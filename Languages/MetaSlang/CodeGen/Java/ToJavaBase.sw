@@ -7,7 +7,7 @@ import /Languages/MetaSlang/Specs/StandardSpec
 sort ToExprSort = Block * Java.Expr * Nat * Nat
 
 sort Collected = {
-		  arrowifs:List Java.InterfDecl
+		  arrowclasses :List Java.ClsDecl
 		 }
 
 op baseSrtToJavaType: Sort -> Java.Type
@@ -68,23 +68,27 @@ def mkPrimOpsClsDecl =
  * sort A = B is translated to the empty class A extending B (A and B are user sorts).
  * class A extends B {}
  *)
-op userTypeToClsDecl: Id * Id -> ClsDecl
-def userTypeToClsDecl(id,superid) =
+op userTypeToClsDecls: Id * Id -> List ClsDecl * Collected
+def userTypeToClsDecls(id,superid) =
 %  ([], (id, None, []), emptyClsBody)
-  ([], (id, Some ([],superid), []), emptyClsBody)
+  ([([], (id, Some ([],superid), []), emptyClsBody)],nothingCollected)
 
 
-op varsToFormalParams: Vars -> List FormPar
+op varsToFormalParams: Vars -> List FormPar * Collected
 def varsToFormalParams(vars) =
-  map varToFormalParam vars
+%  map varToFormalParam vars
+  foldl (fn(v,(fp,col)) ->
+	 let (fp0,col0) = varToFormalParam(v) in
+	 (concat(fp,[fp0]),concatCollected(col,col0))) ([],nothingCollected) vars
 
-op varToFormalParam: Var -> FormPar
+op varToFormalParam: Var -> FormPar * Collected
 
 %def varToFormalParam_v2(var as (id, srt as Base (Qualified (q, srtId), _, _))) =
 %  (false, tt(srtId), (id, 0))
 
 def varToFormalParam(var as (id, srt)) =
-  (false, tt_v3(srt), (id, 0))
+  let (ty,col) = tt_v3(srt) in
+  ((false, ty, (id, 0)),col)
 
 op fieldToFormalParam: Id * Id -> FormPar
 def fieldToFormalParam(fieldProj, fieldType) =
@@ -182,12 +186,12 @@ op mkFinalVar: Id -> Id
 def mkFinalVar(id) =
   "fin_"^id
 
-op mkFinalVarDecl: Id * Sort * Java.Expr -> BlockStmt
+op mkFinalVarDecl: Id * Sort * Java.Expr -> BlockStmt * Collected
 def mkFinalVarDecl(varid,srt,exp) =
-  let type = tt_v3 srt in
+  let (type,col) = tt_v3 srt in
   let isfinal = true in
   let vdecl = ((varid,0),Some(Expr exp)) in
-  LocVarDecl(isfinal,type,vdecl,[])
+  (LocVarDecl(isfinal,type,vdecl,[]),col)
 
 sort TCx = StringMap.Map Java.Expr
 
@@ -208,28 +212,51 @@ def tt_v2(id) =
 (**
  * the new implementation of tt uses type information in order to generate the arrow type (v3)
  *)
-op tt_v3: Sort -> Java.Type
+op tt_v3: Sort -> Java.Type * Collected
 def tt_v3(srt) =
   case srt of
-    | Base(Qualified(_,id),_,_) -> tt_v2(id)
-    | Arrow(srt0,srt1,_) -> mkJavaObjectType(srtId(srt))
+    | Base(Qualified(_,id),_,_) -> (tt_v2(id),nothingCollected)
+    | Arrow(srt0,srt1,_) -> 
+      let (sid,col) = srtId(srt) in
+      (mkJavaObjectType(sid),col)
 
-op tt_id: Sort -> Id
-def tt_id(srt) = getJavaTypeId(tt_v3(srt))
+op tt_id: Sort -> Id * Collected
+def tt_id(srt) = 
+  let (ty,col) = tt_v3(srt) in
+  (getJavaTypeId(ty),col)
 
 (**
  * srtId returns for a given type the string representation accorinding the rules
  * in v3 page 67 for class names. It replaces the old version in LiftPattern.sw
  *)
-op srtId: Sort -> String
+op srtId: Sort -> String * Collected
 def srtId(srt) =
+  let (_,s,col) = srtId_internal(srt) in
+  (s,col)
+
+op srtId_internal: Sort -> List Java.Type * String * Collected
+def srtId_internal(srt) =
   case srt of
-    | Base (Qualified (q, id), _, _) -> id
-    | Product(fields,_) -> foldl (fn((_,fsrt),str) -> str ^ (if str = "" then "" else "$$") ^ (srtId fsrt)) "" fields
+    | Base (Qualified (q, id), _, _) -> ([tt_v2 id],id,nothingCollected)
+    | Product(fields,_) -> foldl (fn((_,fsrt),(types,str,col)) ->
+				  let (str0,col0) = srtId(fsrt) in
+				  let str = str ^ (if str = "" then "" else "$$") ^ str0 in
+				  let col = concatCollected(col,col0) in
+				  let types = concat(types,[tt_v2(str0)]) in
+				  (types,str,col)) ([],"",nothingCollected) fields
     | Arrow(dsrt,rsrt,_) ->
-    let rsrtid = srtId rsrt in
-    let dsrtid = srtId dsrt in
-    dsrtid^"$To$"^rsrtid
+      let (dtypes,dsrtid,col2) = srtId_internal dsrt in
+      let (rsrtid,col1) = srtId rsrt in
+      let (pars,_) = foldl (fn(ty,(pars,nmb)) -> 
+			    let fpar = (false,ty,("arg"^Integer.toString(nmb),0)) in
+			    (concat(pars,[fpar]),nmb+1)
+			   ) ([],1) dtypes in
+      let methHdr = ([],Some(tt_v2(rsrtid)),"apply",pars,[]) in
+      let id = dsrtid^"$To$"^rsrtid in
+      let clsDecl = mkArrowClassDecl(id,(methHdr,None)) in
+      let col3 = {arrowclasses=[clsDecl]} in
+      let col = concatCollected(col1,concatCollected(col2,col3)) in
+      ([tt_v2 id],id,col)
     | _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
 
 op getJavaTypeId: Java.Type -> Id
@@ -252,7 +279,7 @@ def getJavaTypeId(jt) =
  * generates a string representation of the type id1*id2*...*idn -> id
  * the ids are MetaSlang sort ids 
  *)
-op mkArrowSrtId: List Id * Id -> String
+op mkArrowSrtId: List Id * Id -> String * Collected
 def mkArrowSrtId(domidlist,ranid) =
   let p = Internal "" in
   let ran = Base(mkUnQualifiedId(ranid),[],p) in
@@ -445,13 +472,30 @@ def mkNewAnonymousClasInst(id, javaArgs,clsBody:ClsBody) =
 def mkNewAnonymousClasInstOneMethod(id,javaArgs,methDecl) =
   let clsBody = {staticInits=[],flds=[],constrs=[],meths=[methDecl],clss=[],interfs=[]} in
   let exp = CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None) in
-  let (methHdr,_) = methDecl in
-  %let ifmods = [Public,Static] in
-  let ifmods = [] in
-  let ifheader = (id,[]) in
-  let ifbody = {flds=[],meths=[methHdr],clss=[],interfs=[]} in
-  let ifdecl = (ifmods,ifheader,ifbody) in
-  (exp,ifdecl:Java.InterfDecl)
+  let cldecl = mkArrowClassDecl(id,methDecl) in
+  %let _ = writeLine("generated class decl: "^id) in
+  (exp,cldecl:Java.ClsDecl)
+
+
+(**
+ * this generates the arrow class definition given the class name and the "apply" method declaration; the "body" part of
+ * the methDecl parameter will be ignored; it will be transformed into an abstract method.
+ *)
+op mkArrowClassDecl: Id * MethDecl -> ClsDecl
+def mkArrowClassDecl(id,methDecl) =
+  let (methHdr as (mmods,mretype,mid,mpars,mthrows),_) = methDecl in
+  let absApplyMethDecl = ((cons(Abstract,mmods),mretype,mid,mpars,mthrows),None) in
+  % construct the equality method that does nothing but throwing an exception:
+  let eqPars = [(false,(Name ([],id),0),("arg",0))] in
+  let eqHdr = ([],Some(Basic JBool,0),"equals",eqPars,[]) in
+  let eqBody = [Stmt(mkThrowFunEq())] in
+  let equalMethDecl = (eqHdr,Some eqBody) in
+  let clmods = [Abstract] in
+  let clheader = (id,None,[]) in
+  let clbody = {staticInits=[],flds=[],constrs=[],meths=[absApplyMethDecl,equalMethDecl],clss=[],interfs=[]} in
+  let cldecl = (clmods,clheader,clbody) in
+  cldecl
+
 
 op mkVarDecl: Id * Id -> BlockStmt
 def mkVarDecl(v, srtId) =
@@ -522,18 +566,55 @@ def findMatchingUserType(spc,recordSrt) =
      | None -> recordSrt
 
 
+
+(**
+ * compares the summand sort with the match and returns the list of constructor ids
+ * that are not present in the match.
+ *)
+op getMissingConstructorIds: Sort * Match -> List Id
+def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
+  let missingsummands = filter (fn(constrId,_) -> 
+				case find (fn(pat,_,_) ->
+					   case pat of
+					     | EmbedPat(id,_,_,_) -> id = constrId
+					     | _ -> false) cases of
+				  | Some _ -> false
+				  | None -> true) summands
+  in
+  map (fn(id,_) -> id) missingsummands
+
+
+(**
+ * search for the wild pattern in the match and returns the corresponding body, if it
+ * has been found.
+ *)
+op findWildPat: Match -> Option Term
+def findWildPat(cases) =
+  case cases of
+    | [] -> None
+    | (pat,cond,term)::cases -> 
+      (case pat of
+	 | WildPat _ -> Some term
+	 | _ -> findWildPat(cases)
+	)
+
 op concatCollected: Collected * Collected -> Collected
 def concatCollected(col1,col2) =
   {
-   arrowifs=concat(col1.arrowifs,col2.arrowifs)
+   arrowclasses=concat(col1.arrowclasses,col2.arrowclasses)
   }
 
 op nothingCollected: Collected
 def nothingCollected = {
-			arrowifs = []
+			arrowclasses = []
 		       }
 
-op arrowInterfaceId : Id
-def arrowInterfaceId = "Arrow"
+%--------------------------------------------------------------------------------
+%
+% constants
+%
+% --------------------------------------------------------------------------------
+
+def primitiveClassName : Id = "Primitive"
 
 endspec

@@ -27,31 +27,34 @@ op mkProductTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl -> 
 def mkProductTypeClsDecl(id, prodFieldsDecl, prodMethodDecls, constrDecls) =
   ([], (id, None, []), setConstrs(setMethods(setFlds(emptyClsBody, prodFieldsDecl), prodMethodDecls), constrDecls))
 
-op productToClsDecl: Id * Sort -> ClsDecl
-def productToClsDecl(id, srtDef as Product (fields, _)) =
+op productToClsDecls: Id * Sort -> List ClsDecl * Collected
+def productToClsDecls(id, srtDef as Product (fields, _)) =
   let prodFieldsDecls = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFldDecl(fieldProj, fieldType)) fields in
-  let equalityConjunction = mkEqualityBodyForProduct(fields) in
+  let (equalityConjunction,col) = mkEqualityBodyForProduct(fields) in
   let prodMethodDecl =  mkEqualityMethDecl(id) in
   let prodMethodBody = [Stmt (Return (Some (equalityConjunction)))] in
   let prodMethodDecl = setMethodBody(prodMethodDecl, prodMethodBody) in
   let prodConstrDecls = [mkProdConstrDecl(id, fields)] in
-  mkProductTypeClsDecl(id, prodFieldsDecls, [prodMethodDecl], prodConstrDecls)
+  ([mkProductTypeClsDecl(id, prodFieldsDecls, [prodMethodDecl], prodConstrDecls)],col)
 
-op mkEqualityBodyForProduct: List Field -> Java.Expr
+op mkEqualityBodyForProduct: List Field -> Java.Expr * Collected
 def mkEqualityBodyForProduct(fields) =
   case fields of
-    | [] -> CondExp (Un (Prim (Bool true)), None)
+    | [] -> (CondExp (Un (Prim (Bool true)), None),nothingCollected)
     | [(id, srt)] -> 
        let id = getFieldName id in
        let e1 = CondExp (Un (Prim (Name (["this"], id))), None) in
        let e2 = CondExp (Un (Prim (Name (["eqarg"],id))), None) in
-       mkJavaEq(e1, e2, srtId(srt))
+       let (sid,col) = srtId(srt) in
+       (mkJavaEq(e1, e2, sid),col)
     | (id, srt)::fields ->
        let id = getFieldName id in
        let e1 = CondExp (Un (Prim (Name (["this"], id))), None) in
        let e2 = CondExp (Un (Prim (Name (["eqarg"], id))), None) in
-       let eq = mkJavaEq(e1, e2, srtId(srt)) in
-       let restEq = mkEqualityBodyForProduct(fields) in
-       CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None)
+       let (sid,col1) = srtId(srt) in
+       let eq = mkJavaEq(e1, e2, sid) in
+       let (restEq,col2) = mkEqualityBodyForProduct(fields) in
+       let col = concatCollected(col1,col2) in
+       (CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None),col)
 
 endspec

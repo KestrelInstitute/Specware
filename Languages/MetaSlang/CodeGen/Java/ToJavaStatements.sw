@@ -31,7 +31,9 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
 	    then
 	      case utlist(concat(dom,[srt])) of
 		| Some s -> 
-		  translateBaseApplToExpr(tcx,id,argsTerm,k,l,srtId s,spc)
+		  let (sid,col1) = srtId s in
+		  let (res,col2) = translateBaseApplToExpr(tcx,id,argsTerm,k,l,sid,spc) in
+		  (res,concatCollected(col1,col2))
 		| None ->
 		  translatePrimBaseApplToExpr(tcx, id, argsTerm, k, l, spc)
 	  else translateBaseArgsApplToExpr(tcx, id, argsTerm, rng, k, l, spc)
@@ -45,7 +47,10 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
     | Fun (Choose, srt, _) -> translateChooseToExpr(tcx, argsTerm, k, l, spc)
     | Fun (Equals , srt, _) -> translateEqualsToExpr(tcx, argsTerm, k, l, spc)
     | Fun (Project (id) , srt, _) -> translateProjectToExpr(tcx, id, argsTerm, k, l, spc)
-    | Fun (Embed (id, _) , srt, _) -> translateConstructToExpr(tcx, srtId(termSort(term)), id, argsTerm, k, l, spc)
+    | Fun (Embed (id, _) , srt, _) ->
+      let (sid,col1) = srtId(termSort(term)) in
+      let (res,col2) = translateConstructToExpr(tcx, sid, id, argsTerm, k, l, spc) in
+      (res,concatCollected(col1,col2))
     | Fun (Op (Qualified (q, id), _), _, _) ->
       let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
       opvarcase(id)
@@ -82,8 +87,10 @@ def translateChooseToExpr(tcx, argsTerm, k, l, spc) =
 op translateEqualsToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateEqualsToExpr(tcx, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
-  let ((newBlock, [jE1, jE2], newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  ((newBlock, mkJavaEq(jE1, jE2, srtId(termSort(hd(args)))), newK, newL),col)
+  let ((newBlock, [jE1, jE2], newK, newL),col1) = translateTermsToExpressions(tcx, args, k, l, spc) in
+  let (sid,col2) = srtId(termSort(hd(args))) in
+  let col = concatCollected(col1,col2) in
+  ((newBlock, mkJavaEq(jE1, jE2, sid), newK, newL),col)
 
 op translateProjectToExpr: TCx * Id * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateProjectToExpr(tcx, id, argsTerm, k, l, spc) =
@@ -117,12 +124,15 @@ def translateBaseApplToExpr(tcx, opId, argsTerm, k, l, clsId, spc) =
 op translateBaseArgsApplToExpr: TCx * Id * Term * JGen.Type * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateBaseArgsApplToExpr(tcx, opId, argsTerm, rng, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
-  let ((newBlock, javaArgs, newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  let res = if javaBaseOp?(opId)
-	      then (newBlock, mkBinExp(opId, javaArgs), newK, newL)
-	    else (newBlock, mkMethInv(srtId(rng), opId, javaArgs), newK, newL)
+  let ((newBlock, javaArgs, newK, newL),col1) = translateTermsToExpressions(tcx, args, k, l, spc) in
+  let (res,col2) = if javaBaseOp?(opId)
+	      then ((newBlock, mkBinExp(opId, javaArgs), newK, newL),nothingCollected)
+	    else 
+	      let (sid,col) = srtId(rng) in
+	      ((newBlock, mkMethInv(sid, opId, javaArgs), newK, newL),col)
   in
-    (res,col)
+  let col = concatCollected(col1,col2) in
+  (res,col)
 
 op translateUserApplToExpr: TCx * Id * List JGen.Type * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateUserApplToExpr(tcx, opId, dom, argsTerm, k, l, spc) =
@@ -163,8 +173,9 @@ def translateIfThenElseToStatement(tcx, term as IfThenElse(t0, t1, t2, _), k, l,
   let v = mkIfRes(k) in
   let ((b1, k1, l1),col2) = termToExpressionAsgV(v, tcx, t1, k0, l0, spc) in  
   let ((b2, k2, l2),col3) = termToExpressionAsgV(v, tcx, t2, k1, l1, spc) in  
-  let col = concatCollected(col1,concatCollected(col2,col3)) in
-  let vDecl = mkVarDecl(v, srtId(termSort(t2))) in
+  let (sid,col4) = srtId(termSort(t2)) in
+  let col = concatCollected(col1,concatCollected(col2,concatCollected(col3,col4))) in
+  let vDecl = mkVarDecl(v, sid) in
 %  let vAss1 = mkVarAssn(v, jT1) in
 %  let vAss2 = mkVarAssn(v, jT2) in
 %  let ifStmt = mkIfStmt(jT0, b1++[vAss1], b2++[vAss2]) in
@@ -176,26 +187,28 @@ def translateLetToExpr(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
   let [(VarPat (v, _), letTerm)] = letBindings in
   let (vId, vSrt) = v in
   let vSrt = findMatchingUserType(spc,vSrt) in
-  let ((b0, k0, l0),col1) = termToExpressionAsgNV(srtId(vSrt), vId, tcx, letTerm, k, l, spc) in
+  let (sid,col0) = srtId(vSrt) in
+  let ((b0, k0, l0),col1) = termToExpressionAsgNV(sid, vId, tcx, letTerm, k, l, spc) in
   let ((b1, jLetBody, k1, l1),col2) = termToExpression(tcx, letBody, k0, l0, spc) in
 %  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
-  let col = concatCollected(col1,col2) in
+  let col = concatCollected(col0,concatCollected(col1,col2)) in
   ((b0++b1, jLetBody, k1, l1),col)
 
 def translateLetRet(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
   let [(VarPat (v, _), letTerm)] = letBindings in
   let (vId, vSrt) = v in
   let vSrt = findMatchingUserType(spc,vSrt) in
-  let ((b0, k0, l0),col1) = termToExpressionAsgNV(srtId(vSrt), vId, tcx, letTerm, k, l, spc) in
+  let (sid,col0) = srtId(vSrt) in
+  let ((b0, k0, l0),col1) = termToExpressionAsgNV(sid, vId, tcx, letTerm, k, l, spc) in
   let ((b1, k1, l1),col2) = termToExpressionRet(tcx, letBody, k0, l0, spc) in
 %  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
-  let col = concatCollected(col1,col2) in
+  let col = concatCollected(col0,concatCollected(col1,col2)) in
   ((b0++b1, k1, l1),col)
 
 
 def translateCaseToExpr(tcx, term, k, l, spc) =
   let caseType = termSort(term) in
-  let caseTypeId = srtId(caseType) in
+  let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
   %% cases = List (pat, cond, body)
@@ -203,16 +216,17 @@ def translateCaseToExpr(tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let caseTermSrt = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col0) = srtId(termSort(caseTerm)) in
 	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
+        let ((caseTermBlock, k0, l0),col1) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
+	let col = concatCollected(col0,col1) in
 	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
   in
     let cres = mkCres(l) in
     let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitches(tcx, caseTypeId, caseTermJExpr, cres, cases, k0, l0, l, spc) in
     let switchStatement = Stmt (Switch (caseTermJExpr, casesSwitches)) in
     let cresJavaExpr = mkVarJavaExpr(cres) in
-    let col = concatCollected(col1,col2) in
+    let col = concatCollected(col0,concatCollected(col1,col2)) in
     ((caseTermBlock++[switchStatement], cresJavaExpr, finalK, finalL),col)
 
 
@@ -220,11 +234,11 @@ op translateCaseCasesToSwitches: TCx * Id * Java.Expr * Id * Match * Nat * Nat *
 def translateCaseCasesToSwitches(tcx, caseType, caseExpr, cres, cases, k0, l0, l, spc) =
   let
     def mkCaseInit(cons,coSrt) =
-      let caseType = srtId coSrt in
+      let (caseType,col0) = srtId coSrt in
       let sumdType = mkSumd(cons, caseType) in
       let subId = mkSub(cons, l) in
       let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-      mkVarInit(subId, sumdType, castExpr)
+      (mkVarInit(subId, sumdType, castExpr),col0)
   in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let
@@ -238,13 +252,14 @@ def translateCaseCasesToSwitches(tcx, caseType, caseExpr, cres, cases, k0, l0, l
       %let sumdType = mkSumd(cons, caseType) in
       let newTcx = addSubsToTcx(tcx, patVars, subId) in
       let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(cres, newTcx, body, ks, ls, spc) in
-      let initBlock = mkCaseInit(cons,coSrt) in
-      let caseType = srtId coSrt in
+      let (initBlock,col2) = mkCaseInit(cons,coSrt) in
+      let (caseType,col3) = srtId coSrt in
       %let tagId = mkTag(cons) in
       let tagId = mkTagCId(cons) in
       let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
       let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
-      ((switchElement, newK, newL),col1)
+      let col = concatCollected(col1,concatCollected(col2,col3)) in
+      ((switchElement, newK, newL),col)
   in
     let
       def translateCasesToSwitchesRec(cases, kr, lr) =
@@ -298,7 +313,8 @@ def termToExpression(tcx, term, k, l, spc) =
     | Fun (Bool (b),_,_) -> ((mts, mkJavaBool(b), k, l),nothingCollected)
     | Fun (Embed (c, _), srt, _) -> 
       if flatType? srt then
-	((mts, mkMethInv(srtId(srt), c, []), k, l),nothingCollected)
+	let (sid,col) = srtId(srt) in
+	((mts, mkMethInv(sid, c, []), k, l),col)
       else
 	translateLambdaToExpr(tcx,term,k,l,spc)
     | Apply (opTerm, argsTerm, _) -> translateApplyToExpr(tcx, term, k, l, spc)
@@ -336,7 +352,7 @@ def translateIfThenElseRet(tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
 
 def translateCaseRet(tcx, term, k, l, spc) =
   let caseType_ = termSort(term) in
-  let caseTypeId = srtId(caseType_) in
+  let (caseTypeId,col0) = srtId(caseType_) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
   %% cases = List (pat, cond, body)
@@ -344,25 +360,27 @@ def translateCaseRet(tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let caseTermSrt = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col0) = srtId(termSort(caseTerm)) in
 	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
+        let ((caseTermBlock, k0, l0),col1) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
+	let col = concatCollected(col0,col1) in
 	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
   in
   let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitchesRet(tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
   let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
-  let col = concatCollected(col1,col2) in
+  let col = concatCollected(col0,concatCollected(col1,col2)) in
   ((caseTermBlock++[switchStatement], finalK, finalL),col)
 
 
 op translateCaseCasesToSwitchesRet: TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
 def translateCaseCasesToSwitchesRet(tcx, caseType, caseExpr, cases, k0, l0, l, spc) =
   let def mkCaseInit(cons,caseSort) =
-        let caseType = srtId(caseSort) in
+        let (caseType,col) = srtId(caseSort) in
         let sumdType = mkSumd(cons, caseType) in
 	let subId = mkSub(cons, l) in
 	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-	mkVarInit(subId, sumdType, castExpr) in
+	(mkVarInit(subId, sumdType, castExpr),col)
+  in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         let (EmbedPat (cons, argsPat, coSrt, _), _, body) = c in
@@ -375,12 +393,13 @@ def translateCaseCasesToSwitchesRet(tcx, caseType, caseExpr, cases, k0, l0, l, s
 	let subId = mkSub(cons, l) in
 	%let sumdType = mkSumd(cons, caseType) in
         let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	let ((caseBlock, newK, newL),col) = termToExpressionRet(newTcx, body, ks, ls, spc) in
-	let initBlock = mkCaseInit(cons,coSrt) in
-	let caseType = srtId coSrt in
+	let ((caseBlock, newK, newL),col1) = termToExpressionRet(newTcx, body, ks, ls, spc) in
+	let (initBlock,col2) = mkCaseInit(cons,coSrt) in
+	let (caseType,col3) = srtId coSrt in
 	let tagId = mkTagCId(cons) in
 	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
 	let switchElement = ([switchLab], [initBlock]++caseBlock) in
+	let col = concatCollected(col1,concatCollected(col2,col3)) in
 	((switchElement, newK, newL),col)
   in
   let def translateCasesToSwitchesRec(cases, kr, lr) =
@@ -421,7 +440,7 @@ def translateIfThenElseAsgNV(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _),
 %def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
 def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
   let caseType = termSort(term) in
-  let caseTypeId = srtId(caseType) in
+  let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
   %% cases = List (pat, cond, body)
@@ -429,25 +448,28 @@ def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let caseTermSrt = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col1) = srtId(termSort(caseTerm)) in
 	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
-	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col) in
+        let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
+	let col = concatCollected(col1,col2) in
+	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
+  in
    let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitchesAsgNV(vId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
    let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
    let declV = mkVarDecl(vId, vSrtId) in
-   let col = concatCollected(col1,col2) in
+   let col = concatCollected(col0,concatCollected(col1,col2)) in
    (([declV]++caseTermBlock++[switchStatement], finalK, finalL),col)
 
 
 op translateCaseCasesToSwitchesAsgNV: Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
 def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, caseType, caseExpr, cases, k0, l0, l, spc) =
   let def mkCaseInit(cons,srt) =
-        let caseType = srtId srt in
+        let (caseType,col) = srtId srt in
         let sumdType = mkSumd(cons, caseType) in
 	let subId = mkSub(cons, l) in
 	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-	mkVarInit(subId, sumdType, castExpr) in
+	(mkVarInit(subId, sumdType, castExpr),col)
+  in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         let (EmbedPat (cons, argsPat, coSrt, _), _, body) = c in
@@ -459,12 +481,13 @@ def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, caseType, caseExpr, cases, k0
 	let subId = mkSub(cons, l) in
 	%let sumdType = mkSumd(cons, caseType) in
         let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	let ((caseBlock, newK, newL),col) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
-	let initBlock = mkCaseInit(cons,coSrt) in
+	let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
+	let (initBlock,col2) = mkCaseInit(cons,coSrt) in
 	let tagId = mkTagCId(cons) in
-	let caseType = srtId coSrt in
+	let (caseType,col3) = srtId coSrt in
 	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
 	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
+	let col = concatCollected(col1,concatCollected(col2,col3)) in
 	((switchElement, newK, newL),col) in
    let def translateCasesToSwitchesRec(cases, kr, lr) =
          case cases of
@@ -504,7 +527,7 @@ def translateIfThenElseAsgV(vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l, s
 %def translateCaseAsgV(vId, tcx, term, k, l, spc) =
 def translateCaseAsgV(vId, tcx, term, k, l, spc) =
   let caseType = termSort(term) in
-  let caseTypeId = srtId(caseType) in
+  let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
   %% cases = List (pat, cond, body)
@@ -512,24 +535,27 @@ def translateCaseAsgV(vId, tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let caseTermSrt = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col1) = srtId(termSort(caseTerm)) in
 	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
-	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col) in
+        let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
+	let col = concatCollected(col1,col2) in
+	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
+  in
    let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitchesAsgV(vId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
    let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
-   let col = concatCollected(col1,col2) in
+   let col = concatCollected(col0,concatCollected(col1,col2)) in
    ((caseTermBlock++[switchStatement], finalK, finalL),col)
 
 
 op translateCaseCasesToSwitchesAsgV: Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
 def translateCaseCasesToSwitchesAsgV(oldVId, tcx, caseType, caseExpr, cases, k0, l0, l, spc) =
   let def mkCaseInit(cons,coSrt) =
-	let caseType = srtId coSrt in
+	let (caseType,col) = srtId coSrt in
         let sumdType = mkSumd(cons, caseType) in
 	let subId = mkSub(cons, l) in
 	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-	mkVarInit(subId, sumdType, castExpr) in
+	(mkVarInit(subId, sumdType, castExpr),col)
+  in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         let (EmbedPat (cons, argsPat, coSrt, _), _, body) = c in
@@ -540,13 +566,14 @@ def translateCaseCasesToSwitchesAsgV(oldVId, tcx, caseType, caseExpr, cases, k0,
 	let subId = mkSub(cons, l) in
 	%let sumdType = mkSumd(cons, caseType) in
         let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	let ((caseBlock, newK, newL),col) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
-	let initBlock = mkCaseInit(cons,coSrt) in
-	let caseType = srtId coSrt in
+	let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
+	let (initBlock,col2) = mkCaseInit(cons,coSrt) in
+	let (caseType,col3) = srtId coSrt in
 	%let tagId = mkTag(cons) in
 	let tagId = mkTagCId(cons) in
 	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
 	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
+	let col = concatCollected(col1,concatCollected(col2,col3)) in
 	((switchElement, newK, newL),col) in
    let def translateCasesToSwitchesRec(cases, kr, lr) =
          case cases of
@@ -585,7 +612,7 @@ def translateIfThenElseAsgF(cId, fId, tcx, term as IfThenElse(t0, t1, t2, _), k,
 %def translateCaseAsgF(cId, tcx, term, k, l, spc) =
 def translateCaseAsgF(cId, fId, tcx, term, k, l, spc) =
   let caseType = termSort(term) in
-  let caseTypeId = srtId(caseType) in
+  let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
   %% cases = List (pat, cond, body)
@@ -593,24 +620,27 @@ def translateCaseAsgF(cId, fId, tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let caseTermSrt = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col1) = srtId(termSort(caseTerm)) in
 	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
-	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col) in
+        let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
+	let col = concatCollected(col1,col2) in
+	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
+  in
    let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
    let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
-   let col = concatCollected(col1,col2) in
+   let col = concatCollected(col0,concatCollected(col1,col2)) in
    ((caseTermBlock++[switchStatement], finalK, finalL),col)
 
 
 op translateCaseCasesToSwitchesAsgF: Id * Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
 def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseType, caseExpr, cases, k0, l0, l, spc) =
   let def mkCaseInit(cons,coSrt) =
-	let caseType = srtId coSrt in
+	let (caseType,col) = srtId coSrt in
         let sumdType = mkSumd(cons, caseType) in
 	let subId = mkSub(cons, l) in
 	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-	mkVarInit(subId, sumdType, castExpr) in
+	(mkVarInit(subId, sumdType, castExpr),col)
+  in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         let (EmbedPat (cons, argsPat, coSrt, _), _, body) = c in
@@ -621,13 +651,14 @@ def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseType, caseExpr, cases, k
 	let subId = mkSub(cons, l) in
 	%let sumdType = mkSumd(cons, caseType) in
         let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	let ((caseBlock, newK, newL),col) = termToExpressionAsgF(cId, fId, newTcx, body, ks, ls, spc) in
-	let initBlock = mkCaseInit(cons,coSrt) in
-	let caseType = srtId coSrt in
+	let ((caseBlock, newK, newL),col1) = termToExpressionAsgF(cId, fId, newTcx, body, ks, ls, spc) in
+	let (initBlock,col2) = mkCaseInit(cons,coSrt) in
+	let (caseType,col3) = srtId coSrt in
 	%let tagId = mkTag(cons) in
 	let tagId = mkTagCId(cons) in
 	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
 	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
+	let col = concatCollected(col1,concatCollected(col2,col3)) in
 	((switchElement, newK, newL),col) in
    let def translateCasesToSwitchesRec(cases, kr, lr) =
          case cases of
