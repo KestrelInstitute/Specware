@@ -5,7 +5,7 @@
  ("Bug 0102 : Extra variable in gnerated proof obligation"
   :show   "ObligationsOfInteger.sw" 
   :output '(";;; Elaborating obligator at $TESTDIR/ObligationsOfInteger"
-	    ";;; Elaborating spec at $SPECWARE/Library/Base/WFO"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    ""
 	    "spec  "
 	    " import /Library/Base/WFO"

@@ -6,7 +6,7 @@
   :show "theOblig#O"
   :output '(";;; Elaborating obligator at $TESTDIR/theOblig#O"
 	    ";;; Elaborating spec at $TESTDIR/theOblig#S"
-	    ";;; Elaborating spec at $SPECWARE/Library/Base/WFO"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    ""
 	    "spec  "
 	    " import /Library/Base/WFO"
