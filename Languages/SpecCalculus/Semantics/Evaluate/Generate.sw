@@ -3,6 +3,7 @@
 \begin{spec}
 SpecCalc qualifying spec
   import Snark
+  import Proofs
   import Java
   import C
   %import /Languages/MetaSlang/CodeGen/C/ToC
@@ -33,6 +34,8 @@ SpecCalc qualifying spec
 		       evaluateJavaGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
                  | "java" ->
 		       evaluateJavaGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
+		 | "proofs" ->
+		       evaluateProofGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
                  | lang -> raise (Unsupported ((positionOf sub_term),
                                 "no generation for language "
                               ^ lang

@@ -271,6 +271,32 @@ SpecCalc qualifying spec {
             ppTerm scTerm
           ]
 
+      | Prove (claimName, term, proverName, assertions, proverOptions) ->
+	  ppConcat [
+	    ppString ("prove " ^ claimName ^ " in "),
+	    ppTerm term,
+	    (case assertions of
+	       | All -> ppNil
+	       | Explicit ([]) -> ppNil
+	       | Explicit (assertions) -> ppConcat [
+					    ppString " using ",
+					    ppSep (ppString ", ") (map ppString assertions)]),
+            (case proverOptions of
+	       | OptionString ([option]) -> 
+	                                  if option = string("") then ppNil else
+					  ppConcat [
+					   ppString " options ",
+					   ppString (uncell (option)) ]
+	       | OptionName (prover_option_name) -> ppConcat [
+						    ppString " options ",
+						    ppString (printQualifiedId(prover_option_name)) ])
+		    ]
+      | Obligations term ->
+          ppConcat [
+            ppString "obligations ",
+            ppTerm term
+          ]
+
       | Other other_term -> ppOtherTerm other_term
 
   def ppQualifier (Qualified (Qualifier,Id))  =
