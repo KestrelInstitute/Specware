@@ -31,3 +31,12 @@
 		  (interrupt-signal                     (function bail-out))
 		  )
      ,@body))
+
+(defun enlarge-stack (&optional (proposed 10000000))
+  (let* ((old (sys::stack-cushion)))
+    (sys::set-stack-cushion proposed)
+    (let ((new (sys::stack-cushion)))
+      (format t "~%Stack cushion was ~10D [#x~8X],~%" old old)
+      (format t "~&       was set to ~10D [#x~8X],~%" proposed proposed)
+      (format t "~&       and now is ~10D [#x~8X].~%" new new)
+      new)))

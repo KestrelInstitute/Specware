@@ -79,6 +79,7 @@ if [ -f bin/linux/Specware4.dxl ]; then
         echo " "
 	bin/linux/Specware4-text -batch <<-XXXX
 		(load "$EXIT_ON_ERRORS")
+		(enlarge-stack)
 		(exiting-on-errors 
 		  (if (sw "/Applications/Specware/Specware4")
 		    (exit 0)
@@ -92,6 +93,7 @@ else
 		cd Handwritten/Lisp
 		$LISP -batch <<-XXXX
 			(load "$EXIT_ON_ERRORS")
+			(enlarge-stack)
 			(exiting-on-errors 
 			  (load "Specware4.lisp")
 			  (if (sw "/Applications/Specware/Specware4")
