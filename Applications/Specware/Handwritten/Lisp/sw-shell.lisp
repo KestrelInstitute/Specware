@@ -79,7 +79,8 @@
 (defun specware-shell (exiting-lisp?)
   (let  ((magic-eof-cookie (cons :eof nil))
 	 (number-of-eofs 0)
-	 (cl:*package* (find-package :SWShell)))
+	 (cl:*package* (find-package :SWShell))
+	 ch)
     (emacs::eval-in-emacs "(set-comint-prompt)")
     (format t "Specware Shell~%")
     (unwind-protect
@@ -93,6 +94,11 @@
 	  (catch ':top-level-reset	; Only useful for allegro
 	    (with-simple-restart (abort "Return to Specware Shell top level.")
 					;(set-specware-shell t)
+	      (loop while (member (setq ch (read-char *standard-input* nil nil)) '(#\Newline #\Space #\Tab))
+		    do (when (eq ch #\Newline)  ; If user types a newline give a new prompt
+			 (print-shell-prompt)))
+	      (when ch
+		(unread-char ch))
 	      (catch #+allegro 'tpl::top-level-break-loop
 		     #-allegro nil
 		(let ((form (read *standard-input* nil magic-eof-cookie)))
