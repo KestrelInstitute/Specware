@@ -605,11 +605,11 @@ If we want the precedence to be optional:
    )
   1)
 
-(define-sw-parser-rule :NON-MATCH-EXPRESSION ()
+(define-sw-parser-rule :NON-BRANCH-EXPRESSION ()
   (:anyof
-   (1 :NON-MATCH-LET-EXPRESSION   :documentation "Let not ending in case or lambda")
-   (1 :NON-MATCH-IF-EXPRESSION    :documentation "If-then-else not ending in case or lambda")
-   (1 :NON-MATCH-QUANTIFICATION   :documentation "Quantification (fa/ex) not ending in case or lambda")
+   (1 :NON-BRANCH-LET-EXPRESSION  :documentation "Let not ending in case or lambda")
+   (1 :NON-BRANCH-IF-EXPRESSION   :documentation "If-then-else not ending in case or lambda")
+   (1 :NON-BRANCH-QUANTIFICATION  :documentation "Quantification (fa/ex) not ending in case or lambda")
    (1 :TIGHT-EXPRESSION           :documentation "Tight expression -- suitable for annotation")
    )
   1)
@@ -704,10 +704,10 @@ If we want the precedence to be optional:
    ((:tuple "let" (1 :REC-LET-BINDING-SEQUENCE) "in" (2 :EXPRESSION)) (make-rec-let-binding-term 1 2 ':left-lc ':right-lc) :documentation "RecLet Binding")
    ))
 
-(define-sw-parser-rule :NON-MATCH-LET-EXPRESSION ()
+(define-sw-parser-rule :NON-BRANCH-LET-EXPRESSION () ; as above, but not ending with "| .. -> .."
   (:anyof
-   ((:tuple "let" (1 :RECLESS-LET-BINDING)      "in" (2 :NON-MATCH-EXPRESSION)) (make-let-binding-term     1 2 ':left-lc ':right-lc) :documentation "Let Binding")
-   ((:tuple "let" (1 :REC-LET-BINDING-SEQUENCE) "in" (2 :NON-MATCH-EXPRESSION)) (make-rec-let-binding-term 1 2 ':left-lc ':right-lc) :documentation "RecLet Binding")
+   ((:tuple "let" (1 :RECLESS-LET-BINDING)      "in" (2 :NON-BRANCH-EXPRESSION)) (make-let-binding-term     1 2 ':left-lc ':right-lc) :documentation "Let Binding")
+   ((:tuple "let" (1 :REC-LET-BINDING-SEQUENCE) "in" (2 :NON-BRANCH-EXPRESSION)) (make-rec-let-binding-term 1 2 ':left-lc ':right-lc) :documentation "RecLet Binding")
    ))
 
 (define-sw-parser-rule :RECLESS-LET-BINDING ()
@@ -734,8 +734,8 @@ If we want the precedence to be optional:
   (:tuple "if" (1 :EXPRESSION) "then" (2 :EXPRESSION) "else" (3 :EXPRESSION))
   (make-if-expression 1 2 3 ':left-lc ':right-lc)  :documentation "If-Then-Else")
 
-(define-sw-parser-rule :NON-MATCH-IF-EXPRESSION ()
-  (:tuple "if" (1 :EXPRESSION) "then" (2 :EXPRESSION) "else" (3 :NON-MATCH-EXPRESSION))
+(define-sw-parser-rule :NON-BRANCH-IF-EXPRESSION () ; as above, but not ending with "| .. -> .."
+  (:tuple "if" (1 :EXPRESSION) "then" (2 :EXPRESSION) "else" (3 :NON-BRANCH-EXPRESSION))
   (make-if-expression 1 2 3 ':left-lc ':right-lc)  :documentation "If-Then-Else")
 
 ;;; ------------------------------------------------------------------------
@@ -747,8 +747,8 @@ If we want the precedence to be optional:
   (make-quantification 1 2 3 ':left-lc ':right-lc)
   :documentation "Quantification")
 
-(define-sw-parser-rule :NON-MATCH-QUANTIFICATION ()
-  (:tuple (1 :QUANTIFIER) (2 :LOCAL-VARIABLE-LIST) (3 :NON-MATCH-EXPRESSION))
+(define-sw-parser-rule :NON-BRANCH-QUANTIFICATION () ; as above, but not ending with "| .. -> .."
+  (:tuple (1 :QUANTIFIER) (2 :LOCAL-VARIABLE-LIST) (3 :NON-BRANCH-EXPRESSION))
   (make-quantification 1 2 3 ':left-lc ':right-lc)
   :documentation "Quantification")
 
@@ -1062,16 +1062,17 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :AUX-MATCH ()
   (:anyof
-   ((:tuple (1 :NON-MATCH-BRANCH) "|" (2 :AUX-MATCH)) (cons 1 2))
-   ((:tuple (1 :BRANCH))                              (cons 1 nil))
+   ((:tuple (1 :NON-BRANCH-BRANCH) "|" (2 :AUX-MATCH)) (cons 1 2))
+   ((:tuple (1 :BRANCH))                               (cons 1 nil))
    ))
-
-(define-sw-parser-rule :NON-MATCH-BRANCH ()
-  (:tuple (1 :PATTERN) "->" (2 :NON-MATCH-EXPRESSION))
-  (make-branch 1 2 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :BRANCH ()
   (:tuple (1 :PATTERN) "->" (2 :EXPRESSION))
+  (make-branch 1 2 ':left-lc ':right-lc))
+
+(define-sw-parser-rule :NON-BRANCH-BRANCH () ; as above, but not ending with "| .. -> .."
+  ;; i.e., a branch that doesn't end in a branch
+  (:tuple (1 :PATTERN) "->" (2 :NON-BRANCH-EXPRESSION))
   (make-branch 1 2 ':left-lc ':right-lc))
 
 ;;; ========================================================================
