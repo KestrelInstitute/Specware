@@ -28,16 +28,31 @@
 
 ;;; Product
 
-(defun magicElements (product)
-  (etypecase product
-    (null   nil)
-    (cons   (list (car product) (cdr product)))
-    (vector (coerce product 'list))))
+(defun magicElements (size-and-data)
+  (let ((product-size (car size-and-data))
+	(product-data (cdr size-and-data)))
+    (case product-size
+      (0  nil)
+      (1  (list product-data))
+      (2  (list (car product-data) (cdr product-data)))
+      (t  (coerce product-data 'list)))))
+
+(defun magicElements-2 (product-size product-data)
+  (case product-size
+    (0  nil)
+    (1  (list product-data))
+    (2  (list (car product-data) (cdr product-data)))
+    (t  (coerce product-data 'list))))
 
 (defun magicMakeProduct (x)
-  (if (equal (length x) 2)
-      (cons (car x) (cadr x))
-    (coerce x 'vector)))
+  (cond ((null x)
+	 (coerce nil 'vector))
+	((null (cdr x))
+	 (car x))
+	((null (cddr x))
+	 (cons (car x) (cadr x)))
+	(t
+	 (coerce x 'vector))))
 
 ;;; CoProduct
 
@@ -64,4 +79,5 @@
 (defun magicCastFromChar    (x) x)
 (defun magicCastFromList    (x) x)
 (defun magicCastFromOption  (x) x)
+(defun magicCastFromAE-2    (x y) (cons x y))
 

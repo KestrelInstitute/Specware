@@ -1689,7 +1689,8 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   sort AttValue = {qchar : QuoteChar,
-		   items : List AttValue_Item}
+		   items : List AttValue_Item,
+		   value : UString} % result of concatenating all items, resolving refs along the way
 
   sort AttValue_Item = | NonRef UString
                        | Ref    Reference

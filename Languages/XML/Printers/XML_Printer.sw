@@ -1462,7 +1462,7 @@ XML qualifying spec
   %%  TODO
   %% -------------------------------------------------------------------------------------------------
 
-  def print_AttValue {qchar, items} =
+  def print_AttValue {qchar, items, value} =
     [qchar] ^ (foldl (fn (item, result) -> result ^ (print_AttValue_Item item)) [] items) ^ [qchar]
 
   def print_AttValue_Item x =

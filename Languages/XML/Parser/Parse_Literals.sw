@@ -163,13 +163,16 @@ XML qualifying spec
 
 	   | char :: tail ->
 	     if char = qchar then
-	       return ({qchar = qchar,
-			     items = (case rev_char_data of
-					| [] -> rev rev_items
-					| _ ->
-					  rev (cons (NonRef (rev rev_char_data),
-						     rev_items)))},
-		       tail)
+	       let items = (case rev_char_data of
+			      | [] -> rev rev_items
+			      | _ ->
+			        rev (cons (NonRef (rev rev_char_data),
+					   rev_items))) 
+	       in
+		 return ({qchar = qchar,
+			  items = items,
+			  value = compute_attribute_value items},
+			 tail)
 	     else
 	       probe (tail,
 		      cons (char, rev_char_data),
@@ -206,6 +209,14 @@ XML qualifying spec
 		 we_expected = [("...", "quoted text")],
 		 but         = "...??...",
 		 so_we       = "fail immediately"}
+
+  def compute_attribute_value (items : List AttValue_Item) : UString = % TODO -- use monad state for refs
+    foldl (fn (item, result) ->
+	   result ++ (case item of
+			| NonRef ustr -> ustr
+			| Ref    _    -> ustring "<some ref>"))
+          []
+          items
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K37]  SystemLiteral   ::=  QuotedText

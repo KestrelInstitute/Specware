@@ -12,7 +12,7 @@ Magic qualifying spec
   %% Such a beast is not even well formed for metaslang, so it must
   %% be handled carefully!
 
-  op Magic.magicElements      : fa (X,Y) X -> List Y                 % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicElements      : fa (X,Y) Nat * X -> List Y           % see /Languages/XML/Handwritten/Lisp/Magic.lisp
 
   %% XML => MetaSlang 
   %% This creates a product from a heterogenous list.

@@ -30,7 +30,8 @@ XML qualifying spec
 			w2    = [],
 			w3    = [],
 			value = {qchar = UChar.double_quote,
-				 items = [NonRef (ustring "1.0")]}}
+				 items = [NonRef (ustring "1.0")],
+				 value = ustring "1.0"}}
     in
       {prefix     = UString.question_mark,
        name       = ustring "xml",

@@ -90,7 +90,8 @@ XML qualifying spec
     let uname     = ustring name in
     let attributes = (if show_type? then
 			let value = {qchar = UChar.apostrophe,
-				     items = [NonRef (pp_sort_descriptor_for_xml_attribute sd)]}
+				     items = [NonRef (pp_sort_descriptor_for_xml_attribute sd)],
+				     value = []} % todo
 			in
 			let type_attr : ElementAttribute = {w1    = [UChar.space],
 							    name  = ustring "type",
@@ -123,7 +124,7 @@ XML qualifying spec
         %% Note that datum_elements is a heterogenous list,
         %%  hence cannot be properly typed in metaslang,
         %%  hence the "magic" here.
-        let datum_elements = Magic.magicElements datum in
+        let datum_elements = Magic.magicElements (length sd_fields, datum) in
         let
           def aux (datum_elements, sd_fields, new_items) =
 	    case (datum_elements, sd_fields) of
@@ -151,7 +152,7 @@ XML qualifying spec
 	let (constructor_name, sub_datum) = Magic.magicConstructorNameAndValue datum in
 	let possible_sd_entry = find (fn (x,_) -> constructor_name = x) sd_options in
 	(case possible_sd_entry of
-	  | None -> (toScreen ("Should never happen!"); None)
+	  | None -> (fail ("Should never happen!"); None)
 	  | Some (sd_constructor_name, possible_sd_sub_pattern) ->
 	    case possible_sd_sub_pattern of
 	      | None ->
@@ -258,7 +259,7 @@ XML qualifying spec
 	let (constructor_name, sub_datum) = Magic.magicConstructorNameAndValue datum in
 	let possible_sd_entry = find (fn (x,_) -> constructor_name = x) sd_options in
         (case possible_sd_entry of
-	  | None -> (toScreen ("Should never happen!");
+	  | None -> (fail ("Should never happen!");
 		     (Some (indentation_chardata (vspacing, indent)),
 		      Element (Empty (make_EmptyElemTag (ustring constructor_name,
 							 [],
