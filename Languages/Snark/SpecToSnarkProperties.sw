@@ -4,6 +4,7 @@ snark qualifying spec
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
   import /Languages/MetaSlang/CodeGen/CodeGenTransforms
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
+  import /Languages/MetaSlang/Transformations/OpToAxiom
   import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
   import /Languages/SpecCalculus/Semantics/Evaluate/UnitId
 %  import /Languages/MetaSlang/Transformations/Match
@@ -196,7 +197,7 @@ snark qualifying spec
       | ("Nat",     "~") -> "-"
       | ("Integer",     "~") -> "-"
       | (_, "hoapply") ->  "HOAPPLY"
-      | _ -> id
+      | _ -> qual^"_"^id
 
   op mkSnarkFmlaApp: Context * Spec * String * StringSet.Set * Fun * Sort * MS.Term -> LispCell
 
@@ -314,6 +315,9 @@ snark qualifying spec
                 of Record(flds,_) -> map(fn (_, term) -> term) flds
 	         | _ -> [arg] in
     case f of
+      | Op(Qualified(Integer_, "-"),_) ->
+	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
+	      Lisp.cons(Lisp.symbol("SNARK","-"), Lisp.cons(Lisp.nat(0), Lisp.list snarkArgs))
       | Op(Qualified(qual,id),_) ->
           let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)

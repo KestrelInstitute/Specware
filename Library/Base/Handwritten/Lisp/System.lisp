@@ -3,6 +3,8 @@
 
 (defvar System-spec::specwareDebug? nil)
 
+(defvar System-spec::proverUseBase? nil)
+
  ;;; op fail     : fa(a) String -> a
 (defun fail (s) (error "~a" s))
 

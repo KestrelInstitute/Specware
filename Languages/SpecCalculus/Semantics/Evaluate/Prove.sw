@@ -34,11 +34,12 @@ SpecCalc qualifying spec {
      %liftedNoHOSpec <- return(subtractSpecProperties(lambdaLift(noHOSpec), baseSpec));
      %liftedNoHOSpec <- return(lambdaLift(noHOSpec));
      %expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
-     expandedSpec <- return (transformSpecForFirstOrderProver baseSpec subSpec);
+     %expandedSpec <- return (transformSpecForFirstOrderProver baseSpec subSpec);
+     expandedSpec <- return (transformSpecForFirstOrderProver baseSpec uspc);
      %_ <- return (if specwareDebug? then writeString(printSpec(liftedNoHOSpec)) else ());
      %expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
      %expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
-     _ <- return (if specwareDebug? then writeString(printSpec(subtractSpecProperties(expandedSpec, baseSpec))) else ());
+     _ <- return (if specwareDebug? then writeString(printSpec(expandedSpec)) else ());
      %expandedSpec:Spec <- return(explicateHiddenAxioms(noHOSpec));
      %expandedSpec:Spec <- return(uspc);
      prover_options <- 
@@ -49,8 +50,8 @@ SpecCalc qualifying spec {
 	  | Error   (msg, str)     -> raise  (SyntaxError (msg ^ str)));
      proved:Boolean <- (proveInSpec (proof_name,
 				     claim_name, 
-				     subtractSpecProperties(expandedSpec, baseSpec),
-				     %expandedSpec,
+				     %subtractSpecProperties(expandedSpec, baseSpec),
+				     expandedSpec,
 				     spec_name,
 				     baseProverSpec,
 				     rewriteProverSpec,
@@ -64,11 +65,20 @@ SpecCalc qualifying spec {
      return (result, timeStamp, depUIDs)
    }
 
-  op transformSpecForFirstOrderProver: AnnSpec.Spec -> AnnSpec.Spec -> AnnSpec.Spec
 
+  op transformSpecForFirstOrderProver: AnnSpec.Spec -> AnnSpec.Spec -> AnnSpec.Spec
   def transformSpecForFirstOrderProver basespc spc =
-    let spc = addMissingFromBase(basespc,spc,builtinSortOp)
-    in
+    let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
+    let xspc = transformSpecForFirstOrderProverInt spc in
+    if proverUseBase? then let _ = writeLine("PRB") in xspc else
+      let xBaseSpec = transformSpecForFirstOrderProverInt basespc in
+      let res = subtractSpec xspc xBaseSpec in
+      let res = subtractSpecProperties(res, xBaseSpec) in
+      res
+    
+
+  op transformSpecForFirstOrderProverInt: AnnSpec.Spec -> AnnSpec.Spec
+  def transformSpecForFirstOrderProverInt spc =
     %let spc = removeCurrying spc in
     %let _ = writeLine("orig") in
     %let _ = writeLine(printSpec spc) in

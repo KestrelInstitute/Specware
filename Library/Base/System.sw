@@ -7,6 +7,7 @@ System qualifying spec
 
   %% The specwareDebug? flag is set using the lisp ":swdbg" top-level command.
   op debug    : fa(a) String -> a % calls lisp's break if the specwareDebug? flag is set.
+  op proverUseBase?   : Boolean % Tests whether the proverUseBase? flag is set.
   op specwareDebug?   : Boolean % Tests whether the specwareDebug? flag is set.
 
   %% Renamed from toString to avoid ambiguity with monomorphic toStrings

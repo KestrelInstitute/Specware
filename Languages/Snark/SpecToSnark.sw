@@ -371,27 +371,39 @@ snark qualifying spec {
 		  Lisp.symbol("KEYWORD","SORT"),
 		  Lisp.quote(Lisp.cons(Lisp.symbol("SNARK","BOOLEAN"), Lisp.list(domSortList)))]
   
+
+  op substringp: String * String -> Boolean
+  def substringp(s1, s2) =
+    length(s1) <= length(s2) &
+    substring(s2, 0, length(s1)) = s1
+
   op snarkFunctionNoCurryDecl: Spec * String * Sort * Nat -> LispCell
 
   def snarkFunctionNoCurryDecl(spc, name, srt, arity) =
     case arrowOpt(spc, srt) of
       Some (dom, rng) ->
-	%let _ = if name = "list2map_def__filter--local-0" then debug("found it") else () in
+	%let _ = if name = "remove" then debug("found it") else () in
 	case rng of
 	  | Boolean _ -> snarkPredicateDecl(spc, name, dom, arity)
 	  | _ ->
 	case productOpt(spc, dom) of
 	  | Some fields -> 
-	    if "project" lt name or "embed" lt name then
-	      let snarkDomSrt = snarkBaseSort(spc, dom, false) in
-	        Lisp.list[declare_function,
-			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
-			  Lisp.symbol("KEYWORD","SORT"),
-			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
+	    if substringp("project", name) or substringp("embed", name) then
+	      %let _ = if true or name = "remove" then debug("found it 1") else () in
+	      if fields = nil then
+		Lisp.list[declare_constant,
+			  Lisp.quote(Lisp.symbol("SNARK", name)),
+			  Lisp.symbol("KEYWORD","SORT"), Lisp.quote(snarkBaseSort(spc, rng, true))]
+		else
+		  let snarkDomSrt = snarkBaseSort(spc, dom, false) in
+		  Lisp.list[declare_function,
+			    Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
+			    Lisp.symbol("KEYWORD","SORT"),
+			    Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
 	    else
 	    let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(spc, srt, false))
 	                          fields in
-	    %let _ = if name = "list2map_def__filter--local-0" then debug("found it") else () in
+	    %let _ = if true or name = "remove" then debug("found it 2") else () in
 	      Lisp.list[declare_function,
 			Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
 			Lisp.symbol("KEYWORD","SORT"),
@@ -414,6 +426,7 @@ snark qualifying spec {
   def snarkFunctionDecl(spc, name, srt) =
     %let _ = toScreen("Generating snark decl for "^name^" with sort: ") in
     %let _ = printSortToTerminal srt in
+    %let _ = if name = "remove" then debug("remove") else () in
     (case (Prover.curryShapeNum(spc, srt), sortArity(spc, srt))
        of (1,None) ->     %let _ = debug("noArity") in 
 	 snarkFunctionNoArityDecl(spc, name, srt)
@@ -441,6 +454,8 @@ snark qualifying spec {
   def snarkOpDecl(spc, name, srt) =
     case name of
       | "+" -> Lisp.nil()
+      | "-" -> Lisp.nil()
+      | "*" -> Lisp.nil()
       | _ ->
     if Prover.functionSort?(spc, srt)
       then snarkFunctionDecl(spc, name, srt)

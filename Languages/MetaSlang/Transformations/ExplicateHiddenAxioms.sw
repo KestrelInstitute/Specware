@@ -1,6 +1,7 @@
 Prover qualifying spec
  import DefToAxiom
- import OpToAxiom
+ import SortToAxiom
+% import OpToAxiom
 
   op explicateHiddenAxioms: Spec -> Spec
   def explicateHiddenAxioms spc =
