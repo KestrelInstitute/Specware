@@ -51,8 +51,7 @@
     (unless (and sw:common-lisp-image-file (not in-current-dir?))
       (setq sw:common-lisp-image-file world-name))
     (setq sw:common-lisp-image-arguments
-      (if (and *windows-system-p* (equal lisp-emacs-interface-type 'franz))
-	  '("+cn") nil))
+      (if *windows-system-p* '("+cn") nil))
     (when (getenv "SOCKET_INIT_FILE")
       (set-socket-init-for-specware))
 
@@ -61,14 +60,17 @@
       (sw:common-lisp sw:common-lisp-buffer-name
 		      sw:common-lisp-directory
 		      sw:common-lisp-image-name
-		      sw:common-lisp-image-arguments
+		      (if *windows-system-p*
+			  (cons "+cn" sw:common-lisp-image-arguments)
+			sw:common-lisp-image-arguments)
 		      sw:common-lisp-host
 		      sw:common-lisp-image-file
 		      ))
-    (sit-for 1 t)
+    (sit-for 0.5 t)
     (sw:eval-in-lisp-no-value
      (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
-    (goto-char (point-max)) 
+    (goto-char (point-max))
+    (simulate-input-expression ":sw-shell")
     ))
 
 (defun set-socket-init-for-specware ()
