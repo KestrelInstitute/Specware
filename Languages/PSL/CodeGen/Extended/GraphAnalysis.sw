@@ -191,7 +191,7 @@ spec
       breadthFirst([i],[j],[],[],g)
 
   op findTopIndex: Graph -> Index
-  def findTopIndex(g) = 0
+  def findTopIndex _ = 0
 %     % Index of node with no predecessors
 %     case findOptionIndex
 %            (fn (nd,i) -> if nd.3 = [] then Some i else None)
