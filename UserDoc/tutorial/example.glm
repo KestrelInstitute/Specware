@@ -760,8 +760,6 @@ automatically proven based primarily on the knowledge of &Specware;'s
 
 </section> <!-- proof obligations -->
 
-</section>  <!-- refinement -->
-
 <section>
 <title>Alternatives</title>
 
@@ -797,6 +795,8 @@ which ops are meant to be ``exported'' by a spec. In future versions
 of the system, some functionality like this may be included.</para>
 
 </section>  <!-- alternatives -->
+
+</section>  <!-- refinement -->
 
 <section>
 <title>Code Generation and Testing</title>
@@ -930,6 +930,8 @@ it could have been omitted.</para>
 ||    :swl MatchingTest#Test find-matches-test.lisp
 ]]
 
+</section> <!-- code gen -->
+
 <section>
 <title>Testing</title>
 
@@ -1001,7 +1003,5 @@ match.</para>
 </section>  <!-- testing -->
 
 </section>  <!-- code gen and testing -->
-
-</section>
 
 </chapter>
