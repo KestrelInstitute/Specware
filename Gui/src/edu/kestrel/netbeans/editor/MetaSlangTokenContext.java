@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:52  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -51,8 +54,7 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final int INT_LITERAL_ID        = STRING_LITERAL_ID + 1;
 
     // Operator numeric-ids - do not modify //GEN-BEGIN
-    public static final int POUND_ID = INT_LITERAL_ID + 1;     // #
-    public static final int LPAREN_ID = POUND_ID + 1;          // (
+    public static final int LPAREN_ID = INT_LITERAL_ID + 1;    // (
     public static final int RPAREN_ID = LPAREN_ID + 1;         // )
     public static final int COMMA_ID = RPAREN_ID + 1;          // ,
     public static final int DOT_ID = COMMA_ID + 1;             // .
@@ -67,9 +69,11 @@ public class MetaSlangTokenContext extends TokenContext {
 
     // Keywords numeric-ids - do not modify //GEN-BEGIN
     public static final int AS_ID = RBRACE_ID + 1;
-    public static final int CASE_ID = AS_ID + 1;
+    public static final int AXIOM_ID = AS_ID + 1;
+    public static final int CASE_ID = AXIOM_ID + 1;
     public static final int CHOOSE_ID = CASE_ID + 1;
-    public static final int DEF_ID = CHOOSE_ID + 1;
+    public static final int CONJECTURE_ID = CHOOSE_ID + 1;
+    public static final int DEF_ID = CONJECTURE_ID + 1;
     public static final int ELSE_ID = DEF_ID + 1;
     public static final int EMBED_ID = ELSE_ID + 1;
     public static final int EMBEDP_ID = EMBED_ID + 1;
@@ -92,7 +96,8 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final int SORT_ID = RESTRICT_ID + 1;
     public static final int SPEC_ID = SORT_ID + 1;
     public static final int THEN_ID = SPEC_ID + 1;
-    public static final int TRUE_ID = THEN_ID + 1;
+    public static final int THEOREM_ID = THEN_ID + 1;
+    public static final int TRUE_ID = THEOREM_ID + 1;
     public static final int WHERE_ID = TRUE_ID + 1;
     // End of Keywords numeric-ids //GEN-END
 
@@ -138,7 +143,6 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final BaseTokenID INT_LITERAL = new BaseTokenID("int-literal", INT_LITERAL_ID);
 
     // Operator token-ids - do not modify //GEN-BEGIN
-    public static final BaseImageTokenID POUND = new BaseImageTokenID("pound", POUND_ID, OPERATORS, "#");
     public static final BaseImageTokenID LPAREN = new BaseImageTokenID("lparen", LPAREN_ID, OPERATORS, "(");
     public static final BaseImageTokenID RPAREN = new BaseImageTokenID("rparen", RPAREN_ID, OPERATORS, ")");
     public static final BaseImageTokenID COMMA = new BaseImageTokenID("comma", COMMA_ID, OPERATORS, ",");
@@ -154,8 +158,10 @@ public class MetaSlangTokenContext extends TokenContext {
 
     // Keyword token-ids - do not modify //GEN-BEGIN
     public static final BaseImageTokenID AS = new BaseImageTokenID("as", AS_ID, KEYWORDS);
+    public static final BaseImageTokenID AXIOM = new BaseImageTokenID("axiom", AXIOM_ID, KEYWORDS);
     public static final BaseImageTokenID CASE = new BaseImageTokenID("case", CASE_ID, KEYWORDS);
     public static final BaseImageTokenID CHOOSE = new BaseImageTokenID("choose", CHOOSE_ID, KEYWORDS);
+    public static final BaseImageTokenID CONJECTURE = new BaseImageTokenID("conjecture", CONJECTURE_ID, KEYWORDS);
     public static final BaseImageTokenID DEF = new BaseImageTokenID("def", DEF_ID, KEYWORDS);
     public static final BaseImageTokenID ELSE = new BaseImageTokenID("else", ELSE_ID, KEYWORDS);
     public static final BaseImageTokenID EMBED = new BaseImageTokenID("embed", EMBED_ID, KEYWORDS);
@@ -179,6 +185,7 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final BaseImageTokenID SORT = new BaseImageTokenID("sort", SORT_ID, KEYWORDS);
     public static final BaseImageTokenID SPEC = new BaseImageTokenID("spec", SPEC_ID, KEYWORDS);
     public static final BaseImageTokenID THEN = new BaseImageTokenID("then", THEN_ID, KEYWORDS);
+    public static final BaseImageTokenID THEOREM = new BaseImageTokenID("theorem", THEOREM_ID, KEYWORDS);
     public static final BaseImageTokenID TRUE = new BaseImageTokenID("true", TRUE_ID, KEYWORDS);
     public static final BaseImageTokenID WHERE = new BaseImageTokenID("where", WHERE_ID, KEYWORDS);
     // End of Keyword token-ids //GEN-END
@@ -199,9 +206,10 @@ public class MetaSlangTokenContext extends TokenContext {
 
     static {
         BaseImageTokenID[] kwds = new BaseImageTokenID[] {//GEN-BEGIN
-            AS, CASE, CHOOSE, DEF, ELSE, EMBED, EMBEDP, ENDSPEC, EX, FA, 
-            FALSE, FN, IF, IMPORT, IN, IS, LET, OF, OP, PROJECT, 
-            QUOTIENT, RELAX, RESTRICT, SORT, SPEC, THEN, TRUE, WHERE
+            AS, AXIOM, CASE, CHOOSE, CONJECTURE, DEF, ELSE, EMBED, 
+            EMBEDP, ENDSPEC, EX, FA, FALSE, FN, IF, IMPORT, IN, IS, LET, 
+            OF, OP, PROJECT, QUOTIENT, RELAX, RESTRICT, SORT, SPEC, THEN, 
+            THEOREM, TRUE, WHERE
         };//GEN-END
 
         for (int i = kwds.length - 1; i >= 0; i--) {

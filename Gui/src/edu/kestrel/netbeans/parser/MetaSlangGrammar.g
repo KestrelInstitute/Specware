@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/02/08 01:26:59  weilyn
+ * Added rules to recognize claims and sort definitions
+ *
  * Revision 1.6  2003/02/07 20:06:19  gilham
  * Added opDefinition and scURI to MetaSlangGrammar.
  *
@@ -92,10 +95,8 @@ private scTerm[Token unitIdToken] returns[ElementFactory.Item item]
 {
     item = null;
 }
-    : ( scURI
-      | item=specDefinition[unitIdToken]
-//       | item=scQualify[unitIdToken]
-//       | item=scURI
+    : ( item=specDefinition[unitIdToken]
+//      | item=scQualify[unitIdToken]
       )                     {if (item != null) builder.setParent(item, null);}
     ;
 
@@ -164,10 +165,7 @@ private declaration returns[ElementFactory.Item item]
 
 //---------------------------------------------------------------------------
 private importDeclaration
-{
-    ElementFactory.Item ignore;
-}
-    : "import" ignore=scTerm[null]
+    : "import" scURI
     ;
 
 //---------------------------------------------------------------------------
@@ -175,46 +173,46 @@ private sortDeclarationOrDefinition returns[ElementFactory.Item sort]
 {
     sort = null;
     String[] params = null;
-    String name = null;
+    String sortName = null;
     String sortDef = null;
 }
     : begin:"sort" 
-      name=qualifiableNames
+      sortName=qualifiableSortNames
       ((formalSortParameters) => 
             (params=formalSortParameters) (equals sortDef=sort)?
           | (equals sortDef=sort)?
       )
-                           {sort = builder.createSort(name, params);
+                           {sort = builder.createSort(sortName, params);
                              ParserUtil.setBounds(builder, sort, begin, LT(0));
                             }
     ;
 
-private qualifiableNames returns[String name]
+private qualifiableSortNames returns[String sortName]
 {
-    name = null;
+    sortName = null;
     String member = null;
     String qlf = null;
 }
-    : name=qualifiableName
+    : sortName=qualifiableSortName
     | LBRACE 
-      member=qualifiableName
-                            {name = "{" + member;}
-      (COMMA member=qualifiableName
-                            {name = name + ", " + member;}
+      member=qualifiableSortName
+                            {sortName = "{" + member;}
+      (COMMA member=qualifiableSortName
+                            {sortName = sortName + ", " + member;}
       )*
-      RBRACE                {name = name + "}";}
+      RBRACE                {sortName = sortName + "}";}
       
                             
     ;
 
-private qualifiableName returns[String name]
+private qualifiableSortName returns[String sortName]
 {
-    name = null;
+    sortName = null;
     String qlf = null;
 }
     : (qlf=qualifier DOT)?
-      name=idName
-                            {if (qlf != null) name = qlf + "." + name;}
+      sortName=idName
+                            {if (qlf != null) sortName = qlf + "." + sortName;}
     ;
 
 private idName returns[String name]
@@ -251,12 +249,48 @@ private opDeclaration returns[ElementFactory.Item op]
     String sort = null;
 }
     : begin:"op" 
-      name=qualifiableNames
+      name=qualifiableOpNames
       nonWordSymbol[":"] 
       sort=sort
                             {op = builder.createOp(name, sort);
                              ParserUtil.setBounds(builder, op, begin, LT(0));
                             }
+    ;
+
+private qualifiableOpNames returns[String opName]
+{
+    opName = null;
+    String member = null;
+    String qlf = null;
+}
+    : opName=qualifiableOpName
+    | LBRACE 
+      member=qualifiableOpName
+                            {opName = "{" + member;}
+      (COMMA member=qualifiableOpName
+                            {opName = opName + ", " + member;}
+      )*
+      RBRACE                {opName = opName + "}";}
+      
+                            
+    ;
+
+private qualifiableOpName returns[String opName]
+{
+    opName = null;
+    String qlf = null;
+}
+    : (qlf=qualifier DOT)?
+      opName=opName
+                            {if (qlf != null) opName = qlf + "." + opName;}
+    ;
+
+private opName returns[String opName]
+{
+    opName = null;
+}
+    : id:IDENTIFIER         {opName = id.getText();}
+    | sym:NON_WORD_SYMBOL   {opName = sym.getText();}
     ;
 
 private sort returns[String sort]
@@ -286,7 +320,7 @@ private opDefinition
     String name = null;
     String[] params = null;
 }
-    : "def" name=qualifiableNames
+    : "def" name=qualifiableOpNames
       ((formalOpParameters equals) => params=formalOpParameters equals
        | equals) 
       expression
@@ -403,7 +437,8 @@ private qualifiableRef returns[String name]
 {
     name = null;
 }
-    : name=qualifiableName
+    // 
+    : name=qualifiableOpName
     ;
 
 //---------------------------------------------------------------------------
@@ -417,7 +452,7 @@ private equals
 // e.g. ":", "=", "*", "/", "|", "->".  (If these are defined as tokens, the 
 // lexer will be nonderterministic.)
 private nonWordSymbol[String expected]
-    : t:IDENTIFIER          {t.getText().equals(expected)}? 
+    : t:NON_WORD_SYMBOL     {t.getText().equals(expected)}? 
     ;
     exception
     catch [RecognitionException ex] {
@@ -563,13 +598,6 @@ options {
     :  ".."
     ;
 
-POUND
-options {
-  paraphrase = "'#'";
-}
-    :  "#"
-    ;
-
 //-----------------------------
 //=== ALL LETTERS and DIGITS ==
 //-----------------------------
@@ -676,14 +704,6 @@ IDENTIFIER  options
     paraphrase = "an identifier";
     testLiterals = true;
 }
-    : WORD_SYMBOL | NON_WORD_SYMBOL 
-    ;
-    
-//-----------------------------
-//====== WORD SYMBOLS =========
-//-----------------------------
-
-protected WORD_SYMBOL
     : WORD_START_MARK (WORD_CONTINUE_MARK)*
     ;
 
@@ -699,7 +719,7 @@ protected WORD_CONTINUE_MARK
 //====== NON-WORD SYMBOLS =====
 //-----------------------------
 
-protected NON_WORD_SYMBOL
+NON_WORD_SYMBOL
     : (NON_WORD_MARK)+
     ;
 

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:52  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -393,15 +396,25 @@ public class MetaSlangSyntax extends Syntax {
 
     // Generated code for matchKeyword - do not modify //GEN-BEGIN
     public static TokenID matchKeyword(char[] buffer, int offset, int len) {
-        if (len > 8)
+        if (len > 10)
             return null;
         if (len <= 1)
             return null;
         switch (buffer[offset++]) {
             case 'a':
-                return (len == 2
-                    && buffer[offset++] == 's')
-                        ? MetaSlangTokenContext.AS : null;
+                switch (buffer[offset++]) {
+                    case 's':
+                        return (len == 2)
+                                ? MetaSlangTokenContext.AS : null;
+                    case 'x':
+                        return (len == 5
+                            && buffer[offset++] == 'i'
+                            && buffer[offset++] == 'o'
+                            && buffer[offset++] == 'm')
+                                ? MetaSlangTokenContext.AXIOM : null;
+                    default:
+                        return null;
+                }
             case 'c':
                 if (len <= 3)
                     return null;
@@ -418,6 +431,17 @@ public class MetaSlangSyntax extends Syntax {
                             && buffer[offset++] == 's'
                             && buffer[offset++] == 'e')
                                 ? MetaSlangTokenContext.CHOOSE : null;
+                    case 'o':
+                        return (len == 10
+                            && buffer[offset++] == 'n'
+                            && buffer[offset++] == 'j'
+                            && buffer[offset++] == 'e'
+                            && buffer[offset++] == 'c'
+                            && buffer[offset++] == 't'
+                            && buffer[offset++] == 'u'
+                            && buffer[offset++] == 'r'
+                            && buffer[offset++] == 'e')
+                                ? MetaSlangTokenContext.CONJECTURE : null;
                     default:
                         return null;
                 }
@@ -581,10 +605,21 @@ public class MetaSlangSyntax extends Syntax {
                     return null;
                 switch (buffer[offset++]) {
                     case 'h':
-                        return (len == 4
-                            && buffer[offset++] == 'e'
-                            && buffer[offset++] == 'n')
-                                ? MetaSlangTokenContext.THEN : null;
+                        if (buffer[offset++] != 'e')
+                                return null;
+                        switch (buffer[offset++]) {
+                            case 'n':
+                                return (len == 4)
+                                        ? MetaSlangTokenContext.THEN : null;
+                            case 'o':
+                                return (len == 7
+                                    && buffer[offset++] == 'r'
+                                    && buffer[offset++] == 'e'
+                                    && buffer[offset++] == 'm')
+                                        ? MetaSlangTokenContext.THEOREM : null;
+                            default:
+                                return null;
+                        }
                     case 'r':
                         return (len == 4
                             && buffer[offset++] == 'u'
