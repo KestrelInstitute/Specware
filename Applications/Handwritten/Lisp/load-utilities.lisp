@@ -138,3 +138,18 @@
                                              #+Lispworks SYSTEM::*TEMP-DIRECTORY*
 					     #+(or mcl cmu) "/tmp/"
 					     ))
+
+(defun copy-file (source target)
+  #+allegro(sys:copy-file source target)
+  #-allegro
+  (with-open-file (istream source :direction :input)
+    (with-open-file (ostream target :direction :output)
+      (loop
+	(let ((char (read-char istream nil :eof)))
+	  (cond
+	   ((eq :eof char)
+	    (return))
+	   ((eq #\Page char)
+	    )
+	   (t
+	    (princ char ostream))))))))

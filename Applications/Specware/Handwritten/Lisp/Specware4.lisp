@@ -1,8 +1,10 @@
 (defpackage "SPECWARE")
 (in-package "SPECWARE")
 
-(declaim (optimize (speed 3) (debug 2) (safety 1)))
+(declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
 ;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
+
+(setq *load-verbose* nil)		; Don't print loaded file messages
 
 #+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
@@ -14,6 +16,8 @@
 (setq *compile-verbose* nil)
 #+cmu
 (setq extensions:*efficiency-note-cost-threshold* 30)
+#+cmu
+(setq c::*compile-print* nil)
 #+mcl
 (egc t)					; Turn on ephemeral gc
 
@@ -37,12 +41,20 @@
 
 (defvar Specware4 (specware::getenv "SPECWARE4"))
 
-(load (make-pathname
-       :defaults (concatenate 'string Specware4
-                              "/Provers/Snark/Handwritten/Lisp/snark-system")
-       :type     "lisp"))
+(defun ignore-warning (condition)
+   (declare (ignore condition))
+   (muffle-warning))
 
-(snark:make-snark-system t)
+(defpackage "SNARK")
+
+(handler-bind ((warning #'ignore-warning))
+  (load (make-pathname
+	 :defaults (concatenate 'string Specware4
+				"/Provers/Snark/Handwritten/Lisp/snark-system")
+	 :type     "lisp")))
+
+(handler-bind ((warning #'ignore-warning))
+  (snark:make-snark-system t))
 
 (declaim (optimize (speed 3) (debug 2) (safety 1)))
 ;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
@@ -131,13 +143,13 @@
     )
   )
 
-(defpackage "SNARK")
 
-(map 'list #'(lambda (file)
+;(handler-bind ((warning #'ignore-warning))
+  (map 'list #'(lambda (file)
 	       (list 33 file)
 	       (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
      SpecwareRuntime
-     )
+     );)
 
 ;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string
