@@ -17,6 +17,8 @@ import java.io.*;
 import java.awt.font.*;
 import java.awt.event.*;
 import java.awt.geom.*;
+import java.awt.dnd.*;
+import java.awt.datatransfer.*;
 import java.text.*;
 import java.awt.*;
 
@@ -25,7 +27,7 @@ import java.awt.*;
  * specified by an instance of XGraphSpec.
  */
 
-public class XGraphDisplay extends JGraph implements Storable {
+public class XGraphDisplay extends JGraph implements Storable, Observer, DropTargetListener {
     
     protected XGraphSpec graphSpec;
     //public Vector  elementViews;
@@ -67,11 +69,6 @@ public class XGraphDisplay extends JGraph implements Storable {
      */
     protected Vector graphValueListener;
     
-    /** flag controlling the behaviour when the graph display is closed; if set to true, all representation
-     * elements contained in the graph will be removed, which is the default.
-     */
-    protected boolean removeAllOnClosing = false;
-    
     /** saved bounds of the graph if displayed as an internal frame in an desktop
      */
     protected Rectangle bounds;
@@ -79,6 +76,10 @@ public class XGraphDisplay extends JGraph implements Storable {
     /** the context menu for this graph display
      */
     protected XGraphElementPopupMenu popupMenu;
+    
+    /** flag signaling whether this graph display is a clipboard.
+     */
+    protected boolean isClipboard = false;
     
     /**
      * @param graphSpec the object containing the graph spec
@@ -101,6 +102,8 @@ public class XGraphDisplay extends JGraph implements Storable {
         setCloneable(false);
              */
         setSizeable(true);
+        CellHandle handle = getUI().getHandle(this);
+        Dbg.pr("graph handle: "+handle+(handle!=null?" has class "+handle.getClass().getName():""));
     }
     
     public XGraphDisplay(XGraphSpec graphSpec) {
@@ -178,6 +181,11 @@ public class XGraphDisplay extends JGraph implements Storable {
         modelListener.enable();
     }
     
+    
+    public XGraphModelListener getModelListener() {
+        return modelListener;
+    }
+    
     public void updateUI() {
         setUI(new XGraphUI());
         invalidate();
@@ -198,11 +206,112 @@ public class XGraphDisplay extends JGraph implements Storable {
         //setPortsVisible(true);
         //setGridEnabled(true);
         setScale(1.0);
-        getModel().addGraphModelListener(new GraphModelListener() {
-            public void graphChanged(GraphModelEvent e) {
-                //writeToFile("xgraphdb");
-            }});
-            setCloneable(false);
+        setCloneable(false);
+        //initDnD();
+    }
+    
+    /** initializes drag-and-drop features.
+     */
+    private void initDnD() {
+        XGraphApplication appl = getApplication();
+        if (appl != null) {
+            XGraphDesktop dt = appl.getDesktop();
+            if (dt != null) {
+                Dbg.pr("initDnD...");
+                XModelTree modelTree = dt.getModelTree();
+                DropTarget dropTarget = new DropTarget(this,this);
+            }
+        }
+    }
+    /** Called while a drag operation is ongoing, when the mouse pointer enters
+     * the operable part of the drop site for the <code>DropTarget</code>
+     * registered with this listener.
+     *
+     * @param dtde the <code>DropTargetDragEvent</code>
+     *
+     */
+    public void dragEnter(DropTargetDragEvent dtde) {
+        Dbg.pr("XGraphDisplay.dragEnter");
+        dtde.acceptDrag(dtde.getDropAction());
+    }
+    
+    /** Called while a drag operation is ongoing, when the mouse pointer has
+     * exited the operable part of the drop site for the
+     * <code>DropTarget</code> registered with this listener.
+     *
+     * @param dte the <code>DropTargetEvent</code>
+     *
+     */
+    public void dragExit(DropTargetEvent dte) {
+        Dbg.pr("XGraphDisplay.dragExit");
+    }
+    
+    /** Called when a drag operation is ongoing, while the mouse pointer is still
+     * over the operable part of the drop site for the <code>DropTarget</code>
+     * registered with this listener.
+     *
+     * @param dtde the <code>DropTargetDragEvent</code>
+     *
+     */
+    public void dragOver(DropTargetDragEvent e) {
+        Dbg.pr("XGraphDisplay.dragOver");
+        //e.rejectDrag();
+        e.acceptDrag(e.getDropAction());
+        //Dbg.pr("dragOver, e.source has class "+e.getSource().getClass().getName());
+    }
+    
+    public void drop(DropTargetDropEvent e) {
+        Dbg.pr("XGraphDisplay.drop");
+        Transferable tr = e.getTransferable();
+        try {
+            //flavor not supported, reject drop
+            if (!tr.isDataFlavorSupported(ModelElement.MODEL_ELEMENT_FLAVOR)) {
+                e.rejectDrop();
+                return;
+            }
+            
+            //cast into appropriate data type
+            ModelElement melem = (ModelElement) tr.getTransferData(ModelElement.MODEL_ELEMENT_FLAVOR);
+            if (!melem.dragAndDropOk()) {
+                Dbg.pr("Model Element "+melem+" doesn't allow drag and drop.");
+                e.rejectDrop();
+                return;
+            }
+            XGraphElement elem = melem.getARepr();
+            if (elem == null) {
+                Dbg.pr("rejecting drop, because there's no representation for model element "+melem);
+                e.rejectDrop();
+                return;
+            }
+            XGraphDisplay srcgraph = elem.getGraph();
+            if (srcgraph == null) {
+                e.rejectDrop();
+                return;
+            }
+            Map cellMap = srcgraph.cloneCells(new Object[]{elem},this);
+            if (cellMap.containsKey(elem)) {
+                Object obj = cellMap.get(elem);
+                CellView cv = getView().getMapping(obj,false);
+                if (cv != null) {
+                    Point p = e.getLocation();
+                    Rectangle b = cv.getBounds();
+                    int dx = p.x - b.x;
+                    int dy = p.y - b.y;
+                    XGraphView gv = getXGraphView();
+                    gv.startGroupTranslate();
+                    gv.translateViewsInGroup(new CellView[]{cv}, dx,dy);
+                    gv.endGroupTranslate();
+                    repaint();
+                }
+            }
+            e.dropComplete(true);
+        }
+        catch (UnsupportedFlavorException e0)  {e.rejectDrop();}
+        catch (IOException e1) {e.rejectDrop();}
+    }
+    
+    public void dropActionChanged(DropTargetDragEvent dtde) {
+        Dbg.pr("XGraphDisplay.dragActionChanged");
     }
     
     /** initializes the popup menu for this graph display. Subclasses may overwrite this method to add/remove items.
@@ -252,7 +361,10 @@ public class XGraphDisplay extends JGraph implements Storable {
             public void actionPerformed(ActionEvent e) {
                 //Dbg.pr("invoking graph.writeToFile()...");
                 //graph.writeToFile();
-                getXGraphView().deleteAll(XGraphDisplay.this,true);
+                int anws = JOptionPane.showConfirmDialog(XGraphDisplay.this, "Do you really want to clear this graph display?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
+                if (anws != JOptionPane.YES_OPTION) return;
+                clear();
+                //getXGraphView().deleteAll(XGraphDisplay.this,true);
             }
         });
         popupMenu.add(menuItem);
@@ -278,6 +390,7 @@ public class XGraphDisplay extends JGraph implements Storable {
      */
     public void setApplication(XGraphApplication appl) {
         this.appl = appl;
+        initDnD();
     }
     
     public XGraphApplication getApplication() {
@@ -370,11 +483,28 @@ public class XGraphDisplay extends JGraph implements Storable {
         return res;
     }
     
+    /** returns the root XNodes.
+     */
+    public XNode[] getRootNodes() {
+        ArrayList nodes = new ArrayList();
+        Object[] roots = getRoots();
+        for(int i=0;i<roots.length;i++) {
+            if (roots[i] instanceof XNode) {
+                nodes.add(roots[i]);
+            }
+        }
+        XNode[] res = new XNode[nodes.size()];
+        nodes.toArray(res);
+        return res;
+    }
+    
     /** creates a graph display that is used as clipboard in case this graph display is a "standalone" graph display.
      * If it is part of an application then the clipboard of the application is used and this method will be ignored.
      */
     protected XGraphDisplay createClipboard() {
-        return new XGraphDisplay("Clipboard", new XGraphSpec());
+        XGraphDisplay res = new XGraphDisplay("Clipboard", new XGraphSpec());
+        res.setIsClipboard(true);
+        return res;
     }
     
     /** returns the clipboard that is used for cut/cop/paste actions.
@@ -391,6 +521,16 @@ public class XGraphDisplay extends JGraph implements Storable {
         return clipboard;
     }
     
+    /** returns whether or not this graph display is a clipboard.
+     */
+    public boolean isClipboard() {
+        return isClipboard;
+    }
+    
+    public void setIsClipboard(boolean b) {
+        isClipboard = b;
+    }
+    
     /** clears the clipboard that is used by this grpah display.
      */
     
@@ -398,12 +538,6 @@ public class XGraphDisplay extends JGraph implements Storable {
         XGraphDisplay clipboard = getClipboard();
         if (clipboard != null)
             clipboard.clear();
-    }
-    
-    /** sets the flag that controls whether all elements in the graph will be removed when the graph display is closed
-     * or not. */
-    public void setRemoveAllOnClosing(boolean b) {
-        removeAllOnClosing = b;
     }
     
     /**
@@ -452,10 +586,23 @@ public class XGraphDisplay extends JGraph implements Storable {
         return graphSpec.getDrawingModes();
     }
     
-    /** removes all elements from this graph.
+    /** removes all elements from this graph, it tries to call deleteAction until it returns 0; if no decrease is
+     * observed from one call to the next, then clear() fails and issues a message.
      */
     public void clear() {
-        getXGraphModel().removeAll();
+        int cnt = deleteAction(false,false);
+        while (cnt>0) {
+            Dbg.pr("clear: still "+cnt+" cells left.");
+            int cnt0 = deleteAction(false,false);
+            Dbg.pr("             "+cnt0+" cells left.");
+            if (cnt0<cnt) {
+                cnt = cnt0;
+            } else {
+                // ok, that's lazy, it forces the warning message to come up...
+                deleteAction(false,true);
+                return;
+            }
+        }
     }
     
     /** switches the drawing mode. First the exit() method of the current drawing mode is called,
@@ -913,6 +1060,19 @@ public class XGraphDisplay extends JGraph implements Storable {
         setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
     }
     
+    protected Rectangle outlineBounds = null;
+    protected Image moveImage = null;
+    protected Rectangle imageBounds = null;
+    
+    public void setOutlineBounds(Rectangle b) {
+        outlineBounds = b;
+    }
+    
+    public void setMoveImage(Image img, Rectangle imgBounds) {
+        this.moveImage = img;
+        this.imageBounds = imgBounds; 
+    }
+    
     /** calls paint in JGraph and paints the highlightedPortView, if it's set. */
     public void paint(Graphics g) {
         try {
@@ -930,6 +1090,23 @@ public class XGraphDisplay extends JGraph implements Storable {
                 //getUI().paintCell(g, highlightedPortView, r ,  true);
                 g2d.setColor(Color.blue);
                 g2d.fill3DRect(x,y,w,h,true);
+            }
+            if (outlineBounds != null) {
+                g2d.setColor(Color.red);
+                g2d.setStroke(new BasicStroke(2,BasicStroke.CAP_BUTT,BasicStroke.JOIN_MITER,1,new float[]{5,5},0));
+                g2d.draw(outlineBounds);
+                if (moveImage != null) {
+                    int dx1 = outlineBounds.x;
+                    int dy1 = outlineBounds.y;
+                    int dx2 = outlineBounds.x + outlineBounds.width;
+                    int dy2 = outlineBounds.y + outlineBounds.height;
+                    int sx1 = imageBounds.x;
+                    int sy1 = imageBounds.y;
+                    int sx2 = imageBounds.x + imageBounds.width;
+                    int sy2 = imageBounds.y + imageBounds.height;
+                    //g2d.drawImage(moveImage,outlineBounds.x, outlineBounds.y, outlineBounds.width, outlineBounds.height, this);
+                    g2d.drawImage(moveImage,dx1,dy1,dx2,dy2,sx1,sy1,sx2,sy2,this);
+                }
             }
         } catch (Exception e) {
             System.err.println("error while painting graph display: "+e.getMessage());
@@ -1107,6 +1284,17 @@ public class XGraphDisplay extends JGraph implements Storable {
         return candidate;
     }
     
+    /** this method is called whenever the GraphView of the graph display changes.
+     */
+    public void update(Observable o, Object arg) {
+        if (arg instanceof GraphView.GraphViewEdit) {
+            GraphView.GraphViewEdit edit = (GraphView.GraphViewEdit)arg;
+            if (modelListener != null) {
+                //modelListener.processChangedViews(edit.getChanged(),edit.getContext());
+            }
+        }
+    }
+    
     /** the string representing the line separator as returned by <code>System.getProperty("line.separator")</code>
      */
     static public String newline = System.getProperty("line.separator");
@@ -1199,6 +1387,22 @@ public class XGraphDisplay extends JGraph implements Storable {
         return super.convertValueToString(obj);
     }
     
+    public void startEditingAtCell(Object cell) {
+        if (cell instanceof XNode) {
+            XNode node = (XNode)cell;
+            if (!node.isEditable()) {
+                try {
+                    node.renameOk(true); // will throw an Exception if not
+                } catch (VetoException ve) {
+                    String msg = ve.getMessage();
+                    JOptionPane.showMessageDialog(this,msg);
+                }
+                return;
+            }
+        }
+        super.startEditingAtCell(cell);
+    }
+    
     /** clones cells from this graph display to the given destGraph. It creates an instance of XCloneManager, sets it's
      * createReadOnlyClone flag accordingly and calls its cloneCells() method.
      * @param cells the cells in this graph display to be cloned
@@ -1239,11 +1443,12 @@ public class XGraphDisplay extends JGraph implements Storable {
      */
     public Object[] copyAction() {
         clearClipboard();
+        int dx = 50, dy = 50;
         XGraphDisplay clipboard = getClipboard();
         Object[] selection = getSelectionCells();
         if (selection.length > 0) {
             copyCells(selection,clipboard);
-            clipboard.translateAllViews(50,50,true);
+            clipboard.translateAllViews(dx,dy,true);
         }
         return selection;
     }
@@ -1253,11 +1458,12 @@ public class XGraphDisplay extends JGraph implements Storable {
      */
     public Object[] cloneAction() {
         clearClipboard();
+        int dx = 50, dy = 50;
         XGraphDisplay clipboard = getClipboard();
         Object[] selection = getSelectionCells();
         if (selection.length > 0) {
             cloneCells(selection,clipboard);
-            clipboard.translateAllViews(50,50,true);
+            clipboard.translateAllViews(dx,dy,true);
         }
         return selection;
     }
@@ -1269,7 +1475,12 @@ public class XGraphDisplay extends JGraph implements Storable {
     public Object[] cutAction() {
         Object[] selection = cloneAction();
         if (selection.length > 0) {
-            getXGraphModel().removeNodes(selection);
+            try {
+                getXGraphModel().removeNodes(selection);
+            } catch (VetoException ve) {
+                String msg = ve.getMessage();
+                JOptionPane.showMessageDialog(this,msg);
+            }
         }
         return selection;
     }
@@ -1288,7 +1499,7 @@ public class XGraphDisplay extends JGraph implements Storable {
                 clones.add(iter.next());
             }
             setSelectionCells(clones.toArray());
-            clipboard.deleteAction();
+            clipboard.clear();
         } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(this,e.getMessage());
         } finally {
@@ -1298,22 +1509,39 @@ public class XGraphDisplay extends JGraph implements Storable {
     
     /** action performed when the graph window is closed. */
     public void closeAction(Rectangle oldbounds) {
-        if (removeAllOnClosing) {
-            getXGraphModel().removeAll();
-        }
         if (oldbounds != null) {
             setSavedBounds(oldbounds);
         }
-        if (isEmpty()) {
+        if (isEmpty() && appl != null) {
             appl.unregisterGraph(this);
         }
     }
     
     /** dangerous! Deletes all elements in the graph and closes it.
+     * @param close whether or not to close the graph display after the deletion
+     * @param showWarningOnFailure whether or not to show a warning message in case not all
+     *        elements could be removed.
+     * @return the number of cells left, i.e. 0 on success
      */
+    public int deleteAction(boolean close, boolean showWarningOnFailure) {
+        try {
+            //if (!getApplication().getClipboard().equals(this)) {
+            //    getModelNode().removeOk(true);
+            //}
+            boolean ignoreVetos = isClipboard();
+            getXGraphModel().removeAll(ignoreVetos);
+            if (close) closeAction(null);
+        } catch (VetoException ve) {
+            if (showWarningOnFailure) {
+                String msg = "Graph cannot be cleared, because it contains elements that cannot be removed.";
+                JOptionPane.showMessageDialog(this,msg);
+            }
+        }
+        return getXGraphModel().getRootCount();
+    }
+    
     public void deleteAction() {
-        getXGraphModel().removeAll();
-        closeAction(null);
+        deleteAction(true,true);
     }
     
     /** returns true, if the graph is empty.
@@ -1346,8 +1574,21 @@ public class XGraphDisplay extends JGraph implements Storable {
                 if (((XEdge)cells[i]).isInnerEdge())
                     selok = false;
             }
-            if (selok)
+            if (selok && (cells[i] instanceof GraphCell)) {
+                GraphCell cell = (GraphCell)cells[i];
+                CellView cv = getView().getMapping(cell,false);
+                if (cv != null) {
+                    Map attr = cv.getAttributes();
+                    if (!GraphConstants.isVisible(attr)) {
+                        //Dbg.pr("not selecting invisible cell "+cells[i]);
+                        selok = false;
+                    }
+                }
+            }
+            if (selok) {
                 l.add(cells[i]);
+                //Dbg.pr3("adding cell "+cells[i]+" ("+cells[i].getClass().getName()+") to selection.");
+            }
         }
         super.setSelectionCells(XCloneManager.makeCellsUnique(l.toArray()));
     }
@@ -1469,7 +1710,7 @@ public class XGraphDisplay extends JGraph implements Storable {
         btn.setToolTipText("cut");
         btn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Dbg.pr("cut");
+                Dbg.pr("cut and copy to clipboard");
                 cutAction();
             }
         });
@@ -1477,7 +1718,7 @@ public class XGraphDisplay extends JGraph implements Storable {
         // copy
         btn = new JButton(IconImageData.copy24Icon);
         btn.setMargin(new Insets(0,0,0,0));
-        btn.setToolTipText("copy");
+        btn.setToolTipText("copy to clipboard");
         btn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Dbg.pr("copy...");
@@ -1488,7 +1729,7 @@ public class XGraphDisplay extends JGraph implements Storable {
         // clone
         btn = new JButton(IconImageData2.clone24Icon);
         btn.setMargin(new Insets(0,0,0,0));
-        btn.setToolTipText("clone");
+        btn.setToolTipText("clone to clipboard");
         btn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Dbg.pr("clone...");
@@ -1499,7 +1740,7 @@ public class XGraphDisplay extends JGraph implements Storable {
         // paste
         btn = new JButton(IconImageData.paste24Icon);
         btn.setMargin(new Insets(0,0,0,0));
-        btn.setToolTipText("paste");
+        btn.setToolTipText("paste from clipboard");
         btn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Dbg.pr("paste");
@@ -1561,9 +1802,6 @@ public class XGraphDisplay extends JGraph implements Storable {
         if (c instanceof XNode) {
             XNode n = (XNode)c;
             ModelNode mnode = n.getModelNode();
-            if (n.equals(mnode.getReprExemplar())) {
-                Dbg.pr(".. is reprExemplar of model node");
-            }
         }
         if (c instanceof XContainerNode) {
             XContainerNode n = (XContainerNode) c;
@@ -1625,4 +1863,5 @@ public class XGraphDisplay extends JGraph implements Storable {
         frame.setSize(500,500);
         frame.show();
     }
+    
 }
