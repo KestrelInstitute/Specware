@@ -65,6 +65,7 @@ SpecCalc qualifying spec {
 
   op evaluateOtherProofGen      : OtherValue * SCTerm * Option String * Boolean -> Position -> SpecCalc.Env ()
   op evaluateOtherProofGenLocal : OtherValue * SCTerm * Option String * Boolean -> Position -> SpecCalc.Env ()
+  op evaluateOtherObligations   : OtherValue                                    -> Position -> SpecCalc.Env ValueInfo
 
   %% Lower-level support routines:
 
@@ -82,6 +83,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.38  2004/12/21 13:38:47  mcdonald
+%% misc tweaks for Prism
+%%
 %% Revision 1.37  2004/12/14 11:22:55  mcdonald
 %% hooks for tentative new prism code -- should be transparent to others
 %%

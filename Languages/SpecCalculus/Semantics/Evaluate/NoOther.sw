@@ -49,6 +49,11 @@ SpecCalc qualifying spec
     raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
+  def SpecCalc.evaluateOtherObligations _ (* value *) pos = {
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Obligations: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+  }
+
   def SpecCalc.ppOtherValue _ (* value *) = ppString "<some OtherValue>"
 
   def SpecCalc.ppOtherTerm  _ (* term *)  = ppString "<some OtherTerm>"
@@ -60,6 +65,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.12  2005/01/28 03:12:51  mcdonald
+%% tweak to avoid compiler warnings
+%%
 %% Revision 1.11  2004/11/12 23:02:24  cyrluk
 %% Added other for ProofGen.
 %%

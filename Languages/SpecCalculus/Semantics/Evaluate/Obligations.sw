@@ -28,6 +28,8 @@ SpecCalc qualifying spec
 			                     (positionOf term);
 			return (Spec compressed_spec, time_stamp, dep_UIDs)}
 
+        | Other  other -> evaluateOtherObligations other (positionOf term)
+
 	| _ -> raise (Unsupported (positionOf term,
 				   "Can create obligations for Specs and Morphisms only"))
 		      }
