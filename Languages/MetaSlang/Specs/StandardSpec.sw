@@ -1,7 +1,7 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/StandardSpec.sl, v1.5
 % derived from SW4/Languages/MetaSlang/ADT/Specs/StandardSpecSig.sl, v1.1.1.1
 
-spec {
+StandardSpec qualifying spec {
  import AnnSpec
 
  % sort SpecName = String % Repeated so MetaSlang4.SpecName exists

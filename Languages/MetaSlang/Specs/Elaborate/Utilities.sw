@@ -1,5 +1,6 @@
 % Utilities qualifying
 spec { 
+ import /Library/Base
  import SpecToPosSpec   % for PosSpec's, plus convertSort[Info]ToPSort[Info]
  import ../Printer        % for error messages
  import /Library/Legacy/DataStructures/MergeSort % for combining error messages
@@ -428,8 +429,8 @@ spec {
    case (l1,l2)
      of ([],[]) -> Unify pairs
       | (e1::l1,e2::l2) -> 
-        (case unify(e1,e2,pairs)
-           of Unify pairs -> unifyL(srt1,srt2,l1,l2,pairs,unify)
+        (case unify(e1,e2,pairs) of
+            | Unify pairs -> unifyL(srt1,srt2,l1,l2,pairs,unify)
             | notUnify    -> notUnify)
       | _ -> NotUnify(srt1,srt2)
 
@@ -467,34 +468,35 @@ spec {
    %%    let _ = String.writeLine (printSort s2) in
 
    let
-       def unifyCP(srt1,srt2,r1,r2,pairs):Unification = 
-           unifyL(srt1, srt2, r1, r2, pairs,
+       def unifyCP (srt1,srt2,r1,r2,pairs):Unification = 
+           unifyL (srt1, srt2, r1, r2, pairs,
                   fn ((id1,s1),(id2,s2),pairs) -> 
                   if id1 = id2 then
                     (case (s1,s2) of
                         | (None,None) -> Unify pairs 
-                        | (Some s1,Some s2) -> unify(s1,s2,pairs)
-                        | _ -> NotUnify(srt1,srt2))
+                        | ((Some s1): (Option PSort),(Some s2) : (Option PSort)) ->
+                             unify (s1,s2,pairs) % ### (le) Why is the sort necessary? won't typecheck with it.
+                        | _ -> NotUnify (srt1,srt2))
                   else
                     NotUnify(srt1,srt2))
 
-       def unifyP(srt1,srt2,r1,r2,pairs):Unification = 
-           unifyL(srt1,srt2,r1,r2,pairs,
+       def unifyP (srt1,srt2,r1,r2,pairs):Unification = 
+           unifyL (srt1,srt2,r1,r2,pairs,
                   fn((id1,s1),(id2,s2),pairs) -> 
                   if id1 = id2 
                   then unify(s1,s2,pairs)
                   else NotUnify(srt1,srt2))
            
-       def unify(s1,s2,pairs):Unification = 
-         let pos1 = sortAnn(s1) in
-         let pos2 = sortAnn(s2) in
-         let srt1 = withAnnS(unlinkPSort s1, pos1) in
-         let srt2 = withAnnS(unlinkPSort s2, pos2) in
+       def unify (s1,s2,pairs):Unification = 
+         let pos1 = sortAnn s1  in
+         let pos2 = sortAnn s2  in
+         let srt1 = withAnnS (unlinkPSort s1, pos1) in
+         let srt2 = withAnnS (unlinkPSort s2, pos2) in
          if equalSort?(srt1,srt2) then 
            Unify pairs 
          else
-           case (srt1,srt2)
-             of (CoProduct(r1,_),CoProduct(r2,_)) -> 
+           case (srt1,srt2) of
+              | (CoProduct(r1,_),CoProduct(r2,_)) -> 
                 unifyCP(srt1,srt2,r1,r2,pairs)
               | (Product(r1,_),Product(r2,_)) -> 
                 unifyP(srt1,srt2,r1,r2,pairs)

@@ -18,9 +18,9 @@
 
 % TypeChecker qualifying
 spec { 
-
   %% The TypeChecker function is elaboratePosSpec 
 
+  import /Library/Base
   import /Library/Legacy/DataStructures/ErrorMonad
   import Infix
   import Utilities
@@ -112,7 +112,7 @@ spec {
           | Some srt_0 -> Some (checkSort (env_1, srt_0)))
  in
    %% sorts is a map to a map to sort_info
-   let sorts_1 = map (fn m -> StringMap.map elaborate_sort_0 m) sorts_0 in
+   let sorts_1 = StringMap.map (fn m -> StringMap.map elaborate_sort_0 m) sorts_0 in % ### why the type?
  
    %% ---------- OPS : PASS 0 ----------
    let def elaborate_op_0 (op_name, op_info_0 : POpInfo) =
@@ -127,7 +127,7 @@ spec {
                  %% | _ -> op_info_0)
           | _ -> op_info_0)
  in
-   let ops_1 = map (fn m -> StringMap.mapi elaborate_op_0 m) ops_0 in                
+   let ops_1 = StringMap.map (fn m -> StringMap.mapi elaborate_op_0 m) ops_0 in % ### why the qualifier?
  
    %% ---------- PROPERTIES : PASS 0 ----------
    let props_1 = props_0 in
@@ -176,10 +176,10 @@ spec {
             Some term_2)
  in
    %% Do polymorphic definitions first
-   let ops_2_a = map (fn m -> StringMap.mapi (elaborate_op_1 true)  m) ops_1 in
-   let ops_2_b = map (fn m -> StringMap.mapi (elaborate_op_1 false) m) ops_2_a in
-   let ops_2_c = map (fn m -> StringMap.mapi (elaborate_op_1 true)  m) ops_2_b in
-   let ops_2   = map (fn m -> StringMap.mapi (elaborate_op_1 false) m) ops_2_c in
+   let ops_2_a = StringMap.map (fn m -> StringMap.mapi (elaborate_op_1 true)  m) ops_1 in % ### Why the qualifier?
+   let ops_2_b = StringMap.map (fn m -> StringMap.mapi (elaborate_op_1 false) m) ops_2_a in % ### Qualifier?
+   let ops_2_c = StringMap.map (fn m -> StringMap.mapi (elaborate_op_1 true)  m) ops_2_b in % ### Qualifier?
+   let ops_2   = StringMap.map (fn m -> StringMap.mapi (elaborate_op_1 false) m) ops_2_c in % ### Qualifier?
  
    %% ---------- PROPERTIES : PASS 1. ---------- 
    let def elaborate_fm_1 (prop_type, name, type_vars_1, fm_1) = 
@@ -208,8 +208,7 @@ spec {
           | None       -> None
           | Some srt_2 -> Some (checkSort (env_3, srt_2)))
  in
-   let sorts_3 = map (fn m -> StringMap.map elaborate_sort_2 m) sorts_2 
- in
+   let sorts_3 = StringMap.map (fn m -> StringMap.map elaborate_sort_2 m) sorts_2 in % ### Qualifier?
  
    %% ---------- OPS : PASS 2 ---------- 
    let def elaborate_op_2 (op_name, (op_names, fixity, (type_vars_2, srt_2), opt_def_2) : POpInfo) =
@@ -256,7 +255,7 @@ spec {
                                  tvpe_vars_used (* Probably correct ;-*)
                                 else 
                                  let scheme = convertPSortSchemeToSortScheme (type_vars_3, srt_3) in
-                                 let scheme = ASpecPrinter.printSortScheme (scheme) in
+                                 let scheme = AnnSpecPrinter.printSortScheme (scheme) in
                                  (error (env_3, 
                                          "mismatch between bound and free variables "^scheme, 
                                          pos);
@@ -266,12 +265,11 @@ spec {
                 ()
               else 
                 let scheme = convertPSortSchemeToSortScheme (type_vars_3_b, srt_3) in
-                let scheme = ASpecPrinter.printSortScheme(scheme) in
+                let scheme = AnnSpecPrinter.printSortScheme(scheme) in
                 error(env_3, "Repeated sort variables contained in "^scheme, pos));
              Some term_3))
  in
-   let ops_3 = map (fn m -> StringMap.mapi elaborate_op_2 m) ops_2 
- in
+   let ops_3 = StringMap.map (fn m -> StringMap.mapi elaborate_op_2 m) ops_2 in % ### Qualifier?
  
    %% ---------- AXIOMS : PASS 2 ----------
    let def elaborate_fm_2 (prop_type, name, type_vars_2, fm_2) = 
@@ -423,33 +421,33 @@ spec {
   def aux_elaborateTerm (env, trm, term_sort : PSort) = 
    case trm of
 
-    | Fun (OneName (id, fixity), srt, pos) -> 
+    | Fun (OneName (idXXX, fixity), srt, pos) -> % ### Changed id to idXXX to avoid name conflict
       let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
       (* resolve sort from environment *)
-      (case findVarOrOps (env, id, pos) of
+      (case findVarOrOps (env, idXXX, pos) of
         | terms as _::_ ->
           %% selectTermWithConsistentSort calls consistentSortOp?, which calls unifySorts 
-          (case selectTermWithConsistentSort (env, id, pos, terms, term_sort) of
+          (case selectTermWithConsistentSort (env, idXXX, pos, terms, term_sort) of
             | None -> trm
             | Some term ->
               let srt = termSort term in
               let srt = elaborateCheckSortForTerm (env, term, srt, term_sort) in
               (case term of
-                | Var ((id, _),         pos) -> Var ((id, srt),         pos)
+                | Var ((idXXX, _),         pos) -> Var ((idXXX, srt),         pos)
                 | Fun (OneName qidf, _, pos) -> Fun (OneName qidf, srt, pos)
                 | Fun (TwoNames xx,  _, pos) -> Fun (TwoNames xx,  srt, pos)
                 | _ -> System.fail "Variable or constant expected"))
         | [] -> 
           (* resolve identifier declaration from sort information *)
-          (case mkEmbed0 (env, srt, id) of
-           | Some id -> Fun (Embed (id, false), checkSort (env, srt), pos)
+          (case mkEmbed0 (env, srt, idXXX) of
+           | Some idXXX -> Fun (Embed (idXXX, false), checkSort (env, srt), pos)
            | None -> 
-              (case mkEmbed1 (env, srt, trm, id, pos) of
+              (case mkEmbed1 (env, srt, trm, idXXX, pos) of
                | Some term -> term
                | None ->
-                  (case uniqueConstr (env, trm, id, pos) of
+                  (case uniqueConstr (env, trm, idXXX, pos) of
                    | Some term -> term
-                   | _ -> undeclared  (env, trm, id, term_sort, pos)))))
+                   | _ -> undeclared  (env, trm, idXXX, term_sort, pos)))))
 
 
     | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
@@ -788,7 +786,7 @@ spec {
                   | Fun (OneName (_ ,  Infix p), _, pos) -> Infix (term, p)
                   | Fun (OneName (id, _),        _, pos) ->
                       (case consistentTag (findVarOrOps (env, id, pos)) of
-                        | (true, Some p) -> Infix  (term, p)
+                        | (true, (Some p) : (Option (Associativity * Nat))) -> Infix (term, p) % ### Why the Type?
                         | (true, _)      -> Nonfix term
                         | _ ->
                        (error (env, "Inconsistent infix information for overloaded op: " ^ id,
@@ -815,7 +813,7 @@ spec {
   def selectTermWithConsistentSort (env, id, pos, terms, srt) =
    %% calls consistentSortOp?, which calls unifySorts 
    case terms of
-    | [term] -> Some term
+    | [term] -> (Some term) : (Option PosSpec.PTerm)
     | _ ->
       (case unlinkPSort srt of
        | MetaTyVar _ -> None
@@ -859,8 +857,8 @@ spec {
        let pos        = termAnn   term in
        let termString = printTerm term in
        let tsLength   = length termString in
-       let fillerA    = blankString (10 - tsLength) in
-       let fillerB    = blankString (tsLength - 10) in
+       let fillerA    = blankString ((Integer.fromNat 10) - (Integer.fromNat tsLength)) in  % ### why the qualifier? why the coercion?
+       let fillerB    = blankString ((Integer.fromNat tsLength) - (Integer.fromNat 10)) in
        error (env, 
              newLines [" Could not match sort constraint", 
                        fillerA ^ termString ^ " of sort " ^ printSort givenSort, 
@@ -1234,15 +1232,15 @@ spec {
     then ()
     else error (env, msg, pos)
 
-  def blankString (n) =
-   if n <= 0 then 
+  def blankString (n:Integer) =
+   if n <= (Integer.fromNat 0) then 
      "" 
    else
    let oneHundredSpaces = "                                                                                                    " in
-   if n < 100 then
-     substring (oneHundredSpaces, 0, n)
+   if n < (Integer.fromNat 100) then
+     substring (oneHundredSpaces, 0, (Nat.toNat n))
    else
-     oneHundredSpaces ^ blankString (n - 100)
+     oneHundredSpaces ^ blankString (n - (Integer.fromNat 100))
 
   def newLines lines = 
    case lines of
