@@ -2,25 +2,19 @@
 (defpackage "XML")
 (in-package "XML")
 
-(defun show_sort (msg srt)
-  (format t "~%~A : ~S~%" msg srt))
+;;; ------------------------------------------------------------------------
 
-(defun parseXML (filename pattern)
-  (break "From ~A: ~% read ~S" 
-	 filename
-	 pattern))
-
-(defconstant null-attributes '())
 (defconstant null-whitespace '())
-(defconstant null-chardata   '())
+
 (defun indentation-chardata (n)
   (cons :|Some| (cons 10 (cons 10 (make-whitespace n)))))
 
-(defconstant newline-chardata   (cons :|Some| (list 36))) ; avoid bootstrap issues by making list directly
-(defconstant tail-chardata   (cons :|Some| (list 43))) ; avoid bootstrap issues by making list directly
-(defconstant tail2-chardata   (cons :|Some| (list 43 43))) ; avoid bootstrap issues by making list directly
-(defconstant cp-chardata   (cons :|Some| (list 36 36))) ; avoid bootstrap issues by making list directly
+(defun make-whitespace (n)
+  (let ((chars nil))
+    (dotimes (i n) (push 32 chars))
+    chars))
 
+;;; ------------------------------------------------------------------------
 
 (defun XML::printXML (datum-and-table)
   (let* ((datum (car datum-and-table))
@@ -29,22 +23,25 @@
 	 (main-sort  (car  main-entry))
 	 (main-qid   (cadr main-sort))
 	 (main-id    (cdr  main-qid)))
-    (format t "~%Table size: ~D~%" (length table))
-    ;; todo: prolog
-    (let ((doc (make_Document ;; null-prolog
-		(list (make-content-item-from-full-element main-id 
-							   datum 
-							   main-sort 
-							   table
-							   0)))))
+    (let ((doc (make_Document 
+		(list 
+		 xml::standard_XMLDecl_DocItem  ; first <?xml version="1.0"?>
+                 (cons :|WhiteSpace| '(10 10))  ; then a couple of newlines
+		 ;;
+                 ;; (cons :|DTD|  (make_DocTypeDecl ...)) ; TODO
+		 ;;
+                 (cons :|WhiteSpace| '(10 10))  ; then a couple of newlines
+		 (make-content-item-from-full-element main-id 
+						      datum 
+						      main-sort 
+						      table
+						      0)
+		 ))))
       (print_Document_to_String (svref doc 0)))))
 
 (defun chase (sort table)
-  ;; (format t "~&---------------------------~%")
-  ;; (format t "~&Chase: ~S~%" sort)
   (labels ((aux (sort)
 	    (let ((expansion (cdr (assoc sort table :test 'equal))))
-	      ;; (format t "~&   to: ~S~%" expansion)
 	      (cond ((null expansion)                 sort)
 		    ((eq (car expansion) :|Base|)     (aux expansion))
 		    ((eq (car expansion) :|Subsort|)  (aux (cadr expansion)))
@@ -56,17 +53,12 @@
   (make_Content_Item_from_Element 
    (make-element name datum sort table (+ indent 2))))
 
-(defun make-whitespace (n)
-  (let ((chars nil))
-    (dotimes (i n) (push 32 chars))
-    chars))
-
 (defun make-element (name datum sort table indent)
   (let* ((pattern (chase sort table))
 	 (name (unicode::ustring name))
 	 (sort-attribute  (make_GenericAttribute '(32) (unicode::ustring "type") '() '() 
 						 (make_QuotedText '34
-								  (pp-sort-for-xml sort))))
+								  (pp-sort-for-xml-attribute sort))))
 	 (attributes 
 	  (list sort-attribute)))
     (multiple-value-bind (items text)
@@ -87,7 +79,7 @@
 			     items)
 	       (make_ETag name null-whitespace)))))))
 
-(defun pp-sort-for-xml (sort)
+(defun pp-sort-for-xml-attribute (sort)
   (labels ((aux (sort)
 		(case (car sort)
 		  (:|Base|
@@ -102,12 +94,7 @@
 		   (format nil "[COMPOUND SORT: ~S]" sort)))))
     (unicode::ustring (aux sort))))
 
-
 (defun make-content-items (datum sort pattern table indent)
-  ;; (format t "~& From: ~S~%" sort)
-  ;;  (format t "~&   to: ~S~%" pattern)
-  ;;  (format t "~&datum: ~S~%" datum)
-  ;;  (format t "~&---------------------------~%")
   (let ((key  (car pattern))
 	(body (cdr pattern)))
     (case key
@@ -190,30 +177,27 @@
 					  (list :|Base| qid new-element)
 					  table 
 					  indent))))
-		      
 
 		 ((equal qid '("Option" . "Option"))
 		  (if (eq (car datum) :|None|)
 		      (values '()
 			      :|None|)
 		    (progn 
-		      ;; (format t "~%----------OPTION-------------~%")
 		      (make-content-items (cdr datum) 
 					  sort
 					  (chase (cadr body) table)
 					  table 
 					  indent))))
-			
-		 
 		 (t
-		  ;; (print (list :unknown-base pattern))
 		  (values ()
 			  (unicode::ustring (format nil "?? Base: ~A.~A ??" (car qid) (cdr qid))))))))
 
       (t
-       (print (list :unknown pattern))
        (values ()
 	       (unicode::ustring (format nil "?? Key: ~A ??" key)))))))
 
+;;; ------------------------------------------------------------------------
 
+(defun show_sort (msg srt)
+  (format t "~%~A : ~S~%" msg srt))
 
