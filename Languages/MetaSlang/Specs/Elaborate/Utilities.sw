@@ -240,17 +240,17 @@ spec {
  def checkErrors(env:LocalEnv) = 
    let errors = env.errors in
    let def comp((l,c),(l2,c2)) = 
-         case Nat.compare(l,l2)
-           of EQUAL -> Nat.compare(c,c2)
-            | c -> c
+         case Nat.compare(l,l2) of
+           | Equal -> Nat.compare(c,c2)
+           | c -> c
    in
    let def compare((m1,(l,r)),(m2,(l2,r2))) = 
-         case comp(l,l2)
-           of EQUAL -> 
-              (case comp(r,r2)
-                 of EQUAL -> String.compare(m1,m2)
+         case comp(l,l2) of
+           | Equal -> 
+              (case comp(r,r2) of
+                  | Equal -> String.compare(m1,m2)
                   | c     -> c)
-            | c -> c
+           | c -> c
    in
    let errors = MergeSort.uniqueSort compare (! errors) in
    let errMsg = (Ref "") : Ref String in
@@ -309,7 +309,7 @@ spec {
 
  def compareQId (Qualified (q1, id1), Qualified (q2, id2)): Comparison = 
   case String.compare (q1, q2) of
-   | EQUAL  -> String.compare (id1, id2)
+   | Equal  -> String.compare (id1, id2)
    | result -> result
 
  %% sjw: Replace base srt by its instantiated definition
