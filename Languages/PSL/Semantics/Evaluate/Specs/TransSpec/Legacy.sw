@@ -60,14 +60,14 @@ TransSpec qualifying spec
       ms <- return {
         spc = {
             importInfo = {
-              imports = (modeSpec transSpec).spc.importInfo.imports,
-              importedSpec = (modeSpec transSpec).spc.importInfo.importedSpec,
+              imports = elabSpec.importInfo.imports,
+              importedSpec = elabSpec.importInfo.importedSpec,
               localOps = [],
               localSorts = []
             },
-            sorts = (modeSpec transSpec).spc.sorts,
-            ops = (modeSpec transSpec).spc.ops,
-            properties = (modeSpec transSpec).spc.properties
+            sorts = elabSpec.sorts,
+            ops = elabSpec.ops,
+            properties = elabSpec.properties
           },
         variables = variables (modeSpec transSpec),
         hidden = hidden (modeSpec transSpec),
