@@ -7,14 +7,14 @@ XML qualifying spec
   %%%          Names                                                                               %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  [Definition: A Name is a token beginning with a letter or one of a few punctuation characters, 
-  %%   and continuing with letters, digits, hyphens, underscores, colons, or full stops, together 
-  %%   known as name characters.] Names beginning with the string "xml", or any string which would 
-  %%   match (('X'|'x') ('M'|'m') ('L'|'l')), are reserved for standardization in this or future 
+  %%  [Definition: A Name is a token beginning with a letter or one of a few punctuation characters,
+  %%   and continuing with letters, digits, hyphens, underscores, colons, or full stops, together
+  %%   known as name characters.] Names beginning with the string "xml", or any string which would
+  %%   match (('X'|'x') ('M'|'m') ('L'|'l')), are reserved for standardization in this or future
   %%   versions of this specification.
   %%
-  %%  Note: The Namespaces in XML Recommendation [XML Names] assigns a meaning to names containing 
-  %%        colon characters. Therefore, authors should not use the colon in XML names except for 
+  %%  Note: The Namespaces in XML Recommendation [XML Names] assigns a meaning to names containing
+  %%        colon characters. Therefore, authors should not use the colon in XML names except for
   %%        namespace purposes, but XML processors must accept the colon as a name character.
   %%
   %%  An Nmtoken (name token) is any mixture of name characters.
@@ -56,7 +56,6 @@ XML qualifying spec
 		     return (cons (first_char, rev name_chars), tail))
 		| _ ->
 		  return (cons (first_char, rev name_chars), [])
-		      
 	 in
 	   aux (tail, [])
 	   }
@@ -111,7 +110,6 @@ XML qualifying spec
 		     return (cons (first_char, rev name_chars), tail))
 		| _ ->
 		  return (cons (first_char, rev name_chars), [])
-		      
 	 in
 	   aux (tail, [])
 	   }

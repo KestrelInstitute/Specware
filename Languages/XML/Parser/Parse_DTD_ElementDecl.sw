@@ -8,64 +8,64 @@ XML qualifying spec
   %%
   %%  [Definition: An element type declaration takes the form:]
   %%
-  %%   [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>' 
+  %%   [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>'
   %%
   %%                                                             [VC: Unique Element Type Declaration]
   %%
-  %%  [Definition: An element type has element content when elements of that type must contain only 
-  %%   child elements (no character data), optionally separated by white space (characters matching 
+  %%  [Definition: An element type has element content when elements of that type must contain only
+  %%   child elements (no character data), optionally separated by white space (characters matching
   %%   the nonterminal S).]
   %%
   %%  [Definition: In this case, the constraint includes a content model, a simple grammar governing
   %%   the allowed types of the child elements and the order in which they are allowed to appear.]
   %%
-  %%   [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children 
+  %%   [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children
   %%
-  %%  *[47]  children     ::=  (choice | seq) ('?' | '*' | '+')? 
+  %%  *[47]  children     ::=  (choice | seq) ('?' | '*' | '+')?
   %%    ==>
   %%  [K20]  children     ::=  cp
   %%                                                             [KWFC: Children Decl]
   %%
-  %%  The grammar is built on content particles (cps), which consist of names, choice lists of 
+  %%  The grammar is built on content particles (cps), which consist of names, choice lists of
   %%  content particles, or sequence lists of content particles:
   %%
-  %%  *[48]  cp           ::=  (Name | choice | seq) ('?' | '*' | '+')? 
+  %%  *[48]  cp           ::=  (Name | choice | seq) ('?' | '*' | '+')?
   %%    ==>
   %%  [K21]  cp           ::=  cpbody Repeater
   %%  [K22]  cpbody       ::=  Name | choice | seq
   %%
-  %%  *[49]  choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
+  %%  *[49]  choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')'
   %%    ==>
-  %%  [K23]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
-  %%                                                             [VC: Proper Group/PE Nesting] 
+  %%  [K23]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')'
+  %%                                                             [VC: Proper Group/PE Nesting]
   %%
-  %%  *[50]  seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
+  %%  *[50]  seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')'
   %%    ==>
-  %%  [K24]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
+  %%  [K24]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')'
   %%                                                             [VC: Proper Group/PE Nesting]
   %%
   %%  [K25]  Repeater     ::=  ('?' | '*' | '+' | '')
   %%
-  %%  [Definition: An element type has mixed content when elements of that type may contain 
+  %%  [Definition: An element type has mixed content when elements of that type may contain
   %%   character data, optionally interspersed with child elements.] In this case, the types of
   %%   the child elements may be constrained, but not their order or their number of occurrences:
   %%
-  %%   [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
+  %%   [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')'
   %%
-  %%                                                             [VC: Proper Group/PE Nesting] 
+  %%                                                             [VC: Proper Group/PE Nesting]
   %%                                                             [VC: No Duplicate Types]
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%   [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>' 
+  %%   [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementDecl (start : UChars) : Required ElementDecl =
-    %% 
+    %%
     %% We begin here just past '<!ELEMENT' in rule 45, looking for:
     %%
-    %%   S Name S contentspec S? '>' 
+    %%   S Name S contentspec S? '>'
     %%
     {
      (w1,       tail) <- parse_WhiteSpace  start;
@@ -103,14 +103,14 @@ XML qualifying spec
 	}}
 
   %% -------------------------------------------------------------------------------------------------
-  %%   [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children 
+  %%   [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ContentSpec (start : UChars) : Required ContentSpec =
     case start of
 
       | 69 :: 77 :: 80 :: 84 :: 89  :: tail ->
-        %% 'EMPTY' 
+        %% 'EMPTY'
         return (Empty, tail)
 
       | 65 :: 78 :: 89 :: tail ->
@@ -139,7 +139,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %%  [KWFC: Children Decl]                         [K20] -- well_formed_children?
   %%
-  %%    The basic production for children in the contentspec of an elementdecl in the DTD 
+  %%    The basic production for children in the contentspec of an elementdecl in the DTD
   %%    must be a choice or seq, not a simple name.
   %% -------------------------------------------------------------------------------------------------
 
@@ -183,11 +183,11 @@ XML qualifying spec
 	      repeater = repeater},
 	     tail)
      }
-     
+
   %% -------------------------------------------------------------------------------------------------
   %%  [K22]  cpbody       ::=  Name | choice | seq
-  %%  [K23]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
-  %%  [K24]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
+  %%  [K23]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')'
+  %%  [K24]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_CPBody (start : UChars) : Required CPBody =
@@ -202,14 +202,14 @@ XML qualifying spec
 
 	   | 124 :: tail ->
              %% '|'
-	     let 
+	     let
 	       def probe (tail, rev_alternatives) =
 		 {
 		  (w3, tail) <- parse_WhiteSpace tail;
 		  (cp, tail) <- parse_CP         tail;
 		  (w4, tail) <- parse_WhiteSpace tail;
 		  let rev_alternatives = cons ((w3, cp, w4), rev_alternatives) in
-		  case tail of 
+		  case tail of
 
 		    | 41 :: tail ->
                       %% ')'
@@ -224,14 +224,14 @@ XML qualifying spec
 
 	   | 44 :: tail ->
              %% ','
-	     let 
+	     let
 	       def probe (tail, rev_items) =
 		 {
 		  (w3, tail) <- parse_WhiteSpace tail;
 		  (cp, tail) <- parse_CP         tail;
 		  (w4, tail) <- parse_WhiteSpace tail;
 		  let rev_items = cons ((w3, cp, w4), rev_items) in
-		  case tail of 
+		  case tail of
 
 		    | 41 :: tail ->
                       %% ')'
@@ -295,14 +295,14 @@ XML qualifying spec
       | _ ->                	return (One,       start)
 
   %% -------------------------------------------------------------------------------------------------
-  %%   [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
+  %%   [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')'
   %% -------------------------------------------------------------------------------------------------
   %%  Note: if the list is empty, it ends with ")", if non-empty, ")*"
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Mixed (start : UChars) : Possible Mixed =
     case start of
-      | 40 :: tail -> 
+      | 40 :: tail ->
         %% '('
         {
 	 (w1, tail) <- parse_WhiteSpace tail;
@@ -329,7 +329,7 @@ XML qualifying spec
 			case tail of
 
 			  | 124 :: tail ->
-                            %% '|' 
+                            %% '|'
 			    {
 			     (w4,   tail) <- parse_WhiteSpace tail;
 			     (name, tail) <- parse_Name        tail;
@@ -379,6 +379,5 @@ XML qualifying spec
 	   | _ -> return (None, start)
 	    }
       | _ -> return (None, start)
-		       
 
 endspec

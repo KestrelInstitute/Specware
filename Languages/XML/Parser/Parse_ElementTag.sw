@@ -9,21 +9,21 @@ XML qualifying spec
   %%  Rules [K5] -- [K10] simplify the parsing (and especially any associated error reporting) for
   %%  several related constructs given by the W3 grammar as:
   %%
-  %%  *[23]  XMLDecl       ::=  '<?xml'     VersionInfo  EncodingDecl? SDDecl?   S? '?>' 
-  %%  *[77]  TextDecl      ::=  '<?xml'     VersionInfo? EncodingDecl            S? '?>'         
-  %%  *[40]  STag          ::=  '<'  Name   (S Attribute)*                       S?  '>' 
+  %%  *[23]  XMLDecl       ::=  '<?xml'     VersionInfo  EncodingDecl? SDDecl?   S? '?>'
+  %%  *[77]  TextDecl      ::=  '<?xml'     VersionInfo? EncodingDecl            S? '?>'
+  %%  *[40]  STag          ::=  '<'  Name   (S Attribute)*                       S?  '>'
   %%  *[42]  ETag          ::=  '</' Name                                        S?  '>'
-  %%  *[41]  Attribute     ::=  Name Eq AttValue 
-  %%  *[44]  EmptyElemTag  ::=  '<'  Name   (S Attribute)*                       S? '/>' 
+  %%  *[41]  Attribute     ::=  Name Eq AttValue
+  %%  *[44]  EmptyElemTag  ::=  '<'  Name   (S Attribute)*                       S? '/>'
   %%
   %%  plus several supporting rules for the above
   %%
   %% -------------------------------------------------------------------------------------------------
   %% They are all instances of [K5]:
   %%
-  %%  [K5]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
+  %%  [K5]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix
   %%  [K6]  ElementTagPrefix   ::=  ( '?' | '/'  | '' )
-  %%  [K7]  ElementName        ::=  NmToken        
+  %%  [K7]  ElementName        ::=  NmToken
   %%  [K8]  ElementAttributes  ::=  List ElementAttribute
   %%  [K9]  ElementAttribute   ::=  S NmToken S? '=' S? AttValue
   %%                                                             [WFC: No External Entity References]
@@ -33,12 +33,12 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K5]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
+  %%  [K5]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Option_ElementTag (start : UChars) : Possible ElementTag =
     case start of
-      | 60 :: tail -> 
+      | 60 :: tail ->
          %% '<'
          {
 	  (prefix,     tail) <- parse_ElementTagPrefix   tail;
@@ -69,7 +69,7 @@ XML qualifying spec
       | _ ->                    return ([],  start)
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K7]  ElementName        ::=  NmToken        
+  %%  [K7]  ElementName        ::=  NmToken
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementName (start : UChars) : Required UString =
@@ -80,13 +80,13 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementAttributes (start : UChars) : Required ElementAttributes =
-    let 
+    let
        def probe (tail, rev_attrs) =
 	 {
 	  (possible_attribute, scout) <- parse_ElementAttribute tail;
 	  case possible_attribute of
-	    | None -> 
-	      return (rev rev_attrs, 
+	    | None ->
+	      return (rev rev_attrs,
 		      tail)
 	    | Some attr ->
 	      probe (scout, cons (attr, rev_attrs))
@@ -102,11 +102,11 @@ XML qualifying spec
   %%
   %%    Attribute values cannot contain direct or indirect entity references to external entities.
   %%
-  %%  Note that "external entity" applies to entity definitions from both the internal and external 
+  %%  Note that "external entity" applies to entity definitions from both the internal and external
   %%  subsets of the DTD.  There are (confusingly) two orthogonal uses of "internal" vs. "external",
   %%  one for internal/external dtd subsets and another for internal/external entities.
   %%
-  %%  [Definition: If the entity definition is an EntityValue, the defined entity is called an 
+  %%  [Definition: If the entity definition is an EntityValue, the defined entity is called an
   %%   internal entity. ...]
   %%  [Definition: If the entity is not internal, it is an external entity, ...]
   %% -------------------------------------------------------------------------------------------------
@@ -135,7 +135,7 @@ XML qualifying spec
 	   return (None, start)
        | _ ->
 	   return (None, start)
-	  }	   
+	  }
 
   %% -------------------------------------------------------------------------------------------------
   %% [K10]  ElementTagPostfix  ::=  ( '?' | '/'  | '' )

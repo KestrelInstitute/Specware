@@ -6,7 +6,7 @@ XML qualifying spec
   %% ------------------------------------------------------------------------
   %% Characters:
 
-  def UChar.open_angle   = uchar #<        % "lt" is xml convention, but would cause infix clash with Nat.lt 
+  def UChar.open_angle   = uchar #<        % "lt" is xml convention, but would cause infix clash with Nat.lt
   def UChar.close_angle  = uchar #>        % for consistency with "open_angle"
   def UChar.amp          = uchar #&        % name chosen to adhere to XML conventions
 
@@ -19,14 +19,14 @@ XML qualifying spec
 
   def UChar.open_paren   = uchar #(
   def UChar.close_paren  = uchar #)
-  def UChar.vertical_bar = uchar #\x7C   
+  def UChar.vertical_bar = uchar #\x7C
 
   def UChar.equal_sign   = uchar #=
   def UChar.period       = uchar #.
   def UChar.comma        = uchar #,
   def UChar.semicolon    = uchar #;
   def UChar.percent      = uchar #%
-  def UChar.double_quote = uchar #\x22     
+  def UChar.double_quote = uchar #\x22
   def UChar.apostrophe   = uchar #\x27     (* single quote *)
 
   def UChar.colon        = uchar #:
@@ -42,9 +42,9 @@ XML qualifying spec
   %% ------------------------------------------------------------------------
   %% Strings:
 
-  def UString.space         = ustring " "   
+  def UString.space         = ustring " "
 
-  def UString.open_angle    = ustring "<"   % "lt" is xml convention, but would cause infix clash with Nat.lt 
+  def UString.open_angle    = ustring "<"   % "lt" is xml convention, but would cause infix clash with Nat.lt
   def UString.close_angle   = ustring ">"   % for consistency with "open_angle"
   def UString.amp           = ustring "&"   % name chosen to adhere to XML conventions
 

@@ -25,23 +25,23 @@ spec
      | Some _ -> map
      | None   -> cons ((name, uchars), map)
 
- op GE.eval : GE_Map * Name -> Option Content 
- op PE.eval : PE_Map * Name -> Option UChars 
+ op GE.eval : GE_Map * Name -> Option Content
+ op PE.eval : PE_Map * Name -> Option UChars
 
  def GE.eval (map, name) =
    case map of
-     | (key, value) :: tail -> 
-       if key = name then 
-	 Some value 
+     | (key, value) :: tail ->
+       if key = name then
+	 Some value
        else
 	 GE.eval (tail, name)
      | [] -> None
 
  def PE.eval (map, name) =
    case map of
-     | (key, value) :: tail -> 
-       if key = name then 
-	 Some value 
+     | (key, value) :: tail ->
+       if key = name then
+	 Some value
        else
 	 PE.eval (tail, name)
      | [] -> None

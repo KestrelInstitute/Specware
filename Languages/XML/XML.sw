@@ -11,7 +11,7 @@ XML qualifying spec
   %%%                 INTERFACE
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  %% These are all very tricky -- actual handwritten function takes extra arg depicting X 
+  %% These are all very tricky -- actual handwritten function takes extra arg depicting X
   op parseXML        : fa (X) String  -> X     % Tricky, TODO
   op parseUnicodeXML : fa (X) UString -> X     % Tricky, TODO
   op printXML        : fa (X) X -> String      % Tricky, see Languages/XML/Handwritten/Lisp/Support.lisp
@@ -55,14 +55,14 @@ XML qualifying spec
     let (result, newstate) = catch run XML_Handler (initialState uchars) in
     case (result, newstate.exceptions) of
 
-      | (Ok possible_document, []) -> 
+      | (Ok possible_document, []) ->
         possible_document
 
       | _ ->
 	let _ = toScreen (print_pending_XML_Exceptions newstate) in
 	None
 
-  def XML_Handler _ : Env (Option Document) = 
+  def XML_Handler _ : Env (Option Document) =
     %% let _ = toScreen (print_XML_Exception except) in %% catch inserts exception into state
     return None
 
@@ -78,7 +78,7 @@ XML qualifying spec
 %%%     return false}
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%                 OUTPUT 
+  %%%                 OUTPUT
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   % op write_unicode_chars_to_file : UChars * Filename * Encoding -> ()
@@ -89,6 +89,5 @@ XML qualifying spec
   def print_Document_to_file (doc : Document, filename : Filename) =
     let ustr = print_Document_to_UString doc in
     write_unicode_chars_to_file (ustr, filename, null_encoding) % handwritten lisp
-
 
 endspec

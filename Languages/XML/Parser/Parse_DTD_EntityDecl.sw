@@ -17,104 +17,103 @@ XML qualifying spec
   %%
   %%   [73]  EntityDef      ::=  EntityValue | (ExternalID NDataDecl?)
   %%
-  %%   [Definition: The literal entity value is the quoted string actually present in the entity 
-  %%    declaration, corresponding to the non-terminal EntityValue.] 
+  %%   [Definition: The literal entity value is the quoted string actually present in the entity
+  %%    declaration, corresponding to the non-terminal EntityValue.]
   %%
-  %%   [Definition: The replacement text is the content of the entity, after replacement of 
+  %%   [Definition: The replacement text is the content of the entity, after replacement of
   %%    character references and parameter-entity references.]
   %%
-  %%   [Definition: If the entity definition is an EntityValue, the defined entity is called an 
-  %%    internal entity. There is no separate physical storage object, and the content of the 
+  %%   [Definition: If the entity definition is an EntityValue, the defined entity is called an
+  %%    internal entity. There is no separate physical storage object, and the content of the
   %%    entity is given in the declaration.]
   %%
   %%   If the NDataDecl is present, this is a general unparsed entity; otherwise it is a parsed entity.
   %%
   %%   4.3.2 Well-Formed Parsed Entities:
   %%
-  %%  "An external general parsed entity is well-formed if it matches the production labeled 
+  %%  "An external general parsed entity is well-formed if it matches the production labeled
   %%   'extParsedEnt'."
   %%
-  %%  "An internal general parsed entity is well-formed if its replacement text matches the 
+  %%  "An internal general parsed entity is well-formed if its replacement text matches the
   %%   production labeled content."
   %%
-  %%  "A consequence of well-formedness in [general] entities is that the logical and physical 
-  %%   structures in an XML document are properly nested; no start-tag, end-tag, empty-element 
-  %%   tag, element, comment, processing instruction, character reference, or entity reference 
-  %%   can begin in one [general] entity and end in another."  Kestrel note: [general] added, 
+  %%  "A consequence of well-formedness in [general] entities is that the logical and physical
+  %%   structures in an XML document are properly nested; no start-tag, end-tag, empty-element
+  %%   tag, element, comment, processing instruction, character reference, or entity reference
+  %%   can begin in one [general] entity and end in another."  Kestrel note: [general] added,
   %%   since sentence would be false for parameter entities, as one can have a start tag in
   %%   in one parameter entity and the matching end tag in antoher.
   %%
   %%   [74]  PEDef          ::=  EntityValue | ExternalID
-  %%                                                             [VC:  Proper Declaration/PE Nesting] 
+  %%                                                             [VC:  Proper Declaration/PE Nesting]
   %%
-  %%   [76]  NDataDecl      ::=  S 'NDATA' S Name 
+  %%   [76]  NDataDecl      ::=  S 'NDATA' S Name
   %%                                                             [VC: Notation Declared]
   %%
   %% ------------------------------------------------------------------------------------------------
   %%
   %%  [Definition: If the entity is not internal, it is an external entity, declared as follows:]
   %%
-  %%  *[75]  ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
+  %%  *[75]  ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral
+  %%  *[83]  PublicID       ::=  'PUBLIC' S PubidLiteral
   %%    ==>
   %%  [K27]  ExternalID     ::=  GenericID
   %%                                                             [KWFC: External ID]
   %%
-  %%  *[83]  PublicID       ::=  'PUBLIC' S PubidLiteral 
-  %%    ==>
-  %%  [K28]  PublicID       ::=  GenericID
-  %%                                                             [KWFC: Public ID]
+  %%  [K28]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %%
-  %%  [K29]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %%  GenericID = ExternalID + PublicID,   but only GenericID and ExternalID are actually used,
+  %%                                       so PublicID can be dropped
   %%
-  %%  [Definition: The SystemLiteral is called the entity's system identifier. It is a URI reference 
+  %%  [Definition: The SystemLiteral is called the entity's system identifier. It is a URI reference
   %%  (as defined in [IETF RFC 2396], updated by [IETF RFC 2732]), meant to be dereferenced to obtain
-  %%   input for the XML processor to construct the entity's replacement text.] 
+  %%   input for the XML processor to construct the entity's replacement text.]
   %%
-  %%  It is an error for a fragment identifier (beginning with a # character) to be part of a system 
-  %%  identifier. Unless otherwise provided by information outside the scope of this specification 
-  %%  (e.g. a special XML element type defined by a particular DTD, or a processing instruction 
-  %%  defined by a particular application specification), relative URIs are relative to the location 
-  %%  of the resource within which the entity declaration occurs. A URI might thus be relative to 
-  %%  the document entity, to the entity containing the external DTD subset, or to some other 
+  %%  It is an error for a fragment identifier (beginning with a # character) to be part of a system
+  %%  identifier. Unless otherwise provided by information outside the scope of this specification
+  %%  (e.g. a special XML element type defined by a particular DTD, or a processing instruction
+  %%  defined by a particular application specification), relative URIs are relative to the location
+  %%  of the resource within which the entity declaration occurs. A URI might thus be relative to
+  %%  the document entity, to the entity containing the external DTD subset, or to some other
   %%  external parameter entity.
   %%
-  %%  URI references require encoding and escaping of certain characters. The disallowed characters 
-  %%  include all non-ASCII characters, plus the excluded characters listed in Section 2.4 of 
-  %%  [IETF RFC 2396], except for the number sign (#) and percent sign (%) characters and the square 
+  %%  URI references require encoding and escaping of certain characters. The disallowed characters
+  %%  include all non-ASCII characters, plus the excluded characters listed in Section 2.4 of
+  %%  [IETF RFC 2396], except for the number sign (#) and percent sign (%) characters and the square
   %%  bracket characters re-allowed in [IETF RFC 2732]. Disallowed characters must be escaped as follows:
   %%
   %%    1.  Each disallowed character is converted to UTF-8 [IETF RFC 2279] as one or more bytes.
   %%
-  %%    2.  Any octets corresponding to a disallowed character are escaped with the URI escaping 
+  %%    2.  Any octets corresponding to a disallowed character are escaped with the URI escaping
   %%        mechanism (that is, converted to %HH, where HH is the hexadecimal notation of the byte value).
   %%
   %%    3.  The original character is replaced by the resulting character sequence.
   %%
   %% -------------------------------------------------------------------------------------------------
   %%
-  %%  [Definition: Notations identify by name the format of unparsed entities, the format of 
-  %%   elements which bear a notation attribute, or the application to which a processing 
+  %%  [Definition: Notations identify by name the format of unparsed entities, the format of
+  %%   elements which bear a notation attribute, or the application to which a processing
   %%   instruction is addressed.]
   %%
-  %%  [Definition: Notation declarations provide a name for the notation, for use in entity and 
-  %%   attribute-list declarations and in attribute specifications, and an external identifier 
-  %%   for the notation which may allow an XML processor or its client application to locate a 
+  %%  [Definition: Notation declarations provide a name for the notation, for use in entity and
+  %%   attribute-list declarations and in attribute specifications, and an external identifier
+  %%   for the notation which may allow an XML processor or its client application to locate a
   %%   helper application capable of processing data in the given notation.]
   %%
-  %%  [Definition: In addition to a system identifier, an external identifier may include a public 
-  %%   identifier.] 
+  %%  [Definition: In addition to a system identifier, an external identifier may include a public
+  %%   identifier.]
   %%
-  %%  *[82]  NotationDecl   ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>' 
+  %%  *[82]  NotationDecl   ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>'
   %%    ==>
-  %%  [K30]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
+  %%  [K29]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>'
   %%
   %%                                                             [VC: Unique Notation Name]
   %%
   %%  An XML processor attempting to retrieve the entity's content may use the public identifier
-  %%  to try to generate an alternative URI reference. If the processor is unable to do so, it 
-  %%  must use the URI reference specified in the system literal. Before a match is attempted, 
-  %%  all strings of white space in the public identifier must be normalized to single space 
-  %%  characters (#x20), and leading and trailing white space must be removed.  
+  %%  to try to generate an alternative URI reference. If the processor is unable to do so, it
+  %%  must use the URI reference specified in the system literal. Before a match is attempted,
+  %%  all strings of white space in the public identifier must be normalized to single space
+  %%  characters (#x20), and leading and trailing white space must be removed.
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -159,7 +158,7 @@ XML qualifying spec
     case tail of
 
       | 62 :: tail ->
-        %% '>' 
+        %% '>'
         return ({w1   = w1,
 		 name = name,
 		 w2   = w2,
@@ -195,13 +194,13 @@ XML qualifying spec
 		    but         = "EOF occurred first",
 		    so_we       = "fail immediately"}
        }
-	      
+
   %% -------------------------------------------------------------------------------------------------
   %%   [72]  PEDecl         ::=  '<!ENTITY' S '%' S Name S PEDef     S? '>'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_PEDecl (start : UChars, w1 : WhiteSpace, allow_pe_refs? : Boolean) : Required PEDecl =
-   %% We begin here just past the % in rule [72], looking for: 
+   %% We begin here just past the % in rule [72], looking for:
    %%   S Name S PEDef S? '>'
    {
     (w2,    tail) <- parse_WhiteSpace start;
@@ -256,16 +255,16 @@ XML qualifying spec
   %%
   %%  4.3.2 Well-Formed Parsed Entities:
   %%
-  %%  "An external general parsed entity is well-formed if it matches the production labeled 
+  %%  "An external general parsed entity is well-formed if it matches the production labeled
   %%   'extParsedEnt'."
   %%
-  %%  "An internal general parsed entity is well-formed if its replacement text matches the 
+  %%  "An internal general parsed entity is well-formed if its replacement text matches the
   %%   production labeled content."
   %%
-  %%  "A consequence of well-formedness in [general] entities is that the logical and physical 
-  %%   structures in an XML document are properly nested; no start-tag, end-tag, empty-element 
-  %%   tag, element, comment, processing instruction, character reference, or entity reference 
-  %%   can begin in one [general] entity and end in another."  Kestrel note: [general] added, 
+  %%  "A consequence of well-formedness in [general] entities is that the logical and physical
+  %%   structures in an XML document are properly nested; no start-tag, end-tag, empty-element
+  %%   tag, element, comment, processing instruction, character reference, or entity reference
+  %%   can begin in one [general] entity and end in another."  Kestrel note: [general] added,
   %%   since sentence would be false for parameter entities, as one can have a start tag in
   %%   in one parameter entity and the matching end tag in antoher.
   %%
@@ -306,12 +305,12 @@ XML qualifying spec
   %%
   %%  but note validity constraint:
   %%
-  %%  [VC: Proper Declaration/PE Nesting]           [74] [K11] *[29] 
+  %%  [VC: Proper Declaration/PE Nesting]           [74] [K11] *[29]
   %%
-  %%    Parameter-entity replacement text must be properly nested with markup declarations. 
+  %%    Parameter-entity replacement text must be properly nested with markup declarations.
   %%
-  %%    That is to say, if either the first character or the last character of a markup declaration 
-  %%    (markupdecl above) is contained in the replacement text for a parameter-entity reference, 
+  %%    That is to say, if either the first character or the last character of a markup declaration
+  %%    (markupdecl above) is contained in the replacement text for a parameter-entity reference,
   %%    both must be contained in the same replacement text.
   %%
   %% -------------------------------------------------------------------------------------------------
@@ -327,7 +326,7 @@ XML qualifying spec
 	 }
 
       | 39 :: tail ->
-        %% apostrophe 
+        %% apostrophe
         {
 	 (value, tail) <- parse_EntityValue start;
 	 return (Value value, tail)
@@ -340,7 +339,7 @@ XML qualifying spec
 	 }
 
   %% -------------------------------------------------------------------------------------------------
-  %%   [76]  NDataDecl      ::=  S 'NDATA' S Name 
+  %%   [76]  NDataDecl      ::=  S 'NDATA' S Name
   %% -------------------------------------------------------------------------------------------------
 
   def parse_NDataDecl (start : UChars) : Possible NDataDecl =
@@ -348,7 +347,7 @@ XML qualifying spec
      (w1, tail) <- parse_WhiteSpace start;
      case tail of
 
-       | 78 :: 68 :: 65 :: 84 :: 65 :: tail -> 
+       | 78 :: 68 :: 65 :: 84 :: 65 :: tail ->
          %% 'NDATA'
          {
 	  (w2,   tail) <- parse_WhiteSpace tail;
@@ -368,10 +367,10 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %%  [KWFC: External ID]                           [K27] *[75] -- well_formed_external_id?
   %%
-  %%    ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
+  %%    ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_ExternalID (start : UChars) : Required ExternalID = 
+  def parse_ExternalID (start : UChars) : Required ExternalID =
     {
      (id, tail) <- parse_GenericID start;
      (when (~ (well_formed_external_id? id))
@@ -388,35 +387,11 @@ XML qualifying spec
     }
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K28]  PublicID       ::=  GenericID
-  %%                                                             [KWFC: Public ID]
-  %% -------------------------------------------------------------------------------------------------
-  %%  [KWFC: Public ID]                             [K28] *[83] -- well_formed_public_id?
-  %%
-  %%    PublicID       ::=  'PUBLIC' S PubidLiteral 
-  %% -------------------------------------------------------------------------------------------------
-
-  def parse_PublicID (start : UChars) : Required PublicID = 
-    {
-     (id, tail) <- parse_GenericID start;
-     (when (~ (well_formed_public_id? id))
-      (error {kind        = Syntax,
-	      requirement = "'PUBLIC' S PubidLiteral ",
-	      start       = start,
-	      tail        = tail,
-	      peek        = 10,
-	      we_expected = [("'PUBLIC \"...\"", "id with public literal, but no system literal")],
-	      but         = "the generic ID either doesn't start with PUBLIC or contains a system literal",
-	      so_we       = "pretend this is ok"}));
-     return (id, tail)
-    }
-
-  %% -------------------------------------------------------------------------------------------------
-  %%  [K29]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %%  [K28]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %% -------------------------------------------------------------------------------------------------
 
   def parse_GenericID (start : UChars) : Required GenericID =
-    case start of 
+    case start of
 
       | 83 :: 89 :: 83 :: 84 :: 69 :: 77 :: tail ->
         %% 'SYSTEM'
@@ -466,22 +441,22 @@ XML qualifying spec
 		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K30]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
+  %%  [K29]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_NotationDecl (start : UChars) : Required NotationDecl =
-    %% 
+    %%
     %% We begin just past '<!NOTATION' in rule [K30], looking for:
-    %% 
-    %%  S Name S GenericID S? '>' 
-    %% 
+    %%
+    %%  S Name S GenericID S? '>'
+    %%
     {
      (w1,   tail) <- parse_WhiteSpace start;
      (name, tail) <- parse_Name       tail;
      (w2,   tail) <- parse_WhiteSpace tail;
      (id,   tail) <- parse_GenericID  tail;  % (ExternalID | PublicID)
      (w3,   tail) <- parse_WhiteSpace tail;
-     case tail of 
+     case tail of
 
        | 62 :: tail ->
          %% '>'

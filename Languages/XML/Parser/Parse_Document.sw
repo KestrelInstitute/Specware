@@ -13,26 +13,26 @@ XML qualifying spec
   %%
   %%  The document entity is well-formed if it matches the production labeled 'document'.
   %%
-  %%  [Definition: The document entity serves as the root of the entity tree and a starting-point 
-  %%   for an XML processor.] 
+  %%  [Definition: The document entity serves as the root of the entity tree and a starting-point
+  %%   for an XML processor.]
   %%
-  %%  This [W3] specification does not specify how the document entity is to be located by an XML 
-  %%  processor; unlike other entities, the document entity has no name and might well appear on 
+  %%  This [W3] specification does not specify how the document entity is to be located by an XML
+  %%  processor; unlike other entities, the document entity has no name and might well appear on
   %%  a processor input stream without any identification at all.
   %%
-  %%  [Definition: XML documents should begin with an XML declaration which specifies the version 
-  %%   of XML being used.] 
-  %%   
-  %%  [Definition: There is exactly one element, called the root, or document element, no part of 
-  %%   which appears in the content of any other element.] 
+  %%  [Definition: XML documents should begin with an XML declaration which specifies the version
+  %%   of XML being used.]
   %%
-  %%  For all other elements, if the start-tag is in the content of another element, the end-tag 
-  %%  is in the content of the same element. More simply stated, the elements, delimited by start- 
+  %%  [Definition: There is exactly one element, called the root, or document element, no part of
+  %%   which appears in the content of any other element.]
+  %%
+  %%  For all other elements, if the start-tag is in the content of another element, the end-tag
+  %%  is in the content of the same element. More simply stated, the elements, delimited by start-
   %%  and end-tags, nest properly within each other.
   %%
   %%  [Definition: As a consequence of this, for each non-root element C in the document, there is
-  %%   one other element P in the document such that C is in the content of P, but is not in the 
-  %%   content of any other element that is in the content of P. P is referred to as the parent of C, 
+  %%   one other element P in the document such that C is in the content of P, but is not in the
+  %%   content of any other element that is in the content of P. P is referred to as the parent of C,
   %%   and C as a child of P.]
   %%
   %%  *[1]  document  ::=  prolog element Misc*
@@ -42,19 +42,19 @@ XML qualifying spec
   %%
   %%  [K1]  document  ::=  XMLDecl? MiscList doctypedecl? MiscList element MiscList
   %%
-  %%                                                             [VC:   Root Element Type]  
-  %%                                                             [KVC:  Valid DTD]  
-  %%                                                             [KVC:  Valid Root Element]  
+  %%                                                             [VC:   Root Element Type]
+  %%                                                             [KVC:  Valid DTD]
+  %%                                                             [KVC:  Valid Root Element]
   %%                                                             [KVC:  Element Valid]
   %%
   %%  [K2]  MiscList  ::=  Misc*
   %%
   %%  [27]  Misc      ::=  Comment | PI | S
   %%
-  %%  [Definition: Markup takes the form of start-tags, end-tags, empty-element tags, entity 
-  %%   references, character references, comments, CDATA section delimiters, document type 
-  %%   declarations, processing instructions, XML declarations, text declarations, and any white 
-  %%   space that is at the top level of the document entity (that is, outside the document 
+  %%  [Definition: Markup takes the form of start-tags, end-tags, empty-element tags, entity
+  %%   references, character references, comments, CDATA section delimiters, document type
+  %%   declarations, processing instructions, XML declarations, text declarations, and any white
+  %%   space that is at the top level of the document entity (that is, outside the document
   %%   element and not inside any other markup).]
   %%
   %%  [Definition: All text that is not markup constitutes the character data of the document.]
@@ -71,7 +71,7 @@ XML qualifying spec
      (misc1,        tail) <- parse_MiscList    tail;
      (dtd,          tail) <- parse_DTD         tail;
      (misc2,        tail) <- parse_MiscList    tail;
-     %% Note that the grammar does not allow the root element to be 
+     %% Note that the grammar does not allow the root element to be
      %% obtained via expansion of an entity reference.
      %% Inside the content of elements, however, entity references
      %% may expand into text that includes other elements.
@@ -91,7 +91,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def parse_MiscList (start : UChars) : Required MiscList =
-    let 
+    let
        def probe (tail, rev_miscs) =
 	 case tail of
 	   | [] -> return (rev rev_miscs, [])
@@ -101,7 +101,7 @@ XML qualifying spec
 	      case possible_misc of
 		| Some misc ->
 		  probe (scout, cons (misc, rev_miscs))
-		| _ -> 
+		| _ ->
 		  return (rev rev_miscs, tail)
 	      }
     in
@@ -125,7 +125,7 @@ XML qualifying spec
 	}
 
       %% XML/PI
-      | 60 :: 63 :: tail -> 
+      | 60 :: 63 :: tail ->
         %% '<?'
         (case tail of
 
@@ -141,12 +141,12 @@ XML qualifying spec
 		    we_expected = [("'<?'",              "PI"),
 				   ("'<!--'",            "Comment"),
 				   ("#x9 #xA #xD #x20",  "WhiteSpace"),
-				   ("'<!DOCTYPE'",       "DTD"), 
+				   ("'<!DOCTYPE'",       "DTD"),
 				   ("'<'",               "Element")],
 		    but         = "we saw '<?xml'",
 		    so_we       = "pretend its a PI"};
 	     (pi, tail) <- parse_PI start;
-	     return (Some (PI pi), 
+	     return (Some (PI pi),
 		     tail)
 	    }
 
@@ -154,7 +154,7 @@ XML qualifying spec
 	  | _ ->
 	    {
 	     (pi, tail) <- parse_PI start;
-	     return (Some (PI pi), 
+	     return (Some (PI pi),
 		     tail)
 	    })
 
@@ -179,7 +179,7 @@ XML qualifying spec
 				     ("'<?'",              "PI"),
 				     ("'<!--'",            "Comment"),
 				     ("#x9 #xA #xD #x20",  "WhiteSpace"),
-				     ("'<!DOCTYPE'",       "DTD"), 
+				     ("'<!DOCTYPE'",       "DTD"),
 				     ("'<'",               "Element")],
 		      but         = "EOF occurred first",
 		      so_we       = "fail immediately"}

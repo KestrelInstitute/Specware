@@ -9,60 +9,60 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          ExternalDTD (External subset of Doc Type Decl)                                      %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %% 
-  %%  [WFC: External Subset]                        *[28] 
+  %%
+  %%  [WFC: External Subset]                        *[28]
   %%
   %%  *The external subset, if any, must match the production for extSubset.
   %%
   %%  ==>
   %%
-  %%  [KWFC: External Subset]                       [K11] *[28] 
+  %%  [KWFC: External Subset]                       [K11] *[28]
   %%
   %%   The external subset, if any, must match the production for ExternalDTD.
-  %% 
+  %%
   %% -------------------------------------------------------------------------------------------------
-  %%  
+  %%
   %%  For clarity, we rename "extSubset" to "ExternalDTD" :
-  %%  
+  %%
   %%  *[30]  extSubset           ::=  TextDecl? extSubsetDecl
-  %%  *[31]  extSubsetDecl       ::=  ( markupdecl | conditionalSect | DeclSep)* 
+  %%  *[31]  extSubsetDecl       ::=  ( markupdecl | conditionalSect | DeclSep)*
   %%  *[61]  conditionalSect     ::=  includeSect | ignoreSect
   %%
   %%    ==>
   %%
   %%  [K15]  ExternalDTD         ::=  TextDecl? ExternalDecls
   %%                                                             [VC: Unique Element Type Declaration]
-  %%                                                             [VC: One ID per Element Type]    
-  %%                                                             [VC: One Notation Per Element Type] 
+  %%                                                             [VC: One ID per Element Type]
+  %%                                                             [VC: One Notation Per Element Type]
   %%                                                             [VC: No Notation on Empty Element]
   %%
   %%  [K16]  ExternalDecls       ::=  ExternalDecl*
   %%
   %%  [K17]  ExternalDecl        ::=  Decl
   %%
-  %%  [Definition: Conditional sections are portions of the document type declaration external 
-  %%   subset which are included in, or excluded from, the logical structure of the DTD based on 
+  %%  [Definition: Conditional sections are portions of the document type declaration external
+  %%   subset which are included in, or excluded from, the logical structure of the DTD based on
   %%   the keyword which governs them.]
-  %% 
-  %%   [62]  includeSect         ::=  '<![' S? 'INCLUDE' S? '[' extSubsetDecl ']]>' 
+  %%
+  %%   [62]  includeSect         ::=  '<![' S? 'INCLUDE' S? '[' extSubsetDecl ']]>'
   %%    ==>
-  %%  [K18]  includeSect         ::=  '<![' S? 'INCLUDE' S? '[' ExternalDecls ']]>' 
-  %% 
+  %%  [K18]  includeSect         ::=  '<![' S? 'INCLUDE' S? '[' ExternalDecls ']]>'
+  %%
   %%                                                             [VC: Proper Conditional Section/PE Nesting]
-  %% 
+  %%
   %%  The following rule is infinitely ambiguous for no good reason, so simplify it.
   %%  [production [63] would accept any number of ignoreSectContents, which can be the null string.]
-  %%   [63]  ignoreSect          ::=  '<![' S? 'IGNORE' S? '[' ignoreSectContents* ']]>' 
+  %%   [63]  ignoreSect          ::=  '<![' S? 'IGNORE' S? '[' ignoreSectContents* ']]>'
   %%    ==>
-  %%  [K19]  ignoreSect          ::=  '<![' S? 'IGNORE' S? '[' ignoreSectContents ']]>' 
-  %% 
+  %%  [K19]  ignoreSect          ::=  '<![' S? 'IGNORE' S? '[' ignoreSectContents ']]>'
+  %%
   %%                                                             [VC: Proper Conditional Section/PE Nesting]
-  %% 
+  %%
   %%   [64]  ignoreSectContents  ::=  Ignore ('<![' ignoreSectContents ']]>' Ignore)*
-  %% 
+  %%
   %%   [65]  Ignore              ::=  Char* - (Char* ('<![' | ']]>') Char*)
-  %% 
-  %%  
+  %%
+  %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ XML qualifying spec
       | None -> return None
       | Some internal_dtd ->
         case internal_dtd.external_id of
-	  | None -> return None
+          | None -> return None
 	  | Some id ->
 	    parse_external_dtd id
 
@@ -102,61 +102,61 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ExternalDecls (start : UChars) : Required (List ExternalDecl) =
-    let 
+    let
         def probe (tail, rev_markups) =
 	  case tail of
 
-	    %%  [K14]  Decl           ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect 
+	    %%  [K14]  Decl           ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect
 
-	    | 60 :: 33 :: 69 :: 76 :: 69 :: 77 :: 69 :: 78 :: 84 :: tail -> 
+	    | 60 :: 33 :: 69 :: 76 :: 69 :: 77 :: 69 :: 78 :: 84 :: tail ->
 	      %% '<!ELEMENT'
 	      {
 	       (decl, tail) <- parse_ElementDecl tail;
 	       probe (tail, cons (Element decl, rev_markups))
 	      }
-	      
-	    | 60 :: 33 :: 65 :: 84 :: 84 :: 76 :: 73 :: 83 :: 84 :: tail -> 
-	      %% '<!ATTLIST' 
+
+	    | 60 :: 33 :: 65 :: 84 :: 84 :: 76 :: 73 :: 83 :: 84 :: tail ->
+	      %% '<!ATTLIST'
 	      {
 	       (decl, tail) <- parse_AttlistDecl tail;
 	       probe (tail, cons (Attributes decl, rev_markups))
 	      }
-	      
-	    | 60 :: 33 :: 69 :: 78 :: 84 :: 73 :: 84 :: 89 :: tail -> 
+
+	    | 60 :: 33 :: 69 :: 78 :: 84 :: 73 :: 84 :: 89 :: tail ->
 	      %% '<!ENTITY'
 	      {
 	       (decl, tail) <- parse_EntityDecl (tail, false);
 	       probe (tail, cons (Entity decl, rev_markups))
 	      }
-	      
-	    | 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 :: tail -> 
+
+	    | 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 :: tail ->
 	      %% '<!NOTATATION'
 	      {
 	       (decl, tail) <- parse_NotationDecl tail;
 	       probe (tail, cons (Notation decl, rev_markups))
 	      }
-	      
+
 	    | 60 :: 63 :: tail ->
 	      %% '<?'
 	      {
 	       (decl, tail) <- parse_PI tail;
 	       probe (tail, cons (PI decl, rev_markups))
 	      }
-	      
+
 	    | 60 :: 45 :: 45 :: tail ->
 	      %% '<--'
 	      {
 	       (comment, tail) <- parse_Comment tail;
 	       probe (tail, cons (Comment comment, rev_markups))
 	      }
-	      
+
 	    | 37 :: tail ->
-	      %% '%' 
+	      %% '%'
 	      {
 	       (ref, tail) <- parse_PEReference tail;
 	       probe (tail, cons (PEReference ref, rev_markups))
 	      }
-	      
+
 	    | 60 :: 33 :: 91 :: tail ->
 	      %% "<!["
 	      {
@@ -185,7 +185,7 @@ XML qualifying spec
 			       but         = "something other than INCLUDE or IGNORE was seen",
 			       so_we       = "fail immediately"}
 		    }
-		   
+
 	    | char :: _ ->
 	      if white_char? char then
 		{
@@ -200,8 +200,8 @@ XML qualifying spec
 			    peek        = 10,
 			    we_expected = [("'<!ELEMENT'",            "element decl"),
 					   ("'<!ATTLIST'",            "attribute list decl"),
-					   ("'<!ENTITY'",             "entity decl"),					       
-					   ("'<!NOTATION'",           "notation decl"),					       
+					   ("'<!ENTITY'",             "entity decl"),
+					   ("'<!NOTATION'",           "notation decl"),
 					   ("'<--'",                  "comment"),
 					   ("'%'",                    "PE Reference"),
 					   ("'<![' S 'INCLUDE'",      "include decl"),
@@ -210,7 +210,7 @@ XML qualifying spec
 					   ("']'",                    "end of markups in DTD")],
 			    but         = (describe_char char) ^ " was seen instead",
 			    so_we       = "fail immediately"}
-		
+
 	    | _ ->
 		hard_error {kind        = EOF,
 			    requirement = "Each markup or declsep in the DTD must be one of those indicated below.",
@@ -219,8 +219,8 @@ XML qualifying spec
 			    peek        = 0,
 			    we_expected = [("'<!ELEMENT'",            "element decl"),
 					   ("'<!ATTLIST'",            "attribute list decl"),
-					   ("'<!ENTITY'",             "entity decl"),					       
-					   ("'<!NOTATION'",           "notation decl"),					       
+					   ("'<!ENTITY'",             "entity decl"),
+					   ("'<!NOTATION'",           "notation decl"),
 					   ("'<--'",                  "comment"),
 					   ("'%'",                    "PE Reference"),
 					   ("'<![' S 'INCLUDE'",      "include decl"),
@@ -229,13 +229,12 @@ XML qualifying spec
 					   ("']'",                    "end of markups in DTD")],
 			    but         = "EOF occurred first",
 			    so_we       = "fail immediately"}
-		
     in
       probe (start, [])
 
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K18]  includeSect         ::=  '<![' S? 'INCLUDE' S? '[' ExternalDecls ']]>' 
+  %%  [K18]  includeSect         ::=  '<![' S? 'INCLUDE' S? '[' ExternalDecls ']]>'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_IncludeSect (start : UChars, w1 : WhiteSpace) : Required IncludeSect =
@@ -244,12 +243,12 @@ XML qualifying spec
      (w2,    tail) <- parse_WhiteSpace start;
      case tail of
        | 91 :: tail ->
-         %% '[' 
+         %% '['
 	 {
 	  (decls, tail) <- parse_ExternalDecls tail;
 	  case tail of
 	    | 93 :: 93 :: 62 :: tail ->
-	      %% ']]>' 
+	      %% ']]>'
 	      return ({w1    = w1,
 		       w2    = w2,
 		       decls = decls},
@@ -274,9 +273,9 @@ XML qualifying spec
 		     but         = "we saw something else",
 		     so_we       = "fail immediately"}
 	}
-     
+
   %% -------------------------------------------------------------------------------------------------
-  %%  [K19]  ignoreSect          ::=  '<![' S? 'IGNORE' S? '[' ignoreSectContents ']]>' 
+  %%  [K19]  ignoreSect          ::=  '<![' S? 'IGNORE' S? '[' ignoreSectContents ']]>'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_IgnoreSect (start : UChars, w1 : WhiteSpace) : Required IgnoreSect =
@@ -285,7 +284,7 @@ XML qualifying spec
      (w2, tail) <- parse_WhiteSpace start;
      case tail of
        | 91 :: tail ->
-         %% '[' 
+         %% '['
 	 {
 	  (contents : IgnoreSectContents, tail) <- parse_IgnoreSectContents tail;
 	  return ({w1       = w1,
@@ -313,7 +312,7 @@ XML qualifying spec
 			     contents : List (IgnoreSectContents * Ignore)}
 
   def parse_IgnoreSectContents (start : UChars) : Required IgnoreSectContents =
-    let 
+    let
         def parse_ignore (tail, rev_ignore) =
 	  case tail of
 	    | 93 :: 93 :: 62 :: _ ->
@@ -338,7 +337,7 @@ XML qualifying spec
         def probe (tail, prefix, rev_contents) =
 	  {
 	   (i_s_c,  tail) <- parse_IgnoreSectContents tail;
-	   (ignore, tail) <- parse_ignore             (tail, []); 
+	   (ignore, tail) <- parse_ignore             (tail, []);
 	   let rev_contents = cons ((i_s_c, ignore), rev_contents) in
 	   case tail of
 	     | 93 :: 93 :: 62 :: tail ->
@@ -349,7 +348,7 @@ XML qualifying spec
 	     | 60 :: 33 :: 91 :: tail ->
 	       %% "<!["
 	       probe (tail, prefix, rev_contents)
-	       
+
 	      }
     in
       {
@@ -364,5 +363,5 @@ XML qualifying spec
 	   %% "<!["
 	   probe (tail, prefix, [])
 	  }
-      
+
 endspec

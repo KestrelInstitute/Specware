@@ -11,20 +11,20 @@ XML qualifying spec
   %%
   %%   [10]  AttValue        ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
   %%
-  %%                                                             [WFC: No < in Attribute Values] 
+  %%                                                             [WFC: No < in Attribute Values]
   %%
-  %%  *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%  *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'")
   %%    ==>
-  %%  [K38]  SystemuLiteral  ::=  QuotedText
-  %%                
-  %%  *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
+  %%  [K37]  SystemuLiteral  ::=  QuotedText
+  %%
+  %%  *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
   %%    ==>
-  %%  [K39]  PubidLiteral    ::=  QuotedText
-  %%                                                             [KWFC: Pubid Literal]   
+  %%  [K38]  PubidLiteral    ::=  QuotedText
+  %%                                                             [KWFC: Pubid Literal]
   %%
   %%   [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
   %%
-  %%  [K40]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%  [K39]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'")
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -33,43 +33,43 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def parse_EntityValue (start : UChars) : Required EntityValue =
-    let 
+    let
        def probe (tail, rev_char_data, rev_items, qchar) =
 	 case tail of
 
-	   | 38 :: tail -> 
+	   | 38 :: tail ->
 	     %% '&'
 	     {
 	      %% parse_Reference assumes we're just past the ampersand.
 	      (ref, tail) <- parse_Reference tail;
 	      probe (tail,
-		     [], 
+		     [],
 		     cons (Ref ref,
-			   rev_items), 
+			   rev_items),
 		     qchar)
 	     }
-	   | 37 :: tail -> 
+	   | 37 :: tail ->
 	     %% '%'
              {
 	      (ref, tail) <- parse_PEReference tail;
 	      probe (tail,
-		     [], 
+		     [],
 		     cons (PERef ref,
-			   rev_items), 
+			   rev_items),
 		     qchar)}
 
-	   | char :: tail -> 
+	   | char :: tail ->
 	     if char = qchar then
 	       return ({qchar = qchar,
 			items = (case rev_char_data of
 				   | [] -> rev rev_items
-				   | _ -> 
+				   | _ ->
 				     rev (cons (NonRef (rev rev_char_data),
 						rev_items)))},
 		       tail)
 	     else
 	       probe (tail,
-		      cons (char, rev_char_data), 
+		      cons (char, rev_char_data),
 		      rev_items,
 		      qchar)
 
@@ -79,17 +79,17 @@ XML qualifying spec
 			 start       = start,
 			 tail        = start,
 			 peek        = 0,
-			 we_expected = [("[" ^ (string [qchar]) ^ "] ", 
+			 we_expected = [("[" ^ (string [qchar]) ^ "] ",
 					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
 			 but         = "EOF occurred before it terminated",
 			 so_we       = "fail immediately"}
     in
       case start of
-	| 34 :: tail -> 
+	| 34 :: tail ->
 	  %% double-quote
 	  probe (tail, [], [], 34)
 
-	| 39 :: tail -> 
+	| 39 :: tail ->
 	  %% apostrophe
 	  probe (tail, [], [], 39)
 
@@ -116,7 +116,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %%   [10]  AttValue        ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
   %%
-  %%                                                             [WFC: No < in Attribute Values] 
+  %%                                                             [WFC: No < in Attribute Values]
   %% -------------------------------------------------------------------------------------------------
   %%  [WFC: No < in Attribute Values]               [10] [60] [K9] *[41]
   %%
@@ -127,11 +127,11 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def parse_AttValue (start : UChars) : Required AttValue =
-    let 
+    let
        def probe (tail, rev_char_data, rev_items, qchar) =
 	 case tail of
 
-	   | 60 :: _ -> 
+	   | 60 :: _ ->
 	     %% '<'
 	     {
 	      error {kind        = Syntax,
@@ -143,63 +143,63 @@ XML qualifying spec
 		     but         = "'<' was seen",
 		     so_we       = "pretend '<' is a normal character"};
 	      probe (tail,
-		     [60], 
+		     [60],
 		     cons (NonRef (rev rev_char_data),
 			   rev_items),
 		     qchar)
 	     }
 
-	   | 38 :: tail -> 
+	   | 38 :: tail ->
              %% '&'
 	     {
 	      %% parse_Reference assumes we're just past the ampersand.
 	      (ref, tail) <- parse_Reference tail;
 	      probe (tail,
-		     [], 
+		     [],
 		     cons (Ref ref,
-			   rev_items), 
+			   rev_items),
 		     qchar)
 	     }
 
-	   | char :: tail -> 
+	   | char :: tail ->
 	     if char = qchar then
 	       return ({qchar = qchar,
 			     items = (case rev_char_data of
 					| [] -> rev rev_items
-					| _ -> 
+					| _ ->
 					  rev (cons (NonRef (rev rev_char_data),
 						     rev_items)))},
 		       tail)
 	     else
 	       probe (tail,
-		      cons (char, rev_char_data), 
+		      cons (char, rev_char_data),
 		      rev_items,
 		      qchar)
 
 	   | _ ->
 	     hard_error {kind        = EOF,
-			 requirement = "An attribute value was expected.", 
+			 requirement = "An attribute value was expected.",
  			 start       = start,
 			 tail        = tail,
 			 peek        = 10,
-			 we_expected = [("[" ^ (string [qchar]) ^ "] ", 
+			 we_expected = [("[" ^ (string [qchar]) ^ "] ",
 					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
 			 but         = "EOF occurred first",
 			 so_we       = "fail immediately"}
     in
       case start of
 
-	| 34 :: tail -> 
+	| 34 :: tail ->
 	  %% double-quote
 	  probe (tail, [], [], 34)
 
-	| 39 :: tail -> 
+	| 39 :: tail ->
 	  %% apostrophe
           probe (tail, [], [], 39)
 
         | _ ->
 	  hard_error {kind        = Syntax,
-		 requirement = "An attribute value was expected.", 
+		 requirement = "An attribute value was expected.",
 		 start       = start,
 		 tail        = start,
 		 peek        = 10,
@@ -208,30 +208,30 @@ XML qualifying spec
 		 so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K38]  SystemuLiteral  ::=  QuotedText
+  %%  [K37]  SystemLiteral   ::=  QuotedText
   %% -------------------------------------------------------------------------------------------------
 
   def parse_SystemLiteral (start : UChars) : Required SystemLiteral =
     parse_QuotedText start
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K39]  PubidLiteral    ::=  QuotedText
-  %%                                                             [KWFC: Pubid Literal]   
+  %%  [K38]  PubidLiteral    ::=  QuotedText
+  %%                                                             [KWFC: Pubid Literal]
   %% -------------------------------------------------------------------------------------------------
-  %%  [KWFC: Pubid Literal]                         [K39] *[12] -- well_formed_pubid_literal?
+  %%  [KWFC: Pubid Literal]                         [K38] *[12] -- well_formed_pubid_literal?
   %%
   %%    All chars in a pubid literal are PubidChar's :
-  %%    PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
+  %%    PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
   %% -------------------------------------------------------------------------------------------------
 
   def parse_PubidLiteral (start : UChars) : Required PubidLiteral =
-    let 
+    let
        def find_bad_char tail =
 	 case tail of
 
 	   | [] -> None
 
-	   | char :: tail -> 
+	   | char :: tail ->
 	     if pubid_char? char then
 	       find_bad_char tail
 	     else
@@ -251,22 +251,22 @@ XML qualifying spec
 		  start       = start,
 		  tail        = tail,
 		  peek        = 10,
-		  we_expected = [("([#x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%])*", "pubid chars")], 
+		  we_expected = [("([#x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%])*", "pubid chars")],
 		  but         = (describe_char bad_char) ^ " was seen",
 		  so_we       = "pretend that is a pubid character"});
 	  return (qtext, tail)
 	 }}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K40]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%  [K39]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'")
   %% -------------------------------------------------------------------------------------------------
 
   def parse_QuotedText (start : UChars) : Required QuotedText =
-    let 
+    let
        def probe (tail, rev_text, qchar) =
 	 case tail of
 
-	   | char :: tail -> 
+	   | char :: tail ->
 	     if char = qchar then
 	       return ({qchar = qchar,
 			text  = rev rev_text},
@@ -282,18 +282,18 @@ XML qualifying spec
 			 start       = start,
 			 tail        = tail,
 			 peek        = 10,
-			 we_expected = [("[" ^ (string [qchar]) ^ "] ", 
+			 we_expected = [("[" ^ (string [qchar]) ^ "] ",
 					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
 			 but         = "EOF occurred first",
 			 so_we       = "fail immediately"}
     in
       case start of
 
-	| 34 :: tail -> 
-          %% double-quote				 
-          probe (tail, [], 34) 
-				   
-	| 39 :: tail -> 
+	| 34 :: tail ->
+          %% double-quote
+          probe (tail, [], 34)
+
+	| 39 :: tail ->
           %% apostrophe
 	  probe (tail, [], 39)
 

@@ -10,7 +10,7 @@ XML qualifying spec
 	 let digit = rem (n, 16) in
 	 let n = div(n, 16) in
 	 if n = 0 then
-	   implode (map (fn digit -> 
+	   implode (map (fn digit ->
 			 chr (if digit <= 9 then
 				48 + digit
 			      else

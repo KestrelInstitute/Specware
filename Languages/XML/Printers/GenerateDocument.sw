@@ -1,5 +1,5 @@
 
-XML qualifying spec 
+XML qualifying spec
 
   import /Languages/MetaSlang/Specs/Elaborate/SortDescriptor
   import ../XML_Sig
@@ -15,11 +15,11 @@ XML qualifying spec
   def repeat_char (char : UChar, n : Nat) : UChars =
     if n <= 0 then
       []
-    else 
+    else
       cons (char, repeat_char (char, n - 1))
 
-  def fa (X) generate_Document (datum : X, 
-				table as (main_entry as (main_sort, _) :: _) : SortExpansionTable) 
+  def fa (X) generate_Document (datum : X,
+				table as (main_entry as (main_sort, _) :: _) : SortExpansionTable)
     : Document =
     let Base ((qualifier, main_id), _) = main_sort in
     let dtd = {internal = None,
@@ -29,7 +29,7 @@ XML qualifying spec
     make_Document (Some standard_XMLDecl,                     % first <?xml version="1.0"?>
 		   [],
 		   dtd,
-		   [WhiteSpace [UChar.newline, UChar.newline]],   
+		   [WhiteSpace [UChar.newline, UChar.newline]],
 		   generate_Element (main_id, datum, main_sort, table, 2, 0, true),
 		   [])
 
@@ -54,18 +54,18 @@ XML qualifying spec
     else if qualifier = "<unqualified>" then
       id
     else
-      qualifier ^ "." ^ id	   
+      qualifier ^ "." ^ id
 
   def pp_sort_descriptor_for_xml_attribute (sd : SortDescriptor) : UString =
-    let 
-       def aux sd = 
+    let
+       def aux sd =
 	 case sd of
 	   | Base (qid, args) ->
 	     (case args of
 		| []            -> (print_qid qid)
 		| [arg]         -> (print_qid qid) ^ " " ^ (aux arg)
-		| first :: rest -> ((print_qid qid) ^ " (" ^ 
-				    (foldl (fn (arg, result) -> result ^ ", " ^ (aux arg)) 
+		| first :: rest -> ((print_qid qid) ^ " (" ^
+				    (foldl (fn (arg, result) -> result ^ ", " ^ (aux arg))
 				           (aux first)
 					   rest) ^
 				    ")"))
@@ -133,18 +133,18 @@ XML qualifying spec
           def aux (datum_elements, sd_fields, new_items) =
 	    case (datum_elements, sd_fields) of
 
-	      | ([], []) -> 
+	      | ([], []) ->
 	        Some {items   = rev new_items,
 		      trailer = Some (indentation_chardata (vspacing, indent - 2))}
 
 	      | (datum_element :: datum_elements, (sd_field_name, sd_field_pattern) :: sd_fields) ->
 	         aux (datum_elements,
-		      sd_fields, 
+		      sd_fields,
 		      cons ((Some (indentation_chardata (vspacing, indent)),
-			     Element (generate_Element (sd_field_name, 
-							datum_element, 
-							sd_field_pattern, 
-							table, 
+			     Element (generate_Element (sd_field_name,
+							datum_element,
+							sd_field_pattern,
+							table,
 							vspacing,
 							indent,
 							false))),
@@ -159,20 +159,20 @@ XML qualifying spec
 	  | None -> (toScreen ("Should never happen!"); None)
 	  | Some (sd_constructor_name, possible_sd_sub_pattern) ->
 	    case possible_sd_sub_pattern of
-	      | None -> 
+	      | None ->
 	        Some {items = [(Some (indentation_chardata (1 (* vspacing*), indent)),
 				Element (Empty (make_EmptyElemTag (ustring constructor_name, [], []))))],
 		      trailer = Some (indentation_chardata (1 (* vspacing *), indent - 2))}
 	      | Some sd_sub_pattern ->
 	        case sd_options of
-		  | [("None", _), ("Some", _)]  -> 
+		  | [("None", _), ("Some", _)]  ->
 		    generate_content (sub_datum,
 				      sd,
 				      expand_SortDescriptor (sd_sub_pattern, table),
 				      table,
 				      1, % vspacing,
 				      indent)
-		  | [("Some", _), ("None", _)]-> 
+		  | [("Some", _), ("None", _)]->
 		    generate_content (sub_datum,
 				      sd,
 				      expand_SortDescriptor (sd_sub_pattern, table),
@@ -189,7 +189,7 @@ XML qualifying spec
 							       indent,
 							       false)))],
 			  trailer = Some (indentation_chardata (1 (* vspacing *), indent - 2))})
-	   
+
       | Base (qid, args) ->
 	(case qid of
 	  | ("String",  "String") ->
@@ -236,7 +236,7 @@ XML qualifying spec
 	    (let [sub_sd] = args in
 	     let (constructor_name, sub_datum) = Magic.magicConstructorNameAndValue datum in
 	     case constructor_name of
-	       | "None" -> 
+	       | "None" ->
 	          None
 	       | _ ->
 	         generate_content (sub_datum,
@@ -270,26 +270,26 @@ XML qualifying spec
 	let (constructor_name, sub_datum) = Magic.magicConstructorNameAndValue datum in
 	let possible_sd_entry = find (fn (x,_) -> constructor_name = x) sd_options in
         (case possible_sd_entry of
-	  | None -> (toScreen ("Should never happen!"); 
+	  | None -> (toScreen ("Should never happen!");
 		     (Some (indentation_chardata (vspacing, indent)),
-		      Element (Empty (make_EmptyElemTag (ustring constructor_name, 
-							 [], 
+		      Element (Empty (make_EmptyElemTag (ustring constructor_name,
+							 [],
 							 [])))))
 	  | Some (sd_constructor_name, possible_sd_sub_pattern) ->
 	    case possible_sd_sub_pattern of
-	      | None -> 
+	      | None ->
 	        (Some (indentation_chardata (vspacing, indent)),
 		 Element (Empty (make_EmptyElemTag (ustring constructor_name, [], []))))
 	      | Some sd_sub_pattern ->
 	        case sd_options of
-		  | [("None", _), ("Some", _)]  -> 
+		  | [("None", _), ("Some", _)]  ->
 		    generate_Content_Item (sub_datum,
 					   sd,
 					   expand_SortDescriptor (sd_sub_pattern, table),
 					   table,
 					   1, % vspacing,
 					   indent)
-		  | [("Some", _), ("None", _)]-> 
+		  | [("Some", _), ("None", _)]->
 		    generate_Content_Item (sub_datum,
 					   sd,
 					   expand_SortDescriptor (sd_sub_pattern, table),
@@ -332,7 +332,7 @@ XML qualifying spec
 	    (let [sub_sd] = args in
 	     let (constructor_name, sub_datum) = Magic.magicConstructorNameAndValue datum in
 	     case constructor_name of
-	       | "None" -> 
+	       | "None" ->
 	         (Some (indentation_chardata (vspacing, indent)),
 		  Element (Empty (make_EmptyElemTag (ustring constructor_name, [], []))))
 	       | _ ->
@@ -340,28 +340,26 @@ XML qualifying spec
 					sd,
 					expand_SortDescriptor (sub_sd, table),
 					table,
-					vspacing, 
+					vspacing,
 					indent))
 
 	  | qid ->
-	    indent_text_item (vspacing, 
-			      indent, 
+	    indent_text_item (vspacing,
+			      indent,
 			      ustring ("?? Base: " ^ (print_qid qid) ^  " ?? ")))
 
       | _ ->
-	indent_text_item (vspacing, 
-			  indent, 
+	indent_text_item (vspacing,
+			  indent,
 			  ustring ("?? unrecognized type  ?? "))
-	
-
 
   def indent_ustring (ustr : UString) : Option Content =
     Some {items   = [],
-	  trailer = Some ((indentation_chardata (0, 1)) ^ 
-			  ustr ^ 
+	  trailer = Some ((indentation_chardata (0, 1)) ^
+			  ustr ^
 			  (indentation_chardata (0, 1)))}
 
-  def indent_text_item (vspacing : Nat, indent : Nat, ustr : UString) 
+  def indent_text_item (vspacing : Nat, indent : Nat, ustr : UString)
     : Option CharData * Content_Item =
     (Some ((indentation_chardata (vspacing, indent)) ^ ustr ^ [32]),
      Element (Empty (make_EmptyElemTag (UString.colon, [], []))))

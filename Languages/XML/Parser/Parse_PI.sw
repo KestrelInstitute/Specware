@@ -7,20 +7,20 @@ XML qualifying spec
   %%%          PI                                                                                  %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  [Definition: Processing instructions (PIs) allow documents to contain instructions for 
+  %%  [Definition: Processing instructions (PIs) allow documents to contain instructions for
   %%   applications.]
   %%
-  %%  *[16]  PI        ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>' 
+  %%  *[16]  PI        ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
   %%    ==>
-  %%  [K31]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
-  %%  [K32]  PIValue   ::= Char* - (Char* '?>' Char*)
+  %%  [K30]  PI        ::= '<?' PITarget (S PIValue)? '?>'
+  %%  [K31]  PIValue   ::= Char* - (Char* '?>' Char*)
   %%
   %%   [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
-  %% 
+  %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K31]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
+  %%  [K30]  PI        ::= '<?' PITarget (S PIValue)? '?>'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_PI (start : UChars) : Required PI =
@@ -36,7 +36,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %%   [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
   %% -------------------------------------------------------------------------------------------------
-     
+
   def parse_PITarget (start : UChars) : Required PITarget =
     {
      (target, tail) <- parse_NmToken start;
@@ -46,19 +46,19 @@ XML qualifying spec
 	      start       = start,
 	      tail        = tail,
 	      peek        = 10,
-	      we_expected = [("Name - 'xml' variants", "legal PI target name")], 
+	      we_expected = [("Name - 'xml' variants", "legal PI target name")],
 	      but         = "we saw the illegal name '" ^ (string target) ^ "' instead",
 	      so_we       = "pretend '" ^ (string target) ^ "' is an acceptable name"}));
      return (target, tail)
      }
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K31]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
-  %%  [K32]  PIValue   ::= Char* - (Char* '?>' Char*)
+  %%  [K30]  PI        ::= '<?' PITarget (S PIValue)? '?>'
+  %%  [K31]  PIValue   ::= Char* - (Char* '?>' Char*)
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Optional_WhiteSpace_and_PIValue (start : UChars) : Possible (WhiteSpace * PIValue) =
-    let 
+    let
       def probe (tail, rev_result) =
 	case tail of
 
@@ -85,7 +85,7 @@ XML qualifying spec
        (pi_value,   tail) <- probe (tail, []);
        case (whitespace, pi_value) of
 
-	 | ([], []) -> 
+	 | ([], []) ->
 	   return (None, start)
 
 	 | ([], _)  ->

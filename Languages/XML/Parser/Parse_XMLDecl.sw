@@ -5,10 +5,10 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          XMLDecl / TextDecl                                                                  %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %% 
-  %%  [Definition: XML documents should begin with an XML declaration which specifies the version 
-  %%   of XML being used.] 
-  %%   
+  %%
+  %%  [Definition: XML documents should begin with an XML declaration which specifies the version
+  %%   of XML being used.]
+  %%
   %%  *[23]  XMLDecl       ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%    ==>
   %%   [K3]  XMLDecl       ::=  ElementTag
@@ -27,16 +27,16 @@ XML qualifying spec
   %%  *[25]  Eq            ::=  S? '=' S?
   %%
   %%  *[26]  VersionNum    ::=  ([a-zA-Z0-9_.:] | '-')+
-  %% 
-  %%  *[32]  SDDecl        ::=  S 'standalone' Eq (("'" ('yes' | 'no') "'") | ('"' ('yes' | 'no') '"'))
-  %% 
-  %%                                                             [VC: Standalone Document Declaration]
-  %% 
-  %%  *[80]  EncodingDecl  ::=  S 'encoding' Eq ('"' EncName '"' | "'" EncName "'" ) 
   %%
-  %%  *[81]  EncName       ::=  [A-Za-z] ([A-Za-z0-9._] | '-')* 
+  %%  *[32]  SDDecl        ::=  S 'standalone' Eq (("'" ('yes' | 'no') "'") | ('"' ('yes' | 'no') '"'))
+  %%
+  %%                                                             [VC: Standalone Document Declaration]
+  %%
+  %%  *[80]  EncodingDecl  ::=  S 'encoding' Eq ('"' EncName '"' | "'" EncName "'" )
+  %%
+  %%  *[81]  EncName       ::=  [A-Za-z] ([A-Za-z0-9._] | '-')*
   %%                            /* Encoding name contains only Latin characters */
-  %% 
+  %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
@@ -47,8 +47,8 @@ XML qualifying spec
   %%
   %%    XMLDecl  ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%
-  %%    An XMLDecl is just a PI (i.e., tag starting with '<?' and ending with '?>') with target 'xml', 
-  %%    but having said that, the PI value for an XMLDecl (which is otherwise unstructured in a generic 
+  %%    An XMLDecl is just a PI (i.e., tag starting with '<?' and ending with '?>') with target 'xml',
+  %%    but having said that, the PI value for an XMLDecl (which is otherwise unstructured in a generic
   %%    PI) is structured as an ElementTag using the syntax for attributes, so it's more convenient
   %%    to treat XMLDecl as a special case of ElementTag (as opposed to being a special case of PI).
   %% -------------------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ XML qualifying spec
     {
      (possible_tag, tail) <- parse_Option_ElementTag start;
      case possible_tag of
-       | None -> 
+       | None ->
          return (None, start)
        | Some tag ->
 	 %% [KWFC: XML Decl]
@@ -69,12 +69,12 @@ XML qualifying spec
 	   %% Tag starts with '<?xml', but isn't a legal xml decl.  Find out why.
 	   {
 	    (saw_version?, _, _) <-
-	    (foldM (fn (saw_version?, saw_encoding?, saw_standalone?) -> fn attribute -> 
+	    (foldM (fn (saw_version?, saw_encoding?, saw_standalone?) -> fn attribute ->
 		    case attribute.name of
 	              | 118 :: 101 :: 114 :: 115 :: 105 :: 111 :: 110 :: [] ->
 		        %% 'version'
 		        {
-			 (when saw_version? 
+			 (when saw_version?
 			  (error {kind        = WFC,
 				  requirement = "There should be exactly one version attribute in the 'xml' decl.",
 				  start       = start,
@@ -83,7 +83,7 @@ XML qualifying spec
 				  we_expected = [],
 				  but         = "multiple version attributes were seen",
 				  so_we       = "leave duplicate version attributes in the 'xml' decl"}));
-			 (when saw_encoding? 
+			 (when saw_encoding?
 			  (error {kind        = WFC,
 				  requirement = "The version attribute must come first in the 'xml' decl.",
 				  start       = start,
@@ -92,7 +92,7 @@ XML qualifying spec
 				  we_expected = [],
 				  but         = "a version attribute follows an encoding attribute in the 'xml' decl",
 				  so_we       = "leave the mis-ordered attributes in the 'xml' decl"}));
-			 (when saw_standalone? 
+			 (when saw_standalone?
 			  (error {kind        = WFC,
 				  requirement = "The version attribute must come first in an 'xml' decl.",
 				  start       = start,
@@ -106,7 +106,7 @@ XML qualifying spec
 		      | 101 :: 110 :: 99 :: 111 :: 100 :: 105 :: 110 :: 103 :: [] ->
 			%% 'encoding'
 		        {
-			 (when saw_encoding? 
+			 (when saw_encoding?
 			  (error {kind        = WFC,
 				  requirement = "At most one encoding attributes is allowed in the 'xml' decl.",
 				  start       = start,
@@ -115,7 +115,7 @@ XML qualifying spec
 				  we_expected = [],
 				  but         = "multiple encoding attributes were seen in the 'xml' decl",
 				  so_we       = "leave duplicate encoding attributes in the 'xml' decl"}));
-			 (when saw_standalone? 
+			 (when saw_standalone?
 			  (error {kind        = WFC,
 				  requirement = "Any encoding attribute must preceed a standalone attribute in the 'xml' decl.",
 				  start       = start,
@@ -130,7 +130,7 @@ XML qualifying spec
 		      | 115 :: 116 :: 97 :: 110 :: 100 :: 97 :: 108 :: 111 :: 110 :: 101 :: [] ->
 			%% 'standalone'
 			{
-			 (when saw_standalone? 
+			 (when saw_standalone?
 			  (error {kind        = WFC,
 				  requirement = "At most one standalone attributes is allowed in the 'xml' decl.",
 				  start       = start,
@@ -169,7 +169,7 @@ XML qualifying spec
 		   we_expected = [("version='...",  "version attribute")],
 		   but         = "no version attribute was seen in the 'xml' decl",
 		   so_we       = "proceed with the version attribute missing"}));
-	  
+
 	  (when (~ (tag.postfix = ustring "?"))
 	   (error {kind        = Syntax,
 		   requirement = "The 'xml' decl should end with '?>'.",
@@ -188,18 +188,18 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %%  [KWFC: Text Decl]                             [K4] *[77]  -- well_formed_text_decl?
   %%
-  %%    TextDecl  ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'         
+  %%    TextDecl  ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_TextDecl (start : UChars) : Possible TextDecl =
     {
      (possible_tag, tail) <- parse_Option_ElementTag start;
      case possible_tag of
-       | None -> 
+       | None ->
          return (None, start)
        | Some tag ->
 	 %% [KWFC: Text Decl]
-	 if well_formed_text_decl? tag then 
+	 if well_formed_text_decl? tag then
 	   return (Some tag, tail)
 	 else if (~ ((tag.prefix = (ustring "?")) & (tag.name = (ustring "xml")))) then
 	   return (None, start)
@@ -207,12 +207,12 @@ XML qualifying spec
 	   %% Tag starts with '<?xml', but isn't a legal text decl.  Find out why.
 	   {
 	    (saw_version?, saw_encoding?) <-
-	    (foldM (fn (saw_version?, saw_encoding?) -> fn attribute -> 
+	    (foldM (fn (saw_version?, saw_encoding?) -> fn attribute ->
 		    case attribute.name of
 		      | 118 :: 101 :: 114 :: 115 :: 105 :: 111 :: 110 :: [] ->
 		        %% 'version'
 		        {
-			 (when saw_version? 
+			 (when saw_version?
 			  (error {kind        = WFC,
 				  requirement = "There should be at most one version attribute in a text decl (external 'xml' decl).",
 				  start       = start,
@@ -221,7 +221,7 @@ XML qualifying spec
 				  we_expected = [],
 				  but         = "multiple version attributes were seen",
 				  so_we       = "leave duplicate version attributes in the text decl"}));
-			 (when saw_encoding? 
+			 (when saw_encoding?
 			  (error {kind        = WFC,
 				  requirement = "The version attribute (if any) must come first in a text decl (external 'xml' decl).",
 				  start       = start,
@@ -235,7 +235,7 @@ XML qualifying spec
 		      | 101 :: 110 :: 99 :: 111 :: 100 :: 105 :: 110 :: 103 :: [] ->
 			%% 'encoding'
 			{
-			 (when saw_encoding? 
+			 (when saw_encoding?
 			  (error {kind        = WFC,
 				  requirement = "At most one encoding attributes is allowed in a text decl (external 'xml' decl).",
 				  start       = start,

@@ -9,22 +9,22 @@ XML qualifying spec
   %%%          InternalDTD                                                                         %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  [Definition: The XML document type declaration contains or points to markup declarations that 
-  %%   provide a grammar for a class of documents. This grammar is known as a document type 
-  %%   definition, or DTD. The document type declaration can point to an external subset (a special 
-  %%   kind of external entity) containing markup declarations, or can contain the markup declarations 
-  %%   directly in an internal subset, or can do both. The DTD for a document consists of both subsets 
+  %%  [Definition: The XML document type declaration contains or points to markup declarations that
+  %%   provide a grammar for a class of documents. This grammar is known as a document type
+  %%   definition, or DTD. The document type declaration can point to an external subset (a special
+  %%   kind of external entity) containing markup declarations, or can contain the markup declarations
+  %%   directly in an internal subset, or can do both. The DTD for a document consists of both subsets
   %%   taken together.]
   %%
-  %%  [Definition: A markup declaration is an element type declaration, an attribute-list declaration, 
-  %%   an entity declaration, or a notation declaration.] 
+  %%  [Definition: A markup declaration is an element type declaration, an attribute-list declaration,
+  %%   an entity declaration, or a notation declaration.]
   %%
-  %%  These declarations may be contained in whole or in part within parameter entities, as 
-  %%  described in the well-formedness and validity constraints below. 
+  %%  These declarations may be contained in whole or in part within parameter entities, as
+  %%  described in the well-formedness and validity constraints below.
   %%
   %%  The internal subset has the following physical form:
   %%
-  %%  '<!DOCTYPE' S Name (S ExternalID)? S? DTD_Decls? '>' 
+  %%  '<!DOCTYPE' S Name (S ExternalID)? S? DTD_Decls? '>'
   %%
   %%  It may contain the following atomic markup decls:
   %%
@@ -41,40 +41,40 @@ XML qualifying spec
   %%   space, tab, cr, lf      -- Whitespace
   %%
   %%
-  %%  *[28]  doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
+  %%  *[28]  doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>'
   %%
   %%                                                            *[WFC: External Subset]
-  %%                                                            *[VC:  Root Element Type] 
+  %%                                                            *[VC:  Root Element Type]
   %%
-  %% *[28a]  DeclSep        ::=  PEReference | S    
+  %% *[28a]  DeclSep        ::=  PEReference | S
   %%                                                            *[WFC: PE Between Declarations]
   %%
   %%
-  %%  *[29]  markupdecl     ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
+  %%  *[29]  markupdecl     ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment
   %%
   %%                                                            *[WFC: PEs in Internal Subset]
-  %%                                                            *[VC:  Proper Declaration/PE Nesting] 
+  %%                                                            *[VC:  Proper Declaration/PE Nesting]
   %%
   %%    ==>
   %%
-  %%  [K11]  doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>' 
+  %%  [K11]  doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>'
   %%
   %%                                                             [KWFC: External Subset]
   %%                                                             [WFC:  PE Between Declarations]
   %%                                                             [WFC:  PEs in Internal Subset]
-  %%                                                             [VC:  Root Element Type] 
-  %%                                                             [VC:  Proper Declaration/PE Nesting] 
+  %%                                                             [VC:  Root Element Type]
+  %%                                                             [VC:  Proper Declaration/PE Nesting]
   %%
   %%  [K12]  InternalDecls  ::=  '[' InternalDecl* ']' S?
   %%  [K13]  InternalDecl   ::=  Decl
   %%                                                             [KWFC: Internal Decl]
   %%
-  %%  [K14]  Decl           ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect 
+  %%  [K14]  Decl           ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K11]  doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>' 
+  %%  [K11]  doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>'
   %%
   %%                                                             [KWFC: External Subset]
   %%                                                             [WFC:  PE Between Declarations]
@@ -155,7 +155,6 @@ XML qualifying spec
 			     we_expected  = [("'>'", "to terminate DTD")],
 			     but          = "EOF occurred first",
 			     so_we        = "fail immediately"}
-		 
 		}
 	  | _ ->
 	    {
@@ -204,7 +203,7 @@ XML qualifying spec
 			     so_we       = "fail immediately"}
 		}}
      | _ -> return (None, start)
-       
+
   %% -------------------------------------------------------------------------------------------------
   %%  [K12]  InternalDecls    ::=  '[' InternalDecl* ']' S?
   %% -------------------------------------------------------------------------------------------------
@@ -215,18 +214,18 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %%  [KWFC: Internal Decl]                         [K14] *[28] *[28a] *[29] -- internal_decl?
   %%
-  %%    InternalDecl ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S 
+  %%    InternalDecl ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S
   %% -------------------------------------------------------------------------------------------------
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K14]  Decl             ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect 
+  %%  [K14]  Decl             ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect
   %%
   %%  InternalDecl is a proper subset of Decl.
   %%  ExternalDecl equals Decl.
   %%
   %%  We unify them for parsing purposes to make handling of plausible
-  %%  errors more robust.  (In particular, we anticipate that manual 
-  %%  movement of decls from the external subset to the internal subset 
+  %%  errors more robust.  (In particular, we anticipate that manual
+  %%  movement of decls from the external subset to the internal subset
   %%  could introduce errors, as could mistakes made by document authors
   %%  confused by the similarity of the two subsets.)
   %% -------------------------------------------------------------------------------------------------
@@ -239,74 +238,74 @@ XML qualifying spec
     %%
     case start of
 
-      | 91 :: tail ->                    
+      | 91 :: tail ->
         %% '['
-        (let 
+        (let
             def probe (tail, rev_markups) =
 	      case tail of
 
-		| 93 :: tail -> 
+		| 93 :: tail ->
 		  %% ']'
 		  {
 		   (w1, tail) <- parse_WhiteSpace tail;
-		   return (Some {decls = rev rev_markups, 
+		   return (Some {decls = rev rev_markups,
 				 w1    = w1},
 			   tail)
 		   }
 
-                %% [29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
+                %% [29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment
 
-		| 60 :: 33 :: 69 :: 76 :: 69 :: 77 :: 69 :: 78 :: 84 :: tail -> 
+		| 60 :: 33 :: 69 :: 76 :: 69 :: 77 :: 69 :: 78 :: 84 :: tail ->
                   %% '<!ELEMENT'
 		  {
 		   (decl, tail) <- parse_ElementDecl tail;
 		   probe (tail, cons (Element decl, rev_markups))
 		  }
-		  
-		| 60 :: 33 :: 65 :: 84 :: 84 :: 76 :: 73 :: 83 :: 84 :: tail -> 
-                  %% '<!ATTLIST' 
+
+		| 60 :: 33 :: 65 :: 84 :: 84 :: 76 :: 73 :: 83 :: 84 :: tail ->
+                  %% '<!ATTLIST'
 		  {
 		   (decl, tail) <- parse_AttlistDecl tail;
 		   probe (tail, cons (Attributes decl, rev_markups))
 		  }
-		  
-		| 60 :: 33 :: 69 :: 78 :: 84 :: 73 :: 84 :: 89 :: tail -> 
+
+		| 60 :: 33 :: 69 :: 78 :: 84 :: 73 :: 84 :: 89 :: tail ->
                   %% '<!ENTITY'
 		  {
 		   (decl, tail) <- parse_EntityDecl (tail, false);
 		   probe (tail, cons (Entity decl, rev_markups))
 		  }
-		  
-		| 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 :: tail -> 
+
+		| 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 :: tail ->
                   %% '<!NOTATATION'
 		  {
 		   (decl, tail) <- parse_NotationDecl tail;
 		   probe (tail, cons (Notation decl, rev_markups))
 		  }
-		  
+
 		| 60 :: 63 :: tail ->
                   %% '<?'
 		  {
 		   (decl, tail) <- parse_PI tail;
 		   probe (tail, cons (PI decl, rev_markups))
 		  }
-		  
+
 		| 60 :: 45 :: 45 :: tail ->
                   %% '<--'
 		  {
 		   (comment, tail) <- parse_Comment tail;
 		   probe (tail, cons (Comment comment, rev_markups))
 		  }
-		  
-                %% [28a] DeclSep      ::=  PEReference | S    
+
+                %% [28a] DeclSep      ::=  PEReference | S
 
 		| 37 :: tail ->
-                  %% '%' 
+                  %% '%'
 		  {
 		   (ref, tail) <- parse_PEReference tail;
 		   probe (tail, cons (PEReference ref, rev_markups))
 		  }
-		  
+
 		| char :: _ ->
 		  if white_char? char then
 		    {
@@ -321,8 +320,8 @@ XML qualifying spec
 				peek        = 10,
 				we_expected = [("'<!ELEMENT'",            "element decl"),
 					       ("'<!ATTLIST'",            "attribute list decl"),
-					       ("'<!ENTITY'",             "entity decl"),					       
-					       ("'<!NOTATION'",           "notation decl"),					       
+					       ("'<!ENTITY'",             "entity decl"),
+					       ("'<!NOTATION'",           "notation decl"),
 					       ("'<--'",                  "comment"),
 					       ("'%'",                    "PE Reference"),
 					       ("( #9 | #A | #D | #20 )", "whitespace"),
@@ -338,9 +337,9 @@ XML qualifying spec
 				peek        = 0,
 				we_expected = [("'<!ELEMENT'",            "element decl"),
 					       ("'<!ATTLIST'",            "attribute list decl"),
-					       ("'<!ENTITY'",             "entity decl"),					       
-					       ("'<!NOTATION'",           "notation decl"),					       
-					       ("'<--'",                  "comment"),
+					       ("'<!ENTITY'",             "entity decl"),
+					       ("'<!NOTATION'",           "notation decl"),
+ 					       ("'<--'",                  "comment"),
 					       ("'%'",                    "PE Reference"),
 					       ("( #9 | #A | #D | #20 )", "whitespace"),
 					       ("']'",                    "end of markups in DTD")],
@@ -349,7 +348,7 @@ XML qualifying spec
 
 	 in
 	   probe (tail, []))
-	
+
       | _ -> return (None, start)
 
   %% ------------------------------------------------------------------------------------------------

@@ -6,7 +6,7 @@ XML qualifying spec
   %%%          DTD AttListDecl                                                                     %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  [Definition: Attribute-list declarations specify the name, data type, and default value 
+  %%  [Definition: Attribute-list declarations specify the name, data type, and default value
   %%   (if any) of each attribute associated with a given element type:]
   %%
   %%   [52]  AttlistDecl     ::=  '<!ATTLIST' S Name AttDef* S? '>'
@@ -14,7 +14,7 @@ XML qualifying spec
   %%   [53]  AttDef          ::=  S Name S AttType S DefaultDecl
   %%                                                             [VC: ID Attribute Default] (implicit)
   %%
-  %%  *[54]  AttType         ::=  StringType | TokenizedType | EnumeratedType 
+  %%  *[54]  AttType         ::=  StringType | TokenizedType | EnumeratedType
   %%  *[55]  StringType      ::=  'CDATA'
   %%  *[56]  TokenizedType   ::=  'ID'                          *[VC: ID]
   %%                                                            *[VC: One ID per Element Type]
@@ -26,10 +26,10 @@ XML qualifying spec
   %%                            | 'NMTOKEN'                     *[VC: Name Token]
   %%                            | 'NMTOKENS'                    *[VC: Name Token]
   %%
-  %%  [Definition: Enumerated attributes can take one of a list of values provided in the 
-  %%   declaration]. 
+  %%  [Definition: Enumerated attributes can take one of a list of values provided in the
+  %%   declaration].
   %%
-  %%  *[57]  EnumeratedType  ::=  NotationType | Enumeration 
+  %%  *[57]  EnumeratedType  ::=  NotationType | Enumeration
   %%
   %%    ==>
   %%
@@ -43,32 +43,32 @@ XML qualifying spec
   %%                            | 'ENTITIES'                     [VC: Entity Name]
   %%                            | 'NMTOKEN'                      [VC: Name Token]
   %%                            | 'NMTOKENS'                     [VC: Name Token]
-  %%                            | NotationType 
-  %%                            | Enumeration 
+  %%                            | NotationType
+  %%                            | Enumeration
   %%
-  %%   [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
+  %%   [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')'
   %%
-  %%                                                             [VC: Notation Attributes] 
-  %%                                                             [VC: One Notation Per Element Type] 
+  %%                                                             [VC: Notation Attributes]
+  %%                                                             [VC: One Notation Per Element Type]
   %%                                                             [VC: No Notation on Empty Element]
   %%
-  %%   [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')' 
+  %%   [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')'
   %%
   %%                                                             [VC: Enumeration]
   %%
-  %%   [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue) 
+  %%   [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue)
   %%
-  %%                                                             [VC:  Required Attribute] 
+  %%                                                             [VC:  Required Attribute]
   %%                                                             [VC:  Attribute Default Legal]
   %%                                                             [VC:  Fixed Attribute Default]
-  %% 
-  %%  In an attribute declaration, #REQUIRED means that the attribute must always be provided, 
-  %%  #IMPLIED that no default value is provided. 
   %%
-  %%  [Definition: If the declaration is neither #REQUIRED nor #IMPLIED, then the AttValue value 
-  %%   contains the declared default value; the #FIXED keyword states that the attribute must 
-  %%   always have the default value. If a default value is declared, when an XML processor 
-  %%   encounters an omitted attribute, it is to behave as though the attribute were present with 
+  %%  In an attribute declaration, #REQUIRED means that the attribute must always be provided,
+  %%  #IMPLIED that no default value is provided.
+  %%
+  %%  [Definition: If the declaration is neither #REQUIRED nor #IMPLIED, then the AttValue value
+  %%   contains the declared default value; the #FIXED keyword states that the attribute must
+  %%   always have the default value. If a default value is declared, when an XML processor
+  %%   encounters an omitted attribute, it is to behave as though the attribute were present with
   %%   the declared default value.]
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -86,7 +86,7 @@ XML qualifying spec
     {
      (w1,   tail) <- parse_WhiteSpace start;
      (name, tail) <- parse_Name       tail;
-     let 
+     let
        def probe (tail, rev_att_defs) =
 	 {
 	  (possible_att_def, tail) <- parse_AttDef tail;
@@ -111,7 +111,7 @@ XML qualifying spec
 			   start       = start,
 			   tail        = tail,
 			   peek        = 10,
-			   we_expected = [("'>'", "to terminate decl")], 
+			   we_expected = [("'>'", "to terminate decl")],
 			   but         = (describe_char char) ^ " was seen instead",
 			   so_we       = "pretend interpolated '>' was seen"};
 		    return ({w1   = w1,
@@ -126,7 +126,7 @@ XML qualifying spec
 			       start       = start,
 			       tail        = [],
 			       peek        = 0,
-			       we_expected = [("'>'", "to terminate decl")], 
+			       we_expected = [("'>'", "to terminate decl")],
 			       but         = "EOF occurred first",
 			       so_we       = "fail immediately"}
 		   }}
@@ -145,7 +145,7 @@ XML qualifying spec
      case tail of
 
        | 62 :: tail ->
-         %% '>' 
+         %% '>'
          return (None, start)
 
        | _ ->
@@ -178,8 +178,8 @@ XML qualifying spec
   %%                            | 'ENTITIES'                     [VC: Entity Name]
   %%                            | 'NMTOKEN'                      [VC: Name Token]
   %%                            | 'NMTOKENS'                     [VC: Name Token]
-  %%                            | NotationType 
-  %%                            | Enumeration 
+  %%                            | NotationType
+  %%                            | Enumeration
   %% -------------------------------------------------------------------------------------------------
 
   def parse_AttType (start : UChars) : Required AttType =
@@ -210,13 +210,13 @@ XML qualifying spec
         %% open-paren
         parse_Enumeration tail
 
-      | char :: _ -> 
+      | char :: _ ->
 	hard_error {kind        = Syntax,
 		    requirement = "Attribute Type",
 		    start       = start,
 		    tail        = start,
 		    peek        = 10,
-		    we_expected = [("'CDATA'",    "to declare CDATA    attribute"), 
+		    we_expected = [("'CDATA'",    "to declare CDATA    attribute"),
 				   ("'IDREFS'",   "to declare IDREFS   attribute"),
 				   ("'IDREF'",    "to declare IDREF    attribute"),
 				   ("'ID'",       "to declare ID       attribute"),
@@ -228,13 +228,13 @@ XML qualifying spec
 				   ("'('",        "to start enumeration")],
 		    but         = (describe_char char) ^ " was seen instead",
 		    so_we       = "fail immediately"}
-      | _ -> 
+      | _ ->
 	hard_error {kind        = EOF,
 		    requirement = "Attribute Type",
 		    start       = start,
 		    tail        = [],
 		    peek        = 0,
-		    we_expected = [("'CDATA'",    "to declare CDATA    attribute"), 
+		    we_expected = [("'CDATA'",    "to declare CDATA    attribute"),
 				   ("'IDREFS'",   "to declare IDREFS   attribute"),
 				   ("'IDREF'",    "to declare IDREF    attribute"),
 				   ("'ID'",       "to declare ID       attribute"),
@@ -248,28 +248,28 @@ XML qualifying spec
 		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%   [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
+  %%   [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_NotationType (start : UChars) : Required AttType =
     %%
     %% We begin here just past 'NOTATION' in rule 58, looking for:
     %%
-    %%   S '(' S? Name (S? '|' S? Name)* S? ')' 
+    %%   S '(' S? Name (S? '|' S? Name)* S? ')'
     %%
     {
      (w1, tail) <- parse_WhiteSpace start;
      case tail of
        | 40 :: tail ->
-         %% open-paren       
-         %%  S? Name (S? '|' S? Name)* S? ')' 
+         %% open-paren
+         %%  S? Name (S? '|' S? Name)* S? ')'
          {
 	  (w2,    tail) <- parse_WhiteSpace tail;
 	  (first, tail) <- parse_Name       tail;
-	  let 
-	    %%  (S? '|' S? Name)* S? ')' 
+	  let
+	    %%  (S? '|' S? Name)* S? ')'
             def probe (tail, rev_names) =
-	      %% '(' S? Name (S? '|' S? Name)* S? ')' 
+	      %% '(' S? Name (S? '|' S? Name)* S? ')'
 	      {
 	       (w3, tail) <- parse_WhiteSpace tail;
 	       case tail of
@@ -316,7 +316,7 @@ XML qualifying spec
 	  in
 	    probe (tail, [])
 	   }
-       | char :: _ -> 
+       | char :: _ ->
 	   hard_error {kind        = Syntax,
 		       requirement = "NOTATION decl in DTD used '(' to initiate options.",
 		       start       = start,
@@ -325,7 +325,7 @@ XML qualifying spec
 		       we_expected = [("'('", "to begin enumeration")],
 		       but         = (describe_char char) ^ " was seen instead",
 		       so_we       = "fail immediately"}
-       | _ -> 
+       | _ ->
 	   hard_error {kind        = EOF,
 		       requirement = "NOTATION decl in DTD used '(' to initiate options.",
 		       start       = start,
@@ -337,27 +337,27 @@ XML qualifying spec
 	  }
 
   %% -------------------------------------------------------------------------------------------------
-  %%   [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')' 
+  %%   [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Enumeration (start : UChars) : Required AttType =
     %%
     %% We begin here just past '(' in rule 59, looking for:
     %%
-    %%  S? Nmtoken (S? '|' S? Nmtoken)* S? ')' 
+    %%  S? Nmtoken (S? '|' S? Nmtoken)* S? ')'
     %%
     {
      (w1,    tail) <- parse_WhiteSpace start;
      (first, tail) <- parse_Name       tail;
-     let 
+     let
        def probe (tail, rev_names) =
-	 %%  (S? '|' S? Name)* S? ')' 
+	 %%  (S? '|' S? Name)* S? ')'
 	 {
 	  (w2, tail) <- parse_WhiteSpace tail;
 	  case tail of
 
 	    | 124 :: tail ->
-	      %% '|' 
+	      %% '|'
 	      {
 	       (w3,   tail) <- parse_WhiteSpace tail;
 	       (name, tail) <- parse_Name       tail;
@@ -397,9 +397,9 @@ XML qualifying spec
      in
        probe (tail, [])
       }
-	 
+
   %% -------------------------------------------------------------------------------------------------
-  %%   [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue) 
+  %%   [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue)
   %% -------------------------------------------------------------------------------------------------
 
   def parse_DefaultDecl (start : UChars) : Possible DefaultDecl =
@@ -410,11 +410,11 @@ XML qualifying spec
         return (Some Required, tail)
 
       | 35 :: 73 :: 77 :: 80 :: 76 :: 73 :: 69 :: 68 :: tail ->
-        %% '#IMPLIED'  
+        %% '#IMPLIED'
         return (Some Implied, tail)
 
       | 35 :: 70 :: 73 :: 88 :: 69 :: 68 :: tail ->
-	%% '#FIXED' 
+	%% '#FIXED'
 	{
 	 (w1,    tail) <- parse_WhiteSpace tail;
 	 (value, tail) <- parse_AttValue tail;

@@ -23,14 +23,13 @@ XML qualifying spec
      misc2   = misc2,
      element = element,
      misc3   = misc3}
-		     
 
   def standard_XMLDecl : XMLDecl =
     let version_attr = {w1    = UString.space,
 			name  = ustring "version",
 			w2    = [],
 			w3    = [],
-			value = {qchar = UChar.double_quote, 
+			value = {qchar = UChar.double_quote,
 				 items = [NonRef (ustring "1.0")]}}
     in
       {prefix     = UString.question_mark,
@@ -43,8 +42,8 @@ XML qualifying spec
     : Element =
     Empty empty_tag
 
-  def make_Full_Element (stag    : STag, 
-			 content : Content, 
+  def make_Full_Element (stag    : STag,
+			 content : Content,
 			 etag    : ETag)
     : Element =
     Full {stag    = stag,
@@ -61,7 +60,7 @@ XML qualifying spec
   def make_Content_Item_from_Reference (ref     : Reference) : Content_Item =  Reference ref
   def make_Content_Item_from_PI        (pi      : PI)        : Content_Item =  PI        pi
   def make_Content_Item_from_CDSect    (cd_sect : CDSect)    : Content_Item =  CDSect    cd_sect
-  def make_Content_Item_from_Comment   (comment : Comment)   : Content_Item =  Comment   comment 
+  def make_Content_Item_from_Comment   (comment : Comment)   : Content_Item =  Comment   comment
 
   def make_STag (name       : UChars,
 		 attributes : ElementAttributes,
@@ -86,7 +85,7 @@ XML qualifying spec
 			 attributes : ElementAttributes,
 			 whitespace : WhiteSpace)
     : STag =
-    {prefix     = [],  
+    {prefix     = [],
      name       = name,
      attributes = attributes,
      whitespace = whitespace,

@@ -12,8 +12,8 @@ XML qualifying spec
 		context    : Processing_Environment}
 
   def initialState (uchars : UChars) : State =
-    {exceptions = [], 
-     messages   = [], 
+    {exceptions = [],
+     messages   = [],
      utext      = uchars,
      ge_defs    = empty_map,
      pe_defs    = empty_map,
@@ -21,7 +21,7 @@ XML qualifying spec
 
   sort Processing_Environment = {tracing? : Boolean} % could add verbosity, etc.
 
-  def default_processing_environment : Processing_Environment = 
+  def default_processing_environment : Processing_Environment =
     {tracing? = Trace_XML_Parser?}
 
   def Trace_XML_Parser? : Boolean = false
@@ -34,13 +34,12 @@ XML qualifying spec
 			we_expected : List (String * String),
 			but         : String,
 			so_we       : String}
-			
 
-  sort XML_Exception_Type = | EOF         
+  sort XML_Exception_Type = | EOF
                             | Syntax
-                            | WFC         
-                            | VC          
-                            | KC          
+                            | WFC
+                            | VC
+                            | KC
 
   def print_pending_XML_Exceptions (state : State) : String =
     %% maybe be sensitive to context ?
@@ -52,11 +51,10 @@ XML qualifying spec
 	"\n\n"
 
   def print_one_XML_Exception (x : XML_Exception, utext : UChars) : String =
-    
     let (line, column, byte) = location_of (x.start, utext) in
     let location = (Nat.toString line) ^ ":" ^ (Nat.toString column) ^ " (byte " ^ (Nat.toString byte) ^ ")" in
 
-      "\n At " ^ location 
+      "\n At " ^ location
     ^ "\n " ^ (case x.kind of
 		 | EOF       -> "EOF: "
 		 | Syntax    -> "Syntax error: "
@@ -69,18 +67,18 @@ XML qualifying spec
     ^ (case x.we_expected of
 	 | []  -> "\n <we had no expectations?> \n"
 	 | [_] -> "\n we expected: \n"
-	 | _   -> "\n we expected one of: \n") 
+	 | _   -> "\n we expected one of: \n")
     ^ (let max_length = foldl (fn ((s1, _), max_length) -> max (max_length, length s1)) 0 x.we_expected in
-       let 
+       let
          def pad n =
 	   if n >= max_length then
 	     ""
 	   else
 	     " " ^ pad (n + 1)
        in
-	 foldl (fn ((s1, s2), result) -> 
-		result ^ "\n    " ^ s1 ^ (pad (length s1)) ^ " -- " ^ s2) 
-	       "" 
+	 foldl (fn ((s1, s2), result) ->
+		result ^ "\n    " ^ s1 ^ (pad (length s1)) ^ " -- " ^ s2)
+	       ""
 	       x.we_expected)
     ^ "\n\n but " ^ x.but ^ ","
     ^ "\n so we " ^ x.so_we
@@ -97,7 +95,7 @@ XML qualifying spec
 	else
 	  case tail of
 	    | [] -> (line, column, byte)
-	    | char :: tail -> 
+	    | char :: tail ->
 	      case char of
 		| 10 -> aux (tail, line + 1, 0,          byte + 1)
 		| _  -> aux (tail, line,     column + 1, byte + 1)

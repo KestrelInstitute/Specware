@@ -20,23 +20,23 @@ XML qualifying spec
 
   %op monadBind : fa (a,b) (Env a) * (a -> Env b) -> Env b
   def monadBind (f, g) =
-    fn state -> 
+    fn state ->
       case (f state) of
 
-        %% In the normal case, y is the value that would have been returned 
-        %%  by f if it had not been written monadically but rather dealt with 
+        %% In the normal case, y is the value that would have been returned
+        %%  by f if it had not been written monadically but rather dealt with
         %%  exceptions via side effects or a non-local flow of control.
-        %% g accepts that obvious value and produces a new Env (see above), 
-	%%  which is applied to the hidden state created by the monadic f, 
+        %% g accepts that obvious value and produces a new Env (see above),
+	%%  which is applied to the hidden state created by the monadic f,
 	%%  to produce a new value and state...
 	| (Ok        y,      newState) -> (g y newState)
 
         %%
         %% In the exceptional case, f is not returning a normal value,
-        %%  so we stop processing and simply return the exception, along 
+        %%  so we stop processing and simply return the exception, along
 	%%  with its associated state, without ever looking at g.
         %%
-	%% We can't do obvious optimization of | x -> x 
+	%% We can't do obvious optimization of | x -> x
         %%  because lhs is Env a and rhs is Env b
 	| (Exception except, newState) -> (Exception except, newState)
 
@@ -105,7 +105,7 @@ XML qualifying spec
   %% could have the first half of an element, or part of an
   %% attribute value, etc.
    op define_parameter_entity : Name * UChars -> Env ()
-  def define_parameter_entity (name, uchars) = 
+  def define_parameter_entity (name, uchars) =
     fn state ->
      (Ok (),
       {exceptions = state.exceptions,
@@ -125,7 +125,7 @@ XML qualifying spec
   %% production for "content", so we can store the result of
   %% such a parse.
    op define_general_entity : Name * Content -> Env ()
-  def define_general_entity (name, content) = 
+  def define_general_entity (name, content) =
     fn state ->
      (Ok (),
       {exceptions = state.exceptions,
@@ -177,10 +177,10 @@ XML qualifying spec
 	context    = {tracing? = false}})
 
    op trace : String -> Env ()
-  def trace str = 
+  def trace str =
     fn state ->
       let _ = (if state.context.tracing? then
-		 toScreen str 
+		 toScreen str
 	       else
 		 ())
       in
@@ -191,8 +191,8 @@ XML qualifying spec
   %%  delayed processing
 
    op raise_later : XML_Exception -> Env ()
-  def raise_later except = 
-    fn state -> 
+  def raise_later except =
+    fn state ->
      let _ = (if Wizard_Fail_Hard? then
 		fail (System.toString except)
 	      else
@@ -210,7 +210,7 @@ XML qualifying spec
   %%  Exception handling -- do not process following applications
 
    op raise_now : fa (a) XML_Exception -> Env a
-  def raise_now except = fn state -> 
+  def raise_now except = fn state ->
     let _ =
       if  Wizard_Fail_Hard? then
         fail (System.toString except)
@@ -220,7 +220,7 @@ XML qualifying spec
       (Exception except, state)
 
   %% --------------------------------------------------------------------------------
-  
+
   def            error (x : XML_Exception) : Env () = raise_later x
   def fa(a) hard_error (x : XML_Exception) : Env a  = raise_now   x
 

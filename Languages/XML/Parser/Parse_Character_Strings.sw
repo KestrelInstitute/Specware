@@ -11,27 +11,27 @@ XML qualifying spec
   %%
   %%  [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
   %%
-  %%  [Definition: Comments may appear anywhere in a document outside other markup; in addition, 
-  %%   they may appear within the document type declaration at places allowed by the grammar. 
-  %%   They are not part of the document's character data; an XML processor may, but need not, 
-  %%   make it possible for an application to retrieve the text of comments. For compatibility, 
-  %%   the string "--" (double-hyphen) must not occur within comments.] 
+  %%  [Definition: Comments may appear anywhere in a document outside other markup; in addition,
+  %%   they may appear within the document type declaration at places allowed by the grammar.
+  %%   They are not part of the document's character data; an XML processor may, but need not,
+  %%   make it possible for an application to retrieve the text of comments. For compatibility,
+  %%   the string "--" (double-hyphen) must not occur within comments.]
   %%
   %%  Parameter entity references are not recognized within comments.
   %%
   %%  [15]  Comment   ::=  '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
   %%
   %%
-  %%  [Definition: CDATA sections may occur anywhere character data may occur; they are used to 
-  %%   escape blocks of text containing characters which would otherwise be recognized as markup. 
+  %%  [Definition: CDATA sections may occur anywhere character data may occur; they are used to
+  %%   escape blocks of text containing characters which would otherwise be recognized as markup.
   %%   CDATA sections begin with the string "<![CDATA[" and end with the string "]]>":]
   %%
-  %%  [18]  CDSect    ::=  CDStart CData CDEnd 
-  %%  [19]  CDStart   ::=  '<![CDATA[' 
-  %%  [20]  CData     ::=  (Char* - (Char* ']]>' Char*)) 
+  %%  [18]  CDSect    ::=  CDStart CData CDEnd
+  %%  [19]  CDStart   ::=  '<![CDATA['
+  %%  [20]  CData     ::=  (Char* - (Char* ']]>' Char*))
   %%  [21]  CDEnd     ::=  ']]>'
   %%
-  %%  Note that the anonymous rule about characters (see section below on WFC's) implicitly 
+  %%  Note that the anonymous rule about characters (see section below on WFC's) implicitly
   %%  restricts the characters that may appear in CharData to be Char's.
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,17 +64,17 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def parse_CharData (start : UChars) : (Option CharData) * UChars =
-    let 
+    let
        def probe (tail, rev_char_data) =
 	 case tail of
 
-	   | 93 :: 93 :: 62 :: _ -> 
+	   | 93 :: 93 :: 62 :: _ ->
 	     %% ']]>'
-	     (Some (rev rev_char_data), tail)	
+	     (Some (rev rev_char_data), tail)
 
-	   | char :: scout -> 
+	   | char :: scout ->
 	     if char_data_char? char then
-	       %% note that char_data_char? is false for 60 ('<') and 38 ('&') 
+	       %% note that char_data_char? is false for 60 ('<') and 38 ('&')
 	       probe (scout, cons (char, rev_char_data))
 	     else
 	       (Some (rev rev_char_data),
@@ -102,7 +102,7 @@ XML qualifying spec
 
 		| 62 :: tail ->
 		  %% '-->'
-		  return (rev rev_comment, 
+		  return (rev rev_comment,
 			  tail)
 
 		| _ ->
@@ -135,9 +135,9 @@ XML qualifying spec
       probe (start, [])
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [18]  CDSect    ::=  CDStart CData CDEnd 
-  %%  [19]  CDStart   ::=  '<![CDATA[' 
-  %%  [20]  CData     ::=  (Char* - (Char* ']]>' Char*)) 
+  %%  [18]  CDSect    ::=  CDStart CData CDEnd
+  %%  [19]  CDStart   ::=  '<![CDATA['
+  %%  [20]  CData     ::=  (Char* - (Char* ']]>' Char*))
   %%  [21]  CDEnd     ::=  ']]>'
   %% -------------------------------------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ XML qualifying spec
 
 	   | 93 :: 93 :: 62 :: tail ->
 	     %% ']]>'
-	     return ({cdata = rev rev_comment}, 
+	     return ({cdata = rev rev_comment},
 		     tail)
 
 	   | [] ->
