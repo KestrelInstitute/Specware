@@ -35,7 +35,7 @@ def clsDeclsFromSorts(spc) =
    let jcginfo =
    (foldriAQualifierMap (fn (qualifier, id, sort_info, jcginfo) -> 
 			 let newjcginfo = sortToClsDecls(qualifier, id, sort_info, spc, jcginfo) in
-			 concatClsDecls(newjcginfo,jcginfo))
+			 newjcginfo)
     initialJcgInfo spc.sorts)
    in
      concatClsDecls({clsDecls=[primClsDecl],collected=nothingCollected},jcginfo)
@@ -46,20 +46,23 @@ def sortToClsDecls(qualifier, id, sort_info, spc, jcginfo) =
   case sort_info of
     | (_, _, [(_, srtDef)]) -> 
       if baseType?(spc,srtDef)
-	then (warn("Unsupported sort definition: \"sort "^id^" = "^printSort(srtDef)^"\" ignored.");jcginfo)
+	then (issueUnsupportedError(sortAnn(srtDef),"sort definition: \"sort "^id^" = "^printSort(srtDef)^"\" ignored.");jcginfo)
       else
 	let (newClsDecls,col) = 
 	%let _ = writeLine("sort "^id^" = "^printSort srtDef) in
 	(case srtDef of
-	   | Product (fields, _) -> productToClsDecls(id, srtDef)
-	   | CoProduct (summands, _) -> coProductToClsDecls(id, srtDef)
-	   | Quotient (superSort, quotientPred, _) -> quotientToClsDecls(id, superSort, quotientPred, spc)
-	   | Subsort (superSort, pred, _) -> subSortToClsDecls(id, superSort, pred, spc)
+	   | Product (fields, _) -> productToClsDecls(id,srtDef,spc)
+	   | CoProduct (summands, _) -> coProductToClsDecls(id,srtDef,spc)
+	   | Quotient (superSort, quotientPred, _) -> quotientToClsDecls(id,superSort,quotientPred,spc)
+	   | Subsort (superSort, pred, _) -> subSortToClsDecls(id,superSort,pred,spc)
 	   | Base (Qualified (qual, id1), [], _) -> userTypeToClsDecls(id,id1)
-	   | _ -> fail("Unsupported sort definition: sort "^id^" = "^printSort(srtDef))
+	   | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort(srtDef))
+	   (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported");(jcginfo.clsDecls,nothingCollected))
 	  )
       in
-	exchangeClsDecls(jcginfo,newClsDecls)
+	let newjcginfo = newJcgInfo(newClsDecls,col) in
+	concatJcgInfo(jcginfo,newjcginfo)
+	%appendClsDecls(jcginfo,newClsDecls)
     | _ -> jcginfo
 
 op addFldDeclToClsDecls: Id * FldDecl * JcgInfo -> JcgInfo
@@ -157,14 +160,16 @@ def mkAsrtStmt(asrtOpId,fpars) =
   let expr = mkMethodInvFromFormPars(asrtOpId,fpars) in
   [Stmt(Expr(mkMethInvName(([],"assert"),[expr])))]
 
-op mkAssertFromDom: List JGen.Type * Spec -> Block * Collected
+op mkAssertFromDom: List Sort * Spec -> Block * Collected
 def mkAssertFromDom(dom, spc) =
   case dom of
     | [Subsort(_, subPred, _)] ->
       let ((stmt, jPred, newK, newL),col) = termToExpression(empty, subPred, 1, 1, spc) in
       (case (stmt, newK, newL) of
 	 | ([], 1, 1) -> ([Stmt(Expr(mkMethInvName(([],"assert"), [jPred])))],col)
-	 | _ -> fail ("Type pred generated statements: not supported"))
+	 | _ -> %fail ("Type pred generated statements: not supported"))
+	     (issueUnsupportedError(termAnn(subPred),"subsort format not supported");([],nothingCollected))
+	 )
     | _ -> ([],nothingCollected)
 
 op mkPrimArgsMethodBody: Term * Spec -> Block * Collected
@@ -223,7 +228,7 @@ def addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
 			     else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo)
       else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo)
        )
-     | _ -> let _ = warnNoCode(opId,Some("cannot find user type in arguments of op "^opId)) in
+     | _ -> let _ = warnNoCode(termAnn(trm),opId,Some("cannot find user type in arguments of op "^opId)) in
 	jcginfo
        )
     %| _ -> let _ = warnNoCode(opId,Some("opId doesn't have a flat type: "^printSort(rng))) in
@@ -291,9 +296,9 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo) =
 	 let methodDecl = (([], Some (tt(rngId)), opId, fpars, []), Some (assertStmt++methodBody)) in
 	 addMethDeclToClsDecls(opId, srthId, methodDecl, jcginfo)
 	 | _ ->
-	   (warnNoCode(opId,Some("can't happen: user type is not flat"));jcginfo)
+	   (warnNoCode(termAnn(body),opId,Some("can't happen: user type is not flat"));jcginfo)
 	  )
-    | _ -> (warnNoCode(opId,Some("no user type found in the arg list of op "^opId));jcginfo)
+    | _ -> (warnNoCode(termAnn(body),opId,Some("no user type found in the arg list of op "^opId));jcginfo)
 
 (**
  * this op generates the "default" method in the summand super class. If the list of cases contains a wild pattern the corresponding
@@ -353,12 +358,13 @@ def addSumMethDeclToClsDecls(opId, srthId, caseTerm, pat (*as EmbedPat (cons, ar
   case pat of
     | EmbedPat (cons, argsPat, coSrt, _) ->
       (case caseTerm of
-	 | Var ((vId, vSrt), _) ->
-	 let args = case argsPat of
-		      | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId,_), _))) -> vId) args
-		      | Some (VarPat ((vId, _), _)) -> [vId]
-		      | Some (pat) -> fail("in body of op "^opId^": pattern not supported: '"^printPattern(pat)^"'")
-		      | None -> [] in
+	 | Var ((vId, vSrt), b) ->
+	 let (args,ok?) = case argsPat of
+		      | Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId,_), _))) -> vId) args,true)
+		      | Some (VarPat ((vId, _), _)) -> ([vId],true)
+		      | Some (pat) -> (issueUnsupportedError(b,"pattern not supported");([],false))
+		      | None -> ([],true) in
+	 if ~ ok? then jcginfo else
 	 let summandId = mkSummandId(srthId, cons) in
 	 let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
 	 let tcx = StringMap.insert(empty, vId, thisExpr) in
@@ -368,9 +374,9 @@ def addSumMethDeclToClsDecls(opId, srthId, caseTerm, pat (*as EmbedPat (cons, ar
 	 let newMethDecl = appendMethodBody(methodDecl, JBody) in
 	 let jcginfo = addCollectedToJcgInfo(jcginfo,col) in
 	 addMethDeclToClsDecls(opId, summandId, newMethDecl, jcginfo)
-	 | _ -> (warnNoCode(opId,Some("case term format not supported: '"^printTerm(caseTerm)^"'"));jcginfo))
+	 | _ -> (issueUnsupportedError(termAnn(caseTerm),"case term format not supported");jcginfo))
      %| WildPat _ -> jcginfo
-     | _ -> (warnNoCode(opId,Some("pattern format not supported: '"^printPattern(pat)^"'"));jcginfo)
+     | _ -> (warnNoCode(termAnn(caseTerm),opId,Some("pattern format not supported: '"^printPattern(pat)^"'"));jcginfo)
 
 op addArgsToTcx: TCx * List Id -> TCx
 def addArgsToTcx(tcx, args) =
@@ -398,12 +404,13 @@ def modifyClsDeclsFromOps(spc, jcginfo) =
   jcginfo spc.ops
 
 op modifyClsDeclsFromOp: Spec * Id * Id * OpInfo * JcgInfo -> JcgInfo
-def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]), jcginfo) =
+def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt0), [(_, trm)]), jcginfo) =
   let clsDecls = jcginfo.clsDecls in
   let srt = inferType(spc,trm) in
-  %let _ = writeLine("op "^id^" : "^printSort srt) in
+  let srt = foldRecordsForOpSort(spc,srt) in
   case srt of
-    | Arrow _ -> addMethodFromOpToClsDecls(spc, id, srt, trm, jcginfo)
+    | Arrow(domsrt,rngsrt,_) ->
+      addMethodFromOpToClsDecls(spc, id, srt, trm, jcginfo)
     | _ ->
     if notAUserType?(spc,srt)
       then
@@ -422,13 +429,54 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
       let newJcgInfo = addFldDeclToClsDecls(srtId, fldDecl, jcginfo) in
       addCollectedToJcgInfo(newJcgInfo,col)
 
+% --------------------------------------------------------------------------------
+
+op insertClsDeclsForCollectedProductSorts : Spec * JcgInfo -> JcgInfo
+def insertClsDeclsForCollectedProductSorts(spc,jcginfo) =
+  let psrts = jcginfo.collected.productSorts in
+  if psrts = [] then jcginfo else
+  let psrts = uniqueSort (fn(s1,s2) -> compare((srtId s1).1,(srtId s2).1)) psrts in
+  let jcginfo = clearCollected(jcginfo) in
+  let tmp = List.show "," (map printSort psrts) in
+  let _ = writeLine("collected product sorts:"^newline^tmp) in
+  let
+    def insertSort(srt,jcginfo) =
+      let (id,_) = srtId(srt) in
+      let sortinfo = ([mkUnQualifiedId(id)],[],[([],srt)]) in
+      sortToClsDecls(UnQualified,id,sortinfo,spc,jcginfo)
+  in
+  let jcginfo = foldr insertSort jcginfo psrts in
+  insertClsDeclsForCollectedProductSorts(spc,jcginfo)
+
+
+
+% --------------------------------------------------------------------------------
+
+
+
 op concatClsDecls: JcgInfo * JcgInfo -> JcgInfo
 def concatClsDecls({clsDecls=cd1,collected=col1},{clsDecls=cd2,collected=col2}) =
   {clsDecls = cd1 ++ cd2,collected=concatCollected(col1,col2)}
 
+op newJcgInfo: List ClsDecl * Collected -> JcgInfo
+def newJcgInfo(cd,col) =
+  {clsDecls=cd,collected=col}
+
+op concatJcgInfo: JcgInfo * JcgInfo -> JcgInfo
+def concatJcgInfo({clsDecls=cd1,collected=col1},{clsDecls=cd2,collected=col2}) =
+  {clsDecls=cd1++cd2,collected=concatCollected(col1,col2)}
+
+op appendClsDecls: JcgInfo * List ClsDecl -> JcgInfo
+def appendClsDecls({clsDecls=cd1,collected=col},cd2) =
+  {clsDecls=cd1++cd2,collected=col}
+
 op addCollectedToJcgInfo: JcgInfo * Collected -> JcgInfo
 def addCollectedToJcgInfo({clsDecls=cd,collected=col1},col2) =
   {clsDecls=cd,collected=concatCollected(col1,col2)}
+
+op clearCollected: JcgInfo -> JcgInfo
+def clearCollected({clsDecls=cd,collected=_}) =
+  {clsDecls=cd,collected=nothingCollected}
 
 op exchangeClsDecls: JcgInfo * List ClsDecl -> JcgInfo
 def exchangeClsDecls({clsDecls=_,collected=col},newClsDecls) =
@@ -470,16 +518,16 @@ def processOptions(jspc as (_,_,cidecls), optspec, filename) =
 	 (p,b,o,i)
   in
   let jimports = map packageNameToJavaName imports in
+  let dir = if bdir = "" then "." else bdir in
+  let relpath = packageNameToPath pkgname in
   let
     def processOptionsForClsInterf(cidecl) =
-      let dir = if bdir = "" then "." else bdir in
-      let relpath = packageNameToPath pkgname in
       let (what,filename) = case cidecl of
                               | ClsDecl (mods,hdr as (id,_,_),body) -> ("class",id)
                               | InterfDecl (mods, hdr as (id,_),body) -> ("interface",id)
       in
       let fullpath = dir ^ "/" ^ relpath ^ "/" ^ filename ^ ".java" in
-      let _ = writeLine(";;; "^what^" "^filename^" -> "^fullpath) in
+      %let _ = writeLine(";;; "^what^" "^filename^" -> "^fullpath) in
       let pkg = packageNameToJavaName pkgname in
       let jspc = (Some pkg,jimports,[mkPublic cidecl]) in
       let jspc = makeConstructorsAndMethodsPublic(jspc,pubops) in
@@ -489,7 +537,13 @@ def processOptions(jspc as (_,_,cidecls), optspec, filename) =
     let _ = writeLine(";;; all classes -> "^filename) in
     [(filename,jspc)]
   else
-    map processOptionsForClsInterf cidecls
+    let res = map processOptionsForClsInterf cidecls in
+    let cnt = length(cidecls) in
+    let _ = if cnt > 0
+	      then writeLine(";;; "^natToString(cnt)^" Java files written to directory \""^dir^"/"^relpath^"/\"")
+	    else writeLine(";;; no Java files generated.")
+    in
+    res
 
 def printJavaFile(jfile as (filename,jspc)) =
     let p = ppCompUnit jspc in
@@ -506,15 +560,17 @@ def specToJava(spc,optspec,filename) =
   let spc = identifyIntSorts spc in
   let spc = letWildPatToSeq spc in
   let spc = unfoldSortAliases spc in
+  %let spc = foldRecordSorts spc in
   %let _ = writeLine("Lifting Patterns") in
   %let spc = liftPattern(spc) in
   %let _ = writeLine(";;; Renaming Variables") in
   let spc = distinctVariable(spc) in
-  let _ = writeLine(printSpec spc) in
+  %let _ = writeLine(printSpec spc) in
   %let _ = writeLine(";;; Generating Classes") in
   let jcginfo = clsDeclsFromSorts(spc) in
   %let _ = writeLine(";;; Adding Bodies") in
   let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
+  let jcginfo = insertClsDeclsForCollectedProductSorts(spc,jcginfo) in
   %let _ = writeLine(";;; Writing Java file") in
   let clsDecls = jcginfo.clsDecls in
   let arrowcls = jcginfo.collected.arrowclasses in

@@ -11,7 +11,7 @@ def mkSubSortTypeClsDecl(id, subSortFieldDecls, subSortMethodDecls, subSortConst
 op subSortToClsDecls: Id * Sort * Term * Spec -> List ClsDecl * Collected
 def subSortToClsDecls(id, superSort, pred, spc) =
   case superSort of
-    | Base (Qualified (q, superSortId), _, _) ->
+    | Base (Qualified (q, superSortId), _, b) ->
     (case pred of
        | Fun (Op (Qualified (q, predId), fix) , superSort, _) ->
        let relaxFieldDecl = fieldToFldDecl("relax", superSortId) in
@@ -22,9 +22,11 @@ def subSortToClsDecls(id, superSort, pred, spc) =
        let subSortMethodDecl = setMethodBody(subSortMethodDecl, subSortMethodBody) in
        let (subSortConstrDecl,col) = mkSubSortConstrDecl(id, superSortId, superSort, predId,spc) in
        ([mkSubSortTypeClsDecl(id, [relaxFieldDecl], [subSortMethodDecl], [subSortConstrDecl])],col)
-       | _ -> fail("unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.")
+       | _ -> (issueUnsupportedError(b,"unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.");
+	       ([],nothingCollected))
       )
-    | _ -> fail("unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.")
+    | _ -> (issueUnsupportedError(termAnn(pred),"unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.");
+	    ([],nothingCollected))
 
 op mkSubSortConstrDecl: Id  * Id * Sort * Id * Spec -> ConstrDecl * Collected
 def mkSubSortConstrDecl(id, superSortId, superSort, predId,spc) =

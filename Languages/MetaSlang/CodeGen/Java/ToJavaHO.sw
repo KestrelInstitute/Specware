@@ -45,7 +45,7 @@ spec
 	let (res,col2) = standAloneFromSort(mkReturnStmt(rexp),srt,k,l) in
 	(res,concatCollected(col1,col2))
       | Lambda((pat,cond,body)::_,_) -> translateLambdaTerm(tcx,term,k,l,spc)
-      | _ -> fail("not yet supported: stand-alone lambda terms: \""^printTerm(term)^"\"")
+      | _ -> unsupportedInTerm(term,k,l,"not yet supported: stand-alone lambda terms: \""^printTerm(term)^"\"")
 
 
 
@@ -171,8 +171,9 @@ def standaloneWithParNames(s,applySig as (apdom,apran),arrowTypeSig as (atdom,at
   let meth = mkMethDeclWithParNames("apply",apdom,apran,parNames,s) in
   let (clsname,col1) = mkArrowSrtId(atdom,atran) in
   let (exp,cldecl) = mkNewAnonymousClasInstOneMethod(clsname,[],meth) in
-  let col2 = {arrowclasses=[cldecl]} in
-  let col = concatCollected(col1,col2) in
+  %let col2 = {arrowclasses=[cldecl]} in
+  %let col = concatCollected(col1,col2) in
+  let col = addArrowClassToCollected(cldecl,col1) in
   ((mts,exp,k,l),col)
 
 op standAloneFromSort: Java.Stmt * Sort * Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected

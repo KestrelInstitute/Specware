@@ -10,7 +10,7 @@ def mkQuotientTypeClsDecl(id, fieldDecls, methodDecls, constrDecls) =
 op quotientToClsDecls: Id * Sort * Term * Spec -> List ClsDecl * Collected
 def quotientToClsDecls(id, superSort, quotientPred, spc) =
   case superSort of
-  | Base (Qualified (q, superSortId), _, _) ->
+  | Base (Qualified (q, superSortId), _, b) ->
   (case quotientPred of
    | Fun (Op (Qualified (q, quotientPredId), fix) , _, _) ->
      let quotFieldDecl = fieldToFldDecl("choose", superSortId) in
@@ -19,9 +19,12 @@ def quotientToClsDecls(id, superSort, quotientPred, spc) =
      let quotMethodDecl = setMethodBody(quotMethodDecl, quotMethodBody) in
      let quotConstrDecls = [mkQuotConstrDecl(id, superSortId, quotientPredId)] in
      ([mkQuotientTypeClsDecl(id, [quotFieldDecl], [quotMethodDecl], quotConstrDecls)],col)
-   | _ -> fail("unsupported term for quotient sort: '"^printTerm(quotientPred)^"'; only operator names are supported.")
-     )
-  | _ -> fail("unsupported term for quotient sort: '"^printTerm(quotientPred)^"'; only operator names are supported.")
+   | _ -> (issueUnsupportedError(b,"unsupported term for quotient sort: '"^printTerm(quotientPred)^"'; only operator names are supported.");
+	   ([],nothingCollected)
+     ))
+  | _ -> (issueUnsupportedError(termAnn(quotientPred),
+				"unsupported term for quotient sort: '"^printTerm(quotientPred)^"'; only operator names are supported.");
+	  ([],nothingCollected))
 
 op mkQuotEqBody: Id * Sort * Id * Spec -> Block * Collected
 def mkQuotEqBody(superSrtId, superSort, quotPredId, spc) =

@@ -326,12 +326,14 @@ def srtTermDelta_internal(srt, term, fail?) =
 op liftCaseTopCase: Op * (Term | caseTerm?) * Nat -> Term * Nat * List OpDef
 
 def liftCaseTopCase(oper, body, k) =
+  let b = termAnn(body) in
   let caseTerm = caseTerm(body) in
   let cases = caseCases(body) in
   let caseBodys = map (fn (pat, cond, patBody) -> patBody) cases in
   let (newCaseBodys, newK, newOds) = liftCases(oper, caseBodys, k) in
   let newCases = ListPair.map (fn ((pat, cond, _), (newPatBody)) -> (pat, cond, newPatBody)) (cases, newCaseBodys) in
-  let newTerm = mkApply(Lambda (newCases, noPos), caseTerm) in
+  let newTerm = mkApply(Lambda (newCases, b), caseTerm) in
+  let newTerm = withAnnT(newTerm,b) in
   (newTerm, newK, newOds)
   
 
@@ -356,28 +358,30 @@ def liftCase(oper, term, k) =
 def liftCaseApply(oper, term as Apply (opTerm, argsTerm, _), k) =
   let args = applyArgsToTerms(argsTerm) in
   let (newArgs, newK, newOds) = liftCases(oper, args, k) in
-  (mkApplication(opTerm, newArgs), newK, newOds)
+  (withAnnT(mkApplication(opTerm, newArgs),termAnn(term)), newK, newOds)
+
 
 def liftCaseRecord(oper, term as Record (fields,_), k) =
   let recordTerms = recordFieldsToTerms(fields) in
   let (newTerms, newK, newOds) = liftCases(oper, recordTerms, k) in
   let newFields = map (fn ((id, _), newTerm) -> (id, newTerm)) (fields, newTerms) in
-    (mkRecord(newFields), newK, newOds)
+    (withAnnT(mkRecord(newFields),termAnn(term)), newK, newOds)
 
 def liftCaseIfThenElse(oper, term as IfThenElse(t1, t2, t3, _), k) =
   let args = [t1, t2, t3] in
   let ([newT1, newT2, newT3], newK, newOds) = liftCases(oper, args, k) in
-    (MS.mkIfThenElse(newT1, newT2, newT3), newK, newOds)
+    (withAnnT(MS.mkIfThenElse(newT1, newT2, newT3),termAnn(term)), newK, newOds)
 
 def liftCaseLet(oper, term as Let (letBindings, letBody, _), k) =
   case letBindings of
     | [(VarPat (v, _), letTerm)] ->
     let args = [letTerm, letBody] in
     let ([newLetTerm, newLetBody], newK, newOds) = liftCases(oper, args, k) in
-    (mkLet([(mkVarPat(v), newLetTerm)], newLetBody), newK, newOds)
+    (withAnnT(mkLet([(mkVarPat(v), newLetTerm)], newLetBody),termAnn(term)), newK, newOds)
     | _ -> let _ = unSupported(oper) in (term, k, [])
 
 def liftCaseCase(oper, term, k) =
+  let b = termAnn(term) in
   let ttermSort = termSort(term) in
   let caseTerm = caseTerm(term) in
   let caseTermSort = termSort(caseTerm) in
@@ -390,11 +394,11 @@ def liftCaseCase(oper, term, k) =
   let freeVars = uniqueSort (fn ((id1, _), (id2, _)) -> compare(id1, id2)) freeVarsCases in
   let freeVarsSorts = map (fn(id, srt) -> srt) freeVars in
   let newOp = mkNewOp(oper, k) in
-  let newOpSrt = mkArrow(mkProduct(cons(caseTermSort, freeVarsSorts)), ttermSort) in
+  let newOpSrt = withAnnS(mkArrow(mkProduct(cons(caseTermSort, freeVarsSorts)), ttermSort),b) in
   let newVar = mkNewVar(oper, k, caseTermSort) in
-  let newOpTerm = mkApply(Lambda (newCases, noPos), mkVar(newVar)) in
+  let newOpTerm = withAnnT(mkApply(Lambda (newCases, b), mkVar(newVar)),b) in
   let newOpDef = (newOp, cons(caseTermSort,freeVarsSorts), ttermSort, cons(newVar, freeVars), newOpTerm) in
-  let newTerm = mkApplication(mkOp(newOp, newOpSrt), cons(newCaseTerm, map mkVar freeVars)) in
+  let newTerm = withAnnT(mkApplication(mkOp(newOp, newOpSrt), cons(newCaseTerm, map mkVar freeVars)),b) in
   (newTerm, finalK, newOds1++newOds2++[newOpDef])
   
 op liftCases: Op * List Term * Nat -> List Term * Nat * List OpDef
@@ -455,11 +459,13 @@ def liftPattern(spc) =
 op addOpToSpec: OpDef * Spec -> Spec
 
 def addOpToSpec((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term), spc:Spec) =
-  let srt = case dom of | [] -> rng | [dom] -> mkArrow(dom, rng) | _ -> mkArrow(mkProduct(dom), rng) in
+  let srt = case dom of | [] -> rng | [dom] -> withAnnS(mkArrow(dom, rng),sortAnn(dom)) | _ -> mkArrow(mkProduct(dom), rng) in
   let varPatterns = map mkVarPat formals in
   let term = mkLambda(mkTuplePat(varPatterns), body) in
   let (f, t) = srtTermDelta(srt, term) in
   run (addOp (oper, srt, term, spc))
    
-def addOp (oper, srt, term, spc) : SpecCalc.Env Spec = addOp [oper] Nonfix ([], srt) [([], term)] spc noPos
+def addOp (oper, srt, term, spc) : SpecCalc.Env Spec =
+  let b = termAnn(term) in
+  addOp [oper] Nonfix ([], srt) [([], term)] spc b
 endspec

@@ -4,11 +4,13 @@ import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
+%import /Languages/SpecCalculus/Semantics/Exception
 
 sort ToExprSort = Block * Java.Expr * Nat * Nat
 
 sort Collected = {
-		  arrowclasses :List Java.ClsDecl
+		  arrowclasses : List Java.ClsDecl,
+		  productSorts : List Sort
 		 }
 
 op baseSrtToJavaType: Sort -> Java.Type
@@ -256,6 +258,9 @@ def tt_v3(srt) =
       let (sid,col) = srtId(srt) in
       (mkJavaObjectType(sid),col)
     | Product([],_) -> (JVoid,nothingCollected)
+    | Product(_,_) ->
+      let (sid,col) = srtId(srt) in
+      (mkJavaObjectType(sid),col)
     | _ -> fail("tt_v3 can't handle sort "^printSort(srt))
 
 op tt_id: Sort -> Id * Collected
@@ -280,9 +285,9 @@ def srtId_internal(srt) =
   case srt of
     | Base (Qualified (q, id), _, _) -> ([tt_v2 id],id,nothingCollected)
     | Product([],_) -> ([JVoid],"void",nothingCollected)
-    | Product(fields,_) -> foldl (fn((_,fsrt),(types,str,col)) ->
+    | Product(fields,_) -> foldl (fn((id,fsrt),(types,str,col)) ->
 				  let (str0,col0) = srtId(fsrt) in
-				  let str = str ^ (if str = "" then "" else "$$") ^ str0 in
+				  let str = str ^ (if str = "" then "" else "$$") ^ str0(*^"$"^id*) in
 				  let col = concatCollected(col,col0) in
 				  let types = concat(types,[tt_v2(str0)]) in
 				  (types,str,col)) ([],"",nothingCollected) fields
@@ -296,8 +301,9 @@ def srtId_internal(srt) =
       let methHdr = ([],Some(tt_v2(rsrtid)),"apply",pars,[]) in
       let id = dsrtid^"$To$"^rsrtid in
       let clsDecl = mkArrowClassDecl(id,(methHdr,None)) in
-      let col3 = {arrowclasses=[clsDecl]} in
-      let col = concatCollected(col1,concatCollected(col2,col3)) in
+      %let col3 = {arrowclasses=[clsDecl],productSorts=[]} in
+      let col = addArrowClassToCollected(clsDecl,concatCollected(col1,col2)) in
+      %let col = concatCollected(col1,concatCollected(col2,col3)) in
       ([tt_v2 id],id,col)
     | _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
 
@@ -326,7 +332,11 @@ op mkArrowSrtId: List Id * Id -> String * Collected
 def mkArrowSrtId(domidlist,ranid) =
   let p = Internal "" in
   let ran = Base(mkUnQualifiedId(ranid),[],p) in
-  let fields = map (fn(id) -> ("x",Base(mkUnQualifiedId(id),[],p):Sort)) domidlist in
+  let (fields,_) = foldl (fn(id,(fields,n)) -> 
+			  let field = (natToString(n),Base(mkUnQualifiedId(id),[],p):Sort) in 
+			  (concat(fields,[field]),n+1))
+                   ([],1) domidlist
+  in
   let dom = Product(fields,p) in
   let srt = Arrow(dom,ran,p) in
   srtId(srt)
@@ -717,23 +727,14 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
     (pkg,imp,cidecls)
 
 
-(**
- * looks in the spec for a user type matching the given sort; if a matching
- * user type exists, the corresponding sort will be returned, otherwise the sort
- * given as input itself will be returned
- *)
-op findMatchingUserType: Spec * Sort -> Sort
-def findMatchingUserType(spc,srtdef) =
-  let srts = sortsAsList(spc) in
-  let srtPos = sortAnn srtdef in
-  let foundSrt = find (fn |(qualifier, id, (_, _, [(_,srt)])) -> equalSort?(srtdef, srt)|_ -> false) srts in
-  case foundSrt of
-    | Some (q, classId, _) -> 
-      %let _ = writeLine("matching user type found: sort "^classId^" = "^printSort(srtdef)) in
-      Base(mkUnQualifiedId(classId),[],srtPos)
-    | None ->
-      %let _ = writeLine("no matching user type found for "^printSort(srtdef)) in
-      srtdef
+op findMatchingUserTypeCol: Spec * Sort -> Sort * Collected
+def findMatchingUserTypeCol(spc,srt) =
+  case findMatchingUserTypeOption(spc,srt) of
+    | Some s -> (s,nothingCollected)
+    | None -> (srt,(case srt of
+		      | Product _ -> addProductSortToCollected(srt,nothingCollected)
+		      | _ -> nothingCollected))
+
 
 (**
  * looks in the spec for a user type that is a restriction type, where the given sort is the sort of the
@@ -755,6 +756,35 @@ def findMatchingRestritionType(spc,srt) =
       else None
     | _ -> None
 
+op inferTypeFoldRecords: Spec * Term -> Sort
+def inferTypeFoldRecords(spc,term) =
+  let srt = inferType(spc,term) in
+  %let _ = writeLine("inferType("^printTerm(term)^") = "^printSort(srt)) in
+  case srt of
+    | Product _ -> 
+      let srt0 = findMatchingUserType(spc,srt) in
+      %let _ = writeLine("findMatchingUserType("^printSort(srt)^") = "^printSort(srt0)) in
+      srt0
+    | _ -> srt
+
+op foldRecordsForOpSort : Spec * Sort -> Sort
+def foldRecordsForOpSort(spc,srt) =
+  case srt of
+    | Arrow(domsrt,rngsrt,b) ->
+      let domsrt =
+          (case domsrt of
+	     | Product(fields,b) -> 
+	       let fields = map (fn(id,srt0) -> (id,findMatchingUserType(spc,srt0))) fields in
+	       Product(fields,b)
+	     | _ -> findMatchingUserType(spc,domsrt)
+	      )
+      in
+      let rngsrt = findMatchingUserType(spc,rngsrt) in
+      Arrow(domsrt,rngsrt,b)
+    | _ -> findMatchingUserType(spc,srt)
+
+
+
 (**
  * inserts "restrict" structs, if there's a mismatch between the domain sorts and 
  * the sorts of the args
@@ -767,7 +797,8 @@ def insertRestricts(spc,dom,args) =
       let domsrt = unfoldBase(spc,domsrt) in
       case domsrt of
 	| Subsort(srt,pred,_) ->
-	  let tsrt = inferType(spc,argterm) in
+	  %let tsrt = inferType(spc,argterm) in
+	  let tsrt = termSort(argterm) in
 	  let b = termAnn(argterm) in
 	  if equalSort??(srt,tsrt) then
 	    let rsrt = Arrow(tsrt,domsrt,b) in
@@ -809,6 +840,19 @@ def equalSort??(srt0,srt1) =
   let srt1 = equalizeIntSort(srt1) in
   equalSort?(srt0,srt1)
 
+(**
+ * this is used to distinguish "real" product from "record-products"
+ *)
+op fieldsAreNumbered: fa(a) List(String * a) -> Boolean
+def fieldsAreNumbered(fields) =
+  let
+    def fieldsAreNumbered0(i,fields) =
+      case fields of
+	| [] -> true
+	| (id,_)::fields -> id = Nat.toString(i) & fieldsAreNumbered0(i+1,fields)
+  in
+  fieldsAreNumbered0(1,fields)
+
 
 (**
  * compares the summand sort with the match and returns the list of constructor ids
@@ -843,12 +887,29 @@ def findWildPat(cases) =
 op concatCollected: Collected * Collected -> Collected
 def concatCollected(col1,col2) =
   {
-   arrowclasses=concat(col1.arrowclasses,col2.arrowclasses)
+   arrowclasses=concat(col1.arrowclasses,col2.arrowclasses),
+   productSorts=concat(col1.productSorts,col2.productSorts)
+  }
+
+op addArrowClassToCollected: ClsDecl * Collected -> Collected
+def addArrowClassToCollected(decl,col as {arrowclasses,productSorts}) =
+  {
+   arrowclasses = cons(decl,arrowclasses),
+   productSorts = productSorts
+  }
+
+op addProductSortToCollected: Sort * Collected -> Collected
+def addProductSortToCollected(srt, col as {arrowclasses,productSorts}) =
+  {
+   arrowclasses = arrowclasses,
+   productSorts = if exists (fn(psrt) -> equalSort?(srt,psrt)) productSorts then productSorts
+		  else cons(srt,productSorts)
   }
 
 op nothingCollected: Collected
 def nothingCollected = {
-			arrowclasses = []
+			arrowclasses = [],
+			productSorts = []
 		       }
 
 op packageNameToPath: String -> String
@@ -862,7 +923,16 @@ def packageNameToJavaName(s) =
     | [] -> ([],"")
     | l::path -> (rev(path),l)
 
-  
+% --------------------------------------------------------------------------------
+%
+% exceptions
+%
+% --------------------------------------------------------------------------------
+
+op issueUnsupportedError: Position * String -> ()
+def issueUnsupportedError(pos,msg) =
+  let excp = Unsupported(pos,msg) in
+  writeLine(printException(excp))
 
 %--------------------------------------------------------------------------------
 %

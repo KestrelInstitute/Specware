@@ -108,7 +108,7 @@ spec
 	     | allargs as (t1::argterms) ->
 	       % check whether the first argument has an unrefined sort
 	       %let _ = writeLine("checking for method call: "^printTerm(t1)) in
-	       let t1srt = unfoldBase(spc,inferType(spc,t1)) in
+	       let t1srt = unfoldBase(spc,inferTypeFoldRecords(spc,t1)) in
 	       if sortIsUnrefinedInSpec?(spc,t1srt) then
 		 %let _ = writeLine("   found java method call to "^printQualifiedId(qid)) in
 		 let opid = id in

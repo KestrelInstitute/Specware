@@ -88,8 +88,8 @@ def mkSumEqMethBody(clsId, consId, summandId, flds) =
   %let negateInstanceExpr = CondExp (Un (Un (LogNot, Prim (Paren (instanceExpr)))) , None) in
   ([mkIfStmt(tagEqExpr, [s, Stmt (Return (Some (eqExpr)))], [Stmt (Return (Some (CondExp (Un (Prim (Bool false)), None))))])],col)
 
-op coProductToClsDecls: Id * Sort -> (List ClsDecl) * Collected
-def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
+op coProductToClsDecls: Id * Sort * Spec -> (List ClsDecl) * Collected
+def coProductToClsDecls(id, srtDef as CoProduct (summands, _), spc) =
   let tagFieldDecl = fieldToFldDecl("tag", "Integer") in
   let def mkTagCFieldDeclsFromSummands(summands, sumNum) = 
         (case summands of

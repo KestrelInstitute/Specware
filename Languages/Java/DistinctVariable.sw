@@ -28,21 +28,24 @@ def renameVarRecord(term as Record (fields,_), oldV, newV) =
   let recordTerms = recordFieldsToTerms(fields) in
   let newTerms = map (fn (recordTerm) -> renameVar(recordTerm, oldV, newV)) recordTerms in
   let newFields = map (fn ((id, _), newTerm) -> (id, newTerm)) (fields, newTerms) in
-     mkRecord(newFields)
+     let res = mkRecord(newFields) in
+     withAnnT(res,termAnn(term))
 
 def renameVarIfThenElse(term as IfThenElse(t1, t2, t3, _), oldV, newV) =
   let newT1 = renameVar(t1, oldV, newV) in
   let newT2 = renameVar(t2, oldV, newV) in
   let newT3 = renameVar(t3, oldV, newV) in
-    MS.mkIfThenElse(newT1, newT2, newT3)
+    let res = MS.mkIfThenElse(newT1, newT2, newT3) in
+    withAnnT(res,termAnn(term))
 
 def renameVarCase(term, oldV, newV) =
+  let b = termAnn(term) in
   let caseTerm = caseTerm(term) in
   let newCaseTerm = renameVar(caseTerm, oldV, newV) in
   let cases = caseCases(term) in
   let newCases = map (fn (match) -> renameVarMatch(match, oldV, newV)) cases in
-  let newTerm = mkApply(Lambda (newCases, noPos), newCaseTerm) in
-    newTerm
+  let res = mkApply(Lambda (newCases, b), newCaseTerm) in
+  withAnnT(res,termAnn(term))
 
 op renameVarMatch: (Pattern * Term * Term) * Var * Var -> Pattern * Term * Term
 
@@ -65,12 +68,14 @@ def renameVarLet(term as Let (letBindings, letBody, _), oldV, newV) =
 
 def renameVarLetNewVar(letTerm, letBody, oldV, newV) =
   let newLetTerm = renameVar(letTerm, oldV, newV) in
-    mkLet([(mkVarPat(newV), newLetTerm)], letBody)
+    let res = mkLet([(mkVarPat(newV), newLetTerm)], letBody) in
+    withAnnT(res,termAnn(letTerm))
 
 def renameVarLetOldVar(letTerm, letBody, oldV, newV) =
   let newLetTerm = renameVar(letTerm, oldV, newV) in
   let newLetBody = renameVar(letBody, oldV, newV) in
-    mkLet([(mkVarPat(oldV), newLetTerm)], newLetBody)
+    let res = mkLet([(mkVarPat(oldV), newLetTerm)], newLetBody) in
+    withAnnT(res,termAnn(letTerm))
 
 
 op distinctVar: Term * List Id -> Term * List Id
@@ -114,7 +119,8 @@ def distinctVars(terms, ids) =
 def distinctVarApply(term as Apply (opTerm, argsTerm, _), ids) =
   let args = applyArgsToTerms(argsTerm) in
   let (newArgs, newIds) = distinctVars(args, ids) in
-    (mkApplication(opTerm, newArgs), newIds)
+    let res = (mkApplication(opTerm, newArgs)) in
+    (withAnnT(res,termAnn(term)), newIds)
 
 def distinctVarLambda(term as Lambda ([(pat, cond, body)],b), ids) =
   let argNames = patternNamesOpt(pat) in
@@ -130,21 +136,25 @@ def distinctVarRecord(term as Record (fields,_), ids) =
   let recordTerms = recordFieldsToTerms(fields) in
   let (newTerms, newIds) = distinctVars(recordTerms, ids) in
   let newFields = map (fn ((id, _), newTerm) -> (id, newTerm)) (fields, newTerms) in
-    (mkRecord(newFields), newIds)
+    let res = (mkRecord(newFields)) in
+    (withAnnT(res,termAnn(term)),newIds)
 
 def distinctVarIfThenElse(term as IfThenElse(t1, t2, t3, _), ids) =
   let args = [t1, t2, t3] in
   let ([newT1, newT2, newT3], newIds) = distinctVars(args, ids) in
-    (MS.mkIfThenElse(newT1, newT2, newT3), newIds)
+    let res = MS.mkIfThenElse(newT1, newT2, newT3) in
+    (withAnnT(res,termAnn(term)), newIds)
 
 def distinctVarCase(term, ids) =
+  let b = termAnn(term) in
   let caseTerm = caseTerm(term) in
   let (newCaseTerm, newIds1) = distinctVar(caseTerm, ids) in
   let cases = caseCases(term) in
   let caseBodys = map (fn (pat, cond, patBody) -> patBody) cases in
   let (newCaseBodys, newIds2) = distinctVars(caseBodys, newIds1) in
   let newCases = ListPair.map (fn ((pat, cond, _), (newPatBody)) -> (pat, cond, newPatBody)) (cases, newCaseBodys) in
-  let newTerm = mkApply(Lambda (newCases, noPos), newCaseTerm) in
+  let newTerm = mkApply(Lambda (newCases, b), newCaseTerm) in
+  let newTerm = withAnnT(newTerm,termAnn(term)) in
   (newTerm, newIds2)
 
 def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
@@ -155,7 +165,7 @@ def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
     if member(vId, newIds)
       then distinctVarLetNewVar(v, newLetTerm, letBody, newIds)
     else distinctVarLetNoNewVar(v, newLetTerm, letBody, newIds)
-    | _ -> fail "unsupported in distinctVarLet"
+    | _ -> (term,ids)
 
 def distinctVarLetNewVar(var as (vId, vSrt), letTerm, letBody, ids) =
   let newId = findNewId(vId, ids) in
@@ -163,13 +173,15 @@ def distinctVarLetNewVar(var as (vId, vSrt), letTerm, letBody, ids) =
   let newVar = (newId, vSrt) in
   let renamedLetBody = renameVar(letBody, var, newVar) in
   let (newLetBody, finalIds) = distinctVar(renamedLetBody, newIds) in
-  (mkLet([(mkVarPat(newVar), letTerm)], newLetBody), finalIds)
+  let res = (mkLet([(mkVarPat(newVar), letTerm)], newLetBody)) in
+  (withAnnT(res,termAnn(letTerm)),finalIds)
 
 
 def distinctVarLetNoNewVar(var as (vId, vSrt), letTerm, letBody, ids) =
   let newIds = cons(vId, ids) in
   let (newLetBody, finalIds) = distinctVar(letBody, newIds) in
-  (mkLet([(mkVarPat(var), letTerm)], newLetBody), finalIds)
+  let res = (mkLet([(mkVarPat(var), letTerm)], newLetBody)) in
+  (withAnnT(res,termAnn(letTerm)),finalIds)
 
 
 op findNewId: Id * List Id -> Id

@@ -43,7 +43,8 @@ def termToExpression_internal(tcx, term, k, l, spc, addRelaxChoose?) =
 	   (case srt of
 	      | Base (Qualified (q, srtId), _, _) -> ((mts, mkQualJavaExpr(srtId, id), k, l),nothingCollected)
 	      | Arrow(dom,rng,_) -> translateLambdaToExpr(tcx,term,k,l,spc)
-	      | _ -> fail("unsupported term in termToExpression: "^printTerm(term)))
+	      | _ -> unsupportedInTerm(term,k,l,"term not supported by Java code generator")
+	      )
       | Fun (Nat (n),_,__) -> ((mts, mkJavaNumber(n), k, l),nothingCollected)
       | Fun (Bool (b),_,_) -> ((mts, mkJavaBool(b), k, l),nothingCollected)
       | Fun (String(s),_,_) -> ((mts, mkJavaString(s), k, l),nothingCollected)
@@ -62,14 +63,14 @@ def termToExpression_internal(tcx, term, k, l, spc, addRelaxChoose?) =
       | _ ->
 	     if caseTerm?(term)
 	       then translateCaseToExpr(tcx, term, k, l, spc)
-	     else fail("unsupported term in termToExpression: "^printTerm(term))
-
+	     else
+	       unsupportedInTerm(term,k,l,"term not supported by Java code generator")
 
 
 def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
   let
     def opvarcase(id) =
-      let srt = inferType(spc,term) in
+      let srt = inferTypeFoldRecords(spc,term) in
       %%Fixed here
       let args = applyArgsToTerms(argsTerm) in
       % use the sort of the operator for the domain, if possible; this
@@ -78,7 +79,7 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
       let dom = case opTerm of
 		  | Fun(Op(_),opsrt,_) -> srtDom(opsrt)
 		  | _ -> map (fn(arg) ->
-			      let srt = inferType(spc,arg) in
+			      let srt = inferTypeFoldRecords(spc,arg) in
 			      %findMatchingUserType(spc,srt)
 			      srt
 			     ) args
@@ -113,7 +114,7 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
     | Fun (Equals , srt, _) -> translateEqualsToExpr(tcx, argsTerm, k, l, spc)
     | Fun (Project (id) , srt, _) -> translateProjectToExpr(tcx, id, argsTerm, k, l, spc)
     | Fun (Embed (id, _) , srt, _) ->
-      let (sid,col1) = srtId(inferType(spc,term)) in
+      let (sid,col1) = srtId(inferTypeFoldRecords(spc,term)) in
       let (res,col2) = translateConstructToExpr(tcx, sid, id, argsTerm, k, l, spc) in
       (res,concatCollected(col1,col2))
     | Fun (Op (Qualified (q, id), _), _, _) ->
@@ -134,7 +135,8 @@ def translateRestrictToExpr(tcx, srt, argsTerm, k, l, spc) =
       (case findMatchingRestritionType(spc,srt) of
 	 | Some (Base(Qualified(q,srtId),_,_)) ->
 	   ((newBlock,mkNewClasInst(srtId,[newArg]), newK, newL),col1)
-	 | None -> fail("unsupported sort in restrict term: "^printSort(srt))
+	 | None -> %fail("unsupported sort in restrict term: "^printSort(srt))
+	   unsupportedInSort(srt,k,l,"unsupported sort in restrict term: "^printSort(srt))
 	  )
 
 op translateRelaxToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
@@ -160,13 +162,14 @@ op translateEqualsToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * 
 def translateEqualsToExpr(tcx, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
   let ((newBlock, [jE1, jE2], newK, newL),col1) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  let (sid,col2) = srtId(inferType(spc,hd(args))) in
+  let (sid,col2) = srtId(inferTypeFoldRecords(spc,hd(args))) in
   let col = concatCollected(col1,col2) in
   ((newBlock, mkJavaEq(jE1, jE2, sid), newK, newL),col)
 
 op translateProjectToExpr: TCx * Id * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateProjectToExpr(tcx, id, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
+  let id = getFieldName id in
   let ((newBlock, [e], newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
   ((newBlock, mkFldAcc(e, id), newK, newL),col)
 
@@ -220,18 +223,26 @@ def translateUserApplToExpr(tcx, opId, dom, argsTerm, k, l, spc) =
       let topJArg = nth(javaArgs, h) in
       let resJArgs = deleteNth(h, javaArgs) in
       ((newBlock, mkMethExprInv(topJArg, opId, resJArgs), newK, newL),col)
-    | _ -> (warnNoCode(opId,None);errorResultExp(k,l))
+    | _ -> %(warnNoCode(opId,None);errorResultExp(k,l))
+      unsupportedInTerm(argsTerm,k,l,"no user type found in argument list of application.")
 
 def translateRecordToExpr(tcx, term as Record (fields, _), k, l, spc) =
   let recordTerms = recordFieldsToTerms(fields) in
-  let recordSrt = inferType(spc,term) in
+  let recordSrt = inferTypeFoldRecords(spc,term) in
   let ((newBlock, javaArgs, newK, newL),col) = translateTermsToExpressions(tcx, recordTerms, k, l, spc) in
   let srts = sortsAsList(spc) in
-  let foundSrt = find (fn (qualifier, id, (_, _, [(_,srt)])) -> equalSort?(recordSrt, srt)) srts in
-  case foundSrt of
-     | Some (q, recordClassId, _) ->  ((newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL),col)
-     | None -> fail("Could not find record sort.")
-  %%Fix here HACK!!!
+  case findMatchingUserTypeOption(spc,recordSrt) of
+  %let foundSrt = find (fn (qualifier, id, (_, _, [(_,srt)])) -> equalSort?(recordSrt, srt)) srts in
+  %case foundSrt of
+     | Some (Base(Qualified(_,recordClassId),_,_)) ->  ((newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL),col)
+     | None -> %
+       %let _ = warn("Could not find sort definition for \""^printSort(recordSrt)^"\"") in
+       if fieldsAreNumbered fields then
+	 let (recordClassId,col) = srtId recordSrt in
+	 let col = addProductSortToCollected(recordSrt,col) in
+	 ((newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL),col)
+       else
+	 unsupportedInSort(recordSrt,k,l,"product sort must be introduced as a sort definition")
 
 
 def translateIfThenElseToExpr(tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
@@ -250,7 +261,7 @@ def translateIfThenElseToStatement(tcx, term as IfThenElse(t0, t1, t2, _), k, l,
   let v = mkIfRes(k) in
   let ((b1, k1, l1),col2) = termToExpressionAsgV(v, tcx, t1, k0, l0, spc) in  
   let ((b2, k2, l2),col3) = termToExpressionAsgV(v, tcx, t2, k1, l1, spc) in  
-  let (sid,col4) = srtId(inferType(spc,t2)) in
+  let (sid,col4) = srtId(inferTypeFoldRecords(spc,t2)) in
   let col = concatCollected(col1,concatCollected(col2,concatCollected(col3,col4))) in
   let vDecl = mkVarDecl(v, sid) in
 %  let vAss1 = mkVarAssn(v, jT1) in
@@ -263,7 +274,7 @@ def translateIfThenElseToStatement(tcx, term as IfThenElse(t0, t1, t2, _), k, l,
 def translateLetToExpr(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
   case letBindings of
     | [(VarPat (v as (vid,_), _), letTerm)] ->
-    let _ = writeLine("let "^vid^" = ...") in
+    %let _ = writeLine("let "^vid^" = ...") in
     let (vId, vSrt) = v in
     let vSrt = findMatchingUserType(spc,vSrt) in
     let (sid,col0) = srtId(vSrt) in
@@ -272,12 +283,12 @@ def translateLetToExpr(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
     %  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
     let col = concatCollected(col0,concatCollected(col1,col2)) in
     ((b0++b1, jLetBody, k1, l1),col)
-    | (pat,_)::_ -> (warn("pattern not (yet) supported: "^printPattern(pat));errorResultExp(k,l))
+    | (pat,_)::_ -> unsupportedInTerm(term,k,l,"pattern not (yet) supported: "^printPattern(pat))
 
 def translateLetRet(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
   case letBindings of
     | [(VarPat (v as (vid,_), _), letTerm)] ->
-    let _ = writeLine("let "^vid^" = ...") in
+    %let _ = writeLine("let "^vid^" = ...") in
     let (vId, vSrt) = v in
     let vSrt = findMatchingUserType(spc,vSrt) in
     let (sid,col0) = srtId(vSrt) in
@@ -286,11 +297,11 @@ def translateLetRet(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
     %  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
     let col = concatCollected(col0,concatCollected(col1,col2)) in
     ((b0++b1, k1, l1),col)
-    | (pat,_)::_ -> (warn("pattern not (yet) supported: "^printPattern(pat));errorResultExpRet(k,l))
+    | (pat,_)::_ -> unsupportedInTermRet(term,k,l,"pattern not (yet) supported: "^printPattern(pat))
 
 
 def translateCaseToExpr(tcx, term, k, l, spc) =
-  let caseType = inferType(spc,term) in
+  let caseType = inferTypeFoldRecords(spc,term) in
   let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -299,7 +310,7 @@ def translateCaseToExpr(tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col0) = srtId(inferType(spc,caseTerm)) in
+        let (caseTermSrt,col0) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col1) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col0,col1) in
@@ -373,7 +384,7 @@ def relaxChooseTerm(spc,t) =
     | Apply(Fun(Restrict,_,_),_,_) -> t
     | Apply(Fun(Choose,_,_),_,_) -> t
     | _ -> 
-    let srt0 = inferType(spc,t) in
+    let srt0 = inferTypeFoldRecords(spc,t) in
     let srt = unfoldBase(spc,srt0) in
     case srt of
       | Subsort(ssrt,_,b) ->
@@ -414,7 +425,7 @@ def termToExpressionRet(tcx, term, k, l, spc) =
 	((s1++s2++s3,k,l),concatCollected(col1,col2))
       | _ ->
         let ((b, jE, newK, newL),col) = termToExpression(tcx, term, k, l, spc) in
-	let stmts = if isVoid?(spc,inferType(spc,term))
+	let stmts = if isVoid?(spc,inferTypeFoldRecords(spc,term))
 		      then [Stmt(Expr jE),Stmt(Return None)]
 		    else [Stmt(Return(Some(jE)))]
 	in
@@ -430,7 +441,7 @@ def translateIfThenElseRet(tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
     ((b0++[ifStmt], k2, l2),col)
 
 def translateCaseRet(tcx, term, k, l, spc) =
-  let caseType_ = inferType(spc,term) in
+  let caseType_ = inferTypeFoldRecords(spc,term) in
   let (caseTypeId,col0) = srtId(caseType_) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -439,7 +450,7 @@ def translateCaseRet(tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col0) = srtId(inferType(spc,caseTerm)) in
+        let (caseTermSrt,col0) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col1) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col0,col1) in
@@ -462,13 +473,14 @@ def translateCaseCasesToSwitchesRet(tcx, caseType, caseExpr, cases, k0, l0, l, s
   in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
-        let (EmbedPat (cons, argsPat, coSrt, _), _, body) = c in
-	let patVars = case argsPat of
-	                | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId, _), _))) -> vId) args
-	                | Some (VarPat ((vId, _), _)) -> [vId]
-	                | None -> [] 
-	                | Some(pat) -> fail("unsupported pattern in case: "^printPattern(pat))
+        let (EmbedPat (cons, argsPat, coSrt, b), _, body) = c in
+	let (patVars,ok?) = case argsPat of
+	                | Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId, _), _))) -> vId) args,true)
+	                | Some (VarPat ((vId, _), _)) -> ([vId],true)
+	                | None -> ([],true) 
+	                | Some(pat) -> ([],false)
 	in
+	if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
 	let subId = mkSub(cons, l) in
 	%let sumdType = mkSumd(cons, caseType) in
         let newTcx = addSubsToTcx(tcx, patVars, subId) in
@@ -517,7 +529,7 @@ def translateIfThenElseAsgNV(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _),
     (([varDecl]++b0++[ifStmt], k2, l2),col)
 
 def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
-  let caseType = inferType(spc,term) in
+  let caseType = inferTypeFoldRecords(spc,term) in
   let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -526,7 +538,7 @@ def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col1) = srtId(inferType(spc,caseTerm)) in
+        let (caseTermSrt,col1) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col1,col2) in
@@ -550,12 +562,14 @@ def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, caseType, caseExpr, cases, k0
   in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
-        let (EmbedPat (cons, argsPat, coSrt, _), _, body) = c in
-	let patVars = case argsPat of
-	                | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId, _), _))) -> vId) args
-	                | Some (VarPat ((vId, _), _)) -> [vId]
-	                | Some (pat) -> fail("unsupported pattern: '"^printPattern(pat)^"'")
-	                | None -> [] in
+        let (EmbedPat (cons, argsPat, coSrt, b), _, body) = c in
+	let (patVars,ok?) = case argsPat of
+	                | Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId, _), _))) -> vId) args,true)
+	                | Some (VarPat ((vId, _), _)) -> ([vId],true)
+	                | Some (pat) -> ([],false)
+	                | None -> ([],true)
+	in
+	if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
 	let subId = mkSub(cons, l) in
 	%let sumdType = mkSumd(cons, caseType) in
         let newTcx = addSubsToTcx(tcx, patVars, subId) in
@@ -604,7 +618,7 @@ def translateIfThenElseAsgV(vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l, s
 
 %def translateCaseAsgV(vId, tcx, term, k, l, spc) =
 def translateCaseAsgV(vId, tcx, term, k, l, spc) =
-  let caseType = inferType(spc,term) in
+  let caseType = inferTypeFoldRecords(spc,term) in
   let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -613,7 +627,7 @@ def translateCaseAsgV(vId, tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col1) = srtId(inferType(spc,caseTerm)) in
+        let (caseTermSrt,col1) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col1,col2) in
@@ -689,7 +703,7 @@ def translateIfThenElseAsgF(cId, fId, tcx, term as IfThenElse(t0, t1, t2, _), k,
 
 %def translateCaseAsgF(cId, tcx, term, k, l, spc) =
 def translateCaseAsgF(cId, fId, tcx, term, k, l, spc) =
-  let caseType = inferType(spc,term) in
+  let caseType = inferTypeFoldRecords(spc,term) in
   let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -698,7 +712,7 @@ def translateCaseAsgF(cId, fId, tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col1) = srtId(inferType(spc,caseTerm)) in
+        let (caseTermSrt,col1) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col1,col2) in
@@ -783,10 +797,35 @@ op errorResultExpRet: Nat * Nat -> (Block * Nat * Nat) * Collected
 def errorResultExpRet(k,l) =
   ((mts,k,l),nothingCollected)
 
-def warnNoCode(opId,optreason) =
-  writeLine("warning: no code has been generated for op \""^opId^"\""
-	    ^ (case optreason of
-		 | Some str -> ", reason: "^str
-		 | _ -> "."))
+op unsupportedInTerm: Term * Nat * Nat * String -> (Block * Java.Expr * Nat * Nat) * Collected
+def unsupportedInTerm(t,k,l,msg) =
+  let pos = termAnn(t) in
+  let _ = issueUnsupportedError(pos,msg) in
+  errorResultExp(k,l)
+
+op unsupportedInTermRet: Term * Nat * Nat * String -> (Block * Nat * Nat) * Collected
+def unsupportedInTermRet(t,k,l,msg) =
+  let pos = termAnn(t) in
+  let _ = issueUnsupportedError(pos,msg) in
+  errorResultExpRet(k,l)
+
+op unsupportedInRet: Position * Nat * Nat * String -> (Block * Nat * Nat) * Collected
+def unsupportedInRet(pos,k,l,msg) =
+  let _ = issueUnsupportedError(pos,msg) in
+  errorResultExpRet(k,l)
+
+op unsupportedInSort: Sort * Nat * Nat * String -> (Block * Java.Expr * Nat * Nat) * Collected
+def unsupportedInSort(s,k,l,msg) =
+  let pos = sortAnn(s) in
+  let _ = issueUnsupportedError(pos,msg) in
+  errorResultExp(k,l)
+
+def warnNoCode(pos:Position,opId,optreason) =
+  let msg = ("warning: no code has been generated for op \""^opId^"\""
+	     ^ (case optreason of
+		  | Some str -> ", reason: "^str
+		  | _ -> "."))
+  in
+    issueUnsupportedError(pos,msg)
 
 endspec
