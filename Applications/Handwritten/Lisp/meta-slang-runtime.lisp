@@ -115,9 +115,9 @@
 			  ;; Determine equality by calling the quotient 
 			  ;; operator in the second position 
 			  (funcall (svref t1 1) ; (quotient-relation t1)
-				   (svref t1 2) ; (quotient-element t1) 
-				   (svref t2 2) ; (quotient-element t2)
-				   ))
+				   (cons (svref t1 2) ; (quotient-element t1) 
+				         (svref t2 2) ; (quotient-element t2)
+				   )))
 			 (t
 			  (and
 			   ;; Two vectors (corresponding to tuple types)
