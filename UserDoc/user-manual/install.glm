@@ -14,14 +14,14 @@ The following programs and documents are included on the &Specware;
 <listitem>
   <para>
      <"setup.exe"> - This program in the root directory of the CD is
-     the Specware 4.0 installer for Windows. Before running this
-     program, please read the "Installation Instructions" section below.
+     the Specware 4.0 installer for Windows. It should be launched
+     automatically when the CD is inserted into the CD-ROM drive.
   </para>
 </listitem>
 
 <listitem>
   <para>
-     <"README"> - This document contains important information about
+     <"README.txt"> - This document contains important information about
      &Specware; 4.0, including what has changed from previous versions
      and how to give feedback on current and future features.
   </para>
@@ -121,8 +121,10 @@ hardware configuration is recommended: </para>
 <section>
 <title>Operating system</title>
 
-<para> &Specware; 4.0 has been tested to work with Windows XP, Windows
-2000 and Windows NT 4.0.</para>
+<para> 
+This version of &Specware; 4.0 has been tested to work with Windows
+XP, Windows 2000 and Windows NT 4.0.
+</para>
 
 </section>  <!-- operating system -->
 
@@ -135,36 +137,35 @@ hardware configuration is recommended: </para>
 
 <step>
 <para>
-Before running the &Specware; 4.0 installer, you should have a recent
-version of XEmacs (21.1 or higher) installed on your machine.
-If you already have XEmacs, then proceed to the next step.  Otherwise,
-open the XEmacs folder provided on the setup CD, and run <"setup.exe">.
-Select "Install from Local Directory" as the Installation Method, and
-click "Next" through the remaining steps to accept the default
-configuration.
-</para>
-
-<para>
-Note: If you choose not to complete this step of installing XEmacs, a 
-text-only version of Specware will be installed instead.
+Insert the installation CD into your CD-ROM drive; the &Specware; 4.0
+<"setup.exe"> installer wizard will be automatically launched.
 </para>
 </step>
 
 <step>
 <para>
-After XEmacs has been installed, launch the &Specware; 4.0 installer
-<"setup.exe"> on the CD.
+After accepting the license agreement, the installer will check
+whether XEmacs is installed on your machine.  If it is, a message will
+appear displaying the found path to XEmacs.  If it is not, you will
+be asked whether you would like to install it.  It is HIGHLY
+recommended that you answer [[L:Yes]], as &Specware; 4.0 has been
+designed to run inside the XEmacs environment.  Clicking [[L:Yes]]
+will then launch the XEmacs installer wizard.  Select the "Install
+from Local Directory" option for quickest installation, and click
+[[L:Next]] through each step in the wizard to accept the default 
+configuration.  After XEmacs has been installed, you will return to
+the &Specware; installer wizard.
 </para>
 </step>
 
 <step>
 <para>
-Follow the instructions in the installation wizard, and &Specware; 4.0
-will be installed on your machine.  A shortcut to &Specware; will be
-placed on your Desktop as well as in the Program Files folder in the
-Start menu.  Documentation, libraries and example code will be placed
-in the installation directory you specified in the wizard (the default
-is <"C:\Program Files\Specware">).
+Select the directory where you would like &Specware; to be installed
+(the default is <"C:\Program Files\Specware">, and click [[L:Next]] to
+complete the installation.  A shortcut to &Specware; will be placed on
+your Desktop as well as in the Program Files folder in the Start menu.  
+Documentation, libraries and example code will be placed in the
+installation directory you selected.
 </para>
 </step>
 
@@ -176,14 +177,14 @@ is <"C:\Program Files\Specware">).
 <title>Uninstalling</title>
 
 <para>
-To uninstall &Specware; 4.0, run <"setup.exe"> again and select the
-"Remove" option in the wizard, or use the <"Add/Remove Programs">
-setting in the Control Panel.
+To uninstall &Specware; 4.0, run the installer on the CD again and
+select the "Remove" option in the wizard, or use the
+<"Add/Remove Programs"> setting in the Control Panel.
 </para>
 
 <para>
 If you need to reinstall &Specware;, please uninstall it first and
-then run the <"setup.exe"> installer to install a clean version.
+then run the installer on the CD to install a clean version.
 </para>
 
 </section> <!-- uninstalling -->
