@@ -85,7 +85,7 @@ SpecCalc qualifying spec {
 
  def printSpecExpanded base_spec _(*reverse_context*) spc =
    %% TODO: use reverse_context for imports ?
-   AnnSpecPrinter.printSpec (subtractSpec (spc << {importInfo = emptyImportInfo}) base_spec)
+   AnnSpecPrinter.printSpecVerbose (subtractSpec (spc << {importInfo = emptyImportInfo}) base_spec) 
 
  %% ======================================================================
  %% Morphism
