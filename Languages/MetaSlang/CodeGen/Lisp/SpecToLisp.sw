@@ -254,9 +254,9 @@ def isSpecialBoolOpAppl (id,term) =
          of Record([_,_],_) -> true
 	  | _               -> false)
 
-op  mkSpecialBoolOpAppl : Spec * String * StringSet.Set * QualifiedId * MS.Term -> LispTerm
+op  mkLSpecialBoolOpAppl : Spec * String * StringSet.Set * QualifiedId * MS.Term -> LispTerm
 
-def mkSpecialBoolOpAppl (sp,dpn,vars,Qualified("Boolean",n),Record([(_,x),(_,y)],_)) =
+def mkLSpecialBoolOpAppl (sp,dpn,vars,Qualified("Boolean",n),Record([(_,x),(_,y)],_)) =
     let (LOp,LOplOpt) = case n
                  of "&"  -> ("cl:and",None)
 		  | "or" -> ("cl:or", None)
@@ -333,7 +333,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
            else Const(Parameter pid)
          | Some term ->
 	   if isSpecialBoolOpAppl(id,term)
-	   then mkSpecialBoolOpAppl(sp,dpn,vars,id,term)
+	   then mkLSpecialBoolOpAppl(sp,dpn,vars,id,term)
 	   else mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term)))
    | (Embed(id,true),srt,_) ->
      let rng = range(sp,srt) in
