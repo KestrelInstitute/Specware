@@ -149,7 +149,11 @@ else
 		        (load "$MEMORY_MANAGEMENT") 
 			(enlarge-stack)
 			(exiting-on-errors 
-			  (load "Specware4.lisp")
+			  (load "Specware4.lisp"))
+			;; We have two separate exiting-on-errors forms because we must
+			;; finish evaluating the load of Specware4.lisp to create the 
+			;; Specware package before the reader sees a reference to it.
+			(exiting-on-errors 
 			  (Specware::initializeSpecware-0) 
 			  (if (sw "/Applications/Specware/Specware4")
 			    (exit 0)
@@ -179,7 +183,11 @@ else
 		            (load "$MEMORY_MANAGEMENT") 
 			    (enlarge-stack)
 			    (exiting-on-errors 
-			      (load "Specware4.lisp")
+			      (load "Specware4.lisp"))
+			    ;; We have two separate exiting-on-errors forms because we must
+			    ;; finish evaluating the load of Specware4.lisp to create the 
+			    ;; Specware package before the reader sees a reference to it.
+			    (exiting-on-errors 
 			      (Specware::initializeSpecware-0) 
 			      (if (sw "/Applications/Specware/Specware4")
 				(exit 0)
