@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/02/18 18:06:42  weilyn
+ * Added support for imports.
+ *
  * Revision 1.4  2003/02/17 04:33:56  weilyn
  * Created claim customizer.
  *
@@ -64,6 +67,10 @@ class SourceEditSupport {
         bundle.getString("MENU_CREATE_CLAIM")
     };
 
+    static final String[] PROOF_MENU_NAMES = {
+    
+    };
+        
     /* Get the new types that can be created in this node.
      * For example, a node representing a Java package will permit classes to be added.
      * @return array of new type operations that are allowed
@@ -78,6 +85,20 @@ class SourceEditSupport {
         };
     }
 
+    /* Get the new types that can be created in this node.
+     * For example, a node representing a Java package will permit classes to be added.
+     * @return array of new type operations that are allowed
+     */
+    public static NewType[] createNewTypes(ProofElement element) {
+	return new NewType[] {
+/*	    new SpecElementNewType(element, (byte) 0),
+            new SpecElementNewType(element, (byte) 1),
+            new SpecElementNewType(element, (byte) 2),
+            new SpecElementNewType(element, (byte) 3),
+            new SpecElementNewType(element, (byte) 4),*/
+        };
+    }
+    
     /** New types for spec element */
     static class SpecElementNewType extends NewType {
 	/** Spec element where to create new element */
@@ -202,6 +223,78 @@ class SourceEditSupport {
 	}
 	}
 
+    /** New types for proof element */
+    static class ProofElementNewType extends NewType {
+	/** Proof element where to create new element */
+        ProofElement element;
+
+	/** The kind of element to create */
+	byte kind;
+        
+	/** Creates new type
+	 * @param element Where to create new element.
+	 * @param kind The kind of the element to create
+	 */
+	public ProofElementNewType(ProofElement element, byte kind) {
+	    this.element = element;
+	    this.kind = kind;
+	}
+
+	/** Get the name of the new type.
+	 * @return localized name.
+	 */
+	public String getName() {
+	    return PROOF_MENU_NAMES[kind];
+	}
+
+	/** Help context */
+	public org.openide.util.HelpCtx getHelpCtx() {
+	    return new org.openide.util.HelpCtx (SourceEditSupport.class.getName () + ".newElement" + kind); // NOI18N
+	}
+
+	/** Creates new element */
+	public void create () throws IOException {
+	    final String name = element.getName();
+
+	    Element newElement = null;
+
+/*	    try {
+		switch (kind) {
+		case 0:
+		    {
+			// Adding import
+			ImportElement e = new ImportElement();
+			e.setName("<name of unit to import>");
+			MemberCustomizer cust = new MemberCustomizer(e, "Import");
+			if (openCustomizer(cust, "TIT_NewImport") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		}
+                
+	    }
+	    catch (SourceException exc) {
+		// shouldn't happen - memory implementation
+		// is not based on java source.
+	    }*/
+
+	    if (newElement == null)
+		return;
+
+	    final Element addingElement = newElement;
+	    SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
+		    public void run() throws SourceException {
+			switch (kind) {
+/*			case 0:
+			    ((SpecElement)element).addImport((ImportElement)addingElement);
+			    return;*/
+			}
+                        
+		    }
+		});
+	}
+	}
+    
     /** Show dialog and allow user to modify new element.
      * @param customizer The component to be displayed
      * @param titleKey the key to resource bundle for the title of dialog
@@ -312,15 +405,24 @@ class SourceEditSupport {
 		return findSource(mm.getParent());
 	    }
 	}
+        if (element instanceof ProofElement) {
+            ProofElement mm = (ProofElement) element;
+ 	    SourceElement source = mm.getSource();
+	    if (source != null) {
+		return source;
+	    } else {
+		return findSource(mm.getParent());
+	    }           
+        }
 	if (element instanceof MemberElement) {
 	    return findSource(((MemberElement) element).getParent());
 	}
 	return null;
     }
     
-    static void createMetaSlangFile(SpecElement spec, FileObject target) throws SourceException, IOException {
+    static void createMetaSlangFile(MemberElement elem, FileObject target) throws SourceException, IOException {
 	DataObject targetObject;
-	String name = spec.getName();
+	String name = elem.getName();
 	FileObject newFile;
 	String newName;
         
@@ -346,7 +448,11 @@ class SourceEditSupport {
 								      bundle.getString("EXC_CREATE_SOURCE_FILE")
 								      );
 	}
-	cookie.getSource().addSpec(spec);
+        if (elem instanceof SpecElement) {
+            cookie.getSource().addSpec((SpecElement)elem);
+        } else if (elem instanceof ProofElement) {
+            cookie.getSource().addProof((ProofElement)elem);
+        }
 	
     }
     
@@ -361,6 +467,17 @@ class SourceEditSupport {
 	src.removeSpec(spec);
     }
 
+    static void removeProof(ProofElement proof) throws SourceException {
+	SourceElement src = SourceEditSupport.findSource(proof);
+	if (src == null) {
+	    throw (SourceException)ErrorManager.getDefault().annotate(
+								      new SourceException("Element has no source"), // NOI18N
+								      bundle.getString("EXC_NO_SOURCE")
+								      );
+	}
+	src.removeProof(proof);
+    }
+    
     /* default */static class PackagePaste implements NodeTransfer.Paste {
 	private static PasteType[] EMPTY_TYPES = new PasteType[0];                         
 	/** True, if the paste should remove the original class element.
@@ -369,9 +486,16 @@ class SourceEditSupport {
 
 	/** Spec element to paste.
 	 */        
-	private SpecElement element;
+	//private SpecElement element;
+        
+        private MemberElement element;
         
 	PackagePaste(SpecElement element, boolean deleteSelf) {
+	    this.deleteSelf = deleteSelf;
+	    this.element = element;
+	}
+        
+        PackagePaste(ProofElement element, boolean deleteSelf) {
 	    this.deleteSelf = deleteSelf;
 	    this.element = element;
 	}
@@ -407,11 +531,11 @@ class SourceEditSupport {
 	    }
 
 	    public Transferable paste() throws IOException {
-		final SpecElement spec = PackagePaste.this.element;
+		final MemberElement elem = PackagePaste.this.element;
 		final boolean del = PackagePaste.this.deleteSelf;
 
 		try {                
-		    createMetaSlangFile(spec, target);
+		    createMetaSlangFile(elem, target);
 		} catch (SourceException ex) {
 		    IOException x = new IOException(ex.getMessage());
 		    ErrorManager.getDefault().annotate(x, ex);
@@ -419,10 +543,14 @@ class SourceEditSupport {
 		}
 		if (del) {
 		    final SourceException ex[] = { null };
-		    SourceEditSupport.invokeAtomicAsUser(spec, new SourceEditSupport.ExceptionalRunnable() {
+		    SourceEditSupport.invokeAtomicAsUser(elem, new SourceEditSupport.ExceptionalRunnable() {
 			    public void run() throws SourceException {
 				try {
-				    removeSpec(spec);
+                                    if (elem instanceof SpecElement) {
+                                        removeSpec((SpecElement)elem);
+                                    } else if (elem instanceof ProofElement) {
+                                        removeProof((ProofElement)elem);
+                                    }
 				} catch (SourceException e) {
 				    ex[0] = e;
 				} 
@@ -464,4 +592,25 @@ class SourceEditSupport {
 	}
     }
 
+    static class ProofMultiPasteType extends PasteType {
+	ProofElementNode target;
+	Collection members;
+	boolean delete;
+
+	ProofMultiPasteType(ProofElementNode target, Collection members, boolean delete) {
+	    this.target = target;
+	    this.members = members;
+	    this.delete = delete;
+	}
+
+	public Transferable paste() throws IOException {
+	    for (Iterator it = members.iterator(); it.hasNext(); ) {
+		target.pasteElement((Element)it.next(), delete);
+	    }
+	    if (delete) 
+		return ExTransferable.EMPTY;
+	    else
+		return null;
+	}
+    }    
 }

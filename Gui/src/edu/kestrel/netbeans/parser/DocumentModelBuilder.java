@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/02/18 18:10:09  weilyn
+ * Added support for imports.
+ *
  * Revision 1.4  2003/02/17 04:35:21  weilyn
  * Added support for expressions.
  *
@@ -124,6 +127,17 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	return info;
     }
  
+    /** Creates an element for a proof.
+	@param name Name of the proof.
+    */
+    public Item createProof(String name) {
+	ProofInfo info = new ProofInfo(name);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createProof(): "+info);
+	}
+	return info;
+    }
+    
     /** Sets bounds for the whole element. Begin is offset of first character of the element,
 	end is the offset of the last one.
     */
@@ -277,8 +291,10 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	    //addSpec((SpecInfo)child);
 	    if (child instanceof SpecInfo) {
 	      //Util.log("DocumentModelBuilder.setParent child is an instance of specInfo = "+child);
-	      addMember(SourceInfo.SPEC, childInfo);
-	    } 
+	       addMember(SourceInfo.SPEC, childInfo);
+	    } else if (child instanceof ProofInfo) {
+               addMember(SourceInfo.PROOF, childInfo); 
+            }
 	} else if (parent instanceof SpecInfo) {
 	    SpecInfo parentInfo = (SpecInfo)parent;
 	    if (child instanceof SortInfo) {
@@ -292,7 +308,9 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	    } else if (child instanceof ImportInfo) {
                 parentInfo.addMember(SpecInfo.IMPORT, childInfo);
             }
-	} 
+	} else if (parent instanceof ProofInfo) {
+            ProofInfo parentInfo = (ProofInfo)parent;
+        }
     }
     
     public void markError(Item item) {

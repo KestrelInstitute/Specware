@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:03  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -191,14 +194,99 @@ public final class SourceElement extends Element {
         return getSourceImpl().getSpec(name);
     }
 
+  //================== proofs ==========================
+
+    /** Add a new proof.
+    * @param el the proof to add
+    * @throws SourceException if impossible
+    */
+    public void addProof (ProofElement el) throws SourceException {
+      //Util.log("SourceElement.addProof -- adding proof "+el.getName());
+        String id = el.getName();
+        if (getProof(id) != null)
+            throwAddException("FMT_EXC_AddProofToSource", el); // NOI18N
+        getSourceImpl().changeProofs(new ProofElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new proofs.
+    * @param el the proofs to add
+    * @throws SourceException if impossible
+    */
+    public void addProofs(final ProofElement[] els) throws SourceException {
+        String id;
+        
+        for (int i = 0; i < els.length; i++) {
+            id = els[i].getName();
+            if (getProof(id) != null)
+                throwAddException("FMT_EXC_AddProofToSource", els[i]); // NOI18N
+        }
+        getSourceImpl().changeProofs(els, Impl.ADD);
+    }
+
+    /** This method just throws localized exception. It is used during
+    * adding proof element, which already exists in source.
+    * @param formatKey The message format key to localized bundle.
+    * @param element The element which can't be added
+    * @exception SourceException is alway thrown from this method.
+    */
+    private void throwAddException(String formatKey, ProofElement element) throws SourceException {
+	String msg = NbBundle.getMessage(ElementFormat.class, formatKey,
+					 element.getName());
+        throwSourceException(msg);
+    }
+
+    /** Remove a proof.
+    * @param el the proof to remove
+    * @throws SourceException if impossible
+    */
+    public void removeProof(ProofElement el) throws SourceException {
+        getSourceImpl().changeProofs(new ProofElement[] { el }, Impl.REMOVE);
+    }
+
+    /** Remove some proofs.
+    * @param els the proofs to remove
+    * @throws SourceException if impossible
+    */
+    public void removeProofs (final ProofElement[] els) throws SourceException {
+        getSourceImpl().changeProofs(els, Impl.REMOVE);
+    }
+
+    /** Set the proofs.
+    * The old ones will be replaced.
+    * @param els the new proofs
+    * @throws SourceException if impossible
+    */
+    public void setProofs (ProofElement[] els) throws SourceException {
+        getSourceImpl().changeProofs(els, Impl.SET);
+    }
+
+    /** Get the proofs.
+    * @return all proofs
+    */
+    public ProofElement[] getProofs() {
+        System.err.println("*** getProofs(): SourceImpl="+ getSourceImpl());
+        return getSourceImpl().getProofs();
+    }
+
+    /** Find a proof by name.
+    * @param name the name to look for
+    * @return the proof, or <code>null</code> if it does not exist
+    */
+    public ProofElement getProof(String name) {
+        return getSourceImpl().getProof(name);
+    }
+
+    //-------------------------------------------------------------
+    
     /* Prints the element into the element printer.
     * @param printer The element printer where to print to
     * @exception ElementPrinterInterruptException if printer cancel the printing
     */
     public void print(ElementPrinter printer) throws ElementPrinterInterruptException {
         print(getSpecs(), printer);
+        print(getProofs(), printer);
     }
-
+    
     /** Lock the underlaing document to have exclusive access to it and could make changes
     * on this SourceElement.
     *
@@ -269,6 +357,24 @@ public final class SourceElement extends Element {
         * @return the spec, or <code>null</code> if it does not exist
         */
         public SpecElement getSpec (String name);
+
+        /** Change the set of specs.
+        * @param elems the specs to change
+        * @param action one of {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+        * @exception SourceException if the action cannot be handled
+        */
+        public void changeProofs (ProofElement[] elems, int action) throws SourceException;
+
+        /** Get all proofs.
+        * @return the proofs
+        */
+        public ProofElement[] getProofs ();
+
+        /** Find a proof by name.
+        * @param name the name to look for
+        * @return the proof, or <code>null</code> if it does not exist
+        */
+        public ProofElement getProof (String name);
 
         /** Lock the underlaing document to have exclusive access to it and could make changes
         * on this SourceElement.

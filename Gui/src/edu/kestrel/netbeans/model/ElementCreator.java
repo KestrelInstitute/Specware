@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:12:57  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:14:03  weilyn
  * Added support for defs.
  *
@@ -31,4 +34,5 @@ public interface ElementCreator {
     public DefElementImpl    createDef(SpecElement parent);
     public ClaimElementImpl  createClaim(SpecElement parent);
     public ImportElementImpl createImport(SpecElement parent);
+    public ProofElementImpl  createProof(Element parent);
 }

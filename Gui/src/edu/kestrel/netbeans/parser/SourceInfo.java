@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:28  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -24,6 +27,7 @@ import edu.kestrel.netbeans.codegen.TextBinding;
 
 public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater {
     public static final int SPEC = 0;
+    public static final int PROOF = 1;
 
     SourceElement.Impl  sourceImpl;
     LangModel.Updater   updater;
@@ -40,16 +44,24 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         new SpecFinder()
     };
     
+    private static final ElementMatch.Finder[] PROOF_FINDERS = {
+        //new TextPositionMatch(),
+        new ProofFinder()
+    };
+
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
         SPEC_FINDERS,
+        PROOF_FINDERS,
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
         ElementProperties.PROP_SPECS,
+        ElementProperties.PROP_PROOFS,
     };
     
     private static final Class[] CHILDREN_TYPES = {
         SpecElement.class,
+        ProofElement.class,
     };
     
     SourceInfo() {
@@ -113,13 +125,16 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         SourceElement source = (SourceElement)target;
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
-	for (int kind = SPEC; kind <= SPEC; kind++) {
+	for (int kind = SPEC; kind <= PROOF; kind++) {
             Element[] curMembers;
             switch (kind) {
 	    case SPEC:
 		curMembers = source.getSpecs();
 		break;
-	    default:
+            case PROOF:
+                curMembers = source.getProofs();
+                break;
+            default:
 		throw new InternalError("Illegal member type"); // NOI18N
             }
             ChildCollection col = memberLists[kind];
@@ -144,6 +159,12 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
     }
     
     private static final class SpecFinder extends ElementMatch.AbstractFinder {
+        protected boolean matches(BaseElementInfo info, Element el) {
+            return info.name.equals(((MemberElement)el).getName());
+        }
+    }
+
+    private static final class ProofFinder extends ElementMatch.AbstractFinder {
         protected boolean matches(BaseElementInfo info, Element el) {
             return info.name.equals(((MemberElement)el).getName());
         }

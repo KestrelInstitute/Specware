@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/02/18 18:12:59  weilyn
+ * Added support for imports.
+ *
  * Revision 1.4  2003/02/17 04:30:23  weilyn
  * Added support for expressions.
  *
@@ -55,4 +58,7 @@ public interface ElementProperties {
     public static final String PROP_CLAIM_KIND = "claim_kind"; // NOI18N    
 
     public static final String PROP_EXPRESSION = "expression"; // NOI18N        
+
+    public static final String PROP_PROOFS = "proofs"; // NOI18N        
+
 }

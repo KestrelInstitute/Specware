@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/02/18 18:12:50  weilyn
+ * Added support for imports.
+ *
  * Revision 1.4  2003/02/17 04:30:12  weilyn
  * Added support for expressions.
  *
@@ -130,12 +133,16 @@ public interface Binding {
         public void changeMembers(MultiPropertyChangeEvent evt) throws SourceException;
     }
     
-    public interface Spec extends Member, Container {
-    }
-    
     public interface Source extends Binding, Container {
       //public Binding.Container    getSpecSection();
       //public Binding.Container    getOpSection();
     }
+
+    public interface Spec extends Member, Container {
+    }
+    
+    public interface Proof extends Member, Container {
+    }
+    
 }
 

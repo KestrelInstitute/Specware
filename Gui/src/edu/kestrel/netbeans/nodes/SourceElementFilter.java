@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:12  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -27,12 +30,13 @@ import java.beans.PropertyChangeListener;
 public class SourceElementFilter {
 
     public static final int       SPEC = 1;
-    public static final int       ALL = SPEC;
+    public static final int       PROOF = 2;
+    public static final int       ALL = SPEC | PROOF;
     /** Default order of the top-level element types in the hierarchy.
     * A list, each of whose elements is a bitwise disjunction of element types.
     * By default, only classes and interfaces are listed, and these together.
     */
-    public static final int[]     DEFAULT_ORDER = { SPEC };
+    public static final int[]     DEFAULT_ORDER = { SPEC | PROOF };
 
     /** stores property value */
     private int[]                 order = null;

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/18 18:13:46  weilyn
+ * Added insert strategy for claims, defs and imports.
+ *
  * Revision 1.1  2003/01/30 02:01:53  gilham
  * Initial version.
  *
@@ -83,25 +86,26 @@ class DefaultInsertStrategy implements Positioner {
 	    SourceElement source = (SourceElement) container;
 	    if (selector instanceof SpecElement) {
 		return getFirstNonEmpty(source, 0);
-	    }
+	    } else if (selector instanceof ProofElement) {
+                return getFirstNonEmpty(source, 1);
+            }
 	} else if (container instanceof SpecElement) {
 	    SpecElement spec = (SpecElement) container;
 	    if (selector instanceof ImportElement) {
 		return getFirstNonEmpty(spec, 0);
-	    }
-            if (selector instanceof SortElement) {
+	    } else if (selector instanceof SortElement) {
 		return getFirstNonEmpty(spec, 1);
-	    } 
-	    if (selector instanceof OpElement) {
+	    } else if (selector instanceof OpElement) {
 		return getFirstNonEmpty(spec, 2);
-	    }
-            if (selector instanceof DefElement) {
+	    } else if (selector instanceof DefElement) {
 		return getFirstNonEmpty(spec, 3);
-	    }
-            if (selector instanceof ClaimElement) {
+	    } else if (selector instanceof ClaimElement) {
 		return getFirstNonEmpty(spec, 4);
 	    }
-	}
+	} else if (container instanceof ProofElement) {
+            ProofElement proof = (ProofElement) container;
+            //TODO
+        }
 	return null;
     }
         
@@ -109,7 +113,13 @@ class DefaultInsertStrategy implements Positioner {
 	//Util.log("*** DefaultInsertStrategy.getFirstNonEmpty(): startPos="+startPos);
         Element[] items;
         
-	items = container.getSpecs();
+	if (startPos > 1) {
+            items = container.getProofs();
+            if (items != null && items.length > 0) {
+                return items;
+            }
+        }
+        items = container.getSpecs();
 	if (items != null && items.length > 0) {
 	    //edu.kestrel.netbeans.Util.log("*** DefaultInsertStrategy.getFirstNonEmpty(): return "+Util.print((MemberElement[])items));
 	    return items;

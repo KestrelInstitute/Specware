@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/02/20 23:07:14  weilyn
+ * Added prove stuff.
+ *
  * Revision 1.6  2003/02/19 18:48:03  weilyn
  * Commented out ProcessUnit as a spec action for now because Specware doesn't process on the spec level, just file level.
  *
@@ -92,6 +95,26 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
     
     /** Array of the actions of the meta-slang classes. */
     private static final SystemAction[] SPEC_ACTIONS = new SystemAction[] {
+	SystemAction.get(EditAction.class),
+	//SystemAction.get(OpenAction.class),
+	null,
+ //       SystemAction.get(ProcessUnitAction.class),
+//        null,
+	SystemAction.get(CutAction.class),
+	SystemAction.get(CopyAction.class),
+	SystemAction.get(PasteAction.class),
+	null,
+	SystemAction.get(NewAction.class),
+	SystemAction.get(DeleteAction.class),
+	SystemAction.get(RenameAction.class),
+	//null,
+	//SystemAction.get(OverrideAction.class),
+	//SystemAction.get(ToolsAction.class),
+	//SystemAction.get(PropertiesAction.class)
+    };
+
+    /** Array of the actions of the meta-slang classes. */
+    private static final SystemAction[] PROOF_ACTIONS = new SystemAction[] {
 	SystemAction.get(EditAction.class),
 	//SystemAction.get(OpenAction.class),
 	null,
@@ -238,6 +261,46 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
         return createSpecChildren(element, MetaSlangDataObject.getExplorerFactory() );
     }
 
+    /** Returns the node asociated with specified element.
+     * @return ElementNode
+     */
+    public Node createProofNode(final ProofElement element) {
+        if ( element == null ) {
+            return FACTORY_GETTER_NODE;
+        }
+        ProofElementNode n;
+        if (tree) {
+            ProofChildren children = (ProofChildren) createProofChildren(element);
+            ProofElementFilter filter = new ProofElementFilter();
+            n = new ProofElementNode(element, children ,true) {
+		    {
+			getCookieSet().add((FilterCookie) getChildren ());
+		    }
+		};
+
+            n.setElementFormat(new ElementFormat(NbBundle.getBundle (MetaSlangElementNodeFactory.class).getString("CTL_Proof_name_format")));
+
+            filter.setOrder (new int[] {
+/*                SpecElementFilter.IMPORT,
+		SpecElementFilter.SORT,
+		SpecElementFilter.OP,
+                SpecElementFilter.DEF,
+                SpecElementFilter.CLAIM,*/
+            });
+            children.setFilter (filter);
+        }
+        else {
+            n = (ProofElementNode) super.createProofNode(element);
+        }
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(PROOF_ACTIONS);
+        return n;
+    }
+    
+    protected Children createProofChildren( ProofElement element ) {
+        return createProofChildren(element, MetaSlangDataObject.getExplorerFactory() );
+    }
+    
     /**
      * This method will try to extract more information than the ordinary Error message.
      */

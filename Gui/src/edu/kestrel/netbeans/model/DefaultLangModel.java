@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:12:54  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:14:03  weilyn
  * Added support for defs.
  *
@@ -184,7 +187,14 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
     public SourceElementImpl createSource() {
         return new SourceElementImpl(this);
     }
-    
+
+    public ProofElementImpl createProof(Element src) {
+        ProofElementImpl c = new ProofElementImpl(this);
+        getWrapper().wrapProof(c, src);
+        c.setParent(src);
+        return c;
+    }
+        
     public void addPreCommitListener(CommitListener l) {
         synchronized (this) {
             if (preCommitListeners == null)
@@ -632,6 +642,9 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         if (target instanceof SpecElement) {
             SpecElementImpl impl = (SpecElementImpl)getElementImpl(target);
             impl.updateMembers(propertyName, els, orderIndices, optMap);
+        } else if (target instanceof ProofElement) {
+            ProofElementImpl impl = (ProofElementImpl)getElementImpl(target);
+            impl.updateMembers(propertyName, els, orderIndices, optMap);
         } else {
 	    Util.log("DefaultLangModel.updateMembers() : "+propertyName+" els = "+els.length);
 	    Util.log("DefaultLangModel.updateMembers() orderIndices = "+Util.print(orderIndices)+" optMap = "+Util.print(optMap));
@@ -649,7 +662,10 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
 	} else if (target instanceof SpecElement) {
 	    SpecElementImpl impl = (SpecElementImpl)getElementImpl(target);
 	    impl.updateMemberOrder(orderedMembers);
-	}
+	} else if (target instanceof ProofElement) {
+            ProofElementImpl impl = (ProofElementImpl)getElementImpl(target);
+            impl.updateMemberOrder(orderedMembers);
+        }
     }
     
     public void activate(Element target) {

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:27  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -40,6 +43,7 @@ public class SourceImplProxy implements SourceElement.Impl, Node.Cookie,
 PropertyChangeListener {
     
     private static final SpecElement[] NO_SPECS = new SpecElement[0];
+    private static final ProofElement[] NO_PROOFS = new ProofElement[0];
     
     /**
      * PropertyChangeListeners attached to the SourceElement.
@@ -138,6 +142,26 @@ PropertyChangeListener {
         return null;
     }
     
+    public void changeProofs(ProofElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeProofs(elems, action);
+    }
+    
+    public ProofElement[] getProofs() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getProofs(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getProofs(): specs="+impl.getProofs());
+            return impl.getProofs();
+        }
+        return NO_PROOFS;
+    }
+    
+    public ProofElement getProof(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getProof(name);
+        return null;
+    }
     
     public Collection getPropertyChangeListeners() {
         SourceElement.Impl impl = safeFindModelDelegate();

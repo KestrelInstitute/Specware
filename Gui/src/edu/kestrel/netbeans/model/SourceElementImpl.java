@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:04  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -28,7 +31,7 @@ import edu.kestrel.netbeans.Util;
 
 
 /**
- * Represents a source file. This element manages zero or more spec elements.
+ * Represents a source file. This element manages zero or more spec & proof elements.
  * <B>This element has not any
  * Binding</B> since it has no (direct) properties.<P>
  * Although this implementation *does* implement entire SourceElement.Impl interface,
@@ -39,6 +42,7 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
     /** Reference keeping a collection of ElementImpls residing here.
      */
   private SpecCollection  specs;
+  private ProofCollection proofs;
   private MemberCollection members;
     
     private static final long serialVersionUID = 8506642610861188475L;
@@ -73,8 +77,8 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
     members = new MemberCollection(this, (Binding.Container)b); 
   }
 
-    public Element[] getElements() {
-        return getSpecs();
+    public Element[] getElements() { 
+        return members.getElements();
     }
     
     public SpecElement getSpec(String id) {
@@ -112,6 +116,41 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         //firePropertyChangeEvent(event);
     }
     
+    public ProofElement getProof(String id) {
+        if (proofs == null)
+            return null;
+        return proofs.getProof(id);
+    }
+    
+    public ProofElement[] getProofs() {
+        if (proofs == null)
+            return ProofCollection.EMPTY;
+        return (ProofElement[])proofs.getElements();
+    }
+    
+    // Setters/changers
+    public void changeProofs(ProofElement[] mms, int operation) throws SourceException {
+        //Util.log("SourceElementImpl.changeProof -- adding proof ");
+        Object token = takeLock();
+        try {
+            if (proofs == null) {
+                if (operation != ProofElement.Impl.REMOVE && mms.length == 0)
+		  return;
+                initializeProofs();
+            }
+	    //Util.log("SourceElementimpl.changeProofs calling change members for Proofs "+mms.length);
+            proofs.changeMembers(mms, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+        //IndexedPropertyBase.Change changes = IndexedPropertyBase.computeChanges(getProofs(), mms);
+        //Util.log("SourceElementImpl.changeProof -- Changes  "+changes);
+        //MultiPropertyChangeEvent event = new MultiPropertyChangeEvent (this, ElementProperties.PROP_PROOFS, getProofs(), mms);
+        //Util.log("SourceElementImpl.changeProof -- event " + event);
+        //firePropertyChangeEvent(event);
+    }
+
     private void notifyCreate(Element[] els) {
         for (int i = 0; i < els.length; i++) {
             ElementImpl impl = (ElementImpl)els[i].getCookie(ElementImpl.class);
@@ -121,8 +160,8 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
     
     protected void notifyCreate() {
         Element[] els;
-        if (this.specs != null) {
-            notifyCreate(specs.getElements());
+        if (this.proofs != null) {
+            notifyCreate(proofs.getElements());
         }
         super.notifyCreate();
     }
@@ -162,6 +201,16 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
             specs.updateMembers(elements, indices, optMap);
 	    //Util.log("SourceElementimpl.updateMembers after PartialCollection.updateMembers specs = "+Util.print(getSpecs())+
 	    //			     " members =  "+members);
+	} else if (name == ElementProperties.PROP_PROOFS) {
+            if (proofs == null) {
+                if (elements.length == 0)
+                    return;
+                initializeProofs();
+            }
+	    //Util.log("SourceElementimpl.updateMembers calling proofs update members indices =  "+Util.print(indices));
+            proofs.updateMembers(elements, indices, optMap);
+	    //Util.log("SourceElementimpl.updateMembers after PartialCollection.updateMembers proofs = "+Util.print(getProofs())+
+	    //			     " members =  "+members);
 	} else {
             throw new IllegalArgumentException("Unsupported property: " + name); // NOI18N
         }
@@ -183,6 +232,10 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
       //((Binding.Source)getRawBinding()).getSpecSection(),  getModelImpl(), this);
     }
     
+    private void initializeProofs() {
+      this.proofs = new ProofCollection(this, getModelImpl(), members);
+      //((Binding.Source)getRawBinding()).getProofSection(),  getModelImpl(), this);
+    }
     
     protected SourceElementImpl findSource() {
         return this;
@@ -203,13 +256,11 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
     protected void notifyRemove() {
         Element[] allElems;
         
-        if (specs != null) {
-            allElems = members.getElements();
-            for (int i = 0; i < allElems.length; i++) {
-                ElementImpl impl = members.getElementImpl(allElems[i]);
-		Util.log("SourceElementImpl.notifyRemove calling notifyRemove on "+impl);
-                impl.notifyRemove();
-            }
+        allElems = members.getElements();
+        for (int i = 0; i < allElems.length; i++) {
+            ElementImpl impl = members.getElementImpl(allElems[i]);
+            Util.log("SourceElementImpl.notifyRemove calling notifyRemove on "+impl);
+            impl.notifyRemove();
         }
         super.notifyRemove();
     }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/02/18 18:06:45  weilyn
+ * Added support for imports.
+ *
  * Revision 1.4  2003/02/17 04:32:11  weilyn
  * Added support for expressions.
  *
@@ -62,6 +65,7 @@ public final class SourceOptions extends SystemOption {
     private static final byte T_OP = 3;
     private static final byte T_DEF = 4;
     private static final byte T_CLAIM = 5;
+    private static final byte T_PROOF = 6;
 
 
     /** Names of all properties. */
@@ -72,6 +76,7 @@ public final class SourceOptions extends SystemOption {
         "opElementFormat",   //NOI18N
         "defElementFormat",   //NOI18N
         "claimElementFormat", // NOI18N
+        "proofElementFormat", // N0I18N
     };
     
     static Element[] TEST_ELEMENTS;
@@ -138,6 +143,9 @@ public final class SourceOptions extends SystemOption {
     /** Property name of the spec display format. */
     public static final String PROP_SPEC_FORMAT = PROP_NAMES[T_SPEC];
 
+    /** Property name of the proof display format. */
+    public static final String PROP_PROOF_FORMAT = PROP_NAMES[T_PROOF];
+    
     /** Property name of the 'categories usage' property. */
     public static final String PROP_CATEGORIES_USAGE = "categoriesUsage"; // NOI18N
 
@@ -256,6 +264,20 @@ public final class SourceOptions extends SystemOption {
         return getElementFormat(T_CLAIM);
     }
 
+    /** Set the proof format.
+    * @param format the new format
+    */
+    public void setProofElementFormat(ElementFormat format) {
+        setElementFormat(T_PROOF, format);
+    }
+
+    /** Get the proof format.
+    * @return the current format
+    */
+    public ElementFormat getProofElementFormat() {
+        return getElementFormat(T_PROOF);
+    }
+    
     // ============= getters for long form of formats =================
 
     /** Get the spec format for longer hints.
@@ -304,6 +326,14 @@ public final class SourceOptions extends SystemOption {
     public ElementFormat getClaimElementLongFormat() {
         loadDefaultFormats();
         return DEFAULT_FORMATS_LONG[T_CLAIM];
+    }
+
+    /** Get the proof format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getProofElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_PROOF];
     }
 
     // ============= categories of elements usage ===================

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:13:01  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:14:03  weilyn
  * Added support for defs.
  *
@@ -444,4 +447,45 @@ abstract class MemoryCollection extends Object implements Serializable {
         }
     }
 
+    /** Collection of proofs.
+    */
+    static class Proof extends Member {
+        private static final ProofElement[] EMPTY = new ProofElement[0];
+
+        static final long serialVersionUID =3206093459760846163L;
+
+        /** @param ce proof element memory impl to work in
+        */
+        public Proof (ProofElement.Memory memory) {
+            super (memory, ElementProperties.PROP_PROOFS, EMPTY);
+        }
+        
+        public MemberElement find(String name) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                ProofElement element = (ProofElement)it.next ();
+                String ename = element.getName();
+                if (name.equals(ename)) {
+                    return element;
+                }
+            }
+            // nothing found
+            return null;
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+	    ProofElement proof = (ProofElement) obj;
+            ProofElement.Memory mem = new ProofElement.Memory (proof);
+            ProofElement newProof = new ProofElement(mem, proof.getSource());
+            mem.copyFrom(proof);
+            return newProof;
+        }
+    }    
 }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:11  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -161,6 +164,9 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
     if (key instanceof SpecElement) {
       return new Node[] { factory.createSpecNode((SpecElement)key) };
     }
+    if (key instanceof ProofElement) {
+        return new Node[] { factory.createProofNode((ProofElement)key) };
+    }
     if (NOT_KEY.equals(key))
       return new Node[] { factory.createWaitNode() };
     // never should get here
@@ -293,6 +299,9 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
 	if ((elementType & SourceElementFilter.SPEC) != 0) {
 	    keys.addAll(Arrays.asList(element.getSpecs()));
 	}
+        if ((elementType & SourceElementFilter.PROOF) != 0) {
+            keys.addAll(Arrays.asList(element.getProofs()));
+        }
     }
 
 
@@ -303,7 +312,8 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
     private final class ElementListener implements PropertyChangeListener {
         public void propertyChange (PropertyChangeEvent evt) {
             String propName = evt.getPropertyName();
-            boolean refresh = propName.equals(ElementProperties.PROP_SPECS);
+            boolean refresh = (propName.equals(ElementProperties.PROP_SPECS) ||
+                               propName.equals(ElementProperties.PROP_PROOFS));
 			       
             if (!refresh && ElementProperties.PROP_STATUS.equals(evt.getPropertyName())) {
                 Integer val = (Integer) evt.getNewValue();

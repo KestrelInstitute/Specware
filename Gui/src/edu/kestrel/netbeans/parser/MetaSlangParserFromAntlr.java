@@ -860,6 +860,15 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if ( inputState.guessing==0 ) {
 				if (childItem != null) children.add(childItem);
 			}
+			if ( inputState.guessing==0 ) {
+				proof = builder.createProof(name);
+				if (unitIdToken != null) {
+				begin = unitIdToken;
+				}
+				builder.setParent(new LinkedList()/*children*/, proof);
+				ParserUtil.setAllBounds(builder, proof, begin, headerEnd, LT(0));
+				
+			}
 		}
 		catch (RecognitionException ex) {
 			if (inputState.guessing==0) {
@@ -2337,7 +2346,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			{
 				match(RPAREN);
 				if ( inputState.guessing==0 ) {
-					text = "}";
+					text = ")";
 				}
 				break;
 			}

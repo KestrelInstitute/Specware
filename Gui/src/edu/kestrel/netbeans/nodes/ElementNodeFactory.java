@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:06:36  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:15:04  weilyn
  * Added support for defs.
  *
@@ -72,7 +75,13 @@ public interface ElementNodeFactory {
     */
     public Node createImportNode (ImportElement element);
 
-     /** Make a node indicating that the creation of children
+    /** Make a node representing a proof.
+    * @param element the proof
+    * @return a proof node instance
+    */
+    public Node createProofNode (ProofElement element);
+
+    /** Make a node indicating that the creation of children
     * is still under way.
     * It should be used when the process is slow.
     * @return a wait node

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:12:52  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:14:02  weilyn
  * Added support for defs.
  *
@@ -34,5 +37,6 @@ public interface BindingFactory {
     public Binding.Def bindDef(DefElement impl);
     public Binding.Claim bindClaim(ClaimElement impl);
     public Binding.Import bindImport(ImportElement impl);
+    public Binding.Proof bindProof(ProofElement impl);
 }
 

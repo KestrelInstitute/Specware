@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:06:38  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:15:04  weilyn
  * Added support for defs.
  *
@@ -89,6 +92,14 @@ public class FilterFactory implements ElementNodeFactory {
     */
     public Node createImportNode (ImportElement element) {
         return delegate.createImportNode( element );
+    }
+
+    /** Make a node representing a proof
+    * @param element the proof
+    * @return a proof node instance
+    */
+    public Node createProofNode (ProofElement element) {
+        return delegate.createProofNode( element );
     }
 
     /** Make a node indicating that the creation of children

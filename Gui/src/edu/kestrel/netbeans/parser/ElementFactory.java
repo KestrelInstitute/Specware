@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/02/18 18:10:12  weilyn
+ * Added support for imports.
+ *
  * Revision 1.4  2003/02/17 04:35:23  weilyn
  * Added support for expressions.
  *
@@ -72,6 +75,11 @@ public interface ElementFactory {
 	@param name Name of the import
     */
     public Item createImport(String name);
+    
+    /** Creates an element for a proof.
+	@param name Name of the proof.
+    */
+    public Item createProof(String name);
     
     public void setParent(Collection children, Item parent);
 

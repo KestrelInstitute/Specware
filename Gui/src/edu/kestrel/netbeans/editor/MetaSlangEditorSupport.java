@@ -6,6 +6,12 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/03/13 01:23:53  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
  * Revision 1.2  2003/02/17 07:01:59  weilyn
  * Made scURI an Item, and added more rules for scProve.
  *
@@ -561,7 +567,10 @@ public class MetaSlangEditorSupport extends DataEditorSupport implements EditorC
             }
             else if (element instanceof ClaimElement) {
                 n = factory.createClaimNode((ClaimElement)element);
-            }
+            } 
+            else if (element instanceof ProofElement) {
+                n = factory.createProofNode((ProofElement)element);
+            } 
             else if (element instanceof SourceElement) {
                 n = support.getDataObject().getNodeDelegate();
             }

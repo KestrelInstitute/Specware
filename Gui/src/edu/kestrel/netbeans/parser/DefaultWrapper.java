@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:10:07  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:16:02  weilyn
  * Added support for defs.
  *
@@ -58,6 +61,10 @@ public class DefaultWrapper implements WrapperFactory {
 
     public ImportElement wrapImport(ImportElement.Impl theImpl, Element parent) {
         return new ImportElement(theImpl, (SpecElement)parent);
+    }    
+    
+    public ProofElement wrapProof(MemberElement.Impl theImpl, Element parent) {
+        return new ProofElement(theImpl, parent);
     }    
     
 }

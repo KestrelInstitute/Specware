@@ -6,6 +6,12 @@
  *
  *
  * $Log$
+ * Revision 1.18  2003/03/13 01:23:55  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
  * Revision 1.17  2003/03/12 03:01:56  weilyn
  * no message
  *
@@ -310,13 +316,13 @@ private scProve[Token unitIdToken] returns[ElementFactory.Item proof]
       //ignore=fullURIPath
       (childItem=proverAssertions)?     {if (childItem != null) children.add(childItem);}
       (childItem=proverOptions)?        {if (childItem != null) children.add(childItem);}
-                                        /*{proof = builder.createProof(name);
+                                        {proof = builder.createProof(name);
                                          if (unitIdToken != null) {
                                             begin = unitIdToken;
                                          }
-                                         builder.setParent(children, proof);
+                                         builder.setParent(new LinkedList()/*children*/, proof);
                                          ParserUtil.setAllBounds(builder, proof, begin, headerEnd, LT(0));
-                                         }*/
+                                         }
     ;
 
 //---------------------------------------------------------------------------
@@ -770,7 +776,7 @@ private formalOpParameters returns[String[] params]
     params = null;
     List paramList = new LinkedList();
 }
-    : (pattern[paramList]
+    : ((pattern[paramList]
       )*                    {params = (String[]) paramList.toArray(new String[]{});}
     ;
 
@@ -844,7 +850,7 @@ private specialSymbol returns[String text]
 }
     : UBAR                  {text = "_";}
     | LPAREN                {text = "(";}
-    | RPAREN                {text = "}";}
+    | RPAREN                {text = ")";}
     | LBRACKET              {text = "[";}
     | RBRACKET              {text = "]";}
     | LBRACE                {text = "{";}

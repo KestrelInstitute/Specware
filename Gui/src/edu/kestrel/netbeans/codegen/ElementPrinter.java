@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 17:59:36  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:12:14  weilyn
  * Added support for defs.
  *
@@ -108,5 +111,12 @@ public interface ElementPrinter {
     */
     public void markImport(ImportElement element, int what)
     throws ElementPrinterInterruptException;
- 
+
+    /** Mark a notable point in a class element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markProof(ProofElement element, int what)
+    throws ElementPrinterInterruptException;    
 }

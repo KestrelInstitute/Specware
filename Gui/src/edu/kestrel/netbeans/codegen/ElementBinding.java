@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 17:59:33  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:12:13  weilyn
  * Added support for defs.
  *
@@ -699,5 +702,10 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
         public void markImport(ImportElement element, int what) throws ElementPrinterInterruptException {
             mark(element, what);
         }
+
+        public void markProof(ProofElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+
     }
 }

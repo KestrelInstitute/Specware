@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:06:40  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:15:04  weilyn
  * Added support for defs.
  *
@@ -44,6 +47,9 @@ interface IconStrings {
      static final String IMPORT =
         "edu/kestrel/resources/images/ImportNodeIcon"; // NOI18N
 
+     static final String PROOF =
+        "edu/kestrel/resources/images/ProofNodeIcon"; // NOI18N     
+     
      static final String WAIT =
         "edu/kestrel/resources/images/wait"; // NOI18N
 
