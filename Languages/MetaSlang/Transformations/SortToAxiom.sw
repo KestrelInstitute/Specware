@@ -165,7 +165,7 @@ Prover qualifying spec
    case fields of
      | [] -> []
      | (id, _):: restFields ->
-       let predFmla = mkEmbedPred(srt, id) in
+       let predFmla = mkEmbedPred(srt, id, var) in
        let restPreds = mkPredFmlasForFields(srt, var, restFields) in
        Cons(predFmla, restPreds)
 
@@ -210,8 +210,8 @@ Prover qualifying spec
        let arg = mkVar(("constr_var_arg", aSrt)) in
        Apply (Fun (Embed (id, true), srt, noPos), arg, noPos)
 
- op  mkEmbedPred: Sort * Id -> MS.Term
- def mkEmbedPred(srt, id) =
-   mkApply((mkEmbedded(id, srt)), mkVar(id, srt))
+ op  mkEmbedPred: Sort * Id * Var -> MS.Term
+ def mkEmbedPred(srt, id, var) =
+   mkApply((mkEmbedded(id, srt)), mkVar(var))
 
 endspec

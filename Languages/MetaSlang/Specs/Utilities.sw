@@ -442,6 +442,8 @@ Utilities qualifying spec
 	    | Seq(terms,a) -> 
 	      Seq(List.map subst terms,
 		  a)
+	    | SortedTerm(term, srt, a) ->
+	      SortedTerm(subst(term), srt, a)
 
 	def substRule (pat,cond,term) = 
 	  let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in

@@ -102,6 +102,25 @@ spec
 	     srt)
     | _ -> srt
 
+ op unfoldBeforeCoProduct: Spec * Sort -> Sort
+ def unfoldBeforeCoProduct(sp, srt) =
+   case srt of
+     | Base (qid, srts, a) ->
+      (case findTheSort (sp, qid) of
+	 | None -> srt
+	 | Some info ->
+	   if definedSortInfo? info then
+	     let (tvs, fsrt) = unpackFirstSortDef info in
+	     case fsrt of
+	       | CoProduct _ -> srt
+	       | _ -> 
+	       let ssrt = substSort (zip (tvs, srts), fsrt) in
+		 unfoldBeforeCoProduct (sp, ssrt)
+	   else
+	     srt)
+    | _ -> srt
+
+ %% This is dangerous as there may be recursion (I have removed calls to it -- sjw)
  op unfoldStripSort : Spec * Sort * Boolean -> Sort
  def unfoldStripSort (spc, srt, verbose) =
   unfoldStripSort1 (spc, srt, [], verbose)

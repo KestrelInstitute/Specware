@@ -94,10 +94,10 @@ snark qualifying spec {
 		  Lisp.quote(Lisp.symbol("SNARK", "embed_Nil")), Lisp.symbol("KEYWORD","SORT"),  Lisp.quote(Lisp.symbol("SNARK","List"))],
 	Lisp.list[declare_constant,
 		  Lisp.quote(Lisp.symbol("SNARK", "nil")), Lisp.symbol("KEYWORD","SORT"),  Lisp.quote(Lisp.symbol("SNARK","List"))],
-	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "length")), Lisp.nat(1),
-		   Lisp.symbol("KEYWORD","SORT"),
-		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "NUMBER"),
-					 Lisp.symbol("SNARK", "List")])],
+%	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "length")), Lisp.nat(1),
+%		   Lisp.symbol("KEYWORD","SORT"),
+%		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "NUMBER"),
+%					 Lisp.symbol("SNARK", "List")])],
 	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "embed_Cons")), Lisp.nat(2),
 		   Lisp.symbol("KEYWORD","SORT"),
 		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "List"),
@@ -122,7 +122,7 @@ snark qualifying spec {
 		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "BOOLEAN"),
 					 Lisp.symbol("SNARK", "logical")])]
 
-       ]
+       ] %++ arithmeticFunctions
 						    
 %(SNARK:DECLARE-CONSTANT-SYMBOL 'SNARK::|switchLamAux| :SORT 'SNARK::|Arrow_Nat_Nat|)
   op baseAxioms: List LispCell
@@ -192,10 +192,10 @@ snark qualifying spec {
       [
 	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "+")), Lisp.nat(2),
 		   Lisp.symbol("KEYWORD","ASSOCIATIVE"), Lisp.bool(true),
-		   Lisp.symbol("KEYWORD","COMMUTATIVE"), Lisp.bool(true)],
-	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "*")), Lisp.nat(2),
-		   Lisp.symbol("KEYWORD","ASSOCIATIVE"), Lisp.bool(true),
 		   Lisp.symbol("KEYWORD","COMMUTATIVE"), Lisp.bool(true)]
+%	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "*")), Lisp.nat(2),
+%		   Lisp.symbol("KEYWORD","ASSOCIATIVE"), Lisp.bool(true),
+%		   Lisp.symbol("KEYWORD","COMMUTATIVE"), Lisp.bool(true)]
 
 %	"(snark::declare-function-symbol
 %                'snark::+ 2 
@@ -308,8 +308,8 @@ snark qualifying spec {
   def snarkBaseSort (spc, s:Sort, rng?) : LispCell = 
     let s = unfoldBaseUnInterp(spc, s) in
     case s of
-      | Base (Qualified ("Nat",     "Nat"),     _,_) -> Lisp.symbol ("SNARK", "NUMBER")
-      | Base (Qualified ("Nat",     "PosNat"),  _,_) -> Lisp.symbol ("SNARK", "NUMBER")
+      %| Base (Qualified ("Nat",     "Nat"),     _,_) -> Lisp.symbol ("SNARK", "NUMBER")
+      %| Base (Qualified ("Nat",     "PosNat"),  _,_) -> Lisp.symbol ("SNARK", "NUMBER")
       | Base (Qualified ("Integer", "Integer"), _,_) -> Lisp.symbol ("SNARK", "NUMBER")
       | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
      %| Base(Qualified(qual,id),_,_) -> let res = findBuiltInSort(spc, Qualified(qual,id), rng?) in
@@ -322,6 +322,7 @@ snark qualifying spec {
 				      else 
 					 Lisp.symbol ("SNARK", snarkSortId id))
       | Subsort(supSrt, _, _) -> snarkBaseSort(spc, supSrt, rng?)
+      | Quotient(supSrt, _, _) -> snarkBaseSort(spc, supSrt, rng?)
       | Product _ -> Lisp.symbol("SNARK", "TRUE")
       | Arrow   _ -> Lisp.symbol("SNARK", "TRUE")
       | TyVar   _ -> Lisp.symbol("SNARK", "TRUE")
@@ -353,6 +354,7 @@ snark qualifying spec {
 	             (let (_, srt) = unpackSort dfn in
 	              case srt of
 			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",snarkSortId(id))
+			| Quotient (supSrt, _, _) -> Lisp.symbol("SNARK",snarkSortId(id))
 			| _ -> snarkBaseSort(spc, srt, rng?))
 	           | _ -> Lisp.symbol("SNARK",snarkSortId(id))))
       | _ -> Lisp.symbol("SNARK",snarkSortId(id))

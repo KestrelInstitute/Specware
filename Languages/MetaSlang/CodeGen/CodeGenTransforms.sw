@@ -575,6 +575,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 		     | Arrow (_, srt, _) -> srt
 		     | _ -> srt)
       in
+      let cpsrt = unfoldBeforeCoProduct(spc, cpsrt) in
       (case cpsrt of
 	| Base (sqid, insttv as _::_, _) ->
           %% constructor Cons could become Cons_Nat for List (Nat), etc.
@@ -591,6 +592,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 		     | Arrow (srt, _, _) -> srt
 		     | _ -> srt)
       in
+      let cpsrt = unfoldBeforeCoProduct(spc, cpsrt) in
       %let _ = writeLine("Constuctor pred sort: "^printSort(cpsrt)) in
       (case cpsrt of
 	| Base (sqid, insttv as _::_, _) ->
@@ -1500,7 +1502,8 @@ def addEqOpsFromSort (spc, qid, info) =
     spc
   else
     let (tvs, srt) = unpackFirstSortDef info in
-    let usrt = unfoldStripSort (spc, srt, false) in
+    %% Was unfoldStripSort which is unnecessary and dangerous because of recursive types
+    let usrt = stripSubsorts (spc, srt) in
     case usrt of
       | Boolean _ -> spc
       | Base (Qualified (_, "Nat"),     [], _) -> spc
@@ -1579,7 +1582,8 @@ def addEqOpsFromSort (spc, qid, info) =
 				    | None -> mkTrue ()
 				    | Some (fsrt as Base _) -> bcase fsrt
 				    | Some fsrt ->
-				      let ufsrt = unfoldStripSort (spc, fsrt, false) in
+				    %% Was unfoldStripSort which is unnecessary and dangerous because of recursive types
+				    let ufsrt = stripSubsorts (spc, fsrt) in
 				      case fsrt of
 					| Product (fields, _) -> 
 					  getEqTermFromProductFields (fields, fsrt, 

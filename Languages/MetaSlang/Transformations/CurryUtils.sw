@@ -27,53 +27,6 @@ CurryUtils qualifying spec
       (i,[])
       l
 
-  op  unCurrySort: Sort * Spec -> Boolean * Sort
-  %% Returns transformed sort and whether any change was made
-  %% Don't look inside sort definitions except to follow arrows
-  %% (otherwise infinitely recursive)
-  def unCurrySort(srt,spc) =
-    let def unCurryRec s = unCurrySort(s,spc)
-        def unCurryArrowAux(rng,accumDomSrts) =
-	  (case stripSubsorts(spc,rng) of
-	    | Arrow(dom, restRng, _) ->
-	      let expandedDomSrts = 
-                  foldl (fn (dom_srt, dom_srts) ->
-			 case productOpt (spc, dom_srt) of
-			   | Some fields -> dom_srts ++ (map (fn (_,s) -> s) fields)
-			   | _ -> dom_srts ++ [dom_srt])
-		        []
-		        accumDomSrts
-	      in
-	      (true,(unCurryArrowAux(restRng,expandedDomSrts ++ [dom])).2)
-	    | _ ->
-	      let (changed?,nRng) = unCurryRec rng in
-	      let (changed?,nDomSrts) = foldrPred unCurryRec changed? accumDomSrts
-	      in (changed?,mkArrow(mkProduct nDomSrts, nRng)))
-    in
-    case srt of
-      | Subsort(srt, _, _) -> unCurryRec srt
-      | Arrow(dom, rng, _) ->
-        unCurryArrowAux(rng,[dom])
-      | Product(xs,a) ->
-        let (changed?,nxs)
-	   = foldrPred (fn (id,t) ->
-			let (changed?,nt) = unCurryRec t in
-		        (changed?,(id,nt)))
-	       false xs
-	in (changed?,Product(nxs,a))
-      | CoProduct(xs,a) ->
-	let (changed?,nxs)
-	   = foldrPred (fn (id,Some t) ->
-			   let (changed?,nt) = unCurryRec t in
-		           (changed?,(id,Some nt))
-			  | pr -> (false,pr))
-	       false xs
-	in (changed?,CoProduct(nxs,a))
-      | Quotient(s,t,a) ->
-        let (changed?,ns) = unCurryRec s in
-	(changed?,Quotient (ns,t,a))
-      | s -> (false,s)
-
   op  getCurryArgs: MS.Term -> Option(MS.Term * List MS.Term)
   def getCurryArgs t =
     let def aux(term,i,args) =

@@ -512,6 +512,7 @@ AnnSpec qualifying spec
  % substract the ops and sorts in the second argument from those
  % appearing in the first.
  op subtractSpec        : [a] ASpec a -> ASpec a -> ASpec a
+ op subtractSpecProperties: [a] ASpec a * ASpec a -> ASpec a
 
  %% Create new spec with added sort, op, property, import, etc.
 
@@ -671,7 +672,6 @@ AnnSpec qualifying spec
     ops        = mapDiffOps   x.ops   y.ops,
     sorts      = mapDiffSorts x.sorts y.sorts}
 
-  op subtractSpecProperties: Spec * Spec -> Spec
   def subtractSpecProperties(spec1, spec2) =
     let spec2PropNames = map (fn (pt, pn, tv, tm) -> pn) spec2.properties in
     let newProperties =
