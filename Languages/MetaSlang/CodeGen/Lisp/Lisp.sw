@@ -161,7 +161,7 @@ ListADT qualifying spec {
            | Char    c      -> strings ["#\\", Char.toString c]
            | String  s      -> string s
            | Symbol  (p, s) -> strings ["'", p, "::", s]
-	   | Cell cell      -> strings ["'", System.toString cell]
+	   | Cell cell      -> strings ["'", anyToString cell]
 	   | Parameter s    -> string s)
         
 
