@@ -3306,8 +3306,7 @@ pseudo-`op-declarations:
 ||op &&  infixr 15 : Boolean * Boolean -> Boolean 
 ||op =   infixr 20 : fa(a) a * a       -> Boolean 
 ||op ~=  infixr 20 : fa(a) a * a       -> Boolean 
-||op <<  infix? ?? : {$a$:$X$, $b$:$Y$} * {$a$:$X$, $c$:$Z$} ->
-                                           {$a$:$X$, $b$:$Y$, $c$:$Z$}
+||op <<  infixl 11 : {$a$:$X$, $b$:$Y$} * {$a$:$X$, $c$:$Z$} -> {$a$:$X$, $b$:$Y$, $c$:$Z$}
 ]]
 </para>
 <!-- ================================================================= -->
