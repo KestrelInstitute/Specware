@@ -1,5 +1,6 @@
 SpecCalc qualifying spec 
  import ../../Environment
+ import AccessSpec
 
  op addSort        : [a] List QualifiedId            -> ASort a -> ASpec a -> Position -> SpecCalc.Env (ASpec a)
  op addOp          : [a] List QualifiedId -> Fixity  -> ATerm a -> ASpec a -> Position -> SpecCalc.Env (ASpec a)
@@ -23,8 +24,15 @@ SpecCalc qualifying spec
                            | _ -> old_infos)
                         []
                         new_names
-  in {
-   new_sorts <-
+  in
+  {
+    mapM (fn name -> 
+	  if basicQualifiedId? name then
+	    raise (SpecError (pos, (printAliases new_names)^" is a basic type, hence cannot be redeclared."))
+	  else
+	    return ())
+         new_names;
+    new_sorts <-
      case old_infos of
        | [] ->
          %%  We're declaring a brand new sort.
@@ -107,6 +115,12 @@ SpecCalc qualifying spec
                         []
                         new_names
   in {
+    mapM (fn name -> 
+	  if basicQualifiedId? name then
+	    raise (SpecError (pos, (printAliases new_names)^" is a basic op, hence cannot be redeclared."))
+	  else
+	    return ())
+         new_names;
    new_ops <-
    case old_infos of
      | [] ->
