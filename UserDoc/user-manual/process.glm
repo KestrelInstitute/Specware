@@ -397,9 +397,44 @@ executed. If no [[L::sw]] command has been yet executed in the current
 <title>Unit-Specific Processing</title>
 
 <para>This section describes what happens when specific kinds of units
-are processed.</section>
+are processed.</para>
+
+<section>
+<title>Typechecking Specs</title>
+
+<para>The user can define specs by explicitly listing the sorts, ops,
+and axioms comprising the spec, possibly after importing one or more
+spec. When these spec definitions are processed, &Specware; typechecks
+all the expressions that appear in the spec. Typechecking means
+checking that the expressions are type-correct, according to the rules
+of the &Metaslang; language.</para>
+
+<para>In general, only some of the ops and variables that appear in an
+expression have explicit type (i.e., sort) information. Typechecking
+also involves reconstructing the types of those ops and variables that
+lack explicit type information.</para>
+
+<para>Typechecking is an integrated process that checks the type
+correctness of expressions while reconstructing the missing type
+information. This is done by deriving and solving type constraints
+from the expression. For instance, if it is known that an op [[f]] has
+sort [[A -> B]] then the type of the variable [[x]] in the expression
+[[f(x)]] must be [[A]], and the type of the whole expression must be
+[[B]].</para>
+
+<para>If the missing type information cannot be uniquely reconstructed
+and/or if certain constraints are violated, &Specware; signals an
+error, indicating the textual position of the problematic
+expression.</para>
+
+<para>
+</para>
 
 </section>
+
+&prove; <!-- section on proofs -->
+
+</section>  <!-- unit-specific processing -->
 
 <section>
 <title>Auxiliary Commands</title>

@@ -43,8 +43,7 @@
 &start;
 &model;
 &defining;
-&process;
-&prove;
+&process; <!-- includes &prove; -->
 &generatedlisp;
 &debug;
 
