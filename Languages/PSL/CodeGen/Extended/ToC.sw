@@ -117,8 +117,12 @@ SpecCalc qualifying spec {
         | None -> (cspc,Void)
         | Some retRef ->
 	    let spc = specOf initSpec in
-            let (names,fixity,(tyVars,srt),_) = Op.deref (spc, retRef) in
-	    sortToCType cspc spc srt
+	    case AnnSpec.findAllOps (spc,retRef) of
+	      | [(names,fixity,(tyVars,srt),_)] ->
+	        sortToCType cspc spc srt
+	      | _ ->
+		let _ = toScreen ("\nDang.\n") in 
+		(cspc,Void)		
     in
     let def handler id procedure except =
       case except of
