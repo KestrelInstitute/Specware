@@ -37,11 +37,14 @@ System qualifying spec {
   op temporaryDirectory : String
 
 (*
- The following chases symbolic links to get to the true name.
- Interpret the args as <directory>/<name>.<type>
+ The following chase symbolic links to get to the true name.
+ The second arg to trueFilePath is true for relative paths,
+ false for absolute paths.
 *)
 
-  op trueFilename : (List String) * String * String -> (List String) * String * String
+  op trueFilename : String -> String
+  op trueFilePath : List String * Boolean -> List String
+
 
 (* 
  The following allows you wrap the main body you wish to execute [arg 3]

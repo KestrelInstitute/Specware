@@ -59,22 +59,32 @@
   ;; (sys::room nil)
   )
 
-;;; op trueFilename : (List String * String * String) -> (List String * String * String)
-(defun trueFilename (directory name type)
-  (let* ((given-pathname (make-pathname :directory (cons :absolute directory)
-					:name      name
-					:type      type))
+;;; op trueFilename : String -> String 
+(defun trueFilename (filename)
+  (let* ((given-pathname (pathname filename))
 	 (resolved-pathname
 	  #+Allegro
 	  (excl::pathname-resolve-symbolic-links given-pathname)
 	  #-Allegro
 	  (truename given-pathname)
-	  )
-	 (resolved-directory
-	  (rest				; trim off leading :ABSOLUTE
-	   (pathname-directory resolved-pathname))))
-    (list
-     resolved-directory
-     (pathname-name resolved-pathname)
-     (pathname-type resolved-pathname))))
+	  ))
+    (namestring resolved-pathname)))
+
+;;; op trueFilePath : List String * Boolean -> List String
+(defun trueFilePath (path relative?)
+  (let* ((rpath (reverse path))
+	 (name (first rpath))
+	 (dir  (cons (if relative? :relative :absolute)
+		     (reverse (rest rpath))))
+	 (given-pathname (make-pathname :directory dir :name name))
+	 (resolved-pathname
+	  #+Allegro
+	  (excl::pathname-resolve-symbolic-links given-pathname)
+	  #-Allegro
+	  (truename given-pathname)
+	  ))
+    (append (rest (pathname-directory resolved-pathname))
+	    (list (pathname-name resolved-pathname)))))
+
+
      
