@@ -471,9 +471,11 @@
 (defvar *last-make-args* nil)
 (defvar *make-verbose* t)
 
-(defun make (&optional args)
+(defun make (&rest args)
  (let* (
-	(make-args (if (not (null args)) args *last-make-args*))
+	(make-args (if (not (null args)) 
+		       (cons (subst-home (first args)) (rest args))
+		     *last-make-args*))
 	(make-command (if (specware::getenv "SPECWARE4_MAKE") (specware::getenv "SPECWARE4_MAKE") "make"))
 	(user-make-file-suffix ".mk")
 	(sw-make-file "$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules")
@@ -533,7 +535,7 @@
 			     cbase cbase)
 		     ))
 		 (when *make-verbose* (format t ";; invoking make~%"))
-		 (run-cmd (format nil "~A -f ~A" make-command make-file))
+		 (run-cmd make-command (format nil " -f ~A"  make-file))
 		 )
 	     ;; else: no make-args
 	     (progn
@@ -541,7 +543,7 @@
 	       (if (IO-SPEC::fileExistsAndReadable make-file)
 		   (progn
 		     (format t "; using existing make-file ~s...~%" make-file)
-		     (run-cmd (format nil "~A -f ~A" make-command make-file))
+		     (run-cmd make-command (format nil " -f ~A" make-command make-file))
 		     )
 		 (format t " and no previous make-file found; please supply a unit-id as argument.~%")
 		 )
@@ -564,17 +566,17 @@
   )
 
 #-allegro
-(defun run-cmd (cmd)
-  #+cmu  (ext:run-program cmd :output t)
-  #+mcl  (ccl:run-program cmd :output t)
-  #+sbcl (sb-ext:run-program cmd :output t)
+(defun run-cmd (cmd &rest args)
+  #+cmu  (ext:run-program cmd args :output t)
+  #+mcl  (ccl:run-program cmd args :output t)
+  #+sbcl (sb-ext:run-program cmd args :output t)
   #-(or cmu mcl sbcl) (format t "Not yet implemented")
   (values))
 
 #+allegro
-(defun run-cmd (cmd)
-  #+UNIX      (shell (format nil "~A" cmd))
-  #+MSWINDOWS (shell (format nil "~A" cmd))
+(defun run-cmd (cmd &rest args)
+  #+UNIX      (shell (format nil "~A~{ ~A}" cmd args))
+  #+MSWINDOWS (shell (format nil "~A~{ ~A}" cmd args))
   #-(OR UNIX MSWINDOWS) (format t "~&Neither the UNIX nor MSWINDOWS feature is present, so I don't know what to do!~%")
   )
   
