@@ -370,6 +370,8 @@
 (defmacro fixnum? (x)
   `(#+Allegro excl::fixnump 
     #+CMU     extensions::fixnump
+    #+gcl     si:fixnump
+    #-(or Allegro CMU gcl) (error "parser4::fixnum? not defined!")
     ,x))
     
 #+OPTIMIZE-PARSER

@@ -3,7 +3,7 @@
 (in-package "CL-USER")
 
 (defun local-file (filename) 
-  (make-pathname :name filename :defaults *LOAD-PATHNAME*))
+  (make-pathname :name filename :defaults #-gcl *LOAD-PATHNAME* #+gcl SI:*LOAD-PATHNAME*))
 
 (defun load-local-file (filename) 
   (specware::load-lisp-file (local-file filename) :compiled? nil))
