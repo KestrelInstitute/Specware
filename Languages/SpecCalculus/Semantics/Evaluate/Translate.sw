@@ -456,39 +456,14 @@ Note: The code below does not yet match the documentation above, but should.
     case op_term of
       | Fun (Op (qid, fixity), srt, pos) ->
 	(let new_qid = translateOpQualifiedId op_id_map qid in
-	 case new_qid of
-	   | Qualified ("Boolean", id) -> 
-	     if new_qid = qid then 
-	       op_term 
-	     else 
-	       fail ("translateOp: Cannot use Boolean as a qualifier in 'Boolean." ^ id ^ "' at " ^ (printAll pos))
-	   | Qualified (q, id) ->
-	       if q = UnQualified || q = "Boolean" then
-		 (case id of
-		    | "~"    -> fail ("translateOp: cannot refer to syntax '~' in '"   ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
-		    | "&"    -> fail ("translateOp: cannot refer to syntax '&' in '"   ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
-		    | "&&"   -> fail ("translateOp: cannot refer to syntax '&&' in '"  ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
-		    | "or"   -> fail ("translateOp: cannot refer to syntax 'or' in '"  ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
-		    | "||"   -> fail ("translateOp: cannot refer to syntax '||' in '"  ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
-		    | "=>"   -> fail ("translateOp: cannot refer to syntax '=>' in '"  ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
-		    | "<=>"  -> fail ("translateOp: cannot refer to syntax '<=>' in '" ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
-		    | "="    -> fail ("translateOp: cannot refer to syntax '=' in '"   ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
-		    | "~="   -> fail ("translateOp: cannot refer to syntax '~=' in '"  ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
-		    | _ -> 
-		      if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
-	       else
-		 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
+	 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
       | _ -> op_term
 
   def translateSort sort_id_map sort_term =
     case sort_term of
       | Base (qid, srts, pos) ->
 	(let new_qid = translateSortQualifiedId sort_id_map qid in
-	 case new_qid of
-	   | Qualified ("Boolean", id) -> fail ("translateType: Cannot use Boolean as a qualifier in 'Boolean." ^ id ^ "' at " ^ (printAll pos))
-	   | Qualified (q, "Boolean")  -> fail ("translateType: Cannot translate another type into '" ^ q ^ ".Boolean' at " ^ (printAll pos))
-	   | _ ->
-	     if new_qid = qid then sort_term else Base (new_qid, srts, pos))
+	 if new_qid = qid then sort_term else Base (new_qid, srts, pos))
       | _ -> sort_term
 
 
