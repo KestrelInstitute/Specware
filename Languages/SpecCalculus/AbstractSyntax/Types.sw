@@ -102,6 +102,14 @@ The first two elements in the morphism products are terms that evaluate
 to the domain and codomain of the morphisms.
 *)
     | SpecMorph    (Term a) * (Term a) * (List (SpecMorphRule a))
+    | SpecInterp   (Term a) * (Term a) * (SpecInterpRules a)
+
+    | SpecPrism    (Term a) * List (Term a) * List (Term a)
+      %% The first term is a shared domain spec.
+      %% The first list of terms is a list of morphisms, all with the same domain spec.
+      %% The second list of terms is a list of morphisms among the codomains of the 
+      %% first set of morphisms.
+
     | DiagMorph    (Term a) * (Term a) * (List (DiagMorphRule a))
     | ExtendMorph  (Term a)
     | Qualify      (Term a) * Name
@@ -301,6 +309,20 @@ The term in the component must evaluate to a morphism.
   
   type AnswerVar = Option Var
 
+  type  SpecInterpRules a = (SpecInterpRules_ a) * a
+  type  SpecInterpRules_ a = 
+    %% This is the form used by Specware 2 -- a cospan, where the codomain-to-mediator.
+    %% morphism is presumably a definitional extension.
+    %% Alternatively, this could be expressed as symbol to term mappings,
+    %% or as a quotient of morphisms (where an interpretation is viewed as a morphism
+    %% from a quotient of isomorphic specs to a quotient of isomorphic specs).
+    {med : Term a,
+     d2m : Term a,
+     c2m : Term a}
+
+  op  mkSpecInterpRules  : fa (a) (Term a) * (Term a) * (Term a) * a -> SpecInterpRules a
+  def mkSpecInterpRules (med, d2m, c2m, pos) = ({med = med, d2m = d2m, c2m = c2m}, pos)
+
 (*
 The following are invoked from the parser:
 *)
@@ -315,6 +337,8 @@ The following are invoked from the parser:
   op mkDiag        : fa (a) (List (DiagElem a))                                             * a -> Term a
   op mkColimit     : fa (a) (Term a)                                                        * a -> Term a
   op mkSpecMorph   : fa (a) (Term a) * (Term a) * (List (SpecMorphRule a))                  * a -> Term a
+  op mkSpecInterp  : fa (a) (Term a) * (Term a) * (SpecInterpRules a)                       * a -> Term a
+  op mkSpecPrism   : fa (a) (Term a) * (List (Term a)) * (List (Term a))                    * a -> Term a
   op mkDiagMorph   : fa (a) (Term a) * (Term a) * (List (DiagMorphRule a))                  * a -> Term a
   op mkExtendMorph : fa (a) (Term a)                                                        * a -> Term a
   op mkQualify     : fa (a) (Term a) * Name                                                 * a -> Term a
@@ -344,8 +368,12 @@ The following are invoked from the parser:
   def mkSpec        (elements,                  pos) = (Spec        elements,                    pos)
   def mkDiag        (elements,                  pos) = (Diag        elements,                    pos)
   def mkColimit     (diag,                      pos) = (Colimit     diag,                        pos)
-  def mkSpecMorph   (dom_term, cod_term, rules, pos) = (SpecMorph   (dom_term, cod_term, rules), pos)
-  def mkDiagMorph   (dom_term, cod_term, rules, pos) = (DiagMorph   (dom_term, cod_term, rules), pos)
+
+  def mkSpecMorph   (dom_term, cod_term, rules,       pos) = (SpecMorph       (dom_term, cod_term, rules),       pos)
+  def mkSpecInterp  (dom_term, cod_term, rules,       pos) = (SpecInterp      (dom_term, cod_term, rules),       pos)
+  def mkDiagMorph   (dom_term, cod_term, rules,       pos) = (DiagMorph       (dom_term, cod_term, rules),       pos)
+  def mkSpecPrism   (dom_term, sm_terms, conversions, pos) = (SpecPrism       (dom_term, sm_terms, conversions), pos)
+
   def mkExtendMorph (term,                      pos) = (ExtendMorph term,                        pos)
   def mkQualify     (term, name,                pos) = (Qualify     (term, name),                pos)
   def mkTranslate   (term, translate_expr,      pos) = (Translate   (term, translate_expr),      pos)
@@ -373,3 +401,4 @@ The following are invoked from the parser:
     len > 1 && sub(s,len - 1) = #:
 
 endspec
+
