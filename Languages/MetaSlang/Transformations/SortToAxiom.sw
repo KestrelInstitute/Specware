@@ -8,7 +8,7 @@ Prover qualifying spec
    if definedSortInfo? info then
      let (_, srt_def) = unpackSortDef info.dfn in
      let localSorts = spc.importInfo.localSorts in
-     if memberQualifiedId (q, id, localSorts) then
+%     if memberQualifiedId (q, id, localSorts) then
        let sort_name = Qualified (q, id) in
        let axioms = 
 	   case srt_def of
@@ -18,10 +18,10 @@ Prover qualifying spec
 	     | _ -> [] 
        in
 	 axioms
-     else 
+      %else 
        %let _ = writeLine(name^": in axiomFromSortDef Def part is not local") in
        %let _ = debug("not local sort") in
-       []
+      % []
    else
      %let _ = writeLine(name^": in axiomFromSortDef NOT def part") in
      []
@@ -112,16 +112,20 @@ Prover qualifying spec
  op  axiomFromCoProductDefTop: Spec * QualifiedId * Sort -> Properties
  def axiomFromCoProductDefTop(spc, name, srt as CoProduct (fields, b)) =
    let disEqAxioms = mkDisEqsForFields(spc, srt, name, fields) in
-   let exhaustAxiom = exhaustAxiom(spc, srt, name, fields) in
-   Cons(exhaustAxiom, disEqAxioms)
+   let exhaustAxioms = exhaustAxioms(spc, srt, name, fields) in
+   exhaustAxioms++disEqAxioms
 
- op  exhaustAxiom: Spec * Sort * QualifiedId * List (Id * Option Sort) -> Property
- def exhaustAxiom(spc, srt, name as Qualified(qname, id), fields) =
+ op  exhaustAxioms: Spec * Sort * QualifiedId * List (Id * Option Sort) -> Properties
+ def exhaustAxioms(spc, srt, name as Qualified(qname, id), fields) =
    let newVar = (id^"_Var", mkBase(name, [])) in
-   let disjuncts = mkEqFmlasForFields(srt, newVar, fields) in
-   let tm = mkSimpOrs(disjuncts) in
-   let fmla = mkBind(Forall, [newVar], tm) in
-   (Axiom, mkQualifiedId(qname, id^"_def"), [], fmla)
+   let eqDisjuncts = mkEqFmlasForFields(srt, newVar, fields) in
+   let eqTm = mkSimpOrs(eqDisjuncts) in
+   let eqFmla = mkBind(Forall, [newVar], eqTm) in
+   let predDisjuncts = mkPredFmlasForFields(srt, newVar, fields) in
+   let predTm = mkSimpOrs(predDisjuncts) in
+   let predFmla = mkBind(Forall, [newVar], predTm) in
+   [(Axiom, mkQualifiedId(qname, id^"_def"), [], eqFmla),
+    (Axiom, mkQualifiedId(qname, id^"_def"), [], predFmla)]
 
  op  mkEqFmlasForFields: Sort * Var * List (Id * Option Sort) -> List MS.Term
  def mkEqFmlasForFields(srt, var, fields) =
@@ -134,6 +138,15 @@ Prover qualifying spec
        let eqlFmla = mkBind(Exists, existVars, eql) in
        let restEqls = mkEqFmlasForFields(srt, var, restFields) in
        Cons(eqlFmla, restEqls)
+
+ op  mkPredFmlasForFields: Sort * Var * List (Id * Option Sort) -> List MS.Term
+ def mkPredFmlasForFields(srt, var, fields) =
+   case fields of
+     | [] -> []
+     | (id, optSrt):: restFields ->
+       let predFmla = mkEmbedPred(srt, id, optSrt) in
+       let restPreds = mkPredFmlasForFields(srt, var, restFields) in
+       Cons(predFmla, restPreds)
 
  op  mkDisEqsForFields: Spec * Sort * QualifiedId * List (Id * Option Sort) -> Properties
  def mkDisEqsForFields(spc, srt, name, fields) =
@@ -175,5 +188,9 @@ Prover qualifying spec
      | Some aSrt ->
        let arg = mkVar(("constr_var_arg", aSrt)) in
        Apply (Fun (Embed (id, true), srt, noPos), arg, noPos)
+
+ op  mkEmbedPred: Sort * Id * Option Sort -> MS.Term
+ def mkEmbedPred(srt, id, optSrt) =
+   mkApply((mkEmbedded(id, srt)), mkVar(id, srt))
 
 endspec

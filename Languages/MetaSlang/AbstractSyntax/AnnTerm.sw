@@ -341,6 +341,21 @@ MetaSlang qualifying spec {
      | QuotientPat (_,_,   a) -> a
      | SortedPat   (_,_,   a) -> a
 
+  op withAnnP: [a] APattern a * a -> APattern a
+ def withAnnP (pat, b) =
+   case pat of
+     | AliasPat    (p1,p2,   a) -> if b = a then pat else AliasPat    (p1,p2,   b)
+     | VarPat      (v,       a) -> if b = a then pat else VarPat      (v,       b)
+     | EmbedPat    (i,p,s,   a) -> if b = a then pat else EmbedPat    (i,p,s,   b)
+     | RecordPat   (f,       a) -> if b = a then pat else RecordPat   (f,       b)
+     | WildPat     (s,       a) -> if b = a then pat else WildPat     (s,       b)
+     | BoolPat     (bp,      a) -> if b = a then pat else BoolPat     (bp,      b)
+     | NatPat      (n,       a) -> if b = a then pat else NatPat      (n,       b)
+     | StringPat   (s,       a) -> if b = a then pat else StringPat   (s,       b)
+     | CharPat     (c,       a) -> if b = a then pat else CharPat     (c,       b)
+     | RelaxPat    (p,t,     a) -> if b = a then pat else RelaxPat    (p,t,     b)
+     | QuotientPat (p,t,     a) -> if b = a then pat else QuotientPat (p,t,     b)
+     | SortedPat   (p,s,     a) -> if b = a then pat else SortedPat   (p,s,     b)
 
   op withAnnS: [a] ASort a * a -> ASort a
  def withAnnS (srt, a) =

@@ -819,6 +819,17 @@ Utilities qualifying spec
 	 | Fun(Bool false,_,_) -> mkNot t1
 	 | _ -> mkImplies (t1,t2)
 
+ op  mkSimpIff: MS.Term * MS.Term -> MS.Term
+ def mkSimpIff (t1, t2) =
+   case t1 of
+     | Fun(Bool true,_,_)  -> t2
+     | Fun(Bool false,_,_) -> negateTerm(t2) %mkTrue() % was mkFalse() !!
+     | _ -> 
+       case t2 of
+	 | Fun(Bool true,_,_)  -> t1
+	 | Fun(Bool false,_,_) -> negateTerm(t1)
+	 | _ -> mkIff (t1,t2)
+
 
  op  identityFn?: [a] ATerm a -> Boolean
  def identityFn? f =

@@ -54,6 +54,7 @@ MS qualifying spec
  op stringSort      : Sort
 
  def boolSort       = Boolean noPos
+ def integerSort    = mkBase  (Qualified("Integer", "Integer"), []) 
  def natSort        = mkBase  (Qualified("Nat",     "Nat"),     []) 
  def charSort       = mkBase  (Qualified("Char",    "Char"),    [])
  def stringSort     = mkBase  (Qualified("String",  "String"),  [])
@@ -98,6 +99,7 @@ MS qualifying spec
  op mkTrue : () -> Term
  op mkFalse : () -> Term
 
+ op mkInt : Integer -> Term
  op mkNat : Nat -> Term
  op mkChar : Char -> Term
  op mkBool : Boolean -> Term
@@ -113,6 +115,9 @@ MS qualifying spec
  def mkTrue  () = mkFun (Bool true,  boolSort)
  def mkFalse () = mkFun (Bool false, boolSort)
 
+ def mkInt i = if i >= 0
+		 then mkNat(i)
+	       else mkApply (mkOp(mkQualifiedId("Integer", "-"), mkArrow(integerSort, natSort)), mkNat(-i))
  def mkNat n = mkFun (Nat n, natSort)
  def mkChar char = mkFun (Char char, charSort)
  def mkBool bool = mkFun (Bool bool, boolSort)
