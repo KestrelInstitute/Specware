@@ -22,6 +22,71 @@ endspec
 
 ")
 
+ ("Bug 0012 : The tutorial does not work anymore."
+  :sw "/UserDoc/tutorial/example/MatchingRefinements"
+  :output ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols
+;;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols_Ref
+;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Symbols
+;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching0
+;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Words
+;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Messages
+;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#SymbolMatching
+;;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching_Ref0
+;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#WordMatching
+;;; Elaborating spec-substitution at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching
+;;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching_Ref
+;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches0
+;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Matches
+;;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref0
+;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#FindMatches
+;;; Elaborating spec-substitution at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches
+;;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref
+")
+ 
+ ("Bug 0015 : Substitute and Translate fail to update the localSorts and localOps"
+  :show "Bug_0015/subsExample#BB"
+  :output ";;; Elaborating spec-substitution at $TESTDIR/Bug_0015/subsExample#BB
+;;; Elaborating spec at $TESTDIR/Bug_0015/subsExample#AA
+;;; Elaborating spec at $TESTDIR/Bug_0015/subsExample#A
+;;; Elaborating spec-morphism at $TESTDIR/Bug_0015/subsExample#M
+;;; Elaborating spec at $TESTDIR/Bug_0015/subsExample#B
+
+spec  
+ import B
+ type Interval = {start:Integer, stop:Integer}
+ op isEmptyInterval? : Interval -> Boolean
+ def isEmptyInterval? {start = x, stop = y} = x = y
+endspec
+
+")
+
+ ("Bug 0016 : An incorrect SWPATH produces no error or warning"
+  :path "/loser/loser/loser"
+  :output "Warning: Directory does not exist: /loser/loser/loser
+Keeping old path:
+$SPECWARE:.:$SPECWARE/")
+
+ ("Bug 0017 : Incorrect colimit computed"
+  :show "Bug_0017/AAcol#C"
+  :output ";;; Elaborating diagram-colimit at $TESTDIR/Bug_0017/AAcol#C
+;;; Elaborating diagram-term at $TESTDIR/Bug_0017/AAcol#D
+;;; Elaborating spec at $TESTDIR/Bug_0017/AAcol#A
+
+spec  
+ def Y.fubaz = 12345
+ def X.fubaz = 12345
+endspec
+
+")
+
+ ("Bug 0018 : Cannot generate code from colimit"
+  :sw "Bug_0018/BBcol#K"
+  :output ";;; Elaborating diagram-colimit at $TESTDIR/Bug_0018/BBcol#K
+;;; Elaborating diagram-term at $TESTDIR/Bug_0018/BBcol#K
+;;; Elaborating spec at $TESTDIR/Bug_0018/BBcol#A
+;;; Generating lisp file $TESTDIR/Bug_0018/lisp/BBcol.lisp
+")
+
  ("Bug 0043 : Snark doesn't like Booleans"
   :show "Bug_0043/Change#ShouldBeProvable" 
   :output ";;; Elaborating proof-term at $TESTDIR/Bug_0043/Change#ShouldBeProvable
