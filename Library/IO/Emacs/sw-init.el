@@ -199,7 +199,7 @@
 	 (slash-dir (sw::normalize-filename "/"))
 	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*))
 	 (base-world-name
-	   (if (and (eq *specware-lisp* 'allegro) (not *windows-system-p*))
+	   (if (and (eq *specware-lisp* 'allegro))
 	       (concat bin-dir "/big-alisp." *lisp-image-extension*)
 	     nil))
 	 (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
@@ -235,8 +235,11 @@
   (when base-world-name
     (run-plain-lisp 1)
     ;; Currently
-    (sw:eval-in-lisp-no-value (format "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)"
-				      base-world-name))
+    (sw:eval-in-lisp-no-value
+     (format (if *windows-system-p*
+		 "(build-lisp-image %S :c-heap-start  #x7c623000 :oldspace #x100)"
+	       "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)")
+	     base-world-name))
     (sleep-for 4)
     (simulate-input-expression "(exit)")
     (sleep-for 2))
