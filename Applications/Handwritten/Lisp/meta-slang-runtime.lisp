@@ -93,7 +93,7 @@
 ;;;     )
 
 ;;; This is twice as fast as the version above...
-(defun slang-term-equals (t1 t2)
+(defun slang-term-equals-2 (t1 t2)
   (or (eq t1 t2)
       (typecase t1
 	(null      (null    t2))
@@ -103,8 +103,8 @@
 	(character (eq      t1 t2))
 	(cons      (and (consp t2) 
 			;;   Cons cells are equal if their elements are equal too.
-			(slang-term-equals (car t1) (car t2))
-			(slang-term-equals (cdr t1) (cdr t2))))
+			(slang-term-equals-2 (car t1) (car t2))
+			(slang-term-equals-2 (cdr t1) (cdr t2))))
         (vector    (cond ((and   
 			   ;; (quotient? t1) 
 			   ;; (quotient? t2)
@@ -125,13 +125,13 @@
 			   (vectorp t2)
 			   (let ((dim (array-dimension t1 0)))
 			     (do ((i 0 (+ i 1))
-				  (v-equal t (slang-term-equals (svref t1 i)  (svref t2 i))))
+				  (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
 				 ((or (= i dim) (not v-equal)) v-equal)))))))
 	(t (progn 
 	     (format t "Ill formed terms~%") 
 	     nil)))))
 
-(defun slang-term-equals-1 (x) (slang-term-equals (car x) (cdr x)))
+(defun slang-term-equals (x) (slang-term-equals-2 (car x) (cdr x)))
 
 
 #|

@@ -145,7 +145,7 @@
               Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
 
 ;;; Initialization includes preloading the base spec.
-(Specware::initializeSpecware)
+(Specware::initializeSpecware-0)
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/PSL/PSL~2%")
