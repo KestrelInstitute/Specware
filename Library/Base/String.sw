@@ -103,12 +103,11 @@ String qualifying spec
   op Nat.toString     : Nat -> String      % deprecated
   op Char.toString    : Char -> String     % deprecated
 
-  op Integer.intToString    : Integer -> String
-  op Integer.stringToInt    : (String | Integer.intConvertible) -> Integer
+  op Integer.intToString : Integer -> String
+  op Integer.stringToInt : (String | Integer.intConvertible) -> Integer
 
   op Nat.natToString  : Nat -> String
-  op Nat.stringToNat  :
-     {s : String | length s > 0 & all isNum (explode s)} -> Nat
+  op Nat.stringToNat  : (String | Nat.natConvertible) -> Nat
 
   % axioms copied from base spec String:
 
@@ -156,7 +155,7 @@ String qualifying spec
   axiom natToString_def is  natToString = Nat.toString
 
   axiom stringToNat_def is
-    fa (s : String) (all isNum (explode s)) =>
+    fa (s : String) natConvertible s =>
        stringToNat s =
        (let def charToDigit (c : (Char | isNum)) : Nat =
                 case c of
@@ -181,20 +180,15 @@ String qualifying spec
   % ops conceptually belonging to other specs but introduced here,
   % whose Lisp code is generated:
 
-  op Integer.intConvertible : String -> Boolean  % auxiliary predicate
-
-  op Boolean.show : Boolean -> String
-  op Compare.show : Comparison -> String
-  op Option.show  : fa(a) (a -> String) -> Option a -> String
-  op Integer.show : Integer -> String
-  op Nat.show     : Nat -> String
-  op List.show    : String -> List String -> String
-  op Char.show    : Char -> String
-
-  def Integer.intConvertible s =
-    let cs = explode s in
-      (exists isNum cs) &
-      ((all isNum cs) or (hd cs = #- & all isNum (tl cs)))
+  op Boolean.show           : Boolean -> String
+  op Compare.show           : Comparison -> String
+  op Option.show            : fa(a) (a -> String) -> Option a -> String
+  op Integer.intConvertible : String -> Boolean
+  op Integer.show           : Integer -> String
+  op Nat.natConvertible     : String -> Boolean
+  op Nat.show               : Nat -> String
+  op List.show              : String -> List String -> String
+  op Char.show              : Char -> String
 
   def Boolean.show b = Boolean.toString b
 
@@ -209,7 +203,16 @@ String qualifying spec
        | None   -> "None"
        | Some x -> "(Some " ^ (shw x) ^ ")"
 
+  def Integer.intConvertible s =
+    let cs = explode s in
+      (exists isNum cs) &
+      ((all isNum cs) or (hd cs = #- & all isNum (tl cs)))
+
   def Integer.show i = Integer.toString i
+
+  def Nat.natConvertible s =
+    let cs = explode s in
+      (exists isNum cs) & (all isNum cs)
 
   def Nat.show n = Nat.toString n
 
