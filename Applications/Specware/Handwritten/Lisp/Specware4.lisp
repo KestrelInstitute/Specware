@@ -5,6 +5,14 @@
 
 (defvar Specware4 (sys:getenv "SPECWARE4"))
 
+;; Used in printing out the license and about-specware command
+(defvar user::Specware-version "4.0")
+(defvar user::Specware-version-name "Specware-4-0")
+(defvar user::Specware-patch-level "1")
+
+;; Used in patch detection and about-specware command
+(defvar Major-Version-String "4-0")
+
 ;; The following defines functions such as:
 ;;    compile-and-load-lisp-file
 ;;    load-lisp-file
