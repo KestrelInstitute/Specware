@@ -20,7 +20,7 @@ Boolean qualifying spec
   % def or  (x,y) = if x then true  else y
   % def =>  (x,y) = if x then y     else true
   % def <=> (x,y) = if x then y     else ~y 
-  % def ~=  (x,y) = ~(x = y)
+  def ~=  (x,y) = ~(x = y)
 
   % ops conceptually belonging to this spec but introduced elsewhere:
 
