@@ -5,7 +5,18 @@
 
 (in-package :cl-user)
 
-(defvar *socket-number* 4324)
+(defun socket-number-from-command-line ()
+  (let ((command-line-arg? (member "socket" (system:command-line-arguments)
+				   :test 'equal)))
+    (if command-line-arg?
+	(let ((socketnum (read-from-string (second command-line-arg?))))
+	  (if (integerp socketnum)
+	      socketnum
+	    (progn (warn "Illegal socket argument: ~a" socketnum)
+		   nil)))
+      nil)))
+
+(defvar *socket-number* (or (socket-number-from-command-line) 4324))
 
 (defun print-result (arg)
   (format t "~% Connection to Java ~A" arg)

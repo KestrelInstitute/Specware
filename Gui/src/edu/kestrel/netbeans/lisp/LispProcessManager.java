@@ -6,9 +6,13 @@
 
 package edu.kestrel.netbeans.lisp;
 
+/* Use sockets instead
 import com.franz.jlinker.TranStruct;
 import com.franz.jlinker.JavaLinkDist;
 import com.franz.jlinker.LispConnector;
+*/
+import java.net.Socket;
+import java.lang.reflect.Method;
 
 //hacky stuff:
 import org.openide.nodes.Node;
@@ -52,6 +56,12 @@ public class LispProcessManager {
     static private ExternalLispProcess lispServer = null;
     static private Process lispProcess = null;
     
+    static private Socket lispSocket = null;
+    static private BufferedReader toLispStream = null;
+    static private OutputStream fromLispStream = null;
+ 
+    static private lispProcessManagerClass = Class.forname("LispProcessManager");
+   
     /** Creates a new instance of LispProcessManager */
     public LispProcessManager() {
     }
@@ -104,7 +114,15 @@ public class LispProcessManager {
             return false;
         }
     }
-    
+   lispSocket = socket(lispHost,lispPort);
+   toLispStream = new BufferedReader(new InputStreamReader(lispSocket.getInputStream()));
+   fromLispStream = lispSocket.getOutputStream();
+   lispSocket.close();
+   if (toLispStream.ready()){};
+   
+   m = lispProcessManagerClass.getMethod(methodName,new Class[] {param.getClass()};
+   try {m.invoke(param)}
+
     public static void destroyLispProcess() {
         if (lispProcess != null) {
 //            writeToOutput("\n Destroying Lisp Process "+lispProcess);

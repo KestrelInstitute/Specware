@@ -147,6 +147,17 @@
 ;;; Initialization includes preloading the base spec.
 (Specware::initializeSpecware)
 
+#+allegro
+(defun start-java-connection? ()
+  (format t "Checking  command-line arguments: ~a~%" (system:command-line-arguments))
+  (when (member "socket" (system:command-line-arguments)
+		:test 'equal)
+    (load (concatenate 'string
+	    Specware4 "/Gui/src/Lisp/specware-socket-init"))))
+
+#+allegro
+(push 'start-java-connection? excl:*restart-actions*)
+
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
