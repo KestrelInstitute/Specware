@@ -43,9 +43,6 @@ SpecCalc qualifying spec {
     sortMap = sort_map,
     opMap   = op_map}
 
-  % op ppQualifiedId : QualifiedId -> Doc
-  % def ppQualifiedId id = ppString (printQualifiedId id)
-  
   % when omit printing the concrete domain and codomain specs.
   % When printing the maps, we print only where they differ
   % from the canonical injection (where they differ from
@@ -121,12 +118,8 @@ SpecCalc qualifying spec {
     colimit       = specColimit,
     initialObject = emptySpec,
     compose       = compose,
-    % ppObj         = fn spc -> ppString (printSpec spc),
     ppObj         = ppASpec,
-    % ppObj       = fn obj -> ppString "spec object ... later",
     ppArr         = ppMorphism
-    % ppArr       = fn {dom = dom, cod = cod, sortMap = sm, opMap = om} ->
-    % ppString "spec morphism ... later"
   }
 
  %% Used by colimit to actually build the initialCocone
