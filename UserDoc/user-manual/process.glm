@@ -381,6 +381,8 @@ the unit definitions inside the file.</para>
 
 </section>
 
+<!-- LEFT OUT FOR NOW:
+
 <section>
 <title>Repeating the Last Processing Command</title>
 
@@ -390,6 +392,8 @@ executed. If no [[L::sw]] command has been yet executed in the current
 &Specware; session, an error is signaled.</para>
 
 </section>
+
+-->
 
 </section>  <!-- processing commands -->
 
@@ -427,8 +431,17 @@ and/or if certain constraints are violated, &Specware; signals an
 error, indicating the textual position of the problematic
 expression.</para>
 
-<para>
-</para>
+<para>Since the &Metaslang; type system features subsorts defined by
+arbitrary predicates, it is in general undecidable whether an
+expression involving subsorts is type-correct or not. When &Specware;
+processes a spec, it assumes that the type constraints arising from
+subsorts are satisfied, thus making typechecking decidable.</para>
+
+<para>The proof obligations associated with a spec, which are
+extracted via the &Metaslang; [[obligations]] operator, include
+conjectures derived from the type constraints arising from subsorts.
+If all of these conjectures are discharged (using a theorem prover)
+then all the expressions in the spec are type-correct.</para>
 
 </section>
 
@@ -476,15 +489,20 @@ cache.</para>
 [[L::sw <unit-defining-text>]]. In addition, if processing does not
 yield errors, the value of the unit is displayed on screen.</para>
 
+<!-- LEFT OUT FOR NOW:
+
 <para>If the [[L::show]] command is given without an argument, it
 displays the value of the unit processed by the last [[L::show]]
 command that has been executed. If no [[L::sw]] command has been yet
 executed in the current &Specware; session, an error is
 signaled.</para>
 
-<para>The [[L::show]] serves to inspect the value of units constructed
-via the &Metaslang; operators. This is especially useful for beginning
-users as an aid to clarify the semantics of such operators.</para>
+-->
+
+<para>The [[L::show]] command serves to inspect the value of units
+constructed via the &Metaslang; operators. This is especially useful
+for beginning users as an aid to clarify the semantics of such
+operators.</para>
 
 </section>
 
@@ -498,14 +516,14 @@ that associates processing results to unit references.</para>
 on screen via the following command:</para>
 
 [[L:
-||    :swlist
+||    :list
 ]]
 
 <para>The cache is cleared (i.e., re-initialized) via the following
 command:</para>
 
 [[L:
-||    :swinit
+||    :sw-init
 ]]
 
 <para>Normally, there is no need to use these commands.</para>
