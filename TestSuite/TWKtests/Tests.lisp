@@ -59,8 +59,7 @@ p1: Conjecture doubleswitchidentity in aspec is Proved! using Snark.
 ;;; Elaborating spec-morphism at $TESTDIR/ThreeValue#ThreeM
 ;;; Elaborating obligator at $TESTDIR/ThreeValue#ThreeObs
 ;;; Elaborating proof-term at $TESTDIR/ThreeValue#ThreeP
-;; ensure-directories-exist: creating
-;;   $TESTDIR/Both/ThreeValue/ThreeP.log
+;; ensure-directories-exist: creating $TESTDIR/Both/ThreeValue/ThreeP.log
 ;; Directory $TESTDIR/Both/ThreeValue/ does not exist, will create.
 ThreeP: Theorem threedifferent in ThreeValuesDef is Proved! using Snark.
     Snark Log file: $TESTDIR/Both/ThreeValue/ThreeP.log
@@ -72,8 +71,7 @@ ThreeP: Theorem threedifferent in ThreeValuesDef is Proved! using Snark.
 ;;; Elaborating spec at $TESTDIR/MathFact#sum_spec
 ;;; Elaborating obligator at $TESTDIR/MathFact#sum_spec_obs
 ;;; Elaborating proof-term at $TESTDIR/MathFact#sum_spec_p1
-;; ensure-directories-exist: creating
-;;   $TESTDIR/Both/MathFact/sum_spec_p1.log
+;; ensure-directories-exist: creating $TESTDIR/Both/MathFact/sum_spec_p1.log
 ;; Directory $TESTDIR/Both/MathFact/ does not exist, will create.
 sum_spec_p1: Conjecture sum_zero in sum_spec_obs is NOT proved using Snark.
     Snark Log file: $TESTDIR/Both/MathFact/sum_spec_p1.log
