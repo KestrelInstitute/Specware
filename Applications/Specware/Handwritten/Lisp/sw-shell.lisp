@@ -248,8 +248,16 @@
     (s &rest all-args &key format-control format-arguments &allow-other-keys)
   (if (eq s 'file-error)
       (apply original-error s all-args)
-    (progn (apply #'format t format-control format-arguments)
-	   (throw ':top-level-reset nil))))
+    (progn
+      (when (typep s 'condition)
+	(unless format-control
+	  (setq format-control (simple-condition-format-control s)))
+	(unless format-arguments
+	  (setq format-arguments (simple-condition-format-arguments s))))
+      (if format-control
+	       (apply #'format t format-control format-arguments)
+	(format t "Error ~a" s))
+      (throw ':top-level-reset nil))))
 
 (defun sw-shell-0 ()
   (Specware::initializeSpecware-0)
