@@ -4,7 +4,7 @@ This constructs PSL and refines various abstract sorts.
 
 \begin{spec}
 let PSL = spec {
-  import /Languages/Specware/Semantics/Specware
+  import /Languages/SpecCalculus/Semantics/Specware
   import /Languages/PSL/Semantics/Evaluate/Other
 
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic/AsLists

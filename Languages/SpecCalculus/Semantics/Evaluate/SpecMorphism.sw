@@ -17,18 +17,27 @@ coherence conditions of the morphism elements.
     print (";;; Processing spec morphism at " ^ (uriToString uri) ^ "\n");
     (domValue,domTimeStamp,domDepURIs) <- evaluateTermInfo domTerm;
     (codValue,codTimeStamp,codDepURIs) <- evaluateTermInfo codTerm;
-    case (coerceToSpec domValue, coerceToSpec codValue) of
+    coercedDomValue <- return (coerceToSpec domValue);
+    coercedCodValue <- return (coerceToSpec codValue);
+    case (coercedDomValue, coercedCodValue) of
       | (Spec spc1, Spec spc2) -> {
             morph <- makeSpecMorphism spc1 spc2 morphRules (positionOf domTerm);
             return (Morph morph,max(domTimeStamp,codTimeStamp),
                     listUnion (domDepURIs,codDepURIs))
           }
+      | (Other _, _) ->
+          evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepURIs)
+                             (coercedCodValue,codTimeStamp,codDepURIs) morphRules (positionOf domTerm)
+      | (_, Other _) -> 
+          evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepURIs)
+                             (coercedCodValue,codTimeStamp,codDepURIs) morphRules (positionOf codTerm)
       | (Spec _, _) -> raise
           (TypeCheck (positionOf domTerm,
                       "domain of spec morphism is not a spec"))
       | (_, Spec _) -> raise
           (TypeCheck (positionOf codTerm,
                       "codomain of spec morphism is not a spec"))
+
       | (_,_) -> raise
           (TypeCheck (positionOf domTerm,
                       "domain and codomain of spec morphism are not specs"))
@@ -158,6 +167,17 @@ coherence conditions of the morphism elements.
     }
 \end{spec}
 
+The first pass to creating a morphism doesn't mention the ops
+and sorts that ops and sorts with the same name. The function
+below completes the map.
+
+A better strategy would be to use a different map theory that
+allows us to omit the identity components.
+
+If we explicitly indicate a mapping, use that
+TODO: What if explicit map is to non-existant target?
+Should we check to see if qid is in cod_map??  
+
 \begin{spec}
   op completeMorphismMap:
     fa(a,b) AQualifierMap QualifiedId
@@ -177,24 +197,5 @@ coherence conditions of the morphism elements.
              | _ -> raise (MorphError (position, "No mapping for " ^ qualifier ^ "." ^ id))
     in
       foldOverQualifierMap compl emptyMap dom_map
-
-%     foldriAQualifierMap (fn (qualifier, id, _, new_map) ->
-%                          %% If we explicitly indicate a mapping, use that
-%                          %% TODO: What if explicit map is to non-existant target?
-%                          %%       Should we check to see if qid is in cod_map??  
-%                          case findAQualifierMap (trans_map, qualifier, id) of
-%                            | Some qid -> update new_map 
-%                                                 (Qualified (qualifier,id))
-%                                                 qid % explicit
-%                            | _ ->
-%                          %% Otherwise, if the identity map works, use that
-%                          case findAQualifierMap (cod_map, qualifier, id) of
-%                            | Some _   -> update new_map 
-%                                                 (Qualified (qualifier,id)) 
-%                                                 (Qualified (qualifier,id)) % identity
-%                            | _ -> 
-%                          fail ("morphism: No mapping for "^qualifier^"."^id))
-%                         emptyMap
-%                         dom_map               
 }
 \end{spec}

@@ -2,25 +2,29 @@
 
 \begin{spec}
 SpecCalc qualifying spec {
-  import Signature 
+  import ../../AbstractSyntax/Types
+  import ../PSpec
+  import /Languages/SpecCalculus/Semantics/Evaluate/Signature 
   import /Languages/MetaSlang/Specs/Elaborate/Utilities
   import /Languages/MetaSlang/AbstractSyntax/Fold
   import /Library/Legacy/DataStructures/ListPair
-  import Spec/Utilities
+  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/Utilities
   import ../Utilities
-  import Spec
+  import /Languages/SpecCalculus/Semantics/Evaluate/Spec
   import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
 
   op sortScheme : fa (a) AOpInfo a -> ASortScheme a
   def sortScheme (names,fxty,sortScheme,optTerm) = sortScheme
 
-  op sortOfScheme : fa (a) ASortScheme a -> ASort a
-  def sortOfScheme (tyVars,srt) = srt
+  op sortOf : fa (a) ASortScheme a -> ASort a
+  def sortOf (tyVars,srt) = srt
+
+  op evaluatePSpecElems  : PSpec -> List (PSpecElem Position) -> SpecCalc.Env (PSpec * TimeStamp * URI_Dependency)
 
   op evaluatePSpecProcElem :
            PSpec
         -> PSpecElem Position
-        -> Env PSpec
+        -> SpecCalc.Env PSpec
   def evaluatePSpecProcElem pSpec (elem,position) =
     case elem of
       | Proc (name,procInfo) ->
@@ -32,9 +36,9 @@ SpecCalc qualifying spec {
             (foldriAQualifierMap
                (fn (qual,id,opInfo,recSorts) ->
                    if qual = UnQualified then
-                     Cons ((id,sortOfScheme (sortScheme opInfo)),recSorts)
+                     Cons ((id,sortOf (sortScheme opInfo)),recSorts)
                    else
-                     Cons ((qual ^ "_" ^ id,sortOfScheme (sortScheme opInfo)),recSorts))
+                     Cons ((qual ^ "_" ^ id,sortOf (sortScheme opInfo)),recSorts))
                         [] tmpSpec.ops) in
           % let procSort = mkBase(unQualified "Proc",[argProd,resSort,storeRec]) in {
           let procSort = mkArrow (argProd,resSort) in {
@@ -386,7 +390,6 @@ of the \verb+fa+ operation over the domain of the map \verb+f+
 
 We choose the second approach.
 
-
 \begin{spec}
       | Assign (trm1,trm2) ->
           (case trm2 of
@@ -505,7 +508,6 @@ We choose the second approach.
             | _ ->
                 compileAssign pSpec first last bSpec cnt trm1 trm2)
 
->>>>>>> 1.10
 \begin{spec}
       | Relation trm -> compileAxiomStmt pSpec first last bSpec cnt trm
 \end{spec}
@@ -870,64 +872,61 @@ front of the axiom term.
     -> SpecCalc.Env (BSpec * Nat * PSpec)
 \end{spec}
 
-  def compileProcCall ctxt first last bspec cnt procs trm? pr args =
-      let procOpInfo =
-        case StringMap_find(ctxt.static.ops,pr) of
-            Some procOpInfo -> procOpInfo
+  def compileProcCall pSpec first last bSpec cnt trm? procId args = {
+      statCtxt <- staticSpec pSpec;
+      procOpInfo <-
+        case findTheOp (dyCtxt,procId) of
           | None ->
-             fail ("compileProcCall: call to undefined procedure: " ^ pr) in
+             raise (SpecError (internalPosition, "compileProcCall: call to undefined procedure: " ^ (printQualifiedId procId)))
+          | Some info -> info;
 
-      let (leftId,leftPrimedTerm) =
-          case trm? of
-               Some trm -> processLHS trm
-             | None -> ("dummy", mkRecord_ast [])
+      (leftId, leftPrimedTerm) <-
+         return (case trm? of
+           | Some trm -> processLHS trm
+           | None -> ("dummy", mkRecord []);
 %                  (case procOpInfo of
 %                      (_,(_,(Base(_,srts),_)),_) -> 
 %                          (mkVar_ast("x___x",hd(tl srts)),hd(tl srts))
 %                    | _ -> fail
 %                        ("compileProcCall: bad procedure opInfo: " ^ pr))
-             | _ -> fail "compileProcCall: result term not a variable" in
+           | _ -> fail "compileProcCall: result term not a variable"); 
 
-      let primedId = leftId ^ "'" in
-      let procInfo = eval_p procs pr in
-      let declDynCtxt = fromMetaSlang_ast procInfo.dynamic in
-      let apexSpec = ctxt.dynamic in
-      let apexSpec = {
-          name = apexSpec.name,
-          sorts = apexSpec.sorts,
-          ops = StringMap_foldri (fn (opr,opinfo,map) ->
-                  StringMap_insert(map,opr ^ "'",opinfo))
-                             apexSpec.ops
-                             declDynCtxt.ops,
-          properties = apexSpec.properties,
-          imports = apexSpec.imports
-        } in
-      let argTuple = mkTuple_ast args in
-      let oldRec =
-          mkRecord_local(StringMap_foldri (fn (id,opinfo,pairs) ->
-                              let trm = mkOp_ast([id],opinfo.2.2) in
-                              Cons ((id,trm),pairs))
-                             []
-                             declDynCtxt.ops) in
-      let newRec =
-          mkRecord_local(StringMap_foldri (fn (id,opinfo,pairs) ->
-                              let trm = mkOp_ast([id ^ "'"],opinfo.2.2) in
-                              Cons ((id,trm),pairs))
-                             []
-                             declDynCtxt.ops) in
-      let recPair = mkTuple_ast([oldRec,newRec]) in
-      let totalTuple = mkTuple_ast([argTuple,leftPrimedTerm,recPair]) in
-      let procOp = mkOp_ast([pr],procOpInfo.2.2) in
+So a procedure can write to anything in scope when it was declared.
+What about local variables that are introduced after the procedure is declared
+but before the procedure is called. They must be renamed when they are introduced.
+If a variable name appears here and in the dynamic context of the procedure,
+then they are the same variable. Moreover we can be certain that the new primed
+version of the variable doesn't exist.
 
-      let axm = mkApply_ast(procOp,totalTuple) in
-      let apexSpec =
+      primedId <- return (leftId ^ "'");
+      procInfo <- return (eval procs procId); 
+      declDynCtxt <- return procInfo.dynamicSpec;
+      newOps <- foldOverOps (fn (qual,id,opInfo,map) ->
+                  return (insertAQualifierMap (map, qual, id ^ "'", opInfo)))
+                             pSpec.dynamicSpec.ops
+                             procInfo.dynamicSpec
+      apexSpec <- return (setOps pSpec.dynamicSpec, newOps);
+      argTuple <- return (mkTuple args); 
+      oldRec <- return (mkRecord_local (foldOverOps (fn (qual,id,opInfo,terms) ->
+                              Cons (mkOp(mkQualifiedId (qual,id), sortOf (sortScheme opInfo)),terms))
+                             []
+                             declDynCtxt.ops));
+      newRec <- return (mkRecord_local (foldOverOps (fn (qual,id,opInfo,terms) ->
+                              Cons (mkOp(mkQualifiedId (qual,id ^ "'"), sortOf (sortScheme opInfo)),terms))
+                             []
+                             declDynCtxt.ops));
+      recPair <- return (mkTuple [oldRec,newRec]); 
+      totalTuple <- return (mkTuple [argTuple,leftPrimedTerm,recPair]); 
+      procOp <- return (mkOp (pr, sortOf (sortScheme procOpInfo)));
+      axm <- return (mkApply (procOp,totalTuple));
+      apexSpec <- return (
         case trm? of
-            Some trm -> 
-                (case StringMap_find (ctxt.dynamic.ops,leftId) of
-                      None ->
-                       fail ("compileProcCall: id '" ^ leftId ^ "' is undefined")
-                    | Some (fixity,sortScheme,optTerm) ->
-
+          | Some trm -> 
+              (case findTheOp (pSpec.dynamicSpec.ops,leftId) of
+                 | None ->
+                     raise (SpecError (internalPosition,
+                                      "compileProcCall: id '" ^ (printQualifiedId leftId) ^ "' is undefined")
+                 | Some (fixity,sortScheme,optTerm) ->
 end{spec}
 
 The point here is that, if the variable was defined in an scope outside
@@ -936,11 +935,10 @@ in the apexSpec. Hence, before adding we must make sure its not already
 there.
 
 begin{spec}
-                       (case StringMap_find(apexSpec.ops,primedId) of
-                            None -> addOp_ast((primedId,
-                               fixity,sortScheme,optTerm),apexSpec)
+                       (case findTheOp(apexSpec.ops,primedId) of
+                          | None -> addOp ((primedId,fixity,sortScheme,optTerm),apexSpec)
                           | Some _ -> apexSpec))
-          | None -> apexSpec in
+            | None -> apexSpec in
 
       let apexSpec = addAxiom_ast(("call",[],axm),apexSpec) in
       let apexSpec_ms = elaborateInContext ctxt.static apexSpec in

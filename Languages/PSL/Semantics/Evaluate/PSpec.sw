@@ -7,8 +7,14 @@ the P as parameterized spec.
 \begin{spec}
 SpecCalc qualifying spec {
   import New
-  import Signature
+  import ../PSpec
+  import ../Utilities
+  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
   import /Library/Legacy/DataStructures/ListUtilities
+\end{spec}
+
+\begin{spec}
+  sort SpecCalc.OtherValue = PSpec
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -21,9 +27,7 @@ or names to spec like things that include procedures. I think the latter.
 They are procedures in context.
 
 \begin{spec}
- % op SpecCalc.evaluatePSpec :
- %         List (PSpecElem Position)
- %      -> SpecCalc.Env ValueInfo
+  op SpecCalc.evaluatePSpec : List (PSpecElem Position) -> SpecCalc.Env ValueInfo
   def SpecCalc.evaluatePSpec pSpecElements = {
      base <- basePSpec;
      (pSpec,timeStamp,depURIs) <- evaluatePSpecElems base pSpecElements;
@@ -33,15 +37,15 @@ They are procedures in context.
      dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
      newPSpec <- setDynamicSpec pSpec dyCtxtElab;
      newPSpec <- setStaticSpec newPSpec statCtxtElab;
-     return (PSpec newPSpec,timeStamp,depURIs)
+     return (Other newPSpec,timeStamp,depURIs)
    }
 \end{spec}
 
 \begin{spec}
-%   op evaluatePSpecElems :
-%            PSpec
-%         -> List (PSpecElem Position)
-%         -> Env (PSpec * TimeStamp * URI_Dependency)
+  op evaluatePSpecElems :
+           PSpec
+        -> List (PSpecElem Position)
+        -> SpecCalc.Env (PSpec * TimeStamp * URI_Dependency)
 
   def SpecCalc.evaluatePSpecElems initialPSpec pSpecElems = {
       (pSpecWithImports,timeStamp,depURIs)
@@ -61,13 +65,13 @@ They are procedures in context.
   op evaluatePSpecImportElem :
            (PSpec * TimeStamp * URI_Dependency)
         -> PSpecElem Position
-        -> Env (PSpec * TimeStamp * URI_Dependency)
+        -> SpecCalc.Env (PSpec * TimeStamp * URI_Dependency)
   def evaluatePSpecImportElem (val as (pSpec,currentTimeStamp,currentDeps)) (elem,position) =
     case elem of
       | Import term -> {
             (value,importTimeStamp,depURIs) <- evaluateTermInfo term;
             (case value of
-              | PSpec impPSpec -> {
+              | Other impPSpec -> {
                     newStatic <- mergeImport term impPSpec.staticSpec pSpec.staticSpec position;
                     newDynamic <- mergeImport term impPSpec.dynamicSpec pSpec.dynamicSpec position;
                     newPSpec <- setStaticSpec pSpec newStatic;
@@ -89,12 +93,12 @@ They are procedures in context.
   op evaluatePSpecProcElem :
            PSpec
         -> PSpecElem Position
-        -> Env PSpec
+        -> SpecCalc.Env PSpec
 
   op evaluatePSpecContextElem :
            PSpec
         -> PSpecElem Position
-        -> Env PSpec
+        -> SpecCalc.Env PSpec
   def evaluatePSpecContextElem pSpec (elem, position) =
     case elem of
       | Sort (names,(tyVars,optSort)) -> {
@@ -158,7 +162,7 @@ They are procedures in context.
   op evaluatePSpecDynamicContextElem :
            PSpec
         -> PSpecElem Position
-        -> Env PSpec
+        -> SpecCalc.Env PSpec
   def evaluatePSpecDynamicContextElem pSpec (elem, position) =
     case elem of
       | _ -> return pSpec

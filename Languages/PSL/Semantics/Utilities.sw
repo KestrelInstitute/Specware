@@ -1,8 +1,11 @@
 \section{Construction / Destruction Operations}
 
+These should be part of PSpec but the following are monadic.
+
 \begin{spec}
 SpecCalc qualifying spec {
-  import Environment
+  import PSpec
+  import /Languages/SpecCalculus/Semantics/Environment
 
   op staticSpec : PSpec -> SpecCalc.Env Spec
   def staticSpec pSpec = return pSpec.staticSpec

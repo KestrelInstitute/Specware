@@ -11,8 +11,19 @@ SpecCalc qualifying spec
 
   def SpecCalc.evaluateOther args pos = {
     uri <- getCurrentURI;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at "^(uriToString uri)^"\n"))
-					}
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri) ^ "\n"))
+  }
+
+  def SpecCalc.evaluateOtherSubstitute morph other morphTerm pos = {
+    uri <- getCurrentURI;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri)^ "\n"))
+  }
+
+  def SpecCalc.evaluateOtherSpecMorph spc morph rules pos = {
+    uri <- getCurrentURI;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri)^ "\n"))
+  }
+
   def SpecCalc.ppOtherValue value = ppString "<some OtherValue>"
 
   def SpecCalc.ppOtherTerm  term  = ppString "<some OtherTerm>"

@@ -60,18 +60,18 @@ if [ ! -x "$LISP" ]; then
 fi
 
 echo " "
-if [ -f lisp/Specware4.lisp ]; then
+if [ -f lisp/PSL.lisp ]; then
   echo "Saving previous specware lisp file ..."
-  echo "cp -p -f lisp/Specware4.lisp lisp/Specware4-save.lisp"
-  cp -p -f lisp/Specware4.lisp lisp/Specware4-save.lisp
+  echo "cp -p -f lisp/PSL.lisp lisp/PSL-save.lisp"
+  cp -p -f lisp/PSL.lisp lisp/PSL-save.lisp
 else
   echo "Note: No previous specware lisp file."
 fi
 echo " "
-if [ -f bin/linux/Specware4.dxl ]; then
+if [ -f bin/linux/PSL.dxl ]; then
   echo "Saving previous specware image ..."
-  echo "cp -p -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl"
-  cp -p -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
+  echo "cp -p -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl"
+  cp -p -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl
 else
   echo "Note: No previous specware image."
 fi
@@ -101,7 +101,7 @@ if [ -f lisp ]; then
    exit 1
 fi
 
-bin/linux/Specware4-text -batch <<-XXXX
+$SPECWARE4/Applications/Specware/bin/linux/Specware4-text -batch <<-XXXX
                :swpath
 	(load "$EXIT_ON_ERRORS") ; bin/linux/exit-on-errors
 	(enlarge-stack)
@@ -162,7 +162,7 @@ $LISP -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
 	(exiting-on-errors 
 	  (load "PSL.lisp"))
-	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
+	(excl::dumplisp :name "$SPECWARE4/Applications/PSL/bin/linux/PSL.dxl")
 XXXX
 RC=$?
 

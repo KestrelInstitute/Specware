@@ -1,49 +1,66 @@
 #!/bin/bash --noprofile
 
-# This script builds PSL.
-# That is,
-#  - it saves the old generated PSL.lisp and PSL.dxl (ie world)
-#  - it starts Specware4 
-#      - it first tries to run a lisp session with an existing dxl image
-#      - if that fails it tries to load PSL from previously generated lisp
-#  - applies Specware to itself (sw "/Applications/PSL/PSL")
-#     to generate a new PSL.lisp,
-#  - starts a fresh lisp session
-#  - loads the new PSL (under Handwritten/Lisp, (load "PSL.lisp"))
-#    (this compiles everything)
-#  - starts a fresh lisp session again
-#  - loads the new PSL (under Handwritten/Lisp, (load "PSL.lisp"))
-#  - dumps a world into the bin directory
-
-# Perhaps there should be a different script for bootstrapping from lisp
-# (bootstrap-from-lisp?).
+# Load and generate a dxl (world) for PSL. Does not compile PSL.
 
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. The 'set -v' turns on echoing of
 # lines read. This will be removed later.
 
-# set -v
-
-# We assume SPECWARE4 has been set.
-if [ -z $SPECWARE4 ]; then
-    echo "Failed to bootstrap, SPECWARE4 environment variable not set"
-    exit 1
-fi
-
-echo \$SPECWARE4=$SPECWARE4
+act='load'
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
-LISP=${LISP:-/usr/local/acl/acl61/alisp}
+# set -v
 
-echo cd $SPECWARE4/Applications/PSL
-cd $SPECWARE4/Applications/PSL
+# Test whether SPECWARE4 has been set
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+case "$SPECWARE4" in
+    /*) : ok;;
+    *)  SPECWARE="`pwd`/$SPECWARE4";;
+esac
+
+if [ ! -d "$SPECWARE4"/Applications/PSL ]; then
+   echo "Failed to $act: could not find directory
+   $SPECWARE4/Applications/PSL" 2>&1
+   exit 1
+fi
+
+# Try to find lisp executable:
+
+if [ -z "$LISP" ]; then
+   for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
+      if [ -x "$L" ]; then
+         export LISP="$L"; break
+      fi
+   done
+fi
+
+if [ -z "$LISP" ]; then
+   echo "Failed to $act, no LISP executable found" 2>&1
+   exit 1
+fi
+
+if [ ! -x "$LISP" ]; then
+   echo "Failed to $act, $LISP is not executable" 2>&1
+   exit 1
+fi
 
 echo " "
 if [ -f bin/linux/PSL.dxl ]; then
   echo "Saving previous specware image ..."
-  echo "cp -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl"
-  cp -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl
+  echo "cp -p -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl"
+  cp -p -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl
 else
   echo "Note: No previous specware image."
 fi
@@ -57,13 +74,21 @@ echo " "
 # Is there a way to inhibit all the warnings (eg unused variable)
 # when Lisp loads?
 
-SWPATH=$SPECWARE4:.
+export SWPATH=$SPECWARE4:.
+EXIT_ON_ERRORS=$SPECWARE4/Applications/Specware/bin/linux/exit-on-errors
+
+echo "\$SWPATH=$SWPATH"
 
 # All the toplevel routines that activate Specware return a boolean value.
 # They return true if the call to Specware succeeded without activating
 # Specware's toplevel handler. They return false (lisp nil) when the
 # handler is invoked. If, when bootrapping, the toplevel handler is
 # called, then we abort the bootstrap.
+
+if [ -f lisp ]; then
+   echo "Failed to $act, $SPECWARE4/Applications/PSL/lisp is not a directory" 2>&1
+   exit 1
+fi
 
 echo " "
 echo cd $SPECWARE4/Applications/PSL/Handwritten/Lisp
@@ -79,13 +104,8 @@ echo " "
 echo "Loading PSL ... (to compile)"
 echo " "
 $LISP -batch <<-XXXX
-	(defun bail-out-on-signals (os-exception)
-	  (let ((signal-number (excl::operating-system-signal-number os-exception))
-	        (signal-name   (excl::operating-system-signal-name   os-exception)))
-	    (when (stringp signal-number) (rotatef signal-name signal-number)) ; workaround for Allegro bug 
-	    (format t "~&Lisp session terminated by OS signal ~D: ~A~%" signal-number signal-name)
-	    (exit signal-number)))
-	(handler-bind ((INTERRUPT-SIGNAL (function bail-out-on-signals)))
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
 	  (load "PSL.lisp"))
 XXXX
 RC=$?
@@ -94,7 +114,7 @@ RC=$?
 if [ $RC -ne 0 ]; then
   echo ""
   echo "First load failed with code $RC, exiting ..."
-  exit 1
+  exit $RC
 fi
 
 # The second time is just to do the dumplisp. If we do it in one
@@ -110,15 +130,9 @@ echo " "
 echo "Loading PSL ... (for dumplisp)"
 echo " "
 $LISP -batch <<-XXXX
-	(defun bail-out-on-signals (os-exception)
-	  (let ((signal-number (excl::operating-system-signal-number os-exception))
-	        (signal-name   (excl::operating-system-signal-name   os-exception)))
-	    (when (stringp signal-number) (rotatef signal-name signal-number)) ; workaround for Allegro bug 
-	    (format t "~&Lisp session terminated by OS signal ~D: ~A~%" signal-number signal-name)
-	    (exit signal-number)))
-	(handler-bind ((INTERRUPT-SIGNAL (function bail-out-on-signals)))
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
 	  (load "PSL.lisp"))
-	(setq SW-NOW-RETURNS-STATUS t) ; temp hack -- value is irrelevant, just want to intern symbol
 	(excl::dumplisp :name "$SPECWARE4/Applications/PSL/bin/linux/PSL.dxl")
 XXXX
 RC=$?
@@ -127,5 +141,5 @@ RC=$?
 if [ $RC -ne 0 ]; then
   echo ""
   echo "Second load failed with code $RC, exiting ..."
-  exit 1
+  exit $RC
 fi

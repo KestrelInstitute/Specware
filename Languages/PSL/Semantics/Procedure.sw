@@ -7,6 +7,9 @@ Bipointed predicative \BSpecs\ are those where the morphisms in
 a diagram are all imports and where each \BSpec\ has two \emph{points};
 corresponding to initial and final states.
 
+The dynamicSpec records the variables in scope when the procedure is
+declared. Same for the static context.
+
 \begin{spec}
 SpecCalc qualifying spec {
   % import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
@@ -16,7 +19,7 @@ SpecCalc qualifying spec {
   sort Procedure = {
     parameters : List String,
     return : Option String,
-    staticSpec : Spec, % why are these here?
+    staticSpec : Spec,
     dynamicSpec : Spec,
     code : BSpec
   }

@@ -30,7 +30,20 @@ SpecCalc qualifying spec {
   op evaluateObligations : SCTerm                                                                   -> SpecCalc.Env ValueInfo
 
   %% Hook for extensions to specware
-  op evaluateOther       : OtherTerm Position                                           -> Position -> SpecCalc.Env ValueInfo  % used for extensions to Specware
+  op evaluateOther       : OtherTerm Position                           -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOtherSpecMorph :
+       ValueInfo
+    -> ValueInfo
+    -> List (SpecMorphRule Position)
+    -> Position
+    -> SpecCalc.Env ValueInfo
+
+  op SpecCalc.evaluateOtherSubstitute :
+       ValueInfo
+    -> ValueInfo
+    -> SCTerm
+    -> Position
+    -> SpecCalc.Env ValueInfo
 
   %% Lower-level support routines:
 
@@ -39,7 +52,8 @@ SpecCalc qualifying spec {
 
   %% Hooks to create an environment in which monad can be run
   op Specware.ignoredState    : State
-  op Specware.toplevelHandler : Exception -> SpecCalc.Monad Boolean % SpecCalc.Monad = SpecCalc.Env, but type checker gets confused if we use Env
+  op Specware.toplevelHandler : Exception -> SpecCalc.Monad Boolean
+  % SpecCalc.Monad = SpecCalc.Env, but type checker gets confused if we use Env
 
   %% These are hooks to handwritten function that save and restore the
   %% Specware state in a lisp environment Successive invocations of the
@@ -49,6 +63,5 @@ SpecCalc qualifying spec {
 
   op Specware.saveSpecwareState         : SpecCalc.Env ()
   op Specware.restoreSavedSpecwareState : SpecCalc.Env ()
-
 }
 \end{spec}

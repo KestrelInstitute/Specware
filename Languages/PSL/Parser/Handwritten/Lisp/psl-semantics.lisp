@@ -6,7 +6,7 @@
   :comment "A specification" 
   (setq *varcounter* 0)
   (let ((decls (if (eq :unspecified decls) nil decls)))
-    (cons (cons :|PSL| decls) (make-pos l r))))
+    (cons (cons :|Other| decls) (make-pos l r))))
 
 (defun make-psl-var-decl (varName sortScheme l r)
   (cons
