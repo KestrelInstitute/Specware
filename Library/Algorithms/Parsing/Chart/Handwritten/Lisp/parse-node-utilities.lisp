@@ -6,10 +6,16 @@
 (defmacro warn-pos (&rest args)
   `(warn-pos-fn session ,@args))
 
+(defvar *suppress-warnings?* nil)
+(defvar *warnings*   '())
+
 (defun warn-pos-fn (session &rest args)
-  (emacs::goto-file-position (namestring (parse-session-file session))
-			     (second args) (third args))
-  (apply 'warn args))
+  (cond (*suppress-warnings?*
+	 (push (apply 'format nil args) *warnings*))
+	(t
+	 (emacs::goto-file-position (namestring (parse-session-file session))
+				    (second args) (third args))
+	 (apply 'warn args))))
 
 (defun parser-attach-rules (session)
   ;;
