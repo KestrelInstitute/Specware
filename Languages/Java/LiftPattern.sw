@@ -3,7 +3,8 @@ spec
 import /Languages/MetaSlang/Specs/Utilities
 import /Languages/MetaSlang/Specs/Environment
 import /Languages/SpecCalculus/Semantics/Environment
-import /Languages/SpecCalculus/Semantics/Evaluate/Spec
+import /Languages/SpecCalculus/Semantics/Evaluate/Spec/Utilities
+%import /Languages/SpecCalculus/Semantics/Evaluate/Spec
 
 sort Term = MS.Term
 %sort Env a = SpecCalc.Env a

@@ -1,6 +1,8 @@
-spec
+Prover qualifying spec
  import ../Specs/Environment
+ import ProverPattern
 
+  sort Term = MS.Term
   op unCurry: MS.Term * Nat -> Option ((List Id) * MS.Term)
 
   op unCurrySort: Sort * Nat -> Sort
@@ -76,7 +78,7 @@ spec
         of Arrow _ -> true
          | Subsort(s,_,_) -> functionSort?(sp,s)
          | _ -> false
-
+(*
  op patternNameOpt : Pattern       -> Option Id
  op patternNamesOpt: Pattern       -> Option (List Id)
 
@@ -98,7 +100,7 @@ spec
 		       | _-> None)
 	            (Some ([])) fields
      | _ -> None
-
+*)
   op curryShapeNum: Spec * Sort -> Nat
   def curryShapeNum(sp,srt) =
     case arrowOpt(sp,srt)
@@ -109,6 +111,8 @@ spec
 
   def unLambdaDef(spc, srt, name, term) =
     let new_equality = mkUncurryEquality(spc, srt, name, term) in
+    let faVars = freeVars(new_equality) in
+    let new_equality = mkBind(Forall, faVars, new_equality) in
     let eqltyWithPos = withAnnT(new_equality, termAnn(term)) in
       [eqltyWithPos]
 
@@ -151,10 +155,15 @@ spec
 	if memberQualifiedId(qname, name, localOps) then
 	  let pos = termAnn(term) in
 	  let opName = mkQualifiedId(qname, name) in
-	  let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
-	  %	let _ = writeLine(name^": in axiomFromOpDef Def part") in
-            [ax]
-	else []
+	  let initialFmla = hd (unLambdaDef(spc, srt, opName, term)) in
+	  let liftedFmlas = proverPattern(initialFmla) in
+	  let axioms = map (fn(fmla:Term) -> (Axiom, name^"_def", [], fmla)) liftedFmlas in
+	  %%let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
+	  	%let _ = writeLine(name^": in axiomFromOpDef Def part") in
+            axioms
+	else %let _ = writeLine(name^": in axiomFromOpDef Def part is not local") in
+	  %let _ = debug("not local op") in
+	     []
       | _ -> %let _ = writeLine(name^": in axiomFromOpDef NOT def part") in
 	       []
 	

@@ -212,6 +212,11 @@ AnnSpec qualifying spec
    %% TODO: take into account substitution of tyvs
    tyvs1 = tyvs2 & equalTerm? (t1, t2)
 
+op equalProperty?: fa(a) AProperty a * AProperty a -> Boolean
+def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2, tyVars2, term2)) =
+  propType1 = propType2 & equalTerm?(term1, term2) & equalTyVars?(tyVars1, tyVars2)
+
+
  % --------------------------------------------------------------------------------
  % get the sort/op names as list of strings
 (* ### Unused?

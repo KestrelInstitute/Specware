@@ -38,8 +38,11 @@ SpecCalc qualifying spec
     let translated_dom_axioms = mapPartial (fn prop ->
 					    case prop of
 					      | (Axiom, name, tyvars, fm) ->
-						Some (Conjecture, name, tyvars,
-						      translateTerm (fm, sortMap, opMap))
+					        if exists (fn (codProp) -> equalProperty?(codProp, prop)) cod.properties
+						  then None
+						else 
+						  Some (Conjecture, name, tyvars,
+							translateTerm (fm, sortMap, opMap))
 					      | _ -> None) 
 					   dom.properties
     in
@@ -47,8 +50,8 @@ SpecCalc qualifying spec
 			                  | Some unitId -> [((UnitId (UnitId_Relative unitId),pos), cod)]
 			                  | _ -> [],
 			 importedSpec = Some cod,
-			 localOps     = emptyOpNames,
-			 localSorts   = emptySortNames}
+			 localOps     = cod.importInfo.localOps,
+			 localSorts   = cod.importInfo.localSorts}
     in
     let ob_spc = {importInfo = import_of_cod,
 		  ops        = cod.ops,

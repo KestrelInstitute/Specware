@@ -1,6 +1,7 @@
 MetaSlang qualifying spec { 
  import /Library/Base
  import /Library/Legacy/Utilities/State  % for MetaTyVar's
+ import /Library/Legacy/DataStructures/ListPair
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                QualifiedId 
@@ -529,6 +530,13 @@ MetaSlang qualifying spec {
      | _ -> false
 
  def equalVar? ((id1,s1), (id2,s2)) = id1 = id2 & equalSort? (s1, s2)
+
+ op equalTyVar?: TyVar * TyVar -> Boolean
+ def equalTyVar?(tyVar1, tyVar2) = tyVar1 = tyVar2
+
+ op equalTyVars?: TyVars * TyVars -> Boolean
+ def equalTyVars?(tyVars1, tyVars2) =
+   all (fn (tyV1, tyV2) -> equalTyVar?(tyV1, tyV2)) (tyVars1, tyVars2)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Mappings

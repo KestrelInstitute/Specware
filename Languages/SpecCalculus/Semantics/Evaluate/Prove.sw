@@ -2,9 +2,12 @@ SpecCalc qualifying spec {
   import UnitId
   import Spec/SpecUnion
   import /Languages/Snark/SpecToSnark
+  import /Languages/MetaSlang/Transformations/DefToAxiom
   import UnitId/Utilities                                    % for uidToString, if used...
 
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
+
+ %op explicateHiddenAxioms:AnnSpec.Spec -> AnnSpec.Spec
   
  def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
      unitId <- getCurrentUnitId;
@@ -21,6 +24,8 @@ SpecCalc qualifying spec {
 	     case coerceToSpec value of
 	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
                | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
+     expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
+     _ <- return(writeString(printSpec(subtractSpec expandedSpec baseSpec)));
      prover_options <- 
        (case possible_options of
 	  | OptionString prover_options -> return (prover_options)
@@ -29,7 +34,7 @@ SpecCalc qualifying spec {
 	  | Error   (msg, str)     -> raise  (SyntaxError (msg ^ str)));
      proved:Boolean <- (proveInSpec (proof_name,
 				     claim_name, 
-				     subtractSpec uspc baseSpec,
+				     subtractSpec expandedSpec baseSpec,
 				     spec_name,
 				     baseProverSpec,
 				     prover_name, 
@@ -109,6 +114,7 @@ SpecCalc qualifying spec {
 		  assertions, prover_options, snarkLogFileName, pos) = {
    result <-
    let baseHypothesis = base_spc.properties in
+   let _ = debug("pinspec") in
    let findClaimInSpec = firstUpTo (fn (_, propertyName, _, _) -> claim_name = propertyName)
                                    spc.properties in
    case findClaimInSpec of
