@@ -22,6 +22,7 @@
     ("show" . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
     ("showx" . "[unit-term] Like `show' but shows all types and ops including imports.")
     ("prove" . "[proof arguments] Abbreviation for proc prove [proof arguments]")
+    ("prwb" . "[on] Include the base hypothesis when invokig Snark.")
     ("punits" . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
     ("lpunits" . "[unit-identifier [filename]] Like `punits' but only for local conjectures.")
@@ -193,6 +194,7 @@
 ;      (j-config-pkg (cl-user::swj-config-pkg argstr))
 ;      (j-config-reset (cl-user::swj-config-reset))
       (prove (cl-user::sw (concatenate 'string "prove " argstr)) (values))
+      (prwb (if argstr (cl-user::swprb argstr) (cl-user::swprb)))
       (punits (cl-user::swpf argstr))
       (lpunits (cl-user::lswpf argstr))	; No local version yet
       (ctext (if (null argstr)
