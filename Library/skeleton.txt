@@ -19,10 +19,10 @@ GENERAL NOTIONS
   * logical operations
   * comparisons
   * satisfiable
-  * epsilon
   * uniquely satisfied
-  * iota
   * finite
+  * epsilon
+  * iota
   * min
   * max
 
