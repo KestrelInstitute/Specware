@@ -20,6 +20,7 @@ XML qualifying spec
                         | Quotient     SortDescriptor * TermDescriptor              
                         | Subsort      SortDescriptor * TermDescriptor              
                         | Base         QIdDescriptor * List SortDescriptor
+                        | Boolean
                         | TyVar        
                         | MetaTyVar    
                         | Bottom
@@ -30,6 +31,7 @@ XML qualifying spec
   def MakeQuotientSortDescriptor  (base, qq)  : SortDescriptor = Quotient   (base, qq)
   def MakeSubsortSortDescriptor   (base, pp)  : SortDescriptor = Subsort    (base, pp)
   def MakeBaseSortDescriptor      (q,id,args) : SortDescriptor = Base       ((q,id), args)
+  def MakeBooleanSortDescriptor   ()          : SortDescriptor = Boolean    
 
   %% Does this belong here (for use by apps) or elsewhere (for use by just Specware itself) ?
 
@@ -81,6 +83,7 @@ XML qualifying spec
 							       ""
 							       parms) ^ 
 					    ")"))
+      | Boolean       -> "Boolean.Boolean"
       | TyVar         -> "type var"
       | MetaTyVar     -> "meta type var"
       | Bottom        -> "<bottom>"

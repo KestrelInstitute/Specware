@@ -56,7 +56,6 @@ XML qualifying spec
 		       pos),
 		  arg],
 		 pos)
-	 
        def mkembed (id, _ (* srt *)) =
 	 Fun (Embed (id, false), 
 	      sort_descriptor,  % TODO: correct?
@@ -137,6 +136,7 @@ XML qualifying spec
 								          mynil
 									  (rev srts))])
 	   
+	   | Boolean _ -> mkapp ("XML", "MakeBooleanSortDescriptor-0", mkrecord [])
 	   | TyVar      (tv,                _) -> tag "<Some TyVar>"
 	   
 	   | MetaTyVar  (mtv,               _) -> tag "<Some MetaTyVar??>"

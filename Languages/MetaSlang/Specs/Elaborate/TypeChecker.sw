@@ -333,6 +333,8 @@ spec {
             of {link = Some other_sort, uniqueId, name} -> checkSort(env,other_sort)
              | _ -> srt)
 
+       | Boolean _ -> srt
+
        | Base (given_sort_qid, instance_sorts, pos) ->
 	 let def given_sort_str () =
 	      (printQualifiedId given_sort_qid)
@@ -926,10 +928,10 @@ spec {
                       (case findTheOp2 (env, id1, id2) of
                         | Some (_,Infix p,_,_) -> Infix  (term, p)
                         | _                    -> Nonfix term)
-                  | Fun (And,       _, _) -> Infix (term, (Left, 12))
-                  | Fun (Or,        _, _) -> Infix (term, (Left, 13))
-                  | Fun (Implies,   _, _) -> Infix (term, (Left, 14))
-                  | Fun (Iff,       _, _) -> Infix (term, (Left, 15))
+                  | Fun (And,       _, _) -> Infix (term, (Right, 12))
+                  | Fun (Or,        _, _) -> Infix (term, (Right, 13))
+                  | Fun (Implies,   _, _) -> Infix (term, (Right, 14))
+                  | Fun (Iff,       _, _) -> Infix (term, (Right, 15))
                   | Fun (Equals,    _, _) -> Infix (term, (Left, 20))
                   | Fun (NotEquals, _, _) -> Infix (term, (Left, 20))
                   | _ -> Nonfix term

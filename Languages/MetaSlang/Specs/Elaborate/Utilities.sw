@@ -648,6 +648,7 @@ spec
       | Quotient(t,pred,_) -> occurs(v,t)  %or occursT(v,pred)
       | Subsort(t,pred,_)  -> occurs(v,t)  %or occursT(v,pred)
       | Base(_,srts,_)     -> exists (fn s -> occurs(v,s)) srts
+      | Boolean _          -> false
       | TyVar _            -> false 
       | MetaTyVar _        -> (case unlinkSort srt of
                                | MetaTyVar(w1,_) -> v = w1 
