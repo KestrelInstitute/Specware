@@ -11,7 +11,7 @@ act='build image'
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
-set -v
+# set -v
 
 # Test whether SPECWARE4 has been set
 
