@@ -163,8 +163,9 @@ start-htm.dbk: Makefile $(GLM2DBK) start.glm
 	$(GLM2DBK) -htm start.glm > start-htm.dbk
 
 clean:
-	rm -rf $(SUM).tex $(SUM).aux $(SUM).log \
-	$(PDFDBK) $(HTMDBK) *.old db2html-dir \
-	$(SUM).dbk $(SUM)-htm.dbk
+	rm -rf $(SUM).tex $(SUM).aux $(SUM).log $(SUM).out \
+	$(PDFDBK) $(HTMDBK) *.old $(SUM).htm-dir \
+	$(SUM).dbk $(SUM)-htm.dbk jade.log
 
 pristine: clean
+	

@@ -6,34 +6,34 @@
 The translation of executable specs to Lisp code is straightforward
 for the most part as Lisp is a higher-order functional
 language. Functional expressions go to lambda expressions and most
-&Specware sorts are implemented as lisp lists and vectors apart
+&Specware; sorts are implemented as Lisp lists and vectors apart
 from the strings, numbers, characters and booleans which are
-implemented by the corresponding lisp datatypes. This guide is meant
+implemented by the corresponding Lisp datatypes. This guide is meant
 primarily to help the user in calling and debugging the functions
 generated from a spec, so we concentrate on the translation of op
 names to Lisp names and the implementation of sorts. The
 implementation details of procedural constructs such as
 pattern-matching are omitted. The interested user is free to examine
-the lisp code itself, which is simple but verbose for pattern-matching
+the Lisp code itself, which is simple but verbose for pattern-matching
 constructs.
 </para>
 
 <section>
-<title>Translation of &Specware Names to Lisp Names</title>
+<title>Translation of &Specware; Names to Lisp Names</title>
 
 <para>
-&Specware ops are implemented using lisp defuns if they are functions,
-defparameter otherwise. Their names are uppercased and put in the
+&Specware; ops are implemented using Lisp [[L:defun]]s if they are functions,
+[[L:defparameter]]s otherwise. Their names are upper-cased and put in the
 package with the same name as the qualifier, or [[L:SW-USER]] if
 unqualified. However, if the name is that of a built-in Lisp symbol,
-the name is prepended with the character "!" and not uppercased. If
-the qualifier of the op is the same as a built-in lisp package then
+the name is prepended with the character "[[L:!]]" and not upper-cased. If
+the qualifier of the op is the same as a built-in Lisp package then
 "[[L:-SPEC]]" is appended to the spec name to get the package name.  For
-example, the lisp code for the spec:
+example, the Lisp code for the spec:
 </para>
 
 [[
-||  A qualifying spec
+||  Z qualifying spec
 ||    def two: Nat = 2
 ||    def add1(x:Nat): Nat = x + 1
 ||  endspec
@@ -43,8 +43,8 @@ is
 </para>
 
 [[L:
-||  (DEFPACKAGE "A")
-||  (IN-PACKAGE "A")
+||  (DEFPACKAGE "Z")
+||  (IN-PACKAGE "Z")
 ||
 ||  (DEFPARAMETER TWO 2)
 ||  (DEFUN ADD1 (X) (INTEGER-SPEC::+-2 X 1))
@@ -56,7 +56,7 @@ is
 <title>Arity and Currying Normalization</title>
 
 <para>
-All &Specware functions are unary. Multiple argument functions are
+All &Specware; functions are unary. Multiple argument functions are
 modeled using either functions with product domains, or curried
 functions. For efficiency we wish to exploit Common Lisp's support of
 n-ary functions. Arity normalization aims to minimize unpacking and
@@ -73,19 +73,20 @@ to the function.
 <para>
 For each function whose argument is a product, two entry points are
 created: a unary function whose name is derived from the op as
-described above, and an n-ary function whose name has "[[L:-n]]"
-appended. E.g. for 
+described above, and an n-ary function whose name has
+"[[L:-]]<replaceable>n</replaceable>"
+appended. Fir example, for 
 </para>
 [[
 ||  op min : Integer * Integer -> Integer
 ]]
 <para>
-there are two lisp functions [[L:#'MIN-2]] and [[L:#'|!min|]].
+there are two Lisp functions, [[L:#'MIN-2]] and [[L:#'|!min|]].
 A call with an explicit product is translated to the n-ary version,
 otherwise the unary version is used. For example, [[min(1,2)]] translates
 to [[L:(MIN-2 1 2)]], and [[ foldr min inf l ]] translates to 
 [[L:(FOLDR-1-1-1 #'|!min| INF L)]].
-When generating lisp for a definition, the form is examined to see whether the
+When generating Lisp for a definition, the form is examined to see whether the
 definition is naturally n-ary. If it is, then the primary definition is
 n-ary and the unary function is defined in terms of the n-ary function,
 otherwise the situation is reversed. For example, given the definition
@@ -117,14 +118,15 @@ we get the two Common Lisp definitions:
 <para>
 For each curried function (i.e. for each function whose codomain is a
 function) there is an additional uncurried version of the function
-with "-1" added n times to the name where n is the number of curried
-arguments. E.g. for
+with "[[L:-1]]" added <replaceable>n</replaceable> times to
+the name where <replaceable>n</replaceable> is the number of curried
+arguments. For example, for
 </para>
 [[
 ||  op foldr: fa(key,a,b) (a * b -> b) -> b -> map(key,a) -> b
 ]]
 <para>
-there are two lisp functions [[L:#FOLDR]] and [[L:#FOLDR-1-1-1]].
+there are two Lisp functions, [[L:#FOLDR]] and [[L:#FOLDR-1-1-1]].
 </para>
 
 <para>
@@ -178,7 +180,7 @@ Restrictions and comprehensions are implemented using their supersort.
 
 <para>
 A quotient is represented as as a vector of three elements: the
-quotient tag (which is the value of the lisp variable
+quotient tag (which is the value of the Lisp variable
 [[L:SLANG-BUILT-IN::QUOTIENT-TAG]]), the representation of the quotient
 relation, and the actual value in the underlying sort.
 </para>

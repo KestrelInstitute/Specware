@@ -77,8 +77,12 @@ by ``/''.</para></listitem>
 <listitem><para>The ``/'' signs of the ``/''-separated sequence of
 path elements preceded by ``/'', resulting from the previous step, are
 turned into ``\''; in addition, <".sw"> is appended at the
-end. Otherwise, the ``/'' signs are left unchanged and <".sw"> is
-appended at the end. Either way, the result of this second step is a
+end.
+<!--
+%%Otherwise, the ``/'' signs are left unchanged and <".sw"> is
+%%appended at the end. Either way, the
+-->
+The result of this second step is a
 (partial) path in the file system.</para></listitem>
 
 <listitem><para>The path resulting from the previous step is appended
@@ -168,7 +172,7 @@ version of the spec for sets in
 
 <para>A relative unit identifier is a ``/''-separated sequence of one
 or more path elements, where the last separator can be ``#''.  Examples
-are [[a/b/c]], [[d]], and [[e#f]]. So, &swpath-based and relative unit
+are [[a/b/c]], [[d]], and [[e#f]]. So, &swpath;-based and relative unit
 identifiers can be distinguished by the presence or absence of ``/''
 at the beginning.</para>
 
@@ -192,9 +196,13 @@ removal takes place. Either way, the result of this first step is a
 
 <listitem><para>The ``/'' signs of the ``/''-separated sequence of
 path elements, resulting from the previous step, are turned into
-``\''; in addition, <".sw"> is appended at the end. Otherwise, the
-``/'' signs are left unchanged and <".sw"> is appended at the
-end. Either way, the result of this second step is a (partial) path in
+``\''; in addition, <".sw"> is appended at the end.
+<!--
+%%Otherwise, the
+%%``/'' signs are left unchanged and <".sw"> is appended at the
+%%end. Either way, the
+-->
+The result of this second step is a (partial) path in
 the file system.</para></listitem>
 
 <listitem><para>The path resulting from the previous step is appended
@@ -262,9 +270,13 @@ removal takes place. Either way, the result of this first step is a
 
 <listitem><para>The ``/'' signs of the ``/''-separated sequence of
 path elements, resulting from the previous step, are turned into
-``\''; in addition, <".sw"> is appended at the end. Otherwise, the
-``/'' signs are left unchanged and <".sw"> is appended at the
-end. Either way, the result of this second step is a (partial) path in
+``\''; in addition, <".sw"> is appended at the end.
+<!--
+%%Otherwise, the
+%%``/'' signs are left unchanged and <".sw"> is appended at the
+%%end. Either way, the
+-->
+The result of this second step is a (partial) path in
 the file system.</para></listitem>
 
 <listitem><para>The path resulting from the previous step is appended

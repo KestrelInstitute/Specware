@@ -16,7 +16,7 @@ proof term.  A typical proof term is of the form: </para>
 
 [[
 ||    prove property in spec_term
-||          using hypothesis1 hypothesis2 ... 
+||          using hypothesis1, hypothesis2
 ||          options "(use-paramodulation t)
 ||                   (use-resolution nil)
 ||                   (use-hyperresolution t)"
@@ -30,9 +30,10 @@ prover to try to prove [[property]] from [[hypothesis1]] and
 the properties
 [[property]], [[hypothesis1]], and [[hypothesis2]] must all be
 names of claims
-(i.e. axioms, conjectures, or theorems) that appear in [[spec_term]].
+(i.e. axioms, conjectures, or theorems) that appear in the
+spec resulting from elaborating [[spec_term]].
 Note also that [[hypothesis1]] and [[hypothesis2]] are required to
-appear earlier in [[spec_term]] than [[property]].  Most users will
+appear earlier in that spec than [[property]].  Most users will
 omit the [[options]] list.  Additionally, the [[using]] part can
 be omitted as well.  In this case all the properties that appear in
 [[spec_term]] prior to [[property]] will be used to prove
@@ -78,7 +79,7 @@ multiple proofs in single file.  For example, in file <"proof.sw"> we
 could include more than one proof as follows: </para>
 
 [[
-||p1  = prove prop1 using ax1 ax2
+||p1  = prove prop1 using ax1, ax2
 ||p1a = prove prop1 using ax3
 ||p2  = prove prop2
 ]]

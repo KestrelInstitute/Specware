@@ -18,9 +18,9 @@ them are available in the &Specware menu in the menubar.
 
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
-    <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1"/>
-    <colspec colname="name"     colnum="2" colwidth="135" rowsep="1"/>
-    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1"/>
+    <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1">
+    <colspec colname="name"     colnum="2" colwidth="135" rowsep="1">
+    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1">
     <thead>
       <row>
 	<entry colname="key">&nbsp; Key</entry>
@@ -131,9 +131,9 @@ These are the commands available in the *common-lisp* buffer.
 
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
-    <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1"/>
-    <colspec colname="name"     colnum="2" colwidth="135" rowsep="1"/>
-    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1"/>
+    <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1">
+    <colspec colname="name"     colnum="2" colwidth="135" rowsep="1">
+    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1">
     <thead>
       <row>
 	<entry colname="key">&nbsp; Key</entry>
@@ -195,9 +195,9 @@ in most Word Processing Programs), mouse [[Options]], [[Editing]],
 
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
-    <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1"/>
-    <colspec colname="name"     colnum="2" colwidth="135"  rowsep="1"/>
-    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1"/>
+    <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1">
+    <colspec colname="name"     colnum="2" colwidth="135"  rowsep="1">
+    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1">
     <thead>
       <row>
 	<entry colname="key">&nbsp; Key</entry>
