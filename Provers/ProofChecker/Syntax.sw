@@ -1,22 +1,11 @@
 spec
 
-  %%%%%%%%%%%%%
-  % primitives:
-  %%%%%%%%%%%%%
-
-  import Primitives
-
-  type TypeVariables = FSeq TypeVariable
-  type Variables     = FSeq Variable
-  type Fields        = FSeq Field
-  type Constructors  = FSeq Constructor
-
-  % no need for `TypeNames' or `Operations'
+  import PrimitivesWithAbbreviations
 
 
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % types, expressions, patterns, and sequences of them:
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % types, expressions, and patterns:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   (* Types depend on expressions, which depend on types and patterns, which
   depend on types. So, we first declare the meta types for these syntactic
@@ -26,9 +15,18 @@ spec
   type Expression  % defined below
   type Pattern     % defined below
 
+  % useful abbreviations:
+
+  type Type?    = Option Type
+  type Pattern? = Option Pattern
+
+  type BoundVar  = Variable * Type
+
   type Types       = FSeq Type
   type Expressions = FSeq Expression
   type Patterns    = FSeq Pattern
+  type Type?s      = FSeq Type?
+  type BoundVars   = FSeq BoundVar
 
 
   %%%%%%%%
@@ -55,9 +53,6 @@ spec
   type SubOrQuotientTypeConstruct =
     | sub
     | quotien(*t*)
-
-  type Type? = Option Type
-  type Type?s = FSeq Type?
 
   type Type =
     | boolean
@@ -121,9 +116,6 @@ spec
     | existential
     | existential1
 
-  type BoundVar  = Variable * Type
-  type BoundVars = FSeq BoundVar
-
   type Expression =
     | nullary         NullaryExprOperator
     | unary           UnaryExprOperator * Expression
@@ -157,8 +149,6 @@ spec
   A fourth difference is that since we explictly model components of sum types
   that have no type, we also have to model embedding patterns with no argument
   pattern. We use `Option' for that. *)
-
-  type Pattern? = Option Pattern
 
   type Pattern =
     | variable  BoundVar

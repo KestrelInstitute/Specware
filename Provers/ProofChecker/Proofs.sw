@@ -1,15 +1,9 @@
 spec
 
-  import Primitives
+  import PrimitivesWithAbbreviations, Positions
 
-  type TypeVariables = FSeq TypeVariable
-  type Variables     = FSeq Variable
-  type Fields        = FSeq Field
-  type Constructors  = FSeq Constructor
+  type Proof  % defined below
 
-  type Position = FSeq Nat
-
-  type Proof
   type Proofs = FSeq Proof
   type Proof? = Option Proof
   type Proof?s = FSeq Proof?
@@ -107,9 +101,9 @@ spec
     | thTupleProjection             Proof * PosNat
     | thRecordUpdate1               Proof * Proof * Field
     | thRecordUpdate2               Proof * Proof * Field
-    | thEmbedderSurjective          Proof * Variable * Variable
-    | thEmbeddersDistinct           Proof *
-                                    Constructor * Constructor * Variable * Variable
+    | thEmbedderSurjective          Proof * Constructor * Variable * Variable
+    | thEmbeddersDistinct           Proof * Constructor * Constructor
+                                          * Variable? * Variable?
     | thEmbedderInjective           Proof * Constructor * Variable * Variable
     | thRelaxatorSatisfiesPredicate Proof * Variable
     | thRelaxatorInjective          Proof * Variable * Variable

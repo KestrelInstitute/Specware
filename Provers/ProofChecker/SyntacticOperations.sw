@@ -1,6 +1,6 @@
 spec
 
-  import Syntax
+  import Syntax, Positions
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -408,8 +408,6 @@ spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % type substitution at position:
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  type Position = FSeq Nat
 
   op typeSubstInTypeAt :
      Type * Type * Type * Position * Type -> Boolean
