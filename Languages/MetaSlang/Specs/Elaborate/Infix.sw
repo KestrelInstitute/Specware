@@ -26,7 +26,7 @@ Infix qualifying spec
 %%  resolveInfixes is invoked by the typechecker here,
 %%  but also by convertToMMTerm in ~/Work/Generic/Planware/Sources/CodeGen/,
 %%  which is invoked directly from the parser semantic routines.
-%%  That makes it awkwar to provide a plausible environment for the message,
+%%  That makes it awkward to provide a plausible environment for the message,
 %%  so for now, revert to fail when there are problems while parsing.
  def resolveInfixes(opt_env,tagTermWithInfixInfo,pos,terms) = 
    let def local_error str =
@@ -50,7 +50,7 @@ Infix qualifying spec
        case terms of
 	 | [Nonfix(t1)] -> [Nonfix(t1)]
 	 | [Infix(t,_)] -> [Nonfix(t)]
-	 | [] -> System.fail (printAll pos^" : No terms to apply")
+	 | [] -> (local_error (printAll pos^" : No terms to apply"); [])
 	 | (Infix(t,p)) :: rest ->  
 	   (%local_error ("Infix "^printTerm t ^" given without left argument");
 	    scan (delta0,applyPrefixes([Nonfix t] ++ rest)))
@@ -88,7 +88,7 @@ Infix qualifying spec
 		       %% As indicated above, the first infix operator here (infix1) 
 		       %%  binds tighter than the prior infix operator.
 		       [Nonfix(applyInfix(t1,infix1,t2))]
-		 | _ -> (local_error ("Infix "^printTerm infix1^" given without left argument");
+		 | _ -> (local_error ("Missing right operand near infix operator "^printTerm infix1);
 			 [Nonfix(t1)]))
 
 	 | (Nonfix _)::(Nonfix _)::_ ->
