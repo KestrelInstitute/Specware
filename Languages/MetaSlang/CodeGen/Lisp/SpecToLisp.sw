@@ -1327,7 +1327,7 @@ SpecToLisp qualifying spec {
  def instantiateHOFns? = true
 
  op  lambdaLift? : Boolean
- def lambdaLift? = false
+ def lambdaLift? = true
 
  op  removeCurrying? : Boolean
  def removeCurrying? = false
