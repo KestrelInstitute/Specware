@@ -94,43 +94,43 @@ TypeChecker qualifying spec
 
     %% ---------- SORTS : PASS 1 ----------
     let
-      def elaborate_sort_1 (q, id, sortInfo as (aliases, tyvars, defs)) =
-	if ~(memberQualifiedId (q, id, localSorts)) then
-	  sortInfo
-	else 
+      def elaborate_sort_1 (sortInfo as (aliases, tyvars, defs)) =
+	if exists (fn Qualified (q, id) -> memberQualifiedId (q, id, localSorts)) aliases then
 	  (aliases,
 	   tyvars, 
 	   map (fn def_1 -> checkSortScheme (env_2, def_1)) defs)
+	else 
+	  sortInfo
     in
-    let sorts_2 = mapiAQualifierMap elaborate_sort_1 sorts_1 in
+    let sorts_2 = mapSortMap elaborate_sort_1 sorts_1 in
     let env_2a  = setEnvSorts (env_2, sorts_2) in
 
     %% ---------- OPS   : PASS 1 ----------
     let 
-      def elaborate_op_1 poly? (q, id, opinfo as (aliases, fixity, sort_scheme, defs)) =
-	if ~(memberQualifiedId (q, id, localOps)) then
-	  opinfo
-	else
+      def elaborate_op_1 poly? (opinfo as (aliases, fixity, sort_scheme, defs)) =
+	if exists (fn Qualified (q, id) -> memberQualifiedId (q, id, localOps)) aliases then
 	  let sort_scheme_2 = checkSortScheme (env_2a, sort_scheme) in
 	  (aliases,
 	   fixity, 
 	   sort_scheme_2,
 	   map (fn (_,term_1) ->
 		let tyvars = sort_scheme.1 in
-		let term_2 = if poly? = (tyvars ~= []) then
-		               elaborateTermTop (env_2a, term_1, sort_scheme_2.2)
-			     else 
-			       term_1 
+		let term_2 = (if poly? = (tyvars ~= []) then
+				elaborateTermTop (env_2a, term_1, sort_scheme_2.2)
+			      else 
+				term_1)
 		in
 		  % TODO: Check that op sort is an instance of def sort
 		  (tyvars, term_2))
 	       defs)
+	else
+	  opinfo
     in
     %% Do polymorphic definitions first
-    let ops_2_a = mapiAQualifierMap (elaborate_op_1 true)  ops_1   in
-    let ops_2_b = mapiAQualifierMap (elaborate_op_1 false) ops_2_a in
-    let ops_2_c = mapiAQualifierMap (elaborate_op_1 true)  ops_2_b in
-    let ops_2   = mapiAQualifierMap (elaborate_op_1 false) ops_2_c in
+    let ops_2_a = mapOpMap (elaborate_op_1 true)  ops_1   in
+    let ops_2_b = mapOpMap (elaborate_op_1 false) ops_2_a in
+    let ops_2_c = mapOpMap (elaborate_op_1 true)  ops_2_b in
+    let ops_2   = mapOpMap (elaborate_op_1 false) ops_2_c in
 
     %% ---------- PROPERTIES : PASS 1. ---------- 
     let
@@ -155,22 +155,20 @@ TypeChecker qualifying spec
 
     %% ---------- SORTS : PASS 2 ---------- 
     let
-      def elaborate_sort_2 (q, id, sortInfo as (aliases, tyvars, defs)) =
-	if ~(memberQualifiedId (q, id, localSorts)) then
-	  sortInfo
-	else 
+      def elaborate_sort_2 (sortInfo as (aliases, tyvars, defs)) =
+	if exists (fn Qualified (q, id) -> memberQualifiedId (q, id, localSorts)) aliases then
 	  (aliases,
 	   tyvars, 
 	   map (fn def_2 -> checkSortScheme (env_3, def_2)) defs)
+	else
+	  sortInfo
     in
-    let sorts_3 = mapiAQualifierMap elaborate_sort_2 sorts_2 in
+    let sorts_3 = mapSortMap elaborate_sort_2 sorts_2 in
 
     %% ---------- OPS : PASS 2 ---------- 
     let
-      def elaborate_op_2 (q, id, opinfo as (op_names, fixity, sort_scheme_2, defs_2)) =
-	if ~(memberQualifiedId (q, id, localOps)) then
-	  opinfo
-	else
+      def elaborate_op_2 (opinfo as (aliases, fixity, sort_scheme_2, defs_2)) =
+	if exists (fn Qualified (q, id) -> memberQualifiedId (q, id, localOps)) aliases then
 	  let (tyvars_3, srt_3) = checkSortScheme (env_3, sort_scheme_2) in
 	  let all_different? = checkDifferent (tyvars_3, StringSet.empty)  in
 	  let defs_3 =
@@ -191,7 +189,7 @@ TypeChecker qualifying spec
 				 case link of
 				   | Some s -> record_tyvars_used s
 				   | None   -> error (env_3, 
-						      "Incomplete type for op "^id
+						      "Incomplete type for op "^(printQualifiedId (hd aliases))
 						      ^":"^newline
 						      ^(printSort aSrt), 
 						      pos))
@@ -241,9 +239,11 @@ TypeChecker qualifying spec
 					  tyvars_3)
 		| _ -> tyvars_3
 	  in
-	    (op_names, fixity, (tyvars_4, srt_3), defs_3)
+	    (aliases, fixity, (tyvars_4, srt_3), defs_3)
+	else
+	  opinfo
     in
-    let ops_3 = mapiAQualifierMap elaborate_op_2 ops_2 in
+    let ops_3 = mapOpMap elaborate_op_2 ops_2 in
 
     %% ---------- AXIOMS : PASS 2 ----------
     let 
@@ -299,7 +299,6 @@ TypeChecker qualifying spec
       | []   -> Spec (convertPosSpecToSpec spec_3)
       | msgs -> Errors msgs
 
- 
   % ========================================================================
   %% ---- called inside SORTS : PASS 0  -----
   % ========================================================================
@@ -385,9 +384,9 @@ TypeChecker qualifying spec
 			     pos))
              in
 	     let new_sort_qid = hd first_aliases in
-	     let new_instance_sorts = map (fn instance_sort ->
-					   checkSort (env, instance_sort))
-	                             instance_sorts
+	     let new_instance_sorts = 
+                 map (fn instance_sort -> checkSort (env, instance_sort))
+	             instance_sorts
 	     in
 	     if given_sort_qid = new_sort_qid && instance_sorts = new_instance_sorts then 
 	       srt
@@ -396,7 +395,7 @@ TypeChecker qualifying spec
 		
       | CoProduct (fields, pos) ->
 	let nfields = map (fn (id, None)   -> (id, None) 
-                         | (id, Some s) -> (id, Some (checkSort (env, s))))
+                            | (id, Some s) -> (id, Some (checkSort (env, s))))
                        fields
 	in
 	if nfields = fields then 
@@ -405,7 +404,7 @@ TypeChecker qualifying spec
 	  CoProduct (nfields, pos)
 
       | Product (fields, pos) ->
-	let nfields = map (fn (id, s)-> (id, checkSort (env, s))) fields in
+	let nfields = map (fn (id, s) -> (id, checkSort (env, s))) fields in
         if nfields = fields then 
 	  srt
 	else 
@@ -1124,7 +1123,7 @@ TypeChecker qualifying spec
   def elaborateSortForTerm (env, term, givenSort, expectedSort) = 
     %% unifySorts has side effect of modifying metaTyVar links
     let (success, msg) = unifySorts env true givenSort expectedSort in
-    ((if success or env.firstPass? then
+    ((if success || env.firstPass? then
 	()
       else
 	let pos        = termAnn   term in

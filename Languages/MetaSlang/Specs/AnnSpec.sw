@@ -124,6 +124,48 @@ AnnSpec qualifying spec
      emptyAQualifierMap
      ops
 
+  op mapSortMap : fa(b) (ASortInfo b -> ASortInfo b) -> ASortMap b -> ASortMap b 
+ def mapSortMap sortinfo_map sorts =
+   foldriAQualifierMap 
+     (fn (index_q, index_id, sort_info as (aliases,_,_), new_map) ->
+      let (Qualified (q, id)) :: _ = aliases in
+      if index_q = q && index_id = id then
+	%% When access is via a primary alias, update 
+	%% the info and record that (identical) new 
+	%% value for all the aliases.
+	let new_info = sortinfo_map sort_info in
+	foldl (fn (Qualified(q, id), new_map) ->
+	       insertAQualifierMap (new_map, q, id, new_info))				   
+	      new_map
+	      aliases
+      else
+	%% For the non-primary aliases, do nothing,
+	%% since they are handled derivatively above.
+	new_map)
+     emptyAQualifierMap
+     sorts
+
+  op mapOpMap : fa(b) (AOpInfo b -> AOpInfo b) -> AOpMap b -> AOpMap b 
+ def mapOpMap opinfo_map ops =
+   foldriAQualifierMap 
+     (fn (index_q, index_id, op_info as (aliases,_,_,_), new_map) ->
+      let (Qualified (q, id)) :: _ = aliases in
+      if index_q = q && index_id = id then
+	%% When access is via a primary alias, update 
+	%% the info and record that (identical) new 
+	%% value for all the aliases.
+	let new_info = opinfo_map op_info in
+	foldl (fn (Qualified(q, id), new_map) ->
+	       insertAQualifierMap (new_map, q, id, new_info))				   
+	      new_map
+	      aliases
+      else
+	%% For the non-primary aliases, do nothing,
+	%% since they are handled derivatively above.
+	new_map)
+     emptyAQualifierMap
+     ops
+
   op mapSpecProperties : fa(b) TSP_Maps b -> AProperties b ->  AProperties b 
  def mapSpecProperties tsp_maps properties =
    map (fn (pt, nm, tvs, term) -> 
