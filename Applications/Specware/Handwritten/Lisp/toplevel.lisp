@@ -54,22 +54,71 @@
 #+allegro
 (top-level:alias ("sw-help" :string) (&optional com) (sw-help com))
     
+;;; Normalization utilities
+(defun subst-home (path)
+  (if (and (stringp path) (>= (length path) 2) (equal (subseq path 0 2) "~/"))
+      (concatenate 'string (specware::getenv "HOME") (subseq path 1))
+    path))
 
-(defun subst-home (dir)
-  (if (and (stringp dir) (>= (length dir) 2) (equal (subseq dir 0 2) "~/"))
-      (concatenate 'string (specware::getenv "HOME") (subseq dir 1))
-    dir))
+(defun strip-extraneous (str)
+  (let ((len (length str)))
+    (if (> len 0)
+	(if (member (elt str 0) '(#\" #\space))
+	    (strip-extraneous (subseq str 1 len))
+	  (if (member (elt str (- len 1)) '(#\" #\space))
+	      (strip-extraneous (subseq str 0 (- len 1)))
+	    str))
+      str)))
+
+;;; Code for handling specalc terms as well as just unitid strings
+(defun unitIdString? (str)
+  (loop for i from 0 to (- (length str) 1)
+        always (let ((ch (elt str i)))
+		 (or (alphanumericp ch)
+		     (member ch '(#\/ #\:))))))
+
+(defvar *saved-swpath* nil)
+(defvar *temp-file-in-use?* nil)
+
+(defun norm-unitid-str (str)
+  (if (null str) str
+    (progn (setq str (strip-extraneous str))
+	   (setq str (subst-home str))
+	   (let ((len (length str)))
+	     (when (and (> len 3)
+			(string= (subseq str (- len 3)) ".sw"))
+	       (setq str (subseq str 0 (- len 3)))))
+	   (setq *temp-file-in-use?* nil)
+	   (unless (unitIdString? str)
+	     ;; spec calc term. Need to put it in a temporary file
+	     (let* ((tmp-dir (format nil "~Asw/" specware::temporaryDirectory))
+		    (tmp-name (format nil "sw_tmp_~D_~D"
+				      (incf *tmp-counter*) 
+				      (ymd-hms)))
+		    (tmp-uid (format nil "/~A"     tmp-name))
+		    (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
+		    (old-swpath (or *saved-swpath* (specware::getEnv "SWPATH")))
+		    (new-swpath (format nil #-mswindows "~Asw/:~A" #+mswindows "~A/sw/;~A"
+					Specware::temporaryDirectory old-swpath)))
+	       (ensure-directories-exist tmp-dir)
+	       (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
+		 (format s "~A" str))
+	       (setq *saved-swpath* old-swpath)
+	       (specware::setenv "SWPATH" new-swpath)
+	       (setq *temp-file-in-use?* t)
+	       (setq str tmp-uid)))
+	   str)))
 
 (defvar *last-unit-Id-_loaded* nil)
 
 (defun sw0 (x)
-  (Specware::runSpecwareUID (subst-home x))
+  (Specware::runSpecwareUID (norm-unitid-str x))
   (values))
 
 #+allegro(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
 (defun set-base (x)
-  (Specware::setBase_fromLisp (subst-home x))
+  (Specware::setBase_fromLisp (norm-unitid-str x))
   (values))
 #+allegro
 (top-level:alias ("set-base" :case-sensitive) (x) (set-base (string x)))
@@ -96,7 +145,7 @@
 #+allegro(top-level:alias ("list" :case-sensitive) () (list-loaded-units))
 
 (defun sw (&optional x)
-  (setq x (subst-home x))
+  (setq x (norm-unitid-str x))
   (if x
       (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* x))
     (if *last-unit-Id-_loaded*
@@ -110,7 +159,7 @@
   (sw x))
 
 (defun show (&optional x)
-  (setq x (subst-home x))
+  (setq x (norm-unitid-str x))
   (if x
       (Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
     (if *last-unit-Id-_loaded*
@@ -123,7 +172,7 @@
 
 ;; Not sure if an optional UnitId make sense for swl
 (defun swl-internal (x &optional y)
-  (Specware::evaluateLispCompile_fromLisp-2 (subst-home x)
+  (Specware::evaluateLispCompile_fromLisp-2 (norm-unitid-str x)
 					    (if y (cons :|Some| (subst-home y))
 					      '(:|None|))))
 
@@ -171,7 +220,8 @@
 					    specware::temporaryDirectory
 					    "cl-current-file")))))
     (if (Specware::evaluateLispCompileLocal_fromLisp-2
-	 x (cons :|Some| lisp-file-name))
+	 (norm-unitid-str x)
+	 (cons :|Some| lisp-file-name))
 	(let (#+allegro *redefinition-warnings*)
 	  (specware::compile-and-load-lisp-file lisp-file-name))
       "Specware Processing Failed!")))
@@ -211,11 +261,12 @@
   (when (null x)
     (setq x (and (consp *last-swl-args*) (car *last-swl-args*))))
   (if (null x) (format t "~&No previous spec")
-    (progn 
+    (progn
+      (setq x (norm-unitid-str x))
       (unless (eq (elt x 0) #\/)
 	(format t "~&coercing ~A to /~A~%" x x)
 	(setq x (format nil "/~A" x)))
-      (setq x (subst-home x))
+      (setq x (norm-unitid-str x))
       (cond ((sw (string x))
 	     (setq *current-swe-spec* x)
 	     (setq *current-swe-spec-dir* (specware::current-directory))
@@ -418,7 +469,7 @@
 ;;; --------------------------------------------------------------------------------
 
 (defun swj (x &optional y)
-  (Specware::evaluateJavaGen_fromLisp-2 (subst-home x) 
+  (Specware::evaluateJavaGen_fromLisp-2 (norm-unitid-str x) 
 					(if y 
 					    (cons :|Some| y)
 					  '(:|None|)))
@@ -514,8 +565,8 @@
 
 (defun swc-internal (x &optional y)
 ;;  (format t "swc-internal: x=~A, y=~A~%" x y)
-   (Specware::evaluateCGen_fromLisp-2 (subst-home x) (if y (cons :|Some| (subst-home y))
-						       '(:|None|)))
+   (Specware::evaluateCGen_fromLisp-2 (norm-unitid-str x) (if y (cons :|Some| (subst-home y))
+							    '(:|None|)))
    (values))
 
 (defun swc (&optional args)
@@ -554,7 +605,7 @@
 
 (defun make (&rest args)
   (let* ((make-args (if (not (null args)) 
-			(cons (subst-home (first args)) (rest args))
+			(cons (norm-unitid-str (first args)) (rest args))
 		      *last-make-args*))
 	 (make-command (if (specware::getenv "SPECWARE4_MAKE") (specware::getenv "SPECWARE4_MAKE") "make"))
 	 (user-make-file-suffix ".mk")
@@ -679,7 +730,7 @@
 ;; --------------------------------------------------------------------------------
 
 (defun swpf-internal (x &optional y &key (obligations t))
-  (Specware::evaluateProofGen_fromLisp-3 (subst-home (string x))
+  (Specware::evaluateProofGen_fromLisp-3 (norm-unitid-str (string x))
 					 (if y (cons :|Some| (string (subst-home y)))
 					   '(:|None|))
 					 obligations))
@@ -784,7 +835,8 @@
       (princ (specware::getenv "SWPATH"))
     (let ((str (string str)))
       (speccalc::checkSpecPathsExistence str)
-      (princ (specware::setenv "SWPATH" (string str)))))
+      (princ (specware::setenv "SWPATH" (string str)))
+      (setq *saved-swpath* nil))) 
   (values))
 
 #+allegro
@@ -845,16 +897,6 @@
 
 (defun help (&optional command)
   (sw-help command))
-
-(defun strip-extraneous (str)
-  (let ((len (length str)))
-    (if (> len 0)
-	(if (member (elt str 0) '(#\" #\space))
-	    (strip-extraneous (subseq str 1 len))
-	  (if (member (elt str (- len 1)) '(#\" #\space))
-	      (strip-extraneous (subseq str 0 (- len 1)))
-	    str))
-      str)))
 
 #+(or sbcl cmu)
 (defun cl::commandp (form)
