@@ -7,7 +7,10 @@
 package edu.kestrel.especs.graphs;
 
 import edu.kestrel.especs.graphs.spec.*;
+import edu.kestrel.especs.graphs.editor.*;
 import edu.kestrel.graphs.spec.*;
+import edu.kestrel.graphs.editor.*;
+import edu.kestrel.graphs.io.*;
 import edu.kestrel.graphs.*;
 import com.jgraph.graph.*;
 import java.util.*;
@@ -18,6 +21,28 @@ import java.awt.*;
  * @author  ma
  */
 public class StepEdge extends XStraightEdge {
+    
+    protected String stepName;
+    protected String stepParams;
+    /** holds the condition given as list of conjuntive terms, element type: Term (see below) */
+    protected java.util.List conditionTerms;
+    
+    /** holds the list of updates; element type: Term (see below) */
+    protected java.util.List updates;
+    
+    /** inner class used to represent the constituents of the step's condition. */
+    public static class Term {
+        public String term;
+        public boolean isReadonly = false;
+        public Term(String term) {
+            this.term = term;
+        }
+        public String toString() {
+            return term;
+        }
+    }
+    
+    protected boolean isGeneratedFromImportedStep = false;
     
     /** Creates a new instance of StepEdge */
     public StepEdge() {
@@ -57,6 +82,74 @@ public class StepEdge extends XStraightEdge {
         return ev;
     }
     
+    public XElementEditor createEditorPane() {
+        return new StepEditor(this);
+    }
     
+    public String getCollapsedLabel(String fullLabel) {
+        if (stepName == null) return "";
+        return stepName;
+    }
+    
+    
+    public String getStepName() {
+        return stepName;
+    }
+    
+    public void setStepName(String stepName) {
+        this.stepName = stepName;
+        refreshUserObject();
+    }
+    
+    public String getStepParams() {
+        return stepParams;
+    }
+    
+    public void setStepParams(String params) {
+        this.stepParams = stepParams;
+        refreshUserObject();
+    }
+    
+    public void setConditionTerms(java.util.List conditionTerms) {
+        this.conditionTerms = conditionTerms;
+        refreshUserObject();
+    }
+    
+    public java.util.List getConditionTerms() {
+        return conditionTerms;
+    }
+    
+    public void setUpdates(java.util.List updates) {
+        this.updates = updates;
+        refreshUserObject();
+    }
+    
+    public java.util.List getUpdates() {
+        return updates;
+    }
+    
+    protected void refreshUserObject() {
+        StringBuffer buf = new StringBuffer();
+        buf.append(getStepName()+":"+"\n");
+        String sep = "";
+        if (conditionTerms != null) {
+            Iterator iter = conditionTerms.iterator();
+            while(iter.hasNext()) {
+                Term t = (Term) iter.next();
+                buf.append(sep+" "+t.term+"\n");
+                sep = "&";
+            }
+        }
+        sep = "";
+        if (updates != null) {
+            Iterator iter = updates.iterator();
+            while(iter.hasNext()) {
+                Term t = (Term) iter.next();
+                buf.append(sep+" "+t.term+"\n");
+                sep = ",";
+            }
+        }
+        setFullUserObject(buf.toString());
+    }
     
 }
