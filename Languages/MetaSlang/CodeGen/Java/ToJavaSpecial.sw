@@ -10,7 +10,7 @@ spec
   import ToJavaStatements
   import Monad
 
-  op  specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
+  %op  specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
   def specialTermToExpressionM(tcx,term,k,l) =
     %let _ = writeLine("specialTermToExpression: term="^printTerm(term)) in
     let
