@@ -130,7 +130,8 @@ in Monad qualifying spec
     if MonadicStateInternal.newGlobalVar (name,value) then
       return ()
     else
-      raise (redefinedGlobalVariable name)
+      return ()
+      % raise (redefinedGlobalVariable name)
     
   op writeGlobalVar : fa (a) String * a -> Monad ()
   def writeGlobalVar (name,value) =
