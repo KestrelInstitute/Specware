@@ -855,7 +855,7 @@ def toAny     = Term `TranslationBasic.toAny`
 
      def doProp ((pt, pn as Qualified (qname, name), tvs, fmla), spc) =
        let env = mkEnv (qname, name) in
-       let (_, _, fmla) = unpackTerm fmla in
+       let fmla = extractInnerTerm fmla in
        let term = makeVarTerm fmla in
        let (opers, term) = lambdaLiftTerm (env, term) in
        let newProp = (pt, pn, tvs, term) in
