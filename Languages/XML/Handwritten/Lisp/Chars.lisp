@@ -310,3 +310,17 @@
 (defun xml::latin_alphabetic_char? (i)
   (and (< i #.(expt 2 16))
        (svref *latin-alphabetic-chars* i)))
+
+;;; %% [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*
+
+(defparameter *char-data-chars*
+    (let ((new-vector (copy-seq *chars*)))
+      (setf (svref new_vector (char-code #\<)) nil)
+      (setf (svref new_vector (char-code #\&)) nil)
+      new-vector))
+
+(defun xml::char_data_char? (i)
+  %% char? but not '<' or '&'
+  (if (< i #.(expt 2 16))
+      (svref *char-data-chars* i)
+    (< i #x10ffff)))
