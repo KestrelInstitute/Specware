@@ -1,56 +1,63 @@
 // $ANTLR 2.7.1: MetaSlangGrammar.g -> MetaSlangParserFromAntlrTokenTypes.txt$
 MetaSlangParserFromAntlr    // output token vocab name
-LITERAL_spec="spec"=4
-LITERAL_endspec="endspec"=5
-LITERAL_import="import"=6
-LITERAL_sort="sort"=7
-LBRACE("'{'")=8
-COMMA("','")=9
-RBRACE("'}'")=10
-DOT("'.'")=11
-IDENTIFIER("an identifier")=12
-LPAREN("'('")=13
-RPAREN("')'")=14
-LITERAL_op="op"=15
-UBAR("'_'")=16
-LBRACKET("'['")=17
-RBRACKET("']'")=18
-NAT_LITERAL("an integer")=19
-CHAR_LITERAL("a character")=20
-STRING_LITERAL("a string")=21
-LITERAL_true="true"=22
-LITERAL_false="false"=23
-LITERAL_as="as"=24
-LITERAL_case="case"=25
-LITERAL_choose="choose"=26
-LITERAL_else="else"=27
-LITERAL_embed="embed"=28
-"embed?"=29
-LITERAL_ex="ex"=30
-LITERAL_fa="fa"=31
-LITERAL_fn="fn"=32
-LITERAL_if="if"=33
-LITERAL_in="in"=34
-LITERAL_let="let"=35
-LITERAL_def="def"=36
-LITERAL_of="of"=37
-LITERAL_project="project"=38
-LITERAL_quotient="quotient"=39
-LITERAL_relax="relax"=40
-LITERAL_restrict="restrict"=41
-LITERAL_then="then"=42
-LITERAL_where="where"=43
-LITERAL_is="is"=44
-VOCAB=45
-WHITESPACE=46
-LINE_COMMENT=47
-BLOCK_COMMENT=48
-SEMICOLON("';'")=49
-DOTDOT("'..'")=50
-POUND("'#'")=51
-LETTER=52
-DIGIT=53
-ESC=54
-WORD_SYMBOL=55
-NON_WORD_SYMBOL=56
-NON_WORD_MARK=57
+INNER_UNIT_REF("an inner-unit reference")=4
+IDENTIFIER("an identifier")=5
+LITERAL_spec="spec"=6
+LITERAL_endspec="endspec"=7
+LITERAL_import="import"=8
+LITERAL_sort="sort"=9
+LBRACE("'{'")=10
+COMMA("','")=11
+RBRACE("'}'")=12
+DOT("'.'")=13
+LPAREN("'('")=14
+RPAREN("')'")=15
+LITERAL_op="op"=16
+LITERAL_def="def"=17
+UBAR("'_'")=18
+LBRACKET("'['")=19
+RBRACKET("']'")=20
+NAT_LITERAL("an integer")=21
+CHAR_LITERAL("a character")=22
+STRING_LITERAL("a string")=23
+LITERAL_true="true"=24
+LITERAL_false="false"=25
+LITERAL_as="as"=26
+LITERAL_case="case"=27
+LITERAL_choose="choose"=28
+LITERAL_else="else"=29
+LITERAL_embed="embed"=30
+"embed?"=31
+LITERAL_ex="ex"=32
+LITERAL_fa="fa"=33
+LITERAL_fn="fn"=34
+LITERAL_if="if"=35
+LITERAL_in="in"=36
+LITERAL_let="let"=37
+LITERAL_of="of"=38
+LITERAL_project="project"=39
+LITERAL_quotient="quotient"=40
+LITERAL_relax="relax"=41
+LITERAL_restrict="restrict"=42
+LITERAL_then="then"=43
+LITERAL_where="where"=44
+LITERAL_is="is"=45
+VOCAB=46
+WHITESPACE=47
+LINE_COMMENT=48
+BLOCK_COMMENT=49
+SEMICOLON("';'")=50
+DOTDOT("'..'")=51
+POUND("'#'")=52
+LETTER=53
+DIGIT=54
+CHAR_GLYPH=55
+OTHER_CHAR_GLYPH=56
+ESC=57
+HEXADECIMAL_DIGIT=58
+STRING_LITERAL_GLYPH=59
+WORD_SYMBOL=60
+WORD_START_MARK=61
+WORD_CONTINUE_MARK=62
+NON_WORD_SYMBOL=63
+NON_WORD_MARK=64

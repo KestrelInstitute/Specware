@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/01/31 17:38:33  gilham
+ * Removed token recording code.
+ *
  * Revision 1.4  2003/01/31 15:34:08  gilham
  * Defined nonWordSymbol[String expected] parser rule to handle ":", "=", "*", etc.
  * used in the language syntax.
@@ -52,8 +55,8 @@ starts
 {
     Token firstToken = LT(1);
 }
-    : (  scToplevelTerm
-       | scToplevelDecls
+    : (  (scDecl) => scToplevelDecls
+       | scToplevelTerm
       )                     {Token lastToken = LT(0);
                              if (lastToken != null && lastToken.getText() != null) {
                                  ParserUtil.setBodyBounds(builder, (ElementFactory.Item)builder, firstToken, lastToken);
@@ -84,14 +87,28 @@ private scDecl
 
 private scTerm[Token unitIdToken] returns[ElementFactory.Item item]
 {
-    Object[] objEnd = null;
     item = null;
-    Object beginEnd = null;
 }
-    : (  item=specDefinition[unitIdToken]
+    : ( scURI
+      | item=specDefinition[unitIdToken]
 //       | item=scQualify[unitIdToken]
 //       | item=scURI
       )                     {if (item != null) builder.setParent(item, null);}
+    ;
+
+//---------------------------------------------------------------------------
+private scURI
+    : (   (nonWordSymbol["/"]) => nonWordSymbol["/"] scURIPath
+        | scURIPath
+      )
+      (INNER_UNIT_REF)?
+    ;
+
+private scURIPath
+    : IDENTIFIER 
+      ( (nonWordSymbol["/"]) => nonWordSymbol["/"] scURIPath
+      |
+      )
     ;
 
 //---------------------------------------------------------------------------
@@ -139,7 +156,7 @@ private declaration returns[ElementFactory.Item item]
     : importDeclaration
     | item=sortDeclaration
     | item=opDeclaration
-//    | item=definition
+    | definition
     ;
 
 //---------------------------------------------------------------------------
@@ -252,6 +269,52 @@ private sort returns[String sort]
       )+
     ;
 
+//---------------------------------------------------------------------------
+private definition
+    : opDefinition;
+
+private opDefinition
+{
+    String name = null;
+    String[] params = null;
+}
+    : "def" name=qualifiableNames
+      ((params=formalOpParameters equals) => params=formalOpParameters equals
+       | equals) 
+      expression
+    ;
+
+private expression
+{
+    String ignore = null;
+}
+    : (  ignore=qualifiableRef
+       | ignore=literal
+       | ignore=specialSymbol
+       | ignore=expressionKeyword
+      )+
+    ;
+
+private formalOpParameters returns[String[] params]
+{
+    params = null;
+    String param = null;
+    List paramList = null;
+}
+    : param=idName
+                            {params = new String[]{param};}
+    | LPAREN                {paramList = new LinkedList();}
+      (param=idName
+                            {paramList.add(param);}
+       (COMMA 
+        param=idName
+                            {paramList.add(param);}
+       )*)?
+      RPAREN                {params = (String[]) paramList.toArray(new String[]{});}
+    ;
+
+
+//---------------------------------------------------------------------------
 private specialSymbol returns[String text]
 {
     text = null;
@@ -301,9 +364,10 @@ private expressionKeyword returns[String text]
     | "fn"                  {text = "fn ";}
     | "if"                  {text = "if ";}
     | "in"                  {text = "in ";}
-    | ("let"                {text = "let ";}
-       ("def"               {text = "let def ";}
-       )?)
+    | (  ("let" "def") => "let" "def"               
+                            {text = "let def";}
+       | "let"              {text = "let";}
+      )
     | "of"                  {text = "of ";}
     | "project"             {text = "project ";}
     | "quotient"            {text = "quotient ";}
@@ -500,6 +564,17 @@ DIGIT
     ;
 
 //-----------------------------
+//=== INNER_UNIT_REF ================
+//-----------------------------
+
+INNER_UNIT_REF
+options {
+  paraphrase = "an inner-unit reference";
+}
+    : '#' WORD_START_MARK (WORD_CONTINUE_MARK)+
+    ;
+
+//-----------------------------
 //=== Literals ================
 //-----------------------------
 
@@ -516,7 +591,41 @@ CHAR_LITERAL
 options {
   paraphrase = "a character";
 }
-    : '#' ( ESC | ~'\'' ) 
+    : '#' CHAR_GLYPH
+    ;
+
+protected CHAR_GLYPH
+    : LETTER
+    | DIGIT
+    | OTHER_CHAR_GLYPH
+    ;
+
+protected OTHER_CHAR_GLYPH
+    : '!' | ':' | '@' | '#' | '$' | '%' | '^' | '&' | '*' | '(' | ')' | '_' | '-' | '+' | '='
+    | '|' | '~' | '`' | '.' | ',' | '<' | '>' | '?' | '/' | ';' | '\'' | '[' | ']' | '{' | '}'
+    | ESC
+    | '\\' 'x' HEXADECIMAL_DIGIT HEXADECIMAL_DIGIT
+    ;
+
+protected ESC
+    : '\\'
+      ( 'a'
+      | 'b'
+      | 't'
+      | 'n'
+      | 'v'
+      | 'f'
+      | 'r'
+      | 's'
+      | '"'
+      | '\\'
+      )
+    ;
+
+protected HEXADECIMAL_DIGIT
+    : DIGIT
+    | ('a'..'f')
+    | ('A'..'F')
     ;
 
 // string literals
@@ -524,21 +633,17 @@ STRING_LITERAL
 options {
   paraphrase = "a string";
 }
-    : '"' (ESC|~('"'|'\\'))* '"'
+    : '"' (STRING_LITERAL_GLYPH)* '"'
     ;
 
-protected ESC
-    : '\\'
-      ( 'n'
-      | 'r'
-      | 't'
-      | 'b'
-      | 'f'
-      | '"'
-      | '\''
-      | '\\'
-      )
+protected STRING_LITERAL_GLYPH
+    : LETTER
+    | DIGIT
+    | OTHER_CHAR_GLYPH
+    | ' '
     ;
+
+
 
 //-----------------------------
 //====== IDENTIFIERS ==========
@@ -557,7 +662,15 @@ IDENTIFIER  options
 //-----------------------------
 
 protected WORD_SYMBOL
-    : LETTER (LETTER | DIGIT | '_' | '?')*
+    : WORD_START_MARK (WORD_CONTINUE_MARK)*
+    ;
+
+protected WORD_START_MARK
+    : LETTER
+    ;
+
+protected WORD_CONTINUE_MARK
+    : LETTER | DIGIT | '_' | '?'
     ;
 
 //-----------------------------

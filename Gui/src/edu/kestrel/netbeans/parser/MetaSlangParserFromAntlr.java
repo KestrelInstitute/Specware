@@ -80,32 +80,104 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			switch ( LA(1)) {
-			case LITERAL_spec:
-			{
-				scToplevelTerm();
-				break;
+			boolean synPredMatched4 = false;
+			if (((LA(1)==IDENTIFIER) && (LA(2)==IDENTIFIER||LA(2)==LITERAL_is) && (LA(3)==IDENTIFIER||LA(3)==LITERAL_spec))) {
+				int _m4 = mark();
+				synPredMatched4 = true;
+				inputState.guessing++;
+				try {
+					{
+					scDecl();
+					}
+				}
+				catch (RecognitionException pe) {
+					synPredMatched4 = false;
+				}
+				rewind(_m4);
+				inputState.guessing--;
 			}
-			case IDENTIFIER:
-			{
+			if ( synPredMatched4 ) {
 				scToplevelDecls();
-				break;
 			}
-			default:
-			{
+			else if ((LA(1)==IDENTIFIER||LA(1)==LITERAL_spec) && (_tokenSet_0.member(LA(2))) && (_tokenSet_1.member(LA(3)))) {
+				scToplevelTerm();
+			}
+			else {
 				throw new NoViableAltException(LT(1), getFilename());
 			}
+			
 			}
-			}
-			Token lastToken = LT(0);
-			if (lastToken != null && lastToken.getText() != null) {
-			ParserUtil.setBodyBounds(builder, (ElementFactory.Item)builder, firstToken, lastToken);
+			if ( inputState.guessing==0 ) {
+				Token lastToken = LT(0);
+				if (lastToken != null && lastToken.getText() != null) {
+				ParserUtil.setBodyBounds(builder, (ElementFactory.Item)builder, firstToken, lastToken);
+				}
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_0);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_2);
+			} else {
+			  throw ex;
+			}
+		}
+	}
+	
+	private final void scDecl() throws RecognitionException, TokenStreamException {
+		
+		
+		String ignore;
+		ElementFactory.Item ignore2;
+		Token unitIdToken = null;
+		
+		
+		try {      // for error handling
+			ignore=name();
+			if ( inputState.guessing==0 ) {
+				unitIdToken = LT(0);
+			}
+			equals();
+			ignore2=scTerm(unitIdToken);
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_3);
+			} else {
+			  throw ex;
+			}
+		}
+	}
+	
+	private final void scToplevelDecls() throws RecognitionException, TokenStreamException {
+		
+		
+		try {      // for error handling
+			scDecl();
+			{
+			_loop8:
+			do {
+				if ((LA(1)==IDENTIFIER)) {
+					scDecl();
+				}
+				else {
+					break _loop8;
+				}
+				
+			} while (true);
+			}
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_2);
+			} else {
+			  throw ex;
+			}
 		}
 	}
 	
@@ -119,34 +191,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			ignore=scTerm(null);
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_0);
-		}
-	}
-	
-	private final void scToplevelDecls() throws RecognitionException, TokenStreamException {
-		
-		
-		try {      // for error handling
-			scDecl();
-			{
-			_loop6:
-			do {
-				if ((LA(1)==IDENTIFIER)) {
-					scDecl();
-				}
-				else {
-					break _loop6;
-				}
-				
-			} while (true);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_2);
+			} else {
+			  throw ex;
 			}
-		}
-		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_0);
 		}
 	}
 	
@@ -156,44 +207,42 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		ElementFactory.Item item;
 		
 		
-		Object[] objEnd = null;
 		item = null;
-		Object beginEnd = null;
 		
 		
 		try {      // for error handling
 			{
-			item=specDefinition(unitIdToken);
+			switch ( LA(1)) {
+			case IDENTIFIER:
+			{
+				scURI();
+				break;
 			}
-			if (item != null) builder.setParent(item, null);
+			case LITERAL_spec:
+			{
+				item=specDefinition(unitIdToken);
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+			}
+			if ( inputState.guessing==0 ) {
+				if (item != null) builder.setParent(item, null);
+			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_1);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_4);
+			} else {
+			  throw ex;
+			}
 		}
 		return item;
-	}
-	
-	private final void scDecl() throws RecognitionException, TokenStreamException {
-		
-		
-		String ignore;
-		ElementFactory.Item ignore2;
-		Token unitIdToken = null;
-		
-		
-		try {      // for error handling
-			ignore=name();
-			unitIdToken = LT(0);
-			equals();
-			ignore2=scTerm(unitIdToken);
-		}
-		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_2);
-		}
 	}
 	
 	private final String  name() throws RecognitionException, TokenStreamException {
@@ -207,9 +256,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			name=idName();
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_3);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_5);
+			} else {
+			  throw ex;
+			}
 		}
 		return name;
 	}
@@ -236,9 +289,81 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_4);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_6);
+			} else {
+			  throw ex;
+			}
+		}
+	}
+	
+	private final void scURI() throws RecognitionException, TokenStreamException {
+		
+		
+		try {      // for error handling
+			{
+			boolean synPredMatched15 = false;
+			if (((LA(1)==IDENTIFIER) && (LA(2)==IDENTIFIER) && (_tokenSet_0.member(LA(3))))) {
+				int _m15 = mark();
+				synPredMatched15 = true;
+				inputState.guessing++;
+				try {
+					{
+					nonWordSymbol("/");
+					}
+				}
+				catch (RecognitionException pe) {
+					synPredMatched15 = false;
+				}
+				rewind(_m15);
+				inputState.guessing--;
+			}
+			if ( synPredMatched15 ) {
+				nonWordSymbol("/");
+				scURIPath();
+			}
+			else if ((LA(1)==IDENTIFIER) && (_tokenSet_0.member(LA(2))) && (_tokenSet_7.member(LA(3)))) {
+				scURIPath();
+			}
+			else {
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			
+			}
+			{
+			switch ( LA(1)) {
+			case INNER_UNIT_REF:
+			{
+				match(INNER_UNIT_REF);
+				break;
+			}
+			case EOF:
+			case IDENTIFIER:
+			case LITERAL_endspec:
+			case LITERAL_import:
+			case LITERAL_sort:
+			case LITERAL_op:
+			case LITERAL_def:
+			{
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+			}
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_4);
+			} else {
+			  throw ex;
+			}
 		}
 	}
 	
@@ -260,36 +385,116 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		try {      // for error handling
 			begin = LT(1);
 			match(LITERAL_spec);
-			headerEnd = begin;
+			if ( inputState.guessing==0 ) {
+				headerEnd = begin;
+			}
 			{
-			_loop12:
+			_loop23:
 			do {
-				if ((LA(1)==LITERAL_import||LA(1)==LITERAL_sort||LA(1)==LITERAL_op)) {
+				if ((_tokenSet_8.member(LA(1)))) {
 					childItem=declaration();
-					if (childItem != null) children.add(childItem);
+					if ( inputState.guessing==0 ) {
+						if (childItem != null) children.add(childItem);
+					}
 				}
 				else {
-					break _loop12;
+					break _loop23;
 				}
 				
 			} while (true);
 			}
 			end = LT(1);
 			match(LITERAL_endspec);
-			spec = builder.createSpec(name);
-			if (unitIdToken != null) {
-			begin = unitIdToken;
+			if ( inputState.guessing==0 ) {
+				spec = builder.createSpec(name);
+				if (unitIdToken != null) {
+				begin = unitIdToken;
+				}
+				builder.setParent(children, spec);
+				ParserUtil.setAllBounds(builder, spec, begin, headerEnd, end);
+				
 			}
-			builder.setParent(children, spec);
-			ParserUtil.setAllBounds(builder, spec, begin, headerEnd, end);
-			
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_1);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_4);
+			} else {
+			  throw ex;
+			}
 		}
 		return spec;
+	}
+	
+	private final void nonWordSymbol(
+		String expected
+	) throws RecognitionException, TokenStreamException {
+		
+		Token  t = null;
+		
+		try {      // for error handling
+			t = LT(1);
+			match(IDENTIFIER);
+			if (!(t.getText().equals(expected)))
+			  throw new SemanticException("t.getText().equals(expected)");
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				
+				int line = t.getLine();
+				String msg = "expecting \"" + expected + "\", found \"" + t.getText() + "\"";
+				throw new RecognitionException(msg, null, line);
+				
+			} else {
+				throw ex;
+			}
+		}
+	}
+	
+	private final void scURIPath() throws RecognitionException, TokenStreamException {
+		
+		
+		try {      // for error handling
+			match(IDENTIFIER);
+			{
+			boolean synPredMatched20 = false;
+			if (((LA(1)==IDENTIFIER) && (LA(2)==IDENTIFIER) && (_tokenSet_0.member(LA(3))))) {
+				int _m20 = mark();
+				synPredMatched20 = true;
+				inputState.guessing++;
+				try {
+					{
+					nonWordSymbol("/");
+					}
+				}
+				catch (RecognitionException pe) {
+					synPredMatched20 = false;
+				}
+				rewind(_m20);
+				inputState.guessing--;
+			}
+			if ( synPredMatched20 ) {
+				nonWordSymbol("/");
+				scURIPath();
+			}
+			else if ((_tokenSet_0.member(LA(1))) && (_tokenSet_7.member(LA(2))) && (_tokenSet_9.member(LA(3)))) {
+			}
+			else {
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			
+			}
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_0);
+			} else {
+			  throw ex;
+			}
+		}
 	}
 	
 	private final ElementFactory.Item  declaration() throws RecognitionException, TokenStreamException {
@@ -316,6 +521,11 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				item=opDeclaration();
 				break;
 			}
+			case LITERAL_def:
+			{
+				definition();
+				break;
+			}
 			default:
 			{
 				throw new NoViableAltException(LT(1), getFilename());
@@ -323,9 +533,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_5);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_10);
+			} else {
+			  throw ex;
+			}
 		}
 		return item;
 	}
@@ -341,9 +555,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			qlf=name();
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_6);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_11);
+			} else {
+			  throw ex;
+			}
 		}
 		return qlf;
 	}
@@ -359,12 +577,18 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		try {      // for error handling
 			id = LT(1);
 			match(IDENTIFIER);
-			name = id.getText();
+			if ( inputState.guessing==0 ) {
+				name = id.getText();
+			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_7);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_12);
+			} else {
+			  throw ex;
+			}
 		}
 		return name;
 	}
@@ -380,9 +604,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			ignore=scTerm(null);
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_5);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_10);
+			} else {
+			  throw ex;
+			}
 		}
 	}
 	
@@ -412,6 +640,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case LITERAL_import:
 			case LITERAL_sort:
 			case LITERAL_op:
+			case LITERAL_def:
 			{
 				break;
 			}
@@ -421,14 +650,20 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 			}
 			}
-			sort = builder.createSort(name, params);
-			ParserUtil.setBounds(builder, sort, begin, LT(0));
-			
+			if ( inputState.guessing==0 ) {
+				sort = builder.createSort(name, params);
+				ParserUtil.setBounds(builder, sort, begin, LT(0));
+				
+			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_5);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_10);
+			} else {
+			  throw ex;
+			}
 		}
 		return sort;
 	}
@@ -449,16 +684,39 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			name=qualifiableNames();
 			nonWordSymbol(":");
 			sort=sort();
-			op = builder.createOp(name, sort);
-			ParserUtil.setBounds(builder, op, begin, LT(0));
-			
+			if ( inputState.guessing==0 ) {
+				op = builder.createOp(name, sort);
+				ParserUtil.setBounds(builder, op, begin, LT(0));
+				
+			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_5);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_10);
+			} else {
+			  throw ex;
+			}
 		}
 		return op;
+	}
+	
+	private final void definition() throws RecognitionException, TokenStreamException {
+		
+		
+		try {      // for error handling
+			opDefinition();
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_10);
+			} else {
+			  throw ex;
+			}
+		}
 	}
 	
 	private final String  qualifiableNames() throws RecognitionException, TokenStreamException {
@@ -481,23 +739,29 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			{
 				match(LBRACE);
 				member=qualifiableName();
-				name = "{" + member;
+				if ( inputState.guessing==0 ) {
+					name = "{" + member;
+				}
 				{
-				_loop21:
+				_loop32:
 				do {
 					if ((LA(1)==COMMA)) {
 						match(COMMA);
 						member=qualifiableName();
-						name = name + ", " + member;
+						if ( inputState.guessing==0 ) {
+							name = name + ", " + member;
+						}
 					}
 					else {
-						break _loop21;
+						break _loop32;
 					}
 					
 				} while (true);
 				}
 				match(RBRACE);
-				name = name + "}";
+				if ( inputState.guessing==0 ) {
+					name = name + "}";
+				}
 				break;
 			}
 			default:
@@ -507,9 +771,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_8);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_13);
+			} else {
+			  throw ex;
+			}
 		}
 		return name;
 	}
@@ -528,31 +796,41 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case IDENTIFIER:
 			{
 				param=idName();
-				params = new String[]{param};
+				if ( inputState.guessing==0 ) {
+					params = new String[]{param};
+				}
 				break;
 			}
 			case LPAREN:
 			{
 				match(LPAREN);
-				paramList = new LinkedList();
+				if ( inputState.guessing==0 ) {
+					paramList = new LinkedList();
+				}
 				param=idName();
-				paramList.add(param);
+				if ( inputState.guessing==0 ) {
+					paramList.add(param);
+				}
 				{
-				_loop27:
+				_loop38:
 				do {
 					if ((LA(1)==COMMA)) {
 						match(COMMA);
 						param=idName();
-						paramList.add(param);
+						if ( inputState.guessing==0 ) {
+							paramList.add(param);
+						}
 					}
 					else {
-						break _loop27;
+						break _loop38;
 					}
 					
 				} while (true);
 				}
 				match(RPAREN);
-				params = (String[]) paramList.toArray(new String[]{});
+				if ( inputState.guessing==0 ) {
+					params = (String[]) paramList.toArray(new String[]{});
+				}
 				break;
 			}
 			default:
@@ -562,9 +840,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_5);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_10);
+			} else {
+			  throw ex;
+			}
 		}
 		return params;
 	}
@@ -583,7 +865,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				qlf=qualifier();
 				match(DOT);
 			}
-			else if ((LA(1)==IDENTIFIER) && (_tokenSet_9.member(LA(2)))) {
+			else if ((LA(1)==IDENTIFIER) && (_tokenSet_14.member(LA(2)))) {
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -591,35 +873,20 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			
 			}
 			name=idName();
-			if (qlf != null) name = qlf + "." + name;
+			if ( inputState.guessing==0 ) {
+				if (qlf != null) name = qlf + "." + name;
+			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_9);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_14);
+			} else {
+			  throw ex;
+			}
 		}
 		return name;
-	}
-	
-	private final void nonWordSymbol(
-		String expected
-	) throws RecognitionException, TokenStreamException {
-		
-		Token  t = null;
-		
-		try {      // for error handling
-			t = LT(1);
-			match(IDENTIFIER);
-			if (!(t.getText().equals(expected)))
-			  throw new SemanticException("t.getText().equals(expected)");
-		}
-		catch (RecognitionException ex) {
-			
-			int line = t.getLine();
-			String msg = "expecting \"" + expected + "\", found \"" + t.getText() + "\"";
-			throw new RecognitionException(msg, null, line);
-			
-		}
 	}
 	
 	private final String  sort() throws RecognitionException, TokenStreamException {
@@ -632,14 +899,16 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt31=0;
-			_loop31:
+			int _cnt42=0;
+			_loop42:
 			do {
 				switch ( LA(1)) {
 				case IDENTIFIER:
 				{
 					text=qualifiableRef();
-					sort = sort + text;
+					if ( inputState.guessing==0 ) {
+						sort = sort + text;
+					}
 					break;
 				}
 				case NAT_LITERAL:
@@ -649,7 +918,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LITERAL_false:
 				{
 					text=literal();
-					sort = sort + text;
+					if ( inputState.guessing==0 ) {
+						sort = sort + text;
+					}
 					break;
 				}
 				case LBRACE:
@@ -662,7 +933,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case RBRACKET:
 				{
 					text=specialSymbol();
-					sort = sort + text;
+					if ( inputState.guessing==0 ) {
+						sort = sort + text;
+					}
 					break;
 				}
 				case LITERAL_as:
@@ -670,7 +943,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LITERAL_choose:
 				case LITERAL_else:
 				case LITERAL_embed:
-				case 29:
+				case 31:
 				case LITERAL_ex:
 				case LITERAL_fa:
 				case LITERAL_fn:
@@ -686,22 +959,28 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LITERAL_where:
 				{
 					text=expressionKeyword();
-					sort = sort + text;
+					if ( inputState.guessing==0 ) {
+						sort = sort + text;
+					}
 					break;
 				}
 				default:
 				{
-					if ( _cnt31>=1 ) { break _loop31; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt42>=1 ) { break _loop42; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				}
-				_cnt31++;
+				_cnt42++;
 			} while (true);
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_5);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_10);
+			} else {
+			  throw ex;
+			}
 		}
 		return sort;
 	}
@@ -717,9 +996,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			name=qualifiableName();
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_9);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_15);
+			} else {
+			  throw ex;
+			}
 		}
 		return name;
 	}
@@ -746,21 +1029,27 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			{
 				t1 = LT(1);
 				match(NAT_LITERAL);
-				text = t1.getText();
+				if ( inputState.guessing==0 ) {
+					text = t1.getText();
+				}
 				break;
 			}
 			case CHAR_LITERAL:
 			{
 				t2 = LT(1);
 				match(CHAR_LITERAL);
-				text = t2.getText();
+				if ( inputState.guessing==0 ) {
+					text = t2.getText();
+				}
 				break;
 			}
 			case STRING_LITERAL:
 			{
 				t3 = LT(1);
 				match(STRING_LITERAL);
-				text = t3.getText();
+				if ( inputState.guessing==0 ) {
+					text = t3.getText();
+				}
 				break;
 			}
 			default:
@@ -770,9 +1059,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_9);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_15);
+			} else {
+			  throw ex;
+			}
 		}
 		return text;
 	}
@@ -789,49 +1082,65 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case UBAR:
 			{
 				match(UBAR);
-				text = "_";
+				if ( inputState.guessing==0 ) {
+					text = "_";
+				}
 				break;
 			}
 			case LPAREN:
 			{
 				match(LPAREN);
-				text = "(";
+				if ( inputState.guessing==0 ) {
+					text = "(";
+				}
 				break;
 			}
 			case RPAREN:
 			{
 				match(RPAREN);
-				text = "}";
+				if ( inputState.guessing==0 ) {
+					text = "}";
+				}
 				break;
 			}
 			case LBRACKET:
 			{
 				match(LBRACKET);
-				text = "[";
+				if ( inputState.guessing==0 ) {
+					text = "[";
+				}
 				break;
 			}
 			case RBRACKET:
 			{
 				match(RBRACKET);
-				text = "]";
+				if ( inputState.guessing==0 ) {
+					text = "]";
+				}
 				break;
 			}
 			case LBRACE:
 			{
 				match(LBRACE);
-				text = "{";
+				if ( inputState.guessing==0 ) {
+					text = "{";
+				}
 				break;
 			}
 			case RBRACE:
 			{
 				match(RBRACE);
-				text = "}";
+				if ( inputState.guessing==0 ) {
+					text = "}";
+				}
 				break;
 			}
 			case COMMA:
 			{
 				match(COMMA);
-				text = ", ";
+				if ( inputState.guessing==0 ) {
+					text = ", ";
+				}
 				break;
 			}
 			default:
@@ -841,9 +1150,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_9);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_15);
+			} else {
+			  throw ex;
+			}
 		}
 		return text;
 	}
@@ -860,106 +1173,387 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case LITERAL_as:
 			{
 				match(LITERAL_as);
-				text = "as ";
+				if ( inputState.guessing==0 ) {
+					text = "as ";
+				}
 				break;
 			}
 			case LITERAL_case:
 			{
 				match(LITERAL_case);
-				text = "case ";
+				if ( inputState.guessing==0 ) {
+					text = "case ";
+				}
 				break;
 			}
 			case LITERAL_choose:
 			{
 				match(LITERAL_choose);
-				text = "choose ";
+				if ( inputState.guessing==0 ) {
+					text = "choose ";
+				}
 				break;
 			}
 			case LITERAL_else:
 			{
 				match(LITERAL_else);
-				text = "else ";
+				if ( inputState.guessing==0 ) {
+					text = "else ";
+				}
 				break;
 			}
 			case LITERAL_embed:
 			{
 				match(LITERAL_embed);
-				text = "embed ";
+				if ( inputState.guessing==0 ) {
+					text = "embed ";
+				}
 				break;
 			}
-			case 29:
+			case 31:
 			{
-				match(29);
-				text = "embed? ";
+				match(31);
+				if ( inputState.guessing==0 ) {
+					text = "embed? ";
+				}
 				break;
 			}
 			case LITERAL_ex:
 			{
 				match(LITERAL_ex);
-				text = "ex ";
+				if ( inputState.guessing==0 ) {
+					text = "ex ";
+				}
 				break;
 			}
 			case LITERAL_fa:
 			{
 				match(LITERAL_fa);
-				text = "fa ";
+				if ( inputState.guessing==0 ) {
+					text = "fa ";
+				}
 				break;
 			}
 			case LITERAL_fn:
 			{
 				match(LITERAL_fn);
-				text = "fn ";
+				if ( inputState.guessing==0 ) {
+					text = "fn ";
+				}
 				break;
 			}
 			case LITERAL_if:
 			{
 				match(LITERAL_if);
-				text = "if ";
+				if ( inputState.guessing==0 ) {
+					text = "if ";
+				}
 				break;
 			}
 			case LITERAL_in:
 			{
 				match(LITERAL_in);
-				text = "in ";
+				if ( inputState.guessing==0 ) {
+					text = "in ";
+				}
 				break;
 			}
 			case LITERAL_let:
 			{
 				{
-				match(LITERAL_let);
-				text = "let ";
+				boolean synPredMatched61 = false;
+				if (((LA(1)==LITERAL_let) && (LA(2)==LITERAL_def) && (_tokenSet_15.member(LA(3))))) {
+					int _m61 = mark();
+					synPredMatched61 = true;
+					inputState.guessing++;
+					try {
+						{
+						match(LITERAL_let);
+						match(LITERAL_def);
+						}
+					}
+					catch (RecognitionException pe) {
+						synPredMatched61 = false;
+					}
+					rewind(_m61);
+					inputState.guessing--;
+				}
+				if ( synPredMatched61 ) {
+					match(LITERAL_let);
+					match(LITERAL_def);
+					if ( inputState.guessing==0 ) {
+						text = "let def";
+					}
+				}
+				else if ((LA(1)==LITERAL_let) && (_tokenSet_15.member(LA(2))) && (_tokenSet_16.member(LA(3)))) {
+					match(LITERAL_let);
+					if ( inputState.guessing==0 ) {
+						text = "let";
+					}
+				}
+				else {
+					throw new NoViableAltException(LT(1), getFilename());
+				}
+				
+				}
+				break;
+			}
+			case LITERAL_of:
+			{
+				match(LITERAL_of);
+				if ( inputState.guessing==0 ) {
+					text = "of ";
+				}
+				break;
+			}
+			case LITERAL_project:
+			{
+				match(LITERAL_project);
+				if ( inputState.guessing==0 ) {
+					text = "project ";
+				}
+				break;
+			}
+			case LITERAL_quotient:
+			{
+				match(LITERAL_quotient);
+				if ( inputState.guessing==0 ) {
+					text = "quotient ";
+				}
+				break;
+			}
+			case LITERAL_relax:
+			{
+				match(LITERAL_relax);
+				if ( inputState.guessing==0 ) {
+					text = "relax ";
+				}
+				break;
+			}
+			case LITERAL_restrict:
+			{
+				match(LITERAL_restrict);
+				if ( inputState.guessing==0 ) {
+					text = "restrict ";
+				}
+				break;
+			}
+			case LITERAL_then:
+			{
+				match(LITERAL_then);
+				if ( inputState.guessing==0 ) {
+					text = "then ";
+				}
+				break;
+			}
+			case LITERAL_where:
+			{
+				match(LITERAL_where);
+				if ( inputState.guessing==0 ) {
+					text = "where ";
+				}
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_15);
+			} else {
+			  throw ex;
+			}
+		}
+		return text;
+	}
+	
+	private final void opDefinition() throws RecognitionException, TokenStreamException {
+		
+		
+		String name = null;
+		String[] params = null;
+		
+		
+		try {      // for error handling
+			match(LITERAL_def);
+			name=qualifiableNames();
+			{
+			boolean synPredMatched47 = false;
+			if (((LA(1)==IDENTIFIER||LA(1)==LPAREN) && (LA(2)==IDENTIFIER||LA(2)==RPAREN||LA(2)==LITERAL_is) && (_tokenSet_17.member(LA(3))))) {
+				int _m47 = mark();
+				synPredMatched47 = true;
+				inputState.guessing++;
+				try {
+					{
+					params=formalOpParameters();
+					equals();
+					}
+				}
+				catch (RecognitionException pe) {
+					synPredMatched47 = false;
+				}
+				rewind(_m47);
+				inputState.guessing--;
+			}
+			if ( synPredMatched47 ) {
+				params=formalOpParameters();
+				equals();
+			}
+			else if ((LA(1)==IDENTIFIER||LA(1)==LITERAL_is) && (_tokenSet_18.member(LA(2))) && (_tokenSet_19.member(LA(3)))) {
+				equals();
+			}
+			else {
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			
+			}
+			expression();
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_10);
+			} else {
+			  throw ex;
+			}
+		}
+	}
+	
+	private final String[]  formalOpParameters() throws RecognitionException, TokenStreamException {
+		String[] params;
+		
+		
+		params = null;
+		String param = null;
+		List paramList = null;
+		
+		
+		try {      // for error handling
+			switch ( LA(1)) {
+			case IDENTIFIER:
+			{
+				param=idName();
+				if ( inputState.guessing==0 ) {
+					params = new String[]{param};
+				}
+				break;
+			}
+			case LPAREN:
+			{
+				match(LPAREN);
+				if ( inputState.guessing==0 ) {
+					paramList = new LinkedList();
+				}
 				{
 				switch ( LA(1)) {
-				case LITERAL_def:
+				case IDENTIFIER:
 				{
-					match(LITERAL_def);
-					text = "let def ";
+					param=idName();
+					if ( inputState.guessing==0 ) {
+						paramList.add(param);
+					}
+					{
+					_loop54:
+					do {
+						if ((LA(1)==COMMA)) {
+							match(COMMA);
+							param=idName();
+							if ( inputState.guessing==0 ) {
+								paramList.add(param);
+							}
+						}
+						else {
+							break _loop54;
+						}
+						
+					} while (true);
+					}
 					break;
 				}
-				case LITERAL_endspec:
-				case LITERAL_import:
-				case LITERAL_sort:
-				case LBRACE:
-				case COMMA:
-				case RBRACE:
-				case IDENTIFIER:
-				case LPAREN:
 				case RPAREN:
-				case LITERAL_op:
-				case UBAR:
-				case LBRACKET:
-				case RBRACKET:
+				{
+					break;
+				}
+				default:
+				{
+					throw new NoViableAltException(LT(1), getFilename());
+				}
+				}
+				}
+				match(RPAREN);
+				if ( inputState.guessing==0 ) {
+					params = (String[]) paramList.toArray(new String[]{});
+				}
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_20);
+			} else {
+			  throw ex;
+			}
+		}
+		return params;
+	}
+	
+	private final void expression() throws RecognitionException, TokenStreamException {
+		
+		
+		String ignore = null;
+		
+		
+		try {      // for error handling
+			{
+			int _cnt50=0;
+			_loop50:
+			do {
+				switch ( LA(1)) {
+				case IDENTIFIER:
+				{
+					ignore=qualifiableRef();
+					break;
+				}
 				case NAT_LITERAL:
 				case CHAR_LITERAL:
 				case STRING_LITERAL:
 				case LITERAL_true:
 				case LITERAL_false:
+				{
+					ignore=literal();
+					break;
+				}
+				case LBRACE:
+				case COMMA:
+				case RBRACE:
+				case LPAREN:
+				case RPAREN:
+				case UBAR:
+				case LBRACKET:
+				case RBRACKET:
+				{
+					ignore=specialSymbol();
+					break;
+				}
 				case LITERAL_as:
 				case LITERAL_case:
 				case LITERAL_choose:
 				case LITERAL_else:
 				case LITERAL_embed:
-				case 29:
+				case 31:
 				case LITERAL_ex:
 				case LITERAL_fa:
 				case LITERAL_fn:
@@ -974,71 +1568,27 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LITERAL_then:
 				case LITERAL_where:
 				{
+					ignore=expressionKeyword();
 					break;
 				}
 				default:
 				{
-					throw new NoViableAltException(LT(1), getFilename());
+					if ( _cnt50>=1 ) { break _loop50; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				}
-				}
-				}
-				break;
-			}
-			case LITERAL_of:
-			{
-				match(LITERAL_of);
-				text = "of ";
-				break;
-			}
-			case LITERAL_project:
-			{
-				match(LITERAL_project);
-				text = "project ";
-				break;
-			}
-			case LITERAL_quotient:
-			{
-				match(LITERAL_quotient);
-				text = "quotient ";
-				break;
-			}
-			case LITERAL_relax:
-			{
-				match(LITERAL_relax);
-				text = "relax ";
-				break;
-			}
-			case LITERAL_restrict:
-			{
-				match(LITERAL_restrict);
-				text = "restrict ";
-				break;
-			}
-			case LITERAL_then:
-			{
-				match(LITERAL_then);
-				text = "then ";
-				break;
-			}
-			case LITERAL_where:
-			{
-				match(LITERAL_where);
-				text = "where ";
-				break;
-			}
-			default:
-			{
-				throw new NoViableAltException(LT(1), getFilename());
-			}
+				_cnt50++;
+			} while (true);
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_9);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_10);
+			} else {
+			  throw ex;
+			}
 		}
-		return text;
 	}
 	
 	private final String  booleanLiteral() throws RecognitionException, TokenStreamException {
@@ -1056,14 +1606,18 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			{
 				t1 = LT(1);
 				match(LITERAL_true);
-				text = "true ";
+				if ( inputState.guessing==0 ) {
+					text = "true ";
+				}
 				break;
 			}
 			case LITERAL_false:
 			{
 				t2 = LT(1);
 				match(LITERAL_false);
-				text = "false ";
+				if ( inputState.guessing==0 ) {
+					text = "false ";
+				}
 				break;
 			}
 			default:
@@ -1073,9 +1627,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_9);
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_15);
+			} else {
+			  throw ex;
+			}
 		}
 		return text;
 	}
@@ -1086,6 +1644,8 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		"EOF",
 		"<2>",
 		"NULL_TREE_LOOKAHEAD",
+		"an inner-unit reference",
+		"an identifier",
 		"\"spec\"",
 		"\"endspec\"",
 		"\"import\"",
@@ -1094,10 +1654,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		"','",
 		"'}'",
 		"'.'",
-		"an identifier",
 		"'('",
 		"')'",
 		"\"op\"",
+		"\"def\"",
 		"'_'",
 		"'['",
 		"']'",
@@ -1118,7 +1678,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		"\"if\"",
 		"\"in\"",
 		"\"let\"",
-		"\"def\"",
 		"\"of\"",
 		"\"project\"",
 		"\"quotient\"",
@@ -1136,31 +1695,59 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		"'#'",
 		"LETTER",
 		"DIGIT",
+		"CHAR_GLYPH",
+		"OTHER_CHAR_GLYPH",
 		"ESC",
+		"HEXADECIMAL_DIGIT",
+		"STRING_LITERAL_GLYPH",
 		"WORD_SYMBOL",
+		"WORD_START_MARK",
+		"WORD_CONTINUE_MARK",
 		"NON_WORD_SYMBOL",
 		"NON_WORD_MARK"
 	};
 	
-	private static final long _tokenSet_0_data_[] = { 2L, 0L };
+	private static final long _tokenSet_0_data_[] = { 197554L, 0L };
 	public static final BitSet _tokenSet_0 = new BitSet(_tokenSet_0_data_);
-	private static final long _tokenSet_1_data_[] = { 37090L, 0L };
+	private static final long _tokenSet_1_data_[] = { 1138L, 0L };
 	public static final BitSet _tokenSet_1 = new BitSet(_tokenSet_1_data_);
-	private static final long _tokenSet_2_data_[] = { 4098L, 0L };
+	private static final long _tokenSet_2_data_[] = { 2L, 0L };
 	public static final BitSet _tokenSet_2 = new BitSet(_tokenSet_2_data_);
-	private static final long _tokenSet_3_data_[] = { 17592186050560L, 0L };
+	private static final long _tokenSet_3_data_[] = { 34L, 0L };
 	public static final BitSet _tokenSet_3 = new BitSet(_tokenSet_3_data_);
-	private static final long _tokenSet_4_data_[] = { 16L, 0L };
+	private static final long _tokenSet_4_data_[] = { 197538L, 0L };
 	public static final BitSet _tokenSet_4 = new BitSet(_tokenSet_4_data_);
-	private static final long _tokenSet_5_data_[] = { 32992L, 0L };
+	private static final long _tokenSet_5_data_[] = { 35184372097056L, 0L };
 	public static final BitSet _tokenSet_5 = new BitSet(_tokenSet_5_data_);
-	private static final long _tokenSet_6_data_[] = { 2048L, 0L };
+	private static final long _tokenSet_6_data_[] = { 35184371883104L, 0L };
 	public static final BitSet _tokenSet_6 = new BitSet(_tokenSet_6_data_);
-	private static final long _tokenSet_7_data_[] = { 35115652612064L, 0L };
+	private static final long _tokenSet_7_data_[] = { 35184372287458L, 0L };
 	public static final BitSet _tokenSet_7 = new BitSet(_tokenSet_7_data_);
-	private static final long _tokenSet_8_data_[] = { 45280L, 0L };
+	private static final long _tokenSet_8_data_[] = { 197376L, 0L };
 	public static final BitSet _tokenSet_8 = new BitSet(_tokenSet_8_data_);
-	private static final long _tokenSet_9_data_[] = { 17523466565600L, 0L };
+	private static final long _tokenSet_9_data_[] = { 35184372312050L, 0L };
 	public static final BitSet _tokenSet_9 = new BitSet(_tokenSet_9_data_);
+	private static final long _tokenSet_10_data_[] = { 197504L, 0L };
+	public static final BitSet _tokenSet_10 = new BitSet(_tokenSet_10_data_);
+	private static final long _tokenSet_11_data_[] = { 8192L, 0L };
+	public static final BitSet _tokenSet_11 = new BitSet(_tokenSet_11_data_);
+	private static final long _tokenSet_12_data_[] = { 70368744177568L, 0L };
+	public static final BitSet _tokenSet_12 = new BitSet(_tokenSet_12_data_);
+	private static final long _tokenSet_13_data_[] = { 35184372302752L, 0L };
+	public static final BitSet _tokenSet_13 = new BitSet(_tokenSet_13_data_);
+	private static final long _tokenSet_14_data_[] = { 70368744169376L, 0L };
+	public static final BitSet _tokenSet_14 = new BitSet(_tokenSet_14_data_);
+	private static final long _tokenSet_15_data_[] = { 35184372080544L, 0L };
+	public static final BitSet _tokenSet_15 = new BitSet(_tokenSet_15_data_);
+	private static final long _tokenSet_16_data_[] = { 35184372088802L, 0L };
+	public static final BitSet _tokenSet_16 = new BitSet(_tokenSet_16_data_);
+	private static final long _tokenSet_17_data_[] = { 70368743971872L, 0L };
+	public static final BitSet _tokenSet_17 = new BitSet(_tokenSet_17_data_);
+	private static final long _tokenSet_18_data_[] = { 35184371883040L, 0L };
+	public static final BitSet _tokenSet_18 = new BitSet(_tokenSet_18_data_);
+	private static final long _tokenSet_19_data_[] = { 35184372088736L, 0L };
+	public static final BitSet _tokenSet_19 = new BitSet(_tokenSet_19_data_);
+	private static final long _tokenSet_20_data_[] = { 35184372088864L, 0L };
+	public static final BitSet _tokenSet_20 = new BitSet(_tokenSet_20_data_);
 	
 	}
