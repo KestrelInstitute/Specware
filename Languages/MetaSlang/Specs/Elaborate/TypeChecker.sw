@@ -43,7 +43,7 @@ spec {
   op unlinkRec                : MS.Sort -> MS.Sort
   op undeterminedSort?        : MS.Sort -> Boolean
 
-%  op checkSort                : LocalEnv * MS.Sort                    -> MS.Sort
+  op checkSort                : LocalEnv * MS.Sort                    -> MS.Sort
   op checkSortScheme          : LocalEnv * (TyVars   * MS.Sort)       -> (TyVars * MS.Sort)
   op elaborateSort            : LocalEnv * MS.Sort    * MS.Sort         -> MS.Sort
   op elaborateCheckSortForTerm: LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort 
