@@ -49,7 +49,8 @@
 ;;; Generating lisp file /tmp/cl-current-file.lisp
 ")
       ("Restrict Obligations"
-       :show ";;; Elaborating obligator at $TESTDIR/RestrictObligation#O
+       :show "RestrictObligation#O"
+       :output ";;; Elaborating obligator at $TESTDIR/RestrictObligation#O
 ;;; Elaborating spec at $TESTDIR/RestrictObligation#A
 ;;; Elaborating spec at $SPECWARE/Library/Base/WFO
 

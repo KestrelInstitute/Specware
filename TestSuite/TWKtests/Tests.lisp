@@ -32,21 +32,9 @@ Errors in $TESTDIR/t0103_1.sw
        :output ";;; Elaborating spec at $TESTDIR/Switch#aspec
 ;;; Elaborating obligator at $TESTDIR/Switch#aspecobs
 ;;; Elaborating proof-term at $TESTDIR/Switch#p1
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/Top
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/Char
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/List
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/Nat
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/Option
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/String
-;;; Elaborating spec at $SPECWARE/Library/ProverBase/System
-;;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite
 ;; ensure-directories-exist: creating $TESTDIR/Both/Switch/p1.log
 ;; Directory $TESTDIR/Both/ does not exist, will create.
 ;; Directory $TESTDIR/Both/Switch/ does not exist, will create.
-;;; Elaborating spec at $SPECWARE/Library/Base/ProverBase
 p1: Conjecture doubleswitchidentity in aspec is Proved! using Snark.
     Snark Log file: $TESTDIR/Both/Switch/p1.log
 "
