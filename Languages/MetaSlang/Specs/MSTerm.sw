@@ -139,18 +139,6 @@ MS qualifying spec
 
  def usingNewBooleans? : Boolean = false
 
- op notOp : Term 
- op andOp : Term 
- op orOp : Term 
- op impliesOp : Term 
- op iffOp : Term 
-
- def notOp = mkOp (Qualified("Boolean", "~" ), unaryBoolSort)
- def andOp = mkInfixOp (Qualified("Boolean", "&" ), Infix(Right,15), binaryBoolSort)
- def orOp = mkInfixOp (Qualified("Boolean", "or"), Infix(Right,14), binaryBoolSort)
- def impliesOp = mkInfixOp (Qualified("Boolean", "=>"), Infix(Right,13), binaryBoolSort)
- def iffOp = mkInfixOp (Qualified("Boolean","<=>"), Infix(Right,12), binaryBoolSort)
-
  %% Record's
 
  op mkTuple : List Term -> Term
@@ -183,7 +171,7 @@ MS qualifying spec
  def tupleFields? fields =
    (foldl (fn ((id,_),i) ->
 	   if i < 0 then i
-	     else if id = Nat.toString i then i + 1 else ~1)
+	     else if id = Nat.toString i then i + 1 else Integer.~ 1)
       1 fields)
    > 0
 
@@ -209,11 +197,31 @@ MS qualifying spec
  op mkProjection  : Id * Term                   -> Term
  op mkSelection   : Id * Term                   -> Term
 
- def mkNot     trm      = mkApply (notOp,     trm)
- def mkAnd     (t1, t2) = mkApply (andOp,     mkTuple [t1,t2])
- def mkOr      (t1, t2) = mkApply (orOp,      mkTuple [t1,t2])
- def mkImplies (t1, t2) = mkApply (impliesOp, mkTuple [t1,t2])
- def mkIff     (t1, t2) = mkApply (iffOp,     mkTuple [t1,t2])
+ def mkNot     trm      = mkApply (if usingNewBooleans? then
+				     Fun (Not,     unaryBoolSort, noPos)
+				   else
+				     mkOp(Qualified("Boolean", "~" ), unaryBoolSort),
+				   trm)
+ def mkAnd     (t1, t2) = mkApply (if usingNewBooleans? then
+				     Fun (And,     binaryBoolSort, noPos)
+				   else
+				     mkInfixOp (Qualified("Boolean", "&" ), Infix(Right,15), binaryBoolSort),
+				   mkTuple [t1,t2])
+ def mkOr      (t1, t2) = mkApply (if usingNewBooleans? then
+				     Fun (Or,     binaryBoolSort, noPos)
+				   else
+				     mkInfixOp (Qualified("Boolean", "or" ), Infix(Right,14), binaryBoolSort),
+				   mkTuple [t1,t2])
+ def mkImplies (t1, t2) = mkApply (if usingNewBooleans? then
+				     Fun (Implies,     binaryBoolSort, noPos)
+				   else
+				     mkInfixOp (Qualified("Boolean", "=>" ), Infix(Right,13), binaryBoolSort),
+				   mkTuple [t1,t2])
+ def mkIff     (t1, t2) = mkApply (if usingNewBooleans? then
+				     Fun (Iff,     binaryBoolSort, noPos)
+				   else
+				     mkInfixOp (Qualified("Boolean", "<=>" ), Infix(Right,12), binaryBoolSort),
+				   mkTuple [t1,t2])
 
  def mkConj(cjs) =
   case cjs
@@ -274,7 +282,7 @@ MS qualifying spec
    case tm of
      | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),negTm,_) -> negTm
      | Apply(Fun(Not,_,_),negTm,_) -> negTm
-     | _ -> mkApply(notOp,tm)
+     | _ -> mkNot tm
 
  %% Patterns ...
 
