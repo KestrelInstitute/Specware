@@ -62,7 +62,8 @@ TransSpec qualifying spec
               imports = elabSpec.importInfo.imports,
               importedSpec = elabSpec.importInfo.importedSpec,
               localOps = [],
-              localSorts = []
+              localSorts = [],
+	      localProperties = []
             },
             sorts = elabSpec.sorts,
             ops = elabSpec.ops,

@@ -347,7 +347,8 @@ ModeSpec qualifying spec
               imports = modeSpec.spc.importInfo.imports,
               importedSpec = modeSpec.spc.importInfo.importedSpec,
               localOps = [],
-              localSorts = []
+              localSorts = [],
+              localProperties = []
             },
             sorts = modeSpec.spc.sorts,
             ops = modeSpec.spc.ops,
