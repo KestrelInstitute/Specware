@@ -136,7 +136,8 @@ def patternNames (pattern:Pattern) =
           id)
 
   def specId id = 
-      let id = translate (fn #| -> "\\|" | ## -> "\\#" | ch -> Char.toString ch) id
+      % TODO:  Optimize this to avoid needless consing for normal cases?
+      let id = translate (fn #| -> "\\|" | ## -> "\\#" | ch -> Char.toString ch) id 
       in
       let ID = String.map Char.toUpperCase id in
       if isLispString(ID) 
