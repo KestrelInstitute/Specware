@@ -345,6 +345,18 @@ def srtId_internal(srt,addIds?) =
       in
       let col = if addIds? then addProductSortToCollected(srt,col) else col in
       (l,str,col)
+    | CoProduct(fields,_) -> 
+      let (l,str,col) = foldl (fn((id,optfsrt),(types,str,col)) ->
+			       let (str0,col0) = case optfsrt of
+			                           | Some fsrt -> srtId(fsrt)
+			                           | None -> ("",nothingCollected) in
+			       let str = str ^ (if str = "" then "" else "$_$") ^ str0 in
+			       let str = if addIds? then str^"$"^id else str in
+			       let col = concatCollected(col,col0) in
+			       let types = concat(types,[tt_v2(str0)]) in
+			       (types,str,col)) ([],"",nothingCollected) fields
+      in
+      (l,str,col)
     | Arrow(dsrt,rsrt,_) ->
       let (dtypes,dsrtid,col2) = srtId_internal(dsrt,false) in
       let (_,rsrtid,col1) = srtId_internal(rsrt,addIds?) in

@@ -26,7 +26,7 @@ Integer qualifying spec
   op Integer.~ : Integer -> Integer
      % qualifier required to avoid parsing confusion with boolean negation ~
   axiom backward_compatible_unary_minus_def is
-    Integer.~ = -
+    fa (i: Integer) Integer.~(i) = -(i)
 
   % negative integers are obtained by negating positive ones:
   axiom negative_integers is

@@ -9,17 +9,18 @@
 	    ";;; Elaborating spec-morphism at $TESTDIR/Change#FlipFlopImplementation"
 	    ";;; Elaborating spec at $TESTDIR/Change#Flipflop"
 	    ";;; Elaborating spec at $TESTDIR/Change#GiveNameToTilde"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/List"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Nat"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Option"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System"
-	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/List")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Nat")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Option")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Change/ShouldBeProvable.log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $TESTDIR/Snark/Change/ does not exist, will create.")

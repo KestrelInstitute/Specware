@@ -11,6 +11,8 @@ spec
 
   axiom geqs is fa (i) i >= i
 
+%  axiom geqleq is fa (i,j) i >= j => j <= i
+
   axiom minusii is fa (i) i - i = 0
 
   axiom geqminu1 is fa (i, k) i >= k+1 => i >= k

@@ -22,6 +22,8 @@ PrNat qualifying spec
   axiom posNat?_def is
     fa (n: Nat) posNat?(n) <=> (n ~= zero)
 
+  axiom zero_def is zero = 0
+
   axiom one_def is one = succ zero
 
   axiom two_def is two = succ(succ zero)

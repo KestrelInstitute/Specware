@@ -3,6 +3,10 @@ spec
 %  import Integer
 %  import Nat
 
+%  axiom minus is fa (x: Integer, y: Integer) x - y = x + (- y)
+
+%  axiom leq_to_geq is fa (x: Integer, y: Integer) (x <= y) = (y >= x)
+
 %  axiom ge_reflexive is fa (i: Integer) (i >= i) = true
 
   %axiom nat_plus_nat is fa (n1: Nat, n2: Nat) n1 + n2 >= 0

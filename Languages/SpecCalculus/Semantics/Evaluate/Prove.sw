@@ -4,6 +4,7 @@ SpecCalc qualifying spec {
   import /Languages/Snark/SpecToSnark
   import /Provers/DP/ToFourierMotzkin
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
+  import /Languages/MetaSlang/Transformations/RemoveQuotient
   import /Languages/MetaSlang/CodeGen/CodeGenTransforms
   import UnitId/Utilities                                    % for uidToString, if used...
 
@@ -28,20 +29,8 @@ SpecCalc qualifying spec {
 	     case coerceToSpec value of
 	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
                | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
-     subSpec <- return(subtractSpec uspc baseSpec);
-     %subSpec <- return (subtractSpecProperties(uspc, baseSpec));
-     %noHOSpec <- return(subtractSpecProperties(instantiateHOFns(uspc), baseSpec));
-     %liftedNoHOSpec <- return(subtractSpecProperties(lambdaLift(noHOSpec), baseSpec));
-     %liftedNoHOSpec <- return(lambdaLift(noHOSpec));
-     %expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
-     %expandedSpec <- return (transformSpecForFirstOrderProver baseSpec subSpec);
      expandedSpec <- return (transformSpecForFirstOrderProver baseSpec uspc);
-     %_ <- return (if specwareDebug? then writeString(printSpec(liftedNoHOSpec)) else ());
-     %expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
-     %expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
      _ <- return (if specwareDebug? then writeString(printSpec(expandedSpec)) else ());
-     %expandedSpec:Spec <- return(explicateHiddenAxioms(noHOSpec));
-     %expandedSpec:Spec <- return(uspc);
      prover_options <- 
        (case possible_options of
 	  | OptionString prover_options -> return (prover_options)
@@ -50,7 +39,6 @@ SpecCalc qualifying spec {
 	  | Error   (msg, str)     -> raise  (SyntaxError (msg ^ str)));
      proved:Boolean <- (proveInSpec (proof_name,
 				     claim_name, 
-				     %subtractSpecProperties(expandedSpec, baseSpec),
 				     expandedSpec,
 				     spec_name,
 				     baseProverSpec,
@@ -77,7 +65,6 @@ SpecCalc qualifying spec {
       %let res = subtractSpec xspc xBaseSpec in
       let res = subtractSpecProperties(xspc, xBaseSpec) in
       res
-    
 
   op transformSpecForFirstOrderProverInt: AnnSpec.Spec -> AnnSpec.Spec
   def transformSpecForFirstOrderProverInt spc =
@@ -85,6 +72,11 @@ SpecCalc qualifying spec {
     %let _ = writeLine(printSpec spc) in
     let spc = unfoldSortAliases spc in
     let spc = removeCurrying spc in
+    %let _ = writeLine("remCur") in
+    %let _ = writeLine(printSpec spc) in
+    let spc = removeQuotient spc in
+    %let _ = writeLine("remQ") in
+    %let _ = writeLine(printSpec spc) in
     %let spc = instantiateHOFns spc in
     %let _ = writeLine("instHO") in
     %let _ = writeLine(printSpec spc) in
@@ -119,7 +111,8 @@ SpecCalc qualifying spec {
      (optBaseUnitId,baseSpec) <- getBase;
      proverBaseUnitId <- pathToRelativeUID "/Library/ProverBase/Top";
      (Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
-     return baseProverSpec % (subtractSpec baseProverSpec baseSpec)
+     return baseProverSpec % 
+     %return (subtractSpecProperties(baseProverSpec, baseSpec)) %baseProverSpec % 
     }
 
   op getRewriteProverSpec : Env Spec
@@ -128,7 +121,7 @@ SpecCalc qualifying spec {
      (optBaseUnitId,baseSpec) <- getBase;
      proverRewriteUnitId <- pathToRelativeUID "/Library/Base/ProverRewrite";
      (Spec rewriteProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverRewrite") proverRewriteUnitId;
-     return (subtractSpec rewriteProverSpec baseSpec)
+     return (subtractSpecProperties(rewriteProverSpec, baseSpec))
     }
 
  def proverOptionsFromSpec (name, spc, spec_name) = {
@@ -436,7 +429,6 @@ SpecCalc qualifying spec {
            Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]),
            Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-SORTS"), Lisp.bool(true)]),
            Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
-           Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
            Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
 	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)]),
 	   Lisp.list([Lisp.symbol("SNARK","USE-CONDITIONAL-ANSWER-CREATION"), Lisp.bool(true)]),
@@ -455,4 +447,3 @@ SpecCalc qualifying spec {
 
 
 }
-

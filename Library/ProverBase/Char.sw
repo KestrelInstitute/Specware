@@ -61,6 +61,4 @@ PrChar qualifying spec
                                     then chr(ord c - ord #A + ord #a)
                                     else c)
 
-  def compare(c1,c2) = compare(ord c1, ord c2)
-
 endspec
