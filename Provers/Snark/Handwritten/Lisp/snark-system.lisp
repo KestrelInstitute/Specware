@@ -313,11 +313,11 @@
 		"utilities"
                 "tptp"
                 "backward-compatibility"
-		("examples" "overbeek-test")
-		("examples" "front-last-example")
-		("examples" "steamroller-example")
-		("examples" "reverse-example")
-                ("examples" "hot-drink-example")
+		;; ("examples" "overbeek-test")
+		;; ("examples" "front-last-example")
+		;; ("examples" "steamroller-example")
+		;; ("examples" "reverse-example")
+                ;; ("examples" "hot-drink-example")
 		"patches"
 		))
 
