@@ -1,13 +1,14 @@
 \section{Monomorphic Sets}
 
+This is in use but to be deprecated. Use ../Sets.sw instead
+
 This is a spec for basic monomorphic sets.  The axioms have been omitted
 for the time being as have many of the useful operations.  This is the
 way that sets might have been defined in the old Slang.
 
 \begin{spec}
 spec
-  % import /Library/PrettyPrinter/WadlerLindig
-  import Elem
+  import ../Elem
 
   sort Set
 
@@ -24,8 +25,11 @@ spec
   op singleton : Elem -> Set
   op insert : Set -> Elem -> Set
 
+  % These belong in some extended spec for finite or enumerable sets. 
   op fold : fa(a) (a -> Elem -> a) -> a -> Set -> a
   op map : (Elem -> Elem) -> Set -> Set
+
+  % op takeOne : Set -> Option (Elem * Set)
 \end{spec}
 
 This pretty prints the elements of a list with breaks at each element.
@@ -36,13 +40,14 @@ Also it is not clear that a concrete definition belongs here at all.
 Perhaps it belongs in the refinements of this spec.
 
 \begin{spec}
-  op ppSet : Set -> Pretty
-  def ppSet set =
+  op pp : Set -> Pretty
+  def pp set =
      ppSep (ppString ",")
-       (fold (fn l -> fn elem -> Cons (ppElem elem, l)) [] set)
+       (fold (fn l -> fn elem -> Cons (Elem.pp elem, l)) [] set)
 \end{spec}
 
 These don't belong here
+
 \begin{spec}
   op toList : Set -> List Elem
 %  op addList : Set -> List Elem -> Set

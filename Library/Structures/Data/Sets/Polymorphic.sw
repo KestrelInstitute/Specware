@@ -25,17 +25,11 @@ spec
   op singleton : fa(a) a -> Set a
 
   % op fold : fa (a) (a -> a -> a) -> a -> Set a -> a
+
   op fold : fa (a,b) (a -> b -> a) -> a -> Set b -> a
   op map : fa (a,b) (a -> b) -> Set a -> Set b
 
-  op take : fa (a) Set a -> Option (a * Set a)
-
-%%   sort MaybeTwo a =
-%%     | Zero
-%%     | One a
-%%     | Two (a * a * Set a)
-
-  % op takeTwo : fa (a) Set a -> MaybeTwo a
+  % op takeOne : fa (a) Set a -> Option (a * Set a)
 
   op ppSet : fa(a) (a -> Pretty) -> Set a -> Pretty
 \end{spec}
