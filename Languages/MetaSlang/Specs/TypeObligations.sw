@@ -639,11 +639,14 @@ spec
 	  let sigma1 = unfoldBase(gamma,sigma1) in
           let (xVarTm,gamma1) = freshVars("X",sigma1,gamma) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVarTm,sigma1,tau1) in
-          let tcc    = subtypeRec(pairs,tcc,gamma1,
-				  mkApply(M,xVarTm),tau2,sigma2) in
+          let tcc    = case M of
+	                 | Lambda _ -> tcc % In this case the extra test would be redundant
+	                 | _ -> subtypeRec(pairs,tcc,gamma1,
+					   mkApply(M,xVarTm),tau2,sigma2) in
 	  tcc
         | (Product(fields1,_),Product(fields2,_)) -> 
-	  let tcc = ListPair.foldl 
+	  let tcc =
+	  ListPair.foldl 
 		(fn((_,t1),(id,t2),tcc) -> 
 		     subtypeRec(pairs,tcc,gamma,
 				mkApply(mkFun(Project id,mkArrow(sigma1,t1)),
@@ -671,7 +674,6 @@ spec
         | (Quotient(tau1,pred1,_),Quotient(sigma2,pred2,_)) -> tcc 
 	  %%%%%%%%%%%%% FIXME
         | (TyVar(tv1,_),TyVar(tv2,_)) -> tcc
-	  %%% FIXME?
         | (Base(id1,srts1,_),Base(id2,srts2,_)) ->
 	  if id1 = id2
 	      then
