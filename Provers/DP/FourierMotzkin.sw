@@ -448,10 +448,10 @@ FM qualifying spec
     let ineqSet = sortIneqSet(ineqSet) in
     let ineqSet = integerPreProcess(ineqSet) in
     let completeIneqs = fourierMotzkin(ineqSet) in
-    let _ = writeLine("FM: input:") in
-    let _ = writeIneqs(ineqSet) in
-    let _ = writeLine("FM: output:") in
-    let _ = writeIneqs(completeIneqs) in
+    %let _ = writeLine("FM: input:") in
+    %let _ = writeIneqs(ineqSet) in
+    %let _ = writeLine("FM: output:") in
+    %let _ = writeIneqs(completeIneqs) in
     if member(contradictIneqGt, completeIneqs) or
       member(contradictIneqGtEq, completeIneqs) or
       member(contradictIneqGtZero, completeIneqs)      
