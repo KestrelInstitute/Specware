@@ -106,6 +106,9 @@
 
 (make-system "../../UI/Emacs/Handwritten/Lisp")
 
+;;; Preload the base specs
+(user::sw "/Library/Base")
+
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
