@@ -100,7 +100,7 @@ The following is the sort given to us by the parser.
   sort Term a = (Term_ a) * a
   sort Term_ a = 
     | Print   (Term a)
-    | Prove   ClaimName * Term a * ProverName * Assertions * ProverOptions
+    | Prove   ClaimName * Term a * ProverName * Assertions * ProverOptions * AnswerVar
     | UnitId     RelativeUID
     | Spec    List (SpecElem a)
     | Diag    List (DiagElem a)
@@ -309,6 +309,8 @@ The term in the component must evaluate to a morphism.
   sort ProverOptions = | OptionString (List LispCell)
                        | OptionName QualifiedId
                        | Error   (String * String)  % error msg, problematic string
+
+  sort AnswerVar = Option Var
 \end{spec}
 
 The following are invoked from the parser:
@@ -319,7 +321,7 @@ The following are invoked from the parser:
   op mkDecls       : fa (a) (List (Decl a))                                                 * a -> SpecFile a
 
   op mkPrint       : fa (a) (Term a)                                                        * a -> Term a
-  op mkProve       : fa (a) ClaimName * Term a * ProverName * Assertions * ProverOptions    * a -> Term a
+  op mkProve       : fa (a) ClaimName * Term a * ProverName * Assertions * ProverOptions * AnswerVar   * a -> Term a
   op mkUnitId      : fa (a) RelativeUID                                                     * a -> Term a
   op mkSpec        : fa (a) (List (SpecElem a))                                             * a -> Term a
   op mkDiag        : fa (a) (List (DiagElem a))                                             * a -> Term a
@@ -348,8 +350,8 @@ The following are invoked from the parser:
   %% Term's
 
   def mkPrint       (term,                      pos) = (Print       term,                        pos)
-  def mkProve       (claim_name, term, prover_name, assertions, prover_options, pos) 
-                                                     = (Prove       (claim_name, term, prover_name, assertions, prover_options), pos) 
+  def mkProve       (claim_name, term, prover_name, assertions, prover_options, answer_var, pos) 
+                                                     = (Prove       (claim_name, term, prover_name, assertions, prover_options, answer_var), pos) 
   def mkUnitId      (uid,                       pos) = (UnitId      uid,                         pos)
   def mkSpec        (elements,                  pos) = (Spec        elements,                    pos)
   def mkDiag        (elements,                  pos) = (Diag        elements,                    pos)

@@ -1014,16 +1014,21 @@ If we want the precedence to be optional:
 ;;;  SC-PROVE
 ;;; ========================================================================
 
-(defun make-sc-prover (claim-name spec-term prover-name assertions options l r)
+(defun make-sc-prover (claim-name spec-term prover-name assertions options  answerVar l r)
   (let ((prover-name (if (eq prover-name :unspecified) "Snark" prover-name))
 	(assertions  (if (eq assertions  :unspecified) (cons :|All| nil) (cons :|Explicit| assertions)))
-	(options     (if (eq options     :unspecified) (cons :|OptionString| nil) options)))
-    (speccalc::mkProve-6 claim-name spec-term prover-name assertions options (make-pos l r))))
+	(options     (if (eq options     :unspecified) (cons :|OptionString| nil) options))
+	(answerVar   (if (eq answerVar   :unspecified) (cons :|None| nil) answerVar)))
+    (speccalc::mkProve-7 claim-name spec-term prover-name assertions options answerVar (make-pos l r))))
 
 (defun make-sc-prover-options (name_or_string)
   (cond ((stringp name_or_string) 
 	 (read_list_of_s_expressions_from_string name_or_string))
 	(t (cons :|OptionName| name_or_string))))
+
+(defun make-sc-answerVar (annotated-variable)
+  (cons :|Some| annotated-variable))
+
 
 ;; ========================================================================
 ;;;  SC-OBLIGATIONS

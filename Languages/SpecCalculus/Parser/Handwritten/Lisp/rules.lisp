@@ -1590,11 +1590,12 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-PROVE ()
-  (:tuple "prove" (1 :QUALIFIABLE-CLAIM-NAME) "in" (2 :SC-TERM) 
+  (:tuple "prove" (1 :QUALIFIABLE-CLAIM-NAME) "in" (2 :SC-TERM)
 	  (:optional (:tuple "with"    (3 :PROVER-NAME)))
 	  (:optional (:tuple "using"   (4 :PROVER-ASSERTIONS)))
-	  (:optional (:tuple "options" (5 :PROVER-OPTIONS))))
-  (make-sc-prover 1 2 3 4 5 ':left-lcb ':right-lcb))
+	  (:optional (:tuple "options" (5 :PROVER-OPTIONS)))
+	  (:optional (:tuple "answerVar"  (6 :ANSWER-VARIABLE))))
+  (make-sc-prover 1 2 3 4 5 6 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PROVER-NAME ()
   (:anyof "Snark" "PVS" "FourierM"))
@@ -1610,6 +1611,11 @@ If we want the precedence to be optional:
    (:tuple (1 :QUALIFIABLE-OP-NAME)))
   ;; returns (:|OptionString| <sexpressions>) or (:|Error| msg string) or (:|OptionName| op)
   (make-sc-prover-options 1))
+
+(define-sw-parser-rule :ANSWER-VARIABLE ()
+   (:tuple (1 :ANNOTATED-VARIABLE))
+  ;; returns (:|OptionString| <sexpressions>) or (:|Error| msg string) or (:|OptionName| op)
+  (make-sc-answerVar 1))
 
 
 ;;; ========================================================================

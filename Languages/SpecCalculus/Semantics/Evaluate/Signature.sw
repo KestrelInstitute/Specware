@@ -30,7 +30,7 @@ SpecCalc qualifying spec {
   op evaluateQualify     : SCTerm -> Qualifier                                                      -> SpecCalc.Env ValueInfo
   op evaluateTranslate   : SCTerm -> TranslateExpr Position                                         -> SpecCalc.Env ValueInfo
   op evaluateSubstitute  : SCTerm * SCTerm                                              -> Position -> SpecCalc.Env ValueInfo
-  op evaluateProve       : ClaimName * SCTerm * ProverName * Assertions * ProverOptions -> Position -> SpecCalc.Env ValueInfo
+  op evaluateProve       : ClaimName * SCTerm * ProverName * Assertions * ProverOptions * AnswerVar -> Position -> SpecCalc.Env ValueInfo
   op evaluateObligations : SCTerm                                                                   -> SpecCalc.Env ValueInfo
   op evaluateExpand      : SCTerm                                                       -> Position -> SpecCalc.Env ValueInfo
   op evaluateGenerate    : String * SCTerm * Option String                              -> Position -> SpecCalc.Env ValueInfo

@@ -244,25 +244,26 @@ SpecCalc qualifying spec
 		  ppString " in ",
 		  ppTerm scTerm]
 
-      | Prove (claimName, term, proverName, assertions, proverOptions) ->
-	ppConcat [ppString ("prove " ^ printQualifiedId claimName ^ " in "),
-		  ppTerm term,
-		  (case assertions of
-		     | All -> ppNil
-		     | Explicit [] -> ppNil
-		     | Explicit assertions -> 
-		       ppConcat [ppString " using ",
-				 ppSep (ppString ", ") (map ppQualifier assertions)]),
-		  (case proverOptions of
-		     | OptionString [option] -> 
-		       if option = string("") then 
-			 ppNil 
-		       else
-			 ppConcat [ppString " options ",
-				   ppString (uncell option)]
-		     | OptionName (prover_option_name) -> 
-		       ppConcat [ppString " options ",
-				 ppString (printQualifiedId prover_option_name)])]
+      | Prove (claimName, term, proverName, assertions, proverOptions, answer_var) ->
+	  ppConcat [
+	    ppString ("prove " ^ printQualifiedId(claimName) ^ " in "),
+	    ppTerm term,
+	    (case assertions of
+	       | All -> ppNil
+	       | Explicit ([]) -> ppNil
+	       | Explicit (assertions) -> ppConcat [
+					    ppString " using ",
+					    ppSep (ppString ", ") (map ppQualifier assertions)]),
+            (case proverOptions of
+	       | OptionString ([option]) -> 
+	                                  if option = string("") then ppNil else
+					  ppConcat [
+					   ppString " options ",
+					   ppString (uncell (option)) ]
+	       | OptionName (prover_option_name) -> ppConcat [
+						    ppString " options ",
+						    ppString (printQualifiedId(prover_option_name)) ])
+		    ]
 
       | Expand term ->
 	ppConcat [ppString "expand ",
