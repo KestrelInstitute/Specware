@@ -105,7 +105,9 @@ and given the definition
 [[
 ||  def multFG(x: Nat * Nat) = (F x) * (G x)
 ]]
+<para>
 we get the two Common Lisp definitions:
+</para>
 [[L:
 ||  (DEFUN MULTFG (X Y) (PAIR1-1 (CONS X Y)))
 ||  (DEFUN MULTFG-1 (X) (* (F-1 X) (G-1 X)))
