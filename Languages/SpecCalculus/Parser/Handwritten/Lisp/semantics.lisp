@@ -1020,3 +1020,7 @@ If we want the precedence to be optional:
 (defun make-sc-obligations (term l r)
   (cons (cons :|Obligations| term)
     (make-pos l r)))
+
+(defun make-sc-reduce (ms-term sc-term l r)
+  (cons (cons :|Reduce| (cons ms-term sc-term))
+    (make-pos l r)))

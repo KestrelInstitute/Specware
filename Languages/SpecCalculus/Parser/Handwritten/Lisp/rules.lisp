@@ -159,6 +159,7 @@
    (1 :SC-GENERATE)
    (1 :SC-OBLIGATIONS)
    (1 :SC-PROVE)
+   (1 :SC-REDUCE)
    (1 :SC-EXTEND))
   1)
 
@@ -1539,10 +1540,12 @@ If we want the precedence to be optional:
   (:tuple "+->")
 )
 
-;; ========================================================================
-;;;  SC-GENERATE
-;;; ========================================================================
-
 (define-sw-parser-rule :SC-OBLIGATIONS ()
   (:tuple "obligations" (1 :SC-TERM))
   (make-sc-obligations 1 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :SC-REDUCE ()
+  (:tuple "reduce" (1 :TIGHT-EXPRESSION) "in" (2 :SC-TERM))
+  (make-sc-reduce 1 2 ':left-lcb ':right-lcb))
+
+

@@ -26,8 +26,8 @@
 				  #\. #\, #\;              ; dot, comma, semi
 				  ;; #\'                   ; apostrophe
 				  )
-   :ad-hoc-keywords             '("end-spec" "_" ".." "using" "options")
-   :ad-hoc-symbols              '("__" "using" "options")
+   :ad-hoc-keywords             '("end-spec" "_" ".." "using" "options" "reduce")
+   :ad-hoc-symbols              '("__" "using" "options" "reduce")
    :ad-hoc-numbers              '()
    ;;
    :comment-to-eol-chars        "%"
