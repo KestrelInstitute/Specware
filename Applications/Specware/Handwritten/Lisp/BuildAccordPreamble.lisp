@@ -13,7 +13,7 @@
 
 (defvar cl-user::Specware-version "4.0")
 (defvar cl-user::Specware-version-name "Specware-4-0")
-(defvar cl-user::Specware-patch-level "1")
+(defvar cl-user::Specware-patch-level "0")
 
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-0")
