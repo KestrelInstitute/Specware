@@ -453,7 +453,7 @@ If we want the precedence to be optional:
    "module" "spec" "import" "sort" "def" "op" "end"
    "fn" "case" "of" "let" "if" "then" "else" "in" "with" "using" "options"
    "project" "relax" "restrict" "quotient" "choose" "embed" "embed?"
-   "select" "as" "infixl" "infixr"
+   "as" "infixl" "infixr"
    "axiom" "theorem" "conjecture"
    "_" "::" ":" "->" "|" "(" ")" "[" "]" "{" "}" "*" "." "/" ","
    ))
