@@ -2,7 +2,6 @@
 
 SpecToLisp qualifying spec { 
   import ../../Transformations/PatternMatch
-  import ../../Transformations/InstantiateHOFns
   import Lisp
   import ../../Specs/StandardSpec
   
@@ -838,6 +837,11 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
                                           mkLApply(mkLOp "cdr",[vr])]
                             else tabulate(n,fn i -> mkLApply(mkLOp "svref",[vr,mkLNat i]) )
 
+  %op curryShapeNum: Spec * Sort -> Nat
+  def curryShapeNum(sp,srt) =
+    case arrowOpt(sp,srt)
+      of Some (dom,rng) -> 1 + curryShapeNum(sp,rng)
+       | _ -> 0
 
   def duplicateString(n,s) =
     case n
@@ -1021,15 +1025,9 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
       let spc = System.time(lisp(spc))                             in
       spc 
 *)
-  op instantiateHOFns?: Boolean
-  def instantiateHOFns? = true
 
   def toLispEnv (spc) =
       % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
-      let spc = if instantiateHOFns?
-                 then instantiateHOFns spc
-		 else spc 
-      in
       let spc = translateMatch(spc) in
       let spc = arityNormalize(spc) in
       let spc = lisp(spc) in
