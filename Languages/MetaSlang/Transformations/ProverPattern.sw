@@ -7,6 +7,7 @@ Prover qualifying spec
 
 
   op wildCounter: Ref Nat
+  def wildCounter = Ref 0
 
   op initWildCounter: () -> ()
   def initWildCounter () =
