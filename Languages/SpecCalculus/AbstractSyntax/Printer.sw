@@ -17,8 +17,7 @@ use \verb+pp+ functions to render terms as "Pretty".
 \begin{spec}
 SpecCalc qualifying spec {
   import Types
-  import ../../MetaSlang/AbstractSyntax/Printer 
-  import ../../MetaSlang/Specs/Printer
+  import ../../MetaSlang/AbstractSyntax/SimplePrinter 
   import /Library/PrettyPrinter/WadlerLindig
 
   op showSpecFile : fa (a) SpecFile a -> String
@@ -323,30 +322,5 @@ SpecCalc qualifying spec {
 %            fail ("No match in ppPropertyType with: '"
 %               ^ (Lisp_toString any)
 %               ^ "'")
-
-  op ppFixity : Fixity -> Doc
-  def ppFixity fix =
-    case fix of
-      | Infix (Left,n) ->
-          ppConcat [
-            ppString "infixl ",
-            ppString (Nat.toString n)
-          ]
-      | Infix (Right,n) ->
-          ppConcat [
-            ppString "infixr ",
-            ppString (Nat.toString n)
-          ]
-      | Nonfix -> ppNil % ppString "Nonfix"
-%       | any ->
-%            fail ("No match in ppFixity with: '"
-%               ^ (Lisp_toString any)
-%               ^ "'")
-
-  op ppASort : fa (a) ASort a -> Doc
-  def ppASort srt = ppString (printSort srt)
-
-  op ppATerm : fa (a) ATerm a -> Doc
-  def ppATerm term = ppString (printTerm term)
 }
 \end{spec}

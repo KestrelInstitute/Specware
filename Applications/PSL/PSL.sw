@@ -24,11 +24,6 @@ let PSL = spec {
   import NatTrans qualifying
     /Library/Structures/Data/Categories/NatTrans/FreeFunctorDomain/Polymorphic/AsRecord
 
-  sort Vertex.Elem = String
-  sort Edge.Elem = String
-  def Vertex.ppElem = WadlerLindig.ppString
-  def Edge.ppElem = WadlerLindig.ppString
-
   % This doesn't work because the sketches refer explicitly to
   % Vertex.Elem and Edge.Elem so the translation yields operators
   % with the incorrect sort. so insertEdge refers to Vertex.Elem rather than V.Elem
@@ -50,12 +45,9 @@ let PSL = spec {
 
   % sort Systems.Elem = ATerm ()
 % These shouldn't be here.
-  def Systems.ppElem term = ppATerm term
+  def Systems.ppElem term = SpecCalc.ppATerm term
   def Shape.ppDom = ppTaggedElem
   def Shape.ppCod = ppTaggedElem
-
-  def Sketch.ppDom = Edge.ppElem
-  def Sketch.ppCod = Vertex.ppElem
 \end{spec}
 
 Now we repeat some of the definitions appearing in

@@ -255,7 +255,7 @@ Naive pretty printing of \BSpecs
       ppNewline,
       ppString "}"
     ]
-}}
+}
 \end{spec}
 
 ppBSpecLessShort bSpec spc
