@@ -17,6 +17,8 @@ spec {
   op shape : fa (O,A) Diagram (O,A) -> Sketch
   op functor : fa (O,A) Diagram (O,A) -> Functor (O,A)
 
+  op emptyDiagram : fa (O,A) Diagram (O,A)
+
   op ppDiagram : fa (O,A) Diagram (O,A) -> Pretty
   def ppDiagram dgm =
     ppConcat [
