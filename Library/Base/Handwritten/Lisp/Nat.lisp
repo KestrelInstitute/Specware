@@ -67,7 +67,7 @@
 
 (defun |!rem| (x y)
   (declare (integer x y))
-  (the integer (lisp::rem x y)))
+  (the integer (cl::rem x y)))
 
 ;;; (defun |!rem-1| (x)
 ;;;   (rem (car x) (cdr x)))
@@ -75,7 +75,7 @@
 
 (defun div (x y)
   (declare (integer x y))
-  (the integer (lisp::truncate x y)))
+  (the integer (cl::truncate x y)))
 
 ;;; (defun div-1 (x)
 ;;;   (truncate (car x) (cdr x)))

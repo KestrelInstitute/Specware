@@ -9,33 +9,33 @@
 ;;; Added various declarations to quiet down cmucl.
 
 (defun |!length| (x)
-  (declare (type lisp:simple-base-string x))
-  (the lisp:fixnum 
+  (declare (type cl:simple-base-string x))
+  (the cl:fixnum 
     (array-dimension x 0)))
 
 (defun concat (x y)
-  (declare (type lisp:simple-base-string x y))
-  (the lisp:simple-base-string 
+  (declare (type cl:simple-base-string x y))
+  (the cl:simple-base-string 
     (concatenate 'string x y)))
 
 (defun concat-1 (x)
   (declare (cons x))
-  (the lisp:simple-base-string 
+  (the cl:simple-base-string 
     (concatenate 'string 
-		 (the lisp:simple-base-string (car x)) 
-		 (the lisp:simple-base-string (cdr x)))))
+		 (the cl:simple-base-string (car x)) 
+		 (the cl:simple-base-string (cdr x)))))
 
 (defun |!++| (x y)
-  (declare (type lisp:simple-base-string x y))
-  (the lisp:simple-base-string 
+  (declare (type cl:simple-base-string x y))
+  (the cl:simple-base-string 
     (concatenate 'string x y)))
 
 ;;; (defun |!++|-1 (x)
 ;;;    (concatenate 'string (car x) (cdr x)))
 
 (defun ^ (x y)
-  (declare (type lisp:simple-base-string x y))
-  (the lisp:simple-base-string 
+  (declare (type cl:simple-base-string x y))
+  (the cl:simple-base-string 
     (concatenate 'string x y)))
 
 
@@ -43,13 +43,13 @@
 ;;;    (concatenate 'string (car x) (cdr x)))
 
 (defun toScreen (x)
-  (declare (type lisp:simple-base-string x))
-  (common-lisp::format t "~A" x))
+  (declare (type cl:simple-base-string x))
+  (cl:format t "~A" x))
 
 (defun writeLine (x)
-  (declare (type lisp:simple-base-string x))
-  (common-lisp::format t "~A" x)
-  (common-lisp::format t "~%"))
+  (declare (type cl:simple-base-string x))
+  (cl:format t "~A" x)
+  (cl:format t "~%"))
 
 (defconstant newline
   (format nil "~c" #\newline))
@@ -72,15 +72,15 @@
 ;;;   (null (find-if (lambda (ch) (not (funcall fn ch))) s)))
 
 (defun sub (s n)
-  (declare (type lisp:simple-base-string s) (type lisp:fixnum n))
+  (declare (type cl:simple-base-string s) (type cl:fixnum n))
   (elt s n))
 
 ;;; (defun sub-1 (s)
 ;;;     (elt (car s) (cdr s)))
 
 (defun substring (s start end)
-  (declare (type lisp:simple-base-string s) (type lisp:fixnum start end))
-  (the lisp:simple-base-string (subseq s start end)))
+  (declare (type cl:simple-base-string s) (type cl:fixnum start end))
+  (the cl:simple-base-string (subseq s start end)))
 
 ;;; (defun substring-1 (x)
 ;;;     (subseq (svref x 0) (svref x 1) (svref x 2)))    
@@ -126,18 +126,18 @@
 		      (string (funcall f ch)))
 		  chars)))
     (declare (type list translated-char-strings))
-    (the lisp:simple-base-string 
+    (the cl:simple-base-string 
       (apply #'concatenate 'string translated-char-strings))))
 
 (defun leq (s1 s2)
-  (declare (type lisp:simple-base-string s1 s2))
+  (declare (type cl:simple-base-string s1 s2))
   ;; result is fixnum or nil
   (string<= s1 s2))
 
 (defun leq-1 (x)  (string<= (car x) (cdr x)))
 
 (defun lt (s1 s2)
-  (declare (type lisp:simple-base-string s1 s2))
+  (declare (type cl:simple-base-string s1 s2))
   ;; result is fixnum or nil
   (string< s1 s2))
 
@@ -159,7 +159,7 @@
 ;;; (defun compare-1 (x) (compare (car x) (cdr x)))
 
 (defun concatList (x)
-  (the lisp:simple-base-string 
+  (the cl:simple-base-string 
     (apply #'concatenate 'string x)))
 
 ;;; #| Tests:

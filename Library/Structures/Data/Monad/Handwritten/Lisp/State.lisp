@@ -35,9 +35,9 @@
    (cons :|VarRef| value)
 )
 
-% readVar written in MetaSlang.
+; readVar written in MetaSlang.
 
-% The test below should not be necessary because of MetaSlang typechecking.
+; The test below should not be necessary because of MetaSlang typechecking.
 (defun writeVar (variable value)
    (if (eq (car variable) :|VarRef|)
      (progn (rplacd variable value) t)
