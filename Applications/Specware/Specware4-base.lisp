@@ -1059,7 +1059,7 @@
    (error "Nonexhaustive match failure in length")))
 
 (defun METASLANG::equalList? (x y eqFn) 
-  (cl::and 
+  (cl:and 
    ( =  (LIST-SPEC::|!length| x) (LIST-SPEC::|!length| y)) 
    (block 
     nil 
@@ -1068,7 +1068,7 @@
         (if (consp x) 
             (if (consp y) 
                 (return 
-                 (cl::and 
+                 (cl:and 
                   (funcall eqFn (cons (car x) (car y))) 
                   (METASLANG::equalList? (cdr x) (cdr y) eqFn)))))) 
     (return nil))))
@@ -1212,7 +1212,7 @@
   (block 
    nil 
    (return 
-    (cl::and 
+    (cl:and 
      (string=  (car pV1) (car pV2)) 
      (METASLANG::equalSort? (cdr pV1) (cdr pV2)))) 
    (error "Nonexhaustive match failure in equalVar?")))
@@ -1225,7 +1225,7 @@
          (if (eq (car p2) :|AliasPat|) 
              (let ((pV114 (cdr p2))) 
                (return 
-                (cl::and 
+                (cl:and 
                  (METASLANG::equalPattern? (svref pV45 0) (svref pV114 0)) 
                  (METASLANG::equalPattern? (svref pV45 1) (svref pV114 1))))))) 
        (if (eq (car p1) :|VarPat|) 
@@ -1236,9 +1236,9 @@
                  (if (eq (car p2) :|EmbedPat|) 
                      (let ((pV101 (cdr p2))) 
                        (return 
-                        (cl::and 
+                        (cl:and 
                          (string=  (svref pV43 0) (svref pV101 0)) 
-                         (cl::and 
+                         (cl:and 
                           (METASLANG::equalSort? (svref pV43 2) (svref pV101 2)) 
                           (METASLANG::equalOpt? 
                            (svref pV43 1) 
@@ -1256,7 +1256,7 @@
                               (block 
                                nil 
                                (return 
-                                (cl::and 
+                                (cl:and 
                                  (string=  (car pV9) (car pV10)) 
                                  (METASLANG::equalPattern? (cdr pV9) (cdr pV10)))) 
                                (error 
@@ -1284,7 +1284,7 @@
                                              (if (eq (car p2) :|RelaxPat|) 
                                                  (let ((pV63 (cdr p2))) 
                                                    (return 
-                                                    (cl::and 
+                                                    (cl:and 
                                                      (METASLANG::equalPattern? 
                                                       (svref pV36 0) 
                                                       (svref pV63 0)) 
@@ -1296,7 +1296,7 @@
                                                  (if (eq (car p2) :|QuotientPat|) 
                                                      (let ((pV56 (cdr p2))) 
                                                        (return 
-                                                        (cl::and 
+                                                        (cl:and 
                                                          (METASLANG::equalPattern? 
                                                           (svref pV35 0) 
                                                           (svref pV56 0)) 
@@ -1310,7 +1310,7 @@
                                                           :|SortedPat|) 
                                                          (let ((pV49 (cdr p2))) 
                                                            (return 
-                                                            (cl::and 
+                                                            (cl:and 
                                                              (METASLANG::equalPattern? 
                                                               (svref pV34 0) 
                                                               (svref pV49 0)) 
@@ -1331,7 +1331,7 @@
          (if (eq (car t2) :|Apply|) 
              (let ((pV140 (cdr t2))) 
                (return 
-                (cl::and 
+                (cl:and 
                  (METASLANG::equalTerm? (svref pV65 0) (svref pV140 0)) 
                  (METASLANG::equalTerm? (svref pV65 1) (svref pV140 1))))))) 
        (if (eq (car t1) :|ApplyN|) 
@@ -1353,7 +1353,7 @@
                           (block 
                            nil 
                            (return 
-                            (cl::and 
+                            (cl:and 
                              (string=  (car pV7) (car pV8)) 
                              (METASLANG::equalTerm? (cdr pV7) (cdr pV8)))) 
                            (error "Nonexhaustive match failure in equalTerm?"))))))) 
@@ -1362,11 +1362,11 @@
                      (if (eq (car t2) :|Bind|) 
                          (let ((pV122 (cdr t2))) 
                            (return 
-                            (cl::and 
+                            (cl:and 
                              (slang-built-in::slang-term-equals 
                               (svref pV62 0) 
                               (svref pV122 0)) 
-                             (cl::and 
+                             (cl:and 
                               (METASLANG::equalList? 
                                (svref pV62 1) 
                                (svref pV122 1) 
@@ -1379,7 +1379,7 @@
                          (if (eq (car t2) :|Let|) 
                              (let ((pV114 (cdr t2))) 
                                (return 
-                                (cl::and 
+                                (cl:and 
                                  (METASLANG::equalTerm? 
                                   (svref pV61 1) 
                                   (svref pV114 1)) 
@@ -1392,7 +1392,7 @@
                                        (block 
                                         nil 
                                         (return 
-                                         (cl::and 
+                                         (cl:and 
                                           (METASLANG::equalPattern? 
                                            (car pV17) 
                                            (car pV18)) 
@@ -1406,7 +1406,7 @@
                              (if (eq (car t2) :|LetRec|) 
                                  (let ((pV107 (cdr t2))) 
                                    (return 
-                                    (cl::and 
+                                    (cl:and 
                                      (METASLANG::equalTerm? 
                                       (svref pV60 1) 
                                       (svref pV107 1)) 
@@ -1419,7 +1419,7 @@
                                            (block 
                                             nil 
                                             (return 
-                                             (cl::and 
+                                             (cl:and 
                                               (METASLANG::equalVar? 
                                                (car pV25) 
                                                (car pV26)) 
@@ -1439,7 +1439,7 @@
                                      (if (eq (car t2) :|Fun|) 
                                          (let ((pV95 (cdr t2))) 
                                            (return 
-                                            (cl::and 
+                                            (cl:and 
                                              (METASLANG::equalFun? 
                                               (svref pV58 0) 
                                               (svref pV95 0)) 
@@ -1458,11 +1458,11 @@
                                                   (block 
                                                    nil 
                                                    (return 
-                                                    (cl::and 
+                                                    (cl:and 
                                                      (METASLANG::equalPattern? 
                                                       (svref pV37 0) 
                                                       (svref pV38 0)) 
-                                                     (cl::and 
+                                                     (cl:and 
                                                       (METASLANG::equalTerm? 
                                                        (svref pV37 1) 
                                                        (svref pV38 1)) 
@@ -1476,11 +1476,11 @@
                                              (if (eq (car t2) :|IfThenElse|) 
                                                  (let ((pV82 (cdr t2))) 
                                                    (return 
-                                                    (cl::and 
+                                                    (cl:and 
                                                      (METASLANG::equalTerm? 
                                                       (svref pV56 0) 
                                                       (svref pV82 0)) 
-                                                     (cl::and 
+                                                     (cl:and 
                                                       (METASLANG::equalTerm? 
                                                        (svref pV56 1) 
                                                        (svref pV82 1)) 
@@ -1501,7 +1501,7 @@
                                                           :|SortedTerm|) 
                                                          (let ((pV69 (cdr t2))) 
                                                            (return 
-                                                            (cl::and 
+                                                            (cl:and 
                                                              (METASLANG::equalTerm? 
                                                               (svref pV54 0) 
                                                               (svref pV69 0)) 
@@ -1518,7 +1518,7 @@
          (if (eq (car s2) :|Arrow|) 
              (let ((pV121 (cdr s2))) 
                (return 
-                (cl::and 
+                (cl:and 
                  (METASLANG::equalSort? (svref pV76 0) (svref pV121 0)) 
                  (METASLANG::equalSort? (svref pV76 1) (svref pV121 1))))))) 
        (if (eq (car s1) :|Product|) 
@@ -1533,7 +1533,7 @@
                       (block 
                        nil 
                        (return 
-                        (cl::and 
+                        (cl:and 
                          (string=  (car pV5) (car pV6)) 
                          (METASLANG::equalSort? (cdr pV5) (cdr pV6)))) 
                        (error "Nonexhaustive match failure in equalSort?"))))))) 
@@ -1549,7 +1549,7 @@
                           (block 
                            nil 
                            (return 
-                            (cl::and 
+                            (cl:and 
                              (string=  (car pV13) (car pV14)) 
                              (METASLANG::equalOpt? 
                               (cdr pV13) 
@@ -1561,7 +1561,7 @@
                      (if (eq (car s2) :|Quotient|) 
                          (let ((pV104 (cdr s2))) 
                            (return 
-                            (cl::and 
+                            (cl:and 
                              (METASLANG::equalSort? 
                               (svref pV73 0) 
                               (svref pV104 0)) 
@@ -1573,7 +1573,7 @@
                          (if (eq (car s2) :|Subsort|) 
                              (let ((pV97 (cdr s2))) 
                                (return 
-                                (cl::and 
+                                (cl:and 
                                  (METASLANG::equalSort? 
                                   (svref pV72 0) 
                                   (svref pV97 0)) 
@@ -1585,7 +1585,7 @@
                              (if (eq (car s2) :|Base|) 
                                  (let ((pV90 (cdr s2))) 
                                    (return 
-                                    (cl::and 
+                                    (cl:and 
                                      (slang-built-in::slang-term-equals 
                                       (svref pV71 0) 
                                       (svref pV90 0)) 
@@ -1614,7 +1614,7 @@
                                                           (let ((pV38 
                                                                  (svref pV37 0))) 
                                                             (return 
-                                                             (cl::or 
+                                                             (cl:or 
                                                               ( =  
                                                                (svref pV41 2) 
                                                                (svref pV37 2)) 
@@ -1686,7 +1686,7 @@
   (block 
    nil 
    (return 
-    (cl::and 
+    (cl:and 
      (slang-built-in::slang-term-equals (car pV1) (car pV2)) 
      (METASLANG::equalSort? (cdr pV1) (cdr pV2)))) 
    (error "Nonexhaustive match failure in equalSortScheme?")))
@@ -1695,7 +1695,7 @@
   (block 
    nil 
    (return 
-    (cl::and 
+    (cl:and 
      (slang-built-in::slang-term-equals (car pV1) (car pV2)) 
      (METASLANG::equalTerm? (cdr pV1) (cdr pV2)))) 
    (error "Nonexhaustive match failure in equalTermScheme?")))
@@ -1705,11 +1705,11 @@
    nil 
    (let ((pV10 (svref pV2 3))) 
      (return 
-      (cl::and 
+      (cl:and 
        (slang-built-in::slang-term-equals (svref pV1 0) (svref pV2 0)) 
-       (cl::and 
+       (cl:and 
         (slang-built-in::slang-term-equals (svref pV1 1) (svref pV2 1)) 
-        (cl::and 
+        (cl:and 
          (equalSortScheme? (svref pV1 2) (svref pV2 2)) 
          (LIST-SPEC::all-1-1 
           #'(lambda (def1) 
@@ -1726,9 +1726,9 @@
    nil 
    (let ((pV8 (svref pV2 2))) 
      (return 
-      (cl::and 
+      (cl:and 
        (slang-built-in::slang-term-equals (svref pV1 0) (svref pV2 0)) 
-       (cl::and 
+       (cl:and 
         (slang-built-in::slang-term-equals (svref pV1 1) (svref pV2 1)) 
         (LIST-SPEC::all-1-1 
          #'(lambda (def1) 
@@ -1776,7 +1776,7 @@
        (if (eq (car pV1) :|Qualified|) 
            (let ((pV2 (cdr pV1))) 
              (return 
-              (cl::and (string=  (car pV2) qualifier) (string=  (cdr pV2) id))))) 
+              (cl:and (string=  (car pV2) qualifier) (string=  (cdr pV2) id))))) 
        (error "Nonexhaustive match failure in memberQualifiedId"))) 
    qids))
 
@@ -1885,7 +1885,7 @@
                  (return 
                   (let ((newP1 (mapRec pV35))) 
                     (let ((newP2 (mapRec pV36))) 
-                      (if (cl::and 
+                      (if (cl:and 
                            (slang-built-in::slang-term-equals newP1 pV35) 
                            (slang-built-in::slang-term-equals newP2 pV36)) 
                           pattern 
@@ -1902,7 +1902,7 @@
                             (let ((newPat (mapRec pV34))) 
                               (let ((newSrt 
                                      (METASLANG::mapSort-1-1 tsp_maps1 pV32))) 
-                                (if (cl::and 
+                                (if (cl:and 
                                      (slang-built-in::slang-term-equals 
                                       newPat 
                                       pV34) 
@@ -1936,7 +1936,7 @@
                           (let ((newPat (mapRec pV27))) 
                             (let ((newTrm 
                                    (METASLANG::mapTerm-1-1 tsp_maps1 pV28))) 
-                              (if (cl::and 
+                              (if (cl:and 
                                    (slang-built-in::slang-term-equals 
                                     newPat 
                                     pV27) 
@@ -1955,7 +1955,7 @@
                               (let ((newPat (mapRec pV24))) 
                                 (let ((newTrm 
                                        (METASLANG::mapTerm-1-1 tsp_maps1 pV25))) 
-                                  (if (cl::and 
+                                  (if (cl:and 
                                        (slang-built-in::slang-term-equals 
                                         newPat 
                                         pV24) 
@@ -2027,7 +2027,7 @@
                                                        (METASLANG::mapSort-1-1 
                                                         tsp_maps1 
                                                         pV14))) 
-                                                  (if (cl::and 
+                                                  (if (cl:and 
                                                        (slang-built-in::slang-term-equals 
                                                         newPat 
                                                         pV13) 
@@ -2086,7 +2086,7 @@
                                       (mapRec (cdr x1)))) 
                                   pV45))) 
                             (let ((newBdy (mapRec pV46))) 
-                              (if (cl::and 
+                              (if (cl:and 
                                    (slang-built-in::slang-term-equals 
                                     pV45 
                                     newDecls) 
@@ -2120,7 +2120,7 @@
                                              "Nonexhaustive match failure in mapTerm")))) 
                                       pV42))) 
                                 (let ((newBdy (mapRec pV43))) 
-                                  (if (cl::and 
+                                  (if (cl:and 
                                        (slang-built-in::slang-term-equals 
                                         pV42 
                                         newDecls) 
@@ -2154,11 +2154,11 @@
                                       (let ((newT1 (mapRec pV36))) 
                                         (let ((newT2 (mapRec pV37))) 
                                           (let ((newT3 (mapRec pV38))) 
-                                            (if (cl::and 
+                                            (if (cl:and 
                                                  (slang-built-in::slang-term-equals 
                                                   newT1 
                                                   pV36) 
-                                                 (cl::and 
+                                                 (cl:and 
                                                   (slang-built-in::slang-term-equals 
                                                    newT2 
                                                    pV37) 
@@ -2209,7 +2209,7 @@
                                                            (cdr x1)))) 
                                                       pV31))) 
                                                 (let ((newTrm (mapRec pV32))) 
-                                                  (if (cl::and 
+                                                  (if (cl:and 
                                                        (slang-built-in::slang-term-equals 
                                                         pV31 
                                                         newVars) 
@@ -2231,7 +2231,7 @@
                                                  (return 
                                                   (let ((newT1 (mapRec pV27))) 
                                                     (let ((newT2 (mapRec pV28))) 
-                                                      (if (cl::and 
+                                                      (if (cl:and 
                                                            (slang-built-in::slang-term-equals 
                                                             newT1 
                                                             pV27) 
@@ -2295,7 +2295,7 @@
                                                                        (METASLANG::mapSort-1-1 
                                                                         tsp_maps1 
                                                                         pV21))) 
-                                                                  (if (cl::and 
+                                                                  (if (cl:and 
                                                                        (slang-built-in::slang-term-equals 
                                                                         newTrm 
                                                                         pV20) 
@@ -2388,7 +2388,7 @@
                          (return 
                           (let ((newS1 (mapRec tsp_maps1 sort_map pV29))) 
                             (let ((newS2 (mapRec tsp_maps1 sort_map pV30))) 
-                              (if (cl::and 
+                              (if (cl:and 
                                    (slang-built-in::slang-term-equals newS1 pV29) 
                                    (slang-built-in::slang-term-equals newS2 pV30)) 
                                   srt 
@@ -2403,7 +2403,7 @@
                               (let ((newSsrt (mapRec tsp_maps1 sort_map pV26))) 
                                 (let ((newTrm 
                                        (METASLANG::mapTerm-1-1 tsp_maps1 pV27))) 
-                                  (if (cl::and 
+                                  (if (cl:and 
                                        (slang-built-in::slang-term-equals 
                                         newSsrt 
                                         pV26) 
@@ -2425,7 +2425,7 @@
                                            (METASLANG::mapTerm-1-1 
                                             tsp_maps1 
                                             pV24))) 
-                                      (if (cl::and 
+                                      (if (cl:and 
                                            (slang-built-in::slang-term-equals 
                                             newSsrt 
                                             pV23) 
@@ -2831,7 +2831,7 @@
        (return t) 
        (if (consp row) 
            (return 
-            (cl::and 
+            (cl:and 
              (string=  (car (car row)) (NAT-SPEC::toString i)) 
              (ANNSPECPRINTER::isShortTuple (INTEGER-SPEC::|!+| i 1) (cdr row)))))) 
    (error "Nonexhaustive match failure in isShortTuple")))
@@ -5830,19 +5830,19 @@
                (pV3 (car pV2))) 
            (return 
             (PRETTYPRINT::|!string| 
-             (if (cl::or 
+             (if (cl:or 
                   (string=  pV3 METASLANG::UnQualified) 
-                  (cl::or 
+                  (cl:or 
                    (string=  pV3 "Nat") 
-                   (cl::or 
+                   (cl:or 
                     (string=  pV3 "Boolean") 
-                    (cl::or 
+                    (cl:or 
                      (string=  pV3 "String") 
-                     (cl::or 
+                     (cl:or 
                       (string=  pV3 "Integer") 
-                      (cl::or 
+                      (cl:or 
                        (string=  pV3 "General") 
-                       (cl::or (string=  pV3 "Char") (string=  pV3 "List")))))))) 
+                       (cl:or (string=  pV3 "Char") (string=  pV3 "List")))))))) 
                  pV4 
                  (STRING-SPEC::^ (STRING-SPEC::^ pV3 ".") pV4))))))) 
    (error "Nonexhaustive match failure in ppAsciiId")))
@@ -6004,17 +6004,17 @@
 
 (defun ANNSPECPRINTER::isBuiltIn? (spec_ref pV1) 
   (declare (ignore pV1)) 
-  (cl::or 
+  (cl:or 
    (string=  spec_ref "String") 
-   (cl::or 
+   (cl:or 
     (string=  spec_ref "Nat") 
-    (cl::or 
+    (cl:or 
      (string=  spec_ref "Boolean") 
-     (cl::or 
+     (cl:or 
       (string=  spec_ref "Char") 
-      (cl::or 
+      (cl:or 
        (string=  spec_ref "Integer") 
-       (cl::or (string=  spec_ref "List") (string=  spec_ref "General"))))))))
+       (cl:or (string=  spec_ref "List") (string=  spec_ref "General"))))))))
 
 (defun ANNSPECPRINTER::isBuiltIn?-1 (x) 
   (ANNSPECPRINTER::isBuiltIn? (car x) (cdr x)))
@@ -6147,7 +6147,7 @@
                            (pV55 (cdr pV41))) 
                        (return 
                         (if (BOOLEAN-SPEC::~ 
-                             (cl::and 
+                             (cl:and 
                               (string=  (svref x 0) (car pV49)) 
                               (string=  (svref x 1) (cdr pV49)))) 
                             (cons pV54 pV55) 
@@ -6182,7 +6182,7 @@
                                          (INTEGER-SPEC::~ 
                                           (INTEGER-SPEC::|!+| pV54 1)))) 
                                     (let ((button1 
-                                           (if (cl::and 
+                                           (if (cl:and 
                                                 (ANNSPECPRINTER::markSubterm?-1 
                                                  context) 
                                                 (BOOLEAN-SPEC::~ 
@@ -6197,7 +6197,7 @@
                                                 nil) 
                                                (PRETTYPRINT::|!string| "")))) 
                                       (let ((button2 
-                                             (if (cl::and 
+                                             (if (cl:and 
                                                   (ANNSPECPRINTER::markSubterm?-1 
                                                    context) 
                                                   (BOOLEAN-SPEC::~ 
@@ -6610,7 +6610,7 @@
                          (pV31 (cdr pV20))) 
                      (return 
                       (if (BOOLEAN-SPEC::~ 
-                           (cl::and 
+                           (cl:and 
                             (string=  (svref x 0) (car pV27)) 
                             (string=  (svref x 1) (cdr pV27)))) 
                           (cons pV30 pV31) 
@@ -7956,7 +7956,7 @@
                          #'(lambda (imp_props) 
                             (LIST-SPEC::|!exists|-1-1 
                              #'(lambda (x1) 
-                                (cl::and 
+                                (cl:and 
                                  (slang-built-in::slang-term-equals 
                                   |!type| 
                                   (svref x1 0)) 
@@ -12906,7 +12906,7 @@
        (return nil) 
        (if (consp l) 
            (return 
-            (cl::or 
+            (cl:or 
              (slang-built-in::slang-term-equals (car l) x) 
              (POLYSET::member?-1-1 (cdr l) x))))) 
    (error "Nonexhaustive match failure in member?")))
@@ -13719,11 +13719,11 @@
                                                                (scan 
                                                                 pV52 
                                                                 (cdr pV41)))) 
-                                                          (if (cl::or 
+                                                          (if (cl:or 
                                                                (INTEGER-SPEC::|!>| 
                                                                 delta0 
                                                                 pV52) 
-                                                               (cl::and 
+                                                               (cl:and 
                                                                 ( =  delta0 pV52) 
                                                                 (slang-built-in::slang-term-equals 
                                                                  pV51 
@@ -13798,11 +13798,11 @@
                                                                                                             (cdr 
                                                                                                              pV32))) 
                                                                                                        (return 
-                                                                                                        (if (cl::or 
+                                                                                                        (if (cl:or 
                                                                                                              (INTEGER-SPEC::|!>| 
                                                                                                               pV52 
                                                                                                               pV30) 
-                                                                                                             (cl::and 
+                                                                                                             (cl:and 
                                                                                                               ( =  
                                                                                                                pV52 
                                                                                                                pV30) 
@@ -14247,18 +14247,18 @@
                               (return (SPLAYSET::memberT comp pV5 t_)))) 
                       (if (eq (car pV4) :|SplayNil|) 
                           (return 
-                           (cl::and 
+                           (cl:and 
                             (SPLAYSET::memberT comp pV5 t_) 
                             (SPLAYSET::treeIn comp pV3 t_)))) 
                       (if (eq (car pV3) :|SplayNil|) 
                           (return 
-                           (cl::and 
+                           (cl:and 
                             (SPLAYSET::memberT comp pV5 t_) 
                             (SPLAYSET::treeIn comp pV4 t_)))) 
                       (return 
-                       (cl::and 
+                       (cl:and 
                         (SPLAYSET::memberT comp pV5 t_) 
-                        (cl::and 
+                        (cl:and 
                          (SPLAYSET::treeIn comp pV3 t_) 
                          (SPLAYSET::treeIn comp pV4 t_))))))))) 
    (error "Nonexhaustive match failure in treeIn")))
@@ -14271,7 +14271,7 @@
          (if (eq (car set2) :|SET|) 
              (let ((pV12 (cdr set2))) 
                (return 
-                (cl::and 
+                (cl:and 
                  ( =  (svref pV7 1) (svref pV12 1)) 
                  (SPLAYSET::treeIn 
                   (svref pV7 0) 
@@ -14830,9 +14830,9 @@
    (return nil)))
 
 (defun JGEN::baseType? (|!type|) 
-  (cl::or 
+  (cl:or 
    (METASLANG::boolSort? |!type|) 
-   (cl::or (METASLANG::integerSort? |!type|) (METASLANG::natSort? |!type|))))
+   (cl:or (METASLANG::integerSort? |!type|) (METASLANG::natSort? |!type|))))
 
 (defun JGEN::mkJavaNumber (i) 
   (cons 
@@ -15072,7 +15072,7 @@
        (error "Nonexhaustive match failure in translateConstructToExpr")))))
 
 (defun JGEN::mkJavaEq (e1 e2 t1) 
-  (if (cl::or (string=  t1 "Boolean") (string=  t1 "Integer")) 
+  (if (cl:or (string=  t1 "Boolean") (string=  t1 "Integer")) 
       (cons 
        :|CondExp| 
        (cons 
@@ -15264,9 +15264,9 @@
                                                  (pV20 (car pV19))) 
                                              (return 
                                               (let ((id 
-                                                     (if (cl::and 
+                                                     (if (cl:and 
                                                           (string=  pV21 "~") 
-                                                          (cl::or 
+                                                          (cl:or 
                                                            (string=  
                                                             pV20 
                                                             "Integer") 
@@ -16695,7 +16695,7 @@
                  (if (eq (car pV15) :|File|) 
                      (let ((pV5 (svref (cdr pV15) 1))) 
                        (return 
-                        (if (cl::and ( =  (svref pV5 0) 0) ( =  (svref pV5 1) 0)) 
+                        (if (cl:and ( =  (svref pV5 0) 0) ( =  (svref pV5 1) 0)) 
                             (SPECWARE::getFirstRealPosition pV13) 
                             (cons :|Some| pV15))))) 
                  (return (SPECWARE::getFirstRealPosition pV13)))))))) 
@@ -16775,7 +16775,7 @@
    (error "Nonexhaustive match failure in ppRelativeURI")))
 
 (defun WADLERLINDIG::ppFits-1-1 (w x) 
-  (cl::and 
+  (cl:and 
    (INTEGER-SPEC::|!>=| w 0) 
    (block 
     nil 
@@ -19767,15 +19767,15 @@
         (cons (JAVA::emptyBrackets (INTEGER-SPEC::|!-| n 1)) nil)))))
 
 (defun JAVA::isEmptyClsBody-1 (cb) 
-  (cl::and 
+  (cl:and 
    (LIST-SPEC::|!null| (svref cb 5)) 
-   (cl::and 
+   (cl:and 
     (LIST-SPEC::|!null| (svref cb 2)) 
-    (cl::and 
+    (cl:and 
      (LIST-SPEC::|!null| (svref cb 1)) 
-     (cl::and 
+     (cl:and 
       (LIST-SPEC::|!null| (svref cb 4)) 
-      (cl::and 
+      (cl:and 
        (LIST-SPEC::|!null| (svref cb 0)) 
        (LIST-SPEC::|!null| (svref cb 3))))))))
 
@@ -19783,11 +19783,11 @@
   (JAVA::isEmptyClsBody-1 (vector x0 x1 x2 x3 x4 x5)))
 
 (defun JAVA::isEmptyInterfBody-1 (ib) 
-  (cl::and 
+  (cl:and 
    (LIST-SPEC::|!null| (svref ib 1)) 
-   (cl::and 
+   (cl:and 
     (LIST-SPEC::|!null| (svref ib 3)) 
-    (cl::and (LIST-SPEC::|!null| (svref ib 0)) (LIST-SPEC::|!null| (svref ib 2))))))
+    (cl:and (LIST-SPEC::|!null| (svref ib 0)) (LIST-SPEC::|!null| (svref ib 2))))))
 
 
 (defun JAVA::isEmptyInterfBody (x0 x1 x2 x3) 
@@ -22090,7 +22090,7 @@
      (if (consp l) 
          (if (consp r) 
              (return 
-              (cl::and 
+              (cl:and 
                (funcall p (cons (car l) (car r))) 
                (LISTPAIR::all-1-1 p (cons (cdr l) (cdr r))))))) 
      (return t))))
@@ -22119,7 +22119,7 @@
      (if (consp l) 
          (if (consp r) 
              (return 
-              (cl::or 
+              (cl:or 
                (funcall p (cons (car l) (car r))) 
                (LISTPAIR::|!exists|-1-1 p (cons (cdr l) (cdr r))))))) 
      (return nil))))
@@ -22702,7 +22702,7 @@
        (let ((pV6 (cdr xs))) 
          (if (consp pV6) 
              (return 
-              (cl::and 
+              (cl:and 
                (BOOLEAN-SPEC::~ (funcall |!cmpGT| (cons (car xs) (car pV6)))) 
                (MERGESORT::sorted-1-1 |!cmpGT| pV6)))))) 
    (return t)))
@@ -22758,7 +22758,7 @@
   (METASLANG::equalOpt? (svref x 0) (svref x 1) (svref x 2)))
 
 (defun METASLANG::existsSubTerm-1-1 (pred? term) 
-  (cl::or 
+  (cl:or 
    (funcall pred? term) 
    (block 
     nil 
@@ -22769,7 +22769,7 @@
             (if (eq (car term) :|Apply|) 
                 (let ((pV29 (cdr term))) 
                   (return 
-                   (cl::or 
+                   (cl:or 
                     (METASLANG::existsSubTerm-1-1 pred? (svref pV29 0)) 
                     (METASLANG::existsSubTerm-1-1 pred? (svref pV29 1))))) 
                 (if (eq (car term) :|Record|) 
@@ -22781,7 +22781,7 @@
                     (if (eq (car term) :|Let|) 
                         (let ((pV27 (cdr term))) 
                           (return 
-                           (cl::or 
+                           (cl:or 
                             (METASLANG::existsSubTerm-1-1 pred? (svref pV27 1)) 
                             (LIST-SPEC::|!exists|-1-1 
                              #'(lambda (x) 
@@ -22790,7 +22790,7 @@
                         (if (eq (car term) :|LetRec|) 
                             (let ((pV26 (cdr term))) 
                               (return 
-                               (cl::or 
+                               (cl:or 
                                 (METASLANG::existsSubTerm-1-1 
                                  pred? 
                                  (svref pV26 1)) 
@@ -22806,11 +22806,11 @@
                                 (if (eq (car term) :|IfThenElse|) 
                                     (let ((pV24 (cdr term))) 
                                       (return 
-                                       (cl::or 
+                                       (cl:or 
                                         (METASLANG::existsSubTerm-1-1 
                                          pred? 
                                          (svref pV24 0)) 
-                                        (cl::or 
+                                        (cl:or 
                                          (METASLANG::existsSubTerm-1-1 
                                           pred? 
                                           (svref pV24 1)) 
@@ -22826,7 +22826,7 @@
                                             (return 
                                              (LIST-SPEC::|!exists|-1-1 
                                               #'(lambda (x) 
-                                                 (cl::or 
+                                                 (cl:or 
                                                   (METASLANG::existsSubTerm-1-1 
                                                    pred? 
                                                    (svref x 1)) 
@@ -22888,13 +22888,13 @@
   (METASLANG::mkQualifiedId (car x) (cdr x)))
 
 (defun METASLANG::printQualifierDotId (qualifier id) 
-  (if (cl::or 
+  (if (cl:or 
        (string=  qualifier "Nat") 
-       (cl::or 
+       (cl:or 
         (string=  qualifier "Boolean") 
-        (cl::or 
+        (cl:or 
          (string=  qualifier "String") 
-         (cl::or 
+         (cl:or 
           (string=  qualifier "Char") 
           (string=  qualifier METASLANG::UnQualified))))) 
       id 
@@ -23760,7 +23760,7 @@
                (let ((pV5 (cdr rules))) 
                  (progn (if (null pV5) (return nil)) 
                         (return 
-                         (cl::or 
+                         (cl:or 
                           (PATTERNMATCH::wildPattern?-1 (car rules)) 
                           (nonfinalWildPattern? pV5))))))) 
        (error "Nonexhaustive match failure in checkUnreachableCase")))) 
@@ -24800,7 +24800,7 @@
            (progn (if (eq (car pV10) :|RecordPat|) 
                       (if (null pV9) 
                           (return 
-                           (cl::and 
+                           (cl:and 
                             (PATTERNMATCH::isTrue pV11) 
                             (LIST-SPEC::all-1-1 
                              #'(lambda (x) 
@@ -24808,7 +24808,7 @@
                              (car (cdr pV10))))))) 
                   (if (null pV9) 
                       (return 
-                       (cl::and 
+                       (cl:and 
                         (PATTERNMATCH::simplePattern pV10) 
                         (PATTERNMATCH::isTrue pV11)))))))) 
    (return nil)))
@@ -25379,7 +25379,7 @@
        (return t) 
        (if (consp row) 
            (return 
-            (cl::and 
+            (cl:and 
              (string=  (car (car row)) (NAT-SPEC::toString i)) 
              (PATTERNMATCH::isShortTuple (INTEGER-SPEC::|!+| i 1) (cdr row)))))) 
    (error "Nonexhaustive match failure in isShortTuple")))
@@ -25614,7 +25614,7 @@
        (return nil) 
        (if (consp |!map|) 
            (return 
-            (cl::or 
+            (cl:or 
              (slang-built-in::slang-term-equals (car (car |!map|)) key) 
              (POLYMAP::inDomain?-1-1 (cdr |!map|) key))))) 
    (error "Nonexhaustive match failure in inDomain?")))
@@ -26854,7 +26854,7 @@
                  #'(lambda (x) 
                     (LIST-SPEC::|!cons| "/" (LIST-SPEC::|!cons| (car x) (cdr x)))) 
                  nil 
-                 (if (cl::or tildaPath? device?) (LIST-SPEC::tl path) path))))) 
+                 (if (cl:or tildaPath? device?) (LIST-SPEC::tl path) path))))) 
           (if tildaPath? 
               (STRING-SPEC::^ "~" mainPath) 
               (if device? 
@@ -27607,7 +27607,7 @@
                                (let ((pV94 (cdr pV92))) 
                                  (return 
                                   (if (BOOLEAN-SPEC::~ 
-                                       (cl::and 
+                                       (cl:and 
                                         (string=  pV84 (car pV94)) 
                                         (string=  pV85 (cdr pV94)))) 
                                       (SPECCALC::|!return| pV87) 
@@ -27716,7 +27716,7 @@
                                (let ((pV72 (cdr pV70))) 
                                  (return 
                                   (if (BOOLEAN-SPEC::~ 
-                                       (cl::and 
+                                       (cl:and 
                                         (string=  pV61 (car pV72)) 
                                         (string=  pV62 (cdr pV72)))) 
                                       (SPECCALC::|!return| pV64) 
@@ -28222,7 +28222,7 @@
          (let ((pV4 (cdr pV2))
                (pV3 (car pV2))) 
            (return 
-            (if (cl::or 
+            (if (cl:or 
                  (string=  pV3 METASLANG::UnQualified) 
                  (LIST-SPEC::|!member| pV3 SPECCALC::omittedQualifiers)) 
                 (WADLERLINDIG::ppString pV4) 
@@ -28561,7 +28561,7 @@
                                                                                    (cdr 
                                                                                     pV124)) 
                                                                                   (return 
-                                                                                   (if (cl::or 
+                                                                                   (if (cl:or 
                                                                                         (SPECCALC::isSimpleTerm? 
                                                                                          pV126) 
                                                                                         (SPECCALC::isSimpleTerm? 
@@ -28642,7 +28642,7 @@
                                                                                (cdr 
                                                                                 pV106)) 
                                                                               (return 
-                                                                               (if (cl::or 
+                                                                               (if (cl:or 
                                                                                     (SPECCALC::isSimpleTerm? 
                                                                                      pV108) 
                                                                                     (SPECCALC::isSimpleTerm? 
@@ -28712,7 +28712,7 @@
                                                           pV89))) 
                                                        nil)))))))))))) 
                               (return 
-                               (if (cl::or 
+                               (if (cl:or 
                                     (SPECCALC::isSimpleTerm? pV84) 
                                     (SPECCALC::isSimpleTerm? pV85)) 
                                    (WADLERLINDIG::ppGroup 
@@ -29018,7 +29018,7 @@
          (let ((pV57 (svref pV35 1))
                (pV56 (svref pV35 0))) 
            (return 
-            (if (cl::or 
+            (if (cl:or 
                  (SPECCALC::isSimpleSort? pV56) 
                  (SPECCALC::isSimpleSort? pV57)) 
                 (WADLERLINDIG::ppGroup 
@@ -29727,7 +29727,7 @@
                            (if (eq (car f2) :|Op|) 
                                (let ((pV25 (cdr f2))) 
                                  (return 
-                                  (cl::and 
+                                  (cl:and 
                                    (slang-built-in::slang-term-equals 
                                     (cdr pV13) 
                                     (cdr pV25)) 
@@ -29786,7 +29786,7 @@
   (let ((x1 (svref x 0))
         (y (svref x 1))
         (eqFn (svref x 2))) 
-    (cl::and 
+    (cl:and 
      ( =  (LIST-SPEC::|!length| x1) (LIST-SPEC::|!length| y)) 
      (block 
       nil 
@@ -29795,7 +29795,7 @@
           (if (consp x1) 
               (if (consp y) 
                   (return 
-                   (cl::and 
+                   (cl:and 
                     (funcall (funcall eqFn spc) (cons (car x1) (car y))) 
                     (SPECCALC::equivList?-1-1 spc (vector (cdr x1) (cdr y) eqFn))))))) 
       (return nil)))))
@@ -29829,7 +29829,7 @@
            (if (eq (car s2) :|Arrow|) 
                (let ((pV121 (cdr s2))) 
                  (return 
-                  (cl::and 
+                  (cl:and 
                    (SPECCALC::equivSort?-1-1 
                     spc 
                     (cons (svref pV76 0) (svref pV121 0))) 
@@ -29851,7 +29851,7 @@
                             (block 
                              nil 
                              (return 
-                              (cl::and 
+                              (cl:and 
                                (string=  (car pV5) (car pV6)) 
                                (SPECCALC::equivSort?-1-1 
                                 spc 
@@ -29872,7 +29872,7 @@
                                 (block 
                                  nil 
                                  (return 
-                                  (cl::and 
+                                  (cl:and 
                                    (string=  (car pV13) (car pV14)) 
                                    (SPECCALC::equivOpt?-1-1 
                                     spc 
@@ -29887,7 +29887,7 @@
                        (if (eq (car s2) :|Quotient|) 
                            (let ((pV104 (cdr s2))) 
                              (return 
-                              (cl::and 
+                              (cl:and 
                                (SPECCALC::equivSort?-1-1 
                                 spc 
                                 (cons (svref pV73 0) (svref pV104 0))) 
@@ -29899,7 +29899,7 @@
                            (if (eq (car s2) :|Subsort|) 
                                (let ((pV97 (cdr s2))) 
                                  (return 
-                                  (cl::and 
+                                  (cl:and 
                                    (SPECCALC::equivSort?-1-1 
                                     spc 
                                     (cons (svref pV72 0) (svref pV97 0))) 
@@ -29911,7 +29911,7 @@
                                (if (eq (car s2) :|Base|) 
                                    (let ((pV90 (cdr s2))) 
                                      (return 
-                                      (cl::and 
+                                      (cl:and 
                                        (slang-built-in::slang-term-equals 
                                         (STANDARDSPEC::findTheSort 
                                          spc 
@@ -29947,7 +29947,7 @@
                                                             (let ((pV38 
                                                                    (svref pV37 0))) 
                                                               (return 
-                                                               (cl::or 
+                                                               (cl:or 
                                                                 ( =  
                                                                  (svref pV41 2) 
                                                                  (svref pV37 2)) 
@@ -30028,7 +30028,7 @@
     (block 
      nil 
      (return 
-      (cl::and 
+      (cl:and 
        (string=  (car pV1) (car pV2)) 
        (SPECCALC::equivSort?-1-1 spc (cons (cdr pV1) (cdr pV2))))) 
      (error "Nonexhaustive match failure in equivVar?"))))
@@ -30043,7 +30043,7 @@
            (if (eq (car p2) :|AliasPat|) 
                (let ((pV114 (cdr p2))) 
                  (return 
-                  (cl::and 
+                  (cl:and 
                    (SPECCALC::equivPattern?-1-1 
                     spc 
                     (cons (svref pV45 0) (svref pV114 0))) 
@@ -30061,9 +30061,9 @@
                    (if (eq (car p2) :|EmbedPat|) 
                        (let ((pV101 (cdr p2))) 
                          (return 
-                          (cl::and 
+                          (cl:and 
                            (string=  (svref pV43 0) (svref pV101 0)) 
-                           (cl::and 
+                           (cl:and 
                             (SPECCALC::equivSort?-1-1 
                              spc 
                              (cons (svref pV43 2) (svref pV101 2))) 
@@ -30088,7 +30088,7 @@
                                     (block 
                                      nil 
                                      (return 
-                                      (cl::and 
+                                      (cl:and 
                                        (string=  (car pV9) (car pV10)) 
                                        (SPECCALC::equivPattern?-1-1 
                                         spc 
@@ -30121,7 +30121,7 @@
                                                (if (eq (car p2) :|RelaxPat|) 
                                                    (let ((pV63 (cdr p2))) 
                                                      (return 
-                                                      (cl::and 
+                                                      (cl:and 
                                                        (SPECCALC::equivPattern?-1-1 
                                                         spc 
                                                         (cons 
@@ -30139,7 +30139,7 @@
                                                         :|QuotientPat|) 
                                                        (let ((pV56 (cdr p2))) 
                                                          (return 
-                                                          (cl::and 
+                                                          (cl:and 
                                                            (SPECCALC::equivPattern?-1-1 
                                                             spc 
                                                             (cons 
@@ -30157,7 +30157,7 @@
                                                             :|SortedPat|) 
                                                            (let ((pV49 (cdr p2))) 
                                                              (return 
-                                                              (cl::and 
+                                                              (cl:and 
                                                                (SPECCALC::equivPattern?-1-1 
                                                                 spc 
                                                                 (cons 
@@ -30186,7 +30186,7 @@
            (if (eq (car t2) :|Apply|) 
                (let ((pV140 (cdr t2))) 
                  (return 
-                  (cl::and 
+                  (cl:and 
                    (SPECCALC::equivTerm?-1-1 
                     spc 
                     (cons (svref pV65 0) (svref pV140 0))) 
@@ -30217,7 +30217,7 @@
                                 (block 
                                  nil 
                                  (return 
-                                  (cl::and 
+                                  (cl:and 
                                    (string=  (car pV7) (car pV8)) 
                                    (SPECCALC::equivTerm?-1-1 
                                     spc 
@@ -30229,11 +30229,11 @@
                        (if (eq (car t2) :|Bind|) 
                            (let ((pV122 (cdr t2))) 
                              (return 
-                              (cl::and 
+                              (cl:and 
                                (slang-built-in::slang-term-equals 
                                 (svref pV62 0) 
                                 (svref pV122 0)) 
-                               (cl::and 
+                               (cl:and 
                                 (SPECCALC::equivList?-1-1 
                                  spc 
                                  (vector 
@@ -30248,7 +30248,7 @@
                            (if (eq (car t2) :|Let|) 
                                (let ((pV114 (cdr t2))) 
                                  (return 
-                                  (cl::and 
+                                  (cl:and 
                                    (SPECCALC::equivTerm?-1-1 
                                     spc 
                                     (cons (svref pV61 1) (svref pV114 1))) 
@@ -30264,7 +30264,7 @@
                                              (block 
                                               nil 
                                               (return 
-                                               (cl::and 
+                                               (cl:and 
                                                 (SPECCALC::equivPattern?-1-1 
                                                  spc 
                                                  (cons (car pV17) (car pV18))) 
@@ -30278,7 +30278,7 @@
                                (if (eq (car t2) :|LetRec|) 
                                    (let ((pV107 (cdr t2))) 
                                      (return 
-                                      (cl::and 
+                                      (cl:and 
                                        (SPECCALC::equivTerm?-1-1 
                                         spc 
                                         (cons (svref pV60 1) (svref pV107 1))) 
@@ -30294,7 +30294,7 @@
                                                  (block 
                                                   nil 
                                                   (return 
-                                                   (cl::and 
+                                                   (cl:and 
                                                     (SPECCALC::equivVar?-1-1 
                                                      spc 
                                                      (cons (car pV25) (car pV26))) 
@@ -30314,7 +30314,7 @@
                                        (if (eq (car t2) :|Fun|) 
                                            (let ((pV95 (cdr t2))) 
                                              (return 
-                                              (cl::and 
+                                              (cl:and 
                                                (SPECCALC::equivFun?-1-1 
                                                 spc 
                                                 (cons 
@@ -30340,13 +30340,13 @@
                                                         (block 
                                                          nil 
                                                          (return 
-                                                          (cl::and 
+                                                          (cl:and 
                                                            (SPECCALC::equivPattern?-1-1 
                                                             spc 
                                                             (cons 
                                                              (svref pV37 0) 
                                                              (svref pV38 0))) 
-                                                           (cl::and 
+                                                           (cl:and 
                                                             (SPECCALC::equivTerm?-1-1 
                                                              spc 
                                                              (cons 
@@ -30364,13 +30364,13 @@
                                                (if (eq (car t2) :|IfThenElse|) 
                                                    (let ((pV82 (cdr t2))) 
                                                      (return 
-                                                      (cl::and 
+                                                      (cl:and 
                                                        (SPECCALC::equivTerm?-1-1 
                                                         spc 
                                                         (cons 
                                                          (svref pV56 0) 
                                                          (svref pV82 0))) 
-                                                       (cl::and 
+                                                       (cl:and 
                                                         (SPECCALC::equivTerm?-1-1 
                                                          spc 
                                                          (cons 
@@ -30397,7 +30397,7 @@
                                                             :|SortedTerm|) 
                                                            (let ((pV69 (cdr t2))) 
                                                              (return 
-                                                              (cl::and 
+                                                              (cl:and 
                                                                (SPECCALC::equivTerm?-1-1 
                                                                 spc 
                                                                 (cons 
@@ -30416,7 +30416,7 @@
     (block 
      nil 
      (return 
-      (cl::and 
+      (cl:and 
        (slang-built-in::slang-term-equals (car pV1) (car pV2)) 
        (SPECCALC::equivTerm?-1-1 spc (cons (cdr pV1) (cdr pV2))))) 
      (error "Nonexhaustive match failure in equivTermScheme?"))))
@@ -30452,7 +30452,7 @@
     (block 
      nil 
      (return 
-      (cl::and 
+      (cl:and 
        (slang-built-in::slang-term-equals (car pV1) (car pV2)) 
        (SPECCALC::equivSort?-1-1 spc (cons (cdr pV1) (cdr pV2))))) 
      (error "Nonexhaustive match failure in equivSortScheme?"))))
@@ -30495,7 +30495,7 @@
                     #'(lambda (x) 
                        (let ((old_def (car x))
                              (distinct_defs (cdr x))) 
-                         (if (cl::or 
+                         (if (cl:or 
                               (LIST-SPEC::|!exists|-1-1 
                                #'(lambda (new_sort_scheme) 
                                   (SPECCALC::equivSortScheme?-1-1 
@@ -30562,7 +30562,7 @@
             (if (eq (car pV5) :|Qualified|) 
                 (let ((pV6 (cdr pV5))) 
                   (return 
-                   (if (cl::and 
+                   (if (cl:and 
                         (string=  new_qualifier (car pV6)) 
                         (string=  new_id (cdr pV6))) 
                        (let ((optional_old_info 
@@ -30638,7 +30638,7 @@
             (if (eq (car pV5) :|Qualified|) 
                 (let ((pV6 (cdr pV5))) 
                   (return 
-                   (if (cl::and 
+                   (if (cl:and 
                         (string=  new_qualifier (car pV6)) 
                         (string=  new_id (cdr pV6))) 
                        (let ((optional_old_info 
@@ -30958,12 +30958,12 @@
                     (subtractSpec-1-1 sub_spec original_spec))) 
                (SPECCALC::monadSeq 
                 (funcall (SPECCALC::|!when| 
-                          (cl::or 
+                          (cl:or 
                            (BOOLEAN-SPEC::~ 
                             (slang-built-in::slang-term-equals 
                              (svref should_be_empty_spec 3) 
                              emptyASortMap)) 
-                           (cl::or 
+                           (cl:or 
                             (BOOLEAN-SPEC::~ 
                              (slang-built-in::slang-term-equals 
                               (svref should_be_empty_spec 1) 
@@ -31450,7 +31450,7 @@
                      (error "Nonexhaustive match failure in complainIfAmbiguous")))) 
                nil 
                (svref spc 1)))) 
-         (if (cl::and 
+         (if (cl:and 
               (slang-built-in::slang-term-equals ambiguous_sorts nil) 
               (slang-built-in::slang-term-equals ambiguous_ops nil)) 
              (SPECCALC::|!return| spc) 
@@ -32306,7 +32306,7 @@
            (if (eq (car pred) :|Bind|) 
                (let ((pV25 (cdr pred))) 
                  (return 
-                  (cl::or 
+                  (cl:or 
                    (LIST-SPEC::|!exists|-1-1 
                     #'(lambda (x) (UTILITIES::occurs v (cdr x))) 
                     (svref pV25 1)) 
@@ -32314,9 +32314,9 @@
                (if (eq (car pred) :|IfThenElse|) 
                    (let ((pV24 (cdr pred))) 
                      (return 
-                      (cl::or 
+                      (cl:or 
                        (UTILITIES::occursT v (svref pV24 0)) 
-                       (cl::or 
+                       (cl:or 
                         (UTILITIES::occursT v (svref pV24 1)) 
                         (UTILITIES::occursT v (svref pV24 2)))))) 
                    (if (eq (car pred) :|Var|) 
@@ -32331,7 +32331,7 @@
                                (if (eq (car pred) :|Let|) 
                                    (let ((pV20 (cdr pred))) 
                                      (return 
-                                      (cl::or 
+                                      (cl:or 
                                        (UTILITIES::occursT v (svref pV20 1)) 
                                        (LIST-SPEC::|!exists|-1-1 
                                         #'(lambda (x) 
@@ -32340,7 +32340,7 @@
                                    (if (eq (car pred) :|LetRec|) 
                                        (let ((pV19 (cdr pred))) 
                                          (return 
-                                          (cl::or 
+                                          (cl:or 
                                            (UTILITIES::occursT v (svref pV19 1)) 
                                            (LIST-SPEC::|!exists|-1-1 
                                             #'(lambda (x) 
@@ -32365,7 +32365,7 @@
            (return nil) 
            (if (consp row) 
                (return 
-                (cl::or 
+                (cl:or 
                  (UTILITIES::occurs v (cdr (car row))) 
                  (occursRow v (cdr row)))))) 
        (error "Nonexhaustive match failure in occurs")))
@@ -32379,7 +32379,7 @@
                  (let ((pV8 (cdr (car row)))) 
                    (if (eq (car pV8) :|Some|) 
                        (return 
-                        (cl::or 
+                        (cl:or 
                          (UTILITIES::occurs v (cdr pV8)) 
                          (occursOptRow v pV6))) 
                        (if (eq (car pV8) :|None|) (return (occursOptRow v pV6)))))))) 
@@ -32393,19 +32393,19 @@
              (if (eq (car srt) :|Arrow|) 
                  (let ((pV37 (cdr srt))) 
                    (return 
-                    (cl::or 
+                    (cl:or 
                      (UTILITIES::occurs v (svref pV37 0)) 
                      (UTILITIES::occurs v (svref pV37 1))))) 
                  (if (eq (car srt) :|Quotient|) 
                      (let ((pV36 (cdr srt))) 
                        (return 
-                        (cl::or 
+                        (cl:or 
                          (UTILITIES::occurs v (svref pV36 0)) 
                          (UTILITIES::occursT v (svref pV36 1))))) 
                      (if (eq (car srt) :|Subsort|) 
                          (let ((pV35 (cdr srt))) 
                            (return 
-                            (cl::or 
+                            (cl:or 
                              (UTILITIES::occurs v (svref pV35 0)) 
                              (UTILITIES::occursT v (svref pV35 1))))) 
                          (if (eq (car srt) :|Base|) 
@@ -32733,7 +32733,7 @@
                                                (return 
                                                 (if (LIST-SPEC::|!exists|-1-1 
                                                      #'(lambda (x) 
-                                                        (cl::and 
+                                                        (cl:and 
                                                          (METASLANG::equalSort? 
                                                           (car x) 
                                                           srt1) 
@@ -32764,7 +32764,7 @@
                                                                  (UTILITIES::unfoldPSort 
                                                                   env 
                                                                   srt2))) 
-                                                            (if (cl::and 
+                                                            (if (cl:and 
                                                                  (METASLANG::equalSort? 
                                                                   s1 
                                                                   s1_) 
@@ -33326,7 +33326,7 @@
                                                                                      "Nonexhaustive match failure in elaboratePattern")))))))) 
                                                                   (return sort0))) 
                                                                sort0))) 
-                                                      (if (cl::and 
+                                                      (if (cl:and 
                                                            (svref env 3) 
                                                            (TYPECHECKER::undeterminedSort? 
                                                             sort0)) 
@@ -35723,7 +35723,7 @@
                                                                                                    pV244) 
                                                                                                   alpha))) 
                                                                                             (let ((t1 
-                                                                                                   (if (cl::and 
+                                                                                                   (if (cl:and 
                                                                                                         (BOOLEAN-SPEC::~ 
                                                                                                          (svref 
                                                                                                           env 
@@ -36011,7 +36011,7 @@
                                    (let ((pV30 (svref pV27 1))
                                          (pV29 (svref pV27 0))) 
                                      (return 
-                                      (progn (if (cl::or 
+                                      (progn (if (cl:or 
                                                   (LIST-SPEC::|!null| pV28) 
                                                   (LIST-SPEC::|!exists|-1-1 
                                                    #'(lambda (alias) 
@@ -36226,7 +36226,7 @@
          (if (eq (car s2) :|CoProduct|) 
              (let ((pV10 (car (cdr s2)))) 
                (return 
-                (cl::and 
+                (cl:and 
                  ( =  (LIST-SPEC::|!length| pV7) (LIST-SPEC::|!length| pV10)) 
                  (LIST-SPEC::all-1-1 
                   #'(lambda (x) 
@@ -36234,7 +36234,7 @@
                            (id1 (car x))) 
                        (LIST-SPEC::|!exists|-1-1 
                         #'(lambda (x1) 
-                           (cl::and 
+                           (cl:and 
                             (string=  id1 (car x1)) 
                             (slang-built-in::slang-term-equals cs1 (cdr x1)))) 
                         pV10))) 
@@ -36943,7 +36943,7 @@
                                 (let ((pV6 (cdr termValue))) 
                                   (return 
                                    (if (CAT::edgeInDiagram?-1-1 dgm pV10) 
-                                       (if (cl::and 
+                                       (if (cl:and 
                                             (string=  
                                              pV11 
                                              (SKETCH::|!eval|-1-1 
@@ -37423,7 +37423,7 @@
                                       (cdr pV4)))) 
                                 (LIST-SPEC::|!++| 
                                  (LIST-SPEC::|!++| path (cons currDir nil)) 
-                                 (if (cl::or 
+                                 (if (cl:or 
                                       (slang-built-in::slang-term-equals 
                                        specware4Dirs 
                                        nil) 
@@ -37625,7 +37625,7 @@
                                                pV5) 
                                       (svref pV3 2)) 
                              #'(lambda (rVal) 
-                                (if (cl::and 
+                                (if (cl:and 
                                      (INTEGER-SPEC::|!>=| pV5 rVal) 
                                      (SPECCALC::upToDate? uri rVal)) 
                                     (SPECCALC::monadSeq 
@@ -37835,7 +37835,7 @@
                 (SPECCALC::monadBind 
                  (SPECCALC::fileExistsAndReadable? pV12) 
                  #'(lambda (test) 
-                    (if (cl::and 
+                    (if (cl:and 
                          test 
                          (BOOLEAN-SPEC::~ 
                           (SPECCALC::inSameFile? pV11 currentURI))) 
@@ -38256,7 +38256,7 @@
                                                (let ((pV16 (car pV12))) 
                                                  (if (eq (car pV16) :|Qualified|) 
                                                      (return 
-                                                      (if (cl::or 
+                                                      (if (cl:or 
                                                            (slang-built-in::slang-term-equals 
                                                             (cdr pV8) 
                                                             nil) 
@@ -38338,7 +38338,7 @@
                                                           (car pV38) 
                                                           :|Qualified|) 
                                                          (return 
-                                                          (if (cl::or 
+                                                          (if (cl:or 
                                                                (slang-built-in::slang-term-equals 
                                                                 (cdr pV29) 
                                                                 nil) 
@@ -38431,7 +38431,7 @@
                                                                 :|Qualified|) 
                                                                (if (null dom_ops) 
                                                                    (return 
-                                                                    (if (cl::or 
+                                                                    (if (cl:or 
                                                                          (slang-built-in::slang-term-equals 
                                                                           (cdr 
                                                                            dom_sorts) 
@@ -38509,7 +38509,7 @@
                                                                              pV69) 
                                                                             :|Qualified|) 
                                                                            (return 
-                                                                            (if (cl::or 
+                                                                            (if (cl:or 
                                                                                  (slang-built-in::slang-term-equals 
                                                                                   (cdr 
                                                                                    dom_ops) 
@@ -38825,7 +38825,7 @@
                  #'(lambda (x) 
                     (LIST-SPEC::|!cons| "/" (LIST-SPEC::|!cons| (car x) (cdr x)))) 
                  nil 
-                 (if (cl::or tildaPath? device?) (LIST-SPEC::tl path) path))))) 
+                 (if (cl:or tildaPath? device?) (LIST-SPEC::tl path) path))))) 
           (let ((|!fileName| 
                  (if tildaPath? 
                      (STRING-SPEC::^ "~" mainPath) 
@@ -39205,7 +39205,7 @@
             (LISP-SPEC::|!++| 
              (LISP-SPEC::|!list| 
               (cons 
-               (LISP-SPEC::|!symbol| "LISP" "LET") 
+               (LISP-SPEC::|!symbol| "CL" "LET") 
                (cons 
                 (LISP-SPEC::|!list| nil) 
                 (cons 
@@ -39423,7 +39423,7 @@
                            (if (eq (car pV15) :|Qualified|) 
                                (let ((pV18 (cdr pV15))) 
                                  (return 
-                                  (cl::or 
+                                  (cl:or 
                                    (string=  (car pV18) "Boolean") 
                                    (string=  (cdr pV18) "Boolean"))))))) 
                      (return nil)))) 
@@ -39465,7 +39465,7 @@
                              (if (eq (car pV32) :|Qualified|) 
                                  (let ((pV35 (cdr pV32))) 
                                    (return 
-                                    (cl::or 
+                                    (cl:or 
                                      (string=  (car pV35) "Boolean") 
                                      (string=  (cdr pV35) "Boolean"))))))) 
                        (return nil)))) 
@@ -39498,7 +39498,7 @@
                                                                       (cdr pV45)) 
                                                                      (return 
                                                                       (let ((isfmla 
-                                                                             (cl::or 
+                                                                             (cl:or 
                                                                               (boolArgp 
                                                                                (cdr 
                                                                                 (car 
@@ -39957,14 +39957,12 @@
 
 
 (defun SPECTOLISP::isLispString (id) 
-  (cl::or 
+  (cl:or 
    (STRINGSET::|!member| SPECTOLISP::lispStrings id) 
    (LISP-SPEC::uncell 
     (LISP-SPEC::|!apply| 
-     (LISP-SPEC::|!symbol| "LISP" "FIND-SYMBOL") 
-     (cons 
-      (LISP-SPEC::|!string| id) 
-      (cons (LISP-SPEC::|!string| "COMMON-LISP") nil))))))
+     (LISP-SPEC::|!symbol| "CL" "FIND-SYMBOL") 
+     (cons (LISP-SPEC::|!string| id) (cons (LISP-SPEC::|!string| "CL") nil))))))
 
 (defparameter SPECTOLISP::userStrings (cons :|Ref| STRINGSET::empty))
 
@@ -39993,7 +39991,7 @@
               (return (CHAR-SPEC::toString pV1)))) 
           id))) 
     (let ((|!ID| (STRING-SPEC::|!map|-1-1 #'CHAR-SPEC::toUpperCase id))) 
-      (if (cl::or 
+      (if (cl:or 
            (SPECTOLISP::isLispString |!ID|) 
            (eq (STRING-SPEC::sub id 0) #\!)) 
           (STRING-SPEC::^ (STRING-SPEC::^ "|!" id) "|") 
@@ -40591,9 +40589,7 @@
                                         (LISP-SPEC::|!list| nil)) 
                                     (let ((result 
                                            (LISP-SPEC::|!apply| 
-                                            (LISP-SPEC::|!symbol| 
-                                             "LISP" 
-                                             "FUNCALL") 
+                                            (LISP-SPEC::|!symbol| "CL" "FUNCALL") 
                                             (cons 
                                              (LISP-SPEC::|!list| 
                                               (cons 
@@ -40649,7 +40645,7 @@
                            (pV41 (svref pV13 0))) 
                        (return 
                         (let ((newBdy (mapRec pV42))) 
-                          (if (cl::and 
+                          (if (cl:and 
                                (slang-built-in::slang-term-equals pV41 pV41) 
                                (slang-built-in::slang-term-equals pV42 newBdy)) 
                               term 
@@ -40660,7 +40656,7 @@
                                (pV38 (svref pV12 0))) 
                            (return 
                             (let ((newBdy (mapRec pV39))) 
-                              (if (cl::and 
+                              (if (cl:and 
                                    (slang-built-in::slang-term-equals pV38 pV38) 
                                    (slang-built-in::slang-term-equals 
                                     pV39 
@@ -40692,11 +40688,11 @@
                                     (let ((newT1 (mapRec pV32))) 
                                       (let ((newT2 (mapRec pV33))) 
                                         (let ((newT3 (mapRec pV34))) 
-                                          (if (cl::and 
+                                          (if (cl:and 
                                                (slang-built-in::slang-term-equals 
                                                 newT1 
                                                 pV32) 
-                                               (cl::and 
+                                               (cl:and 
                                                 (slang-built-in::slang-term-equals 
                                                  newT2 
                                                  pV33) 
@@ -40736,7 +40732,7 @@
                                                (pV27 (svref pV8 1))) 
                                            (return 
                                             (let ((newTrm (mapRec pV28))) 
-                                              (if (cl::and 
+                                              (if (cl:and 
                                                    (slang-built-in::slang-term-equals 
                                                     pV27 
                                                     pV27) 
@@ -40758,7 +40754,7 @@
                                                (return 
                                                 (let ((newT1 (mapRec pV23))) 
                                                   (let ((newT2 (mapRec pV24))) 
-                                                    (if (cl::and 
+                                                    (if (cl:and 
                                                          (slang-built-in::slang-term-equals 
                                                           newT1 
                                                           pV23) 
@@ -40817,7 +40813,7 @@
                                                            (return 
                                                             (let ((newTrm 
                                                                    (mapRec pV16))) 
-                                                              (if (cl::and 
+                                                              (if (cl:and 
                                                                    (slang-built-in::slang-term-equals 
                                                                     newTrm 
                                                                     pV16) 
@@ -40864,7 +40860,7 @@
                                        (block 
                                         nil 
                                         (return 
-                                         (cl::or (cdr x) (mapRec (cdr (car x))))) 
+                                         (cl:or (cdr x) (mapRec (cdr (car x))))) 
                                         (error 
                                          "Nonexhaustive match failure in termOpsInSpec?"))) 
                                     nil 
@@ -40875,7 +40871,7 @@
                                   (let ((resT1 (mapRec (svref pV22 0)))) 
                                     (let ((resT2 (mapRec (svref pV22 1)))) 
                                       (let ((resT3 (mapRec (svref pV22 2)))) 
-                                        (cl::or resT1 (cl::or resT2 resT3))))))) 
+                                        (cl:or resT1 (cl:or resT2 resT3))))))) 
                                (if (eq (car term) :|Lambda|) 
                                    (return 
                                     (let ((resMatch 
@@ -40884,7 +40880,7 @@
                                                (block 
                                                 nil 
                                                 (return 
-                                                 (cl::or 
+                                                 (cl:or 
                                                   (cdr x) 
                                                   (mapRec (svref (car x) 2)))) 
                                                 (error 
@@ -40903,13 +40899,13 @@
                                                      (mapRec (svref pV19 0)))) 
                                                 (let ((resT2 
                                                        (mapRec (svref pV19 1)))) 
-                                                  (cl::or resT1 resT2))))) 
+                                                  (cl:or resT1 resT2))))) 
                                            (if (eq (car term) :|Seq|) 
                                                (return 
                                                 (let ((resTerms 
                                                        (LIST-SPEC::foldl-1-1-1 
                                                         #'(lambda (x) 
-                                                           (cl::or 
+                                                           (cl:or 
                                                             (cdr x) 
                                                             (mapRec (car x)))) 
                                                         nil 
@@ -40920,7 +40916,7 @@
                                                     (let ((resTerms 
                                                            (LIST-SPEC::foldl-1-1-1 
                                                             #'(lambda (x) 
-                                                               (cl::or 
+                                                               (cl:or 
                                                                 (cdr x) 
                                                                 (mapRec (car x)))) 
                                                             nil 
@@ -41143,7 +41139,7 @@
                    (if (eq (car pV30) :|Lambda|) 
                        (let ((pV10 (cdr pV30))) 
                          (return 
-                          (if (cl::or 
+                          (if (cl:or 
                                (LIST-SPEC::|!member| x (svref pV10 0)) 
                                ( =  
                                 (SPECTOLISP::countOccurrence2 
@@ -41157,7 +41153,7 @@
                            (let ((pV9 (cdr pV30))) 
                              (let ((pV22 (svref pV9 2))) 
                                (return 
-                                (if (cl::or 
+                                (if (cl:or 
                                      (LIST-SPEC::|!member| x (svref pV9 0)) 
                                      ( =  
                                       (SPECTOLISP::countOccurrence2 
@@ -41597,7 +41593,7 @@
                           #'(lambda (x) 
                              (let ((unused_vars (cdr x))
                                    (var_name (car x))) 
-                               (if (cl::and 
+                               (if (cl:and 
                                     (SPECTOLISP::pV? var_name) 
                                     ( =  
                                      (SPECTOLISP::countOccurrence2 
@@ -42039,7 +42035,7 @@
              (let ((pV11 (svref pV7 0))) 
                (if (eq (car pV11) :|Op|) 
                    (return 
-                    (if (cl::and 
+                    (if (cl:and 
                          (INTEGER-SPEC::|!>| i 1) 
                          ( =  i (SPECTOLISP::curryShapeNum sp (svref pV7 1)))) 
                         (cons 
@@ -42538,7 +42534,7 @@
                                                                                             (return 
                                                                                              (LISTADT::mkLApply 
                                                                                               (LISTADT::mkLOp 
-                                                                                               "cl::and") 
+                                                                                               "cl:and") 
                                                                                               (cons 
                                                                                                (SPECTOLISP::mkLTerm 
                                                                                                 sp 
@@ -42608,7 +42604,7 @@
                                                                                             (return 
                                                                                              (LISTADT::mkLApply 
                                                                                               (LISTADT::mkLOp 
-                                                                                               "cl::or") 
+                                                                                               "cl:or") 
                                                                                               (cons 
                                                                                                (SPECTOLISP::mkLTerm 
                                                                                                 sp 
@@ -42678,11 +42674,11 @@
                                                                                             (return 
                                                                                              (LISTADT::mkLApply 
                                                                                               (LISTADT::mkLOp 
-                                                                                               "cl::or") 
+                                                                                               "cl:or") 
                                                                                               (cons 
                                                                                                (LISTADT::mkLApply 
                                                                                                 (LISTADT::mkLOp 
-                                                                                                 "cl::not") 
+                                                                                                 "cl:not") 
                                                                                                 (cons 
                                                                                                  (SPECTOLISP::mkLTerm 
                                                                                                   sp 
@@ -44336,7 +44332,7 @@
    (if (eq (car pat) :|AliasPat|) 
        (let ((pV19 (cdr pat))) 
          (return 
-          (cl::or 
+          (cl:or 
            (UTILITIES::isPatBound v (svref pV19 0)) 
            (UTILITIES::isPatBound v (svref pV19 1))))) 
        (if (eq (car pat) :|EmbedPat|) 
@@ -44364,7 +44360,7 @@
        (if (eq (car term) :|Apply|) 
            (let ((pV23 (cdr term))) 
              (return 
-              (cl::or 
+              (cl:or 
                (UTILITIES::isFree v (svref pV23 0)) 
                (UTILITIES::isFree v (svref pV23 1))))) 
            (if (eq (car term) :|Record|) 
@@ -44378,10 +44374,10 @@
                        (return 
                         (LIST-SPEC::|!exists|-1-1 
                          #'(lambda (x) 
-                            (cl::and 
+                            (cl:and 
                              (BOOLEAN-SPEC::~ 
                               (UTILITIES::isPatBound v (svref x 0))) 
-                             (cl::or 
+                             (cl:or 
                               (UTILITIES::isFree v (svref x 1)) 
                               (UTILITIES::isFree v (svref x 2))))) 
                          (car (cdr term)))) 
@@ -44389,11 +44385,11 @@
                            (let ((pV19 (cdr term))) 
                              (let ((pV36 (svref pV19 0))) 
                                (return 
-                                (cl::or 
+                                (cl:or 
                                  (LIST-SPEC::|!exists|-1-1 
                                   #'(lambda (x) (UTILITIES::isFree v (cdr x))) 
                                   pV36) 
-                                 (cl::and 
+                                 (cl:and 
                                   (LIST-SPEC::all-1-1 
                                    #'(lambda (x) 
                                       (BOOLEAN-SPEC::~ 
@@ -44404,7 +44400,7 @@
                                (let ((pV18 (cdr term))) 
                                  (let ((pV33 (svref pV18 0))) 
                                    (return 
-                                    (cl::and 
+                                    (cl:and 
                                      (LIST-SPEC::all-1-1 
                                       #'(lambda (x) 
                                          (BOOLEAN-SPEC::~ 
@@ -44412,7 +44408,7 @@
                                            v 
                                            (car x)))) 
                                       pV33) 
-                                     (cl::or 
+                                     (cl:or 
                                       (LIST-SPEC::|!exists|-1-1 
                                        #'(lambda (x) 
                                           (UTILITIES::isFree v (cdr x))) 
@@ -44421,7 +44417,7 @@
                                (if (eq (car term) :|Bind|) 
                                    (let ((pV17 (cdr term))) 
                                      (return 
-                                      (cl::and 
+                                      (cl:and 
                                        (LIST-SPEC::all-1-1 
                                         #'(lambda (w) 
                                            (BOOLEAN-SPEC::~ 
@@ -44433,9 +44429,9 @@
                                    (if (eq (car term) :|IfThenElse|) 
                                        (let ((pV16 (cdr term))) 
                                          (return 
-                                          (cl::or 
+                                          (cl:or 
                                            (UTILITIES::isFree v (svref pV16 0)) 
-                                           (cl::or 
+                                           (cl:or 
                                             (UTILITIES::isFree v (svref pV16 1)) 
                                             (UTILITIES::isFree v (svref pV16 2))))))))))))))) 
    (error "Nonexhaustive match failure in isFree")))
@@ -44603,7 +44599,7 @@
    (error "Nonexhaustive match failure in unfoldBase")))
 
 (defun TYPEOBLIGATIONS::returnPatternRec (pairs gamma |!M| tau sigma) 
-  (if (cl::or 
+  (if (cl:or 
        (slang-built-in::slang-term-equals tau sigma) 
        (LIST-SPEC::|!exists|-1-1 
         #'(lambda (p) (slang-built-in::slang-term-equals p (cons tau sigma))) 
@@ -45094,7 +45090,7 @@
    (error "Nonexhaustive match failure in addFailure")))
 
 (defun TYPEOBLIGATIONS::subtypeRec (pairs tcc gamma |!M| tau sigma) 
-  (if (cl::or 
+  (if (cl:or 
        (slang-built-in::slang-term-equals tau sigma) 
        (LIST-SPEC::|!exists|-1-1 
         #'(lambda (p) (slang-built-in::slang-term-equals p (cons tau sigma))) 
@@ -46476,7 +46472,7 @@
             (LISP-SPEC::|!++| 
              (LISP-SPEC::|!list| 
               (cons 
-               (LISP-SPEC::|!symbol| "LISP" "LET") 
+               (LISP-SPEC::|!symbol| "CL" "LET") 
                (cons 
                 (LISP-SPEC::|!list| 
                  (cons 
@@ -46621,7 +46617,7 @@
                                            (let ((result 
                                                   (LISP-SPEC::|!apply| 
                                                    (LISP-SPEC::|!symbol| 
-                                                    "LISP" 
+                                                    "CL" 
                                                     "FUNCALL") 
                                                    (cons 
                                                     (LISP-SPEC::|!list| 
@@ -47491,7 +47487,7 @@
                                                   (return 
                                                    (SPECCALC::monadSeq 
                                                     (funcall (SPECCALC::|!when| 
-                                                              (cl::and 
+                                                              (cl:and 
                                                                (BOOLEAN-SPEC::~ 
                                                                 (slang-built-in::slang-term-equals 
                                                                  (cdr pV45) 
@@ -47571,7 +47567,7 @@
                                                       (return 
                                                        (SPECCALC::monadSeq 
                                                         (funcall (SPECCALC::|!when| 
-                                                                  (cl::and 
+                                                                  (cl:and 
                                                                    (BOOLEAN-SPEC::~ 
                                                                     (slang-built-in::slang-term-equals 
                                                                      (cdr pV65) 
@@ -47666,7 +47662,7 @@
                                                                 (return 
                                                                  (SPECCALC::monadSeq 
                                                                   (funcall (SPECCALC::|!when| 
-                                                                            (cl::and 
+                                                                            (cl:and 
                                                                              (BOOLEAN-SPEC::~ 
                                                                               (slang-built-in::slang-term-equals 
                                                                                (cdr 
@@ -47755,7 +47751,7 @@
                                                                         (return 
                                                                          (SPECCALC::monadSeq 
                                                                           (funcall (SPECCALC::|!when| 
-                                                                                    (cl::and 
+                                                                                    (cl:and 
                                                                                      (BOOLEAN-SPEC::~ 
                                                                                       (slang-built-in::slang-term-equals 
                                                                                        (cdr 
@@ -47834,7 +47830,7 @@
                                   (return 
                                    (SPECCALC::monadSeq 
                                     (funcall (SPECCALC::|!when| 
-                                              (cl::and 
+                                              (cl:and 
                                                (BOOLEAN-SPEC::~ 
                                                 (slang-built-in::slang-term-equals 
                                                  (cdr pV26) 
@@ -47875,7 +47871,7 @@
                                   (return 
                                    (SPECCALC::monadSeq 
                                     (funcall (SPECCALC::|!when| 
-                                              (cl::and 
+                                              (cl:and 
                                                (BOOLEAN-SPEC::~ 
                                                 (slang-built-in::slang-term-equals 
                                                  (cdr pV7) 
@@ -51514,7 +51510,7 @@ VQid => QualifiedId * Aliases:
 (defun SPLAYMAP::all-1-1 (p? m) 
   (SPLAYMAP::foldri-1-1-1 
    #'(lambda (x) 
-      (cl::and (svref x 2) (funcall p? (cons (svref x 0) (svref x 1))))) 
+      (cl:and (svref x 2) (funcall p? (cons (svref x 0) (svref x 1))))) 
    t 
    m))
 
@@ -51634,7 +51630,7 @@ VQid => QualifiedId * Aliases:
 (defun SPLAYMAP::|!exists|-1-1 (p? m) 
   (SPLAYMAP::foldri-1-1-1 
    #'(lambda (x) 
-      (cl::or (svref x 2) (funcall p? (cons (svref x 0) (svref x 1))))) 
+      (cl:or (svref x 2) (funcall p? (cons (svref x 0) (svref x 1))))) 
    nil 
    m))
 
@@ -52153,7 +52149,7 @@ VQid => QualifiedId * Aliases:
          (if (eq (car set2) :|SET|) 
              (let ((pV11 (cdr set2))) 
                (return 
-                (cl::and 
+                (cl:and 
                  (INTEGER-SPEC::|!<=| (svref pV7 1) (svref pV11 1)) 
                  (SPLAYSET::treeIn 
                   (svref pV7 0) 
@@ -54386,9 +54382,9 @@ VQid => QualifiedId * Aliases:
 (defun UTILITIES::sameCPSort?-1 (x) (UTILITIES::sameCPSort? (car x) (cdr x)))
 
 (defun UTILITIES::specEqual? (s1 s2) 
-  (cl::and 
+  (cl:and 
    (slang-built-in::slang-term-equals (svref s1 2) (svref s2 2)) 
-   (cl::and 
+   (cl:and 
     (slang-built-in::slang-term-equals 
      (STRINGMAP::toList (svref s1 3)) 
      (STRINGMAP::toList (svref s2 3))) 
@@ -54402,9 +54398,9 @@ VQid => QualifiedId * Aliases:
   (UTILITIES::initPrimitiveSpec-1-1-1 "String" "String" nil))
 
 (defun UTILITIES::subspec? (s1 s2) 
-  (cl::and 
+  (cl:and 
    (LISTUTILITIES::subset? (svref s1 2) (svref s2 2)) 
-   (cl::and 
+   (cl:and 
     (STRINGMAP::subset? (svref s1 3) (svref s2 3)) 
     (STRINGMAP::subset? (svref s1 1) (svref s2 1)))))
 

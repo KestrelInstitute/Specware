@@ -32,9 +32,9 @@ SpecToLisp qualifying spec {
   
   def isLispString(id) = StringSet.member(lispStrings,id) or
   %% The above is only necessary for packages. They should be done differently in next release.
-                         Lisp.uncell(Lisp.apply(Lisp.symbol("LISP","FIND-SYMBOL"),
+                         Lisp.uncell(Lisp.apply(Lisp.symbol("CL","FIND-SYMBOL"),
                                                 [Lisp.string(id),
-                                                 Lisp.string("COMMON-LISP")]))
+                                                 Lisp.string("CL")]))
   
   
   op  ith : fa(a) Nat * String * List(String * a) -> Nat
@@ -281,18 +281,18 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
    | (Op(id as Qualified("Boolean","&"),_),srt,_) -> 
      (case optArgs
         of Some (Record([(_,x),(_,y)],_)) -> 
-           mkLApply(mkLOp "cl::and",[mkLTerm(sp,dpn,vars,x),
+           mkLApply(mkLOp "cl:and",[mkLTerm(sp,dpn,vars,x),
                                        mkLTerm(sp,dpn,vars,y)])
          | None -> mkLOp(printPackageId(id,dpn)))
    | (Op(id as Qualified("Boolean","or"),_),srt,_) -> 
      (case optArgs
         of Some (Record([(_,x),(_,y)],_)) -> 
-           mkLApply(mkLOp "cl::or",[mkLTerm(sp,dpn,vars,x),mkLTerm(sp,dpn,vars,y)])
+           mkLApply(mkLOp "cl:or",[mkLTerm(sp,dpn,vars,x),mkLTerm(sp,dpn,vars,y)])
          | None -> mkLOp(printPackageId(id,dpn)))
    | (Op(id as Qualified("Boolean"," =>"),_),srt,_) -> 
      (case optArgs
         of Some (Record([(_,x),(_,y)],_)) -> 
-           mkLApply(mkLOp "cl::or",[mkLApply(mkLOp "cl::not",
+           mkLApply(mkLOp "cl:or",[mkLApply(mkLOp "cl:not",
                                                [mkLTerm(sp,dpn,vars,x)]),
                                       mkLTerm(sp,dpn,vars,y)])
          | None -> mkLOp(printPackageId(id,dpn)))

@@ -66,7 +66,7 @@ spec
 
  def getFunIndex = 
      fn (Fun(Op(qid,fixity),_,_):Term) -> 
-	Lisp.uncell(Lisp.apply(Lisp.symbol("LISP","SXHASH"),[Lisp.cell qid]))
+	Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
       | _ -> 0
 
  def subterms = 

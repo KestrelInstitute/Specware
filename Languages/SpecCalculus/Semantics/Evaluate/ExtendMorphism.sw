@@ -337,7 +337,7 @@ def substOpMap (opMap, term) =
    let snarkEvalForm = makeSnarkAnsEvalForm(prover_options, snarkSortDecls, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) in
      let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
      let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
-     let result = Lisp.apply(Lisp.symbol("LISP","FUNCALL"),
+     let result = Lisp.apply(Lisp.symbol("CL","FUNCALL"),
 			[Lisp.list [Lisp.symbol("SNARK","LAMBDA"),Lisp.nil(),snarkEvalForm]]) in
      let proved = ":PROOF-FOUND" = System.toString(result) in
      %%let _ = displayProofResult(proof_name, claim_type, claim_name, spec_name, proved, snarkLogFileName) in
@@ -361,7 +361,7 @@ def substOpMap (opMap, term) =
 		     Lisp.symbol("KEYWORD","SUPERSEDE")],
 	  Lisp.list
 	  [
-	   Lisp.symbol("LISP","LET"),
+	   Lisp.symbol("CL","LET"),
 	   Lisp.list [
 		      %%Lisp.list [Lisp.symbol("CL-USER","*ERROR-OUTPUT*"),
 			%%	 Lisp.symbol("CL-USER","LOGFILE")],
