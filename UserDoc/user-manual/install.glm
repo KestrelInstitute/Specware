@@ -10,8 +10,8 @@
 <para> &Specware; has relatively modest system requirements for simple
 projects.  Of course, as with any development tool, as your projects
 being developed become more complex, you may wish to work on a more
-powerful machine. For average use, however, we recommend the following
-basic hardware configuration: </para>
+powerful machine. For average use, however, the following basic
+hardware configuration is recommended: </para>
 
 <itemizedlist>
 
@@ -40,7 +40,7 @@ basic hardware configuration: </para>
 <section>
 <title>Operating system</title>
 
-<para> &Specware; 4.0 has been tested to work on Windows NT 4.0 and
+<para> &Specware; 4.0 has been tested to work with Windows NT 4.0 and
 Windows 2000.</para>
 
 </section>  <!-- operating system -->
@@ -57,11 +57,12 @@ Windows 2000.</para>
 Before running the &Specware; 4.0 installer, you should have a recent
 version of XEmacs (21.1 or higher) installed on your machine.
 If you already have XEmacs, then proceed to the next step.  Otherwise,
-open the XEmacs folder provided on the setup CD and run
-<"setup.exe">, which will install the latest version of XEmacs from the Internet.
+open the XEmacs folder provided on the setup CD and run <"setup.exe">.
+Select "Install from Local Directory" as the Installation Method, and click 
+"Next" through the remaining steps to accept the default configuration.
 
 Note: If you choose not to complete this step of installing XEmacs, a text-only version of
-Specware will be installed in the next step.
+Specware will be installed instead.
 </para>
 
 <step>
