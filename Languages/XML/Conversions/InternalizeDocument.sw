@@ -170,7 +170,7 @@ XML qualifying spec
 			""))
 	  | ("List",    "List") ->
 	    let element_sd = expand_SortDescriptor (hd args, table) in
-	    let data = rev (foldl (fn ((_,item), result) ->
+	    let data = rev (foldl (fn ((possible_chardata,item), result) ->
 				   case item of
 				     | Element (Full elt) ->
 				       %let _ = toScreen ("\nSeeking next list element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
@@ -180,12 +180,15 @@ XML qualifying spec
 					    let _ = toScreen ("Warning: failure looking for list element: " ^ 
 							      (print_SortDescriptor element_sd) ^ "\n" )
 					    in
-					      result)
+					      cons ("[failure looking for " ^ (print_SortDescriptor element_sd) ^ "]", result))
 	                             | _ -> 
-				       let _ = toScreen ("While looking for list element: " ^ (print_SortDescriptor element_sd) ^ "\n" ^
-							 "Ignoring: " ^ (string (print_Content_Item item)) ^ "\n")
-				       in
-					 result)
+				       case possible_chardata of
+					 | Some ustr -> cons (trim_whitespace (string ustr), result)
+					 | _ -> 
+					   let _ = toScreen ("While looking for list element: " ^ (print_SortDescriptor element_sd) ^ "\n" ^
+							     "Ignoring: " ^ (string (print_Content_Item item)) ^ "\n")
+					   in
+					     result)
 			          []
 				  element.content.items)
 	    in
