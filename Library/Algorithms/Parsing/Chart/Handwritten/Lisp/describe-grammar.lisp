@@ -28,8 +28,9 @@
 ;; to print a postscript version of the bnf for the grammar each time the system is built.
 (defun print-grammar-ps-file (&optional just-rerun-latex?)
   (let* ((parser-lisp-dir (sys::current-directory))
-	 (parser-tex-dir  (make-pathname :directory (append (pathname-directory parser-lisp-dir) '("TeX"))))
-	 ((*default-pathname-defaults* parser-tex-dir))
+	 (parser-tex-dir  (make-pathname :directory (append (reverse (cdr (reverse (pathname-directory parser-lisp-dir))))
+							    '("TeX"))))
+	 (*default-pathname-defaults* parser-tex-dir)
 	 (tex-file (make-pathname :name "metaslang.tex" :defaults parser-tex-dir)) ; metaslang.tex is the name expected by parser-main.tex
 	 (ps-file  (make-pathname :name "grammar.ps"    :defaults parser-tex-dir)))
     (unless just-rerun-latex?
@@ -46,8 +47,8 @@
     (let ((cmd (format nil "cd ~A ; latex parser-main.tex ; dvips -f parser-main.dvi > grammar.ps"
 		       parser-tex-dir)))
       (re::run-shell-command cmd :wait t))
-    (format t "~&See ~A/grammar.ps~%" parser-tex-dir)
-    (make-pathname :name "grammar" :extension "ps" :defaults parser-tex-dir)))
+    (format t "~&See ~Agrammar.ps~%" parser-tex-dir)
+    (make-pathname :name "grammar" :type "ps" :defaults parser-tex-dir)))
 
 (defun write-bnf-in-latex-for-grammar (latex-file-or-stream &optional (parser *current-parser*)) 
   (if (not (streamp latex-file-or-stream))
@@ -59,7 +60,8 @@
 				     parser
 				     nil
 				     nil)
-	(format t "~&ATOMIC RULES: ~S" atomic-rules)
+	#-DEBUG-PARSER (declare (ignore atomic-rules))
+        #+DEBUG-PARSER (format t "~&ATOMIC RULES: ~S" atomic-rules)
 	(format latex-stream "~&~%")
 	(format latex-stream "~&\\newcommand{\\bnf}[1]           {{#1}}~%")
 	(format latex-stream "~&\\newcommand{\\bnfoptionalopen}  {{\\bnf{$\\big[$}    }}~%")
