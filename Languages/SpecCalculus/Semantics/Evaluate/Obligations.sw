@@ -1,12 +1,9 @@
-\subsection{Obligations}
-
+(*
 The spec calculus Obligations construct takes a spec or a a morphism and 
 returns a spec including the proof obligations as conjectures.
-
-\begin{spec}
+*)
 
 SpecCalc qualifying spec 
-{
   import Signature
   import /Languages/MetaSlang/Specs/TypeObligations
   % import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities % breaks PSL by indirectly loading SpecCalculus version of Value.sw
@@ -21,12 +18,14 @@ SpecCalc qualifying spec
       case value of
 
 	| Spec  spc -> {ob_spec <- return (specObligations (spc,term));
-			compressed_spec <- complainIfAmbiguous (compressDefs ob_spec) (positionOf term);
+			compressed_spec <- complainIfAmbiguous (compressDefs ob_spec)
+			                     (positionOf term);
 			return (Spec compressed_spec, time_stamp, dep_UIDs)}
 
 	| Morph sm  -> {globalContext <- getGlobalContext;
 			ob_spec <- return (morphismObligations (sm,globalContext,positionOf term));
-			compressed_spec <- complainIfAmbiguous (compressDefs ob_spec) (positionOf term);
+			compressed_spec <- complainIfAmbiguous (compressDefs ob_spec)
+			                     (positionOf term);
 			return (Spec compressed_spec, time_stamp, dep_UIDs)}
 
 	| _ -> raise (Unsupported (positionOf term,
@@ -39,7 +38,9 @@ SpecCalc qualifying spec
     let translated_dom_axioms = mapPartial (fn prop ->
 					    case prop of
 					      | (Axiom, name, tyvars, fm) ->
-					        if exists (fn (codProp) -> equalProperty?(codProp, prop)) cod.properties
+					        if exists (fn (codProp) ->
+							   equalProperty?(codProp, prop))
+						     cod.properties
 						  then None
 						else 
 						  Some (Conjecture, name, tyvars,
@@ -67,8 +68,9 @@ SpecCalc qualifying spec
     in
     let obligation_props = translated_dom_axioms ++ dom_definitions_not_in_cod in
     let import_of_cod = {imports = case findUnitIdforUnit(Spec cod,globalContext) of
-			                  | Some unitId -> [((UnitId (UnitId_Relative unitId),pos), cod)]
-			                  | _ -> [],
+				    | Some unitId -> [((UnitId (SpecPath_Relative unitId),pos),
+						       cod)]
+				    | _ -> [],
 			 localOps     = emptyOpNames,
 			 localSorts   = emptySortNames,
 			 localProperties = map propertyName obligation_props}
@@ -140,5 +142,4 @@ SpecCalc qualifying spec
     %% TODO: Add obligations found by definitions, etc.
     %% Second argument should be specRef for spc (showTerm blows up)
     makeTypeCheckObligationSpec (spc,spcTerm)
-}
-\end{spec}
+endspec
