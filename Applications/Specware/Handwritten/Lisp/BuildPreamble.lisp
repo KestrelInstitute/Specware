@@ -43,7 +43,7 @@
   (or (ignore-errors
        (let* ((file-name (pathname-name path))
 	      (major-version-len (length Major-Version-String)))
-	 (if (and (string-equal (pathname-type path) specware::*fasl-default-type*)
+	 (if (and (string-equal (pathname-type path) specware::*fasl-type*)
 		  (string-equal file-name "patch-" :end1 6)
 		  (string-equal file-name Major-Version-String
 				:start1 6 :end1 (+ major-version-len 6))
