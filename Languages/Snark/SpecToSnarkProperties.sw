@@ -237,7 +237,8 @@ snark qualifying spec
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
        | Embedded id ->
 	      let Arrow (dom,rng,_) = srt in
-	      let isfmla = boolSort?(dom) in
+	      let unfoldDomSrt = unfoldBaseUnInterp(sp, dom) in
+	      let isfmla = boolSort?(unfoldDomSrt) in
 	      let snarkArg = if isfmla
 	                       then mkSnarkFmla(context,sp,dpn,vars,[],arg)
 			     else mkSnarkTerm(context,sp,dpn,vars,arg) in
@@ -270,7 +271,9 @@ snark qualifying spec
 	    (case s1 of
 	       | Quotient(qsup, eqv, _) -> mkSnarkFmla(context, sp, dpn, vars, [], mkApplication(eqv, [arg1, arg2]))
 	       | _ ->
-	    let isfmla = boolSort?(s1) or boolSort?(s2) in
+	    let unfoldS1 = unfoldBaseUnInterp(sp, s1) in
+	    let unfoldS2 = unfoldBaseUnInterp(sp, s2) in
+	    let isfmla = boolSort?(unfoldS1) or boolSort?(unfoldS2) in
 	    let snarkArg1 =
 	        if isfmla
 		  then mkSnarkFmla(context, sp, dpn, vars, [], arg1)
