@@ -202,7 +202,7 @@ spec
 	case nodeContent(head,baseG) of
 	  | Branch {condition, trueBranch, falseBranch} ->
 	    if member(falseBranch,loopExits) % outside loop
-	      then (condition,           trueBranch, falseBranch,newG)
+	      then (condition, trueBranch, falseBranch,newG)
 	      else % trueBranch should be outside loop
 	    if member(trueBranch,loopExits)
 	      then (negateTerm condition,falseBranch,trueBranch, newG)
@@ -210,6 +210,7 @@ spec
 	  %% |   Currently only have loops that start with a loop test
 	    
       def buildStraightLine(nd,exits,newG) =
+        if nd = noContinue then newG else
 	case nodeContent(nd,baseG) of
 	  | Block {statements = _, next} ->
 	    buildStructuredGraph (next,exits,newG)
