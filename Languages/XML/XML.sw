@@ -1,6 +1,7 @@
 
 XML qualifying spec
 
+  import /Library/IO/Unicode/UnicodeSig
   import XML_Sig
   import Parser/XML_Parser
   import Printers/XML_Printer
@@ -19,12 +20,12 @@ XML qualifying spec
   %%%                 INPUT
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  sort Filename = String
+  % sort Filename = String
 
-  op read_unicode_chars_from_file : Filename -> Option UChars
+  % op unicode.read_unicode_chars_from_file : Filename * Decoding -> Option UChars
 
   def read_Document_from_file (filename : Filename) : Option Document =
-    let possible_uchars = read_unicode_chars_from_file filename in % handwritten lisp
+    let possible_uchars = read_unicode_chars_from_file (filename, null_decoding) in % handwritten lisp
     case possible_uchars of
       | Some uchars ->
         run_document_monad {
@@ -79,14 +80,14 @@ XML qualifying spec
   %%%                 OUTPUT 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op write_unicode_chars_to_file : UChars * Filename -> ()
+  % op write_unicode_chars_to_file : UChars * Filename * Encoding -> ()
 
   def print_Document_to_String (doc : Document) : String =
     string (print_Document_to_UString doc)
 
   def print_Document_to_file (doc : Document, filename : Filename) =
     let ustr = print_Document_to_UString doc in
-    write_unicode_chars_to_file (ustr, filename) % handwritten lisp
+    write_unicode_chars_to_file (ustr, filename, null_encoding) % handwritten lisp
 
 
 endspec

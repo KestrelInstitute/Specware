@@ -1,11 +1,26 @@
 
 XML qualifying spec
 
-  %% TODO: tests for legality ...
   import ../XML_Sig
+
+  %% TODO: many tests for legality ...
 
   def make_Document (items : DocItems) : Document =
     {items = items}
+
+  def standard_XMLDecl_DocItem : DocItem =
+    let version_attr = {w1    = UString.space,
+			name  = ustring "version",
+			w2    = [],
+			w3    = [],
+			value = {qchar = UChar.double_quote, 
+				 text  = ustring "1.0"}}
+    in
+      XMLDecl {prefix     = UString.question_mark,
+	       name       = ustring "xml",
+	       attributes = [version_attr],
+	       whitespace = [],
+	       postfix    = UString.question_mark}
 
   def make_Empty_Element (empty_tag : EmptyElemTag)
     : Element =
@@ -44,7 +59,7 @@ XML qualifying spec
   def make_ETag (name       : UChars,
 		 whitespace : WhiteSpace)
     : STag =
-    {prefix     = [47],  (* '/' *)
+    {prefix     = UString.back_slash,
      name       = name,
      attributes = [],
      whitespace = whitespace,
@@ -58,7 +73,7 @@ XML qualifying spec
      name       = name,
      attributes = attributes,
      whitespace = whitespace,
-     postfix    = [47]}  (* '/' *)
+     postfix    = UString.back_slash}
 
   def make_GenericAttribute (w1    : WhiteSpace,
 			     name  : NmToken,

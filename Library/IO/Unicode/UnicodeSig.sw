@@ -57,7 +57,7 @@ Unicode qualifying spec
   def null_encoding (chars : UChars) : Bytes  = chars
   def null_decoding (bytes : Bytes)  : UChars = bytes
 
-  op read_unicode_chars_from_file : Filename * Decoding -> UChars
+  op read_unicode_chars_from_file : Filename * Decoding -> Option UChars
 
   op write_unicode_chars_to_file  : UChars * Filename * Encoding -> ()
 

@@ -41,29 +41,30 @@ XML qualifying spec
   %% ------------------------------------------------------------------------
   %% Strings:
 
-  def UString.open_angle   = ustring "<"   % "lt" is xml convention, but would cause infix clash with Nat.lt 
-  def UString.close_angle  = ustring ">"   % for consistency with "open_angle"
-  def UString.amp          = ustring "&"   % name chosen to adhere to XML conventions
+  def UString.space         = ustring " "   
 
-  def UString.open_paren   = ustring "("
-  def UString.close_paren  = ustring ")"
+  def UString.open_angle    = ustring "<"   % "lt" is xml convention, but would cause infix clash with Nat.lt 
+  def UString.close_angle   = ustring ">"   % for consistency with "open_angle"
+  def UString.amp           = ustring "&"   % name chosen to adhere to XML conventions
 
-  def UString.vertical_bar = ustring "|"
+  def UString.open_paren    = ustring "("
+  def UString.close_paren   = ustring ")"
 
-  def UString.equal_sign   = ustring "="
+  def UString.vertical_bar  = ustring "|"
+  def UString.back_slash    = ustring "/"
+  def UString.question_mark = ustring "?"
 
-  def UString.period       = ustring "."
-  def UString.comma        = ustring ","
-  def UString.semicolon    = ustring ";"
+  def UString.equal_sign    = ustring "="
 
-  def UString.percent      = ustring "%"
+  def UString.period        = ustring "."
+  def UString.comma         = ustring ","
+  def UString.semicolon     = ustring ";"
 
-  def UString.double_quote = ustring "\""  (* " this comment balances quotes for emacs *)
-  def UString.apostrophe   = ustring "'"   (* single quote *)
+  def UString.percent       = ustring "%"
+
+  def UString.double_quote  = ustring "\""  (* " this comment balances quotes for emacs *)
+  def UString.apostrophe    = ustring "'"   (* single quote *)
 
   %% ------------------------------------------------------------------------
-
-  op latin_alphabetic?   : UChar -> Boolean 
-  op latin_alphanumeric? : UChar -> Boolean 
 
 endspec

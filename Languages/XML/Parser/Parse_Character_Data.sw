@@ -30,7 +30,6 @@ XML qualifying spec
   %% [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
   %% ----------------------------------------------------------------------------------------------------
 
-  op parse_CharData : UChars -> (Option CharData) * UChars 
   def parse_CharData (start : UChars) : (Option CharData) * UChars =
     let 
        def probe (tail, reversed_char_data) =
@@ -54,5 +53,7 @@ XML qualifying spec
   %% ----------------------------------------------------------------------------------------------------
 
   op parse_CDSect : UChars -> Required CDSect
+
   op parse_Comment : UChars -> Required Comment
+
 endspec

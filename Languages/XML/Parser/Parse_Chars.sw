@@ -4,32 +4,6 @@ XML qualifying spec
 
   import XML_Parser_Base
 
-  %% These are all handwritten as vector-of-boolean accesses
-
-  op letter?          : UChar -> Boolean 
-  op base_char?       : UChar -> Boolean
-  op ideographic?     : UChar -> Boolean
-  op digit?           : UChar -> Boolean
-  op combining_char?  : UChar -> Boolean
-  op extender?        : UChar -> Boolean
-
-  sort Letter         = (UChar | letter?)
-  sort BaseChar       = (UChar | base_char?)
-  sort Ideographic    = (UChar | ideographic?)
-  sort Digit          = (UChar | digit?)
-  sort CombingingChar = (UChar | combining_char?)
-  sort Extender       = (UChar | extender?)
-
-  def parse_Letter (start : UChars) : Required Letter =
-    case start of
-      | char :: tail ->
-        if letter? char then
-	  return (char, tail)
-	else
-	  raise (Syntax ("Not a Letter", {start = start, stop = tail}))
-      | _ ->
-       raise (EOF ("looking for a Letter", {start = start, stop = []}))
-
   def parse_BaseChar (start : UChars) : Required BaseChar =
     case start of
       | char :: tail ->
@@ -39,27 +13,26 @@ XML qualifying spec
 	  raise (Syntax ("Not a BaseChar", {start = start, stop = tail}))
      | _ ->
        raise (EOF ("looking for a BaseChar", {start = start, stop = []}))
-
   
-  def parse_Ideographic  (start : UChars) : Required Ideographic  =
+  def parse_IdeographicChar  (start : UChars) : Required IdeographicChar  =
     case start of
       | char :: tail ->
-        if ideographic? char then
+        if ideographic_char? char then
 	  return (char, tail)
 	else
 	  raise (Syntax ("Not a Ideographic ", {start = start, stop = tail}))
      | _ ->
        raise (EOF ("looking for Ideographic ", {start = start, stop = []}))
   
-  def parse_Digit  (start : UChars) : Required Digit  =
+  def parse_Letter (start : UChars) : Required Letter =
     case start of
       | char :: tail ->
-        if digit? char then
+        if letter? char then
 	  return (char, tail)
 	else
-	  raise (Syntax ("Not a Digit ", {start = start, stop = tail}))
-     | _ ->
-       raise (EOF ("looking for Digit ", {start = start, stop = []}))
+	  raise (Syntax ("Not a Letter", {start = start, stop = tail}))
+      | _ ->
+       raise (EOF ("looking for a Letter", {start = start, stop = []}))
 
   def parse_CombingingChar  (start : UChars) : Required CombingingChar  =
     case start of
@@ -72,15 +45,25 @@ XML qualifying spec
        raise (EOF ("looking for CombingingChar ", {start = start, stop = []}))
 
   
-  def parse_Extender  (start : UChars) : Required Extender  =
+  def parse_Digit  (start : UChars) : Required Digit  =
     case start of
       | char :: tail ->
-        if  extender? char then
+        if digit? char then
 	  return (char, tail)
 	else
-	  raise (Syntax ("Not a Extender ", {start = start, stop = tail}))
+	  raise (Syntax ("Not a Digit ", {start = start, stop = tail}))
      | _ ->
-       raise (EOF ("looking for Extender ", {start = start, stop = []}))
+       raise (EOF ("looking for Digit ", {start = start, stop = []}))
+
+  def parse_ExtenderChar  (start : UChars) : Required ExtenderChar  =
+    case start of
+      | char :: tail ->
+        if  extender_char? char then
+	  return (char, tail)
+	else
+	  raise (Syntax ("Not a ExtenderChar ", {start = start, stop = tail}))
+     | _ ->
+       raise (EOF ("looking for ExtenderChar ", {start = start, stop = []}))
 
   def parse_EqualSign (start : UChars) : Required UChar =
     case start of

@@ -56,8 +56,6 @@ XML qualifying spec
 	 return (None, start)
 	}
 
-  op parse_OpenTag : UChars -> Possible GenericTag
-
   def parse_OpenTag (start : UChars) : Possible GenericTag =
     { (possible_tag, tail) <- parse_Option_GenericTag start;
       case possible_tag of
@@ -68,9 +66,6 @@ XML qualifying spec
 	   return (possible_tag, tail)}
 	| _ -> return (None, start)
      }
-
-  op print_STag : STag -> UString
-  op print_ETag : ETag -> UString
 
   %% ----------------------------------------------------------------------------------------------------
 

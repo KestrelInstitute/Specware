@@ -95,13 +95,16 @@
 ;;;  sort Encoding = UChars -> Bytes   % UTF-8, UTF-16, JIS, etc.
 ;;;  sort Decoding = Bytes  -> UChars  % UTF-8, UTF-16, JIS, etc.
 ;;;
-;;;  op read_unicode_chars_from_file : Filename * Encoding -> UChars
+;;;  op read_unicode_chars_from_file : Filename * Encoding -> Option UChars
 ;;;  op write_unicode_chars_to_file  : UChars * Filename * Encoding -> ()
 
 (defun unicode::read_unicode_chars_from_file (filename decoding)
   (let ((bytes (readBytesFromFile filename)))
-    (let ((uchars (funcall decoding bytes)))
-      uchar)))
+    (case (car bytes)
+      (:|None| :|None|)
+      (:|Some| (cons :|Some|
+		     (let ((uchars (funcall decoding (cdr bytes))))
+		       uchars))))))
 
 (defun unicode::write_unicode_chars_to_file (uchars filename encoding)
   (let ((bytes (funcall encoding uchars)))

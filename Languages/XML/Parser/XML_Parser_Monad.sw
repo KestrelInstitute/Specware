@@ -16,10 +16,10 @@ XML qualifying spec
 		messages   : List String,
 		context    : Processing_Environment}
 
-  op initialState : State
-  def initialState = {exceptions = [], 
-		      messages   = [], 
-		      context    = default_processing_environment}
+  def initialState : State =
+    {exceptions = [], 
+     messages   = [], 
+     context    = default_processing_environment}
 
   sort XML_Exception =
     | EOF       String * Region
@@ -35,8 +35,7 @@ XML qualifying spec
   sort Region = {start : UChars,
 		 stop  : UChars}
 
-  op print_XML_Exception : XML_Exception -> String
-  def print_XML_Exception except =
+  def print_XML_Exception (except : XML_Exception) : String =
     case except of
       | EOF      (msg, _) -> "Unexpected end of file: "  ^ msg
       | Syntax   (msg, _) -> "Syntax error: "            ^ msg

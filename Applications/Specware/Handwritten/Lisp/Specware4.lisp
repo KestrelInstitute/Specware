@@ -71,6 +71,7 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
+    "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
     )
   )
 

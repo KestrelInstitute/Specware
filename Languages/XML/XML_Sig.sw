@@ -373,16 +373,8 @@ XML qualifying spec
 
   %% [26]
   def version_num? ustr = 
-    all? version_char? ustr
+    all? version_num_char? ustr
 		  
-  %% [26]
-  def version_char? char =
-    (latin_alphanumeric? char) or
-    (char = underbar) or 
-    (char = period)   or 
-    (char = colon)    or 
-    (char = minus)
-
   %% [32]
   def encoding_attribute?   attribute = 
     (attribute.name = ustring "encoding")
@@ -392,15 +384,8 @@ XML qualifying spec
   %% [81]
   def legal_encoding_name? (name : UChars) : Boolean =
     case name of
-      | char :: tail -> (latin_alphabetic? char) & (all? enc_name_char? tail)
+      | char :: tail -> (latin_alphabetic_char? char) & (all? enc_name_char? tail)
       | []           -> false
-
-  %% [81]
-  def enc_name_char? char =
-    (latin_alphanumeric? char) or
-    (char = period)   or 
-    (char = underbar) or 
-    (char = minus)
 
   %% [32]
   def standalone_attribute? attribute = 
@@ -901,14 +886,6 @@ XML qualifying spec
   def legal_PubidLiteral? quoted_text =
     (all? pubid_char? quoted_text.text) 	  			
 
-  %% [13]
-  def pubid_char? uchar =
-    (latin_alphanumeric? uchar) or 
-    (uchar = 32) or  % space
-    (uchar = 13) or  % return
-    (uchar = 10) or  % linefeed
-    (in? (uchar, ustring "-'()+,./:=?;!*#@$_%"))
-
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          References                                                                          %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -979,6 +956,7 @@ XML qualifying spec
 
   
   sort CharRef = {style : | Decimal | Hex,
+		  %% note that char? can be true for large values (> 2^16) up to #x10FFFF
 		  char  : (UChar | char?)}
 
   %% [VC:  Entity Declared]:
@@ -995,9 +973,6 @@ XML qualifying spec
   %%  [8]  Nmtokens  ::=  Nmtoken (S Nmtoken)*
   %%
   %% -------------------------------------------------------------------------------------------------
-
-  %% [4]
-  op name_char? : UChar -> Boolean  % Handwritten
 
   sort Names = Name * List (WhiteSpace * Name)
   sort Name  = (UString | name?)
@@ -1112,34 +1087,50 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  sort WhiteSpace = (UChars | whitespace?)
-  % sort True_WhiteSpace     = WhiteSpace
-  % sort WhiteSpace = Option WhiteSpace
-
-  sort QuoteChar  = (UChar | quote_char?)
+  %% These are all handwritten as vector-of-boolean accesses
+  %% See /Languages/XML/Handwritten/Lisp/Chars.lisp
 
 
-  %% [2]  Char   
-  op char? : UChar -> Boolean % Handwritten
+  op char?                  : UChar -> Boolean    % [2] 
+  op white_char?            : UChar -> Boolean    % [3]
+  op letter?                : UChar -> Boolean    % [84]
+  op base_char?             : UChar -> Boolean    % [85]
+  op ideographic_char?      : UChar -> Boolean    % [86]
+  op combining_char?        : UChar -> Boolean    % [87]
+  op digit?                 : UChar -> Boolean    % [88]
+  op extender_char?         : UChar -> Boolean    % [89]
+  op name_char?             : UChar -> Boolean    % [4]
+  op name_start_char?       : UChar -> Boolean    % [5]
+  op pubid_char?            : UChar -> Boolean    % [13]
+  op hex_digit?             : UChar -> Boolean    % [66]
+  op version_num_char?      : UChar -> Boolean    % [26]
+  op enc_name_char?         : UChar -> Boolean    % [81]
+  op latin_alphabetic_char? : UChar -> Boolean    % [81]
 
-  %% [3]
+  %% [9] [10] [11] [12] [24] [32] [80] [K10]  
+  def quote_char? (char : UChar) : Boolean =
+    (char = UChar.double_quote) or
+    (char = UChar.apostrophe)
+
+  sort WhiteChar            = (UChar | white_char?)            % [3]
+  sort Letter               = (UChar | letter?)                % [84]
+  sort BaseChar             = (UChar | base_char?)             % [85]
+  sort IdeographicChar      = (UChar | ideographic_char?)      % [86]
+  sort CombingingChar       = (UChar | combining_char?)        % [87]
+  sort Digit                = (UChar | digit?)                 % [88]
+  sort ExtenderChar         = (UChar | extender_char?)         % [89]
+  sort NameChar             = (UChar | name_char?)             % [4]
+  sort NameStartChar        = (UChar | name_start_char?)       % [5]
+  sort PubidChar            = (UChar | pubid_char?)            % [13]
+  sort HexDigit             = (UChar | hex_digit?)             % [66]
+  sort VersionNumChar       = (UChar | version_num_char?)      % [26]
+  sort EncNameChar          = (UChar | enc_name_char?)         % [81]
+  sort LatinAlphabeticChar? = (UChar | latin_alphabetic_char?) % [81]
+  sort QuoteChar            = (UChar | quote_char?)            % [9] [10] [11] [12] [24] [32] [80] [K10]  
+
+  sort WhiteSpace = (UChars | whitespace?)    % [3]
   def whitespace? (chars : UChars) : Boolean =
     all? white_char? chars
-
-  %% [3]
-  def white_char? (char : UChar) : Boolean = 
-    (char = 32) or % space
-    (char =  9) or % tab
-    (char = 10) or % linefeed
-    (char = 13)    % return
-
-  %% [9] [10] [K10]
-  def quote_char? (char : UChar) : Boolean =
-    (char = 34) or  % double_quote
-    (char = 39)     % apostrophe
-
-  %% [84]
-  op letter?      : UChar  -> Boolean  % Handwritten
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Table of WFC and VC entries                                                         %%%
