@@ -1,13 +1,14 @@
 spec {
   import PSpec
-  import /Languages/MetaSlang/Specs/Categories/AsRecord 
+  import /Languages/MetaSlang/Specs/Categories/AsRecord
   import ../AbstractSyntax/SimplePrinter
 
   sort Value =
-    | Spec  Spec
-    | Morph Morphism
-    | Diag  (Diagram (Spec,Morphism))
-    | PSpec PSpec
+    | Spec     Spec
+    | Morph    Morphism
+    | Diag     SpecDiagram       
+    | Colimit  SpecInitialCocone 
+    | PSpec    PSpec
     | InProcess			  % Used for catching circular definitions
     % | DiagMorph
 
@@ -17,8 +18,9 @@ spec {
   op ppValue : Value -> Doc
   def ppValue value =
     case value of
-      | Spec spc -> ppString (printSpec spc)
-      | Morph morph -> ppMorphism morph
-      | Diag dgm -> ppDiagram dgm
-      | InProcess -> ppString "InProcess"
+      | Spec    spc           -> ppString (printSpec spc)
+      | Morph   spec_morphism -> ppMorphism spec_morphism
+      | Diag    spec_diagram  -> ppDiagram  spec_diagram
+      | Colimit spec_colimit  -> ppColimit  spec_colimit
+      | InProcess             -> ppString "InProcess"
 }

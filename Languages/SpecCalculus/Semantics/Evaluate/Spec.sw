@@ -23,7 +23,7 @@ If there is no obvious coercion, simply return the given value, unchanged.
   def coerceToSpec (value : Value) : Value =  
     case value of
       | Morph   sm  -> Spec (cod sm)
-      | Colimit col -> Spec (apex (cocone col))
+      | Colimit col -> Spec (Cat.apex (Cat.cocone col))
       | _           -> value
 
 

@@ -1,5 +1,5 @@
 spec {
-  import /Languages/MetaSlang/Specs/Categories/AsRecord	
+  import /Languages/MetaSlang/Specs/Categories/AsRecord
   import ../AbstractSyntax/Printer
 
   sort Value =

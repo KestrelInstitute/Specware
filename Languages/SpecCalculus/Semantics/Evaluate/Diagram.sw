@@ -15,7 +15,7 @@ Lots of proof obligations. Needs thought.
 
 \begin{spec}
   def SpecCalc.evaluateDiag elems = {
-      (dgm,timeStamp,depURIs) <-
+    (dgm : SpecDiagram, timeStamp, depURIs) <-
          foldM evaluateDiagElem ((emptyDiagram (specCat ())),0,[]) elems;
       return (Diag dgm,timeStamp,depURIs)
     }
@@ -52,11 +52,11 @@ The conditions for a diagram expression to be valid include:
 
 \begin{spec}
   op evaluateDiagElem :
-       (Diagram (Spec,Morphism) * TimeStamp * URI_Dependency)
+       (SpecDiagram * TimeStamp * URI_Dependency)
     -> DiagElem Position
-    -> Env (Diagram (Spec,Morphism) * TimeStamp * URI_Dependency)
+    -> Env (SpecDiagram * TimeStamp * URI_Dependency)
 
-  def evaluateDiagElem (dgm,timeStamp,depURIs) elem =
+  def evaluateDiagElem (dgm : SpecDiagram,timeStamp,depURIs) elem =
     case (valueOf elem) of
       | Node (nodeId,term) -> {
            (termValue,termTime,termDeps) <- evaluateTermInfo term;
@@ -102,11 +102,11 @@ if edge is not in the diagram then addLa
 
 \begin{spec}
   op addLabelledVertex :
-       Diagram (Spec,Morphism) 
+       SpecDiagram 
     -> Vertex.Elem
     -> Spec
     -> Position
-    -> Env (Diagram (Spec,Morphism))
+    -> Env SpecDiagram
   def addLabelledVertex dgm nodeId spc position =
     if vertexInDiagram? dgm nodeId then
       if (spc = vertexLabel dgm nodeId) then
