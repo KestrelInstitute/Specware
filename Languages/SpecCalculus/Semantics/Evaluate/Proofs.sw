@@ -67,8 +67,8 @@ spec
 	claimName)
        importProofDecls in
    let localProofDecls =
-   generateLocalProofsInSpec(spc, scTerm, fromObligations?,
-			     multipleFiles, prover_name, prover_options,
+   generateLocalProofsInSpec(spc, scTerm, multipleFiles,
+			     fromObligations?, prover_name, prover_options,
 			     importPropNames++basePropNames, globalContext) in
    let _ = debug("genprfsinspc") in
    unionProofDecls(localProofDecls, importProofDecls)
