@@ -350,7 +350,7 @@
 			    (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
 
-(defun swll-internal (x &optional y)
+(defun swll-internal (x y load?)
   ;; scripts depend upon this returning true iff successful
   (let ((lisp-file-name (subst-home (or y (concatenate 'string
 					    specware::temporaryDirectory
@@ -361,7 +361,9 @@
 			     x (cons :|Some| lisp-file-name))
 			    (let (#+allegro *redefinition-warnings*)
 			      ;; scripts depend upon the following returning true iff successful
-			      (specware::compile-and-load-lisp-file lisp-file-name))
+			      (if load?
+				  (specware::compile-and-load-lisp-file lisp-file-name)
+				(compile-file lisp-file-name)))
 			  "Specware Processing Failed!")))
 	       (show-error-position emacs::*goto-file-position-stored* 1)
 	       (maybe-restore-swpath)
@@ -381,7 +383,8 @@
 	(progn (setq *last-swl-args* r-args)
 	       (swll-internal (string (first r-args))
 			      (if (not (null (second r-args)))
-				  (string (second r-args)) nil)))
+				  (string (second r-args)) nil)
+			      t))
       (format t "No previous unit evaluated~%"))))
 
 #+allegro
@@ -391,11 +394,25 @@
 		  *last-swl-args*)))
     (if r-args
 	(progn (setq *last-swl-args* r-args)
-	       (funcall 'swll-internal (string (first r-args))
-			(if (not (null (second r-args)))
-			    (string (second r-args)) nil)))
+	       (swll-internal (string (first r-args))
+			      (if (not (null (second r-args)))
+				  (string (second r-args)) nil)
+			      t))
       (format t "No previous unit evaluated~%"))))
 
+
+(defun swll-no-load (&optional args)
+  ;; scripts depend upon this returning true iff successful
+  (let ((r-args (if (not (null args))
+		    (extract-final-file-name args)
+		  *last-swl-args*)))
+    (if r-args
+	(progn (setq *last-swl-args* r-args)
+	       (swll-internal (string (first r-args))
+			      (if (not (null (second r-args)))
+				  (string (second r-args)) nil)
+			      nil))
+      (format t "No previous unit evaluated~%"))))
 
 (defpackage "SWE") ; for access to results
 
@@ -1297,3 +1314,6 @@
   #-(OR UNIX MSWINDOWS) (format t "~&Neither the UNIX nor MSWINDOWS feature is present, so I don't know what to do!~%")
   )
 
+(defun sc-val (str)
+  (let ((id-str (norm-unitid-str str)))
+  (cddr (specware::evaluateunitid id-str))))
