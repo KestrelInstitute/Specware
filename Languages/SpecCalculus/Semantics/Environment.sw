@@ -85,6 +85,7 @@ UnitId_Dependency.
       newGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
       newGlobalVar ("ValidatedUnitIds",[]);
       newGlobalVar ("CommandInProgress?",false);
+      newGlobalVar ("PrismChoices",[]);
       return ()
     }
 
@@ -276,9 +277,9 @@ while there is a transition from names with "UnitId" to "UnitId".
 
   op setCurrentUnitId : UnitId -> Env ()
   def setCurrentUnitId newUnitId = writeGlobalVar ("CurrentUnitId", Some newUnitId)
-\end{spec}
 
-\begin{spec}
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   op  validatedUID? : UnitId -> Env Boolean
   def validatedUID? = validatedUnitId?
 
@@ -296,6 +297,20 @@ while there is a transition from names with "UnitId" to "UnitId".
       validatedUnitIds <- readGlobalVar "ValidatedUnitIds";
       writeGlobalVar ("ValidatedUnitIds", cons(unitId,validatedUnitIds))
     }
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  type PrismChoice  = {p: SpecPrism, n : Nat}
+  type PrismChoices = List PrismChoice
+
+  op  getPrismChoices : Env PrismChoices
+  def getPrismChoices = 
+    readGlobalVar "PrismChoices"
+
+  op  setPrismChoices : PrismChoices -> Env ()
+  def setPrismChoices ps = 
+    writeGlobalVar ("PrismChoices", ps)
+
 \end{spec}
 
 I'm not sure the following is necessary. It is called at the start of
@@ -306,6 +321,7 @@ the toplevel functions.
   def resetGlobals =
       % writeGlobalVar ("LocalContext", PolyMap.emptyMap);
       % writeGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
+      % writeGlobalVar ("PrismChoices", []);
       writeGlobalVar ("ValidatedUnitIds",[])
 endspec
 \end{spec}
