@@ -293,24 +293,24 @@ be the option to run each (test ...) form in a fresh image.
 
 (defun diff-output (expected got)
   (with-output-to-string (s)
-    (multiple-value-bind (at-start? at-end? expected got)
+    (multiple-value-bind (past-match-at-start? past-match-at-end? expected got)
 	(diff-aux got expected)
       (format s "~%;;; Expected:~%")
       (format s "~&;;;~%")
-      (unless at-start?
+      (when past-match-at-start?
 	(format s "~&;;; <  ...~%"))
       (dolist (line expected)
 	(format s "~&;;; <  ~A~%" (coerce line 'string)))
-      (unless at-end?
+      (when past-match-at-end?
 	(format s "~&;;; <  ...~%"))
       (format s "~&;;;")
       (format s "~&;;; But got:~%")
       (format s "~&;;;~%")
-      (unless at-start?
+      (when past-match-at-start?
 	(format s "~&;;; >  ...~%"))
       (dolist (line got)
 	(format s "~&;;; >  ~A~%" (coerce line 'string)))
-      (unless at-end?
+      (when past-match-at-end?
 	(format s "~&;;; >  ...~%"))
       (format s "~&;;;")
       )))
@@ -319,20 +319,25 @@ be the option to run each (test ...) form in a fresh image.
 (defun diff-aux (expected got)
   (let ((expected-lines  (convert-to-lines expected))
 	(got-lines       (convert-to-lines got)))
-    (do ((at-start? t              nil)
-	 (expected  expected-lines (cdr expected))
-	 (got       got-lines      (cdr got)))
+    (do ((past-match-at-start? nil            t)
+	 (expected             expected-lines (cdr expected))
+	 (got                  got-lines      (cdr got)))
 	((or (null got)
 	     (not (equal (car expected) (car got))))
-	 (do ((at-end?      t                  nil)
-	      (expected-rev (reverse expected) (cdr expected-rev))
-	      (got-rev      (reverse got)      (cdr got-rev)))
-	     ((or (null got-rev)
-		  (not (equal (car expected-rev) (car got-rev))))
-	      (values at-start? 
-		      at-end? 
-		      (reverse expected-rev) 
-		      (reverse got-rev))))))))
+	 (diff-aux-tails past-match-at-start?
+			 (reverse expected)
+			 (reverse got))))))
+
+(defun diff-aux-tails (past-match-at-start? expected-rev got-rev)
+  (do ((past-match-at-end? nil          t)
+       (expected-rev       expected-rev (cdr expected-rev))
+       (got-rev            got-rev      (cdr got-rev)))
+      ((or (null got-rev)
+	   (not (equal (car expected-rev) (car got-rev))))
+       (values past-match-at-start? 
+	       past-match-at-end? 
+	       (reverse expected-rev) 
+	       (reverse got-rev)))))
 
 (defun convert-to-lines (text)
   (if (stringp text)
