@@ -7,7 +7,7 @@
   (let ((possible-document (read_document_from_file filename)))
     (if (eq (car possible-document) :|Some|)
 	(internalize_Document-2 (cdr possible-document) table)
-      :|None|)))
+      '(:|None|))))
 
 (defun parseXML (string-and-table)
   (let ((string (car string-and-table))
@@ -15,7 +15,7 @@
     (let ((possible-document (read_document_from_string string)))
       (if (eq (car possible-document) :|Some|)
 	  (internalize_Document-2 (cdr possible-document) table)
-	:|None|))))
+	'(:|None|)))))
 
 (defun parseUnicodeXML (string-and-table)
   (let ((string (car string-and-table))
@@ -23,7 +23,7 @@
     (let ((possible-document (read_document_from_ustring string)))
       (if (eq (car possible-document) :|Some|)
 	  (internalize_Document-2 (cdr possible-document) table)
-	:|None|))))
+	'(:|None|)))))
 
 (defun internalize_Document-2 (document table)
   (let* ((sd (caar table))

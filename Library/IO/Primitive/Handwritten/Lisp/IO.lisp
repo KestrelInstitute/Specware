@@ -102,7 +102,7 @@
 (defun unicode::read_unicode_chars_from_file-2 (filename decoding)
   (let ((bytes (readBytesFromFile filename)))
     (case (car bytes)
-      (:|None| :|None|)
+      (:|None| '(:|None|))
       (:|Some| (cons :|Some|
 		     (let ((uchars (funcall decoding (cdr bytes))))
 		       uchars))))))
