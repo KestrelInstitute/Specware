@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# Run the tests in the testsuite
+
+act='run the tests'
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+# Test whether SPECWARE4 has been set
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+case "$SPECWARE4" in
+    /*) : ok;;
+    *)  SPECWARE="`pwd`/$SPECWARE4";;
+esac
+
+SpecwareText="$SPECWARE4"/Applications/Specware/bin/linux/Specware4-text
+
+if [ ! -x "$SpecwareText" ]; then
+   echo "Failed to $act: could not find executable $SpecwareText" 2>&1
+   exit 1
+fi
+
+if [ ! -d "$SPECWARE4"/TestSuite ]; then
+   echo "Failed to $act: could not find directory
+   $SPECWARE4/TestSuite" 2>&1
+   exit 1
+fi
+
+cd "$SPECWARE4"
+
+echo 'Running tests...'
+echo '(specware-test::run-test-directories-rec "'"$SPECWARE4"/TestSuite/'")' | "$SpecwareText"
+echo 'Done running tests'
