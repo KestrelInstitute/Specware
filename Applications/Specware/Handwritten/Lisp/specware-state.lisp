@@ -37,26 +37,4 @@
 
 ;; When the following boolean is true, then all exceptions (not just Fail)
 ;; take the user into the Lisp debugger.
-(defvar *specware-wizard* nil)
-
-(defun SPECWARE::setSpecwareWizard (globalContext localContext optURI)
-  (SPECWARE::setSpecwareWizard-1 (vector globalContext localContext optURI)))
-
-(defun SPECWARE::setSpecwareWizard-1 (State)
-  (setq user::*specware-wizard* t)
-  (cons '(:|Ok|) State))
-
-(defun SPECWARE::clearSpecwareWizard (globalContext localContext optURI)
-  (SPECWARE::clearSpecwareWizard-1 (vector globalContext localContext optURI)))
-
-(defun SPECWARE::clearSpecwareWizard-1 (State)
-  (setq user::*specware-wizard* nil)
-  (cons '(:|Ok|) State))
-
-(defun SPECWARE::specwareWizard? (globalContext localContext optURI)
-  (SPECWARE::specwareWizard-1 (vector globalContext localContext optURI)))
-
-(defun SPECWARE::specwareWizard?-1 (State)
-  (cons (cons :|Ok| user::*specware-wizard*) State))
-
-(top-level:alias ("wiz" :case-sensitive) (b) (setq user::*specware-wizard* b))
+(defvar SpecCalc::specwareWizard? nil)
