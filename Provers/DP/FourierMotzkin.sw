@@ -1,7 +1,7 @@
 FM qualifying spec
 
   import /Library/Legacy/DataStructures/MergeSort
-  import /Library/Legacy/Utilities/Lisp
+%  import /Library/Legacy/Utilities/Lisp
 
   sort CompPred =
     | Gt
@@ -9,6 +9,7 @@ FM qualifying spec
     | GtEq
     | LtEq
     | Eq
+    | Neq
 
   sort Var = String
 
@@ -41,12 +42,39 @@ FM qualifying spec
   op zeroPoly?: Poly -> Boolean
   def zeroPoly?(p) = p = zeroPoly
 
-  sort Inequality = CompPred * Poly
+  op constantPoly?: Poly -> Boolean
+  def constantPoly?(p) =
+    case p of
+      | [Constant _] -> true
+      | _ -> false
 
-  op mkIneq: CompPred * Poly -> Inequality
+
+  sort Ineq = CompPred * Poly
+
+  op mkIneq: CompPred * Poly -> Ineq
   def mkIneq(comp, p) = (comp, p)
   
-  op ineqPoly: Inequality -> Poly
+  op contradictIneqGt: Ineq
+  def contradictIneqGt =
+    let minusOne = mkConstant(~1) in
+    let minusOnePoly = mkPoly1(minusOne) in
+    mkIneq(Gt, minusOnePoly)
+
+  op contradictIneqGtZero: Ineq
+  def contradictIneqGtZero =
+    mkIneq(Gt, zeroPoly)
+
+  op contradictIneqGtEq: Ineq
+  def contradictIneqGtEq =
+    let minusOne = mkConstant(~1) in
+    let minusOnePoly = mkPoly1(minusOne) in
+    mkIneq(GtEq, minusOnePoly)
+
+  op mkNormIneq: CompPred * Poly -> Ineq
+  def mkNormIneq(comp, p) =
+    normalize(mkIneq(comp, p))
+  
+  op ineqPoly: Ineq -> Poly
   def ineqPoly(ineq as (comp, poly)) = poly
 
   op termCoef: Term -> Coef
@@ -94,10 +122,10 @@ FM qualifying spec
   def hdVar(p) =
     termVar(hdTerm(p))
 
-  op ineqHdVar: Inequality -> Var
+  op ineqHdVar: Ineq -> Var
   def ineqHdVar(ineq as (comp, poly)) = hdVar(poly)
 
-  op ineqHdVarOpt: Inequality -> Option Var
+  op ineqHdVarOpt: Ineq -> Option Var
   def ineqHdVarOpt(ineq as (comp, poly)) =
     hdVarOpt(poly)
 
@@ -109,6 +137,26 @@ FM qualifying spec
 	| Constant c1 -> Constant (c * c1)
 	| Monom (c1, v) -> Monom ((c * c1), v)
 
+  op termDivCoef: Term * Coef -> Term
+  def termDivCoef(tm, c) =
+    case tm of
+      | Constant c1 -> Constant (c1 div c)
+      | Monom (c1, v) -> Monom ((c1 div c), v)
+
+  op termRemCoef: Term * Coef -> Term
+  def termRemCoef(tm, c) =
+    case tm of
+      | Constant c1 -> Constant (c1 rem c)
+      | Monom (c1, v) -> Monom ((c1 rem c), v)
+
+(*
+  op termPowCoef: Term * Coef -> Term
+  def termPowCoef(tm, c) =
+    case tm of
+      | Constant c1 -> Constant (c1 pow c)
+      | Monom (c1, v) -> Monom ((c1 pow c), v)
+*)
+
   op coefTimesPoly: Coef * Poly -> Poly
   def coefTimesPoly(c, p) =
     if c = 0 then zeroPoly
@@ -119,6 +167,28 @@ FM qualifying spec
   def polyPlusPoly(p1, p2) =
     let newP = p1 ++ p2 in
     normalizePoly(newP)
+
+  op polyMinusPoly: Poly * Poly -> Poly
+  def polyMinusPoly(p1, p2) =
+    polyPlusPoly(p1, negateSum(p2))
+
+  op constantPolyTimesPoly: Poly * Poly -> Poly
+  def constantPolyTimesPoly(p1 as [Constant c], p2) =
+    coefTimesPoly(c, p2)
+  
+  op polyDivConstantPoly: Poly * Poly -> Poly
+  def polyDivConstantPoly(p1, p2 as [Constant c]) =
+    map (fn (tm) -> termDivCoef(tm, c)) p1
+  
+  op polyRemConstantPoly: Poly * Poly -> Poly
+  def polyRemConstantPoly(p1, p2 as [Constant c]) =
+    map (fn (tm) -> termRemCoef(tm, c)) p1
+  
+(*
+  op polyPowConstantPoly: Poly * Poly -> Poly
+  def polyPowConstantPoly(p1, p2 as [Constant c]) =
+    map (fn (tm) -> termPowCoef(tm, c)) p1
+*)
   
   op gcd: Integer * Integer -> Integer
   def gcd(i, j) =
@@ -153,18 +223,23 @@ FM qualifying spec
   def normalizePoly(sum) =
     let sortedSum = uniqueSort compare sum in
     let simplifiedSum = mergeCommonVars(sortedSum) in
-    let reducedSum = reduceCoefs(simplifiedSum) in
-    reducedSum
+    %let reducedSum = reduceCoefs(simplifiedSum) in
+    simplifiedSum
   
-  op normalize: Inequality -> Inequality
+  op normalize: Ineq -> Ineq
 
   def normalize(ineq as (comp, sum)) =
-    let normPoly = normalizePoly(sum) in
+    let normPoly = reduceCoefs(normalizePoly(sum)) in
     case comp of
       | Gt -> (Gt, normPoly)
       | GtEq -> (GtEq, normPoly)
       | Eq -> (Eq, normPoly)
-      | _ -> ((negateComp(comp)), negateSum(normPoly))
+      | _ -> ((oppositeComp(comp)), negateSum(normPoly))
+
+  op negateIneq: Ineq -> Ineq
+  def negateIneq(ineq as (comp, sum)) =
+    normalize(mkIneq(negateComp(comp), sum))
+    
 
   op mergeCommonVars: Poly -> Poly
   def mergeCommonVars(poly) =
@@ -194,21 +269,32 @@ FM qualifying spec
 
   op reduceCoefs: Poly -> Poly
   def reduceCoefs(poly) =
+    if zeroPoly?(poly) then poly else
     let gcd:Integer = foldl (fn ((Constant c), res) -> (gcd(c, res))
 			 | ((Monom(c, _)), res) -> gcd(c, res)) (hdCoef(poly)) poly in
     map (fn (Monom (coef, var)) -> Monom (coef div gcd, var)
               | (Constant coef) -> Constant (coef div gcd))
         poly
 
-  op negateComp: CompPred -> CompPred
-
-  def negateComp(comp) =
+  op oppositeComp: CompPred -> CompPred
+  def oppositeComp(comp) =
     case comp of
       | Gt -> Lt
       | Lt -> Gt
       | GtEq -> LtEq
       | LtEq -> GtEq
       | Eq -> Eq
+      | Neq -> Neq
+
+  op negateComp: CompPred -> CompPred
+  def negateComp(comp) =
+    case comp of
+      | Gt -> LtEq
+      | Lt -> GtEq
+      | GtEq -> Lt
+      | LtEq -> Gt
+      | Eq -> Neq
+      | Neq -> Eq
 
   op negateSum: Poly -> Poly
   def negateSum(poly) =
@@ -216,7 +302,7 @@ FM qualifying spec
               | (Constant coef) -> Constant ((~1) * coef))
         poly
     
-  op chainIneqOpt: Inequality * Inequality -> Option Inequality
+  op chainIneqOpt: Ineq * Ineq -> Option Ineq
   def chainIneqOpt(ineq1 as (comp1, poly1), ineq2 as (comp2, poly2)) =
     let hdT1 = hdTerm(poly1) in
     let hdT2 = hdTerm(poly2) in
@@ -232,12 +318,37 @@ FM qualifying spec
 	let newP1 = coefTimesPoly(p1Mult, poly1) in
 	let newP2 = coefTimesPoly(p2Mult, poly2) in
 	let newP = polyPlusPoly(newP1, newP2) in
+	if zeroPoly?(newP) then chainZeroResult(newP1, newP2, comp1, comp2) else
 	let newComp = chainComp(comp1, comp2) in
-	let newIneq = (newComp, newP) in
+	let newIneq = mkNormIneq(newComp, newP) in
 	Some newIneq
     else None
 
-  op ineqsChainAbleP: Inequality * Inequality -> Boolean
+  op tightenNeqInteger: Ineq -> Ineq -> Ineq
+  def tightenWithNeqInteger (neq as (Neq, poly1)) (ineq2 as (comp2, poly2)) =
+    let hdT1 = hdTerm(poly1) in
+    let hdT2 = hdTerm(poly2) in
+    let hdV1 = termVar(hdT1) in
+    let hdV2 = termVar(hdT2) in
+    let hdC1 = termCoef(hdT1) in
+    let hdC2 = termCoef(hdT2) in
+    if hdV1 = hdV2 & comp2 = GtEq % & hdC1 * hdC2 < 0
+      then
+	let coefGcd = gcd(hdC1, hdC2) in
+	let p1Mult =abs(hdC2 div coefGcd) in
+	let p2Mult = if  hdC1 * hdC2 < 0
+		       then abs(hdC1 div coefGcd)
+		     else ~(abs(hdC1 div coefGcd)) in
+	let newP1 = coefTimesPoly(p1Mult, poly1) in
+	let newP2 = coefTimesPoly(p2Mult, poly2) in
+	let newP = polyPlusPoly(newP1, newP2) in
+	if zeroPoly?(newP)
+	  then let newP = polyMinusPoly(poly2, mkPoly1(mkConstant(1))) in
+	       mkNormIneq(GtEq, newP)
+	else ineq2
+    else ineq2
+
+  op ineqsChainAbleP: Ineq * Ineq -> Boolean
   def ineqsChainAbleP(ineq1 as (compPred1, poly1), ineq2 as (compPred2, poly2)) =
     let hdT1 = hdTerm(poly1) in
     let hdT2 = hdTerm(poly2) in
@@ -247,7 +358,7 @@ FM qualifying spec
     let hdC2 = termCoef(hdT2) in
       hdV1 = hdV2 & hdC1 * hdC2 < 0
 
-  op chainIneq: Inequality * Inequality -> Inequality
+  op chainIneq: Ineq * Ineq -> Ineq
   def chainIneq(ineq1 as (comp1, poly1), ineq2 as (comp2, poly2)) =
     let hdT1 = hdTerm(poly1) in
     let hdT2 = hdTerm(poly2) in
@@ -261,12 +372,23 @@ FM qualifying spec
     let newP1 = coefTimesPoly(p1Mult, poly1) in
     let newP2 = coefTimesPoly(p2Mult, poly2) in
     let newP = polyPlusPoly(newP1, newP2) in
+    %if zeroPoly?(newP) then chainZeroResult(newP1, newP2, comp1, comp2) else
     let newComp = chainComp(comp1, comp2) in
     let newIneq = (newComp, newP) in
       newIneq
 
+  op chainZeroResult: Poly * Poly * CompPred * CompPred -> Option Ineq
+  def chainZeroResult(p1, p2, comp1, comp2) =
+    case (comp1, comp2) of
+      | (GtEq, GtEq) -> Some (mkIneq(Eq, p1))
+      | (Neq, GtEq) -> Some (mkIneq(GtEq, polyMinusPoly(p2, mkPoly1(mkConstant(1)))))
+      | (GtEq, Neq) -> Some (mkIneq(GtEq, polyMinusPoly(p1, mkPoly1(mkConstant(1)))))
+      | (Neq, Neq) -> None
+      | _ -> Some contradictIneqGt
+
   op chainComp: CompPred * CompPred -> CompPred
   def chainComp(comp1, comp2) =
+    %let _ = if comp1 = Neq or comp2 = Neq then fail("Neq") else () in
     case (comp1, comp2) of
       | (Gt, _) -> Gt
       | (_, Gt) -> Gt
@@ -277,20 +399,48 @@ FM qualifying spec
     if p1 = p2 then Equal
     else if zeroPoly?(p1) then Less
     else if zeroPoly?(p2) then Greater
-    else let hd1 = hdTerm(p1) in
-      let hd2 = hdTerm(p2) in
-      compare(hd1, hd2)
+    else let hd1::tl1 = p1 in
+      let hd2::tl2 = p2 in
+      let hdRes = compare(hd1, hd2) in
+      if hdRes = Equal
+	then poly.compare(tl1, tl2)
+      else hdRes
 
-  op ineq.compare: Inequality * Inequality -> Comparison
+  op ineq.compare: Ineq * Ineq -> Comparison
   def ineq.compare(ineq1, ineq2) =
     poly.compare(ineqPoly(ineq1), ineqPoly(ineq2))
 
-  sort IneqSet = List Inequality
+  sort IneqSet = List Ineq
 
   op sortIneqSet: IneqSet -> IneqSet
   def sortIneqSet(ineqSet) =
     uniqueSort ineq.compare ineqSet
 
+  op FMRefute?: IneqSet -> Boolean
+  def FMRefute?(ineqSet) =
+    let ineqSet = integerPreProcess(ineqSet) in
+    let completeIneqs = fourierMotzkin(ineqSet) in
+    if member(contradictIneqGt, completeIneqs) or
+      member(contradictIneqGtEq, completeIneqs) or
+      member(contradictIneqGtZero, completeIneqs)      
+      then true
+    else false
+
+  op integerPreProcess: IneqSet -> IneqSet
+  def integerPreProcess(ineqSet) =
+    let neqs = filter (fn (Neq, _) -> true
+		        |_ -> false) ineqSet in
+    let def tightenNeqBounds(neq, ineqSet) =
+         map (tightenWithNeqInteger neq) ineqSet in
+    let def tightenAllNeqBounds(neqs, ineqSet) =
+          case neqs of
+	    | [] -> ineqSet
+	    | hdNeq::restNeqs ->
+	    let tightenedIneqs = tightenNeqBounds(hdNeq, ineqSet) in
+	    tightenAllNeqBounds(restNeqs, tightenedIneqs) in
+    tightenAllNeqBounds(neqs, ineqSet)
+    
+  
   op fourierMotzkin: IneqSet -> IneqSet
   def fourierMotzkin(ineqSet) =
     case ineqSet of
@@ -312,14 +462,18 @@ FM qualifying spec
   op processIneq0: Var * IneqSet -> IneqSet * IneqSet
   def processIneq0(var, ineqSet) =
     let (possibleChains, nonChains) =
-    case  splitList (fn (poly) -> ~(ineqHdVar(poly) = var)) ineqSet of
+    case  splitList (fn (poly) -> let optVar = ineqHdVarOpt(poly) in
+		     case optVar of
+		       | Some hdVar -> ~(ineqHdVar(poly) = var)
+		       | _ -> true ) ineqSet of
       | None -> (ineqSet, [])
       | Some (possibleChains, firstNonChain, restNonChains) -> (possibleChains, [firstNonChain]++restNonChains) in
+    let possibleChains = integerPreProcess(possibleChains) in
     let newIneqs = processPossibleIneqs(possibleChains) in
     let newIneqSet = newIneqs++nonChains in
     (possibleChains, sortIneqSet(newIneqSet))
 
-  op processIneq1: Inequality * IneqSet -> IneqSet
+  op processIneq1: Ineq * IneqSet -> IneqSet
   def processIneq1(ineq as (comp, poly), possibleChains) =
     let newIneqs = mapPartial (fn (ineq2) -> chainIneqOpt(ineq, ineq2)) possibleChains in
     newIneqs
@@ -335,9 +489,37 @@ FM qualifying spec
       | ineq::ineqSet ->
       let newIneqs = processIneq1(ineq, ineqSet) in
       processPossibleIneqsAux(ineqSet, newIneqs++res)
+
+  op printIneq: Ineq -> String
+  def printIneq(ineq as (comp, poly)) =
+    printPoly(poly)^" "^printComp(comp)^"  0"
+
+  op printPoly: Poly -> String
+  def printPoly(p) =
+    if zeroPoly?(p) then "0"
+    else case p of
+          | [tm] -> printTerm(tm)
+          | hdTm::rp -> printTerm(hdTm)^" + "^printPoly(rp)
+
+  op printTerm: Term -> String
+  def printTerm(tm) =
+    case tm of
+      | Constant c -> intToString(c)
+      | Monom (c, v) -> if c = 1 then v else intToString(c)^"*"^v
+
+  op printComp: CompPred -> String
+  def printComp(comp) =
+    case comp of
+      | Gt -> ">"
+      | Lt -> "<"
+      | GtEq -> ">="
+      | LtEq -> "<="
+      | Eq -> "="
+      | Neq -> "!="
+
   
   %% Functions to read in Lisp s-expressions and generate inequalities:
-  
+(*  
   op listToPoly: Lisp.LispCell -> Poly
   def listToPoly(list) =
     if null(list) then zeroPoly
@@ -365,7 +547,7 @@ FM qualifying spec
       | "LtEq" -> LtEq
       | "Eq" -> Eq
 
-  op readIneq: Lisp.LispCell -> Inequality
+  op readIneq: Lisp.LispCell -> Ineq
   def readIneq(list) =
     let listPoly = car(list) in
     let lispComp = cdr(list) in
@@ -377,6 +559,7 @@ FM qualifying spec
   def readIneqs(list) =
     if null(list) then []
     else Cons(readIneq(car(list)), readIneqs(cdr(list)))
+*)
 
 endspec
     
