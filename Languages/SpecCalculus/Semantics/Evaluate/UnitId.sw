@@ -191,15 +191,44 @@ it easy to experiment with different UnitId path resolution strategies..
         }
       | UnitId_Relative {path=newPath,hashSuffix=newSuffix} -> {
             {path=currentPath,hashSuffix=currentSuffix} <- getCurrentUID;
-            root <- removeLast currentPath;
-            (case (currentPath,currentSuffix,newPath,newSuffix) of
+	    currentPathAlias <- return(pathAlias currentPath);
+            root <- removeLast currentPathAlias;
+            (case (currentPathAlias,currentSuffix,newPath,newSuffix) of
               | (_,Some _,[elem],None) ->
-                    return [normalizeUID {path=currentPath,hashSuffix=Some elem},
+                    return [normalizeUID {path=currentPathAlias,hashSuffix=Some elem},
                             normalizeUID {path=root++newPath,hashSuffix=None}]
               | (_,_,_,_) -> 
                     return [normalizeUID {path=root++newPath,hashSuffix=newSuffix}]
              )
         }
+
+  %% this is set by norm-unitid-str in toplevel.lisp
+  %% It allows a command-line spec to be put into a temporary file but have
+  %% any ids be relative to the shell environment and not the local file's unitid
+  op  aliasPaths: List (List String * List String)
+  def aliasPaths = []
+
+  op  pathAlias: List String -> List String
+  def pathAlias path =
+    let
+      def applyAliases aliasPaths =
+	case aliasPaths of
+	  | [] -> path
+	  | (p,ap)::rpath ->
+	    (case findAlias(path,p,ap) of
+	      | Some tr_path -> tr_path
+	      | None -> applyAliases rpath)
+      def findAlias(path,p,ap) =
+	case (path,p) of
+	  | (_,[]) -> Some(ap ++ path)
+	  | ([],_) -> None
+	  | (p1::rp1,p2::rp2) ->
+	    if p1 = p2
+	      then findAlias(rp1,rp2,ap)
+	      else None
+    in
+    applyAliases aliasPaths
+     
 
 \end{spec}
    
