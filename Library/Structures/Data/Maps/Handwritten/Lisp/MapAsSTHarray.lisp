@@ -84,10 +84,10 @@
 	(nreverse undo-list)
 	(make-map-as-undo-harray new-table nil)))))
 
-(defparameter emptyMap (make-map-as-undo-harray (make-hash-table :test 'equal :size 0) nil))
+(defparameter STH_empty_map (make-map-as-undo-harray (make-hash-table :test 'equal :size 0) nil))
 
 (defun map-as-undo-harray--update (m x y)
-  (if (eq m emptyMap)
+  (if (eq m STH_empty_map)
       (if (eq y *undefined*)
 	  m
 	(let ((new-table (map-as-undo-harray--initial-harray)))
@@ -119,11 +119,11 @@
 
 ;;; The Hash Table interface functions
 
-(defun numItems (m)
+(defun STH_numItems (m)
   (let ((m (map-as-undo-harray-assure-current m)))
     (hash-table-count (map-as-undo-harray--harray m))))
 
-(defun apply-2 (m x)
+(defun STH_apply-2 (m x)
   ;(incf *map-as-undo-harray-ref-count*)
   (let ((val
 	 (if (map-as-undo-harray-current? m)
@@ -140,20 +140,20 @@
     (if (eq val *undefined*) *undefined*
       (mkSome val))))
 
-(defun |!apply| (pr)
-  (apply-2 (car pr) (cdr pr)))
+(defun STH_apply (pr)
+  (STH_apply-2 (car pr) (cdr pr)))
 
 ;;; Some y is stored in array, as it is usually accessed more often than set
-(defun update-3 (m x y)
+(defun STH_update-3 (m x y)
   (map-as-undo-harray--update m x y))
 
-(defun remove-2 (m x)
+(defun STH_remove-2 (m x)
   (map-as-undo-harray--update m x *undefined*))
 
-(defun |!remove| (pr)
+(defun STH_remove (pr)
   (map-as-undo-harray--update (car pr) (cdr pr) *undefined*))
 
-(defun mapi-2 (f m)
+(defun STH_mapi-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -163,7 +163,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun map-2 (f m)
+(defun STH_map-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -173,7 +173,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun mapiPartial-2 (f m)
+(defun STH_mapiPartial-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -186,7 +186,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun mapPartial-2 (f m)
+(defun STH_mapPartial-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -199,7 +199,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun app-2 (f m)
+(defun STH_app-2 (f m)
   (declare (dynamic-extent f))
   (let ((m (map-as-undo-harray-assure-current m)))
     (maphash #'(lambda (key val)
@@ -208,7 +208,7 @@
 	     (map-as-undo-harray--harray m)))
   nil)
 
-(defun appi-2 (f m)
+(defun STH_appi-2 (f m)
   (declare (dynamic-extent f))
   (let ((m (map-as-undo-harray-assure-current m)))
     (maphash #'(lambda (key val)
@@ -235,7 +235,7 @@
        (setf (get '|!map| 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
        (setf (get 'mapi 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil)))
 
-(defun foldi-3 (fn result m)
+(defun STH_foldi-3 (fn result m)
   (map-as-undo-harray--map-through-pairs
      #'(lambda (key val)
 	 (let ((args (foldi-vector key val result)))
@@ -244,7 +244,7 @@
      m)
   result)
 
-(defun imageToList (m) 
+(defun STH_imageToList (m) 
   (let ((m (map-as-undo-harray-assure-current m)))
     (let ((items nil))
       (maphash #'(lambda (key val) 
@@ -253,7 +253,7 @@
 	       (map-as-undo-harray--harray m))
       items)))
 
-(defun mapToList (m) 
+(defun STH_mapToList (m) 
   (let ((m (map-as-undo-harray-assure-current m)))
     (let ((items nil))
       (maphash #'(lambda (key val) 
@@ -261,7 +261,7 @@
 	       (map-as-undo-harray--harray m))
     items)))
 
-(defun domainToList (m) 
+(defun STH_domainToList (m) 
   (let ((m (map-as-undo-harray-assure-current m)))
     (let ((items nil))
       (maphash #'(lambda (key val) 

@@ -1018,7 +1018,8 @@ def addSortConstructorsFromSort (spc, forSnark?, qid, info) =
 		     let term = Lambda ([(pat, cond, body)], b) in
 		     let opinfo = {names  = [opqid], 
 				   fixity = Nonfix, 
-				   dfn    = maybePiTerm (tvs, SortedTerm (term, opsrt, b))}
+				   dfn    = maybePiTerm (tvs, SortedTerm (term, opsrt, b)),
+				   fullyQualified? = false}
 		     in
 		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 		     let opnames = cons (opqid, opnames) in
@@ -1149,7 +1150,8 @@ def addProductSortConstructorsFromSort (spc, qid, info) =
 	 let term = Lambda ([(pat, cond, body)], b) in
 	 let opinfo = {names = [opqid], 
 		       fixity = Nonfix, 
-		       dfn    = maybePiTerm (tvs, SortedTerm (term, opsrt, b))}
+		       dfn    = maybePiTerm (tvs, SortedTerm (term, opsrt, b)),
+		       fullyQualified? = false}
 	 in
 	 let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 	 let opnames = [opqid] in
@@ -1199,7 +1201,8 @@ def addProductAccessorsFromSort (spc, qid, info) =
 		     let term = Lambda ([(pat, cond, body)], b) in
 		     let opinfo = {names  = [opqid], 
 				   fixity = Nonfix, 
-				   dfn    = maybePiTerm (tvs, SortedTerm (term, opsrt, b))}
+				   dfn    = maybePiTerm (tvs, SortedTerm (term, opsrt, b)),
+				   fullyQualified? = false}
 		     in
 		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 		     let opnames = cons (opqid, opnames) in
@@ -1502,7 +1505,8 @@ def addEqOpsFromSort (spc, qid, info) =
       let term = getLambdaTerm (osrt, body, b) in
       let info = {names  = [eqqid],
 		  fixity = Nonfix,
-		  dfn    = SortedTerm (term, getEqOpSort (osrt, b), b)}
+		  dfn    = SortedTerm (term, getEqOpSort (osrt, b), b),
+		  fullyQualified? = false}
       in
       let ops = insertAQualifierMap (spc.ops, eq, eid, info) in
       setOps (spc, ops)

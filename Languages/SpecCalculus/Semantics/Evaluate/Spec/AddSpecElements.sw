@@ -99,7 +99,8 @@ SpecCalc qualifying spec
   let new_names = rev (removeDuplicates new_names) in % don't let duplicate names get into an opinfo!
   let new_info = {names  = new_names, 
 		  fixity = new_fixity, 
-		  dfn    = new_dfn}
+		  dfn    = new_dfn,
+		  fullyQualified? = false}
   in
   let old_infos = foldl (fn (new_name, old_infos) ->
                          case findTheOp (old_spec, new_name) of
@@ -166,7 +167,8 @@ SpecCalc qualifying spec
 	      in
 	      let combined_dfn = maybePiTerm (old_tvs, SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
               let combined_info = old_info << {names = combined_names, 
-					       dfn   = combined_dfn} 
+					       dfn   = combined_dfn,
+					       fullyQualified? = false} 
 	      in
               return (foldl (fn (name as Qualified (q, id), new_ops) ->
                              insertAQualifierMap (new_ops, q, id, combined_info))

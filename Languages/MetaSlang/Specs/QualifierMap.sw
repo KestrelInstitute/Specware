@@ -32,4 +32,7 @@ spec
          -> b
          -> (AQualifierMap a)
          -> SpecCalc.Env b
+ %%  find all the matches to id in every second level map
+ op wildFindUnQualified : [a] AQualifierMap a * Id -> List a
+
 endspec

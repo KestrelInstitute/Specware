@@ -37,6 +37,7 @@ PosSpecToSpec qualifying spec {
 %% mapSpec is correct but unnecessarily maps non-locals
 %   mapSpec (convertPTerm, convertPSort, fn x -> x)
 %     spc
+ 
   let {importInfo, sorts, ops, properties} = spc in
   let {imports = _, localOps, localSorts, localProperties} = importInfo in
   let tsp = (convertPTerm, convertPSort, fn x -> x) in
@@ -44,11 +45,11 @@ PosSpecToSpec qualifying spec {
 
     ops              = if localOps = [] then ops
                        else
-		       mapOpInfos (fn info ->
-				   if someAliasIsLocal? (info.names, localOps) then
-				     info << {dfn = mapTerm tsp info.dfn}
-				   else 
-				     info)
+		       mapOpInfosUnqualified (fn info ->
+					      if someAliasIsLocal? (info.names, localOps) then
+						info << {dfn = mapTerm tsp info.dfn}
+					      else 
+						info)
                                   ops,
 
     sorts            = if localSorts = [] then sorts

@@ -2,13 +2,13 @@ AnnSpec qualifying
 spec
  import QualifierMap
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
- sort AQualifierMap b  = Map(String * String,b)   
+ sort AQualifierMap b  = STHMap.Map(String * String,b)   
  def foldriAQualifierMap f ini qm =
    foldi (fn((q,id),v,r) -> f(q,id,v,r)) ini qm
- def emptyAQualifierMap  = Map.emptyMap       % 
- def findAQualifierMap    (m, x, y)    = Map.apply  (m,  (x,y))
- def removeAQualifierMap  (m, x, y)    = Map.remove (m,  (x,y))
- def insertAQualifierMap (qm, x, y, v) = Map.update (qm, (x,y), v)
+ def emptyAQualifierMap  = STHMap.emptyMap       % 
+ def findAQualifierMap    (m, x, y)    = STHMap.apply  (m,  (x,y))
+ def removeAQualifierMap  (m, x, y)    = STHMap.remove (m,  (x,y))
+ def insertAQualifierMap (qm, x, y, v) = STHMap.update (qm, (x,y), v)
  def mapAQualifierMap = map 
  def mapiAQualifierMap f m = mapi (fn ((q,id),v) -> f(q,id,v)) m
  def mapiPartialAQualifierMap f m = mapiPartial (fn ((q,id),v) -> f(q,id,v)) m
@@ -38,7 +38,15 @@ spec
      
 
  def foldOverQualifierMap f e m =
-   foldL (fn (x as (q,id),r) -> f(q, id, Map.eval(m,x), r))
-     e (Map.domainToList m)
+   foldL (fn (x as (q,id),r) -> f(q, id, STHMap.eval(m,x), r))
+     e (STHMap.domainToList m)
 
+ def wildFindUnQualified (qualifier_map, id) =
+   foldriAQualifierMap (fn (_, ii, val, results) ->
+			if id = ii then
+			  Cons (val, results)
+			else
+			  results)
+                       []
+		       qualifier_map
 endspec

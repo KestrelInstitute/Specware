@@ -180,5 +180,6 @@ SpecCalc qualifying spec
                   %%% else
 		  let combined_dfn = maybeAndTerm (combined_decls ++ combined_defs, termAnn new_info.dfn) in
 		  return (new_info << {names = combined_names, 
-				       dfn   = combined_dfn})
+				       dfn   = combined_dfn,
+				       fullyQualified? = false})
 endspec

@@ -2,7 +2,8 @@ AnnSpec qualifying spec
 
  import Position
  import MSTerm
- import QualifierMapAsSTHashTable
+ %import QualifierMapAsSTHashTable
+ import QualifierMapAsSTHTable2
  import SpecCalc
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,7 +62,8 @@ AnnSpec qualifying spec
 
  type AOpInfo   b = {names  : OpNames,
 		     fixity : Fixity,
-		     dfn    : ATerm b}
+		     dfn    : ATerm b,
+		     fullyQualified?: Boolean}
 
  type AProperties   b  = List (AProperty b) 
  type AProperty     b  = PropertyType * PropertyName * TyVars * ATerm b
@@ -105,6 +107,12 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  components of opInfo
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op opInfoAllDefs : [b] AOpInfo b -> List (ATerm b) 
+ def opInfoAllDefs info =
+   case info.dfn of
+     | And (tms, _) -> tms
+     | tm           -> [tm]
 
   op opInfoDefs : [b] AOpInfo b -> List (ATerm b) 
  def opInfoDefs info =
@@ -251,6 +259,44 @@ AnnSpec qualifying spec
  def mapSpecOps tsp ops =
    mapOpInfos (fn info -> info << {dfn = mapTerm tsp info.dfn})
               ops
+
+ %%% Only map over unqualified ops (for use in qualify)
+ op  mapSpecUnqualified : [b] TSP_Maps b -> ASpec b -> ASpec b
+ def mapSpecUnqualified tsp {importInfo, sorts, ops, properties} =
+   {
+    importInfo       = importInfo,
+    sorts            = mapSpecSorts tsp sorts,
+    ops              = mapSpecOpsUnqualified tsp ops,
+    properties       = mapSpecProperties tsp properties
+   }
+
+ op  mapSpecOpsUnqualified : [b] TSP_Maps b -> AOpMap b -> AOpMap b
+ def mapSpecOpsUnqualified tsp ops =
+   mapOpInfosUnqualified (fn info ->
+			  info << {dfn = mapTerm tsp info.dfn,
+				   fullyQualified? = true})
+              ops
+
+ %% Useful if we know the defs from qualified specs won't be affected
+ op  mapOpInfosUnqualified : [b] (AOpInfo b -> AOpInfo b) -> AOpMap b -> AOpMap b 
+ def mapOpInfosUnqualified opinfo_map ops =
+   foldriAQualifierMap 
+     (fn (q, id, info, new_map) ->
+      if primaryOpName? (q, id, info) && ~(info.fullyQualified?) then
+	%% When access is via a primary alias, update the info and 
+	%% record that (identical) new value for all the aliases.
+	let new_info = opinfo_map info
+	in
+	foldl (fn (Qualified (q, id), new_map) ->
+	       insertAQualifierMap (new_map, q, id, new_info))				   
+	      new_map
+	      info.names
+      else
+	%% For the non-primary aliases, do nothing,
+	%% since they are handled derivatively above.
+	new_map)
+     ops
+     ops
 
  %% mapSortInfos and mapOpInfos apply the provided function
  %% just once to an info, even if it has multiple aliases,
@@ -617,17 +663,6 @@ AnnSpec qualifying spec
                      (wildFindUnQualified (spc.ops, id))
    else
      found
-
- %%  find all the matches to id in every second level map
-  op wildFindUnQualified : [a] AQualifierMap a * Id -> List a
- def wildFindUnQualified (qualifier_map, id) =
-   foldriAQualifierMap (fn (_, ii, val, results) ->
-			if id = ii then
-			  Cons (val, results)
-			else
-			  results)
-                       []
-		       qualifier_map
 
  % this next one is use only in substract spec. it cannot be defined inside
  % the scope of subtractSpec as there is no let-polymorphism in Specware

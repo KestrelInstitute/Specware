@@ -34,6 +34,12 @@ MetaSlang qualifying spec
  def [a] mkAUnQualifiedId (id,     x : a) = (Qualified (UnQualified, id), x)
  def [a] mkAQualifiedId   (q,  id, x : a) = (Qualified (q,           id), x)
 
+ op  unQualifiedId?: QualifiedId -> Boolean
+ def unQualifiedId? id =
+   case id of
+     | Qualified(UnQualified, _) -> true
+     | _ -> false
+
  %% These are used by translation, morphism code
  def unqualified_Boolean = mkUnQualifiedId "Boolean"               % used by translate
  def Boolean_Boolean     = mkQualifiedId ("Boolean", "Boolean")    % used by translate

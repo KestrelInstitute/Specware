@@ -210,7 +210,7 @@ spec
 			in
 			let translate_expr : TranslateExpr Position = (cocone_sm_rules, Internal "Colimit") in
 			update cocone_translations vertex translate_expr)
-                      emptyMap
+                      PolyMap.emptyMap
 		      dg
   in
 
@@ -280,7 +280,7 @@ spec
 					   None))
 			    in
 			      update cc_map vertex sm)
-	                   emptyMap
+	                   PolyMap.emptyMap
 			   dg
       in
 
@@ -405,7 +405,7 @@ spec
 			  in
 			    (cons (apex_qid, aliases),
 			     update local_map vqid apex_qid))
-		         ([], emptyMap : PolyMap.Map (VQid, QualifiedId))
+		         ([], PolyMap.emptyMap)
 		         class
 	       in 
 	       let boolean? = member (Boolean_Boolean, aliases) in
@@ -418,7 +418,7 @@ spec
 				     (eval local_map vqid, aliases)))
 		            vqid_to_apex_qid_and_aliases_map
 		            class)
- 	      (emptyMap : PolyMap.Map (VQid, QualifiedId * Aliases))
+ 	      PolyMap.emptyMap
 	      qset
 
  %% --------------------------------------------------------------------------------
@@ -541,7 +541,7 @@ spec
 			       (select_items spc)
 		     in 
 		     update vertex_to_translation vertex translate_rules)
-                    emptyMap
+                    PolyMap.emptyMap
 		    dg
 
  %% ================================================================================
@@ -580,19 +580,19 @@ spec
  def convertSortRules translate_rules = 
    foldl (fn ((Sort (dom_qid, cod_qid, aliases), _), new_sm_map) ->
 	  update new_sm_map dom_qid cod_qid)
-         emptyMap
+         PolyMap.emptyMap
          translate_rules
 
  def convertOpRules translate_rules = 
    foldl (fn ((Op ((dom_qid, _), (cod_qid, _), aliases), _), new_sm_map) ->
 	  update new_sm_map dom_qid cod_qid)
-         emptyMap 
+         PolyMap.emptyMap 
          translate_rules
 
  %%% def convertPropRules translate_rules = 
  %%%   foldl (fn ((Property (dom_qid, cod_qid), _), new_sm_map) ->
  %%%	      update new_sm_map dom_qid cod_qid)
- %%%         emptyMap 
+ %%%         PolyMap.emptyMap 
  %%%         translate_rules
 
  

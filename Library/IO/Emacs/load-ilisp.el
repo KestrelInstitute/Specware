@@ -38,3 +38,34 @@
 	 '("\\.spec$" . specware-mode)
 	 '("\\.sw$" . specware-mode)
 	 auto-mode-alist))
+
+
+(defvar *load-mode-motion+* t)
+
+(when *load-mode-motion+*
+  (defvar mode-motion+-religion 'highlight)
+  (require 'mode-motion+)
+  (defun mode-motion+-highlight (event)
+    "Highlight the thing under the mouse using a mode-specific motion handler.
+See list-motion-handlers for more details."
+    (mode-motion-clear-last-extent)
+    (and (event-buffer event)
+	 ;; sjw: added save-window-excursion
+	 (save-window-excursion
+	   (cond ((and mouse-grabbed-buffer
+		       ;; first try to do minibuffer specific highlighting
+		       (find-motion-handler 'minibuffer)
+		       (let ((mode-motion-highlight-lines-when-behind nil))
+			 (and (event-point event)
+			      (or (extent-at (event-point event)
+					     (event-buffer event) 'highlight)
+				  (mode-motion-highlight-with-handler
+				   (find-motion-handler 'minibuffer) event))))))
+		 (t (mode-motion-highlight-with-handler
+		     (get-current-motion-handler) event)))))
+    ;; Return nil since now this is used as a hook, and we want to let
+    ;; any other hook run after us.
+    nil)
+  (byte-compile 'mode-motion+-highlight)
+  (set-mode-motion-handler 'dired-mode 'highlight-vline)
+  (global-set-key '(control shift button2) 'mode-motion-copy))

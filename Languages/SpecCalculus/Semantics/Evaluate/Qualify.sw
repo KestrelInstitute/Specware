@@ -1,13 +1,11 @@
-\subsection{Name Qualifing in Specs}
+(* Name Qualifing in Specs *)
 
-\begin{spec}
 SpecCalc qualifying spec 
-{
+
   import Signature 
   import Spec/CompressSpec
   import Spec/MergeSpecs
-\end{spec}
-
+(*
 To qualify a spec means to change all unqualified names to qualified
 names. This can raise exceptions since qualifying a name may identify
 it with a name that already exists.
@@ -16,8 +14,8 @@ The current version need not visit the imported specs as the hierarchy
 is flattened,
 
 Change UnQualified to new_qualifier in all qualified names
+*)
 
-\begin{spec} 
   def SpecCalc.evaluateQualify sc_term new_q = 
    let pos = positionOf sc_term in
    {
@@ -100,7 +98,7 @@ Change UnQualified to new_qualifier in all qualified names
 
       def convertSpec sp =
        let {importInfo = {imports,localOps,localSorts,localProperties}, sorts, ops, properties}
-           = mapSpec (translateOp, translateSort, translatePattern) sp
+           = mapSpecUnqualified (translateOp, translateSort, translatePattern) sp
        in 
        {
 	newSorts      <- convertSortMap sorts;
@@ -116,5 +114,4 @@ Change UnQualified to new_qualifier in all qualified names
        }
     in 
       convertSpec spc
-}
-\end{spec}
+endspec

@@ -745,7 +745,8 @@ def toAny     = Term `TranslationBasic.toAny`
      let new_term = withAnnT(mkLambda (newPattern, body), pos) in
      {names  = [], % TODO: Real names
       fixity = Nonfix, 
-      dfn    = SortedTerm (new_term, new_sort, termAnn body)}
+      dfn    = SortedTerm (new_term, new_sort, termAnn body),
+      fullyQualified? = false}
    else
      let varSort = mkProduct (List.map (fn (_, srt) -> srt) freeVars) in
      let closureVar = ("closure-var", mkAny varSort) in
@@ -786,7 +787,8 @@ def toAny     = Term `TranslationBasic.toAny`
      let new_term = withAnnT(mkLambda (newPattern, newBody), termAnn body) in
      {names  = [], % TODO: Real names
       fixity = Nonfix, 
-      dfn    = SortedTerm (new_term, new_sort, termAnn body)}
+      dfn    = SortedTerm (new_term, new_sort, termAnn body),
+      fullyQualified? = false}
 
  op  getSpecEnv: LLEnv -> Spec
  def getSpecEnv env =
@@ -880,7 +882,8 @@ def toAny     = Term `TranslationBasic.toAny`
  def addNewOp (name as Qualified (q, id), fixity, dfn, spc) =
    let info = {names = [name],
 	       fixity = fixity, 
-	       dfn    = dfn}
+	       dfn    = dfn,
+	       fullyQualified? = false}
    in
      addNewOpAux (info, spc)
 
