@@ -48,22 +48,23 @@ SpecCalc qualifying spec {
   op applySubstitution : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
   def applySubstitution sm spc sm_tm position = 
 
-   %%%   let 
-   %%%     def local_op_names main_spec imported_spec =
-   %%%       foldriAQualifierMap (fn (qualifier,id,info,local_ops) ->
-   %%%			    case findAQualifierMap (imported_spec.ops, qualifier, id) of
-   %%%			      | None   -> Cons (id, local_ops)
-   %%%			      | Some _ -> local_ops)
-   %%%                           []
-   %%%			   main_spec.ops
-   %%%     def local_sort_names main_spec imported_spec =
-   %%%       foldriAQualifierMap (fn (qualifier,id,info,local_sorts) ->
-   %%%			    case findAQualifierMap (imported_spec.sorts, qualifier, id) of
-   %%%			      | None   -> Cons (id, local_sorts)
-   %%%			      | Some _ -> local_sorts)
-   %%%                           []
-   %%%			   main_spec.sorts
-   %%%   in
+      let 
+        def translate_op_names op_names =
+	  let op_map = opMap sm in
+	  List.map (fn qid -> 
+		    case evalPartial op_map qid of
+		     | Some qid -> qid
+		     | _ -> qid)
+	           op_names
+
+        def translate_sort_names sort_names =
+	  let sort_map = sortMap sm in
+	  List.map (fn qid -> 
+		    case evalPartial sort_map qid of
+		     | Some qid -> qid
+		     | _ -> qid)
+                   sort_names
+      in
 
    %% Warning: this assumes that dom_spec is a subspec of spc
    %%    S' = M(S - dom(M)) U cod(M)
@@ -78,8 +79,8 @@ SpecCalc qualifying spec {
     return (setImportInfo (new_spec,
 			   {imports      = [(cod_spec_term, cod_spec)],
 			    importedSpec = Some cod_spec,
-			    localOps     = emptyOpNames,  % local_op_names   new_spec cod_spec
-			    localSorts   = emptySortNames % local_sort_names new_spec cod_spec
+			    localOps     = translate_op_names   spc.importInfo.localOps,  
+			    localSorts   = translate_sort_names spc.importInfo.localSorts 
 			   }))}
 
   op  convertIdMap: QualifiedIdMap -> AQualifierMap (QualifiedId * Aliases)
