@@ -3,6 +3,9 @@ spec
   import /Languages/MetaSlang/Transformations/CurryUtils
   import /Languages/MetaSlang/Transformations/PatternMatch
   import /Languages/MetaSlang/Transformations/Simplify
+  import /Languages/MetaSlang/Transformations/LambdaLift
+  import /Languages/MetaSlang/Transformations/ProverPattern
+  import /Languages/MetaSlang/Transformations/InstantiateHOFns
   import /Languages/SpecCalculus/Semantics/Evaluate/Signature
  op makeTypeCheckObligationSpec: Spec * (SpecCalc.Term Position) -> Spec
  op checkSpec : Spec -> TypeCheckConditions
@@ -451,7 +454,7 @@ spec
 
  op  checkRecursiveCall: TypeCheckConditions * Gamma * MS.Term * MS.Term * MS.Term -> TypeCheckConditions
  def checkRecursiveCall(tcc,gamma,term,n1,n2) =
-   case getCurryArgs term of
+   case CurryUtils.getCurryArgs term of
      | Some(f,args) ->
        (case f of
 	  | Fun(Op(lqid,_),_,_) ->
@@ -460,9 +463,9 @@ spec
 		 if qid = lqid & length args = length vs
 		   %% Should be able to deal with length args < length vs
 		   then
-		     let vs = map (fn (VarPat(v,_)) -> v) vs in
+		     %let vs = map (fn (VarPat(v,_)) -> v) vs in
 		     if vs = [] then tcc
-		       else add_WFO_Condition(tcc,gamma,mkTuple(map mkVar vs),mkTuple args)	       
+		       else add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),mkTuple args)
 		   else tcc
 	       | _ -> tcc)
 	  | _ -> tcc)
@@ -473,9 +476,10 @@ spec
 	 | (_,_,_,Some(qid,[p]),_,_) ->
 	   if qid = lqid
 	     then
-	       let vs = map (fn (VarPat(v,_)) -> v) (getParams p) in
+	       %let vs = map (fn (VarPat(v,_)) -> v) (getParams p) in
+	       let vs = (getParams p) in
 	       if vs = [] then tcc
-	       else add_WFO_Condition(tcc,gamma,mkTuple(map mkVar vs),n2)	       
+	       else add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),n2)	       
 	     else tcc
 	 | _ -> tcc)
      | _ -> tcc
@@ -708,6 +712,7 @@ spec
  def wfoSpecTerm = (UnitId(SpecPath_Relative{path = ["Library","Base","WFO"], hashSuffix = None}),noPos)
 
  def makeTypeCheckObligationSpec (spc,specCalcTerm) =
+   let spc = lambdaLift(instantiateHOFns(spc)) in
    case getOptSpec (Some "/Library/Base/WFO") of
      | None -> fail "Error in processing /Library/Base/WFO"
      | Some wfoSpec ->

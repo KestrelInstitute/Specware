@@ -634,8 +634,8 @@ in
        let (opers,fields) = List.foldr liftRec ([],[]) fields in
        (opers,(Record(fields,noPos)))
      | Bind(binder,bound,body) -> 
-       let (_,liftBody) = lambdaLiftTerm(env, body) in
-       ([], mkBind(binder, bound, liftBody))
+       let (opers, liftBody) = lambdaLiftTerm(env, body) in
+       (opers, mkBind(binder, bound, liftBody))
        %System.fail "Unexpected binder"
      | _ -> System.fail "Unexpected term"
 
@@ -803,14 +803,24 @@ def toAny     = Term `TranslationBasic.toAny`
 	      in
 	      insertOpers(opers,qname,spc)
    in
+     let 
+       def doProp((pt, pn, tyVar, fmla), spc) =
+         let env = mkEnv(UnQualified, pn) in
+	 let term = makeVarTerm(fmla) in
+	 let (opers, term) = lambdaLiftTerm(env, term) in
+	 let newProp = (pt, pn, tyVar, term) in
+	 let spc = addProperty(newProp, spc) in
+	 insertOpers(opers, UnQualified, spc)
+   in
      let ops = spc.ops in
+     let props = spc.properties in
      let spc = 
 	 { importInfo = spc.importInfo,
 	   sorts = spc.sorts,
 	   ops = emptyAQualifierMap,
-	   properties = spc.properties
-	 }
-     in
+	   properties = []
+	 } in
+     let spc = foldl doProp spc props in
      foldriAQualifierMap doOp spc ops
 
  op addNewOp :

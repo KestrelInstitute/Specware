@@ -5,6 +5,39 @@ Prover qualifying spec
   import /Library/Legacy/DataStructures/ListPair
   import /Library/Legacy/DataStructures/SplaySet
 
+
+  op wildCounter: Ref Nat
+
+  op initWildCounter: () -> ()
+  def initWildCounter () =
+    wildCounter := 0
+
+  op useWildCounter: () -> Nat
+  def useWildCounter () =
+    let res = !wildCounter in
+    let _ = wildCounter := res+1 in
+    res
+
+  op mkDeComposedEquality: Sort * Term * Term -> Term
+  def mkDeComposedEquality(srt, t1, t2) =
+    case (t1, t2) of
+      | (Record(args1, _), Record(args2, _)) ->
+         let srtList = case srt of
+			 | Product (idSrtList, _) -> map (fn (_, srt) -> srt) idSrtList
+	                 | _ -> map (fn (_, term) -> termSort(term)) args1 in
+         ListPair.foldl ((fn ((srt, (_, a1)), (_, a2), res) ->
+		   let argEq = mkDeComposedEquality(srt, a1, a2) in
+		   Utilities.mkAnd(argEq, res)))
+	       (mkTrue(): Term) (zip(srtList, args1), (args2: (List (Id * Term))))
+       | (Var (("Wild__Var", _), _), _) -> mkTrue()
+       | (_, Var (("Wild__Var", _), _)) -> mkTrue()
+       | _ -> mkEquality(srt, t1, t2)
+
+  op mkWildVar: Sort -> Term
+  def mkWildVar(srt) =
+    let wildCount = useWildCounter() in
+    Var(("Wild__Var_"^natToString(wildCount), srt), noPos)
+
   sort CondTerm = List(Var) * Term * Term
   sort CondTerms = List(CondTerm)
 
@@ -26,6 +59,7 @@ Prover qualifying spec
 
   op proverPattern: Term -> List Term
   def proverPattern(term) =
+    let _ = initWildCounter() in
     let condTerms = removePattern(term) in
     map condTermToFmla condTerms
 
@@ -143,6 +177,7 @@ Prover qualifying spec
       | Lambda(_) -> removePatternLambda(term)
       | IfThenElse(_) -> removePatternIfThenElse(term)
       | SortedTerm(_) -> removePatternSortedTerm(term)
+      | Seq(trmlst,_) -> removePatternSeq(trmlst)
 
 def removePatternCase(term) =
   let caseTerm = caseTerm(term) in
@@ -151,9 +186,9 @@ def removePatternCase(term) =
   let cases = caseCases(term) in
   let def mkPatCond(patTerms, caseTerm) =
         case patTerms of
-	  | [patTerm] -> mkEquality(caseTermSrt, patTerm, caseTerm)
+	  | [patTerm] -> mkDeComposedEquality(caseTermSrt, patTerm, caseTerm)
 	  | hdPatTerm::tlPatTerms -> let tlPatCond = mkPatCond(tlPatTerms, caseTerm) in
-	                             let hdCond = mkEquality(caseTermSrt, hdPatTerm, caseTerm) in
+	                             let hdCond = mkDeComposedEquality(caseTermSrt, hdPatTerm, caseTerm) in
 	                             Utilities.mkAnd(hdCond, tlPatCond) in
   let def recurseDownBodyCondTerms(hdCaseVars, caseCond, bodyCTs) =
         case bodyCTs of
@@ -264,6 +299,7 @@ def removePatternCase(term) =
       | BoolPat(bool, b) -> [mkBool(bool)]
       | CharPat(char, b) -> [mkChar(char)]
       | NatPat(nat, b) -> [mkNat(nat)]
+      | WildPat(srt, _) -> [mkWildVar(srt)]
       | _ -> fail("pattern not supported")
 
   op aliasPatternToTerms: Pattern -> List Term
@@ -328,10 +364,10 @@ def removePatternCase(term) =
     let def patternTermsToVarsConds(patTerms, term, srt) =
           case patTerms of
 	  %  | Nil -> []
-	    | [patTerm] -> (freeVars(patTerm), mkEquality(srt, patTerm, term))
+	    | [patTerm] -> (freeVars(patTerm), mkDeComposedEquality(srt, patTerm, term))
 	    | hdPatTerm::tlPatTerms -> 
 	      let hdVars = freeVars(hdPatTerm) in
-	      let hdCond = mkEquality(srt, hdPatTerm, term) in
+	      let hdCond = mkDeComposedEquality(srt, hdPatTerm, term) in
 	      let (tlVars, tlCond) = patternTermsToVarsConds(tlPatTerms, term, srt) in
 	      (hdVars++tlVars, Utilities.mkAnd(hdCond, tlCond)) in
     let def patternAndTermToVarsConds(pat, term) =
@@ -398,6 +434,11 @@ def removePatternCase(term) =
 
   op removePatternSortedTerm: Term -> CondTerms
   def removePatternSortedTerm(term) = [([], mkTrue(), term)]
+
+  op removePatternSeq: List Term -> CondTerms
+  def removePatternSeq(trmlst) =
+    let lastTerm = last(trmlst) in
+    removePattern(lastTerm)
 
   op removePatternLetRec: Term -> CondTerms
   def removePatternLetRec(term) = [([], mkTrue(), term)]

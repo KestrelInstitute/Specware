@@ -2,7 +2,7 @@ SpecCalc qualifying spec {
   import UnitId
   import Spec/SpecUnion
   import /Languages/Snark/SpecToSnark
-  import /Languages/MetaSlang/Transformations/DefToAxiom
+  import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
   import UnitId/Utilities                                    % for uidToString, if used...
 
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
@@ -26,11 +26,14 @@ SpecCalc qualifying spec {
 	     case coerceToSpec value of
 	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
                | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
-     subSpec <- return(subtractSpec uspc baseSpec);
-     noHOSpec <- return(instantiateHOFns(subSpec));
-     %_ <- return (if specwareDebug? then writeString(printSpec(subtractSpec noHOSpec baseSpec)) else ());
-     expandedSpec:Spec <- return(explicateHiddenAxioms(noHOSpec));
-     _ <- return (if specwareDebug? then writeString(printSpec(subtractSpec expandedSpec baseSpec)) else ());
+     %subSpec <- return(subtractSpec uspc baseSpec);
+     noHOSpec <- return(subtractSpecProperties(instantiateHOFns(uspc), baseSpec));
+     liftedNoHOSpec <- return(subtractSpecProperties(lambdaLift(noHOSpec), baseSpec));
+     %liftedNoHOSpec <- return(lambdaLift(noHOSpec));
+     _ <- return (if specwareDebug? then writeString(printSpec(liftedNoHOSpec)) else ());
+     expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
+     %expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
+     _ <- return (if specwareDebug? then writeString(printSpec(subtractSpecProperties(expandedSpec, baseSpec))) else ());
      %expandedSpec:Spec <- return(explicateHiddenAxioms(noHOSpec));
      %expandedSpec:Spec <- return(uspc);
      prover_options <- 
@@ -41,7 +44,8 @@ SpecCalc qualifying spec {
 	  | Error   (msg, str)     -> raise  (SyntaxError (msg ^ str)));
      proved:Boolean <- (proveInSpec (proof_name,
 				     claim_name, 
-				     subtractSpec expandedSpec baseSpec,
+				     subtractSpecProperties(expandedSpec, baseSpec),
+				     %expandedSpec,
 				     spec_name,
 				     baseProverSpec,
 				     rewriteProverSpec,
@@ -54,6 +58,19 @@ SpecCalc qualifying spec {
 			      unit   = unitId});
      return (result, timeStamp, depUIDs)
    }
+
+  op subtractSpecProperties: Spec * Spec -> Spec
+  def subtractSpecProperties(spec1, spec2) =
+    let spec2PropNames = map (fn (pt, pn, tv, tm) -> pn) spec2.properties in
+    let newProperties =
+        filter (fn (pt, pn, tv, tm) -> ~(member(pn, spec2PropNames))) spec1.properties in
+    {
+     importInfo = spec1.importInfo,
+     properties = newProperties,
+     ops   = mapDiffOps spec1.ops spec2.ops,
+     sorts = mapDiffSorts spec1.sorts spec2.sorts
+   }
+  
 
   op getBaseProverSpec : Env Spec
   def getBaseProverSpec = 
@@ -218,6 +235,7 @@ SpecCalc qualifying spec {
  def proveWithHypothesis(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
 			 rewrite_hypothesis, rewrite_spc,
 			 prover_name, prover_options, snarkLogFileName) =
+   let _ = debug("preovWithHyp") in
    let _ = if ~(prover_name = "Snark") then writeLine(prover_name ^ " is not supported; using Snark instead.") else () in
    let (claim_type,claim_name,_,_) = claim in
    let def claimType(ct) = 
