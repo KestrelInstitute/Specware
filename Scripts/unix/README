@@ -1,0 +1,20 @@
+
+Important files:
+
+main scripts under Scripts/unix/ :
+
+ Generate_Lisp  -- process .sw files to create <application>.lisp
+ Compile_Lisp   -- compile the <application>.lisp file created above
+ Build_Dev      -- load various application files and create lisp image for internal development
+ Build_App      -- load various application files and create lisp runtime image (such that user needs no licenses except from Kestrel)
+
+support scripts under Scripts/unix/ :
+
+ Verify_Specware -- unused for now
+
+ Verify_Lisp    -- call one of following: 
+ Verify_ACL     -- find ACL     images, set up shell vars, etc.
+ Verify_CMUCL   -- find CMUCL   images, set up shell vars, etc.
+ Verify_OpenMCL -- find OpenMCL images, set up shell vars, etc.
+
+

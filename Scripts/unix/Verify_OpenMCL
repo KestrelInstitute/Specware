@@ -1,0 +1,41 @@
+#!/bin/bash --noprofile
+# set -v
+
+SCRIPTDIR=`/usr/bin/dirname $0`
+
+export LISP_MODE="openmcl"
+export FASL_EXTENSION="dfsl"
+export IMAGE_EXTENSION="openmcl-image"
+export EXECUTABLE_EXTENSION="openmcl-image" 
+
+echo "  ------------------------------------------------------------------------"
+echo "  Verify_OpenMCL:  Ensure that OpenMCL executable exists:"
+echo " "
+
+for L in /usr/local/bin/dppccl $HOME/ccl/dppccl; do
+  if [ -x "$L" ]; then
+    export LISP="$L"; break
+  fi
+done
+
+if [ -z "$LISP" ]; then
+  echo "  Verify_ACL:  Could not find OpenMCL lisp"
+  exit 1
+fi
+
+export LISP_VERSION="openmcl"
+export BATCH_LISP="$LISP --batch"
+export BATCH_SPECWARE="$LISP -I $SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} --batch"
+
+echo "  Verify_OpenMCL:  LISP_MODE            = [$LISP_MODE]"
+echo "  Verify_OpenMCL:  LISP                 = [$LISP]"
+echo "  Verify_OpenMCL:  LISP_VERSION         = [$LISP_VERSION]"
+echo "  Verify_OpenMCL:  FASL_EXTENSION       = [$FASL_EXTENSION]"
+echo "  Verify_OpenMCL:  IMAGE_EXTENSION      = [$IMAGE_EXTENSION]"
+echo "  Verify_OpenMCL:  EXECUTABLE_EXTENSION = [$EXECUTABLE_EXTENSION]"
+echo "  Verify_OpenMCL:  BATCH_LISP           = [$BATCH_LISP]"
+echo "  Verify_OpenMCL:  BATCH_SPECWARE       = [$BATCH_SPECWARE]"
+echo "  "
+
+
+

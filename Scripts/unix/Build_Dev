@@ -1,0 +1,103 @@
+#!/bin/bash --noprofile
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+# 'set -v' turns on echoing of lines read.
+# set -v
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+
+if [ -z "$APP_NAME" ]; then
+  echo "  Build_Dev:  APP_NAME not specified."
+  exit 1
+fi
+
+LISP_MODE=$1
+
+echo "========================================================================"
+echo "  Build_Dev: Load various .fasl files to build ${APP_NAME} image,"
+echo "             a development version of ${APP_NAME} that needs a native $LISP_MODE to run."
+echo " "
+echo "  Build_Dev:  APP_NAME  = [$APP_NAME]"
+echo "  Build_Dev:  APP_DIR   = [$APP_DIR]"
+echo "  Build_Dev:  GEN_DIR   = [$GEN_DIR]"
+echo "  Build_Dev:  SWPATH    = [$SWPATH]"
+echo "  "
+echo "  Build_Dev:  LISP_MODE = [$LISP_MODE]"
+echo "  "
+echo "  Build_Dev:  MAIN_COMPILE_FILE = [$MAIN_COMPILE_FILE]"
+echo "  Build_Dev:  MAIN_BUILD_FILE   = [$MAIN_BUILD_FILE]"
+echo "  "
+
+# Use HERE so we get Verify_Lisp from the directory of this script,
+# as opposed to the directory from which this script was invoked.
+HERE=`/usr/bin/dirname $0`
+# bash convention for . means the file is processed inline (as if copied here)
+. $HERE/Verify_Lisp ${LISP_MODE}
+
+# name of executable file to be created:
+IMAGE="Dev${APP_NAME}.$IMAGE_EXTENSION"
+
+ls -sltr ${GEN_DIR}/${APP_NAME}.* 2>&1
+if [ -f ${GEN_DIR}/${APP_NAME}.$FASL_EXTENSION ]; then
+  echo "  Build_Dev:  Found ${APP_NAME}.$FASL_EXTENSION"
+else
+  echo "  Build_Dev:  Missing ${APP_NAME}.$FASL_EXTENSION -- run Compile_${APP_NAME}_Lisp_${LISP_MODE}"
+  exit 1
+fi
+
+if [ -f ${BIN_DIR}/$IMAGE ]; then
+  ls -sltr ${BIN_DIR}/*${IMAGE}* 2>&1
+  echo "  Build_Dev:  Saving previous $IMAGE image ..."
+  echo "  Build_Dev:  cp -p -f ${BIN_DIR}/$IMAGE ${BIN_DIR}/old-$IMAGE"
+  cp -p -f ${BIN_DIR}/$IMAGE ${BIN_DIR}/old-$IMAGE
+else
+  echo "  Build_Dev:  No previous ${BIN_DIR}/$IMAGE"
+fi
+
+# We load the ${APP_NAME} fasl file and related files in a fresh lisp session,
+# then dump an image file.
+
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).  [??Why is this a good thing to do??]
+
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
+
+cd $APP_DIR
+$BATCH_LISP <<-XXXX
+	#+Allegro (format t "Allegro version%") 
+	#+CMU     (format t "CMU version%") 
+        #+MCL     (format t "OpenMCL version%") 
+	(load "$EXIT_ON_ERRORS") 
+	(load "$MEMORY_MANAGEMENT") 
+	(load "$SAVE_IMAGE") 
+	#+Allegro (compact-memory t 0 32000000) 
+	#+Allegro (set-gc-parameters-for-build t) 
+	(exiting-on-errors 
+	  (load "$MAIN_BUILD_FILE"))
+        (format t "Writing ~A~%" "${BIN_DIR}/$IMAGE")
+	(when (fboundp (quote gc)) (gc))
+        (save-this-lisp-image "${BIN_DIR}/$IMAGE")
+        (exit-from-lisp 0)
+XXXX
+RC=$?
+
+echo "------------------------------------------------------------------------"
+echo "  Build_Dev:  New Status: "
+echo " "
+
+ls -sltr ${BIN_DIR}/*${IMAGE}*  2>&1
+
+echo " "
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "  Build_Dev:  Build of ${APP_NAME} development image failed with code $RC, exiting ..."
+  exit $RC
+fi

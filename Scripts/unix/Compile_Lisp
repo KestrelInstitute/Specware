@@ -1,0 +1,89 @@
+#!/bin/bash --noprofile
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+# 'set -v' turns on echoing of lines read.
+# set -v
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+
+if [ -z "$APP_NAME" ]; then
+  echo "  Compile_Lisp:  APP_NAME not specified."
+  exit 1
+fi
+
+LISP_MODE=$1
+
+echo "========================================================================"
+echo "  Compile_Lisp:  Use $LISP_MODE to Compile ${APP_NAME}.lisp and related files."
+echo " "
+echo "  Compile_Lisp:  APP_NAME  = [$APP_NAME]"
+echo "  Compile_Lisp:  APP_DIR   = [$APP_DIR]"
+echo "  Compile_Lisp:  GEN_DIR   = [$GEN_DIR]"
+echo "  Compile_Lisp:  SWPATH    = [$SWPATH]"
+echo "  "
+echo "  Compile_Lisp:  LISP_MODE = [$LISP_MODE]"
+echo "  "
+echo "  Compile_Lisp:  MAIN_COMPILE_FILE = [$MAIN_COMPILE_FILE]"
+echo "  Compile_Lisp:  MAIN_BUILD_FILE   = [$MAIN_BUILD_FILE]"
+echo "  "
+
+# Use HERE so we get Verify_Lisp from the directory of this script,
+# as opposed to the directory from which this script was invoked.
+HERE=`/usr/bin/dirname $0`
+# bash convention for . means the file is processed inline (as if copied here)
+. $HERE/Verify_Lisp ${LISP_MODE}
+
+if [ -f ${GEN_DIR}/${APP_NAME}.lisp ]; then
+  ls -sltr ${GEN_DIR}/${APP_NAME}.lisp 2>&1
+else
+  echo "  Compile_Lisp:  Missing ${APP_NAME}.lisp -- you need to run Generate_${APP_NAME}_Lisp_${LISP_MODE} (or variant)"
+  exit 1
+fi
+
+echo " "
+echo "  Compile_Lisp:  Running $LISP to compile ${APP_NAME}.lisp, etc."
+echo " "
+
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).  [??Why is this a good thing to do??]
+
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+
+$BATCH_LISP <<-XXXX
+	#+Allegro (format t "Allegro version%") 
+	#+CMU     (format t "CMU version%") 
+	#+MCL     (format t "OpenMCL version%") 
+	(load "$EXIT_ON_ERRORS") 
+	(load "$MEMORY_MANAGEMENT") 
+	#+Allegro (enlarge-stack) 
+	(exiting-on-errors 
+	  (load "$MAIN_COMPILE_FILE"))
+	(exit-from-lisp 0)
+XXXX
+RC=$?
+
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "  Compile_Lisp:  Compilation of ${APP_NAME} lisp files failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+echo "------------------------------------------------------------------------"
+echo "  Compile_Lisp:  New Status: "
+echo " "
+/bin/ls -sltr ${GEN_DIR}/${APP_NAME}.$FASL_EXTENSION
+echo " "
+date
+echo "========================================================================"
+echo " "
+
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "  Compile_Lisp:  Compilation of ${APP_NAME} lisp files using $LISP_VERSION failed with code $RC, exiting ..."
+  exit $RC
+fi
