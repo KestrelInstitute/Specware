@@ -104,7 +104,7 @@ def sortToClsDecls (_(* qualifier *), id, sort_info) =
  *)
 op userTypeToClsDecls: Id * Id -> JGenEnv ()
 def userTypeToClsDecls(id,superid) =
-  let clsDecl = ([], (id, Some ([],superid), []), emptyClsBody) in
+  let clsDecl = ([], (id, Some ([],superid), []), Java.emptyClsBody) in
   addClsDecl clsDecl
 
 op addFldDeclToClsDeclsM: Id * FldDecl -> JGenEnv ()
