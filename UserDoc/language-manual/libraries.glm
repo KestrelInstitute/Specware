@@ -768,15 +768,24 @@ with the &Specware; distribution, for details (e.g. axioms).
         <entry colname="name">&nbsp; [[nth]]</entry>
         <entry colname="fxty">&nbsp; </entry>
         <entry colname="sort">&nbsp; [[fa(a) List a * Nat -> a]]</entry>
-        <entry colname="desc">&nbsp; returns the element at position
-            <replaceable>n</replaceable> of a list, counting from 0</entry>
+        <entry colname="desc">&nbsp; [[nth(]]<replaceable>x</replaceable>[[, ]]<replaceable>n</replaceable>[[)]] returns the element at position
+            <replaceable>n</replaceable> of list <replaceable>x</replaceable>, counting from 0</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[nthTail]]</entry>
         <entry colname="fxty">&nbsp; </entry>
         <entry colname="sort">&nbsp; [[fa(a) List a * Nat -> List a]]</entry>
-        <entry colname="desc">&nbsp; returns the list tail starting after position
+        <entry colname="desc">&nbsp; [[nthTail(]]<replaceable>x</replaceable>[[, ]]<replaceable>n</replaceable>[[)]] returns the
+            tail of list <replaceable>x</replaceable>, starting after position
             <replaceable>n</replaceable>, counting from 0</entry>
+       </row>
+       <row>
+        <entry colname="name">&nbsp; [[sublist]]</entry>
+        <entry colname="fxty">&nbsp; </entry>
+        <entry colname="sort">&nbsp; [[fa(a) List a * Nat * Nat -> List a]]</entry>
+        <entry colname="desc">&nbsp; [[sublist(]]<replaceable>x</replaceable>[[, ]]<replaceable>m</replaceable>[[, ]]<replaceable>n</replaceable>[[)]] returns the
+            tail of list <replaceable>x</replaceable>, from position
+            <replaceable>m</replaceable> up to but not including <replaceable>n</replaceable>, counting from 0</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[foldl]]</entry>
@@ -785,9 +794,9 @@ with the &Specware; distribution, for details (e.g. axioms).
         <entry colname="desc">&nbsp; [[foldl ]]<replaceable>f</replaceable>[[
             ]]<replaceable>e</replaceable>[[ ]]<replaceable>x</replaceable>
             successively applies function <replaceable>f</replaceable> to
-            the elements of <replaceable>x</replaceable> from left to
+            the elements of list <replaceable>x</replaceable> from left to
             right. The second argument to <replaceable>f</replaceable> is
-            initially <replaceable>e</replaceable> and at each step
+            initially <replaceable>e</replaceable> and at each next step
             the result of the previous invocation of <replaceable>f</replaceable></entry>
        </row>
        <row>
