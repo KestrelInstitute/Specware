@@ -1,3 +1,4 @@
+(defpackage "PARSER4")
 (defpackage "UNICODE")
 (defpackage "IO-SPEC")
 (in-package "IO-SPEC")
@@ -109,3 +110,51 @@
 (defun unicode::write_unicode_chars_to_file-3 (uchars filename encoding)
   (let ((bytes (funcall encoding uchars)))
     (writeBytesToFile bytes filename)))
+
+;; Used by prover interface:
+;; Hopefully not Allegro specific.
+(defun parser4::read_list_of_s_expressions_from_string (string)
+  (let ((done? nil)
+	(whitespaces '(#\space #\tab #\newline)))
+    (let* ((trimmed-string (string-trim whitespaces string))
+	   (index 0)
+	   (result 
+	    (catch 'problem
+	      (prog1
+		  (handler-bind ((error #'(lambda (signal) 
+					    (throw 'problem (list signal index)))))
+		    (let ((sexp nil)
+			  (s-expressions ())
+			  (n (length trimmed-string)))
+		      (loop
+			(multiple-value-setq (sexp index)
+			  ;; bug in Allegro?  
+			  ;; Setting eof-error-p to nil won't
+			  ;; suppress eof error unless there is no 
+			  ;; text at all to parse.
+			  ;; At any rate, other kinds of errors are
+			  ;; also possible.
+			  (let ((*package* (find-package 'snark)))
+			    (read-from-string trimmed-string nil nil 
+					      :start               index 
+					      :preserve-whitespace t)))
+			(push sexp s-expressions)
+			(when (>= index n)
+			  (return (reverse s-expressions))))))
+		;; if there were no problems, done? will become true,
+		;; but we will return the value from the handler-bind 
+		;; above from the prog1
+		(setq done? t)))))
+      (if done?
+	  (cons :|OptionString| result)
+	;; cause parser error?
+	(let ((signal (first result))
+	      (index  (second result)))
+	  (let ((error-msg 
+		 (format nil "~A at position ~D" 
+			 (if (eq (type-of signal) 'common-lisp::end-of-file)
+			     "Premature EOF for expression starting"
+			   signal)
+			 index)))
+	    (cons :|Error| (cons error-msg string))))))))
+
