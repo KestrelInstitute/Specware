@@ -142,7 +142,7 @@ with a loop or out of a conditional.
                       Exp (Apply (Binary Set, [Apply (Unary Contents, [Var ("sp",sortToCType srt)]), termToCExp expr]))
                     else
                       Exp (Apply (Binary Set, [Apply (Unary Contents,
-                          [Apply (Binary Add,[Var ("sp",sortToCType srt), Const (Int (true,n))])]), termToCExp expr]))
+                          [Apply (Binary Add,[Var ("sp",sortToCType srt), Const (Int n)])]), termToCExp expr]))
                 | _ -> Exp (Apply (Binary Set, [termToCExp lhs, termToCExp rhs]))))
       | Apply (Fun (Op (procId,fxty),procSort,pos),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
           % let (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) = callArg in
