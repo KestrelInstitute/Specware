@@ -461,7 +461,7 @@ is the spec [[S']] that consists of all the sorts, ops, and axioms of
 [[A]]; the latter must all be translated according to the name mapping
 of [[M]].</para>
 
-<para>For example, suppose that:
+<para>For example, suppose that:</para>
 
 <orderedlist>
 
