@@ -82,47 +82,18 @@ AnnSpec qualifying spec
 
   op mapSpecSorts: fa(b) TSP_Maps b -> ASortMap b -> ASortMap b 
  def mapSpecSorts tsp_maps sorts =
-   foldriAQualifierMap 
-     (fn (index_q, index_id, (aliases, tvs, defs), new_map) ->
-      let (Qualified (q, id)) :: _ = aliases in
-      if index_q = q && index_id = id then
-	%% When access is via a primary alias, update 
-	%% the info and record that (identical) new 
-	%% value for all the aliases.
-	let new_info = (aliases, tvs, mapSortSchemes tsp_maps defs) in
-	foldl (fn (Qualified(q, id), new_map) ->
-	       insertAQualifierMap (new_map, q, id, new_info))				   
-	      new_map
-	      aliases
-      else
-	%% For the non-primary aliases, do nothing,
-	%% since they are handled derivatively above.
-	new_map)
-     emptyAQualifierMap
-     sorts
+   mapSortMap (fn (aliases, tvs, defs) ->
+	       (aliases, tvs, mapSortSchemes tsp_maps defs))
+              sorts
 
   op mapSpecOps : fa(b) TSP_Maps b -> AOpMap b -> AOpMap b
  def mapSpecOps tsp_maps ops =
-   foldriAQualifierMap 
-     (fn (index_q, index_id, (aliases, fixity, (tvs, srt), defs), new_map) ->
-      let (Qualified (q, id)) :: _ = aliases in
-      if index_q = q && index_id = id then
-	%% When access is via a primary alias, update 
-	%% the info and record that (identical) new 
-	%% value for all the aliases.
-	let new_info = (aliases, fixity, (tvs, mapSort tsp_maps srt), 
-			mapTermSchemes tsp_maps defs) 
-	in
-	foldl (fn (Qualified(q, id), new_map) ->
-	       insertAQualifierMap (new_map, q, id, new_info))				   
-	      new_map
-	      aliases
-      else
-	%% For the non-primary aliases, do nothing,
-	%% since they are handled derivatively above.
-	new_map)
-     emptyAQualifierMap
-     ops
+   mapOpMap (fn (aliases, fixity, (tvs, srt), defs) ->
+	     (aliases, 
+	      fixity, 
+	      (tvs, mapSort tsp_maps srt), 
+	      mapTermSchemes tsp_maps defs))
+            ops
 
   op mapSortMap : fa(b) (ASortInfo b -> ASortInfo b) -> ASortMap b -> ASortMap b 
  def mapSortMap sortinfo_map sorts =
