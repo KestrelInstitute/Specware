@@ -89,6 +89,7 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
                 super.mousePressed(e0);
                 return;
             }
+            node = null;
             if (cv != null) {
                 if (cv instanceof XContainerView) {
                     possibleParentView = (XContainerView) cv;
@@ -107,6 +108,7 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
             }
             node = createXNode(graph);
             startPoint = new Point(e.getX(),e.getY());
+            //graph.insertNode(node, new Rectangle(e.getX(),e.getY(),40,40));
             graph.insertNode(node, new Rectangle(e.getX(),e.getY(),initialWidth,initialHeight));
 
             if (possibleParentView != null) {
@@ -116,7 +118,7 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
                 graph.getModel().insert(null,null,pm,null);
                 possibleParentView = null;
             }
-        
+            
         }
         
         public void mouseReleased(MouseEvent e0) {
@@ -128,9 +130,14 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
                 pm.addEntry(node,possibleParentView.getCell());
                 graph.getModel().insert(null,null,pm,null);
             }
+            //node = null;
         }
         
         public void mouseDragged(MouseEvent e0) {
+            if (getMouseButton(e0) == 3) {
+                super.mouseDragged(e0);
+                return;
+            }
             MouseEvent e = fromScreenSnap(e0);
             currentPoint = new Point(e.getX(),e.getY());
             int x = currentPoint.x;
