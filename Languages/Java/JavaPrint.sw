@@ -3,7 +3,7 @@
    Pretty printing the Java spec in java-zq.sl.
 *)
 
-spec
+Java qualifying spec
   import Java
   import /Library/PrettyPrinter/BjornerEspinosa
 
@@ -428,7 +428,7 @@ spec
                    ppStmt st],
                 case opst of 
                   None     -> []
-                | Some st1 -> [ppStmt st1]))
+                | Some st1 -> [toPretty "else ", ppStmt st1]))
       | For (opfi,ope,opfu,st) ->
           prettysAll 
             [prettysNone 
@@ -747,9 +747,9 @@ spec
                             | Some nm -> prettysNone
                                           [ppName nm,
                                            toPretty "this"])
-      | Paren e         -> prettysNone [toPretty "( ",
-                                        ppExpr e,
-                                        toPretty " )"]
+      | Paren e         -> prettysNone [%toPretty "( ",
+                                        ppExpr e]
+                                        %toPretty " )"]
       | NewClsInst nw   -> ppNewClsInst nw
       | NewArr nw       -> ppNewArr nw
       | FldAcc fda      -> ppFldAcc fda

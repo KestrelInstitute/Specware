@@ -86,6 +86,7 @@ def distinctVar(term, ids) =
   if caseTerm?(term) then distinctVarCase(term, ids) else
   case term of
     | Var _ -> (term, ids)
+    | Fun _ -> (term, ids)
     | Apply (opTerm, argsTerm, _) -> distinctVarApply(term, ids)
     | Record _ -> distinctVarRecord(term, ids)
     | IfThenElse _ -> distinctVarIfThenElse(term, ids)

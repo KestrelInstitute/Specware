@@ -66,6 +66,9 @@ def caseTerm(term) =
     trm
 
 op caseCases: (Term | caseTerm?) -> Match
+def caseCases(trm) =
+  let  Apply (Lambda (match, _), trm, _) = trm in
+    match
 
 op recordFieldsToTerms: List (Id * Term) -> List Term
 
@@ -162,7 +165,7 @@ def opDelta(spc, oper) =
 
 op srtTermDelta: Type * Term -> List Var * Term
 
-def srtTermdelta(srt, term) =
+def srtTermDelta(srt, term) =
   let opDom = srtDom(srt) in
   let opRng = srtRange(srt) in
   case term of
@@ -204,6 +207,7 @@ def liftCase(oper, term, k) =
   if caseTerm?(term) then liftCaseCase(oper, term, k) else
   case term of
     | Var _ -> (term, k, [])
+    | Fun _ -> (term, k, [])
     | Apply (opTerm, argsTerm, _) -> liftCaseApply(oper, term, k)
     | Record _ -> liftCaseRecord(oper, term, k)
     | IfThenElse _ -> liftCaseIfThenElse(oper, term, k)
@@ -298,9 +302,10 @@ def liftPattern(spc) =
   (fn (qualifier, name, (op_names, fixity, (tyVars, srt), [(_, term)]),
        result) ->
    let origOp = mkQualifiedId(qualifier, name) in
-   let (newTerm, newOds) = lift(origOp, srtTermDelta(srt, term)) in
+   let (origOpVars, origOpBody) = srtTermDelta(srt, term) in
+   let (newTerm, newOds) = lift(origOp, (origOpVars, origOpBody)) in
    let (origOpNewVars, origOpNewTerm) = srtTermDelta(srt, newTerm) in
-   let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpNewVars, origOpNewTerm) in
+   let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpVars, newTerm) in
    cons(origOpNewDef, newOds++result))
   []
   spc.ops in
@@ -315,6 +320,7 @@ def addOdToSpec((oper:Op, dom:(List Type), rng:Type, formals:List Var, body:Term
   let srt = case dom of | [] -> rng | [dom] -> mkArrow(dom, rng) | _ -> mkArrow(mkProduct(dom), rng) in
   let varPatterns = map mkVarPat formals in
   let term = mkLambda(mkTuplePat(varPatterns), body) in
+  let (f, t) = srtTermDelta(srt, term) in
   case run_monad(optAddOp(oper, srt, term, spc)) of
     | Some newSpec -> newSpec
     | _ -> fail("internal monad error")
