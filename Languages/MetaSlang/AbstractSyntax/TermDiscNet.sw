@@ -96,9 +96,20 @@ spec
 	      (set,SplayMap.insert(next,k,newNode))
 
 
-
 (* The above two functions could be generalized to using just 
  * generic update functions, but it's not worth it. *)
+
+  op  mergeDiscNets: disc_net * disc_net -> disc_net
+  def mergeDiscNets((s1,m1),(s2,m2)) =
+    (IntegerSet.union(s1,s2),
+     foldri (fn (key,val,m) ->
+	      let newval =
+		  case find(m,key) of
+		    | None -> val
+		    | Some oldval -> mergeDiscNets(val,oldval)
+	      in
+	      SplayMap.insert(m,key,newval))
+       m1 m2)
 
 endspec (* TermDiscNet *)
 \end{spec}

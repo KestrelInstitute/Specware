@@ -98,7 +98,7 @@ spec
 			     genPathSymPairs(prefix ++ [indexT,i],t) ++
 			     getRec(i + 1,ts)
 		in
-		    List.cons((prefix List.@ [indexT]),getRec(1,Ms))
+		    List.cons((prefix ++ [indexT]),getRec(1,Ms))
 		
 	    def addOne(path,index) = 
 		TermDiscNet.addForPath(index,path,id)
@@ -106,7 +106,7 @@ spec
         let pairs = genPathSymPairs([],term) in
 	(%String.writeLine(MetaSlangPrint.printTerm term);
 	 %List.app printPath pairs;
-	 List.foldr addOne index pairs)
+	 List.foldl addOne index pairs)
 	
 
 (* NOTE: To avoid conflicts with Star here, symToInt has to be non-negative.

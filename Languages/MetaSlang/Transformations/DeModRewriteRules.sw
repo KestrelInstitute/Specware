@@ -38,6 +38,16 @@ spec
     conditional   = addDemodRules(rules.conditional,Demod.empty)}
 
  op  mergeDemodRules: List DemodRewriteRules -> DemodRewriteRules
+% def mergeDemodRules = 
+%     fn [] -> {unconditional = empty,conditional = empty}
+%      | [rules] -> rules
+%      | rules1::rules2::rules ->
+%        let rules1 = {unconditional = mergeRules(rules1.unconditional,
+%						 rules2.unconditional),
+%		        conditional = mergeRules(rules1.conditional,
+%						 rules2.conditional)}
+%	in
+%	mergeDemodRules(List.cons(rules1,rules))
  def mergeDemodRules = 
      fn [] -> {unconditional = empty,conditional = empty}
       | [rules] -> rules
