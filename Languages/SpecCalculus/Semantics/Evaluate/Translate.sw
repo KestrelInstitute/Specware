@@ -82,48 +82,64 @@ Note: The code below does not yet match the documentation above, but should.
 	  (case findAllSorts (dom_spec, dom_qid) of
 	     | ((Qualified (found_qualifier, _))::_,_,_)::rs  ->
 	       (if rs = [] or found_qualifier = UnQualified then
-		  return (translation_op_map, 
-			  insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, cod_qid))
+                  case findAQualifierMap (translation_sort_map, dom_qualifier, dom_id) of
+		    | None -> return (translation_op_map, 
+				      insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, cod_qid))
+		    | _    -> raise (SpecError (rule_pos, 
+						"translate: Duplicate rules for source sort "^
+						(printQualifiedId dom_qid)))
 		else 
-		  raise (SpecError (rule_pos, "translate: Ambiguous source sort name: "^   (printQualifiedId dom_qid)))) % should be same as dom_id
+		  raise (SpecError (rule_pos, "translate: Ambiguous source sort "^   (printQualifiedId dom_qid)))) 
 	     | _ -> 
-		  raise (SpecError (rule_pos, "translate: Unrecognized source sort name: "^(printQualifiedId dom_qid))))
+		  raise (SpecError (rule_pos, "translate: Unrecognized source sort "^(printQualifiedId dom_qid))))
 
 	| Op ((dom_qid as Qualified(dom_qualifier, dom_id), dom_sort), (cod_qid, cod_sort)) -> 
 	  %% TODO:  Currently ignores sort information.
 	  (case findAllOps (dom_spec, dom_qid) of
 	     | ((Qualified (found_qualifier, _))::_,_,_,_)::rs  ->
 	       (if rs = [] or found_qualifier = UnQualified then
-		  return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, cod_qid),
-			  translation_sort_map)
+                  case findAQualifierMap (translation_op_map, dom_qualifier, dom_id) of
+		    | None -> return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, cod_qid),
+				      translation_sort_map)
+		    | _ -> raise (SpecError (rule_pos, 
+						"translate: Duplicate rules for source op "^
+						(printQualifiedId dom_qid)))
 		else 
-		  raise (SpecError (rule_pos, "translate: Ambiguous source op name: "^   (printQualifiedId dom_qid)))) % should be same as dom_id
+		  raise (SpecError (rule_pos, "translate: Ambiguous source op "^   (printQualifiedId dom_qid)))) 
 	     | _ -> 
-		  raise (SpecError (rule_pos, "translate: Unrecognized source op name: "^(printQualifiedId dom_qid))))
+		  raise (SpecError (rule_pos, "translate: Unrecognized source op "^(printQualifiedId dom_qid))))
 
 	| Ambiguous (dom_qid as Qualified(dom_qualifier, dom_id), cod_qid) -> 
           (let dom_sorts = findAllSorts (dom_spec, dom_qid) in
 	   let dom_ops   = findAllOps   (dom_spec, dom_qid) in
 	   case (dom_sorts, dom_ops) of
 	     | ([], []) ->
-	       raise (SpecError (rule_pos, "translate: Unrecognized source sort/op name: "^(printQualifiedId dom_qid)))
+	       raise (SpecError (rule_pos, "translate: Unrecognized source sort/op "^(printQualifiedId dom_qid)))
 
 	     | (((Qualified (found_qualifier, _))::_,_,_)::rs, [])  ->
 	       if rs = [] or found_qualifier = UnQualified then
-		 return (translation_op_map, 
-			 insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, cod_qid))
+		 case findAQualifierMap (translation_sort_map, dom_qualifier, dom_id) of
+		   | None -> return (translation_op_map, 
+				     insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, cod_qid))
+		   | _ -> raise (SpecError (rule_pos, 
+						"translate: Duplicate rules for source sort "^
+						(printQualifiedId dom_qid)))
 	       else 
-		 raise (SpecError (rule_pos, "translate: Ambiguous source sort name: "^(printQualifiedId dom_qid))) % should be same as dom_id
+		 raise (SpecError (rule_pos, "translate: Ambiguous source sort "^(printQualifiedId dom_qid))) % should be same as dom_id
 
 	     | ([], ((Qualified (found_qualifier, _))::_,_,_,_)::rs) ->
 	       if rs = [] or found_qualifier = UnQualified then
-		 return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, cod_qid),
-			 translation_sort_map)
+		 case findAQualifierMap (translation_op_map, dom_qualifier, dom_id) of
+		   | None -> return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, cod_qid),
+				     translation_sort_map)
+		   | _ -> raise (SpecError (rule_pos, 
+						"translate: Duplicate rules for source op "^
+						(printQualifiedId dom_qid)))
 	       else
-		 raise (SpecError (rule_pos, "translate: Ambiguous source op name: "^(printQualifiedId dom_qid))) % should be same as dom_id
+		 raise (SpecError (rule_pos, "translate: Ambiguous source op "^(printQualifiedId dom_qid))) % should be same as dom_id
 
 	     | (_, _) ->
-	       raise (SpecError (rule_pos, "translate: Ambiguous source sort/op name: "^(printQualifiedId dom_qid))))
+	       raise (SpecError (rule_pos, "translate: Ambiguous source sort/op "^(printQualifiedId dom_qid))))
     in
       foldM insert (emptyAQualifierMap, emptyAQualifierMap) translation_rules
 
