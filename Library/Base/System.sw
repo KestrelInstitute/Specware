@@ -48,5 +48,8 @@ System qualifying spec {
  then control will return to the beginning of this call.
 *)
   op withRestartHandler : fa (a) String * (() -> ()) * (() -> a) -> a
+
+  op garbageCollect : Boolean -> ()
+  op hackMemory     : ()      -> ()
 }
 \end{spec}

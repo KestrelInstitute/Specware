@@ -20,3 +20,14 @@
       (if (equal results '(nil t))
 	  (funcall restart-action (vector))
 	(return (values-list results))))))
+
+(defun garbageCollect (full?)
+  (sys::gc full?))
+
+;; hackMemory essentially calls (room nil) in an attempt to appease 
+;; Allegro CL into not causing mysterious storage conditions during 
+;; the bootstrap. (sigh)  
+;; Calling (gc nil) and (gc t) both failed to have the desired effect.
+(defun hackMemory ()
+  ;; (sys::room nil)
+  )

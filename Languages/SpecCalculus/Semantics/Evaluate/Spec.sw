@@ -115,10 +115,12 @@ The following wraps the existing \verb+elaborateSpec+ in a monad until
 such time as the current one can made monadic.
 
 \begin{spec}
+
  op elaborateSpecM : PosSpec -> Env Spec
  def elaborateSpecM spc =
    { uri      <- getCurrentURI;
      filename <- return ((uriToPath uri) ^ ".sw");
+     hackMemory ();
      print (";;; Processing spec "
 			^ (case uri.hashSuffix of
 			     | Some nm -> nm ^ " "

@@ -349,6 +349,26 @@ Some basic operations for debugging. There should be a proper IO monad.
     fn state ->
       let _ = toScreen str in
       (Ok (), state)
+
+\end{spec}
+
+Some hacks for twiddling memory.  hackMemory essentially calls (room nil)
+in an attempt to appease Allegro CL into not causing mysterious storage 
+conditions during the bootstrap. (sigh)  
+
+\begin{spec}
+  op garbageCollect : Boolean -> Env ()
+  def garbageCollect full? =
+    fn state ->
+      let _ = System.garbageCollect full? in
+      (Ok (), state)
+
+  op hackMemory : () -> Env ()
+  def hackMemory _ =
+    fn state ->
+      let _ = System.hackMemory() in
+      (Ok (), state)
+
 \end{spec}
 
 The following is used when one wants to guard a command with a predicate.
