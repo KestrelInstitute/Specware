@@ -502,18 +502,18 @@
       (format s "  def swe.tmp = ~A~%endspec~%" x))
     ;; Process unit id:
     (unwind-protect
-	    (progn
-	      (specware::setenv "SWPATH" new-swpath)
-	      (setq parser-type-check-output
-		(with-output-to-string (*standard-output*)
-		  (let ((*error-output* *standard-output*)
-			(SpecCalc::numberOfTypeErrorsToPrint 2))
-		    (setq parsed-ok? (Specware::evaluateUID_fromLisp tmp-uid)))))
-	      (when parsed-ok?
-		(if *swe-use-interpreter?*
-		    (setq value (Specware::evalDefInSpec-2 tmp-uid `(:|Qualified| . ("swe" . "tmp"))))
-		  (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))))
-	  (specware::setenv "SWPATH" old-swpath))
+	(progn
+	  (specware::setenv "SWPATH" new-swpath)
+	  (setq parser-type-check-output
+	    (with-output-to-string (*standard-output*)
+	      (let ((*error-output* *standard-output*)
+		    (SpecCalc::numberOfTypeErrorsToPrint 2))
+		(setq parsed-ok? (Specware::evaluateUID_fromLisp tmp-uid)))))
+	  (when parsed-ok?
+	    (if *swe-use-interpreter?*
+		(setq value (Specware::evalDefInSpec-2 tmp-uid `(:|Qualified| . ("swe" . "tmp"))))
+	      (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))))
+      (specware::setenv "SWPATH" old-swpath))
     (if emacs::*goto-file-position-stored* ; Parse or type-check error
 	(progn (princ (trim-error-output parser-type-check-output))
 	       (show-error-position emacs::*goto-file-position-stored* -15))

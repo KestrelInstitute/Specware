@@ -91,7 +91,7 @@
 	  (when *emacs-eval-form-after-prompt*
 	    (emacs::eval-in-emacs *emacs-eval-form-after-prompt*)
 	    (setq *emacs-eval-form-after-prompt* nil))
-	  (catch ':top-level-reset	; Only useful for allegro
+	  (catch ':top-level-reset	; Used by allegro :reset command
 	    (with-simple-restart (abort "Return to Specware Shell top level.")
 					;(set-specware-shell t)
 	      (loop while (member (setq ch (read-char *standard-input* nil nil)) '(#\Newline #\Space #\Tab))
@@ -241,6 +241,24 @@
 ;;; Add commands for entering shell from Lisp shell
 (defun cl-user::sw-shell ()
   (specware-shell nil))
+
+(defvar original-error #'error)
+
+(defun just-print-error-message
+    (s &rest all-args &key format-control format-arguments &allow-other-keys)
+  (if (eq s 'file-error)
+      (apply original-error s all-args)
+    (progn (apply #'format t format-control format-arguments)
+	   (throw ':top-level-reset nil))))
+
+(defun sw-shell-0 ()
+  (Specware::initializeSpecware-0)
+  (setq emacs::*use-emacs-interface?* nil)
+  (#+allegro excl:without-package-locks #-allegro progn
+   (setf (symbol-function 'error) #'just-print-error-message))
+  (specware::change-directory (specware::getenv "SPECWARE4"))
+  (SWShell::specware-shell t)
+  (cl-user::exit))
 
 #+allegro
 (top-level:alias ("sw-shell") () (specware-shell nil))

@@ -40,4 +40,4 @@ set LISP_DIRECTORY=%Specware4%/
 
 rem  Move to Specware 4 main directory:
 
-cd "%Specware4%"
+cd "%SPECWARE4%"
