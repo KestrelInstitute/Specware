@@ -2,6 +2,15 @@
 (in-package :Specware)
 ;(in-package :cl-user) -- *specware4*, *fasl-type*, etc. are in Specware package!
 
+(defvar *fasl-type*
+  #+allegro "fasl"
+  #+mcl     "dfsl"
+  #+cmu     "x86f"
+  #+sbcl    sb-fasl:*fasl-file-type*)
+
+#+mcl					; doesn't have setenv built=in
+(defvar *environment-shadow* nil)
+
 (unless (fboundp 'Specware::getenv)
   (defun Specware::getenv (varname)	; duplicate of definition in load-utilities.lisp
     #+allegro   (system::getenv varname)
