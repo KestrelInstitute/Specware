@@ -213,6 +213,27 @@
 (top-level:alias ("show" :case-sensitive :string) (&optional x)
   (show x))
 
+(defun showx (&optional x)
+  (setq x (norm-unitid-str x))
+  (flet ((show-int (x)
+	   (let ((SpecCalc::printSpecExpanded? t))
+	     (if x
+		 (Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
+	       (if *last-unit-Id-_loaded*
+		   (Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
+		 (format t "No previous unit evaluated~%"))))
+	   (show-error-position emacs::*goto-file-position-stored* 1)
+	   (values)))
+    (if *running-test-harness?*
+	(show-int x)
+      (let ((emacs::*goto-file-position-store?* t)
+	    (emacs::*goto-file-position-stored* nil))
+	(show-int x)))))
+
+#+allegro
+(top-level:alias ("showx" :case-sensitive :string) (&optional x)
+  (showx x))
+
 ;; Not sure if an optional UnitId make sense for swl
 (defun swl-internal (x &optional y)
   ;; scripts depend upon this returning true iff successful
