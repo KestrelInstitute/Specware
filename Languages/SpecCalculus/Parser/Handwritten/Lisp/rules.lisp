@@ -693,6 +693,7 @@ If we want the precedence to be optional:
   (:anyof
    (1 :UNQUALIFIED-OP-REF     :documentation "Op reference or Variable reference")
    (1 :SELECTABLE-EXPRESSION  :documentation "Closed expression -- unambiguous termination")
+   (1 :RESTRICTION            :documentation "restrict p e -or- (restrict p) e") ; new, per task 22
    )
   1)
 
@@ -1031,7 +1032,10 @@ If we want the precedence to be optional:
   (:anyof
    :PROJECTOR
    :RELAXATOR
-   :RESTRICTOR
+   ;;  removed :RESTRICTOR, per task 22: 
+   ;;  restrict p must no longer be a function but part of a construct, 
+   ;;  i.e. it must be always followed by an expression, i.e. restrict p e
+   ;; :RESTRICTOR 
    :QUOTIENTER
    :CHOOSER
    :EMBEDDER
@@ -1049,9 +1053,15 @@ If we want the precedence to be optional:
   (make-relaxator 1 ':left-lcb ':right-lcb)
   :documentation "Relaxation")
 
-(define-sw-parser-rule :RESTRICTOR ()
-  (:tuple "restrict" (1 :CLOSED-EXPRESSION))
-  (make-restrictor 1 ':left-lcb ':right-lcb)
+;;  New :RESTRICTION production, per task 22: 
+;;  restrict p must no longer be a function but part of a construct, 
+;;  i.e. it must be always followed by an expression, i.e. restrict p e
+(define-sw-parser-rule :RESTRICTION ()
+  (:anyof 
+   (:tuple     "restrict" (1 :CLOSED-EXPRESSION)     (2 :CLOSED-EXPRESSION))
+   (:tuple "(" "restrict" (1 :CLOSED-EXPRESSION) ")" (2 :CLOSED-EXPRESSION))
+   )
+  (make-application (make-restrictor 1 ':left-lcb ':right-lcb) (list 2) ':left-lcb ':right-lcb)
   :documentation "Restriction")
 
 (define-sw-parser-rule :QUOTIENTER ()
