@@ -140,6 +140,12 @@ echo "\$SWPATH=$SWPATH"
 # handler is invoked. If, when bootrapping, the toplevel handler is
 # called, then we abort the bootstrap.
 
+if [ -f lisp ]; then
+   echo "Failed to $act, $SPECWARE4/Applications/Specware/lisp is not a directory" 2>&1
+   exit 1
+fi
+
+
 if [   -f bin/linux/Specware4.dxl \
      -a \(   \( ! -f Specware4-base.lisp \) \
          -o bin/linux/Specware4.dxl -nt Specware4-base.lisp \) ]; then
@@ -184,6 +190,11 @@ else
 			    echo "Cvs saved lisp, Specware4-base.lisp, is newer than both lisp/Specware4.lisp."
 			fi
                         echo "Bootstrapping from cvs saved lisp: Specware4-base.lisp"
+			if [ ! -d lisp ]; then
+			    echo "mkdir lisp"
+			    mkdir lisp
+			fi
+
 			echo "cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
 			cp -p -f Specware4-base.lisp lisp/Specware4.lisp
 			echo " "
