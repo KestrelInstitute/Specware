@@ -298,13 +298,13 @@ Note: The code below does not yet match the documentation above, but should.
 	%% TODO: ?? Add special hack for aggregate op   renamings: X._ +-> Y._  ??
 
         | Sort (dom_qid, cod_qid, cod_aliases) -> 
-	  if basicQualifiedId? dom_qid then
+	  if basicSortName? dom_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate from base type : " ^ (explicitPrintQualifiedId dom_qid),
 					    rule_pos));
 	     return (translation_op_map, translation_sort_map)
 	    }
-	  else if basicQualifiedId? cod_qid then
+	  else if basicSortName? cod_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate into base type: " ^ (explicitPrintQualifiedId cod_qid),
 					    rule_pos));
@@ -321,13 +321,13 @@ Note: The code below does not yet match the documentation above, but should.
 					    rule_pos));
 	     return (translation_op_map, translation_sort_map)
 	    }
-	  else if basicQualifiedId? dom_qid then
+	  else if basicOpName? dom_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate from base op: " ^ (explicitPrintQualifiedId dom_qid),
 					    rule_pos));
 	     return (translation_op_map, translation_sort_map)
 	    }
-	  else if basicQualifiedId? cod_qid then
+	  else if basicOpName? cod_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate into base op: " ^ (explicitPrintQualifiedId cod_qid),
 					    rule_pos));
@@ -383,7 +383,8 @@ Note: The code below does not yet match the documentation above, but should.
 
   op avoidTranslationCaptures : Spec -> TranslationMaps -> Env TranslationMaps
 
-  def avoidTranslationCaptures spc map = return map
+  def avoidTranslationCaptures spc map = 
+    return map
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -463,10 +464,10 @@ Note: The code below does not yet match the documentation above, but should.
       def translateOpMap old_ops =
         let 
           def translateStep (old_q, old_id, old_info, new_op_map) =
-	    let Qualified (primary_q, primary_id) = primaryOpName old_info in
+	    let primary_qid as Qualified (primary_q, primary_id) = primaryOpName old_info in
 	    if ~ (old_q = primary_q && old_id = primary_id) then
 	      return new_op_map
-	    else if basicQualifier? old_q then
+	    else if exists basicOpName? old_info.names then
 	      return (insertAQualifierMap (new_op_map, old_q, old_id, old_info))
 	    else
 	      {
@@ -481,16 +482,16 @@ Note: The code below does not yet match the documentation above, but should.
 	                          [] 
 				  old_info.names;
 	       new_names <- return (rev new_names);
-	       mapM (fn old_qid ->
-		     if basicQualifiedId? old_qid then
+	       mapM (fn new_qid ->
+		     if basicOpName? new_qid then
 		       {
-			raise_later (TranslationError ("Illegal to translate base op " ^ (explicitPrintQualifiedId old_qid),
+			raise_later (TranslationError ("Illegal to translate into base op " ^ (explicitPrintQualifiedId new_qid),
 						       position));
-			return old_qid
-			}
+			return new_qid
+		       }
 		     else
-		       return old_qid)
-	            old_info.names;
+		       return new_qid)
+	            new_names;
 	       new_info <- foldM (fn merged_info -> fn (Qualified (new_q, new_id)) ->
 				  mergeOpInfo spc
 				              merged_info 
@@ -512,7 +513,7 @@ Note: The code below does not yet match the documentation above, but should.
 	    let Qualified (primary_q, primary_id) = primarySortName old_info in
 	    if ~ (old_q = primary_q && old_id = primary_id) then
 	      return new_sort_map
-	    else if basicQualifier? old_q then
+	    else if exists basicSortName? old_info.names then
 	      return (insertAQualifierMap (new_sort_map, old_q, old_id, old_info))
 	    else
 	      {
@@ -527,16 +528,16 @@ Note: The code below does not yet match the documentation above, but should.
 	                          [] 
 				  old_info.names;
 	       new_names <- return (rev new_names);
-	       mapM (fn old_qid ->
-		     if basicQualifiedId? old_qid && ~ (member (old_qid, new_names)) then
+	       mapM (fn new_qid ->
+		     if basicSortName? new_qid then
 		       {
-			raise_later (TranslationError ("Illegal to translate base type " ^ (explicitPrintQualifiedId old_qid),
+			raise_later (TranslationError ("Illegal to translate into base type " ^ (explicitPrintQualifiedId new_qid),
 						       position));
-			return old_qid
+			return new_qid
 		       }
 		     else
-		       return old_qid)
-	            old_info.names;
+		       return new_qid)
+	            new_names;
 	       if member (unqualified_Boolean, new_names) || member (Boolean_Boolean, new_names) then
 		 return new_sort_map
 	       else
