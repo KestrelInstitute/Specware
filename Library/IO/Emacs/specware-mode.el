@@ -1017,9 +1017,9 @@ If anyone has a good algorithm for this..."
 	(result ())
 	(specware4 (sw:eval-in-lisp "(specware::getenv \"SPECWARE4\")"))
 	pos)
-    (when (eq rawpath 'nil)		; SWPATH not set
+    (when (member rawpath '(nil NIL))		; SWPATH not set -- be agnostic about case
       (setq rawpath specware4)
-      (when (eq rawpath 'nil)		; SPECWARE4 not set
+      (when (member rawpath '(nil NIL))		; SPECWARE4 not set -- be agnostic about case
 	(setq rawpath "")))
     (while (setq pos (position delim rawpath))
       (push (substring rawpath 0 pos) result)
@@ -1071,7 +1071,7 @@ If anyone has a good algorithm for this..."
 		     (head-dir-uid (split-filename-for-path filename)))
 		 (lisp-or-specware-command
 		  ":swpath " "path "
-		  oldpath
+		  (if (member oldpath '(nil NIL)) "" oldpath)
 		  (if (eq window-system 'mswindows) ";" ":")
 		  (car head-dir-uid))
 		 (sleep-for 0.1)	; Just to avoid confusing output
@@ -1107,8 +1107,10 @@ If anyone has a good algorithm for this..."
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name))
 	(text (buffer-substring beg end)))
     (when (or (buffer-modified-p)
-	      (not (sw:eval-in-lisp "(Specware::unitIDCurrentInCache? %S)"
-				    buffer-file-name)))
+	      (let ((result 
+		     (sw:eval-in-lisp "(Specware::unitIDCurrentInCache? %S)"
+				      buffer-file-name)))
+		(member result '(nil NIL))))
       (sw:gcl-current-file)
       (sleep-for 1))			; Give :swll a chance to finish
     (unless (string-equal filename
@@ -1128,9 +1130,10 @@ If anyone has a good algorithm for this..."
 					    buffer-file-name))))
   (save-buffer)
   (let ((temp-file-name (concat (temp-directory) "-cl-current-file")))
-    (if (sw:eval-in-lisp
-	   "(Specware::evaluateLispCompileLocal_fromLisp-2 %S '(:|Some| . %S))"
-	   unitid temp-file-name)
+    (if (member (sw:eval-in-lisp
+		 "(Specware::evaluateLispCompileLocal_fromLisp-2 %S '(:|Some| . %S))"
+		 unitid temp-file-name)
+		'(t T))
 	(sw:eval-in-lisp-no-value
 	   "(let (*redefinition-warnings*)
               (specware::compile-and-load-lisp-file %S))"
@@ -1173,7 +1176,7 @@ If anyone has a good algorithm for this..."
 		 sym)))
       (let ((results (sw:eval-in-lisp (make-search-form qualifier sym))))
 	(message nil)
-	(if (or (null results) (eq results 'NIL))
+	(if (member results '(nil NIL))
 	    (error "Can't find definition of %s." name)
 	  (goto-specware-meta-point-definition sym results))))))
 
