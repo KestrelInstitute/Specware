@@ -11,7 +11,7 @@ spec
   import /Languages/MetaSlang/Specs/StandardSpec
   import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex
 
-  sort Index = Nat
+  sort Index = Integer			% Acually Nat + -1
 
   sort Stat =
     | Assign Term
@@ -39,6 +39,9 @@ spec
 	     body      : Index,
 	     endLoop   : Index,
 	     continue  : Index }
+
+  op noContinue: Index			% To represent return destination
+  def noContinue = ~ 1
     
   sort Node = Index * NodeContent * List Index % predecessors
   sort Graph = List Node		% In some topological order
@@ -63,7 +66,7 @@ spec
   def setNodeContent(i,newNodeContent,g) =
     case nth(g,i) of
       | (index,_,preds) ->
-	replaceNth(index,g,(i,newNodeContent,preds))
+	replaceNth(i,g,(index,newNodeContent,preds))
 	    
   op setDFSIndex: Index * Nat * Graph -> Graph
   def setDFSIndex(i,newDFSI,g) =
@@ -93,7 +96,7 @@ spec
 
   op loopPredecessors: Index * Graph -> List Index
   def loopPredecessors(i,g) =
-    filter (fn j -> descendantIndex?(j,i,g)) (successors(i,g))
+    filter (fn j -> descendantIndex?(j,i,g)) (predecessors(i,g))
 
   op commonSuccessor: Nat * Nat * Graph -> Nat
   def commonSuccessor(i,j,g) =
@@ -112,9 +115,17 @@ spec
 	    | x::riS ->
 	      if member(x,seen) then x
 		else breadthFirst(riS ++ successors(x,g),iS,Cons(x,seen),g)
-	    | _ -> 0
+	    | _ -> noContinue
     in
       breadthFirst([i],[j],[],g)
+
+  op findTopIndex: Graph -> Index
+  def findTopIndex(g) =
+    % Index of node with no predecessors
+    case findOptionIndex
+           (fn (nd,i) -> if nd.3 = [] then Some i else None)
+	   g
+      of Some (topIndex,_) -> topIndex
 
   op exitNodes: List Index * Graph -> List Index
   def exitNodes(nds,g) =
@@ -130,7 +141,7 @@ spec
           case nds of
 	    | [] -> found
 	    | nd::rNds ->
-	      if member(nd,nds) or member(nd,limitNds)
+	      if member(nd,found) %or member(nd,limitNds)
 		then loop(rNds,found,g)
 		else loop(rNds ++ (predecessors(nd,g)),Cons(nd,found),g)
     in
@@ -148,6 +159,8 @@ spec
     %% to determine which links are looping links
     let
       def buildStructuredGraph(nd:Index,exits,newG) =
+	if member(nd,exits) or nd = noContinue then newG
+	else
 	case loopPredecessors(nd,baseG) of
 	  | []  -> buildStraightLine(nd,exits,newG)
 	  | [x] ->
@@ -159,8 +172,8 @@ spec
 
       def buildLoop(head,endloop,loopExits,exits,newG) =
         let (cond,body,continue,newG) = loopHead(head,loopExits,newG) in
-	let newG = buildStraightLine(continue,exits,newG) in
-	let newG = buildStraightLine(body,Cons(head,loopExits),newG) in
+	let newG = buildStructuredGraph(continue,exits,newG) in
+	let newG = buildStructuredGraph(body,Cons(head,loopExits),newG) in
 	let newG = setNodeContent(head,
 				  Loop {condition = cond,
 					preTest?  = true,
@@ -168,7 +181,7 @@ spec
 					endLoop   = endloop,
 					continue  = continue},
 				  newG)
-	in foldl (fn (x,newG) -> buildStraightLine(x,exits,newG))
+	in foldl (fn (x,newG) -> buildStructuredGraph(x,exits,newG))
 	     newG loopExits
 
       def loopHead(head,loopExits,newG) =
@@ -183,11 +196,9 @@ spec
 	  %% |   Currently only have loops that start with a loop test
 	    
       def buildStraightLine(nd,exits,newG) =
-	if member(nd,exits) then newG
-	else
 	case nodeContent(nd,baseG) of
 	  | Block {statements = _, next} ->
-	    buildStraightLine (next,exits,newG)
+	    buildStructuredGraph (next,exits,newG)
 	  | Branch {condition, trueBranch, falseBranch} ->
 	    let continue = commonSuccessor(trueBranch,falseBranch,baseG) in
 	    let newG = buildStraightLine(trueBranch, [continue],newG) in
@@ -208,6 +219,7 @@ spec
 						 falseBranch = falseBranch,
 						 continue    = continue},
 				  newG)
+	   | Return _ -> newG
     in
     case baseG of
       | [] -> []
@@ -215,12 +227,5 @@ spec
       | _::_ ->
         buildStructuredGraph (topIndex, [], baseG)
 
-  op findTopIndex: Graph -> Index
-  def findTopIndex(g) =
-    % Index of node with no predecessors
-    case findOptionIndex
-           (fn (nd,i) -> if nd.3 = [] then Some () else None)
-	   g
-      of Some (topIndex,_) -> topIndex
 
 end
