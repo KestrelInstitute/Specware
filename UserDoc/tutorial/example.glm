@@ -716,8 +716,8 @@ the executable definition of [[find_matches]].</para>
 [[FindMatches_Ref]] follows from the validity of the morphisms
 [[Symbols_Ref]], [[WordMatching_Ref0]], and [[FindMatches_Ref0]]. The
 reason is that sequential composition of morphisms always yields a
-morphism and that substitution, being a pushout, always produces a
-spec and (implicitly) two morphisms.</para>
+morphism and that substitution always produces a spec and (implicitly)
+two morphisms.</para>
 
 <para>[[WordMatching_Ref]] is the sequential composition of
 [[WordMatching_Ref0]] with the morphism from [[WordMatching0]] to

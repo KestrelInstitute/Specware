@@ -490,6 +490,8 @@ and [[Y]], an op [[f]] of type [[X' -> Y]], and an op [[c]] of type
 [[X']]. In other words, [[A]] is replaced with [[B]] inside [[S]] and
 the remaining portion of [[S]] is renamed accordingly.</para>
 
+<!-- REMOVED BECAUSE SUBSTITUTION IS NOT ALWAYS A PUSHOUT:
+
 <para>In category theory, colimits are defined up to isomorphism in
 the sense that, given a diagram of specs and morphisms, there is an
 infinite class of specs (all isomorphic to each other) that are all
@@ -497,6 +499,8 @@ colimits of the diagram. From a practical point of view, it is
 important which spec of the isomorphic class is actually returned.
 Substitution yields a pushout which is what users want most of the
 time.</para>
+
+-->
 
 </section>  <!-- substitution -->
 
