@@ -213,6 +213,8 @@
     filename))
 )
 
+;; The same function with the same name, but in a different package is
+;; defined in Specware4/Library/Base/Handwritten/Lisp/System.lisp
 (defun ensure-final-slash (dirname)
   (if (member (elt dirname (- (length dirname) 1))
 	      '(#\/ #\\))
@@ -235,6 +237,9 @@
 			    #+(and (not unix) Lispworks) SYSTEM::*TEMP-DIRECTORY*
 			    #+unix "/tmp/"
 			    ))))
+
+;; The same function with the same name, but in a different package is
+;; defined in Specware4/Library/Base/Handwritten/Lisp/System.lisp
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
    (namestring #+(or win32 winnt mswindows)
