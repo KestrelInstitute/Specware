@@ -150,13 +150,13 @@ with a loop or out of a conditional.
 \begin{spec}
   op graphToC : CSpec -> Spec.Spec -> Struct.Graph -> CSpec * Stmt
   def graphToC cspc envSpec graph =
-    let def consume cspc first last =
+    let def consume cspc first seen =
       if first = ~1 then
         (cspc,ReturnVoid)
-      else if first = last then
+      else if member? (seen, first) then
         (cspc,Nop)
       else
-        % let _ = writeLine ("first = " ^ (Nat.toString first) ^ " last = " ^ (Nat.toString last)) in
+        % let _ = writeLine ("first = " ^ (Nat.toString first) ^ " seen = " ^ (Nat.toString seen)) in
           case nodeContent (nth (graph, first)) of
 
             | Block {statements, next} -> 
@@ -164,7 +164,7 @@ with a loop or out of a conditional.
 					       let (cspc,stmt) = statementToC cspc statement in
 					       (cspc,concat(stmts,[stmt]))
 					      ) (cspc,[]) statements in
-		let (cspc,rest) = consume cspc next last in
+		let (cspc,rest) = consume cspc next (cons (first, seen)) in
                 (cspc,reduceStmt stmts rest)
 
             | Return (spc,term) -> termToCStmtNew cspc spc term true % Return (termToCExp term)
@@ -172,29 +172,29 @@ with a loop or out of a conditional.
             | IfThen {condition, trueBranch, cont} ->
 		let (spc,condition) = condition in
 		let (cspc,block,cexp) = termToCExp cspc spc condition in
-		let (cspc,trueExp) = consume cspc trueBranch cont in
+		let (cspc,trueExp) = consume cspc trueBranch (cons (first, cons(cont, seen))) in
                 let stmt = IfThen (cexp,trueExp) in
 		let stmt = prependBlockStmt(block,stmt) in
-                let (cspc,rest) = consume cspc cont last in
+                let (cspc,rest) = consume cspc cont (cons (first, seen)) in
                 (cspc,reduceStmt [stmt] rest)
 
             | IfThenElse {condition, trueBranch, falseBranch, cont} ->
 		let (spc,condition) = condition in
 		let (cspc,block,condExp) = termToCExp cspc spc condition in
-                let (cspc,trueStmt) = consume cspc trueBranch cont in
-                let (cspc,falseStmt) = consume cspc falseBranch cont in
+                let (cspc,trueStmt)  = consume cspc trueBranch  (cons (first, (cons (cont, seen)))) in
+                let (cspc,falseStmt) = consume cspc falseBranch (cons (first, (cons (cont, seen)))) in
                 let ifStmt = If (condExp, trueStmt, falseStmt) in
 		let stmt = prependBlockStmt(block,ifStmt) in
-                let (cspc,rest) = consume cspc cont last in
+                let (cspc,rest) = consume cspc cont (cons (first, seen)) in
                 (cspc,reduceStmt [stmt] rest)
 
             | Loop {condition, preTest?, body, cont} ->
 		let (spc,condition) = condition in
-                let (cspc,bodyStmt) = consume cspc body first in
+                let (cspc,bodyStmt) = consume cspc body (cons (first, seen)) in
 		let (cspc,block,condExp) = termToCExp cspc spc condition in
                 let whileStmt = While (condExp, bodyStmt) in
 		let stmt = prependBlockStmt(block,whileStmt) in
-                let (cspc,rest) = consume cspc cont last in
+                let (cspc,rest) = consume cspc cont (cons (first, seen)) in
                 (cspc,reduceStmt [stmt] rest)
 
             | Branch {condition, trueBranch, falseBranch} ->
@@ -217,7 +217,7 @@ with a loop or out of a conditional.
       if graph = [] then
         (cspc,Nop)
       else
-        consume cspc 0 (length graph)
+        consume cspc 0 [(length graph)]
 
   op termToCStmtNew : CSpec -> Spec.Spec -> MS.Term -> Boolean -> CSpec * CStmt
   def termToCStmtNew cspc spc term final? =
@@ -277,4 +277,4 @@ Note that the second argument to "consume" above is an index greater
 beyond the end of the array. This is deliberate. We could used
 infinity. We will not get there as we must encounter a Return first. The
 point is that the "consume" function will continue up to but not including
-the "last" node.
+the "seen" nodes.
