@@ -187,7 +187,7 @@ These are the commands available in the *common-lisp* buffer.
 These are a few general Emacs commands which are useful when
 using Specware. Commands with no key sequences are executed using
 [[M-x name]].  XEmacs can be customized using the [[Options]]
-menu. For example, to make [[delete]] delete the selected region (like
+menu. For example, to make [[delete]] delete the selected region (as
 in most Word Processing Programs), mouse [[Options]], [[Editing]],
 [[Active Regions]]. To make the changes permanent, mouse [[Options]],
 [[Save Options to Init File]].  
