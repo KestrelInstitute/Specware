@@ -948,6 +948,10 @@ Utilities qualifying spec
      else mkLet(map (fn (v,val) -> (mkVarPat v,val)) sb, tm)
 
  def mkIfThenElse(t1,t2:MS.Term,t3:MS.Term):MS.Term =
+   case t1 of
+     | Fun(Bool true,_,_)  -> t2
+     | Fun(Bool false,_,_) -> t3
+     | _ ->
    case t2 of
      | Fun(Bool true,_,_)  -> mkOr(t1,t3)
      | Fun(Bool false,_,_) -> mkAnd(mkNot t1,t3)
@@ -1001,8 +1005,14 @@ Utilities qualifying spec
  def mkSimpImplies (t1, t2) =
    case t1 of
      | Fun(Bool true,_,_)  -> t2
-     | Fun(Bool false,_,_) -> mkFalse()
-     | _ -> mkImplies (t1,t2)
+     | Fun(Bool false,_,_) -> mkTrue() % was mkFalse() !!
+     | _ -> 
+       case t2 of
+        % We can't optimize (x => true) to true, as one might expect from logic.
+        % The semantics for => dictates that we need to eval t1 (e.g., for side-effects) before looking at t2.  
+        %| Fun(Bool true,_,_)  -> mkTrue() 
+	 | Fun(Bool false,_,_) -> mkNot t1
+	 | _ -> mkImplies (t1,t2)
 
 
  op  identityFn?: fa(a) ATerm a -> Boolean
