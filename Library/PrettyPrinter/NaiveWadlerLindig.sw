@@ -31,32 +31,45 @@ WadlerLindig qualifying spec
 %          else
 %            layout rest DocNil column indent
 
+  op PrettyPrint.blanks : Nat -> String
+  op spaces : Nat -> String
+  def spaces n = blanks n
+%%     let
+%%       def spacesAux n stream =
+%%         if n <= 0 then
+%%           stream
+%%         else
+%%           spacesAux (n - 1) (Cons (" ", stream))
+%%     in
+% concatList (spacesAux n [])
+
+  % op spacesAux : Nat -> List String -> List String
+  % def spacesAux n stream =
+    % if n <= 0 then
+      % stream
+    % else
+      % spacesAux (n - 1) (Cons (" ", stream))
+
+  % The following is a tail recursive version of the function "layout" defined above.
+  % The functions spaces and aux would normally be defined within the scope of the "layout"
+  % function, but doing so generates Lisp code that the ACL compiler fails to detect as
+  % tail recursive.
+
   op layout : Doc -> Doc -> Nat -> Nat -> List String -> List String
   def layout doc rest column indent stream =
-    let
-      def spaces n = concatList (aux n)
-      def aux n =
-        if n <= 0 then
-          []
-        else
-          Cons (" ", aux (n - 1))
-    in
-      case doc of
-        | DocGroup d -> layout d rest column indent stream
-        | DocText s -> layout rest DocNil (column + (length s)) indent (Cons (s, stream))
-        | DocBreak s -> layout rest DocNil indent indent (Cons (spaces indent, Cons ("\n", stream)))
-        | DocIndent (newIndent,doc) -> layout doc rest column newIndent stream
-        | DocNest (n,innerDoc) ->
-            layout innerDoc (DocIndent (indent, rest)) column (indent + n) (Cons (spaces (indent + n - column), stream))
-        % | DocCons (l,r) -> layout l (ppCons r rest) column indent stream
-        | DocCons (l,r) ->
-            let s = layout l DocNil column indent stream in
-            layout r rest column indent s
-        | DocNil ->
-           if rest = DocNil then
-             stream
-           else
-             layout rest DocNil column indent stream
+    case doc of
+      | DocGroup d -> layout d rest column indent stream
+      | DocText s -> layout rest DocNil (column + (length s)) indent (Cons (s, stream))
+      | DocBreak s -> layout rest DocNil indent indent (Cons (spaces indent, Cons ("\n", stream)))
+      | DocIndent (newIndent,doc) -> layout doc rest column newIndent stream
+      | DocNest (n,innerDoc) ->
+          layout innerDoc (DocIndent (indent, rest)) column (indent + n) (Cons (spaces (indent + n - column), stream))
+      | DocCons (l,r) -> layout l (ppCons r rest) column indent stream
+      | DocNil ->
+         if rest = DocNil then
+           stream
+         else
+           layout rest DocNil column indent stream
 
   sort Doc =
     | DocNil
