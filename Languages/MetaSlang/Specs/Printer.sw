@@ -962,12 +962,12 @@ AnnSpecPrinter qualifying spec
 	    if n <= 1 then
 	      []
 	    else
-	      [(0, string ("(* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
+	      [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
 	  else
 	    if n <= 1 then
-	      [(0, string ("(* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString m) ^ " declarations. *)"))]
+	      [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString m) ^ " declarations. *)"))]
 	    else
- 	      [(0, string ("(* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
+ 	      [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
      in
      let ppDecls = map ppDecl decls in
      let ppDefs  = map ppDef  defs  in
@@ -1019,12 +1019,12 @@ AnnSpecPrinter qualifying spec
 	    if n <= 1 then
 	      []
 	    else
-	      [(0, string ("(* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
+	      [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
 	  else
 	    if n <= 1 then
-	      [(0, string ("(* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations. *)"))]
+	      [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations. *)"))]
 	    else
- 	      [(0, string ("(* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
+ 	      [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
      in
      let ppDecls = map ppDecl decls in
      let ppDefs  = map ppDef  defs  in
