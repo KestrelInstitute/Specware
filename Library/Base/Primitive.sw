@@ -15,10 +15,10 @@ spec
     characters of that code table are the ASCII characters);
   - Char.ord denotes the function that maps a character to its position
     in the code table;
-  - List.List(a) denotes, for every set set A assigned to the sort variable
-    a, the set of finite lists over A;
-  - String.String the set of finite sequences of the characters denoted by
-    Char.Char;
+  - List.List(a) denotes, for every set A assigned to the sort variable a,
+    the set of finite lists over A;
+  - String.String denotes the set of finite sequences of the characters
+    denoted by Char.Char;
   - String.explode denotes the function that maps a string to the list of
     its component characters.
 
