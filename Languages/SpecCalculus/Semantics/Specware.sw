@@ -285,7 +285,7 @@ Second argument is interpreted as spec containing options for the code generatio
         | Some name -> Some (maybeAddSuffix name ".lisp") in
     let prog = {
       resetGlobals;
-      cleanupGlobalContext;
+      %cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);

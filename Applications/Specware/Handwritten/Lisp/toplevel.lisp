@@ -41,15 +41,20 @@
 (top-level:alias ("sw-help" :string) (&optional com) (sw-help com))
     
 
+(defun subst-home (dir)
+  (if (and (stringp dir) (>= (length dir) 2) (equal (subseq dir 0 2) "~/"))
+      (concatenate 'string (specware::getenv "HOME") (subseq dir 1))
+    dir))
+
 (defvar *last-unit-Id-_loaded* nil)
 
 (defun sw0 (x)
-  (Specware::runSpecwareUID x)
+  (Specware::runSpecwareUID (subst-home x))
   (values))
 #+allegro(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
 (defun set-base (x)
-  (Specware::setBase_fromLisp x)
+  (Specware::setBase_fromLisp (subst-home x))
   (values))
 #+allegro
 (top-level:alias ("set-base" :case-sensitive) (x) (set-base x))
@@ -77,7 +82,7 @@
 
 (defun sw (&optional x)
   (if x
-      (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* (string x)))
+      (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* x))
     (if *last-unit-Id-_loaded*
 	(Specware::evaluateUID_fromLisp *last-unit-Id-_loaded*)
       (format t "No previous unit evaluated~%")))
@@ -85,10 +90,11 @@
   )
 
 #+allegro
-(top-level:alias ("sw" :case-sensitive) (&optional x)
+(top-level:alias ("sw" :case-sensitive :string) (&optional x)
   (sw x))
 
 (defun show (&optional x)
+  (setq x (subst-home x))
   (if x
       (Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
     (if *last-unit-Id-_loaded*
@@ -96,13 +102,14 @@
       (format t "No previous unit evaluated~%")))
   (values))
 #+allegro
-(top-level:alias ("show" :case-sensitive) (&optional x)
+(top-level:alias ("show" :case-sensitive :string) (&optional x)
   (show x))
 
 ;; Not sure if an optional UnitId make sense for swl
 (defun swl-internal (x &optional y)
-  (Specware::evaluateLispCompile_fromLisp-2 x (if y (cons :|Some| y)
-						'(:|None|))))
+  (Specware::evaluateLispCompile_fromLisp-2 (subst-home x)
+					    (if y (cons :|Some| (subst-home y))
+					      '(:|None|))))
 
 ;;; For non-allegro front-end to handle arguments separated by spaces
 (defun toplevel-parse-args (arg-string)
@@ -144,9 +151,9 @@
       (format t "No previous unit evaluated~%"))))
 
 (defun swll-internal (x &optional y)
-  (let ((lisp-file-name (or y (concatenate 'string
-					   specware::temporaryDirectory
-					   "cl-current-file"))))
+  (let ((lisp-file-name (subst-home (or y (concatenate 'string
+					    specware::temporaryDirectory
+					    "cl-current-file")))))
     (if (Specware::evaluateLispCompileLocal_fromLisp-2
 	 x (cons :|Some| lisp-file-name))
 	(let (#+allegro *redefinition-warnings*)
@@ -189,6 +196,7 @@
   (unless (eq (elt x 0) #\/)
     (format t "~&coercing ~A to /~A~%" x x)
     (setq x (format nil "/~A" x)))
+  (setq x (subst-home x))
   (cond ((sw (string x))
 	 (setq *current-swe-spec* x)
 	 (setq *current-swe-spec-dir* (specware::current-directory))
@@ -344,6 +352,7 @@
   (format t "~A~%" JGEN::packageName))
 
 (defun swj-config-dir (&optional dir)
+  (setq dir (subst-home dir))
   #+(or allegro lispworks)
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
@@ -375,9 +384,10 @@
 #+allegro
 (top-level:alias ("swj-config-pkg" :case-sensitive) (&optional pkg-name) (swj-config-pkg pkg-name))
 #+allegro
-(top-level:alias ("swj-config-dir" :case-sensitive) (&optional dir-name) (swj-config-dir dir-name))
+(top-level:alias ("swj-config-dir" :case-sensitive :string) (&optional dir-name) (swj-config-dir dir-name))
 #+allegro
-(top-level:alias ("swj-config-make-public" :case-sensitive) (&optional &rest ops) (swj-config-make-public ops))
+(top-level:alias ("swj-config-make-public" :case-sensitive) (&optional &rest ops)
+  (swj-config-make-public ops))
 #+allegro
 (top-level:alias ("swj-config-reset") () (swj-config-reset))
 
@@ -406,8 +416,8 @@
 (defvar *last-swc-args* nil)
 
 (defun swc-internal (x &optional y)
-   (Specware::evaluateCGen_fromLisp-2 x (if y (cons :|Some| y)
-					  '(:|None|)))
+   (Specware::evaluateCGen_fromLisp-2 (subst-home x) (if y (cons :|Some| (subst-home y))
+						       '(:|None|)))
    (values))
 
 (defun swc (&optional args)
@@ -454,7 +464,7 @@
     (princ System-spec::specwareDebug?)))
 
 (defun swpath  (&optional str)
-  (setq str (strip-extraneous str))
+  (setq str (subst-home (strip-extraneous str)))
   (if (or (null str) (equal str ""))
       (princ (specware::getenv "SWPATH"))
     (let ((str (string str)))
@@ -464,6 +474,7 @@
 
 #+allegro
 (top-level:alias ("swpath" :case-sensitive :string) (&optional str)
+  (setq str (subst-home str))
   (if (or (null str) (equal str ""))
       (princ (sys:getenv "SWPATH"))
     (let ((str (if (eq (aref str 0) #\")
@@ -480,8 +491,7 @@
 (defun cd (&optional (dir ""))
   (if (equal dir "")
       (setq dir (specware::getenv "HOME"))
-    (if (and (>= (length dir) 2) (equal (subseq dir 0 2) "~/"))
-	(setq dir (concatenate 'string (specware::getenv "HOME") (subseq dir 1)))))
+    (setq dir (subst-home dir)))
   #+cmu (unix:unix-chdir (if (equal dir "") (specware::getenv "HOME") dir))
   #-cmu (specware::change-directory dir)
   (let* ((dirpath (specware::current-directory))
@@ -496,7 +506,7 @@
 
 #-allegro
 (defun ld (file)
-  (load file))
+  (load (subst-home file)))
 
 #-allegro
 (defun pwd ()
@@ -509,11 +519,11 @@
 
 #-allegro
 (defun cl (file)
-  (specware::compile-and-load-lisp-file file))
+  (specware::compile-and-load-lisp-file (subst-home file)))
 
 #-allegro
 (defun cf (file)
-  (compile-file file))
+  (compile-file (subst-home file)))
 
 #-allegro
 (defun help (&optional command)

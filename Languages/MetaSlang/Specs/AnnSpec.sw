@@ -538,12 +538,11 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
      sorts = mapDiff x.sorts y.sorts
    }
 
-(* ### unused
  op addDisjointImport: Spec * Spec -> Spec
  def addDisjointImport (spc, imported_spec) =
    let def mergeSortStep (imported_qualifier, imported_id,
 			  imported_sort_info, combined_psorts) =
-        insertAQualifierMap (combined_psorts,
+         insertAQualifierMap (combined_psorts,
 			      imported_qualifier,
 			      imported_id,
 			      imported_sort_info)
@@ -555,11 +554,10 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
 			      imported_op_info)
 	   
    in
-   let spc = addImport (("", imported_spec), spc) in
+   %let spc = addImport (("", imported_spec), spc) in
    let newSorts = foldriAQualifierMap mergeSortStep spc.sorts imported_spec.sorts in
    let spc = setSorts (spc, newSorts) in
    let newOps = foldriAQualifierMap mergeOpStep spc.ops imported_spec.ops in
    let spc = setOps (spc, newOps) in
    setProperties (spc,  spc.properties ++ imported_spec.properties)
-*)
 endspec

@@ -445,16 +445,6 @@ spec
       | [pat] -> pat
       | _ -> RecordPat (tagTuple(pats), noPos)
 
-  op  getParams: Pattern -> List Pattern
-  def getParams(pat:Pattern) = 
-    case pat
-      of VarPat(v,_)-> [pat]
-       | RecordPat(fields,_) ->
-	 if all (fn (_,VarPat _) -> true | (_,RecordPat _) -> true | _ -> false) fields
-	   then map (fn (_,vpat) -> vpat) fields
-	   else []
-       | _ -> []
-
   op  matchPairs: Pattern * Term -> List (Var * Term)
   def matchPairs(p,t) =
     case (p,t) of

@@ -15,11 +15,17 @@ skolemization.
 \begin{spec}
 
 spec RewriteRules
- import ../Specs/TypeObligations
  import HigherOrderMatching
 
  sort Context = HigherOrderMatching.Context
- sort Gamma = TypeObligations.Gamma
+
+ sort Decl  = 
+   | Var Var 
+   | Cond MS.Term 
+   | LetRec List (Var * MS.Term) 
+   | Let List (Pattern * MS.Term)
+
+ sort Gamma = List Decl * TyVars * Spec * String * StringSet.Set
 
  sort RewriteRule = 
    { 

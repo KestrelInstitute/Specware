@@ -250,6 +250,15 @@ Utilities qualifying spec
       | RelaxPat(p,_,_)        -> patVars p
       | QuotientPat(p,_,_)     -> patVars p
 
+ op  getParams: Pattern -> List Pattern
+ def getParams(pat:Pattern) = 
+   case pat
+     of VarPat(v,_)-> [pat]
+      | RecordPat(fields,_) ->
+	if all (fn (_,VarPat _) -> true | (_,RecordPat _) -> true | _ -> false) fields
+	  then map (fn (_,vpat) -> vpat) fields
+	  else []
+      | _ -> []
 
  op  lookup : fa(a,b) (a  -> Boolean) * List(a * b) -> Option b 
  def lookup (desired_key?, association_list) = 
@@ -274,7 +283,6 @@ Utilities qualifying spec
    in
    let _ = appSort(fn _ -> (),vr,fn _ -> ()) srt in
    ! vars
-
 
  % This implementation of substitution 
  % completely ignores free variables in sorts.

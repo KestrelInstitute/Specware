@@ -20,6 +20,8 @@ SpecCalc qualifying spec {
   op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))                        -> SpecCalc.Env ValueInfo
   op evaluateExtendMorph : SCTerm                                                                   -> SpecCalc.Env ValueInfo
   op evaluateLispCompile : ValueInfo * SCTerm * Option String                                       -> SpecCalc.Env ValueInfo
+  op evaluateLispCompileLocal: ValueInfo * SCTerm * Option String                                   -> SpecCalc.Env ValueInfo
+  op evaluateJavaGen     : ValueInfo * (SpecCalc.Term Position) * Option String                     -> SpecCalc.Env ValueInfo
   op evaluateDiag        : List (DiagElem Position)                                                 -> SpecCalc.Env ValueInfo
   op evaluateDiagMorph   : SCTerm * SCTerm * (List (DiagMorphRule Position))                        -> SpecCalc.Env ValueInfo
   op evaluateColimit     : SCTerm                                                                   -> SpecCalc.Env ValueInfo
