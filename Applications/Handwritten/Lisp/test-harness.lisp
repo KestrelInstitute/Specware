@@ -153,7 +153,9 @@ be the option to run each (test ...) form in a fresh image.
 			      (if (eq form ':eof)
 				  (return)
 				(eval form)))))
-      (specware::change-directory old-directory))))
+      (specware::change-directory old-directory))
+    ;; force-ouput so we can monitor interim results of long-running test suites:
+    (force-output)))
 
 (defmacro test-files (&body files)
   `(test-files-fn '(,@files)))
