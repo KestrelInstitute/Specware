@@ -1,6 +1,7 @@
 SpecCalc qualifying spec {
   import /Languages/MetaSlang/Specs/Categories/AsRecord
-  import ../AbstractSyntax/Printer
+  import /Languages/MetaSlang/Specs/Printer
+  import /Languages/SpecCalculus/AbstractSyntax/Printer
   import /Provers/Proof
 
   sort OtherValue                % Used for extensions to Specware

@@ -21,9 +21,9 @@ differs from the identity.
 
 \begin{spec}
 SpecCalc qualifying spec {
-  import /Languages/MetaSlang/Specs/SimplePrinter
-  import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
-  import ../Printer
+ import /Languages/MetaSlang/Specs/AnnSpec
+ import /Languages/MetaSlang/Specs/SimplePrinter
+ import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
 
  sort QualifiedIdMap  = PolyMap.Map (QualifiedId, QualifiedId)
  sort MorphismSortMap = QualifiedIdMap
