@@ -112,7 +112,7 @@ we get the two Common Lisp definitions:
 </para>
 [[L:
 ||  (DEFUN MULTFG-2 (X Y) (MULTFG (CONS X Y)))
-||  (DEFUN MULTFG (X) (* (F-1 X) (G-1 X)))
+||  (DEFUN MULTFG (X) (* (F X) (G X)))
 ]]
 
 <para>
