@@ -22,4 +22,4 @@ set "LISP_HEAP_IMAGE=%SPECWARE4%\Specware4.dxl"
 set LISP_DIRECTORY=%Specware4%/
 cd "%Specware4%"
 
-"%XEMACS_EXE%" -l "%SPECWARE4%\Library\IO\Emacs\xeli\fi-site-init" -l "%SPECWARE4%\Library\IO\Emacs\load" -f run-specware4
+start "ignore" "%XEMACS_EXE%" -l "%SPECWARE4%\Library\IO\Emacs\xeli\fi-site-init" -l "%SPECWARE4%\Library\IO\Emacs\load" -f run-specware4
