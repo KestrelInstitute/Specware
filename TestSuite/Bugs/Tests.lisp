@@ -5,7 +5,7 @@
 (test 
 
  ("Bug 0043 : Snark doesn't like Booleans"
-  :show "Bug_0043/Change" 
+  :show "Bug_0043/Change#ShouldBeProvable" 
   :output "??")
 
  ("Bug 0045 : Unambiguous op erroneously declared ambiguous [toString]" 
@@ -98,15 +98,15 @@ Ambiguous ops:
 
  ("Bug 0085 : Proof obligations for quotient pattern are not generated"
   :show   "Bug_0085/quotpat#O" 
-  :output ";;; Elaborating obligator at ~/Work/Generic/Specware4/TestSuite/Bugs/Bug_0085/quotpat#O
-;;; Elaborating spec at ~/Work/Generic/Specware4/TestSuite/Bugs/Bug_0085/quotpat#S
-;;; Elaborating spec at ~/Work/Generic/Specware4/Library/Base/WFO
+  :output ";;; Elaborating obligator at $TESTDIR/Bug_0085/quotpat#O
+;;; Elaborating spec at $TESTDIR/Bug_0085/quotpat#S
+;;; Elaborating spec at $SPECWARE/Library/Base/WFO
 
 spec  
  import S
  import /Library/Base/WFO
  conjecture f_Obligation is 
-    fa(x : Q, y : Nat) x = quotient eq_mod10 y => natural?(y + 1)
+    fa(x : Q, y : Nat) x = quotient eq_mod10  y => natural?(y + 1)
  conjecture f_Unique is 
     fa(x : Q, y : Nat, z :Nat) x = quotient eq_mod10 y & x = quotient eq_mod10 z => (y + 1) = (z + 1)
  conjecture eq_mod10_Obligation is natural?(10) => true
@@ -141,5 +141,33 @@ Ambiguous ops:  op i : Nat
  found in $TESTDIR/Bug_0093/IncompatColimit.sw
 13.16-19.0")
 
- ;; end of tests
+ ("Bug 0102 : Extra variable in gnerated proof obligation"
+  :show   "Bug_0102/ObligationsOfInteger.sw" 
+  :output ";;; Elaborating obligator at $TESTDIR/Bug_0102/ObligationsOfInteger
+
+spec  
+ import /Library/Base/WFO
+ conjecture Integer.abs_Obligation is fa(x : Integer) x >= 0 => natural? x
+ conjecture Integer.abs_Obligation0 is 
+    fa(x : Integer) ~(x >= 0) => natural?(Integer_.- x)
+ conjecture Integer.addition_def2_Obligation is 
+    fa(n1 : PosNat, n2 : PosNat) 
+     n1 + n2 = plus(n1, n2) 
+     && Integer_.- n1 + Integer_.- n2 = Integer_.-(plus(n1, n2)) 
+        && ~(lte(n1, n2)) => lte(n2, n1)
+ conjecture Integer.addition_def2_Obligation0 is 
+    fa(n1 : PosNat, n2 : PosNat) 
+     n1 + n2 = plus(n1, n2) 
+     && Integer_.- n1 + Integer_.- n2 = Integer_.-(plus(n1, n2)) 
+        && n1 + Integer_.- n2 
+           = if lte(n1, n2)
+              then Integer_.-(minus(n2, n1)) 
+             else minus(n1, n2) && ~(lte(n1, n2)) => lte(n2, n1)
+ conjecture Integer.division_def_Obligation is 
+    fa(y : NonZeroInteger) natural?(abs y) => abs y ~= 0
+ conjecture Integer.division_def_Obligation0 is 
+    fa(x : Integer, y : NonZeroInteger) natural?(abs x div abs y)
+endspec
+
+") ;; end of tests
  )
