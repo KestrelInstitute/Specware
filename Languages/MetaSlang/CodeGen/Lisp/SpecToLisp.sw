@@ -327,7 +327,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
       % Note: Implies ("=>") is non-strict -- it might not evalute the second arg.
       %       This means it is not commutative (to the contrapositive) wrt termination.
       (case optArgs of
-        %| None ->  mkLOp ("slang-built-in:implies-2") % TODO: is this situation possible? Given note above, should it be allowed?
+        %| None -> mkLOp ("slang-built-in:implies-2") % TODO: is this situation possible? Given note above, should it be allowed?
 	 | Some (Record([(_,x),(_,y)],_)) ->
 	   % "x => y" = "if x then y else true" = "or (~ x, y)"
 	   mkLApply (mkLOp("cl:or"),         
