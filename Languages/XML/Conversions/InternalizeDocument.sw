@@ -14,21 +14,20 @@ XML qualifying spec
 				       sd       : SortDescriptor,
 				       table    : SortDescriptorExpansionTable)
     : Option X =
-    let expanded_sd : SortDescriptor = expand_SortDescriptor (sd, table) in
-    internalize_Element (document.element, sd, expanded_sd, table)
+    aux_internalize_Element (document.element, sd, table)
     
   %% we seem to need these op decls to avoid conflicts caused when 
   %% the type checker assumes various invocations are for monomophic versions,
   %% e.g. Option String -- [bug in type checker?]
-  op internalize_Element         : fa (X) Element         * SortDescriptor * SortDescriptor * SortDescriptorExpansionTable -> Option X
+  op aux_internalize_Element     : fa (X) Element         * SortDescriptor * SortDescriptorExpansionTable -> Option X
   op internalize_PossibleElement : fa (X) PossibleElement * SortDescriptor * SortDescriptor * SortDescriptorExpansionTable -> Option X
   op internalize_EmptyElemTag    : fa (X) EmptyElemTag    * SortDescriptor * SortDescriptor * SortDescriptorExpansionTable -> Option X
 
-  def fa (X) internalize_Element (element     : Element,
-				  sd          : SortDescriptor,
-				  expanded_sd : SortDescriptor,
-				  table       : SortDescriptorExpansionTable)
+  def fa (X) aux_internalize_Element (element     : Element,
+				      sd          : SortDescriptor,
+				      table       : SortDescriptorExpansionTable)
     : Option X =
+    let expanded_sd : SortDescriptor = expand_SortDescriptor (sd, table) in
     case element of
 
       | Full elt ->
@@ -309,12 +308,11 @@ XML qualifying spec
     : Option X =
     %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as List for " ^ (print_SortDescriptor list_sd) ^ "\n") in
     let element_sd = hd args in
-    let expanded_sd = expand_SortDescriptor (element_sd, table) in
     let data = rev (foldl (fn ((possible_chardata,item), result) ->
 			   %%% let _ = toScreen ((level_str level) ^ "Seeking next list element: " ^ (print_SortDescriptor element_sd) ^ "\n") in
 			   case item of
 			     | Element element ->
-			       (case internalize_Element (element, element_sd, expanded_sd, table) of
+			       (case aux_internalize_Element (element, element_sd, table) of
 				  | Some datum -> 
 				    %%% let _ = toScreen ((level_str level) ^ "Found list element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
 				    cons (datum, result)

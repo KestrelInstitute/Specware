@@ -918,6 +918,9 @@ spec {
       ("XML",           "internalize_Document"), 
       ("<unqualified>", "internalize_Document"), 
 
+      ("XML",           "internalize_Element"), 
+      ("<unqualified>", "internalize_Element"), 
+
       %% output
 
       ("XML" ,          "writeXMLFile"),

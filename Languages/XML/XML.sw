@@ -31,6 +31,7 @@ XML qualifying spec
   op parseXML             : fa (X) String  -> X          % Tricky -- see Support.lisp
   op parseUnicodeXML      : fa (X) UString -> X          % Tricky -- see Support.lisp
   op internalize_Document : fa (X) Document -> Option X  % Tricky -- see Support.lisp
+  op internalize_Element  : fa (X) Element -> Option X   % Tricky -- see Support.lisp
 
   op writeXMLFile         : fa (X) X * Filename -> ()    % Tricky -- see Support.lisp
   op printXML             : fa (X) X -> String           % Tricky -- see Support.lisp

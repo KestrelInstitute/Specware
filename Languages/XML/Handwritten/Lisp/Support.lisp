@@ -33,6 +33,14 @@
 		       sd)))
     (aux_internalize_Document-3 document desired-sd table)))
 
+(defun internalize_Element (element table)
+  (let* ((sd (caar table))
+	 (desired-sd (if (and (eq (car sd) :|Base|)
+			      (equal (cadr sd) '("Option" . "Option")))
+			 (caddr sd)
+		       sd)))
+    (aux_internalize_Element-3 element desired-sd table)))
+
 ;;; output 
 
 (defun writeXMLFile-2 (datum-and-filename table)
