@@ -32,6 +32,18 @@ MetaSlang qualifying spec {
  def fa (a) mkAUnQualifiedId (id,            x : a) = (Qualified (UnQualified, id), x) 
  def fa (a) mkAQualifiedId   (qualifier, id, x : a) = (Qualified (qualifier,   id), x)
 
+ %% These are used by translation, morphism code
+ def unqualified_Boolean = mkUnQualifiedId "Boolean"
+ def unqualified_Boolean? qid = (qid = unqualified_Boolean)
+ def Boolean_Boolean     = mkQualifiedId ("Boolean", "Boolean")
+ def Boolean_Not         = mkQualifiedId ("Boolean", "~")
+ def Boolean_And         = mkQualifiedId ("Boolean", "&")
+ def Boolean_Or          = mkQualifiedId ("Boolean", "or")
+ def Boolean_Implies     = mkQualifiedId ("Boolean", "=>")
+ def Boolean_Iff         = mkQualifiedId ("Boolean", "<=>")
+ def Boolean_Equals      = mkQualifiedId ("Boolean", "=")
+ def Boolean_NotEquals   = mkQualifiedId ("Boolean", "~=")
+
  op printQualifiedId : QualifiedId -> String
  def printQualifiedId (Qualified (qualifier, id)) =
   if qualifier = UnQualified then

@@ -124,9 +124,9 @@ Note: The code below does not yet match the documentation above, but should.
             let
               def extend_op_map (op_qualifier, op_id, _ (* op_info *), translation_op_map) =
                 if op_qualifier = dom_qualifier then
-                  case findAQualifierMap (translation_op_map, op_qualifier, op_id) of
+                  case findAQualifierMap (translation_op_map, op_qualifier,op_id) of
                     | None -> 
-                        let new_cod_qid = mkQualifiedId (cod_qualifier,op_id) in
+                        let new_cod_qid = mkQualifiedId (cod_qualifier, op_id) in
                         return (insertAQualifierMap (translation_op_map, op_qualifier, op_id, (new_cod_qid, [new_cod_qid])))
                     | _ -> raise (SpecError (rule_pos, "translate: Duplicate rules for source op "^
                                                        (printQualifiedId (mkQualifiedId (op_qualifier,op_id)))))
@@ -136,7 +136,10 @@ Note: The code below does not yet match the documentation above, but should.
                 if sort_qualifier = dom_qualifier then
                   case findAQualifierMap (translation_sort_map, sort_qualifier, sort_id) of
                     | None -> 
-                        let new_cod_qid = mkQualifiedId (cod_qualifier,sort_id) in
+                        let new_cod_qid = case (cod_qualifier, sort_id) of
+					    | ("<unqualified>", "Boolean") -> Boolean_Boolean
+					    | _ -> mkQualifiedId (cod_qualifier, sort_id) 
+                        in
                         return (insertAQualifierMap (translation_sort_map, sort_qualifier, sort_id, (new_cod_qid, [new_cod_qid])))
                     | _ -> raise (SpecError (rule_pos, "translate: Duplicate rules for source sort "^
     						       (printQualifiedId (mkQualifiedId (sort_qualifier,sort_id)))))
@@ -168,7 +171,20 @@ Note: The code below does not yet match the documentation above, but should.
 	     | ([], ((Qualified (found_qualifier, _))::_,_,_,_)::rs) ->
 	       if rs = [] or found_qualifier = UnQualified then
 		 case findAQualifierMap (translation_op_map, dom_qualifier, dom_id) of
-		   | None -> return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, (cod_qid, cod_aliases)),
+		   | None -> return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, 
+							  (case cod_qid of
+							     | Qualified ("<unqualified>", x) ->
+							       (case x of
+								  | "~"   -> Boolean_Not
+								  | "&"   -> Boolean_And
+								  | "or"  -> Boolean_Or
+								  | "=>"  -> Boolean_Implies
+								  | "<=>" -> Boolean_Iff
+								  | "="   -> Boolean_Equals
+								  | "~="  -> Boolean_NotEquals
+								  | _     -> cod_qid)
+							     | _ -> cod_qid, 
+							   cod_aliases)),
 				     translation_sort_map)
 		   | _ -> raise (SpecError (rule_pos, 
 						"translate: Duplicate rules for source op "^
@@ -199,15 +215,47 @@ Note: The code below does not yet match the documentation above, but should.
   def translateOp op_id_map op_term =
     case op_term of
       | Fun (Op (qid, fixity), srt, a) ->
-	let new_qid = translateOpQualifiedId op_id_map qid in
-	if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a)
+	(let new_qid = translateOpQualifiedId op_id_map qid in
+	 % let _ = toScreen ("\nTranslate op from " ^ (anyToString qid) ^ " to " ^ (anyToString new_qid) ^ "\n") in
+	 case new_qid of
+	   | Qualified ("Boolean", x) ->
+	     (case x of
+		| "~"    -> Fun (Not       , srt, a)
+		| "&"    -> Fun (And       , srt, a)
+		| "or"   -> Fun (Or        , srt, a)
+		| "=>"   -> Fun (Implies   , srt, a)
+		| "<=>"  -> Fun (Iff       , srt, a)
+		| "="    -> Fun (Equals    , srt, a)
+		| "~="   -> Fun (NotEquals , srt, a)
+		| _ -> 
+		  if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a))
+	   | Qualified ("<unqualified>", x) ->
+	     (case x of
+		| "~"    -> Fun (Not       , srt, a)
+		| "&"    -> Fun (And       , srt, a)
+		| "or"   -> Fun (Or        , srt, a)
+		| "=>"   -> Fun (Implies   , srt, a)
+		| "<=>"  -> Fun (Iff       , srt, a)
+		| "="    -> Fun (Equals    , srt, a)
+		| "~="   -> Fun (NotEquals , srt, a)
+		| _ -> 
+		  if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a))
+	   | _ ->
+		if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a))
       | _ -> op_term
 
   def translateSort sort_id_map sort_term =
     case sort_term of
       | Base (qid, srts, a) ->
-	 let new_qid = translateSortQualifiedId sort_id_map qid in
-	 if new_qid = qid then sort_term else Base (new_qid, srts, a)
+	(let new_qid = translateSortQualifiedId sort_id_map qid in
+	 if new_qid = Boolean_Boolean then
+	   Boolean a
+	 else if new_qid = unqualified_Boolean then
+	   Boolean a
+	 else if new_qid = qid then 
+	   sort_term 
+	 else 
+	   Base (new_qid, srts, a))
       | _ -> sort_term
 
 

@@ -64,7 +64,26 @@ coherence conditions of the morphism elements.
                   (raise (MorphError (position, "Ambiguous target op " ^ (printQualifiedId qid))));
                 return found_qid
               }
-          | _ -> raise (MorphError (position, "Unrecognized target op " ^ (printQualifiedId qid)))
+          | _ -> 
+	    case qid of
+	      %% qualified names such as   Qualified ("Boolean", "=>")
+	      %% may appear in codomain of mapping, but actually refer to built-in ops
+	      | Qualified ("<unqualified>", "~")   -> return Boolean_Not
+	      | Qualified ("<unqualified>", "&")   -> return Boolean_And
+	      | Qualified ("<unqualified>", "or")  -> return Boolean_Or
+	      | Qualified ("<unqualified>", "=>")  -> return Boolean_Implies
+	      | Qualified ("<unqualified>", "<=>") -> return Boolean_Iff
+	      | Qualified ("<unqualified>", "=")   -> return Boolean_Equals
+	      | Qualified ("<unqualified>", "~=")  -> return Boolean_NotEquals
+	      | Qualified ("Boolean",       "~")   -> return qid
+	      | Qualified ("Boolean",       "&")   -> return qid
+	      | Qualified ("Boolean",       "or")  -> return qid
+	      | Qualified ("Boolean",       "=>")  -> return qid
+	      | Qualified ("Boolean",       "<=>") -> return qid
+	      | Qualified ("Boolean",       "=")   -> return qid
+	      | Qualified ("Boolean",       "~=")  -> return qid
+	      | _ ->
+	        raise (MorphError (position, "Unrecognized target op " ^ (printQualifiedId qid)))
 
       def findCodSort position qid =
         case findAllSorts (cod_spec, qid) of
@@ -73,7 +92,14 @@ coherence conditions of the morphism elements.
                   (raise (MorphError (position, "Ambiguous target sort " ^ (printQualifiedId qid))));
                 return found_qid
               }
-          | _ -> raise (MorphError (position, "Unrecognized target sort " ^ (printQualifiedId qid)))
+          | _ -> 
+	    case qid of
+	      %% qualified names such as   Qualified ("Boolean", "Boolean")
+	      %% may appear in codomain of mapping, but actually refer to built-in sort
+	      | Qualified ("<unqualified>", "Boolean") -> return Boolean_Boolean
+	      | Qualified ("Boolean",       "Boolean") -> return qid
+	      | _ ->
+	        raise (MorphError (position, "Unrecognized target sort " ^ (printQualifiedId qid)))
 
       def insert (op_map,sort_map) ((sm_rule,position) : (SpecMorphRule Position)) =
         case sm_rule of
