@@ -12,7 +12,8 @@
   (excl::dumplisp :name name))
 
 #+Allegro 
-(defun generate-new-lisp-application (name dir files-to-load files-to-copy)
+(defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)
+  (declare (ignore base-lisp)) ; presumes same as this lisp
   ;; Build a fresh image with desired properties.
   ;; (This should be a completely new image, not simply a clone of this image!)
   (compact-memory t -1 0)
@@ -56,7 +57,7 @@
   (extensions::save-lisp name :purify t))
 
 #+CMU
-(defun generate-new-lisp-application (name dir files-to-load files-to-copy)
+(defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)
   ;; Build a fresh image with desired properties.
   ;; (This should be a completely new image, not simply a clone of this image!)
   ;; See http://cvs2.cons.org/ftp-area/cmucl/doc/cmu-user/extensions.html#toc43
@@ -65,7 +66,7 @@
     (ensure-directories-exist app-file)
     (dolist (file files-to-copy) (copy-file file (make-pathname :directory dir :defaults file)))
     (with-open-file (s "/tmp/cmds" :direction :output :if-exists :supersede)
-      (format t "~%Commands to be used to create ~A~%" app-file)
+      (format t "~%Commands to be used in lower process ~A to create~%  ~A~%" base-lisp app-file)
       (format t "========================================================~%")
       (format t "(setq ext:*gc-verbose* nil)~%")
       (format s "(setq ext:*gc-verbose* nil)~%")
@@ -84,19 +85,21 @@
       (format s "~%")
       (format t "========================================================~%"))
     (let ((process nil))
-      (format t "~&~%Output from lisp in lower process being created:~%")
+      (format t "~&~%Output from the lower process being created:~%")
       (format t "~&========================================================~%")
       (unwind-protect 
-	  (setq process (run-program "/usr/local/bin/cmucl" '() :wait t :input "/tmp/cmds" :output t :error :output))
-	(let ((rc (process-exit-code process)))
-	  (format t "~&========================================================~%")
-	  (cond ((= rc 0)
-		 (format t "~&~%Success saving ~A~%" app-file)
-		 (format t "~&Invoke as:")
-		 (format t "~& cmucl -core ~A~%~%" app-file))
-		(t
-		 (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
-	  (process-close process))))))
+	  (setq process (run-program base-lisp '() :wait t :input "/tmp/cmds" :output t :error :output))
+	(if (null process)
+	    (error "Problem creating lower process: ~A" base-lisp)
+	  (let ((rc (process-exit-code process)))
+	    (format t "~&========================================================~%")
+	    (cond ((= rc 0)
+		   (format t "~&~%Success saving ~A~%" app-file)
+		   (format t "~&Invoke as:")
+		   (format t "~& cmucl -core ~A~%~%" app-file))
+		  (t
+		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
+	    (process-close process)))))))
 
 (defun copy-file (a b)
   (with-open-file (old a :direction :input :element-type 'unsigned-byte)
@@ -117,7 +120,7 @@
   (ccl:save-application name))
 
 #+MCL
-(defun generate-new-lisp-application (name dir files-to-load files-to-copy)
+(defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)
   ;; Build a fresh image with desired properties.
   ;; (This should be a completely new image, not simply a clone of this image!)
   (let ((app-file (namestring (make-pathname :directory dir :name name))))
@@ -125,7 +128,7 @@
     (unless (probe-file app-file) (create-file app-file)) ; temporary bug workaround (??)
     (dolist (file files-to-copy) (copy-file file (make-pathname :directory dir :defaults file)))
     (with-open-file (s "/tmp/cmds" :direction :output :if-exists :supersede)
-      (format t "~%Commands to be used to create ~A~%" app-file)
+      (format t "~%Commands to be used in lower process ~A to create~%  ~A~%" base-lisp app-file)
       (format t "========================================================~%")
       (dolist (file files-to-load) 
 	(format t "(load ~S)~%" file)
@@ -135,19 +138,21 @@
       (format s "~%")
       (format t "========================================================~%"))
     (let ((process nil))
-      (format t "~&~%Output from lisp in lower process being created:~%")
+      (format t "~&~%Output from the lower process being created:~%")
       (format t "~&========================================================~%")
       (unwind-protect 
-	  (setq process (run-program "OpenMCL" '() :wait t :input "/tmp/cmds" :output t :error :output))
-	(let ((rc (process-exit-code process)))
-	  (format t "~&========================================================~%")
-	  (cond ((= rc 0)
-		 (format t "~&~%Success saving ~A~%" app-file)
-		 (format t "~&Invoke as:")
-		 (format t "~& cmucl -core ~A~%~%" app-file))
-		(t
-		 (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
-	  (process-close process))))))
+	  (setq process (run-program base-lisp '() :wait t :input "/tmp/cmds" :output t :error :output))
+	(if (null process)
+	    (error "Problem creating lower process: ~A" base-lisp)
+	  (let ((rc (process-exit-code process)))
+	    (format t "~&========================================================~%")
+	    (cond ((= rc 0)
+		   (format t "~&~%Success saving ~A~%" app-file)
+		   (format t "~&Invoke as:")
+		   (format t "~& cmucl -core ~A~%~%" app-file))
+		  (t
+		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
+	    (process-close process)))))))
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 Unknown
@@ -158,7 +163,9 @@
   (error "Unknown version of lisp -- can't save image named ~A" name))
 
 #-(or Allegro CMU MCL)
-(defun generate-new-lisp-application (name dir files-to-load files-to-copy)
-  (error "Unknown version of lisp -- can't save application named ~A" name))
+(defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)
+  (declare (ignore dir files-to-load files-to-copy))
+  (error "Unknown version of lisp: ~A -- can't save application named ~A" 
+	 base-lisp name))
 
 
