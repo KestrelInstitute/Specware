@@ -33,9 +33,9 @@ snark qualifying spec
 
   op snarkSortId: Id -> Id
   def snarkSortId(id) =
-    case id of
-      | "X" -> "snark_X"
-      | _ -> id
+    if length(id) = 1
+      then "snark_"^id
+    else id
   
  def unfoldBaseUnInterp (sp, srt) =
    unfoldBaseUnInterpV (sp, srt, true)
