@@ -68,7 +68,7 @@ reside in a directory on the Windows system path,
 or be referenced by the environment variable <"SPECWARE4_MAKE"> (see below).
 The <"gcc"> utility must likewise reside in a directory on the Windows
 system path, or alternative the definitions of make variables <"CC">
-<"LD"> in the <"Makerules"> file (see below) are made to refer the
+and <"LD"> in the <"Makerules"> file (see below) are made to refer the
 name or pathname of an installed C compiler.
 </para>
 
