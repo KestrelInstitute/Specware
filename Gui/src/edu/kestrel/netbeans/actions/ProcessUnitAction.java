@@ -83,10 +83,12 @@ public class ProcessUnitAction extends NodeAction {
     void processUnitForNode (Node node) {
 	MetaSlangDataObject dataObj = (MetaSlangDataObject) node.getCookie(DataObject.class);
 	FileObject fileObj = dataObj.getPrimaryFile();
+        String pathName = "";
+        try {
+            pathName = fileObj.getFileSystem().getSystemName();
+        } catch (FileStateInvalidException e) {}
         String fileName = fileObj.getPackageName('/'); 
-        //SourceElement source = dataObj.getSource();
-        System.out.println("In processUnitForNode, fileName is "+fileName);
-        LispProcessManager.processUnit(fileName);
+        LispProcessManager.processUnit(pathName, fileName);
     }
 
     /* Help context where to find more about the action.
