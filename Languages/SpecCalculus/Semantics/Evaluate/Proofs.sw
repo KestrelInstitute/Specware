@@ -48,10 +48,6 @@ spec
 	 then (Obligations scTerm, pos)
        else scTerm
 
-  op valueToSCTerm: Value -> SCTerm
-  def valueToSCTerm(v) = (Other v, noPos)
-
-
  (* 
   uid is an absolute path of the spec or morphism for which the proof units are generated.
   baseUid is an absolute path of the spec for the file for where the proof units are to be written.
