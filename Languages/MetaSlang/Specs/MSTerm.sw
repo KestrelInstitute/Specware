@@ -164,6 +164,23 @@ MS qualifying spec {
      | [x] -> x
      | _   -> mkRecord (tagTuple terms)
 
+ op  termToList: fa(a) ATerm a -> List(ATerm a)
+ def termToList t =
+    case t of
+      | Record (fields,_) ->
+        if tupleFields? fields
+	  then map (fn (_,x) -> x) fields
+	 else [t]
+      | _ -> [t]
+
+ op  tupleFields?: fa(a) List (Id * a) -> Boolean
+ def tupleFields? fields =
+   (foldl (fn ((id,_),i) ->
+	   if i < 0 then i
+	     else if id = Nat.toString i then i + 1 else ~1)
+      1 fields)
+   > 0
+
  %% Applications...
 
  op mkNot         : Term                        -> Term

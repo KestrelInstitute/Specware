@@ -214,8 +214,14 @@
   (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
 			   (sw::normalize-filename root-dir)))
   (sw:eval-in-lisp-no-value
+   (format "(load %S)"
+	   (concat root-dir "/Applications/Specware/bin/linux/exit-on-errors")))
+  (sw:eval-in-lisp-no-value
    (format "(namestring (specware::change-directory %S))" dir))
+  (sw:eval-in-lisp-no-value "(set-gc-parameters-for-build t)")
   (sw:eval-in-lisp-no-value "(load \"Specware4.lisp\")")
+  (sw:eval-in-lisp-no-value "(compact-memory t)")
+  (sw:eval-in-lisp-no-value "(set-gc-parameters-for-use t)")
   (when (file-exists-p world-name)
     (rename-file world-name (concat bin-dir "/Specware4-saved."
 				    *lisp-image-extension*)

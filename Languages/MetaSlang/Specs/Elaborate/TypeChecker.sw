@@ -93,7 +93,7 @@ spec {
    %% ---------- INITIALIZE SPEC (see ast-environment.sl) ----------
    %%   AstEnvironment.init adds default imports, etc.
    %%
-   let env_1 = initialEnv ((* "??spec_name??", *) given_spec, filename) in
+   let env_1 = initialEnv (given_spec, filename) in
    let {importInfo = importInfo as {imports = _, importedSpec = _, localOps, localSorts},
         sorts      = sorts_0, 
         ops        = ops_0, 
@@ -116,21 +116,7 @@ spec {
    %% sorts is a map to a map to sort_info
    let sorts_1 = mapiAQualifierMap elaborate_sort_0 sorts_0 in
  
-   %% ---------- OPS : PASS 0 ----------
-%% Identity!
-%   let def elaborate_op_0 (op_name, op_info_0 : MS.OpInfo) =
-%        (case op_info_0 of
-%          | (given_op_names, Nonfix, ([], (op_sort_0 as MetaTyVar _)), opt_def_0) ->
-%             (if undeterminedSort? op_sort_0 then op_info_0
-%             else op_info_0)
-%                 %% (case lookupImportedOp (env_1.importMap, op_name) of
-%                     %% | [(found_op_names, fixity, (ftvs, fsrt), _)] -> 
-%                 %% TODO:  Determine appropriate use of found_op_names vs. given_op_names
-%                 %%   (found_op_names, fixity, (ftvs, convertSortToMS.Sort fsrt), opt_def_0)
-%                 %% | _ -> op_info_0)
-%          | _ -> op_info_0)
-%   in
-%   let ops_1 = map (fn m -> StringMap.mapi elaborate_op_0 m) ops_0 in                
+   %% ---------- OPS : PASS 0 ----------         
    let ops_1 = ops_0 in
 
    %% ---------- PROPERTIES : PASS 0 ----------
@@ -230,7 +216,7 @@ spec {
 	      let type_vars_used  =
                 (let tv_cell = Ref [] : Ref TyVars in
                  let def insert tv = tv_cell := ListUtilities.insert (tv, ! tv_cell) in
-                 let def record_type_vars_used (aSrt : MS.Sort) = 
+                 let def record_type_vars_used (aSrt) = 
                       case aSrt of
                        | MetaTyVar (mtv,     _) -> 
                          (let {name = _, uniqueId, link} = ! mtv in
@@ -604,27 +590,27 @@ spec {
     | Fun (PChoose equiv, srt, pos) ->  (* Has sort (a -> b) -> Quotient(a, equiv) -> b *)
          let a = freshMetaTyVar pos in
          let b = freshMetaTyVar pos in
-         let ty1 : MS.Sort = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          let equiv = elaborateTerm (env, equiv, ty1)                   in 
-         let ty2 : MS.Sort = Arrow (Quotient (a, equiv, pos), b, pos) in
-         let ty3 : MS.Sort = Arrow (a, b, pos) in
-         let ty4 : MS.Sort = Arrow (ty3, ty2, pos) in
+         let ty2 = Arrow (Quotient (a, equiv, pos), b, pos) in
+         let ty3 = Arrow (a, b, pos) in
+         let ty4 = Arrow (ty3, ty2, pos) in
          (elaborateSortForTerm (env, trm, ty4, term_sort);
           elaborateSortForTerm (env, trm, srt, ty4);
           Fun (PChoose equiv, srt, pos))
 
     | Fun (PQuotient equiv, srt, pos) ->  % Has sort a -> Quotient(a, equiv)
          let a = freshMetaTyVar pos in
-         let ty1:MS.Sort = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          let equiv = elaborateTerm (env, equiv, ty1) in 
-         let ty2: MS.Sort = Arrow (a, Quotient (a, equiv, pos), pos) in
+         let ty2 = Arrow (a, Quotient (a, equiv, pos), pos) in
          (elaborateSortForTerm (env, trm, ty2, term_sort);
           elaborateSortForTerm (env, trm, srt, ty2);
           Fun (PQuotient equiv, srt, pos))  
 
     | Fun (Equals, srt, pos) -> 
          let a = freshMetaTyVar pos in
-         let ty:MS.Sort = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          (elaborateSortForTerm (env, trm, ty, term_sort);
           elaborateSortForTerm (env, trm, srt, ty);
           Fun (Equals, srt, pos))
@@ -651,9 +637,9 @@ spec {
 
     | Fun (PRelax pred, srt, pos) -> % Has sort Subsort(a, pred) -> a
          let a = freshMetaTyVar pos in
-         let ty1 : MS.Sort = Arrow (a, type_bool, pos) in
+         let ty1 = Arrow (a, type_bool, pos) in
          let pred = elaborateTerm (env, pred, ty1) in
-         let ty2 : MS.Sort = Arrow (Subsort (a, pred, pos), a, pos) in
+         let ty2 = Arrow (Subsort (a, pred, pos), a, pos) in
          (elaborateSortForTerm (env, trm, ty2, term_sort);
           elaborateSortForTerm (env, trm, srt, ty2);
           Fun (PRelax pred, srt, pos))
@@ -664,9 +650,9 @@ spec {
 
     | Fun (PRestrict pred, srt, pos) -> % Has sort a -> Subsort(a, pred)
          let a = freshMetaTyVar pos in
-         let ty1 : MS.Sort = Arrow (a, type_bool, pos) in
+         let ty1 = Arrow (a, type_bool, pos) in
          let pred = elaborateTerm (env, pred, ty1) in
-         let ty2 : MS.Sort = Arrow (a, Subsort (a, pred, pos), pos) in
+         let ty2 = Arrow (a, Subsort (a, pred, pos), pos) in
          (elaborateSortForTerm (env, trm, ty2, term_sort);
           elaborateSortForTerm (env, trm, srt, ty2);
           Fun (PRestrict pred, srt, pos))
@@ -735,13 +721,13 @@ spec {
                   | MetaTyVar (mtv, _) ->
                     let row = map (fn (id, _)-> (id, freshMetaTyVar pos)) row 
 		    in
-                      (linkMetaTyVar mtv ((Product (row, pos)):MS.Sort);
+                      (linkMetaTyVar mtv ((Product (row, pos)));
                        row)
                         
                   | Subsort (srt, term, _) -> 
                       unfoldConstraint (srt)        
 
-                  | sv : MS.Sort -> 
+                  | sv -> 
                       (pass2Error (env, 
                                   sv, 
                                   printTerm trm^" is constrained to be of an incompatible sort "^newline^ printSort term_sort, 
@@ -764,7 +750,7 @@ spec {
     | Lambda (rules, pos) -> 
          let alpha = freshMetaTyVar pos in
           let beta  = freshMetaTyVar pos in
-          let ty    = (Arrow (alpha, beta, pos)):MS.Sort in
+          let ty    = (Arrow (alpha, beta, pos)) in
           let _     = elaborateSort (env, ty, term_sort) in 
           Lambda 
            (map 
@@ -1304,7 +1290,7 @@ spec {
 	      (EmbedPat (embedId, pat, sort1, pos), env)
       | RecordPat (row, pos) ->
 	let r = map (fn (id, srt)-> (id, freshMetaTyVar pos)) row in
-	let _ = elaborateSort (env, (Product (r, pos)):MS.Sort, sort1) in
+	let _ = elaborateSort (env, (Product (r, pos)), sort1) in
 	let r = ListPair.zip (r, row) in
 	let (r, env) = 
 	    foldr (fn (((id, srt), (_, p)), (row, env))->
@@ -1315,12 +1301,12 @@ spec {
       | RelaxPat (pat, term, pos) -> 
 	let term = elaborateTerm (env, term, 
 				 Arrow (sort1, type_bool, pos)) in
-	let sort2 = (Subsort (sort1, term, pos)):MS.Sort in
+	let sort2 = (Subsort (sort1, term, pos)) in
 	let (pat, env) = elaboratePattern (env, pat, sort2) in
 	(RelaxPat (pat, term, pos), env)
       | QuotientPat (pat, term, pos) ->
 	let v = freshMetaTyVar pos in
-	let sort2 = (Quotient (v, term, pos)):MS.Sort in
+	let sort2 = (Quotient (v, term, pos)) in
 	let _ = elaborateSort (env, sort2, sort1) in
 	let term = elaborateTerm (env, term, 
 				 Arrow (Product ([("1", v), ("2", v)], pos), 

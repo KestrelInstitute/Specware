@@ -335,7 +335,7 @@ spec
 	     (gamma,cons((id,trm),terms)))
 		  (gamma,[]) fields
 	in
-	let trm: MS.Term = Record(terms,noPos) in
+	let trm = Record(terms,noPos) in
 	returnPattern(gamma, trm, patternSort pat,tau)
       | WildPat(sigma,_)	-> 
 	let v = freshName(gamma,"v") in
@@ -351,14 +351,14 @@ spec
      | NatPat(i,_) 		->      
        returnPattern(gamma,Fun(Nat i,natSort,noPos),natSort,tau)
      | RelaxPat(p,pred,_) 	-> 
-       let tau1:Sort = Subsort(tau,pred,noPos) in
+       let tau1 = Subsort(tau,pred,noPos) in
        let (gamma,trm) = bindPattern(gamma,p,tau1) in
-       (gamma,Apply(Fun(Relax,Arrow(tau1,tau,noPos),noPos),trm,noPos):MS.Term)
+       (gamma,Apply(Fun(Relax,Arrow(tau1,tau,noPos),noPos),trm,noPos))
      | QuotientPat(p,pred,_) 	-> 
-       let Quotient(tau1,_,_):Sort = tau in
+       let Quotient(tau1,_,_) = tau in
        let (gamma,trm) = bindPattern(gamma,p,tau1)
        in
-       (gamma,Apply(Fun(Quotient,Arrow(tau1,tau,noPos),noPos),trm,noPos):MS.Term)
+       (gamma,Apply(Fun(Quotient,Arrow(tau1,tau,noPos),noPos),trm,noPos))
 
 
 %
@@ -367,7 +367,7 @@ spec
 %
 
  op simplifyMatch: MS.Term -> MS.Term
- def simplifyMatch(trm:MS.Term) = 
+ def simplifyMatch(trm) = 
      case trm
        of IfThenElse(t1,t2,t3,_) -> 
 	  let t2 = simplifyMatch(t2) in
@@ -424,7 +424,7 @@ spec
      case (tau1,sigma1)
        of (Arrow(tau1,tau2,_),Arrow(sigma1,sigma2,_)) -> 
 	  let x = freshName(gamma,"x") in
-          let xVar   = Var((x,sigma1),noPos):MS.Term in
+          let xVar   = Var((x,sigma1),noPos) in
           let gamma1 = insert((x,sigma1),gamma) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVar,sigma1,tau1) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,
