@@ -3,7 +3,10 @@
 
 ;; When the following boolean is true, then all exceptions (not just Fail)
 ;; take the user into the Lisp debugger.
-(defvar SpecCalc::specwareWizard? nil)
+;; specwareWizard? has a def in ./Languages/SpecCalculus/Semantics/Monad.sw,
+;; which induces a defparameter in ./Applications/Specware/lisp/Specware4.lisp,
+;; so this defvar would be redundant:
+;; (defvar SpecCalc::specwareWizard? nil)
 
 #+allegro
 (defun quiet-do-command (&rest args)
