@@ -5,7 +5,7 @@
 
 (in-package :cl-user)
 
-(defvar *socket-number*)
+(defvar *socket-number* 4323)
 
 (defun print-result (arg)
   (format t "~% Connection to Java ~A" arg)
@@ -42,7 +42,7 @@
   (mp:process-run-function *java-listener-name* 'java-listener))
 
 (defun java-listener ()
-  (setq *socket-number* (read-from-string (specware::getenv "SpecBeansSocketPort")))
+;;  (setq *socket-number* (read-from-string (specware::getenv "SpecBeansSocketPort")))
   (format t "Connecting on socket number ~a~%" *socket-number*)
   (setq *java-socket* (socket:make-socket :remote-port *socket-number*))
   (setq *java-socket-stream* *java-socket*)
