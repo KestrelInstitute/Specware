@@ -1166,9 +1166,9 @@
   (princ (namestring (specware::current-directory)))
   (values))
 
-#-(or allegro clisp)
-(defun exit ()
-  (quit))
+(defun specware::exit ()
+  #+allegro (exit)
+  #-allegro (quit))
 
 #+allegro
 (top-level:alias ("quit" ) () (exit))
