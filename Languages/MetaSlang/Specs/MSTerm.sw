@@ -86,6 +86,7 @@ MS qualifying spec {
  def mkAppl       (t1, tms)       = Apply      (t1, mkTuple tms,         noPos)  
  def mkApplication(t1, tms)       = 
    case tms of
+     | [] -> mkApply(t1,Record([],noPos))
      | [t2] -> mkApply(t1, t2)
      | trm::rest -> mkAppl(t1, tms)
  def mkIfThenElse (t1, t2, t3)    = IfThenElse (t1, t2, t3,              noPos)
