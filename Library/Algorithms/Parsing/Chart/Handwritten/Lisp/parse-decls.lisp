@@ -365,6 +365,12 @@
      new-node)
   )
 
+#+DEBUG-PARSER 
+(defmacro fixnum? (x)
+  `(#+Allegro excl::fixnump 
+    #+CMU     extensions::fixnump
+    ,x))
+    
 #+OPTIMIZE-PARSER
 (defmacro structure-type-of (structure)
   `(caar (excl::structure-ref ,structure 0)))

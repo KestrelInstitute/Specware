@@ -179,7 +179,7 @@
   (catch 'mismatch
     (let ((alist nil))
       (labels ((collect (pattern value)
-		 (cond ((fixnump pattern)
+		 (cond ((fixnum? pattern)
 			;;(comment "New pair: ~S ~S" pattern value)
 			(push (cons pattern value) alist))
 		       ((eql pattern value)
