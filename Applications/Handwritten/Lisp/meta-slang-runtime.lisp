@@ -108,7 +108,7 @@
 	(null      (null    t2))
 	(string    (string= t1 t2))
 	(symbol    (eq      t1 t2))
-	(number    (eq      t1 t2))
+	(number    (eq      t1 t2)) ; catches complex numbers, etc.
 	(character (eq      t1 t2))
 	(cons      (and (consp t2) 
 			;;   Cons cells are equal if their elements are equal too.
@@ -136,9 +136,38 @@
 			     (do ((i 0 (+ i 1))
 				  (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
 				 ((or (= i dim) (not v-equal)) v-equal)))))))
-	(t (progn 
-	     (format t "Ill formed terms~%") 
-	     nil)))))
+	(hash-table
+	 ;; This can happen, for example, when comparing specs, which use maps from
+	 ;; /Library/Structures/Data/Maps/SimpleAsSTHarray.sw that are implemented
+	 ;; with hash tables in the associated Handwritten/Lisp/MapAsSTHarray.lisp
+	 ;; Expensive pair of sub-map tests, but should be used rarely:
+	 (catch 'fail
+	   ;; fail if t1 disagrees with t2 for something in the domain of t1
+	   (maphash #'(lambda (k v) 
+			(unless (slang-term-equals-2 v (gethash k t2))
+			  (throw 'fail nil)))
+		    t1)
+	   ;; fail if t2 disagrees with t1 for something in the domain of t2
+	   (maphash #'(lambda (k v) 
+			(unless (slang-term-equals-2 v (gethash k t1))
+			  (throw 'fail nil)))
+		    t2)
+	   ;; the maps are functionally equivalent
+	   t))
+	(pathname
+	 ;; As long as we might have hash-tables, maybe pathnames?
+	 (equal t1 t2))
+	(t 
+	 ;; structures, etc. will end up here
+	 ;; print semi-informative error message, but avoid printing
+	 ;; what could be enormous structures...
+	 (progn 
+	   (warn "In slang-term-equals, ill formed terms of types ~S and ~S are ~A~%" 
+		 (type-of t1)
+		 (type-of t2)
+		 (if (equal t1 t2) "LISP:EQUAL" "not LISP:EQUAL"))
+	   ;; would it be better to just fail?
+	   (equal t1 t2))))))
 
 (defun slang-term-equals (x) (slang-term-equals-2 (car x) (cdr x)))
 
