@@ -215,13 +215,10 @@ spec {
         if ~(memberQualifiedId(qualifier,op_name,localOps))
           then opinfo
         else
-        let sort_scheme_3 as (type_vars_3, srt_3) = checkSortScheme (env_3, sort_scheme_2) in
+        let (type_vars_3, srt_3) = checkSortScheme (env_3, sort_scheme_2) in
 	let all_different? = checkDifferent (type_vars_3, StringSet.empty)  in
-        %let _ (* pos *) = sortAnn srt in
-        (op_names, 
-         fixity, 
-         sort_scheme_3,
-         map (fn (type_vars_2, term_2) ->
+	let defs_3 =
+	    map (fn (type_vars_2, term_2) ->
 	      let pos    = termAnn term_2 in
 	      let term_3 = elaborateTermTop (env_3, term_2, srt_3)  in
 	      %%  ---
@@ -275,7 +272,15 @@ spec {
 			"Repeated sort variables contained in "^(printSortScheme scheme),
 			pos));
 	       (type_vars_3_b, term_3)))
-	 defs_2)
+	    defs_2
+	in
+	let type_vars_4 =
+	    case defs_3 of
+	      | (type_vars_3_b,_)::_ -> if length type_vars_3_b > length type_vars_3
+	                                  then type_vars_3_b else type_vars_3
+	      | _ -> type_vars_3
+	in
+        (op_names, fixity, (type_vars_4, srt_3), defs_3)
    in
    let ops_3 = mapiAQualifierMap elaborate_op_2 ops_2 
    in
