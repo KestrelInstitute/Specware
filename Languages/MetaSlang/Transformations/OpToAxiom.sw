@@ -79,7 +79,8 @@ Prover qualifying spec
        let rangeTerm = mkApply(mkOp(opname, srt), domVarTerm) in
        let rangePred = srtPred(spc, rng, rangeTerm) in
        let impl = Utilities.mkSimpImplies(domPred, rangePred) in
-       let fmla = mkBind(Forall, [domVar], impl) in
+       %let fmla = mkBind(Forall, [domVar], impl) in
+       let fmla = mkBind(Forall, [domVar], rangePred) in
          fmla
       | _ ->
        let rangeTerm = mkOp(opname, srt) in
@@ -103,6 +104,7 @@ Prover qualifying spec
 	    let rangePred = srtPred(spc, rng, rangeTerm) in
 	    let impl = Utilities.mkSimpImplies(domPred, rangePred) in
 	    let fmla = mkBind(Forall, domVars, impl) in
+	    let fmla = mkBind(Forall, domVars, rangePred) in
   	      fmla
 	  | _ ->
 	    let domVar = ("dom_" ^ name, dom) in
@@ -111,7 +113,8 @@ Prover qualifying spec
 	    let rangeTerm = mkApply(mkOp(opname, srt), domVarTerm) in
 	    let rangePred = srtPred(spc, rng, rangeTerm) in
 	    let impl = Utilities.mkSimpImplies(domPred, rangePred) in
-	    let fmla = mkBind(Forall, [domVar], impl) in
+	    %let fmla = mkBind(Forall, [domVar], impl) in
+	    let fmla = mkBind(Forall, [domVar], rangePred) in
   	      fmla
 
   op opSubsortCurryNoArityAxiom: Spec * QualifiedId * Sort -> MS.Term

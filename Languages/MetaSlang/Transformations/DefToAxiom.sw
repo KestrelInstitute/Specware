@@ -1,6 +1,7 @@
 Prover qualifying spec
  import ../Specs/Environment
  import ProverPattern
+ import OpToAxiom
  import Simplify
 
   % sort Term = MS.Term
@@ -147,8 +148,11 @@ Prover qualifying spec
     else [mkDefEquality(srt, name, term)]
 *)
 
+  op axiomFromOpTop: Spec * Qualifier * Id * OpInfo -> Properties
+  def axiomFromOpTop(spc,qname,name,decl) =
+    axiomFromOpDefTop(spc,qname,name,decl) ++ axiomFromOpSrtTop(spc,qname,name,decl)
+
   op axiomFromOpDefTop: Spec * Qualifier * Id * OpInfo -> Properties
-  
   def axiomFromOpDefTop(spc,qname,name,decl) =
     case decl:OpInfo of
       | (op_names, fixity, (srtTyVars,srt), [(termTyVars, term)]) ->
@@ -161,16 +165,34 @@ Prover qualifying spec
 	  let liftedFmlas = proverPattern(initialFmla) in
 	  %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
 	  %let _ = if name = "queens_gs_aux_1" then map (fn (lf) -> writeLine("LiftedAxioms: " ^ printTerm(lf))) liftedFmlas else [] in
-	  let axioms = map (fn(fmla:MS.Term) -> (Axiom, mkQualifiedId(qname, name^"_def"), [], withAnnT(fmla, pos))) liftedFmlas in
+	  let defAxioms = map (fn(fmla:MS.Term) -> (Axiom, mkQualifiedId(qname, name^"_def"), [], withAnnT(fmla, pos))) liftedFmlas in
 	  %%let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
 	  	%let _ = writeLine(name^": in axiomFromOpDef Def part") in
-            axioms
+            defAxioms
 	else %let _ = writeLine(name^": in axiomFromOpDef Def part is not local") in
 	  %let _ = debug("not local op") in
 	     []
       | _ -> %let _ = writeLine(name^": in axiomFromOpDef NOT def part") in
 	       []
-	
+
+  op axiomFromOpSrtTop: Spec * Qualifier * Id * OpInfo -> Properties
+  def axiomFromOpSrtTop(spc,qname,name,decl) =
+    case decl:OpInfo of
+      | (op_names, fixity, (srtTyVars,srt), _) ->
+        let localOps = spc.importInfo.localOps in
+	if memberQualifiedId(qname, name, localOps) then
+	  let pos = sortAnn(srt) in
+	  let opName = mkQualifiedId(qname, name) in
+	  let subTypeFmla = opSubsortAxiom(spc, opName, srt) in
+	  let liftedFmlas = proverPattern(subTypeFmla) in
+	  let subTypeAxioms =  map (fn(fmla:MS.Term) -> (Axiom, mkQualifiedId(qname, name^"_def"), [], withAnnT(fmla, pos))) liftedFmlas in
+	  %(Axiom, mkQualifiedId(qname, name^"_def"), [], withAnnT(subTypeFmla, pos)) in
+            subTypeAxioms
+	else %let _ = writeLine(name^": in axiomFromOpDef Def part is not local") in
+	  %let _ = debug("not local op") in
+	     []
+      | _ -> %let _ = writeLine(name^": in axiomFromOpDef NOT def part") in
+	       []
 
 
 endspec

@@ -193,9 +193,17 @@ snark qualifying spec
   def mkSnarkName(qual, id) =
     case (qual, id) of
       | ("Nat",     "<=") -> "=<"
-      | ("Integer",     "<=") -> "=<"
+      | ("Integer", "<=") -> "=<"
       | ("Nat",     "~") -> "-"
-      | ("Integer",     "~") -> "-"
+      | ("Integer", "~") -> "-"
+      | ("Nat", ">=") -> ">="
+      | ("Nat", "+") -> "+"
+      | ("Nat", "-") -> "-"
+      | ("Nat", "*") -> "*"
+      | ("Integer", ">=") -> ">="
+      | ("Integer", "+") -> "+"
+      | ("Integer", "-") -> "-"
+      | ("Integer", "*") -> "*"
       | (_, "hoapply") ->  "HOAPPLY"
       | _ -> printQualifiedId(mkQualifiedId(qual, id))
 

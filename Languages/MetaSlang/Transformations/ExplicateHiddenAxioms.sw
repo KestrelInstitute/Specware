@@ -1,12 +1,12 @@
 Prover qualifying spec
  import DefToAxiom
  import SortToAxiom
-% import OpToAxiom
+ import OpToAxiom
 
   op explicateHiddenAxioms: Spec -> Spec
   def explicateHiddenAxioms spc =
     let def axiomFromSortDef(qname,name,sortDecl,sortAxioms) = sortAxioms ++ axiomFromSortDefTop(spc,qname,name,sortDecl) in
-    let def axiomFromOpDef(qname,name,decl,defAxioms) = defAxioms ++ axiomFromOpDefTop(spc,qname,name,decl) in
+    let def axiomFromOp(qname,name,decl,defAxioms) = defAxioms ++ axiomFromOpTop(spc,qname,name,decl) in
     let norm_spc = spc in
     %%let norm_spc = translateMatch(norm_spc) in
     %%let norm_spc = arityNormalize(norm_spc) in
@@ -25,7 +25,7 @@ Prover qualifying spec
               Cons(na, mergeAxiomsByPos(Cons(oa,oas),nas))
             else Cons(oa, mergeAxiomsByPos(oas,Cons(na,nas))) in
     let newSortAxioms = foldriAQualifierMap axiomFromSortDef [] norm_spc.sorts in
-    let newDefAxioms = foldriAQualifierMap axiomFromOpDef [] norm_spc.ops in
+    let newDefAxioms = foldriAQualifierMap axiomFromOp [] norm_spc.ops in
     let newProperties = mergeAxiomsByPos(spc.properties, newSortAxioms) in
     let newProperties = mergeAxiomsByPos(newProperties, newDefAxioms) in
     %%let _ = debug("explicateHidden") in 
