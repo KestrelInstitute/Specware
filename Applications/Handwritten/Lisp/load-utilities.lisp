@@ -170,10 +170,11 @@
     filename))
 )
 
-(defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
-                                             #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-					     #+(or mcl cmu sbcl) "/tmp/"
-					     ))
+(defparameter temporaryDirectory
+    (substitute #\/ #\\ (namestring #+allegro   (SYSTEM:temporary-directory)
+				    #+Lispworks SYSTEM::*TEMP-DIRECTORY*
+				    #+(or mcl cmu sbcl) "/tmp/"
+				    )))
 (defun temporaryDirectory-0 ()
   (namestring 
    #+allegro      (SYSTEM:temporary-directory)

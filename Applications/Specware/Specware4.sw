@@ -3,7 +3,7 @@
 This constructs Specware and refines various abstract sorts.
 
 \begin{spec}
-spec {
+spec 
   import /Languages/SpecCalculus/Semantics/Specware
   import /Languages/SpecCalculus/Semantics/Evaluate/NoOther
 
@@ -33,5 +33,5 @@ spec {
     /Library/Structures/Data/Maps/Monomorphic/AsLists
   import NatTrans qualifying
     /Library/Structures/Data/Categories/NatTrans/FreeFunctorDomain/Polymorphic/AsRecord
-} 
+endspec
 \end{spec}
