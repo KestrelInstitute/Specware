@@ -429,9 +429,10 @@ are no longer needed. *)
       | None -> ~1
       | Some index -> index
 
-  op ppTerms : List MS.Term -> String
-  def ppTerms terms =
-    ppFormat (ppIndent (ppSep ppNewline (map ppATerm terms)))
+  op ppTerms : String -> List MS.Term -> String
+  def ppTerms prefix terms =
+    ppFormat (ppConcat [ppString prefix,
+			ppNest (length prefix) (ppSep ppNewline (map ppATerm terms))])
 
   op getTransitionGuardAndActions : Transition -> Env (Option MSlang.Term * List MSlang.Term)
   def getTransitionGuardAndActions transition = 
@@ -441,10 +442,16 @@ are no longer needed. *)
      %%   looking for those listed as invariants in the modespec
      %% foldVariables maps over spec ops
      print (case (edge transition) of
-	      | Nat (_, qid) -> "\n------\nStep: " ^ (printQualifiedId qid) ^ "\n"
-	      | _ -> print ("\n ?? \n"));
-     print ("\nInvariants: " ^ (anyToString (invariants ms)) ^ "\n");
-     print ("\nVariables:  " ^ (anyToString (variables ms)) ^ "\n");
+	      | Nat (_, qid) -> "\n------\nStep: " ^ (printQualifiedId qid) ^ "\n\n"
+	      | _ -> print ("\n ?? \n\n"));
+     print ("  Invariants: " ^ (anyToString (invariants ms)) ^ "\n");
+     print ("   Variables: " ^ 
+	    (foldVariables (fn s -> 
+			    fn (qid :: _, _, _, _) -> 
+			    s ^ (printQualifiedId qid) ^ "  ")
+	                   "" 
+			   ms) ^ 
+	    "\n");
      (guard_terms, aux_action_terms)  <- foldVariants (fn (guards, actions) -> fn claim -> 
 						       if claim.2 = "Guard" then
 							 return (cons (term claim,guards),
@@ -455,10 +462,10 @@ are no longer needed. *)
                                                       ([], [])
 						      ms;
      action_terms <- foldVariables infoToBindings [] ms;
-     print ("Aux    terms: " ^ (ppTerms aux_action_terms) ^ "\n");
-     print ("Action terms: " ^ (ppTerms action_terms)     ^ "\n");
+     print ((ppTerms "Aux    terms: " aux_action_terms) ^ "\n");
+     print ((ppTerms "Action terms: " action_terms)     ^ "\n");
+     print ((ppTerms "Guard  terms: " guard_terms)      ^ "\n");
      action_terms <- return (aux_action_terms ++ (rev action_terms));
-     print ("Guard  terms: " ^ (ppTerms guard_terms)  ^ "\n");
      case guard_terms of
        | [] ->
          return (None, action_terms)
