@@ -176,7 +176,7 @@ compiles the resulting specification to lisp.
   def fileNameHandler unitId except =
     case except of
       | UIDNotFound (position, badUnitId) ->
-         if badUnitId = unitId then
+         if badUnitId = unitId && ~(hasHashSuffix? unitId) then
            return ()
          else
            raise except

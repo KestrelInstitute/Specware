@@ -372,5 +372,11 @@ The following are invoked from the parser:
   def mkReduce      (term_a, term_b,            pos) = (Reduce      (term_a, term_b),            pos)
   def mkOther       (other,                     pos) = (Other       other,                       pos)
 
+  op  hasHashSuffix?: RelativeUID -> Boolean
+  def hasHashSuffix? unitId =
+    case unitId of
+      | UnitId_Relative  ({path,hashSuffix=Some _}) -> true
+      | SpecPath_Relative({path,hashSuffix=Some _}) -> true
+      | _ -> false
 endspec
 \end{spec}
