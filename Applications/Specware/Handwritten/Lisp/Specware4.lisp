@@ -46,6 +46,10 @@
     (make-pathname :defaults file :type "lisp"))
    (load (make-pathname :defaults file :type nil)))
 
+;; This defines the RE package .. this will go away when the bootstrap
+;; is complete.
+(compile-and-load-lisp-file "re-legacy")
+
 ;; The following list should be generated automatically!
 ;; Perhaps setq is the wrong thing to use. defvar?
 ;; The list is used only in this file.
@@ -59,6 +63,7 @@
     "Library/Base/Handwritten/Lisp/List.lisp"
     "Library/Base/Handwritten/Lisp/String.lisp"
     "Library/Base/Handwritten/Lisp/Option.lisp"
+    "Library/Base/Handwritten/Lisp/System.lisp"
     "Library/IO/Primitive/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
@@ -87,10 +92,6 @@
 ;;  (if (boundp 'parser4::*collected-definitions*) 
 ;;      (symbol-value 'parser4::*collected-definitions*)
 ;;    nil))
-
-;; This defines the RE package .. this will go away when the bootstrap
-;; is complete.
-(compile-and-load-lisp-file "re-legacy")
 
 ;; The following are temporary until the parser migrates under the Specware4
 ;; tree. The following are referred to in semantics.lisp but the qualifiers
@@ -125,10 +126,11 @@
 (make-system (concatenate 'string
     Specware4 "/../SW4/Languages/SpecCalculus/Parser/Handwritten"))
 
+(make-system "../../UI/Emacs/Handwritten/Lisp")
+
 (format t "~2%To test, run (test)~%")
 (format t "~%That will run (sw \"/Applications/Specware/Specware4\")~2%")
 
 (defun user::test ()
   (user::sw "/Applications/Specware/Specware4")
 )
-

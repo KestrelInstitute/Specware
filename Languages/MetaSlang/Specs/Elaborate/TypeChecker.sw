@@ -104,15 +104,15 @@ spec {
    %let _ = String.writeLine "Elaborating sorts" in
    let def elaborate_sort_0
              (qualifier,sortName,
-	      sortInfo as (sort_names, type_vars_0, opt_def_0)) = 
+              sortInfo as (sort_names, type_vars_0, opt_def_0)) = 
         %% Sanity check on sort
         if ~(memberQualifiedId(qualifier,sortName,localSorts))
-	  then sortInfo
-	  else (sort_names, 
-		type_vars_0,          
-		case opt_def_0 of
-		  | None       -> None
-		  | Some srt_0 -> Some (checkSort (env_1, srt_0)))
+          then sortInfo
+          else (sort_names, 
+                type_vars_0,          
+                case opt_def_0 of
+                  | None       -> None
+                  | Some srt_0 -> Some (checkSort (env_1, srt_0)))
    in
    %% sorts is a map to a map to sort_info
    let sorts_1 = mapiAQualifierMap elaborate_sort_0 sorts_0 in
@@ -122,13 +122,13 @@ spec {
 %   let def elaborate_op_0 (op_name, op_info_0 : POpInfo) =
 %        (case op_info_0 of
 %          | (given_op_names, Nonfix, ([], (op_sort_0 as MetaTyVar _)), opt_def_0) ->
-%  	   (if undeterminedSort? op_sort_0 then op_info_0
-% 	    else op_info_0)
-% 	        %% (case lookupImportedOp (env_1.importMap, op_name) of
-%             	%% | [(found_op_names, fixity, (ftvs, fsrt), _)] -> 
+%             (if undeterminedSort? op_sort_0 then op_info_0
+%             else op_info_0)
+%                 %% (case lookupImportedOp (env_1.importMap, op_name) of
+%                     %% | [(found_op_names, fixity, (ftvs, fsrt), _)] -> 
 %                 %% TODO:  Determine appropriate use of found_op_names vs. given_op_names
-% 		%%   (found_op_names, fixity, (ftvs, convertSortToPSort fsrt), opt_def_0)
-% 		%% | _ -> op_info_0)
+%                 %%   (found_op_names, fixity, (ftvs, convertSortToPSort fsrt), opt_def_0)
+%                 %% | _ -> op_info_0)
 %          | _ -> op_info_0)
 %   in
 %   let ops_1 = map (fn m -> StringMap.mapi elaborate_op_0 m) ops_0 in                
@@ -139,9 +139,9 @@ spec {
  
    %% ---------- SPEC AFTER PASS 0  ----------
    let spec_1 = {importInfo   = importInfo,   
-		 sorts        = sorts_1, 
-		 ops          = ops_1, 
-		 properties   = props_1} 
+                 sorts        = sorts_1, 
+                 ops          = ops_1, 
+                 properties   = props_1} 
    in
  
    %% ======================================================================
@@ -157,24 +157,24 @@ spec {
    %% ---------- OPS   : PASS 1 ----------
    let def elaborate_op_1 poly?
              (qualifier, op_name,
-	      opinfo as (op_names, fixity, (type_vars_1, srt_1), opt_def_1)) = 
+              opinfo as (op_names, fixity, (type_vars_1, srt_1), opt_def_1)) = 
         if ~(memberQualifiedId(qualifier,op_name,localOps))
-	  then opinfo
+          then opinfo
         else
         let srt_2 = checkSort (env_2, srt_1) in
         (op_names, 
-	 fixity, 
-	 (type_vars_1, srt_2), 
-	 case opt_def_1 of
-	   None ->  None
-	   | Some term_1 -> 
- 	   % let _ = System.print term_1 in
- 	   let term_2 = if poly? = ~(type_vars_1 = Nil)
-			  then elaborateTerm (env_2, term_1, srt_2)
- 			else term_1 
- 	   in
-	     % TODO: Check that op sort is an instance of def sort
-	     Some term_2)
+         fixity, 
+         (type_vars_1, srt_2), 
+         case opt_def_1 of
+           None ->  None
+           | Some term_1 -> 
+            % let _ = System.print term_1 in
+            let term_2 = if poly? = ~(type_vars_1 = Nil)
+                          then elaborateTerm (env_2, term_1, srt_2)
+                         else term_1 
+            in
+             % TODO: Check that op sort is an instance of def sort
+             Some term_2)
    in
    %% Do polymorphic definitions first
    let ops_2_a = mapiAQualifierMap (elaborate_op_1 true)  ops_1   in
@@ -203,7 +203,7 @@ spec {
    %% ---------- SORTS : PASS 2 ---------- 
    % let _ = String.writeLine "Elaborating sorts" in
    let def elaborate_sort_2 (qualifier, sortName,
-			     sortInfo as (sort_names, type_vars_2, opt_def_2)) = 
+                             sortInfo as (sort_names, type_vars_2, opt_def_2)) = 
         (sort_names, 
          type_vars_2, 
          case opt_def_2 of
@@ -215,66 +215,66 @@ spec {
  
    %% ---------- OPS : PASS 2 ---------- 
    let def elaborate_op_2 (qualifier, op_name,
-			   opinfo as (op_names, fixity, (type_vars_2, srt_2), opt_def_2)) =
+                           opinfo as (op_names, fixity, (type_vars_2, srt_2), opt_def_2)) =
         if ~(memberQualifiedId(qualifier,op_name,localOps))
-	  then opinfo
+          then opinfo
         else
         let type_vars_3 = type_vars_2 in
         let srt_3 = checkSort (env_3, srt_2) in
         %let _ (* pos *) = sortAnn srt in
         (op_names, 
- 	fixity, 
- 	(type_vars_3, srt_3), 
- 	case opt_def_2 of
+         fixity, 
+         (type_vars_3, srt_3), 
+         case opt_def_2 of
          | None -> None
- 	 | Some term_2 -> 
- 	   let pos    = termAnn term_2 in
- 	   let term_3 = elaborateTerm (env_3, term_2, srt_3)  in
- 	   let all_different? = checkDifferent (type_vars_3, StringSet.empty)  in
- 	   %%  ---
- 	   let tvpe_vars_used  =
- 	       (let tv_cell = Ref [] : Ref TyVars in
- 		let def insert tv = tv_cell := ListUtilities.insert (tv, ! tv_cell) in
- 		let def record_type_vars_used (aSrt : PSort) = 
- 		     case aSrt of
- 	              | MetaTyVar (mtv,     _) -> 
- 			(let {name = _, uniqueId, link} = ! mtv in
- 			 case link of
- 		          | Some s -> record_type_vars_used s
- 			  | None   -> error (env_3, 
- 					     "Incomplete sort for op "^op_name^":"^newline
- 					     ^(printSort srt_3), 
- 					     pos))
- 		      | TyVar     (tv,      _) -> insert tv
- 		      | Product   (fields,  _) -> app (fn (_, s)      -> record_type_vars_used s)           fields
- 		      | CoProduct (fields,  _) -> app (fn (_, Some s) -> record_type_vars_used s | _ -> ()) fields
- 		      | Subsort   (s, _,    _) -> record_type_vars_used s
- 		      | Quotient  (s, _,    _) -> record_type_vars_used s
- 		      | Arrow     (s1, s2,  _) -> (record_type_vars_used s1; record_type_vars_used s2)
- 		      | PBase     (_, srts, _) -> app record_type_vars_used srts
- 		in			
- 		let _ = record_type_vars_used srt_3 in
- 		! tv_cell)
- 	   in
- 	   let type_vars_3_b = if null type_vars_3 then
+          | Some term_2 -> 
+            let pos    = termAnn term_2 in
+            let term_3 = elaborateTerm (env_3, term_2, srt_3)  in
+            let all_different? = checkDifferent (type_vars_3, StringSet.empty)  in
+            %%  ---
+            let tvpe_vars_used  =
+                (let tv_cell = Ref [] : Ref TyVars in
+                 let def insert tv = tv_cell := ListUtilities.insert (tv, ! tv_cell) in
+                 let def record_type_vars_used (aSrt : PSort) = 
+                      case aSrt of
+                       | MetaTyVar (mtv,     _) -> 
+                         (let {name = _, uniqueId, link} = ! mtv in
+                          case link of
+                           | Some s -> record_type_vars_used s
+                           | None   -> error (env_3, 
+                                              "Incomplete sort for op "^op_name^":"^newline
+                                              ^(printSort srt_3), 
+                                              pos))
+                       | TyVar     (tv,      _) -> insert tv
+                       | Product   (fields,  _) -> app (fn (_, s)      -> record_type_vars_used s)           fields
+                       | CoProduct (fields,  _) -> app (fn (_, Some s) -> record_type_vars_used s | _ -> ()) fields
+                       | Subsort   (s, _,    _) -> record_type_vars_used s
+                       | Quotient  (s, _,    _) -> record_type_vars_used s
+                       | Arrow     (s1, s2,  _) -> (record_type_vars_used s1; record_type_vars_used s2)
+                       | PBase     (_, srts, _) -> app record_type_vars_used srts
+                 in                        
+                 let _ = record_type_vars_used srt_3 in
+                 ! tv_cell)
+            in
+            let type_vars_3_b = if null type_vars_3 then
                                  tvpe_vars_used % Function was polymorphic, but not declared so.
- 	                       else if length tvpe_vars_used = length type_vars_3 then
- 			        tvpe_vars_used (* Probably correct ;-*)
- 			       else 
- 			        let scheme = convertPSortSchemeToSortScheme (type_vars_3, srt_3)   in
- 			        let scheme = printSortScheme (scheme) in
- 			        (error (env_3, 
- 					"mismatch between bound and free variables "^scheme, 
- 					pos);
- 				 type_vars_3)
- 	   in				 
- 	   ((if all_different? then
- 	       ()
- 	     else 
- 	       let scheme = convertPSortSchemeToSortScheme (type_vars_3_b, srt_3)   in
- 	       let scheme = printSortScheme(scheme) in
- 	       error(env_3, "Repeated sort variables contained in "^scheme, pos));
- 	    Some term_3))
+                                else if length tvpe_vars_used = length type_vars_3 then
+                                 tvpe_vars_used (* Probably correct ;-*)
+                                else 
+                                 let scheme = convertPSortSchemeToSortScheme (type_vars_3, srt_3)   in
+                                 let scheme = printSortScheme (scheme) in
+                                 (error (env_3, 
+                                         "mismatch between bound and free variables "^scheme, 
+                                         pos);
+                                  type_vars_3)
+            in                                 
+            ((if all_different? then
+                ()
+              else 
+                let scheme = convertPSortSchemeToSortScheme (type_vars_3_b, srt_3)   in
+                let scheme = printSortScheme(scheme) in
+                error(env_3, "Repeated sort variables contained in "^scheme, pos));
+             Some term_3))
    in
    let ops_3 = mapiAQualifierMap elaborate_op_2 ops_2 
    in
@@ -282,27 +282,27 @@ spec {
    %% ---------- AXIOMS : PASS 2 ----------
    let def elaborate_fm_2 (prop_type, name, type_vars_2, fm_2) = 
         (let type_vars_3 = type_vars_2 in
- 	let fm_3 = elaborateTerm (env_3, fm_2, type_bool) in
- 	%String.writeLine "Elaborating formula";
- 	%let context = initializeTyVars() in
- 	%let term1 = termToMetaSlang context term in
- 	%let tyVars1 = deleteTyVars context tyVars in
- 	%let tyVars  = map unlinkTyVar tyVars in
- 	%let tyVars2 = deleteTyVars context tyVars in
- 	%let term3 = termToMetaSlang context term_3 in
- 	(%String.writeLine (MetaSlangPrint.printTermWithSorts term1);
- 	 %app String.writeLine tyVars1;
- 	 %String.writeLine (MetaSlangPrint.printTermWithSorts term3);
- 	 %app String.writeLine tyVars2;
- 	 (prop_type, name, type_vars_3, fm_3)))
+         let fm_3 = elaborateTerm (env_3, fm_2, type_bool) in
+         %String.writeLine "Elaborating formula";
+         %let context = initializeTyVars() in
+         %let term1 = termToMetaSlang context term in
+         %let tyVars1 = deleteTyVars context tyVars in
+         %let tyVars  = map unlinkTyVar tyVars in
+         %let tyVars2 = deleteTyVars context tyVars in
+         %let term3 = termToMetaSlang context term_3 in
+         (%String.writeLine (MetaSlangPrint.printTermWithSorts term1);
+          %app String.writeLine tyVars1;
+          %String.writeLine (MetaSlangPrint.printTermWithSorts term3);
+          %app String.writeLine tyVars2;
+          (prop_type, name, type_vars_3, fm_3)))
    in
    let props_3 = map elaborate_fm_2 props_2 in
  
    %% ---------- SPEC AFTER PASS 2 ----------
    let spec_3 = {importInfo   = importInfo,   
-		 sorts        = sorts_3, 
-		 ops          = ops_3, 
-		 properties   = props_3}
+                 sorts        = sorts_3, 
+                 ops          = ops_3, 
+                 properties   = props_3}
    in
    case checkErrors (env_3) of
     | None     -> Ok spec_3 : ErrorMonad.Result PosSpec
@@ -319,89 +319,89 @@ spec {
       of TyVar _ -> srt
 
        | MetaTyVar (v, _) ->
-	 (case ! v
-	    of {link = Some other_sort, uniqueId, name} -> checkSort(env,other_sort)
-	     | _ -> srt)
+         (case ! v
+            of {link = Some other_sort, uniqueId, name} -> checkSort(env,other_sort)
+             | _ -> srt)
 
        | PBase (given_sort_qid, instance_sorts, pos) ->
-	 (case findAllSorts (env.internal, given_sort_qid) of
-	   | sort_info::r -> 
-	     %% TODO: complain if ambiguous
-	     (case sort_info of (main_name::_, found_ty_vars, _) -> 
-	       ((if ~(length found_ty_vars = length instance_sorts) then
-		   let given_sort_str =
-		        (printQualifiedId main_name)
-		       ^ (case instance_sorts of
-			    | Nil    -> ""    
-			    | hd::tl -> "("^ "??" ^ (foldl (fn (instance_sort, str) ->
-							    str^", "^ "??")
-						     ""
-						     tl) 
-			                ^ ")")
-		   in
-		   let found_sort_str =
-		        (printQualifiedId main_name)
-		       ^ (case found_ty_vars of
-			    | Nil    -> ""    
-			    | hd::tl -> "("^ hd ^ (foldl (fn (ty_var, str) ->
-							  str^", "^ ty_var) 
-						   ""
-						   tl) 
-			               ^ ")")
-		   in                                
-		   error (env, 
-			  "Sort reference "^given_sort_str^" does not match declared sort "
-			  ^found_sort_str, 
-			  pos)
-		 else ()); 
-		PBase (main_name,
-		       map (fn instance_sort -> checkSort (env, instance_sort))
-			   instance_sorts, 
-		       pos)))
-	   | [] -> 
-	     (let given_sort_str =
-	           (printQualifiedId given_sort_qid)
-		  ^(case instance_sorts of
-		      | Nil    -> ""    
-		      | hd::tl -> "("^ "??" ^ (foldl (fn (instance_sort, str) ->
-						      str^", "^ "??")
-					       ""
-					       tl) 
-		                 ^ ")")
-		   in
-	      error (env, 
-		     "Sort identifier in "^given_sort_str^" has not been declared", 
-		     pos);
-	      PBase (given_sort_qid, instance_sorts, pos)))
+         (case findAllSorts (env.internal, given_sort_qid) of
+           | sort_info::r -> 
+             %% TODO: complain if ambiguous
+             (case sort_info of (main_name::_, found_ty_vars, _) -> 
+               ((if ~(length found_ty_vars = length instance_sorts) then
+                   let given_sort_str =
+                        (printQualifiedId main_name)
+                       ^ (case instance_sorts of
+                            | Nil    -> ""    
+                            | hd::tl -> "("^ "??" ^ (foldl (fn (instance_sort, str) ->
+                                                            str^", "^ "??")
+                                                     ""
+                                                     tl) 
+                                        ^ ")")
+                   in
+                   let found_sort_str =
+                        (printQualifiedId main_name)
+                       ^ (case found_ty_vars of
+                            | Nil    -> ""    
+                            | hd::tl -> "("^ hd ^ (foldl (fn (ty_var, str) ->
+                                                          str^", "^ ty_var) 
+                                                   ""
+                                                   tl) 
+                                       ^ ")")
+                   in                                
+                   error (env, 
+                          "Sort reference "^given_sort_str^" does not match declared sort "
+                          ^found_sort_str, 
+                          pos)
+                 else ()); 
+                PBase (main_name,
+                       map (fn instance_sort -> checkSort (env, instance_sort))
+                           instance_sorts, 
+                       pos)))
+           | [] -> 
+             (let given_sort_str =
+                   (printQualifiedId given_sort_qid)
+                  ^(case instance_sorts of
+                      | Nil    -> ""    
+                      | hd::tl -> "("^ "??" ^ (foldl (fn (instance_sort, str) ->
+                                                      str^", "^ "??")
+                                               ""
+                                               tl) 
+                                 ^ ")")
+                   in
+              error (env, 
+                     "Sort identifier in "^given_sort_str^" has not been declared", 
+                     pos);
+              PBase (given_sort_qid, instance_sorts, pos)))
 
       | CoProduct (fields, pos) ->  
-	CoProduct (map (fn (id, None)   -> (id, None) 
-			 | (id, Some s) -> (id, Some (checkSort (env, s))))
-		       fields, 
-		   pos)
+        CoProduct (map (fn (id, None)   -> (id, None) 
+                         | (id, Some s) -> (id, Some (checkSort (env, s))))
+                       fields, 
+                   pos)
 
       | Product (fields, pos) ->
-	Product (map (fn (id, s)-> (id, checkSort (env, s))) fields,
-		 pos)
+        Product (map (fn (id, s)-> (id, checkSort (env, s))) fields,
+                 pos)
 
       | Quotient (given_base_sort, given_relation, pos) ->
-	let new_base_sort = checkSort (env, given_base_sort) in
-	let new_rel_sort = Arrow (Product ([("1", new_base_sort), 
-					    ("2", new_base_sort)], 
-					   pos), 
-				  type_bool, 
-				  pos) in
-	let new_relation = elaborateTerm (env, given_relation, new_rel_sort) in
-	Quotient (new_base_sort, new_relation, pos)
+        let new_base_sort = checkSort (env, given_base_sort) in
+        let new_rel_sort = Arrow (Product ([("1", new_base_sort), 
+                                            ("2", new_base_sort)], 
+                                           pos), 
+                                  type_bool, 
+                                  pos) in
+        let new_relation = elaborateTerm (env, given_relation, new_rel_sort) in
+        Quotient (new_base_sort, new_relation, pos)
 
       | Subsort (given_super_sort, given_predicate, pos) -> 
-	let new_super_sort = checkSort (env, given_super_sort) in
-	let new_pred_sort  = Arrow (new_super_sort, type_bool, pos) in
-	let new_predicate  = elaborateTerm (env, given_predicate, new_pred_sort) in
-	Subsort (new_super_sort, new_predicate, pos)
+        let new_super_sort = checkSort (env, given_super_sort) in
+        let new_pred_sort  = Arrow (new_super_sort, type_bool, pos) in
+        let new_predicate  = elaborateTerm (env, given_predicate, new_pred_sort) in
+        Subsort (new_super_sort, new_predicate, pos)
 
       | Arrow (t1, t2, pos) ->
-	Arrow (checkSort (env, t1), checkSort (env, t2), pos)
+        Arrow (checkSort (env, t1), checkSort (env, t2), pos)
 
 
   % ========================================================================
@@ -629,7 +629,6 @@ spec {
          let srt = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
          Var ((id, srt), pos)
 
-    (*
     | LetRec (decls, body, pos) -> 
          let def declareFun (((id, srt), bdy), env) = 
               addVariable (env, id, srt)
@@ -644,7 +643,6 @@ spec {
          let decls = map (elaborateDecl env) decls         in 
          let bdy = elaborateTerm (env, body, term_sort)                 in 
          LetRec (decls, bdy, pos)
-         *)
 
     | Let (decls, body, pos) -> 
          let env0 = env in
@@ -826,29 +824,49 @@ spec {
    case terms of
     | [term] -> (Some term) : (Option PosSpec.PTerm)
     | _ ->
-      (case unlinkPSort srt of
-       | MetaTyVar _ -> None
-       | rsort ->
-          let srtPos = sortAnn srt in 
-          (case filter (consistentSortOp? (env, withAnnS (rsort, srtPos))) terms of
-           | [] -> (error (env, 
-                      "No matches for op "^id^" of sort "^ printSort srt, pos);
-                           None)
-           | [term] -> Some term
-           | first_tm :: _ ->
-               if env.firstPass? then
-                 None
-               else %% Some first_tm
-                 (error (env, 
-                                    "Several matches for overloaded op "^id^" of sort "^ printSort srt^
-                                    (foldl (fn (tm, str) -> str ^ 
-                                            (case tm of
-                                              | Fun (OneName  (     id2, _), _, _) -> str^" "^id2
-                                              | Fun (TwoNames (id1, id2, _), _, _) -> str^" "^id1^"."^id2))
-                                     " : "
-                                     terms),
-                                    pos);
-                          None)))
+       (case unlinkPSort srt of
+         | MetaTyVar _ -> None
+         | rsort ->
+             let srtPos = sortAnn srt in
+             (case filter (consistentSortOp? (env, withAnnS (rsort, srtPos))) terms of
+                | [] -> (error (env,
+                          "No matches for op "^id^" of sort "^ printSort srt,
+                           pos);
+                             None)
+                | [term]        -> Some term
+                | tms ->
+                   if env.firstPass? then
+                     None
+                   else %% If there is a valid unqualified term then prefer that because you
+                        %% cannot explicitly
+                     let def findUnqualified tms =
+                        case tms of
+                          | [] -> None
+                          | tm::rtms ->
+                              (case tm of
+                                 |Fun (OneName  (     _,_), _, _) -> Some tm
+                                 | Fun (TwoNames (id1, _,_), _, _) ->
+                                    if id1 = UnQualified then
+                                      Some tm
+                                    else
+                                      findUnqualified rtms
+                                 | _ -> findUnqualified rtms)
+                     in
+                       (case findUnqualified tms of
+                         | Some term -> Some term
+                         | None ->
+                             (error (env,
+                                    "Several matches for overloaded op "
+                                    ^ id
+                                    ^ " of sort "
+                                    ^ printSort srt
+                                    ^ (foldl (fn (tm, str) -> str ^
+                                         (case tm of
+                                            | Fun (OneName  (     id2, _), _, _) -> " "^id2
+                                            | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
+                                          " : "
+                                          terms),
+                              pos); None))))
 
   def consistentSortOp? (env, srt1) (Fun (_, srt2, _)) =
    %% calls unifySorts, but then resets metatyvar links to None...

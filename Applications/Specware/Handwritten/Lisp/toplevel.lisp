@@ -1,5 +1,7 @@
 (in-package :user)
 
+;; These are Stephen's toplevel Lisp aliases for Specware
+
 (defun sw (x) (Specware::runSpecwareURI (fix_URI x)))
 
 (top-level:alias ("sw" :case-sensitive) (x) (sw (string x)))

@@ -207,6 +207,7 @@ PosSpec qualifying spec {
  % is not a wild-card or variable. Could be made more sophisticated
  % by detecting more compilcated exhaustive matches.
  % A similar utilities is in the PatternMatch compiler.
+ op extendMatch : PMatch * Position -> PMatch
  def extendMatch (match, pos) = 
   let def loop (rules : PMatch) : PMatch = 
        case rules of
