@@ -12,7 +12,7 @@ Op qualifying spec
   sort Op.Fixity = MetaSlang.Fixity
 
   % op Op.idOf : Op.OpInfo -> Id
-  def Op.idOf (names,fxty,srtScheme,termSchemes) =
+  def Op.idOf (names,fxty as _,srtScheme as _,termSchemes as _) =
     case names of
       | [] -> fail "idOf: op with empty list of ids"
       | [name] -> name
@@ -22,13 +22,13 @@ Op qualifying spec
   % def ids opInfo =
 
   % op Op.fixity : OpInfo -> Fixity
-  def Op.fixity (names,fxty,srtScheme,termSchemes) = fxty
+  def Op.fixity (names as _,fxty,srtScheme as _,termSchemes as _) = fxty
 
   % op type : OpInfo -> Type
-  def Op.type (names,fxty,srtScheme,termSchemes) = srtScheme
+  def Op.type (names as _,fxty as _,srtScheme,termSchemes as _) = srtScheme
 
   % op term : OpInfo -> Option MS.Term
-  def Op.term (names,fxty,srtScheme,termSchemes) =
+  def Op.term (names as _,fxty as _,srtScheme as _,termSchemes) =
     case termSchemes of
       | [] -> None
       | [(tyVars,trm)] -> Some trm

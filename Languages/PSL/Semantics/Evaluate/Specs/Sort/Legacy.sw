@@ -12,7 +12,7 @@ Sort qualifying spec
   sort Sort.SortInfo = AnnSpec.ASortInfo Position
 
   % op Sort.idOf : SortInfo -> Id
-  def Sort.idOf (sortNames,tyVars,srtSchemes) =
+  def Sort.idOf (sortNames,tyVars as _,srtSchemes as _) =
     case sortNames of
       | [] -> fail "Sort.idOf: sort with empty list of ids"
       | [name] -> name
@@ -21,7 +21,7 @@ Sort qualifying spec
   % op ids : SortInfo -> IdSet.Set
 
   % op Sort.type : SortInfo -> Type
-  def Sort.type (sortNames,tyVars,srtSchemes) =
+  def Sort.type (sortNames as _,tyVars as _,srtSchemes) =
     case srtSchemes of
       | [] -> fail "Sort.type: sort with empty list of sort schemes"
       | [type] -> type
