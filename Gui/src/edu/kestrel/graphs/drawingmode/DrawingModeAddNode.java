@@ -109,16 +109,17 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
             node = createXNode(graph);
             startPoint = new Point(e.getX(),e.getY());
             //graph.insertNode(node, new Rectangle(e.getX(),e.getY(),40,40));
-            graph.insertNode(node, new Rectangle(e.getX(),e.getY(),initialWidth,initialHeight));
-
-            if (possibleParentView != null) {
-                Map viewMap = new Hashtable();
-                ParentMap pm = new ParentMap();
-                pm.addEntry(node,possibleParentView.getCell());
-                graph.getModel().insert(null,null,pm,null);
-                possibleParentView = null;
+            if (node != null) {
+                graph.insertNode(node, new Rectangle(e.getX(),e.getY(),initialWidth,initialHeight));
+                
+                if (possibleParentView != null) {
+                    Map viewMap = new Hashtable();
+                    ParentMap pm = new ParentMap();
+                    pm.addEntry(node,possibleParentView.getCell());
+                    graph.getModel().insert(null,null,pm,null);
+                    possibleParentView = null;
+                }
             }
-            
         }
         
         public void mouseReleased(MouseEvent e0) {
