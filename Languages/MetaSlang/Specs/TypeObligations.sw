@@ -280,21 +280,27 @@ spec
 % List subcases explicitly to leave place for 
 % special treatment.
 %
-	  (case f
-	     of Equals     -> tcc 
-	      | Quotient   -> tcc
-	      | Choose     -> tcc 
-	      | Restrict   -> tcc 
-	      | Relax      -> tcc 
-	      | Op(id,fx)  -> tcc 
-	      | Project n  -> tcc
-	      | Embed(n,b) -> tcc
-	      | Embedded n -> tcc
-	      | Select   n -> tcc
-	      | Nat      i -> tcc 
-      	      | Char     c -> tcc
-	      | String   s -> tcc
-	      | Bool     b -> tcc
+	  (case f of
+	     | Not        -> tcc 
+	     | And        -> tcc 
+	     | Or         -> tcc 
+	     | Cond       -> tcc 
+	     | Iff        -> tcc 
+	     | Equals     -> tcc 
+	     | NotEquals  -> tcc 
+	     | Quotient   -> tcc
+	     | Choose     -> tcc 
+	     | Restrict   -> tcc 
+	     | Relax      -> tcc 
+	     | Op(id,fx)  -> tcc 
+	     | Project n  -> tcc
+	     | Embed(n,b) -> tcc
+	     | Embedded n -> tcc
+	     | Select   n -> tcc
+	     | Nat      i -> tcc 
+	     | Char     c -> tcc
+	     | String   s -> tcc
+	     | Bool     b -> tcc
           )
 %%
 %% This checks that pattern matching is exhaustive.
