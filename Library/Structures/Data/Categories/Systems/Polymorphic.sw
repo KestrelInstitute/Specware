@@ -25,87 +25,34 @@ a fundamental groupoid.
 Note that the functors appearing here are those whose domain is freely
 generated from the shape.
 
-Formally, a system is a pair consisting of a shape and a functor from
-the twist of the shape into the target category.
-
-There are two copies of Set in sketches. One for the vertices and one for
-the edges.
-
-What do we really want. Right now the sorts for the sketches of the functor
-and the shape are all identified. Why?
-
-Perhaps sketches should have imported sets twice but explicitly named them
-apart than than qualifying. 
+There are two copies of Set in sketches imported when we import
+Functor. One for the vertices and one for the edges. See the comment re
+import below.
 
 For the time being, the sort for the domain of the functor and for the
 sketch are the same. This is reflected in the fact that we don't import
 a copy of Sketch directly but through the import of Functor. It is also
-reflected in the type for the elements of the set. The sort
-mut be able to encode the types of the
+reflected in the type for the elements of the set. 
 
 \begin{spec}
-% translate
-System 
-% by {
-%   Sketch.Sketch +-> Shape.Sketch,
-%   Sketch.Path +-> Shape.Path,
-%   Sketch.Dom +-> Shape.Dom,
-%   Sketch.Cod +-> Shape.Cod,
-%   Sketch.update +-> Shape.update,
-%   Sketch.unionWith +-> Shape.unionWith,
-%   Sketch.remove +-> Shape.remove,
-%   Sketch.ppSketch +-> Shape.ppShape,
-%   Sketch.ppMap +-> Shape.ppMap,
-%   Sketch.ppDom +-> Shape.ppDom,
-%   Sketch.ppCod +-> Shape.ppCod,
-%   Sketch.mapToList +-> Shape.mapToList,
-%   Sketch.insertVertex +-> Shape.insertVertex,
-%   Sketch.insertEdge +-> Shape.insertEdge,
-%   Sketch.inDomain? +-> Shape.inDomain?,
-%   Sketch.imageToList +-> Shape.imageToList,
-%   Sketch.foldMap +-> Shape.foldMap,
-%   Sketch.exists +-> Shape.exists,
-%   Sketch.eval +-> Shape.eval,
-%   Sketch.domainToList +-> Shape.domainToList,
-%   Sketch.all +-> Shape.all,
-%   Vertex.delete +-> V.delete,
-%   Vertex.difference +-> V.difference,
-%   Vertex.Elem +-> V.Elem,
-%   Vertex.empty +-> V.empty,
-%   Vertex.empty? +-> V.empty?,
-%   Vertex.fold +-> V.fold,
-%   Vertex.insert +-> V.insert,
-%   Vertex.intersection +-> V.intersection,
-%   Vertex.map +-> V.map,
-%   Vertex.member? +-> V.member?,
-%   Vertex.ppElem +-> V.ppElem,
-%   Vertex.ppSet +-> V.ppSet,
-%   Vertex.singleton +-> V.singleton,
-%   Vertex.toList +-> V.toList,
-%   Vertex.union +-> V.union,
-%   Edge.delete +-> E.delete,
-%   Edge.difference +-> E.difference,
-%   Edge.Elem +-> E.Elem,
-%   Edge.empty +-> E.empty,
-%   Edge.empty? +-> E.empty?,
-%   Edge.fold +-> E.fold,
-%   Edge.insert +-> E.insert,
-%   Edge.intersection +-> E.intersection,
-%   Edge.map +-> E.map,
-%   Edge.member? +-> E.member?,
-%   Edge.ppElem +-> E.ppElem,
-%   Edge.ppSet +-> E.ppSet,
-%   Edge.singleton +-> E.singleton,
-%   % Edge.toList +-> E.toList, this breaks! Why??? where is the op????
-%   Edge.union +-> E.union
-% }
-where {
-System = spec {
-  % import Functor qualifying ../Functors/FreeDomain/Polymorphic
-  import Functor
+spec {
+
+ (*
+   We would prefer to write:
+     import Functor qualifying ../Functors/FreeDomain/Polymorphic
+   of set and functors are used elsewhere for diagrams. We don't want
+   the sketches (graphs) used for systems to be constructed from the
+   same sets of vertices and edges. Hence we make a modified copy of
+   Functor (in the same directory) using V.Elem and E.Elem rather than
+   Vertex.Elem and Edge.Elem and then import that below.
+
+   Perhaps sketches should have imported sets twice but explicitly named
+   them apart than than qualifying.
+  *)
+
+  import Polymorphic/Functor
   import /Library/PrettyPrinter/WadlerLindig
 
-  sort System (O,A) 
   sort System (O,A) = {
     shape : Sketch,
     functor : Functor (O,A)
@@ -375,5 +322,5 @@ of the system. In a concrete representation, the apparent redundancy
 can be eliminated.
 
 \begin{spec}
-}}
+}
 \end{spec}
