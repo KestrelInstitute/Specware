@@ -489,8 +489,11 @@ spec {
 	  (case unify(env,t1,s1,pairs)
 	     of Unify pairs -> unify(env,t2,s2,pairs)
 	      | notUnify -> notUnify)
-	| (Quotient(ty,trm,_),Quotient(ty_,trm_,_)) -> 
-	     unify(env,ty,ty_,pairs)
+	| (Quotient(ty,trm,_),Quotient(ty_,trm_,_)) ->
+	     %if equalTerm?(trm,trm_)
+	       %then
+		 unify(env,ty,ty_,pairs)
+	       %else NotUnify(srt1,srt2)
 	     %                 if trm = trm_ 
 	     %                     then unify(ty,ty_,pairs) 
 	     %                    else NotUnify(srt1,srt2)
