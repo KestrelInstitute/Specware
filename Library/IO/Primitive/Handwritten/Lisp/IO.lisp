@@ -13,8 +13,15 @@
       nil)))
 
 (defun fileWriteTime (file)
-  (or #+allegro(excl::filesys-write-date file)    ; faster
-      #-allegro(file-write-date file)
+  (or #+allegro(excl::filesys-write-date file)    ; faster?
+      ;;
+      ;; The allegro hack above returns nil for names such as "~/foo.sw"
+      ;; The following should succeed where the above hack returns nil, 
+      ;; but maybe this is all that the standard file-write-date does:
+      ;;  (excl::filesys-write-date (namestring (truename  file))) 
+      ;;
+      ;; Call this when hack fails...
+      (file-write-date file)
       ;; If file doesn't exist then return a future time! (shouldn't normally happen)
       9999999999))
 
