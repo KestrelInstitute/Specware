@@ -435,7 +435,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
      * @param becomeRoot if set to true, the view of the node will be a new root node in the graph, if set to false
      * then the object is added to some "invisible" node, making it itself invisible.
      */
-    public XContainerNode detachFromParent(XGraphDisplay graph, XContainerNode parent, boolean becomeRoot, boolean storeLastParent) {
+    public XContainerNode detachFromParent(XGraphDisplay graph, XContainerNode parent, Rectangle parentBounds, boolean becomeRoot, boolean storeLastParent) {
         XContainerNode currentParent = getParentNode();
         if (currentParent != null)
             if (!currentParent.equals(parent)) {
@@ -451,6 +451,9 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         if (storeLastParent && pcv != null) {
             //lastParentsBounds = new Rectangle(cv.getBounds());
         }
+        if (pcv != null && parentBounds == null) {
+            parentBounds = pcv.getBounds();
+        }
         ParentMap pm = new ParentMap();
         pm.addEntry(this,newParent);
         graph.getModel().edit(null,null,pm,null);
@@ -459,7 +462,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
             if (cv != null) {
                 if (storeLastParent && (pcv != null)) {
                     Rectangle childBounds = cv.getBounds();
-                    Rectangle parentBounds = pcv.getBounds();
+                    //Rectangle parentBounds = pcv.getBounds();
                     offsetToLastParent = new Dimension(childBounds.x-parentBounds.x, childBounds.y-parentBounds.y);
                 }
                 Map viewMap = new Hashtable();
@@ -477,28 +480,29 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
     
     /** calls <code>detachFromParent(graph,false)</code>
      */
-    public void detachFromParent(XGraphDisplay graph, XContainerNode parent) {
-        detachFromParent(graph,parent,false,true);
+    public void detachFromParent(XGraphDisplay graph, XContainerNode parent, Rectangle parentBounds) {
+        detachFromParent(graph,parent,parentBounds,false,true);
     }
     
     /** detached the node from its current parent; become either a root object or invisible.
      */
     public void detachFromParent(XGraphDisplay graph, boolean becomeRoot) {
-        detachFromParent(graph,getParentNode(),becomeRoot,true);
+        XContainerNode parent = getParentNode();
+        detachFromParent(graph,parent,null,becomeRoot,true);
     }
     
     /** detached the node from its current parent.
      */
-    public void detachFromParent(XGraphDisplay graph) {
+    public void detachFromParent(XGraphDisplay graph, Rectangle parentBounds) {
         XContainerNode parent = getParentNode();
-        detachFromParent(graph,parent);
+        detachFromParent(graph,parent,parentBounds);
     }
     
     /** inserts the node as root object without storing its last parent.
      */
     public void insertAsRootObject(XGraphDisplay graph) {
         XContainerNode parent = getParentNode();
-        detachFromParent(graph,parent,true,false);
+        detachFromParent(graph,parent,null,true,false);
     }
     
     /** reattaches the node to the parent node it has been detached from with <code>detachFromParent</code>.

@@ -364,6 +364,7 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         boolean callDefaultPaintMethod = false;
         int textDisplayOption = TEXT_IS_CUT;
         int internalBorderWidth = 20;
+        boolean keepBoundsWhenCollapsing = false;
         
         /** whether or not to use paint for the view, i.e. whether it's filled with paint; default: true.
          * either a border or a paint must be used; if b is false it calls setUseBorder(true).
@@ -514,6 +515,13 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
          */
         public void setInternalBorderWidth(int bw) {
             internalBorderWidth = bw;
+        }
+        
+        /** sets the flag that controls the behaviour when a container node is collapsed: if set to true, then the container node has the same size
+         * after collapsing, if set to false, the node will get the previous collapsed size when it is collapsed.
+         */
+        public void setKeepBoundsWhenCollapsing(boolean b) {
+            keepBoundsWhenCollapsing = b;
         }
         
     }

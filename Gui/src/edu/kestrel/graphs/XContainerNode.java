@@ -252,7 +252,7 @@ public abstract class XContainerNode extends XNode {
      * after this method is being executed. Returns the array of detached children and sets the field
      * <code>detachedChildren</code> to the same value.
      */
-    public java.util.List detachChildren(XGraphDisplay graph) {
+    public java.util.List detachChildren(XGraphDisplay graph, Rectangle parentBounds) {
         int cnt = getChildCount();
         if (cnt == 0) return null;
         XEdge[] edges = getInnerEdges();
@@ -265,7 +265,7 @@ public abstract class XContainerNode extends XNode {
             }
         }
         for(int i=0;i<detachedChildren.size();i++) {
-            ((XNode)detachedChildren.get(i)).detachFromParent(graph,this);
+            ((XNode)detachedChildren.get(i)).detachFromParent(graph,this,parentBounds);
         }
         // detach inner edges from view
         for(int i=0;i<edges.length;i++) {

@@ -124,7 +124,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             menuItem = new JMenuItem("detach all children");
             menuItem.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    node.detachChildren((XGraphDisplay)graph);
+                    node.detachChildren((XGraphDisplay)graph,getBounds());
                 }
             });
             menuItem.setEnabled(false);
@@ -326,6 +326,13 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         return res;
     }
     
+    public CellView[] getChildElementViewsAsArray(boolean recurse) {
+        java.util.List l = getChildElementViews(recurse);
+        CellView[] res = new CellView[l.size()];
+        l.toArray(res);
+        return res;
+    }
+    
     /** adds the nodes as children to the associated container node.
      * @return the XNodeViews of the nodes, for which the adding as child has succeeded.
      */
@@ -398,7 +405,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         Rectangle b0 = getBounds();
         exportBounds(b0);
         //alignToCenterOf(collapsedBounds);
-        setBoundsToChildrenBounds();
+        //setBoundsToChildrenBounds();
         ((XGraphDisplay)graph).getXGraphView().updateAllPorts();
         ((XGraphDisplay)graph).done();
         node.setSavedIsExpanded(true);
@@ -409,16 +416,23 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         if (!isExpanded()) return;
         ((XGraphDisplay)graph).busy();
         Dbg.pr("collapsing "+node+", bounds="+getBounds()+"...");
-        Rectangle b = getBounds();
+        Rectangle b = new Rectangle(getBounds());
         isSwitchingState = true;
         node.liftEdgesFromChildren((XGraphDisplay)graph);
-        node.detachChildren((XGraphDisplay)graph);
+        node.detachChildren((XGraphDisplay)graph,b);
         expanded = false;
         configureExpandCollapseMenuItem();
-        setSizeable(true);
-        if (collapsedBounds != null) {
-            Rectangle b0 = (new Rectangle(b.x,b.y,collapsedBounds.width,collapsedBounds.height));
-            exportBounds(b0);
+        boolean keepSize = viewOptionsExpanded.keepBoundsWhenCollapsing;
+        if (keepSize) {
+            exportBounds(b);
+        } else {
+            setSizeable(true);
+            if (collapsedBounds != null) {
+                Dbg.pr("b=("+b.x+","+b.y+")");
+                Rectangle b0 = (new Rectangle(b.x,b.y,collapsedBounds.width,collapsedBounds.height));
+                exportBounds(b0);
+                bounds = b0;
+            }
         }
         isSwitchingState = false;
         //alignToCenterOf(b);
@@ -464,30 +478,6 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         return false;
     }
     
-    protected void restoreChildrensBounds_(int dx, int dy) {
-        if (savedChildrensBounds == null) return;
-        Dbg.pr("restoring children's bounds...");
-        Set keys = savedChildrensBounds.keySet();
-        Iterator iter = keys.iterator();
-        Map viewMap = new Hashtable();
-        while(iter.hasNext()) {
-            CellView cview = (CellView) iter.next();
-            if (Dbg.isDebug()) {
-                if (!isChildView(cview))
-                    Dbg.pr("restoring bounds of view that's not a child view!??");
-            }
-            Rectangle b = (Rectangle) savedChildrensBounds.get(cview);
-            //Map map = GraphConstants.createMap();
-            //GraphConstants.setBounds(map,b);
-            if (cview instanceof AbstractCellView) {
-                AbstractCellView acview = (AbstractCellView) cview;
-                acview.setBounds(b);
-            }
-            graph.getView().translateViews(new CellView[]{cview},dx,dy);
-        }
-        //graph.getModel().edit(null,viewMap,null,null);
-    }
-    
     public Rectangle getBounds() {
         //Dbg.pr("getBounds() for node "+node+" ("+node.getClass().getName()+")");
         Rectangle bounds = GraphConstants.getBounds(getAttributes());
@@ -503,9 +493,16 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             //int bw = 10;
             //cbounds = AbstractCellView.getBounds(getChildViews());
             //cbounds = new Rectangle(cbounds.x-bw,cbounds.y-bw,cbounds.width+2*bw,cbounds.height+2*bw);
-            cbounds = getChildrenBounds(getChildViews(),null);
+            cbounds = getChildrenBounds(getChildElementViewsAsArray(false),null);
         }
-        if (isExpanded()) bounds.add(cbounds);
+        if (isExpanded()) {
+            bounds.add(cbounds);
+            bounds.width = cbounds.width;
+            bounds.height = cbounds.height;
+            bounds.x = cbounds.x;
+            bounds.y = cbounds.y;
+            //bounds = cbounds;
+        }
         if (collapsedBounds == null) {
             collapsedBounds = new Rectangle(bounds);
             node.setSavedCollapsedBounds(collapsedBounds);
