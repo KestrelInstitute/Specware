@@ -30,7 +30,7 @@ TransSpec qualifying spec
   op applySubst : TransSpec * Subst -> Env TransSpec
   op applyConstraints : TransSpec * Constraints -> Env TransSpec
   op simplifyVariants : ModeSpec -> TransSpec -> Env TransSpec
-  op projectPostSubst : TransSpec -> ModeSpec -> Env Subst
+  op projectPostSubst : TransSpec -> Env Subst
 
   op hideVariables : TransSpec -> Subst -> Subst -> Env TransSpec
   op provablyInconsistent? : TransSpec -> Boolean

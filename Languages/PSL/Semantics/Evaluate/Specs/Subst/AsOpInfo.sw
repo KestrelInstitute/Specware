@@ -13,7 +13,11 @@ Subst qualifying spec
   import ../Op/Legacy
   import ../Spec/Legacy
 
-  sort Subst.Subst = List Op.OpInfo
+  sort Subst.Binding = Op.OpInfo
+  sort Subst.Subst = List Subst.Binding
+
+  def Subst.filter = List.filter
+
   def Subst.pp subst =
     ppConcat [
         String.pp "[",
@@ -21,6 +25,45 @@ Subst qualifying spec
         String.pp "]"
       ]
   def Subst.show subst = ppFormat (pp subst)
+
+%%   op partition : Binding -> Subst -> Subst
+%%   def partition a l =
+%%     case l of
+%%       | [] -> ([],[])
+%%       | (x::l) = 
+%%           let (l1,l2) = partition a l in
+%%             if nameLT x a then
+%%               (Cons (x,l1),l2)
+%%             else
+%%               (l1,Cons (x,l2))
+%% 
+%%   def Subst.order l of
+%%     case l of
+%%       | [] -> []
+%%       | (x::l) ->
+%%           let (l1,l2) = partition x l in
+%%           let (s1,s2) = (order l1,order l2) in 
+%%           s1 ++ (Cons (x,s2))
+
+  op nameLT : Binding -> Binding -> Boolean
+  def nameLT op1 op2 =
+    case (Op.idOf op1, Op.idOf op2) of
+      | (Qualified (q1,n1), Qualified (q2,n2)) -> String.lt (n1,n2)
+
+  def Subst.order l =
+    let
+      def insert x l =
+        case l of
+          | [] -> [x]
+          | (y::rest) ->
+               if nameLT x y then
+                 Cons (x,l)
+               else
+                 Cons (y, insert x rest)
+    in
+     case l of
+       | [] -> []
+       | (x::rest) -> insert x (Subst.order rest)
 
   def Subst.equalSubst? (s1,s2) = equalList? (s1,s2,equalStuff?)
   def Subst.eq? (s1,s2) = equalSubst? (s1,s2)

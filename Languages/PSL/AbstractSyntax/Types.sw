@@ -113,6 +113,7 @@ needs some thought.
     | Relation   (ATerm a)
     | Return     Option (ATerm a)
     | Continue   
+    | Abort      Option (ATerm a)
     | Break
     | Exec       (ATerm a)
     | Skip

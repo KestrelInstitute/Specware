@@ -455,6 +455,13 @@ axiom but we might be better off without an axiom at all.
 \end{spec}
 
 \begin{spec}
+      | Abort optTerm -> {
+          (bSpec,newMode) <- return (newMode (bSpec ctxt) (modeSpec ctxt));
+          axm <- makeAxiom (makeId "abort") (mkTrue position);
+          apexSpec <- addInvariant (modeSpec ctxt) axm position;  % why bother?
+          connectVertices (ctxt withBSpec bSpec) (initial ctxt) newMode apexSpec OpRefSet.empty
+        }
+
       | Continue -> 
           (case (continue ctxt) of
              | Some continueVertex ->
@@ -473,6 +480,12 @@ axiom but we might be better off without an axiom at all.
 \begin{spec}
 	  | Exec trm ->
           (case trm of
+            | Fun(OneName("abort",fixity),srt,position) ->
+                compileCommand ctxt (Abort None,position)
+            | ApplyN ([Fun(OneName("abort",fixity),srt,position)],_) ->
+                compileCommand ctxt (Abort None,position)
+            | ApplyN ((Fun(OneName("abort",fixity),srt,position)) :: exprs,_) ->
+                compileCommand ctxt (Abort None,position)
             | Fun(OneName("skip",fixity),srt,position) ->
                 compileCommand ctxt (Skip,position)
             | Fun(OneName("continue",fixity),srt,position) ->

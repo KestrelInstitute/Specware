@@ -11,6 +11,7 @@ spec
  sort ModeSpec.ModeSpec
 
  op CUtils.emptyCSpec : String -> CSpec
+ op CGen.emptyCSpec : String -> CSpec
 
  op CInterface.addInclude : CSpec * String -> CSpec 
  op OscarStruct.show : StructOscarSpec -> ModeSpec -> String
@@ -20,6 +21,5 @@ spec
  op SpecCalc.oscarToC : Oscar.Spec -> Spec.Spec -> Env CSpec
  op SpecCalc.generateCProcedure : Spec.Spec -> CSpec -> Id.Id -> Procedure -> Env CSpec
  op CInterface.printToFile : CSpec * Option String -> ()
-
 endspec
  

@@ -6,18 +6,20 @@ SpecCalc qualifying spec {
 
   % sort Spec.Spec = ASpec Position
 
-  op CInterface.addInclude : CSpec * String -> CSpec
+  op CInterface.addInclude : CGen.CSpec * String -> CGen.CSpec
   def CInterface.addInclude (cSpec,str) = addInclude cSpec str
 
-  op CInterface.printToFile : CSpec * Option String -> ()
+  % def CUtils.emptyCSpec = CGen.emptyCSpec
+
+  op CInterface.printToFile : CGen.CSpec * Option String -> ()
   def CInterface.printToFile (cSpec, optFileName) =
     case optFileName of
       | None -> fail "printCToFile: missing filename"
       | Some fileName -> toFile (fileName, format (80, ppCSpec cSpec))
 
-  op oscarToC : Oscar.Spec -> Spec.Spec -> Env CSpec
+  op oscarToC : Oscar.Spec -> Spec.Spec -> Env CGen.CSpec
   def oscarToC oscSpec base =
-    let cSpec = emptyCSpec "" in
+    let cSpec = CGen.emptyCSpec "" in
     let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
     let envSpec = addMissingFromBase(base,envSpec,builtinSortOp) in
     let cSpec = generateCTypes cSpec envSpec in
@@ -133,6 +135,8 @@ with a loop or out of a conditional.
               (case rhs of
                 | Apply(Apply (Apply (Fun (Op (Qualified (_,"update"),fxty),_,pos), Fun (Op (Qualified (_,"active"),fxty),srt,_),  _), idx,_),expr,_) ->
                       Exp (Apply (Binary Set, [ArrayRef (Var ("active",sortToCType srt), termToCExp idx),termToCExp expr]))
+                | Apply (Fun (Op (Qualified ("CStore","update"),fxty),srt,pos), Record ([("1",Fun (Op (Qualified (_,mapName),fxty),_,_)), ("2",Fun (String mapIdx,_,_)), ("3",expr)],_), _) ->
+                      Exp (Apply (Binary Set, [Var (mapName++mapIdx,sortToCType srt), termToCExp expr]))
                 | Apply (Fun (Op (Qualified (_,"update"),fxty),srt,pos), Record ([("1",Fun (Op (Qualified (_,"env"),fxty),_,_)), ("2",Fun (Nat n,_,_)), ("3",expr)],_), _) ->
                     if n = 0 then
                       Exp (Apply (Binary Set, [Apply (Unary Contents, [Var ("sp",sortToCType srt)]), termToCExp expr]))

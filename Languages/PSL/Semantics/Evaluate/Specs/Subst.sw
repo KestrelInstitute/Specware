@@ -15,11 +15,16 @@ Subst qualifying spec
   import Spec          % Not used at present.
 
   sort Subst
+  sort Binding
 
   op pp : Subst -> Doc
   op show : Subst -> String
 
   op equalSubst? : Subst * Subst -> Boolean
   op Subst.eq? : Subst * Subst -> Boolean
+
+  op filter : (Binding -> Boolean) -> Subst -> Subst
+
+  op order : Subst -> Subst
 endspec
 \end{spec}

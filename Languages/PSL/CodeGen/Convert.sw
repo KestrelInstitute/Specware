@@ -201,8 +201,11 @@ are no longer needed. *)
             | [] -> 
                  if Mode.member? final mode then
                    return (graph,n,visited)
-                 else
-                   raise (SpecError (noPos, "convertBSpecAux: reached empty set of successors to vertex: " ^ (show (vertex mode))))
+                 else {
+                   print ("convertBSpecAux: reached empty set of successors to vertex: " ^ (show (vertex mode)));
+                   % raise (SpecError (noPos, "convertBSpecAux: reached empty set of successors to vertex: " ^ (show (vertex mode))))
+                   return (graph,n,visited)
+                 }
 
             (* A single edge leaving the node means that the edge is labelled with a statement.  *)
             | [transition] -> {

@@ -7,7 +7,6 @@ TransSpec qualifying spec
   import ../Subst/AsOpInfo
   import ../ModeSpec/AsRecord
 
-
   % sort TransSpec.TransSpec = SpecMorph.Morphism * ModeSpec.ModeSpec * SpecMorph.Morphism
 
   % op forwMorph : TransSpec -> SpecMorph.Morphism
@@ -89,23 +88,30 @@ TransSpec qualifying spec
     }
 
   % This is completely out to lunch if a ref is anything other than an id.
-  % op projectPostSubst : TransSpec -> ModeSpec -> Env Subst
-  def TransSpec.projectPostSubst transSpec ms =
-    let def projectVar ops opInfo = {
-      opInfo <-
-        if member? (changedVars (backMorph transSpec),idOf opInfo) then
-           findTheVariable (modeSpec transSpec) (makePrimedId (idOf opInfo))
-        else
-           findTheVariable (modeSpec transSpec) (idOf opInfo);
+  % op projectPostSubst : TransSpec -> Env Subst
+  def TransSpec.projectPostSubst transSpec =
+    let def projectVar ops opInfo =
+%%       opInfo <-
+%%         if member? (changedVars (backMorph transSpec),idOf opInfo) then
+%%            findTheVariable (modeSpec transSpec) (makePrimedId (idOf opInfo))
+%%         else
+%%            findTheVariable (modeSpec transSpec) (idOf opInfo);
       case term opInfo of
         | Some trm ->
-           if groundTerm? trm then
-             return (cons (opInfo withId (removePrime (Op.idOf opInfo)), ops))
-           else
+           if ~(isPrimedName? (Op.idOf opInfo)) & member? (changedVars (backMorph transSpec),idOf opInfo) then
              return ops
+           else
+             if groundTerm? trm then
+               % print ("projectPostSubst: is ground: " ++ (show trm) ++ "\n");
+               return (cons (opInfo withId (removePrime (Op.idOf opInfo)), ops))
+             else
+               % print ("projectPostSubst: not ground: " ++ (show trm) ++ "\n");
+               return ops
         | None -> return ops
-    } in
-      foldVariables projectVar [] ms
+    in {
+      preSub <- foldVariables projectVar [] (modeSpec transSpec);
+      return (order preSub)
+    }
 
   (*
    This is odd. After rewriting, it should be sufficient just to check for non-op Fun

@@ -30,7 +30,7 @@ SpecCalc qualifying spec {
                     case ProcMap.evalPartial (procedures newOscarSpec, makeId procName) of
                       | None -> raise (SpecError (noPos, "project: procedure " ^ (Id.show (makeId procName)) ^ " is not defined"))
                       | Some proc -> {
-                           cSpec <- generateCProcedure emptySpec (emptyCSpec "") (makeId procName) proc;
+                           cSpec <- generateCProcedure emptySpec (CGen.emptyCSpec "") (makeId procName) proc;
                            cSpec <- return (CInterface.addInclude (cSpec,"matlab.h"));
                            return (CInterface.printToFile(cSpec,Some(fileName)))
                          };

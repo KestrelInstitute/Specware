@@ -278,7 +278,7 @@ PE qualifying spec
                | [] -> return (subOut,termOut)
                | (varInfo::subst) ->
                     if (Op.refOf varInfo) = varRef then {
-                        opTerm <- return (mkFun (Op (makePrimedId (idOf varInfo),Nonfix), type varInfo, noPos));
+                        opTerm <- return (mkFun (Op (makePrimedId (Op.idOf varInfo),Nonfix), type varInfo, noPos));
                         varTerm <-
                            case (term varInfo) of
                              | None -> raise (SpecError (noPos, "projectSubst failed with no binding term"))
@@ -482,13 +482,19 @@ associated with the edge.
       if provablyInconsistent? transSpec then
         return (newOscSpec,newBSpec)
       else {
-        postcondition <- projectPostSubst transSpec (modeSpec (target transition));
+        postcondition <- projectPostSubst transSpec;
         if traceRewriting > 1 then
           print ("specializing edge " ^ (Edg.show (edge transition)) ^ " postcondition " ^ (show postcondition) ^ "\n") else return ();
 
         %% newTargetVertex <- makeNewVertex oldTargetVertex postcondition;
-        newTargetSpec <- hideVariables (modeSpec (Transition.target transition)) postcondition;
-        (newBSpec,newTargetMode,targetIsNew?) <- return (deriveMode oldBSpec (Transition.target transition) newBSpec postcondition newTargetSpec);
+
+        %%% postcondition may include bindings for variables not appearing in the target spec (eg because
+        %%% of "let" construct). When calculating the new target spec and new mode, we should restrict
+        %%% the postcondition to only the variables appearing in the target. Note, however, that when
+        %%% calculating the new transition we need the whole postcondition.
+        targetConstraint <- return (Subst.filter (fn varInfo -> member? (variables (modeSpec (Transition.target transition)), Op.idOf varInfo)) postcondition);
+        newTargetSpec <- hideVariables (modeSpec (Transition.target transition)) targetConstraint;
+        (newBSpec,newTargetMode,targetIsNew?) <- return (deriveMode oldBSpec (Transition.target transition) newBSpec targetConstraint newTargetSpec);
 
         newTransSpec <- hideVariables transSpec precondition postcondition;
         % newEdge <- makeNewEdge edge precondition postcondition;
