@@ -8,7 +8,7 @@ Infix qualifying spec {
  sort FixatedTerm = | Infix   MS.Term *  (Associativity * Precedence)
                      | Nonfix  MS.Term
 
- op resolveInfixes : LocalEnv * (MS.Term -> FixatedTerm) * Position * List(MS.Term) -> MS.Term
+ op resolveInfixes : Option LocalEnv * (MS.Term -> FixatedTerm) * Position * List(MS.Term) -> MS.Term
 
  %    fun printTagged(Nonfix t) = TextIO.print("Nonfix "^AstPrint4.printTerm t^"\n")
  %      | printTagged(Infix(t,(assoc,p))) = 
@@ -23,7 +23,17 @@ Infix qualifying spec {
   All infixes associate to the right.
   *)
 
- def resolveInfixes(env,tagTermWithInfixInfo,pos,terms) = 
+%%  resolveInfixes is invoked by the typechecker here,
+%%  but also by convertToMMTerm in ~/Work/Generic/Planware/Sources/CodeGen/,
+%%  which is invoked directly from the parser semantic routines.
+%%  That makes it awkwar to provide a plausible environment for the message,
+%%  so for now, revert to fail when there are problems while parsing.
+ def resolveInfixes(opt_env,tagTermWithInfixInfo,pos,terms) = 
+  let def local_error str =
+       case opt_env of
+	 | Some env -> error (env, str, pos)
+	 | _ -> fail str
+  in
   let
     def applyInfix(t1,infOp,t2) = ApplyN([infOp,mkTuple([t1,t2])],pos) in
       let def applyPrefixes(terms) = 
@@ -43,7 +53,7 @@ Infix qualifying spec {
                | [Infix(t,_)] -> [Nonfix(t)]
                | [] -> System.fail (printAll pos^" : No terms to apply")
                | (Infix(t,p)) :: _ ->  
-                     (error (env,"Infix "^printTerm t ^" given without left argument",pos);
+                     (local_error ("Infix "^printTerm t ^" given without left argument");
 		      [Nonfix t])
                | (Nonfix(t1)):: (Infix(infix1,(a1,delta1)))::rest -> 
                   let rest = scan(delta1,rest) in
@@ -79,11 +89,11 @@ Infix qualifying spec {
                          %% As indicated above, the first infix operator here (infix1) 
                          %%  binds tighter than the prior infix operator.
                          [Nonfix(applyInfix(t1,infix1,t2))]
-                       | _ -> (error (env,"Infix "^printTerm infix1^" given without left argument",pos);
+                       | _ -> (local_error ("Infix "^printTerm infix1^" given without left argument");
 			       [Nonfix(t1)]))
                 
                | (Nonfix _)::(Nonfix _)::_ ->
-                      (error (env,"Unreduced nonfix",pos); [hd terms]))
+                      (local_error ("Unreduced nonfix"); [hd terms]))
          in
          let def scanrec(tagged) = 
            (case scan(0,tagged) of
