@@ -844,9 +844,13 @@ def eliminateTerm context term =
 	 
 
  def translateMatch (spc : Spec) = 
-   let counter = (Ref 0) : Ref Nat in
+   % sjw: Moved (Ref 0) in-line so it is reexecuted for each call so the counter is reinitialized for each
+   % call. (This was presumably what was intended as otherwise there would be no need for mkContext
+   % to be a function). This means that compiled functions will have the same generated variables
+   % independent of the rest of the file.
+   %let counter = (Ref 0) : Ref Nat in
    let mkContext = fn funName -> 
-                    {counter = counter,
+                    {counter = Ref 0,
 		     spc     = spc,
 		     funName = %spc.name ^"."^ % ???
 		     funName,
