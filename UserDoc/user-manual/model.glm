@@ -41,9 +41,9 @@ suitable commands at the Lisp shell.</para>
 error messages are displayed in the XEmacs buffer containing the Lisp
 shell. In addition, the results of processing are saved into an
 internal cache that &Specware; maintains. Lastly, processing of
-certain kinds of units result in new files being created.  For example,
-when code is generated from a spec, the code is deposited into a <".lisp">
-file.</para>
+certain kinds of units result in new files being created.  For
+example, when Lisp code is generated from a spec, the code is
+deposited into a <".lisp"> file.</para>
 
 <para>&Specware; also features commands to display information about
 units. For instance, the user can display the sorts, ops, and axioms
