@@ -96,13 +96,12 @@ spec
 
       | TypeCheckErrors errs -> printTypeErrors errs
         
-      %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
-      | OldTypeCheck str ->
-		"Type errors:\n" ^ str
-
       | _ -> 
 		"Unknown exception: " 
               ^ (System.toString except)
+
+  op  numberOfTypeErrorsToPrint: Nat
+  def numberOfTypeErrorsToPrint = 20
 
   op printTypeErrors : List(String * Position) -> String
   def printTypeErrors errs =
@@ -114,6 +113,19 @@ spec
 	       ^ " : " ^ msg ^ "\n",
 	      filename)
     in
-    (foldl printErr ("","") errs).1
+    (foldl printErr ("","") (firstN(errs,numberOfTypeErrorsToPrint))).1
+     ++ (if (length errs) <= numberOfTypeErrorsToPrint
+	  then ""
+	 else "...  ("^Nat.toString(length errs - numberOfTypeErrorsToPrint)
+             ^" additional type errors)")
+
+  op  firstN: fa(a) List a * Nat -> List a
+  def firstN(l,n) =
+    if n = 0 then []
+    else
+    case l of
+      | [] -> []
+      | x::r -> cons(x,firstN(r,n-1))
+
 endspec
 \end{spec}

@@ -70,6 +70,27 @@
 			   (string (second r-args)) nil)))
      (format t "No previous unit evaluated~%"))))
 
+(defun swll (x &optional y)
+   (let ((lisp-file-name (or y (concatenate 'string
+				 specware::temporaryDirectory "cl-current-file"))))
+     (if (Specware::evaluateLispCompileLocal_fromLisp x (cons :|Some| lisp-file-name))
+	 (let (*redefinition-warnings*)
+	   (specware::compile-and-load-lisp-file lisp-file-name))
+       "Specware Processing Failed!")))
+#+allegro
+(top-level:alias ("swll" :case-sensitive) (&optional &rest args)
+   (let ((r-args (if (not (null args))
+		     args
+		   *last-swl-args*)))
+   (if r-args
+       (progn (setq *last-swl-args* args)
+	      (funcall 'swll (string (first r-args))
+		       (if (not (null (second r-args)))
+			   (string (second r-args)) nil)))
+     (format t "No previous unit evaluated~%"))))
+
+
+
 ;; Not sure if an optional URI make sense for swj
 (defun swj (x &optional y)
    (Specware::evaluateJavaGen_fromLisp x
