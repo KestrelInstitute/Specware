@@ -25,7 +25,9 @@
 	    "20.1-20.14	: Incomplete type for op loser:"
 	    (:alternatives
 	     "mtv%parser%14"
-	     "mtv%parser%20")
+	     "mtv%parser%20"
+	     "mtv%parser%26"
+	     )
 	    ""))
 
  )

@@ -11,9 +11,9 @@
 	    ";;; Elaborating spec at $TESTDIR/EquivSorts#C"
 	    ""
 	    "spec  "
-	    " import C"
-	    " import B"
 	    " import A"
+	    " import B"
+	    " import C"
 	    "endspec"
 	    ""
 	    ""))
