@@ -1009,15 +1009,11 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :LIST-DISPLAY ()
-  (:anyof
-   ((:tuple "[" "]")                         (make-list-display '() ':left-lcb ':right-lcb) :documentation "Empty List")
-   ((:tuple "[" (1 :LIST-DISPLAY-BODY) "]")  1                                            :documentation "List")
-   ))
+  (:tuple "[" (1 :LIST-DISPLAY-BODY) "]")
+  (make-list-display 1 ':left-lcb ':right-lcb) :documentation "List")
 
 (define-sw-parser-rule :LIST-DISPLAY-BODY ()
-  (1 (:repeat+ :EXPRESSION ","))
-  (make-list-display 1 ':left-lcb ':right-lcb)
-  :documentation "List")
+  (:repeat* :EXPRESSION ","))
 
 ;;; ------------------------------------------------------------------------
 ;;;  STRUCTOR
@@ -1437,7 +1433,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-DIAG ()
-  (:tuple "diagram" "{" (1 (:repeat+ :SC-DIAG-ELEM ",")) "}")
+  (:tuple "diagram" "{" (1 (:repeat* :SC-DIAG-ELEM ",")) "}")
   (make-sc-diag 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-DIAG-ELEM ()
