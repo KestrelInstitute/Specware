@@ -3,6 +3,8 @@
 (defpackage :MSInterpreter)
 (defpackage :JGen)
 (defpackage :IO-SPEC)
+(defpackage :SYSTEM-SPEC)
+(defpackage :EMACS)
 ;; Toplevel Lisp aliases for Specware
 
 (defparameter *sw-help-strings*
@@ -53,6 +55,7 @@
 (defun sw0 (x)
   (Specware::runSpecwareUID (subst-home x))
   (values))
+
 #+allegro(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
 (defun set-base (x)
@@ -688,8 +691,9 @@
 ;; already declared in ~/Work/Generic/Specware4/Library/Base/Handwritten/Lisp/System.lisp :
 ;; (defvar System-spec::specwareDebug? nil)
 (defun swdbg (&optional (b nil b?))
-  (if b? (princ (setq System-spec::specwareDebug?
-		      (and b (not (equal b "nil")))))
+  (if b? 
+      (princ (setq System-spec::specwareDebug?
+	       (and b (not (equal b "nil")))))
     (princ System-spec::specwareDebug?))
   (values))
 
@@ -727,22 +731,23 @@
   (if (equal dir "")
       (setq dir (specware::getenv "HOME"))
     (setq dir (subst-home dir)))
-  (if #+allegro t #-allegro nil
-      (tpl:do-command "cd" dir)
-      (progn 
-	#+cmu (unix:unix-chdir (if (equal dir "") (specware::getenv "HOME") dir))
-	#-cmu (specware::change-directory dir)
-	(let* ((dirpath (specware::current-directory))
-	       (newdir (namestring dirpath)))
-	  #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
-	  (emacs::eval-in-emacs (format nil "(setq default-directory ~s)"
-					(specware::ensure-final-slash newdir)))
-	  (when (under-ilisp?)
-	    (emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
+  #+allegro 
+  (tpl:do-command "cd" dir)
+  #-allegro 
+  (progn 
+    #+cmu (unix:unix-chdir (if (equal dir "") (specware::getenv "HOME") dir))
+    #-cmu (specware::change-directory dir)
+    (let* ((dirpath (specware::current-directory))
+	   (newdir (namestring dirpath)))
+      #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
+      (emacs::eval-in-emacs (format nil "(setq default-directory ~s)"
+				    (specware::ensure-final-slash newdir)))
+      (when (under-ilisp?)
+	(emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
                                                      (cons default-directory nil))"
-					  (specware::ensure-final-slash newdir))))
-	  (princ newdir)
-	  (values)))))
+				      (specware::ensure-final-slash newdir))))
+      (princ newdir)
+      (values))))
 
 (defun ld (file)
   (load (subst-home file)))
