@@ -72,3 +72,5 @@ myapp: main.o QuickSort.o $(GCLIB)
 
 queens.o: queens.c queens.h
 	$(CC) -O3 $(CPPFLAGS) -o $@ -c $< 
+
+queens: queens.o $(GCLIB)
