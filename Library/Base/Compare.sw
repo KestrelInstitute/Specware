@@ -1,4 +1,4 @@
-Compare qualifying spec {
+Compare qualifying spec
   import PrimitiveSorts
 
   sort Comparison =
@@ -12,4 +12,4 @@ Compare qualifying spec {
       | Greater -> "Greater"
       | Equal -> "Equal"
       | Less -> "Less"
-}
+endspec

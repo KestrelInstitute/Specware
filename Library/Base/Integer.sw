@@ -1,7 +1,7 @@
 \section{Integer}
 \begin{spec}
 
-Integer qualifying spec {
+Integer qualifying spec
   import PrimitiveSorts
   import Compare
 
@@ -46,5 +46,5 @@ Integer qualifying spec {
         Greater        
 
   def show n = toString n
-}
+endspec
 \end{spec}

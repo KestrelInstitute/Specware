@@ -1,7 +1,7 @@
 \section{String}
 
 \begin{spec}
-String qualifying spec {
+String qualifying spec
   import PrimitiveSorts
   import Nat
   import Boolean
@@ -41,6 +41,6 @@ String qualifying spec {
     if n lt m then Less else if n = m then Equal else Greater        
 
   op concatList : List String -> String
-}
+endspec
 \end{spec}
 

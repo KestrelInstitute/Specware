@@ -9,7 +9,7 @@ be renamed \verb|PrimitiveSignature| and contain just enough sort and
 op definitions to break the dependencies.
 
 \begin{spec}
-spec {
+spec 
   import PrimitiveSorts
   import List
   import String
@@ -39,5 +39,5 @@ yields \verb|1:2:3|.
           "(Some "
           ^ (showX x)
           ^ ")"
-}
+endspec
 \end{spec}

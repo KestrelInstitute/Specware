@@ -3,7 +3,7 @@ The following is a hack. The problem is that certain functions for
 data structures use fail. Until they are fixed, we need the following.
 
 \begin{spec}
-System qualifying spec {
+System qualifying spec 
   import PrimitiveSorts
   import List
   import Option
@@ -64,5 +64,5 @@ System qualifying spec {
 
   op garbageCollect : Boolean -> ()
   op hackMemory     : ()      -> ()
-}
+endspec
 \end{spec}

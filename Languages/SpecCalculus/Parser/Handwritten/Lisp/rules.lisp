@@ -247,7 +247,7 @@
   (make-spec-definition 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :END-SPEC ()
-  (:anyof "end" "end-spec"))
+  (:anyof "end" "end-spec" "endspec"))
 
 (define-sw-parser-rule :DECLARATION-SEQUENCE ()
   (:repeat* :DECLARATION nil))

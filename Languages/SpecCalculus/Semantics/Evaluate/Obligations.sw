@@ -9,6 +9,7 @@ SpecCalc qualifying spec
 {
   import Signature
   import /Languages/MetaSlang/Specs/TypeObligations
+  import /Languages/SpecCalculus/Semantics/Evaluate/URI/Utilities
 
   def SpecCalc.evaluateObligations term =
     { (value, time_stamp, dep_URIs) <- evaluateTermInfo term;
@@ -17,31 +18,33 @@ SpecCalc qualifying spec
 	| Spec  spc -> let ob_spec = specObligations (spc,term) in
 	               return (Spec ob_spec, time_stamp, dep_URIs)
 
-	| Morph sm  -> let ob_spec = morphismObligations sm in
-	               return (Spec ob_spec, time_stamp, dep_URIs)
+	| Morph sm  -> {globalContext <- getGlobalContext;
+			let ob_spec = morphismObligations (sm,globalContext) in
+			return (Spec ob_spec, time_stamp, dep_URIs)}
 
 	| _ -> raise (Unsupported (positionOf term,
 				   "Can create obligations for Specs and Morphisms only"))
 		      }
  
-  op morphismObligations: Morphism -> Spec
-  def morphismObligations {dom, cod, sortMap, opMap} =
+  op morphismObligations: Morphism * GlobalContext -> Spec
+  def morphismObligations ({dom, cod, sortMap, opMap},globalContext) =
     % let tcc = MetaSlangTypeCheck.checkSpec(domain2) in
-    let translated_dom_axioms = List.mapPartial (fn prop ->
-						 case prop of
-						   | (Axiom, name, tyvars, fm) ->
-						     Some (Conjecture, name, tyvars,
-							   translateTerm (fm, sortMap, opMap))
-						   | _ -> None) 
-			                        dom.properties
+    let translated_dom_axioms = mapPartial (fn prop ->
+					    case prop of
+					      | (Axiom, name, tyvars, fm) ->
+						Some (Conjecture, name, tyvars,
+						      translateTerm (fm, sortMap, opMap))
+					      | _ -> None) 
+					   dom.properties
     in
-    let import_of_cod = {imports      = [%(getURIforSpec(cod,globalContext), cod)
-					],
+    let import_of_cod = {imports      = case findUnitIdforUnit(Spec cod,globalContext) of
+			                  | Some unitId -> [(showURI unitId, cod)]
+			                  | _ -> [],
 			 importedSpec = Some cod,
 			 localOps     = emptyOpNames,
 			 localSorts   = emptySortNames}
     in
-    let ob_spc = {importInfo = import_of_cod, % probably a good idea, but is it actually needed?
+    let ob_spc = {importInfo = import_of_cod,
 		  ops        = cod.ops,
 		  sorts      = cod.sorts,
 		  properties = cod.properties ++ translated_dom_axioms}

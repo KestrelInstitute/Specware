@@ -1,4 +1,4 @@
-spec {
+spec
   sort Integer.Integer
   sort Boolean.Boolean
   sort Char.Char
@@ -8,4 +8,4 @@ spec {
   % in Nat and List respectively.
   % sort Nat.Nat
   % sort List.List a
-}
+endspec

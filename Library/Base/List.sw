@@ -1,7 +1,7 @@
 \section{List}
 
 \begin{spec}
-List qualifying spec {
+List qualifying spec 
   import Option
   import PrimitiveSorts
   import Nat
@@ -181,5 +181,5 @@ List qualifying spec {
      case l of
        | [] -> None
        | hd::tl -> if p hd then Some (hd, res) else firstUpToHelper(p, tl, Cons(hd,res))
-}
+endspec
 \end{spec}

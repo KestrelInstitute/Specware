@@ -4,7 +4,7 @@ To avoid, cyclic dependencies, the \verb|show| function for this
 type is found in spec \verb|Show|.
 
 \begin{spec}
-Option qualifying spec {
+Option qualifying spec
   import Compare
 
   sort Option a = | None | Some a
@@ -36,5 +36,5 @@ Option qualifying spec {
     case opt of
       | None -> None
       | Some x -> Some (f x)
-}
+endspec
 \end{spec}

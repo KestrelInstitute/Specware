@@ -1,7 +1,7 @@
 \section{Nat}
 
 \begin{spec}
-Nat qualifying spec {
+Nat qualifying spec 
   import PrimitiveSorts
   import Integer
   import Compare
@@ -58,9 +58,9 @@ Nat qualifying spec {
 
   def posNat? n = n > 0
 
-  axiom < zero is fa(x) (~(x < 0))
-  axiom < succ is fa(x,y) (x < succ y) <=> (x < y) or (x = y)
-  axiom less or equal is fa(x,y) (x <= y)  <=>  (x < y) or (x = y)
+%  axiom < zero is fa(x) (~(x < 0))
+%  axiom < succ is fa(x,y) (x < succ y) <=> (x < y) or (x = y)
+%  axiom less or equal is fa(x,y) (x <= y)  <=>  (x < y) or (x = y)
 
 %  def min (x,y) = if x <= y then x else y
 %  def max (x,y) = if x <= y then y else x
@@ -78,5 +78,5 @@ Nat qualifying spec {
 %    if n < m then Less else if n = m then Equal else Greater        
 
   def show n = natToString n
-}
+endspec
 \end{spec}

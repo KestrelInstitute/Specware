@@ -42,7 +42,7 @@ spec
        mapTerm (fn (tm) -> case tm of
 	                    | Var(v1,_) -> if v1 = v then arg else tm
 			    | _ -> tm,
-	        fn x -> x, fn x -> x)
+	        id, id)
          bod
      | _ -> Apply(fntm,arg,noPos)
 
