@@ -136,33 +136,44 @@
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-TERM ()
-  (:anyof
-   (:tuple "(" (1 :SC-TERM) ")")
-   (1 :SC-PRINT)
-   (1 :SC-UNIT-ID)
-   (1 :SPEC-DEFINITION)
-   (1 :SC-LET)
-   (1 :SC-WHERE)
-   (1 :SC-QUALIFY)
-   (1 :SC-HIDE)
-   (1 :SC-EXPORT)
-   (1 :SC-TRANSLATE)
-   (1 :SC-SPEC-MORPH)
-   ;; (1 :SC-SHAPE)
-   (1 :SC-DIAG)
-   (1 :SC-COLIMIT)
-   (1 :SC-SUBSTITUTE)
-   ;; (1 :SC-DIAG-MORPH)
-   ;; (1 :SC-DOM)
-   ;; (1 :SC-COD)
-   ;; (1 :SC-LIMIT)
-   ;; (1 :SC-APEX)
-   (1 :SC-GENERATE)
-   (1 :SC-OBLIGATIONS)
-   (1 :SC-PROVE)
-   (1 :SC-EXPAND)
-   (1 :SC-REDUCE)
-   (1 :SC-EXTEND))
+  ;; Factoring SC-TERM this way is a no-op here, but can make it a bit more 
+  ;; convenient to describe certain gramamrs (e.g. Accord) that extend SC-TERM.
+  (:anyof :SC-UNIT-ID
+	  :SC-NON-UNIT-ID))
+
+(define-sw-parser-rule :SC-NON-UNIT-ID ()
+  (:anyof :SC-PARENTHESIZED-TERM
+	  :SC-PRINT
+	  :SC-SPEC ; was SPEC-DEFINITION
+	  :SC-LET
+	  :SC-WHERE
+	  :SC-QUALIFY
+	  :SC-HIDE
+	  :SC-EXPORT
+	  :SC-TRANSLATE
+	  :SC-SPEC-MORPH
+	  ;; :SC-SHAPE
+	  :SC-DIAG
+	  :SC-COLIMIT
+	  :SC-SUBSTITUTE
+	  ;; :SC-DIAG-MORPH
+	  ;; :SC-DOM
+	  ;; :SC-COD
+	  ;; :SC-LIMIT
+	  ;; :SC-APEX
+	  :SC-GENERATE
+	  :SC-OBLIGATIONS
+	  :SC-PROVE
+	  :SC-EXPAND
+	  :SC-REDUCE
+	  :SC-EXTEND))
+
+;;; ========================================================================
+;;;  SC-PARENTHESIZED-TERM
+;;; ========================================================================
+
+(define-sw-parser-rule :SC-PARENTHESIZED-TERM ()
+  (:tuple "(" (1 :SC-TERM) ")")
   1)
 
 ;;; ========================================================================
@@ -218,16 +229,19 @@
    ))
 
 ;;; ========================================================================
-;;;  SPEC-DEFINITION
+;;;  SC-SPEC
 ;;;  http://www.specware.org/manual/html/modules.html
 ;;;  TODO: In doc: Change references to modules
 ;;; ========================================================================
 
-(define-sw-parser-rule :SPEC-DEFINITION ()
+(define-sw-parser-rule :SC-SPEC ()
+  :spec-definition)
+
+(define-sw-parser-rule :SPEC-DEFINITION () ; deprecate
   (:anyof
    (:tuple "spec" "{" (1 :DECLARATION-SEQUENCE) "}")
    (:tuple "spec"     (1 :DECLARATION-SEQUENCE) :END-SPEC))
-  (make-spec-definition 1 ':left-lcb ':right-lcb))
+  (make-sc-spec 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :END-SPEC ()
   (:anyof "end" "end-spec" "endspec"))
@@ -254,7 +268,6 @@
    (1 :SORT-DEFINITION)
    (1 :OP-DEFINITION)
    (1 :CLAIM-DEFINITION))
-  ;; (1 :SPEC-DEFINITION)  ;; obsolete
   1)
 
 ;;; ------------------------------------------------------------------------
@@ -1409,13 +1422,13 @@ If we want the precedence to be optional:
   ;; When we know it must be an op ref...
   ;; "[A.]f"
   (1 :QUALIFIABLE-OP-NAME) 
-  (make-unannotated-op-ref 1 ':left-lcb ':right-lcb))
+  (make-sc-unannotated-op-ref 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-ANNOTATED-OP-REF ()
   ;; This can only be an op ref...
   ;; "[A.]f : <sort>"
   (:tuple (1 :QUALIFIABLE-OP-NAME) ":" (2 :SORT))
-  (make-annotated-op-ref 1 2 ':left-lcb ':right-lcb))
+  (make-sc-annotated-op-ref 1 2 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;  CLAIM REF
@@ -1489,10 +1502,9 @@ If we want the precedence to be optional:
   ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
   ;; (make-sc-translate-rule 1 2 ':left-lcb ':right-lcb))
   (:anyof 
-   ((:tuple :KW-TYPE (1 :SC-SORT-REF)         :MAPS-TO (2 :SC-SORT-REF))          (make-sc-sort-rule      1 2 ':left-lcb ':right-lcb))
-   ((:tuple "op"     (1 :SC-OP-REF)           :MAPS-TO (2 :SC-OP-REF))            (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
+   ((:tuple :KW-TYPE (1 :SC-SORT-REF)       :MAPS-TO (2 :SC-SORT-REF))          (make-sc-sort-rule      1 2 ':left-lcb ':right-lcb))
+   ((:tuple "op"     (1 :SC-OP-REF)         :MAPS-TO (2 :SC-OP-REF))            (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
    ;; ?? axiom/thoerem/conjecture ??
-   ;;
    ;; Without an explicit "sort" or "op" keyword, 
    ;;  if either side is annotated, this is an op rule:
    ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-OP-REF))            (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
@@ -1525,10 +1537,9 @@ If we want the precedence to be optional:
   ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
   ;; (make-sc-spec-morph-rule 1 2 ':left-lcb ':right-lcb))
   (:anyof 
-   ((:tuple :KW-TYPE (1 :SC-SORT-REF)         :MAPS-TO (2 :SC-SORT-REF))          (make-sm-sort-rule      1 2 ':left-lcb ':right-lcb))
-   ((:tuple "op"     (1 :SC-OP-REF)           :MAPS-TO (2 :SC-OP-REF))            (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
+   ((:tuple :KW-TYPE (1 :SC-SORT-REF)       :MAPS-TO (2 :SC-SORT-REF))          (make-sm-sort-rule      1 2 ':left-lcb ':right-lcb))
+   ((:tuple "op"     (1 :SC-OP-REF)         :MAPS-TO (2 :SC-OP-REF))            (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
    ;; ?? axiom/thoerem/conjecture ??
-   ;;
    ;; Without an explicit "sort" or "op" keyword, 
    ;;  if either side is annotated, this is an op rule:
    ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-OP-REF))            (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))

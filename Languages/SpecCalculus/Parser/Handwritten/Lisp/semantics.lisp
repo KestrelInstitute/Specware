@@ -173,7 +173,11 @@
 
 (defparameter unspecified-fixity '(:|Unspecified|))
 
-(defun make-spec-definition (declaration-sequence l r)
+(defun make-sc-spec (declaration-sequence l r)
+  :comment "A specification"
+  (speccalc::mkSpec-2 declaration-sequence (make-pos l r)))
+
+(defun make-spec-definition (declaration-sequence l r) ; deprecate
   :comment "A specification"
   (speccalc::mkSpec-2 declaration-sequence (make-pos l r)))
 
@@ -872,11 +876,19 @@ If we want the precedence to be optional:
   (declare (ignore l r))
   (cons :|Ambiguous| ambiguous-ref))
 
-(defun make-unannotated-op-ref (op-ref      l r)
+(defun make-sc-unannotated-op-ref (op-ref      l r)
   (declare (ignore l r))
   (cons op-ref '(:|None|)))
 
-(defun make-annotated-op-ref   (op-ref sort l r)
+(defun make-unannotated-op-ref (op-ref      l r) ; deprecate
+  (declare (ignore l r))
+  (cons op-ref '(:|None|)))
+
+(defun make-sc-annotated-op-ref   (op-ref sort l r)
+  (declare (ignore l r))
+  (cons op-ref (cons :|Some| sort)))
+
+(defun make-annotated-op-ref   (op-ref sort l r) ; deprecate
   (declare (ignore l r))
   (cons op-ref (cons :|Some| sort)))
 
