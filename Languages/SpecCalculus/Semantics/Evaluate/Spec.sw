@@ -131,7 +131,7 @@ such time as the current one can made monadic.
  def elaborateSpecM spc =
    {
      uri <- getCurrentURI;
-     case elaboratePosSpec (spc, (uriToPath uri) ^ ".sw", true) of
+     case elaboratePosSpec (spc, (uriToPath uri) ^ ".sw", uri.hashSuffix, true) of
        | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
        | Error msg   -> raise  (OldTypeCheck msg)
    }

@@ -37,7 +37,8 @@ spec {
   % op elaboratePosSpecMaybeFail   : List Spec     * PosSpec                        -> PosSpec
   % op elaboratePosSpecReportError : List Spec     * PosSpec * Environment * String -> ErrorMonad.Result PosSpec
 
-  op elaboratePosSpec           : PosSpec * Filename * Boolean  -> ErrorMonad.Result PosSpec
+  op elaboratePosSpec           : PosSpec * Filename * Option String * Boolean
+                                    -> ErrorMonad.Result PosSpec
 
   op unlinkRec                  : PSort -> PSort
   op undeterminedSort?          : PSort -> Boolean
@@ -81,8 +82,14 @@ spec {
   %%    EvalSpec.sl                      : lEvalSpec.evaluateSpec
   %%    ...
 
-  def elaboratePosSpec (given_spec, filename, verbose) = 
-   let _ = if verbose then writeLine (";;; Elaborating spec (" ^ filename ^ ")") else () in
+  def elaboratePosSpec (given_spec, filename, suffix, verbose) = 
+   let _ = if verbose
+	     then writeLine (";;; Elaborating spec "
+			     ^ (case suffix of
+			         | Some nm -> nm ^ " "
+			         | _ -> "")
+			     ^ "in " ^ filename)
+	   else () in
    let _ = initializeMetaTyVar () in
  
    %% ======================================================================
