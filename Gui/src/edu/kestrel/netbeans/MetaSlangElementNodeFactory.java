@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/02/18 17:58:48  weilyn
+ * Added support for imports.
+ *
  * Revision 1.4  2003/02/17 04:28:16  weilyn
  * Cleaned up active context menu actions.
  *
@@ -72,8 +75,8 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 	SystemAction.get(EditAction.class),
 	//SystemAction.get(OpenAction.class),
 	null,
-        SystemAction.get(ProcessUnitAction.class),
-        null,
+ //       SystemAction.get(ProcessUnitAction.class),
+//        null,
 	SystemAction.get(CutAction.class),
 	SystemAction.get(CopyAction.class),
 	SystemAction.get(PasteAction.class),
