@@ -688,6 +688,18 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
       else (cons(v,vars),terms,names,body)
   op substitute: (String * LispTerm) -> LispTerm -> LispTerm
   def substitute(x,arg) body = 
+    let def subst_in_decls decls =
+         case arg of
+	   | Var new_var ->
+             (List.map (fn decl ->
+			case decl of
+			  | Ignore ignored_vars -> 
+			    Ignore (List.map (fn ignored_var -> 
+					      if ignored_var = x then new_var else ignored_var)
+				             ignored_vars))
+	               decls)
+	   | _ -> decls
+    in
       case body
         of Apply(term,terms) -> 
            Apply(substitute(x,arg) term,
@@ -700,7 +712,9 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
            let (vars,names,body) = foldr rename ([],names,body) vars
            in
                mkLLambda(vars,
-			 decls, % could a subsitution be needed?
+			 %% we might be renaming a var, in which case
+                         %% any decls referring to it must be updated
+			 subst_in_decls decls, 
 			 substitute(x,arg) body)
            
          | Var y -> if x = y then arg else mkLVar y
@@ -727,8 +741,8 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
            
          | If(t1,t2,t3) -> 
            mkLIf(substitute(x,arg) t1,
-                       substitute(x,arg) t2,
-                       substitute(x,arg) t3)
+		 substitute(x,arg) t2,
+		 substitute(x,arg) t3)
          | IfThen(t1,t2) -> 
            IfThen(substitute(x,arg) t1,
                   substitute(x,arg) t2)
@@ -786,19 +800,35 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
            
          | Lambda(vars,decls,body) -> 
            let reduced_body = reduceTerm body in
-           let unused_pv_vars = 
+           let unused_and_unignored_pv_vars = 
                List.foldr (fn (var_name, unused_vars) ->
-                           if (pV? var_name) &
-                              (countOccurrence2 (var_name, 0, [reduced_body]) = 0)
+                           if (%% internally generated?
+			       %% (For user-defined vars, we do NOT want add an ignore decl,
+			       %%  as that would hide useful debugging information.)
+			       (pV? var_name) &
+			       %% unused?
+			       (countOccurrence2 (var_name, 0, [reduced_body]) = 0) &
+			       %% not already in an ignore declaration?
+			       %% (can happen if there are multiple passes through reduceTerm)
+			       ~ (exists (fn decl ->
+					  case decl of
+					    | Ignore ignored_names ->
+					      exists (fn ignored_name -> var_name = ignored_name) 
+					             ignored_names
+					    | _ -> false)
+				         decls) &
+			       %% duplications among the vars probably shouldn't happen, 
+			       %% but it doesn't hurt to double-check
+			       ~ (member (var_name, unused_vars)))
 			     then cons (var_name, unused_vars)
-                             else unused_vars)
+			     else unused_vars)
                           []      
                           vars
            in
            let augmented_decls = 
-	       (case unused_pv_vars of
+	       (case unused_and_unignored_pv_vars of
 		  | [] -> decls
-		  | _  -> cons(Ignore unused_pv_vars, decls))
+		  | _  -> cons(Ignore unused_and_unignored_pv_vars, decls))
 	   in
 	     mkLLambda (vars, augmented_decls, reduced_body)
 %

@@ -390,7 +390,11 @@ ArityNormalize qualifying spec {
       case termArity(sp,gamma,term)
         of None -> term
          | Some (dom,num) ->
-           let (name,usedNames) = freshName("x",usedNames) in
+	   %% by using "pV" as the prefix, 
+	   %% we pass the pV? test in reduceTerm,
+	   %% which allows use to include an ignore decl
+           %% if the var is not used in the body
+           let (name,usedNames) = freshName("pV",usedNames) in
            let x = (name,dom) in
            (Lambda([(VarPat(x,noPos),mkTrue(),
                      mkArityApply(sp,dom,term,mkVar x,usedNames))],noPos))
