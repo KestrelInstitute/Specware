@@ -54,8 +54,8 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
     
     protected class MarqueeHandler extends XMarqueeHandler implements java.io.Serializable {
         
-        XNode node;
-        XContainerView possibleParentView;
+        protected XNode node;
+        protected XContainerView possibleParentView;
         
         public MarqueeHandler(XGraphDisplay graph) {
             super(graph);
