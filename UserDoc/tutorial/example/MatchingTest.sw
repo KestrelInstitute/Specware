@@ -20,7 +20,7 @@ Test = spec
 
   op message2string : Message -> MessageString
   def message2string msg =
-      implode(map (fn msym -> case msym of Some ch -> ch | None -> #*) msg)
+      implode(map (fn Some ch -> ch | None -> #*) msg)
 
   op string2message : MessageString -> Message
   def string2message mstr =
