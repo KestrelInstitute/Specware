@@ -774,7 +774,7 @@ spec
    %% if you only do an addImport to the emptyspec you miss all the substance of the
    %% original spec, thus we do an setImports to spc.
    let tcSpec = spc << {importInfo = {imports      = [(specCalcTerm,spc),(wfoSpecTerm,wfoSpec)],
-				      importedSpec = Some (addDisjointImport(spc,wfoSpec)),
+				      % importedSpec = Some (addDisjointImport(spc,wfoSpec)),
 				      localOps     = emptyOpNames,
 				      localSorts   = emptySortNames,
 				      localProperties = emptyPropertyNames}}

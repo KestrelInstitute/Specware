@@ -60,7 +60,6 @@ TransSpec qualifying spec
         spc = {
             importInfo = {
               imports = elabSpec.importInfo.imports,
-              importedSpec = elabSpec.importInfo.importedSpec,
               localOps = [],
               localSorts = [],
 	      localProperties = []

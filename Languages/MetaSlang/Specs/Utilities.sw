@@ -502,7 +502,6 @@ Utilities qualifying spec
  def specEqual? (s1, s2) =
    %% don't test importInfo as it just gives info about how the spec was constructed
    %(s1.imports                = s2.imports)                &
-   % (s1.importedSpec           = s2.importedSpec)           & % ??
    (s1.properties             = s2.properties)             &
    equalAQualifierMap?(s1.sorts, s2.sorts) &
    equalAQualifierMap?(s1.ops, s2.ops)
@@ -739,7 +738,6 @@ Utilities qualifying spec
  op modifyNamesSpec: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * Spec -> Spec
  def modifyNamesSpec (mSrt, mOp, spc) =
    {imports      = spc.imports,
-    importedSpec = spc.ImportedSpec,
     sorts        = StringMap.map (fn qmap -> StringMap.foldri (fn (id, si, res) -> 
 								   let UnQualified newsrt = mSrt(UnQualified id) in
 								   StringMap.insert (res,

@@ -17,8 +17,6 @@ SpecUnion qualifying spec {
 							   imports_list))
 				          []
 					  specs),
-		 %% We're building an imported spec, so we don't  need this information
-		 importedSpec  = None,
 		 localOps      = emptyOpNames,
 		 localSorts    = emptySortNames,
 		 localProperties = emptyPropertyNames},

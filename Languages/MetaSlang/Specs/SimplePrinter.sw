@@ -18,7 +18,7 @@ SpecCalc qualifying spec {
   op ppASpec : fa (a) ASpec a -> Pretty
   def ppASpec (spc as {importInfo,sorts,ops,properties}) = 
     let ppImports = ppNil in
-      % let {imports,importedSpec,localOps,localSorts} = importInfo in
+      % let {imports,localOps,localSorts} = importInfo in
       % let ppNames =
         % map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) imports in
       % ppSep ppNewline ppNames in
@@ -47,7 +47,7 @@ SpecCalc qualifying spec {
 
   op ppASpecLocal : fa (a) ASpec a -> Pretty
   def ppASpecLocal (spc as {importInfo,sorts,ops,properties}) = 
-    let {imports,importedSpec,localOps,localSorts,localProperties=_} = importInfo in
+    let {imports,localOps,localSorts,localProperties=_} = importInfo in
     let ppImports =
       let ppNames =
         map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) spc.importInfo.imports in

@@ -20,7 +20,6 @@ SpecUnion qualifying spec {
    merged_ops    <- opsUnion        specs;
    merged_props  <- propertiesUnion specs;
    merged_spec   <- return {importInfo = {imports       = merged_imports,
-					  importedSpec  = None,               % TODO: is this correct?
 					  localOps      = emptyOpNames,    % merged_local_ops
 					  localSorts    = emptySortNames,
 					  localProperties = emptyPropertyNames}, % merged_local_sorts

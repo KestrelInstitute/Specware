@@ -35,7 +35,6 @@ AnnSpec qualifying spec
   }
 
  type ImportInfo = {imports      : Imports,
-		    importedSpec : Option Spec, % Not currently used?
 		    localOps     : OpNames,
 		    localSorts   : SortNames,
 		    localProperties : PropertyNames}
@@ -340,7 +339,6 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
  def emptyASortMap           = emptyAQualifierMap
  def emptyAOpMap             = emptyAQualifierMap
  def emptyImportInfo         = {imports      = emptyImports,
-                                importedSpec = None,
                                 localOps     = emptyOpNames,
                                 localSorts   = emptySortNames,
 			        localProperties = emptyPropertyNames}
@@ -363,9 +361,6 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
 
  def setImports (spc, new_imports) =
    spc << {importInfo = spc.importInfo << {imports = new_imports}}
-
- def setImportedSpec (spc, new_imported_spec) =
-   spc << {importInfo = spc.importInfo << {importedSpec = Some new_imported_spec}}
 
  def setLocalOps (spc, new_local_ops) =
    spc << {importInfo = spc.importInfo << {localOps = new_local_ops}}

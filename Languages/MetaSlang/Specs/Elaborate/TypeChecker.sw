@@ -96,7 +96,7 @@ spec
     %%   AstEnvironment.init adds default imports, etc.
     %%
     let env_1 = initialEnv (given_spec, filename) in
-    let {importInfo = importInfo as {imports = _, importedSpec = _, localOps, localSorts, localProperties},
+    let {importInfo = importInfo as {imports = _, localOps, localSorts, localProperties},
 	 sorts      = sorts_0, 
 	 ops        = ops_0, 
 	 properties = props_0 

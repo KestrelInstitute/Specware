@@ -38,7 +38,7 @@ PosSpecToSpec qualifying spec {
 %   mapSpec (convertPTerm, convertPSort, fn x -> x)
 %     spc
   let {importInfo, sorts, ops, properties} = spc in
-  let {imports = _, importedSpec = _, localOps, localSorts, localProperties} = importInfo in
+  let {imports = _, localOps, localSorts, localProperties} = importInfo in
   let tsp_maps = (convertPTerm, convertPSort, fn x -> x) in
   { importInfo       = importInfo,
 

@@ -66,7 +66,6 @@ SpecCalc qualifying spec
     let import_of_cod = {imports = case findUnitIdforUnit(Spec cod,globalContext) of
 			                  | Some unitId -> [((UnitId (UnitId_Relative unitId),pos), cod)]
 			                  | _ -> [],
-			 importedSpec = Some cod,
 			 localOps     = emptyOpNames,
 			 localSorts   = emptySortNames,
 			 localProperties = map propertyName obligation_props}

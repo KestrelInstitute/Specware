@@ -101,8 +101,6 @@ spec
    let errs : List (String * Position) = [] in
    let {importInfo, sorts, ops, properties} = spc in
    let MetaTyVar(tv,_)  = freshMetaTyVar ("initialEnv", Internal "ignored") in
-   %% importedSpecs is the subset of external used
-   %% let importMap = importedSpecs in
    let spc = {importInfo   = importInfo,
 	      sorts        = sorts,
 	      ops          = ops,

@@ -1233,10 +1233,7 @@ In the meantime the following does the job.
   
 %   def toLispFileAsPackage (spc, file, package) =
 %    let renamedSpec = {
-%      % name = package,
-%      % importedSpecs = spc.importedSpecs,
 %      imports = spc.imports,
-%      importedSpec = spc.importedSpec,
 %      sorts = spc.sorts,
 %      ops = spc.ops,
 %      properties = spc.properties

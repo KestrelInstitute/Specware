@@ -101,9 +101,8 @@ Change UnQualified to new_qualifier in all qualified names
         List.map qualifyStep properties
 
       def convertSpec sp =
-       let {importInfo = {imports,importedSpec,localOps,localSorts,localProperties}, sorts, ops, properties}
+       let {importInfo = {imports,localOps,localSorts,localProperties}, sorts, ops, properties}
            = mapSpec (translateOp, translateSort, translatePattern) sp
-       %%         importedSpecs    = mapImports convertSpec importedSpecs
        in {
          newSorts <- convertSortMap sorts;
          newOps <- convertOpMap ops;
@@ -111,7 +110,6 @@ Change UnQualified to new_qualifier in all qualified names
          return {
             importInfo = {
               imports = imports,
-              importedSpec = importedSpec,
               localOps = map translateQualifiedId localOps,
               localSorts = map translateQualifiedId localSorts,
               localProperties = map translateQualifiedId localProperties

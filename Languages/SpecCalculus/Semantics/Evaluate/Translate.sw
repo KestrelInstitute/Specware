@@ -567,7 +567,7 @@ Note: The code below does not yet match the documentation above, but should.
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_sorts 
 
     in
-    let {importInfo = {imports,importedSpec,localOps,localSorts,localProperties}, sorts, ops, properties}
+    let {importInfo = {imports,localOps,localSorts,localProperties}, sorts, ops, properties}
          = mapSpec (translateOp op_id_map, translateSort sort_id_map, translatePattern) spc
     in {
       newSorts <- translateSortMap sorts;
@@ -575,7 +575,6 @@ Note: The code below does not yet match the documentation above, but should.
       return {
 	      importInfo = {
 			    imports      = [],
-			    importedSpec = None,
 			    localOps     = map (translateOpQualifiedId op_id_map) localOps,
 			    localSorts   = foldl (fn (ty, local_types) -> 
 						  let new_type = translateSortQualifiedId sort_id_map ty in
