@@ -189,7 +189,7 @@
 (defparameter forall-op   (cons :|Forall| nil))
 (defparameter exists-op   (cons :|Exists| nil))
 
-(defparameter unspecified-fixity :|Unspecified|) ;:|Nonfix|
+(defparameter unspecified-fixity '(:|Unspecified|))
 
 ;; The counter here is for freshMetaTypeVar. Perhaps it should be moved
 ;; out of the parser. Needs thought.
@@ -672,6 +672,31 @@ If we want the precedence to be optional:
   (cons :|Fun|
         (vector f s
                 (make-pos l r))))
+
+(defun make-nonfix (x)
+  (cond ((and (consp x) (eq (car x) :|Fun|) (simple-vector-p (cdr x)))
+	 (let* ((v (cdr x))
+		(f (svref v 0)))
+	   (cond ((not (consp f))
+		  x)
+		 ((eq (car f) :|OneName|)
+		  (let* ((new-f (cons :|OneName| 
+				      (cons (cadr f)    ; id
+					    '(:|Nonfix|))))
+			 (new-v (vector new-f (svref v 1) (svref v 2))))
+		    (cons :|Fun| new-v)))
+		 ((eq (car f) :|TwoNames|)
+		  (let* ((z (cdr f))
+			 (new-f (cons :|TwoNames| 
+				      (vector (svref z 0) ; id
+					      (svref z 1) ; id
+					      '(:|Nonfix|))))
+			 (new-v (vector new-f (svref v 1) (svref v 2))))
+		    (cons :|Fun| new-v)))
+		 (t
+		  x))))
+	(t
+	 x)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   MONAD-EXPRESSION

@@ -465,6 +465,21 @@ spec {
   %% which calls unifySorts, 
   %%  which side-effects links for metaTyVar's via 
 
+  def fixateOneName (id_fixity : Id * Fixity, explicit_fixity : Fixity) 
+    : Id * Fixity =
+    (id_fixity.1, 
+     case explicit_fixity of
+       | Unspecified -> id_fixity.2
+       | _           -> explicit_fixity)
+
+  def fixateTwoNames (q_id_fixity : Id * Id * Fixity, explicit_fixity : Fixity) 
+    : Id * Id * Fixity =
+    (q_id_fixity.1, 
+     q_id_fixity.2, 
+     case explicit_fixity of
+       | Unspecified -> q_id_fixity.3
+       | _           -> explicit_fixity)
+
   %% TODO: convert elaborateTerm args to work on term scheme and sort scheme?
   def elaborateTerm (env, trm, term_sort) =
    case trm of
@@ -481,9 +496,9 @@ spec {
               let srt = termSort term in
               let srt = elaborateCheckSortForTerm (env, term, srt, term_sort) in
               (case term of
-                | Var ((id, _),         pos) -> Var ((id, srt),         pos)
-                | Fun (OneName qidf, _, pos) -> Fun (OneName qidf, srt, pos)
-                | Fun (TwoNames xx,  _, pos) -> Fun (TwoNames xx,  srt, pos)
+                | Var ((id, _),          pos) -> Var ((id, srt),         pos)
+                | Fun (OneName  idf,  _, pos) -> Fun (OneName  (fixateOneName  (idf,  fixity)), srt, pos)
+                | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), srt, pos)
                 | _ -> System.fail "Variable or constant expected"))
         | [] -> 
           (* resolve identifier declaration from sort information *)
@@ -837,8 +852,9 @@ spec {
     | ApplyN (terms, pos) ->
           (let def tagTermWithInfixInfo (term : MS.Term) : FixatedTerm = 
                  case term of
-                  | Fun (OneName (_ ,  Infix p), _, pos) -> Infix (term, p)
-                  | Fun (OneName (id, _),        _, pos) ->
+                  | Fun (OneName (_,  Nonfix),  _, pos) -> Nonfix term
+                  | Fun (OneName (_,  Infix p), _, pos) -> Infix (term, p)
+                  | Fun (OneName (id, _),       _, pos) ->
                       (case consistentTag (findVarOrOps (env, id, pos)) of
                         | (true, (Some p) : (Option (Associativity * Nat))) -> Infix (term, p) % ### Why the Type?
                         | (true, _)      -> Nonfix term
@@ -846,6 +862,7 @@ spec {
                        (error (env, "Inconsistent infix information for overloaded op: " ^ id,
                               pos);
                         Nonfix term))
+                  | Fun (TwoNames (_ , _, Nonfix),  _, pos) -> Nonfix term
                   | Fun (TwoNames (_ , _, Infix p), _, pos) -> Infix (term, p)
                   | Fun (TwoNames (id1, id2, _),    _, pos) ->
                       %% If, due to union semantics, findOps always returns 0 or 1 hits for Q.Id, 

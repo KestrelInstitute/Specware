@@ -1108,7 +1108,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :PARENTHESIZED-EXPRESSION ()
   (:tuple "(" (1 :EXPRESSION) ")")
-  1)
+  (make-nonfix 1))
 
 ;;; ------------------------------------------------------------------------
 ;;;   MONAD-EXPRESSION
