@@ -70,13 +70,13 @@ XML qualifying spec
        | _ ->
 	 {
 	  error {kind        = Syntax,
-		 requirement = "An ElementDecl in a DTD must end with '>'",
-		 problem     = "Some ElementDecl doesn't end with '>'",
-		 expected    = [("'>'", "end of ElementDecl in DTD")],
+		 requirement = "An ElementDecl in a DTD must end with '>'.",
 		 start       = start,
 		 tail        = tail,
 		 peek        = 10,
-		 action      = "Pretend '>' was seen"};
+		 we_expected = [("'>'", "end of ElementDecl in DTD")],
+		 but         = "some ElementDecl doesn't end with '>'",
+		 so_we       = "pretend interpolated '>' was seen"};
 	  return ({w1       = w1,
 		   name     = name,
 		   w2       = w2,
@@ -125,21 +125,21 @@ XML qualifying spec
       | char :: _ ->
 	hard_error {kind        = Syntax,
 		    requirement = "A children clause in an ElementDecl in a DTD should begin with '(' for a choice or seq.",
-		    problem     = "A children clause begins with " ^ (describe_char char) ^ " instead.",
-		    expected    = [("'('", "To start description of a choice or sequence")],
 		    start       = start,
 		    tail        = start,
 		    peek        = 10,
-		    action      = "Immediate failure"}
+		    we_expected = [("'('", "To start description of a choice or sequence")],
+		    but         = "a children clause begins with " ^ (describe_char char) ^ " instead",
+		    so_we       = "fail immediately"}
       | _ ->
 	hard_error {kind        = Syntax,
 		    requirement = "A children clause in an ElementDecl in a DTD should begin with '(' for a choice or seq.",
-		    problem     = "EOF occurred first.",
-		    expected    = [("'('", "To start description of a choice or sequence")],
 		    start       = start,
 		    tail        = start,
 		    peek        = 10,
-		    action      = "Immediate failure"}
+		    we_expected = [("'('", "To start description of a choice or sequence")],
+		    but         = "EOF occurred first",
+		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -231,25 +231,25 @@ XML qualifying spec
 	   | char :: _ ->
 	     hard_error {kind        = Syntax,
 			 requirement = "A choice or sequence in an elementdecl in DTD should continue with '|' or ',', or end with ')'.",
-			 problem     = "Parsing description of choice or sequence in elementdecl in DTD",
-			 expected    = [("'|'", "indication of choice"),
+			 start       = start,
+			 tail        = tail,
+			 peek        = 10,
+			 we_expected = [("'|'", "indication of choice"),
 					("','", "indication of sequence"),
 					("')'", "termination of choise or sequence")],
-			 start    = start,
-			 tail     = tail,
-			 peek     = 10,
-			 action   = "Immediate failure"}
+			 but         = (describe_char char) ^ " was seen instead",
+			 so_we       = "fail immediately"}
 	   | _ ->
 	     hard_error {kind        = Syntax,
 			 requirement = "A choice or sequence in an elementdecl in DTD should continue with '|' or ',', or end with ')'.",
-			 problem     = "Parsing description of choice or sequence in elementdecl in DTD",
-			 expected    = [("'|'", "indication of choice"),
+			 start       = start,
+			 tail        = tail,
+			 peek        = 10,
+			 we_expected = [("'|'", "indication of choice"),
 					("','", "indication of sequence"),
 					("')'", "termination of choise or sequence")],
-			 start    = start,
-			 tail     = tail,
-			 peek     = 10,
-			 action   = "Immediate failure"}
+			 but         = "EOF occurred first",
+			 so_we       = "fail immediately"}
 	    }
 
       | _ ->
@@ -303,13 +303,13 @@ XML qualifying spec
 			    {
 			     error {kind        = Syntax,
 				    requirement = "Mixed construction in elementdecl in DTD requires '|' or ')'.",
-				    problem     = (describe_char char) ^ "was unexpected",
-				    expected    = [("'|'",  "to indicate a new alternative"),
-						   ("')*'", "to terminate declaration")],
 				    start       = start,
 				    tail        = tail,
 				    peek        = 10,
-				    action      = "Pretend ')*' was seen"};
+				    we_expected = [("'|'",  "to indicate a new alternative"),
+						   ("')*'", "to terminate declaration")],
+				    but         = (describe_char char) ^ "was seen instead",
+				    so_we       = "pretend interpolated ')*' was seen"};
 			     return (Some (Names {w1    = w1,
 						  names = rev rev_names,
 						  w2    = w2}),
@@ -320,13 +320,13 @@ XML qualifying spec
 			  | _  ->
 			    hard_error {kind        = EOF,
 					requirement = "Mixed construction in elementdecl in DTD requires '|' or ')'.",
-					problem     = "EOF occurred first",
-					expected    = [("'|'",  "to indicate a new alternative"),
-						       ("')*'", "to terminate declaration")],
 					start       = start,
 					tail        = [],
 					peek        = 0,
-					action      = "Immediate failure"}
+					we_expected = [("'|'",  "to indicate a new alternative"),
+						       ("')*'", "to terminate declaration")],
+					but         = "EOF occurred first",
+					so_we       = "fail immediately"}
 			   }
 		   in
 		     probe (tail_0, []))

@@ -145,14 +145,14 @@ XML qualifying spec
         %% TODO: maybe collect junk up to '>'
         hard_error {kind        = EOF,
 		    requirement = "An element tag must terminate with '?>' '/>' or '>'.",
-		    problem     = "EOF occurred first.",
-		    expected    = [(">",  "to terminate start tag <Foo ...> or end tag </Foo ...>"),
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    we_expected = [(">",  "to terminate start tag <Foo ...> or end tag </Foo ...>"),
 				   ("/>", "to terminate empty element tag <Foo .../>"),
 				   ("?>", "to terminate xml decl <?xml ... ?>")],
-		    start       = start,
-		    tail        = start,
-		    peek        = 0,
-		    action      = "immediate failure"}
+		    but         = "EOF occurred first",
+		    so_we       = "fail immediately"}
 
 
 endspec

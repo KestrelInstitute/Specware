@@ -62,12 +62,12 @@ XML qualifying spec
 	      (when (~ (char? char))
 	       (error {kind        = Syntax,
 		       requirement = "Not all numbers are legal Unicode characters.",
-		       problem     = (describe_char char) ^ "is not a legal Unicode character.",
-		       expected    = [("<see doc>", "hex code for legal Unicode character")],
 		       start       = start,
 		       tail        = tail,
 		       peek        = 0,
-		       action      = "Will pass bogus character along"}));
+		       we_expected = [("<see doc>", "hex code for legal Unicode character")],
+		       but         = (describe_char char) ^ "is not a legal Unicode character",
+		       so_we       = "pass along the bogus character"}));
 	      case tail of
 		| 59  (* ';' *) :: tail ->
 		  return (Char {style = Hex,
@@ -77,12 +77,12 @@ XML qualifying spec
 		  {
 		   error {kind        = Syntax,
 			  requirement = "Hex character references must terminate with ';'.",
-			  problem     = (describe_char char) ^ " occurred first",
-			  expected    = [("';'", "termination of hex character reference")],
 			  start       = start,
 			  tail        = tail,
 			  peek        = 10,
-			  action      = "Will pretend interpolated ';' was seen."};
+			  we_expected = [("';'", "termination of hex character reference")],
+			  but         = (describe_char char) ^ " occurred first",
+			  so_we       = "pretend interpolated ';' was seen."};
 		   return (Char {style = Hex,
 				 char  = char},
 			   tail)
@@ -92,12 +92,12 @@ XML qualifying spec
 		  {
 		   error {kind        = EOF,
 			  requirement = "Hex character references must terminate with ';'.",
-			  problem     = "EOF occurred first.",
-			  expected    = [("';'", "termination of hex character reference")],
 			  start       = start,
 			  tail        = tail,
 			  peek        = 10,
-			  action      = "Will pretend interpolated ';' was seen"};
+			  we_expected = [("';'", "termination of hex character reference")],
+			  but         = "EOF occurred first",
+			  so_we       = "pretend interpolated ';' was seen"};
 		   return (Char {style = Hex,
 				 char  = char},
 			   tail)
@@ -108,12 +108,12 @@ XML qualifying spec
 	      (when (~ (char? char))
 	       (error {kind        = Syntax,
 		       requirement = "Not all numbers are legal Unicode characters.",
-		       problem     = (describe_char char) ^ " is not a legal Unicode character.",
-		       expected    = [("<see doc>", "decimal code for legal Unicode character")],
 		       start       = start,
 		       tail        = tail,
 		       peek        = 0,
-		       action      = "Will pass bogus character along"}));
+		       we_expected = [("<see doc>", "decimal code for legal Unicode character")],
+		       but         = (describe_char char) ^ " is not a legal Unicode character",
+		       so_we       = "pretend the bogus character is legal"}));
 	      case tail of
 		| 59  (* ';' *) :: tail ->
 		  return (Char {style = Decimal,
@@ -123,12 +123,12 @@ XML qualifying spec
 		  {
 		   error {kind        = Syntax,
 			  requirement = "Character references must terminate with ';'.",
-			  problem     = (describe_char char) ^ " occurred first",
-			  expected    = [("';'", "termination of decimal character reference")],
 			  start       = start,
 			  tail        = tail,
 			  peek        = 10,
-			  action      = "Will pretend interpolated ';' was seen."};
+			  we_expected = [("';'", "termination of decimal character reference")],
+			  but         = (describe_char char) ^ " occurred first",
+			  so_we       = "pretend interpolated ';' was seen"};
 		   return (Char {style = Hex,
 				 char  = char},
 			   tail)
@@ -137,12 +137,12 @@ XML qualifying spec
 		  {
 		   error {kind        = EOF,
 			  requirement = "Hex character references must terminate with ';'.",
-			  problem     = "EOF occurred first.",
-			  expected    = [("';'", "termination of decimal character reference")],
 			  start       = start,
 			  tail        = tail,
 			  peek        = 10,
-			  action      = "Will pretend interpolated ';' was seen"};
+			  we_expected = [("';'", "termination of decimal character reference")],
+			  but         = "EOF occurred first",
+			  so_we       = "pretend interpolated ';' was seen"};
 		   return (Char {style = Hex,
 				 char  = char},
 			   tail)
@@ -159,12 +159,12 @@ XML qualifying spec
 	     {
 	      error {kind        = Syntax,
 		     requirement = "Entity references must terminate with ';'.",
-		     problem     = (describe_char char) ^ " occurred first.",
-		     expected    = [("';'", "termination of entity reference")],
 		     start       = start,
 		     tail        = tail,
 		     peek        = 10,
-		     action      = "Will pretend interpolated ';' was seen"};
+		     we_expected = [("';'", "termination of entity reference")],
+		     but         = (describe_char char) ^ " occurred first",
+		     so_we       = "pretend interpolated ';' was seen"};
 	      return (Entity {name = name},
 		      tail)
 	     }
@@ -172,12 +172,12 @@ XML qualifying spec
 	     {
 	      error {kind        = EOF,
 		     requirement = "Entity references must terminate with ';'.",
-		     problem     = "EOF occurred first.",
-		     expected    = [("';'", "termination of entity reference")],
 		     start       = start,
 		     tail        = tail,
 		     peek        = 10,
-		     action      = "Will pretend interpolated ';' was seen"};
+		     we_expected = [("';'", "termination of entity reference")],
+		     but         = "EOF occurred first",
+		     so_we       = "pretend interpolated ';' was seen"};
 	      return (Entity {name = name},
 		      tail)
 	     }}
@@ -209,12 +209,12 @@ XML qualifying spec
 	 {
 	  error {kind        = Syntax,
 		 requirement = "PEReferences must with ';'.",
-		 problem     = (describe_char char) ^ " occurred first.",
-		 expected    = [("';'", "termination of PEReference")],
 		 start       = start,
 		 tail        = tail,
 		 peek        = 10,
-		 action      = "Will pretend interpolated ';' was seen"};
+		 we_expected = [("';'", "termination of PEReference")],
+		 but         = (describe_char char) ^ " occurred first",
+		 so_we       = "pretend interpolated ';' was seen"};
 	  return ({name = name},
 		  tail)
 	 }
@@ -222,12 +222,12 @@ XML qualifying spec
 	 {
 	  error {kind        = Syntax,
 		 requirement = "PEReferences must with ';'.",
-		 problem     = "EOF occurred first.",
-		 expected    = [("';'", "termination of PEReference")],
 		 start       = start,
 		 tail        = tail,
 		 peek        = 10,
-		 action      = "Will pretend interpolated ';' was seen"};
+		 we_expected = [("';'", "termination of PEReference")],
+		 but         = "EOF occurred first",
+		 so_we       = "pretend interpolated ';' was seen"};
 	  return ({name = name},
 		  tail)
 	 }}
@@ -253,12 +253,12 @@ XML qualifying spec
 	      {
 	       error {kind        = Syntax,
 		      requirement = "A decimal number is required.",
-		      problem     = "No decimal digits were seen.",
-		      expected    = [("[0-9]+", "decimal digits")],
 		      start       = start,
 		      tail        = tail,
 		      peek        = 10,
-		      action      = "Will pretend '88' (the encoding of 'X') was seen"};
+		      we_expected = [("[0-9]+", "decimal digits")],
+		      but         = "no decimal digits were seen",
+		      so_we       = "pretend '88' (the decimal encoding of 'X') was seen"};
 	       return (88, tail)
 	       }
 	    else
@@ -301,12 +301,12 @@ XML qualifying spec
 	      {
 	       error {kind        = Syntax,
 		      requirement = "A hex number is required.",
-		      problem     = "No hex digits were seen.",
-		      expected    = [("[0-9A-Fa-f]+", "hex digits")],
 		      start       = start,
 		      tail        = tail,
 		      peek        = 10,
-		      action      = "Will pretend '58' (the hex encoding of 'X') was seen"};
+		      we_expected = [("[0-9A-Fa-f]+", "hex digits")],
+		      but         = "no hex digits were seen",
+		      so_we       = "pretend '58' (the hex encoding of 'X') was seen"};
 	       return (88, tail) (* = hex 58 *)
 	      }
 	    else

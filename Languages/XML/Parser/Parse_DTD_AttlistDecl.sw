@@ -81,12 +81,12 @@ XML qualifying spec
 		   {
 		    error {kind        = Syntax,
 			   requirement = "ATTLIST decl in DTD must terminate with '>'.",
-			   problem     = (describe_char char) ^ " was unexpected.",
-			   expected    = [("'>'", "to terminate decl")], 
 			   start       = start,
 			   tail        = tail,
 			   peek        = 10,
-			   action      = "Pretend '>' was seen"};
+			   we_expected = [("'>'", "to terminate decl")], 
+			   but         = (describe_char char) ^ " was seen instead",
+			   so_we       = "pretend interpolated '>' was seen"};
 		    return ({w1   = w1,
 			     name = name,
 			     defs = rev rev_att_defs,
@@ -96,12 +96,12 @@ XML qualifying spec
 		 | _ ->
 		   hard_error {kind        = EOF,
 			       requirement = "ATTLIST decl in DTD must terminate with '>'.",
-			       problem     = "EOF occurred first.",
-			       expected    = [("'>'", "to terminate decl")], 
 			       start       = start,
 			       tail        = [],
 			       peek        = 0,
-			       action      = "Immediate failure"}
+			       we_expected = [("'>'", "to terminate decl")], 
+			       but         = "EOF occurred first",
+			       so_we       = "fail immediately"}
 		   }}
 
      in
@@ -199,23 +199,23 @@ XML qualifying spec
       | char :: _ -> 
 	hard_error {kind        = Syntax,
 		    requirement = "EnumeratedType ::= NotationType | Enumeration",
-		    problem     = (describe_char char) ^ " was unexpected.",
-		    expected    = [("'NOTATION'", "to start notationtype"),
-				   ("'('",        "to start enumeration")],
 		    start       = start,
 		    tail        = start,
 		    peek        = 10,
-		    action      = "Immediate failure"}
+		    we_expected = [("'NOTATION'", "to start notationtype"),
+				   ("'('",        "to start enumeration")],
+		    but         = (describe_char char) ^ " was seen instead",
+		    so_we       = "fail immediately"}
       | _ -> 
 	hard_error {kind        = EOF,
 		    requirement = "EnumeratedType ::= NotationType | Enumeration",
-		    problem     = "EOF occurred first.",
-		    expected    = [("'NOTATION'", "to start notationtype"),
-				   ("'('",        "to start enumeration")],
 		    start       = start,
 		    tail        = [],
 		    peek        = 0,
-		    action      = "Immediate failure"}
+		    we_expected = [("'NOTATION'", "to start notationtype"),
+				   ("'('",        "to start enumeration")],
+		    but         = "EOF occurred first",
+		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -264,23 +264,23 @@ XML qualifying spec
 		 | char :: _ ->
 		   hard_error {kind        = Syntax,
 			       requirement = "NOTATION decl uses '|' to separate options.",
-			       problem     = (describe_char char) ^ " was unexpected.",
-			       expected    = [("'|'", "to add more options"),
-					      ("')'", "to close decl")],
 			       start       = start,
 			       tail        = tail,
 			       peek        = 10,
-			       action      = "Immediate failure"}
+			       we_expected = [("'|'", "to add more options"),
+					      ("')'", "to close decl")],
+			       but         = (describe_char char) ^ " was seen instead",
+			       so_we       = "fail immediately"}
 		 | _ ->
 		   hard_error {kind        = EOF,
 			       requirement = "NOTATION decl uses '|' to separate options.",
-			       problem     = "EOF occurred first.",
-			       expected    = [("'|'", "to add more options"),
-					      ("')'", "to close decl")],
 			       start       = start,
 			       tail        = tail,
 			       peek        = 10,
-			       action      = "Immediate failure"}
+			       we_expected = [("'|'", "to add more options"),
+					      ("')'", "to close decl")],
+			       but         = "EOF occurred first",
+			       so_we       = "fail immediately"}
 		  }
 	  in
 	    probe (tail, [])
@@ -288,21 +288,21 @@ XML qualifying spec
        | char :: _ -> 
 	   hard_error {kind        = Syntax,
 		       requirement = "NOTATION decl in DTD used '(' to initiate options.",
-		       problem     = (describe_char char) ^ " was unexpected.",
-		       expected    = [("'('", "to begin enumeration")],
 		       start       = start,
 		       tail        = tail,
 		       peek        = 10,
-		       action      = "Immediate failure"}
+		       we_expected = [("'('", "to begin enumeration")],
+		       but         = (describe_char char) ^ " was seen instead",
+		       so_we       = "fail immediately"}
        | _ -> 
 	   hard_error {kind        = EOF,
 		       requirement = "NOTATION decl in DTD used '(' to initiate options.",
-		       problem     = "EOF occurred first.",
-		       expected    = [("'('", "to begin enumeration")],
 		       start       = start,
 		       tail        = [],
 		       peek        = 0,
-		       action      = "Immediate failure"}
+		       we_expected = [("'('", "to begin enumeration")],
+		       but         = "EOF occurred first",
+		       so_we       = "fail immediately"}
 	  }
 
   %% -------------------------------------------------------------------------------------------------
@@ -343,23 +343,23 @@ XML qualifying spec
 	    | char :: _ ->
 	      hard_error {kind        = Syntax,
 			  requirement = "Enumeration decl in DTD requires '|' to separate options.",
-			  problem     = (describe_char char) ^ " was unexpected.",
-			  expected    = [("'|'", "to continue enumerating"),
-					 ("')'", "to terminate enumeration decl")],
 			  start       = start,
 			  tail        = tail,
 			  peek        = 10,
-			  action      = "Immediate failure"}
+			  we_expected = [("'|'", "to continue enumerating"),
+					 ("')'", "to terminate enumeration decl")],
+			  but         = (describe_char char) ^ " was seen instead",
+			  so_we       = "fail immediately"}
 	    | _ ->
 	      hard_error {kind        = Syntax,
 			  requirement = "Enumeration decl in DTD requires '|' to separate options.",
-			  problem     = "EOF occurred first.",
-			  expected    = [("'|'", "to continue enumerating"),
-					 ("')'", "to terminate enumeration decl")],
 			  start       = start,
 			  tail        = tail,
 			  peek        = 10,
-			  action      = "Immediate failure"}
+			  we_expected = [("'|'", "to continue enumerating"),
+					 ("')'", "to terminate enumeration decl")],
+			  but         = "EOF occurred first",
+			  so_we       = "fail immediately"}
 	      }
      in
        probe (tail, [])

@@ -74,13 +74,13 @@ XML qualifying spec
 	   | _ ->
 	     hard_error {kind        = EOF,
 			 requirement = "A quoted expression was being parsed as the value for an Entity declaration.",
-			 problem     = "EOF occurred before it terminated.",
-			 expected    = [("[" ^ (string [qchar]) ^ "] ", 
-					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
 			 start       = start,
 			 tail        = start,
 			 peek        = 0,
-			 action      = "Immediate error"}
+			 we_expected = [("[" ^ (string [qchar]) ^ "] ", 
+					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
+			 but         = "EOF occurred before it terminated",
+			 so_we       = "fail immediately"}
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
@@ -88,21 +88,21 @@ XML qualifying spec
         | char :: _ ->
 	  hard_error {kind        = Syntax,
 		      requirement = "A quoted expression is needed for the value of an Entity declaration.",
-		      problem     = (describe_char char) ^ " was seen instead.",
-		      expected    = [("['\"] ", "apostrophe or double-quote to begin quoted text")],   % silly comment to appease emacs: ")
 		      start       = start,
 		      tail        = start,
 		      peek        = 10,
-		      action      = "Immediate error"}
+		      we_expected = [("['\"] ", "apostrophe or double-quote to begin quoted text")],   % silly comment to appease emacs: ")
+		      but         = (describe_char char) ^ " was seen instead",
+		      so_we       = "fail immediately"}
         | _ ->
 	  hard_error {kind        = Syntax,
 		      requirement = "A quoted expression is needed for the value of an Entity declaration.",
-		      problem     = "EOF occurred first.",
-		      expected    = [("['\"] ", "apostrophe or double-quote to begin quoted text")],   % silly comment to appease emacs: ")
 		      start       = start,
 		      tail        = start,
 		      peek        = 10,
-		      action      = "Immediate error"}
+		      we_expected = [("['\"] ", "apostrophe or double-quote to begin quoted text")],   % silly comment to appease emacs: ")
+		      but         = "EOF occurred first",
+		      so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -119,12 +119,12 @@ XML qualifying spec
 	     {
 	      error {kind        = Syntax,
 		     requirement = "'<', '&', and '\"' are not allowed in an attribute value.",            % silly comment to appease emacs: ")
-		     problem     = "'<' was seen",
-		     expected    = [("[^<&\"]", "Something other than open-angle, ampersand, or quote")],  % silly comment to appease emacs: ")
 		     start       = start,
 		     tail        = tail,
 		     peek        = 10,
-		     action      = "Treating '<' as normal character"};
+		     we_expected = [("[^<&\"]", "Something other than open-angle, ampersand, or quote")],  % silly comment to appease emacs: ")
+		     but         = "'<' was seen",
+		     so_we       = "pretend '<' is a normal character"};
 	      probe (tail,
 		     [60], 
 		     cons (NonRef (rev rev_char_data),
@@ -159,13 +159,13 @@ XML qualifying spec
 	   | _ ->
 	     hard_error {kind        = EOF,
 			 requirement = "An attribute value was expected.", 
-			 problem     = "EOF occurred first.",
-			 expected    = [("[" ^ (string [qchar]) ^ "] ", 
-					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
 			 start       = start,
 			 tail        = tail,
 			 peek        = 10,
-			 action      = "Immediate failure"}
+			 we_expected = [("[" ^ (string [qchar]) ^ "] ", 
+					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
+			 but         = "EOF occurred first",
+			 so_we       = "fail immediately"}
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
@@ -217,13 +217,13 @@ XML qualifying spec
 	   | _ ->
 	     hard_error {kind        = EOF,
 			 requirement = "Quoted text was required.",
-			 problem     = "EOF occurred first.",
-			 expected    = [("[" ^ (string [qchar]) ^ "] ", 
-					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
 			 start       = start,
 			 tail        = tail,
 			 peek        = 10,
-			 action      = "Immediate failure"}
+			 we_expected = [("[" ^ (string [qchar]) ^ "] ", 
+					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
+			 but         = "EOF occurred first",
+			 so_we       = "fail immediately"}
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], 34)
@@ -231,20 +231,20 @@ XML qualifying spec
         | char :: _ ->
 	  hard_error {kind        = Syntax,
 		      requirement = "Quoted text was required.",
-		      problem     = (describe_char char) ^ " was seen instead.",
-		      expected    = [("['\"] ", "apostrophe or double-quote to begin quoted text")], % silly comment to appease emacs: ")
 		      start       = start,
 		      tail        = start,
 		      peek        = 10,
-		      action      = "Immediate error"}
+		      we_expected = [("['\"] ", "apostrophe or double-quote to begin quoted text")], % silly comment to appease emacs: ")
+		      but         = (describe_char char) ^ " was seen instead",
+		      so_we       = "fail immediately"}
         | _ ->
 	  hard_error {kind        = Syntax,
 		      requirement = "Quoted text was required.",
-		      problem     = "EOF occurred first.",
-		      expected    = [("['\"] ", "apostrophe or double-quote to begin quoted text")], % silly comment to appease emacs: ")
 		      start       = start,
 		      tail        = start,
 		      peek        = 10,
-		      action      = "Immediate error"}
+		      we_expected = [("['\"] ", "apostrophe or double-quote to begin quoted text")], % silly comment to appease emacs: ")
+		      but         = "EOF occurred first",
+		      so_we       = "fail immediately"}
 
 endspec

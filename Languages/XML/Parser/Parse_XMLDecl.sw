@@ -44,23 +44,23 @@ XML qualifying spec
        | None -> 
          hard_error {kind        = Syntax,
 		     requirement = "Expected an xml header decl.",
-		     problem     = "Didn't even get a plausible declaration.",
-		     expected    = [("'<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'", "A legal xml header decl")],
 		     start       = start,
 		     tail        = tail,
 		     peek        = 50,
-		     action      = "immediate failure"}
+		     we_expected = [("'<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'", "A legal xml header decl")],
+		     but         = "we didn't even get a plausible declaration",
+		     so_we       = "fail immediately"}
        | Some tag ->
          {
 	  (when (~ ((tag.prefix = (ustring "?")) & (tag.name = (ustring "xml"))))
 	   (error {kind        = Syntax,
 		   requirement = "An xml header decl should begin with '<?xml'.",
-		   problem     = "Observed decl begins '<" ^ (string tag.prefix) ^ (string tag.name) ^ "'.",
-		   expected    = [("'<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'", "A legal xml header decl")],
 		   start       = start,
 		   tail        = tail,
 		   peek        = 50,
-		   action      = "proceed as if xml decl was well-formed"}));
+		   we_expected = [("'<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'", "A legal xml header decl")],
+		   but         = "the observed xml decl begins '<" ^ (string tag.prefix) ^ (string tag.name) ^ "'",
+		   so_we       = "proceed as if the xml decl was well-formed"}));
 	  (saw_version?, saw_encoding?, saw_standalone?) <-
 	  (foldM (fn (saw_version?, saw_encoding?, saw_standalone?) -> fn attribute -> 
 		    case attribute.name of
@@ -69,30 +69,30 @@ XML qualifying spec
 			 (when saw_version? 
 			  (error {kind        = WFC,
 				  requirement = "There should be exactly one version attribute in an xml header decl.",
-				  problem     = "Multiple version attributes were seen.",
-				  expected    = [],
 				  start       = start,
 				  tail        = tail,
 				  peek        = 0,
-				  action      = "leave duplicate version attributes in xml header decl"}));
+				  we_expected = [],
+				  but         = "multiple version attributes were seen",
+				  so_we       = "leave duplicate version attributes in the xml header decl"}));
 			 (when saw_encoding? 
 			  (error {kind        = WFC,
 				  requirement = "The version attribute must come first in an xml header decl.",
-				  problem     = "A version attribute follows an encoding attribute in an xml header decl.",
-				  expected    = [],
 				  start       = start,
 				  tail        = tail,
 				  peek        = 0,
-				  action      = "leave out of order in xml header decl"}));
+				  we_expected = [],
+				  but         = "a version attribute follows an encoding attribute in an xml header decl",
+				  so_we       = "leave the mis-ordered attributes in the xml header decl"}));
 			 (when saw_standalone? 
 			  (error {kind        = WFC,
 				  requirement = "The version attribute must come first in an xml header decl.",
-				  problem     = "A version attribute follows a standalone attribute in an xml header decl.",
-				  expected    = [],
 				  start       = start,
 				  tail        = tail,
 				  peek        = 0,
-				  action      = "leave out of order in xml header decl"}));
+				  we_expected = [],
+				  but         = "a version attribute follows a standalone attribute in an xml header decl",
+				  so_we       = "leave the mis-ordered attributes in the xml header decl"}));
 			 return (true, saw_encoding?, saw_standalone?)
 			 }
 		      | 101 :: 110 :: 99 :: 111 :: 100 :: 105 :: 110 :: 103 (* 'encoding' *) :: [] ->
@@ -100,21 +100,21 @@ XML qualifying spec
 			 (when saw_encoding? 
 			  (error {kind        = WFC,
 				  requirement = "At most one encoding attributes is allowed in an xml header decl.",
-				  problem     = "Multiple encoding attributes were seen in an xml header decl.",
-				  expected    = [],
 				  start       = start,
 				  tail        = tail,
 				  peek        = 0,
-				  action      = "leave duplicate encoding attributes in xml header decl"}));
+				  we_expected = [],
+				  but         = "multiple encoding attributes were seen in an xml header decl",
+				  so_we       = "leave duplicate encoding attributes in the xml header decl"}));
 			 (when saw_standalone? 
 			  (error {kind        = WFC,
 				  requirement = "Any encoding attribute must preceed a standalone attribute in an xml header decl.",
-				  problem     = "An encoding attribute follows a standalone attribute in an xml header decl.",
-				  expected    = [],
 				  start       = start,
 				  tail        = tail,
 				  peek        = 0,
-				  action      = "leave out of order in xml header decl"}));
+				  we_expected = [],
+				  but         = "an encoding attribute follows a standalone attribute in an xml header decl",
+				  so_we       = "leave the mis-ordered attributes in the xml header decl"}));
 			 return (saw_version?, true, saw_standalone?)
 			 }
 		      | 115 :: 116 :: 97 :: 110 :: 100 :: 97 :: 108 :: 111 :: 110 :: 101 (* 'standalone' *) :: [] ->
@@ -122,12 +122,12 @@ XML qualifying spec
 			 (when saw_standalone? 
 			  (error {kind        = WFC,
 				  requirement = "At most one standalone attributes is allowed in an xml header decl.",
-				  problem     = "Multiple standalone attributes were seen in an xml header decl.",
-				  expected    = [],
 				  start       = start,
 				  tail        = tail,
 				  peek        = 0,
-				  action      = "leave duplicate standalone attributes in xml header decl"}));
+				  we_expected = [],
+				  but         = "multiple standalone attributes were seen in an xml header decl",
+				  so_we       = "leave duplicate standalone attributes in the xml header decl"}));
 			 return (saw_version?, saw_encoding?, true)
 			}
 		      | uname ->
@@ -135,14 +135,14 @@ XML qualifying spec
 			 (when true
 			  (error {kind        = WFC,
 				  requirement = "Only version, encoding, and standalone attributes are allowed in an xml header decl.",
-				  problem     = "Unrecognized attribute [" ^ (string uname) ^ "] was seen in an xml header decl.",
-				  expected    = [("version='1.0'",       "version attribute"),
-						 ("encoding='...",       "encoding attribute"),
-						 ("standalone='yes/no'", "standalone attribute")],
 				  start       = start,
 				  tail        = tail,
 				  peek        = 0,
-				  action      = "leave unrecognized attribute in xml header decl"}));
+				  we_expected = [("version='1.0'",       "version attribute"),
+						 ("encoding='...",       "encoding attribute"),
+						 ("standalone='yes/no'", "standalone attribute")],
+				  but         = "unrecognized attribute [" ^ (string uname) ^ "] was seen in an xml header decl",
+				  so_we       = "leave that unrecognized attribute in the xml header decl"}));
 			 return (saw_version?, saw_encoding?, saw_standalone?)
 			 })
 	          (false, false, false)
@@ -151,22 +151,22 @@ XML qualifying spec
 	  (when (~ saw_version?)
 	   (error {kind        = WFC,
 		   requirement = "A version attribute is required in every xml header decl.",
-		   problem     = "No version attribute was seen in an xml header decl.",
-		   expected    = [("version='...",  "version attribute")],
 		   start       = start,
 		   tail        = tail,
 		   peek        = 0,
-		   action      = "proceed with attribute missing"}));
+		   we_expected = [("version='...",  "version attribute")],
+		   but         = "no version attribute was seen in an xml header decl",
+		   so_we       = "proceed with the version attribute missing"}));
 	  
 	  (when (~ (tag.postfix = ustring "?"))
 	   (error {kind        = Syntax,
 		   requirement = "An xml header decl should end with '?>'.",
-		   problem     = "An xml header decl ends with " ^ (string tag.postfix) ^ ">'",
-		   expected    = [("'?>'",  "to end '<?xml ...>' decl")],
 		   start       = start,
 		   tail        = tail,
 		   peek        = 0,
-		   action      = "proceed as if decl terminated correctly"}));
+		   we_expected = [("'?>'",  "to end '<?xml ...>' decl")],
+		   but         = "an xml header decl ends with " ^ (string tag.postfix) ^ ">'",
+		   so_we       = "proceed as if that xml header decl terminated correctly"}));
 	  return (tag, tail)
 	 }}
 

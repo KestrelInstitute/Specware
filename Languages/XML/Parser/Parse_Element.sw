@@ -109,18 +109,18 @@ XML qualifying spec
 	  {
 	   (when (~ ((start_tag? tag) or (empty_tag? tag)))
 	    (error {kind        = WFC,
-		    requirement = "Each element must begin with a start tag or be an empty element tag",
-		    problem     = ("Unexpected "
-				   ^ (if end_tag? tag then "closing" else "unrecognized") 
-				   ^ " tag: '</" 
-				   ^ (string tag.name)
-				   ^ ">'"),
-		    expected    = [(" ", "Start Tag"),
-				   (" ", "Empty Element Tag")],
+		    requirement = "Each element must begin with a start tag or be an empty element tag.",
 		    start       = start,
 		    tail        = tail,
 		    peek        = 10,
-		    action      = "Proceed as if it were a start tag"}));
+		    we_expected = [("<foo ..>",    "Start Tag"),
+				   ("<foo .../> ", "Empty Element Tag")],
+		    but         = ("an unexpected "
+				   ^ (if end_tag? tag then "closing" else "unrecognized") 
+				   ^ " tag: '</" 
+				   ^ (string tag.name)
+				   ^ ">' was seen instead"),
+		    so_we       = "proceed as if that were a start tag"}));
 	   return (possible_tag, tail)}
 	| _ -> return (None, start)
      }
@@ -212,17 +212,17 @@ XML qualifying spec
       | [] ->
 	hard_error {kind        = EOF,
 		    requirement = "Each item in the element contents must be one of the options below.",
-		    problem     = "EOF occcurred first.",
-		    expected    = [("'<!--' ...",      "comment"),
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    we_expected = [("'<!--' ...",      "comment"),
 				   ("'<![CDATA[' ...", "unparsed character data"),				   
 				   ("'</' ...",        "end tag"),				   
 				   ("'<?' ...",        "PI"),
 				   ("'<' Name ...",    "start tag or empty element tag"),				   
 				   ("'&' ...",         "reference")],
-		    start       = start,
-		    tail        = [],
-		    peek        = 0,
-		    action      = "immediate failure"}
+		    but          = "EOF occcurred first",
+		    so_we        = "fail immediately"}
       | 38  (* '&' *)   :: tail -> 
 	{
 	 %% parse_Reference assumes we're just past the ampersand.
@@ -251,25 +251,25 @@ XML qualifying spec
 	  {
 	   (when (~ (end_tag? etag))
 	    (error {kind        = Syntax,
-		    requirement = "An element must terminate with an end tag",
-		    problem     = "tag named " ^ (string etag.name) ^  " was not an end tag",
-		    expected    = [("'</" ^ name ^ ">'", "ETag to close earlier STag with that name")],
+		    requirement = "An element must terminate with an end tag.",
 		    start       = start,
 		    tail        = tail,
 		    peek        = 10,
-		    action      = "Pretend tag is an end tag"}));
+		    we_expected = [("'</" ^ name ^ ">'", "ETag to close earlier STag with that name")],
+		    but         = "the tag named " ^ (string etag.name) ^ " seen instead was not an end tag",
+		    so_we       = "pretend that tag is an end tag"}));
 	   if stag.name = etag.name then
 	     return (etag, tail)
 	   else
 	     {
 	      error {kind        = WFC,
 		     requirement = "Element Type Match : The Name in an element's end-tag must match the element type in the start-tag.",
-		     problem     = "Unexpected end tag: '</" ^ (string etag.name) ^ ">'",
-		     expected    = [("'</" ^ name ^ ">'", "ETag to close earlier STag with that name")],
 		     start       = start,
 		     tail        = tail,
 		     peek        = 0,
-		     action      = "Interpolate missing close tag for " ^ name};
+		     we_expected = [("'</" ^ name ^ ">'", "ETag to close earlier STag with that name")],
+		     but         = "the unexpected end tag: '</" ^ (string etag.name) ^ ">' was seen instead",
+		     so_we       = "pretend an interpolated close tag for " ^ name ^ " was seen"};
 	      return ({prefix     = [47],
 		       name       = stag.name,
 		       attributes = [],
@@ -280,12 +280,12 @@ XML qualifying spec
 	| _ -> 
 	  hard_error {kind        = Syntax,
 		      requirement = "An element must terminate with an end tag.",
-		      problem     = "Element content terminated, but no end tag followed.", 
-		      expected    = [("'</" ^ name ^ ">'", "ETag to close earlier STag with that name")],
 		      start       = start,
 		      tail        = tail,
 		      peek        = 10,
-		      action      = "Immediate failure"}
+		      we_expected = [("'</" ^ name ^ ">'", "ETag to close earlier STag with that name")],
+		      but         = "the element content terminated without a following end tag", 
+		      so_we       = "fail immediately"}
 	 }
 
 endspec

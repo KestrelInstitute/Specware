@@ -40,12 +40,12 @@ XML qualifying spec
 	  | _ ->
 	    hard_error {kind        = EOF,
 			requirement = "PI must terminate with '?>'.",
-			problem     = "EOF occurred first.",
-			expected    = [("'?>'", "termination of PI")],
 			start       = start,
 			tail        = tail,
 			peek        = 10,
-			action      = "immediate failure"}
+			we_expected = [("'?>'", "termination of PI")],
+			but         = "EOF occurred first",
+			so_we       = "fail immediately"}
     in
       {
        %%
@@ -55,12 +55,12 @@ XML qualifying spec
        (when (~ (pi_target? target))
 	(error {kind        = Syntax,
 		requirement = "PI name must be normal name not starting with 'xml'.",
-		problem     = "Illegal name for PI",
-		expected    = [("Name - 'xml' variants", "legal PI target name")], 
 		start       = start,
 		tail        = tail_0,
 		peek        = 10,
-		action      = "Pretend name is acceptable"}));
+		we_expected = [("Name - 'xml' variants", "legal PI target name")], 
+		but         = "we saw the illegal name '" ^ (string target) ^ "' instead",
+		so_we       = "pretend '" ^ (string target) ^ "' is an acceptable name"}));
        (whitespace_and_value, tail) <- probe (tail_0, []);
 
        %% TODO -- cleaner approach?
@@ -79,12 +79,12 @@ XML qualifying spec
 	      (when true
 	       (error {kind        = Syntax,
 		       requirement = "PI requires whitespace between name and value.",
-		       problem     = "No whitespace seen.",
-		       expected    = [("( #x9 | #xA | #xD | #x20 )", "at least one character of whitespace")],
 		       start       = start,
 		       tail        = tail,
 		       peek        = 10,
-		       action      = "Pretend vacuous whitespace was seen"}));
+		       we_expected = [("( #x9 | #xA | #xD | #x20 )", "at least one character of whitespace")],
+		       but         = "no whitespace was seen",
+		       so_we       = "pretend some (vacuous) whitespace was seen"}));
 	      return ({target = target,
 		       value  = Some ([], whitespace_and_value)},
 		      tail)
@@ -94,6 +94,5 @@ XML qualifying spec
 		      value  = None},
 		     tail_0)
 	  }
-
 
 endspec

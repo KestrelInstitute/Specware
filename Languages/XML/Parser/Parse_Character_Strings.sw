@@ -89,23 +89,23 @@ XML qualifying spec
 		  {
 		   error {kind        = Syntax,
 			  requirement = "'--' may not appear in a comment.",
-			  problem     = "'--' appears inside a comment.",
-			  expected    = [("'>'",   "remainder of '-->', to end comment")],
 			  start       = start,
 			  tail        = tail,
 			  peek        = 10,
-			  action      = "Leave bogus '--' in comment"};
+			  we_expected = [("'>'",   "remainder of '-->', to end comment")],
+			  but         = "'--' appears inside a comment",
+			  so_we       = "leave the bogus '--' in the comment"};
 		   probe (tl tail, cons (45, cons (45, rev_comment)))
 		   })
 	   | [] ->
 	     hard_error {kind        = EOF,
 			 requirement = "A comment must terminate with '-->'.",
-			 problem     = "EOF occured first.",
-			 expected    = [("'-->'",   "end of comment")],
 			 start       = start,
 			 tail        = start,
 			 peek        = 0,
-			 action      = "immediate failure"}
+			 we_expected = [("'-->'",   "end of comment")],
+			 but         = "EOF occurred first",
+			 so_we       = "fail immediately"}
 	   | char :: tail ->
 	     probe (tail, cons (char, rev_comment))
     in
@@ -131,12 +131,12 @@ XML qualifying spec
 	   | [] ->
 	     hard_error {kind        = EOF,
 			 requirement = "A CDSect must terminate with ']]>'.",
-			 problem     = "EOF occurred first",
-			 expected    = [("']]>'",   "end of CDSect")],
 			 start       = start,
 			 tail        = start,
 			 peek        = 0,
-			 action      = "immediate failure"}
+			 we_expected = [("']]>'",   "end of CDSect")],
+			 but         = "EOF occurred first",
+			 so_we       = "fail immediately"}
 	   | char :: tail ->
 	     probe (tail, cons (char, rev_comment))
     in

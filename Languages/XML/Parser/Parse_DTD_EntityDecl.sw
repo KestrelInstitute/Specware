@@ -83,13 +83,13 @@ XML qualifying spec
 	    | char :: _ ->
 	      {
 	       error {kind        = Syntax,
-		      requirement = "PEDecl in DTD must terminate with '>',",
-		      problem     = (describe_char char) ^ " was unexpected.",
-		      expected    = [("'>'", "to terminate PEDecl")],
+		      requirement = "PEDecl in DTD must terminate with '>'.",
 		      start       = start,
 		      tail        = tail,
 		      peek        = 10,
-		      action      = "Pretend '>' was seen"};
+		      we_expected = [("'>'", "to terminate PEDecl")],
+		      but         = (describe_char char) ^ " was seen instead",
+		      so_we       = "pretend interpolated '>' was seen"};
 	       return (PE {w1    = w1,
 			   w2    = w2,
 			   name  = name,
@@ -100,13 +100,13 @@ XML qualifying spec
 	      }
 	    | _ ->
 	      hard_error {kind        = Syntax,
-			  requirement = "PEDecl in DTD must terminate with '>',",
-			  problem     = "EOF occurred first.",
-			  expected    = [("'>'", "to terminate PEDecl")],
+			  requirement = "PEDecl in DTD must terminate with '>'.",
 			  start       = start,
 			  tail        = [],
 			  peek        = 0,
-			  action      = "Immediate error"}
+			  we_expected = [("'>'", "to terminate PEDecl")],
+			  but         = "EOF occurred first",
+			  so_we       = "fail immediately"}
 	     }
        | _ ->
 	 %% GEDecl 
@@ -126,13 +126,13 @@ XML qualifying spec
 	    | char :: _ ->
 	      {
 	       error {kind        = Syntax,
-		      requirement = "GEDecl in DTD must terminate with '>',",
-		      problem     = (describe_char char) ^ " was unexpected.",
-		      expected    = [("'>'", "to terminate PEDecl")],
+		      requirement = "GEDecl in DTD must terminate with '>'.",
 		      start       = start,
 		      tail        = tail,
 		      peek        = 10,
-		      action      = "Pretend '>' was seen"};
+		      we_expected = [("'>'", "to terminate PEDecl")],
+		      but         = (describe_char char) ^ " was seen instead",
+		      so_we       = "pretend interpolated '>' was seen"};
 	       return (GE {w1    = w1,
 			   name  = name,
 			   w2    = w2,
@@ -142,13 +142,13 @@ XML qualifying spec
 	      }
 	    | _ ->
 	      hard_error {kind        = Syntax,
-			  requirement = "GEDecl in DTD must terminate with '>',",
-			  problem     = "EOF occurred first.",
-			  expected    = [("'>'", "to terminate PEDecl")],
+			  requirement = "GEDecl in DTD must terminate with '>'.",
 			  start       = start,
 			  tail        = [],
 			  peek        = 0,
-			  action      = "Immediate error"}
+			  we_expected = [("'>'", "to terminate PEDecl")],
+			  but         = "EOF occurred first",
+			  so_we       = "fail immediately"}
 	     }}
 	      
 
@@ -261,12 +261,12 @@ XML qualifying spec
 	 {
 	  error {kind        = Syntax,
 		 requirement = "Notation Decl in DTD must terminate with '>'.",
-		 problem     = (describe_char char) ^ " was unexpected.",
-		 expected    = [("'>'", "to terminate Notation Decl")],
 		 start       = start,
 		 tail        = tail,
 		 peek        = 10,
-		 action      = "Pretend '>' was seen"};
+		 we_expected = [("'>'", "to terminate Notation Decl")],
+		 but         = (describe_char char) ^ " was seen instead",
+		 so_we       = "pretend interpolated '>' was seen"};
 	  return ({w1   = w1,
 		   name = name,
 		   w2   = w2,
@@ -277,12 +277,12 @@ XML qualifying spec
        | _ ->
 	 hard_error {kind        = EOF,
 		     requirement = "Notation Decl in DTD must terminate with '>'.",
-		     problem     = "EOF was seen first.",
-		     expected    = [("'>'", "to terminate Notation Decl")],
 		     start       = start,
 		     tail        = [],
 		     peek        = 0,
-		     action      = "Pretend '>' was seen"}
+		     we_expected = [("'>'", "to terminate Notation Decl")],
+		     but         = "EOF was seen first",
+		     so_we       = "fail immediately"}
 	 }
 
   %% ------------------------------------------------------------------------------------------------
@@ -328,12 +328,12 @@ XML qualifying spec
       | _ ->
 	hard_error {kind        = Syntax,
 		    requirement = "ID reference in DTD must start with 'SYSTEM' or 'PUBLIC'.",
-		    problem     = "Something else was seen.",
-		    expected    = [("'SYSTEM'", "system ID"),
-				   ("'PUBLIC'", "public ID")],
 		    start       = start,
 		    tail        = start,
 		    peek        = 10,
-		    action      = "Immediate failure"}
+		    we_expected = [("'SYSTEM'", "system ID"),
+				   ("'PUBLIC'", "public ID")],
+		    but         = "something else was seen",
+		    so_we       = "fail immediately"}
 
 endspec

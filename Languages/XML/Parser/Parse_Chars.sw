@@ -171,22 +171,22 @@ XML qualifying spec
 	{
 	 error {kind        = Syntax,
 		requirement = "An equal sign must follow an attribute name.",
-		problem     = (describe_char char) ^ " was seen instead",
-		expected    = [("'='", "equal sign")],
 		start       = start,
 		tail        = tail,
 		peek        = 10,
-		action      = "Inserting implicit '='"};
+		we_expected = [("'='", "equal sign")],
+		but         = (describe_char char) ^ " was seen instead",
+		so_we       = "insert an implicit '='"};
 	 return (61, tail)
 	 }
       | _ ->
 	 hard_error {kind        = EOF,
 		     requirement = "An equal sign must follow an attribute name.",
-		     problem     = "EOF occurred first",
-		     expected    = [("'='", "equal sign")],
 		     start       = start,
 		     tail        = [],
 		     peek        = 0,
-		     action      = "immediate failure"}
+		     we_expected = [("'='", "equal sign")],
+		     but         = "EOF occurred first",
+		     so_we       = "fail immediately"}
 
 endspec

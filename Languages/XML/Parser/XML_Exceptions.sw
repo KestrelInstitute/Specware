@@ -23,12 +23,12 @@ XML qualifying spec
 
   sort XML_Exception = {kind        : XML_Exception_Type,
 			requirement : String,
-			problem     : String,
-			expected    : List (String * String),
 			start       : UChars,
 			tail        : UChars,
 			peek        : Nat,
-			action      : String}
+			we_expected : List (String * String),
+			but         : String,
+			so_we       : String}
 			
 
   sort XML_Exception_Type = | EOF         
@@ -51,24 +51,21 @@ XML qualifying spec
     let (line, column, byte) = location_of (x.start, utext) in
     let location = (Nat.toString line) ^ ":" ^ (Nat.toString column) ^ " (byte " ^ (Nat.toString byte) ^ ")" in
 
-      "\n At "       ^ location 
-
-    ^ "\n " ^ ((case x.kind of
-		  | EOF       -> "EOF"
-		  | Syntax    -> "Syntax"
-		  | WFC       -> "WFC (Well-Formedness Condition)"
-		  | VC        -> "VC  (Validity Condition)"
-		  | KC        -> "KC  (Kestrel-specific well-formedness condition)")
-	       ^ " error: ")
-    ^ "\n "     ^ x.requirement
-    ^ "\n but " ^ x.problem 
-    ^ "\n while viewing [" ^ (string (prefix_to_tail (x.start, x.tail))) ^ "]"
-    ^ " with pending [" ^ (string (prefix_for_n   (x.tail,  x.peek))) ^ "]"
-    ^ (case x.expected of
-	 | []  -> "\n <no expectations?> \n"
-	 | [_] -> "\n expected: \n"
-	 | _   -> "\n expected one of: \n") 
-    ^ (let max_length = foldl (fn ((s1, _), max_length) -> max (max_length, length s1)) 0 x.expected in
+      "\n At " ^ location 
+    ^ "\n " ^ (case x.kind of
+		 | EOF       -> "EOF: "
+		 | Syntax    -> "Syntax error: "
+		 | WFC       -> "WFC (Well-Formedness Condition): "
+		 | VC        -> "VC  (Validity Condition): "
+		 | KC        -> "KC  (Kestrel-specific well-formedness condition): ")
+    ^ x.requirement
+    ^ "\n Viewing ["    ^ (string (prefix_to_tail (x.start, x.tail))) ^ "]"
+    ^ " with pending [" ^ (string (prefix_for_n   (x.tail,  x.peek))) ^ "],"
+    ^ (case x.we_expected of
+	 | []  -> "\n <we had no expectations?> \n"
+	 | [_] -> "\n we expected: \n"
+	 | _   -> "\n we expected one of: \n") 
+    ^ (let max_length = foldl (fn ((s1, _), max_length) -> max (max_length, length s1)) 0 x.we_expected in
        let 
          def pad n =
 	   if n >= max_length then
@@ -79,9 +76,10 @@ XML qualifying spec
 	 foldl (fn ((s1, s2), result) -> 
 		result ^ "\n    " ^ s1 ^ (pad (length s1)) ^ " -- " ^ s2) 
 	       "" 
-	       x.expected)
-    ^ "\n\n so taking action: " ^ x.action
-    ^ "\n"       
+	       x.we_expected)
+    ^ "\n\n but " ^ x.but ^ ","
+    ^ "\n so we " ^ x.so_we
+    ^ "\n"
 
   %% --------------------------------------------------------------------------------
 
@@ -126,6 +124,6 @@ XML qualifying spec
       aux (start, 0, [])
 
   def describe_char char =
-    "'" ^ (string [char]) ^ "' (#x" ^ (toHex char) ^ "; = #" ^ (Nat.toString char) ^ ";)"
+    "'" ^ (string [char]) ^ "' (= #x" ^ (toHex char) ^ "; = #" ^ (Nat.toString char) ^ ";)"
 
 endspec

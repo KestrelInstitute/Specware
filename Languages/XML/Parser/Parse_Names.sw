@@ -28,15 +28,15 @@ XML qualifying spec
         {
 	 (when (~ (name_start_char? first_char))
 	  (error {kind        = Syntax,
-		  requirement = "Names must start with letters, underbar, or colon",
-		  problem     = (describe_char first_char) ^ " is not legal as the first character of a name",
-		  expected    = [("[A-Z][a-z]", "Letter"),
-				 ("[_:]",       "special name char"),
-				 ("<see doc>",  "unicode basechar or ideograph")],
+		  requirement = "Names must start with letters, underbar, or colon.",
 		  start       = start,
 		  tail        = tail,
 		  peek        = 10,
-		  action      = "Pretending character is legal start of name"}));
+		  we_expected = [("[A-Z][a-z]", "Letter"),
+				 ("[_:]",       "special name char"),
+				 ("<see doc>",  "unicode basechar or ideograph")],
+		  but         = (describe_char first_char) ^ " is not legal as the first character of a name",
+		  so_we       = "pretend '" ^ (string [first_char]) ^ " is the legal start of a name"}));
 	 let def aux (tail, name_chars) =
               case tail of
 		| char :: scout ->
@@ -52,15 +52,15 @@ XML qualifying spec
 	   }
       | _ ->
 	hard_error {kind        = EOF,
-		    requirement = "A name was required",
-		    problem     = "EOF occurred first",
-		    expected    = [("[A-Z][a-z]", "Letter"),
-				   ("[_:]",       "special name char"),
-				   ("<see doc>",  "unicode basechar or ideograph")],
+		    requirement = "A name was required.",
 		    start       = start,
 		    tail        = [],
 		    peek        = 0,
-		    action      = "Immediate failure"}
+		    we_expected = [("[A-Z][a-z]", "Letter"),
+				   ("[_:]",       "special name char"),
+				   ("<see doc>",  "unicode basechar or ideograph")],
+		    but         = "EOF occurred first",
+		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -84,18 +84,18 @@ XML qualifying spec
 	 (when (~ (name_char? first_char))
 	  (error {kind        = Syntax,
 		  requirement = "The first character of a NmToken is restricted to letters, digits, etc.",
-		  problem     = (describe_char first_char) ^ "is not legal as the first character of a NmToken",
-		  expected    = [("[A-Z][a-z]", "Letter"),
+		  start       = start,
+		  tail        = tail,
+		  peek        = 10,
+		  we_expected = [("[A-Z][a-z]", "Letter"),
 				 ("[0-9]",      "Digit"),
 				 ("[_:-.]",     "special name char"),
 				 ("<see doc>",  "unicode basechar or ideograph"),
 				 ("<see doc>",  "unicode digit"),
 				 ("<see doc>",  "unicode combining char"),
 				 ("<see doc>",  "unicode extender  char")],
-		  start       = start,
-		  tail        = tail,
-		  peek        = 10,
-		  action      = "Pretending character is legal start of NmToken"}));
+		  but         = (describe_char first_char) ^ "is not legal as the first character of a NmToken",
+		  so_we       = "pretend '" ^ (string [first_char]) ^ "' is the legal start of a NmToken"}));
 	 let def aux (tail, name_chars) =
               case tail of
 		| char :: scout ->
@@ -111,19 +111,19 @@ XML qualifying spec
 	   }
       | _ ->
 	hard_error {kind        = EOF,
-		    requirement = "An NmToken was expected",
-		    problem     = "EOF occurred first",
-		    expected    = [("[A-Z][a-z]", "Letter"),
+		    requirement = "An NmToken was required.",
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    we_expected = [("[A-Z][a-z]", "Letter"),
 				   ("[0-9]",      "Digit"),
 				   ("[_:-.]",     "special name char"),
 				   ("<see doc>",  "unicode basechar or ideograph"),
 				   ("<see doc>",  "unicode digit"),
 				   ("<see doc>",  "unicode combining char"),
 				   ("<see doc>",  "unicode extender  char")],
-		    start       = start,
-		    tail        = [],
-		    peek        = 0,
-		    action      = "Immediate failure"}
+		    but         = "EOF occurred first",
+		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
   %%

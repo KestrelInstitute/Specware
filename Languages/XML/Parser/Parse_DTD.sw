@@ -72,14 +72,14 @@ XML qualifying spec
 		     tail)
 	   | char :: _ ->
 	     {
-	      error {kind         = Syntax,
-		     requirement  = "DTD must terminate with '>'.",
-		     problem      = (describe_char char) ^ " was unexpected.",
-		     expected     = [("'>'", "to terminate DTD")],
-		     start        = start,
-		     tail         = tail,
-		     peek         = 10,
-		     action       = "Pretend '>' was seen"};
+	      error {kind        = Syntax,
+		     requirement = "DTD must terminate with '>'.",
+		     start       = start,
+		     tail        = tail,
+		     peek        = 10,
+		     we_expected = [("'>'", "to terminate DTD")],
+		     but         = (describe_char char) ^ " was seen instead",
+		     so_we       = "pretend interpolated '>' was seen"};
 	      return ({w1          = w1,
 		       name        = name,
 		       external_id = None,
@@ -90,12 +90,13 @@ XML qualifying spec
 	   | _ ->
 	     hard_error {kind         = Syntax,
 			 requirement  = "DTD must terminate with '>'.",
-			 problem      = "EOF occurred first.",
-			 expected     = [("'>'", "to terminate DTD")],
 			 start        = start,
 			 tail         = tail,
 			 peek         = 10,
-			 action       = "Pretend '>' was seen"}
+			 we_expected  = [("'>'", "to terminate DTD")],
+			 but          = "EOF occurred first",
+			 so_we        = "fail immediately"}
+
 	    }
       | _ ->
 	{
@@ -114,12 +115,12 @@ XML qualifying spec
 	     {
 	      error {kind        = Syntax,
 		     requirement = "DTD must terminate with '>'.",
-		     problem     = (describe_char char) ^ " was unexpected.",
-		     expected    = [("'>'", "to terminate DTD")],
 		     start       = start,
 		     tail        = tail,
 		     peek        = 10,
-		     action      = "Pretend '>' was seen"};
+		     we_expected = [("'>'", "to terminate DTD")],
+		     but         = (describe_char char) ^ " was seen instead",
+		     so_we       = "pretend interpolated '>' was seen"};
 	      return ({w1          = w1,
 		       name        = name,
 		       external_id = Some (wx, external_id),
@@ -129,13 +130,13 @@ XML qualifying spec
 	      }
 	   | _ ->
 	      hard_error {kind        = Syntax,
-		     requirement  = "DTD must terminate with '>'.",
-		     problem      = "EOF occurred first.",
-		     expected    = [("'>'", "to terminate DTD")],
-		     start       = start,
-		     tail        = [],
-		     peek        = 0,
-		     action      = "Pretend '>' was seen"}
+			  requirement = "DTD must terminate with '>'.",
+			  start       = start,
+			  tail        = [],
+			  peek        = 0,
+			  we_expected = [("'>'", "to terminate DTD")],
+			  but         = "EOF occurred first",
+			  so_we       = "fail immediately"}
 	      }}
 
   %% -------------------------------------------------------------------------------------------------
@@ -231,25 +232,11 @@ XML qualifying spec
 		    }
 		  else
 		    hard_error {kind        = Syntax,
-				requirement = "markup or declsep in DTD must be one of those indicated below.",
-				problem     = (describe_char char) ^ " was unexpected.",
-				expected    = [("'<!ELEMENT'",            "element decl"),
-					       ("'<!ATTLIST'",            "attribute list decl"),
-					       ("'<!ENTITY'",             "entity decl"),					       
-					       ("'<!NOTATION'",           "notation decl"),					       
-					       ("'<--'",                  "comment"),
-					       ("'%'",                    "PE Reference"),
-					       ("( #9 | #A | #D | #20 )", "whitespace"),
-					       ("']'",                    "end of markups in DTD")],
+				requirement = "Each markup or declsep in the DTD must be one of those indicated below.",
 				start       = start,
 				tail        = tail,
 				peek        = 10,
-				action      = "Immediate failure"}
-		| _ ->
-		    hard_error {kind        = EOF,
-				requirement = "markup or declsep in DTD must be one of those indicated below.",
-				problem     = "EOF occurred first.",
-				expected    = [("'<!ELEMENT'",            "element decl"),
+				we_expected = [("'<!ELEMENT'",            "element decl"),
 					       ("'<!ATTLIST'",            "attribute list decl"),
 					       ("'<!ENTITY'",             "entity decl"),					       
 					       ("'<!NOTATION'",           "notation decl"),					       
@@ -257,10 +244,24 @@ XML qualifying spec
 					       ("'%'",                    "PE Reference"),
 					       ("( #9 | #A | #D | #20 )", "whitespace"),
 					       ("']'",                    "end of markups in DTD")],
+				but         = (describe_char char) ^ " was seen instead",
+				so_we       = "fail immediately"}
+		| _ ->
+		    hard_error {kind        = EOF,
+				requirement = "Each markup or declsep in the DTD must be one of those indicated below.",
 				start       = start,
 				tail        = [],
 				peek        = 0,
-				action      = "immediate failure"}
+				we_expected = [("'<!ELEMENT'",            "element decl"),
+					       ("'<!ATTLIST'",            "attribute list decl"),
+					       ("'<!ENTITY'",             "entity decl"),					       
+					       ("'<!NOTATION'",           "notation decl"),					       
+					       ("'<--'",                  "comment"),
+					       ("'%'",                    "PE Reference"),
+					       ("( #9 | #A | #D | #20 )", "whitespace"),
+					       ("']'",                    "end of markups in DTD")],
+				but         = "EOF occurred first",
+				so_we       = "fail immediately"}
 	 in
 	   probe (tail, []))
 	
@@ -273,14 +274,14 @@ XML qualifying spec
      (id, tail) <- parse_GenericID start;
      (when (~ (external_id? id))
       (error {kind        = Syntax,
-	      requirement = "external ID must contain a system literal.",
-	      problem     = "external ID does not contain system literal.",
-	      expected    = [("'SYSTEM \"...\"'",         "id with system literal"),
-			     ("'PUBLIC \"...\" \"...\"'", "id with public literal and system literal")],
+	      requirement = "An external ID (whether SYSTEM or PUBLIC) must contain a system literal.",
 	      start       = start,
 	      tail        = tail,
 	      peek        = 10,
-	      action      = "Pretend it's ok"}));
+	      we_expected = [("'SYSTEM \"...\"'",         "id with system literal"),
+			     ("'PUBLIC \"...\" \"...\"'", "id with public literal and system literal")],
+	      but         = "the external ID does not contain a system literal",
+	      so_we       = "pretend this is ok"}));
      return (id, tail)
     }
 
