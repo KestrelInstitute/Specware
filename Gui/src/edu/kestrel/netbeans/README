@@ -41,10 +41,6 @@ To add a new type of element (FooElement) to the meta-slang element hierarchy:
   ---------------------------------------------------------------------------  
   - in the netbeans directory
 
-    . add new (FooElement-related) API to existing interfaces
-      * public interface ElementFactory
-          public item createFoo(...);
-
     . add new (FooElement-related) implementations to existing classes
       * class MetaSlangElementNodeFactory extends DefaultFactory 
           public Node createFooNode(FooElement element)
@@ -52,29 +48,14 @@ To add a new type of element (FooElement) to the meta-slang element hierarchy:
   ---------------------------------------------------------------------------  
   - in the netbeans/parser subdirectory
 
+    . add new (FooElement-related) API to existing interfaces
+      * public interface ElementFactory
+          public item createFoo(...);
+
     . add new classes:
       * public class FooInfo extends BaseElementInfo
 
     . add new parser rules to MetaSlangGrammar.g
-
-    . invoke antlr to generate MetaSlangLexerFromAntlr.java, MetaSlangParserFromAntlr.java
-
-        java -classpath ".../antlr-2.7.1" antlr.Tool MetaSlangGrammar.g > MetaSlangGrammar.log        
-
-    . insert the following code at the begining of the class body for MetaSlangParserFromAntlr
-
-     ElementFactory builder;
-     Set processedParameterNames = new HashSet();
-     Set processedModeNames = new HashSet();
-     Set processedTransitionNames = new HashSet();
-     Set processedConstraints = new HashSet();
-     Set processedModeServices = new HashSet();
-     Set processedModeConstraints = new HashSet();
-
-public MetaSlangParserFromAntlr(TokenStream lexer, ElementFactory builder) {
-  this(lexer);
-  this.builder = builder;
-}
 
     . add new (FooElement-related) implementations to existing classes
       * public class DocumentModelBuilder extends SourceInfo implements ElementFactory
