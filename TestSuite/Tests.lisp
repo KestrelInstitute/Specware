@@ -21,7 +21,7 @@
        :sw "players#twoPlayersLisp"
        :file-goto-error '("$TESTDIR/players.sw" 43 13)
        :output "Error in specification: Name \"twoPlayers\" defined twice in file.
-  found in $TESTDIR/players.sw
+ found in $TESTDIR/players.sw
 43.13-44.52")
       ("Colimit with no sharing"
        :sw "colimit"

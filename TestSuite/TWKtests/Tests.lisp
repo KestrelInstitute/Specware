@@ -10,7 +10,7 @@
 ;;; Elaborating spec at $TESTDIR/t0103_1#position
 ;;; Elaborating spec at $TESTDIR/t0103_1#move
 Errors in $TESTDIR/t0103_1.sw
-40.33-40.38 :  Could not match sort constraint
+40.33-40.38	:  Could not match sort constraint
               legal? of sort move -> Boolean
           with expected sort Boolean
 ")
