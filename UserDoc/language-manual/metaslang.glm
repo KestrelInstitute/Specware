@@ -410,14 +410,6 @@ presentations of the same `spec are entirely equivalent:
 <<
 ||`symbol ::= `name | `literal | `special-symbol
 ||
-||`qualifiable-name ::= `unqualified-name | `qualified-name
-||
-||`unqualified-name ::= `name
-||
-||`qualified-name ::= `qualifier . `name
-||
-||`qualifier ::= `word-symbol
-||
 ||`name ::= `word-symbol | `non-word-symbol
 ||
 ||`word-symbol ::= `word-start-mark { `word-continue-mark }*
@@ -443,14 +435,7 @@ presentations of the same `spec are entirely equivalent:
 ||
 ||`special-symbol ::= _ | ( | ) | '[ | '] | '{ | '} | ; | , | .
 >>
-Example `qualifiable-names:
-[[
-||    Key
-||    $
-||    Calendar.Date
-||    Monoid.<*>
-]]
-Example `names:
+Sample `names:
 [[
 ||    Date                    $$            ?!
 ||    yymmdd2date             <*>           :=:
@@ -514,7 +499,7 @@ non-alphabetic marks.
 <para>
 Some &Metaslang; users follow the convention of using
 `names that start with a capital letter for
-`spec- and `sort-names and for `constructors,
+`unit-identifiers and `sort-names and for `constructors,
 while `word-symbols chosen for `op-names and `field-names start with a
 lower-case `letter.
 Both plain `local-variables and `local-sort-variables are often chosen
@@ -529,29 +514,6 @@ ignore, but in particular some convention distinguishing
 `constructors from `op-names and `local-variables is
 recommended.
 </para>
-<!-- ===================== OBSOLETE  =================================
-<formalpara id="Warning1"><title>Warning</title>
-<para>
-Note that [[Nat->Boolean]], [[n-1]] and [[x=0]], for instance,
-are single `names.
-If the similar formula is meant, whitespace must be used, as in
-[[Nat -> Boolean]], [[n - 1]] and [[x = 0]].
-Users are well-advised to use the defensive tactic of surrounding
-all <quote>operators</quote> with whitespace.
-</para>
-</formalpara>
-<formalpara id="Warning2"><title>Warning</title>
-<para>
-The liberal naming policy of &Metaslang; may change in the
-future.
-To develop <quote>future-proof</quote> `specs,
-the safe approach is to use either alphanumeric `names,
-starting with a `letter and further using only `letters and
-`decimal-digits, or all non-alpha `names, like [[<+>]] or
-[[>=>]].
-</para>
-</formalpara>
-     ===================== ETELOSBO ================================== -->
 </section>
 <!-- ***************************************************************** -->
 <section id="Comments"><title>Comments</title>
@@ -569,7 +531,7 @@ starting with a `letter and further using only `letters and
 ||`block-comment-body ::=
 ||    `any-text-including-newlines-and-nested-block-comments
 >>
-Example `comments:
+Sample `comments:
 [[
 ||    % keys must be unique
 ||    (* op yymmdd2Date : String -> Date *)
@@ -641,14 +603,14 @@ This is explained in more detail in what follows.
 ||     `spec-term
 ||   | `morphism-term
 ||   | `diagram-term
-||   | `generate-term
+||   | `target-code-term
 ||   | `proof-term
 ||
 ||`specware-file-contents ::=
 ||     `unit-term
-||   | `short-unit-definition { `short-unit-definition }*
+||   | `infile-unit-definition { `infile-unit-definition }*
 ||
-||`short-unit-definition ::= `fragment-identifier = `unit-term
+||`infile-unit-definition ::= `fragment-identifier = `unit-term
 >>
 <!--
 ** ||     | `let-term
@@ -673,40 +635,40 @@ As mentioned above,
 &SpecwareV; must have an [[.sw]] extension.
 The &Specware; files do not directly contain the
 `unit-definitions that form the project.
+In fact, a user never writes `unit-definition explicitly.
 These are instead determined from the contents of the
-&Specware; files using certain rules.
+&Specware; files using the following rules.
 There are two possibilities here.
 The first is that the `specware-file-contents consists of a
 single `unit-term.
 If
-<replaceable>P</replaceable>[[/]]<replaceable>N</replaceable>is
-the full `path for the
-&Specware; file but without the [[.sw]] extension, the unit
-being defined has as its full `unit-identifier
-<replaceable>P</replaceable>/<replaceable>N</replaceable>.
+<"<replaceable>P</replaceable>.sw"> is
+the path for the &Specware; file, the unit
+being defined has as its `unit-identifier
+<replaceable>P</replaceable>.
 For example, if file <"/units/Layout/Fixture.sw"> contains a
-single `unit-term <replaceable>U</replaceable>, the full `unit-identifier is
+single `unit-term <replaceable>U</replaceable>, the `unit-identifier is
 [[/units/Layout/Fixture]], and the `unit-definition it
 contributes to the project is
 [[
 ||  /units/Layout/Fixture = \<replaceable>U\</replaceable>
 ]]
-(Note that this is not allowed as a `short-unit-definition in a
+(Note that this is not allowed as an `infile-unit-definition in a
 `specware-file-contents, since the `unit-identifier is not a
 `fragment-identifier.)
 </para>
 <para>
 The second possibility is that the &Specware; file contains one or more
-`unit-definitions.
-If <replaceable>N</replaceable> is the `name of such a
-`unit-definition, and
-<replaceable>P</replaceable> is the full `path for the
-&Specware; file but without the [[.sw]] extension, the unit
-being defined has as its full `unit-identifier
-<replaceable>P</replaceable>#<replaceable>N</replaceable>.
-For example, if file <"/units/Layout/Movable.sw"> contains a
-`unit-definition [[Pos = \<replaceable>U\</replaceable>]],
-the full `unit-identifier is [[/units/Layout/Movable#Pos]],
+`infile-unit-definitions.
+If <replaceable>I</replaceable> is the `fragment-identifier
+of such an `infile-unit-definition, and
+<"<replaceable>P</replaceable>.sw"> is the path for the
+&Specware; file, the unit
+being defined has as its `unit-identifier
+<replaceable>P</replaceable>#<replaceable>I</replaceable>.
+For example, if file <"/units/Layout/Movable.sw"> contains an
+`infile-unit-definition [[Pos = \<replaceable>U\</replaceable>]],
+the `unit-identifier is [[/units/Layout/Movable#Pos]],
 and the `unit-definition it contributes to the project is
 [[
 ||  /units/Layout/Movable#Pos = \<replaceable>U\</replaceable>
@@ -720,9 +682,7 @@ and the `unit-definition it contributes to the project is
 ||
 ||`swpath-based-path ::= / `relative-path
 ||
-||`relative-path ::= { `folder-name / }* `name [ # `fragment-identifier ]
-||
-||`folder-name ::= `name | .. | .
+||`relative-path ::= { `name / }* `name [ # `fragment-identifier ]
 ||
 ||`fragment-identifier ::= `word-symbol
 >>
@@ -744,11 +704,9 @@ to these pathnames; for example, if <"SWPATH"> is set to
 <"/units/Layout:.">, then
 [[/units/Layout/Fixture]] may be shortened to [[/Fixture]],
 and [[/units/Layout/Movable#Pos]] to [[/Movable#Pos]].
-As usual, the filename ``<".">'' stands for the current
+(As usual, the filename ``<".">'' stands for the current
 folder (directory) and allows &Specware; to look there for
-`unit-definitions.
-Likewise, the filename ``<"..">'' refers to the parent
-folder.
+`unit-definitions.)
 How `unit-definitions are processed by &Specware; is further
 dealt with in the &Specware; User Manual.
 </para>
@@ -804,7 +762,7 @@ Restriction.
 `Spec-forms must be sort-correct.
 </para>
 <para>
-Example `spec-forms:
+Sample `spec-forms:
 [[
 ||    spec import Measures import Valuta endspec
 ]]
@@ -823,34 +781,167 @@ Chapter.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section><title>Translations</title>
+<section><title>Qualifications</title>
+<!--====================================================================-->
+<para>
+Names of sorts and `ops may be <emphasis>unqualified</emphasis>
+or <emphasis>qualified</emphasis>.
+The difference is that `unqualified-names do not contain a
+dot sign ``[[.]]'', while `qualified-names are prefixed with
+a ```qualifier'' followed by a dot.  Examples of unqualified
+names are [[Date]], [[today]] and [[<*>]].
+Examples of `qualified-names are 
+[[Calendar.Date]], [[Calendar.today]] and [[Monoid.<*>]].
+</para>
+
+<para>
+`Qualifiers can be used to disambiguate.  For example, there
+may be reason to use two different `ops called [[union]] in
+the same context: one for set union, and one for bag
+(multiset) union.  They could then more fully be
+called [[Set.union]] and [[Bag.union]], respectively.
+Unlike in earlier versions of Specware, there is no rigid
+relationship between `qualifiers and the `unit-identifiers
+identifying `specs.
+The author of a collection of `specs may use the `qualifier
+deemed most appropriate for any `sort-name or `op-name.
+For example, there could be a single `spec dubbed
+[[SetsAndBags]] that introduces two new `ops, one called
+[[Set.union]] and one called [[Bag.union]].
+Generally, sorts and `ops that ``belong together''
+should receive the same `qualifier.
+It is up to the author of the `specs to determine what
+belongs together.
+</para>
+
+<para>
+`Sort-names and `op-names are <emphasis>introduced</emphasis> in a
+`declaration or `definition, and may then be
+<emphasis>employed</emphasis> elsewhere in the same `spec.
+Thus, all occurrences of a `sort-name or `op-name can be divided
+into ``introductions'' and ``employs''.
+The name as introduced in an introduction is the 
+<emphasis>full name</emphasis> of the sort or `op.
+If that name is unqualified, the full name is unqualified.
+If the name as introduced is qualified, then so is the full
+name.
+</para>
+
+<para>
+For employs the rules are slightly different.  First, if the
+name employed
+occurs just like that in an introduction, then it is the
+full name.
+Also, if the name employed is qualified, it is the full name.
+Otherwise, the name as employed may be unqualified
+shorthand for a qualified full name.
+For example, given an employ of the unqualified `sort-name
+[[Date]], possible qualified full names for it are
+[[Calendar.Date]], [[DateAndTime.Date]],
+[[Diary.Date]], and so on.  But, of course, the full name
+must be one that is introduced in the `spec.
+If there is precisely one `qualified-name introduced whose last part is
+the same as the `unqualified-name employed, then that name is the full name.
+Otherwise, sort information may be employed to disambiguate
+(``resolve overloading'').
+</para>
+
+<para>
+Here is an illustration of the various possibilities:
+
+[[
+||  spec
+||    sort Apple
+||    sort Fruit.Apple
+||    sort Fruit.Pear
+||    sort Fruit.Date
+||    sort Calendar.Date
+||    sort Fruit.Basket = Apple * Pear * Date
+||  endspec
+]]
+
+In the definition of sort [[Fruit.Basket]] we have three
+unqualified employs of `sort-names, viz. [[Apple]], [[Pear]] and
+[[Date]].
+The name [[Apple]] is introduced like that, so the employ
+[[Apple]] already uses the full name; it does not refer to
+[[Fruit.Apple]].
+The name [[Pear]] is nowhere introduced just like that, so the employ
+must be shorthand for some qualified full name.  There is
+only one applicable introduction, namely [[Fruit.Pear]].
+Finally, for [[Date]] there are two candidates:
+[[Fruit.Date]] and [[Calendar.Date]].  This is ambiguous,
+and in fact an error.
+To correct the error, the employ of [[Date]] should be
+changed into either [[Fruit.Date]] or [[Calendar.Date]],
+depending on the intention.
+</para>
+
+<para>
+It is possible to give a qualification in one go to all
+`unqualified-names introduced in a `spec.
+If <replaceable>Q</replaceable> is a `qualifier, and
+<replaceable>S</replaceable> is a term denoting a `spec, then
+the term [[\<replaceable>Q\</replaceable> qualifying
+\<replaceable>S\</replaceable>]] denotes the same `spec as
+<replaceable>S</replaceable>, except that each introduction
+of an `unqualified-name <replaceable>N</replaceable> is
+replaced by an introduction of the `qualified-name
+[[\<replaceable>Q\</replaceable>.\<replaceable>N\</replaceable>]].
+Employs that before referred to the unqualified introduction
+are also accordingly qualified, so that they now refer to
+the qualified introduction.
+
+For example, the value of
+
+[[
+||  Company qualifying spec
+||    sort Apple
+||    sort Fruit.Apple
+||    sort Fruit.Pear
+||    sort Fruit.Basket = Apple * Pear
+||  endspec
+]]
+
+is the same as that of
+
+[[
+||  spec
+||    sort Company.Apple
+||    sort Fruit.Apple
+||    sort Fruit.Pear
+||    sort Fruit.Basket = Company.Apple * Fruit.Pear
+||  endspec
+]]
+</para>
+
+<!--====================================================================-->
 <para>
 <<
 ||`spec-qualification ::=  `qualifier qualifying `spec-term
 ||
-||`spec-translation ::= translate `spec-term by `name-map
+||`qualifier ::= `word-symbol
 ||
-||`name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
+||`qualifiable-name ::= `unqualified-name | `qualified-name
 ||
-||`name-map-item ::= `sort-name-map-item | `op-name-map-item
+||`unqualified-name ::= `name
 ||
-||`sort-name-map-item ::= [ sort ] `qualifiable-name +-> `qualifiable-name
-||
-||`op-name-map-item ::=
-||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
-||
-||`annotable-qualifiable-name ::= `qualifiable-name [ : `sort ]
+||`qualified-name ::= `qualifier . `name
 >>
-Example `spec-qualification:
+Sample `spec-qualification:
 [[
 ||    Weight qualifying /Units#Weights
-Example `spec-translation:
+]]
+Sample `qualifiable-names:
 [[
-||    translate A by {Counter +-> Nat}
+||    Key
+||    $
+||    Calendar.Date
+||    Monoid.<*>
 ]]
 Let <replaceable>R</replaceable> be the result of
 elaborating `spec-term <replaceable>S</replaceable>.
-Then the elaboration of [[\<replaceable>Q\</replaceable>
+Then the elaboration of `qualification [[\<replaceable>Q\</replaceable>
 qualifying \<replaceable>S\</replaceable>]], where
 <replaceable>Q</replaceable> is a `qualifier, is
 <replaceable>R</replaceable> with each unqualified
@@ -880,8 +971,31 @@ Note that the `claim-name [[LargeSize]] is unchanged.
 In later versions of &Specware; this may change, so that
 also unqualified `claim-names get qualified.
 </para>
+</section>
+<!-- ***************************************************************** -->
+<section><title>Translations</title>
 <para>
-Further, the elaboration of [[translate
+<<
+||`spec-translation ::= translate `spec-term by `name-map
+||
+||`name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
+||
+||`name-map-item ::= `sort-name-map-item | `op-name-map-item
+||
+||`sort-name-map-item ::= [ sort ] `qualifiable-name +-> `qualifiable-name
+||
+||`op-name-map-item ::=
+||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
+||
+||`annotable-qualifiable-name ::= `qualifiable-name [ : `sort ]
+>>
+Sample `spec-translation:
+[[
+||    translate A by {Counter +-> Nat}
+]]
+Let <replaceable>R</replaceable> be the result of
+elaborating `spec-term <replaceable>S</replaceable>.
+Then the elaboration of [[translate
 \<replaceable>S\</replaceable> by {
 \<replaceable>M\</replaceable>\<subscript>1\</subscript> +->
 \<replaceable>N\</replaceable>\<subscript>1\</subscript>, ...
@@ -919,14 +1033,14 @@ results in:
 <<
 ||`spec-substitution ::= `spec-term '[ `morphism-term ']
 >>
-Example `spec-substitution:
+Sample `spec-substitution:
 [[
 ||    Routing#Basis[morphism /Coll/Lattice ->
-||                  /Coll/LatticeWithTop {} ]
+||                           /Coll/LatticeWithTop {} ]
 ]]
 </para>
 <para>
-The elaboration of
+The elaboration of `spec-substitution
 [[\<replaceable>S\</replaceable>[\<replaceable>M\</replaceable>]]]
 yields the `spec
 <replaceable>T</replaceable> obtained as follows.
@@ -978,7 +1092,7 @@ Although isomorphic to the result that would be obtained
 by using a `diagram-colimit, <replaceable>T</replaceable>
 is more ``user-oriented'' in two ways:
 the names in <replaceable>T</replaceable> are names from
-<replaceable>C</replaceable>, and `axioms of
+<replaceable>C</replaceable>, and axioms of
 <replaceable>D</replaceable> not repeated in
 <replaceable>C</replaceable> are not repeated here either.
 </para>
@@ -1080,10 +1194,10 @@ Then, first, each `sort-name or `op-name introduced in
 <replaceable>T'</replaceable>.
 Further, no `sort-name or `op-name originating from a
 library `spec may have been subject to translation.
-Finally, each `axiom in
+Finally, each axiom in
 <replaceable>S'</replaceable> must be a theorem that follows
-from the `axioms of <replaceable>T'</replaceable>.
-Collectively, the `axioms in <replaceable>S'</replaceable>
+from the axioms of <replaceable>T'</replaceable>.
+Collectively, the axioms in <replaceable>S'</replaceable>
 are known as the <emphasis>proof obligations</emphasis>
 engendered by the morphism.
 They are the formal expression of the requirement that the step from
@@ -1115,7 +1229,7 @@ They are the formal expression of the requirement that the step from
 ||
 ||`diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||
-||`diagram-elem ::
+||`diagram-element ::
 ||     `diagram-node
 ||   | `diagram-edge
 ||
@@ -1146,7 +1260,7 @@ morphism from [[\<replaceable>D\</replaceable>]] to
 [[\<replaceable>C\</replaceable>]].
 </para>
 <para>
-Example `diagram:
+Sample `diagram:
 [[
 ||    diagram {
 ||       A          +-> /Coll/Lattice,
@@ -1184,18 +1298,18 @@ from elaborating the corresponding `spec-terms and
 <section><title>Generate Terms</title>
 <para>
 <<
-||`generate-term ::= generate `language-name `spec-term [ in `string-literal ]
+||`target-code-term ::= generate `target-language-name `spec-term [ in `string-literal ]
 ||
-||`language-name ::= lisp
+||`target-language-name ::= lisp
 >>
-Example `generate-term:
+Sample `target-code-term:
 [[
 ||    generate lisp /Vessel#Contour
 ||                      in "C:/Projects/Vessel/Contour.lisp"
 ]]
-The elaboration of a `generate-term for a correct `spec-term
+The elaboration of a `target-code-term for a correct `spec-term
 generates code in the language suggested by the
-`language-name (currently only Common Lisp); see further the
+`target-language-name (currently only Common Lisp); see further the
 &Specware; User Manual.
 </para>
 </section>
@@ -1222,10 +1336,10 @@ The `claim-names must occur as `claim-names in the `spec
 that results from elaborating the `spec-term.
 </para>
 <para>
-Example `proof-term:
+Sample `proof-term:
 [[
 ||    prove Effect in translate A by {Counter +-> Nat}
-||                                 options "(use-paramodulation t)"
+||                         options "(use-paramodulation t)"
 ]]
 </para>
 <para>
@@ -1235,7 +1349,7 @@ The property to be proved is the `claim of the first
 `claim-name; the hypotheses (assumptions) that may be used
 in the proof
 The `prover-options are prover-specific and are not
-further defined here.
+further described here.
 For details, see the &Specware; User Manual.
 </para>
 </section>
@@ -1257,7 +1371,7 @@ For details, see the &Specware; User Manual.
 ||
 ||`equals ::= is | =
 >>
-Example `declarations:
+Sample `declarations:
 [[
 ||    import Lookup
 ||    sort Key
@@ -1269,11 +1383,99 @@ Example `declarations:
 </para>
 <!-- ***************************************************************** -->
 <section id="Import-declarations"><title>Import-declarations</title>
+<!--====================================================================-->
+<para>
+A `spec may contain one or more `import-declarations.
+On elaboration, these are ``expanded''.
+The effect is as if the bodies of these imported `specs (themselves
+in elaborated form, which means that all `import-declarations
+have been expanded, all translations performed and all
+shorthand employs of names have been resolved to full names,
+after which only declarations or definitions of sorts, `ops
+and axioms are left)
+is inserted in place in the receiving `spec.
+</para>
+
+<para>
+For example, the result of
+
+[[
+||  spec
+||    import spec
+||             sort A.Z
+||             op b : Nat -> Z
+||           end
+||    sort A.Z = String
+||    def b = "i8"
+||  endspec
+]]
+
+is this ``expanded'' `spec:
+
+[[
+||  spec
+||    sort A.Z
+||    op b : Nat -> A.Z
+||    sort A.Z = String
+||    def b = "i8"
+||  endspec
+]]
+</para>
+
+<para>
+For this to be correct, the imported `specs must be correct
+by themselves; in addition, the result of expanding them in
+place must result in a correct `spec.
+</para>
+
+<para>
+There are a few restrictions, which are meant to catch
+unintentional naming mistakes.
+First, if two different imported `specs each introduce a
+sort or `op
+with the same (full) name, the introductions must be
+identical declarations or definitions, or one may be a
+declaration and the other a ``compatible'' definition.
+For example, given
+
+[[
+||  S1 = spec op e : Int end
+||  S2 = spec op e : Char end
+||  S3 = spec def e = 0 end
+]]
+
+the `specs [[S1]] and [[S3]] can be imported together, but
+all other combinations of two or more co-imported `specs
+are incorrect.
+This restriction is in fact a special case of the general
+requirement that import expansion must result in a correct
+`spec.
+
+Secondly, a `sort-name introduced in any of the imported
+`specs cannot be re-introduced in the receiving `spec except
+for the case of an ``imported'' declaration together with a
+definition in the receiving `spec.
+Similarly for `op-names, with the addition that an
+`op-definition in the receiving `spec
+must be compatible with an `op-declaration for the same name
+in an imported `spec.
+The latter is again a special case of the general requirement that
+import expansion must result in a correct `spec.
+</para>
+
+<para>
+What is specifically excluded by the above, is giving a
+definition of a sort or `op in some `spec, import it, and then
+redefining or declaring that sort or `op with the same full
+name in the receiving `spec.
+</para>
+
+<!--====================================================================-->
 <para>
 <<
 ||`import-declaration ::= import `spec-term
 >>
-Example `import-declarations
+Sample `import-declarations
 [[
 ||    import Lookup
 ]]
@@ -1300,15 +1502,19 @@ effect as a single import.
 </para>
 <!-- ================================================================= -->
 <para>
-If `spec <replaceable>A</replaceable> imports
+If `spec <replaceable>A</replaceable> is imported by
 <replaceable>B</replaceable>, each model of
-<replaceable>A</replaceable> is necessarily a model of
-<replaceable>B</replaceable> (after <quote>forgetting</quote>
-any `names newly introduced by <replaceable>A</replaceable>).
-So <replaceable>A</replaceable> is then a refinement of
+<replaceable>B</replaceable> is necessarily a model of
+<replaceable>A</replaceable> (after <quote>forgetting</quote>
+any `names newly introduced by <replaceable>B</replaceable>).
+So <replaceable>A</replaceable> is then refined by
 <replaceable>B</replaceable>, and the morphism from
-<replaceable>B</replaceable> to <replaceable>A</replaceable> is
+<replaceable>A</replaceable> to <replaceable>B</replaceable> is
 known as the <quote>import morphism</quote>.
+As it does not involve translation of `sort-names or
+`op-names,
+it can be denoted by [[morphism \<replaceable>A\</replaceable>
+-> \<replaceable>B\</replaceable> {}]].
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -1330,7 +1536,7 @@ be a different `name.
 </para>
 <!-- ================================================================= -->
 <para>
-Example `sort-declarations:
+Sample `sort-declarations:
 [[
 ||    sort Date
 ||    sort Array a
@@ -1369,7 +1575,7 @@ different, as long as the model respects sorting.
 <<
 ||`sort-definition ::= sort `sort-name [ `formal-sort-parameters ] `equals `sort
 >>
-Example `sort-definitions:
+Sample `sort-definitions:
 [[
 ||    sort Date = {year : Nat, month : Nat, day : Nat}
 ||    sort Array a = List a
@@ -1458,7 +1664,7 @@ fixpoint of a recursive domain equation.
 ||`sort-variable-binder ::= fa `local-sort-variable-list
 ||
 >>
-Example `op-declarations:
+Sample `op-declarations:
 [[
 ||    op usage : String
 ||
@@ -1649,7 +1855,7 @@ operator.
 </para>
 <para>
      ====================== TEY TON ================================== -->
-Example `op-definitions:
+Sample `op-definitions:
 [[
 ||    def usage = "Usage: Lookup key [database]"
 ||
@@ -1874,7 +2080,7 @@ Otherwise, the `spec is incorrect.
 ||
 ||`sort-quantification ::= sort `sort-variable-binder
 >>
-Example `claim-definitions:
+Sample `claim-definitions:
 [[
 ||    axiom norm_idempotent is
 ||      norm o norm = norm
@@ -1973,7 +2179,7 @@ need for parenthesizing in order to avoid grammatical ambiguities.)
 </para>
 <!-- ================================================================= -->
 <para>
-Example `sorts:
+Sample `sorts:
 [[
 ||    | Point XYpos | Line XYpos * XYpos
 ||    List String * Nat -> Option String
@@ -2036,7 +2242,7 @@ Textually, it has a scope just like a plain `local-variable.
 ||`constructor ::= `name
 ||
 >>
-Example `sort-sum:
+Sample `sort-sum:
 [[
 ||    | Point XYpos | Line XYpos * XYpos
 ]]
@@ -2207,7 +2413,7 @@ second of which is a function sort:
 ||`arrow-source ::= `sort-sum | `slack-sort
 ||
 >>
-Example `sort-arrow:
+Sample `sort-arrow:
 [[
 ||    (a -> b) * b -> List a -> List b
 ]]
@@ -2246,7 +2452,7 @@ semantics of &Metaslang;.
 ||`sort-product ::= `tight-sort * `tight-sort { * `tight-sort }*
 ||
 >>
-Example `sort-product:
+Sample `sort-product:
 [[
 ||    (a -> b) * b * List a
 ]]
@@ -2303,7 +2509,7 @@ Values of a product sort can be constructed with
 ||`proper-sort-list ::= `sort , `sort { , `sort }*
 ||
 >>
-Example `sort-instantiation:
+Sample `sort-instantiation:
 [[
 ||    Map (Nat, Boolean)
 ]]
@@ -2328,7 +2534,7 @@ in the indexed family of sorts for the `sort-name of the
 <<
 ||`sort-name ::= `qualifiable-name
 >>
-Example `sort-names:
+Sample `sort-names:
 [[
 ||    Key
 ||    Calendar.Date
@@ -2339,7 +2545,7 @@ there is a `sort-declaration and/or
 `sort-definition for it in the current `spec or in some `spec
 that is imported (directly or indirectly) in the current `spec.
 If there is a unique `qualified-name for a given
-`unqualified-ending, the qualification may be omitted for a
+unqualified ending, the qualification may be omitted for a
 `sort-name used as a `sort.
 </para>
 <!-- ================================================================= -->
@@ -2363,7 +2569,7 @@ original assignment.)
 ||`field-name ::= `name
 ||
 >>
-Example `sort-record:
+Sample `sort-record:
 [[
 ||    {center : XYpos, radius : Length}
 ]]
@@ -2450,7 +2656,7 @@ a product and a record sort.
 ||`sort-restriction ::= ( `slack-sort '| `expression )
 ||
 >>
-Example `sort-restriction:
+Sample `sort-restriction:
 [[
 ||    (Nat | even)
 ]]
@@ -2529,7 +2735,7 @@ accommodate the unary negation operator [[~]], which has sort
 ||`sort-comprehension ::= '{ `annotated-pattern '| `expression '}
 ||
 >>
-Example `sort-comprehension:
+Sample `sort-comprehension:
 [[
 ||    {n : Nat | even n}
 ]]
@@ -2566,7 +2772,7 @@ So the meaning of the example `sort-comprehension above is
 <<
 ||`sort-quotient ::= `closed-sort / `expression
 >>
-Example `sort-quotient:
+Sample `sort-quotient:
 [[
 ||     Nat / (fn (m, n) -> m rem 3 = n rem 3)
 ]]
@@ -2679,7 +2885,7 @@ grammatical ambiguities.)
 </para>
 <!--====================================================================-->
 <para>
-Example `expressions:
+Sample `expressions:
 [[
 ||    fn (s : String) -> s ^ "."
 ||    case z of {re = x, im = y} -> {re = x, im = ~y}
@@ -2751,7 +2957,7 @@ assigned to it in the environment.
 ||`lambda-form ::= fn `match
 ||
 >>
-Example `lambda-form:
+Sample `lambda-form:
 [[
 ||    fn (s : String) -> s ^ "."
 ]]
@@ -2798,7 +3004,7 @@ total, but undefined for <replaceable>x</replaceable>.
 <<
 ||`case-expression ::= case `expression of `match
 >>
-Example `case-expressions:
+Sample `case-expressions:
 [[
 ||    case z of {re = x, im = y} -> {re = x, im = ~y}
 ||
@@ -2831,7 +3037,7 @@ the `application
 ||
 ||`formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
 >>
-Example `let-expressions:
+Sample `let-expressions:
 [[
 ||    let x = x + e in f(x, x)
 ||    let def f x = x + e in f (f x)
@@ -2896,7 +3102,7 @@ changed to:
 ||`if-expression ::= if `expression then `expression else `expression
 ||
 >>
-Example `if-expression:
+Sample `if-expression:
 [[
 ||    if x <= y then x else y
 ]]
@@ -2925,7 +3131,7 @@ The value of an `if-expression
 ||`local-variable ::= `name
 ||
 >>
-Example `quantifications:
+Sample `quantifications:
 [[
 ||    fa(x) norm (norm x) = norm x
 ||    ex(e : M) fa(x : M) x <*> e = x & e <*> x = x
@@ -2995,7 +3201,7 @@ So [[fa x (x = x)]], for example, is ungrammatical.
 ||
 ||`infix-application ::= `actual-parameter `op-name `actual-parameter
 >>
-Example `applications:
+Sample `applications:
 [[
 ||    f (x, x)
 ||    f x (g y)
@@ -3117,7 +3323,7 @@ In an `annotated-expression
 </para>
 <!-- ================================================================= -->
 <para>
-Example `annotated-expression:
+Sample `annotated-expression:
 [[
 ||    [] : List Arg
 ||    Positive : Sign
@@ -3153,7 +3359,7 @@ increase clarity.
 <<
 ||`op-name ::= `qualifiable-name
 >>
-Example `op-names:
+Sample `op-names:
 [[
 ||    length
 ||    >=
@@ -3165,7 +3371,7 @@ there is an `op-declaration and/or
 `op-definition for it in the current `spec or in some `spec
 that is imported (directly or indirectly) in the current `spec.
 If there is a unique `qualified-name for a given
-`unqualified-ending that is sort-correct in the context,
+unqualified ending that is sort-correct in the context,
 the qualification may be omitted for an
 `op-name used as an `expression.
 So overloaded `ops
@@ -3220,7 +3426,7 @@ original assignment.)
 ||    | `string-literal
 ||
 >>
-Example `literals:
+Sample `literals:
 [[
 ||    true
 ||    3260
@@ -3255,7 +3461,7 @@ negates an integer, or use the built-in infix operator
 ||`boolean-literal ::= true | false
 ||
 >>
-Example `boolean-literals:
+Sample `boolean-literals:
 [[
 ||    true
 ||    false
@@ -3275,7 +3481,7 @@ So [[embed true]] is ungrammatical.
 <<
 ||`nat-literal ::= `decimal-digit { `decimal-digit }*
 >>
-Example `nat-literals:
+Sample `nat-literals:
 [[
 ||    3260
 ||    007
@@ -3318,7 +3524,7 @@ both [[007]] and [[7]] denote the number 7.
 </para>
 <!--====================================================================-->
 <para>
-Example `char-literals:
+Sample `char-literals:
 [[
 ||   #z
 ||   #\x7a
@@ -3421,7 +3627,7 @@ whitespace suggested by the name (`space, `tab or `newline).
 </para>
 <!--====================================================================-->
 <para>
-Example `string-literals:
+Sample `string-literals:
 [[
 ||    ""
 ||    "see page"
@@ -3502,7 +3708,7 @@ with a `projector.)
 </para>
 <!--====================================================================-->
 <para>
-Example `field-selections:
+Sample `field-selections:
 [[
 ||    triple.2
 ||    z.re
@@ -3541,7 +3747,7 @@ is a convenient notation for the equivalent `expression
 ||`tuple-display-body ::= [ `expression , `expression { , `expression }* ]
 ||
 >>
-Example `tuple-display:
+Sample `tuple-display:
 [[
 ||    ("George", Poodle : Dog, 10)
 ]]
@@ -3576,7 +3782,7 @@ there is no need to ever annotate it with a `sort.)
 ||`field-filler ::= `field-name `equals `expression
 ||
 >>
-Example `record-display:
+Sample `record-display:
 [[
 ||    {name = "George", kind = Poodle : Dog, age = 10}
 ]]
@@ -3608,7 +3814,7 @@ inhabitant of the unit sort [[()]].
 ||
 ||`sequential-tail ::= `expression | `open-sequential-expression
 >>
-Example `sequential-expression:
+Sample `sequential-expression:
 [[
 ||    (writeLine "key not found"; embed Missing)
 ]]
@@ -3654,7 +3860,7 @@ discarded.
 ||`list-display-body ::= [ `expression { , `expression }* ]
 ||
 >>
-Example `list-display:
+Sample `list-display:
 [[
 ||    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 ]]
@@ -3743,7 +3949,7 @@ any of the sort annotations is omitted:
 <<
 ||`projector ::= project `field-selector
 >>
-Example `projectors:
+Sample `projectors:
 [[
 ||    project 2
 ||    project re
@@ -3816,7 +4022,7 @@ to its <replaceable>i</replaceable>th component
 <<
 ||`relaxator ::= relax `closed-expression
 >>
-Example `relaxator:
+Sample `relaxator:
 [[
 ||    relax even
 ]]
@@ -3864,7 +4070,7 @@ the corresponding section.
 <<
 ||`restrictor ::= restrict `closed-expression
 >>
-Example `restrictor:
+Sample `restrictor:
 [[
 ||    restrict even
 ]]
@@ -3927,7 +4133,7 @@ This is a theorem from the Theory of Integers.
 <<
 ||`quotienter ::= quotient `closed-expression
 >>
-Example `quotienter:
+Sample `quotienter:
 [[
 ||     quotient (fn (m, n) -> m rem 3 = n rem 3)
 ]]
@@ -3979,7 +4185,7 @@ inhabitants of [[Z3]].
 <<
 ||`chooser ::= choose `closed-expression
 >>
-Example `chooser:
+Sample `chooser:
 [[
 ||    choose congMod3
 ]]
@@ -4064,7 +4270,7 @@ quotient sort for <replaceable>Q</replaceable>.
 <<
 ||`embedder ::= [ embed ] `constructor
 >>
-Example `embedders:
+Sample `embedders:
 [[
 ||    Nil
 ||    embed Nil
@@ -4114,7 +4320,7 @@ above).
 <<
 ||`embedding-test ::= embed? `constructor
 >>
-Example `embedding-test:
+Sample `embedding-test:
 [[
 ||    embed? Cons
 ]]
@@ -4172,7 +4378,7 @@ constructor of the sum sort.
 ||`branch ::= `pattern -> `expression
 ||
 >>
-Example `matches:
+Sample `matches:
 [[
 ||    {re = x, im = y} -> {re = x, im = ~y}
 ||
@@ -4337,7 +4543,7 @@ avoid grammatical ambiguities.)
 ||
 ||`field-patterner ::= `field-name [ `equals `pattern ]
 >>
-Example `patterns:
+Sample `patterns:
 [[
 ||    (i, p) : Integer * Boolean
 ||    z as {re = x, im = y}

@@ -34,14 +34,6 @@ easy reference.
 <<
 ||  `symbol ::= `name | `literal | `special-symbol
 ||  
-||  `qualifiable-name ::= `unqualified-name | `qualified-name
-||  
-||  `unqualified-name ::= `name
-||  
-||  `qualified-name ::= `qualifier . `name
-||  
-||  `qualifier ::= `word-symbol
-||  
 ||  `name ::= `word-symbol | `non-word-symbol
 ||  
 ||  `word-symbol ::= `word-start-mark { `word-continue-mark }*
@@ -97,14 +89,14 @@ easy reference.
 ||     `spec-term
 ||   | `morphism-term
 ||   | `diagram-term
-||   | `generate-term
+||   | `target-code-term
 ||   | `proof-term
 ||  
 ||  `specware-file-contents ::=
 ||     `unit-term
-||   | `short-unit-definition { `short-unit-definition }*
+||   | `infile-unit-definition { `infile-unit-definition }*
 ||  
-||  `short-unit-definition ::= `fragment-identifier = `unit-term
+||  `infile-unit-definition ::= `fragment-identifier = `unit-term
 >>
 </para>
 </formalpara>
@@ -116,9 +108,7 @@ easy reference.
 ||  
 ||  `swpath-based-path ::= / `relative-path
 ||  
-||  `relative-path ::= { `folder-name / }* `name [ # `fragment-identifier ]
-||  
-||  `folder-name ::= `name | .. | .
+||  `relative-path ::= { `name / }* `name [ # `fragment-identifier ]
 ||  
 ||  `fragment-identifier ::= `word-symbol
 >>
@@ -149,11 +139,25 @@ easy reference.
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Translations</title>
+<formalpara><title>Qualifications</title>
 <para>
 <<
 ||  `spec-qualification ::=  `qualifier qualifying `spec-term
 ||  
+||  `qualifier ::= `word-symbol
+||  
+||  `qualifiable-name ::= `unqualified-name | `qualified-name
+||  
+||  `unqualified-name ::= `name
+||  
+||  `qualified-name ::= `qualifier . `name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Translations</title>
+<para>
+<<
 ||  `spec-translation ::= translate `spec-term by `name-map
 ||  
 ||  `name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
@@ -215,7 +219,7 @@ easy reference.
 ||  
 ||  `diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||  
-||  `diagram-elem ::
+||  `diagram-element ::
 ||     `diagram-node
 ||   | `diagram-edge
 ||  
@@ -230,9 +234,9 @@ easy reference.
 <formalpara><title>Generate Terms</title>
 <para>
 <<
-||  `generate-term ::= generate `language-name `spec-term [ in `string-literal ]
+||  `target-code-term ::= generate `target-language-name `spec-term [ in `string-literal ]
 ||  
-||  `language-name ::= lisp
+||  `target-language-name ::= lisp
 >>
 </para>
 </formalpara>
