@@ -1,10 +1,9 @@
-% only p2 gets proved:
 
 p1 = prove symb_matches?_Obligation in MatchingObligations#SymbolMatching_Oblig
 
+%% One of the word_matches_at?_Obligation is no longer generated because it is trivially true
 p2 = prove word_matches_at?_Obligation  in MatchingObligations#WordMatching_Oblig
 p3 = prove word_matches_at?_Obligation0 in MatchingObligations#WordMatching_Oblig
-p4 = prove word_matches_at?_Obligation1 in MatchingObligations#WordMatching_Oblig
 
 p5  = prove word_matches_at?_Obligation   in MatchingObligations#WordMatching0_Oblig
 p6  = prove word_matches_at?_Obligation0  in MatchingObligations#WordMatching0_Oblig
