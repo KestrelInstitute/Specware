@@ -741,7 +741,7 @@ provers will be added in the future.</para>
 <para>For example, the user can attempt to discharge the proof
 obligation for [[MatchingSpecs#SymbolMatching]] by writing the
 following command in a file named <"MatchingProof.sw">, located in the
-same directory as <"MatchingObligations.sw">:</para>
+same directory as <"MatchingObligations.sw">:
 
 [[
 ||    prove symb_matches? in
@@ -755,8 +755,8 @@ Then at the Lisp prompt, issue this command to discharge the proof:
 ]]
 
 The obligation is translated to the Snark theorem prover and
-automatically proven based primarily on the knowledge of &Specware's
-[[Option]] sort that we automatically send to Snark.
+automatically proven based primarily on the knowledge of &Specware;'s
+[[Option]] sort that we automatically send to Snark.</para>
 
 </section> <!-- proof obligations -->
 

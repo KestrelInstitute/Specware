@@ -40,6 +40,9 @@ generate provably correct new code by the same process.</para>
 </section>  <!-- overview -->
 
 <section>
+<title>&Specware; Development Process</title>
+
+<section>
 <title>Building Specifications</title>
 
 <para>The first step in building an application in &Specware; is to
@@ -78,6 +81,8 @@ operations, by including axioms and theorems to describe them.</para>
 specifications using the colimit operation.  Colimit
 <quote>glues</quote> specs together along shared concepts.  Morphisms
 describe exactly how concepts are shared.</para>
+
+</section> <!-- building -->
 
 <section>
 <title>Refining Specifications</title>
@@ -126,7 +131,7 @@ expressed by a morphism but also by an interpretation.</para>
 </section>  <!-- refining -->
 
 <section>
-<title>Extending a Refinement</title>
+<title>Extending Refinements</title>
 
 <para>You build up a refinement in the same way you build up a
 specification, in an iterative, stepwise progression.  You build basic
@@ -157,7 +162,7 @@ is to refine your abstract specs in terms of these library specs.
 This process guarantees that &Specware; can generate code to implement
 your specifications in its target language, Lisp.</para>
 
-</section>  <!-- refining -->
+</section>  <!-- extending -->
 
 <section>
 <title>Generating Code</title>
@@ -168,9 +173,9 @@ contains a function for each of the operations you have described in
 the abstract specification.  After you examine and test it, you can
 embed it in an application that uses the functions.</para>
 
-</section>  <!-- code gen -->
+</section>  <!-- generating -->
 
-</section>  <!-- building specs -->
+</section>  <!-- process -->
 
 <section>
 <title>Specification Components</title>
@@ -184,7 +189,7 @@ embed it in an application that uses the functions.</para>
 <para>A sort is a syntactic entity that denotes a set of values. In
 its simplest form, a sort is a symbol. For example, a spec can contain
 a sort <computeroutput lang="metaslang">Nat</computeroutput> that denotes the set of natural numbers,
-i.e., <computeroutput lang="metaslang">0,1,2,...</computeroutput>.</para>
+i.e., 0, 1, 2, ...</para>
 
 <para>Sort symbols can be combined by means of some pre-defined
 constructs to build more complex sorts. One such construct is
@@ -436,6 +441,70 @@ pushout.</para>
 </section>
 
 <section>
+<title>Substitutions</title>
+
+<para>Given a spec <computeroutput lang="metaslang">S</computeroutput> and a morphism <computeroutput lang="metaslang">M</computeroutput>, it is possible (under
+certain conditions) to substitute the domain of <computeroutput lang="metaslang">M</computeroutput> with its
+codomain inside <computeroutput lang="metaslang">S</computeroutput>. Another way to say the same thing is that it is
+possible to <quote>apply</quote> the morphism <computeroutput lang="metaslang">M</computeroutput> to the spec
+<computeroutput lang="metaslang">S</computeroutput>.</para>
+
+<para>Let <computeroutput lang="metaslang">A</computeroutput> and <computeroutput lang="metaslang">B</computeroutput> be the domain and codomain specs of <computeroutput lang="metaslang">M</computeroutput>.
+The substitution operation is possible if and only if <computeroutput lang="metaslang">A</computeroutput> is a
+sub-spec of <computeroutput lang="metaslang">S</computeroutput>, in the sense that all the sorts, ops, and axioms of
+<computeroutput lang="metaslang">A</computeroutput> are also in <computeroutput lang="metaslang">S</computeroutput>. This is the case when <computeroutput lang="metaslang">S</computeroutput> is constructed by
+importing and extending, directly or indirectly, <computeroutput lang="metaslang">A</computeroutput>.</para>
+
+<para>If that condition is satisfied, the result of the substitution
+is the spec <computeroutput lang="metaslang">S'</computeroutput> that consists of all the sorts, ops, and axioms of
+<computeroutput lang="metaslang">B</computeroutput> plus all the sorts, ops, and axioms of <computeroutput lang="metaslang">S</computeroutput> that are not in
+<computeroutput lang="metaslang">A</computeroutput>; the latter must all be translated according to the name mapping
+of <computeroutput lang="metaslang">M</computeroutput>.</para>
+
+<para>For example, suppose that:</para>
+
+<orderedlist>
+
+<listitem>
+<para><computeroutput lang="metaslang">A</computeroutput> consists of a sort <computeroutput lang="metaslang">X</computeroutput>;</para>
+</listitem>
+
+<listitem>
+<para><computeroutput lang="metaslang">S</computeroutput> consists of two sorts <computeroutput lang="metaslang">X</computeroutput> and <computeroutput lang="metaslang">Y</computeroutput> and an op <computeroutput lang="metaslang">f</computeroutput>
+of type <computeroutput lang="metaslang">X -&gt; Y</computeroutput>;</para>
+</listitem>
+
+<listitem>
+<para><computeroutput lang="metaslang">B</computeroutput> consists of a sort <computeroutput lang="metaslang">X'</computeroutput> and an op <computeroutput lang="metaslang">c</computeroutput> of type
+<computeroutput lang="metaslang">X'</computeroutput>;</para>
+</listitem>
+
+<listitem>
+<para><computeroutput lang="metaslang">M</computeroutput> maps sort <computeroutput lang="metaslang">X</computeroutput> in <computeroutput lang="metaslang">A</computeroutput> to sort <computeroutput lang="metaslang">X'</computeroutput> in <computeroutput lang="metaslang">B</computeroutput>.</para>
+</listitem>
+
+</orderedlist>
+
+<para>The result <computeroutput lang="metaslang">S'</computeroutput> of the substitution consists of sorts <computeroutput lang="metaslang">X'</computeroutput>
+and <computeroutput lang="metaslang">Y</computeroutput>, an op <computeroutput lang="metaslang">f</computeroutput> of type <computeroutput lang="metaslang">X' -&gt; Y</computeroutput>, and an op <computeroutput lang="metaslang">c</computeroutput> of type
+<computeroutput lang="metaslang">X'</computeroutput>. In other words, <computeroutput lang="metaslang">A</computeroutput> is replaced with <computeroutput lang="metaslang">B</computeroutput> inside <computeroutput lang="metaslang">S</computeroutput> and
+the remaining portion of <computeroutput lang="metaslang">S</computeroutput> is renamed accordingly.</para>
+
+<!-- REMOVED BECAUSE SUBSTITUTION IS NOT ALWAYS A PUSHOUT:
+
+<para>In category theory, colimits are defined up to isomorphism in
+the sense that, given a diagram of specs and morphisms, there is an
+infinite class of specs (all isomorphic to each other) that are all
+colimits of the diagram. From a practical point of view, it is
+important which spec of the isomorphic class is actually returned.
+Substitution yields a pushout which is what users want most of the
+time.</para>
+
+-->
+
+</section>  <!-- substitution -->
+
+<section>
 <title>Interpretations</title>
 
 <para>A morphism maps a sort or op of the source spec to a sort or op
@@ -486,6 +555,6 @@ of the interpretations.</para>
 
 </section>
 
-</section>  <!-- spec components -->
+</section>  <!-- components -->
 
 </chapter>
