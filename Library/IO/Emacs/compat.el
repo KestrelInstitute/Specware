@@ -206,6 +206,7 @@
   (defun add-specware-listener-key-bindings (m)
     (define-key m '(tab) 'comint-dynamic-complete)
     (define-key m "\e." 'sw:meta-point)
+    (define-key m "\C-c\C-d" 'ild-abort)
     (easy-menu-define specware-interaction-buffer-menu
 		      m
 		      "Menu used in Specware buffer."
