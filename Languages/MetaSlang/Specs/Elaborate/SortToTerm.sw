@@ -78,14 +78,14 @@ XML qualifying spec
        def convert srt =
 	 case resolveMetaTyVar srt of
 	   
-	   | Arrow      (x, y,              _) -> mkapp ("XML", "MakeArrowSortDescriptor",
+	   | Arrow      (x, y,              _) -> mkapp ("XML", "MakeArrowSortDescriptor-2",
 							 mkrecord [convert x, 
 								   convert y])
 	   
 	   | Product    (fields,            _) -> mkapp ("XML", "MakeProductSortDescriptor",
 							 (foldl (fn ((id, srt), result) ->
-								 mkapp ("List", "cons",
-									mkrecord [mkapp ("List", "cons", 
+								 mkapp ("List", "cons-2",
+									mkrecord [mkapp ("List", "cons-2", 
 											 mkrecord [tag id, 
 												   convert srt]),
 										  result]))
@@ -94,8 +94,8 @@ XML qualifying spec
 	   
 	   | CoProduct  (fields,            _) -> mkapp ("XML", "MakeCoProductSortDescriptor",
 							 (foldl (fn ((id, opt_srt), result) ->
-								 mkapp ("List", "cons",
-									mkrecord [mkapp ("List", "cons",
+								 mkapp ("List", "cons-2",
+									mkrecord [mkapp ("List", "cons-2",
 											 mkrecord [tag id,
 												   case opt_srt of
 												     | None     -> % mkapp ("Option", "None", mynil)
@@ -109,20 +109,20 @@ XML qualifying spec
 							        mynil
 								(rev fields)))
 	   
-	   | Quotient   (srt, rel,          _) -> mkapp ("XML", "MakeQuotientSortDescriptor",
+	   | Quotient   (srt, rel,          _) -> mkapp ("XML", "MakeQuotientSortDescriptor-2",
 							 mkrecord [convert srt, 
 								   tag "QQQ"])
 	   
 	   
-	   | Subsort    (srt, pred,         _) -> mkapp ("XML", "MakeSubsortSortDescriptor",
+	   | Subsort    (srt, pred,         _) -> mkapp ("XML", "MakeSubsortSortDescriptor-2",
 							 mkrecord [convert srt, 
 								   tag "PPP"])
 	   
-	   | Base (Qualified (q, id), srts, _) -> mkapp ("XML", "MakeBaseSortDescriptor",
+	   | Base (Qualified (q, id), srts, _) -> mkapp ("XML", "MakeBaseSortDescriptor-3",
 							 mkrecord [tag q,
 								   tag id, 
 								   (foldl (fn (srt, result) ->
-									   mkapp ("List", "cons", 
+									   mkapp ("List", "cons-2", 
 										  mkrecord [convert srt, result]))
 								          mynil
 									  (rev srts))])
@@ -132,8 +132,8 @@ XML qualifying spec
 	   | MetaTyVar  (mtv,               _) -> tag "<Some MetaTyVar??>"
     in
       foldl (fn ((srt, expansion), trm) -> 
-	     mkapp ("List", "cons",
-		    mkrecord [mkapp ("List", "cons",
+	     mkapp ("List", "cons-2",
+		    mkrecord [mkapp ("List", "cons-2",
 				     mkrecord [convert srt, 
 					       convert expansion]),
 			      trm]))
