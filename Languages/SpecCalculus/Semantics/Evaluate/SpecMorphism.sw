@@ -288,21 +288,30 @@ Should we check to see if qid is in cod_map??
 	    let translated_sort = translateSortViaSM (dom_sort, sortMap, opMap) in
 	    let Some cod_qid    = evalPartial sortMap dom_qid in
 	    let (Some cod_info) = findTheSort (cod_spec, cod_qid) in
-	    let cod_sort        = firstSortDefInnerSort cod_info in
-	    if equalSort? (translated_sort, cod_sort) then
-	      return ()
-	    else if equivSort? cod_spec false (translated_sort, cod_sort) then
-	      return ()
-	    else 
-	      let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
-		        "\nThe domain type " ^ (printSort dom_sort) ^
-			"\n  translates to " ^ (printSort translated_sort) ^
-			"\n   which is not " ^ (printSort cod_sort)
-	      in
-		raise (MorphError (pos, msg))
+	    % let cod_sort        = firstSortDefInnerSort cod_info in
+	    case sortInfoDefs cod_info of
+	      | [] -> 
+	         let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^
+		           "\nThe domain type   " ^ (printQualifiedId dom_qid) ^ " has a definition: " ^ (printSort dom_sort) ^ 
+			   "\nbut translates to " ^ (printQualifiedId cod_qid) ^ ", which does not."
+		 in
+		   raise (MorphError (pos, msg))
+	      | dfn :: _ -> 
+	        let cod_sort = sortInnerSort dfn in
+		if equalSort? (translated_sort, cod_sort) then
+		  return ()
+		else if equivSort? cod_spec false (translated_sort, cod_sort) then
+		  return ()
+		else 
+		  let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+		            "\nThe domain type " ^ (printSort dom_sort) ^
+			    "\n  translates to " ^ (printSort translated_sort) ^
+			    "\n   which is not " ^ (printSort cod_sort)
+		  in
+		    raise (MorphError (pos, msg))
 
       def verify_op_type (dom_q, dom_id, dom_info : OpInfo, _) = 
-	let (_,dom_sort,_) = unpackFirstOpDef dom_info in
+	let (_,dom_sort,dom_dfn) = unpackFirstOpDef dom_info in
 	case dom_sort of
 	  | Any _ -> return ()
 	  | _ ->
@@ -310,18 +319,26 @@ Should we check to see if qid is in cod_map??
 	    let translated_sort = translateSortViaSM (dom_sort, sortMap, opMap) in
 	    let Some cod_qid    = evalPartial opMap dom_qid in
 	    let Some cod_info   = findTheOp (cod_spec, cod_qid) in
-	    let cod_sort        = firstOpDefInnerSort cod_info in
-	    if equalSort? (translated_sort, cod_sort) then
-	      return ()
-	    else if equivSort? cod_spec false (translated_sort, cod_sort) then
-	      return ()
-	    else
-	      let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
-		        "\nThe domain type " ^ (printSort dom_sort) ^
-			"\n  translates to " ^ (printSort translated_sort) ^
-			"\n   which is not " ^ (printSort cod_sort)
+	    let dom_defined?    = case dom_dfn of | Any _ -> false | _ -> true in
+	    if dom_defined? && (opInfoDefs cod_info = []) then
+	      let msg = "Inconsistent op def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^
+		        "\nThe domain op     " ^ (printQualifiedId dom_qid) ^ " has a definition: " ^ (printTerm dom_dfn) ^ 
+			"\nbut translates to " ^ (printQualifiedId cod_qid) ^ ", which does not."
 	      in
 		raise (MorphError (pos, msg))
+	    else
+	      let cod_sort        = firstOpDefInnerSort cod_info in
+	      if equalSort? (translated_sort, cod_sort) then
+		return ()
+	      else if equivSort? cod_spec false (translated_sort, cod_sort) then
+		return ()
+	      else
+		let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+		          "\nThe domain type " ^ (printSort dom_sort) ^
+			  "\n  translates to " ^ (printSort translated_sort) ^
+			  "\n   which is not " ^ (printSort cod_sort)
+		in
+		  raise (MorphError (pos, msg))
     in
       {
        foldOverQualifierMap verify_sort_def () dom_spec.sorts;
