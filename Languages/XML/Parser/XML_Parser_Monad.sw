@@ -115,6 +115,12 @@ XML qualifying spec
        pe_defs    = update (state.pe_defs, name, uchars),
        context    = state.context})
 
+   op get_pe_replacement_text : Name -> Env (Option UChars)
+  def get_pe_replacement_text name =
+    fn state ->
+     (Ok (eval (state.pe_defs, name)),
+      state)
+
   %% The replacement text for general entities must match the
   %% production for "content", so we can store the result of
   %% such a parse.
@@ -128,6 +134,12 @@ XML qualifying spec
        ge_defs    = update (state.ge_defs, name, content),
        pe_defs    = state.pe_defs,
        context    = state.context})
+
+   op get_ge_replacement_content : Name -> Env (Option Content)
+  def get_ge_replacement_content name =
+    fn state ->
+     (Ok (eval (state.ge_defs, name)),
+      state)
 
   %% --------------------------------------------------------------------------------
   %%  Debugging -- normal control flow, but print message as immediate side effect
