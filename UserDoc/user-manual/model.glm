@@ -49,9 +49,11 @@ deposited into a <".lisp"> file.</para>
 units. For instance, the user can display the sorts, ops, and axioms
 of the spec resulting from a colimit operation.</para>
 
-<para>Lastly, there are commands to inspect and modify an environment
-variable that determines how unit names are resolved to <".sw">
-files.</para>
+<para>There are commands to inspect and modify an environment variable
+that determines how unit names are resolved to <".sw"> files.</para>
+
+<para>Lastly, there are commands to list the units in the internal
+cache and to clear the cache.</para>
 
 </section>
 

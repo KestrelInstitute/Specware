@@ -1,6 +1,42 @@
 <chapter id="process">
 <title>Processing Units</title>
 
+<section>
+<title>Overview</title>
+
+<para>Unit definitions are processed by &Specware;. The user instructs
+&Specware; to process units by supplying certain commands. &Specware;
+has access, via the Lisp run time environment, to the underlying file
+system, so it can access the unit definitions contained in <".sw">
+files. The environment variable &swpath; determines which <".sw">
+files are accessed by &Specware; to find unit definitions.</para>
+
+<para>Processing of a certain unit causes processing of the units
+referenced in the defining text of the unit, recursively. For
+instance, if a spec [[A]] extends a spec [[B]] which in turns extends
+a spec [[C]], when [[A]] is processed also [[B]] and [[C]] are
+processed. There must be no circularities in the chain of unit
+dependencies.</para>
+
+<para>Processing causes progress and/or error messages to be displayed
+on the screen, in the XEmacs buffer containing the Lisp shell (where
+the user also supplies commands to &Specware;). Progress messages
+inform the user that units are processed without error. Error messages
+provide information on the cause of errors, so that the user can fix
+them by editing the unit definitions.</para>
+
+<para>The processing of certain kinds of units results in the creation
+of new files, as an additional side effect. For instance, Lisp
+programs are a kind of unit, constructed by the [[generate]] operator
+of &Metaslang;. A side effect of processing one such unit is that the
+resulting code is written into a <".lisp"> file.</para>
+
+<para>cache
+
+</section>
+
+
+<!-- command to clear the cache -->
 
 
 </chapter>
