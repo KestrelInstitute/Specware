@@ -1232,12 +1232,12 @@ spec {
       
 
   def consistentTag competing_pterms =
-   %% If all the alternatives (found by findVarOrOps) have the same optional infix priority, 
+   %% If one of the alternatives (found by findVarOrOps) has optional infix priority
+   %% and the others either have the same infix priority or are not infix ops then,
    %% return (true, priority), otherwise return (false, None).
    %% In other words, we will complain if F or Foo.F is ambigous among terms that
-   %% have differing infix priorities.
-   %% Note: due to union semantics, findVarOrOps should always returns 0 or 1 hits for Q.Id, 
-   %%       in which case this routine will necessarily return (true, priority).
+   %% have differing infix priorities, but allow prefix versions.
+   %% findVarOrOps should never return any OneName
    case competing_pterms of
     | (Fun (OneName  (_,    Infix priority), _, pos))::r -> consistentInfixMS.Terms (r, Some priority)
     | (Fun (TwoNames (_, _, Infix priority), _, pos))::r -> consistentInfixMS.Terms (r, Some priority) % r must be []
@@ -1249,15 +1249,13 @@ spec {
     | [] -> (true, optional_priority)
     | (Fun (OneName (_, Infix element_priority), _, pos))::tail ->
       (case optional_priority of
-        | None -> (false, None)
+        | None -> consistentInfixMS.Terms (tail, Some element_priority)
         | Some priority -> if element_priority = priority
                             then consistentInfixMS.Terms (tail, optional_priority)
                             else (false, None))
     | (Fun (TwoNames (_, _, Infix element_priority), _, pos))::tail ->
-      %% Union semantics should preclude multiple alternatives for Q.Id,
-      %% so we should never get here.
       (case optional_priority of
-        | None -> (false, None)
+        | None -> consistentInfixMS.Terms (tail, Some element_priority)
         | Some priority -> if element_priority = priority
                             then consistentInfixMS.Terms (tail, optional_priority)
                             else (false, None))
