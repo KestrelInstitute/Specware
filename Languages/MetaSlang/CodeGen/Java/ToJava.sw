@@ -315,7 +315,7 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo) =
  *)
 
 op mkDefaultMethodForCase: Spec * Id * List Type * Type * List Var * Term -> Option MethDecl * Collected
-def mkDefaultMethodForCase(spc,opId,dom,rng,vars,body) =
+def mkDefaultMethodForCase(_(* spc *),opId,_(* dom *),rng,vars,body) =
   %let (mods,opt_mbody) = ([Abstract],None) in
   let (rngId,col0) = srtId(rng) in
   let opt = %(mods,opt_mbody,col1) =
