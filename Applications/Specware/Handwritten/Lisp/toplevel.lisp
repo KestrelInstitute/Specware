@@ -851,6 +851,12 @@
 (defun dir (&optional (str ""))
   (ls str))
 
+(defun dirr (&optional (str "*.sw"))
+  #+allegro (excl:run-shell-command
+	      (format nil "ls `find . -name '~a' -print | sed 's/^\\.\\///'`"
+		      str))
+  (values))
+
 #-allegro
 (defun pa (&optional pkgname)
   (if (null pkgname)
