@@ -43,19 +43,19 @@
 ;;; introduction of PROCDEF.
 (define-sw-parser-rule :PROCSPEC-ELEM ()
   (:anyof
-    (1 :IMPORTDECL)
-    (1 :SORTDECL)
-    (1 :SORTDEF)
-    (1 :OPDECL)
-    (1 :OPDEF)
+    (1 :IMPORT-DECLARATION)
+    (1 :SORT-DECLARATION)
+    (1 :SORT-DEFINITION)
+    (1 :OP-DECLARATION)
+    (1 :OP-DEFINITION)
     (1 :VARDECL)
-    (1 :CLAIMDECL)
+    (1 :CLAIM-DEFINITION)
     (1 :PROCDEF))
   1)
 
 (define-sw-parser-rule :PROCDEF ()
   (:tuple "proc"
-    (1 :ID)
+    (1 :NAME)
     "(" (:optional (2 :PSL-PROC-PARAMS)) ")"
     ":" (3 :SORT)
     (:optional (:tuple "{" (4 :PSL-COMMAND-SEQ) "}")))
@@ -66,7 +66,7 @@
   (list . 1))
 
 (define-sw-parser-rule :PSL-PROC-PARAM ()
-  (:tuple (1 :ID) ":" (2 :SORT))
+  (:tuple (1 :NAME) ":" (2 :SORT))
   (cons 1 2))
 
 (define-sw-parser-rule :PSL-COMMAND ()
@@ -85,11 +85,11 @@
   1)
 
 (define-sw-parser-rule :PSL-RELATION ()
-  (:tuple "<" (1 :TERM) ">")
+  (:tuple "<" (1 :EXPRESSION) ">")
   (make-psl-relation 1 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :VARDECL ()
-  (:tuple "var" (1 :IDENT) ":" (2 :SORTSCHEME))
+  (:tuple "var" (1 :NAME) ":" (2 :SORT-SCHEME))
   (make-psl-var-decl 1 2 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :PSL-IF ()
@@ -101,7 +101,7 @@
   (make-psl-do (list . 1) ':left-lc ':right-lc))
 
 (define-sw-parser-rule :PSL-CASE ()
-  (:tuple "case" (1 :TERM) "{" (2 (:repeat :PSL-CASE-BRANCH "|")) "}")
+  (:tuple "case" (1 :EXPRESSION) "{" (2 (:repeat :PSL-CASE-BRANCH "|")) "}")
   (make-psl-case 1 (list . 2) ':left-lc ':right-lc))
 
 (define-sw-parser-rule :PSL-LET ()
@@ -116,15 +116,15 @@
   (make-psl-skip ':left-lc ':right-lc))
 
 (define-sw-parser-rule :PSL-RETURN ()
-  (:tuple "return" (1 :TERM))
+  (:tuple "return" (1 :EXPRESSION))
   (make-psl-return 1 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :PSL-ASSIGN ()
-  (:tuple (1 :TERM) ":=" (2 :TERM))
+  (:tuple (1 :EXPRESSION) ":=" (2 :EXPRESSION))
   (make-psl-assign 1 2 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :PSL-EXEC ()
-  (:tuple (1 :TERM))
+  (:tuple (1 :EXPRESSION))
   (make-psl-exec 1 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :PSL-COMMAND-SEQ ()
@@ -132,7 +132,7 @@
   (list . 1))
 
 (define-sw-parser-rule :PSL-ALTERNATIVE ()
-  (:tuple (1 :TERM) "->" (2 :PSL-COMMAND-SEQ))
+  (:tuple (1 :EXPRESSION) "->" (2 :PSL-COMMAND-SEQ))
   (make-psl-alternative 1 2 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :PSL-CASE-BRANCH ()

@@ -110,7 +110,7 @@
 (make-system (concatenate 'string
     Specware4 "/../Specware4/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
 (make-system (concatenate 'string
-    Specware4 "/../Specware4/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
+    Specware4 "/../Specware4/Languages/PSL/Parser/Handwritten/Lisp"))
 
 ;;; (sw) (make-system "../../UI/Emacs/Handwritten/Lisp")
 ;;; (sw) 
