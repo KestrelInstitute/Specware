@@ -22,27 +22,40 @@
 (defun java-listener-running-p ()
   (loop for process in sys::*all-processes* 
       for name = (mp::process-name process)
-      if (search *java-listener-name* name)
+      if (equal *java-listener-name* name)
       do (return t)
       finally (return nil)))
 
+;;; Kill processes spawned by java listener (names of form  "Java Listener-i")
+(defun kill-java-listener-processes ()
+  (loop for process in sys::*all-processes* 
+      for name = (mp::process-name process)
+      if (and (search *java-listener-name* name)
+	      (not (equal *java-listener-name* name)))
+      do (mp:process-kill p)))
+
 (defvar *java-socket*)
 (defvar *java-socket-stream*)
+(defvar *java-process-num* 0)
 
 (defun init-java-listener ()
   (mp:process-run-function *java-listener-name* 'java-listener))
 
 (defun java-listener ()
-  (setq *java-socket* (socket:make-socket :connect :passive :local-port *socket-number*))
+  (setq *java-socket* (socket:make-socket :connect :passive
+					  :local-port *socket-number*))
   (setq *java-socket-stream* (socket:accept-connection *java-socket*))
   (loop while (open-stream-p *java-socket-stream*)
 	   do ;;(socket::wait-for-input *java-socket-stream*)
 	      ;;(when (listen *java-socket-stream*)
 	      ;; read will wait for stream
-		(let ((form (read *java-socket-stream* nil :end)))
-		  (if (eq form :end)
-		      (return)
-		    (ignore-errors (eval form)))));)
+	     (let ((form (read *java-socket-stream* nil :end)))
+	       (if (eq form :end)
+		   (return)
+		 (mp:process-run-function
+		  (format nil "~a-~a" *java-listener-name*
+			  (incf *java-process-num*))
+		  #'(lambda () (ignore-errors (eval form)))))))
   (close *java-socket-stream*)
   ;; close socket
   (close *java-socket*)
