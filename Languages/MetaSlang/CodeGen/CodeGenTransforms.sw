@@ -245,7 +245,7 @@ def p2mSort(spc,srt,minfo) =
 			%let _ = writeLine("  "^(printTyVarSubst tvsubst)) in
 			let names = cons(qid,(filter (fn(qid_) -> ~(qid_=qid0)) names)) in 
 			let srtdef = applyTyVarSubst2Sort(srtdef,tvsubst) in
-			let srtdef = addSortSuffixToConstructors(srtdef,suffix) in
+			%let srtdef = addSortSuffixToConstructors(srtdef,suffix) in
 			%let _ = writeLine("after applyTyVarSubst2Sort: "^printSort(srtdef)) in
 			% add it first to prevent infinite loop:
 			let tmp_sinfo = (names,[],[([],srtdef)]) in
@@ -371,7 +371,7 @@ def p2mPattern(spc,pat,minfo) =
       let id = (case srt of
 		  | Base(qid,insttv as _::_,_) ->
 		    if exists (fn(TyVar _) -> true | s -> false) insttv then id else
-		    id^(getSortNameSuffix insttv)
+		    id(*^(getSortNameSuffix insttv)*)
 		  | _ -> id)
       in
       let (optPat,minfo) = (case optPat of
@@ -424,7 +424,7 @@ def p2mFun(spc,fun,srt,minfo) =
       (case cpsrt of
 	| Base(sqid,insttv as _::_,_) ->
 	  if exists (fn(TyVar _) -> true | s -> false) insttv then (fun,srt1,minfo) else
-	  let id = id^(getSortNameSuffix insttv) in
+	  let id_ = id^(getSortNameSuffix insttv) in
 	  let fun = Embed(id,b?) in
 	  (fun,srt1,minfo)
 	| _ -> (fun,srt1,minfo)
@@ -679,7 +679,198 @@ def addMissingFromPattern(bspc,spc,ignore,pat,minfo) =
 
 %--------------------------------------------------------------------------------
 
+(**
+ * adds for each co-product sort the constructor ops for each element.
+ * e.g. for Lists, the following ops are added:
+ * op List_cons fa(a) a * List -> List
+ * def List_cons(x1,x2) = (embed cons)(x1,x2)
+ * op List_nil: () -> List
+ * def List_nil() = embed nil
+ *)
 
+op addSortConstructorsToSpec : Spec -> Spec * List(QualifiedId)
+def addSortConstructorsToSpec(spc) =
+  let res = foldriAQualifierMap
+             (fn(qid,name,sortinfo,(spc,opnames)) ->
+	      let (spc,opnames0) = addSortConstructorsFromSort(spc,Qualified(qid,name),sortinfo) in
+	      (spc,concat(opnames,opnames0))
+	     ) (spc,[]) spc.sorts
+  in
+  res
+
+op addSortConstructorsFromSort: Spec * QualifiedId * SortInfo -> Spec * List(QualifiedId)
+def addSortConstructorsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
+  case sortschemes of
+    | [] -> (spc,[])
+    | (tyvars,srt)::_ -> 
+    case srt of
+      | CoProduct (fields,b) -> 
+      %let _ = writeLine("generating constructor ops for sort "^(printQualifiedId qid)^"...") in
+      %let _ = writeLine("  typevars: "^(List.show "," tyvars)) in
+      List.foldr 
+       (fn((id,optsrt),(spc,opnames)) ->
+	let opqid as Qualified(opq,opid) = getConstructorOpName(qid,id) in
+	%let _ = writeLine("  op "^(printQualifiedId opqid)) in
+	let tyvarsrts = map (fn(tv) -> TyVar(tv,b)) tyvars0 in
+	let codom:Sort  = Base(qid,tyvarsrts,b) in
+	let opsrt = case optsrt of
+		      | None -> Arrow(Product([],b),codom,b)
+		      | Some s -> Arrow(s,codom,b)
+	in
+	let (termsrt,eb) = case optsrt of
+		      | None -> (codom,false)
+		      | Some s -> (Arrow(s,codom,b),true)
+	in
+	let pat = patternFromSort(optsrt,b) in
+	let cond = mkTrue() in
+	let funterm = Fun(Embed(id,eb),termsrt,b) in
+	let body = argTermFromSort(optsrt,funterm,b) in
+	let term = Lambda([(pat,cond,body)],b) in
+	let sortscheme = (tyvars,opsrt) in
+	let opinfo = ([opqid],Nonfix,sortscheme,[(tyvars,term)]) in
+	let newops = insertAQualifierMap(spc.ops,opq,opid,opinfo) in
+	let opnames = cons(opqid,opnames) in
+	(setOps(spc,newops),opnames)
+       ) (spc,[]) fields
+      | _ -> (spc,[])
+
+
+op getConstructorOpName: QualifiedId * String -> QualifiedId
+def getConstructorOpName(qid as Qualified(q,id),consid) =
+  let sep = "$" in
+  Qualified(q,id^sep^consid)
+
+% this is used to distinguish "real" product from "record-products"
+op productfieldsAreNumbered: fa(a) List(String * a) -> Boolean
+def productfieldsAreNumbered(fields) =
+  let
+    def fieldsAreNumbered0(i,fields) =
+      case fields of
+	| [] -> true
+	| (id,_)::fields -> id = Nat.toString(i) & fieldsAreNumbered0(i+1,fields)
+  in
+  fieldsAreNumbered0(1,fields)
+
+
+op patternFromSort: Option Sort * Position -> Pattern
+def patternFromSort(optsrt,b) =
+  let
+    def mkVarPat(id,srt) =
+      VarPat((id,srt),b)
+  in
+  case optsrt of
+    | None -> RecordPat([],b)
+    | Some srt -> 
+      case srt of
+	| Product([],_) -> RecordPat([],b)
+	| Product(fields,_) ->
+	  if productfieldsAreNumbered fields then
+	    RecordPat (List.map (fn(id,srt) -> (id,mkVarPat("x"^id,srt))) fields,b)
+	  else mkVarPat("x",srt)
+	| _ -> mkVarPat("x",srt)
+
+op argTermFromSort: Option Sort * MS.Term * Position -> MS.Term
+def argTermFromSort(optsrt,funterm,b) =
+  let
+    def mkVarTerm(id,srt) =
+      Var((id,srt),b)
+  in
+  case optsrt of
+    | None -> funterm
+    | Some srt -> 
+      let term = 
+        case srt of
+	  | Product(fields,_) ->
+	    if productfieldsAreNumbered fields then
+	      Record(List.map (fn(id,srt) -> (id,mkVarTerm("x"^id,srt))) fields,b)
+	    else mkVarTerm("x",srt)
+	  | _ -> mkVarTerm("x",srt)
+      in
+      Apply(funterm,term,b)
+
+% --------------------------------------------------------------------------------
+
+(**
+ * converts anonymous lambda terms to inner functions, e.g.
+ *
+ *    (fn(x) -> t)
+ *
+ *  is tranformed to
+ *
+ *    let def inner(x) = t in inner
+ *
+ * The idea is that "inner" is then lifted to the outer level by the
+ * general lambda-lifting transformation
+ *)
+
+op lambdaToInner: Spec -> Spec
+def lambdaToInner(spc) =
+  let _ = writeLine("lambdaToInner...") in
+  let ops = foldriAQualifierMap
+            (fn(q,id,opinfo as (opnames,fixity,(tyvars,srt),opterms),newops) ->
+	     let newopterms = List.map (fn(tyvars,term) -> (tyvars,lambdaToInnerToplevelTerm(spc,term))) opterms in
+	     let newopinfo = (opnames,fixity,(tyvars,srt),newopterms) in
+	     insertAQualifierMap(newops,q,id,newopinfo))
+	    emptyAQualifierMap spc.ops
+  in
+  setOps(spc,ops)
+
+op lambdaToInnerToplevelTerm: Spec * MS.Term -> MS.Term
+def lambdaToInnerToplevelTerm(spc,term) =
+  case term of
+    | Lambda(m,b) -> let newm = List.map
+                                (fn(pat,cond,body) ->
+				 (pat,
+				  lambdaToInnerTerm spc cond,
+				  lambdaToInnerTerm spc body))
+				m
+		     in
+		     Lambda(newm,b)
+    | _ -> lambdaToInnerTerm spc term
+
+op lambdaToInnerTerm: Spec -> MS.Term -> MS.Term
+def lambdaToInnerTerm spc t =
+  %let _ = writeLine("lambdaToInnerTerm("^(printTerm t)^")") in
+  case t of
+    | LetRec(vartermlist,body,b) ->
+      let vartermlist = List.map (fn(v,t) -> (v,lambdaToInnerToplevelTerm(spc,t))) vartermlist in
+      let body = lambdaToInnerTerm spc body in
+      LetRec(vartermlist,body,b)
+    | Lambda([(pat,cond,term)],b) ->
+      let fname = "inner" in
+      let fsrt = inferType(spc,t) in
+      let var = (fname,fsrt) in
+      let cond = lambdaToInnerTerm spc cond in
+      let term = lambdaToInnerTerm spc term in
+      let t = Lambda([(pat,cond,term)],b) in
+      let newt = LetRec([(var,t)],Var(var,b),b) in
+      let _ = writeLine("lambdaToInner("^(printTerm t)^") = "^(printTerm newt)) in
+      newt
+    | Apply(t1,t2,b) -> Apply(lambdaToInnerTerm spc t1,lambdaToInnerTerm spc t2,b)
+    | Record(fields,b) ->
+      let fields = map (fn(id,t) -> (id,lambdaToInnerTerm spc t)) fields in
+      Record(fields,b)
+    | Let(letlist,t,b) ->
+      let letlist = map (fn(pat,term) -> (lambdaToInnerPat spc pat,lambdaToInnerTerm spc term)) letlist in
+      let t = lambdaToInnerTerm spc t in
+      Let(letlist,t,b)
+    | Lambda(m,b) ->
+      let m = map (fn(pat,cond,body) -> (lambdaToInnerPat spc pat,lambdaToInnerTerm spc cond,
+					 lambdaToInnerTerm spc body)) m
+      in
+      Lambda(m,b)
+    | IfThenElse(t1,t2,t3,b) ->
+      let t1 = lambdaToInnerTerm spc t1 in
+      let t2 = lambdaToInnerTerm spc t2 in
+      let t3 = lambdaToInnerTerm spc t3 in
+      IfThenElse(t1,t2,t3,b)
+    | Seq(terms,b) ->
+      let terms = map (fn(t) -> lambdaToInnerTerm spc t) terms in
+      Seq(terms,b)
+    | _ -> t
+
+op lambdaToInnerPat: Spec -> Pattern -> Pattern
+def lambdaToInnerPat spc pat = pat
 
 
 endspec

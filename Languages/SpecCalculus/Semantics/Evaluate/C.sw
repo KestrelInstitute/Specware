@@ -5,7 +5,7 @@
 
 SpecCalc qualifying spec
   import UnitId
-  import /Languages/MetaSlang/CodeGen/C/GCfree/CG
+  import /Languages/MetaSlang/CodeGen/C/CG
 
   op  evaluateCGen: ValueInfo * Option String -> SpecCalc.Env ValueInfo
   def evaluateCGen (valueInfo as (Spec spc,_,_), optFileNm) = {
