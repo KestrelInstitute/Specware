@@ -24,6 +24,16 @@ SpecCalc qualifying spec
     raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri)^ "\n"))
   }
 
+  def SpecCalc.evaluateOtherPrint value pos = {
+    uri <- getCurrentURI;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri)^ "\n"))
+  }
+
+  def SpecCalc.evaluateOtherGenerate args valueInfo pos = {
+    uri <- getCurrentURI;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri)^ "\n"))
+  }
+
   def SpecCalc.ppOtherValue value = ppString "<some OtherValue>"
 
   def SpecCalc.ppOtherTerm  term  = ppString "<some OtherTerm>"

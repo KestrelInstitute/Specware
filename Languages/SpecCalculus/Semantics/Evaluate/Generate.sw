@@ -3,8 +3,38 @@
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature  
+  import Snark
+  import /Languages/MetaSlang/CodeGen/C/ToC
   import ../SpecPath
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
+
+  def SpecCalc.evaluateGenerate (language, sub_term as (term,position), optFile) pos = {
+        (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
+        baseURI <- pathToRelativeURI "/Library/Base";
+        (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseURI;
+        cValue <- return (coerceToSpec value);
+        case cValue of
+          | Spec spc -> 
+              (case language of
+                 | "lisp" -> evaluateLispCompile ((cValue,timeStamp,depURIs), sub_term,optFile)
+                 | "snark" -> evaluateSnarkGen ((cValue,timeStamp,depURIs), sub_term,optFile)
+                 | "spec" -> {
+                        print (showValue cValue);
+                        return (cValue,timeStamp,depURIs)
+                      }
+                 | "c" -> 
+                       let _ = specToC (subtractSpec spc baseSpec) in
+                       return (cValue,timeStamp,depURIs)
+                 | lang -> raise (Unsupported ((positionOf sub_term),
+                                "no generation for language "
+                              ^ lang
+                              ^ " yet")))
+
+          | Other value -> evaluateOtherGenerate (language,sub_term,optFile) (value,timeStamp,depURIs) pos
+
+          | _ -> raise (TypeCheck (pos,
+                        "attempting to generate code from an object that is not a specification"))
+        }
 
   %% Need to add error detection code
   def SpecCalc.evaluateLispCompile(valueInfo as (value,_,_), cterm, optFileName) =

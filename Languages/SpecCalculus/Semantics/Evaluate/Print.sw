@@ -49,6 +49,7 @@ SpecCalc qualifying spec {
       | Morph   sm  -> SpecCalc.print (printMorphism base_spec reverse_context sm)
       | Diag    dg  -> SpecCalc.print (printDiagram  base_spec reverse_context dg)
       | Colimit col -> SpecCalc.print (printColimit  base_spec reverse_context col)
+      | Other other -> evaluateOtherPrint other (positionOf term)
       | InProcess   -> SpecCalc.print "No value!");
    SpecCalc.print "\n";
    return (value, time_stamp, dep_URIs)
@@ -275,6 +276,4 @@ SpecCalc qualifying spec {
    %%%  %%       so whether or not it makes sense, we must work around this fact.
    %%%  let trimmed_apex_spec = subtractSpec apex_spec base_spec in
    %%%  AnnSpecPrinter.printSpec trimmed_apex_spec
-
-
 }

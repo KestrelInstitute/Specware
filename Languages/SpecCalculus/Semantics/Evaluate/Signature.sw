@@ -28,9 +28,10 @@ SpecCalc qualifying spec {
   op evaluateSubstitute  : SCTerm * SCTerm                                              -> Position -> SpecCalc.Env ValueInfo
   op evaluateProve       : ClaimName * SCTerm * ProverName * Assertions * ProverOptions -> Position -> SpecCalc.Env ValueInfo
   op evaluateObligations : SCTerm                                                                   -> SpecCalc.Env ValueInfo
+  op evaluateGenerate    : String * SCTerm * Option String -> Position -> SpecCalc.Env ValueInfo
 
   %% Hook for extensions to specware
-  op evaluateOther       : OtherTerm Position                           -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOther       : OtherTerm Position -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherSpecMorph :
        ValueInfo
     -> ValueInfo
@@ -42,6 +43,14 @@ SpecCalc qualifying spec {
        ValueInfo
     -> ValueInfo
     -> SCTerm
+    -> Position
+    -> SpecCalc.Env ValueInfo
+
+  op evaluateOtherPrint : OtherValue -> Position -> SpecCalc.Env ()
+
+  op evaluateOtherGenerate :
+       String * SCTerm * Option String
+    -> OtherValue * TimeStamp * URI_Dependency
     -> Position
     -> SpecCalc.Env ValueInfo
 

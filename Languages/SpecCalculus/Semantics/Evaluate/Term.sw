@@ -1,7 +1,5 @@
 \subsection{Interpreter for Spec Calculus}
 
-Synchronized with r1.9 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
-
 \begin{spec}
 SpecCalc qualifying spec {
  % import Signature          
@@ -14,13 +12,11 @@ SpecCalc qualifying spec {
  import SpecMorphism 
  import DiagMorphism 
  import Generate      
- import Snark
  import Translate      
  import Obligations
  import Substitute      
  import Print      
  import Prove
- import /Languages/MetaSlang/CodeGen/C/ToC
 \end{spec}
 
 This is a monadic interpreter for the Spec Calculus.
@@ -72,31 +68,7 @@ This is a monadic interpreter for the Spec Calculus.
 
     | Prove args -> SpecCalc.evaluateProve args pos
 
-    | Generate (language, sub_term as (term,position), optFile) -> {
-          (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
-          baseURI <- pathToRelativeURI "/Library/Base";
-          (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseURI;
-          (case coerceToSpec value of
-            | cValue as Spec spc -> 
-                (case language of
-                   | "lisp" -> evaluateLispCompile ((cValue,timeStamp,depURIs),
-						   sub_term,optFile)
-                   | "snark" -> evaluateSnarkGen ((cValue,timeStamp,depURIs),
-						   sub_term,optFile)
-                   | "spec" -> {
-                          print (showValue cValue);
-                          return (cValue,timeStamp,depURIs)
-                        }
-                   | "c" -> 
-                         let _ = specToC (subtractSpec spc baseSpec) in
-                         return (cValue,timeStamp,depURIs)
-                   | lang -> raise (Unsupported ((positionOf sub_term),
-                                  "no generation for language "
-                                ^ lang
-                                ^ " yet")))
-            | _ -> raise (TypeCheck ((positionOf sub_term),
-                        "attempting to generate code from an object that is not a specification")))
-        }
+    | Generate args -> SpecCalc.evaluateGenerate args pos
 
     | Other args -> SpecCalc.evaluateOther args pos  % used for extensions to Specware
 }
