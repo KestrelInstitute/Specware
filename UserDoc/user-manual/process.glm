@@ -35,7 +35,7 @@ that the resulting code is written into a <".lisp"> file.</para>
 
 <para>When &Specware; processes a unit, it saves the processing
 results into an internal cache, associating the results to the unit's
-name. By using this cache, &Specware; avoid unnecessary
+name. By using this cache, &Specware; avoids unnecessary
 re-computations: it only re-processes the units whose files have
 changed since they were processed last time. From the point of view of
 the final result, this caching mechanism is completely transparent to
@@ -114,7 +114,7 @@ case, a unit definition is searched in the file, whose identifier (at
 the left of ``='') is the same as the identifier that follows ``#'' in
 the original unit reference. If no such unit definition is found, the
 unit reference cannot be resolved and an error is signaled by
-&Specware. If instead such a unit definition is found, its defining
+&Specware;. If instead such a unit definition is found, its defining
 text (at the right of ``='') is the final result of
 resolution.</para></listitem>
 
