@@ -119,9 +119,18 @@ snark qualifying spec {
 						 Lisp.symbol("SNARK","?X")]
 				       ]
 			    ]
-		 )
-		]
-     ]
+		)],		
+     Lisp.list [snark_assert,
+		Lisp.quote
+		(Lisp.list [Lisp.symbol("SNARK",">="), Lisp.nat(1), Lisp.nat(0)]
+		)
+	       ],		
+     Lisp.list [snark_assert,
+		Lisp.quote
+		(Lisp.list [Lisp.symbol("SNARK",">="), Lisp.nat(0), Lisp.nat(0)]
+		)
+	       ]
+    ]
 
   op arithmeticFunctions: List LispCell
   def arithmeticFunctions =
