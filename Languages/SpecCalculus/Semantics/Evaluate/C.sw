@@ -11,7 +11,7 @@ SpecCalc qualifying spec
 
   def evaluateCGen (valueInfo as (Spec spc,_,_), optFileNm) = {
      baseUnitId <- pathToRelativeUID "/Library/Base";
-     (Spec baseSpec,_,_) <- SpecCalc.evaluateUnitId (Internal "base") baseUnitId;
+     (Spec baseSpec,_,_) <- SpecCalc.evaluateUID (Internal "base") baseUnitId;
       let _ = generateCCode (subtractSpec spc baseSpec, spc, optFileNm) in
       return valueInfo}
 
