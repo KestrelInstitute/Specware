@@ -19,7 +19,9 @@ Prover qualifying spec
   def condTermToFmla(condTerm) =
     let (vars, cond, term) = condTerm in
     let body = mkImplies(cond, term) in
-    let res = mkBind(Forall, vars, body) in
+    let res = case vars of
+                | Nil -> body
+                | _ -> mkBind(Forall, vars, body) in
     res
 
   op proverPattern: Term -> List Term
@@ -196,6 +198,7 @@ def removePatternCase(term) =
 	  (newVars, newCond, newTerm) in
     let def generateCasesArg(funCase:CondTerm, argCases:CondTerms) =
           case argCases of
+	    | Nil -> [funCase]
 	    | [argCase] -> [mkLeafCase(funCase, argCase)]
 	    | hdArgCase::restArgCases -> cons(mkLeafCase(funCase, hdArgCase), generateCasesArg(funCase, restArgCases)) in
     let def generateCasesFun(funCases, argCases) =
