@@ -40,7 +40,7 @@ spec {
 		  of None -> TyVar (findTyVar(context,uniqueId),pos)
 		   | Some ssrt -> convertPSort ssrt)
 	     | _ -> srt
-     def convertPFun (f : PFun): Fun = 
+     def convertPFun (f) = 
            case f
 	     of PQuotient equiv  -> Quotient 
 	      | PChoose equiv    -> Choose
@@ -50,9 +50,36 @@ spec {
 	      | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
 	      | _ -> f
    in
-   mapSpec (convertPTerm,convertPSort, fn x -> x)
-     spc
+%% mapSpec is correct but unnecessarily maps non-locals
+%   mapSpec (convertPTerm, convertPSort, fn x -> x)
+%     spc
+  let {importInfo, sorts, ops, properties} = spc in
+  let {imports = _, importedSpec = _, localOps, localSorts} = importInfo in
+  let tsp_maps = (convertPTerm, convertPSort, fn x -> x) in
+  { importInfo       = importInfo,
 
+    ops              = mapAQualifierMap 
+			(fn opinfo as (aliases, fixity, (tvs, srt), opt_def) ->
+			 let nm = hd aliases in
+			 if member(nm,localOps)
+			   then
+			    (aliases, fixity, (tvs, mapSort tsp_maps srt), 
+			     mapTermOpt tsp_maps opt_def)
+			   else opinfo)
+			ops,
+
+    sorts            = mapAQualifierMap 
+			 (fn sortinfo as (aliases, tvs, opt_def) ->
+			  let nm = hd aliases in
+			 if member(nm,localSorts)
+			   then (aliases, tvs, mapSortOpt tsp_maps opt_def)
+			   else sortinfo)
+			 sorts,
+
+    properties       = map (fn (pt, nm, tvs, term) -> 
+			       (pt, nm, tvs, mapTerm tsp_maps term))
+			   properties
+   }
 
 % def convertPosSpecToSpec {importInfo, sorts, ops, properties} =
 %    let new_ops  = 
