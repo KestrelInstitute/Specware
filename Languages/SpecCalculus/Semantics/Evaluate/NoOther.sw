@@ -39,12 +39,12 @@ SpecCalc qualifying spec
     raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
-  def SpecCalc.evaluateOtherProofGen (_, _, _, _) (* value, term, optFileName, fromObligations? *) pos = {
+  def SpecCalc.evaluateOtherProofGen _ (* value, term, optFileName, fromObligations? *) pos = {
     unitId <- getCurrentUID;
     raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
-  def SpecCalc.evaluateOtherProofGenLocal (_, _, _, _) (* value, term, optFileName, fromObligations? *) pos = {
+  def SpecCalc.evaluateOtherProofGenLocal _ (* value, term, optFileName, fromObligations? *) pos = {
     unitId <- getCurrentUID;
     raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
@@ -60,6 +60,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.11  2004/11/12 23:02:24  cyrluk
+%% Added other for ProofGen.
+%%
 %% Revision 1.10  2004/11/12 19:04:53  becker
 %% Added the signature and default implementations to
 %% evaluateProofGenOther  and evaluateProofGenLocalOther
