@@ -467,6 +467,14 @@ spec
 						      (0,ppValue context x)]))
 					       rm)),
 			    string "}"]
+      | Constructor("Cons",arg as RecordVal[(_,_),(_,_)]) ->
+	(case valueToList v of
+	   | Some listVals ->
+	     prettysNone [string "[",
+			  prettysLinear(addSeparator (string ", ")
+					(map (ppValue context) listVals)),
+			  string "]"]
+	   | None -> prettysFill[string "Cons",string " ",ppValue context arg])
       | Constructor (id,arg) -> prettysFill [string id,string " ",ppValue context arg]
       | Constant          id -> string id
       | QuotientVal (f,arg)  -> prettysFill [string "quotient",string " ",
@@ -497,6 +505,16 @@ spec
 		    prettysLinear(addSeparator (string ", ") (map (fn id -> string id) ids)),
 		    string "}>"]
       | Unevaluated t  -> ppTerm context ([],Top:ParentTerm) t
+
+  op  valueToList: Value -> Option(List Value)
+  def valueToList v =
+    case v of
+      | Constructor("Cons",RecordVal[(_,a),(_,rl)]) ->
+        (case valueToList rl of
+	  | Some l -> Some(Cons(a,l))
+	  | None -> None)
+      | Constant "Nil" -> Some []
+      | _ -> None
 
   op  valueToTerm: Value -> MS.Term
   def valueToTerm v =
