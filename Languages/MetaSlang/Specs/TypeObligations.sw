@@ -329,7 +329,7 @@ spec
 	let fs     = product(getSpec gamma,tau) in
 	let fields = ListPair.zip(fs,fields)    in
 	let (gamma,terms) = 
-	    List.foldl 
+	    List.foldr
 	    (fn (((_,tau),(id,p)),(g,terms))-> 
 	     let (gamma,trm) = bindPattern(g,p,tau) in 
 	     (gamma,cons((id,trm),terms)))
