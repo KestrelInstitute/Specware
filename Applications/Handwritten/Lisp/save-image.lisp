@@ -123,6 +123,7 @@
 #+MCL
 (defun save-this-lisp-image (name)
   (format t "Saving ~a~%" name)
+  (set-gc-parameters-for-use nil)
   ;(unless (probe-file name) (create-file  name))  ; temporary bug workaround (??)
   (ccl:save-application name))
 

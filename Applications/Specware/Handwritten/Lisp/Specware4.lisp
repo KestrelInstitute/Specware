@@ -222,13 +222,6 @@
 #+sbcl
 (push  'Specware::initializeSpecware-0 sb-int:*after-save-initializations*)
 
-;;; Set gc parameters at startup
-#+mcl
-(push  #'(lambda ()
-	   (ccl:set-lisp-heap-gc-threshold (* 16777216 8))
-	   (ccl:egc nil))
-       ccl:*lisp-startup-functions*)
-
 #+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648))

@@ -59,7 +59,14 @@
 	      ;;
 	      (setf (sys::gsgc-parameter :generation-spread)          12) ; default is  4, range is 0-26 
 	      )
-  #-Allegro (format t "~&set-gc-parameters-for-use is currently a no-op for non-Allegro lisp~%")
+  ;;; Set gc parameters at startup
+  #+mcl
+  (push  #'(lambda ()
+	     (ccl:set-lisp-heap-gc-threshold (* 16777216 8))
+	     (ccl:egc nil))
+	 ccl:*lisp-startup-functions*)
+
+  #-(or Allegro mcl) (format t "~&set-gc-parameters-for-use is currently a no-op for non-Allegro lisp~%")
   ;;
   (when verbose?
     #+Allegro (sys::gsgc-parameters)

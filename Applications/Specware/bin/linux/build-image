@@ -37,7 +37,7 @@ esac
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
+   for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /Applications/acl/alisp /usr/local/acl/acl501/lisp; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi

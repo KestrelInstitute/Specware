@@ -64,6 +64,7 @@ cd "$SPECWARE4"/Applications/Specware
 
 export SWPATH; SWPATH="$SPECWARE4":.
 EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 
 if [ -f lisp ]; then
    echo "Failed to $act, $SPECWARE4/Applications/Specware/lisp is not a directory" 2>&1
@@ -125,7 +126,10 @@ echo "Loading Specware ... (for dumplisp)"
 echo " "
 $LISP <<-XXXX
 	(load "$EXIT_ON_ERRORS")
+	(load "$MEMORY_MANAGEMENT")
+	(set-gc-parameters-for-build nil)
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
+	(set-gc-parameters-for-use nil)
 	(ccl:save-application "$SPECWARE4/Applications/Specware/bin/linux/Specware4.openmcl-image")
 XXXX
