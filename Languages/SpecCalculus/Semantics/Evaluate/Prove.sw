@@ -18,9 +18,9 @@ SpecCalc qualifying spec {
      proof_name <- return (URItoProofName (URI));
      spec_name <- return (SpecTermToSpecName(spec_term));
      uspc <- (
-	     case value of
+	     case coerceToSpec value of
 	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
-               | _ -> raise (Proof (pos, "Argument to prove command is not a spec.")));
+               | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
      prover_options <- 
        (case possible_options of
 	  | Options prover_options -> return (prover_options)
