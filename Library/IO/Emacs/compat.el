@@ -194,7 +194,7 @@
     (find-unbalanced-region-lisp (point-min) (point-max)))
 
   (defvar *specware-buffer-name* "*Specware Shell*")
-
+  
   ;(push 'specware-mode ilisp-modes)
 
   (defun inferior-lisp-running-p ()

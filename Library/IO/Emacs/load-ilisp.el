@@ -12,6 +12,9 @@
       load-path)
 
 (defvar ilisp-*use-fsf-compliant-keybindings* t)
+
+(defvar ilisp-*use-frame-for-arglist-output-p* nil)
+(defvar ilisp-*arglist-message-switch-back-p* t)
 ;(defvar ilisp-*use-frame-for-output* nil)
 (require 'ilisp)
 
