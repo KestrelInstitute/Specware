@@ -54,6 +54,13 @@ at the Lisp prompt. This command does the following things:
   way that it compiles and executable with the same name as the
   generated C-files with removed suffix, i.e. for the above example
   the name of the executable would be "foo_bar".
+
+  By convention, if a file named <unit>_main.c or <unit>_test.c exists,
+  it will be automatically included in the build process; <unit>_test.c
+  will only be used, if <unit>_main.c does not exist. For the above
+  example this would mean that, if a file named "foo_bar.c" exists, it
+  would be included in the build.
+
   In addition to the built-in Makerules file, the generated make-file
   "swcmake.mk" will also include a unit-specific make-file in the
   current directory called <executable>.mk, i.e. in the above example
@@ -70,14 +77,7 @@ at the Lisp prompt. This command does the following things:
              for the final compilation and linking of the
              executable. It usually lists additional C-files (.o
              and/or .c files) that the example needs to be a fully
-             stand-alone application. The most common usage of this
-             is the specification of a handwritten main file that
-             calls the generated C code. Example:
-
-                   USERFILES = main.c
-
-             For help how to provide a MetaSlang-written main
-             function, see below.
+             stand-alone application.
 
   Other make variables that are used in the generated/predefined rules
   are LDFLAGS (can be used to add addtional libraries, etc.), CPPFLAGS
