@@ -5,7 +5,7 @@
 ;; exists and is readable. Otherwise, it return false.
 (defun fileExistsAndReadable (x)
   (handler-case
-      (close (open x :direction :input))
+      (progn (close (open x :direction :input)) t)
     (file-error (condition) 
       (declare (ignore condition))
       nil)))

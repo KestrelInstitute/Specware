@@ -98,7 +98,7 @@
       (princ (specware::getenv "SWPATH"))
     (let ((str (string str)))
       (speccalc::checkSpecPathsExistence str)
-      (princ (setf (specware::getenv "SWPATH") (string str))))))
+      (princ (specware::setenv "SWPATH" (string str))))))
 
 #+allegro
 (top-level:alias ("swpath" :case-sensitive) (&optional str)

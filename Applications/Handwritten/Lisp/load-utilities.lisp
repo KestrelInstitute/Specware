@@ -41,9 +41,17 @@
 
 (defun getenv (varname)
   #+allegro   (system::getenv varname)
-  #+mcl          (ccl::getenv varname)
-  #+lispworks    (hcl::getenv varname) 	;?
-  #+cmucl (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+  #+mcl       (ccl::getenv varname)
+  #+lispworks (hcl::getenv varname) 	;?
+  #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+  )
+
+(defun setenv (varname newvalue)
+  #+allegro   (setf (system::getenv varname) newvalue)
+  #+mcl       (setf (ccl::getenv varname) newvalue)
+  #+lispworks (setf (hcl::getenv varname) newvalue) 
+  #+cmu       (setf (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+		newvalue)
   )
 
 #+(or mcl Lispworks)
@@ -77,7 +85,8 @@
 
 (defvar *fasl-type*
   #+allegro "fasl"
-  #+mcl     "dfsl")
+  #+mcl     "dfsl"
+  #+cmu     "x86f")
 
 (unless (fboundp 'compile-file-if-needed)
   ;; Conditional because of an apparent Allegro bug in generate-application
