@@ -119,7 +119,7 @@
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" (sw::normalize-filename root-dir)))
     (sw:eval-in-lisp "#+allegro(sys::set-stack-cushion 10000000)
                       #-allegro()")
-    (sw:eval-in-lisp "(time (user::boot))")
+    (sw:eval-in-lisp "(time (CL-USER::sw \"Applications/PSL/PSL\"))")
     (build-psl root-dir)))
 
 
