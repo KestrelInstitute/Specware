@@ -2,13 +2,14 @@
 (in-package :Specware)
 ;(in-package :cl-user) -- *specware4*, *fasl-type*, etc. are in Specware package!
 
-(defun Specware::getenv (varname) ; duplicate of definition in load-utilities.lisp
-  #+allegro   (system::getenv varname)
-  #+mcl       (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
-		  (ccl::getenv varname))
-  #+lispworks (hcl::getenv varname) 	;?
-  #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
-  )
+(unless (fboundp 'Specware::getenv)
+  (defun Specware::getenv (varname)	; duplicate of definition in load-utilities.lisp
+    #+allegro   (system::getenv varname)
+    #+mcl       (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
+		    (ccl::getenv varname))
+    #+lispworks (hcl::getenv varname)	;?
+    #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+    ))
 
 (defvar *specware4* (Specware::getenv "SPECWARE4"))
 
@@ -25,10 +26,11 @@
 		 0)) 
       (compile-file file))))
 
-(defun compile-and-load-lisp-file (file)
-   (let ((filep (make-pathname :defaults file :type "lisp")))
-     (compile-file-if-needed filep)
-     (load (make-pathname :defaults filep :type nil))))
+(unless (fboundp 'compile-and-load-lisp-file)
+  (defun compile-and-load-lisp-file (file)
+    (let ((filep (make-pathname :defaults file :type "lisp")))
+      (compile-file-if-needed filep)
+      (load (make-pathname :defaults filep :type nil)))))
 
 
 (loop for fil in '("Base/Handwritten/Lisp/Boolean"
