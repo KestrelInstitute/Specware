@@ -949,7 +949,21 @@ spec {
     | [term] -> Some term
     | _ ->
    case unlinkSort srt of
-    | MetaTyVar _ -> None
+    | MetaTyVar _ ->
+      if env.firstPass? then None
+	else  (error (env,
+		      "Several matches for overloaded op "
+		      ^ id
+		      ^ " of sort "
+		      ^ printSort srt
+		      ^ (foldl (fn (tm, str) -> str ^
+				(case tm of
+				   | Fun (OneName  (     id2, _), _, _) -> " "^id2
+				   | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
+			   " : "
+			   terms),
+		      pos);
+	       None)
     | rsort ->
 	let srtPos = sortAnn srt in
 	(case filter (consistentSortOp? (env, withAnnS (rsort, srtPos),true)) terms of
