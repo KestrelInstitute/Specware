@@ -27,7 +27,7 @@
 	      (cond ((consp name)
 		     (if (valid-function-name-p name)
 			 (fdefinition name)
-			 (eval:make-interpreted-function name)))
+		       (eval:make-interpreted-function name)))
 		    ((macro-function name)
 		     (error 'simple-type-error
 			    :datum name
@@ -105,3 +105,6 @@
 		(eval:internal-eval original-exp))))))
       (t
        exp))))
+
+(defun valid-function-name-p (name) (symbolp name))
+

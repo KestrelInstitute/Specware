@@ -5,15 +5,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #+Allegro 
-(defun save-lisp-image (name)
-  ;; DEVELOPMENT
+(defun save-this-lisp-image (name)
+  ;; Save this image.
   (compact-memory t -1 0)
   (set-gc-parameters-for-use t)
   (excl::dumplisp :name name))
 
 #+Allegro 
-(defun save-lisp-executable (name dir files-to-load files-to-copy)
-  ;; APPLICATION
+(defun generate-new-lisp-application (name dir files-to-load files-to-copy)
+  ;; Build a fresh image with desired properties.
+  ;; (This should be a completely new image, not simply a clone of this image!)
   (compact-memory t -1 0)
   (set-gc-parameters-for-use t)
   (generate-application 
@@ -39,15 +40,15 @@
 
     ;; which runtime? the other option is :dynamic which includes the compiler
     :runtime  :standard
-  )
+    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 CMU
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #+CMU
-(defun save-lisp-image (name)
-  ;; DEVELOPMENT
+(defun save-this-lisp-image (name)
+  ;; Save this image.
   (setq ext:*gc-verbose* nil)
   (setq ext:*bytes-consed-between-gcs* 20000000)
   ;; See http://cvs2.cons.org/ftp-area/cmucl/doc/cmu-user/extensions.html#toc43
@@ -55,50 +56,109 @@
   (extensions::save-lisp name :purify t))
 
 #+CMU
-(defun save-lisp-executable (name dir files-to-load files-to-copy)
-  ;; APPLICATION
-  (setq ext:*gc-verbose* nil)
-  (setq ext:*bytes-consed-between-gcs* 20000000)
-  (setq ext:*environment-list* ())
-  (setq lisp::lisp-environment-list ())
+(defun generate-new-lisp-application (name dir files-to-load files-to-copy)
+  ;; Build a fresh image with desired properties.
+  ;; (This should be a completely new image, not simply a clone of this image!)
   ;; See http://cvs2.cons.org/ftp-area/cmucl/doc/cmu-user/extensions.html#toc43
   ;; The :purify option compacts current data and makes GC skip it in resulting image.
-  (cd dir)
-  (dolist (file files-to-load) (load file))
-  (let ((here (pathname-directory *current-directory*)))
-    (dolist (file files-to-copy) 
-      (copy-file file (make-pathname :dir here :defaults file))))
-  (extensions::save-lisp name :purify t))
+  (let ((app-file (namestring (make-pathname :directory dir :name name))))
+    (ensure-directories-exist app-file)
+    (dolist (file files-to-copy) (copy-file file (make-pathname :directory dir :defaults file)))
+    (with-open-file (s "/tmp/cmds" :direction :output :if-exists :supersede)
+      (format t "~%Commands to be used to create ~A~%" app-file)
+      (format t "========================================================~%")
+      (format t "(setq ext:*gc-verbose* nil)~%")
+      (format s "(setq ext:*gc-verbose* nil)~%")
+      (format t "(setq ext:*bytes-consed-between-gcs* 20000000)~%")
+      (format s "(setq ext:*bytes-consed-between-gcs* 20000000)~%")
+      (let ((env (list (assoc :JFLAWS ext:*environment-list*) (assoc :SPECWARE4 ext:*environment-list*))))
+	(format t "(setq ext:*environment-list* (quote ~S))~%" env)
+	(format s "(setq ext:*environment-list* (quote ~S))~%" env)
+	(format t "(setq lisp::lisp-environment-list (quote ~S))~%" nil)
+	(format s "(setq lisp::lisp-environment-list (quote ~S))~%" nil))
+      (dolist (file files-to-load) 
+	(format t "(load ~S)~%" file)
+	(format s "(load ~S)~%" file))
+      (format t "(extensions::save-lisp ~S :purify t)~%" app-file)
+      (format s "(extensions::save-lisp ~S :purify t)~%" app-file)
+      (format s "~%")
+      (format t "========================================================~%"))
+    (let ((process nil))
+      (format t "~&~%Output from lisp in lower process being created:~%")
+      (format t "~&========================================================~%")
+      (unwind-protect 
+	  (setq process (run-program "/usr/local/bin/cmucl" '() :wait t :input "/tmp/cmds" :output t :error :output))
+	(let ((rc (process-exit-code process)))
+	  (format t "~&========================================================~%")
+	  (cond ((= rc 0)
+		 (format t "~&~%Success saving ~A~%" app-file)
+		 (format t "~&Invoke as:")
+		 (format t "~& cmucl -core ~A~%~%" app-file))
+		(t
+		 (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
+	  (process-close process))))))
+
+(defun copy-file (a b)
+  (with-open-file (old a :direction :input :element-type 'unsigned-byte)
+    (with-open-file (new b :direction :output :element-type 'unsigned-byte)
+      (let ((eof (cons nil nil)))
+	(do ((byte (read-byte old nil eof) (read-byte old nil eof)))
+	    ((eq byte eof))
+	  (write-byte byte new))))))
+		  
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 OpenMCL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #+MCL
-(defun save-lisp-image (name)
-  ;; DEVELOPMENT
-  (unless (probe-file name)
-    (create-file  name))  ; temporary bug workaround
+(defun save-this-lisp-image (name)
+  (unless (probe-file name) (create-file  name))  ; temporary bug workaround (??)
   (ccl:save-application name))
 
 #+MCL
-(defun save-lisp-executable (name dir files-to-load files-to-copy)
-  ;; APPLICATION
-  (let ((name (make-pathname :dir dir :name name)))
-    (unless (probe-file name)
-      (create-file  name))  ; temporary bug workaround
-    (ccl:save-application name)))
+(defun generate-new-lisp-application (name dir files-to-load files-to-copy)
+  ;; Build a fresh image with desired properties.
+  ;; (This should be a completely new image, not simply a clone of this image!)
+  (let ((app-file (namestring (make-pathname :directory dir :name name))))
+    (ensure-directories-exist app-file)
+    (unless (probe-file app-file) (create-file app-file)) ; temporary bug workaround (??)
+    (dolist (file files-to-copy) (copy-file file (make-pathname :directory dir :defaults file)))
+    (with-open-file (s "/tmp/cmds" :direction :output :if-exists :supersede)
+      (format t "~%Commands to be used to create ~A~%" app-file)
+      (format t "========================================================~%")
+      (dolist (file files-to-load) 
+	(format t "(load ~S)~%" file)
+	(format s "(load ~S)~%" file))
+      (format t "(ccl::save-application ~S)~%" app-file)
+      (format s "(ccl::save-application ~S)~%" app-file)
+      (format s "~%")
+      (format t "========================================================~%"))
+    (let ((process nil))
+      (format t "~&~%Output from lisp in lower process being created:~%")
+      (format t "~&========================================================~%")
+      (unwind-protect 
+	  (setq process (run-program "OpenMCL" '() :wait t :input "/tmp/cmds" :output t :error :output))
+	(let ((rc (process-exit-code process)))
+	  (format t "~&========================================================~%")
+	  (cond ((= rc 0)
+		 (format t "~&~%Success saving ~A~%" app-file)
+		 (format t "~&Invoke as:")
+		 (format t "~& cmucl -core ~A~%~%" app-file))
+		(t
+		 (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
+	  (process-close process))))))
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 Unknown
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #-(or Allegro CMU MCL)
-(defun save-lisp-image (name)
+(defun save-this-lisp-image (name)
   (error "Unknown version of lisp -- can't save image named ~A" name))
 
 #-(or Allegro CMU MCL)
-(defun save-lisp-executable (name)
+(defun generate-new-lisp-application (name dir files-to-load files-to-copy)
   (error "Unknown version of lisp -- can't save application named ~A" name))
 
 
