@@ -238,7 +238,7 @@
 		((eq #\Page char)
 		 )
 		(t
-		 (princ char ostream))))))))))
+		 (princ char ostream)))))))))
 
 (defun ensure-final-slash (dirname)
   (if (member (elt dirname (- (length dirname) 1))
