@@ -4,7 +4,6 @@ package edu.kestrel.netbeans.actions;
 import edu.kestrel.netbeans.MetaSlangDataNode;
 import edu.kestrel.netbeans.MetaSlangDataObject;
 import edu.kestrel.netbeans.Util;
-import edu.kestrel.netbeans.lisp.LispProcessManager;
 import edu.kestrel.netbeans.model.Element;
 import edu.kestrel.netbeans.model.MemberElement;
 import edu.kestrel.netbeans.model.SourceElement;

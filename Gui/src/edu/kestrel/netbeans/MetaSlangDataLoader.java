@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/05/07 21:18:59  weilyn
+ * UpdateSWPathAction
+ *
  * Revision 1.4  2003/02/17 04:28:13  weilyn
  * Cleaned up active context menu actions.
  *
@@ -93,12 +96,14 @@ public class MetaSlangDataLoader extends UniFileLoader {
 	    // SystemAction.get (CustomizeBeanAction.class),
 	    //SystemAction.get(FileSystemAction.class),
 	    null,
-	    //SystemAction.get(CompileAction.class),
-            SystemAction.get(StartLispAction.class),
-            SystemAction.get(UpdateSWPathAction.class),
-            null,
             SystemAction.get(ProcessUnitAction.class),
 	    SystemAction.get(GenerateCodeAction.class),
+            null,
+            //SystemAction.get(UpdateSWPathAction.class),
+            //null,
+            //SystemAction.get(CompileAction.class),
+            SystemAction.get(StartLispAction.class),
+            SystemAction.get(KillLispAction.class),
             null,
 	    /*
 	    SystemAction.get(BuildAction.class),

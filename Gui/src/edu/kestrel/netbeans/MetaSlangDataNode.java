@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/04/23 00:42:16  weilyn
+ * Added some support for creating new scTerms in explorer
+ *
  * Revision 1.1  2003/01/30 02:01:33  gilham
  * Initial version.
  *
@@ -51,6 +54,7 @@ import edu.kestrel.netbeans.model.ProofElement;
 import edu.kestrel.netbeans.nodes.SourceChildren;
 import edu.kestrel.netbeans.nodes.MemberCustomizer;
 import edu.kestrel.netbeans.nodes.MorphismCustomizer;
+import edu.kestrel.netbeans.nodes.ProofCustomizer;
 import edu.kestrel.netbeans.parser.MetaSlangParser;
 import edu.kestrel.netbeans.settings.MetaSlangSettings;
 
@@ -364,9 +368,9 @@ public class MetaSlangDataNode extends DataNode // implements ChangeListener
         }
         return new NewType[] {new NewSpecType(),
                               new NewMorphismType(),
-                              new NewDiagramType(),
-                              new NewColimitType(),
-                              new NewProofType(),};
+                              new NewProofType(),
+                              /*new NewDiagramType(),
+                              new NewColimitType(),*/};
     }
     
     /** Encapsulation of creating new spec or interface.
@@ -464,7 +468,8 @@ public class MetaSlangDataNode extends DataNode // implements ChangeListener
             Task parsingTask = el.prepare();
             try {
                 e.setName(name);
-                if (openCustomizer(new MemberCustomizer(e, "Morphism"), "New Morphism")) {
+                MorphismCustomizer cust = new MorphismCustomizer(e, el);
+                if (openCustomizer(cust, "New Morphism") && cust.isOK()) {
                     if (parsingTask.isFinished()) {
                         addMorphism(el, e);
                     } else {
@@ -515,7 +520,7 @@ public class MetaSlangDataNode extends DataNode // implements ChangeListener
     
     /** Encapsulation of creating new diagram.
      */
-    class NewDiagramType extends NewType {
+/*    class NewDiagramType extends NewType {
         
         NewDiagramType() {
         }
@@ -583,11 +588,11 @@ public class MetaSlangDataNode extends DataNode // implements ChangeListener
                 throw newex;
             }
         }
-    }
+    }*/
     
     /** Encapsulation of creating new colimit
      */
-    class NewColimitType extends NewType {
+/*    class NewColimitType extends NewType {
         
         NewColimitType() {
         }
@@ -655,7 +660,7 @@ public class MetaSlangDataNode extends DataNode // implements ChangeListener
                 throw newex;
             }
         }
-    }
+    }*/
     
     /** Encapsulation of creating new proof
      */
@@ -680,7 +685,8 @@ public class MetaSlangDataNode extends DataNode // implements ChangeListener
             Task parsingTask = el.prepare();
             try {
                 e.setName(name);
-                if (openCustomizer(new MemberCustomizer(e, "Proof"), "New Proof")) {
+                ProofCustomizer cust = new ProofCustomizer(e, el);
+                if (openCustomizer(cust, "New Proof") && cust.isOK()) {
                     if (parsingTask.isFinished()) {
                         addProof(el, e);
                     } else {

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/19 18:52:47  weilyn
+ * Added calls to LispProcessManager to generate lisp and java.
+ *
  * Revision 1.2  2003/02/19 15:46:20  gilham
  * Added submenu for GenerateCodeAction.
  *
@@ -39,6 +42,7 @@ import org.openide.windows.WindowManager;
 import edu.kestrel.netbeans.MetaSlangDataObject;
 import edu.kestrel.netbeans.Util;
 import edu.kestrel.netbeans.lisp.LispProcessManager;
+import edu.kestrel.netbeans.lisp.LispSocketManager;
 import edu.kestrel.netbeans.model.SourceElement;
 
 /**
@@ -117,11 +121,11 @@ public class GenerateCodeAction extends NodeAction {
 	switch (target) {
 	case ActSubMenuModel.LISP_TARGET:
 	    //Util.log("*** Generating Lisp code: fileName ="+fileName);
-	    LispProcessManager.generateLispCode(pathName, fileName);
+	    LispSocketManager.generateLispCode(pathName, fileName);
 	    break;
 	case ActSubMenuModel.JAVA_TARGET: 
 	    //Util.log("*** Generating Java code: fileName ="+fileName);
-	    LispProcessManager.generateJavaCode(pathName, fileName);
+	    LispSocketManager.generateJavaCode(pathName, fileName);
 	    break;
         }
     }

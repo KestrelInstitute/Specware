@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:36  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -57,7 +60,8 @@ import edu.kestrel.netbeans.codegen.SourceText;
 class MetaSlangParserGlue implements MetaSlangParser.Env, DocumentBinding.Env, 
     LangModel.Env, SourceCookie.Editor
 {
-
+    private static final boolean DEBUG = false;
+    
     private MultiDataObject.Entry   sourceEntry;
     private MetaSlangDataObject     metaSlangDataObj;
     private DocumentBinding         docBinding;
@@ -160,7 +164,9 @@ class MetaSlangParserGlue implements MetaSlangParser.Env, DocumentBinding.Env,
      */
     public Reader getSourceText() throws IOException {
         CloneableEditorSupport editor = findEditorSupport();
-	edu.kestrel.netbeans.Util.log("*** getSourceText(): editor="+editor);
+        if (DEBUG) {
+            edu.kestrel.netbeans.Util.log("*** getSourceText(): editor="+editor);
+        }
         final StyledDocument doc = editor.getDocument();
         
         if (doc != null) {
