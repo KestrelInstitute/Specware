@@ -94,7 +94,7 @@ UnitId_Dependency.
   op getBase : Env ((Option RelativeUnitId) * Spec)
   def getBase = readGlobalVar "BaseInfo"
 
-  op getBaseSpec : () -> Spec
+% op getBaseSpec : () -> Spec % declared in /Languages/MetaSlang/Specs/Printer
   def getBaseSpec() =
     let prog = {
        (optBaseUnitId,baseSpec) <- getBase;
