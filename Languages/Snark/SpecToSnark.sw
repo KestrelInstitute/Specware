@@ -104,6 +104,19 @@ snark qualifying spec {
 					 Lisp.symbol("SNARK", "TRUE"),
 					 Lisp.symbol("SNARK", "List")])],
 
+	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "embed_Some")), Lisp.nat(1),
+		   Lisp.symbol("KEYWORD","SORT"),
+		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "Option"),
+					 Lisp.symbol("SNARK", "TRUE")])],
+
+	Lisp.list[declare_constant,
+		  Lisp.quote(Lisp.symbol("SNARK", "embed_None")), Lisp.symbol("KEYWORD","SORT"),  Lisp.quote(Lisp.symbol("SNARK","Option"))],
+
+	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "embed_Some")), Lisp.nat(1),
+		   Lisp.symbol("KEYWORD","SORT"),
+		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "Option"),
+					 Lisp.symbol("SNARK", "TRUE")])],
+
 	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "HOLDS")), Lisp.nat(1),
 		   Lisp.symbol("KEYWORD","SORT"),
 		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "BOOLEAN"),

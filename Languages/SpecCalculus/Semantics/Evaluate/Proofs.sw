@@ -77,7 +77,9 @@ spec
  def generateLocalProofsInSpec (spc, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, previousPropNames, globalContext) =
    let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
    let props = usedSpc.properties in
-   let localProps = filter (fn (prop) -> let (_, propName, _, _) = prop in ~(member(propName, previousPropNames))) props in
+   let localProps = filter (fn (prop) -> let (propType, propName, _, _) = prop in 
+			                  ~(member(propName, previousPropNames))
+			                  & ~(propType = Axiom)) props in
    map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext)) localProps
 
 % op ppProof: SCDecl -> WadlerLindig.Pretty
