@@ -200,47 +200,51 @@
 
 ;; To factor the parser further, perhaps we should think about removing
 ;; the reference to StandardSpec from the semantic rules.
-(defun make-sort-declaration (qualifiable-sort-names formal-sort-parameters l r)
-  (let*  ((typeVars1 (if (eq :unspecified formal-sort-parameters) nil formal-sort-parameters))
-          (sort      nat-sort) ; hack -- conversion by abstractSort will be ignored
-          (tyVarsSrt (StandardSpec::abstractSort-3 #'namedTypeVar typeVars1 sort))
-          (typeVars2 (car tyVarsSrt)))
-    ;; Since namedTypeVar is the identity function,
-    ;;  (car tyVarsSrt) will just be a copy of typeVars1,
-    ;;  (cdr tyVarsSrt) will be ignored.
-    ;; TODO: skip the code above and use typeVars1 for typeVars2 below
-    (cons (cons :|Sort| (cons (remove-duplicates qualifiable-sort-names :test 'equal :from-end t)
-			      (cons typeVars2 ())))
-          (make-pos l r))))
+(defun make-sort-declaration (qualifiable-sort-names optional-tvs l r)
+  (let*  ((tvs     (if (eq :unspecified optional-tvs) nil optional-tvs))
+	  ;;
+	  (names   (remove-duplicates qualifiable-sort-names :test 'equal :from-end t))
+          ;; use of nat-sort below is a hack -- conversion by abstractSort will be ignored
+          (tvs-srt (StandardSpec::abstractSort-3 #'namedTypeVar tvs nat-sort))
+	  ;; Since namedTypeVar is the identity function,
+	  ;;  (car tvs-srt) will just be a copy of typeVars1,
+	  ;;  (cdr tvs-srt) will be ignored. 
+          (tvs     (car tvs-srt))
+	  (defs    '())
+	  (pos     (make-pos l r)))
+    (SPECCALC::mkSortSpecElem-4 names tvs defs pos)))
 
 ;;; ------------------------------------------------------------------------
 ;;;  SORT-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-definition (qualifiable-sort-names formal-sort-parameters sort l r)
-  (let* ((typeVars1 (if (eq :unspecified formal-sort-parameters) nil formal-sort-parameters))
-         (tyVarsSrt (StandardSpec::abstractSort-3 #'namedTypeVar typeVars1 sort))
-         (typeVars2 (car tyVarsSrt))
-         (sort2     (cdr tyVarsSrt)))
-    ;; Since namedTypeVar is the identity function,
-    ;;  (car tyVarsSrt) will just be a copy of typeVars1,
-    ;;  (cdr tyVarsSrt) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
-    ;; TODO: Move the responsibility for this conversion into the linker.
-    (cons (cons :|Sort| (cons (remove-duplicates qualifiable-sort-names :test 'equal :from-end t)
-			      (cons typeVars2 (list (cons typeVars2 sort2)))))
-          (make-pos l r))))
+(defun make-sort-definition (qualifiable-sort-names optional-tvs sort l r)
+  (let* ((tvs      (if (eq :unspecified optional-tvs) nil optional-tvs))
+	 (names    (remove-duplicates qualifiable-sort-names :test 'equal :from-end t))
+         (tvs-srt  (StandardSpec::abstractSort-3 #'namedTypeVar tvs sort))
+	 ;; Since namedTypeVar is the identity function,
+	 ;;  (car tvs-srt) will just be a copy of typeVars1,
+	 ;;  (cdr tvs-srt) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
+         (tvs      (car tvs-srt))
+         (defs     (list (cdr tvs-srt)))
+	 (pos      (make-pos l r))) 
+    (SPECCALC::mkSortSpecElem-4 names tvs defs pos)))
+
 
 ;;; ------------------------------------------------------------------------
 ;;;  OP-DECLARATION
 ;;; ------------------------------------------------------------------------
 
 (defun make-op-declaration (qualifiable-op-names optional-fixity sort-scheme l r)
-  (let ((fixity (if (equal :unspecified optional-fixity) 
+  (let ((names (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
+	(fixity (if (equal :unspecified optional-fixity) 
 		    unspecified-fixity
-		  optional-fixity)))
-    (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
-                            (vector fixity sort-scheme ())))
-          (make-pos l r))))
+		  optional-fixity))
+	(tvs (car sort-scheme))
+	(sig (cdr sort-scheme))
+	(defs '())
+	(pos (make-pos l r)))
+    (SPECCALC::mkOpSpecElem-6 names fixity tvs sig defs pos)))
 
 (defun make-fixity (associativity priority l r)
   (declare (ignore l r))
@@ -269,22 +273,22 @@ If we want the precedence to be optional:
 ;;;  OP-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-(defun make-op-definition (tyVars qualifiable-op-names params optional-sort term l r)
-  (let* ((tyVars     (if (equal :unspecified tyVars) () tyVars))
-         (term       (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
-         (term       (bind-parameters params term l r))
-         (tyVarsTerm (StandardSpec::abstractTerm-3 #'namedTypeVar tyVars term))
-         (term       (cdr tyVarsTerm))
-         (tyVars     (car tyVarsTerm))
-         (srtScheme  (cons tyVars (freshMetaTypeVar l r))))
-    ;; Since namedTypeVar is the identity function,
-    ;;  (car tyVarsTerm) will just be a copy of tyVars
-    ;;    so srtScheme will be tyVars * Mtv -- i.e. Mtv parameterized by tyVars
-    ;;  (cdr tyVarsTerm) will be a copy of term with (Base qid) replaced by (TyVar id) where appropriate.
-    ;; TODO: Move the responsibility for all this conversion into the linker.
-    (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
-                            (vector unspecified-fixity srtScheme (list (cons tyVars term))))) 
-	  (make-pos l r))))
+(defun make-op-definition (optional-tvs qualifiable-op-names params optional-sort term l r)
+  (let* ((tvs       (if (equal :unspecified optional-tvs)  ()   optional-tvs))
+         (term      (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
+	 ;;
+	 (names     (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
+	 (fixity    unspecified-fixity)
+         (term      (bind-parameters params term l r))
+         (tvs-term  (StandardSpec::abstractTerm-3 #'namedTypeVar tvs term))
+	 ;; Since namedTypeVar is the identity function,
+	 ;;  (car tvs-term) will just be a copy of tvs
+	 ;;  (cdr tvs-term) will be a copy of term with (Base qid) replaced by (TyVar id) where appropriate.
+         (tvs       (car tvs-term))
+         (sig       (freshMetaTypeVar l r)) ; this will effectively be parameterized by tvs
+         (defs      (list (cdr tvs-term)))
+	 (pos       (make-pos l r)))
+    (SPECCALC::mkOpSpecElem-6 names fixity tvs sig defs pos)))
 
 (defun bind-parameters (params term l r)
   (if (null params)
