@@ -466,13 +466,12 @@ significant: [[grandparent]], [[grandParent]] and
 <para>
 Restriction.
 In general, `names can be chosen freely.
-However, the following <emphasis>reserved words</emphasis> have a
+However, the following <emphasis>reserved symbols</emphasis> have a
 special meaning and must not be used for `names:
-<!-- !! (echo COLUMNIZE; cat reservedWords; echo ZeEnd) | abc -w meta -->
+<!-- !! echo RESWORDS | abc -w meta -->
 [[
-||    as              embed?        infixl           quotient
-||    axiom           endspec       infixr           relax
-||    Boolean         ex            is               restrict
+||    as              endspec       infixr           relax
+||    axiom           ex            is               restrict
 ||    case            fa            let              spec
 ||    choose          false         morphism         then
 ||    colimit         fn            obligations      theorem
@@ -481,22 +480,18 @@ special meaning and must not be used for `names:
 ||    diagram         if            project          type
 ||    else            import        prove            where
 ||    embed           in            qualifying
+||    embed?          infixl        quotient
+||
+||    :         ::        |         =>        ||       &&
+||    <-        ->        +->       =         ~=       <<
 ]]
 They each count as a single `symbol, and no whitespace is
-allowed inside any reserved word.
-</para>
-<para>
-Likewise, the following <emphasis>reserved non-words</emphasis>
-must not be used for `names:
-[[
-||    :        ::       |        =>       ||      &&
-||    <-       ->       +->      =        ~=      <<
-]]
+allowed inside any reserved symbol.
 </para>
 <!-- ================================================================= -->
 <para>
-The `non-word-symbols can be used to choose convenient `names
-for `infix-operators that, conventionally, are written with
+`Non-word-symbols can be used to choose convenient `names
+for `operators that, conventionally, are written with
 non-alphabetic marks.
 </para>
 <!-- ================================================================= -->
@@ -937,6 +932,10 @@ is the same as that of
 ||
 ||`qualified-name ::= `qualifier . `name
 >>
+Restriction.
+`Qualifiers cannot be reserved symbols.
+</para>
+<para>
 Sample `spec-qualification:
 [[
 ||    Weight qualifying /Units#Weights
@@ -1636,7 +1635,7 @@ be such that its inhabitants can be constructed this way in
 So there can be no <quote>bottom-less</quote> stacks:
 deconstructing a stack using
 [[
-||    def fa(a) hasBottom? (s : Stack a) : Boolean =
+||    def [a] hasBottom? (s : Stack a) : Boolean =
 ||      case s of
 ||         | Empty -> true
 ||         | Push {top, pop = rest} -> hasBottom? rest
@@ -1681,14 +1680,14 @@ fixpoint of a recursive domain equation.
 ||
 ||`type-scheme ::= [ `type-variable-binder ] `type-descriptor
 ||
-||`type-variable-binder ::= fa ( `local-type-variable-list )
+||`type-variable-binder ::= `[ `local-type-variable-list `]
 ||
 >>
 Sample `op-declarations:
 [[
 ||    op usage : String
 ||
-||    op o infixl 24 : fa(a,b,c) (b -> c) * (a -> b) -> a -> c
+||    op o infixl 24 : [a,b,c] (b -> c) * (a -> b) -> a -> c
 ]]
 </para>
 <!-- ====================== NOT YET ==================================
@@ -1775,7 +1774,7 @@ $S$[[ -> ]]$T$, the source types are the
 singleton set {super($S$)}.
 If the type of the `op is a polymorphic function type
 corresponding to some `type-scheme
-[[fa(]]$V$[[) ]]$S$[[ -> ]]$T$, the source types are the
+[[[]]$V$[[] ]]$S$[[ -> ]]$T$, the source types are the
 set of all types super($S'$)
 for the types
 $S'$[[ -> ]]$T'$ of the indexed family of
@@ -1785,7 +1784,7 @@ the `local-type-variables in
 $V$.
 For example, for
 [[
-||   op f : fa(a) a * a -> a
+||   op f : [a] a * a -> a
 ]]
 the source types are the set
 {[[Integer * Integer]], [[Boolean * Boolean]], [[Char *
@@ -1872,7 +1871,7 @@ Sample `op-definitions:
 [[
 ||    def usage = "Usage: Lookup key [database]"
 ||
-||    def fa(a,b,c) o(f : b -> c, g: a -> b) : a -> c =
+||    def [a,b,c] o(f : b -> c, g: a -> b) : a -> c =
 ||      fn (x : a) -> f(g x)
 ||
 ||    def o(f, g) x = f(g x)
@@ -1938,12 +1937,12 @@ Note that the optional type annotation in an `op-definition
 can not be a polymorphic `type-scheme, unlike for
 `op-declarations.  For example, the following is ungrammatical:
 [[
-||    def o : fa(a,b,c) (b -> c) * (a -> b) -> a -> c =
+||    def o : [a,b,c] (b -> c) * (a -> b) -> a -> c =
 ||      fn (f, g) -> fn (x) -> f(g x)
 ]]
 The presumably intended effect is achieved by
 [[
-||    def fa(a,b,c) o : (b -> c) * (a -> b) -> a -> c =
+||    def [a,b,c] o : (b -> c) * (a -> b) -> a -> c =
 ||      fn (f, g) -> fn (x) -> f(g x)
 ]]
 In a model of the `spec, an indexed family of typed values is
@@ -2007,14 +2006,14 @@ An `op-definition can be thought of as a special notation
 for an axiom.
 For example,
 [[
-||    def fa(a) double (x : a) = (x, x)
+||    def [a] double (x : a) = (x, x)
 ]]
 can be thought of as standing for:
 [[
-||    op double : fa(a) a -> a * a
+||    op double : [a] a -> a * a
 ||
 ||    axiom double_def is
-||      type fa(a) fa(x : a) double x = (x, x)
+||      [a] fa(x : a) double x = (x, x)
 ]]
 In fact, &Specware; generates such axioms for use by
 provers.
@@ -2073,9 +2072,7 @@ Otherwise, the `spec is incorrect.
 ||
 ||`claim-name ::= `name
 ||
-||`claim ::= [ `type-quantification ] `expression
-||
-||`type-quantification ::= type `type-variable-binder
+||`claim ::= [ `type-variable-binder ] `expression
 >>
 Sample `claim-definitions:
 [[
@@ -2083,7 +2080,7 @@ Sample `claim-definitions:
 ||      norm o norm = norm
 ||
 ||    theorem o_assoc is
-||      type fa(a,b,c,d) fa(f : c -> d, g : b -> c, h : a -> b)
+||      [a,b,c,d] fa(f : c -> d, g : b -> c, h : a -> b)
 ||        f o (g o h) = (f o g) o h
 ||
 ||    conjecture pivot_hold is
@@ -3297,9 +3294,10 @@ pseudo-`op-declarations:
 ||op =>  infixr 13 : Boolean * Boolean -> Boolean 
 ||op ||  infixr 14 : Boolean * Boolean -> Boolean 
 ||op &&  infixr 15 : Boolean * Boolean -> Boolean 
-||op =   infixr 20 : fa(a) a * a       -> Boolean 
-||op ~=  infixr 20 : fa(a) a * a       -> Boolean 
-||op <<  infixl 25 : {$a$:$X$, $b$:$Y$} * {$a$:$X$, $c$:$Z$} -> {$a$:$X$, $b$:$Y$, $c$:$Z$}
+||op =   infixr 20 : [a]   a * a       -> Boolean 
+||op ~=  infixr 20 : [a]   a * a       -> Boolean 
+||op <<  infixl 25 : {$x$:$A$, ... , $y$:$B$, ...} * {$x$:$A$, ... , $z$:$C$, ...}
+||                -> {$x$:$A$, ... , $y$:$B$, ... , $z$:$C$, ...}
 ]]
 </para>
 <!-- ================================================================= -->
@@ -4034,8 +4032,8 @@ For example, the following correct `spec becomes incorrect when
 any of the type annotations is omitted:
 [[
 ||    spec
-||      def fa(a) p2 = project 2 : String *  a  ->  a
-||      def       q2 = project 2 : String * Nat -> Nat
+||      def [a] p2 = project 2 : String *  a  ->  a
+||      def     q2 = project 2 : String * Nat -> Nat
 ||    endspec
 ]]
 </para>
@@ -4851,18 +4849,16 @@ Allow [[op]] for [[def]].
 
 Allow [[def type]] and [[def op]].
 
-Allow [[type fa]] for all `type-variable-binders.
-
 (Maybe) Allow [[type op]] for infix parameterized types.
 
 Allow
 [[
-||    def o : fa(a,b,c) (b -> c) * (a -> b) -> a -> c =
+||    def o : [a,b,c] (b -> c) * (a -> b) -> a -> c =
 ||      fn (f, g) -> fn (x) -> f(g x)
 ]]
 or
 [[
-||    op fa(a,b,c) o : (b -> c) * (a -> b) -> a -> c
+||    op [a,b,c] o : (b -> c) * (a -> b) -> a -> c
 ]]
 or both
 

@@ -1,15 +1,25 @@
-<appendix><title>Base Libraries</title>
-
-<para>
-The base libraries are automatically imported by every user-defined `spec.
-</para>
+<appendix><title>Inbuilts and Base Libraries</title>
 
 <para>
 This appendix provides a brief description of the `type-names and `ops
-in the current base libraries. The title of each section of this appendix
+that are either ``inbuilt'' or provided by
+the current base libraries.
+The base libraries are automatically imported by every user-defined `spec.
+The title of each section of this appendix
 is the qualifier of the `type-names and `ops given therein.
 For example, the full `op-name for `op [[~]] described
 in Section ``Boolean'' is [[Boolean.~]].
+</para>
+
+<para>
+Some of the descriptions for the inbuilts
+use pseudo-`declarations, which are not actually
+legal Metaslang but suggest the intention.
+</para>
+
+<para>
+For the sake of brevity, [[infixl]] is abbreviated below
+to [[L]] and [[infixr]] to [[R]].
 </para>
 
 <!--
@@ -19,14 +29,62 @@ with the &Specware; distribution, for details (e.g. axioms).
 </para>
 -->
 
+<!-- Equality ****************************************************** -->
+
+<section><title>Equality</title>
+ <para>
+  <variablelist>
+   <varlistentry>
+    <term><command>Ops</command></term>
+    <listitem>
+     <para>
+        <informaltable frame="sides" colsep="1">
+         <tgroup cols="4">
+          <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
+          <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
+          <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
+          <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
+          <thead>
+       <row>
+        <entry colname="name">&nbsp; Name</entry>
+        <entry colname="fxty">&nbsp; Fixity</entry>
+        <entry colname="type">&nbsp; Type</entry>
+        <entry colname="desc">&nbsp; Description</entry>
+       </row>
+          </thead>
+          <tbody>
+       <row>
+        <entry colname="name">&nbsp; [[=]]</entry>
+        <entry colname="fxty">&nbsp; [[R 20]]</entry>
+        <entry colname="type">&nbsp; [[[a] a * a -> a]]</entry>
+        <entry colname="desc">&nbsp; tests if the parameters are equal</entry>
+       </row>
+       <row>
+        <entry colname="name">&nbsp; [[~=]]</entry>
+        <entry colname="fxty">&nbsp; [[R 20]]</entry>
+        <entry colname="type">&nbsp; [[[a] a * a -> a]]</entry>
+        <entry colname="desc">&nbsp; tests if the parameters are unequal</entry>
+       </row>
+          </tbody>
+         </tgroup>
+        </informaltable>
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </para>
+</section>
+
 <!-- Boolean ****************************************************** -->
 
 <section><title>Boolean</title>
  <para>
+(Note that [[true]] and [[false]] are actually not `constructors
+but `boolean-literals.)
   <variablelist>
    <varlistentry>
     <term><command>Type</command></term>
-    <listitem><para>[[type Boolean]]</para></listitem>
+    <listitem><para>[[type Boolean = | true | false]]</para></listitem>
    </varlistentry>
    <varlistentry>
     <term><command>Ops</command></term>
@@ -35,7 +93,7 @@ with the &Specware; distribution, for details (e.g. axioms).
       <informaltable frame="sides" colsep="1">
        <tgroup cols="4">
         <colspec colname="name" colnum="1" colwidth="50"  rowsep="1">
-        <colspec colname="fxty" colnum="2" colwidth="40"  rowsep="1">
+        <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
         <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
         <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
         <thead>
@@ -54,34 +112,28 @@ with the &Specware; distribution, for details (e.g. axioms).
         <entry colname="desc">&nbsp; logical negation</entry>
        </row>
        <row>
-        <entry colname="name">&nbsp; [[&]]</entry>
-        <entry colname="fxty">&nbsp; [[infixr 15]]</entry>
+        <entry colname="name">&nbsp; [[&&]]</entry>
+        <entry colname="fxty">&nbsp; [[R 15]]</entry>
         <entry colname="type">&nbsp; [[Boolean * Boolean -> Boolean]]</entry>
-        <entry colname="desc">&nbsp; logical and</entry>
+        <entry colname="desc">&nbsp; non-strict logical and</entry>
        </row>
        <row>
-        <entry colname="name">&nbsp; [[or]]</entry>
-        <entry colname="fxty">&nbsp; [[infixr 14]]</entry>
+        <entry colname="name">&nbsp; [[||]]</entry>
+        <entry colname="fxty">&nbsp; [[R 14]]</entry>
         <entry colname="type">&nbsp; [[Boolean * Boolean -> Boolean]]</entry>
-        <entry colname="desc">&nbsp; logical or</entry>
+        <entry colname="desc">&nbsp; non-strict logical or</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[=>]]</entry>
-        <entry colname="fxty">&nbsp; [[infixr 13]]</entry>
+        <entry colname="fxty">&nbsp; [[R 13]]</entry>
         <entry colname="type">&nbsp; [[Boolean * Boolean -> Boolean]]</entry>
-        <entry colname="desc">&nbsp; logical implication</entry>
+        <entry colname="desc">&nbsp; non-strict logical implication</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[<=>]]</entry>
-        <entry colname="fxty">&nbsp; [[infixr 12]]</entry>
+        <entry colname="fxty">&nbsp; [[R 12]]</entry>
         <entry colname="type">&nbsp; [[Boolean * Boolean -> Boolean]]</entry>
         <entry colname="desc">&nbsp; logical equivalence</entry>
-       </row>
-       <row>
-        <entry colname="name">&nbsp; [[~=]]</entry>
-        <entry colname="fxty">&nbsp; [[infixr 20]]</entry>
-        <entry colname="type">&nbsp; [[fa(a) a * a -> Boolean]]</entry>
-        <entry colname="desc">&nbsp; inequality (logical exclusive or)</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[toString]]</entry>
@@ -128,7 +180,7 @@ with the &Specware; distribution, for details (e.g. axioms).
       <informaltable frame="sides" colsep="1">
        <tgroup cols="4">
         <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
-        <colspec colname="fxty" colnum="2" colwidth="40"  rowsep="1">
+        <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
         <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
         <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
         <thead>
@@ -141,62 +193,62 @@ with the &Specware; distribution, for details (e.g. axioms).
         </thead>
         <tbody>
        <row>
-        <entry colname="name">&nbsp; [[~]]</entry>
+        <entry colname="name">&nbsp; [[-]]</entry>
         <entry colname="fxty">&nbsp; </entry>
         <entry colname="type">&nbsp; [[Integer -> Integer]]</entry>
-        <entry colname="desc">&nbsp; unary minus</entry>
+        <entry colname="desc">&nbsp; unary minus (has `qualifier [[Integer_]]!)</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[+]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 25]]</entry>
+        <entry colname="fxty">&nbsp; [[L 25]]</entry>
         <entry colname="type">&nbsp; [[Integer * Integer -> Integer]]</entry>
         <entry colname="desc">&nbsp; addition</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[-]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 25]]</entry>
+        <entry colname="fxty">&nbsp; [[L 25]]</entry>
         <entry colname="type">&nbsp; [[Integer * Integer -> Integer]]</entry>
         <entry colname="desc">&nbsp; subtraction</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[*]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 27]]</entry>
+        <entry colname="fxty">&nbsp; [[L 27]]</entry>
         <entry colname="type">&nbsp; [[Integer * Integer -> Integer]]</entry>
         <entry colname="desc">&nbsp; multiplication</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[div]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 26]]</entry>
+        <entry colname="fxty">&nbsp; [[L 26]]</entry>
         <entry colname="type">&nbsp; [[Integer * NonZeroInteger -> Integer]]</entry>
         <entry colname="desc">&nbsp; division (truncates towards 0)</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[rem]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 26]]</entry>
+        <entry colname="fxty">&nbsp; [[L 26]]</entry>
         <entry colname="type">&nbsp; [[Integer * NonZeroInteger -> Integer]]</entry>
         <entry colname="desc">&nbsp; remainder ([[$x$ rem $y$ = $x$ - $y$ * ($x$ div $y$)]])</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[<]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 20]]</entry>
+        <entry colname="fxty">&nbsp; [[L 20]]</entry>
         <entry colname="type">&nbsp; [[Integer * Integer -> Boolean]]</entry>
         <entry colname="desc">&nbsp; less-than</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[<=]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 20]]</entry>
+        <entry colname="fxty">&nbsp; [[L 20]]</entry>
         <entry colname="type">&nbsp; [[Integer * Integer -> Boolean]]</entry>
         <entry colname="desc">&nbsp; less-than-or-equal</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[>]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 20]]</entry>
+        <entry colname="fxty">&nbsp; [[L 20]]</entry>
         <entry colname="type">&nbsp; [[Integer * Integer -> Boolean]]</entry>
         <entry colname="desc">&nbsp; greater-than</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[>=]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 20]]</entry>
+        <entry colname="fxty">&nbsp; [[L 20]]</entry>
         <entry colname="type">&nbsp; [[Integer * Integer -> Boolean]]</entry>
         <entry colname="desc">&nbsp; greater-than-or-equal</entry>
        </row>
@@ -282,7 +334,7 @@ with the &Specware; distribution, for details (e.g. axioms).
       <informaltable frame="sides" colsep="1">
        <tgroup cols="4">
         <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
-        <colspec colname="fxty" colnum="2" colwidth="40"  rowsep="1">
+        <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
         <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
         <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
         <thead>
@@ -387,7 +439,7 @@ with the &Specware; distribution, for details (e.g. axioms).
       <informaltable frame="sides" colsep="1">
        <tgroup cols="4">
         <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
-        <colspec colname="fxty" colnum="2" colwidth="40"  rowsep="1">
+        <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
         <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
         <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
         <thead>
@@ -503,7 +555,7 @@ with the &Specware; distribution, for details (e.g. axioms).
       <informaltable frame="sides" colsep="1">
        <tgroup cols="4">
         <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
-        <colspec colname="fxty" colnum="2" colwidth="40"  rowsep="1">
+        <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
         <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
         <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
         <thead>
@@ -535,25 +587,25 @@ with the &Specware; distribution, for details (e.g. axioms).
        </row>
        <row>
         <entry colname="name">&nbsp; [[leq]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 20]]</entry>
+        <entry colname="fxty">&nbsp; [[L 20]]</entry>
         <entry colname="type">&nbsp; [[String * String -> Boolean]]</entry>
         <entry colname="desc">&nbsp; lexicographic less-than-or-equal</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[lt]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 20]]</entry>
+        <entry colname="fxty">&nbsp; [[L 20]]</entry>
         <entry colname="type">&nbsp; [[String * String -> Boolean]]</entry>
         <entry colname="desc">&nbsp; lexicographic less-than</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[++]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 25]]</entry>
+        <entry colname="fxty">&nbsp; [[L 25]]</entry>
         <entry colname="type">&nbsp; [[String * String -> String]]</entry>
         <entry colname="desc">&nbsp; string concatenation</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[^]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 25]]</entry>
+        <entry colname="fxty">&nbsp; [[L 25]]</entry>
         <entry colname="type">&nbsp; [[String * String -> String]]</entry>
         <entry colname="desc">&nbsp; same as [[++]]</entry>
        </row>
@@ -661,7 +713,7 @@ with the &Specware; distribution, for details (e.g. axioms).
       <informaltable frame="sides" colsep="1">
        <tgroup cols="4">
         <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
-        <colspec colname="fxty" colnum="2" colwidth="40"  rowsep="1">
+        <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
         <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
         <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
         <thead>
@@ -676,13 +728,13 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[nil]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a]]</entry>
         <entry colname="desc">&nbsp; the empty list</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[null]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a -> Boolean]]</entry>
         <entry colname="desc">&nbsp; true for empty lists</entry>
        </row>
        <row>
@@ -694,50 +746,50 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[cons]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) a * List a -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] a * List a -> List a]]</entry>
         <entry colname="desc">&nbsp; constructs a list consisting of a first element and a
             list tail</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[insert]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) a * List a -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] a * List a -> List a]]</entry>
         <entry colname="desc">&nbsp; same as [[cons]]</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[hd]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a -> a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a -> a]]</entry>
         <entry colname="desc">&nbsp; returns the first element of the list</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[tl]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a -> List a]]</entry>
         <entry colname="desc">&nbsp; returns the list tail without the first element</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[++]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 25]]</entry>
-        <entry colname="type">&nbsp; [[fa(a) List a * List a -> List a]]</entry>
+        <entry colname="fxty">&nbsp; [[L 25]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a * List a -> List a]]</entry>
         <entry colname="desc">&nbsp; list concatenation</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[concat]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a * List a -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a * List a -> List a]]</entry>
         <entry colname="desc">&nbsp; prefix `op for list concatenation</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[flatten]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List(List(a)) -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List(List(a)) -> List a]]</entry>
         <entry colname="desc">&nbsp; returns the concatenation of the list elements</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[diff]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a * List a -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a * List a -> List a]]</entry>
         <entry colname="desc">&nbsp; list subtraction:
             [[diff($x$,$y$)]]
             returns a list containing the elements of
@@ -748,20 +800,20 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[member]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) a * List a -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a] a * List a -> Boolean]]</entry>
         <entry colname="desc">&nbsp; list membership</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[nth]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a * Nat -> a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a * Nat -> a]]</entry>
         <entry colname="desc">&nbsp; [[nth($x$, $n$)]] returns the element at position
             $n$ of list $x$, counting from 0</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[nthTail]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a * Nat -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a * Nat -> List a]]</entry>
         <entry colname="desc">&nbsp; [[nthTail($x$, $n$)]] returns the
             tail of list $x$, starting after position
             $n$, counting from 0</entry>
@@ -769,7 +821,7 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[sublist]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a * Nat * Nat -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a * Nat * Nat -> List a]]</entry>
         <entry colname="desc">&nbsp; sublist($x$, $m$, $n$)]] returns the
             tail of list $x$, from position 
             $m$ up to but not including $n$, counting from 0</entry>
@@ -777,7 +829,7 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[foldl]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) (a*b -> b) -> b -> List a -> b]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a*b -> b) -> b -> List a -> b]]</entry>
         <entry colname="desc">&nbsp; [[foldl $f$ $e$ $x$]]
             successively applies function $f$ to
             the elements of list $x$ from left to
@@ -788,54 +840,54 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[foldr]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) (a*b -> b) -> b -> List a -> b]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a*b -> b) -> b -> List a -> b]]</entry>
         <entry colname="desc">&nbsp; like [[foldl]], but the elements of the list are
             processed from right to left</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[map]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) (a->b) -> List a -> List b]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a->b) -> List a -> List b]]</entry>
         <entry colname="desc">&nbsp; applies function to each element of a list and returns
             the list consisting of the results</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[mapPartial]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) (a->Option b) -> List a -> List b]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a->Option b) -> List a -> List b]]</entry>
         <entry colname="desc">&nbsp; like [[map]] but replacing each result [[Some $y$]]
             by $y$ and deleting [[None]] results.</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[filter]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) (a -> Boolean) -> List a -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] (a -> Boolean) -> List a -> List a]]</entry>
         <entry colname="desc">&nbsp; returns the list of elements satisfying the given predicate</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[rev]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a -> List a]]</entry>
         <entry colname="desc">&nbsp; reverse list</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[all]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) (a -> Boolean) -> List a -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a] (a -> Boolean) -> List a -> Boolean]]</entry>
         <entry colname="desc">&nbsp; true if all elements of the list satisfy
             the predicate given as first parameter</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[exists]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) (a->Boolean) -> List a -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a] (a->Boolean) -> List a -> Boolean]]</entry>
         <entry colname="desc">&nbsp; true if some element of the list satisfies
             the predicate given as first parameter</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[find]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) (a -> Boolean) -> List a -> Option(a)]]</entry>
+        <entry colname="type">&nbsp; [[[a] (a -> Boolean) -> List a -> Option(a)]]</entry>
         <entry colname="desc">&nbsp; returns [[Some $x$]] where $x$ is the
             first element in the list (from left to right) for which the
             given predicate yields true; if no such element exists,
@@ -844,14 +896,14 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[tabulate]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) Nat * (Nat -> a) -> List a]]</entry>
+        <entry colname="type">&nbsp; [[[a] Nat * (Nat -> a) -> List a]]</entry>
         <entry colname="desc">&nbsp; [[tabulate($n$, $f$)]] returns the list
             [[[$f$(0), $f$(1),]] ... [[, $f$($n$-1)]]]</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[firstUpTo]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) (a -> Boolean) -> List a -> Option (a * List a)]]</entry>
+        <entry colname="type">&nbsp; [[[a] (a -> Boolean) -> List a -> Option (a * List a)]]</entry>
         <entry colname="desc">&nbsp; returns [[Some($e$,
             $x$)]] where
             $e$ is the first element in the list
@@ -863,7 +915,7 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[splitList]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) (a -> Boolean) -> List a -> Option (List a * a * List a)]]</entry>
+        <entry colname="type">&nbsp; [[[a] (a -> Boolean) -> List a -> Option (List a * a * List a)]]</entry>
         <entry colname="desc">&nbsp; returns [[Some($x$,
             $e$,
             $y$)]] where
@@ -877,7 +929,7 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[locationOf]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) List a * List a -> Option (Nat * List a)]]</entry>
+        <entry colname="type">&nbsp; [[[a] List a * List a -> Option (Nat * List a)]]</entry>
         <entry colname="desc">&nbsp; [[locationOf($s$,
             $t$)]] returns
             [[Some($n$,
@@ -894,19 +946,27 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[compare]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) (a * a -> Comparison) -> List a * List a -> Comparison]]</entry>
+        <entry colname="type">&nbsp; [[[a] (a * a -> Comparison) -> List a * List a -> Comparison]]</entry>
         <entry colname="desc">&nbsp; compares two list using the comparison function given as first parameter</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[show]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) String -> List String -> String]]</entry>
-        <entry colname="desc">&nbsp; [[show($s$,
-            $x$)]] returns the element strings
-            in $x$ concatenated, with string
-            $s$
+        <entry colname="type">&nbsp; [[[a] String -> List String -> String]]</entry>
+        <entry colname="desc">&nbsp; [[show($s$, $x$)]] returns the element strings
+            in $x$ concatenated, with string $s$
             inserted between any two elements</entry>
        </row>
+        </tbody>
+       </tgroup>
+      </informaltable>
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </para>
+</section>
+
 <!-- Compare ****************************************************** -->
 
 <section><title>Compare</title>
@@ -923,7 +983,7 @@ with the &Specware; distribution, for details (e.g. axioms).
         <informaltable frame="sides" colsep="1">
          <tgroup cols="4">
           <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
-          <colspec colname="fxty" colnum="2" colwidth="40"  rowsep="1">
+          <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
           <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
           <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
           <thead>
@@ -974,7 +1034,7 @@ with the &Specware; distribution, for details (e.g. axioms).
         <informaltable frame="sides" colsep="1">
          <tgroup cols="4">
           <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
-          <colspec colname="fxty" colnum="2" colwidth="40"  rowsep="1">
+          <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
           <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
           <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
           <thead>
@@ -989,31 +1049,31 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[some]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) a -> Option a]]</entry>
+        <entry colname="type">&nbsp; [[[a] a -> Option a]]</entry>
         <entry colname="desc">&nbsp; `op that constructs [[Some $x$]]</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[none]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) Option a]]</entry>
+        <entry colname="type">&nbsp; [[[a] Option a]]</entry>
         <entry colname="desc">&nbsp; `op that constructs [[None]]</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[some?]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) Option a -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a] Option a -> Boolean]]</entry>
         <entry colname="desc">&nbsp; tests if the parameter is of the form [[Some $x$]]</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[none?]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) Option a -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a] Option a -> Boolean]]</entry>
         <entry colname="desc">&nbsp; tests if the parameter is [[None]]</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[compare]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) (a * a -> Comparison) -> Option a * Option a -> Comparison]]</entry>
+        <entry colname="type">&nbsp; [[[a] (a * a -> Comparison) -> Option a * Option a -> Comparison]]</entry>
         <entry colname="desc">&nbsp; returns the result of the comparison of the two optional
             values, where [[None]] is less than [[Some
             $x$]] for all
@@ -1025,7 +1085,7 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[mapOption]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) (a -> b) -> Option a -> Option b]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a -> b) -> Option a -> Option b]]</entry>
         <entry colname="desc">&nbsp; applies the function given as first parameter to the
             optional value if it is [[Some $x$]],
             otherwise [[None]] is returned</entry>
@@ -1033,7 +1093,7 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[show]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) (a -> String) -> Option a -> String]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a -> String) -> Option a -> String]]</entry>
         <entry colname="desc">&nbsp; converts optional value to string; if the optional value
             is [[Some $x$]], it uses the function
             given as first parameter to convert
@@ -1049,9 +1109,39 @@ with the &Specware; distribution, for details (e.g. axioms).
  </para>
 </section>
 
-        </tbody>
-       </tgroup>
-      </informaltable>
+<!-- Records ***************************************************** -->
+
+<section><title>Records</title>
+ <para>
+  <variablelist>
+   <varlistentry>
+    <term><command>Op</command></term>
+    <listitem>
+     <para>
+        <informaltable frame="sides" colsep="1">
+         <tgroup cols="4">
+          <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
+          <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
+          <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
+          <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
+          <thead>
+       <row>
+        <entry colname="name">&nbsp; Name</entry>
+        <entry colname="fxty">&nbsp; Fixity</entry>
+        <entry colname="type">&nbsp; Type</entry>
+        <entry colname="desc">&nbsp; Description</entry>
+       </row>
+          </thead>
+          <tbody>
+       <row>
+        <entry colname="name">&nbsp; [[<<]]</entry>
+        <entry colname="fxty">&nbsp; [[L 25]]</entry>
+        <entry colname="type">&nbsp; [[{$x$:$A$,]]...[[,$y$:$B$,]]...[[} * {$x$:$A$,]]...[[,$z$:$C$,]]...[[} -> {$x$:$A$,]]...[[,$y$:$B$,]]...[[,$z$:$C$,]]...[[}]]</entry>
+        <entry colname="desc">&nbsp; see Section `Applications under <emphasis>record update</emphasis></entry>
+       </row>
+          </tbody>
+         </tgroup>
+        </informaltable>
      </para>
     </listitem>
    </varlistentry>
@@ -1077,7 +1167,7 @@ with the &Specware; distribution, for details (e.g. axioms).
     <informaltable frame="sides" colsep="1">
      <tgroup cols="4">
       <colspec colname="name" colnum="1" colwidth="50"  rowsep="1">
-      <colspec colname="fxty" colnum="2" colwidth="40"  rowsep="1">
+      <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
       <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
       <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
       <thead>
@@ -1092,37 +1182,37 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[id]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a) a -> a]]</entry>
+        <entry colname="type">&nbsp; [[[a] a -> a]]</entry>
         <entry colname="desc">&nbsp; identity function</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[o]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 24]]</entry>
-        <entry colname="type">&nbsp; [[fa(a,b,c) (b -> c) * (a -> b) -> (a -> c)]]</entry>
+        <entry colname="fxty">&nbsp; [[L 24]]</entry>
+        <entry colname="type">&nbsp; [[[a,b,c] (b -> c) * (a -> b) -> (a -> c)]]</entry>
         <entry colname="desc">&nbsp; function composition</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[injective?]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) (a -> b) -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a -> b) -> Boolean]]</entry>
         <entry colname="desc">&nbsp; injectivity predicate; non-constructive</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[surjective?]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) (a -> b) -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a -> b) -> Boolean]]</entry>
         <entry colname="desc">&nbsp; surjectivity predicate; non-constructive</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[bijective?]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) (a -> b) -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a -> b) -> Boolean]]</entry>
         <entry colname="desc">&nbsp; bijectivity predicate; non-constructive</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[inverse]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[fa(a,b) Bijective(a,b) -> Bijective(b,a)]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] Bijective(a,b) -> Bijective(b,a)]]</entry>
         <entry colname="desc">&nbsp; inverts bijective function; non-constructive</entry>
        </row>
       </tbody>

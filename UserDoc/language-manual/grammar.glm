@@ -315,7 +315,7 @@ easy reference.
 ||  
 ||  `type-scheme ::= [ `type-variable-binder ] `type-descriptor
 ||  
-||  `type-variable-binder ::= fa ( `local-type-variable-list )
+||  `type-variable-binder ::= `[ `local-type-variable-list `]
 ||  
 >>
 </para>
@@ -349,9 +349,7 @@ easy reference.
 ||  
 ||  `claim-name ::= `name
 ||  
-||  `claim ::= [ `type-quantification ] `expression
-||  
-||  `type-quantification ::= type `type-variable-binder
+||  `claim ::= [ `type-variable-binder ] `expression
 >>
 </para>
 </formalpara>
