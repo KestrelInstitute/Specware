@@ -67,8 +67,20 @@ def ut(srt) =
     case utlist(domsrts) of
       | Some s -> Some s
       | None -> 
-        let rngsrt = srtRange(srt) in
-	ut(rngsrt)
+        (case srt of
+	   | Arrow(_,rng,_) -> ut(rng)
+	   | _ -> None
+	  )
+
+op utlist: List Sort -> Option Sort
+def utlist(srts) =
+  case srts of
+    | [] -> None
+    | srt::srts ->
+      (case ut(srt) of
+	 | Some s -> Some s
+	 | None -> utlist(srts)
+	)
 
 op baseVar?: Var -> Boolean
 op userVar?: Var -> Boolean

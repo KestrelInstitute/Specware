@@ -183,6 +183,9 @@ def tt_v3(srt) =
     | Base(Qualified(_,id),_,_) -> tt_v2(id)
     | Arrow(srt0,srt1,_) -> mkJavaObjectType(srtId(srt))
 
+op tt_id: Sort -> Id
+def tt_id(srt) = getJavaTypeId(tt_v3(srt))
+
 (**
  * srtId returns for a given type the string representation accorinding the rules
  * in v3 page 67 for class names. It replaces the old version in LiftPattern.sw
@@ -197,6 +200,22 @@ def srtId(srt) =
     let dsrtid = srtId dsrt in
     dsrtid^"$To$"^rsrtid
     | _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
+
+op getJavaTypeId: Java.Type -> Id
+def getJavaTypeId(jt) =
+  case jt of
+    | (bon,0) -> (case bon of
+		    | Basic JBool -> "boolean"
+		    | Basic Byte -> "byte"
+		    | Basic Short -> "short"
+		    | Basic Char -> "char"
+		    | Basic JInt -> "int"
+		    | Basic Long -> "long"
+		    | Basic JFloat -> "float"
+		    | Basic Double -> "double"
+		    | Name (_,id) -> id
+		 )
+    | _ -> fail("can't handle non-scalar types in getJavaTypeId")
 
 (**
  * generates a string representation of the type id1*id2*...*idn -> id

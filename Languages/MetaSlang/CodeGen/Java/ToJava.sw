@@ -85,20 +85,32 @@ def addMethodFromOpToClsDecls(spc, opId, srt, trm, jcginfo) =
   if all (fn (srt) -> notAUserType?(srt)) dom
     then
       if notAUserType?(rng)
-	then addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
+	then
+	  case ut(srt) of
+	    | Some usrt ->
+	      % v3:p45:r8
+	      let classId = srtId(usrt) in
+	      addStaticMethodToClsDecls(spc,opId,srt,dom,rng,trm,classId,jcginfo)
+	    | None ->
+	      % v3:p46:r1
+	      addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
       else addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
   else
     addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
 
-op addPrimMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
-def addPrimMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _,  _), trm, jcginfo) =
+op addStaticMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * Id * JcgInfo -> JcgInfo
+def addStaticMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _,  _), trm, classId, jcginfo) =
   let clsDecls = jcginfo.clsDecls in
   let (vars, body) = srtTermDelta(srt, trm) in
   let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
   let methodBody = mkPrimArgsMethodBody(body, spc) in
   let assertStmt = mkAssertFromDom(dom, spc) in
   let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
-  addMethDeclToClsDecls("Primitive", methodDecl, jcginfo)
+  addMethDeclToClsDecls(classId, methodDecl, jcginfo)
+
+op addPrimMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
+def addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
+  addStaticMethodToClsDecls(spc,opId,srt,dom,rng,trm,"Primitive",jcginfo)
 
 op mkAssertFromDom: List JGen.Type * Spec -> Block
 def mkAssertFromDom(dom, spc) =

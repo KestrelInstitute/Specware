@@ -26,10 +26,15 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
       let args = applyArgsToTerms(argsTerm) in
       let dom = map termSort args in
       let rng = srt in
-      if all (fn (srt) -> ~ (userType?(srt))) dom
+      if all (fn (srt) -> notAUserType?(srt)) dom
 	then
 	  if notAUserType?(rng)
-	    then translateBaseApplToExpr(tcx, id, argsTerm, k, l, spc)
+	    then
+	      case utlist(concat(dom,[srt])) of
+		| Some s -> 
+		  translateBaseApplToExpr(tcx,id,argsTerm,k,l,srtId s,spc)
+		| None ->
+		  translatePrimBaseApplToExpr(tcx, id, argsTerm, k, l, spc)
 	  else translateBaseArgsApplToExpr(tcx, id, argsTerm, rng, k, l, spc)
       else
 	translateUserApplToExpr(tcx, id, dom, argsTerm, k, l, spc)
@@ -50,54 +55,55 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
 
 
 op translateRestrictToExpr: TCx * Sort * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-op translateRelaxToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-op translateQuotientToExpr: TCx * Sort * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-op translateChooseToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-op translateEqualsToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-op translateProjectToExpr: TCx * Id * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-op translateConstructToExpr: TCx * Id * Id * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-op translateBaseApplToExpr: TCx * Id * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-op translateBaseArgsApplToExpr: TCx * Id * Term * JGen.Type * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-op translateUserApplToExpr: TCx * Id * List JGen.Type * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-
 def translateRestrictToExpr(tcx, srt, argsTerm, k, l, spc) =
   let [arg] = applyArgsToTerms(argsTerm) in
   let (newBlock, newArg, newK, newL) = termToExpression(tcx, arg, k, l, spc) in
   let Base (Qualified (q, srtId), _, _) = srt in
   (newBlock, mkNewClasInst(srtId, [newArg]), newK, newL)
 
+op translateRelaxToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 def translateRelaxToExpr(tcx, argsTerm, k, l, spc) =
   let [arg] = applyArgsToTerms(argsTerm) in
   let (newBlock, newArg, newK, newL) = termToExpression(tcx, arg, k, l, spc) in
   (newBlock, mkFldAcc(newArg, "relax"), newK, newL)
 
+op translateQuotientToExpr: TCx * Sort * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 def translateQuotientToExpr(tcx, srt, argsTerm, k, l, spc) =
   let [arg] = applyArgsToTerms(argsTerm) in
   let (newBlock, newArg, newK, newL) = termToExpression(tcx, arg, k, l, spc) in
   let Base (Qualified (q, srtId), _, _) = srt in
   (newBlock, mkNewClasInst(srtId, [newArg]), newK, newL)
 
+op translateChooseToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 def translateChooseToExpr(tcx, argsTerm, k, l, spc) =
   let [arg] = applyArgsToTerms(argsTerm) in
   let (newBlock, newArg, newK, newL) = termToExpression(tcx, arg, k, l, spc) in
   (newBlock, mkFldAcc(newArg, "choose"), newK, newL)
 
+op translateEqualsToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 def translateEqualsToExpr(tcx, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
   let (newBlock, [jE1, jE2], newK, newL) = translateTermsToExpressions(tcx, args, k, l, spc) in
   (newBlock, mkJavaEq(jE1, jE2, srtId(termSort(hd(args)))), newK, newL)
 
+op translateProjectToExpr: TCx * Id * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 def translateProjectToExpr(tcx, id, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
   let (newBlock, [e], newK, newL) = translateTermsToExpressions(tcx, args, k, l, spc) in
   (newBlock, mkFldAcc(e, id), newK, newL)
 
+op translateConstructToExpr: TCx * Id * Id * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 def translateConstructToExpr(tcx, srtId, opId, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
   let (newBlock, javaArgs, newK, newL) = translateTermsToExpressions(tcx, args, k, l, spc) in
   (newBlock, mkMethInv(srtId, opId, javaArgs), newK, newL)
-  
-def translateBaseApplToExpr(tcx, opId, argsTerm, k, l, spc) =
+
+op translatePrimBaseApplToExpr: TCx * Id * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
+def translatePrimBaseApplToExpr(tcx, opId, argsTerm, k, l, spc) =
+  translateBaseApplToExpr(tcx,opId,argsTerm,k,l,"Primitive",spc)
+
+op translateBaseApplToExpr: TCx * Id * Term * Nat * Nat * Id * Spec -> Block * Java.Expr * Nat * Nat
+def translateBaseApplToExpr(tcx, opId, argsTerm, k, l, clsId, spc) =
   let args = applyArgsToTerms(argsTerm) in
   let (newBlock, javaArgs, newK, newL) = translateTermsToExpressions(tcx, args, k, l, spc) in
   if javaBaseOp?(opId)
@@ -105,8 +111,9 @@ def translateBaseApplToExpr(tcx, opId, argsTerm, k, l, spc) =
       if (length args) = 2
 	then (newBlock, mkBinExp(opId, javaArgs), newK, newL)
       else (newBlock, mkUnExp(opId, javaArgs), newK, newL)
-  else (newBlock, mkMethInv("Primitive", opId, javaArgs), newK, newL)
+  else (newBlock, mkMethInv(clsId, opId, javaArgs), newK, newL)
 
+op translateBaseArgsApplToExpr: TCx * Id * Term * JGen.Type * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 def translateBaseArgsApplToExpr(tcx, opId, argsTerm, rng, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
   let (newBlock, javaArgs, newK, newL) = translateTermsToExpressions(tcx, args, k, l, spc) in
@@ -114,6 +121,7 @@ def translateBaseArgsApplToExpr(tcx, opId, argsTerm, rng, k, l, spc) =
     then (newBlock, mkBinExp(opId, javaArgs), newK, newL)
   else (newBlock, mkMethInv(srtId(rng), opId, javaArgs), newK, newL)
 
+op translateUserApplToExpr: TCx * Id * List JGen.Type * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 def translateUserApplToExpr(tcx, opId, dom, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
   case findIndex (fn(srt) -> userType?(srt)) dom of
