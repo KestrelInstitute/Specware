@@ -109,7 +109,20 @@ them are available in the &Specware menu in the menubar.
 	  Defaults to unitId for the current file. </entry>
       </row>
       <row>
-	<entry colname="key">&nbsp; [[C-c C-p]]</entry>
+	<entry colname="key">&nbsp; [[C-c g]]</entry>
+        <entry colname="name">&nbsp; [[sw:generate-lisp]]</entry>
+	<entry colname="descr">&nbsp; Does [[:swl]] on current file. With
+          an argument compiles and loads the generated lisp.</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-c C-l]]</entry>
+        <entry colname="name">&nbsp; [[sw:generate-lisp]]</entry>
+	<entry colname="descr">&nbsp; Does [[:swll]] on current file
+          (generates lisp for local definitions of current file and
+           compiles and loads them).</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-c !]]</entry>
         <entry colname="name">&nbsp; [[cd-current-directory]]</entry>
 	<entry colname="descr">&nbsp; Does a :cd in the *common-lisp* 
 	  buffer to the directory of the current file.

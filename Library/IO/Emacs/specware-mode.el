@@ -141,7 +141,10 @@ accepted in lieu of prompting."
 (defconst specware-menu 
     '("Specware"
       ["Process Current File" sw:process-current-file t]
-      ["Process Unit" sw:process-unit t] 
+      ["Process Unit" sw:process-unit t]
+      ["Generate Lisp" sw:generate-lisp t]
+      ["Generate & Load Lisp" (sw:generate-lisp t) t]
+      ["Generate Local Lisp" sw:cl-current-file t]
       [":cd to this directory" cd-current-directory t] 
       ["Find Definition" sw:meta-point t]
       ["Find Next Definition" sw:continue-meta-point
@@ -188,6 +191,7 @@ accepted in lieu of prompting."
   (define-key map "\M-,"     'sw:continue-meta-point)
   (define-key map "\C-cp"    'sw:process-current-file)
   (define-key map "\C-c\C-p" 'sw:process-unit)
+  (define-key map "\C-c\g"   'sw:generate-lisp)
   (define-key map "\C-c\C-l" 'sw:cl-current-file)
   (define-key map "\C-c\C-u" 'sw:cl-unit)
   (define-key map "\C-c!"    'cd-current-directory)
@@ -984,6 +988,16 @@ If anyone has a good algorithm for this..."
 					   (sw::file-to-specware-unit-id
 					    buffer-file-name))))
   (simulate-input-expression (concat ":sw " unitid)))
+
+(defun sw:generate-lisp (compile-and-load?)
+  (interactive "P")
+  (save-buffer)
+  (let* ((filename (sw::file-to-specware-unit-id buffer-file-name))
+	 (dir default-directory)
+	 (unitname (substring filename (length dir))))
+    (simulate-input-expression (concat ":swl " filename))
+    (when compile-and-load?
+      (simulate-input-expression (concat ":cl " dir "lisp/" unitname)))))
 
 (defun sw:cl-current-file ()
   (interactive)
