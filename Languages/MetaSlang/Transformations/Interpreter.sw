@@ -22,6 +22,9 @@ spec
 
   sort Subst = List (Id * Value)
 
+  op  unevaluated?: Value -> Boolean
+  def unevaluated? x = embed? Unevaluated x
+
   op  emptySubst: Subst
   def emptySubst = []
 
@@ -313,29 +316,14 @@ spec
 	   | Bool b -> Some b
 	   | _ -> None)
       | RecordVal [("1",a1),("2",a2)] ->
-	(case (a1, a2) of
-	   | (Unevaluated t1, Unevaluated t2) -> 
-	     (case (t1, t2) of
-		| (Fun (Op _, _, _), Fun (Op _, _, _)) ->
-		  %% Note: for ops, we can establish truth but not falsity.
-		  %% Consider:  spec op f : Nat op g : Nat endspec
-		  %% We know that "f = f" is true,
-		  %% but "f = g" could be true or false
-		  if equalTerm? (t1, t2) then
-		    Some true
-		  else
-		    None
-		| _ -> 
-		  %% For literals, we can decide true or false.
-		  Some (equalTerm? (t1, t2)))
-	   | (Unevaluated _, _) -> None
-	   | (_, Unevaluated _) -> None
-	   | _ ->
-             %% evaluated values
-	     %% TODO: Can a1 and a2 be RecordValues containing Unevaluated terms?
-	     %% If so, should this recur to handle values such as "f = f" 
-	     %% that might appear at lower levels?
-	     Some (a1 = a2))
+        (if evalConstant? a1 & evalConstant? a2
+	  then (case (a1,a2) of
+		  | (Unevaluated t1,Unevaluated t2) ->
+		    if equalTerm?(t1, t2)
+		      then Some true
+		      else None
+		  | _ -> Some(a1 = a2))
+	  else None)
       | _ -> None
         
   def mergeFields(row1,row2) =
@@ -763,7 +751,7 @@ spec
 		    string "{",
 		    prettysFill(addSeparator (string ", ") (map (fn id -> string id) ids)),
 		    string "}>"]
-      | Unevaluated t  -> prettysNone[string "<Unev ",
+      | Unevaluated t  -> prettysNone[string "<Unev: ",
 				      ppTerm context ([],Top:ParentTerm) t,
 				      string ">"]
 
