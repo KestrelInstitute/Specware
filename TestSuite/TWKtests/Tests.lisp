@@ -1,29 +1,29 @@
 ;;;(test-files "proveOblig.sw" "simple.sw" "fib.sw"
 ;;;	    "colimit.sw"
-;;;	    "tw-0103-1.sw" "tw-0103-2.sw" "tw-0103-3.sw"
+;;;	    "t0103_1.sw" "t0103_2.sw" "t0103_3.sw"
 ;;;	    "players.sw")
 
 (test-directories ".")
 
-(test ("twk message 1/8/03" :sw "tw-0103-1"
-			:output ";;; Elaborating spec at $TESTDIR/tw-0103-1#player
-;;; Elaborating spec at $TESTDIR/tw-0103-1#position
-;;; Elaborating spec at $TESTDIR/tw-0103-1#move
-Errors in $TESTDIR/tw-0103-1.sw
+(test ("twk message 1/8/03" :sw "t0103_1"
+			:output ";;; Elaborating spec at $TESTDIR/t0103_1#player
+;;; Elaborating spec at $TESTDIR/t0103_1#position
+;;; Elaborating spec at $TESTDIR/t0103_1#move
+Errors in $TESTDIR/t0103_1.sw
 40.33-40.38 :  Could not match sort constraint
               legal? of sort move -> Boolean
           with expected sort Boolean
 ")
       ("twk message 1/8/03 fix 1"
-       :sw "tw-0103-2"
-       :output ";;; Elaborating spec at $TESTDIR/tw-0103-2#player
-;;; Elaborating spec at $TESTDIR/tw-0103-2#position
-;;; Elaborating spec at $TESTDIR/tw-0103-2#move
+       :sw "t0103_2"
+       :output ";;; Elaborating spec at $TESTDIR/t0103_2#player
+;;; Elaborating spec at $TESTDIR/t0103_2#position
+;;; Elaborating spec at $TESTDIR/t0103_2#move
 ")
       ("twk message 1/8/03 fix 2"
-       :sw "tw-0103-3"
-       :output ";;; Elaborating spec at $TESTDIR/tw-0103-3#player
-;;; Elaborating spec at $TESTDIR/tw-0103-3#position
-;;; Elaborating spec at $TESTDIR/tw-0103-3#move
+       :sw "t0103_3"
+       :output ";;; Elaborating spec at $TESTDIR/t0103_3#player
+;;; Elaborating spec at $TESTDIR/t0103_3#position
+;;; Elaborating spec at $TESTDIR/t0103_3#move
 ")
       )

@@ -75,8 +75,7 @@
   (loop for i from 0 to (- (length str) 1)
         always (let ((ch (elt str i)))
 		 (or (alphanumericp ch)
-		     (member ch '(#\/ #\: #\# #\_ #\-))
-		     (princ ch)))))
+		     (member ch '(#\/ #\: #\# #\_ #\-))))))
 
 (defvar *saved-swpath* nil)
 (defvar *temp-file-in-use?* nil)
@@ -117,19 +116,22 @@
 	       (setq str tmp-uid)))
 	   str)))
 
+(defvar *running-test-harness?* nil)
+
 (defun show-error-position (emacs-error-info)
   (when emacs-error-info
     (let ((error-file (first emacs-error-info))
 	  (linepos (second emacs-error-info))
 	  (charpos (third emacs-error-info)))
-      (if (sw-temp-file? error-file)
-	  (emacs::eval-in-emacs (format nil "(progn (previous-input-line)
+      (unless *running-test-harness?*
+	(if (sw-temp-file? error-file)
+	    (emacs::eval-in-emacs (format nil "(progn (previous-input-line)
 						    (comint-bol nil)
 						    (forward-word 1)
 						    (forward-char ~a))"
-					(1+ charpos)))
-	(emacs::eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)"
-				      error-file linepos charpos))))))
+					  (1+ charpos)))
+	  (emacs::eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)"
+					error-file linepos charpos)))))))
 
 (defvar *last-unit-Id-_loaded* nil)
 

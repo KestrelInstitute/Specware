@@ -174,6 +174,8 @@ be the option to run each (test ...) form in a fresh image.
     "/"
     file))
 
+(defvar cl-user::*running-test-harness?* nil)
+
 (defun test-1 (name &key sw swe swe-spec swl swll lisp show
 			 output (output-predicate 'equal)
 			 (value "--NotAValue--")
@@ -182,7 +184,8 @@ be the option to run each (test ...) form in a fresh image.
 			 error files)
   (let (val error-type (error-messages ())
 	(emacs::*goto-file-position-store?* t)
-	(emacs::*goto-file-position-stored* nil))
+	(emacs::*goto-file-position-stored* nil)
+	(cl-user::*running-test-harness?* t))
     (let ((test-output (with-output-to-string (*standard-output*)
 			 (multiple-value-setq (val error-type)
 			   (ignore-errors
