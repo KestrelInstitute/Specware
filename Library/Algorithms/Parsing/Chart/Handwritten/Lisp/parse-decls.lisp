@@ -180,11 +180,13 @@
   ;;                                    such that this node will be the second child, i.e.
   ;;                                    such that the parent node will start at some earlier location 
   (precedence +default-precedence+) ; fixed precedence 
-  bvi            ; bit-vector index
-  semantics      ; e.g., the actual string for a symbol
-  p2bvi-map      ; alist:   precedence => bvi
-  items          ; the sub-rules of this rule
-  main-rule?     ; was this entered by the user as a top-level rule?
+  bvi                               ; bit-vector index
+  semantics                         ; e.g., the actual string for a symbol
+  p2bvi-map                         ; alist:   precedence => bvi
+  items                             ; the sub-rules of this rule
+  main-rule?                        ; was this entered by the user as a top-level rule?
+  optional?                         ; is every item optional?
+  (default-semantics :unspecified)  ; what to return if the rule is processed as optional
   documentation 
   )
 
@@ -306,10 +308,11 @@
   rule                 
   precedence
   ;; rule & precedence => possible-children-bv
-  possible-children-bv ; allows quick match on multiple rules...
+  possible-children-bv              ; allows quick match on multiple rules...
   ;; closure routine maps possible-children-bv => possible-handles-bv
-  possible-handles-bv  ; was desired-bv
+  possible-handles-bv               
   semantic-index 
+  (default-semantics :unspecified)  ; what to return if the rule is processed as optional
   )
   
 ;;; ========================================

@@ -283,7 +283,8 @@
 	(if (null child)
 	    (if (null index) 
 		nil 
-	      (push (cons index :unspecified) alist))
+	      (push (cons index (parser-rule-item-default-semantics item)) ; was :unspecified 
+		    alist))
 	  (multiple-value-bind (child-value child-alist)
 	      (eval-node session child)
 	    (cond ((null index)
@@ -310,15 +311,16 @@
 	(unless (null child)
 	  (let* (;; (child-rule-name (parser-rule-name (parser-node-rule child)))
 		 (items (parser-rule-items rule))
-		 (index 
-		  (dotimes (i (length items))
-		    (let ((item (svref items i)))
-		      (when (parser-rule-item-matches? item child)
-			(return (parser-rule-item-semantic-index item)))))))
+		 (item  (dotimes (i (length items))
+			  (let ((item (svref items i)))
+			    (when (parser-rule-item-matches? item child)
+			      (return item)))))
+		 (index (if (null item) nil (parser-rule-item-semantic-index item))))
 	    (if (null child)
 		(if (null index) 
 		    nil 
-		  (push (cons index :unspecified) alist))
+		  (push (cons index (parser-rule-item-default-semantics item)) ; was :unspecified
+			alist))
 	      (multiple-value-bind (child-value child-alist)
 		  (eval-node session child)
 		(cond ((null index)
