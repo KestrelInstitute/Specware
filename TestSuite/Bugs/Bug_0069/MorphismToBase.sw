@@ -4,5 +4,5 @@ S = spec sort SS endspec
 
 T = spec endspec
 
-M = morphism S -> T {SS +-> Char}
+M = morphism S -> T {SS +-> Char.Char}
 
