@@ -308,5 +308,16 @@ endspec
 
 ")
 
+ ("Bug 0107 : Bogus Nil prints as []"
+  :show   "Bug_0107/BogusNil"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0107/BogusNil
+
+spec  
+ type NotList =  | Nil | Whatever
+ def b : NotList = Nil
+endspec
+
+")
+
  ;; end of tests
  )
