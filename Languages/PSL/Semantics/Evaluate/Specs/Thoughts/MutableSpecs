@@ -1,0 +1,34 @@
+Also imagine what would happen if we were to have foldOp applied to a
+spec with a mutable map for the ops and further that the unit for the fold
+operation was the same spec as that over which we are folding for example,
+suppose we fold over the ops and add a new version of the op to the spec.
+then might we loop forever?  It would be the same as folding over a
+mutable set and for each x in the set, inserting f x into the same set.
+
+The problem with the following os
+Think about adding single threaded versions of the
+functions for building specs.
+
+  sv <- newSpecVar empty
+or just
+  sv <- newSpecVar
+  addOp sv opInfo
+  addSort sv sortInfo
+
+etc
+so they don't return a new spec
+
+alternatively we add a current spec to the state monad
+
+setCurrentSpec (some spec)
+
+addOp opInfo
+addSort opInfo
+
+etc.
+
+Perhaps the former way means that all the specs can be implemented with side
+effecting operations and hash tables and whatnot.
+
+When outside the monad, then the spec is implemented without side effects
+inside, we can use side effects.

@@ -1,0 +1,77 @@
+
+Think about getting rid of resetGlobals in Specware.
+
+There is inconsitency. In some cases there is union that is curried
+and in other place it is not.
+
+There seems to be an import bug.
+
+I mistakenly used the same qualifier (Vertex and Edge) for 
+Sets/Monomorphic and Sets/Finite. Some functions refer to Edge.pp 
+and Vertex.pp, but these get mapped to the set pp functions rather
+than the element functions.
+
+
+There is excessive qualification of OpInfo and Id in Op, Sort, Spec etc.
+This is because we import Env which imports Exception from the SpecCalc
+which in turn imports the pretty printer for the SpecCalc (for unitId)
+which in turn imports AnnSpec. Hopefully many of these qualifiers can
+be eliminated when things get factored a little more cleanly.
+
+Why is it that op refences start out as OneName and TwoName and then
+changed to QualifiedId but sort references start out as QualifiedId.
+
+Stephen has made a good point. Even if you want to assign each op an id,
+then you might want to ensure that the ids are unique across the
+whole session. That way if you import an op, you don't have to
+rename or reindex things.
+
+What about rules for qualifying?
+
+Should the writer of a spec or a user of a spec qualify a spec or both?
+
+Id imports Sets qualified Sets imports Elem. Elem is qualified.
+are unqualified.
+Env imports Collections unqualified. Should really qualify the Collection by
+IdSet in the same way that Sets get qualified with IdSet.
+
+
+Could there be an even more abstract version where instead of
+tying ourselves to projection operations we use maps
+
+sort Op
+
+op names : Op -> IdSet.Set
+
+but now we want a map
+
+op names : Map (Op,IdSet.Id)
+
+
+op names : Spec -> Map (Op,IdSet.Id)
+
+Suppose a term resolves to an operator reference.
+
+So a term contains an Op .. say an identitier. Then by the above, there is one
+map from Op to a set of Ids. Updating that map is enough and we don't need the OpRef
+stuff.
+
+In the above, there is only one such map. An op must be unique across the entire system.
+
+An alternative is to make it indexed on the spec.
+
+Map (Spec,Map(Op,IdSet)) where the Op should be dependent on the Spec .. that
+is we should only be able to look up ops that are in the spec.
+
+Bear in mind that with every Map comes an Eval. I suppose if we have:
+
+op names : Map(Op,IdSet.Id)
+
+then we could define
+
+def Eval.names x : Op -> IdSet.Id = eval names x
+
+This doesn't make sense. Names must be something that gets carried around.
+
+
+Should I be able to create an OpInfo outside the scope of a spec?

@@ -1,0 +1,21 @@
+Why is there a sort associated with an Op in the abstract syntax tree?
+Why is there a fixity associated with an Op?
+What are relax patterns and quotient patterns? 
+Can we make "Var" disappear and instead hold the information about the type
+in the spec environment?
+
+Let (LetDecls * Term) LetDecls refines in one case to a list of stuff and
+in the other case refines to something akin to a Spec.  Presumably such
+a mechanism would link the inner spec to the outer spec.
+
+If we have declarations inside a let and that let is withing the scope
+of a lambda bound variable, is there a way that the declarations
+can be made dependent on the lambda variables. It makes no sense,
+for example for a let inside a recursive function to import
+at runtime, as many copies of Set as the function calls itself
+recursively.
+  
+Can we do the same for NameRef. In on case it refines to a list of names
+and in the other it refines to an OpRef
+
+But there may be cases when they coexist in the same matrix.
