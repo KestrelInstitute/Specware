@@ -71,7 +71,7 @@ SpecCalc qualifying spec {
   def transformSpecForFirstOrderProver basespc spc =
     let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
     let xspc = transformSpecForFirstOrderProverInt spc in
-    if proverUseBase? then let _ = writeLine("PRB") in xspc else
+%    if proverUseBase? then let _ = writeLine("PRB") in xspc else
       let xBaseSpec = transformSpecForFirstOrderProverInt basespc in
       %let xBaseSpec = basespc in
       %let res = subtractSpec xspc xBaseSpec in
@@ -351,9 +351,10 @@ SpecCalc qualifying spec {
    let snarkSortDecls = snarkSorts(spc) in
    let snarkOpDecls = snarkOpDecls(spc) in
    let context = newContext in
-   let snarkBaseHypothesis = map (fn (prop) -> snarkProperty(context, base_spc, prop))
-                                 base_hypothesis in
-   %let snarkBaseHypothesis = [] in
+   let snarkBaseHypothesis = 
+     if proverUseBase?
+       then map (fn (prop) -> snarkProperty(context, base_spc, prop)) base_hypothesis
+     else [] in
    let snarkRewriteHypothesis = map (fn (prop) -> snarkRewrite(context, rewrite_spc, prop))
                                      rewrite_hypothesis in
    %let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
@@ -404,6 +405,38 @@ SpecCalc qualifying spec {
    proved
 
  %print-clocks??
+
+ op makeSnarkProveDecls: List LispCell * List LispCell * List LispCell * List LispCell * List LispCell
+                           * List LispCell * LispCell * String -> LispCell
+
+ def makeSnarkProveDecls(prover_options, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
+			 snarkHypothesis, snarkConjecture, snarkLogFileName) =
+   let setOfSupportOn = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]) in
+   let setOfSupportOff = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(true)]) in
+   
+   Lisp.list
+   [Lisp.list([Lisp.symbol("SNARK","INITIALIZE")]),
+    Lisp.list([Lisp.symbol("SNARK","RUN-TIME-LIMIT"), Lisp.nat(20)]),
+    Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-SORTS"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-CONDITIONAL-ANSWER-CREATION"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-WELL-SORTING"), Lisp.bool(false)])]
+   Lisp.++ (Lisp.list snarkSortDecl)
+   Lisp.++ (Lisp.list snarkOpDecls)
+   Lisp.++ (Lisp.list prover_options)
+   Lisp.++ (Lisp.list [setOfSupportOn])
+   Lisp.++ (Lisp.list snarkBaseHypothesis)
+   Lisp.++ (Lisp.list snarkRewriteHypothesis)
+   Lisp.++ (Lisp.list [setOfSupportOff])
+   Lisp.++ (Lisp.list prover_options)
+   Lisp.++ (Lisp.list baseAxioms)
+   Lisp.++ (Lisp.list snarkHypothesis)
+   Lisp.++ (Lisp.list [snarkConjecture])
+  
+
  op makeSnarkProveEvalForm: List LispCell * List LispCell * List LispCell * List LispCell * List LispCell
                            * List LispCell * LispCell * String -> LispCell
 
@@ -415,7 +448,8 @@ SpecCalc qualifying spec {
    %let _ = if specwareDebug? then LISP.PPRINT(Lisp.list(snarkHypothesis)) else Lisp.list [] in
    let setOfSupportOn = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]) in
    let setOfSupportOff = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(true)]) in
-
+   let snarkProverDecls = makeSnarkProveDecls(prover_options, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
+					      snarkHypothesis, snarkConjecture, snarkLogFileName) in
    	 Lisp.list 
 	 [Lisp.symbol("CL-USER","WITH-OPEN-FILE"),
 	  Lisp.list [Lisp.symbol("CL-USER","LOGFILE"),
@@ -431,28 +465,12 @@ SpecCalc qualifying spec {
 				 Lisp.symbol("CL-USER","LOGFILE")],
 		      Lisp.list [Lisp.symbol("CL-USER","*STANDARD-OUTPUT*"),
 				 Lisp.symbol("CL-USER","LOGFILE")]],
-	   Lisp.list([Lisp.symbol("SNARK","INITIALIZE")]),
-	   Lisp.list([Lisp.symbol("SNARK","RUN-TIME-LIMIT"), Lisp.nat(20)]),
-           Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]),
-           Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-SORTS"), Lisp.bool(true)]),
-           Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
-           Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
-           Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
-	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)]),
-	   Lisp.list([Lisp.symbol("SNARK","USE-CONDITIONAL-ANSWER-CREATION"), Lisp.bool(true)]),
-	   Lisp.list([Lisp.symbol("SNARK","USE-WELL-SORTING"), Lisp.bool(false)])
+	   Lisp.list([Lisp.symbol("CL","WRITE-LINE"), Lisp.string("Snark is invoked by evaluating:")]),
+	   Lisp.list([Lisp.symbol("CL","PPRINT"),
+		      Lisp.quote(Lisp.list[Lisp.symbol("CL","LET"), Lisp.list []] Lisp.++ snarkProverDecls)])
 	  ]
-	  Lisp.++ (Lisp.list snarkSortDecl)
-	  Lisp.++ (Lisp.list snarkOpDecls)
-	  Lisp.++ (Lisp.list prover_options)
-	  Lisp.++ (Lisp.list [setOfSupportOn])
-	  Lisp.++ (Lisp.list snarkBaseHypothesis)
-	  Lisp.++ (Lisp.list snarkRewriteHypothesis)
-	  Lisp.++ (Lisp.list [setOfSupportOff])
-	  Lisp.++ (Lisp.list baseAxioms)
-	  Lisp.++ (Lisp.list snarkHypothesis)
-	  Lisp.++ (Lisp.list [snarkConjecture])]
+	  Lisp.++ snarkProverDecls
+		    ]
 
 
 }
-
