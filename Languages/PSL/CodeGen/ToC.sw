@@ -35,9 +35,10 @@ SpecCalc qualifying spec {
   op graphToC : Struct.Graph -> Stmt
   def graphToC graph =
     let def consume first last =
-          if first = last then
-            Nop
-          else
+         let _ = writeLine ("first = " ^ (Nat.toString first) ^ " last = " ^ (Nat.toString last)) in
+          % if first = last then
+            % Nop
+          % else
             case nodeContent (nth (graph, first)) of
               | Block {statements, next} -> 
                   let stmts = map statementToC statements in
