@@ -764,7 +764,7 @@ Restriction.
 </para>
 <!-- ================================================================= -->
 <para>
-A <emphasis>closed</emphasis>`spec-form is a `spec-form
+A <emphasis>closed</emphasis> `spec-form is a `spec-form
 containing no `import-declarations.
 </para>
 <para>
