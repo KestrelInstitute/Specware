@@ -309,9 +309,6 @@ spec
 	  Unevaluated(mkLetWithSubst(substitute(t,substSb),letSb))
       | _ -> val
 
-
-  op mkLetWithSubst : MS.Term * List (MS.Var * MS.Term) -> MS.Term
-
   %% First list should contain second list as a tail
   op  ldiff: fa(a) List a * List a -> List a
   def ldiff(l1,l2) =
