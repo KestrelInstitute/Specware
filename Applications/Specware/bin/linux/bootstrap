@@ -1,0 +1,73 @@
+#!/bin/bash --noprofile
+
+# This script bootstraps Specware4.
+# That is,
+#  - it saves the old generated Specware4.lisp and Specware4.dxl (ie world)
+#  - it starts Specware4 
+#      - it first tries to run an existing image
+#      - if that fails it tries to load Specware from previously generated lisp
+#  - applies Specware to itself (sw "/Applications/Specware/Specware4")
+#     to generate a new Specware4.lisp,
+#  - starts a fresh lisp image,
+#  - loads the new Specware (under Handwritten/Lisp, (load "Specware4.lisp"))
+#  - dumps a world into the bin directory
+
+# Perhaps there should be a different script for bootstrapping from lisp
+# (bootstrap-from-lisp?.
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. The 'set -v' turns on echoing of
+# lines read. This will be removed later.
+
+# Is there a way to inhibit all the warnings (eg unused variable)
+# when Lisp loads?
+
+set -v
+
+# We assume SPECWARE4 has been set.
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+LISP=${LISP:-/usr/local/acl/acl61/alisp}
+
+cd $SPECWARE4/Applications/Specware
+
+cp -f lisp/Specware4.lisp lisp/Specware4-save.lisp
+cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
+
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).
+
+SWPATH=$SPECWARE4:.
+
+if [ -f bin/linux/Specware4.dxl ]; then
+	echo Bootstrapping from existing Specware image 
+	bin/linux/Specware4-text <<-XXXX
+		(sw "/Applications/Specware/Specware4")
+	XXXX
+else
+	if [ -f lisp/Specware4.lisp ]; then
+		echo Bootstrapping from previously generated lisp
+		$LISP <<-XXXX
+			cd Handwritten/Lisp
+			(load "Specware4.lisp")
+			(sw "/Applications/Specware/Specware4")
+		XXXX
+	else
+		echo "Bootstrap failed"
+		echo "Could not find bin/linux/Specware4.dxl or lisp/Specware4.lisp"
+		exit 1
+	fi
+fi
+
+cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
+
+# I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
+
+$LISP <<-XXXX
+	(load "Specware4.lisp")
+	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
+	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
+XXXX
