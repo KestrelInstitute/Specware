@@ -15,10 +15,18 @@ IO qualifying spec {
   op getCurrentDirectory   : () -> Filename
   op fileExistsAndReadable : Filename -> Boolean
   op fileWriteTime         : Filename -> Time
+  op currentTime           : () -> Time
 
   op fileWritable          : Filename -> Boolean
   op readBytesFromFile     : Filename -> List Byte
   op writeBytesToFile      : List Byte * Filename -> ()
+
+  op writeStringToFile : String *  Filename -> ()
+  def writeStringToFile (string, filename) =
+    writeBytesToFile (map ord (explode string),
+		      filename)
+
+
 }
 \end{spec}
 

@@ -27,6 +27,9 @@
       nil)))
 
 (defun fileWriteTime (file)
+  ;; bignum (i.e., not a lisp fixnum, not a C int)
+  ;; Bigger than 536870911 = 2^29 - 1 = most-positive-fixnum
+  ;; Bigger than 2147483648 = 2^31 = biggest 32-bit int 
   (or #+allegro(excl::filesys-write-date file)    ; faster?
       ;;
       ;; The allegro hack above returns nil for names such as "~/foo.sw"
@@ -34,10 +37,17 @@
       ;; but maybe this is all that the standard file-write-date does:
       ;;  (excl::filesys-write-date (namestring (truename  file))) 
       ;;
-      ;; Call this when hack fails...
+      ;; Call this when hack fails (or we're not running Allego CL) ...
       (file-write-date file)
-      ;; If file doesn't exist then return a future time! (shouldn't normally happen)
-      9999999999))
+      ;; If file doesn't exist then return a future time! 
+      ;; 3288592472 = "Thu Mar 18 01:54:32 PST 2004"
+      9999999999999)) ; eons from now: "Thu May 21 10:46:39 PST 318787"
+
+(defun currentTime-0 ()
+  ;; bignum (i.e., not a lisp fixnum, not a C int)
+  ;; Bigger than 536870911 = 2^29 - 1 = most-positive-fixnum
+  ;; Bigger than 2147483648 = 2^31 = biggest 32-bit int 
+  (get-universal-time))
 
 (defun getCurrentDirectory-0 ()
   (convert-windows-filename (namestring (specware::current-directory))))
@@ -84,7 +94,7 @@
 	    (push char chars)))
       '(:|None|))))
 
-(defun writeBytesToFile (bytes filename)
+(defun writeBytesToFile-2 (bytes filename)
   (with-open-file (s filename :element-type 'unsigned-byte
 		   :direction :output
 		   :if-exists :supersede)
