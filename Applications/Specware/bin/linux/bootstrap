@@ -65,12 +65,12 @@ else
 		XXXX
 	else
 		# This is where you end up if you do cvs checkout and then
-                #  run bootstrap.  Maybe we could get a default version of
-                #  Specware4.lisp from somewhere?
+		#  run bootstrap.  Maybe we could get a default version of
+		#  Specware4.lisp from somewhere?
 		echo " "
 		echo "Bootstrap failed"
 		echo "Could not find bin/linux/Specware4.dxl or lisp/Specware4.lisp"
-                echo "under $SPECWARE4/Applications/Specware"
+		echo "under $SPECWARE4/Applications/Specware"
 		exit 1
 	fi
 fi
