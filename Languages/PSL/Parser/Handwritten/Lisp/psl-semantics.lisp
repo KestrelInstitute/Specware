@@ -63,6 +63,12 @@
 (defun make-psl-skip (l r)
   (cons (cons :|Skip| nil) (make-pos l r)))
 
+(defun make-psl-continue (l r)
+  (cons (cons :|Continue| nil) (make-pos l r)))
+
+(defun make-psl-break (l r)
+  (cons (cons :|Break| nil) (make-pos l r)))
+
 (defun make-psl-return (opt-term l r)
   (cons (cons :|Return|
      (if (eq :unspecified opt-term)

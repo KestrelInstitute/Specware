@@ -79,6 +79,8 @@
     (1 :PSL-LET)
     (1 :PSL-RETURN)
     (1 :PSL-SKIP)
+    (1 :PSL-CONTINUE)
+    (1 :PSL-BREAK)
     (1 :PSL-EXEC)
     ;;; (1 :PSL-CALL)
     ;;; (1 :PSL-ASSIGN-CALL)
@@ -126,6 +128,14 @@
 (define-sw-parser-rule :PSL-SKIP ()
   (:tuple "skip")
   (make-psl-skip ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :PSL-BREAK ()
+  (:tuple "break")
+  (make-psl-break ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :PSL-CONTINUE ()
+  (:tuple "continue")
+  (make-psl-continue ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-RETURN ()
   (:tuple "return" (1 (:optional :EXPRESSION)))
