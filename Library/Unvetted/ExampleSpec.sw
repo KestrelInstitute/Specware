@@ -17,7 +17,7 @@ Natural = Peano qualifying spec
 
   op  positive? : Natural -> Boolean
   def positive? = fn
-    | Zero -> true
+    | Zero   -> true
     | Succ _ -> false
 
   type PositiveNatural = (Natural | positive?)
