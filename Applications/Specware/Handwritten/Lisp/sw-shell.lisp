@@ -21,6 +21,7 @@
     ("cinit" . "Clears Spec unit cache.")    
     ("show" . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
     ("showx" . "[unit-term] Like `show' but shows all types and ops including imports.")
+    ("prove" . "[proof arguments] Abbreviation for proc prove [proof arguments]")
     ("punits" . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
     ("lpunits" . "[unit-identifier [filename]] Like `punits' but only for local conjectures.")
@@ -150,14 +151,15 @@
 	  ,@fms))
 
 (defun lisp-value (val)
-  (setq *** **
-	** *
-	* val)
-  val)
+  (when val
+    (setq *** **
+	  ** *
+	  * (car val)))
+  (values-list val))
 
 (defun process-sw-shell-command (command argstr)
   (if (and (consp command) (null argstr))
-      (lisp-value (eval command))
+      (lisp-value (multiple-value-list (eval command)))
     (case command
       (help (let ((cl-user::*sw-help-strings*
 		   (if *developer?*
@@ -168,6 +170,8 @@
 	      (princ (namestring (specware::current-directory)))
 	    (cl-user::cd argstr))
 	  (values))
+      (pwd (princ (namestring (specware::current-directory)))
+	   (values))
       (dir (cl-user::ls (or argstr "")))
       (dirr (cl-user::dirr (or argstr "")))
       (path (cl-user::swpath argstr))
@@ -178,7 +182,7 @@
       (gen-lisp (cl-user::swl argstr) (values))
       (lgen-lisp (cl-user::swll argstr) (values))
       (gen-c (cl-user::swc argstr) (values))
-      (make (if (null argstr)
+      (make (if (null argstr) 
 		(cl-user::make)
 	      (cl-user::make argstr)))
       (gen-java (cl-user::swj argstr) (values))
@@ -188,6 +192,7 @@
 ;      (j-config-make-public (cl-user::swj-config-make-public argstr))
 ;      (j-config-pkg (cl-user::swj-config-pkg argstr))
 ;      (j-config-reset (cl-user::swj-config-reset))
+      (prove (cl-user::sw (concatenate 'string "prove " argstr)) (values))
       (punits (cl-user::swpf argstr))
       (lpunits (cl-user::lswpf argstr))	; No local version yet
       (ctext (if (null argstr)
