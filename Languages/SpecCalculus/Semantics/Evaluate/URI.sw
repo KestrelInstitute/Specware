@@ -254,8 +254,9 @@ are not are removed from the environment.
 	    {rVal <- foldM (fn val -> (fn depURI -> {dVal <- validateCache depURI;
 						     return (max(val, dVal))}))
 		       timeStamp depURIs;
-	     if upToDate?(uri,rVal) then {setValidatedURI uri;
-					  return rVal}
+	     if timeStamp >= rVal & upToDate?(uri,rVal)
+	      then {setValidatedURI uri;
+		    return rVal}
 	      else {removeFromGlobalContext uri;
 		    return futureTimeStamp}}}}
 
