@@ -5,6 +5,7 @@ Synchronized with r1.4 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalSpecMor
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
+  import Spec/Utilities % for coerceToSpec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
 \end{spec}
 
@@ -15,7 +16,7 @@ coherence conditions of the morphism elements.
   def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules) = {
     (domValue,domTimeStamp,domDepURIs) <- evaluateTermInfo domTerm;
     (codValue,codTimeStamp,codDepURIs) <- evaluateTermInfo codTerm;
-    case (domValue,codValue) of
+    case (coerceToSpec domValue, coerceToSpec codValue) of
       | (Spec spc1, Spec spc2) ->
           {morph <- makeSpecMorphism(spc1, spc2, morphRules);
 	   return (Morph morph,max(domTimeStamp,codTimeStamp),
