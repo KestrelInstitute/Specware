@@ -234,7 +234,7 @@ PE qualifying spec
      else {
        print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n");
        (newOscSpec,newBSpec) <- specializeBSpec oldOscSpec (bSpec procInfo) extendedSubst newOscSpec;
-       % newBSpec <- removeNilTransitions newBSpec;
+       newBSpec <- removeNilTransitions newBSpec;
        newProcId <- makeNewProcId procId subst;
        print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n");
        when ((size (final newBSpec)) = 0)
