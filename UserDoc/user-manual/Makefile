@@ -16,7 +16,8 @@ pdf: $(SUM).pdf
 DB2PDF= ../bin/db2pdf -E9999
 
 PDFDBK= debug.dbk defining.dbk emacs.dbk generatedlisp.dbk \
-  install.dbk model.dbk process.dbk prove.dbk start.dbk
+  install.dbk model.dbk process.dbk prove.dbk start.dbk \
+  javacodegen.dbk ccodegen.dbk
 
 $(SUM).pdf: Makefile $(SUM).dbk $(PDFDBK)
 	@if test -r $(SUM).pdf; \
@@ -80,6 +81,18 @@ start.dbk: Makefile $(GLM2DBK) start.glm
 	 then /bin/mv -f start.dbk start.dbk.old; \
 	 fi
 	$(GLM2DBK) -pdf start.glm > start.dbk
+
+javacodegen.dbk: Makefile $(GLM2DBK) javacodegen.glm
+	@if test -r javacodegen.dbk; \
+	 then /bin/mv -f javacodegen.dbk javacodegen.dbk.old; \
+	 fi
+	$(GLM2DBK) -pdf javacodegen.glm > javacodegen.dbk
+
+ccodegen.dbk: Makefile $(GLM2DBK) ccodegen.glm
+	@if test -r ccodegen.dbk; \
+	 then /bin/mv -f ccodegen.dbk ccodegen.dbk.old; \
+	 fi
+	$(GLM2DBK) -pdf ccodegen.glm > ccodegen.dbk
 
 HTMDIR= $(SUM).htm-dir
 
@@ -167,10 +180,22 @@ start-htm.dbk: Makefile $(GLM2DBK) start.glm
 	 fi
 	$(GLM2DBK) -htm start.glm > start-htm.dbk
 
+javacodegen-htm.dbk: Makefile $(GLM2DBK) javacodegen.glm
+	@if test -r javacodegen-htm.dbk; \
+	 then /bin/mv -f javacodegen-htm.dbk javacodegen-htm.dbk.old; \
+	 fi
+	$(GLM2DBK) -htm javacodegen.glm > javacodegen-htm.dbk
+
+ccodegen-htm.dbk: Makefile $(GLM2DBK) ccodegen.glm
+	@if test -r ccodegen-htm.dbk; \
+	 then /bin/mv -f ccodegen-htm.dbk ccodegen-htm.dbk.old; \
+	 fi
+	$(GLM2DBK) -htm ccodegen.glm > ccodegen-htm.dbk
+
 clean:
 	rm -rf $(SUM).tex $(SUM).aux $(SUM).log $(SUM).out \
 	$(PDFDBK) $(HTMDBK) $(HTMDIR) *.old \
 	$(SUM).dbk $(SUM)-htm.dbk jade.log
 
 pristine: clean
-	
+

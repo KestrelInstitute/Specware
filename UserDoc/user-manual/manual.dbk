@@ -8,6 +8,8 @@
  <!ENTITY generatedlisp SYSTEM "generatedlisp.dbk">
  <!ENTITY debug SYSTEM "debug.dbk">
  <!ENTITY emacs SYSTEM "emacs.dbk">
+ <!ENTITY javacodegen SYSTEM "javacodegen.dbk">
+ <!ENTITY ccodegen SYSTEM "ccodegen.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
  <!ENTITY V "4.1">
