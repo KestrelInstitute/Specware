@@ -7,7 +7,7 @@ having (e.g.) the IEEE Floats as a model.
 This requires that INF is mapped to the largest possible
 true Float value (apparently 2**1024 - 2**971) and similarly
 for -INF.  So each operation that could result in overflow
-must check for this in an implementation based on IEE Floats.
+must check for this in an implementation based on IEEE Floats.
 
 The purpose is to be able to prove some properties of
 arithmetic expressions and such on real numbers, presumably
