@@ -10,6 +10,6 @@ SpecCalc qualifying spec
   op  evaluateCGen: ValueInfo * Option String -> SpecCalc.Env ValueInfo
   def evaluateCGen (valueInfo as (Spec spc,_,_), optFileNm) = {
     (optBaseUnitId,baseSpec) <- getBase;
-     return (generateCCode (subtractSpec spc baseSpec, spc, optFileNm));
+     return (generateCCode (baseSpec, subtractSpec spc baseSpec, spc, optFileNm));
     return valueInfo}
 endspec
