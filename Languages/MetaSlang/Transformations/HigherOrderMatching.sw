@@ -673,7 +673,8 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
         | Seq([],a) -> Product([],a)
         | Seq([M],_) -> inferType(spc,subst,M)
         | Seq(M::Ms,a) -> inferType(spc,subst,Seq(Ms,a))
-        | _ -> System.fail "Non-exhaustive match"
+	| Any a -> Any a
+        | _ -> System.fail "non-exhaustive match"
 
 
 \end{spec}
