@@ -1,4 +1,4 @@
-;;; specware-mode.el. Major mode for editing Specware
+;; specware-mode.el. Major mode for editing Specware
 ;;; Adapted from sml-mode
 ;; Copyright (C) 1989, Lars Bo Nielsen; 1994, Matthew J. Morley
 
@@ -964,19 +964,14 @@ If anyone has a good algorithm for this..."
 					    buffer-file-name))))
   (simulate-input-expression (concat ":sw " filename)))
 
-(defun read-unit-id-for-interactive (prompt &optional default)
-   (let* ((guess (or default buffer-file-name default-directory-name))
-	 (raw-file-name
-	  (read-file-name (format "%s file: " type-string)
-			  guess guess 'confirm))
-	 (expanded-file-name (expand-file-name raw-file-name)))
-    (if (file-directory-p expanded-file-name)
-	(progn
-	  (ding)
-	  (message (format "File: %s [a directory]" raw-file-name))
-	  (sit-for 1)
-	  (read-file-name-for-lisp-command type-string raw-file-name))
-      expanded-file-name)))
+(defun sw:dired-process-current-file ()
+  (interactive)
+  (setq filename (sw::windows-file-to-specware-unit-id (dired-get-filename)))
+  (simulate-input-expression (concat ":sw " filename)))
+
+(when (boundp 'dired-mode-map)
+  (define-key dired-mode-map "\C-cp" 'sw:dired-process-current-file)
+  (define-key dired-mode-map "\C-c!" 'cd-current-directory))
 
 (defun cd-current-directory ()
   (interactive)
@@ -1183,7 +1178,7 @@ If anyone has a good algorithm for this..."
 				    (point))))
 		   nil))
 	     (error nil))))))
-    (when (member symbol '(:))
+    (when (member symbol '(":"))
       (setq symbol nil))
     (or symbol
 	(if (and up-p (null symbol))

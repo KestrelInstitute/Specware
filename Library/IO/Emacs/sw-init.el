@@ -131,6 +131,8 @@
 
 ;; (simulate-input-expression "t")
 (defun simulate-input-expression (str)
+  (unless (inferior-lisp-running-p)
+    (error "Specware not running. Do M-x run-specware4"))
   (let ((win (get-buffer-window *specware-buffer-name*)))
     (if win (select-window win)
       (sw:switch-to-lisp)))

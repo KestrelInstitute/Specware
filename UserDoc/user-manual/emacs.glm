@@ -1,7 +1,7 @@
 <chapter id="emacs">
 
 <title>Emacs Usage in Specware</title>
-f
+
 <para>
 There are a number of emacs commands for &Specware usage. We also list
 some useful general-purpose commands. There is a &Specware mode for
@@ -11,7 +11,8 @@ editing specware files.
 <section>
 <title>&Specware Mode commands</title>
 
-These are the commands available when editing [[.sw] files.
+These are commands available when editing [[.sw]] files. Some of
+them are available in the Specware menu in the menubar.
 
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
@@ -92,16 +93,26 @@ These are the commands available when editing [[.sw] files.
 	</entry>
       </row>
       <row>
+	<entry colname="key">&nbsp; [[C-c p]]</entry>
+        <entry colname="name">&nbsp; [[sw:process-current-file]]</entry>
+	<entry colname="descr">&nbsp; Does :sw on current file. 
+	  Also available in dired where it applies to the file on the
+	  current line.
+	</entry>
+      </row>
+      <row>
 	<entry colname="key">&nbsp; [[C-c C-p]]</entry>
-        <entry colname="name">&nbsp; [[sw:process-file]]</entry>
+        <entry colname="name">&nbsp; [[sw:process-unit]]</entry>
 	<entry colname="descr">&nbsp; Prompts for unitId to process.
 	  Defaults to unitId for the current file. </entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[C-c C-p]]</entry>
-        <entry colname="name">&nbsp; [[sw:cd-current-directory]]</entry>
+        <entry colname="name">&nbsp; [[cd-current-directory]]</entry>
 	<entry colname="descr">&nbsp; Does a :cd in the *common-lisp* 
-	  buffer to the directory of the current file.</entry>
+	  buffer to the directory of the current file.
+	  Also available in dired.
+	</entry>
       </row>
     </tbody>
   </tgroup>
@@ -146,10 +157,19 @@ These are the commands available in the *common-lisp* buffer.
 	</entry>
       </row>
       <row>
-	<entry colname="key">&nbsp; [[C-c C-p]]</entry>
-        <entry colname="name">&nbsp; [[sw:cd-current-directory]]</entry>
-	<entry colname="descr">&nbsp; Does a :cd in the *common-lisp* 
-	  buffer to the directory of the current file.</entry>
+	<entry colname="key">&nbsp; [[M-p]]</entry>
+        <entry colname="name">&nbsp; [[fi:pop-input]]</entry>
+	<entry colname="descr">&nbsp; Gets previous input.</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-r]]</entry>
+        <entry colname="name">&nbsp; [[fi:pop-input]]</entry>
+	<entry colname="descr">&nbsp; Gets previous input matching
+          regular expression (prompted for). Typically you can get
+          a previous input by typing in a small substring. Repeating
+          the command without changing the expression will find
+	  earlier matches.
+	</entry>
       </row>
     </tbody>
   </tgroup>
@@ -161,18 +181,100 @@ These are the commands available in the *common-lisp* buffer.
 <title>Other Useful Emacs Commands</title>
 
 <para>
-These are a few general Emacs commands which are useful when using &Specware.
+These are a few general Emacs commands which are useful when using
+&Specware. Commands with no key sequences are executed using [[M-x name]].
 </para>
 
-C-h
-M-/ dabbrev-expand
-C-sh-middle
-M-x igrep-insinuate
-M-x igrep
-M-x igrep-find
-C-x d
-C-x C-f
-M-x viper-mode
+<informaltable frame="sides" colsep="1">
+  <tgroup cols="3">
+    <colspec colname="key"      colnum="2" colwidth="40"  rowsep="1"/>
+    <colspec colname="name"     colnum="1" colwidth="85"  rowsep="1"/>
+    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+    <thead>
+      <row>
+	<entry colname="key">&nbsp; Sort</entry>
+	<entry colname="name">&nbsp; Name</entry>
+	<entry colname="descr">&nbsp; Description</entry>
+      </row>
+    </thead>
+    <tbody>
+      <row>
+	<entry colname="key">&nbsp; [[C-h]]</entry>
+        <entry colname="name">&nbsp; [[help]]</entry>
+	<entry colname="descr">&nbsp; Help options. [[C-h m]] gives
+	  help about the current mode. Also see Help menu in menubar.
+        </entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-/]]</entry>
+        <entry colname="name">&nbsp; [[dabbrev-expand]]</entry>
+	<entry colname="descr">&nbsp; Does symbol completion based on
+	  nearby words in buffer. Repeated key presses find additional
+	  completions.
+        </entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-sh-middle]]</entry>
+        <entry colname="name">&nbsp; [[mode-motion-copy]]</entry>
+	<entry colname="descr">&nbsp; Copies the (highlighted) identifier or
+	  expression under the mouse to point.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; </entry>
+        <entry colname="name">&nbsp; [[igrep]]</entry>
+	<entry colname="descr">&nbsp; Greps for string in files. 
+	  Brings up buffer with matching lines. Mouse middle on
+	  a line to go to it. (Requires installation of Cygwin in Windows)
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; </entry>
+        <entry colname="name">&nbsp; [[igrep-find]]</entry>
+	<entry colname="descr">&nbsp; Like igrep but searches in
+	  all subdirectories.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; </entry>
+        <entry colname="name">&nbsp; [[fgrep]]</entry>
+	<entry colname="descr">&nbsp; Like igrep except uses fgrep to search.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; </entry>
+        <entry colname="name">&nbsp; [[fgrep-find]]</entry>
+	<entry colname="descr">&nbsp; Like igrep-find except uses fgrep to search.
+	  all subdirectories.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-x C-f]]</entry>
+        <entry colname="name">&nbsp; [[find-file]]</entry>
+	<entry colname="descr">&nbsp; Prompts for file to
+	  edit. [[tab]] does filename completion.
+        </entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-x d]]</entry>
+        <entry colname="name">&nbsp; [[dired]]</entry>
+	<entry colname="descr">&nbsp; Prompts for directory to edit.
+	  Note that commands [[sw:process-current-file]] and
+	  [[cd-current-directory]] described in the previous section
+	  are available in dired mode.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; </entry>
+        <entry colname="name">&nbsp; [[viper-mode]]</entry>
+	<entry colname="descr">&nbsp; Vi emulation mode for people
+	  who like to edit using vi commands. Documentation is
+	  available under [[C-h i]].
+	</entry>
+      </row>
+    </tbody>
+  </tgroup>
+</informaltable>
 
 </section>
 </chapter>

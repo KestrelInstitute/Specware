@@ -7,6 +7,7 @@
  <!ENTITY prove SYSTEM "prove.dbk">
  <!ENTITY generatedlisp SYSTEM "generatedlisp.dbk">
  <!ENTITY debug SYSTEM "debug.dbk">
+ <!ENTITY emacs SYSTEM "emacs.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
  <!ENTITY V "4.0">
@@ -46,5 +47,6 @@
 &process; <!-- includes &prove; -->
 &generatedlisp;
 &debug;
+&emacs;
 
 </book>

@@ -26,3 +26,11 @@
 	 '("\\.spec$" . specware-mode)
 	 '("\\.sw$" . specware-mode)
 	 auto-mode-alist))
+
+(defvar *load-mode-motion+* t)
+
+(when *load-mode-motion+*
+  (defvar mode-motion+-religion 'highlight)
+  (require 'mode-motion+)
+  (set-mode-motion-handler 'dired-mode 'highlight-vline)
+  (global-set-key '(control shift button2) 'mode-motion-copy))
