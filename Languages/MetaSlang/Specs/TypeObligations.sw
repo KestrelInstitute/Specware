@@ -508,7 +508,9 @@ spec
      tcc
 
  def makeTypeCheckObligationSpec (spc,specCalcTerm) =
-   let tcSpec = addImport ((specCalcTerm,spc),emptySpec) in
+   %% if you only do an addImport to the emptyspec you miss all the substance of the
+   %% original spec, thus we do an setImports to spc.
+   let tcSpec = setImports (spc, [(specCalcTerm,spc)]) in
    addConjectures (checkSpec spc,tcSpec)
 
 % op  boundVars    : Gamma -> List Var
