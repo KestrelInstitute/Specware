@@ -404,7 +404,7 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :FIXITY ()
   (:anyof
    ((:tuple "infixl" (:optional (1 :NAT-LITERAL))) (make-fixity :|Left| 1 ':left-lcb ':right-lcb))
-   ((:tuple "infixr" (:optional (1 :NAT-LITERAL))) (make-fixity :|Left| 1 ':left-lcb ':right-lcb))
+   ((:tuple "infixr" (:optional (1 :NAT-LITERAL))) (make-fixity :|Left| 1 ':left-lcb ':right-lcb))))
 ||#
 
 (define-sw-parser-rule :ASSOCIATIVITY ()
@@ -1067,9 +1067,11 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :PROJECTOR ()
-  (:tuple "project" (1 :FIELD-SELECTOR))
-  (make-projector 1 ':left-lcb ':right-lcb)
-  :documentation "Projection")
+  (:anyof
+   ((:tuple "project" (1 :NAT)) (make-nat-selector  1 ':left-lcb ':right-lcb)
+    :documentation "Projection")
+   ((:tuple "project" (1 :FIELD-NAME)) (make-field-name-selector 1 ':left-lcb ':right-lcb)
+    :documentation "Projection")))
 
 (define-sw-parser-rule :RELAXATOR ()
   (:tuple "relax"    (1 :CLOSED-EXPRESSION))

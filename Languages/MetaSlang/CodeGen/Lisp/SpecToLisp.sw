@@ -56,12 +56,14 @@ SpecToLisp qualifying spec {
       let row = product(sp,dom)   in
       ith(0,id,row)
 
- def isPairProjection(sp,srt,id):Option(String) = 
+ def isSpecialProjection(sp,srt,id):Option(String) = 
      case stripSubsorts(sp,srt)
        of Arrow(dom,_,_) -> 
-          (case unfoldBase(sp,dom)
+          (case stripSubsorts(sp,dom)
              of Product([(id1,_),(id2,_)],_) -> 
                 if id1 = id then Some "car" else Some "cdr"
+	      | Product([(id1,_)],_) ->	% Unary record
+		Some "functions::id"
               | _ -> None)
        | _ -> None
 
@@ -185,7 +187,7 @@ def mkLispTuple valTms =
   case valTms
     of [] -> mkLBool(false)        % Nil
      %% Named tuples can be unary
-     %| [x] -> System.fail ("Unary tuple!")
+     | [x] -> x
      | [_,_] -> mkLApply(mkLOp "cons",valTms)
      | _ -> mkLApply(mkLOp "vector",valTms)
      
@@ -221,7 +223,7 @@ def mkLApplyArity(id:QualifiedId,defPkgNm:String,arity,vars,args) =
 def mkLEqualityOp(sp,srt) = 
         case stripSubsorts(sp,srt) 
           of Arrow(dom,_,_) -> 
-            (case unfoldBase(sp,dom)
+            (case stripSubsorts(sp,dom)
                of Product([(_,s),_],_) -> 
                   if natSort?(s)  % intSort?(s)
                     then " = "
@@ -245,11 +247,13 @@ op  mkLTermOp : fa(a) Spec * String * StringSet.Set * (Fun * Sort * a)
 def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
     case termOp
       of (Project id,srt,_) -> 
-         (case (isPairProjection(sp,srt,id),optArgs)
+         (case (isSpecialProjection(sp,srt,id),optArgs)
             of (Some proj,None) -> 
                 mkLLambda(["!x"],[],mkLApply(mkLOp proj,[mkLVar "!x"]))
              | (Some proj,Some trm) ->
-                mkLApply(mkLOp proj,[mkLTerm(sp,dpn,vars,trm)])
+		let lTrm = mkLTerm(sp,dpn,vars,trm) in
+		if proj = "functions::id" then lTrm
+                 else mkLApply(mkLOp proj,[lTrm])
              | (None,Some trm) -> 
                let id = projectionIndex(sp,id,srt)  in
                 mkLApply(mkLOp "svref",[mkLTerm(sp,dpn,vars,trm),mkLNat id])
@@ -344,7 +348,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
         | None -> mkLApply(mkLOp "list",[mkLIntern id]))
   | (Quotient,srt,_) -> 
     let dom = range(sp,srt) in
-    let Quotient(_,equiv,_) = unfoldBase(sp,dom) in
+    let Quotient(_,equiv,_) = stripSubsorts(sp,dom) in
     let equiv = mkLTerm(sp,dpn,vars,equiv) in
     (case optArgs
        of None -> mkLApply(mkLOp  "slang-built-in::quotient",[equiv])
@@ -353,7 +357,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
   | (Choose,srt,_) ->  
     let srt1 = range(sp,srt) in
     let dom = domain(sp,srt1) in
-    let Quotient(_,equiv,_) = unfoldBase(sp,dom) in
+    let Quotient(_,equiv,_) = stripSubsorts(sp,dom) in
     let equiv = mkLTerm(sp,dpn,vars,equiv) in
     (case optArgs
        of None -> mkLApply(mkLOp "slang-built-in::choose",[equiv])
