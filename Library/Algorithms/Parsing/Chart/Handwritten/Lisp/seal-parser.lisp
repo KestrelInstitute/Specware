@@ -880,7 +880,8 @@
     ;;
     ;; make rules optional if all their items are optional
     ;;
-    (maphash #'(lambda (name rule)
+    (maphash #'(lambda (rule-name rule)
+		 (declare (ignore rule-name))
 		 (let* ((items (parser-rule-items rule))
 			(n (length items))
 			(all-optional? 
@@ -918,6 +919,7 @@
     ;; make items optional if they invoke an optional rule 
     ;;
     (maphash #'(lambda (rule-name rule)
+		 (declare (ignore rule-name))
 		 (let* ((items (parser-rule-items rule))
 			(n (length items)))
 		   (dotimes (i n t)
@@ -933,7 +935,7 @@
 			       (when-debugging
 				(when *verbose?*
 				  (comment "In rule ~30S, item ~D (~S) is now optional with semantics ~S."
-					   rule-name i item-rule-name
+					   rule i item-rule-name
 					   (parser-rule-item-default-semantics item))))))))))))
 	     ht-name-to-rule)
     ;; changed? will be NIL once we reach a fixpoint (probably about 2 rounds)
