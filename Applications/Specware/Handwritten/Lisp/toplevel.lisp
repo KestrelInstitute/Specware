@@ -458,6 +458,74 @@
 			    (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
 
+(defun swpf-internal (x &optional y &key (obligations t))
+  (Specware::evaluateProofGen_fromLisp-3 (subst-home (string x))
+					 (if y (cons :|Some| (string (subst-home y)))
+					   '(:|None|))
+					 obligations))
+
+(defvar *last-swpf-args* nil)
+
+(defun swpf (&optional args)
+  (let ((r-args (if (not (null args))
+		    (toplevel-parse-args args)
+		  *last-swpf-args*)))
+    (if r-args
+	(progn (setq *last-swpf-args* r-args)
+	       (swpf-internal (string (first r-args))
+			     (if (not (null (second r-args)))
+				 (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
+
+#+allegro
+(top-level:alias ("swpf" :case-sensitive) (&optional &rest args)
+  (let ((r-args (if (not (null args))
+		    args
+		  *last-swpf-args*)))
+    (if r-args
+	(progn (setq *last-swpf-args* args)
+	       (apply 'swpf-internal r-args))
+      (format t "No previous unit evaluated~%"))))
+
+;		      (string (first r-args))
+;			(if (not (null (second r-args)))
+;			    (string (second r-args)) nil)))
+;      (format t "No previous unit evaluated~%"))))
+
+
+;(defun swpfl-internal (x &optional y)
+;  (let ((lisp-file-name (subst-home (or y (concatenate 'string
+;					    specware::temporaryDirectory
+;					    "cl-current-file")))))
+;    (if (Specware::evaluateLispCompileLocal_fromLisp-2
+;	 x (cons :|Some| lisp-file-name))
+;	(let (#+allegro *redefinition-warnings*)
+;	  (specware::compile-and-load-lisp-file lisp-file-name))
+;      "Specware Processing Failed!")))
+
+;(defun swpfl (&optional args)
+;  (let ((r-args (if (not (null args))
+;		    (toplevel-parse-args args)
+;		  *last-swl-args*)))
+;    (if r-args
+;	(progn (setq *last-swl-args* r-args)
+;	       (swpfl-internal (string (first r-args))
+;			      (if (not (null (second r-args)))
+;				  (string (second r-args)) nil)))
+;      (format t "No previous unit evaluated~%"))))
+
+;#+allegro
+;(top-level:alias ("swpfl" :case-sensitive) (&optional &rest args)
+;  (let ((r-args (if (not (null args))
+;		    args
+;		  *last-swl-args*)))
+;    (if r-args
+;	(progn (setq *last-swl-args* args)
+;	       (funcall 'swpfl-internal (string (first r-args))
+;			(if (not (null (second r-args)))
+;			    (string (second r-args)) nil)))
+;      (format t "No previous unit evaluated~%"))))
+
 #+allegro
 (top-level:alias ("wiz" :case-sensitive) (&optional (b nil b?))
   (if b? (princ (setq SpecCalc::specwareWizard? b))

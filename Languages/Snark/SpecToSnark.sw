@@ -126,7 +126,25 @@ snark qualifying spec {
 						 Lisp.symbol("SNARK","?X")]
 				       ]
 			    ]
-		)],		
+		)],
+     Lisp.list [snark_assert,
+		Lisp.quote
+		(Lisp.list [Lisp.symbol("SNARK","ALL"),
+			    Lisp.list[
+				      Lisp.list [Lisp.symbol("SNARK","?X"),
+						 Lisp.symbol("KEYWORD","SORT"),
+						 Lisp.symbol("SNARK","List")]
+				     ],
+			    Lisp.list [Lisp.symbol("SNARK","OR"),
+				       Lisp.list[Lisp.symbol("SNARK","embed?"),
+						 Lisp.symbol("SNARK","Cons"),
+						 Lisp.symbol("SNARK","?X")],
+				       Lisp.list[Lisp.symbol("SNARK","embed?"),
+						 Lisp.symbol("SNARK","Nil"),
+						 Lisp.symbol("SNARK","?X")]
+				       ]
+			    ]
+		)],
      Lisp.list [snark_assert,
 		Lisp.quote
 		(Lisp.list [Lisp.symbol("SNARK",">="), Lisp.nat(1), Lisp.nat(0)]
@@ -134,9 +152,20 @@ snark qualifying spec {
 	       ],		
      Lisp.list [snark_assert,
 		Lisp.quote
+		(Lisp.list [Lisp.symbol("SNARK",">"), Lisp.nat(1), Lisp.nat(0)]
+		)
+	       ],		
+     Lisp.list [snark_assert,
+		Lisp.quote
 		(Lisp.list [Lisp.symbol("SNARK",">="), Lisp.nat(0), Lisp.nat(0)]
 		)
+	       ],
+     Lisp.list [snark_assert,
+		Lisp.quote
+		(Lisp.list [Lisp.symbol("SNARK","NOT"), (Lisp.list [Lisp.symbol("SNARK","="), Lisp.nat(1), Lisp.nat(0)])]
+		)
 	       ]
+
     ]
 
   op arithmeticFunctions: List LispCell
@@ -241,14 +270,17 @@ snark qualifying spec {
 		     Lisp.symbol("KEYWORD","SORT"),
 		     Lisp.quote(snarkBaseSort(spc, srt, true))]
        | Arrow(dom, rng, _) ->
-	  case rng of
+	  (case rng of
 	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateDecl(spc, name, dom, 1)
 	  | _ -> 
 	    let snarkDomSrt = snarkBaseSort(spc, dom, false) in
 	        Lisp.list[declare_function,
 			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
 			  Lisp.symbol("KEYWORD","SORT"),
-			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
+			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))])
+       | _ -> Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
+		     Lisp.symbol("KEYWORD","SORT"),
+		     Lisp.quote(snarkBaseSort(spc, srt, true))]
        )
 
   def snarkPropositionSymbolDecl(name) =
@@ -378,6 +410,9 @@ snark qualifying spec {
   op snarkOpDecl: Spec * String * Sort -> LispCell
 
   def snarkOpDecl(spc, name, srt) =
+    case name of
+      | "+" -> Lisp.nil()
+      | _ ->
     if Prover.functionSort?(spc, srt)
       then snarkFunctionDecl(spc, name, srt)
       else snarkFunctionDecl(spc, name, srt)

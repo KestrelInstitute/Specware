@@ -401,6 +401,50 @@ getOptSpec returns Some spc if the given string evaluates to a spec
     runSpecCommand (catch prog toplevelHandler)
 \end{spec}
 
+\begin{spec}
+  op evaluateProofGen_fromLisp : String * Option String * Boolean -> Boolean
+  def evaluateProofGen_fromLisp (path,targetFile, fromObligations?) = 
+    let target =
+      case targetFile of
+        | None -> None
+        | Some name -> Some (maybeAddSuffix name ".sw") in
+    let prog = {
+      cleanEnv;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
+      path_body <- return (removeSWsuffix path);
+      unitId <- pathToRelativeUID path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      spcInfo <- evaluateUID position unitId;
+      evaluateProofGen (spcInfo, (UnitId unitId, position), target, fromObligations?);
+      return true
+    } in
+    runSpecCommand (catch prog toplevelHandler) 
+\end{spec}
+
+Second argument is interpreted as spec containing options for the code generation.
+
+
+  op evaluateProofGenLocal_fromLisp : String * Option String -> Boolean
+  def evaluateProofGenLocal_fromLisp (path,targetFile) = 
+    let target =
+      case targetFile of
+        | None -> None
+        | Some name -> Some (maybeAddSuffix name ".sw") in
+    let prog = {
+      cleanEnv;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
+      path_body <- return (removeSWsuffix path);
+      unitId <- pathToRelativeUID path_body;
+      pos <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      spcInfo <- evaluateUID pos unitId;
+      evaluateProofGenLocal (spcInfo, (UnitId unitId, pos), target);
+      return true
+    } in
+    runSpecCommand (catch prog toplevelHandler)
+
+
 removeSWsuffix could be generalized to extractUIDpath
 and then the code to create the position would use the
 start and end positions of path_body within path

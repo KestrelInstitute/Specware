@@ -26,6 +26,6 @@ Prover qualifying spec
     let newDefAxioms = foldriAQualifierMap axiomFromOpDef [] norm_spc.ops in
     let newProperties = mergeAxiomsByPos(spc.properties, newDefAxioms) in
     %%let _ = debug("explicateHidden") in 
-    setProperties(spc, newProperties)
+    simplifySpec((setProperties(spc, newProperties)))
 
 endspec

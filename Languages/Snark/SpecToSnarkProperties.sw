@@ -271,16 +271,27 @@ snark qualifying spec
       | Embed (id, b) ->
 	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName("","embed_"^id)), Lisp.list snarkArgs)
+      | Restrict -> let [tm] = args in mkSnarkTerm(context, sp, dpn, vars, tm)
+
+  op mkSnarkHOTermApp: Context * Spec * String * StringSet.Set * MS.Term * MS.Term -> LispCell
+
+  def mkSnarkHOTermApp(context, sp, dpn, vars, f, arg) =
+    let args = case arg
+                of Record(flds,_) -> [f]++map(fn (_, term) -> term) flds
+	         | _ -> [f, arg] in
+    let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
+     Lisp.cons(Lisp.symbol("SNARK","HOAPPLY"), Lisp.list snarkArgs)
 
   op mkSnarkTerm: Context * Spec * String * StringSet.Set * MS.Term -> LispCell
 
   def mkSnarkTerm(context, sp, dpn, vars, term) =
 %    let _ = writeLine("Translating to snark: "^printTerm(term)) in
-    case term
-      of Apply(Fun(f, srt, _), arg, _) -> mkSnarkTermApp(context, sp, dpn, vars, f, arg)
+    case term of 
+      | Apply(Fun(f, srt, _), arg, _) -> mkSnarkTermApp(context, sp, dpn, vars, f, arg)
+      | Apply(f, arg, _) -> mkSnarkHOTermApp(context, sp, dpn, vars, f, arg)
       | IfThenElse(c, t, e, _) ->
 	   Lisp.list [Lisp.symbol("SNARK","IF"),
-		      mkSnarkTerm(context, sp, dpn, vars, c),
+		      mkSnarkFmla(context, sp, dpn, vars, [], c),
 		      mkSnarkTerm(context, sp, dpn, vars, t),
 		      mkSnarkTerm(context, sp, dpn, vars, e)]
       | Fun (Op(Qualified(qual,id),_),_, _) -> Lisp.symbol("SNARK",mkSnarkName(qual, id))
@@ -292,6 +303,7 @@ snark qualifying spec
   op mkNewSnarkTerm: Context * MS.Term -> LispCell
 
   def mkNewSnarkTerm(context, term) =
+    %let _ = debug("mkNewSnarkTerm") in    
     let vars = freeVars term in
     let newFun = mkNewSnarkOp(context) in
     let snarkVars = map (fn (v) -> snarkVar(v)) vars in

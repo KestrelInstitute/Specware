@@ -35,7 +35,7 @@ SpecCalc qualifying spec
                  | "java" ->
 		       evaluateJavaGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
 		 | "proofs" ->
-		       evaluateProofGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
+		       evaluateProofGen ((cValue,timeStamp,depUIDs), sub_term,optFile,false)
                  | lang -> raise (Unsupported ((positionOf sub_term),
                                 "no generation for language "
                               ^ lang
