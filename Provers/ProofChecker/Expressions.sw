@@ -11,6 +11,9 @@ spec
   type Type
   type Pattern
 
+  type Types    = FSeq Type
+  type Patterns = FSeq Pattern
+
   (* Unlike LD, we model all expression abbreviations (e.g. universal and
   existential quantification) explicitly.
 
@@ -26,7 +29,10 @@ spec
   A fourth difference is that here we allow lambda abstractions and unique
   existentials to bind multiple variables. *)
 
+  type Fields = FSeq Field
+
   type BoundVar = Variable * Type
+  type BoundVars = FSeq BoundVar
 
   type NullaryExprOperator =
     | variable Variable
@@ -53,7 +59,7 @@ spec
     | equivalence
 
   type NaryExprOperator =
-    | record FSeq Field
+    | record Fields
     | tuple
 
   type BindingExprOperator =
@@ -62,31 +68,34 @@ spec
     | existential
     | existential1
 
+  type Expression
+  type Expressions = FSeq Expression
+
   type Expression =
     | nullary         NullaryExprOperator
     | unary           UnaryExprOperator * Expression
     | binary          BinaryExprOperator * Expression * Expression
     | ifThenElse      Expression * Expression * Expression
-    | nary            NaryExprOperator * FSeq Expression
-    | binding         BindingExprOperator * FSeqNE BoundVar * Expression
-    | opInstance      Operation * FSeq Type
+    | nary            NaryExprOperator * Expressions
+    | binding         BindingExprOperator * BoundVars * Expression
+    | opInstance      Operation * Types
     | embedder        Type * Constructor
     | cas(*e*)        Expression * FSeqNE (Pattern * Expression)
     | recursiveLet    FSeqNE (BoundVar * Expression) * Expression
     | nonRecursiveLet Pattern * Expression * Expression
 
-  op conjoinAll : FSeq Expression -> Expression
+  op conjoinAll : Expressions -> Expression
   def conjoinAll =
-    the (fn (conjoinAll : FSeq Expression -> Expression) ->
+    the (fn (conjoinAll : Expressions -> Expression) ->
       (conjoinAll empty = nullary tru) &&
       (fa(e) conjoinAll (singleton e) = e) &&
       (fa(e,exprs) exprs ~= empty =>
                    conjoinAll (e |> exprs) =
                    binary (conjunction, e, conjoinAll exprs)))
 
-  op disjoinAll : FSeq Expression -> Expression
+  op disjoinAll : Expressions -> Expression
   def disjoinAll =
-    the (fn (disjoinAll : FSeq Expression -> Expression) ->
+    the (fn (disjoinAll : Expressions -> Expression) ->
       (disjoinAll empty = nullary fals) &&
       (fa(e) disjoinAll (singleton e) = e) &&
       (fa(e,exprs) exprs ~= empty =>

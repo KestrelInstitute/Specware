@@ -17,10 +17,15 @@ spec
   types, not necessarily sum types. The inference rules require the decorating
   type of an embedding pattern to be a sum type. *)
 
+  type Fields = FSeq Field
+
+  type Pattern
+  type Patterns = FSeq Pattern
+
   type Pattern =
     | variable  Variable * Type
     | embedding Type * Constructor * Pattern
-    | record    FSeq Field * FSeq Pattern
+    | record    Fields * Patterns
     | alias     Variable * Type * Pattern
 
 endspec
