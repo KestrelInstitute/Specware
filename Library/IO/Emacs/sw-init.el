@@ -15,7 +15,8 @@
 			  (if *windows-system-p*
 			      "windows"
 			    (symbol-name system-type))))
-	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*)))
+	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*))
+	 (already-running? (inferior-lisp-running-p)))
 
     (setq sw:common-lisp-host "localhost")
     (setq-default sw::lisp-host sw:common-lisp-host)
@@ -70,7 +71,8 @@
     (sw:eval-in-lisp-no-value
      (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
     (goto-char (point-max))
-    (simulate-input-expression ":sw-shell")
+    (unless already-running?
+      (simulate-input-expression ":sw-shell"))
     ))
 
 (defun set-socket-init-for-specware ()
@@ -168,7 +170,8 @@
       (sw:switch-to-lisp)))
   (goto-char (point-max))
   (insert str)
-  (inferior-lisp-newline))
+  (inferior-lisp-newline)
+  (sit-for 0.1 t))
 
 (defvar *specware-continue-form* nil)
 (defvar *last-specware-continue-form* nil)
