@@ -60,14 +60,14 @@ variable, then it will appear twice is the list of UnitId's we generate.
  op checkSpecPathsExistence?: Boolean
  def checkSpecPathsExistence? = true
 
- op checkSpecPathsExistence: String -> ()
+ op checkSpecPathsExistence: String -> Boolean
  def checkSpecPathsExistence str =
    if checkSpecPathsExistence?
-     then app (fn dir -> if fileExists? dir
-	                  then ()
-			  else warn("Directory does not exist: " ^ dir))
+     then all (fn dir -> if fileExists? dir
+	                  then true
+			  else (warn("Directory does not exist: " ^ dir); false))
             (splitStringAtChar specPathSeparator str)
-     else ()
+     else true
 
 }
 \end{spec}
