@@ -2,7 +2,7 @@
 This is a hopelessly naive implementation of Sets as Lists.
 
 \begin{spec}
-spec {
+spec
   import ../Polymorphic
   import /Library/PrettyPrinter/WadlerLindig
 
@@ -67,4 +67,5 @@ spec {
      ]
 
   def toList l = l
-}
+  def fromList l = l
+endspec

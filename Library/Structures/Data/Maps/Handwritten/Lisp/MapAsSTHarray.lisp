@@ -229,11 +229,11 @@
   )
 
 #+allegro
-(progn (setf (get 'foldi 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
-       (setf (get 'app 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
-       (setf (get 'appi 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
-       (setf (get '|!map| 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
-       (setf (get 'mapi 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil)))
+(progn (setf (get 'foldi-3 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
+       (setf (get 'app-2 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'appi-2 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'map-2 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'mapi-2 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil)))
 
 (defun STH_foldi-3 (fn result m)
   (map-as-undo-harray--map-through-pairs
@@ -270,9 +270,3 @@
 	       (map-as-undo-harray--harray m))
     items)))
 
-
-
-#|
-
-
-|#

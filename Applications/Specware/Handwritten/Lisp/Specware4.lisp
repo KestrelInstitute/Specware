@@ -107,6 +107,8 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
+    ;"Library/Structures/Data/Sets/Handwritten/Lisp/SetAsCachedHArray.lisp"
+    "Library/Structures/Data/Sets/Handwritten/Lisp/SetAsSTHarray.lisp"
     "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
     "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
     "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system

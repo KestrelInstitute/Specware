@@ -43,7 +43,7 @@ These shouldn't be here.
 
 \begin{spec}
   op toList : [a] Set a -> List a
-%  op fromList : [a] List a -> Set a
+  op fromList : [a] List a -> Set a
 %  op addList : [a] Set a -> List a -> Set a
 end
 \end{spec}
