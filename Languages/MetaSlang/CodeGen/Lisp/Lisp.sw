@@ -3,14 +3,16 @@
 ListADT qualifying spec {
   import /Library/Legacy/Utilities/Lisp
   import /Library/Legacy/DataStructures/ListPair
-  import /Library/Legacy/DataStructures/StringMapSplay
-  import /Library/Legacy/DataStructures/StringSetSplay
+  %import /Library/Legacy/DataStructures/StringMapSplay
+  import /Library/Structures/Data/Maps/SimpleAsSTHarray
+  %import /Library/Legacy/DataStructures/StringSetSplay
+  import /Library/Structures/Data/Sets/AsSTHarray
   % import System  	% ../utilities/system-base.sl
   import /Library/Legacy/DataStructures/TopSort
   import /Library/Legacy/DataStructures/MergeSort
   import /Library/PrettyPrinter/BjornerEspinosa
 
-  sort LispSpec =
+  type LispSpec =
     { 
       name	    : String,
       extraPackages : Strings,
@@ -18,7 +20,7 @@ ListADT qualifying spec {
       axioms        : LispTerms,
       opDefns       : Definitions }
 
-  sort Definition = String * LispTerm
+  type Definition = String * LispTerm
 
   %% Following musing by jlm:
   %%
@@ -67,7 +69,7 @@ ListADT qualifying spec {
   %%        E.g., see  http://www.franz.com/support/documentation/6.1/ansicl/subsubsu/specialf.htm
   %%        Note that const, op, var, set, apply, etc. are not among these! 
 
- sort LispTerm =
+ type LispTerm =
 
     | Const   Val
     | Op      String
@@ -81,10 +83,10 @@ ListADT qualifying spec {
     | Letrec  Strings  * LispTerms * LispTerm
     | Seq     LispTerms
 
-  sort LispDecl =
+  type LispDecl =
     | Ignore  Strings
 
-  sort Val =
+  type Val =
     | Boolean   Boolean
     | Nat       Nat
     | Char      Char
@@ -93,11 +95,11 @@ ListADT qualifying spec {
     | Parameter String
     | Cell      Lisp.LispCell
 
-  sort LispSpecs   = List LispSpec
-  sort Strings     = List String
-  sort LispTerms   = List LispTerm
-  sort LispDecls   = List LispDecl
-  sort Definitions = List Definition
+  type LispSpecs   = List LispSpec
+  type Strings     = List String
+  type LispTerms   = List LispTerm
+  type LispDecls   = List LispDecl
+  type Definitions = List Definition
 
   op emptySpec : LispSpec
 
@@ -108,12 +110,12 @@ ListADT qualifying spec {
       axioms  = [],
       opDefns = [] }
 
-  op  ops: LispTerm * StringSet.Set -> StringSet.Set
+  op  ops: LispTerm * Set.Set String -> Set.Set String
   def ops(term:LispTerm,names) =
       case term 
-        of Const(Parameter name) -> StringSet.add(names,name)
+        of Const(Parameter name) -> Set.insert names name
 	 | Const _ -> names
-         | Op      name -> StringSet.add(names,name)
+         | Op      name -> Set.insert names name
          | Var     _ -> names
          | Set     (_,term) -> ops(term,names)
          | Lambda  (_,_,term) -> ops(term,names)
@@ -128,30 +130,30 @@ ListADT qualifying spec {
   def sortDefs(defs) = 
       let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 leq nm1) defs in
       let defMap = 
-	  List.foldl (fn((name,term),map)-> StringMap.insert(map,name,(name,term)))
-	  StringMap.empty defs
+	  List.foldl (fn((name,term),map)-> Map.update(map,name,(name,term)))
+	  Map.emptyMap defs
       in
       let map = 
 	  List.foldl
 	    (fn((name,term),map) -> 
-		let opers = ops(term,StringSet.empty) in
-		let opers = StringSet.listItems opers in
-		StringMap.insert(map,name,opers))
-	     StringMap.empty defs
+		let opers = ops(term,Set.empty) in
+		let opers = Set.toList opers in
+		Map.update(map,name,opers))
+	     Map.emptyMap defs
        in
-       let find = fn name -> (case StringMap.find(map,name) of None -> [] | Some l -> l) in
+       let find = fn name -> (case Map.apply(map,name) of None -> [] | Some l -> l) in
        let names = TopSort.topSort(EQUAL,find,List.map (fn(n,_)-> n) defs) in
-       let defs  = List.mapPartial (fn name -> StringMap.find(defMap,name)) names in
+       let defs  = List.mapPartial (fn name -> Map.apply(defMap,name)) names in
        defs
 
   %% Printing of characters is temporarily wrong due to bug in lexer.
 
-  def ppDecl (decl : LispDecl) : Pretty =
+  def ppDecl (decl : LispDecl) : PrettyPrint.Pretty =
      case decl of
        | Ignore names -> prettysLinearDelim ("(declare (ignore ", " ", ")) ")
                                             (List.map string names)
 
-  def ppTerm (t : LispTerm) : Pretty =
+  def ppTerm (t : LispTerm) : PrettyPrint.Pretty =
     case t
 
       of Const v ->
@@ -189,12 +191,12 @@ ListADT qualifying spec {
        | Apply (Op s, ts) ->
          prettysLinearDelim
            ("(", " ",")")
-           ((Cons (string s, List.map ppTerm ts)) : List (Pretty))
+           (Cons (string s, List.map ppTerm ts))
 
        | Apply (t, ts) ->
          prettysLinearDelim
            ("(funcall ", " ",")")
-           ((Cons (ppTerm t, List.map ppTerm ts)) : List (Pretty))
+           (Cons (ppTerm t, List.map ppTerm ts))
 
        | If (p, c, a) ->
          prettysLinearDelim
@@ -241,7 +243,7 @@ ListADT qualifying spec {
            ("(progn ", " ", ")")
            (List.map ppTerm ts)
 
-  def ppOpDefn(s : String,term:LispTerm) : Pretty = 
+  def ppOpDefn(s : String,term:LispTerm) : PrettyPrint.Pretty = 
       case term
 	of Lambda (args, decls, body) -> 
 	    blockFill
@@ -296,7 +298,7 @@ ListADT qualifying spec {
 	streamWriter(stream,";;; Definitions\n\n");
 	app (fn ldef -> ppDefToStream(ldef,stream)) defs))
 
-  def ppSpec (s : LispSpec) : Pretty =
+  def ppSpec (s : LispSpec) : PrettyPrint.Pretty =
       let defs = sortDefs(s.opDefns) 	in
       let name = s.name 		in
       prettysAll
