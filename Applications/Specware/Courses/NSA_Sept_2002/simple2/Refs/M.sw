@@ -1,1 +1,1 @@
-morphism /Specs/A -> /Refs/A {f +-> f}
+morphism /Specs/A -> /Refs/A {}

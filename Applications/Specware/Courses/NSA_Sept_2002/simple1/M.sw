@@ -1,1 +1,1 @@
-morphism A -> Aref {f +-> f}
+morphism A -> Aref {}

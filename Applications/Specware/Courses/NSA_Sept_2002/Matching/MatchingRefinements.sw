@@ -5,7 +5,7 @@ Symbols = spec
 end-spec
 
 Symbols_Ref = morphism /MatchingSpecs#Symbols ->
-                       /MatchingRefinements#Symbols {Symbol +-> Symbol}
+                       /MatchingRefinements#Symbols {}
 
 
 WordMatching0 = spec
@@ -33,12 +33,12 @@ WordMatching0 = spec
 end-spec
 
 WordMatching_Ref0 = morphism /MatchingSpecs#WordMatching ->
-                             WordMatching0 {word_matches_at? +-> word_matches_at?}
+                             WordMatching0 {}
 
 
 WordMatching = colimit diagram {
   x : a -> b +-> Symbols_Ref,
-  y : a -> c +-> morphism /MatchingSpecs#Symbols -> WordMatching0 {Symbol +-> Symbol}
+  y : a -> c +-> morphism /MatchingSpecs#Symbols -> WordMatching0 {}
   }
 
 
@@ -66,10 +66,10 @@ FindMatches0 = spec
 
 end-spec
 
-FindMatches_Ref0 = morphism /MatchingSpecs#FindMatches -> FindMatches0 {find_matches +-> find_matches}
+FindMatches_Ref0 = morphism /MatchingSpecs#FindMatches -> FindMatches0 {}
 
 
 FindMatches = colimit diagram {
   x : a -> b +-> WordMatching_Ref0,
-  y : a -> c +-> morphism /MatchingSpecs#WordMatching -> FindMatches0 {find_matches +-> find_matches}
+  y : a -> c +-> morphism /MatchingSpecs#WordMatching -> FindMatches0 {}
 }

@@ -1,4 +1,4 @@
 colimit diagram {
     m : a -> ar +-> M,
-    i : a -> b  +-> morphism A -> B {f +-> f}
+    i : a -> b  +-> morphism A -> B {}
   }

@@ -3,9 +3,9 @@ A = spec
   def f(n) = 3*n
 end
 
-M = morphism /Specs#A -> A {f +-> f}
+M = morphism /Specs#A -> A {}
 
 B = colimit diagram {
   m : a -> ar +-> M,
-  i : a -> b  +-> morphism /Specs#A -> /Specs#B {f +-> g}
+  i : a -> b  +-> morphism /Specs#A -> /Specs#B {}
  }
