@@ -53,6 +53,9 @@
 
 (defun set-gc-parameters-for-build (&optional verbose?)
   (format t "~3%;;; Set GC parameters to good values for building specware (e.g. loading fasl files).~2%")
+  (when verbose?
+    (format t "~&;;; (room) before setting parameters for build phase:~%")
+    (room))
   ;;
   ;; make newspace grow slowly (maybe not the best strategy?)
   ;;
@@ -71,10 +74,14 @@
   ;;
   (when verbose?
     (sys::gsgc-parameters)
+    (format t "~&;;; (room t) after setting parameters for build phase:~%")
     (room t)))
 
 (defun set-gc-parameters-for-use (&optional verbose?)
   (format t "~3%;;; Set GC parameters to good values for normal use (e.g. processing specs).~2%")
+  (when verbose?
+    (format t "~&;;; (room) before setting parameters for normal use:~%")
+    (room))
   ;;
   ;; Restore parameters to default values.  (Still might want to fine tune these more.)
   ;;
@@ -88,10 +95,14 @@
   (setf (sys::gsgc-parameter :generation-spread)          12) ; default is  4, range is 0-26 
   (when verbose?
     (sys::gsgc-parameters)
+    (format t "~&;;; (room t) after setting parameters for normal use:~%")
     (room t)))
 
 (defun compact-memory (&optional verbose?)
   (format t "~3%;;; Restructure memory to compact old spaces, etc.~2%")
+  (when verbose?
+    (format t "~&;;; (room) before resize-areas:~%")
+    (room))
   (gc)
   (gc t)
   (sys::resize-areas :verbose        verbose?
@@ -102,10 +113,14 @@
 		     :expand         t          ; expand oldspace if necessary, as follows:
 		     :old            #x2000000  ; last, make oldspace at least this large (~ 20 MByte)
 		     )
+  (when verbose?
+    (format t "~&;;; (room) after resize-areas:~%")
+    (room))
   ;; close all but the latest oldspace areas, so their contents
   ;; won't be gc'd again and again...
-  (setf (sys::gsgc-parameter :open-old-area-fence)        -1)
+  (setf (sys::gsgc-parameter :open-old-area-fence) -1)
   (gc t)
   (when verbose?
     (sys::gsgc-parameters)
+    (format t "~&;;; (room t) after setting fence to -1:~%")
     (room t)))
