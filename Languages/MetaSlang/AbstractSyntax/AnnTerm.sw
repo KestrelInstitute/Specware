@@ -213,6 +213,53 @@ MetaSlang qualifying spec {
      | Product _ -> true
      | _         -> false
 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%  These are utilities to help process sort and term definitions.
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%
+ %% For now, we assume the dfn term of a SortInfo or OpInfo will be
+ %% in one of the two forms:
+ %%
+ %%   And ([xx, xx, ...], ...)
+ %%   xx
+ %%
+ %% where each xx is in one of the two forms:
+ %%
+ %%   Pi (.., yy, ..) 
+ %%   yy
+ %%
+ %% and where yy is a Sort/Term not headed by And or Pi 
+ %%
+ %% If there is more than one xx, all such xx should have the same 
+ %% number of type vars, but they can vary in name.
+ %%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op factorSort : [b] ASort b -> List (TyVars * ASort b)
+ op factorTerm : [b] ATerm b -> List (TyVars * ATerm b)
+
+ def factorSort srt =
+   let 
+     def aux srt =
+       case srt of
+	 | Pi (tvs, srt, _) -> (tvs, srt)
+	 | _ -> ([], srt)
+   in
+     case srt of
+       | And (srts, _) -> map aux srts
+       | _ -> [aux srt]
+
+ def factorTerm tm =
+   let
+     def aux tm =
+       case tm of
+	 | Pi (tvs, tm, _) -> (tvs, tm)
+	 | _               -> ([],  tm)
+   in
+     case tm of
+       | And (tms, _) -> map aux tms
+       | _ -> [aux tm]
+       
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

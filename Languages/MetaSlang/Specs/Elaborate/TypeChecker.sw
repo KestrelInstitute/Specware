@@ -531,7 +531,7 @@ TypeChecker qualifying spec
 	     %% If Qualified (id1, id2) refers to an op, use the canonical name for that op.
 	     let Qualified (q, id) = primaryOpName info in
 	     let (tvs, srt) = info.typ in
-	     let (_,srt) = copySort (tvs, srt) in
+	     let (_,srt) = metafySort (tvs, srt) in
 	     let term = Fun (TwoNames (q, id, info.fixity), srt, pos) in
 	     let srt = elaborateCheckSortForTerm (env, term, srt, term_sort) in
 	     (case term of
@@ -982,12 +982,12 @@ TypeChecker qualifying spec
 	elaborateTerm (env, t1, ty)
 
    op makeEqualityType : Sort * Position -> Sort
-  def makeEqualityType (ty_var, pos) =
+  def makeEqualityType (srt, pos) =
     %% let a = freshMetaTyVar noPos in 
     %% parser has it's own sequence of metaTyVar's, which are distinguished
     %% from those produced by freshMetaTyVar:
     %% they will be named "#parser-xxx" instead of "#fresh-xxx"
-    Arrow (Product ([("1", ty_var), ("2", ty_var)], noPos), 
+    Arrow (Product ([("1", srt), ("2", srt)], noPos), 
 	   type_bool,
 	   pos)
 
@@ -1264,7 +1264,7 @@ TypeChecker qualifying spec
   def uniqueConstr (env, trm, id, pos) =
     case StringMap.find (env.constrs, id) of
       | Some [srt_info] ->
-        let (_, c_srt) = copySort srt_info in
+        let (_, c_srt) = metafySort srt_info in
 	let id_srt = case c_srt of
 		       | CoProduct (fields, pos) ->
 	                 (case find (fn (id2, _) -> id = id2) fields of
@@ -1441,7 +1441,7 @@ TypeChecker qualifying spec
 		       let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
 		       (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars)
                      | Some [srt_info] ->
-                                 let (_, c_srt) = copySort srt_info in
+                                 let (_, c_srt) = metafySort srt_info in
                                  (VarPat ((id, c_srt), pos), env, seenVars)
                      | Some _ -> (VarPat ((id, srt), pos), env, seenVars))
                  else
@@ -1462,7 +1462,7 @@ TypeChecker qualifying spec
 	       %% See if there is only one constructor with this name
 	       (case StringMap.find (env.constrs, embedId) of
 		  | Some [srt_info] ->
-		    let (_, c_srt) = copySort srt_info in
+		    let (_, c_srt) = metafySort srt_info in
 		    elaborateSort (env, c_srt, sort1)
 		  | _ -> sort0)
 	     else

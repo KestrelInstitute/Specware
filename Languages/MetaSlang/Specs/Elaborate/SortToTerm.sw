@@ -254,12 +254,12 @@ XML qualifying spec
 	                                     info.dfn
 		in
 		  case possible_base_def of
-		    | Some (type_vars, srt as (Base (_,_,pos))) ->
+		    | Some (tvs, srt as (Base (_,_,pos))) ->
 		      %% unfoldSortRec would recur here.  We don't.
-		      instantiateScheme (env, pos, ts, type_vars, srt)
+		      instantiateScheme (env, pos, ts, tvs, srt)
 		    | _ ->
-		      let (some_type_vars, some_def) = hd info.dfn in % if multiple defs, pick first def arbitrarily
-		      instantiateScheme(env, pos, ts, some_type_vars, some_def))
+		      let (some_tvs, some_def) = hd info.dfn in % if multiple defs, pick first def arbitrarily
+		      instantiateScheme(env, pos, ts, some_tvs, some_def))
 	 | [] -> 
 	   (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);
 	    unlinked_sort))

@@ -266,7 +266,7 @@ Utilities qualifying spec
 	freeVarsRec(t1) ++ freeVarsRec(t2) ++ freeVarsRec(t3)
       | Seq(tms,_) -> foldr (fn (trm,vs) -> vs ++ freeVarsRec trm) [] tms
 
- op  freeVarsList : fa(a) List(a * MS.Term) -> Vars
+ op  freeVarsList : [a] List(a * MS.Term) -> Vars
  def freeVarsList list = 
    List.foldr (fn ((_,trm),vs) -> vs ++ freeVarsRec trm) [] list
 
@@ -306,7 +306,7 @@ Utilities qualifying spec
 	  else []
       | _ -> []
 
- op  lookup : fa(a,b) (a  -> Boolean) * List(a * b) -> Option b 
+ op  lookup : [a,b] (a  -> Boolean) * List(a * b) -> Option b 
  def lookup (desired_key?, association_list) = 
    case association_list of
     | [] -> None
@@ -807,14 +807,14 @@ Utilities qualifying spec
 	 | _ -> mkImplies (t1,t2)
 
 
- op  identityFn?: fa(a) ATerm a -> Boolean
+ op  identityFn?: [a] ATerm a -> Boolean
  def identityFn? f =
    case f of
      | Lambda([(VarPat(x,_),_,Var(y,_))],_) -> x = y
      | _ -> false
 
  
- op  getConjuncts: fa(a) ATerm a -> List (ATerm a)
+ op  getConjuncts: [a] ATerm a -> List (ATerm a)
  def getConjuncts t =
    case t of
      | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_)
@@ -822,7 +822,7 @@ Utilities qualifying spec
      | _ -> [t]
 
   %% Given a universal quantification return list of quantified variables, conditions and rhs
-  op  forallComponents: fa(a) ATerm a -> List (AVar a) * List (ATerm a) * ATerm a
+  op  forallComponents: [a] ATerm a -> List (AVar a) * List (ATerm a) * ATerm a
   def forallComponents t =
     case t of
       | Bind(Forall,vs,bod,_) ->
@@ -835,7 +835,7 @@ Utilities qualifying spec
       | _ -> ([],[],t)
 
   %% Given an existential quantification return list of quantified variables and conjuncts
-  op  existsComponents: fa(a) ATerm a -> List (AVar a) * List (ATerm a)
+  op  existsComponents: [a] ATerm a -> List (AVar a) * List (ATerm a)
   def existsComponents t =
     case t of
       | Bind(Exists,vs,bod,_) ->
@@ -847,7 +847,7 @@ Utilities qualifying spec
 	(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
       | _ -> ([],[t])
 
-  op  constantTerm?: fa(a) ATerm a -> Boolean
+  op  constantTerm?: [a] ATerm a -> Boolean
   def constantTerm? t =
     case t of
       | Lambda _ -> true
@@ -855,7 +855,7 @@ Utilities qualifying spec
       | Record(fields,_) -> exists (fn (_,stm) -> constantTerm? stm) fields
       | _        -> false
 
-  op  lambda?: fa(a) ATerm a -> Boolean
+  op  lambda?: [a] ATerm a -> Boolean
   def lambda? t =
     case t of
       | Lambda _ -> true
@@ -906,7 +906,7 @@ Utilities qualifying spec
      of Fun(_,s,_) -> s
       | _ -> defaultS
 
- op  evalBinary: fa(a) (a * a -> Fun) * (List(Id * MS.Term) -> List a)
+ op  evalBinary: [a] (a * a -> Fun) * (List(Id * MS.Term) -> List a)
                       * List(Id * MS.Term) * Sort
                      -> Option MS.Term
  def evalBinary(f, fVals, fields, srt) =
@@ -914,10 +914,10 @@ Utilities qualifying spec
      of [i,j] -> Some(Fun(f(i,j),srt,noPos))
       | _ -> None
 
- op nat: fa(a) (a -> Nat) -> a -> Fun
- op char: fa(a) (a -> Char) -> a -> Fun
- op str: fa(a) (a -> String) -> a -> Fun
- op bool: fa(a) (a -> Boolean) -> a -> Fun
+ op nat:  [a] (a -> Nat) -> a -> Fun
+ op char: [a] (a -> Char) -> a -> Fun
+ op str:  [a] (a -> String) -> a -> Fun
+ op bool: [a] (a -> Boolean) -> a -> Fun
  def nat f x  = Nat(f x)
  def char f x = Char(f x)
  def str f x = String(f x)
@@ -1058,7 +1058,7 @@ endspec
 %%%      unused stuff -- increasingly obsolete
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%
-%%%  op  printDefinedOps: fa(a) ASpec a -> String
+%%%  op  printDefinedOps: [a] ASpec a -> String
 %%%  def printDefinedOps spc =
 %%%    let localized_spec =
 %%%        {importInfo = spc.importInfo << {imports = emptyImports},
@@ -1068,9 +1068,9 @@ endspec
 %%%    in
 %%%      printSpec localized_spec
 %%%
-%%%  op removeUndefinedOps : fa(a) ASpec a -> ASpec a
+%%%  op removeUndefinedOps : [a] ASpec a -> ASpec a
 %%%
-%%%  op removeDefinitions  : fa(a) ASpec a -> ASpec a
+%%%  op removeDefinitions  : [a] ASpec a -> ASpec a
 %%%  def removeDefinitions spc =
 %%%    {importInfo       = spc.importInfo,
 %%%     ops              = mapOpInfos (fn (aliases, fixity, srt, _) -> 
@@ -1274,8 +1274,8 @@ endspec
 %%% def modifyNamesSortInfo(mSrt,mOp,(sort_names, tyvars, defs)) =
 %%%   (rev (foldl (fn (sort_name, new_names) -> cons(mSrt sort_name, new_names)) nil sort_names),
 %%%    tyvars,
-%%%    map (fn (type_vars, srt) -> 
-%%%	 (type_vars, modifyNamesSort(mSrt, mOp, srt))) 
+%%%    map (fn (tvs, srt) -> 
+%%%	 (tvs, modifyNamesSort(mSrt, mOp, srt))) 
 %%%        defs)
 %%%
 %%%
@@ -1284,8 +1284,8 @@ endspec
 %%%   (rev (foldl (fn (op_name, new_names) -> cons(mOp op_name, new_names)) nil op_names),
 %%%    fixity,
 %%%    (tyvars, modifyNamesSort(mSrt,mOp,srt)),
-%%%    map (fn (type_vars, term) ->
-%%%	 (type_vars, modifyNamesTerm(mSrt,mOp,term)))
+%%%    map (fn (tvs, term) ->
+%%%	 (tvs, modifyNamesTerm(mSrt,mOp,term)))
 %%%        defs)
 %%%
 %%% %% TODO: ??? FIX THIS

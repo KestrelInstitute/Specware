@@ -736,7 +736,7 @@ spec
          (fn (q, id, info, tcc) ->
 	  let (tvs,tau) = info.typ in
 	  if member (Qualified (q, id), localOps) then
-	    foldl (fn ((type_vars, term), tcc) ->
+	    foldl (fn ((_, term), tcc) ->
 		   let usedNames = addLocalVars (term, StringSet.empty) in
 		   let term = etaExpand (spc, usedNames, tau, term) in
 		   let term = renameTerm (emptyContext ()) term in 

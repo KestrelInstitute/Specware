@@ -7,14 +7,7 @@ SpecCalc qualifying spec
      by {SpecCalc.Monad +-> SpecCalc.Env})
  import /Languages/MetaSlang/Specs/Elaborate/Utilities % for unfoldSort
 
- op addSort :
-   fa (a) List QualifiedId
-       -> TyVars
-       -> List (ASortScheme a)
-       -> ASpec a
-       -> Position
-       -> SpecCalc.Env (ASpec a)
-
+  op addSort : [a] List QualifiedId -> TyVars -> List (ASortScheme a) -> ASpec a -> Position -> SpecCalc.Env (ASpec a)
  def addSort new_sort_names new_tvs  new_defs old_spec position =
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
@@ -100,15 +93,7 @@ SpecCalc qualifying spec
      | []     -> "()"
      | v1::vs -> "(" ^ v1 ^ (foldl (fn (v, str) -> str ^","^ v) "" vs) ^ ")"
 
- op addOp :
-    fa (a) List QualifiedId
-        -> Fixity
-        -> ASortScheme a 
-        -> List (ATermScheme a)
-        -> ASpec a
-        -> Position
-        -> SpecCalc.Env (ASpec a)
-
+  op addOp : [a] List QualifiedId -> Fixity -> ASortScheme a -> List (ATermScheme a) -> ASpec a -> Position -> SpecCalc.Env (ASpec a)
  def addOp new_op_names
            new_fixity 
            (new_sort_scheme as (new_tvs, new_sort)) 
@@ -517,13 +502,13 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% These are patterned after equalTerm? etc. in AnnTerm.sw
 
- op equivTerm?    : fa(a) ASpec a -> ATerm    a * ATerm    a -> Boolean
- op equivSort?    : fa(a) ASpec a -> ASort    a * ASort    a -> Boolean
- op equivPattern? : fa(a) ASpec a -> APattern a * APattern a -> Boolean
- op equivFun?     : fa(a) ASpec a -> AFun     a * AFun     a -> Boolean
- op equivVar?     : fa(a) ASpec a -> AVar     a * AVar     a -> Boolean
+ op equivTerm?    : [a] ASpec a -> ATerm    a * ATerm    a -> Boolean
+ op equivSort?    : [a] ASpec a -> ASort    a * ASort    a -> Boolean
+ op equivPattern? : [a] ASpec a -> APattern a * APattern a -> Boolean
+ op equivFun?     : [a] ASpec a -> AFun     a * AFun     a -> Boolean
+ op equivVar?     : [a] ASpec a -> AVar     a * AVar     a -> Boolean
 
- op equivList?    : fa(a,b) ASpec a -> List b * List b * (ASpec a -> b * b -> Boolean) -> Boolean
+  op equivList? : [a,b] ASpec a -> List b * List b * (ASpec a -> b * b -> Boolean) -> Boolean
  def equivList? spc (x, y, eqFn) =
   (length x) = (length y) &
   (case (x, y) of
@@ -532,19 +517,19 @@ SpecCalc qualifying spec
                                              equivList? spc (tail_x, tail_y, eqFn)
       | _ -> false)
 
- op equivOpt? : fa (a,b) ASpec a -> Option b * Option b * (ASpec a -> b * b -> Boolean) -> Boolean
+  op equivOpt? : [a,b] ASpec a -> Option b * Option b * (ASpec a -> b * b -> Boolean) -> Boolean
  def equivOpt? spc (x, y, eqFn) =
   case (x, y) of
      | (None,    None)    -> true
      | (Some x1, Some y1) -> eqFn spc (x1, y1)
      | _ -> false
 
- op equivTermScheme?: fa(a) ASpec a -> ATermScheme a * ATermScheme a -> Boolean
+  op equivTermScheme? : [a] ASpec a -> ATermScheme a * ATermScheme a -> Boolean
  def equivTermScheme? spc ((tyvs1, t1), (tyvs2, t2)) =
    tyvs1 = tyvs2 & 
    equivTerm? spc (t1, t2)
 
- op equivSortScheme?: fa(a) ASpec a -> ASortScheme a * ASortScheme a -> Boolean
+  op equivSortScheme? : [a] ASpec a -> ASortScheme a * ASortScheme a -> Boolean
  def equivSortScheme? spc ((tyvs1, s1), (tyvs2, s2)) =
    tyvs1 = tyvs2 & 
    equivSort? spc (s1, s2)
@@ -611,7 +596,7 @@ SpecCalc qualifying spec
      | _ -> false
 
  def equivSort? spc (s1, s2) =
-  case (s1,s2) of
+  case (s1, s2) of
      | (Arrow     (x1, y1,  _), 
         Arrow     (x2, y2,  _)) -> equivSort? spc (x1, x2) & equivSort? spc (y1, y2)
      | (Product   (xs1,     _), 
@@ -689,15 +674,14 @@ SpecCalc qualifying spec
 	  | [] -> 
 	    Base (primarySortName info, ts, pos)
 	  | _ ->
-	    let (some_type_vars, some_def) = hd info.dfn in
-	    myInstantiateScheme (ts, some_type_vars, some_def))
+	    let (some_tvs, some_def) = hd info.dfn in
+	    myInstantiateScheme (ts, some_tvs, some_def))
 
- op myInstantiateScheme : fa (a) List (ASort a) * TyVars * ASort a -> ASort a
- def fa (a) myInstantiateScheme (types, tvs, srt) = 
+  op myInstantiateScheme : [a] List (ASort a) * TyVars * ASort a -> ASort a
+ def [a] myInstantiateScheme (types, tvs, srt) = 
    if null tvs then
      srt
    else
-     let mtvar_position = Internal "copySort" in
      let tyVarMap = zip (tvs, types) in
      let
         def mapTyVar (tv : TyVar, tvs : List (TyVar * ASort a), pos) : ASort a = 
@@ -968,7 +952,3 @@ def getStringAttributesFromSpec spc =
   def basicQualifiedId? (Qualified(q,_)) = member (q, basicQualifiers)
 
 endspec
-
-
-
-

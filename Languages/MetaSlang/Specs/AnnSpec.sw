@@ -47,9 +47,9 @@ AnnSpec qualifying spec
  type Aliases      = QualifiedIds
  type QualifiedIds = List QualifiedId 
 
-   op someAliasIsLocal? : Aliases * QualifiedIds -> Boolean
-  def someAliasIsLocal? (aliases, local_names) =
-    exists (fn qid -> member (qid, local_names)) aliases 
+  op someAliasIsLocal? : Aliases * QualifiedIds -> Boolean
+ def someAliasIsLocal? (aliases, local_names) =
+   exists (fn qid -> member (qid, local_names)) aliases 
     
  type Imports = List Import
  type Import  = (SpecCalc.Term Position) * Spec
@@ -69,76 +69,15 @@ AnnSpec qualifying spec
  type AProperties   b  = List (AProperty b) 
  type AProperty     b  = PropertyType * PropertyName * TyVars * ATerm b
  type PropertyType     = | Axiom | Theorem | Conjecture
-
  
-  op primarySortName : [b] ASortInfo b -> SortName
-  op primaryOpName   : [b] AOpInfo b   -> OpName
- op  propertyName    : [b] AProperty b -> PropertyName
+ op primarySortName : [b] ASortInfo b -> SortName
+ op primaryOpName   : [b] AOpInfo   b -> OpName
+ op propertyName    : [b] AProperty b -> PropertyName
 
  def primarySortName info = hd info.names
  def primaryOpName   info = hd info.names
  def propertyName    p    = p.2
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%  These are utilities to help process sort and term definitions.
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- op joinSorts  : [b] List (TyVars * ASort b) * b -> ASort b
- op splitSort  : [b] ASort b -> List (TyVars * ASort b)
-
- op joinTerms  : [b] List (TyVars * ASort b * ATerm b) * b -> ATerm b
- op splitTerm  : [b] ATerm b -> List (TyVars * ASort b * ATerm b)
-
-
- def joinSorts (pairs, pos) =
-   let srts =
-       map (fn (tvs, srt) ->
-	    case tvs of
-	      | [] -> srt
-	      | _ -> Pi (tvs, srt, sortAnn srt))
-           pairs
-   in
-     case srts of
-       | [] -> Any pos
-       | [srt] -> srt
-       | _  -> And (srts, pos)
-
- def splitSort srt =
-   let 
-     def aux srt =
-       case srt of
-	 | Pi (tvs, srt, _) -> (tvs, srt)
-	 | _ -> ([], srt)
-   in
-     case srt of
-       | And (srts, _) -> map aux srts
-       | _ -> [aux srt]
-
- def joinTerms (triples, pos)  =
-   let tms = 
-       map (fn (tvs, srt, tm) ->
-	    let a = termAnn tm in
-	    case tvs of
-	      | [] -> SortedTerm (tm, srt, a)
-	      | _ -> Pi (tvs, SortedTerm (tm, srt, a), a))
-           triples
-   in
-     case tms of
-       | []   -> Any pos
-       | [tm] -> tm
-       | _ -> And (tms, pos)
-
- def splitTerm tm =
-   let
-     def aux tm =
-       case tm of
-	 | Pi (tvs, SortedTerm (tm, srt, _), _) -> (tvs, srt, tm)
-	 | SortedTerm (tm, srt, _) -> ([], srt, tm)
-   in
-     case tm of
-       | And (tms, _) -> map aux tms
-       | _ -> [aux tm]
-       
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  type AOpSignature  b = String * String * TyVars * ASort b
@@ -149,8 +88,7 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
- op mapSpec    : [b] TSP_Maps b -> ASpec b -> ASpec b
-
+  op mapSpec : [b] TSP_Maps b -> ASpec b -> ASpec b
  def mapSpec tsp {importInfo, sorts, ops, properties} =
    {
     importInfo       = importInfo,
@@ -159,7 +97,7 @@ AnnSpec qualifying spec
     properties       = mapSpecProperties tsp properties
    }
 
-  op mapSpecSorts: [b] TSP_Maps b -> ASortMap b -> ASortMap b 
+  op mapSpecSorts : [b] TSP_Maps b -> ASortMap b -> ASortMap b 
  def mapSpecSorts tsp sorts =
    mapSortInfos (fn info -> info << {dfn = mapSortSchemes tsp info.dfn})
                 sorts
@@ -176,12 +114,22 @@ AnnSpec qualifying spec
  %% just once to an info, even if it has multiple aliases,
  %% then arrange for each alias to index that same new info.
 
+  op primarySortName? : [a] Qualifier * Id * ASortInfo a -> Boolean
+  op primaryOpName?   : [a] Qualifier * Id * AOpInfo   a -> Boolean
+
+ def primarySortName? (q, id, info) =
+   let Qualified (qq, ii) = primarySortName info in
+   q = qq && id = ii
+
+ def primaryOpName? (q, id, info) =
+   let Qualified (qq, ii) = primaryOpName info in
+   q = qq && id = ii
+
   op mapSortInfos : [b] (ASortInfo b -> ASortInfo b) -> ASortMap b -> ASortMap b 
  def mapSortInfos sortinfo_map sorts =
    foldriAQualifierMap 
-     (fn (index_q, index_id, info, new_map) ->
-      let Qualified (q, id) = primarySortName info in
-      if index_q = q && index_id = id then
+     (fn (q, id, info, new_map) ->
+      if primarySortName? (q, id, info) then
 	%% When access is via a primary alias, update the info and
 	%% record that (identical) new value for all the aliases.
 	let new_info = sortinfo_map info in
@@ -199,9 +147,8 @@ AnnSpec qualifying spec
   op mapOpInfos : [b] (AOpInfo b -> AOpInfo b) -> AOpMap b -> AOpMap b 
  def mapOpInfos opinfo_map ops =
    foldriAQualifierMap 
-     (fn (index_q, index_id, info, new_map) ->
-      let Qualified (q, id) = primaryOpName info in
-      if index_q = q && index_id = id then
+     (fn (q, id, info, new_map) ->
+      if primaryOpName? (q, id, info) then
 	%% When access is via a primary alias, update the info and 
 	%% ecord that (identical) new value for all the aliases.
 	let new_info = opinfo_map info in
@@ -219,9 +166,8 @@ AnnSpec qualifying spec
   op filterSortMap : [b] (ASortInfo b -> Boolean) -> ASortMap b -> ASortMap b 
  def filterSortMap keep? sorts =
    foldriAQualifierMap 
-     (fn (index_q, index_id, info, new_map) ->
-      let Qualified (q, id) = primarySortName info in
-      if index_q = q && index_id = id && keep? info then
+     (fn (q, id, info, new_map) ->
+      if primarySortName? (q, id, info) && keep? info then
 	foldl (fn (Qualified(q, id), new_map) ->
 	       insertAQualifierMap (new_map, q, id, info))				   
 	      new_map
@@ -234,9 +180,8 @@ AnnSpec qualifying spec
   op filterOpMap : [b] (AOpInfo b -> Boolean) -> AOpMap b -> AOpMap b 
  def filterOpMap keep? ops =
    foldriAQualifierMap 
-     (fn (index_q, index_id, info, new_map) ->
-      let Qualified (q, id) = primaryOpName info in
-      if index_q = q && index_id = id && keep? info then
+     (fn (q, id, info, new_map) ->
+      if primaryOpName? (q, id, info) && keep? info then
 	foldl (fn (Qualified(q, id), new_map) ->
 	       insertAQualifierMap (new_map, q, id, info))				   
 	      new_map
@@ -249,9 +194,8 @@ AnnSpec qualifying spec
   op foldSortInfos : [a,b] (ASortInfo a * b -> b) -> b -> ASortMap a -> b
  def foldSortInfos f init sorts =
    foldriAQualifierMap 
-     (fn (index_q, index_id, info, result) ->
-      let Qualified (q, id) = primarySortName info in
-      if index_q = q && index_id = id then
+     (fn (q, id, info, result) ->
+      if primarySortName? (q, id, info) then
 	f (info, result)
       else
 	result)
@@ -261,9 +205,8 @@ AnnSpec qualifying spec
   op foldOpInfos : [a,b] (AOpInfo a * b -> b) -> b -> AOpMap a -> b
  def foldOpInfos f init ops =
    foldriAQualifierMap 
-     (fn (index_q, index_id, info, result) ->
-      let Qualified (q, id) = primaryOpName info in
-      if index_q = q && index_id = id then
+     (fn (q, id, info, result) ->
+      if primaryOpName? (q, id, info) then
 	f (info, result)
       else
 	result)
@@ -273,9 +216,8 @@ AnnSpec qualifying spec
   op appSortInfos : [b] (ASortInfo b -> ()) -> ASortMap b -> ()
  def appSortInfos f sorts =
    appiAQualifierMap 
-     (fn (index_q, index_id, info) ->
-      let Qualified (q, id) = primarySortName info in
-      if index_q = q && index_id = id then
+     (fn (q, id, info) ->
+      if primarySortName? (q, id, info) then
 	f info
       else
 	())
@@ -284,14 +226,12 @@ AnnSpec qualifying spec
   op appOpInfos : [b] (AOpInfo b -> ()) -> AOpMap b -> ()
  def appOpInfos f ops =
    appiAQualifierMap 
-     (fn (index_q, index_id, info) ->
-      let Qualified (q, id) = primaryOpName info in
-      if index_q = q && index_id = id then
+     (fn (q, id, info) ->
+      if primaryOpName? (q, id, info) then
 	f info
       else
 	())
      ops
-
 
   op mapSpecProperties : [b] TSP_Maps b -> AProperties b ->  AProperties b 
  def mapSpecProperties tsp properties =
@@ -407,7 +347,6 @@ AnnSpec qualifying spec
 	   exists (fn def2 -> equalSortScheme? (def1, def2)) 
 	          info2.dfn) 
           info1.dfn
-
 
   op equalOpInfo?: [a] AOpInfo a * AOpInfo a -> Boolean
  def equalOpInfo? (info1, info2) =
