@@ -111,8 +111,8 @@
 (cl-user::sw "/Library/Base")
 
 (format t "~2%To bootstrap, run (boot)~%")
-(format t "~%That will run :sw /Applications/Specware/Specware4~2%")
+(format t "~%That will run :sw /Applications/PSL/PSL~2%")
 
 (defun cl-user::boot ()
-  (cl-user::sw "/Applications/Specware/Specware4")
+  (cl-user::sw "/Applications/PSL/PSL")
   )
