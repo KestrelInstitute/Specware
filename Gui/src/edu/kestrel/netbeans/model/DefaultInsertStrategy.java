@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:53  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -83,12 +86,21 @@ class DefaultInsertStrategy implements Positioner {
 	    }
 	} else if (container instanceof SpecElement) {
 	    SpecElement spec = (SpecElement) container;
-	    if (selector instanceof SortElement) {
+	    if (selector instanceof ImportElement) {
 		return getFirstNonEmpty(spec, 0);
-	    } 
-	    if (selector instanceof OpElement) {
+	    }
+            if (selector instanceof SortElement) {
 		return getFirstNonEmpty(spec, 1);
 	    } 
+	    if (selector instanceof OpElement) {
+		return getFirstNonEmpty(spec, 2);
+	    }
+            if (selector instanceof DefElement) {
+		return getFirstNonEmpty(spec, 3);
+	    }
+            if (selector instanceof ClaimElement) {
+		return getFirstNonEmpty(spec, 4);
+	    }
 	}
 	return null;
     }
@@ -108,12 +120,27 @@ class DefaultInsertStrategy implements Positioner {
     private Element[] getFirstNonEmpty(SpecElement container, int startPos) {
         Element[] items;
         
-        if (startPos > 0) {
+        if (startPos > 4) {
+            items = container.getClaims();
+            if (items != null && items.length > 0)
+                return items;
+        }
+        if (startPos > 3) {
+            items = container.getDefs();
+            if (items != null && items.length > 0)
+                return items;
+        }
+        if (startPos > 2) {
+            items = container.getOps();
+            if (items != null && items.length > 0)
+                return items;
+        }
+        if (startPos > 1) {
             items = container.getSorts();
             if (items != null && items.length > 0)
                 return items;
         }
-        items = container.getOps();
+        items = container.getImports();
         if (items != null && items.length > 0)
             return items;
         return null;
