@@ -8,7 +8,7 @@ way that sets might have been defined in the old Slang.
 
 \begin{spec}
 spec
-  import ../Elem
+  import Elem 
 
   sort Set
 

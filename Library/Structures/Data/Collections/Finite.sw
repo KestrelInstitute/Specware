@@ -1,0 +1,16 @@
+\section{Finite Collections}
+
+Any finite collection is enumerable. If it is finite we believe that it can
+be printed.
+
+\begin{spec}
+spec
+  import Enum
+  import Fold
+  import FoldLeft
+  import FoldRight
+  
+  op pp : Collection -> Doc
+  op show : Collection -> String
+endspec
+\end{spec}

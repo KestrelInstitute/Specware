@@ -1,8 +1,4 @@
 spec
+  import translate ../Collections/Finite by {Collection +-> Set}
   import ../Sets
-  import translate ../Finite by {
-    Finite.Collection +-> Set,
-    Finite.pp +-> pp,
-    Finite.fold +-> fold
-  }
 endspec

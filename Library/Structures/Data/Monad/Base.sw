@@ -13,5 +13,5 @@ This defines both the prefix and infix operators. There is
 support for the prefix form in the MetaSlang parser.
 
 \begin{spec}
-../Monad
+translate ../Monad by {Monad._ +-> _}
 \end{spec}

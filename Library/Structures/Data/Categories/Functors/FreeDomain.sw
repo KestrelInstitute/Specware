@@ -1,7 +1,5 @@
 \section{Functors with free domain and fixed (monomorphic) target category}
 
-This file to be deprecated in favour of ../FreeDomain.sw
-
 This is a spec for mono functors where the domain is the free
 category generated from a category presentation (ie sketch). This spec is
 meant mainly defining systems. A key distinction between

@@ -6,9 +6,7 @@ way that sets might have been defined in the old Slang.
 
 \begin{spec}
 spec
-  import Elem
-
-  sort Set
+  import translate Collections by {Collection +-> Set}
 
   op empty : Set
   op empty? : Set -> Boolean
@@ -22,7 +20,5 @@ spec
 
   op singleton : Elem -> Set
   op insert : Set -> Elem -> Set
-
-  op map : (Elem -> Elem) -> Set -> Set
 endspec
 \end{spec}

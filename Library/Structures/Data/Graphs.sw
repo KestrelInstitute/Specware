@@ -1,5 +1,7 @@
 \section{A simple specification for Graphs}
 
+This is to be deprecated. See Graphs/Finite.sw for the new version.
+
 The translates need sorting out. And the equating of Dom to Edge.Elem should be done
 by translate. Basically reduce the number redundant sorts.
 
