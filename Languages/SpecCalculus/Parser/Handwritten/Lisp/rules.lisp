@@ -982,12 +982,12 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :RECORD-DISPLAY ()
-  (:tuple "{" (:optional (1 :RECORD-DISPLAY-BODY)) "}")
+  (:tuple "{" (1 :RECORD-DISPLAY-BODY) "}")
   1
   :documentation "Record")
 
 (define-sw-parser-rule :RECORD-DISPLAY-BODY ()
-  (1 (:repeat+ :FIELD-FILLER ","))
+  (1 (:repeat* :FIELD-FILLER ","))
   (make-record-display 1 ':left-lcb ':right-lcb)
   :documentation "Record")
 
