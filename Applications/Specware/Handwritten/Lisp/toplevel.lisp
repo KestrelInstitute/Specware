@@ -1283,7 +1283,8 @@
 (defun pa (&optional pkgname)
   (if (null pkgname)
       (princ (package-name *package*))
-    (let ((pkg (find-package pkgname)))
+    (let ((pkg (or (find-package pkgname)
+		   (find-package (string-upcase pkgname)))))
       (if pkg
 	  (setq *package* pkg)
 	(princ "Not a package"))))

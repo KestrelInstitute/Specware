@@ -58,6 +58,7 @@
     ("untr" . "Untrace all traced functions.")
     ("f-b" . "[lisp function names] Break functions.")
     ("f-unb" . "[lisp function names] Unreak functions. No argument means all broken functions")
+    ("pa" . "[package name] Set package for lisp forms.")
     ("dev" . "[on] Set *developer?*. No argument gives current setting.")
     ("wiz" . "[on] Set SpecCalc::specwareWizard?. No argument gives current setting.")
     ("swdbg" . "[on] Set System-spec::specwareDebug?. No argument gives current setting.")))
@@ -227,6 +228,7 @@
 	     (cl-user::f-b argstr)))
       (f-unb (when (fboundp 'cl-user::f-unb)
 	       (cl-user::f-unb (or argstr ""))))
+      (pa (cl-user::pa argstr))
       (dev (if argstr
 	       (princ (setq *developer?* (if (member argstr '("nil" "NIL" "off") :test 'string=)
 					     nil t)))
