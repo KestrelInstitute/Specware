@@ -216,6 +216,7 @@ spec
                       -> Term
   def makeUnfoldedTerm(_ (* f *), args, resultSort, tyVarSbst, vs, defbody, fnIndices,
 		       recursive?, qid, nm, unfoldMap, simplifyTerm, spc) =
+
     let replaceIndices = filter (fn i -> constantTerm?(nth(args,i))
 				        & member(i,fnIndices))
                            (tabulate (length args, id))
@@ -237,9 +238,90 @@ spec
       let defbody = mapTerm(id,instantiateTyVars,id) defbody in
       let remainingParams = map (fn p -> mapPattern(id,instantiateTyVars,id) p)
                               remainingParams in
+
+      let (remainingParams, remainingArgs) = 
+          adjustBindingsToAvoidCapture (remainingParams, remainingArgs, vs, args, defbody)
+      in
+
       let newTm = makeLet(remainingParams,remainingArgs,defbody) in
       let newTm = substitute(newTm,vSubst) in
       unfoldInTerm(simplifyTerm(newTm),unfoldMap,simplifyTerm,spc)
+
+
+  def adjustBindingsToAvoidCapture (remainingParams, remainingArgs, params, args, defbody) =
+
+    %% If a parameter var could capture a free var in an arg, introduce temp vars to 
+    %% avoid the capture:
+    %%   First bind the new temp vars to all the args (no capture possible).
+    %%   Then bind the parameter vars to the new temp vars (no capture possible).
+
+    let 
+      def similar? (param, arg) =
+	    case (param, arg) of
+	      | (VarPat ((param_id,_),_), Var ((arg_id,_),_)) -> 
+	        param_id = arg_id
+	      | (RecordPat (p_fields, _), Record (a_fields, _)) ->
+	        all (fn (p,a) -> similar? (p,a)) 
+		    (zip ((map (fn field -> field.2) p_fields), 
+			  (map (fn field -> field.2) a_fields)))
+	      | _ -> false
+    in
+    let (remainingParams, remainingArgs) = 
+        unzip (filter (fn (param, arg) -> ~ (similar?(param, arg)))
+	              (zip (remainingParams, remainingArgs)))
+    in
+    let pattern_vars  : List (List Var) = map patVars  remainingParams in
+    let arg_free_vars : List (List Var) = map freeVars remainingArgs   in
+    let possible_capture? =
+        case rev pattern_vars of
+	  | [] -> false
+	  | _ :: outer_pattern_vars ->
+	    (let (capture?, _) =
+	     foldl (fn (arg_vars, (capture?, outer_pattern_vars_list)) ->
+		    if capture? then
+		      (true, [])
+		    else if exists (fn av -> 
+				    exists (fn outer_pat_vars -> 
+					    exists (fn pv -> av.1 = pv.1) 
+					           outer_pat_vars)
+				           outer_pattern_vars_list)
+		                   arg_vars 
+		      then
+			(true, [])
+		    else
+		      (false,
+		       case outer_pattern_vars_list of
+			 | [] -> []
+			 | _ :: outer_list -> outer_list))
+	           (false, outer_pattern_vars)
+		   (rev arg_free_vars)
+	     in
+	       capture?)
+    in
+    if possible_capture? then
+      %% Note: This is a rare occurence.  It seems to happen once(!) in the Forges PSL
+      %% sources, and never in Specware, Accord, Planware, JFlaws, JavaCard, ...
+      let 
+        def find_unused_id index =
+	  let new_id = "temp-" ^ (toString index) ^ "-" in
+	  if idReferenced? (new_id, defbody) || (exists (fn arg -> idReferenced? (new_id, arg)) args) then
+	    find_unused_id (index + 1)
+	  else
+	    (index + 1, new_id)
+      in
+      let (_, temp_vars) = 
+	  foldl (fn (arg, (index, new_vars)) ->
+		 let (index, new_id) = find_unused_id index in
+		 let new_var = ((new_id, termSort arg), noPos) in
+		 (index,  new_vars ++ [new_var]))
+	        (0, [])
+		remainingArgs
+      in
+      let revisedParams = (map (fn v -> VarPat v) temp_vars) ++ remainingParams               in
+      let revisedArgs   = remainingArgs                      ++ map (fn v -> Var v) temp_vars in
+      (revisedParams, revisedArgs)
+    else	
+      (remainingParams, remainingArgs)
 
   %% Returns nm if it is not referenced in t, otherwise adds -i to
   %% to make it unique
@@ -380,14 +462,14 @@ spec
 		    (case argSort of
 		      | Product(fields,_) ->
 		        let vars = (foldl (fn ((label,srt),(result,i)) ->
-					    (result ++ [(label,("x-"^Nat.toString i,srt))],
+					    (result ++ [(label,("xxx-"^Nat.toString i,srt))],
 					     i+1))
 				      ([],0) fields).1
 			in mkLambda(mkRecordPat(map (fn(l,v) -> (l,mkVarPat(v))) vars),
 				    mkApply(defn,
 					    mkRecord(map (fn (l,v) -> (l,mkVar(v))) vars))))
 		  else 
-		  let nv = ("x-"^Nat.toString argNum,argSort) in
+		  let nv = ("yyy-"^Nat.toString argNum,argSort) in
 		  mkLambda(mkVarPat(nv),aux(mkApply(defn,mkVar(nv)),rSorts,argNum+1))
     in aux(defn,curryArgSorts,0)
 
