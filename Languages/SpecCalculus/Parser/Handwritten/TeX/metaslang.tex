@@ -482,9 +482,10 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {SC\char45DIAG\char45EDGE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char58}\  \grnonterminal {NAME}\  \grterminal {\char45\char62}\  \grnonterminal {NAME}\  \grterminal {\char124\char45\char62}\  \grnonterminal {SC\char45TERM}
 \\
-\\ \grnonterminal {SC\char45SPEC\char45MORPH} \> $::=$ \> \>   \grterminal {morph}  \grterminal {\{}  \bnfrepeatopen  \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \bnfrepeatclose  \grterminal {\}}\\  \>  \>  \>\ \ \ \ \ \ \ \ \   \grterminal {\char58}  \grnonterminal {SC\char45TERM}  \grterminal {\char45\char62}  \grnonterminal {SC\char45TERM}
+\\ \grnonterminal {SC\char45SPEC\char45MORPH} \> $::=$ \> \>   \grterminal {morphism}  \grnonterminal {SC\char45TERM}  \grterminal {\char45\char62}  \grnonterminal {SC\char45TERM}\\  \>  \>  \>\ \ \ \ \ \ \ \ \ \ \ \   \grterminal {\{}  \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} 
+\\  \>  \>  \> \ \ \ \ \ \ \ \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \bnfrepeatclose  \grterminal {\}}
 \\
-\\ \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \> $::=$ \> \>    \grnonterminal {QUALIFIABLE\char45NAME}\  \grterminal {\char124\char45\char62}\  \grnonterminal {EXPRESSION}
+\\ \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \> $::=$ \> \>    \grnonterminal {QUALIFIABLE\char45NAME}\  \grterminal {\char43\char45\char62}\  \grnonterminal {EXPRESSION}
 \\
 \\ \grnonterminal {QUALIFIABLE\char45NAME} \> $::=$ \> \>   \grnonterminal {UNQUALIFIED\char45NAME} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {QUALIFIED\char45NAME}
@@ -500,7 +501,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {SC\char45EXPORT} \> $::=$ \> \>    \grterminal {export}\  \grnonterminal {SC\char45NAME\char45EXPR}\  \grterminal {from}\  \grnonterminal {SC\char45TERM}
 \\
-\\ \grnonterminal {SC\char45GENERATE} \> $::=$ \> \>    \grterminal {generate}\  \grnonterminal {STRING}\  \grnonterminal {SC\char45TERM}\  \bnfoptionalopen    \grterminal {in}\  \grnonterminal {STRING} \bnfoptionalclose
+\\ \grnonterminal {SC\char45GENERATE} \> $::=$ \> \>    \grterminal {generate}\  \grnonterminal {NAME}\  \grnonterminal {SC\char45TERM}\  \bnfoptionalopen    \grterminal {in}\  \grnonterminal {STRING} \bnfoptionalclose
 \\
 \\ \grnonterminal {SC\char45TOPLEVEL\char45DECLS} \> $::=$ \> \>    \grnonterminal {SC\char45DECLS}
 \end{tabbing}
