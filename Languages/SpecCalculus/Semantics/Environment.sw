@@ -300,7 +300,7 @@ while there is a transition from names with "UnitId" to "UnitId".
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type PrismChoice  = {p: SpecPrism, n : Nat}
+  type PrismChoice  = {uid : UnitId, n : Nat, max : Nat}
   type PrismChoices = List PrismChoice
 
   op  getPrismChoices : Env PrismChoices
@@ -311,21 +311,27 @@ while there is a transition from names with "UnitId" to "UnitId".
   def setPrismChoices ps = 
     writeGlobalVar ("PrismChoices", ps)
 
+  op  initialPrismChoice : UnitId * Nat -> PrismChoice
+  def initialPrismChoice (uid, max) =
+    %% indexing is [0 .. n)
+    {uid = uid, n = 0, max = max}
+
   op  incrPrismChoices : PrismChoices -> Option PrismChoices
   def incrPrismChoices pcs =
     %% compute next set of indices in cartesian product
     %% return None when past end of all possiblities
+    %% indexing is [0 .. n)
     case pcs of
       | [] -> None
       | pc :: pcs ->
         let n = pc.n + 1 in
-	if n <= length pc.p.sms then
+	if n < pc.max then
 	  %% normal case
 	  Some (cons (pc << {n = n}, pcs))
 	else
 	  %% "carry" case
 	  case incrPrismChoices pcs of
-	    | Some pcs -> Some (cons (pc << {n = 1}, pcs))
+	    | Some pcs -> Some (cons (pc << {n = 0}, pcs))
 	    | None -> None
 
 \end{spec}
