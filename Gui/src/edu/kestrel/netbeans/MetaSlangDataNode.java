@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:33  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -41,8 +44,13 @@ import org.netbeans.modules.java.tools.BadgeCache;
 
 import edu.kestrel.netbeans.model.SourceElement;
 import edu.kestrel.netbeans.model.SpecElement;
+import edu.kestrel.netbeans.model.MorphismElement;
+import edu.kestrel.netbeans.model.DiagramElement;
+import edu.kestrel.netbeans.model.ColimitElement;
+import edu.kestrel.netbeans.model.ProofElement;
 import edu.kestrel.netbeans.nodes.SourceChildren;
 import edu.kestrel.netbeans.nodes.MemberCustomizer;
+import edu.kestrel.netbeans.nodes.MorphismCustomizer;
 import edu.kestrel.netbeans.parser.MetaSlangParser;
 import edu.kestrel.netbeans.settings.MetaSlangSettings;
 
@@ -354,7 +362,11 @@ public class MetaSlangDataNode extends DataNode // implements ChangeListener
         if (getMetaSlangDataObject().isMetaSlangFileReadOnly()) {
             return super.getNewTypes();
         }
-        return new NewType[] {new NewSpecType()};
+        return new NewType[] {new NewSpecType(),
+                              new NewMorphismType(),
+                              new NewDiagramType(),
+                              new NewColimitType(),
+                              new NewProofType(),};
     }
     
     /** Encapsulation of creating new spec or interface.
@@ -380,7 +392,7 @@ public class MetaSlangDataNode extends DataNode // implements ChangeListener
             Task parsingTask = el.prepare();
             try {
                 e.setName(name);
-                if (openCustomizer(new MemberCustomizer(e, "Spec"), "TIT_NewSpec")) {
+                if (openCustomizer(new MemberCustomizer(e, "Spec"), "New Spec")) {
                     if (parsingTask.isFinished()) {
                         addSpec(el, e);
                     } else {
@@ -412,6 +424,294 @@ public class MetaSlangDataNode extends DataNode // implements ChangeListener
                     public void run() {
                         try {
                             src.addSpec(mm);
+                        } catch (SourceException e) {
+                            ex[0] = e;
+                        }
+                    }
+                });
+            } catch (SourceException e) {
+            }
+            if (ex[0] != null) {
+                IOException newex = new IOException(ex[0].getLocalizedMessage());
+                ErrorManager.getDefault().annotate(
+                newex, ex[0]
+                );
+                throw newex;
+            }
+        }
+    }
+    
+    /** Encapsulation of creating new spec or interface.
+     */
+    class NewMorphismType extends NewType {
+        
+        NewMorphismType() {
+        }
+        
+        public String getName() {
+            return bundle.getString("MENU_CREATE_MORPHISM");
+        }
+        
+        public HelpCtx getHelpCtx() {
+            return null;
+        }
+        
+        public void create() throws IOException {
+            String name = "NewMorphism"; // NOI18N
+            
+            final MorphismElement e = new MorphismElement();
+            final SourceElement el = ((MetaSlangDataObject)getDataObject()).getSource();
+            Task parsingTask = el.prepare();
+            try {
+                e.setName(name);
+                if (openCustomizer(new MemberCustomizer(e, "Morphism"), "New Morphism")) {
+                    if (parsingTask.isFinished()) {
+                        addMorphism(el, e);
+                    } else {
+                        parsingTask.addTaskListener(new org.openide.util.TaskListener() {
+                            public void taskFinished(Task t) {
+                                t.removeTaskListener(this);
+                                try {
+                                    addMorphism(el, e);
+                                } catch (IOException exc) {
+                                    ErrorManager.getDefault().notify(exc);
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (SourceException ex) {
+                IOException newex = new IOException(ex.getLocalizedMessage());
+                ErrorManager.getDefault().annotate(
+                newex, ex
+                );
+                throw newex;
+            }
+        }
+        
+        private void addMorphism(final SourceElement src, final MorphismElement mm) throws IOException {
+            final SourceException[] ex  = new SourceException[] { null };
+            try {
+                src.runAtomicAsUser(new Runnable() {
+                    public void run() {
+                        try {
+                            src.addMorphism(mm);
+                        } catch (SourceException e) {
+                            ex[0] = e;
+                        }
+                    }
+                });
+            } catch (SourceException e) {
+            }
+            if (ex[0] != null) {
+                IOException newex = new IOException(ex[0].getLocalizedMessage());
+                ErrorManager.getDefault().annotate(
+                newex, ex[0]
+                );
+                throw newex;
+            }
+        }
+    }
+    
+    /** Encapsulation of creating new diagram.
+     */
+    class NewDiagramType extends NewType {
+        
+        NewDiagramType() {
+        }
+        
+        public String getName() {
+            return bundle.getString("MENU_CREATE_DIAGRAM");
+        }
+        
+        public HelpCtx getHelpCtx() {
+            return null;
+        }
+        
+        public void create() throws IOException {
+            String name = "NewDiagram"; // NOI18N
+            
+            final DiagramElement e = new DiagramElement();
+            final SourceElement el = ((MetaSlangDataObject)getDataObject()).getSource();
+            Task parsingTask = el.prepare();
+            try {
+                e.setName(name);
+                if (openCustomizer(new MemberCustomizer(e, "Diagram"), "New Diagram")) {
+                    if (parsingTask.isFinished()) {
+                        addDiagram(el, e);
+                    } else {
+                        parsingTask.addTaskListener(new org.openide.util.TaskListener() {
+                            public void taskFinished(Task t) {
+                                t.removeTaskListener(this);
+                                try {
+                                    addDiagram(el, e);
+                                } catch (IOException exc) {
+                                    ErrorManager.getDefault().notify(exc);
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (SourceException ex) {
+                IOException newex = new IOException(ex.getLocalizedMessage());
+                ErrorManager.getDefault().annotate(
+                newex, ex
+                );
+                throw newex;
+            }
+        }
+        
+        private void addDiagram(final SourceElement src, final DiagramElement mm) throws IOException {
+            final SourceException[] ex  = new SourceException[] { null };
+            try {
+                src.runAtomicAsUser(new Runnable() {
+                    public void run() {
+                        try {
+                            src.addDiagram(mm);
+                        } catch (SourceException e) {
+                            ex[0] = e;
+                        }
+                    }
+                });
+            } catch (SourceException e) {
+            }
+            if (ex[0] != null) {
+                IOException newex = new IOException(ex[0].getLocalizedMessage());
+                ErrorManager.getDefault().annotate(
+                newex, ex[0]
+                );
+                throw newex;
+            }
+        }
+    }
+    
+    /** Encapsulation of creating new colimit
+     */
+    class NewColimitType extends NewType {
+        
+        NewColimitType() {
+        }
+        
+        public String getName() {
+            return bundle.getString("MENU_CREATE_COLIMIT");
+        }
+        
+        public HelpCtx getHelpCtx() {
+            return null;
+        }
+        
+        public void create() throws IOException {
+            String name = "NewColimit"; // NOI18N
+            
+            final ColimitElement e = new ColimitElement();
+            final SourceElement el = ((MetaSlangDataObject)getDataObject()).getSource();
+            Task parsingTask = el.prepare();
+            try {
+                e.setName(name);
+                if (openCustomizer(new MemberCustomizer(e, "Colimit"), "New Colimit")) {
+                    if (parsingTask.isFinished()) {
+                        addColimit(el, e);
+                    } else {
+                        parsingTask.addTaskListener(new org.openide.util.TaskListener() {
+                            public void taskFinished(Task t) {
+                                t.removeTaskListener(this);
+                                try {
+                                    addColimit(el, e);
+                                } catch (IOException exc) {
+                                    ErrorManager.getDefault().notify(exc);
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (SourceException ex) {
+                IOException newex = new IOException(ex.getLocalizedMessage());
+                ErrorManager.getDefault().annotate(
+                newex, ex
+                );
+                throw newex;
+            }
+        }
+        
+        private void addColimit(final SourceElement src, final ColimitElement mm) throws IOException {
+            final SourceException[] ex  = new SourceException[] { null };
+            try {
+                src.runAtomicAsUser(new Runnable() {
+                    public void run() {
+                        try {
+                            src.addColimit(mm);
+                        } catch (SourceException e) {
+                            ex[0] = e;
+                        }
+                    }
+                });
+            } catch (SourceException e) {
+            }
+            if (ex[0] != null) {
+                IOException newex = new IOException(ex[0].getLocalizedMessage());
+                ErrorManager.getDefault().annotate(
+                newex, ex[0]
+                );
+                throw newex;
+            }
+        }
+    }
+    
+    /** Encapsulation of creating new proof
+     */
+    class NewProofType extends NewType {
+        
+        NewProofType() {
+        }
+        
+        public String getName() {
+            return bundle.getString("MENU_CREATE_PROOF");
+        }
+        
+        public HelpCtx getHelpCtx() {
+            return null;
+        }
+        
+        public void create() throws IOException {
+            String name = "NewProof"; // NOI18N
+            
+            final ProofElement e = new ProofElement();
+            final SourceElement el = ((MetaSlangDataObject)getDataObject()).getSource();
+            Task parsingTask = el.prepare();
+            try {
+                e.setName(name);
+                if (openCustomizer(new MemberCustomizer(e, "Proof"), "New Proof")) {
+                    if (parsingTask.isFinished()) {
+                        addProof(el, e);
+                    } else {
+                        parsingTask.addTaskListener(new org.openide.util.TaskListener() {
+                            public void taskFinished(Task t) {
+                                t.removeTaskListener(this);
+                                try {
+                                    addProof(el, e);
+                                } catch (IOException exc) {
+                                    ErrorManager.getDefault().notify(exc);
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (SourceException ex) {
+                IOException newex = new IOException(ex.getLocalizedMessage());
+                ErrorManager.getDefault().annotate(
+                newex, ex
+                );
+                throw newex;
+            }
+        }
+        
+        private void addProof(final SourceElement src, final ProofElement mm) throws IOException {
+            final SourceException[] ex  = new SourceException[] { null };
+            try {
+                src.runAtomicAsUser(new Runnable() {
+                    public void run() {
+                        try {
+                            src.addProof(mm);
                         } catch (SourceException e) {
                             ex[0] = e;
                         }
