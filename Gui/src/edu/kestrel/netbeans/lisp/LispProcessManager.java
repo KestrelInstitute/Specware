@@ -78,16 +78,26 @@ public class LispProcessManager {
         }
     }
     
-    public static void processUnit(String fileName) {
-	Util.log("*** LispProcessManager.processUnit(): fileName="+fileName);
+    public static void destroyLispProcess() {
+        if (lispProcess != null) {
+            writeToOutput("\n Destroying Lisp Process "+lispProcess);
+            lispProcess.destroy();
+            lispProcess = null;
+            lispServer = null;
+        }
+    }
+    
+    public static void processUnit(String pathName, String fileName) {
+	Util.log("*** LispProcessManager.processUnit(): pathName="+pathName+", fileName="+fileName);
         if (connectToLisp()) {
-            TranStruct [] ARGS = new TranStruct[3];
+            TranStruct [] ARGS = new TranStruct[2];
             TranStruct [] RES;
-            ARGS[0] = JavaLinkDist.newDistOb(fileName);
+            ARGS[0] = JavaLinkDist.newDistOb(pathName);
+            ARGS[1] = JavaLinkDist.newDistOb(fileName);
             com.franz.jlinker.LispConnector.go(false, null);
             Util.log("Processing unit ..."+ fileName);
             try {
-                RES = JavaLinkDist.invokeInLispEx(3, JavaLinkDist.newDistOb("USER::SW"), ARGS);
+                RES = JavaLinkDist.invokeInLispEx(3, JavaLinkDist.newDistOb("USER::PROCESS-UNIT"), ARGS);
                 Util.log("Done.");
                 if (com.franz.jlinker.JavaLinkDist.stringP(RES[0])) {
                     Util.log("Error while generating code for scheduler: \n"+ RES[0]);
