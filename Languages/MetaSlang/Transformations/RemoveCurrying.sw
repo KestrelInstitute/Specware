@@ -101,8 +101,8 @@ RemoveCurrying qualifying spec
     case tm of
       | Apply(t1,t2,a) ->
         (case getCurryArgs tm  of
-	   | None -> unCurryApply(unCurryTermRec t1,[t2],spc)
-	   | Some(f,args) -> unCurryApply(f,args,spc))
+	   | None -> unCurryApply(unCurryTermRec t1,[unCurryTermRec t2],spc)
+	   | Some(f,args) -> unCurryApply(f,map unCurryTermRec args,spc))
       | Record(row,a) ->
 	let newRow = map (fn (id,trm) -> (id, unCurryTermRec trm)) row in
 	if row = newRow then tm
@@ -121,12 +121,17 @@ RemoveCurrying qualifying spec
       | Lambda([(pat,_,body)],_)  ->
 	let bodySort = termSort body in
 	if arrow? (spc,bodySort)
-	  then flattenLambda(pat,body,bodySort,spc)
+	  then flattenLambda(patVars pat,body,bodySort,spc)
 	else
 	let newBody = unCurryTermRec body in
 	if newBody = body
 	  then tm
 	else mkLambda(pat,newBody)
+
+      | Lambda(rls,a) ->
+	let newrls = map (fn (pat,pred,body) -> (pat,unCurryTermRec pred,unCurryTermRec body))
+	               rls
+	in Lambda(newrls,a)
 	  
       | Let(decls,M,a)  ->
 	let newDecls = map (fn (pat,tm) -> (pat,unCurryTermRec tm))
@@ -150,17 +155,15 @@ RemoveCurrying qualifying spec
 	let newT3 = unCurryTermRec t3 in
 	if newT1 = t1 & newT2 = t2 & newT3 = t3 then tm
 	  else IfThenElse (newT1, newT2, newT3, a)
-%      | Seq(terms,_) ->
+      | Seq(terms,a) -> Seq(map unCurryTermRec terms,a)
 %      | Bind(b,vars,M,_)  -> 
       | _ -> tm
 
-  op  flattenLambda: Pattern * MS.Term * Sort * Spec -> MS.Term
-  def flattenLambda(pat,body,bodySort,spc) =
-    let vs = patVars(pat) in
+  op  flattenLambda: List Var * MS.Term * Sort * Spec -> MS.Term
+  def flattenLambda(vs,body,bodySort,spc) =
     case body of
       | Lambda([(sPat,_,sBody)],_) ->
-        mkLambda(mkTuplePat(map mkVarPat (vs ++ patVars sPat)),
-		 unCurryTerm(sBody,spc))
+        flattenLambda(vs ++ patVars sPat,sBody,termSort sBody,spc)
       | _ ->
 	case arrowOpt(spc,bodySort) of
 	  | Some (dom,_) ->
@@ -171,6 +174,7 @@ RemoveCurrying qualifying spec
 	    in
 	      mkLambda(mkTuplePat(map mkVarPat (vs ++ newVars)),
 		       unCurryTerm(mkApply(body,mkTuple(map mkVar newVars)),spc))
+	  | None -> mkLambda(mkTuplePat(map mkVarPat vs),unCurryTerm(body,spc))
 
   def varNamePool = ["x","y","z","w","l","m","n","o","p","q","r","s"]
 
