@@ -321,12 +321,13 @@
 ;;;  SORT-DECLARATION
 ;;; ------------------------------------------------------------------------
 
-;;;  TODO: In doc: sort-declaration now uses qualified name, not just name
+;;;  TODO: Fix doc: sort-declaration now uses qualified name, not just name
 (define-sw-parser-rule :SORT-DECLARATION ()
   (:tuple "sort" (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)))
   (make-sort-declaration 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-SORT-PARAMETERS ()
+  ;; a little tricky.  Allow "X" "(X)" "(X,Y)" etc. but not "()"
   (:anyof :SINGLE-SORT-VARIABLE :LOCAL-SORT-VARIABLE-LIST))
 
 (define-sw-parser-rule :SINGLE-SORT-VARIABLE ()
@@ -397,14 +398,14 @@ If we want the precedence to be optional:
   (:tuple "def"
           (:optional (1 :SORT-VARIABLE-BINDER))
           (2 :QUALIFIABLE-OP-NAMES)
-          (:optional (3 :FORMAL-PARAMETERS))
+          (3 :FORMAL-PARAMETERS)
           (:optional (:tuple ":" (4 :SORT)))
           :EQUALS
           (5 :EXPRESSION))
   (make-op-definition 1 2 3 4 5 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETERS ()
-  (:repeat+ :FORMAL-PARAMETER))
+  (:repeat* :FORMAL-PARAMETER))
 
 (define-sw-parser-rule :FORMAL-PARAMETER ()
   :CLOSED-PATTERN)
@@ -1256,7 +1257,7 @@ If we want the precedence to be optional:
 ;; (list . 1))
 
 (define-sw-parser-rule :SC-DECL-REFS ()
-  (:repeat+ :SC-DECL-REF ","))
+  (:repeat* :SC-DECL-REF ","))
 
 (define-sw-parser-rule :SC-DECL-REF ()
   (:anyof 
@@ -1366,8 +1367,9 @@ If we want the precedence to be optional:
   (make-sc-translate-expr 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-TRANSLATE-RULES ()
-  (1 (:repeat* :SC-TRANSLATE-RULE ","))
-  (make-sc-translate-rules 1))
+  (:repeat* :SC-TRANSLATE-RULE ",")
+;;;   (make-sc-translate-rules 1)
+  )
 
 (define-sw-parser-rule :SC-TRANSLATE-RULE ()
   ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
@@ -1392,16 +1394,14 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-SPEC-MORPH ()
   (:anyof
-    ((:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM)
-	    "{" (3 (:optional :SC-SPEC-MORPH-RULES)) "}")
-        (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb))
-    ((:tuple (1 :SC-TERM) "to" (2 :SC-TERM)
-	    "{" (3 (:optional :SC-SPEC-MORPH-RULES)) "}")
-        (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb)))
-)
+    ((:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM) "{" (3 :SC-SPEC-MORPH-RULES) "}")
+     (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb))
+    ((:tuple (1 :SC-TERM) "to" (2 :SC-TERM) "{" (3 :SC-SPEC-MORPH-RULES) "}")
+     (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb)))
+  )
 
 (define-sw-parser-rule :SC-SPEC-MORPH-RULES ()
-  (:repeat+ :SC-SPEC-MORPH-RULE ","))
+  (:repeat* :SC-SPEC-MORPH-RULE ","))
 
 (define-sw-parser-rule :SC-SPEC-MORPH-RULE ()
   ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))

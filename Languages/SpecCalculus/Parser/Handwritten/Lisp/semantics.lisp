@@ -273,8 +273,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-op-definition (tyVars qualifiable-op-names params optional-sort term l r)
-  (let* ((params     (if (equal :unspecified params) '() params))
-         (tyVars     (if (equal :unspecified tyVars) '() tyVars))
+  (let* ((tyVars     (if (equal :unspecified tyVars) '() tyVars))
          (term       (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
          (term       (bind-parameters params term l r))
          (tyVarsTerm (PosSpec::abstractTerm #'namedTypeVar tyVars term))
@@ -786,19 +785,13 @@ If we want the precedence to be optional:
 ;;;  SC-EXPORT
 ;;; ========================================================================
 
-(defun make-sc-hide (opt-name-list sc-term l r)
-  (let* ((name-list (if (eq :unspecified opt-name-list)
-                        nil
-                        opt-name-list)))
-      (cons (cons :|Hide| (cons name-list sc-term))
-            (make-pos l r))))
+(defun make-sc-hide (name-list sc-term l r)
+  (cons (cons :|Hide| (cons name-list sc-term))
+	(make-pos l r)))
 
-(defun make-sc-export (opt-name-list sc-term l r)
-  (let* ((name-list (if (eq :unspecified opt-name-list)
-                        nil
-                        opt-name-list)))
-      (cons (cons :|Export| (cons name-list sc-term))
-            (make-pos l r))))
+(defun make-sc-export (name-list sc-term l r)
+  (cons (cons :|Export| (cons name-list sc-term))
+	(make-pos l r)))
 
 (defun make-sc-sort-ref      (sort-ref             l r)  
   (declare (ignore l r))
@@ -836,10 +829,10 @@ If we want the precedence to be optional:
   (cons rules
         (make-pos l r)))
 
-(defun make-sc-translate-rules (rules)
-  (if (equal rules :unspecified)
-      '()
-    rules))
+;;; (defun make-sc-translate-rules (rules)
+;;;   (if (equal rules :unspecified)
+;;;      '()
+;;;    rules))
 
 ;;; (defun make-sc-translate-rule (left-qualifiable-name right-qualifiable-name l r)
 ;;;   (cons (cons left-qualifiable-name right-qualifiable-name)
@@ -865,11 +858,10 @@ If we want the precedence to be optional:
 ;;;  SC-SPEC-MORPH
 ;;; ========================================================================
 
-(defun make-sc-spec-morph (dom-sc-term cod-sc-term sc-spec-morph-rules l r)
+(defun make-sc-spec-morph (dom-sc-term cod-sc-term rules l r)
+  ;; (let ((rules (if (eq rules :unspecified) nil rules))) ...)
   (cons (cons :|SpecMorph|
-	      (vector dom-sc-term cod-sc-term (if (eq sc-spec-morph-rules :unspecified)
-						  nil
-						sc-spec-morph-rules)))
+	      (vector dom-sc-term cod-sc-term rules))
 	(make-pos l r)))
 
 ;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
