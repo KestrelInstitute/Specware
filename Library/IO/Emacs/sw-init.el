@@ -67,9 +67,7 @@
 		      sw:common-lisp-host
 		      sw:common-lisp-image-file
 		      ))
-    (if (eq lisp-emacs-interface-type 'franz)
-	(sit-for 3 t)
-      (wait-for-prompt))
+    (wait-for-prompt)
     (sw:eval-in-lisp-no-value
      (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
     (goto-char (point-max))
@@ -78,10 +76,12 @@
     ))
 
 (defun wait-for-prompt ()
-  ;(sit-for 0.1 t)
+  (sit-for 0.1)
   (let ((proc (get-buffer-process *specware-buffer-name*)))
-    (while (not (equal comint-status " :ready"))
-      (accept-process-output proc))))
+    (while (not (if (eq lisp-emacs-interface-type 'franz)
+		    (equal fi:allegro-run-status-string "Idle")
+		  (equal comint-status " :ready")))
+      (accept-process-output proc 10))))
 
 (defun set-socket-init-for-specware ()
   (message "set-socket-init-for-specware")
