@@ -936,10 +936,10 @@ spec {
                       (case findTheOp2 (env, id1, id2) of
                         | Some (_,Infix p,_,_) -> Infix  (term, p)
                         | _                    -> Nonfix term)
-                  | Fun (And,       _, _) -> Infix (term, (Right, 12))
-                  | Fun (Or,        _, _) -> Infix (term, (Right, 13))
-                  | Fun (Implies,   _, _) -> Infix (term, (Right, 14))
-                  | Fun (Iff,       _, _) -> Infix (term, (Right, 15))
+                  | Fun (And,       _, _) -> Infix (term, (Right, 15))
+                  | Fun (Or,        _, _) -> Infix (term, (Right, 14))
+                  | Fun (Implies,   _, _) -> Infix (term, (Right, 13))
+                  | Fun (Iff,       _, _) -> Infix (term, (Right, 12))
                   | Fun (Equals,    _, _) -> Infix (term, (Left, 20))
                   | Fun (NotEquals, _, _) -> Infix (term, (Left, 20))
                   | _ -> Nonfix term
