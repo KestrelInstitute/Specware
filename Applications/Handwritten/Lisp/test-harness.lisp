@@ -231,8 +231,8 @@ be the option to run each (test ...) form in a fresh image.
 		 (not (funcall value-predicate val value)))
 	(push (format nil "Expected:~%~S~%;; Got: ~%~S" value val) error-messages))
       (when (and output (not error-type)
-		 (not (funcall output-predicate test-output output)))
-	(push (format nil "Expected output: ~%~S~%;; Got:~%~S" output test-output)
+		 (not (funcall output-predicate output test-output)))
+	(push (diff-output test-output output)
 	      error-messages))
       (when (and file-goto-error
 		 (not (equal file-goto-error emacs::*goto-file-position-stored*)))
@@ -251,7 +251,7 @@ be the option to run each (test ...) form in a fresh image.
 	(progn (format *test-harness-stream* "~%;;; ================================================================================~%")
 	       (format *test-harness-stream* ";;; Test failed! ~a~%" name)
 	       (loop for msg in error-messages
-		     do (format *test-harness-stream* "~&;; ~a~%" msg))
+		     do (format *test-harness-stream* "~&;;; ~a~%" msg))
 	       (format *test-harness-stream* "~&;;; ================================================================================~%")
 	       )))))
 
@@ -278,3 +278,61 @@ be the option to run each (test ...) form in a fresh image.
 			 new
 			 (subseq str (+ match (length old))))))
     str))
+
+(defun diff-output (expected got)
+  (with-output-to-string (s)
+    (multiple-value-bind (at-start? at-end? expected got)
+	(diff-aux got expected)
+      (format s "~%;;; Expected:~%")
+      (format s "~&;;;~%")
+      (unless at-start?
+	(format s "~&;;; <  ...~%"))
+      (dolist (line expected)
+	(format s "~&;;; <  ~A~%" (coerce line 'string)))
+      (unless at-end?
+	(format s "~&;;; <  ...~%"))
+      (format s "~&;;;")
+      (format s "~&;;; But got:~%")
+      (format s "~&;;;~%")
+      (unless at-start?
+	(format s "~&;;; >  ...~%"))
+      (dolist (line got)
+	(format s "~&;;; >  ~A~%" (coerce line 'string)))
+      (unless at-end?
+	(format s "~&;;; >  ...~%"))
+      (format s "~&;;;")
+      )))
+    
+
+(defun diff-aux (expected got)
+  (let ((expected-lines  (convert-to-lines expected))
+	(got-lines       (convert-to-lines got)))
+    (do ((at-start? t              nil)
+	 (expected  expected-lines (cdr expected))
+	 (got       got-lines      (cdr got)))
+	((or (null got)
+	     (not (equal (car expected) (car got))))
+	 (do ((at-end?      t                  nil)
+	      (expected-rev (reverse expected) (cdr expected-rev))
+	      (got-rev      (reverse got)      (cdr got-rev)))
+	     ((or (null got-rev)
+		  (not (equal (car expected-rev) (car got-rev))))
+	      (values at-start? 
+		      at-end? 
+		      (reverse expected-rev) 
+		      (reverse got-rev))))))))
+
+(defun convert-to-lines (str)
+  (let ((lines nil)
+	(local-chars nil))
+    (do ((chars (coerce str 'list) (cdr chars)))
+	((null chars)
+	 (reverse (cons (reverse local-chars) lines)))
+      (let ((char (car chars)))
+	(cond ((equal char #\Newline)
+	       (push (reverse local-chars) lines)
+	       (setq local-chars nil))
+	      (t
+	       (push char local-chars)))))))
+
+    
