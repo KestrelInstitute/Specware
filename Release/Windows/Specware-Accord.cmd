@@ -20,7 +20,7 @@ rem specware.
 
 set "LISP_EXECUTABLE=%SPECWARE4%\Specware-Accord.exe"
 set "LISP_HEAP_IMAGE=%SPECWARE4%\Specware-Accord.dxl"
-set LISP_DIRECTORY=%Specware4%/
-cd "%Specware4%"
+set LISP_DIRECTORY=%SPECWARE4%/
+cd "%SPECWARE4%"
 
 "%XEMACS_EXE%" -l "%SPECWARE4%\Library\IO\Emacs\xeli\fi-site-init" -l "%SPECWARE4%\Library\IO\Emacs\load" -f "run-lisp-application" &
