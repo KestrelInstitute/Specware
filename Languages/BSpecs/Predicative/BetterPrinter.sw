@@ -38,12 +38,10 @@ spec {
           ppString "->",
           V.ppElem dst,
           ppString " +->",
+          ppMorphismShort forw,
           ppBreak,
-          ppSep ppBreak [
-            ppMorphismShort forw,
-            ppIndent (ppASpec (subtractSpec apex spc)),
-            ppMorphismShort back
-          ]
+          ppIndent (ppASpec (subtractSpec apex spc)),
+          ppMorphismShort back
         ])
      ] in
    if V.member? visited dst then
@@ -90,22 +88,26 @@ spec {
                           ppQualifiedId dom,
                           ppString "+->",
                           ppQualifiedId cod], l)) [] map) in
-    ppConcat [
-      (if sortM = emptyMap then
-         ppNil
-       else
-         ppConcat [
-           ppString "sort map {",
-           ppM sortM,
-           ppString "} "
-         ]),
-      (if opM = emptyMap then
-         ppNil
-       else
-         ppConcat [
-           ppString "op map {",
-           ppM opM,
-           ppString "}"
-         ])
-    ]
+    if sortM = emptyMap & opM = emptyMap then
+      ppNil
+    else
+      ppConcat [
+        ppBreak,
+        (if sortM = emptyMap then
+           ppNil
+         else
+           ppConcat [
+             ppString "sort map {",
+             ppM sortM,
+             ppString "} "
+           ]),
+        (if opM = emptyMap then
+           ppNil
+         else
+           ppConcat [
+             ppString "op map {",
+             ppM opM,
+             ppString "}"
+           ])
+      ]
 }

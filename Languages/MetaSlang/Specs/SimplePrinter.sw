@@ -113,7 +113,7 @@ MetaSlang qualifying spec {
                  ppString "def ",
                  ppNames,
                  ppGroup (ppIndent (ppConcat [
-                   ppString " = ",
+                   ppString " =",
                    ppBreak,
                    ppGroup (ppATerm trm)
                  ]))

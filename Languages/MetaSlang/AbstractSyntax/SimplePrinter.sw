@@ -49,11 +49,11 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ppGrConcat [
                   ppString "(",
                   ppATerm left,
-                  ppString " ",
                   ppGroup (ppIndent (ppConcat [
+                    ppString " ",
                     ppQualifiedId qid,
                     ppBreak,
-                    ppIndent (ppAppend (ppATerm right) (ppString ")"))
+                    ppAppend (ppATerm right) (ppString ")")
                   ]))
                 ]
           | Apply (Fun(Equals,srt,_), Record ([("1",left),("2",right)],_),_) ->
@@ -188,11 +188,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ppGrConcat [
                 ppString "if ",
                 ppATerm pred,
-                ppString "then",
-                ppAppend ppNewline (ppIndent (ppATerm term1)),
-                ppNewline,
+                ppString " then",
+                ppBreak,
+                ppIndent (ppATerm term1),
+                ppBreak,
                 ppString "else",
-                ppAppend ppNewline (ppIndent (ppATerm term2))
+                ppBreak,
+                ppIndent (ppATerm term2)
               ]
           | Seq (terms,_) ->
               ppSep (ppString "; ") (map ppATerm terms)
@@ -353,7 +355,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ^ (System.toString any)
               ^ "'")
 
-  def omittedQualifiers = ["Boolean","Int","Nat","Double","List","String","Char"]
+  def omittedQualifiers = ["Boolean","Integer","Nat","Double","List","String","Char"]
 
   op ppQualifiedId : QualifiedId -> Pretty
   def ppQualifiedId (Qualified (qualifier,id)) =
