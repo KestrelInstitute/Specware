@@ -443,8 +443,8 @@ AnnTermPrinter qualifying spec {
   def ppListPath path f (left, sep, right) ps = 
    prettysNone [
      left,
-     prettysLinear (
+     prettysFill (
        addSeparator sep 
-       (ListUtilities.mapWithIndex (fn (i, x) -> f (cons (i, path), x)) ps)),
+         (mapWithIndex (fn (i, x) -> f (cons (i, path), x)) ps)),
      right]
 }

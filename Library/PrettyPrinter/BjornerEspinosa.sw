@@ -345,11 +345,11 @@ PrettyPrint qualifying spec {
         List.@
         [(0,lengthString(0,"%)"))]
 
-    def printInt(i:Integer) = Integer.toString i
+    def printInt(i:Integer) = toString i
 
    op buttonPretty : Boolean * Integer * Pretty * Boolean -> Pretty
    def buttonPretty(enabled,number,p,sos?) = 
-       let string = Boolean.toString enabled^":"^printInt number^":"^Boolean.toString sos? in
+       let string = toString enabled^":"^printInt number^":"^toString sos? in
        prettysNone ([lengthString(0,"%["),lengthString(0,string),p])
 
 

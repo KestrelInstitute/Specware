@@ -287,7 +287,7 @@ AnnSpecPrinter qualifying spec {
             | _ -> 
              blockFill(0,
                 [(0,ppTerm context ([0] ++ path,Top:ParentTerm) t1),
-                 (1,blockNone(0,
+                 (2,blockNone(0,
                         (case t2
                            of Record(row,_) ->
                                if isShortTuple(1,row)
@@ -304,9 +304,9 @@ AnnSpecPrinter qualifying spec {
 
    case isFiniteList term of
     | Some terms -> AnnTermPrinter.ppListPath path
-           (fn (path,term) -> 
-                ppTerm context (path,Top:ParentTerm) term) 
-                   (pp.LBrack,pp.Comma,pp.RBrack)  terms
+                      (fn (path,term) -> 
+		       ppTerm context (path,Top:ParentTerm) term) 
+                      (pp.LBrack,pp.Comma,pp.RBrack)  terms
     | None -> 
         (case term of
          | Fun(top,srt,a) -> 
@@ -360,9 +360,9 @@ AnnSpecPrinter qualifying spec {
            in
      
                 blockAll (0,
-                     [(0, blockFill (0,
-                                     [(0,blockLinear(0,ppDs(0,4,pp.Let,decls))),
-                                      (0,pp.In)])),
+                     [(0, blockLinear (0,
+                                       [(0,blockLinear(0,ppDs(0,4,pp.Let,decls))),
+					(0,pp.In)])),
                       (0,ppTerm context ([length decls]++ path,parentTerm) body)])
          | LetRec(decls,body,_) -> 
             let
@@ -375,8 +375,10 @@ AnnSpecPrinter qualifying spec {
                                       pp.fromString id,
                                       string " ",
                                       ppPattern context ([1,0] ++ path,false) pat,
-                                      pp.Equals]),
-                                  (4,ppTerm context ([2,0] ++ path,Top:ParentTerm)
+				      string " ",
+                                      pp.Equals,
+				      string " "]),
+                                  (2,ppTerm context ([2,0] ++ path,Top:ParentTerm)
 				       body)])
                   | _ -> 
 		    blockLinear(0,
@@ -390,8 +392,9 @@ AnnSpecPrinter qualifying spec {
                          [(0,blockNone(0,
                                 [(0,pp.Let),
                                  (0,AnnTermPrinter.ppListPath path ppD
-				      (pp.Empty,pp.Empty,pp.In) decls)])),
-                         (0,ppTerm context ([length decls]++ path,parentTerm) body)])
+				      (pp.Empty,pp.Empty,pp.Empty) decls)])),
+			  (0,pp.In),
+			  (0,ppTerm context ([length decls]++ path,parentTerm) body)])
          | Record(row,_) ->
                    if isShortTuple(1,row)
                       then 
@@ -402,18 +405,18 @@ AnnSpecPrinter qualifying spec {
                    else
                    let
                        def ppEntry  (path,(id,t)) = 
-                           blockLinear(0,
-                             [(0,pp.fromString  id),
-                              (0,string  " = "),
-                              (0,ppTerm context (path,Top:ParentTerm) t)])
+                           blockFill(0,
+                             [(0,prettysNone[pp.fromString  id,
+					     string  " = "]),
+                              (2,ppTerm context (path,Top:ParentTerm) t)])
                    in
                       AnnTermPrinter.ppListPath path ppEntry (pp.LCurly,string ", ",pp.RCurly) row
          | IfThenElse(t1,t2,t3,_) -> 
                    blockLinear(0,
                      [(0,prettys [pp.If,ppTerm context ([0]++ path,Top:ParentTerm) t1]),
-                      (3,blockLinear(0,
+                      (0,blockFill(0,
                              [(0,pp.Then),
-                              (0,ppTerm context ([1]++ path,Top:ParentTerm) t2),
+                              (3,ppTerm context ([1]++ path,Top:ParentTerm) t2),
                               (0,string " ")])),
                       (0,blockFill(0,
                        [(0,pp.Else),
@@ -453,13 +456,13 @@ AnnSpecPrinter qualifying spec {
               let
                  def prInfix(f1,f2,l,t1,oper,t2,r) =
                      prettysFill
-                       [l,
-                        ppTerm context ([0,1]++ path,f1) t1,
-                         string " ",
-                         ppTerm context ([0]++ path,Top:ParentTerm) oper,
-                         string " ",
-                         ppTerm context ([1,1]++ path,f2) t2,
-                        r]
+                       [prettysNone[l,
+				    ppTerm context ([0,1]++ path,f1) t1,
+				    string " "],
+                        prettysNone[ppTerm context ([0]++ path,Top:ParentTerm) oper,
+				    string " ",
+				    ppTerm context ([1,1]++ path,f2) t2,
+				    r]]
               in
   %
   % Infix printing is to be completed.
@@ -467,11 +470,18 @@ AnnSpecPrinter qualifying spec {
               (case (parentTerm,termFixity(trm1))
                  of (_,Nonfix) -> prApply(trm1,trm2)
                   | (Nonfix,Infix(a,p)) ->
-                    prInfix(Nonfix,Nonfix,pp.LP,t1,trm1,t2,pp.RP)
+                    prInfix(Infix(Left,p),Infix(Right,p),pp.LP,t1,trm1,t2,pp.RP)
                   | (Top,Infix(a,p))  ->
-                    prInfix(Nonfix,Nonfix,pp.Empty,t1,trm1,t2,pp.Empty) 
+                    prInfix(Infix(Left,p),Infix(Right,p),pp.Empty,t1,trm1,t2,pp.Empty) 
                   | (Infix(a1,p1),Infix(a2,p2)) ->
-                    prInfix(Nonfix,Nonfix,pp.LP,t1,trm1,t2,pp.RP))
+		    if p1 = p2
+		      then (if a1 = a2
+			     then prInfix(Infix(Left,p2),Infix(Right,p2),pp.Empty,t1,trm1,t2,pp.Empty)
+			     else prInfix(Infix(Left,p2),Infix(Right,p2),pp.LP,t1,trm1,t2,pp.RP))
+		      else (if p2 > p1
+			     then %% Inner has higher precedence
+			          prInfix(Infix(Left,p2),Infix(Right,p2),pp.Empty,t1,trm1,t2,pp.Empty)
+			     else prInfix(Infix(Left,p2),Infix(Right,p2),pp.LP,t1,trm1,t2,pp.RP)))
          | Apply(t1,t2,_) -> prApply(t1,t2)
          | ApplyN([t],_) -> ppTerm context (path,parentTerm) t
          | ApplyN([trm1,trm2 as Record([(_,t1),(_,t2)],_)],_) ->
@@ -659,19 +669,19 @@ AnnSpecPrinter qualifying spec {
     | EmbedPat  ("Nil", None, Base (Qualified   (UnQualified, "List"), [_], _), _) -> string "[]" % ???
     | EmbedPat  (id, None, _(* srt *),_) -> pp.fromString id
     | RecordPat (row, _) ->
-     if isShortTuple (1, row) then
-       AnnTermPrinter.ppListPath path (fn (path,(id, pat)) -> 
-                                     ppPattern context (path,true) pat) 
-                                    (pp.LP, pp.Comma, pp.RP) 
-                               row
-     else
-       let def ppEntry (path, (id, pat)) = 
-             blockFill (0,
-                        [(0,prettysNone [pp.fromString id, pp.Equals]),
-                         (2 + String.length id,
-                          prettysFill [ppPattern context (path, true) pat])])
-       in
-         AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
+      if isShortTuple (1, row) then
+	AnnTermPrinter.ppListPath path (fn (path,(id, pat)) -> 
+				      ppPattern context (path,true) pat) 
+				     (pp.LP, pp.Comma, pp.RP) 
+				row
+      else
+	let def ppEntry (path, (id, pat)) = 
+	      blockFill (0,
+			 [(0,prettysNone [pp.fromString id,string " ",pp.Equals,string " "]),
+			  (2,
+			   prettysFill [ppPattern context (path, true) pat])])
+	in
+	  AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
     | EmbedPat ("Cons", 
                Some (RecordPat ([("1",p1), ("2",p2)], _)),
                Base (_(* Qualified("List","List") *), [_], _), _) -> 
@@ -871,7 +881,7 @@ AnnSpecPrinter qualifying spec {
 			      prettys
 			  | _ -> 
                             let pretty = ppTerm context (path,Top:ParentTerm) term in
-                            let prettys = [(0,pp.DefEquals),(0,string " "),(4,pretty)] in
+                            let prettys = [(0,pp.DefEquals),(0,string " "),(2,pretty)] in
                             prettys
 		   in
 		   let prettys = ppDefn([index,defIndex],defining_term) in

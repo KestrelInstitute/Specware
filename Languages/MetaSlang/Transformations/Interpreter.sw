@@ -517,24 +517,24 @@ spec
       | RecordVal   rm ->
         if tupleFields? rm
 	  then prettysNone [string "(",
-			    prettysLinear(addSeparator (string ", ")
-					    (map (fn (_,x) -> ppValue context x) rm)),
+			    prettysFill(addSeparator (string ", ")
+					 (map (fn (_,x) -> ppValue context x) rm)),
 			    string ")"]
 	  else prettysNone [string "{",
-			    prettysLinear(addSeparator (string ", ")
-					    (map (fn (id,x) ->
-						  blockLinear
-						    (0,
-						     [(0,string  id),
-						      (0,string  " = "),
-						      (0,ppValue context x)]))
+			    prettysFill(addSeparator (string ", ")
+					  (map (fn (id,x) ->
+						   blockLinear
+						   (0,
+						    [(0,string  id),
+						     (0,string  " = "),
+						     (0,ppValue context x)]))
 					       rm)),
 			    string "}"]
       | Constructor("Cons",arg as RecordVal[(_,_),(_,_)]) ->
 	(case valueToList v of
 	   | Some listVals ->
 	     prettysNone [string "[",
-			  prettysLinear(addSeparator (string ", ")
+			  prettysFill(addSeparator (string ", ")
 					(map (ppValue context) listVals)),
 			  string "]"]
 	   | None -> prettysFill[string "Cons",string " ",ppValue context arg])
@@ -544,28 +544,28 @@ spec
 					     ppValue context f,string " ",
 					     ppValue context arg]
       | Closure(_,sb)  -> prettysNone[string "<Closure {",
-				      prettysLinear(addSeparator (string ", ")
-					    (map (fn (id,x) ->
-						  blockLinear
-						    (0,
-						     [(0,string  id),
-						      (0,string  " -> "),
-						      (0,ppValue context x)]))
-					       sb)),
+				      prettysFill(addSeparator (string ", ")
+					(map (fn (id,x) ->
+					      blockLinear
+					        (0,
+						 [(0,string  id),
+						  (0,string  " -> "),
+						  (0,ppValue context x)]))
+					 sb)),
 				      string "}>"]
       | RecClosure(_,sb,ids)  -> 
 	prettysNone[string "<Closure {",
-		    prettysLinear(addSeparator (string ", ")
-				    (map (fn (id,x) ->
-					  blockLinear
+		    prettysFill(addSeparator (string ", ")
+				  (map (fn (id,x) ->
+					blockLinear
 					  (0,
 					   [(0,string  id),
 					    (0,string  " -> "),
-					      (0,ppValue context x)]))
-				     sb)),
+					    (0,ppValue context x)]))
+				   sb)),
 		    string "}, ",
 		    string "{",
-		    prettysLinear(addSeparator (string ", ") (map (fn id -> string id) ids)),
+		    prettysFill(addSeparator (string ", ") (map (fn id -> string id) ids)),
 		    string "}>"]
       | Unevaluated t  -> ppTerm context ([],Top:ParentTerm) t
 
