@@ -88,6 +88,7 @@
    ((:tuple "colimit")        "colimit") ; so we can use colimit as a function
    ((:tuple "diagram")        "diagram") ; so we can use diagram as a function
    ((:tuple "print")          "print") ; so we can use print as a function
+   ((:tuple "with")           "with") ; so we can use with as a function
    ((:tuple "Snark")          "Snark") ; so we can use Snark as a Spec
    ((:tuple (1 :NON_KEYWORD_NAME)) 1)
    ))
