@@ -50,6 +50,8 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\ \grnonterminal {NAME} \> $::=$ \> \>   \grterminal {\char61} 
 \\  \>  \>   \bnfalternative \>  \grterminal {\char42} 
 \\  \>  \>   \bnfalternative \>  \grterminal {translate} 
+\\  \>  \>   \bnfalternative \>  \grterminal {colimit} 
+\\  \>  \>   \bnfalternative \>  \grterminal {diagram} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {NON\_KEYWORD\_NAME}
 \\
 \\ \grnonterminal {NON\_KEYWORD\_NAME} \> $::=$ \> \>    \grnonterminal {SYMBOL}
@@ -476,7 +478,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {SC\char45QUALIFY} \> $::=$ \> \>    \grnonterminal {QUALIFIER}\  \grterminal {qualifying}\  \grnonterminal {SC\char45TERM}
 \\
-\\ \grnonterminal {SC\char45DIAG} \> $::=$ \> \>    \grterminal {diag}\  \grterminal {\{}\  \bnfrepeatopen  \grnonterminal {SC\char45DIAG\char45ELEM} \bnfrepeatclose\  \grterminal {\}}
+\\ \grnonterminal {SC\char45DIAG} \> $::=$ \> \>    \grterminal {diagram}\  \grterminal {\{}\  \bnfrepeatopen  \grnonterminal {SC\char45DIAG\char45ELEM} \bnfrepeatclose\  \grterminal {\}}
 \\
 \\ \grnonterminal {SC\char45DIAG\char45ELEM} \> $::=$ \> \>   \grnonterminal {SC\char45DIAG\char45NODE} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45DIAG\char45EDGE}
@@ -485,7 +487,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {SC\char45DIAG\char45EDGE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char58}\  \grnonterminal {NAME}\  \grterminal {\char45\char62}\  \grnonterminal {NAME}\  \grnonterminal {MAPS\char45TO}\  \grnonterminal {SC\char45TERM}
 \\
-\\ \grnonterminal {SC\char45COLIMIT} \> $::=$ \> \>    \grterminal {colim}\  \grnonterminal {SC\char45TERM}
+\\ \grnonterminal {SC\char45COLIMIT} \> $::=$ \> \>    \grterminal {colimit}\  \grnonterminal {SC\char45TERM}
 \\
 \\ \grnonterminal {SC\char45SPEC\char45MORPH} \> $::=$ \> \>   \grterminal {morphism}  \grnonterminal {SC\char45TERM}  \grterminal {\char45\char62}  \grnonterminal {SC\char45TERM}\\  \>  \>  \>\ \ \ \ \ \ \ \ \ \ \ \   \grterminal {\{}  \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} 
 \\  \>  \>  \> \ \ \ \ \ \ \ \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \bnfrepeatclose  \grterminal {\}}
