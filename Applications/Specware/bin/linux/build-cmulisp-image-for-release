@@ -167,5 +167,26 @@ XXXX
 
 ##  TODO: copy highest-numbered patch from "$SPECWARE4"/Release/Linux/CMU/Patches
 ##/bin/cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.x86f          "$SPECWARE4"/distribution-cmulisp/Patches
-/bin/cp "$SPECWARE4"/Release/Linux/CMU/Specware-cmulisp                  "$SPECWARE4"/distribution-cmulisp
+/bin/cp "$SPECWARE4"/Release/Linux/CMU/Specware-cmulisp                  "$SPECWARE4"/distribution-cmulisp/Specware
 /bin/cp "$SPECWARE4"/Applications/Specware/bin/linux/Specware4.cmuimage  "$SPECWARE4"/distribution-cmulisp
+
+
+# ================================================================================
+#  Patches
+# ================================================================================
+
+mkdir -p ${SPECWARE4}/distribution-cmulisp/Patches
+
+# ================================================================================
+#  Delete CVS stuff  (should already be done, but something may have been missed in copy-files-for-distribution.lisp
+# ================================================================================
+
+cd ${SPECWARE4}/distribution-cmulisp
+find . -type d -name "CVS" -print | xargs /bin/rm -rf 
+
+
+# ================================================================================
+#  Make tar file
+# ================================================================================
+
+tar cvf "$SPECWARE4"/Specware.tar *
