@@ -293,6 +293,19 @@ def p2mSort(spc,srt,minfo) =
 			let sinfo = (names,[],[([],srtdef)]) in
 			let minfo = exchangeSortInfoInSortOpInfos(qid,sinfo,minfo) in
 			minfo
+		      | %DAC:  Added this case for uninterpreted types.  After looking at the
+			% code above for the interpreted case I am not sure this is the right
+			% thing to do for code-generation, because in the above code, care is
+			% to exchange the srt definition types for the original types.
+			% However, this case is needed for the Snark translator and to ensure
+			% that the resulting spec is a valid metaslang spec.
+			Some (names,tv as _::_,[]) ->
+			let tvsubst = zip(tv,insttv) in
+			%let _ = writeLine("  "^(printTyVarSubst tvsubst)) in
+			let names = cons(qid,(filter (fn(qid_) -> ~(qid_=qid0)) names)) in 
+			let sinfo = (names,[],[]) in
+			let minfo = addSortInfo2SortOpInfos(qid,sinfo,minfo) in
+			minfo
 		      | _ -> minfo)
       in
       (Base(qid,[],b),minfo)
