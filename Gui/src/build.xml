@@ -21,39 +21,21 @@
   
 
   <target name="compile" depends="clean">
-    <javac srcdir="." destdir=".">
+    <javac srcdir="."
+           includes="edu/kestrel/graphs/**,edu/kestrel/especs/**"
+           destdir="."
+    >
     <classpath refid="project.class.path"/>
     </javac>
   </target>
 
   <target name="compile13" depends="clean">
-    <javac srcdir="." destdir=".">
+    <javac srcdir="."
+           includes="edu/kestrel/graphs/**,edu/kestrel/especs/**"
+           destdir="."
+    >
     <classpath refid="project.class.path13"/>
     </javac>
-  </target>
-
-  <target name="runx" depends="compile">
-    <java classname="edu.kestrel.graphs.XGraphDisplay"
-	  fork="yes"
-	  >
-    <classpath refid="project.class.path"/>
-    </java>
-  </target>
-
-  <target name="runy" depends="compile">
-    <java classname="edu.kestrel.especs.graphs.EGraphDisplay"
-	  fork="yes"
-	  >
-    <classpath refid="project.class.path"/>
-    </java>
-  </target>
-
-  <target name="runz" depends="compile">
-    <java classname="edu.kestrel.graphs.XGraphApplication"
-	  fork="yes"
-	  >
-    <classpath refid="project.class.path"/>
-    </java>
   </target>
 
   <target name="run" depends="compile">
