@@ -1,7 +1,5 @@
 String qualifying spec
 
-  % refinement of base spec String
-
   import Char
   import List
 
@@ -30,8 +28,6 @@ String qualifying spec
   op newline       : String
   op toScreen      : String -> ()  % deprecated
   op writeLine     : String -> ()  % deprecated
-
-  % axioms copied from base spec String:
 
   axiom implode_def is
     fa (s : String) implode(explode s) = s
@@ -108,8 +104,6 @@ String qualifying spec
 
   op Nat.natToString  : Nat -> String
   op Nat.stringToNat  : (String | Nat.natConvertible) -> Nat
-
-  % axioms copied from base spec String:
 
   axiom boolean_toString_def is
     fa (x : Boolean) Boolean.toString x = (if x then "true" else "false")

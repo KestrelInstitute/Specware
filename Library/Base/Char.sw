@@ -1,7 +1,5 @@
 Char qualifying spec
 
-  % refinement of base spec Nat
-
   import Nat
 
   % sorts:
@@ -20,8 +18,6 @@ Char qualifying spec
   op isAscii     : Char -> Boolean
   op toUpperCase : Char -> Char
   op toLowerCase : Char -> Char
-
-  % axioms copied from base spec Char:
 
   axiom chr_def is
     fa (n : Nat) n < 256 => ord(chr n) = n

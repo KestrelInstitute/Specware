@@ -1,7 +1,5 @@
 Compare qualifying spec
 
-  % refinement of base spec Compare
-
   import Boolean
 
   % sorts:

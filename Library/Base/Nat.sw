@@ -1,7 +1,5 @@
 Nat qualifying spec
 
-  % refinement of base spec Nat
-
   import Integer
 
   % sorts:

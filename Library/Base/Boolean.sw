@@ -1,7 +1,5 @@
 Boolean qualifying spec
 
-  % refinement of base spec Boolean
-
   import Primitive
 
   % sorts:

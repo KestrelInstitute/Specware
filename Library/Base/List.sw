@@ -1,7 +1,5 @@
 List qualifying spec
 
-  % refinement of base spec List
-
   import Option
   import Nat
 
@@ -48,9 +46,6 @@ List qualifying spec
   op compare         : fa(a)   (a * a -> Comparison) -> List a * List a ->
                                Comparison
   op app             : fa(a)   (a -> ()) -> List a -> ()  % deprecated
-
-  % the op rev2 is an auxiliary op to define rev; it is not present
-  % in the base spec List of which this spec is a refinement
 
   def nil = Nil
 

@@ -1,7 +1,5 @@
 Functions qualifying spec
 
-  % refinement of base spec Functions
-
   import Boolean
 
   % sorts:
@@ -24,8 +22,6 @@ Functions qualifying spec
   op surjective? : fa(a,b) (a -> b) -> Boolean
   op bijective?  : fa(a,b) (a -> b) -> Boolean
   op inverse     : fa(a,b) Bijective(a,b) -> Bijective(b,a)
-
-  % axioms copied from base spec Functions:
 
   axiom injective?_def is sort fa(a,b)
     fa (f : a -> b) injective? f <=> (fa (x,y : a) f x = f y => x = y)

@@ -1,7 +1,5 @@
 Option qualifying spec
 
-  % refinement of base spec Option
-
   import Compare
 
   % sorts:
