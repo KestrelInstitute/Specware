@@ -398,8 +398,8 @@ MSToFM qualifying spec
   def fromFMTermIneq(spc, ineq, context) =
     let def compToQid(comp) =
           case comp of
-	    | GT -> mkQualifiedId("Integer",">")
-	    | LT -> mkQualifiedId("Integer","<")
+	    | Gt -> mkQualifiedId("Integer",">")
+	    | Lt -> mkQualifiedId("Integer","<")
 	    | GtEq -> mkQualifiedId("Integer",">=")
 	    | LtEq -> mkQualifiedId("Integer","<=")
 	    | Eq -> mkQualifiedId("Integer","=")
