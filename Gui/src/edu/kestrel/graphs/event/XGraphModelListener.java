@@ -79,13 +79,13 @@ public class XGraphModelListener implements GraphModelListener {
                 XNode node = (XNode) objs[i];
                 Dbg.pr("listener: removed node: "+node);
                 ModelNode mnode = node.getModelNode();
-                mnode.removeRepr(node);
+                mnode.removeRepr(graph,node);
             }
             if (objs[i] instanceof XEdge) {
                 XEdge edge = (XEdge) objs[i];
                 Dbg.pr("listener: removed edge: "+edge);
                 ModelEdge medge = edge.getModelEdge();
-                medge.removeRepr(edge);
+                medge.removeRepr(graph,edge);
             }
         }
         if (graph.isEmpty()) {
@@ -169,8 +169,38 @@ public class XGraphModelListener implements GraphModelListener {
             JOptionPane.showMessageDialog(graph,me.getMessage());
         }
         CellView cv = graph.getView().getMapping(edge,false);
-        if (cv instanceof XGraphElementView)
+        if (cv instanceof XGraphElementView) {
             edge.updateViewData((XGraphElementView)cv);
+        }
+    }
+    
+    
+    /** this method is invoked by the view observer whenever the view has changed.
+     * @param changedViews the views that have changed
+     * @param the context of the changed views, i.e. those views that are affected by the view change.
+     */
+    public void processChangedViews(Object[] changed, Object[] context) {
+        ArrayList changedList = new ArrayList();
+        ArrayList contextList = new ArrayList();
+        Vector allviews = new Vector();
+        if (changed != null)
+            for(int i=0;i<changed.length;i++) {
+                if (changed[i] instanceof XGraphElementView) {
+                    changedList.add(changed[i]);
+                    allviews.add(changed[i]);
+                }
+            }
+        if (context != null)
+            for(int i=0;i<context.length;i++) {
+                if (context[i] instanceof XGraphElementView) {
+                    contextList.add(context[i]);
+                    allviews.add(context[i]);
+                }
+            }
+        Enumeration iter = allviews.elements();
+        while(iter.hasMoreElements()) {
+            ((XGraphElementView)iter.nextElement()).viewChanged(changedList,contextList);
+        }
     }
     
 }
