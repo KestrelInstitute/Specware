@@ -22,8 +22,11 @@ import org.openide.util.Utilities;
  */
 public class ExternalLispProcess extends ProcessExecutor {
        
-    /** Creates a new instance of ExternalLispProcess */
     public ExternalLispProcess() {
+    }
+    
+    /** Creates a new instance of ExternalLispProcess */
+    public ExternalLispProcess(int lispPort) {
 
         String lispImagePath = System.getProperty("Env-SPECWARE4");
     
@@ -35,7 +38,7 @@ public class ExternalLispProcess extends ProcessExecutor {
         String lispImageFile = (lispImagePath+ (Utilities.isWindows() ? "\\Applications\\Specware\\bin\\windows\\" : "/Applications/Specware/bin/linux/") +"Specware4.dxl"); 
         String initFile = (lispImagePath + (Utilities.isWindows() ? "\\Gui\\src\\Lisp\\" : "/Gui/src/Lisp/") + "specware-socket-init.lisp");
         String lispExecutable =  Utilities.isWindows() ? "\"c:\\Progra~1\\acl62\\alisp.exe\"" : (lispImagePath + "/Applications/Specware/bin/linux/SpecBeans-text");
-        String exeArgs = Utilities.isWindows() ? ("-I "+lispImageFile+" -L "+initFile) : "";
+        String exeArgs = Utilities.isWindows() ? ("-I "+lispImageFile+" -L "+initFile+" -- socket "+lispPort) : "" + lispPort;
         NbProcessDescriptor DEFAULT = new NbProcessDescriptor(lispExecutable, exeArgs);
         setExternalExecutor(DEFAULT);
     }

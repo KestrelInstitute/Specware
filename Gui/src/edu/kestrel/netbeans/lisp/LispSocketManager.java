@@ -110,7 +110,7 @@ public class LispSocketManager {
                 //serverSocketThread = new Thread(new SocketConnector());
                 //serverSocketThread.start();
                 if (serverSocket == null) {
-                    serverSocket = new ServerSocket(lispPort);
+                    serverSocket = new ServerSocket(0);
                 }
                 
                 if (DEBUG) {
@@ -133,7 +133,7 @@ public class LispSocketManager {
                     Util.log("All properties: "+System.getProperties());
                 }*/
 
-                lispServer = new ExternalLispProcess();
+                lispServer = new ExternalLispProcess(lispPort);
 
                 lispProcess = lispServer.createProcess();
                 Thread.sleep(5000);
