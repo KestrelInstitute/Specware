@@ -41,16 +41,16 @@ if [ -d CVS ] ; then
   cvs -q update -d
   echo Update of Specware4 finished.
 else
-  if [ -d /cvs/specware ]; then
-    CVSROOT=/cvs/specware
+  if [ -d /cvs ]; then
+    CVSROOT=/cvs
   else
-    if [ -d /net/flycatcher/cvs/specware ]; then
-      CVSROOT=/net/flycatcher/cvs/specware
+    if [ -d /net/flycatcher/cvs ]; then
+      CVSROOT=/net/flycatcher/cvs
     else
       echo The CVS repository for Specware is not locally accessible.
       echo An attempt will be made to retrieve Specware over the net
       echo using ssh.
-      CVSROOT=`logname`@crake.kestrel.edu:/cvs/specware
+      CVSROOT=`logname`@crake.kestrel.edu:/cvs
       CVS_RSH=ssh
     fi
   fi
