@@ -24,7 +24,6 @@ coherence conditions of the morphism elements.
     case (coercedDomValue, coercedCodValue) of
       | (Spec spc1, Spec spc2) -> {
             morph <- makeSpecMorphism spc1 spc2 morphRules (positionOf domTerm) (Some sm_tm);
-            verify_signature_mappings morph;
             return (Morph morph,max(domTimeStamp,codTimeStamp),
                     listUnion (domDepUIDs,codDepUIDs))
           }
@@ -53,18 +52,32 @@ coherence conditions of the morphism elements.
   op makeSpecMorphism : Spec -> Spec -> List (SpecMorphRule Position) -> Position -> Option SCTerm -> Env Morphism
   def makeSpecMorphism domSpec codSpec rawMapping position opt_sm_tm = 
     {
-      morph <- makeResolvedMapping domSpec codSpec rawMapping;
+      morphism_map <- makeResolvedMapping domSpec codSpec rawMapping;
       raise_any_pending_exceptions;
-      result <- buildSpecMorphism domSpec codSpec morph position opt_sm_tm;
+      sm <- buildSpecMorphism domSpec codSpec morphism_map position opt_sm_tm;
       raise_any_pending_exceptions;
-      return result
+      % translation_maps <- return (convertMorphismMapToTranslationMap morphism_map);
+      verifySignatureMappings domSpec codSpec sm position;
+      raise_any_pending_exceptions;
+      return sm
      }
 
+  sort MorphismMap = AQualifierMap QualifiedId
+  sort MorphismMaps = MorphismMap  * MorphismMap 
+
+(*
+  op  convertMorphismMapToTranslationMap : MorphismMaps -> TranslationMaps
+  def convertMorphismMapToTranslationMap morphism_maps =
+    let (morphism_op_map, morphism_sort_map) = morphism_maps in
+    let translation_op_map   = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_op_map   in
+    let translation_sort_map = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_sort_map in
+    (translation_op_map, translation_sort_map)
+*)
   op makeResolvedMapping :
         Spec
      -> Spec
      -> List (SpecMorphRule Position)
-     -> Env ((AQualifierMap QualifiedId) * (AQualifierMap QualifiedId))
+     -> Env MorphismMaps
 
   def makeResolvedMapping dom_spec cod_spec sm_rules =
     let 
@@ -261,10 +274,73 @@ Should we check to see if qid is in cod_map??
     in
       foldOverQualifierMap compl emptyMap dom_map
 
-  op verify_signature_mappings : Morphism -> Env ()
-  def verify_signature_mappings morp =
+  op  verifySignatureMappings : Spec -> Spec -> Morphism -> Position -> Env ()
+  def verifySignatureMappings dom_spec cod_spec sm pos =
     %% TODO:  bug 67 !!
-    return ()
+    let {dom, cod, sortMap, opMap, sm_tm=_} = sm in
+    let 
+      def verify_op_type (dom_q, dom_id, dom_info : OpInfo, _) = 
+	let dom_qid = Qualified(dom_q, dom_id) in
+	let (_,dom_sort,_) = unpackFirstOpDef dom_info in
+	{
+	 translated_sort <- return (translateSortViaSM (dom_sort, sortMap, opMap));
+	 Some cod_qid <- return (evalPartial opMap dom_qid);
+	 (Some cod_info) <- return (findTheOp (cod_spec, cod_qid));
+	 (_,cod_sort,_)  <- return (unpackFirstOpDef cod_info);
+	 if equalSort? (translated_sort, cod_sort) then
+	   return ()
+	 else
+	   let msg = "Inconsistent signature mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+	             "\nThe domain sort " ^ (printSort dom_sort) ^
+		     "\n  translates to " ^ (printSort translated_sort) ^
+		     "\n   which is not " ^ (printSort cod_sort)
+	   in
+	   raise (MorphError (pos, msg))
+	    }
+    in
+      foldOverQualifierMap verify_op_type () dom_spec.ops
+
+  op translateSortViaSM : MS.Sort * MorphismSortMap * MorphismOpMap -> MS.Sort
+  def translateSortViaSM (srt, sortMap, opMap) =
+    let def findName m QId =
+	  case evalPartial m QId of
+	    | Some nQId -> nQId
+	    | _ -> QId
+	def translateSort (srt) =
+	  case srt of
+	    | Base (QId, srts, a) -> 
+	      (case findName sortMap QId of
+		 | Qualified("Boolean", "Boolean") -> Boolean a
+		 | cod_qid -> Base (cod_qid, srts, a))
+	    | _ -> srt
+	def translateTerm (trm) =
+	  case trm of
+	    | Fun (Op (QId, fixity), srt, a) -> 
+	      let cod_qid as Qualified (q, id) = findName opMap QId in
+	      let fun =
+	          (case q of
+		     | "Boolean" ->
+	               (case id of 
+			  | "~"   -> Not
+			  | "&&"  -> 
+			    let _ = toScreen ("\n?? Translating to '&&' ??\n") in
+			    And
+			  | "||"  -> 
+			    let _ = toScreen ("\n?? Translating to '||' ??\n") in
+			    Or
+			  | "=>"  -> 
+			    let _ = toScreen ("\n?? Translating to '=>' ??\n") in
+			    Implies
+			  | "<=>" -> Iff
+			  | "="   -> Equals
+			  | "~="  -> NotEquals
+			  | _ -> Op (cod_qid, fixity))
+		     | _ -> Op (cod_qid, fixity))
+	      in
+		Fun (fun, srt, a)
+	    | _ -> trm
+    in 
+    mapSort (translateTerm, translateSort, id) srt
 
 }
 \end{spec}
