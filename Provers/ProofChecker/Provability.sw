@@ -691,7 +691,7 @@ spec
                            FA v t (e1 @ VAR v == e2 @ VAR v)))))
     | thAbstraction ->
       (fa (cx:Context, vS:Variables, tS:Types, e:Expression, eS:Expressions,
-           t:Type, esbs:ExprSubstitution, an1:AxiomName, an2:AxiomName)
+           t:Type, esbs:ExprSubstitution)
          length vS = length tS
       && pj (wellTypedExpr (cx, FNN vS tS e @ TUPLE eS, t))
       && isExprSubstFrom? (esbs, vS, eS)
