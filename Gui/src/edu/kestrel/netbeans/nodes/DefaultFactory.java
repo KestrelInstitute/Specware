@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:15:03  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:42:08  weilyn
  * Added support for claims.
  *
@@ -51,8 +54,8 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   private static final int FILTER_CATEGORIES = 0x1000;
   
   static {
-    CATEGORIES = new Integer[3];
-    for (int i = 0; i < 3; i++) {
+    CATEGORIES = new Integer[4];
+    for (int i = 0; i < 4; i++) {
       CATEGORIES[i] = new Integer(i);
     }
   }
@@ -62,6 +65,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     case 1: return CATEGORIES[0];
     case 2: return CATEGORIES[1];
     case 4: return CATEGORIES[2];
+    case 8: return CATEGORIES[3];
     }
     return null;
   }
@@ -186,9 +190,9 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     SystemAction.get(PasteAction.class),
     null,
     SystemAction.get(NewAction.class),
-    null,
-    SystemAction.get(ToolsAction.class),
-    SystemAction.get(PropertiesAction.class)
+    //null,
+    //SystemAction.get(ToolsAction.class),
+    //SystemAction.get(PropertiesAction.class)
   };
 
   /** Filters under each category node */
