@@ -41,6 +41,22 @@ XML qualifying spec
     : Option X =
     internalize_Element (document.element, sd, table)
     
+  def type_attribute (element : PossibleElement) : Option String =
+    foldl (fn (attribute : ElementAttribute, result) ->
+	   case result of
+	     | Some _ -> result
+	     | _ -> (if "type" = (string attribute.name) then
+		       Some (foldl (fn (item, result) ->
+				    result ^ (case item of
+						| NonRef ustr -> string ustr
+						| Ref _ -> "<xmlref>"))
+			           ""
+				   attribute.value.items)
+		     else
+		       result))
+          None
+	  element.stag.attributes
+
   def fa (X) internalize_Element (element : Element,
 				  sd      : SortDescriptor,
 				  table   : SortDescriptorExpansionTable)
@@ -49,28 +65,14 @@ XML qualifying spec
     case element of
       | Full elt -> 
         let desired = print_SortDescriptor sd in
-        let given   = string elt.stag.name in
-	let attributes = elt.stag.attributes in
-	let given_type = (case (foldl (fn (attribute, result) ->
-				 case result of
-				   | Some _ -> result
-				   | _ -> Some (if "type" = (string attribute.name) then
-						  foldl (fn (item, result) ->
-							 result ^ (case item of
-								     | NonRef ustr -> string ustr
-								     | Ref _ -> "<xmlref>"))
-						        "type "
-							attribute.value.items
-						else
-						  "unknown type"))
-			        None
-				attributes)
-			    of
-			      | Some str -> str
-			      | _ -> "unspecified type")
+	let given_type = (case (type_attribute elt) of
+			    | Some str -> str
+			    | _ -> "unspecified type")
 	in
-	let _ = toScreen ("\nSeeking " ^ desired ^ " from " ^ given ^ " of " ^ given_type ^ "\n") in
-        internalize_PossibleElement (elt, pattern, table)
+	let _ = toScreen ("\nSeeking " ^ desired ^ " from " ^ string elt.stag.name ^ 
+			  " of " ^ given_type ^ "\n") 
+	in
+	  internalize_PossibleElement (elt, pattern, table)
       | Empty _ -> fail "empty element"
 
   def fa (X) internalize_PossibleElement (element    : PossibleElement,
@@ -192,11 +194,35 @@ XML qualifying spec
 	      Some (magicCastFromList data)
 	  | ("Char",    "Char")   -> fail "decoding char"
 	  | ("Option" , "Option") -> fail "decoding option"
-	  | _ -> fail "decoding mystery")
+	  | (x, y) -> fail ("decoding " ^ x ^ "." ^ y))
       | CoProduct sd_options ->
-	fail ("decoding CoProduct: " ^ (string (print_Element (Full element))))
+	(let element_name = string element.stag.name in
+	 case (find (fn sd_option -> 
+		     (case type_attribute element of
+			| Some str -> sd_option.1 = str
+			| _ -> false)
+			or
+			(sd_option.1 = element_name))
+	            sd_options)
+	   of
+	   | Some (_, Some matching_sd_option) -> 
+	      (case internalize_PossibleElement (element,
+						 expand_SortDescriptor (matching_sd_option, table),
+						 table) 
+		 of
+		 | Some datum -> Some datum
+		 | _ ->
+		   fail ("looking for coproduct element: " ^ (print_SortDescriptor sd_pattern) ^ "\n" ))
+           | _ ->
+	     fail ("decoding CoProduct: XML " ^ element_name ^ " datum doesn't match any of " ^ 
+		   (foldl (fn ((name, _), result) ->
+			   case result of
+			     | "" -> name
+			     | _ -> result ^ ", " ^ name)
+		          ""
+			  sd_options)
+		   ^ " coproduct options"))
       | _ ->
-	fail "?? decoding unrecognized type  ?? "
-
+	fail "unrecognized type"
 
 endspec
