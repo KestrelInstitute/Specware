@@ -67,7 +67,7 @@
     (setq path (string-subst path " ~/" (concatenate 'string " " (home-dir) "/")))
     (when #+mswindows t #-mswindows nil
 	  (setq path (string-subst path "/Program Files/" "/Progra~1/"))))
-    path)
+  path)
 
 (defun strip-extraneous (str)
   (let ((len (length str)))
@@ -354,7 +354,7 @@
   ;; scripts depend upon this returning true iff successful
   (let ((lisp-file-name (subst-home (or y (concatenate 'string
 					    specware::temporaryDirectory
-					    "cl-current-file"))))
+					    "lgen_lisp_tmp"))))
 	(x (norm-unitid-str x)))
     (flet ((swll1 (x lisp-file-name)
 	     (let ((val (if (Specware::evaluateLispCompileLocal_fromLisp-2
