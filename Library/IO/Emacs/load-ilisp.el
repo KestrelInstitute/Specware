@@ -1,5 +1,7 @@
 
-;; Load everything
+;; Load everything and use ilisp interface to lisp instead of Franz's
+
+(defvar lisp-emacs-interface-type 'ilisp)
 
 (defconst *specware* (getenv "SPECWARE4"))
 (defconst *specware-home-directory* (getenv "SPECWARE4"))

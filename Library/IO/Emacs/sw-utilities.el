@@ -49,13 +49,13 @@
 (defun goto-file-position (file line col)
   (let ((full-file (expand-file-name file
 				     (save-excursion
-				       (set-buffer fi:common-lisp-buffer-name)
+				       (set-buffer sw:common-lisp-buffer-name)
 				       default-directory))))
     (unless (equal (buffer-file-name) full-file)
       (find-file-other-window full-file))
     (goto-line line)
     (when (> col 0)
-      (forward-char (- col 1)))))
+      (forward-char col))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mouse sensitive interfacing.
@@ -133,7 +133,7 @@
     (let ((bdrs (* borders 2))
 	  (left (+ left borders))
 	  (top (+ top borders)))
-      (select-frame-if-active (get-frame-for-buffer (get-buffer-create fi:common-lisp-buffer-name)))
+      (select-frame-if-active (get-frame-for-buffer (get-buffer-create sw:common-lisp-buffer-name)))
       (let* ((frame (selected-frame))
 	     (int-bdrs (frame-property frame 'scrollbar-width))
 	     (int-h-bdrs (+ int-bdrs
@@ -374,12 +374,14 @@
 (defun apply-refinement-from-library-taxonomy ()
   (interactive)
   (send-message-to-lisp
-   "(SpecwareUI::applyRefinementFromLibraryTaxonomy SpecwareUI::specware-ui-current-defining-diagram)"))
+   "(SpecwareUI::applyRefinementFromLibraryTaxonomy
+       SpecwareUI::specware-ui-current-defining-diagram)"))
 
 (defun apply-refinement-from-library-diagram ()
   (interactive)
   (send-message-to-lisp
-   "(SpecwareUI::applyRefinementFromLibraryDiagram SpecwareUI::specware-ui-current-defining-diagram)"))
+   "(SpecwareUI::applyRefinementFromLibraryDiagram
+       SpecwareUI::specware-ui-current-defining-diagram)"))
 
 (defun context-dependent-simplify-tactic ()
   (interactive)
@@ -417,9 +419,10 @@
   (if (null sw:*current-specware-process*)
       ()
     (progn
-      (fi:eval-in-lisp
+      (sw:eval-in-lisp
        (format 
-	"(mp::process-kill (MP:PROCESS-NAME-TO-PROCESS \"%s\"))" sw:*current-specware-process*))
+	"(mp::process-kill (MP:PROCESS-NAME-TO-PROCESS \"%s\"))"
+	sw:*current-specware-process*))
       (setq sw:*current-specware-process* nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -132,7 +132,7 @@ information on how to send the mail."
   (define-key m "\er" 'fi:re-search-backward-input)
   (define-key m "\es" 'fi:re-search-forward-input)
   (define-key m "\e." 'specware-meta-point)
-  (define-key m "\e*" 'switch-to-lisp))
+  (define-key m "\e*" 'sw:switch-to-lisp))
 
 (defun cleanup-fi:lisp-listener-mode ()
   (and fi:lisp-listener-mode-map

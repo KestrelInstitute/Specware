@@ -155,8 +155,8 @@ accepted in lieu of prompting."
 
   (define-key map "\M-."     'specware-meta-point)
   (define-key map "\M-,"     'continue-specware-meta-point)
-  (define-key map "\C-cl"    'switch-to-lisp)
-  (define-key map "\M-*"     'switch-to-lisp)
+  (define-key map "\C-cl"    'sw:switch-to-lisp)
+  (define-key map "\M-*"     'sw:switch-to-lisp)
   (define-key map "\C-?"     'backward-delete-char-untabify)
   (define-key map "\C-c%"    'extract-sexp)
   (define-key map "\C-c;"    'comment-region)
@@ -971,8 +971,9 @@ If anyone has a good algorithm for this..."
   (interactive)
   (if (null *pending-specware-meta-point-results*)
       (error "No more Definitions")
-    (goto-specware-meta-point-definition (car *pending-specware-meta-point-results*)
-					 (cdr *pending-specware-meta-point-results*))))
+    (goto-specware-meta-point-definition
+     (car *pending-specware-meta-point-results*)
+     (cdr *pending-specware-meta-point-results*))))
 
 ;;;; Meta-point facility (adapted from refine-meta-point fi:lisp-find-definition)
 ;;;; Uses Franz interface functions to communicate with Lisp
@@ -982,12 +983,12 @@ If anyone has a good algorithm for this..."
 	 (qualifier (car pr))
 	 (sym (cadr pr)))
     (message "Requesting info from Lisp...")
-    (let ((sym (if (equal (substring sym 0 2) "|!")
+    (let ((sym (if (and (> (length sym) 3)(equal (substring sym 0 2) "|!"))
 		   (substring sym 2 -1)
 		 sym)))
-      (let ((results (fi:eval-in-lisp (make-search-form qualifier sym))))
+      (let ((results (sw:eval-in-lisp (make-search-form qualifier sym))))
 	(message nil)
-	(if (null results)
+	(if (or (null results) (eq results 'NIL))
 	    (error "Can't find definition of %s." name)
 	  (goto-specware-meta-point-definition sym results))))))
 
@@ -1010,7 +1011,8 @@ If anyone has a good algorithm for this..."
 		   ;; Can't fail now.
 		   (find-file-noselect file))))))
       (if (member major-mode '(fi:inferior-common-lisp-mode
-			       fi:lisp-listener-mode))
+			       fi:lisp-listener-mode
+			       ilisp-mode))
 	  (other-window 1))
       (switch-to-buffer buf))
     (goto-char 0)
@@ -1061,28 +1063,23 @@ If anyone has a good algorithm for this..."
     qual))
 
 (defun find-qualifier-info (name)
-  (let ((colon-pos (fi::lisp-find-char ?: name)))
+  (let ((colon-pos (position ?: name)))
       (if colon-pos			; has a package
 	  (list (normalize-qualifier (substring name 0 colon-pos))
-		(substring name (if (eq ?: (elt name (+ colon-pos 1)))
+		(substring name (if (and (< (+ colon-pos 1) (length name))
+					 (eq ?: (elt name (+ colon-pos 1))))
 				    (+ colon-pos 2)
 				  (+ colon-pos 1))))
-	(let ((dot-pos (fi::lisp-find-char ?. name)))
+	(let ((dot-pos (position ?. name)))
 	  (if dot-pos			; has a package
 	      (list (substring name 0 dot-pos)
 		    (substring name (+ dot-pos 1)))
 	    (list sw::UnQualified name))))))
 
 (defun strip-hash-suffix (str)
-  (let ((pos (fi::lisp-find-char ?# str)))
+  (let ((pos (position ?# str)))
     (if pos (substring str 0 pos)
       str)))
-
-(defun spec-from-fi:package ()
-  (if (null fi:package) ""
-    (let ((colon-pos (fi::lisp-find-char ?: fi:package)))
-      (upcase (if (null colon-pos) fi:package
-		(substring fi:package (+ colon-pos 1)))))))
 
 (defun find-containing-spec ()
   (save-excursion
@@ -1105,19 +1102,13 @@ If anyone has a good algorithm for this..."
 
 (defun sw::get-default-symbol (prompt &optional up-p ignore-keywords)
   (let ((symbol-at-point (sw::get-symbol-at-point up-p)))
-    (if fi::use-symbol-at-point
-	(list symbol-at-point)
-      (let ((read-symbol
-	     (let ((fi::original-package fi:package))
-	       (fi::ensure-minibuffer-visible)
-	       (fi::completing-read
-		(if symbol-at-point
-		    (format "%s: (default %s) " prompt symbol-at-point)
-		  (format "%s: " prompt))
-		'fi::minibuffer-complete))))
-	(list (if (string= read-symbol "")
-		  symbol-at-point
-		read-symbol))))))
+    (let ((read-symbol
+	   (read-from-minibuffer (concat prompt ": ")
+	    (if symbol-at-point
+		symbol-at-point ""))))
+      (list (if (string= read-symbol "")
+		symbol-at-point
+	      read-symbol)))))
 
 (defun sw::get-symbol-at-point (&optional up-p)
   (let ((symbol
@@ -1128,15 +1119,14 @@ If anyone has a good algorithm for this..."
 	       (forward-char 1))
 	     (while (eq (char-after (- (point) 2)) ?-)
 			   (forward-char -2))
-	     (fi::defontify-string
-		 (buffer-substring
-		  (point)
-		  (progn (forward-sexp -1)
-			 (while (looking-at "\\s'")
-			   (forward-char 1))
-			 (while (member (char-before) '(?. ?:))
-			   (forward-sexp -1))
-			 (point))))))
+	     (buffer-substring
+	      (point)
+	      (progn (forward-sexp -1)
+		     (while (looking-at "\\s'")
+		       (forward-char 1))
+		     (while (member (char-before) '(?. ?:))
+		       (forward-sexp -1))
+		     (point)))))
 	  (t
 	   (condition-case ()
 	       (save-excursion
@@ -1165,26 +1155,25 @@ If anyone has a good algorithm for this..."
 		   (forward-char 1))
 		 (if (re-search-backward "\\sw\\|\\s_\\|\\." nil t)
 		     (progn (forward-char 1)
-			    (fi::defontify-string
-				(buffer-substring
-				 (point)
-				 (progn (forward-sexp -1)
-					(while (looking-at "\\s'")
-					  (forward-char 1))
-					(point)))))
+			    (buffer-substring
+			     (point)
+			     (progn (forward-sexp -1)
+				    (while (looking-at "\\s'")
+				      (forward-char 1))
+				    (point))))
 		   nil))
 	     (error nil))))))
     (or symbol
 	(if (and up-p (null symbol))
 	    (sw::get-symbol-at-point)))))
 
-(defun fi:check-unbalanced-parentheses-when-saving ()
-  (if (and fi:check-unbalanced-parentheses-when-saving
+(defun sw:check-unbalanced-parentheses-when-saving ()
+  (if (and sw:check-unbalanced-parentheses-when-saving
 	   (memq major-mode '(fi:common-lisp-mode fi:emacs-lisp-mode
-			      fi:franz-lisp-mode specware-mode)))
-      (if (eq 'warn fi:check-unbalanced-parentheses-when-saving)
+			      fi:franz-lisp-mode specware-mode ilisp-mode)))
+      (if (eq 'warn sw:check-unbalanced-parentheses-when-saving)
 	  (condition-case nil
-	      (progn (fi:find-unbalanced-parenthesis) nil)
+	      (progn (sw:find-unbalanced-parenthesis) nil)
 	    (error
 	     (message "Warning: parens are not balanced in this buffer.")
 	     (ding)
@@ -1192,7 +1181,7 @@ If anyone has a good algorithm for this..."
 	     ;; so the file is written:
 	     nil))
 	(condition-case nil
-	    (progn (fi:find-unbalanced-parenthesis) nil)
+	    (progn (sw:find-unbalanced-parenthesis) nil)
 	  (error
 	   ;; save file if user types "yes":
 	   (not (y-or-n-p "Parens are not balanced.  Save file anyway? ")))))))

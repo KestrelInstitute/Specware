@@ -28,4 +28,5 @@ given, then a default heap image is loaded.")
 (defun sw:start-specware (&optional buffer-name directory executable-image-name
 				 image-args host image-file)
   (interactive)
-  (fi:common-lisp buffer-name directory executable-image-name image-args host image-file))
+  (sw:common-lisp buffer-name directory executable-image-name image-args
+		  host image-file))
