@@ -97,8 +97,8 @@ SpecCalc qualifying spec {
             ppTerm term
           ]
       | Translate (term, (translation,_)) ->
-          let def ppTranslateRule (rule,pos) = % change (rule,pos) to rule but only after everyone has re-bootstrapped TODO
-	       case rule of                    % change rule to rule.1     but only after everyone has re-bootstrapped
+          let def ppTranslateRule (rule, _(* position *)) = 
+	       case rule of          
 		 | Sort (left_qid, right_qid) ->
   		   ppConcat [
 			     ppQualifier left_qid,
