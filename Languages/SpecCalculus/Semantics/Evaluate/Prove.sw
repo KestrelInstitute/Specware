@@ -4,14 +4,15 @@ SpecCalc qualifying spec {
   import /Languages/Snark/SpecToSnark
   
  def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
-     (value, timeStamp, depURIs) <- SpecCalc.evaluateTermInfo spec_term;
-     (Spec baseSpec, _, _) <- SpecCalc.evaluateURI (Internal "base")
-						   (SpecPath_Relative {path       = ["Library","Base"],
-								       hashSuffix = None});
-     URI              <- getCurrentURI;
-     snarkLogFileName <- URItoSnarkLogFile URI;
-     proof_name       <- return (URItoProofName URI);
-     spec_name        <- return (SpecTermToSpecName spec_term);
+     (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo spec_term;
+     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
+                     (SpecPath_Relative {path = ["Library","Base"],
+                                         hashSuffix = None});
+     URI <- getCurrentURI;
+     snarkLogFileName <- URItoSnarkLogFile (URI);
+     _ <- return (ensureDirectoriesExist snarkLogFileName);
+     proof_name <- return (URItoProofName (URI));
+     spec_name <- return (SpecTermToSpecName(spec_term));
      options <- 
        (case possible_options of
 	  | Options options  -> return (options)
@@ -162,8 +163,8 @@ SpecCalc qualifying spec {
        proved
 
  op makeSnarkProveEvalForm: List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * Lisp.LispCell * String -> Lisp.LispCell
+
  def makeSnarkProveEvalForm(options, snarkSortDecl, snarkOpDecls, snarkHypothesis, snarkConjecture, snarkLogFileName) =
-   let _ = ensureDirectoriesExist snarkLogFileName in
 %   let _ = toScreen("Proving snark fmla: ") in
 %   let _ = LISP.PPRINT(snarkConjecture) in
 %   let _ = writeLine(" using: ") in
@@ -188,6 +189,7 @@ SpecCalc qualifying spec {
 	   Lisp.list([Lisp.symbol("SNARK","INITIALIZE")]),
 	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)])
 	  ]
+	  Lisp.++ (Lisp.list options)
 	  Lisp.++ (Lisp.list snarkSortDecl)
 	  Lisp.++ (Lisp.list snarkOpDecls)
 	  Lisp.++ (Lisp.list snarkHypothesis)

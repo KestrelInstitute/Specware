@@ -126,7 +126,7 @@
 (defun make-sc-prover (claim-name spec-term prover-name assertions options l r)
   (let ((prover-name (if (eq prover-name :unspecified) "Snark" prover-name))
 	(assertions  (if (eq assertions  :unspecified) (cons :|All| nil) (cons :|Explicit| assertions)))
-	(options     (if (eq options     :unspecified) '() options)))
+	(options     (if (eq options     :unspecified) (cons :|Options| nil) options)))
     (cons (cons :|Prove| (vector claim-name spec-term prover-name assertions options))
 	  (make-pos l r))))
 
@@ -152,9 +152,10 @@
 			  ;; text at all to parse.
 			  ;; At any rate, other kinds of errors are
 			  ;; also possible.
-			  (read-from-string trimmed-string nil nil 
-					    :start               index 
-					    :preserve-whitespace t))
+			  (let ((*package* (find-package 'snark)))
+			    (read-from-string trimmed-string nil nil 
+					      :start               index 
+					      :preserve-whitespace t)))
 			(push sexp s-expressions)
 			(when (>= index n)
 			  (return (reverse s-expressions))))))
