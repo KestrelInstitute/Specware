@@ -494,11 +494,12 @@ are no longer needed. *)
       def mkEquality t0 t1 =
         MSlang.mkApply (mkEquals (), MSlang.mkTuple ([t0,t1], noPos),noPos)
     in
-      let opTerm = mkFun (Op (idOf varInfo,Nonfix), type varInfo, noPos) in
       if isPrimedName? (idOf varInfo) then
         case (term varInfo) of
           | None -> return bindings
-          | Some trm -> return (cons (mkEquality opTerm trm, bindings))
+          | Some trm -> 
+	    let opTerm = mkFun (Op (idOf varInfo,Nonfix), type varInfo, noPos) in
+	    return (cons (mkEquality opTerm trm, bindings))
       else
         return bindings
 
