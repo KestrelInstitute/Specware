@@ -75,6 +75,14 @@
   (declare (ignore left right))
   (MetaSlang::mkQualifiedId qualifier id))
 
+(defun make-unqualified-claim-name (id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkUnQualifiedId id))
+
+(defun make-qualified-claim-name (qualifier id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkQualifiedId qualifier id))
+
 
 ;;; ========================================================================
 ;;;  Primitives
@@ -783,6 +791,30 @@ If we want the precedence to be optional:
       (cons (cons :|Export| (cons name-list sc-term))
             (make-pos l r))))
 
+(defun make-sc-sort-ref      (sort-ref             l r)  
+  (declare (ignore l r))
+  (cons :|Sort|      sort-ref))
+
+(defun make-sc-op-ref        (op-ref               l r)  
+  (declare (ignore l r))
+  (cons :|Op|        op-ref))
+
+(defun make-sc-claim-ref     (claim-type claim-ref l r)  
+  (declare (ignore l r))
+  (cons claim-type   claim-ref))
+
+(defun make-sc-ambiguous-ref (ambiguous-ref        l r)  
+  (declare (ignore l r))
+  (cons :|Ambiguous| ambiguous-ref))
+
+(defun make-unannotated-op-ref (op-ref      l r)
+  (declare (ignore l r))
+  (cons op-ref '(:|None|)))
+
+(defun make-annotated-op-ref   (op-ref sort l r)
+  (declare (ignore l r))
+  (cons op-ref (cons :|Some| sort)))
+
 ;;; ========================================================================
 ;;;  SC-TRANSLATE
 ;;; ========================================================================
@@ -800,8 +832,20 @@ If we want the precedence to be optional:
       '()
     rules))
 
-(defun make-sc-translate-rule (left-qualifiable-name right-qualifiable-name l r)
-  (cons (cons left-qualifiable-name right-qualifiable-name)
+;;; (defun make-sc-translate-rule (left-qualifiable-name right-qualifiable-name l r)
+;;;   (cons (cons left-qualifiable-name right-qualifiable-name)
+;;;        (make-pos l r)))
+
+(defun make-sc-sort-rule (left-sort-ref right-sort-ref l r)
+  (cons (cons left-sort-ref right-sort-ref)
+        (make-pos l r)))
+
+(defun make-sc-op-rule (left-op-ref right-op-ref l r)
+  (cons (cons left-op-ref right-op-ref)
+        (make-pos l r)))
+
+(defun make-sc-ambiguous-rule (left-ref right-ref l r)
+  (cons (cons left-ref right-ref)
         (make-pos l r)))
 
 ;;; ------------------------------------------------------------------------
@@ -812,16 +856,29 @@ If we want the precedence to be optional:
 ;;;  SC-SPEC-MORPH
 ;;; ========================================================================
 
-(defun make-sc-spec-morph (dom-sc-term cod-sc-term opt-sc-spec-morph-elems l r)
-  (let* ((sc-spec-morph-elems (if (eq :unspecified opt-sc-spec-morph-elems)
-                                  nil
-                                  opt-sc-spec-morph-elems)))
-     (cons (cons :|SpecMorph|
-                 (vector dom-sc-term cod-sc-term sc-spec-morph-elems))
-           (make-pos l r))))
+(defun make-sc-spec-morphism (dom-sc-term cod-sc-term sc-spec-morphism-rules l r)
+  (cons (cons :|SpecMorph|
+	      (vector dom-sc-term cod-sc-term sc-spec-morphism-rules))
+	(make-pos l r)))
 
-(defun make-sc-spec-morph-elem (qualifiable-name-dom qualifiable-name-cod l r)
+(defun make-sc-spec-morphism-rule (qualifiable-name-dom qualifiable-name-cod l r)
   (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
+
+(defun make-sm-sort-rule (left-sort-ref right-sort-ref l r)
+  (cons :|Sort|
+	(vector left-sort-ref right-sort-ref
+		(make-pos l r))))
+
+(defun make-sm-op-rule (left-op-ref right-op-ref l r)
+  (cons :|Op| 
+	(vector left-op-ref right-op-ref
+		(make-pos l r))))
+
+(defun make-sm-ambiguous-rule (left-ref right-ref l r)
+  (cons :|Ambiguous|  
+	(vector left-ref right-ref
+		(make-pos l r))))
+
 
 ;;; ========================================================================
 ;;;  SC-SHAPE

@@ -14,7 +14,7 @@ SpecCalc qualifying spec {
   op evaluateSpecMorph :
       (SpecCalc.Term Position) 
     * (SpecCalc.Term Position)
-    * (List (SpecMorphElem Position))
+    * (List (SpecMorphRule Position))
     -> Env ValueInfo
 
   op evaluateDiag : List (DiagElem Position) -> Env ValueInfo
@@ -24,7 +24,7 @@ SpecCalc qualifying spec {
   op evaluateDiagMorph :
       (SpecCalc.Term Position)
     * (SpecCalc.Term Position)
-    * (List (DiagMorphElem Position))
+    * (List (DiagMorphRule Position))
     -> Env ValueInfo
 
   op evaluateLispCompile : ValueInfo * SpecCalc.Term Position * Option String

@@ -94,8 +94,8 @@ The first two elements in the morphism products are terms that evaluate
 to the domain and codomain of the morphisms.
 
 \begin{spec}
-    | SpecMorph (Term a) * (Term a) * (List (SpecMorphElem a))
-    | DiagMorph (Term a) * (Term a) * (List (DiagMorphElem a))
+    | SpecMorph (Term a) * (Term a) * (List (SpecMorphRule a))
+    | DiagMorph (Term a) * (Term a) * (List (DiagMorphRule a))
 \end{spec}
 
 \begin{spec}
@@ -115,8 +115,8 @@ construct is experimental.
 The next two control the visibilty of names outside a spec.
 
 \begin{spec}
-    | Hide   (NameExpr a) * (Term a)
-    | Export (NameExpr a) * (Term a)
+    | Hide   (NamesExpr a) * (Term a)
+    | Export (NamesExpr a) * (Term a)
 \end{spec}
 
 This is an initial attempt at code generation. The first string is the
@@ -158,7 +158,7 @@ Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
   sort TranslateMap a = ((QualifiedId * QualifiedId) * a)
 \end{spec}
 
-A \verb+NameExpr+ denotes list of names and operators. They are used in
+A \verb+NamesExpr+ denotes list of names and operators. They are used in
 \verb+hide+ and \verb+export+ terms to either exclude names from being
 export or dually, to specify exactly what names are to be exported.
 Presumably the syntax will borrow ideas from the syntax used for
@@ -167,7 +167,13 @@ wildcards to stand for a collection of names. For now, one must explicitly
 list them.
 
 \begin{spec}
-  sort NameExpr a = List QualifiedId
+  sort NamesExpr a = List (NameExpr a)
+  sort NameExpr a = | Sort       QualifiedId
+                    | Op         QualifiedId * Option Sort
+                    | Axiom      QualifiedId
+                    | Theorem    QualifiedId
+                    | Conjecture QualifiedId
+                    | Ambiguous  QualifiedId
 \end{spec}
 
 A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
@@ -211,7 +217,9 @@ The tagging in the sorts below may be excessive given the \verb+ATerm+
 is already tagged.
 
 \begin{spec}
-  sort SpecMorphElem a = QualifiedId * QualifiedId * a
+  sort SpecMorphRule a = | Sort       QualifiedId                 * QualifiedId                 * a
+                         | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * a
+                         | Ambiguous  QualifiedId                 * QualifiedId                 * a
 \end{spec}
 
 The current syntax allows one to write morphisms mapping names to terms
@@ -223,9 +231,9 @@ and components of the natural transformation. The current syntax allows
 them to be presented in any order. 
 
 \begin{spec}
-  sort DiagMorphElem a = (DiagMorphElem_ a) * a
-  sort DiagMorphElem_ a =
-    | ShapeMap Name * Name
+  sort DiagMorphRule a = (DiagMorphRule_ a) * a
+  sort DiagMorphRule_ a =
+    | ShapeMap    Name * Name
     | NatTranComp Name * (Term a) 
 \end{spec}
 

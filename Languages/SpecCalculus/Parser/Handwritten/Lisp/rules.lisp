@@ -223,12 +223,6 @@
 (define-sw-parser-rule :DECLARATION-SEQUENCE ()
   (:repeat* :DECLARATION nil))
 
-
-;;;  (1 (:optional (:repeat :DECLARATION nil)))
-;;;  (if (eq '1 :unspecified)
-;;;      '()
-;;;      (list . 1)))
-
 ;;; ========================================================================
 ;;;  DECLARATION
 ;;;  http://www.specware.org/manual/html/declarations.html
@@ -259,6 +253,67 @@
 (define-sw-parser-rule :IMPORT-DECLARATION ()
   (:tuple "import" (1 :SC-TERM))
   (make-import-declaration 1 ':left-lcb ':right-lcb))
+
+;;; ------------------------------------------------------------------------
+;;;  QUALIFIABLE-SORT-NAME 
+;;; ------------------------------------------------------------------------
+(define-sw-parser-rule :QUALIFIABLE-SORT-NAME ()
+  (:anyof :UNQUALIFIED-SORT-NAME :QUALIFIED-SORT-NAME))
+
+(define-sw-parser-rule :UNQUALIFIED-SORT-NAME ()
+  (1 :SORT-NAME)
+  (make-unqualified-sort-name 1 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :QUALIFIED-SORT-NAME ()
+  (:tuple (1 :QUALIFIER) "." (2 :SORT-NAME))
+  (make-qualified-sort-name 1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :QUALIFIER ()
+  (1 :NAME)
+  1)
+
+;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
+;;;        but use :NON_KEYWORD_NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+(define-sw-parser-rule :SORT-NAME ()
+  :NON_KEYWORD_NAME)
+
+;;; ------------------------------------------------------------------------
+;;;  QUALIFIABLE-OP-NAME 
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :QUALIFIABLE-OP-NAME ()
+  (:anyof :UNQUALIFIED-OP-NAME :QUALIFIED-OP-NAME))
+
+(define-sw-parser-rule :UNQUALIFIED-OP-NAME ()
+  (1 :OP-NAME)
+  (make-unqualified-op-name 1 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :QUALIFIED-OP-NAME ()
+  (:tuple (1 :QUALIFIER) "." (2 :OP-NAME))
+  (make-qualified-op-name 1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :OP-NAME ()
+  (1 :NAME)
+  1)
+
+;;; ------------------------------------------------------------------------
+;;;  QUALIFIABLE-CLAIM-NAME 
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :QUALIFIABLE-CLAIM-NAME ()
+  (:anyof :UNQUALIFIED-CLAIM-NAME :QUALIFIED-CLAIM-NAME))
+
+(define-sw-parser-rule :UNQUALIFIED-CLAIM-NAME ()
+  (1 :CLAIM-NAME)
+  (make-unqualified-claim-name 1 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :QUALIFIED-CLAIM-NAME ()
+  (:tuple (1 :QUALIFIER) "." (2 :CLAIM-NAME))
+  (make-qualified-claim-name 1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :CLAIM-NAME ()
+  (1 :NAME)
+  1)
 
 ;;; ------------------------------------------------------------------------
 ;;;  SORT-DECLARATION
@@ -509,26 +564,6 @@ If we want the precedence to be optional:
 	    (2 (:REPEAT+ :QUALIFIABLE-SORT-NAME ","))
 	    "}")
     2)))
-
-(define-sw-parser-rule :QUALIFIABLE-SORT-NAME ()
-  (:anyof :UNQUALIFIED-SORT-NAME :QUALIFIED-SORT-NAME))
-
-(define-sw-parser-rule :UNQUALIFIED-SORT-NAME ()
-  (1 :SORT-NAME)
-  (make-unqualified-sort-name 1 ':left-lcb ':right-lcb))
-
-(define-sw-parser-rule :QUALIFIED-SORT-NAME ()
-  (:tuple (1 :QUALIFIER) "." (2 :SORT-NAME))
-  (make-qualified-sort-name 1 2 ':left-lcb ':right-lcb))
-
-(define-sw-parser-rule :QUALIFIER ()
-  (1 :NAME)
-  1)
-
-;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :NON_KEYWORD_NAME instead for :SORT-NAME and :LOCAL-VARIABLE
-(define-sw-parser-rule :SORT-NAME ()
-  :NON_KEYWORD_NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-REF
@@ -845,21 +880,6 @@ If we want the precedence to be optional:
 	    (2 (:REPEAT+ :QUALIFIABLE-OP-NAME ","))
 	    "}")
     2)))
-
-(define-sw-parser-rule :QUALIFIABLE-OP-NAME ()
-  (:anyof :UNQUALIFIED-OP-NAME :QUALIFIED-OP-NAME))
-
-(define-sw-parser-rule :UNQUALIFIED-OP-NAME ()
-  (1 :OP-NAME)
-  (make-unqualified-op-name 1 ':left-lcb ':right-lcb))
-
-(define-sw-parser-rule :QUALIFIED-OP-NAME ()
-  (:tuple (1 :QUALIFIER) "." (2 :OP-NAME))
-  (make-qualified-op-name 1 2 ':left-lcb ':right-lcb))
-
-(define-sw-parser-rule :OP-NAME ()
-  (1 :NAME)
-  1)
 
 ;;; ------------------------------------------------------------------------
 ;;;   LITERAL
@@ -1219,11 +1239,11 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-HIDE ()
-  (:tuple "hide" "{" (:optional :QUALIFIABLE-NAME-LIST) "}" "in" (2 :SC-TERM))
+  (:tuple "hide" "{" (1 :SC-DECL-REFS) "}" "in" (2 :SC-TERM))
   (make-sc-hide 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-EXPORT ()
-  (:tuple "export" "{" (:optional :QUALIFIABLE-NAME-LIST) "}" "from" (2 :SC-TERM))
+  (:tuple "export" "{" (1 :SC-DECL-REFS) "}" "from" (2 :SC-TERM))
   (make-sc-export 1 2 ':left-lcb ':right-lcb))
 
 ;; Right now we simply list the names to hide or export. Later
@@ -1233,8 +1253,101 @@ If we want the precedence to be optional:
 ;;   (:tuple "{" (1 (:optional :QUALIFIABLE-NAME-LIST)) "}")
 ;; (list . 1))
 
-(define-sw-parser-rule :QUALIFIABLE-NAME-LIST ()
-  (:repeat+ :QUALIFIABLE-NAME ","))
+(define-sw-parser-rule :SC-DECL-REFS ()
+  (:repeat+ :SC-DECL-REF ","))
+
+(define-sw-parser-rule :SC-DECL-REF ()
+  (:anyof 
+   ((:tuple "sort"          (1 :SC-SORT-REF))          (make-sc-sort-ref      1 ':left-lcb ':right-lcb))
+   ((:tuple "op"            (1 :SC-OP-REF))            (make-sc-op-ref        1 ':left-lcb ':right-lcb))
+   ((:tuple (1 :CLAIM-KIND) (2 :SC-CLAIM-REF))         (make-sc-claim-ref     1 2 ':left-lcb ':right-lcb))
+   ;; Without an explicit "sort" or "op" keyword, if ref is annotated, its an op ref:
+   ((:tuple                 (1 :SC-ANNOTATED-OP-REF))  (make-sc-op-ref        1 ':left-lcb ':right-lcb))
+   ;; Otherwise, it's probably ambiguous (semantic routine will notice that "=" must be an op):
+   ((:tuple                 (1 :SC-AMBIGUOUS-REF))     (make-sc-ambiguous-ref 1 ':left-lcb ':right-lcb))
+   ))
+
+;;; ------------------------------------------------------------------------
+;;;  SORT REF
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :SC-SORT-REF ()
+  ;; When we know it must be a sort ref...
+  ;; "[A.]X" "([A.]X)", but X cannot be "="
+  (:anyof 
+   ((:tuple     (1 :QUALIFIABLE-SORT-NAME)     )  1)  ; "[A.]f"  
+   ((:tuple "(" (1 :QUALIFIABLE-SORT-NAME) ")" )  1)  ; "([A.]f)"
+   ))
+
+;;; ------------------------------------------------------------------------
+;;;  OP REF
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :SC-OP-REF ()
+  ;; When we know it must be an op ref...
+  ;; "[A,]f", "([A,]f)", "[A.]f : <sort>", "([A.]f : <sort>)"
+  (:anyof 
+   ((:tuple     (1 :SC-OP-REF-AUX)     )  1)  ; "[A.]f"  
+   ((:tuple "(" (1 :SC-OP-REF-AUX) ")" )  1)  ; "([A.]f)"
+   ))
+
+(define-sw-parser-rule :SC-OP-REF-AUX ()
+  ;; "[A,]f", "([A,]f)", "[A.]f : <sort>", "([A.]f : <sort>)"
+  (:anyof 
+    :SC-UNANNOTATED-OP-REF
+    :SC-ANNOTATED-OP-REF))
+
+(define-sw-parser-rule :SC-UNANNOTATED-OP-REF ()
+  ;; When we know it must be an op ref...
+  ;; "[A.]f"
+  (1 :QUALIFIABLE-OP-NAME) 
+  (make-unannotated-op-ref 1 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :SC-ANNOTATED-OP-REF ()
+  ;; This can only be an op ref...
+  ;; "[A.]f : <sort>"
+  (:tuple (1 :QUALIFIABLE-OP-NAME) ":" (2 :SORT))
+  (make-annotated-op-ref 1 2 ':left-lcb ':right-lcb))
+
+;;; ------------------------------------------------------------------------
+;;;  CLAIM REF
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :SC-CLAIM-REF ()
+  ;; When we know it must be a claim ref...
+  ;; "[A.]X" "([A.]X)", but X cannot be "="
+  (:anyof 
+   ((:tuple     (1 :QUALIFIABLE-CLAIM-NAME)     )  1)  ; "[A.]f"  
+   ((:tuple "(" (1 :QUALIFIABLE-CLAIM-NAME) ")" )  1)  ; "([A.]f)"
+   ))
+
+;;; ------------------------------------------------------------------------
+;;;  AMBIGUOUS REF
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :SC-AMBIGUOUS-REF ()
+  ;; When we're not sure if its a sort/op/axiom ref...
+  ;; "[A.]X" "([A.]X)", but X cannot be "="
+  (:anyof 
+   ((:tuple     (1 :QUALIFIABLE-NAME)     )  1)  ; "[A.]f"  
+   ((:tuple "(" (1 :QUALIFIABLE-NAME) ")" )  1)  ; "([A.]f)"
+   ))
+
+;;; ------------------------------------------------------------------------
+;;;  QUALIFIABLE-NAME (might refer to sort/op/axiom)
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :QUALIFIABLE-NAME ()
+  ;; might be sort or op name, but will be of the form XXX or QQQ.XXX
+  (:anyof :UNQUALIFIED-NAME :QUALIFIED-NAME))
+
+(define-sw-parser-rule :UNQUALIFIED-NAME ()
+  (1 :NAME)
+  (list 1))
+
+(define-sw-parser-rule :QUALIFIED-NAME ()
+  (:tuple (1 :QUALIFIER) "." (2 :NAME))
+  (list 1 2))
 
 ;;; ========================================================================
 ;;;  SC-TRANSLATE
@@ -1255,24 +1368,21 @@ If we want the precedence to be optional:
   (make-sc-translate-rules 1))
 
 (define-sw-parser-rule :SC-TRANSLATE-RULE ()
-  (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
-  (make-sc-translate-rule 1 2 ':left-lcb ':right-lcb))
-
-;;; ------------------------------------------------------------------------
-;;;  QUALIFIABLE-NAME (might refer to sort or op)
-;;; ------------------------------------------------------------------------
-
-(define-sw-parser-rule :QUALIFIABLE-NAME ()
-  ;; might be sort or op name, but will be of the form XXX or QQQ.XXX
-  (:anyof :UNQUALIFIED-NAME :QUALIFIED-NAME))
-
-(define-sw-parser-rule :UNQUALIFIED-NAME ()
-  (1 :NAME)
-  (list 1))
-
-(define-sw-parser-rule :QUALIFIED-NAME ()
-  (:tuple (1 :QUALIFIER) "." (2 :NAME))
-  (list 1 2))
+  ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
+  ;; (make-sc-translate-rule 1 2 ':left-lcb ':right-lcb))
+  (:anyof 
+   ((:tuple "sort" (1 :SC-SORT-REF)         :MAPS-TO (2 :SC-SORT-REF))          (make-sc-sort-rule      1 2 ':left-lcb ':right-lcb))
+   ((:tuple "op"   (1 :SC-OP-REF)           :MAPS-TO (2 :SC-OP-REF))            (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
+   ;; ?? axiom/thoerem/conjecture ??
+   ;;
+   ;; Without an explicit "sort" or "op" keyword, 
+   ;;  if either side is annotated, this is an op rule:
+   ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-OP-REF))            (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
+   ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-ANNOTATED-OP-REF))  (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
+   ((:tuple        (1 :SC-OP-REF)           :MAPS-TO (2 :SC-ANNOTATED-OP-REF))  (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
+   ;; Otherwise, it's probably ambiguous (semantic routine will notice that "=" must be an op):
+   ((:tuple        (1 :SC-AMBIGUOUS-REF)    :MAPS-TO (2 :SC-AMBIGUOUS-REF))     (make-sc-ambiguous-rule 1 2 ':left-lcb ':right-lcb))
+   ))
 
 ;;; ========================================================================
 ;;;  SC-SPEC-MORPH
@@ -1280,15 +1390,28 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-SPEC-MORPH ()
   (:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM)
-	  "{" (3 (:optional :SC-SPEC-MORPH-ELEM-LIST)) "}")
+	  "{" (3 (:optional :SC-SPEC-MORPH-RULES)) "}")
   (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb))
 
-(define-sw-parser-rule :SC-SPEC-MORPH-ELEM-LIST ()
-  (:repeat+ :SC-SPEC-MORPH-ELEM ","))
+(define-sw-parser-rule :SC-SPEC-MORPH-RULES ()
+  (:repeat+ :SC-SPEC-MORPH-RULE ","))
 
-(define-sw-parser-rule :SC-SPEC-MORPH-ELEM ()
-  (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
-  (make-sc-spec-morph-elem 1 2 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :SC-SPEC-MORPH-RULE ()
+  ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
+  ;; (make-sc-spec-morph-rule 1 2 ':left-lcb ':right-lcb))
+  (:anyof 
+   ((:tuple "sort" (1 :SC-SORT-REF)         :MAPS-TO (2 :SC-SORT-REF))          (make-sm-sort-rule      1 2 ':left-lcb ':right-lcb))
+   ((:tuple "op"   (1 :SC-OP-REF)           :MAPS-TO (2 :SC-OP-REF))            (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
+   ;; ?? axiom/thoerem/conjecture ??
+   ;;
+   ;; Without an explicit "sort" or "op" keyword, 
+   ;;  if either side is annotated, this is an op rule:
+   ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-OP-REF))            (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
+   ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-ANNOTATED-OP-REF))  (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
+   ((:tuple        (1 :SC-OP-REF)           :MAPS-TO (2 :SC-ANNOTATED-OP-REF))  (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
+   ;; Otherwise, it's probably ambiguous (semantic routine will notice that "=" must be an op):
+   ((:tuple        (1 :SC-AMBIGUOUS-REF)    :MAPS-TO (2 :SC-AMBIGUOUS-REF))     (make-sm-ambiguous-rule 1 2 ':left-lcb ':right-lcb))
+   ))
 
 ;;; ========================================================================
 ;;;  SC-SHAPE

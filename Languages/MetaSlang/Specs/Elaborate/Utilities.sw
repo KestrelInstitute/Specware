@@ -205,10 +205,20 @@ spec {
            | c -> c     
    in
    let errors = MergeSort.uniqueSort compare (! errors) in
-   let errMsg = (Ref "") : Ref String in
+   %% TODO:  UGH -- this could all be functional...
+   let errMsg    = (Ref "") : Ref String in
+   let last_file = (Ref "") : Ref Filename in
    let def printError(msg,pos) = 
+       let same_file? = (case pos of
+                           | File (filename, left, right) ->
+                             let same? = (filename = (! last_file)) in
+                             (last_file := filename;                       
+			      same?)
+                           | _ -> false)
+       in
          errMsg := (! errMsg) ^
-                   printAll pos^" : "^msg^PrettyPrint.newlineString()
+	           ((if same_file? then print else printAll) pos)
+                   ^" : "^msg^PrettyPrint.newlineString()
               
    in
    if null(errors) then 

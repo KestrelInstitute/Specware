@@ -12,12 +12,12 @@ For morphisms, evaluate the domain and codomain terms, and check
 coherence conditions of the morphism elements. 
 
 \begin{spec}
-  def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphElems) = {
+  def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules) = {
     (domValue,domTimeStamp,domDepURIs) <- evaluateTermInfo domTerm;
     (codValue,codTimeStamp,codDepURIs) <- evaluateTermInfo codTerm;
     case (domValue,codValue) of
       | (Spec spc1, Spec spc2) ->
-          {morph <- makeSpecMorphism(spc1, spc2, morphElems);
+          {morph <- makeSpecMorphism(spc1, spc2, morphRules);
 	   return (Morph morph,max(domTimeStamp,codTimeStamp),
 		   listUnion(domDepURIs,codDepURIs))}
       | (Spec _, _) -> raise
@@ -31,50 +31,86 @@ coherence conditions of the morphism elements.
                       "domain and codomain of spec morphism are not specs"))
     }
 
-  op makeSpecMorphism :
-     (Spec * Spec * List(SpecMorphElem Position)) -> Env Morphism
+  op makeSpecMorphism : (Spec * Spec * List(SpecMorphRule Position)) -> Env Morphism
   def makeSpecMorphism (domSpec,codSpec,rawMapping) = 
-      return (buildSpecMorphism(domSpec,codSpec,
-				makeResolvedMapping(domSpec,codSpec,rawMapping)))
+    return (buildSpecMorphism(domSpec,
+			      codSpec,
+			      makeResolvedMapping(domSpec,codSpec,rawMapping)))
     
-  op makeResolvedMapping :
-    Spec * Spec * List (SpecMorphElem Position)
-      -> AQualifierMap(QualifiedId) * AQualifierMap(QualifiedId)
-  %% Need to change fail to raise
-  def makeResolvedMapping(domSpec,codSpec,mapPairs) =
-    let def findCodOp (qid as Qualified(qualifier_c,id_c)) =
-          case findAllOps(codSpec,qid)
-	    of ((foundQId as Qualified(qualifierN,_))::_,_,_,_)::rs ->
-	       (if rs = [] or (qualifierN = UnQualified) then ()
-		 else fail("morphism: Ambiguous target  op name "^id_c);
-		foundQId)
-	     | _ -> fail ("morphism: Target op " ^ qualifier_c^"."^id_c^"  not found.")
-        def findCodSort  (qid as Qualified(qualifier_c,id_c)) =
-          case findAllSorts(codSpec,qid)
-	    of ((foundQId as Qualified(qualifierN,_))::_,_,_)::rs ->
-	       (if rs = [] or qualifierN = UnQualified then ()
-		 else fail("morphism: Ambiguous target  sort name "^id_c);
-		foundQId)
-	     | _ -> fail ("morphism: Target sort "^qualifier_c^"."^id_c^" not found.")
-        def insert((domN as Qualified(qualifier_n,id_n),codTm,pos),
-		   (opMap,sortMap)) =
-	  case findAllOps(domSpec,domN)
-	    of ((Qualified(qualifierN,idN))::_,_,_,_)::rs ->
-	       (if rs = [] or qualifierN = UnQualified then ()
-		 else fail("morphism: Ambiguous source op name "^id_n);
-	        (insertAQualifierMap(opMap,qualifierN,idN,
-				     findCodOp codTm),
-		 sortMap))
-	     | _ ->
-	  (case findAllSorts(domSpec,domN)
-	    of ((Qualified(qualifierN,idN))::_,_,_)::rs  ->
-	       (if rs = [] or qualifierN = UnQualified then ()
-		 else fail("morphism: Ambiguous source sort name "^id_n);
-		(opMap,insertAQualifierMap(sortMap,qualifierN,idN,
-					   findCodSort codTm)))
-	     | _ -> fail ("morphism: Source identifier \""^qualifier_n^"."^id_n^ "\" not found."))
+  op makeResolvedMapping : Spec * Spec * List (SpecMorphRule Position) -> AQualifierMap(QualifiedId) * AQualifierMap(QualifiedId)
+
+  def makeResolvedMapping (dom_spec, cod_spec, sm_rules) =
+    %% TODO: change fail to raise
+    let 
+
+        def findCodOp (qid as Qualified (qualifier, id)) =
+          case findAllOps (cod_spec, qid) of
+	    | ((found_qid as Qualified(found_qualifier,_))::_,_,_,_)::rs ->
+	      (if rs = [] or (found_qualifier = UnQualified) 
+		 then ()
+	         else fail("morphism: Ambiguous target  op name "^id);
+	       found_qid)
+	    | _ -> fail ("morphism: Target op " ^ qualifier^"."^id^"  not found.")
+
+        def findCodSort  (qid as Qualified (qualifier, id)) =
+          case findAllSorts (cod_spec, qid) of
+	    | ((found_qid as Qualified (found_qualifier,_))::_,_,_)::rs ->
+	      (if rs = [] or found_qualifier = UnQualified 
+		 then ()
+		 else fail("morphism: Ambiguous target  sort name "^id);
+	       found_qid)
+	    | _ -> fail ("morphism: Target sort "^qualifier^"."^id^" not found.")
+
+        def insert (sm_rule, (op_map,sort_map)) =
+          case sm_rule of
+	    | Sort (dom_qid as Qualified (dom_qualifier, dom_id), cod_qid, pos) ->
+	      (case findAllSorts (dom_spec, dom_qid) of
+		 | ((Qualified (found_qualifier, found_id))::_,_,_)::rs  ->
+		   (if rs = [] or found_qualifier = UnQualified 
+		      then ()
+		      else fail("morphism: Ambiguous source sort name "^ dom_id);
+		    (op_map, 
+		     insertAQualifierMap (sort_map, found_qualifier, found_id, findCodSort cod_qid)))
+		 | _ -> fail ("morphism: source sort identifier "^dom_qualifier^"."^dom_id^ " not found."))
+
+	    | Op ((dom_qid as Qualified (dom_qualifier, dom_id), opt_dom_sort), 
+		  (cod_qid, opt_cod_sort), 
+		  pos)
+	      ->
+              (case findAllOps (dom_spec, dom_qid) of
+		 | ((Qualified (found_qualifier, found_id))::_,_,_,_)::rs ->
+		   (if rs = [] or found_qualifier = UnQualified 
+		      then ()
+		      else fail("morphism: Ambiguous source op name "^dom_id);
+		    (insertAQualifierMap (op_map, found_qualifier, found_id, findCodOp cod_qid),
+		     sort_map))
+		 | _ -> fail ("morphism: source op identifier "^dom_qualifier^"."^dom_id^ " not found."))
+
+	    | Ambiguous (dom_qid as Qualified(dom_qualifier, dom_id), cod_qid, pos) ->
+              (let dom_sorts = findAllSorts (dom_spec, dom_qid) in
+	       let dom_ops   = findAllOps   (dom_spec, dom_qid) in
+	       case (dom_sorts, dom_ops) of
+		 | (None, None) ->
+		   fail ("morphism: Source sort/op identifier "^dom_qualifier^"."^dom_id^ " not found.")
+
+		 | (((Qualified (found_qualifier, found_id))::_,_,_)::rs, None)  ->
+		   (if rs = [] or found_qualifier = UnQualified 
+		      then ()
+		      else fail("morphism: Ambiguous source sort name "^ dom_id);
+		    (op_map, 
+		     insertAQualifierMap (sort_map, found_qualifier, found_id, findCodSort cod_qid)))
+
+		 | (None, ((Qualified (found_qualifier, found_id))::_,_,_,_)::rs) ->
+		   (if rs = [] or found_qualifier = UnQualified 
+		      then ()
+		      else fail("morphism: Ambiguous source op name "^dom_id);
+		    (insertAQualifierMap (op_map, found_qualifier, found_id, findCodOp cod_qid),
+		     sort_map))
+
+		 | (_, _) ->
+		   fail ("morphism: Ambiguous source sort/op identifier "^dom_qualifier^"."^dom_id))
     in
-       List.foldr insert (emptyAQualifierMap,emptyAQualifierMap) mapPairs
+       List.foldr insert (emptyAQualifierMap,emptyAQualifierMap) sm_rules
 
   %% Make a monad when debugged
   op buildSpecMorphism :
@@ -83,25 +119,32 @@ coherence conditions of the morphism elements.
   def buildSpecMorphism (domSpec,codSpec, (opMap,sortMap)) =
     let {importInfo = _, sorts = domSorts, ops = domOps, properties = _} = domSpec in
     let {importInfo = _, sorts = codSorts, ops = codOps, properties = _} = codSpec in
-    {dom = domSpec,
-     cod  = codSpec,
-     opMap = completeMorphismMap(opMap,domOps,codOps),
-     sortMap = completeMorphismMap(sortMap,domSorts,codSorts)}
+    {dom     = domSpec,
+     cod     = codSpec,
+     opMap   = completeMorphismMap (opMap,   domOps,   codOps),
+     sortMap = completeMorphismMap (sortMap, domSorts, codSorts)}
 
   op completeMorphismMap:
-    fa(a,b) AQualifierMap(QualifiedId) * AQualifierMap a * AQualifierMap b
-             -> PolyMap.Map (QualifiedId, QualifiedId)
-  def completeMorphismMap(transMap,domMap,codMap) =
-    foldriAQualifierMap
-      (fn (qualifierD, idD, _, newMap) ->
-        case findAQualifierMap(transMap,qualifierD,idD) of
-	  | Some qIDC -> update newMap (Qualified(qualifierD,idD)) qIDC % explicit
-	  | _ ->
-        case findAQualifierMap(codMap,qualifierD,idD)
-	  of Some _ -> update newMap (Qualified(qualifierD,idD))
-			      (Qualified(qualifierD,idD)) % identity
-	   | _ -> fail ("morphism: No mapping for \""^qualifierD^"."^idD^ "\"."))
-      emptyMap
-      domMap	       
+    fa(a,b) AQualifierMap(QualifiedId) * AQualifierMap a * AQualifierMap b -> PolyMap.Map (QualifiedId, QualifiedId)
+
+  def completeMorphismMap (trans_map, dom_map, cod_map) =
+    foldriAQualifierMap (fn (qualifier, id, _, new_map) ->
+			 %% If we explicitly indicate a mapping, use that
+			 %% TODO: What if explicit map is to non-existant target?
+                         %%       Should we check to see if qid is in cod_map??  
+			 case findAQualifierMap (trans_map, qualifier, id) of
+			   | Some qid -> update new_map 
+			                        (Qualified (qualifier,id))
+						qid % explicit
+			   | _ ->
+			 %% Otherwise, if the identity map works, use that
+			 case findAQualifierMap (cod_map, qualifier, id) of
+			   | Some _   -> update new_map 
+                                                (Qualified (qualifier,id)) 
+						(Qualified (qualifier,id)) % identity
+			   | _ -> 
+                         fail ("morphism: No mapping for "^qualifier^"."^id))
+			emptyMap
+			dom_map	       
 }
 \end{spec}

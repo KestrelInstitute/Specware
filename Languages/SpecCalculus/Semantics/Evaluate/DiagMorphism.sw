@@ -8,7 +8,7 @@ SpecCalc qualifying spec {
 \end{spec}
 
 \begin{spec}
-  def SpecCalc.evaluateDiagMorph (domTerm,codTerm,morphElems) = {
+  def SpecCalc.evaluateDiagMorph (domTerm,codTerm,morphRules) = {
       domValue <- SpecCalc.evaluateTermInfo domTerm;
       codValue <- SpecCalc.evaluateTermInfo codTerm;
       raise (Unsupported ((positionOf domTerm),
