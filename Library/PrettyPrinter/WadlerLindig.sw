@@ -77,7 +77,8 @@ WadlerLindig qualifying spec
        | (i,m,DocCons(x,y)) :: z -> ppFits w (Cons((i,m,x),Cons((i,m,y),z)))
        | (i,m,DocNest(j,x)) :: z -> ppFits w (Cons ((i+j,m,x),z))
        | (i,m,DocText(s)) :: z -> ppFits (w - (length s)) z
-       | (i,Flat,DocBreak s) :: z -> false % ppFits (w - (fromNat (length s))) z
+       | (i,Flat,DocBreak s) :: z -> ppFits (w - (length s)) z
+       % | (i,Flat,DocBreak s) :: z -> false % ppFits (w - (length s)) z
        | (i,Break,DocBreak _) :: z -> true % impossible 
        | (i,m,DocGroup(x)) :: z -> ppFits w (Cons((i,Flat,x),z)))
   
@@ -144,8 +145,9 @@ WadlerLindig qualifying spec
   op ppSep : Doc ->  List Doc -> Doc
   def ppSep sep l = 
     case l of
-        Nil -> ppNil
-      | s::Nil -> s
+      | [] -> ppNil
+      | [s] -> s
+      | DocNil::ss -> ppSep sep ss
       | s::ss -> ppCons s (ppCons sep (ppSep sep ss))
 
 %  let pretty w doc =
