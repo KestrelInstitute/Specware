@@ -46,7 +46,7 @@
   (OscarAbsSyn::mkSpecialize-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :SC-PSL-INLINE ()
-  (:tuple "inline" (1 :NAME) "in" (2 :SC-TERM))
+  (:tuple "inline" (1 :STRING) "in" (2 :SC-TERM))
   (OscarAbsSyn::mkInline-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
 
@@ -90,7 +90,7 @@
     (1 :PSL-DO)
     ;; (1 :PSL-CASE)
     (1 :PSL-LET)
-    (1 :PSL-RETURN)
+    ;; (1 :PSL-RETURN)
     (1 :PSL-SKIP)
     (1 :PSL-CONTINUE)
     (1 :PSL-BREAK)
@@ -144,11 +144,11 @@
   (:tuple "continue")
   (OscarAbsSyn::mkContinue (make-pos ':left-lcb ':right-lcb)))
 
-(define-sw-parser-rule :PSL-RETURN ()
-  (:tuple "return" (1 (:optional :EXPRESSION)))
-  (let* ((opt 1)
-         (optTerm (if (equal :unspecified opt) Option::None (cons :|Some| opt))))
-    (OscarAbsSyn::mkReturn-2 optTerm (make-pos ':left-lcb ':right-lcb))))
+;; (define-sw-parser-rule :PSL-RETURN ()
+;;   (:tuple "return" (1 (:optional :EXPRESSION)))
+;;   (let* ((opt 1)
+;;          (optTerm (if (equal :unspecified opt) Option::None (cons :|Some| opt))))
+;;     (OscarAbsSyn::mkReturn-2 optTerm (make-pos ':left-lcb ':right-lcb))))
 
 ;; (define-sw-parser-rule :PSL-ASSIGN ()
 ;;   (:tuple (1 :EXPRESSION) ":=" (2 :EXPRESSION))

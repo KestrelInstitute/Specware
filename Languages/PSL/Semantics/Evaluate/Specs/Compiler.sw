@@ -142,7 +142,7 @@ to the initial and final states.
           finalSpecElab <- elaborate finalSpec; 
 
           bSpec <- return (
-             let (initial,final) = (mkNatVertex 0, mkNatVertex 1) in
+             let (initial,final) = (mkNatVertex 0 procId, mkNatVertex 1 procId) in
              let bSpec = addMode (BSpec.make initial finalSpecElab) final finalSpecElab in
              bSpec withFinal (VrtxSet.singleton final));
           proc <- return (makeProcedure (map refOf argVars) varsInScope
@@ -182,8 +182,9 @@ the full bSpec.
   def evaluateProcElemPassThree oscarSpec (elem,position) =
     case elem of
       | Proc (procName,procInfo) -> {
-           procValue <- return (eval (procedures oscarSpec, (makeId procName) :Id.Id));
-           (initial,final) <- return (mkNatVertex 0, mkNatVertex 1);
+           procId <- return (makeId procName);
+           procValue <- return (eval (procedures oscarSpec, procId));
+           (initial,final) <- return (mkNatVertex 0 procId, mkNatVertex 1 procId);
            newModeSpec <- union (modeSpec (bSpec procValue) initial) (modeSpec oscarSpec);
            ctxt : CompCtxt <-
                 return {
@@ -197,15 +198,17 @@ the full bSpec.
                   break = None,
                   continue = None,
                   bSpec = bSpec procValue,
+                  procId = procId,
                   returnInfo = returnInfo procValue
                 };
       
            ctxt <- compileCommand ctxt procInfo.command;
-           proc <- makeProcedure (parameters procValue) (varsInScope procValue)
-                                         (returnInfo procValue)
-                                         (modeSpec procValue)
-                                         (bSpec ctxt);
-           oscarSpec <- addProcedure oscarSpec (makeId procName) proc;
+           proc <- makeProcedure (parameters procValue)
+                                 (varsInScope procValue)
+                                 (returnInfo procValue)
+                                 (modeSpec procValue)
+                                 (bSpec ctxt);
+           oscarSpec <- addProcedure oscarSpec procId proc;
            return oscarSpec
          }
       | _ -> return oscarSpec
@@ -467,6 +470,10 @@ axiom but we might be better off without an axiom at all.
 \begin{spec}
 	  | Exec trm ->
           (case trm of
+            | ApplyN ([Fun(OneName("return",fixity),srt,position)],_) ->
+                compileCommand ctxt (Return None,position)
+            | ApplyN ((Fun(OneName("return",fixity),srt,position)) :: exprs,_) ->
+                compileCommand ctxt (Return (Some (ApplyN (exprs,position))),position)
             | ApplyN ([lhs,Fun(OneName(":=",fixity),srt,position),rhs],_) ->
                 compileCommand ctxt (Assign (lhs,rhs),position)
             | ApplyN (lhs :: (Fun(OneName(":=",fixity),srt,position)) :: rhs,_) ->
@@ -873,7 +880,7 @@ from a natural number.
 
 \begin{spec}
   sort Vrtx.Vertex =
-    | Nat Nat
+    | Nat (Nat * Id.Id)
     | Pair (Vrtx.Vertex * Subst)
 
   op Vrtx.eq? : Vrtx.Vertex * Vrtx.Vertex -> Boolean 
@@ -887,7 +894,7 @@ from a natural number.
 
   def Vrtx.pp vertex =
     case vertex of
-      | Nat n -> String.pp (Nat.toString n)
+      | Nat (n,id) -> String.pp ("(" ^ (Nat.toString n) ^ "," ^ (show id) ^ ")")
       | Pair (vertex,subst) ->
          ppConcat [
            String.pp "(",
@@ -898,23 +905,23 @@ from a natural number.
          ]
   def Vrtx.show vertex = ppFormat (pp vertex)
 
-  op mkNatVertex : Nat -> Vrtx.Vertex
-  def mkNatVertex n = Nat n
+  op mkNatVertex : Nat -> Id.Id -> Vrtx.Vertex
+  def mkNatVertex n id = Nat (n, id)
 
   op newVertex : CompCtxt -> Env (Vrtx.Vertex * CompCtxt)
   def newVertex ctxt =
-    return (mkNatVertex (graphCounter ctxt),
+    return (mkNatVertex (graphCounter ctxt) (procId ctxt),
      ctxt withGraphCounter ((graphCounter ctxt) + 1))
 \end{spec}
 
 \begin{spec}
   sort Edg.Edge =
-    | Nat Nat
+    | Nat (Nat * Id.Id)
     | Triple (Edg.Edge * Subst * Subst)
 
   def Edg.pp edge = 
     case edge of
-      | Nat n -> String.pp (Nat.toString n)
+      | Nat (n,id) -> String.pp ("(" ^ (Nat.toString n) ^ "," ^ (show id) ^ ")")
       | Triple (edge,pre,post) ->
           ppConcat [
             String.pp "(",
@@ -937,12 +944,12 @@ from a natural number.
 
   def Edg.show edge = ppFormat (pp edge)
 
-  op mkNatEdge : Nat -> Edg.Edge
-  def mkNatEdge n = Nat n
+  op mkNatEdge : Nat -> Id.Id -> Edg.Edge
+  def mkNatEdge n id = Nat (n,id)
 
   op newEdge : CompCtxt -> Env (Edg.Edge * CompCtxt)
   def newEdge ctxt =
-    return (mkNatEdge (graphCounter ctxt),
+    return (mkNatEdge (graphCounter ctxt) (procId ctxt),
       ctxt withGraphCounter ((graphCounter ctxt) + 1))
 \end{spec}
 

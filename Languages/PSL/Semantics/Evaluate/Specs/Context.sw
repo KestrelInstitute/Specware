@@ -24,6 +24,7 @@ CompCtxt qualifying spec
       break : Option Vrtx.Vertex,
       continue : Option Vrtx.Vertex,
       bSpec : BSpec,
+      procId : Id.Id,
       returnInfo : ReturnInfo
     }
   
@@ -62,6 +63,9 @@ CompCtxt qualifying spec
   
   op bSpec : CompCtxt -> BSpec
   def bSpec ctxt = ctxt.bSpec
+
+  op procId : CompCtxt -> Id.Id
+  def procId ctxt = ctxt.procId
   
   op returnInfo : CompCtxt -> ReturnInfo
   def returnInfo ctxt = ctxt.returnInfo
@@ -78,6 +82,7 @@ CompCtxt qualifying spec
       break = break ctxt,
       continue = continue ctxt,
       bSpec = bSpec ctxt,
+      procId = procId ctxt,
       returnInfo = returnInfo ctxt
     }
 
@@ -93,6 +98,7 @@ CompCtxt qualifying spec
       break = break ctxt,
       continue = continue ctxt,
       bSpec = bSpec ctxt,
+      procId = procId ctxt,
       returnInfo = returnInfo ctxt
     }
   
@@ -108,6 +114,7 @@ CompCtxt qualifying spec
       break = break ctxt,
       continue = continue ctxt,
       bSpec = bSpec ctxt,
+      procId = procId ctxt,
       returnInfo = returnInfo ctxt
     }
   
@@ -123,6 +130,7 @@ CompCtxt qualifying spec
       break = optVertex,
       continue = continue ctxt,
       bSpec = bSpec ctxt,
+      procId = procId ctxt,
       returnInfo = returnInfo ctxt
     }
   
@@ -138,6 +146,7 @@ CompCtxt qualifying spec
       break = break ctxt,
       continue = optVertex,
       bSpec = bSpec ctxt,
+      procId = procId ctxt,
       returnInfo = returnInfo ctxt
     }
   
@@ -153,6 +162,7 @@ CompCtxt qualifying spec
       break = break ctxt,
       continue = continue ctxt,
       bSpec = bSpec ctxt,
+      procId = procId ctxt,
       returnInfo = returnInfo ctxt
     }
   
@@ -168,6 +178,7 @@ CompCtxt qualifying spec
       break = break ctxt,
       continue = continue ctxt,
       bSpec = bSpec,
+      procId = procId ctxt,
       returnInfo = returnInfo ctxt
     }
 
@@ -186,6 +197,7 @@ CompCtxt qualifying spec
       break = break ctxt,
       continue = continue ctxt,
       bSpec = bSpec ctxt,
+      procId = procId ctxt,
       returnInfo = returnInfo ctxt
     }
 
