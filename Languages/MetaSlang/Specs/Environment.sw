@@ -132,32 +132,32 @@ spec {
   let def find (name, S, a) =  
        case S 
          of []            -> TyVar(name,a)
-          | (idXXX, srt) ::S -> if name = idXXX then srt else find (name, S, a) 
+          | (id, srt) ::S -> if name = id then srt else find (name, S, a) 
   in 
   let def substRec srt =  
        case srt of
-          | Base (idXXX,             srts,                   a) ->  
-            Base (idXXX,             List.map substRec srts, a) 
+          | Base (id,                   srts, a) ->  
+            Base (id, List.map substRec srts, a) 
 
-          | Arrow (s1,          s2,           a) ->  
+          | Arrow (         s1,          s2,  a) ->  
             Arrow (substRec s1, substRec s2,  a) 
 
-          | Product (fields,                                       a) ->  
-            Product (List.map (fn(idXXX,s)-> (idXXX,substRec s)) fields, a) 
+          | Product (                                      fields, a) ->  
+            Product (List.map (fn(id,s)-> (id,substRec s)) fields, a) 
 
           | CoProduct (fields, a) ->  
-            CoProduct (List.map (fn (idXXX, sopt)->
-                                 (idXXX,
+            CoProduct (List.map (fn (id, sopt)->
+                                 (id,
                                   case sopt
                                     of None   -> None
                                      | Some s -> Some(substRec s))) 
                                 fields,
                        a) 
 
-          | Quotient (srt,          term, a) -> % No substitution for quotientsorts
+          | Quotient (         srt, term, a) -> % No substitution for quotientsorts
             Quotient (substRec srt, term, a) 
 
-          | Subsort  (srt,          term, a) -> % No substitution for subsorts
+          | Subsort  (         srt, term, a) -> % No substitution for subsorts
             Subsort  (substRec srt, term, a) 
 
           | TyVar (name, a) -> find (name, S, a)

@@ -410,9 +410,9 @@ op fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * StandardSpec
 def fullCurriedApplication(sp,dpn,vars,term) =
   let def aux(term,i,args) =
         case term
-          of Fun(Op (idXXX,_),srt,_) ->
+          of Fun(Op (id,_),srt,_) ->
              if i > 1 & i = curryShapeNum(sp,srt)
-               then Some(mkLApply(mkLOp(unCurryName(printPackageId(idXXX,dpn),i)),
+               then Some(mkLApply(mkLOp(unCurryName(printPackageId(id,dpn),i)),
                                  List.map (fn t -> mkLTerm(sp,dpn,vars,t)) args))
               else None
            | Apply(t1,t2,_) -> aux(t1,i+1,cons(t2,args))
