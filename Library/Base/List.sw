@@ -24,7 +24,7 @@ List qualifying spec
                                List a
   op member          : fa(a)   a * List a -> Boolean
   op sublist         : fa(a)   {(l,i,j) : List a * Nat * Nat |
-                                i < j & j <= length l} -> List a
+                                i <= j & j <= length l} -> List a
   op map             : fa(a,b) (a -> b) -> List a -> List b
   op mapPartial      : fa(a,b) (a -> Option b) -> List a -> List b
   op foldl           : fa(a,b) (a * b -> b) -> b -> List a -> b

@@ -19,7 +19,7 @@ String qualifying spec
   op exists        : (Char -> Boolean) -> String -> Boolean
   op all           : (Char -> Boolean) -> String -> Boolean
   op sub           : {(s,n) : String * Nat | n < length s} -> Char
-  op substring     : {(s,i,j) : String * Nat * Nat | i < j & j <= length s} ->
+  op substring     : {(s,i,j) : String * Nat * Nat | i <= j & j <= length s} ->
                      String
   op concatList    : List String -> String
   op translate     : (Char -> String) -> String -> String
@@ -62,7 +62,7 @@ String qualifying spec
        sub(s,n) = nth(explode s,n)
 
   axiom substring_def is
-    fa (s : String, i : Nat, j : Nat) i < j & j < length s =>
+    fa (s : String, i : Nat, j : Nat) i <= j & j <= length s =>
        substring(s,i,j) = implode(sublist(explode s,i,j))
 
   axiom concatList_def is
