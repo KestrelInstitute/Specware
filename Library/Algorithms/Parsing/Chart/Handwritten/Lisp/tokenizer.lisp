@@ -75,6 +75,7 @@
     (assign-tokenizer-codes whitespace-table non-word-symbol-continue-chars +non-word-symbol-continue-code+)
     (assign-tokenizer-codes whitespace-table number-continue-chars          +number-continue-code+)
     ;; codes that are legal after whitespace is started:
+    (assign-tokenizer-code  whitespace-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
     (assign-tokenizer-codes whitespace-table word-symbol-start-chars        +word-symbol-start-code+)
     (assign-tokenizer-codes whitespace-table non-word-symbol-start-chars    +non-word-symbol-start-code+)
     (assign-tokenizer-codes whitespace-table number-start-chars             +number-start-code+)
@@ -82,11 +83,11 @@
     (assign-tokenizer-codes whitespace-table comment-to-eol-chars           +comment-to-eol-code+)
     (assign-tokenizer-codes whitespace-table whitespace-chars               +whitespace-code+)
     (assign-tokenizer-codes whitespace-table separator-chars                +separator-code+)
-    (assign-tokenizer-code  whitespace-table #\#                            +char-literal-start-code+)
     ;;
     ;;  word-symbol-table 
     ;;
     ;; codes that are illegal after a word symbol is started:
+    ;; (assign-tokenizer-code  whitespace-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
     (assign-tokenizer-codes word-symbol-table word-symbol-start-chars        +word-symbol-start-code+) 
     (assign-tokenizer-codes word-symbol-table number-continue-chars          +number-continue-code+)
     (assign-tokenizer-codes word-symbol-table non-word-symbol-continue-chars +non-word-symbol-continue-code+)
@@ -674,7 +675,7 @@
 	  (#.+word-symbol-start-code+        (go terminate-word-symbol-with-start-word-symbol))
 	  (#.+number-start-code+             (go terminate-word-symbol-with-start-number))
 	  (#.+string-quote-code+             (go terminate-word-symbol-with-start-string))
-          (#.+char-literal-start-code+       (go terminate-word-symbol-with-start-char-literal))
+          (#.+char-literal-start-code+       (go terminate-word-symbol-with-start-char-literal)) ; for now at least, can't happen
 	  ;; weird
 	  (#.+non-word-symbol-continue-code+ (go terminate-word-symbol-with-continue-non-word-symbol))
 	  (#.+number-continue-code+          (go terminate-word-symbol-with-continue-number)) 
