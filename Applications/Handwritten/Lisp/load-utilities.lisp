@@ -178,15 +178,22 @@
 )
 
 (defparameter temporaryDirectory
-    (substitute #\/ #\\ (namestring #+allegro   (SYSTEM:temporary-directory)
-				    #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-				    #+(or mcl cmu sbcl) "/tmp/"
-				    )))
+  (ensure-final-slash
+   (substitute #\/ #\\
+	       (namestring #+allegro (or (getenv "TEMP")
+					 (getenv "TMP")
+					 (SYSTEM:temporary-directory))
+			   #+Lispworks SYSTEM::*TEMP-DIRECTORY*
+			   #+(or mcl cmu sbcl) "/tmp/"
+			   ))))
 (defun temporaryDirectory-0 ()
-  (namestring 
-   #+allegro      (SYSTEM:temporary-directory)
-   #+Lispworks    SYSTEM::*TEMP-DIRECTORY*
-   #+(or mcl cmu sbcl) "/tmp/"))
+  (ensure-final-slash
+   (namestring 
+    #+allegro      (or (getenv "TEMP")
+		       (getenv "TMP")
+		       (SYSTEM:temporary-directory))
+    #+Lispworks    SYSTEM::*TEMP-DIRECTORY*
+    #+(or mcl cmu sbcl) "/tmp/")))
 
 (defun setTemporaryDirectory ()
   (setq temporaryDirectory (substitute #\/ #\\ (temporaryDirectory-0))))
