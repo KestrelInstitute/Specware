@@ -124,6 +124,20 @@ Errors in $TESTDIR/Bug_0022/RedefinedOp.sw
  found in $TESTDIR/Bug_0024/players.sw
 43.13-44.52")
 
+ ("Bug 0028 : A few sort names such as Filename are mysteriously problematic."
+  :show "Bug_0028/ProblematicTypes"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0028/ProblematicTypes
+
+spec  
+ type LineColumn = Nat
+ type Filename = String
+ type LineColumnByte = Nat
+ type Position = Nat
+endspec
+
+")
+
+
  ("Bug 0043 : Snark doesn't like Booleans"
   :show "Bug_0043/Change#ShouldBeProvable" 
   :output ";;; Elaborating proof-term at $TESTDIR/Bug_0043/Change#ShouldBeProvable
