@@ -119,7 +119,7 @@
 	       (cons
 		(cond ((eq optional-hash-char :unspecified)
 		       (cons :|None| nil))
-		      ((eq optional-hash-char #\Space)
+		      ((eq optional-hash-name :unspecified)
 		       (cons :|Some| (format nil "~C" optional-hash-char)))
 		      ((eq optional-hash-char #\Space)
 		       (cons :|Some| optional-hash-name))
