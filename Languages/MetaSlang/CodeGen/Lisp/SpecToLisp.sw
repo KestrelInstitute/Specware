@@ -3,6 +3,7 @@
 SpecToLisp qualifying spec { 
  import ../../Transformations/PatternMatch
  import ../../Transformations/InstantiateHOFns
+ import ../../Transformations/LambdaLift
  import Lisp
  import ../../Specs/StandardSpec
 
@@ -1104,12 +1105,18 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
 *)
   op instantiateHOFns?: Boolean
   def instantiateHOFns? = true
+  op lambdaLift?: Boolean
+  def lambdaLift? = false
 
   def toLispEnv (spc) =
       % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
       let spc = setProperties(spc,[]) in % axioms are irrelevant for code generation
       let spc = if instantiateHOFns?
                  then instantiateHOFns spc
+		 else spc 
+      in
+      let spc = if lambdaLift?
+                 then lambdaLift spc
 		 else spc 
       in
       let spc = translateMatch(spc) in

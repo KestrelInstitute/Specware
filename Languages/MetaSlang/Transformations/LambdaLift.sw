@@ -52,7 +52,7 @@ LambdaLift qualifying spec
  %    closure: TranslationBuiltIn.makeClosure(name,freeVars)
  % 		   
 
- op simulateClosures?: Boolean		% If false just use lambdas with free vars
+ op  simulateClosures?: Boolean		% If false just use lambdas with free vars
  def simulateClosures? = false
 
  sort Ops      = Map.Map(String,LiftInfo)
@@ -61,6 +61,7 @@ LambdaLift qualifying spec
 	spc 	    : Spec,
 	opers       : Ops,
 	opName      : String,
+	qName       : String,
 	counter	    : Ref Nat
       }
  sort FreeVars = List Var 
@@ -112,6 +113,10 @@ LambdaLift qualifying spec
 	| RelaxPat(pat,_,_) -> patternVars(pat)
 	| QuotientPat(pat,_,_) -> patternVars(pat)
 	| SortedPat(pat,_,_) -> patternVars(pat)
+	| StringPat _ -> []
+	| BoolPat _ -> []
+	| CharPat _ -> []
+	| NatPat _ -> []
 	| _ -> System.fail("Unexpected pattern in match normalized expression: "^printPattern(pat))
 
  def makeVarTerm(term:Term) = 
@@ -213,8 +218,9 @@ LambdaLift qualifying spec
 % (dom sort should be a list of dom sorts corresponding to record/tuple patterns in functions)
 %
  def makeClosureApplication(env,name,freeVars,dom,rng) = 
+   let qualname = Qualified(env.qName,name) in
    case freeVars
-     of [] -> mkOp(Qualified(UnQualified,name),mkArrow(dom,rng))
+     of [] -> mkOp(qualname,mkArrow(dom,rng))
 (**
 	 mkApply(makeClosureOp(),
 		 mkTuple 
@@ -223,19 +229,23 @@ LambdaLift qualifying spec
 		 ])
 **)
       | [(id,varSrt)] ->
-         if simulateClosures?
-	   then
-	     mkApply(makeClosureOp(),
-		     mkTuple [mkOp(Qualified(UnQualified,name),
-				   mkArrow(mkProduct [varSrt,dom],rng)),
-			      mkVar (id,varSrt)])
-	   else mkOp(Qualified(UnQualified,name),
-		     mkArrow(mkProduct [varSrt,dom],rng))
-      | _ -> 
+         if ~simulateClosures?
+	   then mkOp(qualname, mkArrow(mkProduct [varSrt,dom],rng))	     
+	   else mkApply(makeClosureOp(),
+			mkTuple [mkOp(Qualified(env.qName,name),
+				      mkArrow(mkProduct [varSrt,dom],rng)),
+				 mkVar (id,varSrt)])
+      | _ ->
+       if ~simulateClosures?
+	 then
+	   mkOp(qualname,
+		mkArrow(mkProduct(productSorts(getSpecEnv env,dom)
+				  ++ map (fn (_,varSrt) -> varSrt) freeVars),
+			rng))
+       else      
        let prod = mkTuple(List.map mkVar freeVars) in
        let srt1 = termSortEnv(getSpecEnv(env),prod) in
-       let oper = mkOp(Qualified(UnQualified,name),
-		       mkArrow(mkProduct [srt1,dom],rng))
+       let oper = mkOp(qualname, mkArrow(mkProduct [srt1,dom],rng))
        in
        mkApply(makeClosureOp(),
 	       mkTuple[oper, ArityNormalize.mkArityTuple(env.spc,prod)])	
@@ -249,21 +259,22 @@ LambdaLift qualifying spec
       pattern = pat,
       body = body}
 
- def insertOper(liftInfo:LiftInfo,{opName,opers,counter,spc}:LLEnv) =
+ def insertOper(liftInfo:LiftInfo,{qName,opName,opers,counter,spc}:LLEnv) =
      { 
 	opName  = opName,
+	qName   = qName,
        	opers   = Map.update(opers,liftInfo.ident,liftInfo),
        	counter = counter,
-	spc = spc
+	spc     = spc
      }
 
- def actualFreeVars({opName,opers,counter,spc}:LLEnv,vars) =
+ def actualFreeVars({qName,opName,opers,counter,spc}:LLEnv,vars) =
    %let _ = String.writeLine("actualFreeVars: vars="^varsToString(vars)) in
      let
 	def lookup(v as (id,_)) = 
 	    case Map.apply (opers, id)
 	      of None -> [v]
-	       | Some (info:LiftInfo) -> info.freeVars
+	       | Some (info) -> info.freeVars
      in 
        let res = removeDuplicates(flatten(List.map lookup vars)) in
        %let _ = String.writeLine("freeVars: "^varsToString(res)) in
@@ -363,7 +374,7 @@ Given let definition:
     | Let(decls,body) -> 
       let opName = env.opName in
       let
-	 def liftDecl((pat,term as (trm,vars):VarTerm),(opers,env,decls)) =
+	 def liftDecl((pat,term as (trm,vars)),(opers,env,decls)) =
 	     case (pat,trm)
 		of (VarPat((id,srt),_),Lambda([(pat2,cond,body)])) -> 
 		   let (opers2,body) = lambdaLiftTerm(env,body) in
@@ -501,7 +512,7 @@ in
 	    )
      | Lambda [(pat,cond,body)] -> 
 		%let _ = String.writeLine("lambdaLiftTerm: pattern: " ^ MetaSlangPrint.printPattern(pat)^", vars: "^varsToString(vars)) in
-       let (opers,body) = lambdaLiftTerm(env,body:VarTerm) in
+       let (opers,body) = lambdaLiftTerm(env,body) in
        let num = State.!(env.counter) in
        let _ = env.counter State.:= num + 1 in
        let name = env.opName ^ "_internal_" ^ (Nat.toString num) in
@@ -569,6 +580,9 @@ in
 		  | _ -> (opers,mkApply(nt1,nt2)))
 	     else (opers,mkApply(nt1,nt2))	     
 	   | _ ->
+	     if ~simulateClosures?
+	       then (opers,mkApply(nt1,nt2))
+	     else 
 	     let argument = mkTuple [nt1,toAny(nt2)] in
 	     let alpha    = mkTyVar "alpha" in
 	     let beta     = mkTyVar "beta" in
@@ -703,7 +717,8 @@ def getSpecEnv(env) =
 
 *)
 
- def varsToString(vars) = (List.foldl (fn(v as (id,srt:Sort),s) ->
+ op  varsToString: List Var -> String
+ def varsToString(vars) = (List.foldl (fn(v as (id,srt),s) ->
 				       s ^ (if s = "[" then ""
 					     else " ")
 				         ^ id ^ ":" ^ printSort(srt))
@@ -711,51 +726,51 @@ def getSpecEnv(env) =
 
  def lambdaLift(spc) = 
      let counter = Ref 1 : Ref Nat in
-     let def mkEnv(name) = {opName = name,
-			    spc = spc,
-			    counter = counter,
-			    opers = Map.emptyMap} in
+     let def mkEnv(qname,name) =
+           {opName = name,
+	    qName  = qname,
+	    spc = spc,
+	    counter = counter,
+	    opers = Map.emptyMap} in
      let
-       def insertOpers(opers,spc) = 
+       def insertOpers(opers,qname,spc) = 
 	 case opers
 	   of [] -> spc
 	    | {name,ident,pattern,freeVars,body,closure}::opers -> 
 %%		  let spc = abstractVars(ident,freeVars,closure) in
 	      let (nms, f,s,t)
-	         = abstractName(mkEnv(name), name, freeVars, pattern, body) in
+	         = abstractName(mkEnv(qname,name), name, freeVars, pattern, body) in
 	      %let (_,srt) = s in
 	      %let _ = String.writeLine("addop "^name^":"^printSort(srt)) in
 	      % TODO: Real names
-	      let spc = addNewOp(mkUnQualifiedId(name), f, s, t, spc) in
-	      insertOpers(opers,spc)
+	      let spc = addNewOp(Qualified(qname,name), f, s, t, spc) in
+	      insertOpers(opers,qname,spc)
    in
      let 
        def doOp(qname,name,(names, fixity, (tvs,srt), defs),spc) = 
 	 %let _ = String.writeLine("lambdaLift \""^name^"\"...") in
 	 case defs
 	   of [] ->
-	     %% Fixed it...
-	     %-let _ = String.writeLine("addop "^name^":"^printSort(srt)) in
-	     addNewOp (mkUnQualifiedId(name), fixity, (tvs, srt), [], spc)
+	     addNewOp (Qualified(qname,name), fixity, (tvs, srt), [], spc)
 	    | [(def_tvs,Lambda([(pat,cond,term)],a))] -> 
-	     let env = mkEnv(name) in
+	     let env = mkEnv(qname,name) in
 	     let term = makeVarTerm(term) in
 	     let (opers,term) = lambdaLiftTerm(env,term) in
-	     let term = (Lambda([(pat,cond,term)],a)):Term in
+	     let term = Lambda([(pat,cond,term)],a) in
 	     %-let _ = String.writeLine("addop "^name^":"^printSort(srt)) in
-	     let spc = addNewOp(mkUnQualifiedId(name),fixity,(tvs,srt),[([],term)],
+	     let spc = addNewOp(Qualified(qname,name),fixity,(tvs,srt),[([],term)],
 				spc)
 	     in
-	     insertOpers(opers,spc)
+	     insertOpers(opers,qname,spc)
 	    | [(def_tvs,term)] -> 
-	     let env = mkEnv(name) in
+	     let env = mkEnv(qname,name) in
 	     let term = makeVarTerm(term) in
 	     let (opers,term) = lambdaLiftTerm(env,term) in
 	     %-let _ = String.writeLine("addop "^name^":"^printSort(srt)) in
-	     let spc = addNewOp(mkUnQualifiedId(name),fixity,(tvs,srt),[([],term)],
+	     let spc = addNewOp(Qualified(qname,name),fixity,(tvs,srt),[([],term)],
 				spc)
 	     in
-	     insertOpers(opers,spc)
+	     insertOpers(opers,qname,spc)
    in
      let ops = spc.ops in
      let spc = 

@@ -34,12 +34,15 @@ MS qualifying spec
  def mkQuotientSort (srt, rel)  = Quotient (srt, rel,   noPos)
 
  def mkProduct sorts =
-  let def loop (n, sorts) = 
-       case sorts  of
-          | []         -> []
-          | srt::sorts -> cons((Nat.toString n, srt), loop(n + 1, sorts))
-  in
-    Product(loop(1,sorts), noPos)
+  case sorts of
+    | [s] -> s
+    | _ ->
+      let def loop (n, sorts) = 
+	   case sorts  of
+	      | []         -> []
+	      | srt::sorts -> cons((Nat.toString n, srt), loop(n + 1, sorts))
+      in
+	Product(loop(1,sorts), noPos)
 
  def mkCoProduct fields = CoProduct (fields, noPos)
 

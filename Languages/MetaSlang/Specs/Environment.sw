@@ -155,6 +155,15 @@ spec {
     of Product (fields, _) -> fields
      | _ -> System.fail ("Could not extract product sort "^printSort srt)
 
+ op  productSorts: Spec * Sort -> List Sort
+ def productSorts (sp, srt) =
+   case stripSubsorts (sp, srt)
+    of Product (fields, _) ->
+       if tupleFields? fields
+	 then map (fn (_,x) -> x) fields
+	 else [srt]
+     | _ -> [srt]
+
  def coproduct (sp : Spec, srt : Sort) = 
   case stripSubsorts (sp, srt)
     of CoProduct (fields, _) -> fields
