@@ -3,7 +3,7 @@
 A simple pretty printer for MetaSlang.
 
 \begin{spec}
-spec {
+SpecCalc qualifying spec {
   import AnnTerm
   import /Library/PrettyPrinter/WadlerLindig
 

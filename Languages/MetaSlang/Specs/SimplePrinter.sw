@@ -3,7 +3,7 @@
 A simple pretty printer for MetaSlang.
 
 \begin{spec}
-MetaSlang qualifying spec {
+SpecCalc qualifying spec {
   import ../AbstractSyntax/SimplePrinter
   import AnnSpec
 

@@ -17,7 +17,7 @@ use \verb+pp+ functions to render terms as "Pretty".
 \begin{spec}
 SpecCalc qualifying spec {
   import Types
-  import ../../MetaSlang/AbstractSyntax/SimplePrinter 
+  import ../../MetaSlang/Specs/SimplePrinter 
   import /Library/PrettyPrinter/WadlerLindig
 
   op showSpecFile : fa (a) SpecFile a -> String
@@ -279,67 +279,67 @@ SpecCalc qualifying spec {
   def ppIdInfo ids = ppSep (ppString ".") (map ppString ids)
 *)
    
-  op ppASortInfo : fa (a) TyVars * Option (ASort a) -> Doc
-  def ppASortInfo sortInfo =
-    case sortInfo of
-       | ([],None) -> ppNil
-       | ([],Some srt) -> ppAppend (ppString " = ") (ppASort srt)
-       | (tyVars,Some srt) -> 
-           ppConcat [
-             ppString " (",
-             ppSep (ppString ",") (map ppString tyVars),
-             ppString ") = ",
-             ppASort srt
-           ]
-
-  op ppAOpInfo : fa (a)  Fixity * ASortScheme a * Option (ATerm a) -> Doc
-  def ppAOpInfo (fixity,(tyVars,srt),optTerm) =
-    ppConcat [
-      ppFixity fixity,
-      ppString " : ",
-      (case tyVars of
-        | [] -> ppNil
-        | _ -> 
-           ppConcat [
-             ppString "fa (",
-             ppSep (ppString ",") (map ppString tyVars),
-             ppString ") "
-           ]),
-      ppASort srt,
-      (case optTerm of
-        | None -> ppNil
-        | Some term ->
-            ppConcat [
-              ppString " = ",
-              ppATerm term
-            ])
-    ]
-
-  op ppAProperty : fa (a) AProperty a -> Doc
-  def ppAProperty (propType, name, tyVars, term) =
-    ppConcat [
-      ppPropertyType propType,
-      ppString " ",
-      ppString name,
-      ppString " ",
-      (case tyVars of
-        | [] -> ppNil
-        | _ -> 
-           ppConcat [
-             ppString "fa (",
-             ppSep (ppString ",") (map ppString tyVars),
-             ppString ") "
-           ]),
-      ppString " ",
-      ppATerm term
-    ]
-
-  op ppPropertyType : PropertyType -> Doc
-  def ppPropertyType propType =
-    case propType of
-      | Axiom -> ppString "axiom"
-      | Theorem -> ppString "theorem"
-      | Conjecture -> ppString "conjecture"
+%   op ppASortInfo : fa (a) TyVars * Option (ASort a) -> Doc
+%   def ppASortInfo sortInfo =
+%     case sortInfo of
+%        | ([],None) -> ppNil
+%        | ([],Some srt) -> ppAppend (ppString " = ") (ppASort srt)
+%        | (tyVars,Some srt) -> 
+%            ppConcat [
+%              ppString " (",
+%              ppSep (ppString ",") (map ppString tyVars),
+%              ppString ") = ",
+%              ppASort srt
+%            ]
+% 
+%   op ppAOpInfo : fa (a)  Fixity * ASortScheme a * Option (ATerm a) -> Doc
+%   def ppAOpInfo (fixity,(tyVars,srt),optTerm) =
+%     ppConcat [
+%       ppFixity fixity,
+%       ppString " : ",
+%       (case tyVars of
+%         | [] -> ppNil
+%         | _ -> 
+%            ppConcat [
+%              ppString "fa (",
+%              ppSep (ppString ",") (map ppString tyVars),
+%              ppString ") "
+%            ]),
+%       ppASort srt,
+%       (case optTerm of
+%         | None -> ppNil
+%         | Some term ->
+%             ppConcat [
+%               ppString " = ",
+%               ppATerm term
+%             ])
+%     ]
+% 
+%   op ppAProperty : fa (a) AProperty a -> Doc
+%   def ppAProperty (propType, name, tyVars, term) =
+%     ppConcat [
+%       ppPropertyType propType,
+%       ppString " ",
+%       ppString name,
+%       ppString " ",
+%       (case tyVars of
+%         | [] -> ppNil
+%         | _ -> 
+%            ppConcat [
+%              ppString "fa (",
+%              ppSep (ppString ",") (map ppString tyVars),
+%              ppString ") "
+%            ]),
+%       ppString " ",
+%       ppATerm term
+%     ]
+% 
+%   op ppPropertyType : PropertyType -> Doc
+%   def ppPropertyType propType =
+%     case propType of
+%       | Axiom -> ppString "axiom"
+%       | Theorem -> ppString "theorem"
+%       | Conjecture -> ppString "conjecture"
 %       | any ->
 %            fail ("No match in ppPropertyType with: '"
 %               ^ (Lisp_toString any)
