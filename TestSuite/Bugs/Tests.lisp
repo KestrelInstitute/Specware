@@ -102,16 +102,27 @@ Errors in $TESTDIR/Bug_0021/AmbiguousOp.sw
 24.12-24.12	: Type reference b is ambiguous among A.b, {e, A.a, C.b}
 ")
  
- ("Bug 0022 : Redefined ops processed without giving error message."
-  :sw "Bug_0022/RedefinedOp"
-  :output ";;; Elaborating spec at $TESTDIR/Bug_0022/RedefinedOp
+ ("Bug 0022 A : Redefined ops processed without giving error message."
+  :sw "Bug_0022/RedefinedOp#A"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0022/RedefinedOp#A
 
-Warning: op should not follow def for f, but allowing this for now...
 Errors in $TESTDIR/Bug_0022/RedefinedOp.sw
-4.9-4.12	: Could not match type constraint
-                true of type Boolean
-          with expected type String
+5.1-5.13	: op should not follow def for f
 ")
+
+ ("Bug 0022 B : Redefined ops processed without giving error message."
+  :sw "Bug_0022/RedefinedOp#B"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0022/RedefinedOp#B
+
+Errors in $TESTDIR/Bug_0022/RedefinedOp.sw
+11.1-11.10	: op should not follow def for f
+")
+
+ ("Bug 0024 : ':swl'-ing a processed spec causes a stack overflow error "
+  :sw "Bug_0024/players"
+  :output "Error in specification: Name \"twoPlayers\" defined twice in file.
+ found in $TESTDIR/Bug_0024/players.sw
+43.13-44.52")
 
  ("Bug 0043 : Snark doesn't like Booleans"
   :show "Bug_0043/Change#ShouldBeProvable" 
