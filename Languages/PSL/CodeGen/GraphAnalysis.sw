@@ -42,7 +42,7 @@ spec
 	     cont      : Index }
 
   op noContinue: Index			% To represent return destination
-  def noContinue = Integer.~ 1
+  def noContinue = -1
     
   sort Node = Index * NodeContent * List Index % predecessors
   sort Graph = List Node		% In some topological order

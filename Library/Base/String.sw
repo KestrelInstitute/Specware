@@ -129,7 +129,7 @@ String qualifying spec
   axiom int_toString_def is
     fa (x : Integer) Integer.toString x =
                      (if x >= 0 then Nat.toString x
-                                else "-" ^ Nat.toString(Integer.~ x))
+                                else "-" ^ Nat.toString(- x))
 
   axiom nat_toString_def is
     fa (x : Nat) Nat.toString x =
@@ -162,7 +162,7 @@ String qualifying spec
     fa (s : String) intConvertible s =>
        stringToInt s = (let firstchar::_ = explode s in
                         if firstchar = #-
-                        then Integer.~(stringToNat(substring(s,1,length s)))
+                        then -(stringToNat(substring(s,1,length s)))
                         else stringToNat s)
 
   axiom natToString_def is

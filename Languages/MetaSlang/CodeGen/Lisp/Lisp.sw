@@ -364,7 +364,7 @@ def mkLQuote id = mkLOp ("'" ^ id)
 def mkLNat n = Const(Nat n)
 def mkLInt n = if n >= 0
 		then mkLNat n
-	      else mkLApply(mkLOp "-",[mkLNat (Integer.~ n)])
+	      else mkLApply(mkLOp "-",[mkLNat (- n)])
 def mkLChar ch = Const(Char ch)
 def mkLBool b = Const(Boolean b)
 

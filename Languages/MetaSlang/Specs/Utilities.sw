@@ -553,7 +553,7 @@ Utilities qualifying spec
      %		    if IntegerSet.member(indices,idx)
      %			  then (idx - 1,StringMap.insert(ops,nm,(fxty,srt,None):OpInfo))
      %		    else (idx - 1,StringMap.insert(ops,nm,(fxty,srt,defn)))) 
-     %	           (Integer.~ 1,StringMap.empty) spc.ops)) 
+     %	           (-1,StringMap.empty) spc.ops)) 
      in
      {importInfo       = spc.importInfo,
       sorts            = spc.sorts,
@@ -1124,7 +1124,7 @@ Utilities qualifying spec
  op  attemptEval1: String * MS.Term -> Option MS.Term
  def attemptEval1(opName,arg) =
    case (opName,arg) of
-      | ("~", Fun (Nat i,_,aa)) -> Some(Fun (Nat (Integer.~ i), natSort,aa))
+      | ("~", Fun (Nat i,_,aa)) -> Some(Fun (Nat (- i), natSort,aa))
       | ("~", Fun (Bool b,_,aa)) -> Some(Fun (Bool (~b), boolSort,aa))
       | ("pred", Fun (Nat i,_,aa)) -> Some(Fun (Nat (pred i), natSort,aa))
       | ("toString", Fun (Nat i,_,aa)) -> Some (Fun (String (toString i), stringSort,aa))

@@ -850,7 +850,7 @@ AnnSpecPrinter qualifying spec {
          | [name] -> ppOpName name
          | _      -> ppList ppOpName ("{", ",", "}") aliases
      in
-     let index1 = Integer.~(index + 1) in
+     let index1 = -(index + 1) in
      let button1 = if markSubterm?(context) & ~ (null defs)
                     then PrettyPrint.buttonPretty
                            (~(IntegerSet.member(context.indicesToDisable,index1)),

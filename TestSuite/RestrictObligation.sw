@@ -2,7 +2,7 @@ A = spec
 op Nat.+  infixl 25: Nat * Nat -> Nat
 op nonNeg?: Integer -> Boolean
 
-op f: {p: Integer * Integer | p.1 > Integer.~ p.2}  -> Nat
+op f: {p: Integer * Integer | p.1 > - p.2}  -> Nat
 %def f(x,y) = x Nat.+ y
 
 

@@ -297,7 +297,7 @@ are no longer needed. *)
   op vertexToIndex : FinitePolyMap.Map (String,Index) -> Vrtx.Vertex -> Index
   def vertexToIndex visited vrtx =
     case evalPartial (visited,show vrtx) of
-      | None -> Integer.~ 1
+      | None -> noContinue
       | Some index -> index
 
   op getTransitionAction : Transition -> Env MSlang.Term

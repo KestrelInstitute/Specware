@@ -167,7 +167,7 @@ MS qualifying spec
  def tupleFields? fields =
    (foldl (fn ((id,_),i) ->
 	   if i < 0 then i
-	     else if id = Nat.toString i then i + 1 else Integer.~ 1)
+	     else if id = Nat.toString i then i + 1 else -1)
       1 fields)
    > 0
 

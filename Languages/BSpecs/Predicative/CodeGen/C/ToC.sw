@@ -363,7 +363,7 @@ parameter variables.
           if vartype = Void then divideDecls(vardecls,funParNames) else
           if List.member(id,funParNames) then
             %- add the decl as parameter decls
-            let funParNames = List.filter (fn(x) -> Boolean.~(id = x)) funParNames in
+            let funParNames = List.filter (fn(x) -> ~(id = x)) funParNames in
             let (params1,decls1) = divideDecls(vardecls,funParNames) in
             (List.cons(vardecl,params1),decls1)
           else
@@ -646,7 +646,7 @@ defined variables with a primitive type.
              let _ = writeLine("local id "^id) in
              if List.member(id,procNames) then Fn(id,[],Void)
              else Var(id,varSortToType srt)
-        | Int(val) -> Const(if val<0 then Int(false,Integer.~(val)) else Int(true,val))
+        | Int(val) -> Const(if val<0 then Int(false, - val) else Int(true,val))
         | Char(val) -> Const(Char(val))
         | Bool(val) -> Const(Int(true,if val then 1 else 0))
         | String(val) -> Const(String(val))

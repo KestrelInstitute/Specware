@@ -12,7 +12,7 @@ spec
   def Integer.intToString = Integer.toString
   def Integer.stringToInt s = let firstchar::_ = explode s in
 			       if firstchar = #-
-				 then Integer.~(stringToNat(substring(s,1,length s)))
+				 then -(stringToNat(substring(s,1,length s)))
 			       else stringToNat s
   def Nat.natToString = Nat.toString
   def Nat.stringToNat s =

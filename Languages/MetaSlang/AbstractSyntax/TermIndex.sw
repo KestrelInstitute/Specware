@@ -96,7 +96,7 @@ spec
 	 def genPathSymPairs(prefix,M) = 
 	     let (M::Ms,isFlex?) = getApplys(M,[]) in
 		if isFlex?
-		   then [prefix ++ [Integer.~ 1]]
+		   then [prefix ++ [-1]]
 		else
 		let indexT = getFunIndex M in
 		let Ms = subterms Ms in
@@ -126,7 +126,7 @@ spec
 
     def makePath(p,entry: sym_entry) = 
 	case entry
-	  of Star -> p ++ [Integer.~ 1]
+	  of Star -> p ++ [-1]
 	   | SymS x  -> p ++ [x]
 
     op  getTerms : TermDiscNet.disc_net * List Integer * sym_entry -> IntegerSet.Set
