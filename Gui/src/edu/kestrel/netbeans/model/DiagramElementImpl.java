@@ -18,7 +18,7 @@ class DiagramElementImpl extends MemberElementImpl implements DiagramElement.Imp
      */
     private SourceElementImpl       sourceImpl;
     
-//    private ImportCollection     imports;
+    private DiagElemCollection      diagElems;
 
     private MemberCollection        members;
 
@@ -46,14 +46,15 @@ class DiagramElementImpl extends MemberElementImpl implements DiagramElement.Imp
         // PENDING: set these directly.
         super.createFromModel(model);
 
-        // member elements need the Element already.
-//        changeImports(element.getImports(), SpecElement.Impl.ADD);
+        // member elements need the Element alreADD);
     }
     
     public final void setParent(ElementImpl impl) {
         super.setParent(impl);
         if (impl instanceof SourceElementImpl) {
             sourceImpl = (SourceElementImpl)impl;
+        } else {
+            sourceImpl = null;
         }
     }
     
@@ -66,30 +67,30 @@ class DiagramElementImpl extends MemberElementImpl implements DiagramElement.Imp
     // Member management methods
     // - will delegate to collection helpers.
     ///////////////////////////////////////////////////////////////////////////////////
-/*    public ImportElement[] getImports() {
-        if (imports == null)
-            return ImportCollection.EMPTY;
-        return (ImportElement[])imports.getElements().clone();
+    public DiagElemElement[] getDiagElems() {
+        if (diagElems == null)
+            return DiagElemCollection.EMPTY;
+        return (DiagElemElement[])diagElems.getElements().clone();
     }
     
-    public ImportElement getImport(String name) {
-        if (imports == null)
+    public DiagElemElement getDiagElem(String name) {
+        if (diagElems == null)
             return null;
-        return imports.getImport(name);
+        return diagElems.getDiagElem(name);
     }
     
-    public void changeImports(ImportElement[] elements, int operation) 
+    public void changeDiagElems(DiagElemElement[] elements, int operation) 
         throws SourceException {
-        initializeImports();
+        initializeDiagElems();
         Object token = takeMasterLock();
         try {
-            imports.changeMembers(elements, operation);
+            diagElems.changeMembers(elements, operation);
             commit();
         } finally {
             releaseLock(token);
         }
     }
-*/
+
 
     // Utility methods
     ///////////////////////////////////////////////////////////////////////////////////
@@ -107,11 +108,11 @@ class DiagramElementImpl extends MemberElementImpl implements DiagramElement.Imp
     
     public void updateMembers(String propName, Element[] els, int[] indices,
         int[] optMap) {
-/*        if (propName == ElementProperties.PROP_IMPORTS) {
-	    initializeImports();
-            imports.updateMembers(els, indices, optMap);
+        if (propName == ElementProperties.PROP_DIAG_ELEMS) {
+	    initializeDiagElems();
+            diagElems.updateMembers(els, indices, optMap);
         }
-*/	//Util.log("DiagramElementimpl.updateMembers after PartialCollection.updateMembers members = "+members);
+	//Util.log("DiagramElementimpl.updateMembers after PartialCollection.updateMembers members = "+members);
 	//Util.log("DiagramElementimpl.updateMembers after PartialCollection.updateMembers indices = "+Util.print(indices)
 	//				 +" optMap = "+Util.print(optMap));
 
@@ -121,16 +122,16 @@ class DiagramElementImpl extends MemberElementImpl implements DiagramElement.Imp
         members.updateOrder(ordered);
     }
     
-/*    private void initializeImports() {
-        if (imports != null)
+    private void initializeDiagElems() {
+        if (diagElems != null)
             return;
         synchronized (this) {
-            if (imports == null) {
-                imports = new ImportCollection(this, getModelImpl(), members);
+            if (diagElems == null) {
+                diagElems = new DiagElemCollection(this, getModelImpl(), members);
             }
         }
     }
-*/
+
 
     protected final Binding createBinding(Element el) {
         return getModelImpl().getBindingFactory().bindDiagram((DiagramElement)el);
@@ -158,12 +159,7 @@ class DiagramElementImpl extends MemberElementImpl implements DiagramElement.Imp
     
     ///////////////////////////////////////////////////////////////////////////////////
     public String toString() {
-        StringBuffer sb = new StringBuffer();
-        
-        sb.append("DiagramElement["); // NOI18N
-        sb.append(getName());
-        sb.append("]");
-        return sb.toString();
+        return "DiagramElementImpl[" + getName() + "]"; // NOI18N
     }
     
     /**
@@ -216,8 +212,8 @@ class DiagramElementImpl extends MemberElementImpl implements DiagramElement.Imp
         }
         super.notifyCreate();
         members.sanityCheck();
-//        if (imports != null)
-//            imports.sanityCheck();
+        if (diagElems != null)
+            diagElems.sanityCheck();
     }
     
     public Element[] getElements() {

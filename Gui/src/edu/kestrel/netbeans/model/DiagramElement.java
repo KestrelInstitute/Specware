@@ -50,9 +50,12 @@ public final class DiagramElement extends MemberElement {
     public DiagramElement(MemberElement.Impl impl, Element parent) {
         super(impl, parent);
 	if (parent instanceof SourceElement) {
+            System.out.println("DiagramElement constructor: parent instanceof SOURCELEEMNT");
 	    this.source = (SourceElement) parent;
 	    this.topLevel = true;
 	} else {
+            System.out.println("DiagramElement constructor: source is null");
+            this.source = null;
 	    this.topLevel = false;
 	}
     }
@@ -87,71 +90,42 @@ public final class DiagramElement extends MemberElement {
         this.source = source;
     }
     
-    //================== TODO: ADD THESE METHODS FOR EACH SUB-ELEMENT ===============================
+    //================== DIAGELEMS ===============================
 
-    /** Add a new import to the spec.
-     *  @param el the import to add
-     * @throws SourceException if impossible
-     */
-/*    public void addImport(ImportElement el) throws SourceException {
-        if (getImport(el.getName()) != null)
-            throwAddException("FMT_EXC_AddImport", el); // NOI18N
-        getSpecImpl().changeImports(new ImportElement[] { el }, Impl.ADD);
+    public void addDiagElem(DiagElemElement el) throws SourceException {
+        if (getDiagElem(el.getName()) != null)
+            throwAddException("FMT_EXC_AddDiagElem", el); // NOI18N
+        getDiagramImpl().changeDiagElems(new DiagElemElement[] { el }, Impl.ADD);
     }
-*/
-    /** Add some new imports to the spec.
-     *  @param els the imports to add
-     * @throws SourceException if impossible
-     */
-/*    public void addImports(final ImportElement[] els) throws SourceException {
+
+    public void addDiagElems(final DiagElemElement[] els) throws SourceException {
         for (int i = 0; i < els.length; i++)
-            if (getImport(els[i].getName()) != null)
-                throwAddException("FMT_EXC_AddImport", els[i]); // NOI18N
-        getSpecImpl().changeImports(els, Impl.ADD);
+            if (getDiagElem(els[i].getName()) != null)
+                throwAddException("FMT_EXC_AddDiagElem", els[i]); // NOI18N
+        getDiagramImpl().changeDiagElems(els, Impl.ADD);
     }
-*/
-    /** Remove a import from the spec.
-     *  @param el the import to remove
-     * @throws SourceException if impossible
-     */
-/*    public void removeImport(ImportElement el) throws SourceException {
-        getSpecImpl().changeImports(
-						 new ImportElement[] { el }, Impl.REMOVE
-						 );
+
+    public void removeDiagElem(DiagElemElement el) throws SourceException {
+        getDiagramImpl().changeDiagElems(new DiagElemElement[] { el }, Impl.REMOVE
+                                     );
     }
-*/
-    /** Remove some imports from the spec.
-     *  @param els the imports to remove
-     * @throws SourceException if impossible
-     */
-/*    public void removeImports(final ImportElement[] els) throws SourceException {
-        getSpecImpl().changeImports(els, Impl.REMOVE);
+
+    public void removeDiagElems(final DiagElemElement[] els) throws SourceException {
+        getDiagramImpl().changeDiagElems(els, Impl.REMOVE);
     }
-*/
-    /** Set the imports for this spec.
-     * Previous imports are removed.
-     * @param els the new imports
-     * @throws SourceException if impossible
-     */
-/*    public void setImports(ImportElement[] els) throws SourceException {
-        getSpecImpl().changeImports(els, Impl.SET);
+
+    public void setDiagElems(DiagElemElement[] els) throws SourceException {
+        getDiagramImpl().changeDiagElems(els, Impl.SET);
     }
-*/
-    /** Get all imports in this spec.
-     * @return the imports
-     */
-/*    public ImportElement[] getImports() {
-        return getSpecImpl().getImports();
+
+    public DiagElemElement[] getDiagElems() {
+        return getDiagramImpl().getDiagElems();
     }
-*/
-    /** Find a import by name.
-     * @param name the name of the import to look for
-     * @return the element or <code>null</code> if not found
-     */
-/*    public ImportElement getImport(String name) {
-        return getSpecImpl().getImport(name);
+
+    public DiagElemElement getDiagElem(String name) {
+        return getDiagramImpl().getDiagElem(name);
     }
-*/
+
 
     // ================ printing =========================================
 
@@ -175,11 +149,11 @@ public final class DiagramElement extends MemberElement {
         printer.markDiagram(this, printer.BODY_BEGIN); // BODY begin
         printer.println(""); // NOI18N
 
-/*        if (print(getImports(), printer)) {
+        if (print(getDiagElems(), printer)) {
             printer.println(""); // NOI18N
             printer.println(""); // NOI18N
         }
-*/
+
         printer.println(""); // NOI18N
         printer.markDiagram(this, printer.BODY_END); // BODY end
 //        printer.print("endspec"); // NOI18N
@@ -258,31 +232,13 @@ public final class DiagramElement extends MemberElement {
      * @see DiagramElement
      */
     public static interface Impl extends MemberElement.Impl {
-        /** Add some items. */
-        public static final int ADD = SpecElement.Impl.ADD;//1;
-        /** Remove some items. */
-        public static final int REMOVE = SpecElement.Impl.REMOVE;//-1;
-        /** Set some items, replacing the old ones. */
-        public static final int SET = SpecElement.Impl.SET;//0;
 
-        //==============TODO======================
-        /** Change the set of imports.
-         * @param elems the new imports
-         * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
-         * @exception SourceException if impossible
-         */
-        //public void changeImports(ImportElement[] elems, int action) throws SourceException;
+        //============== DIAGELEMS ======================
+        public void changeDiagElems(DiagElemElement[] elems, int action) throws SourceException;
 
-        /** Get all imports.
-         * @return the imports
-         */
-        //public ImportElement[] getImports();
+        public DiagElemElement[] getDiagElems();
 
-        /** Find a import by signature.
-         * @param arguments the argument types to look for
-         * @return the import, or <code>null</code> if it does not exist
-         */
-        //public ImportElement getImport(String name);
+        public DiagElemElement getDiagElem(String name);
 
     }
         
@@ -290,8 +246,8 @@ public final class DiagramElement extends MemberElement {
     /** Memory based implementation of the element factory.
      */
     static final class Memory extends MemberElement.Memory implements Impl {
-        /** collection of imports */
-//        private MemoryCollection.Import imports;       
+        /** collection of diagElems */
+        private MemoryCollection.DiagElem diagElems;       
 
         public Memory() {
         }
@@ -306,7 +262,7 @@ public final class DiagramElement extends MemberElement {
         /** Late initialization of initialization of copy elements.
         */
         public void copyFrom (DiagramElement copyFrom) {
-//            changeImports (copyFrom.getImports (), SET);
+            changeDiagElems (copyFrom.getDiagElems (), SET);
         }
 
         /** Changes set of elements.
@@ -314,42 +270,42 @@ public final class DiagramElement extends MemberElement {
 	 * @param action the action to do(ADD, REMOVE, SET)
 	 * @exception SourceException if the action cannot be handled
 	 */
-/*        public synchronized void changeImports(ImportElement[] elems, int action) {
-            initImports();
-            imports.change(elems, action);
+        public synchronized void changeDiagElems(DiagElemElement[] elems, int action) {
+            initDiagElems();
+            diagElems.change(elems, action);
         }
 
-        public synchronized ImportElement[] getImports() {
-            initImports();
-            return(ImportElement[])imports.toArray();
+        public synchronized DiagElemElement[] getDiagElems() {
+            initDiagElems();
+            return(DiagElemElement[])diagElems.toArray();
         }
-*/
-        /** Finds a import with given name and argument types.
+
+        /** Finds a diagElem with given name and argument types.
 	 * @param source the name of source mode
 	 * @param target the name of target mode
-	 * @return the element or null if such import does not exist
+	 * @return the element or null if such diagElem does not exist
 	 */
-/*        public synchronized ImportElement getImport(String name) {
-            initImports();
-            return(ImportElement)imports.find(name);
+        public synchronized DiagElemElement getDiagElem(String name) {
+            initDiagElems();
+            return(DiagElemElement)diagElems.find(name);
         }
 
-        void initImports() {
-            if (imports == null) {
-                imports = new MemoryCollection.Import(this);
+        void initDiagElems() {
+            if (diagElems == null) {
+                diagElems = new MemoryCollection.DiagElem(this);
             }
         }
-*/
+
 
         void markCurrent(Element marker, boolean after) {
             MemoryCollection col = null;
       
-/*            if (marker instanceof ImportElement) {
-                col = imports;
+            if (marker instanceof DiagElemElement) {
+                col = diagElems;
             } else {
                 throw new IllegalArgumentException();
             }
-*/          if (col != null) 
+          if (col != null) 
                 col.markCurrent(marker, after);
         }
 
