@@ -140,8 +140,20 @@
 
 #+allegro
 (top-level:alias ("swe-spec" :case-sensitive :string) (x) 
-  (setq *current-swe-spec* x)
-  (format t "~&Subsequent :swe commands will now import ~A~%" x))
+  (unless (eq (elt x 0) #\/)
+    (format t "~&coercing ~A to /~A~%" x x)
+    (setq x (format nil "/~A" x)))
+  (cond ((sw (string x))
+	 (setq *current-swe-spec* x)
+	 (setq *current-swe-spec-dir* (specware::current-directory))
+	 (format t "~&Subsequent :swe commands will now import ~A.~%" x)
+	 (format t "~&The following will produce, compile and load code for this spec:~%")
+	 (format t "~&:swll ~A~%" x))
+	(t
+	 (format t "~&:swe-spec had no effect.~%" x)
+	 (if *current-swe-spec*
+	     (format t "~&Subsequent :swe commands will still import ~A.~%" *current-swe-spec*)
+	   (format t "~&Subsequent :swe commands will still import just the base spec.~%")))))
 
 (defvar *swe-print-as-slang?* nil)
 (defvar *swe-return-value?* nil)
@@ -174,9 +186,8 @@
 	 (tmp-uid (format nil "/~A"     tmp-name))
 	 (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
 	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
-	 (this-dir (specware::current-directory))
 	 (old-swpath (specware::getEnv "SWPATH"))
-	 (new-swpath (format nil ":/tmp/swe/:~A:~A" this-dir old-swpath)))
+	 (new-swpath (format nil ":/tmp/swe/:~A:~A" *current-swe-spec-dir* old-swpath)))
     ;; clear any old values or function definitions:
     (makunbound  'swe::tmp)
     (fmakunbound 'swe::tmp)
@@ -184,7 +195,7 @@
     (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
       (if (null *current-swe-spec*)
 	  (format s "spec~%  def swe.tmp = ~A~%endspec~%" x)
-	(format s "spec~%  import /~A~%  def swe.tmp = ~A~%endspec~%" 
+	(format s "spec~%  import ~A~%  def swe.tmp = ~A~%endspec~%" 
 		*current-swe-spec*
 		x)))
     ;; Process unit id:
