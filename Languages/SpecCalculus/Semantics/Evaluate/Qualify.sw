@@ -24,8 +24,9 @@ Change UnQualified to new_qualifier in all qualified names
 		compressed_spec <- complainIfAmbiguous (compressDefs qualified_spec) (positionOf term);
                 return (Spec compressed_spec,timeStamp,depUnitIds)
               }
+	  | Other other -> evaluateOtherQualify other (positionOf term)
           | _ -> raise (TypeCheck ((positionOf term),
-                            "qualifying a term that is not a specification"))
+				   "qualifying a term that is not a specification"))
     }
 
   op qualifySpec : Spec -> Qualifier -> Position -> SpecCalc.Env Spec

@@ -34,6 +34,11 @@ SpecCalc qualifying spec
     raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
+  def SpecCalc.evaluateOtherQualify _ (* value *) pos = {
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+  }
+
   def SpecCalc.ppOtherValue _ (* value *) = ppString "<some OtherValue>"
 
   def SpecCalc.ppOtherTerm  _ (* term *)  = ppString "<some OtherTerm>"
