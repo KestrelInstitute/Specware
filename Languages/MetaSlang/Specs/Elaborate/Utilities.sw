@@ -314,7 +314,12 @@ spec
                 let l1 = length tvs in
                 let l2 = length ts  in
                 ((if ~(l1 = l2) then
-                    error(env,"\n  Instantiation list does not match argument list",
+                    error(env,
+			  "\n  [A] Instantiation list (" ^ 
+			  (foldl (fn (arg, s) -> s ^ " " ^ (anyToString arg)) "" ts) ^
+			  " ) does not match argument list (" ^ 
+			  (foldl (fn (tv, s) -> s ^ " " ^ (anyToString tv)) "" tvs) ^
+			  " )",
                           pos)
                   else 
                     ());
@@ -396,7 +401,13 @@ spec
 
  def instantiateScheme (env, pos, types, type_vars, srt) = 
    if ~(length types = length type_vars) then
-     (error (env, "\n  Instantiation list does not match argument list", pos);
+     (error (env, 
+	     "\n  [B] Instantiation list (" ^ 
+	     (foldl (fn (arg, s) -> s ^ " " ^ (anyToString arg)) "" types) ^
+	     " ) does not match argument list (" ^ 
+	     (foldl (fn (tv, s) -> s ^ " " ^ (anyToString tv)) "" type_vars) ^
+	     " )",
+	     pos);
       srt)
    else
      let (new_type_vars, new_srt) = copySort (type_vars, srt) in
