@@ -144,7 +144,7 @@ accepted in lieu of prompting."
       ["Process Unit" sw:process-unit t]
       ["Generate Lisp" sw:generate-lisp t]
       ["Generate & Load Lisp" (sw:generate-lisp t) t]
-      ["Generate Local Lisp" sw:cl-current-file t]
+      ["Generate Local Lisp"  sw:gcl-current-file t]
       ["Evaluate Region (:swe)" sw:evaluate-region (mark)]
       ["Set :swe Spec" sw:set-swe-spec t]
       [":cd to this directory" cd-current-directory t] 
@@ -194,7 +194,7 @@ accepted in lieu of prompting."
   (define-key map "\C-cp"    'sw:process-current-file)
   (define-key map "\C-c\C-p" 'sw:process-unit)
   (define-key map "\C-c\g"   'sw:generate-lisp)
-  (define-key map "\C-c\C-l" 'sw:cl-current-file)
+  (define-key map "\C-c\C-l" ' sw:gcl-current-file)
   (define-key map "\C-c\C-e" 'sw:evaluate-region)
   (define-key map "\C-c\C-s" 'sw:set-swe-spec)
   (define-key map "\C-c\C-u" 'sw:cl-unit)
@@ -976,13 +976,14 @@ If anyone has a good algorithm for this..."
     (simulate-input-expression (concat ":sw " filename))))
 
 (defun sw::file-to-specware-unit-id (filename)
-  (when (eq (elt filename 1) ?:)
-    (setq filename (substring filename 2)))
   (let ((len (length filename)))
     (when (equal ".sw" (substring filename (- len 3)))
       (setq filename (substring filename 0 (- len 3))))
     (setq filename (sw::normalize-filename filename))
-    (name-relative-to-swpath filename)))
+    (setq filename (name-relative-to-swpath filename))
+    (when (eq (elt filename 1) ?:)
+      (setq filename (substring filename 2)))
+    filename))
 
 (defun sw::normalize-filename (filename)
   (setq filename (replace-in-string filename "\\\\" "/"))
@@ -1002,12 +1003,13 @@ If anyone has a good algorithm for this..."
 (defun name-relative-to-swpath (filename)
   (let ((swpath (get-swpath)))
     (loop for dir in swpath
-	  do (if (string-equal dir (substring filename 0 (min (length dir)
-							      (length filename))))
-		 (let ((rel-filename (substring filename (length dir))))
-		   (return (if (eq (elt rel-filename 0) ?/)
-			       rel-filename
-			     (concat "/" rel-filename)))))
+	  do (let ((dir (sw::normalize-filename dir)))
+	       (if (string-equal dir (substring filename 0 (min (length dir)
+								(length filename))))
+		   (let ((rel-filename (substring filename (length dir))))
+		     (return (if (eq (elt rel-filename 0) ?/)
+				 rel-filename
+			       (concat "/" rel-filename))))))
 	  finally (let ((oldpath (sw:eval-in-lisp "(specware::getenv \"SWPATH\")")))
 		    (simulate-input-expression
 		     (concat ":swpath " oldpath
@@ -1033,7 +1035,7 @@ If anyone has a good algorithm for this..."
     (when compile-and-load?
       (simulate-input-expression (concat ":cl " dir "lisp/" unitname)))))
 
-(defun sw:cl-current-file ()
+(defun sw:gcl-current-file ()
   (interactive)
   (save-buffer)
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
@@ -1043,8 +1045,13 @@ If anyone has a good algorithm for this..."
   (interactive "r")
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name))
 	(text (buffer-substring beg end)))
-    (simulate-input-expression (concat ":swe-spec " filename))
-    (sleep-for 0.1)
+    (when (buffer-modified-p)
+      (sw:gcl-current-file)
+      (sleep-for 1))			; Give :swll a chance to finish
+    (unless (string-equal filename
+			  (sw:eval-in-lisp "cl-user::*current-swe-spec*"))
+      (simulate-input-expression (concat ":swe-spec " filename))
+      (sleep-for 0.1))
     (simulate-input-expression (concat ":swe " text))))
 
 (defun sw:set-swe-spec ()
