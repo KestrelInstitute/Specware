@@ -510,7 +510,7 @@ is rewritten to
      let (ds,tvs,env,name,names) = gamma in
      let subst0 = HigherOrderMatching.emptySubstitution in
      let
-	 def loop(d:Decl,rules) = 
+	 def loop(d,rules) = 
 	     case d
 	       of Cond c -> 
 		  let c = HigherOrderMatching.dereferenceAll subst0 c in
