@@ -109,7 +109,8 @@ SpecCalc qualifying spec {
 		let spc = specOf initSpec in
 		let (names,fxty,(tyVars,srt),_) = Op.deref (spc, argRef) in
 		let (cspc,ctype) = sortToCType cspc spc srt in
-		(OpRef.show argRef, ctype))
+		let Qualified (_,id) = argRef in
+		(OpRef.show (mkUnQualifiedId id), ctype))
                 parameters
     in
     let (cspc,returnType) =
