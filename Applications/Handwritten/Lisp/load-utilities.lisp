@@ -152,7 +152,7 @@
   #+allegro(sys:copy-file source target)
   #-allegro
   (with-open-file (istream source :direction :input)
-    (with-open-file (ostream target :direction :output)
+    (with-open-file (ostream target :direction :output :if-does-not-exist :create)
       (loop
 	(let ((char (read-char istream nil :eof)))
 	  (cond
@@ -162,3 +162,41 @@
 	    )
 	   (t
 	    (princ char ostream))))))))
+
+(defun ensure-final-slash (dirname)
+  (if (member (elt dirname (- (length dirname) 1))
+	      '(#\/ #\\))
+      dirname
+    (concatenate 'string dirname "/")))
+
+(defun directory? (pathname)
+  (null (pathname-name pathname)))
+
+(defun extend-directory (dir ext-dir)
+  (make-pathname :directory
+		 (concatenate 'list
+			      (pathname-directory dir)
+			      (last (pathname-directory ext-dir)))))
+
+(defun make-directory (dir)
+  #+allegro (sys::make-directory dir)
+  #+cmu (unix:unix-mkdir (if (pathnamep dir)
+			     (namestring dir)
+			   dir)
+			 #o755))
+
+(defun copy-directory (source target)
+  #+allegro(sys::copy-directory source target)
+  #-allegro
+  (let ((source-dirpath (if (stringp source)
+			    (parse-namestring (ensure-final-slash source))
+			  source))
+	(target-dirpath (if (stringp target)
+			    (parse-namestring (ensure-final-slash target))
+			  target)))
+    (unless (probe-file target-dirpath)
+      (make-directory target-dirpath))
+    (loop for dir-item in (directory source-dirpath)
+      do (if (directory? dir-item)
+	     (copy-directory dir-item (extend-directory target-dirpath dir-item))
+	   (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))
