@@ -50,7 +50,7 @@
       "fa" "or"
       "colimit" "of" "by" "translate"
       "import" "true" "false" "while" "end-while"
-      "end-spec" "end-module" "is"
+      "end-spec" "endspec" "end-module" "is"
       "prog" "end-prog" "step" "end-step" "with" "end-with"
       "end-mode" "end-stad" "end-espec" "end-espec-refinement" "end-if"
       "initial" "final" "when" "guard" "do"
