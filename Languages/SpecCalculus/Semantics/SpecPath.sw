@@ -41,16 +41,16 @@ variable, then it will appear twice is the list of UnitId's we generate.
                          | Some d -> [d]
                          | None -> []
     in
-    let currDir = getCurrentDirectory () in
+    %% 8/9/04 sjw: Core decided that it did not make sense to have . implicitly in specPath
+    %let currDir = getCurrentDirectory () in
     let strings =
       case getEnv "SWPATH" of
         | Some str ->
           let paths = splitStringAtChar specPathSeparator str in
           paths
-            ++ [currDir]
             ++ (if specware4Dirs = [] or List.member(hd specware4Dirs,paths)
                  then [] else specware4Dirs)
-        | _ -> [currDir,"/"] ++ specware4Dirs
+        | _ -> ["/"] ++ specware4Dirs
     in
       mapM pathToCanonicalUID strings
 
