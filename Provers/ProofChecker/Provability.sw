@@ -876,12 +876,8 @@ spec
       && length tS = n
       && pj (wellTypedExpr (cx, LETDEF vS tS eS e, t))
       && length eS = n
-      && length conjuncts = n
-      && (fa(i:Nat) i < n =>
-            conjuncts!i =
-            (VAR (vS!i) == (eS!i)))
       && pj (theoreM (cx ++ multiVarDecls (vS, tS)
-                        <| axioM (an, empty, conjoinAll conjuncts),
+                        <| axioM (an, empty, TUPLE (map (VAR, vS)) == TUPLE eS),
                       e == e0))
       && toSet vS /\ exprFreeVars e0 = empty
       => pj (theoreM (cx, LETDEF vS tS eS e == e0)))
