@@ -83,6 +83,9 @@ spec
     fa(cx,t1,t2)
       tyEq cx t1 t2 => wfTy cx t1 && wfTy cx t2
 
+  conjecture wellTypedExprHasWellFormedType is  % OK
+    fa(cx,e,t) wtEx cx e t => wfTy cx t
+
   % more...
 
 endspec
