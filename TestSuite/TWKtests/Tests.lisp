@@ -32,9 +32,25 @@ Errors in $TESTDIR/t0103_1.sw
        :output ";;; Elaborating spec at $TESTDIR/Switch#aspec
 ;;; Elaborating obligator at $TESTDIR/Switch#aspecobs
 ;;; Elaborating proof-term at $TESTDIR/Switch#p1
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Top
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Char
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/List
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Nat
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Option
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/String
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/System
+;;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite
+;; ensure-directories-exist: creating $TESTDIR/Snark/Switch/p1.log
+;; Directory $TESTDIR/Snark/ does not exist, will create.
+;; Directory $TESTDIR/Snark/Switch/ does not exist, will create.
+;;; Elaborating spec at $SPECWARE/Library/Base/ProverBase
 p1: Conjecture doubleswitchidentity in aspec is Proved!
     Snark Log file: $TESTDIR/Snark/Switch/p1.log
-")
+"
+)
 
       ("twk_message 6/18/04"
        :sw "ThreeValue"
@@ -43,9 +59,14 @@ p1: Conjecture doubleswitchidentity in aspec is Proved!
 ;;; Elaborating spec-morphism at $TESTDIR/ThreeValue#ThreeM
 ;;; Elaborating obligator at $TESTDIR/ThreeValue#ThreeObs
 ;;; Elaborating proof-term at $TESTDIR/ThreeValue#ThreeP
+;; ensure-directories-exist: creating
+;;   $TESTDIR/Snark/ThreeValue/ThreeP.log
+;; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will
+;;   create.
 ThreeP: Theorem threedifferent in ThreeValuesDef is Proved!
     Snark Log file: $TESTDIR/Snark/ThreeValue/ThreeP.log
-")
+"
+)
 
       ("twk_message 8/2/04"
        :sw "MathFact"
@@ -53,24 +74,27 @@ ThreeP: Theorem threedifferent in ThreeValuesDef is Proved!
 ;;; Elaborating spec at $TESTDIR/MathFact#sum_spec
 ;;; Elaborating obligator at $TESTDIR/MathFact#sum_spec_obs
 ;;; Elaborating proof-term at $TESTDIR/MathFact#sum_spec_p1
-sum_spec_p1: Conjecture sum_zero in sum_spec_obs is Proved!
+;; ensure-directories-exist: creating
+;;   $TESTDIR/Snark/MathFact/sum_spec_p1.log
+;; Directory $TESTDIR/Snark/MathFact/ does not exist, will create.
+sum_spec_p1: Conjecture sum_zero in sum_spec_obs is NOT proved.
     Snark Log file: $TESTDIR/Snark/MathFact/sum_spec_p1.log
-")
+"
+)
       ("twk_message 8/13/04"
        :sw "Tuples"
        :output ";;; Elaborating spec at $TESTDIR/Tuples#X1
 ;;; Elaborating obligator at $TESTDIR/Tuples#O1
 ;;; Elaborating proof-term at $TESTDIR/Tuples#P1
-;; ensure-directories-exist: creating
-;;   $TESTDIR/Snark/Tuples/P1.log
-;; Directory $TESTDIR/Snark/Tuples/ does not exist,
-;;   will create.
+;; ensure-directories-exist: creating $TESTDIR/Snark/Tuples/P1.log
+;; Directory $TESTDIR/Snark/Tuples/ does not exist, will create.
 P1: Conjecture twoMakesMakeAMatch1 in O1 is Proved!
     Snark Log file: $TESTDIR/Snark/Tuples/P1.log
 ;;; Elaborating proof-term at $TESTDIR/Tuples#P2
 P2: Conjecture twoMakesMakeAMatch2 in O1 is Proved!
     Snark Log file: $TESTDIR/Snark/Tuples/P2.log
-")
+"
+)
 
 
 

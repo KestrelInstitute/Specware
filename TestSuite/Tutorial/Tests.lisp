@@ -24,23 +24,61 @@
                        :output ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p1
 ;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#SymbolMatching_Oblig
 ;;; Elaborating spec at $SPECWARE/Library/Base/WFO
-;;; Elaborating spec at $SPECWARE/Library/Base/ProverBase
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Top
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Char
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/List
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Nat
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Option
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/String
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/System
 ;;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite
+;;; Elaborating spec at $SPECWARE/Library/Base/ProverBase
 p1: Conjecture symb_matches?_Obligation in MatchingObligations#SymbolMatching_Oblig is Proved!
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p1.log
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1.log
+;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p2
+;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#WordMatching_Oblig
+p2: Conjecture word_matches_at?_Obligation in MatchingObligations#WordMatching_Oblig is Proved!
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2.log
 ;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p3
-;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#FindMatches0_Oblig
-p3: Conjecture find_matches_aux_Obligation in MatchingObligations#FindMatches0_Oblig is NOT proved.
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p3.log
-;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p4
-p4: Conjecture word_matching_Obligation in MatchingObligations#FindMatches0_Oblig is Proved!
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p4.log
+p3: Conjecture word_matches_at?_Obligation0 in MatchingObligations#WordMatching_Oblig is Proved!
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3.log
 ;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5
-p5: Conjecture word_matching_Obligation0 in MatchingObligations#FindMatches0_Oblig is NOT proved.
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p5.log
+;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#WordMatching0_Oblig
+p5: Conjecture word_matches_at?_Obligation in MatchingObligations#WordMatching0_Oblig is Proved!
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5.log
 ;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p6
-p6: Conjecture word_matching_Obligation1 in MatchingObligations#FindMatches0_Oblig is NOT proved.
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p6.log
+p6: Conjecture word_matches_at?_Obligation0 in MatchingObligations#WordMatching0_Oblig is Proved!
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p6.log
+;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p7
+p7: Conjecture word_matches_at?_Obligation1 in MatchingObligations#WordMatching0_Oblig is NOT proved.
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p7.log
+;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p8
+p8: Conjecture word_matches_aux?_Obligation in MatchingObligations#WordMatching0_Oblig is NOT proved.
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p8.log
+;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p9
+p9: Conjecture word_matches_aux?_Obligation0 in MatchingObligations#WordMatching0_Oblig is NOT proved.
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p9.log
+;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p10
+p10: Conjecture word_matches_aux?_Obligation1 in MatchingObligations#WordMatching0_Oblig is Proved!
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p10.log
+;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p12
+;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#FindMatches0_Oblig
+p12: Conjecture find_matches_Obligation in MatchingObligations#FindMatches0_Oblig is Proved!
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p12.log
+;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p13
+p13: Conjecture find_matches_aux_Obligation in MatchingObligations#FindMatches0_Oblig is Proved!
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p13.log
+;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p14
+p14: Conjecture find_matches_aux_Obligation0 in MatchingObligations#FindMatches0_Oblig is NOT proved.
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p14.log
+;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p15
+;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#FindMatches_Ref0_Oblig
+;;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref0
+p15: Conjecture match_finding in MatchingObligations#FindMatches_Ref0_Oblig is NOT proved.
+    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p15.log
 ")
       ("swl find-matches" :swl "/UserDoc/tutorial/example/MatchingRefinements#FindMatches $TESTDIR/find-matches"
                        :output ";;; Generating lisp file $TESTDIR/find-matches.lisp
