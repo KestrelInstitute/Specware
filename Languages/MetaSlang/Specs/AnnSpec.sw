@@ -141,11 +141,14 @@ AnnSpec qualifying spec {
                           properties
    }
 
+
+ op mapTermOpt    : fa(b) TSP_Maps b -> Option (ATerm b) -> Option (ATerm b)
  def mapTermOpt tsp_maps opt_term = 
   case opt_term
     of None      -> None
      | Some term -> Some (mapTerm tsp_maps term)
 
+ op mapSortOpt    : fa(b) TSP_Maps b -> Option (ASort b) -> Option (ASort b)
  def mapSortOpt tsp_maps opt_sort =
   case opt_sort
     of None     -> None

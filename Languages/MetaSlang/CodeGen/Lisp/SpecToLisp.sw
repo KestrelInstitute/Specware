@@ -161,7 +161,7 @@ def patternNames (pattern:Pattern) =
            if pkg = defPkgNm
              then specId id % !!!
              else
-               (pkg ^ ":" ^ ":" ^ specId id)
+               (pkg ^ "::" ^ specId id)
       
   def opArity(sp,idf,srt) =
     case sortArity(sp,srt)

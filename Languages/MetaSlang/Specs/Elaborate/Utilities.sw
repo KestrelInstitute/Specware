@@ -506,7 +506,7 @@ spec {
                  if equalSort?(t,s1)
                      then Unify pairs
                  else
-                     if occursRec(mtv,t) 
+                     if occurs(mtv,t) 
                          then NotUnify (srt1,srt2)
                      else (linkMetaTyVar mtv (withAnnS(s2,pos2)); Unify pairs)
               | (t, MetaTyVar (mtv, _)) -> 
@@ -515,7 +515,7 @@ spec {
                 if equalSort? (t, s2) then
                   Unify pairs
                 else
-                  if occursRec (mtv, t) then
+                  if occurs (mtv, t) then
                     NotUnify (srt1,srt2)
                   else
                     (linkMetaTyVar mtv (withAnnS(s1,pos1)); Unify pairs)
@@ -564,10 +564,21 @@ spec {
    let _ = mapSort(fn x -> x,vr,fn x -> x) srt in
    ! vars
 
- def occursRec(v,srt:PSort) =
+ def occurs(v: PMetaTyVar,srt: PSort): Boolean = 
+   let
+      def occursOptRow(v,row) =
+       case row of
+	 | [] -> false
+	 | (_,Some t)::rRow -> occurs(v,t) or occursOptRow(v,rRow)
+	 | (_,None)::rRow -> occursOptRow(v,rRow)
+     def occursRow(v,row) =
+       case row of
+	 | [] -> false
+	 | (_,t)::rRow -> occurs(v,t) or occursRow(v,rRow)
+   in
    case srt
-     of CoProduct(row,_)   -> exists (fn (_,Some t) -> occurs(v,t) | _ -> false) row
-      | Product(row,_)     -> exists (fn (_,t) -> occurs(v,t)) row
+     of CoProduct(row,_)   -> occursOptRow(v,row)
+      | Product(row,_)     -> occursRow(v,row)
       | Arrow(t1,t2,_)     -> occurs(v,t1) or occurs(v,t2)
       | Quotient(t,pred,_) -> occurs(v,t)  or occursT(v,pred)
       | Subsort(t,pred,_)  -> occurs(v,t)  or occursT(v,pred)
@@ -575,10 +586,7 @@ spec {
       | TyVar _            -> false 
       | MetaTyVar _        -> (case unlinkPSort srt of
                                | MetaTyVar(w1,_) -> v = w1 
-                               | t -> occursRec(v,t))
-
- def occurs(v: PMetaTyVar,srt: PSort): Boolean = 
-   occursRec(v,srt)
+                               | t -> occurs(v,t))
 
  def occursT(v,pred) =
    case pred

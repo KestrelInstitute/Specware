@@ -526,7 +526,8 @@ MetaSlang qualifying spec {
 	   else Let (newDecls, newBdy, a)
 
        | LetRec     (decls, bdy, a) -> 
-	 let newDecls = map (fn ((id, srt), trm) -> ((id, mapSort tsp_maps srt), mapRec trm))
+	 let newDecls = map (fn ((id, srt), trm) -> ((id, mapSort tsp_maps srt),
+						     mapRec trm))
 	                  decls in
 	 let newBdy = mapRec bdy in
 	 if decls = newDecls & bdy = newBdy then term
@@ -584,36 +585,37 @@ MetaSlang qualifying spec {
   in
     mapRec term
 
- def mapSort (tsp_maps as (_,sort_map,_)) srt = 
+ def mapSort (tsp_maps as (_,sort_map,_)) srt =
   let
-   def mapS (tsp_maps,srt) = 
+   %% Written with explicit parameter passing to avoid closure creation
+   def mapS (tsp_maps,sort_map,srt) = 
     case srt of
        | CoProduct (row,       a) ->
-         let newRow = map (fn (id,opt) -> (id, mapRecOpt opt)) row in
+         let newRow = mapSRowOpt (tsp_maps,sort_map,row) in
 	 if newRow = row then srt
 	   else CoProduct (newRow, a)
        | Product   (row,       a) -> 
-         let newRow = map (fn (id,s) -> (id, mapRec s)) row in
+         let newRow = mapSRow (tsp_maps,sort_map,row) in
 	 if newRow = row then srt
 	   else Product (newRow, a)
        | Arrow     (s1,  s2,   a) ->
-	 let newS1 = mapRec s1 in
-	 let newS2 = mapRec s2 in
+	 let newS1 = mapRec (tsp_maps,sort_map,s1) in
+	 let newS2 = mapRec (tsp_maps,sort_map,s2) in
 	 if newS1 = s1 & newS2 = s2 then srt
 	   else Arrow (newS1,  newS2, a)
        | Quotient  (ssrt, trm,  a) ->
-	 let newSsrt = mapRec ssrt in
+	 let newSsrt = mapRec (tsp_maps,sort_map,ssrt) in
 	 let newTrm =  mapTerm tsp_maps trm in
 	 if newSsrt = ssrt & newTrm = trm then srt
 	   else Quotient (newSsrt, newTrm,  a)
        | Subsort   (ssrt, trm,  a) ->
-	 let newSsrt = mapRec ssrt in
+	 let newSsrt = mapRec (tsp_maps,sort_map,ssrt) in
 	 let newTrm =  mapTerm tsp_maps trm in
 	 if newSsrt = ssrt & newTrm = trm then srt
 	   else Subsort (newSsrt, newTrm,  a)
      % | Subset    (ssrt, trm,  a) -> Subset    (mapRec ssrt, mapTerm tsp_maps trm, a)
        | Base      (qid, srts, a) ->
-	 let newSrts = map mapRec srts in
+	 let newSrts = mapSLst(tsp_maps,sort_map,srts) in
 	 if newSrts = srts then srt
 	   else Base (qid, newSrts, a)
        | MetaTyVar(tv,pos) -> 
@@ -621,21 +623,39 @@ MetaSlang qualifying spec {
 	   (case link
 	      of None -> srt
 	       | Some ssrt ->
-	         let newssrt = mapRec ssrt in
+	         let newssrt = mapRec (tsp_maps,sort_map,ssrt) in
 		 if newssrt = ssrt then srt
 		  else MetaTyVar(Ref {name = name,uniqueId = uniqueId,
 				      link = Some newssrt},pos))
        | _ -> srt
 
-   def mapRecOpt opt_sort = 
-    case opt_sort of
-      | None     -> None
-      | Some srt -> Some (mapRec srt)
-   def mapRec srt = 
+   def mapSLst (tsp_maps,sort_map,srts) =
+     case srts of
+       | [] -> []
+       | ssrt::rsrts -> cons(mapRec(tsp_maps,sort_map,ssrt),
+			     mapSLst(tsp_maps,sort_map,rsrts))
+
+   def mapSRowOpt (tsp_maps,sort_map,row) =
+     case row of
+       | [] -> []
+       | (id,optsrt)::rrow -> cons((id,mapRecOpt(tsp_maps,sort_map,optsrt)),
+				   mapSRowOpt(tsp_maps,sort_map,rrow))
+
+   def mapSRow (tsp_maps,sort_map,row) =
+     case row of
+       | [] -> []
+       | (id,ssrt)::rrow -> cons((id,mapRec(tsp_maps,sort_map,ssrt)),
+				 mapSRow(tsp_maps,sort_map,rrow))
+
+   def mapRecOpt (tsp_maps,sort_map,opt_sort) = 
+     case opt_sort of
+       | None     -> None
+       | Some ssrt -> Some (mapRec (tsp_maps,sort_map,ssrt))
+   def mapRec (tsp_maps,sort_map,srt) = 
      %% apply map to leaves, then apply map to result
-     sort_map (mapS (tsp_maps,srt))
+     sort_map (mapS (tsp_maps,sort_map,srt))
   in
-    mapRec srt
+    mapRec (tsp_maps,sort_map,srt)
 
  def mapPattern (tsp_maps as (_,_,pattern_map)) pattern = 
   let
