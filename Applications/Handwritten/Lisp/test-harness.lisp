@@ -49,6 +49,7 @@ be the option to run each (test ...) form in a fresh image.
 
 (defvar *use-separate-process?* nil)
 (defvar *verbose?* t)
+(defvar *quiet-about-dirs?* nil)
 (defvar *write-log-file* nil)
 (defvar *test-harness-stream* t)
 (defvar *test-directory*)
@@ -81,19 +82,25 @@ be the option to run each (test ...) form in a fresh image.
       (make-pathname :directory dir
 		     :device dev))))
 
+(defun sorted-directory (dirpath)
+  (sort (directory dirpath) 
+	#'(lambda (a b) 
+	    (string<= (namestring a) (namestring b)))))
+
 (defun run-test-directories-rec-fn (dirs)
   ;; First run the tests for the directories themselves
   (run-test-directories-fn dirs)
   ;; Then recursively test the sub-directories
   (loop for dir in dirs
-     do (let* ((dirpath (if (stringp dir)
-			    (make-pathname :directory dir :name :wild)
-			  dir)))
-	  (loop for dir-item in (directory dirpath)
-		unless (equal (pathname-name dir-item) "CVS")
-		do (setq dir-item (normalize-directory dir-item))
-		   (when (specware::directory? dir-item)
-		     (run-test-directories-rec-fn (list dir-item)))))))
+      do (let* ((dirpath (if (stringp dir)
+			     (make-pathname :directory dir :name :wild)
+			   dir)))
+	   ;; sort the directory items to make runs more predictable
+	   (loop for dir-item in (sorted-directory dirpath)
+	       unless (equal (pathname-name dir-item) "CVS")
+	       do (setq dir-item (normalize-directory dir-item))
+		  (when (specware::directory? dir-item)
+		    (run-test-directories-rec-fn (list dir-item)))))))
 
 (defun run-test-directories-fn (dirs)
   (loop for dir in dirs
@@ -132,7 +139,8 @@ be the option to run each (test ...) form in a fresh image.
 	 (*test-temporary-directory* (get-temporary-directory))
 	 (*test-temporary-directory-name* (replace-string (directory-namestring *test-temporary-directory*) "\\" "/"))
 	 (old-directory (specware::current-directory)))
-    (format t "~%;;;; Running test suite in directory ~a~%" *test-directory*)
+    (unless *quiet-about-dirs?* 
+      (format t "~%;;;; Running test suite in directory ~a~%" *test-directory*))
     (ensure-directories-exist *test-temporary-directory*)
     (specware::change-directory *test-temporary-directory*)
     (unwind-protect (with-open-file (str path :direction :input)
@@ -151,7 +159,10 @@ be the option to run each (test ...) form in a fresh image.
 	       (source (merge-pathnames filepath *test-directory*))
 	       (target (merge-pathnames filepath *test-temporary-directory*)))
 	  (ensure-directories-exist target)
-	  (specware::copy-file source target))))
+	  (if *quiet-about-dirs?* 
+	      (with-output-to-string (*standard-output*)
+		(specware::copy-file source target))
+	    (specware::copy-file source target)))))
 
 (defmacro test-directories (&body dirs)
   `(test-directories-fn '(,@dirs)))
@@ -162,7 +173,10 @@ be the option to run each (test ...) form in a fresh image.
 	       (source (merge-pathnames dirpath *test-directory*))
 	       (target (merge-pathnames dirpath *test-temporary-directory*)))
 	  ;(ensure-directories-exist target)
-	  (specware::copy-directory source target nil))))
+	  (if *quiet-about-dirs?* 
+	      (with-output-to-string (*standard-output*)
+		(specware::copy-directory source target nil))
+	    (specware::copy-directory source target nil)))))
 
 (defmacro test (&body test-forms)
   `(progn ,@(loop for fm in test-forms collect `(test-1 ,@fm))))
@@ -245,7 +259,7 @@ be the option to run each (test ...) form in a fresh image.
       (if (null error-messages)
 	  (when *verbose?*
 	    (format *test-harness-stream* ";;; Test succeeded. ~a~%" name))
-	(progn (format *test-harness-stream* "~%;;; ================================================================================~%")
+	(progn (format *test-harness-stream* "~&;;; ================================================================================~%")
 	       (format *test-harness-stream* ";;; Test failed! ~a~%" name)
 	       (loop for msg in error-messages
 		     do (format *test-harness-stream* "~&;;; ~a~%" msg))
