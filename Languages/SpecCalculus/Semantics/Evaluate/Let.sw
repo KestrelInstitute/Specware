@@ -36,7 +36,8 @@ The list must be sorted in dependence order. Recursion is not allowed.
         bindInLocalContext (URI_Relative {path=[name], hashSuffix=None}) valueInfo;
         return ()
       } in
-      foldM (fn () -> fn decl -> evaluateLocalDecl decl)
-        () decls
+      foldM (fn _ -> fn decl -> evaluateLocalDecl decl)
+            () 
+            decls
 }
 \end{spec}
