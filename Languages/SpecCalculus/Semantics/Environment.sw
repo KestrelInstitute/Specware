@@ -368,7 +368,6 @@ conditions during the bootstrap. (sigh)
     fn state ->
       let _ = System.hackMemory() in
       (Ok (), state)
-
 \end{spec}
 
 The following is used when one wants to guard a command with a predicate.

@@ -126,7 +126,7 @@ spec {
           | None -> cSpec
           | Some srt -> makeCType cSpec (showQualifiedId (Qualified (qual,id))) srt
     in
-      foldriAQualifierMap doSort cSpec spc.sorts
+      addTypeDefn (foldriAQualifierMap doSort cSpec spc.sorts) "bool" Int
 
   op removePrime : QualifiedId -> QualifiedId
   def removePrime (qid as Qualified (qual,id)) =
@@ -154,6 +154,7 @@ the base types in C. For instance \verb+typedef int Integer+.
       Base id
     else
       case (qual,id) of
+        | ("Boolean","Boolean") -> Base "bool"
         | ("Integer","Integer") -> Int
         | ("Nat","Nat") -> UnsignedInt
         | ("String","String") -> Ptr Char
