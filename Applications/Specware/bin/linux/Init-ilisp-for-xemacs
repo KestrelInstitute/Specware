@@ -63,7 +63,8 @@ else
     # See the note in compile-misc-ilisp-files.el
     export LISP_DIRECTORY=`pwd`
     export LISP_EXECUTABLE=$CMULISP
-    xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
+    xemacs -batch \
+           -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
            -l "$SPECWARE4"/Library/IO/Emacs/compile-misc-ilisp-files \
            -geometry =100x20-0+80
     echo "With luck, xemacs is now done compiling."
