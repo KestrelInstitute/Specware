@@ -61,6 +61,7 @@ public class LispProcessManager {
     static private OutputStream fromLispStream = null;
  
     static private lispProcessManagerClass = Class.forname("LispProcessManager");
+    static private stringClass = Class.forname("String");
    
     /** Creates a new instance of LispProcessManager */
     public LispProcessManager() {
@@ -114,14 +115,30 @@ public class LispProcessManager {
             return false;
         }
     }
-   lispSocket = socket(lispHost,lispPort);
+    /*   lispSocket = socket(lispHost,lispPort);
    toLispStream = new BufferedReader(new InputStreamReader(lispSocket.getInputStream()));
    fromLispStream = lispSocket.getOutputStream();
    lispSocket.close();
    if (toLispStream.ready()){};
+    */
    
-   m = lispProcessManagerClass.getMethod(methodName,new Class[] {param.getClass()};
-   try {m.invoke(param)}
+    public static void lispCallBack() {
+	String methodName = fromLispStream.readLine();
+	// Assumes next line is an integer: add catch for NumberFormatException
+	int numParams = decode(fromLispStream.readLine());
+	String[] params = new String[numParams];
+	Class[] paramClasses = new Class[numParams]
+	for(int i = 0; i < numParams; i++) {
+	    params[i] = fromLispStream.readLine();
+	    paramClasses[i] = stringClass;
+	};
+	Method m = lispProcessManagerClass.getMethod(methodName,paramClasses);
+	try {m.invoke(params)}
+	  catch (Exception _e) {
+	      
+	  }
+    }
+				     
 
     public static void destroyLispProcess() {
         if (lispProcess != null) {
@@ -132,6 +149,7 @@ public class LispProcessManager {
         }
     }
     
+
     public static void processUnit(String pathName, String fileName) {
         if (connectToLisp()) {
             TranStruct [] ARGS = new TranStruct[2];
@@ -164,8 +182,15 @@ public class LispProcessManager {
         if (fileObj != null)
             fileObj.refresh();
     }
-    
-    public static void setProcessUnitResults(String pathName, String fileName, int lineNum, int colNum, String errorMsg) {
+
+    // Entry point from lisp interface that takes only strings
+    public static void setProcessUnitResults(String pathName, String fileName,
+					     String lineNum, String colNum, String errorMsg) {
+	// decode can throw NumberFormatException
+	setProcessUnitResults(pathName,fileName,decode(lineNum),decode(colNum),errorMsg)
+
+    public static void setProcessUnitResults(String pathName, String fileName,
+					     int lineNum, int colNum, String errorMsg) {
         FileObject fileObj = Repository.getDefault().find(pathName, fileName, "sw");
         if (fileObj != null) {
             // SLIGHT HACK: ParseSourceRequest is the same class used for the netbeans parsing stuff...
