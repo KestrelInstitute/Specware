@@ -40,6 +40,7 @@ class ImportB extends Member implements Binding.Import {
         ImportElement my = (ImportElement)getElement();
         try {
             target.setName(my.getName());
+            target.setUnitImported(my.getUnitImported());
         } catch (SourceException ex) {
             // should NOT happen
         }
@@ -55,6 +56,14 @@ class ImportB extends Member implements Binding.Import {
 	super.changeName(name);
     }
        
+    public void changeUnitImported(MemberElement newUnit) throws SourceException {
+        if (!source.isGeneratorEnabled())
+            return;
+        
+	ImportElement element = (ImportElement) cloneElement();
+	element.setUnitImported(newUnit);
+    }    
+    
     /**
      * Updates the storage binding object from an external SourceText.
      */
