@@ -11,7 +11,7 @@ clear how they should be qualified if at all.
 spec {
   import /Languages/MetaSlang/Specs/StandardSpec
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
-  import Cats qualifying /Library/Structures/Data/Categories/Polymorphic
+  import Cats qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic
 
   sort Morphism
   op dom : Morphism -> Spec
