@@ -63,9 +63,13 @@ possible path names. Later we may want to have URIs with network addresses.
       hashSuffix : Option String
    }
 
+  sort UnitId = URI
+
   sort RelativeURI =
     | URI_Relative URI
     | SpecPath_Relative URI
+
+  sort RelativeUnitId = RelativeURI
 \end{spec}
 
 The sort \verb+Name+ is used everywhere that one can expect a

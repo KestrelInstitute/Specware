@@ -258,7 +258,6 @@ def liftCaseCase(oper, term, k) =
   let newTerm = mkApplication(mkOp(newOp, newOpSrt), cons(newCaseTerm, map mkVar freeVars)) in
   (newTerm, finalK, newOds1++newOds2++[newOpDef])
   
-
 op liftCases: Op * List Term * Nat -> List Term * Nat * List OpDef
 
 def liftCases(oper, terms, k) =
@@ -321,32 +320,7 @@ def addOdToSpec((oper:Op, dom:(List Type), rng:Type, formals:List Var, body:Term
   let varPatterns = map mkVarPat formals in
   let term = mkLambda(mkTuplePat(varPatterns), body) in
   let (f, t) = srtTermDelta(srt, term) in
-  case run_monad(optAddOp(oper, srt, term, spc)) of
-    | Some newSpec -> newSpec
-    | _ -> fail("internal monad error")
+  run (addOp (oper, srt, term, spc))
    
- def localHandler except = {Specware.toplevelHandler except; return None}
-
- def run_monad (monad : Env (Option Spec)) : Option Spec =
-   %% This is a bit of a hack to let us run monadic code in a
-   %% non-monadic environment.  We don't need the monadic features
-   %% since we have no I/O and produce no exceptions (we hope!),
-   %% but it would be painful to produce and maintain non-monadic
-   %% versions of the monadic functions translateSpec and specUnion.
-   %%
-   %% HACK: The calls to restoreSavedSpecwareState below revive the 
-   %%       global monad state saved by SpecCalc.evaluateColimit in 
-   %%       /Languages/SpecCalculus/Semantics/Evaluate/Colimit.sw
-   %%       
-   case catch monad localHandler ignoredState  of
-     | (Ok spc, _)     -> spc
-     | (Exception _,_) -> fail "Specware toplevel handler failed within colimit!"
-     
- def optAddOp(oper, srt, term, spc) : Env (Option Spec) =
-   {%% start by replacing the ignoredState with global context saved by
-    %% SpecCalc.evaluateColimit in /Languages/SpecCalculus/Semantics/Evaluate/Colimit.sw
-    restoreSavedSpecwareState; 
-    spc <- addOp [oper] Nonfix ([], srt) [([], term)] spc noPos;
-    return (Some spc)}
-
+def addOp (oper, srt, term, spc) : Env Spec = addOp [oper] Nonfix ([], srt) [([], term)] spc noPos
 endspec

@@ -190,10 +190,12 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ppATerm pred,
                 ppString " then",
                 ppBreak,
+                ppString "  ",
                 ppIndent (ppATerm term1),
                 ppBreak,
                 ppString "else",
                 ppBreak,
+                ppString "  ",
                 ppIndent (ppATerm term2)
               ]
           | Seq (terms,_) ->
@@ -436,19 +438,19 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ]))
       | CoProduct (taggedSorts,_) -> 
           let def ppTaggedSort (id,optSrt) =
-            ppConcat [
-              ppString "(",
-              ppString id,
-              ppString " ",
-              case optSrt of
-                | None -> ppNil
-                | Some srt -> ppASort srt,
-              ppString ")"           
-            ]
+            case optSrt of
+              | None -> ppString id
+              | Some srt ->
+                  ppConcat [
+                    ppString (id ^ " "),
+                    ppASort srt
+                  ]
           in ppGrConcat [
             ppString "(",
-            ppBreak,
-            ppSep (ppAppend ppBreak (ppString "|")) (map ppTaggedSort taggedSorts),
+            ppGrConcat [
+              ppString "|  ",
+              ppSep (ppAppend ppBreak (ppString "| ")) (map ppTaggedSort taggedSorts)
+            ],
             ppString ")"
           ]
       | Quotient (srt,term,_) ->

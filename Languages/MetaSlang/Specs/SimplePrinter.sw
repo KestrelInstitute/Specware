@@ -153,17 +153,17 @@ SpecCalc qualifying spec {
     in
     let ppDefs =
       case defs of
-	| []       -> ppNil
-	| [op_def] -> doOpDef op_def
-	| _        -> ppConcat [ppNewline, 
-				ppString " (* Warning: Multiple Definitions for following op *) ",
-				ppNewline, 
-				ppSep ppNewline (map doOpDef defs)]
+        | []       -> ppNil
+        | [op_def] -> ppCons ppNewline (doOpDef op_def)
+        | _        -> ppConcat [ppNewline, 
+                                ppString " (* Warning: Multiple Definitions for following op *) ",
+                                ppNewline, 
+                                ppSep ppNewline (map doOpDef defs)]
     in
     ppConcat [ppNames,
-	      ppString " : ",
-	      ppSrtScheme,
-	      ppDefs]
+              ppString " : ",
+              ppSrtScheme,
+              ppDefs]
 
   op ppAProperty : fa (a) AProperty a -> Pretty
   def ppAProperty (propType,name,tyVars,term) =

@@ -1,5 +1,3 @@
-% derived from SW4/Languages/MetaSlang/ADT/Terms/ATerm.sl, v1.2
-
 MetaSlang qualifying spec { 
  import /Library/Base
  import /Library/Legacy/Utilities/State  % for MetaTyVar's
@@ -98,7 +96,6 @@ MetaSlang qualifying spec {
 
  sort AVar b = Id * ASort b
 
- %% AMatch b = List (APattern b * Condition * ATerm b)
  sort AMatch b = List (APattern b * ATerm b * ATerm b) 
 
  sort ASort b =  

@@ -8,8 +8,10 @@ Utilities qualifying spec {
 
  sort Vars = List Var
 
+(* ### unused ?
  op specEqual? : Spec * Spec -> Boolean
  op subspec?   : Spec * Spec -> Boolean
+*)
 
  op substitute    : MS.Term * List (Var * MS.Term) -> MS.Term
  op freeVars      : MS.Term -> Vars
@@ -468,7 +470,7 @@ Utilities qualifying spec {
 
 
   %% Spec equality
-
+(* ### unused?
  def specEqual? (s1, s2) =
    %% don't test importInfo as it just gives info about how the spec was constructed
    %(s1.imports                = s2.imports)                &
@@ -482,6 +484,7 @@ Utilities qualifying spec {
    ListUtilities.subset? (s1.properties, s2.properties) &
    subsetAQualifierMap?  (s1.sorts,      s2.sorts)      &
    subsetAQualifierMap?  (s1.ops,        s2.ops)
+*)
 
 
  %% Remove op definitions, axioms, and theorems from a spec.
