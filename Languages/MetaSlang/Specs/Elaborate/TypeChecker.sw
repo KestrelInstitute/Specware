@@ -319,6 +319,22 @@ TypeChecker qualifying spec
 	else 
 	  Arrow (nt1, nt2, pos)
 
+      | And (srts, pos) ->
+	let (new_srts, changed?) =  
+            foldl (fn (srt, (new_srts, changed?)) ->
+		   let new_srt = checkSort (env, srt) in
+		   (new_srts ++ [new_srt],
+		    changed? || (new_srt ~= srt)))
+	          ([], false)
+		  srts
+	in
+	if changed? then
+	  maybeAndSort (new_srts, pos)
+	else
+	  srt
+
+      | Any _ -> srt
+
       | _ -> 
         let _ = toScreen ("\ncheckSort, Unrecognized sort: " ^ (anyToString srt) ^ "\n") in
 	srt
@@ -447,9 +463,8 @@ TypeChecker qualifying spec
 				 ^":"^newline
 				 ^(printSort srt), 
 				 termAnn dfn))
-	 | Any _ -> 
-	   let _ = toScreen ("\ncollectUsedTyVars: Unexpected Any: " ^ (anyToString srt) ^ "\n") in
-	   ()
+	 | And (srts, _) -> app scan srts
+	 | Any _ -> ()
 
    in                        
      let _ = scan srt in
@@ -711,6 +726,9 @@ TypeChecker qualifying spec
                         
 	       | Subsort (srt, term, _) -> 
 		 unfoldConstraint (srt)        
+
+	       | And (srt :: _, _) -> % TODO: be smarter about choosing among alternatives
+		 unfoldConstraint srt        
 
 	       | sv -> 
 		 (pass2Error (env, 
@@ -1004,8 +1022,8 @@ TypeChecker qualifying spec
 	      None
 	    else  
 	      (error (env,
-		      "Several matches for overloaded op " ^ id ^ 
-		      " of type " ^ printSort srt ^ 
+		      "Several matches for overloaded op " ^ id ^ " of " ^
+		      (printMaybeAndType srt) ^
 		      (foldl (fn (tm, str) -> str ^
 			      (case tm of
 				 | Fun (OneName  (     id2, _), _, _) -> " "^id2
@@ -1018,7 +1036,7 @@ TypeChecker qualifying spec
 	    let srtPos = sortAnn srt in
 	    (case filter (consistentSortOp? (env, withAnnS (rsort, srtPos),true)) terms of
 	       | [] -> (error (env,
-			       "No matches for op "^id^" of type "^ printSort srt,
+			       "No matches for op " ^ id ^ " of " ^ (printMaybeAndType srt),
 			       pos);
 			None)
 	       | [term] -> Some term
@@ -1051,8 +1069,8 @@ TypeChecker qualifying spec
 			  | Some term -> Some term
 			  | None ->
 			    (error (env,
-				    "Several matches for overloaded op " ^ id ^
-				    " of type " ^ printSort srt ^
+				    "Several matches for overloaded op " ^ id ^ " of " ^
+				    (printMaybeAndType srt) ^
 				    (foldl (fn (tm, str) -> str ^
 					    (case tm of
 					       | Fun (OneName  (     id2, _), _, _) -> " "^id2
@@ -1061,6 +1079,15 @@ TypeChecker qualifying spec
 					   tms),
 				    pos);
 			     None)))
+
+  def printMaybeAndType srt =
+    case srt of
+      | And (srt :: srts, _) ->
+        foldl (fn (srt, s) -> s ^ " and type " ^ (printSort srt) ^ "\n")
+	("type " ^ (printSort srt) ^ "\n")
+	srts
+      | _ ->
+	"type " ^ (printSort srt) 
 
   def consistentSortOp? (env, srt1, ignoreSubsorts?) (Fun (_, srt2, _)) =
    %% calls unifySorts, but then resets metatyvar links to None...
@@ -1083,8 +1110,8 @@ TypeChecker qualifying spec
 	let fillerA    = blankString (10 - tsLength) in  % ### why the qualifier? why the coercion?
 	let fillerB    = blankString (tsLength - 10) in
 	let msg        = newLines ["Could not match type constraint", 
-				   fillerA ^ termString ^ " of type " ^ printSort givenSort, 
-				   fillerB ^ "with expected type " ^ printSort expectedSort]
+				   fillerA ^ termString ^ " of " ^ (printMaybeAndType givenSort), 
+				   fillerB ^ "with expected " ^ (printMaybeAndType expectedSort)]
 	in
 	  error (env, msg, pos));
      givenSort)
@@ -1121,9 +1148,12 @@ TypeChecker qualifying spec
 	let msg = newLines ["Could not match type " ^ printSort s1, 
 			    "                with " ^ printSort s2]
 	in
+	  let _ = mybreak () in
 	  error (env, msg, chooseNonZeroPos (sortAnn s1, sortAnn s2)));
      s1Checked)
 
+  def mybreak () = ()
+    
   % ========================================================================
   %% Called inside elaborateTerm 
 
