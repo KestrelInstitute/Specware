@@ -26,6 +26,8 @@ levels ensures that for all objects in the abstract syntax tree, the
 position information is always the second component.
 
 \begin{spec}
+  sort SCTerm = SpecCalc.Term Position
+
   op valueOf    : fa (a) a * Position -> a
   op positionOf : fa (a) a * Position -> Position
 

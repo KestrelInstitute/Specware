@@ -5,8 +5,6 @@ SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
   import ../Environment
 
-  sort SCTerm = SpecCalc.Term Position
-
   %% Generic mechanism:
 
   op evaluateTerm        : SCTerm                                                                   -> SpecCalc.Env Value
