@@ -1,9 +1,11 @@
 \section{Spec Calculus Abstract Syntax}
 
+Synchronized with r1.13 /Languages/SpecCalculus/AbstractSyntax/Types.sl
+
 \begin{spec}
 SpecCalc qualifying spec {
-  import ../../MetaSlang/Specs/PosSpec  % For Position
-  import ../../MetaSlang/AbstractSyntax/AnnTerm
+  import ../../MetaSlang/Specs/PosSpec % For Position
+  import ../../MetaSlang/AbstractSyntax/AnnTerm % For PSL, but not Specware4
 \end{spec}
 
 All the objects in the abstract syntax are polymorphic and defined at
@@ -17,11 +19,11 @@ levels ensures that for all objects in the abstract syntax tree, the
 position information is always the second component.
 
 \begin{spec}
+  op valueOf    : fa (a) a * Position -> a
   op positionOf : fa (a) a * Position -> Position
-  def positionOf (x,position) = position
 
-  op valueOf : fa (a) a * Position -> a
-  def valueOf (x,position) = x
+  def valueOf    (value, _       ) = value
+  def positionOf (_,     position) = position
 \end{spec}
 
 The following is the toplevel returned by the parser. I don't like
@@ -93,8 +95,8 @@ The first two elements in the morphism products are terms that evaluate
 to the domain and codomain of the morphisms.
 
 \begin{spec}
-    | SpecMorph (Term a) * (Term a) * (List (SpecMorphElem a))
-    | DiagMorph (Term a) * (Term a) * (List (DiagMorphElem a))
+    | SpecMorph (Term a) * (Term a) * (List (SpecMorphRule a))
+    | DiagMorph (Term a) * (Term a) * (List (DiagMorphRule a))
 \end{spec}
 
 \begin{spec}
@@ -114,8 +116,8 @@ construct is experimental.
 The next two control the visibilty of names outside a spec.
 
 \begin{spec}
-    | Hide   (NameExpr a) * (Term a)
-    | Export (NameExpr a) * (Term a)
+    | Hide   (NamesExpr a) * (Term a)
+    | Export (NamesExpr a) * (Term a)
 \end{spec}
 
 This is an initial attempt at code generation. The first string is the
@@ -127,6 +129,14 @@ The third argument is an optional file name to store the result.
 
 \begin{spec}
     | Generate (String * (Term a) * Option String)
+\end{spec}
+
+Subsitution. The first term should be spec valued and the second should
+be morphism valued. Remains to be seen what will happen if/when we
+have diagrams.
+
+\begin{spec}
+    | Subst (Term a) * (Term a)
 \end{spec}
 
 Obligations takes a spec or a a morphism and returns a spec including
@@ -153,11 +163,14 @@ mapping from names to names.
 Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 
 \begin{spec}
-  sort TranslateExpr a = List (TranslateMap a) * a
-  sort TranslateMap a = ((QualifiedId * QualifiedId) * a)
+  sort TranslateExpr  a = List (TranslateRule a) * a
+  sort TranslateRule  a = (TranslateRule_ a) * a
+  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId
+                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) 
+                          | Ambiguous  QualifiedId                 * QualifiedId                 
 \end{spec}
 
-A \verb+NameExpr+ denotes list of names and operators. They are used in
+A \verb+NamesExpr+ denotes list of names and operators. They are used in
 \verb+hide+ and \verb+export+ terms to either exclude names from being
 export or dually, to specify exactly what names are to be exported.
 Presumably the syntax will borrow ideas from the syntax used for
@@ -166,7 +179,13 @@ wildcards to stand for a collection of names. For now, one must explicitly
 list them.
 
 \begin{spec}
-  sort NameExpr a = List QualifiedId
+  sort NamesExpr a = List (NameExpr a)
+  sort NameExpr a = | Sort       QualifiedId
+                    | Op         QualifiedId * Option Sort
+                    | Axiom      QualifiedId
+                    | Theorem    QualifiedId
+                    | Conjecture QualifiedId
+                    | Ambiguous  QualifiedId
 \end{spec}
 
 A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
@@ -210,7 +229,9 @@ The tagging in the sorts below may be excessive given the \verb+ATerm+
 is already tagged.
 
 \begin{spec}
-  sort SpecMorphElem a = QualifiedId * QualifiedId * a
+  sort SpecMorphRule a = | Sort       QualifiedId                 * QualifiedId                 * a
+                         | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * a
+                         | Ambiguous  QualifiedId                 * QualifiedId                 * a
 \end{spec}
 
 The current syntax allows one to write morphisms mapping names to terms
@@ -222,9 +243,9 @@ and components of the natural transformation. The current syntax allows
 them to be presented in any order. 
 
 \begin{spec}
-  sort DiagMorphElem a = (DiagMorphElem_ a) * a
-  sort DiagMorphElem_ a =
-    | ShapeMap Name * Name
+  sort DiagMorphRule a = (DiagMorphRule_ a) * a
+  sort DiagMorphRule_ a =
+    | ShapeMap    Name * Name
     | NatTranComp Name * (Term a) 
 \end{spec}
 
