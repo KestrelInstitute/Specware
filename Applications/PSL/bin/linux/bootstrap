@@ -84,7 +84,7 @@ echo " "
 cd $SPECWARE4/Applications/Specware
 bin/linux/Specware4-text -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
-	(enlarge-stack)
+	(enlarge-stack 50000000)
 	(exiting-on-errors 
 	  (if (sw "/Applications/PSL/PSL")
 	    (exit 0)
