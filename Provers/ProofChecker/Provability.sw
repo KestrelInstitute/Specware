@@ -674,7 +674,7 @@ spec
       (fa (cx:Context, e:Expression, v:Variable)
          pj (wellTypedExpr (cx, e, BOOL --> BOOL))
       && ~(v in? exprFreeVars e)
-      => pj (theoreM (cx, e @ TRUE &&& e @ FALSE <==> FA v BOOL e @ VAR v)))
+      => pj (theoreM (cx, e @ TRUE &&& e @ FALSE <==> FA v BOOL (e @ VAR v))))
     | thCongruence ->
       (fa (cx:Context, e1:Expression, e2:Expression, e:Expression,
            t:Type, t1:Type)
