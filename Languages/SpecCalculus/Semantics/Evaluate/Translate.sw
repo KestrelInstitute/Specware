@@ -31,6 +31,39 @@ To translate a spec means to recursively descend the hierarchy of imports
 and translate names. This can raise exceptions since ops may end up with
 the same names.
 
+If the following, assume we are given the rule "<lhs> +-> <rhs>"
+
+We lookup <lhs> in the domain spec to find a domain item, raising an exception
+if nothing can be found.  The rules are intended to be the same as those used
+when linking names in formulas within a spec, but the keywords "sort" and "op" 
+are allowed here to disambiguate an otherwise missing context:
+
+\begin{verbatim}
+  "sort [A.]X"   will look at sorts only
+  "op   [A.]X"   will look at ops   only
+  "[A.]X"        will look at sorts and ops, raising an exception if there are both
+  "[A.]f : B.X"  will lookup [A.]f of type [B.]X
+  "X"            will find unqualified "X" in preference to "A.X" if both exist.
+\end{verbatim}
+
+Translate all references to the found item into <rhs>, withe following
+caveats:
+
+\begin{itemize}
+\item If <rhs> lacks an explicit qualifier, the rhs item is unqualified.
+
+\item If multiple lhs items map to the same rhs item, then their (translated)
+      properties (e.g. types or definitions) must be mergable or an exception 
+      is raised.
+
+\item Given sorts A and B, plus ops (f : A) and (f : B), if A and B are both
+      mapped to the same C, then (f : A) and (f : B) will implicitly map to 
+      the same rhs item (unless they are explicitly mapped elsewhere).
+
+\end{itemize}
+
+Note: The code below does not yet match the documentation above, but should.
+
 \begin{spec}
   op translateSpec : Spec -> TranslateExpr Position -> Env Spec
   def translateSpec spc expr = {
