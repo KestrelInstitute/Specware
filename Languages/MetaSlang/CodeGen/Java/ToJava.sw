@@ -725,7 +725,7 @@ def builtinSortOp(qid) =
 
 % --------------------------------------------------------------------------------
 
-op transformSpecForJavaCodeGen: Spec -> Spec -> JSpec
+%op transformSpecForJavaCodeGen: Spec -> Spec -> Spec
 def transformSpecForJavaCodeGen basespc spc =
   let spc = translateRecordMergeInSpec spc in
   let spc = identifyIntSorts spc in
@@ -735,6 +735,24 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = letWildPatToSeq spc in
   let spc = lambdaLift(spc) in
   let spc = distinctVariable(spc) in
+  spc
+  %let jcginfo = clsDeclsFromSorts(spc) in
+  %let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
+  %let arrowcls = jcginfo.collected.arrowclasses in
+  %let jcginfo = insertClsDeclsForCollectedProductSorts(spc,jcginfo) in
+  %let clsDecls = jcginfo.clsDecls in
+  %let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
+  %let clsDecls = clsDecls ++ arrowcls in
+  %let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
+  %let imports = [] in
+  %let jspc = (None, imports, clsOrInterfDecls) in
+  %let jspc = mapJName mapJavaIdent jspc in
+%  let jfiles = processOptions(jspc,optspec,filename) in
+%  let _ = app printJavaFile jfiles in
+  %jspc
+
+%op generateJavaCodeFromTransformedSpec: Spec -> JSpec
+def generateJavaCodeFromTransformedSpec spc =
   let jcginfo = clsDeclsFromSorts(spc) in
   let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
   let arrowcls = jcginfo.collected.arrowclasses in
@@ -742,8 +760,7 @@ def transformSpecForJavaCodeGen basespc spc =
   let clsDecls = jcginfo.clsDecls in
   let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
   let clsDecls = clsDecls ++ arrowcls in
-  let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls
-  in
+  let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
   let imports = [] in
   let jspc = (None, imports, clsOrInterfDecls) in
   let jspc = mapJName mapJavaIdent jspc in
@@ -756,27 +773,27 @@ def transformSpecForJavaCodeGen basespc spc =
 op specToJava : Spec * Spec * Option Spec * String -> JSpec
 
 def specToJava(basespc,spc,optspec,filename) =
-%  let spc = translateRecordMergeInSpec spc in
-%  let spc = identifyIntSorts spc in
-%  let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
-%  let spc = poly2mono(spc,false) in
-%  let spc = unfoldSortAliases spc in
-%  let spc = letWildPatToSeq spc in
-%  let spc = lambdaLift(spc) in
-%  let spc = distinctVariable(spc) in
-%  let jcginfo = clsDeclsFromSorts(spc) in
-%  let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
-%  let arrowcls = jcginfo.collected.arrowclasses in
-%  let jcginfo = insertClsDeclsForCollectedProductSorts(spc,jcginfo) in
-%  let clsDecls = jcginfo.clsDecls in
-%  let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
-%  let clsDecls = clsDecls ++ arrowcls in
-%  let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls
-%  in
-%  let imports = [] in
-%  let jspc = (None, imports, clsOrInterfDecls) in
-%  let jspc = mapJName mapJavaIdent jspc in
-  let jspc = transformSpecForJavaCodeGen basespc spc in
+  %let spc = translateRecordMergeInSpec spc in
+  %let spc = identifyIntSorts spc in
+  %let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
+  %let spc = poly2mono(spc,false) in
+  %let spc = unfoldSortAliases spc in
+  %let spc = letWildPatToSeq spc in
+  %let spc = lambdaLift(spc) in
+  %let spc = distinctVariable(spc) in
+  let spc = transformSpecForJavaCodeGen basespc spc in
+  %let jcginfo = clsDeclsFromSorts(spc) in
+  %let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
+  %let arrowcls = jcginfo.collected.arrowclasses in
+  %let jcginfo = insertClsDeclsForCollectedProductSorts(spc,jcginfo) in
+  %let clsDecls = jcginfo.clsDecls in
+  %let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
+  %let clsDecls = clsDecls ++ arrowcls in
+  %let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
+  %let imports = [] in
+  %let jspc = (None, imports, clsOrInterfDecls) in
+  %let jspc = mapJName mapJavaIdent jspc in
+  let jspc = generateJavaCodeFromTransformedSpec spc in
   let jfiles = processOptions(jspc,optspec,filename) in
   let _ = List.app printJavaFile jfiles in
   jspc
