@@ -4,6 +4,9 @@
 ;;; op fail     : fa(a) String -> a
 (defun fail (s) (error "~a" s))
 
+;;; op debug     : fa(a) String -> a
+(defun |!debug| (s) (when Specware::specwareDebug? (break "~a" s)))
+
 ;;; op toString : fa(a) a -> String
 (defun toString (s) (let ((*print-pretty* nil)) (format nil "~S" s)))
 

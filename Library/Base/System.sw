@@ -9,6 +9,11 @@ System qualifying spec
   import Option
 
   op fail     : fa(a) String -> a
+
+  %% The specwareDebug? flag is set using the lisp ":swdbg" top-level command.
+  op debug    : fa(a) String -> a % calls lisp's break if the specwareDebug? flag is set.
+  op specwareDebug?   : Boolean % Tests whether the specwareDebug? flag is set.
+
   op toString : fa(a) a -> String
   op print    : fa(a) a -> a
 
