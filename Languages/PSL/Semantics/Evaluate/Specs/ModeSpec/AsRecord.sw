@@ -261,7 +261,7 @@ ModeSpec qualifying spec
 
   % op elaborate : ModeSpec -> Env ModeSpec
   def ModeSpec.elaborate modeSpec = {
-      print "mode spec elaborate";
+      % print "mode spec elaborate";
       elabSpec <- Spec.elaborate (specOf modeSpec);
       % elabSpec <- catch (Spec.elaborate (specOf modeSpec))
       %      (fn except -> {
