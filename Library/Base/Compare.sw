@@ -7,19 +7,19 @@ Compare qualifying spec
   % sorts:
 
   sort Comparison =
-    | Greater
-    | Equal
     | Less
+    | Equal
+    | Greater
 
   % ops whose Lisp code is generated:
 
   op compare : Comparison * Comparison -> Comparison
 
-  def compare(cmp1,cmp2) = if cmp1 = cmp2 then Equal
-                           else if (cmp1 = Greater or
-                                    cmp1 = Equal & cmp2 = Less) then Greater
-                           else (*  cmp1 = Less or
-                                    cmp1 = Equal & cmp2 = Greater *) Less
+  def compare(cmp1,cmp2) = if  cmp1 = cmp2     then Equal
+                      else if (cmp1 = Less or
+                               cmp2 = Greater) then Less
+                      else (*  cmp1 = Greater or
+                               cmp2 = Less *)       Greater
 
   % ops conceptually belonging to this spec but introduced elsewhere:
 
