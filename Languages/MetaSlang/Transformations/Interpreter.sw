@@ -322,6 +322,8 @@ spec
 		    if equalTerm?(t1, t2)
 		      then Some true
 		      else None
+		  | (Unevaluated _, _) -> None
+		  | (_, Unevaluated _) -> None
 		  | _ -> Some(a1 = a2))
 	  else None)
       | _ -> None
