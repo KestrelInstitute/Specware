@@ -23,15 +23,28 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
       let srt = termSort(term) in
       %%Fixed here
       let args = applyArgsToTerms(argsTerm) in
-      let dom = map termSort args in
+      % use the sort of the operator for the domain, if possible; this
+      % avoid problems like: the operator is defined on the restriction type, but
+      % the args have the unrestricted type
+      let dom = case opTerm of
+		  | Fun(Op(_),opsrt,_) -> srtDom(opsrt)
+		  | _ -> map (fn(arg) ->
+			      let srt = termSort(arg) in
+			      %findMatchingUserType(spc,srt)
+			      srt
+			     ) args
+      in
       let rng = srt in
-      if all (fn (srt) -> notAUserType?(srt) or baseTypeAlias?(spc,srt)) dom
+      if all (fn (srt) ->
+	      notAUserType?(srt) %or baseTypeAlias?(spc,srt)
+	     ) dom
 	then
+	  let _ = writeLine("no user type in "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
 	  if notAUserType?(rng)
 	    then
 	      case utlist_internal (fn(srt) -> userType?(srt) & ~(baseTypeAlias?(spc,srt))) (concat(dom,[srt])) of
 		| Some s ->
-		  let _ = writeLine(" ut found user type "^printSort(s)) in
+		  %let _ = writeLine(" ut found user type "^printSort(s)) in
 		  let (sid,col1) = srtId s in
 		  let (res,col2) = translateBaseApplToExpr(tcx,id,argsTerm,k,l,sid,spc) in
 		  (res,concatCollected(col1,col2))
@@ -299,18 +312,22 @@ def addSubsToTcx(tcx, args, subId) =
 
 op relaxChooseTerm: Spec * Term -> Term
 def relaxChooseTerm(spc,t) =
-  let srt0 = termSort(t) in
-  let srt = unfoldBase(spc,srt0) in
-  case srt of
-    | Subsort(ssrt,_,b) ->
+  case t of
+    | Apply(Fun(Restrict,_,_),_,_) -> t
+    | Apply(Fun(Choose,_,_),_,_) -> t
+    | _ -> 
+    let srt0 = termSort(t) in
+    let srt = unfoldBase(spc,srt0) in
+    case srt of
+      | Subsort(ssrt,_,b) ->
       let rsrt = Arrow(srt0,ssrt,b) in
       let t = Apply(Fun(Relax,rsrt,b),t,b) in
       relaxChooseTerm(spc,t)
-    | Quotient(ssrt,_,b) ->
+      | Quotient(ssrt,_,b) ->
       let rsrt = Arrow(srt0,ssrt,b) in
       let t = Apply(Fun(Choose,rsrt,b),t,b) in
       relaxChooseTerm(spc,t)
-    | _ -> t
+      | _ -> t
 
 def translateTermsToExpressions(tcx, terms, k, l, spc) =
     case terms of

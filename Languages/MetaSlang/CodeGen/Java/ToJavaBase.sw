@@ -646,10 +646,10 @@ def findMatchingUserType(spc,srtdef) =
   let foundSrt = find (fn (qualifier, id, (_, _, [(_,srt)])) -> equalSort?(srtdef, srt)) srts in
   case foundSrt of
     | Some (q, classId, _) -> 
-      let _ = writeLine("matching user type found: sort "^classId^" = "^printSort(srtdef)) in
+      %let _ = writeLine("matching user type found: sort "^classId^" = "^printSort(srtdef)) in
       Base(mkUnQualifiedId(classId),[],srtPos)
     | None ->
-      let _ = writeLine("no matching user type found for "^printSort(srtdef)) in
+      %let _ = writeLine("no matching user type found for "^printSort(srtdef)) in
       srtdef
 
 (**
