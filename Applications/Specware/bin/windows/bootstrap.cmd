@@ -1,3 +1,3 @@
 @echo off
 
-call execute bootstrap-specware4
+call start-in-xemacs bootstrap-specware4
