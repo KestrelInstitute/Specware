@@ -242,11 +242,6 @@ are no longer needed. *)
 	     return (g, next, v)
 	    }
 
-  def my_update (msg, g : FinitePolyMap.Map (Index,NodeContent), n, v) =
-    % let _ = toScreen ("\n " ^ msg ^ "\n") in
-    % let _ = toScreen (" " ^ (toString n) ^ " : " ^ (anyToString v) ^ "\n") in
-    update (g, n, v)
-
   def convertBSpecAux_1 bSpec final_modes graph n visited transition =
     let spc = specOf (Transition.modeSpec transition) in
     %let spc = transformSpecForCodeGen base spc in
@@ -264,17 +259,15 @@ are no longer needed. *)
          if Mode.member? final_modes (target transition) then
 	   case rev actions of
 	     | [] ->
-	       (my_update ("1-F0",
-			   graph, n, 
-			   Block {statements = [],
-				  next       = target_index}),
+	       (update (graph, n, 
+			Block {statements = [],
+			       next       = target_index}),
 		next,
 		visited)
 	       
 	     | [one_action] ->
-	       (my_update ("1-F1",
-			   graph, n, 
-			   Return (spc, one_action)),
+	       (update (graph, n, 
+			Return (spc, one_action)),
 		next,
 		visited)
 	       
@@ -287,22 +280,19 @@ are no longer needed. *)
 		         []
 			 rev_first_actions
 	       in
-	       let g2 = my_update ("1-FN",
-				   graph, n,
-				   Block {statements = statements,
-					  next       = next})
+	       let g2 = update (graph, n,
+				Block {statements = statements,
+				       next       = next})
 	       in
-	       (my_update ("1-FR",
-			   g2, next, 
-			   Return (spc, last_action)),
+	       (update (g2, next, 
+			Return (spc, last_action)),
 		next + 1,
 		visited)
 		   
 	 else
-	   (my_update ("1--N",
-		       graph, n, 
-		       Block {statements = map (fn action -> Assign (spc, action)) actions,
-			      next       = target_index}),
+	   (update (graph, n, 
+		    Block {statements = map (fn action -> Assign (spc, action)) actions,
+			   next       = target_index}),
 	    next,
 	    visited)
      in
@@ -339,11 +329,10 @@ are no longer needed. *)
 	     (g2, n2, original_left_index)
 	   | _ ->
 	     %% Interpolate left actions at frontier (n2) before branch to original left_index
-	     (my_update ("2-L",
-			 g2, n2,
-			 Block 
-			 {statements = map (fn action -> Assign (left_spec, action)) left_actions,
-			  next       = original_left_index}),
+	     (update (g2, n2,
+		      Block 
+		      {statements = map (fn action -> Assign (left_spec, action)) left_actions,
+		       next       = original_left_index}),
 	      n2 + 1,
 	      n2)
      in
@@ -353,22 +342,20 @@ are no longer needed. *)
 	     (g3, n3, original_right_index)
 	   | _ ->
 	     %% Interpolate right actions at frontier (n3) before branch to original right_index
-	     (my_update ("2-R",
-			 g3, n3,
-			 Block 
-			 {statements = map (fn action -> Assign (right_spec, action)) right_actions,
-			  next       = original_right_index}),
+	     (update (g3, n3,
+		      Block 
+		      {statements = map (fn action -> Assign (right_spec, action)) right_actions,
+		       next       = original_right_index}),
 	      n3 + 1,
 	      n3)
      in
      let Some left_guard = opt_left_guard in
      let g5 =
-         my_update ("2-B",
-		    g4, n, 
-		    Branch {condition   = (left_spec, left_guard),
-			    trueBranch  = revised_left_index,
-			    falseBranch = revised_right_index
-			   })
+         update (g4, n, 
+		 Branch {condition   = (left_spec, left_guard),
+			 trueBranch  = revised_left_index,
+			 falseBranch = revised_right_index
+			})
      in
        return (g5, n4, visited)
       }
@@ -411,11 +398,10 @@ are no longer needed. *)
 		  return (g, next, n2)};
 	 let Some left_guard = opt_left_guard in
 	 let g4 =
-	     my_update ("N-B",
-			g3, n,
-			Branch {condition   = (left_spec, left_guard),
-				trueBranch  = revised_left_index,
-				falseBranch = right_index})
+	     update (g3, n,
+		     Branch {condition   = (left_spec, left_guard),
+			     trueBranch  = revised_left_index,
+			     falseBranch = right_index})
 	 in
 	   %% This node will become the right index of the caller (if there is one).
 	   return (g4, n3, visited, n)
