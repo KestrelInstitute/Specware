@@ -37,7 +37,10 @@
     (concat (getenv "SPECWARE4")
 	    "/Applications/Specware/bin/"
 	    ; This could be elaborated
-	    (if (equal (getenv "OSTYPE") "linux") "linux" "windows")
+	    (if (memq system-type '(ms-dos windows-nt windows-95
+				    ms-windows))
+		"windows"
+	      (symbol-name system-type))
 	    "/Specware4.dxl"))
 
   (fi:common-lisp fi:common-lisp-buffer-name
@@ -97,8 +100,11 @@
 ;; in the following we execute a Specware application (rather than run Lisp
 ;; with a Specware world);
 
-(defun run-lisp-application (&optional openSpecWindow)
+(defun run-lisp-application ()
   (interactive "P")
+  (when (inferior-lisp-running-p)
+    (fi:exit-lisp)
+    (sleep-for 2))
   (setq fi:common-lisp-host "localhost")
 ;;
 ;; fi:common-lisp-directory is the directory in which the lisp subprocess will
@@ -120,12 +126,7 @@
   (fi:common-lisp fi:common-lisp-buffer-name
 		  fi:common-lisp-directory
 		  fi:common-lisp-image-name)
- 
-;; Don't break if specware not loaded
-  (when openSpecWindow
-    (fi:eval-in-lisp "(progn (when (find-package \"SPECWAREUI\")
-		        (funcall (intern \"OPENSPECWINDOW\" \"SPECWAREUI\")))
-		        \"Done\")")))
+  (sleep-for 1))
 
 ;; (simulate-input-expression "t")
 (defun simulate-input-expression (str)
@@ -136,37 +137,48 @@
   (insert str)
   (inferior-lisp-newline))
 
-(defun bootstrap-specware (in-current-dir?)
+(defun build-specware4 (in-current-dir?)
   (interactive "P")
-  (let ((current-dir default-directory))
-    (when (inferior-lisp-running-p)
-      (simulate-input-expression ":exit")
-      (sleep-for 1))
+  (let* ((root-dir (if in-current-dir? default-directory
+		     (getenv "SPECWARE4")))
+	 (dir (concat root-dir "/Applications/Specware/Handwritten/Lisp"))
+	 (bin-dir (concat root-dir
+			     "/Applications/Specware/bin/"
+			     (if (memq system-type '(ms-dos windows-nt windows-95
+						     ms-windows))
+				 "windows"
+			       (symbol-name system-type))))
+	 (world-name (concat bin-dir "/Specware4.dxl")))
     (run-lisp-application)
-    (sleep-for 1)
-    (when in-current-dir?
-      (simulate-input-expression (concat ":cd " current-dir)))
-    (simulate-input-expression "(load \"load.lisp\")")
-    (simulate-input-expression "(Bootstrap-Spec::compileBootstrap)")
-    (simulate-input-expression ":exit")
-    (while (inferior-lisp-running-p)
-      (sleep-for 2))
+    (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" dir))
+    (sw:eval-in-lisp "(load \"Specware4.lisp\")")
     (run-lisp-application)
-    (sleep-for 1)
     (unless (inferior-lisp-running-p)
-      (sleep-for 3))
-    (when in-current-dir?
-      (simulate-input-expression (concat ":cd " current-dir)))
-    (simulate-input-expression "(load \"load.lisp\")")
-    (simulate-input-expression "(progn (Bootstrap-Spec::compileAll)
-			        (excl::dumplisp :name \"bin/specware2000-new.world\"))")
-    (simulate-input-expression
-     "(if (probe-file \"bin/specware2000-new.world\")
-	  (progn (when (probe-file \"bin/specware2000.world\")
-                   (rename-file  \"bin/specware2000.world\" \"bin/specware2000-old.world\"))
-		 (rename-file  \"bin/specware2000-new.world\" \"bin/specware2000.world\")
-		 \"Wrote a new bin/specware2000.world\")
-	\"Failed to build a new world!\")")))
+      (sleep-for 1))
+    (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" dir))
+    (sw:eval-in-lisp "(load \"Specware4.lisp\")")
+    (when (file-exists-p world-name)
+      (rename-file world-name (concat bin-dir "/Specware4-saved.dxl") t))
+    (sleep-for 1)
+    (simulate-input-expression (format "(excl::dumplisp :name %S)" world-name))
+;;;    (simulate-input-expression
+;;;     "(if (probe-file \"bin/specware2000-new.world\")
+;;;	  (progn (when (probe-file \"bin/specware2000.world\")
+;;;                   (rename-file  \"bin/specware2000.world\" \"bin/specware2000-old.world\"))
+;;;		 (rename-file  \"bin/specware2000-new.world\" \"bin/specware2000.world\")
+;;;		 \"Wrote a new bin/specware2000.world\")
+;;;	\"Failed to build a new world!\")")
+    ))
+
+(defun bootstrap-specware4 (in-current-dir?)
+  (interactive "P")
+  (run-specware4)
+  (sleep-for 2)
+  (let ((root-dir (if in-current-dir? default-directory
+		    (getenv "SPECWARE4"))))
+    (sw:eval-in-lisp (format "(top-level::do-command :swpath %S)" root-dir))
+    (sw:eval-in-lisp "(user::boot)")
+    (build-specware4 in-current-dir?)))
 
 (defun test-specware-bootstrap (in-current-dir?)
   (interactive "P")
