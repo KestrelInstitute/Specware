@@ -47,7 +47,7 @@ XML qualifying spec
   def make_Content_Item_from_Comment   (comment : Comment)   : Content_Item =  Comment   comment 
 
   def make_STag (name       : UChars,
-		 attributes : GenericAttributes,
+		 attributes : ElementAttributes,
 		 whitespace : WhiteSpace)
     : STag =
     {prefix     = [],
@@ -66,7 +66,7 @@ XML qualifying spec
      postfix    = []}
 
   def make_EmptyElemTag (name       : UChars,
-			 attributes : GenericAttributes,
+			 attributes : ElementAttributes,
 			 whitespace : WhiteSpace)
     : STag =
     {prefix     = [],  
@@ -75,12 +75,12 @@ XML qualifying spec
      whitespace = whitespace,
      postfix    = UString.back_slash}
 
-  def make_GenericAttribute (w1    : WhiteSpace,
+  def make_ElementAttribute (w1    : WhiteSpace,
 			     name  : NmToken,
 			     w2    : WhiteSpace,
 			     w3    : WhiteSpace,
 			     value : QuotedText)
-    : GenericAttribute =
+    : ElementAttribute =
     {w1    = w1,
      name  = name,
      w2    = w2,

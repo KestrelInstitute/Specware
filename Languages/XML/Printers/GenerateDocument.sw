@@ -89,7 +89,7 @@ XML qualifying spec
 			let value : QuotedText = {qchar = UChar.apostrophe,
 						  text  = pp_sort_descriptor_for_xml_attribute sd}
 			in
-			let type_attr : GenericAttribute = {w1    = [UChar.space],
+			let type_attr : ElementAttribute = {w1    = [UChar.space],
 							    name  = ustring "type",
 							    w2    = null_whitespace,
 							    w3    = null_whitespace,

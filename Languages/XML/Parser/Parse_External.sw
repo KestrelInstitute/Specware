@@ -32,7 +32,7 @@ XML qualifying spec
   %% 
   %% *[77]  TextDecl            ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
   %%   ==>
-  %% [K13]  TextDecl            ::=  GenericTag
+  %% [K13]  TextDecl            ::=  ElementTag
   %%
   %%                                                             [KC: Proper Text Decl]
   %%  

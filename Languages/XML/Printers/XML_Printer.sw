@@ -47,7 +47,7 @@ XML qualifying spec
       | _                   -> ustring "unrecognized document entity"
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          GenericTag                                                                          %%%
+  %%%          ElementTag                                                                          %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
   %%  Rules [K4] -- [K10] simplify the parsing (and especially any associated error reporting) for
@@ -64,23 +64,23 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %% They are all instances of [K4]:
   %%
-  %%  [K4]  GenericTag         ::=  GenericPrefix GenericName GenericAttributes GenericPostfix 
-  %%  [K5]  GenericPrefix      ::=  Chars - NmToken
-  %%  [K6]  GenericName        ::=  NmToken        
-  %%  [K7]  GenericAttributes  ::=  List GenericAttribute
-  %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
-  %%  [K9]  GenericPostfix     ::=  Chars - NmToken
+  %%  [K4]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
+  %%  [K5]  ElementTagPrefix    ::=  ( '?' | '/'  | '' )
+  %%  [K6]  ElementName        ::=  NmToken        
+  %%  [K7]  ElementAttributes  ::=  List ElementAttribute
+  %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
+  %%  [K9]  ElementTagPostfix  ::=  ( '?' | '/'  | '' )
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def print_GenericTag {prefix, name, attributes, whitespace, postfix} : UString =
-   ((ustring "<") ^ prefix ^ name ^ (print_GenericAttributes attributes) ^ whitespace ^ postfix ^ (ustring ">"))
+  def print_ElementTag {prefix, name, attributes, whitespace, postfix} : UString =
+   ((ustring "<") ^ prefix ^ name ^ (print_ElementAttributes attributes) ^ whitespace ^ postfix ^ (ustring ">"))
  				     
 
-  def print_GenericAttributes attributes : UString = 
-    (foldl (fn (attr, result) -> result ^ print_GenericAttribute attr) [] attributes)
+  def print_ElementAttributes attributes : UString = 
+    (foldl (fn (attr, result) -> result ^ print_ElementAttribute attr) [] attributes)
 
-  def print_GenericAttribute {w1, name, w2, w3, value} : UString =
+  def print_ElementAttribute {w1, name, w2, w3, value} : UString =
     (w1 ^ name ^ w2 ^ (ustring "=") ^ w3 ^ (print_QuotedText value))
 
   def print_BoundedText {qchar, text} =
@@ -140,7 +140,7 @@ XML qualifying spec
   %% 
   %% *[77]  TextDecl            ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
   %%   ==>
-  %% [K13]  TextDecl            ::=  GenericTag
+  %% [K13]  TextDecl            ::=  ElementTag
   %%
   %%                                                             [KC: Proper Text Decl]
   %%  
@@ -155,7 +155,7 @@ XML qualifying spec
   def print_ExtSubSet {text, other} =
     (print_TextDecl text) ^ (print_ExtSubsetDecls other)
   
-  def print_TextDecl tdecl = print_GenericTag tdecl
+  def print_TextDecl tdecl = print_ElementTag tdecl
 
   def print_ExtSubsetDecls decls = 
     foldl (fn (decl, result) -> result ^ print_ExtSubsetDecl decl) [] decls
@@ -194,7 +194,7 @@ XML qualifying spec
   %% 
   %% *[23]  XMLDecl       ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%   ==>
-  %% [K14]  XMLDecl       ::=  GenericTag
+  %% [K14]  XMLDecl       ::=  ElementTag
   %%
   %%                                                             [KC: Proper XML Decl]
   %%
@@ -215,7 +215,7 @@ XML qualifying spec
   %% 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def print_XMLDecl xml = print_GenericTag xml
+  def print_XMLDecl xml = print_ElementTag xml
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          DTD (Doc Type Decl)                                                                 %%%
@@ -576,13 +576,13 @@ XML qualifying spec
   %% *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K25]  STag          ::=  GenericTag                            
+  %% [K25]  STag          ::=  ElementTag                            
   %%                                                             [KC:  Proper Start Tag]
   %%                                                             [WFC: Unique Att Spec]
   %% 
   %% *[41]  Attribute     ::=  Name Eq AttValue 
   %%   ==>
-  %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
+  %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
   %% 
   %%                                                             [VC:  Attribute Value Type]
   %%                                                             [WFC: No External Entity References]
@@ -590,7 +590,7 @@ XML qualifying spec
   %%
   %% *[42]  ETag          ::=  '</' Name S? '>'
   %%   ==>
-  %% [K26]  ETag          ::=  GenericTag                   
+  %% [K26]  ETag          ::=  ElementTag                   
   %%                                                             [KC:  Proper End Tag]
   %%
   %%  Since the chardata in [43] is typically used for indentation, 
@@ -604,7 +604,7 @@ XML qualifying spec
   %% *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K29]  EmptyElemTag  ::=  GenericTag
+  %% [K29]  EmptyElemTag  ::=  ElementTag
   %%                                                             [KC:  Proper Empty Tag]
   %%                                                             [WFC: Unique Att Spec]
   %%
@@ -621,11 +621,11 @@ XML qualifying spec
         (print_Content content) ^
         (print_ETag    etag)
 
-  def print_EmptyElemTag tag = print_GenericTag tag
+  def print_EmptyElemTag tag = print_ElementTag tag
 
-  def print_STag         tag = print_GenericTag tag
+  def print_STag         tag = print_ElementTag tag
 
-  def print_ETag         tag = print_GenericTag tag
+  def print_ETag         tag = print_ElementTag tag
 
   def print_Content {items, trailer} =
     (foldl (fn ((opt_char_data, item), result) ->

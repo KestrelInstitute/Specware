@@ -2,7 +2,7 @@
 XML qualifying spec
 
   import Parse_References         % parse_Reference   [redundant, given Parse_Character_Strings]
-  import Parse_GenericTag         % parse_Option_GenericTag
+  import Parse_ElementTag         % parse_Option_ElementTag
   import Parse_Character_Strings  % parse_Comment, parse_CDSect
   import Parse_PI                 % parse_PI
 
@@ -19,14 +19,14 @@ XML qualifying spec
   %%
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K25]  STag          ::=  GenericTag                            
+  %% [K25]  STag          ::=  ElementTag                            
   %%
   %%                                                             [KC:  Proper Start Tag]
   %%                                                             [WFC: Unique Att Spec]
   %% 
   %% *[41]  Attribute     ::=  Name Eq AttValue 
   %%   ==>
-  %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
+  %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
   %%
   %%                                                             [VC:  Attribute Value Type]
   %%                                                             [WFC: No External Entity References]
@@ -34,7 +34,7 @@ XML qualifying spec
   %%
   %% *[42]  ETag          ::=  '</' Name S? '>'
   %%   ==>
-  %% [K26]  ETag          ::=  GenericTag                   
+  %% [K26]  ETag          ::=  ElementTag                   
   %%
   %%                                                             [KC:  Proper End Tag]
   %%
@@ -50,7 +50,7 @@ XML qualifying spec
   %%
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K29]  EmptyElemTag  ::=  GenericTag
+  %% [K29]  EmptyElemTag  ::=  ElementTag
   %%
   %%                                                             [KC:  Proper Empty Tag]
   %%                                                             [WFC: Unique Att Spec]
@@ -92,25 +92,27 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %%
-  %% [K25]  STag          ::=  GenericTag                            
+  %% [K25]  STag          ::=  ElementTag                            
   %%
   %%                                                             [KC:  Proper Start Tag]
   %%                                                             [WFC: Unique Att Spec]
   %%
-  %% [K29]  EmptyElemTag  ::=  GenericTag
+  %% [K29]  EmptyElemTag  ::=  ElementTag
   %%
   %%                                                             [KC:  Proper Empty Tag]
   %%                                                             [WFC: Unique Att Spec]
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_OpenTag (start : UChars) : Possible GenericTag =
-    { (possible_tag, tail) <- parse_Option_GenericTag start;
+  def parse_OpenTag (start : UChars) : Possible ElementTag =
+    { (possible_tag, tail) <- parse_Option_ElementTag start;
       case possible_tag of
 	| Some tag ->
 	  {
-	   (when (~ ((start_tag? tag) or (empty_tag? tag)))
+	   (when (end_tag? tag)
 	    (error (WFC {description = "Expected an STag or EmptyElemTag, but saw closing tag: " ^ (string tag.name)})));
+	   (when (~ ((start_tag? tag) or (empty_tag? tag)))
+	    (error (WFC {description = "Expected an STag or EmptyElemTag, but saw unrecognized tag: " ^ (string tag.name)})));
 	   return (possible_tag, tail)}
 	| _ -> return (None, start)
      }
@@ -215,14 +217,14 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %%
-  %% [K26]  ETag          ::=  GenericTag                   
+  %% [K26]  ETag          ::=  ElementTag                   
   %%
   %%                                                             [KC:  Proper End Tag]
   %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ETag (start : UChars) : Required ETag =
-    { (possible_tag, tail) <- parse_Option_GenericTag start;
+    { (possible_tag, tail) <- parse_Option_ElementTag start;
       case possible_tag of
 	| Some tag ->
 	  {
@@ -237,7 +239,7 @@ XML qualifying spec
 	   }
 	| _ -> 
 	  hard_error (Surprise {context = "parsing ETag",
-				expected = [("< ...>", "at least some kind of tag")],
+				expected = [("< ...>", "some kind of element tag")],
 				action   = "Immediate failure",
 				start    = start,
 				tail     = tail,

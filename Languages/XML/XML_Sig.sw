@@ -138,7 +138,7 @@ XML qualifying spec
   %% Misc   disappears as distinct sort, given [K1] [K2] [K3]
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          GenericTag                                                                          %%%
+  %%%          ElementTag                                                                          %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
   %%  Rules [K4] -- [K10] simplify the parsing (and especially any associated error reporting) for
@@ -155,38 +155,49 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %% They are all instances of [K4]:
   %%
-  %%  [K4]  GenericTag         ::=  GenericPrefix GenericName GenericAttributes GenericPostfix 
-  %%  [K5]  GenericPrefix      ::=  Chars - NmToken
-  %%  [K6]  GenericName        ::=  NmToken        
-  %%  [K7]  GenericAttributes  ::=  List GenericAttribute
-  %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
-  %%  [K9]  GenericPostfix     ::=  Chars - NmToken
+  %%  [K4]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
+  %%  [K5]  ElementTagPrefix    ::=  ( '?' | '/'  | '' )
+  %%  [K6]  ElementName        ::=  NmToken        
+  %%  [K7]  ElementAttributes  ::=  List ElementAttribute
+  %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
+  %%  [K9]  ElementTagPostfix  ::=  ( '?' | '/'  | '' )
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  sort GenericTag = {prefix     : GenericPrefix,
-		     name       : GenericName,
-		     attributes : GenericAttributes,
+  sort ElementTag = {prefix     : ElementTagPrefix,
+		     name       : ElementName,
+		     attributes : ElementAttributes,
 		     whitespace : WhiteSpace,
-		     postfix    : GenericPostfix}
+		     postfix    : ElementTagPostfix}
 
-  sort GenericPrefix     = (UChars | generic_prefix?)
+  sort ElementTagPrefix     = (UChars | element_tag_prefix?)
 
-  sort GenericName       = NmToken
+  sort ElementName       = NmToken
 
-  sort GenericAttributes = List GenericAttribute
+  sort ElementAttributes = List ElementAttribute
 
-  sort GenericAttribute = {w1    : WhiteSpace,
+  sort ElementAttribute = {w1    : WhiteSpace,
 			   name  : NmToken,
 			   w2    : WhiteSpace,
 			   %% =
 			   w3    : WhiteSpace,
 			   value : QuotedText}
 
-  sort GenericPostfix   = (UChars | generic_postfix?)
+  sort ElementTagPostfix   = (UChars | element_tag_postfix?)
 
-  op generic_prefix?  : UChars -> Boolean  % complement of names? % TODO
-  op generic_postfix? : UChars -> Boolean  % complement of names? % TODO
+  def element_tag_prefix?  (prefix : UChars) : Boolean =
+    case prefix of
+      | []             -> true
+      | [63] (* '?' *) -> true
+      | [47] (* '/' *) -> true
+      | _ -> false
+
+  def element_tag_postfix?  (postfix : UChars) : Boolean =
+    case postfix of
+      | []             -> true
+      | [63] (* '?' *) -> true
+      | [47] (* '/' *) -> true
+      | _ -> false
 
   sort BoundedText = {qchar : QuoteChar,
 		      text  : UString}
@@ -252,7 +263,7 @@ XML qualifying spec
   %% 
   %% *[77]  TextDecl            ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
   %%   ==>
-  %% [K13]  TextDecl            ::=  GenericTag
+  %% [K13]  TextDecl            ::=  ElementTag
   %%
   %%                                                             [KC: Proper Text Decl]
   %%  
@@ -269,7 +280,7 @@ XML qualifying spec
   
   %% -------------------------------------------------------------------------------------------------
 
-  sort TextDecl = (GenericTag | text_decl?) % similar to XMLDecl
+  sort TextDecl = (ElementTag | text_decl?) % similar to XMLDecl
 
   %%  [KC: Proper Text Decl]
   def text_decl? tag = 
@@ -344,7 +355,7 @@ XML qualifying spec
   %% 
   %% *[23]  XMLDecl       ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%   ==>
-  %% [K14]  XMLDecl       ::=  GenericTag
+  %% [K14]  XMLDecl       ::=  ElementTag
   %%
   %%                                                             [KC: Proper XML Decl]
   %%
@@ -365,7 +376,7 @@ XML qualifying spec
   %% 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  sort XMLDecl = (GenericTag | xml_decl?)
+  sort XMLDecl = (ElementTag | xml_decl?)
 
   %% [KC: Proper XML Decl]
   def xml_decl? tag = 
@@ -742,13 +753,13 @@ XML qualifying spec
   %% *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K25]  STag          ::=  GenericTag                            
+  %% [K25]  STag          ::=  ElementTag                            
   %%                                                             [KC:  Proper Start Tag]
   %%                                                             [WFC: Unique Att Spec]
   %% 
   %% *[41]  Attribute     ::=  Name Eq AttValue 
   %%   ==>
-  %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
+  %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
   %% 
   %%                                                             [VC:  Attribute Value Type]
   %%                                                             [WFC: No External Entity References]
@@ -756,7 +767,7 @@ XML qualifying spec
   %%
   %% *[42]  ETag          ::=  '</' Name S? '>'
   %%   ==>
-  %% [K26]  ETag          ::=  GenericTag                   
+  %% [K26]  ETag          ::=  ElementTag                   
   %%                                                             [KC:  Proper End Tag]
   %%
   %%  Since the chardata in [43] is typically used for indentation, 
@@ -770,7 +781,7 @@ XML qualifying spec
   %% *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K29]  EmptyElemTag  ::=  GenericTag
+  %% [K29]  EmptyElemTag  ::=  ElementTag
   %%                                                             [KC:  Proper Empty Tag]
   %%                                                             [WFC: Unique Att Spec]
   %%
@@ -789,7 +800,7 @@ XML qualifying spec
 
   %% ----------------------------------------------------------------------------------------------------
 
-  sort STag = ((GenericTag | start_tag?) | unique_attributes?)
+  sort STag = ((ElementTag | start_tag?) | unique_attributes?)
 
   %%  [KC: Proper start tag]
   def start_tag? tag = 
@@ -834,7 +845,7 @@ XML qualifying spec
 
   %% ----------------------------------------------------------------------------------------------------
 
-  sort ETag = (GenericTag | end_tag?)
+  sort ETag = (ElementTag | end_tag?)
 
   %%  [KC: proper end tag]
   def end_tag? tag = 
@@ -856,7 +867,7 @@ XML qualifying spec
 
   %% ----------------------------------------------------------------------------------------------------
 
-  sort EmptyElemTag = ((GenericTag | empty_tag?) | unique_attributes?)  
+  sort EmptyElemTag = ((ElementTag | empty_tag?) | unique_attributes?)  
 
   %% [KC: proper empty tag]
   def empty_tag? tag = 

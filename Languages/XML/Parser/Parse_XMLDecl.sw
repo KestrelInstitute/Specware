@@ -1,6 +1,6 @@
 XML qualifying spec
 
-  import Parse_GenericTag
+  import Parse_ElementTag
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          XMLDecl                                                                             %%%
@@ -8,7 +8,7 @@ XML qualifying spec
   %% 
   %% *[23]  XMLDecl       ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%   ==>
-  %% [K14]  XMLDecl       ::=  GenericTag
+  %% [K14]  XMLDecl       ::=  ElementTag
   %%
   %%                                                             [KC: Proper XML Decl]
   %%
@@ -31,7 +31,7 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %% 
-  %% [K14]  XMLDecl       ::=  GenericTag
+  %% [K14]  XMLDecl       ::=  ElementTag
   %%                                                             [KC: Proper XML Decl]
   %%                                                             [VC: Standalone Document Declaration]
   %% 
@@ -39,7 +39,7 @@ XML qualifying spec
 
   def parse_XMLDecl (start : UChars) : Required XMLDecl =
     {
-     (possible_tag, tail) <- parse_Option_GenericTag start;
+     (possible_tag, tail) <- parse_Option_ElementTag start;
      case possible_tag of
        | None -> 
          hard_error (Surprise {context = "Expected xml decl",
