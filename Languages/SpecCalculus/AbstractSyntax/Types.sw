@@ -33,14 +33,15 @@ position information is always the second component.
   def positionOf (_,     position) = position
 \end{spec}
 
-The following is the toplevel returned by the parser. I don't like
-the name of this sort. A file may contain a list of $\mathit{name} =
+The following is the toplevel returned by the parser. (I don't like
+the name of this sort. Ok: changed from SpecFile to SpecTerm)
+A file may contain a list of $\mathit{name} =
 \mathit{term}$ or contain a single term. This should not be polymorphic.
 The type parameter should be instantiated with the type \verb+Position+.
 
 \begin{spec}
-  sort SpecFile  a = (SpecFile_ a) * a
-  sort SpecFile_ a =
+  sort SpecTerm a = (SpecTerm_ a) * a
+  sort SpecTerm_ a =
     | Term  (Term a)
     | Decls (List (Decl a))
 \end{spec}
@@ -317,8 +318,8 @@ The following are invoked from the parser:
 
 \begin{spec}
 
-  op mkTerm        : fa (a) (Term a)                                                        * a -> SpecFile a
-  op mkDecls       : fa (a) (List (Decl a))                                                 * a -> SpecFile a
+  op mkTerm        : fa (a) (Term a)                                                        * a -> SpecTerm a
+  op mkDecls       : fa (a) (List (Decl a))                                                 * a -> SpecTerm a
 
   op mkPrint       : fa (a) (Term a)                                                        * a -> Term a
   op mkProve       : fa (a) ClaimName * Term a * ProverName * Assertions * ProverOptions * AnswerVar   * a -> Term a
@@ -342,7 +343,7 @@ The following are invoked from the parser:
   op mkReduce      : fa (a) (ATerm a) * (Term a)                                            * a -> Term a
   op mkOther       : fa (a) (OtherTerm a)                                                   * a -> Term a
 
-  %% SpecFile's    
+  %% SpecTerm's    
 
   def mkTerm        (term,                      pos) = (Term        term,                        pos)
   def mkDecls       (decls,                     pos) = (Decls       decls,                       pos)

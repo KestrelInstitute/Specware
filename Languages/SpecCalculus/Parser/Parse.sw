@@ -7,7 +7,7 @@ SpecCalc qualifying spec {
   import ../AbstractSyntax/Types
   import /Library/Legacy/Utilities/Lisp
 
-  op parseFile : fa(a) String -> Option (SpecFile a)
+  op parseFile : fa(a) String -> Option (SpecTerm a)
 
   def parseFile file =
     % let file   = Lisp.string (FilePath.toString file) in

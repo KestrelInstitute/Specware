@@ -26,8 +26,8 @@ SpecCalc qualifying spec
  import ../../MetaSlang/Specs/SimplePrinter 
  import /Library/PrettyPrinter/WadlerLindig
 
-  op showSpecFile : [a] SpecFile a -> String
- def showSpecFile specFile = ppFormat (ppSpecFile specFile)
+  op showSpecTerm : [a] SpecTerm a -> String
+ def showSpecTerm spec_term = ppFormat (ppSpecTerm spec_term)
 
   op showTerm : [a] SpecCalc.Term a -> String
  def showTerm term = ppFormat (ppTerm term)
@@ -72,10 +72,10 @@ SpecCalc qualifying spec
   op showRelativeUID : RelativeUID -> String
  def showRelativeUID unitId = ppFormat (ppRelativeUID unitId)
 
-  op ppSpecFile : [a] SpecFile a -> Doc
- def ppSpecFile (specFile as (term, _(* position *))) =
-   case term of
-     | Term term -> ppTerm term
+  op ppSpecTerm : [a] SpecTerm a -> Doc
+ def ppSpecTerm (sterm, _(* position *)) =
+   case sterm of
+     | Term  term -> ppTerm term
      | Decls decls -> ppDecls decls
 
   op ppTerm : [a] SpecCalc.Term a -> Doc
