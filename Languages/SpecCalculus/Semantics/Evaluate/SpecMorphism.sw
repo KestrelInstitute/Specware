@@ -187,7 +187,7 @@ Should we check to see if qid is in cod_map??
          -> Env (PolyMap.Map (QualifiedId, QualifiedId))
 
   def completeMorphismMap trans_map dom_map cod_map position =
-    let def compl (qualifier,id,val,new_map) =
+    let def compl (qualifier, id, _ (* val *), new_map) =
       case findAQualifierMap (trans_map, qualifier, id) of
         | Some qid -> return (update new_map (Qualified (qualifier,id)) qid) % explicit
         | _ ->

@@ -14,7 +14,7 @@ XML qualifying spec
   %% final arg depicting the original sort of the application.
 
   op addSortAsLastTerm : LocalEnv * MS.Term * MS.Term * MS.Sort -> MS.Term
-  def addSortAsLastTerm (env, pre_trm, post_trm, term_sort) =
+  def addSortAsLastTerm (env, _ (* pre_trm *), post_trm, _ (* term_sort *)) =
     %% pre_trm is the original term given to elaborateTerm
     %% post_trm is composd of processed components
     let ApplyN ([Fun (f1, srt, p1), t2], pos) = post_trm in
@@ -57,12 +57,12 @@ XML qualifying spec
 		  arg],
 		 pos)
 	 
-       def mkembed (id, srt) =
+       def mkembed (id, _ (* srt *)) =
 	 Fun (Embed (id, false), 
-	      sort_descriptor,  % correct?
+	      sort_descriptor,  % TODO: correct?
 	      pos)
 
-       def mk_app_embed (id, srt, arg) =
+       def mk_app_embed (id, _ (* srt *), arg) =
 	 ApplyN ([Fun (Embed (id, true), 
 		       Arrow (list_of_sd, % TODO : put something correct here, even though no one looks at it
 			      sort_descriptor,

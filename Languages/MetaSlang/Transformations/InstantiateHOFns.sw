@@ -163,7 +163,7 @@ spec
   def unfoldSizeThreshold = 80
   
   op  unfoldable?: QualifiedId * Term -> Boolean
-  def unfoldable?(qid,defn) =
+  def unfoldable? (_ (* qid *), defn) =
     sizeTerm defn < unfoldSizeThreshold
 
   def sizeTerm t = foldSubTerms (fn (_,sum) -> sum + 1) 0 t
@@ -213,8 +213,8 @@ spec
                          * List Nat * Boolean * QualifiedId * String
                          * AQualifierMap DefInfo * (Term -> Term) * Spec
                       -> Term
-  def makeUnfoldedTerm(f,args,resultSort,tyVarSbst,vs,defbody,fnIndices,
-		       recursive?,qid,nm,unfoldMap,simplifyTerm,spc) =
+  def makeUnfoldedTerm(_ (* f *), args, resultSort, tyVarSbst, vs, defbody, fnIndices,
+		       recursive?, qid, nm, unfoldMap, simplifyTerm, spc) =
     let replaceIndices = filter (fn i -> constantTerm?(nth(args,i))
 				        & member(i,fnIndices))
                            (tabulate (length args, id))

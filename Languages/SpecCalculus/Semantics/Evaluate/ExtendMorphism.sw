@@ -316,13 +316,13 @@ def substOpMap (opMap, term) =
  op proveForAns: Vars * Property * Spec * List Property * Spec * List LispCell * String -> Boolean
 
  def proveForAns(ansVars, claim, spc, base_hypothesis, base_spc, prover_options, snarkLogFileName) =
-   let (claim_type,claim_name,_,_) = claim in
-   let def claimType(ct) = 
-         case ct of
-	   | Conjecture -> "Conjecture" 
-	   | Theorem -> "Theorem" 
-	   | Axiom -> "Axiom" in
-   let claim_type = claimType(claim_type) in
+   let (_ (* claim_type *),claim_name,_,_) = claim in
+   %% let def claimType(ct) = 
+   %%       case ct of
+   %%	     | Conjecture -> "Conjecture" 
+   %%	     | Theorem -> "Theorem" 
+   %%	     | Axiom -> "Axiom" in
+   %% let claim_type = claimType(claim_type) in
    let snarkSortDecls = snarkSorts(spc) in
    let snarkOpDecls = snarkOpDecls(spc) in
    let context = newContext in

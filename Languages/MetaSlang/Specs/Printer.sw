@@ -933,8 +933,8 @@ AnnSpecPrinter qualifying spec {
 	        lines
 		defs)
 
-  op isBuiltIn? : Import -> Boolean
-  def isBuiltIn? (specCalcTerm, _ (* spc *)) = false
+   % op isBuiltIn? : Import -> Boolean
+   % def isBuiltIn? (specCalcTerm, _ (* spc *)) = false
    % spec_ref = "String"  or spec_ref = "Nat"  or 
    % spec_ref = "Boolean" or spec_ref = "Char" or
    % spec_ref = "Integer" or spec_ref = "List" or 
@@ -944,7 +944,7 @@ AnnSpecPrinter qualifying spec {
   def ppSpec context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
                        sorts, ops, properties} = 
       let pp : ATermPrinter = context.pp in
-      let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
+      % let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       blockAll(0,
                [(0,blockFill(0,
                              [(0, pp.Spec),
@@ -964,7 +964,7 @@ AnnSpecPrinter qualifying spec {
   def ppSpecR context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
                         sorts, ops, properties} = 
       let pp : ATermPrinter = context.pp in
-      let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
+      % let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       blockAll(0,
                [(0, blockFill(0,
                               [(0, pp.Spec),
@@ -1075,7 +1075,7 @@ AnnSpecPrinter qualifying spec {
   def ppSpecAll context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
                           sorts, ops, properties} = 
       let pp : ATermPrinter = context.pp in
-      let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
+      % let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       let ppImports = map (fn (specCalcTerm, spc) ->
                            (2, blockFill (0,
                                           [(0,string "import "),

@@ -234,15 +234,18 @@ Java qualifying spec
 
 %%%% field declaration
 
-  def ppFldDecl (ms : List Mod, t : Type, vd : VarDecl, 
-                                    vds : List VarDecl) : Pretty =
-      prettysNone [ppMods ms,
-                   ppType t,
-                   toPretty " ",
-                   ppVarDecl vd,
-                   %toPretty ", ", 
-                   %ppVarDecls vds,
-                   toPretty ";"]
+  def ppFldDecl (ms : List Mod, 
+		 t  : Type, 
+		 vd : VarDecl, 
+		 _ (* vds *) : List VarDecl)
+    : Pretty =
+    prettysNone [ppMods ms,
+		 ppType t,
+		 toPretty " ",
+		 ppVarDecl vd,
+		 %toPretty ", ", 
+		 %ppVarDecls vds,
+		 toPretty ";"]
 
 %%%% variable declarations
 

@@ -121,7 +121,7 @@ Note: The code below does not yet match the documentation above, but should.
 
     	| Ambiguous (Qualified(dom_qualifier, "_"), Qualified(cod_qualifier,"_"), cod_aliases) -> 
             let
-              def extend_op_map (op_qualifier,op_id,op_info,translation_op_map) =
+              def extend_op_map (op_qualifier, op_id, _ (* op_info *), translation_op_map) =
                 if op_qualifier = dom_qualifier then
                   case findAQualifierMap (translation_op_map, op_qualifier, op_id) of
                     | None -> 
@@ -131,7 +131,7 @@ Note: The code below does not yet match the documentation above, but should.
                                                        (printQualifiedId (mkQualifiedId (op_qualifier,op_id)))))
                 else
                   return translation_op_map 
-              def extend_sort_map (sort_qualifier,sort_id,sort_info,translation_sort_map) =
+              def extend_sort_map (sort_qualifier, sort_id, _ (* sort_info *), translation_sort_map) =
                 if sort_qualifier = dom_qualifier then
                   case findAQualifierMap (translation_sort_map, sort_qualifier, sort_id) of
                     | None -> 
@@ -142,7 +142,7 @@ Note: The code below does not yet match the documentation above, but should.
                 else
                   return translation_sort_map
             in {
-              translation_op_map <- foldOverQualifierMap extend_op_map translation_op_map dom_spec.ops;
+              translation_op_map   <- foldOverQualifierMap extend_op_map   translation_op_map   dom_spec.ops;
               translation_sort_map <- foldOverQualifierMap extend_sort_map translation_sort_map dom_spec.sorts;
               return (translation_op_map, translation_sort_map)
             }

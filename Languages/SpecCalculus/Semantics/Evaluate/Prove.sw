@@ -123,7 +123,7 @@ SpecCalc qualifying spec {
 
  op actualHypothesis: List Property * Assertions * Position -> List Property
 
- def actualHypothesis(validHypothesis, assertions, pos) =
+ def actualHypothesis (validHypothesis, assertions, _ (* pos *)) =
      case assertions of
       | All -> validHypothesis
       | Explicit possibilities -> 

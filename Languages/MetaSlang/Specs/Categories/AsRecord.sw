@@ -125,9 +125,10 @@ SpecCalc qualifying spec {
  %% Used by colimit to actually build the initialCocone
  op makeSpecInitialCocone : SpecDiagram -> Spec -> PolyMap.Map (Vertex.Elem,Morphism) -> SpecInitialCocone
  def makeSpecInitialCocone dg apex_spec cc_map =
-  let cat = cod (functor dg) in {
+  let cat = cod (functor dg) in 
+  {
    cocone    = makeSpecCocone dg apex_spec cc_map,
-   universal = fn other_cocone -> ident cat (initialObject cat) % TODO: Fix
+   universal = fn _(* other_cocone *) -> ident cat (initialObject cat) % TODO: This is bogus.  Fix it.
   }
 
  op makeSpecCocone : SpecDiagram -> Spec -> PolyMap.Map (Vertex.Elem,Morphism) -> SpecCocone

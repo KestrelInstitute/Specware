@@ -278,7 +278,7 @@ ListADT qualifying spec {
 
   op ppSpecToFile : LispSpec * String * String -> ()
 
-  def ppSpecToFile (spc, file, preamble) =
+  def ppSpecToFile (spc, file, _ (* preamble *)) =
     %% Rewritten to not use ppSpec which requires a lot of space for large specs
     let defs = sortDefs(spc.opDefns) 	in
     let name = spc.name 		in

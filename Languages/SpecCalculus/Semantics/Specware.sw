@@ -85,9 +85,14 @@ get a unit from a unit id string.
   op evaluateUnitId : String -> Option SpecCalc.Value
   def evaluateUnitId path =
     let
-      def handler except =
-        case except of
-          | _ -> return (None : Option SpecCalc.Value)
+      % TODO: do we really intend to ignore exceptions here?
+      % old (generates compiler warning about unused var: except):
+      % def handler except =
+      % case except of
+      %   | _ -> return (None : Option SpecCalc.Value)
+      % 
+      def handler _ (* except *) =
+        return (None : Option SpecCalc.Value)
     in
     let prog = {
       resetGlobals;

@@ -68,7 +68,7 @@ snark qualifying spec
 	           | _ -> Lisp.symbol("SNARK",id)))
       | _ -> Lisp.symbol("SNARK",id)
     
-  def snarkPPBaseSort(sp:Spec, s:Sort, rng?):LispCell = 
+  def snarkPPBaseSort(_(* sp *):Spec, s:Sort, rng?):LispCell = 
     let res =
     case s of
       | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NATURAL")
