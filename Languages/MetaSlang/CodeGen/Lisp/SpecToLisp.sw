@@ -299,22 +299,28 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
    (* Ad hoc translation for boolean operations that are not
       call by value when applied directly *)
    | (Op(id as Qualified("Boolean","&"),_),srt,_) -> 
+     let arity = opArity(sp,id,srt) in
      (case optArgs
         of Some (Record([(_,x),(_,y)],_)) -> 
            mkLApply(mkLOp "cl:and",[mkLTerm(sp,dpn,vars,x),
                                        mkLTerm(sp,dpn,vars,y)])
+         | Some term -> mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term))
          | None -> mkLOp(printPackageId(id,dpn)))
    | (Op(id as Qualified("Boolean","or"),_),srt,_) -> 
+     let arity = opArity(sp,id,srt) in
      (case optArgs
         of Some (Record([(_,x),(_,y)],_)) -> 
            mkLApply(mkLOp "cl:or",[mkLTerm(sp,dpn,vars,x),mkLTerm(sp,dpn,vars,y)])
+         | Some term -> mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term))
          | None -> mkLOp(printPackageId(id,dpn)))
    | (Op(id as Qualified("Boolean"," =>"),_),srt,_) -> 
+     let arity = opArity(sp,id,srt) in
      (case optArgs
         of Some (Record([(_,x),(_,y)],_)) -> 
            mkLApply(mkLOp "cl:or",[mkLApply(mkLOp "cl:not",
                                                [mkLTerm(sp,dpn,vars,x)]),
                                       mkLTerm(sp,dpn,vars,y)])
+         | Some term -> mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term))
          | None -> mkLOp(printPackageId(id,dpn)))
    | (Op (id,_),srt,_) -> 
      let arity = opArity(sp,id,srt) in
