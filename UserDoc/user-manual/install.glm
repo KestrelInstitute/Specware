@@ -30,7 +30,8 @@ The following programs and documents are included on the &Specware;
 <listitem>
   <para>
      <"XEmacs"> - This folder contains the XEmacs <"setup.exe">
-     installer for Windows. XEmacs is the environment within which
+     installer for Windows, as well as the packages necessary to
+     install the program. XEmacs is the environment within which
      &Specware; 4.0 is designed to run.
   </para>
 </listitem>
@@ -134,6 +135,13 @@ XP, Windows 2000 and Windows NT 4.0.
 <title>Installation Instructions</title>
 
 <procedure>
+
+<step>
+<para>
+If you have a previous version of Specware installed on your computer,
+please first remove it before running the Specware 4.0 installation.
+</para>
+</step>
 
 <step>
 <para>
