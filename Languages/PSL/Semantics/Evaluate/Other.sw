@@ -5,6 +5,7 @@ SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
   import ../../AbstractSyntax/SimplePrinter
   import Oscar
+  import Reindex
   import /Languages/SpecCalculus/Semantics/Evaluate/SpecMorphism
   import /Languages/SpecCalculus/Semantics/Evaluate/Substitute
   import Transformations/PartialEval

@@ -171,9 +171,9 @@ for lists.
                 case claimType claim of
                   | Conjecture -> return (newModeSpec,Cons(claim,newClaims), insert(newInvars,ref))
                   | _ -> {
-                       print ("normalize: claim = " ^ (show (term claim)) ^ "\n");
+                       % print ("normalize: claim = " ^ (show (term claim)) ^ "\n");
                        (newModeSpec,newFormula) <- visitConjunct newModeSpec (term claim);
-                       print ("normalize: after = " ^ (show newFormula) ^ "\n");
+                       % print ("normalize: after = " ^ (show newFormula) ^ "\n");
                        case newFormula of
                          | Fun (Bool b,_,_) ->
                             if b then
@@ -189,7 +189,7 @@ for lists.
         (case formula of
           | Apply (Fun (Op (Qualified ("Boolean","&"),fxty),srt,funPos),
                    Record([(M_fld,M),(N_fld,N)], recPos),applPos) -> {
-                     print ("normalize: conjunction = " ^ (show formula) ^ "\n"); % " (" ^ (System.toString formula) ^ ")\n");
+                     % print ("normalize: conjunction = " ^ (show formula) ^ "\n"); % " (" ^ (System.toString formula) ^ ")\n");
                      (newModeSpec,newM) <- visitConjunct modeSpec M;
                      (newModeSpec,newN) <- visitConjunct newModeSpec N;
                      newTerm <-

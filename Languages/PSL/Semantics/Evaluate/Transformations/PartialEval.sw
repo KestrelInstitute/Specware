@@ -6,6 +6,8 @@ PE qualifying spec
   import /Languages/PSL/Semantics/Evaluate/Specs/Compiler
   import Simplify
 
+  op Reindex.reindexBSpec : BSpec -> Id.Id -> BSpec
+
   (* We prematurely refine transition specs here. *)
   import /Languages/PSL/Semantics/Evaluate/Specs/TransSpec/Legacy
 
@@ -209,7 +211,11 @@ PE qualifying spec
                     } else 
                       return (subst, cons (param,residParams), cons (arg, residArgs), cons (srt,residSorts))
                  }
-             | _ -> fail "mismatched lists in partitionArgs"
+             | _ -> fail ("mismatched lists in partitionArgs: "
+                    ^ "\n  parameters=" ^ (System.toString procInfo.parameters) 
+                    ^ "\n  argList=" ^ (System.toString argList) 
+                    ^ "\n  paramSortList=" ^ (System.toString paramSortList) 
+                    ^ "\n")
        in
          partitionArgs (procInfo.parameters,argList,paramSortList);
 
@@ -226,7 +232,10 @@ PE qualifying spec
                     else 
                       return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (type varInfo, residStateSorts))
                  }
-             | _ -> fail "mismatched lists in partitionState"
+             | _ -> fail ("mismatched lists in partitionState"
+                    ^ "\n  varsInScope=" ^ (System.toString (varsInScope procInfo))
+                    ^ "\n  storeList=" ^ (System.toString storeList)
+                    ^ "\n") 
         in
           partitionState subst (varsInScope procInfo) storeList;
 
@@ -239,8 +248,9 @@ PE qualifying spec
        if traceRewriting > 0 then
          print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
        (newOscSpec,newBSpec) <- specializeBSpec oldOscSpec (bSpec procInfo) extendedSubst newOscSpec;
+       newProcId <- makeNewProcId procId extendedSubst;
+       % newBSpec <- return (reindexBSpec newBSpec newProcId);
        newBSpec <- removeNilTransitions newBSpec;
-       newProcId <- makeNewProcId procId subst;
        if traceRewriting > 0 then
          print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n") else return ();
        (newReturnInfo : ReturnInfo, newReturnTerm, newReturnSort,postcondition,bindingTerm) <-
@@ -352,7 +362,7 @@ PE qualifying spec
        rhs <- return (mkAnd (newTerm,bindingTerm));
        equalTerm <- MSlangEnv.mkApply (mkEquals (freshMetaTyVar noPos,noPos), mkTuple ([callTerm,rhs], noPos),noPos);
        newOscSpec <- newOscSpec Env.withModeSpec newModeSpec;
-       newProc <- return (Proc.makeProcedure residParams (varsInScope procInfo)
+       newProc <- return (Proc.makeProcedure residParams residStateVars
                                  newReturnInfo
                                  (modeSpec procInfo)
                                  newBSpec);
