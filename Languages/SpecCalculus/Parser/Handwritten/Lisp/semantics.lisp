@@ -462,7 +462,7 @@ If we want the precedence to be optional:
 
 (defun make-unqualified-op-ref (name l r)
   (make-fun (cond (ms::|usingNewBooleans?|
-		   (cond ((equal name "not") (cons :|Not| nil))
+		   (cond ((equal name "~") (cons :|Not| nil))
 			 ((equal name "&")  (cons :|And| nil))
 			 ((equal name "or") (cons :|Or| nil))
 			 ;;((equal name ("&&") (cons :|And| nil))
