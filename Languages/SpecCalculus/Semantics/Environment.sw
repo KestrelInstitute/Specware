@@ -311,6 +311,23 @@ while there is a transition from names with "UnitId" to "UnitId".
   def setPrismChoices ps = 
     writeGlobalVar ("PrismChoices", ps)
 
+  op  incrPrismChoices : PrismChoices -> Option PrismChoices
+  def incrPrismChoices pcs =
+    %% compute next set of indices in cartesian product
+    %% return None when past end of all possiblities
+    case pcs of
+      | [] -> None
+      | pc :: pcs ->
+        let n = pc.n + 1 in
+	if n <= length pc.p.sms then
+	  %% normal case
+	  Some (cons (pc << {n = n}, pcs))
+	else
+	  %% "carry" case
+	  case incrPrismChoices pcs of
+	    | Some pcs -> Some (cons (pc << {n = 1}, pcs))
+	    | None -> None
+
 \end{spec}
 
 I'm not sure the following is necessary. It is called at the start of
