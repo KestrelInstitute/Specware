@@ -2,9 +2,9 @@ echo off
 rem This starts Specware within an Xemacs window (plus a Allegro Lisp Console)
 
 set SPECWARE4=\Progra~1\Specware4
+rem SWPATH needs /s rather than \s so URI parsing works
+set SWPATH=/Progra~1/Specware4
 set ALLEGRO=C:\Progra~1\acl61
-
-set SWPATH=/Proga~1/Specware4
 
 rem The following environment variables are used within the emacs
 rem interface to find the executable and the Specware world to run. Note
