@@ -93,9 +93,10 @@ file; such a file is the result of this step. If no such directory is
 found, the unit reference cannot be resolved and an error is signaled
 by &Specware;.</para></listitem>
 
-<listitem><para>There are two alternative steps here, depending on
-whether the original unit reference contains ``#'' or
-not.</para></listitem>
+<listitem>
+
+<para>There are two alternative steps here, depending on whether the
+original unit reference contains ``#'' or not.</para>
 
 <orderedlist>
 
@@ -119,6 +120,8 @@ text (at the right of ``='') is the final result of
 resolution.</para></listitem>
 
 </orderedlist>
+
+</listitem>
 
 </orderedlist>
 
@@ -204,9 +207,10 @@ existing file, that is the result of this third step.  Otherwise, the
 unit reference cannot be resolved and an error is signaled by
 &Specware;.</para></listitem>
 
-<listitem><para>There are two alternative steps here, depending on
-whether the original unit reference contains ``#'' or
-not.</para></listitem>
+<listitem>
+
+<para>There are two alternative steps here, depending on whether the
+original unit reference contains ``#'' or not.</para>
 
 <orderedlist>
 
@@ -230,6 +234,8 @@ text (at the right of ``='') is the final result of
 resolution.</para></listitem>
 
 </orderedlist>
+
+</listitem>
 
 </orderedlist>
 
@@ -271,9 +277,10 @@ existing file, that is the result of this third step.  Otherwise, the
 unit reference cannot be resolved and an error is signaled by
 &Specware;.</para></listitem>
 
-<listitem><para>There are two alternative steps here, depending on
-whether the original unit reference contains ``#'' or
-not.</para></listitem>
+<listitem>
+
+<para>There are two alternative steps here, depending on whether the
+original unit reference contains ``#'' or not.</para>
 
 <orderedlist>
 
@@ -297,6 +304,8 @@ text (at the right of ``='') is the final result of
 resolution.</para></listitem>
 
 </orderedlist>
+
+</listitem>
 
 </orderedlist>
 
