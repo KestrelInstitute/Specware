@@ -49,12 +49,12 @@ spec {
     
   def singleton x = Cons(x,[])
 
-  def union s1 s2 = fold insert s1 s2
+  % def union s1 s2 = fold insert s1 s2
 
-  def take s =
-    case s of
-	  | [] -> None
-	  | h::t -> Some (h,t)
+%   def takeOne s =
+%     case s of
+% 	  | [] -> None
+% 	  | h::t -> Some (h,t)
 
   def ppSet ppElem l =
      ppConcat [
