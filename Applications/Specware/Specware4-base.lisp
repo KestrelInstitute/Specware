@@ -1509,13 +1509,13 @@
   (block 
    nil 
    (if (eq (car s1) :|Arrow|) 
-       (let ((pV78 (cdr s1))) 
+       (let ((pV76 (cdr s1))) 
          (if (eq (car s2) :|Arrow|) 
-             (let ((pV123 (cdr s2))) 
+             (let ((pV121 (cdr s2))) 
                (return 
                 (lisp::and 
-                 (METASLANG::equalSort? (svref pV78 0) (svref pV123 0)) 
-                 (METASLANG::equalSort? (svref pV78 1) (svref pV123 1))))))) 
+                 (METASLANG::equalSort? (svref pV76 0) (svref pV121 0)) 
+                 (METASLANG::equalSort? (svref pV76 1) (svref pV121 1))))))) 
        (if (eq (car s1) :|Product|) 
            (if (eq (car s2) :|Product|) 
                (return 
@@ -1552,140 +1552,127 @@
                               #'METASLANG::equalSort?-1))) 
                            (error "Nonexhaustive match failure in equalSort?"))))))) 
                (if (eq (car s1) :|Quotient|) 
-                   (let ((pV75 (cdr s1))) 
+                   (let ((pV73 (cdr s1))) 
                      (if (eq (car s2) :|Quotient|) 
-                         (let ((pV106 (cdr s2))) 
+                         (let ((pV104 (cdr s2))) 
                            (return 
                             (lisp::and 
                              (METASLANG::equalSort? 
-                              (svref pV75 0) 
-                              (svref pV106 0)) 
+                              (svref pV73 0) 
+                              (svref pV104 0)) 
                              (METASLANG::equalTerm? 
-                              (svref pV75 1) 
-                              (svref pV106 1))))))) 
+                              (svref pV73 1) 
+                              (svref pV104 1))))))) 
                    (if (eq (car s1) :|Subsort|) 
-                       (let ((pV74 (cdr s1))) 
+                       (let ((pV72 (cdr s1))) 
                          (if (eq (car s2) :|Subsort|) 
-                             (let ((pV99 (cdr s2))) 
+                             (let ((pV97 (cdr s2))) 
                                (return 
                                 (lisp::and 
                                  (METASLANG::equalSort? 
-                                  (svref pV74 0) 
-                                  (svref pV99 0)) 
+                                  (svref pV72 0) 
+                                  (svref pV97 0)) 
                                  (METASLANG::equalTerm? 
-                                  (svref pV74 1) 
-                                  (svref pV99 1))))))) 
+                                  (svref pV72 1) 
+                                  (svref pV97 1))))))) 
                        (if (eq (car s1) :|Base|) 
-                           (let ((pV73 (cdr s1))) 
-                             (let ((pV90 (svref pV73 1))
-                                   (pV89 (svref pV73 0))) 
-                               (if (eq (car s2) :|Base|) 
-                                   (let ((pV92 (cdr s2))) 
-                                     (let ((pV94 (svref pV92 1))
-                                           (pV93 (svref pV92 0))) 
-                                       (progn (return 
-                                               (lisp::and 
-                                                (slang-built-in::slang-term-equals 
-                                                 pV89 
-                                                 pV93) 
-                                                (METASLANG::equalList? 
-                                                 pV90 
-                                                 pV94 
-                                                 #'METASLANG::equalSort?-1))) 
-                                              (return 
-                                               (lisp::and 
-                                                (slang-built-in::slang-term-equals 
-                                                 pV89 
-                                                 pV93) 
-                                                (METASLANG::equalList? 
-                                                 pV90 
-                                                 pV94 
-                                                 #'METASLANG::equalSort?-1))))))))) 
+                           (let ((pV71 (cdr s1))) 
+                             (if (eq (car s2) :|Base|) 
+                                 (let ((pV90 (cdr s2))) 
+                                   (return 
+                                    (lisp::and 
+                                     (slang-built-in::slang-term-equals 
+                                      (svref pV71 0) 
+                                      (svref pV90 0)) 
+                                     (METASLANG::equalList? 
+                                      (svref pV71 1) 
+                                      (svref pV90 1) 
+                                      #'METASLANG::equalSort?-1)))))) 
                            (if (eq (car s1) :|TyVar|) 
                                (if (eq (car s2) :|TyVar|) 
                                    (return 
                                     (string=  (car (cdr s1)) (car (cdr s2))))) 
                                (if (eq (car s1) :|MetaTyVar|) 
-                                   (let ((pV79 (car (cdr s1)))) 
+                                   (let ((pV77 (car (cdr s1)))) 
                                      (progn (if (eq (car s2) :|MetaTyVar|) 
                                                 (return 
-                                                 (let ((pV43 (STATE::|!!| pV79))) 
+                                                 (let ((pV41 (STATE::|!!| pV77))) 
                                                    (block 
                                                     nil 
-                                                    (let ((pV44 (svref pV43 0))) 
+                                                    (let ((pV42 (svref pV41 0))) 
                                                       (return 
-                                                       (let ((pV39 
+                                                       (let ((pV37 
                                                               (STATE::|!!| 
                                                                (car (cdr s2))))) 
                                                          (block 
                                                           nil 
-                                                          (let ((pV40 
-                                                                 (svref pV39 0))) 
+                                                          (let ((pV38 
+                                                                 (svref pV37 0))) 
                                                             (return 
                                                              (lisp::or 
                                                               ( =  
-                                                               (svref pV43 2) 
-                                                               (svref pV39 2)) 
+                                                               (svref pV41 2) 
+                                                               (svref pV37 2)) 
                                                               (block 
                                                                nil 
                                                                (if (eq 
-                                                                    (car pV44) 
+                                                                    (car pV42) 
                                                                     :|Some|) 
-                                                                   (let ((pV37 
+                                                                   (let ((pV35 
                                                                           (cdr 
-                                                                           pV44))) 
+                                                                           pV42))) 
                                                                      (progn (if (eq 
                                                                                  (car 
-                                                                                  pV40) 
+                                                                                  pV38) 
                                                                                  :|Some|) 
                                                                                 (return 
                                                                                  (METASLANG::equalSort? 
-                                                                                  pV37 
+                                                                                  pV35 
                                                                                   (cdr 
-                                                                                   pV40)))) 
+                                                                                   pV38)))) 
                                                                             (return 
                                                                              (METASLANG::equalSort? 
-                                                                              pV37 
+                                                                              pV35 
                                                                               s2))))) 
                                                                (if (eq 
-                                                                    (car pV40) 
+                                                                    (car pV38) 
                                                                     :|Some|) 
                                                                    (return 
                                                                     (METASLANG::equalSort? 
                                                                      s1 
-                                                                     (cdr pV40)))) 
+                                                                     (cdr pV38)))) 
                                                                (return nil))))) 
                                                           (error 
                                                            "Nonexhaustive match failure in equalSort?"))))) 
                                                     (error 
                                                      "Nonexhaustive match failure in equalSort?"))))) 
                                             (return 
-                                             (let ((pV52 (STATE::|!!| pV79))) 
+                                             (let ((pV50 (STATE::|!!| pV77))) 
                                                (block 
                                                 nil 
-                                                (let ((pV53 (svref pV52 0))) 
+                                                (let ((pV51 (svref pV50 0))) 
                                                   (return 
                                                    (block 
                                                     nil 
-                                                    (if (eq (car pV53) :|Some|) 
+                                                    (if (eq (car pV51) :|Some|) 
                                                         (return 
                                                          (METASLANG::equalSort? 
-                                                          (cdr pV53) 
+                                                          (cdr pV51) 
                                                           s2))) 
                                                     (return nil)))) 
                                                 (error 
                                                  "Nonexhaustive match failure in equalSort?")))))))))))))) 
    (if (eq (car s2) :|MetaTyVar|) 
        (return 
-        (let ((pV61 (STATE::|!!| (car (cdr s2))))) 
+        (let ((pV59 (STATE::|!!| (car (cdr s2))))) 
           (block 
            nil 
-           (let ((pV62 (svref pV61 0))) 
+           (let ((pV60 (svref pV59 0))) 
              (return 
               (block 
                nil 
-               (if (eq (car pV62) :|Some|) 
-                   (return (METASLANG::equalSort? s1 (cdr pV62)))) 
+               (if (eq (car pV60) :|Some|) 
+                   (return (METASLANG::equalSort? s1 (cdr pV60)))) 
                (return nil)))) 
            (error "Nonexhaustive match failure in equalSort?"))))) 
    (return nil)))
@@ -18439,6 +18426,22 @@
                     x4) 
            x5))
 
+(defun SPECCALC::foldM (f) 
+  #'(lambda (a) 
+     #'(lambda (l) 
+        (block 
+         nil 
+         (if (null l) 
+             (return (SPECCALC::|!return| a)) 
+             (if (consp l) 
+                 (let ((pV4 (cdr l))) 
+                   (return 
+                    (SPECCALC::monadBind 
+                     (funcall (funcall f a) (car l)) 
+                     #'(lambda (y) 
+                        (funcall (funcall (SPECCALC::foldM f) y) pV4))))))) 
+         (error "Nonexhaustive match failure in foldM")))))
+
 (defun SPECCALC::printAliases (pV7) 
   (block 
    nil 
@@ -18495,257 +18498,324 @@
              ")")))) 
    (error "Nonexhaustive match failure in printTypeVars")))
 
-(defun SPECCALC::addOp (names) 
-  (block 
-   nil 
-   (if (consp names) 
-       (let ((pV43 (car names))) 
-         (if (eq (car pV43) :|Qualified|) 
-             (let ((pV45 (cdr pV43))) 
-               (let ((pV47 (cdr pV45))
-                     (pV46 (car pV45))) 
-                 (return 
-                  #'(lambda (new_fixity) 
-                     #'(lambda (new_sort_scheme) 
-                        (let ((new_sort (cdr new_sort_scheme))
-                              (new_type_vars (car new_sort_scheme))) 
-                          #'(lambda (new_defs) 
-                             #'(lambda (old_spec) 
-                                #'(lambda (|!position|) 
-                                   (let ((old_ops (svref old_spec 1))) 
-                                     (let ((old_qmap 
-                                            (let ((pV2 
-                                                   (STRINGMAP::|!find| 
-                                                    old_ops 
-                                                    pV46))) 
-                                              (block 
-                                               nil 
-                                               (if (eq (car pV2) :|None|) 
-                                                   (return STRINGMAP::empty) 
-                                                   (if (eq (car pV2) :|Some|) 
-                                                       (return (cdr pV2)))) 
-                                               (error 
-                                                "Nonexhaustive match failure in addOp"))))) 
-                                       (SPECCALC::monadBind 
-                                        (let ((pV33 
-                                               (STRINGMAP::|!find| old_qmap pV47))) 
-                                          (block 
-                                           nil 
-                                           (if (eq (car pV33) :|None|) 
-                                               (return 
-                                                (SPECCALC::|!return| 
-                                                 (STRINGMAP::insert 
-                                                  old_qmap 
-                                                  pV47 
-                                                  (vector 
-                                                   names 
-                                                   new_fixity 
-                                                   new_sort_scheme 
-                                                   new_defs)))) 
-                                               (if (eq (car pV33) :|Some|) 
-                                                   (let ((pV34 (cdr pV33))) 
-                                                     (let ((pV38 (svref pV34 3))
-                                                           (pV37 (svref pV34 2))
-                                                           (pV35 (svref pV34 0))) 
-                                                       (let ((pV40 (cdr pV37))
-                                                             (pV39 (car pV37))) 
+(defun SPECCALC::addOp (new_op_names) 
+  #'(lambda (new_fixity) 
+     #'(lambda (new_sort_scheme) 
+        (let ((new_type_vars (car new_sort_scheme))) 
+          #'(lambda (new_defs) 
+             #'(lambda (old_spec) 
+                #'(lambda (|!position|) 
+                   (let ((old_infos 
+                          (LIST-SPEC::foldl-1-1-1 
+                           #'(lambda (x1) 
+                              (let ((old_infos (cdr x1))) 
+                                (let ((pV2 
+                                       (STANDARDSPEC::findTheOp 
+                                        old_spec 
+                                        (car x1)))) 
+                                  (block 
+                                   nil 
+                                   (if (eq (car pV2) :|Some|) 
+                                       (let ((pV3 (cdr pV2))) 
+                                         (return 
+                                          (if (LIST-SPEC::|!exists|-1-1 
+                                               #'(lambda (old_info) 
+                                                  (slang-built-in::slang-term-equals 
+                                                   pV3 
+                                                   old_info)) 
+                                               old_infos) 
+                                              old_infos 
+                                              (LIST-SPEC::|!cons| pV3 old_infos))))) 
+                                   (return old_infos))))) 
+                           nil 
+                           new_op_names))) 
+                     (SPECCALC::monadBind 
+                      (block 
+                       nil 
+                       (if (null old_infos) 
+                           (return 
+                            (let ((new_info 
+                                   (vector 
+                                    new_op_names 
+                                    new_fixity 
+                                    new_sort_scheme 
+                                    new_defs))) 
+                              (SPECCALC::|!return| 
+                               (LIST-SPEC::foldl-1-1-1 
+                                #'(lambda (x1) 
+                                   (let ((pV4 (car x1))) 
+                                     (block 
+                                      nil 
+                                      (if (eq (car pV4) :|Qualified|) 
+                                          (let ((pV6 (cdr pV4))) 
+                                            (return 
+                                             (insertAQualifierMap 
+                                              (cdr x1) 
+                                              (car pV6) 
+                                              (cdr pV6) 
+                                              new_info)))) 
+                                      (error 
+                                       "Nonexhaustive match failure in addOp")))) 
+                                (svref old_spec 1) 
+                                new_op_names)))) 
+                           (if (consp old_infos) 
+                               (let ((pV51 (car old_infos))) 
+                                 (let ((pV56 (svref pV51 3))
+                                       (pV55 (svref pV51 2))) 
+                                   (let ((pV57 (car pV55))) 
+                                     (if (null (cdr old_infos)) 
+                                         (return 
+                                          (let ((combined_op_names 
+                                                 (LISTUTILITIES::listUnion 
+                                                  (svref pV51 0) 
+                                                  new_op_names))) 
+                                            (block 
+                                             nil 
+                                             (if (null pV56) 
+                                                 (if (null new_defs) 
+                                                     (return 
+                                                      (SPECCALC::raise 
+                                                       (cons 
+                                                        :|SpecError| 
+                                                        (cons 
+                                                         |!position| 
+                                                         (STRING-SPEC::^ 
+                                                          (STRING-SPEC::^ 
+                                                           (STRING-SPEC::^ 
+                                                            (STRING-SPEC::^ 
+                                                             (STRING-SPEC::^ 
+                                                              (STRING-SPEC::^ 
+                                                               "Operator " 
+                                                               (SPECCALC::printAliases 
+                                                                new_op_names)) 
+                                                              " has been redeclared") 
+                                                             "
+ from ") 
+                                                            (ANNSPECPRINTER::printSortScheme-1 
+                                                             pV55)) 
+                                                           "
+   to ") 
+                                                          (ANNSPECPRINTER::printSortScheme-1 
+                                                           new_sort_scheme)))))) 
+                                                     (if (consp new_defs) 
                                                          (return 
-                                                          (block 
-                                                           nil 
-                                                           (if (null pV38) 
-                                                               (if (null 
-                                                                    new_defs) 
-                                                                   (return 
-                                                                    (SPECCALC::raise 
-                                                                     (cons 
-                                                                      :|SpecError| 
-                                                                      (cons 
-                                                                       |!position| 
+                                                          (let ((happy? 
+                                                                 (block 
+                                                                  nil 
+                                                                  (if (null 
+                                                                       (car 
+                                                                        new_sort_scheme)) 
+                                                                      (if (eq 
+                                                                           (car 
+                                                                            (cdr 
+                                                                             new_sort_scheme)) 
+                                                                           :|MetaTyVar|) 
+                                                                          (return 
+                                                                           t))) 
+                                                                  (return 
+                                                                   (slang-built-in::slang-term-equals 
+                                                                    new_type_vars 
+                                                                    pV57))))) 
+                                                            (if happy? 
+                                                                (let ((new_info 
+                                                                       (vector 
+                                                                        combined_op_names 
+                                                                        (svref 
+                                                                         pV51 
+                                                                         1) 
+                                                                        pV55 
+                                                                        new_defs))) 
+                                                                  (SPECCALC::|!return| 
+                                                                   (LIST-SPEC::foldl-1-1-1 
+                                                                    #'(lambda (x1) 
+                                                                       (let ((pV16 
+                                                                              (car 
+                                                                               x1))) 
+                                                                         (block 
+                                                                          nil 
+                                                                          (if (eq 
+                                                                               (car 
+                                                                                pV16) 
+                                                                               :|Qualified|) 
+                                                                              (let ((pV18 
+                                                                                     (cdr 
+                                                                                      pV16))) 
+                                                                                (return 
+                                                                                 (insertAQualifierMap 
+                                                                                  (cdr 
+                                                                                   x1) 
+                                                                                  (car 
+                                                                                   pV18) 
+                                                                                  (cdr 
+                                                                                   pV18) 
+                                                                                  new_info)))) 
+                                                                          (error 
+                                                                           "Nonexhaustive match failure in addOp")))) 
+                                                                    (svref 
+                                                                     old_spec 
+                                                                     1) 
+                                                                    combined_op_names))) 
+                                                                (SPECCALC::raise 
+                                                                 (cons 
+                                                                  :|SpecError| 
+                                                                  (cons 
+                                                                   |!position| 
+                                                                   (STRING-SPEC::^ 
+                                                                    (STRING-SPEC::^ 
+                                                                     (STRING-SPEC::^ 
+                                                                      (STRING-SPEC::^ 
                                                                        (STRING-SPEC::^ 
                                                                         (STRING-SPEC::^ 
-                                                                         (STRING-SPEC::^ 
-                                                                          (STRING-SPEC::^ 
-                                                                           (STRING-SPEC::^ 
-                                                                            (STRING-SPEC::^ 
-                                                                             "Operator " 
-                                                                             (SPECCALC::printAliases 
-                                                                              names)) 
-                                                                            " has been redeclared") 
-                                                                           "
- from ") 
-                                                                          (ANNSPECPRINTER::printSort 
-                                                                           pV40)) 
-                                                                         "
-   to ") 
-                                                                        (ANNSPECPRINTER::printSort 
-                                                                         new_sort)))))) 
-                                                                   (if (consp 
-                                                                        new_defs) 
-                                                                       (return 
-                                                                        (let ((happy? 
-                                                                               (block 
-                                                                                nil 
-                                                                                (if (null 
-                                                                                     (car 
-                                                                                      new_sort_scheme)) 
-                                                                                    (if (eq 
-                                                                                         (car 
-                                                                                          (cdr 
-                                                                                           new_sort_scheme)) 
-                                                                                         :|MetaTyVar|) 
-                                                                                        (return 
-                                                                                         t))) 
-                                                                                (return 
-                                                                                 (slang-built-in::slang-term-equals 
-                                                                                  new_type_vars 
-                                                                                  pV39))))) 
-                                                                          (if happy? 
-                                                                              (SPECCALC::|!return| 
-                                                                               (STRINGMAP::insert 
-                                                                                old_qmap 
-                                                                                pV47 
-                                                                                (vector 
-                                                                                 pV35 
-                                                                                 (svref 
-                                                                                  pV34 
-                                                                                  1) 
-                                                                                 pV37 
-                                                                                 new_defs))) 
-                                                                              (SPECCALC::raise 
-                                                                               (cons 
-                                                                                :|SpecError| 
-                                                                                (cons 
-                                                                                 |!position| 
-                                                                                 (STRING-SPEC::^ 
-                                                                                  (STRING-SPEC::^ 
-                                                                                   (STRING-SPEC::^ 
-                                                                                    (STRING-SPEC::^ 
-                                                                                     (STRING-SPEC::^ 
-                                                                                      (STRING-SPEC::^ 
-                                                                                       "Operator " 
-                                                                                       (SPECCALC::printAliases 
-                                                                                        names)) 
-                                                                                      " has been redeclared or redefined") 
-                                                                                     "
+                                                                         "Operator " 
+                                                                         (SPECCALC::printAliases 
+                                                                          new_op_names)) 
+                                                                        " has been redeclared or redefined") 
+                                                                       "
  with new type variables ") 
-                                                                                    (SPECCALC::printTypeVars 
-                                                                                     new_type_vars)) 
-                                                                                   "
+                                                                      (SPECCALC::printTypeVars 
+                                                                       new_type_vars)) 
+                                                                     "
     differing from prior ") 
-                                                                                  (SPECCALC::printTypeVars 
-                                                                                   pV39)))))))))) 
-                                                               (if (consp pV38) 
-                                                                   (if (null 
-                                                                        new_defs) 
-                                                                       (return 
-                                                                        (let ((happy? 
-                                                                               (let ((pV17 
-                                                                                      (cdr 
-                                                                                       pV37))
-                                                                                     (pV16 
-                                                                                      (car 
-                                                                                       pV37))) 
-                                                                                 (block 
-                                                                                  nil 
-                                                                                  (if (null 
-                                                                                       pV16) 
-                                                                                      (if (eq 
-                                                                                           (car 
-                                                                                            pV17) 
-                                                                                           :|MetaTyVar|) 
-                                                                                          (return 
-                                                                                           t))) 
-                                                                                  (if (eq 
-                                                                                       (car 
-                                                                                        pV17) 
-                                                                                       :|MetaTyVar|) 
-                                                                                      (return 
-                                                                                       (slang-built-in::slang-term-equals 
-                                                                                        new_type_vars 
-                                                                                        pV16))) 
-                                                                                  (return 
-                                                                                   nil))))) 
-                                                                          (if happy? 
-                                                                              (SPECCALC::|!return| 
-                                                                               (STRINGMAP::insert 
-                                                                                old_qmap 
-                                                                                pV47 
-                                                                                (vector 
-                                                                                 pV35 
-                                                                                 new_fixity 
-                                                                                 new_sort_scheme 
-                                                                                 pV38))) 
-                                                                              (SPECCALC::raise 
-                                                                               (cons 
-                                                                                :|SpecError| 
-                                                                                (cons 
-                                                                                 |!position| 
-                                                                                 (STRING-SPEC::^ 
-                                                                                  (STRING-SPEC::^ 
-                                                                                   (STRING-SPEC::^ 
-                                                                                    (STRING-SPEC::^ 
-                                                                                     (STRING-SPEC::^ 
-                                                                                      (STRING-SPEC::^ 
-                                                                                       "Operator " 
-                                                                                       (SPECCALC::printAliases 
-                                                                                        names)) 
-                                                                                      " has been redeclared") 
-                                                                                     "
+                                                                    (SPECCALC::printTypeVars 
+                                                                     pV57)))))))))) 
+                                                 (if (consp pV56) 
+                                                     (if (null new_defs) 
+                                                         (return 
+                                                          (let ((happy? 
+                                                                 (let ((pV27 
+                                                                        (cdr 
+                                                                         pV55))
+                                                                       (pV26 
+                                                                        (car 
+                                                                         pV55))) 
+                                                                   (block 
+                                                                    nil 
+                                                                    (if (null 
+                                                                         pV26) 
+                                                                        (if (eq 
+                                                                             (car 
+                                                                              pV27) 
+                                                                             :|MetaTyVar|) 
+                                                                            (return 
+                                                                             t))) 
+                                                                    (if (eq 
+                                                                         (car 
+                                                                          pV27) 
+                                                                         :|MetaTyVar|) 
+                                                                        (return 
+                                                                         (slang-built-in::slang-term-equals 
+                                                                          new_type_vars 
+                                                                          pV26))) 
+                                                                    (return nil))))) 
+                                                            (if happy? 
+                                                                (let ((new_info 
+                                                                       (vector 
+                                                                        combined_op_names 
+                                                                        new_fixity 
+                                                                        new_sort_scheme 
+                                                                        pV56))) 
+                                                                  (SPECCALC::|!return| 
+                                                                   (LIST-SPEC::foldl-1-1-1 
+                                                                    #'(lambda (x1) 
+                                                                       (let ((pV30 
+                                                                              (car 
+                                                                               x1))) 
+                                                                         (block 
+                                                                          nil 
+                                                                          (if (eq 
+                                                                               (car 
+                                                                                pV30) 
+                                                                               :|Qualified|) 
+                                                                              (let ((pV32 
+                                                                                     (cdr 
+                                                                                      pV30))) 
+                                                                                (return 
+                                                                                 (insertAQualifierMap 
+                                                                                  (cdr 
+                                                                                   x1) 
+                                                                                  (car 
+                                                                                   pV32) 
+                                                                                  (cdr 
+                                                                                   pV32) 
+                                                                                  new_info)))) 
+                                                                          (error 
+                                                                           "Nonexhaustive match failure in addOp")))) 
+                                                                    (svref 
+                                                                     old_spec 
+                                                                     1) 
+                                                                    combined_op_names))) 
+                                                                (SPECCALC::raise 
+                                                                 (cons 
+                                                                  :|SpecError| 
+                                                                  (cons 
+                                                                   |!position| 
+                                                                   (STRING-SPEC::^ 
+                                                                    (STRING-SPEC::^ 
+                                                                     (STRING-SPEC::^ 
+                                                                      (STRING-SPEC::^ 
+                                                                       (STRING-SPEC::^ 
+                                                                        (STRING-SPEC::^ 
+                                                                         "Operator " 
+                                                                         (SPECCALC::printAliases 
+                                                                          new_op_names)) 
+                                                                        " has been redeclared") 
+                                                                       "
  from type ") 
-                                                                                    (ANNSPECPRINTER::printSort 
-                                                                                     pV40)) 
-                                                                                   "
+                                                                      (ANNSPECPRINTER::printSortScheme-1 
+                                                                       pV55)) 
+                                                                     "
    to type ") 
-                                                                                  (ANNSPECPRINTER::printSort 
-                                                                                   new_sort)))))))) 
-                                                                       (if (consp 
-                                                                            new_defs) 
-                                                                           (return 
-                                                                            (SPECCALC::raise 
-                                                                             (cons 
-                                                                              :|SpecError| 
-                                                                              (cons 
-                                                                               |!position| 
-                                                                               (STRING-SPEC::^ 
-                                                                                (STRING-SPEC::^ 
-                                                                                 (STRING-SPEC::^ 
-                                                                                  (STRING-SPEC::^ 
-                                                                                   (STRING-SPEC::^ 
-                                                                                    (STRING-SPEC::^ 
-                                                                                     "Operator " 
-                                                                                     (SPECCALC::printAliases 
-                                                                                      names)) 
-                                                                                    " has been redefined") 
-                                                                                   "
+                                                                    (ANNSPECPRINTER::printSortScheme-1 
+                                                                     new_sort_scheme)))))))) 
+                                                         (if (consp new_defs) 
+                                                             (return 
+                                                              (SPECCALC::raise 
+                                                               (cons 
+                                                                :|SpecError| 
+                                                                (cons 
+                                                                 |!position| 
+                                                                 (STRING-SPEC::^ 
+                                                                  (STRING-SPEC::^ 
+                                                                   (STRING-SPEC::^ 
+                                                                    (STRING-SPEC::^ 
+                                                                     (STRING-SPEC::^ 
+                                                                      (STRING-SPEC::^ 
+                                                                       "Operator " 
+                                                                       (SPECCALC::printAliases 
+                                                                        new_op_names)) 
+                                                                      " has been redefined") 
+                                                                     "
  from ") 
-                                                                                  (ANNSPECPRINTER::printTermScheme-1 
-                                                                                   (car 
-                                                                                    pV38))) 
-                                                                                 "
+                                                                    (ANNSPECPRINTER::printTermScheme-1 
+                                                                     (car pV56))) 
+                                                                   "
    to ") 
-                                                                                (ANNSPECPRINTER::printTermScheme-1 
-                                                                                 (car 
-                                                                                  new_defs))))))))))) 
-                                                           (error 
-                                                            "Nonexhaustive match failure in addOp")))))))) 
-                                           (error 
-                                            "Nonexhaustive match failure in addOp"))) 
-                                        #'(lambda (new_qmap) 
-                                           (let ((new_ops 
-                                                  (STRINGMAP::insert 
-                                                   old_ops 
-                                                   pV46 
-                                                   new_qmap))) 
-                                             (let ((sp (setOps old_spec new_ops))) 
-                                               (SPECCALC::|!return| 
-                                                (LIST-SPEC::foldl-1-1-1 
-                                                 #'(lambda (x) 
-                                                    (addLocalOpName 
-                                                     (cdr x) 
-                                                     (car x))) 
-                                                 sp 
-                                                 names)))))))))))))))))))) 
-   (error "Nonexhaustive match failure in addOp")))
+                                                                  (ANNSPECPRINTER::printTermScheme-1 
+                                                                   (car new_defs))))))))))) 
+                                             (error 
+                                              "Nonexhaustive match failure in addOp")))))))))) 
+                       (return 
+                        (SPECCALC::raise 
+                         (cons 
+                          :|SpecError| 
+                          (cons 
+                           |!position| 
+                           (STRING-SPEC::^ 
+                            (STRING-SPEC::^ 
+                             "Op " 
+                             (SPECCALC::printAliases new_op_names)) 
+                            " refers to multiple prior ops")))))) 
+                      #'(lambda (new_ops) 
+                         (SPECCALC::monadBind 
+                          (SPECCALC::|!return| (setOps old_spec new_ops)) 
+                          #'(lambda (sp) 
+                             (funcall (funcall (SPECCALC::foldM 
+                                                #'(lambda (sp) 
+                                                   #'(lambda (name) 
+                                                      (SPECCALC::|!return| 
+                                                       (addLocalOpName sp name))))) 
+                                               sp) 
+                                      new_op_names)))))))))))))
 
 (defun SPECCALC::addOp-1-1-1-1-1-1-1 (x1 x2 x3 x4 x5 x6 x7) 
   (funcall (funcall (funcall (funcall (funcall (funcall (SPECCALC::addOp x1) x2) 
@@ -18755,159 +18825,222 @@
                     x6) 
            x7))
 
-(defun SPECCALC::addSort (names) 
-  (block 
-   nil 
-   (if (consp names) 
-       (let ((pV28 (car names))) 
-         (if (eq (car pV28) :|Qualified|) 
-             (let ((pV30 (cdr pV28))) 
-               (let ((pV32 (cdr pV30))
-                     (pV31 (car pV30))) 
-                 (return 
-                  #'(lambda (new_type_vars) 
-                     #'(lambda (new_defs) 
-                        #'(lambda (old_spec) 
-                           #'(lambda (|!position|) 
-                              (let ((old_sorts (svref old_spec 3))) 
-                                (let ((old_qmap 
-                                       (let ((pV2 
-                                              (STRINGMAP::|!find| old_sorts pV31))) 
+(defun SPECCALC::addSort (new_sort_names) 
+  #'(lambda (new_type_vars) 
+     #'(lambda (new_defs) 
+        #'(lambda (old_spec) 
+           #'(lambda (|!position|) 
+              (let ((old_infos 
+                     (LIST-SPEC::foldl-1-1-1 
+                      #'(lambda (x) 
+                         (let ((old_infos (cdr x))) 
+                           (let ((pV2 
+                                  (STANDARDSPEC::findTheSort old_spec (car x)))) 
+                             (block 
+                              nil 
+                              (if (eq (car pV2) :|Some|) 
+                                  (let ((pV3 (cdr pV2))) 
+                                    (return 
+                                     (if (LIST-SPEC::|!exists|-1-1 
+                                          #'(lambda (old_info) 
+                                             (slang-built-in::slang-term-equals 
+                                              pV3 
+                                              old_info)) 
+                                          old_infos) 
+                                         old_infos 
+                                         (LIST-SPEC::|!cons| pV3 old_infos))))) 
+                              (return old_infos))))) 
+                      nil 
+                      new_sort_names))) 
+                (SPECCALC::monadBind 
+                 (block 
+                  nil 
+                  (if (null old_infos) 
+                      (return 
+                       (let ((new_info 
+                              (vector new_sort_names new_type_vars new_defs))) 
+                         (SPECCALC::|!return| 
+                          (LIST-SPEC::foldl-1-1-1 
+                           #'(lambda (x) 
+                              (let ((pV4 (car x))) 
+                                (block 
+                                 nil 
+                                 (if (eq (car pV4) :|Qualified|) 
+                                     (let ((pV6 (cdr pV4))) 
+                                       (return 
+                                        (insertAQualifierMap 
+                                         (cdr x) 
+                                         (car pV6) 
+                                         (cdr pV6) 
+                                         new_info)))) 
+                                 (error "Nonexhaustive match failure in addSort")))) 
+                           (svref old_spec 3) 
+                           new_sort_names)))) 
+                      (if (consp old_infos) 
+                          (let ((pV39 (car old_infos))) 
+                            (let ((pV43 (svref pV39 2))
+                                  (pV42 (svref pV39 1))) 
+                              (if (null (cdr old_infos)) 
+                                  (return 
+                                   (let ((combined_sort_names 
+                                          (LISTUTILITIES::listUnion 
+                                           (svref pV39 0) 
+                                           new_sort_names))) 
+                                     (if (slang-built-in::slang-term-equals 
+                                          new_type_vars 
+                                          pV42) 
                                          (block 
                                           nil 
-                                          (if (eq (car pV2) :|None|) 
-                                              (return STRINGMAP::empty) 
-                                              (if (eq (car pV2) :|Some|) 
-                                                  (return (cdr pV2)))) 
-                                          (error 
-                                           "Nonexhaustive match failure in addSort"))))) 
-                                  (SPECCALC::monadBind 
-                                   (let ((pV21 
-                                          (STRINGMAP::|!find| old_qmap pV32))) 
-                                     (block 
-                                      nil 
-                                      (if (eq (car pV21) :|None|) 
-                                          (return 
-                                           (SPECCALC::|!return| 
-                                            (STRINGMAP::insert 
-                                             old_qmap 
-                                             pV32 
-                                             (vector 
-                                              names 
-                                              new_type_vars 
-                                              new_defs)))) 
-                                          (if (eq (car pV21) :|Some|) 
-                                              (let ((pV22 (cdr pV21))) 
-                                                (let ((pV25 (svref pV22 2))
-                                                      (pV24 (svref pV22 1))) 
+                                          (if (null pV43) 
+                                              (if (null new_defs) 
                                                   (return 
-                                                   (if (slang-built-in::slang-term-equals 
-                                                        new_type_vars 
-                                                        pV24) 
-                                                       (block 
-                                                        nil 
-                                                        (if (null pV25) 
-                                                            (if (null new_defs) 
-                                                                (return 
-                                                                 (SPECCALC::raise 
-                                                                  (cons 
-                                                                   :|SpecError| 
-                                                                   (cons 
-                                                                    |!position| 
-                                                                    (STRING-SPEC::^ 
-                                                                     (STRING-SPEC::^ 
-                                                                      "Sort " 
-                                                                      (SPECCALC::printAliases 
-                                                                       names)) 
-                                                                     " has been redeclared."))))) 
-                                                                (if (consp 
-                                                                     new_defs) 
-                                                                    (return 
-                                                                     (SPECCALC::|!return| 
-                                                                      (STRINGMAP::insert 
-                                                                       old_qmap 
-                                                                       pV32 
-                                                                       (vector 
-                                                                        (svref 
-                                                                         pV22 
-                                                                         0) 
-                                                                        new_type_vars 
-                                                                        new_defs)))))) 
-                                                            (if (consp pV25) 
-                                                                (if (null 
-                                                                     new_defs) 
-                                                                    (return 
-                                                                     (SPECCALC::|!return| 
-                                                                      old_qmap)) 
-                                                                    (if (consp 
-                                                                         new_defs) 
-                                                                        (return 
-                                                                         (SPECCALC::raise 
-                                                                          (cons 
-                                                                           :|SpecError| 
-                                                                           (cons 
-                                                                            |!position| 
-                                                                            (STRING-SPEC::^ 
-                                                                             (STRING-SPEC::^ 
-                                                                              (STRING-SPEC::^ 
-                                                                               (STRING-SPEC::^ 
-                                                                                (STRING-SPEC::^ 
-                                                                                 (STRING-SPEC::^ 
-                                                                                  "Sort " 
-                                                                                  (SPECCALC::printAliases 
-                                                                                   names)) 
-                                                                                 " has been redefined") 
-                                                                                "
- from ") 
-                                                                               (ANNSPECPRINTER::printSortScheme-1 
-                                                                                (car 
-                                                                                 pV25))) 
-                                                                              "
-   to ") 
-                                                                             (ANNSPECPRINTER::printSortScheme-1 
-                                                                              (car 
-                                                                               new_defs))))))))))) 
-                                                        (error 
-                                                         "Nonexhaustive match failure in addSort")) 
-                                                       (SPECCALC::raise 
-                                                        (cons 
-                                                         :|SpecError| 
-                                                         (cons 
-                                                          |!position| 
-                                                          (STRING-SPEC::^ 
-                                                           (STRING-SPEC::^ 
-                                                            (STRING-SPEC::^ 
-                                                             (STRING-SPEC::^ 
+                                                   (SPECCALC::raise 
+                                                    (cons 
+                                                     :|SpecError| 
+                                                     (cons 
+                                                      |!position| 
+                                                      (STRING-SPEC::^ 
+                                                       (STRING-SPEC::^ 
+                                                        "Sort " 
+                                                        (SPECCALC::printAliases 
+                                                         new_sort_names)) 
+                                                       " has been redeclared."))))) 
+                                                  (if (consp new_defs) 
+                                                      (return 
+                                                       (let ((new_info 
+                                                              (vector 
+                                                               combined_sort_names 
+                                                               new_type_vars 
+                                                               new_defs))) 
+                                                         (SPECCALC::|!return| 
+                                                          (LIST-SPEC::foldl-1-1-1 
+                                                           #'(lambda (x) 
+                                                              (let ((pV11 
+                                                                     (car x))) 
+                                                                (block 
+                                                                 nil 
+                                                                 (if (eq 
+                                                                      (car pV11) 
+                                                                      :|Qualified|) 
+                                                                     (let ((pV13 
+                                                                            (cdr 
+                                                                             pV11))) 
+                                                                       (return 
+                                                                        (insertAQualifierMap 
+                                                                         (cdr x) 
+                                                                         (car 
+                                                                          pV13) 
+                                                                         (cdr 
+                                                                          pV13) 
+                                                                         new_info)))) 
+                                                                 (error 
+                                                                  "Nonexhaustive match failure in addSort")))) 
+                                                           (svref old_spec 3) 
+                                                           combined_sort_names)))))) 
+                                              (if (consp pV43) 
+                                                  (if (null new_defs) 
+                                                      (return 
+                                                       (let ((new_info 
+                                                              (vector 
+                                                               combined_sort_names 
+                                                               pV42 
+                                                               pV43))) 
+                                                         (SPECCALC::|!return| 
+                                                          (LIST-SPEC::foldl-1-1-1 
+                                                           #'(lambda (x) 
+                                                              (let ((pV18 
+                                                                     (car x))) 
+                                                                (block 
+                                                                 nil 
+                                                                 (if (eq 
+                                                                      (car pV18) 
+                                                                      :|Qualified|) 
+                                                                     (let ((pV20 
+                                                                            (cdr 
+                                                                             pV18))) 
+                                                                       (return 
+                                                                        (insertAQualifierMap 
+                                                                         (cdr x) 
+                                                                         (car 
+                                                                          pV20) 
+                                                                         (cdr 
+                                                                          pV20) 
+                                                                         new_info)))) 
+                                                                 (error 
+                                                                  "Nonexhaustive match failure in addSort")))) 
+                                                           (svref old_spec 3) 
+                                                           combined_sort_names)))) 
+                                                      (if (consp new_defs) 
+                                                          (return 
+                                                           (SPECCALC::raise 
+                                                            (cons 
+                                                             :|SpecError| 
+                                                             (cons 
+                                                              |!position| 
                                                               (STRING-SPEC::^ 
                                                                (STRING-SPEC::^ 
-                                                                "Sort " 
-                                                                (SPECCALC::printAliases 
-                                                                 names)) 
-                                                               " has been redeclared or redefined") 
-                                                              "
+                                                                (STRING-SPEC::^ 
+                                                                 (STRING-SPEC::^ 
+                                                                  (STRING-SPEC::^ 
+                                                                   (STRING-SPEC::^ 
+                                                                    "Sort " 
+                                                                    (SPECCALC::printAliases 
+                                                                     new_sort_names)) 
+                                                                   " has been redefined") 
+                                                                  "
+ from ") 
+                                                                 (ANNSPECPRINTER::printSortScheme-1 
+                                                                  (car pV43))) 
+                                                                "
+   to ") 
+                                                               (ANNSPECPRINTER::printSortScheme-1 
+                                                                (car new_defs))))))))))) 
+                                          (error 
+                                           "Nonexhaustive match failure in addSort")) 
+                                         (SPECCALC::raise 
+                                          (cons 
+                                           :|SpecError| 
+                                           (cons 
+                                            |!position| 
+                                            (STRING-SPEC::^ 
+                                             (STRING-SPEC::^ 
+                                              (STRING-SPEC::^ 
+                                               (STRING-SPEC::^ 
+                                                (STRING-SPEC::^ 
+                                                 (STRING-SPEC::^ 
+                                                  "Sort " 
+                                                  (SPECCALC::printAliases 
+                                                   new_sort_names)) 
+                                                 " has been redeclared or redefined") 
+                                                "
  with new type variables ") 
-                                                             (SPECCALC::printTypeVars 
-                                                              new_type_vars)) 
-                                                            "
+                                               (SPECCALC::printTypeVars 
+                                                new_type_vars)) 
+                                              "
     differing from prior ") 
-                                                           (SPECCALC::printTypeVars 
-                                                            pV24))))))))))) 
-                                      (error 
-                                       "Nonexhaustive match failure in addSort"))) 
-                                   #'(lambda (new_qmap) 
-                                      (let ((new_sorts 
-                                             (STRINGMAP::insert 
-                                              old_sorts 
-                                              pV31 
-                                              new_qmap))) 
-                                        (let ((sp (setSorts old_spec new_sorts))) 
-                                          (SPECCALC::|!return| 
-                                           (LIST-SPEC::foldl-1-1-1 
-                                            #'(lambda (x) 
-                                               (addLocalSortName (cdr x) (car x))) 
-                                            sp 
-                                            names)))))))))))))))))) 
-   (error "Nonexhaustive match failure in addSort")))
+                                             (SPECCALC::printTypeVars pV42))))))))))))) 
+                  (return 
+                   (SPECCALC::raise 
+                    (cons 
+                     :|SpecError| 
+                     (cons 
+                      |!position| 
+                      (STRING-SPEC::^ 
+                       (STRING-SPEC::^ 
+                        "Sort " 
+                        (SPECCALC::printAliases new_sort_names)) 
+                       " refers to multiple prior sorts")))))) 
+                 #'(lambda (new_sorts) 
+                    (SPECCALC::monadBind 
+                     (SPECCALC::|!return| (setSorts old_spec new_sorts)) 
+                     #'(lambda (sp) 
+                        (funcall (funcall (SPECCALC::foldM 
+                                           #'(lambda (sp) 
+                                              #'(lambda (name) 
+                                                 (SPECCALC::|!return| 
+                                                  (addLocalSortName sp name))))) 
+                                          sp) 
+                                 new_sort_names)))))))))))
 
 (defun SPECCALC::addSort-1-1-1-1-1-1 (x1 x2 x3 x4 x5 x6) 
   (funcall (funcall (funcall (funcall (funcall (SPECCALC::addSort x1) x2) x3) x4) 
@@ -18976,22 +19109,6 @@
 
 (defun SPECCALC::addVarDecl (x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11) 
   (SPECCALC::addVarDecl-1 (vector x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11)))
-
-(defun SPECCALC::foldM (f) 
-  #'(lambda (a) 
-     #'(lambda (l) 
-        (block 
-         nil 
-         (if (null l) 
-             (return (SPECCALC::|!return| a)) 
-             (if (consp l) 
-                 (let ((pV4 (cdr l))) 
-                   (return 
-                    (SPECCALC::monadBind 
-                     (funcall (funcall f a) (car l)) 
-                     #'(lambda (y) 
-                        (funcall (funcall (SPECCALC::foldM f) y) pV4))))))) 
-         (error "Nonexhaustive match failure in foldM")))))
 
 (defun SPECCALC::foldMapAp (abf) 
   #'(lambda (x) 
@@ -19155,34 +19272,8 @@
                                                     result_defs)))) 
                                           pV44 
                                           pV39))) 
-                                    (if (INTEGER-SPEC::|!>| 
-                                         (LIST-SPEC::|!length| combined_defs) 
-                                         1) 
-                                        (SPECCALC::raise 
-                                         (cons 
-                                          :|SpecError| 
-                                          (cons 
-                                           |!position| 
-                                           (LIST-SPEC::foldl-1-1-1 
-                                            #'(lambda (x) 
-                                               (STRING-SPEC::^ 
-                                                (STRING-SPEC::^ (cdr x) "
-") 
-                                                (ANNSPECPRINTER::printTermScheme-1 
-                                                 (car x)))) 
-                                            (STRING-SPEC::^ 
-                                             (STRING-SPEC::^ 
-                                              "Merged versions of op " 
-                                              (SPECCALC::printAliases op_names)) 
-                                             " have different definitions:
-") 
-                                            combined_defs)))) 
-                                        (SPECCALC::|!return| 
-                                         (vector 
-                                          op_names 
-                                          pV37 
-                                          pV38 
-                                          combined_defs))))))))))))))) 
+                                    (SPECCALC::|!return| 
+                                     (vector op_names pV37 pV38 combined_defs)))))))))))))) 
          (error "Nonexhaustive match failure in mergeOpInfo")))))
 
 (defun SPECCALC::mergeSortInfo-1 (newPSortInfo) 
@@ -19259,30 +19350,8 @@
                                               combined_defs)))) 
                                     pV23 
                                     pV19))) 
-                              (if (INTEGER-SPEC::|!>| 
-                                   (LIST-SPEC::|!length| combined_defs) 
-                                   1) 
-                                  (SPECCALC::raise 
-                                   (cons 
-                                    :|SpecError| 
-                                    (cons 
-                                     |!position| 
-                                     (LIST-SPEC::foldl-1-1-1 
-                                      #'(lambda (x) 
-                                         (STRING-SPEC::^ 
-                                          (STRING-SPEC::^ (cdr x) "
-") 
-                                          (ANNSPECPRINTER::printSortScheme-1 
-                                           (car x)))) 
-                                      (STRING-SPEC::^ 
-                                       (STRING-SPEC::^ 
-                                        "Merged versions of Sort " 
-                                        (SPECCALC::printAliases sort_names)) 
-                                       " have different definitions:
-") 
-                                      combined_defs)))) 
-                                  (SPECCALC::|!return| 
-                                   (vector sort_names pV22 combined_defs))))))))))))) 
+                              (SPECCALC::|!return| 
+                               (vector sort_names pV22 combined_defs)))))))))))) 
          (error "Nonexhaustive match failure in mergeSortInfo")))))
 
 (defun SPECCALC::auxTranslateSpec-1 (spc) 
@@ -21413,11 +21482,17 @@
                  (if (eq (car f1) :|Relax|) 
                      (if (eq (car f2) :|Relax|) (return t)) 
                      (if (eq (car f1) :|Op|) 
-                         (if (eq (car f2) :|Op|) 
-                             (return 
-                              (slang-built-in::slang-term-equals 
-                               (cdr f1) 
-                               (cdr f2)))) 
+                         (let ((pV13 (cdr f1))) 
+                           (if (eq (car f2) :|Op|) 
+                               (let ((pV25 (cdr f2))) 
+                                 (return 
+                                  (lisp::and 
+                                   (slang-built-in::slang-term-equals 
+                                    (cdr pV13) 
+                                    (cdr pV25)) 
+                                   (slang-built-in::slang-term-equals 
+                                    (STANDARDSPEC::findTheOp spc (car pV13)) 
+                                    (STANDARDSPEC::findTheOp spc (car pV25)))))))) 
                          (if (eq (car f1) :|Project|) 
                              (if (eq (car f2) :|Project|) 
                                  (return (string=  (cdr f1) (cdr f2)))) 
@@ -21509,17 +21584,17 @@
     (block 
      nil 
      (if (eq (car s1) :|Arrow|) 
-         (let ((pV78 (cdr s1))) 
+         (let ((pV76 (cdr s1))) 
            (if (eq (car s2) :|Arrow|) 
-               (let ((pV123 (cdr s2))) 
+               (let ((pV121 (cdr s2))) 
                  (return 
                   (lisp::and 
                    (SPECCALC::equivSort?-1-1 
                     spc 
-                    (cons (svref pV78 0) (svref pV123 0))) 
+                    (cons (svref pV76 0) (svref pV121 0))) 
                    (SPECCALC::equivSort?-1-1 
                     spc 
-                    (cons (svref pV78 1) (svref pV123 1)))))))) 
+                    (cons (svref pV76 1) (svref pV121 1)))))))) 
          (if (eq (car s1) :|Product|) 
              (if (eq (car s2) :|Product|) 
                  (return 
@@ -21567,112 +21642,101 @@
                                  (error 
                                   "Nonexhaustive match failure in equivSort?"))))))))) 
                  (if (eq (car s1) :|Quotient|) 
-                     (let ((pV75 (cdr s1))) 
+                     (let ((pV73 (cdr s1))) 
                        (if (eq (car s2) :|Quotient|) 
-                           (let ((pV106 (cdr s2))) 
+                           (let ((pV104 (cdr s2))) 
                              (return 
                               (lisp::and 
                                (SPECCALC::equivSort?-1-1 
                                 spc 
-                                (cons (svref pV75 0) (svref pV106 0))) 
+                                (cons (svref pV73 0) (svref pV104 0))) 
                                (SPECCALC::equivTerm?-1-1 
                                 spc 
-                                (cons (svref pV75 1) (svref pV106 1)))))))) 
+                                (cons (svref pV73 1) (svref pV104 1)))))))) 
                      (if (eq (car s1) :|Subsort|) 
-                         (let ((pV74 (cdr s1))) 
+                         (let ((pV72 (cdr s1))) 
                            (if (eq (car s2) :|Subsort|) 
-                               (let ((pV99 (cdr s2))) 
+                               (let ((pV97 (cdr s2))) 
                                  (return 
                                   (lisp::and 
                                    (SPECCALC::equivSort?-1-1 
                                     spc 
-                                    (cons (svref pV74 0) (svref pV99 0))) 
+                                    (cons (svref pV72 0) (svref pV97 0))) 
                                    (SPECCALC::equivTerm?-1-1 
                                     spc 
-                                    (cons (svref pV74 1) (svref pV99 1)))))))) 
+                                    (cons (svref pV72 1) (svref pV97 1)))))))) 
                          (if (eq (car s1) :|Base|) 
-                             (let ((pV73 (cdr s1))) 
-                               (let ((pV89 (svref pV73 0))
-                                     (pV90 (svref pV73 1))) 
-                                 (if (eq (car s2) :|Base|) 
-                                     (let ((pV92 (cdr s2))) 
-                                       (let ((pV93 (svref pV92 0))
-                                             (pV94 (svref pV92 1))) 
-                                         (progn (return 
-                                                 (lisp::and 
-                                                  (slang-built-in::slang-term-equals 
-                                                   pV89 
-                                                   pV93) 
-                                                  (SPECCALC::equivList?-1-1 
-                                                   spc 
-                                                   (vector 
-                                                    pV90 
-                                                    pV94 
-                                                    #'SPECCALC::equivSort?-1)))) 
-                                                (return 
-                                                 (lisp::and 
-                                                  (slang-built-in::slang-term-equals 
-                                                   pV89 
-                                                   pV93) 
-                                                  (SPECCALC::equivList?-1-1 
-                                                   spc 
-                                                   (vector 
-                                                    pV90 
-                                                    pV94 
-                                                    #'SPECCALC::equivSort?-1)))))))))) 
+                             (let ((pV71 (cdr s1))) 
+                               (if (eq (car s2) :|Base|) 
+                                   (let ((pV90 (cdr s2))) 
+                                     (return 
+                                      (lisp::and 
+                                       (slang-built-in::slang-term-equals 
+                                        (STANDARDSPEC::findTheSort 
+                                         spc 
+                                         (svref pV71 0)) 
+                                        (STANDARDSPEC::findTheSort 
+                                         spc 
+                                         (svref pV90 0))) 
+                                       (SPECCALC::equivList?-1-1 
+                                        spc 
+                                        (vector 
+                                         (svref pV71 1) 
+                                         (svref pV90 1) 
+                                         #'SPECCALC::equivSort?-1))))))) 
                              (if (eq (car s1) :|TyVar|) 
                                  (if (eq (car s2) :|TyVar|) 
                                      (return 
                                       (string=  (car (cdr s1)) (car (cdr s2))))) 
                                  (if (eq (car s1) :|MetaTyVar|) 
-                                     (let ((pV79 (car (cdr s1)))) 
+                                     (let ((pV77 (car (cdr s1)))) 
                                        (progn (if (eq (car s2) :|MetaTyVar|) 
                                                   (return 
-                                                   (let ((pV43 
-                                                          (STATE::|!!| pV79))) 
+                                                   (let ((pV41 
+                                                          (STATE::|!!| pV77))) 
                                                      (block 
                                                       nil 
-                                                      (let ((pV44 (svref pV43 0))) 
+                                                      (let ((pV42 (svref pV41 0))) 
                                                         (return 
-                                                         (let ((pV39 
+                                                         (let ((pV37 
                                                                 (STATE::|!!| 
                                                                  (car (cdr s2))))) 
                                                            (block 
                                                             nil 
-                                                            (let ((pV40 
-                                                                   (svref pV39 0))) 
+                                                            (let ((pV38 
+                                                                   (svref pV37 0))) 
                                                               (return 
                                                                (lisp::or 
                                                                 ( =  
-                                                                 (svref pV43 2) 
-                                                                 (svref pV39 2)) 
+                                                                 (svref pV41 2) 
+                                                                 (svref pV37 2)) 
                                                                 (block 
                                                                  nil 
                                                                  (if (eq 
-                                                                      (car pV44) 
+                                                                      (car pV42) 
                                                                       :|Some|) 
-                                                                     (let ((pV37 
+                                                                     (let ((pV35 
                                                                             (cdr 
-                                                                             pV44))) 
+                                                                             pV42))) 
                                                                        (progn (if (eq 
                                                                                    (car 
-                                                                                    pV40) 
+                                                                                    pV38) 
                                                                                    :|Some|) 
                                                                                   (return 
                                                                                    (SPECCALC::equivSort?-1-1 
                                                                                     spc 
                                                                                     (cons 
-                                                                                     pV37 
+                                                                                     pV35 
                                                                                      (cdr 
-                                                                                      pV40))))) 
+                                                                                      pV38))))) 
                                                                               (return 
                                                                                (SPECCALC::equivSort?-1-1 
                                                                                 spc 
                                                                                 (cons 
-                                                                                 pV37 
+                                                                                 pV35 
                                                                                  s2)))))) 
                                                                  (if (eq 
-                                                                      (car pV40) 
+                                                                      (car pV38) 
                                                                       :|Some|) 
                                                                      (return 
                                                                       (SPECCALC::equivSort?-1-1 
@@ -21680,39 +21744,39 @@
                                                                        (cons 
                                                                         s1 
                                                                         (cdr 
-                                                                         pV40))))) 
+                                                                         pV38))))) 
                                                                  (return nil))))) 
                                                             (error 
                                                              "Nonexhaustive match failure in equivSort?"))))) 
                                                       (error 
                                                        "Nonexhaustive match failure in equivSort?"))))) 
                                               (return 
-                                               (let ((pV52 (STATE::|!!| pV79))) 
+                                               (let ((pV50 (STATE::|!!| pV77))) 
                                                  (block 
                                                   nil 
-                                                  (let ((pV53 (svref pV52 0))) 
+                                                  (let ((pV51 (svref pV50 0))) 
                                                     (return 
                                                      (block 
                                                       nil 
-                                                      (if (eq (car pV53) :|Some|) 
+                                                      (if (eq (car pV51) :|Some|) 
                                                           (return 
                                                            (SPECCALC::equivSort?-1-1 
                                                             spc 
-                                                            (cons (cdr pV53) s2)))) 
+                                                            (cons (cdr pV51) s2)))) 
                                                       (return nil)))) 
                                                   (error 
                                                    "Nonexhaustive match failure in equivSort?")))))))))))))) 
      (if (eq (car s2) :|MetaTyVar|) 
          (return 
-          (let ((pV61 (STATE::|!!| (car (cdr s2))))) 
+          (let ((pV59 (STATE::|!!| (car (cdr s2))))) 
             (block 
              nil 
-             (let ((pV62 (svref pV61 0))) 
+             (let ((pV60 (svref pV59 0))) 
                (return 
                 (block 
                  nil 
-                 (if (eq (car pV62) :|Some|) 
-                     (return (SPECCALC::equivSort?-1-1 spc (cons s1 (cdr pV62))))) 
+                 (if (eq (car pV60) :|Some|) 
+                     (return (SPECCALC::equivSort?-1-1 spc (cons s1 (cdr pV60))))) 
                  (return nil)))) 
              (error "Nonexhaustive match failure in equivSort?"))))) 
      (return nil))))
@@ -28516,34 +28580,16 @@
        #'(lambda (filename) 
           (SPECCALC::monadSeq 
            (SPECCALC::hackMemory) 
-           (SPECCALC::monadSeq 
-            (SPECCALC::|!print| 
-             (STRING-SPEC::^ 
-              (STRING-SPEC::^ 
-               (STRING-SPEC::^ 
-                (STRING-SPEC::^ 
-                 ";;; Processing spec " 
-                 (let ((pV2 (car uri))) 
-                   (block 
-                    nil 
-                    (if (eq (car pV2) :|Some|) 
-                        (return (STRING-SPEC::^ (cdr pV2) " "))) 
-                    (return "")))) 
-                "in ") 
-               filename) 
-              "
-")) 
-            (let ((pV4 (TYPECHECKER::elaboratePosSpec spc filename))) 
-              (block 
-               nil 
-               (if (eq (car pV4) :|Ok|) 
-                   (return 
-                    (SPECCALC::|!return| 
-                     (POSSPECTOSPEC::convertPosSpecToSpec-1 (cdr pV4)))) 
-                   (if (eq (car pV4) :|Error|) 
-                       (return 
-                        (SPECCALC::raise (cons :|OldTypeCheck| (cdr pV4)))))) 
-               (error "Nonexhaustive match failure in elaborateSpecM"))))))))))
+           (let ((pV1 (TYPECHECKER::elaboratePosSpec spc filename))) 
+             (block 
+              nil 
+              (if (eq (car pV1) :|Ok|) 
+                  (return 
+                   (SPECCALC::|!return| 
+                    (POSSPECTOSPEC::convertPosSpecToSpec-1 (cdr pV1)))) 
+                  (if (eq (car pV1) :|Error|) 
+                      (return (SPECCALC::raise (cons :|OldTypeCheck| (cdr pV1)))))) 
+              (error "Nonexhaustive match failure in elaborateSpecM")))))))))
 
 (defun SPECCALC::elaborateSpecM (x0 x1 x2 x3) 
   (SPECCALC::elaborateSpecM-1 (vector x0 x1 x2 x3)))
@@ -30660,44 +30706,58 @@
    #'SPECCALC::ppMorphism-1 
    #'SPECCALC::ppASpec-1))
 
+(defun SPECCALC::uriToString (hashSuffix path) 
+  (let ((path (SPECCALC::abbreviatedPath path))) 
+    (let ((tildaPath? (string=  (LIST-SPEC::hd path) "~"))) 
+      (let ((mainPath 
+             (STRING-SPEC::concatList 
+              (LIST-SPEC::foldr-1-1-1 
+               #'(lambda (x) 
+                  (LIST-SPEC::|!cons| "/" (LIST-SPEC::|!cons| (car x) (cdr x)))) 
+               nil 
+               (if tildaPath? (LIST-SPEC::tl path) path))))) 
+        (let ((|!fileName| 
+               (if tildaPath? (STRING-SPEC::^ "~" mainPath) mainPath))) 
+          (block 
+           nil 
+           (if (eq (car hashSuffix) :|None|) 
+               (return |!fileName|) 
+               (if (eq (car hashSuffix) :|Some|) 
+                   (let ((pV2 (cdr hashSuffix))) 
+                     (return 
+                      (if (string=  |!fileName| "") 
+                          pV2 
+                          (STRING-SPEC::^ (STRING-SPEC::^ |!fileName| "#") pV2)))))) 
+           (error "Nonexhaustive match failure in uriToString")))))))
+
+(defun SPECCALC::uriToString-1 (x) (SPECCALC::uriToString (car x) (cdr x)))
+
 (defun SPECCALC::evaluateDiag (elems) 
   (SPECCALC::monadBind 
-   (funcall (funcall (SPECCALC::foldM #'SPECCALC::evaluateDiagElem-1) 
-                     (vector (CAT::emptyDiagram-1 (SPECCALC::specCat)) 0 nil)) 
-            elems) 
-   #'(lambda (x) 
-      (let ((depURIs (svref x 2))
-            (timeStamp (svref x 1))
-            (dgm (svref x 0))) 
-        (SPECCALC::monadBind 
-         #'SPECCALC::getCurrentURI-1 
-         #'(lambda (uri) 
-            (SPECCALC::monadBind 
-             (SPECCALC::|!return| 
-              (STRING-SPEC::^ (SPECCALC::uriToPath-1 uri) ".sw")) 
-             #'(lambda (filename) 
-                (SPECCALC::monadSeq 
-                 (SPECCALC::|!print| 
-                  (STRING-SPEC::^ 
-                   (STRING-SPEC::^ 
-                    (STRING-SPEC::^ 
-                     (STRING-SPEC::^ 
-                      ";;; Processing spec diagram " 
-                      (let ((pV2 (car uri))) 
-                        (block 
-                         nil 
-                         (if (eq (car pV2) :|Some|) 
-                             (return (STRING-SPEC::^ (cdr pV2) " "))) 
-                         (return "")))) 
-                     "in ") 
-                    filename) 
-                   "
+   #'SPECCALC::getCurrentURI-1 
+   #'(lambda (uri) 
+      (SPECCALC::monadSeq 
+       (SPECCALC::|!print| 
+        (STRING-SPEC::^ 
+         (STRING-SPEC::^ 
+          ";;; Processing spec diagram at " 
+          (SPECCALC::uriToString-1 uri)) 
+         "
 ")) 
-                 (SPECCALC::|!return| 
-                  (vector 
-                   (cons :|Diag| (cons (car dgm) (cdr dgm))) 
-                   timeStamp 
-                   depURIs)))))))))))
+       (SPECCALC::monadBind 
+        (funcall (funcall (SPECCALC::foldM #'SPECCALC::evaluateDiagElem-1) 
+                          (vector 
+                           (CAT::emptyDiagram-1 (SPECCALC::specCat)) 
+                           0 
+                           nil)) 
+                 elems) 
+        #'(lambda (x) 
+           (let ((dgm (svref x 0))) 
+             (SPECCALC::|!return| 
+              (vector 
+               (cons :|Diag| (cons (car dgm) (cdr dgm))) 
+               (svref x 1) 
+               (svref x 2))))))))))
 
 (defun SPECCALC::evaluateDiagMorph (domTerm codTerm morphRules) 
   (SPECCALC::monadBind 
@@ -35480,67 +35540,80 @@
 
 (defun SPECCALC::evaluateObligations-1 (term) 
   (SPECCALC::monadBind 
-   (SPECCALC::evaluateTermInfo-1 term) 
-   #'(lambda (x) 
-      (let ((dep_URIs (svref x 2))
-            (time_stamp (svref x 1))
-            (value (svref x 0))) 
-        (block 
-         nil 
-         (if (eq (car value) :|Spec|) 
-             (return 
-              (SPECCALC::monadBind 
-               (SPECCALC::|!return| (SPECCALC::specObligations (cdr value) term)) 
-               #'(lambda (ob_spec) 
-                  (SPECCALC::monadBind 
-                   (funcall (SPECCALC::complainIfAmbiguous-1 
-                             (SPECCALC::compressDefs-1 ob_spec)) 
-                            (SPECCALC::positionOf-1 term)) 
-                   #'(lambda (compressed_spec) 
-                      (SPECCALC::|!return| 
-                       (vector 
-                        (cons 
-                         :|Spec| 
-                         (vector 
-                          (svref compressed_spec 0) 
-                          (svref compressed_spec 1) 
-                          (svref compressed_spec 2) 
-                          (svref compressed_spec 3))) 
-                        time_stamp 
-                        dep_URIs))))))) 
-             (if (eq (car value) :|Morph|) 
-                 (let ((pV3 (cdr value))) 
-                   (return 
-                    (SPECCALC::monadBind 
-                     #'SPECCALC::getGlobalContext-1 
-                     #'(lambda (globalContext) 
-                        (SPECCALC::monadBind 
-                         (SPECCALC::|!return| 
-                          (SPECCALC::morphismObligations pV3 globalContext)) 
-                         #'(lambda (ob_spec) 
-                            (SPECCALC::monadBind 
-                             (funcall (SPECCALC::complainIfAmbiguous-1 
-                                       (SPECCALC::compressDefs-1 ob_spec)) 
-                                      (SPECCALC::positionOf-1 term)) 
-                             #'(lambda (compressed_spec) 
-                                (SPECCALC::|!return| 
-                                 (vector 
-                                  (cons 
-                                   :|Spec| 
-                                   (vector 
-                                    (svref compressed_spec 0) 
-                                    (svref compressed_spec 1) 
-                                    (svref compressed_spec 2) 
-                                    (svref compressed_spec 3))) 
-                                  time_stamp 
-                                  dep_URIs)))))))))))) 
-         (return 
-          (SPECCALC::raise 
-           (cons 
-            :|Unsupported| 
-            (cons 
-             (SPECCALC::positionOf-1 term) 
-             "Can create obligations for Specs and Morphisms only")))))))))
+   #'SPECCALC::getCurrentURI-1 
+   #'(lambda (uri) 
+      (SPECCALC::monadSeq 
+       (SPECCALC::|!print| 
+        (STRING-SPEC::^ 
+         (STRING-SPEC::^ 
+          ";;; Processing obligations at " 
+          (SPECCALC::uriToString-1 uri)) 
+         "
+")) 
+       (SPECCALC::monadBind 
+        (SPECCALC::evaluateTermInfo-1 term) 
+        #'(lambda (x) 
+           (let ((dep_URIs (svref x 2))
+                 (time_stamp (svref x 1))
+                 (value (svref x 0))) 
+             (block 
+              nil 
+              (if (eq (car value) :|Spec|) 
+                  (return 
+                   (SPECCALC::monadBind 
+                    (SPECCALC::|!return| 
+                     (SPECCALC::specObligations (cdr value) term)) 
+                    #'(lambda (ob_spec) 
+                       (SPECCALC::monadBind 
+                        (funcall (SPECCALC::complainIfAmbiguous-1 
+                                  (SPECCALC::compressDefs-1 ob_spec)) 
+                                 (SPECCALC::positionOf-1 term)) 
+                        #'(lambda (compressed_spec) 
+                           (SPECCALC::|!return| 
+                            (vector 
+                             (cons 
+                              :|Spec| 
+                              (vector 
+                               (svref compressed_spec 0) 
+                               (svref compressed_spec 1) 
+                               (svref compressed_spec 2) 
+                               (svref compressed_spec 3))) 
+                             time_stamp 
+                             dep_URIs))))))) 
+                  (if (eq (car value) :|Morph|) 
+                      (let ((pV3 (cdr value))) 
+                        (return 
+                         (SPECCALC::monadBind 
+                          #'SPECCALC::getGlobalContext-1 
+                          #'(lambda (globalContext) 
+                             (SPECCALC::monadBind 
+                              (SPECCALC::|!return| 
+                               (SPECCALC::morphismObligations pV3 globalContext)) 
+                              #'(lambda (ob_spec) 
+                                 (SPECCALC::monadBind 
+                                  (funcall (SPECCALC::complainIfAmbiguous-1 
+                                            (SPECCALC::compressDefs-1 ob_spec)) 
+                                           (SPECCALC::positionOf-1 term)) 
+                                  #'(lambda (compressed_spec) 
+                                     (SPECCALC::|!return| 
+                                      (vector 
+                                       (cons 
+                                        :|Spec| 
+                                        (vector 
+                                         (svref compressed_spec 0) 
+                                         (svref compressed_spec 1) 
+                                         (svref compressed_spec 2) 
+                                         (svref compressed_spec 3))) 
+                                       time_stamp 
+                                       dep_URIs)))))))))))) 
+              (return 
+               (SPECCALC::raise 
+                (cons 
+                 :|Unsupported| 
+                 (cons 
+                  (SPECCALC::positionOf-1 term) 
+                  "Can create obligations for Specs and Morphisms only"))))))))))))
+
 
 (defun SPECCALC::printSpec-1-1-1 (base_spec reverse_context spc) 
   (PRETTYPRINT::toString 
@@ -35623,32 +35696,6 @@
 
 (defun SPECCALC::ppMorphismMap-1 (x) 
   (SPECCALC::ppMorphismMap (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
-
-(defun SPECCALC::uriToString (hashSuffix path) 
-  (let ((path (SPECCALC::abbreviatedPath path))) 
-    (let ((tildaPath? (string=  (LIST-SPEC::hd path) "~"))) 
-      (let ((mainPath 
-             (STRING-SPEC::concatList 
-              (LIST-SPEC::foldr-1-1-1 
-               #'(lambda (x) 
-                  (LIST-SPEC::|!cons| "/" (LIST-SPEC::|!cons| (car x) (cdr x)))) 
-               nil 
-               (if tildaPath? (LIST-SPEC::tl path) path))))) 
-        (let ((|!fileName| 
-               (if tildaPath? (STRING-SPEC::^ "~" mainPath) mainPath))) 
-          (block 
-           nil 
-           (if (eq (car hashSuffix) :|None|) 
-               (return |!fileName|) 
-               (if (eq (car hashSuffix) :|Some|) 
-                   (let ((pV2 (cdr hashSuffix))) 
-                     (return 
-                      (if (string=  |!fileName| "") 
-                          pV2 
-                          (STRING-SPEC::^ (STRING-SPEC::^ |!fileName| "#") pV2)))))) 
-           (error "Nonexhaustive match failure in uriToString")))))))
-
-(defun SPECCALC::uriToString-1 (x) (SPECCALC::uriToString (car x) (cdr x)))
 
 (defun SPECCALC::relativeURI_ToString (rel_uri) 
   (block 
@@ -37177,146 +37224,159 @@
  (claim_name spec_term prover_name assertions possible_options) 
   #'(lambda (pos) 
      (SPECCALC::monadBind 
-      (SPECCALC::evaluateTermInfo-1 spec_term) 
-      #'(lambda (x) 
-         (let ((depURIs (svref x 2))
-               (timeStamp (svref x 1))
-               (value (svref x 0))) 
-           (SPECCALC::monadBind 
-            (funcall (SPECCALC::evaluateURI (cons :|Internal| "base")) 
-                     (cons 
-                      :|SpecPath_Relative| 
-                      (cons '(:|None|) (cons "Library" (cons "Base" nil))))) 
-            #'(lambda (x1) 
-               (let ((pV18 (svref x1 0))) 
-                 (block 
-                  nil 
-                  (if (eq (car pV18) :|Spec|) 
-                      (let ((pV21 (cdr pV18))) 
-                        (return 
-                         (SPECCALC::monadBind 
-                          (funcall (SPECCALC::evaluateURI 
-                                    (cons :|Internal| "ProverBase")) 
-                                   (cons 
-                                    :|SpecPath_Relative| 
-                                    (cons 
-                                     '(:|None|) 
-                                     (cons 
-                                      "Library" 
-                                      (cons "Base" (cons "ProverBase" nil)))))) 
-                          #'(lambda (x11) 
-                             (let ((pV14 (svref x11 0))) 
-                               (block 
-                                nil 
-                                (if (eq (car pV14) :|Spec|) 
-                                    (let ((pV17 (cdr pV14))) 
-                                      (return 
-                                       (SPECCALC::monadBind 
-                                        #'SPECCALC::getCurrentURI-1 
-                                        #'(lambda (|!URI|) 
-                                           (SPECCALC::monadBind 
-                                            (SPECCALC::URItoSnarkLogFile-1 
-                                             |!URI|) 
-                                            #'(lambda (snarkLogFileName) 
-                                               (SPECCALC::monadBind 
-                                                (SPECCALC::|!return| 
-                                                 (IO-SPEC::ensureDirectoriesExist 
-                                                  snarkLogFileName)) 
-                                                #'(lambda (pV5) 
-                                                   (declare (ignore pV5)) 
-                                                   (SPECCALC::monadBind 
-                                                    (SPECCALC::|!return| 
-                                                     (SPECCALC::URItoProofName-1 
-                                                      |!URI|)) 
-                                                    #'(lambda (proof_name) 
-                                                       (SPECCALC::monadBind 
-                                                        (SPECCALC::|!return| 
-                                                         (SPECCALC::SpecTermToSpecName-1 
-                                                          spec_term)) 
-                                                        #'(lambda (spec_name) 
-                                                           (SPECCALC::monadBind 
-                                                            (let ((pV7 
-                                                                   (SPECCALC::coerceToSpec 
-                                                                    value))) 
-                                                              (block 
-                                                               nil 
-                                                               (if (eq 
-                                                                    (car pV7) 
-                                                                    :|Spec|) 
-                                                                   (return 
-                                                                    (SPECCALC::|!return| 
-                                                                     (cdr pV7)))) 
-                                                               (return 
-                                                                (SPECCALC::raise 
-                                                                 (cons 
-                                                                  :|Proof| 
-                                                                  (cons 
-                                                                   pos 
-                                                                   "Argument to prove command is not coerceable to a spec.")))))) 
-                                                            #'(lambda (uspc) 
-                                                               (SPECCALC::monadBind 
-                                                                (block 
-                                                                 nil 
-                                                                 (if (eq 
-                                                                      (car 
-                                                                       possible_options) 
-                                                                      :|Options|) 
-                                                                     (return 
-                                                                      (SPECCALC::|!return| 
-                                                                       (cdr 
-                                                                        possible_options))) 
-                                                                     (if (eq 
-                                                                          (car 
-                                                                           possible_options) 
-                                                                          :|Error|) 
-                                                                         (let ((pV10 
-                                                                                (cdr 
-                                                                                 possible_options))) 
-                                                                           (return 
-                                                                            (SPECCALC::raise 
-                                                                             (cons 
-                                                                              :|SyntaxError| 
-                                                                              (STRING-SPEC::^ 
-                                                                               (car 
-                                                                                pV10) 
-                                                                               (cdr 
-                                                                                pV10)))))))) 
-                                                                 (error 
-                                                                  "Nonexhaustive match failure in evaluateProve")) 
-                                                                #'(lambda (prover_options) 
-                                                                   (SPECCALC::monadBind 
-                                                                    (SPECCALC::proveInSpec 
-                                                                     proof_name 
-                                                                     claim_name 
-                                                                     (subtractSpec-1-1 
-                                                                      uspc 
-                                                                      pV21) 
-                                                                     spec_name 
-                                                                     pV17 
-                                                                     prover_name 
-                                                                     assertions 
-                                                                     prover_options 
-                                                                     snarkLogFileName 
-                                                                     pos) 
-                                                                    #'(lambda (proved) 
-                                                                       (SPECCALC::monadBind 
-                                                                        (SPECCALC::|!return| 
-                                                                         (cons 
-                                                                          :|Proof| 
-                                                                          (cons 
-                                                                           (if proved 
-                                                                               '(:|Proved|) 
-                                                                               '(:|Unproved|)) 
-                                                                           |!URI|))) 
-                                                                        #'(lambda (result) 
+      #'SPECCALC::getCurrentURI-1 
+      #'(lambda (uri) 
+         (SPECCALC::monadSeq 
+          (SPECCALC::|!print| 
+           (STRING-SPEC::^ 
+            (STRING-SPEC::^ 
+             ";;; Processing prove at " 
+             (SPECCALC::uriToString-1 uri)) 
+            "
+")) 
+          (SPECCALC::monadBind 
+           (SPECCALC::evaluateTermInfo-1 spec_term) 
+           #'(lambda (x) 
+              (let ((depURIs (svref x 2))
+                    (timeStamp (svref x 1))
+                    (value (svref x 0))) 
+                (SPECCALC::monadBind 
+                 (funcall (SPECCALC::evaluateURI (cons :|Internal| "base")) 
+                          (cons 
+                           :|SpecPath_Relative| 
+                           (cons '(:|None|) (cons "Library" (cons "Base" nil))))) 
+                 #'(lambda (x1) 
+                    (let ((pV18 (svref x1 0))) 
+                      (block 
+                       nil 
+                       (if (eq (car pV18) :|Spec|) 
+                           (let ((pV21 (cdr pV18))) 
+                             (return 
+                              (SPECCALC::monadBind 
+                               (funcall (SPECCALC::evaluateURI 
+                                         (cons :|Internal| "ProverBase")) 
+                                        (cons 
+                                         :|SpecPath_Relative| 
+                                         (cons 
+                                          '(:|None|) 
+                                          (cons 
+                                           "Library" 
+                                           (cons "Base" (cons "ProverBase" nil)))))) 
+                               #'(lambda (x11) 
+                                  (let ((pV14 (svref x11 0))) 
+                                    (block 
+                                     nil 
+                                     (if (eq (car pV14) :|Spec|) 
+                                         (let ((pV17 (cdr pV14))) 
+                                           (return 
+                                            (SPECCALC::monadBind 
+                                             #'SPECCALC::getCurrentURI-1 
+                                             #'(lambda (|!URI|) 
+                                                (SPECCALC::monadBind 
+                                                 (SPECCALC::URItoSnarkLogFile-1 
+                                                  |!URI|) 
+                                                 #'(lambda (snarkLogFileName) 
+                                                    (SPECCALC::monadBind 
+                                                     (SPECCALC::|!return| 
+                                                      (IO-SPEC::ensureDirectoriesExist 
+                                                       snarkLogFileName)) 
+                                                     #'(lambda (pV5) 
+                                                        (declare (ignore pV5)) 
+                                                        (SPECCALC::monadBind 
+                                                         (SPECCALC::|!return| 
+                                                          (SPECCALC::URItoProofName-1 
+                                                           |!URI|)) 
+                                                         #'(lambda (proof_name) 
+                                                            (SPECCALC::monadBind 
+                                                             (SPECCALC::|!return| 
+                                                              (SPECCALC::SpecTermToSpecName-1 
+                                                               spec_term)) 
+                                                             #'(lambda (spec_name) 
+                                                                (SPECCALC::monadBind 
+                                                                 (let ((pV7 
+                                                                        (SPECCALC::coerceToSpec 
+                                                                         value))) 
+                                                                   (block 
+                                                                    nil 
+                                                                    (if (eq 
+                                                                         (car 
+                                                                          pV7) 
+                                                                         :|Spec|) 
+                                                                        (return 
+                                                                         (SPECCALC::|!return| 
+                                                                          (cdr 
+                                                                           pV7)))) 
+                                                                    (return 
+                                                                     (SPECCALC::raise 
+                                                                      (cons 
+                                                                       :|Proof| 
+                                                                       (cons 
+                                                                        pos 
+                                                                        "Argument to prove command is not coerceable to a spec.")))))) 
+                                                                 #'(lambda (uspc) 
+                                                                    (SPECCALC::monadBind 
+                                                                     (block 
+                                                                      nil 
+                                                                      (if (eq 
+                                                                           (car 
+                                                                            possible_options) 
+                                                                           :|Options|) 
+                                                                          (return 
                                                                            (SPECCALC::|!return| 
-                                                                            (vector 
-                                                                             result 
-                                                                             timeStamp 
-                                                                             depURIs))))))))))))))))))))))) 
-                                (error 
-                                 "Nonexhaustive match failure in evaluateProve")))))))) 
-                  (error "Nonexhaustive match failure in evaluateProve"))))))))))
+                                                                            (cdr 
+                                                                             possible_options))) 
+                                                                          (if (eq 
+                                                                               (car 
+                                                                                possible_options) 
+                                                                               :|Error|) 
+                                                                              (let ((pV10 
+                                                                                     (cdr 
+                                                                                      possible_options))) 
+                                                                                (return 
+                                                                                 (SPECCALC::raise 
+                                                                                  (cons 
+                                                                                   :|SyntaxError| 
+                                                                                   (STRING-SPEC::^ 
+                                                                                    (car 
+                                                                                     pV10) 
+                                                                                    (cdr 
+                                                                                     pV10)))))))) 
+                                                                      (error 
+                                                                       "Nonexhaustive match failure in evaluateProve")) 
+                                                                     #'(lambda (prover_options) 
+                                                                        (SPECCALC::monadBind 
+                                                                         (SPECCALC::proveInSpec 
+                                                                          proof_name 
+                                                                          claim_name 
+                                                                          (subtractSpec-1-1 
+                                                                           uspc 
+                                                                           pV21) 
+                                                                          spec_name 
+                                                                          pV17 
+                                                                          prover_name 
+                                                                          assertions 
+                                                                          prover_options 
+                                                                          snarkLogFileName 
+                                                                          pos) 
+                                                                         #'(lambda (proved) 
+                                                                            (SPECCALC::monadBind 
+                                                                             (SPECCALC::|!return| 
+                                                                              (cons 
+                                                                               :|Proof| 
+                                                                               (cons 
+                                                                                (if proved 
+                                                                                    '(:|Proved|) 
+                                                                                    '(:|Unproved|)) 
+                                                                                |!URI|))) 
+                                                                             #'(lambda (result) 
+                                                                                (SPECCALC::|!return| 
+                                                                                 (vector 
+                                                                                  result 
+                                                                                  timeStamp 
+                                                                                  depURIs))))))))))))))))))))))) 
+                                     (error 
+                                      "Nonexhaustive match failure in evaluateProve")))))))) 
+                       (error "Nonexhaustive match failure in evaluateProve")))))))))))))
 
 
 (defun SPECCALC::evaluateProve-1 (x) 
@@ -37896,25 +37956,42 @@
 
 
 (defun SPECCALC::evaluateSpec (spec_elements) 
-  (SPECCALC::monadBind 
-   (funcall (SPECCALC::evaluateSpecElems-1 emptySpec) spec_elements) 
-   #'(lambda (x) 
-      (let ((depURIs (svref x 2))
-            (|!TS| (svref x 1))) 
-        (SPECCALC::monadBind 
-         (SPECCALC::elaborateSpecM-1 (svref x 0)) 
-         #'(lambda (elaborated_spec) 
-            (SPECCALC::|!return| 
-             (vector 
-              (cons 
-               :|Spec| 
-               (vector 
-                (svref elaborated_spec 0) 
-                (svref elaborated_spec 1) 
-                (svref elaborated_spec 2) 
-                (svref elaborated_spec 3))) 
-              |!TS| 
-              depURIs))))))))
+  #'(lambda (|!position|) 
+     (SPECCALC::monadBind 
+      #'SPECCALC::getCurrentURI-1 
+      #'(lambda (uri) 
+         (SPECCALC::monadSeq 
+          (SPECCALC::|!print| 
+           (STRING-SPEC::^ 
+            (STRING-SPEC::^ 
+             ";;; Processing spec at " 
+             (SPECCALC::uriToString-1 uri)) 
+            "
+")) 
+          (SPECCALC::monadBind 
+           (funcall (SPECCALC::evaluateSpecElems-1 emptySpec) spec_elements) 
+           #'(lambda (x) 
+              (let ((depURIs (svref x 2))
+                    (|!TS| (svref x 1))) 
+                (SPECCALC::monadBind 
+                 (SPECCALC::elaborateSpecM-1 (svref x 0)) 
+                 #'(lambda (elaborated_spec) 
+                    (SPECCALC::monadBind 
+                     (funcall (SPECCALC::complainIfAmbiguous-1 
+                               (SPECCALC::compressDefs-1 elaborated_spec)) 
+                              |!position|) 
+                     #'(lambda (compressed_spec) 
+                        (SPECCALC::|!return| 
+                         (vector 
+                          (cons 
+                           :|Spec| 
+                           (vector 
+                            (svref compressed_spec 0) 
+                            (svref compressed_spec 1) 
+                            (svref compressed_spec 2) 
+                            (svref compressed_spec 3))) 
+                          |!TS| 
+                          depURIs))))))))))))))
 
 (defun SPECCALC::makeResolvedMapping (dom_spec cod_spec sm_rules) 
   (labels 
@@ -38250,89 +38327,76 @@
   (SPECCALC::monadBind 
    #'SPECCALC::getCurrentURI-1 
    #'(lambda (uri) 
-      (SPECCALC::monadBind 
-       (SPECCALC::|!return| (STRING-SPEC::^ (SPECCALC::uriToPath-1 uri) ".sw")) 
-       #'(lambda (filename) 
-          (SPECCALC::monadSeq 
-           (SPECCALC::|!print| 
-            (STRING-SPEC::^ 
-             (STRING-SPEC::^ 
-              (STRING-SPEC::^ 
-               (STRING-SPEC::^ 
-                ";;; Processing spec morphism " 
-                (let ((pV2 (car uri))) 
-                  (block 
-                   nil 
-                   (if (eq (car pV2) :|Some|) 
-                       (return (STRING-SPEC::^ (cdr pV2) " "))) 
-                   (return "")))) 
-               "in ") 
-              filename) 
-             "
+      (SPECCALC::monadSeq 
+       (SPECCALC::|!print| 
+        (STRING-SPEC::^ 
+         (STRING-SPEC::^ 
+          ";;; Processing spec morphism at " 
+          (SPECCALC::uriToString-1 uri)) 
+         "
 ")) 
-           (SPECCALC::monadBind 
-            (SPECCALC::evaluateTermInfo-1 domTerm) 
-            #'(lambda (x) 
-               (let ((domDepURIs (svref x 2))
-                     (domTimeStamp (svref x 1))
-                     (domValue (svref x 0))) 
-                 (SPECCALC::monadBind 
-                  (SPECCALC::evaluateTermInfo-1 codTerm) 
-                  #'(lambda (x1) 
-                     (let ((codDepURIs (svref x1 2))
-                           (codTimeStamp (svref x1 1))) 
-                       (let ((pV11 (SPECCALC::coerceToSpec (svref x1 0)))
-                             (pV10 (SPECCALC::coerceToSpec domValue))) 
-                         (block 
-                          nil 
-                          (if (eq (car pV10) :|Spec|) 
-                              (progn (if (eq (car pV11) :|Spec|) 
-                                         (return 
-                                          (SPECCALC::monadBind 
-                                           (SPECCALC::makeSpecMorphism 
-                                            (cdr pV10) 
-                                            (cdr pV11) 
-                                            morphRules) 
-                                           #'(lambda (morph) 
-                                              (SPECCALC::|!return| 
-                                               (vector 
-                                                (cons 
-                                                 :|Morph| 
-                                                 (vector 
-                                                  (svref morph 0) 
-                                                  (svref morph 1) 
-                                                  (svref morph 2) 
-                                                  (svref morph 3))) 
-                                                (INTEGER-SPEC::|!max| 
-                                                 domTimeStamp 
-                                                 codTimeStamp) 
-                                                (LISTUTILITIES::listUnion 
-                                                 domDepURIs 
-                                                 codDepURIs))))))) 
+       (SPECCALC::monadBind 
+        (SPECCALC::evaluateTermInfo-1 domTerm) 
+        #'(lambda (x) 
+           (let ((domDepURIs (svref x 2))
+                 (domTimeStamp (svref x 1))
+                 (domValue (svref x 0))) 
+             (SPECCALC::monadBind 
+              (SPECCALC::evaluateTermInfo-1 codTerm) 
+              #'(lambda (x1) 
+                 (let ((codDepURIs (svref x1 2))
+                       (codTimeStamp (svref x1 1))) 
+                   (let ((pV8 (SPECCALC::coerceToSpec (svref x1 0)))
+                         (pV7 (SPECCALC::coerceToSpec domValue))) 
+                     (block 
+                      nil 
+                      (if (eq (car pV7) :|Spec|) 
+                          (progn (if (eq (car pV8) :|Spec|) 
                                      (return 
-                                      (SPECCALC::raise 
-                                       (cons 
-                                        :|TypeCheck| 
-                                        (cons 
-                                         (SPECCALC::positionOf-1 domTerm) 
-                                         "domain of spec morphism is not a spec")))))) 
-                          (if (eq (car pV11) :|Spec|) 
-                              (return 
-                               (SPECCALC::raise 
-                                (cons 
-                                 :|TypeCheck| 
-                                 (cons 
-                                  (SPECCALC::positionOf-1 codTerm) 
-                                  "codomain of spec morphism is not a spec"))))) 
+                                      (SPECCALC::monadBind 
+                                       (SPECCALC::makeSpecMorphism 
+                                        (cdr pV7) 
+                                        (cdr pV8) 
+                                        morphRules) 
+                                       #'(lambda (morph) 
+                                          (SPECCALC::|!return| 
+                                           (vector 
+                                            (cons 
+                                             :|Morph| 
+                                             (vector 
+                                              (svref morph 0) 
+                                              (svref morph 1) 
+                                              (svref morph 2) 
+                                              (svref morph 3))) 
+                                            (INTEGER-SPEC::|!max| 
+                                             domTimeStamp 
+                                             codTimeStamp) 
+                                            (LISTUTILITIES::listUnion 
+                                             domDepURIs 
+                                             codDepURIs))))))) 
+                                 (return 
+                                  (SPECCALC::raise 
+                                   (cons 
+                                    :|TypeCheck| 
+                                    (cons 
+                                     (SPECCALC::positionOf-1 domTerm) 
+                                     "domain of spec morphism is not a spec")))))) 
+                      (if (eq (car pV8) :|Spec|) 
                           (return 
                            (SPECCALC::raise 
                             (cons 
                              :|TypeCheck| 
                              (cons 
-                              (SPECCALC::positionOf-1 domTerm) 
-                              "domain and codomain of spec morphism are not specs")))) 
-                          (error 
-                           "Nonexhaustive match failure in evaluateSpecMorph")))))))))))))))
+                              (SPECCALC::positionOf-1 codTerm) 
+                              "codomain of spec morphism is not a spec"))))) 
+                      (return 
+                       (SPECCALC::raise 
+                        (cons 
+                         :|TypeCheck| 
+                         (cons 
+                          (SPECCALC::positionOf-1 domTerm) 
+                          "domain and codomain of spec morphism are not specs")))) 
+                      (error "Nonexhaustive match failure in evaluateSpecMorph")))))))))))))
 
 
 (defun SPECCALC::evaluateSpecMorph-1 (x) 
@@ -38341,77 +38405,89 @@
 (defun SPECCALC::evaluateSubstitute (spec_tm sm_tm) 
   #'(lambda (term_pos) 
      (SPECCALC::monadBind 
-      (SPECCALC::evaluateTermInfo-1 spec_tm) 
-      #'(lambda (x) 
-         (let ((spec_dep_URIs (svref x 2))
-               (spec_timestamp (svref x 1))
-               (spec_value (svref x 0))) 
-           (SPECCALC::monadBind 
-            (SPECCALC::evaluateTermInfo-1 sm_tm) 
-            #'(lambda (x1) 
-               (let ((sm_value (svref x1 0))) 
-                 (let ((pV7 (SPECCALC::coerceToSpec spec_value))) 
-                   (block 
-                    nil 
-                    (if (eq (car pV7) :|Spec|) 
-                        (if (eq (car sm_value) :|Morph|) 
-                            (return 
-                             (let ((timeStamp 
-                                    (INTEGER-SPEC::|!max| 
-                                     spec_timestamp 
-                                     (svref x1 1)))) 
-                               (let ((dep_URIs 
-                                      (LISTUTILITIES::listUnion 
-                                       spec_dep_URIs 
-                                       (svref x1 2)))) 
-                                 (SPECCALC::monadBind 
-                                  (funcall (funcall (funcall (SPECCALC::attemptSubstitution-1 
-                                                              (cdr pV7)) 
-                                                             (cdr sm_value)) 
-                                                    sm_tm) 
-                                           term_pos) 
-                                  #'(lambda (new_spec) 
-                                     (SPECCALC::monadBind 
-                                      (funcall (SPECCALC::complainIfAmbiguous-1 
-                                                (SPECCALC::compressDefs-1 
-                                                 new_spec)) 
-                                               term_pos) 
-                                      #'(lambda (compressed_spec) 
-                                         (SPECCALC::|!return| 
-                                          (vector 
-                                           (cons 
-                                            :|Spec| 
-                                            (vector 
-                                             (svref compressed_spec 0) 
-                                             (svref compressed_spec 1) 
-                                             (svref compressed_spec 2) 
-                                             (svref compressed_spec 3))) 
-                                           timeStamp 
-                                           dep_URIs))))))))))) 
-                    (if (eq (car sm_value) :|Morph|) 
-                        (return 
-                         (SPECCALC::raise 
-                          (cons 
-                           :|TypeCheck| 
+      #'SPECCALC::getCurrentURI-1 
+      #'(lambda (uri) 
+         (SPECCALC::monadSeq 
+          (SPECCALC::|!print| 
+           (STRING-SPEC::^ 
+            (STRING-SPEC::^ 
+             ";;; Processing substitution at " 
+             (SPECCALC::uriToString-1 uri)) 
+            "
+")) 
+          (SPECCALC::monadBind 
+           (SPECCALC::evaluateTermInfo-1 spec_tm) 
+           #'(lambda (x) 
+              (let ((spec_dep_URIs (svref x 2))
+                    (spec_timestamp (svref x 1))
+                    (spec_value (svref x 0))) 
+                (SPECCALC::monadBind 
+                 (SPECCALC::evaluateTermInfo-1 sm_tm) 
+                 #'(lambda (x1) 
+                    (let ((sm_value (svref x1 0))) 
+                      (let ((pV7 (SPECCALC::coerceToSpec spec_value))) 
+                        (block 
+                         nil 
+                         (if (eq (car pV7) :|Spec|) 
+                             (if (eq (car sm_value) :|Morph|) 
+                                 (return 
+                                  (let ((timeStamp 
+                                         (INTEGER-SPEC::|!max| 
+                                          spec_timestamp 
+                                          (svref x1 1)))) 
+                                    (let ((dep_URIs 
+                                           (LISTUTILITIES::listUnion 
+                                            spec_dep_URIs 
+                                            (svref x1 2)))) 
+                                      (SPECCALC::monadBind 
+                                       (funcall (funcall (funcall (SPECCALC::attemptSubstitution-1 
+                                                                   (cdr pV7)) 
+                                                                  (cdr sm_value)) 
+                                                         sm_tm) 
+                                                term_pos) 
+                                       #'(lambda (new_spec) 
+                                          (SPECCALC::monadBind 
+                                           (funcall (SPECCALC::complainIfAmbiguous-1 
+                                                     (SPECCALC::compressDefs-1 
+                                                      new_spec)) 
+                                                    term_pos) 
+                                           #'(lambda (compressed_spec) 
+                                              (SPECCALC::|!return| 
+                                               (vector 
+                                                (cons 
+                                                 :|Spec| 
+                                                 (vector 
+                                                  (svref compressed_spec 0) 
+                                                  (svref compressed_spec 1) 
+                                                  (svref compressed_spec 2) 
+                                                  (svref compressed_spec 3))) 
+                                                timeStamp 
+                                                dep_URIs))))))))))) 
+                         (if (eq (car sm_value) :|Morph|) 
+                             (return 
+                              (SPECCALC::raise 
+                               (cons 
+                                :|TypeCheck| 
+                                (cons 
+                                 (SPECCALC::positionOf-1 spec_tm) 
+                                 "substitution attempted on a non-spec"))))) 
+                         (if (eq (car pV7) :|Spec|) 
+                             (return 
+                              (SPECCALC::raise 
+                               (cons 
+                                :|TypeCheck| 
+                                (cons 
+                                 (SPECCALC::positionOf-1 sm_tm) 
+                                 "substitution is not a morphism"))))) 
+                         (return 
+                          (SPECCALC::raise 
                            (cons 
-                            (SPECCALC::positionOf-1 spec_tm) 
-                            "substitution attempted on a non-spec"))))) 
-                    (if (eq (car pV7) :|Spec|) 
-                        (return 
-                         (SPECCALC::raise 
-                          (cons 
-                           :|TypeCheck| 
-                           (cons 
-                            (SPECCALC::positionOf-1 sm_tm) 
-                            "substitution is not a morphism"))))) 
-                    (return 
-                     (SPECCALC::raise 
-                      (cons 
-                       :|TypeCheck| 
-                       (cons 
-                        term_pos 
-                        "substitution is not a morphism, and is attempted on a non-spec")))) 
-                    (error "Nonexhaustive match failure in evaluateSubstitute")))))))))))
+                            :|TypeCheck| 
+                            (cons 
+                             term_pos 
+                             "substitution is not a morphism, and is attempted on a non-spec")))) 
+                         (error 
+                          "Nonexhaustive match failure in evaluateSubstitute"))))))))))))))
 
 
 (defun SPECCALC::evaluateSubstitute-1 (x) 
@@ -38420,36 +38496,49 @@
 (defun SPECCALC::evaluateTranslate-1 (term) 
   #'(lambda (translation) 
      (SPECCALC::monadBind 
-      (SPECCALC::evaluateTermInfo-1 term) 
-      #'(lambda (x) 
-         (let ((depURIs (svref x 2))
-               (timeStamp (svref x 1))) 
-           (let ((pV2 (SPECCALC::coerceToSpec (svref x 0)))) 
-             (block 
-              nil 
-              (if (eq (car pV2) :|Spec|) 
-                  (return 
-                   (SPECCALC::monadBind 
-                    (funcall (SPECCALC::translateSpec-1 (cdr pV2)) translation) 
-                    #'(lambda (spcTrans) 
-                       (SPECCALC::|!return| 
-                        (vector 
-                         (cons 
-                          :|Spec| 
-                          (vector 
-                           (svref spcTrans 0) 
-                           (svref spcTrans 1) 
-                           (svref spcTrans 2) 
-                           (svref spcTrans 3))) 
-                         timeStamp 
-                         depURIs)))))) 
-              (return 
-               (SPECCALC::raise 
-                (cons 
-                 :|TypeCheck| 
-                 (cons 
-                  (SPECCALC::positionOf-1 term) 
-                  "translating a term that is not a specification")))))))))))
+      #'SPECCALC::getCurrentURI-1 
+      #'(lambda (uri) 
+         (SPECCALC::monadSeq 
+          (SPECCALC::|!print| 
+           (STRING-SPEC::^ 
+            (STRING-SPEC::^ 
+             ";;; Processing translation at " 
+             (SPECCALC::uriToString-1 uri)) 
+            "
+")) 
+          (SPECCALC::monadBind 
+           (SPECCALC::evaluateTermInfo-1 term) 
+           #'(lambda (x) 
+              (let ((depURIs (svref x 2))
+                    (timeStamp (svref x 1))) 
+                (let ((pV2 (SPECCALC::coerceToSpec (svref x 0)))) 
+                  (block 
+                   nil 
+                   (if (eq (car pV2) :|Spec|) 
+                       (return 
+                        (SPECCALC::monadBind 
+                         (funcall (SPECCALC::translateSpec-1 (cdr pV2)) 
+                                  translation) 
+                         #'(lambda (spcTrans) 
+                            (SPECCALC::|!return| 
+                             (vector 
+                              (cons 
+                               :|Spec| 
+                               (vector 
+                                (svref spcTrans 0) 
+                                (svref spcTrans 1) 
+                                (svref spcTrans 2) 
+                                (svref spcTrans 3))) 
+                              timeStamp 
+                              depURIs)))))) 
+                   (return 
+                    (SPECCALC::raise 
+                     (cons 
+                      :|TypeCheck| 
+                      (cons 
+                       (SPECCALC::positionOf-1 term) 
+                       "translating a term that is not a specification"))))))))))))))
+
 
 (defun SPECCALC::ppColimit (cocone pV1) 
   (declare (ignore pV1)) 
@@ -40320,7 +40409,7 @@
                 (funcall (SPECCALC::evaluateURI (SPECCALC::positionOf-1 term)) 
                          (cdr pV12))) 
                (if (eq (car pV12) :|Spec|) 
-                   (return (SPECCALC::evaluateSpec (cdr pV12))) 
+                   (return (funcall (SPECCALC::evaluateSpec (cdr pV12)) pos)) 
                    (if (eq (car pV12) :|SpecMorph|) 
                        (return (SPECCALC::evaluateSpecMorph-1 (cdr pV12))) 
                        (if (eq (car pV12) :|Diag|) 
@@ -40544,32 +40633,43 @@
 
 (defun SPECCALC::evaluateColimit-1 (term) 
   (SPECCALC::monadBind 
-   (SPECCALC::evaluateTermInfo-1 term) 
-   #'(lambda (x) 
-      (let ((value (svref x 0))) 
-        (block 
-         nil 
-         (if (eq (car value) :|Diag|) 
-             (let ((pV3 (cdr value))) 
-               (return 
-                (let ((initial_cocone 
-                       (CAT::colimit-1-1 
-                        (FUNCTOR::cod-1 (CAT::functor-1 pV3)) 
-                        pV3))) 
-                  (SPECCALC::|!return| 
-                   (vector 
-                    (cons 
-                     :|Colimit| 
-                     (cons (car initial_cocone) (cdr initial_cocone))) 
-                    (svref x 1) 
-                    (svref x 2))))))) 
-         (return 
-          (SPECCALC::raise 
-           (cons 
-            :|TypeCheck| 
-            (cons 
-             (SPECCALC::positionOf-1 term) 
-             "argument of colimit is not a diagram")))))))))
+   #'SPECCALC::getCurrentURI-1 
+   #'(lambda (uri) 
+      (SPECCALC::monadSeq 
+       (SPECCALC::|!print| 
+        (STRING-SPEC::^ 
+         (STRING-SPEC::^ 
+          ";;; Processing colimit at " 
+          (SPECCALC::uriToString-1 uri)) 
+         "
+")) 
+       (SPECCALC::monadBind 
+        (SPECCALC::evaluateTermInfo-1 term) 
+        #'(lambda (x) 
+           (let ((value (svref x 0))) 
+             (block 
+              nil 
+              (if (eq (car value) :|Diag|) 
+                  (let ((pV3 (cdr value))) 
+                    (return 
+                     (let ((initial_cocone 
+                            (CAT::colimit-1-1 
+                             (FUNCTOR::cod-1 (CAT::functor-1 pV3)) 
+                             pV3))) 
+                       (SPECCALC::|!return| 
+                        (vector 
+                         (cons 
+                          :|Colimit| 
+                          (cons (car initial_cocone) (cdr initial_cocone))) 
+                         (svref x 1) 
+                         (svref x 2))))))) 
+              (return 
+               (SPECCALC::raise 
+                (cons 
+                 :|TypeCheck| 
+                 (cons 
+                  (SPECCALC::positionOf-1 term) 
+                  "argument of colimit is not a diagram"))))))))))))
 
 (defun SPECCALC::evaluateColimit (x0 x1) 
   (SPECCALC::evaluateColimit-1 (cons x0 x1)))
@@ -40630,8 +40730,8 @@
 (defun SPECCALC::evaluateSnarkGen-1-1 (x1 x2) 
   (funcall (SPECCALC::evaluateSnarkGen-1 x1) x2))
 
-(defun SPECCALC::evaluateSpec-1-1 (x1 x2) 
-  (funcall (SPECCALC::evaluateSpec x1) x2))
+(defun SPECCALC::evaluateSpec-1-1-1 (x1 x2 x3) 
+  (funcall (funcall (SPECCALC::evaluateSpec x1) x2) x3))
 
 (defun SPECCALC::evaluateSpecElem (x0 x1 x2 x3) 
   (SPECCALC::evaluateSpecElem-1 (vector x0 x1 x2 x3)))
