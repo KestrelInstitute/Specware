@@ -480,7 +480,15 @@ spec
        | ("show", Char c)     -> String (toString c)
        | ("succ",Int i)       -> Int (succ i)
 
-       | ("stringToInt",String s)  -> Int(stringToInt s)
+%% Defined in InterpreterBase
+%       | ("stringToInt",String s)  ->
+%         if intConvertible s
+%	   then Int(stringToInt s)
+%	   else default()
+%       | ("stringToNat",String s)  ->
+%         if natConvertible s
+%	   then Int(stringToNat s)
+%	   else default()
        | ("length",String s)  -> Int(length s)
        | ("explode",String s) -> List.foldr (fn (c,r) -> Constructor("Cons",RecordVal[("1",Char c),("2",r)]))
                                    (Constant "Nil") (explode s)
@@ -539,8 +547,12 @@ spec
        %| ">="  -> Bool(>=(intVals fields))
        %| "min" -> Int(min(intVals fields))
        %| "max" -> Int(max(intVals fields))
-       | "rem" -> Int(rem(intVals fields))
-       | "div" -> Int(div(intVals fields))
+       | "rem" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(rem(x,y))
+       | "div" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(div(x,y))
 
        %% string operations
        | "concat" -> String(concat(stringVals fields))
@@ -548,11 +560,20 @@ spec
        | "^"   -> String(^(stringVals fields))
        | "substring" ->
 	 (case fields of
-	    [(_,s),(_,i),(_,j)] -> String(substring(stringVal s,intVal i,intVal j))
+	    | [(_,s),(_,i),(_,j)] ->
+	      let sv = stringVal s in
+	      let iv = intVal i in
+	      let jv = intVal j in
+	      if iv <= jv && jv <= length sv
+		then String(substring(stringVal s,intVal i,intVal j))
+		else default()
 	    | _ -> default())
        | "leq" -> Bool(leq(stringVals fields))
        | "lt"  -> Bool(lt( stringVals fields))
-       | "sub" -> Char(sub(stringIntVals fields))
+       | "sub" -> let (s,i) = stringIntVals fields in
+	          if i >= 0 && i < length s
+		    then Char(sub(s,i))
+		    else default()
 
     % %% Boolean operations are non-strict
     %% %% Should it be non-strict in first argument as well as second?

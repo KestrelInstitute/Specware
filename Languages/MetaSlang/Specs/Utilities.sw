@@ -914,6 +914,16 @@ Utilities qualifying spec
      of [i,j] -> Some(Fun(f(i,j),srt,noPos))
       | _ -> None
 
+ op  evalBinaryNotZero: (Nat * Nat -> Fun) * (List(Id * MS.Term) -> List Nat)
+                      * List(Id * MS.Term) * Sort
+                     -> Option MS.Term
+ def evalBinaryNotZero(f, fVals, fields, srt) =
+   case fVals fields
+     of [i,j] ->
+        if j=0 then None
+	  else Some(Fun(f(i,j),srt,noPos))
+      | _ -> None
+
  op nat:  [a] (a -> Nat) -> a -> Fun
  op char: [a] (a -> Char) -> a -> Fun
  op str:  [a] (a -> String) -> a -> Fun
@@ -963,7 +973,7 @@ Utilities qualifying spec
         Some(Fun(Nat((foldl *) 1 (natVals fields)),
 		 sortFromField(fields,natSort),noPos))
       | "-"   -> evalBinary(nat -,natVals,fields,
-			  sortFromField(fields,natSort))
+			    sortFromField(fields,natSort))
       | "<"   -> if spName = "String"
 	          then evalBinary(bool <,stringVals,fields,boolSort)
 		  else evalBinary(bool <,natVals,fields,boolSort)
@@ -980,8 +990,8 @@ Utilities qualifying spec
 			    sortFromField(fields,natSort))
       | "max" -> evalBinary(nat max,natVals,fields,
 			    sortFromField(fields,natSort))
-      | "rem" -> evalBinary(nat rem,natVals,fields,natSort)
-      | "div" -> evalBinary(nat div,natVals,fields,natSort)
+      | "rem" -> evalBinaryNotZero(nat rem,natVals,fields,natSort)
+      | "div" -> evalBinaryNotZero(nat div,natVals,fields,natSort)
 
       %% string operations
       | "concat" -> evalBinary(str concat,stringVals,fields,stringSort)
@@ -990,8 +1000,13 @@ Utilities qualifying spec
       | "substring" ->
 	(case fields
 	   of [(_,s),(_,i),(_,j)] ->
-	      Some(Fun(String(substring(stringVal s,natVal i,natVal j)),
-		       stringSort,noPos))
+	      let sv = stringVal s in
+	      let iv = natVal i in
+	      let jv = natVal j in
+	      if iv <= jv && jv <= length sv
+		then Some(Fun(String(substring(sv,iv,jv)),
+			      stringSort,noPos))
+		else None
 	    | _ -> None)
       | "leq" -> evalBinary(bool leq,stringVals,fields,boolSort)
       | "lt"  -> evalBinary(bool lt,stringVals,fields,boolSort)
