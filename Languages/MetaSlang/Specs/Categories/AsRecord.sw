@@ -46,29 +46,38 @@ SpecCalc qualifying spec {
   % When printing the maps, we print only where they differ
   % from the canonical injection (where they differ from
   % the identity)
+  op ppMorphMap : PolyMap.Map (QualifiedId,QualifiedId) -> Pretty
+  def ppMorphMap map =
+    let abbrevMap =
+      foldMap (fn newMap -> fn d -> fn c ->
+          if d = c then
+            newMap
+          else
+            update newMap d c) emptyMap map in
+    if abbrevMap = emptyMap then
+      ppString "{}"
+    else
+      ppGroup (ppIndent (ppConcat [
+        ppString "{",
+        ppBreak,
+        ppGroup (ppSep (ppCons (ppString ",") ppBreak) (foldMap (fn l -> fn dom -> fn cod
+                 -> Cons (ppConcat [
+                            ppQualifiedId dom,
+                            ppString " +-> ",
+                            ppQualifiedId cod], l)) [] abbrevMap)),
+        ppBreak,
+        ppString "}"
+      ]))
+
   op ppMorphism : Morphism -> Doc
   def ppMorphism {dom=_, cod=_, sortMap, opMap} = 
-    ppConcat [
+    ppGroup (ppConcat [
+      ppString "sort map = ",
+      ppMorphMap sortMap,
       ppNewline,
-      ppString "Sort map=",
-      ppNewline,
-      ppNest 2 (ppMap ppQualifiedId ppQualifiedId
-        (foldMap (fn newMap -> fn d -> fn c ->
-          if d = c then
-            newMap
-          else
-            update newMap d c) emptyMap sortMap)),
-      ppNewline,
-      ppString "Op map=",
-      ppNewline,
-      ppNest 2 (ppMap ppQualifiedId ppQualifiedId
-        (foldMap (fn newMap -> fn d -> fn c ->
-          if d = c then
-            newMap
-          else
-            update newMap d c) emptyMap opMap)),
-      ppNewline
-    ]
+      ppString "op map = ",
+      ppMorphMap opMap
+    ])
 
   def dom     morph = morph.dom
   def cod     morph = morph.cod
