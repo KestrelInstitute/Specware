@@ -88,6 +88,7 @@
 		(room))
 	      ;; close all but the latest oldspace areas, so their contents
 	      ;; won't be gc'd again and again...
+	      #+ALLEGRO-V6.2 
 	      (setf (sys::gsgc-parameter :open-old-area-fence) fence)
 	      (gc t)
 	      (when verbose?
