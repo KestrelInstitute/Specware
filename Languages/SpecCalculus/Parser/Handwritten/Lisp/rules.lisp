@@ -476,7 +476,7 @@ If we want the precedence to be optional:
   (format nil "~D" 1))
 
 (define-sw-parser-rule :CLAIM ()
-  (:tuple (:optional (1 :SORT-QUANTIFICATION)) (2 :EXPRESSION))
+  (:tuple (:optional (1 :SORT-QUANTIFICATION)) (2 :EXPRESSION-NOT-STARTING-WITH-BRACKET))
   (cons 1 2))
 
 (define-sw-parser-rule :SORT-QUANTIFICATION ()
@@ -688,6 +688,18 @@ If we want the precedence to be optional:
    )
   1)
 
+(define-sw-parser-rule :EXPRESSION-NOT-STARTING-WITH-BRACKET ()
+  (:anyof
+   (1 :LAMBDA-FORM          :documentation "Function definition")
+   (1 :CASE-EXPRESSION      :documentation "Case")
+   (1 :LET-EXPRESSION       :documentation "Let")
+   (1 :IF-EXPRESSION        :documentation "If-then-else")
+   (1 :QUANTIFICATION       :documentation "Quantification (fa/ex)")
+   (1 :ANNOTATED-EXPRESSION :documentation "Annotated (i.e. typed) expression")
+   (1 :TIGHT-EXPRESSION-NOT-STARTING-WITH-BRACKET :documentation "Tight expression -- suitable for annotation -- not starting with '['")
+   )
+  1)
+
 (define-sw-parser-rule :NON-BRANCH-EXPRESSION ()
   (:anyof
    (1 :NON-BRANCH-LET-EXPRESSION  :documentation "Let not ending in case or lambda")
@@ -705,15 +717,29 @@ If we want the precedence to be optional:
    )
   1)
 
+(define-sw-parser-rule :TIGHT-EXPRESSION-NOT-STARTING-WITH-BRACKET ()
+  (:anyof
+   (1 :APPLICATION-NOT-STARTING-WITH-BRACKET          :documentation "Application not starting with bracket")
+   (1 :CLOSED-EXPRESSION-NOT-STARTING-WITH-BRACKET    :documentation "Closed expression -- unambiguous termination -- not starting with '['")
+   )
+  1)
+
 ;;;  UNQUALIFIED-OP-REF is outside SELECTABLE-EXPRESSION to avoid ambiguity with "A.B.C"
 ;;;   being both SELECT (C, TWO-NAME-EXPRESSION (A,B))
 ;;;          and SELECT (C, SELECT (B, UNQUALIFIED-OP-REF A))
 ;;;  "X . SELECTOR" will be parsed as TWO-NAME-EXPRESSION and be disambiguated in post-processing
 (define-sw-parser-rule :CLOSED-EXPRESSION ()
   (:anyof
+   (1 :CLOSED-EXPRESSION-NOT-STARTING-WITH-BRACKET)
+   (1 :LIST-DISPLAY           :documentation "List") ; starts with left bracket
+   )
+  1)
+
+(define-sw-parser-rule :CLOSED-EXPRESSION-NOT-STARTING-WITH-BRACKET ()
+  (:anyof
    (1 :BUILT-IN-OPERATOR      :documentation "&&, ||, =>, <=>, =, ~=, <<")
    (1 :UNQUALIFIED-OP-REF     :documentation "Op reference or Variable reference")
-   (1 :SELECTABLE-EXPRESSION  :documentation "Closed expression -- unambiguous termination")
+   (1 :SELECTABLE-EXPRESSION  :documentation "Closed expression -- unambiguous termination, not starting with [")
    (1 :RESTRICTION            :documentation "restrict p e -or- (restrict p) e") ; new, per task 22
    )
   1)
@@ -723,9 +749,9 @@ If we want the precedence to be optional:
 ;;;         Select (B, OpRef (Qualified (unqualified, A)))
 ;;;         Select (B, VarRef A)
 ;;;        So we parse as TWO-NAME-EXPRESSION and resolve in post-processing.
+
 (define-sw-parser-rule :SELECTABLE-EXPRESSION ()
   (:anyof
-   ;; 
    (1 :TWO-NAME-EXPRESSION        :documentation "Reference to op or var, or selection")  ; resolve in post-processing  (name     . name)
    ;; (1 :QUALIFIED-OP-REF        :documentation "Qualified reference to op")             ; see TWO-NAME-EXPRESSION
    (1 :NAT-FIELD-SELECTION        :documentation "Selection from name using Nat")         ; see TWO-NAME-EXPRESSION     (name     . nat)
@@ -735,7 +761,6 @@ If we want the precedence to be optional:
    (1 :TUPLE-DISPLAY              :documentation "Tuple")
    (1 :RECORD-DISPLAY             :documentation "Record")
    (1 :SEQUENTIAL-EXPRESSION      :documentation "Sequence of expressions")
-   (1 :LIST-DISPLAY               :documentation "List")
    (1 :STRUCTOR                   :documentation "Project, Embed, etc.")
    (1 :PARENTHESIZED-EXPRESSION   :documentation "Parenthesized expression")
    (1 :MONAD-EXPRESSION           :documentation "Monadic expression")
@@ -940,6 +965,13 @@ If we want the precedence to be optional:
   (:tuple (1 :CLOSED-EXPRESSION) (2 :CLOSED-EXPRESSIONS)) ;  (:optional (:tuple ":" (3 :SORT)))
   (make-application 1 2 ':left-lcb ':right-lcb) ; see notes above
   :documentation "Application")
+
+(define-sw-parser-rule :APPLICATION-NOT-STARTING-WITH-BRACKET  ()
+  (:tuple (1 :CLOSED-EXPRESSION-NOT-STARTING-WITH-BRACKET) (2 :CLOSED-EXPRESSIONS)) ;  (:optional (:tuple ":" (3 :SORT)))
+  (make-application 1 2 ':left-lcb ':right-lcb) ; see notes above
+  :documentation "Application")
+
+
 
 (define-sw-parser-rule :CLOSED-EXPRESSIONS ()
   (:repeat+ :CLOSED-EXPRESSION))
