@@ -25,8 +25,10 @@ coherence conditions of the morphism elements.
     case (coercedDomValue, coercedCodValue) of
       | (Spec spc1, Spec spc2) -> {
             morph <- makeSpecMorphism spc1 spc2 morphRules (positionOf domTerm) (Some sm_tm);
-            return (Morph morph,max(domTimeStamp,codTimeStamp),
-                    listUnion (domDepUIDs,codDepUIDs))
+	    dep_uids <- return (listUnion (domDepUIDs,codDepUIDs));
+            return (Morph morph,
+		    max(domTimeStamp,codTimeStamp),
+		    dep_uids)
           }
       | (Other _, _) ->
         evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepUIDs)
