@@ -438,20 +438,23 @@ are no longer needed. *)
   def getTransitionGuardAndActions transition = 
     let ms = modeSpec (transSpec transition) in
     {
+
      %% foldVariants  maps over spec properties (i.e. axioms, theorems, etc.) 
      %%   looking for those listed as invariants in the modespec
+
      %% foldVariables maps over spec ops
-     print (case (edge transition) of
-	      | Nat (_, qid) -> "\n------\nStep: " ^ (printQualifiedId qid) ^ "\n\n"
-	      | _ -> print ("\n ?? \n\n"));
-     print ("  Invariants: " ^ (anyToString (invariants ms)) ^ "\n");
-     print ("   Variables: " ^ 
-	    (foldVariables (fn s -> 
-			    fn (qid :: _, _, _, _) -> 
-			    s ^ (printQualifiedId qid) ^ "  ")
-	                   "" 
-			   ms) ^ 
-	    "\n");
+     %%     print (case (edge transition) of
+     %%	      | Nat (_, qid) -> "\n------\nStep: " ^ (printQualifiedId qid) ^ "\n\n"
+     %%	      | _ -> print ("\n ?? \n\n"));
+     %%     print ("  Invariants: " ^ (anyToString (invariants ms)) ^ "\n");
+     %%     print ("   Variables: " ^ 
+     %%	    (foldVariables (fn s -> 
+     %%			    fn (qid :: _, _, _, _) -> 
+     %%			    s ^ (printQualifiedId qid) ^ "  ")
+     %%	                   "" 
+     %%			   ms) ^ 
+     %%	    "\n");
+
      %% Note: The variants of the transition are invariants of the modespec, so
      %%       foldVariants is implemended to map over the invariants of the modespec.
      (guard_terms, aux_action_terms)  <- foldVariants (fn (guards, actions) -> fn claim -> 
@@ -464,9 +467,11 @@ are no longer needed. *)
                                                       ([], [])
 						      ms;
      action_terms <- foldVariables infoToBindings [] ms;
-     print ((ppTerms "Aux    terms: " aux_action_terms) ^ "\n");
-     print ((ppTerms "Action terms: " action_terms)     ^ "\n");
-     print ((ppTerms "Guard  terms: " guard_terms)      ^ "\n");
+
+     % print ((ppTerms "Aux    terms: " aux_action_terms) ^ "\n");
+     % print ((ppTerms "Action terms: " action_terms)     ^ "\n");
+     % print ((ppTerms "Guard  terms: " guard_terms)      ^ "\n");
+
      action_terms <- return (aux_action_terms ++ (rev action_terms));
      case guard_terms of
        | [] ->
