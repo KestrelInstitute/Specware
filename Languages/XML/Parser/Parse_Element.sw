@@ -220,17 +220,30 @@ XML qualifying spec
   %%  [K34]  content       ::=  (CharData? content_item)* CharData?
   %% -------------------------------------------------------------------------------------------------
 
+  def entity_value (name) : UChars =
+    case name of
+      | [97, 112, 111, 115] (* apos *) -> [38]
+      | [108, 116]          (* lt *)   -> [60]
+      | _ -> name
+
   def parse_Content (start : UChars, pending_open_tags : List (ElementTag)) : Required Content =
     let
-       def parse_items (tail, rev_items) =
-	 let (char_data, tail) = parse_CharData tail in
+       def parse_items (tail, pending_chars, rev_items) =
+	 let (char_data, tail) = parse_XCharData tail in
 	 {
 	  (possible_item, scout) <- parse_Content_Item (tail, pending_open_tags);
 	  case possible_item of
 	    | Some item ->
-	      parse_items (scout,
-			   cons ((char_data, item),
-				 rev_items))
+	      (case item of
+		 | Reference (Entity {name}) -> 
+		   parse_items (scout, 
+				pending_chars ++ char_data ++ (entity_value name),
+				rev_items)
+		 | _ ->
+		   parse_items (scout,
+				[],
+				cons ((Some (pending_chars ++ char_data), item),
+				      rev_items)))
 	    | _ ->
 	      %% Note:  The valdidator will expand reference items later, which
 	      %%         may introduce new sub-eleemnts, etc.
@@ -242,11 +255,11 @@ XML qualifying spec
 	      %%         CharData's are merged, to maintain the Content structure.
 	      %%         (Or we could allow Content to have adjacent CharData's.)
 	      return ({items   = rev rev_items,
-		       trailer = char_data},
+		       trailer = Some (pending_chars ++ char_data)},
 		      tail)
 	     }
     in
-      parse_items (start, [])
+      parse_items (start, [], [])
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K35]  content_item  ::=  element | Reference | CDSect | PI | Comment
@@ -308,7 +321,7 @@ XML qualifying spec
         %% '&'
 	{
 	 %% parse_Reference assumes we're just past the ampersand.
-	 (ref, tail) <- parse_Reference start;
+	 (ref, tail) <- parse_Reference tail;
 	 %% Note:  The valdidator will expand reference items such as this later,
 	 %%         which may introduce new sub-eleemnts, etc.
          %%        The replacement text for this ref must match the production

@@ -63,25 +63,25 @@ XML qualifying spec
   %%  [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_CharData (start : UChars) : (Option CharData) * UChars =
+  def parse_XCharData (start : UChars) : CharData * UChars =
     let
        def probe (tail, rev_char_data) =
 	 case tail of
 
 	   | 93 :: 93 :: 62 :: _ ->
 	     %% ']]>'
-	     (Some (rev rev_char_data), tail)
+	     (rev rev_char_data, tail)
 
 	   | char :: scout ->
 	     if char_data_char? char then
 	       %% note that char_data_char? is false for 60 ('<') and 38 ('&')
 	       probe (scout, cons (char, rev_char_data))
 	     else
-	       (Some (rev rev_char_data),
+	       (rev rev_char_data,
 		tail)
 
 	   | _ ->
-	     (Some (rev rev_char_data),
+	     (rev rev_char_data,
 	      tail)
     in
       probe (start, [])
