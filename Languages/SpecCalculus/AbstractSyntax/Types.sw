@@ -1,7 +1,7 @@
 \section{Spec Calculus Abstract Syntax}
 
 \begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
 \end{spec}
 
 We import PosSpec for Position, QualifiedId, ASortScheme etc.  This is a
@@ -296,5 +296,12 @@ The term in the component must evaluate to a morphism.
   sort ProverOptions = | OptionString (List LispCell)
                        | OptionName QualifiedId
                        | Error   (String * String)  % error msg, problematic string
-}
+\end{spec}
+
+The next is callable from the parser.
+
+\begin{spec}
+  op mkOther : fa (a) (OtherTerm a) * a -> Term a
+  def mkOther (other,position) = (Other other, position)
+endspec
 \end{spec}
