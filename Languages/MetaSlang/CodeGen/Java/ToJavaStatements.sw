@@ -25,12 +25,13 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
       let args = applyArgsToTerms(argsTerm) in
       let dom = map termSort args in
       let rng = srt in
-      if all (fn (srt) -> notAUserType?(srt)) dom
+      if all (fn (srt) -> notAUserType?(srt) or baseTypeAlias?(spc,srt)) dom
 	then
 	  if notAUserType?(rng)
 	    then
-	      case utlist(concat(dom,[srt])) of
-		| Some s -> 
+	      case utlist_internal (fn(srt) -> userType?(srt) & ~(baseTypeAlias?(spc,srt))) (concat(dom,[srt])) of
+		| Some s ->
+		  let _ = writeLine(" ut found user type "^printSort(s)) in
 		  let (sid,col1) = srtId s in
 		  let (res,col2) = translateBaseApplToExpr(tcx,id,argsTerm,k,l,sid,spc) in
 		  (res,concatCollected(col1,col2))
@@ -62,8 +63,15 @@ op translateRestrictToExpr: TCx * Sort * Term * Nat * Nat * Spec -> (Block * Jav
 def translateRestrictToExpr(tcx, srt, argsTerm, k, l, spc) =
   let [arg] = applyArgsToTerms(argsTerm) in
   let ((newBlock, newArg, newK, newL),col1) = termToExpression(tcx, arg, k, l, spc) in
-  let Base (Qualified (q, srtId), _, _) = srt in
-  ((newBlock, mkNewClasInst(srtId, [newArg]), newK, newL),col1)
+  case srt of
+    | Base (Qualified (q, srtId), _, _) ->
+      ((newBlock, mkNewClasInst(srtId, [newArg]), newK, newL),col1)
+    | _ -> 
+      (case findMatchingRestritionType(spc,srt) of
+	 | Some (Base(Qualified(q,srtId),_,_)) ->
+	   ((newBlock,mkNewClasInst(srtId,[newArg]), newK, newL),col1)
+	 | None -> fail("unsupported sort in restrict term: "^printSort(srt))
+	  )
 
 op translateRelaxToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateRelaxToExpr(tcx, argsTerm, k, l, spc) =

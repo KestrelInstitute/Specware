@@ -65,7 +65,10 @@ def notAUserType?(srt) = ~(userType?(srt))
  * each srt are also considered in case srt is an arrow type
  *)
 op ut: Sort -> Option Sort
-def ut(srt) =
+def ut(srt) = ut_internal userType? srt
+
+op ut_internal: (Sort -> Boolean) -> Sort -> Option Sort
+def ut_internal isUserType? srt =
   let
     def utlist(srts) =
       case srts of
@@ -76,7 +79,7 @@ def ut(srt) =
 	     | None -> utlist(srts)
 	    )
   in
-  if userType?(srt) then Some srt
+  if isUserType?(srt) then Some srt
   else
     let domsrts = srtDom(srt) in
     case utlist(domsrts) of
@@ -87,15 +90,18 @@ def ut(srt) =
 	   | _ -> None
 	  )
 
-op utlist: List Sort -> Option Sort
-def utlist(srts) =
+op utlist_internal: (Sort -> Boolean) -> List Sort -> Option Sort
+def utlist_internal isUserType? srts =
   case srts of
     | [] -> None
     | srt::srts ->
-      (case ut(srt) of
+      (case ut_internal isUserType? srt of
 	 | Some s -> Some s
-	 | None -> utlist(srts)
+	 | None -> utlist_internal isUserType? srts
 	)
+
+op utlist: List Sort -> Option Sort
+def utlist(srt) = utlist_internal userType? srt
 
 (** 
  * returns whether or not the given sort is "flat" meaning that it
@@ -318,7 +324,7 @@ def liftCase(oper, term, k) =
 def liftCaseApply(oper, term as Apply (opTerm, argsTerm, _), k) =
   let args = applyArgsToTerms(argsTerm) in
   let (newArgs, newK, newOds) = liftCases(oper, args, k) in
-    (mkApplication(opTerm, newArgs), newK, newOds)
+  (mkApplication(opTerm, newArgs), newK, newOds)
 
 def liftCaseRecord(oper, term as Record (fields,_), k) =
   let recordTerms = recordFieldsToTerms(fields) in

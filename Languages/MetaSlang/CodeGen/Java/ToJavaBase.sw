@@ -315,6 +315,10 @@ def mkVarJavaExpr(id) = CondExp (Un (Prim (Name ([], id))), None)
 op mkQualJavaExpr: Id * Id -> Java.Expr
 def mkQualJavaExpr(id1, id2) = CondExp (Un (Prim (Name ([id1], id2))), None)
 
+op mkThisExpr:() -> Java.Expr
+def mkThisExpr() =
+  CondExp(Un(Prim(This None)),None)
+
 op mkBaseJavaBinOp: Id -> Java.BinOp
 def mkBaseJavaBinOp(id) =
   case id of
@@ -644,7 +648,25 @@ def findMatchingUserType(spc,recordSrt) =
      | Some (q, recordClassId, _) ->  Base(mkUnQualifiedId(recordClassId),[],srtPos)
      | None -> recordSrt
 
-
+(**
+ * looks in the spec for a user type that is a restriction type, where the given sort is the sort of the
+ * restrict operator. The sort must be in the form X -> (X|p), and this op returns the name of the user type
+ * that is defined as (X|p)
+ *)
+op findMatchingRestritionType: Spec * Sort -> Option Sort
+def findMatchingRestritionType(spc,srt) =
+  case srt of
+    | Arrow(X0,ssrt as Subsort(X1,pred,_),_) -> 
+      if equalSort?(X0,X1) then
+	(let srts = sortsAsList(spc) in
+	 let srtPos = sortAnn ssrt in
+	 let foundSrt = find (fn(qualifier,id,(_,_,[(_,srt)])) -> equalSort?(ssrt,srt)) srts in
+	 case foundSrt of
+	   | Some (q,subsortid,_) -> Some(Base(mkUnQualifiedId(subsortid),[],srtPos))
+	   | None -> None
+	  )
+      else None
+    | _ -> None
 
 (**
  * compares the summand sort with the match and returns the list of constructor ids
