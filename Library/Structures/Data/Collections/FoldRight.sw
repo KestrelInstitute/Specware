@@ -7,6 +7,6 @@ a right fold operation on the collection.
 spec
   import Enum
   
-  op foldr : fa (a) (a -> Elem -> a) -> a -> Collection -> a
+  op foldr : fa (a) (a * Elem -> a) * a * Collection -> a
 endspec
 \end{spec}

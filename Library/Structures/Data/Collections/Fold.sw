@@ -10,20 +10,16 @@ His version requires an uncurried sort for \Op{fold} as the domain is given
 by a subsort. This isn't possible for the curried version unless we have
 dependent types.
 
-The op name \Op{commutes} is poor.
-
 \begin{spec}
 spec
   import Enum
 
-  op commutes? : fa (a) (a -> Elem -> a) -> Boolean 
-  sort Commutes (a) = ((a -> Elem -> a) | commutes?) 
+  op foldable? : fa (a) (a * Elem -> a) -> Boolean 
+  sort Foldable a = ((a * Elem -> a) | foldable?) 
 
-  op fold : fa (a) Commutes (a) -> a -> Collection -> a 
+  op fold : fa (a) Foldable a * a * Collection -> a 
 
-  % axiom empty is fa (x) ~(x in? empty)
-  % axiom commutes is fa (f) (commutes? f) <=> (fa (x,y,z) f (f x y) z = f (f x z) y)
-  % axiom x is fa (s,p,x) x in? (filter p s) <=> (x in? s) & (p x) 
+  % axiom foldable is fa (f) (foldable? f) <=> (fa (x,y,z) f (f x y) z = f (f x z) y)
   % axiom fold_unit is fa (c,f) fold f c empty = c 
   % axiom fold_iteration is fa (s,x,c,f) fold f c (s with x) = fold f (f c x) (s without x)
 endspec

@@ -7,6 +7,6 @@ a left fold operation on the collection.
 spec
   import Enum
   
-  op foldl : fa (a) (a -> Elem -> a) -> a -> Collection -> a
+  op foldl : fa (a) (a * Elem -> a) * a * Collection -> a
 endspec
 \end{spec}

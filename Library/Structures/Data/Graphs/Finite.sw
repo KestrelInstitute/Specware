@@ -6,34 +6,25 @@ The translates need sorting out.
 
 \begin{spec}
 let
-  VertexSet = translate (translate ../Sets/Finite by {Elem.Elem +-> Vertex.Vertex}) by {
-      Elem._ +-> Vertex._,
-      Set._ +-> VertexSet._
-    }
-  EdgeSet = translate (translate ../Sets/Finite by {Elem.Elem +-> Edge.Edge}) by {
-      Elem._ +-> Edge._,
-      Set._ +-> EdgeSet._
-    }
-in
-  spec {
-
+  VertexSet = translate (translate ../Sets/Finite
+    by {Elem.Elem +-> Vertex.Vertex})
+    by {Elem._ +-> Vertex._, Set._ +-> VertexSet._}
+  EdgeSet = translate (translate ../Sets/Finite
+    by {Elem.Elem +-> Edge.Edge})
+    by {Elem._ +-> Edge._, Set._ +-> EdgeSet._}
+  GraphMap = translate (translate ../Maps/Finite
+    by {KeyValue._ +-> EdgeVertex._, Dom._ +-> Edge._, Cod._ +-> Vertex._})
+    by {Edge.Dom +-> Edge.Edge, Vertex.Cod +-> Vertex.Vertex}
+in spec
     import VertexSet qualifying VertexSet
     import EdgeSet qualifying EdgeSet
-
-    import GraphMap qualifying (translate (translate ../Maps/Finite by {
-        KeyValue._ +-> EdgeVertex._,
-        Dom._ +-> Edge._,
-        Cod._ +-> Vertex._
-      }) by {
-        Edge.Dom +-> Edge.Edge,
-        Vertex.Cod +-> Vertex.Vertex
-       })
+    import GraphMap qualifying GraphMap
   
     sort Graph
 
     op vertices : Graph -> VertexSet.Set
     op edges : Graph -> EdgeSet.Set
-    op src : Graph -> Map
+    op source : Graph -> Map
     op target : Graph -> Map
     op pp : Graph -> Doc
 \end{spec}
@@ -55,7 +46,7 @@ identity of a vertex, how do we specify the source and target of an edge?
   op insertVertex : Graph -> Vertex -> Graph
 \end{spec}
 
-When we add an edge, we also add the src and target of the edge.
+When we add an edge, we also add the source and target of the edge.
 
 \begin{spec}
   op insertEdge : Graph -> Edge -> Vertex -> Vertex -> Graph
@@ -81,7 +72,7 @@ to the graphs.
   op make : VertexSet.Set -> EdgeSet.Set -> Map -> Map -> Graph
 \end{spec}
 
-begin{spec}
+\begin{spec}
   def pp graph = 
     ppConcat [
       pp "Vertices = ",
@@ -91,13 +82,10 @@ begin{spec}
       pp (edges graph),
       ppNewline,
       pp "Source map = ",
-      pp (src graph),
+      ppIndent (pp (source graph)),
       ppNewline,
       pp "Target map = ",
-      pp (target graph)
+      ppIndent (pp (target graph))
     ]
-end{spec}
-
-\begin{spec}
-}
+endspec
 \end{spec}
