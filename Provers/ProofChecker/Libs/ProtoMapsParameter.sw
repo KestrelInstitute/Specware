@@ -1,4 +1,4 @@
-spec
+PMap qualifying spec
 
   (* See the explanation in spec `ProtoMaps'. *)
 

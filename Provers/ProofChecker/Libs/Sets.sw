@@ -2,35 +2,18 @@ Set qualifying spec
 
   (* Here we refine proto-sets to be all sets (finite and infinite) and we add
   a few ops that are specific to infinite sets and do not apply to finite
-  sets. *)
+  sets.
 
-  import translate ProtoSets
+  The spec imported by the following `import' is constructed from spec
+  `ProtoSets' as follows: (1) rename type `PSet' to `Set'; (2) substitute
+  spec `ProtoSetsParameter' with spec `ProtoSetsInstantiationAll'; and (3)
+  rename qualifier `PSet' to `Set'. *)
+
+  import translate (translate ProtoSets by {PSet +-> Set})
                    [morphism ProtoSetsParameter ->
                              ProtoSetsInstantiationAll
                              {protoSetPredicate? +-> protoSetPredicate?}]
-                   by {PSet.PSetPredicate +-> Set.PSetPredicate,
-                       PSet.PSet          +-> Set.Set,
-                       PSet.setPredicate  +-> Set.setPredicate,
-                       PSet.setSuchThat   +-> Set.setSuchThat,
-                       PSet.in?           +-> Set.in?,
-                       PSet.<=            +-> Set.<=,
-                       PSet.>=            +-> Set.>=,
-                       PSet.forall?       +-> Set.forall?,
-                       PSet.exists?       +-> Set.exists?,
-                       PSet.\/            +-> Set.\/,
-                       PSet./\            +-> Set./\,
-                       PSet.unionAll      +-> Set.unionAll,
-                       PSet.intersectAll  +-> Set.intersectAll,
-                       PSet.--            +-> Set.--,
-                       PSet.empty         +-> Set.empty,
-                       PSet.empty?        +-> Set.empty?,
-                       PSet.singleton     +-> Set.singleton,
-                       PSet.singleton?    +-> Set.singleton?,
-                       PSet.uniqueElement +-> Set.uniqueElement,
-                       PSet.with          +-> Set.with,
-                       PSet.wout          +-> Set.wout,
-                       PSet.map           +-> Set.map,
-                       PSet.filter        +-> Set.filter}
+                   by {PSet._ +-> Set._}
 
   % set of all elements (complementary of `empty'):
   op full : [a] Set a

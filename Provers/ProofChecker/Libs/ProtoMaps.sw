@@ -1,4 +1,4 @@
-spec
+PMap qualifying spec
 
   (* A map can be viewed as a partial function. We specify the type `Map' of
   all maps (finite and infinite) and the type `FMap' of finite maps
@@ -9,16 +9,7 @@ spec
   a map), we use proto-sets in this spec. Proto-sets are instantiated to
   finite sets or all sets at the same time when proto-maps are instantiated to
   finite maps or all maps. So, proto-sets are imported in spec
-  `ProtoMapsParameter', which constitutes the parameter of this spec.
-
-  Since the ops in spec `ProtoSets' are not qualified (they get qualified by
-  `FSet' or `Set' when proto-sets are refined to finite or all sets), in this
-  spec we cannot use the following op names (which we would like to use):
-  `<=', `>=', `empty', `singleton', `\/', `/\', `map', and `filter'. So, we
-  use similar but different names, which are translated to the desired ones at
-  the same time when proto-maps are refined to finite or all maps, because at
-  that point proto-sets are also instantiated to finite or all sets and
-  therefore omonymous ops on sets are disambiguated by qualifiers. *)
+  `ProtoMapsParameter', which constitutes the parameter of this spec. *)
 
   import ProtoMapsParameter
 
@@ -44,19 +35,16 @@ spec
   def range m =
     setSuchThat (fn y -> (ex(x) mapFunction m x = Some y))
 
-  op <<= infixl 20 : [a,b] PMap(a,b) * PMap(a,b) -> Boolean
-  % can't use `<=' because it conflicts with `<=' in proto-sets
-  def <<= (m1,m2) =
+  op <= infixl 20 : [a,b] PMap(a,b) * PMap(a,b) -> Boolean
+  def <= (m1,m2) =
     domain m1 <= domain m2 &&
     (fa(x) x in? domain m1 => apply(m1,x) = apply(m2,x))
 
-  op >>= infixl 20 : [a,b] PMap(a,b) * PMap(a,b) -> Boolean
-  % can't use `>=' because it conflicts with `>=' in proto-sets
-  def >>= (m1,m2) = (m2 <<= m1)
+  op >= infixl 20 : [a,b] PMap(a,b) * PMap(a,b) -> Boolean
+  def >= (m1,m2) = (m2 <= m1)
 
-  op mempty : [a,b] PMap(a,b)
-  % can't use `empty' because it conflicts with `empty' in proto-sets
-  def mempty =
+  op empty : [a,b] PMap(a,b)
+  def empty =
     mapSuchThat (fn x -> None)
 
   % extend or overwrite map at point:
@@ -77,8 +65,8 @@ spec
     mapSuchThat (fn z -> if z = x then None else mapFunction m z)
 
   % map map defined at one point:
-  op msingleton : [a,b] a * b -> PMap(a,b)
-  def msingleton(x,y) = define (mempty, x, y)
+  op singleton : [a,b] a * b -> PMap(a,b)
+  def singleton(x,y) = define (empty, x, y)
 
   % make map undefined at multiple points:
   op undefineMulti : [a,b] PMap(a,b) * PSet a -> PMap(a,b)
@@ -108,24 +96,21 @@ spec
   def agree?(m1,m2) =
     (fa(x) x in? (domain m1 /\ domain m2) => apply(m1,x) = apply(m2,x))
 
-  op \\/ infixl 25 : [a,b] ((PMap(a,b) * PMap(a,b)) | agree?) -> PMap(a,b)
-  % can't use `\/' because it conflicts with `\/' in proto-sets
-  def \\/ (m1, m2) =
+  op \/ infixl 25 : [a,b] ((PMap(a,b) * PMap(a,b)) | agree?) -> PMap(a,b)
+  def \/ (m1, m2) =
     mapSuchThat (fn x -> if x in? domain m1 then mapFunction m1 x
                     else if x in? domain m2 then mapFunction m2 x
                     else None)
 
-  op //\ infixl 25 : [a,b] ((PMap(a,b) * PMap(a,b)) | agree?) -> PMap(a,b)
-  % can't use `/\' because it conflicts with `/\' in proto-sets
-  def //\ (m1, m2) =
+  op /\ infixl 25 : [a,b] ((PMap(a,b) * PMap(a,b)) | agree?) -> PMap(a,b)
+  def /\ (m1, m2) =
     mapSuchThat (fn x -> if x in? (domain m1 /\ domain m2)
                          then mapFunction m1 x % = mapFunction m2 x
                          else none)
 
   % map[verb] function over range values of map[noun]:
-  op mmap : [a,b,c] (b -> c) * PMap(a,b) -> PMap(a,c)
-  % can't use `map' because it conflicts with `map' in proto-sets
-  def mmap(f,m) =
+  op map : [a,b,c] (b -> c) * PMap(a,b) -> PMap(a,c)
+  def map(f,m) =
     mapSuchThat (fn x -> case mapFunction m x of
                             | Some y -> Some (f y)
                             | None   -> None)
@@ -147,9 +132,8 @@ spec
                             | Some y -> (if p y then Some y else None)
                             | None   -> None)
 
-  op mfilter : [a,b] PMap(a,b) * Predicate(a*b) -> PMap(a,b)
-  % can't use `filter' because it conflicts with `filter' in proto-sets
-  def mfilter(m,p) =
+  op filter : [a,b] PMap(a,b) * Predicate(a*b) -> PMap(a,b)
+  def filter(m,p) =
     mapSuchThat (fn x -> case mapFunction m x of
                             | Some y -> (if p(x,y) then Some y else None)
                             | None   -> None)

@@ -1,12 +1,19 @@
 FMap qualifying spec
 
   (* Here we refine proto-maps to be finite maps and we add a few ops that are
-  specific to finite maps and do not apply to infinite maps. *)
+  specific to finite maps and do not apply to infinite maps.
 
-  import translate ProtoMaps
+  The spec imported by the following `import' is constructed from spec
+  `ProtoMaps' as follows: (1) rename type `PMap' to `FMap'; (2) substitute
+  spec `ProtoMapsParameter' with spec `ProtoMapsInstantiationFinite' (which
+  includes substituting spec `ProtoSets' with spec `FiniteSets'); and (3)
+  rename qualifier `PMap' to `FMap'. *)
+
+  import translate (translate ProtoMaps by {PMap +-> FMap})
                    [morphism ProtoMapsParameter ->
                              ProtoMapsInstantiationFinite
-                             {PSet.protoSetPredicate? +-> FSet.protoSetPredicate?,
+                             {protoMapFunction?       +-> protoMapFunction?,
+                              PSet.protoSetPredicate? +-> FSet.protoSetPredicate?,
                               PSet.PSetPredicate      +-> FSet.PSetPredicate,
                               PSet.PSet               +-> FSet.FSet,
                               PSet.setPredicate       +-> FSet.setPredicate,
@@ -30,15 +37,7 @@ FMap qualifying spec
                               PSet.wout               +-> FSet.wout,
                               PSet.map                +-> FSet.map,
                               PSet.filter             +-> FSet.filter}]
-                   by {PMap       +-> FMap.FMap,
-                       <<=        +-> FMap.<=,
-                       >>=        +-> FMap.>=,
-                       mempty     +-> FMap.empty,
-                       msingleton +-> FMap.singleton,
-                       \\/        +-> FMap.\/,
-                       //\        +-> FMap./\,
-                       mmap       +-> FMap.map,
-                       mfilter    +-> FMap.filter}
+                   by {PMap._ +-> FMap._}
 
   op size : [a,b] FMap(a,b) -> Nat
   def size m = size (domain m)

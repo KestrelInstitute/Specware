@@ -1,4 +1,4 @@
-spec
+FMap qualifying spec
 
   (* See spec `ProtoMaps' for an explanation. This spec instantiates
   protoMapFunction? to contain exactly all finite functions and accordingly

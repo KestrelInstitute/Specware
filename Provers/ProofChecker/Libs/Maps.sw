@@ -1,12 +1,19 @@
 Map qualifying spec
 
   (* Here we refine proto-maps to be all maps and we add a few ops that are
-  specific to all maps and do not apply to finite maps. *)
+  specific to all maps and do not apply to finite maps.
 
-  import translate ProtoMaps
+  The spec imported by the following `import' is constructed from spec
+  `ProtoMaps' as follows: (1) rename type `PMap' to `Map'; (2) substitute spec
+  `ProtoMapsParameter' with spec `ProtoMapsInstantiationAll' (which includes
+  substituting spec `ProtoSets' with spec `Sets'); and (3) rename qualifier
+  `PMap' to `Map'. *)
+
+  import translate (translate ProtoMaps by {PMap +-> Map})
                    [morphism ProtoMapsParameter ->
                              ProtoMapsInstantiationAll
-                             {PSet.protoSetPredicate? +-> Set.protoSetPredicate?,
+                             {protoMapFunction?       +-> protoMapFunction?,
+                              PSet.protoSetPredicate? +-> Set.protoSetPredicate?,
                               PSet.PSetPredicate      +-> Set.PSetPredicate,
                               PSet.PSet               +-> Set.Set,
                               PSet.setPredicate       +-> Set.setPredicate,
@@ -30,15 +37,7 @@ Map qualifying spec
                               PSet.wout               +-> Set.wout,
                               PSet.map                +-> Set.map,
                               PSet.filter             +-> Set.filter}]
-                   by {PMap       +-> Map.Map,
-                       <<=        +-> Map.<=,
-                       >>=        +-> Map.>=,
-                       mempty     +-> Map.empty,
-                       msingleton +-> Map.singleton,
-                       \\/        +-> Map.\/,
-                       //\        +-> Map./\,
-                       mmap       +-> Map.map,
-                       mfilter    +-> Map.filter}
+                   by {PMap._ +-> Map._}
 
   op finite? : [a,b] Map(a,b) -> Boolean
   def finite? m = finite? (domain m)

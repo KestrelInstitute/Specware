@@ -1,4 +1,4 @@
-spec
+Map qualifying spec
 
   (* See spec `ProtoMaps' for an explanation. This spec instantiates
   protoMapFunction? to contain all partial functions and accordingly

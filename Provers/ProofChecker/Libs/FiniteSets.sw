@@ -1,35 +1,18 @@
 FSet qualifying spec
 
   (* Here we refine proto-sets to be finite sets and we add a few ops that are
-  specific to finite sets and do not apply to infinite sets. *)
+  specific to finite sets and do not apply to infinite sets.
 
-  import translate ProtoSets
+  The spec imported by the following `import' is constructed from spec
+  `ProtoSets' as follows: (1) rename type `PSet' to `FSet'; (2) substitute
+  spec `ProtoSetsParameter' with spec `ProtoSetsInstantiationFinite'; and (3)
+  rename qualifier `PSet' to `FSet'. *)
+
+  import translate (translate ProtoSets by {PSet +-> FSet})
                    [morphism ProtoSetsParameter ->
                              ProtoSetsInstantiationFinite
                              {protoSetPredicate? +-> protoSetPredicate?}]
-                   by {PSet.PSetPredicate +-> FSet.PSetPredicate,
-                       PSet.PSet          +-> FSet.FSet,
-                       PSet.setPredicate  +-> FSet.setPredicate,
-                       PSet.setSuchThat   +-> FSet.setSuchThat,
-                       PSet.in?           +-> FSet.in?,
-                       PSet.<=            +-> FSet.<=,
-                       PSet.>=            +-> FSet.>=,
-                       PSet.forall?       +-> FSet.forall?,
-                       PSet.exists?       +-> FSet.exists?,
-                       PSet.\/            +-> FSet.\/,
-                       PSet./\            +-> FSet./\,
-                       PSet.unionAll      +-> FSet.unionAll,
-                       PSet.intersectAll  +-> FSet.intersectAll,
-                       PSet.--            +-> FSet.--,
-                       PSet.empty         +-> FSet.empty,
-                       PSet.empty?        +-> FSet.empty?,
-                       PSet.singleton     +-> FSet.singleton,
-                       PSet.singleton?    +-> FSet.singleton?,
-                       PSet.uniqueElement +-> FSet.uniqueElement,
-                       PSet.with          +-> FSet.with,
-                       PSet.wout          +-> FSet.wout,
-                       PSet.map           +-> FSet.map,
-                       PSet.filter        +-> FSet.filter}
+                   by {PSet._ +-> FSet._}
 
   op size : [a] FSet a -> Nat
   def [a] size =

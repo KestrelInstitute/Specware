@@ -195,6 +195,13 @@ FSeq qualifying spec
       (fa(seq,seqOfSeqs) flatten (seq |> seqOfSeqs) =
                          seq ++ flatten seqOfSeqs))
 
+  op removeNones : [a] FSeq (Option a) -> FSeq a
+  def removeNones s =
+    let s = filter (s, embed? Some) in
+    the (fn r -> length r = length s &&
+                 (fa(i:Nat) i < length r =>
+                    Some (r elem i) = s elem i))
+
   type Permutation = Bijection(Nat,Nat)
 
   % valid permutation for a sequence of given length:
