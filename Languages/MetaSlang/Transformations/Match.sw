@@ -381,8 +381,8 @@ Match qualifying spec {
   op freshVar : Context * Sort -> Var
 
   def freshVar(context,srt) = 
-      let num = State.! context.counter + 1 in
-      (context.counter State.:= num;
+      let num = ! context.counter + 1 in
+      (context.counter := num;
        ("pV" ++ (Nat.toString num),srt)
       )
 
@@ -844,9 +844,13 @@ def eliminateTerm context term =
 	 
 
  def translateMatch (spc : Spec) = 
-   let counter = (Ref 0) : Ref Nat in
+   % sjw: Moved (Ref 0) in-line so it is reexecuted for each call so the counter is reinitialized for each
+   % call. (This was presumably what was intended as otherwise there would be no need for mkContext
+   % to be a function). This means that compiled functions will have the same generated variables
+   % independent of the rest of the file.
+   %let counter = (Ref 0) : Ref Nat in
    let mkContext = fn funName -> 
-                    {counter = counter,
+                    {counter = Ref 0,
 		     spc     = spc,
 		     funName = %spc.name ^"."^ % ???
 		     funName,
@@ -1165,9 +1169,9 @@ sort dec =
   | Let  :: List[decl] * decision 
 and decision = Ref[{tree : dec, refs : Ref[Nat]}]
 
-def shared (Ref {refs,tree}   : decision) = State.! refs > 1
-def used   (Ref {refs,tree}   : decision) = State.! refs > 0
-def incrnode (Ref {refs,tree} : decision) = refs State.:= 1 + State.! refs
+def shared (Ref {refs,tree}   : decision) = ! refs > 1
+def used   (Ref {refs,tree}   : decision) = ! refs > 0
+def incrnode (Ref {refs,tree} : decision) = refs := 1 + ! refs
 op mkDecision : dec -> decision
 def mkDecision t = Ref {tree = t, refs = Ref 0}:decision
 

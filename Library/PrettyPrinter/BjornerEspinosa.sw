@@ -234,6 +234,11 @@ PrettyPrint qualifying spec {
       let def loop (text : Text, indent) = 
         case text
           of [] -> cont ((indent,blanks indent), base)
+	   | (_, [(0,_)]) :: rest -> 
+	     %% Empty line so ignore indent
+             let head = loop (rest, 0) in
+             let head = newlineAndBlanks(indent,head) in
+             head
            | (indent2, strings) :: rest -> 
              let head = loop (rest, indent2) in
              let head = foldr cont head strings in
