@@ -131,6 +131,9 @@
        (setf (get 'METASLANG::equallist? 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil nil t)))
 ||#
 
+
+(defvar prover::wildCounter 0) ; to suppress annoying compiler warning
+
 ;; The following are specific to Specware and languages that
 ;; extend Specware. The order is significant: specware-state
 ;; must be loaded before the generated lisp file.
