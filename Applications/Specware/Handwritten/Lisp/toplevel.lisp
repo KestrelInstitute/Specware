@@ -294,15 +294,16 @@
 )
 
 #+allegro
-(top-level:alias ("ls" :string) (str)
+(top-level:alias ("ls" :string) (&optional (str ""))
   #+UNIX      (shell (format nil "ls ~A"  str))
   #+MSWINDOWS (shell (format nil "dir ~A" str))
-  #-(OR UNIX WINDOWS) (format t "~&I don't know what OS you're using!~%")
+  #-(OR UNIX MSWINDOWS) (format t "~&Neither the UNIX nor MSWINDOWS feature is present, so I don't know what to do!~%")
   )
 
 #+allegro
-(top-level:alias ("dir" :string) (str)
+(top-level:alias ("dir" :string) (&optional (str ""))
   #+UNIX      (shell (format nil "ls ~A"  str))
   #+MSWINDOWS (shell (format nil "dir ~A" str))
-  #-(OR UNIX WINDOWS) (format t "~&I don't know what OS you're using!~%")
+  #-(OR UNIX MSWINDOWS) (format t "~&Neither the UNIX nor MSWINDOWS feature is present, so I don't know what to do!~%")
   )
+
