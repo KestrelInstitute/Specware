@@ -7,19 +7,22 @@
 	 (max-index        (length locations))
 	 (index            0)
 	 (prior-post-index 0)
-	 (new-reported-gap? nil)
-	 (reported-gap?     nil))
+	 ;; (new-reported-gap? nil)
+	 ;; (reported-gap?     nil)
+	 )
     (loop while (< -1 index max-index) do
-	  (multiple-value-setq (index prior-post-index new-reported-gap?)
+	  (multiple-value-setq (index prior-post-index) ;  new-reported-gap?
 	    (aux-parser-get-values session
 				   (svref locations index) 
 				   min-size
 				   prior-post-index))
-	  (when new-reported-gap?
-	    (setq reported-gap? t)))
+	  ;; (when new-reported-gap? (setq reported-gap? t))
+	  )
     (unless (>= prior-post-index (1- max-index))
-      (when (report-gap session prior-post-index max-index)
-	(setq reported-gap? t)))
+      ;; (when 
+      (report-gap session prior-post-index max-index)
+      ;; (setq reported-gap? t)
+      )
     (setf (parse-session-results session)
 	  (nreverse (parse-session-results session)))
     ;; (when reported-gap? (comment "============================================================================"))
@@ -32,7 +35,8 @@
 	(toplevel-count   0)
 	(toplevel-rule  (parser-toplevel-rule (parse-session-parser session)))
 	(locations      (parse-session-locations session))
-	(reported-gap?  nil))
+	;; (reported-gap?  nil)
+	)
     (dolist (node (parser-location-post-nodes loc))
       (let ((post-index (parser-node-post-index node)))
 	(cond ((> post-index max-index)
@@ -43,8 +47,10 @@
     (when (> max-index (+ pre-index min-size))
       ;;
       (unless (= prior-post-index pre-index) 
-	(when (report-gap session prior-post-index pre-index)
-	  (setq reported-gap? t)))
+	;; (when 
+	(report-gap session prior-post-index pre-index)
+	;; (setq reported-gap? t)
+	)
       (setq prior-post-index max-index)
       ;;
       (let ((alternative-results nil))
@@ -60,7 +66,7 @@
 	    (report-ambiguity session pre-index max-index alternative-results)))
 	(setf (parse-session-results session)
 	  (append alternative-results (parse-session-results session)))))
-    (values max-index prior-post-index reported-gap?)))
+    (values max-index prior-post-index))) ;  reported-gap?
 
 (defun report-gap (session start end)
   (let ((locations (parse-session-locations session))
