@@ -99,7 +99,8 @@
   (elt s n))
 
 (defun sub (sn)
-  (elt (the cl:simple-base-string s) (the cl:fixnum n)))
+  (declare (cons sn))
+  (elt (the cl:simple-base-string (car sn)) (the cl:fixnum (cdr sn))))
 
 (defun substring-3 (s start end)
   (declare (type cl:simple-base-string s) (type cl:fixnum start end))
