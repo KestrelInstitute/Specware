@@ -253,9 +253,10 @@
 		 (parser-node-number node)
 		 (parser-rule-name (parser-node-rule node))
 		 iii)))
-    (format t "======")
-    (dolist (rule (rules-for-bv parser (parser-location-desired-bv location)))
-      (comment "Desired rule: ~A" rule))
+    (when (eq *verbose?* :very)
+      (format t "======")
+      (dolist (rule (rules-for-bv parser (parser-location-desired-bv location)))
+	(comment "Desired rule: ~A" rule)))
     (format t "======")))
 
 ;; ======================================================================
