@@ -79,6 +79,8 @@ This is a monadic interpreter for the Spec Calculus.
 
     | Reduce (msTerm,scTerm) -> SpecCalc.reduce msTerm scTerm pos
 
+    | Quote value -> return (value, futureTimeStamp, []) % Probably should never be called.
+
     | Other args -> SpecCalc.evaluateOther args pos  % used for extensions to Specware
 }
 \end{spec}

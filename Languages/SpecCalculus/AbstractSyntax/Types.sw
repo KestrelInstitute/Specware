@@ -26,6 +26,7 @@ levels ensures that for all objects in the abstract syntax tree, the
 position information is always the second component.
 
 \begin{spec}
+  sort Value  % Defined in ../Semantics/Value
   sort SCTerm = SpecCalc.Term Position
 
   op valueOf    : fa (a) a * Position -> a
@@ -184,9 +185,12 @@ using the definitions and axioms of the spec as rules.
     | Reduce (ATerm a * Term a)
 \end{spec}
 
-The following is a hook for creating applications that are 
-extensions to Specware.  If more than one new term is needed,
-you can make OtherTerm a coproduct of the desired terms.
+Quote is used to capture an internally created value and turn it
+into a Term when needed.
+
+\begin{spec}
+    | Quote Value
+\end{spec}
 
 \begin{spec}
     | Other (OtherTerm a)
