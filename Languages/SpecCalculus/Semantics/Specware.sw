@@ -318,5 +318,24 @@ in the Specware environment, is saved.
 \begin{spec}
   op saveSpecwareState: SpecCalc.Env ()
   op restoreSavedSpecwareState: SpecCalc.Env ()
+\end{spec}
+
+baseSpec is a bit of a hack used by colimit to avoid some bootstrapping 
+and typing issues.
+
+\begin{spec}
+  def SpecCalc.baseSpec () =
+    let run : SpecCalc.Env Spec = 
+        {restoreSavedSpecwareState;
+	 base_URI               <- pathToRelativeURI "/Library/Base";
+	 (Spec base_spec, _, _) <- SpecCalc.evaluateURI (Internal "base") base_URI;
+	 return base_spec} 
+    in
+    let def myHandler except = {toplevelHandler except; return emptySpec} 
+    in
+    case catch run myHandler ignoredState of
+      | (Ok base_spec,_) -> base_spec
+      | (Exception _,_) -> fail "Can't find base spec!"
+
 }
 \end{spec}

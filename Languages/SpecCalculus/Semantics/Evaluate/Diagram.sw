@@ -36,6 +36,9 @@ shape of diagrams. We use ppString, but really should be ppNodeId.
   sort Edge.Elem = EdgeId
   def Vertex.ppElem = ppString
   def Edge.ppElem = ppString
+
+  def SpecCalc.vertexName v = v  % used by colimit
+
 \end{spec}
 
 The conditions for a diagram expression to be valid include:
