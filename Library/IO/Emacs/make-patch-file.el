@@ -5,70 +5,65 @@
 (defun sw:make-patch-file (file)
   (interactive "FPatch file name: ")
   (save-excursion
-    (let ((patch-file-buffer (create-file-buffer file))
-	  (dont-ask (null current-prefix-arg))
+    (let ((dont-ask (null current-prefix-arg))
 	  (new-buffer (current-buffer))
 	  (new-window (selected-window))
 	  (old-window (next-window (selected-window))))
-      (with-current-buffer patch-file-buffer
-	(insert "(in-package \"SW-USER\")\n\n"))
       (with-current-buffer new-buffer
 	(when (eq old-window (selected-window))
 	  (error "No other window"))
-	(let ((old-buffer (window-buffer old-window)))
+	(let ((old-buffer (window-buffer old-window))
+	      (patch-file-buffer (find-file-noselect file)))
 	  (goto-char (point-min) new-buffer)
+	  (goto-char (point-max patch-file-buffer) patch-file-buffer)
+	  ;; Add in-package form to buffer. May not be correct of more than one in file.
+	  (save-excursion
+	    (if (search-forward "(in-package " nil t nil new-buffer)
+		(with-current-buffer patch-file-buffer
+		  (goto-char (match-beginning 0) new-buffer)
+		  (insert-buffer-substring new-buffer (point new-buffer)
+					   (with-current-buffer new-buffer
+					     (beginning-of-defun -1) (point new-buffer))))
+	      (with-current-buffer patch-file-buffer
+		(insert "(in-package \"SW-USER\")\n\n"))))
 	  (with-current-buffer old-buffer
 	    (goto-char (point-min) old-buffer))
 	  (while (not (eq (point new-buffer) (point-max new-buffer)))
 	    (sw:compare-buffers-1 new-buffer old-buffer)
-	    (if (or (eq (point new-buffer) (point-max new-buffer))
-		    (eq (point old-buffer) (point-max old-buffer)))
-		;; Normal termination
+	    (unless (eq (point new-buffer) (point-max new-buffer))
+	      (with-current-buffer new-buffer
+		(beginning-of-defun))
+	      (with-current-buffer old-buffer
+		(beginning-of-defun))
+	      (if (equal 0 (compare-buffer-substrings new-buffer (point new-buffer)
+						      (sw:forward-def-header)
+						      old-buffer (point old-buffer)
+						      (with-current-buffer old-buffer
+							(sw:forward-def-header))))
+		  ;; Definition changed. Copy new one and continue after definition
+		  (progn (sw:copy-to-patch-buffer new-buffer patch-file-buffer
+						  (point new-buffer) (progn (beginning-of-defun -1) (point))
+						  new-window old-window (point old-buffer) dont-ask)
+			 (with-current-buffer old-buffer
+			   (beginning-of-defun -1)))
 		(progn
-		  (sw:copy-to-patch-buffer new-buffer patch-file-buffer
-					(point new-buffer) (point-max new-buffer)
-					new-window old-window (point old-buffer)
-					(or *copy-new-defs-without-asking* dont-ask))
-		  (goto-char (point-max new-buffer) new-buffer))
-	      (progn
-		(with-current-buffer new-buffer
-		  (beginning-of-defun))
-		(with-current-buffer old-buffer
-		  (beginning-of-defun))
-		(if (equal 0 (compare-buffer-substrings new-buffer (point new-buffer)
-							(sw:forward-def-header)
-							old-buffer (point old-buffer)
-							(with-current-buffer old-buffer
-							  (sw:forward-def-header))))
-		    ;; Definition changed. Copy new one and continue after definition
-		    (progn (sw:copy-to-patch-buffer new-buffer patch-file-buffer
-						 (point new-buffer) (progn (beginning-of-defun -1) (point))
-						 new-window old-window (point old-buffer) dont-ask)
-			   (with-current-buffer old-buffer
-			     (beginning-of-defun -1)))
-		  (progn
-		    ;; Skip old until definition exists in new
-;;;		(while (not (save-excursion (search-forward (sw:get-definition-ident-str old-buffer) nil t)))
-;;;		  (with-current-buffer old-buffer
-;;;		    (beginning-of-defun -1))) ; beginning of next definition
-		    ;; Copy new until definition exists in old
-		    (with-current-buffer old-buffer
-		      (while (and (not (eq (point new-buffer) (point-max new-buffer)))
-				  (looking-at "(" new-buffer)
-				  (not (save-excursion
-					 (goto-char (point-min) old-buffer)
-					 (search-forward (sw:get-definition-ident-str new-buffer) nil t))))
-			(with-current-buffer new-buffer
-			  (sw:copy-to-patch-buffer new-buffer patch-file-buffer
-						   (point) (progn (beginning-of-defun -1) (point))
-						   new-window old-window (point old-buffer)
-						   (or *copy-new-defs-without-asking* dont-ask))))
-		      ;; Start again at matching definition in old buffer
-		      (unless (eq (point new-buffer) (point-max new-buffer))
-			(goto-char (point-min) old-buffer)
-			(search-forward (sw:get-definition-ident-str new-buffer) nil t)
-			(beginning-of-defun))))))))))
-      (switch-to-buffer patch-file-buffer))))
+		  (with-current-buffer old-buffer
+		    (while (and (not (eq (point new-buffer) (point-max new-buffer)))
+				(looking-at "(" new-buffer)
+				(not (save-excursion
+				       (goto-char (point-min) old-buffer)
+				       (search-forward (sw:get-definition-ident-str new-buffer) nil t))))
+		      (with-current-buffer new-buffer
+			(sw:copy-to-patch-buffer new-buffer patch-file-buffer
+						 (point) (progn (beginning-of-defun -1) (point))
+						 new-window old-window (point old-buffer)
+						 (or *copy-new-defs-without-asking* dont-ask))))
+		    ;; Start again at matching definition in old buffer
+		    (unless (eq (point new-buffer) (point-max new-buffer))
+		      (goto-char (point-min) old-buffer)
+		      (search-forward (sw:get-definition-ident-str new-buffer) nil t)
+		      (beginning-of-defun)))))))
+	  (switch-to-buffer patch-file-buffer))))))
 
 (defun sw:forward-def-header ()
   (save-excursion (forward-char)
