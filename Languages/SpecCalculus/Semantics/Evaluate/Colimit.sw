@@ -3,7 +3,6 @@
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature
-  import ../../../MetaSlang/Specs/Categories/AsRecord
 \end{spec}
 
 \begin{spec}

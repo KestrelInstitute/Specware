@@ -73,18 +73,18 @@ Note: The code below does not yet match the documentation above, but should.
      -> SpecCalc.Env (AQualifierMap QualifiedId * AQualifierMap QualifiedId)
   def makeTranslationMaps dom_spec (translation_pairs, position) =
     let def insert (translation_opmap, translation_sortmap) 
-                   ((dom_qid as Qualified (dom_qualifier, dom_id), Qualified (target_qualifier, target_id)), 
+                   ((dom_qid as Qualified (dom_qualifier, dom_id), cod_qid as Qualified (target_qualifier, target_id)), 
 		    pos) 
           =
           %% TODO:  What if dom_qid names both an op and a sort ??  Right now, we translate the op but not the sort.
           case findAllOps (dom_spec, dom_qid) of
             | _::other_opinfos ->
                 if other_opinfos = [] then % or qualifier_from_op_info = UnQualified then 
-                  return (insertAQualifierMap (translation_opmap, dom_qualifier, dom_id,
-					       Qualified (if target_qualifier = UnQualified
-							    then dom_qualifier
-							  else target_qualifier,
-							 target_id)),
+                  return (insertAQualifierMap (translation_opmap, dom_qualifier, dom_id, cod_qid),
+%%% 					       Qualified (if target_qualifier = UnQualified
+%%% 							    then dom_qualifier
+%%% 							  else target_qualifier,
+%%% 							 target_id),
                           translation_sortmap)
                 else
                   raise (SpecError (position, "translate: Ambiguous source op name: "^ dom_id))
@@ -93,11 +93,11 @@ Note: The code below does not yet match the documentation above, but should.
                    | _::other_sortinfos ->
                      if other_sortinfos = [] then % or qualifier_from_sort_info = UnQualified then 
 		       return (translation_opmap,
-			       insertAQualifierMap (translation_sortmap, dom_qualifier, dom_id,
-						    Qualified (if target_qualifier = UnQualified
-								 then dom_qualifier
-							       else target_qualifier,
-							       target_id)))
+			       insertAQualifierMap (translation_sortmap, dom_qualifier, dom_id, cod_qid))
+%%%						    Qualified (if target_qualifier = UnQualified
+%%%								 then dom_qualifier
+%%%							       else target_qualifier,
+%%%							       target_id)))
 		     else
 		       raise (SpecError (position, "translate: Ambiguous source sort name: "^dom_id))
                    | _ -> raise (SpecError (position, "translate: Identifier \""^dom_qualifier^"."^dom_id^ "\" not found.")))
