@@ -339,7 +339,7 @@
      (`(build-specware4-continue (, specware4-dir) (, dir) (, bin-dir)
 				 (, slash-dir) (, world-name) (, base-world-name))))))
 
-(defun bootstrap-specware4 (in-current-dir?)
+(defun bootstrap-specware4 (&optional in-current-dir?)
   (interactive "P")
   (let ((specware4-dir (if in-current-dir? (strip-final-slash default-directory)
 			 (concat (getenv "SPECWARE4"))))
