@@ -36,7 +36,7 @@
 
 (defun magicMakeProduct (x)
   (if (equal (length x) 2)
-      (cons (car x) (cdr x))
+      (cons (car x) (cadr x))
     (coerce x 'vector)))
 
 ;;; CoProduct
