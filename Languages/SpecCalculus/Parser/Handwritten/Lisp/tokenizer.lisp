@@ -26,7 +26,7 @@
 				  #\. #\, #\;              ; dot, comma, semi
 				  ;; #\'                   ; apostrophe
 				  )
-   :ad-hoc-keywords             '("end-spec" "end-module" "_" ".." "using" "options")
+   :ad-hoc-keywords             '("end-spec" "_" ".." "using" "options")
    :ad-hoc-symbols              '("__" "using" "options")
    :ad-hoc-numbers              '()
    ;;
