@@ -148,13 +148,17 @@ XML qualifying spec
 		    start       = start,
 		    tail        = tail,
 		    peek        = 10,
-		    we_expected = [("<foo ..>",    "Start Tag"),
-				   ("<foo .../> ", "Empty Element Tag")],
+		    we_expected = [("<foo ..>",    "Start Tag not starting with 'xml'"),
+				   ("<foo .../> ", "Empty Element Tag not starting with 'xml'")],
 		    but         = ("an unexpected "
 				   ^ (if well_formed_end_tag? tag then "closing" else "unrecognized")
-				   ^ " tag: '</"
+				   ^ " tag: '<"
 				   ^ (string tag.name)
-				   ^ ">' was seen instead"),
+				   ^ ">' was seen instead"
+                                   ^ (if xml_prefix? tag.name then
+					"\n starting with a forbidden prefix 'xml', 'XML', etc."
+				      else
+					"")),
 		    so_we       = "proceed as if that were a start tag"}));
 	   return (possible_tag, tail)}
 	| _ -> return (None, start)
