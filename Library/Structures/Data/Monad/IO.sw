@@ -1,6 +1,5 @@
 IO qualifying spec
   import /Library/Structures/Data/Monad/Exception
-  import /Library/Structures/Data/Monad/State
   import ImpureIO
 
   op fileError : (Option Nat * String * String) -> Exception
