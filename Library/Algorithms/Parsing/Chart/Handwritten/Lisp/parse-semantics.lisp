@@ -142,8 +142,8 @@
 	       (parser        (parse-session-parser    session))
 	       (default-alist (parser-default-semantic-alist parser))
 	       ;;
-	       (first-plc (parser-location-position
-			   (svref locations (parser-node-pre-index node))))
+	       (first-plc            (parser-location-position
+				      (svref locations (parser-node-pre-index node))))
 	       (first-byte-position  (first  first-plc))
 	       (first-line           (second first-plc))
 	       (first-column         (third  first-plc))
@@ -152,13 +152,19 @@
 	       ;;
 	       (rightmost-token-node (rightmost-descendent session node))
 	       (token                (parser-node-semantics rightmost-token-node))
+	       ;;
 	       (last-plc             (fourth token))
 	       (last-byte-position   (first  last-plc))
 	       (last-line            (second last-plc))
 	       (last-column          (third  last-plc))
 	       (last-lc              (cons last-line last-column))
 	       (last-lcb             (vector last-line last-column last-byte-position))
+	       ;;
+	       (region               (make-region first-lcb last-lcb))
+	       ;;
 	       (full-alist           (list* 
+				       ;;
+				       ;; These should match the keys in *position-keys* :
 				       ;;
 				       (cons :left-pos     first-byte-position)
 				       (cons :left-line    first-line)
@@ -171,15 +177,19 @@
 				       (cons :right-column last-column)
 				       (cons :right-lc     last-lc)
 				       (cons :right-lcb    last-lcb)
+				       ;;
+				       (cons :region       region)
+				       ;;
 				       (append 
 					(children-alist session rule children) 
 					default-alist)))
-		 (result             (sublis-result full-alist rule-semantics)))
+	       (result               (sublis-result full-alist rule-semantics)))
 	  (when-debugging
 	   (let ((reconstructed-alist (compute-pprint-alist rule-semantics result)))
 	     (unless (sub-alist? reconstructed-alist full-alist)
 	       (warn "Jim may care: Alists differ: ~S ~S ~S" reconstructed-alist full-alist result))))
 	  result)))))
+
 
 ;;; ===== TEMP HERE ====
 
@@ -187,7 +197,8 @@
 (defvar *position-keys* 
   ;; should match keys mentioned above in eval-node
   '(:LEFT-POS  :LEFT-LINE  :LEFT-COLUMN  :LEFT-LC  :LEFT-LCB     
-    :RIGHT-POS :RIGHT-LINE :RIGHT-COLUMN :RIGHT-LC :RIGHT-LCB))
+    :RIGHT-POS :RIGHT-LINE :RIGHT-COLUMN :RIGHT-LC :RIGHT-LCB
+    :REGION))
 
 #+DEBUG-PARSER
 (defun compute-pprint-alist (pattern value)

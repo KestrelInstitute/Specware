@@ -20,30 +20,34 @@
 ;;;  Misc utilities
 ;;; ========================================================================
 
-(defvar *make-pos-warnings-seen* 0)
+;;;; now in Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-semantics.lisp as make-region
+;;;;
+;;;; (defvar *make-pos-warnings-seen* 0)
+;;;; 
+;;;; (defun make-pos (left right) 
+;;;;   (declare (special *parser-source*)) ; bound in parser-interface.lisp
+;;;;   (when (consp left)
+;;;;     (when (< (incf *make-pos-warnings-seen*) 10)
+;;;;       (warn "In MAKE-POS: Bogus left position: ~S" left))
+;;;;     (let* ((line   (car left))
+;;;; 	   (column (cdr left))
+;;;; 	   (byte   0))
+;;;;       (setq left (vector line column byte))))
+;;;;   (when (consp right)
+;;;;     (when (< (incf *make-pos-warnings-seen*) 10)
+;;;;       (warn "In MAKE-POS: Bogus right position: ~S" right))
+;;;;     (let* ((line   (car right))
+;;;; 	   (column (cdr right))
+;;;; 	   (byte   0))
+;;;;       (setq right (vector line column byte))))
+;;;;   (case (first *parser-source*)
+;;;;     (:file   (cons :|File|     (vector (second *parser-source*) left right)))
+;;;;     (:string (cons :|String|   (vector (second *parser-source*) left right)))
+;;;;     (t       (when (< (incf *make-pos-warnings-seen*) 10)
+;;;; 	       (warn "In MAKE-POS: What are we parsing? : ~S" *parser-source*))
+;;;; 	     (cons :|Internal| (second *parser-source*)))))
 
-(defun make-pos (left right) 
-  (declare (special *parser-source*)) ; bound in parser-interface.lisp
-  (when (consp left)
-    (when (< (incf *make-pos-warnings-seen*) 10)
-      (warn "In MAKE-POS: Bogus left position: ~S" left))
-    (let* ((line   (car left))
-	   (column (cdr left))
-	   (byte   0))
-      (setq left (vector line column byte))))
-  (when (consp right)
-    (when (< (incf *make-pos-warnings-seen*) 10)
-      (warn "In MAKE-POS: Bogus right position: ~S" right))
-    (let* ((line   (car right))
-	   (column (cdr right))
-	   (byte   0))
-      (setq right (vector line column byte))))
-  (case (first *parser-source*)
-    (:file   (cons :|File|     (vector (second *parser-source*) left right)))
-    (:string (cons :|String|   (vector (second *parser-source*) left right)))
-    (t       (when (< (incf *make-pos-warnings-seen*) 10)
-	       (warn "In MAKE-POS: What are we parsing? : ~S" *parser-source*))
-	     (cons :|Internal| (second *parser-source*)))))
+(defun make-pos (x y) (make-region x y))
 
 (defun freshMetaTypeVar (left right)
   (cons :|MetaTyVar|
@@ -154,12 +158,14 @@
 ;;;  TODO: In doc: Change references to modules
 ;;; ========================================================================
 
-(defparameter internal-parser-position (cons :|Internal| "built-in from parser"))
+(defparameter *internal-parser-position* 
+  (cons :|Internal| "built-in from parser"))
+
 (defun make-internal-sort (name)
   (cons :|Base| 
 	(vector (MetaSlang::mkQualifiedId-2 name name)
 		nil 
-		internal-parser-position)))
+		*internal-parser-position*)))
 
 (defparameter char-sort   (make-internal-sort "Char"    ))
 (defparameter bool-sort   (make-internal-sort "Boolean" ))

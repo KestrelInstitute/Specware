@@ -953,6 +953,24 @@
     (debugging-comment "New round: look for more optional rules."))
   (debugging-comment "========================================"))
 
+(defparameter *bogus-locations*
+  (let ((*parser-source* '(:internal "parser initialization")))
+    (list
+
+     (cons :left-pos     -1)
+     (cons :left-line    -1)
+     (cons :left-column  -1)
+     (cons :left-lc     (cons -1 -1))
+     (cons :left-lcb    (vector -1 -1 -1))
+     ;;
+     (cons :right-pos    -1)
+     (cons :right-line   -1)
+     (cons :right-column -1)
+     (cons :right-lc     (cons -1 -1))
+     (cons :right-lcb    (vector -1 -1 -1))
+     ;;
+     (cons :region       (make-region (vector -1 -1 -1) (vector -1 -1 -1))))))
+
 (defun propagate-optional-one-round (parser)
   (let ((ht-name-to-rule (parser-ht-name-to-rule parser))
 	(changed? nil)) 
@@ -976,17 +994,19 @@
 		       (setf (parser-rule-optional? rule) t)
 		       (let ((semantic-pattern (parser-rule-semantics rule)))
 			 (when (not (null semantic-pattern))
-			   (let ((semantic-alist nil)
+			   (let ((semantic-alist *bogus-locations*)
 				 (items (parser-rule-items rule)))
 			     (dotimes (i n)
 			       (let ((item (svref items i)))
 				 (unless (null item)
 				   (let ((index (parser-rule-item-semantic-index item)))
 				     (unless (null index)
-				       (push (cons index (parser-rule-item-default-semantics item))
-					     semantic-alist))))))
+				       (let ((default (parser-rule-item-default-semantics item)))
+					 (push (cons index (if (keywordp default) default (list 'quote default)))
+					       semantic-alist)))))))
 			     (setf (parser-rule-default-semantics rule)
-			       (eval (sanitize-sexpression (sublis-result semantic-alist semantic-pattern)))))))
+			       ;; eval...
+			       (sanitize-sexpression (sublis-result semantic-alist semantic-pattern))))))
 		       ;; (when (parser-repeat-rule-p rule) (setf (parser-rule-default-semantics rule) '()))
 		       (debugging-comment "Rule ~S is now optional with semantics ~S." 
 					  rule
@@ -1018,11 +1038,21 @@
     changed?))
 
 (defun sanitize-sexpression (s)
+  ;; not terribly smart, but handles some simple cases...
   (cond ((atom s) s)
-	((and (eq (car s) 'list)
-	      (atom (cdr s))
+	((eq (car s) 'quote) 
+	 (if (or (eq (cadr s) nil) 
+		 (eq (cadr s) t)
+		 (keywordp (cadr s)))
+	     (cadr s)
+	   s))
+	((and (eq (car s) 'if)
+	      (equal (cadr s) '(EQ (QUOTE :UNSPECIFIED) :UNSPECIFIED)))
+	 (sanitize-sexpression (caddr s)))
+	((and (atom (cdr s))
 	      (not (null (cdr s))))
 	 :ILLEGAL-SEXPRESSION)
 	(t (mapcar #'sanitize-sexpression s))))
     
+
 

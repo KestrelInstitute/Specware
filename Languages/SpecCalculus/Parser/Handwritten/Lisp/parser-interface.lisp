@@ -12,7 +12,8 @@
 ;;
 ;; parse-file is defined in /Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-top.lisp
 
-(defvar *parser-source* nil) ; used by make-pos in semantics.lisp
+;;;; now in Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-semantics.lisp
+;;;; (defvar *parser-source* nil) ; used by make-pos in semantics.lisp
 
 ;; Called from $SPECWARE4/Languages/SpecCalculus/Parser/Parse.sw
 (defun parseFile (fileName)
