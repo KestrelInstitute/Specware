@@ -407,6 +407,11 @@ SpecCalc qualifying spec
 		     other_infos) 
 	      ^ "\n"
       in
+      %% Print short version first, in case printing of (possibly enormous) spec fails
+      %% while preparing full message.
+      let _ = toScreen ("\n" ^ sort_msg ^ op_msg ^ "\n")                                       in
+      let _ = toScreen ("\nThe full error message should follow, but it may take several\n")   in
+      let _ = toScreen ("\nminutes or more to print it if the spec in question is large:\n\n") in
       let spc_msg = "\n in following spec: \n" ^ (printSpec spc) in
       raise (SpecError (position, "\n" ^ sort_msg ^ op_msg ^ spc_msg))
 
