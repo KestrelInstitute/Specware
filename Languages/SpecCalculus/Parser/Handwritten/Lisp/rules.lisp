@@ -397,7 +397,16 @@ If we want the precedence to be optional:
   (make-sort-scheme 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SORT-VARIABLE-BINDER ()
+  (:anyof 
+   :OLD-SORT-VARIABLE-BINDER  
+   :NEW-SORT-VARIABLE-BINDER ))
+
+(define-sw-parser-rule :OLD-SORT-VARIABLE-BINDER ()
   (:tuple "fa" (1 :LOCAL-SORT-VARIABLE-LIST))
+  1)
+
+(define-sw-parser-rule :NEW-SORT-VARIABLE-BINDER ()
+  (:tuple "["  (1 (:repeat+ :LOCAL-SORT-VARIABLE ",")) "]")
   1)
 
 ;;; ------------------------------------------------------------------------
@@ -471,7 +480,12 @@ If we want the precedence to be optional:
   (cons 1 2))
 
 (define-sw-parser-rule :SORT-QUANTIFICATION ()
-  (:tuple :KW-TYPE (1 :SORT-VARIABLE-BINDER))
+  (:anyof 
+   :OLD-SORT-QUANTIFICATION
+   :NEW-SORT-VARIABLE-BINDER))
+
+(define-sw-parser-rule :OLD-SORT-QUANTIFICATION ()
+  (:tuple :KW-TYPE (1 :OLD-SORT-VARIABLE-BINDER))
   1)
 
 ;;; ========================================================================

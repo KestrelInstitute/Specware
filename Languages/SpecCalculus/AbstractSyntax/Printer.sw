@@ -401,24 +401,24 @@ SpecCalc qualifying spec {
               (case type_vars of
                  | [] -> ppNil
                  | _ -> 
-                   ppConcat [ppString "fa (",
+                   ppConcat [ppString "[",
                              ppSep (ppString ",") (map ppString type_vars),
-                             ppString ") "
+                             ppString "] "
                             ]),
               ppASort srt]
 
   op ppAOpDefs : fa (a)  (List QualifiedId) * List (List String * ATerm a) -> Doc
   def ppAOpDefs (aliases, defs) =
-    let prefix = ppConcat [ppString "def ", ppIdInfo aliases] in
     let def pp_def (type_vars, term) =
-        ppConcat [prefix,
+        ppConcat [ppString "def ", 
                   (case type_vars of
                      | [] -> ppNil
                      | _ -> 
-                       ppConcat [ppString "fa (",
+                       ppConcat [ppString "[",
                                  ppSep (ppString ",") (map ppString type_vars),
-                                 ppString ")"
+                                 ppString "]"
                                 ]),
+		  ppIdInfo aliases,
                   ppString " = ",
                   ppATerm term]
     in

@@ -788,7 +788,7 @@ AnnSpecPrinter qualifying spec {
    (case tyVars
         of [] -> string ""
          | _ -> AnnTermPrinter.ppList string
-                  (prettysNone [string " ",pp.Fa,pp.LP],pp.Comma,pp.RP) tyVars)
+                  (prettysNone [string " ",pp.LBrack],pp.Comma,pp.RBrack) tyVars)
   def ppTyVars (pp:ATermPrinter) tyVars = 
    (case tyVars
         of [] -> string ""
@@ -820,7 +820,7 @@ AnnSpecPrinter qualifying spec {
          (0,pp.ppFormulaDesc (" "^(if qualifier = UnQualified then "" else qualifier^".")^id)),
          (0,string " "),
          (0,pp.Is),
-         (0,if null tyVars then string "" else string " sort"),
+         % (0,if null tyVars then string "" else string " sort"),
          (0,ppForallTyVars pp tyVars),
          (0,string " "),
          (3,ppTerm context ([index,propertyIndex],Top:ParentTerm) term)]))

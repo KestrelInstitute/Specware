@@ -183,9 +183,9 @@ SpecCalc qualifying spec {
              | [] -> ppNil
              | _ -> 
                 ppConcat [
-                  ppString "fa (",
+                  ppString "[",
                   ppSep (ppString ",") (map ppString tyVars),
-                  ppString ") "
+                  ppString "] "
                 ]),
           ppString " ",
           ppATerm term

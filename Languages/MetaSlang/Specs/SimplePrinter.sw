@@ -132,18 +132,18 @@ SpecCalc qualifying spec {
       case srtScheme of
         | ([],srt) -> ppASort srt
         | (tyVars,srt) ->
-          ppConcat [ppString "fa (",
+          ppConcat [ppString "[",
 		    ppSep (ppString ",") (map ppString tyVars),
-		    ppString ") ",
+		    ppString "] ",
 		    ppASort srt]
     in
     let def doOpDef (type_vars, term) =
           ppGroup (ppConcat [ppString "def ",
 			     case type_vars of
 			       | [] -> ppNil
-			       | _  -> ppConcat [ppString "fa (",
+			       | _  -> ppConcat [ppString "[",
 						 ppSep (ppString ",") (map ppString type_vars),
-						 ppString ") "],
+						 ppString "] "],
 			     ppNames,
 			     ppGroup (ppIndent (ppConcat [ppString " =",
 							  ppBreak,
@@ -178,9 +178,9 @@ SpecCalc qualifying spec {
              | [] -> ppNil
              | _ -> 
                 ppConcat [
-                  ppString "fa (",
+                  ppString "[",
                   ppSep (ppString ",") (map ppString tyVars),
-                  ppString ") "
+                  ppString "] "
                 ]),
           ppString " ",
           ppATerm term
