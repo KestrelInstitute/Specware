@@ -184,7 +184,7 @@ the base types in C. For instance \verb+typedef int Integer+.
       | Base (Qualified ("Store","Ptr"),[srt],_) -> Ptr (sortToCType srt)
       | Base (qid,[],_) -> baseSortToCType qid
       | Base (qid,srts,_) -> 
-          let _ = writeLine ("sortToCType: found instantiated base type: " ^ (printSort srt)) in
+          % let _ = writeLine ("sortToCType: found instantiated base type: " ^ (printSort srt)) in
           Void
       | Arrow (domSort,codSort,_) -> 
           let domTypes =
@@ -325,6 +325,7 @@ later to unfold sort definitions.
           Apply (Unary Contents, [termToCExp arg])
       | Apply (Fun (Embed ("Number",_),srt,_),arg,_) -> termToCExp arg
       | Apply (Fun (Embed ("Int",_),srt,_),arg,_) -> termToCExp arg
+      | Apply (Fun (Op (Qualified (_,"fixBool"),fxty),srt,pos), arg,_) -> termToCExp arg
       | Apply (Fun (Op (Qualified ("Double","fromNat"),fxty),srt,pos), arg,_) -> termToCExp arg
       | Apply (Fun (Op (Qualified ("Double","sqrt"),fxty),srt,pos), arg,_) ->
           Apply (Var ("sqrt",Fn ([Double],Double)), [termToCExp arg])
@@ -359,6 +360,7 @@ later to unfold sort definitions.
           let cFun = termToCExp term1 in
           let cArgs = applyArgsToCExps term2 in
           Apply (cFun,cArgs)
+       | Record ([],_) -> Nop
        | _ -> 
          let _ = writeLine ("termToCExp: term is neither a constant nor an application: " ^ (printTerm term)) in Nop
 \end{spec}
