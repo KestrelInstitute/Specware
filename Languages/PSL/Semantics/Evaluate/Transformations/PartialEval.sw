@@ -181,7 +181,7 @@ PE qualifying spec
         | Fun (Op (id,fxty),srt,pos) -> return (Some (removePrime id))
         | Var _ -> return None
         | Record ([],_) -> return None
-        | _ -> raise (SpecError (noPos, "Return term is invalid: " ^ (System.toString returnTerm)));
+        | _ -> raise (SpecError (noPos, "Return term is invalid: " ^ (anyToString returnTerm)));
     argList <-
       case argTerm of
         | Record (fields,_) -> return (map (fn (x,y) -> y) fields)
@@ -216,9 +216,9 @@ PE qualifying spec
                       return (subst, cons (param,residParams), cons (arg, residArgs), cons (srt,residSorts))
                  }
              | _ -> fail ("mismatched lists in partitionArgs: "
-                    ^ "\n  parameters=" ^ (System.toString procInfo.parameters) 
-                    ^ "\n  argList=" ^ (System.toString argList) 
-                    ^ "\n  paramSortList=" ^ (System.toString paramSortList) 
+                    ^ "\n  parameters=" ^ (anyToString procInfo.parameters) 
+                    ^ "\n  argList=" ^ (anyToString argList) 
+                    ^ "\n  paramSortList=" ^ (anyToString paramSortList) 
                     ^ "\n")
        in
          partitionArgs (procInfo.parameters,argList,paramSortList);
@@ -237,8 +237,8 @@ PE qualifying spec
                       return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (type varInfo, residStateSorts))
                  }
              | _ -> fail ("mismatched lists in partitionState"
-                    ^ "\n  varsInScope=" ^ (System.toString (varsInScope procInfo))
-                    ^ "\n  storeList=" ^ (System.toString storeList)
+                    ^ "\n  varsInScope=" ^ (anyToString (varsInScope procInfo))
+                    ^ "\n  storeList=" ^ (anyToString storeList)
                     ^ "\n") 
         in
           partitionState subst (varsInScope procInfo) storeList;
@@ -300,7 +300,7 @@ PE qualifying spec
               if ((length (final newBSpec)) > 1)  then
                 (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
                                       ^ " by " ^ (show subst)
-                                      % ^ " has multiple final states: " ^ (System.toString (final newBSpec)))))
+                                      % ^ " has multiple final states: " ^ (anyToString (final newBSpec)))))
                                       ^ " has multiple final states: " ^ (ppFormat (ModeList.pp (final newBSpec))))))
               else {
 

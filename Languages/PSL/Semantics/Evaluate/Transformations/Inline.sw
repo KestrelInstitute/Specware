@@ -209,9 +209,9 @@ copies fills in the calling arguments.
                   (newBSpec,[]) (outTrans (bSpec proc) (initial (bSpec proc)));
               return (newBSpec,visited)
             }
-        | _ -> fail ("inlineTransition: called=" ^ (System.toString called)
-                                           ^ "\noptReturnRef=" ^ (System.toString optReturnRef)
-                                           ^ "\noptLHSRef=" ^ (System.toString optLHSRef));
+        | _ -> fail ("inlineTransition: called=" ^ (anyToString called)
+                                           ^ "\noptReturnRef=" ^ (anyToString optReturnRef)
+                                           ^ "\noptLHSRef=" ^ (anyToString optLHSRef));
     foldM (inlineTransition procs newDst endPoint oldBSpec optReturnRef optLHSRef) (newBSpec,visited) successors
   }
 

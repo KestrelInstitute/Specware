@@ -202,7 +202,7 @@ SpecCalc qualifying spec {
       | Invariant -> ppString "invariant"
       | any ->
            fail ("No match in ppPropertyType with: '"
-              ^ (System.toString any)
+              ^ (anyToString any)
               ^ "'")
 
   op ppOscarSpecElems : fa(a) List (OscarSpecElem a) -> Pretty
