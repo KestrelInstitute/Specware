@@ -32,7 +32,7 @@ They are procedures in context.
      dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
      newPSpec <- setDynamicSpec pSpec dyCtxtElab;
      newPSpec <- setStaticSpec newPSpec statCtxtElab;
-     return (PSpec pSpec,timeStamp,depURIs)
+     return (PSpec newPSpec,timeStamp,depURIs)
    }
 \end{spec}
 
