@@ -88,6 +88,23 @@
 			   (string (second r-args)) nil)))
      (format t "No previous unit evaluated~%"))))
 
+;; Not sure whether ... no I'm not repeating this comment :)
+(defun swc (x &optional y)
+   (Specware::evaluateCGen_fromLisp x
+                         (if y (cons :|Some| y)
+                               '(:|None|))))
+#+allegro
+(top-level:alias ("swc" :case-sensitive) (&optional &rest args)
+   (let ((r-args (if (not (null args))
+		     args
+		   *last-swc-args*)))
+   (if r-args
+       (progn (setq *last-swc-args* args)
+	      (funcall 'swc (string (first r-args))
+		       (if (not (null (second r-args)))
+			   (string (second r-args)) nil)))
+     (format t "No previous unit evaluated~%"))))
+
 #+allegro
 (top-level:alias ("wiz" :case-sensitive) (&optional (b nil b?))
    (if b? (princ (setq SpecCalc::specwareWizard? b))
