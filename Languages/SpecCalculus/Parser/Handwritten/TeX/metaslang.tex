@@ -1,0 +1,490 @@
+
+\newcommand{\bnf}[1]           {{#1}}
+\newcommand{\bnfoptionalopen}  {{\bnf{$\big[$}    }}
+\newcommand{\bnfoptionalclose} {{\bnf{$\big]$}    }}
+\newcommand{\bnfrepeatopen}    {{\bnf{$\big\{$}   }}
+\newcommand{\bnfrepeatclose}   {{\bnf{$\big\}^*$} }}
+\newcommand{\bnfalternative}   {{\bnf{$|$}       }}
+
+\newcommand{\grnonterminal}[1] {{\textup{\textsc {#1}} }}
+
+\newcommand{\grterminal}[1]    {{\underline {\textup {\texttt {#1}}} }}
+
+\newcommand{\grcomment}[1]    {{\textit {\textrm {#1}}}}
+
+{\em
+\begin{tabbing}
+AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \= \kill
+\\
+\\ \grnonterminal {TOPLEVEL} \> $::=$ \> \>   \grnonterminal {SC\char45TOPLEVEL\char45TERM} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45TOPLEVEL\char45DECLS}
+\\
+\\ \grnonterminal {SC\char45TOPLEVEL\char45TERM} \> $::=$ \> \>    \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45TERM} \> $::=$ \> \>   \grnonterminal {SC\char45PRINT} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45URI} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SPEC\char45DEFINITION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45LET} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45WHERE} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45TRANSLATE} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45QUALIFY} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45DIAG} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45SPEC\char45MORPH} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45HIDE} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45EXPORT} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45GENERATE}
+\\
+\\ \grnonterminal {SC\char45PRINT} \> $::=$ \> \>    \grterminal {printF}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45URI} \> $::=$ \> \>   \grnonterminal {SC\char45ABSOLUTE\char45URI} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45RELATIVE\char45URI}
+\\
+\\ \grnonterminal {SC\char45ABSOLUTE\char45URI} \> $::=$ \> \>    \grterminal {\char47}\  \grnonterminal {SC\char45URI\char45PATH}\  \bnfoptionalopen    \grterminal {\#}\  \grnonterminal {NAME} \bnfoptionalclose
+\\
+\\ \grnonterminal {SC\char45URI\char45PATH} \> $::=$ \> \> \grnonterminal {SC\char45URI\char45ELEMENT} \bnfrepeatopen \grterminal {\char47} \grnonterminal {SC\char45URI\char45ELEMENT} \bnfrepeatclose
+\\
+\\ \grnonterminal {SC\char45URI\char45ELEMENT} \> $::=$ \> \>   \grnonterminal {NAME} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char46\char46}
+\\
+\\ \grnonterminal {NAME} \> $::=$ \> \>   \grterminal {\char61} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char42} 
+\\  \>  \>   \bnfalternative \>  \grterminal {translate} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {NON\_KEYWORD\_NAME}
+\\
+\\ \grnonterminal {NON\_KEYWORD\_NAME} \> $::=$ \> \>    \grnonterminal {SYMBOL}
+\\
+\\ \grnonterminal {SC\char45RELATIVE\char45URI} \> $::=$ \> \>    \grnonterminal {SC\char45URI\char45PATH}\  \bnfoptionalopen    \grterminal {\#}\  \grnonterminal {NAME} \bnfoptionalclose
+\\
+\\ \grnonterminal {SPEC\char45DEFINITION} \> $::=$ \> \>     \grterminal {spec}  \bnfoptionalopen \grnonterminal {QUALIFIER} \bnfoptionalclose\\  \>  \>  \>\ \ \ \ \ \ \ \   \grterminal {\{}  \bnfoptionalopen \grnonterminal {DECLARATION\char45SEQUENCE} \bnfoptionalclose  \grterminal {\}} 
+\\  \>  \>   \bnfalternative \>    \grterminal {spec}  \bnfoptionalopen \grnonterminal {QUALIFIER} \bnfoptionalclose\\  \>  \>  \>\ \ \ \ \ \ \ \   \bnfoptionalopen \grnonterminal {DECLARATION\char45SEQUENCE} \bnfoptionalclose\\  \>  \>  \>\ \ \ \ \ \ \ \   \grnonterminal {END\char45SPEC}
+\\
+\\ \grnonterminal {DECLARATION\char45SEQUENCE} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {DECLARATION} \bnfrepeatclose
+\\
+\\ \grnonterminal {DECLARATION} \> $::=$ \> \>   \grnonterminal {IMPORT\char45DECLARATION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SORT\char45DECLARATION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {OP\char45DECLARATION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {DEFINITION}
+\\
+\\ \grnonterminal {IMPORT\char45DECLARATION} \> $::=$ \> \>    \grterminal {import}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SORT\char45DECLARATION} \> $::=$ \> \>   \grterminal {sort}  \grnonterminal {QUALIFIABLE\char45SORT\char45NAME}\\  \>  \>  \>\ \ \ \ \ \ \ \   \bnfoptionalopen \grnonterminal {FORMAL\char45SORT\char45PARAMETERS} \bnfoptionalclose
+\\
+\\ \grnonterminal {QUALIFIABLE\char45SORT\char45NAME} \> $::=$ \> \>   \grnonterminal {UNQUALIFIED\char45SORT\char45NAME} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {QUALIFIED\char45SORT\char45NAME}
+\\
+\\ \grnonterminal {UNQUALIFIED\char45SORT\char45NAME} \> $::=$ \> \>    \grnonterminal {NON\_KEYWORD\_NAME}
+\\
+\\ \grnonterminal {QUALIFIED\char45SORT\char45NAME} \> $::=$ \> \>    \grnonterminal {QUALIFIER}\  \grterminal {\char46}\  \grnonterminal {NON\_KEYWORD\_NAME}
+\\
+\\ \grnonterminal {QUALIFIER} \> $::=$ \> \>    \grnonterminal {NAME}
+\\
+\\ \grnonterminal {FORMAL\char45SORT\char45PARAMETERS} \> $::=$ \> \>   \grnonterminal {SINGLE\char45SORT\char45VARIABLE} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {LOCAL\char45SORT\char45VARIABLE\char45LIST}
+\\
+\\ \grnonterminal {SINGLE\char45SORT\char45VARIABLE} \> $::=$ \> \>    \grnonterminal {LOCAL\char45SORT\char45VARIABLE}
+\\
+\\ \grnonterminal {LOCAL\char45SORT\char45VARIABLE} \> $::=$ \> \>    \grnonterminal {NON\_KEYWORD\_NAME}
+\\
+\\ \grnonterminal {LOCAL\char45SORT\char45VARIABLE\char45LIST} \> $::=$ \> \>   \grterminal {\char40}  \grnonterminal {LOCAL\char45SORT\char45VARIABLE} 
+\\  \>  \>  \> \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {LOCAL\char45SORT\char45VARIABLE} \bnfrepeatclose  \grterminal {\char41}
+\\
+\\ \grnonterminal {OP\char45DECLARATION} \> $::=$ \> \>   \grterminal {op}  \grnonterminal {QUALIFIABLE\char45OP\char45NAME}  \bnfoptionalopen \grnonterminal {FIXITY} \bnfoptionalclose\\  \>  \>  \>\ \ \ \ \ \   \grterminal {\char58}  \grnonterminal {SORT\char45SCHEME}
+\\
+\\ \grnonterminal {QUALIFIABLE\char45OP\char45NAME} \> $::=$ \> \>   \grnonterminal {UNQUALIFIED\char45OP\char45NAME} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {QUALIFIED\char45OP\char45NAME}
+\\
+\\ \grnonterminal {UNQUALIFIED\char45OP\char45NAME} \> $::=$ \> \>    \grnonterminal {OP\char45NAME}
+\\
+\\ \grnonterminal {OP\char45NAME} \> $::=$ \> \>    \grnonterminal {NAME}
+\\
+\\ \grnonterminal {QUALIFIED\char45OP\char45NAME} \> $::=$ \> \>    \grnonterminal {QUALIFIER}\  \grterminal {\char46}\  \grnonterminal {OP\char45NAME}
+\\
+\\ \grnonterminal {FIXITY} \> $::=$ \> \>    \grnonterminal {ASSOCIATIVITY}\  \grnonterminal {NUMBER}
+\\
+\\ \grnonterminal {ASSOCIATIVITY} \> $::=$ \> \>   \grterminal {infixl} 
+\\  \>  \>   \bnfalternative \>  \grterminal {infixr}
+\\
+\\ \grnonterminal {SORT\char45SCHEME} \> $::=$ \> \>    \bnfoptionalopen \grnonterminal {SORT\char45VARIABLE\char45BINDER} \bnfoptionalclose\  \grnonterminal {SORT}
+\\
+\\ \grnonterminal {SORT\char45VARIABLE\char45BINDER} \> $::=$ \> \>    \grterminal {fa}\  \grnonterminal {LOCAL\char45SORT\char45VARIABLE\char45LIST}
+\\
+\\ \grnonterminal {SORT} \> $::=$ \> \>   \grnonterminal {SORT\char45SUM} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SORT\char45ARROW} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SLACK\char45SORT}
+\\
+\\ \grnonterminal {SORT\char45SUM} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {SORT\char45SUMMAND} \bnfrepeatclose
+\\
+\\ \grnonterminal {SORT\char45SUMMAND} \> $::=$ \> \>    \grterminal {\char124}\  \grnonterminal {NAME}\  \bnfoptionalopen \grnonterminal {SLACK\char45SORT} \bnfoptionalclose
+\\
+\\ \grnonterminal {SLACK\char45SORT} \> $::=$ \> \>   \grnonterminal {SORT\char45PRODUCT} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {TIGHT\char45SORT}
+\\
+\\ \grnonterminal {SORT\char45PRODUCT} \> $::=$ \> \>   \grnonterminal {TIGHT\char45SORT}  \grterminal {\char42}  \grnonterminal {TIGHT\char45SORT} \bnfrepeatopen \grterminal {\char42} \grnonterminal {TIGHT\char45SORT} \bnfrepeatclose
+\\
+\\ \grnonterminal {TIGHT\char45SORT} \> $::=$ \> \>   \grnonterminal {SORT\char45INSTANTIATION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CLOSED\char45SORT}
+\\
+\\ \grnonterminal {SORT\char45INSTANTIATION} \> $::=$ \> \>   \grnonterminal {QUALIFIABLE\char45SORT\char45NAME}\\  \>  \>  \>  \grnonterminal {ACTUAL\char45SORT\char45PARAMETERS}
+\\
+\\ \grnonterminal {ACTUAL\char45SORT\char45PARAMETERS} \> $::=$ \> \>   \grnonterminal {CLOSED\char45SORT} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {PROPER\char45SORT\char45LIST}
+\\
+\\ \grnonterminal {CLOSED\char45SORT} \> $::=$ \> \>   \grnonterminal {SORT\char45REF} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SORT\char45RECORD} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SORT\char45RESTRICTION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SORT\char45COMPREHENSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SORT\char45QUOTIENT} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {PARENTHESIZED\char45SORT}
+\\
+\\ \grnonterminal {SORT\char45REF} \> $::=$ \> \>    \grnonterminal {QUALIFIABLE\char45SORT\char45NAME}
+\\
+\\ \grnonterminal {SORT\char45RECORD} \> $::=$ \> \>   \grnonterminal {UNIT\char45PRODUCT\char45SORT} 
+\\  \>  \>   \bnfalternative \>     \grterminal {\{}\  \grnonterminal {FIELD\char45SORT\char45LIST}\  \grterminal {\}}
+\\
+\\ \grnonterminal {UNIT\char45PRODUCT\char45SORT} \> $::=$ \> \>      \grterminal {\{}\  \grterminal {\}} 
+\\  \>  \>   \bnfalternative \>     \grterminal {\char40}\  \grterminal {\char41}
+\\
+\\ \grnonterminal {FIELD\char45SORT\char45LIST} \> $::=$ \> \> \grnonterminal {FIELD\char45SORT} \bnfrepeatopen \grterminal {\char44} \grnonterminal {FIELD\char45SORT} \bnfrepeatclose
+\\
+\\ \grnonterminal {FIELD\char45SORT} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char58}\  \grnonterminal {SORT}
+\\
+\\ \grnonterminal {SORT\char45RESTRICTION} \> $::=$ \> \>    \grterminal {\char40}\  \grnonterminal {SLACK\char45SORT}\  \grterminal {\char124}\  \grnonterminal {EXPRESSION}\  \grterminal {\char41}
+\\
+\\ \grnonterminal {EXPRESSION} \> $::=$ \> \>   \grnonterminal {LAMBDA\char45FORM} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CASE\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {LET\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {IF\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {QUANTIFICATION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {TIGHT\char45EXPRESSION}
+\\
+\\ \grnonterminal {LAMBDA\char45FORM} \> $::=$ \> \>    \grterminal {fn}\  \grnonterminal {MATCH}
+\\
+\\ \grnonterminal {MATCH} \> $::=$ \> \>    \bnfoptionalopen \grterminal {\char124} \bnfoptionalclose\  \grnonterminal {BRANCH} \bnfrepeatopen \grterminal {\char124} \grnonterminal {BRANCH} \bnfrepeatclose
+\\
+\\ \grnonterminal {BRANCH} \> $::=$ \> \>    \grnonterminal {PATTERN}\  \grterminal {\char45\char62}\  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {PATTERN} \> $::=$ \> \>   \grnonterminal {ANNOTATED\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {TIGHT\char45PATTERN}
+\\
+\\ \grnonterminal {ANNOTATED\char45PATTERN} \> $::=$ \> \>    \grnonterminal {PATTERN}\  \grterminal {\char58}\  \grnonterminal {SORT}
+\\
+\\ \grnonterminal {TIGHT\char45PATTERN} \> $::=$ \> \>   \grnonterminal {ALIASED\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CONS\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {EMBED\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {QUOTIENT\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {RELAX\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CLOSED\char45PATTERN}
+\\
+\\ \grnonterminal {ALIASED\char45PATTERN} \> $::=$ \> \>    \grnonterminal {VARIABLE\char45PATTERN}\  \grterminal {as}\  \grnonterminal {TIGHT\char45PATTERN}
+\\
+\\ \grnonterminal {VARIABLE\char45PATTERN} \> $::=$ \> \>    \grnonterminal {NON\_KEYWORD\_NAME}
+\\
+\\ \grnonterminal {CONS\char45PATTERN} \> $::=$ \> \>    \grnonterminal {CLOSED\char45PATTERN}\  \grterminal {\char58\char58}\  \grnonterminal {TIGHT\char45PATTERN}
+\\
+\\ \grnonterminal {CLOSED\char45PATTERN} \> $::=$ \> \>   \grnonterminal {VARIABLE\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {WILDCARD\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {LITERAL\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {LIST\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {TUPLE\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {RECORD\char45PATTERN} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {PARENTHESIZED\char45PATTERN}
+\\
+\\ \grnonterminal {WILDCARD\char45PATTERN} \> $::=$ \> \> \grterminal {\_}
+\\
+\\ \grnonterminal {LITERAL\char45PATTERN} \> $::=$ \> \>   \grterminal {true} \> \grcomment{Boolean Pattern} 
+\\  \>  \>   \bnfalternative \>  \grterminal {false} \> \grcomment{Boolean Pattern} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {NUMBER} \> \grcomment{Nat Pattern} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CHARACTER} \> \grcomment{Char Pattern} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {STRING} \> \grcomment{String Pattern}
+\\
+\\ \grnonterminal {LIST\char45PATTERN} \> $::=$ \> \>      \grterminal {\char91}\  \grterminal {\char93} \> \grcomment{The empty list} 
+\\  \>  \>   \bnfalternative \>     \grterminal {\char91}\  \grnonterminal {PATTERN} \bnfrepeatopen \grterminal {\char44} \grnonterminal {PATTERN} \bnfrepeatclose\  \grterminal {\char93} \> \grcomment{List enumeration}
+\\
+\\ \grnonterminal {TUPLE\char45PATTERN} \> $::=$ \> \>      \grterminal {\char40}\  \grterminal {\char41} \> \grcomment{Empty tuple pattern} 
+\\  \>  \>   \bnfalternative \>     \grterminal {\char40}\  \grnonterminal {PATTERN}\  \grterminal {\char44}\  \grnonterminal {PATTERN} \bnfrepeatopen \grterminal {\char44} \grnonterminal {PATTERN} \bnfrepeatclose\  \grterminal {\char41} \> \grcomment{Tuple pattern}
+\\
+\\ \grnonterminal {RECORD\char45PATTERN} \> $::=$ \> \>    \grterminal {\{}\  \grnonterminal {FIELD\char45PATTERN} \bnfrepeatopen \grterminal {\char44} \grnonterminal {FIELD\char45PATTERN} \bnfrepeatclose\  \grterminal {\}}
+\\
+\\ \grnonterminal {FIELD\char45PATTERN} \> $::=$ \> \>    \grnonterminal {NAME}\  \bnfoptionalopen    \grterminal {\char61}\  \grnonterminal {PATTERN} \bnfoptionalclose
+\\
+\\ \grnonterminal {PARENTHESIZED\char45PATTERN} \> $::=$ \> \>    \grterminal {\char40}\  \grnonterminal {PATTERN}\  \grterminal {\char41}
+\\
+\\ \grnonterminal {EMBED\char45PATTERN} \> $::=$ \> \>    \grnonterminal {NAME}\  \grnonterminal {CLOSED\char45PATTERN}
+\\
+\\ \grnonterminal {QUOTIENT\char45PATTERN} \> $::=$ \> \>    \grterminal {quotient}\  \grnonterminal {CLOSED\char45EXPRESSION}\  \grnonterminal {TIGHT\char45PATTERN}
+\\
+\\ \grnonterminal {CLOSED\char45EXPRESSION} \> $::=$ \> \>   \grnonterminal {UNQUALIFIED\char45OP\char45REF} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SELECTABLE\char45EXPRESSION}
+\\
+\\ \grnonterminal {UNQUALIFIED\char45OP\char45REF} \> $::=$ \> \>    \grnonterminal {NAME}
+\\
+\\ \grnonterminal {SELECTABLE\char45EXPRESSION} \> $::=$ \> \>   \grnonterminal {TWO\char45NAME\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {LITERAL} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {FIELD\char45SELECTION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {TUPLE\char45DISPLAY} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {RECORD\char45DISPLAY} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SEQUENTIAL\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {LIST\char45DISPLAY} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {STRUCTOR} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {PARENTHESIZED\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {MONAD\char45EXPRESSION}
+\\
+\\ \grnonterminal {TWO\char45NAME\char45EXPRESSION} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char46}\  \grnonterminal {NAME}
+\\
+\\ \grnonterminal {LITERAL} \> $::=$ \> \>   \grnonterminal {BOOLEAN\char45LITERAL} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {NAT\char45LITERAL} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CHAR\char45LITERAL} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {STRING\char45LITERAL}
+\\
+\\ \grnonterminal {BOOLEAN\char45LITERAL} \> $::=$ \> \>   \grterminal {true} 
+\\  \>  \>   \bnfalternative \>  \grterminal {false}
+\\
+\\ \grnonterminal {NAT\char45LITERAL} \> $::=$ \> \>    \grnonterminal {NUMBER}
+\\
+\\ \grnonterminal {CHAR\char45LITERAL} \> $::=$ \> \>    \grnonterminal {CHARACTER}
+\\
+\\ \grnonterminal {STRING\char45LITERAL} \> $::=$ \> \>    \grnonterminal {STRING}
+\\
+\\ \grnonterminal {FIELD\char45SELECTION} \> $::=$ \> \>    \grnonterminal {SELECTABLE\char45EXPRESSION}\  \grterminal {\char46}\  \grnonterminal {FIELD\char45SELECTOR}
+\\
+\\ \grnonterminal {FIELD\char45SELECTOR} \> $::=$ \> \>   \grnonterminal {NUMBER} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {NAME}
+\\
+\\ \grnonterminal {TUPLE\char45DISPLAY} \> $::=$ \> \>    \grterminal {\char40}\  \bnfoptionalopen \grnonterminal {TUPLE\char45DISPLAY\char45BODY} \bnfoptionalclose\  \grterminal {\char41}
+\\
+\\ \grnonterminal {TUPLE\char45DISPLAY\char45BODY} \> $::=$ \> \>   \grnonterminal {EXPRESSION}  \grterminal {\char44}  \grnonterminal {EXPRESSION} \bnfrepeatopen \grterminal {\char44} \grnonterminal {EXPRESSION} \bnfrepeatclose
+\\
+\\ \grnonterminal {RECORD\char45DISPLAY} \> $::=$ \> \>    \grterminal {\{}\  \bnfoptionalopen \grnonterminal {RECORD\char45DISPLAY\char45BODY} \bnfoptionalclose\  \grterminal {\}}
+\\
+\\ \grnonterminal {RECORD\char45DISPLAY\char45BODY} \> $::=$ \> \> \grnonterminal {FIELD\char45FILLER} \bnfrepeatopen \grterminal {\char44} \grnonterminal {FIELD\char45FILLER} \bnfrepeatclose
+\\
+\\ \grnonterminal {FIELD\char45FILLER} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char61}\  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {SEQUENTIAL\char45EXPRESSION} \> $::=$ \> \>    \grterminal {\char40}\  \grnonterminal {OPEN\char45SEQUENTIAL\char45EXPRESSION}\  \grterminal {\char41}
+\\
+\\ \grnonterminal {OPEN\char45SEQUENTIAL\char45EXPRESSION} \> $::=$ \> \>   \grnonterminal {VOID\char45EXPRESSION} \bnfrepeatopen \grterminal {\char59} \grnonterminal {VOID\char45EXPRESSION} \bnfrepeatclose\\  \>  \>  \>  \grterminal {\char59}  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {VOID\char45EXPRESSION} \> $::=$ \> \>    \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {LIST\char45DISPLAY} \> $::=$ \> \>      \grterminal {\char91}\  \grterminal {\char93} \> \grcomment{Empty List} 
+\\  \>  \>   \bnfalternative \>     \grterminal {\char91}\  \grnonterminal {LIST\char45DISPLAY\char45BODY}\  \grterminal {\char93} \> \grcomment{List}
+\\
+\\ \grnonterminal {LIST\char45DISPLAY\char45BODY} \> $::=$ \> \> \grnonterminal {EXPRESSION} \bnfrepeatopen \grterminal {\char44} \grnonterminal {EXPRESSION} \bnfrepeatclose
+\\
+\\ \grnonterminal {STRUCTOR} \> $::=$ \> \>   \grnonterminal {PROJECTOR} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {RELAXATOR} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {RESTRICTOR} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {QUOTIENTER} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CHOOSER} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {EMBEDDER} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {EMEBDDING\char45TEST}
+\\
+\\ \grnonterminal {PROJECTOR} \> $::=$ \> \>    \grterminal {project}\  \grnonterminal {FIELD\char45SELECTOR}
+\\
+\\ \grnonterminal {RELAXATOR} \> $::=$ \> \>    \grterminal {relax}\  \grnonterminal {CLOSED\char45EXPRESSION}
+\\
+\\ \grnonterminal {RESTRICTOR} \> $::=$ \> \>    \grterminal {restrict}\  \grnonterminal {CLOSED\char45EXPRESSION}
+\\
+\\ \grnonterminal {QUOTIENTER} \> $::=$ \> \>    \grterminal {quotient}\  \grnonterminal {CLOSED\char45EXPRESSION}
+\\
+\\ \grnonterminal {CHOOSER} \> $::=$ \> \>    \grterminal {choose}\  \grnonterminal {CLOSED\char45EXPRESSION}
+\\
+\\ \grnonterminal {EMBEDDER} \> $::=$ \> \>    \grterminal {embed}\  \grnonterminal {NAME}
+\\
+\\ \grnonterminal {EMEBDDING\char45TEST} \> $::=$ \> \>    \grterminal {embed\char63}\  \grnonterminal {NAME}
+\\
+\\ \grnonterminal {PARENTHESIZED\char45EXPRESSION} \> $::=$ \> \>    \grterminal {\char40}\  \grnonterminal {EXPRESSION}\  \grterminal {\char41}
+\\
+\\ \grnonterminal {MONAD\char45EXPRESSION} \> $::=$ \> \>   \grnonterminal {MONAD\char45TERM\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {MONAD\char45BINDING\char45EXPRESSION}
+\\
+\\ \grnonterminal {MONAD\char45TERM\char45EXPRESSION} \> $::=$ \> \>    \grterminal {\{}\  \grnonterminal {EXPRESSION}\  \grterminal {\char59}\  \grnonterminal {MONAD\char45STMT\char45LIST}\  \grterminal {\}}
+\\
+\\ \grnonterminal {MONAD\char45STMT\char45LIST} \> $::=$ \> \>   \grnonterminal {EXPRESSION} 
+\\  \>  \>   \bnfalternative \>     \grnonterminal {EXPRESSION}\  \grterminal {\char59}\  \grnonterminal {MONAD\char45STMT\char45LIST} 
+\\  \>  \>   \bnfalternative \>     \grnonterminal {PATTERN}\  \grterminal {\char60\char45}\  \grnonterminal {EXPRESSION}\  \grterminal {\char59}\  \grnonterminal {MONAD\char45STMT\char45LIST}
+\\
+\\ \grnonterminal {MONAD\char45BINDING\char45EXPRESSION} \> $::=$ \> \>   \grterminal {\{}  \grnonterminal {PATTERN}  \grterminal {\char60\char45}  \grnonterminal {EXPRESSION}\\  \>  \>  \>\ \ \ \ \   \grterminal {\char59}  \grnonterminal {MONAD\char45STMT\char45LIST}  \grterminal {\}}
+\\
+\\ \grnonterminal {RELAX\char45PATTERN} \> $::=$ \> \>    \grterminal {relax}\  \grnonterminal {CLOSED\char45EXPRESSION}\  \grnonterminal {TIGHT\char45PATTERN}
+\\
+\\ \grnonterminal {CASE\char45EXPRESSION} \> $::=$ \> \>    \grterminal {case}\  \grnonterminal {EXPRESSION}\  \grterminal {of}\  \grnonterminal {MATCH}
+\\
+\\ \grnonterminal {LET\char45EXPRESSION} \> $::=$ \> \>      \grterminal {let}\  \grnonterminal {RECLESS\char45LET\char45BINDING}\  \grterminal {in}\  \grnonterminal {EXPRESSION} \> \grcomment{Let Binding} 
+\\  \>  \>   \bnfalternative \>    \grterminal {let}  \grnonterminal {REC\char45LET\char45BINDING\char45SEQUENCE}\\  \>  \>  \>\   \grterminal {in}  \grnonterminal {EXPRESSION} \> \grcomment{RecLet Binding}
+\\
+\\ \grnonterminal {RECLESS\char45LET\char45BINDING} \> $::=$ \> \>    \grnonterminal {PATTERN}\  \grnonterminal {EQUALS}\  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {EQUALS} \> $::=$ \> \>   \grterminal {\char61} 
+\\  \>  \>   \bnfalternative \>  \grterminal {is}
+\\
+\\ \grnonterminal {REC\char45LET\char45BINDING\char45SEQUENCE} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {REC\char45LET\char45BINDING} \bnfrepeatclose
+\\
+\\ \grnonterminal {REC\char45LET\char45BINDING} \> $::=$ \> \>   \grterminal {def}  \grnonterminal {NAME}  \grnonterminal {FORMAL\char45PARAMETER\char45SEQUENCE}\\  \>  \>  \>\ \ \ \ \ \ \   \bnfoptionalopen    \grterminal {\char58}\  \grnonterminal {SORT} \bnfoptionalclose\\  \>  \>  \>\ \ \ \ \ \ \   \grnonterminal {EQUALS}  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {FORMAL\char45PARAMETER\char45SEQUENCE} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {CLOSED\char45PATTERN} \bnfrepeatclose
+\\
+\\ \grnonterminal {IF\char45EXPRESSION} \> $::=$ \> \>   \grterminal {if}  \grnonterminal {EXPRESSION}  \grterminal {then}  \grnonterminal {EXPRESSION}\\  \>  \>  \>  \grterminal {else}  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {QUANTIFICATION} \> $::=$ \> \>   \grnonterminal {QUANTIFIER}  \grnonterminal {LOCAL\char45VARIABLE\char45LIST}\\  \>  \>  \>  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {QUANTIFIER} \> $::=$ \> \>   \grterminal {fa} 
+\\  \>  \>   \bnfalternative \>  \grterminal {ex}
+\\
+\\ \grnonterminal {LOCAL\char45VARIABLE\char45LIST} \> $::=$ \> \>   \grterminal {\char40}  \grnonterminal {ANNOTATED\char45VARIABLE} 
+\\  \>  \>  \> \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {ANNOTATED\char45VARIABLE} \bnfrepeatclose  \grterminal {\char41}
+\\
+\\ \grnonterminal {ANNOTATED\char45VARIABLE} \> $::=$ \> \>    \grnonterminal {NON\_KEYWORD\_NAME}\  \bnfoptionalopen    \grterminal {\char58}\  \grnonterminal {SORT} \bnfoptionalclose
+\\
+\\ \grnonterminal {TIGHT\char45EXPRESSION} \> $::=$ \> \>   \grnonterminal {APPLICATION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {ANNOTATED\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CLOSED\char45EXPRESSION}
+\\
+\\ \grnonterminal {APPLICATION} \> $::=$ \> \>    \grnonterminal {CLOSED\char45EXPRESSION}\  \grnonterminal {CLOSED\char45EXPRESSIONS}
+\\
+\\ \grnonterminal {CLOSED\char45EXPRESSIONS} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {CLOSED\char45EXPRESSION} \bnfrepeatclose
+\\
+\\ \grnonterminal {ANNOTATED\char45EXPRESSION} \> $::=$ \> \>    \grnonterminal {TIGHT\char45EXPRESSION}\  \grterminal {\char58}\  \grnonterminal {SORT}
+\\
+\\ \grnonterminal {SORT\char45COMPREHENSION} \> $::=$ \> \>    \grterminal {\{}\  \grnonterminal {ANNOTATED\char45PATTERN}\  \grterminal {\char124}\  \grnonterminal {EXPRESSION}\  \grterminal {\}}
+\\
+\\ \grnonterminal {SORT\char45QUOTIENT} \> $::=$ \> \>    \grnonterminal {CLOSED\char45SORT}\  \grterminal {\char47}\  \grnonterminal {TIGHT\char45EXPRESSION}
+\\
+\\ \grnonterminal {PARENTHESIZED\char45SORT} \> $::=$ \> \>    \grterminal {\char40}\  \grnonterminal {SORT}\  \grterminal {\char41}
+\\
+\\ \grnonterminal {PROPER\char45SORT\char45LIST} \> $::=$ \> \>    \grterminal {\char40}\  \grnonterminal {SORT}\  \grterminal {\char44}\  \grnonterminal {SORT} \bnfrepeatopen \grterminal {\char44} \grnonterminal {SORT} \bnfrepeatclose\  \grterminal {\char41}
+\\
+\\ \grnonterminal {SORT\char45ARROW} \> $::=$ \> \>    \grnonterminal {ARROW\char45SOURCE}\  \grterminal {\char45\char62}\  \grnonterminal {SORT}
+\\
+\\ \grnonterminal {ARROW\char45SOURCE} \> $::=$ \> \>   \grnonterminal {SORT\char45SUM} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SLACK\char45SORT}
+\\
+\\ \grnonterminal {DEFINITION} \> $::=$ \> \>   \grnonterminal {SORT\char45DEFINITION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {OP\char45DEFINITION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CLAIM\char45DEFINITION}
+\\
+\\ \grnonterminal {SORT\char45DEFINITION} \> $::=$ \> \>   \grterminal {sort}  \grnonterminal {QUALIFIABLE\char45SORT\char45NAME}\\  \>  \>  \>\ \ \ \ \ \ \ \   \bnfoptionalopen \grnonterminal {FORMAL\char45SORT\char45PARAMETERS} \bnfoptionalclose\\  \>  \>  \>\ \ \ \ \ \ \ \   \grnonterminal {EQUALS}  \grnonterminal {SORT}
+\\
+\\ \grnonterminal {OP\char45DEFINITION} \> $::=$ \> \>   \grterminal {def}  \bnfoptionalopen \grnonterminal {SORT\char45VARIABLE\char45BINDER} \bnfoptionalclose\\  \>  \>  \>\ \ \ \ \ \ \   \grnonterminal {QUALIFIABLE\char45OP\char45NAME}  \bnfoptionalopen \grnonterminal {FORMAL\char45PARAMETERS} \bnfoptionalclose\\  \>  \>  \>\ \ \ \ \ \ \   \bnfoptionalopen    \grterminal {\char58}\  \grnonterminal {SORT} \bnfoptionalclose\\  \>  \>  \>\ \ \ \ \ \ \   \grnonterminal {EQUALS}  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {FORMAL\char45PARAMETERS} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {CLOSED\char45PATTERN} \bnfrepeatclose
+\\
+\\ \grnonterminal {CLAIM\char45DEFINITION} \> $::=$ \> \>   \grnonterminal {CLAIM\char45KIND}  \grnonterminal {ANY\char45TEXT\char45UP\char45TO\char45EQUALS}\\  \>  \>  \>  \grterminal {is}  \grnonterminal {CLAIM}
+\\
+\\ \grnonterminal {CLAIM\char45KIND} \> $::=$ \> \>   \grterminal {axiom} 
+\\  \>  \>   \bnfalternative \>  \grterminal {theorem} 
+\\  \>  \>   \bnfalternative \>  \grterminal {conjecture}
+\\
+\\ \grnonterminal {ANY\char45TEXT\char45UP\char45TO\char45EQUALS} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {DESCRIPTION\char45ELEMENT} \bnfrepeatclose
+\\
+\\ \grnonterminal {DESCRIPTION\char45ELEMENT} \> $::=$ \> \>   \grnonterminal {NON\_KEYWORD\_NAME} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {NUMBER\_AS\_STRING} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {STRING} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {CHARACTER} 
+\\  \>  \>   \bnfalternative \>  \grterminal {true} 
+\\  \>  \>   \bnfalternative \>  \grterminal {false} 
+\\  \>  \>   \bnfalternative \>  \grterminal {fa} 
+\\  \>  \>   \bnfalternative \>  \grterminal {ex} 
+\\  \>  \>   \bnfalternative \>  \grterminal {module} 
+\\  \>  \>   \bnfalternative \>  \grterminal {spec} 
+\\  \>  \>   \bnfalternative \>  \grterminal {import} 
+\\  \>  \>   \bnfalternative \>  \grterminal {sort} 
+\\  \>  \>   \bnfalternative \>  \grterminal {def} 
+\\  \>  \>   \bnfalternative \>  \grterminal {op} 
+\\  \>  \>   \bnfalternative \>  \grterminal {end} 
+\\  \>  \>   \bnfalternative \>  \grterminal {fn} 
+\\  \>  \>   \bnfalternative \>  \grterminal {case} 
+\\  \>  \>   \bnfalternative \>  \grterminal {of} 
+\\  \>  \>   \bnfalternative \>  \grterminal {let} 
+\\  \>  \>   \bnfalternative \>  \grterminal {if} 
+\\  \>  \>   \bnfalternative \>  \grterminal {then} 
+\\  \>  \>   \bnfalternative \>  \grterminal {else} 
+\\  \>  \>   \bnfalternative \>  \grterminal {in} 
+\\  \>  \>   \bnfalternative \>  \grterminal {project} 
+\\  \>  \>   \bnfalternative \>  \grterminal {relax} 
+\\  \>  \>   \bnfalternative \>  \grterminal {restrict} 
+\\  \>  \>   \bnfalternative \>  \grterminal {quotient} 
+\\  \>  \>   \bnfalternative \>  \grterminal {choose} 
+\\  \>  \>   \bnfalternative \>  \grterminal {embed} 
+\\  \>  \>   \bnfalternative \>  \grterminal {embed\char63} 
+\\  \>  \>   \bnfalternative \>  \grterminal {select} 
+\\  \>  \>   \bnfalternative \>  \grterminal {as} 
+\\  \>  \>   \bnfalternative \>  \grterminal {infixl} 
+\\  \>  \>   \bnfalternative \>  \grterminal {infixr} 
+\\  \>  \>   \bnfalternative \>  \grterminal {axiom} 
+\\  \>  \>   \bnfalternative \>  \grterminal {theorem} 
+\\  \>  \>   \bnfalternative \>  \grterminal {conjecture} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\_} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char58\char58} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char58} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char45\char62} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char124} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char40} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char41} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char91} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char93} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\{} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\}} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char42} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char46} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char47} 
+\\  \>  \>   \bnfalternative \>  \grterminal {\char44}
+\\
+\\ \grnonterminal {NUMBER\_AS\_STRING} \> $::=$ \> \>    \grnonterminal {NUMBER}
+\\
+\\ \grnonterminal {CLAIM} \> $::=$ \> \>    \bnfoptionalopen \grnonterminal {SORT\char45QUANTIFICATION} \bnfoptionalclose\  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {SORT\char45QUANTIFICATION} \> $::=$ \> \>    \grterminal {sort}\  \grnonterminal {SORT\char45VARIABLE\char45BINDER}
+\\
+\\ \grnonterminal {END\char45SPEC} \> $::=$ \> \>   \grterminal {end} 
+\\  \>  \>   \bnfalternative \>  \grterminal {end\char45spec}
+\\
+\\ \grnonterminal {SC\char45LET} \> $::=$ \> \>    \grterminal {let}\  \grnonterminal {SC\char45DECLS}\  \grterminal {in}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45DECLS} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {SC\char45DECL} \bnfrepeatclose
+\\
+\\ \grnonterminal {SC\char45DECL} \> $::=$ \> \>    \grnonterminal {NAME}\  \grnonterminal {EQUALS}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45WHERE} \> $::=$ \> \>    \grnonterminal {SC\char45TERM}\  \grterminal {where}\  \grnonterminal {SC\char45DECLS}\  \grterminal {end}
+\\
+\\ \grnonterminal {SC\char45TRANSLATE} \> $::=$ \> \>    \grterminal {translate}\  \grnonterminal {SC\char45TERM}\  \grterminal {by}\  \grnonterminal {SC\char45TRANSLATE\char45EXPR}
+\\
+\\ \grnonterminal {SC\char45TRANSLATE\char45EXPR} \> $::=$ \> \>   \grterminal {\{}  \grnonterminal {SC\char45TRANSLATE\char45MAP} 
+\\  \>  \>  \> \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {SC\char45TRANSLATE\char45MAP} \bnfrepeatclose  \grterminal {\}}
+\\
+\\ \grnonterminal {SC\char45TRANSLATE\char45MAP} \> $::=$ \> \>   \grnonterminal {QUALIFIABLE\char45OP\char45NAME}\\  \>  \>  \>  \grterminal {\char45\char62}  \grnonterminal {QUALIFIABLE\char45OP\char45NAME}
+\\
+\\ \grnonterminal {SC\char45QUALIFY} \> $::=$ \> \>    \grnonterminal {QUALIFIER}\  \grterminal {qualifying}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45DIAG} \> $::=$ \> \>    \grterminal {diag}\  \grterminal {\{}\  \bnfrepeatopen  \grnonterminal {SC\char45DIAG\char45ELEM} \bnfrepeatclose\  \grterminal {\}}
+\\
+\\ \grnonterminal {SC\char45DIAG\char45ELEM} \> $::=$ \> \>   \grnonterminal {SC\char45DIAG\char45NODE} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45DIAG\char45EDGE}
+\\
+\\ \grnonterminal {SC\char45DIAG\char45NODE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char124\char45\char62}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45DIAG\char45EDGE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char58}\  \grnonterminal {NAME}\  \grterminal {\char45\char62}\  \grnonterminal {NAME}\  \grterminal {\char124\char45\char62}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45SPEC\char45MORPH} \> $::=$ \> \>   \grterminal {morph}  \grterminal {\{}  \bnfrepeatopen  \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \bnfrepeatclose  \grterminal {\}}\\  \>  \>  \>\ \ \ \ \ \ \ \ \   \grterminal {\char58}  \grnonterminal {SC\char45TERM}  \grterminal {\char45\char62}  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \> $::=$ \> \>    \grnonterminal {QUALIFIABLE\char45NAME}\  \grterminal {\char124\char45\char62}\  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {QUALIFIABLE\char45NAME} \> $::=$ \> \>   \grnonterminal {UNQUALIFIED\char45NAME} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {QUALIFIED\char45NAME}
+\\
+\\ \grnonterminal {UNQUALIFIED\char45NAME} \> $::=$ \> \>    \grnonterminal {NAME}
+\\
+\\ \grnonterminal {QUALIFIED\char45NAME} \> $::=$ \> \>    \grnonterminal {QUALIFIER}\  \grterminal {\char46}\  \grnonterminal {NAME}
+\\
+\\ \grnonterminal {SC\char45HIDE} \> $::=$ \> \>    \grterminal {hide}\  \grnonterminal {SC\char45NAME\char45EXPR}\  \grterminal {in}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45NAME\char45EXPR} \> $::=$ \> \>   \grterminal {\{}  \grnonterminal {QUALIFIABLE\char45NAME} 
+\\  \>  \>  \> \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {QUALIFIABLE\char45NAME} \bnfrepeatclose  \grterminal {\}}
+\\
+\\ \grnonterminal {SC\char45EXPORT} \> $::=$ \> \>    \grterminal {export}\  \grnonterminal {SC\char45NAME\char45EXPR}\  \grterminal {from}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45GENERATE} \> $::=$ \> \>    \grterminal {generate}\  \grnonterminal {STRING}\  \grnonterminal {SC\char45TERM}\  \bnfoptionalopen    \grterminal {in}\  \grnonterminal {STRING} \bnfoptionalclose
+\\
+\\ \grnonterminal {SC\char45TOPLEVEL\char45DECLS} \> $::=$ \> \>    \grnonterminal {SC\char45DECLS}
+\end{tabbing}
+}
