@@ -124,17 +124,6 @@ information on how to send the mail."
 ;;;"
 ;;;	  ipc-version fi::required-ipc-version))))
 
-(defconst specware-interaction-menu 
-    '("Specware"
-      ["Find Definition" sw:meta-point t]
-      ["Find Next Definition" sw:continue-meta-point
-       *pending-specware-meta-point-results*]
-      ["Switch to Previous File" sw:switch-to-lisp t]
-      ["Search for Previous Input" fi:re-search-backward-input t]
-      ["Exit Specware" sw:exit-lisp (inferior-lisp-running-p)]
-      "-----"
-      ["About Specware" about-specware t]))
-
 ;;; Make listener commands bound to same keys as comint
 (defun add-specware-listener-key-bindings (m)
   (define-key m "\en" 'fi:push-input)
@@ -170,5 +159,3 @@ Beginning of line; skip prompt." t nil)
 	 fi:lisp-listener-mode-map)
     (cleanup-fi:lisp-listener-mode)
   (add-hook 'fi:lisp-listener-mode-hook 'cleanup-fi:lisp-listener-mode))
-
-(pushnew ".fasl" completion-ignored-extensions)

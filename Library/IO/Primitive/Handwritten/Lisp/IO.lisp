@@ -27,6 +27,7 @@
   (convert-windows-filename (namestring (specware::current-directory))))
 
 (defun convert-windows-filename (filestr)
+  (declare (simple-string filestr))
   (let ((strip-c-colon-nm
 	 (if (string-equal "c:" (subseq filestr 0 2))  ; Ignore case of c in =
 	     (subseq filestr 2 (length filestr))

@@ -1,5 +1,6 @@
-(defpackage :HASHTABLE)
-(in-package :HASHTABLE)
+;;;Changed from :HASHTABLE for compatibility with cmulisp
+(defpackage :HASHTABLE-SPEC)
+(in-package :HASHTABLE-SPEC)
 
 (defun initialize (test size) 
   (let ((test (car test)))

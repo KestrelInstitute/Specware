@@ -3,6 +3,10 @@
 
 #+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
+#+cmu
+(setq ext:*gc-verbose* nil)
+#+cmu
+(setq extensions:*bytes-consed-between-gcs* 10000000)
 
 ;;; (defvar Specware4 #+allegro(sys:getenv "SPECWARE4")
 ;;;                  #+mcl(ccl::getenv "SPECWARE4")

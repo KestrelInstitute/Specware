@@ -1,6 +1,10 @@
 (defvar lisp-emacs-interface-type 'franz)
 (defvar sw:common-lisp-buffer-name "*specware*")
 
+(pushnew ".fasl" completion-ignored-extensions)
+(pushnew ".x86f" completion-ignored-extensions)	; cmulisp
+(pushnew ".dfsl" completion-ignored-extensions)	; mcl
+
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
@@ -22,6 +26,7 @@
 		    common-lisp-image-arguments
 		    common-lisp-host
 		    common-lisp-image-file))
+  (defvar *specware-lisp* 'allegro)
   (define-function 'sw:exit-lisp 'fi:exit-lisp)
   (define-function 'sw:switch-to-lisp 'fi:toggle-to-lisp)
   (define-function 'extract-sexp 'fi:extract-list)
@@ -42,6 +47,7 @@
     (load "ilisp/ilisp"))
   (setq allegro-program (getenv "LISP_EXECUTABLE"))
   (setq expand-symlinks-rfs-exists t)	; ?
+  (defvar *specware-lisp* 'cmulisp)
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
 			 &optional
@@ -50,13 +56,30 @@
 			 common-lisp-host
 			 common-lisp-image-file)
     (setq sw:common-lisp-buffer-name common-lisp-buffer-name)
-    (cmulisp common-lisp-buffer-name
+    ;; cmulisp adds the *'s back
+    (cmulisp (subseq common-lisp-buffer-name
+		     1 (- (length common-lisp-buffer-name) 1))
+	     (if common-lisp-image-file
+		 (concat common-lisp-image-name " -core " common-lisp-image-file)
+	       common-lisp-image-name)
 ;	     (concat common-lisp-image-name " "
 ;                     (if common-lisp-image-arguments
 ;                         common-lisp-image-arguments "")
 ;                     (if common-lisp-image-file
 ;                         (concat " -I " common-lisp-image-file) ""))
-	     ))
+	     )
+    (install-bridge-for-emacsEval))
+  ;; Handling emacs-eval emacsEval  (could be more robust!)
+  (defun emacs-eval-handler (process output)
+    (when output
+     (eval (car (read-from-string output)))))
+
+  (defun install-bridge-for-emacsEval ()
+    (require 'bridge)
+    (install-bridge)
+    (setq bridge-source-insert nil)
+    (setq bridge-handlers '(("(" . emacs-eval-handler))))
+
   (defun extract-sexp ()
     "Delete the S-expression containing the S-expression that starts at point
      and replace it with the S-expression that starts at the point."
@@ -73,23 +96,51 @@
       (delete-region start (point))
       (insert mine)
       (backward-sexp)))
+
   (defun sw:exit-lisp ()
     (interactive)
-    (message "NYI")
+    (simulate-input-expression ":quit")
     )
-  (defun sw:switch-to-lisp (&optional EOB-P)
+
+  (defun sw:switch-to-lisp (&optional eob-p)
     (interactive "P")
-    (switch-to-lisp EOB-P))
+    (if (equal (buffer-name (current-buffer))
+	       *specware-buffer-name*)
+	(lisp-pop-to-buffer ilisp-last-buffer nil t)
+      (progn (setq ilisp-last-buffer (current-buffer))
+	     (lisp-pop-to-buffer *specware-buffer-name* nil t)))
+    (when eob-p
+      (goto-char (point-max))))
+
   (defun sw:eval-in-lisp (&rest args)
     (car (read-from-string (ilisp-send (apply 'format args)))))
+
   (define-function 'inferior-lisp-newline 'return-ilisp)
+
   (defun sw:find-unbalanced-parenthesis ()
     (interactive)
     (find-unbalanced-region-lisp (point-min) (point-max)))
+
   (defvar *specware-buffer-name* "*specware*")
+
   (push 'specware-mode ilisp-modes)
+
   (defun inferior-lisp-running-p ()
-    (and (buffer-live-p *specware-buffer-name*)
+    (and (buffer-live-p (get-buffer *specware-buffer-name*))
 	 (with-current-buffer *specware-buffer-name*
-	   (not (equal comint-status " :exit"))))))
+	   (not (equal comint-status " :exit")))))
+  
+  (defun add-specware-listener-key-bindings (m)
+    (define-key m "\e." 'sw:meta-point)
+    (easy-menu-define specware-interaction-buffer-menu
+		      m
+		      "Menu used in Specware buffer."
+		      specware-interaction-menu)
+    (easy-menu-add specware-interaction-buffer-menu m))
+
+  (defun specware-listener-mode-hook ()
+    (and ilisp-mode-map
+	 (add-specware-listener-key-bindings ilisp-mode-map)))
+  (add-hook 'ilisp-mode-hook 'specware-listener-mode-hook t)
+)
 

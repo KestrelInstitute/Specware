@@ -26,7 +26,7 @@ Notes:
   #+allegro
   (when lep::*connection*
     (lep::eval-in-emacs string))
-  #+Lispworks (eval string))		;Probably not right
+  #-allegro (format t "~a" string))
 
 
 (defvar *select-term-number-in-spec*)

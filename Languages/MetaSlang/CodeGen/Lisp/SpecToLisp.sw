@@ -28,13 +28,19 @@ SpecToLisp qualifying spec {
          "+","++","**","-","*",">","<","<=",">= ","\\=",
          "BOOLEAN", "INTEGER", "SHADOW", "TRACE", "WHEN",
          %% Added because of Xanalys packages, but prudent anyway
-         "SYSTEM", "IO", "BOOTSTRAP"]
+         "SYSTEM", "IO", "BOOTSTRAP",
+	 %% Added for cmulisp compatibility
+	 "HASHTABLE"]
+
+  def notReallyLispStrings =
+        ["C","D","I","M","N","P","S","V","X","Y","Z","KEY","NAME","VALUE","PATTERN"]
   
   def isLispString(id) = StringSet.member(lispStrings,id) or
   %% The above is only necessary for packages. They should be done differently in next release.
-                         Lisp.uncell(Lisp.apply(Lisp.symbol("CL","FIND-SYMBOL"),
-                                                [Lisp.string(id),
-                                                 Lisp.string("CL")]))
+                         (Lisp.uncell(Lisp.apply(Lisp.symbol("CL","FIND-SYMBOL"),
+						 [Lisp.string(id),
+						  Lisp.string("CL")]))
+			  & (~(member(id,notReallyLispStrings))))
   
   
   op  ith : fa(a) Nat * String * List(String * a) -> Nat

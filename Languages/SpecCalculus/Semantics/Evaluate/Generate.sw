@@ -66,7 +66,7 @@ Make a lisp file name for a URI.
       | _ -> {
          prefix <- removeLastElem path;
          mainName <- lastElem path;
-         fileName <- return ((uriToPath {path=prefix,hashSuffix=None})
+         fileName <- return ((uriToFullPath {path=prefix,hashSuffix=None})
                              ^ "/lisp/" ^ mainName ^ ".lisp");
          return fileName}
 \end{spec}

@@ -60,7 +60,7 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
+   for L in /usr/local/bin/cmucl; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
@@ -79,17 +79,16 @@ fi
 
 LISP_DIR=`dirname "$LISP"`
 LISP_EXECUTABLE="$LISP"
-LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4.dxl
+LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4.cmuimage
 LISP_DIRECTORY="$SPECWARE4"/
 export LISP_EXECUTABLE
 export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 
 
-xemacs -l "$LISP_DIR"/xeli/fi-site-init \
-       -l "$SPECWARE4"/Library/IO/Emacs/load \
+xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
        -geometry 180x70+180+2 \
+       -f run-specware4 &
 #       -name "Specware" \
 #       -title "Specware" \
 #       -geometry =150x60+20+20 \
-       -eval "(run-specware4)" &

@@ -156,6 +156,19 @@ accepted in lieu of prompting."
       "-----"
       ["About Specware" about-specware t])) 
 
+
+(defconst specware-interaction-menu 
+    '("Specware"
+      ["Find Definition" sw:meta-point t]
+      ["Find Next Definition" sw:continue-meta-point
+       *pending-specware-meta-point-results*]
+      ["Switch to Previous File" sw:switch-to-lisp t]
+      ["Search for Previous Input" fi:re-search-backward-input t]
+      ["Run Specware" run-specware4 (not (inferior-lisp-running-p))]
+      ["Exit Specware" sw:exit-lisp (inferior-lisp-running-p)]
+      "-----"
+      ["About Specware" about-specware t]))
+
 ;;; BINDINGS: should be common to the source and process modes...
 
 (defun install-sw-keybindings (map)

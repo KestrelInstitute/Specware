@@ -13,11 +13,15 @@
 (defvar *last-swj-args* nil)
 
 (defun sw0 (x)
-   (Specware::runSpecwareURI x))
+   (Specware::runSpecwareURI x)
+   (values))
 #+allegro(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
 (defun sw-re-init ()
-   (setq *specware-global-context* nil))
+   (setq *specware-global-context* nil)
+   (values))
+(defun sw-init ()
+   (sw-re-init))
 #+allegro(top-level:alias "sw-init" () (sw-re-init))
 
 (defun list-loaded-units ()
@@ -25,7 +29,8 @@
 #+allegro(top-level:alias ("list" :case-sensitive) () (list-loaded-units))
 
 (defun sw (x)
-   (Specware::evaluateURI_fromLisp x))
+   (Specware::evaluateURI_fromLisp x)
+   (values))
 
 #+allegro
 (top-level:alias ("sw" :case-sensitive) (&optional x)
@@ -36,7 +41,8 @@
       (format t "No previous unit evaluated~%"))))
 
 (defun show (x)
-   (Specware::evaluatePrint_fromLisp x))
+   (Specware::evaluatePrint_fromLisp x)
+   (values))
 #+allegro
 (top-level:alias ("show" :case-sensitive) (&optional x)
   (if x
@@ -49,7 +55,8 @@
 (defun swl (x &optional y)
    (Specware::evaluateLispCompile_fromLisp x
                          (if y (cons :|Some| y)
-                               '(:|None|))))
+                               '(:|None|)))
+   (values))
 #+allegro
 (top-level:alias ("swl" :case-sensitive) (&optional &rest args)
    (let ((r-args (if (not (null args))
@@ -66,7 +73,8 @@
 (defun swj (x &optional y)
    (Specware::evaluateJavaGen_fromLisp x
                          (if y (cons :|Some| y)
-                               '(:|None|))))
+                               '(:|None|)))
+   (values))
 #+allegro
 (top-level:alias ("swj" :case-sensitive) (&optional &rest args)
    (let ((r-args (if (not (null args))
@@ -87,6 +95,11 @@
 ;; When the following boolean is true, then the System.debug function will
 ;; take the user into the Lisp debugger.
 (defvar System-spec::specwareDebug? nil)
+(defun swdbg (&optional (b nil b?))
+  (if b? (princ (setq System-spec::specwareDebug?
+		      (and b (not (equal b "nil")))))
+    (princ System-spec::specwareDebug?))
+  (values))
 
 #+allegro
 (top-level:alias ("swdbg" :case-sensitive) (&optional (b nil b?))
@@ -94,11 +107,12 @@
           (princ System-spec::specwareDebug?)))
 
 (defun swpath  (&optional str)
-  (if (null str)
+  (if (or (null str) (equal str ""))
       (princ (specware::getenv "SWPATH"))
     (let ((str (string str)))
       (speccalc::checkSpecPathsExistence str)
-      (princ (specware::setenv "SWPATH" (string str))))))
+      (princ (specware::setenv "SWPATH" (string str)))))
+  (values))
 
 #+allegro
 (top-level:alias ("swpath" :case-sensitive) (&optional str)
@@ -107,3 +121,36 @@
     (let ((str (string str)))
       (speccalc::checkSpecPathsExistence str)
       (princ (setf (sys:getenv "SWPATH") (string str))))))
+
+#+cmu
+(defun cd (&optional dir)
+  (specware::change-directory (or dir (specware::getenv "HOME"))))
+
+(defun strip-extraneous (str)
+  (let ((len (length str)))
+    (if (> len 0)
+	(if (member (elt str 0) '(#\" #\space))
+	    (strip-extraneous (subseq str 1 len))
+	  (if (member (elt str (- len 1)) '(#\" #\space))
+	      (strip-extraneous (subseq str 0 (- len 1)))
+	    str))
+      str)))
+
+#+cmu
+(defun cl::commandp (form)
+  (and (symbolp form)
+       (eq (symbol-package form) *keyword-package*)))
+
+#+cmu
+(defun cl::invoke-command-interactive (command)
+  (let ((fn (intern (symbol-name command)))
+	(ch (read-char-no-hang)))
+    (if ch
+	(progn (unread-char ch)
+	       (if (fboundp fn)
+		   (funcall fn (strip-extraneous (read-line)))
+		 (progn (read-line)
+			(warn "Unknown command ~s" command))))
+      (if (fboundp fn)
+	  (funcall fn)
+	(warn "Unknown command ~s" command)))))

@@ -8,13 +8,10 @@
 
 (defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
 
-(push (concat *specware-emacs* "ilisp/")
+(push (concat *specware-emacs* "ilisp-20020831/")
       load-path)
 
-;; This sets the emacs to lisp interface to be the one supplied by franz
-;; The alternative supported is ilisp which is enabled by setting this
-;; variable to 'ilisp
-(defvar lisp-emacs-interface-type 'franz)
+(require 'ilisp)
 
 (defun sw:load-specware-emacs-file (name)
   (load (concatenate 'string *specware-emacs* name)))

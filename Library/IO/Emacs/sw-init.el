@@ -156,32 +156,50 @@
 				 "windows"
 			       (symbol-name system-type))))
 	 (slash-dir (sw::normalize-filename "/"))
-	 (world-name (concat bin-dir "/Specware4.dxl")))
+	 (world-name (concat bin-dir (if (eq *specware-lisp* 'cmulisp)
+					 "/Specware4.cmuimage"
+				       "/Specware4.dxl"))))
     (run-plain-lisp)
-    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)"
+    (sw:eval-in-lisp (format (if (eq *specware-lisp* 'cmulisp)
+				 "(setf (cdr (assoc :SWPATH ext:*environment-list*)) %S)"
+				 "(setf (sys:getenv \"SWPATH\") %S)")
 			     (concat (sw::normalize-filename root-dir)
 				     (if *windows-system-p* ";" ":")
 				     slash-dir)))
-    (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)"
+    (sw:eval-in-lisp (format (if (eq *specware-lisp* 'cmulisp)
+				 "(setf (cdr (assoc :SPECWARE4 ext:*environment-list*)) %S)"
+			       "(setf (sys:getenv \"SPECWARE4\") %S)")
 			     (sw::normalize-filename root-dir)))
     
-    (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" dir))
+    (sw:eval-in-lisp (format (if (eq *specware-lisp* 'cmulisp)
+				 "(setf (extensions:default-directory) %S)"
+			       "(top-level::do-command :cd %S)") dir))
     (sw:eval-in-lisp "(load \"Specware4.lisp\")")
 
     (run-plain-lisp)
     (unless (inferior-lisp-running-p)
       (sleep-for 1))
-    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)"
+    (sw:eval-in-lisp (format (if (eq *specware-lisp* 'cmulisp)
+				 "(setf (cdr (assoc :SWPATH ext:*environment-list*)) %S)"
+				 "(setf (sys:getenv \"SWPATH\") %S)")
 			     (concat (sw::normalize-filename root-dir)
 				     (if *windows-system-p* ";" ":")
 				     slash-dir)))
-    (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" (sw::normalize-filename root-dir)))
-    (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" dir))
+    (sw:eval-in-lisp (format (if (eq *specware-lisp* 'cmulisp)
+				 "(setf (cdr (assoc :SPECWARE4 ext:*environment-list*)) %S)"
+			       "(setf (sys:getenv \"SPECWARE4\") %S)")
+			     (sw::normalize-filename root-dir)))
+    (sw:eval-in-lisp (format (if (eq *specware-lisp* 'cmulisp)
+				 "(setf (extensions:default-directory) %S)"
+			       "(top-level::do-command :cd %S)") dir))
     (sw:eval-in-lisp "(load \"Specware4.lisp\")")
     (when (file-exists-p world-name)
       (rename-file world-name (concat bin-dir "/Specware4-saved.dxl") t))
     (sleep-for 1)
-    (simulate-input-expression (format "(excl::dumplisp :name %S)" world-name))
+    (simulate-input-expression (format (if (eq *specware-lisp* 'cmulisp)
+					   "(ext:save-lisp %S)"
+					 "(excl::dumplisp :name %S)")
+				       world-name))
 ;;;    (simulate-input-expression
 ;;;     "(if (probe-file \"bin/specware2000-new.world\")
 ;;;	  (progn (when (probe-file \"bin/specware2000.world\")
