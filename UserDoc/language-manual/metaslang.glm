@@ -470,17 +470,17 @@ However, the following <emphasis>reserved words</emphasis> have a
 special meaning and must not be used for `names:
 <!-- !! (echo COLUMNIZE; cat reservedWords; echo ZeEnd) | abc -w meta -->
 [[
-||    as            endspec       infixr        relax
-||    axiom         ex            is            restrict
-||    case          fa            let           spec
-||    choose        false         morphism      then
-||    colimit       fn            obligations   theorem
-||    conjecture    from          of            translate
-||    def           generate      op            true
-||    diagram       if            project       type
-||    else          import        prove         where
-||    embed         in            qualifying
-||    embed?        infixl        quotient
+||    as              embed?        infixl           quotient
+||    axiom           endspec       infixr           relax
+||    Boolean         ex            is               restrict
+||    case            fa            let              spec
+||    choose          false         morphism         then
+||    colimit         fn            obligations      theorem
+||    conjecture      from          of               translate
+||    def             generate      op               true
+||    diagram         if            project          type
+||    else            import        prove            where
+||    embed           in            qualifying
 ]]
 They each count as a single `symbol, and no whitespace is
 allowed inside any reserved word.
@@ -489,16 +489,9 @@ allowed inside any reserved word.
 Likewise, the following <emphasis>reserved non-words</emphasis>
 must not be used for `names:
 [[
-||    :       ::      |       =>      ||     &&
-||    <-      ->      +->     =       ~=     <<
+||    :        ::       |        =>       ||      &&
+||    <-       ->       +->      =        ~=      <<
 ]]
-In addition, several `names -- for example [[=]] -- are
-pre-defined in built-in libraries.
-While strictly speaking not reserved, they must not be
-redefined.
-See further the <link
-linkend="libraries"><emphasis>Libraries</emphasis>
-Appendix</link>.
 </para>
 <!-- ================================================================= -->
 <para>
