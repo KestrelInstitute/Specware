@@ -18,7 +18,7 @@ To evaluate a spec we deposit the declarations in a new spec
 and then qualify the resulting spec if the spec was given a name.
 
 \begin{spec}
- def SpecCalc.evaluateSpec spec_elements = 
+ def SpecCalc.evaluateSpec spec_elements position = 
   %% TODO:  Figure out rules for adding import of Base.
   %%        For example, it should not be imported by specs that it imports.
   %%        And the user might want to suppress auto-import of it.
@@ -39,7 +39,8 @@ and then qualify the resulting spec if the spec was given a name.
     %% -------------------------------------------
     (pos_spec,TS,depURIs) <- evaluateSpecElems emptySpec spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
-    return (Spec elaborated_spec,TS,depURIs)
+    compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
+    return (Spec compressed_spec,TS,depURIs)
   }
 \end{spec}
 

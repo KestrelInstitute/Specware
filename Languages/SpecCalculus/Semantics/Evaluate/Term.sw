@@ -37,7 +37,7 @@ This is a monadic interpreter for the Spec Calculus.
 
     | URI uri -> SpecCalc.evaluateURI (positionOf term) uri
 
-    | Spec elems -> SpecCalc.evaluateSpec elems
+    | Spec elems -> SpecCalc.evaluateSpec elems pos
 
     | SpecMorph fields -> SpecCalc.evaluateSpecMorph fields
 
