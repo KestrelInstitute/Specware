@@ -1,8 +1,14 @@
 ;; This file defines general utilities that are necessary to 
 ;; connect EXTENDED-SLANG specs with lisp code.
 
+(defpackage "SPECCALC")
 (defpackage :SLANG-BUILT-IN)
 (IN-PACKAGE :SLANG-BUILT-IN)
+
+;; defvar specwareWizard? here (as opposed to def in Monad.sw) 
+;; to avoid having CMUCL treat it as a constant, in which case
+;; code under the false branch would be optimized away!
+(defvar SPECCALC::specwareWizard? nil) ; see Specware4/Languages/SpecCalculus/Semantics/Monad.sw
 
 (defparameter quotient-tag
   (list :|Quotient|))
