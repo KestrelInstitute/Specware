@@ -70,4 +70,25 @@
 (specware::copy-directory (in-lisp-dir "xeli/") (in-distribution-dir "Library/IO/Emacs/xeli/"))
 
 
+(specware::make-directory (in-distribution-dir "Examples/Accord/"))
+
+(specware::copy-directory (in-specware-dir "../Accord/Tests/Library/")
+			  (in-distribution-dir "Examples/Accord/Library/"))
+(delete-file-if-present (in-distribution-dir "Examples/Accord/Library/.cvsignore"))
+
+(specware::copy-directory (in-specware-dir "../Accord/Tests/Cipher/")
+			  (in-distribution-dir "Examples/Accord/Cipher/"))
+(delete-file-if-present (in-distribution-dir "Examples/Accord/Cipher/.cvsignore"))
+
+(specware::copy-directory (in-specware-dir "../Accord/Tests/F91/")
+			  (in-distribution-dir "Examples/Accord/F91/"))
+(delete-file-if-present (in-distribution-dir "Examples/Accord/F91/.cvsignore"))
+
+(specware::copy-directory (in-specware-dir "../Accord/Tests/GCD/")
+			  (in-distribution-dir "Examples/Accord/GCD/"))
+(delete-file-if-present (in-distribution-dir "Examples/Accord/GCD/.cvsignore"))
+
+(specware::copy-directory (in-specware-dir "../Accord/Tests/Queens/")
+			  (in-distribution-dir "Examples/Accord/Queens/"))
+(delete-file-if-present (in-distribution-dir "Examples/Accord/Queens/.cvsignore"))
 
