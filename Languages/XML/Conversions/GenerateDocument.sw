@@ -100,7 +100,6 @@ XML qualifying spec
 	      etag    = etag}
 
   def fa (X) generate_content (datum      : X,
-			       % sd         : SortDescriptor,
 			       sd_pattern : SortDescriptor,
 			       table      : SortDescriptorExpansionTable,
 			       vspacing   : Nat,
@@ -150,14 +149,12 @@ XML qualifying spec
 	        case sd_options of
 		  | [("None", _), ("Some", _)]  ->
 		    generate_content (sub_datum,
-				      % sd,
 				      expand_SortDescriptor (sd_sub_pattern, table),
 				      table,
 				      1, % vspacing,
 				      indent)
 		  | [("Some", _), ("None", _)]->
 		    generate_content (sub_datum,
-				      % sd,
 				      expand_SortDescriptor (sd_sub_pattern, table),
 				      table,
 				      1, % vspacing,
@@ -190,7 +187,6 @@ XML qualifying spec
 	       let items = Magic.magicCastToList datum in
 	       Some {items = rev (foldl (fn (item, items) ->
 					 cons (generate_Content_Item (item,
-								      % element_sd,
 								      element_sd,
 								      table,
 								      2, % vspacing,
@@ -201,7 +197,6 @@ XML qualifying spec
 		     trailer = Some (indentation_chardata (2 (* vspacing*), indent - 2))}
 	     else
 	       generate_content (datum,
-				 % sd,
 				 Base (qid, [new_element_sd]),
 				 table,
 				 vspacing,
@@ -223,7 +218,6 @@ XML qualifying spec
 	          None
 	       | _ ->
 	         generate_content (sub_datum,
-				   % sd,
 				   expand_SortDescriptor (sub_sd, table),
 				   table,
 				   vspacing,
@@ -234,11 +228,7 @@ XML qualifying spec
       | _ ->
 	indent_ustring (ustring ("?? unrecognized type  ?? "))
 
-
-
-
   def fa (X) generate_Content_Item (datum      : X,
-				    % sd         : SortDescriptor,
 				    sd_pattern : SortDescriptor,
 				    table      : SortDescriptorExpansionTable,
 				    vspacing   : Nat,
@@ -267,14 +257,12 @@ XML qualifying spec
 	        case sd_options of
 		  | [("None", _), ("Some", _)]  ->
 		    generate_Content_Item (sub_datum,
-					   % sd,
 					   expand_SortDescriptor (sd_sub_pattern, table),
 					   table,
 					   1, % vspacing,
 					   indent)
 		  | [("Some", _), ("None", _)]->
 		    generate_Content_Item (sub_datum,
-					   % sd,
 					   expand_SortDescriptor (sd_sub_pattern, table),
 					   table,
 					   1, % vspacing,
@@ -320,7 +308,6 @@ XML qualifying spec
 		  Element (Empty (make_EmptyElemTag (ustring constructor_name, [], []))))
 	       | _ ->
 		 generate_Content_Item (sub_datum,
-					% sd,
 					expand_SortDescriptor (sub_sd, table),
 					table,
 					vspacing,
