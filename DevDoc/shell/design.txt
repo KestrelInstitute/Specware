@@ -34,21 +34,21 @@ Metaslang grammar):
  dirr
  path [dirseq]
  proc [unit-term]
+ cinit
  show [unit-term]
  showx [unit-term]
+ punits [spec-term [string-literal]]
+ lpunits [spec-term [string-literal]]
+ ctext [spec-term]
+ eval [expression]
+ eval-lisp [expression]
  gen-lisp [spec-term [string-literal]]
  lgen-lisp [spec-term [string-literal]]
  gen-c [spec-term [filename]]
  make [spec-term]
  gen-java [spec-term [filename]]
- punits [spec-term [string-literal]]
- lpunits [spec-term [string-literal]]
- cinit
- ctext [spec-term]
- eval [expression]
- eval-lisp [expression]
- cf [filename]
  ld [filename]
+ cf [filename]
  cl [filename]
  exit
 
@@ -87,11 +87,15 @@ e.g. `c:\programs\specware\libs;d:\home\sw' for Windows and
 * proc [unit-term]
 (can be abbreviated to p)
 
-Without an argument, processes the last processed unit term. If the last processed
-unit is absent, an error occurs.
+Without an argument, processes the last processed unit term. If the last
+processed unit is absent, an error occurs.
 
-With an argument, sets the last processed unit term to the argument and processes
-it.
+With an argument, sets the last processed unit term to the argument and
+processes it.
+
+* cinit
+
+Clears the Specware unit cache.
 
 * show [unit-term]
 
@@ -102,6 +106,60 @@ the last processed unit).
 * showx [unit-term]
 
 Like command `show' but import-declarations are "expanded".
+
+* punits [spec-term [string-literal]]
+
+Without arguments, generates proof unit definitions for all conjectures in the
+last processed unit, provided the last processed unit is a spec-term that is a
+unit-identifier. The generated proof unit definitions are deposited into a
+file <name>.sw in the current directory, where <name> is generated from the
+unit-identifier.
+
+With one argument (spec-term), generates proof unit definitions for all
+conjectures in the last processed unit, provided the last processed unit is a
+spec-term that is a unit-identifier. The generated proof unit definitions are
+deposited into a file <name>.sw in the current directory, where <name> is
+generated from the unit-identifier.
+
+With two arguments (spec-term and string-literal), generates proof unit
+definitions for all conjectures in spec-term and deposits the generated proof
+unit definitions into the file whose path is the string-literal. Thus, the
+string-literal should end in ".sw".
+
+NOTE: In Specware 4.1, the spec-term must be a unit-identifier;
+also proof units for proof obligations are generated, and the unit
+may be a morphism.
+
+* lpunits [spec-term [string-literal]]
+
+Like command `punits' except that it only generates proof unit definitions for
+the conjectures locally present in the spec-term (e.g. not from imported
+specs).
+
+NOTE: See NOTE at punits
+
+* ctext [spec-term]
+
+Without an argument, displays the current context.
+
+With an argument, sets the current context to the argument.
+
+* eval [expression]
+(can be abbreviated to e)
+
+Without an argument, evaluates the last evaluated expression within the
+current context and displays the result. If the last evaluated expression is
+absent, an error occurs.
+
+With an argument, sets the last evaluated expression to the argument,
+evaluates it within the current context, and displays the result.
+
+Evaluation takes place via the Metaslang interpreter that is part of Specware.
+
+* eval-lisp [expression]
+
+Like command `eval', except that the expression is compiled to Lisp and then
+evaluated in Lisp.
 
 * gen-lisp [spec-term [string-literal]]
 
@@ -141,74 +199,25 @@ Generate C code with makefile and call make on it.
 
 Generates Java code for unit in filename. With no argument uses last processed unit.
 
-* punits [spec-term [string-literal]]
-
-Without arguments, generates proof unit definitions for all conjectures in the
-last processed unit, provided the last processed unit is a spec-term that is a
-unit-identifier. The generated proof unit definitions are deposited into a
-file <name>.sw in the current directory, where <name> is generated from the
-unit-identifier.
-
-With one argument (spec-term), generates proof unit definitions for all
-conjectures in the last processed unit, provided the last processed unit is a
-spec-term that is a unit-identifier. The generated proof unit definitions are
-deposited into a file <name>.sw in the current directory, where <name> is
-generated from the unit-identifier.
-
-With two arguments (spec-term and string-literal), generates proof unit
-definitions for all conjectures in spec-term and deposits the generated proof
-unit definitions into the file whose path is the string-literal. Thus, the
-string-literal should end in ".sw".
-
-* lpunits [spec-term [string-literal]]
-
-Like command `punits' except that it only generates proof unit definitions for
-the conjectures locally present in the spec-term (e.g. not from imported
-specs).
-
-* cinit
-
-Clears the Specware unit cache.
-
-* ctext [spec-term]
-
-Without an argument, displays the current context.
-
-With an argument, sets the current context to the argument.
-
-* eval [expression]
-(can be abbreviated to e)
-
-Without an argument, evaluates the last evaluated expression within the
-current context and displays the result. If the last evaluated expression is
-absent, an error occurs.
-
-With an argument, sets the last evaluated expression to the argument,
-evaluates it within the current context, and displays the result.
-
-Evaluation takes place via the Metaslang interpreter that is part of Specware.
-
-* eval-lisp [expression]
-
-Like command `eval', except that the expression is compiled to Lisp and then
-evaluated in Lisp.
-
-* cf [filename]
-
-Compile lisp file filename.
+NOTE: In Specware 4.1, the second argument is not a filename but a
+spec-term for a so-called "option spec".
 
 * ld [filename]
 
 Load lisp file filename.
+
+* cf [filename]
+
+Compile lisp file filename.
 
 * cl [filename]
 
 Compile and load lisp file filename.
 
 * exit
-(Aliases quit and ok)
+(Alias: quit)
 
-Terminates the shell. With the argument "l" also exits lisp.
+Terminates the shell.
 
 
 User interface
@@ -220,6 +229,8 @@ command is "sent" to Specware for processing. While and after the command is
 processed the response is displayed beneath the command, possibly on multiple
 lines. So, commands are provided by the user and processed by the system one
 at a time.
+
+NOTE.  The following is not implemented in Specware 4.1
 
 The shell includes a command history mechanism, which remembers the sequence
 of commands since the shell was started. In other words, the shell includes a
