@@ -24,7 +24,7 @@ Specware. A specification, or theory, describes a concept to
 some degree of detail. To add properties and extend
 definitions, you create new specifications that import or
 combine earlier specifications. Within a specification, you can
-reason about objects and their relationships. You declare sorts
+reason about objects and their relationships. You declare types
 (data types) and operations (ops, functions), axioms that state
 properties of operations, and theorems that follow logically
 from axioms.</para>
@@ -233,7 +233,7 @@ rather than one. Both choices are available.</para>
 <para>You combine specifications to extend the refinement
 iteratively. The goal is to create a refinement between the
 abstract specification of your problem domain and a concrete
-implementation of the problem solution in terms of sorts and
+implementation of the problem solution in terms of types and
 operations that ultimately are defined in the Specware
 libraries of mathematical and computational theories.</para>
 
@@ -244,14 +244,14 @@ this specification might map cards to natural numbers and hands
 to lists containing natural numbers.</para>
 
 <para>The Specware libraries contains constructive
-specifications for various sorts, including natural numbers and
+specifications for various types, including natural numbers and
 lists.</para>
 
 <para>To refine your abstract specification, you build a
 refinement between the abstract Hand specification and the
 List-based specification.
-When all sorts and operations are refined to concrete
-library-defined sorts and operations, the Specware system can
+When all types and operations are refined to concrete
+library-defined types and operations, the Specware system can
 generate code from the specification.</para>
 
 </section>

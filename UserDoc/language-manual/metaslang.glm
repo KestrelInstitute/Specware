@@ -3416,7 +3416,7 @@ $T$.
 <!-- ================================================================= -->
 <para>
 The value of `prefix-application $H P$ is the value returned by
-function $(H$ for the argument value $P$.
+function $(H)$ for the argument value $P$.
 </para>
 <para>
 The meaning of `infix-application $P N Q$, in which $P$ and $Q$ are
