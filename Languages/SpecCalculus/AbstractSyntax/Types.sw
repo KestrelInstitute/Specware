@@ -130,6 +130,14 @@ The third argument is an optional file name to store the result.
     | Generate (String * (Term a) * Option String)
 \end{spec}
 
+Subsitution. The first term should be spec valued and the second should
+be morphism valued. Remains to be seen what will happen if/when we
+have diagrams.
+
+\begin{spec}
+    | Subst (Term a) * (Term a)
+\end{spec}
+
 Obligations takes a spec or a a morphism and returns a spec including
 the proof obligations as conjectures.
 

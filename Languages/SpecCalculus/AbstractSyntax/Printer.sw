@@ -140,12 +140,19 @@ SpecCalc qualifying spec {
             ppString "  ",
             ppNest 2 (ppSep ppNewline (map ppDiagElem elems)),
             ppNewline,
-            ppString "end"
+            ppString "}"
           ]
       | Colimit term ->
           ppConcat [
             ppString "colim ",
             ppTerm term
+          ]
+      | Subst (specTerm,morphTerm) ->
+          ppConcat [
+            ppTerm specTerm,
+            ppString " [",
+            ppTerm morphTerm,
+            ppString "]"
           ]
 (*
       | SpecMorph (dom,cod,elems) ->
