@@ -971,9 +971,9 @@ AnnSpecPrinter qualifying spec {
 				 sorts, ops, properties} =
       %% Also suppress printing import of base specs
       let pp : ATermPrinter = context.pp in
-      let imported_sorts  = map (fn (_,spc) -> spc.sorts)        imports in
-      let imported_ops    = map (fn (_,spc) -> spc.ops)          imports in
-      let imported_props  = map (fn (_,spc) -> spc.properties)   imports in
+      let imported_sorts  = Cons (base_spec.sorts,      map (fn (_,spc) -> spc.sorts)        imports) in
+      let imported_ops    = Cons (base_spec.ops,        map (fn (_,spc) -> spc.ops)          imports) in
+      let imported_props  = Cons (base_spec.properties, map (fn (_,spc) -> spc.properties)   imports) in
       let def imported_sort? (qualifier, id) =
   	    exists (fn sorts -> case findAQualifierMap (sorts, qualifier, id) of 
 				  | Some _ -> true 
