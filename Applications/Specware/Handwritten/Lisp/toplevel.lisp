@@ -285,7 +285,8 @@
 			 (format t "~%where ~A is " auxfn)
 			 (let ((fn (symbol-function auxfn)))
 			   (let ((code #+allegro (excl::func_code fn)
-				       #-allegro fn))
+				       #+cmu     (eval:interpreted-function-lambda-expression fn)
+				       #-(or allegro cmu) fn))
 			     (if (consp code)
 				 (pprint code)
 			       (format t "the compiled function ~A" fn))))
@@ -547,16 +548,24 @@
 (defun cl::invoke-command-interactive (command)
   (let ((fn (intern (symbol-name command) (find-package "CL-USER")))
 	(ch (read-char-no-hang)))
-    (if ch
-	(progn (unread-char ch)
-	       (if (fboundp fn)
-		   (funcall fn (read-line))
-		 (progn (read-line)
-			(warn "Unknown command ~s" command)
-			(values))))
+    ;; Warning: the READ used to get the command will typically eat
+    ;; the terminating whitespace char.
+    ;; In batch mode, this may be the newline char, so ch here
+    ;; gets the first character on the following line.
+    ;; (In interactive mode, ch will be NIL in such cases.)
+    ;; To avoid this problem, scripts should put spaces after :pwd, etc.
+    (when ch
+      (unread-char ch))
+    (if (or (null ch)          ; interactive, end of command
+	    (eq ch #\Newline)) ; batch, first char after whitespace is newline      
+	(if (fboundp fn)
+	    (funcall fn)
+	  (progn (warn "Unknown command ~s" command)
+		 (values)))
       (if (fboundp fn)
-	  (funcall fn)
-	(progn (warn "Unknown command ~s" command)
+	  (funcall fn (read-line))
+	(progn (read-line)
+	       (warn "Unknown command ~s" command)
 	       (values))))))
 
 #+mcl
