@@ -1,5 +1,6 @@
 (defpackage :Specware)
-(in-package :cl-user)
+(in-package :Specware)
+;(in-package :cl-user) -- *specware4*, *fasl-type*, etc. are in Specware package!
 
 (defun Specware::getenv (varname) ; duplicate of definition in load-utilities.lisp
   #+allegro   (system::getenv varname)
