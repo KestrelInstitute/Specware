@@ -6,8 +6,14 @@ Flipflop =
         fa(x) ~(flop x = x)
   endspec
 
+GiveNameToTilde = % since ~ can't appear directly in morphisms
+ spec
+     op negation : Boolean -> Boolean
+   def negation = (~)
+ endspec
+
 FlipFlopImplementation =
-  morphism Flipflop -> spec endspec {Flip +-> Boolean, flop +-> Boolean.~}
+  morphism Flipflop -> GiveNameToTilde {Flip +-> Boolean, flop +-> negation}
 
 Correct =
   prove change in obligations FlipFlopImplementation
