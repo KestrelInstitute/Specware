@@ -2,11 +2,11 @@
 XML qualifying spec
 
   import Parse_XMLDecl
-  import Parse_InternalDTD
+  import Parse_DTD
   import Parse_Element
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          Document                                                                            %%%
+  %%%          Document entity                                                                     %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
   %%  4.3.2 Well-Formed Parsed Entities:
@@ -40,7 +40,7 @@ XML qualifying spec
   %%
   %%   ==>
   %%
-  %%  [K1]  document  ::=  XMLDecl? MiscList InternalDTD? MiscList element MiscList
+  %%  [K1]  document  ::=  XMLDecl? MiscList doctypedecl? MiscList element MiscList
   %%
   %%                                                             [VC:   Root Element Type]  
   %%                                                             [KVC:  Valid DTD]  
@@ -62,34 +62,24 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K1]  document  ::=  XMLDecl? MiscList InternalDTD? MiscList element MiscList
+  %%  [K1]  document  ::=  XMLDecl? MiscList doctypedecl? MiscList element MiscList
   %% -------------------------------------------------------------------------------------------------
-
-  def parse_XML_Document (start  : UChars) : Required XML_Document =
-    { 
-     (doc, tail) <- parse_Document start;
-      return ({document = doc,
-	       dtd      = {internal = doc.dtd,
-			   external = None},
-	       entities = []}, 
-	      tail)
-      }
 
   def parse_Document (start  : UChars) : Required Document =
     {
-     (xmldecl,               tail) <- parse_XMLDecl     start;
-     (misc1,                 tail) <- parse_MiscList    tail;
-     (possible_internal_dtd, tail) <- parse_InternalDTD tail;
-     (misc2,                 tail) <- parse_MiscList    tail;
+     (xmldecl,      tail) <- parse_XMLDecl     start;
+     (misc1,        tail) <- parse_MiscList    tail;
+     (dtd,          tail) <- parse_DTD         tail;
+     (misc2,        tail) <- parse_MiscList    tail;
      %% Note that the grammar does not allow the root element to be 
      %% obtained via expansion of an entity reference.
      %% Inside the content of elements, however, entity references
      %% may expand into text that includes other elements.
-     (root_element,          tail) <- parse_Element     (tail, []);
-     (misc3,                 tail) <- parse_MiscList    tail;
+     (root_element, tail) <- parse_Element     (tail, []);
+     (misc3,        tail) <- parse_MiscList    tail;
      return ({xmldecl = xmldecl,
 	      misc1   = misc1,
-	      dtd     = possible_internal_dtd,
+	      dtd     = dtd,
 	      misc2   = misc2,
 	      element = root_element,
 	      misc3   = misc3},

@@ -2,7 +2,6 @@ XML qualifying spec
 
   import Parse_Character_Strings % parse_WhiteSpace
 
-
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          DTD EntityDecl                                                                      %%%
   %%%          DTD NotationDecl                                                                    %%%
@@ -30,7 +29,23 @@ XML qualifying spec
   %%
   %%   If the NDataDecl is present, this is a general unparsed entity; otherwise it is a parsed entity.
   %%
+  %%   4.3.2 Well-Formed Parsed Entities:
+  %%
+  %%  "An external general parsed entity is well-formed if it matches the production labeled 
+  %%   'extParsedEnt'."
+  %%
+  %%  "An internal general parsed entity is well-formed if its replacement text matches the 
+  %%   production labeled content."
+  %%
+  %%  "A consequence of well-formedness in [general] entities is that the logical and physical 
+  %%   structures in an XML document are properly nested; no start-tag, end-tag, empty-element 
+  %%   tag, element, comment, processing instruction, character reference, or entity reference 
+  %%   can begin in one [general] entity and end in another."  Kestrel note: [general] added, 
+  %%   since sentence would be false for parameter entities, as one can have a start tag in
+  %%   in one parameter entity and the matching end tag in antoher.
+  %%
   %%   [74]  PEDef          ::=  EntityValue | ExternalID
+  %%                                                             [VC:  Proper Declaration/PE Nesting] 
   %%
   %%   [76]  NDataDecl      ::=  S 'NDATA' S Name 
   %%                                                             [VC: Notation Declared]
@@ -41,15 +56,15 @@ XML qualifying spec
   %%
   %%  *[75]  ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
   %%    ==>
-  %%  [K25]  ExternalID     ::=  GenericID
+  %%  [K27]  ExternalID     ::=  GenericID
   %%                                                             [KWFC: External ID]
   %%
   %%  *[83]  PublicID       ::=  'PUBLIC' S PubidLiteral 
   %%    ==>
-  %%  [K26]  PublicID       ::=  GenericID
+  %%  [K28]  PublicID       ::=  GenericID
   %%                                                             [KWFC: Public ID]
   %%
-  %%  [K27]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %%  [K29]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %%
   %%  [Definition: The SystemLiteral is called the entity's system identifier. It is a URI reference 
   %%  (as defined in [IETF RFC 2396], updated by [IETF RFC 2732]), meant to be dereferenced to obtain
@@ -91,7 +106,7 @@ XML qualifying spec
   %%
   %%  *[82]  NotationDecl   ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>' 
   %%    ==>
-  %%  [K28]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
+  %%  [K30]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
   %%
   %%                                                             [VC: Unique Notation Name]
   %%
@@ -238,6 +253,22 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %%   [73]  EntityDef      ::=  EntityValue | (ExternalID NDataDecl?)
+  %%
+  %%  4.3.2 Well-Formed Parsed Entities:
+  %%
+  %%  "An external general parsed entity is well-formed if it matches the production labeled 
+  %%   'extParsedEnt'."
+  %%
+  %%  "An internal general parsed entity is well-formed if its replacement text matches the 
+  %%   production labeled content."
+  %%
+  %%  "A consequence of well-formedness in [general] entities is that the logical and physical 
+  %%   structures in an XML document are properly nested; no start-tag, end-tag, empty-element 
+  %%   tag, element, comment, processing instruction, character reference, or entity reference 
+  %%   can begin in one [general] entity and end in another."  Kestrel note: [general] added, 
+  %%   since sentence would be false for parameter entities, as one can have a start tag in
+  %%   in one parameter entity and the matching end tag in antoher.
+  %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_EntityDef (start : UChars) : Required EntityDef =
@@ -267,6 +298,22 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %%   [74]  PEDef          ::=  EntityValue | ExternalID
+  %%
+  %%  4.3.2 Well-Formed Parsed Entities:
+  %%
+  %%  "All external parameter entities are well-formed by definition."
+  %%  "All internal parameter entities are well-formed by definition."
+  %%
+  %%  but note validity constraint:
+  %%
+  %%  [VC: Proper Declaration/PE Nesting]           [74] [K11] *[29] 
+  %%
+  %%    Parameter-entity replacement text must be properly nested with markup declarations. 
+  %%
+  %%    That is to say, if either the first character or the last character of a markup declaration 
+  %%    (markupdecl above) is contained in the replacement text for a parameter-entity reference, 
+  %%    both must be contained in the same replacement text.
+  %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_PEDef (start : UChars) : Required PEDef =
@@ -316,10 +363,10 @@ XML qualifying spec
 	}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K25]  ExternalID     ::=  GenericID
+  %%  [K27]  ExternalID     ::=  GenericID
   %%                                                             [KWFC: External ID]
   %% -------------------------------------------------------------------------------------------------
-  %%  [KWFC: External ID]                           [K25] *[75] -- well_formed_external_id?
+  %%  [KWFC: External ID]                           [K27] *[75] -- well_formed_external_id?
   %%
   %%    ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
   %% -------------------------------------------------------------------------------------------------
@@ -341,10 +388,10 @@ XML qualifying spec
     }
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K26]  PublicID       ::=  GenericID
+  %%  [K28]  PublicID       ::=  GenericID
   %%                                                             [KWFC: Public ID]
   %% -------------------------------------------------------------------------------------------------
-  %%  [KWFC: Public ID]                             [K26] *[83] -- well_formed_public_id?
+  %%  [KWFC: Public ID]                             [K28] *[83] -- well_formed_public_id?
   %%
   %%    PublicID       ::=  'PUBLIC' S PubidLiteral 
   %% -------------------------------------------------------------------------------------------------
@@ -365,7 +412,7 @@ XML qualifying spec
     }
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K27]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %%  [K29]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %% -------------------------------------------------------------------------------------------------
 
   def parse_GenericID (start : UChars) : Required GenericID =
@@ -419,12 +466,12 @@ XML qualifying spec
 		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K28]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
+  %%  [K30]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_NotationDecl (start : UChars) : Required NotationDecl =
     %% 
-    %% We begin just past '<!NOTATION' in rule [K28], looking for:
+    %% We begin just past '<!NOTATION' in rule [K30], looking for:
     %% 
     %%  S Name S GenericID S? '>' 
     %% 

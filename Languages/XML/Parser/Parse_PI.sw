@@ -12,15 +12,15 @@ XML qualifying spec
   %%
   %%  *[16]  PI        ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>' 
   %%    ==>
-  %%  [K29]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
-  %%  [K30]  PIValue   ::= Char* - (Char* '?>' Char*)
+  %%  [K31]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
+  %%  [K32]  PIValue   ::= Char* - (Char* '?>' Char*)
   %%
   %%   [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
   %% 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K29]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
+  %%  [K31]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
   %% -------------------------------------------------------------------------------------------------
 
   def parse_PI (start : UChars) : Required PI =
@@ -53,8 +53,8 @@ XML qualifying spec
      }
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K29]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
-  %%  [K30]  PIValue   ::= Char* - (Char* '?>' Char*)
+  %%  [K31]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
+  %%  [K32]  PIValue   ::= Char* - (Char* '?>' Char*)
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Optional_WhiteSpace_and_PIValue (start : UChars) : Possible (WhiteSpace * PIValue) =

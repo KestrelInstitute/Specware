@@ -6,7 +6,7 @@ XML qualifying spec
   import Parse_PI
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          InternalDTD (Internal subset of Doc Type Decl)                                      %%%
+  %%%          InternalDTD                                                                         %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
   %%  [Definition: The XML document type declaration contains or points to markup declarations that 
@@ -22,7 +22,7 @@ XML qualifying spec
   %%  These declarations may be contained in whole or in part within parameter entities, as 
   %%  described in the well-formedness and validity constraints below. 
   %%
-  %%  The internal subset has the following overall form:
+  %%  The internal subset has the following physical form:
   %%
   %%  '<!DOCTYPE' S Name (S ExternalID)? S? DTD_Decls? '>' 
   %%
@@ -41,26 +41,23 @@ XML qualifying spec
   %%   space, tab, cr, lf      -- Whitespace
   %%
   %%
-  %%  For clarity, we replace the ambiguous name "doctypedecl" with "InternalDTD" :
-  %%
-  %%
-  %%  *[28]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
+  %%  *[28]  doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
   %%
   %%                                                            *[WFC: External Subset]
   %%                                                            *[VC:  Root Element Type] 
   %%
-  %% *[28a]  DeclSep      ::=  PEReference | S    
+  %% *[28a]  DeclSep        ::=  PEReference | S    
   %%                                                            *[WFC: PE Between Declarations]
   %%
   %%
-  %%  *[29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
+  %%  *[29]  markupdecl     ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
   %%
   %%                                                            *[WFC: PEs in Internal Subset]
   %%                                                            *[VC:  Proper Declaration/PE Nesting] 
   %%
   %%    ==>
   %%
-  %%  [K11]  InternalDTD  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>' 
+  %%  [K11]  doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>' 
   %%
   %%                                                             [KWFC: External Subset]
   %%                                                             [WFC:  PE Between Declarations]
@@ -68,17 +65,16 @@ XML qualifying spec
   %%                                                             [VC:  Root Element Type] 
   %%                                                             [VC:  Proper Declaration/PE Nesting] 
   %%
-  %%  [K12]  InternalDecls    ::=  '[' InternalDecl* ']' S?
-  %%  [K13]  InternalDecl     ::=  Decl
+  %%  [K12]  InternalDecls  ::=  '[' InternalDecl* ']' S?
+  %%  [K13]  InternalDecl   ::=  Decl
   %%                                                             [KWFC: Internal Decl]
   %%
-  %%  [K14]  Decl             ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect 
+  %%  [K14]  Decl           ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect 
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%  (renaming of doctypedecl)
-  %%  [K11]  InternalDTD  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>' 
+  %%  [K11]  doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>' 
   %%
   %%                                                             [KWFC: External Subset]
   %%                                                             [WFC:  PE Between Declarations]
@@ -110,23 +106,24 @@ XML qualifying spec
      | 60 :: 33 :: 68 :: 79 :: 67 :: 84 :: 89 :: 80 :: 69 :: tail ->
        %% '<!DOCTYPE'
        {
-	(w1,          tail) <- parse_WhiteSpace start;
-	(name,        tail) <- parse_Name       tail;
-	(wx,          tail) <- parse_WhiteSpace tail;
+	(w1,   tail) <- parse_WhiteSpace start;
+	(name, tail) <- parse_Name       tail;
+	(wx,   tail) <- parse_WhiteSpace tail;
 	case tail of
 
 	  | 91 :: _ ->
 	    %% '['
 	    {
-	     (decls,     tail) <- parse_InternalDecls tail;
+	     (decls, tail) <- parse_InternalDecls tail;
 	     case tail of
 
 	       | 62 :: tail ->
                  %% '>'
 	         return (Some {w1          = w1,
 			       name        = name,
+			       w2          = None,
 			       external_id = None,
-			       w2          = wx,
+			       w3          = wx,
 			       decls       = decls},
 			 tail)
 
@@ -142,8 +139,9 @@ XML qualifying spec
 			 so_we       = "pretend interpolated '>' was seen"};
 		  return (Some {w1          = w1,
 				name        = name,
+				w2          = None,
 				external_id = None,
-				w2          = wx,
+				w3          = wx,
 				decls       = decls},
 			  tail)
 		 }
@@ -162,7 +160,7 @@ XML qualifying spec
 	  | _ ->
 	    {
 	     (external_id, tail) <- parse_ExternalID tail;
-	     (w2,          tail) <- parse_WhiteSpace tail;
+	     (w3,          tail) <- parse_WhiteSpace tail;
 	     (decls,       tail) <- parse_InternalDecls  tail;
 	     case tail of
 
@@ -170,8 +168,9 @@ XML qualifying spec
                  %% '>'
 	         return (Some {w1          = w1,
 			       name        = name,
-			       external_id = Some (wx, external_id),
-			       w2          = w2,
+			       w2          = Some wx,
+			       external_id = Some external_id,
+			       w3          = w3,
 			       decls       = decls},
 			 tail)
 
@@ -187,8 +186,9 @@ XML qualifying spec
 			 so_we       = "pretend interpolated '>' was seen"};
 		  return (Some {w1          = w1,
 				name        = name,
-				external_id = Some (wx, external_id),
-				w2          = w2,
+				w2          = Some wx,
+				external_id = Some external_id,
+				w3          = w3,
 				decls       = decls},
 			  tail)
 		 }
@@ -207,9 +207,28 @@ XML qualifying spec
        
   %% -------------------------------------------------------------------------------------------------
   %%  [K12]  InternalDecls    ::=  '[' InternalDecl* ']' S?
+  %% -------------------------------------------------------------------------------------------------
+
+  %% -------------------------------------------------------------------------------------------------
   %%  [K13]  InternalDecl     ::=  Decl
   %%                                                             [KWFC: Internal Decl]
+  %% -------------------------------------------------------------------------------------------------
+  %%  [KWFC: Internal Decl]                         [K14] *[28] *[28a] *[29] -- internal_decl?
+  %%
+  %%    InternalDecl ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S 
+  %% -------------------------------------------------------------------------------------------------
+
+  %% -------------------------------------------------------------------------------------------------
   %%  [K14]  Decl             ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect 
+  %%
+  %%  InternalDecl is a proper subset of Decl.
+  %%  ExternalDecl equals Decl.
+  %%
+  %%  We unify them for parsing purposes to make handling of plausible
+  %%  errors more robust.  (In particular, we anticipate that manual 
+  %%  movement of decls from the external subset to the internal subset 
+  %%  could introduce errors, as could mistakes made by document authors
+  %%  confused by the similarity of the two subsets.)
   %% -------------------------------------------------------------------------------------------------
 
   def parse_InternalDecls (start : UChars) : Possible InternalDecls =

@@ -15,17 +15,16 @@ XML qualifying spec
   %%
   %%  *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%    ==>
-  %%  [K36]  SystemuLiteral  ::=  QuotedText
+  %%  [K38]  SystemuLiteral  ::=  QuotedText
   %%                
   %%  *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
   %%    ==>
-  %%  [K37]  PubidLiteral    ::=  QuotedText
-  %%                
+  %%  [K39]  PubidLiteral    ::=  QuotedText
   %%                                                             [KWFC: Pubid Literal]   
   %%
   %%   [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
   %%
-  %%  [K38]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%  [K40]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -209,17 +208,17 @@ XML qualifying spec
 		 so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K36]  SystemuLiteral  ::=  QuotedText
+  %%  [K38]  SystemuLiteral  ::=  QuotedText
   %% -------------------------------------------------------------------------------------------------
 
   def parse_SystemLiteral (start : UChars) : Required SystemLiteral =
     parse_QuotedText start
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K37]  PubidLiteral    ::=  QuotedText
+  %%  [K39]  PubidLiteral    ::=  QuotedText
   %%                                                             [KWFC: Pubid Literal]   
   %% -------------------------------------------------------------------------------------------------
-  %%  [KWFC: Pubid Literal]                         [K37] *[12] -- well_formed_pubid_literal?
+  %%  [KWFC: Pubid Literal]                         [K39] *[12] -- well_formed_pubid_literal?
   %%
   %%    All chars in a pubid literal are PubidChar's :
   %%    PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
@@ -259,7 +258,7 @@ XML qualifying spec
 	 }}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K38]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%  [K40]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_QuotedText (start : UChars) : Required QuotedText =

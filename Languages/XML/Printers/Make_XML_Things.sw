@@ -12,7 +12,7 @@ XML qualifying spec
 
   def make_Document (xmldecl : Option XMLDecl,
 		     misc1   : MiscList,
-		     dtd     : Option InternalDTD,
+		     dtd     : DocTypeDecl,
 		     misc2   : MiscList,
 		     element : Element,
 		     misc3   : MiscList)

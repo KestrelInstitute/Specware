@@ -33,14 +33,12 @@ XML qualifying spec
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%  def print_XML_Document_to_UString (document : Document) : UString =
-
   def print_Document_to_UString (document : Document) : UString =
     (case document.xmldecl of
        | Some decl -> print_XMLDecl decl
        | _ -> [])
     ^ (print_MiscList    document.misc1)   
-    ^ (print_InternalDTD document.dtd)     
+    ^ (print_DTD         document.dtd)     
     ^ (print_MiscList    document.misc2)   
     ^ (print_Element     document.element) 
     ^ (print_MiscList    document.misc3) 
@@ -163,23 +161,23 @@ XML qualifying spec
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def print_ExtSubSet {text, other} =
-    (print_TextDecl text) ^ (print_ExtSubsetDecls other)
+  def print_ExternalDTD {textdecl, decls} =
+    (print_TextDecl textdecl) ^ (print_ExternalDecls decls)
   
-  def print_TextDecl tdecl = print_ElementTag tdecl
+  def print_TextDecl textdecl = print_ElementTag textdecl
 
-  def print_ExtSubsetDecls decls = 
-    foldl (fn (decl, result) -> result ^ print_ExtSubsetDecl decl) [] decls
+  def print_ExternalDecls decls = 
+    foldl (fn (decl, result) -> result ^ print_ExternalDecl decl) [] decls
 
-  def print_ExtSubsetDecl decl = 
+  def print_ExternalDecl decl = 
     case decl of
-     % | Markup  markup       -> print_MarkupDecl  markup
+     % | Markup  markup     -> print_MarkupDecl  markup
      | Include include_sect -> print_IncludeSect include_sect
      | Ignore  ignore_sect  -> print_IgnoreSect  ignore_sect
-     % | DeclSep dsep         -> print_DeclSep     dsep
+     % | DeclSep dsep       -> print_DeclSep     dsep
 		    
-  def print_IncludeSect {w1, w2, decl} =
-    (ustring "<![") ^ w1 ^ (ustring "INCLUDE") ^ w2 ^ (ustring "[") ^ (print_ExtSubsetDecl decl) ^ (ustring "]]>")  
+  def print_IncludeSect {w1, w2, decls} =
+    (ustring "<![") ^ w1 ^ (ustring "INCLUDE") ^ w2 ^ (ustring "[") ^ (print_ExternalDecls decls) ^ (ustring "]]>")  
 
 
   def print_IgnoreSect {w1, w2, contents} =
@@ -260,35 +258,41 @@ XML qualifying spec
   %% 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def print_InternalDTD (possible_dtd : Option InternalDTD) : UString =
-    case possible_dtd of
-      | Some {w1, name, external_id, w2, decls} ->
-        (w1 
-	 ^ name 
-	 ^ (case external_id of
-	      | Some (w1, id) -> w1 ^ print_GenericID id
-	      | _ -> [])
-	 ^ w2 
-	 ^ (case decls of
-	      | Some {decls, w1} ->
-	        ((foldl (fn (decl, result) -> 
-			 result ^ (case decl of
-				     % | Decl mdecl -> print_MarkupDecl mdecl
-				   | Element    decl -> print_ElementDecl  decl
-				   | Attributes decl -> print_AttlistDecl  decl
-				   | Entity     decl -> print_EntityDecl   decl
-				   | Notation   decl -> print_NotationDecl decl
-				   | PI         decl -> print_PI           decl
-				   | Comment    decl -> print_Comment      decl
-				     % | Sep  dsep  -> print_DeclSep    dsep
-				   | PEReference peref -> print_PEReference peref
-				   | WhiteSpace  white -> print_WhiteSpace  white
-				  ))
-		  []
-		  decls)
-		 ^ w1)
-	      | _ -> []))
+  def print_DTD (dtd : DocTypeDecl) : UString =
+    case dtd.internal of
+      | Some internal -> print_InternalDTD internal
       | _ -> []
+       
+  def print_InternalDTD (internal : InternalDTD) : UString =
+    let {w1, name, w2, external_id, w3, decls} = internal in
+    (w1 
+     ^ name 
+     ^ (case w2 of
+	  | Some w2 -> w2
+	  | _ -> [])
+     ^ (case external_id of
+	  | Some id -> print_GenericID id
+	  | _ -> [])
+     ^ w3 
+     ^ (case decls of
+	  | Some {decls, w1} ->
+	    ((foldl (fn (decl, result) -> 
+		     result ^ (case decl of
+				 % | Decl mdecl -> print_MarkupDecl mdecl
+			       | Element    decl -> print_ElementDecl  decl
+			       | Attributes decl -> print_AttlistDecl  decl
+			       | Entity     decl -> print_EntityDecl   decl
+			       | Notation   decl -> print_NotationDecl decl
+			       | PI         decl -> print_PI           decl
+			       | Comment    decl -> print_Comment      decl
+				 % | Sep  dsep  -> print_DeclSep    dsep
+			       | PEReference peref -> print_PEReference peref
+			       | WhiteSpace  white -> print_WhiteSpace  white
+			      ))
+	      []
+	      decls)
+	     ^ w1)
+	  | _ -> []))
 
 %%%  def print_DeclSep dsep = 
 %%%    case dsep of

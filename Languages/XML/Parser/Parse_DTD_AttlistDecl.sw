@@ -33,7 +33,7 @@ XML qualifying spec
   %%
   %%    ==>
   %%
-  %%  [K24]  AttType         ::=  'CDATA'
+  %%  [K26]  AttType         ::=  'CDATA'
   %%                            | 'ID'                           [VC: ID]
   %%                                                             [VC: One ID per Element Type]
   %%                                                             [VC: ID Attribute Default]
@@ -168,7 +168,7 @@ XML qualifying spec
 	     }}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K24]  AttType         ::=  'CDATA'
+  %%  [K26]  AttType         ::=  'CDATA'
   %%                            | 'ID'                           [VC: ID]
   %%                                                             [VC: One ID per Element Type]
   %%                                                             [VC: ID Attribute Default]

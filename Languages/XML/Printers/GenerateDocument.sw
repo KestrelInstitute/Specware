@@ -22,9 +22,13 @@ XML qualifying spec
 				table as (main_entry as (main_sort, _) :: _) : SortExpansionTable) 
     : Document =
     let Base ((qualifier, main_id), _) = main_sort in
+    let dtd = {internal = None,
+	       external = None,
+	       entities = []}
+    in
     make_Document (Some standard_XMLDecl,                     % first <?xml version="1.0"?>
 		   [],
-		   None,
+		   dtd,
 		   [WhiteSpace [UChar.newline, UChar.newline]],   
 		   generate_Element (main_id, datum, main_sort, table, 2, 0, true),
 		   [])

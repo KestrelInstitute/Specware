@@ -37,6 +37,11 @@ XML qualifying spec
   %%  *[81]  EncName       ::=  [A-Za-z] ([A-Za-z0-9._] | '-')* 
   %%                            /* Encoding name contains only Latin characters */
   %% 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  %% -------------------------------------------------------------------------------------------------
+  %%   [K3]  XMLDecl       ::=  ElementTag
+  %%                                                             [KWFC: XML Decl]
   %% -------------------------------------------------------------------------------------------------
   %%  [KWFC: XML Decl]                              [K3] *[23] *[24] *[25] *[26] *[32] *[80] *[81] -- well_formed_xml_decl?
   %%
@@ -46,15 +51,6 @@ XML qualifying spec
   %%    but having said that, the PI value for an XMLDecl (which is otherwise unstructured in a generic 
   %%    PI) is structured as an ElementTag using the syntax for attributes, so it's more convenient
   %%    to treat XMLDecl as a special case of ElementTag (as opposed to being a special case of PI).
-  %%
-  %%  [KWFC: Text Decl]                             [K4] *[77]  -- well_formed_text_decl?
-  %%
-  %%    TextDecl  ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'         
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  %% -------------------------------------------------------------------------------------------------
-  %%   [K3]  XMLDecl       ::=  ElementTag
-  %%                                                             [KWFC: XML Decl]
   %% -------------------------------------------------------------------------------------------------
 
   def parse_XMLDecl (start : UChars) : Possible XMLDecl =
@@ -189,6 +185,10 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %%   [K4]  TextDecl      ::=  ElementTag
   %%                                                             [KWFC: Text Decl]
+  %% -------------------------------------------------------------------------------------------------
+  %%  [KWFC: Text Decl]                             [K4] *[77]  -- well_formed_text_decl?
+  %%
+  %%    TextDecl  ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'         
   %% -------------------------------------------------------------------------------------------------
 
   def parse_TextDecl (start : UChars) : Possible TextDecl =

@@ -241,6 +241,7 @@ XML qualifying spec
   %%                                                             [WFC: Entity Declared]
   %%                                                             [WFC: Parsed Entity] 
   %%                                                             [WFC: No Recursion]
+  %%                                                             [VC:  Entity Declared]
   %% -------------------------------------------------------------------------------------------------
   %%  [WFC: Entity Declared]                        [68]           -- entity_declared?
   %%
@@ -306,6 +307,8 @@ XML qualifying spec
   %%  [69]  PEReference  ::=  '%' Name ';' 
   %%                                                             [WFC: In DTD]
   %%                                                             [WFC: No Recursion]
+  %%                                                             [VC:  Entity Declared]
+  %%                                                             [VC:  Proper Group/PE Nesting] (implicit)
   %% -------------------------------------------------------------------------------------------------
   %%  [WFC: In DTD]                                 [69] (really [31] [K12]) -- no_pe_reference?
   %%

@@ -23,7 +23,7 @@ XML qualifying spec
   %%
   %%  *[47]  children     ::=  (choice | seq) ('?' | '*' | '+')? 
   %%    ==>
-  %%  [K18]  children     ::=  cp
+  %%  [K20]  children     ::=  cp
   %%                                                             [KWFC: Children Decl]
   %%
   %%  The grammar is built on content particles (cps), which consist of names, choice lists of 
@@ -31,20 +31,20 @@ XML qualifying spec
   %%
   %%  *[48]  cp           ::=  (Name | choice | seq) ('?' | '*' | '+')? 
   %%    ==>
-  %%  [K19]  cp           ::=  cpbody Repeater
-  %%  [K20]  cpbody       ::=  Name | choice | seq
+  %%  [K21]  cp           ::=  cpbody Repeater
+  %%  [K22]  cpbody       ::=  Name | choice | seq
   %%
   %%  *[49]  choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
   %%    ==>
-  %%  [K21]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
+  %%  [K23]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
   %%                                                             [VC: Proper Group/PE Nesting] 
   %%
   %%  *[50]  seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
   %%    ==>
-  %%  [K22]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
+  %%  [K24]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
   %%                                                             [VC: Proper Group/PE Nesting]
   %%
-  %%  [K23]  Repeater     ::=  ('?' | '*' | '+' | '')
+  %%  [K25]  Repeater     ::=  ('?' | '*' | '+' | '')
   %%
   %%  [Definition: An element type has mixed content when elements of that type may contain 
   %%   character data, optionally interspersed with child elements.] In this case, the types of
@@ -134,10 +134,10 @@ XML qualifying spec
 	      }}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K18]  children     ::=  cp
+  %%  [K20]  children     ::=  cp
   %%                                                             [KWFC: Children Decl]
   %% -------------------------------------------------------------------------------------------------
-  %%  [KWFC: Children Decl]                         [K18] -- well_formed_children?
+  %%  [KWFC: Children Decl]                         [K20] -- well_formed_children?
   %%
   %%    The basic production for children in the contentspec of an elementdecl in the DTD 
   %%    must be a choice or seq, not a simple name.
@@ -172,7 +172,7 @@ XML qualifying spec
 		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K19]  cp           ::=  cpbody Repeater
+  %%  [K21]  cp           ::=  cpbody Repeater
   %% -------------------------------------------------------------------------------------------------
 
   def parse_CP (start : UChars) : Required CP =
@@ -185,9 +185,9 @@ XML qualifying spec
      }
      
   %% -------------------------------------------------------------------------------------------------
-  %%  [K20]  cpbody       ::=  Name | choice | seq
-  %%  [K21]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
-  %%  [K22]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
+  %%  [K22]  cpbody       ::=  Name | choice | seq
+  %%  [K23]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
+  %%  [K24]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_CPBody (start : UChars) : Required CPBody =
@@ -283,7 +283,7 @@ XML qualifying spec
 	 }
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K23]  Repeater     ::=  ('?' | '*' | '+' | '')
+  %%  [K25]  Repeater     ::=  ('?' | '*' | '+' | '')
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Repeater (start : UChars) : Required Repeater =
@@ -296,6 +296,8 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %%   [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
+  %% -------------------------------------------------------------------------------------------------
+  %%  Note: if the list is empty, it ends with ")", if non-empty, ")*"
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Mixed (start : UChars) : Possible Mixed =

@@ -27,7 +27,7 @@ XML qualifying spec
   %%  *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
   %%                                                            *[WFC: Unique Att Spec]
   %%    ==>
-  %%  [K31]  STag          ::=  ElementTag                            
+  %%  [K33]  STag          ::=  ElementTag                            
   %%                                                             [KWFC: Start Tag]
   %%                                                             [WFC:  Unique Att Spec]
   %% 
@@ -46,18 +46,18 @@ XML qualifying spec
   %%
   %%  *[42]  ETag          ::=  '</' Name S? '>'
   %%    ==>
-  %%  [K32]  ETag          ::=  ElementTag                   
+  %%  [K34]  ETag          ::=  ElementTag                   
   %%                                                             [KWFC: End Tag]
   %%
   %%  [Definition: The text between the start-tag and end-tag is called the element's content:]
   %%
   %%  Note: Given the way Kestrel uses the chardata in *[43] for indentation, it makes more sense to 
-  %%        group it as in [K31].  (See print_Element in XML_Printer.sw)
+  %%        group it as in [K35].  (See print_Element in XML_Printer.sw)
   %%
   %%  *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
   %%    ==>
-  %%  [K33]  content       ::=  content_item* CharData?
-  %%  [K34]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment )
+  %%  [K35]  content       ::=  content_item* CharData?
+  %%  [K36]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment )
   %% 
   %%
   %%  [Definition: An element with no content is said to be empty.] 
@@ -70,7 +70,7 @@ XML qualifying spec
   %%  *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
   %%                                                             [WFC: Unique Att Spec]
   %%    ==>
-  %%  [K35]  EmptyElemTag  ::=  ElementTag
+  %%  [K37]  EmptyElemTag  ::=  ElementTag
   %%                                                             [KWFC: Empty Tag]
   %%                                                             [WFC:  Unique Att Spec]
   %%
@@ -116,24 +116,24 @@ XML qualifying spec
 	}
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K31]  STag          ::=  ElementTag                            
+  %%  [K33]  STag          ::=  ElementTag                            
   %%                                                             [KWFC: Start Tag]
   %%                                                             [WFC:  Unique Att Spec]
-  %%  [K35]  EmptyElemTag  ::=  ElementTag
+  %%  [K37]  EmptyElemTag  ::=  ElementTag
   %%                                                             [KWFC: Empty Tag]
   %%                                                             [WFC:  Unique Att Spec]
   %% -------------------------------------------------------------------------------------------------
-  %%  [KWFC: Start Tag]                             [K31] *[40] -- well_formed_start_tag?
+  %%  [KWFC: Start Tag]                             [K33] *[40] -- well_formed_start_tag?
   %%
   %%    STag  ::=  '<'  Name  (S Attribute)*  S?  '>' 
   %%    where Name is not a variant of 'xml'
   %% -------------------------------------------------------------------------------------------------
-  %%  [KWFC: Empty Tag]                             [K35] *[44] -- well_formed_empty_tag?
+  %%  [KWFC: Empty Tag]                             [K37] *[44] -- well_formed_empty_tag?
   %%
   %%    EmptyElemTag  ::=  '<'  Name  (S Attribute)*  S?  '/>' 
   %%    where Name is not a variant of 'xml'
   %% -------------------------------------------------------------------------------------------------
-  %%  [WFC: Unique Att Spec]                        [K31] [K35] *[40] *[44] -- unique_attributes?
+  %%  [WFC: Unique Att Spec]                        [K33] [K37] *[40] *[44] -- unique_attributes?
   %%
   %%    No attribute name may appear more than once in the same start-tag or empty-element tag.
   %% -------------------------------------------------------------------------------------------------
@@ -162,10 +162,10 @@ XML qualifying spec
      }
 
   %% ----------------------------------------------------------------------------------------------------
-  %%  [K32]  ETag          ::=  ElementTag                   
+  %%  [K34]  ETag          ::=  ElementTag                   
   %%                                                             [KWFC: End Tag]
   %% ----------------------------------------------------------------------------------------------------
-  %%  [KWFC: End Tag]                               [K32] *[42] -- well_formed_end_tag?
+  %%  [KWFC: End Tag]                               [K34] *[42] -- well_formed_end_tag?
   %%
   %%    ETag  ::=  '</'  Name  S?  '>'
   %%    where Name is not a variant of 'xml'
@@ -218,7 +218,7 @@ XML qualifying spec
 	 }
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K33]  content       ::=  content_item* CharData?
+  %%  [K35]  content       ::=  content_item* CharData?
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Content (start : UChars, pending_open_tags : List (ElementTag)) : Required Content =
@@ -250,7 +250,7 @@ XML qualifying spec
       parse_items (start, [])
 
   %% -------------------------------------------------------------------------------------------------
-  %%  [K34]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment )
+  %%  [K36]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment )
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Content_Item (start : UChars, pending_open_tags : List (ElementTag)) : Possible Content_Item =

@@ -26,10 +26,8 @@ XML qualifying spec
   %%  [K7]  ElementName        ::=  NmToken        
   %%  [K8]  ElementAttributes  ::=  List ElementAttribute
   %%  [K9]  ElementAttribute   ::=  S NmToken S? '=' S? AttValue
-  %%
   %%                                                             [WFC: No External Entity References]
   %%                                                             [VC:  Attribute Value Type]
-  %%
   %% [K10]  ElementTagPostfix  ::=  ( '?' | '/'  | '' )
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -99,6 +97,18 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %%  [K9]  ElementAttribute   ::=  S NmToken S? '=' S? AttValue
   %%                                                             [WFC: No External Entity References]
+  %% -------------------------------------------------------------------------------------------------
+  %%  [WFC: No External Entity References]          [K9] *[41] -- no_external_enity_references?
+  %%
+  %%    Attribute values cannot contain direct or indirect entity references to external entities.
+  %%
+  %%  Note that "external entity" applies to entity definitions from both the internal and external 
+  %%  subsets of the DTD.  There are (confusingly) two orthogonal uses of "internal" vs. "external",
+  %%  one for internal/external dtd subsets and another for internal/external entities.
+  %%
+  %%  [Definition: If the entity definition is an EntityValue, the defined entity is called an 
+  %%   internal entity. ...]
+  %%  [Definition: If the entity is not internal, it is an external entity, ...]
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementAttribute (start : UChars) : Possible ElementAttribute =
