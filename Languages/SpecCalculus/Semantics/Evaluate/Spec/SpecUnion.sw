@@ -1,7 +1,7 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/SpecUnion.sl, v1.3
 
 SpecUnion qualifying spec {
- import /Languages/SpecCalculus/Semantics/Environment  % foldM    
+ import ../../Environment  % foldM    
  import /Languages/MetaSlang/Specs/StandardSpec
  import /Library/Legacy/DataStructures/ListUtilities
  import Utilities % mergeSortInfo, mergeOpInfo
