@@ -80,7 +80,7 @@ spec
   def renameInSpec s =
     let c = emptyContext () in
     let {importInfo, sorts, ops, properties} = s in
-    let ops        = mapOpMap (renameOp c) ops in
+    let ops        = mapOpInfos (renameOp c) ops in
     let properties = map (renameFormula c) properties in
     {importInfo = importInfo,
      sorts      = sorts,

@@ -837,21 +837,21 @@ def eliminateTerm context term =
 	term       = None} 
    in
      {importInfo    = spc.importInfo,
-      sorts         = mapSortMap (fn (aliases as ((Qualified(_,id))::_), tyVars, defs) ->
+      sorts         = mapSortInfos (fn (aliases as ((Qualified(_,id))::_), tyVars, defs) ->
+				    (aliases,
+				     tyVars, 
+				     map (fn (type_vars, srt) -> 
+					  (type_vars, eliminateSort (mkContext id) srt))
+				         defs))
+                                   spc.sorts,
+      ops           = mapOpInfos (fn (aliases as ((Qualified(_,id))::_), fixity, (tyVars, srt), defs)->
 				  (aliases,
-				   tyVars, 
-				   map (fn (type_vars, srt) -> 
-					(type_vars, eliminateSort (mkContext id) srt))
+				   fixity, 
+				   (tyVars, eliminateSort (mkContext id) srt),
+				   map (fn (type_vars, term) -> 
+					(type_vars, eliminateTerm (mkContext id) term))
 				       defs))
-                                 spc.sorts,
-      ops           = mapOpMap (fn (aliases as ((Qualified(_,id))::_), fixity, (tyVars, srt), defs)->
-				(aliases,
-				 fixity, 
-				 (tyVars, eliminateSort (mkContext id) srt),
-				 map (fn (type_vars, term) -> 
-				      (type_vars, eliminateTerm (mkContext id) term))
-				     defs))
-                               spc.ops,
+                                 spc.ops,
       properties    = map (fn (pt, pname as Qualified(_, id), tyvars, term) -> 
     		  	      (pt, pname, tyvars, eliminateTerm (mkContext id) term)) 
                           spc.properties

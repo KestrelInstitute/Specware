@@ -102,7 +102,7 @@ TypeChecker qualifying spec
 	else 
 	  sortInfo
     in
-    let sorts_2 = mapSortMap elaborate_sort_1 sorts_1 in
+    let sorts_2 = mapSortInfos elaborate_sort_1 sorts_1 in
     let env_2a  = setEnvSorts (env_2, sorts_2) in
 
     %% ---------- OPS   : PASS 1 ----------
@@ -127,10 +127,10 @@ TypeChecker qualifying spec
 	  opinfo
     in
     %% Do polymorphic definitions first
-    let ops_2_a = mapOpMap (elaborate_op_1 true)  ops_1   in
-    let ops_2_b = mapOpMap (elaborate_op_1 false) ops_2_a in
-    let ops_2_c = mapOpMap (elaborate_op_1 true)  ops_2_b in
-    let ops_2   = mapOpMap (elaborate_op_1 false) ops_2_c in
+    let ops_2_a = mapOpInfos (elaborate_op_1 true)  ops_1   in
+    let ops_2_b = mapOpInfos (elaborate_op_1 false) ops_2_a in
+    let ops_2_c = mapOpInfos (elaborate_op_1 true)  ops_2_b in
+    let ops_2   = mapOpInfos (elaborate_op_1 false) ops_2_c in
 
     %% ---------- PROPERTIES : PASS 1. ---------- 
     let
@@ -163,7 +163,7 @@ TypeChecker qualifying spec
 	else
 	  sortInfo
     in
-    let sorts_3 = mapSortMap elaborate_sort_2 sorts_2 in
+    let sorts_3 = mapSortInfos elaborate_sort_2 sorts_2 in
 
     %% ---------- OPS : PASS 2 ---------- 
     let
@@ -243,7 +243,7 @@ TypeChecker qualifying spec
 	else
 	  opinfo
     in
-    let ops_3 = mapOpMap elaborate_op_2 ops_2 in
+    let ops_3 = mapOpInfos elaborate_op_2 ops_2 in
 
     %% ---------- AXIOMS : PASS 2 ----------
     let 

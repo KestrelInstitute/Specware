@@ -715,8 +715,8 @@ Utilities qualifying spec
             defs)
    in
    {importInfo       = spc.importInfo,
-    sorts            = mapSortMap letRecToLetTermSortInfo spc.sorts,
-    ops              = mapOpMap   letRecToLetTermOpInfo   spc.ops,
+    sorts            = mapSortInfos letRecToLetTermSortInfo spc.sorts,
+    ops              = mapOpInfos   letRecToLetTermOpInfo   spc.ops,
     properties       = spc.properties}
 
  op  patternVars  : Pattern -> List Var
@@ -1067,7 +1067,7 @@ endspec
 %%%  op removeDefinitions  : fa(a) ASpec a -> ASpec a
 %%%  def removeDefinitions spc =
 %%%    {importInfo       = spc.importInfo,
-%%%     ops              = mapOpMap (fn (aliases, fixity, srt, _) -> 
+%%%     ops              = mapOpInfos (fn (aliases, fixity, srt, _) -> 
 %%% 				 (aliases, fixity, srt, []))
 %%%                                 spc.ops,
 %%%     sorts            = spc.sorts,
