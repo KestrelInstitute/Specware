@@ -26,6 +26,8 @@ spec
  %%                 Temporary hacks
  %% ================================================================================
 
+ sort SpecCalc.TranslateRules a = List (SpecCalc.TranslateRule a)
+
  sort PropertyMap = Properties % TODO: convert   once properties are in qualified map
  sort MorphismPropMap          % TODO: make real once properties are in qualified map
 
@@ -49,11 +51,6 @@ spec
  sort VQidSortMap   = PolyMap.Map (VQid, SortInfo)
  sort VQidOpMap     = PolyMap.Map (VQid, OpInfo)
  sort VQidPropMap   = PolyMap.Map (VQid, Property) 
- sort VQidQidMap    = PolyMap.Map (VQid, QualifiedId)
-
- % sort Aliases       = List QualifiedId
- sort QidAliasesMap = AQualifierMap Aliases
-
 
  %% ----
 
@@ -62,24 +59,12 @@ spec
 				    (Morphism -> QualifiedIdMap)               ->
 				    QuotientSet
 
- op disambiguateQuotientSet : QuotientSet -> QuotientSet 
-
-
- %% ----
-
- op makeVertexToTranslateExprMap : fa (info) SpecDiagram                                                              -> 
-                                             VQidQidMap                                                             -> 
-                                             QidAliasesMap                                                               -> 
-                			     (Spec -> List (Qualifier * Id * info))                                   -> 
-                			     (QualifiedId * QualifiedId * Aliases -> SpecCalc.TranslateRule Position) ->
-                                             PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position)
-
  %% ----
 
  %% Morphism[Sort/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
- op convertSortRules : SpecCalc.TranslateExpr Position -> MorphismSortMap  
- op convertOpRules   : SpecCalc.TranslateExpr Position -> MorphismOpMap
- op convertPropRules : SpecCalc.TranslateExpr Position -> MorphismPropMap
+ op convertSortRules : SpecCalc.TranslateRules Position -> MorphismSortMap  
+ op convertOpRules   : SpecCalc.TranslateRules Position -> MorphismOpMap
+ op convertPropRules : SpecCalc.TranslateRules Position -> MorphismPropMap
 
  %% ================================================================================
  %%                 Primary routine defined in this spec
@@ -95,7 +80,7 @@ spec
   let base_spec = getBaseSpec() in  % TODO: base spec should be an arg to specColimit, or part of monad
 
   let 
-     def non_base_sorts spc =
+     def extract_non_base_sorts spc =
        let base_sorts = base_spec.sorts in
        foldriAQualifierMap (fn (qualifier, id, info, non_base_sorts) ->
 			    case findAQualifierMap (base_sorts, qualifier, id) of
@@ -103,7 +88,7 @@ spec
 			      | _    -> non_base_sorts)
                            []    
 			   spc.sorts    
-     def non_base_ops spc =
+     def extract_non_base_ops spc =
        let base_ops = base_spec.ops in
        foldriAQualifierMap (fn (qualifier, id, info, non_base_ops) ->
 			    case findAQualifierMap (base_ops, qualifier, id) of
@@ -111,28 +96,54 @@ spec
 			      | _    -> non_base_ops)
                            []    
 			   spc.ops    
+
+     %%  def extract_non_base_props spc =
+     %%    let base_props = base_spec.props in
+     %%    foldriAQualifierMap (fn (qualifier, id, info, non_base_props) ->
+     %%  		    case findAQualifierMap (base_props, qualifier, id) of
+     %%  		      | None -> cons ((qualifier, id, info), non_base_props)
+     %%  		      | _    -> non_base_props)
+     %%                     []    
+     %%  		   spc.props    
   in
-  %% (1) Create lists of quotient sets of connected items.
-  %%     This should take about O(N log N), where N is the number of items
-  %%     in the diagram.
-  %%     The O(log N) factor is from using tree-based functional maps, so in
-  %%     principle that could be optimized to O(1) with clever refinement.
 
-  let sort_qset : QuotientSet = computeQuotientSet dg non_base_sorts sortMap in 
-  let op_qset   : QuotientSet = computeQuotientSet dg non_base_ops   opMap in 
-  %% let prop_qset : QuotientSet = computeQuotientSet dg non_base_props vqid_prop_map in 
+  %% -------------------------------------------------------------------------------------------------------------
+  %% (1) Create quotient sets of connected items : List (List (Vertex.Elem * QualifiedId))
+  %%     This should take about O(N log N), where N is the number of items in the diagram.
+  %%     The O(log N) factor is from using tree-based functional maps, so in principle 
+  %%     this could be optimized to O(1) with clever refinement.
+  %% -------------------------------------------------------------------------------------------------------------
 
+  let sort_qset : QuotientSet = computeQuotientSet dg extract_non_base_sorts sortMap in 
+  let   op_qset : QuotientSet = computeQuotientSet dg extract_non_base_ops     opMap in 
+ %let prop_qset : QuotientSet = computeQuotientSet dg extract_non_base_props propMap in 
+
+  %% debugging
+  %% let _ = showVQidQuotientSets [("sort", sort_qset), ("op", op_qset) (*, ("prop", prop_qset) *)] in 
+
+  %% -------------------------------------------------------------------------------------------------------------
   %% (2) Disambiguate names appearing in those quotient sets, by (only if necessary) 
   %%     prepending the name of the node that introduced them.
   %%     Create vqid => <disambiguated qid> for those vqid's whose 
   %%     internal qid (the one that would be used by an identity mapping)
   %%     would be ambiguous.
   %%     This should be O(N log N) as above.
+  %% -------------------------------------------------------------------------------------------------------------
 
-  let (disambiguating_sort_rules, cod_sort_alias_map) = computeDisambiguatingVQidRules sort_qset in
-  let (disambiguating_op_rules,   cod_op_alias_map)   = computeDisambiguatingVQidRules op_qset   in
-  %% let (disambiguating_prop_rules, cod_prop_alias_map) = computeDisambiguatingVQidRules prop_qset in
+  %% debugging
+  %% let _ = toScreen "----------------------------------------\nSorts:\n" in
+  let vqid_to_apex_qid_and_aliases_sort_map = computeVQidToApexQidAndAliasesMap sort_qset in
+  %% debugging
+  %% let _ = toScreen "----------------------------------------\nOps:\n" in
+  let vqid_to_apex_qid_and_aliases_op_map   = computeVQidToApexQidAndAliasesMap   op_qset in
+  %% debugging
+  %% let _ = toScreen "----------------------------------------\nProps:\n" in
+ %let vqid_to_apex_qid_and_aliases_prop_map = computeVQidToApexQidAndAliasesMap prop_qset in
 
+  %% debugging
+  %% let _ = showVQidMaps [("sort", vqid_to_apex_qid_and_aliases_sort_map), ("op", vqid_to_apex_qid_and_aliases_op_map) (*, ("prop", vqid_to_apex_qid_and_aliases_prop_map) *)] in
+
+  %% -------------------------------------------------------------------------------------------------------------
   %% (3) Construct maps Vertex => TranslateExpr, where the translate expr 
   %%     maps each item from the vertex's spec into an item in the apex spec, 
   %%     using the cannonical structures for translation morphisms:
@@ -149,48 +160,42 @@ spec
   %%
   %%     After the apex spec is created, these maps will be used later to 
   %%     construct the cocone morphisms.
+  %% -------------------------------------------------------------------------------------------------------------
 
-  let vertex_to_sm_sort_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position) =
-      makeVertexToTranslateExprMap dg 
-  			           disambiguating_sort_rules
-				   cod_sort_alias_map
-				   non_base_sorts
-				   (fn (dom_qid, cod_qid, cod_aliases) -> 
-				    let rule_ : TranslateRule_ Position = Sort (dom_qid, cod_qid, cod_aliases) in
-				    let rule  : TranslateRule  Position = (rule_, Internal "Colimit Sort") in
-				    rule)
+  let vertex_to_sm_sort_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateRules Position) =
+      makeVertexToTranslateRulesMap dg 
+                                    vqid_to_apex_qid_and_aliases_sort_map
+				    extract_non_base_sorts
+                                    makeTranslateSortRule
+
+
   in
-  let vertex_to_sm_op_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position) =
-      makeVertexToTranslateExprMap dg 
-  			           disambiguating_op_rules
-				   cod_op_alias_map
-				   non_base_ops
-				   (fn (dom_qid, cod_qid, cod_aliases) -> 
-				    let rule_ : TranslateRule_ Position = Op ((dom_qid, None), (cod_qid, None), cod_aliases) in
-				    let rule  : TranslateRule  Position = (rule_, Internal "Colimit Op") in
-				    rule)
+  let vertex_to_sm_op_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateRules Position) =
+      makeVertexToTranslateRulesMap dg 
+                                    vqid_to_apex_qid_and_aliases_op_map
+				    extract_non_base_ops
+                                    makeTranslateOpRule
   in
-  %% let vertex_to_sm_sort_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position) =
-  %%       makeVertexToTranslateExprMap dg 
-  %% 			           disambiguating_prop_rules
-  %%   				   non_base_props
-  %% 				   (fn (dom_qid, cod_qid) -> 
-  %% 				    let rule_ : TranslateRule_ Position = Property (dom_qid, cod_qid) in
-  %% 				    let rule  : TranslateRule  Position = (rule_, Internal "Colimit Prop") in
-  %% 				    rule)
-  %%   in
+
+  %% let vertex_to_sm_prop_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateRules Position) =
+  %%     makeVertexToTranslateRulesMap dg 
+  %%                                   vqid_to_apex_qid_and_aliases_prop_map
+  %%                                   extract_non_base_props
+  %%                                   makeTranslatePropRule
+  %% in 
+
   let vertex_to_sm_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position) =
       foldOverVertices (fn cocone_translations -> fn vertex ->
-			let cocone_sm_rules = (case evalPartial vertex_to_sm_sort_rules  vertex of
-						 | Some (translate_expr,_) -> translate_expr
+			let cocone_sm_rules = (case evalPartial vertex_to_sm_sort_rules vertex of
+						 | Some translate_rules -> translate_rules
 						 | _ -> [])
                                               ++			    
-                                              (case evalPartial vertex_to_sm_op_rules    vertex of
-						 | Some (translate_expr,_) -> translate_expr
+                                              (case evalPartial vertex_to_sm_op_rules   vertex of
+						 | Some translate_rules -> translate_rules
 						 | _ -> [])
 					      %%  ++			    
-					      %%  (case evalPartial vertex_to_sm_prop_rules  vertex of
-					      %%   | Some (translate_expr,_) -> translate_expr
+					      %%  (case evalPartial vertex_to_sm_prop_rules vertex of
+					      %%   | Some translate_rules -> translate_rules
 					      %%   | _ -> [])
 			in
 			let translate_expr : TranslateExpr Position = (cocone_sm_rules, Internal "Colimit") in
@@ -199,9 +204,15 @@ spec
 		      dg
   in
 
+  %% debugging
+  %% let _ = showVertexToTranslateExprMaps vertex_to_sm_rules in
+
+  %% -------------------------------------------------------------------------------------------------------------
   %% (4)  Use the translation expressions to construct as a translation morphism the
   %%      cocone morphism for each vertex, and then merge their codomain specs to
   %%      create the apex spec.
+  %% -------------------------------------------------------------------------------------------------------------
+
   let apex_spec : Spec =
       foldOverVertices (fn apex_spec -> fn vertex ->
 			let vertex_spec             = vertexLabel dg          vertex in
@@ -214,8 +225,11 @@ spec
 			  | _ -> fail "Internal error: translation inside colimit failed.")
                        base_spec % proto_apex_spec
               	       dg
- in
+  in
+
+  %% -------------------------------------------------------------------------------------------------------------
   %% (5) Use the rules plus the new apex spec to build the cocone morphisms
+  %% -------------------------------------------------------------------------------------------------------------
 
   let vertex_to_sm_map = 
       foldOverVertices (fn cc_map -> fn vertex -> 
@@ -235,11 +249,27 @@ spec
                        dg
   in
 
+  %% -------------------------------------------------------------------------------------------------------------
   %% (6) Put it all together into the final structure...
 
   makeSpecInitialCocone dg apex_spec vertex_to_sm_map
 
+ %% ====================================================================================================
 
+ def makeTranslateSortRule (dom_qid, cod_qid, cod_aliases) =
+   let rule_ : TranslateRule_ Position = Sort (dom_qid, cod_qid, cod_aliases) in
+   let rule  : TranslateRule  Position = (rule_, Internal "Colimit Sort") in
+   rule
+
+ def makeTranslateOpRule (dom_qid, cod_qid, cod_aliases) =
+   let rule_ : TranslateRule_ Position = Op ((dom_qid, None), (cod_qid, None), cod_aliases) in
+   let rule  : TranslateRule  Position = (rule_, Internal "Colimit Op") in
+   rule
+
+ %% def makeTranslatePropRule (dom_qid, cod_qid, cod_aliases) -> 
+ %%   let rule_ : TranslateRule_ Position = Prop (dom_qid, cod_qid, cod_aliases) in
+ %%   let rule  : TranslateRule  Position = (rule_, Internal "Colimit Prop") in
+ %%   rule
 
  %% ================================================================================
  %% (1) Create lists of quotient sets of connected items.
@@ -249,10 +279,10 @@ spec
  %% diagram, using MFSet.merge to produce implicit quotient sets of items that are 
  %% connected via morphisms labelling those edges.
 
- def computeQuotientSet dg              % SpecDiagram
-                        non_base_items  % Spec     -> List (Qualifier * Id * info)
-			sm_qid_map      % Morphism -> QualifiedIdMap
-  =
+ def fa (info) computeQuotientSet (dg              : SpecDiagram)
+                                  (non_base_items  : Spec -> List (Qualifier * Id * info))
+				  (sm_qid_map      : Morphism -> QualifiedIdMap)
+  : QuotientSet =				    
   %% "mfset" = "Merge/Find Set", "vqid" = "vertex, qualified id", 
   let initial_mfset_vqid_map = 
       %% VQid => {Rank = 0, Parent = None, Value = VQid}
@@ -300,7 +330,6 @@ spec
 
   extractQuotientSet final_mfset_vqid_map % List List VQid
 
-
  %% ================================================================================
  %% (2) Disambiguate names appearing in those quotient sets, by (only if necessary) 
  %%     prepending the name of the node that introduced them.
@@ -310,85 +339,93 @@ spec
  %%     This should be O(N log N) as above.
  %% ================================================================================
 
- op computeDisambiguatingVQidRules : QuotientSet -> VQidQidMap * QidAliasesMap
+ op computeVQidToApexQidAndAliasesMap : QuotientSet -> PolyMap.Map (VQid, QualifiedId * Aliases)
+ def computeVQidToApexQidAndAliasesMap qset =
 
- def computeDisambiguatingVQidRules qset =
-   let qid_to_classes = 
-       %% QualifiedId => List EquivalentClass
-       %% This lets us detect ambiguities
-       %% O(N log N)
-       foldl (fn (qclass, qid_to_classes) ->
-	      foldl (fn (vqid, qid_to_classes) ->
-                         let qid = vqid.2 in
-			 let prior_classes =
-			     case evalPartial qid_to_classes qid of
-			       | None         -> []
-			       | Some classes -> classes
-			 in
-			   %% only enter a class once, even if qid appears multiple 
-			   %% times in it, e.g. as (V1,qid) (V2,qid) ...
-			   if member (qclass, prior_classes) then
-			     qid_to_classes
-			   else
-			     update qid_to_classes qid (Cons (qclass, prior_classes)))
-		    qid_to_classes
-		    qclass)
-	     PolyMap.emptyMap 
-	     qset
-   in
-   let id_to_qualifiers : PolyMap.Map (Id, List Qualifier) =
-       %% This records all the qualifiers associated with an id, so if we
-       %%  need to requalify that id, we can see what's already in use.
-       %% O(N log N) 
-       foldl (fn (qclass, id_to_qualifiers) ->
-	      foldl (fn (vqid, id_to_qualifiers) ->
-                         let qid = vqid.2 in
-			 (*
-			 case eval qid_to_classes qid of
-			   | [_] -> 
-			     %% Usually, there will be one entry in one class
- 			     %% It might be ambiguous with two entries in one class, 
-  			     %% but that kind of ambiguity won't matter, since
-			     %% whichever qid an id resolves to, it will get the
-			     %% same item.
-			     id_to_qualifiers 
-			   | _ -> *)
-			     let Qualified (qualifier, id) = qid in
-			     let prior_qualifiers =
-			         case evalPartial id_to_qualifiers id of
-				   | None            -> []
-				   | Some qualifiers -> qualifiers
-			     in
-			     %% Enter a qualifier just once.
-			     %% Since the expected number of qualifiers is small (e.g. 2),
-			     %% don't try to be too smart here.
-			     if List.member (qualifier, prior_qualifiers) then
-			       id_to_qualifiers
-			     else
-			       update id_to_qualifiers id (Cons (qualifier, prior_qualifiers)))
-		    id_to_qualifiers
-		    qclass)
-	     PolyMap.emptyMap 
-	     qset
-   in
-   %% O(N log N) 
-   List.foldl (fn (qclass, result) ->
-	       List.foldl (fn (vqid as (vertex, vertex_qid as Qualified (qualifier, id)), 
-			       (disambiguating_rules, cod_alias_map)) ->
-			   case eval id_to_qualifiers id of
-			     | [_] -> (disambiguating_rules, % unambiguous
-				       insertAQualifierMap (cod_alias_map, qualifier, id, [vertex_qid]))
-			     | _ -> let fresh_qid as Qualified (qualifier, id) = reviseQId (vertex, qualifier, id, id_to_qualifiers) in
-			            (update disambiguating_rules vqid fresh_qid,
-                                     insertAQualifierMap (cod_alias_map, qualifier, id, [fresh_qid])))
-	                  result
-			  qclass)
-              (emptyMap           : VQidQidMap, 
-	       emptyAQualifierMap : QidAliasesMap)
+   let qid_to_class_indices = makeQidToClassIndicesMap qset in 
+   %% debugging
+   %% let _ = showQidToClassIndices qid_to_class_indices in
+
+   let id_to_qualifiers = makeIdToQualifiersMap qset in
+   %% debugging
+   %% let _ = showIdToQualifiers id_to_qualifiers in
+
+   List.foldl (fn (class, vqid_to_apex_qid_and_aliases_map) ->
+	       let (aliases, local_map) = % local to this class
+ 	           foldl (fn (vqid as (vertex, qid as Qualified (qualifier, id)), 
+			      (aliases, local_map))
+			  ->
+			  let apex_qid =
+			      case eval qid_to_class_indices qid of
+				| [_] -> qid % unique, no need to disambiguate
+				| _   -> reviseQId (vertex, qualifier, id, id_to_qualifiers)
+			  in
+			    (cons (apex_qid, aliases),
+			     update local_map vqid apex_qid))
+		         ([], emptyMap : PolyMap.Map (VQid, QualifiedId))
+		         class
+	       in 
+		 List.foldl (fn (vqid, vqid_to_apex_qid_and_aliases_map) ->
+			     update vqid_to_apex_qid_and_aliases_map 
+			            vqid 
+				    (eval local_map vqid, aliases))
+		            vqid_to_apex_qid_and_aliases_map
+		            class)
+ 	      (emptyMap : PolyMap.Map (VQid, QualifiedId * Aliases))
 	      qset
 
  %% --------------------------------------------------------------------------------
 
+ op  makeQidToClassIndicesMap : QuotientSet -> PolyMap.Map (QualifiedId, List Integer)
+ def makeQidToClassIndicesMap qset =
+   let (qid_to_class_indices, _) = 
+       %% QualifiedId => List EquivalentClass
+       %% This lets us detect ambiguities
+       %% O(N log N)
+       foldl (fn (class, (qid_to_class_indices, class_index)) ->
+	      (foldl (fn (vqid, qid_to_class_indices) ->
+		      let qid = vqid.2 in
+		      case evalPartial qid_to_class_indices qid of
+			| None ->
+		          update qid_to_class_indices qid [class_index]
+			| Some (prior_class_indices as latest_prior_index::_) ->
+			  %% only enter a class once, even if qid appears multiple 
+			  %% times in it, e.g. as (V1,qid) (V2,qid) ...
+			  if class_index = latest_prior_index then
+			    qid_to_class_indices
+			  else
+			    update qid_to_class_indices qid (Cons (class_index, prior_class_indices)))
+	             qid_to_class_indices
+		     class,
+	       class_index + 1))
+             (PolyMap.emptyMap, 0)
+	     qset
+   in
+   qid_to_class_indices
+
+ op  makeIdToQualifiersMap : QuotientSet -> PolyMap.Map (Id, List Qualifier)
+ def makeIdToQualifiersMap qset = 
+   %% This records all the qualifiers associated with an id, so if we
+   %%  need to requalify that id, we can see what's already in use.
+   %% O(N log N) 
+   foldl (fn (class, id_to_qualifiers) ->
+	  foldl (fn ((_, Qualified (qualifier, id)), id_to_qualifiers) ->
+		 case evalPartial id_to_qualifiers id of
+		   | None -> 
+		     update id_to_qualifiers id [qualifier]
+		   | Some prior_qualifiers -> 
+		     %% Enter a qualifier just once.
+		     %% Since the expected number of qualifiers is small (e.g. 2),
+		     %% don't try to be too smart here.
+		     if List.member (qualifier, prior_qualifiers) then
+		       id_to_qualifiers
+		     else
+		       update id_to_qualifiers id (Cons (qualifier, prior_qualifiers)))
+	        id_to_qualifiers
+	        class)
+         PolyMap.emptyMap 
+	 qset
+     
  % Pick a new qualifier, avoiding those given by id_to_qualifiers
  def reviseQId (vertex, qualifier, id, id_to_qualifiers) =
     let qualifiers_to_avoid = eval id_to_qualifiers id in
@@ -407,7 +444,7 @@ spec
     Qualified (revised qualifier, id)
 
  %% ================================================================================
- %% (3) Construct maps Vertex => TranslateExpr, where the translate expr 
+ %% (3) Construct maps Vertex => List (TranslateRule a), where the translate expr 
  %%     maps each item from the vertex's spec into an item in the apex spec, 
  %%     using the cannonical structures for translation morphisms:
  %%
@@ -422,32 +459,31 @@ spec
  %%     disambiguating rules provide an explicit target.
  %% ================================================================================
 
- def makeVertexToTranslateExprMap dg 
-                                  disambiguating_vqid_to_qid_rules
-                                  cod_alias_map
-				  non_base_items                   % Spec -> List (Qualifier * Id * info)
-				  make_translate_rule 
+ op makeVertexToTranslateRulesMap : fa (info) SpecDiagram                                                              -> 
+                                              PolyMap.Map(VQid, QualifiedId * Aliases)                                 -> 
+                			      (Spec -> List (Qualifier * Id * info))                                   -> 
+                			      (QualifiedId * QualifiedId * Aliases -> SpecCalc.TranslateRule Position) ->
+                                              PolyMap.Map (Vertex.Elem, SpecCalc.TranslateRules Position)
+
+ def makeVertexToTranslateRulesMap dg 
+                                   vqid_to_apex_qid_and_aliases
+				   extract_non_base_items
+				   make_translate_rule 
    = 
-   %% Build the map: vertex => TranslateExpr Position
+   %% Build the map: vertex => TranslateRules Position
    foldOverVertices (fn vertex_to_translation -> fn vertex : Vertex.Elem ->
 		     let spc = vertexLabel dg vertex in
-		     let translate_expr_ = 
+		     let translate_rules = 
 			 foldl (fn ((qualifier, id, info), translate_rules) ->
 				let vertex_qid = Qualified(qualifier,id) in
 				let vqid = (vertex, vertex_qid) in
-				let apex_qid as Qualified(apex_qualifier, apex_id) =
-				    case evalPartial disambiguating_vqid_to_qid_rules vqid of
-				       | None             -> vertex_qid
-				       | Some revised_qid -> revised_qid
-				in
-  		                let Some apex_aliases = findAQualifierMap (cod_alias_map, apex_qualifier, apex_id) in
+				let (apex_qid, apex_aliases) = eval vqid_to_apex_qid_and_aliases vqid in
 				Cons (make_translate_rule (vertex_qid, apex_qid, apex_aliases),
 				      translate_rules))
 			       []
-			       (non_base_items spc)
+			       (extract_non_base_items spc)
 		     in 
-		     let translate_expr = (translate_expr_, Internal "arrg") in
-		     update vertex_to_translation vertex translate_expr)
+		     update vertex_to_translation vertex translate_rules)
                     emptyMap
 		    dg
 
@@ -493,25 +529,163 @@ spec
  %% ================================================================================
 
  %% Morphism[Sort/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
- def convertSortRules (translate_rules, _) = 
+ def convertSortRules translate_rules = 
    foldl (fn ((Sort (dom_qid, cod_qid, aliases), _), new_sm_map) ->
 	  update new_sm_map dom_qid cod_qid)
          emptyMap
          translate_rules
 
- def convertOpRules  (translate_rules, _) = 
+ def convertOpRules translate_rules = 
    foldl (fn ((Op ((dom_qid, _), (cod_qid, _), aliases), _), new_sm_map) ->
 	  update new_sm_map dom_qid cod_qid)
          emptyMap 
          translate_rules
 
- %%% def convertPropRules (translate_rules, _) = 
+ %%% def convertPropRules translate_rules = 
  %%%   foldl (fn ((Property (dom_qid, cod_qid), _), new_sm_map) ->
  %%%	      update new_sm_map dom_qid cod_qid)
  %%%         emptyMap 
  %%%         translate_rules
 
  
+ %% ================================================================================
+ %% Misc debugging support
+ %% ================================================================================
+
+ op showVQidQuotientSets : List (String * QuotientSet) -> ()
+ def showVQidQuotientSets qsets_data =
+   (toScreen "------------------------------------------\n\n";
+    List.app (fn (qset_type, qset) ->
+	      (toScreen (qset_type ^ " quotients:\n");
+	       toScreen (showVQidQuotientSet qset)))
+             qsets_data;
+    toScreen "------------------------------------------\n\n")
+
+ op showVQidQuotientSet : QuotientSet -> String
+ def showVQidQuotientSet qset = ppFormat (ppVQidQuotientSet qset)
+
+ op ppVQidQuotientSet : QuotientSet -> Doc
+ def ppVQidQuotientSet qset =
+   let def ppClass class =
+        ppConcat [
+		  ppString "{  ",
+		  ppSep (ppString ", ") (map ppVQid class),
+		  ppString "  }"
+		 ]
+   in
+   ppConcat [ppString "\n",
+	     ppSep (ppString "\n") (map ppClass qset),
+	     ppString "\n\n"]
+
+ %% --------------------------------------------------------------------------------
+
+ op showVQidMaps : List (String * PolyMap.Map (VQid, QualifiedId * Aliases)) -> ()
+
+ def showVQidMaps map_info =
+   (toScreen "==========================================\n";
+    app (fn (map_type, vqid_map) ->
+	 (toScreen (map_type ^" rules:\n\n");
+	  showVQidToQidAliasesMap vqid_map;
+	  toScreen "\n\n"))
+        map_info;
+    toScreen "==========================================\n")
+
+ def showVQidToQidAliasesMap vqid_to_qid_and_aliases_map =
+   toScreen ("\nVQid => QualifiedId * Aliases:\n\n"                  
+	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn vqid -> fn (qid, aliases) ->
+					     cons (ppConcat [ppVQid vqid,
+							     ppString " => ",
+							     ppQid qid,
+							     ppString " * ",
+							     (ppSep (ppString ", ") (map ppQid aliases)),
+							     ppString "\n"],
+						   result))
+				            []
+					    vqid_to_qid_and_aliases_map)))
+	     ^ "------------------------------------------\n")
+
+ %% --------------------------------------------------------------------------------
+ 
+ op showVertexToTranslateExprMaps : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position) -> ()
+ def showVertexToTranslateExprMaps vertex_to_sm_rules =
+   (toScreen "==========================================\n";
+    foldMap (fn ignore -> fn vertex -> fn translate_expr ->
+	     (toScreen ("Translation for " ^ vertex ^ "\n\n");
+	      toScreen (ppFormat (ppTranslateExpr translate_expr));
+	      toScreen "\n\n"))
+            ()
+            vertex_to_sm_rules;
+    toScreen "==========================================\n")
+
+ def ppTranslateExpr (translate_rules, _) =
+  let  def ppTranslateRule (rule, _(* position *)) = 
+	       case rule of          
+		 | Sort (left_qid, right_qid, aliases) ->
+  		   ppConcat [
+			     ppQid left_qid,
+			     ppString " -> ",
+			     ppQid right_qid
+			    ] 
+		 | Op ((left_qid,_), (right_qid,_), aliases) ->
+		   ppConcat [
+			     ppQid left_qid,
+			     ppString " -> ",
+			     ppQid right_qid
+			    ] 
+		 | Ambiguous (left_qid, right_qid, aliases) ->
+		   ppConcat [
+			     ppQid left_qid,
+			     ppString " -> ",
+			     ppQid right_qid
+			    ] 
+  in
+    ppConcat [
+	      ppString "{",
+	      ppSep (ppString ", ") (map ppTranslateRule translate_rules),
+	      ppString "}"]
+
+ %% --------------------------------------------------------------------------------
+
+ op showQidToClassIndices : PolyMap.Map (QualifiedId, List Integer) -> ()
+ def showQidToClassIndices qid_to_class_indices =
+   toScreen ("\nQualifiedId => <Number of Classes>:\n\n"                  
+	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn qid -> fn class_indices ->
+					     cons (ppConcat [ppQid qid,
+							     ppString (" => " ^
+								       (Nat.toString (length class_indices))
+								       ^ " classes\n")],
+						   result))
+				            []
+					    qid_to_class_indices))))
+
+ op showIdToQualifiers : PolyMap.Map (Id, List Qualifier) -> ()
+ def showIdToQualifiers id_to_qualifiers =
+   toScreen ("\nId => Qualifiers:\n\n"                  
+	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn id -> fn qualifiers ->
+					     cons (ppConcat [ppString (id ^ " => "),
+							     (ppSep (ppString ", ") (map ppString qualifiers)),
+							     ppString "\n"],
+						   result))
+				            []
+					    id_to_qualifiers)))
+	     ^ "------------------------------------------\n")
+
+
+ op ppVQid : VQid -> Doc
+ def ppVQid (vertex, Qualified (qualifier, id)) = 
+   ppString ("[" ^ (SpecCalc.vertexName vertex) ^ "]" ^ (showQid qualifier id))
+
+ op ppQid : QualifiedId -> Doc
+ def ppQid (Qualified (qualifier, id)) = 
+   ppString (showQid qualifier id)
+
+ op showQid : Qualifier -> Id -> String
+ def showQid qualifier id =
+   if qualifier = UnQualified then
+     id
+   else
+     qualifier ^ "." ^ id
+
 endspec
    
 %%%% ================================================================================
