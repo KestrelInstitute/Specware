@@ -756,9 +756,8 @@ If we want the precedence to be optional:
   (cons (cons :|SpecMorph| (vector dom-sc-term cod-sc-term sc-spec-morph-elems))
         (make-pos l r)))
 
-(defun make-sc-spec-morph-elem (qualifiable-name expression l r)
-  (cons (cons qualifiable-name expression)
-        (make-pos l r)))
+(defun make-sc-spec-morph-elem (qualifiable-name-dom qualifiable-name-cod l r)
+  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-SHAPE

@@ -1252,7 +1252,7 @@ If we want the precedence to be optional:
   (make-sc-spec-morph 2 3 (list . 1) ':left-lc ':right-lc))
 
 (define-sw-parser-rule :SC-SPEC-MORPH-ELEM ()
-  (:tuple (1 :QUALIFIABLE-NAME) "+->" (2 :EXPRESSION))
+  (:tuple (1 :QUALIFIABLE-NAME) "+->" (2 :QUALIFIABLE-NAME))
   (make-sc-spec-morph-elem 1 2 ':left-lc ':right-lc))
 
 ;;; ========================================================================

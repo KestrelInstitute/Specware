@@ -47,8 +47,8 @@ the same names.
 		   (opMap,sortMap)) =
 	  case findAllOps(spc,n)
 	    of ((Qualified(qualifierN,idN))::_,_,_,_)::rs ->
-	       (if rs = [] then ()
-		 else fail("translate: Ambiguous source op name "^qualifier_n^"."^id_m);
+	       (if rs = [] or qualifierN = UnQualified then ()
+		 else fail("translate: Ambiguous source op name: "^id_n);
 	        (insertAQualifierMap(opMap,qualifierN,idN,
 				     Qualified(if qualifier_m = UnQualified
 					        then qualifierN
@@ -58,15 +58,14 @@ the same names.
 	     | _ ->
 	  (case findAllSorts(spc,n)
 	    of ((Qualified(qualifierN,idN))::_,_,_)::rs  ->
-	       (if rs = [] then ()
-		 else fail("translate: Ambiguous source op name "^qualifier_n^"."^id_m);
+	       (if rs = [] or qualifierN = UnQualified then ()
+		 else fail("translate: Ambiguous source sort name: "^id_n);
 		(opMap,insertAQualifierMap(sortMap,qualifierN,idN,
 					   Qualified(if qualifier_m = UnQualified
 						        then qualifierN
 						       else qualifier_m,
 						     id_m))))
-	     | _ -> System.fail ("Translate: Identifier \""^qualifier_n^"."^id_m^
-				 "\" has not been defined."))
+	     | _ -> fail ("Translate: Identifier \""^qualifier_n^"."^id_m^ "\" not found."))
     in
        List.foldr insert (emptyAQualifierMap,emptyAQualifierMap) transPairs
 
@@ -124,17 +123,15 @@ the same names.
 	    mergeSortInfo(newSortInfo, oldSortInfo, new_qualifier, new_id)))
         emptyAQualifierMap sorts
 
-    def translateSpec sp =
-     let {importInfo = _, sorts, ops, properties}
-         = mapSpec (translateOp, translateSort, translatePattern) sp
-     %%         importedSpecs    = mapImports translateSpec importedSpecs
-     in
-       {importInfo   = emptyImportInfo,	% Could change if we get smarter
-        sorts        = translateSortMap sorts,
-        ops          = translateOpMap   ops,
-        properties   = properties}
-
   in
-  translateSpec spc
+  let {importInfo = _, sorts, ops, properties}
+         = mapSpec (translateOp, translateSort, translatePattern) spc
+     %%         importedSpecs    = mapImports translateSpec importedSpecs
+  in
+    {importInfo   = emptyImportInfo,	% Could change if we get smarter
+     sorts        = translateSortMap sorts,
+     ops          = translateOpMap   ops,
+     properties   = properties}
+
 }
 \end{spec}

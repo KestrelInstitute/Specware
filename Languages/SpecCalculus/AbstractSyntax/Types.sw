@@ -203,8 +203,7 @@ The tagging in the sorts below may be excessive given the \verb+ATerm+
 is already tagged.
 
 \begin{spec}
-  sort SpecMorphElem a = (SpecMorphElem_ a) * a
-  sort SpecMorphElem_ a = QualifiedId * (ATerm a)
+  sort SpecMorphElem a = QualifiedId * QualifiedId * a
 \end{spec}
 
 The current syntax allows one to write morphisms mapping names to terms
