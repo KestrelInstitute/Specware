@@ -58,7 +58,7 @@
   (let ((output-str (with-output-to-string (str)
 		      (let ((*standard-output* str))
 			(user::sw  file-name)))))
-    (jcall (jmethod "LispProcessManager" "setProcessUnitResults") output-str)))
+    (jstatic "setProcessUnitResults" "edu.kestrel.netbeans.lisp.LispProcessManager" output-str)))
 
 
 ;(excl::chdir "planware:java-ui;")
