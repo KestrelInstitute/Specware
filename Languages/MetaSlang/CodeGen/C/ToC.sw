@@ -44,7 +44,7 @@ spec {
                  | (VarPat ((id,varSrt),_),_,trm) ->
                       addFuncDefn cSpec name [(id,sortToCType varSrt)] (sortToCType (codSort srt)) (Return (termToCExp trm))
                  | (RecordPat (fields,_),_,trm) ->
-                     let def fieldToVarDecl (id,pat) =
+                     let def fieldToVarDecl (_,pat) = % was (id,pat) but this id seems to be unused...
                        case pat of
                          | VarPat ((id,varSrt),_) -> (id, sortToCType varSrt)
                          | _ -> fail "generateCFunctions: record field not a var pat"
