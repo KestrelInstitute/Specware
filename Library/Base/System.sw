@@ -5,6 +5,7 @@ data structures use fail. Until they are fixed, we need the following.
 \begin{spec}
 System qualifying spec {
   import PrimitiveSorts
+  import List
   import Option
 
   op fail     : fa(a) String -> a
@@ -34,6 +35,13 @@ System qualifying spec {
  further details.
 *)
   op temporaryDirectory : String
+
+(*
+ The following chases symbolic links to get to the true name.
+ Interpret the args as <directory>/<name>.<type>
+*)
+
+  op trueFilename : (List String) * String * String -> (List String) * String * String
 
 (* 
  The following allows you wrap the main body you wish to execute [arg 3]
