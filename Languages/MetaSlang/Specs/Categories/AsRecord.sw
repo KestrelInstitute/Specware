@@ -169,7 +169,7 @@ SpecCat qualifying spec {
   %% Then compute the colimit sort for each quotient set and enter it for each name it has
   let apex_sort_map =
       foldl (fn (qlist as mu_node::_, sort_map) -> 
-	     let (apex_sort_names, apex_sort_info) = computeColimitSortEntry qlist in
+	     let apex_sort_info as (apex_sort_names,_,_) = computeColimitSortInfo qlist in
 	     foldl (fn (sort_name, sort_map) ->
 		    let Qualified(qualifier, id) = sort_name in
 		    insertAQualifierMap (sort_map, qualifier, id, apex_sort_info))
@@ -180,26 +180,19 @@ SpecCat qualifying spec {
   in
   apex_sort_map
 
- def computeColimitSortEntry qlist =
-  let mu_node::_ = qlist in
-  let sort_info  = mu_node.value in
-  let sort_names = chooseColimitSortNames sort_info in
-  (sort_names, sort_info)
-
- def chooseColimitSortNames sort_info = 
-   let (aliases,_,_) = sort_info in
-   let new_aliases = eliminateDuplicates aliases in   
-   new_aliases
-
- def eliminateDuplicates names =
-  case names of
-   | hd::tail -> let new_tail = eliminateDuplicates tail in
-                 if member (hd, new_tail) then 
-		   new_tail
-		 else
-		   Cons (hd, new_tail)
-   | _ -> names
-
+ def computeColimitSortInfo qlist =
+  let first_mu_node::other_mu_nodes = qlist in
+  let first_sort_info = first_mu_node.value in
+  let ((Qualified (qualifier, id))::_, _, _) = first_sort_info in
+  let apex_sort_info = foldl (fn (mu_node, apex_sort_info) ->
+			      let base_sort_info = mu_node.value in
+			      mergeSortInfo (base_sort_info, Some apex_sort_info, qualifier, id))
+                             first_sort_info
+			     other_mu_nodes
+  in
+  let (aliases,tyvars,opt_defn) = apex_sort_info in
+  %% might want to reorder aliases
+  (aliases,tyvars,opt_defn)
 
  %% --------------------------------------------------------------------------------
 
@@ -249,7 +242,7 @@ SpecCat qualifying spec {
   %% Then compute the colimit op for each quotient set and enter it for each name it has
   let apex_op_map =
       foldl (fn (qlist as mu_node::_, op_map) -> 
-	     let (apex_op_names, apex_op_info) = computeColimitOpEntry qlist in
+	     let apex_op_info as (apex_op_names,_,_,_) = computeColimitOpInfo qlist in
 	     foldl (fn (op_name, op_map) ->
 		    let Qualified(qualifier, id) = op_name in
 		    insertAQualifierMap (op_map, qualifier, id, apex_op_info))
@@ -260,16 +253,20 @@ SpecCat qualifying spec {
   in
   apex_op_map
 
- def computeColimitOpEntry qlist =
-  let mu_node::_ = qlist in
-  let op_info  = mu_node.value in
-  let op_names = chooseColimitOpNames op_info in
-  (op_names, op_info)
+ def computeColimitOpInfo qlist =
+  let first_mu_node::other_mu_nodes = qlist in
+  let first_op_info = first_mu_node.value in
+  let ((Qualified (qualifier, id))::_, _, _, _) = first_op_info in
+  let apex_op_info = foldl (fn (mu_node, apex_op_info) ->
+			    let base_op_info = mu_node.value in
+			    mergeOpInfo (base_op_info, Some apex_op_info, qualifier, id))
+                           first_op_info
+			   other_mu_nodes
+  in
+  let (aliases,fixity,sort_scheme,opt_defn) = apex_op_info in
+  %% Might want to re-order names...
+  (aliases,fixity,sort_scheme,opt_defn)
 
- def chooseColimitOpNames op_info = 
-   let (aliases,_,_,_) = op_info in
-   let new_aliases = eliminateDuplicates aliases in   
-   new_aliases
 
 
  %% --------------------------------------------------------------------------------
@@ -285,7 +282,7 @@ SpecCat qualifying spec {
                          foldriAQualifierMap (fn (qualifier, id, sort_info, morphism_sort_map) -> 			
 					      let base_qid        = Qualified (qualifier, id) in
 					      let apex_sort_info  = eval vqid_sort_map (vertex, base_qid) in
-					      let apex_qid::_     = chooseColimitSortNames apex_sort_info in
+					      let (apex_qid::_,_,_) = apex_sort_info in
 					      update morphism_sort_map base_qid apex_qid)
                                              emptyMap
 					     base_spec.sorts
@@ -294,7 +291,7 @@ SpecCat qualifying spec {
                          foldriAQualifierMap (fn (qualifier, id, op_info, morphism_op_map) -> 			
 					      let base_qid        = Qualified (qualifier, id) in
 					      let apex_op_info    = eval vqid_op_map (vertex, base_qid) in
-					      let apex_qid::_     = chooseColimitOpNames apex_op_info in
+					      let (apex_qid::_,_,_,_) = apex_op_info in
 					      update morphism_op_map base_qid apex_qid)
                                              emptyMap
                                              base_spec.ops
