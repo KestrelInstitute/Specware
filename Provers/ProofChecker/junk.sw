@@ -4,6 +4,126 @@ again. *)
 
 
 
+%%% spec JudgementPrinter (temporarily stored here):
+
+spec
+
+  (* This spec defines a very rudimentary conversion from judgements to
+  strings (for printing purposes). Of course, the conversion involves all the
+  syntactic entities defined in spec `Syntax', because judgements are made of
+  such entities.
+
+  The conversion defined here operates on primitives instantiated as strings
+  (see `import' below). In the future, it could be parameterized over
+  conversion of the primitives, and conversion of the primitives could be
+  instantiated when primitives are instantiated.
+
+  As mentioned above, the conversion defined here is rudimentary. For example,
+  type `boolean' is converted to "Boolean" and a user-defined type that
+  happens to be "Boolean" is converted to "Boolean" as well, creating
+  potential reading ambiguities. No text width is taken into account,
+  resulting in potentially very long lines. Many unnecessary parentheses are
+  generated. These and other shortcomings will be overcome in the future.
+
+  The conversion includes some simple checking, e.g. that the number of
+  constructors of a sum type matches the number of optional types. If checks
+  are not satisfied, the erroneous entity is converted to some sort of error
+  message. *)
+
+  import Syntax[PrimitivesAsStringsMorphism]
+
+  type Printer a = a -> String
+
+  op printType       : Printer Type
+  op printExpression : Printer Expression
+  op printPattern    : Print Pattern
+
+  def printType = fn
+    | boolean -> "Boolean"
+    | variable tv -> tv
+    | arrow(t1,t2) -> "(" ++ printType t1 ++ " -> " ++ printType t2 ++ ")"
+    | sum(cS,t?S) ->
+      if length cS ~= length t?S then "### MALFORMED SUM TYPE ###"
+      else 
+    | nary(tc,tS)
+    | subQuot(tc,t,e)
+
+  op printContext    : Print Context
+  op printJudgement  : Printer Judgement
+
+endspec
+
+
+
+%%% spec ProofParser (temporarily stored here):
+
+spec
+
+  import (spec import Proofs, Provability endspec)
+         [PrimitivesAsStringsMorphism]
+         [/Library/General/FiniteStructuresAsListsMorphism]
+
+
+  type Text = List Char
+
+  type Token =
+    | rule InferenceRule
+    | string String
+    | natural Nat
+    | positive PosNat
+    | openParen
+    | closeParen
+
+  type TokenizedText = List Token
+
+  op tokenize : Text -> Option TokenizedText
+
+
+endspec
+
+(*
+Proof
+Proofs
+Proof?s
+TypeName
+Operation
+AxiomName
+TypeVariable
+Variable
+Variable?
+Constructor
+Constructors
+Field
+Fields
+Position = FSeq Nat
+Nat
+FSeq Nat
+PosNat
+
+*
+Option
+FSeq
+
+Nat/PosNat
+TypeName
+Operation
+AxiomName
+TypeVariable
+Variable
+Constructor
+Field
+
+tokens:
+- rules
+- names (7)
+- (
+- )
+- 0
+- positive natural
+*)
+
+
+
 %%% parsing stuff:
 
   type ParserOp =
