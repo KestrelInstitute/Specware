@@ -2,6 +2,7 @@ package edu.kestrel.netbeans.nodes;
 
 import edu.kestrel.netbeans.editor.MetaSlangSyntax;
 import edu.kestrel.netbeans.model.MorphismElement;
+import edu.kestrel.netbeans.model.UnitID;
 import edu.kestrel.netbeans.nodes.MemberCustomizer;
 import edu.kestrel.netbeans.nodes.SourceEditSupport.ExceptionalRunnable;
 
@@ -143,7 +144,7 @@ public class MorphismCustomizer extends javax.swing.JPanel {
             return;
 
         final String newSourcePath = (String)sourceComboBox.getSelectedItem();
-        String oldSourcePath = element.getSourceURI().getPath();
+        String oldSourcePath = element.getSourceUnitID().toString();
         boolean ok = false;
         Exception x = null;
 
@@ -151,7 +152,8 @@ public class MorphismCustomizer extends javax.swing.JPanel {
             try {
                 SourceEditSupport.runAsUser(element, new ExceptionalRunnable() {
                     public void run() throws SourceException {
-                        element.getSourceURI().setPath(newSourcePath);
+                        UnitID.addInstance(newSourcePath);
+                        element.setSourceUnitID(UnitID.get(newSourcePath));
                     }
                 });
                 ok = true;
@@ -175,7 +177,7 @@ public class MorphismCustomizer extends javax.swing.JPanel {
             return;
 
         final String newTargetPath = (String)targetComboBox.getSelectedItem();
-        String oldTargetPath = element.getDestinationURI().getPath();
+        String oldTargetPath = element.getTargetUnitID().toString();
         boolean ok = false;
         Exception x = null;
 
@@ -183,7 +185,8 @@ public class MorphismCustomizer extends javax.swing.JPanel {
             try {
                 SourceEditSupport.runAsUser(element, new ExceptionalRunnable() {
                     public void run() throws SourceException {
-                        element.getDestinationURI().setPath(newTargetPath);
+                        UnitID.addInstance(newTargetPath);
+                        element.setTargetUnitID(UnitID.get(newTargetPath));
                     }
                 });
                 ok = true;
