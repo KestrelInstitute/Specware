@@ -314,6 +314,29 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
                let id = projectionIndex(sp,id,srt) in
                mkLLambda(["!x"],[],mkLApply(mkLOp "svref",[mkLVar "!x",mkLNat id]))
           )
+    | (Not, srt, _ ) ->
+      let oper = mkLOp("cl.not") in
+      (case optArgs
+         of None -> oper
+          | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
+    | (And, srt, _ ) ->
+      let oper = mkLOp("cl.and") in
+      (case optArgs
+         of None -> oper
+          | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
+    | (Or, srt, _ ) ->
+      let oper = mkLOp("cl.or") in
+      (case optArgs
+         of None -> oper
+          | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
+    | (Implies, srt, _ ) ->
+      (case optArgs
+         of None -> mkLOp ("cl.implies") % ??
+          | Some (Record([(_,x),(_,y)],_)) ->
+	    mkLApply (mkLOp("cl.or"),
+		      [mkLTerm(sp,dpn,vars,x),
+		       mkLApply(mkLOp "cl.not",
+				[mkLTerm(sp,dpn,vars,y)])]))
     | (Equals,srt,_) ->
       let oper = mkLOp(mkLEqualityOp(sp,srt)) in
       (case optArgs
