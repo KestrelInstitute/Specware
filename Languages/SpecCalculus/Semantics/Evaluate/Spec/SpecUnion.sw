@@ -19,10 +19,13 @@ SpecUnion qualifying spec {
    merged_sorts  <- sortsUnion      specs;
    merged_ops    <- opsUnion        specs;
    merged_props  <- propertiesUnion specs;
-   merged_spec   <- return {importInfo = {imports       = merged_imports,
-					  localOps      = emptyOpNames,    % merged_local_ops
-					  localSorts    = emptySortNames,
-					  localProperties = emptyPropertyNames}, % merged_local_sorts
+   merged_local_sorts <- return (foldl (fn (spc, names) -> names ++ spc.importInfo.localSorts)      [] specs);
+   merged_local_ops   <- return (foldl (fn (spc, names) -> names ++ spc.importInfo.localOps)        [] specs);
+   merged_local_props <- return (foldl (fn (spc, names) -> names ++ spc.importInfo.localProperties) [] specs);
+   merged_spec   <- return {importInfo = {imports         = merged_imports,
+					  localOps        = merged_local_ops,
+					  localSorts      = merged_local_sorts,
+					  localProperties = merged_local_props},
 			    sorts      = merged_sorts,
 			    ops        = merged_ops,
 			    properties = merged_props};
