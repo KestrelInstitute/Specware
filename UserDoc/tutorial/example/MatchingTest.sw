@@ -37,4 +37,4 @@ Test = spec
       map match2string
           (find_matches(string2message mstr, map string2word wstrs))
 
-end
+endspec
