@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:35  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:54  weilyn
  * Added support for morphism nodes.
  *
@@ -331,6 +334,11 @@ public class SourceText implements DocumentBinding {
         return b;
     }
     
+    public Binding.DiagElem bindDiagElem(DiagElemElement impl) {
+        DiagElemB b = new DiagElemB(impl, this);
+        return b;
+    }
+
     public Binding.Diagram bindDiagram(DiagramElement impl) {
         DiagramB b = new DiagramB(impl, this);
         return b;
@@ -340,7 +348,12 @@ public class SourceText implements DocumentBinding {
         ColimitB b = new ColimitB(impl, this);
         return b;
     }
-
+    
+/*    public Binding.URI bindURI(URIElement impl) {
+        URIB b = new URIB(impl, this);
+        return b;
+    }   
+*/
     public void dumpDocument() {
         System.err.println("Document dump:"); // NOI18N
         final StyledDocument doc = getEditorSupport().getDocument();
