@@ -6,7 +6,9 @@ application developed with &Specware;. Despite its small size, the
 example illustrates the general methodology to develop software with
 &Specware;. Furthermore, the description of the example includes
 concrete explanations to run the example through &Specware;, thus
-serving as a usage tutorial.</para>
+serving as a usage tutorial. The code for this example may be found
+in the <"Examples\Matching\"> folder in your installation directory
+(e.g. <"C:\Program Files\Specware\">).</para>
 
 <section>
 <title>The Problem</title>
