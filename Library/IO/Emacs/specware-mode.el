@@ -31,7 +31,7 @@
 ;;; VERSION STRING
 
 (defconst specware-mode-version-string
-  "specware-mode, Version 0.2")
+  "specware-mode, Version 1.0")
 
 (provide 'specware-mode)
 
@@ -147,12 +147,15 @@ accepted in lieu of prompting."
       ["Find Definition" sw:meta-point t]
       ["Find Next Definition" sw:continue-meta-point
        *pending-specware-meta-point-results*]
-      ["Switch to *common-lisp* " sw:switch-to-lisp t]
+      ["Switch to *specware* buffer" sw:switch-to-lisp t]
       ["Comment Out Region" (comment-region (region-beginning) (region-end)) (mark)]
       ["Uncomment Region"
        (comment-region (region-beginning) (region-end) '(4))
        (mark)]
-      ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark)])) 
+      ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark)]
+      ["Run Specware" run-specware4 (not (inferior-lisp-running-p))]
+      "-----"
+      ["About Specware" about-specware t])) 
 
 ;;; BINDINGS: should be common to the source and process modes...
 
@@ -1206,6 +1209,94 @@ If anyone has a good algorithm for this..."
 	  (error
 	   ;; save file if user types "yes":
 	   (not (y-or-n-p "Parens are not balanced.  Save file anyway? ")))))))
+
+
+(load-library "about")
+;; Modified from about.el
+(defun about-get-buffer (name)
+  (cond ((get-buffer name)
+	 (switch-to-buffer name)
+	 ;(delete-other-windows)
+	 (goto-char (point-min))
+	 name)
+	(t
+	 (switch-to-buffer name)
+	 ;(delete-other-windows)
+	 (buffer-disable-undo)
+	 ;; #### This is a temporary fix until wid-edit gets fixed right.
+	 ;; We don't do everything that widget-button-click does -- i.e.
+	 ;; we don't change the link color on button down -- but that's
+	 ;; not important.
+	 (add-local-hook
+	  'mouse-track-click-hook
+	  #'(lambda (event count)
+	      (cond
+	       ((widget-event-point event)
+		(let* ((pos (widget-event-point event))
+		       (button (get-char-property pos 'button)))
+		  (when button
+		    (widget-apply-action button event)
+		    t))))))
+	 (set-specifier left-margin-width about-left-margin (current-buffer))
+	 (set (make-local-variable 'widget-button-face) 'about-link-face)
+	 nil)))
+
+(defvar specware-logo
+  (make-glyph ()))
+
+(set-glyph-image specware-logo
+		 "./specware_logo.xpm"
+		 'global 'x)
+
+(defun goto-specware-web-page (&rest ign)
+  (browse-url "http://specware.org/"))
+
+(defun goto-specware-release-notes (&rest ign)
+  (browse-url
+   (if (inferior-lisp-running-p)
+       (format "http://specware.org/release-notes-%s-%s.html"
+	       (sw:eval-in-lisp "specware::Major-Version-String")
+	       (sw:eval-in-lisp "user::Specware-patch-level"))
+     "http://specware.org/news.html")))
+
+(defun about-specware ()
+  "Describe the Specware System"
+  (interactive)
+  (unless (about-get-buffer "*About Specware*")
+    (widget-insert (about-center specware-logo))
+    (widget-create 'default
+		   :format "%t"
+		   :tag-glyph specware-logo)
+    (widget-insert "\n\n")
+    (when (inferior-lisp-running-p)
+      (let* ((specware-version (sw:eval-in-lisp "user::Specware-version"))
+	     (specware-patch-number (sw:eval-in-lisp "user::Specware-patch-level"))
+	     (specware-version (format "Version %s.%s"
+				       specware-version
+				       specware-patch-number)))
+	(widget-insert (about-center specware-version))
+	(widget-create'link :help-echo "Specware Version Release Notes"
+			    :action 'goto-specware-release-notes
+			    :button-prefix ""
+			    :button-suffix ""
+			    specware-version)))
+    (widget-insert "\n\n")
+    (widget-create 'link :help-echo "Specware Web Page"
+		   :action 'goto-specware-web-page
+		   :button-prefix ""
+		   :button-suffix ""
+		   "Specware")
+    (widget-insert " is a leading-edge automated software development system 
+that allows users to precisely specify the desired functionality of 
+their applications and to generate provably correct code based on 
+these requirements. At the core of the design process in Specware 
+lies stepwise refinement, in which users begin with a simple, abstract 
+model of their problem and iteratively refine this model until it 
+uniquely and concretely describes their application.")
+    (widget-insert "\n")
+    (about-finish-buffer)
+    (goto-line 2)))
+
 
 ;;; & do the user's customisation
 
