@@ -2,14 +2,13 @@
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
 
-# Use HERE so we get Verify_XXX from the directory of this script,
-# as opposed to the directory from which this script was invoked.
-HERE=`/usr/bin/dirname $0`
-if [ -f $HERE/Verify_${LISP_MODE} ]; then
+LISP_MODE=$1
+
+if [ -f $SPECWARE4/Scripts/unix/Verify_${LISP_MODE} ]; then
   # bash convention for . means the file is processed inline (as if copied here)
-  . $HERE/Verify_${LISP_MODE}
+  . $SPECWARE4/Scripts/unix/Verify_${LISP_MODE}
 else
-  echo "  Generate_Lisp: Unrecognized lisp mode.  LISP_MODE = [$LISP_MODE]"
+  echo "  Verify_Lisp: Unrecognized lisp mode.  LISP_MODE = [$LISP_MODE]"
   exit 1
 fi
 
