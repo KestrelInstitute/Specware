@@ -22,7 +22,7 @@
 # files. See "man bash" for details. The 'set -v' turns on echoing of
 # lines read. This will be removed later.
 
-set -v
+# set -v
 
 # We assume SPECWARE4 has been set.
 if [ -z $SPECWARE4 ]; then
@@ -30,13 +30,19 @@ if [ -z $SPECWARE4 ]; then
     exit 1
 fi
 
+echo \$SPECWARE4=$SPECWARE4
+
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
 LISP=${LISP:-/usr/local/acl/acl61/alisp}
 
+echo cd $SPECWARE4/Applications/Specware
 cd $SPECWARE4/Applications/Specware
 
+echo Saving previous image and build ... 
+echo cp -f lisp/Specware4.lisp lisp/Specware4-save.lisp
 cp -f lisp/Specware4.lisp lisp/Specware4-save.lisp
+echo cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
 cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
 
 # Note the use of the <<-XXXX in the following. The - means that preceeding
@@ -85,6 +91,14 @@ else
 	fi
 fi
 
+# If the bootstrap failed (non-zero exit status) then we abort.
+if [ $? ]; then
+  echo ""
+  echo "Bootstrap failed, exiting ..."
+  exit 1
+fi
+
+echo cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
 cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
 
 # We load the new Specware4.lisp twice, each in a fresh lisp session. The
@@ -92,10 +106,18 @@ cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
 # lisp file for Specware, we are certain something needs to be compiled.
 # We could do the load and compile up above in the lisp that generated it,
 # but that seems weird to me ...
+echo Loading Specware ... (to compile)
 $LISP <<-XXXX
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 	  (load "Specware4.lisp"))
 XXXX
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $? ]; then
+  echo ""
+  echo "Load failed, exiting ..."
+  exit 1
+fi
 
 # The second time is just to do the dumplisp. If we do it in one
 # go, the generated dxl file is almost 4 times larger.
@@ -111,8 +133,16 @@ XXXX
 #  tend to fail (or need to be more complicated) when the lines are 
 #  excessively broken.  So I'd ask it to be left in unless there's a 
 #  reason to remove it.
+echo Loading Specware ... (for dumplisp)
 $LISP <<-XXXX
 	(load "Specware4.lisp")
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 	  (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
 XXXX
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $? ]; then
+  echo ""
+  echo "Load failed, exiting ..."
+  exit 1
+fi
