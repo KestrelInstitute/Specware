@@ -141,7 +141,7 @@ it easy to experiment with different URI path resolution strategies..
               | (_,Some _,[elem],None) ->
                     return [normalizeURI {path=currentPath,hashSuffix=Some elem}]
               | (_,_,_,_) -> {
-                    root <- removeLastElem currentPath;
+                    root <- removeLast currentPath;
                     return [normalizeURI {path=root++newPath,hashSuffix=newSuffix}]
                  })
           }
@@ -194,7 +194,7 @@ handled correctly.
   def loadFile uri fileName = {
       print ("Loading: " ^ fileName ^ "\n");
       case (parseFile fileName) of
-        | None -> raise (SyntaxError fileName)
+        | None -> raise (ParserError fileName)
         | Some specFile -> 
            (case (valueOf specFile) of
              | Term term -> {
@@ -208,16 +208,16 @@ handled correctly.
                    bindInGlobalContext uri
                      (value,max(timeStamp,fileWriteTime fileName),depURIs)
                  }
-             | Decls decls -> evaluateGlobalDecls uri decls)
+             | Decls decls -> evaluateGlobalDecls uri fileName decls)
     }
 
-  op evaluateGlobalDecls : URI -> (List (Decl Position)) -> Env ()
-  def evaluateGlobalDecls {path,hashSuffix} decls =
+  op evaluateGlobalDecls : URI -> String -> List (Decl Position) -> Env ()
+  def evaluateGlobalDecls {path,hashSuffix} fileName decls =
     let def evaluateGlobalDecl (name,term) =
       let newURI = {path=path,hashSuffix=Some name} in {
         setCurrentURI newURI;
-        valueInfo <- SpecCalc.evaluateTermInfo term;
-        bindInGlobalContext newURI valueInfo
+        (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
+        bindInGlobalContext newURI (value,max(timeStamp,fileWriteTime fileName),depURIs)
     }
     in {
       saveURI <- getCurrentURI;
