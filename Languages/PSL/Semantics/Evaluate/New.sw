@@ -34,7 +34,7 @@ spec {
             (foldriAQualifierMap
                (fn (qual,id,opInfo,recSorts) -> Cons ((qual ^ "-" ^ id,sortOfScheme (sortScheme opInfo)),recSorts))
                         [] tmpSpec.ops) in
-          let procSort = mkPBase(unQualified "Proc",[argProd,resSort,storeRec]) in {
+          let procSort = mkBase(unQualified "Proc",[argProd,resSort,storeRec]) in {
              static <- staticSpec pSpec;
              static <- addOp [unQualified name] Nonfix (tyVarsOf procSort,procSort) None static internalPosition;
              pSpec <- setStaticSpec pSpec static;
@@ -65,7 +65,7 @@ spec for the MetaSlang abstract syntax, but it is ok for now.
         | Quotient (srt1,_,_) -> tyVarsOfAux (srt1,tvs)
         | Subsort (srt1,_,_) -> tyVarsOfAux (srt1,tvs)
         | Base (_,srts,_) -> foldl tyVarsOfAux tvs srts
-        | PBase (_,srts,_) -> foldl tyVarsOfAux tvs srts
+%        | PBase (_,srts,_) -> foldl tyVarsOfAux tvs srts
         | TyVar (tv,_) -> if member (tv,tvs) then tvs else List.insert (tv,tvs)
         | MetaTyVar _ -> tvs
     in
@@ -102,7 +102,7 @@ The partial evaluator makes use of this convention.
 So, we must assume that no other operator starts with \verb+return\_+
 (obviously, other procedure's return variables may start with such a
 suffix, but the rest of the string will make the strings different, since
-by assumptions all procedures have different names. In addition, note that
+by assumptions all procedures have different names). In addition, note that
 the code assumes that there is no hiding of variables: variables declared in
 a procedure (including its arguments) must be distinct from variables
 declared, say, in an enclosing procedure. However, two procedures in separate

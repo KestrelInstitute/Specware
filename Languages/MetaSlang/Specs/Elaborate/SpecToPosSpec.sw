@@ -17,31 +17,52 @@ SpecToPosSpec qualifying spec {
  op convertSortToPSort         : Sort      -> PSort
  op convertFunToPFun           : Fun       -> PFun
 
-
+ def convertSpecToPosSpec spc = spc
  %% Half-baked conversion from StandardSpec to PosSpec
- def convertSpecToPosSpec {importInfo, sorts, ops, properties = _} =
-  {importInfo   = importInfo,
-   sorts        = mapAQualifierMap convertSortInfoToPSortInfo sorts,
-   ops          = mapAQualifierMap convertOpInfoToPOpInfo     ops,
-   properties   = emptyAProperties
-  } 
+% def convertSpecToPosSpec {importInfo, sorts, ops, properties = _} =
+%  {importInfo   = importInfo,
+%   sorts        = mapAQualifierMap convertSortInfoToPSortInfo sorts,
+%   ops          = mapAQualifierMap convertOpInfoToPOpInfo     ops,
+%   properties   = emptyAProperties
+%  } 
 
- def convertSortInfoToPSortInfo (sort_names, tvs, opt_def : Option Sort) = 
-  let new_opt_pdef : Option PSort =
-      (case opt_def of
-        | None     -> None
-        | Some srt -> Some (convertSortToPSort srt))
-  in
-    (sort_names, tvs, new_opt_pdef)
+def convertSortInfoToPSortInfo info = info
 
- def convertOpInfoToPOpInfo (op_names, fixity, (tvs, srt), opt_def : Option Term) =
-  let new_psrt = convertSortToPSort srt in
-  let new_opt_pdef : Option PTerm =
-      (case opt_def of
-        | None     -> None
-        | Some trm -> Some (convertTermToPTerm trm)) 
-  in
-    (op_names, fixity, (tvs, new_psrt), new_opt_pdef)
+% def convertSortInfoToPSortInfo (sort_names, tvs, opt_def : Option Sort) = 
+%  let new_opt_pdef : Option PSort =
+%      (case opt_def of
+%        | None     -> None
+%        | Some srt -> Some (convertSortToPSort srt))
+%  in
+%    (sort_names, tvs, new_opt_pdef)
+
+def convertOpInfoToPOpInfo info = info
+
+% def convertOpInfoToPOpInfo (op_names, fixity, (tvs, srt), opt_def : Option Term) =
+%  let new_psrt = convertSortToPSort srt in
+%  let new_opt_pdef : Option PTerm =
+%      (case opt_def of
+%        | None     -> None
+%        | Some trm -> Some (convertTermToPTerm trm)) 
+%  in
+%    (op_names, fixity, (tvs, new_psrt), new_opt_pdef)
+
+% def convertSortInfoToPSortInfo (sort_names, tvs, opt_def : Option Sort) = 
+%  let new_opt_pdef : Option PSort =
+%      (case opt_def of
+%        | None     -> None
+%        | Some srt -> Some (convertSortToPSort srt))
+%  in
+%    (sort_names, tvs, new_opt_pdef)
+
+% def convertOpInfoToPOpInfo (op_names, fixity, (tvs, srt), opt_def : Option Term) =
+%  let new_psrt = convertSortToPSort srt in
+%  let new_opt_pdef : Option PTerm =
+%      (case opt_def of
+%        | None     -> None
+%        | Some trm -> Some (convertTermToPTerm trm)) 
+%  in
+%    (op_names, fixity, (tvs, new_psrt), new_opt_pdef)
 
 
  %sort TVContext = StringMap TyVar
@@ -127,7 +148,7 @@ SpecToPosSpec qualifying spec {
    | Subsort  (s, t,       _) -> Subsort   (convertSortToPSort s, 
                                             convertTermToPTerm t, 
                                             pos)
-   | Base     (qid, sorts, _) -> PBase     (qid, 
+   | Base     (qid, sorts, _) -> Base      (qid, 
                                             List.map convertSortToPSort sorts,
                                             pos)
    | TyVar    (tv,         _) -> TyVar     (tv, pos)

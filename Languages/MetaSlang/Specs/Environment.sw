@@ -303,15 +303,15 @@ spec {
      | Lambda     ([],                   _) -> System.fail 
                                                 "inferType: Ill formed lambda abstraction"
      | IfThenElse (_, t2, t3,            _) -> inferType (sp, t2)
-     | Seq        ([],                   _) -> Product ([], ())
+     | Seq        ([],                   _) -> Product ([], noPos)
      | Seq        ([M],                  _) -> inferType (sp, M)
-     | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, ()))
+     | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
      | _ -> System.fail "inferType: Non-exhaustive match"
 
- def SpecEnvironment4.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], ())
- def booleanSort : Sort = Base (Qualified ("Boolean", "Boolean"), [], ())
- def SpecEnvironment4.charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], ())
- def integerSort : Sort = Base (Qualified ("Integer", "Integer"), [], ())
+ def SpecEnvironment4.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
+ def booleanSort : Sort = Base (Qualified ("Boolean", "Boolean"), [], noPos)
+ def SpecEnvironment4.charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], noPos)
+ def integerSort : Sort = Base (Qualified ("Integer", "Integer"), [], noPos)
 
  op SpecEnvironment4.patternSort : Pattern -> Sort
  def SpecEnvironment4.patternSort = fn
@@ -321,7 +321,7 @@ spec {
    | RecordPat  (idpatternlist, _) -> let fields = List.map (fn (id, pat) -> 
                                                              (id, SpecEnvironment4.patternSort pat)) 
                                                             idpatternlist in
-                                      Product (fields, ())
+                                      Product (fields, noPos)
    | WildPat     (srt,          _) -> srt
    | StringPat   _                 -> SpecEnvironment4.stringSort
    | BoolPat     _                 -> booleanSort
@@ -338,7 +338,7 @@ spec {
  def mkRestrict (sp, {pred, term}) = 
   let srt = inferType (sp, term) in
   let srt = mkArrow (srt, mkSubsort (srt, pred)) in
-  mkApply ((Fun (Restrict, srt, ())), 
+  mkApply ((Fun (Restrict, srt, noPos)), 
            term)
  
  def mkProjectTerm (sp, id, term) = 
@@ -346,7 +346,7 @@ spec {
   let fields = product (sp, srt) in
     (case List.find (fn (id2, s)-> id = id2) fields
        of Some (_, s) -> 
-          mkApply(Fun (Project id, mkArrow(srt,s), ()),
+          mkApply(Fun (Project id, mkArrow(srt,s), noPos),
                   term)
         | _ -> System.fail "Projection index not found in product")
 
@@ -354,7 +354,7 @@ spec {
   let srt    = inferType (sp, term) in
   let fields = coproduct (sp, srt)  in
   case List.find (fn (id2, s)-> id = id2) fields
-    of Some (_,Some s) -> mkApply (Fun (Select id, mkArrow (srt, s), ()),
+    of Some (_,Some s) -> mkApply (Fun (Select id, mkArrow (srt, s), noPos),
                                    term)
      | _ -> System.fail "Selection index not found in product"
 
@@ -478,7 +478,7 @@ spec {
       | Record     (fields,               _) -> Product(map (fn (id, t)-> 
                                                              (id, termSortEnv (sp, t)))
                                                             fields,
-                                                        ())
+                                                        noPos)
       | Let        (_, term,              _) -> termSortEnv   (sp, term)
       | LetRec     (_, term,              _) -> termSortEnv   (sp, term)
       | Var        ((id, srt),            _) -> unfoldToArrow (sp, srt)

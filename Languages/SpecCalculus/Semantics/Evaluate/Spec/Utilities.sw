@@ -1,7 +1,7 @@
 SpecCalc qualifying spec {
  import ../../Environment
  import /Languages/MetaSlang/Specs/AnnSpec
- import /Library/Legacy/DataStructures/Monadic/SplayMap
+ import SpecCalc qualifying /Library/Legacy/DataStructures/Monadic/SplayMap
 
  op addSort :
    fa (a) List QualifiedId
@@ -107,7 +107,7 @@ SpecCalc qualifying spec {
              | (Some _, None)   -> return (sort_names, new_type_vars, new_opt_def)
              | (None,   Some _) -> return (sort_names, new_type_vars, old_opt_def)
              | (Some sNew, Some sOld) ->
-                 if sNew = sOld then % Could use a smarter equivalence test
+                 if equalSort?(sNew, sOld) then % Could use a smarter equivalence test
                    return (sort_names, new_type_vars, new_opt_def)
                  else
                    raise (SpecError (position,
@@ -128,7 +128,7 @@ SpecCalc qualifying spec {
          (if ~(new_fixity = old_fixity) then
            raise (SpecError (position, "Merged versions of Op "^qualifier^"."^id^" have different fixity"))
          else
-           if ~(new_sort_scheme = old_sort_scheme) then % Could use a smarter equivalence test 
+           if ~(equalSortScheme?(new_sort_scheme, old_sort_scheme)) then % Could use a smarter equivalence test 
              raise (SpecError (position, "Merged versions of Op "^qualifier^"."^id^" have different sorts"))
            else
              let op_names = listUnion(new_op_names,old_op_names) in
@@ -137,12 +137,11 @@ SpecCalc qualifying spec {
                | (Some _, None)   -> return (op_names, new_fixity, new_sort_scheme, new_opt_def)
                | (None,   Some _) -> return (op_names, new_fixity, new_sort_scheme, old_opt_def)
                | (Some sNew, Some sOld) ->
-                   if sNew = sOld then   % Could use a smarter equivalence test
+                   if equalTerm?(sNew, sOld) then   % Could use a smarter equivalence test
                      return (op_names, new_fixity, new_sort_scheme, new_opt_def)
                    else
                      raise (SpecError (position, "Merged versions of Op "^qualifier^"."^id^" have different definitions")))
 
-  sort Monad a = SpecCalc.Env a %%% Why is this necessary. Already done in Environment
   op foldOverQualifierMap :
     fa(a,b) (Qualifier * Id * a * b -> SpecCalc.Env b)
          -> b

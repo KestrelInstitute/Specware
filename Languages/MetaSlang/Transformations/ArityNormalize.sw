@@ -193,7 +193,7 @@ ArityNormalize4 qualifying spec {
                  let fields = 
                      map 
                       (fn (name,label,srt)->
-                      let trm = mkApply((Fun(Project label,mkArrow(dom,srt),())),v) in
+                      let trm = mkApply((Fun(Project label,mkArrow(dom,srt),noPos)),v) in
                       (label,trm))
                        names
                  in
@@ -247,7 +247,7 @@ ArityNormalize4 qualifying spec {
                        | _ -> 
                         let (name,_) = freshName("x",usedNames) in
                         let x = (name,dom) in
-                        Lambda([((VarPat(x,())),mkTrue(),Apply(term,Var(x,()),()))],()))
+                        Lambda([((VarPat(x,noPos)),mkTrue(),Apply(term,Var(x,noPos),noPos))],noPos))
          | Some fields ->
       (case fields
         of (*[_] -> term                        % Singleton products don't get changed
@@ -258,11 +258,11 @@ ArityNormalize4 qualifying spec {
            let (names,_) = freshNames("x",fields,usedNames) in
            let vars = ListPair.map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
            let trm:Term  = Lambda 
-                              ([(RecordPat(map (fn (l,v) -> (l,VarPat(v,()))) vars,()),
+                              ([(RecordPat(map (fn (l,v) -> (l,VarPat(v,noPos))) vars,noPos),
                                     mkTrue(),
                                     Apply(term,Record((map 
                                         (fn (l,v) -> 
-                                            (l,(Var(v,())):Term)) vars),()),()))],())
+                                            (l,(Var(v,noPos)):Term)) vars),noPos),noPos))],noPos)
            in
            trm)))
 
@@ -348,7 +348,7 @@ ArityNormalize4 qualifying spec {
               foldr
               (fn((pat,t1),(decls,usedNames,gamma)) ->
                   let t2 = normalizeArity(sp,gamma,usedNames,t1)                 in
-                  let (usedNames,gamma) = insertPattern(pat,(usedNames,gamma))         in
+                  let (usedNames,gamma) = insertPattern(pat,(usedNames,gamma))   in
                   (cons((pat,t2),decls),usedNames,gamma)) 
                         ([],usedNames,gamma)
                              decls 
@@ -359,8 +359,8 @@ ArityNormalize4 qualifying spec {
           let (usedNames,gamma) = 
               foldr 
                 (fn((v,term),(usedNames,gamma)) ->
-                   let (id,_) = v                                                 in
-                   let usedNames = StringSet.add(usedNames,id)                         in
+                   let (id,_) = v                                                in
+                   let usedNames = StringSet.add(usedNames,id)                   in
                    let gamma = cons((id,termArity(sp,gamma,term)),gamma)         in
                    (usedNames,gamma))
                            (usedNames,gamma)
@@ -391,8 +391,8 @@ ArityNormalize4 qualifying spec {
          | Some (dom,num) ->
            let (name,usedNames) = freshName("x",usedNames) in
            let x = (name,dom) in
-           (Lambda([(VarPat(x,()),mkTrue(),
-                     mkArityApply(sp,dom,term,mkVar x,usedNames))],()))
+           (Lambda([(VarPat(x,noPos),mkTrue(),
+                     mkArityApply(sp,dom,term,mkVar x,usedNames))],noPos))
 
  
 

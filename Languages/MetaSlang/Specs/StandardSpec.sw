@@ -67,11 +67,11 @@ StandardSpec qualifying spec {
  op mkProduct      : List Sort                    -> Sort
  op mkCoProduct    : List (String * Option Sort)  -> Sort
 
- def mkTyVar        name        = TyVar    (name,       ())
- def mkBase         (qid, srts) = Base     (qid, srts,  ())
- def mkArrow        (s1, s2)    = Arrow    (s1, s2,     ())
- def mkSubsort      (srt, pred) = Subsort  (srt, pred,  ())
- def mkQuotientSort (srt, rel)  = Quotient (srt, rel,   ())
+ def mkTyVar        name        = TyVar    (name,       noPos)
+ def mkBase         (qid, srts) = Base     (qid, srts,  noPos)
+ def mkArrow        (s1, s2)    = Arrow    (s1, s2,     noPos)
+ def mkSubsort      (srt, pred) = Subsort  (srt, pred,  noPos)
+ def mkQuotientSort (srt, rel)  = Quotient (srt, rel,   noPos)
 
  def mkProduct sorts =
   let def loop (n, sorts) = 
@@ -79,9 +79,9 @@ StandardSpec qualifying spec {
           | []         -> []
           | srt::sorts -> cons((Nat.toString n, srt), loop(n + 1, sorts))
   in
-    Product(loop(1,sorts), ())
+    Product(loop(1,sorts), noPos)
 
- def mkCoProduct fields = CoProduct (fields, ())
+ def mkCoProduct fields = CoProduct (fields, noPos)
 
  %% Sort terms for constant sorts:
 
@@ -113,17 +113,17 @@ StandardSpec qualifying spec {
  op mkAppl        : Term * List Term              -> Term
  op mkIfThenElse  : Term * Term * Term            -> Term
 
- def mkRecord     fields          = Record     (fields,                  ())
- def mkLet        (decls, term)   = Let        (decls, term,             ())
- def mkLetRec     (decls, term)   = LetRec     (decls, term,             ())
- def mkLambda     (pat,   term)   = Lambda     ([(pat, mkTrue(), term)], ())
- def mkBind       (b, vars, term) = Bind       (b, vars, term,           ())
+ def mkRecord     fields          = Record     (fields,                  noPos)
+ def mkLet        (decls, term)   = Let        (decls, term,             noPos)
+ def mkLetRec     (decls, term)   = LetRec     (decls, term,             noPos)
+ def mkLambda     (pat,   term)   = Lambda     ([(pat, mkTrue(), term)], noPos)
+ def mkBind       (b, vars, term) = Bind       (b, vars, term,           noPos)
 
- def mkVar        v               = Var        (v,                       ())
- def mkFun        (constant, srt) = Fun        (constant, srt,           ()) 
- def mkApply      (t1, t2)        = Apply      (t1, t2,                  ())
- def mkAppl       (t1, tms)       = Apply      (t1, mkTuple tms,         ())  
- def mkIfThenElse (t1, t2, t3)    = IfThenElse (t1, t2, t3,              ())
+ def mkVar        v               = Var        (v,                       noPos)
+ def mkFun        (constant, srt) = Fun        (constant, srt,           noPos) 
+ def mkApply      (t1, t2)        = Apply      (t1, t2,                  noPos)
+ def mkAppl       (t1, tms)       = Apply      (t1, mkTuple tms,         noPos)  
+ def mkIfThenElse (t1, t2, t3)    = IfThenElse (t1, t2, t3,              noPos)
 
  %% Fun's
 
@@ -280,13 +280,13 @@ StandardSpec qualifying spec {
  op mkTuplePat  : List Pattern  -> Pattern
  op mkWildPat   : Sort          -> Pattern
 
- def mkNatPat    n    = NatPat    (n,              ())
- def mkBoolPat   b    = BoolPat   (b,              ())
- def mkCharPat   c    = CharPat   (c,              ())
- def mkStringPat s    = StringPat (s,              ())
- def mkVarPat    v    = VarPat    (v,              ())
- def mkWildPat   s    = WildPat   (s,              ())
- def mkTuplePat  pats = RecordPat (tagTuple(pats), ())
+ def mkNatPat    n    = NatPat    (n,              noPos)
+ def mkBoolPat   b    = BoolPat   (b,              noPos)
+ def mkCharPat   c    = CharPat   (c,              noPos)
+ def mkStringPat s    = StringPat (s,              noPos)
+ def mkVarPat    v    = VarPat    (v,              noPos)
+ def mkWildPat   s    = WildPat   (s,              noPos)
+ def mkTuplePat  pats = RecordPat (tagTuple(pats), noPos)
 
  %% ---
 

@@ -338,7 +338,7 @@ Match4 qualifying spec {
       case (pat1,pat2)
         of (EmbedPat(e1,_,_,_),EmbedPat(e2,_,_,_)) -> e1 = e2
 	 | (RecordPat _,RecordPat _) -> true
-	 | _ -> pat1 = pat2
+	 | _ -> equalPattern?(pat1,pat2)
       
 
 (*
@@ -432,7 +432,7 @@ Match4 qualifying spec {
 		   let trm = 
 		       (case find (fn (id2,s) -> id = id2) fields
 			  of Some(_,Some s) ->
-			     mkApply((Fun(Select id,mkArrow(srt,s),())),t)
+			     mkApply((Fun(Select id,mkArrow(srt,s),noPos)),t)
 			   | _ -> System.fail "Selection index not found in product")
 		   in
 		   [(p,trm)]
@@ -481,9 +481,9 @@ Match4 qualifying spec {
       let t  = mkApply(oper,t) in
       let pat = 
           case vs of [(_,v)] -> mkVarPat v
-	     | _ -> RecordPat(map (fn(l,v)-> (l,mkVarPat v)) vs,())
+	     | _ -> RecordPat(map (fn(l,v)-> (l,mkVarPat v)) vs,noPos)
       in
-      Lambda([(pat,mkTrue(),t)],())
+      Lambda([(pat,mkTrue(),t)],noPos)
 
   def mkOptimizedIfThenElse(cond,thenBranch,elseBranch) = 
       if isTrue(cond)
@@ -563,7 +563,7 @@ Match4 qualifying spec {
 %%     t1 = choose(fn x -> x) t 
 %%
       let v = ("v",srt)                                   in
-      let f = mkLambda(VarPat(v,()),Var(v,()))                    in
+      let f = mkLambda(VarPat(v,noPos),Var(v,noPos))                    in
       let t1 = mkApply(mkChooseFun(pred,srt,srt,f),t)	  in
       let rules  = map (fn((Cons((QuotientPat(p,pred,_)):Pattern,pats),cond,e):Rule) ->
 			      (Cons(p,pats),cond,e):Rule) rules in
@@ -683,10 +683,10 @@ def makeDefault(context:Context,srt,rules,vs,term) =
 	       | [(VarPat(v,_),Fun(Bool true,_,_),body)] ->
 		let term: Term = 
 		    case vs
-		      of [(_,v)] -> Var(v,())
-		       | _ -> Record(map (fn(l,v)-> (l,mkVar v)) vs,()) 
+		      of [(_,v)] -> Var(v,noPos)
+		       | _ -> Record(map (fn(l,v)-> (l,mkVar v)) vs,noPos) 
 		in
-		let body = mkLet([(VarPat(v,()),term)],body) in
+		let body = mkLet([(VarPat(v,noPos),term)],body) in
 		 (rev firstRules,mkSuccess(srt,body))
 	       | rule::rules ->
 		 loop(rules,cons(rule,firstRules))
@@ -720,7 +720,7 @@ def eliminateTerm context term =
 				       eliminateTerm context b)) rules 
 	 in
 	 if  simpleAbstraction(rules) 
-	     then Lambda(rules,())
+	     then Lambda(rules,noPos)
 	 else 
 
 	 %%%	 let _ = writeLine "Elimination from lambda " in
@@ -817,7 +817,7 @@ def eliminateTerm context term =
 	| (lbl,r)::row -> lbl = Nat.toString i & isShortTuple(i + 1,row)
 
  op recordfields? : fa(A) List (Id * A) -> Boolean
- def recordfields?(fields) = Boolean.~(isShortTuple(1,fields))
+ def recordfields?(fields) = ~(isShortTuple(1,fields))
 
 (*****
 %%%%%%

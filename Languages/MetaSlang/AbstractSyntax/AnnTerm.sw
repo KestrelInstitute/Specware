@@ -91,7 +91,7 @@ MetaSlang qualifying spec {
   | Quotient     ASort b * ATerm b                   * b
   | Subsort      ASort b * ATerm b                   * b
   | Base         QualifiedId * List (ASort b)        * b
-  | PBase        QualifiedId * List (ASort b)        * b  % Before elaborateSpec
+%  | Base        QualifiedId * List (ASort b)        * b  % Before elaborateSpec
   | TyVar        TyVar                               * b
   | MetaTyVar    AMetaTyVar b                        * b  % Before elaborateSpec
        
@@ -193,7 +193,7 @@ MetaSlang qualifying spec {
      | CoProduct (_,   a) -> a
      | Quotient  (_,_, a) -> a
      | Subsort   (_,_, a) -> a
-     | PBase     (_,_, a) -> a
+     | Base     (_,_, a) -> a
      | TyVar     (_,   a) -> a
      | MetaTyVar (_,   a) -> a
 
@@ -207,7 +207,7 @@ MetaSlang qualifying spec {
      | CoProduct (fields,   _) -> CoProduct (fields,   a)
      | Quotient  (s,t,      _) -> Quotient  (s,t,      a)
      | Subsort   (s,t,      _) -> Subsort   (s,t,      a)
-     | PBase     (qid,srts, _) -> PBase     (qid,srts, a)
+     | Base     (qid,srts, _) -> Base     (qid,srts, a)
      | TyVar     (tv,       _) -> TyVar     (tv,       a)
      | MetaTyVar (tv,       _) -> MetaTyVar (tv,       a)
 
@@ -367,8 +367,8 @@ MetaSlang qualifying spec {
         Subsort   (x2, t2,  _)) -> equalSort? (x1, x2) & equalTerm? (t1, t2)
      | (Base      (q1, xs1, _), 
         Base      (q2, xs2, _)) -> q1 = q2 & equalList? (xs1, xs2, equalSort?)
-     | (PBase     (q1, xs1, _), 
-        PBase     (q2, xs2, _)) -> q1 = q2 & equalList? (xs1, xs2, equalSort?)
+     | (Base     (q1, xs1, _), 
+        Base     (q2, xs2, _)) -> q1 = q2 & equalList? (xs1, xs2, equalSort?)
      | (TyVar     (v1,      _), 
         TyVar     (v2,      _)) -> v1 = v2
 
@@ -610,10 +610,15 @@ MetaSlang qualifying spec {
 	 let newSrts = map mapRec srts in
 	 if newSrts = srts then srt
 	   else Base (qid, newSrts, a)
-       | PBase     (qid, srts, a) -> 
-	 let newSrts = map mapRec srts in
-	 if newSrts = srts then srt
-	   else PBase (qid, newSrts, a)
+       | MetaTyVar(tv,pos) -> 
+	   let {name,uniqueId,link} = ! tv in
+	   (case link
+	      of None -> srt
+	       | Some ssrt ->
+	         let newssrt = mapRec ssrt in
+		 if newssrt = ssrt then srt
+		  else MetaTyVar(Ref {name = name,uniqueId = uniqueId,
+				      link = Some newssrt},pos))
        | _ -> srt
 
    def mapRecOpt opt_sort = 
@@ -826,8 +831,8 @@ MetaSlang qualifying spec {
        | Base      (qid, srts,                 a) ->
          Base      (qid, map replaceRec srts,  a)
 
-       | PBase     (qid, srts,                 a) -> 
-         PBase     (qid, map replaceRec srts,  a)
+       | Base     (qid, srts,                 a) -> 
+         Base     (qid, map replaceRec srts,  a)
 
        | _ -> srt
 
@@ -941,7 +946,7 @@ MetaSlang qualifying spec {
           | Quotient  (srt, trm,  _) -> (appRec srt; appTerm tsp_apps trm)
           | Subsort   (srt, trm,  _) -> (appRec srt; appTerm tsp_apps trm)
           | Base      (qid, srts, _) -> app appRec srts
-          | PBase     (qid, srts, _) -> app appRec srts
+          | Base     (qid, srts, _) -> app appRec srts
           | _                        -> ()
 
       def appRec srt = 

@@ -245,22 +245,26 @@ spec {
                                               ^(printSort srt_3), 
                                               pos))
                        | TyVar     (tv,      _) -> insert tv
-                       | Product   (fields,  _) -> app (fn (_, s)      -> record_type_vars_used s)           fields
-                       | CoProduct (fields,  _) -> app (fn (_, Some s) -> record_type_vars_used s | _ -> ()) fields
+                       | Product   (fields,  _) ->
+			 app (fn (_, s)      -> record_type_vars_used s) fields
+                       | CoProduct (fields,  _) ->
+			 app (fn (_, Some s) -> record_type_vars_used s | _ -> ())
+			   fields
                        | Subsort   (s, _,    _) -> record_type_vars_used s
                        | Quotient  (s, _,    _) -> record_type_vars_used s
-                       | Arrow     (s1, s2,  _) -> (record_type_vars_used s1; record_type_vars_used s2)
-                       | PBase     (_, srts, _) -> app record_type_vars_used srts
+                       | Arrow     (s1, s2,  _) ->
+			 (record_type_vars_used s1; record_type_vars_used s2)
+                       | Base     (_, srts, _) -> app record_type_vars_used srts
                  in                        
                  let _ = record_type_vars_used srt_3 in
                  ! tv_cell)
             in
             let type_vars_3_b = if null type_vars_3 then
                                  tvpe_vars_used % Function was polymorphic, but not declared so.
-                                else if length tvpe_vars_used = length type_vars_3 then
-                                 tvpe_vars_used (* Probably correct ;-*)
+                                else if length tvpe_vars_used = length type_vars_3
+				       then tvpe_vars_used (* Probably correct ;-*)
                                 else 
-                                 let scheme = convertPSortSchemeToSortScheme (type_vars_3, srt_3)   in
+                                 let scheme =  (type_vars_3, srt_3)   in
                                  let scheme = printSortScheme (scheme) in
                                  (error (env_3, 
                                          "mismatch between bound and free variables "^scheme, 
@@ -270,7 +274,7 @@ spec {
             ((if all_different? then
                 ()
               else 
-                let scheme = convertPSortSchemeToSortScheme (type_vars_3_b, srt_3)   in
+                let scheme = (type_vars_3_b, srt_3)   in
                 let scheme = printSortScheme(scheme) in
                 error(env_3, "Repeated sort variables contained in "^scheme, pos));
              Some term_3))
@@ -322,7 +326,7 @@ spec {
             of {link = Some other_sort, uniqueId, name} -> checkSort(env,other_sort)
              | _ -> srt)
 
-       | PBase (given_sort_qid, instance_sorts, pos) ->
+       | Base (given_sort_qid, instance_sorts, pos) ->
          (case findAllSorts (env.internal, given_sort_qid) of
            | sort_info::r -> 
              %% TODO: complain if ambiguous
@@ -353,7 +357,7 @@ spec {
                           ^found_sort_str, 
                           pos)
                  else ()); 
-                PBase (main_name,
+                Base (main_name,
                        map (fn instance_sort -> checkSort (env, instance_sort))
                            instance_sorts, 
                        pos)))
@@ -371,7 +375,7 @@ spec {
               error (env, 
                      "Sort identifier in "^given_sort_str^" has not been declared", 
                      pos);
-              PBase (given_sort_qid, instance_sorts, pos)))
+              Base (given_sort_qid, instance_sorts, pos)))
 
       | CoProduct (fields, pos) ->  
         CoProduct (map (fn (id, None)   -> (id, None) 

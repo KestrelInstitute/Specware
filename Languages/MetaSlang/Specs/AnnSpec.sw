@@ -2,6 +2,7 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/ASpecSig.sl v1.2
 
 AnnSpec qualifying spec {
+ import Position
  import ../AbstractSyntax/AnnTerm   
  import /Library/Legacy/DataStructures/StringMapSplay % for qualifier maps
 
@@ -26,7 +27,7 @@ AnnSpec qualifying spec {
  %% conceivably it could be more interesting in the future.
 
 
- sort StandardAnnotation = ()
+ sort StandardAnnotation = Position	% was ()
 
  sort Spec = ASpec StandardAnnotation
 
@@ -206,6 +207,28 @@ AnnSpec qualifying spec {
   foldriAQualifierMap (fn (qualifier, id, op_info, new_list) -> 
                          cons ((qualifier, id, op_info), new_list))
                      [] spc.ops
+
+ op equalSortInfo?: fa(a) ASortInfo a * ASortInfo a -> Boolean
+ def equalSortInfo?((sortNames1,tyvs1,optDef1),(sortNames2,tyvs2,optDef2)) =
+   sortNames1 = sortNames2
+     & tyvs1 = tyvs2
+     %% Could take into account substitution of tyvs
+     & equalOpt?(optDef1,optDef2,equalSort?)
+
+ op equalOpInfo?: fa(a) AOpInfo a * AOpInfo a -> Boolean
+ def equalOpInfo?((opNames1,fixity1,sortsch1,optDef1),
+		  (opNames2,fixity2,sortsch2,optDef2)) =
+   opNames1 = opNames2
+     & fixity1 = fixity2
+     & equalSortScheme?(sortsch1,sortsch2)
+     & equalOpt?(optDef1,optDef2,equalTerm?)
+
+ op equalSortScheme?: fa(a) ASortScheme a * ASortScheme a -> Boolean
+ def equalSortScheme?((tyvs1,def1),(tyvs2,def2)) =
+   tyvs1 = tyvs2
+     %% Could take into account substitution of tyvs
+     & equalSort?(def1,def2)
+
 
  % --------------------------------------------------------------------------------
  % get the sort/op names as list of strings

@@ -21,6 +21,7 @@ Position qualifying spec {
   (1, last, last)
 
  def internalPosition : Position = Internal "built-in"
+ def noPos            : Position = Internal "no position"
 
  % ------------------------------------------------------------------------
 

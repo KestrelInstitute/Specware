@@ -11,11 +11,7 @@ a spec. Then perhaps we add dom and cod domain operations on morphisms.
 Perhaps the calculus is getting too complicated.
 
 \begin{spec}
-  op evaluateTranslate :
-       SpecCalc.Term Position
-    -> TranslateExpr Position
-    -> Env ValueInfo
-  def evaluateTranslate term translation = {
+  def SpecCalc.evaluateTranslate term translation = {
       (value,timeStamp,depURIs) <- evaluateTermInfo term;
       case value of
         | Spec spc -> {

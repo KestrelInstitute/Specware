@@ -587,13 +587,13 @@ AnnSpecPrinter qualifying spec {
                  (0,AnnTermPrinter.ppListPath path
                       (fn(path,srt) -> ppSort context (path,Top:ParentSort) srt)
                       (pp.LP,pp.Comma,pp.RP) ts)])
-    | PBase(idInfo,[],_) -> pp.ppPSortId(idInfo)
-    | PBase(idInfo,ts,_) -> 
-            blockFill(0,
-                [(0,pp.ppPSortId(idInfo)),
-                 (0,AnnTermPrinter.ppListPath path
-                      (fn(path,srt) -> ppSort context (path,Top:ParentSort) srt)
-                      (pp.LP,pp.Comma,pp.RP) ts)])
+%    | PBase(idInfo,[],_) -> pp.ppPSortId(idInfo)
+%    | PBase(idInfo,ts,_) -> 
+%            blockFill(0,
+%                [(0,pp.ppPSortId(idInfo)),
+%                 (0,AnnTermPrinter.ppListPath path
+%                      (fn(path,srt) -> ppSort context (path,Top:ParentSort) srt)
+%                      (pp.LP,pp.Comma,pp.RP) ts)])
     | TyVar(id,_) -> string id
     | MetaTyVar(mtv,_) -> string (TyVarString mtv)
     | _ -> string "ignoring bad case for sort"
@@ -658,13 +658,13 @@ AnnSpecPrinter qualifying spec {
              prettysFill [ppPattern context ([0]++ path,false) p1,
                           string " :: ",
                           ppPattern context ([1]++ path,false) p2])
-    | EmbedPat ("Cons",
-               Some  (RecordPat ([("1",p1),("2",p2)], _)),
-               PBase (_(* Qualified("List","List") *),[_],_), _) -> 
-     enclose(enclosed,
-             prettysFill [ppPattern context ([0]++ path,false) p1,
-                          string " :: ",
-                          ppPattern context ([1]++ path,false) p2])
+%    | EmbedPat ("Cons",
+%               Some  (RecordPat ([("1",p1),("2",p2)], _)),
+%               PBase (_(* Qualified("List","List") *),[_],_), _) -> 
+%     enclose(enclosed,
+%             prettysFill [ppPattern context ([0]++ path,false) p1,
+%                          string " :: ",
+%                          ppPattern context ([1]++ path,false) p2])
     | EmbedPat (id, Some pat,_(* srt *),_) -> 
      enclose(enclosed,
              prettysFill (cons (pp.fromString id,

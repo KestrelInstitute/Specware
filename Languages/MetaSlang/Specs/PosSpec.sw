@@ -2,7 +2,7 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/PosSpecSig.sl v1.1.1.1
 
 PosSpec qualifying spec {
- import AnnSpec
+ import StandardSpec
  import Position
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
@@ -46,8 +46,8 @@ PosSpec qualifying spec {
  %  Base PSort's
  % ------------------------------------------------------------------------
 
- op mkPBase : QualifiedId * List PSort -> PSort
- def mkPBase (qid, srts) = PBase (qid, srts, internalPosition)
+% op mkPBase : QualifiedId * List PSort -> PSort
+% def mkPBase (qid, srts) = Base (qid, srts, internalPosition)
 
  op boolPSort   : PSort
  op charPSort   : PSort
@@ -55,72 +55,72 @@ PosSpec qualifying spec {
  op natPSort    : PSort
  % op intPSort  : PSort
 
- def boolPSort   = mkPBase (Qualified ("Boolean", "Boolean"), [])
- def charPSort   = mkPBase (Qualified ("Char",    "Char"),    [])
- def stringPSort = mkPBase (Qualified ("String",  "String"),  [])
- def natPSort    = mkPBase (Qualified ("Nat",     "Nat"),     [])
- % def intPSort  = mkPBase (Qualified ("Integer", "Integer"), [])
+ def boolPSort   = mkBase (Qualified ("Boolean", "Boolean"), [])
+ def charPSort   = mkBase (Qualified ("Char",    "Char"),    [])
+ def stringPSort = mkBase (Qualified ("String",  "String"),  [])
+ def natPSort    = mkBase (Qualified ("Nat",     "Nat"),     [])
+ % def intPSort  = mkBase (Qualified ("Integer", "Integer"), [])
 
  % ------------------------------------------------------------------------
  %  Constructors of PSort's
  % ------------------------------------------------------------------------
 
- op mkProduct : List PSort     -> PSort
- op mkArrow   : PSort * PSort  -> PSort
+% op mkProduct : List PSort     -> PSort
+% op mkArrow   : PSort * PSort  -> PSort
 
- % ------------------------------------------------------------------------
+% % ------------------------------------------------------------------------
 
- def mkProduct psorts : PSort =
-  let def loop (n, psorts) = 
-       case psorts of
-        | [] -> []
-        | (psrt::psorts) -> List.cons((Nat.toString n, psrt), loop(n + 1, psorts))
-  in
-    (Product(loop(1, psorts), internalPosition))
+% def mkProduct psorts : PSort =
+%  let def loop (n, psorts) = 
+%       case psorts of
+%        | [] -> []
+%        | (psrt::psorts) -> List.cons((Nat.toString n, psrt), loop(n + 1, psorts))
+%  in
+%    (Product(loop(1, psorts), internalPosition))
 
- def mkArrow (s1, s2) : PSort = Arrow (s1, s2, internalPosition)
+% def mkArrow (s1, s2) : PSort = Arrow (s1, s2, internalPosition)
 
- % ------------------------------------------------------------------------
- %   Primitive PTerm's
- % ------------------------------------------------------------------------
+% % ------------------------------------------------------------------------
+% %   Primitive PTerm's
+% % ------------------------------------------------------------------------
 
- op mkTrue      : ()                  -> PTerm
- op mkString    : String              -> PTerm
- op mkOp        : QualifiedId * PSort -> PTerm % ?
+% op mkTrue      : ()                  -> PTerm
+% op mkString    : String              -> PTerm
+% op mkOp        : QualifiedId * PSort -> PTerm % ?
 
- % ------------------------------------------------------------------------
+% % ------------------------------------------------------------------------
 
- def mkTrue ()  = Fun (Bool true,  boolPSort, internalPosition)
- %def mkFalse() = Fun (Bool false, boolPSort, internalPosition)
+% def mkTrue ()  = Fun (Bool true,  boolPSort, internalPosition)
+% %def mkFalse() = Fun (Bool false, boolPSort, internalPosition)
 
- def mkString s = Fun (String s, stringPSort, internalPosition)
- def mkOp (qid, srt) = Fun (Op (qid, Nonfix), srt, internalPosition)
+% def mkString s = Fun (String s, stringPSort, internalPosition)
+% def mkOp (qid, srt) = Fun (Op (qid, Nonfix), srt, internalPosition)
 
  % ------------------------------------------------------------------------
  %  Constructors of PTerm's
  % ------------------------------------------------------------------------
 
  op mkApplyN      : PTerm * PTerm                 -> PTerm
- op mkTuple       : List PTerm                    -> PTerm
+% op mkTuple       : List PTerm                    -> PTerm
  op mkList        : List PTerm * Position * PSort -> PTerm
 
  % ------------------------------------------------------------------------
 
  def mkApplyN (t1, t2) : PTerm = ApplyN ([t1, t2],       internalPosition)
- def mkTuple  terms    : PTerm = Record (tagTuple terms, internalPosition)
+% def mkTuple  terms    : PTerm = Record (tagTuple terms, internalPosition)
 
- op tagTuple  : fa(A) List A -> List (Id * A)
- def tagTuple terms = 
-   let def loop (index, terms) = 
-     case terms of
-       | [] -> []
-       | tm::terms -> cons((Nat.toString index, tm), loop(index + 1, terms))
-  in loop (1, terms)
+% op tagTuple  : fa(A) List A -> List (Id * A)
+% def tagTuple terms = 
+%   let def loop (index, terms) = 
+%     case terms of
+%       | [] -> []
+%       | tm::terms -> cons((Nat.toString index, tm), loop(index + 1, terms))
+%  in loop (1, terms)
 
- % ------------------------------------------------------------------------
+% % ------------------------------------------------------------------------
 
  def mkList (terms : List PTerm, pos, element_type) = 
-  let list_type  = PBase (Qualified ("List", "List"),                                [element_type], pos) in
+  let list_type  = Base (Qualified ("List", "List"),                                [element_type], pos) in
   let cons_type  = Arrow (Product   ([("1", element_type), ("2", list_type)], pos),  list_type,      pos) in
   let consFun    = Fun   (Embed     ("Cons", true),                                  cons_type,      pos) in
   let empty_list = Fun   (Embed     ("Nil",  false),                                 list_type,      pos) in
@@ -138,24 +138,24 @@ PosSpec qualifying spec {
  op mkConsPattern : PPattern * PPattern * Position * PSort -> PPattern
 
  def mkListPattern (patterns : List PPattern, pos, element_type) : PPattern = 
-  let list_type  = PBase (Qualified("List","List"),  [element_type], pos) in
+  let list_type  = Base (Qualified("List","List"),  [element_type], pos) in
   let empty_list = EmbedPat ("Nil",  None,  list_type, pos) in
   let def mkCons (x, xs) = 
        EmbedPat ("Cons", Some (RecordPat ([("1",x), ("2",xs)], pos)), list_type, pos) in
   List.foldr mkCons empty_list patterns
 
  def mkConsPattern (p1 : PPattern, p2 : PPattern, pos, element_type) : PPattern =
-  let list_type  = PBase (Qualified("List","List"), [element_type], pos) in
+  let list_type  = Base (Qualified("List","List"), [element_type], pos) in
   EmbedPat ("Cons", Some (RecordPat ([("1",p1), ("2",p2)], pos)), list_type, pos)
 
- % ------------------------------------------------------------------------
- %   ???
- % ------------------------------------------------------------------------
+% % ------------------------------------------------------------------------
+% %   ???
+% % ------------------------------------------------------------------------
 
- op insertDefaultMatches : PosSpec -> PosSpec
+% op insertDefaultMatches : PosSpec -> PosSpec
 
- op abstractSort : (String -> TyVar) * List String * PSort -> TyVars * PSort
- op abstractTerm : (String -> TyVar) * List String * PTerm -> TyVars * PTerm
+% op abstractSort : (String -> TyVar) * List String * PSort -> TyVars * PSort
+% op abstractTerm : (String -> TyVar) * List String * PTerm -> TyVars * PTerm
 
  op removeDefinitions : PosSpec -> PosSpec
  op exportSpec        : PosSpec -> PosSpec
@@ -327,7 +327,7 @@ PosSpec qualifying spec {
   let def insert (tv, map) = StringMap.insert (map, tv, fresh tv) in
   let m = List.foldr insert StringMap.empty tyVars in
   let doSort = 
-      fn (srt as (PBase (Qualified (_, s), [], pos)) : PSort) -> 
+      fn (srt as (Base (Qualified (_, s), [], pos)) : PSort) -> 
          (case StringMap.find (m, s) of
            | Some tyVar -> (TyVar (tyVar, pos)) : PSort
            | None -> srt) 
@@ -358,8 +358,8 @@ PosSpec qualifying spec {
  (* TODO: Fix this?
       let def export_sort (srt : PSort) : PSort = 
               case srt
-                of PBase (Qualified(_,    id), srts, pos) -> 
-                   PBase (Qualified(name, id), srts, pos)
+                of Base (Qualified(_,    id), srts, pos) -> 
+                   Base (Qualified(name, id), srts, pos)
                  | _ -> srt
       in
       let def export_term (trm : PTerm) : PTerm = 

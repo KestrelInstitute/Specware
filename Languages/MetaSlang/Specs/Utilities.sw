@@ -792,7 +792,7 @@ Utilities qualifying spec {
       | LetRec(vts,t,a) -> 
 	let vts = List.map (fn(v,t) -> (letRecToLetTermVar(v),letRecToLetTermTerm(t))) vts in
 	let t = letRecToLetTermTerm(t) in
-	let pts = List.map (fn(v,t) -> (VarPat(v,()),t)) vts in
+	let pts = List.map (fn(v,t) -> (VarPat(v,noPos),t)) vts in
 	let dummyterm = mkTrue() in
 	let dummypts = List.map (fn(pat,t) -> 
 				 case t

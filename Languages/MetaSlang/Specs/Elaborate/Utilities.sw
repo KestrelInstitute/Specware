@@ -173,7 +173,7 @@ spec {
         case srt : PSort of
 	 | CoProduct (row, _) ->
 	   app (fn (id,_) -> addConstr (id, tvs, srt, constrMap)) row
-	 %% | PBase (Qualified (qid, id), _, _) ->
+	 %% | Base (Qualified (qid, id), _, _) ->
 	 %%   (let matching_entries : List(String * QualifiedId * SortInfo) = 
          %%           lookupSortInImports(importMap, qid, id)
          %%       in
@@ -280,7 +280,7 @@ spec {
  def unfoldPSortRec (env, srt, qids) : PSort = 
    let unlinked_sort = unlinkPSort srt in
    case unlinked_sort of
-    | PBase (qid, ts, pos) -> 
+    | Base (qid, ts, pos) -> 
       if SplaySet.member (qids, qid) then
          (error(env,
                 "The sort "^(printQualifiedId qid)^" is recursively defined using itself",
@@ -300,8 +300,8 @@ spec {
                     ());
                  %% Use the primary name, even if the reference was via some alias.
                  %% This normalizes all references to be via the same name.
-                 PBase (main_qid, ts, pos))
-              | (aliases, tvs, Some (srt as PBase(_,_,pos))) -> 
+                 Base (main_qid, ts, pos))
+              | (aliases, tvs, Some (srt as Base(_,_,pos))) -> 
                 %% A base sort can be defined in terms of another base sort.
                 %% So we unfold recursively here.
                 unfoldPSortRec(env,
@@ -475,7 +475,7 @@ spec {
                    %                  if trm = trm_ 
                    %                      then unify(ty,ty_,pairs) 
                    %                  else NotUnify(srt1,srt2)
-              | (PBase(id,ts,pos1),PBase(id_,ts_,pos2)) -> 
+              | (Base(id,ts,pos1),Base(id_,ts_,pos2)) -> 
                    if exists (fn (p1,p2) -> 
                               %% p = (srt1,srt2) 
                               %% need predicate that chases metavar links
@@ -521,12 +521,12 @@ spec {
                     (linkMetaTyVar mtv (withAnnS(s1,pos1)); Unify pairs)
               | (Subsort(ty,_,_),ty2) -> unify(ty,ty2,pairs)
               | (ty,Subsort(ty2,_,_)) -> unify(ty,ty2,pairs)
-              | (PBase _,_) -> 
+              | (Base _,_) -> 
                  let  s1_ = unfoldPSort(env,srt1) in
                 if equalSort?(s1,s1_)
                 then NotUnify (srt1,srt2)
                 else unify(s1_,s2,pairs)
-              | (_,PBase _) ->
+              | (_,Base _) ->
                 let s2_ = unfoldPSort(env,srt2) in
                 if equalSort?(s2,s2_)
                 then NotUnify (srt1,srt2)
@@ -571,7 +571,7 @@ spec {
       | Arrow(t1,t2,_)     -> occurs(v,t1) or occurs(v,t2)
       | Quotient(t,pred,_) -> occurs(v,t)  or occursT(v,pred)
       | Subsort(t,pred,_)  -> occurs(v,t)  or occursT(v,pred)
-      | PBase(_,srts,_)    -> exists (fn s -> occurs(v,s)) srts
+      | Base(_,srts,_)     -> exists (fn s -> occurs(v,s)) srts
       | TyVar _            -> false 
       | MetaTyVar _        -> (case unlinkPSort srt of
                                | MetaTyVar(w1,_) -> v = w1 

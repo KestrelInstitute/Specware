@@ -124,11 +124,11 @@
 ;;; ========================================================================
 
 (defparameter internal-parser-position (cons :|Internal| "built-in from parser"))
-(defparameter char-sort   (cons :|PBase| (vector (mkQualifiedId "Char"    "Char")    nil internal-parser-position)))
-(defparameter bool-sort   (cons :|PBase| (vector (mkQualifiedId "Boolean" "Boolean") nil internal-parser-position)))
-(defparameter string-sort (cons :|PBase| (vector (mkQualifiedId "String"  "String")  nil internal-parser-position)))
-(defparameter int-sort    (cons :|PBase| (vector (mkQualifiedId "Integer" "Integer") nil internal-parser-position)))
-(defparameter nat-sort    (cons :|PBase| (vector (mkQualifiedId "Nat"     "Nat")     nil internal-parser-position)))
+(defparameter char-sort   (cons :|Base| (vector (mkQualifiedId "Char"    "Char")    nil internal-parser-position)))
+(defparameter bool-sort   (cons :|Base| (vector (mkQualifiedId "Boolean" "Boolean") nil internal-parser-position)))
+(defparameter string-sort (cons :|Base| (vector (mkQualifiedId "String"  "String")  nil internal-parser-position)))
+(defparameter int-sort    (cons :|Base| (vector (mkQualifiedId "Integer" "Integer") nil internal-parser-position)))
+(defparameter nat-sort    (cons :|Base| (vector (mkQualifiedId "Nat"     "Nat")     nil internal-parser-position)))
 
 (defparameter forall-op   (cons :|Forall| nil))
 (defparameter exists-op   (cons :|Exists| nil))
@@ -194,7 +194,7 @@
          (sort2     (cdr tyVarsSrt)))
     ;; Since namedTypeVar is the identity function,
     ;;  (car tyVarsSrt) will just be a copy of typeVars1,
-    ;;  (cdr tyVarsSrt) will be a copy of sort with (PBase qid) replaced by (TyVar id) where appropriate.
+    ;;  (cdr tyVarsSrt) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for this conversion into the linker.
     (cons (cons :|Sort| (cons (remove-duplicates qualifiable-sort-names :test 'equal :from-end t)
 			      (cons typeVars2 (cons :|Some| sort2))))
@@ -229,7 +229,7 @@ If we want the precedence to be optional:
                 optional-sort-variable-binder)))
     ;; Since namedTypeVar is the identity function,
     ;;  (car <result>) will just be a copy of vars
-    ;;  (cdr <result>) will be a copy of sort with (PBase qid) replaced by (TyVar id) where appropriate.
+    ;;  (cdr <result>) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for that conversion into the linker.
     (PosSpec::abstractSort #'namedTypeVar vars sort)))
 
@@ -249,7 +249,7 @@ If we want the precedence to be optional:
     ;; Since namedTypeVar is the identity function,
     ;;  (car tyVarsTerm) will just be a copy of tyVars
     ;;    so srtScheme will be tyVars * Mtv -- i.e. Mtv parameterized by tyVars
-    ;;  (cdr tyVarsTerm) will be a copy of term with (PBase qid) replaced by (TyVar id) where appropriate.
+    ;;  (cdr tyVarsTerm) will be a copy of term with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
     (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
                             (vector nil srtScheme (cons :|Some| term))))
@@ -259,7 +259,7 @@ If we want the precedence to be optional:
   (if (null params)
       term
     (cons :|Lambda|
-          (cons (list (vector (car params) (PosSpec::mkTrue)
+          (cons (list (vector (car params) (StandardSpec::mkTrue)
                               (bind-parameters (cdr params) term l r)))
                 (make-pos l r)))))
 
@@ -277,7 +277,7 @@ If we want the precedence to be optional:
            (term         (cdr typeVarsTerm)))
       ;; Since namedTypeVar is the identity function,
       ;;  (car typeVarsTerm) will just be a copy of the original typevars
-      ;;  (cdr typeVarsTerm) will be a copy of expression with (PBase qid) replaced by (TyVar id) where appropriate.
+      ;;  (cdr typeVarsTerm) will be a copy of expression with (Base qid) replaced by (TyVar id) where appropriate.
       ;; TODO: Move the responsibility for all this conversion into the linker.
       (cons (cons :|Claim| (vector (list claim-kind) label typevars term))
             (make-pos l r)))))
@@ -337,7 +337,7 @@ If we want the precedence to be optional:
 
 (defun make-product (fields l r)
   (cons :|Product|
-        (cons (PosSpec::tagTuple fields)
+        (cons (StandardSpec::tagTuple fields)
               (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
@@ -345,7 +345,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-sort-instantiation (qualifiable-sort-name actual-sort-parameters l r)
-  (cons :|PBase|
+  (cons :|Base|
         (vector qualifiable-sort-name actual-sort-parameters
                 (make-pos l r))))
 
@@ -355,7 +355,7 @@ If we want the precedence to be optional:
 
 (defun make-sort-ref (qualifiable-sort-name l r)
   (let ((sort-args nil))
-    (cons :|PBase|
+    (cons :|Base|
           (vector qualifiable-sort-name sort-args
                   (make-pos l r)))))
 
@@ -484,7 +484,7 @@ If we want the precedence to be optional:
       term
     (cons :|Lambda|
           (cons (list (vector (car params)
-                              (PosSpec::mkTrue)
+                              (StandardSpec::mkTrue)
                               (bindParams (cdr params) term l r)))
                 (make-pos l r)))))
 
@@ -568,7 +568,7 @@ If we want the precedence to be optional:
                    '()
                  optional-tuple-display-body)))
     (cons ':|Record|
-          (cons (PosSpec::tagTuple terms)
+          (cons (StandardSpec::tagTuple terms)
                 (make-pos l r)))))
 
 ;;; ------------------------------------------------------------------------
@@ -687,7 +687,7 @@ If we want the precedence to be optional:
 
 (defun make-branch (pattern expression l r)
   (declare (ignore l r))
-  (vector pattern (PosSpec::mkTrue) expression))
+  (vector pattern (StandardSpec::mkTrue) expression))
 
 ;;; ========================================================================
 ;;;  PATTERN
@@ -712,7 +712,7 @@ If we want the precedence to be optional:
 (defun make-tuple-pattern            (patterns         l r)
   (if (= (length patterns) 1)
       (car patterns)
-    (cons :|RecordPat| (cons (PosSpec::tagTuple patterns) (make-pos l r)))))
+    (cons :|RecordPat| (cons (StandardSpec::tagTuple patterns) (make-pos l r)))))
 
 (defun make-record-pattern          (fields            l r)
   (let ((alphabetized-fields (sort fields #'(lambda (x y) (string< (car x) (car y))))))
