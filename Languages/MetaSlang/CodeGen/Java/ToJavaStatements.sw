@@ -19,7 +19,14 @@ op specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Blo
  *) 
 op termToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def termToExpressionM(tcx, term, k, l) =
-   termToExpression_internalM(tcx,term,k,l,true)
+  {
+   specialFun <- getSpecialFun;
+   res <- specialFun(tcx,term,k,l);
+   case res of
+     | Some res1 -> return res1
+     | None ->
+       termToExpression_internalM(tcx,term,k,l,true)
+  }
 
 op termToExpression_internalM: TCx * JGen.Term * Nat * Nat * Boolean -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
@@ -38,17 +45,23 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 	      | Some (newV) -> return (mts, newV, k, l)
 	      | _ -> return (mts, mkVarJavaExpr(id), k, l))
 	 | Fun (Op (Qualified (q, id), _), srt, _) -> 
-	   if baseType?(spc,srt) then
-	      return (mts, mkQualJavaExpr(primitiveClassName, id), k, l)
-	   else
-	     (case srt of
-		| Base (Qualified (q, srtId), _, _) -> return (mts, mkQualJavaExpr(srtId, id), k, l)
-		| Boolean _                         -> return (mts, mkQualJavaExpr("Boolean", id), k, l)
-		| Arrow(dom,rng,_) -> translateLambdaToExprM(tcx,term,k,l)
-		| _ -> 
-                  let _ = print term in
-		  raise(UnsupportedTermFormat((printTerm term)^" [2]"),termAnn term)
-	      )
+	   {
+	    localVarFun <- getLocalVarToJExprFun;
+	    case localVarFun id of
+	      | Some jexpr -> return (mts,jexpr,k,l)
+	      | None ->
+	        (if baseType?(spc,srt) then
+		   return (mts,mkQualJavaExpr(primitiveClassName,id),k,l)
+		 else
+		   (case srt of
+		      | Base (Qualified (q, srtId), _, _) -> return (mts, mkQualJavaExpr(srtId, id), k, l)
+		      | Boolean _                         -> return (mts, mkQualJavaExpr("Boolean", id), k, l)
+		      | Arrow(dom,rng,_) -> translateLambdaToExprM(tcx,term,k,l)
+		      | _ -> 
+		        let _ = print term in
+			raise(UnsupportedTermFormat((printTerm term)^" [2]"),termAnn term)
+			 ))
+	   }
 	 | Fun (Nat (n),_,__) -> return(mts, mkJavaNumber(n), k, l)
 	 | Fun (Bool (b),_,_) -> return(mts, mkJavaBool(b), k, l)
 	 | Fun (String(s),_,_) -> return(mts, mkJavaString(s), k, l)

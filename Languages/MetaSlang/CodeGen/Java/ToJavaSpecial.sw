@@ -99,6 +99,17 @@ spec
 	}
     in
     case term of
+      | Apply(Apply(Fun(Op(Qualified(newq,"new"),_),_,_),Fun(Op(Qualified(_,className),_),_,_),_),arg,_) ->
+        let _ = writeLine("found new, qualifier="^newq^", className="^className^", args="^(printTerm arg)) in
+	let args = (case arg of
+		      | Record(fields,_) -> map (fn(_,t) -> t) fields
+		      | _ -> [arg])
+	in
+	check4StaticOrNew(className,"new",args)
+	%return None
+      | Apply(Fun(Op(Qualified(_,"currentTimeMillis"),_),_,_),_,_) ->
+        let expr = mkMethInvName((["System"],"currentTimeMillis"),[]) in
+	return(Some([],expr,k,l))
       | Apply(Fun(Op(Qualified("System","fail"),_),_,_),t,_) ->
         {
 	 (s,argexpr,k,l) <- termToExpressionM(tcx,t,k,l);
@@ -240,7 +251,7 @@ spec
 		 check4StaticOrNew(qual,id,allargs)
 	     | [] -> check4StaticOrNew(qual,id,[]))
 	else
-	  %let _ = writeLine("    "^(printQualifiedId qid)^" *not* found in spec.") in
+	  %let _ = writeLine("    "^(printQualifiedId qid)^" *not* found in spec."^(printSpec spc)) in
 	  return None
        }
       | _ -> return None

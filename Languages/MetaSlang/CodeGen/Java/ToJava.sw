@@ -28,7 +28,7 @@ def JGen.metaSlangTermToJavaExpr term =
   }
 
 %op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (Block * List Java.Expr)
-def metaSlangTermsToJavaExprs terms =
+def JGen.metaSlangTermsToJavaExprs terms =
   {
    (block,exprs,_,_) <- translateTermsToExpressionsM(empty,terms,0,0);
    return (block,exprs)
@@ -577,7 +577,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
 							 | Lambda(match,b) ->
 							   let match = map
 							      (fn(p,cond,trm) ->
-							       let _ = writeLine("inserting restrict...") in
+							       %let _ = writeLine("inserting restrict...") in
 							       let b = termAnn(trm) in
 							       let rsrt = Arrow(srtrng,opsrtrng,b):Sort in
 							       let trm = Apply(Fun(Restrict,rsrt,b),trm,b) in

@@ -15,6 +15,8 @@ spec
 
   type JSpec = Java.CompUnit
   type JavaSpec = JSpec
+  type TCx = StringMap.Map Java.Expr
+
 
 %  type JcgInfo = {
 %		  clsDecls : List ClsDecl,
@@ -74,6 +76,7 @@ spec
 
   op mkBinExp: Id * List Java.Expr -> Java.Expr
   op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
+  op mkVarJavaExpr: Id -> Java.Expr
 
 
 end-spec

@@ -247,8 +247,6 @@ def isIdentityAssignment?(stmt) =
 	 | _ -> false)
     | _ -> false
 
-sort TCx = StringMap.Map Java.Expr
-
 op mts: Block
 def mts = []
 
@@ -462,7 +460,7 @@ def mkJavaString(s) =
 def mkJavaChar(c) =
   CondExp (Un (Prim (Char (c))), None)
 
-op mkVarJavaExpr: Id -> Java.Expr
+%op mkVarJavaExpr: Id -> Java.Expr
 def mkVarJavaExpr(id) = CondExp (Un (Prim (Name ([], id))), None)
 
 op mkQualJavaExpr: Id * Id -> Java.Expr
@@ -971,7 +969,7 @@ op insertRestricts: Spec * List Sort * List Term -> List Term
 def insertRestricts(spc,dom,args) =
   let
     def insertRestrict(domsrt,argterm) =
-      let _ = writeLine("insertRestrict: domsrt="^printSort(domsrt)^", argterm="^printTermWithSorts(argterm)) in
+      %let _ = writeLine("insertRestrict: domsrt="^printSort(domsrt)^", argterm="^printTermWithSorts(argterm)) in
       let domsrt = unfoldBase(spc,domsrt) in
       case domsrt of
 	| Subsort(srt,pred,_) ->
