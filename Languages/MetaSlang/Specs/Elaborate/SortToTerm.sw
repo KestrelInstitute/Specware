@@ -126,13 +126,13 @@ XML qualifying spec
       def add_to_table (srt, table) =
 	let expansion = unfoldSort (env, srt) in
 	let _ = toScreen ("\n-----------------------------\n") in
-        let _ = show_sort ("     Sort", srt) in
-        let _ = show_sort ("Expansion", expansion) in
+	let _ = show_sort ("     Sort", srt) in
+	let _ = show_sort ("Expansion", expansion) in
 	if expansion = srt then
 	  let _ = toScreen ("\n <not added> \n") in
 	  let _ = toScreen ("\n-----------------------------\n") in
 	  table
-	else
+	else 
 	  let new_table = cons ((srt, expansion), table) in
 	  let _ = toScreen ("\n *** ADDED *** \n") in
 	  let _ = toScreen ("\n-----------------------------\n") in
@@ -155,7 +155,16 @@ XML qualifying spec
 	  | Base      (nm, srts, pos) -> (let already_seen? = 
 					      (foldl (fn ((old_srt, _), seen?) -> 
 						      seen? or (case old_srt of
-								  | Base (old_nm, _, _) -> nm = old_nm
+								  | Base (old_nm, _, _) -> 
+								    (nm = old_nm 
+								     or 
+								     %% Treat List.List as permanently seen,
+								     %% because it needs special treatment.
+								     %% In particular, it's recursive expansion 
+								     %% into a coproduct of Cons | Nil doesn't 
+								     %% correspond to the efficient internal 
+								     %% structures created for lists.
+								     nm = Qualified ("List", "List"))
 								  | _ -> seen?))
 					             false
 						     table)
