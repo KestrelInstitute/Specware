@@ -54,7 +54,7 @@ resolved to the defining text of the unit, which is contained in a
 kinds are syntactically distinguished from each other and they are
 resolved in slightly different ways.</para>
 
-<section>
+<section id="absoluteref">
 <title>Absolute References</title>
 
 <para>An absolute reference starts with ``/'' (forward slash),
@@ -161,7 +161,7 @@ version.</para>
 
 </section>  <!-- absolute references -->
 
-<section>
+<section id="relativeref">
 <title>Relative References</title>
 
 <para>A relative reference is a ``/''-separated sequence of one or
@@ -322,10 +322,9 @@ whole command (including the argument) must fit in one line.</para>
 ]]
 
 <para>The unit reference can be absolute or relative. If it is
-absolute, &Specware; attempts to resolve it as explained in the
-section on resolution of absolute references above.  If it is
-relative, &Specware; attempts to resolve it as explained in the
-section on resolution of relative references above, as if the
+absolute, &Specware; attempts to resolve it as explained in <xref
+linkend="absoluteref">.  If it is relative, &Specware; attempts to
+resolve it as explained in <xref linkend="relativeref">, as if the
 reference occurred in a single-unit file of the current Lisp
 directory. Either way, if resolution fails an error is signaled by
 &Specware;.</para>
