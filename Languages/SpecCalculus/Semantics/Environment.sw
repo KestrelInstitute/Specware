@@ -228,6 +228,7 @@ operator binds the output of the first operation.
     fn state -> (case (f state) of
       | (Ok y, newState) -> (g y newState)
       | (Exception except, newState) -> (Exception except, newState))
+      %% Can't do obvious optimization of | x -> x because lhs is Env a and rhs is Env b
 \end{spec}
 
 The second simply sequences two operations without any extra binding.

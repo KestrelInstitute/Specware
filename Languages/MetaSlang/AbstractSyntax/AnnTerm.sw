@@ -579,22 +579,22 @@ MetaSlang qualifying spec {
 	 if match = newMatch then term
 	   else Lambda (newMatch, a)
 
-       | Bind       (bnd, vars, trm, a) -> 
-	 let newVars = map (fn (id,srt)-> (id, mapSort tsp_maps srt)) vars in
-	 let newTrm = mapRec trm in
-	 if vars = newVars & trm = newTrm then term
-	   else Bind (bnd, newVars, newTrm, a)
-
        | Apply      (       t1,        t2,  a) ->
 	 let newT1 = mapRec t1 in
 	 let newT2 = mapRec t2 in
 	 if newT1 = t1 & newT2 = t2 then term
-	  else Apply(mapRec newT1, mapRec newT2,  a)
+	  else Apply(newT1, newT2,  a)
 
        | Seq        (                terms, a) -> 
 	 let newTerms = map mapRec terms in
 	 if newTerms = terms then term
 	   else Seq(newTerms, a)
+
+       | Bind       (bnd, vars, trm, a) -> 
+	 let newVars = map (fn (id,srt)-> (id, mapSort tsp_maps srt)) vars in
+	 let newTrm = mapRec trm in
+	 if vars = newVars & trm = newTrm then term
+	   else Bind (bnd, newVars, newTrm, a)
 
        | ApplyN     (                terms, a) -> 
 	 let newTerms = map mapRec terms in
@@ -748,6 +748,80 @@ MetaSlang qualifying spec {
   in
     mapRec pattern
 
+ %% Like mapTerm but ignores sorts
+ op  mapSubTerms: fa(a) (ATerm a -> ATerm a) -> ATerm a -> ATerm a
+ def mapSubTerms f term = 
+  let 
+   def mapT term = 
+    case term of
+       | Fun _ -> term 
+       | Var  _ -> term 
+       | Let        (decls, bdy, a) -> 
+	 let newDecls = map (fn (pat, trm) -> (pat, mapRec trm)) decls in
+	 let newBdy = mapRec bdy in
+	 if decls = newDecls & bdy = newBdy then term
+	   else Let (newDecls, newBdy, a)
+
+       | LetRec(decls, bdy, a) -> 
+	 let newDecls = map (fn ((id, srt), trm) -> ((id,srt), mapRec trm))
+	                  decls in
+	 let newBdy = mapRec bdy in
+	 if decls = newDecls & bdy = newBdy then term
+	   else LetRec(newDecls, newBdy, a)
+
+       | Record(row, a) -> 
+	 let newRow = map (fn (id,trm) -> (id, mapRec trm)) row in
+	 if row = newRow then term
+	   else Record(newRow,a)
+
+       | IfThenElse (t1,t2,t3,a) -> 
+	 let newT1 = mapRec t1 in
+	 let newT2 = mapRec t2 in
+	 let newT3 = mapRec t3 in
+	 if newT1 = t1 & newT2 = t2 & newT3 = t3 then term
+	   else IfThenElse (newT1, newT2, newT3, a)
+
+       | Lambda(match, a) -> 
+         let newMatch = map (fn (pat, cond, trm)->
+			      (pat, mapRec cond, mapRec trm))
+                          match in
+	 if match = newMatch then term
+	   else Lambda (newMatch, a)
+
+       | Bind(bnd, vars, trm, a) -> 
+	 let newVars = map (fn (id,srt)-> (id, srt)) vars in
+	 let newTrm = mapRec trm in
+	 if vars = newVars & trm = newTrm then term
+	   else Bind (bnd, newVars, newTrm, a)
+
+       | Apply(t1,t2,a) ->
+	 let newT1 = mapRec t1 in
+	 let newT2 = mapRec t2 in
+	 if newT1 = t1 & newT2 = t2 then term
+	  else Apply(newT1, newT2,  a)
+
+       | Seq(terms, a) -> 
+	 let newTerms = map mapRec terms in
+	 if newTerms = terms then term
+	   else Seq(newTerms, a)
+
+       | ApplyN(terms, a) -> 
+	 let newTerms = map mapRec terms in
+	 if newTerms = terms then term
+	   else ApplyN (newTerms, a)
+
+       | SortedTerm (trm, srt, a) -> 
+	 let newTrm = mapRec trm in
+	 if newTrm = trm then term
+	   else SortedTerm (newTrm, srt, a)
+   def mapRec term = 
+     %% apply map to leaves, then apply map to result
+     f (mapT term)
+  in
+    mapRec term
+
+
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive Term Search
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -823,6 +897,61 @@ MetaSlang qualifying spec {
 
     | SortedTerm(M,   _,   _) -> foldSubTerms f newVal M
  
+ op  foldSubTermsEvalOrder : fa(b,r) (ATerm b * r -> r) -> r -> ATerm b -> r
+ def foldSubTermsEvalOrder f val term = 
+  let recVal =
+      case term of
+	| Var _                 -> val
+	| Fun _                 -> val
+
+	| Apply(M as Lambda (rules,  _),N,_) ->	% case statement
+	  let val = (foldSubTermsEvalOrder f val N) in
+	  foldl (fn ((_,c,M),val) ->
+		   foldSubTermsEvalOrder f (foldSubTermsEvalOrder f val c) M)
+	    val rules 
+
+	| Apply     (M,N,    _) -> foldSubTermsEvalOrder f
+				     (foldSubTermsEvalOrder f val M) N
+
+	| Record    (fields, _) -> foldl (fn ((_,M),val) ->
+					    foldSubTermsEvalOrder f val M)
+				     val fields
+
+	| Let       (decls,N,_) -> let dval = foldl (fn ((_,M),val) ->
+						       foldSubTermsEvalOrder f val M)
+				                val decls
+				   in foldSubTermsEvalOrder f dval N
+
+	| LetRec    (decls,N,_) -> foldl (fn ((_,M),val) -> (foldSubTermsEvalOrder f val M))
+				     (foldSubTermsEvalOrder f val N) decls
+
+	| Seq       (Ms,     _) -> foldl f val Ms
+
+	| IfThenElse(M,N,P,  _) -> foldSubTermsEvalOrder f
+				     (foldSubTermsEvalOrder f
+				       (foldSubTermsEvalOrder f val M) N)
+				     P
+
+	| Bind      (_,_,M,  _) -> foldSubTermsEvalOrder f val M
+
+	| Lambda    (rules,  _) -> let val = f(term,val) in
+				   %% lambda is evaluated before its contents
+				   %% this is an approximation as we don't know when
+				   %% contents will be evaluated
+				   foldl (fn ((_,c,M),val) ->
+					   foldSubTermsEvalOrder f
+					     (foldSubTermsEvalOrder f val c) M)
+				     val rules     
+
+	| ApplyN    (Ms,     _) -> foldl (fn (M,val) -> foldSubTermsEvalOrder f val M)
+				     val Ms
+
+	| SortedTerm(M,_,    _) -> foldSubTermsEvalOrder f val M
+  in
+    case term of
+      | Lambda _ -> recVal
+      | _        -> f(term,recVal)
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Replacement
@@ -1046,7 +1175,6 @@ MetaSlang qualifying spec {
           | Quotient  (srt, trm,  _) -> (appRec srt; appTerm tsp_apps trm)
           | Subsort   (srt, trm,  _) -> (appRec srt; appTerm tsp_apps trm)
           | Base      (qid, srts, _) -> app appRec srts
-          | Base     (qid, srts, _) -> app appRec srts
           | _                        -> ()
 
       def appRec srt = 

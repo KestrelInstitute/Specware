@@ -32,12 +32,12 @@ spec
   def emptyMap = MapSTHashtable.emptyMap
   def numItems = MapSTHashtable.numItems
 
-  def apply = MapSTHashtable.apply
+  def apply(m, x) = MapSTHashtable.apply(m, x)
   def eval (m, x) =
     case MapSTHashtable.apply(m,x) of
       | Some v -> v
       | None -> fail "inside eval"   % shame shame
-  def update = MapSTHashtable.update
+  def update(x,y,z) = MapSTHashtable.update(x,y,z)
   def remove = MapSTHashtable.remove
   def inDomain? (m, x) =
     case apply (m, x) of

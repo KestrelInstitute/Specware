@@ -23,6 +23,7 @@ ListUtilities qualifying spec {
   op findOptionIndex   : fa(a,b) (a * Nat -> Option b) -> List a -> Option (Nat * b)
   op findIndex         : fa(a)   (a -> Boolean) -> List a -> Option(Nat * a)
 
+  op mapWithIndexRec   : fa(a,b) (Nat * a -> b) * List a * Nat -> List b
   op mapWithIndex      : fa(a,b) (Nat * a -> b) -> List a -> List b
 
   op subset?           : fa (a) List a * List a -> Boolean
