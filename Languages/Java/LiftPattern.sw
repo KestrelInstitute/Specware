@@ -15,6 +15,9 @@ sort Type = Sort
 %sort BaseType = (Sort | baseType?)
 
 sort OpDef = Op * List Sort * Sort * List Var * Term
+% the Boolean flag is used to distinguish the case of a function with no arguments
+% from a constant: if the flag is true, then it's a constant
+sort OpDef2 = Op * List Sort * Sort * List Var * Term * Boolean (* constant or function *)
 
 op unSupported: Op -> String
 def unSupported x =
@@ -240,10 +243,38 @@ def srtDom(srt) =
      argSorts)
     | _ -> []
 
+op srtDomKeepSubsorts: Sort -> List Sort
+def srtDomKeepSubsorts(srt) =
+  let def domSrtDom(dom) =
+       (case dom of
+	  | Product (fields, _) -> map (fn (_,srt) -> srt) fields
+	  %| Subsort (subSrt, _, _) -> domSrtDom(subSrt)
+	  | _ -> [dom]) in
+  case srt of
+    | Arrow (dom, rng, _) ->
+    (let argSorts = domSrtDom(dom) in
+     argSorts)
+    | _ -> []
+
 def srtRange(srt) =
   case srt of
     | Arrow (dom, rng, _) -> rng
     | _ -> srt
+
+op srtDomPreds: Sort -> List(Option Term)
+def srtDomPreds(srt) =
+  %let _ = writeLine("srtDomPreds "^printSort(srt)) in
+  let def srtPred(srt) : Option Term =
+        case srt of
+	  | Subsort(_,pred,_) -> 
+	    %let _ = writeLine("collecting restriction term "^printTerm(pred)) in
+	    Some pred
+	  | _ -> None
+  in
+    case srt of
+      | Arrow(Product(fields,_),_,_) -> map (fn(_,srt) -> srtPred(srt)) fields
+      | Arrow(srt,_,_) -> [srtPred(srt)]
+      | _ -> []
 
  op patternNameOpt : Pattern       -> Option Id
  op patternNamesOpt: Pattern       -> Option (List Id)
@@ -452,6 +483,7 @@ def liftPattern(spc) =
    let (origOpVars, origOpBody) = srtTermDelta(srt, term) in
    let (newTerm, newOds) = lift(spc,origOp, (origOpVars, origOpBody)) in
    let (origOpNewVars, origOpNewTerm) = srtTermDelta(srt, newTerm) in
+   let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
    let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpVars, newTerm) in
    cons(origOpNewDef, newOds++result))
   []
@@ -462,11 +494,21 @@ def liftPattern(spc) =
    result
 
 op addOpToSpec: OpDef * Spec -> Spec
-
 def addOpToSpec((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term), spc:Spec) =
-  let srt = case dom of | [] -> rng | [dom] -> withAnnS(mkArrow(dom, rng),sortAnn(dom)) | _ -> mkArrow(mkProduct(dom), rng) in
+  addOpToSpec2((oper,dom,rng,formals,body,false),spc)
+   
+op addOpToSpec2: OpDef2 * Spec -> Spec
+def addOpToSpec2((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term, isConstantOp?: Boolean), spc:Spec) =
+  let srt = case dom of 
+	      | [] -> if isConstantOp? then rng else mkArrow(mkProduct([]),rng)
+	      | [dom] -> withAnnS(mkArrow(dom, rng),sortAnn(dom))
+	      | _ -> mkArrow(mkProduct(dom), rng)
+  in
   let varPatterns = map mkVarPat formals in
-  let term = mkLambda(mkTuplePat(varPatterns), body) in
+  let term = case varPatterns of
+               | [] -> if isConstantOp? then body else mkLambda(mkTuplePat(varPatterns),body)
+               | _ -> mkLambda(mkTuplePat(varPatterns), body)
+  in
   let (f, t) = srtTermDelta(srt, term) in
   run (addOp (oper, srt, term, spc))
    

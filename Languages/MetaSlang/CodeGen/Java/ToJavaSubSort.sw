@@ -3,9 +3,11 @@ JGen qualifying spec
 import ToJavaBase
 import ToJavaStatements
 
-op mkSubSortTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl -> ClsDecl
-def mkSubSortTypeClsDecl(id, subSortFieldDecls, subSortMethodDecls, subSortConstrDecls) =
-  ([], (id, None, []), setConstrs(setMethods(setFlds(emptyClsBody, subSortFieldDecls), subSortMethodDecls), subSortConstrDecls))
+op mkSubSortTypeClsDecl: Id * Id * List FldDecl * List MethDecl * List ConstrDecl -> ClsDecl
+def mkSubSortTypeClsDecl(id, _(*superSortId*), subSortFieldDecls, subSortMethodDecls, subSortConstrDecls) =
+  let ssrt = None in %if builtinBaseTypeId? superSortId then None else Some ([],superSortId) in
+  ([], (id, ssrt, []),
+   setConstrs(setMethods(setFlds(emptyClsBody, subSortFieldDecls), subSortMethodDecls), subSortConstrDecls))
 
 
 op subSortToClsDecls: Id * Sort * MS.Term * Spec -> List ClsDecl * Collected
@@ -21,7 +23,7 @@ def subSortToClsDecls(id, superSort, pred, spc) =
        let subSortMethodBody = [Stmt (Return (Some (mkJavaEq(thisRelax, eqargRelax, superSortId))))] in
        let subSortMethodDecl = setMethodBody(subSortMethodDecl, subSortMethodBody) in
        let (subSortConstrDecl,col) = mkSubSortConstrDecl(id, superSortId, superSort, predId,spc) in
-       ([mkSubSortTypeClsDecl(id, [relaxFieldDecl], [subSortMethodDecl], [subSortConstrDecl])],col)
+       ([mkSubSortTypeClsDecl(id, superSortId, [relaxFieldDecl], [subSortMethodDecl], [subSortConstrDecl])],col)
        | _ -> (issueUnsupportedError(b,"unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.");
 	       ([],nothingCollected))
       )

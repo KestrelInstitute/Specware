@@ -53,10 +53,10 @@ def unfoldSortAliases(spc) =
   let srts = sortsAsList(spc) in
   case find (fn(_,_,sortinfo) -> 
 	     case sortinfo of
-	       | (_,_,(_,Base(qid,_,_))::_) -> true
+	       | (_,_,(_,Base(qid,psrts,_))::_) -> true
 	       | _ -> false) srts of
     | None -> spc
-    | Some (q0,id0,(_,_,(_,Base(qid,_,_))::_)) ->
+    | Some (q0,id0,(_,_,(_,Base(qid,psrts,_))::_)) ->
       let qid0 = mkQualifiedId(q0,id0) in
       %let _ = writeLine("sort alias found: "^printQualifiedId(qid0)^" = "^printQualifiedId(qid)) in
       let srts = filter (fn(q1,id1,_) -> ~((q1=q0)&(id1=id0))) srts in
@@ -65,11 +65,15 @@ def unfoldSortAliases(spc) =
                            emptyASortMap srts
       in
       let spc = setSorts(spc,sortmap) in
-      let spc = mapSpec (id,
-			 fn|s as Base(qid2,srt,b) -> if (qid2 = qid0) then Base(qid,srt,b) else s
-			   |s -> s
-			 ,id) spc
+      let
+        def mapSrt(s) = 
+	  case s of
+	    | Base(qid2,srts,b) -> %let srts = psrts in
+	                           if (qid2 = qid0) then Base(qid,psrts,b)
+				   else Base(qid2,srts,b)
+	    | _ -> s
       in
+      let spc = mapSpec (id,mapSrt,id) spc in
       unfoldSortAliases spc
 
 (**
@@ -484,7 +488,7 @@ op getSortNameSuffix: List Sort -> String
 def getSortNameSuffix(instlist) =
   case instlist of
     | [] -> ""
-    | srt::instlist -> "$" ^ (sortId srt)^(getSortNameSuffix instlist)
+    | srt::instlist -> "_" ^ (sortId srt)^(getSortNameSuffix instlist)
 
 op addOpInfo2SortOpInfos: QualifiedId * OpInfo * SortOpInfos -> SortOpInfos
 def addOpInfo2SortOpInfos(nqid,opinfo,minfo) =
@@ -672,5 +676,10 @@ def addMissingFromPattern(bspc,spc,ignore,pat,minfo) =
     | QuotientPat(p,t,_) -> amp(p,amt(t,minfo))
     | SortedPat(p,s,_) -> amp(p,ams(s,minfo))
     | _ -> minfo
+
+%--------------------------------------------------------------------------------
+
+
+
 
 endspec

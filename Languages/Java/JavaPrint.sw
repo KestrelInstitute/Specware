@@ -768,7 +768,7 @@ Java qualifying spec
                               toPretty ".",
                               toPretty (Integer.toString i2)]
       | Bool b          -> toPretty (Boolean.toString b)
-      | Char c          -> toPretty (Char.toString c)
+      | Char c          -> toPretty ("'"^(Char.toString c)^"'")
       | String s        -> toPretty (concatList ["\"",s,"\""])
       | Null            -> toPretty "null"
       | ClsInst opt     -> prettysNone [case opt of

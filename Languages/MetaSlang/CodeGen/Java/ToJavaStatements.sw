@@ -149,8 +149,10 @@ def translateRelaxToExpr(tcx, argsTerm, k, l, spc) =
 op translateQuotientToExpr: TCx * Sort * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateQuotientToExpr(tcx, srt, argsTerm, k, l, spc) =
   let [arg] = applyArgsToTerms(argsTerm) in
-  let ((newBlock, newArg, newK, newL),col) = termToExpression(tcx, arg, k, l, spc) in
-  let Base (Qualified (q, srtId), _, _) = srt in
+  let ((newBlock, newArg, newK, newL),col0) = termToExpression(tcx, arg, k, l, spc) in
+  %let Base (Qualified (q, srtId), _, _) = srt in
+  let (srtId,col1) = srtId srt in
+  let col = concatCollected(col0,col1) in
   ((newBlock, mkNewClasInst(srtId, [newArg]), newK, newL),col)
 
 op translateChooseToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
@@ -362,6 +364,7 @@ def translateCaseCasesToSwitches(tcx, _(* caseType *), caseExpr, cres, cases, k0
 	  %let sumdType = mkSumd(cons, caseType) in
 	  let newTcx = addSubsToTcx(tcx, patVars, subId) in
 	  let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(cres, newTcx, body, ks, ls, spc) in
+	  let coSrt = unfoldToSubsort(spc,coSrt) in
 	  let (initBlock,col2) = mkCaseInit(cons,coSrt) in
 	  let (caseType,col3) = srtId coSrt in
 	  %let tagId = mkTag(cons) in
@@ -494,6 +497,19 @@ def translateCaseRet(tcx, term, k, l, spc) =
   let col = concatCollected(col0,concatCollected(col1,col2)) in
   ((caseTermBlock++[switchStatement], finalK, finalL),col)
 
+op unfoldToSubsort: Spec * Sort -> Sort
+def unfoldToSubsort(spc,srt) =
+  let def uf(srt) =
+  case srt of
+    | Subsort(srt,_,_) -> srt
+    | _ -> let usrt = unfoldBase(spc,srt) in
+    if usrt = srt then srt else
+      unfoldToSubsort(spc,usrt)
+  in
+    let usrt = uf(srt) in
+    case usrt of
+      | Subsort _ -> usrt
+      | _ -> srt
 
 op translateCaseCasesToSwitchesRet: TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
 def translateCaseCasesToSwitchesRet(tcx, _(* caseType *), caseExpr, cases, k0, l0, l, spc) =
@@ -514,6 +530,7 @@ def translateCaseCasesToSwitchesRet(tcx, _(* caseType *), caseExpr, cases, k0, l
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
 	    let ((caseBlock, newK, newL),col1) = termToExpressionRet(newTcx, body, ks, ls, spc) in
+	    let coSrt = unfoldToSubsort(spc,coSrt) in
 	    let (initBlock,col2) = mkCaseInit(cons,coSrt) in
 	    let (caseType,col3) = srtId coSrt in
 	    let tagId = mkTagCId(cons) in
@@ -613,6 +630,7 @@ def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, _(* caseType *), caseExpr, ca
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
 	    let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
+	    let coSrt = unfoldToSubsort(spc,coSrt) in
 	    let (initBlock,col2) = mkCaseInit(cons,coSrt) in
 	    let tagId = mkTagCId(cons) in
 	    let (caseType,col3) = srtId coSrt in
@@ -712,6 +730,7 @@ def translateCaseCasesToSwitchesAsgV(oldVId, tcx, _(* caseType *), caseExpr, cas
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
 	    let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
+	    let coSrt = unfoldToSubsort(spc,coSrt) in
 	    let (initBlock,col2) = mkCaseInit(cons,coSrt) in
 	    let (caseType,col3) = srtId coSrt in
 	    %let tagId = mkTag(cons) in
@@ -811,6 +830,7 @@ def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, _(* caseType *), caseExpr, c
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
 	    let ((caseBlock, newK, newL),col1) = termToExpressionAsgF(cId, fId, newTcx, body, ks, ls, spc) in
+	    let coSrt = unfoldToSubsort(spc,coSrt) in
 	    let (initBlock,col2) = mkCaseInit(cons,coSrt) in
 	    let (caseType,col3) = srtId coSrt in
 	    %let tagId = mkTag(cons) in

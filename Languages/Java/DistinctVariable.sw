@@ -17,7 +17,7 @@ def renameVar(term, oldV, newV) =
     | Record _ -> renameVarRecord(term, oldV, newV)
     | IfThenElse _ -> renameVarIfThenElse(term, oldV, newV)
     | Let _ -> renameVarLet(term, oldV, newV)
-    | _ -> fail "unsupported in renameVar"
+    | _ -> term %fail "unsupported in renameVar"
 
 def renameVarApply(term as Apply (opTerm, argsTerm, _), oldV, newV) =
   let args = applyArgsToTerms(argsTerm) in
@@ -99,7 +99,7 @@ def distinctVar(term, ids) =
     | Let _ -> distinctVarLet(term, ids)
     | Lambda _ -> distinctVarLambda(term, ids)
 		  %TODO: catch lambda terms
-    | LetRec _ -> fail("inner function definitions not yet supported.")
+    | LetRec _ -> (term,ids) %fail("inner function definitions not yet supported.")
     %(term,ids)
     | SortedTerm(t,_,_) -> distinctVar(t,ids)
     | Seq(terms,b) -> foldl (fn(term,(Seq(terms,b),ids0)) ->
@@ -129,7 +129,8 @@ def distinctVarLambda(term as Lambda ([(pat, cond, body)],b), ids) =
           (let (newBody, _) = distinctVar(body, argNames) in
 	   (Lambda ([(pat, cond, newBody)],b), ids)
 	 )
-       | _ -> fail("DistinctVarLambda with no args: "^printTerm(term))
+       | _ -> (term,ids)
+       %| _ -> fail("DistinctVarLambda with no args: "^printTerm(term))
      )
 
 def distinctVarRecord(term as Record (fields,_), ids) =
@@ -208,7 +209,8 @@ def distinctVariable(spc) =
    let (formals, body) = srtTermDelta(srt, term) in
    let ids = map (fn (id, srt) -> id) formals in
    let (newTerm, newIds) = distinctVar(body, ids) in
-   let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), formals, newTerm) in
+   let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
+   let origOpNewDef = (origOp, srtDomKeepSubsorts(srt), srtRange(srt), formals, newTerm,isConstantOp?) in
    cons(origOpNewDef, result)
     |(qualifier,name,opinfo,result) -> result
   )
@@ -216,7 +218,7 @@ def distinctVariable(spc) =
   spc.ops in
   let result = emptySpec in
   let result = setSorts(result, spc.sorts) in
-  let result = foldr addOpToSpec result newOpDefs in
+  let result = foldr addOpToSpec2 result newOpDefs in
    result
 
 

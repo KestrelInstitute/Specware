@@ -7,6 +7,7 @@ import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 %import /Languages/SpecCalculus/Semantics/Exception
 import ../../Transformations/LambdaLift
 import ../../Transformations/PatternMatch
+import ../../Transformations/HigherOrderMatching
 
 sort ToExprSort = Block * Java.Expr * Nat * Nat
 
@@ -288,7 +289,10 @@ def tt_v3(srt) =
     | TyVar id -> 
       let id = "Object" in
       (mkJavaObjectType(id),nothingCollected)
-    | _ -> fail("tt_v3 can't handle sort "^printSort(srt))
+    | _ -> (issueUnsupportedError(sortAnn(srt),"unsupported sort "^printSort(srt));
+	    let id = "Object" in
+	    (mkJavaObjectType(id),nothingCollected))
+	    
 
 op tt_id: Sort -> Id * Collected
 def tt_id(srt) = 
@@ -353,6 +357,8 @@ def srtId_internal(srt,addIds?) =
       let id = "Object" in
       ([tt_v2 id],id,nothingCollected)
     %| _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
+    | Subsort(srt,_,_) -> srtId_internal(srt,addIds?)
+    | Quotient(srt,_,_) -> srtId_internal(srt,addIds?)
     | _ -> (issueUnsupportedError(sortAnn(srt),"sort format not supported: "^printSort(srt));
 	    ([tt_v2 "ERRORSORT"],"ERRORSORT",nothingCollected))
 
@@ -520,26 +526,50 @@ def mkVars(ids) =
  * E.g., (id,(Nat|even)  -> Some(Apply(even,id))
  * This only works, because the super sort of a restriction sort must be a flat sort, no records etc. 
 *)
-op mkAsrtTestAppl: Spec * Var -> Option Term
-def mkAsrtTestAppl(spc,var as (id,srt)) =
-  case getRestrictionTerm(spc,srt) of
+op mkAsrtTestAppl: Spec * (Term * Option Term) -> Option Term
+def mkAsrtTestAppl(spc,(trm,optt)) =
+  case optt of
     | Some t -> 
-      let b = sortAnn(srt) in
-      Some(Apply(t,Var(var,b),b))
-    | None -> None
+      %let _ = writeLine(id^" has restriction term "^printTerm(t)) in
+      let b = termAnn(t) in
+      let t = Apply(t,trm,b) in
+      let t = dereferenceAll (empty,empty) t in
+      Some t
+    | None ->
+      %let _ = writeLine(id^" has no restriction term") in
+      None
+
+%def mkAsrtTestAppl(spc,var as (id,srt)) =
+%  case getRestrictionTerm(spc,srt) of
+%    | Some t -> 
+%      let b = sortAnn(srt) in
+%      Some(Apply(t,Var(var,b),b))
+%    | None -> None
 
 
 (**
  * generates the conjunction of assertions for the given variable list
  *)
-op mkAsrtExpr: Spec * List Var -> Option Term
-def mkAsrtExpr(spc,vars) =
+op mkAsrtExpr: Spec * List Var * List(Option Term) -> Option Term
+def mkAsrtExpr(spc,vars,dompreds) =
+  let vars = if length(dompreds) = 1 & length(vars) > 1
+	       then let (fields,_) = foldl (fn((id,srt),(fields,n)) ->
+					    let b = sortAnn(srt) in
+					    let t = Var((id,srt),b) in
+					    let nstr = natToString(n) in
+					    (concat(fields,[(nstr,t)]),n+1)) ([],1) vars
+		    in
+		    [Record(fields,noPos)]
+	     else
+	       map (fn(id,srt) -> Var((id,srt),sortAnn(srt))) vars
+  in
+  let varspred = zip(vars,dompreds) in
   let
-    def mkAsrtExpr0(vars,optterm) =
-      case vars of
+    def mkAsrtExpr0(varspred,optterm) =
+      case varspred of
 	| [] -> optterm
-	| var::vars -> 
-	  let appl = mkAsrtTestAppl(spc,var) in
+	| varpred::varspred -> 
+	  let appl = mkAsrtTestAppl(spc,varpred) in
 	  let next = 
 	  (case appl of
 	     | Some t0 -> (case optterm of
@@ -555,15 +585,16 @@ def mkAsrtExpr(spc,vars) =
 	     | None -> optterm
 	    )
 	  in
-	  mkAsrtExpr0(vars,next)
+	  mkAsrtExpr0(varspred,next)
   in
-  mkAsrtExpr0(vars,None)
+  mkAsrtExpr0(varspred,None)
 
 (**
  * returns the restriction term for the given sort, if it has one.
  *)
 op getRestrictionTerm: Spec * Sort -> Option Term
 def getRestrictionTerm(spc,srt) =
+  %let _ = writeLine("get restriction term: "^printSort(srt)) in
   let srt = unfoldBase(spc,srt) in
   case srt of
     | Subsort(_,pred,_) -> Some pred
@@ -720,7 +751,7 @@ def mkParamsFromPattern(pat) =
 	  (let id = case pat0 of
 	              | VarPat((id,_),_) -> id
 	              | WildPat _ -> "arg"^Integer.toString(n)
-		      | _ -> fail(errmsg_unsupported(pat))
+		      | _ -> (issueUnsupportedError(patAnn(pat0),errmsg_unsupported(pat));"??")
 	   in
 	   let ids = patlist(patl,n+1) in
 	   cons(id,ids)
