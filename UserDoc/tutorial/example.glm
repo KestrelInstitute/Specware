@@ -661,6 +661,9 @@ in a file <"MatchingObligations.sw">, in the same directory as
 the following definitions:</para>
 
 [[
+||    SymbolMatching = 
+||      obligations MatchingSpecs#SymbolMatching
+||
 ||    Symbols_Ref_Oblig =
 ||      obligations MatchingRefinements#Symbols_Ref
 ||
@@ -671,7 +674,9 @@ the following definitions:</para>
 ||      obligations MatchingRefinements#FindMatches_Ref0
 ]]
 
-<para>[[Symbols_Ref_Oblig]], [[WordMatching_Ref0_Oblig]], and
+<para>[[SymbolMatching_Oblig]] is a spec that express the proof
+obligations that arise as a result of typechecking the spec SymbolMatching.
+[[Symbols_Ref_Oblig]], [[WordMatching_Ref0_Oblig]], and
 [[FindMatches_Ref0_Oblig]] are specs that express the proof
 obligations of the associated morphisms as conjectures. &Specware;
 provides the capability to display (i.e., print) any spec, morphism,
@@ -734,20 +739,23 @@ given directives. Currently, the only available prover is Snark; more
 provers will be added in the future.</para>
 
 <para>For example, the user can attempt to discharge the proof
-obligation for [[WordMatching_Ref0]] by writing the following command
+obligation for [[SymbolMatching]] by writing the following command
 in a file named <"MatchingProof.sw">, located in the same directory
 as <"MatchingObligations.sw">:</para>
 
 [[
-||    prove word_matching in
-||      MatchingObligations#WordMatching_Ref0_Oblig with snark
-]]
+||    prove symb_matches? in
+||      MatchingObligations#SymbolMatching_Oblig
 
 Then at the Lisp prompt, issue this command to discharge the proof:
 
 [[L:
 ||    :sw MatchingProof.sw
 ]]
+
+The obligation is translated to the Snark theorem prover and
+automatically proven based primarily on the knowledge of &Specware's
+[[Option]] sort that we automatically send to Snark.
 
 </section> <!-- proof obligations -->
 

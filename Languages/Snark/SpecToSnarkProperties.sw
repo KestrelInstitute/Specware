@@ -81,6 +81,17 @@ spec {
        | Op(Qualified(qual,id),_) ->
 	    let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
+       | Embedded id ->
+	      let def boolArgp(arg, srt) =
+	          case srt of
+		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
+                    | _ -> false in
+	      let Arrow (dom,rng,_) = srt in
+	      let isfmla = boolArgp(arg, dom) in
+	      let snarkArg = if isfmla
+	                       then mkSnarkFmla(context,sp,dpn,vars,arg)
+			     else mkSnarkTerm(context,sp,dpn,vars,arg) in
+		 Lisp.cons(Lisp.symbol("SNARK","embed?"), Lisp.list[Lisp.symbol("SNARK",id),snarkArg])
        | Equals -> 
 	    let def boolArgp(arg, srt) =
 	          case srt of

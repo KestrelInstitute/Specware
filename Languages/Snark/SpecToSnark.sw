@@ -76,6 +76,38 @@ spec {
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Option"))]
       ]
 
+  op snarkBaseDecls: List LispCell
+  def snarkBaseDecls =
+    [
+	Lisp.list[declare_predicate,
+		  Lisp.quote(Lisp.symbol("SNARK", "embed?")), Lisp.nat(2)]
+       ]
+						    
+
+  op baseAxioms: List LispCell
+  def baseAxioms =
+    [
+     Lisp.list [snark_assert,
+		Lisp.quote
+		(Lisp.list [Lisp.symbol("SNARK","ALL"),
+			    Lisp.list[
+				      Lisp.list [Lisp.symbol("SNARK","?X"),
+						 Lisp.symbol("KEYWORD","SORT"),
+						 Lisp.symbol("SNARK","Option")]
+				     ],
+			    Lisp.list [Lisp.symbol("SNARK","OR"),
+				       Lisp.list[Lisp.symbol("SNARK","embed?"),
+						 Lisp.symbol("SNARK","Some"),
+						 Lisp.symbol("SNARK","?X")],
+				       Lisp.list[Lisp.symbol("SNARK","embed?"),
+						 Lisp.symbol("SNARK","None"),
+						 Lisp.symbol("SNARK","?X")]
+				       ]
+			    ]
+		 )
+		]
+     ]
+
   op arithmeticFunctions: List LispCell
   def arithmeticFunctions =
       [
@@ -249,6 +281,7 @@ spec {
 		           snarkOpDeclPartial(spc, mkSnarkName(qname,name), srt))
                     opsigs in
 %      snarkBuiltInOps ++ snarkOpDecls
+       snarkBaseDecls ++
        snarkOpDecls
 
 

@@ -206,6 +206,7 @@ SpecCalc qualifying spec {
 	  Lisp.++ (Lisp.list snarkSortDecl)
 	  Lisp.++ (Lisp.list snarkOpDecls)
 	  Lisp.++ (Lisp.list snarkBaseHypothesis)
+	  Lisp.++ (Lisp.list baseAxioms)
 	  Lisp.++ (Lisp.list snarkHypothesis)
 	  Lisp.++ (Lisp.list [snarkConjecture])]
 
