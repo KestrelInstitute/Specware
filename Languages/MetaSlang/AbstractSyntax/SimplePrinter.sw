@@ -523,11 +523,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Apply (Fun(Embed("Cons",true),_,_),Record ([(_,t1),(_,t2)],_),_) -> 
           (case isFiniteList t2 of
              | Some terms -> Some (Cons (t1,terms))
-             | None -> None)
-     | Apply (Fun(Embed("Cons",true),_,_),Record ([(_,t1),(_,t2)],_),_) -> 
+             | _ -> None)
+      | ApplyN ([Fun (Embed ("Cons", true), _, _), _,
+		 Record ([(_, t1), (_, t2)], _),
+		 _], _) -> 
           (case isFiniteList t2 of
              | Some terms -> Some (Cons (t1,terms))
-             | None -> None)
+             | _ -> None)
      | _ -> None
 }
 \end{spec}
