@@ -397,5 +397,10 @@ The following are invoked from the parser:
       | UnitId_Relative  ({path,hashSuffix=Some _}) -> true
       | SpecPath_Relative({path,hashSuffix=Some _}) -> true
       | _ -> false
+
+  op  deviceString?: String -> Boolean
+  def deviceString? s =
+    sub(s,(length s) - 1) = #:
+
 endspec
 \end{spec}

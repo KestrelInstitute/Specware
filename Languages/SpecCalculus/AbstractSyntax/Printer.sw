@@ -21,7 +21,6 @@ as done here.
 
 \begin{spec}
 SpecCalc qualifying spec 
-{
  import Types
  import ../../MetaSlang/Specs/SimplePrinter 
  import /Library/PrettyPrinter/WadlerLindig
@@ -54,7 +53,14 @@ SpecCalc qualifying spec
 %         ]
 
   op ppUID : UnitId -> Doc
- def ppUID unitId = ppAppend (ppString "/") (ppUIDlocal unitId)
+ def ppUID unitId =
+   let ppLocal = ppUIDlocal unitId in
+   case unitId of
+     | {path=h::_,hashSuffix=_} ->
+       if deviceString? h
+	 then ppLocal
+	 else ppAppend (ppString "/") ppLocal
+     | _ -> ppLocal			% Shouldn't happen
 
   op ppUIDlocal : UnitId -> Doc
  def ppUIDlocal {path, hashSuffix} =
@@ -429,5 +435,5 @@ SpecCalc qualifying spec
 
   op ppOtherTerm : [a] OtherTerm a -> Doc % Used for extensions to Specware
 
-}
+endspec
 \end{spec}

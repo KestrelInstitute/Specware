@@ -3,7 +3,7 @@
 Derived from r1.5 SW4/Languages/SpecCalculus/Semantics/UnitId.sl
 
 \begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import ../../Environment
 \end{spec}
 
@@ -180,10 +180,6 @@ hash suffix is ignored.
 	    | _ -> path
     in
     removeCommonPrefix(path,home)
-
-  op deviceString?: String -> Boolean
-  def deviceString? s =
-    sub(s,(length s) - 1) = #:
 
 \end{spec}
 
@@ -529,5 +525,5 @@ emacs interface functions.
       []
       globalContext
 
-}
+endspec
 \end{spec}
