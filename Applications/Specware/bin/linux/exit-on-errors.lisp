@@ -52,6 +52,8 @@
   )
 
 (defun set-gc-parameters-for-build (&optional verbose?)
+  #+Allegro
+  (progn
   (format t "~3%;;; Set GC parameters to good values for building specware (e.g. loading fasl files).~2%")
   (when verbose?
     (format t "~&;;; (room) before setting parameters for build phase:~%")
@@ -75,9 +77,11 @@
   (when verbose?
     (sys::gsgc-parameters)
     (format t "~&;;; (room t) after setting parameters for build phase:~%")
-    (room t)))
+    (room t))))
 
 (defun set-gc-parameters-for-use (&optional verbose?)
+  #+Allegro
+  (progn
   (format t "~3%;;; Set GC parameters to good values for normal use (e.g. processing specs).~2%")
   (when verbose?
     (format t "~&;;; (room) before setting parameters for normal use:~%")
@@ -96,9 +100,11 @@
   (when verbose?
     (sys::gsgc-parameters)
     (format t "~&;;; (room t) after setting parameters for normal use:~%")
-    (room t)))
+    (room t))))
 
 (defun compact-memory (&optional verbose?)
+  #+Allegro
+  (progn
   (format t "~3%;;; Restructure memory to compact old spaces, etc.~2%")
   (when verbose?
     (format t "~&;;; (room) before resize-areas:~%")
@@ -123,4 +129,4 @@
   (when verbose?
     (sys::gsgc-parameters)
     (format t "~&;;; (room t) after setting fence to -1:~%")
-    (room t)))
+    (room t))))

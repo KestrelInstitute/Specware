@@ -1,5 +1,7 @@
 #+Lispworks
 (setq *default-package-use-list* '("CL"))
+#+mcl
+(setq ccl:*make-package-use-defaults* '("CL"))
 
 (defpackage :Specware (:use :cl))
 (in-package :Specware)
@@ -157,13 +159,11 @@
 (defun setTemporaryDirectory ()
   (setq temporaryDirectory (temporaryDirectory-0)))
 
-#-mcl
 (defun copy-file (source target)
   #+allegro(sys:copy-file source target)
   #+cmu(ext:run-program "cp" (list (namestring source)
 				   (namestring target)))
-  #+mcl(ccl:run-program "cp" (list (namestring source)
-				   (namestring target)))
+  #+mcl(ccl:copy-file source target)
   #+sbcl(sb-ext:run-program "/bin/cp" (list (namestring source)
 					    (namestring target)))
   #-(or allegro cmu sbcl mcl)

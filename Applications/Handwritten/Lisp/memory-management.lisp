@@ -37,7 +37,7 @@
   #-Allegro (format t "~&set-gc-parameters-for-build is currently a no-op for non-Allegro lisp~%")
   ;;
   (when verbose?
-    (sys::gsgc-parameters)
+    #-Allegro (sys::gsgc-parameters)
     (format t "~&;;; (room) after setting parameters for build phase:~%")
     (room)))
 
@@ -62,7 +62,7 @@
   #-Allegro (format t "~&set-gc-parameters-for-use is currently a no-op for non-Allegro lisp~%")
   ;;
   (when verbose?
-    (sys::gsgc-parameters)
+    #-Allegro (sys::gsgc-parameters)
     (format t "~&;;; (room) after setting parameters for normal use:~%")
     (room)))
 
