@@ -6,7 +6,7 @@ rem Set allegro to the version you have
 set ALLEGRO=C:\Progra~1\acl62
 rem set ALLEGRO=C:\Progra~1\acl61
 
-set SPECWARE_BIN=$SPECWARE4\Applications\Specware\bin\windows
+set SPECWARE_BIN=%SPECWARE4%\Applications\Specware\bin\windows
 
 set LISP_EXECUTABLE=%ALLEGRO%\alisp.exe
 set LISP_HEAP_IMAGE=%SPECWARE_BIN%\Specware4.dxl
