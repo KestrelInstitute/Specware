@@ -478,20 +478,35 @@ PE qualifying spec
      else {
        newProcId <- makeProcId procId extendedSubst;
        case evalPartial (procedures newOscSpec, newProcId) of
-         | Some procInfo -> return (Some (newOscSpec, bSpec procInfo, callReturnOpRef, procInfo))
+         | Some procInfo -> {
+             print ("specialProc: already seen:" ++ (Id.show newProcId) ++ "\n");
+             return (Some (newOscSpec, bSpec procInfo, callReturnOpRef, procInfo))
+            }
          | None -> {
              if traceRewriting > 0 then
-                print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
+               print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
              (newOscSpec,newBSpec) <- specializeBSpec oldOscSpec (bSpec procInfo) extendedSubst newOscSpec;
+             if traceRewriting > 0 then
+               print ("number of final states = " ^ (Nat.show (length (final newBSpec))) ^ "\n") else return ();
              newBSpec <- removeNilTransitions newBSpec;
              if traceRewriting > 0 then
                print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n") else return ();
+             if (~(length residParams = 0) or ~(length residStateVars = 0)) & (traceRewriting > 0) then {
+               print ("new procedure has residual argument or state dependency\n");
+               print (ppFormat (ppConcat [
+                  ppString "params = [",
+                  ppSep (String.pp ",") (map OpRef.pp residParams),
+                  ppString "] state = [",
+                  ppSep (String.pp ",") (map OpRef.pp residStateVars),
+                  ppString "]",
+                  ppNewline
+                ]))} else return ();
              newProc <- return (Proc.makeProcedure residParams residStateVars
-                               None
+                               (returnInfo procInfo)    % otherwise we don't know what name to look for in the return state.
                                (modeSpec procInfo)
                                newBSpec);
              newOscSpec <- addProcedure newOscSpec newProcId newProc;
-             return (Some (newOscSpec,newBSpec,callReturnOpRef,procInfo))
+             return (Some (newOscSpec,newBSpec,callReturnOpRef,newProc))
           }
      }
    }
@@ -505,13 +520,9 @@ PE qualifying spec
      -> Oscar.Spec
      -> Env (Oscar.Spec * BSpec)
   def specializeBSpec oldOscSpec oldBSpec precondition newOscSpec = {
-      %% coAlg <- return (succCoalgebra oldBSpec);
-      %% first <- makeNewVertex (initial oldBSpec) precondition;
       initialSpec <- hideVariables (modeSpec (initial oldBSpec)) precondition;
       (newBSpec,newMode) <- return (deriveBSpec oldBSpec precondition initialSpec);
-      %% newBSpec <- return (BSpec.make first initialSpec);
       fold (specialTrans oldBSpec oldOscSpec newMode precondition) (newOscSpec,newBSpec) (outTrans oldBSpec (initial oldBSpec))
-      % fold (specializeTransition oldBSpec oldOscSpec newMode precondition) (newOscSpec,newBSpec) (outTrans oldBSpec (initial oldBSpec))
     }
 \end{spec}
 
@@ -588,6 +599,12 @@ PE qualifying spec
             | _ -> mode)
       | _ -> mode
 
+  op showOptRef : Option Op.Ref -> String
+  def showOptRef ref =
+    case ref of
+      | None -> "None"
+      | Some x -> Id.show x
+
   op findVertex : List (Mode * Mode) -> Mode -> Option Mode
   def findVertex pairs mode =
     case pairs of
@@ -615,34 +632,45 @@ PE qualifying spec
              case result of
                | None -> return (newOscSpec,newBSpec,found)
                | Some (newOscSpec,procBSpec,optCallReturnRef,procInfo) ->
+                   let precondition = filterPrecondition (Mode.substOf newSourceMode) transSpec in
                    let
                      def inlineTransition src (newBSpec,visited,finals) transition = {
-                         dst <- return (target transition);
+                         t <- return (target transition);
                          (newDst,successors,newBSpec,visited,newFinals) <-
-                            case findVertex visited dst of
+                            case findVertex visited t of
                               | None ->
-                                   let (newBSpec,newDst) = copyMode newBSpec dst in
-                                   let newFinals =
-                                     if Mode.member? (final oldBSpec) dst then
-                                       Cons (newDst,finals)
-                                     else
-                                       finals
-                                   in
-                                     return (newDst, outTrans oldBSpec dst, newBSpec, Cons ((dst,newDst),visited),newFinals)
+                                  let _ = toScreen ("specialProcCall subst of t =" ++ (Subst.show (Mode.substOf t)) ++ "\n") in
+                                  let _ = toScreen ("returnInfo =" ++ (showOptRef (returnInfo procInfo)) ++ "\n") in
+                                  let _ = toScreen ("optCallReturnRef =" ++ (showOptRef optCallReturnRef) ++ "\n") in
+                                  let postcondition = filterPostcondition transSpec (returnInfo procInfo) optCallReturnRef (Mode.substOf t) in
+                                  let _ = toScreen ("specialProcCall postcondition=" ++ (Subst.show postcondition) ++ "\n") in
+                                  let (newBSpec,newDst) = copyMode newBSpec t (order (precondition ++ postcondition)) in
+                                  let newFinals =
+                                    if Mode.member? (final procBSpec) t then
+                                      Cons (newDst,finals)
+                                    else
+                                      finals
+                                  in
+                                    return (newDst, outTrans procBSpec t, newBSpec, Cons ((t,newDst),visited),newFinals)
                               | Some newDst -> return (newDst,[],newBSpec,visited,finals);
-                          (newBSpec,newTrans) <- return (newTrans newBSpec src newDst transSpec);
+                          (newBSpec,newTrans) <- return (newTrans newBSpec src newDst (Transition.transSpec transition));
                           foldM (inlineTransition newDst) (newBSpec,visited,newFinals) successors
                         }
                      def tryFinal oldOscSpec oldBSpec (newOscSpec,newBSpec) mode = {
-                       postcondition <- computePostcondition (Mode.substOf newSourceMode) transSpec (returnInfo procInfo) optCallReturnRef (Mode.substOf mode);
-  
+                       % postcondition <- computePostcondition (Mode.substOf newSourceMode) transSpec (returnInfo procInfo) optCallReturnRef (Mode.substOf mode);
+                       postcondition <- return (Mode.substOf mode);
                        foldM (specialTrans oldBSpec oldOscSpec mode postcondition) (newOscSpec,newBSpec) (outTrans oldBSpec dst)
                        %% foldM (specializeTransition oldBSpec oldOscSpec mode subst) (newOscSpec,newBSpec) (outTrans oldBSpec dst)
                      }
                    in {
                      (newBSpec,visited,finals) <- foldM (inlineTransition newSourceMode) (newBSpec,[],[]) (outTrans procBSpec (initial procBSpec));
-                     (newOscSpec,newBSpec) <- foldM (tryFinal oldOscSpec oldBSpec) (newOscSpec,newBSpec) finals;
-                     return (newOscSpec,newBSpec,true)
+                     successors <- return (outTrans oldBSpec dst);
+                     if successors = [] then
+                         return (newOscSpec, setFinal newBSpec finals,true)
+                       else {
+                         (newOscSpec,newBSpec) <- foldM (tryFinal oldOscSpec oldBSpec) (newOscSpec,newBSpec) finals;
+                         return (newOscSpec,newBSpec,true)
+                       }
                    }
             }
          | _ -> return (newOscSpec,newBSpec,found)
@@ -670,6 +698,33 @@ call.
     otherwise discard it.
 
 \begin{spec}
+  op filterPrecondition : Subst.Subst -> TransSpec -> Subst.Subst
+  def filterPrecondition precondition transSpec =
+    case precondition of
+      | [] -> []
+      | varInfo::subst ->
+          if member? (changedVars (backMorph transSpec), idOf varInfo) then
+            filterPrecondition subst transSpec
+          else
+            Cons (varInfo, filterPrecondition subst transSpec)
+
+  op filterPostcondition : TransSpec -> ReturnInfo -> Option Op.Ref -> Subst.Subst -> Subst.Subst
+  def filterPostcondition transSpec optReturnId optCallReturnId subst =
+    case subst of
+      | [] -> []
+      | varInfo::subst ->
+          let rest = filterPostcondition transSpec optReturnId optCallReturnId subst in
+            if member? (changedVars (backMorph transSpec), idOf varInfo) then    % transSpec is from pov of caller
+              Cons (varInfo,rest)
+            else
+              (case (optReturnId,optCallReturnId) of
+                | (Some returnId,Some callReturnId) ->
+                     if (Op.idOf varInfo) = returnId then
+                       Cons (varInfo withId callReturnId, rest)
+                     else
+                       rest
+                | _ -> rest)
+
   op computePostcondition : Subst.Subst -> TransSpec -> ReturnInfo -> Option Op.Ref -> Subst.Subst -> Env Subst.Subst
   def computePostcondition precondition transSpec optReturnId optCallReturnId procFinal =
    let
@@ -678,13 +733,6 @@ call.
          return newSubst
        else
          return (Cons (varInfo,newSubst))
-         (* case optCallReturnId of
-           | Some callReturnId ->
-                if (Op.idOf varInfo) = callReturnId then
-                  newSubst
-                else
-                  Cons (varInfo,newSubst)
-           | _ -> newSubst *)
      def fixPostcondition (newSubst:Subst.Subst) varInfo =
        if member? (changedVars (backMorph transSpec), idOf varInfo) then
          return (Cons (varInfo,newSubst))
@@ -695,10 +743,14 @@ call.
                   return (Cons (varInfo withId callReturnId, newSubst))
                 else
                   return newSubst
-            | _ -> return newSubst
+           | _ -> return newSubst
      in {
+       print "computing post condition after inline:\n";
+       print ("pre: " ++ (Subst.show precondition) ++ "\n");
+       print ("post: " ++ (Subst.show precondition) ++ "\n");
        newPre <- foldM propagatePrecondition [] precondition;
        newPost <- foldM fixPostcondition newPre procFinal;
+       print ("new post: " ++ (Subst.show newPost) ++ "\n");
        return (order newPost)
      }
 \end{spec}
@@ -828,28 +880,9 @@ associated with the edge.
               (newBSpec,newTargetMode,targetIsNew?) <- return (deriveMode oldBSpec (Transition.target transition) newBSpec targetConstraint newTargetSpec);
       
               newTransSpec <- hideVariables transSpec precondition postcondition;
-              % newEdge <- makeNewEdge edge precondition postcondition;
       
               (newBSpec,newTransition) <- return (deriveTransition transition newBSpec newSourceMode newTargetMode precondition postcondition newTransSpec);
       
-              % if traceRewriting > 1 then
-                % print ("newEdge: " ^ (Edg.show (edge newTransition)) ^ "\n") else return ();
-      
-              %% newTargetSpec <- hideVariables oldTargetSpec postcondition;
-              %% targetIsNew? <- return (~(VrtxSet.member? (vertices (shape (system newBSpec)), newTargetVertex)));
-      
-      %%        if traceRewriting > 1 then
-      %%          print ("target: " ^ (Vrtx.show newTargetVertex) ^ " is new? " ^ (show targetIsNew?) ^ "\n") else return ();
-      %%
-      %%        newBSpec <-
-      %%          if targetIsNew? then
-      %%            if Mode.member? (final oldBSpec) (target transition) then
-      %%              return (addFinalMode newBSpec newTargetVertex newTargetSpec)
-      %%            else
-      %%              return (addMode newBSpec newTargetVertex newTargetSpec)
-      %%          else
-      %%            return newBSpec;
-              %% newBSpec <- connect newBSpec newSrcVertex newTargetVertex newEdge newTransSpec;       
               if targetIsNew? then
                 foldM (specialTrans oldBSpec oldOscSpec newTargetMode postcondition) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
               else

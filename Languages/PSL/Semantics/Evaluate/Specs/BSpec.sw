@@ -305,10 +305,10 @@ BSpec qualifying spec
         } in
         (newBSpec,newMode)
 
-  op BSpec.copyMode : BSpec -> Mode -> (BSpec * Mode)
-  def BSpec.copyMode bSpec mode =
+  op BSpec.copyMode : BSpec -> Mode -> Subst.Subst -> (BSpec * Mode)
+  def BSpec.copyMode bSpec mode subst =
       let newMode = {
-          vertex = Pair (Nat (bSpec.nextIdx,idOf mode), substOf mode),
+          vertex = Pair (Nat (bSpec.nextIdx,idOf mode), subst),
           modeSpec = modeSpec mode
         } in
       let newBSpec = {
@@ -418,6 +418,18 @@ BSpec qualifying spec
 
   op BSpec.final : BSpec -> List Mode
   def BSpec.final bSpec = bSpec.final
+
+  op BSpec.setFinal : BSpec -> List Mode -> BSpec
+  def BSpec.setFinal bSpec finals = {
+      modes = bSpec.modes,
+      transitions = bSpec.transitions,
+      outTrans = bSpec.outTrans,
+      inTrans = bSpec.inTrans,
+      initial = bSpec.initial,
+      final = finals,
+      nextIdx = bSpec.nextIdx,
+      id = bSpec.id 
+    }
 
   def Vrtx.pp vertex =
     case vertex of

@@ -25,7 +25,8 @@ SpecCalc qualifying spec {
           (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo unit;
           case value of
             | Other oscarSpec -> {
-                  newOscarSpec <- inlineProc oscarSpec (makeId procName);
+                  % newOscarSpec <- inlineProc oscarSpec (makeId procName);
+                  newOscarSpec <- return oscarSpec;
                   junk <-
                     case ProcMap.evalPartial (procedures newOscarSpec, makeId procName) of
                       | None -> raise (SpecError (noPos, "project: procedure " ^ (Id.show (makeId procName)) ^ " is not defined"))
