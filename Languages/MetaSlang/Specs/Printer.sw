@@ -536,7 +536,7 @@ AnnSpecPrinter qualifying spec
  def ppSortScheme context parent (tyVars, srt) = 
    let pp2 = ppSort context parent srt in
    let pp1 = ppForallTyVars context.pp tyVars in
-   prettysNone [pp1, pp2]     
+   prettysNone [pp1, string " ", pp2]     
 
  def ppSort context (path, parent) srt = 
    let pp : ATermPrinter = context.pp in
