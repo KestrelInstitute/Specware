@@ -2,6 +2,15 @@ spec
 
   import Provability
 
+  conjecture substVarNotFree is  % OK
+    fa(cx,e,v,e1) v nin? exprFreeVars e => exprSubst1 v e1 e = e
+
+  conjecture substFreeVars is  % OK
+    fa(cx,e,v,e1) v in? exprFreeVars e
+               && exprSubstOK? (e, single v e1)
+               => exprFreeVars (exprSubst1 v e1 e) =
+                  exprFreeVars e - v \/ exprFreeVars e1
+
   % can rename v to fresh v' in any proof
 
   conjecture exTrue is  % OK
@@ -14,13 +23,13 @@ spec
     fa(cx,e) wtEx cx e BOOL => wtEx cx (~~ e) BOOL
 
   conjecture alwaysWellFormedContext is  % OK
-    (fa(cx,t) wfTy cx t          => wfCx cx)
+    (fa(cx,t) wfTy cx t         => wfCx cx)
     &&
     (fa(cx,t1,t2) tyEq cx t1 t2 => wfCx cx)
     &&
     (fa(cx,e,t) wtEx cx e t     => wfCx cx)
     &&
-    (fa(cx,e) theo cx e           => wfCx cx)
+    (fa(cx,e) theo cx e         => wfCx cx)
 
   conjecture exUniversal is  % OK
     fa(cx,v,t,e)
