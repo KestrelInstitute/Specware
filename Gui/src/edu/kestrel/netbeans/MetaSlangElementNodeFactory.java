@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:11:15  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:00:52  weilyn
  * Added createClaimNode method
  *
@@ -49,22 +52,22 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 
     private static final SystemAction[] DEFAULT_ACTIONS = new SystemAction[] {
 	SystemAction.get(EditAction.class),
-	SystemAction.get(OpenAction.class),
+	//SystemAction.get(OpenAction.class),
 	null,
 	SystemAction.get(CutAction.class),
 	SystemAction.get(CopyAction.class),
 	null,
 	SystemAction.get(DeleteAction.class),
 	SystemAction.get(RenameAction.class),
-	null,
-	SystemAction.get(ToolsAction.class),
-	SystemAction.get(PropertiesAction.class)
+	//null,
+	//SystemAction.get(ToolsAction.class),
+	//SystemAction.get(PropertiesAction.class)
     };
 
     /** Array of the actions of the meta-slang classes. */
     private static final SystemAction[] SPEC_ACTIONS = new SystemAction[] {
 	SystemAction.get(EditAction.class),
-	SystemAction.get(OpenAction.class),
+	//SystemAction.get(OpenAction.class),
 	null,
         SystemAction.get(ProcessUnitAction.class),
         null,
@@ -72,14 +75,13 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 	SystemAction.get(CopyAction.class),
 	SystemAction.get(PasteAction.class),
 	null,
+	SystemAction.get(NewAction.class),
 	SystemAction.get(DeleteAction.class),
 	SystemAction.get(RenameAction.class),
-	null,
-	SystemAction.get(NewAction.class),
-	null,
+	//null,
 	//SystemAction.get(OverrideAction.class),
-	SystemAction.get(ToolsAction.class),
-	SystemAction.get(PropertiesAction.class)
+	//SystemAction.get(ToolsAction.class),
+	//SystemAction.get(PropertiesAction.class)
     };
 
     private static final SystemAction[] CONTAINER_ACTIONS
@@ -90,9 +92,10 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 			      SystemAction.get(NewAction.class),
 			      SystemAction.get(DeleteAction.class),
 			      SystemAction.get(RenameAction.class),
-			      null,
-			      SystemAction.get(ToolsAction.class),
-			      SystemAction.get(PropertiesAction.class)};
+			      //null,
+			      //SystemAction.get(ToolsAction.class),
+			      //SystemAction.get(PropertiesAction.class)
+                             };
 
     /** This node can return current element factory as cookie */
     private final Node FACTORY_GETTER_NODE = new FactoryGetterNode();

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/14 21:36:24  weilyn
+ * Added Start Lisp action.
+ *
  * Revision 1.2  2003/02/14 16:56:42  weilyn
  * Added support for process unit action.
  *
@@ -83,12 +86,13 @@ public class MetaSlangDataLoader extends UniFileLoader {
     protected SystemAction[] defaultActions() {
         return new SystemAction[] {
             SystemAction.get(EditAction.class),
-	    SystemAction.get(OpenAction.class),
+	    //SystemAction.get(OpenAction.class),
 	    // SystemAction.get (CustomizeBeanAction.class),
-	    SystemAction.get(FileSystemAction.class),
+	    //SystemAction.get(FileSystemAction.class),
 	    null,
 	    //SystemAction.get(CompileAction.class),
             SystemAction.get(StartLispAction.class),
+            null,
             SystemAction.get(ProcessUnitAction.class),
 	    SystemAction.get(GenerateCodeAction.class),
             null,
@@ -104,11 +108,11 @@ public class MetaSlangDataLoader extends UniFileLoader {
 	    SystemAction.get(NewAction.class),
 	    SystemAction.get(DeleteAction.class),
 	    SystemAction.get(RenameAction.class),
-	    null,
-	    SystemAction.get(SaveAsTemplateAction.class),
-	    null,
-	    SystemAction.get(ToolsAction.class),
-	    SystemAction.get(PropertiesAction.class),
+	    //null,
+	    //SystemAction.get(SaveAsTemplateAction.class),
+	    //null,
+	    //SystemAction.get(ToolsAction.class),
+	    //SystemAction.get(PropertiesAction.class),
 	    };
     }
     
