@@ -1,3 +1,4 @@
+%JGen qualifying
 spec
 
 import LiftPattern
@@ -200,10 +201,11 @@ def mkNewId(id, n) =
 op distinctVariable: Spec -> Spec
 
 def distinctVariable(spc) =
+%  let _ = writeLine("distinctVariable...") in
   let newOpDefs = foldriAQualifierMap 
                     (fn (q, id, info, result) ->
 		     case opInfoDefs info of
-		       | [dfn] ->
+		       | dfn::_ ->
 		         let (tvs, srt, term) = unpackTerm dfn in
 			 let origOp = mkQualifiedId (q, id) in
 			 let (formals, body) = srtTermDelta (srt, term) in
@@ -224,7 +226,9 @@ def distinctVariable(spc) =
   in
   let result = initialSpecInCat in % if we started instead with emptySpec, might we omit some built-in defs?
   let result = setSorts(result, spc.sorts) in
+%  let _ = writeLine("#newOpDefs="^(Integer.toString(length newOpDefs))) in
   let result = foldr addOpToSpec2 result newOpDefs in
+%  let result = setImportInfo(result,spc.importInfo) in
    result
 
 

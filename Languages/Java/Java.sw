@@ -328,6 +328,20 @@ sort Ident = String
 
 % --------------------------------------------------------------------------------
 
+op Java.emptyClsBody: ClsBody
+def Java.emptyClsBody =
+  { handwritten = [],
+    staticInits = [],
+    flds        = [],
+    constrs     = [], 
+    meths       = [],
+    clss        = [],
+    interfs     = [] }
+
+
+
+% --------------------------------------------------------------------------------
+
 op mapJName: (Ident -> Ident) -> CompUnit -> CompUnit
 def mapJName ii (optpkg,ifnames,cis) =
   (case optpkg of
