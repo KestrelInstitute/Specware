@@ -71,6 +71,8 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
+    "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
+    "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
     )
   )
 
@@ -108,12 +110,13 @@
     ;; Functions that are assumed by the MetaSlang to Lisp compiler
     "Applications/Handwritten/Lisp/meta-slang-runtime"
 
-    ;; Functions for saving/restoring the Specware state to/from the lisp environment
-    "Applications/Specware/Handwritten/Lisp/specware-state"
-
     ;; The generated lisp code.  This also initializes the Specware
     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
     "Applications/PSL/lisp/PSL.lisp"
+
+    ;; XML support -- this calls code generated in Specware4.lisp for various XML definitions
+    ;; maybe interface would be a better name
+    "Languages/XML/Handwritten/Lisp/Support.lisp"
 
     ;; Toplevel aliases 
     "Applications/Specware/Handwritten/Lisp/toplevel"
@@ -141,8 +144,8 @@
 (make-system (concatenate 'string
               Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
 
-;;; Preload the base specs
-(cl-user::sw "/Library/Base")
+;;; Initialization includes preloading the base spec.
+(Specware::initializeSpecware)
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/PSL/PSL~2%")
