@@ -604,6 +604,16 @@ spec
 	    (linkMetaTyVar mtv (withAnnS (s1, pos1)); 
 	     Unify pairs)
 
+	% TODO: alpha equivalence...
+	% | (Pi _, Pi _) -> alpha equivalence directly
+
+	| (Pi _, _) ->
+	  % TODO: perhaps alpha equivalence by converting vars to meta-ty-vars
+	  unify (env, sortInnerSort srt1, srt2, pairs, ignoreSubsorts?)
+
+	| (_, Pi _) ->
+	  unify (env, srt1, sortInnerSort srt2, pairs, ignoreSubsorts?)
+
 	| _ ->
 	  if ignoreSubsorts? then
 	    case (srt1, srt2) of
