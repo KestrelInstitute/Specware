@@ -78,20 +78,20 @@ The term `spec is used as short for `spec-form.
 The <emphasis>semantics</emphasis> of &Metaslang; `specs is given
 in terms of classes of <emphasis>models</emphasis>.
 A model is an assignment of sets of values (called
-``sorts'') to all the
-`sort-names and of ``sorted'' values to all the `op-names
+``types'') to all the
+`type-names and of ``typed'' values to all the `op-names
 declared -- explicitly or implicitly -- in the `spec.
 The notion of <emphasis>value</emphasis> includes
 numbers, strings, arrays, functions, etcetera.
-A sorted value can be thought of as a pair
+A typed value can be thought of as a pair
 (<replaceable>S</replaceable>, <replaceable>V</replaceable>),
 in which 
-<replaceable>S</replaceable> is a sort and
+<replaceable>S</replaceable> is a type and
 <replaceable>V</replaceable> is a value that is an
 inhabitant of 
 <replaceable>S</replaceable>.
 For example, the `expressions [[0 : Nat]] and [[0 : Integer]]
-correspond, semantically, to the sorted values
+correspond, semantically, to the typed values
 (<replaceable>N</replaceable>, 0) and
 (<replaceable>Z</replaceable>, 0), respectively,
 in which
@@ -99,10 +99,6 @@ in which
 natural numbers {0, 1, 2, ...}, and 
 <replaceable>Z</replaceable> for the set of
 integers {..., -2, -1, 0, 1, 2, ...}.
-(For historical reasons, the term <emphasis>sort</emphasis> is
-traditionally used in specification languages with
-essentially the same meaning as the term
-<emphasis>type</emphasis> in programming languages.)
 In &Metaslang;, <emphasis>`op</emphasis> is used -- again for
 historical reasons -- for declared names representing
 values.
@@ -114,7 +110,7 @@ things normally not considered operators.)
 For example, given this `spec:
 [[
 ||    spec
-||      sort Even
+||      type Even
 ||      op next : Even -> Even
 ||      axiom nextEffect is
 ||        fa(x : Even) ~(next x = x)
@@ -126,7 +122,7 @@ increments an even number by 2 to [[next]].
 </para>
 <!-- ================================================================= -->
 <para>
-Each model has to <emphasis>respect sorting</emphasis>; for
+Each model has to <emphasis>respect typing</emphasis>; for
 example, given the above assignment to [[Even]], the function
 that increments a number by 1 does not map all even numbers
 to even numbers, and therefore can not -- in the same model
@@ -135,15 +131,15 @@ Additionally, the axioms of the `spec have to be satisfied by
 the model.
 The axiom labeled [[nextEffect]] above states that
 the function assigned to `op-name [[next]]
-maps any value of the sort assigned to `sort-name [[Even]]
+maps any value of the type assigned to `type-name [[Even]]
 to a different value.
-So the squaring function, although sort-respecting, could not
+So the squaring function, although type-respecting, could not
 be assigned to [[next]] since it maps 0 to itself.
 </para>
 <!-- ================================================================= -->
 <para>
-If all sort-respecting combinations of assignments of sorts to
-`sort-names and `ops to `op-names fail the axioms test, the
+If all type-respecting combinations of assignments of types to
+`type-names and `ops to `op-names fail the axioms test, the
 `spec has no models and is called
 <emphasis>inconsistent</emphasis>.
 Although usually undesirable, an inconsistent `spec is not by
@@ -197,77 +193,77 @@ the value of [[z]] is [["let-x"]] (`op [[x]]
 </para>
 </section>
 <!-- ================================================================= -->
-<section id="Sort-correctness"><title>Sort-correctness</title>
+<section id="Type-correctness"><title>Type-correctness</title>
 <para>
 Next to the general requirement that each model respects
-sorting, there are specific correctness requirements for
-various constructs that constrain the possible sorts for the
+typing, there are specific correctness requirements for
+various constructs that constrain the possible types for the
 components. For example, in an `application [[f(x)]], the
-sort of the `actual-parameter [[x]] has to match the domain
-sort of function [[f]].
+type of the `actual-parameter [[x]] has to match the domain
+type of function [[f]].
 These requirements are stated in the relevant sections of
 this language manual.
-If no sort-respecting combinations of assignments meeting all
+If no type-respecting combinations of assignments meeting all
 these requirements exist for a given `spec, it is considered
-<emphasis>incorrect</emphasis>, and is said to have a sort
-error (or type error).
+<emphasis>incorrect</emphasis>, and is said to have a type
+error.
 This is determined by &Specware; while elaborating the `spec,
 and signaled as an error.
-Sort-incorrectness differs from inconsistency in that the
+Type-incorrectness differs from inconsistency in that the
 meaning of the axioms does not come into play, and the
 question whether an incorrect `spec is consistent is moot.
 </para>
 <!-- ================================================================= -->
 <para>
 To be precise, there are subtle and less subtle differences
-between sort-incorrectness of a `spec and its having no 
-sort-respecting combinations of assignments.
-For example, the following `spec is sort-correct but has no
+between type-incorrectness of a `spec and its having no 
+type-respecting combinations of assignments.
+For example, the following `spec is type-correct but has no
 models:
 [[
 ||    spec
-||      sort Empty = | Just Empty
+||      type Empty = | Just Empty
 ||      op IdoNotExist : Empty
 ||    endspec
 ]]
-The explanation is that the `sort-definition for [[Empty]]
+The explanation is that the `type-definition for [[Empty]]
 generates an <emphasis>implicit</emphasis> axiom that all
-inhabitants of the sort [[Empty]] must satisfy, and for this
+inhabitants of the type [[Empty]] must satisfy, and for this
 recursive definition the axiom effectively states that such
-creatures can't exist: the sort [[Empty]] is uninhabited.
-That by itself is no problem, but precludes a sort-respecting
+creatures can't exist: the type [[Empty]] is uninhabited.
+That by itself is no problem, but precludes a type-respecting
 assignment of an inhabitant of [[Empty]] to `op [[IdoNotExist]].
-So the `spec, while sort-correct, is actually inconsistent.
-See further under <link linkend="Sort-definitions"><emphasis>Sort-definitions</emphasis></link>.
+So the `spec, while type-correct, is actually inconsistent.
+See further under <link linkend="Type-definitions"><emphasis>Type-definitions</emphasis></link>.
 </para>
 <!-- ================================================================= -->
 <para>
-Here is a sort-incorrect `spec that has sort-respecting
+Here is a type-incorrect `spec that has type-respecting
 combinations of assignments:
 [[
 ||    spec
-||      sort Outcome = | Positive | Negative
-||      sort Sign = | Positive | Zero | Negative
+||      type Outcome = | Positive | Negative
+||      type Sign = | Positive | Zero | Negative
 ||      def whatAmI = Positive
 ||    endspec
 ]]
 Here there are two constructors [[Positive]]
-of different sorts, the sort [[Outcome]] and the sort
+of different types, the type [[Outcome]] and the type
 [[Sign]].
 That by itself is fine, but when such
 <quote>overloaded</quote> constructors are used,
 the context must give sufficient information which is meant.
 Here, the use of [[Positive]] in the `definition for `op
 [[whatAmI]] leaves both possibilities open; as used it is
-<emphasis>sort-ambiguous</emphasis>.
-&Metaslang; allows omitting sort information provided that, given
-a sort assignment to all `local-sort-variables in scope, unique
-sorts for all sorted constructs, such as `expressions and
+<emphasis>type-ambiguous</emphasis>.
+&Metaslang; allows omitting type information provided that, given
+a type assignment to all `local-type-variables in scope, unique
+types for all typed constructs, such as `expressions and
 `patterns, can be inferred from the context.
-If no complete and unambiguous sort-assignment can be made,
+If no complete and unambiguous type-assignment can be made,
 the `spec is not accepted by the &Specware; system.
-Sort-ambiguous `expressions can be disambiguated by using a
-sort annotation, as described under <link
+Type-ambiguous `expressions can be disambiguated by using a
+type annotation, as described under <link
 linkend="Annotated-expressions"><emphasis>Annotated-expressions</emphasis></link>.
 In the example, the `definition of [[whatAmI]] can be disambiguated in either
 of the following ways:
@@ -280,7 +276,7 @@ Also, if the `spec elsewhere contains something along the lines of:
 ||      op signToNat : Sign -> Nat
 ||      def sw = signToNat whatAmI
 ]]
-that is sufficient to establish that [[whatAmI]] has sort [[Sign]]
+that is sufficient to establish that [[whatAmI]] has type [[Sign]]
 and thereby disambiguate the use of [[Positive]].
 See further under
 <link linkend="Op-definitions"><emphasis>Op-definitions</emphasis></link>
@@ -292,44 +288,44 @@ and <link linkend="Structors"><emphasis>Structors</emphasis></link>.
 <para>
 When code is generated for a `spec, complete
 <quote>self-contained</quote> code is only
-generated for `sort-definitions and `op-definitions that are
+generated for `type-definitions and `op-definitions that are
 fully <emphasis>constructive</emphasis>.
 Non-constructiveness is <quote>contagious</quote>:
 a `definition is only constructive if all components of the
 definition are.
-The sort of a `sort-name without `definition is not
+The type of a `type-name without `definition is not
 constructive.
-A sort is only constructive if all component sorts are.
+A type is only constructive if all component types are.
 An `op without `definition is non-constructive, and so
-is an `op whose sort is non-constructive.
+is an `op whose type is non-constructive.
 A `quantification is non-constructive.
 The built-in polymorphic equality predicate [[=]] is only
-constructive for <emphasis>discrete sorts</emphasis> (see
+constructive for <emphasis>discrete types</emphasis> (see
 below).
 </para>
 <!-- ================================================================= -->
 <para>
-A sort is called discrete if the equality predicate [[=]]
-for that sort is constructive.
-The built-in sorts [[Integer]], [[Nat]], [[Boolean]],
+A type is called discrete if the equality predicate [[=]]
+for that type is constructive.
+The built-in types [[Integer]], [[Nat]], [[Boolean]],
 [[Char]] and [[String]] are all discrete.
-Sort [[List ]]<replaceable>S</replaceable> is discrete when
+Type [[List ]]<replaceable>S</replaceable> is discrete when
 <replaceable>S</replaceable> is.
-All function sorts are non-discrete (even when the domain
-sort is the unit sort).
-Sum sorts, product sorts and record sorts are discrete
-whenever all component sorts are.
-Subsort
+All function types are non-discrete (even when the domain
+type is the unit type).
+Sum types, product types and record types are discrete
+whenever all component types are.
+Subtype
 [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] is discrete when
-supersort <replaceable>S</replaceable> is.
+supertype <replaceable>S</replaceable> is.
 (Predicate <replaceable>P</replaceable> need not be
-constructive: the equality test is that of the supersort.)
-Quotient sort
+constructive: the equality test is that of the supertype.)
+Quotient type
 <replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable> is discrete when
 predicate <replaceable>Q</replaceable> is
 constructive.
-(Sort <replaceable>S</replaceable> need not be discrete:
-the equality test on the quotient sort is just the predicate
+(Type <replaceable>S</replaceable> need not be discrete:
+the equality test on the quotient type is just the predicate
 <replaceable>Q</replaceable> applied to pairs of members of the
 <replaceable>Q</replaceable>-equivalence classes.)
 </para>
@@ -401,13 +397,13 @@ as far as only the meaning is concerned, the following two
 presentations of the same `spec are entirely equivalent:
 [[
 ||    spec
-||      sort Even
+||      type Even
 ||      op next : Even -> Even
 ||      axiom nextEffect is
 ||        fa(x : Even) ~(next x = x)
 ||    endspec
 ||
-||    spec sort   Even op   next : Even -> Even axiom nextEffect
+||    spec type   Even op   next : Even -> Even axiom nextEffect
 ||    is fa(x : Even)~(next     x            = x)endspec
 ]]
 </para>
@@ -473,12 +469,12 @@ special meaning and must not be used for `names:
 [[
 ||    as            endspec       infixr        relax
 ||    axiom         ex            is            restrict
-||    case          fa            let           sort
-||    choose        false         morphism      spec
-||    colimit       fn            obligations   then
-||    conjecture    from          of            theorem
-||    def           generate      op            translate
-||    diagram       if            project       true
+||    case          fa            let           spec
+||    choose        false         morphism      then
+||    colimit       fn            obligations   theorem
+||    conjecture    from          of            translate
+||    def           generate      op            true
+||    diagram       if            project       type
 ||    else          import        prove         where
 ||    embed         in            qualifying
 ||    embed?        infixl        quotient
@@ -511,14 +507,14 @@ non-alphabetic marks.
 <para>
 Some &Metaslang; users follow the convention of using
 `names that start with a capital letter for
-`unit-identifiers and `sort-names and for `constructors,
+`unit-identifiers and `type-names and for `constructors,
 while `word-symbols chosen for `op-names and `field-names start with a
 lower-case `letter.
-Both plain `local-variables and `local-sort-variables are often chosen
+Both plain `local-variables and `local-type-variables are often chosen
 to be single lower-case `letters: [[x]], [[y]], [[z]],
 [[a]], [[b]], [[c]], with the start of the alphabet
-preferred for `local-sort-variables.
-`Op-names of predicates (that is, having some sort
+preferred for `local-type-variables.
+`Op-names of predicates (that is, having some type
 <replaceable>S</replaceable>[[ -> Boolean]]) often end with
 the mark [[?]].
 These are just conventions that users are free to follow or
@@ -776,7 +772,7 @@ The elaboration of a `spec-term, if defined, yields a
 ||`spec-form ::= spec { `declaration }* endspec
 >>
 Restriction.
-`Spec-forms must be sort-correct.
+`Spec-forms must be type-correct.
 </para>
 <para>
 Sample `spec-forms:
@@ -801,7 +797,7 @@ Chapter.
 <section><title>Qualifications</title>
 <!--====================================================================-->
 <para>
-Names of sorts and `ops may be <emphasis>unqualified</emphasis>
+Names of types and `ops may be <emphasis>unqualified</emphasis>
 or <emphasis>qualified</emphasis>.
 The difference is that `unqualified-names do not contain a
 dot sign ``[[.]]'', while `qualified-names are prefixed with
@@ -821,24 +817,24 @@ Unlike in earlier versions of Specware, there is no rigid
 relationship between `qualifiers and the `unit-identifiers
 identifying `specs.
 The author of a collection of `specs may use the `qualifier
-deemed most appropriate for any `sort-name or `op-name.
+deemed most appropriate for any `type-name or `op-name.
 For example, there could be a single `spec dubbed
 [[SetsAndBags]] that introduces two new `ops, one called
 [[Set.union]] and one called [[Bag.union]].
-Generally, sorts and `ops that ``belong together''
+Generally, types and `ops that ``belong together''
 should receive the same `qualifier.
 It is up to the author of the `specs to determine what
 belongs together.
 </para>
 
 <para>
-`Sort-names and `op-names are <emphasis>introduced</emphasis> in a
+`Type-names and `op-names are <emphasis>introduced</emphasis> in a
 `declaration or `definition, and may then be
 <emphasis>employed</emphasis> elsewhere in the same `spec.
-Thus, all occurrences of a `sort-name or `op-name can be divided
+Thus, all occurrences of a `type-name or `op-name can be divided
 into ``introductions'' and ``employs''.
 The name as introduced in an introduction is the 
-<emphasis>full name</emphasis> of the sort or `op.
+<emphasis>full name</emphasis> of the type or `op.
 If that name is unqualified, the full name is unqualified.
 If the name as introduced is qualified, then so is the full
 name.
@@ -852,14 +848,14 @@ full name.
 Also, if the name employed is qualified, it is the full name.
 Otherwise, the name as employed may be unqualified
 shorthand for a qualified full name.
-For example, given an employ of the unqualified `sort-name
+For example, given an employ of the unqualified `type-name
 [[Date]], possible qualified full names for it are
 [[Calendar.Date]], [[DateAndTime.Date]],
 [[Diary.Date]], and so on.  But, of course, the full name
 must be one that is introduced in the `spec.
 If there is precisely one `qualified-name introduced whose last part is
 the same as the `unqualified-name employed, then that name is the full name.
-Otherwise, sort information may be employed to disambiguate
+Otherwise, type information may be employed to disambiguate
 (``resolve overloading'').
 </para>
 
@@ -868,17 +864,17 @@ Here is an illustration of the various possibilities:
 
 [[
 ||  spec
-||    sort Apple
-||    sort Fruit.Apple
-||    sort Fruit.Pear
-||    sort Fruit.Date
-||    sort Calendar.Date
-||    sort Fruit.Basket = Apple * Pear * Date
+||    type Apple
+||    type Fruit.Apple
+||    type Fruit.Pear
+||    type Fruit.Date
+||    type Calendar.Date
+||    type Fruit.Basket = Apple * Pear * Date
 ||  endspec
 ]]
 
-In the definition of sort [[Fruit.Basket]] we have three
-unqualified employs of `sort-names, viz. [[Apple]], [[Pear]] and
+In the definition of type [[Fruit.Basket]] we have three
+unqualified employs of `type-names, viz. [[Apple]], [[Pear]] and
 [[Date]].
 The name [[Apple]] is introduced like that, so the employ
 [[Apple]] already uses the full name; it does not refer to
@@ -913,10 +909,10 @@ For example, the value of
 
 [[
 ||  Company qualifying spec
-||    sort Apple
-||    sort Fruit.Apple
-||    sort Fruit.Pear
-||    sort Fruit.Basket = Apple * Pear
+||    type Apple
+||    type Fruit.Apple
+||    type Fruit.Pear
+||    type Fruit.Basket = Apple * Pear
 ||  endspec
 ]]
 
@@ -924,10 +920,10 @@ is the same as that of
 
 [[
 ||  spec
-||    sort Company.Apple
-||    sort Fruit.Apple
-||    sort Fruit.Pear
-||    sort Fruit.Basket = Company.Apple * Fruit.Pear
+||    type Company.Apple
+||    type Fruit.Apple
+||    type Fruit.Pear
+||    type Fruit.Basket = Company.Apple * Fruit.Pear
 ||  endspec
 ]]
 </para>
@@ -962,7 +958,7 @@ Then the elaboration of `qualification [[\<replaceable>Q\</replaceable>
 qualifying \<replaceable>S\</replaceable>]], where
 <replaceable>Q</replaceable> is a `qualifier, is
 <replaceable>R</replaceable> with each unqualified
-`sort-name or `op-name <replaceable>N</replaceable> introduced there 
+`type-name or `op-name <replaceable>N</replaceable> introduced there 
 replaced by the `qualified-name
 <replaceable>Q</replaceable>[[.]]<replaceable>N</replaceable>.
 The same replacement applies to all uses of
@@ -997,14 +993,14 @@ also unqualified `claim-names get qualified.
 ||
 ||`name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
 ||
-||`name-map-item ::= `sort-name-map-item | `op-name-map-item
+||`name-map-item ::= `type-name-map-item | `op-name-map-item
 ||
-||`sort-name-map-item ::= [ sort ] `qualifiable-name +-> `qualifiable-name
+||`type-name-map-item ::= [ type ] `qualifiable-name +-> `qualifiable-name
 ||
 ||`op-name-map-item ::=
 ||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
 ||
-||`annotable-qualifiable-name ::= `qualifiable-name [ : `sort ]
+||`annotable-qualifiable-name ::= `qualifiable-name [ : `type-descriptor ]
 >>
 Sample `spec-translation:
 [[
@@ -1028,7 +1024,7 @@ replaced by
 For example, the elaboration of
 [[
 ||  translate spec
-||    sort E
+||    type E
 ||    op i : E
 ||  endspec by {
 ||    E +-> Counter,
@@ -1038,7 +1034,7 @@ For example, the elaboration of
 results in:
 [[
 ||  spec
-||    sort Counter
+||    type Counter
 ||    op zero : Counter
 ||  endspec
 ]]
@@ -1096,8 +1092,8 @@ is to <replaceable>R</replaceable> as
 </para>
 <para>
 Except when <replaceable>R</replaceable> introduces, next
-to the `sort-names and `op-names it has in common with
-<replaceable>D</replaceable>, new `sort-names or `op-names
+to the `type-names and `op-names it has in common with
+<replaceable>D</replaceable>, new `type-names or `op-names
 that also occur in <replaceable>C</replaceable>,
 the result `spec <replaceable>T</replaceable>
 is a categorical colimit of this pushout diagram:
@@ -1121,7 +1117,7 @@ the names in <replaceable>T</replaceable> are names from
 For example, assume we have:
 [[
 ||  A = spec
-||    sort Counter
+||    type Counter
 ||    op reset: Counter
 ||    op tick : Counter -> Counter
 ||    axiom Effect is
@@ -1137,7 +1133,7 @@ For example, assume we have:
 ||  
 ||  AA = spec
 ||    import A
-||    sort Interval = {start: Counter, stop: Counter}
+||    type Interval = {start: Counter, stop: Counter}
 ||    op isEmptyInterval? : Interval -> Boolean
 ||    def isEmptyInterval? {start = x, stop = y} = (x = y)
 ||  endspec
@@ -1146,7 +1142,7 @@ Then the result of [[AA[M]]] is the same as that of this `spec:
 [[
 ||  spec
 ||    import B
-||    sort Interval = {start: Nat, stop: Nat}
+||    type Interval = {start: Nat, stop: Nat}
 ||    op isEmptyInterval? : Interval -> Boolean
 ||    def isEmptyInterval? {start = x, stop = y} = (x = y)
 ||  endspec
@@ -1215,10 +1211,10 @@ let <replaceable>S'</replaceable> be the result of elaborating
 \<replaceable>M\</replaceable> }]],
 and let <replaceable>T'</replaceable> be the result of elaborating
 <replaceable>T</replaceable>.
-Then, first, each `sort-name or `op-name introduced in
+Then, first, each `type-name or `op-name introduced in
 <replaceable>S'</replaceable> must also be introduced in
 <replaceable>T'</replaceable>.
-Further, no `sort-name or `op-name originating from a
+Further, no `type-name or `op-name originating from a
 library `spec may have been subject to translation.
 Finally, each axiom in
 <replaceable>S'</replaceable> must be a theorem that follows
@@ -1233,7 +1229,7 @@ They are the formal expression of the requirement that the step from
 </section>
 <!-- ***************************************************************** -->
 <!--
-** <section><title>Spec sort and operator visibility</title>
+** <section><title>Spec type and operator visibility</title>
 ** <para>
 ** <<
 ** ||`spec-visibility ::=
@@ -1387,12 +1383,12 @@ For details, see the &Specware; User Manual.
 <<
 ||`declaration ::=
 ||      `import-declaration
-||    | `sort-declaration
+||    | `type-declaration
 ||    | `op-declaration
 ||    | `definition
 ||
 ||`definition ::=
-||      `sort-definition
+||      `type-definition
 ||    | `op-definition
 ||    | `claim-definition
 ||
@@ -1401,9 +1397,9 @@ For details, see the &Specware; User Manual.
 Sample `declarations:
 [[
 ||    import Lookup
-||    sort Key
+||    type Key
 ||    op present : Database * Key -> Boolean
-||    sort Key = String
+||    type Key = String
 ||    def present(db, k) = embed? Some (lookup (db, k))
 ||    axiom norm_idempotent is fa(x) norm (norm x) = norm x
 ]]
@@ -1418,7 +1414,7 @@ The effect is as if the bodies of these imported `specs (themselves
 in elaborated form, which means that all `import-declarations
 have been expanded, all translations performed and all
 shorthand employs of names have been resolved to full names,
-after which only declarations or definitions of sorts, `ops
+after which only declarations or definitions of types, `ops
 and axioms are left)
 is inserted in place in the receiving `spec.
 </para>
@@ -1429,10 +1425,10 @@ For example, the result of
 [[
 ||  spec
 ||    import spec
-||             sort A.Z
+||             type A.Z
 ||             op b : Nat -> Z
 ||           end
-||    sort A.Z = String
+||    type A.Z = String
 ||    def b = toString
 ||  endspec
 ]]
@@ -1441,9 +1437,9 @@ is this ``expanded'' `spec:
 
 [[
 ||  spec
-||    sort A.Z
+||    type A.Z
 ||    op b : Nat -> A.Z
-||    sort A.Z = String
+||    type A.Z = String
 ||    def b = toString
 ||  endspec
 ]]
@@ -1459,7 +1455,7 @@ place must result in a correct `spec.
 There are a few restrictions, which are meant to catch
 unintentional naming mistakes.
 First, if two different imported `specs each introduce a
-sort or `op
+type or `op
 with the same (full) name, the introductions must be
 identical declarations or definitions, or one may be a
 declaration and the other a ``compatible'' definition.
@@ -1478,7 +1474,7 @@ This restriction is in fact a special case of the general
 requirement that import expansion must result in a correct
 `spec.
 
-Secondly, a `sort-name introduced in any of the imported
+Secondly, a `type-name introduced in any of the imported
 `specs cannot be re-introduced in the receiving `spec except
 for the case of an ``imported'' declaration together with a
 definition in the receiving `spec.
@@ -1492,8 +1488,8 @@ import expansion must result in a correct `spec.
 
 <para>
 What is specifically excluded by the above, is giving a
-definition of a sort or `op in some `spec, import it, and then
-redefining or declaring that sort or `op with the same full
+definition of a type or `op in some `spec, import it, and then
+redefining or declaring that type or `op with the same full
 name in the receiving `spec.
 </para>
 
@@ -1538,106 +1534,106 @@ So <replaceable>A</replaceable> is then refined by
 <replaceable>B</replaceable>, and the morphism from
 <replaceable>A</replaceable> to <replaceable>B</replaceable> is
 known as the <quote>import morphism</quote>.
-As it does not involve translation of `sort-names or
+As it does not involve translation of `type-names or
 `op-names,
 it can be denoted by [[morphism \<replaceable>A\</replaceable>
 -> \<replaceable>B\</replaceable> {}]].
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-declarations"><title>Sort-declarations</title>
+<section id="Type-declarations"><title>Type-declarations</title>
 <para>
 <<
-||`sort-declaration ::= sort `sort-name [ `formal-sort-parameters ]
+||`type-declaration ::= type `type-name [ `formal-type-parameters ]
 ||
-||`formal-sort-parameters ::= `local-sort-variable | ( `local-sort-variable-list )
+||`formal-type-parameters ::= `local-type-variable | ( `local-type-variable-list )
 ||
-||`local-sort-variable ::= `name
+||`local-type-variable ::= `name
 ||
-||`local-sort-variable-list ::= `local-sort-variable { , `local-sort-variable }*
+||`local-type-variable-list ::= `local-type-variable { , `local-type-variable }*
 ||
 >>
 Restriction.
-Each `local-sort-variable of the `formal-sort-parameters must
+Each `local-type-variable of the `formal-type-parameters must
 be a different `name.
 </para>
 <!-- ================================================================= -->
 <para>
-Sample `sort-declarations:
+Sample `type-declarations:
 [[
-||    sort Date
-||    sort Array a
-||    sort Map(a, b)
+||    type Date
+||    type Array a
+||    type Map(a, b)
 ]]
 </para>
 <!-- ================================================================= -->
 <para>
-Every `sort-name used in a `spec must be declared (in the
+Every `type-name used in a `spec must be declared (in the
 same `spec or in an imported `spec, included the
 <quote>built-in</quote> `specs that are always implicitly imported).
-A `sort-name may have <emphasis>sort parameters</emphasis>.
-Given the example `sort-declarations above, some valid
-`sorts that can be used in this context are [[Array Date]],
+A `type-name may have <emphasis>type parameters</emphasis>.
+Given the example `type-declarations above, some valid
+`type-descriptors that can be used in this context are [[Array Date]],
 [[Array (Array Date)]] and [[Map (Nat, Boolean)]].
 </para>
 <!-- ================================================================= -->
 <para>
-In a model of the `spec, a sort is assigned to
-each unparameterized `sort-name, while an infinite
-<emphasis>family</emphasis> of sorts is assigned to
-parameterized `sort-names <quote>indexed</quote> by tuples
-of sorts, that is, there is one family member, a sort,
+In a model of the `spec, a type is assigned to
+each unparameterized `type-name, while an infinite
+<emphasis>family</emphasis> of types is assigned to
+parameterized `type-names <quote>indexed</quote> by tuples
+of types, that is, there is one family member, a type,
 for each possible assignment
-of sorts to the `local-sort-variables.
-So for the above example `sort-declaration of [[Array]]
-one sort must be assigned to [[Array Nat]], one to
+of types to the `local-type-variables.
+So for the above example `type-declaration of [[Array]]
+one type must be assigned to [[Array Nat]], one to
 [[Array Boolean]], one to [[Array (Array Date)]], and so on.
-These assigned sorts could all be the same sort, or perhaps all
-different, as long as the model respects sorting.
+These assigned types could all be the same type, or perhaps all
+different, as long as the model respects typing.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-definitions"><title>Sort-definitions</title>
+<section id="Type-definitions"><title>Type-definitions</title>
 <para>
 <<
-||`sort-definition ::= sort `sort-name [ `formal-sort-parameters ] `equals `sort
+||`type-definition ::= type `type-name [ `formal-type-parameters ] `equals `type-descriptor
 >>
-Sample `sort-definitions:
+Sample `type-definitions:
 [[
-||    sort Date = {year : Nat, month : Nat, day : Nat}
-||    sort Array a = List a
-||    sort Map(a, b) = (Array (a * b) | key_uniq?)
+||    type Date = {year : Nat, month : Nat, day : Nat}
+||    type Array a = List a
+||    type Map(a, b) = (Array (a * b) | key_uniq?)
 ]]
-In each model, the sort assigned to the
-`sort-name must be the same as the right-hand-side `sort.
-For parameterized sorts, this extends to all possible
+In each model, the type assigned to the
+`type-name must be the same as the right-hand-side `type-descriptor.
+For parameterized types, this extends to all possible
 assignments
-of sorts to the `local-sort-variables, taking the right-hand `sorts
+of types to the `local-type-variables, taking the right-hand `type-descriptors
 as interpreted under each of these assignments.
-So, for the example, [[Map(Nat, Char)]] is the same sort as
+So, for the example, [[Map(Nat, Char)]] is the same type as
 [[(Array (Nat * Char) | key_uniq?)]], and so on.
 </para>
 <!-- ================================================================= -->
 <para>
-With <emphasis>recursive</emphasis> `sort-definitions, there
+With <emphasis>recursive</emphasis> `type-definitions, there
 are additional requirements.
 For example, consider
 [[
-||    sort Stack a =
+||    type Stack a =
 ||      | Empty
 ||      | Push {top : a, pop : Stack a}
 ]]
-This means that for each sort [[a]] there is a value
-[[Empty]] of sort [[Stack a]], and further a function
-[[Push]] that maps values of sort [[{top : a, pop : Stack
+This means that for each type [[a]] there is a value
+[[Empty]] of type [[Stack a]], and further a function
+[[Push]] that maps values of type [[{top : a, pop : Stack
 a}]] to [[Stack a]].
-Furthermore, the sort assigned to [[Stack a]] must be such
+Furthermore, the type assigned to [[Stack a]] must be such
 that all its inhabitants can be constructed
 <emphasis>exclusively</emphasis> and
 <emphasis>uniquely</emphasis> in this way:
 there is one inhabitant [[Empty]], and all others are the
 result of a [[Push]].
-Finally -- this is the point -- the sort in the model must
+Finally -- this is the point -- the type in the model must
 be such that its inhabitants can be constructed this way in
 <emphasis>a finite number of steps</emphasis>.
 So there can be no <quote>bottom-less</quote> stacks:
@@ -1653,10 +1649,10 @@ resulting in [[true]].
 </para>
 <!-- ================================================================= -->
 <para>
-In general, `sort-definitions generate implicit axioms,
-which for recursive definitions imply that the sort is not
+In general, `type-definitions generate implicit axioms,
+which for recursive definitions imply that the type is not
 <quote>larger</quote> than necessary.
-In technical terms, in each model the sort is the least
+In technical terms, in each model the type is the least
 fixpoint of a recursive domain equation.
 </para>
 <!-- ================================================================= -->
@@ -1667,7 +1663,7 @@ fixpoint of a recursive domain equation.
 ** The corresponding axioms are higher-order of a nature that
 ** the provers that can currently be coupled to the &Specware;
 ** system can not handle, and are not actually generated.
-** For normal cases of <quote>algebraic sorts</quote>
+** For normal cases of <quote>algebraic types</quote>
 ** like [[Stack a]] above, there is a first-order
 ** characterization, and the appropriate axioms are generated for
 ** use by provers.
@@ -1678,7 +1674,7 @@ fixpoint of a recursive domain equation.
 <section id="Op-declarations"><title>Op-declarations</title>
 <para>
 <<
-||`op-declaration ::= op `op-name [ `fixity ] : `sort-scheme
+||`op-declaration ::= op `op-name [ `fixity ] : `type-scheme
 ||
 ||`fixity ::= `associativity `priority
 ||
@@ -1686,9 +1682,9 @@ fixpoint of a recursive domain equation.
 ||
 ||`priority ::= `nat-literal
 ||
-||`sort-scheme ::= [ `sort-variable-binder ] `sort
+||`type-scheme ::= [ `type-variable-binder ] `type-descriptor
 ||
-||`sort-variable-binder ::= fa ( `local-sort-variable-list )
+||`type-variable-binder ::= fa ( `local-type-variable-list )
 ||
 >>
 Sample `op-declarations:
@@ -1703,16 +1699,16 @@ Sample `op-declarations:
 Restriction.
 Although `ops may be <quote>overloaded</quote>,
 an `op may not be redeclared and/or redefined with overlapping
-<emphasis>source sorts</emphasis> (see below), whether in the
+<emphasis>source types</emphasis> (see below), whether in the
 same `spec or after having been defined in an imported `spec,
 not even when the meaning of both `definitions is the same.
 For example, [[op abs : Nat -> Nat]] cannot coexist with
 [[op abs : Integer -> Integer]], but either can coexist
 with [[op abs : Char -> Nat]].
 There may be both an `op-declaration and an `op-definition
-for the same `op, provided that the sort information supplied
+for the same `op, provided that the type information supplied
 by the `op-declaration is compatible with the (explicit or
-inferred) sort of the `op-definition, and that the
+inferred) type of the `op-definition, and that the
 `op-definition is not given in an imported `spec (but in the
 current `spec, or in a later `spec importing the current
 `spec).
@@ -1736,21 +1732,21 @@ all `op-declarations for the `op-name must have the same
 -->
 <!-- ================================================================= -->
 <para>
-An `op-declaration introduces an `op-name with an associated sort.
-The sort can be <quote>monomorphic</quote>, like [[String]], or
-<quote>polymorphic</quote> (indicated by a `sort-variable-binder).
+An `op-declaration introduces an `op-name with an associated type.
+The type can be <quote>monomorphic</quote>, like [[String]], or
+<quote>polymorphic</quote> (indicated by a `type-variable-binder).
 In the latter case, an indexed family of values is assigned to
-parameterized `sort-names <quote>indexed</quote> by tuples of
-sorts, that is, there is one family member, a sorted value, for each
-possible assignment of sorts to the `local-sort-variables of
-the `sort-variable-binder, and the sort of that value is the
-result of the corresponding substitution of sorts for
-`local-sort-variables on the
-polymorphic sort of the `op.
+parameterized `type-names <quote>indexed</quote> by tuples of
+types, that is, there is one family member, a typed value, for each
+possible assignment of types to the `local-type-variables of
+the `type-variable-binder, and the type of that value is the
+result of the corresponding substitution of types for
+`local-type-variables on the
+polymorphic type of the `op.
 In the example above, the declaration of polymorphic [[o]] can
 be thought of as introducing a family of (fictitious) `ops,
 one for each possible assignment to the
-`local-sort-variables [[a]], [[b]] and [[c]]:
+`local-type-variables [[a]], [[b]] and [[c]]:
 [[
 ||o\<subscript>Nat,String,Char \</subscript> : (String -> Char) * (Nat -> String) -> Nat -> Char
 ||
@@ -1764,50 +1760,50 @@ Any `op-definition for [[o]] must be likewise accommodating.
 <!-- ================================================================= -->
 <!-- ====================== NOT YET ==================================
 <para>
-Given a sort <replaceable>S</replaceable>, the sort
+Given a type <replaceable>S</replaceable>, the type
 super(<replaceable>S</replaceable>) is defined to be
 <replaceable>S</replaceable> if <replaceable>S</replaceable>
-is not a subsort.
-For a subsort [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]],
-super([[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]]) is the sort
+is not a subtype.
+For a subtype [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]],
+super([[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]]) is the type
 super(<replaceable>S</replaceable>).
 For example, super([[(Nat | even)]]) is [[Integer]].
 </para>
 
 <para>
-The source sorts of an `op are the set of sorts determined
+The source types of an `op are the set of types determined
 as follows.
-If the sort of the `op is some monomorphic function sort
-<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, the source sorts are the
+If the type of the `op is some monomorphic function type
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, the source types are the
 singleton set {super(<replaceable>S</replaceable>)}.
-If the sort of the `op is a polymorphic function sort
-corresponding to some `sort-scheme
-[[fa(]]<replaceable>V</replaceable>[[) ]]<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, the source sorts are the
-set of all sorts super(<replaceable>S'</replaceable>)
-for the sorts
+If the type of the `op is a polymorphic function type
+corresponding to some `type-scheme
+[[fa(]]<replaceable>V</replaceable>[[) ]]<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, the source types are the
+set of all types super(<replaceable>S'</replaceable>)
+for the types
 <replaceable>S'</replaceable>[[ -> ]]<replaceable>T'</replaceable> of the indexed family of
 values,
-obtainable by the substitution of sorts for
-the `local-sort-variables in
+obtainable by the substitution of types for
+the `local-type-variables in
 <replaceable>V</replaceable>.
 For example, for
 [[
 ||   op f : fa(a) a * a -> a
 ]]
-the source sorts are the set
+the source types are the set
 {[[Integer * Integer]], [[Boolean * Boolean]], [[Char *
 Char]], ...}.
 </para>
 
 <para>
-Finally, if the sort of the `op is not a (monomorphic or
-polymorphic) function sort, the source sorts of the `op are
-the singleton set {[[()]]}, containing just the unit sort.
+Finally, if the type of the `op is not a (monomorphic or
+polymorphic) function type, the source types of the `op are
+the singleton set {[[()]]}, containing just the unit type.
 </para>
      ====================== TEY TON ================================== -->
 <!-- ================================================================= -->
 <para>
-Only binary `ops (those having some sort
+Only binary `ops (those having some type
 <replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable>[[ -> ]]<replaceable>U</replaceable>)
 may be declared with a `fixity.
 When declared with a `fixity, the `op-name may be used in infix
@@ -1844,7 +1840,7 @@ For the role of the `associativity and `priority, see further at
 <para>
 <<
 ||`op-definition ::=
-||    def [ `sort-variable-binder ] `formal-expression [ : `sort ] `equals
+||    def [ `type-variable-binder ] `formal-expression [ : `type-descriptor ] `equals
 ||        `expression
 ||
 ||`formal-expression ::= `op-name | `formal-application
@@ -1926,37 +1922,37 @@ always uses prefix notation, also for infix operators.
 An `op can be defined without having been declared.
 In that case the `op-definition
 generates an implicit `op-declaration for the `op, as well as
-implicit `sort-declarations for <quote>place-holder</quote>
-sorts needed for the `op-declaration.
+implicit `type-declarations for <quote>place-holder</quote>
+types needed for the `op-declaration.
 For example, an undeclared `op defined by
 [[
 ||    def f x y = (x, y x)
 ]]
 generates implicit `declarations like:
 [[
-||    sort s4771
-||    sort s4772
+||    type s4771
+||    type s4772
 ||    op f : s4771 -> (s4771 -> s4772) -> (s4771 * s4772)
 ]]
 in which [[s4771]] and [[s4772]] are fresh `names.
 Note that this is not polymorphic, but monomorphic with
-<emphasis>unspecified</emphasis> sorts.
+<emphasis>unspecified</emphasis> types.
 However, the further uses of [[f]] must uniquely determine
-sorts for the place-holders.
-In general, sorting information on `ops may be omitted, but sufficient
+types for the place-holders.
+In general, typing information on `ops may be omitted, but sufficient
 information must be supplied when used, so that all
-`expressions can be assigned a sort in the context in which
+`expressions can be assigned a type in the context in which
 they occur while uniquely associating the `ops with
 `op-declarations or `op-definitions.
-If two different associations both give sort-correct `specs,
+If two different associations both give type-correct `specs,
 the `spec is ambiguous and incorrect.
 </para>
 <!-- ================================================================= -->
 <para>
-As for `op-definitions, the presence of a `sort-variable-binder
+As for `op-definitions, the presence of a `type-variable-binder
 signals that the `op being defined is polymorphic.
-Note that the optional sort annotation in an `op-definition
-may not be a polymorphic `sort-scheme, unlike for
+Note that the optional type annotation in an `op-definition
+may not be a polymorphic `type-scheme, unlike for
 `op-declarations.  For example, the following is ungrammatical:
 [[
 ||    def o : fa(a,b,c) (b -> c) * (a -> b) -> a -> c =
@@ -1967,12 +1963,12 @@ The presumably intended effect is achieved by
 ||    def fa(a,b,c) o : (b -> c) * (a -> b) -> a -> c =
 ||      fn (f, g) -> fn (x) -> f(g x)
 ]]
-In a model of the `spec, an indexed family of sorted values is
+In a model of the `spec, an indexed family of typed values is
 assigned to a polymorphic `op, with one family member for each
-possible assignment of sorts to the `local-sort-variables of
-the `sort-variable-binder, and the sort of that value is the
-result of the corresponding `sort-instantiation for the
-polymorphic sort of the `op.
+possible assignment of types to the `local-type-variables of
+the `type-variable-binder, and the type of that value is the
+result of the corresponding `type-instantiation for the
+polymorphic type of the `op.
 Thus, we can reduce the meaning of a polymorphic
 `op-definition to a family of (fictitious) monomorphic
 `op-definitions.
@@ -2016,11 +2012,11 @@ The semantics is described in terms of such `op-definitions.
 </para>
 <!-- ================================================================= -->
 <para>
-In each model, the sorted value assigned to the
+In each model, the typed value assigned to the
 `op being defined must be the same as the value of the
 right-hand-side `expression.
 For polymorphic `op-definitions, this extends to all possible
-assignments of sorts to the `local-sort-variables.
+assignments of types to the `local-type-variables.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -2035,7 +2031,7 @@ can be thought of as standing for:
 ||    op double : fa(a) a -> a * a
 ||
 ||    axiom double_def is
-||      sort fa(a) fa(x : a) double x = (x, x)
+||      type fa(a) fa(x : a) double x = (x, x)
 ]]
 In fact, &Specware; generates such axioms for use by
 provers.
@@ -2059,7 +2055,7 @@ be <emphasis>total</emphasis>.
 But in assigning a meaning to a recursive `op-definition, we
 -- temporarily -- allow &undefined; and partial functions
 (functions that are not everywhere defined on their domain
-sort) to be assigned to recursively defined `ops.
+type) to be assigned to recursively defined `ops.
 In the thus extended class of models, the recursive `ops must be
 the least-defined solution to the <quote>axiomatic</quote>
 equation (the least fixpoint as in domain theory), given the
@@ -2094,9 +2090,9 @@ Otherwise, the `spec is incorrect.
 ||
 ||`claim-name ::= `name
 ||
-||`claim ::= [ `sort-quantification ] `expression
+||`claim ::= [ `type-quantification ] `expression
 ||
-||`sort-quantification ::= sort `sort-variable-binder
+||`type-quantification ::= type `type-variable-binder
 >>
 Sample `claim-definitions:
 [[
@@ -2104,7 +2100,7 @@ Sample `claim-definitions:
 ||      norm o norm = norm
 ||
 ||    theorem o_assoc is
-||      sort fa(a,b,c,d) fa(f : c -> d, g : b -> c, h : a -> b)
+||      type fa(a,b,c,d) fa(f : c -> d, g : b -> c, h : a -> b)
 ||        f o (g o h) = (f o g) o h
 ||
 ||    conjecture pivot_hold is
@@ -2115,14 +2111,14 @@ Sample `claim-definitions:
 <!-- ================================================================= -->
 <para>
 Restriction.
-The sort of the `claim must be [[Boolean]].
+The type of the `claim must be [[Boolean]].
 </para>
 <!-- ================================================================= -->
 <para>
-When a `sort-quantification is present, the `claim is polymorphic.
+When a `type-quantification is present, the `claim is polymorphic.
 The `claim may be thought of as standing for an infinite family
 of monomorphic `claims, one for each possible assignment of
-sorts to the `local-sort-variables.
+types to the `local-type-variables.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -2163,41 +2159,41 @@ future revisions of Metaslang.
 </section>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sorts"><title>Sorts</title>
+<section id="Type-descriptors"><title>Type-descriptors</title>
 <para>
 <<
-||`sort ::=
-||      `sort-sum
-||    | `sort-arrow
-||    | `slack-sort
+||`type-descriptor ::=
+||      `type-sum
+||    | `type-arrow
+||    | `slack-type-descriptor
 ||
-||`slack-sort ::=
-||      `sort-product
-||    | `tight-sort
+||`slack-type-descriptor ::=
+||      `type-product
+||    | `tight-type-descriptor
 ||
-||`tight-sort ::=
-||      `sort-instantiation
-||    | `closed-sort
+||`tight-type-descriptor ::=
+||      `type-instantiation
+||    | `closed-type-descriptor
 ||
-||`closed-sort ::=
-||      `sort-name
-||    | `local-sort-variable
-||    | `sort-record
-||    | `sort-restriction
-||    | `sort-comprehension
-||    | `sort-quotient
-||    | ( `sort )
+||`closed-type-descriptor ::=
+||      `type-name
+||    | `local-type-variable
+||    | `type-record
+||    | `type-restriction
+||    | `type-comprehension
+||    | `type-quotient
+||    | ( `type-descriptor )
 ||
 >>
 (The distinctions <quote>`slack-</quote>,
 <quote>`tight-</quote> and <quote>`closed-</quote> before
-<quote>`sort</quote> have no semantic significance.
+<quote>`type-descriptor</quote> have no semantic significance.
 The distinction merely serves the purpose of diminishing the
 need for parenthesizing in order to avoid grammatical ambiguities.)
 </para>
 <!-- ================================================================= -->
 <para>
-Sample `sorts:
+Sample `type-descriptors:
 [[
 ||    | Point XYpos | Line XYpos * XYpos
 ||    List String * Nat -> Option String
@@ -2211,82 +2207,82 @@ Sample `sorts:
 ||    Nat / (fn (m, n) -> m rem 3 = n rem 3)
 ||    (Nat * Nat)
 ]]
-The meaning of a parenthesized `sort
+The meaning of a parenthesized `type-descriptor
 [[(\<replaceable>S\</replaceable>)]] is the same
-as that of the enclosed `sort
+as that of the enclosed `type-descriptor
 <replaceable>S</replaceable>.
 </para>
 <!-- ================================================================= -->
 <para>
-The various other kinds of `sorts not defined here are described
+The various other kinds of `type-descriptors not defined here are described
 each in their following respective sections, with the exception
-of `local-sort-variable, whose
-(lack of) meaning as a `sort is described below.
+of `local-type-variable, whose
+(lack of) meaning as a `type-descriptor is described below.
 </para>
 <!-- ================================================================= -->
 <para>
 Restriction.
-A `local-sort-variable may only be used as a `sort if
-it occurs in the scope of a `formal-sort-parameters
-or `sort-variable-binder in which it is introduced.
+A `local-type-variable may only be used as a `type-descriptor if
+it occurs in the scope of a `formal-type-parameters
+or `type-variable-binder in which it is introduced.
 </para>
 <!-- ================================================================= -->
 <para>
 Disambiguation.
-A single `name used as a `sort is a `local-sort-variable
-when it occurs in the scope of a `formal-sort-parameters
-or `sort-variable-binder in which it is introduced, and
+A single `name used as a `type-descriptor is a `local-type-variable
+when it occurs in the scope of a `formal-type-parameters
+or `type-variable-binder in which it is introduced, and
 then it identifies the textually most recent introduction.
-Otherwise, the `name is a `sort-name.
+Otherwise, the `name is a `type-name.
 </para>
 <!-- ================================================================= -->
 <para>
-A `local-sort-variable used as a `sort has no meaning by
+A `local-type-variable used as a `type-descriptor has no meaning by
 itself, and where relevant to the semantics is either
-<quote>indexed away</quote> (for parameterized sorts) or
+<quote>indexed away</quote> (for parameterized types) or
 <quote>instantiated away</quote> (when introduced in a
-`formal-sort-parameters or `sort-variable-binder) before a
+`formal-type-parameters or `type-variable-binder) before a
 meaning is ascribed to the construct in which it occurs.
 Textually, it has a scope just like a plain `local-variable.
 </para>
 <!-- ***************************************************************** -->
-<section id="Sort-sums"><title>Sort-sums</title>
+<section id="Type-sums"><title>Type-sums</title>
 <para>
 <<
-||`sort-sum ::= `sort-summand { `sort-summand }*
+||`type-sum ::= `type-summand { `type-summand }*
 ||
-||`sort-summand ::= '| `constructor [ `slack-sort ]
+||`type-summand ::= '| `constructor [ `slack-type-descriptor ]
 ||
 ||`constructor ::= `name
 ||
 >>
-Sample `sort-sum:
+Sample `type-sum:
 [[
 ||    | Point XYpos | Line XYpos * XYpos
 ]]
 Restriction.
-The `constructors of a `sort-sum must all be different `names.
+The `constructors of a `type-sum must all be different `names.
 </para>
 <!-- ================================================================= -->
 <para>
-The ordering of the `sort-summands has no significance:
-[[| Zero | Succ Peano]] denotes the same <quote>sum sort</quote> as
+The ordering of the `type-summands has no significance:
+[[| Zero | Succ Peano]] denotes the same <quote>sum type</quote> as
 [[| Succ Peano | Zero]].
 </para>
 <!-- ================================================================= -->
 <para>
-A `sort-sum denotes a <emphasis>sum sort</emphasis>, which
-is a sort that is inhabited by <quote>tagged values</quote>.
+A `type-sum denotes a <emphasis>sum type</emphasis>, which
+is a type that is inhabited by <quote>tagged values</quote>.
 A tagged value is a pair
 (<replaceable>C</replaceable>, <replaceable>v</replaceable>),
 in which 
 <replaceable>C</replaceable> is a `constructor and
-<replaceable>v</replaceable> is a sorted value.
+<replaceable>v</replaceable> is a typed value.
 </para>
 <!-- ================================================================= -->
 <para>
-A `sort-sum introduces a number of `embedders, one for each
-`sort-summand.
+A `type-sum introduces a number of `embedders, one for each
+`type-summand.
 In the discussion, we omit the optional [[embed]] keyword of
 the `embedders.
 The `embedders are similar to `ops, and are explained as if
@@ -2295,35 +2291,35 @@ they were `ops, but note the Restriction specified under
 </para>
 <!-- ================================================================= -->
 <para>
-For a `sort-sum
+For a `type-sum
 <replaceable>SS</replaceable> with
-`sort-summand
+`type-summand
 <replaceable>C</replaceable> <replaceable>S</replaceable>,
 in which
 <replaceable>C</replaceable> is a `constructor and
-<replaceable>S</replaceable> a `sort,
-the corresponding pseudo-`op introduced is sorted as follows:
+<replaceable>S</replaceable> a `type-descriptor,
+the corresponding pseudo-`op introduced is typed as follows:
 [[
 ||    op \<replaceable>C\</replaceable> : \<replaceable>S\</replaceable> -> \<replaceable>SS\</replaceable>
 ]]
-It maps a value <replaceable>v</replaceable> of sort
+It maps a value <replaceable>v</replaceable> of type
 <replaceable>S</replaceable> to the tagged value
 (<replaceable>C</replaceable>,
 <replaceable>v</replaceable>).
-If the `sort-summand is a single
+If the `type-summand is a single
 <emphasis>parameter-less</emphasis> `constructor (the
-`slack-sort is missing),
-the pseudo-`op introduced is sorted as follows:
+`slack-type-descriptor is missing),
+the pseudo-`op introduced is typed as follows:
 [[
 ||    op \<replaceable>C\</replaceable> : \<replaceable>SS\</replaceable>
 ]]
 It denotes the tagged value
 (<replaceable>C</replaceable>, ()), in which () is the
-inhabitant of the unit sort (see under <link linkend="Sort-records"><emphasis>Sort-records</emphasis></link>).
+inhabitant of the unit type (see under <link linkend="Type-records"><emphasis>Type-records</emphasis></link>).
 </para>
 <!-- ================================================================= -->
 <para>
-The sum sort denoted by the `sort-sum then consists of the
+The sum type denoted by the `type-sum then consists of the
 union of the ranges (for parameter-less constructors the
 values) of the pseudo-`ops for all constructors.
 </para>
@@ -2338,11 +2334,11 @@ and jointly <emphasis>surjective</emphasis>.
 This means, first, that for any pair of `constructors
 <replaceable>C1</replaceable> and
 <replaceable>C2</replaceable> of
-<emphasis>any</emphasis> `sort-sum, and for any pair
+<emphasis>any</emphasis> `type-sum, and for any pair
 of values
 <replaceable>v1</replaceable> and
 <replaceable>v2</replaceable>
-of the appropriate sort
+of the appropriate type
 (to be omitted for parameter-less `constructors),
 the value of
 <replaceable>C1</replaceable> <replaceable>v1</replaceable>
@@ -2353,68 +2349,68 @@ when
 and
 <replaceable>C2</replaceable>
 are the same `constructor of the <emphasis>same</emphasis>
-sum sort, and
+sum type, and
 <replaceable>v1</replaceable> and
 <replaceable>v2</replaceable>
 (which then are either both absent, or else must have the
-same sort) are both absent or are the same value.
+same type) are both absent or are the same value.
 In other words, whenever the `constructors are different, or are from
-different `sort-sums, or the values are different, the
+different `type-sums, or the values are different, the
 results are different.
-(The fact that synonymous `constructors of different sorts
+(The fact that synonymous `constructors of different types
 yield different values already follows from the fact that
-values in the models are sorted.)
+values in the models are typed.)
 </para>
 <!-- ================================================================= -->
 <para>
 Secondly, for any value <replaceable>u</replaceable> of any sum
-sort, there is a `constructor <replaceable>C</replaceable> of
-that sum sort and a value
-<replaceable>v</replaceable> of the appropriate sort
+type, there is a `constructor <replaceable>C</replaceable> of
+that sum type and a value
+<replaceable>v</replaceable> of the appropriate type
 (to be omitted for parameter-less `constructors),
 such that the value of
 <replaceable>C</replaceable> <replaceable>v</replaceable>
 is
 <replaceable>u</replaceable>.
-In other words, all values of a sum sort can be constructed
+In other words, all values of a sum type can be constructed
 with an `embedder.
 </para>
 <!-- ================================================================= -->
 <para>
 For example, consider
 [[
-||     sort Peano =
+||     type Peano =
 ||       | Zero
 ||       | Succ Peano
 ||
-||     sort Unique =
+||     type Unique =
 ||       | Zero
 ]]
 This means that there is a value
-[[Zero]] of sort [[Peano]], and further a function
-[[Succ]] that maps values of sort [[Peano]]
-to sort [[Peano]].
+[[Zero]] of type [[Peano]], and further a function
+[[Succ]] that maps values of type [[Peano]]
+to type [[Peano]].
 Then [[Zero]] and [[Succ n]] are guaranteed to be
-different, and each value of sort [[Peano]] is either
+different, and each value of type [[Peano]] is either
 [[Zero : Peano]], or expressible in the form
 [[Succ (n : Peano)]] for a suitable expression [[n]].
 The `expressions [[Zero : Peano]] and [[Zero : Unique]]
 denote different, entirely unrelated, values.
-(Note that [[Unique]] is <emphasis>not</emphasis> a subsort of
-[[Peano]].  Subsorts of a sort can only be made with a
-`sort-restriction, for instance as in
+(Note that [[Unique]] is <emphasis>not</emphasis> a subtype of
+[[Peano]].  Subtypes of a type can only be made with a
+`type-restriction, for instance as in
 [[(Peano | embed? Zero)]].)
-For recursively defined `sort-sums, see also the discussion
-under <link linkend="Sort-definitions"><emphasis>Sort-definitions</emphasis></link>.
+For recursively defined `type-sums, see also the discussion
+under <link linkend="Type-definitions"><emphasis>Type-definitions</emphasis></link>.
 </para>
 <!-- ================================================================= -->
 <para>
 Note.
-Although the sum sorts [[| Mono]] and [[| Mono ()]] have
+Although the sum types [[| Mono]] and [[| Mono ()]] have
 exactly the same set of inhabitants when considered as
-unsorted values, these two sorts are different, and the
-pseudo-`ops they introduce have different sorts, only the
-second of which is a function sort:
+untyped values, these two types are different, and the
+pseudo-`ops they introduce have different types, only the
+second of which is a function type:
 [[
 ||    Mono : | Mono
 ||
@@ -2423,194 +2419,194 @@ second of which is a function sort:
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-arrows"><title>Sort-arrows</title>
+<section id="Type-arrows"><title>Type-arrows</title>
 <para>
 <<
-||`sort-arrow ::= `arrow-source -> `sort
+||`type-arrow ::= `arrow-source -> `type-descriptor
 ||
-||`arrow-source ::= `sort-sum | `slack-sort
+||`arrow-source ::= `type-sum | `slack-type-descriptor
 ||
 >>
-Sample `sort-arrow:
+Sample `type-arrow:
 [[
 ||    (a -> b) * b -> List a -> List b
 ]]
 In this example, the `arrow-source is [[(a -> b) * b]], and the (target)
-`sort [[List a -> List b]].
+`type-descriptor [[List a -> List b]].
 </para>
 <!-- ================================================================= -->
 <para>
-The <emphasis>function sort</emphasis> <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> is inhabited by
+The <emphasis>function type</emphasis> <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> is inhabited by
 precisely all <emphasis>partial or total</emphasis> functions from
 <replaceable>S</replaceable>
 to <replaceable>T</replaceable>.
-That is, function <replaceable>f</replaceable> has sort
+That is, function <replaceable>f</replaceable> has type
 <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> if, and only if,
-for each value <replaceable>x</replaceable> of sort
+for each value <replaceable>x</replaceable> of type
 <replaceable>S</replaceable> such that the value of
 <replaceable>f</replaceable> <replaceable>x</replaceable> is
-defined, that value has sort <replaceable>T</replaceable>.
+defined, that value has type <replaceable>T</replaceable>.
 Functions can be constructed with `lambda-forms, and be used
 in `applications.
 </para>
 <!-- ================================================================= -->
 <para>
-In considering whether two functions (of the same sort) are
-equal, only the meaning on the domain sort is relevant.
-Whether a function is undefined outside its domain sort, or
-might return some value of some sort, is immaterial to the
+In considering whether two functions (of the same type) are
+equal, only the meaning on the domain type is relevant.
+Whether a function is undefined outside its domain type, or
+might return some value of some type, is immaterial to the
 semantics of &Metaslang;.
-(For a sort-correct `spec, the difference is unobservable.)
+(For a type-correct `spec, the difference is unobservable.)
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-products"><title>Sort-products</title>
+<section id="Type-products"><title>Type-products</title>
 <para>
 <<
-||`sort-product ::= `tight-sort * `tight-sort { * `tight-sort }*
+||`type-product ::= `tight-type-descriptor * `tight-type-descriptor { * `tight-type-descriptor }*
 ||
 >>
-Sample `sort-product:
+Sample `type-product:
 [[
 ||    (a -> b) * b * List a
 ]]
-Note that a `sort-product contains
-at least two constituent `tight-sorts.
+Note that a `type-product contains
+at least two constituent `tight-type-descriptors.
 </para>
 <!--====================================================================-->
 <para>
-A `sort-product denotes a <emphasis>product sort</emphasis>
-that has at least two <quote>component sorts</quote>,
-represented by its `tight-sorts.
-The ordering of the component sorts is significant: unless
+A `type-product denotes a <emphasis>product type</emphasis>
+that has at least two <quote>component types</quote>,
+represented by its `tight-type-descriptors.
+The ordering of the component types is significant: unless
 <replaceable>S</replaceable>
-and <replaceable>T</replaceable> are the same sort,
-the product sort
-<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable> is different from the sort
+and <replaceable>T</replaceable> are the same type,
+the product type
+<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable> is different from the type
 <replaceable>T</replaceable>[[ * ]]<replaceable>S</replaceable>.
-Further, the three sorts
+Further, the three types
 [[(]]<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable>[[)]] [[* ]]<replaceable>U</replaceable>,
 <replaceable>S</replaceable>[[ *]] [[(]]<replaceable>T</replaceable>[[ * ]]<replaceable>U</replaceable>[[)]] and
 <replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable>[[ * ]]<replaceable>U</replaceable> are all different; the first
-two have two component sorts, while the last one has three.
-The inhabitants of the product sort
+two have two component types, while the last one has three.
+The inhabitants of the product type
 <replaceable>S</replaceable><subscript>1</subscript> [[* ]]<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
 [[* ]]<replaceable>S<subscript>n</subscript></replaceable>
 are precisely all <replaceable>n</replaceable>-tuples
 (<replaceable>v<subscript>1</subscript></replaceable>,
 <replaceable>v<subscript>2</subscript></replaceable>, ... ,
 <replaceable>v<subscript>n</subscript></replaceable>), where each
-<replaceable>v<subscript>i</subscript></replaceable> has sort
+<replaceable>v<subscript>i</subscript></replaceable> has type
 [[\<replaceable>S\<subscript>i\</subscript>\</replaceable>]], for
 <replaceable>i</replaceable> = 1, 2, ... ,
 <replaceable>n</replaceable>.
-Values of a product sort can be constructed with
+Values of a product type can be constructed with
 `tuple-displays, and component values can be extracted with
 `tuple-patterns as well as with `projectors.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-instantiations"><title>Sort-instantiations</title>
+<section id="Type-instantiations"><title>Type-instantiations</title>
 <para>
 <<
-||`sort-instantiation ::= `sort-name `actual-sort-parameters
+||`type-instantiation ::= `type-name `actual-type-parameters
 ||
-||`actual-sort-parameters ::= `closed-sort | ( `proper-sort-list )
+||`actual-type-parameters ::= `closed-type-descriptor | ( `proper-type-list )
 ||
-||`proper-sort-list ::= `sort , `sort { , `sort }*
+||`proper-type-list ::= `type-descriptor , `type-descriptor { , `type-descriptor }*
 ||
 >>
-Sample `sort-instantiation:
+Sample `type-instantiation:
 [[
 ||    Map (Nat, Boolean)
 ]]
 Restriction.
-The `sort-name must have been declared or
-defined as a parameterized sort (see <link linkend="Sort-declarations"><emphasis>Sort-declarations</emphasis></link>), and
-the number of `sorts in the `actual-sort-parameters must match
-the number of `local-sort-variables in the
-`formal-sort-parameters of the `sort-declaration and/or `sort-definition.
+The `type-name must have been declared or
+defined as a parameterized type (see <link linkend="Type-declarations"><emphasis>Type-declarations</emphasis></link>), and
+the number of `type-descriptors in the `actual-type-parameters must match
+the number of `local-type-variables in the
+`formal-type-parameters of the `type-declaration and/or `type-definition.
 </para>
 <!-- ================================================================= -->
 <para>
-The `sort represented by a `sort-instantiation is the sort
-assigned for the combination of sorts of the `actual-sort-parameters
-in the indexed family of sorts for the `sort-name of the
-`sort-instantiation.
+The `type-descriptor represented by a `type-instantiation is the type
+assigned for the combination of types of the `actual-type-parameters
+in the indexed family of types for the `type-name of the
+`type-instantiation.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-names"><title>Sort-names</title>
+<section id="Type-names"><title>Type-names</title>
 <para>
 <<
-||`sort-name ::= `qualifiable-name
+||`type-name ::= `qualifiable-name
 >>
-Sample `sort-names:
+Sample `type-names:
 [[
 ||    Key
 ||    Calendar.Date
 ]]
 Restriction.
-At the spec level, a `sort-name may only be used if
-there is a `sort-declaration and/or
-`sort-definition for it in the current `spec or in some `spec
+At the spec level, a `type-name may only be used if
+there is a `type-declaration and/or
+`type-definition for it in the current `spec or in some `spec
 that is imported (directly or indirectly) in the current `spec.
 If there is a unique `qualified-name for a given
 unqualified ending, the qualification may be omitted for a
-`sort-name used as a `sort.
+`type-name used as a `type-descriptor.
 </para>
 <!-- ================================================================= -->
 <para>
-The sort of a `sort-name is the sort assigned to
+The type of a `type-name is the type assigned to
 it in the model.
 (In this case, the context can not have superseded the
 original assignment.)
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-records"><title>Sort-records</title>
+<section id="Type-records"><title>Type-records</title>
 <para>
 <<
-||`sort-record ::= '{ [ `field-sorter-list ] '} | ( )
+||`type-record ::= '{ [ `field-typer-list ] '} | ( )
 ||
-||`field-sorter-list ::= `field-sorter { , `field-sorter }*
+||`field-typer-list ::= `field-typer { , `field-typer }*
 ||
-||`field-sorter ::= `field-name : `sort
+||`field-typer ::= `field-name : `type-descriptor
 ||
 ||`field-name ::= `name
 ||
 >>
-Sample `sort-record:
+Sample `type-record:
 [[
 ||    {center : XYpos, radius : Length}
 ]]
 Restriction.
-The `field-names of a `sort-record must all be different.
+The `field-names of a `type-record must all be different.
 </para>
 <!-- ================================================================= -->
 <para>
-Note that a `sort-record contains either no
-constituent `field-sorters, or else at least two.
+Note that a `type-record contains either no
+constituent `field-typers, or else at least two.
 </para>
 <!--====================================================================-->
 <para>
-A `sort-record is like a `sort-product, except that the
+A `type-record is like a `type-product, except that the
 components, called <quote>fields</quote>, are identified by
 name instead of by position.
-The ordering of the `field-sorters has no significance:
+The ordering of the `field-typers has no significance:
 [[{center : XYpos, radius : Length}]]
-denotes the same <emphasis>record sort</emphasis> as
+denotes the same <emphasis>record type</emphasis> as
 [[{radius : Length, center : XYpos}]].
 Therefore we assume in the following, without loss of generality, that
 the fields are ordered lexicographically according to their
 `field-names (as in a dictionary: [[a]] comes
 before [[ab]] comes before [[b]]) using some fixed collating
 order for all marks that may comprise a name.
-Then each field of a record sort with
+Then each field of a record type with
 <replaceable>n</replaceable> fields has a
 <emphasis>position</emphasis> in the range 1 to
 <replaceable>n</replaceable>.
-The inhabitants of the record sort
+The inhabitants of the record type
 [[{]]<replaceable>F</replaceable><subscript>1</subscript>
 [[: ]]<replaceable>S</replaceable><subscript>1</subscript>[[, ]]<replaceable>F</replaceable><subscript>2</subscript>
 [[: ]]<replaceable>S</replaceable><subscript>2</subscript>[[,]]
@@ -2620,11 +2616,11 @@ are precisely all <replaceable>n</replaceable>-tuples
 (<replaceable>v<subscript>1</subscript></replaceable>,
 <replaceable>v<subscript>2</subscript></replaceable>, ... ,
 <replaceable>v<subscript>n</subscript></replaceable>), where each
-<replaceable>v<subscript>i</subscript></replaceable> has sort
+<replaceable>v<subscript>i</subscript></replaceable> has type
 <replaceable>S<subscript>i</subscript></replaceable>, for
 <replaceable>i</replaceable> = 1, 2, ... ,
 <replaceable>n</replaceable>.
-The `field-names of that record sort are the `field-names
+The `field-names of that record type are the `field-names
 <replaceable>F</replaceable><subscript>1</subscript>,
 ... ,
 <replaceable>F<subscript>n</subscript></replaceable>,
@@ -2635,43 +2631,43 @@ and, given the lexicographic ordering,
 position<replaceable>i</replaceable>, for
 <replaceable>i</replaceable> = 1, 2, ... ,
 <replaceable>n</replaceable>.
-Values of a record sort can be constructed with
+Values of a record type can be constructed with
 `record-displays, and field values can be extracted with
 `record-patterns and (as for
-product sorts) with `projectors.
+product types) with `projectors.
 </para>
 <!--====================================================================-->
 <para>
-For the `sort-record [[{}]], which may be equivalently
-written as [[()]], the record sort it denotes has zero components, and
+For the `type-record [[{}]], which may be equivalently
+written as [[()]], the record type it denotes has zero components, and
 therefore no `field-names.
-This zero-component sort has precisely one
+This zero-component type has precisely one
 inhabitant, and is called the <emphasis>unit
-sort</emphasis>.
-The unit sort may equally well be
-considered a product sort, and is the only sort that is both
-a product and a record sort.
+type</emphasis>.
+The unit type may equally well be
+considered a product type, and is the only type that is both
+a product and a record type.
 <!--====================================================================-->
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-restrictions"><title>Sort-restrictions</title>
+<section id="Type-restrictions"><title>Type-restrictions</title>
 <para>
 <<
-||`sort-restriction ::= ( `slack-sort '| `expression )
+||`type-restriction ::= ( `slack-type-descriptor '| `expression )
 ||
 >>
-Sample `sort-restriction:
+Sample `type-restriction:
 [[
 ||    (Nat | even)
 ]]
 Restriction.
-In a `sort-restriction
+In a `type-restriction
 [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]], the `expression
 <replaceable>P</replaceable> must be a predicate on
-the sort
+the type
 <replaceable>S</replaceable>, that is,
-<replaceable>P</replaceable> must be a function of sort
+<replaceable>P</replaceable> must be a function of type
 <replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!-- ================================================================= -->
@@ -2682,10 +2678,10 @@ Note that the parentheses in
 <!-- ================================================================= -->
 <para>
 The inhabitants of
-`sort-restriction
+`type-restriction
 [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] are precisely the
 inhabitants of
-sort
+type
 <replaceable>S</replaceable> that satisfy the
 predicate
 <replaceable>P</replaceable>, that is, they are
@@ -2702,15 +2698,15 @@ If
 function, then
 [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P1</replaceable>[[)]] and
 [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P2</replaceable>[[)]] are equivalent, that is,
-they denote the same sort.
+they denote the same type.
 </para>
 <!-- ================================================================= -->
 <para>
-The sort 
+The type 
 [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] is called a
-<emphasis>subsort</emphasis> of
-<emphasis>supersort</emphasis> <replaceable>S</replaceable>.
-Values can be shuttled between a subsort and its supersort
+<emphasis>subtype</emphasis> of
+<emphasis>supertype</emphasis> <replaceable>S</replaceable>.
+Values can be shuttled between a subtype and its supertype
 and vice versa with
 `relaxators and `restrict-expressions; see also
 <link linkend="metaslang-relax-pattern"><emphasis>Relax-patterns</emphasis></link>.
@@ -2718,12 +2714,12 @@ and vice versa with
 <!--====================================================================-->
 <para>
 Metaslang does not require the explicit use of a `relaxator to relax
-an `expression from a subsort to its supersort if the
+an `expression from a subtype to its supertype if the
 context requires the latter.
 Implicit relaxation will take place when needed.
 For example, in the `expression [[~1]] the `nat-literal [[1]]
-of sort [[Nat]] is implicitly relaxed to sort [[Integer]] to
-accommodate the unary negation operator [[~]], which has sort
+of type [[Nat]] is implicitly relaxed to type [[Integer]] to
+accommodate the unary negation operator [[~]], which has type
 [[Integer -> Integer]].
 </para>
 <!--====================================================================-->
@@ -2731,73 +2727,73 @@ accommodate the unary negation operator [[~]], which has sort
 Likewise, Metaslang does not require the explicit use of a
 `restrict-expression
 to restrict
-an `expression from a sort to a subsort if the
+an `expression from a type to a subtype if the
 context requires the latter.
 Implicit restriction will take place when needed.
 For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
-of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
-a subsort of [[Nat]], to accommodate the division operator
-[[div]], whose second argument has sort [[PosNat]].
+of type [[Nat]] is implicitly restricted to type [[PosNat]],
+a subtype of [[Nat]], to accommodate the division operator
+[[div]], whose second argument has type [[PosNat]].
 But note that implicit restriction engenders the same proof
 obligation as results when using an explicit
 `restrict-expression.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-comprehensions"><title>Sort-comprehensions</title>
+<section id="Type-comprehensions"><title>Type-comprehensions</title>
 <para>
 <<
-||`sort-comprehension ::= '{ `annotated-pattern '| `expression '}
+||`type-comprehension ::= '{ `annotated-pattern '| `expression '}
 ||
 >>
-Sample `sort-comprehension:
+Sample `type-comprehension:
 [[
 ||    {n : Nat | even n}
 ]]
 Restriction.
-In a `sort-comprehension
+In a `type-comprehension
 [[{]]<replaceable>P</replaceable>[[ : ]]<replaceable>S</replaceable>[[ | ]]<replaceable>E</replaceable>[[}]],
 the `expression
 <replaceable>E</replaceable> must
-have sort [[Boolean]].
+have type [[Boolean]].
 </para>
 <!-- ================================================================= -->
 <para>
-`Sort-comprehensions provide an alternative notation for
-`sort-restrictions that is akin
+`Type-comprehensions provide an alternative notation for
+`type-restrictions that is akin
 to the common mathematical notation for set comprehensions.
 The meaning of
-`sort-comprehension
+`type-comprehension
 [[{]]<replaceable>P</replaceable>[[ : ]]<replaceable>S</replaceable>[[ | ]]<replaceable>E</replaceable>[[}]]
-is the same as that of the `sort-restriction
+is the same as that of the `type-restriction
 [[(]]<replaceable>S</replaceable>[[ |
 fn ]]<replaceable>P</replaceable>[[ -> ]]<replaceable>E</replaceable>[[)]].
-So the meaning of the example `sort-comprehension above is
+So the meaning of the example `type-comprehension above is
 [[(Nat | fn n -> even n)]].
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Sort-quotients"><title>Sort-quotients</title>
+<section id="Type-quotients"><title>Type-quotients</title>
 <para>
 <<
-||`sort-quotient ::= `closed-sort / `closed-expression
+||`type-quotient ::= `closed-type-descriptor / `closed-expression
 >>
-Sample `sort-quotient:
+Sample `type-quotient:
 [[
 ||     Nat / (fn (m, n) -> m rem 3 = n rem 3)
 ]]
 Restriction.
-In a `sort-quotient
+In a `type-quotient
 <replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>, the `expression
 <replaceable>Q</replaceable> must be a (binary) predicate on
-the sort <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable> that is an equivalence relation,
+the type <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable> that is an equivalence relation,
 as explained below.
 </para>
 <!-- ================================================================= -->
 <para>
 Equivalence relation.
 Call two values <replaceable>x</replaceable> and
-<replaceable>y</replaceable> of sort
+<replaceable>y</replaceable> of type
 <replaceable>S</replaceable>
 <quote><replaceable>Q</replaceable>-related</quote>
 if
@@ -2807,7 +2803,7 @@ Then <replaceable>Q</replaceable> is an
 <emphasis>equivalence relation</emphasis>
 if, for all values <replaceable>x</replaceable>,
 <replaceable>y</replaceable> and
-<replaceable>z</replaceable> of sort
+<replaceable>z</replaceable> of type
 <replaceable>S</replaceable>,
 <replaceable>x</replaceable> is
 <replaceable>Q</replaceable>-related
@@ -2840,7 +2836,7 @@ These equivalence classes will be called
 <!-- ================================================================= -->
 <para>
 The inhabitants of the <emphasis>quotient
-sort</emphasis>
+type</emphasis>
 <replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>
 are precisely the <replaceable>Q</replaceable>-equivalence classes
 into which the inhabitants of
@@ -2849,7 +2845,7 @@ into which the inhabitants of
 For the example above, there are three equivalence
 classes of natural numbers leaving the same remainder on
 division by 3: the sets {0, 3, 6, ...},
-{1, 4, 7, ...} and {2, 5, 8, ...}, and so the quotient sort
+{1, 4, 7, ...} and {2, 5, 8, ...}, and so the quotient type
 has three inhabitants.
 </para>
 <!-- ================================================================= -->
@@ -2915,8 +2911,8 @@ Sample `expressions:
 ||    (n + 1)
 ]]
 Restriction.
-Like all polymorphic or sort-ambiguous constructs, an `expression
-can only be used in a context if its sort can be inferred
+Like all polymorphic or type-ambiguous constructs, an `expression
+can only be used in a context if its type can be inferred
 uniquely, given the `expression and the context.
 This restriction will not be repeated for the various kinds of
 `expressions defined in the following subsections.
@@ -2956,7 +2952,7 @@ disambiguation between the latter two, see <link linkend="Embedders"><emphasis>E
 </para>
 <!-- ================================================================= -->
 <para>
-A `local-variable used as an `expression has the sorted value
+A `local-variable used as an `expression has the typed value
 assigned to it in the environment.
 </para>
 <!-- ***************************************************************** -->
@@ -2981,19 +2977,19 @@ establishing this.
 </para>
 <!-- ================================================================= -->
 <para>
-The sort of a `lambda-form is that of its `match.
-The meaning of a given `lambda-form of sort
+The type of a `lambda-form is that of its `match.
+The meaning of a given `lambda-form of type
 <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> is
 the function <replaceable>f</replaceable> mapping each
 inhabitant <replaceable>x</replaceable> of
 <replaceable>S</replaceable> to a value
-<replaceable>y</replaceable> of sort
+<replaceable>y</replaceable> of type
 <replaceable>T</replaceable>, where
 <replaceable>y</replaceable> is the return value
 of <replaceable>x</replaceable> for the `match of the
 `lambda-form.
 If the `match accepts each <replaceable>x</replaceable> of
-sort <replaceable>S</replaceable> (for acceptance and return
+type <replaceable>S</replaceable> (for acceptance and return
 value, see the section on <link linkend="Matches"><emphasis>Matches</emphasis></link>) function
 <replaceable>f</replaceable> is total; otherwise it is
 partial, and undefined for those values
@@ -3041,7 +3037,7 @@ the `application
 ||`rec-let-binding-sequence ::= `rec-let-binding { `rec-let-binding }*
 ||
 ||`rec-let-binding ::=
-||    def `name `formal-parameter-sequence [ : `sort ] `equals `expression
+||    def `name `formal-parameter-sequence [ : `type-descriptor ] `equals `expression
 ||
 ||`formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
 >>
@@ -3129,7 +3125,7 @@ The value of an `if-expression
 ||
 ||`local-variable-list ::= `annotable-variable { , `annotable-variable }*
 ||
-||`annotable-variable ::= `local-variable [ : `sort ]
+||`annotable-variable ::= `local-variable [ : `type-descriptor ]
 ||
 ||`local-variable ::= `name
 ||
@@ -3149,10 +3145,10 @@ be a different `name.
 <!-- ================================================================= -->
 <para>
 `Quantifications are non-constructive, even when the domain
-sort is finitely enumerable.
-The main uses are in `sort-restrictions and `sort-comprehensions,
+type is finitely enumerable.
+The main uses are in `type-restrictions and `type-comprehensions,
 and `claims.
-The sort of a `quantification is [[Boolean]].
+The type of a `quantification is [[Boolean]].
 There are two kinds of quantifications:
 [[fa]]-`quantifications (or <quote>universal
 quantifications</quote>; fa = for all), and
@@ -3194,12 +3190,12 @@ So [[fa x (x = x)]], for example, is ungrammatical.
 <section id="Annotated-expressions"><title>Annotated-expressions</title>
 <para>
 <<
-||`annotated-expression ::= `tight-expression : `sort
+||`annotated-expression ::= `tight-expression : `type-descriptor
 >>
 Restriction.
 In an `annotated-expression
 <replaceable>E</replaceable>[[ : ]]<replaceable>S</replaceable>, the `expression
-<replaceable>E</replaceable> must have sort
+<replaceable>E</replaceable> must have type
 <replaceable>S</replaceable>.
 </para>
 <!-- ================================================================= -->
@@ -3215,19 +3211,19 @@ The value of an `annotated-expression
 </para>
 <!-- ================================================================= -->
 <para>
-The sort of some `expressions is polymorphic.  For example,
-for any sort <replaceable>T</replaceable>,
-[[[]]] denotes the empty list of sort [[List ]]<replaceable>T</replaceable>.
-Likewise, `constructors of parameterized sum sorts can be
+The type of some `expressions is polymorphic.  For example,
+for any type <replaceable>T</replaceable>,
+[[[]]] denotes the empty list of type [[List ]]<replaceable>T</replaceable>.
+Likewise, `constructors of parameterized sum types can be
 polymorphic, as the constructor [[None]] of
 [[
-||    sort Option a = | Some a | None
+||    type Option a = | Some a | None
 ]]
-Further, overloaded `constructors have an ambiguous sort.
-By annotating such polymorphic or sort-ambiguous
-`expressions with a `sort, their sort can
+Further, overloaded `constructors have an ambiguous type.
+By annotating such polymorphic or type-ambiguous
+`expressions with a `type-descriptor, their type can
 be disambiguated, which is required unless an
-unambiguous sort can already be inferred from the context.
+unambiguous type can already be inferred from the context.
 Annotation, even when redundant, can further help to
 increase clarity.
 </para>
@@ -3310,9 +3306,9 @@ the following interpretations hold:
 ||    1 @ 2 $ 3  =   1 @ (2  $ 3)
 ||    1 $ 2 $ 3  =   1 $ (2  $ 3)
 ]]
-Note that no sort information is used in the disambiguation.
-If [[(1 @ 2) $ 3]] is sort-correct but [[1 @ (2 $ 3)]] is
-not, the formula [[1 @ 2 $ 3]] is sort-incorrect, since its
+Note that no type information is used in the disambiguation.
+If [[(1 @ 2) $ 3]] is type-correct but [[1 @ (2 $ 3)]] is
+not, the formula [[1 @ 2 $ 3]] is type-incorrect, since its
 interpretation is.
 </para>
 <!-- ================================================================= -->
@@ -3322,12 +3318,12 @@ In an `application <replaceable>H</replaceable>
 <replaceable>P</replaceable>, in which
 <replaceable>H</replaceable> is an `application-head
 and <replaceable>P</replaceable> an `actual-parameter,
-the sort of <replaceable>P</replaceable>
-must be some function sort
+the type of <replaceable>P</replaceable>
+must be some function type
 <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, and then
-<replaceable>H</replaceable> must have the domain sort
+<replaceable>H</replaceable> must have the domain type
 <replaceable>S</replaceable>.
-The sort of the whole `application is then
+The type of the whole `application is then
 <replaceable>T</replaceable>.
 </para>
 <!-- ================================================================= -->
@@ -3357,19 +3353,19 @@ Restriction.
 In a `restrict-expression
 [[restrict ]]<replaceable>P</replaceable> <replaceable>E</replaceable>
 the `expression <replaceable>P</replaceable> must have function
-sort <replaceable>S</replaceable>[[ -> Boolean]] and the
-`expression <replaceable>E</replaceable> must have sort
+type <replaceable>S</replaceable>[[ -> Boolean]] and the
+`expression <replaceable>E</replaceable> must have type
 <replaceable>S</replaceable> for some
 <replaceable>S</replaceable>.
 </para>
 <!--====================================================================-->
 <para>
-The sort of a `restrict-expression
+The type of a `restrict-expression
 [[restrict ]]<replaceable>P</replaceable>
 <replaceable>E</replaceable>,
 where <replaceable>P</replaceable> has
-sort <replaceable>S</replaceable>[[ -> Boolean]],
-is the sort
+type <replaceable>S</replaceable>[[ -> Boolean]],
+is the type
 [[(]]<replaceable>S</replaceable> [[|]] <replaceable>P</replaceable>[[)]].
 </para>
 <!--====================================================================-->
@@ -3392,7 +3388,7 @@ that the value of <replaceable>E</replaceable> satisfies predicate
 <para>
 For example, assuming the `definitions from the Base Library
 for [[Nat]], the `restrict-expression
-[[restrict posNat? (n+1)]] has sort
+[[restrict posNat? (n+1)]] has type
 [[PosNat]].
 The proof obligation here is that, in the context,
 [[(n+1) > 0]].
@@ -3400,21 +3396,21 @@ The proof obligation here is that, in the context,
 <!--====================================================================-->
 <para>
 The purpose of `restrict-expressions is to make it
-explicit that an `expression whose a-priori sort is some
-supersort <replaceable>S</replaceable> actually is guaranteed
-(or required) to have subsort
+explicit that an `expression whose a-priori type is some
+supertype <replaceable>S</replaceable> actually is guaranteed
+(or required) to have subtype
 [[(]]<replaceable>S</replaceable> [[|]]
 <replaceable>P</replaceable>[[)]].
 Note, however, that Metaslang does not require the explicit use of a
 `restrict-expression
 to restrict
-an `expression from a sort to a subsort if the
+an `expression from a type to a subtype if the
 context requires the latter.
 Implicit restriction will take place when needed.
 For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
-of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
-a subsort of [[Nat]], to accommodate the division operator
-[[div]], whose second argument has sort [[PosNat]].
+of type [[Nat]] is implicitly restricted to type [[PosNat]],
+a subtype of [[Nat]], to accommodate the division operator
+[[div]], whose second argument has type [[PosNat]].
 But note that implicit restriction engenders the same proof
 obligation as results when using an explicit
 `restrict-expression.
@@ -3438,19 +3434,19 @@ and/or `op-definition for it in the current `spec or in some
 `spec that is imported (directly or indirectly) in the current
 `spec.
 If there is a unique `qualified-name for a given unqualified
-ending that is sort-correct in the context, the qualification
+ending that is type-correct in the context, the qualification
 may be omitted for an `op-name used as an `expression.
-So overloaded `ops may only be used as such when their sort can
+So overloaded `ops may only be used as such when their type can
 be disambiguated in the context.
 </para>
 <!-- ================================================================= -->
 <!-- ====================== NOT YET ==================================
 <para>
 Restriction.
-Overloaded `ops, when used as `expressions, have an ambiguous sort.
-They may only be used as such when their sort can be
+Overloaded `ops, when used as `expressions, have an ambiguous type.
+They may only be used as such when their type can be
 disambiguated in the context.
-Unlike for `constructors, target-sort information is not used
+Unlike for `constructors, target-type-descriptor information is not used
 for this disambiguation.
 For example, consider
 [[
@@ -3462,13 +3458,13 @@ For example, consider
 ]]
 In the application [[abs c]]
 (the right-hand side of the `definition for [[ok]])
-[[c]] is known to have sort [[Char]] in the context.
+[[c]] is known to have type [[Char]] in the context.
 This is enough to determine [[abs]] as identifying here
 [[op abs : Char -> Nat]].
 In the application [[abs x]]
 (the right-hand side of the `definition for [[ko]])
-the context gives no constraint on the sort of [[x]],
-and no sort-disambiguation for [[abs]] is possible, so its
+the context gives no constraint on the type of [[x]],
+and no type-disambiguation for [[abs]] is possible, so its
 use there is incorrect.
 </para>
      ====================== TEY TON ================================== -->
@@ -3506,13 +3502,13 @@ except for <quote>significant</quote> whitespace in
 <!--====================================================================-->
 <para>
 `Literals provide denotations for the inhabitants of the
-<quote>built-in</quote> sorts [[Boolean]], [[Nat]], [[Char]]
+<quote>built-in</quote> types [[Boolean]], [[Nat]], [[Char]]
 and [[String]].
 The value of a `literal is independent of the environment.
 </para>
 <!--====================================================================-->
 <para>
-(There are no `literals for the built-in sort [[Integer]].
+(There are no `literals for the built-in type [[Integer]].
 For nonnegative integers, a `nat-literal can be used.
 For negative integers, apply the built-in `op [[~]], which
 negates an integer, or use the built-in infix operator
@@ -3531,7 +3527,7 @@ Sample `boolean-literals:
 ||    true
 ||    false
 ]]
-The sort [[Boolean]] has precisely two inhabitants,
+The type [[Boolean]] has precisely two inhabitants,
 the values of [[true]] and [[false]].
 </para>
 <!--====================================================================-->
@@ -3551,7 +3547,7 @@ Sample `nat-literals:
 ||    3260
 ||    007
 ]]
-The `sort [[Nat]] is, by definition, the subsort of
+The `type-descriptor [[Nat]] is, by definition, the subtype of
 [[Integer]] restricted to the nonnegative integers 0, 1, 2,
 ... , which we identify with the natural numbers.
 The value of a `nat-literal is the natural number of which
@@ -3594,7 +3590,7 @@ Sample `char-literals:
 ||   #z
 ||   #\x7a
 ]]
-The sort [[Char]] is inhabited by the 256
+The type [[Char]] is inhabited by the 256
 8-bit <emphasis>characters</emphasis>
 occupying decimal positions 0 through 255 (hexadecimal
 positions 00 through FF) in the ISO 8859-1 code table.
@@ -3605,7 +3601,7 @@ second set of 128 characters -- those with
 <quote>the high bit set</quote> -- may print or otherwise
 be visually presented differently than intended by the
 ISO 8859-1 code.)
-The value of a `char-literal is a character of sort
+The value of a `char-literal is a character of type
 [[Char]].
 </para>
 <!--====================================================================-->
@@ -3700,11 +3696,11 @@ Sample `string-literals:
 ||    "the symbol ' is a single quote"
 ||    "the symbol \" is a double quote"
 ]]
-The sort [[String]] is inhabited by the
+The type [[String]] is inhabited by the
 <emphasis>strings</emphasis>, which are (possibly empty)
 sequences of characters.
-The sort [[String]] is primitive; it is a different sort
-than the isomorphic sort [[List Char]], and the list operations 
+The type [[String]] is primitive; it is a different type
+than the isomorphic type [[List Char]], and the list operations 
 can not be directly applied to strings.
 </para>
 <!--====================================================================-->
@@ -3741,15 +3737,15 @@ this: [[[6'2"]]].
 <!-- No longer needed because of transformation to project F E ****
 ** Restriction.
 ** When the `field-selector is some `nat-literal with value
-** <replaceable>i</replaceable>, the sort of the
-** `closed-expression must be a product sort,
-** and if the number of components of that product sort is
+** <replaceable>i</replaceable>, the type of the
+** `closed-expression must be a product type,
+** and if the number of components of that product type is
 ** <replaceable>n</replaceable>, it must hold that
 ** <replaceable>i</replaceable> is one of the values 1 through 
 ** <replaceable>n</replaceable>.
 ** When the `field-selector is some `field-name
-** <replaceable>F</replaceable>, the sort of the
-** `closed-expression must be a record sort, one of whose
+** <replaceable>F</replaceable>, the type of the
+** `closed-expression must be a record type, one of whose
 ** fields has that `field-name <replaceable>F</replaceable>.
 ** </para>
 ** ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3789,8 +3785,8 @@ Sample `field-selections:
 ** When the `field-selector is some `field-name
 ** <replaceable>F</replaceable>, <replaceable>i</replaceable>
 ** is the position selected by <replaceable>F</replaceable> in
-** sort <replaceable>S</replaceable>, as discussed under
-** `Sort-records.
+** type <replaceable>S</replaceable>, as discussed under
+** `Type-records.
 ** The value of the `field-selection is then the
 ** <replaceable>i</replaceable>th component of
 ** <replaceable>v</replaceable>.
@@ -3825,15 +3821,15 @@ The value of a `tuple-display whose `tuple-display-body is
 not empty, is the tuple whose
 components are the respective values of the `expressions of
 the `tuple-display-body, taken in textual order.
-The sort of that tuple is the <quote>product</quote> of the
-corresponding sorts of the components.
+The type of that tuple is the <quote>product</quote> of the
+corresponding types of the components.
 The value of [[()]] is the empty tuple, which is the sole
-inhabitant of the unit sort [[()]].
+inhabitant of the unit type [[()]].
 (The fact that the notation [[()]] does double duty, for
-a `sort and as an `expression, creates no ambiguity.
+a `type-descriptor and as an `expression, creates no ambiguity.
 Note also that -- unlike the empty `list-display [[[]]] --
 the `expression [[()]] is monomorphic, so
-there is no need to ever annotate it with a `sort.)
+there is no need to ever annotate it with a `type-descriptor.)
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -3855,15 +3851,15 @@ The value of a `record-display is the record whose
 components are the respective values of the `expressions of
 the `record-display-body, taken in the lexicographic order
 of the `field-names, as discussed under <link
-linkend="Sort-records"><emphasis>Sort-records</emphasis></link>.
-The sort of that record is the record sort with the same set
-of `field-names, where the sort for each `field-name
-<replaceable>F</replaceable> is the sort of
-the corresponding sort of the component selected by
+linkend="Type-records"><emphasis>Type-records</emphasis></link>.
+The type of that record is the record type with the same set
+of `field-names, where the type for each `field-name
+<replaceable>F</replaceable> is the type of
+the corresponding type of the component selected by
 <replaceable>F</replaceable> in the record.
 The value of [[{}]] is the empty tuple, which is the sole
-inhabitant of the unit sort [[()]].
-(For `expressions as well as for `sorts, the notations
+inhabitant of the unit type [[()]].
+(For `expressions as well as for `type-descriptors, the notations
 [[{}]] and [[()]] are fully interchangeable.)
 </para>
 </section>
@@ -3927,24 +3923,24 @@ Sample `list-display:
 ]]
 Restriction.
 All `expressions of the `list-display-body must have the
-same sort.
+same type.
 </para>
 <!--====================================================================-->
 <para>
 Note that a `list-display [[[]]] with empty
 `list-display-body is polymorphic, and may need to be
-sort-disambiguated, for example with a sort annotation.
+type-disambiguated, for example with a type annotation.
 In a case like [[[[], [1]]]], there is no need to
 disambiguate [[[]]], since the above restriction already
-implies that [[[]]] here has the same sort as [[[1]]],
-which has sort [[List Nat]].
+implies that [[[]]] here has the same type as [[[1]]],
+which has type [[List Nat]].
 </para>
 <!--====================================================================-->
 <para>
-The parameterized sort [[List]], although built-in, is
+The parameterized type [[List]], although built-in, is
 actually not primitive, but defined by:
 [[
-||    sort List a =
+||    type List a =
 ||      | Nil
 ||      | Cons a * List a
 ]]
@@ -3979,15 +3975,15 @@ denotes the same list as the `expression [[Cons
 >>
 ********************************************************************** -->
 The `structors are a medley of constructs, all having polymorphic
-or sort-ambiguous function sorts and denoting special functions
-that go between structurally related sorts, such as
-the constructors of sum sorts and the destructors of product sorts.
+or type-ambiguous function types and denoting special functions
+that go between structurally related types, such as
+the constructors of sum types and the destructors of product types.
 </para>
 <!--====================================================================-->
 <para>
 Restriction.
-Like all polymorphic or sort-ambiguous constructs, a `structor
-can only be used in a context where its sort can be inferred
+Like all polymorphic or type-ambiguous constructs, a `structor
+can only be used in a context where its type can be inferred
 uniquely.
 This restriction will not be repeated for the various kinds
 of `structors described in the following subsections.
@@ -3995,7 +3991,7 @@ of `structors described in the following subsections.
 <!--====================================================================-->
 <para>
 For example, the following correct `spec becomes incorrect when
-any of the sort annotations is omitted:
+any of the type annotations is omitted:
 [[
 ||    spec
 ||      def fa(a) p2 = project 2 : String *  a  ->  a
@@ -4017,9 +4013,9 @@ Sample `projectors:
 When the `field-selector is some `nat-literal with value
 <replaceable>i</replaceable>, it is required that
 <replaceable>i</replaceable> be at least 1.
-The sort of the
-`projector is a function sort (whose domain sort is a product
-sort) of the form
+The type of the
+`projector is a function type (whose domain type is a product
+type) of the form
 <replaceable>S</replaceable><subscript>1</subscript> [[* ]]<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
 [[* ]]<replaceable>S<subscript>n</subscript></replaceable>[[ -> ]]<replaceable>S<subscript>i</subscript></replaceable>,
 where <replaceable>n</replaceable> is at least
@@ -4030,7 +4026,7 @@ each
 (<replaceable>v<subscript>1</subscript></replaceable>,
 <replaceable>v<subscript>2</subscript></replaceable>, ... ,
 <replaceable>v<subscript>n</subscript></replaceable>)
-inhabiting the domain sort 
+inhabiting the domain type 
 to its <replaceable>i</replaceable>th component
 <replaceable>v<subscript>i</subscript></replaceable>.
 </para>
@@ -4038,9 +4034,9 @@ to its <replaceable>i</replaceable>th component
 <para>
 When the `field-selector is some `field-name
 <replaceable>F</replaceable>,
-the sort of the
-`projector is a function sort (whose domain sort is a record
-sort) of the form
+the type of the
+`projector is a function type (whose domain type is a record
+type) of the form
 [[{]]<replaceable>F</replaceable><subscript>1</subscript>
 [[: ]]<replaceable>S</replaceable><subscript>1</subscript>[[, ]]<replaceable>F</replaceable><subscript>2</subscript>
 [[: ]]<replaceable>S</replaceable><subscript>2</subscript>[[,]]
@@ -4054,14 +4050,14 @@ for some natural number <replaceable>i</replaceable> in the
 range 1 through <replaceable>n</replaceable>.
 Assuming that the fields are lexicographically ordered by
 `field-name (see under <link
-linkend="Sort-records"><emphasis>Sort-records</emphasis></link>),
+linkend="Type-records"><emphasis>Type-records</emphasis></link>),
 the value of the `projector is the function that maps
 each
 <replaceable>n</replaceable>-tuple
 (<replaceable>v<subscript>1</subscript></replaceable>,
 <replaceable>v<subscript>2</subscript></replaceable>, ... ,
 <replaceable>v<subscript>n</subscript></replaceable>)
-inhabiting the domain sort 
+inhabiting the domain type 
 to its <replaceable>i</replaceable>th component
 <replaceable>v<subscript>i</subscript></replaceable>.
 </para>
@@ -4078,47 +4074,47 @@ Sample `relaxator:
 ]]
 Restriction.
 The `closed-expression of a `relaxator must have some function
-sort <replaceable>S</replaceable>[[ -> Boolean]].
+type <replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!--====================================================================-->
 <para>
-The sort of `relaxator [[relax ]]<replaceable>P</replaceable>,
-where <replaceable>P</replaceable> has sort
+The type of `relaxator [[relax ]]<replaceable>P</replaceable>,
+where <replaceable>P</replaceable> has type
 <replaceable>S</replaceable>[[ -> Boolean]], is the function
-sort (whose domain is a subsort) [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] [[-> ]]<replaceable>S</replaceable>.
+type (whose domain is a subtype) [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] [[-> ]]<replaceable>S</replaceable>.
 The value of the `relaxator is the function that maps each
-inhabitant of subsort
+inhabitant of subtype
 [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] to the same value --
-apart from the sort information -- inhabiting supersort
+apart from the type information -- inhabiting supertype
 <replaceable>S</replaceable>.
 </para>
 <!--====================================================================-->
 <para>
 For example, given
 [[
-||    sort Even = (Nat | even)
+||    type Even = (Nat | even)
 ]]
-we have the sorting
+we have the typing
 [[
 ||    relax even : Even -> Nat
 ]]
 for the function that injects the even natural numbers back
-into the supersort of [[Even]].
+into the supertype of [[Even]].
 </para>
 <!--====================================================================-->
 <para>
 Metaslang does not require the explicit use of a `relaxator to relax
-an `expression from a subsort to its supersort if the
+an `expression from a subtype to its supertype if the
 context requires the latter.
 Implicit relaxation will take place when needed.
 For example, in the `expression [[~1]] the `nat-literal [[1]]
-of sort [[Nat]] is implicitly relaxed to sort [[Integer]] to
-accommodate the unary negation operator [[~]], which has sort
+of type [[Nat]] is implicitly relaxed to type [[Integer]] to
+accommodate the unary negation operator [[~]], which has type
 [[Integer -> Integer]].
 </para>
 <!--====================================================================-->
 <para>
-Note the remarks about equivalence of `sort-restrictions in
+Note the remarks about equivalence of `type-restrictions in
 the corresponding section.
 </para>
 </section>
@@ -4133,21 +4129,21 @@ Sample `quotienter:
 ||     quotient (fn (m, n) -> m rem 3 = n rem 3)
 ]]
 Restriction.
-The `closed-expression of a `quotienter must have some sort
+The `closed-expression of a `quotienter must have some type
 <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
-linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>.
+linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>.
 </para>
 <!--====================================================================-->
 <para>
-The sort of `quotienter [[quotient ]]<replaceable>Q</replaceable>,
-where <replaceable>Q</replaceable> has sort
-<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], is the function sort
+The type of `quotienter [[quotient ]]<replaceable>Q</replaceable>,
+where <replaceable>Q</replaceable> has type
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], is the function type
 <replaceable>S</replaceable>[[ -> ]]<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>, that is, it goes from some
-sort to one of its quotient sorts.
+type to one of its quotient types.
 The value of the `quotienter is the function that maps each
-inhabitant of sort <replaceable>S</replaceable> to the
+inhabitant of type <replaceable>S</replaceable> to the
 <replaceable>Q</replaceable>-equivalence class inhabiting <replaceable>S</replaceable>[[ /]] 
 <replaceable>Q</replaceable> of which it is a member.
 </para>
@@ -4158,9 +4154,9 @@ For example, given
 ||    def congMod3 : Nat * Nat -> Boolean =
 ||      (fn (m, n) -> m rem 3 = n rem 3)
 ||
-||    sort Z3 = Nat / congMod3
+||    type Z3 = Nat / congMod3
 ]]
-we have the sorting
+we have the typing
 [[
 ||    quotient congMod3 : Nat -> Z3
 ]]
@@ -4181,24 +4177,24 @@ Sample `chooser:
 ]]
 Restriction.
 In a `chooser [[choose ]]<replaceable>Q</replaceable>,
-`expression <replaceable>Q</replaceable> must have some sort
+`expression <replaceable>Q</replaceable> must have some type
 <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], and must be an equivalence relation (see under
-<link linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>).
+<link linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>).
 </para>
 <!--====================================================================-->
 <para>
-The sort of a `chooser [[choose ]]<replaceable>Q</replaceable>,
-where <replaceable>Q</replaceable> has sort
-<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], is a function sort of the form
+The type of a `chooser [[choose ]]<replaceable>Q</replaceable>,
+where <replaceable>Q</replaceable> has type
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], is a function type of the form
 <replaceable>R</replaceable> [[->]]
 [[(]]<replaceable>S</replaceable>[[ /
 ]]<replaceable>Q</replaceable>[[ ->
 ]]<replaceable>T</replaceable>[[)]], where
-<replaceable>R</replaceable> is the subsort of
+<replaceable>R</replaceable> is the subtype of
 <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>
 consisting of the <replaceable>Q</replaceable>-constant
 (explained below) functions.
-Expressed more formally, <replaceable>R</replaceable> is the sort
+Expressed more formally, <replaceable>R</replaceable> is the type
 [[{f :]] <replaceable>S</replaceable>[[ ->
 ]]<replaceable>T</replaceable> [[| fa((x,y) :]]
 <replaceable>S</replaceable> [[*]]
@@ -4214,7 +4210,7 @@ where the `names [[f]], [[x]] and [[y]] must be replaced by
 <para>
 The value of the `chooser is the
 function mapping each <replaceable>Q</replaceable>-constant
-(explained below) function <replaceable>f</replaceable> inhabiting sort
+(explained below) function <replaceable>f</replaceable> inhabiting type
 <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> to the function that maps 
 each inhabitant <replaceable>C</replaceable> of
 <replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable> to <replaceable>f</replaceable>
@@ -4254,7 +4250,7 @@ function [[fn n -> n*n rem 3]] is [[congMod3]]-constant;
 for the equivalence class {2, 5, 8, ...}, for example, it
 maps each member to the same value 1.
 So [[choose congMod3 (fn n -> n*n rem 3)]] maps the inhabitant
-{2, 5, 8, ...} of sort [[Z3]] to the natural number 1.
+{2, 5, 8, ...} of type [[Z3]] to the natural number 1.
 </para>
 <!--====================================================================-->
 <para>
@@ -4262,7 +4258,7 @@ The most discriminating
 <replaceable>Q</replaceable>-constant function is
 [[quotient ]]<replaceable>Q</replaceable>, and
 [[choose ]]<replaceable>Q</replaceable>[[ quotient ]]<replaceable>Q</replaceable> is the identity function on the
-quotient sort for <replaceable>Q</replaceable>.
+quotient type for <replaceable>Q</replaceable>.
 </para>
 <!--====================================================================-->
 <para>
@@ -4295,7 +4291,7 @@ of an `op or a `local-variable in scope, then it is
 interpreted as the latter of the various possibilities.
 For example, in the context of
 [[
-||    sort Answer = | yes | no
+||    type Answer = | yes | no
 ||
 ||    def yes = no : Answer
 ||
@@ -4318,7 +4314,7 @@ interpretation can be avoided.
 <!-- ================================================================= -->
 <para>
 The semantics of `embedders is described in the section on
-<link linkend="Sort-sums"><emphasis>Sort-sums</emphasis></link>.
+<link linkend="Type-sums"><emphasis>Type-sums</emphasis></link>.
 The presence or absence of the keyword [[embed]] is not
 significant for the meaning of the construct (although it
 may be required for grammatical disambiguation, as described
@@ -4336,16 +4332,16 @@ Sample `embedding-test:
 ||    embed? Cons
 ]]
 Restriction.
-The sort of an `embedding-test [[embed? ]]<replaceable>C</replaceable> must be of the form
+The type of an `embedding-test [[embed? ]]<replaceable>C</replaceable> must be of the form
 <replaceable>SS</replaceable>[[ -> Boolean]], where
-<replaceable>SS</replaceable> is a sum sort that has a
+<replaceable>SS</replaceable> is a sum type that has a
 `constructor <replaceable>C</replaceable>.
 </para>
 <!-- ================================================================= -->
 <para>
 The value of `embedding-test [[embed? ]]<replaceable>C</replaceable> is the predicate that returns
 [[true]] if the argument value -- which, as inhabitant of a
-sum sort, is tagged -- has tag <replaceable>C</replaceable>,
+sum type, is tagged -- has tag <replaceable>C</replaceable>,
 and otherwise [[false]].
 The `embedding-test can be equivalently rewritten as
 [[
@@ -4359,10 +4355,10 @@ where the wildcard [[_]] in the first `branch is omitted when
 <!-- ================================================================= -->
 <para>
 In plain words, [[embed? ]]<replaceable>C</replaceable>
-tests whether its sum-sorted argument has been constructed with the
+tests whether its sum-typed argument has been constructed with the
 `constructor <replaceable>C</replaceable>.
 It is an error when <replaceable>C</replaceable> is not a
-constructor of the sum sort.
+constructor of the sum type.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -4399,13 +4395,13 @@ Sample `matches:
 ]]
 Restriction.
 In a `match, given the environment, there must be a
-unique sort <replaceable>S</replaceable> to which the `pattern
-of each `branch conforms, and a unique sort
+unique type <replaceable>S</replaceable> to which the `pattern
+of each `branch conforms, and a unique type
 <replaceable>T</replaceable> to which the `expression of each
-`branch conforms, and then the `match has sort
+`branch conforms, and then the `match has type
 <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>.
 The `pattern of each `branch then has
-sort <replaceable>S</replaceable>.
+type <replaceable>S</replaceable>.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -4518,7 +4514,7 @@ value with empty acceptance binding (empty since there are no
 avoid grammatical ambiguities.)
 <<
 ||
-||`annotated-pattern ::= `pattern : `sort
+||`annotated-pattern ::= `pattern : `type-descriptor
 ||
 ||`aliased-pattern ::= `variable-pattern as `tight-pattern
 ||
@@ -4567,15 +4563,15 @@ Sample `patterns:
 ||    {top, pop = rest}
 ]]
 Restriction.
-Like all polymorphic or sort-ambiguous constructs, a `pattern
-may only be used in a context where its sort can be uniquely
+Like all polymorphic or type-ambiguous constructs, a `pattern
+may only be used in a context where its type can be uniquely
 inferred.
 </para>
 <!--====================================================================-->
 <para>
 Disambiguation.
 A single `name used as a `pattern is an `embed-pattern
-if it is a `constructor of the sort of the `pattern.
+if it is a `constructor of the type of the `pattern.
 Otherwise, the `name is a `variable-pattern.
 </para>
 <!--====================================================================-->
@@ -4583,20 +4579,20 @@ Otherwise, the `name is a `variable-pattern.
 Restriction.
 Each `local-variable in a `pattern must be a different
 `name, disregarding any `local-variables introduced in
-`expressions or `sorts contained in the `pattern.
+`expressions or `type-descriptors contained in the `pattern.
 (For example, [[Line (z, z)]] is not a lawful `pattern,
 since [[z]] is repeated; but [[n : {n : Nat | n < p}]]
 is lawful: the second [[n]] is <quote>shielded</quote> by
-the `sort-comprehension in which it occurs.)
+the `type-comprehension in which it occurs.)
 </para>
 <!--  ================================================================= -->
 <para>
 Restriction.
-The `closed-expression of a `quotient-pattern must have some sort
+The `closed-expression of a `quotient-pattern must have some type
 <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
-linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>.
+linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>.
 </para>
 <!--  ================================================================= -->
 <para>
@@ -4611,7 +4607,7 @@ establishing this.
 <para>
 Restriction.
 The `closed-expression of a `relax-pattern must have some function
-sort <replaceable>S</replaceable>[[ -> Boolean]].
+type <replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!--  ================================================================= -->
 <para>
@@ -4626,7 +4622,7 @@ The <emphasis>accepting</emphasis> `local-variables of a `pattern
 the collection of `local-variables occurring in
 <replaceable>P</replaceable>,
 disregarding any `local-variables introduced in
-`expressions or `sorts contained in the
+`expressions or `type-descriptors contained in the
 <replaceable>P</replaceable>.
 For example, in `pattern [[u : {v : S | p v}]], [[u]] is an
 accepting `local-variable, but [[v]] is not.  (The latter is an
@@ -4673,7 +4669,7 @@ replacing each constituent `cons-pattern
 <replaceable>H</replaceable>[[ :: ]]<replaceable>T</replaceable>
 by the `embed-pattern [[Cons
 (]]<replaceable>H</replaceable>[[, ]]<replaceable>T</replaceable>[[)]], where [[Cons]] denotes the
-`constructor of the parameterized sort [[List]].
+`constructor of the parameterized type [[List]].
 For the example, the construed version is:
 [[
 ||    s0 as Cons (v7944,
@@ -4711,7 +4707,7 @@ An <emphasis>accepting binding</emphasis> of a `pattern
 <replaceable>P</replaceable> for a value
 <replaceable>x</replaceable> in an environment
 <replaceable>C</replaceable> is some
-binding <replaceable>B</replaceable> of sorted
+binding <replaceable>B</replaceable> of typed
 values to the accepting `local-variables of the
 <emphasis>tame</emphasis> variant
 <replaceable>P<subscript>t</subscript></replaceable>,
@@ -4720,7 +4716,7 @@ such that the value of each expressive descendant
 <replaceable>ED<subscript>P</subscript></replaceable>
 in the environment
 <replaceable>C</replaceable> extended with binding
-<replaceable>B</replaceable>, is the same sorted value as
+<replaceable>B</replaceable>, is the same typed value as
 <replaceable>x</replaceable>.
 </para>
 <!--  ================================================================= -->
@@ -4738,9 +4734,9 @@ If an accepting binding exists, the value
 <replaceable>P</replaceable>.
 There is a unique binding
 <replaceable>B</replaceable> among the accepting bindings in
-which the sort of each assigned value is as
-<quote>restricted</quote> as possible in the subsort-supersort
-hierarchy without violating well-sortedness constraints (in
+which the type of each assigned value is as
+<quote>restricted</quote> as possible in the subtype-supertype
+hierarchy without violating well-typedness constraints (in
 other words, there are no avoidable implicit relaxations).
 The acceptance binding is then the binding
 <replaceable>B</replaceable> <emphasis>projected
@@ -4791,9 +4787,9 @@ obtained by <quote>forgetting</quote> the fresh `name
 
 TODO:
 
-More sort-correctness restrictions.
+More type-correctness restrictions.
 Unification, monomorphicity restriction.
-Unspecified op sorts.
+Unspecified op types.
 
 Constructive
 
@@ -4813,11 +4809,11 @@ Wishes for further syntax changes:
 
 Allow [[op]] for [[def]].
 
-Allow [[def sort]] and [[def op]].
+Allow [[def type]] and [[def op]].
 
-Allow [[sort fa]] for all `sort-variable-binders.
+Allow [[type fa]] for all `type-variable-binders.
 
-(Maybe) Allow [[sort op]] for infix parameterized sorts.
+(Maybe) Allow [[type op]] for infix parameterized types.
 
 Allow
 [[

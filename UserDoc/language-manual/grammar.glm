@@ -153,14 +153,14 @@ easy reference.
 ||  
 ||  `name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
 ||  
-||  `name-map-item ::= `sort-name-map-item | `op-name-map-item
+||  `name-map-item ::= `type-name-map-item | `op-name-map-item
 ||  
-||  `sort-name-map-item ::= [ sort ] `qualifiable-name +-> `qualifiable-name
+||  `type-name-map-item ::= [ type ] `qualifiable-name +-> `qualifiable-name
 ||  
 ||  `op-name-map-item ::=
 ||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
 ||  
-||  `annotable-qualifiable-name ::= `qualifiable-name [ : `sort ]
+||  `annotable-qualifiable-name ::= `qualifiable-name [ : `type-descriptor ]
 >>
 </para>
 </formalpara>
@@ -256,12 +256,12 @@ easy reference.
 <<
 ||  `declaration ::=
 ||      `import-declaration
-||    | `sort-declaration
+||    | `type-declaration
 ||    | `op-declaration
 ||    | `definition
 ||  
 ||  `definition ::=
-||      `sort-definition
+||      `type-definition
 ||    | `op-definition
 ||    | `claim-definition
 ||  
@@ -278,25 +278,25 @@ easy reference.
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-declarations</title>
+<formalpara><title>Type-declarations</title>
 <para>
 <<
-||  `sort-declaration ::= sort `sort-name [ `formal-sort-parameters ]
+||  `type-declaration ::= type `type-name [ `formal-type-parameters ]
 ||  
-||  `formal-sort-parameters ::= `local-sort-variable | ( `local-sort-variable-list )
+||  `formal-type-parameters ::= `local-type-variable | ( `local-type-variable-list )
 ||  
-||  `local-sort-variable ::= `name
+||  `local-type-variable ::= `name
 ||  
-||  `local-sort-variable-list ::= `local-sort-variable { , `local-sort-variable }*
+||  `local-type-variable-list ::= `local-type-variable { , `local-type-variable }*
 ||  
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-definitions</title>
+<formalpara><title>Type-definitions</title>
 <para>
 <<
-||  `sort-definition ::= sort `sort-name [ `formal-sort-parameters ] `equals `sort
+||  `type-definition ::= type `type-name [ `formal-type-parameters ] `equals `type-descriptor
 >>
 </para>
 </formalpara>
@@ -304,7 +304,7 @@ easy reference.
 <formalpara><title>Op-declarations</title>
 <para>
 <<
-||  `op-declaration ::= op `op-name [ `fixity ] : `sort-scheme
+||  `op-declaration ::= op `op-name [ `fixity ] : `type-scheme
 ||  
 ||  `fixity ::= `associativity `priority
 ||  
@@ -312,9 +312,9 @@ easy reference.
 ||  
 ||  `priority ::= `nat-literal
 ||  
-||  `sort-scheme ::= [ `sort-variable-binder ] `sort
+||  `type-scheme ::= [ `type-variable-binder ] `type-descriptor
 ||  
-||  `sort-variable-binder ::= fa ( `local-sort-variable-list )
+||  `type-variable-binder ::= fa ( `local-type-variable-list )
 ||  
 >>
 </para>
@@ -324,7 +324,7 @@ easy reference.
 <para>
 <<
 ||  `op-definition ::=
-||    def [ `sort-variable-binder ] `formal-expression [ : `sort ] `equals
+||    def [ `type-variable-binder ] `formal-expression [ : `type-descriptor ] `equals
 ||        `expression
 ||  
 ||  `formal-expression ::= `op-name | `formal-application
@@ -348,48 +348,48 @@ easy reference.
 ||  
 ||  `claim-name ::= `name
 ||  
-||  `claim ::= [ `sort-quantification ] `expression
+||  `claim ::= [ `type-quantification ] `expression
 ||  
-||  `sort-quantification ::= sort `sort-variable-binder
+||  `type-quantification ::= type `type-variable-binder
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sorts</title>
+<formalpara><title>Type-descriptors</title>
 <para>
 <<
-||  `sort ::=
-||      `sort-sum
-||    | `sort-arrow
-||    | `slack-sort
+||  `type-descriptor ::=
+||      `type-sum
+||    | `type-arrow
+||    | `slack-type-descriptor
 ||  
-||  `slack-sort ::=
-||      `sort-product
-||    | `tight-sort
+||  `slack-type-descriptor ::=
+||      `type-product
+||    | `tight-type-descriptor
 ||  
-||  `tight-sort ::=
-||      `sort-instantiation
-||    | `closed-sort
+||  `tight-type-descriptor ::=
+||      `type-instantiation
+||    | `closed-type-descriptor
 ||  
-||  `closed-sort ::=
-||      `sort-name
-||    | `local-sort-variable
-||    | `sort-record
-||    | `sort-restriction
-||    | `sort-comprehension
-||    | `sort-quotient
-||    | ( `sort )
+||  `closed-type-descriptor ::=
+||      `type-name
+||    | `local-type-variable
+||    | `type-record
+||    | `type-restriction
+||    | `type-comprehension
+||    | `type-quotient
+||    | ( `type-descriptor )
 ||  
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-sums</title>
+<formalpara><title>Type-sums</title>
 <para>
 <<
-||  `sort-sum ::= `sort-summand { `sort-summand }*
+||  `type-sum ::= `type-summand { `type-summand }*
 ||  
-||  `sort-summand ::= '| `constructor [ `slack-sort ]
+||  `type-summand ::= '| `constructor [ `slack-type-descriptor ]
 ||  
 ||  `constructor ::= `name
 ||  
@@ -397,55 +397,55 @@ easy reference.
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-arrows</title>
+<formalpara><title>Type-arrows</title>
 <para>
 <<
-||  `sort-arrow ::= `arrow-source -> `sort
+||  `type-arrow ::= `arrow-source -> `type-descriptor
 ||  
-||  `arrow-source ::= `sort-sum | `slack-sort
+||  `arrow-source ::= `type-sum | `slack-type-descriptor
 ||  
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-products</title>
+<formalpara><title>Type-products</title>
 <para>
 <<
-||  `sort-product ::= `tight-sort * `tight-sort { * `tight-sort }*
+||  `type-product ::= `tight-type-descriptor * `tight-type-descriptor { * `tight-type-descriptor }*
 ||  
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-instantiations</title>
+<formalpara><title>Type-instantiations</title>
 <para>
 <<
-||  `sort-instantiation ::= `sort-name `actual-sort-parameters
+||  `type-instantiation ::= `type-name `actual-type-parameters
 ||  
-||  `actual-sort-parameters ::= `closed-sort | ( `proper-sort-list )
+||  `actual-type-parameters ::= `closed-type-descriptor | ( `proper-type-list )
 ||  
-||  `proper-sort-list ::= `sort , `sort { , `sort }*
+||  `proper-type-list ::= `type-descriptor , `type-descriptor { , `type-descriptor }*
 ||  
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-names</title>
+<formalpara><title>Type-names</title>
 <para>
 <<
-||  `sort-name ::= `qualifiable-name
+||  `type-name ::= `qualifiable-name
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-records</title>
+<formalpara><title>Type-records</title>
 <para>
 <<
-||  `sort-record ::= '{ [ `field-sorter-list ] '} | ( )
+||  `type-record ::= '{ [ `field-typer-list ] '} | ( )
 ||  
-||  `field-sorter-list ::= `field-sorter { , `field-sorter }*
+||  `field-typer-list ::= `field-typer { , `field-typer }*
 ||  
-||  `field-sorter ::= `field-name : `sort
+||  `field-typer ::= `field-name : `type-descriptor
 ||  
 ||  `field-name ::= `name
 ||  
@@ -453,28 +453,28 @@ easy reference.
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-restrictions</title>
+<formalpara><title>Type-restrictions</title>
 <para>
 <<
-||  `sort-restriction ::= ( `slack-sort '| `expression )
+||  `type-restriction ::= ( `slack-type-descriptor '| `expression )
 ||  
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-comprehensions</title>
+<formalpara><title>Type-comprehensions</title>
 <para>
 <<
-||  `sort-comprehension ::= '{ `annotated-pattern '| `expression '}
+||  `type-comprehension ::= '{ `annotated-pattern '| `expression '}
 ||  
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Sort-quotients</title>
+<formalpara><title>Type-quotients</title>
 <para>
 <<
-||  `sort-quotient ::= `closed-sort / `closed-expression
+||  `type-quotient ::= `closed-type-descriptor / `closed-expression
 >>
 </para>
 </formalpara>
@@ -541,7 +541,7 @@ easy reference.
 ||  `rec-let-binding-sequence ::= `rec-let-binding { `rec-let-binding }*
 ||  
 ||  `rec-let-binding ::=
-||    def `name `formal-parameter-sequence [ : `sort ] `equals `expression
+||    def `name `formal-parameter-sequence [ : `type-descriptor ] `equals `expression
 ||  
 ||  `formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
 >>
@@ -566,7 +566,7 @@ easy reference.
 ||  
 ||  `local-variable-list ::= `annotable-variable { , `annotable-variable }*
 ||  
-||  `annotable-variable ::= `local-variable [ : `sort ]
+||  `annotable-variable ::= `local-variable [ : `type-descriptor ]
 ||  
 ||  `local-variable ::= `name
 ||  
@@ -577,7 +577,7 @@ easy reference.
 <formalpara><title>Annotated-expressions</title>
 <para>
 <<
-||  `annotated-expression ::= `tight-expression : `sort
+||  `annotated-expression ::= `tight-expression : `type-descriptor
 >>
 </para>
 </formalpara>
@@ -816,7 +816,7 @@ easy reference.
 >>
 <<
 ||  
-||  `annotated-pattern ::= `pattern : `sort
+||  `annotated-pattern ::= `pattern : `type-descriptor
 ||  
 ||  `aliased-pattern ::= `variable-pattern as `tight-pattern
 ||  

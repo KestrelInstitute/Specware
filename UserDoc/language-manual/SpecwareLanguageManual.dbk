@@ -23,7 +23,7 @@
  <!ENTITY libraries SYSTEM "libraries.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
- <!ENTITY V "4.0">
+ <!ENTITY V "4.1">
  <!ENTITY SpecwareV "&Specware; &V;">
  <!ENTITY Metaslang "Metaslang">
  <!ENTITY xemacs "<productname>XEmacs</productname>">
