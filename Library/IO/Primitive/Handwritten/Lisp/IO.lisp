@@ -26,6 +26,8 @@
       (declare (ignore condition))
       nil)))
 
+(defvar nullFileWriteTime 9999999999999)   ; eons from now: "Thu May 21 10:46:39 PST 318787"
+
 (defun fileWriteTime (file)
   ;; bignum (i.e., not a lisp fixnum, not a C int)
   ;; Bigger than 536870911 = 2^29 - 1 = most-positive-fixnum
@@ -41,7 +43,7 @@
       (file-write-date file)
       ;; If file doesn't exist then return a future time! 
       ;; 3288592472 = "Thu Mar 18 01:54:32 PST 2004"
-      9999999999999)) ; eons from now: "Thu May 21 10:46:39 PST 318787"
+      nullFileWriteTime))
 
 (defun currentTime-0 ()
   ;; bignum (i.e., not a lisp fixnum, not a C int)

@@ -335,6 +335,6 @@ aren't are removed from the environment.
   def upToDateOrNotPresent?(unitId,timeStamp) =
     let fileName = (uidToFullPath unitId) ^ ".sw" in
     let writeTime = fileWriteTime fileName in
-    writeTime <= timeStamp or writeTime = 9999999999
+    writeTime <= timeStamp or writeTime = nullFileWriteTime
 endspec
 \end{spec}

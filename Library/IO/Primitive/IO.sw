@@ -15,6 +15,7 @@ IO qualifying spec {
   op getCurrentDirectory   : () -> Filename
   op fileExistsAndReadable : Filename -> Boolean
   op fileWriteTime         : Filename -> Time
+  op nullFileWriteTime     : Time
   op currentTime           : () -> Time
 
   op fileWritable          : Filename -> Boolean
