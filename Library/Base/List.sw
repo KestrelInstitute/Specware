@@ -22,6 +22,8 @@ List qualifying spec
   op nth             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
   op nthTail         : fa(a)   {(l,i) : List a * Nat | i < length l} ->
                                List a
+  op last            : fa(a)   {l: List a | length(l) > 0} -> a
+  op butLast         : fa(a)   {l: List a | length(l) > 0} -> List a
   op member          : fa(a)   a * List a -> Boolean
   op sublist         : fa(a)   {(l,i,j) : List a * Nat * Nat |
                                 i <= j & j <= length l} -> List a
@@ -83,6 +85,16 @@ List qualifying spec
   def nthTail(hd::tl,i) =  % list is non-empty because length > i >= 0
     if i = 0 then tl
              else nthTail(tl,i-1)
+
+  def last(hd::tl) =
+    case tl of
+      | [] -> hd
+      | _ -> last(tl)
+
+  def butLast(hd::tl) =
+    case tl of
+      | [] -> []
+      | _ -> Cons(hd, butLast(tl))
 
   def member(x,l) =
     case l of
