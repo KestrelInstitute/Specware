@@ -261,26 +261,32 @@ def translateIfThenElseToStatement(tcx, term as IfThenElse(t0, t1, t2, _), k, l,
   (([vDecl]++b0++[ifStmt], vExpr, k2, l2),col)
 
 def translateLetToExpr(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
-  let [(VarPat (v, _), letTerm)] = letBindings in
-  let (vId, vSrt) = v in
-  let vSrt = findMatchingUserType(spc,vSrt) in
-  let (sid,col0) = srtId(vSrt) in
-  let ((b0, k0, l0),col1) = termToExpressionAsgNV(sid, vId, tcx, letTerm, k, l, spc) in
-  let ((b1, jLetBody, k1, l1),col2) = termToExpression(tcx, letBody, k0, l0, spc) in
-%  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
-  let col = concatCollected(col0,concatCollected(col1,col2)) in
-  ((b0++b1, jLetBody, k1, l1),col)
+  case letBindings of
+    | [(VarPat (v as (vid,_), _), letTerm)] ->
+    let _ = writeLine("let "^vid^" = ...") in
+    let (vId, vSrt) = v in
+    let vSrt = findMatchingUserType(spc,vSrt) in
+    let (sid,col0) = srtId(vSrt) in
+    let ((b0, k0, l0),col1) = termToExpressionAsgNV(sid, vId, tcx, letTerm, k, l, spc) in
+    let ((b1, jLetBody, k1, l1),col2) = termToExpression(tcx, letBody, k0, l0, spc) in
+    %  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
+    let col = concatCollected(col0,concatCollected(col1,col2)) in
+    ((b0++b1, jLetBody, k1, l1),col)
+    | (pat,_)::_ -> (warn("pattern not (yet) supported: "^printPattern(pat));errorResultExp(k,l))
 
 def translateLetRet(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
-  let [(VarPat (v, _), letTerm)] = letBindings in
-  let (vId, vSrt) = v in
-  let vSrt = findMatchingUserType(spc,vSrt) in
-  let (sid,col0) = srtId(vSrt) in
-  let ((b0, k0, l0),col1) = termToExpressionAsgNV(sid, vId, tcx, letTerm, k, l, spc) in
-  let ((b1, k1, l1),col2) = termToExpressionRet(tcx, letBody, k0, l0, spc) in
-%  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
-  let col = concatCollected(col0,concatCollected(col1,col2)) in
-  ((b0++b1, k1, l1),col)
+  case letBindings of
+    | [(VarPat (v as (vid,_), _), letTerm)] ->
+    let _ = writeLine("let "^vid^" = ...") in
+    let (vId, vSrt) = v in
+    let vSrt = findMatchingUserType(spc,vSrt) in
+    let (sid,col0) = srtId(vSrt) in
+    let ((b0, k0, l0),col1) = termToExpressionAsgNV(sid, vId, tcx, letTerm, k, l, spc) in
+    let ((b1, k1, l1),col2) = termToExpressionRet(tcx, letBody, k0, l0, spc) in
+    %  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
+    let col = concatCollected(col0,concatCollected(col1,col2)) in
+    ((b0++b1, k1, l1),col)
+    | (pat,_)::_ -> (warn("pattern not (yet) supported: "^printPattern(pat));errorResultExpRet(k,l))
 
 
 def translateCaseToExpr(tcx, term, k, l, spc) =
@@ -773,6 +779,9 @@ def concatBlock(b1,b2) =
 op errorResultExp: Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
 def errorResultExp(k,l) =
   ((mts,mkJavaNumber(0),k,l),nothingCollected)
+op errorResultExpRet: Nat * Nat -> (Block * Nat * Nat) * Collected
+def errorResultExpRet(k,l) =
+  ((mts,k,l),nothingCollected)
 
 def warnNoCode(opId,optreason) =
   writeLine("warning: no code has been generated for op \""^opId^"\""

@@ -46,4 +46,29 @@ def letWildPatToSeq(spc) =
   let pattid = (fn(p) -> p) in
   mapSpec (lettoseq,sortid,pattid) spc
 
+
+op unfoldSortAliases: Spec -> Spec
+def unfoldSortAliases(spc) =
+  let srts = sortsAsList(spc) in
+  case find (fn(_,_,sortinfo) -> 
+	     case sortinfo of
+	       | (_,_,(_,Base(qid,_,_))::_) -> true
+	       | _ -> false) srts of
+    | None -> spc
+    | Some (q0,id0,(_,_,(_,Base(qid,_,_))::_)) ->
+      let qid0 = mkQualifiedId(q0,id0) in
+      let _ = writeLine("sort alias found: "^printQualifiedId(qid0)^" = "^printQualifiedId(qid)) in
+      let srts = filter (fn(q1,id1,_) -> ~((q1=q0)&(id1=id0))) srts in
+      let sortmap = foldl (fn((q,id,sinfo),srtmap) ->
+			    insertAQualifierMap(srtmap,q,id,sinfo))
+                           emptyASortMap srts
+      in
+      let spc = setSorts(spc,sortmap) in
+      let spc = mapSpec (id,
+			 fn|s as Base(qid2,srt,b) -> if (qid2 = qid0) then Base(qid,srt,b) else s
+			   |s -> s
+			 ,id) spc
+      in
+      unfoldSortAliases spc
+
 endspec

@@ -45,10 +45,10 @@ def sortToClsDecls(qualifier, id, sort_info, spc, jcginfo) =
   let clsDecls = jcginfo.clsDecls in
   case sort_info of
     | (_, _, [(_, srtDef)]) -> 
-      let (newClsDecls,col) = 
       if baseType?(spc,srtDef)
-	then fail("Unsupported sort definition: sort "^id^" = "^printSort(srtDef))
+	then (warn("Unsupported sort definition: \"sort "^id^" = "^printSort(srtDef)^"\" ignored.");jcginfo)
       else
+	let (newClsDecls,col) = 
 	%let _ = writeLine("sort "^id^" = "^printSort srtDef) in
 	(case srtDef of
 	   | Product (fields, _) -> productToClsDecls(id, srtDef)
@@ -505,11 +505,12 @@ op specToJava : Spec * Option Spec * String -> JSpec
 def specToJava(spc,optspec,filename) =
   let spc = identifyIntSorts spc in
   let spc = letWildPatToSeq spc in
-  %let _ = writeLine(printSpec spc) in
+  let spc = unfoldSortAliases spc in
   %let _ = writeLine("Lifting Patterns") in
   %let spc = liftPattern(spc) in
   %let _ = writeLine(";;; Renaming Variables") in
   let spc = distinctVariable(spc) in
+  let _ = writeLine(printSpec spc) in
   %let _ = writeLine(";;; Generating Classes") in
   let jcginfo = clsDeclsFromSorts(spc) in
   %let _ = writeLine(";;; Adding Bodies") in
