@@ -112,6 +112,7 @@ StandardSpec qualifying spec {
  op mkFun         : Fun * Sort                    -> Term
  op mkApply       : Term * Term                   -> Term
  op mkAppl        : Term * List Term              -> Term
+ op mkApplication : Term * List Term              -> Term
  op mkIfThenElse  : Term * Term * Term            -> Term
 
  def mkRecord     fields          = Record     (fields,                  noPos)
@@ -124,6 +125,10 @@ StandardSpec qualifying spec {
  def mkFun        (constant, srt) = Fun        (constant, srt,           noPos) 
  def mkApply      (t1, t2)        = Apply      (t1, t2,                  noPos)
  def mkAppl       (t1, tms)       = Apply      (t1, mkTuple tms,         noPos)  
+ def mkApplication(t1, tms)       = 
+   case tms of
+     | [t2] -> mkApply(t1, t2)
+     | trm::rest -> mkAppl(t1, tms)
  def mkIfThenElse (t1, t2, t3)    = IfThenElse (t1, t2, t3,              noPos)
 
  %% Fun's
