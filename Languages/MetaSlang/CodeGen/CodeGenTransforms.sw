@@ -1264,6 +1264,7 @@ def addEqOpsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
       | Base(Qualified(_,"Integer"),[],_) -> spc
       | Base(Qualified(_,"Char"),[],_) -> spc
       | Base(Qualified(_,"Boolean"),[],_) -> spc
+      | Boolean _ -> spc
       %| Base(Qualified(_,"Float"),[],_) -> spc
       | Base(Qualified(_,"String"),[],_) -> spc
       | _ ->
