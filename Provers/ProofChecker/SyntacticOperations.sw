@@ -116,9 +116,9 @@ spec
                                  (exprFreeVars e1 -- pattVars p)
 
 
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % ops in types, expressions, or patterns:
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % ops in types, expressions, and patterns:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op typeOps : Type       -> FSet Operation
   op exprOps : Expression -> FSet Operation
@@ -340,7 +340,6 @@ spec
                                   nonRecursiveLet (p,
                                                    exprSubst sbs e,
                                                    exprSubst bodySbs e1)
-
 
   % captured variables at free occurrences of given variable:
   op captVars : Variable -> Expression -> FSet Variable
