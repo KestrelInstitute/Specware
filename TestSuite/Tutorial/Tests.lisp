@@ -139,7 +139,7 @@ p15: Conjecture match_finding in MatchingObligations#FindMatches_Ref0_Oblig is N
                                          (specware::compile-and-load-lisp-file \"$TESTDIR/find-matches.lisp\"))")
       ("swll MatchingTest#Test" :swll "/UserDoc/tutorial/example/MatchingTest#Test"
 				:output ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingTest#Test
-;;; Generating lisp file /tmp/cl-current-file.lisp
+;;; Generating lisp file /tmp/lgen_lisp_tmp.lisp
 ")
       ("test_find_matches" :swe "test_find_matches(\"**V*ALN**EC*E*S\",
                                                    [\"CERAMIC\", \"CHESS\", \"DECREE\", \"FOOTMAN\",

@@ -20,7 +20,7 @@ spec
      n1 + n2 = plus(n1, n2) 
      && - n1 + - n2 = -(plus(n1, n2)) 
         && n1 + - n2 
-           = if lte(n1, n2) then -(minus(n2, n1)) else minus(n1, n2) 
+           = (if lte(n1, n2) then -(minus(n2, n1)) else minus(n1, n2)) 
            && ~(lte(n1, n2)) => lte(n2, n1)
  conjecture Integer.division_def_Obligation is 
     fa(y : NonZeroInteger) natural?(abs y) => abs y ~= 0

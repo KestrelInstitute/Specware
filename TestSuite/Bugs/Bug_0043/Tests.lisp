@@ -25,8 +25,9 @@
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $TESTDIR/Snark/Change/ does not exist, will create.")
 	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase"
-	    "ShouldBeProvable: Conjecture change is Proved! using Snark."
+	    "    Expanded spec file: $TESTDIR/Snark/Change/ShouldBeProvable.sw"
 	    "    Snark Log file: $TESTDIR/Snark/Change/ShouldBeProvable.log"
+	    "ShouldBeProvable: Conjecture change is Proved! using Snark."
 	    ""
 	    ""
 	    ""))

@@ -76,9 +76,9 @@ endspec
 
 spec  
  type T = (( | Foo | Fum) | truep)
- type Injection1(a, b) = ((a -> b) | Functions.injective?)
  type T1 = {x : ( | Foo | Fum) | true}
  type T2 = ((T * T1) | truep)
+ type Injection1(a, b) = ((a -> b) | Functions.injective?)
  
  op  truep : [a] a -> Boolean
  axiom List.induction1 is [a] 
