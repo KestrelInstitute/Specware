@@ -101,7 +101,7 @@ unit cache and thereby restore integrity.
 
 <para>The user can construct specs by explicitly listing the types,
 ops, and axioms comprising the spec, possibly after importing one or
-more spec. When a spec is processed, &Specware;
+more other specs.  When a spec is processed, &Specware;
 typechecks all the expressions that appear in the spec. Typechecking
 means checking that the expressions are type-correct, according to the
 rules of the &Metaslang; language.</para>
