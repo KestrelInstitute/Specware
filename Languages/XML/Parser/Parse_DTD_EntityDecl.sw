@@ -355,7 +355,7 @@ XML qualifying spec
   def parse_ExternalID (start : UChars) : Required ExternalID =  % TODO
     {
      (id, tail) <- parse_GenericID start;
-     (when (~ (external_id? id))
+     (when (~ (well_formed_external_id? id))
       (error {kind        = Syntax,
 	      requirement = "An external ID (whether SYSTEM or PUBLIC) must contain a system literal.",
 	      start       = start,

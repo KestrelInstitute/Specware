@@ -99,7 +99,7 @@ XML qualifying spec
      case possible_open_tag of
        | Some open_tag ->
          %% open_tag will be one of EmptyElemTag or STag
-         (if empty_tag? open_tag then
+         (if well_formed_empty_tag? open_tag then
 	    return (Some (Empty open_tag), 
 		    tail)
 	  else
@@ -152,7 +152,7 @@ XML qualifying spec
       case possible_tag of
 	| Some tag ->
 	  {
-	   (when (~ ((start_tag? tag) or (empty_tag? tag)))
+	   (when (~ ((well_formed_start_tag? tag) or (well_formed_empty_tag? tag)))
 	    (error {kind        = WFC,
 		    requirement = "Each element must begin with a start tag or be an empty element tag.",
 		    start       = start,
@@ -161,7 +161,7 @@ XML qualifying spec
 		    we_expected = [("<foo ..>",    "Start Tag"),
 				   ("<foo .../> ", "Empty Element Tag")],
 		    but         = ("an unexpected "
-				   ^ (if end_tag? tag then "closing" else "unrecognized") 
+				   ^ (if well_formed_end_tag? tag then "closing" else "unrecognized") 
 				   ^ " tag: '</" 
 				   ^ (string tag.name)
 				   ^ ">' was seen instead"),
@@ -287,7 +287,7 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
   %%
-  %%  [KC: Proper End   Tag]                       [K28] -- end_tag?
+  %%  [KC: Proper End   Tag]                       [K28] -- well_formed_end_tag?
   %%
   %%    prefix     = '/'
   %%    name       not 'xml'
@@ -302,7 +302,7 @@ XML qualifying spec
       case possible_tag of
 	| Some etag ->
 	  {
-	   (when (~ (end_tag? etag))
+	   (when (~ (well_formed_end_tag? etag))
 	    (error {kind        = Syntax,
 		    requirement = "An element must terminate with an end tag.",
 		    start       = start,
