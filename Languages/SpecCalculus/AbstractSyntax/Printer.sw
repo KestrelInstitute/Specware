@@ -14,6 +14,13 @@ discarded.
 We use \verb+show+ functions to render terms as strings. We
 use \verb+pp+ functions to render terms as "Pretty".
 
+Note that the spec calculus "print" command is implemented via 
+SpecCalc.evaluatePrint, which is defined in 
+/Languages/SpecCalculus/Semantics/Evaluate/Print.sw,
+and which uses an alternative strategy of printing the value
+that results from evaluating a term, as opposed the term itself
+as done here.
+
 \begin{spec}
 SpecCalc qualifying spec {
   import Types
