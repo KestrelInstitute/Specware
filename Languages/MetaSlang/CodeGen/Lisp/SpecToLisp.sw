@@ -239,7 +239,34 @@ def mkLEqualityOp(sp,srt) =
                       | (Base (Qualified("Char","Char"),_,_)) -> "eq"
                       | _ -> "slang-built-in::slang-term-equals-2")
              | _ -> "slang-built-in::slang-term-equals-2")
-        | _ -> "slang-built-in::slang-term-equals-2"
+        | _ -> "slang-built-in::slang-term-equals-2" 
+
+% Special translation for boolean ops that are not strict in
+% the r.h.s. parameter when applied directly in an infix application
+%
+op  isSpecialBoolOpAppl : QualifiedId * MS.Term -> Boolean
+
+def isSpecialBoolOpAppl (id,term) =
+      (case id
+       of Qualified("Boolean",n) -> member(n,["&","or","=>"])
+	|  _                       -> false)
+    & (case term
+         of Record([_,_],_) -> true
+	  | _               -> false)
+
+op  mkSpecialBoolOpAppl : Spec * String * StringSet.Set * QualifiedId * MS.Term -> LispTerm
+
+def mkSpecialBoolOpAppl (sp,dpn,vars,Qualified("Boolean",n),Record([(_,x),(_,y)],_)) =
+    let (LOp,LOplOpt) = case n
+                 of "&"  -> ("cl:and",None)
+		  | "or" -> ("cl:or", None)
+		  | "=>" -> ("cl:or", Some "cl:not") in
+    let argl = mkLTerm(sp,dpn,vars,x) in
+    let argr = mkLTerm(sp,dpn,vars,y) in
+    let argl1 = (case LOplOpt
+                  of Some LOpl -> mkLApply(mkLOp "cl:not",[argl])
+		   | None       -> argl) in
+    mkLApply(mkLOp LOp,[argl1,argr])
 
 op  mkLTermOp : fa(a) Spec * String * StringSet.Set * (Fun * Sort * a)
                        * Option(MS.Term) -> LispTerm
@@ -296,42 +323,18 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
    | (Bool b,srt,_) -> mkLBool b
    | (Char c,srt,_) -> mkLChar c
 
-   (* Ad hoc translation for boolean operations that are not
-      call by value when applied directly *)
-   | (Op(id as Qualified("Boolean","&"),_),srt,_) -> 
-     let arity = opArity(sp,id,srt) in
-     (case optArgs
-        of Some (Record([(_,x),(_,y)],_)) -> 
-           mkLApply(mkLOp "cl:and",[mkLTerm(sp,dpn,vars,x),
-                                       mkLTerm(sp,dpn,vars,y)])
-         | Some term -> mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term))
-         | None -> mkLOp(printPackageId(id,dpn)))
-   | (Op(id as Qualified("Boolean","or"),_),srt,_) -> 
-     let arity = opArity(sp,id,srt) in
-     (case optArgs
-        of Some (Record([(_,x),(_,y)],_)) -> 
-           mkLApply(mkLOp "cl:or",[mkLTerm(sp,dpn,vars,x),mkLTerm(sp,dpn,vars,y)])
-         | Some term -> mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term))
-         | None -> mkLOp(printPackageId(id,dpn)))
-   | (Op(id as Qualified("Boolean"," =>"),_),srt,_) -> 
-     let arity = opArity(sp,id,srt) in
-     (case optArgs
-        of Some (Record([(_,x),(_,y)],_)) -> 
-           mkLApply(mkLOp "cl:or",[mkLApply(mkLOp "cl:not",
-                                               [mkLTerm(sp,dpn,vars,x)]),
-                                      mkLTerm(sp,dpn,vars,y)])
-         | Some term -> mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term))
-         | None -> mkLOp(printPackageId(id,dpn)))
    | (Op (id,_),srt,_) -> 
      let arity = opArity(sp,id,srt) in
-     % let oper = if StringSet.member(vars,pid) then mkLVar pid else mkLOp pid in % unused
      (case optArgs
         of None ->
 	   let pid = printPackageId(id,dpn) in
            if functionSort?(sp,srt)
               then mkLUnaryFnRef(pid,arity,vars)
            else Const(Parameter pid)
-         | Some term -> mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term)))
+         | Some term ->
+	   if isSpecialBoolOpAppl(id,term)
+	   then mkSpecialBoolOpAppl(sp,dpn,vars,id,term)
+	   else mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term)))
    | (Embed(id,true),srt,_) ->
      let rng = range(sp,srt) in
      (case isConsDataType(sp,rng)
