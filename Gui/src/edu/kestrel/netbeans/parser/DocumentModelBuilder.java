@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/03/29 03:14:00  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.6  2003/03/14 04:15:31  weilyn
  * Added support for proof terms
  *
@@ -152,6 +155,28 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	return info;
     }
 
+    /** Creates an element for a diagram.
+	@param name Name of the diagram.
+    */
+    public Item createDiagram(String name) {
+	DiagramInfo info = new DiagramInfo(name);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createDiagram(): "+info);
+	}
+	return info;
+    }
+
+    /** Creates an element for a colimit.
+	@param name Name of the colimit.
+    */
+    public Item createColimit(String name) {
+	ColimitInfo info = new ColimitInfo(name);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createColimit(): "+info);
+	}
+	return info;
+    }
+    
     /** Sets bounds for the whole element. Begin is offset of first character of the element,
 	end is the offset of the last one.
     */
@@ -310,7 +335,11 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
                addMember(SourceInfo.PROOF, childInfo); 
             } else if (child instanceof MorphismInfo) {
                addMember(SourceInfo.MORPHISM, childInfo); 
-            }
+            } else if (child instanceof DiagramInfo) {
+               addMember(SourceInfo.DIAGRAM, childInfo); 
+            } else if (child instanceof ColimitInfo) {
+               addMember(SourceInfo.COLIMIT, childInfo); 
+            } 
 	} else if (parent instanceof SpecInfo) {
 	    SpecInfo parentInfo = (SpecInfo)parent;
 	    if (child instanceof SortInfo) {
@@ -328,7 +357,11 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
             ProofInfo parentInfo = (ProofInfo)parent;
         } else if (parent instanceof MorphismInfo) {
             MorphismInfo parentInfo = (MorphismInfo)parent;
-        }
+        } else if (parent instanceof DiagramInfo) {
+            DiagramInfo parentInfo = (DiagramInfo)parent;
+        } else if (parent instanceof ColimitInfo) {
+            ColimitInfo parentInfo = (ColimitInfo)parent;
+        } 
     }
     
     public void markError(Item item) {

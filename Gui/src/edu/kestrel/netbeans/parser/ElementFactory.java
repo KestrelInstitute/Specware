@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/03/29 03:14:00  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.6  2003/03/14 04:15:31  weilyn
  * Added support for proof terms
  *
@@ -88,6 +91,16 @@ public interface ElementFactory {
 	@param name Name of the morphism.
     */
     public Item createMorphism(String name);
+
+    /** Creates an element for a diagram.
+	@param name Name of the diagram.
+    */
+    public Item createDiagram(String name);
+
+    /** Creates an element for a colimit.
+	@param name Name of the colimit.
+    */
+    public Item createColimit(String name);
 
     public void setParent(Collection children, Item parent);
 

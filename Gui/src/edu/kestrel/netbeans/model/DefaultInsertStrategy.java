@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/03/29 03:13:55  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.3  2003/03/14 04:14:00  weilyn
  * Added support for proof terms
  *
@@ -92,7 +95,11 @@ class DefaultInsertStrategy implements Positioner {
 	    } else if (selector instanceof ProofElement) {
                 return getFirstNonEmpty(source, 1);
             } else if (selector instanceof MorphismElement) {
-                return getFirstNonEmpty(source, 1);
+                return getFirstNonEmpty(source, 2);
+            } else if (selector instanceof DiagramElement) {
+                return getFirstNonEmpty(source, 3);
+            } else if (selector instanceof ColimitElement) {
+                return getFirstNonEmpty(source, 4);
             }
 	} else if (container instanceof SpecElement) {
 	    SpecElement spec = (SpecElement) container;
@@ -113,7 +120,13 @@ class DefaultInsertStrategy implements Positioner {
         } else if (container instanceof MorphismElement) {
             MorphismElement proof = (MorphismElement) container;
             //TODO
-        }
+        } else if (container instanceof DiagramElement) {
+            DiagramElement diagram = (DiagramElement) container;
+            //TODO
+        } else if (container instanceof ColimitElement) {
+            ColimitElement diagram = (ColimitElement) container;
+            //TODO
+        } 
 	return null;
     }
         
@@ -121,7 +134,26 @@ class DefaultInsertStrategy implements Positioner {
 	//Util.log("*** DefaultInsertStrategy.getFirstNonEmpty(): startPos="+startPos);
         Element[] items;
         
-	if (startPos > 1) {
+        //TODO: decide on the real order
+        if (startPos > 4) {
+            items = container.getColimits();
+            if (items != null && items.length > 0) {
+                return items;
+            }
+        }
+	if (startPos > 3) {
+            items = container.getDiagrams();
+            if (items != null && items.length > 0) {
+                return items;
+            }
+        }
+ 	if (startPos > 2) {
+            items = container.getMorphisms();
+            if (items != null && items.length > 0) {
+                return items;
+            }
+        }
+ 	if (startPos > 1) {
             items = container.getProofs();
             if (items != null && items.length > 0) {
                 return items;

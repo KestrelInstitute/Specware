@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/03/29 03:13:59  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.6  2003/03/14 04:14:22  weilyn
  * Added support for proof terms
  *
@@ -70,6 +73,8 @@ public final class SourceOptions extends SystemOption {
     private static final byte T_CLAIM = 5;
     private static final byte T_PROOF = 6;
     private static final byte T_MORPHISM = 7;
+    private static final byte T_DIAGRAM = 8;
+    private static final byte T_COLIMIT = 9;
 
     /** Names of all properties. */
     static final String[] PROP_NAMES = {
@@ -81,6 +86,8 @@ public final class SourceOptions extends SystemOption {
         "claimElementFormat", // NOI18N
         "proofElementFormat", // N0I18N
         "morphismElementFormat", // N0I18N
+        "diagramElementFormat", // N0I18N
+        "colimitElementFormat", // N0I18N
     };
     
     static Element[] TEST_ELEMENTS;
@@ -152,6 +159,12 @@ public final class SourceOptions extends SystemOption {
     
     /** Property name of the morphism display format. */
     public static final String PROP_MORPHISM_FORMAT = PROP_NAMES[T_MORPHISM];
+
+    /** Property name of the diagram display format. */
+    public static final String PROP_DIAGRAM_FORMAT = PROP_NAMES[T_DIAGRAM];
+    
+    /** Property name of the colimit display format. */
+    public static final String PROP_COLIMIT_FORMAT = PROP_NAMES[T_COLIMIT];
 
     /** Property name of the 'categories usage' property. */
     public static final String PROP_CATEGORIES_USAGE = "categoriesUsage"; // NOI18N
@@ -299,6 +312,34 @@ public final class SourceOptions extends SystemOption {
         return getElementFormat(T_MORPHISM);
     }
 
+    /** Set the diagram format.
+    * @param format the new format
+    */
+    public void setDiagramElementFormat(ElementFormat format) {
+        setElementFormat(T_DIAGRAM, format);
+    }
+
+    /** Get the diagram format.
+    * @return the current format
+    */
+    public ElementFormat getDiagramElementFormat() {
+        return getElementFormat(T_DIAGRAM);
+    }
+
+    /** Set the colimit format.
+    * @param format the new format
+    */
+    public void setColimitElementFormat(ElementFormat format) {
+        setElementFormat(T_COLIMIT, format);
+    }
+
+    /** Get the colimit format.
+    * @return the current format
+    */
+    public ElementFormat getColimitElementFormat() {
+        return getElementFormat(T_COLIMIT);
+    }
+
     // ============= getters for long form of formats =================
 
     /** Get the spec format for longer hints.
@@ -363,6 +404,22 @@ public final class SourceOptions extends SystemOption {
     public ElementFormat getMorphismElementLongFormat() {
         loadDefaultFormats();
         return DEFAULT_FORMATS_LONG[T_MORPHISM];
+    }
+
+    /** Get the diagram format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getDiagramElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_DIAGRAM];
+    }
+
+    /** Get the colimit format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getColimitElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_COLIMIT];
     }
 
     // ============= categories of elements usage ===================

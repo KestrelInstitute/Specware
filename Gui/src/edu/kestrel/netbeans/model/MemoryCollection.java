@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:56  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/14 04:14:01  weilyn
  * Added support for proof terms
  *
@@ -533,4 +536,89 @@ abstract class MemoryCollection extends Object implements Serializable {
             return newMorphism;
         }
     }        
+
+    /** Collection of diagrams.
+    */
+    static class Diagram extends Member {
+        private static final DiagramElement[] EMPTY = new DiagramElement[0];
+
+        static final long serialVersionUID =3206093459760846163L;
+
+        /** @param ce diagram element memory impl to work in
+        */
+        public Diagram (DiagramElement.Memory memory) {
+            super (memory, ElementProperties.PROP_DIAGRAMS, EMPTY);
+        }
+        
+        public MemberElement find(String name) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                DiagramElement element = (DiagramElement)it.next ();
+                String ename = element.getName();
+                if (name.equals(ename)) {
+                    return element;
+                }
+            }
+            // nothing found
+            return null;
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+	    DiagramElement diagram = (DiagramElement) obj;
+            DiagramElement.Memory mem = new DiagramElement.Memory (diagram);
+            DiagramElement newDiagram = new DiagramElement(mem, diagram.getSource());
+            mem.copyFrom(diagram);
+            return newDiagram;
+        }
+    }    
+
+    /** Collection of colimits.
+    */
+    static class Colimit extends Member {
+        private static final ColimitElement[] EMPTY = new ColimitElement[0];
+
+        static final long serialVersionUID =3206093459760846163L;
+
+        /** @param ce colimit element memory impl to work in
+        */
+        public Colimit (ColimitElement.Memory memory) {
+            super (memory, ElementProperties.PROP_DIAGRAMS, EMPTY);
+        }
+        
+        public MemberElement find(String name) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                ColimitElement element = (ColimitElement)it.next ();
+                String ename = element.getName();
+                if (name.equals(ename)) {
+                    return element;
+                }
+            }
+            // nothing found
+            return null;
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+	    ColimitElement colimit = (ColimitElement) obj;
+            ColimitElement.Memory mem = new ColimitElement.Memory (colimit);
+            ColimitElement newColimit = new ColimitElement(mem, colimit.getSource());
+            mem.copyFrom(colimit);
+            return newColimit;
+        }
+    }    
+
 }

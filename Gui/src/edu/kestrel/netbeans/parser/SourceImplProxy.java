@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/03/29 03:14:03  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.2  2003/03/14 04:15:33  weilyn
  * Added support for proof terms
  *
@@ -48,6 +51,8 @@ PropertyChangeListener {
     private static final SpecElement[] NO_SPECS = new SpecElement[0];
     private static final ProofElement[] NO_PROOFS = new ProofElement[0];
     private static final MorphismElement[] NO_MORPHISMS = new MorphismElement[0];
+    private static final DiagramElement[] NO_DIAGRAMS = new DiagramElement[0];
+    private static final ColimitElement[] NO_COLIMITS = new ColimitElement[0];
     
     /**
      * PropertyChangeListeners attached to the SourceElement.
@@ -185,6 +190,48 @@ PropertyChangeListener {
         SourceElement.Impl impl = safeFindModelDelegate();
         if (impl != null)
             return impl.getMorphism(name);
+        return null;
+    }
+
+    public void changeDiagrams(DiagramElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeDiagrams(elems, action);
+    }
+    
+    public DiagramElement[] getDiagrams() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getDiagrams(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getDiagrams(): specs="+impl.getDiagrams());
+            return impl.getDiagrams();
+        }
+        return NO_DIAGRAMS;
+    }
+    
+    public DiagramElement getDiagram(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getDiagram(name);
+        return null;
+    }
+
+    public void changeColimits(ColimitElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeColimits(elems, action);
+    }
+    
+    public ColimitElement[] getColimits() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getColimits(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getColimits(): specs="+impl.getColimits());
+            return impl.getColimits();
+        }
+        return NO_COLIMITS;
+    }
+    
+    public ColimitElement getColimit(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getColimit(name);
         return null;
     }
 

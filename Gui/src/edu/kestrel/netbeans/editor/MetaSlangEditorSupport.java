@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/29 03:13:54  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.4  2003/03/14 04:13:22  weilyn
  * Added support for proof terms
  *
@@ -576,6 +579,12 @@ public class MetaSlangEditorSupport extends DataEditorSupport implements EditorC
             } 
             else if (element instanceof MorphismElement) {
                 n = factory.createMorphismNode((MorphismElement)element);
+            } 
+            else if (element instanceof DiagramElement) {
+                n = factory.createDiagramNode((DiagramElement)element);
+            } 
+            else if (element instanceof ColimitElement) {
+                n = factory.createColimitNode((ColimitElement)element);
             } 
             else if (element instanceof SourceElement) {
                 n = support.getDataObject().getNodeDelegate();

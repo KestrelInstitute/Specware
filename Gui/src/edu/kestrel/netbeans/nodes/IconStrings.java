@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:58  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/14 04:14:21  weilyn
  * Added support for proof terms
  *
@@ -55,6 +58,12 @@ interface IconStrings {
      
      static final String MORPHISM =
         "edu/kestrel/resources/images/MorphismNodeIcon"; // NOI18N     
+     
+     static final String DIAGRAM =
+        "edu/kestrel/resources/images/DiagramNodeIcon"; // NOI18N     
+
+     static final String COLIMIT =
+        "edu/kestrel/resources/images/ColimitNodeIcon"; // NOI18N     
      
      static final String WAIT =
         "edu/kestrel/resources/images/wait"; // NOI18N

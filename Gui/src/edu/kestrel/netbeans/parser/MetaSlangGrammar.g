@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.25  2003/03/29 03:14:00  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.24  2003/03/23 02:55:35  weilyn
  * Reverted "sort" and "expression" rules because actual SpecCalculus grammar was too ambiguous and low performance (due to extensive need for syntactic predicates).  Kept pattern rules.  Eliminated most other syntactic predicates for performance.  TODO: resolve lexical nondetermisim warnings.
  *
@@ -167,7 +170,7 @@ private scBasicTerm[Token unitIdToken] returns[ElementFactory.Item item]
     | item=scLet[unitIdToken]
     | item=scTranslate[unitIdToken]
     | item=scQualify[unitIdToken]
-    | item=scDiag[unitIdToken]
+    | item=scDiagram[unitIdToken]
     | item=scColimit[unitIdToken]
     | item=scMorphism[unitIdToken]
     | item=scGenerate[unitIdToken]
@@ -243,34 +246,66 @@ private scTranslate[Token unitIdToken] returns[ElementFactory.Item translate]
 private scQualify[Token unitIdToken] returns[ElementFactory.Item qualify]
 {
     qualify = null;
-    String strIgnore = null;
-    ElementFactory.Item itemIgnore = null;
+    String name = null;
+    ElementFactory.Item childItem = null;
+    Token headerEnd = null;
+    List children = new LinkedList();
 }
-    : strIgnore=qualifier
+    : name=qualifier                    //{headerEnd = LT(0);}
       "qualifying"
-      itemIgnore=scTerm[null]
+      childItem=scTerm[null]            /*{if (childItem != null) children.add(childItem);}
+                                        {qualify = builder.createQualification(name);
+                                         if (unitIdToken != null) {
+                                             begin = unitIdToken;
+                                         }
+                                         builder.setParent(children, qualify);
+                                         ParserUtil.setAllBounds(builder, qualify, begin, headerEnd, end);
+                                        }*/
     ;
 
-private scDiag[Token unitIdToken] returns[ElementFactory.Item diag]
+private scDiagram[Token unitIdToken] returns[ElementFactory.Item diagram]
 {
-    diag = null;
-    ElementFactory.Item ignore = null;
+    diagram = null;
+    ElementFactory.Item childItem = null;
+    Token headerEnd = null;
+    List children = new LinkedList();
+    String name= (unitIdToken == null) ? "" : unitIdToken.getText();
 }
-    : "diagram"
+    : begin:"diagram"                   {headerEnd = begin;}
       LBRACE
-      scDiagElem
-      (COMMA scDiagElem
-      )*
-      RBRACE
+      (scDiagElem                        //TODO:{if (childItem != null) children.add(childItem);}
+       (COMMA scDiagElem                 //TODO:{if (childItem != null) children.add(childItem);}
+       )*
+      )?
+      end:RBRACE                  
+                                        {diagram = builder.createDiagram(name);
+                                         if (unitIdToken != null) {
+                                             begin = unitIdToken;
+                                         }
+                                         builder.setParent(children, diagram);
+                                         ParserUtil.setAllBounds(builder, diagram, begin, headerEnd, end);
+                                        }
     ;
 
 private scColimit[Token unitIdToken] returns[ElementFactory.Item colimit]
 {
     colimit = null;
     ElementFactory.Item ignore = null;
+    Token headerEnd = null;
+    ElementFactory.Item childItem = null;
+    List children = new LinkedList();
+    String name = (unitIdToken == null) ? "" : unitIdToken.getText();
 }
-    : "colimit"
-      ignore=scTerm[null]
+    : begin:"colimit"                   {headerEnd = begin;}
+      childItem=scTerm[null]            {if (childItem != null) children.add(childItem);}
+
+                                        {colimit = builder.createColimit(name);
+                                         if (unitIdToken != null) {
+                                            begin = unitIdToken;
+                                         }
+                                         builder.setParent(children, colimit);
+                                         ParserUtil.setAllBounds(builder, colimit, begin, headerEnd, LT(0));
+                                        }
     ;
 
 private scSubstitute[Token unitIdToken] returns[ElementFactory.Item substitute]
@@ -297,14 +332,16 @@ private scMorphism[Token unitIdToken] returns[ElementFactory.Item morphism]
       src=scTerm[null]            {if (src != null) children.add(src);}
       ARROW
       dest=scTerm[null]           {if (dest != null) children.add(dest);}
+      LBRACE
       nameMap                     //TODO:make this an Item object
+      end:RBRACE
 
                                   {morphism = builder.createMorphism(name);
                                    if (unitIdToken != null) {
                                        begin = unitIdToken;
                                    }
                                    builder.setParent(children, morphism);
-                                   ParserUtil.setAllBounds(builder, morphism, begin, headerEnd, LT(0));
+                                   ParserUtil.setAllBounds(builder, morphism, begin, headerEnd, end);
                                   }
     ;
 
@@ -391,12 +428,10 @@ private nameMap returns[String nameMap]
     nameMap = "";
     String text = null;
 }   
-    : lbrace:LBRACE                     {nameMap = lbrace.getText();}
-      (text=nameMapItem                 {nameMap = nameMap + text;}
+    : (text=nameMapItem                 {nameMap = nameMap + text;}
        (comma:COMMA text=nameMapItem    {nameMap = nameMap + comma.getText() + text;}
        )*
       )?
-      rbrace:RBRACE                     {nameMap = nameMap + rbrace;}
     ;
 
 private nameMapItem returns[String mapItem]
@@ -444,13 +479,17 @@ private annotableQualifiableName returns[String name]
 
 //------------------------------------------------------------------------------
 
-private scDiagElem
-    : scDiagNode
-    | scDiagEdge
+private scDiagElem returns[ElementFactory.Item diagElem]
+{
+    diagElem = null;
+}
+    : diagElem=scDiagNode
+    | diagElem=scDiagEdge
     ;
 
-private scDiagNode
+private scDiagNode returns[ElementFactory.Item diagNode]
 {
+    diagNode = null;
     String nodeName = null;
     ElementFactory.Item ignore = null;
 }
@@ -459,17 +498,18 @@ private scDiagNode
       ignore=scTerm[null]
     ;
 
-private scDiagEdge
+private scDiagEdge returns[ElementFactory.Item diagEdge]
 {
+    diagEdge = null;
     String name1 = null;
     String name2 = null;
     String name3 = null;
     ElementFactory.Item ignore = null;
 }
     : name1=name
-      nonWordSymbol[":"]
+      COLON //nonWordSymbol[":"]
       name2=name
-      nonWordSymbol["->"]
+      ARROW //nonWordSymbol["->"]
       name3=name
       nonWordSymbol["+->"]
       ignore=scTerm[null]

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/03/29 03:13:57  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.2  2003/03/14 04:14:01  weilyn
  * Added support for proof terms
  *
@@ -361,6 +364,170 @@ public final class SourceElement extends Element {
         return getSourceImpl().getMorphism(name);
     }
 
+  //================== diagrams ==========================
+
+    /** Add a new diagram.
+    * @param el the diagram to add
+    * @throws SourceException if impossible
+    */
+    public void addDiagram (DiagramElement el) throws SourceException {
+      //Util.log("SourceElement.addDiagram -- adding diagram "+el.getName());
+        String id = el.getName();
+        if (getDiagram(id) != null)
+            throwAddException("FMT_EXC_AddDiagramToSource", el); // NOI18N
+        getSourceImpl().changeDiagrams(new DiagramElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new diagrams.
+    * @param el the diagrams to add
+    * @throws SourceException if impossible
+    */
+    public void addDiagrams(final DiagramElement[] els) throws SourceException {
+        String id;
+        
+        for (int i = 0; i < els.length; i++) {
+            id = els[i].getName();
+            if (getDiagram(id) != null)
+                throwAddException("FMT_EXC_AddDiagramToSource", els[i]); // NOI18N
+        }
+        getSourceImpl().changeDiagrams(els, Impl.ADD);
+    }
+
+    /** This method just throws localized exception. It is used during
+    * adding diagram element, which already exists in source.
+    * @param formatKey The message format key to localized bundle.
+    * @param element The element which can't be added
+    * @exception SourceException is alway thrown from this method.
+    */
+    private void throwAddException(String formatKey, DiagramElement element) throws SourceException {
+	String msg = NbBundle.getMessage(ElementFormat.class, formatKey,
+					 element.getName());
+        throwSourceException(msg);
+    }
+
+    /** Remove a diagram.
+    * @param el the diagram to remove
+    * @throws SourceException if impossible
+    */
+    public void removeDiagram(DiagramElement el) throws SourceException {
+        getSourceImpl().changeDiagrams(new DiagramElement[] { el }, Impl.REMOVE);
+    }
+
+    /** Remove some diagrams.
+    * @param els the diagrams to remove
+    * @throws SourceException if impossible
+    */
+    public void removeDiagrams (final DiagramElement[] els) throws SourceException {
+        getSourceImpl().changeDiagrams(els, Impl.REMOVE);
+    }
+
+    /** Set the diagrams.
+    * The old ones will be replaced.
+    * @param els the new diagrams
+    * @throws SourceException if impossible
+    */
+    public void setDiagrams (DiagramElement[] els) throws SourceException {
+        getSourceImpl().changeDiagrams(els, Impl.SET);
+    }
+
+    /** Get the diagrams.
+    * @return all diagrams
+    */
+    public DiagramElement[] getDiagrams() {
+        System.err.println("*** getDiagrams(): SourceImpl="+ getSourceImpl());
+        return getSourceImpl().getDiagrams();
+    }
+
+    /** Find a diagram by name.
+    * @param name the name to look for
+    * @return the diagram, or <code>null</code> if it does not exist
+    */
+    public DiagramElement getDiagram(String name) {
+        return getSourceImpl().getDiagram(name);
+    }
+
+  //================== colimits ==========================
+
+    /** Add a new colimit.
+    * @param el the colimit to add
+    * @throws SourceException if impossible
+    */
+    public void addColimit (ColimitElement el) throws SourceException {
+      //Util.log("SourceElement.addColimit -- adding colimit "+el.getName());
+        String id = el.getName();
+        if (getColimit(id) != null)
+            throwAddException("FMT_EXC_AddColimitToSource", el); // NOI18N
+        getSourceImpl().changeColimits(new ColimitElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new colimits.
+    * @param el the colimits to add
+    * @throws SourceException if impossible
+    */
+    public void addColimits(final ColimitElement[] els) throws SourceException {
+        String id;
+        
+        for (int i = 0; i < els.length; i++) {
+            id = els[i].getName();
+            if (getColimit(id) != null)
+                throwAddException("FMT_EXC_AddColimitToSource", els[i]); // NOI18N
+        }
+        getSourceImpl().changeColimits(els, Impl.ADD);
+    }
+
+    /** This method just throws localized exception. It is used during
+    * adding colimit element, which already exists in source.
+    * @param formatKey The message format key to localized bundle.
+    * @param element The element which can't be added
+    * @exception SourceException is alway thrown from this method.
+    */
+    private void throwAddException(String formatKey, ColimitElement element) throws SourceException {
+	String msg = NbBundle.getMessage(ElementFormat.class, formatKey,
+					 element.getName());
+        throwSourceException(msg);
+    }
+
+    /** Remove a colimit.
+    * @param el the colimit to remove
+    * @throws SourceException if impossible
+    */
+    public void removeColimit(ColimitElement el) throws SourceException {
+        getSourceImpl().changeColimits(new ColimitElement[] { el }, Impl.REMOVE);
+    }
+
+    /** Remove some colimits.
+    * @param els the colimits to remove
+    * @throws SourceException if impossible
+    */
+    public void removeColimits (final ColimitElement[] els) throws SourceException {
+        getSourceImpl().changeColimits(els, Impl.REMOVE);
+    }
+
+    /** Set the colimits.
+    * The old ones will be replaced.
+    * @param els the new colimits
+    * @throws SourceException if impossible
+    */
+    public void setColimits (ColimitElement[] els) throws SourceException {
+        getSourceImpl().changeColimits(els, Impl.SET);
+    }
+
+    /** Get the colimits.
+    * @return all colimits
+    */
+    public ColimitElement[] getColimits() {
+        System.err.println("*** getColimits(): SourceImpl="+ getSourceImpl());
+        return getSourceImpl().getColimits();
+    }
+
+    /** Find a colimit by name.
+    * @param name the name to look for
+    * @return the colimit, or <code>null</code> if it does not exist
+    */
+    public ColimitElement getColimit(String name) {
+        return getSourceImpl().getColimit(name);
+    }
+
     //-------------------------------------------------------------
     
     /* Prints the element into the element printer.
@@ -371,6 +538,8 @@ public final class SourceElement extends Element {
         print(getSpecs(), printer);
         print(getProofs(), printer);
         print(getMorphisms(), printer);
+        print(getDiagrams(), printer);
+        print(getColimits(), printer);
     }
     
     /** Lock the underlaing document to have exclusive access to it and could make changes
@@ -444,8 +613,8 @@ public final class SourceElement extends Element {
         */
         public SpecElement getSpec (String name);
 
-        /** Change the set of specs.
-        * @param elems the specs to change
+        /** Change the set of proofs.
+        * @param elems the proofs to change
         * @param action one of {@link #ADD}, {@link #REMOVE}, or {@link #SET}
         * @exception SourceException if the action cannot be handled
         */
@@ -479,6 +648,42 @@ public final class SourceElement extends Element {
         * @return the Morphism, or <code>null</code> if it does not exist
         */
         public MorphismElement getMorphism (String name);
+
+        /** Change the set of diagrams.
+        * @param elems the diagrams to change
+        * @param action one of {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+        * @exception SourceException if the action cannot be handled
+        */
+        public void changeDiagrams (DiagramElement[] elems, int action) throws SourceException;
+
+        /** Get all diagrams.
+        * @return the diagrams
+        */
+        public DiagramElement[] getDiagrams ();
+
+        /** Find a diagram by name.
+        * @param name the name to look for
+        * @return the diagram, or <code>null</code> if it does not exist
+        */
+        public DiagramElement getDiagram (String name);
+
+        /** Change the set of colimits.
+        * @param elems the colimits to change
+        * @param action one of {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+        * @exception SourceException if the action cannot be handled
+        */
+        public void changeColimits (ColimitElement[] elems, int action) throws SourceException;
+
+        /** Get all colimits.
+        * @return the colimits
+        */
+        public ColimitElement[] getColimits ();
+
+        /** Find a colimit by name.
+        * @param name the name to look for
+        * @return the colimit, or <code>null</code> if it does not exist
+        */
+        public ColimitElement getColimit (String name);
 
         /** Lock the underlaing document to have exclusive access to it and could make changes
         * on this SourceElement.

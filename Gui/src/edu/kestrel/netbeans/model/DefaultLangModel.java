@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:55  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/14 04:14:00  weilyn
  * Added support for proof terms
  *
@@ -200,7 +203,21 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         c.setParent(src);
         return c;
     }
+
+    public DiagramElementImpl createDiagram(Element src) {
+        DiagramElementImpl c = new DiagramElementImpl(this);
+        getWrapper().wrapDiagram(c, src);
+        c.setParent(src);
+        return c;
+    }    
     
+    public ColimitElementImpl createColimit(Element src) {
+        ColimitElementImpl c = new ColimitElementImpl(this);
+        getWrapper().wrapColimit(c, src);
+        c.setParent(src);
+        return c;
+    }    
+
     public SourceElementImpl createSource() {
         return new SourceElementImpl(this);
     }
@@ -658,6 +675,12 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         } else if (target instanceof MorphismElement) {
             MorphismElementImpl impl = (MorphismElementImpl)getElementImpl(target);
             impl.updateMembers(propertyName, els, orderIndices, optMap);
+        } else if (target instanceof DiagramElement) {
+            DiagramElementImpl impl = (DiagramElementImpl)getElementImpl(target);
+            impl.updateMembers(propertyName, els, orderIndices, optMap);
+        } else if (target instanceof ColimitElement) {
+            ColimitElementImpl impl = (ColimitElementImpl)getElementImpl(target);
+            impl.updateMembers(propertyName, els, orderIndices, optMap);
         } else {
 	    Util.log("DefaultLangModel.updateMembers() : "+propertyName+" els = "+els.length);
 	    Util.log("DefaultLangModel.updateMembers() orderIndices = "+Util.print(orderIndices)+" optMap = "+Util.print(optMap));
@@ -681,7 +704,13 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         } else if (target instanceof MorphismElement) {
             MorphismElementImpl impl = (MorphismElementImpl)getElementImpl(target);
             impl.updateMemberOrder(orderedMembers);
-        }
+        } else if (target instanceof DiagramElement) {
+            DiagramElementImpl impl = (DiagramElementImpl)getElementImpl(target);
+            impl.updateMemberOrder(orderedMembers);
+        } else if (target instanceof ColimitElement) {
+            ColimitElementImpl impl = (ColimitElementImpl)getElementImpl(target);
+            impl.updateMemberOrder(orderedMembers);
+        } 
     }
     
     public void activate(Element target) {

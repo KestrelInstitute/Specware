@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:58  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/14 04:14:21  weilyn
  * Added support for proof terms
  *
@@ -113,6 +116,22 @@ public class FilterFactory implements ElementNodeFactory {
         return delegate.createMorphismNode( element );
     }
     
+    /** Make a node representing a diagram
+    * @param element the diagram
+    * @return a diagram node instance
+    */
+    public Node createDiagramNode (DiagramElement element) {
+        return delegate.createDiagramNode( element );
+    }
+
+    /** Make a node representing a colimit
+    * @param element the colimit
+    * @return a proof node instance
+    */
+    public Node createColimitNode (ColimitElement element) {
+        return delegate.createColimitNode( element );
+    }
+
     /** Make a node indicating that the creation of children
     * is still under way.
     * It should be used when the process is slow.

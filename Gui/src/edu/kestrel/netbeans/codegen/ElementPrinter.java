@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:54  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/14 04:12:30  weilyn
  * Added support for proof terms
  *
@@ -130,4 +133,21 @@ public interface ElementPrinter {
     */
     public void markMorphism(MorphismElement element, int what)
     throws ElementPrinterInterruptException;        
+
+    /** Mark a notable point in a class element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markDiagram(DiagramElement element, int what)
+    throws ElementPrinterInterruptException;    
+
+    /** Mark a notable point in a class element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markColimit(ColimitElement element, int what)
+    throws ElementPrinterInterruptException;    
+    
 }

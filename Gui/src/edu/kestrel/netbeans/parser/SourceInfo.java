@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/03/29 03:14:03  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.2  2003/03/14 04:15:33  weilyn
  * Added support for proof terms
  *
@@ -32,6 +35,8 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
     public static final int SPEC = 0;
     public static final int PROOF = 1;
     public static final int MORPHISM = 2;
+    public static final int DIAGRAM = 3;
+    public static final int COLIMIT = 4;
 
     SourceElement.Impl  sourceImpl;
     LangModel.Updater   updater;
@@ -58,22 +63,38 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         new MorphismFinder()
     };
 
+    private static final ElementMatch.Finder[] DIAGRAM_FINDERS = {
+        //new TextPositionMatch(),
+        new DiagramFinder()
+    };
+    
+    private static final ElementMatch.Finder[] COLIMIT_FINDERS = {
+        //new TextPositionMatch(),
+        new ColimitFinder()
+    };
+    
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
         SPEC_FINDERS,
         PROOF_FINDERS,
         MORPHISM_FINDERS,
+        DIAGRAM_FINDERS,
+        COLIMIT_FINDERS,
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
         ElementProperties.PROP_SPECS,
         ElementProperties.PROP_PROOFS,
         ElementProperties.PROP_MORPHISMS,
+        ElementProperties.PROP_DIAGRAMS,
+        ElementProperties.PROP_COLIMITS,
     };
     
     private static final Class[] CHILDREN_TYPES = {
         SpecElement.class,
         ProofElement.class,
         MorphismElement.class,
+        DiagramElement.class,
+        ColimitElement.class,
     };
     
     SourceInfo() {
@@ -137,7 +158,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         SourceElement source = (SourceElement)target;
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
-	for (int kind = SPEC; kind <= MORPHISM; kind++) {
+	for (int kind = SPEC; kind <= DIAGRAM; kind++) {
             Element[] curMembers;
             switch (kind) {
 	    case SPEC:
@@ -148,6 +169,12 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
                 break;
             case MORPHISM:
                 curMembers = source.getMorphisms();
+                break;
+            case DIAGRAM:
+                curMembers = source.getDiagrams();
+                break;
+            case COLIMIT:
+                curMembers = source.getColimits();
                 break;
             default:
 		throw new InternalError("Illegal member type"); // NOI18N
@@ -186,6 +213,18 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
     }
 
     private static final class MorphismFinder extends ElementMatch.AbstractFinder {
+        protected boolean matches(BaseElementInfo info, Element el) {
+            return info.name.equals(((MemberElement)el).getName());
+        }
+    }
+
+    private static final class DiagramFinder extends ElementMatch.AbstractFinder {
+        protected boolean matches(BaseElementInfo info, Element el) {
+            return info.name.equals(((MemberElement)el).getName());
+        }
+    }
+
+    private static final class ColimitFinder extends ElementMatch.AbstractFinder {
         protected boolean matches(BaseElementInfo info, Element el) {
             return info.name.equals(((MemberElement)el).getName());
         }

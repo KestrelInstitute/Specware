@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/03/29 03:13:59  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.2  2003/03/14 04:14:21  weilyn
  * Added support for proof terms
  *
@@ -173,6 +176,12 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
     if (key instanceof MorphismElement) {
         return new Node[] { factory.createMorphismNode((MorphismElement)key) };
     }
+    if (key instanceof DiagramElement) {
+        return new Node[] { factory.createDiagramNode((DiagramElement)key) };
+    }
+    if (key instanceof ColimitElement) {
+        return new Node[] { factory.createColimitNode((ColimitElement)key) };
+    }
     if (NOT_KEY.equals(key))
       return new Node[] { factory.createWaitNode() };
     // never should get here
@@ -311,6 +320,12 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
         if ((elementType & SourceElementFilter.MORPHISM) != 0) {
             keys.addAll(Arrays.asList(element.getMorphisms()));
         }
+        if ((elementType & SourceElementFilter.DIAGRAM) != 0) {
+            keys.addAll(Arrays.asList(element.getDiagrams()));
+        }
+        if ((elementType & SourceElementFilter.COLIMIT) != 0) {
+            keys.addAll(Arrays.asList(element.getColimits()));
+        }
     }
 
 
@@ -323,7 +338,9 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
             String propName = evt.getPropertyName();
             boolean refresh = (propName.equals(ElementProperties.PROP_SPECS) ||
                                propName.equals(ElementProperties.PROP_PROOFS) ||
-                               propName.equals(ElementProperties.PROP_MORPHISMS));
+                               propName.equals(ElementProperties.PROP_MORPHISMS) ||
+                               propName.equals(ElementProperties.PROP_DIAGRAMS) ||
+                               propName.equals(ElementProperties.PROP_COLIMITS));
 			       
             if (!refresh && ElementProperties.PROP_STATUS.equals(evt.getPropertyName())) {
                 Integer val = (Integer) evt.getNewValue();

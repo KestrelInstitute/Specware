@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/03/29 03:13:57  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.2  2003/03/14 04:14:02  weilyn
  * Added support for proof terms
  *
@@ -47,6 +50,8 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
   private SpecCollection  specs;
   private ProofCollection proofs;
   private MorphismCollection morphisms;
+  private DiagramCollection diagrams;
+  private ColimitCollection colimits;
   private MemberCollection members;
     
     private static final long serialVersionUID = 8506642610861188475L;
@@ -190,6 +195,76 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         //firePropertyChangeEvent(event);
     }
 
+    public DiagramElement getDiagram(String id) {
+        if (diagrams == null)
+            return null;
+        return diagrams.getDiagram(id);
+    }
+    
+    public DiagramElement[] getDiagrams() {
+        if (diagrams == null)
+            return DiagramCollection.EMPTY;
+        return (DiagramElement[])diagrams.getElements();
+    }
+    
+    // Setters/changers
+    public void changeDiagrams(DiagramElement[] mms, int operation) throws SourceException {
+        //Util.log("SourceElementImpl.changeDiagram -- adding diagram ");
+        Object token = takeLock();
+        try {
+            if (diagrams == null) {
+                if (operation != DiagramElement.Impl.REMOVE && mms.length == 0)
+		  return;
+                initializeDiagrams();
+            }
+	    //Util.log("SourceElementimpl.changeDiagrams calling change members for Diagrams "+mms.length);
+            diagrams.changeMembers(mms, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+        //IndexedPropertyBase.Change changes = IndexedPropertyBase.computeChanges(getDiagrams(), mms);
+        //Util.log("SourceElementImpl.changeDiagram -- Changes  "+changes);
+        //MultiPropertyChangeEvent event = new MultiPropertyChangeEvent (this, ElementProperties.PROP_PROOFS, getDiagrams(), mms);
+        //Util.log("SourceElementImpl.changeDiagram -- event " + event);
+        //firePropertyChangeEvent(event);
+    }
+
+    public ColimitElement getColimit(String id) {
+        if (colimits == null)
+            return null;
+        return colimits.getColimit(id);
+    }
+    
+    public ColimitElement[] getColimits() {
+        if (colimits == null)
+            return ColimitCollection.EMPTY;
+        return (ColimitElement[])colimits.getElements();
+    }
+    
+    // Setters/changers
+    public void changeColimits(ColimitElement[] mms, int operation) throws SourceException {
+        //Util.log("SourceElementImpl.changeColimit -- adding colimit ");
+        Object token = takeLock();
+        try {
+            if (colimits == null) {
+                if (operation != ColimitElement.Impl.REMOVE && mms.length == 0)
+		  return;
+                initializeColimits();
+            }
+	    //Util.log("SourceElementimpl.changeColimits calling change members for Colimits "+mms.length);
+            colimits.changeMembers(mms, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+        //IndexedPropertyBase.Change changes = IndexedPropertyBase.computeChanges(getColimits(), mms);
+        //Util.log("SourceElementImpl.changeColimit -- Changes  "+changes);
+        //MultiPropertyChangeEvent event = new MultiPropertyChangeEvent (this, ElementProperties.PROP_PROOFS, getColimits(), mms);
+        //Util.log("SourceElementImpl.changeColimit -- event " + event);
+        //firePropertyChangeEvent(event);
+    }
+
     private void notifyCreate(Element[] els) {
         for (int i = 0; i < els.length; i++) {
             ElementImpl impl = (ElementImpl)els[i].getCookie(ElementImpl.class);
@@ -207,6 +282,12 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         }
         if (this.morphisms != null) {
             notifyCreate(morphisms.getElements());
+        }
+        if (this.diagrams != null) {
+            notifyCreate(diagrams.getElements());
+        }
+        if (this.colimits != null) {
+            notifyCreate(colimits.getElements());
         }
         super.notifyCreate();
     }
@@ -262,10 +343,21 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
                     return;
                 initializeMorphisms();
             }
-	    //Util.log("SourceElementimpl.updateMembers calling morphisms update members indices =  "+Util.print(indices));
             morphisms.updateMembers(elements, indices, optMap);
-	    //Util.log("SourceElementimpl.updateMembers after PartialCollection.updateMembers morphisms = "+Util.print(getMorphisms())+
-	    //			     " members =  "+members);
+	} else if (name == ElementProperties.PROP_DIAGRAMS) {
+            if (diagrams == null) {
+                if (elements.length == 0)
+                    return;
+                initializeDiagrams();
+            }
+            diagrams.updateMembers(elements, indices, optMap);
+	} else if (name == ElementProperties.PROP_COLIMITS) {
+            if (colimits == null) {
+                if (elements.length == 0)
+                    return;
+                initializeColimits();
+            }
+            colimits.updateMembers(elements, indices, optMap);
 	} else {
             throw new IllegalArgumentException("Unsupported property: " + name); // NOI18N
         }
@@ -296,7 +388,17 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
       this.morphisms = new MorphismCollection(this, getModelImpl(), members);
       //((Binding.Source)getRawBinding()).getMorphismSection(),  getModelImpl(), this);
     }
+
+    private void initializeDiagrams() {
+      this.diagrams = new DiagramCollection(this, getModelImpl(), members);
+      //((Binding.Source)getRawBinding()).getProofSection(),  getModelImpl(), this);
+    }
     
+    private void initializeColimits() {
+      this.colimits = new ColimitCollection(this, getModelImpl(), members);
+      //((Binding.Source)getRawBinding()).getProofSection(),  getModelImpl(), this);
+    }
+
     protected SourceElementImpl findSource() {
         return this;
     }

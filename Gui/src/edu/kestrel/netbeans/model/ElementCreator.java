@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:56  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/14 04:14:01  weilyn
  * Added support for proof terms
  *
@@ -39,4 +42,6 @@ public interface ElementCreator {
     public ImportElementImpl        createImport(SpecElement parent);
     public ProofElementImpl         createProof(Element parent);
     public MorphismElementImpl      createMorphism(Element parent);
+    public DiagramElementImpl       createDiagram(Element parent);
+    public ColimitElementImpl       createColimit(Element parent);
 }

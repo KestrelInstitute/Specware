@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:53  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/14 04:12:30  weilyn
  * Added support for proof terms
  *
@@ -713,5 +716,14 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
         public void markMorphism(MorphismElement element, int what) throws ElementPrinterInterruptException {
             mark(element, what);
         }
+
+        public void markDiagram(DiagramElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+
+        public void markColimit(ColimitElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+        
     }
 }

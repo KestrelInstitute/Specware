@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/03/29 03:13:52  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.8  2003/03/14 04:11:56  weilyn
  * Added support for proof terms
  *
@@ -156,6 +159,46 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 	//SystemAction.get(PropertiesAction.class)
     };
     
+    /** Array of the actions of the meta-slang classes. */
+    private static final SystemAction[] DIAGRAM_ACTIONS = new SystemAction[] {
+	SystemAction.get(EditAction.class),
+	//SystemAction.get(OpenAction.class),
+	null,
+ //       SystemAction.get(ProcessUnitAction.class),
+//        null,
+	SystemAction.get(CutAction.class),
+	SystemAction.get(CopyAction.class),
+	SystemAction.get(PasteAction.class),
+	null,
+	SystemAction.get(NewAction.class),
+	SystemAction.get(DeleteAction.class),
+	SystemAction.get(RenameAction.class),
+	//null,
+	//SystemAction.get(OverrideAction.class),
+	//SystemAction.get(ToolsAction.class),
+	//SystemAction.get(PropertiesAction.class)
+    };
+
+    /** Array of the actions of the meta-slang classes. */
+    private static final SystemAction[] COLIMIT_ACTIONS = new SystemAction[] {
+	SystemAction.get(EditAction.class),
+	//SystemAction.get(OpenAction.class),
+	null,
+ //       SystemAction.get(ProcessUnitAction.class),
+//        null,
+	SystemAction.get(CutAction.class),
+	SystemAction.get(CopyAction.class),
+	SystemAction.get(PasteAction.class),
+	null,
+	SystemAction.get(NewAction.class),
+	SystemAction.get(DeleteAction.class),
+	SystemAction.get(RenameAction.class),
+	//null,
+	//SystemAction.get(OverrideAction.class),
+	//SystemAction.get(ToolsAction.class),
+	//SystemAction.get(PropertiesAction.class)
+    };
+
     private static final SystemAction[] CONTAINER_ACTIONS
 	= new SystemAction[] {SystemAction.get(CutAction.class),
 			      SystemAction.get(CopyAction.class),
@@ -364,6 +407,86 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
         return createMorphismChildren(element, MetaSlangDataObject.getExplorerFactory() );
     }
     
+    /** Returns the node asociated with specified element.
+     * @return ElementNode
+     */
+    public Node createDiagramNode(final DiagramElement element) {
+        if ( element == null ) {
+            return FACTORY_GETTER_NODE;
+        }
+        DiagramElementNode n;
+        if (tree) {
+            DiagramChildren children = (DiagramChildren) createDiagramChildren(element);
+            DiagramElementFilter filter = new DiagramElementFilter();
+            n = new DiagramElementNode(element, children ,true) {
+		    {
+			getCookieSet().add((FilterCookie) getChildren ());
+		    }
+		};
+
+            n.setElementFormat(new ElementFormat(NbBundle.getBundle (MetaSlangElementNodeFactory.class).getString("CTL_Diagram_name_format")));
+
+            filter.setOrder (new int[] {
+/*                SpecElementFilter.IMPORT,
+		SpecElementFilter.SORT,
+		SpecElementFilter.OP,
+                SpecElementFilter.DEF,
+                SpecElementFilter.CLAIM,*/
+            });
+            children.setFilter (filter);
+        }
+        else {
+            n = (DiagramElementNode) super.createDiagramNode(element);
+        }
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(DIAGRAM_ACTIONS);
+        return n;
+    }
+    
+    protected Children createDiagramChildren( DiagramElement element ) {
+        return createDiagramChildren(element, MetaSlangDataObject.getExplorerFactory() );
+    }
+
+    /** Returns the node asociated with specified element.
+     * @return ElementNode
+     */
+    public Node createColimitNode(final ColimitElement element) {
+        if ( element == null ) {
+            return FACTORY_GETTER_NODE;
+        }
+        ColimitElementNode n;
+        if (tree) {
+            ColimitChildren children = (ColimitChildren) createColimitChildren(element);
+            ColimitElementFilter filter = new ColimitElementFilter();
+            n = new ColimitElementNode(element, children ,true) {
+		    {
+			getCookieSet().add((FilterCookie) getChildren ());
+		    }
+		};
+
+            n.setElementFormat(new ElementFormat(NbBundle.getBundle (MetaSlangElementNodeFactory.class).getString("CTL_Colimit_name_format")));
+
+            filter.setOrder (new int[] {
+/*                SpecElementFilter.IMPORT,
+		SpecElementFilter.SORT,
+		SpecElementFilter.OP,
+                SpecElementFilter.DEF,
+                SpecElementFilter.CLAIM,*/
+            });
+            children.setFilter (filter);
+        }
+        else {
+            n = (ColimitElementNode) super.createColimitNode(element);
+        }
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(COLIMIT_ACTIONS);
+        return n;
+    }
+    
+    protected Children createColimitChildren( ColimitElement element ) {
+        return createColimitChildren(element, MetaSlangDataObject.getExplorerFactory() );
+    }
+
     /**
      * This method will try to extract more information than the ordinary Error message.
      */

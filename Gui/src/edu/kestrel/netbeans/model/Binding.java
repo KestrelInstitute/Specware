@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/03/29 03:13:55  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.6  2003/03/14 04:14:00  weilyn
  * Added support for proof terms
  *
@@ -149,5 +152,13 @@ public interface Binding {
     
     public interface Morphism extends Member, Container {
     }
+
+    public interface Diagram extends Member, Container {
+    }
+
+    public interface Colimit extends Member, Container {
+    }
+    
+    
 }
 

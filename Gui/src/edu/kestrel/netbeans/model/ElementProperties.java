@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/03/29 03:13:56  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.6  2003/03/14 04:14:01  weilyn
  * Added support for proof terms
  *
@@ -65,4 +68,9 @@ public interface ElementProperties {
     public static final String PROP_PROOFS = "proofs"; // NOI18N        
 
     public static final String PROP_MORPHISMS = "morphisms"; // NOI18N         
+    
+    public static final String PROP_DIAGRAMS = "diagrams"; // NOI18N      
+
+    public static final String PROP_COLIMITS = "colimits"; // NOI18N      
+
 }

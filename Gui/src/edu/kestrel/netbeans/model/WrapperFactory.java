@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:57  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/14 04:14:02  weilyn
  * Added support for proof terms
  *
@@ -38,5 +41,7 @@ public interface WrapperFactory {
     public ImportElement        wrapImport(ImportElement.Impl theImpl, Element parent);
     public ProofElement         wrapProof(MemberElement.Impl theImpl, Element parent);
     public MorphismElement      wrapMorphism(MemberElement.Impl theImpl, Element parent);
+    public DiagramElement       wrapDiagram(MemberElement.Impl theImpl, Element parent);
+    public ColimitElement       wrapColimit(MemberElement.Impl theImpl, Element parent);
 }
 

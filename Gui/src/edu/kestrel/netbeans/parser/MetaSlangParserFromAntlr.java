@@ -406,7 +406,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					item=scQualify(unitIdToken);
 				}
 				else if ((LA(1)==LITERAL_diagram) && (LA(2)==LBRACE)) {
-					item=scDiag(unitIdToken);
+					item=scDiagram(unitIdToken);
 				}
 				else if ((LA(1)==LITERAL_colimit) && (_tokenSet_1.member(LA(2)))) {
 					item=scColimit(unitIdToken);
@@ -639,14 +639,16 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		qualify = null;
-		String strIgnore = null;
-		ElementFactory.Item itemIgnore = null;
+		String name = null;
+		ElementFactory.Item childItem = null;
+		Token headerEnd = null;
+		List children = new LinkedList();
 		
 		
 		try {      // for error handling
-			strIgnore=qualifier();
+			name=qualifier();
 			match(LITERAL_qualifying);
-			itemIgnore=scTerm(null);
+			childItem=scTerm(null);
 		}
 		catch (RecognitionException ex) {
 			if (inputState.guessing==0) {
@@ -660,34 +662,76 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return qualify;
 	}
 	
-	private final ElementFactory.Item  scDiag(
+	private final ElementFactory.Item  scDiagram(
 		Token unitIdToken
 	) throws RecognitionException, TokenStreamException {
-		ElementFactory.Item diag;
+		ElementFactory.Item diagram;
 		
+		Token  begin = null;
+		Token  end = null;
 		
-		diag = null;
-		ElementFactory.Item ignore = null;
+		diagram = null;
+		ElementFactory.Item childItem = null;
+		Token headerEnd = null;
+		List children = new LinkedList();
+		String name= (unitIdToken == null) ? "" : unitIdToken.getText();
 		
 		
 		try {      // for error handling
+			begin = LT(1);
 			match(LITERAL_diagram);
-			match(LBRACE);
-			scDiagElem();
-			{
-			_loop23:
-			do {
-				if ((LA(1)==COMMA)) {
-					match(COMMA);
-					scDiagElem();
-				}
-				else {
-					break _loop23;
-				}
-				
-			} while (true);
+			if ( inputState.guessing==0 ) {
+				headerEnd = begin;
 			}
+			match(LBRACE);
+			{
+			switch ( LA(1)) {
+			case LITERAL_print:
+			case LITERAL_translate:
+			case LITERAL_diagram:
+			case LITERAL_colimit:
+			case IDENTIFIER:
+			case STAR:
+			case NON_WORD_SYMBOL:
+			case LITERAL_Snark:
+			{
+				scDiagElem();
+				{
+				_loop24:
+				do {
+					if ((LA(1)==COMMA)) {
+						match(COMMA);
+						scDiagElem();
+					}
+					else {
+						break _loop24;
+					}
+					
+				} while (true);
+				}
+				break;
+			}
+			case RBRACE:
+			{
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+			}
+			end = LT(1);
 			match(RBRACE);
+			if ( inputState.guessing==0 ) {
+				diagram = builder.createDiagram(name);
+				if (unitIdToken != null) {
+				begin = unitIdToken;
+				}
+				builder.setParent(children, diagram);
+				ParserUtil.setAllBounds(builder, diagram, begin, headerEnd, end);
+				
+			}
 		}
 		catch (RecognitionException ex) {
 			if (inputState.guessing==0) {
@@ -698,7 +742,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			  throw ex;
 			}
 		}
-		return diag;
+		return diagram;
 	}
 	
 	private final ElementFactory.Item  scColimit(
@@ -706,14 +750,35 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 	) throws RecognitionException, TokenStreamException {
 		ElementFactory.Item colimit;
 		
+		Token  begin = null;
 		
 		colimit = null;
 		ElementFactory.Item ignore = null;
+		Token headerEnd = null;
+		ElementFactory.Item childItem = null;
+		List children = new LinkedList();
+		String name = (unitIdToken == null) ? "" : unitIdToken.getText();
 		
 		
 		try {      // for error handling
+			begin = LT(1);
 			match(LITERAL_colimit);
-			ignore=scTerm(null);
+			if ( inputState.guessing==0 ) {
+				headerEnd = begin;
+			}
+			childItem=scTerm(null);
+			if ( inputState.guessing==0 ) {
+				if (childItem != null) children.add(childItem);
+			}
+			if ( inputState.guessing==0 ) {
+				colimit = builder.createColimit(name);
+				if (unitIdToken != null) {
+				begin = unitIdToken;
+				}
+				builder.setParent(children, colimit);
+				ParserUtil.setAllBounds(builder, colimit, begin, headerEnd, LT(0));
+				
+			}
 		}
 		catch (RecognitionException ex) {
 			if (inputState.guessing==0) {
@@ -733,6 +798,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		ElementFactory.Item morphism;
 		
 		Token  begin = null;
+		Token  end = null;
 		
 		morphism = null;
 		ElementFactory.Item src = null;
@@ -758,14 +824,17 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if ( inputState.guessing==0 ) {
 				if (dest != null) children.add(dest);
 			}
+			match(LBRACE);
 			nameMap();
+			end = LT(1);
+			match(RBRACE);
 			if ( inputState.guessing==0 ) {
 				morphism = builder.createMorphism(name);
 				if (unitIdToken != null) {
 				begin = unitIdToken;
 				}
 				builder.setParent(children, morphism);
-				ParserUtil.setAllBounds(builder, morphism, begin, headerEnd, LT(0));
+				ParserUtil.setAllBounds(builder, morphism, begin, headerEnd, end);
 				
 			}
 		}
@@ -1091,42 +1160,23 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 	private final String  nameMap() throws RecognitionException, TokenStreamException {
 		String nameMap;
 		
-		Token  lbrace = null;
 		Token  comma = null;
-		Token  rbrace = null;
 		
 		nameMap = "";
 		String text = null;
 		
 		
 		try {      // for error handling
-			lbrace = LT(1);
-			match(LBRACE);
-			if ( inputState.guessing==0 ) {
-				nameMap = lbrace.getText();
-			}
 			{
-			switch ( LA(1)) {
-			case LITERAL_print:
-			case LITERAL_translate:
-			case LITERAL_diagram:
-			case LBRACE:
-			case LITERAL_colimit:
-			case IDENTIFIER:
-			case LITERAL_sort:
-			case LITERAL_op:
-			case STAR:
-			case NON_WORD_SYMBOL:
-			case LITERAL_Snark:
-			{
+			if ((_tokenSet_22.member(LA(1))) && (_tokenSet_23.member(LA(2))) && (_tokenSet_24.member(LA(3)))) {
 				text=nameMapItem();
 				if ( inputState.guessing==0 ) {
 					nameMap = nameMap + text;
 				}
 				{
-				_loop42:
+				_loop43:
 				do {
-					if ((LA(1)==COMMA)) {
+					if ((LA(1)==COMMA) && (_tokenSet_22.member(LA(2))) && (_tokenSet_23.member(LA(3)))) {
 						comma = LT(1);
 						match(COMMA);
 						text=nameMapItem();
@@ -1135,27 +1185,18 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 						}
 					}
 					else {
-						break _loop42;
+						break _loop43;
 					}
 					
 				} while (true);
 				}
-				break;
 			}
-			case RBRACE:
-			{
-				break;
+			else if ((_tokenSet_9.member(LA(1))) && (_tokenSet_15.member(LA(2))) && (_tokenSet_16.member(LA(3)))) {
 			}
-			default:
-			{
+			else {
 				throw new NoViableAltException(LT(1), getFilename());
 			}
-			}
-			}
-			rbrace = LT(1);
-			match(RBRACE);
-			if ( inputState.guessing==0 ) {
-				nameMap = nameMap + rbrace;
+			
 			}
 		}
 		catch (RecognitionException ex) {
@@ -1184,7 +1225,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_22);
+				consumeUntil(_tokenSet_25);
 			} else {
 			  throw ex;
 			}
@@ -1192,15 +1233,19 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return qlf;
 	}
 	
-	private final void scDiagElem() throws RecognitionException, TokenStreamException {
+	private final ElementFactory.Item  scDiagElem() throws RecognitionException, TokenStreamException {
+		ElementFactory.Item diagElem;
+		
+		
+		diagElem = null;
 		
 		
 		try {      // for error handling
-			if ((_tokenSet_0.member(LA(1))) && (LA(2)==NON_WORD_SYMBOL) && (_tokenSet_1.member(LA(3)))) {
-				scDiagNode();
+			if ((_tokenSet_0.member(LA(1))) && (LA(2)==NON_WORD_SYMBOL)) {
+				diagElem=scDiagNode();
 			}
-			else if ((_tokenSet_0.member(LA(1))) && (LA(2)==NON_WORD_SYMBOL) && (_tokenSet_0.member(LA(3)))) {
-				scDiagEdge();
+			else if ((_tokenSet_0.member(LA(1))) && (LA(2)==COLON)) {
+				diagElem=scDiagEdge();
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -1211,11 +1256,12 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_23);
+				consumeUntil(_tokenSet_26);
 			} else {
 			  throw ex;
 			}
 		}
+		return diagElem;
 	}
 	
 	private final void scSubstituteTermList() throws RecognitionException, TokenStreamException {
@@ -1229,13 +1275,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			ignore=scTerm(null);
 			match(RBRACKET);
 			{
-			_loop55:
+			_loop56:
 			do {
-				if ((LA(1)==LBRACKET) && (_tokenSet_1.member(LA(2))) && (_tokenSet_24.member(LA(3)))) {
+				if ((LA(1)==LBRACKET) && (_tokenSet_1.member(LA(2))) && (_tokenSet_27.member(LA(3)))) {
 					scSubstituteTermList();
 				}
 				else {
-					break _loop55;
+					break _loop56;
 				}
 				
 			} while (true);
@@ -1267,7 +1313,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_25);
+				consumeUntil(_tokenSet_28);
 			} else {
 			  throw ex;
 			}
@@ -1286,8 +1332,8 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		try {      // for error handling
 			match(LITERAL_using);
 			{
-			int _cnt59=0;
-			_loop59:
+			int _cnt60=0;
+			_loop60:
 			do {
 				if ((_tokenSet_0.member(LA(1))) && (_tokenSet_9.member(LA(2))) && (_tokenSet_15.member(LA(3)))) {
 					anAssertion=name();
@@ -1297,10 +1343,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					anAssertion=name();
 				}
 				else {
-					if ( _cnt59>=1 ) { break _loop59; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt60>=1 ) { break _loop60; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt59++;
+				_cnt60++;
 			} while (true);
 			}
 		}
@@ -1327,17 +1373,17 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		try {      // for error handling
 			match(LITERAL_options);
 			{
-			int _cnt62=0;
-			_loop62:
+			int _cnt63=0;
+			_loop63:
 			do {
 				if ((_tokenSet_18.member(LA(1)))) {
 					anOption=literal();
 				}
 				else {
-					if ( _cnt62>=1 ) { break _loop62; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt63>=1 ) { break _loop63; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt62++;
+				_cnt63++;
 			} while (true);
 			}
 		}
@@ -1445,7 +1491,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_26);
+				consumeUntil(_tokenSet_29);
 			} else {
 			  throw ex;
 			}
@@ -1461,10 +1507,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			if ((_tokenSet_27.member(LA(1))) && (_tokenSet_28.member(LA(2))) && (_tokenSet_29.member(LA(3)))) {
+			if ((_tokenSet_30.member(LA(1))) && (_tokenSet_23.member(LA(2))) && (_tokenSet_31.member(LA(3)))) {
 				mapItem=sortNameMapItem();
 			}
-			else if ((_tokenSet_30.member(LA(1))) && (_tokenSet_28.member(LA(2))) && (_tokenSet_31.member(LA(3)))) {
+			else if ((_tokenSet_32.member(LA(1))) && (_tokenSet_23.member(LA(2))) && (_tokenSet_24.member(LA(3)))) {
 				mapItem=opNameMapItem();
 			}
 			else {
@@ -1476,7 +1522,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_23);
+				consumeUntil(_tokenSet_9);
 			} else {
 			  throw ex;
 			}
@@ -1538,7 +1584,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_23);
+				consumeUntil(_tokenSet_9);
 			} else {
 			  throw ex;
 			}
@@ -1600,7 +1646,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_23);
+				consumeUntil(_tokenSet_9);
 			} else {
 			  throw ex;
 			}
@@ -1639,7 +1685,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					sortName = "{" + member;
 				}
 				{
-				_loop74:
+				_loop75:
 				do {
 					if ((LA(1)==COMMA)) {
 						match(COMMA);
@@ -1649,7 +1695,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 						}
 					}
 					else {
-						break _loop74;
+						break _loop75;
 					}
 					
 				} while (true);
@@ -1670,7 +1716,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_32);
+				consumeUntil(_tokenSet_33);
 			} else {
 			  throw ex;
 			}
@@ -1717,7 +1763,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				name = text;
 			}
 			{
-			if ((LA(1)==NON_WORD_SYMBOL) && (_tokenSet_33.member(LA(2))) && (_tokenSet_34.member(LA(3)))) {
+			if ((LA(1)==NON_WORD_SYMBOL) && (_tokenSet_34.member(LA(2))) && (_tokenSet_35.member(LA(3)))) {
 				nonWordSymbol(":");
 				if ( inputState.guessing==0 ) {
 					name = name + " : ";
@@ -1727,7 +1773,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					name = name + text;
 				}
 			}
-			else if ((LA(1)==COMMA||LA(1)==RBRACE||LA(1)==NON_WORD_SYMBOL) && (_tokenSet_35.member(LA(2))) && (_tokenSet_36.member(LA(3)))) {
+			else if ((_tokenSet_9.member(LA(1))) && (_tokenSet_15.member(LA(2))) && (_tokenSet_16.member(LA(3)))) {
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -1739,7 +1785,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_37);
+				consumeUntil(_tokenSet_9);
 			} else {
 			  throw ex;
 			}
@@ -1778,7 +1824,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					opName = "{" + member;
 				}
 				{
-				_loop86:
+				_loop87:
 				do {
 					if ((LA(1)==COMMA)) {
 						match(COMMA);
@@ -1788,7 +1834,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 						}
 					}
 					else {
-						break _loop86;
+						break _loop87;
 					}
 					
 				} while (true);
@@ -1809,7 +1855,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_38);
+				consumeUntil(_tokenSet_36);
 			} else {
 			  throw ex;
 			}
@@ -1827,66 +1873,38 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt101=0;
-			_loop101:
+			int _cnt102=0;
+			_loop102:
 			do {
-				switch ( LA(1)) {
-				case STRING_LITERAL:
-				case NAT_LITERAL:
-				case CHAR_LITERAL:
-				case LITERAL_true:
-				case LITERAL_false:
-				{
+				if ((_tokenSet_0.member(LA(1))) && (_tokenSet_37.member(LA(2))) && (_tokenSet_38.member(LA(3)))) {
+					text=qualifiableRef();
+					if ( inputState.guessing==0 ) {
+						sort = sort + text;
+					}
+				}
+				else if ((_tokenSet_18.member(LA(1)))) {
 					text=literal();
 					if ( inputState.guessing==0 ) {
 						sort = sort + text;
 					}
-					break;
 				}
-				case LITERAL_let:
-				case LITERAL_in:
-				case LITERAL_fa:
-				case LITERAL_as:
-				case LITERAL_quotient:
-				case LITERAL_case:
-				case LITERAL_choose:
-				case LITERAL_else:
-				case LITERAL_embed:
-				case 62:
-				case LITERAL_ex:
-				case LITERAL_fn:
-				case LITERAL_if:
-				case LITERAL_of:
-				case LITERAL_project:
-				case LITERAL_relax:
-				case LITERAL_restrict:
-				case LITERAL_then:
-				case LITERAL_where:
-				{
+				else if ((_tokenSet_39.member(LA(1))) && (_tokenSet_40.member(LA(2))) && (_tokenSet_38.member(LA(3)))) {
+					text=specialSymbol();
+					if ( inputState.guessing==0 ) {
+						sort = sort + text;
+					}
+				}
+				else if ((_tokenSet_41.member(LA(1))) && (_tokenSet_40.member(LA(2))) && (_tokenSet_38.member(LA(3)))) {
 					text=expressionKeyword();
 					if ( inputState.guessing==0 ) {
 						sort = sort + text;
 					}
-					break;
 				}
-				default:
-					if ((_tokenSet_0.member(LA(1))) && (_tokenSet_39.member(LA(2))) && (_tokenSet_40.member(LA(3)))) {
-						text=qualifiableRef();
-						if ( inputState.guessing==0 ) {
-							sort = sort + text;
-						}
-					}
-					else if ((_tokenSet_41.member(LA(1))) && (_tokenSet_42.member(LA(2))) && (_tokenSet_40.member(LA(3)))) {
-						text=specialSymbol();
-						if ( inputState.guessing==0 ) {
-							sort = sort + text;
-						}
-					}
 				else {
-					if ( _cnt101>=1 ) { break _loop101; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt102>=1 ) { break _loop102; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
-				}
-				_cnt101++;
+				
+				_cnt102++;
 			} while (true);
 			}
 		}
@@ -1894,7 +1912,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_43);
+				consumeUntil(_tokenSet_42);
 			} else {
 			  throw ex;
 			}
@@ -1902,9 +1920,11 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return sort;
 	}
 	
-	private final void scDiagNode() throws RecognitionException, TokenStreamException {
+	private final ElementFactory.Item  scDiagNode() throws RecognitionException, TokenStreamException {
+		ElementFactory.Item diagNode;
 		
 		
+		diagNode = null;
 		String nodeName = null;
 		ElementFactory.Item ignore = null;
 		
@@ -1918,16 +1938,19 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_23);
+				consumeUntil(_tokenSet_26);
 			} else {
 			  throw ex;
 			}
 		}
+		return diagNode;
 	}
 	
-	private final void scDiagEdge() throws RecognitionException, TokenStreamException {
+	private final ElementFactory.Item  scDiagEdge() throws RecognitionException, TokenStreamException {
+		ElementFactory.Item diagEdge;
 		
 		
+		diagEdge = null;
 		String name1 = null;
 		String name2 = null;
 		String name3 = null;
@@ -1936,9 +1959,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			name1=name();
-			nonWordSymbol(":");
+			match(COLON);
 			name2=name();
-			nonWordSymbol("->");
+			match(ARROW);
 			name3=name();
 			nonWordSymbol("+->");
 			ignore=scTerm(null);
@@ -1947,11 +1970,12 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_23);
+				consumeUntil(_tokenSet_26);
 			} else {
 			  throw ex;
 			}
 		}
+		return diagEdge;
 	}
 	
 	private final String  literal() throws RecognitionException, TokenStreamException {
@@ -2009,7 +2033,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_44);
+				consumeUntil(_tokenSet_43);
 			} else {
 			  throw ex;
 			}
@@ -2058,7 +2082,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_45);
+				consumeUntil(_tokenSet_44);
 			} else {
 			  throw ex;
 			}
@@ -2331,7 +2355,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					paramList.add(param);
 				}
 				{
-				_loop81:
+				_loop82:
 				do {
 					if ((LA(1)==COMMA)) {
 						match(COMMA);
@@ -2341,7 +2365,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 						}
 					}
 					else {
-						break _loop81;
+						break _loop82;
 					}
 					
 				} while (true);
@@ -2362,7 +2386,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_46);
+				consumeUntil(_tokenSet_45);
 			} else {
 			  throw ex;
 			}
@@ -2378,7 +2402,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			if ((LA(1)==IDENTIFIER) && (_tokenSet_32.member(LA(2)))) {
+			if ((LA(1)==IDENTIFIER) && (_tokenSet_33.member(LA(2)))) {
 				sortName=unqualifiedSortName();
 			}
 			else if ((_tokenSet_0.member(LA(1))) && (LA(2)==DOT)) {
@@ -2393,7 +2417,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_32);
+				consumeUntil(_tokenSet_33);
 			} else {
 			  throw ex;
 			}
@@ -2415,7 +2439,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_32);
+				consumeUntil(_tokenSet_33);
 			} else {
 			  throw ex;
 			}
@@ -2451,7 +2475,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_32);
+				consumeUntil(_tokenSet_33);
 			} else {
 			  throw ex;
 			}
@@ -2487,7 +2511,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_47);
+				consumeUntil(_tokenSet_46);
 			} else {
 			  throw ex;
 			}
@@ -2510,7 +2534,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					sortScheme = sortScheme + text;
 				}
 			}
-			else if ((_tokenSet_33.member(LA(1))) && (_tokenSet_39.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
+			else if ((_tokenSet_34.member(LA(1))) && (_tokenSet_47.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -2613,7 +2637,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_33);
+				consumeUntil(_tokenSet_34);
 			} else {
 			  throw ex;
 			}
@@ -2643,7 +2667,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				list = list + text;
 			}
 			{
-			_loop97:
+			_loop98:
 			do {
 				if ((LA(1)==COMMA)) {
 					comma = LT(1);
@@ -2654,7 +2678,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					}
 				}
 				else {
-					break _loop97;
+					break _loop98;
 				}
 				
 			} while (true);
@@ -2669,7 +2693,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_33);
+				consumeUntil(_tokenSet_34);
 			} else {
 			  throw ex;
 			}
@@ -2713,7 +2737,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_42);
+				consumeUntil(_tokenSet_40);
 			} else {
 			  throw ex;
 			}
@@ -2852,7 +2876,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_42);
+				consumeUntil(_tokenSet_40);
 			} else {
 			  throw ex;
 			}
@@ -2960,10 +2984,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case LITERAL_let:
 			{
 				{
-				boolean synPredMatched149 = false;
-				if (((LA(1)==LITERAL_let) && (LA(2)==LITERAL_def) && (_tokenSet_42.member(LA(3))))) {
-					int _m149 = mark();
-					synPredMatched149 = true;
+				boolean synPredMatched150 = false;
+				if (((LA(1)==LITERAL_let) && (LA(2)==LITERAL_def) && (_tokenSet_40.member(LA(3))))) {
+					int _m150 = mark();
+					synPredMatched150 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -2972,19 +2996,19 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched149 = false;
+						synPredMatched150 = false;
 					}
-					rewind(_m149);
+					rewind(_m150);
 					inputState.guessing--;
 				}
-				if ( synPredMatched149 ) {
+				if ( synPredMatched150 ) {
 					match(LITERAL_let);
 					match(LITERAL_def);
 					if ( inputState.guessing==0 ) {
 						text = "let def";
 					}
 				}
-				else if ((LA(1)==LITERAL_let) && (_tokenSet_42.member(LA(2))) && (_tokenSet_40.member(LA(3)))) {
+				else if ((LA(1)==LITERAL_let) && (_tokenSet_40.member(LA(2))) && (_tokenSet_38.member(LA(3)))) {
 					match(LITERAL_let);
 					if ( inputState.guessing==0 ) {
 						text = "let";
@@ -3063,7 +3087,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_42);
+				consumeUntil(_tokenSet_40);
 			} else {
 			  throw ex;
 			}
@@ -3087,7 +3111,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			match(LITERAL_def);
 			name=qualifiableOpNames();
 			{
-			if ((LA(1)==NON_WORD_SYMBOL||LA(1)==LITERAL_is) && (_tokenSet_33.member(LA(2))) && (_tokenSet_39.member(LA(3)))) {
+			if ((LA(1)==NON_WORD_SYMBOL||LA(1)==LITERAL_is) && (_tokenSet_34.member(LA(2))) && (_tokenSet_47.member(LA(3)))) {
 				equals();
 			}
 			else if ((_tokenSet_51.member(LA(1))) && (_tokenSet_52.member(LA(2))) && (_tokenSet_53.member(LA(3)))) {
@@ -3160,6 +3184,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case ARROW:
 			case STRING_LITERAL:
 			case IDENTIFIER:
+			case COLON:
 			case LBRACKET:
 			case RBRACKET:
 			case STAR:
@@ -3167,7 +3192,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case LITERAL_Snark:
 			case LPAREN:
 			case RPAREN:
-			case COLON:
 			case NAT_LITERAL:
 			case LITERAL_fa:
 			case COLONCOLON:
@@ -3235,7 +3259,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			_loop113:
+			_loop114:
 			do {
 				if ((_tokenSet_54.member(LA(1)))) {
 					pattern=closedPattern();
@@ -3244,7 +3268,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					}
 				}
 				else {
-					break _loop113;
+					break _loop114;
 				}
 				
 			} while (true);
@@ -3275,38 +3299,38 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt142=0;
-			_loop142:
+			int _cnt143=0;
+			_loop143:
 			do {
-				if ((_tokenSet_0.member(LA(1))) && (_tokenSet_39.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
+				if ((_tokenSet_0.member(LA(1))) && (_tokenSet_47.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
 					item=qualifiableRef();
 					if ( inputState.guessing==0 ) {
 						expr = expr + item + " ";
 					}
 				}
-				else if ((_tokenSet_18.member(LA(1))) && (_tokenSet_42.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
+				else if ((_tokenSet_18.member(LA(1))) && (_tokenSet_56.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
 					item=literal();
 					if ( inputState.guessing==0 ) {
 						expr = expr + item + " ";
 					}
 				}
-				else if ((_tokenSet_41.member(LA(1))) && (_tokenSet_42.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
+				else if ((_tokenSet_39.member(LA(1))) && (_tokenSet_56.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
 					item=specialSymbol();
 					if ( inputState.guessing==0 ) {
 						expr = expr + item + " ";
 					}
 				}
-				else if ((_tokenSet_56.member(LA(1))) && (_tokenSet_42.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
+				else if ((_tokenSet_41.member(LA(1))) && (_tokenSet_56.member(LA(2))) && (_tokenSet_48.member(LA(3)))) {
 					item=expressionKeyword();
 					if ( inputState.guessing==0 ) {
 						expr = expr + item + " ";
 					}
 				}
 				else {
-					if ( _cnt142>=1 ) { break _loop142; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt143>=1 ) { break _loop143; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt142++;
+				_cnt143++;
 			} while (true);
 			}
 		}
@@ -3400,7 +3424,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				sortQuant = sortQuant + text;
 			}
 			{
-			_loop110:
+			_loop111:
 			do {
 				if ((LA(1)==COMMA)) {
 					comma = LT(1);
@@ -3411,7 +3435,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					}
 				}
 				else {
-					break _loop110;
+					break _loop111;
 				}
 				
 			} while (true);
@@ -3426,7 +3450,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_33);
+				consumeUntil(_tokenSet_34);
 			} else {
 			  throw ex;
 			}
@@ -3503,10 +3527,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			if ((_tokenSet_60.member(LA(1))) && (_tokenSet_33.member(LA(2))) && (_tokenSet_61.member(LA(3)))) {
+			if ((_tokenSet_60.member(LA(1))) && (_tokenSet_34.member(LA(2))) && (_tokenSet_61.member(LA(3)))) {
 				pattern=basicPattern();
 			}
-			else if ((_tokenSet_60.member(LA(1))) && (_tokenSet_33.member(LA(2))) && (_tokenSet_62.member(LA(3)))) {
+			else if ((_tokenSet_60.member(LA(1))) && (_tokenSet_34.member(LA(2))) && (_tokenSet_62.member(LA(3)))) {
 				pattern=annotatedPattern();
 			}
 			else {
@@ -3630,9 +3654,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				}
 				case COMMA:
 				case RBRACE:
+				case COLON:
 				case RBRACKET:
 				case RPAREN:
-				case COLON:
 				{
 					break;
 				}
@@ -3817,7 +3841,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					pattern = pattern + text;
 				}
 				{
-				_loop133:
+				_loop134:
 				do {
 					if ((LA(1)==COMMA)) {
 						comma = LT(1);
@@ -3828,7 +3852,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 						}
 					}
 					else {
-						break _loop133;
+						break _loop134;
 					}
 					
 				} while (true);
@@ -3928,7 +3952,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					pattern = pattern + text;
 				}
 				{
-				_loop129:
+				_loop130:
 				do {
 					if ((LA(1)==COMMA)) {
 						comma = LT(1);
@@ -3939,7 +3963,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 						}
 					}
 					else {
-						break _loop129;
+						break _loop130;
 					}
 					
 				} while (true);
@@ -3996,7 +4020,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				pattern = pattern + text;
 			}
 			{
-			_loop136:
+			_loop137:
 			do {
 				if ((LA(1)==COMMA)) {
 					comma = LT(1);
@@ -4007,7 +4031,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					}
 				}
 				else {
-					break _loop136;
+					break _loop137;
 				}
 				
 			} while (true);
@@ -4101,7 +4125,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_23);
+				consumeUntil(_tokenSet_26);
 			} else {
 			  throw ex;
 			}
@@ -4148,7 +4172,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_44);
+				consumeUntil(_tokenSet_43);
 			} else {
 			  throw ex;
 			}
@@ -4187,6 +4211,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		"'..'",
 		"\"sort\"",
 		"\"op\"",
+		"':'",
 		"'['",
 		"']'",
 		"\"using\"",
@@ -4198,7 +4223,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		"'.'",
 		"'('",
 		"')'",
-		"':'",
 		"\"infixl\"",
 		"\"infixr\"",
 		"an integer",
@@ -4249,143 +4273,143 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		"NON_WORD_MARK"
 	};
 	
-	private static final long _tokenSet_0_data_[] = { 60163166736L, 0L };
+	private static final long _tokenSet_0_data_[] = { 120292708880L, 0L };
 	public static final BitSet _tokenSet_0 = new BitSet(_tokenSet_0_data_);
-	private static final long _tokenSet_1_data_[] = { 60245611184L, 0L };
+	private static final long _tokenSet_1_data_[] = { 120375153328L, 0L };
 	public static final BitSet _tokenSet_1 = new BitSet(_tokenSet_1_data_);
-	private static final long _tokenSet_2_data_[] = { 527895502732274L, 0L };
+	private static final long _tokenSet_2_data_[] = { 528024888622066L, 0L };
 	public static final BitSet _tokenSet_2 = new BitSet(_tokenSet_2_data_);
-	private static final long _tokenSet_3_data_[] = { 527895502995442L, 256L, 0L, 0L };
+	private static final long _tokenSet_3_data_[] = { 528024888918002L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_3 = new BitSet(_tokenSet_3_data_);
 	private static final long _tokenSet_4_data_[] = { 2L, 0L };
 	public static final BitSet _tokenSet_4 = new BitSet(_tokenSet_4_data_);
-	private static final long _tokenSet_5_data_[] = { 527903019237362L, 0L };
+	private static final long _tokenSet_5_data_[] = { 528039921319922L, 0L };
 	public static final BitSet _tokenSet_5 = new BitSet(_tokenSet_5_data_);
-	private static final long _tokenSet_6_data_[] = { 252738278246055922L, 256L, 0L, 0L };
+	private static final long _tokenSet_6_data_[] = { 252738415148138482L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_6 = new BitSet(_tokenSet_6_data_);
-	private static final long _tokenSet_7_data_[] = { 527895502732272L, 0L };
+	private static final long _tokenSet_7_data_[] = { 528024888622064L, 0L };
 	public static final BitSet _tokenSet_7 = new BitSet(_tokenSet_7_data_);
-	private static final long _tokenSet_8_data_[] = { 527895502995440L, 256L, 0L, 0L };
+	private static final long _tokenSet_8_data_[] = { 528024888918000L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_8 = new BitSet(_tokenSet_8_data_);
-	private static final long _tokenSet_9_data_[] = { 68216551186L, 0L };
+	private static final long _tokenSet_9_data_[] = { 136399157010L, 0L };
 	public static final BitSet _tokenSet_9 = new BitSet(_tokenSet_9_data_);
-	private static final long _tokenSet_10_data_[] = { 60163166994L, 0L };
+	private static final long _tokenSet_10_data_[] = { 120292709138L, 0L };
 	public static final BitSet _tokenSet_10 = new BitSet(_tokenSet_10_data_);
 	private static final long _tokenSet_11_data_[] = { -16777230L, 511L, 0L, 0L };
 	public static final BitSet _tokenSet_11 = new BitSet(_tokenSet_11_data_);
-	private static final long _tokenSet_12_data_[] = { -534575537196112L, 255L, 0L, 0L };
+	private static final long _tokenSet_12_data_[] = { -534788138077264L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_12 = new BitSet(_tokenSet_12_data_);
-	private static final long _tokenSet_13_data_[] = { 68308825874L, 0L };
+	private static final long _tokenSet_13_data_[] = { 136491431698L, 0L };
 	public static final BitSet _tokenSet_13 = new BitSet(_tokenSet_13_data_);
-	private static final long _tokenSet_14_data_[] = { 527834703462400L, 0L };
+	private static final long _tokenSet_14_data_[] = { 527903422939136L, 0L };
 	public static final BitSet _tokenSet_14 = new BitSet(_tokenSet_14_data_);
-	private static final long _tokenSet_15_data_[] = { 252210443928467378L, 256L, 0L, 0L };
+	private static final long _tokenSet_15_data_[] = { 252210512111073202L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_15 = new BitSet(_tokenSet_15_data_);
-	private static final long _tokenSet_16_data_[] = { 252738415685009394L, 256L, 0L, 0L };
+	private static final long _tokenSet_16_data_[] = { 252738690562916338L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_16 = new BitSet(_tokenSet_16_data_);
-	private static final long _tokenSet_17_data_[] = { 60163183120L, 0L };
+	private static final long _tokenSet_17_data_[] = { 120292725264L, 0L };
 	public static final BitSet _tokenSet_17 = new BitSet(_tokenSet_17_data_);
 	private static final long _tokenSet_18_data_[] = { 252210375226818560L, 0L };
 	public static final BitSet _tokenSet_18 = new BitSet(_tokenSet_18_data_);
-	private static final long _tokenSet_19_data_[] = { 252210443443369746L, 0L };
+	private static final long _tokenSet_19_data_[] = { 252210511625975570L, 0L };
 	public static final BitSet _tokenSet_19 = new BitSet(_tokenSet_19_data_);
-	private static final long _tokenSet_20_data_[] = { 527902920013650L, 0L };
+	private static final long _tokenSet_20_data_[] = { 528039822096210L, 0L };
 	public static final BitSet _tokenSet_20 = new BitSet(_tokenSet_20_data_);
-	private static final long _tokenSet_21_data_[] = { 527834703462464L, 0L };
+	private static final long _tokenSet_21_data_[] = { 527903422939200L, 0L };
 	public static final BitSet _tokenSet_21 = new BitSet(_tokenSet_21_data_);
-	private static final long _tokenSet_22_data_[] = { 137438955520L, 0L };
+	private static final long _tokenSet_22_data_[] = { 120695370256L, 0L };
 	public static final BitSet _tokenSet_22 = new BitSet(_tokenSet_22_data_);
-	private static final long _tokenSet_23_data_[] = { 49152L, 0L };
+	private static final long _tokenSet_23_data_[] = { 395170624016L, 0L };
 	public static final BitSet _tokenSet_23 = new BitSet(_tokenSet_23_data_);
-	private static final long _tokenSet_24_data_[] = { 527896576474096L, 0L };
+	private static final long _tokenSet_24_data_[] = { -534513476832368L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_24 = new BitSet(_tokenSet_24_data_);
-	private static final long _tokenSet_25_data_[] = { 256L, 0L };
+	private static final long _tokenSet_25_data_[] = { 274877908992L, 0L };
 	public static final BitSet _tokenSet_25 = new BitSet(_tokenSet_25_data_);
-	private static final long _tokenSet_26_data_[] = { 527902936790866L, 0L };
+	private static final long _tokenSet_26_data_[] = { 49152L, 0L };
 	public static final BitSet _tokenSet_26 = new BitSet(_tokenSet_26_data_);
-	private static final long _tokenSet_27_data_[] = { 60297392656L, 0L };
+	private static final long _tokenSet_27_data_[] = { 528027036105712L, 0L };
 	public static final BitSet _tokenSet_27 = new BitSet(_tokenSet_27_data_);
-	private static final long _tokenSet_28_data_[] = { 197602128400L, 0L };
+	private static final long _tokenSet_28_data_[] = { 256L, 0L };
 	public static final BitSet _tokenSet_28 = new BitSet(_tokenSet_28_data_);
-	private static final long _tokenSet_29_data_[] = { 197602177552L, 0L };
+	private static final long _tokenSet_29_data_[] = { 528039838873426L, 0L };
 	public static final BitSet _tokenSet_29 = new BitSet(_tokenSet_29_data_);
-	private static final long _tokenSet_30_data_[] = { 60431610384L, 0L };
+	private static final long _tokenSet_30_data_[] = { 120426934800L, 0L };
 	public static final BitSet _tokenSet_30 = new BitSet(_tokenSet_30_data_);
-	private static final long _tokenSet_31_data_[] = { -534438314904688L, 255L, 0L, 0L };
+	private static final long _tokenSet_31_data_[] = { 395170673168L, 0L };
 	public static final BitSet _tokenSet_31 = new BitSet(_tokenSet_31_data_);
-	private static final long _tokenSet_32_data_[] = { 528126794842176L, 256L, 0L, 0L };
+	private static final long _tokenSet_32_data_[] = { 120561152528L, 0L };
 	public static final BitSet _tokenSet_32 = new BitSet(_tokenSet_32_data_);
-	private static final long _tokenSet_33_data_[] = { -534575753858160L, 255L, 0L, 0L };
+	private static final long _tokenSet_33_data_[] = { 528589577910098L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_33 = new BitSet(_tokenSet_33_data_);
-	private static final long _tokenSet_34_data_[] = { -499253942815856L, 255L, 0L, 0L };
+	private static final long _tokenSet_34_data_[] = { -534788354739312L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_34 = new BitSet(_tokenSet_34_data_);
-	private static final long _tokenSet_35_data_[] = { 68619204370L, 0L };
+	private static final long _tokenSet_35_data_[] = { -499316219840622L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_35 = new BitSet(_tokenSet_35_data_);
-	private static final long _tokenSet_36_data_[] = { 252210581367420850L, 256L, 0L, 0L };
+	private static final long _tokenSet_36_data_[] = { 254469458802112274L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_36 = new BitSet(_tokenSet_36_data_);
-	private static final long _tokenSet_37_data_[] = { 17179918336L, 0L };
+	private static final long _tokenSet_37_data_[] = { -6597168990254L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_37 = new BitSet(_tokenSet_37_data_);
-	private static final long _tokenSet_38_data_[] = { 254470164250157056L, 256L, 0L, 0L };
+	private static final long _tokenSet_38_data_[] = { -6597086545934L, 511L, 0L, 0L };
 	public static final BitSet _tokenSet_38 = new BitSet(_tokenSet_38_data_);
-	private static final long _tokenSet_39_data_[] = { -6603611442224L, 255L, 0L, 0L };
+	private static final long _tokenSet_39_data_[] = { 29838017737056256L, 0L };
 	public static final BitSet _tokenSet_39 = new BitSet(_tokenSet_39_data_);
-	private static final long _tokenSet_40_data_[] = { -6597093492782L, 511L, 0L, 0L };
+	private static final long _tokenSet_40_data_[] = { -6872046897198L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_40 = new BitSet(_tokenSet_40_data_);
-	private static final long _tokenSet_41_data_[] = { 29838281877544960L, 0L };
+	private static final long _tokenSet_41_data_[] = { -282583284431453824L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_41 = new BitSet(_tokenSet_41_data_);
-	private static final long _tokenSet_42_data_[] = { -6741050395696L, 255L, 0L, 0L };
+	private static final long _tokenSet_42_data_[] = { 529139333723986L, 0L };
 	public static final BitSet _tokenSet_42 = new BitSet(_tokenSet_42_data_);
-	private static final long _tokenSet_43_data_[] = { 528402712936512L, 0L };
+	private static final long _tokenSet_43_data_[] = { -6872046897198L, 511L, 0L, 0L };
 	public static final BitSet _tokenSet_43 = new BitSet(_tokenSet_43_data_);
-	private static final long _tokenSet_44_data_[] = { -6734607943726L, 511L, 0L, 0L };
+	private static final long _tokenSet_44_data_[] = { 256680714527176530L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_44 = new BitSet(_tokenSet_44_data_);
-	private static final long _tokenSet_45_data_[] = { 256680802573672514L, 256L, 0L, 0L };
+	private static final long _tokenSet_45_data_[] = { 527937782677568L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_45 = new BitSet(_tokenSet_45_data_);
-	private static final long _tokenSet_46_data_[] = { 527851883331648L, 256L, 0L, 0L };
+	private static final long _tokenSet_46_data_[] = { 536870912L, 0L };
 	public static final BitSet _tokenSet_46 = new BitSet(_tokenSet_46_data_);
-	private static final long _tokenSet_47_data_[] = { 1099511627776L, 0L };
+	private static final long _tokenSet_47_data_[] = { -6610053893168L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_47 = new BitSet(_tokenSet_47_data_);
 	private static final long _tokenSet_48_data_[] = { -6597093492782L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_48 = new BitSet(_tokenSet_48_data_);
-	private static final long _tokenSet_49_data_[] = { -143980629040L, 511L, 0L, 0L };
+	private static final long _tokenSet_49_data_[] = { -274977130542L, 511L, 0L, 0L };
 	public static final BitSet _tokenSet_49 = new BitSet(_tokenSet_49_data_);
-	private static final long _tokenSet_50_data_[] = { 549755830272L, 0L };
+	private static final long _tokenSet_50_data_[] = { 1099511644160L, 0L };
 	public static final BitSet _tokenSet_50 = new BitSet(_tokenSet_50_data_);
-	private static final long _tokenSet_51_data_[] = { 254462467668713472L, 256L, 0L, 0L };
+	private static final long _tokenSet_51_data_[] = { 254462760263360512L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_51 = new BitSet(_tokenSet_51_data_);
-	private static final long _tokenSet_52_data_[] = { -534575753858160L, 511L, 0L, 0L };
+	private static final long _tokenSet_52_data_[] = { -534788354739312L, 511L, 0L, 0L };
 	public static final BitSet _tokenSet_52 = new BitSet(_tokenSet_52_data_);
-	private static final long _tokenSet_53_data_[] = { -6603611442224L, 511L, 0L, 0L };
+	private static final long _tokenSet_53_data_[] = { -6610053893168L, 511L, 0L, 0L };
 	public static final BitSet _tokenSet_53 = new BitSet(_tokenSet_53_data_);
-	private static final long _tokenSet_54_data_[] = { 254462450488844288L, 0L };
+	private static final long _tokenSet_54_data_[] = { 254462725903622144L, 0L };
 	public static final BitSet _tokenSet_54 = new BitSet(_tokenSet_54_data_);
-	private static final long _tokenSet_55_data_[] = { 17179869184L, 256L, 0L, 0L };
+	private static final long _tokenSet_55_data_[] = { 34359738368L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_55 = new BitSet(_tokenSet_55_data_);
-	private static final long _tokenSet_56_data_[] = { -282583284431453824L, 255L, 0L, 0L };
+	private static final long _tokenSet_56_data_[] = { -6884931800112L, 255L, 0L, 0L };
 	public static final BitSet _tokenSet_56 = new BitSet(_tokenSet_56_data_);
-	private static final long _tokenSet_57_data_[] = { 259493944949289552L, 0L };
+	private static final long _tokenSet_57_data_[] = { 259494349213086288L, 0L };
 	public static final BitSet _tokenSet_57 = new BitSet(_tokenSet_57_data_);
 	private static final long _tokenSet_58_data_[] = { 33554432L, 0L };
 	public static final BitSet _tokenSet_58 = new BitSet(_tokenSet_58_data_);
-	private static final long _tokenSet_59_data_[] = { 255027067963367426L, 256L, 0L, 0L };
+	private static final long _tokenSet_59_data_[] = { 255026812412813314L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_59 = new BitSet(_tokenSet_59_data_);
-	private static final long _tokenSet_60_data_[] = { 258966110245827088L, 0L };
+	private static final long _tokenSet_60_data_[] = { 258966445790147088L, 0L };
 	public static final BitSet _tokenSet_60 = new BitSet(_tokenSet_60_data_);
-	private static final long _tokenSet_61_data_[] = { -499253942815854L, 511L, 0L, 0L };
+	private static final long _tokenSet_61_data_[] = { -499329104743534L, 511L, 0L, 0L };
 	public static final BitSet _tokenSet_61 = new BitSet(_tokenSet_61_data_);
-	private static final long _tokenSet_62_data_[] = { -499253942815856L, 511L, 0L, 0L };
+	private static final long _tokenSet_62_data_[] = { -499329104743536L, 511L, 0L, 0L };
 	public static final BitSet _tokenSet_62 = new BitSet(_tokenSet_62_data_);
-	private static final long _tokenSet_63_data_[] = { 550829604864L, 0L };
+	private static final long _tokenSet_63_data_[] = { 1101659160576L, 0L };
 	public static final BitSet _tokenSet_63 = new BitSet(_tokenSet_63_data_);
-	private static final long _tokenSet_64_data_[] = { 1650341232640L, 0L };
+	private static final long _tokenSet_64_data_[] = { 1102196031488L, 0L };
 	public static final BitSet _tokenSet_64 = new BitSet(_tokenSet_64_data_);
-	private static final long _tokenSet_65_data_[] = { 254462510618456592L, 0L };
+	private static final long _tokenSet_65_data_[] = { 254462846162776592L, 0L };
 	public static final BitSet _tokenSet_65 = new BitSet(_tokenSet_65_data_);
-	private static final long _tokenSet_66_data_[] = { 259530710540481040L, 0L };
+	private static final long _tokenSet_66_data_[] = { 259530497939599888L, 0L };
 	public static final BitSet _tokenSet_66 = new BitSet(_tokenSet_66_data_);
-	private static final long _tokenSet_67_data_[] = { -534575753858158L, 511L, 0L, 0L };
+	private static final long _tokenSet_67_data_[] = { -534788354739310L, 511L, 0L, 0L };
 	public static final BitSet _tokenSet_67 = new BitSet(_tokenSet_67_data_);
-	private static final long _tokenSet_68_data_[] = { 256152967870210050L, 256L, 0L, 0L };
+	private static final long _tokenSet_68_data_[] = { 256152712319655938L, 256L, 0L, 0L };
 	public static final BitSet _tokenSet_68 = new BitSet(_tokenSet_68_data_);
 	
 	}

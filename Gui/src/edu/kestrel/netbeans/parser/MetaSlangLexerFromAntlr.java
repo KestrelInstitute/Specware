@@ -68,16 +68,16 @@ public MetaSlangLexerFromAntlr(LexerSharedInputState state) {
 	literals.put(new ANTLRHashString("generate", this), new Integer(19));
 	literals.put(new ANTLRHashString("infixl", this), new Integer(41));
 	literals.put(new ANTLRHashString("theorem", this), new Integer(46));
-	literals.put(new ANTLRHashString("import", this), new Integer(36));
+	literals.put(new ANTLRHashString("import", this), new Integer(37));
 	literals.put(new ANTLRHashString("infixr", this), new Integer(42));
 	literals.put(new ANTLRHashString("where", this), new Integer(71));
 	literals.put(new ANTLRHashString("conjecture", this), new Integer(48));
 	literals.put(new ANTLRHashString("embed?", this), new Integer(62));
-	literals.put(new ANTLRHashString("Snark", this), new Integer(35));
+	literals.put(new ANTLRHashString("Snark", this), new Integer(36));
 	literals.put(new ANTLRHashString("prove", this), new Integer(22));
 	literals.put(new ANTLRHashString("in", this), new Integer(8));
 	literals.put(new ANTLRHashString("diagram", this), new Integer(12));
-	literals.put(new ANTLRHashString("options", this), new Integer(32));
+	literals.put(new ANTLRHashString("options", this), new Integer(33));
 	literals.put(new ANTLRHashString("fn", this), new Integer(64));
 	literals.put(new ANTLRHashString("of", this), new Integer(66));
 	literals.put(new ANTLRHashString("morphism", this), new Integer(17));
@@ -90,7 +90,7 @@ public MetaSlangLexerFromAntlr(LexerSharedInputState state) {
 	literals.put(new ANTLRHashString("endspec", this), new Integer(6));
 	literals.put(new ANTLRHashString("if", this), new Integer(65));
 	literals.put(new ANTLRHashString("colimit", this), new Integer(16));
-	literals.put(new ANTLRHashString("using", this), new Integer(31));
+	literals.put(new ANTLRHashString("using", this), new Integer(32));
 	literals.put(new ANTLRHashString("else", this), new Integer(60));
 	literals.put(new ANTLRHashString("sort", this), new Integer(27));
 	literals.put(new ANTLRHashString("by", this), new Integer(10));
@@ -369,7 +369,7 @@ tryAgain:
 		
 		match('%');
 		{
-		_loop160:
+		_loop161:
 		do {
 			if ((_tokenSet_4.member(LA(1)))) {
 				{
@@ -377,7 +377,7 @@ tryAgain:
 				}
 			}
 			else {
-				break _loop160;
+				break _loop161;
 			}
 			
 		} while (true);
@@ -426,7 +426,7 @@ tryAgain:
 		
 		match("(*");
 		{
-		_loop166:
+		_loop167:
 		do {
 			if ((LA(1)=='\r') && (LA(2)=='\n') && ((LA(3) >= '\u0003' && LA(3) <= '\u00ff')) && ((LA(4) >= '\u0003' && LA(4) <= '\u00ff'))) {
 				match('\r');
@@ -456,7 +456,7 @@ tryAgain:
 				}
 			}
 			else {
-				break _loop166;
+				break _loop167;
 			}
 			
 		} while (true);
@@ -496,7 +496,7 @@ tryAgain:
 		
 		}
 		{
-		_loop171:
+		_loop172:
 		do {
 			if ((LA(1)=='\r') && (LA(2)=='\n') && (true) && (true)) {
 				match('\r');
@@ -526,16 +526,16 @@ tryAgain:
 				}
 			}
 			else {
-				break _loop171;
+				break _loop172;
 			}
 			
 		} while (true);
 		}
 		{
-		boolean synPredMatched174 = false;
+		boolean synPredMatched175 = false;
 		if (((LA(1)=='\\'))) {
-			int _m174 = mark();
-			synPredMatched174 = true;
+			int _m175 = mark();
+			synPredMatched175 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -543,12 +543,12 @@ tryAgain:
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched174 = false;
+				synPredMatched175 = false;
 			}
-			rewind(_m174);
+			rewind(_m175);
 			inputState.guessing--;
 		}
-		if ( synPredMatched174 ) {
+		if ( synPredMatched175 ) {
 			match("\\begin{spec}");
 		}
 		else {
@@ -866,17 +866,17 @@ tryAgain:
 		match('#');
 		mWORD_START_MARK(false);
 		{
-		int _cnt200=0;
-		_loop200:
+		int _cnt201=0;
+		_loop201:
 		do {
 			if ((_tokenSet_1.member(LA(1)))) {
 				mWORD_CONTINUE_MARK(false);
 			}
 			else {
-				if ( _cnt200>=1 ) { break _loop200; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine());}
+				if ( _cnt201>=1 ) { break _loop201; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine());}
 			}
 			
-			_cnt200++;
+			_cnt201++;
 		} while (true);
 		}
 		if ( _createToken && _token==null && _ttype!=Token.SKIP ) {
@@ -970,13 +970,13 @@ tryAgain:
 			matchRange('1','9');
 			}
 			{
-			_loop204:
+			_loop205:
 			do {
 				if (((LA(1) >= '0' && LA(1) <= '9'))) {
 					matchRange('0','9');
 				}
 				else {
-					break _loop204;
+					break _loop205;
 				}
 				
 			} while (true);
@@ -1359,13 +1359,13 @@ tryAgain:
 		
 		match('"');
 		{
-		_loop215:
+		_loop216:
 		do {
 			if ((_tokenSet_8.member(LA(1)))) {
 				mSTRING_LITERAL_GLYPH(false);
 			}
 			else {
-				break _loop215;
+				break _loop216;
 			}
 			
 		} while (true);
@@ -1444,13 +1444,13 @@ tryAgain:
 		
 		mWORD_START_MARK(false);
 		{
-		_loop219:
+		_loop220:
 		do {
 			if ((_tokenSet_1.member(LA(1)))) {
 				mWORD_CONTINUE_MARK(false);
 			}
 			else {
-				break _loop219;
+				break _loop220;
 			}
 			
 		} while (true);
@@ -1469,17 +1469,17 @@ tryAgain:
 		int _saveIndex;
 		
 		{
-		int _cnt224=0;
-		_loop224:
+		int _cnt225=0;
+		_loop225:
 		do {
 			if ((_tokenSet_3.member(LA(1)))) {
 				mNON_WORD_MARK(false);
 			}
 			else {
-				if ( _cnt224>=1 ) { break _loop224; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine());}
+				if ( _cnt225>=1 ) { break _loop225; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine());}
 			}
 			
-			_cnt224++;
+			_cnt225++;
 		} while (true);
 		}
 		if ( _createToken && _token==null && _ttype!=Token.SKIP ) {

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:54  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/14 04:12:31  weilyn
  * Added support for proof terms
  *
@@ -328,6 +331,16 @@ public class SourceText implements DocumentBinding {
         return b;
     }
     
+    public Binding.Diagram bindDiagram(DiagramElement impl) {
+        DiagramB b = new DiagramB(impl, this);
+        return b;
+    }
+
+    public Binding.Colimit bindColimit(ColimitElement impl) {
+        ColimitB b = new ColimitB(impl, this);
+        return b;
+    }
+
     public void dumpDocument() {
         System.err.println("Document dump:"); // NOI18N
         final StyledDocument doc = getEditorSupport().getDocument();

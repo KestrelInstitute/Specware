@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/03/29 03:13:59  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.2  2003/03/14 04:14:22  weilyn
  * Added support for proof terms
  *
@@ -35,12 +38,14 @@ public class SourceElementFilter {
     public static final int       SPEC = 1;
     public static final int       PROOF = 2;
     public static final int       MORPHISM = 4;
-    public static final int       ALL = SPEC | PROOF | MORPHISM;
+    public static final int       DIAGRAM = 8;
+    public static final int       COLIMIT = 16;
+    public static final int       ALL = SPEC | PROOF | MORPHISM | DIAGRAM | COLIMIT;
     /** Default order of the top-level element types in the hierarchy.
     * A list, each of whose elements is a bitwise disjunction of element types.
     * By default, only classes and interfaces are listed, and these together.
     */
-    public static final int[]     DEFAULT_ORDER = { SPEC | PROOF | MORPHISM};
+    public static final int[]     DEFAULT_ORDER = { SPEC | PROOF | MORPHISM | DIAGRAM | COLIMIT};
 
     /** stores property value */
     private int[]                 order = null;
