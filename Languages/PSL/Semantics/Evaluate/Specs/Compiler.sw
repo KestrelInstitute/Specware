@@ -173,10 +173,6 @@ The initial and final states here must agree with those used above
 when the initial bSpec was constructed. Perhaps they shouldn't be
 hard coded.
 
-### A problem here is that the dynamic field in ctxt gets an elaborated
-### spec when initialized? This means it will be elaborated again as we
-### compile the command for the procedure and assemble the bSpec.
-
 After compiling the procedure, we replace the procedure entry in the
 oscarSpec computed in the first pass in the oscarSpec with a new one containing
 the full bSpec.
@@ -269,78 +265,13 @@ functions to compile commands. The counter is used generate unique
   sort Systems.Elem = ATerm Position
 \end{spec}
 
-The argument context is used to generate the specs labeling nodes and
-edges. Both the static and the dynamic context should be included. However,
-for efficiency reasons, and since there is no integrity checking, we
-just use the dynamic context.
-
 Even if bipointed \BSpecs\ have one starting node and a set of ending nodes,
 compilation always produces singleton sets of ending nodes. The partial
-evaluator may generate sets with more than one node, though: that is the
+evaluator may generate sets with more than one node, that is the
 reason for having a set of ending nodes.
 
-The current version includes in the morphism, only those
-things where the map differs from the canonical injection.
-
-The next function should be defined inside the scope of the second
-however, Specware does not have let-polymorphism.
-
-This constructs a new Map to be used n a spec morphism. It does so by
-converting an association list (which is easy to give as an argument)
-into a map (which is also implemented as an association list (duh!)). The
-indirection is silly at this point but may help us later when the maps
-are not implemented by association lists.
-
-Note that the generated map gives only where the morphism differ from
-the identity.  However it checks that everything in the domain is mapped
-to something that exists in the codomain, or if it is not mapped, then
-the name in the domain appears unchanged in the codomain.
-
-Would prefer if we had a syntax for map comprehensions. It would
-make much of the following unnecessary.
-
-The following is incomplete. The generated map should be used to
-prefix the identity.
-
-Note also that when we create the morphism, we don't need the maps.
-They can be derived from the specs involved. The morphism should
-be constructed lazily.
-
-\begin{spec}
-%   op makeOpMap : Spec.Spec -> Spec.Spec -> List (Id.Id * Id.Id) -> Env OpMap.Map
-%   def makeOpMap dom cod mapping =
-%     let
-%       def listToMap opMap (domId,codId) = {
-%           domInfo <- findTheOp dom domId;
-%           codInfo <- findTheOp cod codId;
-%           case evalPartial (opMap, domInfo) of
-%             | None -> return (update (opMap, domInfo, codInfo))
-%             | Some prevCodInfo -> 
-%                 if ~(prevCodInfo = codInfo) then
-%                   fatalError ("Domain id mapped twice: " ^ (show domId))
-%                 else
-%                   return opMap
-%         }
-%     in
-%       fold listToMap empty mapping
-
-%   op mkMorph :
-%        ModeSpec
-%     -> ModeSpec
-%     -> List Id.Id 
-%     -> Env Morphism
-%   def mkMorph dom cod opModifiers = {
-%      opMap <- makeOpMap (specOf dom) (specOf cod) opModifiers;
-%      return (makeMorphism (specOf dom) (specOf cod) identSortMap opMap)
-%    }
-\end{spec}
-
-We compile a command with respect to a procedure context. The context records, amongst
-other things, the current static and dynamic specs. These give, respectively, the
-constants and variables currently in scope. Also in the context is a so-called BSpec.
-This is the flow-graph currently being constructed.
-
-The context also includes the identities of the vertices in the BSpec
+We compile a command with respect to a compilation context.
+The context includes the identities of the vertices in the BSpec
 to be connected by the command. That is, the endpoints of a command are already
 part of the BSpec by the time we compile the command. 
 
@@ -353,7 +284,13 @@ part of the BSpec by the time we compile the command.
     case cmd of
       | Seq cmds -> compileSeq ctxt cmds
       | If [] -> specError "compileCommand: If: empty list of alternatives" position
-      | If alts -> compileAlternatives ctxt alts
+      | If alts -> {
+          ctxt <- compileAlternatives ctxt alts;
+          axm <- return (mkNot (disjList (map (fn ((guard,term),_) -> guard) alts, position), position));
+          prop <- makeAxiom (makeId "guard") axm;
+          apexSpec <- addInvariant (modeSpec ctxt) prop position;
+          connectVertices ctxt (initial ctxt) (final ctxt) apexSpec OpRefSet.empty
+        }
 \end{spec}
 
 To compile a loop, we compile the alternatives in the body in such a
@@ -596,34 +533,6 @@ This should be an invariant. Must check.
           | SpecError (pos,str) -> specError ("Variable '" ^ (show leftId) ^ "' is undefined") position
           | _ -> raise except);
     apexSpec <- addVariable (modeSpec ctxt) (varInfo withId (makePrimedId leftId)) position; 
-\end{spec}
- 
-The next clause may seem puzzling. The point is that, from the time
-the spec is assigned to the first state until we handle the subsequent
-assignment, a new variable may have been created. Introducing the variable
-(via a \verb+let+) does not give require a transition.  So by the time
-we get here, the dynamic context may have grown beyond what appears
-at the initial state. If the operator is absent from the start state,
-then it cannot appear on the right side and hence should be discarded
-from the spec at the apex. While it may make some sense semantically,
-it may lead to a misleading error message at elaboration time. If the
-variable just declared appears on the right, then using the code below
-gives rise to an error where the operator is undeclared. In fact, the
-user has simply used an unitialized variable.  Nevertheless, for the
-time being, I've chosen to remove it.
-
-                 let spc = ctxt.dynamic in
-                 let mSpec = modeSpec_ms bspec initial in
-                 (case StringMap_find (mSpec.ops,leftId) of
-                     None -> {name = spc.name,
-                              sorts = spc.sorts,
-                              ops = StringMap_remove (spc.ops,leftId),
-                              properties = spc.properties,
-                              imports = spc.imports}
-                   | Some _ -> ctxt.dynamic) in
-          % let apexSpec =
-              % addOp_ast((primedId,fixity,(tyVarsOf srt,srt),None),apexSpec) in
-\begin{spec}
     axm <- mkEquality (leftPrimedTerm,rhs,position);
 \end{spec}
 
