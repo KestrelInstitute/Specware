@@ -270,6 +270,55 @@ spec
     else   FAIL
 
 
+  (* Check whether `cxi' is the context for the `i'-th branch of a case
+  expression that is well-typed in `cx' and whose target expression and
+  patterns are `e' and `pS'. If so, return nothing. *)
+
+  op checkCaseBranchContext :
+     Context -> Expression -> Patterns -> Nat -> Context -> MayFail ()
+  def checkCaseBranchContext cx e pS i cxi =
+    if i < length pS then
+    if maxCommonPrefix (cx, cxi) = cx then
+    let cxExtra:Context =   % such that `cxi = cx ++ cxExtra'
+        lastN (cxi, length cxi - length cx) in
+    if length cxExtra >= 2 then
+    (case first cxExtra of axioM (_, mustBe_empty, mustBe_negPattAsm) ->
+    if mustBe_empty = empty
+    && mustBe_negPattAsm =
+       conjoinAll (map (pattAssumptionsNegatedQuantified e, firstN (pS, i))) then
+    (case last cxExtra of axioM (_, mustBe_empty, mustBe_posPattAsm) ->
+    if mustBe_empty = empty
+    && mustBe_posPattAsm = pattAssumptions e (pS!i)
+    && subFromTo (cxExtra, 1, length cxExtra - 2) =
+       multiVarDecls (pattVarsWithTypes (pS!i)) then
+    OK ()
+    else   FAIL
+    | _ -> FAIL)
+    else   FAIL
+    | _ -> FAIL)
+    else   FAIL
+    else   FAIL
+    else   FAIL
+
+
+  (* Check whether `cxS' consists of the contexts for the branches of a
+  case expression that is well-typed in `cx' and whose target expression and
+  patterns are `e' and `pS'. If so, return nothing. *)
+
+  op checkCaseBranchContexts :
+     Context -> Expression -> Patterns -> Contexts -> MayFail ()
+  def checkCaseBranchContexts cx e pS cxS =
+    let def aux (i : Nat)   % current index in cxS
+                : MayFail () =
+          if i < length cxS then
+            case checkCaseBranchContext cx e pS i (cxS!i) of
+              | OK () -> aux (i+1)
+              | _ -> FAIL
+          else OK ()
+    in
+    aux 0
+
+
   (* Check whether given type variables and types form a valid type
   substitution. If so, return it. *)
 
@@ -861,16 +910,28 @@ spec
      | _ -> FAIL
 
 
-  (* Check proofs of well-typed expressions with given context and types;
-  return expressions if successful. *)
+  (* Check proofs of well-typed expressions; return contexts, expressions, and
+  types, if successful. *)
+
+  op checkWTExprs : Proofs -> MayFail (Contexts * Expressions * Types)
+  def checkWTExprs prfS =
+    case checkSequence (map (checkWTExpr, prfS)) of
+      | OK cx_e_t_S -> OK (unzip3 cx_e_t_S)
+      | _ -> FAIL
+
+
+  (* Like previous op but also check that all contexts coincide with argument
+  and that types coincide with arguments. Only return expressions, if
+  successful. *)
 
   op checkWTExprsWithContextAndTypes :
      Context -> Types -> Proofs -> MayFail Expressions
   def checkWTExprsWithContextAndTypes cx tS prfS =
-    case checkSequence (map (checkWTExprWithContext cx, prfS)) of
-      | OK etS ->
-        let (eS, mustBe_tS) = unzip etS in
-        if mustBe_tS = tS then OK eS else FAIL
+    case checkWTExprs prfS of
+      | OK (mustBeAll_cx, eS, mustBe_tS) ->
+        if toSet mustBeAll_cx = singleton cx
+        && mustBe_tS = tS then OK eS
+        else FAIL
       | _ -> FAIL
 
 
@@ -1165,7 +1226,7 @@ spec
       | _ -> FAIL
 
 
-  (* Check well-typed non-recursive let; return context, expression
+  (* Check proof of well-typed non-recursive let; return context, expression
   components, and type, if successful. *)
 
   op checkWTNonRecursiveLet :
@@ -1174,6 +1235,23 @@ spec
     case checkWTExpr prf of
       | OK (cx, nonRecursiveLet (p, e, e1), t) -> OK (cx, p, e, e1, t)
       | _ -> FAIL
+
+
+  (* Check proof of well-typed case branch expressions, given context `cx' in
+  which target expression and patterns are well-typed, given target expression
+  `e', and given patterns `pS'. Return expressions and type (all expressions
+  must have the same type) if successful. *)
+
+  op checkWTCaseBranchExprs :
+     Context -> Expression -> Patterns -> Proofs -> MayFail (Expressions * Type)
+  def checkWTCaseBranchExprs cx e pS prfS =
+    case checkWTExprs prfS of OK (cxS, eS, mustBeAll_t_for_some_t) ->
+    (case checkCaseBranchContexts cx e pS cxS of OK () ->
+    if size (toSet mustBeAll_t_for_some_t) = 1 then
+    OK (eS, first mustBeAll_t_for_some_t)
+    else   FAIL
+    | _ -> FAIL)
+    | _ -> FAIL
 
 
   (* Check proof of well-typed pattern; return context, pattern, and type, if
@@ -1330,6 +1408,29 @@ spec
     case checkTheoremEquation prf of
       | OK (cx, mustBe_leftE, rightE) ->
         if mustBe_leftE = leftE then OK (cx, rightE) else FAIL
+      | _ -> FAIL
+
+
+  (* Check proofs of equations; returns contexts, left subexpressions, and
+  right subexpressions, if successful. *)
+
+  op checkTheoremEquations :
+     Proofs -> MayFail (Contexts * Expressions * Expressions)
+  def checkTheoremEquations prfS =
+    case checkSequence (map (checkTheoremEquation, prfS)) of
+      | OK cx_leftE_rightE_S -> OK (unzip3 cx_leftE_rightE_S)
+      | _ -> FAIL
+
+
+  (* Like previous op but also check that left subexpressions coincide with
+  arguments. Only return contexts and right subexpressions, if successful. *)
+
+  op checkTheoremEquationsWithLeftExprs :
+     Expressions -> Proofs -> MayFail (Contexts * Expressions)
+  def checkTheoremEquationsWithLeftExprs leftES prfS =
+    case checkTheoremEquations prfS of
+      | OK (cxS, mustBe_leftES, rightES) ->
+        if mustBe_leftES = leftES then OK (cxS, rightES) else FAIL
       | _ -> FAIL
 
 
@@ -1511,6 +1612,26 @@ spec
                              nary (tuple, mustBe_vS), nary (tuple, eS))))) ->
         if mustBe_vS = map (VAR, vS) then OK (cx, vS, tS, eS) else FAIL
       | _ -> FAIL
+
+
+  (* Check proofs of theorems required to prove that a case expression that is
+  well-typed in `cx' and that has target expression `e', patterns `pS', and
+  branch expressions `eS' is equal to some expression `e0'. Each theorem must
+  say that `eS!i == e0' in the context for branch `i'. Return `e0' if
+  successful. *)
+
+  op checkCaseBranchTheorems :
+     Context -> Expression -> Patterns -> Expressions -> Proofs ->
+     MayFail Expression
+  def checkCaseBranchTheorems cx e pS eS prfS =
+    case checkTheoremEquationsWithLeftExprs eS prfS of
+      OK (cxS, mustBeAll_e0_for_some_e0) ->
+    (case checkCaseBranchContexts cx e pS cxS of OK () ->
+    if size (toSet mustBeAll_e0_for_some_e0) = 1 then
+    OK (first mustBeAll_e0_for_some_e0)
+    else   FAIL
+    | _ -> FAIL)
+    | _ -> FAIL
 
 
   (* We finally define `check', the main op of this spec. *)
@@ -1911,52 +2032,17 @@ spec
     | exCase (prf, prfS, prf1, prfS1) ->
       (case checkWTExpr prf of OK (cx, e, t) ->
       (case checkWTPattsWithContextAndType cx t prfS of OK pS ->
-      let n:Nat = length pS in
-      if n > 0 then
+      if length pS > 0 then
       (case checkTheoremWithContextAndFormula
             cx (disjoinAll (map (pattAssumptionsQuantified e, pS))) prf1 of
          OK () ->
-
-      let caseMatches:Expressions = seqSuchThat (fn(i:Nat) ->
-        if i < n then Some (let (vS,tS) = pattVarsWithTypes (pS!i) in
-                            EXX vS tS (pattAssumptions e (pS!i)))
-        else None) in
-
-      let varCxS:Contexts = seqSuchThat (fn(i:Nat) ->
-        if i < n then Some (multiVarDecls (pattVarsWithTypes (pS!i)))
-        else None) in
-      let negAsmS:Expressions = seqSuchThat (fn(i:Nat) ->
-        if i < n then Some (conjoinAll (seqSuchThat (fn(j:Nat) ->
-                             if j < i then Some (~~ (caseMatches!j))
-                                      else None)))
-                 else None) in
-      let posAsmS:Expressions = seqSuchThat (fn(i:Nat) ->
-        if i < n then Some (pattAssumptions e (pS!i))
-                 else None) in
-      if length prfS1 = n then
-      let def aux (i:Nat, eS:Expressions, t?:Type?)
-                  : MayFail (Expressions * Type) =
-            if i = n then
-              case t? of Some t -> OK (eS, t)
-                       | None   -> FAIL   % never happens
-            else
-              case checkCaseBranchExpr
-                     cx (varCxS!i) (negAsmS!i) (posAsmS!i) (prfS1!i) of
-                | OK (e, t) ->
-                  (case t? of Some t1 -> if t1 = t then aux (i+1, eS <| e, Some t)
-                                         else FAIL
-                            | None -> aux (i+1, eS <| e, Some t))
-                | _ -> FAIL
-      in
-      (case aux (0, empty, None) of OK (eS, t1) ->
+      (case checkWTCaseBranchExprs cx e pS prfS1 of OK (eS, t1) ->
       OK (wellTypedExpr (cx, CASE e pS eS, t1))
       | _ -> FAIL)
-      else   FAIL
       | _ -> FAIL)
       else   FAIL
       | _ -> FAIL)
       | _ -> FAIL)
-
     | exRecursiveLet (prf, prf1) ->
       (case checkTheoremRecursiveLet prf of OK (cx, vS, tS, eS) ->
       (case checkWTExprWithContext (cx ++ multiVarDecls (vS, tS)) prf1 of
@@ -2301,68 +2387,25 @@ spec
       OK (theoreM (cx, FA v t (CHOOSE q e @ (QUOTIENT q @ VAR v) == e @ VAR v)))
       else   FAIL
       | _ -> FAIL)
-
-%%%%%%%%% TO DO:
     | thCase (prf, prfS) ->
-      (case checkWTExpr prf of OK (cx, casE (e, pS, eS), t) ->
-      let n:Nat = length pS in
-      if n > 0
-      && length eS = n
-      && length prfS = n then
-      let caseMatches:Expressions = seqSuchThat (fn(i:Nat) ->
-        if i < n then Some (let (vS,tS) = pattVarsWithTypes (pS!i) in
-                            EXX vS tS (pattAssumptions e (pS!i)))
-        else None) in
-      let varCxS:Contexts = seqSuchThat (fn(i:Nat) ->
-        if i < n then Some (multiVarDecls (pattVarsWithTypes (pS!i)))
-        else None) in
-      let negAsmS:Expressions = seqSuchThat (fn(i:Nat) ->
-        if i < n then Some (conjoinAll (seqSuchThat (fn(j:Nat) ->
-                             if j < i then Some (~~ (caseMatches!j))
-                                      else None)))
-                 else None) in
-      let posAsmS:Expressions = seqSuchThat (fn(i:Nat) ->
-        if i < n then Some (pattAssumptions e (pS!i))
-                 else None) in
-      let def aux (i:Nat, e0?:Expression?) : MayFail Expression =
-            if i = n then
-              case e0? of Some e0 -> OK e0
-                        | None    -> FAIL   % never happens
-            else
-              case checkCaseBranchTheorem
-                     cx (varCxS!i) (negAsmS!i) (posAsmS!i) (eS!i) (prfS!i) of
-                | OK e0 ->
-                  (case e0? of Some mustBeE0 -> if mustBeE0 = e0 then
-                                                  aux (i+1, Some e0)
-                                                else FAIL
-                             | None -> aux (i+1, Some e0))
-                | _ -> FAIL
-      in
-      (case aux (0, None) of OK e0 ->
+      (case checkWTCase prf of OK (cx, e, pS, eS, _) ->
+      (case checkCaseBranchTheorems cx e pS eS prfS of OK e0 ->
       OK (theoreM (cx, CASE e pS eS == e0))
       | _ -> FAIL)
-      else   FAIL
       | _ -> FAIL)
-    | thRecursiveLet (prfEx, prfTh) ->
-      (case checkWTExpr prfEx of OK (cx, recursiveLet (vS, tS, eS, e), t) ->
-      let n:Nat = length vS in
-      if length tS = n
-      && length eS = n then
-      (case checkTheoremEquation prfTh of OK (cx1, mustBeLetDef, e0) ->
-      let conjuncts:Expressions = seqSuchThat (fn(i:Nat) ->
-        if i < n then Some (VAR (vS!i) == (eS!i))
-        else None) in
-      (case checkExtraAxiom (cx ++ multiVarDecls (vS, tS)) cx1 of
-         OK (_, mustBeEmpty, mustBeConjoinAllConjuncts) ->
-      if mustBeConjoinAllConjuncts = conjoinAll conjuncts
-      && toSet vS /\ exprFreeVars e0 = empty then
+    | thRecursiveLet (prf, prf1) ->
+      (case checkWTRecursiveLet prf of OK (cx, vS, tS, eS, e, _) ->
+      (case checkTheoremEquationWithLeftExpr (LETDEF vS tS eS e) prf1 of
+         OK (mustBe_cx_vS_vSEqualsES, e0) ->
+      (case checkExtraAxiomWithTypeVarsAndFormula
+              (cx ++ multiVarDecls (vS, tS)) mustBe_cx_vS_vSEqualsES
+              empty (TUPLE (map (VAR, vS)) == TUPLE eS) of OK _ ->
+      if toSet vS /\ exprFreeVars e0 = empty then
       OK (theoreM (cx, LETDEF vS tS eS e == e0))
       else   FAIL
       | _ -> FAIL)
       | _ -> FAIL)
-      else   FAIL
       | _ -> FAIL)
-
     | thAbbrevTrue (prf, v) ->
       (case checkWFContext prf of OK cx ->
       OK (theoreM (cx, TRUE <==> FN v BOOL (VAR v) == FN v BOOL (VAR v)))
@@ -2421,57 +2464,5 @@ spec
       (case checkWTNonRecursiveLet prf of OK (cx, p, e, e1, t) ->
       OK (theoreM (cx, LET p e e1 == CASE e (singleton p) (singleton e1)))
       | _ -> FAIL)
-
-
-
-
-
-
-  %%% TO CHECK..........
-
-  op checkCaseBranchExpr :
-     Context -> Context -> Expression -> Expression -> Proof ->
-     MayFail (Expression * Type)
-  def checkCaseBranchExpr cx varCx negAsm posAsm prf =
-    case checkWTExpr prf of OK (cx1, e, t) ->
-    if maxCommonPrefix (cx, cx1) = cx
-    && length cx1 = length cx + length varCx + 2 then
-    case last cx1 of axioM (_, tvS, e1) ->
-    if tvS = empty
-    && e1 = posAsm
-    && subFromLong (cx1, length cx + 1, length varCx) = varCx then
-    case cx1 ! (length cx) of axioM (_, tvS, e1) ->
-    if tvS = empty
-    && e1 = negAsm then
-    OK (e, t)
-    else   FAIL
-    | _ -> FAIL
-    else   FAIL
-    | _ -> FAIL
-    else   FAIL
-    | _ -> FAIL
-
-  op checkCaseBranchTheorem :
-     Context -> Context -> Expression -> Expression -> Expression -> Proof ->
-     MayFail Expression
-  def checkCaseBranchTheorem cx varCx negAsm posAsm e prf =
-    case checkTheoremEquation prf of OK (cx1, mustBeE, e0) ->
-    if mustBeE = e
-    && maxCommonPrefix (cx, cx1) = cx
-    && length cx1 = length cx + length varCx + 2 then
-    case last cx1 of axioM (_, tvS, e1) ->
-    if tvS = empty
-    && e1 = posAsm
-    && subFromLong (cx1, length cx + 1, length varCx) = varCx then
-    case cx1 ! (length cx) of axioM (_, tvS, e1) ->
-    if tvS = empty
-    && e1 = negAsm then
-    OK e0
-    else   FAIL
-    | _ -> FAIL
-    else   FAIL
-    | _ -> FAIL
-    else   FAIL
-    | _ -> FAIL
 
 endspec
