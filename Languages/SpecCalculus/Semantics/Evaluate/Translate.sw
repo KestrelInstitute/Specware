@@ -13,9 +13,9 @@ SpecCalc qualifying spec
   import Spec/CompressSpec
   import Spec/AccessSpec
   import Spec/MergeSpecs
-  import Spec/QualifyCapture
   import Spec/VarOpCapture
   import UnitId/Utilities                                % for uidToString, if used...
+
 \end{spec}
 
 Perhaps evaluating a translation should yield a morphism rather than just 
@@ -85,28 +85,13 @@ Note: The code below does not yet match the documentation above, but should.
      %%
      %% makeTranslationMaps will have raised various exceptions if it 
      %% cannot guarantee all of this
-     %%                          ----
-     %% However, it is still possible that a renaming would cause an
-     %% inadvertant ambiguity or even capture, so we check for that.
-     %%
-     %% In particular, we worry the following situation:
-     %%
-     %%   an unqualified Y that refers to B.Y in the domain spec  
-     %%
-     %%   and translation rules:
-     %%     B.Y +-> B.Y 
-     %%     A.X +-> Y 
      %% 
-     %%   creating a spec in which the unqualified Y refers to the 
-     %%   translation of A.X, as opposed to the transation of B.Y
-     %%
-     %% Moreover, we wish to avoid gratuitously qualifying every reference, 
-     %%  to keep print forms for specs as similar as possible to their 
-     %%  original input text.  Seeing Integer.+, String.^ etc. everywhere 
-     %%  would be confusing and annoying.
-     %%
-     translation_maps <- removeQualifyCaptures spc translation_maps pos;
-     raise_any_pending_exceptions;
+     %% [Note that if an unqualified Y refers to B.Y in the domain spec,  
+     %%  the typechecker will have resolved that reference from 
+     %%  "<UnQualified>.Y" to "B.Y", so even if some X is translated to 
+     %%  unqualified Y, the original refs via an unqualified Y will 
+     %%  have been modified so that they translate along with B.Y to refer 
+     %%  safely to B.Y]
      %%
      %% Now we produce a new spec using these unmbiguous maps.
      %%
@@ -132,9 +117,8 @@ Note: The code below does not yet match the documentation above, but should.
      complainIfAmbiguous (compressDefs spc) pos
     } 
 
-  % see QualifyCapture.sw
-  % sort TranslationMap  = AQualifierMap (QualifiedId * Aliases) 
-  % sort TranslationMaps = TranslationMap * TranslationMap
+  sort TranslationMap  = AQualifierMap (QualifiedId * Aliases) 
+  sort TranslationMaps = TranslationMap * TranslationMap
 
   op makeTranslationMaps :
         Spec
