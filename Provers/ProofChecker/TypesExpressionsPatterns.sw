@@ -293,13 +293,11 @@ spec
   op FALSE : Expression
   def FALSE = nullary fals
 
-  op O infixl 40 : Expression * Field -> Expression
-     % `O' is a (big) dot `.'
-  def O (e,f) = unary (recordProjection f, e)
+  op DOTr infixl 40 : Expression * Field -> Expression
+  def DOTr (e,f) = unary (recordProjection f, e)
 
-  op OO infixl 40 : Expression * PosNat -> Expression
-     % need to distinguish dot for records from dot for tuples
-  def OO (e,i) = unary (tupleProjection i, e)
+  op DOTt infixl 40 : Expression * PosNat -> Expression
+  def DOTt (e,i) = unary (tupleProjection i, e)
 
   op RELAX : Expression -> Expression
   def RELAX r = unary (relaxator, r)
@@ -307,8 +305,8 @@ spec
   op QUOTIENT : Expression -> Expression
   def QUOTIENT q = unary (quotienter, q)
 
-  op NOT : Expression -> Expression
-  def NOT e = unary (negation, e)
+  op ~~ : Expression -> Expression
+  def ~~ e = unary (negation, e)
 
   op __ infixl 40 : Expression * Expression -> Expression
      % double underscore is incospicuous enough to look almost like blank
@@ -340,6 +338,9 @@ spec
 
   op <==> infixl 22 : Expression * Expression -> Expression
   def <==> (e1,e2) = binary (equivalence, e1, e2)
+
+  op IF : Expression -> Expression -> Expression -> Expression
+  def IF e0 e1 e2 = ifThenElse (e0, e1, e2)
 
   op ERECORD : Fields -> Expressions -> Expression
   def ERECORD fS eS = nary (record fS, eS)

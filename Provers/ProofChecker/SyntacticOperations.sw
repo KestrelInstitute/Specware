@@ -175,18 +175,22 @@ spec
     (ex (tvS:TypeVariables, e:Expression) opDefinition (tvS, o, e) in? cx)
 
 
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % multiple type variable declarations:
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % multiple (type) variable declarations:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op multiTypeVarDecls : TypeVariables -> Context
   def multiTypeVarDecls tvS =
     map (embed tVarDeclaration, tvS)
 
+  op multiVarDecls : BoundVars -> Context
+  def multiVarDecls bvS =
+    map (embed varDeclaration, bvS)
 
-  %%%%%%%%%%%%%%%%%%%%%
-  % type substitutions:
-  %%%%%%%%%%%%%%%%%%%%%
+
+  %%%%%%%%%%%%%%%%%%%%
+  % type substitution:
+  %%%%%%%%%%%%%%%%%%%%
 
   (* While in LD type substitutions are describes by a sequence of distinct
   type variables and a sequence of types of the same length, here we use
@@ -261,9 +265,9 @@ spec
                                  typeSubstInPatt sbs p)
 
 
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % expression substitutions:
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%
+  % expression substitution:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
   (* While LD only defines only the substitution of a single variable with an
   expression, here we consider multi-variable substitutions (like for
@@ -368,9 +372,9 @@ spec
            exprFreeVars (apply(sbs,v)) /\ captVars v e = empty)
 
 
-  %%%%%%%%%%%%%%%%%%%%%%%%
-  % pattern substitutions:
-  %%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%
+  % pattern substitution:
+  %%%%%%%%%%%%%%%%%%%%%%%
 
   type PatternSubstitution = Variable * Variable
 

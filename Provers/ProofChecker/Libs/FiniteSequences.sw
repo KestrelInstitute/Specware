@@ -195,6 +195,27 @@ FSeq qualifying spec
       (fa(seq,seqOfSeqs) flatten (seq |> seqOfSeqs) =
                          seq ++ flatten seqOfSeqs))
 
+  type Permutation = Bijection(Nat,Nat)
+
+  % valid permutation for a sequence of given length:
+  op permutationForLength? : Permutation * Nat -> Boolean
+  def permutationForLength?(p,n) =
+    (fa(i:Nat) i < n => p i < n)
+
+  % i-th element of input sequence becomes (p i)-th element of output sequence:
+  op permute : [a] {(s,p) : FSeq a * Permutation |
+                     permutationForLength? (p, length s)} -> FSeq a
+  def [a] permute(s,p) =
+    the (fn (r : FSeq a) ->
+      length r = length s &&
+      (fa(i:Nat) i < length s => s elem i = r elem (p i)))
+
+  op permuted? : [a] FSeq a * FSeq a -> Boolean
+  def permuted?(s1,s2) =
+    length s1 = length s2 &&
+    (ex(p:Permutation) permutationForLength? (p, length s1) &&
+                       permute(s1,p) = s2)
+
   % non-empty sequences:
   type FSeqNE a = {s : FSeq a | ~(empty? s)}
 
