@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/01 02:29:36  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.7  2003/03/29 03:13:55  weilyn
  * Added support for morphism nodes.
  *
@@ -104,7 +107,25 @@ public interface Binding {
     /** Binds an import to the source.
      */
     public interface Import extends Member {
+        
+        public void changeUnitImported(MemberElement unit) throws SourceException;
+        
     }
+    
+    /** Binds a uri to the source.
+     */
+//    public interface URI extends Member {
+        /**
+         * Changes the arguments of the uri.
+         */
+//        public void changePath(String path) throws SourceException;
+//    }
+    
+    /** Binds a diagElem to the source.
+     */
+    public interface DiagElem extends Member {
+    }
+        
     
     
     /** Container interface that manages contained bindings. Currently only reorder operation
@@ -151,6 +172,15 @@ public interface Binding {
     }
     
     public interface Morphism extends Member, Container {
+        /**
+         * Changes the sourceUnitID of the morphism
+         */
+        public void changeSourceUnitID(UnitID newSourceUnitID) throws SourceException;    
+        
+        /**
+         * Changes the targetUnitID of the morphism
+         */
+        public void changeTargetUnitID(UnitID newTargetUnitID) throws SourceException;    
     }
 
     public interface Diagram extends Member, Container {
@@ -158,7 +188,6 @@ public interface Binding {
 
     public interface Colimit extends Member, Container {
     }
-    
     
 }
 
