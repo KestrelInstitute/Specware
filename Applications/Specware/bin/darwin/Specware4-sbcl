@@ -60,7 +60,7 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/darwin
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /Users/westfold/ccl/dppccl /Users/westfold/Desktop/Download/ccl/dppccl /Users/westfold/ccl-13/dppccl /Users/westfold/ccl-0.14/dppccl; do
+   for L in /usr/local/bin/sbcl /sw/bin/sbcl; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
@@ -79,13 +79,13 @@ fi
 
 LISP_DIR=`dirname "$LISP"`
 LISP_EXECUTABLE="$LISP"
-LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4.openmcl-image
+LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4.sbcl-image
 LISP_DIRECTORY="$SPECWARE4"/
 export LISP_EXECUTABLE
 export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 
 
-$xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-openmcl \
+$xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
        -geometry 180x70+180+2 \
        -f run-specware4 &

@@ -12,16 +12,26 @@
 (setq ext:*gc-verbose* nil)
 #+cmu
 (setq extensions:*bytes-consed-between-gcs* 40000000)
-#+cmu
+#+sbcl
+(setf (bytes-consed-between-gcs) 40000000)
+#+(or cmu sbcl)
 (setq *compile-verbose* nil)
 #+cmu
 (setq extensions:*efficiency-note-cost-threshold* 30)
+#+sbcl
+(setq sb-ext:*efficiency-note-cost-threshold* 30)
 #+cmu
 (setq c::*compile-print* nil)
+#+sbcl
+(declaim (optimize (sb-ext:inhibit-warnings 3)))
 ;#+mcl
 ;(egc t)					; Turn on ephemeral gc
 #+mcl
 (ccl::set-lisp-heap-gc-threshold (* 16777216 4))
+#+sbcl
+(setq sb-fasl:*fasl-file-type* "sfsl")	; Default is "fasl" which conflicts with allegro
+#+sbcl
+(setq *debug-beginner-help-p* nil)
 
 ;; Used in printing out the license and about-specware command
 (defvar cl-user::Specware-version "4.0")

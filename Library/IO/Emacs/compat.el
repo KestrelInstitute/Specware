@@ -53,10 +53,18 @@
   (defvar ilisp-*use-fsf-compliant-keybindings* t) ; Use c-c as command prefix (not c-z)
   (unless (fboundp 'run-ilisp)
     (load "ilisp/ilisp"))
-  (setq allegro-program (getenv "LISP_EXECUTABLE"))
+  (setq lisp-program (getenv "LISP_EXECUTABLE"))
   (setq expand-symlinks-rfs-exists t)	; ?
-  (defvar *specware-lisp* 'cmulisp)
-  (defvar *lisp-image-extension* "cmuimage")
+  (defvar *specware-lisp* (if (search "dpccl" lisp-program)
+			      'openmcl
+			    (if (search "sbcl" lisp-program)
+				'sbcl
+			      'cmulisp)))
+  (defvar *lisp-image-extension*
+    (case *specware-lisp*
+      (openmcl "openmcl-image")
+      (cmulisp "cmuimage")
+      (sbcl "sbclimage")))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
 			 &optional
@@ -71,9 +79,11 @@
 		     1 (- (length common-lisp-buffer-name) 1))
 	     (if common-lisp-image-file
 		 (case *specware-lisp*
-		   (cmulisp
-		     (concat common-lisp-image-name
-			     " -core " common-lisp-image-file))
+		   ((cmulisp sbcl)
+		     (if common-lisp-image-file
+			 (concat common-lisp-image-name
+				 " -core " common-lisp-image-file)
+		       common-lisp-image-name))
 		   (otherwise
 		     (concat common-lisp-image-name " "
 			     common-lisp-image-file)))
@@ -84,7 +94,8 @@
 ;                     (if common-lisp-image-file
 ;                         (concat " -I " common-lisp-image-file) ""))
 	     )
-    (install-bridge-for-emacsEval))
+    (install-bridge-for-emacsEval)
+    (setq default-directory common-lisp-directory))
   ;; Handling emacs-eval emacsEval  (could be more robust!)
   (defun emacs-eval-handler (process output)
     (when output
@@ -169,4 +180,3 @@
 	 (add-specware-listener-key-bindings ilisp-mode-map)))
   (add-hook 'ilisp-mode-hook 'specware-listener-mode-hook t)
 )
-

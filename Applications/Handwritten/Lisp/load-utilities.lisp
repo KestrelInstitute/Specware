@@ -26,6 +26,7 @@
   #+Lispworks (hcl:get-working-directory)    ; ??       (current-pathname)
   #+mcl       (ccl::current-directory-name)  ; ??
   #+cmu       (extensions:default-directory) ; pathname
+  #+sbcl      (sb-unix:posix-getcwd)
   )
 
 (defun parse-device-directory (str)
@@ -46,6 +47,7 @@
     #+Lispworks (hcl:change-directory directory)
     #+mcl       (ccl::%chdir          directory)
     #+cmu       (setf (extensions:default-directory) directory)
+    #+sbcl      (sb-unix::int-syscall ("chdir" c-string) directory)
     ;; in Allegro CL, at least,
     ;; if (current-directory) is already a pathname, then
     ;; (make-pathname (current-directory)) will fail
@@ -60,6 +62,7 @@
 		  (ccl::getenv varname))
   #+lispworks (hcl::getenv varname) 	;?
   #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+  #+sbcl      (posix-getenv  varname)
   )
 
 (defun setenv (varname newvalue)
@@ -73,6 +76,7 @@
 		(if pr (setf (cdr pr) newvalue)
 		  (push (cons (intern varname "KEYWORD") newvalue)
 			ext:*environment-list*)))
+  #+sbcl      (sb-unix::int-syscall ("setenv" c-string c-string int) varname newvalue 1)
   )
 
 #+(or mcl Lispworks)
@@ -99,7 +103,8 @@
 (defvar *fasl-type*
   #+allegro "fasl"
   #+mcl     "dfsl"
-  #+cmu     "x86f")
+  #+cmu     "x86f"
+  #+sbcl    sb-fasl:*fasl-file-type*)
 
 (unless (fboundp 'compile-file-if-needed)
   ;; Conditional because of an apparent Allegro bug in generate-application
@@ -107,11 +112,12 @@
   (defun compile-file-if-needed (file)
     #+allegro (excl::compile-file-if-needed file)
     #+Lispworks (hcl:compile-file-if-needed file)
-    #+(or cmu mcl) (when (> (file-write-date file)
-			    (or (file-write-date (make-pathname :defaults file
-								:type *fasl-type*))
-				0)) 
-		     (compile-file file))))
+    #+(or cmu mcl sbcl)
+    (when (> (file-write-date file)
+	     (or (file-write-date (make-pathname :defaults file
+						 :type *fasl-type*))
+		 0)) 
+      (compile-file file))))
 
 (defun compile-and-load-lisp-file (file)
    (let ((filep (make-pathname :defaults file :type "lisp")))
@@ -136,13 +142,13 @@
 
 (defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
                                              #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-					     #+(or mcl cmu) "/tmp/"
+					     #+(or mcl cmu sbcl) "/tmp/"
 					     ))
 (defun temporaryDirectory-0 ()
   (namestring 
    #+allegro      (SYSTEM:temporary-directory)
    #+Lispworks    SYSTEM::*TEMP-DIRECTORY*
-   #+(or mcl cmu) "/tmp/"))
+   #+(or mcl cmu sbcl) "/tmp/"))
 
 (defun setTemporaryDirectory ()
   (setq temporaryDirectory (temporaryDirectory-0)))
@@ -152,7 +158,11 @@
   #+allegro(sys:copy-file source target)
   #+cmu(ext:run-program "cp" (list (namestring source)
 				   (namestring target)))
-  #-(or allegro cmu)
+  #+mcl(ccl:run-program "cp" (list (namestring source)
+				   (namestring target)))
+  #+sbcl(sb-ext:run-program "/bin/cp" (list (namestring source)
+					    (namestring target)))
+  #-(or allegro cmu sbcl mcl)
   (with-open-file (istream source :direction :input)
     (with-open-file (ostream target :direction :output :if-does-not-exist :create)
       (loop
@@ -182,11 +192,13 @@
 			      (last (pathname-directory ext-dir)))))
 
 (defun make-directory (dir)
+  (let ((dir (if (pathnamep dir)
+		 (namestring dir)
+	       dir)))
   #+allegro (sys::make-directory dir)
-  #+cmu (unix:unix-mkdir (if (pathnamep dir)
-			     (namestring dir)
-			   dir)
-			 #o755))
+  #+cmu (unix:unix-mkdir dir #o755)
+  #+mcl (ccl:run-program "mkdir" (list dir))
+  #+sbcl (sb-ext:run-program "/bin/mkdir" (list dir))
 
 (defun copy-directory (source target)
   #+allegro(sys::copy-directory source target)

@@ -37,8 +37,9 @@
   (the cl:simple-base-string 
     (concatenate 'string x y)))
 
-;(define-compiler-macro concat-2 (x y)
-;  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+;;; Putting (the cl:simple-base-string ,y) gives mcl exponential compiler behavior
+(define-compiler-macro concat-2 (x y)
+  `(concatenate 'string ,(if (stringp x) x `(the cl:simple-base-string ,x)) ,y))
 
 (defun concat (xy)
   (declare (cons xy))
@@ -52,8 +53,10 @@
   (the cl:simple-base-string 
     (concatenate 'string x y)))
 
-;(define-compiler-macro ++-2 (x y)
-;  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+;;; Putting (the cl:simple-base-string ,y) gives mcl exponential compiler behavior
+(define-compiler-macro ++-2 (x y)
+  `(concatenate 'string ,(if (stringp x) x `(the cl:simple-base-string ,x))
+		,y))
 
 (defun |!++| (xy)
   (declare (cons xy))
@@ -67,8 +70,9 @@
   (the cl:simple-base-string 
     (concatenate 'string x y)))
 
-;(define-compiler-macro ^-2 (x y)
-;  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+;;; Putting (the cl:simple-base-string ,y) gives mcl exponential compiler behavior
+(define-compiler-macro ^-2 (x y)
+  `(concatenate 'string ,x ,(if (stringp y) y `(the cl:simple-base-string ,y))))
 
 (defun ^ (xy)
   (declare (cons xy))

@@ -149,7 +149,7 @@
 					   "cl-current-file"))))
     (if (Specware::evaluateLispCompileLocal_fromLisp-2
 	 x (cons :|Some| lisp-file-name))
-	(let (*redefinition-warnings*)
+	(let (#+allegro *redefinition-warnings*)
 	  (specware::compile-and-load-lisp-file lisp-file-name))
       "Specware Processing Failed!")))
 
@@ -472,12 +472,20 @@
       (speccalc::checkSpecPathsExistence str)
       (princ (setf (sys:getenv "SWPATH") (string str))))))
 
+(defun under-ilisp? ()
+  (and (find-package "ILISP")
+       (find-symbol "ILISP-COMPILE" "ILISP")))
+
 #-allegro
 (defun cd (&optional dir)
   (let ((dir (or dir (specware::getenv "HOME"))))
     #-cmu (specware::change-directory dir)
-    #+cmu (progn (unix:unix-chdir dir)
-		 (namestring (specware::current-directory)))))
+    #+cmu (unix:unix-chdir dir)
+    (let ((newdir (namestring (specware::current-directory))))
+      (when (under-ilisp?)
+	(emacs::eval-in-emacs (format nil "(setq default-directory ~s)"
+				      (specware::ensure-final-slash newdir))))
+      newdir)))
 
 #-allegro
 (defun pwd ()
@@ -514,10 +522,12 @@
 	       (if (fboundp fn)
 		   (funcall fn (read-line))
 		 (progn (read-line)
-			(warn "Unknown command ~s" command))))
+			(warn "Unknown command ~s" command)
+			(values))))
       (if (fboundp fn)
 	  (funcall fn)
-	(warn "Unknown command ~s" command)))))
+	(progn (warn "Unknown command ~s" command)
+	       (values))))))
 
 #+mcl
 (let ((ccl::*warn-if-redefine-kernel* nil))
@@ -526,7 +536,10 @@
 	   (args (if (consp form) (cdr form))))
       (if (keywordp cmd)
 	  (dolist (g ccl::*active-toplevel-commands*
-		     (cl::invoke-command-interactive cmd))
+		     (let ((vals (multiple-value-list (cl::invoke-command-interactive cmd))))
+		       (dolist (val vals)
+			 (format t "~A~%" val))
+		       t))
 	    (when (let* ((pair (assoc cmd (cdr g))))
 		    (if pair 
 			(progn (apply (cadr pair) args)
@@ -536,8 +549,10 @@
 
 #-allegro
 (defun ls (&optional (str ""))
-  #+cmu (ext:run-program "ls" (if (equal str "") () (list str)) :output t)
-  #-cmu (format t "Not yet implemented")
+  #+cmu  (ext:run-program "ls" (if (equal str "") () (list str)) :output t)
+  #+mcl  (ccl:run-program "ls" (if (equal str "") () (list str)) :output t)
+  #+sbcl (sb-ext:run-program "/bin/ls" (if (equal str "") () (list str)) :output t)
+  #-(or cmu mcl sbcl) (format t "Not yet implemented")
   (values))
 
 #-allegro

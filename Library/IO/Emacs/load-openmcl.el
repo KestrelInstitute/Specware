@@ -11,7 +11,7 @@
 
 (defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
 
-(push (concat *specware-emacs* "ilisp-20020831/")
+(push (concat *specware-emacs* "ilisp/")
       load-path)
 
 (defvar ilisp-*use-fsf-compliant-keybindings* t)

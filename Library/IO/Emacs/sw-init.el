@@ -66,7 +66,10 @@
 		      sw:common-lisp-host
 		      sw:common-lisp-image-file
 		      ))
-    (goto-char (point-max))
+    (sit-for 1)
+    (sw:eval-in-lisp-no-value
+     (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
+    (goto-char (point-max)) 
     ))
 
 (defun set-socket-init-for-specware ()
@@ -193,8 +196,7 @@
 		     slash-dir)))
     (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
 				      (sw::normalize-filename root-dir)))
-    (sw:eval-in-lisp-no-value
-     (format "(namestring (specware::change-directory %S))" dir))
+    
     (simulate-input-expression "(time (load \"Specware4.lisp\"))")
     (continue-form-when-ready
      (`(build-specware4-continue (, root-dir) (, dir) (, bin-dir)
@@ -230,7 +232,8 @@
   (simulate-input-expression (format (case *specware-lisp*
 				       (cmulisp "(ext:save-lisp %S)")
 				       (allegro "(excl::dumplisp :name %S)")
-				       (openmcl "(ccl:save-application %S)"))
+				       (openmcl "(ccl:save-application %S)")
+				       (sbcl "(sb-ext:save-lisp-and-die %S)"))
 				     world-name))
 ;;;    (simulate-input-expression
 ;;;     "(if (probe-file \"bin/specware2000-new.world\")
@@ -305,7 +308,8 @@
   (simulate-input-expression (format (case *specware-lisp*
 				       (cmulisp "(ext:save-lisp %S)")
 				       (allegro "(excl::dumplisp :name %S)")
-				       (openmcl "(ccl:save-application %S)"))
+				       (openmcl "(ccl:save-application %S)")
+				       (sbcl "(sb-ext:save-lisp-and-die %S)"))
 				     world-name))
 ;;;    (simulate-input-expression
 ;;;     "(if (probe-file \"bin/specware2000-new.world\")
