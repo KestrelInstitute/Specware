@@ -12,6 +12,7 @@ are described monolithically ... everything appears below. Ugh!
 SpecCalc qualifying spec {
   import ../AbstractSyntax/Types   
   import ../AbstractSyntax/Printer
+  import /Library/IO/Primitive/IO
   import Map
 \end{spec}
 
@@ -68,7 +69,7 @@ TimeStamp that is latest of the TimeStamps of the files of its
 URI_Dependency.
 
 \begin{spec}
-  sort TimeStamp = Nat          % Not a fixnum
+  sort TimeStamp = Time          % Not a fixnum
   sort URI_Dependency = List URI
   sort ValueInfo = Value * TimeStamp * URI_Dependency
   sort GlobalContext = Map.Map (URI, ValueInfo)
@@ -311,7 +312,8 @@ monad. We may want to change the order this function takes its arguments
 and the structure of the argument (ie. curried or not) to be consistent
 with other fold operations. (But they are in the order that I like :-).
 
-This needs to go into a Monad library. 
+This needs to go into a Monad library. The spec
+Library/Structures/Data/Monad now exists but not used.
 
 \begin{spec}
   op foldM : fa (a,b) (a -> b -> Env a) -> a -> List b -> Env a
@@ -339,18 +341,6 @@ rely on the overloading?
             return (Cons (xNew,xsNew))
           }
 \end{spec}
-
-The following are defined in Handwritten Environment.lisp
-
-\begin{spec}
-  op getEnv : String -> Option String
-  op getCurrentDirectory : () -> String
-  op fileExistsAndReadable : String -> Boolean
-  op fileWriteTime : String -> TimeStamp
-\end{spec}
-
-It might be better (semantically) to wrap the above in monad. Needs
-thought. 
 
 \begin{spec}
 %   op getCurrentDirectory : Env String

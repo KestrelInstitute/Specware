@@ -20,7 +20,7 @@ AnnTermPrinter qualifying spec {
   import /Library/PrettyPrinter/BjornerEspinosa
   import /Library/Legacy/DataStructures/ListUtilities
   import /Library/Legacy/DataStructures/StringMapSplay
-  import /Library/Legacy/State
+  import /Library/Legacy/Utilities/State
 
   %% ========================================================================
 

@@ -1,5 +1,5 @@
 SplaySet qualifying spec {  
-  import /Library/Legacy/State
+  import /Library/Legacy/Utilities/State
   import SplayTree
 
   sort Set key =

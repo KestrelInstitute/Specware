@@ -41,7 +41,7 @@ or a file.
    
 PrettyPrint qualifying spec {
 
-  import /Library/Legacy/IO
+  import /Library/Legacy/Utilities/IO
   import /Library/Legacy/DataStructures/StringUtilities
   % import List
 

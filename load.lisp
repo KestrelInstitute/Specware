@@ -25,9 +25,8 @@
 
 (format t "~2%No don't do that.~2%")
 (format t "~2%To test, run (test)~%")
-(format t "~%That will run (sw \"/Applications/Specware/Generate\")~2%")
+(format t "~%That will run (sw \"/Applications/Specware/Specware4\")~2%")
 
 (defun test ()
-  ;; (sw "/Library/Structures/Data/Categories/Diagrams/Polymorphic/AsRecord")
-  (swe "/Applications/Specware/Generate")
+  (sw "/Applications/Specware/Specware4")
 )

@@ -1,6 +1,6 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/SpecUnion.sl, v1.3
 
-spec {
+SpecUnion qualifying spec {
  import StandardSpec
  import /Library/Legacy/DataStructures/ListUtilities
 

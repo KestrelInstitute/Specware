@@ -30,12 +30,15 @@ SpecCalc qualifying spec {
   op evaluateLispCompile: ValueInfo * SpecCalc.Term Position * Option String
 			  -> Env ValueInfo
 
-  op evaluateTerm : SpecCalc.Term  Position -> Env Value
+  op evaluateTerm : SpecCalc.Term Position -> Env Value
 
-  op evaluateTermInfo : SpecCalc.Term  Position -> Env ValueInfo
+  op evaluateTermInfo : SpecCalc.Term Position -> Env ValueInfo
 
-  op evaluateLet : List (Decl Position) -> SpecCalc.Term Position
-                  -> Env ValueInfo
+  op evaluateLet :
+       List (Decl Position)
+    -> SpecCalc.Term Position
+    -> Env ValueInfo
+
   op qualifySpec : Spec -> Qualifier -> Env Spec
 
   op evaluateTranslate : SpecCalc.Term Position -> TranslateExpr Position

@@ -2,7 +2,7 @@
 
 MetaSlang qualifying spec { 
  import /Library/Base
- import /Library/Legacy/State  % for MetaTyVar's
+ import /Library/Legacy/Utilities/State  % for MetaTyVar's
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                QualifiedId 

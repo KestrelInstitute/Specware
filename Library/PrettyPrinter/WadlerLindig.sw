@@ -40,8 +40,6 @@ WadlerLindig qualifying spec
     | SText (String * SDoc)
     | SLine (Integer * SDoc)   (* newline + spaces *)
   
-  op concatList : List String -> String
-
   op ppLayout : SDoc -> String
   def ppLayout doc =
     let def replicate (cnt:Integer) str =

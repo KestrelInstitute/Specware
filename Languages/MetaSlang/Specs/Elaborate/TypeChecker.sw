@@ -17,7 +17,7 @@
         
 *)
 
-% TypeChecker qualifying
+TypeChecker qualifying
 spec { 
   %% The TypeChecker function is elaboratePosSpec 
 

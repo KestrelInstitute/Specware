@@ -26,3 +26,11 @@ solution was to qualify the maps in Sketches.
 
 URIs with ../../.. don't work see references to /Languages/MetaSlang etc in
 Spec Calculus
+
+a function called error is defined in
+Languages/MetaSlang/Specs/Elaborate/Utilities.sw
+a function with the same name is defined in 
+Languages/SpecCalculus/Semantics/Environment.sw
+
+Both end up being qualified in the same way and there is no error detected
+until the generated lisp code is compiled.

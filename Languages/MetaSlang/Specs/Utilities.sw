@@ -1,6 +1,6 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/SpecUtilities.sl, v1.3
 
-spec { 
+Utilities qualifying spec { 
  import StandardSpec    % defines sorts Spec, Term, etc.
  import /Library/Legacy/DataStructures/IntegerSet
  import /Library/Legacy/DataStructures/ListPair 

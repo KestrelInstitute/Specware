@@ -1,6 +1,6 @@
 % synchronized with version 1.4 of SW4/Languages/MetaSlang/TypeChecker/PosSpecToSpec.sl
 
-% PosSpecToSpec qualifying
+PosSpecToSpec qualifying
 spec {
  %%  convert pos terms to standard terms
 

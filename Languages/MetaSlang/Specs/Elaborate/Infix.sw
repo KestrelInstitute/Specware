@@ -2,7 +2,7 @@
 
 (* Resolve infixe operators     *)
 
-spec {
+Infix qualifying spec {
  import ../PosSpec
  import ../Printer % for error messages
 

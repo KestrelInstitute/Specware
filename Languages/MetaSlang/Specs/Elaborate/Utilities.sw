@@ -1,7 +1,6 @@
-% Synchronized with version 1.8 of  SW4/Languages/MetaSlang/TypeChecker/TypeCheckUtilities.sl
+% Synchronized with version 1.8 of  SW4/Languages/MetaSlang/TypeChecker/TypeCheckUtilities.sl 
 
-
-% Utilities qualifying
+Utilities qualifying
 spec { 
  import /Library/Base
  import SpecToPosSpec   % for PosSpec's, plus convertSort[Info]ToPSort[Info]

@@ -5,7 +5,7 @@ Aadapted from SML/NJ
 \begin{spec}
 SplayMap qualifying spec {
   import /Library/Base
-  import /Library/Legacy/State
+  import /Library/Legacy/Utilities/State
   import SplayTree
 
   sort Map (key, a) =
