@@ -49,7 +49,11 @@ SpecCalc qualifying spec
 
   def lispFilePreamble() = "(require \"SpecwareRuntime\" \""
                           ^(case getEnv "SPECWARE4" of
-			     | Some path -> path
+			     | Some path -> translate (fn ch ->	  % \ to / for windows
+						       case ch of
+							| #\\ -> "/"
+							| _ -> toString ch)
+			                      path
 			     | None -> "")
 		          ^"/Library/SpecwareRuntime.lisp\")\n\n"
 
