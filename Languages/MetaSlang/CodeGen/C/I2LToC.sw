@@ -797,10 +797,11 @@ I2LToC qualifying spec {
 
   op c4StructExpr: CgContext * CSpec * CBlock * I2L.Type * Expressions * List(String) * Boolean -> CSpec * CBlock * CExp
   def c4StructExpr (ctxt,cspc,block,typ,exprs,fieldnames,forInitializer) =
-    if forInitializer then
-      c4StructExprForInitializer(ctxt,cspc,block,typ,exprs,fieldnames)
-    else
-      c4StructExpr_(ctxt,cspc,block,typ,exprs,fieldnames)
+    % even inside initialization forms, we may need to allocate struct's
+    % if forInitializer then
+    %  c4StructExprForInitializer(ctxt,cspc,block,typ,exprs,fieldnames)
+    % else
+    c4StructExpr_(ctxt,cspc,block,typ,exprs,fieldnames)
       
 
   op c4StructExpr_: CgContext * CSpec * CBlock * I2L.Type * Expressions * List(String) -> CSpec * CBlock * CExp
