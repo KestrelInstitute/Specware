@@ -96,6 +96,16 @@ spec
            | _ -> checkTypeDecl (rtail cx) tn
 
 
+  (* Like previous op but also check that arity coincides with
+  argument. Return nothing, if successful. *)
+
+  op checkTypeDeclWithArity : Context -> TypeName -> Nat -> MayFail ()
+  def checkTypeDeclWithArity cx tn n =
+    case checkTypeDecl cx tn of
+      | OK mustBe_n -> if mustBe_n = n then OK () else FAIL
+      | _ -> FAIL
+
+
   (* Check whether a context declares an op. If so, return its type
   information. *)
 
@@ -147,8 +157,8 @@ spec
            | _ -> checkOpDef (rtail cx) o
 
 
-  (* Check whether a context includes an axiom. If so, return the rest of the
-  axiom information. *)
+  (* Check whether a context includes a named axiom. If so, return the rest of
+  the axiom information. *)
 
   op checkAxiom : Context -> AxiomName -> MayFail (TypeVariables * Expression)
   def checkAxiom cx an =
@@ -232,7 +242,7 @@ spec
     else   FAIL
 
 
-  (* Check whether type variables and types can form a valid type
+  (* Check whether given type variables and types form a valid type
   substitution. If so, return it. *)
 
   op checkTypeSubstitution : TypeVariables -> Types -> MayFail TypeSubstitution
@@ -243,7 +253,7 @@ spec
     else FAIL
 
 
-  (* Check whether variables and expressions can form a valid expression
+  (* Check whether given variables and expressions form a valid expression
   substitution. If so, return it. *)
 
   op checkExprSubstitution : Variables -> Expressions -> MayFail ExprSubstitution
@@ -252,51 +262,6 @@ spec
     && length vS = length eS
     then OK (FMap.fromSequences (vS, eS))
     else FAIL
-
-
-
-
-  %%% WE'LL CHECK THESE 3 LATER...
-
-
-  op checkFieldType : Type -> Field -> MayFail Type
-  def checkFieldType t f =
-    case t of
-      | nary (record fS, tS) ->
-        if noRepetitions? fS then
-        let i:Nat = indexOf (fS, f) in
-        if i < length tS then
-        OK (tS!i)
-        else FAIL
-        else FAIL
-      | _ -> FAIL
-
-  op checkConstructorType? : Type -> Constructor -> MayFail Type?
-  def checkConstructorType? t c =
-    case t of
-      | sum (cS, t?S) ->
-        if noRepetitions? cS then
-        let i:Nat = indexOf (cS, c) in
-        if i < length t?S then
-        OK (t?S ! i)
-        else FAIL
-        else FAIL
-      | _ -> FAIL
-
-  op checkRecordTypeUnion : Type -> Type -> MayFail Type
-  def checkRecordTypeUnion t1 t2 =
-    case (t1, t2) of (nary (record fS1, tS1), nary (record fS2, tS2)) ->
-    if length fS1 = length tS1
-    && length fS2 = length tS2 then
-    let fS = maxCommonPrefix (fS1, fS2) in
-    let tS = maxCommonPrefix (tS1, tS2) in
-    if toSet (lastN (fS1, length fS1 - length fS)) /\
-       toSet (lastN (fS2, length fS2 - length fS)) = empty then
-    OK (TRECORD (fS1 ++ lastN (fS2, length fS2 - length fS))
-                (tS1 ++ lastN (tS2, length tS2 - length tS)))
-    else   FAIL
-    else   FAIL
-    | _ -> FAIL
 
 
   (* We give a functional version of positional type substitution, which is
@@ -529,6 +494,7 @@ spec
           else FAIL
 
   conjecture typeSubstInXXXAt_is_functional_version_of_isTypeSubstInXXXAt? is
+                        % `XXX' stands for `Type', `Expr', or `Patt'
     fa (t:Type, e:Expression, p:Pattern,
         newT:Type, newE:Expression, newP:Pattern,
         old:Type, new:Type, pos:Position)
@@ -641,12 +607,12 @@ spec
 
 
   (* This is the main op of this spec. Before defining it, we define various
-  auxiliary checking ops that are mutually recursive with `check'. *)
+  auxiliary checking ops that are mutually recursive with this op. *)
 
   op check : Proof -> MayFail Judgement   % defined below
 
 
-  (* Check proof of well-formed context; return context if success. *)
+  (* Check proof of well-formed context; return context if successful. *)
 
   op checkWFContext : Proof -> MayFail Context
   def checkWFContext prf =
@@ -655,7 +621,8 @@ spec
       | _ -> FAIL
 
 
-  (* Check proof of well-formed type; return context and type if success. *)
+  (* Check proof of well-formed type; return context and type if
+  successful. *)
 
   op checkWFType : Proof -> MayFail (Context * Type)
   def checkWFType prf =
@@ -667,28 +634,43 @@ spec
   (* Like previous op but also check that context coincides with argument.
   Only return type, if successful. *)
 
-  op checkWFType_cx : Context -> Proof -> MayFail Type
-  def checkWFType_cx cx prf =
+  op checkWFTypeWithContext : Context -> Proof -> MayFail Type
+  def checkWFTypeWithContext cx prf =
     case checkWFType prf of
       | OK (mustBe_cx, t) -> if mustBe_cx = cx then OK t else FAIL
+      | _ -> FAIL
+
+
+  (* Like previous op but allow context to have extra type variable
+  declarations. Besides type, return declared type variables (in the order
+  they are declared) if successful. *)
+
+  op checkWFTypeWithContextAndExtraTypeVars :
+     Context -> Proof -> MayFail (TypeVariables * Type)
+  def checkWFTypeWithContextAndExtraTypeVars cx prf =
+    case checkWFType prf of
+      | OK (mustBe_cx_plus_tvS, t) ->
+        (case checkExtraTypeVars cx mustBe_cx_plus_tvS of
+           | OK tvS -> OK (tvS, t)
+           | _ -> FAIL)
       | _ -> FAIL
 
 
   (* Check proofs of well-formed types with given context; return types if
   successful. *)
 
-  op checkWFTypes_cx : Context -> Proofs -> MayFail Types
-  def checkWFTypes_cx cx prfS =
-    checkSequence (map (checkWFType_cx cx, prfS))
+  op checkWFTypesWithContext : Context -> Proofs -> MayFail Types
+  def checkWFTypesWithContext cx prfS =
+    checkSequence (map (checkWFTypeWithContext cx, prfS))
 
 
   (* Check optional proofs of well-formed types with given context; return
   optional types according to optional proofs (i.e. `None' proof yields `None'
   type while `Some' proof yields `Some' type) if all proofs successful. *)
 
-  op checkWFType?s_cx : Context -> Proof?s -> MayFail Type?s
-  def checkWFType?s_cx cx prf?S =
-    checkOptionSequence (map (mapOption (checkWFType_cx cx), prf?S))
+  op checkWFType?sWithContext : Context -> Proof?s -> MayFail Type?s
+  def checkWFType?sWithContext cx prf?S =
+    checkOptionSequence (map (mapOption (checkWFTypeWithContext cx), prf?S))
 
 
   (* Check proof of well-formed sum type; return context, constructors, and
@@ -734,8 +716,9 @@ spec
   (* Like previous op but also check that context and base type coincide with
   arguments. Only return predicate, if successful. *)
 
-  op checkWFSubType_cx_t : Context -> Type -> Proof -> MayFail (Expression)
-  def checkWFSubType_cx_t cx t prf =
+  op checkWFSubTypeWithContextAndBaseType :
+     Context -> Type -> Proof -> MayFail (Expression)
+  def checkWFSubTypeWithContextAndBaseType cx t prf =
     case checkWFSubType prf of
       | OK (mustBe_cx, mustBe_t, r) ->
         if mustBe_cx = cx && mustBe_t = t then OK r else FAIL
@@ -755,8 +738,9 @@ spec
   (* Like previous op but also check that context and base type coincide with
   arguments. Only return predicate, if successful. *)
 
-  op checkWFQuotientType_cx_t : Context -> Type -> Proof -> MayFail (Expression)
-  def checkWFQuotientType_cx_t cx t prf =
+  op checkWFQuotientTypeWithContextAndBaseType :
+     Context -> Type -> Proof -> MayFail (Expression)
+  def checkWFQuotientTypeWithContextAndBaseType cx t prf =
     case checkWFQuotientType prf of
       | OK (mustBe_cx, mustBe_t, q) ->
         if mustBe_cx = cx && mustBe_t = t then OK q else FAIL
@@ -776,108 +760,108 @@ spec
   (* Like previous op but also check that context coincides with argument.
   Only return expression and type, if successful. *)
 
-  op checkWTExpr_cx : Context -> Proof -> MayFail (Expression * Type)
-  def checkWTExpr_cx cx prf =
+  op checkWTExprWithContext : Context -> Proof -> MayFail (Expression * Type)
+  def checkWTExprWithContext cx prf =
     case checkWTExpr prf of
       | OK (mustBe_cx, e, t) ->
         if mustBe_cx = cx then OK (e, t) else FAIL
       | _ -> FAIL
 
 
-  (* Like previous op but also check that type coincides with argument. Only
-  return expression, if successful. *)
+  (* Like previous op but allow context to have extra type variable
+  declarations. Besides expression and type, return declared type variables
+  (in the order they are declared) if successful. *)
 
-  op checkWTExpr_cx_t : Context -> Type -> Proof -> MayFail Expression
-  def checkWTExpr_cx_t cx t prf =
-    case checkWTExpr_cx cx prf of
+  op checkWTExprWithContextAndExtraTypeVars :
+     Context -> Proof -> MayFail (TypeVariables * Expression * Type)
+  def checkWTExprWithContextAndExtraTypeVars cx prf =
+    case checkWTExpr prf of
+      | OK (mustBe_cx_plus_tvS, e, t) ->
+        (case checkExtraTypeVars cx mustBe_cx_plus_tvS of
+           | OK tvS -> OK (tvS, e, t)
+           | _ -> FAIL)
+      | _ -> FAIL
+
+
+  (* Like op `checkWTExprWithContext' but also check that type coincides with
+  argument. Only return expression, if successful. *)
+
+  op checkWTExprWithContextAndType : Context -> Type -> Proof -> MayFail Expression
+  def checkWTExprWithContextAndType cx t prf =
+    case checkWTExprWithContext cx prf of
       | OK (e, mustBe_t) ->
         if mustBe_t = t then OK e else FAIL
       | _ -> FAIL
 
 
+  (* Check proofs of well-typed expressions with given context and types;
+  return expressions if successful. *)
 
-  op checkWTExprsWithContextAndTypes :
-     Context -> Types -> Proofs -> MayFail Expressions
+  op checkWTExprsWithContextAndTypes : Context -> Types -> Proofs -> MayFail Expressions
   def checkWTExprsWithContextAndTypes cx tS prfS =
-    case checkSequence (map (checkWTExpr_cx cx, prfS)) of
-      | OK exTyS ->
-        let (eS, tS1) = unzip exTyS in
-        if tS1 = tS then OK eS else FAIL
+    case checkSequence (map (checkWTExprWithContext cx, prfS)) of
+      | OK etS ->
+        let (eS, mustBe_tS) = unzip etS in
+        if mustBe_tS = tS then OK eS else FAIL
       | _ -> FAIL
 
-  op checkCaseBranchExpr :
-     Context -> Context -> Expression -> Expression -> Proof ->
-     MayFail (Expression * Type)
-  def checkCaseBranchExpr cx varCx negAsm posAsm prf =
-    case checkWTExpr prf of OK (cx1, e, t) ->
-    if maxCommonPrefix (cx, cx1) = cx
-    && length cx1 = length cx + length varCx + 2 then
-    case last cx1 of axioM (_, tvS, e1) ->
-    if tvS = empty
-    && e1 = posAsm
-    && subFromLong (cx1, length cx + 1, length varCx) = varCx then
-    case cx1 ! (length cx) of axioM (_, tvS, e1) ->
-    if tvS = empty
-    && e1 = negAsm then
-    OK (e, t)
-    else   FAIL
-    | _ -> FAIL
-    else   FAIL
-    | _ -> FAIL
-    else   FAIL
-    | _ -> FAIL
 
-  op checkCaseBranchTheorem :
-     Context -> Context -> Expression -> Expression -> Expression -> Proof ->
-     MayFail Expression
-  def checkCaseBranchTheorem cx varCx negAsm posAsm e prf =
-    case checkTheoremEquation prf of OK (cx1, mustBeE, e0) ->
-    if mustBeE = e
-    && maxCommonPrefix (cx, cx1) = cx
-    && length cx1 = length cx + length varCx + 2 then
-    case last cx1 of axioM (_, tvS, e1) ->
-    if tvS = empty
-    && e1 = posAsm
-    && subFromLong (cx1, length cx + 1, length varCx) = varCx then
-    case cx1 ! (length cx) of axioM (_, tvS, e1) ->
-    if tvS = empty
-    && e1 = negAsm then
-    OK e0
-    else   FAIL
-    | _ -> FAIL
-    else   FAIL
-    | _ -> FAIL
-    else   FAIL
-    | _ -> FAIL
+  (* Check proof of well-typed expression of arrow type (i.e. function);
+  return context, expression, and domain and codomain types, if successful. *)
 
-  op checkPatt : Proof -> MayFail (Context * Pattern * Type)
-  def checkPatt prf =
+  op checkWTFunction : Proof -> MayFail (Context * Expression * Type * Type)
+  def checkWTFunction prf =
+    case checkWTExpr prf of
+      | OK (cx, e, arrow (t1, t2)) -> OK (cx, e, t1, t2)
+      | _ -> FAIL
+
+
+  (* Check proof of well-typed pattern; return context, pattern, and type, if
+  successful. *)
+
+  op checkWTPatt : Proof -> MayFail (Context * Pattern * Type)
+  def checkWTPatt prf =
     case check prf of
       | OK (wellTypedPatt (cx, p, t)) -> OK (cx, p, t)
       | _ -> FAIL
 
-  op checkPattWithContext : Context -> Proof -> MayFail (Pattern * Type)
-  def checkPattWithContext cx prf =
-    case check prf of
-      | OK (wellTypedPatt (cx1, p, t)) ->
-        if cx1 = cx then OK (p, t) else FAIL
+
+  (* Like previous op but also check that context coincides with argument.
+  Only return pattern and type, if successful. *)
+
+  op checkWTPattWithContext : Context -> Proof -> MayFail (Pattern * Type)
+  def checkWTPattWithContext cx prf =
+    case checkWTPatt prf of
+      | OK (mustBe_cx, p, t) ->
+        if mustBe_cx = cx then OK (p, t) else FAIL
       | _ -> FAIL
 
-  op checkPattWithContextAndType : Context -> Type -> Proof -> MayFail Pattern
-  def checkPattWithContextAndType cx t prf =
-    case check prf of
-      | OK (wellTypedPatt (cx1, p, t1)) ->
-        if cx1 = cx && t1 = t then OK p else FAIL
+
+  (* Like previous op but also check that type coincides with argument. Only
+  return pattern, if successful. *)
+
+  op checkWTPattWithContextAndType : Context -> Type -> Proof -> MayFail Pattern
+  def checkWTPattWithContextAndType cx t prf =
+    case checkWTPattWithContext cx prf of
+      | OK (p, mustBe_t) ->
+        if mustBe_t = t then OK p else FAIL
       | _ -> FAIL
 
-  op checkPattsWithContextAndTypes :
-     Context -> Types -> Proofs -> MayFail Patterns
-  def checkPattsWithContextAndTypes cx tS prfS =
-    case checkSequence (map (checkPattWithContext cx, prfS)) of
-      | OK paTyS ->
-        let (pS, tS1) = unzip paTyS in
-        if tS1 = tS then OK pS else FAIL
+
+  (* Check proofs of well-typed patterns with given context and types; return
+  patterns if successful. *)
+
+  op checkWTPattsWithContextAndTypes : Context -> Types -> Proofs -> MayFail Patterns
+  def checkWTPattsWithContextAndTypes cx tS prfS =
+    case checkSequence (map (checkWTPattWithContext cx, prfS)) of
+      | OK ptS ->
+        let (pS, mustBe_tS) = unzip ptS in
+        if mustBe_tS = tS then OK pS else FAIL
       | _ -> FAIL
+
+
+  (* Check proof of theorem; return context and formula (expression) if
+  successful. *)
 
   op checkTheorem : Proof -> MayFail (Context * Expression)
   def checkTheorem prf =
@@ -885,149 +869,149 @@ spec
       | OK (theoreM (cx, e)) -> OK (cx, e)
       | _ -> FAIL
 
+
+  (* Like previous op but also check that context coincides with argument.
+  Only return formula, if successful. *)
+
   op checkTheoremWithContext : Context -> Proof -> MayFail Expression
   def checkTheoremWithContext cx prf =
-    case check prf of
-      | OK (theoreM (cx1, e)) ->
-        if cx1 = cx then OK e else FAIL
-      | _ -> FAIL
-
-  op checkTheoremGiven : Context -> Expression -> Proof -> MayFail ()
-  def checkTheoremGiven cx e prf =
-    case check prf of
-      | OK (theoreM (cx1, e1)) ->
-        if cx1 = cx && e1 = e then OK () else FAIL
-      | _ -> FAIL
-
-  op checkTheoremOpDef :
-     Context -> Proof -> MayFail (TypeVariables * Variable * Type * Expression)
-  def checkTheoremOpDef cx prf =
     case checkTheorem prf of
-      OK (cx1, binding (existential1, vS, tS,
-                        binary (equation, nullary (variable v), e))) ->
-    (case checkExtraTypeVars cx cx1 of OK tvS ->
-    if vS = singleton v
-    && length tS = 1 then
-    let t:Type = first tS in
-    OK (tvS, v, t, e)
-    else FAIL
+      | OK (mustBe_cx, e) -> if mustBe_cx = cx then OK e else FAIL
+      | _ -> FAIL
+
+
+  (* Like previous op but allow context to have extra type variable
+  declarations. Besides formula, return declared type variables (in the order
+  they are declared) if successful. *)
+
+  op checkTheoremWithContextAndExtraTypeVars :
+     Context -> Proof -> MayFail (TypeVariables * Expression)
+  def checkTheoremWithContextAndExtraTypeVars cx prf =
+    case checkTheorem prf of
+      | OK (mustBe_cx_plus_tvS, e) ->
+        (case checkExtraTypeVars cx mustBe_cx_plus_tvS of
+           | OK tvS -> OK (tvS, e)
+           | _ -> FAIL)
+      | _ -> FAIL
+
+
+  (* Like op `checkTheoremWithContext' but also check that formula coincides
+  with argument. Return nothing if successful. *)
+
+  op checkTheoremWithContextAndFormula :
+     Context -> Expression -> Proof -> MayFail ()
+  def checkTheoremWithContextAndFormula cx e prf =
+    case checkTheoremWithContext cx prf of
+      | OK mustBe_e -> if mustBe_e = e then OK () else FAIL
+      | _ -> FAIL
+
+
+  (* Check proof of existence and uniqueness theorem required to extend a
+  context with an op definition. More precisely, given arguments `cx', `t',
+  and `tvS', check that proof proves `theoreM (cx ++ multiTypeVarDecls tvS1,
+  EX1 v (typeSubstInType tsbs t) (VAR v == e))' for some `tvS1', `v', `e', and
+  `tsbs' such that `isTypeSubstFrom? (tsbs, tvS, map (TVAR, tvS1))' (see rule
+  `cxOpDef' in spec `Provability'); return `tvS1', `v', and `e' if
+  successful. *)
+
+  op checkTheoremOpDef : Context -> Type -> TypeVariables -> Proof ->
+                         MayFail (TypeVariables * Variable * Expression)
+  def checkTheoremOpDef cx t tvS prf =
+    case checkTheoremWithContextAndExtraTypeVars cx prf of
+      OK (tvS1,
+          binding (existential1, mustBe_singleton_v, mustBe_singleton_tsbs_of_t,
+                   binary (equation, nullary (variable v), e))) ->
+    (case checkTypeSubstitution tvS (map (TVAR, tvS1)) of OK tsbs ->
+    if length mustBe_singleton_v = 1 then
+    let v:Variable = first mustBe_singleton_v in
+    if mustBe_singleton_tsbs_of_t = singleton (typeSubstInType tsbs t) then
+    OK (tvS, v, e)
+    else   FAIL
+    else   FAIL
     | _ -> FAIL)
     | _ -> FAIL
+
+
+  (* Check proof of reflexivity theorem required to form well-formed quotient
+  type. More precisely, check that proof proves `theoreM (cx, FA v t (q @ PAIR
+  (VAR v) (VAR v)))' for some `cx', `v', `t', and `q' such that `q' has no
+  free variables (see rules `tyQuot' in spec `Provability'); return `cx', `v',
+  `t', and `q' if successful. *)
 
   op checkTheoremReflexivity :
      Proof -> MayFail (Context * Variable * Type * Expression)
   def checkTheoremReflexivity prf =
     case checkTheorem prf of
-      | OK (cx, binding (universal, vS, tS, binary (application, q, vv))) ->
-        if length vS = 1
-        && length tS = 1 then
-        let v:Variable = first vS in
-        let t:Type     = first tS in
-        if exprFreeVars q = empty
-        &&  vv = PAIR (VAR v) (VAR v) then
-        OK (cx, v, t, q)
-        else FAIL
-        else FAIL
-      | _ -> FAIL
+      OK (cx, binding (universal, mustBe_singleton_v, mustBe_singleton_t,
+                       binary (application, q, mustBe_pair_v_v))) ->
+    if length mustBe_singleton_v = 1
+    && length mustBe_singleton_t = 1 then
+    let v:Variable = first mustBe_singleton_v in
+    let t:Type     = first mustBe_singleton_t in
+    if exprFreeVars q = empty
+    &&  mustBe_pair_v_v = PAIR (VAR v) (VAR v) then
+    OK (cx, v, t, q)
+    else   FAIL
+    else   FAIL
+    | _ -> FAIL
+
+
+  (* Check proof of symmetry theorem required to form well-formed quotient
+  type. More precisely, given arguments `cx', `t', and `q', check that proof
+  proves `theoreM (cx, FAA (seq2(v1,v2)) (seq2(t,t)) (q @ PAIR (VAR v1) (VAR
+  v2) ==> q @ PAIR (VAR v2) (VAR v1)))' for some distinct `v1' and `v2' (see
+  rule `tyQuot' in spec `Provability'); return nothing if successful. *)
 
   op checkTheoremSymmetry :
      Context -> Type -> Expression -> Proof -> MayFail ()
   def checkTheoremSymmetry cx t q prf =
-    case checkTheorem prf of
-      | OK (cx1, binding (universal, vS, tS, e)) ->
-        if cx1 = cx
-        && length vS = 2 then
-        let v1:Variable = vS!0 in
-        let v2:Variable = vS!1 in
-        if v1 ~= v2
-        && tS = seq2 (t, t)
-        && e = (q @ PAIR (VAR v1) (VAR v2)
-                ==>
-                q @ PAIR (VAR v2) (VAR v1)) then
-        OK ()
-        else FAIL
-        else FAIL
-      | _ -> FAIL
+    case checkTheoremWithContext cx prf of
+      OK (binding (universal, mustBe_seq2_v1_v2, mustBe_seq2_t_t,
+                   mustBe_q_pair_v1_v2_implies_q_pair_v2_v1)) ->
+    if length mustBe_seq2_v1_v2 = 2 then
+    let v1:Variable = mustBe_seq2_v1_v2 ! 0 in
+    let v2:Variable = mustBe_seq2_v1_v2 ! 1 in
+    if v1 ~= v2
+    && mustBe_seq2_t_t = seq2 (t, t)
+    && mustBe_q_pair_v1_v2_implies_q_pair_v2_v1 =
+       (q @ PAIR (VAR v1) (VAR v2) ==> q @ PAIR (VAR v2) (VAR v1)) then
+    OK ()
+    else   FAIL
+    else   FAIL
+    | _ -> FAIL
+
+
+  (* Check proof of transitivity theorem required to form well-formed quotient
+  type. More precisely, given arguments `cx', `t', and `q', check that proof
+  proves `theoreM (cx, FAA (seq3(u1,u2,u3)) (seq3(t,t,t)) (q @ PAIR (VAR u1)
+  (VAR u2) &&& q @ PAIR (VAR u2) (VAR u3) ==> q @ PAIR (VAR u1) (VAR u3)))'
+  for some distinct `u1', `u2', and `u3' (see rule `tyQuot' in spec
+  `Provability'); return nothing if successful. *)
 
   op checkTheoremTransitivity :
      Context -> Type -> Expression -> Proof -> MayFail ()
   def checkTheoremTransitivity cx t q prf =
-    case checkTheorem prf of
-      | OK (cx1, binding (universal, vS, tS, e)) ->
-        if cx1 = cx
-        && length vS = 3 then
-        let v1:Variable = vS!0 in
-        let v2:Variable = vS!1 in
-        let v3:Variable = vS!2 in
-        if v1 ~= v2
-        && v2 ~= v3
-        && v3 ~= v1
-        && tS = seq3 (t, t, t)
-        && e = (q @ PAIR (VAR v1) (VAR v2)
-                &&&
-                q @ PAIR (VAR v2) (VAR v3)
-                ==>
-                q @ PAIR (VAR v1) (VAR v3)) then
-        OK ()
-        else FAIL
-        else FAIL
-      | _ -> FAIL
+    case checkTheoremWithContext cx prf of
+      OK (binding (universal, mustBe_seq3_u1_u2_u3, mustBe_seq3_t_t_t,
+                   mustBe_q_pair_u1_u2_and_q_pair_u2_u3_implies_q_pair_u1_u3)) ->
+    if length mustBe_seq3_u1_u2_u3 = 3 then
+    let u1:Variable = mustBe_seq3_u1_u2_u3 ! 0 in
+    let u2:Variable = mustBe_seq3_u1_u2_u3 ! 1 in
+    let u3:Variable = mustBe_seq3_u1_u2_u3 ! 2 in
+    if u1 ~= u2
+    && u2 ~= u3
+    && u3 ~= u1
+    && mustBe_seq3_t_t_t = seq3 (t, t, t)
+    && mustBe_q_pair_u1_u2_and_q_pair_u2_u3_implies_q_pair_u1_u3 =
+       (q @ PAIR (VAR u1) (VAR u2) &&& q @ PAIR (VAR u2) (VAR u3) ==>
+        q @ PAIR (VAR u1) (VAR u3)) then
+    OK ()
+    else   FAIL
+    else   FAIL
+    | _ -> FAIL
 
-  op checkTheoremEquation : Proof -> MayFail (Context * Expression * Expression)
-  def checkTheoremEquation prf =
-    case checkTheorem prf of
-      | OK (cx, binary (equation, e1, e2)) -> OK (cx, e1, e2)
-      | _ -> FAIL
 
-  op checkTheoremEquationGiven :
-     Context -> Expression -> Expression -> Proof -> MayFail ()
-  def checkTheoremEquationGiven cx e1 e2 prf =
-    case checkTheorem prf of
-      | OK (cx1, e) ->
-        if cx1 = cx && e = (e1 == e2) then OK () else FAIL
-      | _ -> FAIL
-
-  op checkTheoremCongruence :
-     Context -> Expression -> Expression -> Proof -> MayFail ()
-  def checkTheoremCongruence cx e q prf =
-    case checkTheorem prf of
-      | OK (cx1, binding (universal, vS, tS, e0)) ->
-        if cx1 = cx
-        && length vS = 2 then
-        let v1:Variable = vS!0 in
-        let v2:Variable = vS!1 in
-        if v1 ~= v2
-        && ~(v1 in? exprFreeVars e)
-        && ~(v2 in? exprFreeVars e)
-        && e0 = (q @ PAIR (VAR v1) (VAR v2) ==> e @ VAR v1 == e @ VAR v2) then
-        OK ()
-        else FAIL
-        else FAIL
-      | _ -> FAIL
-
-  op checkTheoremRecursiveLet :
-     Proof -> MayFail (Context * Variables * Types * Expressions)
-  def checkTheoremRecursiveLet prf =
-    case check prf of
-      | OK (theoreM (cx, binding (existential1, vS, tS,
-                                  binary (equation,
-                                    nary (tuple, veS), nary (tuple, eS))))) ->
-        if veS = map (VAR, vS) then OK (cx, vS, tS, eS) else FAIL
-      | _ -> FAIL
-
-  op checkTypeEquivalence : Proof -> MayFail (Context * Type * Type)
-  def checkTypeEquivalence prf =
-    case check prf of
-      | OK (typeEquivalence (cx, t1, t2)) -> OK (cx, t1, t2)
-      | _ -> FAIL
-
-  op checkTypeEquivalenceWithContext : Context -> Proof -> MayFail (Type * Type)
-  def checkTypeEquivalenceWithContext cx prf =
-    case check prf of
-      | OK (typeEquivalence (cx1, t1, t2)) ->
-        if cx1 = cx then OK (t1, t2) else FAIL
-      | _ -> FAIL
-
+  (* We finally define `check', the main op of this spec. *)
 
   def check = fn
 
@@ -1043,10 +1027,8 @@ spec
     | cxOpDecl (prf, prf1, o) ->
       (case checkWFContext prf of OK cx ->
       if ~(o in? contextOps cx) then
-      (case checkWFType prf1 of OK (mustBe_cx_plus_tvS, t) ->
-      (case checkExtraTypeVars cx mustBe_cx_plus_tvS of OK tvS ->
+      (case checkWFTypeWithContextAndExtraTypeVars cx prf1 of OK (tvS, t) ->
       OK (wellFormedContext (cx <| opDeclaration (o, tvS, t)))
-      | _ -> FAIL)
       | _ -> FAIL)
       else   FAIL
       | _ -> FAIL)
@@ -1054,12 +1036,10 @@ spec
       (case checkWFContext prf of OK cx ->
       (case checkTypeDecl cx tn of OK n ->
       if ~(contextDefinesType? (cx, tn)) then
-      (case checkWFType prf1 of OK (mustBe_cx_plus_tvS, t) ->
-      (case checkExtraTypeVars cx mustBe_cx_plus_tvS of OK tvS ->
+      (case checkWFTypeWithContextAndExtraTypeVars cx prf1 of OK (tvS, t) ->
       if length tvS = n then
       OK (wellFormedContext (cx <| typeDefinition (tn, tvS, t)))
       else   FAIL
-      | _ -> FAIL)
       | _ -> FAIL)
       else   FAIL
       | _ -> FAIL)
@@ -1068,14 +1048,11 @@ spec
       (case checkWFContext prf of OK cx ->
       (case checkOpDecl cx o of OK (tvS, t) ->
       if ~(contextDefinesOp? (cx, o)) then
-      (case checkTheoremOpDef cx prf1 of OK (tvS1, v, mustBe_tsbs_of_t, e) ->
-      (case checkTypeSubstitution tvS (map (TVAR, tvS1)) of OK tsbs ->
-      if mustBe_tsbs_of_t = typeSubstInType tsbs t
-      && ~(o in? exprOps e) then
+      (case checkTheoremOpDef cx t tvS prf1 of OK (tvS1, v, e) ->
+      if ~(o in? exprOps e) then
       let esbs:ExprSubstitution = FMap.singleton (v, OPP o (map (TVAR, tvS1))) in
       OK (wellFormedContext (cx <| opDefinition (o, tvS1, exprSubst esbs e)))
       else   FAIL
-      | _ -> FAIL)
       | _ -> FAIL)
       else   FAIL
       | _ -> FAIL)
@@ -1083,10 +1060,9 @@ spec
     | cxAxiom (prf, prf1, an) ->
       (case checkWFContext prf of OK cx ->
       if ~(an in? contextAxioms cx) then
-      (case checkWTExpr prf1 of OK (mustBe_cx_plus_tvS, e, boolean) ->
-      (case checkExtraTypeVars cx mustBe_cx_plus_tvS of OK tvS ->
+      (case checkWTExprWithContextAndExtraTypeVars cx prf1 of
+        OK (tvS, e, boolean) ->
       OK (wellFormedContext (cx <| axioM (an, tvS, e)))
-      | _ -> FAIL)
       | _ -> FAIL)
       else   FAIL
       | _ -> FAIL)
@@ -1099,7 +1075,7 @@ spec
     | cxVarDecl (prf, prf1, v) ->
       (case checkWFContext prf of OK cx ->
       if ~(v in? contextVars cx) then
-      (case checkWFType_cx cx prf1 of OK t ->
+      (case checkWFTypeWithContext cx prf1 of OK t ->
       OK (wellFormedContext (cx <| varDeclaration (v, t)))
       | _ -> FAIL)
       else   FAIL
@@ -1127,7 +1103,7 @@ spec
       | _ -> FAIL)
     | tyArrow (prf1, prf2) ->
       (case checkWFType prf1 of OK (cx, t1) ->
-      (case checkWFType_cx cx prf2 of OK t2 ->
+      (case checkWFTypeWithContext cx prf2 of OK t2 ->
       OK (wellFormedType (cx, t1 --> t2))
       | _ -> FAIL)
       | _ -> FAIL)
@@ -1136,38 +1112,36 @@ spec
       if length prf?S = length cS
       && noRepetitions? cS
       && length cS > 0 then
-      (case checkWFType?s_cx cx prf?S of OK t?S ->
+      (case checkWFType?sWithContext cx prf?S of OK t?S ->
       OK (wellFormedType (cx, SUM cS t?S))
       | _ -> FAIL)
       else   FAIL
       | _ -> FAIL)
     | tyInstance (prf, prfS, tn) ->
       (case checkWFContext prf of OK cx ->
-      (case checkTypeDecl cx tn of OK mustBe_length_prfS ->
-      if mustBe_length_prfS = length prfS then
-      (case checkWFTypes_cx cx prfS of OK tS ->
+      (case checkTypeDeclWithArity cx tn (length prfS) of OK () ->
+      (case checkWFTypesWithContext cx prfS of OK tS ->
       OK (wellFormedType (cx, TYPE tn tS))
       | _ -> FAIL)
-      else   FAIL
       | _ -> FAIL)
       | _ -> FAIL)
     | tyRecord (prf, prfS, fS) ->
       (case checkWFContext prf of OK cx ->
       if length prfS = length fS
       && noRepetitions? fS then
-      (case checkWFTypes_cx cx prfS of OK tS ->
+      (case checkWFTypesWithContext cx prfS of OK tS ->
       OK (wellFormedType (cx, TRECORD fS tS))
       | _ -> FAIL)
       else   FAIL
       | _ -> FAIL)
     | tyProduct (prf, prfS) ->
       (case checkWFContext prf of OK cx ->
-      (case checkWFTypes_cx cx prfS of OK tS ->
+      (case checkWFTypesWithContext cx prfS of OK tS ->
       OK (wellFormedType (cx, PRODUCT tS))
       | _ -> FAIL)
       | _ -> FAIL)
     | tySub prf ->
-      (case checkWTExpr prf of OK (cx, r, arrow (t, boolean)) ->
+      (case checkWTFunction prf of OK (cx, r, t, boolean) ->
       if exprFreeVars r = empty then
       OK (wellFormedType (cx, t \ r))
       else   FAIL
@@ -1181,11 +1155,17 @@ spec
       | _ -> FAIL)
       | _ -> FAIL)
 
+
+
+   %%%%% CONTINUE HERE %%%%%
+
+
+
     %%%%%%%%%% type equivalence:
     | tyEqDef (prfCx, prfTyS, tn) ->
       (case checkWFContext prfCx of OK cx ->
       (case checkTypeDef cx tn of OK (tvS, t) ->
-      (case checkWFTypes_cx cx prfTyS of OK tS ->
+      (case checkWFTypesWithContext cx prfTyS of OK tS ->
       (case checkTypeSubstitution tvS tS of OK tsbs ->
       OK (typeEquivalence (cx, TYPE tn tS, typeSubstInType tsbs t))
       | _ -> FAIL)
@@ -1238,7 +1218,7 @@ spec
       | _ -> FAIL)
     | tyEqSubPredicate (prfTy1, prfTy2, prfEq) ->
       (case checkWFSubType prfTy1 of OK (cx, t, r1) ->
-      (case checkWFSubType_cx_t cx t prfTy2 of OK r2 ->
+      (case checkWFSubTypeWithContextAndBaseType cx t prfTy2 of OK r2 ->
       (case checkTheoremEquationGiven cx r1 r2 prfEq of OK () ->
       OK (typeEquivalence (cx, t \ r1, t \ r2))
       | _ -> FAIL)
@@ -1246,7 +1226,7 @@ spec
       | _ -> FAIL)
     | tyEqQuotientPredicate (prfTy1, prfTy2, prfEq) ->
       (case checkWFQuotientType prfTy1 of OK (cx, t, q1) ->
-      (case checkWFQuotientType_cx_t cx t prfTy2 of OK q2 ->
+      (case checkWFQuotientTypeWithContextAndBaseType cx t prfTy2 of OK q2 ->
       (case checkTheoremEquationGiven cx q1 q2 prfEq of OK () ->
       OK (typeEquivalence (cx, t / q1, t / q2))
       | _ -> FAIL)
@@ -1294,7 +1274,7 @@ spec
       | _ -> FAIL)
     | exApplication (prf1, prf2) ->
       (case checkWTExpr prf1 of OK (cx, e1, arrow (t1, t2)) ->
-      (case checkWTExpr_cx cx prf2 of OK (e2, t3) ->
+      (case checkWTExprWithContext cx prf2 of OK (e2, t3) ->
       if t3 = t1 then
       OK (wellTypedExpr (cx, e1 @ e2, t2))
       else FAIL
@@ -1302,7 +1282,7 @@ spec
       | _ -> FAIL)
     | exEquation (prf1, prf2) ->
       (case checkWTExpr prf1 of OK (cx, e1, t) ->
-      (case checkWTExpr_cx_t cx t prf2 of OK e2 ->
+      (case checkWTExprWithContextAndType cx t prf2 of OK e2 ->
       OK (wellTypedExpr (cx, e1 == e2, BOOL))
       | _ -> FAIL)
       | _ -> FAIL)
@@ -1312,7 +1292,7 @@ spec
       | _ -> FAIL)
     | exRecordUpdate (prf1, prf2) ->
       (case checkWTExpr prf1 of OK (cx, e1, t1) ->
-      (case checkWTExpr_cx cx prf2 of OK (e2, t2) ->
+      (case checkWTExprWithContext cx prf2 of OK (e2, t2) ->
       (case checkRecordTypeUnion t1 t2 of OK t ->
       OK (wellTypedExpr (cx, e1 <<< e2, t))
       | _ -> FAIL)
@@ -1320,9 +1300,9 @@ spec
       | _ -> FAIL)
     | exRestriction (prfTy, prfEx, prfTh) ->
       (case checkWFSubType prfTy of OK (cx, t, r) ->
-      (case checkWTExpr_cx cx prfEx of OK (e, t1) ->
+      (case checkWTExprWithContext cx prfEx of OK (e, t1) ->
       if t1 = t then
-      (case checkTheoremGiven cx (r @ e) prfTh of OK () ->
+      (case checkTheoremWithContextAndFormula cx (r @ e) prfTh of OK () ->
       OK (wellTypedExpr (cx, RESTRICT r e, t \ r))
       | _ -> FAIL)
       else   FAIL
@@ -1330,7 +1310,7 @@ spec
       | _ -> FAIL)
     | exChoice (prfTy, prfEx, prfTh) ->
       (case checkWFQuotientType prfTy of OK (cx, t, q) ->
-      (case checkWTExpr_cx cx prfEx of OK (e, arrow (t0, t1)) ->
+      (case checkWTExprWithContext cx prfEx of OK (e, arrow (t0, t1)) ->
       if t0 = t then
       (case checkTheoremCongruence cx e q prfTh of OK () ->
       OK (wellTypedExpr (cx, CHOOSE q e, t/q --> t1))
@@ -1355,7 +1335,7 @@ spec
       | _ -> FAIL)
     | exEquivalence (prf1, prf2) ->
       (case checkWTExpr prf1 of OK (cx, e1, boolean) ->
-      (case checkWTExpr_cx cx prf2 of OK (e2, boolean) ->
+      (case checkWTExprWithContext cx prf2 of OK (e2, boolean) ->
       OK (wellTypedExpr (cx, e1 <==> e2, BOOL))
       | _ -> FAIL)
       | _ -> FAIL)
@@ -1418,7 +1398,7 @@ spec
     | exOpInstance (prfCx, prfTyS, o) ->
       (case checkWFContext prfCx of OK cx ->
       (case checkOpDecl cx o of OK (tvS, t) ->
-      (case checkWFTypes_cx cx prfTyS of OK tS ->
+      (case checkWFTypesWithContext cx prfTyS of OK tS ->
       (case checkTypeSubstitution tvS tS of OK tsbs ->
       OK (wellTypedExpr (cx, OPP o tS, typeSubstInType tsbs t))
       | _ -> FAIL)
@@ -1439,7 +1419,7 @@ spec
       | _ -> FAIL)
     | exCase (prfTgt, prfPS, prfExh, prfES) ->
       (case checkWTExpr prfTgt of OK (cx, e, t) ->
-      (case checkSequence (map (checkPattWithContextAndType cx t, prfPS)) of
+      (case checkSequence (map (checkWTPattWithContextAndType cx t, prfPS)) of
          OK pS ->
       let n:Nat = length pS in
       if n > 0 then
@@ -1447,7 +1427,7 @@ spec
         if i < n then Some (let (vS,tS) = pattVarsWithTypes (pS!i) in
                             EXX vS tS (pattAssumptions (pS!i, e)))
         else None) in
-      (case checkTheoremGiven cx (disjoinAll caseMatches) prfExh of OK () ->
+      (case checkTheoremWithContextAndFormula cx (disjoinAll caseMatches) prfExh of OK () ->
       let varCxS:FSeq Context = seqSuchThat (fn(i:Nat) ->
         if i < n then Some (multiVarDecls (pattVarsWithTypes (pS!i)))
         else None) in
@@ -1567,31 +1547,31 @@ spec
     | paEmbedding1 (prfTy, prfPa, c) ->
       (case checkWFSumType prfTy of OK (cx, cS, t?S) ->
       (case checkConstructorType? (SUM cS t?S) c of OK (Some ti) ->
-      (case checkPattWithContextAndType cx ti prfPa of OK p ->
+      (case checkWTPattWithContextAndType cx ti prfPa of OK p ->
       OK (wellTypedPatt (cx, PEMBED (SUM cS t?S) c p, SUM cS t?S))
       | _ -> FAIL)
       | _ -> FAIL)
       | _ -> FAIL)
     | paRecord (prf, prfS) ->
       (case checkWFRecordType prf of OK (cx, fS, tS) ->
-      (case checkPattsWithContextAndTypes cx tS prfS of OK pS ->
+      (case checkWTPattsWithContextAndTypes cx tS prfS of OK pS ->
       OK (wellTypedPatt (cx, PRECORD fS pS, TRECORD fS tS))
       | _ -> FAIL)
       | _ -> FAIL)
     | paTuple (prf, prfS) ->
       (case checkWFProductType prf of OK (cx, tS) ->
-      (case checkPattsWithContextAndTypes cx tS prfS of OK pS ->
+      (case checkWTPattsWithContextAndTypes cx tS prfS of OK pS ->
       OK (wellTypedPatt (cx, PTUPLE pS, PRODUCT tS))
       | _ -> FAIL)
       | _ -> FAIL)
     | paAlias (prf, v) ->
-      (case checkPatt prf of OK (cx, p, t) ->
+      (case checkWTPatt prf of OK (cx, p, t) ->
       if ~(v in? contextVars cx) then
       OK (wellTypedPatt (cx, AS v t p, t))
       else   FAIL
       | _ -> FAIL)
     | paEquivalentTypes (prfPa, prfTE) ->
-      (case checkPatt prfPa of OK (cx, p, t) ->
+      (case checkWTPatt prfPa of OK (cx, p, t) ->
       (case checkTypeEquivalenceWithContext cx prfTE of OK (t0, t1) ->
       if t0 = t then
       OK (wellTypedPatt (cx, p, t1))
@@ -1603,7 +1583,7 @@ spec
     | thAxiom (prfCx, prfTyS, tvS, an) ->
       (case checkWFContext prfCx of OK cx ->
       (case checkAxiom cx an of OK (tvS, e) ->
-      (case checkWFTypes_cx cx prfTyS of OK tS ->
+      (case checkWFTypesWithContext cx prfTyS of OK tS ->
       (case checkTypeSubstitution tvS tS of OK tsbs ->
       OK (theoreM (cx, typeSubstInExpr tsbs e))
       | _ -> FAIL)
@@ -1613,7 +1593,7 @@ spec
     | thOpDef (prfCx, prfTyS, o) ->
       (case checkWFContext prfCx of OK cx ->
       (case checkOpDef cx o of OK (tvS, e) ->
-      (case checkWFTypes_cx cx prfTyS of OK tS ->
+      (case checkWFTypesWithContext cx prfTyS of OK tS ->
       (case checkTypeSubstitution tvS tS of OK tsbs ->
       OK (theoreM (cx, OPP o tS == typeSubstInExpr tsbs e))
       | _ -> FAIL)
@@ -1646,8 +1626,8 @@ spec
       | _ -> FAIL)
     | thCongruence (prf1, prf2, prf3) ->
       (case checkWTExpr prf1 of OK (cx, e1, t) ->
-      (case checkWTExpr_cx_t cx t prf2 of OK e2 ->
-      (case checkWTExpr_cx cx prf3 of OK (e, arrow (t0, t1)) ->
+      (case checkWTExprWithContextAndType cx t prf2 of OK e2 ->
+      (case checkWTExprWithContext cx prf3 of OK (e, arrow (t0, t1)) ->
       if t0 = t then
       OK (theoreM (cx, e1 == e2 ==> e @ e1 == e @ e2))
       else   FAIL
@@ -1656,7 +1636,7 @@ spec
       | _ -> FAIL)
     | thExtensionality (prf1, prf2, v) ->
       (case checkWTExpr prf1 of OK (cx, e1, arrow (t, t1)) ->
-      (case checkWTExpr_cx_t cx (t --> t1) prf2 of OK e2 ->
+      (case checkWTExprWithContextAndType cx (t --> t1) prf2 of OK e2 ->
       if ~(v in? exprFreeVars e1 \/ exprFreeVars e2) then
       OK (theoreM (cx, e1 == e2 <==>
                        FA v t e1 @ VAR v == e2 @ VAR v))
@@ -1732,7 +1712,7 @@ spec
       (case checkWTExpr prf1 of
          OK (cx, nary (record fS1, eS1), nary (record mustBeFS1, tS1)) ->
       if mustBeFS1 = fS1 then
-      (case checkWTExpr_cx cx prf2 of
+      (case checkWTExprWithContext cx prf2 of
          OK (nary (record fS2, eS2), nary (record mustBeFS2, tS2)) ->
       if mustBeFS2 = fS2
       && f in? fS1
@@ -1749,7 +1729,7 @@ spec
       (case checkWTExpr prf1 of
          OK (cx, nary (record fS1, eS1), nary (record mustBeFS1, tS1)) ->
       if mustBeFS1 = fS1 then
-      (case checkWTExpr_cx cx prf2 of
+      (case checkWTExprWithContext cx prf2 of
          OK (nary (record fS2, eS2), nary (record mustBeFS2, tS2)) ->
       if mustBeFS2 = fS2
       && f in? fS2
@@ -1992,5 +1972,150 @@ spec
       OK (theoreM (cx, LET p e e1 == CASE e (singleton p) (singleton e1)))
       | _ -> FAIL)
 
+
+
+
+
+
+  %%% TO CHECK..........
+
+  op checkFieldType : Type -> Field -> MayFail Type
+  def checkFieldType t f =
+    case t of
+      | nary (record fS, tS) ->
+        if noRepetitions? fS then
+        let i:Nat = indexOf (fS, f) in
+        if i < length tS then
+        OK (tS!i)
+        else FAIL
+        else FAIL
+      | _ -> FAIL
+
+  op checkConstructorType? : Type -> Constructor -> MayFail Type?
+  def checkConstructorType? t c =
+    case t of
+      | sum (cS, t?S) ->
+        if noRepetitions? cS then
+        let i:Nat = indexOf (cS, c) in
+        if i < length t?S then
+        OK (t?S ! i)
+        else FAIL
+        else FAIL
+      | _ -> FAIL
+
+  op checkRecordTypeUnion : Type -> Type -> MayFail Type
+  def checkRecordTypeUnion t1 t2 =
+    case (t1, t2) of (nary (record fS1, tS1), nary (record fS2, tS2)) ->
+    if length fS1 = length tS1
+    && length fS2 = length tS2 then
+    let fS = maxCommonPrefix (fS1, fS2) in
+    let tS = maxCommonPrefix (tS1, tS2) in
+    if toSet (lastN (fS1, length fS1 - length fS)) /\
+       toSet (lastN (fS2, length fS2 - length fS)) = empty then
+    OK (TRECORD (fS1 ++ lastN (fS2, length fS2 - length fS))
+                (tS1 ++ lastN (tS2, length tS2 - length tS)))
+    else   FAIL
+    else   FAIL
+    | _ -> FAIL
+
+  op checkCaseBranchExpr :
+     Context -> Context -> Expression -> Expression -> Proof ->
+     MayFail (Expression * Type)
+  def checkCaseBranchExpr cx varCx negAsm posAsm prf =
+    case checkWTExpr prf of OK (cx1, e, t) ->
+    if maxCommonPrefix (cx, cx1) = cx
+    && length cx1 = length cx + length varCx + 2 then
+    case last cx1 of axioM (_, tvS, e1) ->
+    if tvS = empty
+    && e1 = posAsm
+    && subFromLong (cx1, length cx + 1, length varCx) = varCx then
+    case cx1 ! (length cx) of axioM (_, tvS, e1) ->
+    if tvS = empty
+    && e1 = negAsm then
+    OK (e, t)
+    else   FAIL
+    | _ -> FAIL
+    else   FAIL
+    | _ -> FAIL
+    else   FAIL
+    | _ -> FAIL
+
+  op checkCaseBranchTheorem :
+     Context -> Context -> Expression -> Expression -> Expression -> Proof ->
+     MayFail Expression
+  def checkCaseBranchTheorem cx varCx negAsm posAsm e prf =
+    case checkTheoremEquation prf of OK (cx1, mustBeE, e0) ->
+    if mustBeE = e
+    && maxCommonPrefix (cx, cx1) = cx
+    && length cx1 = length cx + length varCx + 2 then
+    case last cx1 of axioM (_, tvS, e1) ->
+    if tvS = empty
+    && e1 = posAsm
+    && subFromLong (cx1, length cx + 1, length varCx) = varCx then
+    case cx1 ! (length cx) of axioM (_, tvS, e1) ->
+    if tvS = empty
+    && e1 = negAsm then
+    OK e0
+    else   FAIL
+    | _ -> FAIL
+    else   FAIL
+    | _ -> FAIL
+    else   FAIL
+    | _ -> FAIL
+
+  op checkTheoremEquation : Proof -> MayFail (Context * Expression * Expression)
+  def checkTheoremEquation prf =
+    case checkTheorem prf of
+      | OK (cx, binary (equation, e1, e2)) -> OK (cx, e1, e2)
+      | _ -> FAIL
+
+  op checkTheoremEquationGiven :
+     Context -> Expression -> Expression -> Proof -> MayFail ()
+  def checkTheoremEquationGiven cx e1 e2 prf =
+    case checkTheorem prf of
+      | OK (cx1, e) ->
+        if cx1 = cx && e = (e1 == e2) then OK () else FAIL
+      | _ -> FAIL
+
+  op checkTheoremCongruence :
+     Context -> Expression -> Expression -> Proof -> MayFail ()
+  def checkTheoremCongruence cx e q prf =
+    case checkTheorem prf of
+      | OK (cx1, binding (universal, vS, tS, e0)) ->
+        if cx1 = cx
+        && length vS = 2 then
+        let v1:Variable = vS!0 in
+        let v2:Variable = vS!1 in
+        if v1 ~= v2
+        && ~(v1 in? exprFreeVars e)
+        && ~(v2 in? exprFreeVars e)
+        && e0 = (q @ PAIR (VAR v1) (VAR v2) ==> e @ VAR v1 == e @ VAR v2) then
+        OK ()
+        else FAIL
+        else FAIL
+      | _ -> FAIL
+
+  op checkTheoremRecursiveLet :
+     Proof -> MayFail (Context * Variables * Types * Expressions)
+  def checkTheoremRecursiveLet prf =
+    case check prf of
+      | OK (theoreM (cx, binding (existential1, vS, tS,
+                                  binary (equation,
+                                    nary (tuple, veS), nary (tuple, eS))))) ->
+        if veS = map (VAR, vS) then OK (cx, vS, tS, eS) else FAIL
+      | _ -> FAIL
+
+  op checkTypeEquivalence : Proof -> MayFail (Context * Type * Type)
+  def checkTypeEquivalence prf =
+    case check prf of
+      | OK (typeEquivalence (cx, t1, t2)) -> OK (cx, t1, t2)
+      | _ -> FAIL
+
+  op checkTypeEquivalenceWithContext : Context -> Proof -> MayFail (Type * Type)
+  def checkTypeEquivalenceWithContext cx prf =
+    case check prf of
+      | OK (typeEquivalence (cx1, t1, t2)) ->
+        if cx1 = cx then OK (t1, t2) else FAIL
+      | _ -> FAIL
 
 endspec
