@@ -23,9 +23,15 @@ MetaSlang qualifying spec {
 
  sort QualifiedId = | Qualified Qualifier * Id
 
+ %% An annotated qualified id can record extra information, 
+ %% e.g. the precise position of the name.
+ sort AQualifiedId a = QualifiedId * a
+
  %% the following are invoked by the parser to make qualified names
- def mkUnQualifiedId id              = Qualified (UnQualified, id)
- def mkQualifiedId   (qualifier, id) = Qualified (qualifier,   id)
+ def mkUnQualifiedId  id                 =  Qualified (UnQualified, id)
+ def mkQualifiedId    (qualifier, id)    =  Qualified (qualifier,   id)
+ def fa (a) mkAUnQualifiedId (id,            x : a) = (Qualified (UnQualified, id), x) 
+ def fa (a) mkAQualifiedId   (qualifier, id, x : a) = (Qualified (qualifier,   id), x)
 
  op printQualifiedId : QualifiedId -> String
  def printQualifiedId (Qualified (qualifier, id)) =
