@@ -78,7 +78,9 @@
 (defun specware-shell (exiting-lisp?)
   (let  ((magic-eof-cookie (cons :eof nil))
 	 (number-of-eofs 0)
-	 (cl:*package* (find-package :SWShell))
+	 (cl:*package* cl:*package*)
+	 (sw-shell-pkg (find-package :SWShell))
+	 * ** ***
 	 ch)
     (emacs::eval-in-emacs "(set-comint-prompt)")
     (setq *emacs-eval-form-after-prompt* nil)
@@ -102,6 +104,8 @@
 	      (catch #+allegro 'tpl::top-level-break-loop
 		     #-allegro nil
 		(let ((form (read *standard-input* nil magic-eof-cookie)))
+		  (when (symbolp form)
+		    (setq form (intern (symbol-name form) sw-shell-pkg)))
 		  (cond ((member form '(quit exit))
 			 (setq exiting-lisp? t)
 			 (cl-user::exit))
@@ -144,9 +148,15 @@
   `(progn (set-specware-shell nil)
 	  ,@fms))
 
+(defun lisp-value (val)
+  (setq *** **
+	** *
+	* val)
+  val)
+
 (defun process-sw-shell-command (command argstr)
   (if (and (consp command) (null argstr))
-      (progn (eval command))
+      (lisp-value (eval command))
     (case command
       (help (let ((cl-user::*sw-help-strings*
 		   (if *developer?*
@@ -207,8 +217,7 @@
       ;; Non-user commands
       (set-base (cl-user::set-base argstr))
       (show-base-unit-id (cl-user::show-base-unit-id))
-      ((lisp l) (let ((cl:*package* (find-package "CL-USER")))
-		  (with-break-possibility (eval (read-from-string argstr)))))
+      ((lisp l) (with-break-possibility (lisp-value (eval (read-from-string argstr)))))
       (cl (with-break-possibility (cl-user::cl argstr)))
       (ld (with-break-possibility (cl-user::ld argstr)))
       (cf (cl-user::cf argstr))
