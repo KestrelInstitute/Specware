@@ -54,3 +54,106 @@
     ;; which runtime? the other option is :dynamic which includes the compiler
     :runtime :standard
   )
+
+;;; Copy needed directories to distribution
+(copy-directory (in-specware-dir "Library/Base/")
+		(in-distribution-dir "Library/Base/"))
+(specware::copy-file (in-specware-dir "Library/Base.sw")
+                     (in-distribution-dir "Library/Base.sw"))
+(copy-directory (in-specware-dir "Library/IO/Emacs/")
+		(in-distribution-dir "Library/IO/Emacs/"))
+(copy-directory (in-specware-dir "UserDoc/tutorial/example/")
+		(in-distribution-dir "Examples/Matching/"))
+(copy-directory (in-specware-dir "UserDoc/examples/")
+		(in-distribution-dir "Examples/"))
+
+(specware::concatenate-files
+   (loop for fil in '("Base/Handwritten/Lisp/Integer"
+		      "Base/Handwritten/Lisp/Char"
+		      "Base/Handwritten/Lisp/String"
+		      "Base/Handwritten/Lisp/System"
+		      "IO/Primitive/Handwritten/Lisp/IO"
+		      "Legacy/Utilities/Handwritten/Lisp/State"
+		      "Legacy/Utilities/Handwritten/Lisp/IO"
+		      "Legacy/Utilities/Handwritten/Lisp/Lisp"
+		      "Structures/Data/Monad/Handwritten/Lisp/State"
+		      "../Applications/Handwritten/Lisp/meta-slang-runtime")
+      collect (format nil "~a/Library/~a.lisp" Specware-dir fil))
+   (in-distribution-dir "Library/SpecwareRuntime.lisp"))
+
+(specware::make-directory (in-distribution-dir "Documentation/"))
+(specware::copy-file (in-specware-dir "UserDoc/language-manual/SpecwareLanguageManual.pdf")
+ 	   (in-distribution-dir "Documentation/SpecwareLanguageManual.pdf"))
+(specware::copy-file (in-specware-dir "UserDoc/tutorial/SpecwareTutorial.pdf")
+ 	   (in-distribution-dir "Documentation/SpecwareTutorial.pdf"))
+(specware::copy-file (in-specware-dir "UserDoc/user-manual/SpecwareUserManual.pdf")
+ 	   (in-distribution-dir "Documentation/SpecwareUserManual.pdf"))
+(specware::copy-file (in-specware-dir "UserDoc/cheat-sheet/Specware-405-QuickReference.pdf")
+ 	   (in-distribution-dir "Documentation/Specware-QuickReference.pdf"))
+(specware::copy-file (in-accord-dir "UserDoc/ReleaseNotes.txt")
+		     (in-distribution-dir "Documentation/AccordReleaseNotes.txt"))
+(specware::copy-file (in-accord-dir "UserDoc/Cygwin.txt")
+		     (in-distribution-dir "Documentation/Cygwin.txt"))
+(specware::copy-file (in-accord-dir "UserDoc/tutorial.pdf")
+		     (in-distribution-dir "Documentation/AccordTutorial.pdf"))
+
+(copy-directory (in-accord-dir "Tests/Queens/")
+		(in-distribution-dir "Tests/Queens/"))
+(copy-directory (in-accord-dir "Tests/Library/")
+		(in-distribution-dir "Tests/Library/"))
+(copy-directory (in-accord-dir "Tests/GCD/")
+		(in-distribution-dir "Tests/GCD/"))
+(copy-directory (in-accord-dir "Tests/Cipher/")
+		(in-distribution-dir "Tests/Cipher/"))
+
+(copy-directory (in-accord-dir "Sources/Handwritten/")
+		(in-distribution-dir "Sources/Handwritten/"))
+
+(copy-directory (in-lisp-dir "xeli/")
+		(in-distribution-dir "Library/IO/Emacs/xeli/"))
+
+(specware::make-directory (in-distribution-dir "Patches/"))
+
+(specware::make-directory (in-distribution-dir "Languages/"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Clib/"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Clib/gc6.2/"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Clib/gc6.2/include/"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Clib/gc6.2/include/private/"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Clib/gc6.2/cord"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Clib/gc6.2/doc"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Clib/gc6.2/Mac_files"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Clib/gc6.2/tests"))
+(specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Examples"))
+
+(with-open-file (s (in-specware-dir "Languages/MetaSlang/CodeGen/C/cgen-distribution-files"))
+  (let ((eof (cons nil nil)))
+    (do ((filename (read-line s nil eof) (read-line s nil eof)))
+	((eq filename eof))
+      (let ((filename (string-trim '(#\Space #\Tab) filename)))
+	(unless (equalp filename "")
+	  (specware::copy-file (in-specware-dir filename) (in-distribution-dir filename)))))))
+
+(let ((saw? nil)
+      (in-file (in-distribution-dir "Languages/MetaSlang/CodeGen/C/Clib/gc6.2/Makefile"))
+      (out-file (in-distribution-dir "temp")))
+  (with-open-file (in in-file)
+    (with-open-file (out out-file :direction :output)
+      (let ((eof (cons nil nil)))
+	(do ((line (read-line in nil eof) (read-line in nil eof)))
+	    ((eq line eof))
+	  (write-line (format nil "~A"
+				  (cond ((equalp line "CC=cc $(ABI_FLAG)")
+					 (setq saw? t)
+					 "CC=gcc -w $(ABI_FLAG)")
+					(t
+					 line)))
+		      out)))))
+  (unless saw?
+    (warn "Did not see \"CC=cc $(ABI_FLAG)\""))
+  (delete-file in-file)
+  (rename-file out-file in-file))
+
+

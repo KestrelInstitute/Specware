@@ -226,6 +226,20 @@
 	   (t
 	    (princ char ostream))))))))
 
+(defun concatenate-files (files target)
+  (with-open-file (ostream target :direction :output :if-does-not-exist :create)
+    (loop for file in files
+      do (with-open-file (istream file :direction :input)
+	   (loop
+	     (let ((char (read-char istream nil :eof)))
+	       (cond
+		((eq :eof char)
+		 (return))
+		((eq #\Page char)
+		 )
+		(t
+		 (princ char ostream))))))))))
+
 (defun ensure-final-slash (dirname)
   (if (member (elt dirname (- (length dirname) 1))
 	      '(#\/ #\\))

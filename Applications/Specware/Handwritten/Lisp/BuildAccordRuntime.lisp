@@ -65,6 +65,20 @@
 (copy-directory (in-specware-dir "UserDoc/examples/")
 		(in-distribution-dir "Examples/"))
 
+(specware::concatenate-files
+   (loop for fil in '("Base/Handwritten/Lisp/Integer"
+		      "Base/Handwritten/Lisp/Char"
+		      "Base/Handwritten/Lisp/String"
+		      "Base/Handwritten/Lisp/System"
+		      "IO/Primitive/Handwritten/Lisp/IO"
+		      "Legacy/Utilities/Handwritten/Lisp/State"
+		      "Legacy/Utilities/Handwritten/Lisp/IO"
+		      "Legacy/Utilities/Handwritten/Lisp/Lisp"
+		      "Structures/Data/Monad/Handwritten/Lisp/State"
+		   "../Applications/Handwritten/Lisp/meta-slang-runtime")
+      collect (format nil "~a/Library/~a.lisp" Specware-dir fil))
+   (in-distribution-dir "Library/SpecwareRuntime.lisp"))
+
 (specware::make-directory (in-distribution-dir "Documentation/"))
 (specware::copy-file (in-specware-dir "UserDoc/language-manual/SpecwareLanguageManual.pdf")
  	   (in-distribution-dir "Documentation/SpecwareLanguageManual.pdf"))
@@ -74,24 +88,6 @@
  	   (in-distribution-dir "Documentation/SpecwareUserManual.pdf"))
 (specware::copy-file (in-specware-dir "UserDoc/cheat-sheet/Specware-405-QuickReference.pdf")
  	   (in-distribution-dir "Documentation/Specware-QuickReference.pdf"))
-(specware::copy-file (in-accord-dir "UserDoc/ReleaseNotes.txt")
-		     (in-distribution-dir "Documentation/AccordReleaseNotes.txt"))
-(specware::copy-file (in-accord-dir "UserDoc/Cygwin.txt")
-		     (in-distribution-dir "Documentation/Cygwin.txt"))
-(specware::copy-file (in-accord-dir "UserDoc/tutorial.pdf")
-		     (in-distribution-dir "Documentation/AccordTutorial.pdf"))
-
-(copy-directory (in-accord-dir "Tests/Queens/")
-		(in-distribution-dir "Tests/Queens/"))
-(copy-directory (in-accord-dir "Tests/Library/")
-		(in-distribution-dir "Tests/Library/"))
-(copy-directory (in-accord-dir "Tests/GCD/")
-		(in-distribution-dir "Tests/GCD/"))
-(copy-directory (in-accord-dir "Tests/Cipher/")
-		(in-distribution-dir "Tests/Cipher/"))
-
-(copy-directory (in-accord-dir "Sources/Handwritten/")
-		(in-distribution-dir "Sources/Handwritten/"))
 
 (copy-directory (in-lisp-dir "xeli/")
 		(in-distribution-dir "Library/IO/Emacs/xeli/"))

@@ -9,14 +9,10 @@
       #+cmu     "x86f"
       #+sbcl    sb-fasl:*fasl-file-type*))
 
-#+mcl					; doesn't have setenv built=in
-(defvar *environment-shadow* nil)
-
 (unless (fboundp 'Specware::getenv)
   (defun Specware::getenv (varname)	; duplicate of definition in load-utilities.lisp
     #+allegro   (system::getenv varname)
-    #+mcl       (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
-		    (ccl::getenv varname))
+    #+mcl       (ccl::getenv varname)
     #+lispworks (hcl::getenv varname)	;?
     #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
     ))
