@@ -1,5 +1,6 @@
 (define-sw-parser-rule :SC-TERM ()
   (:anyof
+   (:tuple "(" (1 :SC-TERM) ")")
    (1 :SC-PRINT)
    (1 :SC-URI)
    (1 :SPEC-DEFINITION)
@@ -148,3 +149,9 @@
 (define-sw-parser-rule :PSL-CASE-BRANCH ()
   (:tuple (1 :PATTERN) "->" (2 :PSL-COMMAND-SEQ))
   (make-psl-case-branch 1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :CLAIM-KIND ()
+  (:anyof ((:tuple "axiom")       :|Axiom|)
+          ((:tuple "theorem")     :|Theorem|)
+          ((:tuple "invariant")   :|Invariant|)
+          ((:tuple "conjecture")  :|Conjecture|)))
