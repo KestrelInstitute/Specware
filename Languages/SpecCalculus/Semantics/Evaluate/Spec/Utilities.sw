@@ -5,6 +5,7 @@ SpecCalc qualifying spec
    (translate (translate /Library/Legacy/DataStructures/Monadic/SplayMap
      by {Monad._ +-> SpecCalc._})
      by {SpecCalc.Monad +-> SpecCalc.Env})
+ import /Languages/MetaSlang/Specs/Elaborate/Utilities % for unfoldSort
 
  op addSort :
    fa (a) List QualifiedId
@@ -18,8 +19,7 @@ SpecCalc qualifying spec
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
-  %% let new_sort_names = rev (removeDuplicates new_sort_names) in % don't let duplicate names get into a sortinfo!
-  let new_sort_names = removeDuplicates new_sort_names in
+  let new_sort_names = rev (removeDuplicates new_sort_names) in % don't let duplicate names get into a sortinfo!
   let old_infos = foldl (fn (new_name, old_infos) ->
                          case findTheSort (old_spec, new_name) of
                            | Some info -> 
@@ -113,8 +113,7 @@ SpecCalc qualifying spec
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
-  %% let new_op_names = rev (removeDuplicates new_op_names) in % don't let duplicate names get into an opinfo!
-  let new_op_names = removeDuplicates new_op_names in % rev?
+  let new_op_names = rev (removeDuplicates new_op_names) in % don't let duplicate names get into an opinfo!
   let old_infos = foldl (fn (new_name, old_infos) ->
                          case findTheOp (old_spec, new_name) of
                            | Some info -> 
@@ -293,7 +292,7 @@ SpecCalc qualifying spec
                  %%  New:  op ... : fa (...) ...  OR  def fa (...) ...  
                  let _ =
                     if ~(equivSortScheme? emptySpec (old_sort_scheme,new_sort_scheme)) then
-                      toScreen ("Merged versions of op " ^ (printAliases op_names) ^ "have different sorts:"
+                      toScreen ("Merged versions of op " ^ (printAliases op_names) ^ " have different sorts:"
                              ^ "\n " ^ (printSortScheme new_sort_scheme)
                              ^ "\n " ^ (printSortScheme old_sort_scheme) ^ "\n")
                     else () in
@@ -629,7 +628,7 @@ SpecCalc qualifying spec
                | _ -> false)
 
      | (MetaTyVar (v1,      _),
-        _                     ) ->
+        _                    ) ->
           let ({link=link1, uniqueId=id1, name}) = ! v1 in
             (case link1 of
                | Some ls1 -> equivSort? spc (ls1, s2)
@@ -642,6 +641,45 @@ SpecCalc qualifying spec
                | Some ls2 -> equivSort? spc (s1, ls2)
                | _ -> false)
 
+(*
+     | (Base _,  _) ->
+        %% We know second sort is not a Base sort.
+        %% TODO: There is probably some awful way to get an infinite recursion here.
+	%% Tedious, but unfoldSort expects to get the current spc via 
+        %% the internal field of a LocalEnv, so we make an ad hoc env.
+        %% Fortunately, this case is rare.
+        let env = {importMap  = StringMap.empty, % importMap,
+		   %specName   = spec_name,
+		   internal   = spc,
+		   errors     = Ref [],
+		   vars       = StringMap.empty,
+		   firstPass? = true,
+		   constrs    = StringMap.empty,
+		   file       = "Internal"
+		  }
+       in
+       let expanded_s1 = unfoldSort (env, s1) in
+       equivSort? spc (expanded_s1, s2)
+
+     | (_, Base _) ->
+        %% We know first sort is not a Base sort.
+        %% TODO: There is probably some awful way to get an infinite recursion here.
+	%% Tedious, but unfoldSort expects to get the current spc via 
+        %% the internal field of a LocalEnv, so we make an ad hoc env.
+        %% Fortunately, this case is rare.
+        let env = {importMap  = StringMap.empty, % importMap,
+		   %specName   = spec_name,
+		   internal   = spc,
+		   errors     = Ref [],
+		   vars       = StringMap.empty,
+		   firstPass? = true,
+		   constrs    = StringMap.empty,
+		   file       = "Internal"
+		  }
+       in
+       let expanded_s2 = unfoldSort (env, s2) in
+       equivSort? spc (s1, expanded_s2)
+*)
      | _ -> false
 
  def equivPattern? spc (p1,p2) =
