@@ -5,7 +5,7 @@ This is meant as a possible version of a spec
 having (e.g.) the IEEE Floats as a model.
 
 This requires that INF is mapped to the largest possible
-true Float value (aparently 2**1024 - 2**971) and similarly
+true Float value (apparently 2**1024 - 2**971) and similarly
 for -INF.  So each operation that could result in overflow
 must check for this in an implementation based on IEE Floats.
 
