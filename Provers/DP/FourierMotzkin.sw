@@ -56,7 +56,7 @@ FM qualifying spec
   
   op contradictIneqGt: Ineq
   def contradictIneqGt =
-    let minusOne = mkConstant(~1) in
+    let minusOne = mkConstant(Integer.~ 1) in
     let minusOnePoly = mkPoly1(minusOne) in
     mkIneq(Gt, minusOnePoly)
 
@@ -66,7 +66,7 @@ FM qualifying spec
 
   op contradictIneqGtEq: Ineq
   def contradictIneqGtEq =
-    let minusOne = mkConstant(~1) in
+    let minusOne = mkConstant(Integer.~ 1) in
     let minusOnePoly = mkPoly1(minusOne) in
     mkIneq(GtEq, minusOnePoly)
 
@@ -298,8 +298,8 @@ FM qualifying spec
 
   op negateSum: Poly -> Poly
   def negateSum(poly) =
-    map (fn (Monom (coef, var)) -> Monom (((~1) * coef), var)
-              | (Constant coef) -> Constant ((~1) * coef))
+    map (fn (Monom (coef, var)) -> Monom (((Integer.~ 1) * coef), var)
+              | (Constant coef) -> Constant ((Integer.~ 1) * coef))
         poly
     
   op chainIneqOpt: Ineq * Ineq -> Option Ineq
@@ -338,7 +338,7 @@ FM qualifying spec
 	let p1Mult =abs(hdC2 div coefGcd) in
 	let p2Mult = if  hdC1 * hdC2 < 0
 		       then abs(hdC1 div coefGcd)
-		     else ~(abs(hdC1 div coefGcd)) in
+		     else Integer.~(abs(hdC1 div coefGcd)) in
 	let newP1 = coefTimesPoly(p1Mult, poly1) in
 	let newP2 = coefTimesPoly(p2Mult, poly2) in
 	let newP = polyPlusPoly(newP1, newP2) in

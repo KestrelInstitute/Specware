@@ -218,7 +218,7 @@ with a loop or out of a conditional.
   op graphToC : CSpec -> Spec.Spec -> Struct.Graph -> CSpec * Stmt
   def graphToC cspc _(*envSpec*) graph =
     let def consume cspc first seen =
-      if first = ~1 then
+      if first = Integer.~ 1 then
         (cspc,ReturnVoid)
       else if member? (seen, first) then
         (cspc,Nop)

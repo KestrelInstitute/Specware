@@ -75,7 +75,7 @@ with a loop or out of a conditional.
   op graphToC : Struct.Graph -> Stmt
   def graphToC graph =
     let def consume first last =
-      if first = ~1 then
+      if first = Integer.~ 1 then
         VoidReturn
       else if first = last then
         Nop

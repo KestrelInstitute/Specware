@@ -412,7 +412,7 @@ are no longer needed. *)
   op vertexToIndex : FinitePolyMap.Map (String,Index) -> Vrtx.Vertex -> Index
   def vertexToIndex visited vrtx =
     case evalPartial (visited,show vrtx) of
-      | None -> ~1
+      | None -> Integer.~ 1
       | Some index -> index
 
   op ppTerms : String -> List MS.Term -> String
