@@ -199,7 +199,7 @@ libraries-htm.dbk: Makefile libraries.glm
 grammar.glm: Makefile metaslang.glm grammar.preamble \
              bin/mkgrammar ~lambert/abc/meta/glmgramm.cmd
 	@if test -r grammar.glm; \
-	 then /bin/mv -f grammar.glm intro.dbk.old; \
+	 then /bin/mv -f grammar.glm grammar.glm.old; \
 	 fi
 	bin/mkgrammar
 

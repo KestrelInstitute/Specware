@@ -2,8 +2,9 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" [
 <!DOCTYPE book SYSTEM "/usr/local/share/xml/docbook/docbookx.dtd" [
--->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" [
+-->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" [
 
 <!-- NOTE: The htm version is derived from the pdf version by make.
 
