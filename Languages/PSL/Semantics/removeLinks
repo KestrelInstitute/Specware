@@ -1,4 +1,0 @@
-#!/bin/bash
-
-cd $SPECWARE4/Languages/PSL/Semantics
-find * -type l -exec /bin/rm {} \;

@@ -1,1 +1,0 @@
-prove symb_matches? in MatchingObligations#SymbolMatching_Oblig
