@@ -325,7 +325,7 @@ spec
  def UIDtoProofFile ((unitId as {path,hashSuffix}), optFileNm) = 
    case optFileNm
       of Some filNam ->
-	let fileUid = normalizeUID(pathStringToCanonicalUID filNam) in
+	let fileUid = normalizeUID(pathStringToCanonicalUID(filNam,false)) in
 	let filePath = addDevice?(fileUid.path) in
 	let fileUid = {path=butLast filePath, hashSuffix=None} in
 	return (Some fileUid, filNam, false)
@@ -370,6 +370,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.23  2004/11/12 23:02:24  cyrluk
+%% Added other for ProofGen.
+%%
 %% Revision 1.22  2004/11/12 19:04:53  becker
 %% Added the signature and default implementations to
 %% evaluateProofGenOther  and evaluateProofGenLocalOther

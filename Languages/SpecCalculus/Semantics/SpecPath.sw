@@ -52,7 +52,7 @@ variable, then it will appear twice is the list of UnitId's we generate.
                  then [] else specware4Dirs)
         | _ -> ["/"] ++ specware4Dirs
     in
-      mapM pathToCanonicalUID strings
+      mapM topPathToCanonicalUID strings
 
  op specPathSeparator: Char
  def specPathSeparator = (if msWindowsSystem? then #; else #:)
