@@ -49,7 +49,7 @@ Integer qualifying spec
 
   op >  infixl 20 : Integer * Integer -> Boolean
   op >= infixl 20 : Integer * Integer -> Boolean
-  op abs          : Integer -> Integer
+  op abs          : Integer -> {i : Integer | i >= 0}
   op min          : Integer * Integer -> Integer
   op max          : Integer * Integer -> Integer
   op compare      : Integer * Integer -> Comparison
