@@ -190,6 +190,7 @@ MetaSlang qualifying spec {
  op termAnn: fa(a) ATerm a -> a 
  def termAnn(t) = 
   case t of
+     | Apply      (_,_,   a) -> a
      | ApplyN     (_,     a) -> a
      | Record     (_,     a) -> a
      | Bind       (_,_,_, a) -> a

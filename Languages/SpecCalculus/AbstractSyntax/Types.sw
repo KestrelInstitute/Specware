@@ -256,7 +256,8 @@ them to be presented in any order.
   sort Assertions = | All
                     | Explicit List ClaimName
 
-  sort ProverOptions = | Options (List LispCell)
+  sort ProverOptions = | OptionString (List LispCell)
+                       | OptionName QualifiedId
                        | Error   (String * String)  % error msg, problematic string
 \end{spec}
 A \verb+NatTranComp+ element is a component in a natural transformation

@@ -4,6 +4,8 @@ SpecCalc qualifying spec {
   import ../SpecPath
   import /Languages/Snark/SpecToSnark
   import URI/Utilities                                    % for uriToString, if used...
+
+ op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
   
  def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
      %% -------------------------------------------
@@ -29,7 +31,9 @@ SpecCalc qualifying spec {
                | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
      prover_options <- 
        (case possible_options of
-	  | Options prover_options -> return (prover_options)
+	  | OptionString prover_options -> return (prover_options)
+	  | OptionName prover_option_name -> 
+	        proverOptionsFromSpec(prover_option_name, uspc, spec_name)
 	  | Error   (msg, str)     -> raise  (SyntaxError (msg ^ str)));
      proved:Boolean <- (proveInSpec (proof_name,
 				     claim_name, 
@@ -45,6 +49,27 @@ SpecCalc qualifying spec {
 			      unit   = URI});
      return (result, timeStamp, depURIs)
    }
+
+ def proverOptionsFromSpec(name, spc, spec_name) = {
+   options <- return(findTheOp(spc, name));
+   options_def <-
+      (case options of
+	 | Some (_,_,_,[(_,opTerm)]) -> return (opTerm)
+	 | _ -> raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId(name) ^
+		       (case spec_name of
+			  | Some spec_name -> ", in Spec, " ^ spec_name ^ "."
+			  | _ -> "."))));
+   options_string <-
+      (case options_def of
+	 | Fun (String (opString),_,_) -> return (opString)
+	 | _ -> raise (SyntaxError ("Prover option definition, " ^ printQualifiedId(name) ^ 
+		                    ", is not a string.")));
+   possible_options <- return(PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING(options_string));
+   prover_options <- (case possible_options of
+	  | OptionString (prover_options) -> return (prover_options)
+	  | Error   (msg, str)     -> raise  (SyntaxError (msg ^ str)));
+   return prover_options
+  }
 
  op URItoSnarkLogFile: URI -> SpecCalc.Monad String
  def URItoSnarkLogFile (uri as {path,hashSuffix}) = {

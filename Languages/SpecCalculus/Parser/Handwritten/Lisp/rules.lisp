@@ -185,12 +185,14 @@
 (define-sw-parser-rule :PROVER-ASSERTIONS ()
   (:anyof
    "ALL"
-   (:repeat* :CLAIM-NAME)))
+   (:repeat+ :CLAIM-NAME ",")))
 
 (define-sw-parser-rule :PROVER-OPTIONS ()
-  (:tuple (1 :STRING)) 
-  ;; returns (:|Sexps| <sexpressions>) or (:|Error| msg string)
-  (read-list-of-s-expressions-from-string 1))
+  (:anyof
+   (:tuple (1 :STRING)) 
+   (:tuple (1 :QUALIFIABLE-OP-NAME)))
+   ;; returns (:|OptionString| <sexpressions>) or (:|Error| msg string) or (:|OptionName| op)
+  (make-sc-prover-options 1))
 
 
 ;;; ========================================================================
