@@ -15,7 +15,7 @@
 			  (if *windows-system-p*
 			      "windows"
 			    (symbol-name system-type))))
-	 (world-name (concat bin-dir "/Specware4.dxl")))
+	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*)))
 
     (setq sw:common-lisp-host "localhost")
     (setq-default sw::lisp-host sw:common-lisp-host)
@@ -142,6 +142,19 @@
   (insert str)
   (inferior-lisp-newline))
 
+(defvar *specware-continue-form* nil)
+(defvar *last-specware-continue-form* nil)
+
+(defun continue-emacs-computation ()
+  (let ((fm *specware-continue-form*))
+    (setq *last-specware-continue-form* fm)
+    (setq *specware-continue-form* nil)
+    (eval fm)))
+
+(defun continue-form-when-ready (form)
+  (setq *specware-continue-form* form)
+  (simulate-input-expression "(emacs::eval-in-emacs \"(continue-emacs-computation)\")"))
+
 (defun build-specware4 (in-current-dir?)
   (interactive "P")
   (let* ((root-dir (if in-current-dir?
@@ -167,30 +180,34 @@
     (sw:eval-in-lisp (format "(specware::setenv \"SPECWARE4\" %S)"
 			     (sw::normalize-filename root-dir)))
     (sw:eval-in-lisp (format "(namestring (specware::change-directory %S))" dir))
-    (sw:eval-in-lisp "(load \"Specware4.lisp\")")
+    (simulate-input-expression "(load \"Specware4.lisp\")")
+    (continue-form-when-ready
+     (`(build-specware4-continue (, root-dir) (, dir) (, bin-dir)
+				 (, slash-dir) (, world-name))))))
 
-    (run-plain-lisp)
-    (unless (inferior-lisp-running-p)
-      (sleep-for 1))
-    (sw:eval-in-lisp (format "(load %S)"
-			     (concat root-dir "/Applications/Handwritten/Lisp/load-utilities")))
-    (sw:eval-in-lisp (format "(specware::setenv \"SWPATH\" %S)"
-			     (concat (sw::normalize-filename root-dir)
-				     (if *windows-system-p* ";" ":")
-				     slash-dir)))
-    (sw:eval-in-lisp (format "(specware::setenv \"SPECWARE4\" %S)"
-			     (sw::normalize-filename root-dir)))
-    (sw:eval-in-lisp (format "(namestring (specware::change-directory %S))" dir))
-    (sw:eval-in-lisp "(load \"Specware4.lisp\")")
-    (when (file-exists-p world-name)
-      (rename-file world-name (concat bin-dir "/Specware4-saved."
-				      *lisp-image-extension*)
-		   t))
-    (sleep-for 1)
-    (simulate-input-expression (format (if (eq *specware-lisp* 'cmulisp)
-					   "(ext:save-lisp %S)"
-					 "(excl::dumplisp :name %S)")
-				       world-name))
+(defun build-specware4-continue (root-dir dir bin-dir slash-dir world-name)
+  (run-plain-lisp)
+  (unless (inferior-lisp-running-p)
+    (sleep-for 1))
+  (sw:eval-in-lisp (format "(load %S)"
+			   (concat root-dir "/Applications/Handwritten/Lisp/load-utilities")))
+  (sw:eval-in-lisp (format "(specware::setenv \"SWPATH\" %S)"
+			   (concat (sw::normalize-filename root-dir)
+				   (if *windows-system-p* ";" ":")
+				   slash-dir)))
+  (sw:eval-in-lisp (format "(specware::setenv \"SPECWARE4\" %S)"
+			   (sw::normalize-filename root-dir)))
+  (sw:eval-in-lisp (format "(namestring (specware::change-directory %S))" dir))
+  (sw:eval-in-lisp "(load \"Specware4.lisp\")")
+  (when (file-exists-p world-name)
+    (rename-file world-name (concat bin-dir "/Specware4-saved."
+				    *lisp-image-extension*)
+		 t))
+  (sleep-for 1)
+  (simulate-input-expression (format (if (eq *specware-lisp* 'cmulisp)
+					 "(ext:save-lisp %S)"
+				       "(excl::dumplisp :name %S)")
+				     world-name))
 ;;;    (simulate-input-expression
 ;;;     "(if (probe-file \"bin/specware2000-new.world\")
 ;;;	  (progn (when (probe-file \"bin/specware2000.world\")
@@ -198,7 +215,7 @@
 ;;;		 (rename-file  \"bin/specware2000-new.world\" \"bin/specware2000.world\")
 ;;;		 \"Wrote a new bin/specware2000.world\")
 ;;;	\"Failed to build a new world!\")")
-    ))
+  )
 
 (defun build-specware4-from-base (in-current-dir?)
   (interactive "P")
@@ -234,8 +251,12 @@
     (when (file-exists-p specware4-base-lisp)
       (copy-file specware4-base-lisp specware4-lisp t))
     (sw:eval-in-lisp (format "(namestring (specware::change-directory %S))" dir))
-    (sw:eval-in-lisp "(load \"Specware4.lisp\")")
+    (simulate-input-expression "(load \"Specware4.lisp\")")
+    (continue-form-when-ready
+     (`(build-specware4-from-base-continue (, root-dir) (, dir) (, bin-dir)
+					   (, slash-dir) (, world-name))))))
 
+(defun build-specware4-from-base-continue (root-dir dir bin-dir slash-dir world-name)
     (run-plain-lisp)
     (unless (inferior-lisp-running-p)
       (sleep-for 1))
@@ -264,7 +285,7 @@
 ;;;		 (rename-file  \"bin/specware2000-new.world\" \"bin/specware2000.world\")
 ;;;		 \"Wrote a new bin/specware2000.world\")
 ;;;	\"Failed to build a new world!\")")
-    ))
+    )
 
 (defun bootstrap-specware4 (in-current-dir?)
   (interactive "P")
@@ -282,8 +303,8 @@
 			     (sw::normalize-filename root-dir)))
     (sw:eval-in-lisp "#+allegro(sys::set-stack-cushion 10000000)
                       #-allegro()")
-    (sw:eval-in-lisp "(time (user::boot))")
-    (build-specware4 root-dir)))
+    (simulate-input-expression "(time (user::boot))")
+    (continue-form-when-ready (`(build-specware4 (, root-dir))))))
 
 
 (defun test-specware-bootstrap (in-current-dir?)

@@ -115,9 +115,7 @@
       (goto-char (point-max))))
 
   (defun sw:eval-in-lisp (str &rest args)
-    (car (read-from-string (ilisp-send (apply 'format str args)
-				       "Eval in *specware*"
-				       t))))
+    (car (read-from-string (ilisp-send (apply 'format str args)))))
 
   (define-function 'inferior-lisp-newline 'return-ilisp)
 
