@@ -70,7 +70,7 @@
   (if (pathnamep directory) directory
     (multiple-value-bind (dev dir)
 	(parse-device-directory directory)
-      (if (and (> (length dir) 0) (member (elt dir 0) '(#\/ #\\)))
+      (if (and #-gcl nil (> (length dir) 0) (member (elt dir 0) '(#\/ #\\))) ; jlm: I blindly added gcl test since root is non-standard
 	  (setq dir (cons :root (split-dir-components dir)))
 	(setq dir (concatenate 'list
 			       (pathname-directory (current-directory))
