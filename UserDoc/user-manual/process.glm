@@ -67,7 +67,7 @@ steps:</para>
 
 <orderedlist>
 
-<listitem> If the reference contains ``#'', the ``#'' itself and the
+<listitem>If the reference contains ``#'', the ``#'' itself and the
 identifier following it are removed, obtaining a ``/''-separated
 sequence of one or more identifiers, preceded by ``/''. Otherwise, no
 removal takes place. Either way, the result of this first step is a
@@ -98,21 +98,23 @@ the original unit reference contains ``#'' or not.</listitem>
 <orderedlist>
 
 <listitem>This is the case that the original unit reference does not
-contain ``#''. If the file is a single-unit file, i.e., it contains
-the defining text for a unit, the defining text is the final result of
-resolution. Otherwise, an error is signaled by &Specware;.</listitem>
+contain ``#''. If the file resulting from the previous step is a
+single-unit file, i.e., it contains the defining text for a unit, the
+defining text is the final result of resolution. Otherwise, an error
+is signaled by &Specware;.</listitem>
 
 <listitem>This is the case that the original unit reference contains
-``#''. The file must be a multiple-unit file, i.e., it must contain a
-sequence of one or more unit definitions. If this is not the case, the
+``#''. The file resulting from the previous step must be a
+multiple-unit file, i.e., it must contain a sequence of one or more
+unit definitions. If this is not the case, the unit reference cannot
+be resolved and an error is signaled by &Specware;. If that is the
+case, a unit definition is searched in the file, whose identifier (at
+the left of ``='') is the same as the identifier that follows ``#'' in
+the original unit reference. If no such unit definition is found, the
 unit reference cannot be resolved and an error is signaled by
-&Specware;. If that is the case, a unit definition is searched in the
-file, whose identifier (at the left of ``='') is the same as the
-identifier that follows ``#'' in the original unit reference. If no
-such unit definition is found, the unit reference cannot be resolved
-and an error is signaled by &Specware. If instead such a unit
-definition is found, its defining text (at the right of ``='') is the
-final result of resolution.</listitem>
+&Specware. If instead such a unit definition is found, its defining
+text (at the right of ``='') is the final result of
+resolution.</listitem>
 
 </orderedlist>
 
@@ -121,10 +123,163 @@ final result of resolution.</listitem>
 <para>For example, consider a reference [[/a/b/c]]. Since it does not
 contain ``#'', the first step does not do anything. Assuming that the
 underlying operating system is Windows, the result of the second step
-is <"\a\b\c.sw">. Suppose that &swpath; consists of the directories
-<"c:\users\me\specware:
+is <"\a\b\c.sw">. Suppose that &swpath; is
+<"\users\me\specware:\tmp">, that <"c:\users\me\specware"> does not
+contain any <"a"> subdirectory, and that <"c:\tmp\a\b\c.sw"> exists.
+The result of the third step is the file <"c:\tmp\a\b\c.sw">.  If such
+a file is a single-unit file, its content is the result of the fourth
+step.</para>
 
-</section>
+<para>As another example, consider a reference [[/e#f]]. The result of
+the first step is [[/e]]. The result of the second step (still
+assuming Windows) is <"\e.sw">. Assuming &swpath; as before and that
+<"c:\users\me\specware"> contains a file <"e.sw">, the file
+<"c:\users\me\specware\e.sw"> is the result of the third step.  The
+file must be a multiple-unit file. Assuming that this is the case and
+that it contains a unit definition with identifier [[f]], its defining
+text is the result of the fourth step.</para>
+
+</section>  <!-- absolute references -->
+
+<section>
+<title>Relative References</title>
+
+<para>A relative reference is a ``/''-separated sequence of one or
+more identifiers, where the last separator can be ``#''.  Examples are
+[[a/b/c]], [[d]], and [[e#f]]. So, absolute and relative references
+can be distinguished by the presence or absence of ``/'' at their
+beginning.</para>
+
+<para>The resolution of relative references does not depend on
+&swpath;, but on the location of the unit-defining text where the
+reference occurs. There are two cases two consider: the reference
+occurring in a single-unit file; and the reference occurring in a
+multiple-unit file.</para>
+
+<para>Suppose that the relative reference occurs in a single-unit
+file. Then &Specware; attempts to resolve the reference in the
+following steps:</para>
+
+<orderedlist>
+
+<listitem>If the reference contains ``#'', the ``#'' itself and the
+identifier following it are removed, obtaining a ``/''-separated
+sequence of one or more identifiers. Otherwise, no removal takes
+place. Either way, the result of this first step is a ``/''-separated
+sequence of identifiers.</listitem>
+
+<listitem>If the underlying operating system is Windows, the ``/''
+signs of the ``/''-separated sequence of identifiers, resulting from
+the previous step, are turned into ``\''; in addition, <".sw"> is
+appended at the end. Otherwise, the ``/'' signs are left unchanged and
+<".sw"> is appended at the end. Either way, the result of this second
+step is a (partial) path in the file system.</listitem>
+
+<listitem>The path resulting from the previous step is appended after
+the absolute path of the directory of the file containing the relative
+reference. If the resulting absolute path identifies an existing file,
+that is the result of this third step.  Otherwise, the unit reference
+cannot be resolved and an error is signaled by &Specware;.</listitem>
+
+<listitem>There are two alternative steps here, depending on whether
+the original unit reference contains ``#'' or not.</listitem>
+
+<orderedlist>
+
+<listitem>This is the case that the original unit reference does not
+contain ``#''. If the file resulting from the previous step is a
+single-unit file, i.e., it contains the defining text for a unit, the
+defining text is the final result of resolution. Otherwise, an error
+is signaled by &Specware;.</listitem>
+
+<listitem>This is the case that the original unit reference contains
+``#''. The file resulting from the previous step must be a
+multiple-unit file, i.e., it must contain a sequence of one or more
+unit definitions. If this is not the case, the unit reference cannot
+be resolved and an error is signaled by &Specware;. If that is the
+case, a unit definition is searched in the file, whose identifier (at
+the left of ``='') is the same as the identifier that follows ``#'' in
+the original unit reference. If no such unit definition is found, the
+unit reference cannot be resolved and an error is signaled by
+&Specware. If instead such a unit definition is found, its defining
+text (at the right of ``='') is the final result of
+resolution.</listitem>
+
+</orderedlist>
+
+</orderedlist>
+
+<para>So, resolution of a relative reference occurring in a
+single-unit file is like resolution of an absolute reference, except
+that the directory where the reference occurs is used instead of
+&swpath;.</para>
+
+<para>Suppose, instead, that the relative reference occurs in a
+multiple-unit file.  Then &Specware; attempts to resolve the reference
+in the following steps:</para>
+
+<orderedlist>
+
+<listitem>If the relative reference is a single identifier, &Specware;
+attempts to find a unit definition with that identifier inside the
+file where the reference occurs. If such a unit definition is found,
+its defining text is the final result of resolution. Otherwise, the
+following steps are carried out.</listitem>
+
+<listitem>If the reference contains ``#'', the ``#'' itself and the
+identifier following it are removed, obtaining a ``/''-separated
+sequence of one or more identifiers. Otherwise, no removal takes
+place. Either way, the result of this first step is a ``/''-separated
+sequence of identifiers.</listitem>
+
+<listitem>If the underlying operating system is Windows, the ``/''
+signs of the ``/''-separated sequence of identifiers, resulting from
+the previous step, are turned into ``\''; in addition, <".sw"> is
+appended at the end. Otherwise, the ``/'' signs are left unchanged and
+<".sw"> is appended at the end. Either way, the result of this second
+step is a (partial) path in the file system.</listitem>
+
+<listitem>The path resulting from the previous step is appended after
+the absolute path of the directory of the file containing the relative
+reference. If the resulting absolute path identifies an existing file,
+that is the result of this third step.  Otherwise, the unit reference
+cannot be resolved and an error is signaled by &Specware;.</listitem>
+
+<listitem>There are two alternative steps here, depending on whether
+the original unit reference contains ``#'' or not.</listitem>
+
+<orderedlist>
+
+<listitem>This is the case that the original unit reference does not
+contain ``#''. If the file resulting from the previous step is a
+single-unit file, i.e., it contains the defining text for a unit, the
+defining text is the final result of resolution. Otherwise, an error
+is signaled by &Specware;.</listitem>
+
+<listitem>This is the case that the original unit reference contains
+``#''. The file resulting from the previous step must be a
+multiple-unit file, i.e., it must contain a sequence of one or more
+unit definitions. If this is not the case, the unit reference cannot
+be resolved and an error is signaled by &Specware;. If that is the
+case, a unit definition is searched in the file, whose identifier (at
+the left of ``='') is the same as the identifier that follows ``#'' in
+the original unit reference. If no such unit definition is found, the
+unit reference cannot be resolved and an error is signaled by
+&Specware. If instead such a unit definition is found, its defining
+text (at the right of ``='') is the final result of
+resolution.</listitem>
+
+</orderedlist>
+
+</orderedlist>
+
+<para>So, resolution of a relative reference occurring in a
+multiple-unit file is like resolution of a relative reference
+occurring in a single-unit file, preceded by an attempt to locate the
+unit in the file where the reference occurs, only in case such a
+reference is a single identifier.</para>
+
+</section>  <!-- relative references -->
 
 </section>  <!-- resolution of unit references -->
 
