@@ -7,6 +7,6 @@ spec
   import Check, Provability
 
   conjecture checkCorrect is
-    fa(prf:Proof, jdg:Judgement) check prf = OK jdg <=> provable? jdg
+    fa(prf:Proof, jdg:Judgement) check prf = OK jdg => provable? jdg
 
 endspec
