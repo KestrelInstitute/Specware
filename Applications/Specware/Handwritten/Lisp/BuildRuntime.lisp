@@ -1,3 +1,5 @@
+;; These two definitions might not be needed here
+;; They are in BuildPreamble.lisp where they are needed
 (defvar Specware-version "4.0 Beta")
 (defvar Specware-version-name "Specware-4-0-Beta")
 (defvar Specware-name "Specware4")	; Name of directory and startup files

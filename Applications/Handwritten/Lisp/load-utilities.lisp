@@ -49,10 +49,16 @@
     (unwind-protect (load "system.lisp")
       (change-directory old-directory))))
 
+(unless (fboundp 'compile-file-if-needed)
+  ;; Conditional because of an apparent Allegro bug in generate-application
+  ;; where excl::compile-file-if-needed compiles even if not needed
+  (defun compile-file-if-needed (file)
+    (#+allegro excl::compile-file-if-needed
+	       #+Lispworks hcl:compile-file-if-needed
+	       file)))
+
 (defun compile-and-load-lisp-file (file)
-   (#+allegro excl::compile-file-if-needed
-    #+Lispworks hcl:compile-file-if-needed
-    (make-pathname :defaults file :type "lisp"))
+   (compile-file-if-needed (make-pathname :defaults file :type "lisp"))
    (load (make-pathname :defaults file :type nil)))
 
 (defun load-lisp-file (file &rest ignore)
