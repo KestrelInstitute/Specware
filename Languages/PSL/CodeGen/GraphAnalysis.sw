@@ -254,7 +254,7 @@ spec
 
   def printNode((DFSindex,content,preds),i) =
     "Node " ^ (Integer.toString i) ^ ": DFS index: " ^ (Integer.toString DFSindex)
-      ^ " Preds: (" ^ (foldl(fn (j,str) -> str ^ (Integer.toString j) ^ " ") "" preds)
+      ^ " Preds: (" ^ (show " " (map Integer.toString preds))
       ^ ")\n  "
       ^ (case content of
 	  | Branch {condition, trueBranch, falseBranch} ->
@@ -262,7 +262,7 @@ spec
 	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
 	    ^ "False branch: " ^ (Integer.toString falseBranch)
 	  | Block {statements, next} ->
-	    "Block: " ^ (foldl (fn (st,str) -> str ^ (printStat st) ^ "; ") "" statements)
+	    "Block: " ^ show "; " (map printStat statements)
 	    ^ "\n  "
 	    ^ "Next: " ^ (Integer.toString next)
 	  | Return t ->
