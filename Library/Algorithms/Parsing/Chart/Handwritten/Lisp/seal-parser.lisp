@@ -888,7 +888,7 @@
 				     (push (cons index (parser-rule-item-default-semantics item))
 					   semantic-alist)))))
 			     (setf (parser-rule-default-semantics rule)
-			       (eval (sublis-result semantic-alist semantic-pattern))))))
+			       (eval (sanitize-sexpression (sublis-result semantic-alist semantic-pattern)))))))
 		       ;; (when (parser-repeat-rule-p rule) (setf (parser-rule-default-semantics rule) '()))
 		       (debugging-comment "Rule ~S is now optional with semantics ~S." 
 					  rule
@@ -919,6 +919,12 @@
     ;; changed? will be NIL once we reach a fixpoint (probably about 2 rounds)
     changed?))
 
-  
-
+(defun sanitize-sexpression (s)
+  (cond ((atom s) s)
+	((and (eq (car s) 'list)
+	      (atom (cdr s))
+	      (not (null (cdr s))))
+	 :ILLEGAL-SEXPRESSION)
+	(t (mapcar #'sanitize-sexpression s))))
+    
 
