@@ -227,9 +227,9 @@ endspec
 ")
 
  ("Bug 0047 : Case insensitivity of Lisp considered harmful"
-  :lisp "(print SW-USER::result_0047)"
+  :lisp "(print (list SW-USER::high_low SW-USER::high_low))"
   :output "
-123 ")
+(123 456)")
 
  ("Bug 0053 : Strange result is shown for result of spec-substitution"
   :show   "Bug_0053/Subst#BB" 
