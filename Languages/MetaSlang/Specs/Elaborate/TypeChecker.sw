@@ -167,7 +167,7 @@ spec {
 	      % let _ = System.print term_1 in
 	      let type_vars_1 = sort_scheme_1.1 in
 	      let term_2 = if poly? = ~(type_vars_1 = Nil) then
-	                     elaborateTerm (env_2, term_1, sort_scheme_2.2)
+	                     elaborateTermTop (env_2, term_1, sort_scheme_2.2)
 			   else 
 			     term_1 
 	      in
@@ -184,7 +184,7 @@ spec {
    %% ---------- PROPERTIES : PASS 1. ---------- 
    let def elaborate_fm_1 (prop_type, name, type_vars_1, fm_1) = 
         let type_vars_2 = type_vars_1 in
-        let fm_2 = elaborateTerm (env_2, fm_1, type_bool) in
+        let fm_2 = elaborateTermTop (env_2, fm_1, type_bool) in
         (prop_type, name, type_vars_2, fm_2)
    in
    let props_2 = map elaborate_fm_1 props_1 in
@@ -224,7 +224,7 @@ spec {
          sort_scheme_3,
          map (fn (type_vars_2, term_2) ->
 	      let pos    = termAnn term_2 in
-	      let term_3 = elaborateTerm (env_3, term_2, srt_3)  in
+	      let term_3 = elaborateTermTop (env_3, term_2, srt_3)  in
 	      %%  ---
 	      let type_vars_used  =
                 (let tv_cell = Ref [] : Ref TyVars in
@@ -282,7 +282,7 @@ spec {
    %% ---------- AXIOMS : PASS 2 ----------
    let def elaborate_fm_2 (prop_type, name, type_vars_2, fm_2) = 
         (let type_vars_3 = type_vars_2 in
-         let fm_3 = elaborateTerm (env_3, fm_2, type_bool) in
+         let fm_3 = elaborateTermTop (env_3, fm_2, type_bool) in
          %String.writeLine "Elaborating formula";
          %let context = initializeTyVars() in
          %let term1 = termToMetaSlang context term in
@@ -438,16 +438,32 @@ spec {
   %% ---- called inside CheckSort 
   % ========================================================================
 
-  %% elaborateTerm calls aux_elaborateTerm, 
-  %% which calls elaborateCheckSortForTerm, 
+  op resolveMetaTyVar: Sort -> Sort
+  def resolveMetaTyVar srt =
+    case srt of
+      | MetaTyVar(tv,_) -> 
+        let {name=_,uniqueId=_,link} = ! tv in
+	(case link
+	   of None -> srt
+	    | Some ssrt -> resolveMetaTyVar ssrt)
+      | _ -> srt
+
+  op resolveMetaTyVars: MS.Term -> MS.Term
+  def resolveMetaTyVars trm =
+    mapTerm (id,resolveMetaTyVar,id) trm
+
+  def elaborateTermTop (env, trm, term_sort) =
+    let trm = elaborateTerm(env, trm, term_sort) in
+    %% Resolve now rather than later to release space
+    resolveMetaTyVars trm
+
+  %% elaborateTerm calls elaborateCheckSortForTerm, 
   %% which calls elaborateSortForTerm, 
   %% which calls unifySorts, 
   %%  which side-effects links for metaTyVar's via 
 
   %% TODO: convert elaborateTerm args to work on term scheme and sort scheme?
-  def elaborateTerm (env, trm, term_sort : MS.Sort) = aux_elaborateTerm (env, trm, term_sort)
-
-  def aux_elaborateTerm (env, trm, term_sort : MS.Sort) = 
+  def elaborateTerm (env, trm, term_sort) =
    case trm of
 
     | Fun (OneName (id, fixity), srt, pos) ->
