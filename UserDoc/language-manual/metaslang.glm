@@ -340,7 +340,8 @@ non-empty sequence of spaces, tabs, newlines, and `comments
 (described below).
 A `symbol is presented in the text as a sequence of one or
 more <quote>marks</quote> (ASCII characters).
-Within a composite (multi-mark) `symbol, no whitespace is
+Within a composite (multi-mark) `symbol, as well as within a
+`unit-identifier, no whitespace is
 allowed, but whitespace may be needed between two `symbols if
 together they could be taken for one `symbol; in particular,
 two `simple-names that follow each other should be separated by
@@ -697,10 +698,11 @@ and the `unit-definition it contributes to the project is
 >>
 </para>
 <formalpara id="Warning0"><title>Warning</title> <para>
+Recall that whitespace is not allowed within `unit-identifiers.
 Note that `unit-identifiers are processed by the tokenizer like
-everything else. This means that whitespace is removed and
+everything else. This means that
 marks not allowed in `word-symbols, even if otherwise permitted in
-filenames (such as <".">), cannot appear in `unit-identifiers.
+filenames (such as <"-">), cannot appear in `unit-identifiers.
 For this reason, some care must be taken when naming units.
 </para> </formalpara>
 <para>
