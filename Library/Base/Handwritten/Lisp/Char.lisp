@@ -16,26 +16,49 @@
 (defun chr (n)
   (code-char n))
 
-(defun isUpperCase (ch)
-  (upper-case-p ch))
+;;; lower-case-p, upper-case-p etc. only guaranteed for Standard ASCII (First 96 characters)
+(defun isUpperCase (char)
+  (declare (character char))
+  (let ((ch-num (char-code char)))
+    (or (< 64 ch-num 91)		; A-Z
+	(< 191 ch-num 215)		; À-Ö
+	(< 215 ch-num 224)		; Ø-ß
+	)))
 
-(defun isLowerCase (ch)
-  (lower-case-p ch))
+(defun isLowerCase (char)
+  (declare (character char))
+  (let ((ch-num (char-code char)))
+    (or (< 96 ch-num 123)		; a-z
+	(< 223 ch-num 247)		; à-à
+	(< 247 ch-num 256)		; ø-ÿ
+	)))
 
 (defun isAlpha (ch)
-  (alpha-char-p ch))
+  (or (isUpperCase ch)
+      (isLowerCase ch)))
 
 (defun isNum (ch)
   (and (<= 48 (char-code ch)) (<= (char-code ch) 57)))
 
 (defun isAlphaNum (ch)
-  (alphanumericp ch))
+  (or (isAlpha ch)
+      (isNum ch)))
 
-(defun isAscii (ch)
-  (standard-char-p ch))
+(defun isAscii (char)
+  (declare (character char))
+  (< -1
+     (char-code char)
+     256))
 
-(defun toUpperCase (ch)
-  (char-upcase ch))
+;;; Relationship between ÿ and ß is anomalous
+(defun toUpperCase (char)
+  (declare (character char))
+  (if (isLowerCase char)
+      (code-char (- (char-code char) 32))
+    char))
 
-(defun toLowerCase (ch)
-  (char-downcase ch))
+(defun toLowerCase (char)
+  (declare (character char))
+  (if (isUpperCase char)
+      (code-char (+ (char-code char) 32))
+    char))
