@@ -1,7 +1,7 @@
 InstantiateHO qualifying
 spec
   import Simplify
-  %import RenameBound
+  import CurryUtils
   import ../Specs/Utilities
   sort Term = MS.Term
 
@@ -460,44 +460,45 @@ spec
       | Some (_,t) -> t
       | _ -> fail "lookupId: Shouldn't happen"
 
-  op  curriedSort?: Spec * Sort -> Boolean
-  def curriedSort?(sp,srt) = curryShapeNum(sp,srt) > 1
+%%% inCurryUtils
+%  op  curriedSort?: Spec * Sort -> Boolean
+%  def curriedSort?(sp,srt) = curryShapeNum(sp,srt) > 1
 
-  op  curryShapeNum: Spec * Sort -> Nat
-  def curryShapeNum(sp,srt) =
-    case arrowOpt(sp,srt)
-      of Some (_,rng) -> 1 + curryShapeNum(sp,rng)
-       | _ -> 0
+%  op  curryShapeNum: Spec * Sort -> Nat
+%  def curryShapeNum(sp,srt) =
+%    case arrowOpt(sp,srt)
+%      of Some (_,rng) -> 1 + curryShapeNum(sp,rng)
+%       | _ -> 0
 
-  op  curryArgSorts: Spec * Sort -> List Sort
-  def curryArgSorts(sp,srt) =
-    case arrowOpt(sp,srt)
-      of Some (dom,rng) -> cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
-       | _ -> []
+%  op  curryArgSorts: Spec * Sort -> List Sort
+%  def curryArgSorts(sp,srt) =
+%    case arrowOpt(sp,srt)
+%      of Some (dom,rng) -> cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
+%       | _ -> []
 
-  op  curriedParams: Term -> List Pattern * Term
-  def curriedParams defn =
-    let def aux(t,vs) =
-          case t of
-	    | Lambda([(p,_,body)],_) ->
-	      if (case p of
-		    | VarPat _ -> true
-		    | RecordPat _ -> true
-		    | _ -> false)
-		then aux(body,vs ++ [p])
-		else (vs,t)
-	    | _ -> (vs,t)
-    in
-    aux(defn,[])
+%  op  curriedParams: Term -> List Pattern * Term
+%  def curriedParams defn =
+%    let def aux(t,vs) =
+%          case t of
+%	    | Lambda([(p,_,body)],_) ->
+%	      if (case p of
+%		    | VarPat _ -> true
+%		    | RecordPat _ -> true
+%		    | _ -> false)
+%		then aux(body,vs ++ [p])
+%		else (vs,t)
+%	    | _ -> (vs,t)
+%    in
+%    aux(defn,[])
 
-  op  noncurryArgSorts: Spec * Sort -> List Sort
-  def noncurryArgSorts(sp,srt) =
-    case arrowOpt(sp,srt)
-      of Some (dom,_) ->
-	 (case productOpt(sp,dom) of
-	   | Some fields -> map (fn(_,s) -> s) fields
-	   | _ -> [dom])
-       | _ -> []
+%  op  noncurryArgSorts: Spec * Sort -> List Sort
+%  def noncurryArgSorts(sp,srt) =
+%    case arrowOpt(sp,srt)
+%      of Some (dom,_) ->
+%	 (case productOpt(sp,dom) of
+%	   | Some fields -> map (fn(_,s) -> s) fields
+%	   | _ -> [dom])
+%       | _ -> []
 
 
 endspec

@@ -92,13 +92,14 @@ RemoveCurrying qualifying spec
   def unCurryTerm(tm,spc) =
     let def unCurryTermRec t = unCurryTerm(t,spc)
         def unCurryApply(f,args,spc) =
-	  let curryShape = curryShapeNum(spc,termSort f) in
+	  let fsrt = termSortEnv(spc,f) in
+	  let curryShape = curryShapeNum(spc,fsrt) in
 	  if curryShape = length args
 	    then mkApply(convertFun(f,curryShape,spc),
 			 mkTuple(map unCurryTermRec args))
 	  else
-	    let newVars = mkNewVars(nthTail(curryArgSorts(spc,termSort f),
-					    curryShape - length args - 1),
+	    let newVars = mkNewVars(nthTail(curryArgSorts(spc,fsrt),
+					    length args - 1),
 				    map (fn (id,_) -> id) (freeVars f),
 				    spc)
 	    in
@@ -110,8 +111,8 @@ RemoveCurrying qualifying spec
     case tm of
       | Apply(t1,t2,a) ->
         (case getCurryFnArgs tm  of
-	   | None -> unCurryApply(unCurryTermRec t1,[unCurryTermRec t2],spc)
-	   | Some(f,args) -> unCurryApply(f,map unCurryTermRec args,spc))
+	   | None -> unCurryApply(unCurryTermRec t1,[t2],spc)
+	   | Some(f,args) -> unCurryApply(f,args,spc))
       | Record(row,a) ->
 	let newRow = map (fn (id,trm) -> (id, unCurryTermRec trm)) row in
 	if row = newRow then tm
@@ -128,7 +129,7 @@ RemoveCurrying qualifying spec
 	
       %% Assume multiple rules have been transformed away and predicate is true
       | Lambda([(pat,_,body)],_)  ->
-	let bodySort = termSort body in
+	let bodySort = termSortEnv(spc,body) in
 	if arrow? (spc,bodySort)
 	  then flattenLambda(getParams pat,body,bodySort,spc)
 	else
@@ -172,7 +173,7 @@ RemoveCurrying qualifying spec
   def flattenLambda(vs,body,bodySort,spc) =
     case body of
       | Lambda([(sPat,_,sBody)],_) ->
-        flattenLambda(vs ++ [sPat],sBody,termSort sBody,spc)
+        flattenLambda(vs ++ [sPat],sBody,termSortEnv(spc,sBody),spc)
       | _ ->
 	case arrowOpt(spc,bodySort) of
 	  | Some (dom,_) ->
