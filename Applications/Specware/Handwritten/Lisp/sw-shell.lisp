@@ -7,11 +7,10 @@
 (defvar *last-eval-expr* nil)
 ;(defparameter *specware-shell-readtable* (make-readtable))
 
-(defun specware-shell ()
+(defun specware-shell (exiting-lisp?)
   (let  ((magic-eof-cookie (cons :eof nil))
 	 (number-of-eofs 0)
-	 (cl:*package* (find-package :SWShell))
-	 (exiting-lisp? nil))
+	 (cl:*package* (find-package :SWShell)))
     (setq *in-specware-shell?* t)
     (emacs::eval-in-emacs "(set-comint-prompt t)")
     (format t "Specware Shell~%")
@@ -163,10 +162,10 @@
 
 ;;; Add commands for entering shell from Lisp shell
 (defun cl-user::sw-shell ()
-  (specware-shell))
+  (specware-shell nil))
 
 #+allegro
-(top-level:alias ("sw-shell") () (specware-shell))
+(top-level:alias ("sw-shell") () (specware-shell nil))
 
 (setq cl-user::*sw-help-strings*
   (concatenate 'list cl-user::*sw-help-strings*

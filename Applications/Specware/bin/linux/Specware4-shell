@@ -25,7 +25,7 @@ case "$SPECWARE4" in
     *)  SPECWARE4="`pwd`/$SPECWARE4";;
 esac
 
-echo "\$SPECWARE4=$SPECWARE4"
+#echo "\$SPECWARE4=$SPECWARE4"
 
 # Test whether SPECWARE4 has been set
 
@@ -80,8 +80,8 @@ if [ -z "$IMAGE_EXTENSION" ]; then
    IMAGE_EXTENSION="dxl"
 fi
 
-echo "\$IMAGE_EXTENSION=$IMAGE_EXTENSION"
+#echo "\$IMAGE_EXTENSION=$IMAGE_EXTENSION"
 
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4."$IMAGE_EXTENSION"
 
-"$LISP" -I "$LISP_HEAP_IMAGE" -e "(progn (setq emacs::*use-emacs-interface?* nil ) (SWShell::specware-shell) (exit))"
+"$LISP" -I "$LISP_HEAP_IMAGE" -e "(progn (setq emacs::*use-emacs-interface?* nil ) (SWShell::specware-shell t) (exit))"
