@@ -244,7 +244,7 @@ RemoveCurrying qualifying spec
 	       false xs
 	in (changed?,CoProduct(nxs,a))
       | Quotient(s,t,a) ->
-        let (changed?,ns) = unCurryRec s in
+	let (changed?,ns) = unCurryRec s in
 	let nt = unCurryTerm(t, spc) in
 	(changed?, Quotient (ns,nt,a))
       | s -> (false,s)
