@@ -216,8 +216,6 @@ Note: The code below does not yet match the documentation above, but should.
 	        merged_opinfo <- foldM (fn merged_opinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
 					  mergeOpInfo merged_opinfo 
 					              (findAQualifierMap (new_op_map, new_qualifier, new_id))
-						      new_qualifier 
-						      new_id 
 						      position)
 		                       first_opinfo
 				       new_aliases;
@@ -253,8 +251,6 @@ Note: The code below does not yet match the documentation above, but should.
 	        merged_sortinfo <- foldM (fn merged_sortinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
 					  mergeSortInfo merged_sortinfo 
 					                (findAQualifierMap (new_sort_map, new_qualifier, new_id))
-						        new_qualifier 
-						        new_id 
 							position)
 		                         first_sortinfo
 				         new_aliases;

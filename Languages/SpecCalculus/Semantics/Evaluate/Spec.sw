@@ -88,7 +88,7 @@ and then qualify the resulting spec if the spec was given a name.
     let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, combined_psorts) =
       let newPSortInfo = convertSortInfoToPSortInfo imported_sort_info in
       let oldPSortInfo = findAQualifierMap (combined_psorts,imported_qualifier, imported_id) in {
-          mergedSorts <- SpecCalc.mergeSortInfo newPSortInfo oldPSortInfo imported_qualifier imported_id position;
+          mergedSorts <- SpecCalc.mergeSortInfo newPSortInfo oldPSortInfo position;
           return (insertAQualifierMap (combined_psorts,
                                        imported_qualifier,
                                        imported_id,
@@ -97,7 +97,7 @@ and then qualify the resulting spec if the spec was given a name.
     let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, combined_pops) =
       let newPOpInfo = convertOpInfoToPOpInfo imported_op_info in
       let oldPOpInfo = findAQualifierMap (combined_pops,imported_qualifier, imported_id) in {
-           mergedOps <- SpecCalc.mergeOpInfo newPOpInfo oldPOpInfo imported_qualifier imported_id position;
+           mergedOps <- SpecCalc.mergeOpInfo newPOpInfo oldPOpInfo position;
            return (insertAQualifierMap (combined_pops,
                                         imported_qualifier,
                                         imported_id,
