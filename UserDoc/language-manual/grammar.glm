@@ -219,7 +219,7 @@ easy reference.
 ||  
 ||  `diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||  
-||  `diagram-element ::
+||  `diagram-element ::=
 ||     `diagram-node
 ||   | `diagram-edge
 ||  

@@ -478,9 +478,14 @@ special meaning and must not be used for `names:
 ]]
 They each count as a single `symbol, and no whitespace is
 allowed inside any reserved word.
-Further, a stand-alone colon mark [[:]], a stuttered colon mark
-[[::]] and a stand-alone vertical-bar mark [[|]] may not be used
-as `names.
+</para>
+<para>
+Likewise, the following <emphasis>reserved non-words</emphasis>
+must not be used for `names:
+[[
+||    :       ::      |
+||    <-      ->      +->
+]]
 In addition, several `names -- for example [[=]] -- are
 pre-defined in built-in libraries.
 While strictly speaking not reserved, they must not be
@@ -1084,10 +1089,10 @@ the result `spec <replaceable>T</replaceable>
 is a categorical colimit of this pushout diagram:
 [[
 ||              \<replaceable>D\</replaceable> ---------> \<replaceable>R\</replaceable>
-||              |         |
-||              |         |
-||              |         |
-||              v         v
+||              |            |
+||              |            |
+||              |            |
+||              v            v
 ||              \<replaceable>C\</replaceable> ---------> \<replaceable>T\</replaceable>
 ]]
 Although isomorphic to the result that would be obtained 
@@ -1231,7 +1236,7 @@ They are the formal expression of the requirement that the step from
 ||
 ||`diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||
-||`diagram-element ::
+||`diagram-element ::=
 ||     `diagram-node
 ||   | `diagram-edge
 ||
@@ -1350,7 +1355,7 @@ The elaboration of a `proof-term invokes the prover suggested
 by the `prover-name (currently only SNARK).
 The property to be proved is the `claim of the first
 `claim-name; the hypotheses (assumptions) that may be used
-in the proof
+in the proof.
 The `prover-options are prover-specific and are not
 further described here.
 For details, see the &Specware; User Manual.
@@ -1409,7 +1414,7 @@ For example, the result of
 ||             op b : Nat -> Z
 ||           end
 ||    sort A.Z = String
-||    def b = "i8"
+||    def b = toString
 ||  endspec
 ]]
 
@@ -1420,7 +1425,7 @@ is this ``expanded'' `spec:
 ||    sort A.Z
 ||    op b : Nat -> A.Z
 ||    sort A.Z = String
-||    def b = "i8"
+||    def b = toString
 ||  endspec
 ]]
 </para>
@@ -4627,23 +4632,21 @@ is actually immaterial).
 Step 1.  From `pattern <replaceable>P</replaceable>, form some
 <emphasis>tame variant</emphasis>
 <replaceable>P<subscript>t</subscript></replaceable> by
-first replacing each `field-patterner consisting of a single
+replacing each `field-patterner consisting of a single
 `field-name <replaceable>F</replaceable> by the
-`field-patterner <replaceable>F</replaceable> [[=]] [[_]], and
-next
-replacing each `wildcard-pattern [[_]] in
-<replaceable>P</replaceable>, thus modified, by a
-unique fresh `name, that
-is, any `name that does not already occur in the
-`spec, directly or indirectly through an import.
-For example, assuming that the `names [[v7944]] and [[v7945]]
-are fresh, a tame variant of
+`field-patterner <replaceable>F</replaceable> [[=]] <replaceable>F</replaceable>
+and replacing each `wildcard-pattern [[_]] in
+<replaceable>P</replaceable> by a unique fresh `name, that is,
+any `name that does not already occur in the `spec, directly or
+indirectly through an import.
+For example, assuming that the `name [[v7944]]
+is fresh, a tame variant of
 [[
 ||    s0 as _ :: s1 as (Push {top, pop = rest}) :: ss
 ]]
 is
 [[
-||    s0 as v7944 :: s1 as (Push {top = v7945, pop = rest}) :: ss
+||    s0 as v7944 :: s1 as (Push {top = top, pop = rest}) :: ss
 ]]
 </para>
 <!--  ================================================================= -->
@@ -4661,7 +4664,7 @@ by the `embed-pattern [[Cons
 For the example, the construed version is:
 [[
 ||    s0 as Cons (v7944,
-||                s1 as Cons (Push {top = v7945, pop = rest}, ss))
+||                s1 as Cons (Push {top = top, pop = rest}, ss))
 ]]
 </para>
 <!--  ================================================================= -->
@@ -4687,7 +4690,7 @@ are the three `expressions:
 [[
 ||    s0
 ||    Cons (v7944, s1)
-||    Cons (v7944, Cons (Push {top = v7945, pop = rest}, ss))
+||    Cons (v7944, Cons (Push {top = top, pop = rest}, ss))
 ]]
 </para>
 <!--  ================================================================= -->
@@ -4736,8 +4739,8 @@ on</emphasis> the accepting `local-variables of
 <para>
 For the example, the accepting `local-variables of
 <replaceable>P<subscript>t</subscript></replaceable> are the
-six `local-variables [[s0]], [[s1]], [[ss]], [[rest]], [[v7944]] and
-[[v7945]].
+six `local-variables [[s0]], [[s1]], [[ss]], [[rest]] and
+[[v7944]].
 In general, they are the accepting `local-variables of the
 original `pattern together with any fresh `names used for
 taming.
@@ -4751,9 +4754,9 @@ Under the accepting binding
 ||    s0 = Cons (Empty, Cons (Push {top = 200, pop = Empty}, Nil))
 ||    s1 = Cons (Push {top = 200, pop = Empty}, Nil)
 ||    ss = Nil
+||    top = 200
 ||    rest = Empty
 ||    v7944 = Empty
-||    v7945 = 200
 ]]
 the value of each <replaceable>E</replaceable> in
 <replaceable>ED<subscript>P</subscript></replaceable>
@@ -4764,10 +4767,11 @@ original `pattern, with acceptance binding
 ||    s0 = Cons (Empty, Cons (Push {top = 200, pop = Empty}, Nil))
 ||    s1 = Cons (Push {top = 200, pop = Empty}, Nil)
 ||    ss = Nil
+||    top = 200
 ||    rest = Empty
 ]]
-obtained by <quote>forgetting</quote> the fresh `names
-[[v7944]] and [[v7945]].
+obtained by <quote>forgetting</quote> the fresh `name
+[[v7944]].
 </para>
 </section>
 </section>

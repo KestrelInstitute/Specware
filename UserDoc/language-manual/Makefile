@@ -27,7 +27,6 @@ ADJUSTFONTHTML= bin/adjustFontHTML
 ANCHORHTML= bin/anchorHTML
 REANCHORGRAMMARHTML= bin/reAnchorGrammarHTML
 NAVLINKHTML= bin/navLinkHTML
-PUSHOUTKLUDGE= bin/pushoutKludge
 
 PDFDBK= bookinfo.dbk \
         disclaimer.dbk \
@@ -56,8 +55,6 @@ $(HTMDIR): Makefile $(SLM)-htm.dbk $(HTMDBK) \
 		-exec $(ADJUSTFONTHTML) {} \;
 	/usr/bin/find db2html-dir -name '*.html' \
 		-exec $(ANCHORHTML) {} \;
-	/usr/bin/find db2html-dir -name '*.html' \
-		-exec $(NAVLINKHTML) {} \;
 	$(REANCHORGRAMMARHTML) db2html-dir/grammar.html
 	/bin/mv db2html-dir/book1.html db2html-dir/$(SLM).html
 	@/bin/rm -rf $(HTMDIR).old
@@ -158,7 +155,6 @@ metaslang-htm.dbk: Makefile metaslang.glm
 	 then /bin/mv -f metaslang-htm.dbk metaslang-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm metaslang.glm > metaslang-htm.dbk
-	$(PUSHOUTKLUDGE) metaslang-htm.dbk
 
 usage-htm.dbk: Makefile usage.glm
 	@if test -r usage-htm.dbk; \
