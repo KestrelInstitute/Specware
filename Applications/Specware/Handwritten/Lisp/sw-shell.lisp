@@ -133,7 +133,7 @@
       
       (set-specware-shell nil)
       (unless exiting-lisp?
-	(format t "~%Exiting Specware Shell. :sw-shell to reenter.")))))
+	(format t "~%Exiting Specware Shell. :sw-shell to reenter.~%")))))
 
 (defun sw-shell-command (command)
   (let ((ch (read-char-no-hang *standard-input* nil nil)))
@@ -274,8 +274,11 @@
   (#+allegro excl:without-package-locks #-allegro progn
    (setf (symbol-function 'error) #'just-print-error-message))
   (specware::change-directory (specware::getenv "SPECWARE4"))
-  (SWShell::specware-shell t)
-  (cl-user::exit))
+  (SWShell::specware-shell nil)
+  #+allegro
+  (excl:without-package-locks #-allegro progn
+   (setf (symbol-function 'error) original-error))
+  t)
 
 #+allegro
 (top-level:alias ("sw-shell") () (specware-shell nil))
