@@ -70,9 +70,9 @@ accompanying text will indicate how they are to be resolved.
 <section id="Models"><title>Models</title>
 <para>
 <<
-||    `spec ::= `spec-form
+||`spec ::= `spec-form
 ||
-||    `op ::= `op-name
+||`op ::= `op-name
 >>
 The term `spec is used as short for `spec-form.
 The <emphasis>semantics</emphasis> of &Metaslang; `specs is given
@@ -2696,7 +2696,7 @@ The sort
 <emphasis>supersort</emphasis> <replaceable>S</replaceable>.
 Values can be shuttled between a subsort and its supersort
 and vice versa with
-`relaxators and `restrictors; see also
+`relaxators and `restricted-expressions; see also
 <link linkend="metaslang-relax-pattern"><emphasis>Relax-patterns</emphasis></link>.
 </para>
 <!--====================================================================-->
@@ -2712,7 +2712,8 @@ accommodate the unary negation operator [[~]], which has sort
 </para>
 <!--====================================================================-->
 <para>
-Likewise, Metaslang does not require the explicit use of a `restrictor
+Likewise, Metaslang does not require the explicit use of a
+`restricted-expression
 to restrict
 an `expression from a sort to a subsort if the
 context requires the latter.
@@ -2722,7 +2723,8 @@ of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
 a subsort of [[Nat]], to accommodate the division operator
 [[div]], whose second argument has sort [[PosNat]].
 But note that implicit restriction engenders the same proof
-obligation as results when using an explicit `restrictor.
+obligation as results when using an explicit
+`restricted-expression.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -2854,6 +2856,7 @@ has three inhabitants.
 ||`tight-expression ::=
 ||      `application
 ||    | `annotated-expression
+||    | `restricted-expression
 ||    | `closed-expression
 ||
 ||`closed-expression ::=
@@ -3288,6 +3291,85 @@ value <replaceable>P</replaceable>.
 equivalently as
 `prefix-applications, only the semantics for
 `prefix-applications is given explicitly.)
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section
+id="Restricted-expressions"><title>Restricted-expressions</title>
+<para>
+<<
+||`restricted-expression ::= restrict `closed-expression `closed-expression
+>>
+Sample `restricted-expression:
+[[
+||    restrict posNat? (n+1)
+]]
+Restriction.
+In a `restricted-expression
+[[restrict ]]<replaceable>P</replaceable> <replaceable>E</replaceable>
+the `expression <replaceable>P</replaceable> must have function
+sort <replaceable>S</replaceable>[[ -> Boolean]] and the
+`expression <replaceable>E</replaceable> must have sort
+<replaceable>S</replaceable> for some
+<replaceable>S</replaceable>.
+</para>
+<!--====================================================================-->
+<para>
+The sort of a `restricted-expression
+[[restrict ]]<replaceable>P</replaceable>
+<replaceable>E</replaceable>,
+where <replaceable>P</replaceable> has
+sort <replaceable>S</replaceable>[[ -> Boolean]],
+is the sort
+[[(]]<replaceable>S</replaceable> [[|]] <replaceable>P</replaceable>[[)]].
+</para>
+<!--====================================================================-->
+<para>
+A `restricted-expression
+[[restrict ]]<replaceable>P</replaceable> <replaceable>E</replaceable>
+is a convenient notation for the `let-expression
+[[let relax ]]<replaceable>P</replaceable> <replaceable>V</replaceable>[[ = ]]<replaceable>E</replaceable>[[ in ]]<replaceable>V</replaceable>, where
+<replaceable>V</replaceable> is some unique fresh `name, that
+is, it is any `name that does not already occur in the
+`spec, directly or indirectly through an import.
+</para>
+<!--====================================================================-->
+<para>
+The use of this `restricted-expression engenders a proof obligation
+that the value of <replaceable>E</replaceable> satisfies predicate
+<replaceable>P</replaceable>.
+</para>
+<!--====================================================================-->
+<para>
+For example, assuming the `definitions from the Base Library
+for [[Nat]], the `restricted-expression
+[[restrict posNat? (n+1)]] has sort
+[[PosNat]]; its domain of definedness are the
+nonnegative integers (of sort [[Integer]]).
+The proof obligation here is that, in the context,
+[[(n+1) > 0]].
+</para>
+<!--====================================================================-->
+<para>
+The purpose of `restricted-expressions is to make it
+explicit that an `expression whose a-priori sort is some
+supersort <replaceable>S</replaceable> actually is guaranteed
+(or required) to have subsort
+[[(]]<replaceable>S</replaceable> [[|]]
+<replaceable>P</replaceable>[[)]].
+Note, however, that Metaslang does not require the explicit use of a
+`restricted-expression
+to restrict
+an `expression from a sort to a subsort if the
+context requires the latter.
+Implicit restriction will take place when needed.
+For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
+of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
+a subsort of [[Nat]], to accommodate the division operator
+[[div]], whose second argument has sort [[PosNat]].
+But note that implicit restriction engenders the same proof
+obligation as results when using an explicit
+`restricted-expression.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -3881,7 +3963,6 @@ denotes the same list as the `expression [[Cons
 ||`structor ::=
 ||      `projector
 ||    | `relaxator
-||    | `restrictor
 ||    | `quotienter
 ||    | `chooser
 ||    | `embedder
@@ -4036,78 +4117,6 @@ the corresponding section.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Restrictors"><title>Restrictors</title>
-<para>
-<<
-||`restrictor ::= restrict `closed-expression
->>
-Sample `restrictor:
-[[
-||    restrict even
-]]
-Restriction.
-The `closed-expression of a `restrictor must have some function
-sort <replaceable>S</replaceable>[[ -> Boolean]].
-</para>
-<!--====================================================================-->
-<para>
-A `restrictor
-[[restrict ]]<replaceable>P</replaceable> is a convenient
-notation for the `lambda-form
-[[fn ]]<replaceable>X</replaceable>[[ ->
-let relax ]]<replaceable>P</replaceable> <replaceable>V</replaceable>[[ = ]]<replaceable>X</replaceable>[[ in ]]<replaceable>V</replaceable>, where
-<replaceable>V</replaceable> is some unique fresh `name, that
-is, it is any `name that does not already occur in the
-`spec, directly or indirectly through an import.
-</para>
-<!--====================================================================-->
-<para>
-The sort of a `restrictor is of the form
-<replaceable>S</replaceable>[[ ->
-(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]], that is, it goes from a
-supersort to a subsort.
-In general its value is a partial function, defined only on
-the range of the function [[relax ]]<replaceable>P</replaceable>.
-The use of this partial function engenders a proof obligation
-that the arguments to which it is applied satisfy predicate
-<replaceable>P</replaceable>.
-</para>
-<!--====================================================================-->
-<para>
-For example, the `restrictor
-[[restrict (fn (n : Integer) -> n >= 0)]] has sort
-[[Integer -> Nat]]; its domain of definedness are the
-nonnegative integers (of sort [[Integer]]).
-Used in the following `expression, which has
-sort [[Nat]] assuming that [[i]] has sort [[Integer]],
-[[
-||    if i < 0
-||    then 0
-||    else restrict (fn (n : Integer) -> n >= 0) i
-]]
-the context guarantees that integer [[i]], where it is subjected
-to the `restrictor, satisfies the nonnegativity
-restriction on natural numbers, and will be accepted and
-achieve [[Nat]]-hood.
-Formally, the proof obligation here is [[~(i < 0) => (i >= 0)]].
-This is a theorem from the Theory of Integers.
-</para>
-<!--====================================================================-->
-<para>
-Metaslang does not require the explicit use of a `restrictor
-to restrict
-an `expression from a sort to a subsort if the
-context requires the latter.
-Implicit restriction will take place when needed.
-For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
-of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
-a subsort of [[Nat]], to accommodate the division operator
-[[div]], whose second argument has sort [[PosNat]].
-But note that implicit restriction engenders the same proof
-obligation as results when using an explicit `restrictor.
-</para>
-</section>
-<!-- ***************************************************************** -->
 <section id="Quotienters"><title>Quotienters</title>
 <para>
 <<
@@ -4118,7 +4127,7 @@ Sample `quotienter:
 ||     quotient (fn (m, n) -> m rem 3 = n rem 3)
 ]]
 Restriction.
-The `closed-expression of a `quotienter must have some sort
+Tconsihe `closed-expression of a `quotienter must have some sort
 <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
@@ -4165,9 +4174,9 @@ Sample `chooser:
 ||    choose congMod3
 ]]
 Restriction.
-The `closed-expression of a `chooser must have some sort
-<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], and
-must be an equivalence relation (see under
+In a `chooser [[choose ]]<replaceable>Q</replaceable>,
+`expression <replaceable>Q</replaceable> must have some sort
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], and must be an equivalence relation (see under
 <link linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>).
 </para>
 <!--====================================================================-->
@@ -4175,9 +4184,29 @@ must be an equivalence relation (see under
 The sort of a `chooser [[choose ]]<replaceable>Q</replaceable>,
 where <replaceable>Q</replaceable> has sort
 <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], is a function sort of the form
-[[(]]<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>[[)]] [[->]]
-[[(]]<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>[[ -> ]]<replaceable>T</replaceable>[[)]].
-The value of the `chooser is the (in general partial)
+<replaceable>R</replaceable> [[->]]
+[[(]]<replaceable>S</replaceable>[[ /
+]]<replaceable>Q</replaceable>[[ ->
+]]<replaceable>T</replaceable>[[)]], where
+<replaceable>R</replaceable> is the subsort of
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>
+consisting of the <replaceable>Q</replaceable>-constant
+(explained below) functions.
+Expressed more formally, <replaceable>R</replaceable> is the sort
+[[{f :]] <replaceable>S</replaceable>[[ ->
+]]<replaceable>T</replaceable> [[| fa((x,y) :]]
+<replaceable>S</replaceable> [[*]]
+<replaceable>S</replaceable>[[)]]
+<replaceable>Q</replaceable>[[(x,y) => f x = f y}]],
+where the `names [[f]], [[x]] and [[y]] must be replaced by
+``fresh'' `names not clashing with `names already in use in
+<replaceable>S</replaceable>,
+<replaceable>T</replaceable> or
+<replaceable>Q</replaceable>.
+</para>
+<!--====================================================================-->
+<para>
+The value of the `chooser is the
 function mapping each <replaceable>Q</replaceable>-constant
 (explained below) function <replaceable>f</replaceable> inhabiting sort
 <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> to the function that maps 
