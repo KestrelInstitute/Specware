@@ -507,6 +507,28 @@ spec
         if tS1 = tS then OK eS else FAIL
       | _ -> FAIL
 
+  op checkCaseBranchExpr :
+     Context -> Context -> Expression -> Expression -> Proof ->
+     MayFail (Expression * Type)
+  def checkCaseBranchExpr cx varCx negAsm posAsm prf =
+    case checkExpr prf of OK (cx1, e, t) ->
+    if maxCommonPrefix (cx, cx1) = cx
+    && length cx1 = length cx + length varCx + 2 then
+    case last cx1 of axioM (_, tvS, e1) ->
+    if tvS = empty
+    && e1 = posAsm
+    && subFromLong (cx1, length cx + 1, length varCx) = varCx then
+    case cx1 ! (length cx) of axioM (_, tvS, e1) ->
+    if tvS = empty
+    && e1 = negAsm then
+    OK (e, t)
+    else   FAIL
+    | _ -> FAIL
+    else   FAIL
+    | _ -> FAIL
+    else   FAIL
+    | _ -> FAIL
+
   op checkPattWithContextAndType : Context -> Type -> Proof -> MayFail Pattern
   def checkPattWithContextAndType cx t prf =
     case check prf of
@@ -637,6 +659,16 @@ spec
         else FAIL
       | _ -> FAIL
 
+  op checkTheoremRecursiveLet :
+     Proof -> MayFail (Context * Variables * Types * Expressions)
+  def checkTheoremRecursiveLet prf =
+    case check prf of
+      | OK (theoreM (cx, binding (existential1, vS, tS,
+                                  binary (equation,
+                                    nary (tuple, veS), nary (tuple, eS))))) ->
+        if veS = map (VAR, vS) then OK (cx, vS, tS, eS) else FAIL
+      | _ -> FAIL
+
   op checkTypeEquivalence : Proof -> MayFail (Context * Type * Type)
   def checkTypeEquivalence prf =
     case check prf of
@@ -649,12 +681,7 @@ spec
       | OK (typeEquivalence (cx1, t1, t2)) ->
         if cx1 = cx then OK (t1, t2) else FAIL
       | _ -> FAIL
-(*
-  op checkCaseBranchExprs :
-     Context -> Expression -> Patterns -> Proofs -> MayFail Expressions
-  def checkCaseBranchExprs cx e pS prfS =
-    ...
-*)
+
 
   def check = fn
 
@@ -882,7 +909,7 @@ spec
       | _ -> FAIL)
       | _ -> FAIL)
 
-    % well-typed expressions:
+    %%%%%%%%%% well-typed expressions:
     | exVariable (prf, v) ->
       (case checkContext prf of OK cx ->
       (case checkVarDecl cx v of OK t ->
@@ -1066,13 +1093,12 @@ spec
       OK (wellTypedExpr (cx, EMBED (SUM cS t?S) c, ti --> SUM cS t?S))
       | _ -> FAIL)
       | _ -> FAIL)
-
-(*@@@
     | exCase (prfTgt, prfPS, prfExh, prfES) ->
       (case checkExpr prfTgt of OK (cx, e, t) ->
       (case checkSequence (map (checkPattWithContextAndType cx t, prfPS)) of
          OK pS ->
       let n:Nat = length pS in
+      if n > 0 then
       let caseMatches:Expressions = seqSuchThat (fn(i:Nat) ->
         if i < n then Some (let (vS,tS) = pattVarsWithTypes (pS!i) in
                             EXX vS tS (pattAssumptions (pS!i, e)))
@@ -1090,51 +1116,97 @@ spec
         if i < n then Some (pattAssumptions (pS!i, e))
                  else None) in
       if length prfES = n then
-      let def aux (i:Nat, eS:Expressions, t:Type) : MayFail (Expressions * Type) =
-            ...
+      let def aux (i:Nat, eS:Expressions, t?:Type?)
+                  : MayFail (Expressions * Type) =
+            if i = n then
+              case t? of Some t -> OK (eS, t)
+                       | None   -> FAIL   % never happens
+            else
+              case checkCaseBranchExpr
+                     cx (varCxS!i) (negAsmS!i) (posAsmS!i) (prfES!i) of
+                | OK (e, t) ->
+                  (case t? of Some t1 -> if t1 = t then aux (i+1, eS <| e, Some t)
+                                         else FAIL
+                            | None -> aux (i+1, eS <| e, Some t))
+                | _ -> FAIL
       in
-      (case aux (0, empty) of OK (eS, t1) ->
-      OK (wellTypedExpr (cx, CASE e pS tS, t1))
-      
+      (case aux (0, empty, None) of OK (eS, t1) ->
+      OK (wellTypedExpr (cx, CASE e pS eS, t1))
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exRecursiveLet (prfTh, prfEx) ->
+      (case checkTheoremRecursiveLet prfTh of OK (cx, vS, tS, eS) ->
+      if length vS = length tS
+      && length tS = length eS then
+      (case checkExpr prfEx of OK (cx1, e, t) ->
+      if cx1 = cx ++ multiVarDecls (vS, tS) then
+      OK (wellTypedExpr (cx, LETDEF vS tS eS e, t))
+      else   FAIL
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+    | exNonRecursiveLet prf ->
+      (case checkExpr prf of OK (cx, casE (e, pS, eS), t) ->
+      if length pS = 1
+      && length eS = 1 then
+      OK (wellTypedExpr (cx, LET (first pS) e (first eS), t))
+      else   FAIL
+      | _ -> FAIL)
+    | exEquivalentTypes (prfEx, prfTE) ->
+      (case checkExpr prfEx of OK (cx, e, t) ->
+      (case checkTypeEquivalenceWithContext cx prfTE of OK (t0, t1) ->
+      OK (wellTypedExpr (cx, e, t1))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exAlphaAbstraction (prf, oldV, newV) ->
+      (case checkExpr prf of OK (cx, binding (abstraction, vS, tS, e), t) ->
+      if noRepetitions? vS
+      && oldV in? vS then
+      let i:Nat = indexOf (vS, oldV) in
+      let esbs:ExprSubstitution = FMap.singleton (oldV, VAR newV) in
+      if ~(newV in? toSet vS \/ exprFreeVars e \/ captVars oldV e) then
+      OK (wellTypedExpr (cx, FNN (update(vS,i,newV)) tS (exprSubst esbs e), t))
+      else   FAIL
+      else   FAIL
+      | _ -> FAIL)
+    | exAlphaCase (prf, i, oldV, newV) ->
+      (case checkExpr prf of OK (cx, casE (e, pS, eS), t) ->
+      if i < length pS
+      && i < length eS
+      && oldV in? pattVars (pS!i)
+      && ~(oldV in?
+           pattVars (pS!i) \/ exprFreeVars (eS!i) \/ captVars oldV (eS!i)) then
+      let newPi:Pattern = pattSubst (oldV, newV) (pS!i) in
+      let esbs:ExprSubstitution = FMap.singleton (oldV, VAR newV) in
+      let newEi:Expression = exprSubst esbs (eS!i) in
+      OK (wellTypedExpr
+           (cx, CASE e (update(pS,i,newPi)) (update(eS,i,newEi)), t))
+      else   FAIL
+      | _ -> FAIL)
+    | exAlphaRecursiveLet (prf, oldV, newV) ->
+      (case checkExpr prf of OK (cx, recursiveLet (vS, tS, eS, e), t) ->
+      if noRepetitions? vS
+      && oldV in? vS then
+      let i:Nat = indexOf (vS, oldV) in
+      let esbs:ExprSubstitution = FMap.singleton (oldV, VAR newV) in
+      if ~(newV in? toSet vS \/ captVars oldV e \/ exprFreeVars e \/
+                    unionAll (map (exprFreeVars, eS)) \/
+                    unionAll (map (captVars oldV, eS))) then
+      OK (wellTypedExpr
+           (cx,
+            LETDEF (update(vS,i,newV)) tS
+                   (map (exprSubst esbs, eS)) (exprSubst esbs e),
+            t))
+      else   FAIL
+      else   FAIL
+      | _ -> FAIL)
 
-DEFINING checkCaseBranchExprs...
-
-         pj (wellTypedExpr (cx, e, t))
-      && length pS = n
-      && (fa(i:Nat) i < n =>
-            pj (wellTypedPatt (cx, pS!i, t)))
-      && length caseMatches = n
-      && (fa(i:Nat) i < n =>
-            caseMatches!i =
-            (let (vS,tS) = pattVarsWithTypes (pS!i) in
-             EXX vS tS (pattAssumptions (pS!i, e))))
-      && pj (theoreM (cx, disjoinAll caseMatches))
-      && length posCxS = n
-      && length posAnS = n
-      && (fa(i:Nat) i < n =>
-            posCxS!i =
-            multiVarDecls (pattVarsWithTypes (pS!i))
-              <| axioM (posAnS!i, empty, pattAssumptions (pS!i, e)))
-      && length negCxS = n
-      && length negAnS = n
-      && (fa(i:Nat) i < n =>
-            (let conjuncts:Expressions = the (fn conjuncts ->
-                   length conjuncts = i &&
-                   (fa(j:Nat) j < i => conjuncts!j = ~~ (caseMatches!j))) in
-             negCxS!i =
-             singleton (axioM (negAnS!i, empty, conjoinAll conjuncts))))
-      && length eS = n
-      && (fa(i:Nat) i < n =>
-            pj (wellTypedExpr (cx ++ (negCxS!i) ++ (posCxS!i), eS!i, t1)))
-      => pj (wellTypedExpr (cx, CASE e pS eS, t1)))
-
-    | exRecursiveLet         Proof * Proof
-    | exNonRecursiveLet      Proof
-    | exEquivalentTypes      Proof * Proof
-    | exAlphaAbstraction     Proof * Variable * Variable
-    | exAlphaCase            Proof * Nat * Variable * Variable
-    | exAlphaRecursiveLet    Proof * Variable * Variable
-    % well-typed patterns:
+(*@@@
+    %%%%%%%%%% well-typed patterns:
     | paVariable        Proof * Variable
     | paEmbedding0      Proof * Constructor
     | paEmbedding1      Proof * Proof * Constructor
@@ -1142,7 +1214,7 @@ DEFINING checkCaseBranchExprs...
     | paTuple           Proof * Proofs
     | paAlias           Proof * Variable
     | paEquivalentTypes Proof * Proof
-    % theorems:
+    %%%%%%%%%% theorems:
     | thAxiom                       Proof * Proofs * TypeVariables * AxiomName
     | thOpDef                       Proof * Proofs * Operation
     | thSubstitution                Proof * Proof * Position
