@@ -1,4 +1,4 @@
 (swl "Bref" "B")
 (load "B")
-(BREF::f 7) ; result = 21
-(BREF::g 3) ; result = 18
+(SW-USER::f 7) ; result = 21
+(SW-USER::g 3) ; result = 18
