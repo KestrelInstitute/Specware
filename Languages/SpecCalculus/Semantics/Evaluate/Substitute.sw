@@ -17,7 +17,8 @@ SpecCalc qualifying spec {
            let timeStamp = max (spec_timestamp, sm_timestamp) in
            let dep_URIs  = listUnion (spec_dep_URIs, sm_dep_URIs) in {
              new_spec <- attemptSubstitution spc sm sm_tm term_pos;
-             return (Spec new_spec, timeStamp, dep_URIs)
+             compressed_spec <- complainIfAmbiguous (compressDefs new_spec) term_pos;
+             return (Spec compressed_spec, timeStamp, dep_URIs)
            }
       | (_,        Morph _)  ->
            raise (TypeCheck (positionOf spec_tm, "substitution attempted on a non-spec"))

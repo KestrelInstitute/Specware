@@ -64,7 +64,8 @@ Note: The code below does not yet match the documentation above, but should.
   op translateSpec : Spec -> TranslateExpr Position -> Env Spec
   def translateSpec spc expr = {
       translation_maps <- makeTranslationMaps spc expr;
-      auxTranslateSpec spc translation_maps (positionOf expr)
+      new_spec <- auxTranslateSpec spc translation_maps (positionOf expr);
+      complainIfAmbiguous (compressDefs new_spec) (positionOf expr)
     } 
     
   op makeTranslationMaps :

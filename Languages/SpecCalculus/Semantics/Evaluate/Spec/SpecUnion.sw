@@ -16,16 +16,17 @@ SpecUnion qualifying spec {
   %% let merged_local_ops   = localOpsUnion   specs in
   %% let merged_local_sorts = localSortsUnion specs in
   {
-   merged_sorts   <- sortsUnion      specs;
-   merged_ops     <- opsUnion        specs;
-   merged_props   <- propertiesUnion specs;
-   return {importInfo = {imports       = merged_imports,
-			 importedSpec  = None,               % TODO: is this correct?
-			 localOps      = emptyOpNames,    % merged_local_ops
-			 localSorts    = emptySortNames}, % merged_local_sorts
-	   sorts      = merged_sorts,
-	   ops        = merged_ops,
-	   properties = merged_props}
+   merged_sorts  <- sortsUnion      specs;
+   merged_ops    <- opsUnion        specs;
+   merged_props  <- propertiesUnion specs;
+   merged_spec   <- return {importInfo = {imports       = merged_imports,
+					  importedSpec  = None,               % TODO: is this correct?
+					  localOps      = emptyOpNames,    % merged_local_ops
+					  localSorts    = emptySortNames}, % merged_local_sorts
+			    sorts      = merged_sorts,
+			    ops        = merged_ops,
+			    properties = merged_props};
+   return (compressDefs merged_spec)
   }
 
  %% TODO: The terms for the imports might not remain in a meaningful URI context -- relativize to new context

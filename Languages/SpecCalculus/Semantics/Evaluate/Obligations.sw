@@ -10,18 +10,21 @@ SpecCalc qualifying spec
   import Signature
   import /Languages/MetaSlang/Specs/TypeObligations
   % import /Languages/SpecCalculus/Semantics/Evaluate/URI/Utilities % breaks PSL by indirectly loading SpecCalculus version of Value.sw
+  import Spec/Utilities % for compressDefs and complainIfAmbiguous
   import URI/Utilities  % should work for both Specware and PSL
 
   def SpecCalc.evaluateObligations term =
     { (value, time_stamp, dep_URIs) <- evaluateTermInfo term;
       case value of
 
-	| Spec  spc -> let ob_spec = specObligations (spc,term) in
-	               return (Spec ob_spec, time_stamp, dep_URIs)
+	| Spec  spc -> {ob_spec <- return (specObligations (spc,term));
+			compressed_spec <- complainIfAmbiguous (compressDefs ob_spec) (positionOf term);
+			return (Spec compressed_spec, time_stamp, dep_URIs)}
 
 	| Morph sm  -> {globalContext <- getGlobalContext;
-			let ob_spec = morphismObligations (sm,globalContext) in
-			return (Spec ob_spec, time_stamp, dep_URIs)}
+			ob_spec <- return (morphismObligations (sm,globalContext));
+			compressed_spec <- complainIfAmbiguous (compressDefs ob_spec) (positionOf term);
+			return (Spec compressed_spec, time_stamp, dep_URIs)}
 
 	| _ -> raise (Unsupported (positionOf term,
 				   "Can create obligations for Specs and Morphisms only"))
