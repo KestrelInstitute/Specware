@@ -16,6 +16,16 @@ Logic qualifying spec
 
   type UniquelySatisfiedPredicate a = (Predicate a | uniquelySatisfied?)
 
+  op finite? : [a] Predicate a -> Boolean
+  axiom finite?_def is [a] fa(p)
+    finite? p =
+    % there is a surjective function from {i:Nat | i < n} to {x:a | p x}
+    % (which are "pseudo-types" because of the free variables `n' and `p'):
+    (ex (f : Nat -> a, n:Nat)
+       (fa(x) p x => (ex(i:Nat) i < n && f i = x)))
+
+  type FinitePredicate a = (Predicate a | finite?)
+
   % exists unique (looks like quantifier in "ex1 (fn x:T -> ...)"):
 
   op ex1 : [a] Predicate a -> Boolean

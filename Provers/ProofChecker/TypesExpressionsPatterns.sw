@@ -57,9 +57,9 @@ spec
    && (fa (t:Type, var:Name, e:Expression)
          pred (typ t) && pred (expr e)
       => pred (expr (abstraction ((var, t), e))))
-   && (fa (e1:Expression, e2:Expression, e3:Expression)
-         pred (expr e1) && pred (expr e2) && pred (expr e3)
-      => pred (expr (ifThenElse (e1, e2, e3))))
+   && (fa (e0:Expression, e1:Expression, e2:Expression)
+         pred (expr e0) && pred (expr e1) && pred (expr e2)
+      => pred (expr (ifThenElse (e0, e1, e2))))
    && (fa (fields:FSeq Name, exprs:FSeq Expression)
          length fields = length exprs
       && (fa(e) e in? exprs => pred (expr e))
