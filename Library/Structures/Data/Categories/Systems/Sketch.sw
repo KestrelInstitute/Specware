@@ -47,6 +47,18 @@ Shape qualifying spec {
   op src : Sketch -> Map
   op target : Sketch -> Map
   op ppSketch : Sketch -> Pretty
+
+  sort Sketch = {
+    vertices : V.Set,
+    edges : E.Set,
+    src : Map,
+    target : Map
+   }
+
+  def vertices graph = graph.vertices
+  def edges graph = graph.edges
+  def src graph = graph.src
+  def target graph = graph.target
 \end{spec}
 
 Next we include some basic functions for building a graph incrementally by
@@ -63,13 +75,33 @@ identity of a vertex, how do we specify the source and target of an edge.
 
 \begin{spec}
   op emptySketch : Sketch
+  def emptySketch = {
+     vertices = V.empty,
+     edges = E.empty,
+     src = emptyMap,
+     target = emptyMap
+  }
+
   op insertVertex : Sketch -> V.Elem -> Sketch
+  def insertVertex graph vertex = {
+    vertices = V.insert (vertices graph) vertex,
+    edges = edges graph,
+    src = src graph,
+    target = target graph
+  }
+
 \end{spec}
 
 When we add an edge, we also add the src and target of the edge.
 
 \begin{spec}
   op insertEdge : Sketch -> E.Elem -> V.Elem -> V.Elem -> Sketch
+  def insertEdge graph edge dom cod = {
+    vertices = V.insert (V.insert (vertices graph) dom) cod,
+    edges = E.insert (edges graph) edge,
+    src = update (src graph) edge dom,
+    target = update (target graph) edge cod
+  }
 \end{spec}
 
 Next we define a signature for a pair of fold functions. The idea with

@@ -105,9 +105,17 @@ System = spec {
   import Functor
   import /Library/PrettyPrinter/WadlerLindig
 
-  sort System (O,A)
+  sort System (O,A) 
+  sort System (O,A) = {
+    shape : Sketch,
+    functor : Functor (O,A)
+  }
+
   op shape : fa (O,A) System (O,A) -> Sketch
+  def shape sys = sys.shape
+
   op functor : fa (O,A) System (O,A) -> Functor (O,A)
+  def functor sys = sys.functor
 \end{spec}
 
 The operations for adding vertices and edges yield a system that is not
@@ -123,15 +131,66 @@ an empty system we must give fix the target category.
 
 \begin{spec}
   op emptySystem : fa (O,A) Cat (O,A) -> System (O,A)
+  def emptySystem cat = {
+    shape = emptySketch,
+    functor = emptyFunctor cat
+  }
+
   op addVertex : fa (O,A) System (O,A) -> V.Elem -> System (O,A)
-  op addEdge : fa (O,A) System (O,A)
-    -> E.Elem -> V.Elem -> V.Elem -> System (O,A)
+  def addVertex sys vertex = {
+    shape = insertVertex sys.shape vertex,
+    functor = {
+      dom = insertVertex sys.functor.dom (Tag (0,vertex)),
+      cod = sys.functor.cod,
+      edgeMap = sys.functor.edgeMap,
+      vertexMap = sys.functor.vertexMap
+    }
+  }
+  
+  op addEdge :
+    fa (O,A) System (O,A)
+          -> E.Elem
+          -> V.Elem
+          -> V.Elem
+          -> System (O,A)
+  def addEdge sys edge src target = {
+    shape = insertEdge sys.shape edge src target,
+    functor = {
+      dom = insertEdge
+              (insertEdge sys.functor.dom
+                (Tag (0,edge)) (Tag (0,src)) (Tag (1,edge)))
+                  (Tag (1,edge)) (Tag (0,target)) (Tag (1,edge)),
+      cod = sys.functor.cod,
+      vertexMap = sys.functor.vertexMap,
+      edgeMap = sys.functor.edgeMap
+    }
+  }
 
   op vertexInSystem? : fa (O,A) System (O,A) -> V.Elem -> Boolean
   op edgeInSystem? : fa (O,A) System (O,A) -> E.Elem -> Boolean
 
   op labelVertex : fa (O,A) System (O,A) -> V.Elem -> O -> System (O,A)
+  def labelVertex sys vertex obj = {
+     shape = sys.shape,
+     functor = {
+       dom = sys.functor.dom,
+       cod = sys.functor.cod,
+       vertexMap = PolyMap.update sys.functor.vertexMap (Tag (0,vertex)) obj,
+       edgeMap = sys.functor.edgeMap
+     }
+  }
+
   op labelEdge : fa (O,A) System (O,A) -> E.Elem -> O -> A -> A -> System (O,A)
+  def labelEdge sys edge apex f g = {
+    shape = sys.shape,
+    functor = {
+      dom = sys.functor.dom,
+      cod = sys.functor.cod,
+      vertexMap = PolyMap.update sys.functor.vertexMap (Tag (1, edge)) apex,
+      edgeMap = PolyMap.update (PolyMap.update sys.functor.edgeMap (Tag (0,edge)) f)
+                                     (Tag (1,edge)) g
+    }
+  }
 \end{spec}
 
 The following fold a function over the vertices and edges of a system and
@@ -161,6 +220,19 @@ can be folded over a system sys with:
   op foldOverVertices : fa (x,O,A) (x -> V.Elem -> x) -> x -> System (O,A) -> x
 \end{spec}
 
+\begin{spec}
+  op mapSystem : fa (O,A) System (O,A) -> (O -> O) -> (A -> A) -> System (O,A)
+  def mapSystem sys objMap arrMap = {
+    shape = sys.shape,
+    functor = {
+      dom = sys.functor.dom,
+      cod = sys.functor.cod,
+      vertexMap = mapMap objMap sys.functor.vertexMap,
+      edgeMap = mapMap arrMap sys.functor.edgeMap
+    }
+  }
+\end{spec}
+
 While they are distinguished in the signatures above, the sorts of edges
 and vertices of the sketch must be the same. The sets must also be
 the same sort. Then the domain of the functor is a sketch where the
@@ -180,7 +252,7 @@ The coproduct sort is far more restructive than it needs to be.
   op ppTaggedElem : TaggedElem -> Pretty
   def ppTaggedElem x =
     case x of
-        Just x -> ppElem x
+      | Just x -> ppElem x
       | Tag (n,x) ->
          ppConcat [
            ppString "(",
