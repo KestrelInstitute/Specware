@@ -236,14 +236,14 @@
 ;;; ------------------------------------------------------------------------
 
 (defun make-op-declaration (qualifiable-op-names optional-fixity sort-scheme l r)
-  (let ((names (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
+  (let ((names  (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
 	(fixity (if (equal :unspecified optional-fixity) 
 		    unspecified-fixity
 		  optional-fixity))
-	(tvs (car sort-scheme))
-	(sig (cdr sort-scheme))
-	(defs '())
-	(pos (make-pos l r)))
+	(tvs    (car sort-scheme))
+	(sig    (cdr sort-scheme))
+	(defs   '())
+	(pos    (make-pos l r)))
     (SPECCALC::mkOpSpecElem-6 names fixity tvs sig defs pos)))
 
 (defun make-fixity (associativity priority l r)
@@ -274,21 +274,22 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-op-definition (optional-tvs qualifiable-op-names params optional-sort term l r)
-  (let* ((tvs       (if (equal :unspecified optional-tvs)  ()   optional-tvs))
-         (term      (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
-	 ;;
-	 (names     (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
-	 (fixity    unspecified-fixity)
-         (term      (bind-parameters params term l r))
-         (tvs-term  (StandardSpec::abstractTerm-3 #'namedTypeVar tvs term))
+  (let* ((tvs         (if (equal :unspecified optional-tvs)  ()   optional-tvs))
+	 (range-sort  (if (equal :unspecified optional-sort) (freshMetaTypeVar l r) optional-sort))
+	 (names       (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
+	 (fixity      unspecified-fixity)
+	 (st          (make-sorted-term term range-sort l r))
+	 (st          (bind-parameters params st l r))
+	 (tvs-st      (StandardSpec::abstractTerm-3 #'namedTypeVar tvs st))
 	 ;; Since namedTypeVar is the identity function,
-	 ;;  (car tvs-term) will just be a copy of tvs
-	 ;;  (cdr tvs-term) will be a copy of term with (Base qid) replaced by (TyVar id) where appropriate.
-         (tvs       (car tvs-term))
-         (sig       (freshMetaTypeVar l r)) ; this will effectively be parameterized by tvs
-         (defs      (list (cdr tvs-term)))
-	 (pos       (make-pos l r)))
-    (SPECCALC::mkOpSpecElem-6 names fixity tvs sig defs pos)))
+	 ;;  (car tvs-st) will just be a copy of tvs
+	 ;;  (cdr tvs-st) will be a copy of st with (Base qid) replaced by (TyVar id) where appropriate.
+         (tvs         (car tvs-st))
+	 (st          (cdr tvs-st))
+	 (defs        (list st))
+	 (pos         (make-pos l r))
+	 (ignored-sig (freshMetaTypeVar l r)))
+    (SPECCALC::mkOpSpecElem-6 names fixity tvs ignored-sig defs pos)))
 
 (defun bind-parameters (params term l r)
   (if (null params)

@@ -272,13 +272,11 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
    %% a complication we don't need now (or perhaps ever).
    let dfn =
        case defs of
-	 | []   -> maybePiTerm (tvs, SortedTerm (Any pos, srt, pos))
-	 | [tm] -> maybePiTerm (tvs, SortedTerm (tm,      srt, pos))
-	 | _    -> And (map (fn tm -> maybePiTerm (tvs, SortedTerm (tm, srt, pos))) 
-			    defs,
-			pos)
+	 | []   -> SortedTerm (Any pos, srt, pos) % op decl
+	 | [tm] -> tm
    in
-     (Op (names, fixity, dfn), pos)
+   let dfn = maybePiTerm (tvs, dfn) in
+   (Op (names, fixity, dfn), pos)
 
 \end{spec}
 

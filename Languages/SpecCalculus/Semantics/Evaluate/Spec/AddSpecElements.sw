@@ -148,8 +148,8 @@ SpecCalc qualifying spec
           | (false, true) ->
             %%  Old: op foo 
             %%  New: def foo 
-            let happy? = (case (new_tvs, new_srt) of
-                            | ([], MetaTyVar _) -> 
+            let happy? = (case new_tvs of
+                            | [] ->
                               %%  Old:  op foo : ...
                               %%  New:  def foo x = ...
                               true
@@ -159,7 +159,15 @@ SpecCalc qualifying spec
                               new_tvs = old_tvs)
             in
             if happy? then
-	      let combined_dfn = maybePiTerm (old_tvs, SortedTerm (new_tm, old_srt, termAnn new_tm)) in
+	      let combined_srt = 
+	          case (old_srt, new_srt) of
+		    | (Any _,       _) -> new_srt
+		    | (_,       Any _) -> old_srt
+		    | (MetaTyVar _, _) -> new_srt
+		    | (_, MetaTyVar _) -> old_srt
+		    | _ -> old_srt   % TODO:  maybeAndSort ([old_srt, new_srt], sortAnn new_srt)
+	      in
+	      let combined_dfn = maybePiTerm (old_tvs, SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
               let combined_info = old_info << {names = combined_names, 
 					       dfn   = combined_dfn} 
 	      in
@@ -175,24 +183,29 @@ SpecCalc qualifying spec
           | (true, false) ->
 	    %%  Old:  def foo ... = ...
 	    %%  New:  op foo : ...
-            let happy? = (case (old_tvs, old_srt) of
-                            | ([], MetaTyVar _) -> 
-                              %%  Old:  def foo ... = ...
+	    let _ = toScreen ("\nWarning: op should not follow def for " ^ (printAliases combined_names) ^ ", but allowing this for now...\n") in
+            let happy? = (case old_tvs of
+                            | [] ->
+                              %%  Old:  def foo x = ...
                               %%  New:  op foo : ...
                               true
-                            | (_, MetaTyVar _) -> 
+                            | _ ->
                               %%  Old:  def [a,b,c] foo x = ...
                               %%  New:  op foo : ...
-                              new_tvs = old_tvs
-                            | _ -> 
-                              %%  Old:  op foo : ...
-                              %%  New:  op foo : ...
-                              false)
+                              new_tvs = old_tvs)
             in
             if happy? then
               %%  Old:  def foo x = ...
               %%  New:  op foo : T
-	      let combined_dfn = maybePiTerm (new_tvs, SortedTerm (old_tm, new_srt, termAnn old_tm)) in
+	      let combined_srt = 
+	          case (old_srt, new_srt) of
+		    | (Any _,       _) -> new_srt
+		    | (_,       Any _) -> old_srt
+		    | (MetaTyVar _, _) -> new_srt
+		    | (_, MetaTyVar _) -> old_srt
+		    | _ -> new_srt %  maybeAndSort ([old_srt, new_srt], sortAnn new_srt)
+	      in
+	      let combined_dfn = maybePiTerm (new_tvs, SortedTerm (old_tm, combined_srt, termAnn old_tm)) in
 	      let combined_info = old_info << {names  = combined_names, 
 					       fixity = new_fixity, 
 					       dfn    = combined_dfn}
