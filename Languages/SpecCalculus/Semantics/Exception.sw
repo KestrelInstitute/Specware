@@ -31,7 +31,19 @@ enters something bad. A \Op{ParserError} is raised when the file parser fails.
 \begin{spec}
 SpecCalc qualifying spec
   import /Library/Structures/Data/Monad/Exception
-  import /Languages/SpecCalculus/AbstractSyntax/Printer
+
+  %% avoid importing Printer, because it defines monadic 
+  %% stuff that causes conflicts when this spec is imported by 
+  %% /Languages/SpecCalculus/Semantics/Monad.sw
+  %%
+  %% import /Languages/SpecCalculus/AbstractSyntax/Printer
+
+  %% Instead, just import Position and declare whatever else we need here....
+  import /Languages/MetaSlang/Specs/Position
+  type UnitId 
+  type RelativeUID
+  op showRelativeUID : RelativeUID -> String
+  op showUID : UnitId -> String
 
   sort Monad.Exception =
     | Fail                String 
@@ -155,9 +167,6 @@ SpecCalc qualifying spec
     case l of
       | [] -> []
       | x::r -> cons(x,firstN(r,n-1))
-
-  def undefinedGlobalVariable (name : String) : Exception =
-    UndefinedGlobalVar name
 
 endspec
 \end{spec}

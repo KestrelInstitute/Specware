@@ -5,6 +5,7 @@ Claim qualifying spec
   import ../Claim
   import ../MetaSlang/Legacy
   import /Languages/MetaSlang/Specs/AnnSpec
+  import /Languages/MetaSlang/Specs/SimplePrinter
   import ../Id/Legacy
 
   sort Claim.Claim = AnnSpec.AProperty Position

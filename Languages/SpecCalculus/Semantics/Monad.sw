@@ -16,6 +16,12 @@ SpecCalc qualifying spec
     by {Monad._ +-> SpecCalc._}
   import /Library/IO/Primitive/IO
   import Value
+
+  %% To avoid name clashes, define undefinedGlobalVariable after importing 
+  %% translated Monad stuff, as opposed to defining it in Exception.
+  def undefinedGlobalVariable (name : String) : Exception =
+    UndefinedGlobalVar name
+
 \end{spec}
 
 The Monad/State spec supplies declarations of ths sort Monad and the

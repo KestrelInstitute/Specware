@@ -5,6 +5,7 @@ would be better to accumulate them.
 
 \begin{spec}
 Claim qualifying spec
+  import /Languages/MetaSlang/Specs/AnnSpec
   import Op
 
   sort Claim

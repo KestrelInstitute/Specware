@@ -12,6 +12,7 @@ or \Qualifier{MS} but both are taken.
 \begin{spec}
 MSlang qualifying spec
   import /Library/Structures/Data/Pretty
+  import /Languages/MetaSlang/AbstractSyntax/AnnTerm
   import Position
   import Id
   import Env
