@@ -64,15 +64,12 @@ SpecCalc qualifying spec
                               old_spec.sorts
                               combined_names)
               | (true, false) ->
-                %%  TODO: Shouldn't this be an error???
                 %%  Old: Sort S (X,Y) = T(X,Y)
                 %%  New: Sort S (A,B)
-		let new_info = old_info << {names = combined_names} in
-                return (foldl (fn (name as Qualified (q, id), new_sorts) ->
-                               insertAQualifierMap (new_sorts, q, id, new_info))
-                              old_spec.sorts
-                              combined_names)
-              | _ ->
+                raise (SpecError (pos, 
+                                  "Type "^(printAliases new_names)^" has been redeclared"
+                                  ^ "\n from "^ (printSort old_dfn)))
+	      | _ ->
                 %%  Old: Sort S (X,Y) = T(X,Y)
                 %%  New: Sort S (A,B) = W(A,B)
                 raise (SpecError (pos, 
