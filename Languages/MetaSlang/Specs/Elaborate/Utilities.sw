@@ -324,26 +324,27 @@ spec
 		Base (primarySortName info, ts, pos))
 	     else
 	       let defs = sortInfoDefs info in
-	       let possible_base_def = find (fn srt ->
-					     let (tvs, srt) = unpackSort srt in
-					     case srt of
-					       | Base _ -> true
-					       | _      -> false)
-	                                    defs
+	       let base_defs = filter (fn srt ->
+				       let (tvs, srt) = unpackSort srt in
+				       case srt of
+					 | Base _ -> true
+					 | _      -> false)
+	                              defs
 	       in
-		 case possible_base_def of
-		   | Some srt ->
-		     %% A base sort can be defined in terms of another base sort.
+		 case base_defs of
+		   | [] ->
+		     let dfn = maybeAndSort (defs, sortAnn info.dfn) in
+		     instantiateScheme (env, pos, ts, dfn)
+		   | _ ->
+		     %% A base sort can be defined in terms of other base sorts.
    		     %% So we unfold recursively here.
+		     let dfn = maybeAndSort (base_defs, sortAnn info.dfn) in
 		     unfoldSortRec (env,
-				    instantiateScheme (env, pos, ts, srt),
+				    instantiateScheme (env, pos, ts, dfn),
 				    %% Watch for self-references, even via aliases: 
 				    foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
 				          qids
-					  info.names)
-		   | _ ->
-		     let any_dfn = hd defs in
-		     instantiateScheme (env, pos, ts, any_dfn))
+					  info.names))
           | [] -> 
 	    (error (env, "Could not find sort "^ printQualifiedId qid, pos);
 	     unlinked_sort))
@@ -508,6 +509,22 @@ spec
    else
      case (srt1, srt2) of
 
+       | (And (srts1, _), _) ->
+         foldl (fn (s1, result) ->
+		case result of
+		  | Unify _ -> result
+		  | _ -> unify (env, s1, srt2, pairs, ignoreSubsorts?))
+	       (NotUnify (srt1, srt2))
+	       srts1
+       
+       | (_, And (srts2, _)) ->
+         foldl (fn (s2, result) ->
+		case result of
+		  | Unify _ -> result
+		  | _ -> unify (env, srt1, s2, pairs, ignoreSubsorts?))
+	       (NotUnify (srt1, srt2))
+	       srts2
+       
        | (CoProduct (r1, _), CoProduct (r2, _)) -> 
          unifyCP (env, srt1, srt2, r1, r2, pairs, ignoreSubsorts?)
 
