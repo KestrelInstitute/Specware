@@ -57,9 +57,6 @@
 spec  
  import A
  import /Library/Base/WFO
- conjecture f_Obligation0 is 
-    fa(y : Integer.Integer, x : Integer.Integer) 
-     x Integer.> Integer_.- y => nonNeg?(x Integer.+ y)
  conjecture f_Obligation is 
     fa(X : {p : Integer.Integer * Integer.Integer | 
            p.1 Integer.> Integer_.-(p.2)}) 
@@ -69,6 +66,9 @@ spec
      => Integer.natural?
           ((case X
               of (x, y) -> restrict(nonNeg?)(x Integer.+ y)))
+ conjecture f_Obligation0 is 
+    fa(y : Integer.Integer, x : Integer.Integer) 
+     x Integer.> Integer_.- y => nonNeg?(x Integer.+ y)
 endspec
 
 ")

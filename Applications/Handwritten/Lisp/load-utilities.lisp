@@ -38,14 +38,17 @@
 		(subseq str (1+ found-index)))
       (values nil str))))
 
-(defun split-dir-components (str)
+(defun split-components (str chars)
   (let (found-index result)
-    (loop while (setq found-index (or (position #\/ str)
-				 (position #\\ str)))
+    (loop while (setq found-index (loop for ch in chars
+				    thereis (position ch str)))
       do (push (subseq str 0 found-index) result)
          (setq str (subseq str (1+ found-index))))
     (nreverse (if (string= str "")
 		  result (cons str result)))))
+
+(defun split-dir-components (str)
+  (split-components str '(#\/ #\\)))
 
 (defun dir-to-path (directory)
   (if (pathnamep directory) directory
