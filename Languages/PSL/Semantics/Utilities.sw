@@ -13,8 +13,8 @@ SpecCalc qualifying spec {
   op dynamicSpec : PSpec -> SpecCalc.Env Spec
   def dynamicSpec pSpec = return pSpec.dynamicSpec
 
-  op procedures : PSpec -> SpecCalc.Env (PolyMap.Map (QualifiedId,Procedure))
-  def procedures pSpec = return pSpec.procedures
+  % op procedures : PSpec -> SpecCalc.Env (PolyMap.Map (QualifiedId,Procedure))
+  % def procedures pSpec = return pSpec.procedures
   
   op setStaticSpec : PSpec -> Spec -> SpecCalc.Env PSpec
   def setStaticSpec pSpec spc = return {

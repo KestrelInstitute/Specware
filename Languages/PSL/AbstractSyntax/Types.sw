@@ -67,8 +67,10 @@ needs some thought.
     | Let        List (PSpecElem a) * (Command a)
     | Seq        List (Command a)
     | Relation   (ATerm a)
-    | Return     ATerm a
-    | Exec       ATerm a
+    | Return     Option (ATerm a)
+    | Continue   
+    | Break
+    | Exec       (ATerm a)
     | Skip
 \end{spec}
 

@@ -28,7 +28,10 @@ spec {
   op convertProcedure : Procedure -> StructProcedure
   def convertProcedure proc = {
     parameters = proc.parameters,
-    return = proc.return,
+    return =
+      case proc.returnInfo of
+        | None -> None
+        | Some {returnName,returnSort} -> Some returnName,
     staticSpec = proc.staticSpec,
     dynamicSpec = proc.dynamicSpec,
     code = convertBSpec proc.code proc.dynamicSpec

@@ -16,18 +16,20 @@ SpecCalc qualifying spec {
   import SpecCalc qualifying /Languages/BSpecs/Predicative/BetterPrinter
   % import BSpecs qualifying /Languages/BSpecs/Predicative/Multipointed
 
+  sort ReturnInfo = Option {returnName : String, returnSort : ASort Position}
+
   sort Procedure = {
     parameters : List String,
-    return : Option String,
+    returnInfo : ReturnInfo,
     staticSpec : Spec,
     dynamicSpec : Spec,
     code : BSpec
   }
 
-  op makeProcedure : List String -> Option String -> Spec -> Spec -> BSpec -> Procedure
-  def makeProcedure args ret static dynamic bSpec = {
+  op makeProcedure : List String -> ReturnInfo -> Spec -> Spec -> BSpec -> Procedure
+  def makeProcedure args returnInfo static dynamic bSpec = {
     parameters = args,
-    return = ret,
+    returnInfo = returnInfo,
     staticSpec = static,
     dynamicSpec = dynamic,
     code = bSpec
@@ -41,7 +43,7 @@ the identifier name together with its sort. String may be sufficient,
 however, since once we have a semantic representation, we don't need
 the types anymore. Parameters are call by value.
 
-The field \verb+return+ holds the name of the identifier within the
+The field \verb+returnName+ holds the name of the identifier within the
 procedure to be passed back to the caller.  There might be a better
 way. We return different terms from different places in the procedure. The
 assumption here is that before returning, the procedure will make
@@ -77,9 +79,9 @@ ops and axioms along a transition \ldots only when we introduce procedures.
       ppString "params=(",
       ppSep (ppString ",") (map ppString proc.parameters),
       ppString "), return=",
-      case proc.return of
-          None -> ppNil
-        | Some name -> ppString name,
+      case proc.returnInfo of
+        | None -> ppNil
+        | Some {returnName,returnSort} -> ppString returnName,
       % ppNewline,
       % ppString "staticSpec=",
       % ppNewline,
@@ -98,9 +100,9 @@ ops and axioms along a transition \ldots only when we introduce procedures.
       ppString "params=(",
       ppSep (ppString ",") (map ppString proc.parameters),
       ppString "), return=",
-      case proc.return of
-          None -> ppNil
-        | Some name -> ppString name,
+      case proc.returnInfo of
+        | None -> ppNil
+        | Some {returnName,returnSort} -> ppString returnName,
       % ppNewline,
       % ppString "staticSpec=",
       % ppNewline,
@@ -118,9 +120,9 @@ ops and axioms along a transition \ldots only when we introduce procedures.
       "params=("
       ^ (List.show "," proc.parameters)   %%% Why do we need the qualifier?
       ^ "), return="
-      ^ (case proc.return of
-          None -> ""
-        | Some name -> name)
+      ^ (case proc.returnInfo of
+          | None -> ""
+          | Some {returnName,returnSort} -> returnName)
       ^ "\nbspec=\n"
       ^ (ppFormat (ppBSpec proc.code))
 }

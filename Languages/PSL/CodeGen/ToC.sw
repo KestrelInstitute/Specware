@@ -13,18 +13,18 @@ SpecCalc qualifying spec {
     cSpec
 
   op generateCProcedure : CSpec -> QualifiedId -> Procedure -> CSpec
-  def generateCProcedure cSpec name {parameters,return,staticSpec,dynamicSpec,code} =
+  def generateCProcedure cSpec name {parameters,returnInfo,staticSpec,dynamicSpec,code} =
     let varDecls =
       map (fn argName ->
          (case findTheOp (dynamicSpec, Qualified (UnQualified, argName)) of
             | None -> fail ("arg " ^ argName ^ " not in dynamic spec")
             | Some (names,fixity,(tyVars,srt),optTerm) -> (argName, sortToCType srt))) parameters in
     let returnType =
-      case return of
+      case returnInfo of
         | None -> Void 
-        | Some str ->
-            (case findTheOp (dynamicSpec, Qualified (UnQualified,str)) of
-              | None -> fail ("return " ^ str ^ " not in dynamic spec")
+        | Some {returnName,returnSort} ->
+            (case findTheOp (dynamicSpec, Qualified (UnQualified,returnName)) of
+              | None -> fail ("return " ^ returnName ^ " not in dynamic spec")
               | Some (names,fixity,(tyVars,srt),optTerm) -> sortToCType srt) in
     let procStmt = graphToC (convertBSpec code dynamicSpec) in
     addFuncDefn cSpec (showQualifiedId name) varDecls returnType procStmt

@@ -51,7 +51,8 @@ They are procedures in context.
       (pSpecWithImports,timeStamp,depURIs)
           <- foldM evaluatePSpecImportElem (initialPSpec,0,[]) pSpecElems;
       pSpec <- foldM evaluatePSpecContextElem pSpecWithImports pSpecElems;
-      pSpec <- foldM evaluatePSpecProcElem pSpec pSpecElems;
+      pSpec <- foldM evaluatePSpecProcElemPassOne pSpec pSpecElems;
+      pSpec <- foldM evaluatePSpecProcElemPassTwo pSpec pSpecElems;
       return (pSpec,timeStamp,depURIs)
     }
   
@@ -83,15 +84,9 @@ They are procedures in context.
           }
       | _ -> return val
 
-  op evaluatePSpecProcElem :
-           PSpec
-        -> PSpecElem Position
-        -> SpecCalc.Env PSpec
+  op evaluatePSpecProcElem : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
 
-  op evaluatePSpecContextElem :
-           PSpec
-        -> PSpecElem Position
-        -> SpecCalc.Env PSpec
+  op evaluatePSpecContextElem : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
   def evaluatePSpecContextElem pSpec (elem, position) =
     case elem of
       | Sort (names,(tyVars,optSort)) -> {

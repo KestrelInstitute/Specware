@@ -61,11 +61,11 @@ SpecCalc qualifying spec {
              print "\nApplying morphism to dynamic spec\n";
              newDyCtxt <- attemptSubstitution dyCtxt morph morphTerm pos;
              pSpec <- setDynamicSpec pSpec newDyCtxt;
-             procs <- procedures pSpec;
+             procs <- return (pSpec.procedures);
              print "\nApplying morphism to procedures\n";
              procs <- return (mapMap (fn proc -> {
                            parameters= proc.parameters,
-                           return = proc.return,
+                           returnInfo = proc.returnInfo,
                            staticSpec = proc.staticSpec,
                            dynamicSpec = appSub proc.dynamicSpec,
                            code = mapBSpec proc.code (fn spc -> appSub spc) (fn x -> x)
