@@ -12,39 +12,58 @@ and uncountably infinite cardinality. Note how the specs for the last two are
 obtained by adding axioms to the more generic one for infinite cardinality.
 
 The spec for cardinality 0 (i.e. an empty type) is sometimes useful to
-instantiate type parameters. *)
+instantiate type parameters.
+
+Since the axioms in the specs are unqualified, axiom name overloading may take
+place. For instance, if two named types with finite cardinalities are
+introduced according to the usage shown above, the two finiteness axioms will
+both have name `finite'. This can be prevented by qualifying the axiom names
+in the translation, e.g.
+
+  import translate Type#Countable by {X         +-> MyTypeName,
+                                      infinite  +-> MyTypeName.infinite,
+                                      countable +-> MyTypeName.countable}
+
+An alternative is
+
+  import translate
+         (MyTypeName qualifying Type#Countable)
+         by {MyTypeName.X +-> MyTypeName}
+
+which does not require the axioms to be individually qualified but is slightly
+less straightforward. *)
 
 
 Empty = spec
   type X
-  axiom Type.empty is
+  axiom empty is
     fa (x:X) false
 endspec
 
 
 Finite = spec
   type X
-  axiom Type.finite is
+  axiom finite is
     ~(ex (f : Nat -> X) injective? f)
 endspec
 
 
 Infinite = spec
   type X
-  axiom Type.infinite is
+  axiom infinite is
     ex (f : Nat -> X) injective? f
 endspec
 
 
 CountablyInfinite = spec
   import Infinite
-  axiom Type.countable is
+  axiom countable is
     ex (f : Nat -> X) surjective? f
 endspec
 
 
 UncountablyInfinite = spec
   import Infinite
-  axiom Type.uncountable is
+  axiom uncountable is
     ~(ex (f : Nat -> X) surjective? f)
 endspec
