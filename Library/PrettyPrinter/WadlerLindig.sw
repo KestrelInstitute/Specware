@@ -72,7 +72,7 @@ WadlerLindig qualifying spec
   
   op ppFits : Integer -> List (Integer * Mode * Doc) -> Boolean
   def ppFits w x =
-    (w >= 0) &
+    (w >= (fromNat 0)) &
     (case x of
        | [] -> true
        | (i,m,DocNil) :: z -> ppFits w z
