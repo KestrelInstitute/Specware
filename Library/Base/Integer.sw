@@ -73,10 +73,10 @@ Integer qualifying spec
     fa(i:Integer) i+0 = i && 0+i = i
   axiom addition_def2 is
     fa(n1,n2:PosNat)   n1  +   n2  = plus(n1,n2)
-                   && (-n1) + (-n2) = -(plus(n1,n2))
-                   &&   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
+                  && (-n1) + (-n2) = -(plus(n1,n2))
+                  &&   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
                                                     else minus(n1,n2))
-                   && (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
+                  && (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
                                                     else -(minus(n1,n2)))
 
   axiom subtraction_def is
