@@ -1,7 +1,7 @@
 ;;; Extends lisp prettyprinter to print out Metaslang term representations readably
 
-(defpackage "METASLANG")
-(in-package "METASLANG")
+(defpackage :MetaSlang)
+(in-package :MetaSlang)
 
 ;(list-all-packages)
 ;(setq *print-pprint-dispatch* (copy-pprint-dispatch nil))

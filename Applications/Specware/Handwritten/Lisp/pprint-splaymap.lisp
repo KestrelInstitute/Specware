@@ -1,7 +1,7 @@
 ;;; Extends lisp prettyprinter to print out Metaslang splaymaps representations readably
 
-(defpackage "METASLANG")
-(in-package "METASLANG")
+(defpackage :MetaSlang)
+(in-package :MetaSlang)
 
 ;(list-all-packages)
 ;(setq *print-pprint-dispatch* (copy-pprint-dispatch nil))
@@ -12,7 +12,7 @@
 
 (defvar *print-constructors?* t)
 (defvar *print-splay-maps?* t)
-;(setq METASLANG::*print-splay-maps?* nil)
+;(setq MetaSlang::*print-splay-maps?* nil)
 
 (defun splay_map_symbol? (s)
   (and *print-constructors?* *print-splay-maps?* (member s '(:|MAP|))))
@@ -26,9 +26,9 @@
 (defun print_dotted_pair (strm l)
   (format strm "~@:<~W ~_. ~W~:>" (car l) (cdr l)))
   
-(set-pprint-dispatch '(cons T (and cons (satisfies
-					  (lambda (x) (splay_map_symbol? (car x))))))
-		     'print_dotted_pair)
+;;;(set-pprint-dispatch '(cons T (and cons (satisfies
+;;;					  (lambda (x) (splay_map_symbol? (car x))))))
+;;;		     'print_dotted_pair)
 
 (defun print_splay_set (strm m)
   (let ((*standard-output* strm))
@@ -44,6 +44,15 @@
 (set-pprint-dispatch '(cons splay_set_symbol) 'print_splay_set)
 
 (set-pprint-dispatch '(cons T (and cons (satisfies
-					  (lambda (x) (splay_set_symbol? (car x))))))
+					  (lambda (x) (or (splay_set_symbol? (car x))
+							  (splay_map_symbol? (car x)))))))
 		     'print_dotted_pair)
 
+(defun print_dotted_triple (strm l)
+  (format strm "~@:<~W ~W ~_. ~W~:>" (car l) (cadr l)(cddr l)))
+
+(set-pprint-dispatch '(cons T (cons T (and cons
+				       (satisfies
+					(lambda (x) (or (splay_set_symbol? (car x))
+							(splay_map_symbol? (car x))))))))
+		     'print_dotted_triple)
