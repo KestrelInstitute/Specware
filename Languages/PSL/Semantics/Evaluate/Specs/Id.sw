@@ -1,25 +1,44 @@
 \section{Qualified Ids}
 
-This defines the sort \verb+QualifiedId+ and
-sets of such things. There is some inconsistency here
-as usually the spec that uses sets creates it.
+This defines the sort \Sort{Id} and sets of such things. There is some
+inconsistency here since, elsewhere, it is the user of the sets that
+creates the instance.
 
-This should be enriched with constructors and destructors (projections).
+This should be enriched with constructors and destructors (projections)
+for getting qualifiers etc.
 
-As elsewhere, there may be a win in renaming \verb+make+ to \verb+makeId+.
-Cast your vote. The references to \verb+String+ should probably be
+As elsewhere, there may be a win in renaming \Op{make} to \Op{makeId}.
+Cast your vote. The references to sort \Op{String} should probably be
 made abstract.
 
+The qualifier \Qualifier{IdSet} is needed because \UnitId{Sets} imports
+\UnitId{Elem} and both have show and pp operations. We want to overload
+those operations and the only way to do so right now is to qualify
+them apart.
+
+In the end, the goal is to end up with as much as possible qualified
+by \Qualifier{Id}.
+
 \begin{spec}
-Id qualifying spec
-  import translate (Id qualifying /Library/Structures/Data/Sets/Monomorphic) by {
-    Elem.Elem +-> Id.QualifiedId,
-    Elem.pp +-> Id.pp
-  }
+let
+  Set = translate (translate MonadicSets by {Elem.Elem +-> Id.Id}) by {
+      Elem._ +-> Id._,
+      MonadFold._ +-> IdSetEnv._,
+      _ +-> IdSet._
+    }
 
-  op make : String -> String -> QualifiedId
-  op UnQualifiedId.make : String -> QualifiedId
+  Id = spec
+    import Set 
 
-  op pp : QualifiedId -> Doc
-endspec
+    op make : String -> String -> Id
+    op UnQualifiedId.make : String -> Id
+
+    op IdEnv.make : String -> String -> Env Id
+    op UnQualifiedIdEnv.make : String -> Env Id
+    
+    op pp : Id -> Doc
+    op show : Id -> String
+  endspec
+in
+  Id qualifying Id
 \end{spec}

@@ -10,21 +10,25 @@ within scope in the procedures in \verb+procedures+.
 Oscar qualifying spec {
 
   import ModeSpec
-  import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
+  import ProcedureMap qualifying
+    (translate /Library/Structures/Data/Maps/Finite by {
+      Dom.Dom +-> Id.Id,
+      Cod.Cod +-> Procedure.Procedure
+     })
 
   sort Spec = {
     modeSpec : ModeSpec,
-    procedures : PolyMap.Map (QualifiedId,Procedure)
+    procedures : ProcedureMap.Map
   }
 
-  op make : ModeSpec -> Procedures -> ModeSpec
+  op make : ModeSpec -> ProcedureMap.Map
   def make modeSpec procedures = {
       modeSpec = modeSpec,
       procedures = procedures
     }
 
   op modeSpec : Spec -> ModeSpec
-  op procedures : Spec -> PolyMap.Map (QualifiedId,Procedure)
+  op procedures : Spec -> ProcedureMap.Map
 
   op withModeSpec infixl 17 : Spec * ModeSpec -> Spec
   def withModeSpec (oscSpec,newModeSpec) = {
@@ -32,7 +36,7 @@ Oscar qualifying spec {
       procedures = procedures oscSpec
     }
 
-  op withProcedures infixl 17 : Spec * Procedures -> Spec
+  op withProcedures infixl 17 : Spec * ProcedureMap.Map -> Spec
   def withProcedures (oscSpec,newProcedures) = {
       modeSpec = modeSpec oscSpec,
       procedures = newProcedures
@@ -41,13 +45,13 @@ Oscar qualifying spec {
   op pp : Spec -> Doc
   def pp oscarSpec =
     ppConcat [
-      ppString "modeSpec=",
+      pp "modeSpec=",
       ppNewline,
       ppIndent (pp (modeSpec oscarSpec)),
       ppNewline,
-      ppString "procedures=",
+      pp "procedures=",
       ppNewline,
-      ppIndent (ppMap Id.pp Procedure.pp (procedures oscarSpec))
+      ppIndent (pp (procedures oscarSpec))
     ]
 }
 \end{spec}

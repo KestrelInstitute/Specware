@@ -7,21 +7,23 @@ Property qualifying spec {
   sort Property
   sort PropertyType
 
-  op name : Property -> Id.Set
-  op names : Property -> Id.Set
+  op name : Property -> IdSet.Set
+  op names : Property -> IdSet.Set
   op propType : Property -> PropertyType
   op typeVars : Property -> TypeVars
-  op term : Property -> AbstTerm
+  op term : Property -> MS.Term
 
-  op withName infixl 18 : Property * QualifiedId -> Property
-  op withNames infixl 18 : Property * Id.Set -> Property
+  op withName infixl 18 : Property * Id -> Property
+  op withNames infixl 18 : Property * IdSet.Set -> Property
   op withPropType infixl 18 : Property * PropertyType -> Property
   op withTypeVars infixl 18 : Property * TypeVars -> Property
-  op withTerm infixl 18 : Property * AbstTerm -> Property
+  op withTerm infixl 18 : Property * MS.Term -> Property
 
-  op make : QualifiedId -> PropertyType -> TypeVars -> AbstTerm -> Property
-  op PropNoTypeVars.make : QualifiedId -> PropertyType -> AbstTerm -> Property
+  op make : Id -> PropertyType -> TypeVars -> MS.Term -> Property
+  op PropNoTypeVars.make : Id -> PropertyType -> MS.Term -> Property
+
   op pp : Property -> Doc
+  op show : Property -> String
 }
 \end{spec}
 
