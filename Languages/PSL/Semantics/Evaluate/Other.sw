@@ -9,9 +9,10 @@ SpecCalc qualifying spec {
   import /Languages/SpecCalculus/Semantics/Evaluate/Substitute
   import Transformations/PartialEval
   import Transformations/Inline
-  import ../../CodeGen/ToC
+  import ../../CodeGen/TempCInterface
 
-  % op Convert.mapToList : fa (a,b) FinitePolyMap.Map (a,b) -> List (a * b)
+  % This doesn't belong here.
+  op Convert.mapToList : fa (a,b) FinitePolyMap.Map (a,b) -> List (a * b)
   def Convert.mapToList map = map
 
   % op Convert.toList : EdgSet.Set -> List Edg.Edge
@@ -30,8 +31,7 @@ SpecCalc qualifying spec {
                       | None -> raise (SpecError (noPos, "project: procedure " ^ (Id.show (makeId procName)) ^ " is not defined"))
                       | Some proc -> {
                            cSpec <- generateCProcedure emptySpec (emptyCSpec "") (makeId procName) proc;
-                           cSpec <- return (addInclude(cSpec,"matlab.h"));
-                           %return (toFile (fileName, format (80, ppCSpec cSpec)))
+                           cSpec <- return (addInclude (cSpec,"matlab.h"));
                            return (CG.printToFile(cSpec,Some(fileName)))
                          };
                   return (Other newOscarSpec,timeStamp,depUnitIds)
