@@ -40,6 +40,8 @@ Nat qualifying spec
   op fromNat : Nat -> Nat
   op Integer.fromNat : Nat -> Integer
 
+  op toNat : Integer -> Nat
+
   def zero = 0
   def one  = 1
   def two  = 2
@@ -47,7 +49,7 @@ Nat qualifying spec
   def pred n = n Nat.- 1
 
   def div (n,m) =
-    if n Nat.< m then 0 else 1 Nat.+ ((n Nat.- m) div m)
+    if n Nat.< m then 0 else 1 Nat.+ ((toNat (n Nat.- m)) div m)
 
   def succ n = n Nat.+ 1
 
