@@ -13,48 +13,22 @@ SpecCalc qualifying spec
   def applySpecMorphismSubstitution sm original_spec sm_tm term_pos =
     let sub_spec             = SpecCalc.dom sm in
     let should_be_empty_spec = subtractSpec sub_spec original_spec in
-    {when (~ (should_be_empty_spec.sorts    = emptyASortMap) or
-           ~ (should_be_empty_spec.ops      = emptyAOpMap)   or
-           ~ (should_be_empty_spec.elements = emptyAElements))
-     (let _ = (if should_be_empty_spec.sorts = emptyASortMap then 
-		 () 
-	       else
-		 let _ = toScreen "\nThese sorts are in the domain of the morphism, but not in the subject spec:\n" in
-		 let _ = appSortInfos (fn info -> toScreen (printAliases info.names ^ "\n")) should_be_empty_spec.sorts in
-		 ())
-      in
-      let _ = (if should_be_empty_spec.ops = emptyAOpMap then 
-		 ()
-	       else
-		 let _ = toScreen "\nThese ops are in the domain of the morphism, but not in the subject spec:\n" in
-		 let _ = appOpInfos (fn info -> toScreen (printAliases info.names ^ "\n")) should_be_empty_spec.ops in
-		 ())
-      in
-      let _ = (if should_be_empty_spec.elements = emptyAElements then
-		 ()
-	       else
-		 let _ = toScreen "\nThese elements are in the domain of the morphism, but not in the subject spec:\n" in
-		 let _ = app (fn elt -> toScreen (describeSpecElement elt ^ "\n")) should_be_empty_spec.elements in
-		 ())
-      in
-	raise (TypeCheck (term_pos, warnAboutMissingItems should_be_empty_spec)));
-     auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos}
-
- op  describeSpecElement : SpecElement -> String 
- def describeSpecElement elt =
-   case elt of
-     | Import   (tm, _, _) -> showTerm tm
-     | Op       qid        -> "Op "      ^ printQualifiedId qid
-     | OpDef    qid        -> "OpDef "   ^ printQualifiedId qid
-     | Sort     qid        -> "Sort "    ^ printQualifiedId qid
-     | SortDef  qid        -> "SortDef " ^ printQualifiedId qid
-     | Property property   -> (case property.1 of
-				 | Axiom      -> "Axiom"
-				 | Theorem    -> "Theorem"
-				 | Conjecture -> "Conjecture"
-				 | mystery -> "Mysterious " ^ anyToString mystery)
-                              ^ " " ^
-                              (printQualifiedId (propertyName property))
+    let sorts_msg = printNamesInAQualifierMap should_be_empty_spec.sorts in
+    let ops_msg   = printNamesInAQualifierMap should_be_empty_spec.ops   in
+    let props_msg = (foldl (fn (el,str) ->
+			    case el of
+			      | Property(_, prop_name, _, _) ->
+			        if str = "" then printQualifiedId(prop_name)
+				  else str^", "^printQualifiedId(prop_name)
+			      | _ -> str) % Should check other items?
+		       ""			 
+		       should_be_empty_spec.elements)
+    in
+    case (sorts_msg, ops_msg, props_msg) of
+      | ("", "", "") ->
+        auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos
+      | _ ->
+	raise (TypeCheck (term_pos, warnAboutMissingItems sorts_msg ops_msg props_msg))
 
   def auxApplySpecMorphismSubstitution sm spc sm_tm position = 
 
@@ -169,18 +143,8 @@ SpecCalc qualifying spec
   %%  Error handling...
   %% ======================================================================  
 
-  def warnAboutMissingItems should_be_empty_spec = 
-    let sorts_msg = printNamesInAQualifierMap should_be_empty_spec.sorts in
-    let ops_msg   = printNamesInAQualifierMap should_be_empty_spec.ops   in
-    let props_msg = (foldl (fn (el,str) ->
-			    case el of
-			      | Property(_, prop_name, _, _) ->
-			        if str = "" then printQualifiedId(prop_name)
-				  else str^", "^printQualifiedId(prop_name)
-			      | _ -> str) % Should check other items?
-		       ""			 
-		       should_be_empty_spec.elements)
-    in
+  def warnAboutMissingItems sorts_msg ops_msg props_msg =
+    %% At least one of the messages should be non-empty
     "\n" ^
     (if sorts_msg = "" then 
        ""  
