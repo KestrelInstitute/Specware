@@ -216,29 +216,33 @@
   "Save the current state of the result history."
   (declare (special / // /// + ++ +++))
   (unless *ilisp-old-result*
-    (setq *ilisp-old-result* (list /// // +++ ++ + /))))
+    (setq *ilisp-old-result* (list /// // +++ ++ + /)))
+  (values))
 
 ;;;
 (defun ilisp-restore ()
   "Restore the old result history."
   (declare (special / // + ++ * ** -))
     
-  (setq // (pop *ilisp-old-result*)
-	** (first //)
-	/  (pop *ilisp-old-result*)
-	*  (first /)
+  (setq /// (pop *ilisp-old-result*)
+	*** (first ///)
+	//  (pop *ilisp-old-result*)
+	**  (first //)
 	++  (pop *ilisp-old-result*)
 	+   (pop *ilisp-old-result*)
-	-   (pop *ilisp-old-result*))
+	-   (pop *ilisp-old-result*)
+	/   (pop *ilisp-old-result*)
+	*   (first /))
 
-    ;; Martin Atzmueller 2000-01-26
-    (let ((new/ (pop *ilisp-old-result*)))
-      (if (some #'(lambda (new+)
-		    (and (stringp new+)
-			 (search *ilisp-message-addon-string* new+)))
-		new/)
-	  nil
-	(values-list new/))))
+;    ;; Martin Atzmueller 2000-01-26
+;    (let ((new/ (pop *ilisp-old-result*)))
+;      (if (some #'(lambda (new+)
+;                    (and (stringp new+)
+;                         (search *ilisp-message-addon-string* new+)))
+;                new/)
+;          nil
+;        (values-list new/)))
+    (values))
   
 ;;; ilisp-symbol-name --
 ;;;
