@@ -8,6 +8,17 @@ They are brought together here, without additional text, for
 easy reference.
 </para>
 <!-- ***************************************************************** -->
+<formalpara><title>The Grammar Description Formalism</title>
+<para>
+<<
+||    `wiffle ::= `waffle [ `waffle-tail ] | `piffle { + `piffle }*
+>>
+<<
+||    `piffle ::= 1 | M { `piffle }*
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
 <formalpara><title>Models</title>
 <para>
 <<
@@ -506,9 +517,9 @@ easy reference.
 ||    | `list-display
 ||    | `structor
 ||    | ( `expression )
-||    | ( `inbuilt-infix )
+||    | ( `inbuilt-op )
 ||  
-||  `inbuilt-infix ::= => | '|'| | && | = | ~= | <<
+||  `inbuilt-op ::= => | '|'| | && | = | ~= | <<
 >>
 </para>
 </formalpara>
@@ -598,7 +609,7 @@ easy reference.
 ||  
 ||  `operand ::= `tight-expression
 ||  
-||  `infix-operator ::= `op-name | `inbuilt-infix
+||  `infix-operator ::= `op-name | `inbuilt-op
 >>
 </para>
 </formalpara>

@@ -11,7 +11,7 @@ for each &Metaslang; language construct.
 <!-- ================================================================= -->
 <section id="Preliminaries"><title>Preliminaries</title>
 <!-- ================================================================= -->
-<section id="GrammarDescriptionFormalism"><title>The grammar description formalism</title>
+<section id="GrammarDescriptionFormalism"><title>The Grammar Description Formalism</title>
 <para>
 The grammar rules used to describe the &Metaslang; language
 use the conventions of (extended) BNF.
@@ -146,7 +146,7 @@ If all type-respecting combinations of assignments of types to
 `spec has no models and is called
 <emphasis>inconsistent</emphasis>.
 Although usually undesirable, an inconsistent `spec is not by
-itself considered erroneous.
+itself considered ill formed.
 The &Specware; system does not attempt to detect
 inconsistencies, but associated provers can sometimes be
 used to find them.
@@ -199,7 +199,7 @@ the value of [[z]] is [["let-x"]] (`op [[x]]
 <section id="Type-correctness"><title>Type-correctness</title>
 <para>
 Next to the general requirement that each model respects
-typing, there are specific correctness requirements for
+typing, there are specific restrictions for
 various constructs that constrain the possible types for the
 components. For example, in an `application [[f(x)]], the
 type of the `actual-parameter [[x]] has to match the domain
@@ -208,13 +208,13 @@ These requirements are stated in the relevant sections of
 this language manual.
 If no type-respecting combinations of assignments meeting all
 these requirements exist for a given `spec, it is considered
-<emphasis>incorrect</emphasis>, and is said to have a type
-error.
+<emphasis>type-incorrect</emphasis> and therefore
+<emphasis>ill formed</emphasis>.
 This is determined by &Specware; while elaborating the `spec,
 and signaled as an error.
 Type-incorrectness differs from inconsistency in that the
 meaning of the axioms does not come into play, and the
-question whether an incorrect `spec is consistent is moot.
+question whether an ill-formed `spec is consistent is moot.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -302,7 +302,8 @@ A type is only constructive if all component types are.
 An `op without `definition is non-constructive, and so
 is an `op whose type is non-constructive.
 A `quantification is non-constructive.
-The built-in polymorphic equality predicate [[=]] is only
+The polymorphic `inbuilt-op [[=]] for testing equality and its inequality
+counterpart [[~=]] are only
 constructive for <emphasis>discrete types</emphasis> (see
 below).
 </para>
@@ -310,21 +311,21 @@ below).
 <para>
 A type is called discrete if the equality predicate [[=]]
 for that type is constructive.
-The built-in types [[Integer]], [[Nat]], [[Boolean]],
-[[Char]] and [[String]] are all discrete.
-Type [[List ]]$T$ is discrete when
+The base-library types [[Boolean]], [[Integer]], [[NonZeroInteger]], [[Nat]], [[PosNat]],
+[[Char]], [[String]] and [[Compare]] are all discrete.
+Types [[List $T$]] and [[Option $T$]] are discrete when
 $T$ is.
 All function types are non-discrete (even when the domain
 type is the unit type).
 Sum types, product types and record types are discrete
 whenever all component types are.
 Subtype
-[[(]]$T$[[ | ]]$P$[[)]] is discrete when
+[[($T$ | $P$)]] is discrete when
 supertype $T$ is.
 (Predicate $P$ need not be
 constructive: the equality test is that of the supertype.)
 Quotient type
-$T$[[ / ]]$Q$ is discrete when
+[[$T$ / $Q$]] is discrete when
 predicate $Q$ is
 constructive.
 (Type $T$ need not be discrete:
@@ -506,7 +507,7 @@ to be single lower-case `letters: [[x]], [[y]], [[z]],
 [[a]], [[b]], [[c]], with the start of the alphabet
 preferred for `local-type-variables.
 `Op-names of predicates (that is, having some type
-$T$[[ -> Boolean]]) often end with
+[[$T$ -> Boolean]]) often end with
 the mark [[?]].
 These are just conventions that users are free to follow or
 ignore, but in particular some convention distinguishing 
@@ -577,6 +578,18 @@ morphisms, diagrams or other entities.
 The effect of elaborating a `unit-definition is that its
 `unit-term is elaborated and becomes associated with its
 `unit-identifier.
+</para>
+<para>
+For the elaboration of a `unit-term to be meaningful, it has to be well
+formed and result in a well-formed -- and therefore type-correct -- entity.
+Well-formedness is a stricter requirement than type-correctness.
+If a `unit-term or one of its constituent parts does not meet any of the
+restrictions stated in this language manual, it is ill formed.
+This holds throughout, also if it is not mentioned explicitly for some
+syntactic construct.
+Well-formedness is more than a syntactic property; in general, to
+establish well-formedness it may be necessary to ``discharge''
+(prove) proof obligations engendered by the `unit-term.
 </para>
 <para>
 A &Specware; project consists of a collection of
@@ -762,8 +775,6 @@ The elaboration of a `spec-term, if defined, yields a
 <<
 ||`spec-form ::= spec { `declaration }* endspec
 >>
-Restriction.
-`Spec-forms must be type-correct.
 </para>
 <para>
 Sample `spec-forms:
@@ -955,10 +966,11 @@ $Q$ is a `qualifier, is
 $R$ with each unqualified
 `type-name, `op-name or `claim-name $N$ introduced there 
 replaced by the `qualified-name
-$Q$[[.]]$N$.
-The same replacement applies to all uses of
-$N$ identifying that introduced
-`name.
+[[$Q$.$N$]].
+The same replacement applies to all employs of
+$N$ identifying that introduced `name.
+As always, the result of the replacement is required to be a well-formed
+`spec.
 </para>
 <para>
 For example, the elaboration of
@@ -975,9 +987,6 @@ results in:
 ||    axiom Buffer.LargeSize is Buffer.size >= 1024
 ||  endspec
 ]]
-Note that the `claim-name [[LargeSize]] is unchanged.
-In later versions of &Specware; this may change, so that
-also unqualified `claim-names get qualified.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -997,9 +1006,16 @@ also unqualified `claim-names get qualified.
 ||
 ||`annotable-qualifiable-name ::= `qualifiable-name [ : `type-descriptor ]
 >>
+Restriction.
+A `spec-translation may not map two different `type-names or two different
+`op-names to the same `name.  Note that this implies that
+`type- and `op-names cannot be translated to `names defined in
+the base libraries.
+</para>
+<para>
 Sample `spec-translation:
 [[
-||    translate A by {Counter +-> Nat}
+||    translate A by {Counter +-> Register, tally +-> incr}
 ]]
 Let $R$ be the result of
 elaborating `spec-term $S$.
@@ -1007,13 +1023,29 @@ Then the elaboration of [[translate
 $S$ by {
 $M$\<subscript>1\</subscript> +->
 $N$\<subscript>1\</subscript>, ...
-$M$\<subscript>n\</subscript> +->
-$N$\<subscript>n\</subscript> }]]
+$M<subscript>n</subscript>$ +->
+$N<subscript>n</subscript>$ }]]
 is $R$ with each occurrence of a
 `qualifiable-name
-$M$<subscript>i</subscript>
+$M<subscript>i</subscript>$
 replaced by
-$N$<subscript>i</subscript>.
+$N<subscript>i</subscript>$.
+All other `names are mapped to themselves, i.e., they are unchanged.
+The presence of a type annotation in a `name-map-item, as in
+[[X:E +-> cross]], indicates that the `name-map-item refers to an `op-name;
+additionally, on the left-hand side such an annotation may serve to disambiguate
+between several synonymous `ops, and then there must be an `op in $R$ of
+the type given by the `type-descriptor.
+If the right-hand side of a `name-map-item carries a type
+annotation, its `type-descriptor must conform to the type of
+the `op-name in the resulting `spec.
+Without such annotation on either side, if a `qualifiable-name
+to be translated is introduced both as a `type-name and as an
+`op-name in $R$, it must be preceded by [[type]] or [[op]] to
+indicate which of the two is meant.
+Otherwise the indication [[type]] or [[op]] is not
+required, but allowed; if present, it must correspond to the kind of
+`name (`type-name or `op-name) to be translated.
 </para>
 <para>
 For example, the elaboration of
@@ -1023,14 +1055,14 @@ For example, the elaboration of
 ||    op i : E
 ||  endspec by {
 ||    E +-> Counter,
-||    i +-> zero
+||    i +-> reset
 ||  }
 ]]
 results in:
 [[
 ||  spec
 ||    type Counter
-||    op zero : Counter
+||    op reset : Counter
 ||  endspec
 ]]
 </para>
@@ -1087,8 +1119,8 @@ $D$.
 </para>
 <para>
 Except when $R$ introduces, next
-to the `type-names and `op-names it has in common with
-$D$, new `type-names or `op-names
+to the `type- and `op-names it has in common with
+$D$, new `type- or `op-names
 that also occur in $C$,
 the result `spec $T$
 is a categorical colimit of this pushout diagram:
@@ -1114,17 +1146,18 @@ For example, assume we have:
 ||  A = spec
 ||    type Counter
 ||    op reset: Counter
-||    op tick : Counter -> Counter
+||    op tally : Counter -> Counter
 ||    axiom Effect is
-||      fa (c : Counter) ~(tick c = c)
+||      fa (c : Counter) ~(tally c = c)
 ||  endspec
 ||  
 ||  B = spec
+||    type Register = Nat
 ||    def reset = 0
-||    def tick c = c+1
+||    def incr c = c+1
 ||  endspec
 ||
-||  M = morphism A -> B {Counter +-> Nat}
+||  M = morphism A -> B {Counter +-> Register, tally +-> incr}
 ||  
 ||  AA = spec
 ||    import A
@@ -1137,7 +1170,7 @@ Then the result of [[AA[M]]] is the same as that of this `spec:
 [[
 ||  spec
 ||    import B
-||    type Interval = {start: Nat, stop: Nat}
+||    type Interval = {start: Register, stop: Register}
 ||    op isEmptyInterval? : Interval -> Boolean
 ||    def isEmptyInterval? {start = x, stop = y} = (x = y)
 ||  endspec
@@ -1153,6 +1186,7 @@ Then the result of [[AA[M]]] is the same as that of this `spec:
 The result of elaborating a `diagram-colimit is the `spec
 which is the apex of the cocone forming the
 colimit in the category of `specs and `spec-morphisms.
+As always, the result is required to be well formed.
 See further the &Specware; Tutorial.
 <!-- TODO: weird names -->
 </para>
@@ -1187,46 +1221,57 @@ See further the &Specware; User Manual.
 ||
 ||`spec-morphism ::= morphism `spec-term -> `spec-term `name-map
 >>
-A morphism is a formal mapping between two closed `specs
-that
-describes exactly how one is translated or extended into the
-other.
+A morphism is a formal mapping between two closed `spec-forms that
+describes exactly how one is translated or extended into the other.
+It consists of the two `specs, referred to as ``domain'' and
+``codomain'', and a mapping of all `type- and `op-names introduced in
+the domain `spec to `type- and `op-names of the codomain `spec.
+To be well-formed, a morphism must obey conditions that express that it
+is a proper refinement of the domain into the codomain ` spec.
 </para>
 <para>
 Restriction.
 When used as a `morphism-term, the elaboration of a
-`unit-identifier must yield a spec morphism.
+`unit-identifier must yield a morphism.
 </para>
 <para>
 Restriction (``proof obligations'').
 Given `spec-morphism [[morphism $S$ ->
-$T$ { $M$ }]],
-let $S'$ be the result of elaborating
-[[translate $S$ by {
-$M$ }]],
-and let $T'$ be the result of elaborating
-$T$.
+$T$ {
+$M$\<subscript>1\</subscript> +->
+$N$\<subscript>1\</subscript>, ...
+$M<subscript>n</subscript>$ +->
+$N<subscript>n</subscript>$ }]]
+let $R$ be the result of elaborating $S$, and let
+$S'$ be $R$ with each occurrence of a
+`qualifiable-name
+$M<subscript>i</subscript>$
+replaced by
+$N<subscript>i</subscript>$.
+The same rules apply as for `spec-translation [[translate $S$
+by {]]...[[}]], and the result $S'$ must be well formed, with the
+exception that the restriction on `spec-translations requiring
+different `type- or `op-names to be mapped to different `names
+does not apply here.
+Let $T'$ be the result of elaborating $T$.
 Then, first, each `type-name or `op-name introduced in
-$S'$ must also be introduced in
-$T'$.
+$S'$ must also be introduced in $T'$.
 Further, no `type-name or `op-name originating from a
 library `spec may have been subject to translation.
-Finally, each axiom in
-$S'$ must be a theorem that follows
+Finally, each axiom in $S'$ must be a theorem that follows
 from the axioms of $T'$.
 Collectively, the axioms in $S'$
 are known as the <emphasis>proof obligations</emphasis>
 engendered by the morphism.
 They are the formal expression of the requirement that the step from
-$S'$ to
-$T'$ is a proper refinement.
+$S'$ to $T'$ is a proper refinement.
 </para>
 
 <para>
 For example, in
 [[
 ||  S = spec endspec
-||  T = spec sort Bullion = (Char | isAlpha) endspec
+||  T = spec type Bullion = (Char | isAlpha) endspec
 ||  M = morphism S -> T {Boolean -> Bullion}
 ]]
 the type-name [[Boolean]], which originates from a library spec,
@@ -1247,6 +1292,24 @@ Further, in
 axiom [[ff]] does not follow from (the axiom implied by) the `op-definition
 for [[f]] in `spec [[T]], since [[f(2)]] = [[f(3)]] = 4.
 Therefore, [[M]] is not a proper morphism here either.
+</para>
+
+<para>
+Sample `spec-morphism:
+[[
+||  morphism A -> B {Counter +-> Register, tally +-> incr}
+]]
+</para>
+
+<para>
+The elaboration of `spec-morphism [[morphism $S$ -> $T$ {$M$}]]
+results in the morphism whose domain and codomain are the result of
+elaborating $S$ and $T$, respectively, and whose mapping is given
+by the list of `name-map-items in $M$, using type annotations and
+indicators [[type]] and [[op]] as described for `spec-translations,
+and extended to all domain `type- and `op-names not yet covered
+by having these map to themselves.  (In particular, `names from
+the base-libraries always map to themselves.)
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -1352,7 +1415,7 @@ Sample `target-code-term:
 ||    generate lisp /Vessel#Contour
 ||                      in "C:/Projects/Vessel/Contour.lisp"
 ]]
-The elaboration of a `target-code-term for a correct `spec-term
+The elaboration of a `target-code-term for a well-formed `spec-term
 generates code in the language suggested by the
 `target-language-name (currently only C, Java, and Common Lisp);
 see further the
@@ -1384,7 +1447,7 @@ that results from elaborating the `spec-term.
 <para>
 Sample `proof-term:
 [[
-||    prove Effect in translate A by {Counter +-> Nat}
+||    prove Effect in obligations M
 ||                         options "(use-paramodulation t)"
 ]]
 </para>
@@ -1469,9 +1532,9 @@ is this ``expanded'' `spec:
 </para>
 
 <para>
-For this to be correct, the imported `specs must be correct
+For this to be well formed, the imported `specs must be well formed
 by themselves; in addition, the result of expanding them in
-place must result in a correct `spec.
+place must result in a well-formed `spec.
 </para>
 
 <para>
@@ -1492,9 +1555,9 @@ For example, given
 
 the `specs [[S1]] and [[S3]] can be imported together, but
 all other combinations of two or more co-imported `specs
-are incorrect.
+result in an ill-formed `spec.
 This restriction is in fact a special case of the general
-requirement that import expansion must result in a correct
+requirement that import expansion must result in a well-formed
 `spec.
 
 Secondly, a `type-name introduced in any of the imported
@@ -1506,7 +1569,7 @@ Similarly for `op-names, with the addition that an
 must be compatible with an `op-declaration for the same name
 in an imported `spec.
 The latter is again a special case of the general requirement that
-import expansion must result in a correct `spec.
+import expansion must result in a well-formed `spec.
 </para>
 
 <para>
@@ -1593,7 +1656,7 @@ Sample `type-declarations:
 <para>
 Every `type-name used in a `spec must be declared (in the
 same `spec or in an imported `spec, included the
-<quote>built-in</quote> `specs that are always implicitly imported).
+<quote>base-library</quote> `specs that are always implicitly imported).
 A `type-name may have <emphasis>type parameters</emphasis>.
 Given the example `type-declarations above, some valid
 `type-descriptors that can be used in this context are [[Array Date]],
@@ -1787,8 +1850,8 @@ Given a type $T$, the type
 super($T$) is defined to be
 $T$ if $T$
 is not a subtype.
-For a subtype [[(]]$T$[[ | ]]$P$[[)]],
-super([[(]]$T$[[ | ]]$P$[[)]]) is the type
+For a subtype [[($T$ | $P$)]],
+super([[($T$ | $P$)]]) is the type
 super($T$).
 For example, super([[(Nat | even)]]) is [[Integer]].
 </para>
@@ -1797,14 +1860,14 @@ For example, super([[(Nat | even)]]) is [[Integer]].
 The source types of an `op are the set of types determined
 as follows.
 If the type of the `op is some monomorphic function type
-$S$[[ -> ]]$T$, the source types are the
+[[$S$ -> $T$]], the source types are the
 singleton set {super($S$)}.
 If the type of the `op is a polymorphic function type
 corresponding to some `type-scheme
-[[[]]$V$[[] ]]$S$[[ -> ]]$T$, the source types are the
+[[[$V$] $S$ -> $T$]], the source types are the
 set of all types super($S'$)
 for the types
-$S'$[[ -> ]]$T'$ of the indexed family of
+[[$S'$ -> ]]$T'$ of the indexed family of
 values,
 obtainable by the substitution of types for
 the `local-type-variables in
@@ -1827,7 +1890,7 @@ the singleton set {[[()]]}, containing just the unit type.
 <!-- ================================================================= -->
 <para>
 Only binary `ops (those having some type
-$S$[[ * ]]$T$[[ -> ]]$U$)
+[[$S$ * $T$ -> $U$]])
 may be declared with a `fixity.
 When declared with a `fixity, the `op-name may be used in infix
 notation, and then it is called an `infix-operator.
@@ -1837,7 +1900,7 @@ If the `associativity is [[infixl]], the `infix-operator is
 called <emphasis>left-associative</emphasis>; otherwise,
 if the `associativity is [[infixr]], it is
 called <emphasis>right-associative</emphasis>.
-If the `priority is [[priority ]]$N$,
+If the `priority is [[priority $N$]],
 the operator is said to have
 <emphasis>priority</emphasis> $N$.
 The `nat-literal $N$ stands for a
@@ -1922,7 +1985,7 @@ The ambiguity is resolved in favor of the reading
 as a `formal-infix-application, and then the
 `formal-infix-application $M N P$
 is equivalent to the `formal-prefix-application
-$N$[[ (]]$M$[[, ]]$P$[[)]].
+[[$N$ ($M$, $P$)]].
 For example, for `infix-operator [[o]],
 [[
 ||    def f o g = fn x -> f(g x)
@@ -1954,7 +2017,7 @@ information must be supplied when used, so that all
 they occur while uniquely associating the `ops with
 `op-declarations or `op-definitions.
 If two different associations both give type-correct `specs,
-the `spec is ambiguous and incorrect.
+the `spec is ambiguous and ill formed.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -2076,8 +2139,10 @@ If the solution results in an undefined value or a function
 that is not total (or for higher-order functions, functions
 that may return non-total functions, and so on), the
 `op-definition is improper.
-&SpecwareV; does not attempt to detect this condition
-or generate proof obligations for showing its absence.
+Although &SpecwareV; does attempt to generate proof obligations
+for this condition, it currently covers only ``simple''
+recursion, and not mutual recursion or recursion introduced by
+means of higher-order functions.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -2086,7 +2151,7 @@ Functions that are determined to be the value of an
 need not be total, but the context must enforce
 that the function can not be applied to values for which it
 is undefined.
-Otherwise, the `spec is incorrect.
+Otherwise, the `spec is ill formed.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -2141,6 +2206,9 @@ Theorems can be used by provers.
 Conjectures are meant to represent proof obligations that should
 eventually attain theoremhood.
 Like theorems, they can be used by provers.
+This is only sound if circularities (vicious circles) are avoided.
+This kind of `claim is usually created automatically by the elaboration
+of an `obligator, but can also be created manually.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -2443,12 +2511,12 @@ In this example, the `arrow-source is [[(a -> b) * b]], and the (target)
 </para>
 <!-- ================================================================= -->
 <para>
-The <emphasis>function type</emphasis> $S$[[ -> ]]$T$ is inhabited by
+The <emphasis>function type</emphasis> [[$S$ -> $T$]] is inhabited by
 precisely all <emphasis>partial or total</emphasis> functions from
 $S$
 to $T$.
 That is, function $f$ has type
-$S$[[ -> ]]$T$ if, and only if,
+[[$S$ -> $T$]] if, and only if,
 for each value $x$ of type
 $S$ such that the value of
 $f$ $x$ is
@@ -2489,22 +2557,22 @@ The ordering of the component types is significant: unless
 $S$
 and $T$ are the same type,
 the product type
-$S$[[ * ]]$T$ is different from the type
-$T$[[ * ]]$S$.
+[[$S$ * $T$]] is different from the type
+[[$T$ * $S$]].
 Further, the three types
-[[(]]$S$[[ * ]]$T$[[)]] [[* ]]$U$,
-$S$[[ *]] [[(]]$T$[[ * ]]$U$[[)]] and
-$S$[[ * ]]$T$[[ * ]]$U$ are all different; the first
+[[($S$ * $T$)]] [[* $U$]],
+[[$S$ *]] [[($T$ * $U$)]] and
+[[$S$ * $T$ * $U$]] are all different; the first
 two have two component types, while the last one has three.
 The inhabitants of the product type
-$T$<subscript>1</subscript> [[* ]]$T$<subscript>2</subscript> [[*]] ...
+$T$<subscript>1</subscript> [[* $T$]]<subscript>2</subscript> [[*]] ...
 [[* ]]$T<subscript>n</subscript>$
 are precisely all $n$-tuples
 ($v<subscript>1</subscript>$,
 $v<subscript>2</subscript>$, ... ,
 $v<subscript>n</subscript>$), where each
 $v<subscript>i</subscript>$ has type
-[[$T\<subscript>i\</subscript>$]], for
+[[$T<subscript>i</subscript>$]], for
 $i$ = 1, 2, ... ,
 $n$.
 Values of a product type can be constructed with
@@ -2614,11 +2682,11 @@ $n$ fields has a
 <emphasis>position</emphasis> in the range 1 to
 $n$.
 The inhabitants of the record type
-[[{]]$F$<subscript>1</subscript>
-[[: ]]$T$<subscript>1</subscript>[[, ]]$F$<subscript>2</subscript>
-[[: ]]$T$<subscript>2</subscript>[[,]]
+[[{$F$]]<subscript>1</subscript>
+[[: $T$]]<subscript>1</subscript>[[, $F$]]<subscript>2</subscript>
+[[: $T$]]<subscript>2</subscript>[[,]]
 ...
-[[, ]]$F<subscript>n</subscript>$[[ : ]]$T<subscript>n</subscript>$[[}]]
+[[, $F<subscript>n</subscript>$ : $T<subscript>n</subscript>$}]]
 are precisely all $n$-tuples
 ($v<subscript>1</subscript>$,
 $v<subscript>2</subscript>$, ... ,
@@ -2670,22 +2738,22 @@ Sample `type-restriction:
 ]]
 Restriction.
 In a `type-restriction
-[[(]]$T$[[ | ]]$P$[[)]], the `expression
+[[($T$ | $P$)]], the `expression
 $P$ must be a predicate on
 the type
 $T$, that is,
 $P$ must be a function of type
-$T$[[ -> Boolean]].
+[[$T$ -> Boolean]].
 </para>
 <!-- ================================================================= -->
 <para>
 Note that the parentheses in
-[[(]]$T$[[ | ]]$P$[[)]] are mandatory.
+[[($T$ | $P$)]] are mandatory.
 </para>
 <!-- ================================================================= -->
 <para>
 The inhabitants of type
-[[(]]$T$[[ | ]]$P$[[)]] are precisely the
+[[($T$ | $P$)]] are precisely the
 inhabitants of type $T$ that satisfy the
 predicate $P$, that is, they are those values
 $v$ for which the value of $P$ $v$ is [[true]].
@@ -2693,15 +2761,15 @@ $v$ for which the value of $P$ $v$ is [[true]].
 <!-- ================================================================= -->
 <para>
 If $P1$ and $P2$ are the same function, then
-[[(]]$T$[[ | ]]$P1$[[)]] and
-[[(]]$T$[[ | ]]$P2$[[)]] are equivalent, that is,
+[[($T$ | $P1$)]] and
+[[($T$ | $P2$)]] are equivalent, that is,
 they denote the same type.
-Furthermore, [[(]]$T$[[ | fn _ -> true)]] is equivalent to $T$.
+Furthermore, [[($T$ | fn _ -> true)]] is equivalent to $T$.
 </para>
 <!-- ================================================================= -->
 <para>
 The type 
-[[(]]$T$[[ | ]]$P$[[)]] is called a
+[[($T$ | $P$)]] is called a
 <emphasis>subtype</emphasis> of
 <emphasis>supertype</emphasis> $T$.
 Values can be shuttled between a subtype and its supertype
@@ -2750,7 +2818,7 @@ Sample `type-comprehension:
 ]]
 Restriction.
 In a `type-comprehension
-[[{]]$P$[[ : ]]$T$[[ | ]]$E$[[}]],
+[[{$P$ : $T$ | $E$}]],
 the `expression
 $E$ must
 have type [[Boolean]].
@@ -2761,10 +2829,10 @@ have type [[Boolean]].
 `type-restrictions that is akin
 to the common mathematical notation for set comprehensions.
 The meaning of `type-comprehension
-[[{]]$P$[[ : ]]$T$[[ | ]]$E$[[}]]
+[[{$P$ : $T$ | $E$}]]
 is the same as that of the `type-restriction
-[[(]]$T$[[ |
-fn ]]$P$[[ -> ]]$E$[[)]].
+[[($T$ |
+fn $P$ -> $E$)]].
 So the meaning of the example `type-comprehension above is
 [[(Nat | fn n -> even n)]].
 </para>
@@ -2781,9 +2849,9 @@ Sample `type-quotient:
 ]]
 Restriction.
 In a `type-quotient
-$T$[[ / ]]$Q$, the `expression
+[[$T$ / $Q$]], the `expression
 $Q$ must be a (binary) predicate on
-the type $T$[[ * ]]$T$ that is an equivalence relation,
+the type [[$T$ * $T$]] that is an equivalence relation,
 as explained below.
 </para>
 <!-- ================================================================= -->
@@ -2834,7 +2902,7 @@ These equivalence classes will be called
 <para>
 The inhabitants of the <emphasis>quotient
 type</emphasis>
-$T$[[ / ]]$Q$
+[[$T$ / $Q$]]
 are precisely the $Q$-equivalence classes
 into which the inhabitants of
 $T$ are partitioned by
@@ -2879,9 +2947,9 @@ has three inhabitants.
 ||    | `list-display
 ||    | `structor
 ||    | ( `expression )
-||    | ( `inbuilt-infix )
+||    | ( `inbuilt-op )
 ||
-||`inbuilt-infix ::= => | '|'| | && | = | ~= | <<
+||`inbuilt-op ::= => | '|'| | && | = | ~= | <<
 >>
 (The distinctions `tight- and `closed- for `expressions lack
 semantic significance, and merely serve the purpose of avoiding
@@ -2908,6 +2976,7 @@ Sample `expressions:
 ||    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 ||    project 2
 ||    (n + 1)
+||    (||)
 ]]
 Restriction.
 Like all polymorphic or type-ambiguous constructs, an `expression
@@ -2919,13 +2988,14 @@ This restriction will not be repeated for the various kinds of
 <!-- ================================================================= -->
 <para>
 The meaning of a parenthesized `expression
-[[(]]$E$[[)]] is the same
+[[($E$)]] is the same
 as that of the enclosed `expression
 $E$.
-The meaning of a parenthesized `inbuilt-infix
-[[(]]$I$[[)]] is the same
+The meaning of a parenthesized `inbuilt-op
+[[($I$)]] is the same
 as that of the `lambda-form
 [[fn (x,y) -> x $I$ y]].
+Note that this function is strict in both arguments, unlike $I$ itself.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -2974,7 +3044,7 @@ If the value determined for a `lambda-form as described
 below is not a total function, the context must enforce
 that the function can not be applied to values for which it
 is undefined.
-Otherwise, the `spec is incorrect.
+Otherwise, the `spec is ill formed.
 &SpecwareV; does not attempt to generate proof obligations for
 establishing this.
 </para>
@@ -2982,7 +3052,7 @@ establishing this.
 <para>
 The type of a `lambda-form is that of its `match.
 The meaning of a given `lambda-form of type
-$S$[[ -> ]]$T$ is
+[[$S$ -> $T$]] is
 the function $f$ mapping each
 inhabitant $x$ of
 $S$ to a value
@@ -3021,10 +3091,10 @@ Sample `case-expressions:
 ||       | Push {top = _, pop = rest} -> hasBottom? rest
 ]]
 The value of a `case-expression
-[[case ]]$E$[[ of ]]$M$ is the same as that of
+[[case $E$ of $M$]] is the same as that of
 the `application
-[[(fn ]]$M$[[)
-(]]$E$[[)]].
+[[(fn $M$)
+($E$)]].
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -3051,10 +3121,10 @@ Sample `let-expressions:
 ]]
 In the case of a `recless-let-binding (recless =
 recursion-less), the value of the `let-expression
-[[let ]]$P$[[ = ]]$A$[[ in ]]$E$ is the same as that of the
+[[let $P$ = $A$ in $E$]] is the same as that of the
 `application
-[[(fn ]]$P$[[ -> ]]$E$[[)]]
-[[(]]$A$[[)]].
+[[(fn $P$ -> $E$)]]
+[[($A$)]].
 For the first example above, this amounts to [[f(x + e, x + e)]].
 Note that [[x = x + e]] is not interpreted as a recursive
 definition.
@@ -3111,11 +3181,11 @@ Sample `if-expression:
 ||    if x <= y then x else y
 ]]
 The value of an `if-expression
-[[if ]]$B$[[ then ]]$T$[[ else ]]$F$ is the same as that of the
+[[if $B$ then $T$ else $F$]] is the same as that of the
 `case-expression
-[[case ]]$B$[[ of true ->
-(]]$T$[[) | false ->
-(]]$F$[[)]].
+[[case $B$ of true ->
+($T$) | false ->
+($F$)]].
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -3161,14 +3231,14 @@ quantifications</quote>; ex = there exists).
 <!-- ================================================================= -->
 <para>
 The value of a [[fa]]-`quantification
-[[fa ]]$V$
+[[fa $V$]]
 $E$, in which
 $V$ is a `local-variable-list and
 $E$ is an `expression,
 is determined as
 follows.
 Let $M$ be the `match
-$V$[[ -> ]]$E$.
+[[$V$ -> $E$]].
 If $M$ has return value [[true]] for each
 value $x$ in its domain (note that
 rejection cannot happen here), the value of the
@@ -3177,10 +3247,10 @@ rejection cannot happen here), the value of the
 <!-- ================================================================= -->
 <para>
 The value of an [[ex]]-`quantification
-[[ex ]]$V$
+[[ex $V$]]
 $E$ is the same as that of the
 [[fa]]-`quantification
-[[~(fa ]]$V$[[ ~(]]$E$[[))]].
+[[~(fa $V$ ~($E$))]].
 </para>
 <!-- ================================================================= -->
 <para>
@@ -3197,7 +3267,7 @@ So [[fa x (x = x)]], for example, is ungrammatical.
 >>
 Restriction.
 In an `annotated-expression
-$E$[[ : ]]$T$, the `expression
+[[$E$ : $T$]], the `expression
 $E$ must have type
 $T$.
 </para>
@@ -3209,14 +3279,14 @@ Sample `annotated-expression:
 ||    Positive : Sign
 ]]
 The value of an `annotated-expression
-$E$[[ : ]]$T$ is the value of
+[[$E$ : $T$]] is the value of
 $E$.
 </para>
 <!-- ================================================================= -->
 <para>
 The type of some `expressions is polymorphic.  For example,
 for any type $T$,
-[[[]]] denotes the empty list of type [[List ]]$T$.
+[[[]]] denotes the empty list of type [[List $T$]].
 Likewise, `constructors of parameterized sum types can be
 polymorphic, as the constructor [[None]] of
 [[
@@ -3247,7 +3317,7 @@ increase clarity.
 ||
 ||`operand ::= `tight-expression
 ||
-||`infix-operator ::= `op-name | `inbuilt-infix
+||`infix-operator ::= `op-name | `inbuilt-op
 >>
 Sample `applications:
 [[
@@ -3258,7 +3328,7 @@ Sample `applications:
 Restriction.
 An `infix-operator, whether qualified or
 unqualified, can not be used without more as an
-`actual-parameter or `operand (and in the case of an `inbuilt-infix,
+`actual-parameter or `operand (and in the case of an `inbuilt-op,
 it can not be used without more as any other kind of `expression either).
 To use an `infix-operator in such cases, it
 must be enclosed in parentheses, as for example in the
@@ -3285,17 +3355,17 @@ $R$ are `operands and
 $M$ and
 $N$ are `infix-operators,
 is interpreted as either
-[[(]]$P M Q$[[) ]]$N R$ or
-$P M$[[ (]]$Q N R$[[)]].
+[[($P M Q$) ]]$N R$ or
+[[$P M$ ($Q N R$)]].
 The choice is made as follows.
 If $M$ has higher priority than
 $N$, or the priorities are the same
 but $M$ is left-associative,
 the interpretation is
-[[(]]$P M Q$[[) ]]$N R$.
+[[($P M Q$) ]]$N R$.
 In all other cases
 the interpretation is
-$P M$[[ (]]$Q N R$[[)]].
+[[$P M$ ($Q N R$)]].
 For example, given
 [[
 ||    op @ infixl 10: Nat * Nat -> Nat
@@ -3314,8 +3384,8 @@ not, the formula [[1 @ 2 $$ 3]] is type-incorrect, since its
 interpretation is.
 </para>
 <para>
-For the application of this disambiguation rule, the `inbuilt-infix
-operators have `fixity as suggested by the following
+For the application of this disambiguation rule, the `inbuilt-ops
+have `fixity as suggested by the following
 pseudo-`op-declarations:
 [[
 ||op =>  infixr 13 : Boolean * Boolean -> Boolean 
@@ -3333,7 +3403,7 @@ Restriction.
 In an `application $H$ $P$, in which
 $H$ is an `application-head and $P$ an `actual-parameter,
 the type of $P$ must be some function type
-$S$[[ -> ]]$T$, and then
+[[$S$ -> $T$]], and then
 $H$ must have the domain type
 $S$.
 The type of the whole `application is then
@@ -3350,22 +3420,22 @@ The meaning of `infix-application $P N Q$, in which $P$ and $Q$ are
 `prefix-application [[$N(P, Q)$]].
 </para>
 <para>
-The meaning of `infix-application $P$[[ => ]]$Q$, in which $P$ and $Q$ are
+The meaning of `infix-application [[$P$ => $Q$]], in which $P$ and $Q$ are
 `operands, is the same as that of the
 `if-expression [[if $P$ then $Q$ else true]].
 </para>
 <para>
-The meaning of `infix-application $P$[[ || ]]$Q$, in which $P$ and $Q$ are
+The meaning of `infix-application [[$P$ || $Q$]], in which $P$ and $Q$ are
 `operands, is the same as that of the
 `if-expression [[if $P$ then true else $Q$]].
 </para>
 <para>
-The meaning of `infix-application $P$[[ && ]]$Q$, in which $P$ and $Q$ are
+The meaning of `infix-application [[$P$ && $Q$]], in which $P$ and $Q$ are
 `operands, is the same as that of the
 `if-expression [[if $P$ then $Q$ else false]].
 </para>
 <para>
-The value of `infix-application $P$[[ = ]]$Q$, in which $P$ and $Q$ are
+The value of `infix-application [[$P$ = $Q$]], in which $P$ and $Q$ are
 `operands, is [[true]] if $P$ and $Q$ have the same value, and [[false]]
 otherwise.
 $P$ and $Q$ must have the same type, or else have
@@ -3375,25 +3445,25 @@ of the `operands relaxed to the supertype,
 so, for example, the value of [[(1:Nat)=(1:PosNat)]] is [[true]].
 </para>
 <para>
-The meaning of `infix-application $P$[[ ~= ]]$Q$, in which $P$ and $Q$ are
+The meaning of `infix-application [[$P$ ~= $Q$]], in which $P$ and $Q$ are
 `operands, is the same as that of the
 `prefix-application [[~($P$ = $Q$)]].
 </para>
 <para>
-An `infix-application $P$[[ << ]]$Q$ is also called a ``record update''.
-In a record update $P$[[ << ]]$Q$, in which $P$ and $Q$ are
+An `infix-application [[$P$ << $Q$]] is also called a ``record update''.
+In a record update [[$P$ << $Q$]], in which $P$ and $Q$ are
 `operands, $P$ and $Q$ must have record types, referred to as $S$ and $T$,
 respectively.
 Moreover, for each `field-name $F$ these types $S$ and $T$ have in common,
 the field types for $F$ in $S$ and $T$ must be the same, or be
 subtypes of the same supertype.
-The type of $P$[[ << ]]$Q$ is then the record type $R$ whose `field-names are formed
+The type of [[$P$ << $Q$]] is then the record type $R$ whose `field-names are formed
 by the union of the `field-names of $S$ and $T$, where for each `field-name
 $F$ in that union, the type of field $F$ in $R$ is that of field $F$ in
 $T$ if $F$ is a field of $T$, and otherwise the type of field $F$ in
 $S$.
 Likewise,
-the value of $P$[[ << ]]$Q$ is the record value of type $R$ whose field value
+the value of [[$P$ << $Q$]] is the record value of type $R$ whose field value
 of each field $F$ is that of field $F$ in 
 $Q$ if $F$ is a field of $T$, and otherwise the field value of field $F$ in 
 $P$.
@@ -3416,9 +3486,9 @@ Sample `restrict-expression:
 ]]
 Restriction.
 In a `restrict-expression
-[[restrict ]]$P$ $E$
+[[restrict $P$]] $E$
 the `expression $P$ must have function
-type $T$[[ -> Boolean]] and the
+type [[$T$ -> Boolean]] and the
 `expression $E$ must have type
 $T$ for some
 $T$.
@@ -3426,19 +3496,19 @@ $T$.
 <!--====================================================================-->
 <para>
 The type of a `restrict-expression
-[[restrict ]]$P$
+[[restrict $P$]]
 $E$,
 where $P$ has
-type $T$[[ -> Boolean]],
+type [[$T$ -> Boolean]],
 is the type
-[[(]]$T$ [[|]] $P$[[)]].
+[[($T$]] [[|]] [[$P$)]].
 </para>
 <!--====================================================================-->
 <para>
 A `restrict-expression
-[[restrict ]]$P$ $E$
+[[restrict $P$]] $E$
 is a convenient notation for the `let-expression
-[[let relax ]]$P$ $V$[[ = ]]$E$[[ in ]]$V$, where
+[[let relax $P$]] [[$V$ = $E$ in $V$]], where
 $V$ is some unique fresh `name, that
 is, it is any `name that does not already occur in the
 `spec, directly or indirectly through an import.
@@ -3464,8 +3534,8 @@ The purpose of `restrict-expressions is to make it
 explicit that an `expression whose a-priori type is some
 supertype $T$ actually is guaranteed
 (or required) to have subtype
-[[(]]$T$ [[|]]
-$P$[[)]].
+[[($T$]] [[|]]
+[[$P$)]].
 Note, however, that Metaslang does not require the explicit use of a
 `restrict-expression
 to restrict
@@ -3567,18 +3637,17 @@ except for <quote>significant</quote> whitespace in
 <!--====================================================================-->
 <para>
 `Literals provide denotations for the inhabitants of the
-<quote>built-in</quote> types [[Boolean]], [[Nat]], [[Char]]
+<quote>base-library</quote> types [[Boolean]], [[Nat]], [[Char]]
 and [[String]].
 The value of a `literal is independent of the environment.
 </para>
 <!--====================================================================-->
 <para>
-(There are no `literals for the built-in type [[Integer]].
+(There are no `literals for the base-library type [[Integer]].
 For nonnegative integers, a `nat-literal can be used.
-For negative integers, apply the built-in `op [[-]], which
+For negative integers, apply the unary base-library `op [[-]], which
 negates an integer:
-[[-1]] denote the negative integer
-[[-]]1.)
+[[-1]] denote the negative integer [[-]]1.)
 </para>
 <!-- ***************************************************************** -->
 <section id="Boolean-literals"><title>Boolean-literals</title>
@@ -3671,7 +3740,7 @@ The value of a `char-literal is a character of type
 </para>
 <!--====================================================================-->
 <para>
-The value of a `char-literal [[#]]$G$, where
+The value of a `char-literal [[#$G$]], where
 $G$ is a `char-glyph, is the character denoted by
 $G$.
 For example, [[#z]] is the character that prints as
@@ -3716,7 +3785,7 @@ the actual effect may depend on the operating environment:
 Finally, every character can be obtained using the
 hexadecimal representation of its position.
 The four-mark `char-glyph
-[[\x]]$H$<subscript>1</subscript>$H$<subscript>0</subscript>
+[[\x$H$]]<subscript>1</subscript>$H$<subscript>0</subscript>
 denotes the character with hexadecimal position
 $H$<subscript>1</subscript>$H$<subscript>0</subscript>,
 which is decimal position
@@ -3818,16 +3887,16 @@ this: [[[6'2"]]].
 **** No longer needed because of transformation to project F E -->
 Disambiguation.
 A `closed-expression of the form
-$M$[[.]]$N$,
+[[$M$.$N$]],
 in which $M$ is a `word-symbol and
 $N$ is a `name, is interpreted as
 an `op-name if
-$M$[[.]]$N$
+[[$M$.$N$]]
 occurs as the `op-name of an `op-declaration or `op-definition
 in the `spec in which it occurs or in the set of `names
 imported from another `spec through an `import-declaration.
 Otherwise,
-$M$[[.]]$N$
+[[$M$.$N$]]
 is interpreted as a `field-selection.
 (The effect of a `field-selection can always be obtained
 with a `projector.)
@@ -3857,10 +3926,10 @@ Sample `field-selections:
 ** $v$.
 **** No longer needed because of transformation to project F E -->
 A `field-selection
-$E$[[.]]$F$
+[[$E$.$F$]]
 is a convenient notation for the equivalent `expression
-[[(project ]]$F$
-$E$[[)]].
+[[(project $F$]]
+[[$E$)]].
 (See under <link linkend="Projectors"><emphasis>Projectors</emphasis></link>.)
 </para>
 </section>
@@ -3945,11 +4014,11 @@ Sample `sequential-expression:
 ||    (writeLine "key not found"; embed Missing)
 ]]
 A `sequential-expression
-[[(]]$V$[[; ]]$T$[[)]] is equivalent to the
-`let-expression [[let _ = ]]$V$[[ in]] [[(]]$T$[[)]].
+[[($V$; $T$)]] is equivalent to the
+`let-expression [[let _ = $V$ in]] [[($T$)]].
 So the value of a `sequential-expression
-[[(]]$V$<subscript>1</subscript>[[;]]
-... [[; ]]$V$<subscript>n</subscript>[[; ]]$E$[[)]]
+[[($V$]]<subscript>1</subscript>[[;]]
+... [[; $V$]]<subscript>n</subscript>[[; $E$)]]
 is the value of its
 last constituent `expression $E$.
 </para>
@@ -4002,7 +4071,7 @@ which has type [[List Nat]].
 </para>
 <!--====================================================================-->
 <para>
-The parameterized type [[List]], although built-in, is
+The parameterized type [[List]], although a base-library type, is
 actually not primitive, but defined by:
 [[
 ||    type List a =
@@ -4011,16 +4080,16 @@ actually not primitive, but defined by:
 ]]
 The empty `list-display [[[]]] denotes the same list as the
 `expression [[Nil]], a singleton `list-display
-[[[]]$E$[[]]] denotes the same
+[[[$E$]]] denotes the same
 list as the `expression [[Cons
 ($E$, Nil)]], and a
 multi-element `list-display
-[[[$E$\<subscript>1\</subscript>, $E$\<subscript>2\</subscript>,]]
+[[[$E<subscript>1</subscript>$, $E<subscript>2</subscript>$,]]
 ... [[,]] [[$E\<subscript>n\</subscript>$]]]
 denotes the same list as the `expression [[Cons
-($E$\<subscript>1\</subscript>,
-[$E$\<subscript>2\</subscript>,]]
-... [[,]] [[$E\<subscript>n\</subscript>$])]].
+($E<subscript>1</subscript>$,
+[$E<subscript>2</subscript>$,]]
+... [[,]] [[$E<subscript>n</subscript>$])]].
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -4055,7 +4124,7 @@ of `structors described in the following subsections.
 </para>
 <!--====================================================================-->
 <para>
-For example, the following correct `spec becomes incorrect when
+For example, the following well-formed `spec becomes ill formed when
 any of the type annotations is omitted:
 [[
 ||    spec
@@ -4081,8 +4150,8 @@ $i$ be at least 1.
 The type of the
 `projector is a function type (whose domain type is a product
 type) of the form
-$T$<subscript>1</subscript> [[* ]]$T$<subscript>2</subscript> [[*]] ...
-[[* ]]$T<subscript>n</subscript>$[[ -> ]]$T<subscript>i</subscript>$,
+$T$<subscript>1</subscript> [[* $T$]]<subscript>2</subscript> [[*]] ...
+[[* $T<subscript>n</subscript>$ -> ]]$T<subscript>i</subscript>$,
 where $n$ is at least
 $i$,
 and the value of the `projector is the function that maps
@@ -4102,11 +4171,11 @@ $F$,
 the type of the
 `projector is a function type (whose domain type is a record
 type) of the form
-[[{]]$F$<subscript>1</subscript>
-[[: ]]$T$<subscript>1</subscript>[[, ]]$F$<subscript>2</subscript>
-[[: ]]$T$<subscript>2</subscript>[[,]]
+[[{$F$]]<subscript>1</subscript>
+[[: $T$]]<subscript>1</subscript>[[, $F$]]<subscript>2</subscript>
+[[: $T$]]<subscript>2</subscript>[[,]]
 ...
-[[, ]]$F<subscript>n</subscript>$[[ : ]]$T<subscript>n</subscript>$[[}]]
+[[, $F<subscript>n</subscript>$ : $T<subscript>n</subscript>$}]]
 [[-> ]]$T<subscript>i</subscript>$,
 where $F$ is the same `field-name
 as
@@ -4139,17 +4208,17 @@ Sample `relaxator:
 ]]
 Restriction.
 The `closed-expression of a `relaxator must have some function
-type $T$[[ -> Boolean]].
+type [[$T$ -> Boolean]].
 </para>
 <!--====================================================================-->
 <para>
-The type of `relaxator [[relax ]]$P$,
+The type of `relaxator [[relax $P$]],
 where $P$ has type
-$T$[[ -> Boolean]], is the function
-type (whose domain is a subtype) [[(]]$T$[[ | ]]$P$[[)]] [[-> ]]$T$.
+[[$T$ -> Boolean]], is the function
+type (whose domain is a subtype) [[($T$ | $P$)]] [[-> $T$]].
 The value of the `relaxator is the function that maps each
 inhabitant of subtype
-[[(]]$T$[[ | ]]$P$[[)]] to the same value --
+[[($T$ | $P$)]] to the same value --
 apart from the type information -- inhabiting supertype
 $T$.
 </para>
@@ -4195,21 +4264,21 @@ Sample `quotienter:
 ]]
 Restriction.
 The `closed-expression of a `quotienter must have some type
-$T$[[ * ]]$T$[[ -> Boolean]];
+[[$T$ * $T$ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
 linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>.
 </para>
 <!--====================================================================-->
 <para>
-The type of `quotienter [[quotient ]]$Q$,
+The type of `quotienter [[quotient $Q$]],
 where $Q$ has type
-$T$[[ * ]]$T$[[ -> Boolean]], is the function type
-$T$[[ -> ]]$T$[[ / ]]$Q$, that is, it goes from some
+[[$T$ * $T$ -> Boolean]], is the function type
+[[$T$ -> $T$ / $Q$]], that is, it goes from some
 type to one of its quotient types.
 The value of the `quotienter is the function that maps each
 inhabitant of type $T$ to the
-$Q$-equivalence class inhabiting $T$[[ /]] 
+$Q$-equivalence class inhabiting [[$T$ /]] 
 $Q$ of which it is a member.
 </para>
 <!--====================================================================-->
@@ -4241,30 +4310,30 @@ Sample `chooser:
 ||    choose congMod3
 ]]
 Restriction.
-In a `chooser [[choose ]]$Q$,
+In a `chooser [[choose $Q$]],
 `expression $Q$ must have some type
-$T$[[ * ]]$T$[[ -> Boolean]], and must be an equivalence relation (see under
+[[$T$ * $T$ -> Boolean]], and must be an equivalence relation (see under
 <link linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>).
 </para>
 <!--====================================================================-->
 <para>
-The type of a `chooser [[choose ]]$Q$,
+The type of a `chooser [[choose $Q$]],
 where $Q$ has type
-$S$[[ * ]]$S$[[ -> Boolean]], is a function type of the form
+[[$S$ * $S$ -> Boolean]], is a function type of the form
 $R$ [[->]]
-[[(]]$S$[[ /
-]]$Q$[[ ->
-]]$T$[[)]], where
+[[($S$ /
+$Q$ ->
+$T$)]], where
 $R$ is the subtype of
-$S$[[ -> ]]$T$
+[[$S$ -> $T$]]
 consisting of the $Q$-constant
 (explained below) functions.
 Expressed more formally, $R$ is the type
-[[{f :]] $S$[[ ->
-]]$T$ [[| fa((x,y) :]]
+[[{f :]] [[$S$ ->
+$T$]] [[| fa((x,y) :]]
 $S$ [[*]]
-$S$[[)]]
-$Q$[[(x,y) => f x = f y}]],
+[[$S$)]]
+[[$Q$(x,y) => f x = f y}]],
 where the `names [[f]], [[x]] and [[y]] must be replaced by
 ``fresh'' `names not clashing with `names already in use in
 $S$,
@@ -4276,9 +4345,9 @@ $Q$.
 The value of the `chooser is the
 function mapping each $Q$-constant
 (explained below) function $f$ inhabiting type
-$S$[[ -> ]]$T$ to the function that maps 
+[[$S$ -> $T$]] to the function that maps 
 each inhabitant $C$ of
-$S$[[ / ]]$Q$ to $f$
+[[$S$ / $Q$]] to $f$
 $x$, where
 $x$ is any member of
 $C$.
@@ -4298,7 +4367,7 @@ Function $f$ is
 $Q$-constant if,
 for each $Q$-equivalence class
 $C$ inhabiting
-$S$[[ / ]]$Q$,
+[[$S$ / $Q$]],
 $f$ $x$
 equals $f$
 $y$ for any two values
@@ -4321,15 +4390,15 @@ So [[choose congMod3 (fn n -> n*n rem 3)]] maps the inhabitant
 <para>
 The most discriminating
 $Q$-constant function is
-[[quotient ]]$Q$, and
-[[choose ]]$Q$[[ quotient ]]$Q$ is the identity function on the
+[[quotient $Q$]], and
+[[choose $Q$ quotient $Q$]] is the identity function on the
 quotient type for $Q$.
 </para>
 <!--====================================================================-->
 <para>
-The meaning of [[choose ]]$Q$[[ (fn x -> ]]$E$[[) ]]$A$
+The meaning of [[choose $Q$ (fn x -> $E$) $A$]]
 is the same as that of the `let-expression
-[[let quotient ]]$Q$[[ x = ]]$A$[[ in ]]$E$.
+[[let quotient $Q$ x = $A$ in $E$]].
 Indeed, often a `quotient-pattern offers a more convenient 
 way of expressing the intention of a `chooser.
 Note, however, the remarks on the proof obligations for
@@ -4397,14 +4466,14 @@ Sample `embedding-test:
 ||    embed? Cons
 ]]
 Restriction.
-The type of an `embedding-test [[embed? ]]$C$ must be of the form
-$T/replaceable>[[ -> Boolean]], where
-$T/replaceable> is a sum type that has a
+The type of an `embedding-test [[embed? $C$]] must be of the form
+[[$T$ -> Boolean]], where
+$T$ is a sum type that has a
 `constructor $C$.
 </para>
 <!-- ================================================================= -->
 <para>
-The value of `embedding-test [[embed? ]]$C$ is the predicate that returns
+The value of `embedding-test [[embed? $C$]] is the predicate that returns
 [[true]] if the argument value -- which, as inhabitant of a
 sum type, is tagged -- has tag $C$,
 and otherwise [[false]].
@@ -4419,7 +4488,7 @@ $C$ is parameter-less.
 </para>
 <!-- ================================================================= -->
 <para>
-In plain words, [[embed? ]]$C$
+In plain words, [[embed? $C$]]
 tests whether its sum-typed argument has been constructed with the
 `constructor $C$.
 It is an error when $C$ is not a
@@ -4464,7 +4533,7 @@ unique type $T$ to which the `pattern
 of each `branch conforms, and a unique type
 $T$ to which the `expression of each
 `branch conforms, and then the `match has type
-$S$[[ -> ]]$T$.
+[[$S$ -> $T$]].
 The `pattern of each `branch then has
 type $S$.
 </para>
@@ -4518,7 +4587,7 @@ $x$ for $B$.
 <para>
 Acceptance and return value $y$, if
 any, of a value $x$ for a `branch
-$P$[[ -> ]]$E$ in an environment
+[[$P$ -> $E$]] in an environment
 $C$ are determined as follows.
 If `pattern $P$ rejects
 $x$, the `branch rejects
@@ -4654,7 +4723,7 @@ the `type-comprehension in which it occurs.)
 <para>
 Restriction.
 The `closed-expression of a `quotient-pattern must have some type
-$T$[[ * ]]$T$[[ -> Boolean]];
+[[$T$ * $T$ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
 linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>.
@@ -4672,7 +4741,7 @@ establishing this.
 <para>
 Restriction.
 The `closed-expression of a `relax-pattern must have some function
-type $T$[[ -> Boolean]].
+type [[$T$ -> Boolean]].
 </para>
 <!--  ================================================================= -->
 <para>
@@ -4709,7 +4778,7 @@ Step 1.  From `pattern $P$, form some
 $P<subscript>t</subscript>$ by
 replacing each `field-patterner consisting of a single
 `field-name $F$ by the
-`field-patterner $F$[[ = ]]$F$
+`field-patterner [[$F$ = $F$]]
 and replacing each `wildcard-pattern [[_]] in
 $P$ by a unique fresh `name, that is,
 any `name that does not already occur in the `spec, directly or
@@ -4731,9 +4800,9 @@ $P<subscript>t</subscript>$, form a
 (tamed) <emphasis>construed version</emphasis>
 $P<subscript>tc</subscript>$ by
 replacing each constituent `cons-pattern
-$H$[[ :: ]]$T$
+[[$H$ :: $T$]]
 by the `embed-pattern [[Cons
-(]]$H$[[, ]]$T$[[)]], where [[Cons]] denotes the
+($H$, $T$)]], where [[Cons]] denotes the
 `constructor of the parameterized type [[List]].
 For the example, the construed version is:
 [[
@@ -4752,7 +4821,7 @@ $P$, where
 expressive descendant
 if $E$
 can be obtained by repeatedly replacing some constituent
-`aliased-pattern $L$[[ as ]]$R$
+`aliased-pattern [[$L$ as $R$]]
 of $P<subscript>tc</subscript>$
 by one of the two `patterns
 $L$ and

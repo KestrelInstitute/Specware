@@ -136,29 +136,10 @@ specification, you create a more specific case of it; that is,
 you reduce the number of possible models of it.</para>
 
 <para>The process of refinement is also one of composition. To
-begin the refinement, you construct primitive interpretations
+begin the refinement, you construct primitive refinements
 that show how to implement an abstract concept in terms of a
-concrete concept. You then compose interpretations to deepen
+concrete concept. You then compose refinements to deepen
 and widen the refinement.</para>
-
-<para>Specware provides two types of composition for
-interpretations; horizontal (or parallel), and vertical (or
-sequential).</para>
-
-<itemizedlist>
-<listitem><para>When you compose interpretations horizontally,
-you increase the scope of what is refined. In the same way you
-compose specifications to create a more complex specification
-from simpler parts, you compose refinements horizontally to
-create a complex refinement from simpler
-parts.</para></listitem>
-
-<listitem><para>When you compose interpretations vertically,
-you increase the degree of refinement. You compose
-interpretations sequentially, in a simple, linear progression,
-to create a deeper refinement from a shallower
-one.</para></listitem>
-</itemizedlist>
 
 <para>For example, suppose you are designing a house. A wide
 but not deep view of the design specifies several rooms but
@@ -169,7 +150,7 @@ however, it makes no difference which view you create
 first.</para>
 
 <para>The final refinement implements a complex, abstract
-specification by interpreting it to code.</para>
+specification from which code can be generated.</para>
 
 </section>
 
@@ -247,7 +228,7 @@ rather than one. Both choices are available.</para>
 </section>
 
 <section>
-<title>Refining your specifications to constructive specifications</title>
+<title>Refining Your Specifications to Constructive Specifications</title>
 
 <para>You combine specifications to extend the refinement
 iteratively. The goal is to create a refinement between the
@@ -317,16 +298,12 @@ must be preserved as you refine the operation. However, unless
 you are going to generate code for [[square]], you do not need
 to supply a complete definition.</para>
 
-<para>The completeness of your definitions determines whether
-you can create interpretations to code. An interpretation must
+<para>The completeness of your definitions determines the extent to
+which you can generate code. A complete refinement must
 completely define the operations of the source theory in terms
 of the target theory. This guarantees that, if the target is
-implementable, the source is also implementable. However,
-Specware also allows you to construct interpretation schemes,
-which need not be definitional extensions. This allows you to
-make considerable progress in building up and refining an
-abstract specification in advance of providing complete
-definitions.</para>
+implementable, the source is also implementable.
+</para>
 
 </section>
 
