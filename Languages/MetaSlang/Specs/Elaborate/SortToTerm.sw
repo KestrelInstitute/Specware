@@ -201,7 +201,11 @@ XML qualifying spec
 					  in
 					    foldl scan table srts)
           | TyVar     _               -> table
-	  | MetaTyVar _               -> scan (unlinkSort srt, table)
+	  | MetaTyVar _               -> let new_sort = unlinkSort srt in
+	                                 if new_sort = srt then
+					   table
+					 else
+					   scan (new_sort, table)
    in
      scan (srt, [])
 
