@@ -152,11 +152,6 @@ accepted in lieu of prompting."
        (mark)]
       ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark)])) 
 
-(easy-menu-define specware-mode-menu
-    specware-mode-map
-    "Menu used in Specware mode."
-  specware-menu)
-
 ;;; BINDINGS: should be common to the source and process modes...
 
 (defun install-sw-keybindings (map)
@@ -206,6 +201,10 @@ Full documentation will be available after autoloading the function."
 (defvar specware-mode-map nil "The mode map used in specware-mode.")
 (cond ((not specware-mode-map)
        (setq specware-mode-map (make-sparse-keymap))
+       (easy-menu-define specware-mode-menu
+			 specware-mode-map
+			 "Menu used in Specware mode."
+			 specware-menu)
        (install-sw-keybindings specware-mode-map)))
 
 ;;;(and fi:lisp-listener-mode-map
