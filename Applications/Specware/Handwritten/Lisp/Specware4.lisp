@@ -19,7 +19,7 @@
 #+cmu
 (setq c::*compile-print* nil)
 #+mcl
-(egc t)					; Turn on ephemeral gc
+;(egc t)					; Turn on ephemeral gc
 
 ;; Used in printing out the license and about-specware command
 (defvar cl-user::Specware-version "4.0")

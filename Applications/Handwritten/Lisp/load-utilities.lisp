@@ -147,6 +147,7 @@
 (defun setTemporaryDirectory ()
   (setq temporaryDirectory (temporaryDirectory-0)))
 
+#-mcl
 (defun copy-file (source target)
   #+allegro(sys:copy-file source target)
   #-allegro
