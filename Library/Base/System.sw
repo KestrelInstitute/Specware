@@ -22,7 +22,7 @@ System qualifying spec {
   but on the other hand somewhat fortunate. It means that to access the
   Lisp SYSTEM:getenv we need only extend this signature.
 *)
-  op getenv   : String -> String
+%  op getenv   : String -> String
 
 (*
  The following holds the name of the temporary directory on the

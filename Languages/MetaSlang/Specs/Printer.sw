@@ -31,8 +31,9 @@
 AnnSpecPrinter qualifying spec { 
   import ../AbstractSyntax/Printer
   import AnnSpec
+  import /Library/IO/Primitive/IO                    % for getEnv
   import /Library/Legacy/DataStructures/IntSetSplay  % for indicesToDisable
-  import /Library/Legacy/DataStructures/NatMapSplay      % for markTable's
+  import /Library/Legacy/DataStructures/NatMapSplay  % for markTable's
 
   %% ========================================================================
 
@@ -1123,9 +1124,13 @@ AnnSpecPrinter qualifying spec {
                 ppSpec (initialize(pdfPrinter(counter,"???"),false)) sp) specs0 
      in
      let menues = map pdfMenu specs0                  in
+     let sw2000 = case getEnv "SPECWARE2000" of
+                    | None            -> "??SPECWARE2000??" 
+                    | Some dir_string -> dir_string
+     in
      prettysAll
         ([string "\\documentclass{article}",
-         string ("\\input{" ^ (System.getenv "SPECWARE2000") ^ "/doc/pdf-sources/megamacros}"),
+         string ("\\input{" ^ sw2000 ^ "/doc/pdf-sources/megamacros}"),
          % string "\\input{/specware/doc/macros/macros}",
          string "\\begin{document}",
          string "\\pdfthread num 1"]
@@ -1149,10 +1154,14 @@ AnnSpecPrinter qualifying spec {
  % 3. pretty print append the postlude.
 
   def pdfPreludeToFile(fileName) =
-      PrettyPrint.toFile(fileName,format(90,
+     let sw2000 = case getEnv "SPECWARE2000" of
+                    | None            -> "??SPECWARE2000??" 
+                    | Some dir_string -> dir_string
+     in
+     PrettyPrint.toFile(fileName,format(90,
         prettysAll
         ([string "\\documentclass{article}",
-         string ("\\input{" ^ (System.getenv "SPECWARE2000") ^ "/doc/pdf-sources/megamacros}"),
+         string ("\\input{" ^ sw2000 ^ "/doc/pdf-sources/megamacros}"),
          string "\\begin{document}",
          string "\\pdfthread num 1"])))
 
