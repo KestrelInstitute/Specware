@@ -212,7 +212,7 @@ grammar.glm: Makefile metaslang.glm grammar.preamble \
 clean:
 	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log \
 	       $(SLM)-htm.dbk $(HTMDBK) *.old db2html-dir \
-	       $(SLMDIR) $(SLMTAR) \
+	       $(SLMDIR) $(SLMTAR)
 
 pristine: clean
 	rm -rf $(SLMTARBOL)
