@@ -15,13 +15,15 @@ SpecCalc qualifying spec
     (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
     case value of
       | Diag dgm -> 
-        let cod_cat = cod (functor (dgm)) in
-	let colimit_fn = colimit cod_cat in
+        let cod_cat = cod (functor (dgm)) in 
+	% cod_cat is presumably the category of specs
+	let colimit_fn = colimit cod_cat in  
+	% colimit fn is presumably specColimit.
         let initial_cocone = colimit_fn dgm in
-        % return (Spec (apex (cocone univCocone)),timeStamp,depUIDs)
         return (Colimit initial_cocone, timeStamp, depUIDs)
-      | _ -> raise (TypeCheck (positionOf term, "argument of colimit is not a diagram"))
-       }
+      | _ -> 
+	raise (TypeCheck (positionOf term, "argument of colimit is not a spec diagram"))
+	 }
   }
 
 \end{spec}
