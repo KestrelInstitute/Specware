@@ -931,8 +931,8 @@ MetaSlang qualifying spec {
 	(appT (tsp_apps, term); term_app term)
   in 
     %% TODO: use recursive call
-    term_app term   % not recursive
-    %% appRec term  % recursive
+    %% term_app term   % not recursive
+    appRec term  % recursive
 
  def appSort (tsp_apps as (_, srt_app, _)) srt = 
   let def appS (tsp_apps, srt) =
@@ -969,8 +969,8 @@ MetaSlang qualifying spec {
 	(appP (tsp_apps, pattern); pattern_app pattern)
   in
     %% TODO: use recusive call
-    pattern_app pattern % not recursive
-    %% appRec pattern   % recursive
+    %% pattern_app pattern % not recursive
+    appRec pattern   % recursive
 
  def appSortOpt tsp_apps opt_sort =
    case opt_sort of
