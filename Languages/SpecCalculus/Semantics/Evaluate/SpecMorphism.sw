@@ -61,21 +61,21 @@ coherence conditions of the morphism elements.
         case findAllOps (cod_spec, qid) of
           | ((found_qid as Qualified (found_qualifier,_))::_,_,_,_)::rs -> {
                 when (~(rs = []) & ~(found_qualifier = UnQualified))
-                  (raise (MorphError (position, "Ambiguous target op " ^ (printQualifiedId qid))));
+                  (raise (MorphError (position, "Ambiguous target op " ^ (explicitPrintQualifiedId qid))));
                 return found_qid
               }
           | _ -> 
 	    raise (MorphError (position, 
 			       if syntactic_qid? qid then
-				 "`" ^ (printQualifiedId qid) ^ "' is syntax, not an op, hence cannot be the target of a morphism."
+				 "`" ^ (explicitPrintQualifiedId qid) ^ "' is syntax, not an op, hence cannot be the target of a morphism."
 			       else
-				 "Unrecognized target op " ^ (printQualifiedId qid)))
+				 "Unrecognized target op " ^ (explicitPrintQualifiedId qid)))
 
       def findCodSort position qid dom_qid dom_defs =
         case findAllSorts (cod_spec, qid) of
           | ((found_qid as Qualified (found_qualifier,_))::_,_,_)::rs -> {
                 when (~(rs = []) & ~(found_qualifier = UnQualified))
-                  (raise (MorphError (position, "Ambiguous target sort " ^ (printQualifiedId qid))));
+                  (raise (MorphError (position, "Ambiguous target sort " ^ (explicitPrintQualifiedId qid))));
                 return found_qid
               }
           | _ -> 
@@ -85,19 +85,28 @@ coherence conditions of the morphism elements.
 	      | (Qualified ("<unqualified>", "Boolean"), []) -> return Boolean_Boolean
 	      | (Qualified ("Boolean",       "Boolean"), []) -> return qid
 	      | (Qualified ("<unqualified>", "Boolean"), _) -> 
-	        raise (MorphError (position, "Cannot map defined sort " ^ (printQualifiedId dom_qid) ^ " to Boolean"))
+	        raise (MorphError (position, "Cannot map defined sort " ^ (explicitPrintQualifiedId dom_qid) ^ " to Boolean"))
 	      | (Qualified ("Boolean",       "Boolean"), _) -> 
-	        raise (MorphError (position, "Cannot map defined sort " ^ (printQualifiedId dom_qid) ^ " to Boolean.Boolean"))
+	        raise (MorphError (position, "Cannot map defined sort " ^ (explicitPrintQualifiedId dom_qid) ^ " to Boolean.Boolean"))
 	      | _ ->
-	        raise (MorphError (position, "Unrecognized target sort " ^ (printQualifiedId qid)))
+	        raise (MorphError (position, "Unrecognized target sort " ^ (explicitPrintQualifiedId qid)))
 
       def insert (op_map,sort_map) ((sm_rule,position) : (SpecMorphRule Position)) =
         case sm_rule of
           | Sort (dom_qid, cod_qid) ->
-            (case findAllSorts (dom_spec, dom_qid) of
+	    let dom_types = findAllSorts (dom_spec, dom_qid) in
+	    {
+	     foldM (fn xxx -> fn dom_type -> 
+		    if forbidden_dom_type? dom_type then
+		      raise (MorphError (position, "Illegal to refine base type " ^ (explicitPrintQualifiedId dom_qid) ^ " to something other than itself."))
+		    else
+		      return xxx)
+	           (return true)
+		   dom_types;
+	     case dom_types of
                | ((Qualified (found_qualifier, found_id))::_,_,dom_defs)::rs  -> {
                      when (~(rs = []) & ~(found_qualifier = UnQualified))
-                       (raise (MorphError (position, "Ambiguous source sort " ^ (printQualifiedId dom_qid))));
+                       (raise (MorphError (position, "Ambiguous source sort " ^ (explicitPrintQualifiedId dom_qid))));
                      case findAQualifierMap (sort_map, found_qualifier, found_id) of
                        | None -> {
                              cod_sort <- findCodSort position cod_qid dom_qid dom_defs;
@@ -105,16 +114,26 @@ coherence conditions of the morphism elements.
 				     insertAQualifierMap (sort_map, found_qualifier, found_id, cod_sort))
 				 }
                        | _ -> raise (MorphError (position, "Multiple rules for source sort "
-                                                           ^ (printQualifiedId dom_qid)))
+                                                           ^ (explicitPrintQualifiedId dom_qid)))
                    }
-               | _ -> raise (MorphError (position, "Unrecognized source sort " ^ (printQualifiedId dom_qid))))
+               | _ -> raise (MorphError (position, "Unrecognized source sort " ^ (explicitPrintQualifiedId dom_qid)))
+	      }
 
           | Op ((dom_qid, opt_dom_sort), (cod_qid, opt_cod_sort)) ->
             %% TODO:  Currently ignores sort information.
-            (case findAllOps (dom_spec, dom_qid) of
+	    let dom_ops   = findAllOps   (dom_spec, dom_qid) in
+	    {
+	     foldM (fn xxx -> fn dom_op -> 
+		    if forbidden_dom_op? dom_op then
+		      raise (MorphError (position, "Illegal to refine base op " ^ (explicitPrintQualifiedId dom_qid) ^ " to something other than itself."))
+		    else
+		      return xxx)
+	           (return true)
+		   dom_ops;
+	     case findAllOps (dom_spec, dom_qid) of
                | ((Qualified (found_qualifier, found_id))::_,_,_,_)::rs -> {
                      when (~(rs = []) & ~(found_qualifier = UnQualified))
-                        (raise (MorphError (position, "Ambiguous source op " ^ (printQualifiedId dom_qid))));
+                        (raise (MorphError (position, "Ambiguous source op " ^ (explicitPrintQualifiedId dom_qid))));
                      case findAQualifierMap (op_map, found_qualifier, found_id) of
                        | None -> {
                              cod_op <- findCodOp position cod_qid;
@@ -122,21 +141,37 @@ coherence conditions of the morphism elements.
                                      sort_map)
                            }
                        | _ -> raise (MorphError (position, "Multiple rules for source op "
-                                                          ^ (printQualifiedId dom_qid)))
+                                                          ^ (explicitPrintQualifiedId dom_qid)))
                    }
-               | _ -> raise (MorphError (position, "Unrecognized source op " ^ (printQualifiedId dom_qid))))
+               | _ -> raise (MorphError (position, "Unrecognized source op " ^ (explicitPrintQualifiedId dom_qid)))
+	      }
 
           | Ambiguous (dom_qid, cod_qid) ->
               let dom_sorts = findAllSorts (dom_spec, dom_qid) in
               let dom_ops   = findAllOps   (dom_spec, dom_qid) in
-              case (dom_sorts, dom_ops) of
+	      {
+	       foldM (fn xxx -> fn dom_type -> 
+		      if forbidden_dom_type? dom_type then
+			raise (MorphError (position, "Illegal to refine base type " ^ (explicitPrintQualifiedId dom_qid) ^ " to something other than itself."))
+		      else
+			return xxx)
+	             (return true)
+		     dom_sorts;
+	       foldM (fn xxx -> fn dom_op -> 
+		      if forbidden_dom_op? dom_op then
+			raise (MorphError (position, "Illegal to refine base op " ^ (explicitPrintQualifiedId dom_qid) ^ " to something other than itself."))
+		      else
+			return xxx)
+	             (return true)
+		     dom_ops;
+	       case (dom_sorts, dom_ops) of
                 | ([], []) ->
                     raise (MorphError (position, "Unrecognized source sort/op identifier "
-                                                 ^ (printQualifiedId dom_qid)))
+                                                 ^ (explicitPrintQualifiedId dom_qid)))
                 | (((Qualified (found_qualifier, found_id))::_,_,dom_defs)::rs, [])  -> {
                        when (~(rs = []) & ~(found_qualifier = UnQualified))
                          (raise (MorphError (position, "Ambiguous source sort "
-                                                       ^ (printQualifiedId dom_qid))));
+                                                       ^ (explicitPrintQualifiedId dom_qid))));
                        case findAQualifierMap (sort_map, found_qualifier, found_id) of
                          | None -> {
                                cod_sort <- findCodSort position cod_qid dom_qid dom_defs;
@@ -144,12 +179,12 @@ coherence conditions of the morphism elements.
                                        insertAQualifierMap (sort_map, found_qualifier, found_id, cod_sort))
                              }
                          | _ -> raise (MorphError (position, "Multiple rules for source sort "
-                                                             ^ (printQualifiedId dom_qid)))
+                                                             ^ (explicitPrintQualifiedId dom_qid)))
                     }
                 | ([], ((Qualified (found_qualifier, found_id))::_,_,_,_)::rs) -> {
                       when (~(rs = []) & ~(found_qualifier = UnQualified))
                         (raise (MorphError (position, "Ambiguous source op "
-                                                      ^ (printQualifiedId dom_qid))));
+                                                      ^ (explicitPrintQualifiedId dom_qid))));
                       case findAQualifierMap (op_map, found_qualifier, found_id) of
                         | None -> {
                               cod_op <- findCodOp position cod_qid;
@@ -157,11 +192,12 @@ coherence conditions of the morphism elements.
                                       sort_map)
                             }
                         | _ -> raise (MorphError (position, "Multiple rules for source op "
-                                                            ^ (printQualifiedId dom_qid)))
+                                                            ^ (explicitPrintQualifiedId dom_qid)))
                     }
                 | (_, _) ->
                     raise (MorphError (position, "Ambiguous source sort/op identifier "
-                                                 ^ (printQualifiedId dom_qid)))
+                                                 ^ (explicitPrintQualifiedId dom_qid)))
+	      }
     in
        foldM insert (emptyAQualifierMap,emptyAQualifierMap) sm_rules
 
