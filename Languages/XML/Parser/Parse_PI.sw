@@ -37,7 +37,8 @@ XML qualifying spec
 	  | char :: tail ->
 	    probe (tail, cons (char, rev_result))
 	  | _ ->
-	    error ("EOF scanning PI", start, [])
+	    hard_error (EOF {context = "parsing PI",
+			     start   = start})
     in
       {
        %%
@@ -45,7 +46,12 @@ XML qualifying spec
        %%
        (target, tail_0) <- parse_GenericName start;
        (when (~ (pi_target? target))
-	(error ("Illegal PI Target name", start, tail_0)));
+	(error (Surprise {context = "Parsing PI",
+			  expected = [("Name - 'xml' variants", "legal PI target name")], 
+			  action   = "Pretend name is acceptable",
+			  start    = start,
+			  tail     = tail_0,
+			  peek     = 10})));
 
        (whitespace_and_value, tail) <- probe (tail_0, []);
 
@@ -63,7 +69,12 @@ XML qualifying spec
 	   else
 	     {
 	      (when true
-	       (error ("PI value must begin with whitespace", whitespace_and_value, [])));
+	       (error (Surprise {context = "Parsing PI value",
+				 expected = [(" ", "whitespace")],
+				 action   = "Pretend whitespace was seen",
+				 start    = start,
+				 tail     = tail,
+				 peek     = 10})));
 	      return ({target = target,
 		       value  = Some ([], whitespace_and_value)},
 		      tail)

@@ -71,8 +71,20 @@ XML qualifying spec
 		      markups     = markups},
 		     tail)
 	   | _ ->
-	     error ("DTD doesn't end with '>'", start, nthTail (tail, 10))
-	    }
+	     {
+	      error (Surprise {context  = "ending parse of DTD",
+			       expected = [("'>'", "to terminate DTD")],
+			       action   = "Pretend '>' was seen",
+			       start    = start,
+			       tail     = tail,
+			       peek     = 10});
+	      return ({w1          = w1,
+		       name        = name,
+		       external_id = None,
+		       w3          = wx,
+		       markups     = markups},
+		      tail)
+	     }}
       | _ ->
 	{
 	 (external_id, tail) <- parse_ExternalID tail;
@@ -87,8 +99,20 @@ XML qualifying spec
 		      markups     = markups},
 		     tail)
 	   | _ ->
-	     error ("DTD doesn't end with '>'", start, nthTail (tail, 10))
-	    }}
+	     {
+	      error (Surprise {context  = "ending parse of DTD",
+			       expected = [("'>'", "to terminate DTD")],
+			       action   = "Pretend '>' was seen",
+			       start    = start,
+			       tail     = tail,
+			       peek     = 10});
+	      return ({w1          = w1,
+		       name        = name,
+		       external_id = Some (wx, external_id),
+		       w3          = w3,
+		       markups     = markups},
+		      tail)
+	     }}}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -182,10 +206,16 @@ XML qualifying spec
 		     probe (tail, cons (Sep (WhiteSpace w1), rev_markups))
 		    }
 		  else
-		    error ("Unrecognized markup/declsep", start, tail)
+		    hard_error (Surprise {context  = "Unrecognized markup/declsep in DTD",
+					  expected = [("misc options", "various decls")],
+					  action   = "Immediate failure",
+					  start    = start,
+					  tail     = tail,
+					  peek     = 10})
 		    
 		| _ ->
-		    error ("EOF scanning markups in DTD", start, tail)
+		    hard_error (EOF {context = "parsing markups in DTD",
+				     start   = start})
 	 in
 	   probe (tail, []))
 	
@@ -196,10 +226,14 @@ XML qualifying spec
   def parse_ExternalID (start : UChars) : Required ExternalID =  % TODO
     {
      (id, tail) <- parse_GenericID start;
-     if external_id? id then
-       return (id, tail)
-     else
-       error ("Wanted ExternalID, but saw PublicID", start, tail)
-      }
+     (when (~ (external_id? id))
+      (error (Surprise {context = "Parsing external ID",
+			expected = [("external id", "external id")],
+			action   = "Pretend it's ok",
+			start    = start,
+			tail = tail,
+			peek = 10})));
+     return (id, tail)
+    }
 
 endspec

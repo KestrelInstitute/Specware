@@ -87,11 +87,17 @@ XML qualifying spec
 			  tail)
 		| _ ->
 		  {
-		   error ("Double dash inside comment", start, tail);
-		   probe (tl tail, cons (45, rev_comment))
+		   error (Surprise {context  = "Double dash inside comment",
+				    expected = [("'>'", "Finish '-->' to end comment")],
+				    action   = "Allow bogus contents",
+				    start    = start,
+				    tail     = tail,
+				    peek     = 10});
+		   probe (tl tail, cons (45, cons (45, rev_comment)))
 		   })
 	   | [] ->
-	     error ("EOF inside comment", start, tail)
+	     hard_error (EOF {context = "scanning comment",
+			      start   = start})
 	   | char :: tail ->
 	     probe (tail, cons (char, rev_comment))
     in
@@ -115,7 +121,8 @@ XML qualifying spec
 	     return ({cdata = rev rev_comment}, 
 		     tail)
 	   | [] ->
-	     error ("EOF inside CDSect", start, tail)
+	     hard_error (EOF {context = "scanning CDSect", 
+			      start   = start})
 	   | char :: tail ->
 	     probe (tail, cons (char, rev_comment))
     in

@@ -78,8 +78,7 @@ XML qualifying spec
 	     (content, tail) <- parse_Content tail;
 	     (etag,    tail) <- parse_ETag    tail;
 	     (when (~ (open_tag.name = etag.name))
-	      (error ("Mismatch: \n   Open: " ^ (string open_tag.name) ^ "\n  Close: " ^ (string etag.name),
-		      start, tail)));
+	      (error (WFC {description = "Mismatch: \n   Open: " ^ (string open_tag.name) ^ "\n  Close: " ^ (string etag.name)})));
 	     return (Some (Full {stag    = open_tag, 
 				 content = content, 
 				 etag    = etag}),
@@ -109,7 +108,7 @@ XML qualifying spec
 	| Some tag ->
 	  {
 	   (when (~ ((start_tag? tag) or (empty_tag? tag)))
-	    (error ("Expected an STag or EmptyElemTag", start, tail)));
+	    (error (WFC {description = "Expected an STag or EmptyElemTag, but saw closing tag: " ^ (string tag.name)})));
 	   return (possible_tag, tail)}
 	| _ -> return (None, start)
      }
@@ -191,7 +190,8 @@ XML qualifying spec
 		  return (None, start)
 	      })
       | [] ->
-	error ("EOF scanning content of element.", start, [])
+	hard_error (EOF {context = "parsing content of element",
+			 start   = start})
       | 38  (* '&' *)   :: tail -> 
 	{
 	 %% parse_Reference assumes we're just past the ampersand.
@@ -217,12 +217,21 @@ XML qualifying spec
 	| Some tag ->
 	  {
 	   (when (~ (end_tag? tag))
-	    (error ("Expected an ETag", start, tail)));
+	    (error (Surprise {context = "parsing ETag",
+			      expected = [("</ ...>", "an ending tag")],
+			      action   = "Pretend tag is an end tag",
+			      start    = start,
+			      tail     = tail,
+			      peek     = 10})));
 	   return (tag,tail)
 	   }
 	| _ -> 
-	  error ("Expected an ETag, but at least a generic tag", 
-		 start, tail)
+	  hard_error (Surprise {context = "parsing ETag",
+				expected = [("< ...>", "at least some kind of tag")],
+				action   = "Immediate failure",
+				start    = start,
+				tail     = tail,
+				peek     = 10})
 	 }
 
 endspec

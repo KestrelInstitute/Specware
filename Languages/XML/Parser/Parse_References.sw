@@ -63,14 +63,34 @@ XML qualifying spec
 		     | 59  (* ';' *) :: tail ->
 		       {
 		        (when (~ (char? char))
-			 (error ("Illegal character reference ", start, tail)));
+			 (error (Surprise {context  = "Illegal (hex) character reference",
+					   action   = "Passing bogus character along",
+					   expected = [("hex digits", "legal Unicode character")],
+					   start    = start,
+					   tail     = tail,
+					   peek     = 0})));
 		        return (Char {style = Hex,
 				      char  = char},
 				tail)
 			}
-		     | _ -> error ("Expected hex character reference to end with ';'", start, nthTail (tail, 4)))
-		| _ -> error ("Expected hex digit in hex character reference", start, nthTail (tail, 4)))
-
+		     | _ -> 
+		       {error (Surprise {context  = "Illegal (hex) character reference ",
+					 action   = "Pretending ';' was seen",
+					 expected = [(";", "termination of hex character reference")],
+					 start    = start,
+					 tail     = tail,
+					 peek     = 10});
+		        return (Char {style = Hex,
+				      char  = char},
+				tail)
+			})
+		| _ -> 
+		     hard_error (Surprise {context  = "Illegal (hex) character reference ",
+					   action   = "Immediate failure",
+					   expected = [("[0-9A-Fa-f", "hex digit")],
+					   start    = start,
+					   tail     = tail,
+					   peek     = 10}))
 	   | _ ->
 	     case parse_decimal tail of
 	       | Some (char, tail) ->
@@ -78,23 +98,55 @@ XML qualifying spec
 		    | 59  (* ';' *) :: tail ->
 		      {
 		       (when (~ (char? char))
-			(error ("Illegal character reference ", start, tail)));
+			 (error (Surprise {context  = "Illegal (decimal) character reference ",
+					   action   = "Passing bogus character along",
+					   expected = [("decimal digits", "legal Unicode character")],
+					   start    = start,
+					   tail     = tail,
+					   peek     = 0})));
 		       return (Char {style = Decimal,
 				     char  = char},
 			       tail)
 		       }
-		    | _ -> error ("Expected decimal character reference to end with ';'", start, nthTail (tail, 4)))
-	       | _ -> error ("Expected decimal digit in decimal character reference", start, nthTail (tail, 4)))
+		    | _ -> 
+		      {
+		       error (Surprise {context  = "Illegal (decimal) character reference ",
+					action   = "Pretending ';' was seen",
+					expected = [(";", "termination of decimal character reference")],
+					start    = start,
+					tail     = tail,
+					peek     = 10});
+		       return (Char {style = Decimal,
+				     char  = char},
+			       tail)
+		       })
+	       | _ -> 
+		    hard_error (Surprise {context  = "Illegal (decimal) character reference ",
+					  action   = "Immediate failure",
+					  expected = [("[0-9", "decimal digit")],
+					  start    = start,
+					  tail     = tail,
+					  peek     = 10}))
       | _ ->
-        %% parse EntityRef
+	%% parse EntityRef
 	{
 	 (name, tail) <- parse_Name start;
 	 case tail of
 	   | 59  (* ';' *) :: tail ->
 	     return (Entity {name = name},
 		     tail)
-	   | _ -> error ("Expected entity reference to end with ';'", start, nthTail (tail, 10))
-	    }
+	   | _ -> 
+	     {error (Surprise {context  = "Illegal entity reference",
+			       action   = "Pretending ';' was seen",
+			       expected = [(";", "termination of entity reference")],
+			       start    = start,
+			       tail     = tail,
+			       peek     = 10});
+	      return (Entity {name = name},
+		      tail)
+	     }}
+
+
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -118,8 +170,15 @@ XML qualifying spec
          return ({name = name},
 		 tail)
        | _ -> 
-	 error ("Expecting PEReference", start, tail)
-    }
+	 {error (Surprise {context  = "Expecting PEReference",
+			   action   = "Pretending ';' was seen",
+			   expected = [(";", "termination of PE Reference")],
+			   start    = start,
+			   tail     = tail,
+			   peek     = 10});
+	  return ({name = name},
+		  tail)
+	 }}
 
   %% -------------------------------------------------------------------------------------------------
 

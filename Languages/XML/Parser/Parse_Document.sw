@@ -52,18 +52,18 @@ XML qualifying spec
 	       | XMLDecl    _ -> 
 		 {
 		  (when (total > 0)
-		   (error ("WFC: XML decl is not the first form in an XML document", start, tail)));
+		   (error (WFC {description = "XML decl is not the first form in an XML document"})));
 		  (when (docs > 0)
-		   (error ("WFC: XML decl follows Doctypedecl", start, tail)));
+		   (error (WFC {description = "XML decl follows Doctypedecl"})));
 		  (when (elts > 0)
-		   (error ("WFC: XML decl follows Element", start, tail)));
+		   (error (WFC {description = "XML decl follows Element"})));
 		  return (total + 1, xmls + 1, docs, elts)
 		 }
 
 	       | DTD        _ -> 
 		 {
 		  (when (elts > 0)
-		   (error ("WFC: Doctypedecl (DTD) follows Element", start, tail)));
+		   (error (WFC {description = "Doctypedecl (DTD) follows Element"})));
 		  return (total + 1, xmls, docs + 1, elts)
 		 }
 	       | Element    _ -> 
@@ -73,19 +73,19 @@ XML qualifying spec
 	    items);
 
      (when (xmls = 0)
-      (error ("VC: No XML decl", start, tail)));
+      (error (VC {description = "No 'xml' decl"})));
 
      (when (xmls > 1)
-      (error ("WFC: Multiple XML decls", start, tail)));
+      (error (WFC {description = "Multiple 'xml' decls"})));
 
      (when (docs > 1)
-      (error ("WFC: Multiple Doctypedecl's (DTD's)", start, tail)));
+      (error (WFC {description = "Multiple DTD's (doctypedecl's)"})));
 
      (when (elts = 0)
-      (error ("WFC: No Element", start, tail)));
+      (error (WFC {description = "No Element in document"})));
 
      (when (docs > 1)
-      (error ("WFC: Multiple top-level Element's", start, tail)));
+      (error (WFC {description = "Multiple top-level Element's"})));
 
      let doc : Document = {items = items} in
      return (doc,
@@ -157,7 +157,7 @@ XML qualifying spec
 	}
 
       %% Element
-      | 60 (* '<' *) :: _ ->
+      | 60 (* '<' *) :: scout ->
 	{
 	 (possible_element, tail) <- parse_Element start;
 	 case possible_element of
@@ -165,10 +165,16 @@ XML qualifying spec
 	     return (Element element,
 		     tail)
 	   | _ ->
-	     error ("Expected Whitespace, '<!--' (Comment), '<?' (PI), '<DOCTYPE' (DTD), or '<' (Element)",
-		    start, tail)
-
-	}
+	     hard_error (Surprise {context  = "After a '<' while looking for top-level doc-item",
+				   expected = [("<!--",      "Comment"),
+					       ("<?'",       "PI"),
+					       ("<!DOCTYPE", "DTD"), 
+					       ("<",         "Element")],
+				   action   = "immediate failure",
+				   start    = start, 
+				   tail     = scout,
+				   peek     = 10})
+	    }
 
       %% Whitespace
       | char :: tail ->
@@ -179,7 +185,18 @@ XML qualifying spec
 		   tail)
 	   }
 	else
-	  error ("Expected Whitespace, '<!--' (Comment), '<?' (PI), '<DOCTYPE' (DTD), or '<' (Element)",
-		 start, tail)
+	  hard_error (Surprise {context  = "Looking for top-level doc-item",
+				expected = [(" ",         "WhiteSpace"),
+					    ("<!--",      "Comment"),
+					    ("<?'",       "PI"),
+					    ("<!DOCTYPE", "DTD"), 
+					    ("<",         "Element")],
+				action   = "immediate failure",
+				start    = start, 
+				tail     = tail,
+				peek     = 10})
+      | _ ->
+	  hard_error (EOF {context = "Parsing top-level document items",
+			   start   = start})
 
 endspec

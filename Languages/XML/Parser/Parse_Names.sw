@@ -27,7 +27,12 @@ XML qualifying spec
       | first_char :: tail ->
         {
 	 (when (~ (name_start_char? first_char))
-	  (error ("Expected alphabetic char for name", start, tail)));
+	  (error (Surprise {context  = "Parsing name",
+			    action   = "Pretending character is legal start of name",
+			    expected = [("[A-Z][a-z]_:", "Initial character of name")],
+			    start    = start,
+			    tail     = tail,
+			    peek     = 10})));
 	 let def aux (tail, name_chars) =
               case tail of
 		| char :: scout ->
@@ -36,12 +41,14 @@ XML qualifying spec
 		   else
 		     return (cons (first_char, rev name_chars), tail))
 		| _ ->
-		     error ("Eof while parsing name.", start, [])
+		  hard_error (EOF {context = "While parsing name.", 
+				   start   = start})
 	 in
 	   aux (tail, [])
 	   }
       | _ ->
-	error ("Eof while parsing name.", start, [])
+	hard_error (EOF {context = "While parsing name.", 
+			 start   = start})
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -67,7 +74,8 @@ XML qualifying spec
 	      else
 		return (rev name_chars, tail))
 	   | _ ->
-	     error ("Eof while parsing name.", start, [])
+		hard_error (EOF {context = "While parsing NmToken.", 
+				 start   = start})
     in
       aux (start, [])
 

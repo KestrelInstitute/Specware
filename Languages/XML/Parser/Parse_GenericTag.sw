@@ -74,7 +74,17 @@ XML qualifying spec
     let
        def probe (tail, n, rev_end_chars) =
 	 if n < 1 then
-	   error ("Expected namechar soon after <", start, tail)
+	   {
+	    error (Surprise {context  = "Parsing some kind of tag, five characters past <",
+			     expected = [("[A-Za-z_:]",   "start of name (most likely)"),
+					 ("[0-9.-] etc.", "start of nmtoken (maybe?)")],
+			     action   = "Proceed as if name were seen",
+			     start    = start,
+			     tail     = tail,
+			     peek     = 10});
+	    return (rev rev_end_chars,
+		    tail)
+	    }
 	 else
 	   case tail of
 	     | char :: scout ->
@@ -84,7 +94,8 @@ XML qualifying spec
 	       else
 		 probe (scout, n - 1, cons (char, rev_end_chars))
 	     | _ ->
-		 error ("EOF looking for namechar after '<'", start, tail)
+		 hard_error (EOF {context = "Parsing tag, looking for name after '<'", 
+				  start   = start})
     in
       probe (start, 5, [])
 
@@ -170,7 +181,16 @@ XML qualifying spec
     let
        def probe (tail, n, rev_end_chars) =
 	 if n < 1 then
-	   error ("Expected '>'", start, tail)
+	   {
+	    error (Surprise {context  = "Parsing some kind of tag",
+			     expected = [("'>'",   "close of tag")],
+			     action   = "Proceed as if '>' were seen",
+			     start    = start,
+			     tail     = tail,
+			     peek     = 10});
+	    return (rev rev_end_chars,
+		    tail)
+	    }
 	 else
 	   case tail of
 	     | char :: tail ->
@@ -180,7 +200,8 @@ XML qualifying spec
 	       else
 		 probe (tail, n - 1, cons (char, rev_end_chars))
 	     | _ ->
-	       error ("EOF looking for '>'", start, tail)
+	       hard_error (EOF {context = "looking for '>' to close tag",
+				start   = start})
     in
       probe (start, 5, [])
 

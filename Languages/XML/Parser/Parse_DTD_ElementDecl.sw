@@ -66,10 +66,22 @@ XML qualifying spec
 		  w2       = w2,
 		  contents = contents,
 		  w3       = w3},
-		 start)
+		 tail)
        | _ ->
-         error ("Expected closing '>' for ElementDecl in DTD", start, tail)
-	}
+	 {
+	  error (Surprise {context  = "Near close of elementdecl in dtd",
+			   expected = [("'>'", "close of ElementDecl in DTD")],
+			   action   = "Pretend '>' was seen",
+			   start    = start,
+			   tail     = tail,
+			   peek     = 10});
+	  return ({w1       = w1,
+		   name     = name,
+		   w2       = w2,
+		   contents = contents,
+		   w3       = w3},
+		  tail)
+	}}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -109,7 +121,12 @@ XML qualifying spec
       | 60 (* open-paren *) :: tail ->
         parse_CP start
       | _ ->
-	error ("Children must start with '(' for choice or seq", start, nthTail (start, 10))
+	hard_error (Surprise {context  = "Parsing children in elementdecl in DTD",
+			      expected = [("'('", "To start description of a choice or sequence")],
+			      action   = "Immediate failure",
+			      start    = start,
+			      tail     = start,
+			      peek     = 10})
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -199,8 +216,15 @@ XML qualifying spec
 		     tail)
 
 	   | _ ->
-	     error ("Expected a choice or seq", start, tail)
-	     }
+	     hard_error (Surprise {context  = "Parsing description of choice or sequence in elementdecl in DTD",
+				   expected = [("'|'", "indication of choice"),
+					       ("','", "indication of sequence"),
+					       ("')'", "termination of choise or sequence")],
+				   action   = "Immediate failure",
+				   start    = start,
+				   tail     = tail,
+				   peek     = 10})
+	    }
 
       | _ ->
 	{
@@ -252,8 +276,12 @@ XML qualifying spec
 			  | _  ->
 			    {
 			     (when true
-			      (error ("#PCDATA declaration in DTD containing names must end with ')*'",
-				      start, tail)));
+			      (error (Surprise {context  = "Parsing Mixed construction in elementdecl in DTD", % comment to balance parens: '('
+						expected = [("')'", "to terminate #PCDATA declaration")],
+						action   = "Pretending ')' was seen",
+						start    = start,
+						tail     = tail,
+						peek     = 10})));
 			     return (Some (Names {w1    = w1,
 						  names = rev rev_names,
 						  w2    = w2}),

@@ -41,55 +41,60 @@ XML qualifying spec
     {
      (possible_tag, tail) <- parse_Option_GenericTag start;
      case possible_tag of
-       | None -> error ("Expected xml decl", start, tail)
+       | None -> 
+         hard_error (Surprise {context = "Expected xml decl",
+			       expected = [("<?xml ...?>", "A legal xml decl")],
+			       action   = "Immediate failure",
+			       start    = start,
+			       tail     = tail,
+			       peek     = 50})
        | Some tag ->
          {
 	  (when (~ ((tag.prefix = (ustring "?")) & (tag.name = (ustring "xml"))))
-	   (error ("WFC: XML decl should begin '<?xml', not '<" ^ (string tag.prefix) ^ (string tag.name),
-		   start, tail)));
+	   (error (WFC {description = "XML decl should begin '<?xml', not '<" ^ (string tag.prefix) ^ (string tag.name)})));
 	  (saw_version?, saw_encoding?, saw_standalone?) <-
 	  (foldM (fn (saw_version?, saw_encoding?, saw_standalone?) -> fn attribute -> 
 		    case attribute.name of
 	              | 118 :: 101 :: 114 :: 115 :: 105 :: 111 :: 110 (* 'version' *) :: [] ->
 		        {
 			 (when saw_version? 
-			  (error ("WFC: Multiple version attributes in XML decl", start, tail)));
+			  (error (WFC {description = "Multiple version attributes in XML decl"})));
 			 (when saw_encoding? 
-			  (error ("WFC: version attribute follows encoding attribute in XML decl", start, tail)));
+			  (error (WFC {description = "version attribute follows encoding attribute in XML decl"})));
 			 (when saw_standalone? 
-			  (error ("WFC version attribute follows standalone attribute in XML decl", start, tail)));
+			  (error (WFC {description = "version attribute follows standalone attribute in XML decl"})));
 			 return (true, saw_encoding?, saw_standalone?)
 			 }
 		      | 101 :: 110 :: 99 :: 111 :: 100 :: 105 :: 110 :: 103 (* 'encoding' *) :: [] ->
 		        {
 			 (when saw_encoding? 
-			  (error ("WFC Multiple encoding attributes in XML decl", start, tail)));
+			  (error (WFC {description = "Multiple encoding attributes in XML decl"})));
 			 (when saw_standalone? 
-			  (error ("WFC encoding attribute follows standalone attribute in XML decl", start, tail)));
+			  (error (WFC {description = "encoding attribute follows standalone attribute in XML decl"})));
 			 return (saw_version?, true, saw_standalone?)
 			 }
 		      | 115 :: 116 :: 97 :: 110 :: 100 :: 97 :: 108 :: 111 :: 110 :: 101 (* 'standalone' *) :: [] ->
 			{
 			 (when saw_encoding? 
-			  (error ("WFC Multiple standalone attributes in XML decl", start, tail)));
+			  (error (WFC {description = "Multiple standalone attributes in XML decl"})));
 			 (when saw_standalone? 
-			  (error ("WFC encoding attribute follows standalone attribute in XML decl", start, tail)));
+			  (error (WFC {description = "encoding attribute follows standalone attribute in XML decl"})));
 			 return (saw_version?, saw_encoding?, true)
 			}
 		      | uname ->
 			{
 			 (when true
-			  (error ("WFC Unrecognized attribute [" ^ (string uname) ^ "] in XML decl", start, tail)));
+			  (error (WFC {description = "Unrecognized attribute [" ^ (string uname) ^ "] in XML decl"})));
 			 return (saw_version?, saw_encoding?, saw_standalone?)
 			 })
 	          (false, false, false)
 		  tag.attributes);
 
 	  (when (~ saw_version?)
-	   (error ("WFC No version attribute in XML decl", start, tail)));
+	   (error (WFC {description = "No version attribute in XML decl"})));
 	    
 	  (when (~ (tag.postfix = ustring "?"))
-	   (error ("WFC XML decl should end with '?>', not '" ^ (string tag.postfix) ^ ">'", start, tail)));
+	   (error (WFC {description = "XML decl should end with '?>', not '" ^ (string tag.postfix) ^ ">'"})));
 
 	  return (tag, tail)
 	 }}

@@ -81,9 +81,21 @@ XML qualifying spec
 			  w4    = w4},
 		      tail)
 	    | _ ->
-	      error ("Looking for '>' at end of PEDecl in DTD",
-		     start, nthTail (tail, 10))
-	      }
+	      {
+	       error (Surprise {context = "parsing PEDecl in DTD",
+				expected = [("'>'", "to terminate PEDecl")],
+				action   = "Pretend '>' was seen",
+				start    = start,
+				tail     = tail,
+				peek     = 10});
+	       return (PE {w1    = w1,
+			   w2    = w2,
+			   name  = name,
+			   w3    = w3,
+			   pedef = pedef,
+			   w4    = w4},
+		       tail)
+	      }}
        | _ ->
 	 %% GEDecl 
 	 {
@@ -100,9 +112,20 @@ XML qualifying spec
 			  w3   = w3},
 		      tail)
 	    | _ ->
-	      error ("Looking for '>' at end of GEDecl in DTD",
-		     start, nthTail (tail, 10))
-	      }}
+	      {
+	       error (Surprise {context = "parsing GEDecl in DTD",
+				expected = [("'>'", "to terminate GEDecl")],
+				action   = "Pretend '>' was seen",
+				start    = start,
+				tail     = tail,
+				peek     = 10});
+	       return (GE {w1   = w1,
+			   name = name,
+			   w2   = w2,
+			   edef = edef,
+			   w3   = w3},
+		       tail)
+	      }}}
 
   %% ------------------------------------------------------------------------------------------------
   %%
@@ -210,9 +233,20 @@ XML qualifying spec
 		  w3   = w3},
 		 tail)
        | _ ->
-	 error ("Expected '<!NOTATION' to close with '>'",
-		start, tail)
-	}
+	 {
+	  error (Surprise {context = "parsing Notation Decl in DTD",
+			   expected = [("'>'", "to terminate Notation Decl")],
+			   action   = "Pretend '>' was seen",
+			   start    = start,
+			   tail     = tail,
+			   peek     = 10});
+	  return ({w1   = w1,
+		   name = name,
+		   w2   = w2,
+		   id   = id,
+		   w3   = w3},
+		  tail)
+	 }}
 
   %% ------------------------------------------------------------------------------------------------
   %%
@@ -255,6 +289,11 @@ XML qualifying spec
 		      tail)
 	      }}
       | _ ->
-	error ("Expected 'SYSTEM' or 'PUBLIC' in DTD", start, nthTail(start, 10))
-	 
+	hard_error (Surprise {context  = "Parsing ID reference in DTD",
+			      expected = [("'SYSTEM' or 'PUBLIC'", "to indicate kind of ID")],
+			      action   = "Immediate failure",
+			      start    = start,
+			      tail     = start,
+			      peek     = 10})
+
 endspec

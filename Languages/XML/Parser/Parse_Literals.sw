@@ -38,8 +38,20 @@ XML qualifying spec
        def probe (tail, rev_char_data, rev_items, qchar) =
 	 case tail of
 
-	   | 60  (* '<' *)   :: _ -> 
-	     error ("'<' is not allowed in an attribute value", start, nthTail (tail, 20))
+	   | 60  (* '<' *)   :: tail -> 
+	     {
+	      error (Surprise {context  = "'<' is not allowed in an entity value", 
+			       expected = [("[^%&]", "Something other than percent, ampersand, or quote")], 
+			       action   = "Treating '<' as normal character",
+			       start    = start,
+			       tail     = tail,
+			       peek     = 10});
+	      probe (tail,
+		     [60], 
+		     cons (NonRef (rev rev_char_data),
+			   rev_items),
+		     qchar)
+	     }
 
 	   | 38  (* '&' *)   :: tail -> 
 	     {
@@ -75,13 +87,19 @@ XML qualifying spec
 		      rev_items,
 		      qchar)
 	   | _ ->
-	     error ("Eof while scanning EntityValue", start, [])
+	     hard_error (EOF {context = "scanning EntityValue", 
+			      start   = start})
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
 	| 39 (* apostrophe   *) :: tail -> probe (tail, [], [], 39)
         | _ ->
-          error ("Expected quoted text while scanning EntityValue", start, nthTail (start, 10))
+	  hard_error (Surprise {context = "Expected quoted text while scanning EntityValue", 
+				expected = [("'", "apostrophe or double-quote to begin quoted text")],
+				action   = "Immediate error",
+				start    = start,
+				tail     = start,
+				peek     = 10})
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -95,7 +113,19 @@ XML qualifying spec
 	 case tail of
 
 	   | 60  (* '<' *)   :: _ -> 
-	     error ("'<' is not allowed in an attribute value", start, nthTail (tail, 20))
+	     {
+	      error (Surprise {context  = "'<' is not allowed in an attribute value", 
+			       expected = [("[^<&]", "Something other than open-angle, ampersand, or quote")], 
+			       action   = "Treating '<' as normal character",
+			       start    = start,
+			       tail     = tail,
+			       peek     = 10});
+	      probe (tail,
+		     [60], 
+		     cons (NonRef (rev rev_char_data),
+			   rev_items),
+		     qchar)
+	     }
 
 	   | 38  (* '&' *)   :: tail -> 
 	     {
@@ -122,7 +152,8 @@ XML qualifying spec
 		      rev_items,
 		      qchar)
 	   | _ ->
-	     error ("Eof while scanning attribute value", start, [])
+	     hard_error (EOF {context = "scanning attribute value", 
+			      start   = start})
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
@@ -172,12 +203,18 @@ XML qualifying spec
 		      cons (char, rev_text),
 		      qchar)
 	   | _ ->
-	     error ("Eof while scanning quoted text", start, [])
+	     hard_error (EOF {context = "scanning quoted text", 
+			      start   = start})
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], 34)
 	| 39 (* apostrophe   *) :: tail -> probe (tail, [], 39)
         | _ ->
-	  error ("Expected quoted text", start, nthTail (start, 10))
+	  hard_error (Surprise {context = "Expected quoted text",
+				expected = [("'", "apostrophe or double-quote to begin quoted text")],
+				action   = "Immediate error",
+				start    = start,
+				tail     = start,
+				peek     = 10})
 
 endspec

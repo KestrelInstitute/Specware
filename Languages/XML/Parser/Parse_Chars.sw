@@ -165,11 +165,20 @@ XML qualifying spec
 
   def parse_EqualSign (start : UChars) : Required UChar =
     case start of
-      | 61 (* '=' *) :: tail -> return (61, tail)
+      | 61 (* '=' *) :: tail -> 
+        return (61, tail)
       | _ :: tail ->
-	  raise (Syntax ("Not an equal sign ", {start = start, stop = tail}))
+	{
+	 error (Surprise {context  = "Expecting an equal sign ", 
+			  action   = "Inserting implicit '='",
+			  expected = [("=", "equal sign")],
+			  start = start,
+			  tail  = tail,
+			  peek = 10});
+	 return (61, tail)
+	 }
       | _ ->
-	  raise (EOF ("looking for equal sign ", {start = start, stop = []}))
-	      
+	 hard_error (EOF {context = "Expecting an equal sign ", 
+			  start   = start})
 
 endspec

@@ -22,31 +22,60 @@ XML qualifying spec
      context    = default_processing_environment}
 
   sort XML_Exception =
-    | EOF       String * Region
-    | Syntax    String * Region
-    | Name      String * Region
-    | Value     String * Region
-    | Validity  String * Region
-    | Style     String * Region
-    | Comment   String * Region
-    | WFC       String * Region
-    | VC        String * Region
-
-  sort Region = {start : UChars,
-		 stop  : UChars}
+    | EOF         EOF_Error
+    | Surprise    Surprise_Error
+    | WFC         WFC_Error        % well-formedness condition
+    | VC          VC_Error         % validity condition
+    | KC          KC_Error         % kestrel well-formedness condition
 
   def print_XML_Exception (except : XML_Exception) : String =
-    case except of
-      | EOF      (msg, _) -> "Unexpected end of file: "  ^ msg
-      | Syntax   (msg, _) -> "Syntax error: "            ^ msg
-      | Name     (msg, _) -> "Naming error: "            ^ msg
-      | Value    (msg, _) -> "Value error: "             ^ msg
-      | Validity (msg, _) -> "Invalid form: "            ^ msg
-      | Style    (msg, _) -> "Stylistic issue: "         ^ msg
-      | Comment  (msg, _) -> "Note:"                     ^ msg
-      | WFC      (msg, _) -> "WFC:"                      ^ msg
-      | VC       (msg, _) -> "VC:"                       ^ msg
-      | _                 -> "Unknown exception"
+    "\n\nXML Error: " ^    
+    (case except of
+       | EOF      x -> print_EOF_Error      x
+       | Surprise x -> print_Surprise_Error x
+       | WFC      x -> print_WFC_Error      x
+       | VC       x -> print_VC_Error       x
+       | KC       x -> print_KC_Error       x
+       ) ^
+       "\n\n"
+       
+  %% --------------------------------------------------------------------------------
+
+  sort EOF_Error = {context : String,
+		    start   : UChars}
+
+  def print_EOF_Error x : String =
+    "EOF error" ^ x.context
+
+  %% --------------------------------------------------------------------------------
+
+  sort Surprise_Error = {context  : String,
+			 action   : String,
+			 expected : List (String * String),
+			 start    : UChars,
+			 tail     : UChars,
+			 peek     : Nat}
+
+  def print_Surprise_Error surprise : String =
+    surprise.context ^ ", expected one of" ^
+    (foldl (fn (pair, result) -> result ^ pair.1 ^ "(for " ^ pair.2 ^ ")") "" surprise.expected) ^
+    surprise.action
+
+  %% --------------------------------------------------------------------------------
+
+  sort WFC_Error  = {description : String}
+  def print_WFC_Error x : String =
+       "WFC (Well-Formedness Condition): " ^ x.description
+
+  sort VC_Error   = {description : String}
+  def print_VC_Error x : String =
+       "VC (Validity Condition): " ^ x.description
+
+  sort KC_Error   = {description : String}
+  def print_KC_Error x : String =
+       "KC (Kestrel-specific well-formedness condition): " ^ x.description
+
+  %% --------------------------------------------------------------------------------
 
   sort Processing_Environment = {tracing? : Boolean} % could add verbosity, etc.
   def default_processing_environment : Processing_Environment = 
@@ -195,10 +224,10 @@ XML qualifying spec
   %%  Exception handling -- do not process following applications
 
    op stop_parsing : fa (a) XML_Exception -> Env a
-  def stop_parsing except = raise except
+  def stop_parsing except = raise_now except
 
-   op raise : fa (a) XML_Exception -> Env a
-  def raise except = fn state -> 
+   op raise_now : fa (a) XML_Exception -> Env a
+  def raise_now except = fn state -> 
     let _ =
       if  Wizard_Fail_Hard? then
         fail (System.toString except)
@@ -207,9 +236,9 @@ XML qualifying spec
     in
       (Exception except, state)
 
-
-  def fa(a) error (msg : String, start : UChars, stop : UChars) : Env a =
-    raise (Syntax (msg, {start = start, stop = stop}))
+  
+  def error x : Env () = raise_later x
+  def fa(a) hard_error x : Env a  = raise_now   x
 
   %% --------------------------------------------------------------------------------
 

@@ -78,9 +78,19 @@ XML qualifying spec
 			    w2   = w2},
 			   tail)
 		 | _ ->
-		   error ("AttList decl in DTD doesn't end with '>'",
-			  start, nthTail (tail, 4))
-		  }}
+		   {
+		    error (Surprise {context = "parsing attribute list decl in DTD",
+				     expected = [("'>'", "to terminate decl")], 
+				     action   = "Pretend '>' was seen",
+				     start    = start,
+				     tail     = tail,
+				     peek     = 10});
+		    return ({w1   = w1,
+			     name = name,
+			     defs = rev rev_att_defs,
+			     w2   = w2},
+			    tail)
+		    }}}
      in
        probe (tail, [])
       }
@@ -174,8 +184,13 @@ XML qualifying spec
       | 40 (* open-paren *) :: tail ->
         parse_Enumeration tail
       | _ -> 
-	error ("Expected NOTATION or opening '(' for enumeration in EnumeratedType in DTD",
-	       start, nthTail (start, 10))
+	hard_error (Surprise {context = "Parsing DTD",
+			      expected = [("'NOTATION'", "to start notationtype"),
+					  ("'('",        "to start enumeration")],
+			      action   = "Immediate failure",
+			      start    = start,
+			      tail     = start,
+			      peek     = 10})
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -222,15 +237,25 @@ XML qualifying spec
 				     w3     = w3},
 			   tail)
 		 | _ ->
-		   error ("In Enumerated type, seeking '|' or ')'",
-			  start, nthTail(tail, 4))
+		   hard_error (Surprise {context = "Parsing Enumerated type",
+					 expected = [("'|'", "to add more options"),
+						     ("')'", "to close decl")],
+					 action   = "Immediate failure",
+					 start    = start,
+					 tail     = tail,
+					 peek     = 10})
 		  }
 	  in
 	    probe (tail, [])
 	   }
-       | _ -> error ("Expected '(' after NOTATION in DTD", 
-		     start, tail)
-	}
+       | _ -> 
+	   hard_error (Surprise {context = "Parsing NOTATION decl in DTD",
+				 expected = [("'('", "to begin enumeration")],
+				 action   = "Immediate failure",
+				 start    = start,
+				 tail     = tail,
+				 peek     = 10})
+	  }
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -268,8 +293,13 @@ XML qualifying spec
 				   w2     = w2},
 		      tail)
 	    | _ ->
-	      error ("In Enumerated type, seeking '|' or ')'",
-		     start, nthTail(tail, 4))
+	      hard_error (Surprise {context = "parsing Enumeration decl in DTD",
+				    expected = [("'|'", "to continue enumerating"),
+						("')'", "to terminate enumeration decl")],
+				    action   = "Immediate failure",
+				    start    = start,
+				    tail     = tail,
+				    peek     = 10})
 	     }
      in
        probe (tail, [])
