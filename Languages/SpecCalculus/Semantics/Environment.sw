@@ -15,7 +15,7 @@ SpecCalc qualifying spec {
   import /Library/IO/Primitive/IO
   import /Languages/MetaSlang/Specs/Categories/AsRecord	
   % import Cat qualifying /Library/Structures/Data/Categories/Diagrams/Polymorphic
-  import Map
+  % import Map
 			  
 \end{spec}
 
