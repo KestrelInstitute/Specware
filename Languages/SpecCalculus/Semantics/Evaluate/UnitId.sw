@@ -72,7 +72,8 @@ These are called only from evaluateUID.
 			      setCurrentUID saveUID;
 			      let val = (value,max(timeStamp,rTimeStamp),depUIDs) in
 			      {bindInGlobalContext unitId val;
-			       return (Some (val,unitId))}}
+			       newval <- return (val.1, val.2, [unitId]);
+			       return (Some (newval,unitId))}}
 			   | _ -> return (Some ((value,timeStamp,[unitId]), unitId)))
 		    else return None})
 	      | None -> return None)}
