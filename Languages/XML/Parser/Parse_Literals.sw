@@ -87,15 +87,15 @@ XML qualifying spec
 		      rev_items,
 		      qchar)
 	   | _ ->
-	     hard_error (EOF {context = "scanning EntityValue", 
+	     hard_error (EOF {context = "Parsing EntityValue", 
 			      start   = start})
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
 	| 39 (* apostrophe   *) :: tail -> probe (tail, [], [], 39)
         | _ ->
-	  hard_error (Surprise {context = "Expected quoted text while scanning EntityValue", 
-				expected = [("'", "apostrophe or double-quote to begin quoted text")],
+	  hard_error (Surprise {context = "About to parse quoted text while scanning EntityValue", 
+				expected = [("['\"] ", "apostrophe or double-quote to begin quoted text")],
 				action   = "Immediate error",
 				start    = start,
 				tail     = start,
@@ -152,7 +152,7 @@ XML qualifying spec
 		      rev_items,
 		      qchar)
 	   | _ ->
-	     hard_error (EOF {context = "scanning attribute value", 
+	     hard_error (EOF {context = "Parsing attribute value", 
 			      start   = start})
     in
       case start of
@@ -210,8 +210,8 @@ XML qualifying spec
 	| 34 (* double-quote *) :: tail -> probe (tail, [], 34)
 	| 39 (* apostrophe   *) :: tail -> probe (tail, [], 39)
         | _ ->
-	  hard_error (Surprise {context = "Expected quoted text",
-				expected = [("'", "apostrophe or double-quote to begin quoted text")],
+	  hard_error (Surprise {context  = "About to parse quoted text",
+				expected = [("['\"] ", "apostrophe or double-quote to begin quoted text")],
 				action   = "Immediate error",
 				start    = start,
 				tail     = start,

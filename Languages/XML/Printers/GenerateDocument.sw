@@ -187,11 +187,11 @@ XML qualifying spec
 	(case qid of
 	  | ("String",  "String") ->
 	    let string : String = Magic.magicCastToString datum in
-	    indent_ustring (vspacing, indent, UString.double_quote ^ (ustring string) ^ UString.double_quote)
+	    indent_ustring (UString.double_quote ^ (ustring string) ^ UString.double_quote)
 
 	  | ("Integer", "Integer") ->
 	    let n = Magic.magicCastToInteger datum in
-	    indent_ustring (vspacing, indent, ustring (Integer.toString n))
+	    indent_ustring (ustring (Integer.toString n))
 
 	  | ("List",    "List") ->
 	    (let [element_sd] = args in
@@ -219,11 +219,11 @@ XML qualifying spec
 
 	  | ("Boolean", "Boolean") ->
 	    let bool = Magic.magicCastToBoolean datum in
-	    indent_ustring (vspacing, indent, ustring (if bool then "true" else "false"))
+	    indent_ustring (ustring (if bool then "true" else "false"))
 
 	  | ("Char",    "Char") ->
 	    let char = Magic.magicCastToChar datum in
-	    indent_ustring (vspacing, indent, ustring ("&#" ^ (Nat.toString (ord char)) ^";"))
+	    indent_ustring (ustring ("&#" ^ (Nat.toString (ord char)) ^";"))
 
 	  | ("Option" , "Option") ->
 	    (let [sub_sd] = args in
@@ -239,14 +239,10 @@ XML qualifying spec
 				   vspacing,
 				   indent))
 	  | qid ->
-	    indent_ustring (vspacing,
-			    indent, 
-			    ustring ("?? Base: " ^ (print_qid qid) ^  " ?? ")))
+	    indent_ustring (ustring ("?? Base: " ^ (print_qid qid) ^  " ?? ")))
 
       | _ ->
-	indent_ustring (vspacing,
-			indent, 
-			ustring ("?? unrecognized type  ?? "))
+	indent_ustring (ustring ("?? unrecognized type  ?? "))
 
 
 
@@ -352,11 +348,8 @@ XML qualifying spec
 	
 
 
-  def indent_ustring (vspacing : Nat, indent : Nat, ustr : UString) : Option Content =
+  def indent_ustring (ustr : UString) : Option Content =
     Some {items   = [],
-%%	  trailer = Some ((indentation_chardata (vspacing, indent)) ^ 
-%%			  ustr ^ 
-%%			  (indentation_chardata (vspacing, indent - 2)))}
 	  trailer = Some ((indentation_chardata (0, 1)) ^ 
 			  ustr ^ 
 			  (indentation_chardata (0, 1)))}
@@ -367,9 +360,5 @@ XML qualifying spec
      Element (Empty (make_EmptyElemTag (UString.colon, [], []))))
 
 
-%%%    (Some (indentation_chardata (vspacing, indent)),
-%%%     CDSect {cdata = ((indentation_chardata (0, 1)) ^  
-%%%		      ustr ^ 
-%%%		      (indentation_chardata (0, 1)))))
 
 endspec

@@ -29,41 +29,41 @@ XML qualifying spec
     let possible_uchars = read_unicode_chars_from_file (filename, null_decoding) in % handwritten lisp
     case possible_uchars of
       | Some uchars ->
-        run_document_monad {
+        run_document_monad uchars
+	                   {
 			    (document, uchars) <- parse_Document uchars;
 			    return (Some document)
 			   }
       | _ -> None
 
   def read_Document_from_String (str : String) : Option Document =
-    run_document_monad {
-			(document, uchars) <- parse_Document (ustring str);
-			return (Some document)
-		       }
-
-  def read_Document_from_UString (uchars : UChars) : Option Document =
-    run_document_monad {
+    let uchars = ustring str in
+    run_document_monad uchars
+                       {
 			(document, uchars) <- parse_Document uchars;
 			return (Some document)
 		       }
 
-  def run_document_monad (run : Env (Option Document)) =
-    case catch run XML_Handler initialState  of
-      | (Ok         possible_doc, newstate) -> 
-        let _ = map (fn exception -> toScreen (print_XML_Exception exception))
-	            newstate.exceptions
-	in
-	  possible_doc
+  def read_Document_from_UString (uchars : UChars) : Option Document =
+    run_document_monad uchars
+                       {
+			(document, uchars) <- parse_Document uchars;
+			return (Some document)
+		       }
 
-      | (Exception  exception,    newstate) -> 
-        let _ = map (fn exception -> toScreen (print_XML_Exception exception))
-	            newstate.exceptions
-	in
-	  let _ = toScreen (print_XML_Exception exception) in
+  def run_document_monad (uchars : UChars) (run : Env (Option Document)) =
+    let (result, newstate) = catch run XML_Handler (initialState uchars) in
+    case (result, newstate.exceptions) of
+
+      | (Ok possible_document, []) -> 
+        possible_document
+
+      | _ ->
+	let _ = toScreen (print_pending_XML_Exceptions newstate) in
 	None
 
-  def XML_Handler (except) : Env (Option Document) = 
-    let _ = toScreen (print_XML_Exception except) in
+  def XML_Handler _ : Env (Option Document) = 
+    %% let _ = toScreen (print_XML_Exception except) in %% catch inserts exception into state
     return None
 
 %%% from Specware.sw :

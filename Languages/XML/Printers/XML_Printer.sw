@@ -344,10 +344,16 @@ XML qualifying spec
       | Choice choice -> print_Choice choice
       | Seq    seq    -> print_Seq   seq)
    ^
-   (ustring (case rule of      
-	       | Question -> "?"
-	       | Star     -> "*"
-	       | Plus     -> "+"))
+   (print_BNF_Directive rule)
+
+  def print_CP {body, rule} =
+   (case body of	  
+     | Name   name   -> print_Name   name
+     | Choice choice -> print_Choice choice
+     | Seq    seq    -> print_Seq    seq)
+   ^
+   (print_BNF_Directive rule)
+
    
   def print_Choice choice =
     let alternatives = choice.alternatives in
@@ -360,19 +366,6 @@ XML qualifying spec
     ^
     (ustring ")")
 
-
-  def print_CP {body, rule} =
-   (case body of	  
-     | Name   name   -> print_Name   name
-     | Choice choice -> print_Choice choice
-     | Seq    seq    -> print_Seq    seq)
-   ^
-   (ustring (case rule of      
-	       | Question -> "?"
-	       | Star     -> "*"
-	       | Plus     -> "+"))
-
-   
   def print_Seq seq =
     let items = seq.items in
     (ustring "(") 
@@ -384,6 +377,13 @@ XML qualifying spec
     ^
     (ustring ")")
 
+  def print_BNF_Directive rule =
+    ustring (case rule of      
+	       | ZeroOrOne  -> "?"
+	       | ZeroOrMore -> "*"
+	       | OneOrMore  -> "+"
+	       | One        -> "")
+   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          DTD AttListDecl                                                                     %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -166,10 +166,11 @@ XML qualifying spec
 		     tail)
 	   | _ ->
 	     hard_error (Surprise {context  = "After a '<' while looking for top-level doc-item",
-				   expected = [("<!--",      "Comment"),
-					       ("<?'",       "PI"),
-					       ("<!DOCTYPE", "DTD"), 
-					       ("<",         "Element")],
+				   expected = [("'<?xml'",     "initial xml decl"),
+					       ("'<?'",        "PI"),
+					       ("'<!--'",      "Comment"),
+					       ("'<!DOCTYPE'", "DTD"), 
+					       ("'<'",         "Element")],
 				   action   = "immediate failure",
 				   start    = start, 
 				   tail     = scout,
@@ -186,11 +187,12 @@ XML qualifying spec
 	   }
 	else
 	  hard_error (Surprise {context  = "Looking for top-level doc-item",
-				expected = [(" ",         "WhiteSpace"),
-					    ("<!--",      "Comment"),
-					    ("<?'",       "PI"),
-					    ("<!DOCTYPE", "DTD"), 
-					    ("<",         "Element")],
+				expected = [("'<?xml'",           "initial xml decl"),
+					    ("'<?'",              "PI"),
+					    ("'<!--'",            "Comment"),
+					    ("#x9 #xA #xD #x20",  "WhiteSpace"),
+					    ("'<!DOCTYPE'",       "DTD"), 
+					    ("'<'",               "Element")],
 				action   = "immediate failure",
 				start    = start, 
 				tail     = tail,

@@ -951,11 +951,8 @@ XML qualifying spec
                        | Ref    Reference
 
 
-  sort SystemLiteral = (QuotedText | system_literal?)
+  sort SystemLiteral = QuotedText
   sort PubidLiteral  = (QuotedText | pubid_literal?)
-
-  def system_literal? quoted_text =
-    true
 
   def pubid_literal? quoted_text =
     (all? pubid_char? quoted_text.text) 	  			
