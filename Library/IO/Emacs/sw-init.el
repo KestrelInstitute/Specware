@@ -6,8 +6,7 @@
 (defun run-specware4 (&optional in-current-dir?)
   (interactive "P")
   (if (inferior-lisp-running-p)
-      (progn (lisp-pop-to-buffer *specware-buffer-name*)
-	     (goto-char (point-max)))
+      (sw:switch-to-lisp t)
     (let* ((specware4-dir (sw::normalize-filename
 			   (if in-current-dir?
 			       (strip-final-slash (if (stringp in-current-dir?)

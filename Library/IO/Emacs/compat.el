@@ -36,7 +36,14 @@
   (defvar *specware-lisp* 'allegro)
   (defvar *lisp-image-extension* "dxl")
   (define-function 'sw:exit-lisp 'fi:exit-lisp)
-  (define-function 'sw:switch-to-lisp 'fi:toggle-to-lisp)
+  (defun sw:switch-to-lisp (&optional eob-p)
+    (interactive "P")
+    (unless fi::toggle-to-lisp-last-lisp-buffer
+      (setq fi::toggle-to-lisp-last-lisp-buffer (current-buffer)))
+    (fi:toggle-to-lisp)
+    (when eob-p
+      (goto-char (point-max))))
+  ;(define-function 'sw:switch-to-lisp 'fi:toggle-to-lisp)
   (define-function 'extract-sexp 'fi:extract-list)
   (defun sw:eval-in-lisp (str &rest args)
     (ensure-specware-running)
