@@ -230,9 +230,10 @@
 ;; Should really change things in the tokenizer.
 (define-sw-parser-rule :SC-URI-ELEMENT ()
   (:anyof
-    ((:tuple (1 :NAME))  1)
-    ((:tuple "..")     "..")
-  ))
+    ((:tuple (1 :NAME))             1)
+    ((:tuple (1 :NUMBER_AS_STRING)) 1)    % e.g. ../foo/00/abc/..
+    ((:tuple "..")                  "..")
+    ))
 
 ;;; ========================================================================
 ;;;  SPEC-DEFINITION
