@@ -86,7 +86,9 @@ if [ -f bin/linux/Specware4.dxl ]; then
 		(handler-bind ((INTERRUPT-SIGNAL (function bail-out-on-signals)))
  		  (if (sw "/Applications/Specware/Specware4")
 		    (exit 0)
-		    (exit 0))) ; temporary -- change to 1 
+		    (if (find-symbol "SW-NOW-RETURNS-STATUS") ; temp hack, will become true always
+			(exit 1)     ; eventually we will always do this if SW returns NIL
+			(exit 0))))  ; temp hack until SW returns true on success
 	XXXX
         RC=$?
 else
@@ -105,7 +107,9 @@ else
 			  (load "Specware4.lisp")
 			  (if (sw "/Applications/Specware/Specware4")
 			    (exit 0)
-			    (exit 0))) ; temporary -- change to 1 
+			    (if (find-symbol "SW-NOW-RETURNS-STATUS") ; temp hack, will become true always
+				(exit 1)     ; eventually we will always do this if SW returns NIL
+				(exit 0))))  ; temp hack until SW returns true on success
 		XXXX
                 RC=$?
 	else
@@ -180,6 +184,7 @@ $LISP -batch <<-XXXX
 	    (exit signal-number)))
 	(handler-bind ((INTERRUPT-SIGNAL (function bail-out-on-signals)))
 	  (load "Specware4.lisp"))
+	(setq SW-NOW-RETURNS-STATUS t) ; temp hack -- value is irrelevant, just want to intern symbol
 	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX
 RC=$?
