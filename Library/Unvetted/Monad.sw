@@ -12,7 +12,7 @@ of Metaslang monadic-expressions like {x <- y; y <- z; p x}
 Note that monadSeq is defined here; the user of this spec
 needs to supply definitions for Monad, monadBind and return.
 Additionally, this spec introduces AND defines Kleisli type
-Arrow and ops o ("Kleisli composition"), and Monad ops map
+Arrow and op o ("Kleisli composition"), and Monad ops map
 -- the "action on arrows" of the functor Monad -- and flatten
 (generalization of List.flatten and Set.\\//)
 
