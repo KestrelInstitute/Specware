@@ -11,7 +11,7 @@ Claim qualifying spec
   sort Claim.ClaimType = AnnSpec.PropertyType
 
   % op idOf : Claim -> IdSet.Set
-  def Claim.idOf (claim_type as _,name,tyVars as _,term as _) = name  %% ### hack!
+  def Claim.idOf (claim_type as _,name : Id.Id,tyVars as _,term as _) = name  %% ### hack!
   % op ids : Claim -> IdSet.Set
   % op claimType : Claim -> ClaimType
   def Claim.claimType (claim_type,name as _,tyVars as _,term as _) = claim_type
@@ -30,17 +30,17 @@ Claim qualifying spec
   % op PropNoTypeVars.make : Id -> ClaimType -> MSlang.Term -> Claim
 
   % op makeAxiom : Id -> TypeVars -> MSlang.Term -> Claim
-  def Claim.makeAxiom      id typeVars term = (Axiom,   show id, typeVars, term)
-  def Claim.makeTheorem    id typeVars term = (Theorem, show id, typeVars, term)
-  def Claim.makeConjecture id typeVars term = (Theorem, show id, typeVars, term)
+  def Claim.makeAxiom      id typeVars term = (Axiom,   id, typeVars, term)
+  def Claim.makeTheorem    id typeVars term = (Theorem, id, typeVars, term)
+  def Claim.makeConjecture id typeVars term = (Theorem, id, typeVars, term)
 
   % op pp : Claim -> Doc
   % op show : Claim -> String
  
   def Claim.pp = ppAProperty
 
-  sort Claim.Ref = String
-  def ClaimRef.pp = String.pp
+  sort Claim.Ref = PropertyName
+  def ClaimRef.pp = ppQualifiedId
   def Claim.refOf    (claim_type as _,name,typeVars as _,term as _) = name
   def ClaimEnv.refOf (claim_type as _,name,typeVars as _,term as _) = return name
 endspec

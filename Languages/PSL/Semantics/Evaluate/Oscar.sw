@@ -124,21 +124,21 @@ They are procedures in context.
             addOp oscarSpec opInfo position
           }
       | Claim (Axiom, name, tyVars, term) -> {
-            axm <- makeAxiom (makeId name) tyVars term;
+            axm <- makeAxiom name tyVars term;
             % print ("adding axiom: " ^ name ^ "\n");
             addClaim oscarSpec axm position
           }
       | Claim (Invariant, name, tyVars, term) -> {
-            axm <- makeAxiom (makeId name) tyVars term;
+            axm <- makeAxiom name tyVars term;
             % print ("adding invariant: " ^ name ^ "\n");
             addInvariant oscarSpec axm position
           }
       | Claim (Theorem, name, tyVars, term) -> {
-            thm <- makeTheorem (makeId name) tyVars term;
+            thm <- makeTheorem name tyVars term;
             addClaim oscarSpec thm position
           }
       | Claim (Conjecture, name, tyVars, term) -> {
-            conj <- makeConjecture (makeId name) tyVars term;
+            conj <- makeConjecture name tyVars term;
             addClaim oscarSpec conj position
           }
       | Claim _ -> error "evaluateSpecElem: unsupported claim type"

@@ -57,6 +57,7 @@ AnnSpec qualifying spec
  sort AProperty     b  = PropertyType * PropertyName * TyVars * ATerm b
  sort PropertyType     = | Axiom | Theorem | Conjecture
  sort PropertyName     = QualifiedId
+ sort PropertyNames    = List PropertyName  
  
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

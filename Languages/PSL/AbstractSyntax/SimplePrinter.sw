@@ -170,11 +170,11 @@ SpecCalc qualifying spec {
           ]
 
   op AbsSynClaim.pp : fa (a) Claim a -> Pretty
-  def AbsSynClaim.pp (claimType,name,tyVars,term) =
+  def AbsSynClaim.pp (claimType, qid, tyVars,term) =
     ppConcat [
       pp claimType,
       ppString " ",
-      ppString name,
+      ppQualifiedId qid,
       ppGroup (ppIndent (ppConcat [
         ppString " is",
         ppBreak,

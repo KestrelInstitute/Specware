@@ -533,7 +533,7 @@ PE qualifying spec
   def processProcCall oscSpec transSpec newOscSpec =
     let def procInv (newOscSpec,transSpec) claim =
        case (claimType claim, idOf claim) of
-         | (Axiom, "call") -> {
+         | (Axiom, Qualified(_,"call")) -> {
              (newOscSpec,newTerm,postcondition) <- specializeProcedure oscSpec (newOscSpec,term claim);
              if traceRewriting > 0 then
                print ("specialize procedure gives " ^ (printTerm newTerm) ^ "\n") else return ();
@@ -629,7 +629,7 @@ PE qualifying spec
     let
       def procInv (newOscSpec,newBSpec,found) claim =
        case (claimType claim, idOf claim) of
-         | (Axiom, "call") -> {
+         | (Axiom, Qualified(_,"call")) -> {
              result <- specialProc oldOscSpec (newOscSpec,term claim);
              case result of
                | None -> return (newOscSpec,newBSpec,found)

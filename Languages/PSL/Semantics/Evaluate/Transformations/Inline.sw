@@ -235,8 +235,8 @@ copies fills in the calling arguments.
   op B.procCalled : Claim.Claim -> Env (Option CallInfo)
   def B.procCalled claim =
     case (claimType claim, idOf claim) of
-      | (Axiom, "call") -> {
-            (procId,callArg) <-
+      | (Axiom, Qualified(_,"call")) -> {
+  	    (procId,callArg) <-
               case (term claim) of
                 | Apply (Fun (Op (procId,fxty),procSort,pos),callArg,_) -> return (procId,callArg)
                 | _ -> raise (SpecError (noPos, "Call term: " ^ (printTerm (term claim)) ^ " is not an application"));

@@ -10,7 +10,7 @@ Claim qualifying spec
   sort Claim
   sort ClaimType
 
-  op idOf : Claim -> String   % ### Hack!!
+  op idOf : Claim -> PropertyName   
   op ids : Claim -> IdSet.Set
   op claimType : Claim -> ClaimType
   op typeVars : Claim -> TypeVars
