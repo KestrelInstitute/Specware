@@ -33,6 +33,10 @@
 (format t "~2%To test, run (test)~%")
 (format t "~%That will run (sw \"/Applications/Specware/Specware4\")~2%")
 
+;; Want the new parser to be available whether or not we do a bootstrap.
+(make-system "Library/Algorithms/Parsing/Chart/Handwritten/Lisp/")
+(make-system "Languages/SpecCalculus/Parser/Handwritten/Lisp/")
+
 (defun test ()
   (make-system "Library/Algorithms/Parsing/Chart/Handwritten/Lisp/")
   (make-system "Languages/SpecCalculus/Parser/Handwritten/Lisp/")

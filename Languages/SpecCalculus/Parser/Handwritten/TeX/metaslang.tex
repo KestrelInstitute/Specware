@@ -462,14 +462,16 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {SC\char45DECL} \> $::=$ \> \>    \grnonterminal {NAME}\  \grnonterminal {EQUALS}\  \grnonterminal {SC\char45TERM}
 \\
-\\ \grnonterminal {SC\char45WHERE} \> $::=$ \> \>    \grnonterminal {SC\char45TERM}\  \grterminal {where}\  \grnonterminal {SC\char45DECLS}\  \grterminal {end}
+\\ \grnonterminal {SC\char45WHERE} \> $::=$ \> \>    \grnonterminal {SC\char45TERM}\  \grterminal {where}\  \grterminal {\{}\  \grnonterminal {SC\char45DECLS}\  \grterminal {\}}
 \\
 \\ \grnonterminal {SC\char45TRANSLATE} \> $::=$ \> \>    \grterminal {translate}\  \grnonterminal {SC\char45TERM}\  \grterminal {by}\  \grnonterminal {SC\char45TRANSLATE\char45EXPR}
 \\
 \\ \grnonterminal {SC\char45TRANSLATE\char45EXPR} \> $::=$ \> \>   \grterminal {\{}  \grnonterminal {SC\char45TRANSLATE\char45MAP} 
 \\  \>  \>  \> \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {SC\char45TRANSLATE\char45MAP} \bnfrepeatclose  \grterminal {\}}
 \\
-\\ \grnonterminal {SC\char45TRANSLATE\char45MAP} \> $::=$ \> \>   \grnonterminal {QUALIFIABLE\char45OP\char45NAME}\\  \>  \>  \>  \grterminal {\char45\char62}  \grnonterminal {QUALIFIABLE\char45OP\char45NAME}
+\\ \grnonterminal {SC\char45TRANSLATE\char45MAP} \> $::=$ \> \>   \grnonterminal {QUALIFIABLE\char45OP\char45NAME}  \grnonterminal {MAPS\char45TO}\\  \>  \>  \>  \grnonterminal {QUALIFIABLE\char45OP\char45NAME}
+\\
+\\ \grnonterminal {MAPS\char45TO} \> $::=$ \> \> \grterminal {\char43\char45\char62}
 \\
 \\ \grnonterminal {SC\char45QUALIFY} \> $::=$ \> \>    \grnonterminal {QUALIFIER}\  \grterminal {qualifying}\  \grnonterminal {SC\char45TERM}
 \\
@@ -478,14 +480,14 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\ \grnonterminal {SC\char45DIAG\char45ELEM} \> $::=$ \> \>   \grnonterminal {SC\char45DIAG\char45NODE} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45DIAG\char45EDGE}
 \\
-\\ \grnonterminal {SC\char45DIAG\char45NODE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char124\char45\char62}\  \grnonterminal {SC\char45TERM}
+\\ \grnonterminal {SC\char45DIAG\char45NODE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grnonterminal {MAPS\char45TO}\  \grnonterminal {SC\char45TERM}
 \\
-\\ \grnonterminal {SC\char45DIAG\char45EDGE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char58}\  \grnonterminal {NAME}\  \grterminal {\char45\char62}\  \grnonterminal {NAME}\  \grterminal {\char124\char45\char62}\  \grnonterminal {SC\char45TERM}
+\\ \grnonterminal {SC\char45DIAG\char45EDGE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char58}\  \grnonterminal {NAME}\  \grterminal {\char45\char62}\  \grnonterminal {NAME}\  \grnonterminal {MAPS\char45TO}\  \grnonterminal {SC\char45TERM}
 \\
 \\ \grnonterminal {SC\char45SPEC\char45MORPH} \> $::=$ \> \>   \grterminal {morphism}  \grnonterminal {SC\char45TERM}  \grterminal {\char45\char62}  \grnonterminal {SC\char45TERM}\\  \>  \>  \>\ \ \ \ \ \ \ \ \ \ \ \   \grterminal {\{}  \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} 
 \\  \>  \>  \> \ \ \ \ \ \ \ \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \bnfrepeatclose  \grterminal {\}}
 \\
-\\ \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \> $::=$ \> \>    \grnonterminal {QUALIFIABLE\char45NAME}\  \grterminal {\char43\char45\char62}\  \grnonterminal {EXPRESSION}
+\\ \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \> $::=$ \> \>   \grnonterminal {QUALIFIABLE\char45NAME}  \grnonterminal {MAPS\char45TO}\\  \>  \>  \>  \grnonterminal {QUALIFIABLE\char45NAME}
 \\
 \\ \grnonterminal {QUALIFIABLE\char45NAME} \> $::=$ \> \>   \grnonterminal {UNQUALIFIED\char45NAME} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {QUALIFIED\char45NAME}

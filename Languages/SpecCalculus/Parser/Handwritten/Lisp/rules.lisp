@@ -1177,7 +1177,7 @@ If we want the precedence to be optional:
 ;; same as "let decls in t"
 
 (define-sw-parser-rule :SC-WHERE ()
-  (:tuple (2 :SC-TERM) "where" (1 :SC-DECLS) "end")
+  (:tuple (2 :SC-TERM) "where" "{" (1 :SC-DECLS) "}")
   (make-sc-where 1 2 ':left-lc ':right-lc))
 
 ;;; ========================================================================
@@ -1223,7 +1223,7 @@ If we want the precedence to be optional:
   (make-sc-translate-expr (list . 1) ':left-lc ':right-lc))
 
 (define-sw-parser-rule :SC-TRANSLATE-MAP ()
-  (:tuple (1 :QUALIFIABLE-OP-NAME) "->" (2 :QUALIFIABLE-OP-NAME))
+  (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
   (make-sc-translate-map 1 2 ':left-lc ':right-lc))
 
 ;;; ------------------------------------------------------------------------
@@ -1248,11 +1248,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-SPEC-MORPH ()
   (:tuple "morphism" (2 :SC-TERM) "->" (3 :SC-TERM)
-	  "{" (1 (:repeat :SC-SPEC-MORPH-ELEM ","))"}" )
+	  "{" (1 (:repeat :SC-SPEC-MORPH-ELEM ",")) "}")
   (make-sc-spec-morph 2 3 (list . 1) ':left-lc ':right-lc))
 
 (define-sw-parser-rule :SC-SPEC-MORPH-ELEM ()
-  (:tuple (1 :QUALIFIABLE-NAME) "+->" (2 :QUALIFIABLE-NAME))
+  (:tuple (1 :QUALIFIABLE-NAME) :MAPS-TO (2 :QUALIFIABLE-NAME))
   (make-sc-spec-morph-elem 1 2 ':left-lc ':right-lc))
 
 ;;; ========================================================================
@@ -1274,11 +1274,11 @@ If we want the precedence to be optional:
   1)
 
 (define-sw-parser-rule :SC-DIAG-NODE ()
-  (:tuple (1 :NAME) "|->" (2 :SC-TERM))
+  (:tuple (1 :NAME) :MAPS-TO (2 :SC-TERM))
   (make-sc-diag-node 1 2 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :SC-DIAG-EDGE ()
-  (:tuple (1 :NAME) ":" (2 :NAME) "->" (3 :NAME) "|->" (4 :SC-TERM))
+  (:tuple (1 :NAME) ":" (2 :NAME) "->" (3 :NAME) :MAPS-TO (4 :SC-TERM))
   (make-sc-diag-edge 1 2 3 4 ':left-lc ':right-lc))
 
 ;;; ========================================================================
@@ -1303,3 +1303,7 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :SC-GENERATE ()
   (:tuple "generate" (1 :NAME) (2 :SC-TERM) (:optional (:tuple "in" (3 :STRING))))
   (make-sc-generate 1 2 3 ':left-lc ':right-lc))
+
+(define-sw-parser-rule :MAPS-TO ()
+  (:tuple "+->")
+)
