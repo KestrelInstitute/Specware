@@ -22,7 +22,7 @@ SpecCalc qualifying spec {
   op showValue : Value -> String
   def showValue value = ppFormat (ppValue value)
 
-  op ppValue : Value -> Doc
+%  op ppValue : Value -> Doc
   def ppValue value =
     case value of
       | Spec    spc           -> ppString (printSpec spc)
