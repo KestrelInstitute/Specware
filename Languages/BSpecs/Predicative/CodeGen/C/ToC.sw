@@ -189,23 +189,6 @@ is suffices for now.
             | ((Guard leftGuard)::[], (Guard rightGuard)::[]) -> Nop
             | ((Guard leftGuard)::leftBlock, (Guard rightGuard)::[]) ->
                  (case (leftGuard,rightGuard) of
-                    | (Apply(Fun(Op(Imported("Boolean","~"),_),_),newLeft),_) ->
-                        if newLeft = rightGuard then
-                          let cGuard = termToCExp (codeGenInfo,spc,leftGuard) in
-                          let leftCode = abstCodeToCStmts codeGenInfo spc leftBlock in
-                          (IfThen (cGuard,Block ([],leftCode)))
-                        else
-                          fail "abstStmtToCStmt: left guard not syntactic negation of right"
-                    | (_,Apply(Fun(Op(Imported("Boolean","~"),_),_),newRight)) ->
-                        if leftGuard = newRight then
-                          let cGuard = termToCExp (codeGenInfo,spc,leftGuard) in
-                          let leftCode = abstCodeToCStmts codeGenInfo spc leftBlock in
-                          (IfThen (cGuard,Block ([],leftCode)))
-                        else
-                          fail "abstBlockToCStmts: right guard not syntactic negation of left"
-                    | _ -> fail "abstBlockToCStmts: neither guard in branch is negated")
-            | ((Guard leftGuard)::leftBlock, (Guard rightGuard)::[]) ->
-                 (case (leftGuard,rightGuard) of
                     | (Apply(Fun(Not,_),newLeft),_) ->
                         if newLeft = rightGuard then
                           let cGuard = termToCExp (codeGenInfo,spc,leftGuard) in
@@ -223,23 +206,6 @@ is suffices for now.
                     | _ -> fail "abstBlockToCStmts: neither guard in branch is negated")
             | ((Guard leftGuard)::[], (Guard rightGuard)::rightBlock) ->
                  (case (leftGuard,rightGuard) of
-                    | (Apply(Fun(Op(Imported("Boolean","~"),_),_),newLeft),_) ->
-                        if newLeft = rightGuard then
-                          let cGuard = termToCExp (codeGenInfo,spc,rightGuard) in
-                          let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
-                          (IfThen (cGuard,Block ([],rightCode)))
-                        else
-                          fail "abstStmtToCStmt: left guard not syntactic negation of right"
-                    | (_,Apply(Fun(Op(Imported("Boolean","~"),_),_),newRight)) ->
-                        if leftGuard = newRight then
-                          let cGuard = termToCExp (codeGenInfo,spc,rightGuard) in
-                          let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
-                          (IfThen (cGuard,Block ([],rightCode)))
-                        else
-                          fail "abstBlockToCStmts: right guard not syntactic negation of left"
-                    | _ -> fail "abstBlockToCStmts: neither guard in branch is negated")
-            | ((Guard leftGuard)::[], (Guard rightGuard)::rightBlock) ->
-                 (case (leftGuard,rightGuard) of
                     | (Apply(Fun(Not, _),newLeft), _) ->
                         if newLeft = rightGuard then
                           let cGuard = termToCExp (codeGenInfo,spc,rightGuard) in
@@ -252,25 +218,6 @@ is suffices for now.
                           let cGuard = termToCExp (codeGenInfo,spc,rightGuard) in
                           let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
                           (IfThen (cGuard,Block ([],rightCode)))
-                        else
-                          fail "abstBlockToCStmts: right guard not syntactic negation of left"
-                    | _ -> fail "abstBlockToCStmts: neither guard in branch is negated")
-            | ((Guard leftGuard)::leftBlock, (Guard rightGuard)::rightBlock) ->
-                 (case (leftGuard,rightGuard) of
-                    | (Apply(Fun(Op(Imported("Boolean","~"),_),_),newLeft),_) ->
-                        if newLeft = rightGuard then
-                          let cGuard = termToCExp (codeGenInfo,spc,rightGuard) in
-                          let leftCode = abstCodeToCStmts codeGenInfo spc leftBlock in
-                          let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
-                          (If (cGuard,Block ([],rightCode),Block ([],leftCode)))
-                        else
-                          fail "abstStmtToCStmt: left guard not syntactic negation of right"
-                    | (_,Apply(Fun(Op(Imported("Boolean","~"),_),_),newRight)) ->
-                        if leftGuard = newRight then
-                          let cGuard = termToCExp (codeGenInfo,spc,leftGuard) in
-                          let leftCode = abstCodeToCStmts codeGenInfo spc leftBlock in
-                          let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
-                          (If (cGuard,Block ([],leftCode),Block ([],rightCode)))
                         else
                           fail "abstBlockToCStmts: right guard not syntactic negation of left"
                     | _ -> fail "abstBlockToCStmts: neither guard in branch is negated")
@@ -301,7 +248,7 @@ is suffices for now.
 
 The operator \verb+generateVarDefns+ takes a spec and generates the corresponding variable declarations for the operations. Current restrictions:
 \begin{itemize}
-\item operator may only have primitive sorts "Nat", "Integer", "Boolean", "Char", "String";
+\item operator may only have primitive sorts "Nat", "Integer", "Char", "String";
 \item operators with arrow sorts are not allowed;
 \item sort definitions are ignored.
 \end{itemize}
@@ -366,10 +313,10 @@ regarded.
 \begin{spec}
   op varSortToType0: Sort_ms -> Option Type
   def varSortToType0 srt =
-    case srt
-      of  Base (Imported("Nat","Nat"),[]) -> Some Int
+    case srt of
+       |  Boolean _ -> Some Int
+       |  Base (Imported("Nat","Nat"),[]) -> Some Int
        |  Base (Imported("Integer","Integer"),[]) -> Some Int
-       |  Base (Imported("Boolean","Boolean"),[]) -> Some Int
        |  Base (Imported("Char","Char"),[]) -> Some Char
        |  Base (Imported("String","String"),[]) -> Some (Ptr(Char))
        |  Base (Local(id),_) -> Some (Base(id))
@@ -460,8 +407,6 @@ The operator "getConjList" takes a term of the form "$a_1 \wedge a_2 \wedge
   op getConjList: PTerm -> List PTerm
   def getConjList(t) =
     case t of
-      | Apply(Fun(Op(Imported("Boolean","&"),_),_),Record [(_,t1),(_,term)])
-             -> List.concat(getConjList t1,getConjList(term))
       | Apply(Fun(And,_),Record [(_,t1),(_,term)])
              -> List.concat(getConjList t1,getConjList(term))
       | _   -> [t]
@@ -736,9 +681,6 @@ pendant on the C side.
       | Op (Imported("Integer","<="),_) -> Binary Le
       | Op (Imported("Integer",">"),_) -> Binary Gt
       | Op (Imported("Integer",">="),_) -> Binary Ge
-      | Op (Imported("Boolean","~"),_) -> Unary LogNot
-      | Op (Imported("Boolean","&"),_) -> Binary LogAnd
-      | Op (Imported("Boolean","or"),_) -> Binary LogOr
       | Not       -> Unary  LogNot
       | And       -> Binary LogAnd
       | Or        -> Binary LogOr
@@ -925,7 +867,6 @@ from an auxiliary update of the form $x = x_0$.
 
         \begin{spec}
           % def natSort = Base (Imported ("Nat","Nat"), []) : Sort_ms
-          % def boolSort = Base (Imported ("Boolean","Boolean"), []) : Sort_ms
 
           def compSort =
             Arrow (mkProduct_ms [natSort_ms, natSort_ms], boolSort_ms) : Sort_ms
@@ -958,9 +899,9 @@ from an auxiliary update of the form $x = x_0$.
         \begin{spec}
           op conjList : List PTerm -> PTerm
           def conjList l = case l of
-              [] -> Fun (Bool true, boolSort_ms)
+	    | [] -> Fun (Bool true, boolSort_ms)
             | h::[] -> h
-            | h::t -> Apply (impOp ("Boolean","&") conjSort, mkTuple_ms [h, conjList t])
+            | h::t -> Apply (Fun (And, conjSort), mkTuple_ms [h, conjList t])
         \end{spec}
 
         \begin{spec}

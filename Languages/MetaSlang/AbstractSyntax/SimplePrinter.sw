@@ -407,7 +407,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ^ (anyToString any)
               ^ "'")
 
-  def omittedQualifiers = ["Boolean","Integer","Nat","Double","List","String","Char"]
+  def omittedQualifiers = ["Integer","Nat","Double","List","String","Char"]  % "Integer_" "Option" ...?
 
   op ppQualifiedId : QualifiedId -> Pretty
   def ppQualifiedId (Qualified (qualifier,id)) =
@@ -535,7 +535,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
              ppSep (ppString ",") (map ppASort srts),
              ppString ")"
            ]
-      | Boolean _ -> ppString "Boolean"
+      | Boolean _ -> ppString "Boolean"  
       | TyVar (tyVar,_) -> ppString tyVar
       | MetaTyVar (tyVar,_) -> 
          let ({link, uniqueId, name}) = ! tyVar in

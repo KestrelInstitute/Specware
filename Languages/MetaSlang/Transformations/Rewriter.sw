@@ -91,22 +91,11 @@ spec MetaSlangRewriter
      bound(Forall:Binder,0,term,[],[]) in
    let (condition,fml) = 
 	case formula of
-	  | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
-		   Record([(_,M),(_,N)], _),_) -> 
-	     (Some (substitute(M,S)),N)
 	  | Apply(Fun(Implies, _,_), Record([(_,M),(_,N)], _),_) -> 
 	     (Some (substitute(M,S)),N)
 	  | _ -> (None,formula)
    in
    case fml of
-     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),p,_) ->
-        let rhs = mkFalse() in
-	if p = rhs then []
-	else
-        [freshRule(context,
-		   {name      = desc,   condition = condition,
-		    lhs       = p,      rhs       = mkFalse(),
-		    tyVars    = [],     freeVars  = freeVars})]
      | Apply(Fun(Not, _,_), p,_) ->
         let rhs = mkFalse() in
 	if p = rhs then []
@@ -127,8 +116,6 @@ spec MetaSlangRewriter
 
  def negate term =
    case term of
-     | Apply(Fun(Op(Qualified("Boolean","~"), _),_,_), p,                        _) -> p
-     | Apply(Fun(Op(Qualified("Boolean","or"),_),_,_), Record([(_,M),(_,N)], _), _) -> Utilities.mkAnd(negate M,negate N)
      | Apply (Not, p,                        _) -> p
      | Apply (Or,  Record([(_,M),(_,N)], _), _) -> Utilities.mkAnd(negate M,negate N)
      | _ -> mkNot term

@@ -125,13 +125,8 @@ spec
 
   op  knownSideEffectFreeQIds: List(Qualifier * Id)
   def knownSideEffectFreeQIds =
-    [% ("Boolean","&"),
-     % ("Boolean","~"),
-     % ("Boolean","or"),
-     % ("Boolean","=>"),
-     % ("Boolean","<=>"),
-     % ("Boolean","~="),
-     ("Integer","~"),
+    [("Integer", "~"),  % TODO: deprecate
+     ("Integer_","-"),
      ("Integer","+"),
      ("Integer","<"),
      ("Integer",">"),

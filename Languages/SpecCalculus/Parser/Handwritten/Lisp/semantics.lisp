@@ -168,7 +168,6 @@
 		*internal-parser-position*)))
 
 (defparameter char-sort   (make-internal-sort "Char"    ))
-;(defparameter bool-sort   (make-internal-sort "Boolean" ))
 (defparameter string-sort (make-internal-sort "String"  ))
 (defparameter int-sort    (make-internal-sort "Integer" ))
 (defparameter nat-sort    (make-internal-sort "Nat"     ))
@@ -394,7 +393,7 @@ If we want the precedence to be optional:
 
 (defun make-sort-ref (qualifiable-sort-name l r)
   (if (or (equal qualifiable-sort-name '(:|Qualified| "<unqualified>" . "Boolean"))
-	  (equal qualifiable-sort-name '(:|Qualified| "Boolean" . "Boolean")))
+	  (equal qualifiable-sort-name '(:|Qualified| "Boolean" . "Boolean")))      ; Deprecate "Boolean" as qualifier?
       (cons :|Boolean| (make-pos l r))
     (let ((sort-args nil))
       (cons :|Base|
@@ -478,7 +477,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-two-name-expression (name-1 name-2 l r)
-  (make-fun (cond ((equal name-1 "Boolean")
+  (make-fun (cond ((equal name-1 "Boolean")  ; Deprecate "Boolean" as qualifier?
 		   (cond ((equal name-2 "~")   (cons :|Not|     (make-pos l r)))
 			 ((equal name-2 "&")   (cons :|And|     (make-pos l r))) ; soon to be deprecated ...
 			 ((equal name-2 "&&")  (cons :|And|     (make-pos l r)))

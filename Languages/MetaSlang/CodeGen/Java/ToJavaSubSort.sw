@@ -13,6 +13,7 @@ def mkSubSortTypeClsDecl(id, _(*superSortId*), subSortFieldDecls, subSortMethodD
 op subSortToClsDecls: Id * Sort * MS.Term * Spec -> List ClsDecl * Collected
 def subSortToClsDecls(id, superSort, pred, spc) =
   case superSort of
+    % TODO: add case for Boolean [but sort of weird to have subsort of Boolean]
     | Base (Qualified (q, superSortId), _, b) ->
     (case pred of
        | Fun (Op (Qualified (q, predId), fix) , superSort, _) ->

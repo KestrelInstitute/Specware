@@ -68,11 +68,6 @@ MSToFM qualifying spec
     case f of
       | Op (Qualified (q, id), _) ->
       (case (q, id) of
-	 | ("Boolean", "~") -> true
-	 | ("Boolean", "&") -> true
-	 | ("Boolean", "or") -> true
-	 | ("Boolean", "=>") -> true
-	 | ("Boolean", "<=>") -> true
 	 | ("Nat",     "<=") -> true
 	 | ("Integer", "<=") -> true
 	 | ("Nat",     ">=") -> true
@@ -84,6 +79,11 @@ MSToFM qualifying spec
 	 | ("Nat",     "*") -> true
 	 | ("Integer", "*") -> true
 	 | _ -> false)
+       | Not     -> true
+       | And     -> true
+       | Or      -> true
+       | Implies -> true
+       | Iff     -> true
        | _ -> false
 
   op fmInterpFun: Fun -> ((List FMTerm) -> FMTerm)
@@ -91,11 +91,6 @@ MSToFM qualifying spec
     case f of
       | Op (Qualified (q, id), _) ->
       (case (q, id) of
-	 | ("Boolean", "~") -> (fn ([a]) -> fmNot(a))
-	 | ("Boolean", "&") -> (fn ([a1, a2]) -> fmConjunct(a1, a2))
-	 | ("Boolean", "or") -> (fn ([a1, a2]) -> fmDisjunct(a1, a2))
-	 | ("Boolean", "=>") -> (fn ([a1, a2]) -> fmImpl(a1, a2))
-	 | ("Boolean", "<=>") -> (fn ([a1, a2]) -> fmEquiv(a1, a2))
 	 | ("Nat",     "<=") -> (fn ([a1, a2]) -> fmLtEq(a1, a2))
 	 | ("Integer", "<=") -> (fn ([a1, a2]) -> fmLtEq(a1, a2))
 	 | ("Nat",     ">=") -> (fn ([a1, a2]) -> fmGtEq(a1, a2))
@@ -108,6 +103,11 @@ MSToFM qualifying spec
 	 | ("Integer", "+") -> (fn ([a1, a2]) -> fmPlus(a1, a2))
 	 | ("Nat",     "*") -> (fn ([a1, a2]) -> fmTimes(a1, a2))
 	 | ("Integer", "*") -> (fn ([a1, a2]) -> fmTimes(a1, a2)))
+       | Not     -> (fn ([a]) -> fmNot(a))
+       | And     -> (fn ([a1, a2]) -> fmConjunct(a1, a2))
+       | Or      -> (fn ([a1, a2]) -> fmDisjunct(a1, a2))
+       | Implies -> (fn ([a1, a2]) -> fmImpl(a1, a2))
+       | Iff     -> (fn ([a1, a2]) -> fmEquiv(a1, a2))
 
   op fmNot: FMTerm -> FMTerm
   def fmNot(tm) =

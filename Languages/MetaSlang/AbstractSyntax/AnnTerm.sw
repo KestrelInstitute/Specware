@@ -33,10 +33,10 @@ MetaSlang qualifying spec {
  def fa (a) mkAQualifiedId   (qualifier, id, x : a) = (Qualified (qualifier,   id), x)
 
  %% These are used by translation, morphism code
- def unqualified_Boolean = mkUnQualifiedId "Boolean"
- def Boolean_Boolean     = mkQualifiedId ("Boolean", "Boolean")
- def syntactic_qid? (Qualified(q,id)) = 
-   if q = "Boolean" or q = UnQualified then
+ def unqualified_Boolean = mkUnQualifiedId "Boolean"               % used by translate
+ def Boolean_Boolean     = mkQualifiedId ("Boolean", "Boolean")    % used by translate
+ def syntactic_qid? (Qualified(q,id)) =                            % used by translate, morphism
+   if q = "Boolean" or q = UnQualified then                        % used by translate, morphism
      (case id of
 	| "~"   -> true
 	| "&"   -> true  % TODO: deprecate

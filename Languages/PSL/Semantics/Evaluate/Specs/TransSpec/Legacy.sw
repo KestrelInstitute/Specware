@@ -233,22 +233,6 @@ for lists.
             }
       def visitConjunct modeSpec formula =
         (case formula of
-          | Apply (Fun (Op (Qualified ("Boolean","&"),fxty),srt,funPos),
-                   Record([(M_fld,M),(N_fld,N)], recPos),applPos) -> {
-                     % print ("normalize: conjunction = " ^ (show formula) ^ "\n"); % " (" ^ (anyToString formula) ^ ")\n");
-                     (newModeSpec,newM) <- visitConjunct modeSpec M;
-                     (newModeSpec,newN) <- visitConjunct newModeSpec N;
-                     newTerm <-
-                       return (case (newM,newN) of
-                         | (Fun (Bool b1,srt,pos), Fun (Bool b2,_,_)) -> Fun (Bool (b1 & b2),srt,pos)
-                         | (Fun (Bool b,_,_), _) -> if b then newN else newM
-                         | (_, Fun (Bool b,_,_)) -> if b then newM else newN
-                         | _ ->
-                             Apply (Fun (Op (Qualified("Boolean","&"),fxty),srt,funPos),
-                                    Record([(M_fld,newM),(M_fld,newN)],
-                                    recPos),applPos));
-                     return (newModeSpec,newTerm)
-                   }
           | Apply (Fun (And,srt,funPos),
                    Record([(M_fld,M),(N_fld,N)], recPos),applPos) -> {
                      % print ("normalize: conjunction = " ^ (show formula) ^ "\n"); % " (" ^ (anyToString formula) ^ ")\n");

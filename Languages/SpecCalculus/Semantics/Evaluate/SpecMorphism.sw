@@ -80,14 +80,14 @@ coherence conditions of the morphism elements.
               }
           | _ -> 
 	    case (qid, dom_defs) of
-	      %% qualified names such as   Qualified ("Boolean", "Boolean")
+	      %% qualified names such as   Qualified ("Boolean", "Boolean")  % TODO: Deprecate "Boolean" as qualifier?
 	      %% may appear in codomain of mapping, but actually refer to built-in sort
-	      | (Qualified ("<unqualified>", "Boolean"), []) -> return Boolean_Boolean
-	      | (Qualified ("Boolean",       "Boolean"), []) -> return qid
+	      | (Qualified ("<unqualified>", "Boolean"), []) -> return Boolean_Boolean  % TODO: Deprecate "Boolean" as qualifier?
+	      | (Qualified ("Boolean",       "Boolean"), []) -> return qid              % TODO: Deprecate "Boolean" as qualifier?
 	      | (Qualified ("<unqualified>", "Boolean"), _) -> 
 	        raise (MorphError (position, "Cannot map defined sort " ^ (explicitPrintQualifiedId dom_qid) ^ " to Boolean"))
-	      | (Qualified ("Boolean",       "Boolean"), _) -> 
-	        raise (MorphError (position, "Cannot map defined sort " ^ (explicitPrintQualifiedId dom_qid) ^ " to Boolean.Boolean"))
+	      | (Qualified (q,               "Boolean"), _) -> 
+	        raise (MorphError (position, "Cannot map defined sort " ^ (explicitPrintQualifiedId dom_qid) ^ " to " ^ q ^ ".Boolean"))
 	      | _ ->
 	        raise (MorphError (position, "Unrecognized target sort " ^ (explicitPrintQualifiedId qid)))
 

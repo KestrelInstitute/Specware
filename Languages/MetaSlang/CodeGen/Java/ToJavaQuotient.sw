@@ -10,6 +10,7 @@ def mkQuotientTypeClsDecl(id, fieldDecls, methodDecls, constrDecls) =
 op quotientToClsDecls: Id * Sort * MS.Term * Spec -> List ClsDecl * Collected
 def quotientToClsDecls(id, superSort, quotientPred, spc) =
   case superSort of
+  %% TODO: add case for Boolean 
   | Base (Qualified (q, superSortId), _, b) ->
   (case quotientPred of
    | Fun (Op (Qualified (q, quotientPredId), fix) , _, _) ->

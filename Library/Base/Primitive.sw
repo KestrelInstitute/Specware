@@ -35,7 +35,7 @@ spec
   sort Integer.Integer
   op Integer.~ : Integer.Integer -> Integer.Integer
   op Integer.+ infixl 25 : Integer.Integer * Integer.Integer -> Integer.Integer
-  op Integer.<= infixl 20 : Integer.Integer * Integer.Integer -> Boolean.Boolean
+  op Integer.<= infixl 20 : Integer.Integer * Integer.Integer -> Boolean
 
   sort Nat.Nat = {n : Integer.Integer | 0 Integer.<= n}
                  % the definition of Nat.Nat as a subsort of Integer.Integer

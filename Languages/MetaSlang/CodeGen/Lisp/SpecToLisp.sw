@@ -254,45 +254,16 @@ def mkLEqualityOp(sp,srt) =
                     then " = "
                   else
                   (case stripSubsorts(sp,s) of
-		      %| (Base (Qualified("Boolean","Boolean"),_,_)) -> "eq"
-                      %| (Base (Local("Boolean"),_,_)) -> "eq"
 		      | Boolean _ -> "eq"
                       | (Base (Qualified("Nat","Nat"),_,_)) -> " = "
-                      %| (Base (Local "Nat",_,_)) -> " = "
+                     %| (Base (Local "Nat",_,_)) -> " = "
                       | (Base (Qualified("Integer","Integer"),_,_)) -> " = "
-                      %| (Base (Local "Integer",_,_)) -> " = "
+                     %| (Base (Local "Integer",_,_)) -> " = "
                       | (Base (Qualified("String","String"),_,_)) -> "string= "
                       | (Base (Qualified("Char","Char"),_,_)) -> "eq"
                       | _ -> "slang-built-in::slang-term-equals-2")
              | _ -> "slang-built-in::slang-term-equals-2")
         | _ -> "slang-built-in::slang-term-equals-2" 
-
-% Special translation for boolean ops that are not strict in
-% the r.h.s. parameter when applied directly in an infix application
-%
-op  isSpecialBoolOpAppl : QualifiedId * MS.Term -> Boolean
-
-def isSpecialBoolOpAppl (id,term) =
-      (case id
-       of Qualified("Boolean",n) -> member(n,["&","or","=>"])
-	|  _                       -> false)
-    & (case term
-         of Record([_,_],_) -> true
-	  | _               -> false)
-
-op  mkLSpecialBoolOpAppl : Spec * String * StringSet.Set * QualifiedId * MS.Term -> LispTerm
-
-def mkLSpecialBoolOpAppl (sp,dpn,vars,Qualified("Boolean",n),Record([(_,x),(_,y)],_)) =
-    let (LOp,LOplOpt) = case n
-                 of "&"  -> ("cl:and",None)
-		  | "or" -> ("cl:or", None)
-		  | "=>" -> ("cl:or", Some "cl:not") in
-    let argl = mkLTerm(sp,dpn,vars,x) in
-    let argr = mkLTerm(sp,dpn,vars,y) in
-    let argl1 = (case LOplOpt
-                  of Some LOpl -> mkLApply(mkLOp "cl:not",[argl])
-		   | None       -> argl) in
-    mkLApply(mkLOp LOp,[argl1,argr])
 
 op  mkLTermOp : fa(a) Spec * String * StringSet.Set * (Fun * Sort * a)
                        * Option(MS.Term) -> LispTerm
@@ -398,9 +369,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
 	    then mkLUnaryFnRef(pid,arity,vars)
 	  else Const(Parameter pid)
 	| Some term ->
-	  if isSpecialBoolOpAppl(id,term)
-	    then mkLSpecialBoolOpAppl(sp,dpn,vars,id,term)
-	  else mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term)))
+	  mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term)))
    | (Embed(id,true),srt,_) ->
      let rng = range(sp,srt) in
      (case isConsDataType(sp,rng) of

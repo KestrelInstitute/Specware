@@ -159,8 +159,7 @@ spec
         (if member(spName,evalQualifiers)
 	  then (case a
 		  of RecordVal(fields) ->
-		     (if (all (fn (_,tm) -> evalConstant?(tm)) fields)
-			 or spName = "Boolean"
+		     (if (all (fn (_,tm) -> evalConstant?(tm)) fields) % or spName = "Boolean"
 		       then attemptEvaln(opName,fields,ft)
 		       else Unevaluated(mkApply(ft,valueToTerm a)))
 		    | _ -> (if evalConstant? a
@@ -384,7 +383,7 @@ spec
       
 
   %% Evaluation of constant terms
-  def evalQualifiers = ["Nat","Integer","Integer_","String","Boolean","Char","System"]
+  def evalQualifiers = ["Nat","Integer","Integer_","String","Char","System"] % "Boolean"
   def evalConstant?(v) =
     case v
       of Unevaluated _ -> false
@@ -497,56 +496,54 @@ spec
        | "lt"  -> Bool(lt( stringVals fields))
        | "sub" -> Char(sub(stringIntVals fields))
 
-       %% Boolean operations are non-strict
-       %% Should it be non-strict in first argument as well as second?
-       | "&"   ->
-	 (case fields of
-	    | [(_,Bool x),(_,Bool y)] -> Bool(x & y)
-	    | [(_,Bool false),(_,_)]  -> Bool false
-	    | [(_,_),(_,Bool false)]  -> Bool false
-	    | [(_,ut),(_,Bool true)]  -> ut
-	    | [(_,Bool true),(_,ut)]  -> ut
-	    | _                       -> default())
-       | "or"  ->
-	 (case fields of
-	    | [(_,Bool x),(_,Bool y)] -> Bool(x or y)
-	    | [(_,Bool true),(_,_)]   -> Bool true
-	    | [(_,_),(_,Bool true)]   -> Bool true
-	    | [(_,ut),(_,Bool false)] -> ut
-	    | [(_,Bool false),(_,ut)] -> ut
-            | [(_,Unevaluated x),(_,Unevaluated y)] ->
-               (case (x,y) of
-                  | (Apply (Fun (Op (Qualified (_,"~"),fxty),srt,pos1), lhs, pos2), rhs) ->
-                      if equalTerm? (lhs,rhs) then
-                        Bool true
-                      else
-                        default ()
-                  | (lhs, Apply (Fun (Op (Qualified (_,"~"),fxty),srt,pos1), rhs, pos2)) ->
-                      if equalTerm? (lhs,rhs) then
-                        Bool true
-                      else
-                        default ()
-                  | _ -> default ())
-  	    | _                    -> default())
-
-       | "=>"  ->
-	 (case fields of
-	    | [(_,Bool x),(_,Bool y)] -> Bool(x => y)
-	    | [(_,Bool false),(_,_)]  -> Bool true
-	    | [(_,_),(_,Bool true)]   -> Bool true
-	    | [(_,Unevaluated t),(_,Bool false)] -> Unevaluated(mkNot(t))
-	    | [(_,Bool true),(_,ut)]  -> ut
-	    | _                       -> default())
-       | "<=>"  ->
-	 (case fields of
-	    | [(_,Bool x),(_,Bool y)] -> Bool(x <=> y)
-	    | [(_,Bool false),(_,Unevaluated t)] -> Unevaluated(mkNot(t))
-	    | [(_,Unevaluated t),(_,Bool false)] -> Unevaluated(mkNot(t))
-	    | [(_,ut),(_,Bool true)]  -> ut
-	    | [(_,Bool true),(_,ut)]  -> ut
-	    | _                       -> default())
-
-       %| "trueFilePath" -> 
+    % %% Boolean operations are non-strict
+    %% %% Should it be non-strict in first argument as well as second?
+    %% | "&"   ->
+    %%  (case fields of
+    %%     | [(_,Bool x),(_,Bool y)] -> Bool(x & y)
+    %%     | [(_,Bool false),(_,_)]  -> Bool false
+    %%     | [(_,_),(_,Bool false)]  -> Bool false
+    %%     | [(_,ut),(_,Bool true)]  -> ut
+    %%     | [(_,Bool true),(_,ut)]  -> ut
+    %%     | _                       -> default())
+    %%  | "or"  ->
+    %%  (case fields of
+    %%     | [(_,Bool x),(_,Bool y)] -> Bool(x or y)
+    %%     | [(_,Bool true),(_,_)]   -> Bool true
+    %%     | [(_,_),(_,Bool true)]   -> Bool true
+    %%     | [(_,ut),(_,Bool false)] -> ut
+    %%     | [(_,Bool false),(_,ut)] -> ut
+    %%     | [(_,Unevaluated x),(_,Unevaluated y)] ->
+    %%        (case (x,y) of
+    %%           | (Apply (Fun (Op (Qualified (_,"~"),fxty),srt,pos1), lhs, pos2), rhs) ->
+    %%               if equalTerm? (lhs,rhs) then
+    %%                 Bool true
+    %%               else
+    %%                 default ()
+    %%           | (lhs, Apply (Fun (Op (Qualified (_,"~"),fxty),srt,pos1), rhs, pos2)) ->
+    %%               if equalTerm? (lhs,rhs) then
+    %%                 Bool true
+    %%               else
+    %%                 default ()
+    %%           | _ -> default ())
+    %%     | _                    -> default())
+    %% 
+    %%  | "=>"  ->
+    %%  (case fields of
+    %%     | [(_,Bool x),(_,Bool y)] -> Bool(x => y)
+    %%     | [(_,Bool false),(_,_)]  -> Bool true
+    %%     | [(_,_),(_,Bool true)]   -> Bool true
+    %%     | [(_,Unevaluated t),(_,Bool false)] -> Unevaluated(mkNot(t))
+    %%     | [(_,Bool true),(_,ut)]  -> ut
+    %%     | _                       -> default())
+    %% | "<=>"  ->
+    %%  (case fields of
+    %%     | [(_,Bool x),(_,Bool y)] -> Bool(x <=> y)
+    %%     | [(_,Bool false),(_,Unevaluated t)] -> Unevaluated(mkNot(t))
+    %%     | [(_,Unevaluated t),(_,Bool false)] -> Unevaluated(mkNot(t))
+    %%     | [(_,ut),(_,Bool true)]  -> ut
+    %%     | [(_,Bool true),(_,ut)]  -> ut
+    %%     | _                       -> default())
 
        | _     -> default()
 

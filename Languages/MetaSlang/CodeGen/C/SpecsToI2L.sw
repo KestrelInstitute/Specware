@@ -173,12 +173,11 @@ SpecsToI2L qualifying spec {
     %let _ = String.writeLine(printSort(srt)^"-[unfold]->"^printSort(usrt)) in
     case usrt of
       % primitives ----------------------------------------------
+      | Boolean _  -> Primitive "Boolean"
       | Base(Qualified(_,"Nat"),[],_) -> Primitive "Nat"
       | Base(Qualified(_,"Integer"),[],_) -> Primitive "Integer"
       | Base(Qualified(_,"Char"),[],_) -> Primitive "Char"
       | Base(Qualified(_,"String"),[],_) -> Primitive "String"
-      | Base(Qualified(_,"Boolean"),[],_) -> Primitive "Boolean"
-      | Boolean _  -> Primitive "Boolean"
       %| Base(Qualified(_,"Float"),[],_) -> Primitive "Float"
 
       % reference type
@@ -427,12 +426,11 @@ SpecsToI2L qualifying spec {
 		 unfoldBaseKeepPrimitives (sp, ssrt)
 	     in
 	       (case srt of
+		 | Boolean _ -> srt
 		 | Base(Qualified("Nat","Nat"),[],_) -> srt
 		 | Base(Qualified("Integer","Integer"),[],_) -> srt
 		 | Base(Qualified("Char","Char"),[],_) -> srt
 		 | Base(Qualified("String","String"),[],_) -> srt
-		 | Base(Qualified("Boolean","Boolean"),[],_) -> srt
-		 | Boolean _ -> srt
 		 | Base(Qualified("List","List"),[psrt],X) ->
 		   let upsrt = unfoldBaseKeepPrimitives(sp,psrt) in
 		   Base(Qualified("List","List"),[upsrt],X)
@@ -823,12 +821,11 @@ SpecsToI2L qualifying spec {
     let srt = inferType(spc,t1) in
     let usrt = unfoldStripSort(spc,srt,false) in
     case usrt of
+      | Boolean _ -> primEq()
       | Base(Qualified(_,"Nat"),[],_) -> primEq()
       | Base(Qualified(_,"Integer"),[],_) -> primEq()
       | Base(Qualified(_,"Char"),[],_) -> primEq()
-      | Base(Qualified(_,"Boolean"),[],_) -> primEq()
-      | Boolean _ -> primEq()
-      %| Base(Qualified(_,"Float"),[],_) -> primEq()
+     %| Base(Qualified(_,"Float"),[],_) -> primEq()
       | Base(Qualified(_,"String"),[],_) -> Builtin(StrEquals(t2e t1,t2e t2))
       | _ ->
         let srt = foldSort(spc,termSort t1) in
@@ -977,26 +974,6 @@ SpecsToI2L qualifying spec {
       | (Fun(Op(Qualified("Nat",">="),_),_,_),[t1,t2])
         -> let (e1,e2) = (t2e t1,t2e t2) in
 	   Some(Builtin(IntGreaterOrEqual(e1,e2)))
-
-      | (Fun(Op(Qualified("Boolean","&"),_),_,_),[t1,t2])
-        -> let (e1,e2) = (t2e t1,t2e t2) in
-	   Some(Builtin(BoolAnd(e1,e2)))
-      | (Fun(Op(Qualified("Boolean","or"),_),_,_),[t1,t2])
-        -> let (e1,e2) = (t2e t1,t2e t2) in
-	   Some(Builtin(BoolOr(e1,e2)))
-      | (Fun(Op(Qualified("Boolean","=>"),_),_,_),[t1,t2])
-        -> let (e1,e2) = (t2e t1,t2e t2) in
-	   Some(Builtin(BoolImplies(e1,e2)))
-      | (Fun(Op(Qualified("Boolean","<=>"),_),_,_),[t1,t2])
-        -> let (e1,e2) = (t2e t1,t2e t2) in
-	   Some(Builtin(BoolEquiv(e1,e2)))
-      | (Fun(Op(Qualified("Boolean","~="),_),_,_),[t1,t2])
-        -> let (e1,e2) = (t2e t1,t2e t2) in
-	   let eqterm = (Builtin(Equals(e1,e2)),Primitive "Boolean") in
-	   Some(Builtin(BoolNot(eqterm)))
-      | (Fun(Op(Qualified("Boolean","~"),_),_,_),[t1])
-        -> let e1 = t2e t1 in
-	   Some(Builtin(BoolNot(e1)))
 
       | (Fun(Not,_,_),[t1])
         -> let e1 = t2e t1 in

@@ -1015,7 +1015,6 @@ Utilities qualifying spec
  op  getConjuncts: fa(a) ATerm a -> List (ATerm a)
  def getConjuncts t =
    case t of
-     % | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),	     Record([("1",p),("2",q)],_),_)       -> getConjuncts p ++ getConjuncts q
      | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_)
        -> getConjuncts p ++ getConjuncts q
      | _ -> [t]
@@ -1027,7 +1026,6 @@ Utilities qualifying spec
       | Bind(Forall,vs,bod,_) ->
 	let (rVs,rLhsCjs,rRhs) = forallComponents bod in
 	(vs ++ rVs,rLhsCjs,rRhs)
-      % | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),	     Record([("1",lhs),("2",rhs)],_),_) ->        let (rVs,rLhsCjs,rRhs) = forallComponents rhs in	(rVs,getConjuncts lhs ++ rLhsCjs,rRhs)
       | Apply(Fun(Implies, _,_),
 	     Record([("1",lhs),("2",rhs)],_),_) ->
         let (rVs,rLhsCjs,rRhs) = forallComponents rhs in
@@ -1041,7 +1039,6 @@ Utilities qualifying spec
       | Bind(Exists,vs,bod,_) ->
 	let (rVs,rLhsCjs) = existsComponents bod in
 	(vs ++ rVs,rLhsCjs)
-      % | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),  Record([("1",lhs),("2",rhs)],_),_) -> let (lVs,lLhsCjs) = existsComponents lhs in let (rVs,rLhsCjs) = existsComponents rhs in(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
       | Apply(Fun(And,_,_), Record([("1",lhs),("2",rhs)],_),_) ->
         let (lVs,lLhsCjs) = existsComponents lhs in
         let (rVs,rLhsCjs) = existsComponents rhs in
@@ -1063,7 +1060,7 @@ Utilities qualifying spec
       | _ -> false
 
  %% Evaluation of constant terms
- def evalSpecNames = ["Nat","Integer","String","Boolean"]
+ def evalSpecNames = ["Nat","Integer","String"] 
  def evalConstant?(term) =
    case term
      of Fun(f,_,_) ->
@@ -1188,11 +1185,6 @@ Utilities qualifying spec
 	    | _ -> None)
       | "leq" -> evalBinary(bool leq,stringVals,fields,boolSort)
       | "lt"  -> evalBinary(bool lt,stringVals,fields,boolSort)
-
-      %% Boolean operations
-      %% | "&"   -> evalBinary(bool  &,booleanVals,fields,boolSort)
-      %% | "or"  -> evalBinary(bool or,booleanVals,fields,boolSort)
-      %% | "=>"  -> evalBinary(bool =>,booleanVals,fields,boolSort)
 
       | _ -> None
 

@@ -120,7 +120,7 @@ CGen qualifying spec {
           % | CoProduct (fields,_) -> fail "generateCTypes: found coproduct"
           % | Quotient (srt,term,_) -> fail "generateCTypes: found quotient"
           | Base (qid,[],_) -> addTypeDefn cSpec name (baseSortToCType qid)
-          | Boolean _       -> addTypeDefn cSpec name (baseSortToCType (Qualified ("Boolean", "Boolean")))
+          | Boolean _       -> addTypeDefn cSpec name Int
           | Base (Qualified ("Array","Array"),[srt],_) -> addTypeDefn cSpec name (Array (sortToCType srt))
           | Base (Qualified ("Store","Ptr"),[srt],_) -> addTypeDefn cSpec name (Ptr (sortToCType srt))
           % | Base (qid,srts,_) -> fail "generateCTypes: found instantiated base type"
@@ -169,7 +169,6 @@ the base types in C. For instance \verb+typedef int Integer+.
       Base id
     else
       case (qual,id) of
-        | ("Boolean","Boolean") -> Base "bool"
         | ("Integer","Integer") -> Int
         | ("Nat","Nat") -> Int
         | ("String","String") -> Ptr Char
@@ -184,7 +183,7 @@ the base types in C. For instance \verb+typedef int Integer+.
       | Base (Qualified ("Array","Array"),[srt],_) -> Array (sortToCType srt)
       | Base (Qualified ("Store","Ptr"),[srt],_) -> Ptr (sortToCType srt)
       | Base (qid,[],_) -> baseSortToCType qid
-      | Boolean _       -> baseSortToCType (Qualified ("Boolean", "Boolean"))
+      | Boolean _       -> Int
       | Base (qid,srts,_) -> 
           % let _ = writeLine ("sortToCType: found instantiated base type: " ^ (printSort srt)) in
           Void
@@ -413,10 +412,6 @@ pendant on the C side.
       | Op (Qualified("Double",">"),_) -> Binary Gt
       | Op (Qualified("Double",">="),_) -> Binary Ge
       | Op (Qualified("Double","pi"),_) -> Var ("M_PI",Double)
-
-      | Op (Qualified("Boolean","~"),_) -> Unary LogNot
-      | Op (Qualified("Boolean","&"),_) -> Binary LogAnd
-      | Op (Qualified("Boolean","or"),_) -> Binary LogOr
 
       | Not       -> Unary LogNot
       | And       -> Binary LogAnd

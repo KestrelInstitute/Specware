@@ -63,7 +63,6 @@ snark qualifying spec
 		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Nat","PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-		    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL")
 		    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL")
 		    %| Base(Qualified(qual,id),_,_) -> let res = findPBuiltInSort(spc, Qualified(qual,id), rng?) in
                       %let _ = if specwareDebug? then toScreen("findPBuiltInSort: "^printSort(s)^" returns ") else () in
@@ -87,7 +86,6 @@ snark qualifying spec
 	  case s of 
 	    | Base(Qualified("Nat","Nat"),_,_) -> true
 	    | Base(Qualified("Integer","Integer"),_,_) -> true
-	    | Base(Qualified("Boolean","Boolean"),_,_) -> true 
 	    | Boolean _ -> true 
             | _ -> false in
       let
@@ -95,7 +93,6 @@ snark qualifying spec
 	  case s of 
 	    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-	    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL") 
 	    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL") 
       in
       let builtinScheme = find (fn (_, srt) -> builtinSort?(srt)) schemes in
@@ -133,7 +130,6 @@ snark qualifying spec
 
   def snarkVar(v as (id, srt)) =
     case srt of
-      | Base(Qualified(q,"Boolean"),_,_) -> snarkBoolVarFromId(id)
       | Boolean _ -> snarkBoolVarFromId(id)
       | _ -> snarkVarFromId(id)
 
@@ -149,7 +145,6 @@ snark qualifying spec
 
   def snarkVarTerm(v as (id, srt)) =
     case srt of
-      | Base(Qualified(q,"Boolean"),_,_) -> snarkBoolVarTermFromId(id)
       | Boolean _ -> snarkBoolVarTermFromId(id)
       | _ -> snarkVarFromId(id)
 
@@ -157,7 +152,6 @@ snark qualifying spec
 
   def snarkVarFmla(v as (id, srt)) =
     case srt of
-      | Base(Qualified(q,"Boolean"),_,_) -> snarkBoolVarFmlaFromId(id)
       | Boolean _ -> snarkBoolVarFmlaFromId(id)
       | _ -> snarkVarFromId(id)
 
@@ -197,11 +191,6 @@ snark qualifying spec
 
   def mkSnarkName(qual, id) =
     case (qual, id) of
-      | ("Boolean", "~") -> "NOT"
-      | ("Boolean", "&") -> "AND"
-      | ("Boolean", "or") -> "OR"
-      | ("Boolean", "=>") -> "IMPLIES"
-      | ("Boolean", "<=>") -> "IFF"
       | ("Nat",     "<=") -> "=<"
       | ("Integer",     "<=") -> "=<"
       | ("Nat",     "~") -> "-"
@@ -209,27 +198,19 @@ snark qualifying spec
       | (_, "hoapply") ->  "HOAPPLY"
       | _ -> id
 
-  def snarkBoolOp(id) = 
-    let name = mkSnarkName("Boolean", id) in
-       Lisp.symbol("SNARK", name)
-
   op mkSnarkFmlaApp: Context * Spec * String * StringSet.Set * Fun * Sort * MS.Term -> LispCell
 
   def mkSnarkFmlaApp(context, sp, dpn, vars, f, srt, arg) =
     let args = case arg
                 of Record(flds,_) -> map(fn (_, term) -> term) flds
 	         | _ -> [arg] in
-    case f
-      of Op(Qualified("Boolean",id),_) ->
-	    let snarkArgs = map(fn (arg) -> mkSnarkFmla(context, sp, dpn, vars, [], arg)) args in
-	      Lisp.cons(snarkBoolOp(id), Lisp.list snarkArgs)
+    case f of
        | Op(Qualified(qual,id),_) ->
 	    let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
        | Embedded id ->
 	      let def boolArgp(srt) =
 	          case srt of		    
-		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
 		    | Boolean _ -> true
                     | _ -> false in
 	      let Arrow (dom,rng,_) = srt in
@@ -257,7 +238,6 @@ snark qualifying spec
        | Equals -> 
 	    let def boolArgp(srt) =
 	          case srt of
-		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
 		    | Boolean _ -> true
                     | _ -> false in
 	    let [arg1,arg2] = args in
@@ -279,7 +259,6 @@ snark qualifying spec
        | NotEquals -> 
 	    let def boolArgp(srt) =
 	          case srt of
-		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
 		    | Boolean _ -> true
                     | _ -> false in
 	    let [arg1,arg2] = args in
@@ -538,7 +517,7 @@ snark qualifying spec
     case arrowOpt(spc, srt) of
       Some (dom, rng) ->
 	case rng of
-	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateProp(spc, name, dom, arity)
+	  | Boolean _ -> snarkPredicateProp(spc, name, dom, arity)
 	  | _ ->
 	case productOpt(spc, dom) of
 	  | Some fields -> 

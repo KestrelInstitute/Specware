@@ -19,9 +19,7 @@ def builtinSortOp(qid) =
   %or
   ((q="Integer" or q="Nat" or q="PosNat") & (i="Integer" or i="NonZeroInteger" or i="+" or i="-" or i="*" or i="div" or i="rem" or i="<=" or i="<" or i="~" or
 		  i=">" or i=">=" or i="toString" or i="intToString" or i="show" or i="stringToInt"))
-  or
-  (q="Boolean" & (i="Boolean" or i="true" or i="false" or i="~" or i="&" or i="or" or
-		  i="=>" or i="<=>" or i="~="))
+  % or (q="Boolean" & (i="Boolean" or i="true" or i="false" or i="~" or i="&" or i="or" or i="=>" or i="<=>" or i="~="))
   or
   (q="Char" & (i="Char" or i="chr" or i="isUpperCase" or i="isLowerCase" or i="isAlpha" or
 	       i="isNum" or i="isAlphaNum" or i="isAscii" or i="toUpperCase" or i="toLowerCase"))
@@ -1274,13 +1272,12 @@ def addEqOpsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
     | (tyvars,srt)::_ ->
     let usrt = unfoldStripSort(spc,srt,false) in
     case usrt of
+      | Boolean _ -> spc
       | Base(Qualified(_,"Nat"),[],_) -> spc
       | Base(Qualified(_,"Integer"),[],_) -> spc
       | Base(Qualified(_,"Char"),[],_) -> spc
-      | Base(Qualified(_,"Boolean"),[],_) -> spc
-      | Boolean _ -> spc
-     %| Base(Qualified(_,"Float"),[],_) -> spc
       | Base(Qualified(_,"String"),[],_) -> spc
+     %| Base(Qualified(_,"Float"),[],_) -> spc
       | _ ->
         let b = sortAnn(srt) in
 	let osrt = Base(qid,map (fn(tv)->TyVar(tv,b)) tyvars0,b) in

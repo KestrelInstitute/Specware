@@ -95,7 +95,6 @@ AnnTermPrinter qualifying spec {
               %% TODO:  What if there is an unqualified Nat as well as Nat.Nat ?
               %%        Perhaps that should be disallowed.
               qualifier = "Nat"       or 
-              qualifier = "Boolean"   or
               qualifier = "String"    or
               qualifier = "Integer"   or 
               qualifier = "General"   or
@@ -182,15 +181,6 @@ AnnTermPrinter qualifying spec {
      %   else
      lengthString (String.length s,"\\mbox{{\\tt "^s^"}}")
 
-  def latexBoolean s = 
-   case s of
-    | "&"   -> lengthString (1, "$\\&$")
-    | " =>" -> lengthString (1, "$\\Rightarrow$")
-    | "or"  -> lengthString (2, "\\SWor\\ ")
-    | "<=>" -> lengthString (2, "$\\Leftrightarrow$")
-    | "~"   -> lengthString (1, "$\\neg$")
-    | _     -> string s                  
-
   def latexNat s = 
    case s of
     | "*"   -> lengthString (1, "$\\cdot$") 
@@ -210,7 +200,6 @@ AnnTermPrinter qualifying spec {
      case qualifier of
       | "Nat"     -> latexNat     id
       | "Integer" -> latexInt     id
-      | "Boolean" -> latexBoolean id
       | _         -> prettysNone [string (qualifier^"."), latexString id]
 
   %%  def ppLatexPId (idi : IdInfo) = 
@@ -288,7 +277,6 @@ AnnTermPrinter qualifying spec {
      case qualifier of
       | "Nat"     -> latexNat     id
       | "Integer" -> latexInt     id
-      | "Boolean" -> latexBoolean id
       | _         -> prettysNone [lengthString (0,
                                                 "\\pdfannotlink goto name {"^qualifier^":"^nameSpace^":"^id^"}"^
                                                 newlineString()),
@@ -391,7 +379,6 @@ AnnTermPrinter qualifying spec {
         else
           case qualifier of
            | "Nat"     -> string id
-           | "Boolean" -> string id
            | _         -> prettysNone [lengthString (String.length qualifier,
                                                      "<a href = "^qualifier^".html>"^qualifier^"</a>"),
                                        string ".",
