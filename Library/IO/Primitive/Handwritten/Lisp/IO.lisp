@@ -30,7 +30,7 @@
 
 (defun convert-windows-filename (filestr)
   (let ((strip-c-colon-nm
-	 (if (equal "c:" (subseq filestr 0 2))
+	 (if (string-equal "c:" (subseq filestr 0 2))  ; Ignore case of c in =
 	     (subseq filestr 2 (length filestr))
 	   filestr)))
     (substitute #\/ #\\ strip-c-colon-nm)))
