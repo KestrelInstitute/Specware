@@ -222,19 +222,23 @@ ArityNormalize qualifying spec {
        of VarPat((v as (id,srt)),_) -> 
           (StringSet.add(usedNames,id),(cons((id,None),gamma)):Gamma)
         | RecordPat(fields,_) -> 
-          foldr 
-             (fn ((_,p),result) -> insertPattern(p,result)) 
-                result
-                   fields
+          foldr (fn ((_,p),result) -> insertPattern(p,result)) 
+	    result fields
 
  def insertVars(vars,(usedNames,gamma)) =
-     foldr 
-        (fn (v as (id,srt),(usedNames,gamma)) -> 
-            (StringSet.add(usedNames,id),(cons((id,None),gamma)):Gamma))
-                (usedNames,gamma) 
-                    vars
+     foldr (fn (v as (id,srt),(usedNames,gamma)) -> 
+	     (StringSet.add(usedNames,id),(cons((id,None),gamma))))
+       (usedNames,gamma) 
+       vars
 
-
+  op  addLocalVars: MS.Term * UsedNames -> UsedNames
+  def addLocalVars(t,usedNames) =
+    let used = Ref usedNames in
+    let _ = mapTerm (id,id,fn (p as VarPat((qid,_),_))
+		                -> (used := StringSet.add(!used,qid); p)
+	                    | p -> p)
+              t
+    in !used
 
   op  etaExpand : Spec * UsedNames * Sort * MS.Term -> MS.Term
 
@@ -408,15 +412,17 @@ ArityNormalize qualifying spec {
   def arityNormalize (spc) =
     let usedNames = StringSet.fromList(qualifierIds spc.ops) in
     setOps (spc, 
-            mapAQualifierMap (fn (op_names, fixity, (tyVars, srt), old_defs)->
-                              let new_defs =
-                                  map (fn (type_vars, term) ->
-				       (type_vars,
-					normalizeArityTopLevel (spc, [], usedNames,
-								etaExpand(spc, usedNames, srt, term))))
-				      old_defs
-                              in (op_names, fixity, (tyVars, srt), new_defs))
-                             spc.ops)
+            mapAQualifierMap
+	      (fn (op_names, fixity, (tyVars, srt), old_defs)->
+	       let new_defs =
+	           map (fn (type_vars, term) ->
+			let usedNames = addLocalVars(term,usedNames) in
+			(type_vars,
+			 normalizeArityTopLevel (spc, [], usedNames,
+						 etaExpand(spc, usedNames, srt, term))))
+		     old_defs
+	       in (op_names, fixity, (tyVars, srt), new_defs))
+	      spc.ops)
 
 }
 
