@@ -1,0 +1,145 @@
+To add a new type of element (FooElement) to the meta-slang element hierarchy:
+  ---------------------------------------------------------------------------  
+  - in the netbeans/model subdirectory
+
+    . add new classes:
+      * public final class FooElement extends MemberElement {
+          public static interface Finder
+          public static interface Impl
+          static final class Memory extends MemberElement.Memory implements Impl
+      * class FooElementImpl extends MemberElementImpl implements FooElement.Impl
+                                                                  , ElementOrder // if FooElement is a non-leaf node in the element hierarchy
+      * class FooCollection extends PartialCollection   // if the parent of FooElement contains other types of Element other than FooElement
+                   ...              ObjectCollection    // if the parent of FooElement only contains FooElements
+                                    
+    . add new (FooElement-related) API to existing interfaces
+      * public interface ElementCreator
+          public FooImpl createFoo(<parent class> parent);
+      * public interface WrapperFactory
+          public FooImpl wrapFoo(FooElement.Impl theImpl, Element parent);
+      * public interface ElementProperties
+      * public interface Binding
+          public interface Foo extends Member
+                                       , Container     // if FooElement is a non-leaf node in the element hierarchy
+      * public interface BindingFactory
+          public Binding.Foo bindFoo(FooElement element);
+
+    . add new (FooElement-related) implementations to existing classes
+      * public class DefaultLangModel                  // implements ElementCreator
+          public FooImpl createFoo(<parent class> parent)
+          public void updateMembers(...)               // if FooElement is a non-leaf node in the element hierarchy
+          public void updateMemberOrder(...)           // if FooElement is a non-leaf node in the element hierarchy
+      * public class DefaultWrapper implements WrapperFactory
+          public FooImpl wrapFoo(FooElement.Impl theImpl, Element parent)
+      * abstract class MemoryCollection extends Object implements Serializable
+          static class Foo extends Member
+
+    . add new (FooElement-related) API/implementation to the parent
+      * <Parent>Element
+      * <Parent>ElementImpl
+
+  ---------------------------------------------------------------------------  
+  - in the netbeans directory
+
+    . add new (FooElement-related) API to existing interfaces
+      * public interface ElementFactory
+          public item createFoo(...);
+
+    . add new (FooElement-related) implementations to existing classes
+      * class MetaSlangElementNodeFactory extends DefaultFactory 
+          public Node createFooNode(FooElement element)
+
+  ---------------------------------------------------------------------------  
+  - in the netbeans/parser subdirectory
+
+    . add new classes:
+      * public class FooInfo extends BaseElementInfo
+
+    . add new parser rules to MetaSlangGrammar.g
+
+    . invoke antlr to generate MetaSlangLexerFromAntlr.java, MetaSlangParserFromAntlr.java
+
+        java -classpath ".../antlr-2.7.1" antlr.Tool MetaSlangGrammar.g > MetaSlangGrammar.log        
+
+    . insert the following code at the begining of the class body for MetaSlangParserFromAntlr
+
+     ElementFactory builder;
+     Set processedParameterNames = new HashSet();
+     Set processedModeNames = new HashSet();
+     Set processedTransitionNames = new HashSet();
+     Set processedConstraints = new HashSet();
+     Set processedModeServices = new HashSet();
+     Set processedModeConstraints = new HashSet();
+
+public MetaSlangParserFromAntlr(TokenStream lexer, ElementFactory builder) {
+  this(lexer);
+  this.builder = builder;
+}
+
+    . add new (FooElement-related) implementations to existing classes
+      * public class DocumentModelBuilder extends SourceInfo implements ElementFactory
+          public item createFoo(...)
+          public void setParent(Item child, Item parent)
+
+    . add new (FooElement-related) API/implementation to the parent 
+      * <Parent>Info
+
+  ---------------------------------------------------------------------------  
+  - in the netbeans/codegen subdirectory
+
+    . add new classes
+      * class FooB implements Binding.Foo
+                              , TextBinding.Container   // if FooElement is a non-leaf node in the element hierarchy
+
+    . add new (FooElement-related) API to existing interfaces
+      * public interface ElementPrinter
+          public void markFoo(<parent class> parent, int what) throws ElementPrinterInterruptException;
+
+    . add new (FooElement-related) implementations to existing classes
+      * public class SourceText                        // implements BindingFactory
+          public Binding.Foo bindFoo(FooElement element);
+      * class DefaultElementPrinter implements ElementPrinter
+          public void markFoo(<parent class> parent, int what) throws ElementPrinterInterruptException
+      * abstract class ElementBinding                  
+          static class ElementPrinterImpl implements ElementPrinter
+            public void markFoo(<parent class> parent, int what) throws ElementPrinterInterruptException
+
+    . add new (FooElement-related) API/implementation to the parent 
+      * <Parent>B
+
+    . add new (FooElement-related) resources
+      * Bundle.properties
+
+  ---------------------------------------------------------------------------  
+  - in the nodes subdirectory
+
+    . add new classes
+      * public class FooElementNode extends MemberElementNode
+      * pubilc class FooChildren extends Children.Keys implements FilterCookie  // if FooElement is a non-leaf node in the element hierarchy
+      * public class FooElementFilter extends SourceElementFilter               // if FooElement is a non-leaf node in the element hierarchy
+
+    . add new (FooElement-related) API to existing interfaces
+      * public interface ElementNodeFactory
+          public Node createFooNode(FooElement element);
+      * interface IconStrings
+
+    . add new (FooElement-related) implementations to existing classes
+      * public class DefaultFactory extends Object implements ElementNodeFactory, IconStrings
+          public Node createFooNode(FooElement element)
+      * public class FilterFactory implements ElementNodeFactory 
+          public Node createFooNode(FooElement element)
+      * class SourceEditSupport
+          
+      * public final class ElementFormat extends Format
+          private class Tag extends Object implements Serializable
+            void format(Element element, StringBuffer buf)
+              // handle new tags defined for formatting FooElement 
+
+    . add new (FooElement-related) API/implementation to the parent 
+      * <Parent>ElementNode
+      * <Parent>Children
+      * <Parent>ElementFilter
+
+    . add new (FooElement-related) resources
+      * Bundle.properties
+
