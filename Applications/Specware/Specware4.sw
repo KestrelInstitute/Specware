@@ -24,5 +24,5 @@ let Specware4 = spec {
   import NatTrans qualifying
     /Library/Structures/Data/Categories/NatTrans/FreeFunctorDomain/Polymorphic/AsRecord
 } in
-  Specware4
+  generate lisp Specware4
 \end{spec}
