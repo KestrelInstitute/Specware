@@ -22,7 +22,9 @@
 	  (with-simple-restart (abort "Return to Specware Shell top level.")
 	    (let ((form (read *standard-input* nil magic-eof-cookie)))
 	      (cond ((member form '(quit exit ok))
-		     (return))
+		     (if (equal (read-line *standard-input* nil magic-eof-cookie) "l")
+			 (cl-user::exit)
+		       (return)))
 		    ((not (eq form magic-eof-cookie))
 		     (let ((results
 			    (multiple-value-list (sw-shell-command form))))
