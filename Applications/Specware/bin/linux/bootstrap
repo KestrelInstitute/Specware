@@ -129,8 +129,10 @@ echo " "
 # Is there a way to inhibit all the warnings (eg unused variable)
 # when Lisp loads?
 
-SWPATH=$SPECWARE4:.
+export SWPATH=$SPECWARE4:.
 EXIT_ON_ERRORS=$SPECWARE4/Applications/Specware/bin/linux/exit-on-errors
+
+echo "\$SWPATH=$SWPATH"
 
 # All the toplevel routines that activate Specware return a boolean value.
 # They return true if the call to Specware succeeded without activating
@@ -142,6 +144,7 @@ if [ -f bin/linux/Specware4.dxl ]; then
 	echo "Bootstrapping from existing Specware image: bin/linux/Specware4.dxl"
         echo " "
 	bin/linux/Specware4-text -batch <<-XXXX
+                :swpath
 		(load "$EXIT_ON_ERRORS")
 		(enlarge-stack)
 		(exiting-on-errors 
