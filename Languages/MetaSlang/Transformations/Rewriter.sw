@@ -502,7 +502,8 @@ spec MetaSlangRewriter
 	    if historyRepetition(history)
 		then unit (tl history)
 	    else
-	    let rews = (rewrite(Innermost:Strategy,unconditional) >>= 
+	    % let rews = (rewrite(Innermost:Strategy,unconditional) >>= 
+	    let rews = (rewrite(Outermost:Strategy,unconditional) >>= 
 			(fn (term,(subst,rule,rules)) ->  
 			    unit (term,(subst,rule,
 					{unconditional = unconditional,conditional = conditional}))) 

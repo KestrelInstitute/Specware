@@ -1083,30 +1083,32 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
 
 \begin{spec}
 
-  def doNormalizeTerm (spc:Spec) = 
-      (fn (Let([(pat,N)],M,a)) -> Apply(Lambda([(pat,mkTrue(),M)],a),N,a)
-       | Let(decls,M,a) -> 
+  op doNormalizeTerm : Spec -> MS.Term -> MS.Term
+  def doNormalizeTerm spc term = 
+    case term of
+      | Let ([(pat,N)],M,a) -> Apply (Lambda([(pat,mkTrue(),M)],a),N,a)
+      | Let (decls,M,a) -> 
          let (pats,Ns) = ListPair.unzip decls in
-         Apply(Lambda([(mkTuplePat pats,mkTrue(),M)], a),mkTuple Ns,a)
-%       | IfThenElse(M,N,P) -> 
-%	 let srt = SpecEnvironment.inferType(spc,N) in
-%	 Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),Nonfix),
-%		 Arrow(mkProduct [boolSort,srt,srt],srt)),
-%		 mkTuple [M,N,P])
-        | LetRec(decls,M,_) -> 
-	  System.fail "Replacement of LetRec by fix has not been implemented"
-	| Seq(Ms,a) -> 
-	  let
-	       def loop(Ms) = 
-		   case Ms
-		     of [] -> mkTuple []
-		      | [M] -> M
-		      |  M::Ms -> 
-		 	 let srt = SpecEnvironment.inferType(spc,M) in
-			 Apply(bindPattern(WildPat(srt,a),loop Ms),M,a)
-	  in
-	  loop Ms
-	| term -> term)
+          Apply (Lambda([(mkTuplePat pats,mkTrue(),M)], a),mkTuple Ns,a)
+%       | IfThenElse (M,N,P) -> 
+%          let srt = SpecEnvironment.inferType(spc,N) in
+%          Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),Nonfix),
+%                Arrow(mkProduct [boolSort,srt,srt],srt)),
+%                mkTuple [M,N,P])
+%       | LetRec(decls,M,_) -> 
+%          System.fail "Replacement of LetRec by fix has not been implemented"
+      | Seq (Ms,a) -> 
+         let
+            def loop Ms = 
+              case Ms of
+                | [] -> mkTuple []
+                | [M] -> M
+                |  M::Ms -> 
+                    let srt = SpecEnvironment.inferType(spc,M) in
+                      Apply(bindPattern(WildPat(srt,a),loop Ms),M,a)
+          in
+            loop Ms
+       | term -> term
 
   def normalizeTerm (spc:Spec) = 
       let doTerm = doNormalizeTerm spc in
