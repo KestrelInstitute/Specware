@@ -248,9 +248,11 @@ be the option to run each (test ...) form in a fresh image.
       (if (null error-messages)
 	  (when *verbose?*
 	    (format *test-harness-stream* ";;; Test succeeded. ~a~%" name))
-	(progn (format *test-harness-stream* ";;; Test failed! ~a~%" name)
+	(progn (format *test-harness-stream* "~%;;; Test failed! ~a~%" name)
 	       (loop for msg in error-messages
-		     do (format *test-harness-stream* ";; ~a~%" msg)))))))
+		     do (format *test-harness-stream* ";; ~a~%" msg))
+	       (format *test-harness-stream* "~%")
+	       )))))
 
 (defun normalize-output (str)
   (if (stringp str)
