@@ -7,4 +7,4 @@ let
     } 
   % S = printF Specware4
 in
-  generate "lisp" Specware4
+  generate lisp Specware4
