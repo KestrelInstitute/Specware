@@ -1,12 +1,12 @@
 (**
-  this is deactivated due to incompabilities causing compilation errors
+  wrapper for calling the C generator
 **)
 
 
 SpecCalc qualifying spec
   import Signature  
   import ../SpecPath
-  %import /Languages/MetaSlang/CodeGen/C/GCfree/CG
+  import /Languages/MetaSlang/CodeGen/C/GCfree/CG
 
 
   op evaluateCGen : ValueInfo * Option String -> Monad ValueInfo
@@ -16,7 +16,7 @@ SpecCalc qualifying spec
      (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
                      (SpecPath_Relative {path = ["Library","Base"],
                                          hashSuffix = None});
-%     let _ = generateCCode (subtractSpec spc baseSpec, spc, optFileNm) in
+      let _ = generateCCode (subtractSpec spc baseSpec, spc, optFileNm) in
       return valueInfo}
 
 end-spec
