@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:15:04  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:42:09  weilyn
  * Added support for claims.
  *
@@ -121,7 +124,7 @@ class SourceEditSupport {
 		    {
 			// Adding op
 			OpElement e = new OpElement();
-			e.setName("newOp()"); // NOI18N
+			e.setName("newOp"); // NOI18N
 			OpCustomizer cust = new OpCustomizer(e);
 			if (openCustomizer(cust, "TIT_NewOp") && cust.isOK()) // NOI18N
 			    newElement = e;
@@ -132,7 +135,7 @@ class SourceEditSupport {
 			// Adding def
 			DefElement e = new DefElement();
 			e.setName("newDef");
-			MemberCustomizer cust = new MemberCustomizer(e, "Def");
+			DefCustomizer cust = new DefCustomizer(e);
 			if (openCustomizer(cust, "TIT_NewDef") && cust.isOK()) // NOI18N
 			    newElement = e;
 			break;
@@ -141,10 +144,9 @@ class SourceEditSupport {
 		    {
 			// Adding claim
 			ClaimElement e = new ClaimElement();
-			e.setName("newClaim()"); // NOI18N
-			// TODO
-                        /*ClaimCustomizer cust = new ClaimCustomizer(e);
-			if (openCustomizer(cust, "TIT_NewClaim") && cust.isOK()) // NOI18N*/
+			e.setName("newClaim"); // NOI18N
+                        ClaimCustomizer cust = new ClaimCustomizer(e);
+			if (openCustomizer(cust, "TIT_NewClaim") && cust.isOK()) // NOI18N
 			    newElement = e;
 			break;
 		    }
