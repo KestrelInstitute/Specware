@@ -33,14 +33,8 @@ ShouldBeProvable: Conjecture change is Proved! using Snark.
 ")
 
  ("Bug 0045 : Unambiguous op erroneously declared ambiguous [toString]" 
-  :show   "Bug_0045/ToString"
+  :sw  "Bug_0045/ToString"
   :output ";;; Elaborating spec at $TESTDIR/Bug_0045/ToString
-
-spec  
- op b : Nat -> String
- def b = toString
-endspec
-
 ")
 
 
@@ -300,6 +294,16 @@ spec
  op f infixl 22 : [a] a -> Integer
  def i = 123
  axiom A is [i] f(3) = 0
+endspec
+
+")
+
+ ("Bug 0106 : Names not disambiguated when printing"
+  :show   "Bug_0106/AmbiguousRef"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0106/AmbiguousRef
+
+spec  
+ def b = Nat.toString
 endspec
 
 ")
