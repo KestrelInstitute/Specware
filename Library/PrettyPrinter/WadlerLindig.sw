@@ -2,7 +2,7 @@
 
 \begin{spec}
 WadlerLindig qualifying spec
-  import /Library/Base/Base
+  import /Library/Base
 
   sort Pretty = Doc
 

@@ -7,7 +7,7 @@ Nat qualifying spec
   import Compare
   import Boolean
 
-  sort Nat.Nat = {n : Integer | n Integer.>= 0}
+  sort Nat.Nat % = {n : Integer | n Integer.>= 0}
   op Nat.+ infixl 25 : Nat * Nat -> Nat
   op Nat.* infixl 27 : Nat * Nat -> Nat
   op Nat.- infixl 25 : Nat * Nat -> Integer
@@ -35,6 +35,10 @@ Nat qualifying spec
   op toString    : Nat -> String
   op natToString : Nat -> String
   op stringToNat : String -> Nat
+
+  % coercion functions.
+  op fromNat : Nat -> Nat
+  op Integer.fromNat : Nat -> Integer
 
   def zero = 0
   def one  = 1
