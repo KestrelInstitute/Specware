@@ -104,9 +104,9 @@ MSlang qualifying spec
   
   % op mkNot : Term -> Position -> Term
   def MSlang.mkNot (trm, position) = mkApplyN (if usingNewBooleans? then
-						 Fun (Not, unaryBoolSort, noPos)
+						 Fun (Not, unaryBoolSort(), noPos)
 					       else
-						 mkOp(Qualified("Boolean", "~" ), unaryBoolSort),
+						 mkOp(Qualified("Boolean", "~" ), unaryBoolSort()),
 					       trm, 
 					       position)
   

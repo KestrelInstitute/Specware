@@ -1,5 +1,7 @@
 #!/bin/bash --noprofile
 
+# $HOME/Specware4/Library/Base/older
+
 # This script bootstraps Specware4.
 # That is,
 #  - it saves the old generated Specware4.lisp and Specware4.dxl (ie world)
@@ -272,6 +274,9 @@ $LISP -I ${BIG_ALISP} -batch <<-XXXX
 	  (load "Specware4.lisp"))
 	(compact-memory nil -1 0)         ; not verbose
 	(set-gc-parameters-for-use nil)   ; not verbose
+	; (list (quote ms::usingNewBooleans?) ms::usingNewBooleans?)
+	(setq ms::usingNewBooleans? t)
+	(list (quote ms::usingNewBooleans?) ms::usingNewBooleans?)
         (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX
 RC=$?

@@ -68,7 +68,7 @@ spec {
   %% ========================================================================
 
   def type_nat    = natSort
-  def type_bool   = boolSort
+  def type_bool ()  = boolSort ()
   def type_char   = charSort
   def type_string = stringSort
 
@@ -182,7 +182,7 @@ spec {
    %% ---------- PROPERTIES : PASS 1. ---------- 
    let def elaborate_fm_1 (prop_type, name, type_vars_1, fm_1) = 
         let type_vars_2 = type_vars_1 in
-        let fm_2 = elaborateTermTop (env_2a, fm_1, type_bool) in
+        let fm_2 = elaborateTermTop (env_2a, fm_1, type_bool()) in
         (prop_type, name, type_vars_2, fm_2)
    in
    let props_2 = map elaborate_fm_1 props_1 in
@@ -289,7 +289,7 @@ spec {
    %% ---------- AXIOMS : PASS 2 ----------
    let def elaborate_fm_2 (prop_type, name, type_vars_2, fm_2) = 
         (let type_vars_3 = type_vars_2 in
-         let fm_3 = elaborateTermTop (env_3, fm_2, type_bool) in
+         let fm_3 = elaborateTermTop (env_3, fm_2, type_bool()) in
          %String.writeLine "Elaborating formula";
          %let context = initializeTyVars() in
          %let term1 = termToMetaSlang context term in
@@ -425,7 +425,7 @@ spec {
         let new_rel_sort = Arrow (Product ([("1", new_base_sort), 
                                             ("2", new_base_sort)], 
                                            pos), 
-                                  type_bool, 
+                                  type_bool(), 
                                   pos) in
         let new_relation = elaborateTerm (env, given_relation, new_rel_sort) in
 	if given_base_sort = new_base_sort & given_relation = new_relation then srt
@@ -433,7 +433,7 @@ spec {
 
       | Subsort (given_super_sort, given_predicate, pos) -> 
         let new_super_sort = checkSort (env, given_super_sort) in
-        let new_pred_sort  = Arrow (new_super_sort, type_bool, pos) in
+        let new_pred_sort  = Arrow (new_super_sort, type_bool(), pos) in
         let new_predicate  = elaborateTerm (env, given_predicate, new_pred_sort) in
 	if given_super_sort = new_super_sort & given_predicate = new_predicate then srt
          else Subsort (new_super_sort, new_predicate, pos)
@@ -623,7 +623,7 @@ spec {
 	 (* Has sort {f: a -> b | fa(m,n) equiv(m,n) => f m = f n} -> a \ equiv -> b *)
          let a = freshMetaTyVar pos in
          let b = freshMetaTyVar pos in
-         let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool(), pos) in
          let equiv = elaborateTerm (env, equiv, ty1)                   in 
          let ty2 = Arrow (Quotient (a, equiv, pos), b, pos) in
          let ty3 = Arrow (a, b, pos) in
@@ -641,7 +641,7 @@ spec {
 
     | Fun (PQuotient equiv, srt, pos) ->  % Has sort a -> Quotient(a, equiv)
          let a = freshMetaTyVar pos in
-         let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool(), pos) in
          let equiv = elaborateTerm (env, equiv, ty1) in 
          let ty2 = Arrow (a, Quotient (a, equiv, pos), pos) in
          (elaborateSortForTerm (env, trm, ty2, term_sort);
@@ -649,47 +649,47 @@ spec {
           Fun (PQuotient equiv, srt, pos))  
 
     | Fun (Not, srt, pos) -> 
-         (elaborateSortForTerm (env, trm, unaryBoolSort, term_sort);
-          elaborateSortForTerm (env, trm, srt, unaryBoolSort);
+         (elaborateSortForTerm (env, trm, unaryBoolSort(), term_sort);
+          elaborateSortForTerm (env, trm, srt, unaryBoolSort());
           Fun (Not, srt, pos))
 
     | Fun (And, srt, pos) -> 
-         (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
-          elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+         (elaborateSortForTerm (env, trm, binaryBoolSort(), term_sort);
+          elaborateSortForTerm (env, trm, srt, binaryBoolSort());
           Fun (And, srt, pos))
 
     | Fun (Or, srt, pos) -> 
-         (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
-          elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+         (elaborateSortForTerm (env, trm, binaryBoolSort(), term_sort);
+          elaborateSortForTerm (env, trm, srt, binaryBoolSort());
           Fun (Or, srt, pos))
 
     | Fun (Implies, srt, pos) -> 
-         (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
-          elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+         (elaborateSortForTerm (env, trm, binaryBoolSort(), term_sort);
+          elaborateSortForTerm (env, trm, srt, binaryBoolSort());
           Fun (Implies, srt, pos))
 
     | Fun (Iff, srt, pos) -> 
-         (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
-          elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+         (elaborateSortForTerm (env, trm, binaryBoolSort(), term_sort);
+          elaborateSortForTerm (env, trm, srt, binaryBoolSort());
           Fun (Iff, srt, pos))
 
     | Fun (Equals, srt, pos) -> 
          let a = freshMetaTyVar pos in
-         let ty = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty = Arrow (Product ([("1", a), ("2", a)], pos), type_bool(), pos) in
          (elaborateSortForTerm (env, trm, ty, term_sort);
           elaborateSortForTerm (env, trm, srt, ty);
           Fun (Equals, srt, pos))
 
     | Fun (NotEquals, srt, pos) -> 
          let a = freshMetaTyVar pos in
-         let ty = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty = Arrow (Product ([("1", a), ("2", a)], pos), type_bool(), pos) in
          (elaborateSortForTerm (env, trm, ty, term_sort);
           elaborateSortForTerm (env, trm, srt, ty);
           Fun (NotEquals, srt, pos))
 
     | Fun (Bool b, srt, pos) -> 
-         (elaborateSortForTerm (env, trm, type_bool, term_sort) ; 
-          elaborateCheckSortForTerm (env, trm, srt, type_bool);
+         (elaborateSortForTerm (env, trm, type_bool(), term_sort) ; 
+          elaborateCheckSortForTerm (env, trm, srt, type_bool());
           Fun (Bool b, srt, pos))
 
     | Fun (Nat n, srt, pos) ->  
@@ -709,7 +709,7 @@ spec {
 
     | Fun (PRelax pred, srt, pos) -> % Has sort Subsort(a, pred) -> a
          let a = freshMetaTyVar pos in
-         let ty1 = Arrow (a, type_bool, pos) in
+         let ty1 = Arrow (a, type_bool(), pos) in
          let pred = elaborateTerm (env, pred, ty1) in
          let ty2 = Arrow (Subsort (a, pred, pos), a, pos) in
          (elaborateSortForTerm (env, trm, ty2, term_sort);
@@ -722,7 +722,7 @@ spec {
 
     | Fun (PRestrict pred, srt, pos) -> % Has sort a -> Subsort(a, pred)
          let a = freshMetaTyVar pos in
-         let ty1 = Arrow (a, type_bool, pos) in
+         let ty1 = Arrow (a, type_bool(), pos) in
          let pred = elaborateTerm (env, pred, ty1) in
          let ty2 = Arrow (a, Subsort (a, pred, pos), pos) in
          (elaborateSortForTerm (env, trm, ty2, term_sort);
@@ -773,7 +773,7 @@ spec {
          Let (decls, body, pos)
 
     | IfThenElse (test, thenTrm, elseTrm, pos) -> 
-          let test = elaborateTerm (env, test, type_bool) in
+          let test = elaborateTerm (env, test, type_bool()) in
           let thenTrm = elaborateTerm (env, thenTrm, term_sort) in 
           let elseTrm = elaborateTerm (env, elseTrm, term_sort) in
           IfThenElse (test, thenTrm, elseTrm, pos)          
@@ -829,12 +829,12 @@ spec {
 	   (fn (pat, cond, term)->
 	       let (pat, env) = elaboratePattern (env, pat, alpha) in
 	       let term = elaborateTerm (env, term, beta) in
-	       let cond = elaborateTerm (env, cond, type_bool) in
+	       let cond = elaborateTerm (env, cond, type_bool()) in
 	       (pat, cond, term)) 
 	   rules,    pos)
 
     | Bind (bind, vars, term, pos) ->
-          let _ = elaborateSort (env, term_sort, type_bool) in
+          let _ = elaborateSort (env, term_sort, type_bool()) in
           let (vars, env) = 
               foldl (fn ((id, srt), (vars, env)) ->
 		       let srt = checkSort (env, srt) in
@@ -1283,7 +1283,7 @@ spec {
          %       let expElSrt_ = unfold (env, elSrt1) in
          %       let elSrt = if subsort? (s1_, expElSrt_) & subsort? (s2_, expElSrt_)
          %                    then elSrt1 else (commonAnc (s1_, s2_), pos) in
-         %       (Fun (Equals, (Arrow ((Product [("1", elSrt), ("2", elSrt)], pos), type_bool), pos)), pos)
+         %       (Fun (Equals, (Arrow ((Product [("1", elSrt), ("2", elSrt)], pos), type_bool()), pos)), pos)
     | _ -> (error (env, 
                    "Illegal Equality" ^ printTerm eq_args, 
                    sortAnn srt);
@@ -1331,7 +1331,7 @@ spec {
   let def elab (p:MS.Pattern):MS.Pattern * LocalEnv =
     case p of
       | WildPat (s, pos) -> (WildPat (elaborateSort (env, s, sort1), pos), env)
-      | BoolPat _ -> (elaborateSort (env, sort1, type_bool); (p, env))
+      | BoolPat _ -> (elaborateSort (env, sort1, type_bool()); (p, env))
       | NatPat _ ->  (elaborateSort (env, sort1, type_nat); (p, env))
       | StringPat _ ->  (elaborateSort (env, sort1, type_string);  (p, env))
       | CharPat _ ->  (elaborateSort (env, sort1, type_char); (p, env))
@@ -1434,7 +1434,7 @@ spec {
 	  (RecordPat (r, pos), env)
       | RelaxPat (pat, term, pos) -> 
 	let term = elaborateTerm (env, term, 
-				 Arrow (sort1, type_bool, pos)) in
+				 Arrow (sort1, type_bool(), pos)) in
 	let sort2 = (Subsort (sort1, term, pos)) in
 	let (pat, env) = elaboratePattern (env, pat, sort2) in
 	(RelaxPat (pat, term, pos), env)
@@ -1444,7 +1444,7 @@ spec {
 	let _ = elaborateSort (env, sort2, sort1) in
 	let term = elaborateTerm (env, term, 
 				  Arrow (Product ([("1", v), ("2", v)], pos), 
-					 type_bool, pos)) in
+					 type_bool(), pos)) in
 	let (pat, env) = elaboratePattern (env, pat, v) in
 	(QuotientPat (pat, term, pos), env)
       | p -> (System.print p; System.fail "Nonexhaustive")

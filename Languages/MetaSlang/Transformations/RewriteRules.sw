@@ -534,7 +534,7 @@ is rewritten to
 		        = case axiomRule context
 				(Axiom:PropertyType,
 				 "Context-condition: " ^printTerm c,
-				 tvs, mkEquality(boolSort,c,mkTrue()))
+				 tvs, mkEquality(boolSort(),c,mkTrue()))
 			    of Some rule -> List.cons(rule,rules)
 			     | None -> rules
 		   in 
@@ -544,7 +544,7 @@ is rewritten to
 			  (Axiom:PropertyType,
 			   "Context-condition: " ^printTerm nc
 			   ^" = false",
-			   tvs, mkEquality(boolSort,nc,mkFalse()))
+			   tvs, mkEquality(boolSort(),nc,mkFalse()))
 			  of 
 			   | Some rule -> List.cons(rule,rules)
 			   | None -> rules)
@@ -553,7 +553,7 @@ is rewritten to
 			  (Axiom:PropertyType,
 			   "Context-condition: " ^printTerm nc
 			   ^" = false",
-			   tvs, mkEquality(boolSort,nc,mkFalse()))
+			   tvs, mkEquality(boolSort(),nc,mkFalse()))
 			  of 
 			   | Some rule -> List.cons(rule,rules)
 			   | None -> rules)

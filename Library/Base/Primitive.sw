@@ -30,7 +30,7 @@ spec
   done in this spec.
   *)
 
-  sort Boolean.Boolean
+% sort Boolean.Boolean
 
   sort Integer.Integer
   op Integer.~ : Integer.Integer -> Integer.Integer

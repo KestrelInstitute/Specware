@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# $HOME/Specware4/Library/Base/older
+
 xemacs=`which xemacs`
 act='launch Specware'
 

@@ -2,6 +2,7 @@ Boolean qualifying spec
 
   import Primitive
 
+(*
   % sorts:
 
   % sort Boolean
@@ -40,5 +41,6 @@ Boolean qualifying spec
   % op compare  : Boolean * Boolean -> Comparison
   % op toString : Boolean -> String  % deprecated
   % op show     : Boolean -> String
+*)
 
 endspec

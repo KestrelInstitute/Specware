@@ -49,19 +49,19 @@ MS qualifying spec
  %% Sort terms for constant sorts:
 
  op natSort         : Sort
- op boolSort        : Sort
+ op boolSort        : () -> Sort
  op charSort        : Sort
  op stringSort      : Sort
- op unary_boolean   : Sort
- op binary_boolean  : Sort
+ op unary_boolean   : () -> Sort
+ op binary_boolean  : () -> Sort
 
  def natSort        = mkBase  (Qualified("Nat",     "Nat"),     []) 
  def charSort       = mkBase  (Qualified("Char",    "Char"),    [])
  def stringSort     = mkBase  (Qualified("String",  "String"),  [])
- def boolSort       = mkBoolSort noPos
+ def boolSort    () = mkBoolSort noPos
 
- def unaryBoolSort  = mkArrow (boolSort,                       boolSort)
- def binaryBoolSort = mkArrow (mkProduct [boolSort, boolSort], boolSort)
+ def unaryBoolSort  () = mkArrow (boolSort(),                         boolSort())
+ def binaryBoolSort () = mkArrow (mkProduct [boolSort(), boolSort()], boolSort())
 
  %% Primitive term constructors:
 
@@ -112,12 +112,12 @@ MS qualifying spec
  op mkOp : QualifiedId * Sort -> Term
  op mkInfixOp : QualifiedId * Fixity * Sort -> Term
 
- def mkTrue () = mkFun (Bool true, boolSort)
- def mkFalse () = mkFun (Bool false, boolSort)
+ def mkTrue () = mkFun (Bool true, boolSort())
+ def mkFalse () = mkFun (Bool false, boolSort())
 
  def mkNat n = mkFun (Nat n, natSort)
  def mkChar char = mkFun (Char char, charSort)
- def mkBool bool = mkFun (Bool bool, boolSort)
+ def mkBool bool = mkFun (Bool bool, boolSort())
  def mkString str = mkFun (String str, stringSort)
 
  def mkRelax (srt, pred) = mkFun (Relax, mkArrow (mkSubsort (srt, pred), srt))
@@ -127,7 +127,7 @@ MS qualifying spec
 
  def mkEmbed0 (id, srt) = mkFun (Embed (id, false), srt) % no arg
  def mkEmbed1 (id, srt) = mkFun (Embed (id, true), srt) % arg
- def mkEmbedded (id, srt) = mkFun (Embedded id, mkArrow (srt, boolSort))
+ def mkEmbedded (id, srt) = mkFun (Embedded id, mkArrow (srt, boolSort()))
  def mkProject (id, super, sub) = mkFun (Project id, mkArrow (super, sub))
  def mkSelect (id, super, field) = mkFun (Project id, mkArrow (super, field))
  def mkEquals (srt) = mkFun (Equals, srt)
@@ -137,7 +137,7 @@ MS qualifying spec
 
  %% Op's (particular Fun's)
 
- def usingNewBooleans? : Boolean = false
+ def MS.usingNewBooleans? : Boolean = true
 
  %% Record's
 
@@ -198,29 +198,29 @@ MS qualifying spec
  op mkSelection   : Id * Term                   -> Term
 
  def mkNot     trm      = mkApply (if usingNewBooleans? then
-				     Fun (Not,     unaryBoolSort, noPos)
+				     Fun (Not,     unaryBoolSort(), noPos)
 				   else
-				     mkOp(Qualified("Boolean", "~" ), unaryBoolSort),
+				     mkOp(Qualified("Boolean", "~" ), unaryBoolSort()),
 				   trm)
  def mkAnd     (t1, t2) = mkApply (if usingNewBooleans? then
-				     Fun (And,     binaryBoolSort, noPos)
+				     Fun (And,     binaryBoolSort(), noPos)
 				   else
-				     mkInfixOp (Qualified("Boolean", "&" ), Infix(Right,15), binaryBoolSort),
+				     mkInfixOp (Qualified("Boolean", "&" ), Infix(Right,15), binaryBoolSort()),
 				   mkTuple [t1,t2])
  def mkOr      (t1, t2) = mkApply (if usingNewBooleans? then
-				     Fun (Or,     binaryBoolSort, noPos)
+				     Fun (Or,     binaryBoolSort(), noPos)
 				   else
-				     mkInfixOp (Qualified("Boolean", "or" ), Infix(Right,14), binaryBoolSort),
+				     mkInfixOp (Qualified("Boolean", "or" ), Infix(Right,14), binaryBoolSort()),
 				   mkTuple [t1,t2])
  def mkImplies (t1, t2) = mkApply (if usingNewBooleans? then
-				     Fun (Implies,     binaryBoolSort, noPos)
+				     Fun (Implies,     binaryBoolSort(), noPos)
 				   else
-				     mkInfixOp (Qualified("Boolean", "=>" ), Infix(Right,13), binaryBoolSort),
+				     mkInfixOp (Qualified("Boolean", "=>" ), Infix(Right,13), binaryBoolSort()),
 				   mkTuple [t1,t2])
  def mkIff     (t1, t2) = mkApply (if usingNewBooleans? then
-				     Fun (Iff,     binaryBoolSort, noPos)
+				     Fun (Iff,     binaryBoolSort(), noPos)
 				   else
-				     mkInfixOp (Qualified("Boolean", "<=>" ), Infix(Right,12), binaryBoolSort),
+				     mkInfixOp (Qualified("Boolean", "<=>" ), Infix(Right,12), binaryBoolSort()),
 				   mkTuple [t1,t2])
 
  def mkConj(cjs) =
@@ -236,7 +236,7 @@ MS qualifying spec
      | x::rcs -> mkOr (x, mkOrs rcs)
 
  def mkEquality (dom_sort, t1, t2) = 
-     let srt = mkArrow(mkProduct [dom_sort,dom_sort],boolSort) in
+     let srt = mkArrow(mkProduct [dom_sort,dom_sort],boolSort()) in
      mkApply(mkEquals srt, mkTuple [t1,t2])
 
  def mkRestriction {pred, term} = 

@@ -1137,7 +1137,7 @@ Utilities qualifying spec
  def attemptEval1(opName,arg) =
    case (opName,arg) of
       | ("~", Fun (Nat i,_,aa)) -> Some(Fun (Nat (Integer.~ i), natSort,aa))
-      | ("~", Fun (Bool b,_,aa)) -> Some(Fun (Bool (~b), boolSort,aa))
+      | ("~", Fun (Bool b,_,aa)) -> Some(Fun (Bool (~b), boolSort(),aa))
       | ("pred", Fun (Nat i,_,aa)) -> Some(Fun (Nat (pred i), natSort,aa))
       | ("toString", Fun (Nat i,_,aa)) -> Some (Fun (String (toString i), stringSort,aa))
       | ("succ",Fun (Nat i,_,aa)) -> Some(Fun (Nat (succ i), natSort,aa))
@@ -1146,14 +1146,14 @@ Utilities qualifying spec
       | ("stringToInt",Fun (String s,_,aa)) -> Some(Fun (Nat (stringToInt s),natSort,aa))
 
       | ("isUpperCase",Fun (Char c,_,aa)) ->
-          Some(Fun (Bool(isUpperCase c),boolSort,aa))
+          Some(Fun (Bool(isUpperCase c),boolSort(),aa))
       | ("isLowerCase",Fun (Char c,_,aa)) ->
-          Some(Fun (Bool(isLowerCase c),boolSort,aa))
+          Some(Fun (Bool(isLowerCase c),boolSort(),aa))
       | ("isAlphaNum",Fun (Char c,_,aa)) ->
-          Some(Fun(Bool(isAlphaNum c),boolSort,aa))
-      | ("isAlpha",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAlpha c),boolSort,aa))
-      | ("isNum",Fun (Char c,_,aa)) -> Some(Fun (Bool(isNum c),boolSort,aa))
-      | ("isAscii",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAscii c),boolSort,aa))
+          Some(Fun(Bool(isAlphaNum c),boolSort(),aa))
+      | ("isAlpha",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAlpha c),boolSort(),aa))
+      | ("isNum",Fun (Char c,_,aa)) -> Some(Fun (Bool(isNum c),boolSort(),aa))
+      | ("isAscii",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAscii c),boolSort(),aa))
       | ("toUpperCase",Fun (Char c,_,aa)) ->
           Some(Fun (Char(toUpperCase c),charSort,aa))
       | ("toLowerCase",Fun (Char c,_,aa)) ->
@@ -1174,10 +1174,10 @@ Utilities qualifying spec
 		 sortFromField(fields,natSort),noPos))
       | "-"   -> evalBinary(nat -,natVals,fields,
 			  sortFromField(fields,natSort))
-      | "<"   -> evalBinary(bool <,natVals,fields,boolSort)
-      | "<="  -> evalBinary(bool <=,natVals,fields,boolSort)
-      | ">"   -> evalBinary(bool >,natVals,fields,boolSort)
-      | ">="  -> evalBinary(bool >=,natVals,fields,boolSort)
+      | "<"   -> evalBinary(bool <,natVals,fields,boolSort())
+      | "<="  -> evalBinary(bool <=,natVals,fields,boolSort())
+      | ">"   -> evalBinary(bool >,natVals,fields,boolSort())
+      | ">="  -> evalBinary(bool >=,natVals,fields,boolSort())
       | "min" -> evalBinary(nat min,natVals,fields,
 			    sortFromField(fields,natSort))
       | "max" -> evalBinary(nat max,natVals,fields,
@@ -1195,13 +1195,13 @@ Utilities qualifying spec
 	      Some(Fun(String(substring(stringVal s,natVal i,natVal j)),
 		       stringSort,noPos))
 	    | _ -> None)
-      | "leq" -> evalBinary(bool leq,stringVals,fields,boolSort)
-      | "lt"  -> evalBinary(bool lt,stringVals,fields,boolSort)
+      | "leq" -> evalBinary(bool leq,stringVals,fields,boolSort())
+      | "lt"  -> evalBinary(bool lt,stringVals,fields,boolSort())
 
       %% Boolean operations
-      | "&"   -> evalBinary(bool  &,booleanVals,fields,boolSort)
-      | "or"  -> evalBinary(bool or,booleanVals,fields,boolSort)
-      | "=>"  -> evalBinary(bool =>,booleanVals,fields,boolSort)
+      | "&"   -> evalBinary(bool  &,booleanVals,fields,boolSort())
+      | "or"  -> evalBinary(bool or,booleanVals,fields,boolSort())
+      | "=>"  -> evalBinary(bool =>,booleanVals,fields,boolSort())
 
       | _ -> None
 
@@ -1238,23 +1238,23 @@ Utilities qualifying spec
 	  else None
       | Apply(Fun(Not,  _,_),arg,                       _) -> 
 	  (case arg of
-	     | Fun (Bool b,_,aa) -> Some(Fun (Bool (~ b), boolSort,noPos))
+	     | Fun (Bool b,_,aa) -> Some(Fun (Bool (~ b), boolSort(),noPos))
 	     | _ -> None)
       | Apply(Fun(And,  _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
 	  (case (N1, N2) of
-	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 & b2), boolSort, noPos))
+	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 & b2), boolSort(), noPos))
 	     | _ -> None)
       | Apply(Fun(Or,   _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
 	  (case (N1, N2) of
-	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 or b2), boolSort, noPos))
+	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 or b2), boolSort(), noPos))
 	     | _ -> None)
       | Apply(Fun(Implies, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
 	  (case (N1, N2) of
-	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 => b2), boolSort, noPos))
+	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 => b2), boolSort(), noPos))
 	     | _ -> None)
       | Apply(Fun(Iff, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
 	  (case (N1, N2) of
-	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 <=> b2), boolSort, noPos))
+	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 <=> b2), boolSort(), noPos))
 	     | _ -> None)
       | _ -> None
 

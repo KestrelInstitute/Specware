@@ -32,7 +32,7 @@ spec {
   def mkNotAt trm position = mkApplyNAt notOp trm position
   
   op mkTrueAt : Position -> ATerm Position
-  def mkTrueAt position = mkFunAt (Bool true) boolSort position
+  def mkTrueAt position = mkFunAt (Bool true) (boolSort ()) position
   
   op mkFunAt : Fun -> ASort Position -> Position -> ATerm Position
   def mkFunAt constant srt position = Fun (constant, srt, position) 
@@ -45,7 +45,7 @@ spec {
   op mkEqualityAt : ATerm Position -> ATerm Position -> Position -> ATerm Position
   def mkEqualityAt t0 t1 position = 
     let srt = freshMetaTyVar position in
-    % let srt = mkArrowAt (mkProductAt [dom_sort,dom_sort] position) boolSort position in
+    % let srt = mkArrowAt (mkProductAt [dom_sort,dom_sort] position) (boolSort ()) position in
     mkApplyNAt (mkEqualsAt srt position) (mkTupleAt [t0,t1] position) position
   
   op mkOpAt : QualifiedId -> ASort Position -> Position -> ATerm Position

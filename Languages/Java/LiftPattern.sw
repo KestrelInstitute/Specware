@@ -226,7 +226,7 @@ def opRange(spc, oper) =
   let opinfo = findAllOps(spc, oper) in
   case opinfo of
     | (_,_,(_,srt),_)::_ -> srtRange(srt)
-    | _ -> let _ = unSupported(oper) in boolSort
+    | _ -> let _ = unSupported(oper) in boolSort()
 
 op srtDom: Sort -> List Sort
 op srtRange: Sort -> Sort

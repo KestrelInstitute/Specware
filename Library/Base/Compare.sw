@@ -25,11 +25,11 @@ Compare qualifying spec
 
   % ops conceptually belonging to other specs but introduced here,
   % whose Lisp code is generated:
-
+(*
   op Boolean.compare : Boolean * Boolean -> Comparison
 
   def Boolean.compare(x,y) = if (x = y)    then Equal
                         else if (x = true) then Greater
                         else  (* x = false *)   Less
-
+*)
 endspec

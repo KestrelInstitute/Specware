@@ -659,7 +659,7 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
          System.fail 
 		("Could not extract type for "^
 		 printTermWithSorts N)))
-        | Bind _ -> boolSort
+        | Bind _ -> boolSort()
         | Record(fields,a) -> 
 	  Product(map (fn (id,t)-> (id,inferType(spc,subst,t))) fields,a)
         | Let(_,term,_) -> inferType(spc,subst,term)
@@ -1097,7 +1097,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
 %       | IfThenElse (M,N,P) -> 
 %          let srt = SpecEnvironment.inferType(spc,N) in
 %          Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),Nonfix),
-%                Arrow(mkProduct [boolSort,srt,srt],srt)),
+%                Arrow(mkProduct [boolSort(),srt,srt],srt)),
 %                mkTuple [M,N,P])
 %       | LetRec(decls,M,_) -> 
 %          System.fail "Replacement of LetRec by fix has not been implemented"

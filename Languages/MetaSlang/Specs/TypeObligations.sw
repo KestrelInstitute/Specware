@@ -209,7 +209,7 @@ spec
 	   let tcc  = (tcc,gamma) |- N1 ?? sigma1 	           in
 	   case nonStrictAppl(N1,N2) of
 	     | Some (p1,p2,polarity) ->
-	       let tcc1   = (tcc,gamma)   |- p1 ?? boolSort 	   in
+	       let tcc1   = (tcc,gamma)   |- p1 ?? boolSort() 	   in
 	       let gamma1 = assertCond(if polarity then p1 else negateTerm p1,gamma) in
 	       let tcc2   = (tcc1,gamma1) |- p2 ?? tau 		   in
 	       tcc2
@@ -234,8 +234,8 @@ spec
 
         | Bind(binder,vars,body,_) -> 
 	  let gamma = foldl insert gamma vars        in
-          let tcc = (tcc,gamma) |- body ?? boolSort  in
-          let tcc = <= (tcc,gamma,M,boolSort,tau)    in
+          let tcc = (tcc,gamma) |- body ?? boolSort()  in
+          let tcc = <= (tcc,gamma,M,boolSort(),tau)    in
 	  tcc
         | Let(decls,body,_)    ->
 	  let (tcc,gamma) =
@@ -312,7 +312,7 @@ spec
 	  checkLambda(tcc,gamma,rules,tau,None)
 	
         | IfThenElse(t1,t2,t3,_) -> 
-	  let tcc1   = (tcc,gamma)   |- t1 ?? boolSort 		in
+	  let tcc1   = (tcc,gamma)   |- t1 ?? boolSort() 		in
 	  let gamma1 = assertCond(t1,gamma) 			in
           let tcc2   = (tcc1,gamma1) |- t2 ?? tau 		in
 	  let gamma2 = assertCond(negateTerm t1,gamma) 		in
@@ -374,7 +374,7 @@ spec
                       assertCond(mkEquality(inferType(getSpec gamma,arg),arg,tp),gamma0)
                     | _ -> gamma0
      in
-     let tcc = (tcc,gamma1) |- cond ?? boolSort 		in
+     let tcc = (tcc,gamma1) |- cond ?? boolSort() 		in
      let gamma2 = assertCond(cond,gamma1)			in
      let tcc = (tcc,gamma2) |- body ?? rng 			in
      tcc
@@ -448,7 +448,7 @@ spec
      | StringPat(s,_) 	->      
        returnPattern(gamma,Fun(String s,stringSort,noPos),stringSort,tau)
      | BoolPat(b,_) 		->      
-       returnPattern(gamma,Fun(Bool b,boolSort,noPos),boolSort,tau)
+       returnPattern(gamma,Fun(Bool b,boolSort(),noPos),boolSort(),tau)
      | CharPat(ch,_) 	->      
        returnPattern(gamma,Fun(Char ch,charSort,noPos),charSort,tau)
      | NatPat(i,_) 		->      
@@ -502,7 +502,7 @@ spec
  def add_WFO_Condition((tccs,claimNames),(decls,tvs,spc,qid,name,_),param,recParam) =
    %% ex(pred) (wfo(pred) & fa(params) context(params) => pred(recParams,params))
    let paramSort = inferType(spc,recParam) in
-   let predSort = mkArrow(mkProduct [paramSort,paramSort],boolSort) in
+   let predSort = mkArrow(mkProduct [paramSort,paramSort],boolSort()) in
    let pred = ("pred",predSort) in
    let rhs = mkAppl(mkVar pred,[recParam,param]) in
    let def insert(decl,formula) = 
@@ -519,7 +519,7 @@ spec
    let form = foldl insert rhs decls in
    let form = simplify spc form in
    let form = mkBind(Exists,[pred],mkConj[mkApply(mkOp(Qualified("WFO","wfo"),
-						       mkArrow(predSort,boolSort)),
+						       mkArrow(predSort,boolSort())),
 						  mkVar pred),
 					  form])
    in
@@ -609,7 +609,7 @@ spec
 		   (case (t1,t2)
 	              of (Some t1,Some t2) -> 
 			 let gamma = assertCond(Apply(Fun(Embedded id,
-							  Arrow(sigma,boolSort,noPos),
+							  Arrow(sigma,boolSort(),noPos),
 							  noPos),
 						      M,noPos),
 						gamma) in
@@ -707,7 +707,7 @@ spec
 		       let _ = if name = "variable_assign_def" then debug("checkSpec") else () in
 		       if member(pr,baseProperties) then tcc
 			 else let fm = renameTerm (emptyContext()) fm in
-			      (tcc,gamma0 tvs None (name^"_Obligation"))  |- fm ?? boolSort)
+			      (tcc,gamma0 tvs None (name^"_Obligation"))  |- fm ?? boolSort())
                  tcc spc.properties
      in
      %% Quotient relations are equivalence relations

@@ -408,7 +408,7 @@ PatternMatch qualifying spec {
         of EmbedPat(e,_,_,_) -> embedded(e)
 	 | NatPat(n,_)    ->    equalToConstant(natSort,mkNat(n))
 	 | CharPat(ch,_)  ->    equalToConstant(charSort,mkChar(ch))
-	 | BoolPat(b,_)   ->    equalToConstant(boolSort,mkBool(b))
+	 | BoolPat(b,_)   ->    equalToConstant(boolSort(),mkBool(b))
 	 | StringPat(s,_) ->    equalToConstant(stringSort,mkString s)
 	 | RecordPat _ -> (fn _ -> mkTrue())
 	 | _ -> (fn _ -> mkTrue())
@@ -1008,7 +1008,7 @@ def convertPattern(spc,pat as (p,_):Pattern):pattern =
           *)
        | WildPat srt -> Var("",srt)
        | StringPat s -> Con(CONST{const = STRING s,span = 0},[],stringSort)
-       | BoolPat b   -> Con(CONST{const = BOOL b,span = 2},[],boolSort)
+       | BoolPat b   -> Con(CONST{const = BOOL b,span = 2},[],boolSort())
        | NatPat n    -> Con(CONST{const = NAT n,span = 0},[],intSort)
        | CharPat ch  -> Con(CONST{const = CHAR ch,span = 256},[],charSort)
 
