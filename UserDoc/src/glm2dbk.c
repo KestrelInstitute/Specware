@@ -708,11 +708,17 @@ bool outQuote() {
 trace("\noutQuote:: ");
 
 	if (seetext("''")) {
-		outtext("</quote>");
+		doOutQuote();
 		succeed;
 	}
-	if (aheadtext("<para>")) {
-		outtext("</quote>\n<para>");
+	if (seetext("</para>")) {
+		doOutQuote();
+		outtext("</para>");
+		succeed;
+	}
+	if (seetext("<para>")) {
+		doOutQuote();
+		outtext("<para>");
 		succeed;
 	}
 	fail;
