@@ -2,6 +2,87 @@
 <title>Installing &Specware;</title>
 
 <section>
+<title>Contents of Distribution Package</title>
+
+<para>
+The following programs and documents are included on the &Specware;
+4.0 installation CD:
+</para>
+
+<itemizedlist>
+
+<listitem>
+  <para>
+     <"setup.exe"> - This program in the root directory of the CD is
+     the Specware 4.0 installer for Windows. Before running this
+     program, please read the "Installation Instructions" section below.
+  </para>
+</listitem>
+
+<listitem>
+  <para>
+     <"README"> - This document contains important information about
+     &Specware; 4.0, including what has changed from previous versions
+     and how to give feedback on current and future features.
+  </para>
+</listitem>
+
+<listitem>
+  <para>
+     <"XEmacs"> - This folder contains the XEmacs <"setup.exe">
+     installer for Windows. XEmacs is the environment within which
+     &Specware; 4.0 is designed to run.
+  </para>
+</listitem>
+
+<listitem>
+  <para>
+     <"SNARK"> - This folder contains the license agreement and
+     modified source code for the theorem prover SNARK, which is built
+     into &Specware; 4.0.
+  </para>
+</listitem>
+
+</itemizedlist> <!-- CD contents -->
+
+<para>
+The following documentation is included with the distribution package:
+</para>
+
+<itemizedlist>
+
+<listitem>
+  <para>
+     &Specware; 4.0 User Manual (this document) - The User Manual serves
+     as a quick guide to basic usage and concepts of &Specware;. After
+     reading this, you should feel comfortable with the mechanics of
+     running and using &Specware;.
+  </para>
+</listitem>
+
+<listitem>
+  <para>
+     &Specware; 4.0 Tutorial - The Tutorial will guide you through the
+     process of specifying, refining and generating code in
+     &Specware;. A comprehensive example provides step-by-step
+     instructions for this development process.
+  </para>
+</listitem>
+
+<listitem>
+  <para>
+     &Specware; 4.0 Language Manual - The Language Manual discusses
+     the Metaslang specification language and gives the grammar rules
+     and meaning for each Metaslang language construct.
+  </para>
+</listitem>
+
+</itemizedlist> <!-- documentation -->
+
+</section> <!-- distribution package contents -->
+
+
+<section>
 <title>System Requirements</title>
 
 <section>
@@ -58,32 +139,53 @@ Before running the &Specware; 4.0 installer, you should have a recent
 version of XEmacs (21.1 or higher) installed on your machine.
 If you already have XEmacs, then proceed to the next step.  Otherwise,
 open the XEmacs folder provided on the setup CD, and run <"setup.exe">.
-Select "Install from Local Directory" as the Installation Method, and click 
-"Next" through the remaining steps to accept the default configuration.
+Select "Install from Local Directory" as the Installation Method, and
+click "Next" through the remaining steps to accept the default
+configuration.
+</para>
 
-Note: If you choose not to complete this step of installing XEmacs, a text-only version of
-Specware will be installed instead.
+<para>
+Note: If you choose not to complete this step of installing XEmacs, a 
+text-only version of Specware will be installed instead.
 </para>
 </step>
 
 <step>
 <para>
-After XEmacs has been installed, launch the Specware 4.0 installer
+After XEmacs has been installed, launch the &Specware; 4.0 installer
 <"setup.exe"> on the CD.
 </para>
 </step>
 
 <step>
 <para>
-Follow the instructions in the installation wizard, and Specware 4.0
-will be installed on your machine.  A shortcut to Specware will be
+Follow the instructions in the installation wizard, and &Specware; 4.0
+will be installed on your machine.  A shortcut to &Specware; will be
 placed on your Desktop as well as in the Program Files folder in the
-Start menu.
+Start menu.  Documentation, libraries and example code will be placed
+in the installation directory you specified in the wizard (the default
+is <"C:\Program Files\Specware">).
 </para>
 </step>
 
 </procedure>
 
 </section> <!-- installation instructions -->
+
+<section>
+<title>Uninstalling</title>
+
+<para>
+To uninstall &Specware; 4.0, run <"setup.exe"> again and select the
+"Remove" option in the wizard, or use the <"Add/Remove Programs">
+setting in the Control Panel.
+</para>
+
+<para>
+If you need to reinstall &Specware;, please uninstall it first and
+then run the <"setup.exe"> installer to install a clean version.
+</para>
+
+</section> <!-- uninstalling -->
 
 </chapter>
