@@ -120,18 +120,15 @@
 
 (defvar *running-test-harness?* nil)
 
-(defun show-error-position (emacs-error-info)
+(defun show-error-position (emacs-error-info position-delta)
   (when emacs-error-info
     (let ((error-file (first emacs-error-info))
 	  (linepos (second emacs-error-info))
 	  (charpos (third emacs-error-info)))
       (unless *running-test-harness?*
 	(if (sw-temp-file? error-file)
-	    (emacs::eval-in-emacs (format nil "(progn (previous-input-line)
-						    (comint-bol nil)
-						    (forward-word 1)
-						    (forward-char ~a))"
-					  (1+ charpos)))
+	    (emacs::eval-in-emacs (format nil "(show-error-on-new-input ~a)"
+					  (+ charpos position-delta)))
 	  (emacs::eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)"
 					error-file linepos charpos)))))))
 
@@ -178,7 +175,7 @@
 			(if *last-unit-Id-_loaded*
 			    (Specware::evaluateUID_fromLisp *last-unit-Id-_loaded*)
 			  (format t "No previous unit evaluated~%")))))
-	     (show-error-position emacs::*goto-file-position-stored*)
+	     (show-error-position emacs::*goto-file-position-stored* 1)
 	     val)))
     (if *running-test-harness?*
 	(sw-int x)
@@ -198,7 +195,7 @@
 	     (if *last-unit-Id-_loaded*
 		 (Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
 	       (format t "No previous unit evaluated~%")))
-	   (show-error-position emacs::*goto-file-position-stored*)
+	   (show-error-position emacs::*goto-file-position-stored* 1)
 	   (values)))
     (if *running-test-harness?*
 	(show-int x)
@@ -218,7 +215,7 @@
 	   (let ((val (Specware::evaluateLispCompile_fromLisp-2 x
 								(if y (cons :|Some| (subst-home y))
 								  '(:|None|)))))
-	     (show-error-position emacs::*goto-file-position-stored*)
+	     (show-error-position emacs::*goto-file-position-stored* 1)
 	     val)))
     (if *running-test-harness?*
 	(swl1 x y)
@@ -295,7 +292,7 @@
 			      ;; scripts depend upon the following returning true iff successful
 			      (specware::compile-and-load-lisp-file lisp-file-name))
 			  "Specware Processing Failed!")))
-	       (show-error-position emacs::*goto-file-position-stored*)
+	       (show-error-position emacs::*goto-file-position-stored* 1)
 	       val)))
       (if *running-test-harness?*
 	  (swll1 x lisp-file-name)
@@ -394,6 +391,7 @@
 			   (ymd-hms)))
 	 (tmp-uid (format nil "/~A"     tmp-name))
 	 (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
+	 (*current-temp-file* tmp-sw)
 	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
 	 (SpecCalc::noElaboratingMessageFiles (list tmp-cl))
 	 (old-swpath (specware::getEnv "SWPATH"))
@@ -433,15 +431,9 @@
 		    (setq value (Specware::evalDefInSpec-2 tmp-uid `(:|Qualified| . ("swe" . "tmp"))))
 		  (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))))
 	  (specware::setenv "SWPATH" old-swpath))
-    (if emacs::*goto-file-position-stored*; Parse or type-check error
-	(let ((linepos (second emacs::*goto-file-position-stored*))
-	      (charpos (third emacs::*goto-file-position-stored*)))
-	  (if (eq linepos input-line-num)
-	      (format t "~vt^~%" (+ charpos *expr-begin-offset*))
-	    (if (> linepos input-line-num)
-		(format t "Error: expression ends prematurely~%" emacs::*goto-file-position-stored*)
-	      (format t "Error in context: ~a~%" emacs::*goto-file-position-stored*)))
-	  (princ (trim-error-output parser-type-check-output)))
+    (if emacs::*goto-file-position-stored* ; Parse or type-check error
+	(progn (princ (trim-error-output parser-type-check-output))
+	       (show-error-position emacs::*goto-file-position-stored* -15))
       (progn
 	(princ parser-type-check-output)
 	(if *swe-use-interpreter?*
@@ -558,7 +550,7 @@
 					  (if y 
 					      (cons :|Some| y)
 					    '(:|None|)))
-    (show-error-position emacs::*goto-file-position-stored*)
+    (show-error-position emacs::*goto-file-position-stored* 1)
     (values)))
 
 (defvar *last-swj-args* nil)
@@ -654,16 +646,16 @@
 (defun swc-internal (x &optional y)
 ;;  (format t "swc-internal: x=~A, y=~A~%" x y)
    (let ((emacs::*goto-file-position-store?* t)
-	(emacs::*goto-file-position-stored* nil))
+	 (emacs::*goto-file-position-stored* nil))
      (Specware::evaluateCGen_fromLisp-2 (norm-unitid-str x)
 					(if y (cons :|Some| (subst-home y))
 					  '(:|None|)))
-     (show-error-position emacs::*goto-file-position-stored*)
+     (show-error-position emacs::*goto-file-position-stored* 1)
      (values)))
 
 (defun swc (&optional args)
   (let ((r-args (if (not (null args))
-		    (toplevel-parse-args args)
+		    (extract-final-file-name args)
 		  *last-swc-args*)))
     (if r-args
 	(progn
@@ -671,7 +663,9 @@
 	  (let* (
 		 (unitid (string (first r-args)))
 		 (arg2 (if (null (second r-args)) nil (string (second r-args))))
-		 (cfilename (if arg2 arg2 (getCFileNameFromUnitid unitid)))
+		 (cfilename (if arg2 arg2 (if (unitIdString? unitid)
+					      (getCFileNameFromUnitid unitid)
+					    "temp")))
 		 )
 	    (progn
 	      (funcall 'swc-internal unitid cfilename)
@@ -828,7 +822,7 @@
 						      (if y (cons :|Some| (string (subst-home y)))
 							'(:|None|))
 						      obligations)))
-      (show-error-position emacs::*goto-file-position-stored*)
+      (show-error-position emacs::*goto-file-position-stored* 1)
       val)))
 
 (defvar *last-swpf-args* nil)
@@ -962,11 +956,12 @@
   (if (equal dir "")
       (setq dir (specware::getenv "HOME"))
     (setq dir (subst-home dir)))
+  (specware::change-directory dir)
   #+allegro 
   (tpl:do-command "cd" dir)
   (let* ((dirpath (specware::current-directory))
 	 (newdir (namestring dirpath)))
-    (emacs::eval-in-emacs (format nil "(setq default-directory ~s)"
+    (emacs::eval-in-emacs (format nil "(set-default-directory ~s)"
 				  (specware::ensure-final-slash newdir)))
     #-allegro 
     (progn 
