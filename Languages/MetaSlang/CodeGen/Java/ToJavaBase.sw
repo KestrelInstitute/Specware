@@ -11,6 +11,7 @@ import ../../Transformations/PatternMatch
 import ../../Transformations/HigherOrderMatching
 
 import IJavaCodeGen
+import Monad
 
 sort ToExprSort = Block * Java.Expr * Nat * Nat
 
@@ -308,11 +309,83 @@ def CodeGenTransforms.sortId(srt) = (project 1)(srtId srt)
  * srtId returns for a given type the string representation accorinding the rules
  * in v3 page 67 for class names. It replaces the old version in LiftPattern.sw
  *)
+%% TO BE REMOVED
 op srtId: Sort -> String * Collected
 def srtId(srt) =
   let (_,s,col) = srtId_internal(srt,true) in
   (s,col)
 
+op srtIdM: Sort -> JGenEnv String
+def srtIdM srt =
+  {
+   (_,s) <- srtId_internalM(srt,true);
+   return s
+  }
+
+op srtId_internalM: Sort * Boolean -> JGenEnv (List Java.Type * String)
+def srtId_internalM(srt,addIds?) =
+  case srt of
+    | Base (Qualified (q, id), tvs, _) -> 
+      {
+       id <- if length(tvs)>0 & (all (fn(tv) -> case tv of TyVar _ -> false | _ -> true) tvs) then
+                foldM (fn s -> fn srt ->
+		       {
+			id0 <- srtIdM srt;
+			return (s^"$"^id0)
+		       }) id tvs
+	     else return id;
+       return ([tt_v2 id],id)
+      }
+    | Boolean _ -> return ([tt_v2 "Boolean"],"Boolean")
+    | Product([],_) -> return ([JVoid],"void")
+    | Product(fields,_) ->
+      {
+       (l,str) <- foldM (fn (types,str) -> fn (id,fsrt) ->
+			 {
+			  str0 <- srtIdM fsrt;
+			  str <- return (str ^ (if str = "" then "" else "$_$") ^ str0);
+			  str <- return (if addIds? then str^"$"^id else str);
+			  let types = concat(types,[tt_v2(str0)]) in
+			  return (types,str)
+			 }) ([],"") fields;
+       if addIds? then addProductSortToEnv srt else return ();
+       return (l,str)
+     }
+    | CoProduct(fields,_) ->
+      foldM (fn (types,str) -> fn (id,optfsrt) ->
+	     {
+	      str0 <- case optfsrt of
+			| Some fsrt -> srtIdM fsrt
+			| None -> return "";
+	      str <- return (str ^ (if str = "" then "" else "$_$") ^ str0);
+	      str <- return (if addIds? then str^"$"^id else str);
+	      let types = concat(types,[tt_v2(str0)]) in
+	      return (types,str)
+	     }) ([],"") fields
+    | Arrow(dsrt,rsrt,_) ->
+      {
+       (dtypes,dsrtid) <- srtId_internalM(dsrt,false);
+       (_,rsrtid) <- srtId_internalM(rsrt,addIds?);
+       (pars,_) <- return (foldl (fn(ty,(pars,nmb)) -> 
+				  let fpar = (false,ty,("arg"^Integer.toString(nmb),0)) in
+				  (concat(pars,[fpar]),nmb+1)
+				 ) ([],1) dtypes);
+       methHdr <- return ([],Some(tt_v2(rsrtid)),"apply",pars,[]);
+       id <- return(dsrtid^"$To$"^rsrtid);
+       %let clsDecl = mkArrowClassDecl(id,(methHdr,None)) in
+       addArrowClass (mkArrowClassDecl(id,(methHdr,None)));
+       return ([tt_v2 id],id)
+      }
+    | TyVar(id,_) ->
+      let id = "Object" in
+      return ([tt_v2 id],id)
+    | Subsort(srt,_,_) -> srtId_internalM(srt,addIds?)
+    | Quotient(srt,_,_) -> srtId_internalM(srt,addIds?)
+    | _ -> raise(NotSupported("sort format not supported: "^printSort srt),sortAnn srt)
+           %(issueUnsupportedError(sortAnn(srt),"sort format not supported: "^printSort(srt));
+	   % ([tt_v2 "ERRORSORT"],"ERRORSORT",nothingCollected))
+
+%% TO BE REMOVED
 op srtId_internal: Sort * Boolean -> List Java.Type * String * Collected
 def srtId_internal(srt,addIds?) =
   %let _ = writeLine("srtId("^(printSort srt)^")...") in
@@ -1040,6 +1113,17 @@ def addProductSortToCollected(srt, col as {arrowclasses,productSorts}) =
    arrowclasses = arrowclasses,
    productSorts = if exists (fn(psrt) -> equalSort?(srt,psrt)) productSorts then productSorts
 		  else cons(srt,productSorts)
+  }
+
+op addProductSortToEnv: Sort -> JGenEnv ()
+def addProductSortToEnv srt =
+  %let _ = writeLine("collecting product sort "^printSort(srt)^"...") in
+  {
+   productSorts <- getProductSorts;
+   if exists (fn(psrt) -> equalSort?(srt,psrt)) productSorts then
+     return ()
+   else
+     addProductSort srt
   }
 
 op nothingCollected: Collected

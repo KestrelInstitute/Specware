@@ -5,6 +5,10 @@ import ToJavaBase
 
 sort Term = JGen.Term
 
+% monadic
+op termToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+
+% functional
 op termToExpression: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 op termToExpressionRet: TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
 op termToExpressionAsgNV: Id * Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
@@ -18,6 +22,16 @@ op translateLetToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat
 op translateCaseToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 op specialTermToExpression: TCx * JGen.Term * Nat * Nat * Spec -> Option ((Block * Java.Expr * Nat * Nat) * Collected)
+
+
+
+def termToExpressionM(tcx,term,k,l) =
+  {
+   spc <- getEnvSpec;
+   ((block,expr,k,l),col) <- return(termToExpression(tcx,term,k,l,spc));
+   addCollected col;
+   return (block,expr,k,l)
+  }
 
 (**
  * toplevel entry point for translating a meta-slang term to a java expression 

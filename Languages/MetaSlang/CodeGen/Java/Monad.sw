@@ -74,6 +74,11 @@ def addClsDecls decls =
   fn state ->
   (Ok (), state << { clsDecls = state.clsDecls ++ decls })
 
+op putClsDecls: List ClsDecl -> JGenEnv ()
+def putClsDecls clsDecls =
+  fn state ->
+  (Ok (), state << { clsDecls = clsDecls })
+
 op addCollected: Collected -> JGenEnv ()
 def addCollected col =
   fn state ->
@@ -81,6 +86,31 @@ def addCollected col =
 		    arrowclasses = (state.arrowclasses ++ col.arrowclasses),
 		    productSorts = (state.productSorts ++ col.productSorts)
 		   })
+
+op getClsDecls: JGenEnv (List ClsDecl)
+def getClsDecls =
+  fn state ->
+  (Ok (state.clsDecls), state)
+
+op addProductSort: Sort -> JGenEnv ()
+def addProductSort srt =
+  fn state ->
+  (Ok (), state << { productSorts = state.productSorts ++ [srt] })
+
+op addArrowClass: ClsDecl -> JGenEnv ()
+def addArrowClass clsDecl =
+  fn state ->
+  (Ok (), state << { arrowclasses = state.arrowclasses ++ [clsDecl] })
+
+op getProductSorts: JGenEnv (List Sort)
+def getProductSorts =
+  fn state ->
+  (Ok state.productSorts, state)
+
+op getArrowClasses: JGenEnv (List ClsDecl)
+def getArrowClasses =
+  fn state ->
+  (Ok state.arrowclasses, state)
 
 op putEnvSpec: Spec -> JGenEnv ()
 def putEnvSpec spc =
