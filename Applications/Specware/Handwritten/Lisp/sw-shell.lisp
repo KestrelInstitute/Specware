@@ -73,6 +73,9 @@
 (defun in-specware-shell? ()
   *in-specware-shell?*)
 
+(defun specware-shell0 ()
+  (specware-shell t))
+
 (defun specware-shell (exiting-lisp?)
   (let  ((magic-eof-cookie (cons :eof nil))
 	 (number-of-eofs 0)
@@ -87,33 +90,36 @@
 	  (when *emacs-eval-form-after-prompt*
 	    (emacs::eval-in-emacs *emacs-eval-form-after-prompt*)
 	    (setq *emacs-eval-form-after-prompt* nil))
-	  (with-simple-restart (abort "Return to Specware Shell top level.")
-	    ;(set-specware-shell t)
-	    (let ((form (read *standard-input* nil magic-eof-cookie)))
-	      (cond ((member form '(quit exit))
-		     (setq exiting-lisp? t)
-		     (cl-user::exit))
-		    ((eq form 'ok)
-		     (return))
-		    ((not (eq form magic-eof-cookie))
-		     (let ((results
-			    (multiple-value-list (sw-shell-command form))))
-		       (dolist (result results)
-			 (fresh-line)
-			 (prin1 result)))
-		     (setf number-of-eofs 0))
-		    ((eql (incf number-of-eofs) 1)
-		     (let ((stream (make-synonym-stream '*terminal-io*)))
-		       (setf *standard-input* stream)
-		       (setf *standard-output* stream)
-		       (format t "~&Received EOF on *standard-input*, ~
+	  (catch ':top-level-reset	; Only useful for allegro
+	    (with-simple-restart (abort "Return to Specware Shell top level.")
+					;(set-specware-shell t)
+	      (catch #+allegro 'tpl::top-level-break-loop
+		     #-allegro nil
+		(let ((form (read *standard-input* nil magic-eof-cookie)))
+		  (cond ((member form '(quit exit))
+			 (setq exiting-lisp? t)
+			 (cl-user::exit))
+			((eq form 'ok)
+			 (return))
+			((not (eq form magic-eof-cookie))
+			 (let ((results
+				(multiple-value-list (sw-shell-command form))))
+			   (dolist (result results)
+			     (fresh-line)
+			     (prin1 result)))
+			 (setf number-of-eofs 0))
+			((eql (incf number-of-eofs) 1)
+			 (let ((stream (make-synonym-stream '*terminal-io*)))
+			   (setf *standard-input* stream)
+			   (setf *standard-output* stream)
+			   (format t "~&Received EOF on *standard-input*, ~
 				  switching to *terminal-io*.~%")))
-		    ((> number-of-eofs eofs-before-quit)
-		     (format t "~&Received more than ~D EOFs; Aborting.~%"
-			     eofs-before-quit)
-		     (cl-user::exit))
-		    (t
-		     (format t "~&Received EOF.~%"))))))
+			((> number-of-eofs eofs-before-quit)
+			 (format t "~&Received more than ~D EOFs; Aborting.~%"
+				 eofs-before-quit)
+			 (cl-user::exit))
+			(t
+			 (format t "~&Received EOF.~%"))))))))
       
       (set-specware-shell nil)
       (unless exiting-lisp?
