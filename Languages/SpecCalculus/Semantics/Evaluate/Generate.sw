@@ -47,6 +47,12 @@ SpecCalc qualifying spec
                         "attempting to generate code from an object that is not a specification"))
         }
 
+  def lispFilePreamble() = "(require \"SpecwareRuntime\" \""
+                          ^(case getEnv "SPECWARE4" of
+			     | Some path -> path
+			     | None -> "")
+		          ^"/Library/SpecwareRuntime.lisp\")\n\n"
+
   %% Need to add error detection code
   def SpecCalc.evaluateLispCompile(valueInfo as (value,_,_), cterm, optFileName) =
     case coerceToSpec value of
@@ -56,7 +62,7 @@ SpecCalc qualifying spec
          lispFileName <- UIDtoLispFile (cUID, optFileName);
          print (                          lispFileName ^ "\n");
          let _ = ensureDirectoriesExist lispFileName in
-         let _ = toLispFile (spc, lispFileName,"") in
+         let _ = toLispFile (spc, lispFileName,lispFilePreamble()) in
          return valueInfo}
       | _ -> raise (TypeCheck ((positionOf cterm),
                                "attempting to generate code from an object that is not a specification"))
