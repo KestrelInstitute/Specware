@@ -14,6 +14,7 @@ SpecCalc qualifying spec {
  import SpecMorphism 
  import DiagMorphism 
  import Generate      
+ import Snark
  import Translate      
  import Obligations
  import Print      
@@ -69,6 +70,8 @@ This is a monadic interpreter for the Spec Calculus.
             | Spec spc -> 
                 (case language of
                    | "lisp" -> evaluateLispCompile ((value,timeStamp,depURIs),
+						   sub_term,optFile)
+                   | "snark" -> evaluateSnarkGen ((value,timeStamp,depURIs),
 						   sub_term,optFile)
                    | "spec" -> {
                           print (showValue value);
