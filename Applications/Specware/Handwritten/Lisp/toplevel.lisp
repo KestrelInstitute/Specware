@@ -64,13 +64,14 @@
 
 (defun strip-extraneous (str)
   (let ((len (length str)))
-    (if (> len 0)
-	(if (member (elt str 0) '(#\" #\space))
-	    (strip-extraneous (subseq str 1 len))
-	  (if (member (elt str (- len 1)) '(#\" #\space))
-	      (strip-extraneous (subseq str 0 (- len 1)))
-	    str))
-      str)))
+    (when (> len 0)
+      (when (member (elt str 0) '(#\space))
+	(setq str (strip-extraneous (subseq str 1 len))))
+      (when (member (elt str (- len 1)) '( #\space))
+	(setq str (strip-extraneous (subseq str 0 (- len 1)))))
+      (when (and (> len 1) (eq (elt str 0) #\") (eq (elt str (- len 1)) #\"))
+	(setq str (strip-extraneous (subseq str 1 (- len 1))))))
+    str))
 
 ;;; Code for handling specalc terms as well as just unitid strings
 (defun unitIdString? (str)
