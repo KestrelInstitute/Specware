@@ -63,7 +63,8 @@ fi
 cd "$SPECWARE4"/Applications/Specware
 
 export SWPATH; SWPATH="$SPECWARE4":.
-EXIT_ON_ERRORS="$SPECWARE4"/Applications/Specware/bin/linux/exit-on-errors
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 
 if [ -f lisp ]; then
    echo "Failed to $act, $SPECWARE4/Applications/Specware/lisp is not a directory" 2>&1
@@ -109,7 +110,9 @@ cd Handwritten/Lisp
 # easier just to load it twice rather than to try to figure out if something
 # needs to be compiled.
 $LISP <<-XXXX
-    (load "Specware4.lisp")
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  (load "Specware4.lisp"))
 XXXX
 
 # The second time is just to do the dumplisp. If we do it in one go,
@@ -126,7 +129,7 @@ XXXX
 # Rebuild it each time.  A bit redundant, but ensures compatibility with 6.1/6.2/etc.
 BIG_ALISP="${SPECWARE4}/Applications/Specware/bin/linux/big-alisp.dxl"
 $LISP -batch <<-XXXX
-	(build-lisp-image "$BIG_ALISP" :lisp-heap-start #x48000000 :oldspace #x2000000)
+	(build-lisp-image "$BIG_ALISP" :lisp-heap-start #x48000000 :oldspace #x100)
 XXXX
 
 echo " "
@@ -134,10 +137,12 @@ echo "Loading Specware ... (for dumplisp)"
 echo " "
 $LISP -I ${BIG_ALISP} -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
+	(load "$MEMORY_MANAGEMENT") 
+	(compact-memory t)
 	(set-gc-parameters-for-build t)
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
-	(compact-memory t)
+	(compact-memory t 2 32000000)
 	(set-gc-parameters-for-use t)
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 	  (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
