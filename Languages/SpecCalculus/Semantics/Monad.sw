@@ -44,8 +44,9 @@ This runs a monadic program and lifts the result out of the monad.
   op run : fa (a) Env a -> a
   def run f = 
     case f () of
-      | (Ok x,_) -> x
-      | (Exception _,_) -> fail "run: uncaught exception"
+      | (Ok x, _) -> x
+      | (Exception exception, _) -> 
+        fail ("run: uncaught exception:\n  " ^ (printException exception))
 \end{spec}
 
 Next we define the monad sequencing operators.  The names of the operators
