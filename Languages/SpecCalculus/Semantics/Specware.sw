@@ -284,6 +284,33 @@ The following corresponds to the :show command.
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
+\begin{spec}
+  op evaluateCGen_fromLisp : String * Option String -> Boolean
+  def evaluateCGen_fromLisp (path,targetFile) = 
+    let target =
+      case targetFile of
+        | None -> None
+        | Some name -> Some (maybeAddSuffix name ".c") in
+    let run = {
+      restoreSavedSpecwareState;
+      currentURI <- pathToCanonicalURI ".";
+      setCurrentURI currentURI;
+      path_body <- return (removeSWsuffix path);
+      uri <- pathToRelativeURI path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      cValue <- evaluateURI position uri;
+      evaluateCGen(cValue,target);
+      saveSpecwareState;
+      return true
+    } in
+    case catch run toplevelHandler ignoredState of
+      | (Ok val,_) -> val
+      | (Exception _,_) -> fail "Specware toplevel handler failed"
+\end{spec}
+
+
+
+
 When the lisp file for Specware is compiled and loaded, the following
 will initialize a lisp variable holding the initial state for the
 Specware environment. Subsequent invocations of the evaluate functions
