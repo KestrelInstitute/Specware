@@ -1,7 +1,7 @@
 ;; These two definitions might not be needed here
 ;; They are in BuildPreamble.lisp where they are needed
-(defvar Accord-version "4.0.11")
-(defvar Accord-version-name "Specware-4-0-11")
+(defvar Accord-version "4.1.1")
+(defvar Accord-version-name "Accord-4-1-1")
 (defvar Accord-name "Specware-Accord")	; Name of directory and startup files
 (defvar Accord-dir (sys:getenv "ACCORD"))
 (defvar Specware-dir (sys:getenv "SPECWARE4"))
