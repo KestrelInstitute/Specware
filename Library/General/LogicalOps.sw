@@ -1,4 +1,4 @@
-LogicalOps qualifying spec
+LogicalOp qualifying spec
 
   (* This spec defines some useful logical operations, which may become
   "inbuilt" (see language manual) in future versions of Metaslang. *)
