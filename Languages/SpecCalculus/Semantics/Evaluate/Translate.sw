@@ -175,8 +175,13 @@ Note: The code below does not yet match the documentation above, but should.
 		  else
 		    case findAQualifierMap (translation_sort_map, dom_q, dom_id) of
 		      | None -> 
-		        return (translation_op_map, 
-				insertAQualifierMap (translation_sort_map, dom_q, dom_id, (cod_qid, cod_aliases)))
+		        let new_sort_map = insertAQualifierMap (translation_sort_map, dom_q, dom_id, (cod_qid, cod_aliases)) in
+			let new_sort_map = (if dom_q = found_q then
+					      new_sort_map
+					    else
+					      insertAQualifierMap (new_sort_map, found_q, dom_id, (cod_qid, cod_aliases)))
+			in
+			  return (translation_op_map, new_sort_map)
 		      | _  -> 
 			{
 			 raise_later (TranslationError ("Multiple rules for source type " ^ (explicitPrintQualifiedId dom_qid),
@@ -214,8 +219,13 @@ Note: The code below does not yet match the documentation above, but should.
 		       
 		       | None -> 
 		         %% No rule yet for dom_qid...
-		         return (insertAQualifierMap (translation_op_map, dom_q, dom_id, (cod_qid, cod_aliases)),
-				 translation_sort_map)
+		         let new_op_map = insertAQualifierMap (translation_op_map, dom_q, dom_id, (cod_qid, cod_aliases)) in
+			 let new_op_map = (if dom_q = found_q then
+					      new_op_map
+					    else
+					      insertAQualifierMap (new_op_map, found_q, dom_id, (cod_qid, cod_aliases)))
+			 in
+			   return (new_op_map, translation_sort_map)
 		       | _ -> 
 			 %% Already had a rule for dom_qid...
 			 {
