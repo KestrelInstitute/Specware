@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/02/13 19:44:09  weilyn
+ * Added code to create claim objects.
+ *
  * Revision 1.8  2003/02/10 15:38:36  gilham
  * Allow non-word symbols only as op names, not as sort names or unit ids.
  *
@@ -99,7 +102,7 @@ private scTerm[Token unitIdToken] returns[ElementFactory.Item item]
     item = null;
 }
     : ( item=specDefinition[unitIdToken]
-//      | item=scQualify[unitIdToken]
+      | item=scProve[unitIdToken]
       )                     {if (item != null) builder.setParent(item, null);}
     ;
 
@@ -139,6 +142,19 @@ private specDefinition[Token unitIdToken] returns[ElementFactory.Item spec]
                              builder.setParent(children, spec);
                              ParserUtil.setAllBounds(builder, spec, begin, headerEnd, end);
                              }
+    ;
+
+private scProve[Token unitIdToken] returns[ElementFactory.Item proveItem]
+{
+    proveItem = null;
+    ElementFactory.Item childItem = null;
+    Token headerEnd = null;
+    List children = new LinkedList();
+    String name = (unitIdToken == null) ? "" : unitIdToken.getText();
+}
+    : begin:"prove"
+      (name
+      )*
     ;
 
 private qualifier returns[String qlf]
