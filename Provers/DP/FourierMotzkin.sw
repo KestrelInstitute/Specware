@@ -1,6 +1,7 @@
 FM qualifying spec
 
   import /Library/Legacy/DataStructures/MergeSort
+  import Rational
 %  import /Library/Legacy/Utilities/Lisp
 
   sort CompPred =
@@ -13,7 +14,15 @@ FM qualifying spec
 
   sort Var = String
 
-  sort Coef = Integer
+  sort Coef = Rational
+
+  op Rational.toCoef: Rational -> Coef
+  def Rational.toCoef(r) = r
+
+  op Integer.toCoef: Integer -> Coef
+  def Integer.toCoef(i) = intToRat(i)
+
+%  sort Denom = Integer
 
   sort Term = 
     | Constant Coef
@@ -34,7 +43,7 @@ FM qualifying spec
   def mkPoly2(tm, p) = Cons(tm, p)
 
   op zeroTerm: Term
-  def zeroTerm = Constant 0
+  def zeroTerm = Constant zero
 
   op zeroPoly: Poly
   def zeroPoly = []
@@ -50,15 +59,20 @@ FM qualifying spec
 
   op mkConstantPoly: Coef -> Poly
   def mkConstantPoly(c) =
-    if c = 0
+    if c = zero
       then zeroPoly
     else mkPoly1(Constant(c))
 
+  op mkConstantIntPoly: Integer -> Poly
+  def mkConstantIntPoly(i) =
+    let c = toCoef(i) in
+    mkConstantPoly(c)
+
   op onePoly: Poly
-  def onePoly = mkConstantPoly(1)
+  def onePoly = mkConstantPoly(one)
 
   op minusOnePoly: Poly
-  def minusOnePoly = mkConstantPoly(-1)
+  def minusOnePoly = mkConstantPoly(zero-one)
 
   sort Ineq = CompPred * Poly
 
@@ -93,12 +107,12 @@ FM qualifying spec
       then
 	let [Constant c] = poly in
 	case comp of
-	  | Gt -> c > 0
-	  | GtEq -> c >= 0
-	  | Lt -> c < 0
-	  | LtEq -> c <= 0
-	  | Eq -> c = 0
-	  | Neq -> c ~= 0
+	  | Gt -> c > zero
+	  | GtEq -> c >= zero
+	  | Lt -> c < zero
+	  | LtEq -> c <= zero
+	  | Eq -> c = zero
+	  | Neq -> c ~= zero
     else false
 
   op mkNormIneq: CompPred * Poly -> Ineq
@@ -162,7 +176,7 @@ FM qualifying spec
 
   op coefTimesTerm: Coef * Term -> Term
   def coefTimesTerm(c, tm) =
-    if c = 0 then zeroTerm
+    if c = zero then zeroTerm
     else
       case tm of
 	| Constant c1 -> Constant (c * c1)
@@ -202,7 +216,7 @@ FM qualifying spec
 
   op coefTimesPoly: Coef * Poly -> Poly
   def coefTimesPoly(c, p) =
-    if c = 0 then zeroPoly
+    if c = zero then zeroPoly
     else
       map (fn (tm) -> coefTimesTerm(c, tm)) p
 
@@ -237,23 +251,14 @@ FM qualifying spec
     map (fn (tm) -> termPowCoef(tm, c)) p1
 *)
   
-  op gcd: Integer * Integer -> Integer
+  op gcd: Coef * Coef -> Coef
   def gcd(i, j) =
-    let def gcdAux(i,j) =
-    if i = 1 then 1 else if j = 1 then 1 else
-    if i > j
-      then gcd(i - j, j)
-    else
-      if i < j
-	then gcd(i, j - i)
-      else i in
-    gcdAux(abs(i), abs(j))
+    toCoef(gcd(ratToInt(i), ratToInt(j)))
 
-  op lcm: Integer * Integer -> Integer
+  op lcm: Coef * Coef -> Coef
 
   def lcm(i, j) =
-    let gcd = gcd(i, j) in
-    (i * j) div gcd
+    toCoef(lcm(ratToInt(i), ratToInt(j)))
 
   op compare: Term * Term -> Comparison
   def compare(t1, t2) =
@@ -284,7 +289,7 @@ FM qualifying spec
   op normalize: Ineq -> Ineq
 
   def normalize(ineq as (comp, sum)) =
-    let normPoly = reduceCoefs(normalizePoly(sum)) in
+    let normPoly = reduceCoefs(eliminateDenominators(normalizePoly(sum))) in
     if zeroPoly?(normPoly)
       then normalizeZeroPolyIneq(comp)
     else
@@ -316,13 +321,13 @@ FM qualifying spec
 	    | (Monom (c1, v1), Monom(c2, v2)) ->
 	       if v1 = v2 then
 		 let c = c1 + c2 in
-		 if c = 0
+		 if c = zero
 		   then []
 		 else [Monom (c, v1)]
 	       else [t1, t2]
 	    | (Constant c1, Constant c2) ->
 	       let c = c1 + c2 in
-	       if c = 0 then []
+	       if c = zero then []
 	       else [Constant c]
 	    | _ -> [t1, t2] in
      let def buildRes(t, res) =
@@ -335,10 +340,24 @@ FM qualifying spec
 	    butLastRes++mergeRes in
      foldl buildRes [] poly
 
+  op eliminateDenominators: Poly -> Poly
+  def eliminateDenominators(poly) =
+    %let _ = writeLine("elim: "^printPoly(poly)) in
+    let res =
+    if zeroPoly? poly then poly else
+      let lcm = foldl (fn ((Constant c), res) -> (lcm(denominator c, res))
+                        | ((Monom(c, _)), res) -> lcm(denominator c, res))
+                      (denominator(hdCoef(poly))) poly in
+       map (fn (Monom (coef, var)) -> Monom (coef * lcm, var)
+                 | (Constant coef) -> Constant (coef * lcm))
+        poly in
+    %let _ = writeLine("elim: "^printPoly(res)) in
+    res
+  
   op reduceCoefs: Poly -> Poly
   def reduceCoefs(poly) =
     if zeroPoly?(poly) then poly else
-    let gcd:Integer = foldl (fn ((Constant c), res) -> (gcd(c, res))
+    let gcd:Coef = foldl (fn ((Constant c), res) -> (gcd(c, res))
 			 | ((Monom(c, _)), res) -> gcd(c, res)) (hdCoef(poly)) poly in
     map (fn (Monom (coef, var)) -> Monom (coef div gcd, var)
               | (Constant coef) -> Constant (coef div gcd))
@@ -378,10 +397,10 @@ FM qualifying spec
     let hdV2 = termVar(hdT2) in
     let hdC1 = termCoef(hdT1) in
     let hdC2 = termCoef(hdT2) in
-    if hdV1 = hdV2 & hdC1 * hdC2 < 0
+    if hdV1 = hdV2 & hdC1 * hdC2 < zero
       then
 	let coefGcd = gcd(hdC1, hdC2) in
-	let p1Mult =abs(hdC2 div coefGcd) in
+	let p1Mult = abs(hdC2 div coefGcd) in
 	let p2Mult = abs(hdC1 div coefGcd) in
 	let newP1 = coefTimesPoly(p1Mult, poly1) in
 	let newP2 = coefTimesPoly(p2Mult, poly2) in
@@ -400,11 +419,11 @@ FM qualifying spec
     let hdV2 = termVar(hdT2) in
     let hdC1 = termCoef(hdT1) in
     let hdC2 = termCoef(hdT2) in
-    if hdV1 = hdV2 & comp2 = GtEq % & hdC1 * hdC2 < 0
+    if hdV1 = hdV2 & comp2 = GtEq % & hdC1 * hdC2 < zero
       then
 	let coefGcd = gcd(hdC1, hdC2) in
 	let p1Mult =abs(hdC2 div coefGcd) in
-	let p2Mult = if  hdC1 * hdC2 < 0
+	let p2Mult = if  hdC1 * hdC2 < zero
 		       then abs(hdC1 div coefGcd)
 		     else -(abs(hdC1 div coefGcd)) in
 	let newP1 = coefTimesPoly(p1Mult, poly1) in
@@ -414,7 +433,7 @@ FM qualifying spec
 	%let _ = writeLine("tighten ineq2: "^printIneq(ineq2)) in
 	%let _ = writeLine("tighten newP: "^printPoly(newP)) in
 	if zeroPoly?(newP)
-	  then let newP = polyMinusPoly(poly2, mkPoly1(mkConstant(1))) in
+	  then let newP = polyMinusPoly(poly2, mkPoly1(mkConstant(one))) in
 	       mkNormIneq(GtEq, newP)
 	else ineq2
     else ineq2
@@ -422,7 +441,7 @@ FM qualifying spec
   op tightenGTInteger: Ineq -> Ineq
   def tightenGTInteger (ineq as (comp, poly)) =
     case comp of
-      | Gt -> mkNormIneq(GtEq, polyMinusPoly(poly, mkPoly1(mkConstant(1))))
+      | Gt -> mkNormIneq(GtEq, polyMinusPoly(poly, mkPoly1(mkConstant(one))))
       | _ -> ineq
 
   op ineqsChainAbleP: Ineq * Ineq -> Boolean
@@ -433,7 +452,7 @@ FM qualifying spec
     let hdV2 = termVar(hdT2) in
     let hdC1 = termCoef(hdT1) in
     let hdC2 = termCoef(hdT2) in
-      hdV1 = hdV2 & hdC1 * hdC2 < 0
+      hdV1 = hdV2 & hdC1 * hdC2 < zero
 
   op chainIneq: Ineq * Ineq -> Ineq
   def chainIneq(ineq1 as (comp1, poly1), ineq2 as (comp2, poly2)) =
@@ -458,8 +477,8 @@ FM qualifying spec
   def chainZeroResult(p1, p2, comp1, comp2) =
     case (comp1, comp2) of
       | (GtEq, GtEq) -> Some (mkIneq(Eq, p1))
-      | (Neq, GtEq) -> Some (mkIneq(GtEq, polyMinusPoly(p2, mkPoly1(mkConstant(1)))))
-      | (GtEq, Neq) -> Some (mkIneq(GtEq, polyMinusPoly(p1, mkPoly1(mkConstant(1)))))
+      | (Neq, GtEq) -> Some (mkIneq(GtEq, polyMinusPoly(p2, mkPoly1(mkConstant(one)))))
+      | (GtEq, Neq) -> Some (mkIneq(GtEq, polyMinusPoly(p1, mkPoly1(mkConstant(one)))))
       | (Neq, Neq) -> None
       | _ -> Some contradictIneqGt
 
@@ -617,8 +636,8 @@ FM qualifying spec
   op printTerm: Term -> String
   def printTerm(tm) =
     case tm of
-      | Constant c -> intToString(c)
-      | Monom (c, v) -> if c = 1 then v else intToString(c)^"*"^v
+      | Constant c -> toString(c)
+      | Monom (c, v) -> if c = one then v else toString(c)^"*"^v
 
   op printComp: CompPred -> String
   def printComp(comp) =

@@ -395,7 +395,7 @@ MSToFM qualifying spec
 	(resTerm, newContext)
       | Fun ((Bool true), Boolean(_), _) -> (fmTrue, context)
       | Fun ((Bool false), Boolean(_), _) -> (fmFalse, context)
-      | Fun (Nat (n) ,_,_) -> (Poly (mkConstantPoly(n)), context)
+      | Fun (Nat (n) ,_,_) -> (Poly (mkConstantPoly(intToRational(n))), context)
       | Fun(f, srt, _) -> toFMTermConstant(context, term, f)
       | Var (v, _) -> toFMVar(context, sp, v)
       | _ -> let (newVar, newContext) = toNewFMVar(term, context) in (newVar, newContext) in
@@ -435,18 +435,18 @@ MSToFM qualifying spec
 
   op toFMVar:  Context * Spec * MS.Var -> FMTerm * Context
   def toFMVar (context, spc, var as (v, s)) =
-    (Poly (mkPoly1(mkMonom(1, v))), context)
+    (Poly (mkPoly1(mkMonom(one, v))), context)
 
   op fmBndVars: List MS.Var -> List FMTerm
   def fmBndVars vars =
-    let fmVarList = map (fn (v, s) -> Poly (mkPoly1(mkMonom(1, v)))) vars in
+    let fmVarList = map (fn (v, s) -> Poly (mkPoly1(mkMonom(one, v)))) vars in
       fmVarList
 
   op toFMTermConstant: Context * MS.Term * Fun -> FMTerm * Context
   def toFMTermConstant(cntxt, term, f) =
     let resTerm = 
     case f of
-      | Op (qid, _) -> Poly (mkPoly1(mkMonom(1, printQualifiedId(qid)^"$C")))
+      | Op (qid, _) -> Poly (mkPoly1(mkMonom(one, printQualifiedId(qid)^"$C")))
       | _ -> UnSupported in
     let map = FMMap.update(cntxt.map, term, resTerm) in
     let revMap = FMMap.update(cntxt.revMap, resTerm, term) in
@@ -457,7 +457,7 @@ MSToFM qualifying spec
   def toNewFMVar(term, context) =
     %let _ = fail(printTerm(term)) in
     let (newVar, context) = mkNewFMVar(context) in
-    let resTerm = Poly (mkPoly1(mkMonom(1, newVar))) in
+    let resTerm = Poly (mkPoly1(mkMonom(one, newVar))) in
     let map = FMMap.update(context.map, term, resTerm) in
     let revMap = FMMap.update((context.revMap), resTerm, term) in
     let context = {map = map, revMap = revMap, varCounter = context.varCounter} in
@@ -522,18 +522,18 @@ MSToFM qualifying spec
   op fromFMTermTerm: FM.Term * Context -> MS.Term
   def fromFMTermTerm(tm, context) =
     case tm of
-      | Constant coef -> mkInt(coef)
+      | Constant coef -> mkInt(ratToInt(coef))
       | Monom (coef, var) ->
-        if coef = 1 then fromFMTermVar(var, context)
+        if coef = one then fromFMTermVar(var, context)
 	else
-	  let coefTerm = mkInt(coef) in
+	  let coefTerm = mkInt(ratToInt(coef)) in
 	  let varTerm = fromFMTermVar(var, context) in
 	  mkMult(coefTerm, varTerm)
 
 op fromFMTermVar: FM.Var * Context -> MS.Term
   def fromFMTermVar(var, context) =
     let revMap = context.revMap in
-    case FMMap.apply(revMap, Poly (mkPoly1(mkMonom(1, var)))) of
+    case FMMap.apply(revMap, Poly (mkPoly1(mkMonom(one, var)))) of
       | Some MSTerm -> MSTerm
       | _ -> fail("Shouldnt happen.")
 

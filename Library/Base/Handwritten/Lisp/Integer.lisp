@@ -130,3 +130,25 @@
 
 (define-compiler-macro |!abs| (x)
   `(abs (the-int ,x)))
+
+(defun gcd-2 (x y)
+  (declare (integer x y))
+  (the-int (cl:gcd x y)))
+
+(define-compiler-macro gcd-2 (x y)
+  `(cl:gcd (the-int ,x) (the-int ,y)))
+
+(defun |!gcd| (xy)
+  (declare (cons xy))
+  (cl:gcd (the-int (car xy)) (the-int (cdr xy))))
+
+(defun lcm-2 (x y)
+  (declare (integer x y))
+  (the-int (cl:lcm x y)))
+
+(define-compiler-macro lcm-2 (x y)
+  `(cl:lcm (the-int ,x) (the-int ,y)))
+
+(defun |!lcm| (xy)
+  (declare (cons xy))
+  (cl:lcm (the-int (car xy)) (the-int (cdr xy))))

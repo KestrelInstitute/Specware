@@ -72,6 +72,8 @@ Integer qualifying spec
   op max           : Integer * Integer -> Integer
   op compare       : Integer * Integer -> Comparison
   op pred          : Nat -> Integer
+  op gcd           : Integer * Integer -> PosNat
+  op lcm           : Integer * Integer -> Nat
 
   axiom addition_def1 is
     fa(i:Integer) i+0 = i && 0+i = i
