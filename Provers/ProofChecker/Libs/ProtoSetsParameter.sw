@@ -1,4 +1,4 @@
-spec
+PSet qualifying spec
 
   (* See the explanation in spec `ProtoSets'. *)
 
@@ -6,7 +6,8 @@ spec
 
   op protoSetPredicate? : [a] Predicate a -> Boolean
 
-  axiom atLeastAllFinitePredicates is [a]
-    fa (p : Predicate a) finite? p => protoSetPredicate? p
+  axiom finiteOrAllPredicates is
+    protoSetPredicate? = finite? ||
+    protoSetPredicate? = (fn p -> true)
 
 endspec

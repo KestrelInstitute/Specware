@@ -5,8 +5,31 @@ FSet qualifying spec
 
   import translate ProtoSets
                    [morphism ProtoSetsParameter ->
-                             ProtoSetsInstantiationFinite {}]
-                   by {PSet +-> FSet}
+                             ProtoSetsInstantiationFinite
+                             {protoSetPredicate? +-> protoSetPredicate?}]
+                   by {PSet.PSetPredicate +-> FSet.PSetPredicate,
+                       PSet.PSet          +-> FSet.FSet,
+                       PSet.setPredicate  +-> FSet.setPredicate,
+                       PSet.setSuchThat   +-> FSet.setSuchThat,
+                       PSet.in?           +-> FSet.in?,
+                       PSet.<=            +-> FSet.<=,
+                       PSet.>=            +-> FSet.>=,
+                       PSet.forall?       +-> FSet.forall?,
+                       PSet.exists?       +-> FSet.exists?,
+                       PSet.\/            +-> FSet.\/,
+                       PSet./\            +-> FSet./\,
+                       PSet.unionAll      +-> FSet.unionAll,
+                       PSet.intersectAll  +-> FSet.intersectAll,
+                       PSet.--            +-> FSet.--,
+                       PSet.empty         +-> FSet.empty,
+                       PSet.empty?        +-> FSet.empty?,
+                       PSet.singleton     +-> FSet.singleton,
+                       PSet.singleton?    +-> FSet.singleton?,
+                       PSet.uniqueElement +-> FSet.uniqueElement,
+                       PSet.with          +-> FSet.with,
+                       PSet.wout          +-> FSet.wout,
+                       PSet.map           +-> FSet.map,
+                       PSet.filter        +-> FSet.filter}
 
   op size : [a] FSet a -> Nat
   def [a] size =
@@ -23,8 +46,8 @@ FSet qualifying spec
   folding over. Thus, below is the weakest requirement for folding. *)
 
   op foldable? : [a,b] FSet a * b * (b * a -> b) -> Boolean
-  def foldable?(s,c,f) =
-    (fa(x,y,z) x in? s && y in? s => f(f(z,x),y) = f(f(z,y),x))
+  def [a,b] foldable?(s,c,f) =
+    (fa (x:a, y:a, z:b) x in? s && y in? s => f(f(z,x),y) = f(f(z,y),x))
 
   op fold : [a,b] ((FSet a * b * (b * a -> b)) | foldable?) -> b
   def [a,b] fold =

@@ -4,6 +4,26 @@ Logic qualifying spec
 
   type Predicate a = a -> Boolean
 
+  op <= infixl 20 : [a] Predicate a * Predicate a -> Boolean
+  def [a] <= (p1,p2) =
+    (fa(x:a) p1 x => p2 x)
+
+  op >= infixl 20 : [a] Predicate a * Predicate a -> Boolean
+  def >= (p1,p2) = (p2 <= p1)
+
+  op AND infixl 25 : [a] Predicate a * Predicate a -> Predicate a
+  def AND (p1,p2) =
+    (fn x -> p1 x && p2 x)
+
+  op OR infixl 25 : [a] Predicate a * Predicate a -> Predicate a
+  def OR (p1,p2) =
+    (fn x -> p1 x || p2 x)
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % uniquely satisfied predicates:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   op uniquelySatisfies? : [a] a * Predicate a -> Boolean
   axiom uniquelySatisfies?_def is [a] fa(x,p)
     uniquelySatisfies?(x,p) =
@@ -16,6 +36,21 @@ Logic qualifying spec
 
   type UniquelySatisfiedPredicate a = (Predicate a | uniquelySatisfied?)
 
+  % exists unique (looks like quantifier in "ex1 (fn x:T -> ...)"):
+  op ex1 : [a] Predicate a -> Boolean
+  def ex1 = uniquelySatisfied?
+
+  % iota operator (looks like binder in "the (fn x:T -> ...)"):
+  op the : [a] UniquelySatisfiedPredicate a -> a
+  axiom the_def is [a]
+    fa (p:UniquelySatisfiedPredicate a)
+       uniquelySatisfies? (the p, p)
+
+
+  %%%%%%%%%%%%%%%%%%%%
+  % finite predicates:
+  %%%%%%%%%%%%%%%%%%%%
+
   op finite? : [a] Predicate a -> Boolean
   axiom finite?_def is [a] fa(p)
     finite? p =
@@ -26,16 +61,30 @@ Logic qualifying spec
 
   type FinitePredicate a = (Predicate a | finite?)
 
-  % exists unique (looks like quantifier in "ex1 (fn x:T -> ...)"):
 
-  op ex1 : [a] Predicate a -> Boolean
-  def ex1 = uniquelySatisfied?
+  %%%%%%%%%%%%%%%%%%%%%%%
+  % predicate properties:
+  %%%%%%%%%%%%%%%%%%%%%%%
 
-  % iota operator (looks like binder in "the (fn x:T -> ...)"):
+  % a predicate property is a predicate over predicates:
+  type PredicateProperty a = Predicate (Predicate a)
 
-  op the : [a] UniquelySatisfiedPredicate a -> a
-  axiom the_def is [a]
-    fa (p:UniquelySatisfiedPredicate a)
-       uniquelySatisfies? (the p, p)
+  % the following are useful for inductive definitions:
+
+  op minimallySatisfies? : [a] Predicate a * PredicateProperty a -> Boolean
+  def minimallySatisfies?(pred,prop) =
+    prop pred &&
+    (fa(pred1) prop pred1 => pred <= pred1)
+
+  % predicate property has minimum satisfying predicate:
+  op minimallySatisfied? : [a] PredicateProperty a -> Boolean
+  def [a] minimallySatisfied? prop =
+    (ex(pred) minimallySatisfies?(pred,prop))
+
+  type PredicatePropertyWithMin a = (PredicateProperty a | minimallySatisfied?)
+
+  op min : [a] PredicatePropertyWithMin a -> Predicate a
+  def min prop =
+    the (fn pred -> minimallySatisfies?(pred,prop))
 
 endspec 

@@ -6,7 +6,10 @@ spec
 
   op protoMapFunction? : [a,b] PFunction(a,b) -> Boolean
 
-  axiom atLeastAllFiniteFunctions is [a,b]
-    fa (f : PFunction(a,b)) finite? f => protoMapFunction? f
+  axiom finiteOrAllFunctions is [a,b]
+    protoMapFunction? = finite? ||
+    protoMapFunction? = (fn f -> true)
+
+  import ProtoSets
 
 endspec

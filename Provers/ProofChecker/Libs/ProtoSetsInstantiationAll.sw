@@ -1,4 +1,4 @@
-spec
+Set qualifying spec
 
   (* See spec `ProtoSets' for an explanation. This spec instantiates
   `protoSetPredicate?' to contain all predicates. *)

@@ -5,7 +5,9 @@ spec
 
   import Judgements
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % variables introduced by pattern:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op pattVars : Pattern -> FSet Name
 
@@ -20,7 +22,9 @@ spec
                           pattSeqVars patts
     | alias((v,_),p)   -> pattVars p with v
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % free variables in expression:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op exprFreeVars : Expression -> FSet Name
 
@@ -46,6 +50,12 @@ spec
     | quotienter _             -> empty
     | choice(_,e)              -> exprFreeVars e
     | cas(e,branches)          -> let (patts,exprs) = unzip branches in
+                                  let varSets =
+                                      seqSuchThat (fn(i:Nat) ->
+                                        if i < length branches
+                                        then Some (exprFreeVars (exprs elem i) --
+                                                   pattVars     (patts elem i))
+                                        else None) in
                                   let def branchVars
                                           (e:Expression, p:Pattern) : FSet Name =
                                           exprFreeVars e -- pattVars p in
@@ -73,7 +83,9 @@ spec
     | tuple exprs              -> exprSeqFreeVars exprs
     | tupleProjection(e,_)     -> exprFreeVars e
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % types, ops, type variables, and variables declared in context:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op contextElementTypes    : ContextElement -> FSet Name
   op contextElementOps      : ContextElement -> FSet Name

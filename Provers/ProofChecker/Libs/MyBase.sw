@@ -4,6 +4,8 @@ spec
          PartialFunctions,
          Sets,
          FiniteSets,
+         Maps,
+         FiniteMaps,
          FiniteSequences,
          StructureConversions
 

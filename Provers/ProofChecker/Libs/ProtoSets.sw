@@ -1,12 +1,12 @@
-spec
+PSet qualifying spec
 
   (* A set can be viewed as a predicate, true for exactly the elements that
   belong to the set. So, we could define the type `Set' of sets to be equal or
   isomorphic to the type `Predicate' of predicates. We could then define the
   type `FSet' of finite sets as a subtype of `Set'. This approach would be
   sensible from a specification perspective, but would prevent us from
-  refining `FSet' to something that is not a subtype of (the type that
-  refines) `Set', e.g. we could not refine it in terms of `List'.
+  refining (via morphisms) `FSet' to something that is not a subtype of (the
+  type that refines) `Set', e.g. we could not refine it in terms of `List'.
 
   So, we want the types `Set' and `FSet' to be distinct. Nonetheless, those
   two types share a lot of properties and ops. So, this spec specifies a type
@@ -22,10 +22,15 @@ spec
   underspecified, because it is defined in the specs that define `FSet' and
   `Set'. In order for this spec of proto-sets to make sense, `PSetPredicate'
   must at least include all finite predicates, because the ops `empty' and
-  `with' are sufficient to build all finite sets.
+  `with' are sufficient to build all finite sets. In addition, it must be
+  closed under union, intersection, and other operations. If we did not
+  include these requirements, then this spec would generate some
+  undischargeable subtype proof obligations. We impose these requirements by
+  requiring the strong but simple property that `PSetPredicate' includes
+  either exactly all finite predicates or exactly all predicates.
 
   The parameter `protoSetPredicate?' and its requirements (namely, that it is
-  at least true of all finite predicate) is factored in spec
+  true either for finite predicates or for all predicates) is factored in spec
   `ProtoSetsParameter', so that it can be instantiated via substitution. *)
 
   import ProtoSetsParameter
@@ -38,8 +43,7 @@ spec
 
   % construct set from predicate:
   op setSuchThat : [a] Bijection (PSetPredicate a, PSet a)
-  def setSuchThat =
-    inverse setPredicate
+  def setSuchThat = inverse setPredicate
 
   op in? infixl 20 : [a] a * PSet a -> Boolean
   def in? (x,s) = setPredicate s x
@@ -116,10 +120,6 @@ spec
   op map : [a,b] (a -> b) * PSet a -> PSet b
   def map(f,s) =
     setSuchThat (fn x -> (ex(y) x = f y))
-
-  op map2 : [a,b,c] (a * b -> c) * PSet a * PSet b -> PSet c
-  def map2(f,s1,s2) =
-    setSuchThat (fn x -> (ex(y,z) x = f(y,z)))
 
   op filter : [a] PSet a * Predicate a -> PSet a
   def filter(s,p) =

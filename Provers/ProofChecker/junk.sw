@@ -3,6 +3,33 @@ kept around (in this file) for a while in case it later turns out to be useful
 again. *)
 
 
+%%% functional version of positional type substitution:
+
+  (* In LD, type substitutions at positions are formalized via a relation. Here,
+  we use a function that corresponds to that relation, using an `Option' type
+  to model the fact that the substitution is disallowed (e.g. because the
+  position is not valid. *)
+
+  op typeSubstInTypeAt : Type       * Type * Type * Position -> Option Type
+  op typeSubstInExprAt : Expression * Type * Type * Position -> Option Expression
+  op typeSubstInPattAt : Pattern    * Type * Type * Position -> Option Pattern
+
+  def typeSubstInTypeAt(t,t1,t2,pos) =
+    if pos = empty
+    then if t = t1
+         then Some t2
+         else None
+    else let i = first pos in
+         case t of
+           | instance(n,types) ->
+             if i < length types
+             then (case typeSubstInTypeAt (types elem i, t1, t2, rtail pos) of
+                     | Some newTi -> Some (instance (n, update(types,i,newTi)))
+                     | None       -> None)
+             else None
+           % TO BE CONTINUED.............
+
+
 %%% more verbose def of types:
 
   type VariableType = Name
