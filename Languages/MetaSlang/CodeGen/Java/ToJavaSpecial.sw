@@ -3,6 +3,7 @@
  * to java.lang method (String utilities)
  *)
 
+%JGen qualifying
 spec
 
   import ToJavaBase
@@ -129,8 +130,10 @@ spec
       | Apply(Fun(Op(Qualified("Char",fun as "toUpperCase"),_),_,_),t,_) -> charFun(fun,t)
       | Apply(Fun(Op(qid as Qualified(qual,id),_),opsrt,_),argterm,b) ->
 	if builtinBaseTypeId?(qual) then None else
+	%let _ = writeLine("checking for method call of "^qual^"."^id) in
 	let argterms = applyArgsToTerms(argterm) in
-	if ~(opIdIsDefinedInSpec?(spc,id)) then
+	%if ~(opIdIsDefinedInSpec?(spc,id)) then
+	if (case AnnSpec.findTheOp(spc,qid) of Some _ -> false | _ -> true) then
 	  (case argterms of
 	     | allargs as (t1::argterms) ->
 	       % check whether the first argument has an unrefined sort

@@ -657,7 +657,7 @@ def processOptions(jspc as (_,_,cidecls), optspec, filename) =
     let cnt = length(cidecls) in
     let _ = if cleandir then deleteFile(relpath^"/*") else () in
     let _ = if cnt > 0
-	      then writeLine(";;; "^natToString(cnt)^" Java files written to directory \""^dir^"/"^relpath^"/\"")
+	      then writeLine(";;; "^natToString(cnt)^" Java files written into directory \""^dir^"/"^relpath^"/\"")
 	    else writeLine(";;; no Java files generated.")
     in
     res
