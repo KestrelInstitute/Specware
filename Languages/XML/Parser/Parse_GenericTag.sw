@@ -2,10 +2,24 @@ XML qualifying spec
 
   import Parse_Character_Strings
 
-  %% ====================================================================================================
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%          GenericTag                                                                          %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %% [23] [40] [44] are instances of [K4]:
-  %% 
+  %%  Rules [K4] -- [K10] simplify the parsing (and especially any associated error reporting) for
+  %%  several related constructs given by the W3 grammar as:
+  %%
+  %%  *[23]  XMLDecl       ::=  '<?xml'     VersionInfo  EncodingDecl? SDDecl?   S? '?>' 
+  %%  *[77]  TextDecl      ::=  '<?xml'     VersionInfo? EncodingDecl            S? '?>'         
+  %%  *[40]  STag          ::=  '<'  Name   (S Attribute)*                       S?  '>' 
+  %%  *[42]  ETag          ::=  '</' Name                                        S?  '>'
+  %%  *[44]  EmptyElemTag  ::=  '<'  Name   (S Attribute)*                       S? '/>' 
+  %%
+  %%  plus several supporting rules for the above
+  %%
+  %% -------------------------------------------------------------------------------------------------
+  %% They are all instances of [K4]:
+  %%
   %%  [K4]  GenericTag         ::=  GenericPrefix GenericName GenericAttributes GenericPostfix 
   %%  [K5]  GenericPrefix      ::=  Chars - NmToken
   %%  [K6]  GenericName        ::=  NmToken        
@@ -13,18 +27,12 @@ XML qualifying spec
   %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
   %%  [K9]  GenericPostfix     ::=  Chars - NmToken
   %% [K10]  QuotedText         ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
-  %% 
-  %% [16]  PI        ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>' 
-  %% [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
   %%
-  %% [K20] PI        ::= '<?' PITarget (S PIValue)? '?>'           
-  %% [K21] PIValue   ::= Char* - (Char* '?>' Char*)
-  %% 
-  %% ====================================================================================================
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def parse_Option_GenericTag (start : UChars) : Possible GenericTag =
     case start of
-      | 60 (* < *) :: tail -> 
+      | 60 (* '<' *) :: tail -> 
          {
 	  (prefix,     tail) <- parse_GenericPrefix      tail;
 	  (name,       tail) <- parse_GenericName        tail;
@@ -131,7 +139,7 @@ XML qualifying spec
 	 else
 	   case tail of
 	     | char :: tail ->
-	       if char = 62 (* > *) then
+	       if char = 62 (* '>' *) then
 		 return (rev rev_end_chars,
 			 tail)
 	       else
@@ -140,54 +148,6 @@ XML qualifying spec
 	       error ("EOF looking for '>'", start, tail)
     in
       probe (start, 5, [])
-
-  %% ----------------------------------------------------------------------------------------------------
-
-  def parse_PI (start : UChars) : Required PI =
-    %% assumes we're past initial '<?'
-    let 
-      def probe (tail, rev_result) =
-	case tail of
-	  | 63 :: 62 (* '?>' *) :: tail ->
-	    return (rev rev_result,
-		    tail)
-	  | char :: tail ->
-	    probe (tail, cons (char, rev_result))
-	  | _ ->
-	    error ("EOF scanning PI", start, [])
-    in
-      {
-       (target, tail_0) <- parse_GenericName start;
-
-       (when (~ (pi_target? target))
-	(error ("Illegal PI Target name", start, tail_0)));
-
-       (whitespace_and_value, tail) <- probe (tail_0, []);
-
-       case whitespace_and_value of
-	 | char :: tail ->
-	   if white_char? char then
-	     {
-	      (whitespace, value) <- parse_WhiteSpace whitespace_and_value;
-	      return ({target = target,
-		       value  = Some (whitespace, value)},
-		      tail)
-	      }
-	   else
-	     {
-	      (when true
-	       (error ("PI value must begin with whitespace", whitespace_and_value, [])));
-	      return ({target = target,
-		       value  = Some ([], whitespace_and_value)},
-		      tail)
-	     }
-	 | _ ->
-	     return ({target = target,
-		      value  = None},
-		     tail_0)
-	  }
-
-
 
 endspec
 

@@ -26,10 +26,20 @@ XML qualifying spec
   %%                                                             [WFC: No Recursion]
   %%                                                             [WFC: In DTD]
   %%
-  %% ----------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def parse_Reference (start : UChars) : Possible Reference =
-    %% parse_Reference assumes we're just past the ampersand.
+  %%
+  %% [67]  Reference    ::=  EntityRef | CharRef
+  %% [68]  EntityRef    ::=  '&' Name ';' 
+  %% [66]  CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';' 
+  %%
+  def parse_Reference (start : UChars) : Required Reference =
+    %%  We being just past the '&' in rules [66] and [68], looking for one of:
+    %%
+    %%     '#x' [0-9a-fA-F]+ ';' 
+    %%     '#'  [0-9]+       ';' 
+    %%     Name              ';' 
+    %%
     case start of
       | 35 (* '#' *) :: tail ->
         %% parse CharRef
@@ -43,14 +53,14 @@ XML qualifying spec
 		       {
 		        (when (~ (char? char))
 			 (error ("Illegal character reference ", start, tail)));
-		        return (Some (Char {style = Hex,
-					    char  = char}),
+		        return (Char {style = Hex,
+				      char  = char},
 				tail)
 			}
-		     | _ -> return (None, start))
-		| _ -> return (None, start)) % no hex digits
+		     | _ -> error ("Expected hex character reference to end with ';'", start, nthTail (tail, 4)))
+		| _ -> error ("Expected hex digit in hex character reference", start, nthTail (tail, 4)))
 
-           | _ ->
+	   | _ ->
 	     case parse_decimal tail of
 	       | Some (char, tail) ->
 		 (case tail of
@@ -58,25 +68,32 @@ XML qualifying spec
 		      {
 		       (when (~ (char? char))
 			(error ("Illegal character reference ", start, tail)));
-		       return (Some (Char {style = Decimal,
-					   char  = char}),
+		       return (Char {style = Decimal,
+				     char  = char},
 			       tail)
 		       }
-		    | _ -> return (None, start))
-	       | _ -> return (None, start))
+		    | _ -> error ("Expected decimal character reference to end with ';'", start, nthTail (tail, 4)))
+	       | _ -> error ("Expected decimal digit in decimal character reference", start, nthTail (tail, 4)))
       | _ ->
         %% parse EntityRef
 	{
 	 (name, tail) <- parse_Name start;
 	 case tail of
 	   | 59  (* ';' *) :: tail ->
-	     return (Some (Entity {name = name}),
+	     return (Entity {name = name},
 		     tail)
-	   | _ -> return (None, start)
-	}
+	   | _ -> error ("Expected entity reference to end with ';'", start, nthTail (tail, 10))
+	    }
 
+  %%
+  %% [69]  PEReference  ::=  '%' Name ';' 
+  %%
   def parse_PEReference (start : UChars) : Required PEReference =
     {
+     %% We begin just past the '%", looking for:
+     %%			 
+     %%   Name ';' 
+     %%			 
      (name, tail) <- parse_Name start;
      case tail of
        | 59  (* ';' *) :: tail ->

@@ -1,14 +1,13 @@
 
 XML qualifying spec
 
-  import Parse_ElementDecl
-  import Parse_AttlistDecl
-  import Parse_EntityDecl
-  import Parse_NotationDecl
-  import Parse_GenericTag        % parse_PI
+  import Parse_DTD_ElementDecl
+  import Parse_DTD_AttlistDecl
+  import Parse_DTD_EntityDecl    % includes parse_NotationDecl
+  import Parse_PI
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          Data_Type_Document                                                                  %%%
+  %%%          DTD (Doc Type Decl)                                                                 %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
   %% The doctypedecl (DTD) has the following form, 
@@ -50,7 +49,7 @@ XML qualifying spec
     (name,        tail) <- parse_Name       tail;
     (wx,          tail) <- parse_WhiteSpace tail;
     case tail of
-      | 91 (* open-square *) :: _ ->
+      | 91 (* open-square-bracket *) :: _ ->
         {
 	 (markups,     tail) <- parse_markups    tail;
 	 case tail of
@@ -70,7 +69,7 @@ XML qualifying spec
 	 (w3,          tail) <- parse_WhiteSpace tail;
 	 (markups,     tail) <- parse_markups    tail;
 	 case tail of
-	   | 62 (* close-angle *) :: tail ->
+	   | 62 (* '>' *) :: tail ->
 	     return ({w1          = w1,
 		      name        = name,
 		      external_id = Some (wx, external_id),
@@ -97,12 +96,12 @@ XML qualifying spec
     %% We handle both [28a] and [29] in one procedure:
     %%
     case start of
-      | 91 (* '[' *) :: tail ->                    % comment to balance ']'
+      | 91 (* open-square-bracket *) :: tail ->                    
         (let 
             def probe (tail, rev_markups) =
 	      case tail of
 
-		| 93 (* close bracket *) :: tail -> 
+		| 93 (* close-square-bracket *) :: tail -> 
 		  {
 		   (w1, scout) <- parse_WhiteSpace tail;
 		   return (Some (rev rev_markups, w1),
@@ -129,7 +128,7 @@ XML qualifying spec
 		   probe (tail, cons (Decl (Entity decl), rev_markups))
 		  }
 		  
-		| 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 (* '<!NOTATATION' *) ::  tail -> 
+		| 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 (* '<!NOTATATION' *) :: tail -> 
 		  {
 		   (decl, tail) <- parse_NotationDecl tail;
 		   probe (tail, cons (Decl (Notation decl), rev_markups))

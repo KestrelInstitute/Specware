@@ -4,7 +4,7 @@ XML qualifying spec
   import Parse_Literals
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          Character_Data                                                                      %%%
+  %%%          Character_Strings                                                                   %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
   %% [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
@@ -16,7 +16,10 @@ XML qualifying spec
   %% [20]  CData     ::=  (Char* - (Char* ']]>' Char*)) 
   %% [21]  CDEnd     ::=  ']]>'
   %%
-  %% ----------------------------------------------------------------------------------------------------
+  %%  Note that the anonymous rule about characters (see section below on WFC's) implicitly 
+  %%  restricts the characters that may appear in CharData to be Char's.
+  %%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def parse_WhiteSpace (start : UChars) : Required WhiteSpace =
     let
@@ -38,18 +41,18 @@ XML qualifying spec
 
   def parse_CharData (start : UChars) : (Option CharData) * UChars =
     let 
-       def probe (tail, reversed_char_data) =
+       def probe (tail, rev_char_data) =
 	 case tail of
-	   | 93 :: 93 :: 62 (* ]]> *) :: _ -> (Some (rev reversed_char_data), tail)	
+	   | 93 :: 93 :: 62 (* ']]>' *) :: _ -> (Some (rev rev_char_data), tail)	
 	   | char :: scout -> 
 	     if char_data_char? char then
-	       %% note that char_data_char? is false for 60 (* < *) and 38 (* & *) 
-	       probe (scout, cons (char, reversed_char_data))
+	       %% note that char_data_char? is false for 60 (* '<' *) and 38 (* '&' *) 
+	       probe (scout, cons (char, rev_char_data))
 	     else
-	       (Some (rev reversed_char_data),
+	       (Some (rev rev_char_data),
 		tail)
 	   | _ ->
-	     (Some (rev reversed_char_data),
+	     (Some (rev rev_char_data),
 	      tail)
     in
       probe (start, [])

@@ -12,24 +12,38 @@ XML qualifying spec
   %%                                                             [WFC: Element Type Match] 
   %%                                                             [VC:  Element Valid]
   %%
-  %% [40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
-  %% 
+  %% *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
   %%                                                             [WFC: Unique Att Spec]
-  %% [41]  Attribute     ::=  Name Eq AttValue 
-  %%
+  %%   ==>
+  %% [K19]  STag          ::=  GenericTag                            
+  %%                                                             [KC:  Proper Start Tag]
+  %%                                                             [WFC: Unique Att Spec]
+  %% 
+  %%  [41]  Attribute     ::=  Name Eq AttValue 
   %%                                                             [VC:  Attribute Value Type]
   %%                                                             [WFC: No External Entity References]
   %%                                                             [WFC: No < in Attribute Values]
   %%
-  %% [42]  ETag          ::=  '</' Name S? '>'
+  %% *[42]  ETag          ::=  '</' Name S? '>'
+  %%   ==>
+  %% [K20]  ETag          ::=  GenericTag                   
+  %%                                                             [KC:  Proper End Tag]
   %%
-  %% [43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
+  %%  Since the chardata in [43] is typically used for indentation, 
+  %%  it makes more sense to group it as in [K18]:
+  %%
+  %% *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
+  %%   ==>
+  %% [K21]  content       ::=  (CharData? (element | Reference | CDSect | PI | Comment))* CharData?
   %% 
-  %% [44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 
-  %% 
+  %% *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
+  %%                                                             [WFC: Unique Att Spec]
+  %%   ==>
+  %% [K22]  EmptyElemTag  ::=  GenericTag
+  %%                                                             [KC:  Proper Empty Tag]
   %%                                                             [WFC: Unique Att Spec]
   %%
-  %% ----------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def parse_Element (start : UChars) : Possible Element =
     {
@@ -101,9 +115,9 @@ XML qualifying spec
     %% So do a little lookahead to avoid needless backtracking...
     %%
     case start of
-      | 60 (* < *) :: tail ->
+      | 60 (* '<' *) :: tail ->
         (case tail of
-	   | 33 :: 45 :: 45  :: tail -> 
+	   | 33 :: 45 :: 45 (* '!--' *) :: tail -> 
  	     %% "<!--"
 	     {
 	      %% parse_Comment assumes we're past "<!--"
@@ -111,7 +125,7 @@ XML qualifying spec
 	      return (Some (Comment comment),
 		      tail)
 	     }
-	   | 33 :: 91  :: 67 :: 68 :: 65 :: 84 :: 65 :: 91 :: tail ->
+	   | 33 :: 91  :: 67 :: 68 :: 65 :: 84 :: 65 :: 91 (* '![CDATA[' *) :: tail ->
 	     %% "<![CDATA["
 	     {
 	      %% parse_CDSECT assumes we're past "<![CDATA["
@@ -119,7 +133,7 @@ XML qualifying spec
 	      return (Some (CDSect cdsect),
 		      tail)
 	     }
-	   | 47 :: _ -> 
+	   | 47 (* '/' *) :: _ -> 
 	     %% "</"
 	     %% start of an ETag, so not something we're looking for
 	     return (None, start)
@@ -136,16 +150,12 @@ XML qualifying spec
 	      })
       | [] ->
 	error ("EOF scanning content of element.", start, [])
-      | 38  (* & *)   :: tail -> 
+      | 38  (* '&' *)   :: tail -> 
 	{
 	 %% parse_Reference assumes we're just past the ampersand.
-	 (possible_reference, tail) <- parse_Reference start;
-	 return (case possible_reference of
-		   | Some ref ->
-		     (Some (Reference ref),
-		      tail)
-		   | _ ->	 
-		     (None, start))
+	 (ref, tail) <- parse_Reference start;
+	 return (Some (Reference ref),
+		 tail)
 	}
       | _ ->
 	return (None, start)

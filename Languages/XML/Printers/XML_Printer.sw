@@ -430,13 +430,13 @@ XML qualifying spec
   def print_NDataDecl {w1, w2, name} =
     w1 ^ (ustring "NDATA") ^ w2 ^ name
 
-  def print_PEDecl {w1, w2, name, w3, edef, w4} =
-    (ustring "<!ENTITY") ^ w1 ^ (ustring "%") ^ w2 ^ name ^ w3 ^ (print_PEDef edef) ^ w4 ^ (ustring ">")
+  def print_PEDecl {w1, w2, name, w3, pedef, w4} =
+    (ustring "<!ENTITY") ^ w1 ^ (ustring "%") ^ w2 ^ name ^ w3 ^ (print_PEDef pedef) ^ w4 ^ (ustring ">")
 
   def print_PEDef x = 
     case x of
-     | Local  value -> print_EntityValue value
-     | Remote id    -> print_GenericID id
+     | Value    value -> print_EntityValue value
+     | External id    -> print_GenericID id
 
   %% ----------------------------------------------------------------------------------------------------
 
