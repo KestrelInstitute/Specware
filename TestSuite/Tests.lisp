@@ -10,19 +10,9 @@
 ")
       ("twk message 1/10/03 Reused name leading to circularity."
        :sw "players#twoPlayersLisp"
-       :files '("lisp/players.lisp")
-       :output ";;; Processing spec at $TESTDIR/players#players
-;;; Processing spec at $TESTDIR/players#twoPlayers
-;;; Processing spec at $TESTDIR/players#twoPlayersImpl
-;;; Processing spec morphism at $TESTDIR/players#twoPlayers
-;; ensure-directories-exist: creating
-;;   $TESTDIR/lisp/players.lisp
-;; Directory $TESTDIR/lisp/ does not exist, will create.
-;;; Generating lisp file $TESTDIR/lisp/players.lisp
-")
-      ("twk message 1/10/03 Reused name leading to circularity. Repetition gives error?"
-       :sw "players#twoPlayersLisp"
-       :output "")
+       :output "Error in specification: Name \"twoPlayers\" defined twice in file.
+  found in $TESTDIR/players.sw
+43.13-44.52")
       ("Colimit with no sharing"
        :sw "colimit"
        :output ";;; Processing spec at $TESTDIR/colimit#A

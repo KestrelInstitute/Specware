@@ -412,7 +412,7 @@ sense that no toplevel functions return anything.
 
       | SpecError (position,msg) ->
 		"Error in specification: " ^ msg 
-              ^ "\n  found at " ^ (printAll position)
+              ^ "\n  found " ^ (printAll position)
 
       | MorphError (position,msg) ->
 		"Error in morphism: " ^ msg 

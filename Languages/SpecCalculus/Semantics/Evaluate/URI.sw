@@ -233,6 +233,7 @@ handled correctly.
         bindInGlobalContext newURI (value,max(timeStamp,fileWriteTime fileName),depURIs)
     }
     in {
+      checkForMultipleDefs decls;
       saveURI <- getCurrentURI;
       saveLocalContext <- getLocalContext;
       clearLocalContext;
@@ -240,6 +241,19 @@ handled correctly.
       setCurrentURI saveURI;
       setLocalContext saveLocalContext
     }
+
+  op checkForMultipleDefs: List (Decl Position) -> Env ()
+  def checkForMultipleDefs decls =
+    case foldl (fn ((name,term),result as (seenNames,duplicate?)) ->
+	        case duplicate? of
+		 | None -> if member(name,seenNames)
+		            then (seenNames,Some(name,term))
+			    else (cons(name,seenNames),None)
+                 | _ -> result)
+           ([],None) decls
+      of (_,Some(name,(_,pos))) ->
+	 raise (SpecError (pos,"Name \"" ^ name ^ "\" defined twice in file."))
+       | _ -> return ()
 \end{spec}
 
 validateCache takes a URI (absolute) and checks that it and all its
