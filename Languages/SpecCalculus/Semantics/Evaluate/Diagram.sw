@@ -6,6 +6,7 @@ Much extended from r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalDiagra
 SpecCalc qualifying spec {
   import Signature
   import /Languages/MetaSlang/Specs/Categories/AsRecord
+   import /Library/Legacy/DataStructures/ListUtilities     % for listUnion
 \end{spec}
 
 When constructing the semantic representation of a diagram, what are
@@ -14,9 +15,9 @@ Lots of proof obligations. Needs thought.
 
 \begin{spec}
   def SpecCalc.evaluateDiag elems = {
-      dgm <- foldM evaluateDiagElem (emptyDiagram specCat) elems;
-      % print (ppFormat (ppDiagram dgm));
-      return (Diag dgm,0,[])
+      (dgm,timeStamp,depURIs) <- foldM evaluateDiagElem ((emptyDiagram specCat),0,[]) elems;
+      print (ppFormat (ppDiagram dgm));
+      return (Diag dgm,timeStamp,depURIs)
     }
 \end{spec}
 
@@ -49,27 +50,30 @@ the typechecker complains. I don't understand it.
 
 \begin{spec}
   op evaluateDiagElem :
-       Diagram (Spec,Morphism)
+       (Diagram (Spec,Morphism) * TimeStamp * URI_Dependency)
     -> DiagElem Position
-    -> Env (Diagram (Spec,Morphism))
+    -> Env (Diagram (Spec,Morphism) * TimeStamp * URI_Dependency)
 
-  def evaluateDiagElem dgm elem =
+  def evaluateDiagElem (dgm,timeStamp,depURIs) elem =
     case (valueOf elem) of
       | Node (nodeId,term) -> {
-           value <- evaluateTerm term;
-           case value of
-             | Spec spc -> addLabelledVertex dgm nodeId spc (positionOf term)
+           (termValue,termTime,termDeps) <- evaluateTermInfo term;
+           case termValue of
+             | Spec spc -> {
+                    newDgm <- addLabelledVertex dgm nodeId spc (positionOf term);
+                    return (newDgm, max (timeStamp,termTime), listUnion (depURIs, termDeps))
+                  }
              | _ -> raise (TypeCheck (positionOf term, "diagram node not labeled with a specification"))
           }
       | Edge (edgeId,domNode,codNode,term) -> {
-           value <- evaluateTerm term;
-           case value of
+           (termValue,termTime,termDeps) <- evaluateTermInfo term;
+           case termValue of
              | Morph morph ->
                 if edgeInDiagram? dgm edgeId then
                   if (domNode = eval (src (shape dgm)) edgeId)
                    & (codNode = eval (target (shape dgm)) edgeId) then
                     if (morph = edgeLabel dgm edgeId) then
-                      return dgm
+                      return (dgm, max (timeStamp, termTime), listUnion (depURIs, termDeps))
                     else
                       raise (DiagError (positionOf term,
                                         "edge "
@@ -81,9 +85,10 @@ the typechecker complains. I don't understand it.
                                        ^ edgeId
                                        ^ " has inconsisent source and/or target"))
                 else {
-                    dgm <- addLabelledVertex dgm domNode (dom morph) (positionOf term);
-                    dgm <- addLabelledVertex dgm codNode (cod morph) (positionOf term);
-                    return (labelEdge (addEdge dgm edgeId domNode codNode) edgeId morph)
+                    dgm1 <- addLabelledVertex dgm domNode (dom morph) (positionOf term);
+                    dgm2 <- addLabelledVertex dgm1 codNode (cod morph) (positionOf term);
+                    let dgm3 = labelEdge (addEdge dgm2 edgeId domNode codNode) edgeId morph in
+                      return (dgm3, max (timeStamp,termTime), listUnion (depURIs, termDeps))
                   }
              | _ -> raise (TypeCheck (positionOf term, "diagram edge not labeled by a morphism"))
            }
