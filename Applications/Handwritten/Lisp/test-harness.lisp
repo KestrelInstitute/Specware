@@ -50,6 +50,7 @@ be the option to run each (test ...) form in a fresh image.
 (defvar *use-separate-process?* nil)
 (defvar *verbose?* t)
 (defvar *quiet-about-dirs?* nil)
+(defvar *quiet-copy?* t)
 (defvar *write-log-file* nil)
 (defvar *test-harness-stream* t)
 (defvar *test-directory*)
@@ -159,7 +160,7 @@ be the option to run each (test ...) form in a fresh image.
 	       (source (merge-pathnames filepath *test-directory*))
 	       (target (merge-pathnames filepath *test-temporary-directory*)))
 	  (ensure-directories-exist target)
-	  (if *quiet-about-dirs?* 
+	  (if *quiet-copy?* 
 	      (with-output-to-string (*standard-output*)
 		(specware::copy-file source target))
 	    (specware::copy-file source target)))))
@@ -173,7 +174,7 @@ be the option to run each (test ...) form in a fresh image.
 	       (source (merge-pathnames dirpath *test-directory*))
 	       (target (merge-pathnames dirpath *test-temporary-directory*)))
 	  ;(ensure-directories-exist target)
-	  (if *quiet-about-dirs?* 
+	  (if *quiet-copy?*
 	      (with-output-to-string (*standard-output*)
 		(specware::copy-directory source target nil))
 	    (specware::copy-directory source target nil)))))
