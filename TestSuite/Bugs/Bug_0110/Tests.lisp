@@ -12,7 +12,9 @@
   :output '(";;; Elaborating spec at $TESTDIR/BogusNil#Loser"
 	    "Errors in $TESTDIR/BogusNil.sw"
 	    "14.21-14.22	: Could not match type constraint"
-	    "                  [] of type List(mtv%parser%12)"
+	    (:alternatives
+	     "                  [] of type List(mtv%parser%12)"
+	     "                  [] of type List(mtv%parser%18)")
 	    "          with expected type Bogus"
 	    ""))
 
@@ -21,7 +23,9 @@
   :output '(";;; Elaborating spec at $TESTDIR/BogusNil#Loser2"
 	    "Errors in $TESTDIR/BogusNil.sw"
 	    "20.1-20.14	: Incomplete type for op loser:"
-	    "mtv%parser%14"
+	    (:alternatives
+	     "mtv%parser%14"
+	     "mtv%parser%20")
 	    ""))
 
  )
