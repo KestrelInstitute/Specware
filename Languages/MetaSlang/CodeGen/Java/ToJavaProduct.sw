@@ -33,7 +33,7 @@ def mkProdConstBody(fieldProjs) =
 
 op mkProductTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl -> ClsDecl
 def mkProductTypeClsDecl(id, prodFieldsDecl, prodMethodDecls, constrDecls) =
-  ([], (id, None, []), setConstrs(setMethods(setFlds(emptyClsBody, prodFieldsDecl), prodMethodDecls), constrDecls))
+  ([], (id, None, []), setConstrs(setMethods(setFlds(Java.emptyClsBody, prodFieldsDecl), prodMethodDecls), constrDecls))
 
 op productToClsDecls: Id * Sort -> JGenEnv ()
 def productToClsDecls(id, srtDef as Product (fields, _)) =

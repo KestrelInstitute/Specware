@@ -28,7 +28,7 @@ def mkEqualityBodyForSum(fields) =
 op sumTypeToClsDecl: Id * List FldDecl * List MethDecl -> ClsDecl
 def sumTypeToClsDecl(id, fldDecls, sumConstructorMethDecls) =
   let sumEqMethod = mkAbstractEqualityMethDecl(id) in
-  ([Abstract], (id, None, []), setFlds(setMethods(emptyClsBody, cons(sumEqMethod, sumConstructorMethDecls)), fldDecls))
+  ([Abstract], (id, None, []), setFlds(setMethods(Java.emptyClsBody, cons(sumEqMethod, sumConstructorMethDecls)), fldDecls))
 
 op mkSummandId: Id * Id -> Id
 def mkSummandId(ty, c) =
@@ -37,7 +37,7 @@ def mkSummandId(ty, c) =
 op sumArgToClsDecl: Id * Id -> ClsDecl
 def sumArgToClsDecl(ty, c) =
   let summandId = mkSummandId(ty, c) in
-  ([], (summandId, Some ([], ty), []), emptyClsBody)
+  ([], (summandId, Some ([], ty), []), Java.emptyClsBody)
 
 op fieldsToFormalParams: List (Id * Sort) -> JGenEnv (List FormPar)
 def fieldsToFormalParams(args) =
@@ -103,7 +103,7 @@ def sumToClsDecl(id, c, args) =
    eqMethBody <- mkSumEqMethBody(id, c, summandId, args);
    eqMethDecl <- return(setMethodBody(eqMethDecl, eqMethBody));
    constrDecl <- mkSumConstrDecl(mkSummandId(id, c), id, mkTagCId(c), args);
-   return([], (summandId, Some ([], id), []), setConstrs(setMethods(setFlds(emptyClsBody, fldDecls), [eqMethDecl]), [constrDecl]))
+   return([], (summandId, Some ([], id), []), setConstrs(setMethods(setFlds(Java.emptyClsBody, fldDecls), [eqMethDecl]), [constrDecl]))
   }
 
 op mkSumEqMethBody: Id * Id * Id * List Field -> JGenEnv Block

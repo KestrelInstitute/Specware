@@ -29,7 +29,7 @@ def quotientToClsDecls(id,superSort,quotientPred) =
 
 op mkQuotientTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl -> ClsDecl
 def mkQuotientTypeClsDecl(id, fieldDecls, methodDecls, constrDecls) =
-  ([], (id, None, []), setConstrs(setMethods(setFlds(emptyClsBody, fieldDecls), methodDecls), constrDecls))
+  ([], (id, None, []), setConstrs(setMethods(setFlds(Java.emptyClsBody, fieldDecls), methodDecls), constrDecls))
 
 op mkQuotEqBody: Id * Sort * Id -> JGenEnv Block
 def mkQuotEqBody(superSrtId, superSort, quotPredId) =

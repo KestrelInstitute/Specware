@@ -8,7 +8,7 @@ op mkSubSortTypeClsDecl: Id * Id * List FldDecl * List MethDecl * List ConstrDec
 def mkSubSortTypeClsDecl(id, _(*superSortId*), subSortFieldDecls, subSortMethodDecls, subSortConstrDecls) =
   let ssrt = None in %if builtinBaseTypeId? superSortId then None else Some ([],superSortId) in
   ([], (id, ssrt, []),
-   setConstrs(setMethods(setFlds(emptyClsBody, subSortFieldDecls), subSortMethodDecls), subSortConstrDecls))
+   setConstrs(setMethods(setFlds(Java.emptyClsBody, subSortFieldDecls), subSortMethodDecls), subSortConstrDecls))
 
 
 op subSortToClsDecls: Id * Sort * MS.Term -> JGenEnv ()
