@@ -4,6 +4,357 @@ again. *)
 
 
 
+%%% explicit def of pattVars (vs. using pattBoundVars):
+
+  op pattVars : Pattern -> FSet Variable
+
+  op pattSeqVars : FSeq Pattern -> FSet Variable
+  def pattSeqVars patts =
+    unionAll (map (pattVars, patts))
+
+  def pattVars = fn
+    | variable(v,_)    -> singleton v
+    | embedding(_,_,p) -> pattVars p
+    | record(_,pS)     -> pattSeqVars pS
+    | alias(v,_,p)     -> pattVars p with v
+
+
+
+%%% sum type for types + expressions + patterns and ops on it:
+
+  type TypeOrExprOrPatt =
+    | typ(*e*) Type
+    | expr     Expression
+    | patt     Pattern
+
+  axiom inductionTypesExpressionsPatterns is
+    fa (pred : Predicate TypeOrExprOrPatt)
+  %%%%% types:
+      pred (typ boolean)
+   && (fa (tv:TypeVariable) pred (typ (variable tv)))
+   && (fa (t1:Type, t2:Type)
+         pred (typ t1) && pred (typ t2)
+      => pred (typ (arrow (t1, t2))))
+   && (fa (cS:FSeqNE Constructor, tS?:FSeqNE(Option Type))
+         (fa(t) Some t in? tS? => pred (typ t))
+      => pred (typ (sum (cS, tS?))))
+   && (fa (tc:NaryTypeConstruct, tS:FSeq Type)
+         (fa(t) t in? tS => pred (typ t))
+      => pred (typ (nary (tc, tS))))
+   && (fa (tc:SubOrQuotientTypeConstruct, t:Type, e:Expression)
+         pred (typ t) && pred (expr e)
+      => pred (typ (subQuot (tc, t, e))))
+  %%%%% expressions:
+   && (fa (eo:NullaryExprOperator)
+         pred (expr (nullary eo)))
+   && (fa (eo:UnaryExprOperator, e:Expression)
+         pred (expr e)
+      => pred (expr (unary(eo, e))))
+   && (fa (eo:BinaryExprOperator, e1:Expression, e2:Expression)
+         pred (expr e1) && pred (expr e2)
+      => pred (expr (binary (eo, e1, e2))))
+   && (fa (e0:Expression, e1:Expression, e2:Expression)
+         pred (expr e0) && pred (expr e1) && pred (expr e2)
+      => pred (expr (ifThenElse (e0, e1, e2))))
+   && (fa (eo:NaryExprOperator, eS:FSeq Expression)
+         (fa(e) e in? eS => pred (expr e))
+      => pred (expr (nary (eo, eS))))
+   && (fa (eo:BindingExprOperator,
+           vS:FSeqNE Variable, tS:FSeqNE Type, e:Expression)
+         (fa(t) t in? tS => pred (typ t))
+      && pred (expr e)
+      => pred (expr (binding (eo, zip (vS, tS), e))))
+   && (fa (o:Operation, tS:FSeq Type)
+         (fa(t) t in? tS => pred (typ t))
+      => pred (expr (opInstance (o, tS))))
+   && (fa (t:Type, c:Constructor)
+         pred (typ t)
+      => pred (expr (embedder (t, c))))
+   && (fa (e:Expression, pS:FSeqNE Pattern, eS:FSeqNE Expression)
+         length pS = length eS
+      && (fa(p) p in? pS => pred (patt p))
+      && (fa(e1) e1 in? eS => pred (expr e1))
+      => pred (expr (cas (e, zip (pS, eS)))))
+   && (fa (vS:FSeqNE Variable, tS:FSeqNE Type, eS:FSeq Expression,
+           e:Expression)
+         length vS  = length tS
+      && length tS = length eS
+      && (fa(t) t in? tS => pred (typ t))
+      && (fa(e1) e1 in? eS => pred (expr e1))
+      && pred (expr e)
+      => pred (expr (recursiveLet (zip (zip (vS, tS), eS), e))))
+   && (fa (p:Pattern, e:Expression, e1:Expression)
+         pred (patt p)
+      && pred (expr e)
+      && pred (expr e1)
+      => pred (expr (nonRecursiveLet (p, e, e1))))
+  %%%%% patterns:
+   && (fa (v:Variable, t:Type)
+         pred (typ t)
+      => pred (patt (variable (v, t))))
+   && (fa (t:Type, c:Constructor, p:Pattern)
+         pred (typ t)
+      && pred (patt p)
+      => pred (patt (embedding (t, c, p))))
+   && (fa (fS:FSeq Field, pS:FSeq Pattern)
+         (fa(p) p in? pS => pred (patt p))
+      => pred (patt (record (fS, pS))))
+   && (fa (v:Variable, t:Type, p:Pattern)
+         pred (typ t)
+      && pred (patt p)
+      => pred (patt (alias (v, t, p))))
+
+  op typeSubstAt :
+     TypeOrExprOrPatt * Type * Type * Position * TypeOrExprOrPatt -> Boolean
+
+  def typeSubstAt = min (fn typeSubstAt ->
+  %%%%% types:
+    (fa (old:Type, new:Type)
+       typeSubstAt (typ old, old, new, empty, typ new))
+    &&
+    (fa (old:Type, new:Type, pos:Position, t1:Type, t2:Type, newT1:Type)
+       typeSubstAt (typ t1, old, new, pos, typ newT1) =>
+       typeSubstAt (typ (arrow(t1,t2)), old, new, 1 |> pos,
+                    typ (arrow(newT1,t2))))
+    &&
+    (fa (old:Type, new:Type, pos:Position, t1:Type, t2:Type, newT2:Type)
+       typeSubstAt (typ t2, old, new, pos, typ newT2) =>
+       typeSubstAt (typ (arrow(t1,t2)), old, new, 2 |> pos,
+                    typ (arrow(t1,newT2))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         i:Nat, cS:FSeqNE Constructor, tS?:FSeqNE(Option Type),
+         ti:Type, newTi:Type)
+       i < length tS? &&
+       tS? elem i = Some ti &&
+       typeSubstAt (typ ti, old, new, pos, typ newTi) =>
+       typeSubstAt (typ (sum (cS, tS?)), old, new, (i+1) |> pos,
+                    typ (sum (cS, update(tS?,i,Some newTi)))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         i:Nat, tc:NaryTypeConstruct, tS:FSeq Type, newTi:Type)
+       i < length tS &&
+       typeSubstAt (typ (tS elem i), old, new, pos, typ newTi) =>
+       typeSubstAt (typ (nary(tc,tS)), old, new, (i+1) |> pos,
+                    typ (nary(tc,update(tS,i,newTi)))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         tc:SubOrQuotientTypeConstruct, t:Type, e:Expression, newT:Type)
+       typeSubstAt (typ t, old, new, pos, typ newT) =>
+       typeSubstAt (typ (subQuot(tc,t,e)), old, new, 0 |> pos,
+                    typ (subQuot(tc,newT,e))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         tc:SubOrQuotientTypeConstruct, t:Type, e:Expression, newE:Expression)
+       typeSubstAt (expr e, old, new, pos, expr newE) =>
+       typeSubstAt (typ (subQuot(tc,t,e)), old, new, 1 |> pos,
+                    typ (subQuot(tc,t,newE))))
+  %%%%% expressions:
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         eo:UnaryExprOperator, e:Expression, newE:Expression)
+       typeSubstAt (expr e, old, new, pos, expr newE) =>
+       typeSubstAt (expr (unary(eo,e)), old, new, 0 |> pos,
+                    expr (unary(eo,newE))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         eo:BinaryExprOperator, e1:Expression, e2:Expression, newE1:Expression)
+       typeSubstAt (expr e1, old, new, pos, expr newE1) =>
+       typeSubstAt (expr (binary(eo,e1,e2)), old, new, 1 |> pos,
+                    expr (binary(eo,newE1,e2))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         eo:BinaryExprOperator, e1:Expression, e2:Expression, newE2:Expression)
+       typeSubstAt (expr e2, old, new, pos, expr newE2) =>
+       typeSubstAt (expr (binary(eo,e1,e2)), old, new, 2 |> pos,
+                    expr (binary(eo,e1,newE2))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         e0:Expression, e1:Expression, e2:Expression, newE0:Expression)
+       typeSubstAt (expr e0, old, new, pos, expr newE0) =>
+       typeSubstAt (expr (ifThenElse(e0,e1,e2)), old, new, 0 |> pos,
+                    expr (ifThenElse(newE0,e1,e2))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         e0:Expression, e1:Expression, e2:Expression, newE1:Expression)
+       typeSubstAt (expr e1, old, new, pos, expr newE1) =>
+       typeSubstAt (expr (ifThenElse(e0,e1,e2)), old, new, 1 |> pos,
+                    expr (ifThenElse(e0,newE1,e2))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         e0:Expression, e1:Expression, e2:Expression, newE2:Expression)
+       typeSubstAt (expr e2, old, new, pos, expr newE2) =>
+       typeSubstAt (expr (ifThenElse(e0,e1,e2)), old, new, 2 |> pos,
+                    expr (ifThenElse(e0,e1,newE2))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         eo:NaryExprOperator, i:Nat, eS:FSeq Expression, newEi:Expression)
+       i < length eS &&
+       typeSubstAt (expr (eS elem i), old, new, pos, expr newEi) =>
+       typeSubstAt (expr (nary(eo,eS)), old, new, (i+1) |> pos,
+                    expr (nary(eo,update(eS,i,newEi)))))
+    &&
+    (fa (old:Type, new:Type, pos:Position, eo:BindingExprOperator,
+         i:Nat, vS:FSeqNE Variable, tS:FSeqNE Type, e:Expression, newTi:Type)
+       i < length vS &&
+       length vS = length tS &&
+       typeSubstAt (typ (tS elem i), old, new, pos, typ newTi) =>
+       typeSubstAt (expr (binding (eo, zip (vS, tS), e)),
+                    old, new, (i+1) |> pos,
+                    expr (binding (eo,
+                                   zip (vS, update(tS,i,newTi)),
+                                   e))))
+    &&
+    (fa (old:Type, new:Type, pos:Position, eo:BindingExprOperator,
+         bvS:FSeqNE(Variable*Type), e:Expression, newE:Expression)
+       typeSubstAt (expr e, old, new, pos, expr newE) =>
+       typeSubstAt (expr (binding (eo, bvS, e)), old, new, 0 |> pos,
+                    expr (binding (eo, bvS, newE))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         i:Nat, opp:Operation, tS:FSeq Type, newTi:Type)
+       i < length tS &&
+       typeSubstAt (typ (tS elem i), old, new, pos, typ newTi) =>
+       typeSubstAt (expr (opInstance(opp,tS)), old, new, (i+1) |> pos,
+                    expr (opInstance(opp,update(tS,i,newTi)))))
+    &&
+    (* Since here embedders are decorated by types, instead of sum types as in
+    LD, the positioning changes slightly: we just use 0 to indicate the type
+    that decorates the embedder, as opposed to i to indicate the i-th type
+    component as in LD. *)
+    (fa (old:Type, new:Type, pos:Position,
+         t:Type, c:Constructor, newT:Type)
+       typeSubstAt (typ t, old, new, pos, typ newT) =>
+       typeSubstAt (expr (embedder(t,c)), old, new, 0 |> pos,
+                    expr (embedder(t,c))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         e:Expression, branches:FSeqNE(Pattern*Expression), newE:Expression)
+       typeSubstAt (expr e, old, new, pos, expr newE) =>
+       typeSubstAt (expr (cas(e,branches)), old, new, 0 |> pos,
+                    expr (cas(newE,branches))))
+    &&
+    (fa (old:Type, new:Type, pos:Position, i:Nat, e:Expression,
+         pS:FSeqNE Pattern, eS:FSeqNE Expression, newPi:Pattern)
+       i < length pS &&
+       length pS = length eS &&
+       typeSubstAt (patt (pS elem i), old, new, pos, patt newPi) =>
+       typeSubstAt (expr (cas (e, (zip (pS, eS)))),
+                    old, new, (2*(i+1)-1) |> pos,
+                    expr (cas (e, (zip (update(pS,i,newPi), eS))))))
+    &&
+    (fa (old:Type, new:Type, pos:Position, i:Nat, e:Expression,
+         pS:FSeqNE Pattern, eS:FSeqNE Expression, newEi:Expression)
+       i < length pS &&
+       length pS = length eS &&
+       typeSubstAt (expr (eS elem i), old, new, pos, expr newEi) =>
+       typeSubstAt (expr (cas (e, (zip (pS, eS)))),
+                    old, new, (2*(i+1)) |> pos,
+                    expr (cas (e, (zip (pS, update(eS,i,newEi)))))))
+    &&
+    (fa (old:Type, new:Type, pos:Position, i:Nat, e:Expression,
+         vS:FSeqNE Variable, tS:FSeqNE Type, eS:FSeqNE Expression,
+         e:Expression, newTi:Type)
+       i < length vS &&
+       length vS = length tS &&
+       length tS = length eS &&
+       typeSubstAt (typ (tS elem i), old, new, pos, typ newTi) =>
+       typeSubstAt (expr (recursiveLet (zip (zip (vS, tS), eS), e)),
+                    old, new, (2*(i+1)-1) |> pos,
+                    expr (recursiveLet
+                           (zip (zip (vS, update(tS,i,newTi)), eS), e))))
+    &&
+    (fa (old:Type, new:Type, pos:Position, i:Nat, e:Expression,
+         vS:FSeqNE Variable, tS:FSeqNE Type, eS:FSeqNE Expression,
+         e:Expression, newEi:Expression)
+       i < length vS &&
+       length vS = length tS &&
+       length tS = length eS &&
+       typeSubstAt (expr (eS elem i), old, new, pos, expr newEi) =>
+       typeSubstAt (expr (recursiveLet (zip (zip (vS, tS), eS), e)),
+                    old, new, (2*(i+1)) |> pos,
+                    expr (recursiveLet
+                           (zip (zip (vS, tS), update(eS,i,newEi)), e))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         asgments:FSeqNE(BoundVar*Expression), e:Expression, newE:Expression)
+       typeSubstAt (expr e, old, new, pos, expr newE) =>
+       typeSubstAt (expr (recursiveLet(asgments,e)), old, new, 0 |> pos,
+                    expr (recursiveLet(asgments,newE))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         p:Pattern, e:Expression, e1:Expression, newP:Pattern)
+       typeSubstAt (patt p, old, new, pos, patt newP) =>
+       typeSubstAt (expr (nonRecursiveLet(p,e,e1)), old, new, 0 |> pos,
+                    expr (nonRecursiveLet(newP,e,e1))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         p:Pattern, e:Expression, e1:Expression, newE:Expression)
+       typeSubstAt (expr e, old, new, pos, expr newE) =>
+       typeSubstAt (expr (nonRecursiveLet(p,e,e1)), old, new, 1 |> pos,
+                    expr (nonRecursiveLet(p,newE,e1))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         p:Pattern, e:Expression, e1:Expression, newE1:Expression)
+       typeSubstAt (expr e1, old, new, pos, expr newE1) =>
+       typeSubstAt (expr (nonRecursiveLet(p,e,e1)), old, new, 2 |> pos,
+                    expr (nonRecursiveLet(p,e,newE1))))
+  %%%%% patterns:
+    &&
+    (fa (old:Type, new:Type, pos:Position, v:Variable, t:Type, newT:Type)
+       typeSubstAt (typ t, old, new, pos, typ newT) =>
+       typeSubstAt (patt (variable(v,t)), old, new, 0 |> pos,
+                    patt (variable(v,newT))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         t:Type, c:Constructor, p:Pattern, newT:Type)
+       typeSubstAt (typ t, old, new, pos, typ newT) =>
+       typeSubstAt (patt (embedding(t,c,p)), old, new, 0 |> pos,
+                    patt (embedding(newT,c,p))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         t:Type, c:Constructor, p:Pattern, newP:Pattern)
+       typeSubstAt (patt p, old, new, pos, patt newP) =>
+       typeSubstAt (patt (embedding(t,c,p)), old, new, 1 |> pos,
+                    patt (embedding(t,c,newP))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         i:Nat, fS:FSeq Field, pS:FSeq Pattern, newPi:Pattern)
+       i < length fS &&
+       length fS = length pS &&
+       typeSubstAt (patt (pS elem i), old, new, pos, patt newPi) =>
+       typeSubstAt (patt (record (fS, pS)), old, new, i |> pos,
+                    patt (record (fS, update(pS,i,newPi)))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         v:Variable, t:Type, p:Pattern, newT:Type)
+       typeSubstAt (typ t, old, new, pos, typ newT) =>
+       typeSubstAt (patt (alias(v,t,p)), old, new, 0 |> pos,
+                    patt (alias(v,newT,p))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         v:Variable, t:Type, p:Pattern, newP:Pattern)
+       typeSubstAt (patt p, old, new, pos, patt newP) =>
+       typeSubstAt (patt (alias(v,t,p)), old, new, 1 |> pos,
+                    patt (alias(v,t,newP)))))
+
+  op typeSubstInTypeAt :
+     Type * Type * Type * Position * Type -> Boolean
+  def typeSubstInTypeAt(t,old,new,pos,t1) =
+    typeSubstAt (typ t, old, new, pos, typ t1)
+
+  op typeSubstInExprAt :
+     Expression * Type * Type * Position * Expression -> Boolean
+  def typeSubstInExprAt(e,old,new,pos,e1) =
+    typeSubstAt (expr e, old, new, pos, expr e1)
+
+  op typeSubstInPattAt :
+     Pattern * Type * Type * Position * Pattern -> Boolean
+  def typeSubstInPattAt(p,old,new,pos,p1) =
+    typeSubstAt (patt p, old, new, pos, patt p1)
+
+
+
 %%% unique kind of names:
 
 spec
