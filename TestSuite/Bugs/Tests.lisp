@@ -6,7 +6,28 @@
 
  ("Bug 0043 : Snark doesn't like Booleans"
   :show "Bug_0043/Change#ShouldBeProvable" 
-  :output "??")
+  :output ";;; Elaborating proof-term at $TESTDIR/Bug_0043/Change#ShouldBeProvable
+;;; Elaborating obligator at $TESTDIR/Bug_0043/Change#ShouldBeProvable
+;;; Elaborating spec-morphism at $TESTDIR/Bug_0043/Change#FlipFlopImplementation
+;;; Elaborating spec at $TESTDIR/Bug_0043/Change#Flipflop
+;;; Elaborating spec at $TESTDIR/Bug_0043/Change#GiveNameToTilde
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Top
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Char
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/List
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Nat
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/Option
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/String
+;;; Elaborating spec at $SPECWARE/Library/ProverBase/System
+;;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite
+;;; Elaborating spec at $SPECWARE/Library/Base/ProverBase
+ShouldBeProvable: Conjecture change is Proved. using Snark.
+    Snark Log file: $TESTDIR/Bug_0043/Both/Change/ShouldBeProvable.log
+
+
+")
 
  ("Bug 0045 : Unambiguous op erroneously declared ambiguous [toString]" 
   :show   "Bug_0045/ToString"
