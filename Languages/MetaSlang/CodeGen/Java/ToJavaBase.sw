@@ -960,7 +960,7 @@ op insertRestricts: Spec * List Sort * List Term -> List Term
 def insertRestricts(spc,dom,args) =
   let
     def insertRestrict(domsrt,argterm) =
-      %let _ = writeLine("insertRestrict: domsrt="^printSort(domsrt)^", argterm="^printTermWithSorts(argterm)) in
+      let _ = writeLine("insertRestrict: domsrt="^printSort(domsrt)^", argterm="^printTermWithSorts(argterm)) in
       let domsrt = unfoldBase(spc,domsrt) in
       case domsrt of
 	| Subsort(srt,pred,_) ->

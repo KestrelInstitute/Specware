@@ -19,7 +19,7 @@ op specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Blo
  *) 
 op termToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def termToExpressionM(tcx, term, k, l) =
-  termToExpression_internalM(tcx,term,k,l,true)
+   termToExpression_internalM(tcx,term,k,l,true)
 
 op termToExpression_internalM: TCx * JGen.Term * Nat * Nat * Boolean -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
@@ -122,7 +122,9 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 	translateUserApplToExprM(tcx, id, dom, argsTerm, k, l)
    in
    case opTerm of
-     | Fun (Restrict,      srt, _) -> translateRestrictToExprM  (tcx, srt, argsTerm, k, l)
+     | Fun (Restrict,      srt, _) ->
+       termToExpressionM(tcx,argsTerm,k,l)
+       %translateRestrictToExprM  (tcx, srt, argsTerm, k, l)
      | Fun (Relax,         srt, _) -> translateRelaxToExprM     (tcx,      argsTerm, k, l)
      | Fun (Quotient,      srt, _) -> translateQuotientToExprM  (tcx, srt, argsTerm, k, l)
      | Fun (Choose,        srt, _) -> translateChooseToExprM    (tcx,      argsTerm, k, l)
