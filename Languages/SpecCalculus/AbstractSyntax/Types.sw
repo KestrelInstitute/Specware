@@ -1,7 +1,5 @@
 \section{Spec Calculus Abstract Syntax}
 
-Synchronized with r1.7 SW4/Languages/SpecCalculus/AbstractSyntax/Types.sl
-
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../MetaSlang/Specs/PosSpec % For Position
@@ -82,9 +80,7 @@ such as PSL or Planware, it might be refined to an application-specific
 term, or a coproduct of such terms.
 
 \begin{spec}
-
   sort OtherTerm a  % hook for extensions
-
 \end{spec}
 
 The following is the sort given to us by the parser.
@@ -98,7 +94,6 @@ The following is the sort given to us by the parser.
     | Spec    List (SpecElem a)
     | Diag    List (DiagElem a)
     | Colimit (Term a)
-
 \end{spec}
 
 The calculus supports two types of morphisms: morphisms between specs and
@@ -167,7 +162,6 @@ you can make OtherTerm a coproduct of the desired terms.
 \begin{spec}
     | Other (OtherTerm a)
 \end{spec}
-
 
 The following are declarations that appear in a file or listed
 within a \verb+let+. As noted above, at present the identifiers
@@ -269,24 +263,23 @@ A diagram morphism has two types of elements: components of the shape map
 and components of the natural transformation. The current syntax allows
 them to be presented in any order. 
 
+A \verb+NatTranComp+ element is a component in a natural transformation
+between diagrams. The components are indexed by vertices in the shape.
+The term in the component must evaluate to a morphism.
+
 \begin{spec}
   sort DiagMorphRule a = (DiagMorphRule_ a) * a
   sort DiagMorphRule_ a =
     | ShapeMap    Name * Name
     | NatTranComp Name * (Term a) 
+\end{spec}
 
+\begin{spec}
   sort Assertions = | All
                     | Explicit List ClaimName
 
   sort ProverOptions = | OptionString (List LispCell)
                        | OptionName QualifiedId
                        | Error   (String * String)  % error msg, problematic string
-\end{spec}
-
-A \verb+NatTranComp+ element is a component in a natural transformation
-between diagrams. The components are indexed by vertices in the shape.
-The term in the component must evaluate to a morphism.
-
-\begin{spec}
 }
 \end{spec}
