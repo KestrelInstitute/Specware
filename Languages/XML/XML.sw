@@ -11,10 +11,11 @@ XML qualifying spec
   %%%                 INTERFACE
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op parseXML        : fa (X) String  -> X     % Very tricky -- actual handwritten function takes extra arg depicting X
-  op parseUnicodeXML : fa (X) UString -> X     % Very tricky -- actual handwritten function takes extra arg depicting X
-  op printXML        : fa (X) X -> String      % Very tricky -- actual handwritten function takes extra arg depicting X
-  op printUnicodeXML : fa (X) X -> UString     % Very tricky -- actual handwritten function takes extra arg depicting X
+  %% These are all very tricky -- actual handwritten function takes extra arg depicting X 
+  op parseXML        : fa (X) String  -> X     % Tricky, TODO
+  op parseUnicodeXML : fa (X) UString -> X     % Tricky, TODO
+  op printXML        : fa (X) X -> String      % Tricky, see Languages/XML/Handwritten/Lisp/Support.lisp
+  op printUnicodeXML : fa (X) X -> UString     % Tricky, TODO
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%                 INPUT

@@ -7,25 +7,21 @@ Magic qualifying spec
   %% Such a beast is not even well formed for metaslang, so it must
   %% be handled carefully!
 
-  op Magic.magicElements      : fa (X,Y) X -> List Y
+  op Magic.magicElements      : fa (X,Y) X -> List Y                 % see /Languages/XML/Handwritten/Lisp/Magic.lisp
 
   %% This extracts the name of the constructor from the runtime datum
   %% The value (Y) is actually a reasonable metaslang construction,
   %% but we don't know it's type.
 
-  op Magic.magicConstructorNameAndValue : fa (X,Y) X -> String * Y
+  op Magic.magicConstructorNameAndValue : fa (X,Y) X -> String * Y   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
 
   %% These are just identities that type cast their args, so that the result
   %% is pleasing to Specware for further processing.
 
-  op Magic.magicCastToString        : fa (X) X -> String
-
-  op Magic.magicCastToInteger       : fa (X) X -> Integer
-
-  op Magic.magicCastToList          : fa (X,Y) X -> List Y
-
-  op Magic.magicCastToChar          : fa (X) X -> Char
-
-  op Magic.magicCastToBoolean       : fa (X) X -> Boolean
+  op Magic.magicCastToString        : fa (X) X -> String             % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToInteger       : fa (X) X -> Integer            % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToList          : fa (X,Y) X -> List Y           % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToChar          : fa (X) X -> Char               % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToBoolean       : fa (X) X -> Boolean            % see /Languages/XML/Handwritten/Lisp/Magic.lisp
 
 endspec

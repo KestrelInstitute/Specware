@@ -185,8 +185,8 @@ XML qualifying spec
 
   sort GenericPostfix   = (UChars | generic_postfix?)
 
-  op generic_prefix?  : UChars -> Boolean  % complement of names?
-  op generic_postfix? : UChars -> Boolean  % complement of names?
+  op generic_prefix?  : UChars -> Boolean  % complement of names? % TODO
+  op generic_postfix? : UChars -> Boolean  % complement of names? % TODO
 
   sort BoundedText = {qchar : QuoteChar,
 		      text  : UString}
@@ -275,7 +275,7 @@ XML qualifying spec
                        | Ignore  IgnoreSect
                        | DeclSep (DeclSep    | no_pe_reference?)
 		    
-  op no_pe_reference? : fa (a) a -> Boolean
+  op no_pe_reference? : fa (a) a -> Boolean % TODO
 
   %%  This predicate is a bit tedious, but implements the following constraint documented at
   %%
@@ -932,7 +932,7 @@ XML qualifying spec
 		  char  : (UChar | char?)}
 
   %% [VC:  Entity Declared]:
-  op entity_declared? : Name -> Boolean   % tricky
+  op entity_declared? : Name -> Boolean   % tricky  % TODO
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Names                                                                               %%%
@@ -1060,25 +1060,23 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   %% These are all handwritten as vector-of-boolean accesses
-  %% See /Languages/XML/Handwritten/Lisp/Chars.lisp
 
-
-  op char?                  : UChar -> Boolean    % [2] 
-  op white_char?            : UChar -> Boolean    % [3]
-  op letter?                : UChar -> Boolean    % [84]
-  op base_char?             : UChar -> Boolean    % [85]
-  op ideographic_char?      : UChar -> Boolean    % [86]
-  op combining_char?        : UChar -> Boolean    % [87]
-  op digit?                 : UChar -> Boolean    % [88]
-  op extender_char?         : UChar -> Boolean    % [89]
-  op name_char?             : UChar -> Boolean    % [4]
-  op name_start_char?       : UChar -> Boolean    % [5]
-  op pubid_char?            : UChar -> Boolean    % [13]
-  op hex_digit?             : UChar -> Boolean    % [66]
-  op version_num_char?      : UChar -> Boolean    % [26]
-  op enc_name_char?         : UChar -> Boolean    % [81]
-  op latin_alphabetic_char? : UChar -> Boolean    % [81]
-  op char_data_char?        : UChar -> Boolean    % [14]
+  op char?                  : UChar -> Boolean    % [2]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op white_char?            : UChar -> Boolean    % [3]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op letter?                : UChar -> Boolean    % [84]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op base_char?             : UChar -> Boolean    % [85]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op ideographic_char?      : UChar -> Boolean    % [86]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op combining_char?        : UChar -> Boolean    % [87]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op digit?                 : UChar -> Boolean    % [88]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op extender_char?         : UChar -> Boolean    % [89]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op name_char?             : UChar -> Boolean    % [4]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op name_start_char?       : UChar -> Boolean    % [5]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op pubid_char?            : UChar -> Boolean    % [13]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op hex_digit?             : UChar -> Boolean    % [66]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op version_num_char?      : UChar -> Boolean    % [26]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op enc_name_char?         : UChar -> Boolean    % [81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op latin_alphabetic_char? : UChar -> Boolean    % [81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op char_data_char?        : UChar -> Boolean    % [14]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
 
   %% [9] [10] [11] [12] [24] [32] [80] [K10]  
   def quote_char? (char : UChar) : Boolean =

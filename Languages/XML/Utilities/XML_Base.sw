@@ -4,8 +4,6 @@ XML qualifying spec
 
   % TODO: add Nat.toHex for specware
 
-  op toHex : Nat -> String
-
   def toHex (n : Nat) : String =
     let
        def aux (n, digits) =
@@ -28,6 +26,6 @@ XML qualifying spec
 
   def fa (a) non_null? (xx : List a) = ~ (List.null xx)
 
-  op sublist? : fa (a) List a * List a -> Boolean
+  op sublist? : fa (a) List a * List a -> Boolean  % TODO
 
 endspec

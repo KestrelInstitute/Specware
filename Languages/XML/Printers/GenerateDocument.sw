@@ -7,8 +7,6 @@ XML qualifying spec
   import Make_XML_Things
   import Magic
 
-  op standard_XMLDecl : XMLDecl 
-
   sort SortExpansionTable = List (SortDescriptor * SortDescriptor)
 
   def indentation_chardata (vspacing, indent) : UChars =
