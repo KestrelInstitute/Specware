@@ -872,7 +872,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
   % fn x -> f(x.1,x.2,x.3)
   def defUnaryByNary(name,n) =
     mkLLambda([if n = 0 then "ignore" else "x"],
-	      [],
+	      if n = 0 then [Ignore ["ignore"]] else [],
 	      mkLApply(mkLOp name, nTupleDerefs(n,mkLVar "x")))
 
   % fn x1 -> fn ... -> fn xn -> name(x1,...,xn)

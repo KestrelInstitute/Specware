@@ -81,7 +81,7 @@ ListADT qualifying spec {
     | Seq     LispTerms
 
   sort LispDecl =
-    | Ignore  String
+    | Ignore  Strings
 
   sort Val =
     | Boolean   Boolean
@@ -141,6 +141,11 @@ ListADT qualifying spec {
        defs
 
   %% Printing of characters is temporarily wrong due to bug in lexer.
+
+  def ppDecl (decl : LispDecl) : Pretty =
+     case decl of
+       | Ignore names -> prettysLinearDelim ("(declare (ignore ", " ", ")) ")
+                                            (List.map string names)
 
   def ppTerm (t : LispTerm) : Pretty =
     case t
@@ -239,8 +244,9 @@ ListADT qualifying spec {
 	           (0, prettysLinearDelim
 	                 (" (", " ", ") ")
 	                 (List.map string args)),
-	           (2, prettysNone [ppTerm body, string ")"]),
-	           (0, PrettyPrint.newline ())])
+		   (2, prettysAll ((List.map ppDecl decls) @ 
+				   [prettysNone ([ppTerm body, string ")"])])),
+		   (0, PrettyPrint.newline ())])
 	 | _ -> 
 	    blockFill
 	      (0, [(0, string "(defparameter "),
