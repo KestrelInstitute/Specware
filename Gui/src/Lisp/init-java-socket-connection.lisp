@@ -32,7 +32,7 @@
       for name = (mp::process-name process)
       if (and (search *java-listener-name* name)
 	      (not (equal *java-listener-name* name)))
-      do (mp:process-kill p)))
+      do (mp:process-kill process)))
 
 (defvar *java-socket*)
 (defvar *java-socket-stream*)
