@@ -60,7 +60,7 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in "$HOME"/cmucl/bin/lisp /usr/local/bin/cmucl; do
+   for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
