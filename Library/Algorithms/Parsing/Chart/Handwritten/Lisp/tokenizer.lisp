@@ -345,17 +345,33 @@
 						  comment-quads
 						  ad-hoc-table
 						  ad-hoc-strings)
-	      (when (eq type :EOF)
-		(return nil))
-	      (push (list (or (and (or (eq type :AD-HOC) 
-				       (eq type :WORD-SYMBOL)
-				       (eq type :NON-WORD-SYMBOL))
-				   (gethash value ht-ad-hoc-types))
-			      type)
-			  value 
-			  (list first-byte first-line first-column) 
-			  (list last-byte  last-line  last-column)) 
-		    tokens)
+	      (cond ((eq type :EOF)
+		     (return nil))
+		    ((eq type :WORD-SYMBOL-TERMINATED-BY-HASH) ; new hack for # inside URI's...
+		     (push (list (or (gethash value ht-ad-hoc-types)
+				     :WORD-SYMBOL)
+				 value 
+				 (list first-byte first-line first-column) 
+				 (list last-byte  last-line  last-column)) 
+			   tokens)
+		     (incf last-byte)
+		     (incf last-column)
+		     (push (list (or (gethash :NON-WORD-SYMBOL ht-ad-hoc-types)
+				     :NON-WORD-SYMBOL)
+				 "#"
+				 (list last-byte  last-line  last-column)
+				 (list last-byte  last-line  last-column))
+			   tokens))
+		    (t
+		     (push (list (or (and (or (eq type :AD-HOC) 
+					      (eq type :WORD-SYMBOL)
+					      (eq type :NON-WORD-SYMBOL))
+					  (gethash value ht-ad-hoc-types))
+				     type)
+				 value 
+				 (list last-byte  last-line  last-column) 
+				 (list last-byte  last-line  last-column)) 
+			   tokens)))
 	      (setq pre-byte   last-byte 
 		    pre-line   last-line 
 		    pre-column last-column)))))
@@ -659,6 +675,8 @@
 	  (otherwise                         (go unrecognized-char-while-scanning-word-symbol)))
 
        unrecognized-char-while-scanning-word-symbol
+	(when (eq char #\#) ; new hack for # inside URI's...
+	  (return-values-using-prior-last :WORD-SYMBOL-TERMINATED-BY-HASH (coerce (nreverse token-chars) 'string)))
 	(termination-warning char char-code "word symbol" "" ", which is unrecognized")
 	(go terminate-word-symbol)
 	;;
@@ -667,7 +685,7 @@
 	(return-values-using-prior-last :WORD-SYMBOL (coerce (nreverse token-chars) 'string))
 	;;
        terminate-word-symbol-with-continue-non-word-symbol ; weird
-	(termination-warning char char-code "word symbol" "" ", whichcan continue but not start a non-word symbol")
+	(termination-warning char char-code "word symbol" "" ", which can continue but not start a non-word symbol")
 	(go terminate-word-symbol)
 	;;
        terminate-word-symbol-with-start-word-symbol
@@ -795,7 +813,7 @@
 		char char-code
 		(termination-warning char char-code "partial non-word character literal" "#\\" ", which is eof")
 		(termination-warning char char-code "partial non-word character literal" "#\\" "")
-		(termination-warning char char-code "partial non-word character literal" "#\\" ", which starts of an extended comment")
+		(termination-warning char char-code "partial non-word character literal" "#\\" ", which starts an extended comment")
 		)
 	       (case char
 		 (#\a (return-values :CHARACTER #\bel       ))
@@ -821,7 +839,7 @@
 			 hex-char-2 hex-char-code-2
                 	 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", which is eof")
 			 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) "")
-			 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", whch starts an extended comment")
+			 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", which starts an extended comment")
 			 )
 			(let ((high-nibble (convert-hex-char-to-number hex-char-1))
 			      (low-nibble  (convert-hex-char-to-number hex-char-2)))
