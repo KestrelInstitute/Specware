@@ -9,8 +9,10 @@
 ;;; Elaborating spec at $TESTDIR/Ambop#B
 Error in specification: 
 
-Ambiguous ops: 
+Ambiguous ops:
+
  (* Warning: Multiple definitions for following op *) 
+ op  f : (Nat -> Nat)
  def f =
   (fn n ->
     (n + 1))

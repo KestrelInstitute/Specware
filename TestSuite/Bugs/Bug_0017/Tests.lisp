@@ -9,7 +9,11 @@
 ;;; Elaborating spec at $TESTDIR/AAcol#A
 
 spec  
+ 
+ op  Y.fubaz : Nat
  def Y.fubaz = 12345
+ 
+ op  X.fubaz : Nat
  def X.fubaz = 12345
 endspec
 

@@ -25,10 +25,10 @@ spec
      x < length x0 && pV2 = D.2 => embed?(Cons)(D.1)
 endspec
 
+;;; Elaborating proof-term at $TESTDIR/NeedWFO#P
 ;; ensure-directories-exist: creating $TESTDIR/Both/NeedWFO/P.log
 ;; Directory $TESTDIR/Both/ does not exist, will create.
 ;; Directory $TESTDIR/Both/NeedWFO/ does not exist, will create.
-;;; Elaborating proof-term at $TESTDIR/NeedWFO#P
 P: Conjecture f_Obligation in O is Proved! using simple inequality reasoning.
     Snark Log file: $TESTDIR/Both/NeedWFO/P.log
 ;;; Elaborating proof-term at $TESTDIR/NeedWFO#P0

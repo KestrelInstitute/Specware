@@ -12,7 +12,9 @@
 
 spec  
  import B
- type Interval = {start:Nat, stop:Nat}
+ type Interval = {start : Nat, stop : Nat}
+ 
+ op  isEmptyInterval? : Interval -> Boolean
  def isEmptyInterval? {start = x, stop = y} = x = y
 endspec
 

@@ -7,7 +7,9 @@
   :output ";;; Elaborating spec at $TESTDIR/AmbiguousRef
 
 spec  
- def b = Nat.toString
+ 
+ op  b : Nat -> String
+ def b = toString
 endspec
 
 ")

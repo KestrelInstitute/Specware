@@ -7,8 +7,11 @@
   :output ";;; Elaborating spec at $TESTDIR/QuantifiedAxiom#A
 
 spec  
- op f infixl 22 : [a] List(a) * a -> Integer
+ 
+ op  i : Nat
  def i = 123
+ 
+ op  f infixl 22 : [a] List(a) * a -> Integer
  axiom A is [i] f 3 = 0
 endspec
 
@@ -28,8 +31,11 @@ Errors in $TESTDIR/QuantifiedAxiom.sw
   :output ";;; Elaborating spec at $TESTDIR/QuantifiedAxiom#C
 
 spec  
- op f infixl 22 : [a] a -> Integer
+ 
+ op  i : Nat
  def i = 123
+ 
+ op  f infixl 22 : [a] a -> Integer
  axiom A is [i] f(3) = 0
 endspec
 

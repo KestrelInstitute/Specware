@@ -13,8 +13,10 @@
 ;;; Elaborating spec-morphism at $TESTDIR/IncompatColimit#NN1N2
 Type error: 
 
-Ambiguous ops:  op i : Nat
+Ambiguous ops:
+
  (* Warning: Multiple definitions for following op *) 
+ op  i : Nat
  def i =
   2
  def i =
