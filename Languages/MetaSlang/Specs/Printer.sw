@@ -938,14 +938,14 @@ AnnSpecPrinter qualifying spec {
      (index + 1,
       case defs of
 	| [] -> 
-	  cons ((1,blockFill(0,[(0, pp.Sort),
+	  cons ((1,blockFill(0,[(0, pp.Type),
 				(0, string " "),
 				(0, ppSortNames ()),
 				(0, ppTyVars pp tyVars)])),
 		lines)
 	| _ ->
 	  foldl (fn ((defining_type_vars, defining_sort), lines) ->
-		 cons ((1,blockFill(0,[(0, pp.Sort),
+		 cons ((1,blockFill(0,[(0, pp.Type),
 				       (0, string " "),
 				       (0, ppSortNames()),
 				       (0, ppTyVars pp defining_type_vars),
@@ -1207,7 +1207,7 @@ AnnSpecPrinter qualifying spec {
           (fn (qualifier,id,_,sorts) -> 
               cons(
                 prettysNone
-                 [string ("  \\pdfoutline goto name {"^"???"^":Sort:"
+                 [string ("  \\pdfoutline goto name {"^"???"^":Type:"
                           ^(if qualifier = UnQualified then "" else qualifier^".")^id^"} {"),
                   string (if qualifier = UnQualified then "" else qualifier^"."),
                   string id,
