@@ -7,7 +7,7 @@ spec
  sort SCDecl = SpecCalc.Decl Position
  
  op generateProof: Spec * SCTerm * Property * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
- def generateProof (spc, _(*scTerm*), prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
+ def generateProof (spc, scTerm, prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let def printProofName(qid as Qualified (qual, id)) =
         if qual = UnQualified then
 	  id^"_proof"
@@ -21,7 +21,7 @@ spec
    (proofName, ProveTerm_A)
 
  op generateProofMorphism: Morphism * SCTerm * Property * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
- def generateProofMorphism (morph, _(*scTerm*), prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
+ def generateProofMorphism (morph, scTerm, prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let def printProofName(qid as Qualified (qual, id)) =
         if qual = UnQualified then
 	  id^"_proof"
