@@ -6,25 +6,39 @@ Lisp.  The following sections describe the &Specware; environment and
 the basic mechanisms for running &Specware;.</para>
 
 <section>
-<title>Starting &Specware;</title>
+<title>Starting &Specware; and the &Specware; Shell</title>
 
-<para>To start &Specware;, double-click the <"Specware 4.0"> shortcut
-on your Desktop, or select <"Specware 4.0"> from the <"Start Menu ->
+<para>To start &Specware;, first double-click the <"&SpecwareV;"> shortcut
+on your Desktop, or select <"&SpecwareV;"> from the <"Start Menu ->
 Program Files -> Specware"> folder.  When &Specware; is launched, a
-couple things happen: XEmacs is started and a Lisp image containing
-&Specware; is started inside an XEmacs buffer.  All of the user
-interaction (see the next chapter) with &Specware; occurs at the Lisp
-prompt. </para>
+couple of things happen: XEmacs is started and a Lisp image containing
+&Specware; is started inside an XEmacs buffer.  Next, at the
+Lisp prompt, type the command [[L:sw:shell]] to start the
+&Specware; shell.
+All of the user
+interaction (see the next chapter) with &Specware; occurs at
+the Specware prompt.
+</para>
+
+<para>Processing errors may cause the execution of the
+&Specware; shell to be interrupted, throwing interaction
+back to the Lisp shell.  
+To return to the &Specware; shell, select the appropriate
+restart action offered by Lisp.  Alternatively, re-issue the
+[[L:sw:shell]] command.
+</para>
 
 </section>  <!-- starting specware -->
 
 <section>
 <title>Exiting &Specware;</title>
 
-<para>To exit &Specware;, type [[L::exit]] at the Lisp prompt.  A
-message will appear indicating that another process exists.  Type
-[[L:y]] to confirm that you want to exit.  This will kill &Specware;
-and you may then close the XEmacs window.</para>
+<para>To exit &Specware;, type [[exit]] or [[quit]] at the
+Specware prompt.
+This will terminate the &Specware; session as well as Lisp.
+To exit &Specware; while remaining inside Lisp, give the
+command [[ok]].
+</para>
 
 </section>  <!-- exiting specware -->
 

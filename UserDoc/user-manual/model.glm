@@ -17,8 +17,9 @@ external theorem provers, and code generation.</para>
 <para>The &Metaslang; language is the vehicle to construct units. The
 language has syntax to express all the unit-constructing operations
 that &Specware; provides. The user defines units in &Metaslang;,
-writing the definitions in <".sw"> files (this file extension comes
-from the first and fifth letter of ``&Specware;'').</para>
+writing the definitions in <".sw"> files.
+(This file extension comes from the first letters of the two
+syllables in ``&Specware;''.)</para>
 
 <para>Currently, the only way to construct units in &Specware; is by
 writing text in &Metaslang;. Future versions of &Specware; will
@@ -31,24 +32,31 @@ be possible to draw the diagram on the screen.</para>
 <section>
 <title>Interaction</title>
 
-<para>All the interaction between the user and &Specware; takes place
-through the Lisp shell. The <".sw"> files that define units are
-edited outside of &Specware;, i.e. using XEmacs, Notepad or any other text
-editor of choice. These files are processed by &Specware; by giving
-suitable commands at the Lisp shell.</para>
+<para>The interaction between the user and &Specware; takes place
+through the &Specware; shell. The <".sw"> files that define units are
+edited outside of &Specware;, i.e., using XEmacs, Notepad,
+Vim, or any other text editor of choice.
+These files are processed by &Specware; by giving
+suitable commands to the &Specware; shell.</para>
 
 <para>When <".sw"> files are processed by &Specware;, progress and
-error messages are displayed in the XEmacs buffer containing the Lisp
-shell. In addition, the results of processing are saved into an
+error messages are displayed in the XEmacs buffer containing
+the &Specware; shell.
+In addition, the results of processing are saved into an
 internal cache that &Specware; maintains. Lastly, processing of
 certain kinds of units result in new files being created.  For
 example, when Lisp code is generated from a spec, the code is
 deposited into a <".lisp"> file.</para>
 
+<para>From the &Specware; shell it is possible to evaluate
+Metaslang expressions in the context of a given spec, either
+directly or through generated Lisp code.</para>
+
 <para>&Specware; also features auxiliary commands to display
 information about units, inspect and clear the internal cache, and
-inspect and change an environment variable that determines how unit
-identifiers are resolved to <".sw"> files.</para>
+inspect and change the [[SWPATH]] environment variable,
+which determines how unit identifiers are resolved to <".sw">
+files.</para>
 
 </section>
 

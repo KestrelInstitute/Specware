@@ -8,9 +8,9 @@
 The identifier identifies the unit and the term defines how the unit
 is constructed.</para>
 
-<para>An application developed with &Specware; consists of a set of
+<para>A project developed with &Specware; consists of a set of
 unit definitions, some of which may come from libraries. Units have
-unique identifiers within the application.</para>
+unique identifiers within the project.</para>
 
 <section>
 <title>Unit Identifiers</title>
@@ -18,11 +18,11 @@ unique identifiers within the application.</para>
 <para>A unit identifier is a finite, non-empty sequence of word
 symbols (word symbols are defined in the &Metaslang; grammar).  The
 sequence of word symbols is essentially a ``path'' in a tree: the
-units comprising an application are organized in a tree.</para>
+units comprising a project are organized in a tree.</para>
 
-<para>This provides a convenient and mundane way to organize the units
-comprising an application. Libraries are subtrees of the whole
-tree. Parallel development of different parts of an application can be
+<para>This provides a convenient and simple way to organize the units
+comprising a project. Libraries are subtrees of the whole
+tree. Parallel development of different parts of a project can be
 carried out in different subtrees that can be later put together
 without risk of naming clashes.</para>
 
@@ -42,17 +42,12 @@ colimit operation to a diagram of specs and morphisms.</para>
 constructed by extending another one references the spec being
 extended.</para>
 
-<!-- LEFT OUT FOR NOW BECAUSE "ABSOLUTE" REFERENCES ARE REALLY
-RELATIVE TO SWPATH IN THE CURRENT IMPLEMENTATION, SO IT WOULD
-BE CONFUSING TO CALL THEM "ABSOLUTE":
-
-References can be absolute or relative, and they are
-resolved to units in the tree. The former are complete paths in the
-tree; the latter are partial paths that are combined with the path of
-the referencing unit (according to simple rules explained later) to
-form a complete path in the tree.
-
--->
+<para>
+References can be ``&swpath;-based'' or ``relative''.
+In either case they are
+resolved to full unit identifiers of units in the tree,
+according to simple rules explained later.
+</para>
 
 </section>
 
@@ -64,7 +59,7 @@ form a complete path in the tree.
 <para>The conceptual model just described is realized by means of the
 file system of the underlying operating system. The file system has
 essentially a tree structure. The tree of units comprising a
-&Specware; application is mapped to subtrees of the file system; the
+&Specware; project is mapped to subtrees of the file system; the
 word symbols comprising a path are mapped to file and directory
 names.</para>
 
@@ -88,8 +83,8 @@ on how to inspect and set &swpath;.</para>
 in <".sw"> files under the directories listed in &swpath;. The
 identifier of each unit is its path from the directory in &swpath;
 under which the file defining the unit is: if the unit is under
-directory <"dir">, its identifier is its absolute path in the file
-system ``minus'' the <"dir"> prefix.  This approximate statement is
+a directory named <"ub2">, its identifier is its absolute path in the file
+system ``minus'' the <"ub2"> prefix.  This approximate statement is
 made precise and illustrated by examples below.</para>
 
 </section>
@@ -104,8 +99,8 @@ prefixed by the path from the directory in &swpath; to the
 file.</para>
 
 <para>For example, suppose that &swpath; includes the directory
-<"c:\users\me\specware">. The user creates a file named <"A.sw">
-immediately under the directory <"c:\users\me\specware\one\two">,
+<"C:\users\me\specware">. The user creates a file named <"A.sw">
+immediately under the directory <"C:\users\me\specware\one\two">,
 containing the following text:</para>
 
 [[
@@ -115,7 +110,7 @@ containing the following text:</para>
 ]]
 
 <para>The absolute path of the file in the file system is
-<"c:\users\me\specware\one\two\A.sw">. The unit is a spec containing
+<"C:\users\me\specware\one\two\A.sw">. The unit is a spec containing
 just a type [[X]]. The identifier of the unit is [[/one/two/A]]. Note
 that the path components are separated by ``/'' (forward slash), even
 though the underlying file system uses ``\'' (backward slash). Unit
@@ -147,9 +142,9 @@ the URI syntax, where subparts of a document are referred to using
 ``#''.)</para>
 
 <para>Suppose, as in the previous example, that &swpath; includes the
-directory <"c:\users\me\specware">. The user creates a file named
+directory <"C:\users\me\specware">. The user creates a file named
 <"three.sw"> immediately under the directory
-<"c:\users\me\specware\one\two">, containing the following
+<"C:\users\me\specware\one\two">, containing the following
 text:</para>
 
 [[
