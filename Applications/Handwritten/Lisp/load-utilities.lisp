@@ -227,7 +227,8 @@
 
 (defun directory? (pathname)
   (and (null (pathname-name pathname))
-       (probe-file pathname)))
+       (null (pathname-type pathname))
+       (not (null (directory pathname)))))
 
 (defun extend-directory (dir ext-dir)
   (make-pathname :directory

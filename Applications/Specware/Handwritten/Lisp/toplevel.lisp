@@ -1102,7 +1102,10 @@
 (defun ls (&optional (str ""))
   (let* ((contents (directory (specware::dir-to-path str)))
 	 (sw-files (loop for p in contents
-		     when (string= (pathname-type p) "sw")
+		     when (or (string= (pathname-type p) "sw")
+			      (specware::directory?
+			       #+allegro (parse-namestring (specware::ensure-final-slash (namestring p)))
+			       #-allegro p))
 		     collect p)))
     (list-files sw-files)
     (values)))
@@ -1120,12 +1123,12 @@
 		     when (string= (pathname-type p) "sw")
 		     collect p)))
     (when (not (null sw-files))
-      (format t "~a:~%" (pathname-directory-string dir))
+      (format t "~a:~%" (namestring dir))
       (list-files sw-files))
     (loop for p in contents
       unless (equal (pathname-name p) "CVS")
       do ;; Work around allegro bug in directory
-          #+allegro (setq p (make-pathname :directory (namestring p)))
+          #+allegro (setq p (parse-namestring (specware::ensure-final-slash (namestring p))))
 	  (when (specware::directory? p)
 	   (list-directory-rec p))))
   )
@@ -1134,9 +1137,9 @@
 
 (defun list-files (files)
   (when files
-    (let* ((names (loop for fil in files collect (pathname-name fil)))
+    (let* ((names (loop for fil in files collect (cons (pathname-name fil) (pathname-type fil))))
 	   (num-files (length names))
-	   (max-width (+ 3 (loop for name in names maximize (length name))))
+	   (max-width (1+ (loop for name in names maximize (+ (length (car name)) (length (cdr name))))))
 	   (across (floor *dir-width* max-width))
 	   (rows (ceiling num-files across))
 	   (grouped-names (loop for i from 0 to (- rows 1)
@@ -1145,7 +1148,9 @@
 			          collect (elt names j)))))
       (loop for row in grouped-names
 	do (loop for fil in row
-	     do (format t " ~va" max-width (concatenate 'string fil ".sw")))
+	     do (format t " ~va" max-width (if (null (cdr fil))
+					       (concatenate 'string (car fil) "/")
+					     (concatenate 'string (car fil) "." (cdr fil)))))
 	   (format t "~%")))))
 
 (defun pathname-directory-string (p)

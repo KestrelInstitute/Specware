@@ -120,7 +120,7 @@
 	(format t "~%Exiting Specware Shell. :sw-shell to reenter.")))))
 
 (defun sw-shell-command (command)
-  (let ((ch (read-char-no-hang)))
+  (let ((ch (read-char-no-hang *standard-input* nil nil)))
     (when ch
       (unread-char ch))
     (if (or (null ch)          ; interactive, end of command
