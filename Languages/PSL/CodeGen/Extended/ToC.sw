@@ -121,7 +121,7 @@ SpecCalc qualifying spec {
 	      | [(names,fixity,(tyVars,srt),_)] ->
 	        sortToCType cspc spc srt
 	      | _ ->
-		let _ = fail ("Could not find return var: " ^ (anyToString retRef) ^ "\n") in 
+		let _ = toScreen ("Could not find return var: " ^ (anyToString retRef) ^ "\n") in 
 		(cspc,Void)		
     in
     let def handler id procedure except =
