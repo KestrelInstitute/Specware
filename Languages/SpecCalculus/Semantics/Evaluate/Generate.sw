@@ -5,6 +5,7 @@ SpecCalc qualifying spec {
   import Signature  
   import Snark
   import Java
+  import C
   import /Languages/MetaSlang/CodeGen/C/ToC
   import ../SpecPath
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
@@ -28,9 +29,10 @@ SpecCalc qualifying spec {
                         print (showValue cValue);
                         return (cValue,timeStamp,depURIs)
                       }
-                 | "c" -> 
+                 | "c_old" -> 
                        let _ = specToC (subtractSpec spc baseSpec) in
                        return (cValue,timeStamp,depURIs)
+		 | "c" -> evaluateCGen((cValue,timeStamp,depURIs),optFile)
                  | "java" -> evaluateJavaGen ((cValue,timeStamp,depURIs), sub_term,optFile)
                        %let _ = specToJava (subtractSpec spc baseSpec) in
                        %return (cValue,timeStamp,depURIs)
