@@ -324,9 +324,18 @@ reference is a single identifier.</para>
 
 <para>The &Specware; command to process units is [[L::sw]]. The user
 supplies this command in the XEmacs buffer of the Lisp shell, followed
+by an argument. The argument is a unit reference or the name of a
+multiple-unit file.</para>
+
+<!-- LEFT OUT FOR NOW:
+
+<para>The &Specware; command to process units is [[L::sw]]. The user
+supplies this command in the XEmacs buffer of the Lisp shell, followed
 by an argument. The argument is a unit reference, a piece of text
 defining an unnamed unit, or the name of a multiple-unit file. The
 whole command (including the argument) must fit in one line.</para>
+
+-->
 
 <section>
 <title>Processing a Named Unit</title>
@@ -357,6 +366,8 @@ evaluates their defining text.</para>
 
 </section>
 
+<!-- LEFT OUT FOR NOW:
+
 <section>
 <title>Processing an Unnamed Unit</title>
 
@@ -375,6 +386,8 @@ units, &Specware; recursively resolves the references and parses and
 evaluates their defining text.</para>
 
 </section>
+
+-->
 
 <section>
 <title>Processing a Multiple-Unit File</title>
@@ -494,6 +507,8 @@ and its defining text has not been changed after that, the [[L::show]]
 command will access the results saved in &Specware;'s internal
 cache.</para>
 
+<!-- LEFT OUT FOR NOW:
+
 <para>The command to display an unnamed unit is:</para>
 
 [[L:
@@ -503,6 +518,8 @@ cache.</para>
 <para>This command first processes the unit, exactly as if it were
 [[L::sw <unit-defining-text>]]. In addition, if processing does not
 yield errors, the value of the unit is displayed on screen.</para>
+
+-->
 
 <!-- LEFT OUT FOR NOW:
 
