@@ -84,6 +84,7 @@
   (:anyof
    ((:tuple "=")                   "=") ; so we can refer to = (and "is" ?) as an operator in a term
    ((:tuple "*")                   "*") ; so we can refer to * as an operator in a term
+   ((:tuple "/")                   "/") ; so we can refer to / as an operator in a term
    ((:tuple "translate")      "translate") ; so we can use translate as a function
    ((:tuple "colimit")        "colimit") ; so we can use colimit as a function
    ((:tuple "diagram")        "diagram") ; so we can use diagram as a function
