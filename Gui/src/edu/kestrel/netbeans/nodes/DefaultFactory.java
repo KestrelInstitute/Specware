@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/04/23 01:15:42  weilyn
+ * ClaimCustomizer.java
+ *
  * Revision 1.8  2003/04/01 02:29:39  weilyn
  * Added support for diagrams and colimits
  *
@@ -51,6 +54,7 @@ import org.openide.util.datatransfer.NewType;
 
 import edu.kestrel.netbeans.Util;
 import edu.kestrel.netbeans.model.*;
+
 
 /** The default implementation of the hierarchy nodes factory.
  * Uses the standard node implementations in this package.
@@ -900,7 +904,6 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     }
         
     protected Node[] createNodes(Object key) {
-      System.out.println("DefaultFactory.createNodes with key="+key);
       if (key instanceof Integer) {
 	return new Node[]{new MorphismElementCategoryNode(((Integer)key).intValue(), factory, element, writeable)};
       } 
@@ -916,13 +919,13 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     }
 
     protected void refreshKeys (int filter, Object oldValue, Object newValue) {
-      boolean emptyOld = ((Element[])oldValue).length == 0;
-      boolean emptyNew = ((Element[])newValue).length == 0;
+/*      boolean emptyOld = ((UnitID[])oldValue).length == 0;
+      boolean emptyNew = ((UnitID[])newValue).length == 0;
       if (emptyOld && !emptyNew) {
 	addCategory(filter);
       } else if (!emptyOld && emptyNew) {
 	removeCategory(filter);
-      }
+      }*/
       super.refreshKeys(filter);
     }
 
