@@ -6,7 +6,7 @@ This defines just the prefix operators. There is support in the MetaSlang
 grammar to generate these functions.
 
 \begin{spec}
-Monad qualifying spec {
+Monad qualifying spec
   sort Monad a
 
   op monadBind : fa (a,b) (Monad a) * (a -> Monad b) -> Monad b
@@ -31,5 +31,5 @@ sequencing operator but that might preclude one from refining it.
 \begin{spec}
   axiom non_binding_sequence is
      sort fa (a) fa (f:Monad a,g:Monad a) monadSeq (f,g) = monadBind (f,fn _ -> g)
-}
+endspec
 \end{spec}

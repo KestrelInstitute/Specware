@@ -23,6 +23,7 @@ not WadlerLindig.
 WadlerLindig qualifying spec
   sort Doc
 
+  op ppString : String -> Doc
   op ppNewline : Doc
   op ppBreak : Doc
   op ppConcat : List Doc -> Doc
@@ -35,6 +36,7 @@ WadlerLindig qualifying spec
   op ppFormat : Doc -> String
 
   op String.pp : String -> Doc
+  def String.pp = ppString
 
   op Nat.pp : Nat -> Doc
   def Nat.pp n = pp (Nat.toString n)

@@ -11,16 +11,16 @@ spec
   op empty : Set
   op empty? : Set -> Boolean
 
-  op union : Set -> Set -> Set
-  op intersection : Set -> Set -> Set
-  op difference : Set -> Set -> Set
+  op union : Set * Set -> Set
+  op intersection : Set * Set -> Set
+  op difference : Set * Set -> Set
 
-  op member? : Set -> Elem -> Boolean
-  op delete : Set -> Elem -> Set
+  op member? : Set * Elem -> Boolean
+  op delete : Set * Elem -> Set
 
   op singleton : Elem -> Set
   op theSingleton : (Set | fn set -> ex (x) set = singleton x) -> Elem
 
-  op insert : Set -> Elem -> Set
+  op insert : Set * Elem -> Set
 endspec
 \end{spec}

@@ -8,16 +8,15 @@ by translate. Basically reduce the number redundant sorts.
 \begin{spec}
 spec {
   import /Library/Structures/Data/Maps/Monomorphic
-  import translate (Vertex qualifying /Library/Structures/Data/Sets/Monomorphic) by {
-      Elem.Elem +-> Vertex.Elem,
-      Elem.pp +-> Vertex.ppElem,
-      Vertex.pp +-> Vertex.ppSet
-    }
-  import translate (Edge qualifying /Library/Structures/Data/Sets/Monomorphic) by {
-      Elem.Elem +-> Edge.Elem,
-      Elem.pp +-> Edge.ppElem,
-      Edge.pp +-> Edge.ppSet
-    }
+  import translate (Vertex qualifying /Library/Structures/Data/Sets/Monomorphic)
+    by {Elem.Elem +-> Vertex.Elem,
+        Elem.pp +-> Vertex.ppElem,
+        Vertex.pp +-> Vertex.ppSet}
+  import translate (Edge qualifying /Library/Structures/Data/Sets/Monomorphic)
+    by {Elem.Elem +-> Edge.Elem,
+        Elem.pp +-> Edge.ppElem,
+        Edge.pp +-> Edge.ppSet}
+
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Dom = Edge.Elem   % does this actually refine the sorts in Maps
