@@ -62,7 +62,7 @@ be overwhelming to the user, yet invaluable in understanding why his
 proofs succeeded or failed.  To deal with all this output &Specware;
 redirects all the Snark output to log files. In our example above,
 which executed a proof in the file <"proof.sw">, &Specware; will
-create a subdirectory called <"snark>" at the same level as
+create a subdirectory called <"snark"> at the same level as
 <"proof.sw">.  In that directory log file, <"proof.log"> will be
 created that contains all the Snark output.</para>
 
