@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.20  2003/03/19 18:36:46  gilham
+ * Fixed a bug in the Lexer that caused the token for "\end{spec}" not being skipped.
+ *
  * Revision 1.19  2003/03/14 04:15:31  weilyn
  * Added support for proof terms
  *
@@ -132,8 +135,8 @@ private scTerm[Token unitIdToken] returns[ElementFactory.Item item]
 {
     item = null;    
 }
-    : ( (scSubstitute[unitIdToken]) => item=scSubstitute[unitIdToken]
-      | item=scBasicTerm[unitIdToken]
+    : ( item=scBasicTerm[unitIdToken]
+      | item=scSubstitute[unitIdToken]
       )                     {if (item != null) builder.setParent(item, null);}
     ;
 
@@ -289,7 +292,7 @@ private scGenerate[Token unitIdToken] returns[ElementFactory.Item generate]
     : begin:"generate"        {headerEnd = begin;}
       genName=name
       ignore=scTerm[null]
-      ("in" fileName=name
+      ("in" STRING_LITERAL
       )?
     ;
 
@@ -485,8 +488,20 @@ private qualifier returns[String qlf]
     : qlf=name
     ;
 
-//!!! TO BE EXTENDED !!!
 private name returns[String name]
+{
+    name = null;
+}
+    : name=idName
+    | sym:NON_WORD_SYMBOL           {name=sym.getText();}
+    | translate:"translate"         {name="translate";}
+    | colimit:"colimit"             {name="colimit";}
+    | diagram:"diagram"             {name="diagram";}
+    | print:"print"                 {name="print";}
+    | snark:"Snark"                 {name="Snark";}
+    ;
+
+private nonKeywordName returns[String name]
 {
     name = null;
 }
@@ -646,8 +661,11 @@ private opName returns[String opName]
 {
     opName = null;
 }
-    : id:IDENTIFIER         {opName = id.getText();}
+/*    : id:IDENTIFIER         {opName = id.getText();}
     | sym:NON_WORD_SYMBOL   {opName = sym.getText();}
+    ;
+*/
+    : opName=name
     ;
 
 private fixity
@@ -691,7 +709,7 @@ private opDefinition returns[ElementFactory.Item def]
 }
     : begin:"def"
       name=qualifiableOpNames
-      ((formalOpParameters equals) => params=formalOpParameters equals
+      (params=formalOpParameters equals
        | equals) 
       expr=expression            {def = builder.createDef(name, params, expr);
                                   ParserUtil.setBounds(builder, def, begin, LT(0));
@@ -755,7 +773,7 @@ private expression returns[String expr]
 
 
 //NOn-pattern-ed formalOpParameters code:
-private formalOpParameters returns[String[] params]
+/*private formalOpParameters returns[String[] params]
 {
     params = null;
     String param = null;
@@ -772,17 +790,136 @@ private formalOpParameters returns[String[] params]
        )*)?
       RPAREN                {params = (String[]) paramList.toArray(new String[]{});}
     ;
+*/
 
-/*
 private formalOpParameters returns[String[] params]
 {
     params = null;
     List paramList = new LinkedList();
 }
-    : ((pattern[paramList]
+    : (closedPattern
       )*                    {params = (String[]) paramList.toArray(new String[]{});}
     ;
 
+private pattern
+    : basicPattern
+    | annotatedPattern
+    ;
+
+private annotatedPattern
+    : basicPattern
+      nonWordSymbol[":"]
+      sort
+    ;
+
+private basicPattern
+    : tightPattern
+    ;
+
+private tightPattern
+    : closedPattern
+    | consPattern
+    | aliasedPattern
+    | quotientPattern
+//    | relaxPattern
+    | embedPattern
+    ;
+
+private aliasedPattern
+    : variablePattern
+      "as"
+      tightPattern
+    ;
+
+private embedPattern
+    : name
+      closedPattern
+    ;
+
+private variablePattern
+{
+    String ignore = null;
+}
+    : ignore=nonKeywordName
+    ;
+
+private consPattern
+    : closedPattern
+      nonWordSymbol["::"]
+      tightPattern
+    ;
+
+private closedPattern
+    : parenthesizedPattern
+    | variablePattern
+    | literalPattern
+    | listPattern
+//made this part of parenthesizedPattern    | tuplePattern
+    | recordPattern
+    | wildcardPattern
+    ;
+
+private wildcardPattern
+    : UBAR
+    ;
+
+private literalPattern
+{
+    String ignore = null;
+}
+    : ignore=literal
+    ;
+
+private listPattern
+    : LBRACKET
+      (pattern
+       (COMMA pattern
+       )*
+      )?
+      RBRACKET
+    ;
+
+private parenthesizedPattern
+    : LPAREN
+      (pattern
+       (COMMA pattern
+       )*
+      )?
+      RPAREN
+    ;
+
+private recordPattern
+    : LBRACE
+      fieldPattern
+      (COMMA fieldPattern
+      )*
+      RBRACE
+    ;
+
+private fieldPattern
+    : name
+      (nonWordSymbol["="]
+       pattern
+      )?
+    ;
+
+private quotientPattern
+    : "quotient"
+      closedExpression
+      tightPattern
+    ;
+
+//TODO: selectableExpression
+private closedExpression
+    : unqualifiedOpRef
+    ;
+
+private unqualifiedOpRef
+    : name
+    ;
+      
+
+/* THIS IS BAD BECAUSE OF TOO MUCH NON-DETERMINISM...LOTS OF POTENTIAL FOR "INFINITE LOOPS"
 private pattern[List patternList]
     : basePattern[patternList]
     | annotatedPattern[patternList]
@@ -807,8 +944,10 @@ private annotatedPattern[List patternList]
       
 private parenPattern[List patternList]
     : LPAREN 
-      (pattern[patternList]
-      )*
+      (
+       | (pattern[patternList]
+         )*
+      )
       RPAREN
     ;
 
@@ -821,8 +960,10 @@ private bracePattern[List patternList]
 
 private bracketPattern[List patternList]
     : LBRACKET
-      (pattern[patternList]
-      )*
+      ( 
+       | (pattern[patternList]
+         )*
+      )
       RBRACKET
     ;
 
@@ -1004,24 +1145,23 @@ BLOCK_COMMENT
 // Latex comments -- ignored
 LATEX_COMMENT
     : ( "\\end{spec}"
-      | ( "\\section{"
-      	| "\\subsection{"
-      	| "\\document{"
-      	)
-      	(// '\r' '\n' can be matched in one alternative or by matching
-       	// '\r' in one iteration and '\n' in another.  The language
-       	// that allows both "\r\n" and "\r" and "\n" to be valid
-       	// newlines is ambiguous.  Consequently, the resulting grammar
-       	// must be ambiguous.  This warning is shut off.
-       	options {generateAmbigWarnings=false;}
-       	: { LA(2)!='b' || LA(3)!='e' || LA(4) !='g' || LA(5) !='i' || LA(6) !='n' || LA(7) != '{' || LA(8) != 's' || LA(9) != 'p' || LA(10) != 'e' || LA(11) != 'c' || LA(12) != '}'}? '\\'
-	  | '\r' '\n'		{newline();}
-	  | '\r'		{newline();}
-	  | '\n'		{newline();}
-	  | ~('\\'|'\n'|'\r')
-          )*
-      	"\\begin{spec}"
-      )                         {_ttype = Token.SKIP;}
+      | "\\section{"
+      | "\\subsection{"
+      | "\\document{"
+      )                         
+      (// '\r' '\n' can be matched in one alternative or by matching
+       // '\r' in one iteration and '\n' in another.  The language
+       // that allows both "\r\n" and "\r" and "\n" to be valid
+       // newlines is ambiguous.  Consequently, the resulting grammar
+       // must be ambiguous.  This warning is shut off.
+       options {generateAmbigWarnings=false;}
+       : { LA(2)!='b' || LA(3)!='e' || LA(4) !='g' || LA(5) !='i' || LA(6) !='n' || LA(7) != '{' || LA(8) != 's' || LA(9) != 'p' || LA(10) != 'e' || LA(11) != 'c' || LA(12) != '}'}? '\\'
+	 | '\r' '\n'		{newline();}
+	 | '\r'			{newline();}
+	 | '\n'			{newline();}
+	 | ~('\\'|'\n'|'\r')    
+         )*
+      "\\begin{spec}"           {_ttype = Token.SKIP;}
     ;
 
 //-----------------------------
