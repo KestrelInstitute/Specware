@@ -24,10 +24,10 @@
 (setq sb-ext::*compile-print* nil)
 #+sbcl
 (declaim (optimize (sb-ext:inhibit-warnings 3)))
-;#+mcl
-;(egc t)					; Turn on ephemeral gc
 #+mcl
-(ccl::set-lisp-heap-gc-threshold (* 16777216 4))
+(progn (ccl:egc nil)			; Turn off ephemeral gc as it is inefficient
+       (ccl:gc-retain-pages t)		; Don't give up pages after gc as likely to need them soon
+       (ccl::set-lisp-heap-gc-threshold (* 16777216 3))) ; Increase free space after a gc
 #+sbcl
 (setq sb-fasl:*fasl-file-type* "sfsl")	; Default is "fasl" which conflicts with allegro
 #+sbcl
@@ -74,8 +74,8 @@
 				"/Provers/Snark/Handwritten/Lisp/snark-system")
 	 :type     "lisp")))
 
-(handler-bind ((warning #'ignore-warning))
-  (cl-user::make-or-load-snark-system))
+;(handler-bind ((warning #'ignore-warning))
+;  (cl-user::make-or-load-snark-system))
 
 (declaim (optimize (speed 3) (debug 2) (safety 1)))
 

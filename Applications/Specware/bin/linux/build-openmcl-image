@@ -37,7 +37,7 @@ esac
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /usr/local/bin/opencl "$HOME"/ccl/dppccl; do
+   for L in /Applications/ccl/dppccl /usr/local/bin/dppccl "$HOME"/ccl/dppccl; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
@@ -127,6 +127,5 @@ $LISP <<-XXXX
 	(load "$EXIT_ON_ERRORS")
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
-	(create-file  "$SPECWARE4/Applications/Specware/bin/linux/Specware4.openmcl-image") ; temporary bug workaround
 	(ccl:save-application "$SPECWARE4/Applications/Specware/bin/linux/Specware4.openmcl-image")
 XXXX

@@ -60,7 +60,7 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in "$HOME"/ccl/dppccl /Users/westfold/Desktop/Download/ccl/dppccl /Users/westfold/ccl-13/dppccl /Users/westfold/ccl-0.14/dppccl; do
+   for L in /usr/local/bin/dppccl /Applications/ccl/dppccl "$HOME"/ccl/dppccl; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi

@@ -12,14 +12,14 @@ echo "  ------------------------------------------------------------------------
 echo "  Verify_OpenMCL:  Ensure that OpenMCL executable exists:"
 echo " "
 
-for L in /usr/local/bin/dppccl $HOME/ccl/dppccl; do
+for L in /usr/local/bin/dppccl /Applications/ccl/dppccl $HOME/ccl/dppccl; do
   if [ -x "$L" ]; then
     export LISP="$L"; break
   fi
 done
 
 if [ -z "$LISP" ]; then
-  echo "  Verify_ACL:  Could not find OpenMCL lisp"
+  echo "  Verify_OpenMCL:  Could not find OpenMCL lisp"
   exit 1
 fi
 

@@ -106,6 +106,7 @@
 		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
 	    (process-close process)))))))
 
+#-mcl
 (defun copy-file (a b)
   (with-open-file (old a :direction :input :element-type 'unsigned-byte)
     (with-open-file (new b :direction :output :element-type 'unsigned-byte)
@@ -121,7 +122,8 @@
 
 #+MCL
 (defun save-this-lisp-image (name)
-  (unless (probe-file name) (create-file  name))  ; temporary bug workaround (??)
+  (format t "Saving ~a~%" name)
+  ;(unless (probe-file name) (create-file  name))  ; temporary bug workaround (??)
   (ccl:save-application name))
 
 #+MCL

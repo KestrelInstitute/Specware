@@ -44,7 +44,7 @@
   (format t "~%Lisp session exiting with code ~D~%" return-code)
   #+Allegro                  (excl::exit      return-code)
   #+CMU                      (unix::unix-exit return-code)
-  #+OpenMCL                  (exit            return-code)
-  #-(or Allegro CMU OpenMCL) (exit            return-code)
+  #+OpenMCL                  (quit            return-code)
+  #-(or Allegro CMU OpenMCL) (quit            return-code)
   )
 
