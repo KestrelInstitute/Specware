@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/10 15:38:36  gilham
+ * Allow non-word symbols only as op names, not as sort names or unit ids.
+ *
  * Revision 1.1  2003/01/30 02:01:52  gilham
  * Initial version.
  *
@@ -90,7 +93,8 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final int OF_ID = LET_ID + 1;
     public static final int OP_ID = OF_ID + 1;
     public static final int PROJECT_ID = OP_ID + 1;
-    public static final int QUOTIENT_ID = PROJECT_ID + 1;
+    public static final int PROVE_ID = PROJECT_ID + 1;
+    public static final int QUOTIENT_ID = PROVE_ID + 1;
     public static final int RELAX_ID = QUOTIENT_ID + 1;
     public static final int RESTRICT_ID = RELAX_ID + 1;
     public static final int SORT_ID = RESTRICT_ID + 1;
@@ -179,6 +183,7 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final BaseImageTokenID OF = new BaseImageTokenID("of", OF_ID, KEYWORDS);
     public static final BaseImageTokenID OP = new BaseImageTokenID("op", OP_ID, KEYWORDS);
     public static final BaseImageTokenID PROJECT = new BaseImageTokenID("project", PROJECT_ID, KEYWORDS);
+    public static final BaseImageTokenID PROVE = new BaseImageTokenID("prove", PROVE_ID, KEYWORDS);
     public static final BaseImageTokenID QUOTIENT = new BaseImageTokenID("quotient", QUOTIENT_ID, KEYWORDS);
     public static final BaseImageTokenID RELAX = new BaseImageTokenID("relax", RELAX_ID, KEYWORDS);
     public static final BaseImageTokenID RESTRICT = new BaseImageTokenID("restrict", RESTRICT_ID, KEYWORDS);
@@ -208,8 +213,8 @@ public class MetaSlangTokenContext extends TokenContext {
         BaseImageTokenID[] kwds = new BaseImageTokenID[] {//GEN-BEGIN
             AS, AXIOM, CASE, CHOOSE, CONJECTURE, DEF, ELSE, EMBED, 
             EMBEDP, ENDSPEC, EX, FA, FALSE, FN, IF, IMPORT, IN, IS, LET, 
-            OF, OP, PROJECT, QUOTIENT, RELAX, RESTRICT, SORT, SPEC, THEN, 
-            THEOREM, TRUE, WHERE
+            OF, OP, PROJECT, PROVE, QUOTIENT, RELAX, RESTRICT, SORT, 
+            SPEC, THEN, THEOREM, TRUE, WHERE
         };//GEN-END
 
         for (int i = kwds.length - 1; i >= 0; i--) {

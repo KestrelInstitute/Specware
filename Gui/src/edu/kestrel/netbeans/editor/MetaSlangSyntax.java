@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/10 15:38:36  gilham
+ * Allow non-word symbols only as op names, not as sort names or unit ids.
+ *
  * Revision 1.1  2003/01/30 02:01:52  gilham
  * Initial version.
  *
@@ -543,14 +546,25 @@ public class MetaSlangSyntax extends Syntax {
                         return null;
                 }
             case 'p':
-                return (len == 7
-                    && buffer[offset++] == 'r'
-                    && buffer[offset++] == 'o'
-                    && buffer[offset++] == 'j'
-                    && buffer[offset++] == 'e'
-                    && buffer[offset++] == 'c'
-                    && buffer[offset++] == 't')
-                        ? MetaSlangTokenContext.PROJECT : null;
+                if (len <= 4)
+                    return null;
+                if (buffer[offset++] != 'r'
+                    || buffer[offset++] != 'o')
+                        return null;
+                switch (buffer[offset++]) {
+                    case 'j':
+                        return (len == 7
+                            && buffer[offset++] == 'e'
+                            && buffer[offset++] == 'c'
+                            && buffer[offset++] == 't')
+                                ? MetaSlangTokenContext.PROJECT : null;
+                    case 'v':
+                        return (len == 5
+                            && buffer[offset++] == 'e')
+                                ? MetaSlangTokenContext.PROVE : null;
+                    default:
+                        return null;
+                }
             case 'q':
                 return (len == 8
                     && buffer[offset++] == 'u'
