@@ -290,6 +290,7 @@
 	(comment-tokens     '())
 	(non-comment-tokens '())
 	(comment-eof-error? nil))
+    ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
     (incf-timing-data 'tokenize-file)
     (dolist (token all-tokens)
       (cond ((member (first token) '(:COMMENT-TO-EOL :EXTENDED-COMMENT))
@@ -322,6 +323,7 @@
 	(ad-hoc-table              (tokenizer-parameters-ad-hoc-table              tokenizer-parameters))
 	(ad-hoc-strings            (tokenizer-parameters-ad-hoc-strings            tokenizer-parameters)))
     (let ((tokens nil))
+      ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
       (with-open-file (stream file) 
 	(let ((ps-stream (make-pseudo-stream :unread-chars nil :stream stream))
 	      ;; The upper-left corner of the file is considered 1:0:1 (line 1, column 0, byte 1)
@@ -369,7 +371,7 @@
 					  (gethash value ht-ad-hoc-types))
 				     type)
 				 value 
-				 (list last-byte  last-line  last-column) 
+				 (list first-byte first-line first-column) 
 				 (list last-byte  last-line  last-column)) 
 			   tokens)))
 	      (setq pre-byte   last-byte 
@@ -392,6 +394,7 @@
 					 extended-comment-quads
 					 ad-hoc-table
 					 ad-hoc-strings)
+  ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
   (when digits-may-start-symbols?
     (error "The option digits-may-start-symbols? is currently diabled."))
 
@@ -1179,6 +1182,7 @@
 ;;; ========================================================================
 
 (defun install-tokens (session tokens comments)
+  ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
   (when (null +token-rule+) (break "???"))
   (let ((locations (make-array (1+ (length tokens))))
 	(pre-index 0)
@@ -1223,11 +1227,14 @@
     (debugging-comment "Pre-Comments for ~6D (eof): ~S" pre-index comments)
     (let ((eof-location pre-location))
       (setf (parser-location-pre-comments eof-location) comments)
-      (let* ((last-token (if (null comments)
-			     (parser-node-semantics last-node)
-			   (first (last comments))))
-	     (last-pos   (fourth last-token)))
-	(debugging-comment "Last token: ~S" last-token)
-	(setf (parser-location-position eof-location) last-pos)))
+      (if (null last-node)		
+	  (debugging-comment "No tokens")
+	(let* ((last-token (if (null comments)
+			       (parser-node-semantics last-node)
+			     (first (last comments))))
+	       ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
+	       (last-pos   (fourth last-token)))
+	  (debugging-comment "Last token: ~S" last-token)
+	  (setf (parser-location-position eof-location) last-pos))))
     locations))
 
