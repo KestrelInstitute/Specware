@@ -4,6 +4,7 @@
 (defun run-specware4 ()
   (interactive)
   (setq fi:common-lisp-host "localhost")
+  (setq-default fi::lisp-host fi:common-lisp-host)
 ;;
 ;; fi:common-lisp-directory is the directory in which the lisp subprocess will
 ;; be executed. It is defined in eli/fi-subproc.el with a default value nil
@@ -42,6 +43,8 @@
 		"windows"
 	      (symbol-name system-type))
 	    "/Specware4.dxl"))
+  (setq fi:common-lisp-image-arguments nil ;'("+c")
+	)
 
   (fi:common-lisp fi:common-lisp-buffer-name
 		  fi:common-lisp-directory
@@ -49,7 +52,12 @@
 		  fi:common-lisp-image-arguments
 		  fi:common-lisp-host
 		  fi:common-lisp-image-file
-		  ))
+		  )
+  (sleep-for 2)
+;;;  (while (not (inferior-lisp-running-p))
+;;;    (sleep-for 1))
+;;;  (delete-windows-on "*Warnings*" t)
+  )
 
 ;;;(defun run-specware (&optional openSpecWindow)
 ;;;  (interactive "P")
@@ -101,7 +109,7 @@
 ;; with a Specware world);
 
 (defun run-lisp-application ()
-  (interactive "P")
+  (interactive)
   (when (inferior-lisp-running-p)
     (fi:exit-lisp)
     (sleep-for 2))
@@ -122,6 +130,7 @@
 
   (setq fi:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
   (setq fi:common-lisp-image-file nil)
+  (setq fi:common-lisp-image-arguments nil) ; '("+c"))
 
   (fi:common-lisp fi:common-lisp-buffer-name
 		  fi:common-lisp-directory
