@@ -75,6 +75,18 @@ FM qualifying spec
     let minusOnePoly = mkPoly1(minusOne) in
     mkIneq(GtEq, minusOnePoly)
 
+  op trueIneqGtEq: Ineq
+  def trueIneqGtEq =
+    let one = mkConstant(1) in
+    let onePoly = mkPoly1(one) in
+    mkIneq(GtEq, onePoly)
+
+  op falseIneq: Ineq
+  def falseIneq = contradictIneqGtEq
+
+  op trueIneq: Ineq
+  def trueIneq = trueIneqGtEq
+
   op mkNormIneq: CompPred * Poly -> Ineq
   def mkNormIneq(comp, p) =
     normalize(mkIneq(comp, p))
@@ -451,6 +463,11 @@ FM qualifying spec
 
   op FMRefute?: IneqSet -> Boolean
   def FMRefute?(ineqSet) =
+    if member(contradictIneqGt, ineqSet) or
+      member(contradictIneqGtEq, ineqSet) or
+      member(contradictIneqGtZero, ineqSet)      
+      then true
+    else 
     let ineqSet = sortIneqSet(ineqSet) in
     let ineqSet = integerPreProcess(ineqSet) in
     let completeIneqs = fourierMotzkin(ineqSet) in
