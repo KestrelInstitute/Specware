@@ -86,7 +86,8 @@ echo " "
 # when Lisp loads?
 
 export SWPATH=$SPECWARE4:.
-EXIT_ON_ERRORS=$SPECWARE4/Applications/Specware/bin/linux/exit-on-errors
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 
 echo "\$SWPATH=$SWPATH"
 
@@ -102,8 +103,9 @@ if [ -f lisp ]; then
 fi
 
 $SPECWARE4/Applications/Specware/bin/linux/Specware4-text -batch <<-XXXX
-               :swpath
-	(load "$EXIT_ON_ERRORS") ; bin/linux/exit-on-errors
+	:swpath
+	(load "$EXIT_ON_ERRORS")
+	(load "$MEMORY_MANAGEMENT") 
 	(enlarge-stack)
 	(exiting-on-errors 
 	  (if (sw "/Applications/PSL/PSL")
@@ -157,9 +159,9 @@ fi
 
 # big-alisp.dxl will have a larger lisp heap than the default alisp image.
 # Rebuild it each time.  A bit redundant, but ensures compatibility with 6.1/6.2/etc.
-BIG_ALISP="${SPECWARE4}/Applications/Specware/bin/linux/big-alisp.dxl"
+BIG_ALISP="${SPECWARE4}/Applications/PSL/bin/linux/big-alisp.dxl"
 $LISP -batch <<-XXXX
-	(build-lisp-image "$BIG_ALISP" :lisp-heap-start #x48000000 :oldspace #x2000000)
+	(build-lisp-image "$BIG_ALISP" :lisp-heap-start #x48000000 :oldspace #x100)
 XXXX
 
 echo " "
@@ -167,10 +169,12 @@ echo "Loading PSL ... (for dumplisp)"
 echo " "
 $LISP -I ${BIG_ALISP} -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
+	(load "$MEMORY_MANAGEMENT") 
+	(compact-memory t)
 	(set-gc-parameters-for-build t)
 	(exiting-on-errors 
 	  (load "PSL.lisp"))
-	(compact-memory t)
+	(compact-memory t 2 32000000)
 	(set-gc-parameters-for-use t)
 	(excl::dumplisp :name "$SPECWARE4/Applications/PSL/bin/linux/PSL.dxl")
 XXXX
