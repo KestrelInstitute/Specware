@@ -131,6 +131,28 @@
 
     (format t "~%~% FINISHED")))
 
+(defun generate-incremental-lisp (path-name file-name)
+  (format t "~%PATH NAME ~S ~%FILE NAME ~S" path-name file-name)
+  (setq *current-path-name* path-name)
+  (let* ((full-pathname (pathname (concatenate 'string path-name "/" file-name)))
+         (full-file-name (namestring full-pathname))
+	 (file-name-uri (pathname-name full-pathname))
+	 (full-path-name (cl-user::path-namestring full-file-name)))
+    (format t "~% FULL FILE NAME ~S  ~% URI ~S ~% PATH-NAME ~S "
+	    full-file-name file-name-uri full-path-name)
+    (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
+    (specware::change-directory  full-path-name)
+    (setq *default-pathname-defaults* (excl::current-directory))
+
+    (format t "~% GENERATING LISP FOR ~S" file-name-uri)
+    (let ((output-str (with-output-to-string (str)
+			(let ((*standard-output* str))
+			  (cl-user::swll file-name-uri)))))
+      (jstatic "setGenerateLispResults" "edu.kestrel.netbeans.lisp.LispProcessManager"
+	       path-name file-name output-str))
+
+    (format t "~%~% FINISHED")))
+
 (defun generate-java (path-name file-name)
   (format t "~%PATH NAME ~S ~%FILE NAME ~S" path-name file-name)
   (let* ((full-file-name (namestring (pathname (concatenate 'string path-name "/" file-name))))
