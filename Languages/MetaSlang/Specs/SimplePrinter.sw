@@ -67,6 +67,7 @@ spec {
     let ppTyVars =
       case tyVars of
         | [] -> ppNil
+        | [tyVar] -> ppString (" " ^ tyVar)
         | _::_ ->
             ppConcat [
               ppString " (",
@@ -111,12 +112,14 @@ spec {
         | Some trm ->
              ppConcat [
                ppNewline,
+               ppString "def ",
                ppNames,
                ppString " = ",
                ppATerm trm
              ] in
     ppConcat [
       ppNames,
+      ppString " : ",
       ppSrtScheme,
       ppTrm
     ]

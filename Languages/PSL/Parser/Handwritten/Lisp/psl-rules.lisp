@@ -85,7 +85,7 @@
   1)
 
 (define-sw-parser-rule :PSL-RELATION ()
-  (:tuple "<" (1 :EXPRESSION) ">")
+  (:tuple "<|" (1 :EXPRESSION) "|>")
   (make-psl-relation 1 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :VARDECL ()

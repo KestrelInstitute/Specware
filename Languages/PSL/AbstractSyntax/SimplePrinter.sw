@@ -235,10 +235,12 @@ spec {
     case cmd of
       | If alts ->
           ppConcat [
-            ppString "if",
+            ppString "if {",
             ppNewline,
             ppString "  ",
-            ppIndent (ppAlts alts)
+            ppIndent (ppAlts alts),
+            ppNewline,
+            ppString "}"
           ]
       | Case (term,cases) ->
           ppConcat [
@@ -269,10 +271,12 @@ spec {
             ppString "  ",
             ppIndent (ppSep ppNewline (map ppPSL_Elem decls)),
             ppNewline,
-            ppString "in",
+            ppString "in {",
             ppNewline,
             ppString "  ",
-            ppIndent (ppCommand cmd)
+            ppIndent (ppCommand cmd),
+            ppNewline,
+            ppString "}"
           ]
       | Call (id,terms) ->
           ppConcat [
@@ -295,15 +299,11 @@ spec {
       | Seq commands -> ppCommands commands
       | Relation term ->
          ppConcat [
-           ppString "<",
+           ppString "<|",
            ppATerm term,
-           ppString ">"
+           ppString "|>"
          ]
-      | Exec term ->
-          ppConcat [
-            ppString "call ",
-            ppATerm term
-          ]
+      | Exec term -> ppATerm term
       | Return term ->
           ppConcat [
             ppString "return ",

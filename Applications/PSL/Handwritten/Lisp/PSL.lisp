@@ -1,59 +1,18 @@
-#+Lispworks
-(setq *default-package-use-list* '("CL"))
-
 (defpackage "SPECWARE")
 (in-package "SPECWARE")
 
-(defpackage "EMACS")   ;; needed by the parser
-(defpackage "METASLANG")   ;; needed by the parser
+(defvar Specware4 (sys:getenv "SPECWARE4"))
 
-(terpri) ; purely cosmetic
-
-#+allegro(setq excl:*global-gc-behavior* '(10 10.0))
-
-;;; ---------------
-;; The following collection have been adapted from the 2000 load.lisp
-;; file. Perhaps they should be factored into a separate file as they
-;; are likely to be used for many of the generated lisp applications?
-
-(defun current-directory ()
-  #+allegro(excl::current-directory)
-  #+Lispworks(hcl:get-working-directory)  ;(current-pathname)
-  )
-
-(defun change-directory (directory)
-  ;; (lisp::format t "Changing to: ~A~%" directory)
-  #+allegro(excl::chdir directory)
-  #+Lispworks (hcl:change-directory directory)
-  (setq lisp::*default-pathname-defaults* (current-directory)))
-
-#+Lispworks
-(defun make-system (new-directory)
-  (let ((*default-pathname-defaults*
-     (make-pathname :name (concatenate 'string new-directory "/")
-            :defaults
-            system::*current-working-pathname*))
-    (old-directory (current-directory)))
-    (change-directory new-directory)
-    (unwind-protect (load "system.lisp")
-      (change-directory old-directory))))
-
-#-Lispworks
-(defun make-system (new-directory)
-  (let ((old-directory (current-directory)))
-    (change-directory new-directory)
-    (unwind-protect (load "system.lisp")
-      (change-directory old-directory))))
-
-(defun compile-and-load-lisp-file (file)
-   (#+allegro excl::compile-file-if-needed
-    #+Lispworks hcl:compile-file-if-needed
-    (make-pathname :defaults file :type "lisp"))
-   (load (make-pathname :defaults file :type nil)))
-
-;; This defines the RE package .. this will go away when the bootstrap
-;; is complete.
-;(compile-and-load-lisp-file "re-legacy")
+;; The following defines functions such as:
+;;    compile-and-load-lisp-file
+;;    load-lisp-file
+;;    make-system
+;;    change-directory
+;;    current-directory
+(load (make-pathname
+  :defaults
+    (concatenate 'string Specware4 "/Applications/Handwritten/Lisp/load-utilities")
+  :type "lisp"))
 
 ;; The following list should be generated automatically!
 ;; The list is used only in this file.
@@ -76,9 +35,9 @@
   )
 )
 
-(defvar Specware4 (sys:getenv "SPECWARE4"))
-
-(compile-and-load-lisp-file "runtime")
+;; This loads functions that are assumed by the MetaSlang to Lisp compiler
+(compile-and-load-lisp-file (concatenate 'string
+  Specware4 "/Applications/Handwritten/Lisp/meta-slang-runtime"))
 
 (map 'list #'(lambda (file)
   (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
@@ -98,18 +57,10 @@
 ;; Debugging utilities
 (compile-and-load-lisp-file "debug")
 
-(defun METASLANG::mkQualifiedId (qualifier id) 
-  (cons :|Qualified| (cons qualifier id)))
-
-(defun METASLANG::mkUnQualifiedId (id) 
-  (cons :|Qualified| (cons METASLANG::UnQualified id)))
-
-(defparameter METASLANG::UnQualified "<unqualified>")
-
 (make-system (concatenate 'string
-    Specware4 "/../Specware4/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
+    Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
 (make-system (concatenate 'string
-    Specware4 "/../Specware4/Languages/PSL/Parser/Handwritten/Lisp"))
+    Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
 
 (make-system "../../../Specware/UI/Emacs/Handwritten/Lisp")
 
