@@ -239,7 +239,7 @@
 (defun same-sort-p (x y)
   (ecase (use-sort-implementation?)
    (:dp
-    (eq x y))
+    (or (eq x y) (and (equal x 'number) (eq y (dp-sort-intersection 'nonnegative 'integer t)))))
    (:km
     (km-same-sort-p x y))
    (:bdd
