@@ -1190,7 +1190,7 @@ def AnnSpecPrinter.printTerm term =
 	      in
 	      let pps : Lines =
 	          List.map (fn (specCalcTerm, _) -> 
-			    (0, prettysFill [pp.Import, 
+			    (1, prettysFill [pp.Import, 
 					     %% TODO: indenting this way isn't quite right,
 					     %% since it will indent inside string literals
 					     %% But pretty printers make it inordinately 
@@ -1217,7 +1217,7 @@ def AnnSpecPrinter.printTerm term =
 	      in
 		pps)
 	     ++
-	     [(1, pp.EndSpec), 
+	     [(0, pp.EndSpec), 
 	      (0, string "")])
 
   op indentString : String -> String -> String
