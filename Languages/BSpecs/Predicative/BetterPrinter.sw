@@ -40,7 +40,8 @@ spec {
           ppString " +->",
           ppMorphismShort forw,
           ppBreak,
-          ppIndent (ppASpec (subtractSpec apex spc)),
+          % ppIndent (ppASpec (subtractSpec apex spc)),
+          ppIndent (ppASpecLocal apex),
           ppMorphismShort back
         ])
      ] in

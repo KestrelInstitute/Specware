@@ -50,12 +50,24 @@ They are procedures in context.
   def SpecCalc.evaluatePSpecElems initialPSpec pSpecElems = {
       (pSpecWithImports,timeStamp,depURIs)
           <- foldM evaluatePSpecImportElem (initialPSpec,0,[]) pSpecElems;
-      pSpec <- foldM evaluatePSpecContextElem pSpecWithImports pSpecElems;
+      pSpec <- evaluatePSpecContextElems pSpecWithImports pSpecElems;
       pSpec <- foldM evaluatePSpecProcElemPassOne pSpec pSpecElems;
       pSpec <- foldM evaluatePSpecProcElemPassTwo pSpec pSpecElems;
       return (pSpec,timeStamp,depURIs)
     }
   
+  op evaluatePSpecContextElems : PSpec -> List (PSpecElem Position) -> SpecCalc.Env PSpec
+  def evaluatePSpecContextElems pSpec pSpecElems = {
+      pSpec <- foldM evaluatePSpecContextElemPassOne pSpec pSpecElems;
+      static <- staticSpec pSpec;
+      static <- elaborateSpec static;
+      pSpec <- setStaticSpec pSpec static;
+      pSpec <- foldM evaluatePSpecContextElemPassTwo pSpec pSpecElems;
+      dynamic <- dynamicSpec pSpec;
+      dynamic <- elaborateSpec dynamic;
+      setDynamicSpec pSpec dynamic
+   }
+
   op evaluatePSpecImportElem :
            (PSpec * TimeStamp * URI_Dependency)
         -> PSpecElem Position
@@ -77,17 +89,17 @@ They are procedures in context.
                   }
               | Spec impSpec -> {
                     newStatic <- mergeImport term impSpec pSpec.staticSpec position;
+                    newDynamic <- mergeImport term impSpec pSpec.dynamicSpec position;
                     newPSpec <- setStaticSpec pSpec newStatic;
+                    newPSpec <- setDynamicSpec pSpec newDynamic;
                     return (newPSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depURIs))
                   }
               | _ -> raise (Fail ("Import not a spec")))
           }
       | _ -> return val
 
-  op evaluatePSpecProcElem : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
-
-  op evaluatePSpecContextElem : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
-  def evaluatePSpecContextElem pSpec (elem, position) =
+  op evaluatePSpecContextElemPassOne : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
+  def evaluatePSpecContextElemPassOne pSpec (elem, position) =
     case elem of
       | Sort (names,(tyVars,optSort)) -> {
             static <- staticSpec pSpec;
@@ -147,12 +159,57 @@ They are procedures in context.
       | Claim _ -> error "evaluateSpecElem: unsupported claim type"
       | _ -> return pSpec
 
-  op evaluatePSpecDynamicContextElem :
-           PSpec
-        -> PSpecElem Position
-        -> SpecCalc.Env PSpec
-  def evaluatePSpecDynamicContextElem pSpec (elem, position) =
+  op evaluatePSpecContextElemPassTwo : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
+  def evaluatePSpecContextElemPassTwo pSpec (elem, position) =
     case elem of
+      | Sort ((qid as Qualified (qual,id))::_, (tyVars,optSort)) -> {
+            static <- staticSpec pSpec;
+            case findAQualifierMap (static.sorts, qual, id) of
+              | None -> fail "evaluatePSpecContextElemPassTwo: Sort" 
+              | Some info -> {
+                    dynamic <- dynamicSpec pSpec;
+                    dynamic <- addNonLocalSortInfo dynamic qual id info;
+                    setDynamicSpec pSpec dynamic
+                  }
+          }
+      | Def ([qid as Qualified(qual,id)],(fxty,srtScheme,optTerm)) -> {
+            static <- staticSpec pSpec;
+            case findAQualifierMap (static.ops, qual, id) of
+              | None -> return pSpec
+              | Some info -> {
+                    dynamic <- dynamicSpec pSpec;
+                    dynamic <- addNonLocalOpInfo dynamic qual id info;
+                    setDynamicSpec pSpec dynamic
+                 }
+          }
+      | Var (names,(fxty,srtScheme,optTerm)) -> return pSpec
+      | Op ((qid as Qualified (qual,id))::_,(fxty,srtScheme,optTerm)) -> {
+            static <- staticSpec pSpec;
+            case findAQualifierMap (static.ops, qual, id) of
+              | None -> fail "evaluatePSpecContextElemPassTwo: Op" 
+              | Some info -> {
+                    dynamic <- dynamicSpec pSpec;
+                    dynamic <- addNonLocalOpInfo dynamic qual id info;
+                    setDynamicSpec pSpec dynamic
+                 }
+          }
+      | Claim (Invariant, name, tyVars, term) -> return pSpec
+      | Claim (Axiom, name, tyVars, term) -> {
+            dynamic <- dynamicSpec pSpec;
+            dynamic <- return (addAxiom ((name,tyVars,term), dynamic));
+            setDynamicSpec pSpec dynamic
+          }
+      | Claim (Theorem, name, tyVars, term) -> {
+            dynamic <- dynamicSpec pSpec;
+            dynamic <- return (addTheorem ((name,tyVars,term), dynamic));
+            setDynamicSpec pSpec dynamic
+          }
+      | Claim (Conjecture, name, tyVars, term) -> {
+            dynamic <- dynamicSpec pSpec;
+            dynamic <- return (addConjecture ((name,tyVars,term), dynamic));
+            setDynamicSpec pSpec dynamic
+          }
+      | Claim _ -> error "evaluateSpecElem: unsupported claim type"
       | _ -> return pSpec
 \end{spec}
 
@@ -181,7 +238,9 @@ procedure. Don't we want to elaborate as we go along?
   op basePSpec : SpecCalc.Env PSpec
   def basePSpec = {
     base <- staticBase;
-    dynamicSpec <- return emptySpec;
+    uri <- pathToRelativeURI "/Library/PSL/Base";
+    dynamicSpec <- mergeImport (URI uri,internalPosition) base emptySpec internalPosition;
+    % dynamicSpec <- return (setImportedSpec(dynamicSpec,base));
     return {
         staticSpec = base,
         dynamicSpec = dynamicSpec,

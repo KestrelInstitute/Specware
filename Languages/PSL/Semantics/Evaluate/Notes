@@ -1,3 +1,15 @@
+What is the static vs dynamic rule.
+
+Those names that are dynamic are localOps in the dynamic spec. All other
+names in the dynamic spec are static. So why do we need the static spec at all?
+
+Later we would like to have a delta to the dynamic spec. That is, all the names
+that are local are names that are introduced in this state or transition. For
+this we would need to label the states with both the dynamic and the static spec.
+Or come up with some other way to represent the static and dynamic. Perhaps
+what is needed is a more abstract representation of the static and dynamic spaces. Perhaps
+lists of names for each class .. and make the names separate from what appears in the spec.
+
 So there is overloading of application in three ways:
 normal function application
 procedure application

@@ -3,20 +3,6 @@
 ## There are name conflicts for the product accessors for Procedures, PSpecs and ProcContext
 ## There are name conflicts for BSpecs and ProcContexts
 
-We would like to elaborate less often but there is a problem if we try
-to elaborate once and carry around elaborated specs. The static spec
-(which is referred to from the dynamic spec) may change as we move into
-an inner scope. In which case the dynamic spec must be re-elaborated 
-with respect to the new static spec.
-
-The better way would be to typecheck the program and then never call elaborate
-at all. Bit the problem remains that the dynamic spec in the context refers to
-a static spec that may change. it makes no sense to add the operator in both
-places.
-
-I suppose we could do a find operation on the static spec and then add the info
-to the dynamic spec
-
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
@@ -37,9 +23,8 @@ SpecCalc qualifying spec {
   def sortOf (tyVars,srt) = srt
 \end{spec}
 
-It is called to process the "procedure elements" found in a PSL /
+It is called to process the "procedure elements" found in an
 Oscar specification. It compiles the procedure defined in the element.
-This should be merged with compileProcedure that appears later. 
 
 Note that it incorrectly gives the type of a procedure as a function
 from the type of its arguments to its result type. The real type should
@@ -48,12 +33,15 @@ the value of the variables in scope) and the output (the return value
 and the new values of global variables).
 
 As it stands, there is a dynamic spec as part of the pSpec and a dynamic
-spec as part of each procedure. Both give the names in scope inside the
-procedure.
+spec as part of each procedure. Both give the names in scope inside
+the procedure.
+
+a PSpecContextElem refers to anything in an Oscar specification that is
+not a procedure. This includes vars and ops.
 
 \begin{spec}
   op evaluatePSpecElems  : PSpec -> List (PSpecElem Position) -> SpecCalc.Env (PSpec * TimeStamp * URI_Dependency)
-  op evaluatePSpecContextElem : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
+  op evaluatePSpecContextElems : PSpec -> List (PSpecElem Position) -> SpecCalc.Env PSpec
 
   op evaluatePSpecProcElemPassOne : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
   def evaluatePSpecProcElemPassOne pSpec (elem,position) =
@@ -81,25 +69,30 @@ procedure.
 \end{spec}
 
 We want to construct a placeholder for the procedure. This includes an
-almost empty BSpec. The modes of this BSpec must be labelled
-we extend the current dynamic context with operators
-(variables) for the formal parameters to the procedure. These are now
-variables that are in scope.
+almost empty BSpec. The modes of this BSpec must be labelled. We extend
+the current dynamic context with operators (variables) for the formal
+parameters to the procedure. These are now variables that are in scope.
 
-The bSpec has two states (0 and 1).
+The vertices of the underlying graph are integers that cast into
+MetaSlang terms. We use terms since this helps us later when we do
+partial evaluation.  The initial bSpec has states 0 and 1 corresponding
+to the initial and final states.
 
 Might be better to make the bSpec an Option and just omit it in the first
 pass.
 
-### There may be a problem that the names are added unqualified. On the other hand,
+### There may be a problem that the names are added unqualified.
 
-### There may be a problem that in some cases we save an elaborated spec
-### and in other cases not. Some times elaborated specs get elaborated again.
-### Might be a nop.
+The next two are relevant if we label each transition with
+both the static and dynamic specs and we record the deltas
+in the construction of both.
 
-## The whole issue of when to elaborate specs during compilation needs
-## to be rethought. Right now, the context and procedure environments
-## are not elaborated. But diagrams / systems are labeled with elaborated specs.
+## Do we need to carry the static spec around if it can
+always be recovered from the dynamic spec? Intuitively
+we are carrying around the slice.
+
+          dyCtxt <- return (setLocalOps (pSpec.dynamic, []));
+          dyCtxt <- return (setImportedSpec (dyCtxt,pSpec.dynamic));
 
 \begin{spec}
           dyCtxt <-
@@ -123,8 +116,7 @@ pass.
                      return (dyCtxt, Some {returnSort=procInfo.returnSort,returnName= ("return_" ^ procName)})
                    };
 
-          dyCtxtElab <- elaborateInContext dyCtxt pSpec.staticSpec; 
-          statCtxtElab <- elaborateSpec pSpec.staticSpec; 
+          dyCtxtElab <- elaborateSpec dyCtxt; 
 
           bSpec <- return (
              let (initialV,finalV) = (mkNatVertexEdge 0, mkNatVertexEdge 1) in
@@ -132,7 +124,7 @@ pass.
              setFinalModes bSpec (V.singleton finalV));
           proc <- return (makeProcedure (map (fn (x,y) -> x) procInfo.args)
                                  returnInfo
-                                 statCtxtElab
+                                 pSpec.staticSpec
                                  dyCtxtElab
                                  bSpec);
           setProcedures pSpec (PolyMap.update pSpec.procedures (unQualified procName) proc)
@@ -162,8 +154,9 @@ hard coded.
 ### Procedure (procValue) object has type ReturnInfo but really all
 ### one needs to keep is the return name.
 
-After compiling the procedure, this replaces the procedure entry in the
-pSpec with a new one containing the full bSpec.
+After compiling the procedure, we replace the procedure entry in the
+pSpec computed in the first pass in the pSpec with a new one containing
+the full bSpec.
 
 \begin{spec}
   op evaluatePSpecProcElemPassTwo : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
@@ -256,15 +249,6 @@ a procedure (including its arguments) must be distinct from variables
 declared, say, in an enclosing procedure. However, two procedures in separate
 ``branches'' may indeed have common variable names, because they will be
 never mixed in the specs labeling \BSpecs.
-
-  op compileProcedure :
-       PSpec
-    -> Nat
-    -> String
-    -> ProcInfo Position
-    -> SpecCalc.Env PSpec
-
-  def compileProcedure pSpec cnt name {args,returnSort,command} = 
 
 In the above, note that the procedure is already represented
 in the static context by an operator. A procedure is in scope within its
@@ -435,12 +419,8 @@ under the assumption that they are never used. Needs thought.
           ctxt <- return (setFinal ctxt saveLast);
           axm <- return (mkNot (disjList (map (fn ((guard,term),_) -> guard) alts)));
           apexSpec <- return (addAxiom (("guard", [], axm), dynamic ctxt));
-          apexElab <- elaborateInContext apexSpec (static ctxt);
-          morph1 <- mkMorph (modeSpec (bSpec ctxt) (initialV ctxt)) apexElab [] [];
-          morph2 <- mkMorph (modeSpec (bSpec ctxt) (finalV ctxt)) apexElab [] [];
-          (newEdge,ctxt) <- return (newGraphElement ctxt);
-          bSpec <- return (addTrans (bSpec ctxt) (initialV ctxt) (finalV ctxt) newEdge apexElab morph1 morph2);
-          return (setBSpec ctxt bSpec)
+          apexElab <- elaborateSpec apexSpec;
+          connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab []
         }
 \end{spec}
 
@@ -534,12 +514,8 @@ one for assignments
           (case (optTerm,returnInfo ctxt) of
             | (None,None) -> {
                   apexSpec <- return (addAxiom (("assign", [], mkTrue ()),dynamic ctxt));  % why bother?
-                  apexElab <- elaborateInContext apexSpec (static ctxt); 
-                  morph1 <- mkMorph (modeSpec (bSpec ctxt) (initialV ctxt)) apexElab [] [];
-                  morph2 <- mkMorph (modeSpec (bSpec ctxt) (finalV ctxt)) apexElab [] [];
-                  (newEdge,ctxt) <- return (newGraphElement ctxt); 
-                  bSpec <- return (addTrans (bSpec ctxt) (initialV ctxt) (exit ctxt) newEdge apexElab morph1 morph2);
-                  return (setBSpec ctxt bSpec)
+                  apexElab <- elaborateSpec apexSpec; 
+                  connectVertices ctxt (initialV ctxt) (exit ctxt) apexElab []
                 }
             | (None,Some {returnSort,returnName}) ->
                 raise (SpecError (pos, "Procedure has return sort " ^ (printSort returnSort) ^ " but no return value"))
@@ -659,7 +635,7 @@ The following is wrong as the variables should come in and then out of scope.
 \begin{spec}
       | Let (decls,cmd) -> {
             pSpec <- return {staticSpec = static ctxt, dynamicSpec = dynamic ctxt, procedures = procedures ctxt};
-            newPSpec <- foldM evaluatePSpecContextElem pSpec decls;
+            newPSpec <- evaluatePSpecContextElems pSpec decls;
             saveStatic <- return (static ctxt);
             saveDynamic <- return (dynamic ctxt);
             ctxt <- return (setStatic (setDynamic ctxt newPSpec.dynamicSpec) newPSpec.staticSpec);
@@ -667,10 +643,6 @@ The following is wrong as the variables should come in and then out of scope.
             return (setStatic (setDynamic ctxt saveDynamic) saveStatic)
           }
 \end{spec}
-
-begin{spec}
-      | Case (trm,cases) -> fail "compileCommand: Case: not supported"
-end{spec}
 
 Compiling a skip is a transition where the maps are identities and
 the axiom is just true.
@@ -681,12 +653,8 @@ This should be an invariant. Must check.
 \begin{spec}
       | Skip -> {
           apexSpec <- return (addAxiom (("assign", [], mkTrue ()),dynamic ctxt));  % why bother?
-          apexElab <- elaborateInContext apexSpec (static ctxt); 
-          morph1 <- mkMorph (modeSpec (bSpec ctxt) (initialV ctxt)) apexElab [] [];
-          morph2 <- mkMorph (modeSpec (bSpec ctxt) (finalV ctxt)) apexElab [] [];
-          (newEdge,ctxt) <- return (newGraphElement ctxt); 
-          bSpec <- return (addTrans (bSpec ctxt) (initialV ctxt) (finalV ctxt) newEdge apexElab morph1 morph2);
-          return (setBSpec ctxt bSpec)
+          apexElab <- elaborateSpec apexSpec; 
+          connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab []
         }
 \end{spec}
 
@@ -740,17 +708,8 @@ type variables.
 
 \begin{spec}
     apexSpec <- return (addAxiom (("assign",[],axm),apexSpec)); 
-    apexElab <- elaborateInContext apexSpec (static ctxt); 
-\end{spec}
-
-The remainder of this case, creates and labels the opspan for the transition.
-
-\begin{spec}
-    morph1 <- mkMorph (modeSpec (bSpec ctxt) (initialV ctxt)) apexElab [] [];
-    morph2 <- mkMorph (modeSpec (bSpec ctxt) (finalV ctxt)) apexElab [] [(leftId,makePrimedId leftId)];
-    (newEdge,ctxt) <- return (newGraphElement ctxt);
-    bSpec <- return (addTrans (bSpec ctxt) (initialV ctxt) (finalV ctxt) newEdge apexElab morph1 morph2);
-    return (setBSpec ctxt bSpec)
+    apexElab <- elaborateSpec apexSpec; 
+    connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab [leftId]
   }
 \end{spec}
 
@@ -863,12 +822,8 @@ So the following doesn't handle the situation where the name are captured by lam
                   print ("compileAxiomStmt: " ^ (printQualifiedId qualId) ^ "\n");
                   addOp [qualId] fixity sortScheme optTerm spc (Internal "compileAxiomStmt")})) (dynamic ctxt) primedNames; 
      apexSpec <- return (addAxiom (("axiom stmt",[],trm),apexSpec));
-     apexElab <- elaborateInContext apexSpec (static ctxt); 
-     morph1 <- mkMorph (modeSpec (bSpec ctxt) (initialV ctxt)) apexElab [] [];
-     morph2 <- mkMorph (modeSpec (bSpec ctxt) (finalV ctxt)) apexElab [] (map (fn name -> (removePrime name, name)) primedNames);
-     (newEdge,ctxt) <- return (newGraphElement ctxt);
-     bSpec <- return (addTrans (bSpec ctxt) (initialV ctxt) (finalV ctxt) newEdge apexElab morph1 morph2);
-     return (setBSpec ctxt bSpec)
+     apexElab <- elaborateSpec apexSpec; 
+     connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab (map (fn name -> removePrime name) primedNames)
   }
 \end{spec}
 
@@ -930,7 +885,7 @@ front of the axiom term.
              raise (SpecError (internalPosition, "compileProcCall: call to undefined procedure: " ^ (printQualifiedId procId)))
           | Some info -> return info);
 
-      (leftId, leftPrimedTerm) <-
+      (leftQualId as Qualified(leftQual,leftId), leftPrimedTerm) <-
          return (case trm? of
            | Some trm -> processLHS trm
            % | None -> ("dummy", mkRecord []);
@@ -952,31 +907,39 @@ version of the variable doesn't exist.
 #### The bug here is that we want the dynamic spec that does not contain
 ### the arguments
 
+So what is the rule for names. When we call the procedure, we need to
+pass the entire state that is in scope when the procedure is declared.
+This is all the local names in the procInfo.dynamicSpec.
+
+# Something funny about the way we retieve the local ops and local op info.
+
 \begin{spec}
       procInfo <- return (eval (procedures ctxt) procId); 
-      declDynCtxt <- return procInfo.dynamicSpec;
-      newOps <- foldOverQualifierMap (fn (qual,id,opInfo,map) ->
-                  return (insertAQualifierMap (map, qual, id ^ "'", opInfo)))
-                             ctxt.dynamic.ops
-                             procInfo.dynamicSpec.ops;
-      apexSpec <- return (setOps (dynamic ctxt, newOps));
+      localDynamicOps <- return (getLocalOps procInfo.dynamicSpec);
+      print ("localDynamicOps = " ^ (show " " (map printQualifiedId localDynamicOps)) ^ "\n");
+      changedOps <-
+        foldOverQualifierMap
+           (fn (qual,id,opInfo,opList) ->
+               return (if (member (mkQualifiedId (qual,id), localDynamicOps)) then
+                         Cons ((qual,id,opInfo),opList)
+                       else
+                         opList))
+           []
+           procInfo.dynamicSpec.ops;
+      apexSpec <- foldM (fn spc -> fn (qual,id,opInfo) -> addLocalOpInfo spc qual (id ^ "'") opInfo)
+                             ctxt.dynamic
+                             changedOps;
       argTuple <- return (mkTuple args); 
-      oldRec <- return (mkTuple (foldriAQualifierMap (fn (qual,id,opInfo,terms) ->
-                             Cons (mkOp (mkQualifiedId (qual,id), sortOf (sortScheme opInfo)),terms))
-                             []
-                             declDynCtxt.ops));
-      newRec <- return (mkTuple (foldriAQualifierMap (fn (qual,id,opInfo,terms) ->
-                             Cons (mkOp (mkQualifiedId (qual,id ^ "'"), sortOf (sortScheme opInfo)),terms))
-                             []
-                             declDynCtxt.ops));
-      nameMap <- return (foldriAQualifierMap (fn (qual,id,opInfo,nameMap) ->
-                             Cons ((mkQualifiedId (qual,id), mkQualifiedId (qual,id ^ "'")), nameMap))
-                             []
-                             declDynCtxt.ops);
-      nameMap <-
+      oldRec <- return (mkTuple 
+           (map (fn (qual,id,opInfo) -> mkOp (mkQualifiedId (qual,id), sortOf (sortScheme opInfo))) changedOps));
+      newRec <- return (mkTuple 
+           (map (fn (qual,id,opInfo) -> mkOp (mkQualifiedId (qual,id ^ "'"), sortOf (sortScheme opInfo))) changedOps));
+      changedNames <- return (map (fn (qual,id,opInfo) -> mkQualifiedId (qual,id)) changedOps);
+      changedNames <-
         return (case trm? of
-                  | None -> nameMap
-                  | Some _ -> Cons ((leftId, makePrimedId leftId), nameMap));
+                  | None -> changedNames
+                  | Some _ -> Cons (leftQualId,changedNames));
+      print ("changedNames = " ^ (show " " (map printQualifiedId changedNames)) ^ "\n");
 
       recPair <- return (mkTuple [oldRec,newRec]); 
       totalTuple <- return (mkTuple [argTuple,leftPrimedTerm,recPair]); 
@@ -985,10 +948,10 @@ version of the variable doesn't exist.
       apexSpec <-
         case trm? of
           | Some trm -> 
-              (case findTheOp (dynamic ctxt, leftId) of
+              (case findTheOp (dynamic ctxt, leftQualId) of
                  | None ->
                      raise (SpecError (internalPosition,
-                                      "compileProcCall: id '" ^ (printQualifiedId leftId) ^ "' is undefined"))
+                                      "compileProcCall: id '" ^ (printQualifiedId leftQualId) ^ "' is undefined"))
                  | Some (names,fixity,sortScheme,optTerm) ->
 \end{spec}
 
@@ -999,17 +962,13 @@ there.
 
 \begin{spec}
 
-                       (case findTheOp (apexSpec, makePrimedId leftId) of
-                          | None -> addOp [makePrimedId leftId] fixity sortScheme optTerm apexSpec (Internal "compileProcCall")
+                       (case findTheOp (apexSpec, makePrimedId leftQualId) of
+                          | None -> addLocalOpInfo apexSpec leftQual (leftId ^ "'") (map makePrimedId names,fixity,sortScheme,optTerm)
                           | Some _ -> return apexSpec))
           | None -> return apexSpec; 
       apexSpec <- return (addAxiom (("call", [], axm), apexSpec));
-      apexElab <- elaborateInContext apexSpec (static ctxt);
-      morph1 <- mkMorph (modeSpec (bSpec ctxt) (initialV ctxt)) apexElab [] [];
-      morph2 <- mkMorph (modeSpec (bSpec ctxt) (finalV ctxt)) apexElab [] nameMap;
-      (newEdge,ctxt) <- return (newGraphElement ctxt);
-      bSpec <- return (addTrans (bSpec ctxt) (initialV ctxt) (finalV ctxt) newEdge apexElab morph1 morph2);
-      return (setBSpec ctxt bSpec)
+      apexElab <- elaborateSpec apexSpec;
+      connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab changedNames
    }
 \end{spec}
 
@@ -1019,11 +978,10 @@ there.
   def compileSeq ctxt cmds =
     case cmds of
       | [] -> return ctxt
-      | [cmd] -> compileCommand ctxt cmd   
+      | [cmd] -> compileCommand ctxt cmd
       | cmd::rest -> {
-            dyElab <- elaborateInContext (dynamic ctxt) (static ctxt); 
             (newVertex,ctxt) <- return (newGraphElement ctxt); 
-            ctxt <- return (setBSpec ctxt (addMode (bSpec ctxt) newVertex dyElab));
+            ctxt <- return (setBSpec ctxt (addMode (bSpec ctxt) newVertex (dynamic ctxt)));
             saveLast <- return (finalV ctxt);
             ctxt <- compileCommand (setFinal ctxt newVertex) cmd;
             compileSeq (setInitial (setFinal ctxt saveLast) newVertex) rest
@@ -1243,17 +1201,14 @@ perhaps addMode and friends shoul act on and return a context rather than a bSpe
   op compileAlternatives : ProcContext -> List (Alternative Position) -> SpecCalc.Env ProcContext
 
   def compileAlternative ctxt ((trm,cmd),pos) = {
-      dyElab <- elaborateInContext (dynamic ctxt) (static ctxt);
       (newVertex,ctxt) <- return (newGraphElement ctxt); 
-      bSpec <- return (addMode (bSpec ctxt) newVertex dyElab); 
-      (newEdge,ctxt) <- return (newGraphElement ctxt); 
+      bSpec <- return (addMode (bSpec ctxt) newVertex (dynamic ctxt)); 
+      ctxt <- return (setBSpec ctxt bSpec);
       apexSpec <- return (addAxiom (("guard",[],trm), dynamic ctxt)); 
-      apexElab <- elaborateInContext apexSpec (static ctxt);
-      morph1 <- mkMorph (modeSpec bSpec (initialV ctxt)) apexElab [] []; 
-      morph2 <- mkMorph dyElab apexElab [] []; 
-      bSpec <- return (addTrans bSpec (initialV ctxt) newVertex newEdge apexElab morph1 morph2);
+      apexElab <- elaborateSpec apexSpec;
       saveFirst <- return (initialV ctxt);
-      ctxt <- compileCommand (setInitial (setBSpec ctxt bSpec) newVertex) cmd;
+      ctxt <- connectVertices ctxt (initialV ctxt) newVertex apexElab [];
+      ctxt <- compileCommand (setInitial ctxt newVertex) cmd;
       return (setInitial ctxt saveFirst)
     }
  
@@ -1275,20 +1230,6 @@ the ones for the sub-commands, suitably connected together (differently
 for each kind of compound command). Note that the counter for unique node
 and edge names is threaded through the following function, and that the
 function also returns the procedures declared within the compiled commands.
-
-The following function creates an identity spec morphism. It certainly
-does not belong here, but it is ok for now.
-
-begin{spec}
-  op identityMorphism : Spec_ms -> Morphism_ms
-  def identityMorphism spc = {
-    dom = spc,
-    cod = spc,
-    sortMap = emptyMap_p,
-    opMap = StringMap_foldri
-      (fn (opname,opinfo,map) -> update_p map opname opname) emptyMap_p spc.ops
-  }
-end{spec}
 
 The following function creates a vertex/edge (of sort \verb+Vertex.Elem+, which
 is the same as \verb+Elem_e+) from
@@ -1358,35 +1299,6 @@ begin{spec}
       ((map termSort_ast args), termSort_ast rtn, termSort_ast oldStore) in
     mkApply_ast (mkOp_ast ([name],srt),
        mkTuple_ast [mkTuple_ast args, rtn, mkTuple_ast [oldStore,newStore]])
-end{spec}
-
-The following two functions serve to merge two systems into one. They assume
-that the two systems have disjoint shapes and common labeling categories, so
-that merging boils down to simple union of vertices, edges, source and target
-maps, as well as labeling maps. Obviously, these two functions do not belong
-here, but it is ok for now.
-
-begin{spec}
-  op mergeSystems : fa(O,A) System(O,A) -> System(O,A) -> System(O,A)
-  def mergeSystems sys1 sys2 =
-      {shape = mergeSketches sys1.shape sys2.shape,
-       functor = {dom = mergeSketches sys1.functor.dom sys2.functor.dom,
-                  cod = sys1.functor.cod, % = sys2.functor.cod
-                  vertexMap = unionWith_p (fn x -> fn y -> x) % dummy function
-                                          sys1.functor.vertexMap
-                                          sys2.functor.vertexMap,
-                  edgeMap = unionWith_p (fn x -> fn y -> x) % dummy function
-                                        sys1.functor.edgeMap
-                                        sys2.functor.edgeMap}}
-
-  op mergeSketches : Sketch -> Sketch -> Sketch
-  def mergeSketches skt1 skt2 =
-      {vertices = union_v skt1.vertices skt2.vertices,
-       edges = union_e skt1.edges skt2.edges,
-       src = unionWith (fn x -> fn y -> x) % dummy function
-                       skt1.src skt2.src,
-       target = unionWith (fn x -> fn y -> x) % dummy function
-                          skt1.target skt2.target}
 end{spec}
 
 Some convenience functions are omitted from the \verb+ast+ and
@@ -1540,263 +1452,40 @@ Second argument is context .. another spec.
     case elaboratePosSpec (spc, "internal") of
       | Spec elabSpc -> return (convertPosSpecToSpec elabSpc)
       | Errors errors -> raise (TypeCheckErrors errors)
-\end{spec}
 
-    let specs = StringMap_listItems (emptyEnv_ms ()) in
-    let static_elab = elaborateSpec_ast (specs,static) in
-    let static_ms = toMetaSlang_ast static_elab in
-    let dynamic_elab = elaborateSpec_ast (specs @ [static_ms],dynamic) in
-     toMetaSlang_ast dynamic_elab
+  op addNonLocalSortInfo : Spec -> Qualifier -> Id -> SortInfo -> SpecCalc.Env Spec
+  def addNonLocalSortInfo spc qual id info =
+    case (findAQualifierMap (spc.sorts,qual,id)) of
+      | None -> return (setSorts (spc, insertAQualifierMap (spc.sorts,qual,id,info)))
+      | Some _ -> raise (SpecError (internalPosition, "addNonLocalSortInfo: redefined " ^ (printQualifiedId (Qualified (qual,id)))))
 
-  op elaborateStaticSpec : Spec_ast -> Spec_ms
-  def elaborateStaticSpec static =
-    let specs = StringMap_listItems (emptyEnv_ms ()) in
-    let static_elab = elaborateSpec_ast (specs,static) in
-      toMetaSlang_ast static_elab 
-\end{spec}
+  op addNonLocalOpInfo : Spec -> Qualifier -> Id -> OpInfo -> SpecCalc.Env Spec
+  def addNonLocalOpInfo spc qual id info =
+    case (findAQualifierMap (spc.ops,qual,id)) of
+      | None -> return (setOps (spc, insertAQualifierMap (spc.ops,qual,id,info)))
+      | Some _ -> raise (SpecError (internalPosition, "addNonLocalOpInfo: redefined " ^ (printQualifiedId (Qualified (qual,id)))))
 
+  op addLocalOpInfo : Spec -> Qualifier -> Id -> OpInfo -> SpecCalc.Env Spec
+  def addLocalOpInfo spc qual id info =
+    case (findAQualifierMap (spc.ops,qual,id)) of
+      | None -> return (addLocalOpName (setOps (spc, insertAQualifierMap (spc.ops,qual,id,info)),Qualified (qual,id)))
+      | Some _ -> raise (SpecError (internalPosition, "addNonLocalOpInfo: redefined " ^ (printQualifiedId (Qualified (qual,id)))))
 
------
+  op connectVertices : ProcContext -> V.Elem -> V.Elem -> Spec -> List QualifiedId -> SpecCalc.Env ProcContext
+  def connectVertices ctxt first last spc changedNames = {
+    (newEdge,ctxt) <- return (newGraphElement ctxt); 
+    morph1 <- mkMorph (modeSpec (bSpec ctxt) first) spc [] [];
+    morph2 <- mkMorph (modeSpec (bSpec ctxt) last) spc [] (map (fn x -> (x, makePrimedId x)) changedNames);
+    bSpec <- return (addTrans (bSpec ctxt) first last newEdge spc morph1 morph2);
+    return (setBSpec ctxt bSpec)
+  }
 
-The remainder of the file contains code for handling cases which was
-removed and will need to be reintroduced later.
+  op getLocalOps : fa (a) ASpec a -> OpNames
+  def getLocalOps {importInfo,sorts,ops,properties} =
+    let {imports,importedSpec,localOps,localSorts} = importInfo in localOps
 
-It is convenient to write out a "spec" (as a file) containin everything
-that we have accumulated this far before returning the spec constructed
-above.
-
-op compileCase : fa(a) Context
-     -> Vertex.Elem
-     -> Vertex.Elem
-     -> BSpec
-     -> Nat
-     -> PolyMap.Map (String, Procedure)
-     -> Case a
-     -> BSpec * Nat * PolyMap.Map (String, Procedure)
-
-Compiling a case may be subtle ... may need to elaborate the term
-first to see if there are variables that become constructors.
-
-op compileCase 
-def compileCase
-        let dyCtxt_ms = elaborateInContext ctxt.static ctxt.dynamic in
-        let new = mkNatVertexEdge cnt in
-        let system = addVertex bspec.system new in
-        let system = labelVertex system new dyCtxt_ms in
-        let new = mkNatVertexEdge cnt in
-    newVert
-
-To compile a \verb+case+, we compile its commands, obtaining the
-corresponding \BSpecs. The tricky part is that each command must be compiled
-in a slightly different context: precisely, the starting context extended
-with the pattern variables of the case. After compiling these commands in
-these enlarged contexts, we add an initial node and a final node to the overall
-system. There are transitions out of the initial node to the beginning of
-each case; these transitions are guarded by the guards of the corresponding
-cases. Each of them also includes an axiom equating the term of the
-\verb+case+ to the corresponding pattern (which determines the values of the
-pattern variables at the end of the transition). There are also transitions
-out of the end of each case to the final node of the overall system. We assume
-that the pattern variables are distinct from any other variable in the
-context. We also assume that there no wilcard variables in patterns.
-
-          let (bspecs,axms,cnt2,procs) =
-              foldr (fn (((pat,cond,cmd),_),(bspecs1,axms1,cnt1,procs1)) ->
-                        let patvars = patternVariables pat in
-                        let newctxt =
-                            foldl (fn (pvar,ctxt1) ->
-                                      {static = ctxt1.static,
-                                       dynamic =
-                                       addOp_ast((pvar.1,
-                                              Nonfix,
-                                               (tyVarsOf pvar.2,pvar.2),
-                                               None),
-                                             ctxt1.dynamic)})
-                                  ctxt
-                                  patvars in
-                        let (bspec,newcnt,procs) =
-                            compileCommand newctxt cnt1 cmd in
-                        let axm = patternAxiom trm pat cond in
-                        (cons(bspec,bspecs1),
-                         cons(axm,axms1),
-                         newcnt,
-                         unionWith_p (fn x -> fn y -> x) procs1 procs))
-                    (nil,nil,cnt,procs)
-                    cases in
-          let initVertex = mkNatVertexEdge cnt2 in
-          let finVertex = mkNatVertexEdge (cnt2 + 1) in
-          let spc = ctxt.dynamic in
-          let sys = 
-              foldr (fn (bspec,sys1) -> mergeSystems sys1 bspec.system)
-                    {shape = emptySketch,
-                     functor = {dom = emptySketch,
-                                cod = specCat_ms,
-                                vertexMap = emptyMap_p,
-                                edgeMap = emptyMap_p}}
-                    bspecs in
-          let (finalSystem,cnt3,_) =
-              foldl (fn (bspec,(sys1,cnt1,axms1)) ->
-                        let edge1 = mkNatVertexEdge cnt1 in
-                        let edge2 = mkNatVertexEdge (cnt1 + 1) in
-                        let spcApex2 = modeSpec_ms bspec bspec.initial2 in
-                        let spcApex1 =
-                            addAxiom_ast(("",[],hd axms1),spcApex2) in
-                        let m1 = (identityMorphism spc) in
-                        let m2 = (identityMorphism spcApex2) in
-                        let m11 = {dom = m1.dom,
-                                   cod = spcApex1,
-                                   sortMap = m1.sortMap,
-                                   opMap = m1.opMap} in
-                        let m12 = {dom = m2.dom,
-                                   cod = spcApex1,
-                                   sortMap = m2.sortMap,
-                                   opMap = m2.opMap} in
-                        let m21 = m2 in
-                        let m22 = {dom = m1.dom,
-                                   cod = spcApex2,
-                                   sortMap = m1.sortMap,
-                                   opMap = m1.opMap} in
-                        let sys2 = addEdge
-                                    (addEdge
-                                      sys
-                                      edge1
-                                      initVertex
-                                      bspec.initial2)
-                                    edge2
-                                    finVertex
-                                    (finalVertex bspec) in
-                        (labelEdge
-                          (labelEdge sys2
-                                     edge1
-                                     spcApex1
-                                     m11
-                                     m12)
-                          edge2
-                          spcApex2
-                          m21
-                          m22,
-                         cnt1 + 2,
-                         tl axms1))
-                    (sys, cnt2 + 2, axms)
-                    bspecs in
-          ({initial2 = initVertex,
-            final2 = singleton_p finVertex,
-            system = finalSystem},
-           cnt3,
-           procs)
-
-The following function generates an appropriate axiom from a term and a
-pattern, as well as a condition. The axiom equates the term to the term
-obtained by converting the pattern to a term, where the pattern variables
-are converted to operators. Aliasing patterns (\verb+as+) generate multiple
-equations.
-
-So, we proceed as follows. First, we extract from a pattern a list of
-aliasing-free patterns, by recursively exploring the pattern and separating
-the aliases. Next, we convert each obtained pattern to a single term,
-and each of these terms is equated with the term given as argument.
-These equations are all conjoined together and with the condition
-given as argument.
-
-  op patternAxiom : Term_ast -> Pattern_ast -> Term_ast -> Term_ast
-  def patternAxiom trm pat cond =
-%       let pats = removeAliases pat in
-%       let trms = map patternToTerm pats in
-%       let eqs = map (fn t -> mkEquals_local(trm,t)) trms in
-%       foldl mkAnd_ast cond eqs
-      mkEquals_local (trm, patternToTerm pat)
-
-%%%  op removeAliases : Pattern_ast -> List Pattern_ast
-%%%  def removeAliases (pat,pos) =
-%%%      case pat
-%%%        of AliasPat(pat1,pat2) ->
-%%%           let (pats1,pats2) = (removeAliases pat1,removeAliases pat2) in
-%%%           concat(pats1,pats2)
-%%%         | EmbedPat(id,pat?,srt) ->
-%%%           (case pat? of Some patt ->
-%%%                         foldr (fn (p,pats) ->
-%%%                                   cons((EmbedPat(id,Some p,srt),pos),pats))
-%%%                               nil
-%%%                               (removeAliases patt)
-%%%                       | None ->
-%%%                         [pat])
-%%%         | RecordPat idpats ->
-%%%           let idpats2 =
-%%%               map (fn idpat -> (idpat.1,removeAliases idpat.2)) idpats in
-%%%           let pats =
-%%%               foldr (fn ((id,pats),recpats) ->
-%%%                         foldr (fn (p,recpats1) ->
-%%%                                   List.map (fn recpat -> cons((id,p),recpat))
-%%%                                       recpats1)
-%%%                               recpats
-%%%                               pats)
-%%%                     (cons(nil,nil))
-%%%                     idpats2 in
-%%%           map (fn p -> (RecordPat p,pos)) pats
-%%%         | RelaxPat(patt,trm) ->
-%%%           foldr (fn (p,pats) -> cons(RelaxPat(p,trm),pats))
-%%%                 nil
-%%%                 (removeAliases patt)
-%%%         | QuotientPat(patt,trm) ->
-%%%           foldr (fn (p,pats) -> cons(QuotientPat(p,trm),pats))
-%%%                 nil
-%%%                 (removeAliases patt)
-%%%         | patt -> [patt]
-
-  op patternToTerm : Pattern_ast -> Term_ast
-  def patternToTerm (pat,pos) =
-      case pat of
-         | VarPat(id,srt) -> mkOp_ast([id],srt)
-         | EmbedPat(id,pat?,srt) ->
-           (case pat?
-              of Some patt ->
-                 mkApply_ast(mkEmbed1_ast(id,srt),patternToTerm patt)
-               | None ->
-                 mkEmbed0_ast_local(id,srt))
-         | RecordPat idpats -> (Record(map (fn (id,pat) -> (id,patternToTerm pat)) idpats),pos0_ast)
-         | StringPat s -> mkString_ast s
-         | BoolPat b -> mkBool_ast b
-         | CharPat c -> mkChar_ast c
-         | IntPat i -> mkInt_ast i
-         | RelaxPat(patt,trm) ->
-           mkApply_ast(mkRelax_ast(patternSort_ast patt,trm),patternToTerm patt)
-%%%         | QuotientPat(patt,trm) ->
-%%%           mkApply_ast(mkApply_ast(Fun(Quotient,patternSort_ast patt),trm),
-%%%                   patternToTerm patt) % not sure this is correct
-         % we assume there is no AliasPat because they have all been
-         % removed by removeAliases; we also ignore WildPat
-
-The following function returns all the pattern variables contained in
-a pattern, without repetitions. Even if this function does not belong here,
-it is ok for now.
-
-  op patternVariables : Pattern_ast -> List var_ast
-  def patternVariables (pat,pos) =
-      case pat
-        of AliasPat(pat1,pat2) ->
-           let (vars1,vars2) =
-               (patternVariables pat1, patternVariables pat2) in
-           foldl (fn (v,vs) -> if member(v,vs) then vs else cons(v,vs))
-                 vars1
-                 vars2
-         | VarPat v -> [v]
-         | EmbedPat(_,pat?,_) ->
-           (case pat? of Some pat1 -> patternVariables pat1 | None -> nil)
-         | RecordPat idpats ->
-           foldl (fn (idpat,vs) ->
-                     let vs1 = patternVariables idpat.2 in
-                     foldl (fn (v,vs2) ->
-                               if member(v,vs2) then vs2 else cons(v,vs2))
-                           vs
-                           vs1)
-                 nil
-                 idpats
-         | RelaxPat(pat,_) ->
-           patternVariables pat
-         | QuotientPat(pat,_) ->
-           patternVariables pat
-         | _ ->
-           nil % wrong for WildPat, but never used
-\begin{spec}
+  op getLocalSorts : fa (a) ASpec a -> SortNames
+  def getLocalSorts {importInfo,sorts,ops,properties} =
+    let {imports,importedSpec,localOps,localSorts} = importInfo in localSorts
 }
 \end{spec}
