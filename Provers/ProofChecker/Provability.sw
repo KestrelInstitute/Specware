@@ -24,7 +24,7 @@ spec
     | cxTypeVarDecl
     | cxVarDecl
     % well-formed specs:
-    | spe
+    | speC
     % well-formed types:
     | tyBoolean
     | tyVariable
@@ -165,10 +165,10 @@ spec
     | cxOpDef ->
       (fa (cx:Context, o:Operation, tvS:TypeVariables, t:Type, tvS1:TypeVariables,
            tsbs:TypeSubstitution, v:Variable, e:Expression, esbs:ExprSubstitution)
-         noRepetitions? tvS
-      && pj (wellFormedContext cx)
+         pj (wellFormedContext cx)
       && opDeclaration (o, tvS, t) in? cx
       && ~(contextDefinesOp? (cx, o))
+      && noRepetitions? tvS
       && length tvS1 = length tvS
       && tsbs = FMap.fromSequences (tvS, map (TVAR, tvS1))
       && pj (theoreM (cx ++ multiTypeVarDecls tvS1,
@@ -195,7 +195,7 @@ spec
       => pj (wellFormedContext (cx <| varDeclaration (v, t))))
 
     %%%%%%%%%% well-formed specs:
-    | spe ->
+    | speC ->
       (fa (sp:Spec)
          pj (wellFormedContext sp)
       => pj (wellFormedSpec sp))

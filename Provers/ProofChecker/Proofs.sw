@@ -11,7 +11,7 @@ spec
   applied to such judgements. If it can, the function computes the judgement
   resulting from applying the rule. Otherwise, the function indicates a
   failure; of course, failures are propagated from subtree to supertrees. This
-  function is defined in spec `...'.
+  function is defined in spec `Check'.
 
   Since not all rules are such that there is a unique conclusion judgement for
   given premise judgements (e.g. rule `cxTypeDecl' has a different conclusion
@@ -42,16 +42,16 @@ spec
     | cxOpDecl      Proof * Proof * Operation
     | cxTypeDef     Proof * Proof * TypeName
     | cxOpDef       Proof * Proof * Operation
-    | cxAxiom       Proof * Proof
+    | cxAxiom       Proof * Proof * AxiomName
     | cxTypeVarDecl Proof * TypeVariable
     | cxVarDecl     Proof * Proof * Variable
     % well-formed specs:
-    | spe Proof
+    | speC Proof
     % well-formed types:
     | tyBoolean  Proof
     | tyVariable Proof * TypeVariable
     | tyArrow    Proof * Proof
-    | tySum      Proof?s * Constructors
+    | tySum      Proof * Proof?s * Constructors
     | tyInstance Proof * Proofs * TypeName
     | tyRecord   Proof * Proofs * Fields
     | tyProduct  Proof * Proofs
@@ -153,5 +153,7 @@ spec
     | thAbbrevExistential           Proof
     | thAbbrevExistential1          Proof * Variables
     | thAbbrevNonRecursiveLet       Proof
+
+  % add induction axiom here
 
 endspec
