@@ -3,10 +3,10 @@
 # This file and the description is tailored for the GNU version of make.
 
 # enable this line, if you want to disable the default garbage collector;
-# this must preceed the include statement below
+# this must precede the include statement below
 #USEGC = no
 
-# also preceeding the include statement, you should put here the main
+# also preceding the include statement, you should put here the main
 # target of the application, otherwise you have to use the target's
 # name on the command line as in "make myapp", because the included
 # file defines some rules not intended to be toplevel rules.
