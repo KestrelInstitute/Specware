@@ -27,9 +27,10 @@ SpecCalc qualifying spec {
   def attemptSubstitution original_spec sm term_pos timestamp dep_URIs =
     let sub_spec             = SpecCalc.dom sm in
     let should_be_empty_spec = subtractSpec sub_spec original_spec in
-    {when (~ (should_be_empty_spec.sorts      = emptyASortMap))   (raise (TypeCheck (term_pos, warnAboutSorts should_be_empty_spec)));
-     when (~ (should_be_empty_spec.ops        = emptyAOpMap))     (raise (TypeCheck (term_pos, warnAboutOps   should_be_empty_spec)));
-     when (~ (should_be_empty_spec.properties = emptyProperties)) (raise (TypeCheck (term_pos, warnAboutProps should_be_empty_spec)));
+    {when (~ (should_be_empty_spec.sorts      = emptyASortMap) or
+	   ~ (should_be_empty_spec.ops        = emptyAOpMap)   or
+	   ~ (should_be_empty_spec.properties = emptyProperties))
+          (raise (TypeCheck (term_pos, warnAboutMissingItems should_be_empty_spec)));
      new_spec <- applySubstitution sm original_spec;
      return (Spec new_spec, timestamp, dep_URIs)
      }
@@ -70,15 +71,44 @@ SpecCalc qualifying spec {
   in
     mapSpec (translate_term, translate_sort, translate_pattern) spc
     
-  def warnAboutSorts should_be_empty_spec = 
-    "Some sorts in the domain of the morphism are not in the spec"
-				  
-  def warnAboutOps   should_be_empty_spec = 
-    "Some ops in the domain of the morphism are not in the spec"
-				  
-  def warnAboutProps should_be_empty_spec = 
-    "Some axioms, etc. in the domain of the morphism are not in the spec"
-   }				  
+  op printNamesInAQualifierMap : fa (a) AQualifierMap a -> String
+  def printNamesInAQualifierMap qmap =
+    foldriAQualifierMap (fn (qualifier, id, _, str) ->
+			 let qid = printQualifierDotId (qualifier, id) in
+			 if str = "" then qid else str^", "^qid)
+                        ""
+			qmap 
+
+  op countKeysInAQualifierMap : fa (a) AQualifierMap a -> Nat
+  def countKeysInAQualifierMap qmap =
+    foldriAQualifierMap (fn (_, _, _, n) -> n + 1) 0 qmap
+
+  def warnAboutMissingItems should_be_empty_spec = 
+    let sorts_msg = printNamesInAQualifierMap should_be_empty_spec.sorts in
+    let ops_msg   = printNamesInAQualifierMap should_be_empty_spec.ops   in
+    let props_msg = (foldl (fn ((_, prop_name, _, _), str) ->
+			    if str = "" then prop_name else str^", "^prop_name)
+		           ""			 
+			   should_be_empty_spec.properties)
+    in
+    "\n" ^
+    (if sorts_msg = "" then 
+       ""  
+     else
+       "  These sorts from the domain of the morphism are not in the source spec: " ^ sorts_msg ^ "\n")
+    ^
+    (if ops_msg = "" then 
+       ""  
+     else
+       "  These ops from the domain of the morphism are not in the source spec: " ^ ops_msg  ^ "\n")
+    ^
+    (if props_msg = "" then 
+       ""  
+     else
+       "  These axioms, etc. from the domain of the morphism are not in the source spec: " ^ props_msg  ^ "\n")
+    ^
+    "  in substitution term"
+}
 
 %%%  From  AC :
 %%%

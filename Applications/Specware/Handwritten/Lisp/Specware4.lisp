@@ -1,6 +1,8 @@
 (defpackage "SPECWARE")
 (in-package "SPECWARE")
 
+(setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
+
 (defvar Specware4 (sys:getenv "SPECWARE4"))
 
 ;; The following defines functions such as:

@@ -239,45 +239,46 @@ sense that no toplevel functions return anything.
      saveSpecwareState;			% So work done before error is not lost
      message <- % "Uncaught exception: " ++
        return (case except of
+
          | Fail str -> "Fail: " ^ str
-         | SpecError (position,msg) ->
-               "Error in specification: "
-             ^ msg
-             ^ " at\n"
-             ^ (printAll position)
-         | DiagError (position,msg) ->
-               "Diagram error: "
-             ^ msg
-             ^ " at\n"
-             ^ (printAll position)
+
+         | SyntaxError msg ->
+               "Syntax error: " ^ msg
+
          | ParserError fileName ->
-               "Syntax error: file "
-             ^ fileName
+               "Syntax error for filename: " ^ fileName
+
+         | Unsupported (position,str) ->
+               "Unsupported operation: " ^ str
+             ^ "\n  found at " ^ (printAll position)
+
+         | URINotFound (position, uri) ->
+               "Unknown unit " ^ (showRelativeURI uri) 
+             ^ "\n  referenced from " ^ (printAll position)
+
+         | SpecError (position,msg) ->
+               "Error in specification: " ^ msg 
+             ^ "\n  found at " ^ (printAll position)
+
+         | DiagError (position,msg) ->
+               "Diagram error: " ^ msg 
+             ^ "\n  found at " ^ (printAll position)
+
+         | TypeCheck (position, msg) ->
+               "Type error: " ^ msg 
+             ^ "\n  found at " ^ (printAll position)
+
          | CircularDefinition uri ->
                "Circular definition: " ^ showURI uri
-         | SyntaxError msg ->
-               "Syntax error: "
-             ^ msg
-         | URINotFound (position,uri) ->
-               "Unknown unit error: "
-             ^ (showRelativeURI uri)
-             ^ " referenced from\n" ^ (printAll position)
-         | TypeCheck (position,str) ->
-               "Type error: "
-             ^ str
-             ^ " referenced from\n" ^ (printAll position)
+
          %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
          | OldTypeCheck str ->
-               "Type errors:\n"
-             ^ str
-         | Unsupported (position,str) ->
-               "Unsupported operation: "
-             ^ str
-             ^ " at\n"
-             ^ (printAll position)
+               "Type errors:\n" ^ str
+
          | _ -> 
-               "Unknown exception" 
+               "Unknown exception: " 
              ^ (System.toString except));
+
      if specwareWizard? then
        fail message
      else
