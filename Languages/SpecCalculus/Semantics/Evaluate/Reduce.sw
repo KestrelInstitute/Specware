@@ -16,7 +16,7 @@ SpecCalc qualifying spec
 
   def SpecCalc.reduce ms_term sc_term pos = {
     unitId <- getCurrentUID;
-    print (";;; Processing substitution at " ^ (uidToString unitId) ^ "\n");
+    print (";;; Processing reduce at " ^ (uidToString unitId) ^ "\n");
     result as (spcValue, timeStamp, depUnitIds) <- evaluateTermInfo sc_term;
     spc <- return (coerceToSpec spcValue);
     case spc of
