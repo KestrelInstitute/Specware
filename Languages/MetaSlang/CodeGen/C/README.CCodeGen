@@ -8,7 +8,7 @@ cases, an additional parameter can be supplied specifying the base
 name of the C source and header files into which the C code will be
 generated.
 
-Lisp Prompt:
+Lisp Prompt: (works only for MetaSlang sources, not for Accord sources)
 - - - - - -
 
     :swc <UnitId> [<c-file-base-name>]
@@ -19,7 +19,7 @@ Example:
 where QuickSort.sw contains the spec that is to be translated into the
 C files QuickSort.h and QuickSort.c
 
-Inside a .sw file:
+Inside a .sw file: (works for MetaSlang and Accord sources)
 - - - - - - - - - 
 
 generate c <spec-term> in "<c-file-base-name>"
@@ -107,3 +107,6 @@ passing command line arguments is not yet supported, if you define a
 MetaSlang main operator directly. See the Examples directory for
 examples of both a hand-written main c function that calls the
 generated code and a MetaSlang definition of the main operator.
+
+[Accord users can define a toplevel proc/espec as "main"]
+
