@@ -35,9 +35,9 @@ SpecCalc qualifying spec {
       cSpec <- ProcMapEnv.fold delFnDeclForProc cSpec oscSpec.procedures;
       cSpec <- return(CG.postProcessCSpec cSpec);
       printToFileEnv(cSpec,None);
-      (fail "success"; % useful during development; forces re-elaboration of any example spec
+      %(fail "success"; % useful during development; forces re-elaboration of any example spec
        return cSpec
-      )
+      %)
     }
 
   (**
