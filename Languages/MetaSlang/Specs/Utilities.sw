@@ -1015,6 +1015,8 @@ Utilities qualifying spec
      | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),
 	     Record([("1",p),("2",q)],_),_)
        -> getConjuncts p ++ getConjuncts q
+     | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_)
+       -> getConjuncts p ++ getConjuncts q
      | _ -> [t]
 
   %% Given a universal quantification return list of quantified variables, conditions and rhs
@@ -1039,6 +1041,10 @@ Utilities qualifying spec
 	(vs ++ rVs,rLhsCjs)
       | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),
 	      Record([("1",lhs),("2",rhs)],_),_) ->
+        let (lVs,lLhsCjs) = existsComponents lhs in
+        let (rVs,rLhsCjs) = existsComponents rhs in
+	(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
+      | Apply(Fun(And,_,_), Record([("1",lhs),("2",rhs)],_),_) ->
         let (lVs,lLhsCjs) = existsComponents lhs in
         let (rVs,rLhsCjs) = existsComponents rhs in
 	(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
@@ -1219,6 +1225,28 @@ Utilities qualifying spec
 	if evalConstant?(N1) & evalConstant?(N2)
 	  then Some(mkBool(equalTerm?(N1,N2)))
 	  else None
+      | Apply(Fun(Not,  _,_),arg,                       _) -> 
+	if evalConstant? arg then
+	  case arg of
+	    | Fun (Bool b,_,aa) -> Some(Fun (Bool (~ b), boolSort,aa))
+	    | _ -> None
+	else
+	  None
+      | Apply(Fun(And,  _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
+	if evalConstant?(N1) & evalConstant?(N2) then
+	  evalBinary(bool  &,booleanVals,fields,boolSort)
+	else
+	  None
+      | Apply(Fun(Or,   _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
+	if evalConstant?(N1) & evalConstant?(N2) then
+	  evalBinary(bool or,booleanVals,fields,boolSort)
+	else
+	  None
+      | Apply(Fun(Cond, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
+	if evalConstant?(N1) & evalConstant?(N2) then
+	  evalBinary(bool =>,booleanVals,fields,boolSort)
+	else
+	  None
       | _ -> None
 
   op  printDefinedOps: fa(a) ASpec a -> String
