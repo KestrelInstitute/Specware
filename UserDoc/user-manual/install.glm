@@ -21,14 +21,6 @@ The following programs and documents are included on the &Specware;
 
 <listitem>
   <para>
-     <"README.txt"> - This document contains important information about
-     &Specware; 4.0, including what has changed from previous versions
-     and how to give feedback on current and future features.
-  </para>
-</listitem>
-
-<listitem>
-  <para>
      <"XEmacs"> - This folder contains the XEmacs <"setup.exe">
      installer for Windows, as well as the packages necessary to
      install the program. XEmacs is the environment within which
@@ -51,6 +43,12 @@ The following documentation is included with the distribution package:
 </para>
 
 <itemizedlist>
+
+<listitem>
+  <para> &Specware; 4.0.5 Quick Reference - The Quick Reference gives an
+  overview of processing commands and Metaslang language constructs.
+  </para>
+</listitem>
 
 <listitem>
   <para>
@@ -138,13 +136,6 @@ XP, Windows 2000 and Windows NT 4.0.
 
 <step>
 <para>
-If you have a previous version of Specware installed on your computer,
-please first remove it before running the Specware 4.0 installation.
-</para>
-</step>
-
-<step>
-<para>
 Insert the installation CD into your CD-ROM drive; the &Specware; 4.0
 <"setup.exe"> installer wizard will be automatically launched.
 </para>
@@ -152,13 +143,14 @@ Insert the installation CD into your CD-ROM drive; the &Specware; 4.0
 
 <step>
 <para>
-After accepting the license agreement, the installer will check
-whether XEmacs is installed on your machine.  If it is, a message will
-appear displaying the found path to XEmacs.  If it is not, you will
-be asked whether you would like to install it.  It is HIGHLY
-recommended that you answer [[L:Yes]], as &Specware; 4.0 has been
-designed to run inside the XEmacs environment.  Clicking [[L:Yes]]
-will then launch the XEmacs installer wizard.  Select the "Install
+After accepting the license agreement, the installer will try to find
+the path to the XEmacs <"xemacs.exe"> startup file under the <"Program
+Files"> directory.  If the path is found, the installer continues.
+
+Otherwise, you will have the option to either install XEmacs from the
+distribution CD (click [[L:Yes]]) or to manually type in the full path to
+<"xemacs.exe">, if it is installed elsewhere on your machine (click [[L:No]]).
+Clicking [[L:Yes]] will launch the XEmacs installer wizard.  Select the "Install
 from Local Directory" option for quickest installation, specify
 <"[CD-ROM drive]:\XEmacs\packages\"> as the directory from which to
 install the packages, and click [[L:Next]] through the remaining steps
@@ -189,11 +181,6 @@ installation directory you selected.
 To uninstall &Specware; 4.0, run the installer on the CD again and
 select the "Remove" option in the wizard, or use the
 <"Add/Remove Programs"> setting in the Control Panel.
-</para>
-
-<para>
-If you need to reinstall &Specware;, please uninstall it first and
-then run the installer on the CD to install a clean version.
 </para>
 
 </section> <!-- uninstalling -->
