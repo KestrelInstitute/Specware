@@ -28,10 +28,20 @@
   #+cmu       (extensions:default-directory) ; pathname
   )
 
+(defun parse-device-directory (str)
+  (let ((found-index (position #\: str)))
+    (if found-index
+	(values (subseq str 0 found-index)
+		(subseq str (1+ found-index)))
+      (values nil str))))
+
 (defun change-directory (directory)
   ;; (lisp::format t "Changing to: ~A~%" directory)
   (let ((dirpath (if (pathnamep directory) directory
-		   (make-pathname :directory directory))))
+		   (multiple-value-bind (dev dir)
+		       (parse-device-directory directory)
+		     (make-pathname :directory dir
+				    :device dev)))))
     #+allegro   (excl::chdir          directory)
     #+Lispworks (hcl:change-directory directory)
     #+mcl       (ccl::%chdir          directory)
