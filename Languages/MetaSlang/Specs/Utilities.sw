@@ -954,8 +954,8 @@ Utilities qualifying spec
       | ("chr",Fun (Nat i,_,aa)) -> Some(Fun (Char(chr i),charSort,aa))
       | _ -> None
 
- op  attemptEvaln: String * List(Id * MS.Term) ->  Option MS.Term
- def attemptEvaln(opName,fields) =
+ op  attemptEvaln: String * String * List(Id * MS.Term) ->  Option MS.Term
+ def attemptEvaln(spName,opName,fields) =
    case opName of
       %% Nat operations
       | "+" ->
@@ -966,10 +966,18 @@ Utilities qualifying spec
 		 sortFromField(fields,natSort),noPos))
       | "-"   -> evalBinary(nat -,natVals,fields,
 			  sortFromField(fields,natSort))
-      | "<"   -> evalBinary(bool <,natVals,fields,boolSort)
-      | "<="  -> evalBinary(bool <=,natVals,fields,boolSort)
-      | ">"   -> evalBinary(bool >,natVals,fields,boolSort)
-      | ">="  -> evalBinary(bool >=,natVals,fields,boolSort)
+      | "<"   -> if spName = "String"
+	          then evalBinary(bool <,stringVals,fields,boolSort)
+		  else evalBinary(bool <,natVals,fields,boolSort)
+      | "<="  -> if spName = "String"
+	          then evalBinary(bool <=,stringVals,fields,boolSort)
+		  else evalBinary(bool <=,natVals,fields,boolSort)
+      | ">"   -> if spName = "String"
+	          then evalBinary(bool >,stringVals,fields,boolSort)
+		  else evalBinary(bool >,natVals,fields,boolSort)
+      | ">="  -> if spName = "String"
+	          then evalBinary(bool >=,stringVals,fields,boolSort)
+		  else evalBinary(bool >=,natVals,fields,boolSort)
       | "min" -> evalBinary(nat min,natVals,fields,
 			    sortFromField(fields,natSort))
       | "max" -> evalBinary(nat max,natVals,fields,
@@ -1009,7 +1017,7 @@ Utilities qualifying spec
 	 then (case arg
 		 of Record(fields, _) ->
 		    (if all (fn (_,tm) -> evalConstant?(tm)) fields
-		      then attemptEvaln(opName,fields)
+		      then attemptEvaln(spName,opName,fields)
 		      else None)
 		   | _ -> (if evalConstant?(arg)
 			    then attemptEval1(opName,arg)

@@ -72,7 +72,7 @@ axiom call is exp ((u,5),z',((u,v),(u',v')))
   def sortOpInfoList infoList =
     let
       def cmpOpInfo (o1:Op.OpInfo,o2:Op.OpInfo) =
-        (Id.show (idOf o1)) leq (Id.show (idOf o2))
+        (Id.show (idOf o1)) <= (Id.show (idOf o2))
     in
       sortList cmpOpInfo infoList
 
