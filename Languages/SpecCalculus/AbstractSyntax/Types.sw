@@ -12,12 +12,12 @@ defining an abstract type SpecCalc.Term a, which is refined below.
   import /Library/Legacy/Utilities/Lisp % for LispCell
 (*
 All the objects in the abstract syntax are polymorphic and defined at
-two levels.  The first level pairs the type the type paramerter. The
+two levels.  The first level pairs the type the type parameter. The
 second level defines the constructors for the sort. In this way, every
 sort is annotated. The annotation is typically information about the
 position of the term in the file. It is not clear that there is any
 benefit in making this polymorphic. Might might be enough to pair it
-with the \verb+Position+ type and then refine that sort.  Using two
+with the \verb+Position+ type and then refine that type.  Using two
 levels ensures that for all objects in the abstract syntax tree, the
 position information is always the second component.
 *)
@@ -31,7 +31,7 @@ position information is always the second component.
   def positionOf (_,     position) = position
 (*
 The following is the toplevel returned by the parser. (I don't like
-the name of this sort. Ok: changed from SpecFile to SpecTerm)
+the name of this type. Ok: changed from SpecFile to SpecTerm)
 A file may contain a list of $\mathit{name} =
 \mathit{term}$ or contain a single term. This should not be polymorphic.
 The type parameter should be instantiated with the type \verb+Position+.
@@ -67,7 +67,7 @@ possible path names. Later we may want to have UIDs with network addresses.
 The type \verb+Name+ is used everywhere that one can expect a
 non-structured identifier.  This includes for instance, the names of
 vertices and edges in the shape of a diagram. It also includes the
-qualifiers on op and sort names.
+qualifiers on op and type names.
 
 In the near term, it also includes the identifiers bound by declarations.
 These are either \verb+let+ bound or bound by specs listed in a
@@ -101,11 +101,11 @@ from diagram morphisms in both the concrete and abstract syntax.
 The first two elements in the morphism products are terms that evaluate
 to the domain and codomain of the morphisms.
 *)
-    | SpecMorph (Term a) * (Term a) * (List (SpecMorphRule a))
-    | DiagMorph (Term a) * (Term a) * (List (DiagMorphRule a))
+    | SpecMorph    (Term a) * (Term a) * (List (SpecMorphRule a))
+    | DiagMorph    (Term a) * (Term a) * (List (DiagMorphRule a))
     | ExtendMorph  (Term a)
-    | Qualify   (Term a) * Name
-    | Translate (Term a) * (TranslateExpr a)
+    | Qualify      (Term a) * Name
+    | Translate    (Term a) * (TranslateExpr a)
 (*
 The intention is that \verb+let+ \emph{decls} \verb+in+ \emph{term}
 is the same as \emph{term} \verb+where+ \emph{decls}. The \verb+where+
@@ -167,10 +167,10 @@ bound by a let or listed in a file are unstructured.
 *)
   type Decl a = Name * (Term a)
 (*
-A \verb+TranslateExpr+ denotes a mapping on the op and sort names in a
+A \verb+TranslateExpr+ denotes a mapping on the op and type names in a
 spec. Presumably, in the longer term there will a pattern matching syntax
 to simplify the task of uniformly renaming a collection of operators
-and sorts or for requalifying things. For now, a translation is just a
+and types or for requalifying things. For now, a translation is just a
 mapping from names to names, annotated with the full list of aliases
 to be used in the target info.
 
@@ -183,7 +183,7 @@ Recall the type \verb+IdInfo+ is just a list of identifiers (names).
     | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases
     | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases
 (*
-A \verb+NameExpr+ denote the name of an op, sort or claim. Lists of such
+A \verb+NameExpr+ denote the name of an op, type or claim. Lists of such
 expressions are used in \verb+hide+ and \verb+export+ terms to either
 exclude names from being export or dually, to specify exactly what names
 are to be exported.  Presumably the syntax will borrow ideas from the
@@ -201,7 +201,7 @@ a position as in TranslateExpr above.
                     | Conjecture QualifiedId
                     | Ambiguous  QualifiedId
 (*
-A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
+A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops types etc.
 *)
   type SpecElem a = (SpecElem_ a) * a
 
@@ -230,7 +230,7 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
   op mkOpSpecElem : [a] OpNames * Fixity * TyVars * ASort a * List (ATerm a) * a -> SpecElem a
  def [a] mkOpSpecElem (names, fixity, tvs, srt, defs, pos) =
    %% We potentially could be smarter if srt is just a meta type var
-   %% and use just a normal term instead of a sorted term, but that's
+   %% and use just a normal term instead of a typed term, but that's
    %% a complication we don't need now (or perhaps ever).
    let dfn =
        case defs of
@@ -264,7 +264,7 @@ diagram morphism.
 The syntax for spec morphisms accommodates mapping names to terms but
 the interpreter handles only name to name maps for now.
 
-The tagging in the sorts below may be excessive given the \verb+ATerm+
+The tagging in the types below may be excessive given the \verb+ATerm+
 is already tagged.
 *)
   type SpecMorphRule a = (SpecMorphRule_ a) * a
@@ -300,6 +300,7 @@ The term in the component must evaluate to a morphism.
   type ProverBaseOptions = | ProverBase | Base | AllBase | NoBase
   
   type AnswerVar = Option Var
+
 (*
 The following are invoked from the parser:
 *)
