@@ -214,6 +214,10 @@ can be folded over a system sys with:
 
 \begin{spec}
   op edgeLabel : fa (O,A) System (O,A) -> E.Elem -> (A * O * A)
+  def edgeLabel sys edge =
+    (eval (edgeMap (functor sys)) (Tag (0,edge)),
+     eval (vertexMap (functor sys)) (Tag (1,edge)),
+     eval (edgeMap (functor sys)) (Tag (1,edge)))
   op vertexLabel : fa (O,A) System (O,A) -> V.Elem -> O
 
   op foldOverEdges : fa (x,O,A) (x -> E.Elem -> x) -> x -> System (O,A) -> x

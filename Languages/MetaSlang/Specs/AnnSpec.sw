@@ -457,7 +457,11 @@ AnnSpec qualifying spec {
 
  def subtractSpec x y = {
      importInfo = x.importInfo,
-     properties = x.properties,    % should take the difference here as well
+     properties = foldl (fn (x,l) ->
+           if member (x,y.properties) then
+             l
+           else
+             Cons (x,l)) [] x.properties,
      ops = mapDiff x.ops y.ops,
      sorts = mapDiff x.sorts y.sorts
    }

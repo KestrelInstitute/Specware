@@ -38,16 +38,15 @@ MetaSlang qualifying spec {
       ] in
     ppConcat [
       ppString "spec {",
-      ppNewline,
-      ppImports,    
-      ppNewline,
-        ppNest 2 (ppConcat [
+      ppIndent (ppConcat [
+        ppNewline,
+        ppSep ppNewline [
+          ppImports,    
           ppSep ppNewline (map doSort (sortsAsList spc)),
-          ppNewline,
           ppSep ppNewline (map doOp (opsAsList spc)),
-          ppNewline,
           ppSep ppNewline (map ppAProperty properties)
-        ]),
+        ]
+      ]),
       ppString "}"
     ]
 
@@ -80,7 +79,7 @@ MetaSlang qualifying spec {
     ppConcat [
       ppNames,
       ppTyVars,
-      ppSrt
+      ppGroup (ppIndent ppSrt)
     ]
 
   op ppAOpInfo : fa (a) AOpInfo a -> Pretty
@@ -111,10 +110,15 @@ MetaSlang qualifying spec {
         | Some trm ->
              ppConcat [
                ppNewline,
-               ppString "def ",
-               ppNames,
-               ppString " = ",
-               ppATerm trm
+               ppGroup (ppConcat [
+                 ppString "def ",
+                 ppNames,
+                 ppGroup (ppIndent (ppConcat [
+                   ppString " = ",
+                   ppBreak,
+                   ppGroup (ppATerm trm)
+                 ]))
+               ])
              ] in
     ppConcat [
       ppNames,
@@ -129,17 +133,22 @@ MetaSlang qualifying spec {
       ppPropertyType propType,
       ppString " ",
       ppString name,
-      ppString " is ",
-      (case tyVars of
-        | [] -> ppNil
-        | _ -> 
-           ppConcat [
-             ppString "fa (",
-             ppSep (ppString ",") (map ppString tyVars),
-             ppString ") "
-           ]),
-      ppString " ",
-      ppATerm term
+      ppGroup (ppConcat [
+        ppString " is ",
+        ppBreak,
+        ppGroup (ppIndent (ppConcat [
+          (case tyVars of
+             | [] -> ppNil
+             | _ -> 
+                ppConcat [
+                  ppString "fa (",
+                  ppSep (ppString ",") (map ppString tyVars),
+                  ppString ") "
+                ]),
+          ppString " ",
+          ppATerm term
+        ]))
+      ])
     ]
 
   op ppPropertyType : PropertyType -> Pretty

@@ -708,32 +708,32 @@ AnnSpecPrinter qualifying spec {
       
 
   def printTerm term = 
-   PrettyPrint.toString (format(60,ppTerm (initialize(asciiPrinter,false)) ([],Top:ParentTerm) term))
+   PrettyPrint.toString (format(80,ppTerm (initialize(asciiPrinter,false)) ([],Top:ParentTerm) term))
 
   def termToPretty term =
    ppTerm (initialize(asciiPrinter,false)) ([],Top:ParentTerm) term
 
   def printTermToTerminal term =
-   toTerminal(format(60,ppTerm (initialize(asciiPrinter,false)) ([],Top:ParentTerm) term))
+   toTerminal(format(80,ppTerm (initialize(asciiPrinter,false)) ([],Top:ParentTerm) term))
  
   def printSort srt = 
-    PrettyPrint.toString (format (60, ppSort (initialize (asciiPrinter, false))
+    PrettyPrint.toString (format (80, ppSort (initialize (asciiPrinter, false))
                      ([], Top : ParentSort) srt))
 
   def printSortToTerminal srt = 
-   toTerminal (format (60, ppSort (initialize (asciiPrinter, false))
+   toTerminal (format (80, ppSort (initialize (asciiPrinter, false))
                         ([],Top : ParentSort) srt))
  
   def printSortScheme scheme = 
-    PrettyPrint.toString (format (60, ppSortScheme (initialize(asciiPrinter,false))
+    PrettyPrint.toString (format (80, ppSortScheme (initialize(asciiPrinter,false))
                      ([],Top:ParentSort) scheme))
 
   def printPattern pat = 
-    PrettyPrint.toString(format(60,ppPattern (initialize(asciiPrinter,false))
+    PrettyPrint.toString(format(80,ppPattern (initialize(asciiPrinter,false))
                                              ([],true) pat))
 
   def printTermWithSorts term = 
-    PrettyPrint.toString(format(60,ppTerm (initialize(asciiPrinter,true))
+    PrettyPrint.toString(format(80,ppTerm (initialize(asciiPrinter,true))
                                              ([],Top:ParentTerm) term))
 
   def ppForallTyVars (pp:ATermPrinter) tyVars = 
@@ -997,13 +997,13 @@ AnnSpecPrinter qualifying spec {
       ppSpecR (initialize(asciiPrinter,false)) spc
       
   def printSpec spc =
-      PrettyPrint.toString (format(60,specToPretty spc))
+      PrettyPrint.toString (format(80,specToPretty spc))
 
   def printSpecVerbose spc =
-      PrettyPrint.toString (format(60,specToPrettyVerbose spc))
+      PrettyPrint.toString (format(80,specToPrettyVerbose spc))
 
   def printSpecToTerminal spc =
-     (toTerminal (format(60,specToPretty spc)); String.writeLine "")
+     (toTerminal (format(80,specToPretty spc)); String.writeLine "")
 
   def printSpecToFile(fileName,spc) = 
       toFile(fileName,format(90,specToPretty spc))
@@ -1025,7 +1025,7 @@ AnnSpecPrinter qualifying spec {
 
 
   def printSpecWithSortsToTerminal spc =
-      toTerminal(format(60,ppSpec(initialize(asciiPrinter,true)) spc))
+      toTerminal(format(80,ppSpec(initialize(asciiPrinter,true)) spc))
 
   def latexSpecToPretty spc = 
       let pSpec = ppSpec(initialize(latexPrinter,false)) spc in
