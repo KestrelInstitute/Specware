@@ -170,7 +170,7 @@ spec {
 	       else constrMap := StringMap.insert(cMap, id,
 						  cons((tvs,cp_srt),srt_prs))
    in
-   let def addSort (tvs, srt, sorts, constrMap) =
+   let def addSort (tvs, srt, constrMap) =
         case srt : PSort of
 	 | CoProduct (row, _) ->
 	   app (fn (id,_) -> addConstr (id, tvs, srt, constrMap)) row
@@ -186,13 +186,16 @@ spec {
    in
    let _ = appAQualifierMap 
 	     (fn (sort_names, tyvars, opt_def) -> 
-	      (case opt_def : Option(PSort)
+	      (case opt_def : Option PSort
 		of None     -> ()
-		 | Some srt -> addSort (tyvars, srt, sorts, constrMap)))
+		 | Some srt -> addSort (tyvars, srt, constrMap)))
 	     sorts
    in
    %% Look at at all sorts mentioned in spec
-   let _ = appSpec (fn x -> (), fn s -> addSort([],s,sorts, constrMap), fn p -> ()) spc 
+   let _ = appSpec (fn _ -> (),
+		    fn s -> addSort ([], s, constrMap),
+		    fn _ -> ()) 
+                   spc 
    in ! constrMap
 
  op  checkErrors : LocalEnv -> Option String

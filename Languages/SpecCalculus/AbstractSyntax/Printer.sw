@@ -68,13 +68,13 @@ SpecCalc qualifying spec {
   def showRelativeURI uri = ppFormat (ppRelativeURI uri)
 
   op ppSpecFile : fa (a) SpecFile a -> Doc
-  def ppSpecFile (specFile as (term,position)) =
+  def ppSpecFile (specFile as (term,_ (* position *))) =
     case term of
       | Term term -> ppTerm term
       | Decls decls -> ppDecls decls
 
   op ppTerm : fa (a) SpecCalc.Term a -> Doc
-  def ppTerm (term,position) =
+  def ppTerm (term, _(* position *)) =
     case term of
       | Print t ->
           ppConcat [
@@ -196,7 +196,7 @@ SpecCalc qualifying spec {
       else ppString(Qualifier^"."^Id)
 
   op ppDiagElem : fa (a) DiagElem a -> Doc
-  def ppDiagElem (elem,position) =
+  def ppDiagElem (elem, _ (* position *)) =
     case elem of
       | Node (nodeId,term) ->
           ppConcat [

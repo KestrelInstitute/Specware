@@ -18,12 +18,11 @@ levels ensures that for all objects in the abstract syntax tree, the
 position information is always the second component.
 
 \begin{spec}
-  % sort Position = position % see ast/ast.sl
+  op valueOf    : fa (a) a * Position -> a
   op positionOf : fa (a) a * Position -> Position
-  def positionOf (x,position) = position
 
-  op valueOf : fa (a) a * Position -> a
-  def valueOf (x,position) = x
+  def valueOf    (value, _       ) = value
+  def positionOf (_,     position) = position
 \end{spec}
 
 The following is the toplevel returned by the parser. I don't like

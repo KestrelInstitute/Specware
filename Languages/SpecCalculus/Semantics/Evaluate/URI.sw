@@ -216,7 +216,7 @@ handled correctly.
   %  }
 
   op evaluateGlobalDecls : URI -> String -> List (Decl Position) -> Env ()
-  def evaluateGlobalDecls {path,hashSuffix} fileName decls =
+  def evaluateGlobalDecls {path, hashSuffix=_} fileName decls =
     let def evaluateGlobalDecl (name,term) =
       let newURI = {path=path,hashSuffix=Some name} in {
         setCurrentURI newURI;
@@ -224,11 +224,11 @@ handled correctly.
         bindInGlobalContext newURI (value,max(timeStamp,fileWriteTime fileName),depURIs)
     }
     in {
-      saveURI <- getCurrentURI;
+      saveURI          <- getCurrentURI;
       saveLocalContext <- getLocalContext;
       clearLocalContext;
       mapM evaluateGlobalDecl decls;
-      setCurrentURI saveURI;
+      setCurrentURI   saveURI;
       setLocalContext saveLocalContext
     }
 \end{spec}

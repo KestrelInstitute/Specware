@@ -113,8 +113,9 @@ The following corresponds to the :show command.
       restoreSavedSpecwareState;
       globalContext <- getGlobalContext;
       uriList <-
-        return (foldMap
-          (fn lst -> fn dom -> fn cod -> Cons (dom, lst)) [] globalContext);
+        return (foldMap (fn lst -> fn dom -> fn _ (* cod *) -> Cons (dom, lst)) 
+		        [] 
+			globalContext);
       print (ppFormat (ppSep ppNewline (map ppURI uriList)));
       saveSpecwareState     % shouldn't change anything
     } in

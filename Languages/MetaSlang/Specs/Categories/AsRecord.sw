@@ -42,7 +42,7 @@ SpecCat qualifying spec {
   def ppQualifiedId id = ppString (printQualifiedId id)
   
   op ppMorphism : Morphism -> Doc
-  def ppMorphism {dom,cod,sortMap,opMap} = 
+  def ppMorphism {dom=_, cod=_, sortMap, opMap} = 
     ppConcat [
       ppString "Sort map=",
       ppNewline,

@@ -80,10 +80,11 @@ spec {
 	      value  = root_b.value}
 
  def fa (a,b) extractQuotientLists (mu_map : MergeUnionMap (a,b)) =
-  let root_map =
-      %% a map from root keys to lists of nodes
-      foldMap (fn root_map -> fn key -> fn mu_node ->
-                let root = findRoot (mu_map, mu_node) in
+  %% First, build a map from root keys to lists of nodes.
+  let root_map = 
+      foldMap (fn root_map -> fn _ (* key *) -> fn mu_node -> 
+	        %% ignore mu_node's key, since we only care about root's key
+                let root = findRoot (mu_map, mu_node) in 
 		update root_map 
 		       root.key 
 		       (Cons (mu_node,
@@ -93,7 +94,9 @@ spec {
              (emptyMap : Map (a, List (MergeUnionNode (a,b))))
    	     mu_map
   in
-  foldMap (fn result -> fn _ -> fn mu_node_list ->  % ignore root key 
+  %% Then extract a list of lists from that map.
+  %% (The root keys are no longer of any interest.)
+  foldMap (fn result -> fn _ (* root_key *) -> fn mu_node_list ->  
 	   Cons (mu_node_list, result))
           []
           root_map
