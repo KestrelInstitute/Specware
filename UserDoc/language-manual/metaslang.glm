@@ -268,7 +268,7 @@ of the following ways:
 ]]
 Also, if the `spec elsewhere contains something along the lines of:
 [[
-||      op signToNat (s : Sign) : Nat
+||      op signToNat : Sign -> Nat
 ||      def sw = signToNat whatAmI
 ]]
 that is sufficient to establish that [[whatAmI]] has sort [[Sign]]
@@ -388,7 +388,7 @@ as described under
 <para>
 Other than that, whitespace -- or the lack of it -- has no significance.
 Whitespace can be used to lay-out the text for readability, but
-as far as only the meaning is concerned, the two following
+as far as only the meaning is concerned, the following two
 presentations of the same `spec are entirely equivalent:
 [[
 ||    spec

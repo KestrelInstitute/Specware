@@ -576,7 +576,7 @@ with the &Specware; distribution, for details (e.g. axioms).
         <entry colname="fxty">&nbsp; </entry>
         <entry colname="sort">&nbsp; [[String * Nat -> Char]]</entry>
         <entry colname="desc">&nbsp; returns the
-            <replaceable><replaceable>n</replaceable></replaceable>th
+            <replaceable>n</replaceable>th
             character in a string, counting from 0</entry>
        </row>
        <row>
@@ -842,8 +842,8 @@ with the &Specware; distribution, for details (e.g. axioms).
         <entry colname="fxty">&nbsp; </entry>
         <entry colname="sort">&nbsp; [[fa(a) (a -> Boolean) -> List a -> Option(a)]]</entry>
         <entry colname="desc">&nbsp; returns [[Some]]
-            <replaceable><replaceable>x</replaceable></replaceable> where
-            <replaceable><replaceable>x</replaceable></replaceable> is the
+            <replaceable>x</replaceable> where
+            <replaceable>x</replaceable> is the
             first element in the list (from left to right) for which the
             given predicate yields true; if no such element exists,
             [[None]] is returned</entry>
@@ -1060,15 +1060,6 @@ with the &Specware; distribution, for details (e.g. axioms).
             given as first parameter to convert
             <replaceable>x</replaceable> to a string</entry>
        </row>
-          </tbody>
-         </tgroup>
-        </informaltable>
-     </para>
-    </listitem>
-   </varlistentry>
-  </variablelist>
- </para>
-</section>
 
         </tbody>
        </tgroup>
