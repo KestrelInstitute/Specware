@@ -1461,7 +1461,7 @@ declaration and the other a ``compatible'' definition.
 For example, given
 
 [[
-||  S1 = spec op e : Int end
+||  S1 = spec op e : Integer end
 ||  S2 = spec op e : Char end
 ||  S3 = spec def e = 0 end
 ]]
