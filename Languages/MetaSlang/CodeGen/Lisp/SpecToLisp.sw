@@ -298,74 +298,91 @@ op  mkLTermOp : fa(a) Spec * String * StringSet.Set * (Fun * Sort * a)
                        * Option(MS.Term) -> LispTerm
 
 def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
-    case termOp
-      of (Project id,srt,_) -> 
-         (case (isSpecialProjection(sp,srt,id),optArgs)
-            of (Some proj,None) -> 
-                mkLLambda(["!x"],[],mkLApply(mkLOp proj,[mkLVar "!x"]))
-             | (Some proj,Some trm) ->
-		let lTrm = mkLTerm(sp,dpn,vars,trm) in
-		if proj = "functions::id" then lTrm
-                 else mkLApply(mkLOp proj,[lTrm])
-             | (None,Some trm) -> 
-               let id = projectionIndex(sp,id,srt)  in
-                mkLApply(mkLOp "svref",[mkLTerm(sp,dpn,vars,trm),mkLNat id])
-             | (None,None) -> 
-               let id = projectionIndex(sp,id,srt) in
-               mkLLambda(["!x"],[],mkLApply(mkLOp "svref",[mkLVar "!x",mkLNat id]))
-          )
+  case termOp of
+    | (Project id,srt,_) -> 
+      (case (isSpecialProjection(sp,srt,id),optArgs) of
+	 | (Some proj,None) -> 
+	   mkLLambda(["!x"],[],mkLApply(mkLOp proj,[mkLVar "!x"]))
+	 | (Some proj,Some trm) ->
+	   let lTrm = mkLTerm(sp,dpn,vars,trm) in
+	   if proj = "functions::id" then lTrm
+	   else mkLApply(mkLOp proj,[lTrm])
+	 | (None,Some trm) -> 
+           let id = projectionIndex(sp,id,srt)  in
+	   mkLApply(mkLOp "svref",[mkLTerm(sp,dpn,vars,trm),mkLNat id])
+	 | (None,None) -> 
+	   let id = projectionIndex(sp,id,srt) in
+	   mkLLambda(["!x"],[],mkLApply(mkLOp "svref",[mkLVar "!x",mkLNat id]))
+	  )
     | (Not, srt, _ ) ->
       let oper = mkLOp("cl.not") in
-      (case optArgs
-         of None -> oper
-          | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
+      (case optArgs of
+         | None -> oper  %% TODO: reasonable ?
+	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (And, srt, _ ) ->
-      let oper = mkLOp("cl.and") in
-      (case optArgs
-         of None -> oper
-          | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
+      let oper = mkLOp("cl.and") in % non-strict, hence non-commutative
+      (case optArgs of
+         | None -> oper  %% TODO: reasonable ?
+	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (Or, srt, _ ) ->
-      let oper = mkLOp("cl.or") in
-      (case optArgs
-         of None -> oper
-          | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
+      let oper = mkLOp("cl.or") in % non-strict, hence non-commutative
+      (case optArgs of
+         | None -> oper  %% TODO: reasonable ?
+	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (Implies, srt, _ ) ->
-      (case optArgs
-         of None -> mkLOp ("cl.implies") % ??
-          | Some (Record([(_,x),(_,y)],_)) ->
-	    mkLApply (mkLOp("cl.or"),
-		      [mkLTerm(sp,dpn,vars,x),
-		       mkLApply(mkLOp "cl.not",
-				[mkLTerm(sp,dpn,vars,y)])]))
+      (case optArgs of
+         | None -> mkLOp ("boolean-spec.=>") %% TODO: reasonable ? [ defined in /Library/Handwritten/Lisp/Boolean.lisp ]
+	 | Some (Record([(_,x),(_,y)],_)) ->
+	   % if x then y else true == or (not x, y)
+	   mkLApply (mkLOp("cl.or"),         % non-strict, hence non-commutative 
+		     [mkLApply(mkLOp "cl.not", 
+			       [mkLTerm(sp,dpn,vars,x)]),
+		      mkLTerm(sp,dpn,vars,y)]))
+    | (Iff, srt, _ ) ->
+      (case optArgs of
+         | None -> mkLOp("cl.eq") % TODO: reaonsable?
+	 | Some (Record([(_, x), (_, y)],_)) ->
+	   % if x then y else not y
+	   mkLIf (mkLTerm(sp,dpn,vars,x),
+		  mkLTerm(sp,dpn,vars,y),		   
+		  mkLApply (mkLOp "cl.not",
+			    [mkLTerm(sp,dpn,vars,y)])))
     | (Equals,srt,_) ->
       let oper = mkLOp(mkLEqualityOp(sp,srt)) in
-      (case optArgs
-         of None -> oper
-          | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
+      (case optArgs of
+         | None -> oper
+	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
+    | (NotEquals,srt,_) ->
+      let oper = mkLOp(mkLEqualityOp(sp,srt)) in
+      (case optArgs of
+         | None -> oper  %% TODO: need inequalities ops: neq, not-=, not-string=, ...
+	 | Some arg -> 
+	   mkLApply(mkLOp "cl.not",
+		    [mkLApply (oper,mkLTermList(sp,dpn,vars,arg))]))
     | (Select id,srt,_) -> 
-      (case (hasConsDomain(sp,id,srt),optArgs)
-        of (Some queryOp,None) -> mkLLambda(["!x"],[],mkLVar "!x")
+      (case (hasConsDomain(sp,id,srt),optArgs) of
+	 | (Some queryOp,None) -> mkLLambda(["!x"],[],mkLVar "!x")
          | (Some queryOp,Some term) -> mkLTerm(sp,dpn,vars,term)
          | (None,None) -> mkLOp "cdr"
          | (None,Some term) -> 
            mkLApply(mkLOp "cdr",[mkLTerm(sp,dpn,vars,term)]))
    | (Embedded id,srt,_) -> 
      let dom = domain(sp,srt) in
-     (case (isConsIdentifier(sp,id,dom),optArgs)
-        of (Some queryOp,None) -> 
-           mkLLambda(["!x"],[],mkLApply(mkLOp queryOp,[mkLVar "!x"]))
-         | (Some queryOp,Some term) -> 
-           mkLApply(mkLOp queryOp,[mkLTerm(sp,dpn,vars,term)])
-         | (None,None) -> 
-           mkLLambda(["!x"],
-		     [],
-		     mkLApply (compareSymbols,
-			       [mkLApply (mkLOp "car",[mkLVar "!x"]),
-				mkLIntern(id)]))
-         | (None,Some term) -> 
-           mkLApply (compareSymbols,
-                  [mkLApply (mkLOp "car",[mkLTerm(sp,dpn,vars,term)]),
-                   mkLIntern(id)])
+     (case (isConsIdentifier(sp,id,dom),optArgs) of
+        | (Some queryOp,None) -> 
+          mkLLambda(["!x"],[],mkLApply(mkLOp queryOp,[mkLVar "!x"]))
+	| (Some queryOp,Some term) -> 
+          mkLApply(mkLOp queryOp,[mkLTerm(sp,dpn,vars,term)])
+	| (None,None) -> 
+	  mkLLambda(["!x"],
+		    [],
+		    mkLApply (compareSymbols,
+			      [mkLApply (mkLOp "car",[mkLVar "!x"]),
+			       mkLIntern(id)]))
+	| (None,Some term) -> 
+	  mkLApply (compareSymbols,
+		    [mkLApply (mkLOp "car",[mkLTerm(sp,dpn,vars,term)]),
+		     mkLIntern(id)])
         )
    | (Nat n,srt,_) -> mkLInt n
    | (String s,srt,_) -> mkLString s
@@ -374,52 +391,52 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
 
    | (Op (id,_),srt,_) -> 
      let arity = opArity(sp,id,srt) in
-     (case optArgs
-        of None ->
-	   let pid = printPackageId(id,dpn) in
-           if functionSort?(sp,srt)
-              then mkLUnaryFnRef(pid,arity,vars)
-           else Const(Parameter pid)
-         | Some term ->
-	   if isSpecialBoolOpAppl(id,term)
-	   then mkLSpecialBoolOpAppl(sp,dpn,vars,id,term)
-	   else mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term)))
+     (case optArgs of
+        | None ->
+	  let pid = printPackageId(id,dpn) in
+          if functionSort?(sp,srt)
+	    then mkLUnaryFnRef(pid,arity,vars)
+	  else Const(Parameter pid)
+	| Some term ->
+	  if isSpecialBoolOpAppl(id,term)
+	    then mkLSpecialBoolOpAppl(sp,dpn,vars,id,term)
+	  else mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term)))
    | (Embed(id,true),srt,_) ->
      let rng = range(sp,srt) in
-     (case isConsDataType(sp,rng)
-        of Some _ ->
-           (case optArgs
-              of None -> mkLLambda(["!x"],[],mkLVar "!x")
-               | Some term -> mkLTerm(sp,dpn,vars,term))
-         | None -> 
+     (case isConsDataType(sp,rng) of
+        | Some _ ->
+	  (case optArgs of
+	     | None -> mkLLambda(["!x"],[],mkLVar "!x")
+	     | Some term -> mkLTerm(sp,dpn,vars,term))
+	| None -> 
           let id = mkLIntern id in
-           (case optArgs
-              of None -> mkLLambda(["!x"],
-				   [],
-				   mkLApply(mkLOp "cons",
-					    [id, mkLVar "!x"]))
-               | Some term -> 
-                 mkLApply (mkLOp "cons",[id,mkLTerm(sp,dpn,vars,term)])))
-  | (Embed(id,false),srt,_) -> 
-    (case isConsDataType(sp,srt)
-       of Some _ -> mkLBool false
-        | None -> mkLApply(mkLOp "list",[mkLIntern id]))
-  | (Quotient,srt,_) -> 
-    let dom = range(sp,srt) in
-    let Quotient(_,equiv,_) = stripSubsorts(sp,dom) in
-    let equiv = mkLTerm(sp,dpn,vars,equiv) in
-    (case optArgs
-       of None -> mkLApply(mkLOp  "slang-built-in::quotient",[equiv])
+          (case optArgs of
+	     | None -> mkLLambda(["!x"],
+				 [],
+				 mkLApply(mkLOp "cons",
+					  [id, mkLVar "!x"]))
+	     | Some term -> 
+	       mkLApply (mkLOp "cons",[id,mkLTerm(sp,dpn,vars,term)])))
+   | (Embed(id,false),srt,_) -> 
+     (case isConsDataType(sp,srt) of
+	| Some _ -> mkLBool false
+        | None   -> mkLApply(mkLOp "list",[mkLIntern id]))
+   | (Quotient,srt,_) -> 
+     let dom = range(sp,srt) in
+     let Quotient(_,equiv,_) = stripSubsorts(sp,dom) in
+     let equiv = mkLTerm(sp,dpn,vars,equiv) in
+     (case optArgs of
+	| None -> mkLApply(mkLOp  "slang-built-in::quotient",[equiv])
         | Some term -> mkLApply(mkLOp "slang-built-in::quotient-1-1",
 				[equiv,mkLTerm(sp,dpn,vars,term)]))
-  | (Choose,srt,_) ->  
-    %% let srt1 = range(sp,srt) in
-    %% let dom = domain(sp,srt1) in
-    %% Don't need the equivalence relation when doing a choose
-    %% let Quotient(_,equiv,_) = stripSubsorts(sp,dom) in
-    %% let equiv = mkLTerm(sp,dpn,vars,equiv) in
-    (case optArgs
-       of None -> mkLApply(mkLOp "slang-built-in::choose",[])
+   | (Choose,srt,_) ->  
+     %% let srt1 = range(sp,srt) in
+     %% let dom = domain(sp,srt1) in
+     %% Don't need the equivalence relation when doing a choose
+     %% let Quotient(_,equiv,_) = stripSubsorts(sp,dom) in
+     %% let equiv = mkLTerm(sp,dpn,vars,equiv) in
+     (case optArgs of
+	| None -> mkLApply(mkLOp "slang-built-in::choose",[])
         | Some term ->
 	  mkLApply(mkLOp "slang-built-in::choose-1",
 		   [mkLTerm(sp,dpn,vars,term)]))
@@ -427,15 +444,15 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
  *  Restrict and relax are implemented as identities
  *)
 
-  | (Restrict,srt,_) -> 
-    (case optArgs
-       of None -> mkLLambda(["!x"],[],mkLVar "!x")
+   | (Restrict,srt,_) -> 
+     (case optArgs of
+	| None -> mkLLambda(["!x"],[],mkLVar "!x")
         | Some term -> mkLTerm(sp,dpn,vars,term))
-  | (Relax,srt,_) -> 
-    (case optArgs
-       of None -> mkLLambda(["!x"],[],mkLVar "!x")
+   | (Relax,srt,_) -> 
+     (case optArgs of
+	| None -> mkLLambda(["!x"],[],mkLVar "!x")
         | Some term -> mkLTerm(sp,dpn,vars,term))
-  | _ -> (System.fail "Unexpected termOp")
+   | _ -> (System.fail ("Unexpected termOp: " ^ (anyToString termOp)))
 
  op flattenFailWith : MS.Term -> List (MS.Term)
 
