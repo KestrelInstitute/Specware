@@ -37,6 +37,7 @@ echo "  Verify_ACL:  IMAGE_EXTENSION      = [$IMAGE_EXTENSION]"
 echo "  Verify_ACL:  EXECUTABLE_EXTENSION = [$EXECUTABLE_EXTENSION]"
 echo "  Verify_ACL:  BATCH_LISP           = [$BATCH_LISP]"
 echo "  Verify_ACL:  BATCH_SPECWARE       = [$BATCH_SPECWARE]"
+echo "  Verify_ACL:  BIG_ALISP            = [$BIG_ALISP]"
 echo "  "
 
 if [ -f "${BIG_ALISP}" ]; then
