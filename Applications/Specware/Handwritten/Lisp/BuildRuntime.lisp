@@ -1,7 +1,7 @@
 ;; These two definitions might not be needed here
 ;; They are in BuildPreamble.lisp where they are needed
-(defvar Specware-version "4.0 Beta")
-(defvar Specware-version-name "Specware-4-0-Beta")
+(defvar Specware-version "4.0")
+(defvar Specware-version-name "Specware-4-0")
 (defvar Specware-name "Specware4")	; Name of directory and startup files
 (defvar Specware4-dir (sys:getenv "SPECWARE4"))
 (defun in-specware-dir (file) (concatenate 'string Specware4-dir "/" file))
