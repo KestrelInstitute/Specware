@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:37:44  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:01:45  gilham
  * Initial version.
  *
@@ -288,6 +291,11 @@ public class SourceText implements DocumentBinding {
     
     public Binding.Op bindOp(OpElement impl) {
         OpB b = new OpB(impl, this);
+        return b;
+    }
+    
+    public Binding.Def bindDef(DefElement impl) {
+        DefB b = new DefB(impl, this);
         return b;
     }
     

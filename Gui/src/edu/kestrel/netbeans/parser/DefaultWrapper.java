@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:45:52  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:16  gilham
  * Initial version.
  *
@@ -40,6 +43,10 @@ public class DefaultWrapper implements WrapperFactory {
     
     public OpElement wrapOp(OpElement.Impl theImpl, Element parent) {
         return new OpElement(theImpl, (SpecElement)parent);
+    }
+    
+    public DefElement wrapDef(DefElement.Impl theImpl, Element parent) {
+        return new DefElement(theImpl, (SpecElement)parent);
     }
     
     public ClaimElement wrapClaim(ClaimElement.Impl theImpl, Element parent) {

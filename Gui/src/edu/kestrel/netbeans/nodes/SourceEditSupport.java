@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:12  gilham
  * Initial version.
  *
@@ -50,6 +53,7 @@ class SourceEditSupport {
     static final String[] SPEC_MENU_NAMES = {
 	bundle.getString("MENU_CREATE_SORT"),
 	bundle.getString("MENU_CREATE_OP"),
+	bundle.getString("MENU_CREATE_DEF"),
         bundle.getString("MENU_CREATE_CLAIM")
     };
 
@@ -61,7 +65,8 @@ class SourceEditSupport {
 	return new NewType[] {
 	    new SpecElementNewType(element, (byte) 0),
             new SpecElementNewType(element, (byte) 1),
-            new SpecElementNewType(element, (byte) 2)
+            new SpecElementNewType(element, (byte) 2),
+            new SpecElementNewType(element, (byte) 3)
 	};
     }
 
@@ -124,6 +129,16 @@ class SourceEditSupport {
 		    }
 		case 2:
 		    {
+			// Adding def
+			DefElement e = new DefElement();
+			e.setName("newDef");
+			MemberCustomizer cust = new MemberCustomizer(e, "Def");
+			if (openCustomizer(cust, "TIT_NewDef") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		case 3:
+		    {
 			// Adding claim
 			ClaimElement e = new ClaimElement();
 			e.setName("newClaim()"); // NOI18N
@@ -155,6 +170,9 @@ class SourceEditSupport {
 			    ((SpecElement)element).addOp((OpElement)addingElement);
 			    return;
 			case 2:
+			    ((SpecElement)element).addDef((DefElement)addingElement);
+			    return;
+			case 3:
 			    ((SpecElement)element).addClaim((ClaimElement)addingElement);
 			    return;
 			}

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:45:53  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:17  gilham
  * Initial version.
  *
@@ -45,6 +48,12 @@ public interface ElementFactory {
 	@param sort Sort of the op
     */
     public Item createOp(String name, String sort);
+    
+    /** Creates an element for a def.
+	@param name Name of the def
+	@param params Formal parameters of the def
+    */
+    public Item createDef(String name, String[] params);
     
     /** Creates an element for a claim.
 	@param name Name of the claim

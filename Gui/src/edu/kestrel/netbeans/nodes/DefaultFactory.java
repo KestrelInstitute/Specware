@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:42:08  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:06  gilham
  * Initial version.
  *
@@ -135,6 +138,13 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     return new OpElementNode(element, writeable);
   }
 
+  /* Returns the node asociated with specified element.
+   * @return ElementNode
+   */
+  public Node createDefNode (final DefElement element) {
+    return new DefElementNode(element, writeable);
+  }
+
   /** Make a node representing a claim.
    * @param element the claim
    * @return a claim node instance
@@ -185,6 +195,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   static final int[][] FILTERS = new int[][] {
     { SpecElementFilter.SORT },
     { SpecElementFilter.OP },
+    { SpecElementFilter.DEF },
     { SpecElementFilter.CLAIM }
   };
 
@@ -192,6 +203,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   static final String[] NAMES = new String[] {
     ElementNode.bundle.getString("Sorts"), // NO18N
     ElementNode.bundle.getString("Ops"), // NO18N
+    ElementNode.bundle.getString("Defs"), // NO18N
     ElementNode.bundle.getString("Claims"), // NO18N
   };
 
@@ -199,6 +211,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   static final String[] SHORTDESCRS = new String[] {
     ElementNode.bundle.getString("Sorts_HINT"), // NO18N
     ElementNode.bundle.getString("Ops_HINT"), // NO18N
+    ElementNode.bundle.getString("Defs_HINT"), // NO18N
     ElementNode.bundle.getString("Claims_HINT"), // NO18N
   };
 
@@ -206,6 +219,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   static final String[] HELP_IDS = new String[] {
     "org.openide.src.nodes.ElementCategory.Sorts", // NO18N
     "org.openide.src.nodes.ElementCategory.Ops", // NO18N
+    "org.openide.src.nodes.ElementCategory.Defs", // NO18N
     "org.openide.src.nodes.ElementCategory.Claims" // NO18N
   };
 
@@ -213,6 +227,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   static final String[] SPEC_CATEGORY_ICONS = new String[] {
     SORTS_CATEGORY,
     OPS_CATEGORY,
+    DEFS_CATEGORY,
     CLAIMS_CATEGORY
   };
 
@@ -238,8 +253,11 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       if (element.getOps().length > 0) {
 	activeCategories.add(CATEGORIES[1]);
       }
-      if (element.getClaims().length > 0) {
+      if (element.getDefs().length > 0) {
 	activeCategories.add(CATEGORIES[2]);
+      }
+      if (element.getClaims().length > 0) {
+	activeCategories.add(CATEGORIES[3]);
       }      
     }
         
@@ -280,7 +298,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
   /**
    * Category node - represents one section under spec element node - sorts, 
-   * ops.
+   * ops, defs, claims.
    */
   static class SpecElementCategoryNode extends AbstractNode {
 
@@ -305,12 +323,13 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       switch (index) {
       case 0: setName("Sorts"); break; // NOI18N
       case 1: setName("Ops"); break; // NOI18N
-      case 2: setName("Claims"); break; // NOI18N
+      case 2: setName("Defs"); break; // NOI18N
+      case 3: setName("Claims"); break; // NOI18N
       }
     }
 
     /** Create new element node.
-     * @param index The index of type (0=sorts, 1=ops)
+     * @param index The index of type (0=sorts, 1=ops, 2=defs, 3=claims)
      * @param children the spec children of this node
      */
     private SpecElementCategoryNode(int index, SpecChildren children) {
@@ -354,6 +373,10 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       case 2:
 	return new NewType[] {
 	  new SourceEditSupport.SpecElementNewType(element, (byte) 2),
+	    };
+      case 3:
+	return new NewType[] {
+	  new SourceEditSupport.SpecElementNewType(element, (byte) 3),
 	    };
       default:
 	return super.getNewTypes();

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:37:43  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:01:41  gilham
  * Initial version.
  *
@@ -682,6 +685,10 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
             mark(element, what);
         }
         
+        public void markDef(DefElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+
         public void markClaim(ClaimElement element, int what) throws ElementPrinterInterruptException {
             mark(element, what);
         }

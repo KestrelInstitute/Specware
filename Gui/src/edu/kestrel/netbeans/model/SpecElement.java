@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:39:30  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:05  gilham
  * Initial version.
  *
@@ -232,6 +235,69 @@ public final class SpecElement extends MemberElement {
         return getSpecImpl().getOp(name);
     }
 
+    //================== Defs ===============================
+
+    /** Add a new def to the spec.
+     *  @param el the def to add
+     * @throws SourceException if impossible
+     */
+    public void addDef(DefElement el) throws SourceException {
+        if (getDef(el.getName()) != null)
+            throwAddException("FMT_EXC_AddDef", el); // NOI18N
+        getSpecImpl().changeDefs(new DefElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new defs to the spec.
+     *  @param els the defs to add
+     * @throws SourceException if impossible
+     */
+    public void addDefs(final DefElement[] els) throws SourceException {
+        for (int i = 0; i < els.length; i++)
+            if (getDef(els[i].getName()) != null)
+                throwAddException("FMT_EXC_AddDef", els[i]); // NOI18N
+        getSpecImpl().changeDefs(els, Impl.ADD);
+    }
+
+    /** Remove a def from the spec.
+     *  @param el the def to remove
+     * @throws SourceException if impossible
+     */
+    public void removeDef(DefElement el) throws SourceException {
+        getSpecImpl().changeDefs(new DefElement[] { el }, Impl.REMOVE);
+    }
+
+    /** Remove some defs from the spec.
+     *  @param els the defs to remove
+     * @throws SourceException if impossible
+     */
+    public void removeDefs(final DefElement[] els) throws SourceException {
+        getSpecImpl().changeDefs(els, Impl.REMOVE);
+    }
+
+    /** Set the defs for this spec.
+     * Previous defs are removed.
+     * @param els the new defs
+     * @throws SourceException if impossible
+     */
+    public void setDefs(DefElement[] els) throws SourceException {
+        getSpecImpl().changeDefs(els, Impl.SET);
+    }
+
+    /** Get all defs in this spec.
+     * @return the defs
+     */
+    public DefElement[] getDefs() {
+        return getSpecImpl().getDefs();
+    }
+
+    /** Find a def by name.
+     * @param name the name of the def to look for
+     * @return the element or <code>null</code> if not found
+     */
+    public DefElement getDef(String name) {
+        return getSpecImpl().getDef(name);
+    }
+
     //================== Claims ===============================
 
     /** Add a new claim to the spec.
@@ -325,6 +391,11 @@ public final class SpecElement extends MemberElement {
         }
 
         if (print(getOps(), printer)) {
+            printer.println(""); // NOI18N
+            printer.println(""); // NOI18N
+        }
+        
+        if (print(getDefs(), printer)) {
             printer.println(""); // NOI18N
             printer.println(""); // NOI18N
         }
@@ -455,7 +526,25 @@ public final class SpecElement extends MemberElement {
 	 */
         public OpElement getOp(String name);
         
-        /** Change the set of claims.
+        /** Change the set of defs.
+	 * @param elems the new defs
+	 * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+	 * @exception SourceException if impossible
+	 */
+        public void changeDefs(DefElement[] elems, int action) throws SourceException;
+
+        /** Get all defs.
+	 * @return the defs
+	 */
+        public DefElement[] getDefs();
+
+        /** Find a def by signature.
+	 * @param arguments the argument types to look for
+	 * @return the def, or <code>null</code> if it does not exist
+	 */
+        public DefElement getDef(String name);
+
+         /** Change the set of claims.
 	 * @param elems the new claims
 	 * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
 	 * @exception SourceException if impossible
@@ -482,6 +571,8 @@ public final class SpecElement extends MemberElement {
         private MemoryCollection.Sort sorts;
         /** collection of ops */
         private MemoryCollection.Op ops;
+        /** collection of defs */
+        private MemoryCollection.Def defs;
         /** collection of claims */
         private MemoryCollection.Claim claims;
 
@@ -500,6 +591,7 @@ public final class SpecElement extends MemberElement {
         public void copyFrom (SpecElement copyFrom) {
             changeSorts (copyFrom.getSorts (), SET);
             changeOps (copyFrom.getOps (), SET);
+            changeDefs (copyFrom.getDefs (), SET);
             changeClaims(copyFrom.getClaims (), SET);
         }
 
@@ -565,6 +657,37 @@ public final class SpecElement extends MemberElement {
 	 * @param action the action to do(ADD, REMOVE, SET)
 	 * @exception SourceException if the action cannot be handled
 	 */
+        public synchronized void changeDefs(DefElement[] elems, int action) {
+            initDefs();
+            defs.change(elems, action);
+        }
+
+        public synchronized DefElement[] getDefs() {
+            initDefs();
+            return(DefElement[])defs.toArray();
+        }
+
+        /** Finds a def with given name and argument types.
+	 * @param source the name of source mode
+	 * @param target the name of target mode
+	 * @return the element or null if such def does not exist
+	 */
+        public synchronized DefElement getDef(String name) {
+            initDefs();
+            return(DefElement)defs.find(name);
+        }
+
+        void initDefs() {
+            if (defs == null) {
+                defs = new MemoryCollection.Def(this);
+            }
+        }
+
+        /** Changes set of elements.
+	 * @param elems elements to change
+	 * @param action the action to do(ADD, REMOVE, SET)
+	 * @exception SourceException if the action cannot be handled
+	 */
         public synchronized void changeClaims(ClaimElement[] elems, int action) {
             initClaims();
             claims.change(elems, action);
@@ -593,6 +716,8 @@ public final class SpecElement extends MemberElement {
                 col = sorts;
 	    } else if (marker instanceof OpElement) {
                 col = ops;
+	    } else if (marker instanceof DefElement) {
+                col = defs;
             } else if (marker instanceof ClaimElement) {
                 col = claims;
             } else {

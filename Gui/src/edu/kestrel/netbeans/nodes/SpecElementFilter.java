@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:14  gilham
  * Initial version.
  *
@@ -25,16 +28,18 @@ public class SpecElementFilter extends SourceElementFilter {
     public static final int     SORT = 1;
     /** Specifies a child representing an op. */
     public static final int     OP = 2;
+    /** Specifies a child representing a def . */
+    public static final int     DEF = 4;
     /** Specifies a child representing a claim . */
-    public static final int     CLAIM = 4;
+    public static final int     CLAIM = 8;
     /** Does not specify a child type. */
-    public static final int     ALL = SORT | OP | CLAIM;
+    public static final int     ALL = SORT | OP | DEF | CLAIM;
                                       
 
     /** Default order and filtering.
-    * Places all sorts, ops and claims together in one block.
+    * Places all sorts, ops, defs and claims together in one block.
     */
-    public static final int[]   DEFAULT_ORDER = {SORT | OP | CLAIM};
+    public static final int[]   DEFAULT_ORDER = {SORT | OP | DEF | CLAIM};
 
     /** stores property value */
     private boolean             sorted = true;

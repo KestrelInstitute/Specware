@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:13  gilham
  * Initial version.
  *
@@ -50,7 +53,8 @@ public final class SourceOptions extends SystemOption {
     private static final byte T_SPEC = 0;
     private static final byte T_SORT = 1;
     private static final byte T_OP = 2;
-    private static final byte T_CLAIM = 3;
+    private static final byte T_DEF = 3;
+    private static final byte T_CLAIM = 4;
 
 
     /** Names of all properties. */
@@ -58,6 +62,7 @@ public final class SourceOptions extends SystemOption {
         "specElementFormat", // NOI18N
         "sortElementFormat", // NOI18N
         "opElementFormat",   //NOI18N
+        "defElementFormat",   //NOI18N
         "claimElementFormat", // NOI18N
     };
     
@@ -114,6 +119,9 @@ public final class SourceOptions extends SystemOption {
     public static final String PROP_OP_FORMAT = PROP_NAMES[T_OP];
 
     /** Property name of the op display format. */
+    public static final String PROP_DEF_FORMAT = PROP_NAMES[T_DEF];
+
+    /** Property name of the op display format. */
     public static final String PROP_CLAIM_FORMAT = PROP_NAMES[T_CLAIM];
 
     /** Property name of the spec display format. */
@@ -154,13 +162,6 @@ public final class SourceOptions extends SystemOption {
         return getElementFormat(T_SPEC);
     }
 
-    /** Set the sort format.
-    * @param format the new format
-    */
-    public void setSortElementFormat(ElementFormat format) {
-        setElementFormat(T_SORT, format);
-    }
-    
     private ElementFormat getElementFormat(int type) {
         synchronized (this) {
             if (formats[type] != null)
@@ -173,6 +174,13 @@ public final class SourceOptions extends SystemOption {
         return DEFAULT_FORMATS_SHORT[type];
     }
 
+    /** Set the sort format.
+    * @param format the new format
+    */
+    public void setSortElementFormat(ElementFormat format) {
+        setElementFormat(T_SORT, format);
+    }
+    
     /** Get the sort format.
     * @return the current format
     */
@@ -192,6 +200,20 @@ public final class SourceOptions extends SystemOption {
     */
     public ElementFormat getOpElementFormat() {
         return getElementFormat(T_OP);
+    }
+
+    /** Set the def format.
+    * @param format the new format
+    */
+    public void setDefElementFormat(ElementFormat format) {
+        setElementFormat(T_DEF, format);
+    }
+
+    /** Get the def format.
+    * @return the current format
+    */
+    public ElementFormat getDefElementFormat() {
+        return getElementFormat(T_DEF);
     }
 
     /** Set the claim format.
@@ -232,6 +254,14 @@ public final class SourceOptions extends SystemOption {
     public ElementFormat getOpElementLongFormat() {
         loadDefaultFormats();
         return DEFAULT_FORMATS_LONG[T_OP];
+    }
+
+    /** Get the def format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getDefElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_DEF];
     }
 
     /** Get the claim format for longer hints.
@@ -284,6 +314,10 @@ public final class SourceOptions extends SystemOption {
                 m.setName(id);
                 m.setSort(id);
                 els[T_OP] = m;
+
+                DefElement w = new DefElement();
+                w.setName(id); // NOI18N
+                els[T_DEF] = w;
 
                 ClaimElement c = new ClaimElement();
                 c.setName(id);

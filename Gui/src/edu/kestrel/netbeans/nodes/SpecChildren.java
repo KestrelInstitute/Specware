@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:13  gilham
  * Initial version.
  *
@@ -62,6 +65,7 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
         propToFilter = new HashMap ();
         propToFilter.put (ElementProperties.PROP_SORTS, new Integer (SpecElementFilter.SORT));
         propToFilter.put (ElementProperties.PROP_OPS, new Integer (SpecElementFilter.OP));
+        propToFilter.put (ElementProperties.PROP_DEFS, new Integer (SpecElementFilter.DEF));
         propToFilter.put (ElementProperties.PROP_CLAIMS, new Integer (SpecElementFilter.CLAIM));
     }
 
@@ -170,6 +174,9 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
         if (key instanceof OpElement) {
             return new Node[] { hookNodeName(factory.createOpNode((OpElement)key)) };
         }
+        if (key instanceof DefElement) {
+            return new Node[] { hookNodeName(factory.createDefNode((DefElement)key)) };
+        }
         if (key instanceof ClaimElement) {
             return new Node[] { hookNodeName(factory.createClaimNode((ClaimElement)key)) };
         }
@@ -218,6 +225,9 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
         if ((elementType & SpecElementFilter.OP) != 0) {
             keys.addAll(Arrays.asList(element.getOps()));
         }
+        if ((elementType & SpecElementFilter.DEF) != 0) {
+            keys.addAll(Arrays.asList(element.getDefs()));
+        }
         if ((elementType & SpecElementFilter.CLAIM) != 0) {
             keys.addAll(Arrays.asList(element.getClaims()));
         }
@@ -254,6 +264,8 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
                         filter = SpecElementFilter.SORT;
                     else if (src instanceof OpElement) 
                         filter = SpecElementFilter.OP;
+                    else if (src instanceof DefElement) 
+                        filter = SpecElementFilter.DEF;
                     else if (src instanceof ClaimElement) 
                         filter = SpecElementFilter.CLAIM;
                 } else

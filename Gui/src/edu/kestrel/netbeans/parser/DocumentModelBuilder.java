@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:45:52  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:16  gilham
  * Initial version.
  *
@@ -81,7 +84,18 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	return info;
     }
     
-    /** Creates an element for an op.
+    /** Creates an element for a def.
+	@param str The def string.
+    */
+    public Item	createDef(String name, String[] params) {
+	DefInfo info = new DefInfo(name, params);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createDef(): "+info);
+	}
+	return info;
+    }
+  
+    /** Creates an element for a claim.
 	@param parameter Name of the parameter to be assigned value.
 	@param value Value to be assigned to the parameter.
     */
@@ -254,6 +268,8 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 		parentInfo.addMember(SpecInfo.SORT, childInfo);
 	    } else if (child instanceof OpInfo) {
 		parentInfo.addMember(SpecInfo.OP, childInfo);
+	    } else if (child instanceof DefInfo) {
+		parentInfo.addMember(SpecInfo.DEF, childInfo);
 	    } else if (child instanceof ClaimInfo) {
 		parentInfo.addMember(SpecInfo.CLAIM, childInfo);
 	    }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:45:53  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:28  gilham
  * Initial version.
  *
@@ -33,7 +36,8 @@ import edu.kestrel.netbeans.codegen.TextBinding;
 public class SpecInfo extends BaseElementInfo {
     public static final int SORT = 0;
     public static final int OP = 1;
-    public static final int CLAIM = 2;
+    public static final int DEF = 2;
+    public static final int CLAIM = 3;
 
     Collection           allMembers;
     ChildCollection[]    memberLists;
@@ -47,6 +51,10 @@ public class SpecInfo extends BaseElementInfo {
         new TextPositionMatch(), new NameFinder()
     };
 
+    static final ElementMatch.Finder[] DEFAULT_DEF_FINDERS = {
+        new TextPositionMatch(), new NameFinder()
+    };
+
     static final ElementMatch.Finder[] DEFAULT_CLAIM_FINDERS = {
         new TextPositionMatch(), new NameFinder()
     };
@@ -54,18 +62,21 @@ public class SpecInfo extends BaseElementInfo {
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
         DEFAULT_SORT_FINDERS,
         DEFAULT_OP_FINDERS,
+        DEFAULT_DEF_FINDERS,
         DEFAULT_CLAIM_FINDERS
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
         ElementProperties.PROP_SORTS,
         ElementProperties.PROP_OPS,
+        ElementProperties.PROP_DEFS,
         ElementProperties.PROP_CLAIMS
     };
     
     private static final Class[] CHILDREN_TYPES = {
 	SortElement.class,
         OpElement.class,
+        DefElement.class,
         ClaimElement.class
     };
     
@@ -107,6 +118,9 @@ public class SpecInfo extends BaseElementInfo {
 		break;
 	    case OP:
 		curMembers = spec.getOps();
+		break;
+	    case DEF:
+		curMembers = spec.getDefs();
 		break;
             case CLAIM:
                 curMembers = spec.getClaims();

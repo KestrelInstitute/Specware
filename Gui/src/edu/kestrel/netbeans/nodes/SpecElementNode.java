@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:14  gilham
  * Initial version.
  *
@@ -49,12 +52,14 @@ public class SpecElementNode extends MemberElementNode {
     /** Menu labels */
     private static final String MENU_CREATE_SORT;
     private static final String MENU_CREATE_OP;
+    private static final String MENU_CREATE_DEF;
     private static final String MENU_CREATE_CLAIM;
 
     static {
         ResourceBundle bundle = NbBundle.getBundle(SpecElementNode.class);
         MENU_CREATE_SORT = bundle.getString("MENU_CREATE_SORT");
         MENU_CREATE_OP = bundle.getString("MENU_CREATE_OP");
+        MENU_CREATE_DEF = bundle.getString("MENU_CREATE_DEF");
         MENU_CREATE_CLAIM = bundle.getString("MENU_CREATE_CLAIM");
     }
 
@@ -275,6 +280,8 @@ public class SpecElementNode extends MemberElementNode {
 			OpElement me = (OpElement) addingElement;
 			me  = (OpElement) me.clone();
 			spec.addOp(me);
+                    } else if (addingElement instanceof DefElement) {
+			spec.addDef((DefElement)addingElement);
 		    } else if (addingElement instanceof ClaimElement) {
 			ClaimElement me = (ClaimElement) addingElement;
 			me  = (ClaimElement) me.clone();
@@ -305,6 +312,8 @@ public class SpecElementNode extends MemberElementNode {
 				    origSpec.removeSort((SortElement)addingElement);
 				} else if (addingElement instanceof OpElement) {
 				    origSpec.removeOp((OpElement)addingElement);
+                                } else if (addingElement instanceof DefElement) {
+				    origSpec.removeDef((DefElement)addingElement);
 				} else if (addingElement instanceof ClaimElement) {
 				    origSpec.removeClaim((ClaimElement)addingElement);
 				}

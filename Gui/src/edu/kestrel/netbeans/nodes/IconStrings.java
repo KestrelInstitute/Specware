@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:02:08  gilham
  * Initial version.
  *
@@ -29,6 +32,9 @@ interface IconStrings {
      static final String OP =
         "edu/kestrel/resources/images/OpNodeIcon"; // NOI18N
 
+     static final String DEF =
+        "edu/kestrel/resources/images/DefNodeIcon"; // NOI18N
+
      static final String CLAIM =
         "edu/kestrel/resources/images/ClaimNodeIcon"; // NOI18N
      
@@ -43,6 +49,9 @@ interface IconStrings {
 
      static final String OPS_CATEGORY =
         "edu/kestrel/resources/images/OpNodeIcon"; // NOI18N
+
+     static final String DEFS_CATEGORY =
+        "edu/kestrel/resources/images/DefNodeIcon"; // NOI18N
 
      static final String CLAIMS_CATEGORY =
         "edu/kestrel/resources/images/ClaimNodeIcon"; // NOI18N

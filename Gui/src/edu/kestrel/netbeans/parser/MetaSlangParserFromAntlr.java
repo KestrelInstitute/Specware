@@ -795,7 +795,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case LITERAL_def:
 			{
-				opDefinition();
+				item=opDefinition();
 				break;
 			}
 			case LITERAL_theorem:
@@ -1626,14 +1626,18 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return text;
 	}
 	
-	private final void opDefinition() throws RecognitionException, TokenStreamException {
+	private final ElementFactory.Item  opDefinition() throws RecognitionException, TokenStreamException {
+		ElementFactory.Item def;
 		
+		Token  begin = null;
 		
+		def = null;
 		String name = null;
 		String[] params = null;
 		
 		
 		try {      // for error handling
+			begin = LT(1);
 			match(LITERAL_def);
 			name=qualifiableOpNames();
 			{
@@ -1658,6 +1662,11 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 			}
 			expression();
+			if ( inputState.guessing==0 ) {
+				def = builder.createDef(name, params);
+				ParserUtil.setBounds(builder, def, begin, LT(0));
+				
+			}
 		}
 		catch (RecognitionException ex) {
 			if (inputState.guessing==0) {
@@ -1668,6 +1677,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			  throw ex;
 			}
 		}
+		return def;
 	}
 	
 	private final ElementFactory.Item  claimDefinition() throws RecognitionException, TokenStreamException {

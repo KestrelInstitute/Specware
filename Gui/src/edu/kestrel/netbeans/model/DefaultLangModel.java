@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:39:29  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:01:54  gilham
  * Initial version.
  *
@@ -150,6 +153,13 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
     public OpElementImpl createOp(SpecElement parent) {
         OpElementImpl impl = new OpElementImpl(this);
         getWrapper().wrapOp(impl, parent);
+        impl.setParent(parent);
+        return impl;
+    }
+    
+    public DefElementImpl createDef(SpecElement parent) {
+        DefElementImpl impl = new DefElementImpl(this);
+        getWrapper().wrapDef(impl, parent);
         impl.setParent(parent);
         return impl;
     }

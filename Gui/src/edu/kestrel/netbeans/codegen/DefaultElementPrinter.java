@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:37:43  weilyn
+ * Added support for claims.
+ *
  * Revision 1.1  2003/01/30 02:01:40  gilham
  * Initial version.
  *
@@ -80,6 +83,15 @@ public class DefaultElementPrinter implements ElementPrinter {
     * @exception ElementPrinterInterruptException - see class description
     */
     public void markOp(OpElement element, int what)
+	throws ElementPrinterInterruptException {
+    }
+
+    /** Mark a notable point in a def element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markDef(DefElement element, int what)
 	throws ElementPrinterInterruptException {
     }
 

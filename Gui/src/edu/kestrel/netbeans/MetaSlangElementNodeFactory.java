@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:00:52  weilyn
+ * Added createClaimNode method
+ *
  * Revision 1.1  2003/01/30 02:01:34  gilham
  * Initial version.
  *
@@ -31,6 +34,7 @@ import org.openide.util.NbBundle;
 import org.openide.util.actions.SystemAction;
 import org.openide.*;
 
+import edu.kestrel.netbeans.actions.ProcessUnitAction;
 import edu.kestrel.netbeans.model.*;
 import edu.kestrel.netbeans.nodes.*;
 import edu.kestrel.netbeans.parser.MetaSlangParser;
@@ -62,6 +66,8 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 	SystemAction.get(EditAction.class),
 	SystemAction.get(OpenAction.class),
 	null,
+        SystemAction.get(ProcessUnitAction.class),
+        null,
 	SystemAction.get(CutAction.class),
 	SystemAction.get(CopyAction.class),
 	SystemAction.get(PasteAction.class),
@@ -134,8 +140,10 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 
             filter.setOrder (new int[] {
 		SpecElementFilter.SORT,
-		    SpecElementFilter.OP,
-		    });
+		SpecElementFilter.OP,
+                SpecElementFilter.DEF,
+                SpecElementFilter.CLAIM,
+            });
             children.setFilter (filter);
         }
         else {
@@ -161,6 +169,16 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
      */
     public Node createOpNode(OpElement element) {
         OpElementNode n = new OpElementNode(element, true);
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(DEFAULT_ACTIONS);
+        return n;
+    }
+
+    /** Returns the node asociated with specified element.
+     * @return ElementNode
+     */
+    public Node createDefNode(DefElement element) {
+        DefElementNode n = new DefElementNode(element, true);
         n.setDefaultAction(SystemAction.get(EditAction.class));
         n.setActions(DEFAULT_ACTIONS);
         return n;

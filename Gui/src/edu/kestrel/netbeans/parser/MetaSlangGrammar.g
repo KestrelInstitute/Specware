@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/02/14 17:00:38  weilyn
+ * Added prove term to grammar.
+ *
  * Revision 1.9  2003/02/13 19:44:09  weilyn
  * Added code to create claim objects.
  *
@@ -333,19 +336,23 @@ private definition returns[ElementFactory.Item item]
 {
     item=null;
 }
-    : opDefinition
+    : item=opDefinition
     | item=claimDefinition
     ;
 
-private opDefinition
+private opDefinition returns[ElementFactory.Item def]
 {
+    def = null;
     String name = null;
     String[] params = null;
 }
-    : "def" name=qualifiableOpNames
+    : begin:"def"
+      name=qualifiableOpNames
       ((formalOpParameters equals) => params=formalOpParameters equals
        | equals) 
-      expression
+      expression            {def = builder.createDef(name, params);
+                             ParserUtil.setBounds(builder, def, begin, LT(0));
+                            }
     ;
 
 private claimDefinition returns[ElementFactory.Item claim]
