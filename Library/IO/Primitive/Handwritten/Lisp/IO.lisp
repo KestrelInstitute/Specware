@@ -174,3 +174,17 @@
 			 index)))
 	    (cons :|Error| (cons error-msg string))))))))
 
+;; translate invalid file name characters to valid ones
+(defun convertToFileName(str)
+  (let* ((chars (STRING-SPEC::explode str))
+	 (translated-char-strings 
+	  (mapcar #'(lambda (ch) 
+		      (case ch
+			(#\? "_p")
+			((#\! #\@ #\$ #\^ #\& #\* #\~ #\+ #\- #\= #\| #\< #\> #\/ #\: #\\ #\` #\')
+			 (format nil "_x~a" (char-code ch)))
+			(t (string ch))))
+		  chars)))
+    (declare (type list translated-char-strings))
+    (the cl:simple-base-string 
+      (apply #'concatenate 'string translated-char-strings))))

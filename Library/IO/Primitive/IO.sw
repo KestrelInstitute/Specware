@@ -17,6 +17,7 @@ IO qualifying spec {
   op fileWriteTime         : Filename -> Time
   op nullFileWriteTime     : Time
   op currentTime           : () -> Time
+  op convertToFileName     : String -> Filename
 
   op fileWritable          : Filename -> Boolean
   op readBytesFromFile     : Filename -> List Byte
@@ -26,7 +27,6 @@ IO qualifying spec {
   def writeStringToFile (string, filename) =
     writeBytesToFile (map ord (explode string),
 		      filename)
-
 
 }
 \end{spec}
