@@ -118,6 +118,7 @@ enters something bad. A ParserError is raised when the file parser fails.
     | DiagError    Position * String
     | SpecError    Position * String
     | CircularDefinition URI
+    | Proof       Position * String
 \end{spec}
 
 The result of a statement is \verb+Ok+ or an exception.

@@ -58,24 +58,24 @@ spec {
   op arithmeticSorts: List LispCell
   def arithmeticSorts = 
       [ 
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "integer"))],
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "natural"))],
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "logical"))],
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "char"))],
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "string"))],
-	Lisp.list [declare_subsort, Lisp.quote(Lisp.symbol("SNARK", "integer")),
-					       Lisp.quote(Lisp.symbol("SNARK", "natural"))]
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "INTEGER"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "NATURAL"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "LOGICAL"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "CHAR"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "STRING"))],
+	Lisp.list [declare_subsort, Lisp.quote(Lisp.symbol("SNARK", "INTEGER")),
+					       Lisp.quote(Lisp.symbol("SNARK", "NATURAL"))]
       ]
 
   op arithmeticFunctions: List LispCell
   def arithmeticFunctions =
       [
 	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "+")), Lisp.nat(2),
-		   Lisp.symbol("KEYWORD","associative"), Lisp.bool(true),
-		   Lisp.symbol("KEYWORD","commutative"), Lisp.bool(true)],
+		   Lisp.symbol("KEYWORD","ASSOCIATIVE"), Lisp.bool(true),
+		   Lisp.symbol("KEYWORD","COMMUTATIVE"), Lisp.bool(true)],
 	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "*")), Lisp.nat(2),
-		   Lisp.symbol("KEYWORD","associative"), Lisp.bool(true),
-		   Lisp.symbol("KEYWORD","commutative"), Lisp.bool(true)]
+		   Lisp.symbol("KEYWORD","ASSOCIATIVE"), Lisp.bool(true),
+		   Lisp.symbol("KEYWORD","COMMUTATIVE"), Lisp.bool(true)]
 
 %	"(snark::declare-function-symbol
 %                'snark::+ 2 
@@ -105,15 +105,15 @@ spec {
 		   Lisp.quote(Lisp.list [ Lisp.symbol("SNARK", "logical"),
 					 Lisp.symbol("SNARK", "logical"),
 					 Lisp.symbol("SNARK", "logical")]),
-		   Lisp.symbol("KEYWORD","associative"), Lisp.bool(true),
-		   Lisp.symbol("KEYWORD","commutative"), Lisp.bool(true)],
+		   Lisp.symbol("KEYWORD","ASSOCIATIVE"), Lisp.bool(true),
+		   Lisp.symbol("KEYWORD","COMMUTATIVE"), Lisp.bool(true)],
 	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "logical-or")), Lisp.nat(2),
 		   Lisp.symbol("KEYWORD","SORT"),
 		   Lisp.quote(Lisp.list [ Lisp.symbol("SNARK", "logical"),
 					 Lisp.symbol("SNARK", "logical"),
 					 Lisp.symbol("SNARK", "logical")]),
-		   Lisp.symbol("KEYWORD","associative"), Lisp.bool(true),
-		   Lisp.symbol("KEYWORD","commutative"), Lisp.bool(true)]
+		   Lisp.symbol("KEYWORD","ASSOCIATIVE"), Lisp.bool(true),
+		   Lisp.symbol("KEYWORD","COMMUTATIVE"), Lisp.bool(true)]
        ]
 
 %"(snark::declare-function-symbol 'snark::logical-& 2
@@ -161,11 +161,24 @@ spec {
 		    | Arrow _ -> Lisp.bool true
 		    | TyVar _ -> Lisp.bool true
   
+  def snarkPredicateDecl(spc, name, srt, dom, arity) =
+    case productOpt(spc, dom) of
+      Some fields -> 
+	let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(srt, false))
+	fields in
+	Lisp.list[declare_predicate,
+		  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
+		  Lisp.symbol("KEYWORD","SORT"),
+		  Lisp.quote(Lisp.cons(Lisp.symbol("SNARK","BOOLEAN"), Lisp.list(domSortList)))]
+  
   op snarkFunctionNoCurryDecl: Spec * String * Sort * Nat -> LispCell
 
   def snarkFunctionNoCurryDecl(spc, name, srt, arity) =
     case arrowOpt(spc, srt) of
       Some (dom, rng) ->
+	case rng of
+	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateDecl(spc, name, srt, dom, arity)
+	  | _ ->
 	case productOpt(spc, dom) of
 	  Some fields -> 
 	    let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(srt, false))
@@ -210,14 +223,19 @@ spec {
       then snarkFunctionDecl(spc, name, srt)
       else snarkFunctionDecl(spc, name, srt)
 
+  op snarkBuiltInOps: List LispCell
+
+  def snarkBuiltInOps = arithmeticFunctions
+  
   op snarkOpDecls: Spec -> List LispCell
 
   def snarkOpDecls(spc) =
     let opsigs = specOps(spc) in
     let snarkOpDecls =
-          mapPartial(fn (qname, name, _, srt) -> snarkOpDeclPartial(spc, name, srt))
+          mapPartial(fn (qname, name, _, srt) -> 
+		           snarkOpDeclPartial(spc, mkSnarkName(qname,name), srt))
                     opsigs in
-      snarkOpDecls
+      snarkBuiltInOps ++ snarkOpDecls
 
 
   op LISP.PPRINT: LispCell -> LispCell

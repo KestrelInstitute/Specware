@@ -268,6 +268,10 @@ sense that no toplevel functions return anything.
                "Type error: " ^ msg 
              ^ "\n  found at " ^ (printAll position)
 
+         | Proof (position, msg) ->
+               "Proof error: " ^ msg 
+             ^ "\n  found at " ^ (printAll position)
+
          | CircularDefinition uri ->
                "Circular definition: " ^ showURI uri
 

@@ -40,7 +40,20 @@ spec {
     let res = Lisp.list snarkVarList in
       res
     
-  def snarkBoolOp(id) = Lisp.symbol("SNARK",id)
+  op mkSnarkName: Qualifier * Id -> String
+
+  def mkSnarkName(qual, id) =
+    case (qual, id) of
+      | ("Boolean", "~") -> "NOT"
+      | ("Boolean", "&") -> "AND"
+      | ("Boolean", "or") -> "OR"
+      | ("Boolean", "=>") -> "IMPLIES"
+      | ("Boolean", "<=>") -> "IFF"
+      | _ -> id
+
+  def snarkBoolOp(id) = 
+    let name = mkSnarkName("Boolean", id) in
+       Lisp.symbol("SNARK", name)
 
   op mkSnarkFmlaApp: Spec * String * StringSet.Set * Fun * Sort * Term -> LispCell
 
@@ -78,6 +91,8 @@ spec {
 		      mkSnarkFmla(sp, dpn, vars, c),
 		      mkSnarkFmla(sp, dpn, vars, t),
 		      mkSnarkFmla(sp, dpn, vars, e)]
+      | Fun ((Bool true), Boolean, _) -> Lisp.symbol("SNARK","TRUE")
+      | Fun ((Bool false), Boolean, _) -> Lisp.symbol("SNARK","FALSE")
       | _ -> mkSnarkTerm(sp, dpn, vars, fmla)
 
   op mkSnarkTermApp: Spec * String * StringSet.Set * Fun * Sort * Term -> LispCell
