@@ -90,17 +90,17 @@ coherence conditions of the morphism elements.
               (let dom_sorts = findAllSorts (dom_spec, dom_qid) in
 	       let dom_ops   = findAllOps   (dom_spec, dom_qid) in
 	       case (dom_sorts, dom_ops) of
-		 | (None, None) ->
+		 | ([], []) ->
 		   fail ("morphism: Source sort/op identifier "^dom_qualifier^"."^dom_id^ " not found.")
 
-		 | (((Qualified (found_qualifier, found_id))::_,_,_)::rs, None)  ->
+		 | (((Qualified (found_qualifier, found_id))::_,_,_)::rs, [])  ->
 		   (if rs = [] or found_qualifier = UnQualified 
 		      then ()
 		      else fail("morphism: Ambiguous source sort name "^ dom_id);
 		    (op_map, 
 		     insertAQualifierMap (sort_map, found_qualifier, found_id, findCodSort cod_qid)))
 
-		 | (None, ((Qualified (found_qualifier, found_id))::_,_,_,_)::rs) ->
+		 | ([], ((Qualified (found_qualifier, found_id))::_,_,_,_)::rs) ->
 		   (if rs = [] or found_qualifier = UnQualified 
 		      then ()
 		      else fail("morphism: Ambiguous source op name "^dom_id);
