@@ -73,17 +73,20 @@ be the option to run each (test ...) form in a fresh image.
 			  dir)))
 	  (loop for dir-item in (directory dirpath)
 		unless (equal (pathname-name dir-item) "CVS")
-		do (let ((subdir (make-pathname :directory (namestring dir-item))))
-		     (when (probe-file subdir)
-		       (run-test-directories-rec-fn (list subdir))))))))
+		do ;; Work around allegro bug in directory
+		   #+allegro (setq dir-item (make-pathname :directory (namestring dir-item))) 
+		   (when (specware::directory? dir-item)
+		     (run-test-directories-rec-fn (list dir-item)))))))
 
 (defun run-test-directories-fn (dirs)
   (loop for dir in dirs
      do (let* ((dirpath (if (stringp dir)
-			    (make-pathname :directory dir)
+			    (parse-namestring (specware::ensure-final-slash dir))
 			  dir))
-	       (filepath (merge-pathnames *test-driver-file-name* dirpath)))
-	  (process-test-file filepath))))
+	       (filepath (merge-pathnames (make-pathname :name *test-driver-file-name*)
+					  dirpath)))
+	  (when (probe-file filepath)
+	    (process-test-file filepath)))))
 
 (defun get-temporary-directory ()
   (get-temporary-directory-i 0))
@@ -137,11 +140,11 @@ be the option to run each (test ...) form in a fresh image.
 
 (defun test-directories-fn (dirs)
   (loop for dir in dirs
-     do (let* ((dirpath (make-pathname :directory dir))
+     do (let* ((dirpath (make-pathname :directory (if (equal dir ".") nil dir)))
 	       (source (merge-pathnames dirpath *test-directory*))
 	       (target (merge-pathnames dirpath *test-temporary-directory*)))
 	  ;(ensure-directories-exist target)
-	  (cl-user::copy-directory source target))))
+	  (specware::copy-directory source target))))
 
 (defmacro test (&body test-forms)
   `(progn ,@(loop for fm in test-forms collect `(test-1 ,@fm))))

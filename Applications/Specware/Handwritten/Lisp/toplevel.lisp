@@ -255,7 +255,7 @@
 	      (specware::setenv "SWPATH" new-swpath)
 	      (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))
 	  (specware::setenv "SWPATH" old-swpath))
-	(let (*redefinition-warnings*)
+	(let (#+allegro *redefinition-warnings*)
 	  ;; Load resulting lisp code:
 	  (load (make-pathname :type "lisp" :defaults tmp-cl))
 	  (if *swe-return-value?* swe::tmp
@@ -283,8 +283,8 @@
 			       (format t "the compiled function ~A" fn))))
 			 (format t "~&~%"))))
 		    (t
-		     (warn "No value for expression?")))))
-	  (values))
+		     (warn "No value for expression?")))
+	      (values))))
       "Specware Processing Failed!")))
 #+allegro
 (top-level:alias ("swe" :case-sensitive :string) (x) (swe x))
@@ -454,6 +454,7 @@
     (princ System-spec::specwareDebug?)))
 
 (defun swpath  (&optional str)
+  (setq str (strip-extraneous str))
   (if (or (null str) (equal str ""))
       (princ (specware::getenv "SWPATH"))
     (let ((str (string str)))
@@ -511,7 +512,7 @@
     (if ch
 	(progn (unread-char ch)
 	       (if (fboundp fn)
-		   (funcall fn (strip-extraneous (read-line)))
+		   (funcall fn (read-line))
 		 (progn (read-line)
 			(warn "Unknown command ~s" command))))
       (if (fboundp fn)
@@ -535,13 +536,13 @@
 
 #-allegro
 (defun ls (&optional (str ""))
-  (format t "Not yet implemented")
+  #+cmu (ext:run-program "ls" (if (equal str "") () (list str)) :output t)
+  #-cmu (format t "Not yet implemented")
   (values))
 
 #-allegro
 (defun dir (&optional (str ""))
-  (format t "Not yet implemented")
-  (values))
+  (ls str))
 
 
 #+allegro
