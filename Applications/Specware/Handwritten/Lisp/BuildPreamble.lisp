@@ -27,6 +27,7 @@
 ;; Override normal definition because of an apparent Allegro bug in
 ;; generate-application where excl::compile-file-if-needed compiles
 ;; even if not needed
+#+allegro
 (defun compile-file-if-needed (file) file)
 
 ;;;Patch .fasl files will be named in the form "patch-4-0-x.fasl" and
