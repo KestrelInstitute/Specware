@@ -2,6 +2,7 @@
  <!ENTITY install SYSTEM "install.dbk">
  <!ENTITY start SYSTEM "start.dbk">
  <!ENTITY model SYSTEM "model.dbk">
+ <!ENTITY defining SYSTEM "defining.dbk">
  <!ENTITY process SYSTEM "process.dbk">
  <!ENTITY debug SYSTEM "debug.dbk">
 
@@ -39,6 +40,7 @@
 &install;
 &start;
 &model;
+&defining;
 &process;
 &debug;
 
