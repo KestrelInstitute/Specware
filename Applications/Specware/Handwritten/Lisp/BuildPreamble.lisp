@@ -12,7 +12,6 @@
 (require "eli")
 (require "sock")
 (require "trace")
-(require "prof")
 
 ;; Override normal definition because of an apparent Allegro bug in
 ;; generate-application where excl::compile-file-if-needed compiles
