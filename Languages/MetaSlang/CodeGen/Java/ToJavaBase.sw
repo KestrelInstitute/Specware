@@ -91,6 +91,7 @@ op mkPrimOpsClsDecl: ClsDecl
 def mkPrimOpsClsDecl =
   ([], (primitiveClassName, None, []), emptyClsBody)
 
+%% TO BE REMOVED
 op varsToFormalParams: Spec -> Vars -> List FormPar * Collected
 def varsToFormalParams spc vars =
 %  map varToFormalParam vars
@@ -98,14 +99,26 @@ def varsToFormalParams spc vars =
 	 let (fp0,col0) = varToFormalParam spc v in
 	 (concat(fp,[fp0]),concatCollected(col,col0))) ([],nothingCollected) vars
 
+
+op varsToFormalParamsM: Vars -> JGenEnv (List FormPar)
+def varsToFormalParamsM vars =
+  foldM (fn fps -> fn v ->
+	 {
+	  fp0 <- varToFormalParamM v;
+	  return(concat(fps,[fp0]))
+	 }) [] vars
+
 op varToFormalParam: Spec -> Var -> FormPar * Collected
-
-%def varToFormalParam_v2(var as (id, srt as Base (Qualified (q, srtId), _, _))) =
-%  (false, tt(srtId), (id, 0))
-
 def varToFormalParam spc (variable as (id, srt)) =
   let (ty,col) = tt_v3 spc srt in
   ((false, ty, (id, 0)),col)
+
+op varToFormalParamM: Var -> JGenEnv FormPar
+def varToFormalParamM(id,srt) =
+  {
+   ty <- tt_v3M srt;
+   return (false,ty,(id,0))
+  }
 
 op fieldToFormalParam: Id * Id -> FormPar
 def fieldToFormalParam(fieldProj, fieldType) =
@@ -292,7 +305,35 @@ def tt_v3 spc srt =
 %    | _ -> (issueUnsupportedError(sortAnn(srt),"unsupported sort "^printSort(srt));
 %	    let id = "Object" in
 %	    (mkJavaObjectType(id),nothingCollected))
-	    
+
+op tt_v3M: Sort -> JGenEnv Java.Type
+def tt_v3M srt =
+  {
+   spc <- getEnvSpec;
+   case srt of
+     | Base(Qualified(_,id),_,_) -> return (tt_v2 id)
+     | Boolean _  -> return (tt_v2 "Boolean")
+     | Arrow(srt0,srt1,_) -> 
+       {
+	sid <- srtIdM srt;
+	return(mkJavaObjectType sid)
+       }
+     | Product([],_) -> return(JVoid)
+     | Product(_,_) ->
+       {
+	sid <- srtIdM(srt);
+	return(mkJavaObjectType sid)
+       }
+     | TyVar id -> 
+       let id = "Object" in
+       return(mkJavaObjectType id)
+     | Subsort(srt,_,_) -> tt_v3M srt
+     | _ ->
+       (case findMatchingUserTypeOption(spc,srt) of
+	  | Some usrt -> tt_v3M usrt
+	  | None -> raise(Fail("tt_v3 failed for sort "^(printSort srt)),sortAnn srt)
+       )
+  }
 
 op tt_id: Spec -> Sort -> Id * Collected
 def tt_id spc srt = 

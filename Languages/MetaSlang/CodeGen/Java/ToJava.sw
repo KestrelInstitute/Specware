@@ -95,13 +95,14 @@ op addFldDeclToClsDeclsM: Id * FldDecl -> JGenEnv ()
 def addFldDeclToClsDeclsM(srtId, fldDecl) =
   {
    clsDecls <- getClsDecls;
-   let clsDecls = map (fn (cd as (lm, (cId, sc, si), cb)) -> 
-		       if cId = srtId
-			 then
-			   let newCb = setFlds(cb, cons(fldDecl, cb.flds)) in
-			   (lm, (cId, sc, si), newCb)
-		       else cd)
-   clsDecls
+   let clsDecls =
+          map (fn (cd as (lm, (cId, sc, si), cb)) -> 
+	       if cId = srtId
+		 then
+		   let newCb = setFlds(cb, cons(fldDecl, cb.flds)) in
+		   (lm, (cId, sc, si), newCb)
+	       else cd)
+	  clsDecls
    in
    putClsDecls clsDecls
   }
@@ -110,17 +111,34 @@ def addFldDeclToClsDeclsM(srtId, fldDecl) =
 op addMethDeclToClsDecls: Id * Id * MethDecl * JcgInfo -> JcgInfo
 def addMethDeclToClsDecls(_ (* opId *), srtId, methDecl, jcginfo) =
   let clsDecls =
-  map (fn (clsDecl as (lm, (clsId, sc, si), cb)) -> 
-       if clsId = srtId
-	 then
-	   let newCb = setMethods(cb, cons(methDecl, cb.meths)) in
-	   (lm, (clsId, sc, si), newCb)
-	   else clsDecl)
-  jcginfo.clsDecls
+         map (fn (clsDecl as (lm, (clsId, sc, si), cb)) -> 
+	      if clsId = srtId
+		then
+		  let newCb = setMethods(cb, cons(methDecl, cb.meths)) in
+		  (lm, (clsId, sc, si), newCb)
+	      else clsDecl)
+	 jcginfo.clsDecls
   in
     exchangeClsDecls(jcginfo,clsDecls)
 
 % --------------------------------------------------------------------------------
+
+op addMethDeclToClsDeclsM: Id * Id * MethDecl -> JGenEnv ()
+def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
+  {
+   clsDecls <- getClsDecls;
+   let clsDecls =
+          map (fn (clsDecl as (lm, (clsId, sc, si), cb)) -> 
+	       if clsId = srtId
+		 then
+		   let newCb = setMethods(cb, cons(methDecl, cb.meths)) in
+		   (lm, (clsId, sc, si), newCb)
+	       else clsDecl)
+	  clsDecls
+   in
+   putClsDecls clsDecls
+  }
+
 
 (**
  * this op is responsible for adding the method that correspond to a given op to the right
@@ -171,50 +189,38 @@ op addStaticMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Ter
 def addStaticMethodToClsDeclsM(opId, srt, dom, dompreds, rng (*as Base (Qualified (q, rngId), _,  _)*), trm, classId) =
   {
    spc <- getEnvSpec;
-   jcginfo <- getJcgInfo;
-   jcginfo <- return (addStaticMethodToClsDecls(spc, opId, srt, dom, dompreds, rng, trm, classId,jcginfo));
-   putJcgInfo jcginfo
-  }
-
-op addStaticMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term * Id * JcgInfo -> JcgInfo
-def addStaticMethodToClsDecls(spc, opId, srt, dom, dompreds, rng (*as Base (Qualified (q, rngId), _,  _)*), trm, classId, jcginfo) =
-  %let _ = writeLine(opId^": StaticMethod") in
-  let clsDecls = jcginfo.clsDecls in
-  let (vars, body) = srtTermDelta(srt, trm) in
-  let (rngid,col0) = tt_v3 spc rng in
-  let (fpars,col1) = varsToFormalParams spc vars in
-  let methodDecl = (([Static], Some (rngid), opId, fpars, []), None) in
-  let (methodBody,col2) = mkPrimArgsMethodBody(body, spc) in
-  let (assertStmt,col3) = mkAssertFromDom(dom, spc) in
-  let col = concatCollected(col0,concatCollected(col1,concatCollected(col2,col3))) in
-  let jcginfo = addCollectedToJcgInfo(jcginfo,col) in
-  %% add the assertion method
-  let asrtOpId = mkAssertOp(opId) in
-  let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
-  let (jcginfo,assertStmt) =
+   (vars, body) <- return(srtTermDelta(srt, trm));
+   rngid <- tt_v3M rng;
+   fpars <- varsToFormalParamsM vars;
+   methodDecl <- return (([Static], Some (rngid), opId, fpars, []), None);
+   methodBody <- mkPrimArgsMethodBodyM body;
+   %assertStmt <- mkAssertFromDomM dom;
+   %% add the assertion method
+   asrtOpId <- return(mkAssertOp opId);
+   assertStmt <- return(mkAsrtStmt(asrtOpId,fpars));
+   assertStmt <-
       case mkAsrtExpr(spc,vars,dompreds) of
-	| None -> (jcginfo,[])
+	| None -> return []
 	| Some t -> 
-	let ((s,asrtExpr,_,_),col4) = termToExpression(empty,t,0,0,spc) in
-	let jcginfo = addCollectedToJcgInfo(jcginfo,col4) in
-	if s = [] then (jcginfo,[Stmt(Expr(mkMethInvName(([],"assert"),[asrtExpr])))]) else
-	let asrtBodyStmt = mkReturnStmt(asrtExpr) in
-	let asrtMethodDecl = (([Static], Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])):MethDecl in
-	let jcginfo = addMethDeclToClsDecls(asrtOpId,classId,asrtMethodDecl,jcginfo) in
-	(jcginfo,s++assertStmt)
-  in
-  %%
+	  {
+	   (s,asrtExpr,_,_) <- termToExpressionM(empty,t,0,0);
+	   if s = [] then 
+	     return [Stmt(Expr(mkMethInvName(([],"assert"),[asrtExpr])))]
+	   else
+	     let asrtBodyStmt = mkReturnStmt(asrtExpr) in
+	     let asrtMethodDecl = (([Static], Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])):MethDecl in
+	     {
+	      addMethDeclToClsDeclsM(asrtOpId,classId,asrtMethodDecl);
+	      return (s++assertStmt)
+	     }
+	  };
   let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
-  addMethDeclToClsDecls(opId, classId, methodDecl, jcginfo)
+  addMethDeclToClsDeclsM(opId, classId, methodDecl)
+ }
 
 op addPrimMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
 def addPrimMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
   addStaticMethodToClsDeclsM(opId,srt,dom,dompreds,rng,trm,primitiveClassName)
-
-%%TO BE REMOVED
-op addPrimMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term * JcgInfo -> JcgInfo
-def addPrimMethodToClsDecls(spc, opId, srt, dom, dompreds, rng, trm, jcginfo) =
-  addStaticMethodToClsDecls(spc,opId,srt,dom,dompreds,rng,trm,primitiveClassName,jcginfo)
 
 op mkAsrtStmt: Id * List FormPar -> Block
 def mkAsrtStmt(asrtOpId,fpars) =
@@ -233,53 +239,66 @@ def mkAssertFromDom(dom, spc) =
 	 )
     | _ -> ([],nothingCollected)
 
+op mkAssertFromDomM: List Sort -> JGenEnv Block
+def mkAssertFromDomM dom =
+  case dom of
+    | [Subsort(_, subPred, _)] ->
+      {
+       (stmt, jPred, newK, newL) <- termToExpressionM(empty, subPred, 1, 1);
+       case (stmt, newK, newL) of
+	 | ([], 1, 1) ->
+	   return [Stmt(Expr(mkMethInvName(([],"assert"), [jPred])))]
+	 | _ ->
+	   raise(NotSupported("subsort format not supported; can't create assert statement: "^(printTerm subPred)),termAnn(subPred))
+      }
+    | _ -> return []
+
 op mkPrimArgsMethodBody: Term * Spec -> Block * Collected
 def mkPrimArgsMethodBody(body, spc) =
   let ((b, k, l),col) = termToExpressionRet(empty, body, 1, 1, spc) in
   (b,col)
 
-op addPrimArgsMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
-def addPrimArgsMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
+op mkPrimArgsMethodBodyM: Term -> JGenEnv Block
+def mkPrimArgsMethodBodyM body =
   {
-   spc <- getEnvSpec;
-   jcginfo <- getJcgInfo;
-   jcginfo <- return (addPrimArgsMethodToClsDecls(spc, opId, srt, dom, dompreds, rng, trm, jcginfo));
-   putJcgInfo jcginfo
+   (b,_,_) <- termToExpressionRetM(empty,body,1,1);
+   return b
   }
 
-op addPrimArgsMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term * JcgInfo -> JcgInfo
-def addPrimArgsMethodToClsDecls(spc, opId, srt, _(* dom *), dompreds, rng, trm, jcginfo) =
-  %let _ = writeLine(opId^": PrimArgsMethod") in
-  %case rng of
-  %  | Base (Qualified (q, rngId), _, _) -> 
-      let (rngId,col2) = srtId(rng) in
-      let clsDecls = jcginfo.clsDecls in
-      let (vars, body) = srtTermDelta(srt, trm) in
-      let (fpars,col0) = varsToFormalParams spc vars in
-      let methodDecl = (([Static], Some (tt(rngId)), opId, fpars, []), None) in
-      let (methodBody,col1) = mkPrimArgsMethodBody(body, spc) in
-      let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col0,concatCollected(col0,concatCollected(col1,col2)))) in
-      %%% add the assertion method
-      let asrtOpId = mkAssertOp(opId) in
-      let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
-      let (jcginfo,assertStmt) =
-          case mkAsrtExpr(spc,vars,dompreds) of
-	    | None -> (jcginfo,[])
-	    | Some t ->
-	    let ((s,asrtExpr,_,_),col4) = termToExpression(empty,t,0,0,spc) in
-	    let jcginfo = addCollectedToJcgInfo(jcginfo,col4) in
-	    if s = [] then (jcginfo,[Stmt(Expr(mkMethInvName(([],"assert"),[asrtExpr])))]) else
-	    let asrtBodyStmt = mkReturnStmt(asrtExpr) in
-	    let asrtMethodDecl = (([Static], Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])):MethDecl in
-	    let jcginfo = addMethDeclToClsDecls(asrtOpId,rngId,asrtMethodDecl,jcginfo) in
-	    (jcginfo,s++assertStmt)
-      in
-      %%
-      let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
-      %let _ = writeLine(";;; -> method in class "^rngId) in
-      addMethDeclToClsDecls(opId, rngId, methodDecl, jcginfo)
-    %| _ -> let _ = warnNoCode(opId,None) in
-    %  jcginfo
+op addPrimArgsMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
+def addPrimArgsMethodToClsDeclsM(opId, srt, _(* dom *), dompreds, rng, trm) =
+  {
+   spc <- getEnvSpec;
+   (vars, body) <- return(srtTermDelta(srt, trm));
+   %rngId <- srtIdM rng;
+   classId <- srtIdM rng;
+   rngId <- tt_v3M rng;
+   fpars <- varsToFormalParamsM vars;
+   %methodDecl <- return(([Static], Some (tt(rngId)), opId, fpars, []), None);
+   methodDecl <- return(([Static], Some(rngId), opId, fpars, []), None);
+   methodBody <- mkPrimArgsMethodBodyM body;
+  %%% add the assertion method
+   asrtOpId <- return(mkAssertOp opId);
+   assertStmt <- return(mkAsrtStmt(asrtOpId,fpars));
+   assertStmt <-
+      case mkAsrtExpr(spc,vars,dompreds) of
+	| None -> return []
+	| Some t ->
+	  {
+	   (s,asrtExpr,_,_) <- termToExpressionM(empty,t,0,0);
+	   if s = [] then 
+	     return [Stmt(Expr(mkMethInvName(([],"assert"),[asrtExpr])))]
+	   else
+	     let asrtBodyStmt = mkReturnStmt(asrtExpr) in
+	     let asrtMethodDecl = (([Static], Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])):MethDecl in
+	     {
+	      addMethDeclToClsDeclsM(asrtOpId,classId,asrtMethodDecl);
+	      return (s++assertStmt)
+	     }
+	  };
+   let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
+   addMethDeclToClsDeclsM(opId, classId, methodDecl)
+  }
 
 op addUserMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
 def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =

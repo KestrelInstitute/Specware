@@ -7,6 +7,7 @@ sort Term = JGen.Term
 
 % monadic
 op termToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+op termToExpressionRetM: TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 
 % functional
 op termToExpression: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
@@ -533,6 +534,16 @@ def translateTermsToExpressions(tcx, terms, k, l, spc) =
 
 op translateIfThenElseRet: TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
 op translateCaseRet: TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
+
+% monadic version
+
+def termToExpressionRetM(tcx,term,k,l) =
+  {
+   spc <- getEnvSpec;
+   ((block,k,l),col) <- return(termToExpressionRet(tcx,term,k,l,spc));
+   addCollected col;
+   return (block,k,l)
+  }
 
 def termToExpressionRet(tcx, term, k, l, spc) =
   if caseTerm?(term)
