@@ -1,6 +1,7 @@
 XML qualifying spec
 
-  import Parse_GenericTag
+  import Parse_Names              % parse_NmToken    [redundant, given Parse_Character_Strings]
+  import Parse_Character_Strings  % parse_WhiteSpace
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          PI                                                                                  %%%
@@ -44,7 +45,7 @@ XML qualifying spec
        %%
        %%  [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
        %%
-       (target, tail_0) <- parse_GenericName start;
+       (target, tail_0) <- parse_NmToken start;
        (when (~ (pi_target? target))
 	(error (Surprise {context = "Parsing PI",
 			  expected = [("Name - 'xml' variants", "legal PI target name")], 
