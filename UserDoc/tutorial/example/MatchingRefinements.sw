@@ -1,5 +1,5 @@
 Symbols = spec
-  sort Symbol = (Char | isUpperCase)
+  type Symbol = (Char | isUpperCase)
 endspec
 
 

@@ -1,8 +1,11 @@
+%%% obligations from MatchingSpecs.sw:
+
 SymbolMatching_Oblig = obligations MatchingSpecs#SymbolMatching
 
 WordMatching_Oblig = obligations MatchingSpecs#WordMatching
 
-Symbols_Ref_Oblig = obligations MatchingRefinements#Symbols_Ref
+
+%%% obligations from MatchingRefinements.sw:
 
 WordMatching0_Oblig = obligations MatchingRefinements#WordMatching0
 
