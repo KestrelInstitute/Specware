@@ -12,4 +12,3 @@ Class-Path: antlr.jar jlinker.jar
 Name: edu/kestrel/netbeans/MetaSlangDataLoader.class
 OpenIDE-Module-Class: Loader
 
-

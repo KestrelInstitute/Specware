@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/06/21 00:57:11  weilyn
+ * specware.jar
+ *
  * Revision 1.3  2003/02/19 18:52:47  weilyn
  * Added calls to LispProcessManager to generate lisp and java.
  *
@@ -22,9 +25,11 @@
 package edu.kestrel.netbeans.actions;
 
 import java.awt.MenuShortcut;
+import java.io.IOException;
 import javax.swing.event.*;
 
 import org.openide.actions.*;
+import org.openide.cookies.EditorCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import org.openide.loaders.DataObject;
@@ -41,6 +46,7 @@ import org.openide.windows.WindowManager;
 
 import edu.kestrel.netbeans.MetaSlangDataObject;
 import edu.kestrel.netbeans.Util;
+import edu.kestrel.netbeans.editor.MetaSlangEditorSupport;
 import edu.kestrel.netbeans.lisp.LispProcessManager;
 import edu.kestrel.netbeans.lisp.LispSocketManager;
 import edu.kestrel.netbeans.model.SourceElement;
@@ -111,6 +117,14 @@ public class GenerateCodeAction extends NodeAction {
     */
     void generateCodeForNode (Node node, int target) {
 	MetaSlangDataObject dataObj = (MetaSlangDataObject) node.getCookie(DataObject.class);
+        if (dataObj.isModified()) {
+            MetaSlangEditorSupport editor = (MetaSlangEditorSupport)node.getCookie(EditorCookie.class);
+            try {
+                editor.saveDocument();
+            } catch (IOException ioe) {
+                Util.log("GenerateCodeAction.generateCodeForNode got IOException: "+ioe.getMessage());
+            }
+        }
 	FileObject fileObj = dataObj.getPrimaryFile();
         String pathName = "";
         try {
@@ -141,9 +155,24 @@ public class GenerateCodeAction extends NodeAction {
             }
         }
 
+        if (nodes.length == 0) {
+	    return false;
+	}
+
+	for (int i = 0; i < nodes.length; i++) {
+            Node node = nodes[i];
+	    if (!enable(node)) {
+		return false;
+	    }
+        }
         return true;
     }
 
+    private boolean enable (Node node) {
+	DataObject dataObj = (DataObject) node.getCookie(DataObject.class);
+	return (dataObj instanceof MetaSlangDataObject);
+    }  
+    
     /** Message to display when the action is looking for
     * object that should be processed.
     *

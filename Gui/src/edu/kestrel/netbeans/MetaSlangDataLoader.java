@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/06/21 00:57:10  weilyn
+ * specware.jar
+ *
  * Revision 1.5  2003/05/07 21:18:59  weilyn
  * UpdateSWPathAction
  *
@@ -99,8 +102,8 @@ public class MetaSlangDataLoader extends UniFileLoader {
             SystemAction.get(ProcessUnitAction.class),
 	    SystemAction.get(GenerateCodeAction.class),
             null,
-            //SystemAction.get(UpdateSWPathAction.class),
-            //null,
+            SystemAction.get(UpdateSWPathAction.class),
+            null,
             //SystemAction.get(CompileAction.class),
             SystemAction.get(StartLispAction.class),
             SystemAction.get(KillLispAction.class),
