@@ -1,5 +1,6 @@
 (in-package "CL-USER")
 
+#+Allegro
 (defun bail-out (exception)
   (let ((return-code
 	 ;; Unix return codes are encoded in a byte (i.e. mod 256),
@@ -23,20 +24,29 @@
     (format t "~%Lisp session exiting with code ~D after : ~A~%" return-code exception)
     (exit return-code)))
 
-    
 (defmacro exiting-on-errors (&body body)
+  #+Allegro
   `(handler-bind ((storage-condition                    (function bail-out))
 		  (error                                (function bail-out))
 		  (synchronous-operating-system-signal  (function bail-out))
 		  (interrupt-signal                     (function bail-out))
 		  )
-     ,@body))
+     ,@body)
+  #-Allegro
+  (progn
+    (format t "exiting-on-errors currently just expands to PROGN for non-Allegro lisp")
+    `(progn ,@body)))
+  
 
 (defun enlarge-stack (&optional (proposed 10000000))
+  #+Allegro
   (let* ((old (sys::stack-cushion)))
     (sys::set-stack-cushion proposed)
     (let ((new (sys::stack-cushion)))
       (format t "~%Stack cushion was ~10D [#x~8X],~%" old old)
       (format t "~&       was set to ~10D [#x~8X],~%" proposed proposed)
       (format t "~&       and now is ~10D [#x~8X].~%" new new)
-      new)))
+      new))
+  #-Allegro
+  (format t "enlarge-stack is currently a no-op for non-Allegro lisp")
+  )
