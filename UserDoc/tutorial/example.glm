@@ -734,15 +734,19 @@ given directives. Currently, the only available prover is Snark; more
 provers will be added in the future.</para>
 
 <para>For example, the user can attempt to discharge the proof
-obligation for [[WordMatching_Ref0]] by means of the following command
-(the command below is split into multiple lines for typographical
-reasons, but it must be written as just one line in
-&Specware;):</para>
+obligation for [[WordMatching_Ref0]] by writing the following command
+in a file named <"MatchingProof.sw">, located in the same directory
+as <"MatchingObligations.sw">:</para>
+
+[[
+||    prove word_matching in
+||      MatchingObligations#WordMatching_Ref0_Oblig with snark
+]]
+
+Then at the Lisp prompt, issue this command to discharge the proof:
 
 [[L:
-||    :sw prove word_matching
-||        in MatchingObligations#WordMatching_Ref_Oblig
-||        with snark
+||    :sw MatchingProof.sw
 ]]
 
 </section> <!-- proof obligations -->
@@ -798,7 +802,7 @@ name where the code is deposited as a side effect. The following
 command is given in the Lisp shell:</para>
 
 [[L:
-||    :sw generate lisp <specname> in <targetfilename>
+||    :swl <specname> <targetfilename>
 ]]
 
 <para>The above command first processes the named spec and then
@@ -807,13 +811,10 @@ The file is created if it does not exist; if it exists, it is
 overwritten.</para>
 
 <para>For instance, we can generate Lisp code for the word matching
-application by means of the following command (the command below is
-split into multiple lines for typographical reasons, but it should be
-written as just one line in &Specware;):</para>
+application by means of the following command:</para>
 
 [[L:
-||    :sw generate lisp MatchingRefinements#FindMatches
-||                 in find-matches
+||    :swl MatchingRefinements#FindMatches find-matches
 ]]
 
 <para>Note that if the <".lisp"> suffix is omitted, &Specware; adds it
@@ -914,13 +915,10 @@ it could have been omitted.</para>
 
 <para>Now, instead of generating code from
 [[MatchingRefinements#FindMatches]], we generate code from
-[[MatchingTest#Test]] (the command below is split into multiple lines
-for typographical reasons, but it should be written as just one line
-in &Specware;):</para>
+[[MatchingTest#Test]]:</para>
 
 [[L:
-||    :sw generate lisp MatchingTest#Test
-||                 in find-matches-test.lisp
+||    :swl MatchingTest#Test find-matches-test.lisp
 ]]
 
 <section>
@@ -943,11 +941,11 @@ that Lisp is case-insensitive).</para>
 <para>So, in order to call the functions defined in that file (after
 it has been loaded), it is necessary either to prepend the package
 name to them, or to move to that package and then call them without
-package qualification.  To follow the first approach, we write
-[[sw-user::test_find_matches]] to call the function. To follow the
-second approach, we change package by means of the Lisp command [[:pa
-sw-user]] and then we just write [[test_find_matches]] to call the
-function.</para>
+package qualification.  To follow the first approach, we would write
+[[(sw-user::test_find_matches <arg1> <arg2>)]] to call the function.
+To follow the second approach, we would first change package by means
+of the Lisp command [[:pa sw-user]], and then we can just write 
+[[(test_find_matches <arg1> <arg2>)]] to call the function.</para>
 
 <para>In order to test the program on the example input and output
 given at the beginning of the chapter, we proceed as follows. First,
