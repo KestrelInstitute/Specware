@@ -1,0 +1,109 @@
+
+MetaSlang/C Code Generator
+--------------------------
+
+The C code generator can either be called from the Lisp prompt or
+using the SpecCalc "generate" construct inside a .sw file. In both
+cases, an additional parameter can be supplied specifying the base
+name of the C source and header files into which the C code will be
+generated.
+
+Lisp Prompt:
+- - - - - -
+
+    :swc <UnitId> [<c-file-base-name>]
+
+Example:
+    :swc QuickSort QuickSort
+
+where QuickSort.sw contains the spec that is to be translated into the
+C files QuickSort.h and QuickSort.c
+
+Inside a .sw file:
+- - - - - - - - - 
+
+generate c <spec-term> in "<c-file-base-name>"
+
+Example contents of a .sw file generating c code:
+
+  generate c QuickSort in "QuickSort.c"
+
+This would have the same result as the above command line variant. The
+suffix ".c" can be omitted or not.
+
+
+Compiling and Running the generated C code
+------------------------------------------
+(Additional information is contained in the annotated Makefile in the
+"Examples" directory)
+
+The generated C code is designed to contain as minimal as possible
+references outside the generated code, but there are still some
+builtin routines that are referred to. For that reason, the C compiler
+needs a few extra arguments specifying system include paths and the
+location of the garbage collector library that is used in the
+generated code. The easiest way of compiling the generated code is by
+using a Makefile and including the supplied C generator system
+Makefile in it. The corresponding include statement in a user Makefile
+would then be as follows:
+
+   include $(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules
+
+This file set the CPPFLAGS and CFLAGS make variables to include the
+paths and library necessary for successfully compiling the generated
+code. If additions to this variables need to be done, one can either
+define the corresponding variable before the above include statement
+in the Makefile or use the ":=" assignment after the include statement
+to prevent "make" to recursively process the variable. Example
+
+   CPPFLAGS := -g -pg $(CPPFLAGS)
+
+would be a valid statement for augmenting the CPPFLAGS after the
+include statement. See
+
+  $SPECWARE4/Languages/MetaSlang/CodeGen/C/Examples/Makefile
+
+for an annotated example Makefile.
+
+Garbage Collector
+-----------------
+By default, the generated C code generates calls to the public-domain
+garbage collector written by H. Boehm (see
+http://www.hpl.hp.com/personal/Hans_Boehm/gc/). The library needs to
+be built once on a fresh Specware4 tree and will then be used by the
+Specware-generated C code. The easiest way to build the gc-library is
+described in the example Makefile mentioned above: simple add the
+variable $(GCLIB) to the list of dependencies in your main Makefile
+target. Alternatively, this can be done by hand by changing to the
+directory "$SPECWARE4/Languages/MetaSlang/CodeGen/C/Clib/gc6.2" and
+then running "make". After successful completion of this command, a
+file named "gc.a" should be present in that directory.
+
+Disabling the Garbage Collector
+- - - - - - - - - - - - - - - -
+To disable the garbage collector simply put the variable definition
+
+USEGC = no
+
+*in front of* the line including the above Makerules file. This will 
+prevent the generated code from calling the allocation function of the
+garbage collector and the garbage collector library will not be bound
+to the executable.
+
+
+Supplying a C "main" function
+-----------------------------
+If you want to create a stand-alone C application using the
+Specware-generated code, you have to supply a main function. This can
+be done either by directly defining a MetaSlang operator "main" like
+this
+
+    op main: () -> ()
+    def main () ...
+
+or by hand-coding a main C function in a separate C file, from where
+the Specware-generated code would be called. Note, that currently,
+passing command line arguments is not yet supported, if you define a
+MetaSlang main operator directly. See the Examples directory for
+examples of both a hand-written main c function that calls the
+generated code and a MetaSlang definition of the main operator.
