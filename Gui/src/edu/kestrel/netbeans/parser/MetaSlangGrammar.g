@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2003/02/17 04:35:26  weilyn
+ * Added support for expressions.
+ *
  * Revision 1.11  2003/02/16 02:16:03  weilyn
  * Added support for defs.
  *
@@ -113,16 +116,27 @@ private scTerm[Token unitIdToken] returns[ElementFactory.Item item]
     ;
 
 //---------------------------------------------------------------------------
-private scURI
-    : (   (nonWordSymbol["/"]) => nonWordSymbol["/"] scURIPath
-        | scURIPath
+private scURI returns[ElementFactory.Item uri]
+{
+    uri = null;
+    String item = null;
+    String strURI = "";
+}
+    : (   (nonWordSymbol["/"]) => nonWordSymbol["/"] 
+                                  item=scURIPath        {strURI = strURI + "/" + item;}
+        | item=scURIPath                                {strURI = strURI + item;}
       )
-      (INNER_UNIT_REF)?
+      (ref:INNER_UNIT_REF)?
     ;
 
-private scURIPath
-    : IDENTIFIER 
-      ( (nonWordSymbol["/"]) => nonWordSymbol["/"] scURIPath
+private scURIPath returns[String path]
+{
+    path = "";
+    String item = null;
+}
+    : id:IDENTIFIER                                     {path = path + id.getText();} 
+      ( (nonWordSymbol["/"]) => nonWordSymbol["/"] 
+                                item=scURIPath          {path = path + "/" + item;}
       |
       )
     ;
@@ -150,17 +164,55 @@ private specDefinition[Token unitIdToken] returns[ElementFactory.Item spec]
                              }
     ;
 
-private scProve[Token unitIdToken] returns[ElementFactory.Item proveItem]
+private scProve[Token unitIdToken] returns[ElementFactory.Item prove]
 {
-    proveItem = null;
+    prove = null;
     ElementFactory.Item childItem = null;
     Token headerEnd = null;
     List children = new LinkedList();
     String name = (unitIdToken == null) ? "" : unitIdToken.getText();
 }
-    : begin:"prove"
-      (name
-      )*
+    : begin:"prove"                     {headerEnd = begin;}
+      childItem=claimName               {if (childItem != null) children.add(childItem);}
+      "in"
+      childItem=scURI                   {if (childItem != null) children.add(childItem);}
+      (childItem=proverAssertions)?     {if (childItem != null) children.add(childItem);}
+      (childItem=proverOptions)?        {if (childItem != null) children.add(childItem);}
+                                        /*{prove = builder.createProve(name);
+                                         if (unitIdToken != null) {
+                                            begin = unitIdToken;
+                                         }
+                                         builder.setParent(children, prove);
+                                         ParserUtil.setAllBounds(builder, prove, begin, headerEnd, LT(0));
+                                         }*/
+    ;
+
+private claimName returns[ElementFactory.Item claimName]
+{
+    claimName = null;
+    String ignore = null;
+}
+    : ignore=name
+    ;
+
+private proverAssertions returns[ElementFactory.Item assertionsItem]
+{
+    assertionsItem = null;
+    String anAssertion = null;
+}
+    : "using" 
+      (anAssertion=name
+      )+
+    ;
+
+private proverOptions returns[ElementFactory.Item optionsItem]
+{
+    optionsItem = null;
+    String anOption = null;
+}
+    : "options"
+      (anOption=name
+      )+
     ;
 
 private qualifier returns[String qlf]
@@ -190,7 +242,11 @@ private declaration returns[ElementFactory.Item item]
 
 //---------------------------------------------------------------------------
 private importDeclaration
-    : "import" scURI
+{
+    ElementFactory.Item ignore = null;
+}
+    : "import" 
+      ignore=scURI
     ;
 
 //---------------------------------------------------------------------------
@@ -209,7 +265,7 @@ private sortDeclarationOrDefinition returns[ElementFactory.Item sort]
       )
                            {sort = builder.createSort(sortName, params);
                              ParserUtil.setBounds(builder, sort, begin, LT(0));
-                            }
+                           }
     ;
 
 private qualifiableSortNames returns[String sortName]
@@ -355,8 +411,8 @@ private opDefinition returns[ElementFactory.Item def]
       ((formalOpParameters equals) => params=formalOpParameters equals
        | equals) 
       expr=expression            {def = builder.createDef(name, params, expr);
-                             ParserUtil.setBounds(builder, def, begin, LT(0));
-                            }
+                                  ParserUtil.setBounds(builder, def, begin, LT(0));
+                                 }
     ;
 
 private claimDefinition returns[ElementFactory.Item claim]
