@@ -65,7 +65,7 @@ FSeq qualifying spec
      else None)
 
   % prepend element (|> points into sequence):
-  op |> infixl 30 : [a] a * FSeq a -> FSeq a
+  op |> infixr 30 : [a] a * FSeq a -> FSeq a
   def |> (x,s) =
     singleton x ++ s
 
@@ -73,6 +73,17 @@ FSeq qualifying spec
   op <| infixl 30 : [a] FSeq a * a -> FSeq a
   def <| (s,x) =
     s ++ singleton x
+
+  op seq1 : [a] a -> FSeq a
+  def seq1 = singleton
+
+  op seq2 : [a] a * a -> FSeq a
+  def seq2(x,y) =
+    x |> y |> empty
+
+  op seq3 : [a] a * a * a -> FSeq a
+  def seq3(x,y,z) =
+    x |> y |> z |> empty
 
   % update i-th element:
   op update : [a] {(s,i,x) : FSeq a * Nat * a | i < length s} -> FSeq a
@@ -212,5 +223,9 @@ FSeq qualifying spec
 
   % sequences without repetitions:
   type FSeqNR a = (FSeq a | noRepetitions?)
+
+  op indexOf : [a] {(s,x) : FSeqNR a * a | x in? s} -> Nat
+  def indexOf(s,x) =
+    the (fn(i:Nat) -> s elem i = x)
 
 endspec

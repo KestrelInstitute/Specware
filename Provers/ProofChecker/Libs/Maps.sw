@@ -30,14 +30,15 @@ Map qualifying spec
                               PSet.wout               +-> Set.wout,
                               PSet.map                +-> Set.map,
                               PSet.filter             +-> Set.filter}]
-                   by {PMap    +-> Map.Map,
-                       <<=     +-> Map.<=,
-                       >>=     +-> Map.>=,
-                       mempty  +-> Map.empty,
-                       \\/     +-> Map.\/,
-                       //\     +-> Map./\,
-                       mmap    +-> Map.map,
-                       mfilter +-> Map.filter}
+                   by {PMap       +-> Map.Map,
+                       <<=        +-> Map.<=,
+                       >>=        +-> Map.>=,
+                       mempty     +-> Map.empty,
+                       msingleton +-> Map.singleton,
+                       \\/        +-> Map.\/,
+                       //\        +-> Map./\,
+                       mmap       +-> Map.map,
+                       mfilter    +-> Map.filter}
 
   op finite? : [a,b] Map(a,b) -> Boolean
   def finite? m = finite? (domain m)

@@ -52,7 +52,7 @@ FSet qualifying spec
   op fold : [a,b] ((FSet a * b * (b * a -> b)) | foldable?) -> b
   def [a,b] fold =
     the (fn (fold : ((FSet a * b * (b * a -> b)) | foldable?) -> b) ->
-      (fa(c,f) foldable? (empty, c, f) => fold (empty, c, f) = c) &&
+      (fa(c,f) fold (empty, c, f) = c) &&
       (fa(s,x,c,f) foldable? (s with x, c, f) =>
                    fold (s with x, c, f) = f (fold (s wout x, c, f), x)))
 

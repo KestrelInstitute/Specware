@@ -14,11 +14,11 @@ spec
   Since the ops in spec `ProtoSets' are not qualified (they get qualified by
   `FSet' or `Set' when proto-sets are refined to finite or all sets), in this
   spec we cannot use the following op names (which we would like to use):
-  `<=', `>=', `empty', `\/', `/\', `map', and `filter'. So, we use similar
-  but different names, which are translated to the desired ones at the same
-  time when proto-maps are refined to finite or all maps, because at that
-  point proto-sets are also instantiated to finite or all sets and therefore
-  omonymous ops on sets are disambiguated by qualifiers. *)
+  `<=', `>=', `empty', `singleton', `\/', `/\', `map', and `filter'. So, we
+  use similar but different names, which are translated to the desired ones at
+  the same time when proto-maps are refined to finite or all maps, because at
+  that point proto-sets are also instantiated to finite or all sets and
+  therefore omonymous ops on sets are disambiguated by qualifiers. *)
 
   import ProtoMapsParameter
 
@@ -75,6 +75,10 @@ spec
   op undefine : [a,b] PMap(a,b) * a -> PMap(a,b)
   def undefine(m,x) =
     mapSuchThat (fn z -> if z = x then None else mapFunction m z)
+
+  % map map defined at one point:
+  op msingleton : [a,b] a * b -> PMap(a,b)
+  def msingleton(x,y) = define (mempty, x, y)
 
   % make map undefined at multiple points:
   op undefineMulti : [a,b] PMap(a,b) * PSet a -> PMap(a,b)

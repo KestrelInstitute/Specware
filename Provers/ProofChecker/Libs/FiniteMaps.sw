@@ -30,14 +30,15 @@ FMap qualifying spec
                               PSet.wout               +-> FSet.wout,
                               PSet.map                +-> FSet.map,
                               PSet.filter             +-> FSet.filter}]
-                   by {PMap    +-> FMap.FMap,
-                       <<=     +-> FMap.<=,
-                       >>=     +-> FMap.>=,
-                       mempty  +-> FMap.empty,
-                       \\/     +-> FMap.\/,
-                       //\     +-> FMap./\,
-                       mmap    +-> FMap.map,
-                       mfilter +-> FMap.filter}
+                   by {PMap       +-> FMap.FMap,
+                       <<=        +-> FMap.<=,
+                       >>=        +-> FMap.>=,
+                       mempty     +-> FMap.empty,
+                       msingleton +-> FMap.singleton,
+                       \\/        +-> FMap.\/,
+                       //\        +-> FMap./\,
+                       mmap       +-> FMap.map,
+                       mfilter    +-> FMap.filter}
 
   op size : [a,b] FMap(a,b) -> Nat
   def size m = size (domain m)
