@@ -35,6 +35,9 @@
   (defun sw:eval-in-lisp-no-value (str &rest args)
     (apply 'fi:eval-in-lisp str args)
     t)
+  (defun sw:eval-in-lisp-dispatch (str &rest args)
+    (apply 'fi:eval-in-lisp-asynchronous str args)
+    t)
   (define-function 'inferior-lisp-newline 'fi:inferior-lisp-newline)
   (define-function 'inferior-lisp-running-p 'fi::lep-open-connection-p)
   (define-function 'sw:find-unbalanced-parenthesis 'fi:find-unbalanced-parenthesis)
@@ -130,6 +133,10 @@
 
   (defun sw:eval-in-lisp-no-value (str &rest args)
     (ilisp-send (apply 'format str args))
+    t)
+
+  (defun sw:eval-in-lisp-dispatch (str &rest args)
+    (ilisp-send (apply 'format str args) nil nil t)
     t)
 
   (define-function 'inferior-lisp-newline 'return-ilisp)
