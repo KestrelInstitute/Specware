@@ -384,7 +384,7 @@ spec
       
 
   %% Evaluation of constant terms
-  def evalQualifiers = ["Nat","Integer","String","Boolean","Char","System"]
+  def evalQualifiers = ["Nat","Integer","Integer_","String","Boolean","Char","System"]
   def evalConstant?(v) =
     case v
       of Unevaluated _ -> false
@@ -415,7 +415,8 @@ spec
   def attemptEval1(opName,arg,f) =
     let def default() = Unevaluated(mkApply(f,valueToTerm arg)) in
     case (opName,arg) of
-       | ("~", Int i)         -> Int (Integer.~ i)
+       | ("-", Int i)          -> Int(-i)
+       | ("~", Int i)         -> Int (Integer.~ i) % for backward compatibility
        | ("~", Bool b)        -> Bool (~b)
        | ("pred", Int i)      -> Int (pred i)
        | ("toString", Int i)  -> String (toString i)
