@@ -344,13 +344,15 @@ spec
    let tcc = foldl (checkRule(gamma,dom,rng,optArg)) tcc rules  in
    let rules = 
        (List.map (fn(p,c,b) -> ([p],c,mkTrue())) rules)	 in
-   let x  = useNameFrom(gamma,optArg,"D")			 in
+   let x  = useNameFrom(gamma,optArg,"D")		 in
    let vs = [mkVar(x,dom)] 	        	         in
    let (_,_,spc,_,Qualified(_, name),_,_) = gamma        in
-   let context:PatternMatch.Context = {counter = Ref 0,
-				       spc = spc,
-				       funName = name,
-				       term = None}      in
+   let context:PatternMatch.Context = {counter    = Ref 0,
+				       spc        = spc,
+				       funName    = name,
+				       errorIndex = Ref 0,
+				       term       = None}
+   in
    let trm = match(context,vs,rules,mkFalse(),mkFalse()) in
    (case simplifyMatch(trm)
       of Fun(Bool true,_,_) -> tcc
