@@ -1,6 +1,13 @@
 spec
 
-  import Provability
+  import Primitives
+
+  type TypeVariables = FSeq TypeVariable
+  type Variables     = FSeq Variable
+  type Fields        = FSeq Field
+  type Constructors  = FSeq Constructor
+
+  type Position = FSeq Nat
 
   type Proof
   type Proofs = FSeq Proof
@@ -85,7 +92,7 @@ spec
     | paAlias           Proof * Variable
     | paEquivalentTypes Proof * Proof
     % theorem:
-    | thAxiom                       Proof * Proofs * TypeVariables * Expression
+    | thAxiom                       Proof * Proofs * TypeVariables * AxiomName
     | thOpDef                       Proof * Proofs * Operation
     | thSubstitution                Proof * Proof * Position
     | thTypeSubstitution            Proof * Proof * Position

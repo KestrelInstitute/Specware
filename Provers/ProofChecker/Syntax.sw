@@ -467,7 +467,7 @@ spec
     | opDeclaration   Operation * TypeVariables * Type
     | typeDefinition  TypeName * TypeVariables * Type
     | opDefinition    TypeVariables * Operation * Expression
-    | axio(*m*)       TypeVariables * Expression
+    | axio(*m*)       AxiomName * TypeVariables * Expression
     | tVarDeclaration TypeVariable
     | varDeclaration  Variable * Type
 

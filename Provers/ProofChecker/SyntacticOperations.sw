@@ -142,6 +142,7 @@ spec
   op contextElementOps      : ContextElement -> FSet Operation
   op contextElementTypeVars : ContextElement -> FSet TypeVariable
   op contextElementVars     : ContextElement -> FSet Variable
+  op contextElementAxioms   : ContextElement -> FSet AxiomName
 
   def contextElementTypes = fn
     | typeDeclaration(tn,_) -> singleton tn
@@ -159,15 +160,21 @@ spec
     | varDeclaration(v,_) -> singleton v
     | _                   -> empty
 
+  def contextElementAxioms = fn
+    | axio(an,_,_) -> singleton an
+    | _            -> empty
+
   op contextTypes    : Context -> FSet TypeName
   op contextOps      : Context -> FSet Operation
   op contextTypeVars : Context -> FSet TypeVariable
   op contextVars     : Context -> FSet Variable
+  op contextAxioms   : Context -> FSet AxiomName
 
   def contextTypes    cx = unionAll (map (contextElementTypes,    cx))
   def contextOps      cx = unionAll (map (contextElementOps,      cx))
   def contextTypeVars cx = unionAll (map (contextElementTypeVars, cx))
   def contextVars     cx = unionAll (map (contextElementVars,     cx))
+  def contextAxioms   cx = unionAll (map (contextElementAxioms,   cx))
 
   op contextDefinesType? : Context * TypeName -> Boolean
   def contextDefinesType?(cx,tn) =

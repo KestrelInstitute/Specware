@@ -13,6 +13,9 @@ spec
   and enforcement of separation (e.g. so that a type variable cannot be
   accidentally used as a type name).
 
+  While in LD axioms have no names, here they do, in order to provide a simple
+  way to refer to them (e.g. in proofs).
+
   Here we do not postulate any projection names because we model product types
   explicitly, as opposed to LD where product types are modeled as
   abbreviations of record types with the postulated projection names as
@@ -31,5 +34,6 @@ spec
   import translate Libs/Type#Infinite by {X +-> Variable}
   import translate Libs/Type#Infinite by {X +-> Field}
   import translate Libs/Type#Infinite by {X +-> Constructor}
+  import translate Libs/Type#Infinite by {X +-> AxiomName}
 
 endspec

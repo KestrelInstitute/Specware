@@ -179,10 +179,11 @@ spec
       && ~(o in? exprOps e)
       => pj (wellFormedContext (cx <| opDefinition (tvS1, o, e))))
     | cxAxiom ->
-      (fa (cx:Context, tvS:TypeVariables, e:Expression)
+      (fa (cx:Context, an:AxiomName, tvS:TypeVariables, e:Expression)
          pj (wellFormedContext cx)
+      && ~(an in? contextAxioms cx)
       && pj (wellTypedExpr (cx ++ multiTypeVarDecls tvS, e, BOOL))
-      => pj (wellFormedContext (cx <| axio (tvS, e))))
+      => pj (wellFormedContext (cx <| axio (an, tvS, e))))
     | cxTypeVarDecl ->
       (fa (cx:Context, tv:TypeVariable)
          pj (wellFormedContext cx)
@@ -463,10 +464,11 @@ spec
          pj (wellTypedExpr (cx, EXX bvS e, BOOL))
       => pj (wellTypedExpr (cx, EXX1 bvS e, BOOL)))
     | exIfThenElse ->
-      (fa (cx:Context, e0:Expression, e1:Expression, e2:Expression, t:Type)
+      (fa (cx:Context, e0:Expression, e1:Expression, e2:Expression, t:Type,
+           an1:AxiomName, an2:AxiomName)
          pj (wellTypedExpr (cx, e0, BOOL))
-      && pj (wellTypedExpr (cx <| axio (empty, e0), e1, t))
-      && pj (wellTypedExpr (cx <| axio (empty, ~~ e0), e2, t))
+      && pj (wellTypedExpr (cx <| axio (an1, empty, e0), e1, t))
+      && pj (wellTypedExpr (cx <| axio (an2, empty, ~~ e0), e2, t))
       => pj (wellTypedExpr (cx, IF e0 e1 e2, t)))
     | exOpInstance ->
       (fa (cx:Context, o:Operation, tvS:TypeVariables, t:Type, tS:Types,
@@ -498,12 +500,15 @@ spec
     | exCase ->
       (fa (cx:Context, e:Expression, n:Nat, pS:Patterns, eS:Expressions,
            t:Type, t1:Type, caseMatches:Expressions,
-           posCxS:FSeq Context, negCxS:FSeq Context)
+           posCxS:FSeq Context, negCxS:FSeq Context,
+           posAnS:FSeq AxiomName, negAnS:FSeq AxiomName)
          length pS = n
       && length eS = n
       && length caseMatches = n
       && length posCxS = n
       && length negCxS = n
+      && length posAnS = n
+      && length negAnS = n
       && pj (wellTypedExpr (cx, e, t))
       && (fa(i:Nat) i < n =>
             pj (wellTypedPatt (cx, pS elem i, t)))
@@ -515,14 +520,14 @@ spec
       && (fa(i:Nat) i < n =>
             posCxS elem i =
             multiVarDecls (pattBoundVars (pS elem i))
-              <| axio (empty, pattAssumptions (pS elem i, e)))
+              <| axio (posAnS elem i, empty, pattAssumptions (pS elem i, e)))
       && (fa(i:Nat) i < n =>
             (let conjuncts:Expressions = the (fn conjuncts ->
                  length conjuncts = i &&
                  (fa(j:Nat) j < i =>
                     conjuncts elem j = ~~ (caseMatches elem j))) in
              negCxS elem i =
-             singleton (axio (empty, conjoinAll conjuncts))))
+             singleton (axio (negAnS elem i, empty, conjoinAll conjuncts))))
       && (fa(i:Nat) i < n =>
             pj (wellTypedExpr (cx ++ (negCxS elem i) ++ (posCxS elem i),
                                eS elem i,
@@ -655,13 +660,13 @@ spec
 
     %%%%%%%%%% theorem:
     | thAxiom ->
-      (fa (cx:Context, tvS:TypeVariables, e:Expression, tS:Types,
+      (fa (cx:Context, an:AxiomName, tvS:TypeVariables, e:Expression, tS:Types,
            tsbs:TypeSubstitution)
          noRepetitions? tvS
       && length tvS = length tS
       && tsbs = FMap.fromSequences (tvS, tS)
       && pj (wellFormedContext cx)
-      && axio (tvS, e) in? cx
+      && axio (an, tvS, e) in? cx
       && (fa(i:Nat) i < length tS =>
             pj (wellFormedType (cx, tS elem i)))
       => pj (theore (cx, typeSubstInExpr tsbs e)))
@@ -712,7 +717,8 @@ spec
                           FA (v, BOOL) e1 __ VAR v == e2 __ VAR v))))
     | thAbstraction ->
       (fa (cx:Context, vS:Variables, tS:Types, bvS:BoundVars, e:Expression,
-           eS:Expressions, t:Type, esbs:ExpressionSubstitution)
+           eS:Expressions, t:Type, esbs:ExpressionSubstitution,
+           an1:AxiomName, an2:AxiomName)
          noRepetitions? vS
       && length vS = length eS
       && esbs = FMap.fromSequences (vS, eS)
@@ -723,10 +729,10 @@ spec
       => pj (theore (cx, ((FNN bvS e) __ (TUPLE eS)) == exprSubst esbs e)))
     | thIfThenElse ->
       (fa (cx:Context, e0:Expression, e1:Expression, e2:Expression,
-           e3:Expression, t:Type)
+           e3:Expression, t:Type, an1:AxiomName, an2:AxiomName)
          pj (wellTypedExpr (cx, IF e0 e1 e2, t))
-      && pj (theore (cx <| axio (empty,   e0), e1 == e3))
-      && pj (theore (cx <| axio (empty, ~~e0), e2 == e3))
+      && pj (theore (cx <| axio (an1, empty,   e0), e1 == e3))
+      && pj (theore (cx <| axio (an2, empty, ~~e0), e2 == e3))
       => pj (theore (cx, IF e0 e1 e2 == e3)))
     | thRecord ->
       (fa (cx:Context, fS:Fields, tS:Types, v:Variable, vS:Variables)
@@ -874,16 +880,19 @@ spec
                              e __ (VAR v)))))
     | thCase ->
       (fa (cx:Context, e:Expression, n:Nat, pS:Patterns, eS:Expressions,
-           t:Type, posCxS:FSeq Context, negCxS:FSeq Context, e1:Expression)
+           t:Type, posCxS:FSeq Context, negCxS:FSeq Context, e1:Expression,
+           posAnS:FSeq AxiomName, negAnS:FSeq AxiomName)
          length pS = n
       && length eS = n
       && length posCxS = n
       && length negCxS = n
+      && length posAnS = n
+      && length negAnS = n
       && pj (wellTypedExpr (cx, CASE e (zip (pS, eS)), t))
       && (fa(i:Nat) i < n =>
             posCxS elem i =
             multiVarDecls (pattBoundVars (pS elem i))
-              <| axio (empty, pattAssumptions (pS elem i, e)))
+              <| axio (posAnS elem i, empty, pattAssumptions (pS elem i, e)))
       && (fa(i:Nat) i < n =>
             (let conjuncts:Expressions = the (fn conjuncts ->
                  length conjuncts = i &&
@@ -892,7 +901,7 @@ spec
                     FAA (pattBoundVars (pS elem i))
                         (pattAssumptions (pS elem i, e)))) in
              negCxS elem i =
-             singleton (axio (empty, conjoinAll conjuncts))))
+             singleton (axio (negAnS elem i, empty, conjoinAll conjuncts))))
       && (fa(i:Nat) i < n =>
             pj (theore (cx ++ (negCxS elem i) ++ (posCxS elem i),
                         (eS elem i) == e1)))
@@ -901,7 +910,8 @@ spec
       => pj (theore (cx, CASE e (zip (pS, eS)) == e1)))
     | thRecursiveLet ->
       (fa (cx:Context, vS:Variables, tS:Types, bvS:BoundVars, eS:Expressions,
-           n:Nat, e:Expression, t:Type, e1:Expression, conjuncts:Expressions)
+           n:Nat, e:Expression, t:Type, e1:Expression, conjuncts:Expressions,
+           an:AxiomName)
          length vS = n
       && length tS = n
       && length eS = n
@@ -912,7 +922,7 @@ spec
             conjuncts elem i =
             VAR (vS elem i) == (eS elem i))
       && pj (theore (cx ++ multiVarDecls bvS
-                        <| axio (empty, conjoinAll conjuncts),
+                        <| axio (an, empty, conjoinAll conjuncts),
                      e == e1))
       && toSet vS /\ exprFreeVars e1 = empty
       => pj (theore (cx, LETDEF bvS eS e == e1)))
