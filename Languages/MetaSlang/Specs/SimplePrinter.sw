@@ -28,7 +28,7 @@ SpecCalc qualifying spec
    % in the list of names for that sort.
    let 
      def doSortInfo sortInfo = ppConcat [ppString "type ", ppASortInfo sortInfo]
-     def doOpInfo   opInfo   = ppConcat [ppString "op ",   ppAOpInfo   opInfo]
+     def doOpInfo   opInfo   = ppConcat [ppString "op  ",   ppAOpInfo   opInfo]
    in
      ppConcat [
        ppString "spec {",
@@ -122,7 +122,7 @@ SpecCalc qualifying spec
      ppConcat (ppDecls ++ ppDefs)
 
   op ppAOpInfo : [a] AOpInfo a -> Pretty
- def ppAOpInfo info = ppAOpInfoAux (" op ", info)
+ def ppAOpInfo info = ppAOpInfoAux (" op  ", info)
 
   op ppAOpInfoAux : [a] String * AOpInfo a -> Pretty
  def ppAOpInfoAux (decl_keyword, info) = 
@@ -167,25 +167,38 @@ SpecCalc qualifying spec
 			 ])
    in
    let (decls, defs) = opInfoDeclsAndDefs info in
+   let decls = 
+       %% make sure at least one "op ..." form is printed, to establish the type of the op
+       case (decls, defs) of
+	 | ([], dfn :: _) -> [dfn]
+	 | _ -> decls
+   in
+   let ppWarnings = 
+       case (decls,defs) of
+	 | (_ ::_::_, _::_::_) -> [ppNewline, 
+				   ppString " (* Warning: Multiple declarations and definitions for following op *) ",
+				   ppNewline]
+	 | (_ ::_::_,       _) -> [ppNewline, 
+				   ppString " (* Warning: Multiple declarations for following op *) ",
+				   ppNewline]
+	 | (_,        _::_::_) -> [ppNewline, 
+				   ppString " (* Warning: Multiple definitions for following op *) ",
+				   ppNewline]
+	 | _ -> []
+   in
    let ppDecls =
        case decls of
 	 | []   -> []
 	 | [tm] -> [ppDecl tm]
-	 | _    -> [ppNewline, 
-		    ppString " (* Warning: Multiple declarations for following op *) ",
-		    ppNewline, 
-		    ppSep ppNewline (map ppDecl decls)]
+	 | _    -> [ppSep ppNewline (map ppDecl decls)]
    in
    let ppDefs =
        case defs of
 	 | []   -> []
 	 | [tm] -> [ppDef tm]
-	 | _    -> [ppNewline, 
-		    ppString " (* Warning: Multiple definitions for following op *) ",
-		    ppNewline, 
-		    ppSep ppNewline (map ppDef defs)]
+	 | _    -> [ppSep ppNewline (map ppDef defs)]
    in
-     ppConcat (ppDecls ++ ppDefs)
+     ppConcat (ppWarnings ++ ppDecls ++ [ppNewline] ++ ppDefs)
 
   op ppAProperty : fa (a) AProperty a -> Pretty
  def ppAProperty (propType, name, tvs, term) =

@@ -122,7 +122,7 @@ SpecCalc qualifying spec
 	     | _ ->
 	       (foldl (fn (sort_info, msg) ->
 		       msg ^ (ppFormat (ppASortInfo sort_info)))
-		      "\nAmbiguous types:"
+		      "\nAmbiguous types:\n"
 		      ambiguous_sorts)
 	       ^ "\n"
        in
@@ -132,7 +132,7 @@ SpecCalc qualifying spec
 	     | _ ->
 	       (foldl (fn (opinfo, msg) ->
 		       msg ^ (ppFormat (ppAOpInfo opinfo)))
-		      "\nAmbiguous ops: "
+		      "\nAmbiguous ops:\n"
 		      ambiguous_ops)
        in
 	 (None, Some ("\n" ^ sort_msg ^ op_msg ^ "\n"))

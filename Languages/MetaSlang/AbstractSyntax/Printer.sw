@@ -135,7 +135,7 @@ AnnTermPrinter qualifying spec {
     Conjecture         = string "conjecture",
     Is                 = string "is",
     Import             = string "import ",
-    Op                 = string "op",
+    Op                 = string "op ",
     Of                 = string "of ",
     Def                = string "def ",
     Arrow              = string " -> ",
@@ -463,7 +463,7 @@ AnnTermPrinter qualifying spec {
   def ppListPath path f (left, sep, right) ps = 
    prettysNone [
      left,
-     prettysFill (
+     prettysLinear (
        addSeparator sep 
          (mapWithIndex (fn (i, x) -> f (cons (i, path), x)) ps)),
      right]
