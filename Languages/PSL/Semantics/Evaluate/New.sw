@@ -3,7 +3,6 @@
 \begin{spec}
 spec {
   import Signature 
-  % import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Specs/Elaborate/Utilities
   import /Languages/MetaSlang/Specs/PosSpec
   import /Languages/MetaSlang/AbstractSyntax/Fold
@@ -11,7 +10,7 @@ spec {
   import Spec/Utilities
   import ../Utilities
   import Util
-  import BSpecs qualifying /Languages/BSpecs/Predicative/Multipointed
+  import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
 
   op sortScheme : fa (a) AOpInfo a -> ASortScheme a
   def sortScheme (names,fxty,sortScheme,optTerm) = sortScheme
@@ -29,16 +28,18 @@ spec {
           let argSorts = map (fn (name,srt) -> srt) procInfo.args in
           let argProd = PosSpec.mkProduct argSorts in
           let resSort = procInfo.returnSort in
+          let tmpSpec = subtractSpec pSpec.dynamicSpec pSpec.staticSpec in
           let storeRec = mkProduct_local
             (foldriAQualifierMap
                (fn (qual,id,opInfo,recSorts) -> Cons ((qual ^ "-" ^ id,sortOfScheme (sortScheme opInfo)),recSorts))
-                        [] pSpec.dynamicSpec.ops) in
+                        [] tmpSpec.ops) in
           let procSort = mkPBase(unQualified "Proc",[argProd,resSort,storeRec]) in {
              static <- staticSpec pSpec;
              static <- addOp [unQualified name] Nonfix (tyVarsOf procSort,procSort) None static internalPosition;
              pSpec <- setStaticSpec pSpec static;
              compileProcedure pSpec 0 name procInfo
           }
+      | _ -> return pSpec
 \end{spec}
 
 The following function is used to extract a list of type variables from
@@ -63,6 +64,7 @@ spec for the MetaSlang abstract syntax, but it is ok for now.
         | Quotient (srt1,_,_) -> tyVarsOfAux (srt1,tvs)
         | Subsort (srt1,_,_) -> tyVarsOfAux (srt1,tvs)
         | Base (_,srts,_) -> foldl tyVarsOfAux tvs srts
+        | PBase (_,srts,_) -> foldl tyVarsOfAux tvs srts
         | TyVar (tv,_) -> if member (tv,tvs) then tvs else List.insert (tv,tvs)
         | MetaTyVar _ -> tvs
     in
@@ -265,7 +267,7 @@ however, Specware does not have let-polymorphism.
      }
    }
 
-  sort BSpecs.Morphism = SpecCat.Morphism  %% Why do we need this?
+  % sort BSpecs.Morphism = SpecCat.Morphism  %% Why do we need this?
 
   op compileCommand : 
         PSpec Position
@@ -383,7 +385,42 @@ We choose the second approach.
 \begin{spec}
       | Assign (trm1,trm2) ->
           (case trm2 of
+            | ApplyN ([Fun(OneName(id,fixity),srt,_),Record (args,_)],_) -> {
+                  print "Assign: OneName found (with record args)";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) (unQualified id) (map (fn (x,y) -> y) args)
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+            | ApplyN ([Fun(OneName(id,fixity),srt,pos),arg],_) -> {
+                  print "Assign: OneName found (unary arg)";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) (unQualified id) [arg]
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+
+            | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,_),Record (args,_)],_) -> {
+                  print "Assign: TwoNames found (with record args)";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) (Qualified (id1,id2)) (map (fn (x,y) -> y) args)
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+            | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,pos),arg],_) -> {
+                  print "Assign: TwoNames found (unary arg)";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) (Qualified (id1,id2)) [arg]
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+
             | ApplyN ([Fun(Op(id,fixity),srt,_),Record (args,_)],_) -> {
+                  print "Assign: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
                     compileProcCall pSpec first last bSpec cnt (Some trm1) id (map (fn (x,y) -> y) args)
@@ -391,6 +428,7 @@ We choose the second approach.
                     compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(Op(id,fixity),srt,pos),arg],_) -> {
+                  print "Assign: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
                     compileProcCall pSpec first last bSpec cnt (Some trm1) id [arg]
@@ -607,7 +645,15 @@ elements in the list.
   op processLHS : ATerm Position -> QualifiedId * (ATerm Position)
   def processLHS trm =
     case trm of
+      | Fun (OneName(id,fixity),srt,pos) ->
+         (unQualified id, Fun(OneName(id ^ "'",fixity),srt,pos))
+      | Fun (TwoNames(id1,id2,fixity),srt,pos) ->
+         (Qualified(id1,id2), Fun(TwoNames(id1,id2 ^ "'",fixity),srt,pos))
       | Fun (Op(id,fixity),srt,pos) -> (id, Fun(Op(makePrimedId id,fixity),srt,pos))
+      | ApplyN ((Fun (OneName(id,fixity),srt,pos))::args,pos) ->
+         (unQualified id, ApplyN (Cons (Fun(OneName(id ^ "'",fixity),srt,pos),args),pos))
+      | ApplyN ((Fun (TwoNames(id1,id2,fixity),srt,pos))::args,pos) ->
+         (Qualified (id1,id2), ApplyN (Cons (Fun(TwoNames(id1,id2 ^ "'",fixity),srt,pos),args),pos))
       | ApplyN ((Fun (Op(id,fixity),srt,pos))::args,pos) ->
          (id, ApplyN (Cons (Fun(Op(makePrimedId id,fixity),srt,pos),args),pos))
 \end{spec}

@@ -5,7 +5,7 @@ spec {
 
   sort Value =
     | Spec  Spec
-    | Morph SpecCat.Morphism     %%% BUG! This must be qualified here but need not be qualified in SpecCalculus version. Why??!!
+    | Morph Morphism
     | Diag  (Diagram (Spec,Morphism))
     | PSpec (PSpec Position)
     | InProcess			  % Used for catching circular definitions

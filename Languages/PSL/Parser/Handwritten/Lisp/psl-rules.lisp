@@ -89,7 +89,7 @@
   (make-psl-relation 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :VARDECL ()
-  (:tuple "op" (1 :QUALIFIABLE-OP-NAMES) ":" (2 :SORT-SCHEME))
+  (:tuple "var" (1 :QUALIFIABLE-OP-NAMES) ":" (2 :SORT-SCHEME))
   (make-psl-var-decl 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-IF ()

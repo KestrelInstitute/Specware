@@ -13,7 +13,6 @@ ln -s ../../../SpecCalculus/Semantics/Evaluate/Diagram.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Generate.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Let.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Obligations.sw .
-ln -s ../../../SpecCalculus/Semantics/Evaluate/Print.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Qualify.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/SpecMorphism.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Translate.sw .

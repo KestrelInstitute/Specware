@@ -7,15 +7,15 @@ SpecCalc qualifying spec {
  % import Signature          
  import URI          
  import Spec         
- import Let         
+ % import Let         
  import Qualify         
- import Diagram      
+ % import Diagram      
  import Colimit
- import SpecMorphism 
- import DiagMorphism 
- import Generate      
- import Translate      
- import Obligations
+ % import SpecMorphism 
+ % import DiagMorphism 
+ % import Generate      
+ % import Translate      
+ % import Obligations
  import PSpec
  import Print      
 \end{spec}

@@ -28,6 +28,7 @@ where {
 Context = spec {
   import Procedure
   import /Languages/MetaSlang/Specs/AnnSpec
+  import /Languages/MetaSlang/Specs/SimplePrinter
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
 
   sort PSpec a = {
@@ -35,5 +36,39 @@ Context = spec {
     dynamicSpec : ASpec a,
     procedures : PolyMap.Map (QualifiedId,Procedure)
   }
+
+  op ppPSpec : fa (a) PSpec a -> Doc
+  def ppPSpec pSpec =
+    ppConcat [
+      ppString "static=",
+      ppNewline,
+      ppIndent (ppASpec pSpec.staticSpec),
+      ppNewline,
+      ppString "dynamic=",
+      ppNewline,
+      ppIndent (ppASpec pSpec.dynamicSpec),
+      ppNewline,
+      ppString "procedures=",
+      ppNewline,
+      ppIndent (ppMap ppQualifiedId ppProcedure pSpec.procedures)
+    ]
+
+  % the "Less" means pretty print all the specs but removed
+  % the spec given in the second argument. Usually the Base.
+  op ppPSpecLess : PSpec () -> ASpec () -> Doc
+  def ppPSpecLess pSpec spc =
+    ppConcat [
+      ppString "static=",
+      ppNewline,
+      ppIndent (ppASpec (subtractSpec pSpec.staticSpec spc)),
+      ppNewline,
+      ppString "dynamic=",
+      ppNewline,
+      ppIndent (ppASpec (subtractSpec pSpec.dynamicSpec spc)),
+      ppNewline,
+      ppString "procedures=",
+      ppNewline,
+      ppIndent (ppMap ppQualifiedId (fn proc -> ppProcedureLess proc spc) pSpec.procedures)
+    ]
 }}
 \end{spec}

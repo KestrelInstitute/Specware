@@ -6,15 +6,12 @@ the P as parameterized spec.
 
 \begin{spec}
 SpecCalc qualifying spec {
-  import Signature 
-  import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
-  import /Languages/MetaSlang/Specs/PosSpec
+  % import /Languages/MetaSlang/Specs/PosSpec
   import Spec
-  import Spec/Utilities
-  import URI/Utilities
-  import ../Utilities
+  % import ../Utilities
   import New
-  import Util
+  % import Signature 
+  % import Util
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -27,9 +24,9 @@ or names to spec like things that include procedures. I think the latter.
 They are procedures in context.
 
 \begin{spec}
- op SpecCalc.evaluatePSpec :
-         List (PSpecElem Position)
-      -> SpecCalc.Env ValueInfo
+ % op SpecCalc.evaluatePSpec :
+ %         List (PSpecElem Position)
+ %      -> SpecCalc.Env ValueInfo
  def SpecCalc.evaluatePSpec pSpecElements = {
     base <- basePSpec;
     (pSpec,timeStamp,depURIs) <- evaluatePSpecElems base pSpecElements;
@@ -54,28 +51,35 @@ They are procedures in context.
       dynamic <- mergeImport (URI uri,internalPosition) staticElab dynamic internalPosition;
       pSpec <- setDynamicSpec pSpec dynamic;
       pSpec <- foldM evaluatePSpecDynamicContextElem pSpec pSpecElems;
-      dynamicElab <- elaborateSpec dynamic; 
       pSpec <- foldM evaluatePSpecProcElem pSpec pSpecElems;
       return (pSpec,timeStamp,depURIs)
+    }
+  
+  op baseSpec : SpecCalc.Env (ASpec Position)
+  def baseSpec = {
+      (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "adding base import")
+           (SpecPath_Relative {path = ["Library","Base"], hashSuffix = None});
+      return (convertSpecToPosSpec baseSpec)
     }
 
   op evaluatePSpecImportElem :
            (PSpec Position * TimeStamp * URI_Dependency)
         -> PSpecElem Position
         -> Env (PSpec Position * TimeStamp * URI_Dependency)
-%   def evaluatePSpecImport (val as (pSpec,currentTimeStamp,currentDeps)) (elem,position) =
-%     case elem of
-%       | Import term -> {
-%             (value,importTimeStamp,depURIs) <- evaluateTermInfo term;
-%             (case value of
-%               | PSL impPSpec -> return (value,importTimeStamp,depURIs)
-%               | Spec impSpec -> {
-%                     newSpc <- mergeImport term impSpec spc position;
-%                     return (newSpc, max (currentTimeStamp,importTimeStamp), currentDeps ++ depURIs)
-%                   }
-%               | _ -> raise (Fail ("Import not a spec")))
-%           }
-%       | _ -> return val
+  def evaluatePSpecImportElem (val as (pSpec,currentTimeStamp,currentDeps)) (elem,position) =
+    case elem of
+      | Import term -> {
+            (value,importTimeStamp,depURIs) <- evaluateTermInfo term;
+            (case value of
+              | PSpec impPSpec -> return (impPSpec,importTimeStamp,depURIs)  % This is wrong .. should merge!
+              | Spec impSpec -> {
+                    newStatic <- mergeImport term impSpec pSpec.staticSpec position;
+                    newPSpec <- setStaticSpec pSpec newStatic;
+                    return (newPSpec, max (currentTimeStamp,importTimeStamp), currentDeps ++ depURIs)
+                  }
+              | _ -> raise (Fail ("Import not a spec")))
+          }
+      | _ -> return val
 
   op evaluatePSpecProcElem :
            PSpec Position
@@ -140,20 +144,23 @@ body of some procedure. Don't we want to elaborate as we go along?
 
   op basePSpec : SpecCalc.Env (PSpec Position)
   def basePSpec = {
-    deltaSort <- return (Some (PosSpec.mkProduct [PosSpec.mkTyVar "a", PosSpec.mkTyVar "a"]));
-    procSort <- return (Some
-                 (PosSpec.mkArrow
-                   (PosSpec.mkProduct [
-                      PosSpec.mkTyVar "args",
-                      PosSpec.mkTyVar "rtn",
-                      PosSpec.mkPBase (unQualified "Delta", [PosSpec.mkTyVar "store"])],
-                    PosSpec.boolPSort)));
-    staticSpec <- addSort [unQualified "Delta"] ["a"] deltaSort emptySpec internalPosition;
-    staticSpec <- addSort [unQualified "Proc"]  ["args","rtn","store"] procSort staticSpec internalPosition;
+    (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "psl base import")
+           (SpecPath_Relative {path = ["Library","PSL","Base"], hashSuffix = None});
+    baseSpec <- return (convertSpecToPosSpec baseSpec);
+%     deltaSort <- return (Some (PosSpec.mkProduct [PosSpec.mkTyVar "a", PosSpec.mkTyVar "a"]));
+%     procSort <- return (Some
+%                  (PosSpec.mkArrow
+%                    (PosSpec.mkProduct [
+%                       PosSpec.mkTyVar "args",
+%                       PosSpec.mkTyVar "rtn",
+%                       PosSpec.mkPBase (unQualified "Delta", [PosSpec.mkTyVar "store"])],
+%                     PosSpec.boolPSort)));
+%     staticSpec <- addSort [unQualified "Delta"] ["a"] deltaSort emptySpec internalPosition;
+%     staticSpec <- addSort [unQualified "Proc"]  ["args","rtn","store"] procSort staticSpec internalPosition;
     dynamicSpec <- return emptySpec;
     % let dynamic = addImport ("Static", dynamic)
     return {
-        staticSpec = staticSpec,
+        staticSpec = baseSpec,
         dynamicSpec = dynamicSpec,
         procedures = PolyMap.emptyMap
       }

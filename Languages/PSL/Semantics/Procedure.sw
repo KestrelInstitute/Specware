@@ -9,7 +9,8 @@ corresponding to initial and final states.
 
 \begin{spec}
 spec {
-  import BSpecs qualifying /Languages/BSpecs/Predicative/Multipointed
+  import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
+  % import BSpecs qualifying /Languages/BSpecs/Predicative/Multipointed
 
   sort Procedure = {
     parameters : List String,
@@ -20,6 +21,13 @@ spec {
   }
 
   op makeProcedure : List String -> Option String -> ASpec () -> ASpec () -> BSpec -> Procedure
+  def makeProcedure args ret static dynamic bSpec = {
+    parameters = args,
+    return = ret,
+    staticSpec = static,
+    dynamicSpec = dynamic,
+    code = bSpec
+  }
 \end{spec}
 
 The field \verb+paramaters+ lists the names of the formal parameters
@@ -59,6 +67,27 @@ This isn't the final answer since it doesn't allow us to introduce new
 ops and axioms along a transition \ldots only when we introduce procedures.
 
 \begin{spec}
+  op ppProcedureLess : Procedure -> Spec -> Pretty
+  def ppProcedureLess proc spc =
+    ppConcat [
+      ppString "params=(",
+      ppSep (ppString ",") (map ppString proc.parameters),
+      ppString "), return=",
+      case proc.return of
+          None -> ppNil
+        | Some name -> ppString name,
+      % ppNewline,
+      % ppString "staticSpec=",
+      % ppNewline,
+      % ppString "  ",
+      % ppIndent (ppSpec proc.staticSpec),
+      ppNewline,
+      ppString "bspec=",
+      ppNewline,
+      ppString "  ",
+      ppIndent (ppBSpecLess proc.code spc)
+    ]
+
   op ppProcedure : Procedure -> Pretty
   def ppProcedure proc =
     ppConcat [
