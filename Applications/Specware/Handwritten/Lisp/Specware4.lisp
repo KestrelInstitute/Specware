@@ -10,9 +10,12 @@
 ;;    change-directory
 ;;    current-directory
 (load (make-pathname
-  :defaults
-    (concatenate 'string Specware4 "/Applications/Handwritten/Lisp/load-utilities")
-  :type "lisp"))
+       :defaults (concatenate 'string Specware4 "/Applications/Handwritten/Lisp/load-utilities")
+       :type     "lisp"))
+
+;; The following uses make-system from load-utilities above.
+;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.
+(make-system "../../UI/Emacs/Handwritten/Lisp") 
 
 ;; The following list should be generated automatically!
 ;; The list is used only in this file.
@@ -32,8 +35,8 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
+    )
   )
-)
 
 ;; This loads functions that are assumed by the MetaSlang to Lisp compiler
 (compile-and-load-lisp-file (concatenate 'string
@@ -60,11 +63,9 @@
 
 ;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string
-    Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
+			  Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
 (make-system (concatenate 'string
-    Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
-
-(make-system "../../UI/Emacs/Handwritten/Lisp")
+			  Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
 ;;; Preload the base specs
 (user::sw "/Library/Base")
@@ -74,4 +75,4 @@
 
 (defun user::boot ()
   (user::sw "/Applications/Specware/Specware4")
-)
+  )
