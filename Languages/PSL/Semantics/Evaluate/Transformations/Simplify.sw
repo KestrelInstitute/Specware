@@ -149,8 +149,10 @@ an undesirable degree of non-determinism.
               extendBSpec oldBSpec src newBSpec transition
       | _ -> {
              nilLeavingState? <- existsInSet isNilTransition? transitions;
-             when nilLeavingState?
-                (raise (SpecError (noPos, "Nil transition leaving branching node")));
+             when nilLeavingState? {
+                foldM (fn _ -> fn transition -> print (Edg.show (edge transition))) () transitions;
+                raise (SpecError (noPos, "Nil transition leaving branching node"))
+             };
              foldM (extendBSpec oldBSpec src) newBSpec transitions
           }
 \end{spec}

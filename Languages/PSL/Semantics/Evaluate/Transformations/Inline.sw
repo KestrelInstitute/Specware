@@ -63,7 +63,7 @@ Inline qualifying spec
 
   op BSpec.reindex : BSpec -> BSpec
 
-  op MetaSlangRewriter.traceRewriting : Nat
+  % op MetaSlangRewriter.traceRewriting : Nat
 
   op remove : ProcMap.Map * Id.Id -> ProcMap.Map
 

@@ -5,6 +5,8 @@ TransSpec qualifying spec
   import ../TransSpec
   import ../Op/Legacy
   import ../Subst/AsOpInfo
+  import ../ModeSpec/AsRecord
+
 
   % sort TransSpec.TransSpec = SpecMorph.Morphism * ModeSpec.ModeSpec * SpecMorph.Morphism
 
@@ -24,7 +26,13 @@ TransSpec qualifying spec
 
   % op applySubst : TransSpec * Subst -> Env TransSpec
   def TransSpec.applySubst (transSpec,subst) = {
-      modeSpec <- foldM (fn modeSpec -> fn opInfo -> ModeSpec.addOp modeSpec opInfo noPos) (modeSpec transSpec) subst;
+        modeSpec <- foldM (fn modeSpec -> fn opInfo -> {
+          ms <- ModeSpec.addOp modeSpec opInfo noPos; 
+          let Qualified (qual,id) = idOf opInfo in
+          let newRules = defRule (context modeSpec,qual,id,opInfo) in
+          let newRules = addUnconditionalRules(newRules,rewriteRules modeSpec) in
+          return (ms withRewriteRules newRules)
+      }) (modeSpec transSpec) subst;
       return (transSpec withModeSpec modeSpec)
     }
     
@@ -37,8 +45,40 @@ TransSpec qualifying spec
 
   % op TransSpec.elaborate : TransSpec -> Env TranSpec
   def TransSpec.elaborate transSpec = {
-      modeSpc <- elaborate (modeSpec transSpec);
-      newTransSpec <- return (transSpec withModeSpec modeSpc);
+      % print "trans spec elaborate";
+      elabSpec <- Spec.elaborate (specOf (modeSpec transSpec));
+      % elabSpec <- catch (Spec.elaborate (specOf modeSpec))
+      %      (fn except -> {
+      %          print (printException except);
+      %          print (show modeSpec);
+      %          raise (SpecError (noPos, ""))
+      %       });
+      % newModeSpec <- return (setElaborated (modeSpec withSpec elabSpec));
+      % norm <- normalize newModeSpec;
+      % ctxt <- return (makeContext (specOf newModeSpec));
+      % rules <- return (demodRules (specRules ctxt (specOf newModeSpec)));
+      ms <- return {
+        spc = {
+            importInfo = {
+              imports = (modeSpec transSpec).spc.importInfo.imports,
+              importedSpec = (modeSpec transSpec).spc.importInfo.importedSpec,
+              localOps = [],
+              localSorts = []
+            },
+            sorts = (modeSpec transSpec).spc.sorts,
+            ops = (modeSpec transSpec).spc.ops,
+            properties = (modeSpec transSpec).spc.properties
+          },
+        variables = variables (modeSpec transSpec),
+        hidden = hidden (modeSpec transSpec),
+        invariants = invariants (modeSpec transSpec),
+        context = context (modeSpec transSpec),
+        rewriteRules = rewriteRules (modeSpec transSpec),
+        localSorts = empty,
+        localOps = empty,
+        localClaims = empty
+      };
+      newTransSpec <- return (transSpec withModeSpec ms);
       normalize newTransSpec
     }
 

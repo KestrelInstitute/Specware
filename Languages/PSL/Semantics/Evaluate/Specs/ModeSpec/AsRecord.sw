@@ -329,16 +329,16 @@ ModeSpec qualifying spec
       modeSpec <- foldM (fn modeSpec -> fn claim ->
         if member? (localClaims modeSpec, refOf claim) then 
           let newRules = axiomRules (context modeSpec) claim in
-          let rules = addUnconditionalRules(newRules,rewriteRules modeSpec) in
+          let rules = addUnconditionalRules (newRules,rewriteRules modeSpec) in
             return (modeSpec withRewriteRules rules)
         else
           return modeSpec
-        ) (modeSpec withSpec elabSpec) (specOf modeSpec).properties;
+        ) (modeSpec withSpec elabSpec) elabSpec.properties;
       modeSpec <- fold (fn modeSpec -> fn ref -> {
           opInfo <- findTheOp modeSpec ref;
           let Qualified (qual,id) = idOf opInfo in
           let rules = defRule (context modeSpec,qual,id,opInfo) in
-          let rules = addUnconditionalRules(rules,rewriteRules modeSpec) in
+          let rules = addUnconditionalRules (rules,rewriteRules modeSpec) in
           return (modeSpec withRewriteRules rules)
         }) modeSpec (localOps modeSpec);
       return {
@@ -378,10 +378,11 @@ ModeSpec qualifying spec
     }
 
   def ModeSpec.simplifyInvariants ruleModeSpec modeSpec =
-    let rules = mergeDemodRules [rewriteRules ruleModeSpec, rewriteRules modeSpec] in
+    % let rules = mergeDemodRules [rewriteRules ruleModeSpec, rewriteRules modeSpec] in
+    let rules = rewriteRules ruleModeSpec in
     let
       def doTerm count trm =
-        let lazy = rewriteRecursivePre (context ruleModeSpec,[],rules,trm) in
+        let lazy = rewriteRecursivePre ((context ruleModeSpec) withSpec (specOf ruleModeSpec),[],rules,trm) in
         case lazy of
           | Nil -> trm
           | Cons([],tl) -> trm
@@ -431,7 +432,7 @@ ModeSpec qualifying spec
   def ModeSpec.simplifyInvariant (modeSpec,claimRef) =
     let
       def doTerm count trm =
-        let lazy = rewriteRecursivePre (context modeSpec,[],rewriteRules modeSpec,trm) in
+        let lazy = rewriteRecursivePre ((context modeSpec) withSpec (specOf modeSpec),[],rewriteRules modeSpec,trm) in
         case lazy of
           | Nil ->
               % let _ = writeLine "appToSpec: Nil no change" in
@@ -472,22 +473,16 @@ ModeSpec qualifying spec
   % op join : ModeSpec -> ModeSpec -> Env ModeSpec
   def ModeSpec.join term ms1 ms2 position = {
     newSpc <- mergeImport term (specOf ms1) (specOf ms2) position;
-    newVars <- return (union (variables ms1, variables ms2));
-    newHidden <- return (union (hidden ms1, hidden ms2));
-    newInvars <- return (union (invariants ms1, invariants ms2));
-    newRules <- return (mergeDemodRules [rewriteRules ms1, rewriteRules ms2]);
-    % newElab <- return ((elaborated? ms1) & (elaborated? ms2));
     return {
         spc = newSpc,
-        variables = newVars,
-        hidden = newHidden,
-        invariants = newInvars,
+        variables = union (variables ms1, variables ms2),
+        hidden = union (hidden ms1, hidden ms2),
+        invariants = union (invariants ms1, invariants ms2),
         context = context ms1,
-        rewriteRules = newRules,
-        % elaborated? = newElab
-        localOps = empty,
-        localSorts = empty,
-        localClaims = empty
+        rewriteRules = mergeDemodRules [rewriteRules ms1, rewriteRules ms2],
+        localOps = union (localOps ms1,localOps ms2),
+        localSorts = union (localSorts ms1,localSorts ms2),
+        localClaims = union (localClaims ms1,localClaims ms2)
       }
   }
 

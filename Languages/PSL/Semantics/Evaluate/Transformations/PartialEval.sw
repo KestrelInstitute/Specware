@@ -15,7 +15,7 @@ PE qualifying spec
 
   % def EdgSetEnv.fold = EdgSetEnv.foldl
 
-  op MetaSlangRewriter.traceRewriting : Nat
+  % op MetaSlangRewriter.traceRewriting : Nat
 
   (* We are given an oscar spec (a collection of procedures) and a
   term. We expect the term to be an application that we assume to be a
@@ -161,7 +161,20 @@ PE qualifying spec
   op makeNewProcId : Id.Id -> Subst.Subst -> Env Id.Id
   def makeNewProcId (Qualified (qual,id)) subst = return (Qualified (qual,id ^ "_" ^ (show subst)))
 
-  op specializeProcedure : Oscar.Spec -> (Oscar.Spec * MS.Term) -> Env (Oscar.Spec * MS.Term * Subst)
+           def mkEquality t0 t1 ty =
+             let 
+               def prodToBoolType t1 t2 position =
+                 mkArrow (mkProduct ([t1, t2], position), boolType position, position)
+               def mkEquals ty =
+                 % let t1 = freshMetaTyVar noPos in
+                 % let t2 = freshMetaTyVar noPos in
+                 let type = prodToBoolType ty ty noPos in
+                 MSlang.mkFun (Equals, type, noPos)
+             in
+               MSlang.mkApply (mkEquals ty, MSlang.mkTuple ([t0,t1], noPos),noPos)
+
+
+  op specializeProcedure : Oscar.Spec -> (Oscar.Spec * MS.Term) -> Env (Oscar.Spec * MS.Term * Subst.Subst)
   def specializeProcedure oldOscSpec (newOscSpec, callTerm) = {
     (procId,procSort,procInfo,callArg) <-
       case callTerm of
@@ -260,15 +273,6 @@ PE qualifying spec
          let
            def andOp () = MSlang.mkFun (Op (Qualified ("Boolean","&"),Infix (Right,15)), binaryBoolType noPos, noPos)
            def mkAnd t0 t1 = MSlang.mkApply (andOp (), MSlang.mkTuple ([t0,t1], noPos), noPos)
-           def prodToBoolType t1 t2 position = mkArrow (mkProduct ([t1, t2], position), boolType position, position)
-           def mkEquals () =
-             let t1 = freshMetaTyVar noPos in
-             let t2 = freshMetaTyVar noPos in
-             let type = prodToBoolType t1 t2 noPos in
-             MSlang.mkFun (Equals, type, noPos)
-           def mkEquality t0 t1 =
-             MSlang.mkApply (mkEquals (), MSlang.mkTuple ([t0,t1], noPos),noPos)
-
            def projectSub subIn subOut termOut varRef =
              case subIn of
                | [] -> return (subOut,termOut)
@@ -279,7 +283,7 @@ PE qualifying spec
                            case (term varInfo) of
                              | None -> raise (SpecError (noPos, "projectSubst failed with no binding term"))
                              | Some trm -> return trm;
-                        eqTerm <- return (mkEquality opTerm varTerm); 
+                        eqTerm <- return (mkEquality opTerm varTerm (type varInfo)); 
                         return (cons (varInfo, subOut), mkAnd termOut eqTerm)
                       }
                     else
@@ -337,7 +341,7 @@ PE qualifying spec
                                     case (term varInfo) of
                                       | None -> raise (SpecError (noPos, "projectReturn failed with no binding term"))
                                       | Some trm -> return trm;
-                                 eqTerm <- return (mkEquality returnTerm varTerm); 
+                                 eqTerm <- return (mkEquality returnTerm varTerm (type varInfo)); 
                                  return (cons (varInfo, subOut), mkAnd termOut eqTerm)
                                }
                              else
@@ -367,8 +371,9 @@ PE qualifying spec
        totalTuple <- mkTuple ([paramTerm,newReturnTerm,residStoreTerm],noPos);
        newProcRef <- mkFun (Op (newProcId,Nonfix), newProcType, noPos);
        newTerm <- MSlangEnv.mkApply (newProcRef, totalTuple, noPos);
-       rhs <- return (mkAnd (newTerm,bindingTerm));
-       equalTerm <- MSlangEnv.mkApply (mkEquals (freshMetaTyVar noPos,noPos), mkTuple ([callTerm,rhs], noPos),noPos);
+       rhs <- return (MS.mkAnd (newTerm,bindingTerm));
+       % equalTerm <- MSlangEnv.mkApply (mkEquals (freshMetaTyVar noPos,noPos), mkTuple ([callTerm,rhs], noPos),noPos);
+       equalTerm <- return (mkEquality callTerm rhs (boolType noPos));
        newOscSpec <- newOscSpec Env.withModeSpec newModeSpec;
        newProc <- return (Proc.makeProcedure residParams residStateVars
                                  newReturnInfo
@@ -424,6 +429,10 @@ PE qualifying spec
                  print ("specialize procedure gives inv " ^ (printTerm newInvariant) ^ "\n") else return ();
                claim <- makeAxiom (makeId (printTerm newTerm)) [] newInvariant;
                newOscSpec <- addClaim newOscSpec claim noPos;
+               newRules <- return (axiomRules (context (modeSpec newOscSpec)) claim); 
+               newRules <- return (addUnconditionalRules(newRules,rewriteRules (modeSpec newOscSpec)));
+               newOscSpec <- return (newOscSpec Oscar.withModeSpec ((modeSpec newOscSpec) withRewriteRules newRules));
+
                if traceRewriting > 0 then
                  print "about to simplify (after procedure call)\n" else return ();
                % printRules (modeSpec newOscSpec);

@@ -2,22 +2,11 @@
 
 \begin{spec}
 let S = spec
-%%   import translate (translate Specs/BSpecs/AsLists
-%%     % by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
-%%     % by {Cat._ +-> ModeSpec._}
-%%     by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
-%%     by {CatObject._ +-> ModeSpec._, CatArrow._ +-> SpecMorph._, Cat._ +-> ModeSpecCat._,
-%%         Vertex._ +-> Vrtx._, Edge._ +-> Edg._,
-%%         VertexSet._ +-> VrtxSet._, EdgeSet._ +-> EdgSet._}
-
   import Specs/Compiler
   import Specs/Oscar
 endspec in
 SpecCalc qualifying spec {
-  import translate S by
-    {Monad._ +-> Env._}
-     % Vertex._ +-> V._,
-     % Edge._ +-> E._}
+  import translate S by {Monad._ +-> Env._}
   import translate Refinement by {Monad._ +-> Env._}
   import Specs/Spec/Legacy
   import /Languages/SpecCalculus/Semantics/Evaluate/Signature
@@ -103,10 +92,12 @@ They are procedures in context.
          | Other impOscarSpec -> join term oscarSpec impOscarSpec (positionOf term)
          | Spec impSpec -> {
                newSpec <- mergeImport term impSpec (specOf (modeSpec oscarSpec)) (positionOf term);
-               return (oscarSpec withModeSpec ((modeSpec oscarSpec) withSpec newSpec))
+               let newRules = specRules (context (modeSpec oscarSpec)) newSpec in
+               let allRules = mergeDemodRules [demodRules newRules, rewriteRules (modeSpec oscarSpec)] in
+               return (oscarSpec withModeSpec (((modeSpec oscarSpec) withSpec newSpec) withRewriteRules allRules))
              }
          | _ -> raise (Fail ("Import not a spec"));
-            return (newOscarSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depUnitIds))
+     return (newOscarSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depUnitIds))
     }
 
   op evaluateOscarSpecContextElem : Oscar.Spec -> OscarSpecElem Position -> SpecCalc.Env Oscar.Spec

@@ -38,6 +38,16 @@ spec
         counter     : Ref Nat
       }
 
+  op withSpec infixl 17 : Context * Spec -> Context
+  def withSpec (ctxt,spc) = { 
+        spc = spc,
+        trace = ctxt.trace,
+        traceDepth = ctxt.traceDepth,
+        traceIndent = ctxt.traceIndent,
+        boundVars = ctxt.boundVars,
+        counter = ctxt.counter
+      }
+
 %% . spc        : Spec
 %% . trace      : print trace?
 %% . traceDepth : Counter keeping track of how deeply 
@@ -645,9 +655,10 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
 	  (case SpecEnvironment.rangeOpt(spc,srt)
 	     of Some rng -> rng
 	      | None -> 
-		System.fail 
+		(% System.print N; printSpecWithSortsToTerminal spc;
+         System.fail 
 		("Could not extract type for "^
-		 printTermWithSorts N))
+		 printTermWithSorts N)))
         | Bind _ -> boolSort
         | Record(fields,a) -> 
 	  Product(map (fn (id,t)-> (id,inferType(spc,subst,t))) fields,a)
