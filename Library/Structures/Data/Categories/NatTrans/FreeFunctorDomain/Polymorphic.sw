@@ -31,6 +31,9 @@ spec {
      -> NatTrans (O,A)
 
   op compose : fa (O,A) NatTrans (O,A) -> NatTrans (O,A) -> NatTrans (O,A)
+
+  % The argument is the target category.
+  op emptyNatTrans : fa (O,A) Cat (O,A) -> NatTrans (O,A)
 \end{spec}
 
 Of course we need the naturality condition on this and the axiom that

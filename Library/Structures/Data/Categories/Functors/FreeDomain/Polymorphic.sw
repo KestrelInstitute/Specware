@@ -35,10 +35,12 @@ spec {
 
   sort Functor (O,A)
 
-  op dom : fa(O,A) Functor (O,A) -> Sketch
-  op cod : fa(O,A) Functor (O,A) -> Cat (O,A)
-  op vertexMap : fa(O,A) Functor (O,A) -> PolyMap.Map (Vertex.Elem,O)
-  op edgeMap : fa(O,A) Functor (O,A) -> PolyMap.Map (Edge.Elem,A)
+  op dom : fa (O,A) Functor (O,A) -> Sketch
+  op cod : fa (O,A) Functor (O,A) -> Cat (O,A)
+  op vertexMap : fa (O,A) Functor (O,A) -> PolyMap.Map (Vertex.Elem,O)
+  op edgeMap : fa (O,A) Functor (O,A) -> PolyMap.Map (Edge.Elem,A)
+
+  op emptyFunctor : fa (O,A) Cat (O,A) -> Functor (O,A)
 \end{spec}
 
 When pretty printing a functor, we don't print the domain or codomain. 

@@ -58,7 +58,7 @@ categories and cocomplete categories. In this case the extra
 level of abstraction helps none.
 
 \begin{spec}
-spec {
+Cat qualifying spec {
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Cat (O,A)

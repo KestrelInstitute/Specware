@@ -52,6 +52,9 @@ SpecCat qualifying spec {
 
   op specCat : Cat.Cat (Spec, Morphism)
 
+  op dummyColimit : Diagram (Spec,Morphism) -> InitialCocone (Spec,Morphism)
+  def dummyColimit dgm = fail "no colimit available yet"
+
   def specCat = {
     dom = fn {dom = dom, cod = _, sortMap = _, opMap = _} -> dom,
     cod = fn {dom = _, cod = cod, sortMap = _, opMap = _} -> cod,
@@ -61,7 +64,8 @@ SpecCat qualifying spec {
        sortMap = emptyMap,
        opMap = emptyMap
     },
-    colimit = fn dgm -> emptyInitialCocone, 
+    colimit = dummyColimit,
+    initialObject = emptySpec,
     compose = compose,
     ppObj = fn obj -> ppString "spec object ... later",
     ppArr = fn {dom = dom, cod = cod, sortMap = sm, opMap = om} ->

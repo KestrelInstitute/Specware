@@ -21,6 +21,8 @@ let Specware4 = spec {
     /Library/Structures/Data/Sets/Monomorphic/AsLists
   import Sketch qualifying 
     /Library/Structures/Data/Maps/Monomorphic/AsLists
+  import NatTrans qualifying
+    /Library/Structures/Data/Categories/NatTrans/FreeFunctorDomain/Polymorphic/AsRecord
 
   def Vertex.ppElem = WadlerLindig.ppString
   def Edge.ppElem = WadlerLindig.ppString
