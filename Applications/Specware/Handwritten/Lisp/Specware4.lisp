@@ -13,6 +13,15 @@
        :defaults (concatenate 'string Specware4 "/Applications/Handwritten/Lisp/load-utilities")
        :type     "lisp"))
 
+(load (make-pathname
+       :defaults (concatenate 'string Specware4 "/Provers/Snark/Handwritten/Lisp/snark-system")
+       :type     "lisp"))
+
+(snark:make-snark-system t)
+
+;; Snark puts us in another package .. so we go back
+(in-package "SPECWARE")
+
 ;; The following uses make-system from load-utilities above.
 ;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.
 (make-system "../../UI/Emacs/Handwritten/Lisp") 
