@@ -7,11 +7,11 @@ LITERAL_endspec="endspec"=7
 LITERAL_prove="prove"=8
 LITERAL_in="in"=9
 LITERAL_using="using"=10
-LITERAL_options="options"=11
-LITERAL_import="import"=12
-LITERAL_sort="sort"=13
-LBRACE("'{'")=14
-COMMA("','")=15
+COMMA("','")=11
+LITERAL_options="options"=12
+LITERAL_import="import"=13
+LITERAL_sort="sort"=14
+LBRACE("'{'")=15
 RBRACE("'}'")=16
 DOT("'.'")=17
 LPAREN("'('")=18

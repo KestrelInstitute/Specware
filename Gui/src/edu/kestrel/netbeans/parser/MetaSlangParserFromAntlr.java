@@ -706,7 +706,11 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			int _cnt31=0;
 			_loop31:
 			do {
-				if ((LA(1)==IDENTIFIER) && (LA(2)==EOF||LA(2)==IDENTIFIER||LA(2)==LITERAL_options) && (_tokenSet_9.member(LA(3)))) {
+				if ((LA(1)==IDENTIFIER) && (LA(2)==COMMA)) {
+					anAssertion=name();
+					match(COMMA);
+				}
+				else if ((LA(1)==IDENTIFIER) && (LA(2)==EOF||LA(2)==IDENTIFIER||LA(2)==LITERAL_options) && (_tokenSet_9.member(LA(3)))) {
 					anAssertion=name();
 				}
 				else {
@@ -743,8 +747,8 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			int _cnt34=0;
 			_loop34:
 			do {
-				if ((LA(1)==IDENTIFIER) && (LA(2)==EOF||LA(2)==IDENTIFIER) && (_tokenSet_11.member(LA(3)))) {
-					anOption=name();
+				if (((LA(1) >= NAT_LITERAL && LA(1) <= LITERAL_false))) {
+					anOption=literal();
 				}
 				else {
 					if ( _cnt34>=1 ) { break _loop34; } else {throw new NoViableAltException(LT(1), getFilename());}
@@ -764,6 +768,69 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 		}
 		return optionsItem;
+	}
+	
+	private final String  literal() throws RecognitionException, TokenStreamException {
+		String text;
+		
+		Token  t1 = null;
+		Token  t2 = null;
+		Token  t3 = null;
+		
+		text = null;
+		
+		
+		try {      // for error handling
+			switch ( LA(1)) {
+			case LITERAL_true:
+			case LITERAL_false:
+			{
+				text=booleanLiteral();
+				break;
+			}
+			case NAT_LITERAL:
+			{
+				t1 = LT(1);
+				match(NAT_LITERAL);
+				if ( inputState.guessing==0 ) {
+					text = t1.getText();
+				}
+				break;
+			}
+			case CHAR_LITERAL:
+			{
+				t2 = LT(1);
+				match(CHAR_LITERAL);
+				if ( inputState.guessing==0 ) {
+					text = t2.getText();
+				}
+				break;
+			}
+			case STRING_LITERAL:
+			{
+				t3 = LT(1);
+				match(STRING_LITERAL);
+				if ( inputState.guessing==0 ) {
+					text = t3.getText();
+				}
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+		}
+		catch (RecognitionException ex) {
+			if (inputState.guessing==0) {
+				reportError(ex);
+				consume();
+				consumeUntil(_tokenSet_11);
+			} else {
+			  throw ex;
+			}
+		}
+		return text;
 	}
 	
 	private final String  qualifier() throws RecognitionException, TokenStreamException {
@@ -1200,8 +1267,8 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					}
 					break;
 				}
-				case LBRACE:
 				case COMMA:
+				case LBRACE:
 				case RBRACE:
 				case LPAREN:
 				case RPAREN:
@@ -1469,69 +1536,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 		}
 		return name;
-	}
-	
-	private final String  literal() throws RecognitionException, TokenStreamException {
-		String text;
-		
-		Token  t1 = null;
-		Token  t2 = null;
-		Token  t3 = null;
-		
-		text = null;
-		
-		
-		try {      // for error handling
-			switch ( LA(1)) {
-			case LITERAL_true:
-			case LITERAL_false:
-			{
-				text=booleanLiteral();
-				break;
-			}
-			case NAT_LITERAL:
-			{
-				t1 = LT(1);
-				match(NAT_LITERAL);
-				if ( inputState.guessing==0 ) {
-					text = t1.getText();
-				}
-				break;
-			}
-			case CHAR_LITERAL:
-			{
-				t2 = LT(1);
-				match(CHAR_LITERAL);
-				if ( inputState.guessing==0 ) {
-					text = t2.getText();
-				}
-				break;
-			}
-			case STRING_LITERAL:
-			{
-				t3 = LT(1);
-				match(STRING_LITERAL);
-				if ( inputState.guessing==0 ) {
-					text = t3.getText();
-				}
-				break;
-			}
-			default:
-			{
-				throw new NoViableAltException(LT(1), getFilename());
-			}
-			}
-		}
-		catch (RecognitionException ex) {
-			if (inputState.guessing==0) {
-				reportError(ex);
-				consume();
-				consumeUntil(_tokenSet_19);
-			} else {
-			  throw ex;
-			}
-		}
-		return text;
 	}
 	
 	private final String  specialSymbol() throws RecognitionException, TokenStreamException {
@@ -2048,8 +2052,8 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 					}
 					break;
 				}
-				case LBRACE:
 				case COMMA:
+				case LBRACE:
 				case RBRACE:
 				case LPAREN:
 				case RPAREN:
@@ -2200,7 +2204,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			if (inputState.guessing==0) {
 				reportError(ex);
 				consume();
-				consumeUntil(_tokenSet_19);
+				consumeUntil(_tokenSet_11);
 			} else {
 			  throw ex;
 			}
@@ -2221,11 +2225,11 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		"\"prove\"",
 		"\"in\"",
 		"\"using\"",
+		"','",
 		"\"options\"",
 		"\"import\"",
 		"\"sort\"",
 		"'{'",
-		"','",
 		"'}'",
 		"'.'",
 		"'('",
@@ -2285,43 +2289,43 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 	public static final BitSet _tokenSet_0 = new BitSet(_tokenSet_0_data_);
 	private static final long _tokenSet_1_data_[] = { 34L, 0L };
 	public static final BitSet _tokenSet_1 = new BitSet(_tokenSet_1_data_);
-	private static final long _tokenSet_2_data_[] = { 4503599629601314L, 0L };
+	private static final long _tokenSet_2_data_[] = { 4503599629605410L, 0L };
 	public static final BitSet _tokenSet_2 = new BitSet(_tokenSet_2_data_);
-	private static final long _tokenSet_3_data_[] = { 4503599563260768L, 0L };
+	private static final long _tokenSet_3_data_[] = { 4503599563246432L, 0L };
 	public static final BitSet _tokenSet_3 = new BitSet(_tokenSet_3_data_);
-	private static final long _tokenSet_4_data_[] = { 63975424L, 0L };
+	private static final long _tokenSet_4_data_[] = { 63987712L, 0L };
 	public static final BitSet _tokenSet_4 = new BitSet(_tokenSet_4_data_);
-	private static final long _tokenSet_5_data_[] = { 63978658L, 0L };
+	private static final long _tokenSet_5_data_[] = { 63992994L, 0L };
 	public static final BitSet _tokenSet_5 = new BitSet(_tokenSet_5_data_);
-	private static final long _tokenSet_6_data_[] = { 63978674L, 0L };
+	private static final long _tokenSet_6_data_[] = { 63993010L, 0L };
 	public static final BitSet _tokenSet_6 = new BitSet(_tokenSet_6_data_);
-	private static final long _tokenSet_7_data_[] = { 63975552L, 0L };
+	private static final long _tokenSet_7_data_[] = { 63987840L, 0L };
 	public static final BitSet _tokenSet_7 = new BitSet(_tokenSet_7_data_);
 	private static final long _tokenSet_8_data_[] = { 512L, 0L };
 	public static final BitSet _tokenSet_8 = new BitSet(_tokenSet_8_data_);
-	private static final long _tokenSet_9_data_[] = { 4503599629469730L, 0L };
+	private static final long _tokenSet_9_data_[] = { 4503616272472098L, 0L };
 	public static final BitSet _tokenSet_9 = new BitSet(_tokenSet_9_data_);
-	private static final long _tokenSet_10_data_[] = { 2082L, 0L };
+	private static final long _tokenSet_10_data_[] = { 4130L, 0L };
 	public static final BitSet _tokenSet_10 = new BitSet(_tokenSet_10_data_);
-	private static final long _tokenSet_11_data_[] = { 4503599629467682L, 0L };
+	private static final long _tokenSet_11_data_[] = { 4503599627233954L, 0L };
 	public static final BitSet _tokenSet_11 = new BitSet(_tokenSet_11_data_);
 	private static final long _tokenSet_12_data_[] = { 131072L, 0L };
 	public static final BitSet _tokenSet_12 = new BitSet(_tokenSet_12_data_);
-	private static final long _tokenSet_13_data_[] = { 4503599694461602L, 0L };
+	private static final long _tokenSet_13_data_[] = { 4503599694445218L, 0L };
 	public static final BitSet _tokenSet_13 = new BitSet(_tokenSet_13_data_);
-	private static final long _tokenSet_14_data_[] = { 4503599693705376L, 0L };
+	private static final long _tokenSet_14_data_[] = { 4503599693717664L, 0L };
 	public static final BitSet _tokenSet_14 = new BitSet(_tokenSet_14_data_);
-	private static final long _tokenSet_15_data_[] = { 4503599693443200L, 0L };
+	private static final long _tokenSet_15_data_[] = { 4503599693455488L, 0L };
 	public static final BitSet _tokenSet_15 = new BitSet(_tokenSet_15_data_);
-	private static final long _tokenSet_16_data_[] = { 4503599693803680L, 0L };
+	private static final long _tokenSet_16_data_[] = { 4503599693785248L, 0L };
 	public static final BitSet _tokenSet_16 = new BitSet(_tokenSet_16_data_);
 	private static final long _tokenSet_17_data_[] = { 4503599629729824L, 0L };
 	public static final BitSet _tokenSet_17 = new BitSet(_tokenSet_17_data_);
-	private static final long _tokenSet_18_data_[] = { 9007199254606496L, 0L };
+	private static final long _tokenSet_18_data_[] = { 9007199254604448L, 0L };
 	public static final BitSet _tokenSet_18 = new BitSet(_tokenSet_18_data_);
-	private static final long _tokenSet_19_data_[] = { 4503599627236000L, 0L };
+	private static final long _tokenSet_19_data_[] = { 4503599627233952L, 0L };
 	public static final BitSet _tokenSet_19 = new BitSet(_tokenSet_19_data_);
-	private static final long _tokenSet_20_data_[] = { 4503599627367074L, 0L };
+	private static final long _tokenSet_20_data_[] = { 4503599627365026L, 0L };
 	public static final BitSet _tokenSet_20 = new BitSet(_tokenSet_20_data_);
 	private static final long _tokenSet_21_data_[] = { 4503599629467648L, 0L };
 	public static final BitSet _tokenSet_21 = new BitSet(_tokenSet_21_data_);

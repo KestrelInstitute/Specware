@@ -45,7 +45,7 @@ public MetaSlangLexerFromAntlr(LexerSharedInputState state) {
 	literals.put(new ANTLRHashString("fa", this), new Integer(41));
 	literals.put(new ANTLRHashString("if", this), new Integer(43));
 	literals.put(new ANTLRHashString("op", this), new Integer(20));
-	literals.put(new ANTLRHashString("sort", this), new Integer(13));
+	literals.put(new ANTLRHashString("sort", this), new Integer(14));
 	literals.put(new ANTLRHashString("prove", this), new Integer(8));
 	literals.put(new ANTLRHashString("quotient", this), new Integer(47));
 	literals.put(new ANTLRHashString("embed?", this), new Integer(39));
@@ -54,14 +54,14 @@ public MetaSlangLexerFromAntlr(LexerSharedInputState state) {
 	literals.put(new ANTLRHashString("endspec", this), new Integer(7));
 	literals.put(new ANTLRHashString("of", this), new Integer(45));
 	literals.put(new ANTLRHashString("then", this), new Integer(50));
-	literals.put(new ANTLRHashString("options", this), new Integer(11));
+	literals.put(new ANTLRHashString("options", this), new Integer(12));
 	literals.put(new ANTLRHashString("in", this), new Integer(9));
 	literals.put(new ANTLRHashString("project", this), new Integer(46));
 	literals.put(new ANTLRHashString("else", this), new Integer(37));
 	literals.put(new ANTLRHashString("case", this), new Integer(35));
 	literals.put(new ANTLRHashString("axiom", this), new Integer(24));
 	literals.put(new ANTLRHashString("spec", this), new Integer(6));
-	literals.put(new ANTLRHashString("import", this), new Integer(12));
+	literals.put(new ANTLRHashString("import", this), new Integer(13));
 	literals.put(new ANTLRHashString("true", this), new Integer(32));
 	literals.put(new ANTLRHashString("theorem", this), new Integer(23));
 	literals.put(new ANTLRHashString("ex", this), new Integer(40));

@@ -12,11 +12,11 @@ public interface MetaSlangParserFromAntlrTokenTypes {
 	int LITERAL_prove = 8;
 	int LITERAL_in = 9;
 	int LITERAL_using = 10;
-	int LITERAL_options = 11;
-	int LITERAL_import = 12;
-	int LITERAL_sort = 13;
-	int LBRACE = 14;
-	int COMMA = 15;
+	int COMMA = 11;
+	int LITERAL_options = 12;
+	int LITERAL_import = 13;
+	int LITERAL_sort = 14;
+	int LBRACE = 15;
 	int RBRACE = 16;
 	int DOT = 17;
 	int LPAREN = 18;

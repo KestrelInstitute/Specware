@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2003/02/18 18:10:14  weilyn
+ * Added support for imports.
+ *
  * Revision 1.13  2003/02/17 07:04:09  weilyn
  * Made scURI return an Item, and added more rules for scProve.
  *
@@ -214,7 +217,8 @@ private proverAssertions returns[ElementFactory.Item assertionsItem]
     String anAssertion = null;
 }
     : "using" 
-      (anAssertion=name
+      (anAssertion=name COMMA
+       | anAssertion=name
       )+
     ;
 
@@ -224,7 +228,7 @@ private proverOptions returns[ElementFactory.Item optionsItem]
     String anOption = null;
 }
     : "options"
-      (anOption=name
+      (anOption=literal
       )+
     ;
 
