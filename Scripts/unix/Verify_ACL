@@ -27,7 +27,7 @@ LISP_DIR=`/usr/bin/dirname $LISP`
 export LISP_VERSION=`/bin/basename ${LISP_DIR}`
 export BIG_ALISP="${BIN_DIR}/big-alisp-${LISP_VERSION}.${IMAGE_EXTENSION}"
 export BATCH_LISP="$LISP -I ${BIG_ALISP} -batch"
-export BATCH_SPECWARE="$LISP -I $SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} -batch"
+export BATCH_SPECWARE=${BATCH_SPECWARE:-"$LISP -I $SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} -batch"}
 
 echo "  Verify_ACL:  LISP_MODE            = [$LISP_MODE]"
 echo "  Verify_ACL:  LISP                 = [$LISP]"

@@ -21,6 +21,7 @@ echo " "
 echo "  Generate_Lisp:  APP_NAME  = [$APP_NAME]"
 echo "  Generate_Lisp:  APP_DIR   = [$APP_DIR]"
 echo "  Generate_Lisp:  GEN_DIR   = [$GEN_DIR]"
+echo "  Generate_Lisp:  APP_SETUP = [$APP_SETUP]"
 echo "  Generate_Lisp:  SWPATH    = [$SWPATH]"
 echo "  "
 echo "  Generate_Lisp:  LISP_MODE = [$LISP_MODE]"
@@ -67,6 +68,7 @@ cd $APP_DIR
 $BATCH_SPECWARE <<-XXXX
 	;; We inherit various utilities from Specware.
         ;; (describe-environment) ; pwd, swpath, etc.
+        ${APP_SETUP}
 	(exiting-on-errors 
 	  (if (sw "/${APP_NAME}GenLisp.sw")
             ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)

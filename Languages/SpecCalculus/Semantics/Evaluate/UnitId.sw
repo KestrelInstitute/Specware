@@ -179,6 +179,9 @@ The inner case in the function below is temporary. It is there to make
 it easy to experiment with different UnitId path resolution strategies..
 
 \begin{spec}
+  op shadow_uids? : Boolean
+  def shadow_uids? = false
+
   op generateUIDList : RelativeUID -> Env (List UnitId)
   def generateUIDList unitId =
     case unitId of
@@ -189,18 +192,30 @@ it easy to experiment with different UnitId path resolution strategies..
 					 hashSuffix = hashSuffix})
 		      specPath)
         }
-      | UnitId_Relative {path=newPath,hashSuffix=newSuffix} -> {
-            {path=currentPath,hashSuffix=currentSuffix} <- getCurrentUID;
-	    currentPathAlias <- return(pathAlias currentPath);
-            root <- removeLast currentPathAlias;
-            (case (currentPathAlias,currentSuffix,newPath,newSuffix) of
-              | (_,Some _,[elem],None) ->
-                    return [normalizeUID {path=currentPathAlias,hashSuffix=Some elem},
-                            normalizeUID {path=root++newPath,hashSuffix=None}]
-              | (_,_,_,_) -> 
-                    return [normalizeUID {path=root++newPath,hashSuffix=newSuffix}]
-             )
-        }
+      | UnitId_Relative {path=newPath,hashSuffix=newSuffix} -> 
+        {
+	 {path=currentPath,hashSuffix=currentSuffix} <- getCurrentUID;
+	 currentPathAlias <- return(pathAlias currentPath);
+	 root       <- removeLast currentPath;
+	 root_alias <- removeLast currentPathAlias;
+	 if shadow_uids? && currentPathAlias ~= currentPath then
+	   case (currentPathAlias,currentSuffix,newPath,newSuffix) of
+	     | (_,Some _,[elem],None) ->
+	       return [normalizeUID {path=currentPathAlias,hashSuffix=Some elem},
+		       normalizeUID {path=root++newPath,hashSuffix=None},
+		       normalizeUID {path=currentPath,hashSuffix=Some elem},
+		       normalizeUID {path=root++newPath,hashSuffix=None}]
+	     | (_,_,_,_) -> 
+	       return [normalizeUID {path=root_alias++newPath,hashSuffix=newSuffix},
+		       normalizeUID {path=root++newPath,hashSuffix=newSuffix}]
+	 else
+	   case (currentPathAlias,currentSuffix,newPath,newSuffix) of
+	     | (_,Some _,[elem],None) ->
+	       return [normalizeUID {path=currentPathAlias,hashSuffix=Some elem},
+		       normalizeUID {path=root++newPath,hashSuffix=None}]
+	     | (_,_,_,_) -> 
+	       return [normalizeUID {path=root++newPath,hashSuffix=newSuffix}]
+         }
 
   %% this is set by norm-unitid-str in toplevel.lisp
   %% It allows a command-line spec to be put into a temporary file but have
