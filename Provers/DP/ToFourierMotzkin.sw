@@ -249,6 +249,7 @@ MSToFM qualifying spec
       | BoolBinOp _ -> BoolUnOp (Not, tm)
       | Ineq (ineq) -> Ineq (negateIneq(ineq))
       | LitBool (x) -> LitBool (~ x)
+      | _ -> BoolUnOp (Not, tm)
 
   op fmConjunct: FMTerm * FMTerm -> FMTerm
   def fmConjunct(t1, t2) =
@@ -276,7 +277,7 @@ MSToFM qualifying spec
       | (t1, LitBool true) -> fmEquals(t1, Poly zeroPoly)
       | (LitBool false, t2) -> fmNot(fmEquals(t2, Poly zeroPoly))
       | (t1, LitBool false) -> fmNot(fmEquals(t1, Poly zeroPoly))
-      | _ -> fmFalse
+      | _ -> UnSupported
 
   op fmLtEq: FMTerm * FMTerm -> FMTerm
   def fmLtEq(t1, t2) =
