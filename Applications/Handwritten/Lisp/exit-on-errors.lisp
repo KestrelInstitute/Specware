@@ -34,7 +34,7 @@
      ,@body)
   #-Allegro
   (progn
-    (format t "exiting-on-errors currently just expands to PROGN for non-Allegro lisp")
+    (format t "~&exiting-on-errors currently just expands to PROGN for non-Allegro lisp~%")
     `(progn ,@body)))
   
 
