@@ -134,14 +134,14 @@
   ;; result is fixnum or nil
   (string<= s1 s2))
 
-;;; (defun leq-1 (x)  (string<= (car x) (cdr x)))
+(defun leq-1 (x)  (string<= (car x) (cdr x)))
 
 (defun lt (s1 s2)
   (declare (type lisp:simple-base-string s1 s2))
   ;; result is fixnum or nil
   (string< s1 s2))
 
-;;; (defun lt-1 (x)  (string< (car x) (cdr x)))
+(defun lt-1 (x)  (string< (car x) (cdr x)))
 ;;; 
 ;;; ;;;(defun compare (s1 s2) 
 ;;; ;;;    (if (string< s1 s2)

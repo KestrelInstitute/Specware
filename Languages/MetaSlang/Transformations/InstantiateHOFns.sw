@@ -1,17 +1,23 @@
 InstantiateHO qualifying
 spec
   import Simplify
-  import RenameBound
+  %import RenameBound
   import ../Specs/Utilities
   sort Term = MS.Term
 
   op  instantiateHOFns: Spec -> Spec
   def instantiateHOFns spc =
-    let spc = renameInSpec spc in
+    %let spc = renameInSpec spc in
     let spc = normalizeCurriedDefinitions spc in
     let spc = simplifySpec spc in
     let m = makeUnfoldMap spc in
+    %let m = mapAQualifierMap (renameDefInfo (emptyContext())) m in
     unFoldTerms(spc,m)
+
+%  def renameDefInfo c (vs,defn,defsrt,fnIndices,curried?,recursive?) =
+%    let vs = map (renamePattern c) vs in
+%    let defn = renameTerm c defn in
+%    (vs,defn,defsrt,fnIndices,curried?,recursive?)
 
   op  unFoldTerms: Spec * AQualifierMap DefInfo -> Spec
   def unFoldTerms(spc,m) =
@@ -43,8 +49,7 @@ spec
 		  in
 		  let HOArgs = map (fn s -> hoSort?(spc,s)) argSorts in
 	          if numCurryArgs > 1
-	           then analyzeCurriedDefn(Qualified(q,id),
-					   def1, numCurryArgs,HOArgs,srt)
+	           then analyzeCurriedDefn  (Qualified(q,id),def1,numCurryArgs,HOArgs,srt)
 		   else analyzeUnCurriedDefn(Qualified(q,id),def1,HOArgs,srt)
 	     else None)
       spc.ops
@@ -231,7 +236,8 @@ spec
       let defbody = mapTerm(id,instantiateTyVars,id) defbody in
       let remainingParams = map (fn p -> mapPattern(id,instantiateTyVars,id) p)
                               remainingParams in
-      let newTm = makeLet(remainingParams,remainingArgs,substitute(defbody,vSubst)) in
+      let newTm = makeLet(remainingParams,remainingArgs,defbody) in
+      let newTm = substitute(newTm,vSubst) in
       unfoldInTerm(simplifyTerm(newTm),unfoldMap,simplifyTerm,spc)
 
   %% Returns nm if it is not referenced in t, otherwise adds -i to

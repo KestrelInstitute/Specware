@@ -44,8 +44,8 @@ spec
  sort index = TermDiscNet.disc_net
 
  op TermIndex.empty : index
- op indexTerm       : index * Term * Nat -> index
- op generalizations : index * Term -> List Nat
+ op indexTerm       : index * MS.Term * Nat -> index
+ op generalizations : index * MS.Term -> List Nat
 
  def  TermIndex.empty = TermDiscNet.EmptyDiscNet
 
@@ -56,7 +56,7 @@ spec
      (app (fn i -> String.toScreen(Integer.toString i^" ")) path;
       String.writeLine "")
 
- def getApplys(M: Term,Ms) = 
+ def getApplys(M: MS.Term,Ms) = 
      case M
        of Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_),Fun(Nat n,_,_),_) -> 
 	  (cons(M,Ms),true)
@@ -65,7 +65,7 @@ spec
 
 
  def getFunIndex = 
-     fn (Fun(Op(qid,fixity),_,_):Term) -> 
+     fn (Fun(Op(qid,fixity),_,_):MS.Term) -> 
 	Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
       | _ -> 0
 
@@ -120,7 +120,7 @@ spec
 
     def generalizations (index,term) = 
 	let
-	    def get(p,M:Term) = 
+	    def get(p,M) = 
 		let (M::Ms,isFlex?) = getApplys(M,[]) in
 		if isFlex?
 		   then getTerms(index,p,Star)

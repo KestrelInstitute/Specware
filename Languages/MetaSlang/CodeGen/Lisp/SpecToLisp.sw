@@ -921,10 +921,11 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
 %     let _   = printSpecToTerminal spc         in
     let _   = initializeSpecId()                          in
     let packages = map mkLPackageId (qualifiers spc.ops) in
-    let (defPkgName,extraPackages) =
-        case packages
-          of x::r -> (x,r)
-           | [] -> (defaultSpecwarePackage,[])
+    let (defPkgName,extraPackages) = (defaultSpecwarePackage,packages)
+%% Make defaultSpecwarePackage be the standard package name rather than some random package
+%        case packages
+%          of x::r -> (x,r)
+%           | [] -> (defaultSpecwarePackage,[])
     in
     let
       def mkLOpDef(qname,name,decl,defs) = % ???

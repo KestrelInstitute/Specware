@@ -392,17 +392,18 @@ Utilities qualifying spec {
               ([],sub,freeNames) vars
 	
  def substBoundVar((id,s),sub,freeNames) = 
+   let sub = deleteVar((id,s),sub,[]) in
    if StringSet.member(freeNames,id) then
      let id2 = StringUtilities.freshName(id,freeNames) in
      let sub2 = cons(((id,s),mkVar(id2,s)),sub) in
      ((id2,s),sub2,freeNames)
    else
-     ((id,s),deleteVar((id,s),sub,[]),freeNames)
+     ((id,s),sub,freeNames)
 
  def deleteVar(v,sub,sub2) = 
    case sub
      of []         -> sub2
-      | (w,M)::sub -> if v = w 
+      | (w,M)::sub -> if v.1 = w.1
 		      then sub ++ sub2
 		      else deleteVar(v,sub,cons((w,M),sub2))
 

@@ -29,11 +29,11 @@ spec MetaSlangRewriter
 \begin{spec}
  op applyRewrites : 
     Context * List RewriteRule * Subst 
-       -> List Var * Term 
-	   -> LazyList (Term * (Subst * RewriteRule * List RewriteRule))
+       -> List Var * MS.Term 
+	   -> LazyList (MS.Term * (Subst * RewriteRule * List RewriteRule))
 
 
- op applyRewrite  : Context * RewriteRule * Subst * Term -> List Subst 
+ op applyRewrite  : Context * RewriteRule * Subst * MS.Term -> List Subst 
 
  def applyRewrite(context,rule,subst,term) = 
      let lhs = rule.lhs in
@@ -89,34 +89,34 @@ spec MetaSlangRewriter
 	rhs   = mkVar(2,TyVar("''a",noPos))
      } 
 
- op natVal: Term -> Nat
+ op natVal: MS.Term -> Nat
  def natVal = fn (Fun(Nat i,_,_)) -> i
- op natVals: List(Id * Term) -> List Nat
+ op natVals: List(Id * MS.Term) -> List Nat
  def natVals = map (fn (_,t) -> natVal t)
 
- op charVal: Term -> Char
+ op charVal: MS.Term -> Char
  def charVal = fn (Fun(Char c,_,_)) -> c
- op charVals: List(Id * Term) -> List Char
+ op charVals: List(Id * MS.Term) -> List Char
  def charVals = map (fn (_,t) -> charVal t)
 
- op stringVal: Term -> String
+ op stringVal: MS.Term -> String
  def stringVal = fn (Fun(String s,_,_)) -> s
- op stringVals: List(Id * Term) -> List String
+ op stringVals: List(Id * MS.Term) -> List String
  def stringVals = map (fn (_,t) -> stringVal t)
 
- def sortFromField(fields: List(Id * Term),defaultS:Sort): Sort =
+ def sortFromField(fields: List(Id * MS.Term),defaultS:Sort): Sort =
    case fields
      of (_,Fun(_,s,_))::_-> s
       | _ -> defaultS
 
- def sortFromArg(arg: Term,defaultS:Sort): Sort =
+ def sortFromArg(arg: MS.Term,defaultS:Sort): Sort =
    case arg
      of Fun(_,s,_) -> s
       | _ -> defaultS
 
- op evalBinary: fa(a) (a * a -> Fun) * (List(Id * Term) -> List a)
-                      * List(Id * Term) * Sort
-                     -> Option Term
+ op evalBinary: fa(a) (a * a -> Fun) * (List(Id * MS.Term) -> List a)
+                      * List(Id * MS.Term) * Sort
+                     -> Option MS.Term
  def fa(a) evalBinary(f, fVals, fields, srt) =
    case fVals fields
      of [i,j] -> Some(Fun(f(i,j),srt,noPos))
@@ -131,7 +131,7 @@ spec MetaSlangRewriter
  def str f x = String(f x)
  def bool f x = Bool(f x)
 
- def attemptEval1(opName,arg,(* subst *)_): Term =
+ def attemptEval1(opName,arg,(* subst *)_): MS.Term =
    case (opName,arg) of
       | ("~", Fun (Nat i,_,aa)) -> Fun (Nat (~i), natSort,aa)
       | ("~", Fun (Bool b,_,aa)) -> Fun (Bool (~b), boolSort,aa)
@@ -156,7 +156,7 @@ spec MetaSlangRewriter
       | ("ord",Fun (Char c,_,aa)) -> Fun (Nat(ord c),natSort,aa)
       | ("chr",Fun (Nat i,_,aa)) -> Fun (Char(chr i),charSort,aa)
 
- def attemptEvaln(opName,fields,(* subst *)_): Option Term =
+ def attemptEvaln(opName,fields,(* subst *)_): Option MS.Term =
    case opName
      of "+" ->
         Some(Fun(Nat((foldl +) 0 (natVals fields)),
@@ -213,7 +213,7 @@ spec MetaSlangRewriter
 %      | Apply(,)
       | _ -> Nil
 
- op assertRules: Context * Term * String -> List RewriteRule
+ op assertRules: Context * MS.Term * String -> List RewriteRule
  def assertRules (context,term,desc) =
    let (freeVars,n,S,formula) =
      bound(Forall:Binder,0,term,[],[]) in
@@ -297,16 +297,16 @@ spec MetaSlangRewriter
 
 \begin{spec}
 
- sort Rewriter a = List Var * Term * Demod.demod RewriteRule -> LazyList (Term * a) 
+ sort Rewriter a = List Var * MS.Term * Demod.demod RewriteRule -> LazyList (MS.Term * a) 
  %sort Matcher  a = List Var * Term * Term -> LazyList a
  sort Strategy   = | Innermost | Outermost
 
  op rewriteTerm    : fa(a) {strategy:Strategy,rewriter:Rewriter a,context:Context}
-                           * List Var * Term * Demod.demod RewriteRule
-                           -> LazyList (Term * a)
+                           * List Var * MS.Term * Demod.demod RewriteRule
+                           -> LazyList (MS.Term * a)
  op rewriteSubTerm : fa(a) {strategy:Strategy,rewriter:Rewriter a,context:Context}
-                           * List Var * Term * Demod.demod RewriteRule
-                           -> LazyList (Term * a)
+                           * List Var * MS.Term * Demod.demod RewriteRule
+                           -> LazyList (MS.Term * a)
 
  def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
      case strategy
@@ -376,7 +376,7 @@ spec MetaSlangRewriter
 
 \begin{spec}
 
- op printTerm: Nat * Term -> String
+ op printTerm: Nat * MS.Term -> String
  def printTerm (indent,term) = 
      let indent   = PrettyPrint.blanks indent 					 in
      let context  = initialize(asciiPrinter,false) in 
@@ -414,7 +414,7 @@ spec MetaSlangRewriter
  def completeMatch(term,subst:Subst) =
      let S = subst.2 in
      let 
-	 def loop(term:Term):Boolean = 
+	 def loop(term:MS.Term):Boolean = 
 	     case term
 	       of Fun(top,srt,_) -> true
 	        | Var((id,srt), _)  -> true
@@ -436,7 +436,7 @@ spec MetaSlangRewriter
      in
      loop term
 
- sort History = List (RewriteRule * Term * Subst)
+ sort History = List (RewriteRule * MS.Term * Subst)
 
  op historyRepetition: History -> Boolean
  def historyRepetition = 
@@ -449,7 +449,7 @@ spec MetaSlangRewriter
 		  rules)
 
  op rewriteRecursive : 
-    Context * List Var * RewriteRules * Term -> LazyList (History)
+    Context * List Var * RewriteRules * MS.Term -> LazyList (History)
 
 %%
 %% Apply unconditional rewrite rules using inner-most strategy.
@@ -532,7 +532,7 @@ spec MetaSlangRewriter
 	rewriteRec(rules,emptySubstitution,term,[],true)
 
  op rewriteOnce : 
-    Context * List Var * RewriteRules * Term -> List Term
+    Context * List Var * RewriteRules * MS.Term -> List MS.Term
 
 %%
 %% Apply unconditional rewrite rules using outer-most strategy
@@ -547,10 +547,10 @@ spec MetaSlangRewriter
 
 %    let {unconditional,conditional} = rules in
      let subst = emptySubstitution in
-     let term = dereferenceAll subst term in
+     let term = dereferenceAll emptySubstitution term in
      let rews = rewriteTerm
 		 ({strategy = Innermost: Strategy,
-		   rewriter = applyDemodRewrites(context,subst),
+		   rewriter = applyDemodRewrites(context,emptySubstitution),
 		   context = context},
 		  boundVars,term,unconditional)
      in

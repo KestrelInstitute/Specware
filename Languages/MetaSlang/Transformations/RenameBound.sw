@@ -83,8 +83,8 @@ spec
     let ops      = mapAQualifierMap (renameOp c) ops in
     let properties   = map (renameFormula c) properties in
     {importInfo = importInfo,
-     sorts    = sorts,
-     ops      = ops,
+     sorts      = sorts,
+     ops        = ops,
      properties = properties}
 
   def renameFormula c (pt,name, tyvars, term) =

@@ -7,6 +7,7 @@ ListADT qualifying spec {
   import /Library/Legacy/DataStructures/StringSetSplay
   % import System  	% ../utilities/system-base.sl
   import /Library/Legacy/DataStructures/TopSort
+  import /Library/Legacy/DataStructures/MergeSort
   import /Library/PrettyPrinter/BjornerEspinosa
 
   sort LispSpec =
@@ -107,6 +108,7 @@ ListADT qualifying spec {
       axioms  = [],
       opDefns = [] }
 
+  op  ops: LispTerm * StringSet.Set -> StringSet.Set
   def ops(term:LispTerm,names) =
       case term 
         of Const(Parameter name) -> StringSet.add(names,name)
@@ -115,20 +117,22 @@ ListADT qualifying spec {
          | Var     _ -> names
          | Set     (_,term) -> ops(term,names)
          | Lambda  (_,_,term) -> ops(term,names)
-         | Apply   (term,terms) -> List.foldr ops (ops(term,names)) terms
+         | Apply   (term,terms) -> List.foldl ops (ops(term,names)) terms
          | If      (t1,t2,t3) -> ops(t1,ops(t2,ops(t3,names)))
          | IfThen  (t1,t2) -> ops(t1,ops(t2,names))
-         | Let     (_,terms,body) -> List.foldr ops (ops(body,names)) terms
-         | Letrec  (_,terms,body) -> List.foldr ops (ops(body,names)) terms
+         | Let     (_,terms,body) -> List.foldl ops (ops(body,names)) terms
+         | Letrec  (_,terms,body) -> List.foldl ops (ops(body,names)) terms
          | Seq     terms -> List.foldr ops names terms
 
+  op  sortDefs: Definitions -> Definitions
   def sortDefs(defs) = 
+      let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 leq nm1) defs in
       let defMap = 
-	  List.foldr (fn((name,term),map)-> StringMap.insert(map,name,(name,term)))
+	  List.foldl (fn((name,term),map)-> StringMap.insert(map,name,(name,term)))
 	  StringMap.empty defs
       in
       let map = 
-	  List.foldr
+	  List.foldl
 	    (fn((name,term),map) -> 
 		let opers = ops(term,StringSet.empty) in
 		let opers = StringSet.listItems opers in
@@ -285,7 +289,7 @@ ListADT qualifying spec {
 	 streamWriter(stream,";;; Lisp spec\n\n");
 	 app (fn pkgName -> streamWriter (stream,
 					  "(defpackage \"" ^ pkgName ^ "\")\n"))
-	  spc.extraPackages;
+	  (sortGT (fn (x,y) -> y leq x) spc.extraPackages);
 	streamWriter(stream,"\n(defpackage \"" ^ name ^ "\")");
 	streamWriter(stream,"\n(in-package \"" ^ name ^ "\")\n\n");
 

@@ -57,7 +57,8 @@
 
 Simplify qualifying
 spec
-  import ../Specs/Environment
+ import ../Specs/Environment
+ import ../Specs/Utilities
  sort Term = MS.Term
 
  def sideEffectFree(term:Term) = 
@@ -81,7 +82,7 @@ spec
 	      def occurs(term:Term) = 
 		  case term
 		    of Var (id2,_) -> 
-			(occ := (! occ) +(if id = id2 then 1 else 0); term)
+			(occ := (! occ) + (if id = id2 then 1 else 0); term)
 		     | _ -> term
 	  in
 	  let _ = mapSubTerms occurs body in
@@ -89,12 +90,9 @@ spec
 	     of 0 -> if noSideEffects then body else term
 	      | 1 -> if noSideEffects
 	                 or noInterveningSideEffectsBefore?
-			      (body,fn (v as (Var (id2,_))) -> id = id2
+			      (body,fn (Var (id2,_)) -> id = id2
 			             | _ -> false)
-	               then mapSubTerms(fn (v as (Var (id2,_))) -> 
-					    if id = id2 then e else v
-		                         | t -> t)
-			      body
+	               then substitute(body,[(id,e)])
 		       else term
 	      | _ -> term)
 	| _ -> term
@@ -180,36 +178,18 @@ spec
        of Let(decl1::decl2::decls,body,_) -> 
 	  simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(List.cons(decl2,decls),body))))
 	%% let y = x in f y  --> f x
-	| Let([(VarPat((id,_),_),wVar as (Var(w,_)))],body,_) -> 
-	  let
-	     def replace(term:Term) = 
-		 case term
-		   of (Var((id2,_),_)) -> if id = id2 then wVar else term 
-		    | _ -> term
-	  in
-	     mapSubTerms replace body
+	| Let([(VarPat(v,_),wVar as (Var(w,_)))],body,_) ->
+	  substitute(body,[(v,wVar)])
 	%% Do equivalent for apply lambda
 	%% case y of x -> f x  -->  f y
-	| Apply(Lambda([(VarPat((id,_),_),_,body)],_),wVar as (Var(w,_)),_) ->
-	  let
-	     def replace(term:Term) = 
-		 case term
-		   of (Var((id2,_),_)) -> if id = id2 then wVar else term 
-		    | _ -> term
-	  in
-	     mapSubTerms replace body
+	| Apply(Lambda([(VarPat(v,_),_,body)],_),wVar as (Var(w,_)),_) ->
+	  substitute(body,[(v,wVar)])
 	%% case y of _ -> z  -->  z if y side-effect free
 	| Apply(Lambda([(WildPat(_,_),_,body)],_),tm,_) ->
 	  if sideEffectFree tm then body else term
-	| Let([(VarPat((id,_),_),letTerm as (Apply(Fun(Restrict,_,_),(Var _),_)))],
-	      body,_) -> 
-	  let
-	     def replace(term:Term) = 
-		 case term
-		   of Var((id2,_),_) -> if id = id2 then letTerm else term 
-		    | _ -> term
-	  in
-	     mapSubTerms replace body
+	| Let([(VarPat(v,_),letTerm as (Apply(Fun(Restrict,_,_),(Var _),_)))],
+	      body,_) ->
+	  substitute(body,[(v,letTerm)]) 
 	%% Distribution of terms over application
 	%% (if p then x else y) z --> if p then x z else y z
 	| Apply(IfThenElse(t1,t2,t3,a),tm,_) ->

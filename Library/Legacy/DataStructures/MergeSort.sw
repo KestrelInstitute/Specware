@@ -22,19 +22,18 @@ MergeSort qualifying spec {
            case (xs,ys) of
              | ([],ys) -> ys
              | (xs,[]) -> xs
-             | (x::xs,y::ys) ->
+             | (x::rxs,y::rys) ->
                 if cmpGT(x,y) then
-                  Cons (y, merge (Cons(x,xs),ys))
+                  Cons (y, merge (xs,rys))
                 else
-                  Cons(x, merge (xs,Cons(y,ys))) in
+                  Cons(x, merge (rxs,ys)) in
          let def mergepairs(ls,k) = 
            case ls of
              | [l] -> ls
-             | l1::l2::ls ->
-                if k rem 2 = 1 then
-                  Cons (l1, Cons (l2,ls))
+             | l1::l2::rls ->
+                if k rem 2 = 1 then ls 
                 else
-                  mergepairs (Cons (merge (l1,l2),ls), k div 2)
+                  mergepairs (Cons (merge (l1,l2),rls), k div 2)
              | _ -> System.fail "Impossible: mergepairs" in
          let def nextrun(run,xs) =
            case xs of
@@ -60,19 +59,18 @@ MergeSort qualifying spec {
       case (xs,ys) of
         | ([],ys) -> ys
         | (xs,[]) -> xs
-        | (x::xs,y::ys) ->
+        | (x::rxs,y::rys) ->
             (case cmpfn (x,y) of
-              | Greater -> Cons(y,merge(Cons(x,xs),ys))
-              | Equal   -> merge(Cons(x,xs),ys)
-              | _       -> Cons(x,merge(xs,Cons(y,ys)))) in
+              | Greater -> Cons(y,merge(xs,rys))
+              | Equal   -> merge(xs,rys)
+              | _       -> Cons(x,merge(rxs,ys))) in
     let def mergepairs(ls,k) = 
       case ls of
         | [l] -> ls
-        | l1::l2::ls ->
-            if k rem 2 = 1 then 
-              Cons(l1,Cons(l2,ls))
+        | l1::l2::rls ->
+            if k rem 2 = 1 then ls 
             else
-              mergepairs(Cons(merge(l1,l2),ls), k div 2)
+              mergepairs(Cons(merge(l1,l2),rls), k div 2)
         | _ -> System.fail "Impossible: mergepairs" in
     let def nextrun(run,xs) =
       case xs of

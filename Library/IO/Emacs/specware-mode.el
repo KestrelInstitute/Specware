@@ -988,15 +988,8 @@ If anyone has a good algorithm for this..."
 (defun sw:cl-current-file ()
   (interactive)
   (save-buffer)
-  (let ((filename (sw::file-to-specware-unit-id buffer-file-name))
-	(temp-file-name (concat (temp-directory) "-cl-current-file")))
-    (if (sw:eval-in-lisp "(Specware::evaluateLispCompileLocal_fromLisp %S '(:|Some| . %S))"
-		     filename temp-file-name)
-	(sw:eval-in-lisp-no-value
-	   "(let (*redefinition-warnings*)
-              (specware::compile-and-load-lisp-file %S))"
-	   temp-file-name)
-      (message "Specware Processing Failed!"))))
+  (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
+    (simulate-input-expression (concat ":swll " filename))))
 
 (defun sw:cl-unit (unitid)
   (interactive (list (read-from-minibuffer "Compile and Load Unit: "
