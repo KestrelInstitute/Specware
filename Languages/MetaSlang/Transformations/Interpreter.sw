@@ -70,7 +70,10 @@ spec
 	      | None -> Unevaluated t)
 	  | Fun(fun,_,_) -> evalFun(fun,t,spc,depth)
 	  | Apply(Fun(Op(Qualified("System","time"),_),_,_),y,_) -> time(evalRec(y,sb,spc,depth+1))
-	  | Apply(x,y,_) -> evalApply(evalRec(x,sb,spc,depth+1),evalRec(y,sb,spc,depth+1),sb,spc,depth)
+	  | Apply(x,y,_) ->
+	    if nonStrict? x
+	      then evalApplyNonStrict(x,y,sb,spc,depth)
+	      else evalApply(evalRec(x,sb,spc,depth+1),evalRec(y,sb,spc,depth+1),sb,spc,depth)
 	  | Record(fields,a) ->
 	    RecordVal(map (fn(lbl,e) -> (lbl,evalRec(e,sb,spc,depth+1))) fields)
 	  | IfThenElse(P,M,N,a) ->
@@ -138,6 +141,24 @@ spec
       | Bool b   -> Bool b
       | Embed(id,false) -> Constant id
       | _ -> Unevaluated t
+
+  op  nonStrict?: MS.Term -> Boolean
+  def nonStrict? t =
+    case t of
+      | Fun(f,_,_)  -> member(f,[And,Or,Implies])
+      | _ -> false
+
+  op  evalApplyNonStrict: MS.Term * MS.Term * Subst * Spec * Nat -> Value
+  def evalApplyNonStrict(ft,at,sb,spc,depth) =
+    case at of
+      | Record([("1",at1),("2",at2)],a) ->
+        let ifTm = case ft of
+	             | Fun(And,_,_)     -> IfThenElse(at1,at2,mkFalse(),a)
+	             | Fun(Or,_,_)      -> IfThenElse(at1,mkTrue(),at2,a)
+	             | Fun(Implies,_,_) -> IfThenElse(at1,at2,mkTrue(),a)
+	in
+        evalRec(ifTm,sb,spc,depth+1)
+      | _ -> evalApplySpecial(ft,evalRec(at,sb,spc,depth+1),sb,spc,depth)
 	   
   op  evalApply: Value * Value * Subst * Spec * Nat -> Value
   def evalApply(f,a,sb,spc,depth) =
