@@ -15,12 +15,14 @@ To evaluate a spec we deposit the declarations in a new spec
 and then qualify the resulting spec if the spec was given a name.
 
 \begin{spec}
- def printElaborateSpecMessage? = true
+ op  noElaboratingMessageFiles: List String
+ def noElaboratingMessageFiles = []
 
  def SpecCalc.evaluateSpec spec_elements position = {
     unitId <- getCurrentUID;
-    when printElaborateSpecMessage?
-       (print (";;; Elaborating spec at " ^ (uidToString unitId) ^ "\n"));
+    unitStr <- return (uidToString unitId);
+    when (~(member(unitStr,noElaboratingMessageFiles)))
+       (print (";;; Elaborating spec at " ^ unitStr ^ "\n"));
     (optBaseUnitId,baseSpec) <- getBase;
     (pos_spec,TS,depUIDs) <- evaluateSpecElems (if anyImports? spec_elements
 						  then emptySpec % some import will include baseSpec

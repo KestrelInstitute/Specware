@@ -50,6 +50,8 @@
   (define-function 'inferior-lisp-running-p 'fi::lep-open-connection-p)
   (define-function 'sw:find-unbalanced-parenthesis 'fi:find-unbalanced-parenthesis)
   (defvar *specware-buffer-name* sw:common-lisp-buffer-name)
+  (defun previous-input-line ()
+    (fi:pop-input))
   (when (and (boundp 'fi:lisp-mode-syntax-table)
 	     fi:lisp-mode-syntax-table)
     (modify-syntax-entry ?. "." fi:lisp-mode-syntax-table)))
@@ -135,6 +137,9 @@
       (delete-region start (point))
       (insert mine)
       (backward-sexp)))
+  
+  (defun previous-input-line ()
+    (comint-previous-matching-input-from-input))
 
   (defun sw:exit-lisp ()
     (interactive)

@@ -80,6 +80,14 @@
     (cinit (cl-user::sw-init))
     (gen-lisp (cl-user::swl argstr) (values))
     (lgen-lisp (cl-user::swll argstr) (values))
+    (gen-c (cl-user::swc argstr) (values))
+    (make (cl-user::make argstr))
+    (gen-java (cl-user::swj argstr) (values))
+    (swj-config (cl-user::swj-config))
+    (swj-config-dir (cl-user::swj-config-dir argstr))
+    (swj-config-make-public (cl-user::swj-config-make-public argstr))
+    (swj-config-pkg (cl-user::swj-config-pkg argstr))
+    (swj-config-reset (cl-user::swj-config-reset))
     (punits (cl-user::swpf argstr))
     (lpunits (cl-user::swpf argstr))	; No local version yet
     (ctext (if (null argstr)
@@ -129,10 +137,7 @@
     ("proc" . "[unit-term] Processes the unit. 
                   With no argument, processes the last processed unit.")
     ("show" . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
-    ("cinit" . "Clears Spec unit cache.")
-    ("gen-lisp" . "[spec-term [filename]] Generates Lisp code for unit in filename.
-                  With no argument uses last processed unit.")
-    ("lgen-lisp" . "[spec-term [filename]] Like `gen-lisp' but only generates lisp for local definitions of spec..")
+    ("cinit" . "Clears Spec unit cache.")    
     ("punits" . "[unit-term [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
     ("lpunits" . "[unit-term [filename]] Like `punits' but only for local conjectures.")
@@ -140,6 +145,19 @@
                   With no arguments displays context.")
     ("eval" . "[expression] Evaluates expression with respect to current context.")
     ("eval-lisp" . "[expression] Like `eval' except the expression is translated to Lisp and evaluated in Lisp.")
+    ("gen-lisp" . "[spec-term [filename]] Generates Lisp code for unit in filename.
+                  With no argument uses last processed unit.")
+    ("lgen-lisp" . "[spec-term [filename]] Like `gen-lisp' but only generates lisp for local definitions of spec..")
+    ("gen-c" . "[spec-term [filename]] Generates C code for unit in filename.
+                  With no argument uses last processed unit.")
+    ("make" . "[spec-term] Generate C code with makefile and call make on it.")
+    ("gen-java" . "[spec-term [filename]] Generates Java code for unit in filename.
+                  With no argument uses last processed unit.")
+    ("swj-config" . "Show configuration parameters for Java generation")
+    ("swj-config-dir" . "[dir] Set base directory to be used by gen-java")
+    ("swj-config-make-public" . "[names] Set public names to be used by gen-java")
+    ("swj-config-pkg" . "[pkg] Set package name to be used by gen-java")
+    ("swj-config-reset" . "Restore default configuration parameters for Java generation")
     ("exit" . "Exits shell.")
     ))
 

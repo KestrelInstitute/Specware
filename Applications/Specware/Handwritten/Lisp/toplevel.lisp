@@ -18,15 +18,15 @@
     (":sw-help" . "Help for specware commands")
     (":sw-init" . "Clear Spec cache")
 ;;; Comment out undocumented commands
-;;; (":swc" . "Generate C code for unit") 
+    (":swc" . "Generate C code for unit") 
     (":swe" . "Evaluate specware term")
     (":swe-spec" . "Set spec context for :swe command")
-;;;    (":swj" . "Generate Java code for unit")
-;;;    (":swj-config" . "Show configuration parameters for Java generation")
-;;;    (":swj-config-dir" . "Set base directory to be used by :swj")
-;;;    (":swj-config-make-public" . "Set public names to be used by :swj")
-;;;    (":swj-config-pkg" . "Set package name to be used by :swj")
-;;;    (":swj-config-reset" . "Restore default configuration parameters for Java generation")
+    (":swj" . "Generate Java code for unit")
+    (":swj-config" . "Show configuration parameters for Java generation")
+    (":swj-config-dir" . "Set base directory to be used by :swj")
+    (":swj-config-make-public" . "Set public names to be used by :swj")
+    (":swj-config-pkg" . "Set package name to be used by :swj")
+    (":swj-config-reset" . "Restore default configuration parameters for Java generation")
     (":swl" . "Generate Lisp code for unit")
     (":swll" . "Generate Lisp code for local definition of unit, and compile and load")
     (":swpath" . "Query (no arg) or set SWPATH"))
@@ -79,6 +79,10 @@
 
 (defvar *saved-swpath* nil)
 (defvar *temp-file-in-use?* nil)
+(defvar *current-temp-file* nil)
+(defvar SpecCalc::noElaboratingMessageFiles)
+(defun sw-temp-file? (fil)
+  (equal fil *current-temp-file*))
 
 (defun norm-unitid-str (str)
   (if (null str) str
@@ -96,6 +100,7 @@
 				      (incf *tmp-counter*) 
 				      (ymd-hms)))
 		    (tmp-uid (format nil "/~A"     tmp-name))
+		    (tmp-full-uid (format nil "~A~A"  tmp-dir tmp-name))
 		    (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
 		    (old-swpath (or *saved-swpath* (specware::getEnv "SWPATH")))
 		    (new-swpath (format nil #-mswindows "~Asw/:~A" #+mswindows "~A/sw/;~A"
@@ -106,8 +111,24 @@
 	       (setq *saved-swpath* old-swpath)
 	       (specware::setenv "SWPATH" new-swpath)
 	       (setq *temp-file-in-use?* t)
+	       (setq *current-temp-file* tmp-sw)
+	       (setq SpecCalc::noElaboratingMessageFiles (cons tmp-full-uid nil))
 	       (setq str tmp-uid)))
 	   str)))
+
+(defun show-error-position (emacs-error-info)
+  (when emacs-error-info
+    (let ((error-file (first emacs-error-info))
+	  (linepos (second emacs-error-info))
+	  (charpos (third emacs-error-info)))
+      (if (sw-temp-file? error-file)
+	  (emacs::eval-in-emacs (format nil "(progn (previous-input-line)
+						    (comint-bol nil)
+						    (forward-word 1)
+						    (forward-char ~a))"
+					(1+ charpos)))
+	(emacs::eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)"
+				      error-file linepos charpos))))))
 
 (defvar *last-unit-Id-_loaded* nil)
 
@@ -146,13 +167,15 @@
 
 (defun sw (&optional x)
   (setq x (norm-unitid-str x))
-  (if x
-      (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* x))
-    (if *last-unit-Id-_loaded*
-	(Specware::evaluateUID_fromLisp *last-unit-Id-_loaded*)
-      (format t "No previous unit evaluated~%")))
-  ;; (values) ; breaks bootstrap!  why suppress result?
-  )
+  (let ((emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
+    (let ((val (if x
+		   (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* x))
+		 (if *last-unit-Id-_loaded*
+		     (Specware::evaluateUID_fromLisp *last-unit-Id-_loaded*)
+		   (format t "No previous unit evaluated~%")))))
+      (show-error-position emacs::*goto-file-position-stored*)
+      val)))
 
 #+allegro
 (top-level:alias ("sw" :case-sensitive :string) (&optional x)
@@ -160,21 +183,29 @@
 
 (defun show (&optional x)
   (setq x (norm-unitid-str x))
-  (if x
-      (Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
-    (if *last-unit-Id-_loaded*
-	(Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
-      (format t "No previous unit evaluated~%")))
-  (values))
+  (let ((emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
+    (if x
+	(Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
+      (if *last-unit-Id-_loaded*
+	  (Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
+	(format t "No previous unit evaluated~%")))
+    (show-error-position emacs::*goto-file-position-stored*)
+    (values)))
+
 #+allegro
 (top-level:alias ("show" :case-sensitive :string) (&optional x)
   (show x))
 
 ;; Not sure if an optional UnitId make sense for swl
 (defun swl-internal (x &optional y)
-  (Specware::evaluateLispCompile_fromLisp-2 (norm-unitid-str x)
-					    (if y (cons :|Some| (subst-home y))
-					      '(:|None|))))
+  (let ((emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
+    (let ((val (Specware::evaluateLispCompile_fromLisp-2 (norm-unitid-str x)
+							 (if y (cons :|Some| (subst-home y))
+							   '(:|None|)))))
+      (show-error-position emacs::*goto-file-position-stored*)
+      val)))
 
 ;;; For non-allegro front-end to handle arguments separated by spaces
 (defun toplevel-parse-args (arg-string)
@@ -218,13 +249,17 @@
 (defun swll-internal (x &optional y)
   (let ((lisp-file-name (subst-home (or y (concatenate 'string
 					    specware::temporaryDirectory
-					    "cl-current-file")))))
-    (if (Specware::evaluateLispCompileLocal_fromLisp-2
-	 (norm-unitid-str x)
-	 (cons :|Some| lisp-file-name))
-	(let (#+allegro *redefinition-warnings*)
-	  (specware::compile-and-load-lisp-file lisp-file-name))
-      "Specware Processing Failed!")))
+					    "cl-current-file"))))
+	(emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
+    (let ((val (if (Specware::evaluateLispCompileLocal_fromLisp-2
+		    (norm-unitid-str x)
+		    (cons :|Some| lisp-file-name))
+		   (let (#+allegro *redefinition-warnings*)
+		     (specware::compile-and-load-lisp-file lisp-file-name))
+		 "Specware Processing Failed!")))
+      (show-error-position emacs::*goto-file-position-stored*)
+      val)))
 
 (defun swll (&optional args)
   (let ((r-args (if (not (null args))
@@ -311,13 +346,13 @@
 
 (defun swe (x)
   (let* ((tmp-dir (format nil "~Aswe/" specware::temporaryDirectory))
-	 (SpecCalc::printElaborateSpecMessage? nil)   ; Suppress Elaborating spec message
 	 (tmp-name (format nil "swe_tmp_~D_~D"
 			   (incf *tmp-counter*) 
 			   (ymd-hms)))
 	 (tmp-uid (format nil "/~A"     tmp-name))
 	 (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
 	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
+	 (SpecCalc::noElaboratingMessageFiles (list tmp-cl))
 	 (old-swpath (specware::getEnv "SWPATH"))
 	 (new-swpath (format nil #-mswindows "~Aswe/:~A:~A" #+mswindows "~A/swe/;~A;~A"
 			     Specware::temporaryDirectory *current-swe-spec-dir* old-swpath))
@@ -471,11 +506,14 @@
 ;;; --------------------------------------------------------------------------------
 
 (defun swj (x &optional y)
-  (Specware::evaluateJavaGen_fromLisp-2 (norm-unitid-str x) 
-					(if y 
-					    (cons :|Some| y)
-					  '(:|None|)))
-  (values))
+  (let ((emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
+    (Specware::evaluateJavaGen_fromLisp-2 (norm-unitid-str x) 
+					  (if y 
+					      (cons :|Some| y)
+					    '(:|None|)))
+    (show-error-position emacs::*goto-file-position-stored*)
+    (values)))
 
 (defvar *last-swj-args* nil)
 
@@ -541,9 +579,7 @@
 #+allegro
 (top-level:alias ("swj-config-reset") () (swj-config-reset))
 
-#+allegro
-(top-level:alias
-  ("swj-config") ()
+(defun swj-config ()
   (let* ((pkgname (format nil "~A" JGEN::packageName))
 	 (bdir (format nil "~A" JGEN::baseDir))
 	 (ops (format nil "~A" JGEN::publicOps))
@@ -552,14 +588,18 @@
 	 ;; 	   "none"))
 	 )
     (progn
-      (format t ";;; package name   [change with :swj-config-pkg]:         \"~A\"~%" pkgname)
-      (format t ";;; base directory [change with :swj-config-dir]:         \"~A\"~%" bdir)
-      (format t ";;; public ops     [change with :swj-config-make-public]: ~A~%" ops)
+      (format t ";;; package name   [change with swj-config-pkg]:         \"~A\"~%" pkgname)
+      (format t ";;; base directory [change with swj-config-dir]:         \"~A\"~%" bdir)
+      (format t ";;; public ops     [change with swj-config-make-public]: ~A~%" ops)
       (if (not (string= pkgname "default"))
 	  (let* ((ppath (map 'string #'(lambda(c) (if (eq c #\.) #\/ c)) pkgname))
 		 (dir (concatenate 'string bdir "/" ppath "/")))
 	    (format t ";;; Java file(s) will be written into directory \"~A\"~%" dir))
 	()))))
+
+#+allegro
+(top-level:alias
+  ("swj-config") () (swj-config))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -567,9 +607,13 @@
 
 (defun swc-internal (x &optional y)
 ;;  (format t "swc-internal: x=~A, y=~A~%" x y)
-   (Specware::evaluateCGen_fromLisp-2 (norm-unitid-str x) (if y (cons :|Some| (subst-home y))
-							    '(:|None|)))
-   (values))
+   (let ((emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
+     (Specware::evaluateCGen_fromLisp-2 (norm-unitid-str x)
+					(if y (cons :|Some| (subst-home y))
+					  '(:|None|)))
+     (show-error-position emacs::*goto-file-position-stored*)
+     (values)))
 
 (defun swc (&optional args)
   (let ((r-args (if (not (null args))
@@ -732,10 +776,14 @@
 ;; --------------------------------------------------------------------------------
 
 (defun swpf-internal (x &optional y &key (obligations t))
-  (Specware::evaluateProofGen_fromLisp-3 (norm-unitid-str (string x))
-					 (if y (cons :|Some| (string (subst-home y)))
-					   '(:|None|))
-					 obligations))
+  (let ((emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
+    (let ((val (Specware::evaluateProofGen_fromLisp-3 (norm-unitid-str (string x))
+						      (if y (cons :|Some| (string (subst-home y)))
+							'(:|None|))
+						      obligations)))
+      (show-error-position emacs::*goto-file-position-stored*)
+      val)))
 
 (defvar *last-swpf-args* nil)
 
@@ -875,7 +923,7 @@
       #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
       (when (under-ilisp?)
 	(emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
-                                                     (cons default-directory nil))"
+                                                 (cons default-directory nil))"
 				      (specware::ensure-final-slash newdir))))
       (princ newdir)
       (values))))
