@@ -132,7 +132,7 @@
      (format t "No previous unit evaluated~%"))))
 
 
-(defpackage "SWE")
+(defpackage "SWE") ; for access to results
 
 (defvar *current-swe-spec* nil ) ; "/Library/Base"
 
@@ -146,21 +146,53 @@
 (defvar *swe-print-as-slang?* nil)
 (defvar *swe-return-value?* nil)
 
+(defvar *tmp-counter* 0)
+
+(defun ymd-hms ()
+  (multiple-value-bind (second minute hour day month year)
+      (DECODE-UNIVERSAL-TIME (get-universal-time))
+    (format nil "~2,'0D~2,'0D~2,'0D_~2,'0D~2,'0D~2,'0D" 
+	    (mod year 100) month day
+	    hour minute second)))
+
+(defun ensure-directory (pathname)
+  (let* ((full-dir-list (pathname-directory pathname))
+	 (mode (car full-dir-list))
+	 (dir-list (list mode)))
+    (dolist (subdir (cdr full-dir-list))
+      (setq dir-list (append dir-list (list subdir)))
+      (let ((dir-name (make-pathname :directory dir-list)))
+	(unless (probe-file dir-name)
+	  (excl::make-directory dir-name))))
+    (probe-file (make-pathname :directory full-dir-list))))
+
 (defun swe (x)
-  (let* ((tmp-uid "swe_tmp")
-	 (tmp-sw  (format nil "~A.sw" tmp-uid))
-	 (tmp-cl  (concatenate 'string specware::temporaryDirectory "swe_tmp")))
+  (let* ((tmp-dir (format nil "~Aswe/" specware::temporaryDirectory))
+	 (tmp-name (format nil "swe_tmp_~D_~D"
+			   (incf *tmp-counter*) 
+			   (ymd-hms)))
+	 (tmp-uid (format nil "/~A"     tmp-name))
+	 (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
+	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
+	 (this-dir (specware::current-directory))
+	 (old-swpath (specware::getEnv "SWPATH"))
+	 (new-swpath (format nil ":/tmp/swe/:~A:~A" this-dir old-swpath)))
     ;; clear any old values or function definitions:
     (makunbound  'swe::tmp)
     (fmakunbound 'swe::tmp)
+    (ensure-directory tmp-dir)
     (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
       (if (null *current-swe-spec*)
 	  (format s "spec~%  def swe.tmp = ~A~%endspec~%" x)
-	(format s "spec~%  import ~A~%  def swe.tmp = ~A~%endspec~%" 
+	(format s "spec~%  import /~A~%  def swe.tmp = ~A~%endspec~%" 
 		*current-swe-spec*
 		x)))
     ;; Process unit id:
-    (if (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl))
+    (if (unwind-protect
+	    (progn
+	      (specware::setenv "SWPATH" new-swpath)
+	      (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))
+	  (specware::setenv "SWPATH" old-swpath))
 	(let (*redefinition-warnings*)
 	  ;; Load resulting lisp code:
 	  (load (make-pathname :type "lisp" :defaults tmp-cl))
