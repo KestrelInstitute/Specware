@@ -127,7 +127,7 @@ echo " "
 XXXX
 RC=$?
 
-ls -sltr *.dxl
+ls -sltr $SPECWARE4/Applications/Specware/bin/linux/*.dxl
 
 # If the load failed (non-zero exit status) then we abort.
 if [ $RC -ne 0 ]; then
