@@ -53,6 +53,7 @@ be the option to run each (test ...) form in a fresh image.
 (defvar *test-harness-stream* t)
 (defvar *test-directory*)
 (defvar *test-temporary-directory*)
+(defvar *test-temporary-directory-name*)
 (defvar *test-driver-file-name* "Tests.lisp")
 
 (defvar *test-temporary-directory-name* "SpecwareTest")
@@ -113,6 +114,7 @@ be the option to run each (test ...) form in a fresh image.
 		 file))
 	 (*test-directory* (directory-namestring path))
 	 (*test-temporary-directory* (get-temporary-directory))
+	 (*test-temporary-directory-name* (replace-string (directory-namestring *test-temporary-directory*) "\\" "/"))
 	 (old-directory (specware::current-directory)))
     (format t "~%;;;; Running test suite in directory ~a~%" *test-directory*)
     (ensure-directories-exist *test-temporary-directory*)
@@ -231,13 +233,15 @@ be the option to run each (test ...) form in a fresh image.
 
 (defun normalize-output (str)
   (if (stringp str)
-      (let ((str (replace-string str (directory-namestring *test-temporary-directory*) "$TESTDIR/")))
+      (let ((str (replace-string str *test-temporary-directory-name* "$TESTDIR/")))
 	(setq str (replace-string str "~/" (concatenate 'string (specware::getenv "HOME") "/")))
-	(replace-string str specware::specware4 "$SPECWARE"))
+	(setq str (replace-string str Specware::temporaryDirectory "/tmp/"))
+	(setq str (replace-string str specware::specware4 "$SPECWARE"))
+	(setq str (replace-string str "C:" "")))
     str))
 
 (defun normalize-input (str)
-  (setq str (replace-string str "$TESTDIR/" (directory-namestring *test-temporary-directory*)))
+  (setq str (replace-string str "$TESTDIR/" *test-temporary-directory-name*))
   (replace-string str "$SPECWARE" specware::specware4))
 
 ;; There must be a better way of doing this
