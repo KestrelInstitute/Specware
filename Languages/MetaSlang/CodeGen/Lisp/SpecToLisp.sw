@@ -256,6 +256,7 @@ def mkLEqualityOp(sp,srt) =
                   (case stripSubsorts(sp,s)
                      of (Base (Qualified("Boolean","Boolean"),_,_)) -> "eq"
                       %| (Base (Local("Boolean"),_,_)) -> "eq"
+		      | Boolean _ -> "eq"
                       | (Base (Qualified("Nat","Nat"),_,_)) -> " = "
                       %| (Base (Local "Nat",_,_)) -> " = "
                       | (Base (Qualified("Integer","Integer"),_,_)) -> " = "
