@@ -104,24 +104,6 @@ spec {
  % Boot strapping environment
  %        
  def baseSpec : Spec = 
-%%%le   let base_op_map =
-%%%le       foldr (fn (name, map) -> 
-%%%le              insertAQualifierMap(map, "BaseSpecs", name,
-%%%le                                 ([Qualified(name,name)], 
-%%%le                                  Nonfix, 
-%%%le                                  ([], mkBase(["MetaSlang","Spec"], [])), 
-%%%le                                  None)))
-%%%le             emptyAQualifierMap
-%%%le             ["Integer",
-%%%le              "Nat",     
-%%%le              "Char",    
-%%%le              "Boolean", 
-%%%le              "String",  
-%%%le              "List",    
-%%%le              "General", 
-%%%le              "TranslationBuiltIn"]
-%%%le   in
-%%%le     ops           = base_op_map,
      {importInfo       = emptyImportInfo,
       sorts            = emptyAQualifierMap,
       ops              = emptyAQualifierMap,
@@ -132,20 +114,6 @@ spec {
    let errs : List (String * Position) = [] in
    let {importInfo, sorts, ops, properties} = spc in
    let MetaTyVar(tv,_)  = freshMetaTyVar(pos0) in % ?
-%%%le    let external = merge(external, "String",    stringEnv)  in
-%%%le    let external = merge(external, "Nat",       natEnv)     in
-%%%le    let external = merge(external, "Integer",   intEnv)     in
-%%%le    let external = merge(external, "Boolean",   boolEnv)    in
-%%%le    let external = merge(external, "Char",      charEnv)    in
-%%%le    let external = merge(external, "List",      listEnv)    in
-%%%le    let external = merge(external, "General",   generalEnv) in
-%%%le    let external = merge(external, "BaseSpecs", baseEnv)    in
-   %% Try just leaving the immediate imports
-%%%le    let imports = %foldr (insert external) [] 
-%%%le                  (imports ++ ["String","Nat","Boolean","Integer",
-%%%le                               "Char","List","General"])
-%%%le    in
-%%%le    let importedSpecs = importedSpecsEnv(imports,external) in
    %% importedSpecs is the subset of external used
    %% let importMap = importedSpecs in
    let spc = {importInfo   = importInfo,
@@ -164,13 +132,6 @@ spec {
               file       = file
              } : LocalEnv
    in
-%%%le    let
-%%%le        def importIt(importName) = 
-%%%le          case findImportNamed(external,importName)
-%%%le            of None -> error(env,"Imported spec "^importName^" has not been defined",pos0)
-%%%le             | Some _ -> ()
-%%%le    in 
-%%%le    let _  = app importIt imports  in          
    env
 
  def sameCPSort? (s1: PSort, s2: PSort): Boolean =
