@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -65,7 +65,6 @@
     subsumption-mark
     *rewrites-used*
     *symbols-in-symbol-table*
-    *knuth-bendix-ordering-minimum-constant-weight*
     *skolem-function-alist*
     ))
 
@@ -80,7 +79,8 @@
                 (use-negative-hyperresolution?)
                 (use-ur-resolution?)
                 (use-paramodulation?)
-                (use-ur-pttp?))
+                (use-ur-pttp?)
+                (use-resolve-code?))
       (warn "Neither resolution nor paramodulation are specified."))
     (setq options-have-been-critiqued t))
   nil)
@@ -164,12 +164,14 @@
         'finalize-options
 		))
 
-(defun initialize ()
+(defun initialize (&key (verbose t))
   (cond
     (*snark-is-running*
      (error "SNARK is already running."))
     (t
      (setq time-mark (get-internal-run-time))
+     (when verbose
+       (format t "~&; Running on ~A at " (machine-instance)) (print-current-time))
      (initialize-numberings)
      (setq *using-sorts* nil)
      (setq *tics* nil)
@@ -179,6 +181,8 @@
      (initialize-rows)
      (initialize-constants)
      (initialize-variables)
+     (setf *number-of-new-symbols* 0)
+     (setf *new-symbol-prefix* (newsym-prefix))
 
      (setq clause-subsumption t)
      (setq subsumption-mark 0)
@@ -425,7 +429,7 @@
       (kif-assert-sentence wff)))
    (t
     (apply 'assert wff keys-and-values))))
-  
+
 (defun assert (wff
 	       &key
 	       name
@@ -460,14 +464,14 @@
   (let ((*print-pretty* nil) (*print-radix* nil) (*print-base* 10.) (n 0))
     (prog->
       (not (use-well-sorting?) -> *%check-for-well-sorted-atom%*)
-      (input-wff wff :clausify (use-clausification?) -> wff dp-alist input-wff1)
+      (input-wff wff :clausify (use-clausification?) -> wff dp-alist input-wff1 input-wff-subst)
       (declare (ignore dp-alist))
       (when *find-else-substitution*
         (setq wff (instantiate wff *find-else-substitution*)))
-      (mapcar (lambda (x) (cons (first x) (input-wff (second x))))
+      (mapcar (lambda (x) (cons (first x) (input-wff (second x) :*input-wff-substitution* input-wff-subst)))
               (or constraints (mapcar (lambda (x) (list (car x) (cdr x))) constraint-alist))
               -> constraint-alist)
-      (input-wff answer -> answer)
+      (input-wff answer :*input-wff-substitution* input-wff-subst -> answer)
       (if (use-equality-elimination?) (equality-eliminate-wff wff) wff -> wff)
       (if magic (magic-transform-wff wff :transform-negative-clauses supported) wff -> wff)
       (well-sort-wffs (list* wff answer (mapcar #'cdr constraint-alist)) ->* subst)
@@ -547,9 +551,12 @@
       (throw 'fail nil)
       answer))
 
+(defvar *check-for-disallowed-answer* nil)
+
 (defun answer-disallowed-p (answer)
-  (and (use-constructive-answer-restriction?)
-       (disallowed-symbol-occurs-in-answer-p answer nil)))
+  (if (and (rewrite-answers?) (not *check-for-disallowed-answer*))
+      nil
+      (disallowed-symbol-occurs-in-answer-p answer nil)))
 
 (defun make-demodulant (row1 row2 wff2* context1 context2)
   (cond
@@ -663,17 +670,32 @@
         (setq made t)))
     made))
 
-(defun make-resolventa (row1 atom1 atom1* truthvalue1 subst context1)
+(defun make-resolventa (row1 atom1 atom1* truthvalue1 subst context1 &optional residue)
   (prog->
    (catch 'fail
      (record-new-derived-row
-      (make-row :wff (fail-when-true (make-resolvent-part row1 atom1 atom1* truthvalue1 1 subst))
+      (make-row :wff (fail-when-true
+                      (let ((wff (make-resolvent-part row1 atom1 atom1* truthvalue1 1 subst)))
+                        (if residue (disjoin (instantiate residue subst) wff) wff)))
 		:constraints (fail-when-constraint-false (instantiate (row-constraints row1) 1 subst))
 		:answer (fail-when-disallowed (instantiate (row-answer row1) 1 subst))
 		:supported (row-supported row1)
 		:sequential (row-sequential row1)
                 :context context1
 		:reason `(resolve ,row1 ,(function-code-name (head atom1*))))))))
+
+(defun make-resolventb (row1 residue subst context1)
+  (prog->
+   (catch 'fail
+     (record-new-derived-row
+      (make-row :wff (fail-when-true
+                      (instantiate residue subst))
+                :constraints (fail-when-constraint-false (instantiate (row-constraints row1) 1 subst))
+                :answer (fail-when-disallowed (instantiate (row-answer row1) 1 subst))
+                :supported (row-supported row1)
+                :sequential (row-sequential row1)
+                :context context1
+                :reason `(resolve ,row1 :resolve-code))))))
 
 (defun make-hyperresolvent-nucleus-part (nucleus subst)
   (prog->
@@ -688,7 +710,7 @@
 
 (defvar *resolve-functions-used* nil)
 
-(defun make-hyperresolvent (nucleus electrons subst)
+(defun make-hyperresolvent (nucleus electrons residues subst)
   (prog->
     (row-present-in-context-p nucleus ->nonnil context)
     (catch 'fail
@@ -699,7 +721,9 @@
 	    (supported (row-supported-inheritably nucleus))
             (sequential (row-sequential-inheritably nucleus))
 	    parents)
-	(dolist (x electrons)
+	(dolist (residue residues)
+          (setf wff (fail-when-true (disjoin (instantiate residue subst) wff))))
+        (dolist (x electrons)
           (mvlet (((:list electron+ atom atom*) x))
 	    (setq wff (fail-when-true
 			(disjoin
@@ -895,7 +919,8 @@
              thereis (and
                       (eql 1 (tc-count tc1))
                       (variable-p (tc-term tc1))
-                      (implies *using-sorts* (subsort-p (associative-function-sort head) (variable-sort (tc-term tc1))))
+                      (implies *using-sorts* (same-sort-p (associative-function-argument-sort head)
+                                                          (variable-sort (tc-term tc1))))
                       (loop for tc2 in terms-and-counts
                             never (and (neq tc1 tc2) (variable-occurs-p (tc-term tc1) (tc-term tc2) nil)))))))))
 
@@ -1261,45 +1286,44 @@
     (use-literal-ordering-with-resolution? -> orderfun)
     (selected-atoms-in-row row1 orderfun -> selected-atoms-in-row1)
     (flet ((resolver1 (atom1 truthvalue1 truthvalue2 polarity1 polarity2)
-             (let-options ((use-constructive-answer-restriction nil))
-               (prog->
-                 (quote nil -> atom1*)
-                 ;; apply resolve-code procedural attachments:
-                 (when (row-supported row1)
-                   (dolist (and (compound-p atom1) (function-resolve-code (head atom1) truthvalue1))
-                     ->* fun)
-                   (funcall fun (setq-once atom1* (instantiate atom1 1)) nil ->* subst)
-                   (when (selected-atom-p atom1 polarity1 selected-atoms-in-row1 orderfun
-                                          subst 1 atom1*)
-                     (make-resolventa row1 atom1 atom1* truthvalue1 subst context1)))
-                 ;; resolve row1 with other rows:
-                 (retrieve-unifiable-terms
-                  atom1
-                  nil
-                  (if (eq false truthvalue2)
-                      #'tme-rows-containing-atom-positively
-                      #'tme-rows-containing-atom-negatively)
-                  ->* atom2 row2s)
-                 (quote nil -> atom2*)
-                 (map-rows :rowset row2s :reverse t ->* row2)
-                 (row-present-in-context-p row2 ->nonnil context2)
-                 (selected-atoms-in-row row2 orderfun -> selected-atoms-in-row2)
-                 (when (and (if *interactive?
-                                (implies *row2* (eq row2 *row2*))
-                                (row-given-p row2))
-                            (OR (AND (ROW-UNIT-P ROW1) (ROW-UNIT-P ROW2))
-                                (meets-binary-restrictions-p row1 row2))
-                            (selected-atom-p atom2 polarity2 selected-atoms-in-row2 orderfun))
-                   (setq-once atom1* (instantiate atom1 1))
-                   (setq-once atom2* (instantiate atom2 2))
-                   (unify atom1* atom2* nil ->* subst)
-                   (when (and (selected-atom-p atom1 polarity1 selected-atoms-in-row1 orderfun
-                                               subst 1 atom1*)
-                              (selected-atom-p atom2 polarity2 selected-atoms-in-row2 orderfun
-                                               subst 2 atom2*))
-                     (make-resolvent row1 atom1 atom1* truthvalue1 
-                                     row2 atom2 atom2* truthvalue2
-                                     subst context1 context2)))))))
+             (prog->
+               (quote nil -> atom1*)
+               ;; apply resolve-code procedural attachments:
+               (when (row-supported row1)
+                 (dolist (and (compound-p atom1) (function-resolve-code (head atom1) truthvalue1))
+                   ->* fun)
+                 (funcall fun (setq-once atom1* (instantiate atom1 1)) nil ->* subst &optional residue)
+                 (when (selected-atom-p atom1 polarity1 selected-atoms-in-row1 orderfun
+                                        subst 1 atom1*)
+                   (make-resolventa row1 atom1 atom1* truthvalue1 subst context1 residue)))
+               ;; resolve row1 with other rows:
+               (retrieve-unifiable-terms
+                atom1
+                nil
+                (if (eq false truthvalue2)
+                    #'tme-rows-containing-atom-positively
+                    #'tme-rows-containing-atom-negatively)
+                ->* atom2 row2s)
+               (quote nil -> atom2*)
+               (map-rows :rowset row2s :reverse t ->* row2)
+               (row-present-in-context-p row2 ->nonnil context2)
+               (selected-atoms-in-row row2 orderfun -> selected-atoms-in-row2)
+               (when (and (if *interactive?
+                              (implies *row2* (eq row2 *row2*))
+                              (row-given-p row2))
+                          (OR (AND (ROW-UNIT-P ROW1) (ROW-UNIT-P ROW2))
+                              (meets-binary-restrictions-p row1 row2))
+                          (selected-atom-p atom2 polarity2 selected-atoms-in-row2 orderfun))
+                 (setq-once atom1* (instantiate atom1 1))
+                 (setq-once atom2* (instantiate atom2 2))
+                 (unify atom1* atom2* nil ->* subst)
+                 (when (and (selected-atom-p atom1 polarity1 selected-atoms-in-row1 orderfun
+                                             subst 1 atom1*)
+                            (selected-atom-p atom2 polarity2 selected-atoms-in-row2 orderfun
+                                             subst 2 atom2*))
+                   (make-resolvent row1 atom1 atom1* truthvalue1 
+                                   row2 atom2 atom2* truthvalue2
+                                   subst context1 context2))))))
       (prog->
         (dolist selected-atoms-in-row1 ->* x)
         (values-list x -> atom1 polarity1)
@@ -1307,6 +1331,15 @@
           (resolver1 atom1 false true :pos :neg))
         (unless (eq :pos polarity1)
           (resolver1 atom1 true false :neg :pos))))))
+
+(defun code-resolver (row1)
+  (prog->
+    (when (row-supported row1)
+      (row-present-in-context-p row1 ->nonnil context1)
+      (instantiate (row-wff row1) 1 -> wff1)
+      (dolist (use-resolve-code?) ->* fun)
+      (funcall fun wff1 nil ->* subst &optional wff1*)
+      (make-resolventb row1 (or wff1* false) subst context1))))
 
 (definline hyperresolution-electron-polarity ()
   ;; every atom in an electron has this polarity
@@ -1337,10 +1370,10 @@
          (when (row-supported row)
            (quote nil -> atom2*)
            (dolist (and (compound-p atom2) (function-resolve-code (head atom2) polarity2)) ->* fun)
-           (funcall fun (setq-once atom2* (instantiate atom2 1)) nil ->* subst)
+           (funcall fun (setq-once atom2* (instantiate atom2 1)) nil ->* subst &optional residue)
            (selected-atoms-in-row row orderfun -> selected-atoms-in-row)
            (when (selected-atom-p atom2 polarity2 selected-atoms-in-row orderfun subst 1 atom2*)
-             (make-resolventa row atom2 atom2* truthvalue2 subst context))))
+             (make-resolventa row atom2 atom2* truthvalue2 subst context residue))))
        (prog->
        (quote nil -> atom2*)
        (retrieve-unifiable-terms
@@ -1366,7 +1399,7 @@
 	    (push atom atoms)
 	    (push (instantiate atom 1) atoms*)))
 	 (when atoms*
-	   (hyperresolver2 row nil (nreverse atoms*) 2 nil)))))))
+	   (hyperresolver2 row nil (nreverse atoms*) 2 nil nil)))))))
 
 (defun hyperresolver1 (nucleus atom1 electron atom2 atom2* subst)
   (let ((atoms nil) (atoms* nil))
@@ -1377,9 +1410,9 @@
 		 (not (member atom atoms)))	;equal-p => eq for canonical terms
 	(push atom atoms)
 	(push (instantiate atom 1) atoms*)))	;no dereferencing needed
-    (hyperresolver2 nucleus (list (list electron atom2 atom2*)) (NREVERSE atoms*) 3 subst)))
+    (hyperresolver2 nucleus (list (list electron atom2 atom2*)) (NREVERSE atoms*) 3 nil subst)))
 
-(defun hyperresolver2 (nucleus electrons atoms* n subst)
+(defun hyperresolver2 (nucleus electrons atoms* n residues subst)
   (declare (type fixnum n))
   (prog->
     (hyperresolution-orderfun -> orderfun)
@@ -1389,7 +1422,7 @@
 		 (or (row-supported nucleus)
 		     (some (lambda (x) (row-supported (first x))) electrons))
 		 (selected-atoms-in-hyperresolution-electrons-p electrons subst))
-	(make-hyperresolvent nucleus electrons subst)))
+	(make-hyperresolvent nucleus electrons residues subst)))
      (t
       (first atoms* -> atom*)
       (when (test-option9?)
@@ -1400,20 +1433,20 @@
              ((eq true atom**)
               (return-from hyperresolver2
                 (unless *negative-hyperresolution*
-                  (hyperresolver2 nucleus electrons (rest atoms*) n subst))))
+                  (hyperresolver2 nucleus electrons (rest atoms*) n residues subst))))
              ((eq false atom**)
               (return-from hyperresolver2
                 (when *negative-hyperresolution*
-                  (hyperresolver2 nucleus electrons (rest atoms*) n subst))))
+                  (hyperresolver2 nucleus electrons (rest atoms*) n residues subst))))
              (t
               (setf atom* atom**))))))
       (prog->
         (dolist (and (compound-p atom*)
                      (function-resolve-code (head atom*) (if *negative-hyperresolution* false true)))
           ->* fun)
-        (funcall fun atom* subst ->* subst)
+        (funcall fun atom* subst ->* subst &optional residue)
         (cons (function-code-name (head atom*)) *resolve-functions-used* -> *resolve-functions-used*)
-        (hyperresolver2 nucleus electrons (rest atoms*) n subst))
+        (hyperresolver2 nucleus electrons (rest atoms*) n (cons-unless-nil residue residues) subst))
       (retrieve-unifiable-terms
        atom*
        subst
@@ -1430,7 +1463,7 @@
                selected-atoms-in-rown
                orderfun)
 	  (unify (first atoms*) (setq-once atomn* (instantiate atomn n)) subst ->* subst)
-	  (hyperresolver2 nucleus (cons (list rown atomn atomn*) electrons) (rest atoms*) (1+ n) subst)))))))
+	  (hyperresolver2 nucleus (cons (list rown atomn atomn*) electrons) (rest atoms*) (1+ n) residues subst)))))))
 
 (defun ur-resolver (row)
   (when (row-clause-p row)				;nucleus
@@ -1485,9 +1518,10 @@
           (ur-resolve1 nucleus electrons target-atom target-polarity subst (rest l) k)))
       (prog->
         (dolist (and (compound-p atom1) (function-resolve-code (heada atom1) polarity1)) ->* fun)
-        (funcall fun atom1 subst ->* subst)
-        (cons (function-code-name (head atom1)) *resolve-functions-used* -> *resolve-functions-used*)
-        (ur-resolve1 nucleus electrons target-atom target-polarity subst (rest l) k))
+        (funcall fun atom1 subst ->* subst &optional residue)
+        (unless residue
+          (cons (function-code-name (head atom1)) *resolve-functions-used* -> *resolve-functions-used*)
+          (ur-resolve1 nucleus electrons target-atom target-polarity subst (rest l) k)))
       (prog->
         (retrieve-unifiable-terms
          atom1
@@ -1593,37 +1627,36 @@
 (defun paramodulater-from1 (row1 equality1 pattern1* value1* dir)
   ;; row1 has the equality
   (declare (ignore dir))
-  (let-options ((use-constructive-answer-restriction nil))
-    (prog->
-      (row-present-in-context-p row1 ->nonnil context1)
-      (and (row-embedding-p row1) (embedding-variables row1 1) -> embedding-variables1)
-      (retrieve-unifiable-terms pattern1* nil ->* term2)
-      (unless (variable-p term2)
-        (rows-containing-paramodulatable-term term2 -> row2s)
+  (prog->
+    (row-present-in-context-p row1 ->nonnil context1)
+    (and (row-embedding-p row1) (embedding-variables row1 1) -> embedding-variables1)
+    (retrieve-unifiable-terms pattern1* nil ->* term2)
+    (unless (variable-p term2)
+      (rows-containing-paramodulatable-term term2 -> row2s)
+      (when row2s
+        (setq row2s (impose-binary-restrictions row1 (IF (AND *INTERACTIVE? *ROW2*)
+                                                         (REMOVE-IF-NOT (LAMBDA (X) (EQ *ROW2* X)) ROW2S)
+                                                         ROW2S)))
         (when row2s
-          (setq row2s (impose-binary-restrictions row1 (IF (AND *INTERACTIVE? *ROW2*)
-                                                           (REMOVE-IF-NOT (LAMBDA (X) (EQ *ROW2* X)) ROW2S)
-                                                           ROW2S)))
-          (when row2s
-            (instantiate term2 2 -> term2*)
-            (and embedding-variables1		;unify-bag only cares if both terms are embeddings
-                 (loop for row2 in row2s
-                       always (and (row-embedding-p row2)
-                                   (or (equal-p term2 (first (args (row-wff row2))) nil)
-                                       (equal-p term2 (second (args (row-wff row2))) nil))))
-                 (embedding-variables (car row2s) 2)
-                 -> embedding-variables2)
-            (and embedding-variables2 (append embedding-variables1 embedding-variables2) -> *embedding-variables*)
-            (when (allowable-embedding-superposition (row-embedding-p row1) (row-embedding-p (car row2s)))
-              (unify pattern1* term2* nil ->* subst)
-              (unless (or (equal-p pattern1* value1* subst)
-;;	       (and (neq dir '>)
-;;		    (neq dir '<)
-;;		    (eq '< (simplification-ordering-compare-terms pattern1* value1* subst '<)))
+          (instantiate term2 2 -> term2*)
+          (and embedding-variables1		;unify-bag only cares if both terms are embeddings
+               (loop for row2 in row2s
+                     always (and (row-embedding-p row2)
+                                 (or (equal-p term2 (first (args (row-wff row2))) nil)
+                                     (equal-p term2 (second (args (row-wff row2))) nil))))
+               (embedding-variables (car row2s) 2)
+               -> embedding-variables2)
+          (and embedding-variables2 (append embedding-variables1 embedding-variables2) -> *embedding-variables*)
+          (when (allowable-embedding-superposition (row-embedding-p row1) (row-embedding-p (car row2s)))
+            (unify pattern1* term2* nil ->* subst)
+            (unless (or (equal-p pattern1* value1* subst)
+;;                      (and (neq dir '>)
+;;                           (neq dir '<)
+;;                           (eq '< (simplification-ordering-compare-terms pattern1* value1* subst '<)))
                         )
-                (dolist row2s ->* row2)
-                (row-present-in-context-p row2 ->nonnil context2)
-                (make-paramodulant row1 equality1 value1* row2 term2* subst context1 context2)))))))))
+              (dolist row2s ->* row2)
+              (row-present-in-context-p row2 ->nonnil context2)
+              (make-paramodulant row1 equality1 value1* row2 term2* subst context1 context2))))))))
 
 (defun paramodulater-to (row2)
   (prog-> 
@@ -1665,32 +1698,31 @@
 
 (defun paramodulater-to1 (row2 term2 term2* dir)
   (declare (ignore dir))
-  (let-options ((use-constructive-answer-restriction nil))
-    (prog->
-      (row-present-in-context-p row2 ->nonnil context2)
-      (when (row-supported row2)
-        (dolist (and (compound-p term2*) (function-paramodulate-code (head term2*))) ->* fun)
-        (funcall fun term2* nil ->* value1* subst)
-        (make-paramodulanta value1* row2 term2* subst context2))
-      (and (row-embedding-p row2)
-           (or (equal-p term2 (first (args (row-wff row2))) nil)
-               (equal-p term2 (second (args (row-wff row2))) nil))
-           (embedding-variables row2 2) -> embedding-variables2)
-      (retrieve-unifiable-terms term2* nil #'tme-rows-containing-paramodulatable-equality ->* pattern1 ws)
-      (instantiate pattern1 1 -> pattern1*)
-      (dolist ws ->* w)
-      (car w -> row1)
-      (row-present-in-context-p row1 ->nonnil context1)
-      (when (meets-binary-restrictions-p row2 row1)
-        (cdr w -> value1)
-        (unless (eq pattern1 value1)		;equal-p => eq for canonical terms
-          (make-compound *=* pattern1 value1 -> equality1)
-          (WHEN (OR (TEST-OPTION16?)		;TEST-OPTION16 GIVES PREVIOUS NO-ORDERING BEHAVIOR
-                    (if (row-sequential row1)
-                        (atom-satisfies-sequential-restriction-p equality1 (row-wff row1))
-                        (let ((orderfun (USE-LITERAL-ORDERING-WITH-PARAMODULATION?)))
-                          (implies orderfun (LITERAL-SATISFIES-ORDERING-RESTRICTION-P		;MES 2002-02-08
-                                             orderfun EQUALITY1 :POS (ROW-WFF ROW1))))))
+  (prog->
+    (row-present-in-context-p row2 ->nonnil context2)
+    (when (row-supported row2)
+      (dolist (and (compound-p term2*) (function-paramodulate-code (head term2*))) ->* fun)
+      (funcall fun term2* nil ->* value1* subst)
+      (make-paramodulanta value1* row2 term2* subst context2))
+    (and (row-embedding-p row2)
+         (or (equal-p term2 (first (args (row-wff row2))) nil)
+             (equal-p term2 (second (args (row-wff row2))) nil))
+         (embedding-variables row2 2) -> embedding-variables2)
+    (retrieve-unifiable-terms term2* nil #'tme-rows-containing-paramodulatable-equality ->* pattern1 ws)
+    (instantiate pattern1 1 -> pattern1*)
+    (dolist ws ->* w)
+    (car w -> row1)
+    (row-present-in-context-p row1 ->nonnil context1)
+    (when (meets-binary-restrictions-p row2 row1)
+      (cdr w -> value1)
+      (unless (eq pattern1 value1)		;equal-p => eq for canonical terms
+        (make-compound *=* pattern1 value1 -> equality1)
+        (WHEN (OR (TEST-OPTION16?)		;TEST-OPTION16 GIVES PREVIOUS NO-ORDERING BEHAVIOR
+                  (if (row-sequential row1)
+                      (atom-satisfies-sequential-restriction-p equality1 (row-wff row1))
+                      (let ((orderfun (USE-LITERAL-ORDERING-WITH-PARAMODULATION?)))
+                        (implies orderfun (LITERAL-SATISFIES-ORDERING-RESTRICTION-P		;MES 2002-02-08
+                                           orderfun EQUALITY1 :POS (ROW-WFF ROW1))))))
           (instantiate value1 1 -> value1*)
           (and embedding-variables2		;unify-bag only cares if both terms are embeddings
                (row-embedding-p row1)
@@ -1700,14 +1732,14 @@
           (when (allowable-embedding-superposition (row-embedding-p row1) (row-embedding-p row2))
             (unify pattern1* term2* nil ->* subst)
             (unless (or (equal-p pattern1* value1* subst)
-;;	       (and (neq dir '>)
-;;		    (neq dir '<)
-;;		    (eq '< (simplification-ordering-compare-terms pattern1* value1* subst '<)))
+;;                      (and (neq dir '>)
+;;                           (neq dir '<)
+;;                           (eq '< (simplification-ordering-compare-terms pattern1* value1* subst '<)))
 		        )
               (unless (eql (row-number row1) (row-number row2))
                 ;;don't duplicate work (DO THIS IN IMPOSE-BINARY-RESTRICTIONS INSTEAD)
                 (make-paramodulant row1 equality1 value1* row2 term2* subst
-                                   context1 context2))))))))))
+                                   context1 context2)))))))))
 
 (defun paramodulation-allowable-p (term row)
   (prog->
@@ -1776,7 +1808,7 @@
 (defun make-embeddings1 (cc row a b)
   (let* ((head (head a))
 	 (args (args a))
-         (sort (associative-function-sort head))
+         (sort (associative-function-argument-sort head))
 	 (newvar2 (make-variable sort))
 	 (temp (append args (list newvar2))))
     (cond
@@ -1906,12 +1938,12 @@
 	    (process-new-row-msg "Simplified row wff is true.")
 	    (return-from process-new-row nil))
 	  (setf (row-rewrites-used row) *rewrites-used*))
-	(when (rewrite-terms-in-answer?)
+	(when (rewrite-answers?)
 	  (setq *rewrites-used* (row-rewrites-used row))
 	  (with-clock-on forward-simplification
             (setf (row-answer row) (setq answer (rewriter answer nil))))
 	  (setf (row-rewrites-used row) *rewrites-used*))
-        (when (rewrite-terms-in-constraint?)
+        (when (rewrite-constraints?)
           ;; inefficient to always rewrite constraints
           ;; can't rewrite constraints already in global data structures
           (setq *rewrites-used* (row-rewrites-used row))
@@ -1919,10 +1951,10 @@
             (setf (row-constraints row) 
                   (rewrite-constraint-alist (row-constraints row))))
           (setf (row-rewrites-used row) *rewrites-used*)))
-      (when (and (use-constructive-answer-restriction?)
-		 (disallowed-symbol-occurs-in-answer-p answer nil))
-	(process-new-row-msg "Row answer contains disallowed symbol.")
-	(return-from process-new-row nil))
+      (let ((*check-for-disallowed-answer* t))
+        (when (answer-disallowed-p answer)
+	  (process-new-row-msg "Row answer contains disallowed symbol.")
+	  (return-from process-new-row nil)))
       (setq constraint-alist (row-constraints row))
       (when constraint-alist
 	(with-clock-off constraint-simplification
@@ -1948,7 +1980,7 @@
 	      (IF VARS
 		  (SETF (FUNCTION-CREATED-P FN) T)
 		  (SETF (CONSTANT-CREATED-P FN) T))
-	      (WHEN (EQ :RECURSIVE-PATH (USE-TERM-ORDERING?))
+	      (WHEN (EQ :RPO (USE-TERM-ORDERING?))
 		(RPO-ADD-CREATED-FUNCTION-SYMBOL FN))
 	      (SETF (ROW-WFF ROW) (SETQ WFF (CONJOIN
 					      (MAKE-EQUALITY (FIRST ARGS) VAL)
@@ -2143,6 +2175,9 @@
       (paramodulater-from given-row)
       (unless (row-embedding-p given-row)
         (paramodulater-to given-row))))
+  (when (use-resolve-code?)
+    (with-clock-on resolution
+      (code-resolver given-row)))
   nil)
 
 (defun give-constraint-row (given-row)

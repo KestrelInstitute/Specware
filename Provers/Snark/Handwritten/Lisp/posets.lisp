@@ -12,13 +12,13 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
 
 (in-package :mes)
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(make-poset declare-poset-greaterp declare-poset-lessp
             poset-greaterp poset-lessp poset-equivalent
             poset-superiors poset-inferiors)))
@@ -30,11 +30,11 @@
   (declare (ignore args))
   (make-sparse-matrix :boolean t))
 
-(defun poset-greaterp (poset x y)
+(definline poset-greaterp (poset x y)
   (and (not (eql x y))
        (sparef poset x y)))
 
-(defun poset-lessp (poset x y)
+(definline poset-lessp (poset x y)
   (and (not (eql x y))
        (sparef poset y x)))
 

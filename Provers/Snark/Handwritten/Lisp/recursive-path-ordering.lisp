@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -82,22 +82,23 @@
       (=
        (let ((xvars (variables x subst))
              (yvars (variables y subst)))
-         (and (dolist (v xvars t)
-                (unless (member v yvars)
+         (and (length= xvars yvars)
+              (dolist (v xvars t)
+                (unless (member v yvars :test #'eq)
                   (return nil)))
               (dolist (v yvars t)
-                (unless (member v xvars)
+                (unless (member v xvars :test #'eq)
                   (return nil)))
               (rpo-compare-compounds0 x y subst '=))))
       ((nil)
        (let ((xvars (variables x subst))
              (yvars (variables y subst)))
          (dolist (v xvars)
-           (unless (member v yvars)
+           (unless (member v yvars :test #'eq)
              (setf testval '>)
              (return)))
          (dolist (v yvars)
-           (unless (member v xvars)
+           (unless (member v xvars :test #'eq)
              (cond
               ((null testval)
                (setf testval '<)
@@ -117,8 +118,7 @@
          ((:alist :plist)
           (rpo-compare-alists (arg1 x) (arg1 y) subst testval))
          (otherwise
-          (ecase (or (function-ordering-status fn)
-                     (recursive-path-ordering-status?))
+          (ecase (or (function-ordering-status fn) (rpo-status?))
             (:left-to-right
              (rpo-compare-lists x y (args x) (args y) subst testval))
             (:right-to-left
@@ -150,25 +150,28 @@
       (return (symbol-ordering-compare-term-multisets xargs yargs subst testval))))))
 
 (defun rpo-compare-lists (x y xargs yargs subst testval)
-  (loop
-    (cond
-     ((null xargs)
-      (return (if (null yargs) '= '<)))
-     ((null yargs)
-      (return '>))
-     (t
-      (ecase (rpo-compare-terms (pop xargs) (pop yargs) subst nil)
-        (>
-         (return (and (neq '= testval) (rpo-compare-compounds> x yargs subst testval))))
-        (<
-         (return (and (neq '= testval) (rpo-compare-compounds< xargs y subst testval))))
-        (?
-         (return (and (neq '= testval) (rpo-compare-compounds? x y xargs yargs subst testval))))
-        (=
-         ))))))
+  (let (xarg yarg)
+    (loop
+      (cond
+       ((null xargs)
+        (return (if (null yargs) '= '<)))
+       ((null yargs)
+        (return '>))
+       ((eql (setf xarg (pop xargs)) (setf yarg (pop yargs)))
+        )
+       (t
+        (ecase (rpo-compare-terms xarg yarg subst nil)
+          (>
+           (return (and (neq '= testval) (rpo-compare-compounds> x yargs subst testval))))
+          (<
+           (return (and (neq '= testval) (rpo-compare-compounds< xargs y subst testval))))
+          (?
+           (return (and (neq '= testval) (rpo-compare-compounds? x y xargs yargs subst testval))))
+          (=
+           )))))))
 
 (defun rpo-compare-compounds> (x yargs subst testval)
-  (if (function-boolean-valued-p (head x))
+  (if (or (null yargs) (function-boolean-valued-p (head x)))
       '>
       (let ((can-be-> t))
         (dolist (yarg yargs (if can-be-> '> '?))
@@ -181,7 +184,7 @@
              ))))))
 
 (defun rpo-compare-compounds< (xargs y subst testval)
-  (if (function-boolean-valued-p (head y))
+  (if (or (null xargs) (function-boolean-valued-p (head y)))
       '<
       (let ((can-be-< t))
         (dolist (xarg xargs (if can-be-< '< '?))

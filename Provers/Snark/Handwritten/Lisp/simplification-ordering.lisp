@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -34,7 +34,7 @@
       ((setq v (assoc (list x y) *manual-ordering-results* :test #'subsumed-p))
        (cdr v))
       ((setq v (assoc (list y x) *manual-ordering-results* :test #'subsumed-p))
-       (ecase (cdr v) (< '>) (> '<) (? '?)))
+       (opposite-order (cdr v)))
       (t
        (loop
 	 (terpri) (princ "You must answer the following simplification-ordering question:")
@@ -64,54 +64,56 @@
 		   (return nil))))
 	      (member (instantiating-direction1 args (variables y)) '(> <>))))))
 
+(defun simplification-ordering-compare-terms0 (x y subst testval)
+  (case (use-term-ordering?)
+    (:rpo
+     (rpo-compare-terms-top x y subst testval))
+    (:kbo
+     (kbo-compare-terms x y subst))
+    ((nil :manual)
+     (cond
+      ((equal-p x y subst)
+       '=)
+      ((occurs-p x y subst)
+       '<)
+      ((occurs-p y x subst)
+       '>)
+      ((use-term-ordering?)
+       (manual-ordering-compare-terms x y subst))
+      (t
+       '?)))
+    (otherwise
+     (funcall (use-term-ordering?) x y subst testval))))
+
+(defun simplification-ordering-compare-terms1 (x y &optional subst testval warn row)
+  (let ((dir (simplification-ordering-compare-terms0 x y subst testval)))
+    (when warn
+      (when (and (print-rewrite-orientation?)
+                 (not (member (print-rows-when-derived?) '(nil :signal)))
+                 (member dir '(< >))
+                 row (row-number row))
+        (with-clock-on printing
+          (terpri-comment)
+          (format t "Oriented ~A ~A "
+                  (row-name-or-number row)
+                  (cond
+                   ((eq '> dir) "left-to-right")
+                   ((eq '< dir) "right-to-left")))))
+      (when (and (print-unorientable-rows?)
+                 (not (member (print-rows-when-derived?) '(nil :signal)))
+                 (not (member dir '(< > =))))
+        (with-clock-on printing
+          (terpri-comment)
+          (cond
+           ((and row (row-number row))
+            (format t "Could not orient ~A " (row-name-or-number row)))
+           (t
+            (format t "Could not orient ~A=~A " x y))))))
+    dir))
+
 (defun simplification-ordering-compare-terms (x y &optional subst testval warn row)
   (with-clock-on equality-ordering
-    (let ((dir (cond
-;;              ((definition-p x y)		;warning: may be incompatible with past ordering choices
-;;               '>)
-;;              ((definition-p y x)		;warning: may be incompatible with past ordering choices
-;;     	         '<)
-                ((and (use-term-ordering?) (neq :manual (use-term-ordering?)))
-                 (ecase (use-term-ordering?)
-                   (:recursive-path
-                    (rpo-compare-terms-top x y subst testval))
-                   (:knuth-bendix
-                    (knuth-bendix-ordering-compare-terms x y subst))
-                   (:recursive-decomposition
-                    (unimplemented))))
-                ((equal-p x y subst)
-                 '=)
-                ((occurs-p x y subst)
-                 '<)
-                ((occurs-p y x subst)
-                 '>)
-                ((use-term-ordering?)
-                 (manual-ordering-compare-terms x y subst))
-                (t
-                 '?))))
-      (when warn
-        (when (and (print-rewrite-orientation?)
-		   (not (member (print-rows-when-derived?) '(nil :signal)))
-                   (member dir '(< >))
-		   row (row-number row))
-	  (with-clock-on printing
-	    (terpri-comment)
-	    (format t "Oriented ~A ~A "
-                    (row-name-or-number row)
-                    (cond
-                     ((eq '> dir) "left-to-right")
-                     ((eq '< dir) "right-to-left")))))
-	(when (and (print-unorientable-rows?)
-		   (not (member (print-rows-when-derived?) '(nil :signal)))
-		   (not (member dir '(< > =))))
-	  (with-clock-on printing
-	    (terpri-comment)
-	    (cond
-             ((and row (row-number row))
-              (format t "Could not orient ~A " (row-name-or-number row)))
-             (t
-              (format t "Could not orient ~A=~A " x y))))))
-      dir)))
+    (simplification-ordering-compare-terms1 x y subst testval warn row)))
 
 (defvar *simplification-ordering-compare-equality-arguments-hash-table*)
 

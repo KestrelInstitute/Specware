@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes-sparse-array -*-
 ;;; File: sparse-array.lisp
-;;; Copyright (c) 2001-2002 Mark E. Stickel
+;;; Copyright (c) 2001-2003 Mark E. Stickel
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining a
 ;;; copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,21 @@
 (in-package :mes-sparse-array)
 
 ;;; functions in this file should not depend on implementation details of sparse-vectors
+
+#+cormanlisp
+(defun (setf sparef1) (value sparse-vector index)
+  (declare (ignore value sparse-vector index))
+  (unimplemented))
+
+#+cormanlisp
+(defun (setf sparse-matrix-row) (value sparse-matrix index)
+  (declare (ignore value sparse-matrix index))
+  (unimplemented))
+
+#+cormanlisp
+(defun (setf sparse-matrix-column) (value sparse-matrix index)
+  (declare (ignore value sparse-matrix index))
+  (unimplemented))
 
 ;;; ****s* mes-sparse-array/sparse-matrix
 ;;; NAME
@@ -52,9 +67,9 @@
     (unless (null default-value)
       (error "Default-value must be NIL for Boolean sparse-arrays.")))
   (let ((rows (and (or (not columns) (if rows-supplied rows (not columns-supplied)))
-                   (make-sparse-vector0 nil nil)))
+                   (make-sparse-vector)))
         (columns (and (or (not rows) (if columns-supplied columns (not rows-supplied)))
-                      (make-sparse-vector0 nil nil))))
+                      (make-sparse-vector))))
     (let ((sparse-matrix (make-sparse-matrix0 default-value boolean rows columns)))
       (when rows
         (setf (sparse-vector-type rows) `(rows ,sparse-matrix)))
@@ -111,6 +126,22 @@
 ;;; SOURCE
 
       ;;sparse-matrix-columns is defined as a slot in the sparse-matrix structure
+;;; ***
+
+;;; ****f* mes-sparse-array/sparse-matrix-count
+;;; USAGE
+;;;   (sparse-matrix-count sparse-matrix)
+;;; RETURN VALUE
+;;;   integer number of entries in sparse-matrix
+;;; SOURCE
+
+(defun sparse-matrix-count (sparse-matrix)
+  (let ((n 0))
+    (prog->
+      (map-sparse-vector
+       (or (sparse-matrix-rows sparse-matrix) (sparse-matrix-columns sparse-matrix)) ->* v)
+      (incf n (sparse-vector-count v)))
+    n))
 ;;; ***
 
 ;;; ****if* mes-sparse-array/sparef2
@@ -209,11 +240,10 @@
        (setf type `(column ,sparse-matrix ,index))))
     (unless (eql 0 (sparse-vector-count new-row-or-col))
       (when cols-or-rows
-        (map-sparse-vector-with-indexes
-         (lambda (value index2)
-           (sparse-vector-setter
-            value (or (sparef cols-or-rows index2) (setf (sparef cols-or-rows index2) t)) index))
-         new-row-or-col)))
+        (prog->
+          (map-sparse-vector-with-indexes new-row-or-col ->* value index2)
+          (sparse-vector-setter
+           value (or (sparef cols-or-rows index2) (setf (sparef cols-or-rows index2) t)) index))))
     (setf (sparse-vector-type new-row-or-col) type)
     (sparse-vector-setter new-row-or-col rows-or-cols index)))
 ;;; ***
@@ -235,10 +265,9 @@
                                 (rows (sparse-matrix-columns (second type)))
                                 (columns (sparse-matrix-rows (second type))))))
               (default-value (sparse-vector-default-value sparse-vector)))
-          (map-sparse-vector-indexes-only
-           (lambda (index2)
-             (sparse-vector-setter default-value (sparef cols-or-rows index2) index))
-           sparse-vector)))
+          (prog->
+            (map-sparse-vector-indexes-only sparse-vector ->* index2)
+            (sparse-vector-setter default-value (sparef cols-or-rows index2) index))))
       (setf (sparse-vector-type sparse-vector) nil)
       (unless keep
         (sparse-vector-setter nil rows-or-cols index)))))
@@ -282,9 +311,9 @@
              (or (sparef sparse-vector index)
                  (progn
                    (let ((matrix (second type)))
-                     (setf value (make-sparse-vector0
-                                  (sparse-matrix-default-value matrix)
-                                  (sparse-matrix-boolean matrix))))
+                     (setf value (make-sparse-vector
+                                  :default-value (sparse-matrix-default-value matrix)
+                                  :boolean (sparse-matrix-boolean matrix))))
                    (delete-sparse-matrix-row-or-column sparse-vector index t)
                    (add-sparse-matrix-row-or-column sparse-vector index value))))
             (t
@@ -323,6 +352,84 @@
       (if rows
           (sparse-vector-setter value (setf (sparse-matrix-row sparse-matrix row-index) t) col-index)
           value)))))
+;;; ***
+
+;;; ****f* mes-sparse-array/map-sparse-matrix
+;;; USAGE
+;;;   (map-sparse-matrix function sparse-matrix)
+;;; RETURN VALUE
+;;;   nil
+;;; DESCRIPTION
+;;;   The map-sparse-matrix function applies its unary-function argument
+;;;   to each value in sparse-matrix.
+;;; SEE ALSO
+;;;   map-sparse-matrix-with-indexes
+;;;   map-sparse-matrix-indexes-only
+;;; SOURCE
+
+(defun map-sparse-matrix (function sparse-matrix)
+  (let ((rows (sparse-matrix-rows sparse-matrix)))
+    (if rows
+        (prog->
+          (map-sparse-vector rows ->* row)
+          (map-sparse-vector row ->* value)
+          (funcall function value))
+        (prog->
+          (map-sparse-vector (sparse-matrix-columns sparse-matrix) ->* col)
+          (map-sparse-vector col ->* value)
+          (funcall function value)))))
+;;; ***
+
+;;; ****f* mes-sparse-array/map-sparse-matrix-with-indexes
+;;; USAGE
+;;;   (map-sparse-matrix-with-indexes function sparse-matrix)
+;;; RETURN VALUE
+;;;   nil
+;;; DESCRIPTION
+;;;   The map-sparse-matrix-with-indexes function applies its ternary-function argument
+;;;   to each value, row-index, and column-index in sparse-matrix.
+;;; SEE ALSO
+;;;   map-sparse-matrix
+;;;   map-sparse-matrix-indexes-only
+;;; SOURCE
+
+(defun map-sparse-matrix-with-indexes (function sparse-matrix)
+  (let ((rows (sparse-matrix-rows sparse-matrix)))
+    (if rows
+        (prog->
+          (map-sparse-vector-with-indexes rows ->* row row-index)
+          (map-sparse-vector-with-indexes row ->* value col-index)
+          (funcall function value row-index col-index))
+        (prog->
+          (map-sparse-vector-with-indexes (sparse-matrix-columns sparse-matrix) ->* col col-index)
+          (map-sparse-vector-with-indexes col ->* value row-index)
+          (funcall function value row-index col-index)))))
+;;; ***
+
+;;; ****f* mes-sparse-array/map-sparse-matrix-indexes-only
+;;; USAGE
+;;;   (map-sparse-matrix-indexes-only function sparse-matrix)
+;;; RETURN VALUE
+;;;   nil
+;;; DESCRIPTION
+;;;   The map-sparse-matrix-indexes-only function applies its binary-function argument
+;;;   to each row-index and column-index in sparse-matrix.
+;;; SEE ALSO
+;;;   map-sparse-matrix
+;;;   map-sparse-matrix-with-indexes
+;;; SOURCE
+
+(defun map-sparse-matrix-indexes-only (function sparse-matrix)
+  (let ((rows (sparse-matrix-rows sparse-matrix)))
+    (if rows
+        (prog->
+          (map-sparse-vector-with-indexes rows ->* row row-index)
+          (map-sparse-vector-indexes-only row ->* col-index)
+          (funcall function row-index col-index))
+        (prog->
+          (map-sparse-vector-with-indexes (sparse-matrix-columns sparse-matrix) ->* col col-index)
+          (map-sparse-vector-indexes-only col ->* row-index)
+          (funcall function row-index col-index)))))
 ;;; ***
 
 ;;; ****if* mes-sparse-array/print-sparse-matrix3

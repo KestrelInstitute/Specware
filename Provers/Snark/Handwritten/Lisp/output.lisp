@@ -79,7 +79,7 @@
     (print-term term subst stream depth)))
 
 (defun print-row-term (term &optional subst (stream *standard-output*) depth)
-  (let ((*print-pretty* (print-rows-prettily?)))
+  (let ((*print-pretty* (and (print-rows-prettily?) (print-row-wffs-prettily?))))
     (print-term term subst stream depth)))
 
 (defun terprint-term (term &optional subst (stream *standard-output*) depth)

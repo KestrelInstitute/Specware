@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -246,7 +246,7 @@
                                      (return))))
                :if-compound-cons (push (pop arg) list)))))))
       (cond
-       ((and (same-length-p args args*)
+       ((and (length= args args*)
              (every (lambda (x y) (equal-p x y subst)) args args*))
         none)
        ((null args*)

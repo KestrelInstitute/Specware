@@ -8,23 +8,14 @@ Obtaining SNARK:
   get snark-yyyymmdd.tar.gz
   bye
 
-Installing SNARK:
-
-  gunzip snark-yyyymmdd.tar.gz
-  tar xof snark-yyyymmdd.tar
-  cd snark-yyyymmdd
-  lisp
-  (load "snark-system.lisp")
-  (snark:make-snark-system t)		;t specifies compilation
+See INSTALL file for installation instructions
 
 Running SNARK:
 
   lisp
   (load "snark-system.lisp")
-  (snark:make-snark-system)
+  (make-snark-system)
   :
-
-
 
 Examples:
 
@@ -39,8 +30,6 @@ Examples:
 
   (reverse-example) in reverse-example.lisp
     illustrates logic programming style usage
-
-
 
 A guide to SNARK is being written:
 

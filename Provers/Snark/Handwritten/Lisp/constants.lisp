@@ -12,14 +12,14 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
 
 (in-package :snark)
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter constant-and-function-slots
     '((number (nonce) :read-only t)
       (hash-code (make-atom-hash-code))
@@ -30,14 +30,13 @@
       (created-p nil)
       (constructor nil)
       (allowed-in-answer t)
-      (knuth-bendix-ordering-index nil)
-      (knuth-bendix-ordering-weight 1)
+      (kbo-weight 1)
       (weight 1)
       (constraint-theory nil)
       (in-use nil)
       (plist nil))))			;property list for more properties
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter constant-slots
     (append constant-and-function-slots
             '((sort top-sort)
@@ -50,9 +49,14 @@
 
 (definline get-constant-info (const)
   (or (gethash const *constant-info-table*)
-      (progn
-        (assert-can-be-constant-name-p const)
-        (setf (gethash const *constant-info-table*) (make-constant-info)))))
+      (init-constant-info const)))
+
+(defun init-constant-info (const)
+  (assert-can-be-constant-name-p const)
+  (init-constant-info1 const))
+
+(defun init-constant-info1 (const)
+  (setf (gethash const *constant-info-table*) (make-constant-info)))
 
 (progn
   . #.(mapcan
@@ -75,6 +79,13 @@
 (defun constant-name (const)
   (or (constant-boolean-valued-p const) const))
 
+(defun constant-alias-or-name (const)
+  (let ((aliases (constant-aliases const)))
+    (if aliases (first aliases) (constant-name const))))
+
+(defun constant-aliases (const)
+  (getf (constant-plist const) :aliases))
+
 (defun constant-documentation (const)
   (getf (constant-plist const) :documentation))
 
@@ -83,6 +94,9 @@
 
 (defun constant-source (const)
   (getf (constant-plist const) :source))
+
+(defun (setf constant-aliases) (value const)
+  (setf (getf (constant-plist const) :aliases) value))
 
 (defun (setf constant-documentation) (value const)
   (setf (getf (constant-plist const) :documentation) value))
@@ -105,8 +119,6 @@
       (if function (funcall function k) (collect k result)))
     result))
 
-(defvar *knuth-bendix-ordering-minimum-constant-weight*)
-
 (defun declare-constant-symbol* (symbol
                                  &key
                                  alias
@@ -120,8 +132,7 @@
                                  (created-p nil created-p-supplied)
                                  (constructor nil constructor-supplied)
                                  (allowed-in-answer nil allowed-in-answer-supplied)
-                                 (knuth-bendix-ordering-index nil knuth-bendix-ordering-index-supplied)
-                                 (knuth-bendix-ordering-weight nil knuth-bendix-ordering-weight-supplied)
+                                 (kbo-weight nil kbo-weight-supplied)
                                  (weight nil weight-supplied)
                                  )
   ;; doesn't do anything if no keywords are supplied
@@ -152,15 +163,12 @@
       (cl:assert (implies (or (characterp symbol) (stringp symbol)) constructor))
       (setf (constant-constructor symbol) constructor))
     (set-constant-slot allowed-in-answer)
-    (set-constant-slot knuth-bendix-ordering-index)
-    (when knuth-bendix-ordering-weight-supplied
-      (setf (constant-knuth-bendix-ordering-weight symbol) knuth-bendix-ordering-weight)
-      (when (> *knuth-bendix-ordering-minimum-constant-weight* knuth-bendix-ordering-weight)
-	(setq *knuth-bendix-ordering-minimum-constant-weight* knuth-bendix-ordering-weight)))
+    (set-constant-slot kbo-weight)
     (set-constant-slot weight)
     symbol))
 
 (defun declare-constant-symbol1 (symbol keys-and-values)
+  (get-constant-info symbol)
   (if keys-and-values
       (apply #'declare-constant-symbol* symbol keys-and-values)
       symbol))

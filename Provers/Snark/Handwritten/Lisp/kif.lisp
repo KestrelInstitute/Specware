@@ -1226,7 +1226,7 @@
 
 (defun kif-test1 ()
   (initialize)
-  (trace kif-defobject declare-constant assert)
+;;(trace kif-defobject declare-constant assert)
   (defobject c1 "c1" := c)
   (defobject c1      := c)
   (defobject c2 "c2" :conservative-axiom (= c2 c))
@@ -1241,7 +1241,7 @@
 
 (defun kif-test2 ()
   (initialize)
-  (trace kif-deffunction declare-function assert)
+;;(trace kif-deffunction declare-function assert)
   (deffunction f1 (?x) "f1" := (g ?x))
   (deffunction f1 (?x)      := (g ?x))
   (deffunction f2 (?x) "f2" :-> ?y :=> (p ?x ?y))
@@ -1256,7 +1256,7 @@
 
 (defun kif-test3 ()
   (initialize)
-  (trace kif-defrelation declare-relation assert)
+;;(trace kif-defrelation declare-relation assert)
   (defrelation r1 (?x) "r1" := (s ?x))
   (defrelation r1 (?x)      := (s ?x))
   (defrelation r2 (?x) "r2" :<= (s ?x))

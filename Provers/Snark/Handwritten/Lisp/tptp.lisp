@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: snark -*-
 ;;; File: tptp.lisp
-;;; Copyright (c) 2001-2002 Mark E. Stickel
+;;; Copyright (c) 2001-2003 Mark E. Stickel
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining a
 ;;; copy of this software and associated documentation files (the "Software"),
@@ -95,5 +95,43 @@
     (dolist args ->* arg)
     (if first (setf first nil) (princ ","))
     (print-term-in-tptp-format arg)))
+
+(defun process-tptp-term (x &optional top)
+  (cond
+   ((consp x)
+    (cons (intern (first x)) (mapcar #'process-tptp-term (rest x))))
+   ((not (stringp x))
+    x)
+   ((and (not top) (upper-case-p (char x 0)))
+    (intern (concatenate 'string "?" x)))
+   (t
+    (intern x))))
+
+(defun mapnconc-tptp-file-forms (function filespec &key (if-does-not-exist :error) (package *package*))
+  (let ((tokens (prog->
+                  (mapnconc-file-lines filespec :if-does-not-exist if-does-not-exist ->* line)
+                  (tokenize line 0 (or (position #\% line) (length line)))))
+        (*package* (find-or-make-package package))
+        (result nil) result-last form)
+    (loop
+      (cond
+       ((null tokens)
+        (return result))
+       (t
+        (multiple-value-setq (form tokens) (tokens-to-lisp tokens :intern nil :period t))
+        (cl:assert (equal "input_clause" (first form)))
+        (ncollect (funcall function
+                           (list 'assertion
+                                 (cons 'or (mapcar #'(lambda (x) (process-tptp-term x t))
+                                                   (rest (fourth form))))
+                                 :name (intern (second form))
+                                 :reason (cond
+                                          ((equal "conjecture" (third form))
+                                           '~conclusion)
+                                          ((equal "hypothesis" (third form))
+                                           'assumption)
+                                          (t
+                                           'assertion))))
+                  result))))))
 
 ;;; tptp.lisp EOF

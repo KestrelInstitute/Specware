@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: common-lisp-user -*-
-;;; File: sparse-array-pkg.lisp
-;;; Copyright (c) 2001-2002 Mark E. Stickel
+;;; File: sparse-array-system.lisp
+;;; Copyright (c) 2003 Mark E. Stickel
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining a
 ;;; copy of this software and associated documentation files (the "Software"),
@@ -22,22 +22,27 @@
 
 (in-package :common-lisp-user)
 
-;;; package definition for mes-sparse-array system
-
 (defpackage :mes-sparse-array
-  (:use :common-lisp))
+  (:use :common-lisp :mes-definline :mes-progc)
+  (:export
+   "SPAREF"
+   "SPARSE-VECTOR" "MAKE-SPARSE-VECTOR" "SPARSE-VECTOR-P"
+   "SPARSE-VECTOR-BOOLEAN" "SPARSE-VECTOR-DEFAULT-VALUE"
+   "SPARSE-VECTOR-COUNT"
+   "MAP-SPARSE-VECTOR" "MAP-SPARSE-VECTOR-WITH-INDEXES" "MAP-SPARSE-VECTOR-INDEXES-ONLY"
+   "WITH-SPARSE-VECTOR-ITERATOR"
+   "FIRST-SPAREF" "LAST-SPAREF" "POP-FIRST-SPAREF" "POP-LAST-SPAREF"
+   "SPARSE-MATRIX" "MAKE-SPARSE-MATRIX" "SPARSE-MATRIX-P"
+   "SPARSE-MATRIX-BOOLEAN" "SPARSE-MATRIX-DEFAULT-VALUE"
+   "SPARSE-MATRIX-COUNT"
+   "SPARSE-MATRIX-ROW" "SPARSE-MATRIX-COLUMN" "SPARSE-MATRIX-ROWS" "SPARSE-MATRIX-COLUMNS"
+   "MAP-SPARSE-MATRIX" "MAP-SPARSE-MATRIX-WITH-INDEXES" "MAP-SPARSE-MATRIX-INDEXES-ONLY"))
 
-(in-package :mes-sparse-array)
-(export
- '(sparef
-   sparse-vector make-sparse-vector sparse-vector-p
-   sparse-vector-boolean sparse-vector-default-value
-   sparse-vector-count
-   map-sparse-vector map-sparse-vector-with-indexes map-sparse-vector-indexes-only
-   with-sparse-vector-iterator
-   first-sparef last-sparef pop-first-sparef pop-last-sparef
-   sparse-matrix make-sparse-matrix sparse-matrix-p
-   sparse-matrix-boolean sparse-matrix-default-value
-   sparse-matrix-row sparse-matrix-column sparse-matrix-rows sparse-matrix-columns))
+(dolist (name '("sparse-vector" "sparse-array"))
+  (let ((file (make-pathname :name name :defaults *load-truename*)))
+    (declare (special *compile-me*))
+    (if (and (boundp '*compile-me*) *compile-me*)
+	(SPECWARE::compile-and-load-lisp-file file)
+    (load (or (probe-file (compile-file-pathname file)) file)))))
 
-;;; sparse-array-pkg.lisp EOF
+;;; sparse-array-system.lisp EOF

@@ -21,7 +21,7 @@
 ;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (in-package :mes)
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(nonce
             initialize-numberings make-numbering
             *standard-eql-numbering* *standard-equal-numbering*)))
@@ -85,7 +85,7 @@
                  number))))))))
 
 #+cmu
-(eval-when (:load-toplevel)
+(eval-when (:load-toplevel :execute)
   (initialize-numberings))
 
 ;;; numbering.lisp EOF

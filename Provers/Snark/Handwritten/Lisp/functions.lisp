@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -23,7 +23,7 @@
 
 (defvar *name*)
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter function-slots
     (append constant-and-function-slots
             '((name nil :read-only t)
@@ -84,6 +84,13 @@
    (t
     "function")))
 
+(defun function-alias-or-name (fn)
+  (let ((aliases (function-aliases fn)))
+    (if aliases (first aliases) (function-name fn))))
+
+(defun function-aliases (fn)
+  (getf (function-plist fn) :aliases))
+
 (defun function-documentation (fn)
   (getf (function-plist fn) :documentation))
 
@@ -92,6 +99,9 @@
 
 (defun function-source (fn)
   (getf (function-plist fn) :source))
+
+(defun (setf function-aliases) (value fn)
+  (setf (getf (function-plist fn) :aliases) value))
 
 (defun (setf function-documentation) (value fn)
   (setf (getf (function-plist fn) :documentation) value))
@@ -178,8 +188,7 @@
                                  (constructor nil constructor-supplied)
                                  (skolem-p nil skolem-p-supplied)
                                  (created-p nil created-p-supplied)
-                                 (knuth-bendix-ordering-index nil knuth-bendix-ordering-index-supplied)
-                                 (knuth-bendix-ordering-weight nil knuth-bendix-ordering-weight-supplied)
+                                 (kbo-weight nil kbo-weight-supplied)
                                  (polarity-map nil polarity-map-supplied)
                                  (input-function nil input-function-supplied)
                                  (make-compound-function nil make-compound-function-supplied)
@@ -202,8 +211,7 @@
   (set-function-slot created-p)
   (set-function-slot constructor)
   (set-function-slot allowed-in-answer)
-  (set-function-slot knuth-bendix-ordering-index)
-  (set-function-slot knuth-bendix-ordering-weight)
+  (set-function-slot kbo-weight)
   (set-function-slot constraint-theory)
   (set-function-slot polarity-map)
   (set-function-slot ordering-status)
@@ -227,8 +235,6 @@
   (when permutations-supplied
     (apply #'declare-function-permutative symbol permutations))
   (set-function-slot index-type)
-  (when (or associative (and sort (function-associative symbol)))
-    (associative-function-sort symbol))	;checks that sort is well formed
   symbol)
 
 (defun declare-relation-symbol0 (symbol
@@ -252,8 +258,7 @@
                                  (associative nil associative-supplied)	;only for connectives
                                  (commutative nil commutative-supplied)
                                  
-                                 (knuth-bendix-ordering-index nil knuth-bendix-ordering-index-supplied)
-                                 (knuth-bendix-ordering-weight nil knuth-bendix-ordering-weight-supplied)
+                                 (kbo-weight nil kbo-weight-supplied)
                                  (complement nil complement-supplied)
                                  (magic t magic-supplied)
                                  (polarity-map nil polarity-map-supplied)
@@ -277,8 +282,7 @@
     (declare-function-sort symbol sort))
   (set-function-slot weight)
   (set-function-slot allowed-in-answer)
-  (set-function-slot knuth-bendix-ordering-index)
-  (set-function-slot knuth-bendix-ordering-weight)
+  (set-function-slot kbo-weight)
   (set-function-slot constraint-theory)
   (set-function-slot complement)
   (set-function-slot magic)
@@ -304,8 +308,6 @@
   (when permutations-supplied
     (apply #'declare-function-permutative symbol permutations))
   (set-function-slot index-type)
-  (when (or associative (and sort (function-associative symbol)))
-    (associative-function-sort symbol))	;checks that sort is well formed
   symbol)
 
 (defun declare-function-symbol1 (symbol keys-and-values)
@@ -449,6 +451,7 @@
       :equal-code 'equal-vector-p
       :variant-code 'variant-vector
       :unify-code 'unify-vector)))
+  (check-associative-function-sort function)
   nil)
 
 (defun declare-function-commutative (function &optional verbose)

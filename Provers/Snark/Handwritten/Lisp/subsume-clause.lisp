@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: snark -*-
 ;;; File: subsume-clause.lisp
-;;; Copyright (c) 2002 Mark E. Stickel
+;;; Copyright (c) 2002-2003 Mark E. Stickel
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining a
 ;;; copy of this software and associated documentation files (the "Software"),
@@ -54,7 +54,7 @@
             )
            ((null (rest v))
             (let ((subsumers1 (first subsumerss)) (subsumers2 (first v)))
-              (when (< (length subsumers2) (length subsumers1))
+              (when (length< subsumers2 subsumers1)
                 (setf (first subsumerss) subsumers2)
                 (setf (first v) subsumers1))))
            (t

@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -113,6 +113,7 @@
 (declare-snark-option use-factoring nil)
 (declare-snark-option use-equality-factoring nil)
 (declare-snark-option use-condensing t)
+(declare-snark-option use-resolve-code nil)			;list of resolve-code functions
 (declare-snark-option use-code-for-equality t)
 
 (declare-snark-option use-unit-restriction nil)
@@ -127,19 +128,21 @@
 (declare-snark-option use-subsumption-by-false :false)		;nil, :false, :forward, t
 (declare-snark-option use-simplification-by-units t)		;nil, :forward, t
 (declare-snark-option use-simplification-by-equalities t)	;nil, :forward, t
-(declare-snark-option use-term-ordering :recursive-path)	;nil, :manual, :knuth-bendix, :recursive-path
+(declare-snark-option use-term-ordering :rpo)	;nil, :manual, :kbo, :rpo, or a function
 (declare-snark-option use-term-ordering-cache nil nil)
 (declare-snark-option use-default-ordering t)			;nil, :arity, :reverse, t
-(declare-snark-option recursive-path-ordering-status :multiset)	;default status
-(declare-snark-option knuth-bendix-ordering-status :left-to-right)
+(declare-snark-option rpo-status :multiset)			;default status
+(declare-snark-option kbo-status :left-to-right)		;default status
+(declare-snark-option kbo-variable-weight 1)			;constant-weight >= this > 0
 
 (declare-snark-option use-indefinite-answers nil)		;nil, :disjunctive, :conditional (UNIMPLEMENTED)
 (declare-snark-option use-conditional-answer-creation nil)
-(declare-snark-option use-constructive-answer-restriction nil)
+(declare-snark-option2 use-constructive-answer-restriction nil)	;no longer necessary
 (declare-snark-option use-answers-during-subsumption t)
 (declare-snark-option use-constraint-solver-in-subsumption nil)
-(declare-snark-option rewrite-terms-in-answer nil)
-(declare-snark-option rewrite-terms-in-constraint nil)
+(declare-snark-option allow-skolem-symbols-in-answers t)
+(declare-snark-option rewrite-answers nil)
+(declare-snark-option rewrite-constraints nil)
 (declare-snark-option use-embedded-rewrites t)
 (declare-snark-option use-function-creation nil)
 (declare-snark-option use-replacement-resolution-with-x=x nil)
@@ -150,15 +153,15 @@
 (declare-snark-option use-partitions nil nil)			;nil or list of partition ids
 (declare-snark-option2 partition-communication-table nil)
 
+(declare-snark-option2 assert-reason 'assertion)		;assertion, assumption
+(declare-snark-option assert-context 1)				;1, :current
+
 (declare-snark-option assert-supported t)			;nil, t  :uninherited
 (declare-snark-option assume-supported t)			;nil, t, :uninherited
 (declare-snark-option prove-supported t)			;nil, t, :uninherited
 (declare-snark-option assert-sequential nil)			;nil, t, :uninherited
 (declare-snark-option assume-sequential nil)			;nil, t, :uninherited
 (declare-snark-option prove-sequential nil)			;nil, t, :uninherited
-
-(declare-snark-option2 assert-reason 'assertion)		;assertion, assumption
-(declare-snark-option2 assert-context 1)			;1, :current
 
 (declare-snark-option2 prove-closure t)
 
@@ -225,6 +228,7 @@
 ;;; the following options control how a row is printed
 (declare-snark-option2 print-rows-shortened nil)
 (declare-snark-option2 print-rows-prettily t)
+(declare-snark-option2 print-row-wffs-prettily t)
 (declare-snark-option2 print-row-answers t)
 (declare-snark-option2 print-row-constraints t)
 (declare-snark-option2 print-row-reasons t)
@@ -277,7 +281,7 @@
 (declare-snark-option test-option20 nil nil)	;rpo
 (declare-snark-option test-option21 nil nil)	;maximum-intersection-size in optimize-sparse-vector-expression
 (declare-snark-option test-option22 nil nil)	;turn off commutativity of equality
-(declare-snark-option test-option23 nil nil)
+(declare-snark-option test-option23 nil nil)	;make skolem symbols bigger than nonskolems in default symbol ordering
 (declare-snark-option test-option24 nil nil)
 (declare-snark-option test-option25 nil nil)
 (declare-snark-option test-option26 nil nil)
@@ -342,7 +346,10 @@
     options)
    forms))
 
-#+(and mcl (not openmcl)) (progn (pushnew '(let-options  . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
+#+(and mcl (not openmcl))
+(progn
+  (pushnew '(let-options  . 1) ccl:*fred-special-indent-alist* :test #'equal)
+  nil)
 
 (defun print-options (&optional all)
   (terpri-comment)
@@ -373,5 +380,18 @@
 
 (defmethod agenda-length-before-simplification-limit :before (&optional (value t))
   (mes::limit-agenda-length *agenda-of-other-wffs-to-process* value))
+
+(defmethod use-resolve-code :around (&optional (value nil))
+  (call-next-method
+   (if (listp value)
+       (remove-duplicates value :from-end t)			;replace
+       (cons value (remove value (use-resolve-code?))))))	;add
+
+(defmethod use-term-ordering :around (&optional (value nil))
+  (call-next-method
+   (case value
+     (:recursive-path :rpo)
+     (:knuth-bendix :kbo)
+     (otherwise value))))
 
 ;;; options.lisp EOF

@@ -1,0 +1,24 @@
+SNARK is run regularly in
+ Macintosh Common Lisp on MacOS
+ CMU Common Lisp on Linux
+ Allegro Common Lisp on Solaris
+and has been run in other Common Lisp systems
+
+(replace "yyyymmdd" by the SNARK version date)
+
+Installing SNARK:
+
+  gunzip snark-yyyymmdd.tar.gz
+  tar xof snark-yyyymmdd.tar
+  cd snark-yyyymmdd
+  lisp
+  (load "snark-system.lisp")
+  (make-snark-system t)			;t specifies compilation
+  (make-snark-system t)			;compile again for more inlining (optional)
+
+Running SNARK:
+
+  lisp
+  (load "snark-system.lisp")
+  (make-snark-system)
+  :

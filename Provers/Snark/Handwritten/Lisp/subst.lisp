@@ -348,7 +348,7 @@
      :if-constant (return nil)
      :if-compound (return nil))))
 
-(defun occurs-p (x y subst)
+(defun occurs-p (x y &optional subst)
   "return t if x occurs in y, nil otherwise"
   (dereference
     x subst

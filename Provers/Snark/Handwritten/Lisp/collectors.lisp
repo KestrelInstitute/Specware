@@ -1,4 +1,4 @@
-;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes -*-
+;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes-collectors -*-
 ;;; File: collectors.lisp
 ;;; The contents of this file are subject to the Mozilla Public License
 ;;; Version 1.1 (the "License"); you may not use this file except in
@@ -12,12 +12,12 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
 
-(in-package :mes)
+(in-package :mes-collectors)
 
 (defun make-collector ()
   (cons nil nil))

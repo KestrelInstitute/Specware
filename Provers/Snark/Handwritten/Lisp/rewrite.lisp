@@ -114,7 +114,7 @@
 	(unless (< size-difference 2)
 	  (dereference pattern nil)
 	  (head pattern -> head)
-          (associative-function-sort head -> sort)
+          (associative-function-argument-sort head -> sort)
 	  (make-variable sort -> newvar1)
 	  (ecase embeddings
 	    (:l

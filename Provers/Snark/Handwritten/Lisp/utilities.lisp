@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -55,24 +55,52 @@
                                          (:name *form-name*)
                                          (:source *form-source*)))
 
+(defvar *read-assertion-file-format* nil)
+(defvar *read-assertion-file-if-does-not-exist* :error)
+(defvar *read-assertion-file-verbose* nil)
+(defvar *read-assertion-file-package* :snark-user)
+
 (defun read-assertion-file (filespec
                             &key
-                            (if-does-not-exist :error)
-                            verbose
-                            (package :snark-user)
-                            (readtable *readtable*))
+                            (format *read-assertion-file-format*)
+                            (if-does-not-exist *read-assertion-file-if-does-not-exist*)
+                            (verbose *read-assertion-file-verbose*)
+                            (package *read-assertion-file-package*)
+                            (readtable *readtable*)
+                            hash-dollar)
   ;; read-asssertion-file executes commands and return a list of calls on 'assertion'
   ;; every form that is not a command (commands are named in *read-assertion-file-commands*)
   ;; is treated as a formula to be asserted
-  (declare (ignore verbose))
+  (cond
+   ((eq :cycl format)
+    (return-from read-assertion-file
+      (read-cycl-assertion-file
+       filespec
+       :if-does-not-exist if-does-not-exist
+       :verbose verbose
+       :hash-dollar hash-dollar)))
+   ((eq :km format)
+    (return-from read-assertion-file
+      (read-km-assertion-file
+       filespec
+       :if-does-not-exist if-does-not-exist
+       :verbose verbose
+       :hash-dollar hash-dollar))))
   (prog->
-    (find-or-make-package package -> *package*)
     (identity readtable -> *readtable*)
     (identity *read-assertion-file-commands* -> commands)
     (identity *read-assertion-file-keywords* -> keywords)
     (progv (mapcar #'second keywords)
            (consn nil nil (length keywords))
-      (mapnconc-file-forms filespec :if-does-not-exist if-does-not-exist ->* form)
+      (funcall (cond
+                ((eq :tptp format)
+                 'mapnconc-tptp-file-forms)
+                (t
+                 'mapnconc-file-forms))
+               filespec
+               :if-does-not-exist if-does-not-exist
+               :package package
+               ->* form)
       (and (consp form)
            (symbolp (first form))
            (first (member (first form) commands
@@ -102,7 +130,11 @@
           (otherwise
            (list form)))))))
 
-(defun read-cycl-assertion-file (filespec &key (if-does-not-exist :error) verbose hash-dollar)
+(defun read-cycl-assertion-file (filespec
+                                 &key
+                                 (if-does-not-exist *read-assertion-file-if-does-not-exist*)
+                                 (verbose *read-assertion-file-verbose*)
+                                 hash-dollar)
   ;; do read-assertion-file using case-sensitive reader
   ;; #$expressions will be read into CYCL package
   ;; other expressions will also be read into CYCL package, unless in-package is used in the file
@@ -114,7 +146,10 @@
      :package *hash-dollar-package*
      :readtable (if hash-dollar *hash-dollar-readtable* *readtable*))))
 
-(defun read-km-assertion-file (filespec &key (if-does-not-exist :error) verbose hash-dollar)
+(defun read-km-assertion-file (filespec &key
+                                        (if-does-not-exist *read-assertion-file-if-does-not-exist*)
+                                        (verbose *read-assertion-file-verbose*)
+                                        hash-dollar)
   ;; do read-assertion-file using case-sensitive reader
   ;; #$expressions will be read into KM package
   ;; other expressions will also be read into KM package, unless in-package is used in the file
@@ -169,12 +204,6 @@
    (t
     (error "value ~S is not of the expected form (ASSERTION expr ...)." x))))
 
-(defun find-or-make-package (name)
-  (or (find-package name)
-      (progn
-        (cerror "Make one." "There is no package named ~S ." (string name))
-        (make-package name :use '(:common-lisp)))))
-
 (defun km-package ()
   cl-user::*km-package*)
 
@@ -186,18 +215,22 @@
 
 (defun refute-file (filespec
                     &key
+                    (format *read-assertion-file-format*)
 		    (options *refute-file-options*)
                     (ignore-errors *refute-file-ignore-errors*)
 		    (verbose *refute-file-verbose*)
                     (output-file *refute-file-output-file*)
                     (if-exists *refute-file-if-exists*)
-                    (package :snark-user)
+                    (package *read-assertion-file-package*)
                     (readtable *readtable*))
   (labels
     ((refute-file0 ()
        (initialize)
        (mapc #'eval options)
-       (mapc #'eval (read-assertion-file filespec :package *package* :readtable readtable))
+       (mapc #'eval (funcall 'read-assertion-file filespec
+                             :format format
+                             :package package
+                             :readtable readtable))
        (or (closure) :done))
      (refute-file1 ()
        (prog2
@@ -209,49 +242,49 @@
             (refute-file0))
         (when verbose
           (format t "~&; End refute-file ~A "   filespec) (print-current-time) (terpri)))))
-    (let ((*package* (find-or-make-package package)))
-      (if output-file
-          (with-open-file (stream output-file :direction :output :if-exists if-exists)
-            (when stream
-              (let ((*standard-output* stream) (*error-output* stream))
-                (refute-file1))))
-          (refute-file1)))))
-
-(defun snark-user::refute-snark-example-file (name options)
-  (refute-file
-   (make-pathname :directory (append cl-user::*snark-source-directory* (list "examples"))
-                  :name name
-                  :type "kif")
-   :options options
-   :ignore-errors nil
-   :verbose t
-   :output-file nil
-   :package :snark-user))
+    (if output-file
+        (with-open-file (stream output-file :direction :output :if-exists if-exists)
+          (when stream
+            (let ((*standard-output* stream) (*error-output* stream))
+              (refute-file1))))
+        (refute-file1))))
 
 (defvar *tptp-input-directory*
-  #+cmu "/home/mark/TPTP/Problems/kif/"
-  #+allegro "/home/pacific1/stickel/TPTP/Problems/kif/")
-(defvar *TPTP-OUTPUT-DIRECTORY*
-  #+cmu "/home/mark/TPTP/Problems/snark/out/"
-  #+allegro "/home/pacific1/stickel/TPTP/Problems/snark/out/")
-(defvar *tptp-problem-name-suffix* "+short+rm_eq_rstfp.kif")
+  #+cmu '(:absolute "home" "stickel" "TPTP" "in")
+  #+allegro '(:absolute "home" "pacific1" "stickel" "TPTP" "in"))
 
-(defun do-tptp-problem (problem &key options)
-  (let* ((name (string problem))
-         (dom (subseq name 0 3)))
-    (refute-file (concatenate 'string *tptp-input-directory* dom "/" name *tptp-problem-name-suffix*)
+(defvar *tptp-output-directory*
+  #+cmu '(:absolute "home" "stickel" "TPTP" "snark" "out")
+  #+allegro '(:absolute "home" "pacific1" "stickel" "TPTP" "snark" "out"))
+
+(defvar *tptp-problem-name-suffix* "+short+rm_eq_rstfp")
+
+(defun do-tptp-problem (problem &key (format *read-assertion-file-format*) options)
+  (let* ((name (string problem)))
+    (refute-file (make-pathname
+                  :directory *tptp-input-directory*
+                  :name (concatenate 'string name *tptp-problem-name-suffix*)
+                  :type (if format (string-downcase (symbol-name format)) "kif"))
+                 :format format
                  :options options
                  :ignore-errors t
                  :verbose t
-                 :output-file (concatenate 'string *tptp-output-directory* name ".out")
+                 :output-file (make-pathname
+                               :directory *tptp-output-directory*
+                               :name name
+                               :type "out")
                  :if-exists nil)))
 
-(defun do-tptp-problem1 (problem &key options)
+(defun do-tptp-problem1 (problem &key (format *read-assertion-file-format*) options)
   (let* ((name (string problem)))
     (refute-file (concatenate 'string
-                              #+cmu "/home/mark/snark/examples/"
+                              #+cmu "/home/stickel/snark/examples/"
                               #+mcl "Nori:Research:SNARK:examples:"
-                              name *tptp-problem-name-suffix*)
+                              name
+                              *tptp-problem-name-suffix*
+                              "."
+                              (if format (string-downcase (symbol-name format)) "kif"))
+                 :format format
                  :options (append '((use-hyperresolution t)
                                     (use-paramodulation t)
                                     (use-factoring :pos)
@@ -324,7 +357,7 @@
   (let ((*print-pretty* nil) (*print-radix* nil) (*print-base* 10.)
         (result nil) result-last)
     (print-snark-result :header)
-    (dolist (filename (directory (concatenate 'string dir "*.out")))
+    (dolist (filename (directory (make-pathname :directory dir :name :wild :type "out")))
       (collect (print-snark-result (summarize-output-file filename)) result))
     (terpri)
     result))
@@ -647,34 +680,12 @@
                      (eq :external (nth-value 1 (intern (symbol-name symbol) package))))
                  (not (member symbol option-functions)))
         (collect
-          #-MCL symbol
-          #+MCL (cons symbol (ccl:arglist symbol t))
+          #-mcl symbol
+          #+mcl (cons symbol (ccl:arglist symbol t))
           functions)))
     functions))
-
-(defun snark-all-source-file ()
-  (with-open-file (ostream (make-pathname :directory cl-user::*snark-source-directory*
-                                          :name "snark-all-source"
-                                          :type "lisp")
-                           :direction :output)
-    (copy-source-file "snark-system" ostream)
-    (dolist (filename cl-user::*snark-files*)
-      (unless (member filename '("metering"))
-        (copy-source-file filename ostream)))))
 
-(defun copy-source-file (filename ostream)
-  (with-open-file (istream (make-pathname :directory (snark-file-source-directory filename)
-                                          :name (snark-file-name filename)
-                                          :type "lisp")
-                           :direction :input)
-    (loop
-      (let ((char (read-char istream nil :eof)))
-        (cond
-         ((eq :eof char)
-          (return))
-         ((eq #\Page char)
-          )
-         (t
-          (princ char ostream)))))))
+(defun make-snark-system (&optional compile)
+  (cl-user::make-snark-system compile))
 
 ;;; utilities.lisp EOF

@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: snark -*-
 ;;; File: nonhorn-magic-set.lisp
-;;; Copyright (c) 2000-2002 Mark E. Stickel
+;;; Copyright (c) 2000-2003 Mark E. Stickel
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining a
 ;;; copy of this software and associated documentation files (the "Software"),
@@ -45,6 +45,7 @@
                                                   (declare-relation
                                                    (magic-goal-name (function-name head))
                                                    (function-arity head)
+                                                   :commutative (function-commutative head)
                                                    :magic 'goal))
                                             v)
                                         (args atom)))))))

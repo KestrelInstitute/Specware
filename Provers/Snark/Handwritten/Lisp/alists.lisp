@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -79,10 +79,10 @@
         ((null l)
          nil)
         ((atom l)
-         (input-term l polarity))
+         (input-term1 l polarity))
         (t
-         (lcons (lcons (input-term (car (first l)) polarity)
-                       (input-term (cdr (first l)) polarity)
+         (lcons (lcons (input-term1 (car (first l)) polarity)
+                       (input-term1 (cdr (first l)) polarity)
                        (first l))
                 (input-alist (rest l))
                 l)))))
@@ -269,7 +269,7 @@
         (cons p (conjoin-alist1* key value (rest alist))))))
 
 (defun alist-test1 (&optional case)
-  ;; 2000-09-22: checked
+  ;; 2003-04-13: checked
   (initialize)
   (print-options-when-starting nil)
   (print-summary-when-finished nil)
@@ -288,25 +288,25 @@
   (when (implies case (eql 3 case))
     (new-row-context)
     (print (prove '(p (b . 2) (c . ?z) (a . ?x)) :answer '(values ?x ?z)))
-    (cl:assert (equal '(values 1 3) (answer))))
+    (cl:assert (equal '(values 1 3) (answer t))))
   (when (implies case (eql 4 case))
     (new-row-context)
     (print (prove '(p (b . 2) (a . ?x) . ?) :answer '(values ?x)))
-    (cl:assert (equal '(values 1) (answer))))
+    (cl:assert (equal '(values 1) (answer t))))
   nil)
 
 (defun alist-test2 ()
-  ;; 2000-09-22: checked
+  ;; 2003-04-13: checked
   (initialize)
   (print-options-when-starting nil)
   (print-summary-when-finished nil)
   (use-resolution)
   (assert '(p ?x ?x) :answer '(values ?x))
   (print (prove '(p (alist (a . 1) (b . 2) . ?) (alist (b . 2) (c . 3) . ?))))
-  (cl:assert (equal '(values (alist (a . 1) (b . 2) (c . 3) . ?x)) (answer))))
+  (cl:assert (equal '(values (alist (a . 1) (b . 2) (c . 3) . ?x)) (answer t))))
 
 (defun alist-test3 ()
-  ;; 2000-09-22: checked
+  ;; 2003-04-13: checked
   (initialize)
   (print-options-when-starting nil)
   (print-summary-when-finished nil)

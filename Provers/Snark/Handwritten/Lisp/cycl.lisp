@@ -56,7 +56,7 @@
 ;;; disjointness or partition information
 ;;; interpret expressions like (#$isa X #$symmetricBinaryPredicate)
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   ;; the following causes #$Thing etc. in this file
   ;; to be read into the CYCL package
   (setf *hash-dollar-package* cl-user::*cycl-package*))
@@ -595,7 +595,7 @@
                   #-mcl "cycl-kernel.cycl"))
                (2
                 '(#+mcl "nori:research:snark:cyc-merged-ontology.cycl"
-                  #-MCL "cyc-merged-ontology.cycl"))
+                  #-mcl "cyc-merged-ontology.cycl"))
                (3
                 '(#+mcl "nori:research:snark:cycl-kernel.cycl"
                   #-mcl "cycl-kernel.cycl"
@@ -607,7 +607,7 @@
 (defun cycl-test (&optional (case 1))
   (eval-cycl-data (cycl-file-test case)))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (setf *hash-dollar-package* nil))
 
 ;;; cycl.lisp EOF

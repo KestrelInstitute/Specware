@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -48,7 +48,7 @@
 	      (return nil)))))))))
 
 (defun multiset-equal (x y &key test key)
-  (and (same-length-p x y)
+  (and (length= x y)
        (submultisetp x y :test test :key key)))
 
 ;;; special variables used by bag unification algorithm
@@ -525,7 +525,7 @@
 	 (t
 	  (when (and (unfrozen-variable-p firstx) (unfrozen-variable-p firsty))
 	    (let ((n (lcm firsta firstb))
-		  (newvar (make-variable (associative-function-sort fn))))
+		  (newvar (make-variable (associative-function-argument-sort fn))))
 	      (prog->
 		(unify firstx (make-compound* fn (consn newvar nil (/ n firsta))) subst ->* subst)
 		(unify cc firsty (make-compound* fn (consn newvar nil (/ n firstb))) subst)))))))
@@ -659,7 +659,7 @@
 				(when (and (eql 1 (svref xsol i))
                                            (not (unfrozen-variable-p (x-term i))))
 				  (return (x-term i))))
-                              (make-variable (associative-function-sort fn)))))
+                              (make-variable (associative-function-argument-sort fn)))))
               (dotimes (i nxcoefs)
                 (let ((xsol.i (svref xsol i)))
                   (unless (eql 0 xsol.i)
@@ -746,7 +746,7 @@
 				    ((not (unfrozen-variable-p x-term.i))
 				     x-term.i)
 				    (t
-				     (make-variable (associative-function-sort fn))))))
+				     (make-variable (associative-function-argument-sort fn))))))
 		      (setf (x-bind i) (consn newvar x-bind.i m))
 		      (setf (y-bind j) (consn newvar y-bind.j n))
 		      (unify-bag3* i j+1 subst))))

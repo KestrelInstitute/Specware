@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -26,7 +26,14 @@
 (in-package :common-lisp-user)
 
 (defpackage :mes
-  (:use :common-lisp :mes-sparse-array)
+  (:use :common-lisp
+        :mes-definline
+        :mes-mvlet
+        :mes-progc
+        :mes-collectors
+;;      :mes-doubly-linked-list
+        :mes-queues
+        :mes-sparse-array)
   #+genera (:import-from :future-common-lisp
 	    future-common-lisp:declaim
 	    future-common-lisp:constantly)
@@ -34,7 +41,6 @@
   (:export
 
     ;; defined in useful.lisp
-    "DEFINLINE"
     "FLOAT-INTERNAL-TIME-UNITS-PER-SECOND"
     "CARC" "CDRC" "CAARCC" "CADRCC" "CDARCC" "CDDRCC"
     "NEQ" "NEQL" "NEQUAL" "NEQUALP"
@@ -43,41 +49,34 @@
     #+(OR LUCID GENERA) "DECLAIM"
     #+(OR LUCID GENERA) "CONSTANTLY"
     "KWOTE" "MKLIST" "FIRSTN" "CONSN"
-    "CONS-UNLESS-NIL" "LIST-P" "SAME-LENGTH-P" "INTEGERS-BETWEEN"
+    "CONS-UNLESS-NIL" "LIST-P"
+    "LENGTH=" "LENGTH<" "LENGTH<=" "LENGTH>" "LENGTH>="
+    "INTEGERS-BETWEEN"
     "PERCENTAGE" "PRINT-CURRENT-TIME"
     "LEAP-YEAR-P" "DAYS-PER-MONTH" "MONTH-NUMBER"
+    "QUIT"
     "COMMENT" "NOCOMMENT" "TERPRI-COMMENT"
     "*TERPRI-INDENT*" "TERPRI-COMMENT-INDENT" "TERPRI-INDENT"
     "UNIMPLEMENTED"
     "*HASH-DOLLAR-PACKAGE*" "*HASH-DOLLAR-READTABLE*"
     "HASH-DOLLAR-PRIN1" "HASH-DOLLAR-PRINT"
+    "FIND-OR-MAKE-PACKAGE"
 
     ;; defined in assoc-cache.lisp
     "MAKE-ASSOC-CACHE" "ASSOC-CACHE-PUSH" "ASSOC-CACHE-ENTRIES"
 
     ;; defined in map-file.lisp
+    "MAPNCONC-STREAM-FORMS" "MAPNCONC-STREAM-LINES"
     "MAPNCONC-FILE-FORMS" "MAPNCONC-FILE-LINES" "READ-FILE"
 
     ;; defined in profiling.lisp
     "PROFILE"
-
-    ;; defined in mvlet.lisp
-    "MVLET" "MVLET*"
-
-    ;; defined in progc.lisp
-    "PROG->"
-    "WRAP-PROGN" "WRAP-BLOCK"
 
     ;; defined in counters.lisp
     "MAKE-COUNTER"
     "INCREMENT-COUNTER" "DECREMENT-COUNTER"
     "COUNTER-VALUE" "COUNTER-VALUES"
     "PRINCF"
-
-    ;; defined in collectors.lisp
-    ;; "MAKE-COLLECTOR" "COLLECTOR-VALUE" "COLLECT-ITEM" "COLLECT-LIST"
-    "COLLECT" "NCOLLECT"
-    "PUSHNEW-UNLESS-NIL"
 
     ;; defined in sparse-vector-expression.lisp
     "SPARSE-VECTOR-EXPRESSION-P"
@@ -122,13 +121,6 @@
     "SORTED-UNION" "SORTED-INTERSECTION"
     "SORTED-SET-DIFFERENCE" "SORTED-SET-EXCLUSIVE-OR"
 
-    ;; defined in queues.lisp
-    "MAKE-QUEUE" "QUEUE-LENGTH" "QUEUE-EMPTY-P"
-    "QUEUE-FIRST" "QUEUE-LAST"
-    "ENQUEUE" "DEQUEUE"
-    "QUEUE-DELETE" "QUEUE-DELETE/EQ"
-    "MAPNCONC-QUEUE" "DO-QUEUE"
-
     ;; defined in agenda.lisp
     "MAKE-AGENDA" "AGENDA-LENGTH" "AGENDA-ENTRIES"
     "AGENDA-INSERT" "AGENDA-DELETE"
@@ -156,7 +148,20 @@
 
     ))
 
-(do-external-symbols (symbol :mes-sparse-array)
-  (export (list symbol) :mes))
+(dolist (pkg '(:mes-definline
+               :mes-mvlet
+               :mes-progc
+               :mes-collectors
+;;             :mes-doubly-linked-list
+               :mes-queues
+               :mes-sparse-array))
+  (do-external-symbols (symbol pkg)
+    (export (list symbol) :mes)))
+
+(defvar *cycl-package* (or (find-package :cycl)
+                           (make-package :cycl :use '(:common-lisp))))
+
+(defvar *km-package* (or (find-package :km)
+                         (make-package :km :use '(:common-lisp))))
 
 ;;; package-defs1.lisp EOF

@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -38,6 +38,14 @@
 
 (defun default-symbol-ordering-compare (symbol1 symbol2)
   (cond
+   ((and (test-option23?)
+         (if (function-symbol-p symbol1) (function-skolem-p symbol1) (constant-skolem-p symbol1))
+         (not (if (function-symbol-p symbol2) (function-skolem-p symbol2) (constant-skolem-p symbol2))))
+    '>)
+   ((and (test-option23?)
+         (not (if (function-symbol-p symbol1) (function-skolem-p symbol1) (constant-skolem-p symbol1)))
+         (if (function-symbol-p symbol2) (function-skolem-p symbol2) (constant-skolem-p symbol2)))
+    '<)
    ((function-symbol-p symbol1)
     (cond
      ((not (function-symbol-p symbol2))
@@ -96,40 +104,43 @@
 	 (declare-poset-greaterp *symbol-ordering* (symbol-number x) (symbol-number y))
 	 (warn "Ignoring ordering declaration between nonrelation ~A and relation ~A." x y)))))
 
-(defun symbol-ordering-compare (symbol1 symbol2)
+(definline symbol-ordering-compare (symbol1 symbol2)
   (cond
    ((eql symbol1 symbol2)
     '=)
    (t
-    (let ((n1 (symbol-number symbol1))
-          (n2 (symbol-number symbol2)))
-      (cond
-       ((poset-greaterp *symbol-ordering* n1 n2)
-        '>)
-       ((poset-greaterp *symbol-ordering* n2 n1)
-        '<)
-       (t
-        (let ((ordering-fun (use-default-ordering?)))
-          (cond
-           (ordering-fun
-            (cl:assert (iff (symbol-boolean-valued-p symbol1) (symbol-boolean-valued-p symbol2)))
-            (let ((com (funcall (IF (OR (EQ T ORDERING-FUN)
-                                        (EQ :ARITY ORDERING-FUN)
-                                        (EQ :REVERSE ORDERING-FUN))
-                                    #'DEFAULT-SYMBOL-ORDERING-COMPARE
-                                    ordering-fun)
-                                symbol1
-                                symbol2)))
-              (ecase com
-                (>
-                 (declare-ordering-greaterp2 symbol1 symbol2))
-                (<
-                 (declare-ordering-greaterp2 symbol2 symbol1))
-                (?
-                 ))
-              com))
-           (t
-            '?)))))))))
+    (symbol-ordering-compare1 symbol1 symbol2))))
+
+(defun symbol-ordering-compare1 (symbol1 symbol2)
+  (let ((n1 (symbol-number symbol1))
+        (n2 (symbol-number symbol2)))
+    (cond
+     ((poset-greaterp *symbol-ordering* n1 n2)
+      '>)
+     ((poset-greaterp *symbol-ordering* n2 n1)
+      '<)
+     (t
+      (let ((ordering-fun (use-default-ordering?)))
+        (cond
+         (ordering-fun
+          (cl:assert (iff (symbol-boolean-valued-p symbol1) (symbol-boolean-valued-p symbol2)))
+          (let ((com (funcall (IF (OR (EQ T ORDERING-FUN)
+                                      (EQ :ARITY ORDERING-FUN)
+                                      (EQ :REVERSE ORDERING-FUN))
+                                  #'DEFAULT-SYMBOL-ORDERING-COMPARE
+                                  ordering-fun)
+                              symbol1
+                              symbol2)))
+            (ecase com
+              (>
+               (declare-ordering-greaterp2 symbol1 symbol2))
+              (<
+               (declare-ordering-greaterp2 symbol2 symbol1))
+              (?
+               ))
+            com))
+         (t
+          '?)))))))
 
 (defun opposite-order (x)
   (case x
@@ -154,18 +165,22 @@
       (symbol-numbered x# -> x)
       (map-sparse-vector row ->* y#)
       (symbol-numbered y# -> y)
-      (when (implies (neq none symbols) (member (symbol-to-lisp x) symbols))
+      (when (implies (neq none symbols)
+                     (or (member (symbol-to-lisp x) symbols)
+                         (member (symbol-alias-or-name x) symbols)))
         (or (assoc x l) (first (push (list x nil nil) l)) -> v)
         (push y (third v)))
-      (when (implies (neq none symbols) (member (symbol-to-lisp y) symbols))
+      (when (implies (neq none symbols)
+                     (or (member (symbol-to-lisp y) symbols)
+                         (member (symbol-alias-or-name y) symbols)))
         (or (assoc y l) (first (push (list y nil nil) l)) -> v)
         (push x (second v))))
     (mapc (lambda (v)
-            (setf (first v) (symbol-to-lisp (first v)))
+            (setf (first v) (symbol-alias-or-name (first v)))
             (when (second v)
-              (setf (second v) (sort (mapcar 'symbol-to-lisp (second v)) 'constant-name-lessp)))
+              (setf (second v) (sort (mapcar 'symbol-alias-or-name (second v)) 'constant-name-lessp)))
             (when (third v)
-              (setf (third v) (sort (mapcar 'symbol-to-lisp (third v)) 'constant-name-lessp))))
+              (setf (third v) (sort (mapcar 'symbol-alias-or-name (third v)) 'constant-name-lessp))))
           l)
     (setf l (sort l 'constant-name-lessp :key #'first))
     (dolist (v l)
@@ -527,8 +542,6 @@
 	  (declare-ordering-greaterp2 x y))))))
 
 (defun rpo-add-created-function-symbol (fn)
-  (when (function-symbol-p fn)
-    (setf (function-ordering-status fn) (recursive-path-ordering-status?)))
   (dolist (symbol *symbols-in-symbol-table*)
     (cond
      ((eq symbol fn)

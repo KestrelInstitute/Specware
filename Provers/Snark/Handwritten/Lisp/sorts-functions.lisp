@@ -61,7 +61,7 @@
       (unless (eq top-sort sort)
         (princ ":RESULT " stream)
         (prin1 (sort-name sort) stream)
-        (princ " ")))
+        (princ " " stream)))
     (let ((arg-sort-alist (fsd-argument-sort-alist fsd)))
       (when arg-sort-alist
         (princ ":ARGS " stream)

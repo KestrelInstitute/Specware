@@ -19,9 +19,10 @@
 
 (in-package :mes)
 
-(eval-when (eval compile load)
-  (defvar *clocks* nil)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *clocks* nil))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-clock-variable (name)
     (cl:assert (symbolp name))
     (let* ((s (symbol-name name))
@@ -38,8 +39,9 @@
       (unless (member v *clocks*)
 	(setq *clocks* (nconc *clocks* (list v)))
 	(proclaim `(special ,v)))
-      v))
+      v)))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (mapc #'make-clock-variable
 	'(
 	  resolution

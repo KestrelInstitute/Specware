@@ -36,8 +36,7 @@
 		 (implies *using-sorts* (subsort-p (constant-sort ,v) (variable-sort ,u))))
 	    (setq subst (bind-variable-to-term ,u ,v subst))
 	    (return-from unify)))
-     (UNIFY-VARIABLE*COMPOUND
-	(u v)
+     (unify-variable*compound (u v)
        `(if (and (not (variable-frozen-p ,u))
 		 (if (embedding-variable-p ,u)
 		     (not (embedding-variable-occurs-p (args ,v) subst))
@@ -51,6 +50,11 @@
     (prog ((args1 nil) (args2 nil) (moreterms1 nil) (moreterms2 nil)
 	   (special-unification-problems nil) algrthm temp1 temp2
            (tracing (trace-unify?)))
+       (when tracing
+         (let ((cc1 cc))
+           (setf cc (lambda (subst)
+                      (format t "~2%RESULT = ") (print-terms subst)
+                      (funcall cc1 subst)))))
        loop
        (when tracing
          (format t "~2%TERM1 = ")  (print-term term1)

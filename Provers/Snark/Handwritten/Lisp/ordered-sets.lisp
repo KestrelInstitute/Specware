@@ -21,7 +21,7 @@
 ;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (in-package :mes)
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (export
    '(ordered-set make-ordered-set ordered-set-p
      oset-insert oset-insert-key

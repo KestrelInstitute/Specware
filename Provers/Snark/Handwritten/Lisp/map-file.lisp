@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -20,44 +20,41 @@
 (in-package :mes)
 
 (defun mapnconc-file-forms (function filespec &key (if-does-not-exist :error) (package *package*))
-  ;; apply function to each form in file specified by filespec
-  ;; and return the result of nconc'ing the values
-  (mapnconc-file0
-   (lambda (form)
-     (cond
-      ((and (consp form) (eq 'in-package (first form)))
-       (eval form)
-       nil)
-      (t
-       (funcall function form))))
-   filespec
-   if-does-not-exist
-   package
-   #'read))
-
-(defun mapnconc-file-lines (function filespec &key (if-does-not-exist :error) (package *package*))
-  ;; apply function to each line in file specified by filespec
-  ;; and return the result of nconc'ing the values
-  (mapnconc-file0
-   function
-   filespec
-   if-does-not-exist
-   package
-   #'read-line))
-
-(defun mapnconc-file0 (function filespec if-does-not-exist package read-function)
-  (with-open-file (stream filespec
-			  :direction :input
-			  :if-does-not-exist if-does-not-exist)
+  ;; apply function to each form in file and return the result of nconc'ing the values
+  (with-open-file (stream filespec :direction :input :if-does-not-exist if-does-not-exist)
     (when stream
-      (let ((eof (cons nil nil))
-            (result nil) result-last
-            (*package* (if (packagep package) package (find-package package))))
-        (loop
-	  (let ((x (funcall read-function stream nil eof)))
-            (if (eq eof x)
-                (return result)
-                (ncollect (funcall function x) result))))))))
+      (mapnconc-stream-forms function stream :package package))))
+
+(defun mapnconc-file-lines (function filespec &key (if-does-not-exist :error))
+  ;; apply function to each line in file and return the result of nconc'ing the values
+  (with-open-file (stream filespec :direction :input :if-does-not-exist if-does-not-exist)
+    (when stream
+      (mapnconc-stream-lines function stream))))
+
+(defun mapnconc-stream-forms (function stream &key (package *package*))
+  ;; apply function to each form in stream and return the result of nconc'ing the values
+  (prog->
+    (find-or-make-package package -> *package*)
+    (mapnconc-stream0 stream #'read ->* form)
+    (cond
+     ((and (consp form) (eq 'in-package (first form)))
+      (eval form)
+      nil)
+     (t
+      (funcall function form)))))
+
+(defun mapnconc-stream-lines (function stream)
+  ;; apply function to each line in stream and return the result of nconc'ing the values
+  (mapnconc-stream0 function stream #'read-line))
+
+(defun mapnconc-stream0 (function stream read-function)
+  (let ((eof (cons nil nil))
+        (result nil) result-last)
+    (loop
+      (let ((x (funcall read-function stream nil eof)))
+        (if (eq eof x)
+            (return result)
+            (ncollect (funcall function x) result))))))
 
 (defun read-file (filespec &rest mapnconc-file-forms-options)
   (declare (dynamic-extent mapnconc-file-forms-options))

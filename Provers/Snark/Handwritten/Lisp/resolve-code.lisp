@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -83,5 +83,112 @@
         (when (eq :agenda-empty (closure))
           (return)))
       (mapcar (lambda (x) (arg1 x)) (answers)))))
+
+(defun resolve-code-example2 (&optional (case 1))
+  ;; silly example to illustrate satisfy/falsify code with residue
+  ;; suppose (* a b c) means a*b=c
+  ;; then use satisfy code with residue for the following resolution operations
+  ;; (not (* ?x a b)) -> (not (= a b)) with {?x <- 1}
+  ;; (not (* a ?x b)) -> (not (= a b)) with {?x <- 1}
+  (initialize)
+  (declare-constant 1)
+  (declare-relation '* 3 :satisfy-code 'resolve-code-example2-satisfier)
+  (case case
+    (1
+     (use-resolution t)
+     (prove '(and (not (p ?x ?y ?z)) (* ?x a b) (* c ?y d) (* e ?z ?z))))	;nucleus
+    (2
+     (use-hyperresolution t)
+     (prove '(and (not (p ?x ?y ?z)) (* ?x a b) (* c ?y d) (* e ?z ?z))))	;nucleus
+    (3
+     (use-negative-hyperresolution t)
+     (prove '(* ?x a b)))							;electron
+    (4
+     (use-ur-resolution t)
+     (prove '(and (not (p ?x ?y ?z)) (* ?x a b) (* c ?y d) (* e ?z ?z))))	;nucleus
+    ))
+
+(defun resolve-code-example2-satisfier (cc atom subst)
+  (prog->
+    (args atom -> args)
+    (unify 1 (first args) subst ->* subst)
+    (funcall cc subst (make-compound *not* (make-compound *=* (second args) (third args)))))
+  (prog->
+    (args atom -> args)
+    (unify 1 (second args) subst ->* subst)
+    (funcall cc subst (make-compound *not* (make-compound *=* (first args) (third args))))))
+
+(defun function-resolve-code-satisfy-code (fn)
+  (getf (function-plist fn) :resolve-code-satisfy-code))
+
+(defun function-resolve-code-falsify-code (fn)
+  (getf (function-plist fn) :resolve-code-falsify-code))
+
+(defun (setf function-resolve-code-satisfy-code) (value fn)
+  (setf (getf (function-plist fn) :resolve-code-satisfy-code) value))
+
+(defun (setf function-resolve-code-falsify-code) (value fn)
+  (setf (getf (function-plist fn) :resolve-code-falsify-code) value))
+
+(defun resolve-code-resolver1 (cc wff subst)
+  ;; resolve-code takes wff and substitution as input,
+  ;; calls continuation with new substitution and optional new wff (residue) as result
+  ;;
+  ;; this particular sample resolve-code uses functions, written in the style
+  ;; of function-satisfy-code and function-falsify-code, but stored as
+  ;; function-resolve-code-satisfy-code and function-resolve-code-falsify-code
+  ;; to simultaneously satisfy/falsify literals in a clause in all possible ways
+  (when (clause-p wff)
+    (mvlet (((:values negatoms posatoms) (atoms-in-clause3 wff)))
+      (labels
+        ((resolver (negatoms posatoms subst residue)
+           (cond
+            (negatoms
+             (let ((atom (pop negatoms)))
+               (dereference
+                atom subst
+                :if-compound-appl
+                (prog->
+                  ;; for every way of satisfying this atom by code,
+                  ;; try to satisfy/falsify the remaining atoms by code
+                  (dolist (function-resolve-code-satisfy-code (head atom)) ->* fun)
+                  (funcall fun atom subst ->* subst res)
+                  (resolver negatoms posatoms subst (if (and residue res)
+                                                        (disjoin residue res)
+                                                        (or residue res)))))
+               ;; also try to satisfy/falsify remaining atoms leaving this atom in residue
+               (resolver negatoms posatoms subst (if residue
+                                                     (disjoin residue (negate atom))
+                                                     (negate atom)))))
+            (posatoms
+             (let ((atom (pop posatoms)))
+               (dereference
+                atom subst
+                :if-compound-appl
+                (prog->
+                  ;; for every way of falsifying this atom by code,
+                  ;; try to satisfy/falsify the remaining atoms by code
+                  (dolist (function-resolve-code-falsify-code (head atom)) ->* fun)
+                  (funcall fun atom subst ->* subst res)
+                  (resolver negatoms posatoms subst (if (and residue res)
+                                                        (disjoin residue res)
+                                                        (or residue res)))))
+               ;; also try to satisfy/falsify remaining atoms leaving this atom in residue
+               (resolver negatoms posatoms subst (if residue
+                                                     (disjoin residue atom)
+                                                     atom))))
+            (t
+             (funcall cc subst residue)))))
+        (resolver negatoms posatoms subst nil)))))
+
+(defun resolve-code-example3 ()
+  ;; silly example to illustrate resolve-code for whole formulas
+  ;; gives same result as resolve-code-example2, but in single rather than multiple steps
+  (initialize)
+  (declare-relation '* 3)
+  (setf (function-resolve-code-satisfy-code (input-function '* 3))
+        '(resolve-code-example2-satisfier))
+  (use-resolve-code 'resolve-code-resolver1)
+  (prove '(and (not (p ?x ?y ?z)) (* ?x a b) (* c ?y d) (* e ?z ?z))))
 
 ;;; resolve-code.lisp EOF

@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -80,16 +80,16 @@
         ((null l)
          nil)
         ((atom l)
-         (input-term l polarity))
+         (input-term1 l polarity))
         (t
-         (cons (cons (input-term (first l) polarity)	;plist->alist
-                     (input-term (second l) polarity))
+         (cons (cons (input-term1 (first l) polarity)	;plist->alist
+                     (input-term1 (second l) polarity))
                (input-plist (rest (rest l))))))))
     (assert-can-be-plist-p args)
     (make-compound head (input-plist args))))
 
 (defun plist-test1 (&optional case)
-  ;; 2000-09-22: checked
+  ;; 2003-04-13: checked
   (initialize)
   (print-options-when-starting nil)
   (print-summary-when-finished nil)
@@ -108,11 +108,11 @@
   (when (implies case (eql 3 case))
     (new-row-context)
     (print (prove '(p b 2 c ?z a ?x) :answer '(values ?x ?z)))
-    (cl:assert (equal '(values 1 3) (answer))))
+    (cl:assert (equal '(values 1 3) (answer t))))
   (when (implies case (eql 4 case))
     (new-row-context)
     (print (prove '(p b 2 a ?x . ?) :answer '(values ?x)))
-    (cl:assert (equal '(values 1) (answer))))
+    (cl:assert (equal '(values 1) (answer t))))
   nil)
 
 ;;; plists.lisp EOF

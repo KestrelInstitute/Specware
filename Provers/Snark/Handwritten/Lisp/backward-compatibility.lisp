@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -121,6 +121,8 @@ nil)
 (new-option-name use-rewrite-code-for-characters         use-code-for-characters)
 (new-option-name use-temporal-constraints                use-temporal-reasoning)
 (new-option-name use-number-sorts                        use-lisp-types-as-sorts)
+(new-option-name rewrite-terms-in-answer                 rewrite-answers)
+(new-option-name rewrite-terms-in-constraint             rewrite-constraints)
 
 (new-function-name make-application make-compound)
 (new-function-name make-application* make-compound*)
@@ -337,23 +339,6 @@ nil)
    (input-wff wff -> wff2 dp-alist2)
    (intersection (variables wff1 nil (variables dp-alist1))
 		 (variables wff2 nil (variables dp-alist2)))))
-
-(defun find-else* (wff &rest options &key else-answer &allow-other-keys)
-  (unless (use-constructive-answer-restriction?)
-    (warn "FIND-ELSE called without constructive answer restriction."))
-  (apply #'prove* wff options)
-  (let ((*find-else-substitution* nil))
-    (dolist (var (free-variables wff))
-      (setq *find-else-substitution*
-	    (bind-variable-to-term
-	     var
-	     (create-skolem-term (list var :sort (sort-name (variable-sort var))) wff nil)
-	     *find-else-substitution*)))
-    (apply #'prove* `(not ,wff) :answer else-answer options)))
-
-(defun find-else (wff &rest options)
-  (apply #'find-else* wff options)
-  (closure))
 
 (new-function-name assert-quote-arg assertion-wff)
 (new-function-name convert-km-assertion-file-to-cycl read-km->cycl-assertion-file)

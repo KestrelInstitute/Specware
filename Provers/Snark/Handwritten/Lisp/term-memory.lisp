@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -81,7 +81,7 @@
          ((EQ :LOG V)
           (PRINT (IF (FUNCTION-BOOLEAN-VALUED-P (HEAD TERM))
                      `(INPUT-WFF ',(TERM-TO-LISP TERM))
-                     `(INPUT-TRM ',(TERM-TO-LISP TERM)))))
+                     `(INPUT-TERM ',(TERM-TO-LISP TERM)))))
          (T
           (CANONICAL-COMPOUND-VARIANT TERM NIL (IF (NUMBERP V) V 0)))))))
   (let (entry)

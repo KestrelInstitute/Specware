@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -90,7 +90,7 @@
   (with-clock-on forward-subsumption
     (prog->
       (row-present-in-context-p row ->nonnil row-context)
-      (flet ((FSUBSUME (row2 test)
+      (flet ((fsubsume (row2 test)
                (prog->
                  (row-present-in-context-p row2 ->nonnil row2-context)
 		 (context-subsumption-p row2-context row-context ->nonnil new-row-context)
@@ -124,7 +124,7 @@
   (with-clock-on backward-subsumption
     (prog->
       (row-present-in-context-p row ->nonnil row-context)
-      (flet ((BSUBSUME (row2 test)
+      (flet ((bsubsume (row2 test)
                (prog->
                  (row-present-in-context-p row2 ->nonnil row2-context)
 		 (context-subsumption-p row-context row2-context ->nonnil new-row2-context)
@@ -164,7 +164,7 @@
                                              (DECLARE (IGNORE ATOM POLARITY))
                                              (INCF N))
 					   (ROW-WFF ROW))
-		      (= N (LENGTH (ROW-SUBSUMPTION-MATCHES ROW))))
+		      (LENGTH= N (ROW-SUBSUMPTION-MATCHES ROW)))
 		    (if (use-dp-subsumption?)
 			(dp-subsume+ row row2)
 			(clause-subsumption row row2)))

@@ -12,14 +12,14 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
 
 (in-package :snark)
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter sort-slots
     '((documentation nil)
       (source nil)		;for KIF
@@ -239,8 +239,7 @@
 (defun same-sort-p (x y)
   (ecase (use-sort-implementation?)
    (:dp
-    (or (eq x y) (and (equal x 'number) (eq y (dp-sort-intersection 'nonnegative 'integer t)))
-	(and (equal x 'number) (eq y 'integer))))
+    (eq x y))
    (:km
     (km-same-sort-p x y))
    (:bdd
@@ -401,7 +400,9 @@
         (cerror2 "Multiple sort declaration for function ~S is unimplemented."
                  (function-name function))
 ;;      (setf (function-sort-declarations function) (process-function-sorts (cons fsd fsds)))
-        )))))
+        ))))
+  (when (function-associative function)
+    (check-associative-function-sort function)))
 
 ;;; multiple sort declarations are not allowed for
 ;;; :alist, :plist, and :list* relations and functions
@@ -711,7 +712,7 @@
                        (if (function-skolem-p fn)
                            (let ((v (lookup-value-in-substitution2 term sksubst subst)))
                              (when (eq none v)
-                               (setq v (make-variable (caar (function-sort-declarations fn))))
+                               (setq v (make-variable (fsd-result-sort (first (function-sort-declarations fn)))))
                                (setq sksubst (bind-variable-to-term v term sksubst)))
                              v)
                            term))))
@@ -801,7 +802,7 @@
   ||#
   )
 
-(defun associative-function-sort (fn)
+(defun check-associative-function-sort (fn)
   (let ((fsds (function-sort-declarations fn)))
     (cond
      ((null fsds)
@@ -809,15 +810,34 @@
      ((rest fsds)
       (error "The associative function ~A can have only one sort declaration." fn))
      (t
-      (let ((sort (fsd-result-sort (first fsds))))
+      (let* ((fsd (first fsds))
+             (sort (fsd-result-sort fsd))
+             (argsort (fsd-arg-sort fsd t)))
         (cond
-         ((and (same-sort-p sort (fsd-arg-sort (first fsds) 1))
-               (same-sort-p sort (fsd-arg-sort (first fsds) 2))
-               (every (lambda (p) (same-sort-p sort (cdr p)))
-                      (fsd-argument-sort-alist (first fsds))))
+         ((and ;;(subsort-p argsort sort)
+               (same-sort-p argsort sort)
+               (every (lambda (p) (same-sort-p argsort (cdr p)))
+                      (fsd-argument-sort-alist fsd)))
           sort)
          (t
-          (error "The sort of associative function ~S must be of form (S (1 S) (2 S))." fn))))))))
+          ;; SNARK doesn't support sort declarations like
+          ;; (positive (t real)) for associative functions
+          ;; because (= (f ?real 0) ?real) cannot always be used as a rewrite
+          ;; since the rhs sort is not a subsort of the lhs sort
+          (setf (first fsds) (make-function-sort-declaration
+                              :result-sort sort
+                              :argument-sort-alist (list (cons t sort))))
+          (warn "The associative function ~A is required to have arguments of sort ~A."
+                fn sort)
+          sort)))))))
+
+(defun associative-function-sort (fn)
+  (let ((fsds (function-sort-declarations fn)))
+    (if (null fsds) top-sort (fsd-result-sort (first fsds)))))
+
+(defun associative-function-argument-sort (fn)
+  (let ((fsds (function-sort-declarations fn)))
+    (if (null fsds) top-sort (fsd-arg-sort (first fsds) t))))
 
 (defun print-sort-theory ()
   (ecase (use-sort-implementation?)

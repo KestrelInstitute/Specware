@@ -21,7 +21,7 @@
 ;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (in-package :mes)
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(sparse-vector-expression-p
             map-sparse-vector-expression
             map-sparse-vector-expression-with-indexes

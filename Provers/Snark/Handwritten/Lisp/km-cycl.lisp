@@ -80,7 +80,7 @@ expressions.
 ;;; (initialize-km->cycl) with SNARK functions KM-PACKAGE and CYCL-PACKAGE
 ;;; used to specify the names of the packages used for KM and CycL symbols
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *km->cycl-km-symbols*
     '(
       (*km-a-symbol*               "#$a")

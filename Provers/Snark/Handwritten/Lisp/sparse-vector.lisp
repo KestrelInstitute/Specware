@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes-sparse-array -*-
 ;;; File: sparse-vector.lisp
-;;; Copyright (c) 2002 Mark E. Stickel
+;;; Copyright (c) 2002-2003 Mark E. Stickel
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining a
 ;;; copy of this software and associated documentation files (the "Software"),
@@ -22,6 +22,31 @@
 
 (in-package :mes-sparse-array)
 
+(defmacro carc (x)
+  `(car (the cons ,x)))
+
+(defmacro cdrc (x)
+  `(cdr (the cons ,x)))
+
+(defmacro caarcc (x)
+  `(carc (carc ,x)))
+
+(defmacro cadrcc (x)
+  `(carc (cdrc ,x)))
+
+(defmacro cdarcc (x)
+  `(cdrc (carc ,x)))
+
+(defmacro cddrcc (x)
+  `(cdrc (cdrc ,x)))
+
+;;; ****if* mes-sparse-array/sparse-vector-types
+;;; SOURCE
+
+(deftype sparse-vector-index () 'integer)	;indexes are integers
+(deftype sparse-vector-count () 'fixnum)	;number of entries is a fixnum
+;;; ***
+
 ;;; more implementation independent sparse-vector functions are defined in sparse-array.lisp
 
 ;;; ****s* mes-sparse-array/sparse-vector
@@ -31,17 +56,17 @@
 ;;; SOURCE
 
 (defstruct (sparse-vector
-            (:constructor make-sparse-vector0 (default-value boolean))
+            (:constructor make-sparse-vector0 (default-value boolean entries))
             (:print-function print-sparse-vector3)
             (:copier nil))
   (default-value nil :read-only t)
   (boolean nil :read-only t)
   (type nil)
-  (count 0 :type fixnum)
+  (count 0 :type sparse-vector-count)
   (positive-trie nil)
   (negative-trie nil)
   (cached-entry nil)
-  (entries (initial-sparse-vector-entries boolean) :read-only t))
+  (entries nil :read-only t))
 ;;; ***
 
 ;;; ****f* mes-sparse-array/make-sparse-vector
@@ -55,7 +80,7 @@
   (when boolean
     (unless (null default-value)
       (error "Default-value must be NIL for Boolean sparse-arrays.")))
-  (make-sparse-vector0 default-value boolean))
+  (make-sparse-vector0 default-value boolean (initial-sparse-vector-entries boolean)))
 ;;; ***
 
 ;;; ****f* mes-sparse-array/sparse-vector-p
@@ -74,6 +99,7 @@
 ;;; RETURN VALUE
 ;;;   true if x is a boolean sparse-vector, false otherwise
 ;;; SOURCE
+
       ;;sparse-vector-boolean is defined as a slot in the sparse-vector structure
 ;;; ***
 
@@ -83,6 +109,7 @@
 ;;; RETURN VALUE
 ;;;   the default-value for unstored entries of sparse-vector
 ;;; SOURCE
+
       ;;sparse-vector-default-value is defined as a slot in the sparse-vector structure
 ;;; ***
 
@@ -149,7 +176,7 @@
 (defmacro svn-index (svn)
   (let ((v (gensym)))
     `(let ((,v (carc ,svn)))
-       (if (consp ,v) (carc ,v) ,v))))
+       (the sparse-vector-index (if (consp ,v) (carc ,v) ,v)))))
 ;;; ***
 
 ;;; ****if* mes-sparse-array/svn-value
@@ -174,14 +201,14 @@
 ;;; SOURCE
 
 (defmacro svn-index-t (svn)
-  `(carc ,svn))
+  `(the sparse-vector-index (carc ,svn)))
 ;;; ***
 
 ;;; ****if* mes-sparse-array/svn-index-v
 ;;; SOURCE
 
 (defmacro svn-index-v (svn)
-  `(caarcc ,svn))
+  `(the sparse-vector-index (caarcc ,svn)))
 ;;; ***
 
 ;;; ****if* mes-sparse-array/svn-value-v
@@ -257,12 +284,14 @@
 ;;; SOURCE
 
 (defun sparef1 (sparse-vector index)
+  (declare (type sparse-vector-index index))
   (macrolet
     ((sv-linear-search (n.svn-index n.svn-value default-value)
        ;; backward linear search for short nonempty sparse-vectors
        `(let* ((stop (sparse-vector-entries sparse-vector))
                (n (prev-svn stop))
-               k)
+               (k 0))
+          (declare (type sparse-vector-index k))
           (loop
             (cond
              ((>= index (setf k ,n.svn-index))
@@ -296,7 +325,7 @@
            (t
             (sv-radix-search ,n.svn-index ,n.svn-value ,default-value))))))
     (let ((cnt (sparse-vector-count sparse-vector)))
-      (declare (type fixnum cnt))
+      (declare (type sparse-vector-count cnt))
       (cond
        ((>= 1 cnt)
         (if (eql 0 cnt)
@@ -396,6 +425,7 @@
 ;;; SOURCE
 
 (defun sparse-vector-setter (value sparse-vector index)
+  (declare (type sparse-vector-index index))
   (macrolet ((default-value? ()
                `(eql value (sparse-vector-default-value sparse-vector)))
              (new-entry ()
@@ -415,6 +445,7 @@
          (cond
           ((svn-leaf? n)
            (let ((k (svn-index n)))
+             (declare (type sparse-vector-index k))
              (cond
               ((eql index k)
                (cond
@@ -475,6 +506,7 @@
   (let ((n (gensym)))
     `(let ((k ,index)
            (,n (next-svn stop)))
+       (declare (type sparse-vector-index k))
        (loop
          (if (or (eq stop ,n) (,rel (,svn-index ,n) k))
              (return ,n)
@@ -490,6 +522,7 @@
   (let ((n (gensym)))
     `(let ((k ,index)
            (,n (prev-svn stop)))
+       (declare (type sparse-vector-index k))
        (loop
          (if (or (eq stop ,n) (,rel (,svn-index ,n) k))
              (return ,n)
@@ -554,14 +587,18 @@
 ;;; SOURCE
 
 (defmacro map-sparse-vector-loop-f2 (form &optional (svn-index 'svn-index))
-  `(map-sparse-vector-loop-f (if (< max (,svn-index n)) (return nil) ,form) ,svn-index))
+  `(map-sparse-vector-loop-f
+    (if (< (the sparse-vector-index max) (,svn-index n)) (return nil) ,form)
+    ,svn-index))
 ;;; ***
 
 ;;; ****if* mes-sparse-array/map-sparse-vector-loop-b2
 ;;; SOURCE
 
 (defmacro map-sparse-vector-loop-b2 (form &optional (svn-index 'svn-index))
-  `(map-sparse-vector-loop-b (if (> min (,svn-index n)) (return nil) ,form) ,svn-index))
+  `(map-sparse-vector-loop-b
+    (if (> (the sparse-vector-index min) (,svn-index n)) (return nil) ,form)
+    ,svn-index))
 ;;; ***
 
 ;;; ****if* mes-sparse-array/map-sparse-vector0
@@ -572,53 +609,54 @@
 (defun map-sparse-vector0 (function sparse-vector reverse min max map)
   ;; always returns nil
   (let ((stop (sparse-vector-entries sparse-vector)))
-    (if reverse
-        (if min
-            (cond
-             ((null map)
-              (if (sparse-vector-boolean sparse-vector)
-                  (map-sparse-vector-loop-b2 (let ((v (svn-index-t n))) (funcall function v v)) svn-index-t)
-                  (map-sparse-vector-loop-b2 (funcall function (svn-value-v n) (svn-index-v n)) svn-index-v)))
-             ((sparse-vector-boolean sparse-vector)
-              (map-sparse-vector-loop-b2 (funcall function (svn-index-t n)) svn-index-t))
-             ((eq :indexes map)
-              (map-sparse-vector-loop-b2 (funcall function (svn-index-v n)) svn-index-v))
-             (t
-              (map-sparse-vector-loop-b2 (funcall function (svn-value-v n)) svn-index-v)))
-            (cond
-             ((null map)
-              (if (sparse-vector-boolean sparse-vector)
-                  (map-sparse-vector-loop-b (let ((v (svn-index-t n))) (funcall function v v)) svn-index-t)
-                  (map-sparse-vector-loop-b (funcall function (svn-value-v n) (svn-index-v n)) svn-index-v)))
-             ((sparse-vector-boolean sparse-vector)
-              (map-sparse-vector-loop-b (funcall function (svn-index-t n)) svn-index-t))
-             ((eq :indexes map)
-              (map-sparse-vector-loop-b (funcall function (svn-index-v n)) svn-index-v))
-             (t
-              (map-sparse-vector-loop-b (funcall function (svn-value-v n)) svn-index-v))))
-        (if max
-            (cond
-             ((null map)
-              (if (sparse-vector-boolean sparse-vector)
-                  (map-sparse-vector-loop-f2 (let ((v (svn-index-t n))) (funcall function v v)) svn-index-t)
-                  (map-sparse-vector-loop-f2 (funcall function (svn-value-v n) (svn-index-v n)) svn-index-v)))
-             ((sparse-vector-boolean sparse-vector)
-              (map-sparse-vector-loop-f2 (funcall function (svn-index-t n)) svn-index-t))
-             ((eq :indexes map)
-              (map-sparse-vector-loop-f2 (funcall function (svn-index-v n)) svn-index-v))
-             (t
-              (map-sparse-vector-loop-f2 (funcall function (svn-value-v n)) svn-index-v)))
-            (cond
-             ((null map)
-              (if (sparse-vector-boolean sparse-vector)
-                  (map-sparse-vector-loop-f (let ((v (svn-index-t n))) (funcall function v v)) svn-index-t)
-                  (map-sparse-vector-loop-f (funcall function (svn-value-v n) (svn-index-v n)) svn-index-v)))
-             ((sparse-vector-boolean sparse-vector)
-              (map-sparse-vector-loop-f (funcall function (svn-index-t n)) svn-index-t))
-             ((eq :indexes map)
-              (map-sparse-vector-loop-f (funcall function (svn-index-v n)) svn-index-v))
-             (t
-              (map-sparse-vector-loop-f (funcall function (svn-value-v n)) svn-index-v)))))))
+    (unless (eq stop (next-svn stop))				;quick exit for empty sparse-vectors
+      (if reverse
+          (if min
+              (cond
+               ((null map)
+                (if (sparse-vector-boolean sparse-vector)
+                    (map-sparse-vector-loop-b2 (let ((v (svn-index-t n))) (funcall function v v)) svn-index-t)
+                    (map-sparse-vector-loop-b2 (funcall function (svn-value-v n) (svn-index-v n)) svn-index-v)))
+               ((sparse-vector-boolean sparse-vector)
+                (map-sparse-vector-loop-b2 (funcall function (svn-index-t n)) svn-index-t))
+               ((eq :indexes map)
+                (map-sparse-vector-loop-b2 (funcall function (svn-index-v n)) svn-index-v))
+               (t
+                (map-sparse-vector-loop-b2 (funcall function (svn-value-v n)) svn-index-v)))
+              (cond
+               ((null map)
+                (if (sparse-vector-boolean sparse-vector)
+                    (map-sparse-vector-loop-b (let ((v (svn-index-t n))) (funcall function v v)) svn-index-t)
+                    (map-sparse-vector-loop-b (funcall function (svn-value-v n) (svn-index-v n)) svn-index-v)))
+               ((sparse-vector-boolean sparse-vector)
+                (map-sparse-vector-loop-b (funcall function (svn-index-t n)) svn-index-t))
+               ((eq :indexes map)
+                (map-sparse-vector-loop-b (funcall function (svn-index-v n)) svn-index-v))
+               (t
+                (map-sparse-vector-loop-b (funcall function (svn-value-v n)) svn-index-v))))
+          (if max
+              (cond
+               ((null map)
+                (if (sparse-vector-boolean sparse-vector)
+                    (map-sparse-vector-loop-f2 (let ((v (svn-index-t n))) (funcall function v v)) svn-index-t)
+                    (map-sparse-vector-loop-f2 (funcall function (svn-value-v n) (svn-index-v n)) svn-index-v)))
+               ((sparse-vector-boolean sparse-vector)
+                (map-sparse-vector-loop-f2 (funcall function (svn-index-t n)) svn-index-t))
+               ((eq :indexes map)
+                (map-sparse-vector-loop-f2 (funcall function (svn-index-v n)) svn-index-v))
+               (t
+                (map-sparse-vector-loop-f2 (funcall function (svn-value-v n)) svn-index-v)))
+              (cond
+               ((null map)
+                (if (sparse-vector-boolean sparse-vector)
+                    (map-sparse-vector-loop-f (let ((v (svn-index-t n))) (funcall function v v)) svn-index-t)
+                    (map-sparse-vector-loop-f (funcall function (svn-value-v n) (svn-index-v n)) svn-index-v)))
+               ((sparse-vector-boolean sparse-vector)
+                (map-sparse-vector-loop-f (funcall function (svn-index-t n)) svn-index-t))
+               ((eq :indexes map)
+                (map-sparse-vector-loop-f (funcall function (svn-index-v n)) svn-index-v))
+               (t
+                (map-sparse-vector-loop-f (funcall function (svn-value-v n)) svn-index-v))))))))
 ;;; ***
 
 ;;; ****f* mes-sparse-array/map-sparse-vector
@@ -634,6 +672,9 @@
 ;;;   and <= max if they are specified.  If reverse is nil, the
 ;;;   function is applied to values in ascending order by index;
 ;;;   otherwise, the order is reversed.
+;;; SEE ALSO
+;;;   map-sparse-vector-with-indexes
+;;;   map-sparse-vector-indexes-only
 ;;; SOURCE
 
 (definline map-sparse-vector (function sparse-vector &key reverse min max)
@@ -650,6 +691,7 @@
 ;;;   but applies its binary-function argument to each value and index in sparse-vector.
 ;;; SEE ALSO
 ;;;   map-sparse-vector
+;;;   map-sparse-vector-indexes-only
 ;;; SOURCE
 
 (definline map-sparse-vector-with-indexes (function sparse-vector &key reverse min max)
@@ -668,6 +710,7 @@
 ;;;   on boolean sparse-vectors.
 ;;; SEE ALSO
 ;;;   map-sparse-vector
+;;;   map-sparse-vector-with-indexes
 ;;; SOURCE
 
 (definline map-sparse-vector-indexes-only (function sparse-vector &key reverse min max)
@@ -694,12 +737,10 @@
          ,form)))
 ;;; ***
 
-;;; ****if* mes-sparse-array/make-sparse-vector-iterator
-;;; USAGE
-;;;   (make-sparse-vector-iterator sparse-vector &key reverse min max)
+;;; ****if* mes-sparse-array/make-sparse-vector-iterator0
 ;;; SOURCE
 
-(defun make-sparse-vector-iterator (sparse-vector &key reverse min max)
+(defun make-sparse-vector-iterator0 (sparse-vector reverse min max)
   ;; returns an iterator function such that
   ;; the iterator returns (values value index) for each entry on successive calls
   ;; the iterator returns (values default-value nil) when first called after the last entry
@@ -711,12 +752,14 @@
             (if (sparse-vector-boolean sparse-vector)
                 (sparse-vector-backward-iterator
                  (let ((k (svn-index-t n)))
-                   (if (> min k)
+                   (declare (type sparse-vector-index k))
+                   (if (> (the sparse-vector-index min) k)
                        (values (sparse-vector-default-value sparse-vector) (setf n nil))
                        (values k k))))
                 (sparse-vector-backward-iterator
                  (let ((k (svn-index-v n)))
-                   (if (> min k)
+                   (declare (type sparse-vector-index k))
+                   (if (> (the sparse-vector-index min) k)
                        (values (sparse-vector-default-value sparse-vector) (setf n nil))
                        (values (svn-value-v n) k)))))
             (if (sparse-vector-boolean sparse-vector)
@@ -726,17 +769,28 @@
             (if (sparse-vector-boolean sparse-vector)
                 (sparse-vector-forward-iterator
                  (let ((k (svn-index-t n)))
-                   (if (< max k)
+                   (declare (type sparse-vector-index k))
+                   (if (< (the sparse-vector-index max) k)
                        (values (sparse-vector-default-value sparse-vector) (setf n nil))
                        (values k k))))
                 (sparse-vector-forward-iterator
                  (let ((k (svn-index-v n)))
-                   (if (< max k)
+                   (declare (type sparse-vector-index k))
+                   (if (< (the sparse-vector-index max) k)
                        (values (sparse-vector-default-value sparse-vector) (setf n nil))
                        (values (svn-value-v n) k)))))
             (if (sparse-vector-boolean sparse-vector)
                 (sparse-vector-forward-iterator (let ((k (svn-index-t n))) (values k k)))
                 (sparse-vector-forward-iterator (values (svn-value-v n) (svn-index-v n))))))))
+;;; ***
+
+;;; ****if* mes-sparse-array/make-sparse-vector-iterator
+;;; USAGE
+;;;   (make-sparse-vector-iterator sparse-vector &key reverse min max)
+;;; SOURCE
+
+(definline make-sparse-vector-iterator (sparse-vector &key reverse min max)
+  (make-sparse-vector-iterator0 sparse-vector reverse min max))
 ;;; ***
 
 ;;; ****f* mes-sparse-array/with-sparse-vector-iterator

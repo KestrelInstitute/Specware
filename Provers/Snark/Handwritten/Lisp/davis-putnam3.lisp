@@ -19,7 +19,7 @@
 
 #-snark (in-package #-(or clicc gcl) :common-lisp-user #+(or clicc gcl) :user)
 #+snark (in-package :snark)
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(dp-prover dp-version
 	    dp-tracing dp-tracing-state dp-tracing-models dp-tracing-choices
 	    dp-satisfiable-p dp-satisfiable-file-p make-dp-clause-set
@@ -136,8 +136,8 @@
 
 #+(and (not snark) (not (or lucid symbolics gcl)))
 (declaim (optimize (compilation-speed 0) (speed 3) (safety 0) (debug 0)))
-#+(AND (NOT SNARK) (OR LUCID SYMBOLICS GCL))
-(eval-when (compile load eval)
+#+(and (not snark) (or lucid symbolics gcl))
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(optimize (compilation-speed 0) (speed 3) (safety 0))))
 
 
@@ -1241,7 +1241,7 @@
           (incf depth)))))
     (format t "~%--- after ~,1F seconds " time)))
 
-#-SNARK (defvar float-internal-time-units-per-second (float internal-time-units-per-second))
+#-snark (defvar float-internal-time-units-per-second (float internal-time-units-per-second))
 
 (defun run-time-since (start-time)
   (- (/ (get-internal-run-time) float-internal-time-units-per-second) start-time))

@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -104,7 +104,7 @@
 	 (variant cc (tc-term (car counts1)) (tc-term (car counts2)) subst matches)))
       ((null (cdr counts2))
        )
-      ((and (same-length-p (cddr counts1) (cddr counts2))
+      ((and (length= (cddr counts1) (cddr counts2))
 	    (submultisetp (let (w)
 			    (dolist (tc counts1)
 			      (push (tc-count tc) w))

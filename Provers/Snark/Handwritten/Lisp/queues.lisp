@@ -1,4 +1,4 @@
-;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes -*-
+;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes-queues -*-
 ;;; File: queues.lisp
 ;;; The contents of this file are subject to the Mozilla Public License
 ;;; Version 1.1 (the "License"); you may not use this file except in
@@ -12,127 +12,59 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
 
-(in-package :mes)
+(in-package :mes-queues)
 
 ;;; notes:
-;;; all operations are constant-time except
-;;; dequeue (from-end)
-;;; queue-delete
-;;; queue-delete/eq
-;;; mapnconc-queue
-;;; do-queue
+;;; all operations are constant-time except:
+;;;   queue-length
+;;;   queue-delete
+;;;   mapnconc-queue
+;;;   do-queue
 
-(defstruct (queue
-             (:include counter)
-	     (:constructor make-queue ())
-	     (:copier nil))
-  (entries nil :type list)
-  (entries-last nil :type list))
+(defun make-queue ()
+  (make-doubly-linked-list))
 
 (defun queue-length (queue)
-  (counter-value queue))
+  (dll-length queue))
 
-(defun queue-empty-p (queue)
-  (null (queue-entries queue)))
+(defun queue-empty? (queue)
+  (dll-empty? queue))
 
 (defun queue-first (queue)
   ;; returns first item in queue without removing it
-  (first (queue-entries queue)))
+  (dll-first queue))
 
 (defun queue-last (queue)
   ;; returns last item in queue without removing it
-  (first (queue-entries-last queue)))
+  (dll-last queue))
 
-(defun enqueue (item queue &optional at-front)
+(defun enqueue (queue item &optional at-front)
   ;; inserts item at end (or front) of queue
-  (increment-counter queue)
-  (let ((entries (and at-front (queue-entries queue))))
-    (cond
-      (entries
-       (setf (queue-entries queue) (cons item entries)))
-      (t
-       (collect item (queue-entries queue)))))
+  (if at-front
+      (dll-push-first queue item)
+      (dll-push-last queue item))
   queue)
 
 (defun dequeue (queue &optional from-end)
   ;; removes and returns first (or last) item in queue
-  (let ((entries (queue-entries queue)))
-    (cond
-      ((null entries)
-       nil)
-      ((null (rest entries))
-       (decrement-counter queue)
-       (setf (queue-entries queue) nil)
-       (setf (queue-entries-last queue) nil)
-       (first entries))
-      (from-end
-       (decrement-counter queue)
-       (let ((l (nthcdr (1- (counter-value queue)) entries)))	;inefficient
-	 (prog1 (second l) (setf (queue-entries-last queue) (rplacd l nil)))))
-      (t
-       (decrement-counter queue)
-       (setf (queue-entries queue) (rest entries))
-       (first entries)))))
+  (if from-end
+      (dll-pop-last queue)
+      (dll-pop-first queue)))
 
-(defun queue-delete (item queue &key test key)
-  (let ((entries (queue-entries queue)))
-    (cond
-      ((null entries)
-       nil)
-      ((let ((v (if key (funcall key (first entries)) (first entries))))
-	 (if test
-	     (funcall test item v)
-	     (eql item v)))
-       (decrement-counter queue)
-       (when (null (setf (queue-entries queue) (rest entries)))
-	 (setf (queue-entries-last queue) nil))
-       t)
-      (t
-       (dotails (l entries)
-	 (when (and (rest l)
-		    (let ((v (if key (funcall key (second l)) (second l))))
-		      (if test
-			  (funcall test item v)
-			  (eql item v))))
-           (decrement-counter queue)
-	   (when (null (setf (cdr l) (cddr l)))
-	     (setf (queue-entries-last queue) l))
-	   (return t)))))))
-
-(defun queue-delete/eq (item queue)
-  ;; equivalent to (queue-delete item queue :test #'eq)
-  (let ((entries (queue-entries queue)))
-    (cond
-      ((null entries)
-       nil)
-      ((eq item (first entries))
-       (decrement-counter queue)
-       (when (null (setf (queue-entries queue) (rest entries)))
-         (setf (queue-entries-last queue) nil))
-       t)
-      (t
-       (dotails (l entries)
-	 (when (and (rest l)
-		    (eq item (second l)))
-           (decrement-counter queue)
-	   (when (null (setf (cdr l) (cddr l)))
-	     (setf (queue-entries-last queue) l))
-	   (return t)))))))
+(defun queue-delete (queue item)
+  (dll-delete queue item))
 
 (defun mapnconc-queue (function queue)
-  (let ((result nil) result-last)
-    (dolist (item (queue-entries queue))
-      (ncollect (funcall function item) result))
-    result))
+  (mapnconc-dll function queue))
 
 (defun do-queue (function queue)
   (loop
-    (if (queue-empty-p queue)
+    (if (queue-empty? queue)
 	(return nil)
 	(funcall function (dequeue queue)))))
 

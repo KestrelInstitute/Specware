@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes -*-
 ;;; File: counters.lisp
-;;; Copyright (c) 2000-2001 Mark E. Stickel
+;;; Copyright (c) 2000-2003 Mark E. Stickel
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining a
 ;;; copy of this software and associated documentation files (the "Software"),
@@ -21,14 +21,14 @@
 ;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (in-package :mes)
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(make-counter
             increment-counter decrement-counter
             counter-value counter-values
             princf)))
 
 (defstruct (counter
-            (:constructor MAKE-COUNTER (&optional (increments 0)))
+            (:constructor make-counter (&optional (increments 0)))
             (:copier nil))
   (increments 0 :type integer)
   (decrements 0 :type integer)
@@ -60,15 +60,25 @@
          (v (- i d)))
   (values v (max v (counter-previous-peak-value counter)) i d)))
 
-(defun show-count-p (n)
-  (dolist (v '(1000000 100000 10000 1000 100 10 1))
+(definline show-count-p (n)
+  (dolist (v '(1000000 100000 10000 1000 100 10) t)
     (when (>= n v)
       (return (eql 0 (rem n v))))))
 
 (defun show-count (n)
   (princ #\Space)
-  (princ n)
+  (let (q r)
+    (cond
+     ((eql 0 n)
+      (princ 0))
+     ((progn (multiple-value-setq (q r) (truncate n 1000000)) (eql 0 r))
+      (princ q) (princ #\M))
+     ((progn (multiple-value-setq (q r) (truncate n 1000)) (eql 0 r))
+      (princ q) (princ #\K))
+     (t
+      (princ n))))
   (princ #\Space)
+  (force-output)
   n)
 
 (defun show-count0 (n)

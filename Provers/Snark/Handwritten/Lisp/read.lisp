@@ -12,150 +12,163 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
 
 (in-package :snark)
 
-(defun letter-char-p (char)
+(definline letter-char-p (char)
   (or (alpha-char-p char)
-      (eql char #\$)
-      (eql char #\_)
-      (eql char #\.)
-      (eql char #\!)
-      (eql char #\?)))
+      (eql #\$ char)
+      (eql #\_ char)
+      (eql #\! char)
+      (eql #\? char)))
 
-(defun separator-char-p (char)
-  (or (eql char #\()
-      (eql char #\))
-      (eql char #\,)))
+(definline separator-char-p (char)
+  (or (eql #\( char)
+      (eql #\) char)
+      (eql #\[ char)
+      (eql #\] char)
+      (eql #\, char)
+      (eql #\. char)))
 
-(defun white-space-char-p (char)
-  (or (eql char #\space)
-      (eql char #\tab)
-      (eql char #\newline)
-      (eql char #\return)
-      (eql char #\linefeed)
-      (eql char #\page)))
+(definline whitespace-char-p (char)
+  (or (eql #\space char)
+      (eql #\tab char)
+      (eql #\newline char)
+      (eql #\return char)
+      (eql #\linefeed char)
+      (eql #\page char)))
 
-(defun tokenize (string &optional (start 0) (end (length string)))
-  (let ((pos start))
-    (loop
-      (cond
-	((and (< pos end) (white-space-char-p (elt string pos)))
-	 (incf pos))
-	(t
-	 (return))))
-    (cond
-      ((>= pos end)
-       nil)
-      (t
-       (let ((c (elt string pos)))
-	 (cond
-	   ((digit-char-p c)
-	    (multiple-value-bind (x pos)
-		(tokenize-starting-with-digit string pos end)
-	      (cons x (tokenize string pos end))))
-	   ((letter-char-p c)
-	    (multiple-value-bind (id pos)
-		(tokenize-identifier string pos end)
-	      (cons id (tokenize string pos end))))
-	   ((separator-char-p c)
-	    (cons c (tokenize string (1+ pos) end)))
-	   (t
-	    (multiple-value-bind (op pos)
-		(tokenize-special string pos end)
-	      (cons op (tokenize string pos end))))))))))
-
-(defun tokenize-starting-with-digit (string &optional (start 0) (end (length string)))
-  (let ((pos start) (num 0) (decpt nil) (n 0) (d 1) c)
-    (loop
-      (cond
-	((>= pos end)
-	 (return (values (if (and decpt (> d 1)) (+ num (/ n (float d))) num) pos)))
-	((eql (setq c (elt string pos)) #\.)
-	 (if (not decpt)
-	     (setq decpt t)
-	     (return (tokenize-identifier string start end))))
-	((letter-char-p c)
-	 (return (tokenize-identifier string start end)))
-	((setq c (digit-char-p c))
-	 (if (not decpt)
-	     (setq num (+ (* num 10) c))
-	     (setq n (+ (* n 10) c)
-		   d (* d 10))))
-	(t
-	 (return (values (if (and decpt (> d 1)) (+ num (/ n (float d))) num) pos))))
-      (incf pos))))
-
-(defun tokenize-identifier (string &optional (start 0) (end (length string)))
-  (let ((pos start) (id nil) c)
-    (loop
-      (cond
-	((and (< pos end)
-	      (or (letter-char-p (setq c (elt string pos)))
-		  (digit-char-p c)))
-	 (setq id (cons (char-upcase c) id)))
-	(t
-	 (return (values (intern (coerce (nreverse id) 'string)) pos))))
-      (incf pos))))
-
-(defun tokenize-special (string &optional (start 0) (end (length string)))
-  (let ((pos start) (op nil) c)
-    (loop
-      (cond
-	((and (< pos end)
-	      (not (or (letter-char-p (setq c (elt string pos)))
-		       (digit-char-p c)
-		       (white-space-char-p c)
-		       (separator-char-p c))))
-	 (setq op (cons c op)))
-	(t
-	 (return (values (intern (coerce (nreverse op) 'string)) pos))))
-      (incf pos))))
+(defun tokenize (string &optional (pos 0) (end (length string)))
+  (let ((tokens nil) tokens-last)
+    (labels
+      ((tokenize-identifier ()
+         (let ((start pos) ch)
+           (incf pos)
+           (loop
+             (cond
+              ((eql end pos)
+               (return))
+              ((or (digit-char-p (setf ch (char string pos)))
+                   (letter-char-p ch)
+                   (eql #\- ch))
+               (incf pos))
+              (t
+               (return))))
+           (subseq string start pos)))
+       (tokenize-special ()
+         (let ((start pos) ch)
+           (incf pos)
+           (loop
+             (cond
+              ((eql end pos)
+               (return))
+              ((not (or (digit-char-p (setf ch (char string pos)))
+                        (letter-char-p ch)
+                        (separator-char-p ch)
+                        (whitespace-char-p ch)))
+               (incf pos))
+              (t
+               (return))))
+           (subseq string start pos)))
+       (tokenize-number ()
+         (let ((nopoint t) (num 0) (d 10) n ch cv)
+           (loop
+             (cond
+              ((eql end pos)
+               (return))
+              ((setf cv (digit-char-p (setf ch (char string pos))))
+               (if nopoint
+                   (setf num (+ (* 10 num) cv))
+                   (setf n (+ (* 10 n) cv) d (* 10 d)))
+               (incf pos))
+              ((and nopoint
+                    (eql #\. ch)
+                    (let ((pos (1+ pos)))
+                      (and (not (eql end pos))
+                           (setf n (digit-char-p (char string pos))))))
+               (setf nopoint nil) 
+               (incf pos 2))
+              (t
+               (return))))
+           (if nopoint num (+ num (/ (float n) d))))))
+      (loop
+        (loop
+          (cond
+           ((<= end pos)
+            (return))
+           ((whitespace-char-p (char string pos))
+            (incf pos))
+           (t
+            (return))))
+        (let (ch)
+          (cond
+           ((<= end pos)
+            (return))
+           ((separator-char-p (setf ch (char string pos)))
+            (incf pos)
+            (collect ch tokens))
+           ((letter-char-p ch)
+            (collect (tokenize-identifier) tokens))
+           ((digit-char-p ch)
+            (collect (tokenize-number) tokens))
+           (t
+            (collect (tokenize-special) tokens))))))
+    tokens))
 
 ;;; incomplete: doesn't read infix forms
-;;; but will convert "p(a,b,c)" to (P A B C)
+;;; but will convert "p(a,b,c)" to (p a b c) and "[a,b,c]" to (LIST a b c)
 
-(defun tokens-to-lisp (tokens)
-  (let ((token1 (pop tokens)))
-    (cond
-      ((eql token1 #\()
-       (let (term)
-	 (multiple-value-setq (term tokens) (tokens-to-lisp tokens))
-	 (unless (eql (pop tokens) #\))
-	   (error "Syntax error."))
-	 (values term tokens)))
-      ((numberp token1)
-       (values token1 tokens))
-      ((symbolp token1)
+(defun tokens-to-lisp (tokens &key (intern t) (period nil))
+  (labels
+    ((tokens-to-lisp1 (tokens)
+       (let ((token1 (pop tokens)))
+         (cond
+          ((numberp token1)
+           (values token1 tokens))
+          ((equal "++" token1)					;for TPTP
+           (tokens-to-lisp1 tokens))
+          ((equal "--" token1)					;for TPTP
+           (let (term)
+             (multiple-value-setq (term tokens) (tokens-to-lisp1 tokens))
+             (values (list (intern? "NOT") term) tokens)))
+          ((stringp token1)
+           (if (eql #\( (first tokens))
+               (tokens-to-lisp2 (intern? token1) (rest tokens) #\))
+               (values (intern? token1) tokens)))
+          ((eql #\[ token1)
+           (tokens-to-lisp2 (intern? "LIST") tokens #\]))
+          (t
+           (error "Syntax error.")))))
+     (tokens-to-lisp2 (token1 tokens end)
        (cond
-	 ((null tokens)
-	  (values token1 tokens))
-	 (t
-	  (let ((token2 (first tokens)))
-	    (cond
-	      ((or (eql token2 #\,)
-		   (eql token2 #\)))
-	       (values token1 tokens))
-	      ((eql token2 #\()
-	       (setq tokens (rest tokens))
-	       (let ((args nil) arg)
-		 (loop
-		   (when (eql (first tokens) #\))
-		     (return (values (cons token1 (nreverse args)) (rest tokens))))
-		   (multiple-value-setq (arg tokens) (tokens-to-lisp tokens))
-		   (cond
-		     ((eql (first tokens) #\,)
-		      (setq tokens (rest tokens)))
-		     ((eql (first tokens) #\))
-		      )
-		     (t
-		      (error "Syntax error.")))
-		   (push arg args)))))))))
-      (t
-       (error "Syntax error.")))))
+        ((eql end (first tokens))
+         (values (cons token1 nil) (rest tokens)))
+        (t
+         (let ((args nil) arg)
+           (loop
+             (multiple-value-setq (arg tokens) (tokens-to-lisp1 tokens))
+             (push arg args)
+             (cond
+              ((eql end (first tokens))
+               (return (values (cons token1 (nreverse args)) (rest tokens))))
+              ((eql #\, (first tokens))
+               (setf tokens (rest tokens)))
+              (t
+               (error "Syntax error."))))))))
+     (intern? (token)
+       (if intern (intern token) token)))
+    (let (term)
+      (multiple-value-setq (term tokens) (tokens-to-lisp1 tokens))
+      (when period
+        (cl:assert (eql #\. (first tokens)))
+        (setf tokens (rest tokens)))
+      (values term tokens))))
+
+(defun read-prolog-term (string &key (start 0) (end (length string)) (intern t) (period nil))
+  (tokens-to-lisp (tokenize string start end) :intern intern :period period))
 
 ;;; read.lisp EOF

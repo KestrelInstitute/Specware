@@ -12,22 +12,21 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
 
 (in-package :mes)
 
-#+(or (and mcl (not openmcl)))
+#+(or MCL CMU)
 (defmacro monitor-form (form 
                         &optional (nested :exclusive) (threshold mon:*default-threshold*)
                         (key :percent-time))
   `(unwind-protect
      (progn
-       (mon:monitor-all :mes)
-       (mon:monitor-all :mes-sparse-array)
-       (mon:monitor-all :snark)
+       (mapc 'mon:monitor-all
+             (adjoin *package* (mapcar 'find-package '(:mes :mes-sparse-array :snark))))
        (mon:reset-all-monitoring)
        (prog1
          (time ,form)
@@ -35,7 +34,7 @@
            (mon:report-monitoring :all ,nested ,threshold ,key :ignore-no-calls))))
      (mon:unmonitor)))
 
-#+(or (and mcl (not openmcl)) CMU)
+#+(or MCL CMU)
 (defmacro profile (form)
   `(monitor-form ,form))
 

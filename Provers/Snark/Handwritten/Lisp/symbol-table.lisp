@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -130,7 +130,10 @@
               (progn
                 (assert-can-be-constant-name-p alias)
                 (cl:assert (symbolp alias)))))
-      (find-or-create-symbol-table-entry alias arity-code symbol))))
+      (find-or-create-symbol-table-entry alias arity-code symbol)
+      (if functionp
+          (pushnew alias (function-aliases symbol))
+          (pushnew alias (constant-aliases symbol))))))
 
 (defun create-aliases-for-sort (aliases sort)
   (dolist (alias (mklist aliases))
@@ -535,7 +538,7 @@
 
 (defvar *all-both-polarity*)
 
-(eval-when (load)
+(eval-when (:load-toplevel :execute)
   (setq *all-both-polarity* (cons (constantly :both) nil))
   (rplacd *all-both-polarity* *all-both-polarity*)
   nil)
@@ -545,7 +548,6 @@
 		(allow-keyword-function-symbols t)
 		(allow-keyword-proposition-symbols t)
 		(allow-keyword-relation-symbols t))
-    (setq *knuth-bendix-ordering-minimum-constant-weight* 1000000)
     (setq *skolem-function-alist* nil)
     (make-symbol-table)
     (declare-proposition false)
@@ -642,7 +644,7 @@
 	   :satisfy-code (if (use-code-for-equality?) '(equality-satisfier) nil)
 	   :commutative (if (test-option22?) nil t)
            :MAGIC NIL
-           :alias 'equal))
+           :alias '(equal |equal|)))
     #+ignore
     (declare-relation
      'nonvariable 1
@@ -662,6 +664,11 @@
     (setf (function-logical-symbol-dual *forall*) *exists*)
     (setf (function-logical-symbol-dual *exists*) *forall*)
     nil))
+
+(defun symbol-alias-or-name (symbol)
+  (if (function-symbol-p symbol)
+      (function-alias-or-name symbol)
+      (constant-alias-or-name symbol)))
 
 (defun symbol-boolean-valued-p (x)
   (and (if (function-symbol-p x)

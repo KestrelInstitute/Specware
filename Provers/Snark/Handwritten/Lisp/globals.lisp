@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -121,20 +121,22 @@
           *input-proposition-variables*
           *input-quote-term*
           *input-sort-wff*
+          *input-wff-substitution2*
 	  *interactive?
           *kif-assertion-options*
           *kif-def-kind*
           *kif-form*
 	  *kif-subclass-declarations*
-	  *knuth-bendix-ordering-minimum-constant-weight*
           *load-kif-file-phase*
           *load-kif-file-print*
           *load-kif-file-verbose*
           *load-kif-forms-to-assert*
           *load-kif-forms-to-eval*
 	  *manual-ordering-results*
+          *new-symbol-prefix*
 	  *next-variable-number*
           *nonce*
+          *number-of-new-symbols*
           *number-of-row-contexts*
 	  *path-index*
 	  *pp-margin*
@@ -263,7 +265,11 @@
           *km-reserved-words-table*
 	  *printing-deleted-messages*
           *read-assertion-file-commands*
+          *read-assertion-file-format*
+          *read-assertion-file-if-does-not-exist*
           *read-assertion-file-keywords*
+          *read-assertion-file-package*
+          *read-assertion-file-verbose*
           *redex-path*			;bound only by rewriter
           *refute-file-if-exists*
           *refute-file-ignore-errors*
@@ -276,8 +282,6 @@
           *rpo-cache-numbering*		;bound only by rpo-compare-terms-top
           *ac-rpo-cache*		;bound only by rpo-compare-terms-top
 	  *snark-globals*
-          *snark-load-nonce*
-          *snark-load-time*
 	  *snark-nonsave-globals*
 	  *snark-options*
           *tptp-input-directory*

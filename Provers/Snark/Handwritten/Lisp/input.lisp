@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -23,6 +23,7 @@
 (defvar *var-renaming-subst* nil)		;ttp
 (defvar *input-wff* nil)
 (defvar *input-wff-substitution*)		;alist of (variable-name . variable) or (variable-name . skolem-term) pairs
+(defvar *input-wff-substitution2*)
 (defvar *input-wff-modal-prefix*)
 (defvar *input-quote-term* nil)
 (defvar *input-sort-wff* nil)
@@ -160,10 +161,13 @@
 ;;; Convert LISP S-expression for formula into correct internal form for theorem prover
 ;;; Also eliminate quantifiers and modal operators
 
-(defun input-wff (wff &key (polarity :pos) (clausify nil))
-  (setq *var-renaming-subst* nil)	;ttp
+;;; after input-wff, *input-wff-substitution2* contains the substitutions for all
+;;; bound variables in the wff; it will be misleading if bound variable names are
+;;; repeated or if variable names occur unbound as constants
+
+(defun input-wff (wff &key (polarity :pos) (clausify nil) (*input-wff-substitution* nil))
   (let ((*input-wff* wff)
-        (*input-wff-substitution* nil)
+        (*input-wff-substitution2* nil)
 	(*input-wff-modal-prefix* nil))
     (let ((usr (use-sort-relativization?)))
       (when usr
@@ -184,7 +188,8 @@
     (let ((wff* (input-wff1 wff polarity)))
       (when clausify
         (setq wff* (clausify wff*)))
-      (values wff* nil *input-wff*))))
+      (setf *var-renaming-subst* (remove-if-not #'variable-p *input-wff-substitution2* :key #'cdr))
+      (values wff* nil *input-wff* *input-wff-substitution2*))))
 
 (defun input-wff1 (wff polarity)
   (cond
@@ -219,7 +224,7 @@
 (defun input-quotation (head args polarity)
   (assert-n-arguments-p head args 1)
   (let ((*input-quote-term* t))
-    (input-term (first args) polarity)))
+    (input-term1 (first args) polarity)))
 
 (defun input-equality (head args polarity)
   (require-2-arguments head args polarity))
@@ -291,7 +296,7 @@
 
 (defun input-listof* (head args polarity)
   (assert-n-or-more-arguments-p head args 1)
-  (nconc (input-terms (butlast args) polarity) (input-term (first (last args)) polarity)))
+  (nconc (input-terms (butlast args) polarity) (input-term1 (first (last args)) polarity)))
 
 (defun input-list*-args (head args polarity)
   (make-compound head (input-listof* head args polarity)))
@@ -365,7 +370,6 @@
                            (implies (not ,(first args)) ,(third args))))
                  polarity))))
 
-;;;: ttp: 6/19/93 21:33  added setting *var-renaming-subst* so variables can be deciphered
 (defun input-quantification (head args polarity)
   (cond
    ((eq :both polarity)
@@ -397,7 +401,7 @@
                                 (declare-variable var)
                                 (make-variable-from-var-spec var-spec)))
                   substitution)
-            (push (car substitution) *var-renaming-subst*)))
+            (push (car substitution) *input-wff-substitution2*)))
         (setq *input-wff-substitution* substitution))
        ((or (and (eq :pos polarity) (eq *exists* head))
             (and (eq :neg polarity) (eq *forall* head)))
@@ -407,8 +411,9 @@
             (let ((var (first var-spec)))
               (push (cons var (if (use-quantifier-preservation?)
                                   (make-variable-from-var-spec var-spec)
-                                  (create-skolem-term var-spec form free-vars-in-form)))
-                    substitution))))
+                                  (create-skolem-term var-spec form free-vars-in-form polarity)))
+                    substitution)
+              (push (car substitution) *input-wff-substitution2*))))
         (setq *input-wff-substitution* substitution))
        (t
         (unimplemented)))
@@ -499,11 +504,13 @@
           (input-sort2 sort)
           (declare-variable var)))))
       (append var-spec
-              '(:skolem-p t)))
+              '(:skolem-p t)
+              `(:allowed-in-answer ,(allow-skolem-symbols-in-answers?))))
      (t
       (append var-spec 
               `(:sort ,(sort-name (variable-sort (declare-variable var))))
-              '(:skolem-p t))))))
+              '(:skolem-p t)
+              `(:allowed-in-answer ,(allow-skolem-symbols-in-answers?)))))))
 
 (defun make-variable-from-var-spec (var-spec)
   (if (getf (rest var-spec) :sort-unknown)
@@ -561,10 +568,10 @@
        (setq result (input-variables-in-form arg vars substitution result)))
      result)))
 
-(defun create-skolem-term (var-spec form free-vars-in-form)
+(defun create-skolem-term (var-spec form free-vars-in-form polarity)
   (let ((sort (getf (rest var-spec) :sort))
         (sort-unknown (getf (rest var-spec) :sort-unknown))
-	(newskfn (create-skolem-symbol var-spec form (mapcar #'car free-vars-in-form))))
+	(newskfn (create-skolem-symbol var-spec form (mapcar #'car free-vars-in-form) polarity)))
     (setq var-spec (copy-list var-spec))
     (remf (rest var-spec) :sort)
     (remf (rest var-spec) :sort-unknown)
@@ -584,7 +591,7 @@
 	 (declare-function-sort newskfn (CONS SORT (CONSN TOP-SORT NIL (LENGTH FREE-VARS-IN-FORM)))))
        (make-compound* newskfn (mapcar #'cdr free-vars-in-form))))))
 
-(defun create-skolem-symbol (var-spec form free-vars-in-form)
+(defun create-skolem-symbol (var-spec form free-vars-in-form polarity)
   ;; this code for generating skolem function names and world path function names
   ;; stores the generated name in an alist so that if the exact same wff is input
   ;; again, the same names will be generated
@@ -597,8 +604,8 @@
   ;; this could be improved by checking for variants rather than equality so that
   ;; (assert '(all (u) (some (v) (p u v))))
   ;; would also produce the same wff with the same skolem function
-  (let ((key (list var-spec form free-vars-in-form)))
-    (or (cdr (assoc (list var-spec form free-vars-in-form) *skolem-function-alist* :test #'equal))
+  (let ((key (list var-spec form free-vars-in-form polarity)))
+    (or (cdr (assoc key *skolem-function-alist* :test #'equal))
 	(let* (conc-name
 	       sort
 	       (x (newsym
@@ -612,9 +619,26 @@
                      'skolem)))))
 	  (push (cons key x) *skolem-function-alist*)
 	  x))))
+
+;;; (format nil "~A-~D" *new-symbol-prefix* (incf *number-of-new-symbols*))
+;;; is included in created (including skolem) constant and function symbol
+;;; names to give them hopefully unambiguous internable names across SNARK runs
+;;; to allow import and export of created symbols without conflict
+
+(defvar *new-symbol-prefix*)			;set to "unique" value by (make-snark-system)
+(defvar *number-of-new-symbols*)		;set to 0 by (make-snark-system)
+
+(defun newsym-prefix ()
+  (let ((alphabet (symbol-name 'abcdefghijklmnopqrstuvwxyz))
+        (n (get-internal-run-time))
+        (l nil))
+    (dotimes (i 4)
+      (push (char alphabet (rem n 26)) l)
+      (setf n (floor n 26)))
+    (coerce l 'string)))
 
 (defun newsym (&optional (name 'newsym))
-  (intern (format nil "~A-~A-~D" name *snark-load-time* (incf *snark-load-nonce*)) :snark-user))
+  (intern (format nil "~A-~A-~D" name *new-symbol-prefix* (incf *number-of-new-symbols*)) :snark-user))
 
 (defun input-form* (head terms polarity)
   (make-compound* head (input-terms terms polarity)))
@@ -650,19 +674,19 @@
     (t
      (error "Cannot understand ~S as an atomic formula." atom))))
 
-(defun input-trm (term)
+(defun input-term (term)
   (let ((*input-wff-substitution* nil)
 	(*input-wff-modal-prefix* nil))
-    (input-term term :pos)))
+    (check-well-sorted (input-term1 term :pos))))
 
-(defun input-term (term polarity)
+(defun input-term1 (term polarity)
   (cond
    ((if *input-quote-term* nil (cdr (assoc term *input-wff-substitution*)))
     )
    ((wild-card-p term)
-    (if *input-quote-term* term (make-variable)))
+    (if *input-quote-term* (progn (init-constant-info1 term) term) (make-variable)))
    ((can-be-free-variable-name-p term)
-    (if *input-quote-term* term (declare-variable term)))
+    (if *input-quote-term* (progn (init-constant-info1 term) term) (declare-variable term)))
    ((atom term)
     (let ((symbol (input-constant-symbol term)))
       (when (print-symbol-in-use-warnings?)
@@ -678,7 +702,7 @@
       (warn
        (warn "Term ~S has a variable head; converting it to a LIST-TO-TERM form." term)))
     ;; this will only work if use-code-for-lists option is true
-    (input-term `(list-to-term (list ,@term)) polarity))
+    (input-term1 `(list-to-term (list ,@term)) polarity))
    ((can-be-function-name-p (first term))
     (let ((head (input-function-symbol (first term) (or (list-p (rest term)) 1))))
       (when (print-symbol-in-use-warnings?)
@@ -688,7 +712,7 @@
     (error "Cannot understand ~S as a term." term))))
 
 (defun input-terms (terms polarity)
-  (lcons (input-term (first terms) polarity)
+  (lcons (input-term1 (first terms) polarity)
 	 (input-terms (rest terms) polarity)
 	 terms))
 

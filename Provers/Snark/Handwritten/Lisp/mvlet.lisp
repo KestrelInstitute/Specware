@@ -1,4 +1,4 @@
-;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes -*-
+;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes-mvlet -*-
 ;;; File: mvlet.lisp
 ;;; Copyright (c) 1999 Mark E. Stickel
 ;;;
@@ -20,7 +20,7 @@
 ;;; TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 ;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :mes)
+(in-package :mes-mvlet)
 
 ;;; MVLET and MVLET* are extensions of LET and LET*
 ;;; that add to the list of binding forms
@@ -251,7 +251,10 @@
     (print (macroexpand-1 (print form)))
     nil))
 
-#+(and mcl (not openmcl)) (progn (pushnew '(mvlet  . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
-#+(and mcl (not openmcl)) (progn (pushnew '(mvlet* . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
+#+(and mcl (not openmcl))
+(progn
+  (pushnew '(mvlet  . 1) ccl:*fred-special-indent-alist* :test #'equal)
+  (pushnew '(mvlet* . 1) ccl:*fred-special-indent-alist* :test #'equal)
+  nil)
 
 ;;; mvlet.lisp EOF

@@ -12,7 +12,7 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
@@ -74,19 +74,19 @@
   (let* ((b (oset-find-key value (agenda-buckets agenda)))
          (q (and b (agenda-bucket-queue b))))
     (unless (and q
-                 (not (queue-empty-p q))
+                 (not (queue-empty? q))
                  (funcall (agenda-same-item-p agenda)
                           item
                           (if at-front (queue-first q) (queue-last q))))
       (when (value-insertable-into-agenda value agenda t)
 	(unless q
           (setq q (agenda-bucket-queue (oset-insert-key value (agenda-buckets agenda)))))
-	(enqueue item q at-front)
+	(enqueue q item at-front)
 	(incf (agenda-length agenda))))))
 
 (defun agenda-delete (item value agenda &optional deletion-action)
   (let ((b (oset-find-key value (agenda-buckets agenda))))
-    (when (and b (queue-delete/eq item (agenda-bucket-queue b)))
+    (when (and b (queue-delete (agenda-bucket-queue b) item))
       (decf (agenda-length agenda)))
     (when deletion-action
       (funcall deletion-action item))))
@@ -94,7 +94,7 @@
 (defun agenda-first (agenda &optional delete)
   (let ((length (agenda-length agenda)))
     (unless (eql 0 length)
-      (let* ((b (oset-find-if (lambda (b) (not (queue-empty-p (agenda-bucket-queue b))))
+      (let* ((b (oset-find-if (lambda (b) (not (queue-empty? (agenda-bucket-queue b))))
                               (agenda-buckets agenda)))
              (q (agenda-bucket-queue b)))
         (values
@@ -113,7 +113,7 @@
 (defun agenda-last (agenda &optional delete)
   (let ((length (agenda-length agenda)))
     (unless (eql 0 length)
-      (let* ((b (oset-find-if (lambda (b) (not (queue-empty-p (agenda-bucket-queue b))))
+      (let* ((b (oset-find-if (lambda (b) (not (queue-empty? (agenda-bucket-queue b))))
                               (agenda-buckets agenda)
                               :reverse t))
              (q (agenda-bucket-queue b)))
@@ -178,7 +178,7 @@
             (if (eql 0 (agenda-length agenda)) "." ":"))
     (unless (eql 0 (agenda-length agenda))
       (let ((buckets (mapnconc-oset (lambda (b)
-                                      (unless (queue-empty-p (agenda-bucket-queue b))
+                                      (unless (queue-empty? (agenda-bucket-queue b))
                                         (list b)))
                                     (agenda-buckets agenda))))
         (do* ((k (length buckets))
@@ -203,7 +203,7 @@
         (prog->
           (mapc-oset (agenda-buckets agenda) ->* b)
           (agenda-bucket-queue b -> q)
-          (unless (queue-empty-p q)
+          (unless (queue-empty? q)
             (terpri-comment)
             (terpri-comment)
             (format t "Entries with value ~A:" (agenda-bucket-value b))
@@ -227,7 +227,6 @@
 (defun agenda-entries (&optional (agenda *agenda*))
   ;; added for ttp
   ;; is this function necessary?
-  ;; inappropriate to directly access queue-entries
   (mapnconc-agenda #'list agenda))
 
 ;;; agenda.lisp EOF

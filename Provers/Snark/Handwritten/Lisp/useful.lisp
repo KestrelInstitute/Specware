@@ -12,18 +12,12 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
 
 (in-package :mes)
-
-(defmacro definline (name lambda-list &body body)
-  `(progn 
-     (defun ,name ,lambda-list ,@body)
-     (define-compiler-macro ,name (&rest arg-list)
-       (cons '(lambda ,lambda-list ,@body) arg-list))))
 
 #+lucid
 (defmacro lambda (&rest args)
@@ -247,17 +241,106 @@
 	 (incf n)
 	 (setf x (rest x)))))))
 
-(defun same-length-p (x y)
-  ;; test whether two lists are the same length
-  (loop
-    (cond
-      ((endp x)
-       (return (endp y)))
-      ((endp y)
-       (return nil))
-      (t
-       (setf x (rest x))
-       (setf y (rest y))))))
+(defun length= (x y)
+  ;; if y is an integer then (= (length x) y)
+  ;; if x is an integer then (= x (length y))
+  ;; otherwise (= (length x) (length y))
+  (cond
+   ((or (not (listp y)) (when (not (listp x)) (psetq x y y x) t))
+    (and (<= 0 y)
+         (loop
+           (cond
+            ((endp x)
+             (return (eql 0 y)))
+            ((eql 0 y)
+             (return nil))
+            (t
+             (setf x (rest x) y (1- y)))))))
+   (t
+    (loop
+      (cond
+       ((endp x)
+        (return (endp y)))
+       ((endp y)
+        (return nil))
+       (t
+        (setf x (rest x) y (rest y))))))))
+
+(defun length< (x y)
+  ;; if y is an integer then (< (length x) y)
+  ;; if x is an integer then (< x (length y))
+  ;; otherwise (< (length x) (length y))
+  (cond
+   ((not (listp y))
+    (and (<= 1 y)
+         (loop
+           (cond
+            ((endp x)
+             (return t))
+            ((eql 1 y)
+             (return nil))
+            (t
+             (setf x (rest x) y (1- y)))))))
+   ((not (listp x))
+    (or (> 0 x)
+        (loop
+          (cond
+           ((endp y)
+            (return nil))
+           ((eql 0 x)
+            (return t))
+           (t
+            (setf x (1- x) y (rest y)))))))
+   (t       
+    (loop
+      (cond
+       ((endp x)
+        (return (not (endp y))))
+       ((endp y)
+        (return nil))
+       (t
+        (setf x (rest x) y (rest y))))))))
+
+(defun length<= (x y)
+  ;; if y is an integer then (<= (length x) y)
+  ;; if x is an integer then (<= x (length y))
+  ;; otherwise (<= (length x) (length y))
+  (cond
+   ((not (listp y))
+    (and (<= 0 y)
+         (loop
+           (cond
+            ((endp x)
+             (return t))
+            ((eql 0 y)
+             (return nil))
+            (t
+             (setf x (rest x) y (1- y)))))))
+   ((not (listp x))
+    (or (> 1 x)
+        (loop
+          (cond
+           ((endp y)
+            (return nil))
+           ((eql 1 x)
+            (return t))
+           (t
+            (setf x (1- x) y (rest y)))))))
+   (t
+    (loop
+      (cond
+       ((endp x)
+        (return t))
+       ((endp y)
+        (return nil))
+       (t
+        (setf x (rest x) y (rest y))))))))
+
+(definline length> (x y)
+  (length< y x))
+
+(definline length>= (x y)
+  (length<= y x))
 
 (defun integers-between (low high)
   (let ((i high)
@@ -327,6 +410,10 @@
   (declare (dynamic-extent args))
   (print args)
   nil)
+
+(defun quit ()
+  #-allegro (common-lisp-user::quit)
+  #+allegro (excl::exit))
 
 (defvar *outputting-comment* nil)
 
@@ -433,5 +520,15 @@
 ;;; in MCL, (hash-dollar-print '|a"b|) erroneously prints #$a"b instead of #$|a"b|
 ;;; it appears that readtable-case = :preserve suppresses all escape character printing,
 ;;; not just those for case
+
+(defun find-or-make-package (pkg)
+  (cond
+   ((packagep pkg)
+    pkg)
+   ((find-package pkg)
+    )
+   (t
+    (cerror "Make a package named ~A." "There is no package named ~A." (string pkg))
+    (make-package pkg :use '(:common-lisp)))))
 
 ;;; useful.lisp EOF

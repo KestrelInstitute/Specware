@@ -1,4 +1,4 @@
-;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes -*-
+;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: mes-progc -*-
 ;;; File: progc.lisp
 ;;; The contents of this file are subject to the Mozilla Public License
 ;;; Version 1.1 (the "License"); you may not use this file except in
@@ -12,16 +12,12 @@
 ;;;
 ;;; The Original Code is SNARK.
 ;;; The Initial Developer of the Original Code is SRI International.
-;;; Portions created by the Initial Developer are Copyright (C) 1981-2002.
+;;; Portions created by the Initial Developer are Copyright (C) 1981-2003.
 ;;; All Rights Reserved.
 ;;;
 ;;; Contributor(s): Mark E. Stickel <stickel@ai.sri.com>.
 
-(in-package :mes)
-
-;;; changed convention:
-;;; function argument for ->* is now first instead of last argument
-;;; this allows rest, optional, and keyword arguments
+(in-package :mes-progc)
 
 (defparameter *prog->*-function-second-forms*
 	      '(funcall apply))
@@ -45,9 +41,6 @@
    ((identity form -> var)
     (let ((var form))
       (unnamed-prog-> . prog->-tail)))
-
-;; ((pttp::with-n-m-subgoals n m ->*)
-;;  (pttp::with-n-m-subgoals n m (unnamed-prog-> . prog->-tail)))
    ))
 
 (defun prog->*-function-second-form-p (fn)
@@ -74,19 +67,17 @@
 	 form))
 
 (defun prog->-too-many-variables-error (form)
-  (error "More than one variable to assign value to in (prog-> ... ~S ...)."
-	 form))
+  (error "More than one variable to assign value to in (prog-> ... ~S ...)." form))
 
 (defun prog->-too-many->s-error (form)
   (error "More than one -> in (prog-> ... ~S ...)." form))
 
 (defun prog->-unrecognized->-atom (atom form)
-  (error "Unrecognized operation ~S in (prog-> ... ~S ...)."
-	 atom form))
+  (error "Unrecognized operation ~S in (prog-> ... ~S ...)." atom form))
 
 (defun prog->-atom (x)
   (and (symbolp x)
-       (>= (length (string x)) 2)
+       (<= 2 (length (string x)))
        (string= x "->" :end1 2)))
 
 (defun prog->*-function-argument (forms args)
@@ -98,11 +89,10 @@
      (cadar forms))
     ((and (null (rest forms))
 	  (consp (first forms))
-	  (not (#-(or lucid mcl) special-operator-p
+	  (not (#-(or lucid (and mcl (not openmcl))) special-operator-p
 ;;		#-(or allegro lucid) special-form-p
 ;;		#+allegro cltl1:special-form-p
 		#+(and mcl (not openmcl)) special-form-p
-		#+openmcl cl-user::special-form-p
 		#+lucid lisp:special-form-p
 		(caar forms)))
 	  (not (macro-function (caar forms)))
