@@ -121,7 +121,7 @@ ArityNormalize qualifying spec {
  def polymorphicDomainOp? (spc, idf) =
    case findTheOp (spc, idf) of
      | Some info -> 
-       let (_, srt, _) = unpackOpDef info.dfn in
+       let srt = firstOpDefInnerSort info in
        polymorphicDomain? (spc, srt)
      | None -> false
 
@@ -441,7 +441,7 @@ ArityNormalize qualifying spec {
     setOps (spc, 
             mapOpInfos (fn info -> 
 			let pos = termAnn info.dfn in
-			let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+			let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 			let new_defs =
 			    map (fn dfn ->
 				 let pos = termAnn dfn in

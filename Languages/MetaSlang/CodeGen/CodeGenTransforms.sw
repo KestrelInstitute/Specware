@@ -90,7 +90,7 @@ def unfoldSortAliases spc =
    of
     | None -> spc
     | Some (q0, id0, info) ->
-      let (tvs, srt) = unpackSortDef info.dfn in
+      let (tvs, srt) = unpackFirstSortDef info in
       let Base (qid, psrts, _) = srt in
       let qid0 = mkQualifiedId (q0, id0) in
       %let _ = writeLine ("sort alias found: "^printQualifiedId qid0^" = "^printQualifiedId qid) in
@@ -185,19 +185,19 @@ def foldRecordSorts spc =
 	of
 	| None -> spc
 	| Some (q0, id0, info) ->
-	  case unpackSortDef info.dfn of
-	    | (_, psrt) ->
-	      let qid0 = mkQualifiedId (q0, id0) in
-	      %let _ = writeLine ("product sort found: "^printQualifiedId qid0) in
-	      let spc = foldRecordSorts_internal spc in
-	      let srts = sortsAsList spc in
-	      let srts = filter (fn (q1, id1, _) -> ~((q1 = q0) && (id1 = id0))) srts in
-	      let sortmap = foldl (fn ((q, id, info), srtmap) ->
-				   insertAQualifierMap (srtmap, q, id, info))
-	                          emptyASortMap srts
-	      in
-		let spc = setSorts (spc, insertAQualifierMap (sortmap, q0, id0, info)) in
-		foldRecordSorts0 (spc, cons (qid0, visited))
+	  let psrt = firstSortDefInnerSort info in
+	  let qid0 = mkQualifiedId (q0, id0) in
+	  %let _ = writeLine ("product sort found: "^printQualifiedId qid0) in
+	  let spc = foldRecordSorts_internal spc in
+	  let srts = sortsAsList spc in
+	  let srts = filter (fn (q1, id1, _) -> ~((q1 = q0) && (id1 = id0))) srts in
+	  let sortmap = foldl (fn ((q, id, info), srtmap) ->
+			       insertAQualifierMap (srtmap, q, id, info))
+	                      emptyASortMap 
+			      srts
+	  in
+	  let spc = setSorts (spc, insertAQualifierMap (sortmap, q0, id0, info)) in
+	  foldRecordSorts0 (spc, cons (qid0, visited))
   in
     foldRecordSorts0 (spc, [])
 
@@ -272,8 +272,8 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
       foldriAQualifierMap
         (fn (q, id, info, (map, minfo)) ->
 	 let pos = termAnn info.dfn in
-	 let (tvs, srt, _) = unpackOpDef info.dfn in
-	 let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	 let (tvs, srt, _) = unpackFirstOpDef info in
+	 let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 	 let (new_decls_and_defs, minfo) =
 	     foldl (fn (def0, (defs, minfo)) ->
 		    let (tvs, srt, trm) = unpackTerm def0 in
@@ -318,7 +318,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 	      else 
 		foldriAQualifierMap
 		  (fn (q, id, info, map) ->
-		   let (tvs, _) = unpackSortDef info.dfn in
+		   let tvs = firstSortDefTyVars info in
 		   case tvs of
 		     | [] -> insertAQualifierMap (map, q, id, info)
 		     | _ -> map)
@@ -330,7 +330,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 	     else
 	       foldriAQualifierMap
 	         (fn (q, id, info, map) ->
-		  let (tvs, _, _) = unpackOpDef info.dfn in
+		  let tvs = firstOpDefTyVars info in
 		  case tvs of
 		    | [] -> insertAQualifierMap (map, q, id, info)
 		    | _ -> map)
@@ -359,7 +359,7 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
 	    case findTheSort (spc, qid0) of
 	      | Some info ->
 	        let names = info.names in
-	        let (tvs, srtdef) = unpackSortDef info.dfn in
+	        let (tvs, srtdef) = unpackFirstSortDef info in
 	        (case (tvs, srtdef) of
 		  | (_::_, Any _) ->
 		    %DAC:  Added this case for uninterpreted types.  After looking at the
@@ -610,7 +610,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
       (case AnnSpec.findTheOp (spc, qid) of
 	 | None -> (fun, srt1, minfo)
 	 | Some info ->
-	   (let (mtvs, asrt, term) = unpackOpDef info.dfn in
+	   (let (mtvs, asrt, term) = unpackFirstOpDef info in
 	    if definedOpInfo? info then
 	      %let _ = writeLine ("polymorphic op found: "^printQualifiedId qid) in
 	      let tvsubst0 = sortMatch (asrt, srt, spc) in
@@ -816,7 +816,7 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
 	       let minfo = addMissingFromSort (bspc, spc, ignore, srt, minfo) in
 	       addMissingFromTerm (bspc, spc, ignore, trm, minfo))
 	      minfo
-	      (opDefs info.dfn))
+	      (opInfoDefs info))
        minfo 
        spc.ops
   in
@@ -979,7 +979,7 @@ def addSortConstructorsFromSort (spc, forSnark?, qid, info) =
   if ~ (definedSortInfo? info) then
     (spc, [])
   else
-    let (tvs, srt) = unpackSortDef info.dfn in
+    let (tvs, srt) = unpackFirstSortDef info in
     case srt of
       | CoProduct (fields, b) -> 
         (%let _ = writeLine ("generating constructor ops for sort "^ (printQualifiedId qid)^"...") in
@@ -1123,7 +1123,7 @@ def addProductSortConstructorsFromSort (spc, qid, info) =
   if ~ (definedSortInfo? info) then
     (spc, [])
   else
-    let (tvs, srt) = unpackSortDef info.dfn in
+    let (tvs, srt) = unpackFirstSortDef info in
     case srt of
       | Product (fields, b) -> 
         (%let _ = writeLine ("generating constructor ops for sort "^ (printQualifiedId qid)^"...") in
@@ -1169,7 +1169,7 @@ def addProductAccessorsFromSort (spc, qid, info) =
   if ~ (definedSortInfo? info) then
     (spc, [])
   else
-    let (tvs, srt) = unpackSortDef info.dfn in
+    let (tvs, srt) = unpackFirstSortDef info in
     let srt = stripSubsorts (spc, srt) in
     case srt of
       | Product (fields, b) -> 
@@ -1224,7 +1224,7 @@ def lambdaToInner spc =
   %let _ = writeLine ("lambdaToInner...") in
   let ops = foldriAQualifierMap
             (fn (q, id, info, newops) ->
-	     let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	     let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 	     let new_defs = 
 	         List.map (fn dfn ->
 			   let (tvs, srt, term) = unpackTerm dfn in
@@ -1321,7 +1321,7 @@ def conformOpDecls spc =
   %let _ = writeLine ("lambdaToInner...") in
   let ops = foldriAQualifierMap
             (fn (q, id, info, newops) ->
-	     let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	     let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 	     let new_defs = 
 	         List.map (fn dfn ->
 			   let (tvs, srt, term) = unpackTerm dfn in
@@ -1422,7 +1422,7 @@ def conformOpDeclsTerm (spc, srt, term, _) =
    case findTheOp (spc, qid) of
      | None -> None
      | Some info ->
-       let (_,srt,_) = unpackOpDef info.dfn in
+       let srt = firstOpDefInnerSort info in
        let srt = unfoldToArrow (spc, srt) in
        case srt of
 	 | Arrow (domsrt as (Base _), ransrt, _) ->
@@ -1502,7 +1502,7 @@ def addEqOpsFromSort (spc, qid, info) =
   if ~ (definedSortInfo? info) then
     spc
   else
-    let (tvs, srt) = unpackSortDef info.dfn in
+    let (tvs, srt) = unpackFirstSortDef info in
     let usrt = unfoldStripSort (spc, srt, false) in
     case usrt of
       | Boolean _ -> spc

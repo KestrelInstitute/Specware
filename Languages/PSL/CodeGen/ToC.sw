@@ -39,7 +39,7 @@ SpecCalc qualifying spec {
     let varDecls =
       List.map (fn argRef -> 
 		let info = Op.deref (specOf initSpec, argRef) in
-		let (_,typ,_) = unpackOpDef info.dfn in
+		let typ = firstOpDefInnerSort info in
 		(OpRef.show argRef, sortToCType typ))
                parameters 
     in
@@ -48,7 +48,7 @@ SpecCalc qualifying spec {
         | None -> Void 
         | Some retRef ->
           let info = Op.deref (specOf initSpec, retRef) in
-	  let (_,typ,_) = unpackOpDef info.dfn in
+	  let typ = firstOpDefInnerSort info in
 	  sortToCType typ in
     let def handler id proc except =
       case except of

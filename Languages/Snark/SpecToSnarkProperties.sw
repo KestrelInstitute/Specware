@@ -49,7 +49,7 @@ snark qualifying spec
 	   if ~ (definedSortInfo? info) then
 	     srt
 	   else
-	     let (tvs, srt2) = unpackSortDef info.dfn in
+	     let (tvs, srt2) = unpackFirstSortDef info in
 	     let ssrt = substSort (zip (tvs, srts), srt2) in
 	     case ssrt of
 	       | Product   _ -> srt
@@ -449,7 +449,7 @@ snark qualifying spec
     if ~ (definedSortInfo? info) then
       None
     else
-      let (_, srt) = unpackSortDef info.dfn in
+      let srt = firstSortDefInnerSort info in
       case srt of
 	| Subsort (supSrt, pred, _) ->
 	  let snarkSubSrtId = snarkSortId(id) in

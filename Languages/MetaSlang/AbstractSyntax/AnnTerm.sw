@@ -374,18 +374,40 @@ MetaSlang qualifying spec {
      | And       (types,    b) -> if a = b then srt else And       (types,    a)
      | Any                  b  -> if a = b then srt else Any       a
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%  These are utilities to help process sort and term definitions.
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%                Sort components
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op unpackSort : [b] ASort b -> TyVars * ASort b
- op unpackTerm : [b] ATerm b -> TyVars * ASort b * ATerm b
+ op unpackSort    : [b] ASort b -> TyVars * ASort b
+ op sortTyVars    : [b] ASort b -> TyVars 
+ op sortInnerSort : [b] ASort b -> ASort b
 
  def unpackSort s =
    case s of
      | Pi (tvs, srt, _) -> (tvs, srt)
      | And _ -> fail ("unpackSort: Trying to unpack an And of sorts.")
      | _ -> ([], s)
+
+ def sortTyVars srt =
+   case srt of
+     | Pi (tvs, _, _) -> tvs
+     | And _ -> fail ("sortTyVars: Trying to extract type vars from an And of sorts.")
+     | _ -> []
+
+ def sortInnerSort srt =
+   case srt of
+     | Pi (_, srt, _) -> srt
+     | And _ -> fail ("sortInneSort: Trying to extract inner sort from an And of sorts.")
+     | _ -> srt
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%                Term components
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op unpackTerm    : [b] ATerm b -> TyVars * ASort b * ATerm b
+ op termTyVars    : [b] ATerm b -> TyVars
+ op termSort      : [b] ATerm b -> ASort b
+ op termInnerTerm : [b] ATerm b -> ATerm b
 
  def unpackTerm t =
    let (tvs, tm) = 
@@ -398,24 +420,11 @@ MetaSlang qualifying spec {
      | SortedTerm (tm, srt, _) -> (tvs, srt,         tm) 
      | _                       -> (tvs, termSort tm, tm)
 
-  op extractInnerTerm : [b] ATerm b -> ATerm b
- def extractInnerTerm tm =
-   let tm = 
-       case tm of
-	 | Pi (_, tm, _) -> tm
-	 | And _ -> fail ("unpackTerm: Trying to extract inner term from an And of terms.")
-	 | _ -> tm
-   in
-     case tm of
-       | SortedTerm (tm, _, _) -> tm
-       | _                     -> tm
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%                Term Sorts
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- op termSort    : [b] ATerm    b -> ASort b
- op patternSort : [b] APattern b -> ASort b
+ def termTyVars tm =
+   case tm of
+     | Pi (tvs, _, _) -> tvs
+     | And _ -> fail ("termTyVars: Trying to extract type vars from an And of terms.")
+     | _ -> []
 
  def termSort term =
    case term of
@@ -445,6 +454,22 @@ MetaSlang qualifying spec {
      | _ -> 
        fail ("\n termSort mystery term: " ^ (anyToString term) ^ "\n")
 
+ def termInnerTerm tm =
+   let tm = 
+       case tm of
+	 | Pi (_, tm, _) -> tm
+	 | And _ -> fail ("termInnerTerm: Trying to extract inner term from an And of terms.")
+	 | _ -> tm
+   in
+     case tm of
+       | SortedTerm (tm, _, _) -> tm
+       | _                     -> tm
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%                Pattern components
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op patternSort : [b] APattern b -> ASort b
 
  def patternSort pat =
    case pat of
@@ -460,15 +485,6 @@ MetaSlang qualifying spec {
      | RelaxPat    (p, pred, a) -> Subsort  (patternSort p, pred,                  a)
      | QuotientPat (p, t,    a) -> Quotient (patternSort p, t,                     a)
      | SortedPat   (_, srt,  _) -> srt
-
-  op mkAndOp : [a] a -> ATerm a
- def mkAndOp a =
-   let bool_sort = Boolean a in
-   let binary_bool_sort = Arrow (Product ([("1",bool_sort), ("2",bool_sort)], a),
-				 bool_sort,
-				 a)
-   in
-     Fun (And, binary_bool_sort, a)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Equalities
@@ -1888,6 +1904,19 @@ MetaSlang qualifying spec {
    case s of
      | Base (Qualified ("Integer",     "Integer"),     [], _) -> true
      | _ -> false
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%  Misc constructors
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op mkAndOp : [a] a -> ATerm a
+ def mkAndOp a =
+   let bool_sort = Boolean a in
+   let binary_bool_sort = Arrow (Product ([("1",bool_sort), ("2",bool_sort)], a),
+				 bool_sort,
+				 a)
+   in
+     Fun (And, binary_bool_sort, a)
 
   op mkABase : [b] QualifiedId * List (ASort b) * b -> ASort b
  def mkABase (qid, srts, a) = Base (qid, srts, a)

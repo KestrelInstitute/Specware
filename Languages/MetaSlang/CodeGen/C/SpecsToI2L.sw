@@ -152,7 +152,7 @@ SpecsToI2L qualifying spec {
   op  sortinfo2typedef: CgContext * Spec * QualifiedId * SortInfo -> Option TypeDefinition
   def sortinfo2typedef (ctxt, spc, Qualified (q, id), info) =
     if definedSortInfo? info then
-      let (tvs, srt) = unpackSortDef info.dfn in
+      let (tvs, srt) = unpackFirstSortDef info in
       let typename = (q, id) in
       Some (typename, sort2type (ctxt, spc, tvs, srt))
     else
@@ -327,7 +327,7 @@ SpecsToI2L qualifying spec {
       | None -> None
       | Some info ->
         if definedOpInfo? info then
-	  let (_, _, term) = unpackOpDef info.dfn in
+	  let term = firstOpDefInnerTerm info in
 	  Some term
 	else
 	  None
@@ -412,7 +412,7 @@ SpecsToI2L qualifying spec {
 	    if ~ (definedSortInfo? info) then
 	      srt
 	    else
-	      let (tvs, srt2) = unpackSortDef info.dfn in
+	      let (tvs, srt2) = unpackFirstSortDef info in
 	      let
                 def continue () =
 		  let ssrt = substSort (zip (tvs, srts), srt2) in
@@ -464,7 +464,7 @@ SpecsToI2L qualifying spec {
   op opinfo2declOrDefn: CgContext * Spec * QualifiedId * OpInfo * Option(List String) -> opInfoResult
   
   def opinfo2declOrDefn (ctxt, spc, qid, info, optParNames) =
-    let (tvs, srt, _) = unpackOpDef info.dfn in
+    let (tvs, srt, _) = unpackFirstOpDef info in
     let def qid2str(Qualified(q,id)) =
 	  if q = UnQualified then id else q^"."^id
         def getParamNames(ctxt,t) =
@@ -519,7 +519,7 @@ SpecsToI2L qualifying spec {
 		      returntype = rtype})
       | _ -> 
 	if definedOpInfo? info then
-	  let (tvs, _, term) = unpackOpDef info.dfn in
+	  let term = firstOpDefInnerTerm info in
 	  OpDecl(id,typ,Some(term2expression(ctxt,spc,term)))
 	else
 	  OpDecl(id,typ,None)
@@ -1123,7 +1123,7 @@ SpecsToI2L qualifying spec {
 	      if ~ (definedSortInfo? info) then
 		None
 	      else
-		let (tvs, srt0) = unpackSortDef info.dfn in
+		let (tvs, srt0) = unpackFirstSortDef info in
 		%let usrt = unfoldBase(spc,srt) in
 		%let usrt0 = unfoldBase(spc,srt0) in
 		if equalSort? (srt, srt0) then

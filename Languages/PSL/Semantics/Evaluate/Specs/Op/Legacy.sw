@@ -26,12 +26,12 @@ Op qualifying spec
 
   % op opinfo_type : OpInfo -> Type
   def Op.opinfo_type info = 
-    let (tvs, typ, _) = unpackOpDef info.dfn in
+    let (tvs, typ, _) = unpackFirstOpDef info in
     (tvs, typ)
 
   % op term : OpInfo -> Option MS.Term
   def Op.term info =
-    case opDefs info.dfn of
+    case opInfoDefs info of
       | [] -> None
       | [trm] -> Some trm
       | _::_ -> fail "term: op with more than one term"

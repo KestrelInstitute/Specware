@@ -714,7 +714,7 @@ Utilities qualifying spec
 
      def letRecToLetTermOpInfo info = 
        let pos = termAnn info.dfn in
-       let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+       let (old_decls, old_defs) = opInfoDeclsAndDefs info in
        let new_defs = 
            map (fn tm ->
 		let pos = termAnn tm in

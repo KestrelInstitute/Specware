@@ -136,7 +136,7 @@ Extract rewrite rules from function definition.
 
  def defRule (context, q, id, info : OpInfo) = 
    if definedOpInfo? info then
-     let (tvs, srt, term) = unpackOpDef info.dfn in
+     let (tvs, srt, term) = unpackFirstOpDef info in
      let rule:RewriteRule = 
          {name      = id,
 	  lhs       = Fun (Op (Qualified (q, id), info.fixity), srt, noPos),

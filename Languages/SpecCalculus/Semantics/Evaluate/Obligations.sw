@@ -50,7 +50,7 @@ SpecCalc qualifying spec
     let dom_definitions_not_in_cod
        = foldriAQualifierMap
            (fn (q, id, dom_info, rdefs) ->
-	    case opDefs dom_info.dfn of
+	    case opInfoDefs dom_info of
 	      | [] -> rdefs
 	      | dom_defs ->
 		let
@@ -61,7 +61,7 @@ SpecCalc qualifying spec
 		  | None -> 
 		    defsToConjectures dom_defs ++ rdefs
 		  | Some cod_info ->
-		    defsToConjectures (diff (dom_defs, (opDefs cod_info.dfn))) ++ rdefs)
+		    defsToConjectures (diff (dom_defs, (opInfoDefs cod_info))) ++ rdefs)
 	   [] 
 	   dom.ops
     in

@@ -875,7 +875,7 @@ def findMatchingUserTypeCol(spc,srt) =
 	 let foundSrt = 
 	     find (fn (_, _, info) ->
 		   if definedSortInfo? info then
-		     let (_, srt) = unpackSortDef info.dfn in
+		     let srt = firstSortDefInnerSort info in
 		     equalSort? (ssrt, srt)
 		   else
 		     false)

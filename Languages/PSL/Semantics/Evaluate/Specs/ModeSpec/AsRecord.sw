@@ -395,7 +395,7 @@ ModeSpec qualifying spec
       def doOp info =
         let ref = Op.refOf info in
         if member? (variables modeSpec, ref) then
-          case opDefs info.dfn of
+          case opInfoDefs info of
             | [] -> info  % fail "empty term schemes"
             | [dfn] ->
 	      let (tvs, srt, tm) = unpackTerm dfn in

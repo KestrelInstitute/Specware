@@ -273,7 +273,7 @@ snark qualifying spec {
    if ~ (definedSortInfo? info) then
      None
    else
-     let (_, srt) = unpackSortDef info.dfn in
+     let srt = firstSortDefInnerSort info in
      case srt of
        | Subsort (supSrt, pred, _) ->
          Some (Lisp.list [declare_subsorts, 
@@ -482,7 +482,7 @@ snark qualifying spec {
     let snarkOpDecls =
         foldOpInfos (fn (info, decls) ->
 		     let Qualified (q, id) = primaryOpName info in
-		     let (tvs, srt, _) = unpackOpDef info.dfn in
+		     let (tvs, srt, _) = unpackFirstOpDef info in
 		     case snarkOpDeclPartial (spc, mkSnarkName (q, id), srt) of
 		       | None -> decls
 		       | Some snark_decl -> decls ++ [snark_decl])

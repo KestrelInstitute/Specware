@@ -574,8 +574,7 @@ SpecToLisp qualifying spec {
  def sortOfOp (sp, qid) =
    case findTheOp (sp, qid) of
      | Some info -> 
-       let (_, srt, _) = unpackOpDef info.dfn in
-       srt
+       firstOpDefInnerSort info 
 
  op  fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MS.Term -> Option LispTerm
  def fullCurriedApplication (sp, dpn, vars, term) =
@@ -1310,7 +1309,7 @@ SpecToLisp qualifying spec {
 	      in
 		defs ++ new_defs)
              defs
-	     (opDefs info.dfn)
+	     (opInfoDefs info)
    in
      let defs = foldriAQualifierMap mkLOpDef [] spc.ops in
      {name          = defPkgName, 
@@ -1373,7 +1372,7 @@ SpecToLisp qualifying spec {
 			  info
 			else 
 			  let pos = termAnn info.dfn in
-			  let (tvs, srt, _) = unpackOpDef info.dfn in
+			  let (tvs, srt, _) = unpackFirstOpDef info in
 			  info << {dfn = maybePiTerm (tvs, SortedTerm (Any pos, srt, pos))})
 		       spc.ops)
    in 

@@ -103,14 +103,22 @@ AnnSpec qualifying spec
      | And (srts,   _) -> exists definedSort? srts
      | _  -> true 
 
-  op opDefs : [b] ATerm b -> List (ATerm b) 
- def opDefs tm =
-   case tm of
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%  components of opInfo
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op opInfoDefs : [b] AOpInfo b -> List (ATerm b) 
+ def opInfoDefs info =
+   case info.dfn of
      | And (tms, _) -> filter definedTerm? tms
      | tm           -> filter definedTerm? [tm]
 
-  op opDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
- def opDeclsAndDefs tm =
+  op opInfoDeclsAndDefs : [b] AOpInfo b -> List (ATerm b) * List (ATerm b)
+ def opInfoDeclsAndDefs info =
+   termDeclsAndDefs info.dfn
+
+  op termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
+ def termDeclsAndDefs tm =
    let 
      def segregate tms =
        foldl (fn (tm, (decls, defs)) -> 
@@ -125,11 +133,25 @@ AnnSpec qualifying spec
        | And (tms, _) -> segregate tms
        | tm           -> segregate [tm]
 
-  op sortDefs : [b] ASort b -> List (ASort b) 
- def sortDefs srt =
-   case srt of
+  op termDefs : [b] ATerm b -> List (ATerm b) 
+ def termDefs tm =
+   case tm of
+     | And (tms, _) -> filter definedTerm? tms
+     | tm           -> filter definedTerm? [tm]
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%  components of sortInfo
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op sortInfoDefs : [b] ASortInfo b -> List (ASort b) 
+ def sortInfoDefs info =
+   case info.dfn of
      | And (srts, _) -> filter definedSort? srts
-     | _             -> filter definedSort? [srt]
+     | srt           -> filter definedSort? [srt]
+
+  op sortInfoDeclsAndDefs : [b] ASortInfo b -> List (ASort b) * List (ASort b)
+ def sortInfoDeclsAndDefs info =
+   sortDeclsAndDefs info.dfn 
 
   op sortDeclsAndDefs : [b] ASort b -> List (ASort b) * List (ASort b)
  def sortDeclsAndDefs srt =
@@ -145,22 +167,71 @@ AnnSpec qualifying spec
    in
      case srt of
        | And (srts, _) -> segregate srts
-       | _             -> segregate [srt]
+       | srt           -> segregate [srt]
 
- %% These extract information from the first available definition,
- %% ignoring any additional definitions
+  op sortDefs : [b] ASort b -> List (ASort b) 
+ def sortDefs srt =
+   case srt of
+     | And (srts, _) -> filter definedSort? srts
+     | srt           -> filter definedSort? [srt]
 
-  op unpackOpDef : [b] ATerm b -> TyVars * ASort b * ATerm b
- def unpackOpDef tm =
-   let (decls, defs) = opDeclsAndDefs tm in
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%  components of primary op def
+ %%%  Any uses of these simply ignore any definitions after the 
+ %%%  first one, which (IMHO) is probably not a good thing to do,
+ %%%  but they are here for backwards compatibility
+ %%%  Each use should be reviewed.
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op unpackFirstOpDef    : [b] AOpInfo b -> TyVars * ASort b * ATerm b
+  op firstOpDefTyVars    : [b] AOpInfo b -> TyVars
+  op firstOpDefInnerSort : [b] AOpInfo b -> ASort b
+  op firstOpDefInnerTerm : [b] AOpInfo b -> ATerm b
+
+ def unpackFirstOpDef info =
+   let (decls, defs) = opInfoDeclsAndDefs info in
    let first_def :: _ = defs ++ decls in
    unpackTerm first_def 
 
-  op unpackSortDef : [b] ASort b -> TyVars * ASort b 
- def unpackSortDef srt =
-   let (decls, defs) = sortDeclsAndDefs srt in
+ def firstOpDefTyVars info =
+   let (decls, defs) = opInfoDeclsAndDefs info in
+   let first_def :: _ = defs ++ decls in
+   termTyVars first_def
+
+ def firstOpDefInnerSort info =
+   let (decls, defs) = opInfoDeclsAndDefs info in
+   let first_def :: _ = defs ++ decls in
+   case first_def of
+     | Pi (_, tm, _) -> termSort tm % avoid returning Pi sort
+     | tm            -> termSort tm
+
+ def firstOpDefInnerTerm info =
+   termInnerTerm (hd (opInfoDefs info)) % fail if decl but no def
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%  components of primary sort def
+ %%%  Any uses of these simply ignore any definitions after the 
+ %%%  first one, which (IMHO) is probably not a good thing to do,
+ %%%  but they are here for backwards compatibility
+ %%%  Each use should be reviewed.
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op unpackFirstSortDef    : [b] ASortInfo b -> TyVars * ASort b 
+  op firstSortDefTyVars    : [b] ASortInfo b -> TyVars
+  op firstSortDefInnerSort : [b] ASortInfo b -> ASort b
+
+ def unpackFirstSortDef info =
+   let (decls, defs) = sortInfoDeclsAndDefs info in
    let first_def :: _ = defs ++ decls in
    unpackSort first_def 
+
+ def firstSortDefTyVars info =
+   let (decls, defs) = sortInfoDeclsAndDefs info in
+   let first_def :: _ = defs ++ decls in
+   sortTyVars first_def 
+   
+ def firstSortDefInnerSort info =
+   sortInnerSort (hd (sortInfoDefs info)) % fail if no decl but no def
    
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs
@@ -694,51 +765,6 @@ AnnSpec qualifying spec
    let newOps   = foldriAQualifierMap mergeOpStep   spc.ops   imported_spec.ops   in
    let spc      = setOps   (spc, newOps)   in
    setProperties (spc, spc.properties ++ imported_spec.properties)
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% misc old stuff...
-
- %%
- %% % get the sort/op names as list of strings
- %% % unused?
- %%
- %%  op sortNames : [b] ASpec b -> List String
- %%  op opNames   : [b] ASpec b -> List String
- %% 
- %%  def sortNames spc =
- %%   foldriAQualifierMap (fn (_, sort_name, _, new_list) -> 
- %%                          List.concat (new_list, [sort_name]))
- %%                      [] spc.sorts
- %% 
- %%  def opNames spc =
- %%   foldriAQualifierMap (fn (_, op_name, _, new_list) -> 
- %%                          List.concat (new_list, [op_name])) 
- %%                      [] spc.ops
-
-
- %% old style...
- %% The following havebeen replaced with monadic versions in
- %% SpecCalculus/Semantics/Evaluate/Spec/Utilitites
-
- %% op addSort             : [a] (Qualifier * Id * 
- %%                                 TyVars * Option(ASort a)) * 
- %%                                 ASpec a -> ASpec a
- %%
- %% %% new style...
- %% op addAliasedSort      : [a] (Qualifier * Id * 
- %%                                  SortNames * TyVars * Option (ASort a)) * 
- %%                                ASpec a -> ASpec a
- %%
- %% %% old style...
- %% op addOp               : [a] (Qualifier * Id * 
- %%                                 Fixity * ASortScheme a * Option (ATerm a)) * 
- %%                                ASpec a -> ASpec a
- %%
- %% %% new style...
- %% op addAliasedOp        : [a] (Qualifier * Id * 
- %%                                 OpNames * Fixity * ASortScheme a * Option (ATerm a)) * 
- %%                                ASpec a -> ASpec a
- %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 endspec

@@ -136,7 +136,7 @@ SpecCalc qualifying spec {
       (case possible_options_op of
 	 | Some info ->
 	   if definedOpInfo? info then
-	     let (_, _, opTerm) = unpackOpDef info.dfn in
+	     let opTerm = firstOpDefInnerTerm info in
 	     return opTerm
 	   else
 	     raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId name ^

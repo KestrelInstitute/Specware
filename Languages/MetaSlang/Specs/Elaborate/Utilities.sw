@@ -306,7 +306,7 @@ spec
         (case findAllSorts (env.internal, qid) of
           | info :: r ->
 	    (if ~ (definedSortInfo? info) then
-	       let (tvs, _) = unpackSortDef info.dfn in
+	       let tvs = firstSortDefTyVars info in
 	       let l1 = length tvs in
 	       let l2 = length ts  in
 	       ((if l1 ~= l2 then
@@ -377,7 +377,7 @@ spec
  def findVarOrOps (env, id, a) =
   let 
     def mkTerm (a, info) =
-      let (tvs, srt, tm) = unpackOpDef info.dfn in
+      let (tvs, srt, tm) = unpackFirstOpDef info in
       let (_,srt) = metafySort (Pi (tvs, srt, noPos)) in
       let Qualified (q, id) = primaryOpName info in
       Fun (%% Allow (UnQualified, x) through as TwoNames term ...

@@ -116,7 +116,7 @@ TypeChecker qualifying spec
 			  else 
 			    dfn
 		      in
-		      let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+		      let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 		      let new_defs = map elaborate_dfn old_defs in
 		      let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
 		      let new_info = info << {dfn = new_dfn} in
@@ -395,7 +395,7 @@ TypeChecker qualifying spec
 
 
  def checkOp (info, env) =
-   let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+   let (old_decls, old_defs) = opInfoDeclsAndDefs info in
    let new_decls_and_defs  = map (fn tm -> checkOpDef  (tm, info, env)) 
                                  (old_decls ++ old_defs)
    in
@@ -491,7 +491,7 @@ TypeChecker qualifying spec
            | Some info -> 
 	     %% If Qualified (id1, id2) refers to an op, use the canonical name for that op.
 	     let Qualified (q, id) = primaryOpName info in
-	     let (tvs, srt, tm) = unpackOpDef info.dfn in
+	     let (tvs, srt, tm) = unpackFirstOpDef info in
 	     let (_, srt) = metafySort (Pi (tvs, srt, sortAnn srt)) in
 	     let term = Fun (TwoNames (q, id, info.fixity), srt, pos) in
 	     let srt = elaborateCheckSortForTerm (env, term, srt, term_sort) in

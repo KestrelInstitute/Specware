@@ -948,7 +948,7 @@ AnnSpecPrinter qualifying spec
 				       ))]
 			++ prettys))
      in
-     let (decls, defs) = opDeclsAndDefs info.dfn in
+     let (decls, defs) = opInfoDeclsAndDefs info in
      let warnings = 
          (let m = length decls in
 	  let n = length defs  in

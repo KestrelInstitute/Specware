@@ -750,7 +750,7 @@ spec
 		   |- 
 		   term ?? tau)
 	          tcc 
-		  (opDefs info.dfn)
+		  (opInfoDefs info)
 	  else 
 	    tcc)
 	 tcc 

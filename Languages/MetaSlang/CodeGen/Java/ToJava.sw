@@ -40,7 +40,7 @@ op sortToClsDecls: Qualifier * Id * SortInfo * Spec * JcgInfo -> JcgInfo
 def sortToClsDecls (_(* qualifier *), id, sort_info, spc, jcginfo) =
   let clsDecls = jcginfo.clsDecls in
   if definedSortInfo? sort_info then
-    let (_, srtDef) = unpackSortDef sort_info.dfn in
+    let srtDef = firstSortDefInnerSort sort_info in
     let ok? = case srtDef of
 		| Subsort  (_,Fun(Op _,_,_),_) -> true
 		| Subsort  _                   -> false
@@ -381,7 +381,7 @@ def unfoldToCoProduct(spc,srt) =
    case findAllSorts (spc, mkUnQualifiedId srthId) of
      | info  ::_  ->  % consider only one candidate
        (if definedSortInfo? info then
-	  let (_, srt) = unpackSortDef info.dfn in % consider only first definition
+	  let srt = firstSortDefInnerSort info in % consider only first definition
 	  (%let _ = writeLine("in addMethDeclToSummands: srt="^printSort(srt)) in
 	   case srt of
 	     | CoProduct (summands, _) ->
@@ -484,7 +484,7 @@ def modifyClsDeclsFromOps(spc, jcginfo) =
 
 op modifyClsDeclsFromOp: Spec * Id * Id * OpInfo * JcgInfo -> JcgInfo
 def modifyClsDeclsFromOp (spc, qual, id, op_info, jcginfo) =
-  let (_, opsrt, trm) = unpackOpDef op_info.dfn in
+  let (_, opsrt, trm) = unpackFirstOpDef op_info in
   let clsDecls = jcginfo.clsDecls in
   let dompreds = srtDomPreds opsrt in
   let srt = inferType (spc, trm) in

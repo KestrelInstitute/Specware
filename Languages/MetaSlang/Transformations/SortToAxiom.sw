@@ -6,7 +6,7 @@ Prover qualifying spec
  op  axiomFromSortDefTop: Spec * Qualifier * Id * SortInfo -> Properties
  def axiomFromSortDefTop (spc, q, id, info) =
    if definedSortInfo? info then
-     let (_, srt_def) = unpackSortDef info.dfn in
+     let srt_def = firstSortDefInnerSort info in
      let localSorts = spc.importInfo.localSorts in
 %     if memberQualifiedId (q, id, localSorts) then
        let sort_name = Qualified (q, id) in

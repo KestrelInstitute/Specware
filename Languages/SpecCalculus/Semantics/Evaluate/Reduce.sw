@@ -32,7 +32,7 @@ SpecCalc qualifying spec
             case AnnSpec.findTheOp (elabSpc,tempOpName) of
               | None -> raise (SpecError (pos, "Reduce lost its operator!"))
               | Some info -> 
-		let (_, _, trm) = unpackOpDef info.dfn in
+		let trm = firstOpDefInnerTerm info in
 		return trm;
           reducedTerm <-
             let

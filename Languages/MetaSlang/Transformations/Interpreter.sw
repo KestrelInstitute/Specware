@@ -131,7 +131,7 @@ spec
         (case findTheOp (spc, qid) of
 	   | Some info ->
 	     (if definedOpInfo? info then
-		let tm = extractInnerTerm (hd (opDefs info.dfn)) in
+		let tm = termInnerTerm (hd (opInfoDefs info)) in
 		evalRec (tm, sb, spc, depth+1)
 	      else
 		case qid of 

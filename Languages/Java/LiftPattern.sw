@@ -229,7 +229,7 @@ def opDom (spc, oper) =
   let infos = findAllOps (spc, oper) in
   case infos of
     | info ::_ -> 
-      let (_, srt, _) = unpackOpDef info.dfn in
+      let srt = firstOpDefInnerSort info in
       srtDom srt
     | _ -> 
       let _ = unSupported oper in 
@@ -239,7 +239,7 @@ def opRange (spc, oper) =
   let infos = findAllOps (spc, oper) in
   case infos of
     | info ::_ -> 
-      let (_, srt, _) = unpackOpDef info.dfn in
+      let srt = firstOpDefInnerSort info in % unpackOpDef info.dfn 
       srtRange srt
     | _ -> 
       let _ = unSupported oper in 
@@ -259,6 +259,7 @@ def srtDom(srt) =
     | Arrow (dom, rng, _) ->
       (let argSorts = domSrtDom dom in
        argSorts)
+    | Pi (_, s, _) -> srtDom s
     | _ -> []
 
 op srtDomKeepSubsorts: Sort -> List Sort
@@ -277,6 +278,7 @@ def srtDomKeepSubsorts srt =
 def srtRange srt =
   case srt of
     | Arrow (dom, rng, _) -> rng
+    | Pi (_, s, _) -> srtRange s
     | _ -> srt
 
 op srtDomPreds: Sort -> List (Option Term)
@@ -325,7 +327,7 @@ def opDelta(spc, oper) =
   let infos = findAllOps(spc, oper) in
   case infos of
     | info::_ ->
-      (case opDefs info.dfn of
+      (case opInfoDefs info of
 	 | [dfn] ->
 	   (let (tvs, srt, tm) = unpackTerm dfn in
 	    case tm of
@@ -503,7 +505,7 @@ op liftPattern: Spec -> Spec
 def liftPattern spc =
   let newOpDefs = foldriAQualifierMap 
                     (fn (q, id, info, result) ->
-		     case opDefs info.dfn of
+		     case opInfoDefs info of
 		       | [dfn] ->
 		         let (tvs, srt, term) = unpackTerm dfn in
 			 let origOp = mkQualifiedId (q, id) in

@@ -173,7 +173,7 @@ Prover qualifying spec
 
   op axiomFromOpDefTop: Spec * Qualifier * Id * OpInfo -> Properties
   def axiomFromOpDefTop (spc, q, id, info) =
-    case opDefs info.dfn of
+    case opInfoDefs info of
       | [] -> []
       | defs ->
         %% new: fold over all defs (but presumably just one for now)
@@ -204,7 +204,7 @@ Prover qualifying spec
 
    op axiomFromOpSrtTop: Spec * Qualifier * Id * OpInfo -> Properties
   def axiomFromOpSrtTop (spc, q, id, info) =
-    let (_, srt, _) = unpackOpDef info.dfn in
+    let srt = firstOpDefInnerSort info in
     let localOps = spc.importInfo.localOps in
     if memberQualifiedId (q, id, localOps) then
       let pos = sortAnn srt in

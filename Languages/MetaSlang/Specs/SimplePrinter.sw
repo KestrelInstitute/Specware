@@ -149,7 +149,7 @@ SpecCalc qualifying spec
 						       ppGroup (ppATerm tm)]))
 			 ])
    in
-   let (decls, defs) = opDeclsAndDefs info.dfn in
+   let (decls, defs) = opInfoDeclsAndDefs info in
    let ppDecls = map ppDecl decls in
    let ppDefs  = map ppDef  defs  in
    ppConcat (ppDecls ++ ppDefs)

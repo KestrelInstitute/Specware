@@ -29,7 +29,7 @@ RemoveCurrying qualifying spec
     let newOps = mapOpInfos (fn info ->
 			     if definedOpInfo? info then
 			       %% TODO: Handle multiple defs??
-			       let (old_tvs, old_srt, old_tm) = unpackOpDef info.dfn in
+			       let (old_tvs, old_srt, old_tm) = unpackFirstOpDef info in
 			       let new_tm = unCurryTerm (old_tm, spc) in
 			       let new_dfn = maybePiTerm (old_tvs, 
 							  SortedTerm (new_tm, 
@@ -44,7 +44,7 @@ RemoveCurrying qualifying spec
     let newSorts = mapSortInfos (fn info ->
 				 if definedSortInfo? info then
 				   %% TODO: Handle multiple defs??
-				   let (old_tvs, old_srt) = unpackSortDef info.dfn in
+				   let (old_tvs, old_srt) = unpackFirstSortDef info in
 				   let new_srt = (unCurrySort(old_srt,spc)).2 in
 				   let new_dfn = maybePiSort (old_tvs, new_srt) in
 				   info << {dfn = new_dfn}
@@ -60,7 +60,7 @@ RemoveCurrying qualifying spec
         foldriAQualifierMap
 	  (fn (q, id, info, new_ops) ->
 	   let pos = termAnn info.dfn in
-	   let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	   let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 	   case old_defs of
 	     | old_def :: _ ->
 	       (let (old_tvs, old_srt, old_tm) = unpackTerm old_def in

@@ -63,7 +63,7 @@ CGen qualifying spec {
 %                       ^ (printTerm trm)
 %                       ^ "'")
       def doOp (q, id, info, cSpec) =
-        case opDefs info.dfn of
+        case opInfoDefs info of
           | []     -> cSpec
           | trm::_ -> 
 	    let (tvs, typ, tm) = unpackTerm trm in
@@ -86,9 +86,9 @@ CGen qualifying spec {
   op generateCVars : CSpec -> Spec -> CSpec
   def generateCVars cSpec spc =
     let def doOp (q, id, info, cSpec) =
-      case opDefs info.dfn of
+      case opInfoDefs info of
         | [] -> 
-	  let (_, typ, _) = unpackOpDef info.dfn in
+	  let typ = firstOpDefInnerSort info in
 	  addVarDecl cSpec (showQualifiedId (Qualified (q, id))) (sortToCType typ)
 %             (case (srt : ASort Position) of
 %               | Base (qid,srts,_) ->

@@ -365,7 +365,7 @@ SpecCalc qualifying spec
 
   op myppAOpInfo : [a] Aliases * Fixity * ATerm a -> Doc
   def myppAOpInfo (aliases, fixity, dfn) =
-    let (decls, defs) = opDeclsAndDefs dfn in
+    let (decls, defs) = termDeclsAndDefs dfn in
     ppConcat [ppAOpDecl (aliases, fixity, decls),
 	      ppAOpDefs (aliases, defs)]
 

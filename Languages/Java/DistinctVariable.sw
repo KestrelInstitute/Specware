@@ -202,7 +202,7 @@ op distinctVariable: Spec -> Spec
 def distinctVariable(spc) =
   let newOpDefs = foldriAQualifierMap 
                     (fn (q, id, info, result) ->
-		     case opDefs info.dfn of
+		     case opInfoDefs info of
 		       | [dfn] ->
 		         let (tvs, srt, term) = unpackTerm dfn in
 			 let origOp = mkQualifiedId (q, id) in

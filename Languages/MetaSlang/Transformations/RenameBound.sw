@@ -91,7 +91,7 @@ spec
     (pt,name, tyvars, renameTerm c term)
 
   def renameOp c info =
-    let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+    let (old_decls, old_defs) = opInfoDeclsAndDefs info in
     let new_defs = 
         map (fn dfn ->
 	     let (tvs, srt, term) = unpackTerm dfn in

@@ -826,7 +826,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	 addNewOpAux (info << {names = [Qualified (q, id)]},
 		      spc)
        else
-	 let (tvs, srt, term) = unpackOpDef info.dfn in
+	 let (tvs, srt, term) = unpackFirstOpDef info in
 	 case term of 
 	   | Lambda ([(pat, cond, term)], a) ->
 	     let env = mkEnv (q, id) in
@@ -855,7 +855,7 @@ def toAny     = Term `TranslationBasic.toAny`
 
      def doProp ((pt, pn as Qualified (qname, name), tvs, fmla), spc) =
        let env = mkEnv (qname, name) in
-       let fmla = extractInnerTerm fmla in
+       let fmla = termInnerTerm fmla in
        let term = makeVarTerm fmla in
        let (opers, term) = lambdaLiftTerm (env, term) in
        let newProp = (pt, pn, tvs, term) in

@@ -336,7 +336,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
 			   (case AnnSpec.findTheOp (spc, qid) of
 			      | Some info -> 
 			        (if definedOpInfo? info then
-				   let (_, _, tm) = unpackOpDef info.dfn in
+				   let tm = firstOpDefInnerTerm info in
 				   Some (MSInterpreter.eval (tm, spc))
 				 else
 				   None)

@@ -37,7 +37,7 @@ spec
   def makeUnfoldMap spc =
     mapiPartialAQualifierMap
       (fn (q, id, info) -> 
-       let (decls, defs) = opDeclsAndDefs info.dfn in
+       let (decls, defs) = opInfoDeclsAndDefs info in
        case defs of
 	 | [] -> None
 	 | dfn :: _ ->
@@ -448,7 +448,7 @@ spec
         mapiAQualifierMap
 	  (fn (q, id, info) ->
 	   let pos = termAnn info.dfn in
-	   let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	   let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 	   case old_defs of
 	     | [] -> info
 	     | _ ->
@@ -501,7 +501,7 @@ spec
       | Fun (Op (Qualified (q2, id2),_), _, _) ->
         (case findAQualifierMap (spc.ops, q2, id2) of
 	  | Some info -> 
-	    (let (decls, defs) = opDeclsAndDefs info.dfn in
+	    (let (decls, defs) = opInfoDeclsAndDefs info in
 	     case defs of
 	       | [def2] -> (q2, id2, def2)
 	       | _ -> (q, id, def1))

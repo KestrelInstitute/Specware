@@ -95,7 +95,7 @@ spec
 	 | None -> srt
 	 | Some info ->
 	   if definedSortInfo? info then
-	     let (tvs, srt) = unpackSortDef info.dfn in
+	     let (tvs, srt) = unpackFirstSortDef info in
 	     let ssrt = substSort (zip (tvs, srts), srt) in
 	     unfoldBaseV (sp, ssrt, verbose)
 	   else
