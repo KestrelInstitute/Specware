@@ -34,8 +34,8 @@
 	  (or parser-tex-dir
 	      (let* ((parser-handwritten-lisp-dir (specware::current-directory))
 		     (parser-handwritten-dir      (reverse (cdr (reverse (pathname-directory parser-handwritten-lisp-dir)))))
-		     (parser-handwritten-tex-dir  (append parser-handwritten-dir '("TeX")))))
-	      (make-pathname :directory parser-handwritten-tex-dir)))
+		     (parser-handwritten-tex-dir  (append parser-handwritten-dir '("TeX"))))
+		(make-pathname :directory parser-handwritten-tex-dir))))
 	 (*default-pathname-defaults* parser-tex-dir)
 	 (tex-file (make-pathname :name "metaslang.tex" :defaults parser-tex-dir)) ; metaslang.tex is the name expected by parser-main.tex
 	 (ps-file  (make-pathname :name "grammar.ps"    :defaults parser-tex-dir))
