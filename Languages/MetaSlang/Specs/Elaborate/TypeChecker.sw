@@ -934,7 +934,7 @@ spec {
                   | Fun (NotEquals, _, _) -> Infix (term, (Left, 20))
                   | _ -> Nonfix term
            in 
-           let term = resolveInfixes (tagTermWithInfixInfo, pos, terms) in
+           let term = resolveInfixes (env,tagTermWithInfixInfo, pos, terms) in
            elaborateTerm (env, term, term_sort))
 
     | term -> (%System.print term;

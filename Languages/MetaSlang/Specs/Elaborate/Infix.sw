@@ -3,13 +3,12 @@
 (* Resolve infixe operators     *)
 
 Infix qualifying spec {
- import ../StandardSpec
- import ../Printer % for error messages
+ import Utilities
 
  sort FixatedTerm = | Infix   MS.Term *  (Associativity * Precedence)
                      | Nonfix  MS.Term
 
- op resolveInfixes : (MS.Term -> FixatedTerm) * Position * List(MS.Term) -> MS.Term
+ op resolveInfixes : LocalEnv * (MS.Term -> FixatedTerm) * Position * List(MS.Term) -> MS.Term
 
  %    fun printTagged(Nonfix t) = TextIO.print("Nonfix "^AstPrint4.printTerm t^"\n")
  %      | printTagged(Infix(t,(assoc,p))) = 
@@ -24,8 +23,8 @@ Infix qualifying spec {
   All infixes associate to the right.
   *)
 
- def resolveInfixes(tagTermWithInfixInfo,pos,terms) = 
-let
+ def resolveInfixes(env,tagTermWithInfixInfo,pos,terms) = 
+  let
     def applyInfix(t1,infOp,t2) = ApplyN([infOp,mkTuple([t1,t2])],pos) in
       let def applyPrefixes(terms) = 
          case terms of
@@ -44,7 +43,8 @@ let
                | [Infix(t,_)] -> [Nonfix(t)]
                | [] -> System.fail (printAll pos^" : No terms to apply")
                | (Infix(t,p)) :: _ ->  
-                     System.fail (printAll pos^" : Infix "^printTerm t ^" given without left argument")
+                     (error (env,"Infix "^printTerm t ^" given without left argument",pos);
+		      [Nonfix t])
                | (Nonfix(t1)):: (Infix(infix1,(a1,delta1)))::rest -> 
                   let rest = scan(delta1,rest) in
                   if delta0 > delta1 or (delta0 = delta1 & a1 = Left) then
@@ -79,11 +79,11 @@ let
                          %% As indicated above, the first infix operator here (infix1) 
                          %%  binds tighter than the prior infix operator.
                          [Nonfix(applyInfix(t1,infix1,t2))]
-                       | _ -> System.fail (printAll pos^" : Infix "^printTerm infix1^
-                                          " given without left argument"))
+                       | _ -> (error (env,"Infix "^printTerm infix1^" given without left argument",pos);
+			       [Nonfix(t1)]))
                 
                | (Nonfix _)::(Nonfix _)::_ ->
-                      System.fail (printAll pos^" : Unreduced nonfix"))
+                      (error (env,"Unreduced nonfix",pos); [hd terms]))
          in
          let def scanrec(tagged) = 
            (case scan(0,tagged) of
