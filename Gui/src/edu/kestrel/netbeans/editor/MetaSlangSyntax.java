@@ -6,6 +6,12 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/13 01:23:54  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
  * Revision 1.4  2003/02/17 07:02:02  weilyn
  * Made scURI an Item, and added more rules for scProve.
  *
@@ -248,21 +254,13 @@ public class MetaSlangSyntax extends Syntax {
                 break;
                
             case ISA_BSLASH:
-		int newOffset = processLatexComment(buffer, offset);
-		//Util.log("*** processLatexComment(): offset="+offset+" return "+newOffset);
-		if (newOffset != -1) {
-		    offset = newOffset;
-		    state = INIT;
-		    return MetaSlangTokenContext.LATEX_COMMENT;
-		} else {
-		    newOffset = processLatexCommentStart(buffer, offset);
-		    //Util.log("*** processLatexCommentStart(): offset="+offset+" return "+newOffset);
-		    if (newOffset != -1) {
-			offset = newOffset;
-			state = ISI_LATEX_COMMENT;
-		    } else {
-			state = ISI_NON_WORD_SYMBOL;
-		    }
+                int newOffset = processLatexCommentStart(buffer, offset);
+                //Util.log("*** processLatexCommentStart(): offset="+offset+" return "+newOffset);
+                if (newOffset != -1) {
+                    offset = newOffset;
+                    state = ISI_LATEX_COMMENT;
+                } else {
+                    state = ISI_NON_WORD_SYMBOL;
                 }
                 break;
                
@@ -458,6 +456,17 @@ public class MetaSlangSyntax extends Syntax {
         if (n < 8)
             return -1;
         switch (buffer[offset++]) {
+            case 'e':
+                return (n >= 9
+		&& buffer[offset++] == 'n'
+		&& buffer[offset++] == 'd'
+		&& buffer[offset++] == '{'
+		&& buffer[offset++] == 's'
+		&& buffer[offset++] == 'p'
+		&& buffer[offset++] == 'e'
+		&& buffer[offset++] == 'c'
+		&& buffer[offset++] == '}')
+                ? offset - 1: -1;
             case 'd':
 		return (n >= 9
 			&& buffer[offset++] == 'o'
@@ -494,21 +503,6 @@ public class MetaSlangSyntax extends Syntax {
                 }
 	}
 	return -1;
-    }
-
-    public static int processLatexComment(char[] buffer, int offset) {
-	int n = buffer.length - offset;
-	return (n >= 9
-		&& buffer[offset++] == 'e'
-		&& buffer[offset++] == 'n'
-		&& buffer[offset++] == 'd'
-		&& buffer[offset++] == '{'
-		&& buffer[offset++] == 's'
-		&& buffer[offset++] == 'p'
-		&& buffer[offset++] == 'e'
-		&& buffer[offset++] == 'c'
-		&& buffer[offset++] == '}')
-                ? offset - 1: -1;
     }
 
     public static int processLatexCommentEnd(char[] buffer, int offset) {
