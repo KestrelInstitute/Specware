@@ -9,7 +9,7 @@ spec
   import Java
   import Generate
 
-  op Specware.run_cmd : String -> () % defined in prism-toplevel.lisp
+  op Specware.run_cmd : String -> () % defined in toplevel.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

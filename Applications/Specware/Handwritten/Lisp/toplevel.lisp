@@ -879,6 +879,14 @@
   (cl:substitute #\_  #\# (string unitid))
   )
 
+;; The following is in ./Languages/SpecCalculus/Semantics/Evaluate/Make.sw:
+;;
+;;  op Specware.run_cmd : String -> () % defined in toplevel.lisp file for each application [perhaps just Prism]
+;;
+;; Make.sw is only used by Prism for now, so this is pre-emptive, in case Specware itself begins to use it:
+
+(defefun Specware::run_cmd (x) (run-cmd x)) ; not used yet (except by Prism, which has its own definition)
+
 #-(or allegro cmu mcl sbcl gcl) 
 (defun run-cmd (cmd &rest args)
   (warn "ignoring non-[ALLEGRO/CMU/MCL/SBCL] RUN-CMD : ~A~{ ~A~}" cmd args))
