@@ -383,6 +383,18 @@ MetaSlang qualifying spec {
      | SortedTerm (tm, srt, _) -> (tvs, srt,         tm) 
      | _                       -> (tvs, termSort tm, tm)
 
+  op extractInnerTerm : [b] ATerm b -> ATerm b
+ def extractInnerTerm tm =
+   let tm = 
+       case tm of
+	 | Pi (_, tm, _) -> tm
+	 | And _ -> fail ("unpackTerm: Trying to extract inner term from an And of terms.")
+	 | _ -> tm
+   in
+     case tm of
+       | SortedTerm (tm, _, _) -> tm
+       | _                     -> tm
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Sorts
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
