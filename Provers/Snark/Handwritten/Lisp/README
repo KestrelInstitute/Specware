@@ -1,0 +1,48 @@
+(replace "yyyymmdd" by the SNARK version date)
+
+Obtaining SNARK:
+
+  ftp ftp.ai.sri.com
+  cd hidden/stickel
+  binary
+  get snark-yyyymmdd.tar.gz
+  bye
+
+Installing SNARK:
+
+  gunzip snark-yyyymmdd.tar.gz
+  tar xof snark-yyyymmdd.tar
+  cd snark-yyyymmdd
+  lisp
+  (load "snark-system.lisp")
+  (snark:make-snark-system t)		;t specifies compilation
+
+Running SNARK:
+
+  lisp
+  (load "snark-system.lisp")
+  (snark:make-snark-system)
+  :
+
+
+
+Examples:
+
+  (overbeek-test) in overbeek-test.lisp
+    some standard theorem-proving examples, some time-consuming
+
+  (steamroller-example) in steamroller-example.lisp
+    illustrates sorts
+
+  (front-last-example) in front-last-example.lisp
+    illustrates program synthesis
+
+  (reverse-example) in reverse-example.lisp
+    illustrates logic programming style usage
+
+
+
+A guide to SNARK is being written:
+
+  http://www.ai.sri.com/snark/tutorial/tutorial.html
+

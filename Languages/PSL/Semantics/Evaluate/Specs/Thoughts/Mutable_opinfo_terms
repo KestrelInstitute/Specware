@@ -1,0 +1,29 @@
+Would it also make sense for opInfo and even for terms as we might
+want to transform a term in place? Would only make sense for
+terms in the absence of sharing of opInfo between different specs.
+Otherwise rewriting might have undesirable side-effects. Might work
+for type checking when we want to side-effect a term by augmenting it
+with more type information.
+
+Perhaps the term type should be
+
+sort Extend a
+op child : Extend a -> a
+sort Term =
+  Extend
+    | ApplyN ..
+    | Fun ...
+
+sort Extend a = a
+sort Extend a = a * Position
+sort Extend a = Var (a * Position)
+
+The latter is so we can do update in place when rewriting terms.
+
+Can we get the effect of Extend by rewriting?
+Or by weakening (a sort) in some way?
+
+What about jims idea of mixing .. starting off as assoc lists and
+then switching when everything is in place.
+Not sure it works for what we are doing.
+

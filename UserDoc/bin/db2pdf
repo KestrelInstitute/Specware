@@ -1,0 +1,39 @@
+#! /bin/sh
+
+jadeoptions=
+
+case $1 in
+     -E) jadeoptions="$jadeoptions $1 $2"; shift; shift;;
+     -E*) jadeoptions="$jadeoptions $1";  shift;;
+esac
+
+STYLESHEET=/usr/lib/sgml/stylesheets/cygnus-both.dsl
+
+NAME=`/bin/echo $1 | /bin/sed 's/\.sgml$//;s/\.sgm$//;s/\.dbk$//'`
+
+if [ $# -gt 2 ]
+then
+  /bin/echo "Usage: `basename $0` [filename.sgml]" >&2
+  exit 1
+fi
+
+if [ $# -eq 1 ]
+then
+  if [ ! -r $1 ]
+  then
+    /bin/echo Cannot read \"$1\".  Exiting. >&2
+    exit 1
+  fi
+fi
+
+jade $jadeoptions -t tex -d ${STYLESHEET}\#print -o "$NAME".tex $1
+
+pdfjadetex "$NAME"
+
+if /bin/egrep '^LaTeX Warning: There were undefined references.$' "$NAME".log >/dev/null 2>&1
+then
+  pdfjadetex "$NAME"
+  pdfjadetex "$NAME"
+fi
+
+exit 0

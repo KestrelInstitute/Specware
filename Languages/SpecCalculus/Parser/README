@@ -1,0 +1,17 @@
+This is the parser for MetaSlang and the SpecCalculus.  The files here
+have been adapted from the 3.2 tree.  There is no longer a call to
+makeSpec nor calls to "addOp" etc. Instead a raw abstract syntax tree.
+
+This parser will eventually by factored. The spec-calculus will be
+separated from the MetaSlang language. The parser for the calculus will
+be moved to Applications/Specware/SpecCalculus/Parser/Lisp (or something
+like that).
+
+The rationale is that the language for MetaSlang terms and definitions
+can be used in the implementation of other languages (eg PSL) and
+for other calculi.
+
+Some have suggested that the name of the language should be changed
+from MetaSlang to something else. Suggestions? I am not very
+keen on Slang.
+

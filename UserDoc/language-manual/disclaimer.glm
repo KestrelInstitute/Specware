@@ -1,0 +1,13 @@
+<preface><title>Disclaimer</title>
+<para>
+As experience is gained with &SpecwareVVV;, both the operation
+of the &Specware; system and the &Metaslang; language are bound
+to undergo changes, which may not always be fully
+<quote>backwards compatible</quote>.
+</para>
+<para>
+For updates, news and bug reports, visit the &Specware; web
+site
+<ulink url="http://www.specware.org">http://www.specware.org</ulink>.
+</para>
+</preface>

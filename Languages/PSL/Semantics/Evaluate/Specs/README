@@ -1,0 +1,14 @@
+This contains a first attempt at abstracting specs and terms.  It also
+contains a layer on top of the abstraction for dealing with "mode specs"
+and "transition specs". The former are an extension of a spec structure
+used to label the states (modes) in a graph. The second is an extension
+used for labelling the transitions (edges) in a graph. Together they
+are used for labelling BSpecs.
+
+This has turned into a mess. In particular all the varieties of
+monomorphic sets and maps are a disaster. Also the abstract failed
+because of the need to pattern match on the concrete structure.
+
+You probably don't want to look closely at the stuff here.
+
+This directory is likely to be moved out of the Specware4 tree.

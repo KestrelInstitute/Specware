@@ -1,0 +1,948 @@
+  <appendix><title>Libraries</title>
+    <para>
+      
+      This appendix contains a brief description of the `sorts and `ops
+      pre-defined in the &Metaslang; libraries.
+
+    </para>
+      
+<!--
+    <para>
+      The following primitives
+      &Metaslang; sorts and the corresponding operations and axioms are
+      defined in the built-in library:
+    </para>
+    
+    <simplelist type="horiz" columns="2">
+      <member>[[sort Boolean]]</member> <member>: Boolean values</member>
+      <member>[[sort Nat]]</member> <member>: natural numbers</member>
+      <member>[[sort Integer]]</member> <member>: integer numbers</member>
+      <member>[[sort Char]]</member> <member>: character values</member>
+      <member>[[sort String]]</member> <member>: character string</member>
+      <member>[[sort List]]</member> <member>: representation of lists</member>
+    </simplelist>
+
+-->
+
+    <para>
+      The `op-declarations are given as a table where the first
+      column contains the `name of the `op, the second one its
+      associativity and priority if declared as an infix operator; otherwise the column
+      is left empty. The third column contains the `sort-scheme and the
+      fourth column gives a short description of the meaning.
+    </para>
+
+    <!-- General ******************************************************************************** -->
+
+    <section><title>General</title>
+      <para>
+	<variablelist>
+	  <varlistentry>
+	    <term><command>Sort-declarations</command></term>
+	    <listitem><para>[[sort Option a = | Some a | None]]</para>
+	              <para>[[sort Comparison = | LESS | EQUAL | GREATER]]</para>
+                      <para>[[sort Sum (a, b) = | Left a | Right b]]</para></listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><command>Op-declarations</command></term>
+	    <listitem>
+	      <para>
+		<informaltable frame="sides" colsep="1">
+		  <tgroup cols="4">
+		    <colspec colname="name"     colnum="1" colwidth="65"  rowsep="1"/>
+		    <colspec colname="prio"     colnum="2" colwidth="40"  rowsep="1"/>
+		    <colspec colname="sig"      colnum="3" colwidth="150" rowsep="1"/>
+		    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+		    <thead>
+		      <row>
+			<entry colname="name">&nbsp; Name</entry>
+			<entry colname="prio">&nbsp;Fixity</entry>
+			<entry colname="sig">&nbsp; Sort</entry>
+			<entry colname="descr">&nbsp; Description</entry>
+		      </row>
+		    </thead>
+		    <tbody>
+		      <row>
+			<entry colname="name">&nbsp;[[=]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[fa(a) a * a -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;equality test</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[mapOption]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a,b) (a -> b) -> Option a -> Option b]]</entry>
+			<entry colname="descr">&nbsp;applies the function given as first argument to the optional value, if it is Some x, otherwise None is returned. </entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[compare]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) (a * a -> Comparison) -> Option a * Option a -> Comparison]]</entry>
+			<entry colname="descr">&nbsp;returns the result of the comparison of the two optional values, where None is less than Some x for all x. If both optional values are of the form Some x, then the comparison function given as first argument is used to compute the result.</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[mkSome]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) a -> Option a]]</entry>
+			<entry colname="descr">&nbsp;constructs a Some option for type a</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[mkNone]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) Option a]]</entry>
+			<entry colname="descr">&nbsp;constructs a None option for type a</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[some?]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) Option a -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;returns true, iff the argument has the form Some x</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[none?]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) Option a -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;returns true, iff the argument is None</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[left]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a,b) a -> Sum (a,b)]]</entry>
+			<entry colname="descr">&nbsp;constructs a [[Left x]] element for x of type a</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[right]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a,b) b -> Sum (a,b)]]</entry>
+			<entry colname="descr">&nbsp;constructs a [[Right y]] element for y of type b</entry>
+		      </row>
+		    </tbody>
+		  </tgroup>
+		</informaltable>
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para>
+    </section>
+
+    <!-- Boolean ******************************************************************************** -->
+    
+    <section><title>Boolean</title>
+      <para>
+	<variablelist>
+	  <varlistentry>
+	    <term><command>Sort-declaration</command></term>
+	    <listitem><para>[[sort Boolean = | true | false]]</para></listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><command>Op-declarations</command></term>
+	    <listitem>
+	      <para>
+		<informaltable frame="sides" colsep="1">
+		  <tgroup cols="4">
+		    <colspec colname="name"     colnum="1" colwidth="50"  rowsep="1"/>
+		    <colspec colname="prio"     colnum="2" colwidth="40"  rowsep="1"/>
+		    <colspec colname="sig"      colnum="3" colwidth="150" rowsep="1"/>
+		    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+		    <thead>
+		      <row>
+			<entry colname="name">&nbsp; Name</entry>
+			<entry colname="prio">&nbsp;Fixity</entry>
+			<entry colname="sig">&nbsp; Sort</entry>
+			<entry colname="descr">&nbsp; Description</entry>
+		      </row>
+		    </thead>
+		    <tbody>
+		      <row>
+			<entry colname="name">&nbsp;[[&]] </entry>
+			<entry colname="prio">&nbsp;[[infixr 15]]</entry>
+			<entry colname="sig">&nbsp;[[Boolean * Boolean -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;logical and operator</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[or]]</entry>
+			<entry colname="prio">&nbsp;[[infixr 14]]</entry>
+			<entry colname="sig">&nbsp;[[Boolean * Boolean -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;logical or operator</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[=>]]</entry>
+			<entry colname="prio">&nbsp;[[infixr 13]]</entry>
+			<entry colname="sig">&nbsp;[[Boolean * Boolean -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;implication operator</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[<=>]]</entry>
+			<entry colname="prio">&nbsp;[[infixr 12]]</entry>
+			<entry colname="sig">&nbsp;[[Boolean * Boolean -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;equivalence operator</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[~]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Boolean -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;negation operator</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[toString]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig" >&nbsp;[[Boolean -> String]]</entry>
+			<entry colname="descr">&nbsp;converts a Boolean value to a character string</entry>
+		      </row>
+		      <row>
+			<entry rowsep="1" colname="name">&nbsp;[[compare]]</entry>
+			<entry rowsep="1" colname="prio">&nbsp;</entry>
+			<entry rowsep="1" colname="sig">&nbsp;[[Boolean * Boolean -> Comparison]]</entry>
+			<entry rowsep="1" colname="descr">&nbsp;compares two Boolean values</entry>
+		      </row>
+		    </tbody>
+		  </tgroup>
+		</informaltable>
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para>
+    </section>
+    
+    <!-- Integer ******************************************************************************** -->
+
+    <section><title>Integer</title>
+      <para>
+	<variablelist>
+	  <varlistentry>
+	    <term><command>Sort-declaration</command></term>
+	    <listitem><para>[[sort Integer]]</para></listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><command>Op-declarations</command></term>
+	    <listitem>
+	      <para>
+		<informaltable frame="sides" colsep="1">
+		  <tgroup cols="4">
+		    <colspec colname="name"     colnum="1" colwidth="65"  rowsep="1"/>
+		    <colspec colname="prio"     colnum="2" colwidth="40"  rowsep="1"/>
+		    <colspec colname="sig"      colnum="3" colwidth="150" rowsep="1"/>
+		    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+		    <thead>
+		      <row>
+			<entry colname="name">&nbsp; Name</entry>
+			<entry colname="prio">&nbsp;Fixity</entry>
+			<entry colname="sig">&nbsp; Sort</entry>
+			<entry colname="descr">&nbsp; Description</entry>
+		      </row>
+		    </thead>
+		    <tbody>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[* ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 27]]</entry>
+			<entry colname="sig">&nbsp;[[Integer * Integer -> Integer]]</entry>
+			<entry colname="descr">&nbsp;multiplication</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[+ ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 25]]</entry>
+			<entry colname="sig">&nbsp;[[Integer * Integer -> Integer]]</entry>
+			<entry colname="descr">&nbsp;addition</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[- ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 25]]</entry>
+			<entry colname="sig">&nbsp;[[Integer * Integer -> Integer]]</entry>
+			<entry colname="descr">&nbsp;subtraction</entry>
+		      </row>
+		      <row>
+			<entry colname="name" >&nbsp;[[~]]</entry>
+			<entry colname="prio" >&nbsp;</entry>
+			<entry colname="sig"  >&nbsp;[[Integer -> Integer]]</entry>
+			<entry colname="descr">&nbsp;unary minus operator</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[< ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[Integer * Integer -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;<quote>less than</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[<= ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[Integer * Integer -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;<quote>less or equal than</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[> ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[Integer * Integer -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;<quote>greater than</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[>= ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[Integer * Integer -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;<quote>greater or equal than</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry colname="name"  rowsep="1">&nbsp;[[toString]]</entry>
+			<entry colname="prio"  rowsep="1">&nbsp;</entry>
+			<entry colname="sig"   rowsep="1">&nbsp;[[Integer -> String]]</entry>
+			<entry colname="descr" rowsep="1">&nbsp;converts an integer value to a character string</entry>
+		      </row>
+		      <row>
+			<entry colname="name" >&nbsp;[[intToString]]</entry>
+			<entry colname="prio" >&nbsp;</entry>
+			<entry colname="sig"  >&nbsp;[[Integer -> String]]</entry>
+			<entry colname="descr">&nbsp;same as [[toString]]</entry>
+		      </row>
+		      <row>
+			<entry colname="name"  rowsep="1">&nbsp;[[stringToInt]]</entry>
+			<entry colname="prio"  rowsep="1">&nbsp;</entry>
+			<entry colname="sig"   rowsep="1">&nbsp;[[String -> Integer]]</entry>
+			<entry colname="descr" rowsep="1">&nbsp;converts a character string to an integer value</entry>
+		      </row>
+		      <row>
+			<entry colname="name" >&nbsp;[[max]]</entry>
+			<entry colname="prio" >&nbsp;</entry>
+			<entry colname="sig"  >&nbsp;[[Integer * Integer -> Integer]]</entry>
+			<entry colname="descr">&nbsp;maximum of two integer numbers</entry>
+		      </row>
+		      <row>
+			<entry colname="name" >&nbsp;[[min]]</entry>
+			<entry colname="prio" >&nbsp;</entry>
+			<entry colname="sig"  >&nbsp;[[Integer * Integer -> Integer]]</entry>
+			<entry colname="descr">&nbsp;minimum of two integer numbers</entry>
+		      </row>
+		      <row>
+			<entry rowsep="1" colname="name">&nbsp;[[compare]]</entry>
+			<entry rowsep="1" colname="prio">&nbsp;</entry>
+			<entry rowsep="1" colname="sig">&nbsp;[[Integer * Integer -> Comparison]]</entry>
+			<entry rowsep="1" colname="descr">&nbsp;compares two integer values</entry>
+		      </row>
+		    </tbody>
+		  </tgroup>
+		</informaltable>
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para>
+    </section>
+
+
+    <!-- Nat ******************************************************************************** -->
+
+    <section><title>Nat</title>
+      <para>
+	<variablelist>
+	  <varlistentry>
+	    <term><command>Sort-declaration</command></term>
+	    <listitem><para>[[sort Nat = {n : Integer | n >= 0}]]</para>
+	              <para>[[sort PosNat = {n : Nat | n > 0 }]]</para></listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><command>Op-declarations</command></term>
+	    <listitem>
+	      <para>
+		<informaltable frame="sides" colsep="1">
+		  <tgroup cols="4">
+		    <colspec colname="name"     colnum="1" colwidth="65"  rowsep="1"/>
+		    <colspec colname="prio"     colnum="2" colwidth="40"  rowsep="1"/>
+		    <colspec colname="sig"      colnum="3" colwidth="150" rowsep="1"/>
+		    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+		    <thead>
+		      <row>
+			<entry colname="name">&nbsp; Name</entry>
+			<entry colname="prio">&nbsp;Fixity</entry>
+			<entry colname="sig">&nbsp; Sort</entry>
+			<entry colname="descr">&nbsp; Description</entry>
+		      </row>
+		    </thead>
+		    <tbody>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[* ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 27]]</entry>
+			<entry colname="sig">&nbsp;[[Nat * Nat -> Nat]]</entry>
+			<entry colname="descr">&nbsp;multiplication</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[+ ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 25]]</entry>
+			<entry colname="sig">&nbsp;[[Nat * Nat -> Nat]]</entry>
+			<entry colname="descr">&nbsp;addition</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[- ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 25]]</entry>
+			<entry colname="sig">&nbsp;[[Nat * Nat -> Nat]]</entry>
+			<entry colname="descr">&nbsp;subtraction</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[div]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 26]]</entry>
+			<entry colname="sig">&nbsp;[[Nat * PosNat -> Nat]]</entry>
+			<entry colname="descr">&nbsp;division</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[rem]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 26]]</entry>
+			<entry colname="sig">&nbsp;[[Nat * PosNat -> Nat]]</entry>
+			<entry colname="descr">&nbsp;remainder, modulo</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[< ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[Nat * Nat -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;<quote>less than</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[<= ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[Nat * Nat -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;<quote>less or equal than</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[> ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[Nat * Nat -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;<quote>greater than</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[>= ]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[Nat * Nat -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;<quote>greater or equal than</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[posNat?]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Nat -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;yields false for zero, true otherwise</entry>
+		      </row>
+<!-- omitted, not useful to user: ********************
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[zero]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Nat]]</entry>
+			<entry colname="descr">&nbsp;the natural number 0</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[one]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Nat]]</entry>
+			<entry colname="descr">&nbsp;the natural number 1</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;&nbsp;[[two]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Nat]]</entry>
+			<entry colname="descr">&nbsp;the natural number 2</entry>
+		      </row>
+**************************************** -->
+		      <row>
+			<entry colname="name">&nbsp;[[succ]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Nat -> Nat]]</entry>
+			<entry colname="descr">&nbsp;successor operator</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[pred]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Nat -> Integer]]</entry>
+			<entry colname="descr">&nbsp;predecessor operator</entry>
+		      </row>
+		      <row>
+			<entry colname="name"  >&nbsp;[[toString]]</entry>
+			<entry colname="prio"  >&nbsp;</entry>
+			<entry colname="sig"   >&nbsp;[[Nat -> String]]</entry>
+			<entry colname="descr" >&nbsp;converts an natural value to a character string</entry>
+		      </row>
+		      <row>
+			<entry colname="name" >&nbsp;[[natToString]]</entry>
+			<entry colname="prio" >&nbsp;</entry>
+			<entry colname="sig"  >&nbsp;[[Nat -> String]]</entry>
+			<entry colname="descr">&nbsp;same as [[toString]]</entry>
+		      </row>
+		      <row>
+			<entry colname="name"  >&nbsp;[[stringToNat]]</entry>
+			<entry colname="prio"  >&nbsp;</entry>
+			<entry colname="sig"   >&nbsp;[[String -> Nat]]</entry>
+			<entry colname="descr" >&nbsp;converts a character string to a natural value</entry>
+		      </row>
+		      <row>
+			<entry colname="name" >&nbsp;[[max]]</entry>
+			<entry colname="prio" >&nbsp;</entry>
+			<entry colname="sig"  >&nbsp;[[Nat * Nat -> Nat]]</entry>
+			<entry colname="descr">&nbsp;maximum of two natural numbers</entry>
+		      </row>
+		      <row>
+			<entry colname="name" >&nbsp;[[min]]</entry>
+			<entry colname="prio" >&nbsp;</entry>
+			<entry colname="sig"  >&nbsp;[[Nat * Nat -> Nat]]</entry>
+			<entry colname="descr">&nbsp;minimum of two natural numbers</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[compare]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[Nat * Nat -> Comparison]]</entry>
+			<entry  colname="descr">&nbsp;compares two natural values</entry>
+		      </row>
+		    </tbody>
+		  </tgroup>
+		</informaltable>
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para>
+    </section>
+
+    <!-- Char ******************************************************************************** -->
+
+    <section><title>Char</title>
+      <para>
+	<variablelist>
+	  <varlistentry>
+	    <term><command>Sort-declaration</command></term>
+	    <listitem><para>[[sort Char]]</para></listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><command>Op-declarations</command></term>
+	    <listitem>
+	      <para>
+		<informaltable frame="sides" colsep="1">
+		  <tgroup cols="4">
+		    <colspec colname="name"     colnum="1" colwidth="65"  rowsep="1"/>
+		    <colspec colname="prio"     colnum="2" colwidth="40"  rowsep="1"/>
+		    <colspec colname="sig"      colnum="3" colwidth="150" rowsep="1"/>
+		    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+		    <thead>
+		      <row>
+			<entry colname="name">&nbsp; Name</entry>
+			<entry colname="prio">&nbsp;Fixity</entry>
+			<entry colname="sig">&nbsp; Sort</entry>
+			<entry colname="descr">&nbsp; Description</entry>
+		      </row>
+		    </thead>
+		    <tbody>
+		      <row>
+			<entry  colname="name">&nbsp;[[chr]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[Nat -> Char]]</entry>
+			<entry  colname="descr">&nbsp;converts a natural number to an ASCII character</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[ord]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[Char -> Nat]]</entry>
+			<entry  colname="descr">&nbsp;converts an ASCII character to a natural number</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[compare]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[Char * Char -> Comparison]]</entry>
+			<entry  colname="descr">&nbsp;compares two character values</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[isAlpha]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Char -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;yields true for letters</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[isAlphaNum]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Char -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;yields true for letters and digits</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[isNum]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Char -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;yields true for digits</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[isAscii]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Char -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;yields true for ASCII characters</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[isLowerCase]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Char -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;yields true for lower case letters</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[isUpperCase]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Char -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;yields true for upper case letters</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[toUpperCase]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Char -> Char]]</entry>
+			<entry colname="descr">&nbsp;converts to upper case</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[toLowerCase]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Char -> Char]]</entry>
+			<entry colname="descr">&nbsp;converts to lower case</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[toString]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[Char -> String]]</entry>
+			<entry colname="descr">&nbsp;converts a character to a string</entry>
+		      </row>
+		    </tbody>
+		  </tgroup>
+		</informaltable>
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para>
+    </section>
+
+    <!-- String ******************************************************************************** -->
+
+    <section><title>String</title>
+      <para>
+	<variablelist>
+	  <varlistentry>
+	    <term><command>Sort-declaration</command></term>
+	    <listitem><para>[[sort String]]</para></listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><command>Op-declarations</command></term>
+	    <listitem>
+	      <para>
+		<informaltable frame="sides" colsep="1">
+		  <tgroup cols="4">
+		    <colspec colname="name"     colnum="1" colwidth="65"  rowsep="1"/>
+		    <colspec colname="prio"     colnum="2" colwidth="40"  rowsep="1"/>
+		    <colspec colname="sig"      colnum="3" colwidth="150" rowsep="1"/>
+		    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+		    <thead>
+		      <row>
+			<entry colname="name">&nbsp; Name</entry>
+			<entry colname="prio">&nbsp;Fixity</entry>
+			<entry colname="sig">&nbsp; Sort</entry>
+			<entry colname="descr">&nbsp; Description</entry>
+		      </row>
+		    </thead>
+		    <tbody>
+		      <row>
+			<entry colname="name">&nbsp;[[++]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 25]]</entry>
+			<entry colname="sig">&nbsp;[[String * String -> String]]</entry>
+			<entry colname="descr">&nbsp;string concatenation</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[^]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 25]]</entry>
+			<entry colname="sig">&nbsp;[[String * String -> String]]</entry>
+			<entry colname="descr">&nbsp;string concatenation</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[concat]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[String * String -> String]]</entry>
+			<entry colname="descr">&nbsp;string concatenation</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[explode]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[String -> List(Char)]]</entry>
+			<entry colname="descr">&nbsp;converts a string to a list of characters</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[implode]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[List(Char) -> String]]</entry>
+			<entry colname="descr">&nbsp;converts a list of characters to a string</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[length]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[String -> Nat]]</entry>
+			<entry colname="descr">&nbsp;length of a string</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[leq]]</entry>
+			<entry  colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry  colname="sig">&nbsp;[[String * String -> Boolean]]</entry>
+			<entry  colname="descr">&nbsp;lexicographic <quote>less or equal</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[lt]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 20]]</entry>
+			<entry colname="sig">&nbsp;[[String * String -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;lexicographic <quote>less</quote> comparison</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[map]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[(Char -> Char) * String -> String]]</entry>
+			<entry  colname="descr">&nbsp;returns the concatenation of the results of applying the function given as first argument to each character of the string.</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[newline]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[String]]</entry>
+			<entry colname="descr">&nbsp;the string representing a line break</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[sub]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[String * Nat -> Char]]</entry>
+			<entry colname="descr">&nbsp;returns the nth character in a string</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[substring]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[String * Nat * Nat -> Char]]</entry>
+			<entry  colname="descr">&nbsp;[[substring(s,n1,n2)]] returns the substring of [[s]] from position [[n1]] through position [[n2-1]] (counting from 0)</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[compare]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[String * String -> Comparison]]</entry>
+			<entry  colname="descr">&nbsp;compares two strings</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[translate]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[(Char -> String) * String -> String]]</entry>
+			<entry  colname="descr">&nbsp;returns the concatenation of the results of applying the function given as first argument to each character of the string given as second argument.</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[all]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[(Char -> Boolean) * String]]</entry>
+			<entry  colname="descr">&nbsp;returns the conjunction of the results of applying the function given as first argument to all characters in the string given as second argument.</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[toScreen]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[String -> ()]]</entry>
+			<entry colname="descr">&nbsp;prints the string on the terminal</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[writeLine]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[String -> ()]]</entry>
+			<entry colname="descr">&nbsp;prints the string on the terminal</entry>
+		      </row>
+		    </tbody>
+		  </tgroup>
+		</informaltable>
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para>
+    </section>
+
+    <!-- List ******************************************************************************** -->
+
+    <section><title>List</title>
+      <para>
+	<variablelist>
+	  <varlistentry>
+	    <term><command>Sort-declaration</command></term>
+	    <listitem><para>[[sort List a = | Nil | Cons  a * List a]]</para></listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><command>Op-declarations</command></term>
+	    <listitem>
+	      <para>
+		<informaltable frame="sides" colsep="1">
+		  <tgroup cols="4">
+		    <colspec colname="name"     colnum="1" colwidth="65"  rowsep="1"/>
+		    <colspec colname="prio"     colnum="2" colwidth="40"  rowsep="1"/>
+		    <colspec colname="sig"      colnum="3" colwidth="150" rowsep="1"/>
+		    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+		    <thead>
+		      <row>
+			<entry colname="name">&nbsp; Name</entry>
+			<entry colname="prio">&nbsp;Fixity</entry>
+			<entry colname="sig">&nbsp; Sort</entry>
+			<entry colname="descr">&nbsp; Description</entry>
+		      </row>
+		    </thead>
+		    <tbody>
+		      <row>
+			<entry colname="name">&nbsp;[[nil]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List a ]]</entry>
+			<entry colname="descr">&nbsp;the empty list</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[cons]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) a *
+				  List a -> List a ]]</entry>
+			<entry colname="descr">&nbsp;constructs a list
+				consisting of a first element and a
+				  rest list</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[app]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a)
+				  (a->()) -> List a -> () ]]</entry>
+			<entry colname="descr">&nbsp;applies a function
+				  to all elements of a list</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[map]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a,b)
+				  (a->b) -> List a -> List b]]</entry>
+			<entry colname="descr">&nbsp;applies a
+				  function to all elements of a list
+				  and returns the list consisting of the results</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[exists]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a)
+				  (a->Boolean) -> List a -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;applies a
+				  Boolean function to all elements of a list
+				  and returns the disjunction of the results</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[foldl]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a,b) (a*b -> b) ->  b -> List a -> b]]</entry>
+			<entry colname="descr">&nbsp;[[foldl foo initVal l]] successively applies function [[foo]] to the elements of [[l]] from left to right. The second argument to [[foo]] is initially [[initVal]], and at each step the result of the previous invocation of [[foo]].</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[foldr]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a,b) (a*b -> b) ->  b -> List a -> b]]</entry>
+			<entry colname="descr">&nbsp;like [[foldl]] but the elements of the list are processed from right to left</entry>
+		      </row>
+		      <row>
+			<entry  colname="name">&nbsp;[[compare]]</entry>
+			<entry  colname="prio">&nbsp;</entry>
+			<entry  colname="sig">&nbsp;[[fa(a) (a * a -> Comparison) -> List a * List a  -> Comparison]]</entry>
+			<entry  colname="descr">&nbsp;compares two list using the comparision function given as first argument</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[insert]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) a * List a -> List a]]</entry>
+			<entry colname="descr">&nbsp;inserts an element at the beginning of a list</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[concat]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List a * List a -> List a]]</entry>
+			<entry colname="descr">&nbsp;concatenates two lists</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[diff]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List a * List a -> List a]]</entry>
+			<entry colname="descr">&nbsp;[[diff(l1,l2)]] returns a list containing those elements that are in [[l1]] but not in [[l2]]. The order of the elements in [[l1]] is preserved.</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[member]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) a * List a -> Boolean ]]</entry>
+			<entry colname="descr">&nbsp; list membership</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[++]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 11]]</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List a * List a -> List a]]</entry>
+			<entry colname="descr">&nbsp;list concatenation</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[@]]</entry>
+			<entry colname="prio">&nbsp;[[infixl 11]]</entry>
+			<entry colname="sig">&nbsp;[[fa(a)  List a * List a -> List a]]</entry>
+			<entry colname="descr">&nbsp;list concatenation</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[nth]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List a * Nat -> a ]]</entry>
+			<entry colname="descr">&nbsp;returns the element at position [[n]] of a list (counting from 0)</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[nthTail ]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List a * Nat -> List a]]</entry>
+			<entry colname="descr">&nbsp;returns the list's tail starting after position [[n]] (counting from 0)</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[rev]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List a -> List a]]</entry>
+			<entry colname="descr">&nbsp;reverse list</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[all]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) (a -> Boolean) -> List a -> Boolean ]]</entry>
+			<entry colname="descr">&nbsp;yields true, if the predicate given as first argument is true for all elements of the list.</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[null]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List a -> Boolean]]</entry>
+			<entry colname="descr">&nbsp;yields true, iff the list has no elements</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[flatten]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List(List(a)) -> List a]]</entry>
+			<entry colname="descr">&nbsp;concatenates the element list</entry>
+		      </row>		      <row>
+			<entry colname="name">&nbsp;[[filter]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) (a -> Boolean) -> List a -> List a]]</entry>
+			<entry colname="descr">&nbsp;returns a filtered list wrt. the given predicate</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[find]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) (a -> Boolean) -> List a -> Option(a)]]</entry>
+			<entry colname="descr">&nbsp;returns Some x, if x is the first element in the list (from left to right) for which the given predicate yields true. If no such element exists, None is returned.</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[hd]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a)  List a -> a]]</entry>
+			<entry colname="descr">&nbsp;returns the first element of the list</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[tl]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) List a -> List a ]]</entry>
+			<entry colname="descr">&nbsp;returns the rest list without the first element</entry>
+		      </row>
+		      <row>
+			<entry colname="name">&nbsp;[[tabulate]]</entry>
+			<entry colname="prio">&nbsp;</entry>
+			<entry colname="sig">&nbsp;[[fa(a) Nat * (Nat -> a) -> List a]]</entry>
+			<entry colname="descr">&nbsp;[[tabulate(n, foo)]] returns the list [[ [foo(0), foo(1),]] ... [[, foo(n-1)] ]]</entry>
+		      </row>
+		    </tbody>
+		  </tgroup>
+		</informaltable>
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para>
+    </section>
+
+    
+  </appendix>

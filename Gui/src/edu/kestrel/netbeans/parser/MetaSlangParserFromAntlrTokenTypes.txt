@@ -1,0 +1,56 @@
+// $ANTLR 2.7.1: MetaSlangGrammar.g -> MetaSlangParserFromAntlrTokenTypes.txt$
+MetaSlangParserFromAntlr    // output token vocab name
+LITERAL_spec="spec"=4
+LITERAL_endspec="endspec"=5
+LITERAL_import="import"=6
+LITERAL_sort="sort"=7
+LBRACE("'{'")=8
+COMMA("','")=9
+RBRACE("'}'")=10
+DOT("'.'")=11
+IDENTIFIER("an identifier")=12
+LPAREN("'('")=13
+RPAREN("')'")=14
+LITERAL_op="op"=15
+UBAR("'_'")=16
+LBRACKET("'['")=17
+RBRACKET("']'")=18
+NAT_LITERAL("an integer")=19
+CHAR_LITERAL("a character")=20
+STRING_LITERAL("a string")=21
+LITERAL_true="true"=22
+LITERAL_false="false"=23
+LITERAL_as="as"=24
+LITERAL_case="case"=25
+LITERAL_choose="choose"=26
+LITERAL_else="else"=27
+LITERAL_embed="embed"=28
+"embed?"=29
+LITERAL_ex="ex"=30
+LITERAL_fa="fa"=31
+LITERAL_fn="fn"=32
+LITERAL_if="if"=33
+LITERAL_in="in"=34
+LITERAL_let="let"=35
+LITERAL_def="def"=36
+LITERAL_of="of"=37
+LITERAL_project="project"=38
+LITERAL_quotient="quotient"=39
+LITERAL_relax="relax"=40
+LITERAL_restrict="restrict"=41
+LITERAL_then="then"=42
+LITERAL_where="where"=43
+LITERAL_is="is"=44
+VOCAB=45
+WHITESPACE=46
+LINE_COMMENT=47
+BLOCK_COMMENT=48
+SEMICOLON("';'")=49
+DOTDOT("'..'")=50
+POUND("'#'")=51
+LETTER=52
+DIGIT=53
+ESC=54
+WORD_SYMBOL=55
+NON_WORD_SYMBOL=56
+NON_WORD_MARK=57

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+SPECWARE_BIN=$SPECWARE4/Applications/Specware/bin/linux
+LISP_DIR=/usr/local/acl/acl61
+
+LISP_EXECUTABLE=${LISP:-$LISP_DIR/alisp}
+LISP_HEAP_IMAGE=$SPECWARE_BIN/Specware4.dxl
+LISP_DIRECTORY=$SPECWARE4/
+export LISP_EXECUTABLE
+export LISP_HEAP_IMAGE
+export LISP_DIRECTORY
+
+xemacs -l $LISP_DIR/xeli/fi-site-init \
+       -l $SPECWARE4/Library/IO/Emacs/load \
+       -geometry 180x70+180+2 \
+       -eval "(run-specware4)" &

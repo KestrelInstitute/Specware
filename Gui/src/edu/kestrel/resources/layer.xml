@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
+<!-- Refer to the API Support documentation for hints on what this means. -->
+<!-- (Try browsing under this node and modifying things!) -->
+<!-- The Modules API has a full description on how to use layers. -->
+
+<filesystem>
+   <folder name="Templates">
+        <folder name="Other">
+            <file name="meta_slang.sw" url="meta_slang_template.template">
+                <attr name="template" boolvalue="true"/>
+                <attr name="SystemFileSystem.localizingBundle"
+                      stringvalue="edu.kestrel.resources.Bundle"/>
+                <attr name="SystemFileSystem.icon"
+                      urlvalue="nbresloc:/edu/kestrel/resources/images/File.gif"/>
+                <attr name="templateWizardURL"
+                      urlvalue="nbresloc:/edu/kestrel/resource/DescForMetaSlangTemplate.html"/>
+            </file>
+        </folder>
+   </folder>
+   <folder name="Services">
+        <folder name="MIMEResolver">
+            <file name="edu-kestrel-resources-mime-resolver.xml"  url="mime-resolver.xml">
+                <attr name="SystemFileSystem.localizingBundle" stringvalue="edu.kestrel.resources.Bundle"/>
+                <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/edu/kestrel/resources/images/File.gif"/>
+            </file>
+        </folder>
+        <folder name="IndentEngine">
+            <file name="edu-kestrel-netbeans-editor-MetaSlangIndentEngine.settings" url="MetaSlangIndentEngine.settings">
+                <attr name="SystemFileSystem.localizingBundle" stringvalue="edu.kestrel.resources.Bundle"/>
+                <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/edu/kestrel/resources/images/indentEngine.gif"/>
+            </file>
+        </folder>
+   </folder>
+
+   <folder name="Editors">
+        <folder name="text">
+            <folder name="x-meta-slang">
+                <file name="Settings.settings" url="MetaSlangOptions.settings">
+                    <attr name="SystemFileSystem.localizingBundle" stringvalue="edu.kestrel.resources.Bundle"/>
+                </file>
+                <file name="EditorKit.instance">
+                    <attr name="instanceClass" stringvalue="edu.kestrel.netbeans.editor.MetaSlangEditorKit"/>
+                </file>
+            </folder>
+        </folder>
+        <folder name="AnnotationTypes">
+            <file name="edu-kestrel-netbeans-parser-error.xml" url="parser-error-annotation.xml"/>
+        </folder>
+   </folder>
+
+</filesystem>
+
+

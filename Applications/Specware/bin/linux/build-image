@@ -1,0 +1,42 @@
+#!/bin/bash --noprofile
+
+# This script creates a Specware4 image (.dxl file). It does not
+# do a bootstrap. That is, it does not generate a new Specware4.lisp.
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See man bash for details. The 'set -v' turns on echoing of
+# lines read. this will be removed later.
+
+set -v
+
+# We assume SPECWARE4 has been set.
+
+if [ -z $SPECWARE4 ]; then
+	echo "Failed to build image, SPECWARE4 environment variable not set"
+	exit 1
+fi
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+LISP=${LISP:-/usr/local/acl/acl61/alisp}
+
+cd $SPECWARE4/Applications/Specware
+
+SWPATH=$SPECWARE4:.
+
+if [ ! -f lisp/Specware4.lisp ] ; then
+	echo "Failed to build image: could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp"
+	exit 1
+fi
+
+cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
+
+cd Handwritten/Lisp
+
+# I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
+
+$LISP <<-XXXX
+	(load "Specware4.lisp")
+	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
+	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
+XXXX

@@ -1,0 +1,46 @@
+<chapter id="emacs">
+
+<title>Emacs Usage in Specware</title>
+
+There are a number of emacs commands for &Specware usage. We also list
+some useful general-purpose commands. There is a &Specware mode for
+editing specware files.
+
+M-.
+
+<section>
+<title>&Specware Mode commands</title>
+
+linefeed	newline-and-indent
+tab		sw:indent-line
+M-*		sw:switch-to-lisp
+M-,		continue-specware-meta-point
+M-.		specware-meta-point
+M-|		sw:electric-pipe
+M-tab		sw:back-to-outer-indent
+M-C-\		sw:indent-region
+M-C-i		sw:back-to-outer-indent
+M-C-q		sw:indent-sexp
+
+C-c %		extract-sexp
+C-c '		insert-close-quote
+C-c ;		comment-region
+C-c `		insert-open-quote
+C-c b		insert-beta
+C-c d		insert-degree
+C-c e		insert-emptyset
+C-c l		sw:switch-to-lisp
+C-c n		insert-negation
+C-c s		insert-circle-s
+C-c t		insert-center-dot
+C-c u		insert-mu
+C-c x		insert-times
+C-c return	sw:insert-form
+C-c C-m		sw:insert-form
+C-c C-p		process-specware-file
+
+
+<para>
+</para>
+</section>
+</chapter>

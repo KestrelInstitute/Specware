@@ -1,0 +1,152 @@
+#!/bin/bash --noprofile
+
+# This script bootstraps Specware4.
+# That is,
+#  - it saves the old generated Specware4.lisp and Specware4.dxl (ie world)
+#  - it starts Specware4 
+#      - it first tries to run a lisp session with an existing dxl image
+#      - if that fails it tries to load Specware from previously generated lisp
+#  - applies Specware to itself (sw "/Applications/Specware/Specware4")
+#     to generate a new Specware4.lisp,
+#  - starts a fresh lisp session
+#  - loads the new Specware (under Handwritten/Lisp, (load "Specware4.lisp"))
+#    (this compiles everything)
+#  - starts a fresh lisp session again
+#  - loads the new Specware (under Handwritten/Lisp, (load "Specware4.lisp"))
+#  - dumps a world into the bin directory
+
+# Perhaps there should be a different script for bootstrapping from lisp
+# (bootstrap-from-lisp?).
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. The 'set -v' turns on echoing of
+# lines read. This will be removed later.
+
+# set -v
+
+# We assume SPECWARE4 has been set.
+if [ -z $SPECWARE4 ]; then
+    echo "Failed to bootstrap, SPECWARE4 environment variable not set"
+    exit 1
+fi
+
+echo \$SPECWARE4=$SPECWARE4
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+LISP=${LISP:-/usr/local/acl/acl61/alisp}
+
+if [ ! -f $SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl ]; then
+  echo "No Specware4.dxl"
+  exit 1
+fi
+
+echo cd $SPECWARE4/Applications/PSL
+cd $SPECWARE4/Applications/PSL
+
+echo " "
+if [ -f lisp/PSL.lisp ]; then
+  echo "Saving previous PSL.lisp file ..."
+  echo "cp -f lisp/PSL.lisp lisp/PSL-save.lisp"
+  cp -f lisp/PSL.lisp lisp/PSL-save.lisp
+else
+  echo "Note: No previous PSL lisp file."
+fi
+echo " "
+if [ -f bin/linux/PSL.dxl ]; then
+  echo "Saving previous PSL image ..."
+  echo "cp -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl"
+  cp -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl
+else
+  echo "Note: No previous PSL image."
+fi
+echo " "
+
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).
+
+# Is there a way to inhibit all the warnings (eg unused variable)
+# when Lisp loads?
+
+SWPATH=$SPECWARE4:.
+EXIT_ON_ERRORS=$SPECWARE4/Applications/Specware/bin/linux/exit-on-errors
+
+# All the toplevel routines that activate Specware return a boolean value.
+# They return true if the call to Specware succeeded without activating
+# Specware's toplevel handler. They return false (lisp nil) when the
+# handler is invoked. If, when bootrapping, the toplevel handler is
+# called, then we abort the bootstrap.
+
+echo "Bootstrapping from existing Specware image: bin/linux/Specware4.dxl"
+echo " "
+cd $SPECWARE4/Applications/Specware
+bin/linux/Specware4-text -batch <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  (if (sw "/Applications/PSL/PSL")
+	    (exit 0)
+	    (exit 1)))
+	XXXX
+RC=$?
+# If the bootstrap failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "Bootstrap of PSL failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+echo " "
+echo cd $SPECWARE4/Applications/PSL/Handwritten/Lisp
+cd $SPECWARE4/Applications/PSL/Handwritten/Lisp
+
+# We load the new Specware4.lisp twice, each in a fresh lisp session. The
+# first time compiles everything.  As we have just generated a new
+# lisp file for Specware, we are certain something needs to be compiled.
+# We could do the load and compile up above in the lisp that generated it,
+# but that seems weird to me ...
+
+echo " "
+echo "Loading PSL ... (to compile)"
+echo " "
+$LISP -batch <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  (load "PSL.lisp"))
+XXXX
+RC=$?
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "First load of PSL failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+# The second time is just to do the dumplisp. If we do it in one
+# go, the generated dxl file is almost 4 times larger.
+#
+# I once added a (gc) between the load and the dumplisp, and the dxl
+# file became 10k bigger. Go figure.
+
+# People who want to avoid lots of line breaks can set *DEFAULT-RIGHT-MARGIN* 
+# in their lisp init.
+
+echo " "
+echo "Loading PSL ... (for dumplisp)"
+echo " "
+$LISP -batch <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  (load "PSL.lisp"))
+	(excl::dumplisp :name "$SPECWARE4/Applications/PSL/bin/linux/PSL.dxl")
+XXXX
+RC=$?
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "Second load of PSL failed with code $RC, exiting ..."
+  exit $RC
+fi

@@ -1,0 +1,12 @@
+So there is overloading of application in three ways:
+normal function application
+procedure application
+map evaluation.
+
+what about the idea of changing the op at the apex to have
+as its domain a coproduct rather than primed versions. The problem
+is that it complicates the morphisms. Right now we have the
+attractive property that if name is not mentioned then the
+map is assumed to from identity for that element.
+
+What is the right way to handle variables in scope?

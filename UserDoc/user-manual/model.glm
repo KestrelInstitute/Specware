@@ -1,0 +1,64 @@
+<chapter id="model">
+<title>Usage Model</title>
+
+<section>
+<title>Units</title>
+
+<para>Simply put, the functionality provided by &Specware; consists in
+the capability to construct specs, morphisms, diagrams, code, proofs,
+and other entities. All these entities are collectively called
+<emphasis>units</emphasis>.</para>
+
+<para>Some of the operations made available by &Specware; to construct
+units are fairly sophisticated. Examples are colimits, extraction of
+proof obligations, discharging of proof obligations by means of
+external theorem provers, and code generation.</para>
+
+<para>The &Metaslang; language is the vehicle to construct units. The
+language has syntax to express all the unit-constructing operations
+that &Specware; provides. The user defines units in &Metaslang;,
+writing the definitions in <".sw"> files (this file extension comes
+from the first and fifth letter of ``&Specware;'').</para>
+
+<para>Currently, the only way to construct units in &Specware; is by
+writing text in &Metaslang;. Future versions of &Specware; will
+include the ability to construct units by other means, e.g.,
+graphical. For instance, instead of listing the nodes and edges of a
+diagram in text, it will be possible to draw the diagram on the
+screen.</para>
+
+</section>
+
+<section>
+<title>Interaction</title>
+
+<para>&Specware; runs on top of Lisp. When &Specware is started, a
+Lisp image containing &Specware; is started. The Lisp shell is
+available in an XEmacs buffer; XEmacs is also started when &Specware;
+is started.</para>
+
+<para>All the interaction between the user and &Specware; takes place
+through the Lisp shell. The <".sw"> files that define units are
+manipulated outside of &Specware;, inside XEmacs or any other text
+editor of choice. These files are processed by &Specware; by giving
+suitable commands at the Lisp shell.</para>
+
+<para>When <".sw"> files are processed by &Specware;, progress and
+error messages are displayed in the XEmacs buffer containing the Lisp
+shell. In addition, the results of processing are saved into an
+internal cache that &Specware; maintains. Lastly, processing of
+certain kinds of units result in files being created; for example,
+when code is generated from a spec, the code is deposited into a
+file.</para>
+
+<para>&Specware; also features commands to display information about
+units. For instance, the user can display the sorts, ops, and axioms
+of the spec resulting from a colimit operation.</para>
+
+<para>Lastly, there are commands to inspect and modify an environment
+variable that determines how unit names are resolved to <".sw">
+files.</para>
+
+</section>
+
+</chapter>
