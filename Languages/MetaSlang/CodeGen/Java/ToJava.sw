@@ -300,81 +300,94 @@ def addPrimArgsMethodToClsDeclsM(opId, srt, _(* dom *), dompreds, rng, trm) =
    addMethDeclToClsDeclsM(opId, classId, methodDecl)
   }
 
+%op addUserMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
+%def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
+%  {
+%   spc <- getEnvSpec;
+%   jcginfo <- getJcgInfo;
+%   jcginfo <- return (addUserMethodToClsDecls(spc, opId, srt, dom, dompreds, rng, trm, jcginfo));
+%   putJcgInfo jcginfo
+%  }
+
 op addUserMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
 def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
   {
    spc <- getEnvSpec;
+   (vars, body) <- return(srtTermDelta_internal(srt,trm,true));
+   split <- return(splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars);
+   case split of
+     | Some(vars1,varh,vars2) ->
+
+       if caseTerm?(body)
+	 then 
+	   case caseTerm(body) of
+	     | Var (var,_) ->
+	       if equalVar?(varh, var) then
+		 addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body)
+	       else
+		 addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body)
+	     | _ -> addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body)
+       else addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body)
+
+     | _ -> raise(Fail("cannot find user type in arguments of op "^opId),termAnn(trm))
+  }
+
+%op addCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
+%def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
+%  {
+%   spc <- getEnvSpec;
+%   jcginfo <- getJcgInfo;
+%   jcginfo <- return(addCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo));
+%   putJcgInfo jcginfo
+%  }
+
+
+op addCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
+def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
+  {
+   spc <- getEnvSpec;
+   rngId <- srtIdM rng;
+   Some (vars1, varh, vars2) <- return(splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars);
+   defaultMethodDecl <- mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars1++vars2,body);
+   fpars <- varsToFormalParamsM (vars1++vars2);
+   methodDecl <- return(([], Some (tt(rngId)), opId, fpars , []), None);
+   (_, Base (Qualified(q, srthId), _, _)) <- return varh;
+   case defaultMethodDecl of
+     | Some mdecl -> addMethDeclToClsDeclsM(opId, srthId, mdecl)
+     | _ -> return ();
+   %% add the assertion method
+   asrtOpId <- return(mkAssertOp opId);
+   assertStmt <- return(mkAsrtStmt(asrtOpId,fpars));
+   assertStmt <-
+      case mkAsrtExpr(spc,vars,dompreds) of
+	| None -> return []
+	| Some t ->
+	  {
+	   tcx <- return(StringMap.insert(empty,varh.1,mkThisExpr()));
+	   (s,asrtExpr,_,_) <- termToExpressionM(tcx,t,1,1);
+	   if s = [] then 
+	     return [Stmt(Expr(mkMethInvName(([],"assert"),[asrtExpr])))]
+	   else
+	     {
+	      asrtBodyStmt <- return(mkReturnStmt asrtExpr);
+	      asrtMethodDecl <- return (([],Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt]));
+	      addMethDeclToClsDeclsM(asrtOpId,srthId,asrtMethodDecl);
+	      return(s++assertStmt)
+	     }
+	  };
+   let methodDecl = setMethodBody(methodDecl,assertStmt) in
+   addMethDeclToSummandsM(opId, srthId, methodDecl, body)
+  }
+  
+op addNonCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
+def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
+  {
+   spc <- getEnvSpec;
    jcginfo <- getJcgInfo;
-   jcginfo <- return (addUserMethodToClsDecls(spc, opId, srt, dom, dompreds, rng, trm, jcginfo));
+   jcginfo <- return(addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo));
    putJcgInfo jcginfo
   }
 
-op addUserMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term * JcgInfo -> JcgInfo
-def addUserMethodToClsDecls(spc, opId, srt, dom, dompreds, rng, trm, jcginfo) =
-  %let _ = writeLine(opId^": UserMethod") in
-  %let (rngId,col0) = tt_v3(rng) in
-  %let jcginfo = addCollectedToJcgInfo(jcginfo,col0) in
-  %case rng of
-  %  | Base (Qualified (q, rngId), _, _) ->
-  (let clsDecls = jcginfo.clsDecls in
-   let (vars, body) = srtTermDelta_internal(srt,trm,true) in
-   let split = splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars in
-   case split of
-     | Some(vars1,varh,vars2) ->
-     (if caseTerm?(body)
-	then 
-	  case caseTerm(body) of
-	    | Var (var,_) -> if equalVar?(varh, var) 
-			       then addCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo)
-			     else addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo)
-	    %| t -> (issueUnsupportedError(termAnn(t),"unsupported case term \""^printTerm(t)^
-	    %				  "\", only variables are allowed here.");jcginfo)
-	    | _ -> addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo)
-      else addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo)
-       )
-     | _ -> let _ = warnNoCode(termAnn(trm),opId,Some("cannot find user type in arguments of op "^opId)) in
-	jcginfo
-       )
-    %| _ -> let _ = warnNoCode(opId,Some("opId doesn't have a flat type: "^printSort(rng))) in
-    %	jcginfo
-
-op addCaseMethodsToClsDecls: Spec * Id * List Type * List(Option Term) * Type * List Var * Term * JcgInfo -> JcgInfo
-def addCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo) =
-  %let _ = writeLine(opId^": CaseMethods") in
-  let clsDecls = jcginfo.clsDecls in
-  let (rngId,col0) = srtId(rng) in
-  let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars in
-  %let methodDeclA = (([Abstract], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), None) in
-  let (defaultMethodDecl,col1) = mkDefaultMethodForCase(spc,opId,dom,dompreds,rng,vars1++vars2,body) in
-  let (fpars,col2) = varsToFormalParams spc (vars1++vars2) in
-  let methodDecl = (([], Some (tt(rngId)), opId, fpars , []), None) in
-  let (_, Base (Qualified(q, srthId), _, _)) = varh in
-  let newJcgInfo = case defaultMethodDecl of
-		     | Some mdecl -> addMethDeclToClsDecls(opId, srthId, mdecl, jcginfo)
-                     | _ -> jcginfo
-  in
-  let jcginfo = addCollectedToJcgInfo(newJcgInfo,concatCollected(col0,concatCollected(col1,col2))) in
-  %% add the assertion method
-  let asrtOpId = mkAssertOp(opId) in
-  let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
-  let (jcginfo,assertStmt) =
-      case mkAsrtExpr(spc,vars,dompreds) of
-	| None -> (jcginfo,[])
-	| Some t ->
-	let tcx = StringMap.insert(empty,varh.1,mkThisExpr()) in
-	let ((s,asrtExpr,_,_),col4) = termToExpression(tcx,t,1,1,spc) in
-	let jcginfo = addCollectedToJcgInfo(jcginfo,col4) in
-	if s = [] then (jcginfo,[Stmt(Expr(mkMethInvName(([],"assert"),[asrtExpr])))]) else
-	let asrtBodyStmt = mkReturnStmt(asrtExpr) in
-	let asrtMethodDecl = (([],Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])) in
-	let jcginfo = addMethDeclToClsDecls(asrtOpId,srthId,asrtMethodDecl,jcginfo) in
-	(jcginfo,s++assertStmt)
-  in
-  %%
-  let methodDecl = setMethodBody(methodDecl,assertStmt) in
-  %let _ = writeLine(";;; -> method in class "^srthId) in
-  addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo)
-  
 op addNonCaseMethodsToClsDecls: Spec * Id * List Type * List(Option Term) * Type * List Var * Term * JcgInfo -> JcgInfo
 def addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo) =
   %let _ = writeLine(opId^": NonCaseMethods") in
@@ -418,6 +431,15 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcgin
  * case will be the body of the default method; otherwise the method is abstract.
  *)
 
+op mkDefaultMethodForCaseM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv (Option MethDecl)
+def mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars,body) =
+  {
+   spc <- getEnvSpec;
+   (res,col) <- return(mkDefaultMethodForCase(spc ,opId,dom,dompreds,rng,vars,body));
+   addCollected col;
+   return res
+  }
+
 op mkDefaultMethodForCase: Spec * Id * List Type * List(Option Term) * Type * List Var * Term -> Option MethDecl * Collected
 def mkDefaultMethodForCase(spc ,opId,_(* dom *),_(* dompreds *),rng,vars,body) =
   %let (mods,opt_mbody) = ([Abstract],None) in
@@ -460,6 +482,15 @@ def unfoldToCoProduct(spc,srt) =
  * each sub-class get one method, except in the case where there is a "default" (wild- or var-pattern) 
  * case and the constructor is not mentioned as case in the case construct.
  *)
+ op  addMethDeclToSummandsM: Id * Id * MethDecl * Term -> JGenEnv ()
+ def addMethDeclToSummandsM (opId, srthId, methodDecl, body) =
+   {
+    spc <- getEnvSpec;
+    jcginfo <- getJcgInfo;
+    jcginfo <- return(addMethDeclToSummands (spc, opId, srthId, methodDecl, body, jcginfo));
+    putJcgInfo jcginfo
+   }
+
  op  addMethDeclToSummands: Spec * Id * Id * MethDecl * Term * JcgInfo -> JcgInfo
  def addMethDeclToSummands (spc, opId, srthId, methodDecl, body, jcginfo) =
    let clsDecls = jcginfo.clsDecls in
