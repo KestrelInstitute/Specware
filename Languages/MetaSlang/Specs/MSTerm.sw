@@ -3,6 +3,8 @@ MS qualifying spec
  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
  import Position
 
+ op AnnSpecPrinter.printSort : [a] ASort a -> String  % see Printer.sw for def
+
  sort StandardAnnotation = Position
 
  sort Term         = ATerm           StandardAnnotation
@@ -241,8 +243,8 @@ MS qualifying spec
       (case find (fn (id2, _) -> id = id2) fields of
         | Some (_,sub_sort) -> 
           mkApply (mkProject (id, super_sort, sub_sort),term)
-        | _ -> System.fail "Projection index not found in product")
-    | _ -> System.fail "Product sort expected for mkProjectTerm"    
+        | _ -> System.fail ("Projection index " ^ id ^ " not found in product " ^ printSort super_sort))
+    | _ -> System.fail ("Product sort expected for mkProjection: " ^ printSort super_sort)
 
 
  def mkSelection (id, term) = 
@@ -253,9 +255,7 @@ MS qualifying spec
            of Some (_,Some fieldSort) ->
               mkApply(mkSelect (id, srt, fieldSort), term)
             | _ -> System.fail "Selection index not found in product")
-      | _ -> System.fail ("CoProduct sort expected for mkSelectTerm "^
-                           anyToString  srt)
-
+      | _ -> System.fail ("CoProduct sort expected for mkSelection: " ^ printSort srt)
 
  op negateTerm: Term -> Term
  %% Gets the negated version of term. 
