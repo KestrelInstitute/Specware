@@ -3,6 +3,7 @@ SpecCalc qualifying spec {
   import Spec/SpecUnion
   import /Languages/Snark/SpecToSnark
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
+  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
   import UnitId/Utilities                                    % for uidToString, if used...
 
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
@@ -27,11 +28,13 @@ SpecCalc qualifying spec {
 	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
                | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
      %subSpec <- return(subtractSpec uspc baseSpec);
-     noHOSpec <- return(subtractSpecProperties(instantiateHOFns(uspc), baseSpec));
-     liftedNoHOSpec <- return(subtractSpecProperties(lambdaLift(noHOSpec), baseSpec));
+     subSpec <- return (subtractSpecProperties(uspc, baseSpec));
+     %noHOSpec <- return(subtractSpecProperties(instantiateHOFns(uspc), baseSpec));
+     %liftedNoHOSpec <- return(subtractSpecProperties(lambdaLift(noHOSpec), baseSpec));
      %liftedNoHOSpec <- return(lambdaLift(noHOSpec));
-     _ <- return (if specwareDebug? then writeString(printSpec(liftedNoHOSpec)) else ());
-     expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
+     %expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
+     expandedSpec <- return (transformSpecForFirstOrderProver baseSpec subSpec);
+     _ <- return (if specwareDebug? then writeString(printSpec(expandedSpec)) else ());
 %    expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
      %expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
      _ <- return (if specwareDebug? then writeString(printSpec(subtractSpecProperties(expandedSpec, baseSpec))) else ());
@@ -60,6 +63,30 @@ SpecCalc qualifying spec {
      return (result, timeStamp, depUIDs)
    }
 
+  op transformSpecForFirstOrderProver: AnnSpec.Spec -> AnnSpec.Spec -> AnnSpec.Spec
+
+  def transformSpecForFirstOrderProver basespc spc =
+    let spc = addMissingFromBase(basespc,spc,builtinSortOp)
+    in
+    %let spc = removeCurrying spc in
+%    let spc = instantiateHOFns spc in
+    %let _ = writeLine(printSpec spc) in
+    %let spc = lambdaToInner spc in
+    let spc = poly2mono(spc,true) in
+    %let _ = writeLine(printSpec spc) in
+    %let spc = addEqOpsToSpec spc in
+    %let _ = printSpecWithSortsToTerminal spc in
+    let spc = lambdaLift spc in
+    %let _ = writeLine(printSpec spc) in
+    let (spc,constrOps) = addSortConstructorsToSpec spc in
+    let (spc,constrOps) = addProductAccessorsToSpec spc in
+    %let spc = conformOpDecls spc in
+    %let spc = adjustAppl spc in
+%    let spc = instantiateHOFns spc in
+    let spc = explicateHiddenAxioms(spc) in
+    %let _ = writeLine(printSpec spc) in
+    spc
+  
   op subtractSpecProperties: Spec * Spec -> Spec
   def subtractSpecProperties(spec1, spec2) =
     let spec2PropNames = map (fn (pt, pn, tv, tm) -> pn) spec2.properties in
@@ -92,7 +119,7 @@ SpecCalc qualifying spec {
     }
 
  def proverOptionsFromSpec(name, spc, spec_name) = {
-   possible_options_op <- return(findTheOp(spc, name));
+   possible_options_op <- return(AnnSpec.findTheOp(spc, name));
    options_def <-
       (case possible_options_op of
 	 | Some (_,_,_,[(_,opTerm)]) -> return (opTerm)
@@ -301,7 +328,8 @@ SpecCalc qualifying spec {
            Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
            Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
            Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
-	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)])
+	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)]),
+	   Lisp.list([Lisp.symbol("SNARK","USE-WELL-SORTING"), Lisp.bool(false)])
 	  ]
 	  Lisp.++ (Lisp.list snarkSortDecl)
 	  Lisp.++ (Lisp.list snarkOpDecls)

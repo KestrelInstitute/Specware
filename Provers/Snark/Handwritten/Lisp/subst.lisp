@@ -455,8 +455,24 @@
     x subst
     :if-constant (not (constant-allowed-in-answer x))
     :if-compound (or (not (function-allowed-in-answer (head x)))
+		     (if (equal (head x) *answer-if*)
+			 (or (disallowed-symbol-occurs-in-answer-conditional-p (car (args x)) subst)
+			     (loop for x1 in (cdr (args x))
+				 thereis (disallowed-symbol-occurs-in-answer-p x1 subst))))
 		     (loop for x1 in (args x)
-			   thereis (disallowed-symbol-occurs-in-answer-p x1 subst)))))
+			 thereis (disallowed-symbol-occurs-in-answer-p x1 subst)))))
+
+(defun disallowed-symbol-occurs-in-answer-conditional-p (x subst)
+  (dereference
+    x subst
+    :if-constant (not (constant-allowed-in-answer x))
+    :if-compound (or (not (function-allowed-in-answer-condition (head x)))
+		     (loop for x1 in (args x)
+			 thereis (disallowed-symbol-occurs-in-answer-conditional-p x1 subst)))))
+
+(defun bad-answer-symbol-p (x)
+  (or (equal x 'snark-user::MOVE_UP)
+      (equal x 'snark-user::MOVE_DN)))
 
 (defun embedding-variable-occurs-p (x subst)
   (dereference

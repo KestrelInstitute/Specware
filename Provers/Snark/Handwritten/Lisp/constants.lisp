@@ -30,6 +30,7 @@
       (created-p nil)
       (constructor nil)
       (allowed-in-answer t)
+      (allowed-in-answer-condition t)
       (kbo-weight 1)
       (weight 1)
       (constraint-theory nil)

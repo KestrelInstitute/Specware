@@ -99,7 +99,7 @@ def termOpsInSpec?(term, spc) =
    def mapT(spc, term) =
      case term of
        | Fun        (Op (qid, fixity),          srt,  a) ->
-	  (case findTheOp(spc, qid) of
+	  (case AnnSpec.findTheOp(spc, qid) of
 	    | Some _ -> true
 	    | _ -> false)
 
@@ -161,7 +161,7 @@ def termOpsInSpec(term, spc) =
    def mapT(spc, term) =
      case term of
        | Fun        (Op (qid, fixity),          srt,  a) ->
-	  (case findTheOp(spc, qid) of
+	  (case AnnSpec.findTheOp(spc, qid) of
 	    | Some _ -> [term]
 	    | _ -> [])
 

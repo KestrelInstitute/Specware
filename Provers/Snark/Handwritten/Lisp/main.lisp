@@ -465,7 +465,6 @@
     (prog->
       (not (use-well-sorting?) -> *%check-for-well-sorted-atom%*)
       (input-wff wff :clausify (use-clausification?) -> wff dp-alist input-wff1 input-wff-subst)
-      (declare (ignore dp-alist))
       (when *find-else-substitution*
         (setq wff (instantiate wff *find-else-substitution*)))
       (mapcar (lambda (x) (cons (first x) (input-wff (second x) :*input-wff-substitution* input-wff-subst)))
@@ -549,6 +548,11 @@
 (defun fail-when-disallowed (answer)
   (if (answer-disallowed-p answer)
       (throw 'fail nil)
+    answer))
+
+(defun fail-when-disallowed-conditional (answer)
+  (if (answer-conditional-disallowed-p answer)
+      (throw 'fail nil)
       answer))
 
 (defvar *check-for-disallowed-answer* nil)
@@ -556,7 +560,12 @@
 (defun answer-disallowed-p (answer)
   (if (and (rewrite-answers?) (not *check-for-disallowed-answer*))
       nil
-      (disallowed-symbol-occurs-in-answer-p answer nil)))
+    (disallowed-symbol-occurs-in-answer-p answer nil)))
+
+(defun answer-conditional-disallowed-p (answer)
+  (if (and (rewrite-answers?) (not *check-for-disallowed-answer*))
+      nil
+      (disallowed-symbol-occurs-in-answer-conditional-p answer nil)))
 
 (defun make-demodulant (row1 row2 wff2* context1 context2)
   (cond
@@ -744,14 +753,14 @@
 				answer))
 			     (*negative-hyperresolution*
 			      (make-conditional
-				(fail-when-disallowed (instantiate atom* k subst))
+				(fail-when-disallowed-conditional (instantiate atom* k subst))
 				(fail-when-disallowed (instantiate (row-answer electron+) k subst))
 				answer
 				nil
 				*answer-if*))
 			     (t
 			      (make-conditional
-				(fail-when-disallowed (instantiate atom* k subst))
+				(fail-when-disallowed-conditional (instantiate atom* k subst))
 				answer
 				(fail-when-disallowed (instantiate (row-answer electron+) k subst))
 				nil
@@ -802,7 +811,7 @@
                             answer))
                           (t
                            (make-conditional
-                            (fail-when-disallowed (instantiate (row-wff electron) k subst))
+                            (fail-when-disallowed-conditional (instantiate (row-wff electron) k subst))
                             answer
                             (fail-when-disallowed (instantiate (row-answer electron) k subst))
                             nil

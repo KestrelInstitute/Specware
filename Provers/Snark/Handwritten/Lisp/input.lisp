@@ -168,28 +168,33 @@
 (defun input-wff (wff &key (polarity :pos) (clausify nil) (*input-wff-substitution* nil))
   (let ((*input-wff* wff)
         (*input-wff-substitution2* nil)
-	(*input-wff-modal-prefix* nil))
-    (let ((usr (use-sort-relativization?)))
-      (when usr
-	(let ((l nil))
-	  (dolist (x (input-variables-in-form wff nil nil))
-	    (let ((sort (variable-sort (cdr x))))
-	      (when (neq top-sort sort)
-		(push (if t
-			  `(instance-of ,(car x) ,sort)
-			  `(,sort ,(car x)))
-		      l))))
-	  (when l
-	    (setq wff (list 'implies
-			    (if (null (rest l))
-				(first l)
-				(cons 'and (nreverse l)))
-			    wff))))))
-    (let ((wff* (input-wff1 wff polarity)))
-      (when clausify
-        (setq wff* (clausify wff*)))
-      (setf *var-renaming-subst* (remove-if-not #'variable-p *input-wff-substitution2* :key #'cdr))
-      (values wff* nil *input-wff* *input-wff-substitution2*))))
+	(*input-wff-modal-prefix* nil)
+	(input-error nil))
+    (handler-case
+	(let ((usr (use-sort-relativization?)))
+	  (when usr
+	    (let ((l nil))
+	      (dolist (x (input-variables-in-form wff nil nil))
+		(let ((sort (variable-sort (cdr x))))
+		  (when (neq top-sort sort)
+		    (push (if t
+			      `(instance-of ,(car x) ,sort)
+			    `(,sort ,(car x)))
+			  l))))
+	      (when l
+		(setq wff (list 'implies
+				(if (null (rest l))
+				    (first l)
+				  (cons 'and (nreverse l)))
+				wff))))))
+      (error () (setq input-error t)))
+    (if input-error (values true-wff nil *input-wff* *input-wff-substitution2*)
+      (let ((wff* (handler-case (input-wff1 wff polarity)
+		    (error () true-wff))))
+	(when clausify
+	  (setq wff* (clausify wff*)))
+	(setf *var-renaming-subst* (remove-if-not #'variable-p *input-wff-substitution2* :key #'cdr))
+	(values wff* nil *input-wff* *input-wff-substitution2*)))))
 
 (defun input-wff1 (wff polarity)
   (cond
@@ -668,7 +673,8 @@
       (let ((head (input-relation-symbol (first atom) (or (list-p (rest atom)) 1))))
 	(when (print-symbol-in-use-warnings?)
 	  (setf (function-in-use head) t))
-        (input-form head (rest atom) polarity))))
+        (input-form head (rest atom) polarity))
+      polarity))
     ((and *input-proposition-variables* (can-be-free-variable-name-p atom))
      (declare-variable atom))
     (t

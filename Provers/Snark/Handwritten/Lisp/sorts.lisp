@@ -499,10 +499,17 @@
 
 (defvar *%check-for-well-sorted-atom%* t)
 
-(defun check-for-well-sorted-atom (atom &optional subst)
+(defun check-for-well-sorted-atom (atom polarity &optional subst)
   (when *%check-for-well-sorted-atom%*
     (assert-atom-is-well-sorted atom subst))
   atom)
+;  (if (and *%check-for-well-sorted-atom%* (not (well-sorted-p atom subst)))
+;      (ecase polarity
+;	(:pos true-wff)
+;	(:neg false-wff)
+;	(:both (error "Atomic formula ~A is not well sorted." (term-to-lisp atom subst))))
+;    atom))
+  
 
 (defun assert-atom-is-well-sorted (atom &optional subst)
   (or (well-sorted-p atom subst)

@@ -307,16 +307,17 @@ snark qualifying spec {
 	      Lisp.quote(Lisp.symbol("SNARK", name))]
 
   def snarkBaseSort(spc, s:Sort, rng?):LispCell = 
-    let s = unfoldBase(spc, s) in
+    let s = unfoldBaseUnInterp(spc, s) in
 	          case s of
 		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+		    | Base(Qualified("Nat","PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
-		    | Base(Qualified(qual,id),_,_) -> let res = findBuiltInSort(spc, Qualified(qual,id), rng?) in
+		    %| Base(Qualified(qual,id),_,_) -> let res = findBuiltInSort(spc, Qualified(qual,id), rng?) in
                       %let _ = if specwareDebug? then toScreen("findBuiltInSort: "^printSort(s)^" returns ") else () in
                       %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
 		      %let _ = if specwareDebug? then  writeLine("") else () in
-		      res   %findBuiltInSort(spc, Qualified(qual,id), rng?)
+		      %res   %findBuiltInSort(spc, Qualified(qual,id), rng?)
 		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
                                                        else Lisp.symbol("SNARK",snarkSortId(id))
 		    | Subsort(supSrt, _, _) -> snarkBaseSort(spc, supSrt, rng?)
@@ -326,7 +327,7 @@ snark qualifying spec {
 		    | _ -> Lisp.symbol("SNARK", "TRUE")
 
   def findBuiltInSort(spc, qid as Qualified(qual,id), rng?) =
-    let optSrt = findTheSort(spc, qid) in
+    let optSrt = AnnSpec.findTheSort(spc, qid) in
     case optSrt of
       | Some (names, _, schemes) ->
       (let
@@ -375,13 +376,22 @@ snark qualifying spec {
   def snarkFunctionNoCurryDecl(spc, name, srt, arity) =
     case arrowOpt(spc, srt) of
       Some (dom, rng) ->
+	%let _ = if name = "list2map_def__filter--local-0" then debug("found it") else () in
 	case rng of
 	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateDecl(spc, name, dom, arity)
 	  | _ ->
 	case productOpt(spc, dom) of
 	  | Some fields -> 
+	    if "project" lt name or "embed" lt name then
+	      let snarkDomSrt = snarkBaseSort(spc, dom, false) in
+	        Lisp.list[declare_function,
+			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
+			  Lisp.symbol("KEYWORD","SORT"),
+			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
+	    else
 	    let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(spc, srt, false))
 	                          fields in
+	    %let _ = if name = "list2map_def__filter--local-0" then debug("found it") else () in
 	      Lisp.list[declare_function,
 			Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
 			Lisp.symbol("KEYWORD","SORT"),
