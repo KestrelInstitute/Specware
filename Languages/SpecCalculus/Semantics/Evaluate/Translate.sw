@@ -13,6 +13,8 @@ SpecCalc qualifying spec
   import Spec/CompressSpec
   import Spec/AccessSpec
   import Spec/MergeSpecs
+  import Spec/QualifyCapture
+  import Spec/VarOpCapture
   import UnitId/Utilities                                % for uidToString, if used...
 \end{spec}
 
@@ -74,54 +76,69 @@ Note: The code below does not yet match the documentation above, but should.
 
 \begin{spec}
   op translateSpec : Spec -> TranslateExpr Position -> Env Spec
-  def translateSpec spc expr = {
-      translation_maps <- makeTranslationMaps spc expr;
-      %%
-      %% translation_maps is an explicit map for which each name in its domain
-      %% refers to a particular type or op in the domain spec.  Each rule
-      %% explicitly states that it is mapping a type or an op, and there are
-      %% no wildcards.   [makeTranslationMaps raises various exceptions if it
-      %% cannot guarantee all of this]
-      %%
-      %% However, it is still possible that a renaming could cause an
-      %% inadvertant capture, so now we need to check for that.
-      %%
-      %% In particular, we worry that a rule such as A.X +-> Y could make 
-      %% an unqualified reference Y that had refered to B.Y in the domain 
-      %% spec translate by default into an unqualified Y that now refers 
-      %% to the new unqualified Y in the codomain spec.  Such captures are 
-      %% avoided by renaming the "capturable" unqualified Y to a more 
-      %% explicit B.Y   This is simpler but similar in spirit to the 
-      %% kinds of alpha conversions that are done to avoid capture when 
-      %% instantiating quantified variables in a logical formula.
-      %%
-      %% [We avoid gratuitously qualifying every reference, to keep print
-      %%  forms for specs as similar as possible to their original input text.
-      %%  Seeing Integer.+, String.^ etc. everywhere would be confusing and
-      %%  annoying.]
-      %%
-      %% On the other hand, if a capture is forced by the presence of an
-      %% additional explicit rule such as Y +-> Y, B.Y +-> Y, B._ +-> _, etc.,
-      %% we assume the user knows what they are doing and allow it.
-      %%
-      translation_maps <- avoidTranslationCaptures spc translation_maps;
-      raise_any_pending_exceptions;
-      %%
-      %% Now we produce a new spec using the unambiguous maps.
-      %%
-      new_spec <- auxTranslateSpec spc translation_maps (positionOf expr);
-      raise_any_pending_exceptions;
-      %%
-      %% One final pass to see if we've managed to collapse necessarily 
-      %% distinct types (e.g. A = X * Y and B = Z | p), or necessarily
-      %% distinct ops (e.g. op i = 4 and op j = "oops") onto the same name.
-      %%
-      complainIfAmbiguous (compressDefs new_spec) (positionOf expr)
+  def translateSpec spc expr = 
+    let pos = positionOf expr in
+    {
+     translation_maps <- makeTranslationMaps spc expr;
+     %%
+     %% translation_maps is an explicit map for which each name in its 
+     %% domain refers to a particular type or op in the domain spec.  
+     %%
+     %% Each rule explicitly states that it is mapping a type or an op, 
+     %% and there are no wildcards.   
+     %%
+     %% makeTranslationMaps raises various exceptions if it cannot 
+     %% guarantee all of this
+     %%                          ----
+     %% However, it is still possible that a renaming would cause an
+     %% inadvertant ambiguity or even capture, so we check for that.
+     %%
+     %% In particular, we worry the following situation:
+     %%
+     %%   an unqualified Y that refers to B.Y in the domain spec  
+     %%
+     %%   and translation rules:
+     %%     B.Y +-> B.Y 
+     %%     A.X +-> Y 
+     %% 
+     %%   creating a spec in which the unqualified Y refers to the 
+     %%   translation of A.X, as opposed to the transation of B.Y
+     %%
+     %% Moreover, we wish to avoid gratuitously qualifying every reference, 
+     %%  to keep print forms for specs as similar as possible to their 
+     %%  original input text.  Seeing Integer.+, String.^ etc. everywhere 
+     %%  would be confusing and annoying.
+     %%
+     translation_maps <- removeQualifyCaptures spc translation_maps pos;
+     raise_any_pending_exceptions;
+     %%
+     %% Now we produce a new spec using these unmbiguous maps.
+     %%
+     spc <- auxTranslateSpec spc translation_maps pos;
+     raise_any_pending_exceptions;
+     %%
+     %% Next we worry about traditional captures in which a (global) op Y,
+     %% used under a binding of var X, is renamed to X.   Internally, this 
+     %% is not a problem, since the new refs to op X are distinguishable 
+     %% from the refs to var X, but printing the resulting formula loses
+     %% that distinction, so refs to the op X that are under the binding 
+     %% of var X would be read back in as refs to the var X.
+     %% 
+     %% So we do alpha conversions if a bound var has an op of the same
+     %% name under its scope:
+     %%
+     spc <- return (removeVarOpCaptures spc);
+     %%
+     %% One final pass to see if we've managed to collapse necessarily 
+     %% distinct types (e.g. A = X * Y and B = Z | p), or necessarily
+     %% distinct ops (e.g. op i = 4 and op j = "oops") onto the same name.
+     %%
+     complainIfAmbiguous (compressDefs spc) pos
     } 
-    
 
-  sort TranslationMap  = AQualifierMap (QualifiedId * Aliases) 
-  sort TranslationMaps = TranslationMap * TranslationMap
+  % see QualifyCapture.sw
+  % sort TranslationMap  = AQualifierMap (QualifiedId * Aliases) 
+  % sort TranslationMaps = TranslationMap * TranslationMap
 
   op makeTranslationMaps :
         Spec
@@ -427,13 +444,6 @@ Note: The code below does not yet match the documentation above, but should.
 	   | [] -> false
 	   | _  -> true)
       | _ -> true
-
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  op avoidTranslationCaptures : Spec -> TranslationMaps -> Env TranslationMaps
-
-  def avoidTranslationCaptures spc map = 
-    return map
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
