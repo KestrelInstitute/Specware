@@ -9,13 +9,22 @@ SpecCalc qualifying spec
 
  op mergeSpecs: Spec * Spec -> Spec
  def mergeSpecs (spc1, spc2) =
+   let importInfo = {
+		     imports = listUnion(spc1.importInfo.imports,spc2.importInfo.imports),
+		     localOps = listUnion(spc1.importInfo.localOps,spc2.importInfo.localOps),
+		     localSorts = listUnion(spc1.importInfo.localSorts,spc2.importInfo.localSorts),
+		     localProperties = listUnion(spc1.importInfo.localProperties,spc2.importInfo.localProperties)
+		    }
+   in
    let srts = foldriAQualifierMap
-                (fn (q, id, info, map) -> insertAQualifierMap (map, q, id, info))
+                (fn (q, id, info, map) ->
+		 insertAQualifierMap (map, q, id, info))
 		spc1.sorts 
 		spc2.sorts
    in
    let ops = foldriAQualifierMap
-               (fn (q, id, info, map) -> insertAQualifierMap (map, q, id, info))
+               (fn (q, id, info, map) ->
+		insertAQualifierMap (map, q, id, info))
 	       spc1.ops 
 	       spc2.ops
    in
@@ -28,6 +37,7 @@ SpecCalc qualifying spec
 		     spc2.properties
   in
   let spc = initialSpecInCat in  % maybe emptySpec would be ok, but this is safer
+  let spc = setImportInfo (spc, importInfo) in
   let spc = setSorts      (spc, srts)  in
   let spc = setOps        (spc, ops)   in
   let spc = setProperties (spc, props) in
