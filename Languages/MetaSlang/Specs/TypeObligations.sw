@@ -50,9 +50,9 @@ spec
  def assertCond(cond,(ds,tvs,spc,name,names)) = 
      (cons(Cond cond,ds),tvs,spc,name,names)
  def insert((x,srt),(ds,tvs,spc,name,names))  = 
-     let ds = cons(Var(x,srt):Decl,ds) in
+     let ds = cons(Var(x,srt),ds) in
      let gamma = (ds,tvs,spc,name,names) in
-     let gamma = assertSubtypeCond(Var((x,srt),noPos),srt,gamma) in
+     let gamma = assertSubtypeCond(mkVar(x,srt),srt,gamma) in
      gamma
 % Subsort conditions:
  def insertLet(decls,(ds,tvs,spc,name,names)) = 
@@ -80,7 +80,7 @@ spec
  
 
  sort TypeCheckCondition  = String * TyVars * MS.Term 
- sort TypeCheckConditions = List TypeCheckCondition
+ sort TypeCheckConditions = List(TypeCheckCondition) * StringSet.Set
 
  op addCondition : TypeCheckConditions * Gamma * MS.Term -> 
 		   TypeCheckConditions
@@ -117,10 +117,11 @@ spec
 % def inferType = SpecEnvironment.inferType
 
 
- def addFailure(tcc,(_,_,_,name,_),description) = 
-     cons((name^" :"^description,[],mkFalse()),tcc)
+ def addFailure((tcc,claimNames),(_,_,_,name,_),description) = 
+     let name = name^" :"^description in
+     (Cons((name,[],mkFalse()),tcc),StringSet.add(claimNames,name))
 
- def makeVerificationCondition((decls,tvs,spc,name,_),term) = 
+ def makeVerificationCondition((decls,tvs,spc,name,_),term,claimNames) = 
      let
 	def insert(decl,formula) = 
 	    case decl
@@ -136,11 +137,11 @@ spec
      let term = foldl insert term decls in
      case simplify spc term of
        | Fun(Bool true,_,_) -> None
-       | claim -> Some(name,tvs,claim)
+       | claim -> Some(StringUtilities.freshName(name,claimNames),tvs,claim)
 
- def addCondition(tcc,gamma,term) =
-   case makeVerificationCondition(gamma,term) of
-     | Some condn -> Cons(condn,tcc)
+ def addCondition(tcc as (tccs,claimNames),gamma,term) =
+   case makeVerificationCondition(gamma,term,claimNames) of
+     | Some condn -> (Cons(condn,tccs),StringSet.add(claimNames,condn.1))
      | None       -> tcc
 
 % Generate a fresh name with respect to all the
@@ -289,9 +290,9 @@ spec
        (case args of
 	  | Record([("1",p),("2",q)],_) ->
 	    (case f of
-	       | "&"  -> Some (p,q,true)
-	       | "or" -> Some (p,q,false)
-	       | "=>" -> Some (p,q,true)
+	       | "&"  -> Some (p,q,true)   % p & q  -- can assume  p in q
+	       | "or" -> Some (p,q,false)  % p or q -- can assume ~p in q
+	       | "=>" -> Some (p,q,true)   % p => q -- can assume  p in q
 	       | _ -> None)
 	  | _ -> None)
      | _ -> None
@@ -522,13 +523,13 @@ spec
      let localOps = spc.importInfo.localOps in
      let names = StringSet.fromList (map (fn Qualified(q,id) -> id) localOps) in
      let gamma0 = fn tvs -> fn nm -> ([], tvs, spc, nm, names) in
-     let tcc = [] in
+     let tcc = ([],empty) in
      let tcc = 
 	 foldriAQualifierMap
 	   (fn (qname, name, (names, fixity, (tvs,tau), defs), tcc) ->
 	     if member(Qualified(qname, name),localOps) then
 		 foldl (fn ((type_vars, term), tcc) ->
-			 (tcc,gamma0 tvs name) |- term ?? tau)
+			 (tcc,gamma0 tvs (name^"_Obligation")) |- term ?? tau)
 		   tcc defs
 	       else 
 		 tcc)
@@ -546,7 +547,7 @@ spec
    %% if you only do an addImport to the emptyspec you miss all the substance of the
    %% original spec, thus we do an setImports to spc.
    let tcSpec = setImports (spc, [(specCalcTerm,spc)]) in
-   addConjectures (checkSpec spc,tcSpec)
+   addConjectures ((checkSpec spc).1,tcSpec)
 
 % op  boundVars    : Gamma -> List Var
 % op  boundTypeVars : Gamma -> TyVars
