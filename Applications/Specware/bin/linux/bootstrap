@@ -102,7 +102,7 @@ echo " "
 # Is there a way to inhibit all the warnings (eg unused variable)
 # when Lisp loads?
 
-export SWPATH="$SPECWARE4":.
+export SWPATH=/:.
 EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
 MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 
