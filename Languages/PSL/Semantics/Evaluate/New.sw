@@ -18,7 +18,19 @@ SpecCalc qualifying spec {
 
   op sortOf : fa (a) ASortScheme a -> ASort a
   def sortOf (tyVars,srt) = srt
+\end{spec}
 
+It is called to process the "procedure elements" found in a PSL /
+Oscar specification. It compiles the procedure defined in the element.
+This should be merged with compileProcedure that appears later. 
+
+Note that it incorrectly gives the type of a procedure as a function
+from the type of its arguments to its result type. The real type should
+be as a predicate relating the input (the values of the arguments and
+the value of the variables in scope) and the output (the return value
+and the new values of global variables).
+
+\begin{spec}
   op evaluatePSpecElems  : PSpec -> List (PSpecElem Position) -> SpecCalc.Env (PSpec * TimeStamp * URI_Dependency)
 
   op evaluatePSpecProcElem :
@@ -135,13 +147,16 @@ never mixed in the specs labeling \BSpecs.
                 []
                 dCtxt (Internal "compileProcedure"))
                   saveDyCtxt args;
-   dyCtxt <- 
+   (dyCtxt,returnInfo) <- 
       case returnSort of
-        | Product ([],_) -> return dyCtxt 
-        | _ -> addOp [unQualified ("return_" ^ name)]
+        | Product ([],_) -> return (dyCtxt, None)
+        | _ -> {
+             dyCtxt <- addOp [unQualified ("return_" ^ name)]
                      Nonfix
                      (tyVarsOf returnSort,returnSort)
                      [] dyCtxt internalPosition;
+             return (dyCtxt, Some {returnSort=returnSort,returnName= ("return_" ^ name)}
+           }
    pSpec <- setDynamicSpec pSpec dyCtxt;
    dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
    statCtxtElab <- elaborateSpec statCtxt; 
@@ -164,7 +179,7 @@ never mixed in the specs labeling \BSpecs.
 % again this is a little ugly .. we want to put the procedure into
 % the environment in case the procedure is recursive
 
-   (bSpec,cnt,pSpec) <- compileCommand pSpec first last last bSpec (cnt + 2) command;
+   (bSpec,cnt,pSpec) <- compileCommand pSpec first last last returnInfo bSpec (cnt + 2) command;
    dyCtxt <- dynamicSpec pSpec;
    statCtxt <- staticSpec pSpec;
    dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
@@ -306,7 +321,7 @@ make much of the following unnecessary.
      -> Command Position
      -> SpecCalc.Env (BSpec * Nat * PSpec)
 
-  def compileCommand pSpec first last retn bSpec cnt (cmd,_) =
+  def compileCommand pSpec first last exit bSpec cnt (cmd,pos) =
     case cmd of
 \end{spec}
 
@@ -319,7 +334,7 @@ procedures? And how do we accumulate the procedures? Probably ok ..
 the other procedures are not in scope?
 
 \begin{spec}
-      | Seq cmds -> compileSeq pSpec first last retn bSpec cnt cmds
+      | Seq cmds -> compileSeq pSpec first last exit bSpec cnt cmds
 \end{spec}
 
 The compilation of an \verb+if+ consist of first compiling the
@@ -330,8 +345,8 @@ the alternatives, with transitions out of a common starting node into each
 alternative: these transitions are labeled by the respective guards.
 
 \begin{spec}
-      | If [] -> fail "compileCommand: If: empty list of alternatives"
-      | If alts -> compileAlternatives pSpec first last retn bSpec cnt alts
+      | If [] -> raise (SpecError (pos, "compileCommand: If: empty list of alternatives"))
+      | If alts -> compileAlternatives pSpec first last exit bSpec cnt alts
 \end{spec}
 
 To compile a loop, we first compile the alternatives. Then we add identity
@@ -351,7 +366,7 @@ under the assumption that they are never used. Needs thought.
 \begin{spec}
       | Do [] -> fail "compileCommand: Do: empty list of alternatives"
       | Do alts -> {
-          (bSpec,cnt,pSpec) <- compileAlternatives pSpec first first retn bSpec cnt alts; 
+          (bSpec,cnt,pSpec) <- compileAlternatives pSpec first first exit bSpec cnt alts; 
           axm <- return (mkNot (disjList (map (fn ((guard,term),_) -> guard) alts)));
           dyCtxt <- dynamicSpec pSpec;
           staticCtxt <- staticSpec pSpec;
@@ -417,135 +432,153 @@ We choose the second approach.
                   % print "Assign: OneName found (with record args)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) (unQualified id) (map (fn (x,y) -> y) args)
+                    compileProcCall pSpec first last exit bSpec cnt (Some trm1) (unQualified id) (map (fn (x,y) -> y) args)
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(OneName(id,fixity),srt,pos),arg],_) -> {
                   % print "Assign: OneName found (unary arg)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) (unQualified id) [arg]
+                    compileProcCall pSpec first last exit bSpec cnt (Some trm1) (unQualified id) [arg]
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first last exit bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,_),Record (args,_)],_) -> {
                   % print "Assign: TwoNames found (with record args)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) (Qualified (id1,id2)) (map (fn (x,y) -> y) args)
+                    compileProcCall pSpec first last exit bSpec cnt (Some trm1) (Qualified (id1,id2)) (map (fn (x,y) -> y) args)
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,pos),arg],_) -> {
                   % print "Assign: TwoNames found (unary arg)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) (Qualified (id1,id2)) [arg]
+                    compileProcCall pSpec first last exit bSpec cnt (Some trm1) (Qualified (id1,id2)) [arg]
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(Op(id,fixity),srt,_),Record (args,_)],_) -> {
                   % print "Assign: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) id (map (fn (x,y) -> y) args)
+                    compileProcCall pSpec first last exit bSpec cnt (Some trm1) id (map (fn (x,y) -> y) args)
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(Op(id,fixity),srt,pos),arg],_) -> {
                   % print "Assign: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) id [arg]
+                    compileProcCall pSpec first last exit bSpec cnt (Some trm1) id [arg]
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(Op(id,fixity),srt,pos),arg],_) -> {
                   % print "Assign: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) id [arg]
+                    compileProcCall pSpec first last exit bSpec cnt (Some trm1) id [arg]
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | _ ->
-                compileAssign pSpec first last retn bSpec cnt trm1 trm2)
+                compileAssign pSpec first last bSpec cnt trm1 trm2)
 \end{spec}
 
 \begin{spec}
-      | Return trm2 ->
+      | Return optTerm ->
+          case (optTerm,returnInfo) of
+            | (None,None) -> {
+            | (None,Some (returnSort,returnName) ->
+                  raise (SpecError (pos, "Procedure has return sort " ^ (printSort) ^ " but no return value"))
+            | (Some term, Some (returnSort,returnName) ->
+            | (Some term, None) ->
+                raise (SpecError (pos, "Procedure with unit sort returns a value "))
+          
+             
+                when ~(returnSort = mkProduct [])
+                need returnName .. but there isn't a name if there is no returnSort
+            | Some term ->
           let trm1 =
+            might not return anything
+            if we return something other than a unit, then we must have a return type other than unit
+              trm1 = Op return_proc name.
+            if we don't return anything then we need to have a unit type
+            if the procedure has a return that is more than a unit. something
+            what do we need to know:
+              the type of the return
+              if the return has a non-unit type then the name and type of the return variable
           (case trm2 of
             | ApplyN ([Fun(OneName(id,fixity),srt,_),Record (args,_)],_) -> {
                   % print "Return: OneName found (with record args)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) (unQualified id) (map (fn (x,y) -> y) args)
+                    compileProcCall pSpec first exit bSpec cnt (Some trm1) (unQualified id) (map (fn (x,y) -> y) args)
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first exit bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(OneName(id,fixity),srt,pos),arg],_) -> {
                   % print "Return: OneName found (unary arg)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) (unQualified id) [arg]
+                    compileProcCall pSpec first exit bSpec cnt (Some trm1) (unQualified id) [arg]
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first exit bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,_),Record (args,_)],_) -> {
                   % print "Return: TwoNames found (with record args)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) (Qualified (id1,id2)) (map (fn (x,y) -> y) args)
+                    compileProcCall pSpec first exit bSpec cnt (Some trm1) (Qualified (id1,id2)) (map (fn (x,y) -> y) args)
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first exit bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,pos),arg],_) -> {
                   % print "Return: TwoNames found (unary arg)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) (Qualified (id1,id2)) [arg]
+                    compileProcCall pSpec first exit bSpec cnt (Some trm1) (Qualified (id1,id2)) [arg]
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first exit bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(Op(id,fixity),srt,_),Record (args,_)],_) -> {
                   % print "Return: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) id (map (fn (x,y) -> y) args)
+                    compileProcCall pSpec first exit bSpec cnt (Some trm1) id (map (fn (x,y) -> y) args)
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first exit bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(Op(id,fixity),srt,pos),arg],_) -> {
                   % print "Return: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) id [arg]
+                    compileProcCall pSpec first exit bSpec cnt (Some trm1) id [arg]
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first exit bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(Op(id,fixity),srt,pos),arg],_) -> {
                   % print "Return: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
-                    compileProcCall pSpec first last retn bSpec cnt (Some trm1) id [arg]
+                    compileProcCall pSpec first exit bSpec cnt (Some trm1) id [arg]
                   else
-                    compileAssign pSpec first last retn bSpec cnt trm1 trm2
+                    compileAssign pSpec first exit bSpec cnt trm1 trm2
                 }
             | _ ->
-                compileAssign pSpec first last retn bSpec cnt trm1 trm2)
+                compileAssign pSpec first exit bSpec cnt trm1 trm2)
 \end{spec}
 
 \begin{spec}
-      | Relation trm -> compileAxiomStmt pSpec first last retn bSpec cnt trm
+      | Relation trm -> compileAxiomStmt pSpec first last bSpec cnt trm
 \end{spec}
 
 Temporary while we do not need procedure calls.
 
-\begin{spec}
-	  | Exec trm -> compileAxiomStmt pSpec first last retn bSpec cnt trm
-\end{spec}
+	  | Exec trm -> compileAxiomStmt pSpec first last exit bSpec cnt trm
 
       | Exec trm ->
            (case trm of
@@ -615,8 +648,8 @@ The following is wrong as the variables should come in and then out of scope.
 
 \begin{spec}
       | Let (decls,cmd) -> {
-            (pSpec,_,_) <- evaluatePSpecElems pSpec decls;
-            (bSpec,cnt,procs2) <- compileCommand pSpec first last retn bSpec cnt cmd;
+            (pSpec,_,_) <- evaluatePSpecContextElems pSpec decls;
+            (bSpec,cnt,procs2) <- compileCommand pSpec first last exit bSpec cnt cmd;
             return (bSpec,cnt,pSpec)
           }
 \end{spec}
@@ -650,13 +683,12 @@ This should be an invariant. Must check.
        PSpec
     -> V.Elem
     -> V.Elem
-    -> V.Elem
     -> BSpec
     -> Nat
     -> ATerm Position
     -> ATerm Position
     -> SpecCalc.Env (BSpec * Nat * PSpec)
-  def compileAssign pSpec first last retn bSpec cnt trm1 trm2 = {
+  def compileAssign pSpec first last bSpec cnt trm1 trm2 = {
     (leftId, leftPrimedTerm) <- return (processLHS trm1); 
     dyCtxt <- dynamicSpec pSpec;
     staticCtxt <- staticSpec pSpec;
@@ -821,12 +853,13 @@ So the following doesn't handle the situation where the name are captured by lam
     -> V.Elem
     -> V.Elem
     -> V.Elem
+    -> ReturnInfo
     -> BSpec
     -> Nat
     -> ATerm Position
     -> SpecCalc.Env (BSpec * Nat * PSpec)
 
-  def compileAxiomStmt pSpec first last retn bSpec cnt trm = {
+  def compileAxiomStmt pSpec first last exit returnInfo bSpec cnt trm = {
     dyCtxt <- dynamicSpec pSpec;
     staticCtxt <- staticSpec pSpec;
     names <- return (freeNames trm);
@@ -839,13 +872,13 @@ So the following doesn't handle the situation where the name are captured by lam
          | Some (names,fixity,sortScheme,optTerm) -> {
                   print ("compileAxiomStmt: " ^ (printQualifiedId qualId) ^ "\n");
                   addOp [qualId] fixity sortScheme optTerm spc (Internal "compileAxiomStmt")})) dyCtxt primedNames; 
-      apexSpec <- return (addAxiom (("axiom stmt",[],trm),apexSpec));
-      apexElab <- elaborateInContext apexSpec staticCtxt; 
-      morph1 <- mkMorph (modeSpec bSpec first) apexElab [] [];
-      morph2 <- mkMorph (modeSpec bSpec last) apexElab [] (map (fn name -> (removePrime name, name)) primedNames);
-      newEdge <- return (mkNatVertexEdge cnt);
-      bSpec <- return (addTrans bSpec first last newEdge apexElab morph1 morph2);
-      return (bSpec,cnt+1,pSpec)
+     apexSpec <- return (addAxiom (("axiom stmt",[],trm),apexSpec));
+     apexElab <- elaborateInContext apexSpec staticCtxt; 
+     morph1 <- mkMorph (modeSpec bSpec first) apexElab [] [];
+     morph2 <- mkMorph (modeSpec bSpec last) apexElab [] (map (fn name -> (removePrime name, name)) primedNames);
+     newEdge <- return (mkNatVertexEdge cnt);
+     bSpec <- return (addTrans bSpec first last newEdge apexElab morph1 morph2);
+     return (bSpec,cnt+1,pSpec)
   }
 \end{spec}
 
@@ -896,6 +929,7 @@ front of the axiom term.
     -> V.Elem
     -> V.Elem
     -> V.Elem
+    -> ReturnInfo
     -> BSpec
     -> Nat
     -> Option (ATerm Position)
@@ -905,7 +939,7 @@ front of the axiom term.
 \end{spec}
 
 \begin{spec}
-  def compileProcCall pSpec first last retn bSpec cnt trm? procId args = {
+  def compileProcCall pSpec first last exit returnInfo bSpec cnt trm? procId args = {
       statCtxt <- staticSpec pSpec;
       procOpInfo <-
         (case findTheOp (statCtxt,procId) of
@@ -999,15 +1033,16 @@ there.
      -> V.Elem
      -> V.Elem
      -> V.Elem
+     -> ReturnInfo
      -> BSpec
      -> Nat
      -> List (Command Position)
      -> SpecCalc.Env (BSpec * Nat * PSpec)
 
-  def compileSeq pSpec first last retn bSpec cnt cmds =
+  def compileSeq pSpec first last exit returnInfo bSpec cnt cmds =
     case cmds of
       | [] -> return (bSpec,cnt,pSpec)
-      | [cmd] -> compileCommand pSpec first last retn bSpec cnt cmd   
+      | [cmd] -> compileCommand pSpec first last exit bSpec cnt cmd   
       | cmd::rest -> {
             dyCtxt <- dynamicSpec pSpec;
             staticCtxt <- staticSpec pSpec;
@@ -1015,8 +1050,8 @@ there.
             newVertex <- return (mkNatVertexEdge cnt); 
             bSpec <- return (addMode bSpec newVertex dyElab);
             (bSpec,cnt,pSpec) <-
-              compileCommand pSpec first newVertex retn bSpec (cnt+1) cmd; 
-            compileSeq pSpec newVertex last retn bSpec cnt rest
+              compileCommand pSpec first newVertex exit returnInfo bSpec (cnt+1) cmd; 
+            compileSeq pSpec newVertex last exit returnInfo bSpec cnt rest
           }
 \end{spec}
 
@@ -1029,6 +1064,20 @@ node is returned by \verb+compileAlternatives+ (together with the other
 results), and it is used by \verb+compileCommand+ (which calls
 \verb+compileAlternatives+).
 
+sort ReturnInfo = Option {returnName : String, returnSort : PSort}
+sort ProcContext = {
+    procedures : Map(String,Procedure),
+    dynamic : Spec,
+    static : Spec,
+    graphCounter : Nat,
+    varCounter : Nat,
+    first : Nat,
+    last : Nat,
+    exit : Nat,
+    bSpec : BSpec,
+    returnInfo : Option {returnSort : PSort , returnName : String}
+  }
+
 \begin{spec}
   op compileAlternatives :
        PSpec
@@ -1040,7 +1089,7 @@ results), and it is used by \verb+compileCommand+ (which calls
     -> List (Alternative Position)
     -> SpecCalc.Env (BSpec * Nat * PSpec)
 
-  def compileAlternative pSpec first last retn bSpec cnt ((trm,cmd),pos) = {
+  def compileAlternative pSpec first last exit bSpec cnt ((trm,cmd),pos) = {
       dyCtxt <- dynamicSpec pSpec;
       staticCtxt <- staticSpec pSpec;
       dyElab <- elaborateInContext dyCtxt staticCtxt;
@@ -1052,15 +1101,15 @@ results), and it is used by \verb+compileCommand+ (which calls
       morph1 <- mkMorph (modeSpec bSpec first) apexElab [] []; 
       morph2 <- mkMorph dyElab apexElab [] []; 
       bSpec <- return (addTrans bSpec first newVertex newEdge apexElab morph1 morph2);
-      compileCommand pSpec newVertex last retn bSpec (cnt+2) cmd
+      compileCommand pSpec newVertex last exit bSpec (cnt+2) cmd
     }
  
-  def compileAlternatives pSpec first last retn bSpec cnt alts =
+  def compileAlternatives pSpec first last exit bSpec cnt alts =
     case alts of
-      | [alt] -> compileAlternative pSpec first last retn bSpec cnt alt
+      | [alt] -> compileAlternative pSpec first last exit bSpec cnt alt
       | firstAlt::restAlts -> {
-            (bSpec,cnt,pSpec) <- compileAlternative pSpec first last retn bSpec cnt firstAlt;
-            compileAlternatives pSpec first last retn bSpec cnt restAlts
+            (bSpec,cnt,pSpec) <- compileAlternative pSpec first last exit bSpec cnt firstAlt;
+            compileAlternatives pSpec first last exit bSpec cnt restAlts
           }
 \end{spec}
 

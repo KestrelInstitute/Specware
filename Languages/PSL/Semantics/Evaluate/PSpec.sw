@@ -55,13 +55,6 @@ They are procedures in context.
       return (pSpec,timeStamp,depURIs)
     }
   
-  op baseSpec : SpecCalc.Env Spec
-  def baseSpec = {
-      (Spec base,_,_) <- SpecCalc.evaluateURI (Internal "base spec")
-           (SpecPath_Relative {path = ["Library","Base"], hashSuffix = None});
-      return base
-    }
-
   op evaluatePSpecImportElem :
            (PSpec * TimeStamp * URI_Dependency)
         -> PSpecElem Position
@@ -168,9 +161,9 @@ They are procedures in context.
       | _ -> return pSpec
 \end{spec}
 
-So how do we reconcile these things?
-We construct a Spec with position, and then we start construction the diagram for the
-body of some procedure. Don't we want to elaborate as we go along?
+So how do we reconcile these things?  We construct a Spec with position,
+and then we start construction the diagram for the body of some
+procedure. Don't we want to elaborate as we go along?
 
 \begin{spec}
   op PosSpec.mkTyVar : String -> ASort Position
@@ -178,9 +171,16 @@ body of some procedure. Don't we want to elaborate as we go along?
 
   op staticBase : SpecCalc.Env Spec
   def staticBase = {
-      (Spec base,_,_) <- SpecCalc.evaluateURI (Internal "static base spec")
-           (SpecPath_Relative {path = ["Library","PSL","Base"], hashSuffix = None});
-      return base
+      baseURI <- pathToRelativeURI "/Library/PSL/Base";
+      (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "PSL base") baseURI;
+      return baseSpec
+    }
+
+  op baseSpec : SpecCalc.Env Spec
+  def baseSpec = {
+      baseURI <- pathToRelativeURI "/Library/Base";
+      (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "Specware base") baseURI;
+      return baseSpec
     }
 
   op basePSpec : SpecCalc.Env PSpec

@@ -63,8 +63,11 @@
 (defun make-psl-skip (l r)
   (cons (cons :|Skip| nil) (make-pos l r)))
 
-(defun make-psl-return (term l r)
-  (cons (cons :|Return| term) (make-pos l r)))
+(defun make-psl-return (opt-term l r)
+  (cons (cons :|Return|
+     (if (eq :unspecified opt-term)
+         (cons :|None| nil)
+         (cons :|Some| opt-term))) (make-pos l r)))
 
 (defun make-psl-alternative (guard commands l r)
   (cons (cons guard (make-psl-seq commands l r)) (make-pos l r)))

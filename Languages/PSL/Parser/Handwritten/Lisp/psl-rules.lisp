@@ -128,7 +128,7 @@
   (make-psl-skip ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-RETURN ()
-  (:tuple "return" (1 :EXPRESSION))
+  (:tuple "return" (1 (:optional :EXPRESSION)))
   (make-psl-return 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-ASSIGN ()
