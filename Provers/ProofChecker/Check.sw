@@ -1073,12 +1073,29 @@ spec
       (case checkSequence (map (checkPattWithContextAndType cx t, prfPS)) of
          OK pS ->
       let n:Nat = length pS in
-      let caseMatches:Expressions =
-        seqSuchThat (fn(i:Nat) ->
-          if i < n then Some (let (vS,tS) = pattVarsWithTypes (pS!i) in
-                              EXX vS tS (pattAssumptions (pS!i, e)))
-          else None) in
-      (case checkTheoremGiven cx (disjoinAll caseMatches) of OK () ->
+      let caseMatches:Expressions = seqSuchThat (fn(i:Nat) ->
+        if i < n then Some (let (vS,tS) = pattVarsWithTypes (pS!i) in
+                            EXX vS tS (pattAssumptions (pS!i, e)))
+        else None) in
+      (case checkTheoremGiven cx (disjoinAll caseMatches) prfExh of OK () ->
+      let varCxS:FSeq Context = seqSuchThat (fn(i:Nat) ->
+        if i < n then Some (multiVarDecls (pattVarsWithTypes (pS!i)))
+        else None) in
+      let negAsmS:Expressions = seqSuchThat (fn(i:Nat) ->
+        if i < n then Some (conjoinAll (seqSuchThat (fn(j:Nat) ->
+                             if j < i then Some (~~ (caseMatches!j))
+                                      else None)))
+                 else None) in
+      let posAsmS:Expressions = seqSuchThat (fn(i:Nat) ->
+        if i < n then Some (pattAssumptions (pS!i, e))
+                 else None) in
+      if length prfES = n then
+      let def aux (i:Nat, eS:Expressions, t:Type) : MayFail (Expressions * Type) =
+            ...
+      in
+      (case aux (0, empty) of OK (eS, t1) ->
+      OK (wellTypedExpr (cx, CASE e pS tS, t1))
+      
 
 DEFINING checkCaseBranchExprs...
 
