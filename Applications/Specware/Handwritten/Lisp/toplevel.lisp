@@ -395,6 +395,7 @@
 	 (emacs::*goto-file-position-store?* t)
 	 (emacs::*goto-file-position-stored* nil)
 	 (parser-type-check-output)
+	 (input-line-num 2)
 	 parsed-ok?
 	 value)
     (declare (special SpecCalc::printElaborateSpecMessage?))
@@ -405,9 +406,11 @@
     (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
       (format s "spec~%")
       (when *swe-use-interpreter?*
-	(format s "  import ~A~%" "/Library/InterpreterBase"))
+	(format s "  import ~A~%" "/Library/InterpreterBase")
+	(incf input-line-num))
       (when (not (null *current-swe-spec*))
-	(format s "  import ~A~%" *current-swe-spec*))
+	(format s "  import ~A~%" *current-swe-spec*)
+	(incf input-line-num))
       (format s "  def swe.tmp = ~A~%endspec~%" x))
     ;; Process unit id:
     (unwind-protect
@@ -426,9 +429,9 @@
     (if emacs::*goto-file-position-stored*; Parse or type-check error
 	(let ((linepos (second emacs::*goto-file-position-stored*))
 	      (charpos (third emacs::*goto-file-position-stored*)))
-	  (if (eq linepos 3)
+	  (if (eq linepos input-line-num)
 	      (format t "~vt^~%" (+ charpos *expr-begin-offset*))
-	    (if (> linepos 3)
+	    (if (> linepos input-line-num)
 		(format t "Error: expression ends prematurely~%" emacs::*goto-file-position-stored*)
 	      (format t "Error in context: ~a~%" emacs::*goto-file-position-stored*)))
 	  (princ (trim-error-output parser-type-check-output)))
