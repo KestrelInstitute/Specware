@@ -177,6 +177,12 @@
     filename))
 )
 
+(defun ensure-final-slash (dirname)
+  (if (member (elt dirname (- (length dirname) 1))
+	      '(#\/ #\\))
+      dirname
+    (concatenate 'string dirname "/")))
+
 (defparameter temporaryDirectory
   (ensure-final-slash
    (substitute #\/ #\\
@@ -246,12 +252,6 @@
 		 )
 		(t
 		 (princ char ostream)))))))))
-
-(defun ensure-final-slash (dirname)
-  (if (member (elt dirname (- (length dirname) 1))
-	      '(#\/ #\\))
-      dirname
-    (concatenate 'string dirname "/")))
 
 (defun directory? (pathname)
   (and (null (pathname-name pathname))
