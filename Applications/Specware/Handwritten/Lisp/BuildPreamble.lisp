@@ -17,10 +17,12 @@
 ;;; Normally autoloaded, but we want to preload them for a stand-alone world
 #+(and allegro mswindows)
 (require "eli")
-#+(and allegro mswindows)
+#+allegro
 (require "sock")
-#+(and allegro mswindows)
+#+allegro
 (require "trace")
+#+allegro
+(require "fileutil")
 
 
 ;; Override normal definition because of an apparent Allegro bug in
