@@ -21,8 +21,7 @@ SpecCalc qualifying spec
    (equalSort? (s1, s2))
    ||
    (let env = initialEnv (spc, "internal") in
-    let (result, msg) = unifySorts env ignoreSubsorts? s1 s2 in
-    result)
+    unifySorts env ignoreSubsorts? s1 s2 )
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Term Equivalences, expanding definitions

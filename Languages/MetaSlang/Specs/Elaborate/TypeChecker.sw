@@ -1112,7 +1112,7 @@ TypeChecker qualifying spec
 
   def elaborateSortForTerm (env, term, givenSort, expectedSort) = 
     %% unifySorts has side effect of modifying metaTyVar links
-    let (success, msg) = unifySorts env true givenSort expectedSort in
+    let success = unifySorts env true givenSort expectedSort in
     ((if success || env.firstPass? then
 	()
       else
@@ -1153,7 +1153,7 @@ TypeChecker qualifying spec
   def elaborateSort (env, s1, s2) = 
     let s1Checked = checkSort (env, s1) in
     %% unifySorts has side effect of modifying metatyvar links
-    let (success, msg) = unifySorts env true s1Checked s2 in
+    let success = unifySorts env true s1Checked s2 in
     ((if success then
 	()
       else             

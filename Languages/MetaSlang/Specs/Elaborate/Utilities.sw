@@ -436,7 +436,7 @@ spec
 	  | notUnify    -> notUnify)
      | _ -> NotUnify (srt1, srt2)
 
-  op unifySorts : LocalEnv -> Boolean -> Sort -> Sort -> Boolean * String
+  op unifySorts : LocalEnv -> Boolean -> Sort -> Sort -> Boolean
  def unifySorts env ignoreSubsorts? s1 s2 =
    %% ignoreSubsorts? really should be called ignoreSubsortPreds? 
 
@@ -466,8 +466,8 @@ spec
       *)
 
    case unify (env, s1, s2, [], ignoreSubsorts?) of
-     | Unify     _       -> (true,  "")
-     | NotUnify (s1, s2) -> (false, printSort s1 ^ " ! = " ^ printSort s2)
+     | Unify     _       -> true
+     | NotUnify (s1, s2) -> false
 
   op unifyCP : LocalEnv * Sort * Sort * 
                List (Id * Option Sort) * List (Id * Option Sort) * 
@@ -655,7 +655,7 @@ spec
   op consistentSorts? : LocalEnv * MS.Sort * MS.Sort * Boolean -> Boolean
  def consistentSorts? (env, srt1, srt2, ignoreSubsorts?) =
    let free_mtvs = freeMetaTyVars (srt1) ++ freeMetaTyVars (srt2) in
-   let (val, _) = (unifySorts env ignoreSubsorts? srt1 srt2) in
+   let val = (unifySorts env ignoreSubsorts? srt1 srt2) in
    (clearMetaTyVarLinks free_mtvs;
     val)
 
