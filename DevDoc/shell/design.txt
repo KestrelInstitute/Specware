@@ -35,6 +35,7 @@ Metaslang grammar):
  path [dirseq]
  proc [unit-term]
  show [unit-term]
+ showx [unit-term]
  gen-lisp [spec-term [string-literal]]
  lgen-lisp [spec-term [string-literal]]
  gen-c [spec-term [filename]]
@@ -104,6 +105,10 @@ Like command `proc' but in addition displays the value of the processed
 unit-term (whether it is given explicitly with the command or implicitly as
 the last processed unit).
 
+* showx [unit-term]
+
+Like command `show' but import-declarations are "expanded"
+
 * gen-lisp [spec-term [string-literal]]
 
 Without arguments, generates Lisp code from the last processed unit, provided
@@ -126,7 +131,7 @@ spec-term in string-literal'.
 
 * lgen-lisp [spec-term [string-literal]]
 
-Like command `gen-lisp' except that it only generates Lisp code for sorts and
+Like command `gen-lisp' except that it only generates Lisp code for types and
 ops locally declared in the spec-term. (Typically used for incremental
 development.)
 
