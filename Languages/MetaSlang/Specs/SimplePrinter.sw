@@ -27,7 +27,7 @@ SpecCalc qualifying spec {
     % in the list of names for that sort.
     let def doSortInfo sortInfo =
       ppConcat [
-        ppString "sort ",
+        ppString "type ",
         ppASortInfo sortInfo
       ] in
     let def doOpInfo opInfo =
@@ -57,7 +57,7 @@ SpecCalc qualifying spec {
     % in the list of names for that sort.
     let def doSortInfo sortInfo =
       ppConcat [
-        ppString "sort ",
+        ppString "type ",
         ppASortInfo sortInfo
       ] in
     let def doOpInfo opInfo =
