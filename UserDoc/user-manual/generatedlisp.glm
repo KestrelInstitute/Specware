@@ -126,7 +126,7 @@ arguments. For example, for
 ||  op foldr: fa(key,a,b) (a * b -> b) -> b -> map(key,a) -> b
 ]]
 <para>
-there are two Lisp functions, [[L:#FOLDR]] and [[L:#FOLDR-1-1-1]].
+there are two Lisp functions, [[L:#'FOLDR]] and [[L:#'FOLDR-1-1-1]].
 </para>
 
 <para>
