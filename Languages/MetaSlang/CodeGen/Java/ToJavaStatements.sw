@@ -326,7 +326,7 @@ def translateCaseToExpr(tcx, term, k, l, spc) =
 
 
 op translateCaseCasesToSwitches: TCx * Id * Java.Expr * Id * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitches(tcx, caseType, caseExpr, cres, cases, k0, l0, l, spc) =
+def translateCaseCasesToSwitches(tcx, _(* caseType *), caseExpr, cres, cases, k0, l0, l, spc) =
   let
     def mkCaseInit(cons,coSrt) =
       let (caseType,col0) = srtId coSrt in
@@ -477,7 +477,7 @@ def translateCaseRet(tcx, term, k, l, spc) =
 
 
 op translateCaseCasesToSwitchesRet: TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitchesRet(tcx, caseType, caseExpr, cases, k0, l0, l, spc) =
+def translateCaseCasesToSwitchesRet(tcx, _(* caseType *), caseExpr, cases, k0, l0, l, spc) =
   let def mkCaseInit(cons,caseSort) =
         let (caseType,col) = srtId(caseSort) in
         let sumdType = mkSumd(cons, caseType) in
@@ -578,7 +578,7 @@ def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
 
 
 op translateCaseCasesToSwitchesAsgNV: Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, caseType, caseExpr, cases, k0, l0, l, spc) =
+def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l, spc) =
   let def mkCaseInit(cons,srt) =
         let (caseType,col) = srtId srt in
         let sumdType = mkSumd(cons, caseType) in
@@ -676,7 +676,7 @@ def translateCaseAsgV(vId, tcx, term, k, l, spc) =
 
 
 op translateCaseCasesToSwitchesAsgV: Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitchesAsgV(oldVId, tcx, caseType, caseExpr, cases, k0, l0, l, spc) =
+def translateCaseCasesToSwitchesAsgV(oldVId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l, spc) =
   let def mkCaseInit(cons,coSrt) =
 	let (caseType,col) = srtId coSrt in
         let sumdType = mkSumd(cons, caseType) in
@@ -771,7 +771,7 @@ def translateCaseAsgF(cId, fId, tcx, term, k, l, spc) =
 
 
 op translateCaseCasesToSwitchesAsgF: Id * Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseType, caseExpr, cases, k0, l0, l, spc) =
+def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l, spc) =
   let def mkCaseInit(cons,coSrt) =
 	let (caseType,col) = srtId coSrt in
         let sumdType = mkSumd(cons, caseType) in

@@ -146,7 +146,7 @@ def mkArgProj(fieldProj) =
   "arg_" ^ fieldProj
 
 op mkEqarg: Id -> Id
-def mkEqarg(id) =
+def mkEqarg _(* id *) =
   "eqarg"
 
 op mkTagCId: Id -> Id
@@ -177,7 +177,7 @@ def mkThrowMalf() = mkThrowException("malformed sum value")
 def mkThrowUnexp() = mkThrowException("unexpected sum value") 
 
 op mkDefaultCase: Match * Spec -> List (List SwitchLab * List BlockStmt)
-def mkDefaultCase(cases,spc) =
+def mkDefaultCase(_(* cases *), _(* spc *)) =
   let swlabel = [Default] in
   let stmt = mkThrowMalf() in
   [(swlabel,[Stmt stmt])]

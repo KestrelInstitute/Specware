@@ -40,7 +40,7 @@ def mkQuotEqBody(superSrtId, superSort, quotPredId, spc) =
       ([Stmt (Return (Some eqExp))],col)
 
 op mkQuotConstrDecl: Id  * Id * Id -> ConstrDecl
-def mkQuotConstrDecl(id, superSortId, quotPred) =
+def mkQuotConstrDecl(id, superSortId, _(* quotPred *)) =
   let formParams = [fieldToFormalParam("choose", superSortId)] in
   let quotConstrBody = mkQuotConstBody() in
   ([], id, formParams, [], quotConstrBody)

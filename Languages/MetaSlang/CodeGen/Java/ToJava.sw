@@ -35,7 +35,7 @@ def clsDeclsFromSorts(spc) =
      concatClsDecls({clsDecls=[primClsDecl],collected=nothingCollected},jcginfo)
 
 op sortToClsDecls: Qualifier * Id * SortInfo * Spec * JcgInfo -> JcgInfo
-def sortToClsDecls(qualifier, id, sort_info, spc, jcginfo) =
+def sortToClsDecls (_(* qualifier *), id, sort_info, spc, jcginfo) =
   let clsDecls = jcginfo.clsDecls in
   case sort_info of
     | (_, _, [(_, srtDef)]) -> 
@@ -72,7 +72,7 @@ def addFldDeclToClsDecls(srtId, fldDecl, jcginfo) =
     exchangeClsDecls(jcginfo,clsDecls)
 
 op addMethDeclToClsDecls: Id * Id * MethDecl * JcgInfo -> JcgInfo
-def addMethDeclToClsDecls(opId, srtId, methDecl, jcginfo) =
+def addMethDeclToClsDecls(_ (* opId *), srtId, methDecl, jcginfo) =
   let clsDecls =
   map (fn (clsDecl as (lm, (clsId, sc, si), cb)) -> 
        if clsId = srtId
@@ -172,7 +172,7 @@ def mkPrimArgsMethodBody(body, spc) =
   (b,col)
 
 op addPrimArgsMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
-def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
+def addPrimArgsMethodToClsDecls(spc, opId, srt, _(* dom *), rng, trm, jcginfo) =
   %let _ = writeLine(opId^": PrimArgsMethod") in
   %case rng of
   %  | Base (Qualified (q, rngId), _, _) -> 
@@ -299,7 +299,7 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo) =
  * case will be the body of the default method; otherwise the method is abstract.
  *)
 op mkDefaultMethodForCase: Spec * Id * List Type * Type * List Var * Term -> MethDecl * Collected
-def mkDefaultMethodForCase(spc,opId,dom,rng,vars,body) =
+def mkDefaultMethodForCase (spc, opId, _(* dom *), rng, vars, body) =
   %let (mods,opt_mbody) = ([Abstract],None) in
   let (rngId,col0) = srtId(rng) in
   let (mods,opt_mbody,col1) =
