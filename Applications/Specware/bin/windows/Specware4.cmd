@@ -1,6 +1,6 @@
 set SPECWARE4=C:\Progra~1\Specware4
 rem SWPATH needs /s rather than \s so URI parsing works
-set SWPATH=/Progra~1/Specware4;/
+set SWPATH=C:/Progra~1/Specware4;C:/
 set XEMACS=C:\Progra~1\XEmacs\XEmacs-21.4.6
 rem Set allegro to the version you have
 set ALLEGRO=C:\Progra~1\acl62
