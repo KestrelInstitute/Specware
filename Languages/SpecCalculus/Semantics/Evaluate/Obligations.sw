@@ -13,12 +13,9 @@ SpecCalc qualifying spec
   import Spec/Utilities % for compressDefs and complainIfAmbiguous
   import URI/Utilities  % should work for both Specware and PSL
 
-  def SpecCalc.evaluateObligations term =
-    {%% -------------------------------------------
-     %% next two lines are optional:
+  def SpecCalc.evaluateObligations term = {
      uri <- getCurrentURI;
-     print (";;; Processing obligations at "^(uriToString uri)^"\n");
-     %% -------------------------------------------
+     print (";;; Processing obligations at " ^ (uriToString uri) ^ "\n");
      (value, time_stamp, dep_URIs) <- evaluateTermInfo term;
       case value of
 
@@ -27,7 +24,7 @@ SpecCalc qualifying spec
 			return (Spec compressed_spec, time_stamp, dep_URIs)}
 
 	| Morph sm  -> {globalContext <- getGlobalContext;
-			ob_spec <- return (morphismObligations (sm,globalContext));
+			ob_spec <- return (morphismObligations (sm,globalContext,positionOf term));
 			compressed_spec <- complainIfAmbiguous (compressDefs ob_spec) (positionOf term);
 			return (Spec compressed_spec, time_stamp, dep_URIs)}
 
@@ -35,8 +32,8 @@ SpecCalc qualifying spec
 				   "Can create obligations for Specs and Morphisms only"))
 		      }
  
-  op morphismObligations: Morphism * GlobalContext -> Spec
-  def morphismObligations ({dom, cod, sortMap, opMap},globalContext) =
+  op morphismObligations: Morphism * GlobalContext * Position -> Spec
+  def morphismObligations ({dom, cod, sortMap, opMap},globalContext,pos) =
     % let tcc = MetaSlangTypeCheck.checkSpec(domain2) in
     let translated_dom_axioms = mapPartial (fn prop ->
 					    case prop of
@@ -46,8 +43,8 @@ SpecCalc qualifying spec
 					      | _ -> None) 
 					   dom.properties
     in
-    let import_of_cod = {imports      = case findUnitIdforUnit(Spec cod,globalContext) of
-			                  | Some unitId -> [(showURI unitId, cod)]
+    let import_of_cod = {imports = case findUnitIdforUnit(Spec cod,globalContext) of
+			                  | Some unitId -> [((URI (URI_Relative unitId),pos), cod)]
 			                  | _ -> [],
 			 importedSpec = Some cod,
 			 localOps     = emptyOpNames,
@@ -60,7 +57,7 @@ SpecCalc qualifying spec
     in
       ob_spc
 
-  op translateTerm: StandardSpec.Term * MorphismSortMap * MorphismOpMap -> StandardSpec.Term
+  op translateTerm: MS.Term * MorphismSortMap * MorphismOpMap -> MS.Term
   def translateTerm (tm, sortMap, opMap) =
     let def findName m QId =
 	  case evalPartial m QId of
@@ -82,8 +79,6 @@ SpecCalc qualifying spec
     %% So far only does type conditions (for subsorts
     %% TODO: Add obligations found by definitions, etc.
     %% Second argument should be specRef for spc (showTerm blows up)
-    makeTypeCheckObligationSpec (spc,showTerm spcTerm)
-
+    makeTypeCheckObligationSpec (spc,spcTerm)
 }
-
 \end{spec}

@@ -2,7 +2,16 @@
 
 \begin{spec}
 SpecCalc qualifying spec {
-  import ../../MetaSlang/Specs/PosSpec % For Position
+\end{spec}
+
+We import PosSpec for Position, QualifiedId, ASortScheme etc.  This is a
+bit of a shame as AnnSpec would like to import this spec so as to insert
+a spec calculus term in the import of a spec. This would create a cyclic
+dependency between specs. At present, this is addressed in AnnSpec by
+defining an abstract sort SpecCalc.Term a, which is refined below.
+
+\begin{spec}
+  import ../../MetaSlang/Specs/StandardSpec 
   import /Library/Legacy/Utilities/Lisp % for LispCell
 \end{spec}
 
@@ -125,8 +134,8 @@ construct is experimental.
 The next two control the visibilty of names outside a spec.
 
 \begin{spec}
-    | Hide   (NamesExpr a) * (Term a)
-    | Export (NamesExpr a) * (Term a)
+    | Hide   (List (NameExpr a)) * (Term a)
+    | Export (List (NameExpr a)) * (Term a)
 \end{spec}
 
 This is an initial attempt at code generation. The first string is the
@@ -189,16 +198,18 @@ Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
     | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases
 \end{spec}
 
-A \verb+NamesExpr+ denotes list of names and operators. They are used in
-\verb+hide+ and \verb+export+ terms to either exclude names from being
-export or dually, to specify exactly what names are to be exported.
-Presumably the syntax will borrow ideas from the syntax used for
-qualifiying names. In particular we might want to allow patterns with
-wildcards to stand for a collection of names. For now, one must explicitly
-list them.
+A \verb+NameExpr+ denote the name of an op, sort or claim. Lists of such
+expressions are used in \verb+hide+ and \verb+export+ terms to either
+exclude names from being export or dually, to specify exactly what names
+are to be exported.  Presumably the syntax will borrow ideas from the
+syntax used for qualifiying names. In particular we might want to allow
+patterns with wildcards to stand for a collection of names. For now,
+one must explicitly list them.
+
+There is some inconsistency here as NameExpr is not annotated with 
+a position as in TranslateExpr above.
 
 \begin{spec}
-  sort NamesExpr a = List (NameExpr a)
   sort NameExpr a = | Sort       QualifiedId
                     | Op         QualifiedId * Option Sort
                     | Axiom      QualifiedId

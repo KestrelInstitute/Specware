@@ -21,25 +21,9 @@ To evaluate a spec we deposit the declarations in a new spec
 and then qualify the resulting spec if the spec was given a name.
 
 \begin{spec}
- def SpecCalc.evaluateSpec spec_elements position = 
-  %% TODO:  Figure out rules for adding import of Base.
-  %%        For example, it should not be imported by specs that it imports.
-  %%        And the user might want to suppress auto-import of it.
-  %% let spec_elements = 
-  %%     if dont_import_base? then
-  %%      spec_elements
-  %%     else
-  %%      let base_path = ["Library","Base","Base"]    in
-  %%      let base_uri    : SpecCalc.Term     Position = (URI (SpecPath_Relative base_path), Internal) in
-  %%      let base_import : SpecCalc.SpecElem Position = (Import base_uri,                   Internal) in
-  %%      let _ = toScreen ("\nAdding import of Base\n") in
-  %%      cons(base_import, spec_elements)
-  %% in
-  { %% -------------------------------------------
-    %% next two lines are optional:
+ def SpecCalc.evaluateSpec spec_elements position = {
     uri <- getCurrentURI;
     print (";;; Processing spec at "^(uriToString uri)^"\n");
-    %% -------------------------------------------
     (pos_spec,TS,depURIs) <- evaluateSpecElems emptySpec spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
@@ -94,26 +78,24 @@ and then qualify the resulting spec if the spec was given a name.
       | Claim _ -> error "evaluateSpecElem: unsupported claim type"
 
   def mergeImport spec_term imported_spec spec_a position =
-    let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, combined_psorts) =
-      let newPSortInfo = convertSortInfoToPSortInfo imported_sort_info in
-      let oldPSortInfo = findAQualifierMap (combined_psorts,imported_qualifier, imported_id) in {
-          mergedSorts <- SpecCalc.mergeSortInfo newPSortInfo oldPSortInfo position;
-          return (insertAQualifierMap (combined_psorts,
+    let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, combined_sorts) =
+      let oldSortInfo = findAQualifierMap (combined_sorts,imported_qualifier, imported_id) in {
+          mergedSorts <- SpecCalc.mergeSortInfo imported_sort_info oldSortInfo position;
+          return (insertAQualifierMap (combined_sorts,
                                        imported_qualifier,
                                        imported_id,
                                        mergedSorts))
         } in
-    let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, combined_pops) =
-      let newPOpInfo = convertOpInfoToPOpInfo imported_op_info in
-      let oldPOpInfo = findAQualifierMap (combined_pops,imported_qualifier, imported_id) in {
-           mergedOps <- SpecCalc.mergeOpInfo newPOpInfo oldPOpInfo position;
-           return (insertAQualifierMap (combined_pops,
+    let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, combined_ops) =
+      let oldOpInfo = findAQualifierMap (combined_ops,imported_qualifier, imported_id) in {
+           mergedOps <- SpecCalc.mergeOpInfo imported_op_info oldOpInfo position;
+           return (insertAQualifierMap (combined_ops,
                                         imported_qualifier,
                                         imported_id,
                                         mergedOps))
         } in
     {
-      spec_b <- return (addImport ((showTerm spec_term, imported_spec), spec_a)); 
+      spec_b <- return (addImport ((spec_term, imported_spec), spec_a)); 
       sorts_b <- foldOverQualifierMap mergeSortStep spec_b.sorts imported_spec.sorts;
       spec_c <- return (setSorts (spec_b, sorts_b));
       ops_c <- foldOverQualifierMap mergeOpStep spec_c.ops imported_spec.ops;
@@ -128,7 +110,7 @@ such time as the current one can made monadic.
 
 \begin{spec}
 
- op elaborateSpecM : PosSpec -> Env Spec
+ op elaborateSpecM : Spec -> Env Spec
  def elaborateSpecM spc =
    { uri      <- getCurrentURI;
      filename <- return ((uriToFullPath uri) ^ ".sw");
@@ -177,12 +159,9 @@ of there are explicit imports or the spec is in a directory that ends in
 \end{spec}
 
 \begin{spec}
-
-  
-  op explicateHiddenAxiomsM: PosSpec -> Env Spec
+  op explicateHiddenAxiomsM: Spec -> Env Spec
   def explicateHiddenAxiomsM spc =
     return spc % (explicateHiddenAxioms spc)
 
 }
-
 \end{spec}

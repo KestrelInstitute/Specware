@@ -2,10 +2,10 @@
 
 (in-package "PARSER4")
 
-(defpackage "METASLANG")
+;; (defpackage "METASLANG")
 (defpackage "STANDARDSPEC")
+(defpackage "MS")
 (defpackage "POSITION")
-(defpackage "POSSPEC")
 
 ;;; variables associated with new definition tables (circa May 8, 2002)
 (defvar *current-module-name*   nil) ; used only in this file
@@ -268,11 +268,11 @@
 
 
 ;; To factor the parser further, perhaps we should think about removing
-;; the reference to PosSpec from the semantic rules.
+;; the reference to StandardSpec from the semantic rules.
 (defun make-sort-declaration (qualifiable-sort-names formal-sort-parameters l r)
   (let*  ((typeVars1 (if (eq :unspecified formal-sort-parameters) nil formal-sort-parameters))
           (sort      nat-sort) ; hack -- conversion by abstractSort will be ignored
-          (tyVarsSrt (PosSpec::abstractSort #'namedTypeVar typeVars1 sort))
+          (tyVarsSrt (StandardSpec::abstractSort #'namedTypeVar typeVars1 sort))
           (typeVars2 (car tyVarsSrt)))
     ;; Since namedTypeVar is the identity function,
     ;;  (car tyVarsSrt) will just be a copy of typeVars1,
@@ -288,7 +288,7 @@
 
 (defun make-sort-definition (qualifiable-sort-names formal-sort-parameters sort l r)
   (let* ((typeVars1 (if (eq :unspecified formal-sort-parameters) nil formal-sort-parameters))
-         (tyVarsSrt (PosSpec::abstractSort #'namedTypeVar typeVars1 sort))
+         (tyVarsSrt (StandardSpec::abstractSort #'namedTypeVar typeVars1 sort))
          (typeVars2 (car tyVarsSrt))
          (sort2     (cdr tyVarsSrt)))
     ;; Since namedTypeVar is the identity function,
@@ -330,7 +330,7 @@ If we want the precedence to be optional:
     ;;  (car <result>) will just be a copy of vars
     ;;  (cdr <result>) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for that conversion into the linker.
-    (PosSpec::abstractSort #'namedTypeVar vars sort)))
+    (StandardSpec::abstractSort #'namedTypeVar vars sort)))
 
 ;;; ------------------------------------------------------------------------
 ;;;  OP-DEFINITION
@@ -340,7 +340,7 @@ If we want the precedence to be optional:
   (let* ((tyVars     (if (equal :unspecified tyVars) () tyVars))
          (term       (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
          (term       (bind-parameters params term l r))
-         (tyVarsTerm (PosSpec::abstractTerm #'namedTypeVar tyVars term))
+         (tyVarsTerm (StandardSpec::abstractTerm #'namedTypeVar tyVars term))
          (term       (cdr tyVarsTerm))
          (tyVars     (car tyVarsTerm))
          (srtScheme  (cons tyVars (freshMetaTypeVar l r))))
@@ -357,7 +357,7 @@ If we want the precedence to be optional:
   (if (null params)
       term
     (cons :|Lambda|
-          (cons (list (vector (car params) (StandardSpec::mkTrue)
+          (cons (list (vector (car params) (MS::mkTrue)
                               (bind-parameters (cdr params) term l r)))
                 (make-pos l r)))))
 
@@ -370,7 +370,7 @@ If we want the precedence to be optional:
   (let ((optional-sort-quantification (car claim))
         (expression                   (cdr claim)))
     (let* ((typevars     (if (equal :unspecified optional-sort-quantification) nil optional-sort-quantification))
-           (typeVarsTerm (PosSpec::abstractTerm #'namedTypeVar typevars expression))
+           (typeVarsTerm (StandardSpec::abstractTerm #'namedTypeVar typevars expression))
            (typevars     (car typeVarsTerm))
            (term         (cdr typeVarsTerm)))
       ;; Since namedTypeVar is the identity function,
@@ -435,7 +435,7 @@ If we want the precedence to be optional:
 
 (defun make-product (fields l r)
   (cons :|Product|
-        (cons (StandardSpec::tagTuple fields)
+        (cons (MS::tagTuple fields)
               (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
@@ -579,7 +579,7 @@ If we want the precedence to be optional:
       term
     (cons :|Lambda|
           (cons (list (vector (car params)
-                              (StandardSpec::mkTrue)
+                              (MS::mkTrue)
                               (bindParams (cdr params) term l r)))
                 (make-pos l r)))))
 
@@ -665,7 +665,7 @@ If we want the precedence to be optional:
                    ()
                  optional-tuple-display-body)))
     (cons ':|Record|
-          (cons (StandardSpec::tagTuple terms)
+          (cons (MS::tagTuple terms)
                 (make-pos l r)))))
 
 ;;; ------------------------------------------------------------------------
@@ -697,7 +697,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-list-display (expressions l r)
-  (PosSpec::mkList expressions
+  (StandardSpec::mkList expressions
                    (make-pos l r)
                    (freshMetaTypeVar l r)))
 
@@ -784,7 +784,7 @@ If we want the precedence to be optional:
 
 (defun make-branch (pattern expression l r)
   (declare (ignore l r))
-  (vector pattern (StandardSpec::mkTrue) expression))
+  (vector pattern (MS::mkTrue) expression))
 
 ;;; ========================================================================
 ;;;  PATTERN
@@ -803,13 +803,13 @@ If we want the precedence to be optional:
 (defun make-char-pattern             (char             l r) (cons :|CharPat|     (cons   char                                               (make-pos l r))))
 (defun make-string-pattern           (str              l r) (cons :|StringPat|   (cons   str                                                (make-pos l r))))
 
-(defun make-cons-pattern             (pattern patterns l r) (PosSpec::mkConsPattern pattern patterns (make-pos l r) (freshMetaTypeVar l r)))
-(defun make-list-pattern             (patterns         l r) (PosSpec::mkListPattern patterns         (make-pos l r) (freshMetaTypeVar l r)))
+(defun make-cons-pattern             (pattern patterns l r) (StandardSpec::mkConsPattern pattern patterns (make-pos l r) (freshMetaTypeVar l r)))
+(defun make-list-pattern             (patterns         l r) (StandardSpec::mkListPattern patterns         (make-pos l r) (freshMetaTypeVar l r)))
 
 (defun make-tuple-pattern            (patterns         l r)
   (if (= (length patterns) 1)
       (car patterns)
-    (cons :|RecordPat| (cons (StandardSpec::tagTuple patterns) (make-pos l r)))))
+    (cons :|RecordPat| (cons (MS::tagTuple patterns) (make-pos l r)))))
 
 (defun make-record-pattern          (fields            l r)
   (let ((alphabetized-fields (sort fields #'(lambda (x y) (string< (car x) (car y))))))

@@ -73,13 +73,11 @@ SpecCalc qualifying spec {
    let residue            = subtractSpec spc dom_spec  in     % S - dom(M)
    {translated_residue <- applyMorphism sm residue position;  % M(S - dom(M))
     new_spec <- specUnion [translated_residue, cod_spec];     % M(S - dom(M)) U cod(M)
-    spec_ref <- return (case sm_tm of
-			  | (SpecMorph (_,cod_spec_tm,_),_) -> showTerm cod_spec_tm
-			  | _ -> 
-			    let sm_desc = showTerm sm_tm in
-			    sm_desc^" (* effect is to import codomain of "^sm_desc^ " *) ");
+    cod_spec_term <- return (case sm_tm of
+			  | (SpecMorph (_,cod_spec_tm,_),_) -> cod_spec_tm
+			  | _ -> sm_tm);
     return (setImportInfo (new_spec,
-			   {imports      = [(spec_ref, cod_spec)],
+			   {imports      = [(cod_spec_term, cod_spec)],
 			    importedSpec = Some cod_spec,
 			    localOps     = emptyOpNames,  % local_op_names   new_spec cod_spec
 			    localSorts   = emptySortNames % local_sort_names new_spec cod_spec

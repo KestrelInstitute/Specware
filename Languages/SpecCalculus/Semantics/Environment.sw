@@ -25,8 +25,6 @@ diagram, morphism etc.  We combine them with a coproduct.
 
 \begin{spec}
   sort Info
-  % sort Spec    = ASpec StandardAnnotation
-  % sort PosSpec = ASpec Position
 \end{spec}
 
 The interpreter maintains state.  The state of the interpreter includes

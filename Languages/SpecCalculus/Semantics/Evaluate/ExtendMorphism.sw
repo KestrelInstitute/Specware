@@ -46,7 +46,7 @@ def extendMorphism(morph, base_spc) =
   let axiomFmlas = map (fn (_,_,_,fmla) -> fmla) axioms in
   let newAxiomFmlas = map (fn (fmla) -> substOpMap(opMap, fmla)) axiomFmlas in
   let incompleteAxioms = filter (fn (fmla) -> termOpsInSpec?(fmla, dom)) newAxiomFmlas in
-  let _ = if specwareDebug? then map (fn (f:StandardSpec.Term) -> printTermToTerminal(f)) incompleteAxioms else [()] in
+  let _ = if specwareDebug? then map (fn (f:MS.Term) -> printTermToTerminal(f)) incompleteAxioms else [()] in
   let testAxiom = hd incompleteAxioms in
   let _ = if specwareDebug? then printTermToTerminal(testAxiom) else () in
   let (existentialTest, ansVars) = mkExistential(dom, testAxiom) in
@@ -71,7 +71,7 @@ def extendMorphismWithAnswer(morph, domVars) =
   %%let _ = if specwareDebug? then printMapToTerminal(newOpMap) else () in
     makeMorphism(dom, cod, srtMap, newOpMap)
 
-op mkExistential: Spec * StandardSpec.Term -> Property * Vars
+op mkExistential: Spec * MS.Term -> Property * Vars
 
 def mkExistential (spc, term) =
   let opsToQuantify = termOpsInSpec(term, spc) in
@@ -95,7 +95,7 @@ def mkExistential (spc, term) =
   let _ = if specwareDebug? then printTermToTerminal(existTerm) else () in
     ((Conjecture, "morphismExistential", [], existTerm), newVars)
 
-op termOpsInSpec?: StandardSpec.Term * Spec -> Boolean
+op termOpsInSpec?: MS.Term * Spec -> Boolean
 
 def termOpsInSpec?(term, spc) =
   let 
@@ -157,7 +157,7 @@ def termOpsInSpec?(term, spc) =
   in
     mapRec term
 
-op termOpsInSpec: StandardSpec.Term * Spec -> List StandardSpec.Term
+op termOpsInSpec: MS.Term * Spec -> List MS.Term
 
 def termOpsInSpec(term, spc) =
   let 
@@ -219,7 +219,7 @@ def termOpsInSpec(term, spc) =
   in
     mapRec term
 
-op substOpMap: MorphismOpMap * StandardSpec.Term -> StandardSpec.Term
+op substOpMap: MorphismOpMap * MS.Term -> MS.Term
 
 def substOpMap (opMap, term) =
   %%

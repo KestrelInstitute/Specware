@@ -8,7 +8,6 @@ Specware qualifying spec {
   import Evaluate/Term 
   import Environment 
   import SpecPath
-  % import ../../MetaSlang/Specs/PosSpec    
   import ../../MetaSlang/Specs/Position     
   import ../AbstractSyntax/Printer % for showUI
 \end{spec}
