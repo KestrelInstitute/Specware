@@ -338,6 +338,6 @@
 
 #+allegro				; Fix for other dialects later
 (eval-when (load)
-  (format t "~&;     To create grammar.ps and display using ~A: (cl-user::show-grammar)~%" 
-	  (get-ps-viewer)))
+  (format t "~&;     To create grammar.ps and display using ghostview or gs: (cl-user::show-grammar)~%"))
+
 
