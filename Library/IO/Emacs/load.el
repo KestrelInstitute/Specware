@@ -12,7 +12,12 @@
 (defvar lisp-emacs-interface-type 'franz)
 
 (defun sw:load-specware-emacs-file (name)
-  (byte-compile-and-load-file (concatenate 'string *specware-emacs* name ".el")))
+  (let ((el-file   (concatenate 'string *specware-emacs* name ".el"))
+	(elc-file  (concatenate 'string *specware-emacs* name ".elc")))
+    (unless (and (file-exists-p elc-file)
+		 (file-newer-than-file-p elc-file el-file))
+      (byte-compile-file el-file))
+    (load elc-file)))
 
 ;; This defvar just eliminates a compilation warning message.
 (defvar sw:specware-emacs-files) ; see defconst in files.el
