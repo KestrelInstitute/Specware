@@ -47,7 +47,7 @@ is
 ||  (IN-PACKAGE "A")
 ||
 ||  (DEFPARAMETER TWO 2)
-||  (DEFUN ADD1 (X) (NAT-SPEC::|!+| X 1))
+||  (DEFUN ADD1 (X) (INTEGER-SPEC::+-2 X 1))
 ]]
 </section>
 
@@ -72,19 +72,19 @@ to the function.
 
 <para>
 For each function whose argument is a product, two entry points are
-created: an n-ary function whose name is derived from the op as
-described above, and a unary function whose name has "[[L:-1]]"
+created: a unary function whose name is derived from the op as
+described above, and an n-ary function whose name has "[[L:-n]]"
 appended. E.g. for 
 </para>
 [[
 ||  op min : Integer * Integer -> Integer
 ]]
 <para>
-there are two lisp functions [[L:#'MIN]] and [[L:#'MIN-1]].
+there are two lisp functions [[L:#'MIN-2]] and [[L:#'|!min|]].
 A call with an explicit product is translated to the n-ary version,
 otherwise the unary version is used. For example, [[min(1,2)]] translates
-to [[L:(MIN 1 2)]], and [[ foldr min inf l ]] translates to 
-[[L:(FOLDR-1-1-1 #'MIN-1 INF L)]].
+to [[L:(MIN-2 1 2)]], and [[ foldr min inf l ]] translates to 
+[[L:(FOLDR-1-1-1 #'|!min| INF L)]].
 When generating lisp for a definition, the form is examined to see whether the
 definition is naturally n-ary. If it is, then the primary definition is
 n-ary and the unary function is defined in terms of the n-ary function,
@@ -97,8 +97,8 @@ otherwise the situation is reversed. For example, given the definition
 we get the two Common Lisp definitions:
 </para>
 [[L:
-||  (DEFUN MIN (X Y) (if (<= x y) x y))
-||  (DEFIN MIN-1 (X) (MIN (CAR X) (CDR X)))
+||  (DEFUN MIN-2 (X Y) (if (<= x y) x y))
+||  (DEFIN |!min| (X) (MIN-2 (CAR X) (CDR X)))
 ]]
 <para>
 and given the definition
@@ -110,8 +110,8 @@ and given the definition
 we get the two Common Lisp definitions:
 </para>
 [[L:
-||  (DEFUN MULTFG (X Y) (PAIR1-1 (CONS X Y)))
-||  (DEFUN MULTFG-1 (X) (* (F-1 X) (G-1 X)))
+||  (DEFUN MULTFG-2 (X Y) (MULTFG (CONS X Y)))
+||  (DEFUN MULTFG (X) (* (F-1 X) (G-1 X)))
 ]]
 
 <para>
