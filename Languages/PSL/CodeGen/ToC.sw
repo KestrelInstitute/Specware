@@ -17,7 +17,7 @@ SpecCalc qualifying spec {
 
   op oscarToC : Oscar.Spec -> Spec.Spec -> Env CSpec
   def oscarToC oscSpec base =
-    let cSpec = emptyCSpec in
+    let cSpec = emptyCSpec "" in
     let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
     let envSpec = addMissingFromBase(base,envSpec,builtinSortOp) in
     let cSpec = generateCTypes cSpec envSpec in
