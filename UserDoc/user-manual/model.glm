@@ -45,15 +45,10 @@ certain kinds of units result in new files being created.  For
 example, when Lisp code is generated from a spec, the code is
 deposited into a <".lisp"> file.</para>
 
-<para>&Specware; also features commands to display information about
-units. For instance, the user can display the sorts, ops, and axioms
-of the spec resulting from a colimit operation.</para>
-
-<para>There are commands to inspect and modify an environment variable
-that determines how unit names are resolved to <".sw"> files.</para>
-
-<para>Lastly, there are commands to list the units in the internal
-cache and to clear the cache.</para>
+<para>&Specware; also features auxiliary commands to display
+information about units, inspect and clear the internal cache, and
+inspect and change an environment variable that determines how unit
+names are resolved to <".sw"> files.</para>
 
 </section>
 

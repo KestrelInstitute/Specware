@@ -31,7 +31,7 @@ programs are a kind of unit, constructed by the [[generate]] operator
 of &Metaslang;. A side effect of processing one such unit is that the
 resulting code is written into a <".lisp"> file.</para>
 
-<para>cache
+<para>
 
 </section>
 
