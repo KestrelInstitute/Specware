@@ -470,6 +470,8 @@ axiom but we might be better off without an axiom at all.
 \begin{spec}
 	  | Exec trm ->
           (case trm of
+            | Fun(OneName("return",fixity),srt,position) ->
+                compileCommand ctxt (Return None,position)
             | ApplyN ([Fun(OneName("return",fixity),srt,position)],_) ->
                 compileCommand ctxt (Return None,position)
             | ApplyN ((Fun(OneName("return",fixity),srt,position)) :: exprs,_) ->
@@ -489,7 +491,7 @@ axiom but we might be better off without an axiom at all.
                 else
                   specError ("call to undefined procedure: " ^ id1 ^ "." ^ id2) position
             | _ ->
-               specError "invalid procedure call or relation statement" position)
+               specError ("invalid procedure call or relation statement: " ^ (show trm)) position)
 \end{spec}
 
 
