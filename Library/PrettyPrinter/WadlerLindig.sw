@@ -15,7 +15,13 @@ WadlerLindig qualifying spec
     | DocGroup Doc
   
   op ppCons : Doc -> Doc -> Doc
-  def ppCons x y = DocCons (x,y)
+  % def ppCons x y = DocCons (x,y)  % original
+  def ppCons x y = 
+    case (x,y) of
+      | (DocNil,DocNil) -> DocNil
+      | (DocNil,x) -> x
+      | (x,DocNil) -> x
+      | _ -> DocCons (x,y)
   
   op ppNil : Doc
   def ppNil = DocNil
@@ -49,7 +55,7 @@ WadlerLindig qualifying spec
         Cons (str, replicate (cnt - 1) str) in
     let def makeStringList doc =
       case doc of
-          SNil -> [""]
+        | SNil -> [""]
         | SText (s,d) -> Cons (s,(makeStringList d))
         | SLine (indent,d) ->
                Cons (concatList (Cons ("\n", replicate indent " ")),
