@@ -236,13 +236,25 @@ fi
 # People who want to avoid lots of line breaks can set *DEFAULT-RIGHT-MARGIN* 
 # in their lisp init.
 
+# Rebuild each time.  A bit redundant, but ensures compatibility...
+# big-alisp.dxl will have a larger lisp heap than the default alisp image.
+$LISP -batch <<-XXXX
+	(build-lisp-image "big-alisp.dxl" :lisp-heap-start #x48000000 :oldspace #x2000000)
+XXXX
+
+
 echo " "
 echo "Loading Specware ... (for dumplisp)"
 echo " "
-$LISP -batch <<-XXXX
+$LISP -I big-alisp.dxl -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
+        (setf (sys::gsgc-parameter :free-percent-new) 5) ; default is 25
+        (setf (sys::gsgc-parameter :expansion-free-percent-new) 10) ; default is 35
+        (setf (sys::gsgc-parameter :expansion-free-percent-old) 90) ; default is 35
+        (sys::gsgc-parameters)
+        (room t)
 	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX
 RC=$?

@@ -120,8 +120,26 @@ XXXX
 #
 # I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
 # Do we need it here?
-$LISP <<-XXXX
+
+# Rebuild each time.  A bit redundant, but ensures compatibility...
+# big-alisp.dxl will have a larger lisp heap than the default alisp image.
+$LISP -batch <<-XXXX
+	(build-lisp-image "big-alisp.dxl" :lisp-heap-start #x48000000 :oldspace #x2000000)
+XXXX
+
+echo " "
+echo "Loading Specware ... (for dumplisp)"
+echo " "
+$LISP -I big-alisp.dxl -batch <<-XXXX
 	(load "Specware4.lisp")
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
-	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
+	  ;; We want to keep the newspace segments relatively small.
+	  (setf (sys::gsgc-parameter :free-percent-new) 5) ; default is 25
+	  (setf (sys::gsgc-parameter :expansion-free-percent-new) 10) ; default is 35
+	  ;; But we want to make the oldspace segments large, 
+	  ;; since this reduces the number of them, which speeds up gc.
+	  (setf (sys::gsgc-parameter :expansion-free-percent-old) 90) ; default is 35
+	  (sys::gsgc-parameters)
+	  (room t)
+	  (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
 XXXX
