@@ -288,6 +288,13 @@ StandardSpec qualifying spec {
  def mkWildPat   s    = WildPat   (s,              noPos)
  def mkTuplePat  pats = RecordPat (tagTuple(pats), noPos)
 
+ op negateTerm: Term -> Term
+ %% Gets the negated version of term. 
+ def negateTerm tm =
+   case tm of
+     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),negTm,_) -> negTm
+     | _ -> mkApply(notOp,tm)
+
  %% ---
 
  op findTheSort  : fa(a) ASpec a * QualifiedId    -> Option (ASortInfo a)  

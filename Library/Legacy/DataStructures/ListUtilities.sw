@@ -15,6 +15,7 @@ ListUtilities qualifying spec {
   op take              : fa(T) Nat * List T -> List T
   op drop              : fa(T) Nat * List T -> List T
   op deleteNth         : fa(a) Nat * List a -> List a
+  op replaceNth        : fa(a) Nat * List a * a -> List a
 
   op flatMap           : fa(a,b) (a -> List b) -> List a -> List b
 
@@ -126,6 +127,13 @@ ListUtilities qualifying spec {
     else 
       Cons (hd ls,
             deleteNth (n - 1, tl ls))
+
+  def replaceNth(n,ls,elem) = 
+    if n = 0 then
+      Cons(elem,tl ls)
+    else 
+      Cons (hd ls,
+            replaceNth (n - 1, tl ls, elem))
 
   def flatMap f =
     let def loop l =
