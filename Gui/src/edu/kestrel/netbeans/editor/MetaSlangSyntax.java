@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/03/19 19:21:26  weilyn
+ * Added ISI_LATEX_COMMENT as a last buffer state
+ *
  * Revision 1.6  2003/03/13 21:51:36  weilyn
  * Made "\end{spec}" part of ProcessLatexCommentStart
  *
@@ -62,6 +65,8 @@ public class MetaSlangSyntax extends Syntax {
     private static final int ISA_LPAREN = ISI_INT + 1; // after '('
     private static final int ISA_BSLASH = ISA_LPAREN + 1; // after '\'
 
+    private static final boolean DEBUG = true;
+
     public MetaSlangSyntax() {
         tokenContextPath = MetaSlangTokenContext.contextPath;
     }
@@ -71,7 +76,7 @@ public class MetaSlangSyntax extends Syntax {
 
         while(offset < stopOffset) {
             actChar = buffer[offset];
-	    //Util.log("*** parseToken: char="+actChar+" state="+getStateName(state));
+	    if (DEBUG) Util.log("*** parseToken: char="+actChar+" state="+getStateName(state));
 
             switch (state) {
             case INIT:
@@ -258,7 +263,7 @@ public class MetaSlangSyntax extends Syntax {
                
             case ISA_BSLASH:
                 int newOffset = processLatexCommentStart(buffer, offset);
-                //Util.log("*** processLatexCommentStart(): offset="+offset+" return "+newOffset);
+                if (DEBUG) Util.log("*** processLatexCommentStart(): offset="+offset+" return "+newOffset);
                 if (newOffset != -1) {
                     offset = newOffset;
                     state = ISI_LATEX_COMMENT;
@@ -277,12 +282,13 @@ public class MetaSlangSyntax extends Syntax {
                
             case ISA_BSLASH_I_LATEX_COMMENT:
 		newOffset = processLatexCommentEnd(buffer, offset);
-		//Util.log("*** processLatexCommentEnd(): offset="+offset+" return "+newOffset);
+		if (DEBUG) Util.log("*** processLatexCommentEnd(): offset="+offset+" return "+newOffset);
 		if (newOffset != -1) {
 		    offset = newOffset;
 		    state = INIT;
 		    return MetaSlangTokenContext.LATEX_COMMENT;
 		}
+		state = ISI_LATEX_COMMENT;
 		break;
                
             case ISA_STAR_I_BLOCK_COMMENT:
