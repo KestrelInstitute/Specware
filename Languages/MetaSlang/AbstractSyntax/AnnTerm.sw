@@ -3,6 +3,8 @@ MetaSlang qualifying spec {
  import /Library/Legacy/Utilities/State  % for MetaTyVar's
  import /Library/Legacy/DataStructures/ListPair
 
+ op AnnSpecPrinter.printTerm  : [a] ATerm       a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                QualifiedId
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -431,11 +433,11 @@ MetaSlang qualifying spec {
      | Apply      (t1,t2,   _) -> (case termSort t1 of
 				     | Arrow(dom,rng,_) -> rng
 				     | _ -> System.fail ("Cannot extract sort of application "
-							 ^ anyToString term))
+							 ^ printTerm term))
      | ApplyN     ([t1,t2], _) -> (case termSort t1 of
 				     | Arrow(dom,rng,_) -> rng
 				     | _ -> System.fail ("Cannot extract sort of application "
-							 ^ anyToString term))
+							 ^ printTerm term))
 
      | Record     (fields,  a)              -> Product (List.map (fn (id, t) -> (id, termSort t)) fields, a)
      | Bind       (_,_,_,   a)              -> Boolean a
@@ -451,8 +453,7 @@ MetaSlang qualifying spec {
      | Pi         (tvs, t,  a)              -> Pi (tvs, termSort t, a) 
      | And        (tms,     a)              -> And (map termSort tms,  a)
      | Any                  a               -> Any a
-     | _ -> 
-       fail ("\n termSort mystery term: " ^ (anyToString term) ^ "\n")
+     | mystery -> fail ("\n No match in termSort with: " ^ (anyToString mystery) ^ "\n")
 
  def termInnerTerm tm =
    let tm = 

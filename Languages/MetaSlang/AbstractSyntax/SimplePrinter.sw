@@ -238,10 +238,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ppSep (ppString "; ") (map ppATerm terms)
 	  | SortedTerm (tm,srt,_) ->
 	      ppGrConcat [ppATerm tm, ppString": ",ppBreak,ppASort srt]
-          | any ->
-               fail ("No match in ppATerm with: '"
-                  ^ (anyToString any)
-                  ^ "'"))
+          | mystery -> fail ("No match in ppATerm with: '" ^ (anyToString mystery) ^ "'"))
 
   op ppBinder : Binder -> Pretty
   def ppBinder binder =
@@ -333,10 +330,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppString ")"
           ]
       | SortedPat (pat,srt,_) -> ppAPattern pat
-      | any ->
-           fail ("No match in ppAPattern with: '"
-              ^ (anyToString any)
-              ^ "'")
+      | mystery -> fail ("No match in ppAPattern with: '" ^ (anyToString mystery) ^ "'")
 
 
   op ppBoolean : Boolean -> Pretty
@@ -404,10 +398,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Bool b -> ppBoolean b
       | OneName (id,fxty) -> ppString id
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
-      | any ->
-           fail ("No match in ppAFun with: '"
-              ^ (anyToString any)
-              ^ "'")
+      | mystery -> fail ("No match in ppAFun with: '" ^ (anyToString mystery) ^ "'")
 
   def omittedQualifiers = ["Integer","Nat","Double","List","String","Char"]  % "Integer_" "Option" ...?
 
@@ -433,10 +424,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           ]
       | Nonfix -> ppNil % ppString "Nonfix"
       | Unspecified -> ppNil % ppString "Unspecified"
-      | any ->
-           fail ("No match in ppFixity with: '"
-              ^ (anyToString any)
-              ^ "'")
+      | mystery -> fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
   op isSimpleSort? : fa (a) ASort a -> Boolean
   def isSimpleSort? srt =
@@ -543,10 +531,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
          let ({link, uniqueId, name}) = ! tyVar in
              ppString (name ^ (Nat.toString uniqueId))
 
-      | any ->
-           fail ("No match in ppASort with: '"
-              ^ (anyToString any)
-              ^ "'")
+      | mystery -> fail ("No match in ppASort with: '" ^ (anyToString mystery) ^ "'")
 
   op isFiniteList : fa (a) ATerm a -> Option (List (ATerm a))
   def isFiniteList term =  

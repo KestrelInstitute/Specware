@@ -40,7 +40,7 @@ CPrint qualifying spec {
                             (t, prettysNone
                                   [string " (*", p, string ") ",
                                    ppPlainTypes ts])
-       | _ -> System.fail ("Unexpected type to print "^anyToString t)
+       | mystery -> System.fail ("Unexpected type to print "^anyToString mystery)
 
   def ppConst (v : Val) : Pretty =
     case v

@@ -311,10 +311,10 @@ spec
 	       let l2 = length ts  in
 	       ((if l1 ~= l2 then
 		   error (env,
-			  "\n  [A] Instantiation list (" ^ 
-			  (foldl (fn (arg, s) -> s ^ " " ^ (anyToString arg)) "" ts) ^
+			  "\nInstantiation list (" ^ 
+			  (foldl (fn (arg, s) -> s ^ " " ^ (printSort arg)) "" ts) ^
 			  " ) does not match argument list (" ^ 
-			  (foldl (fn (tv, s) -> s ^ " " ^ (anyToString tv)) "" tvs) ^
+			  (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs) ^
 			  " )",
 			  pos)
 		 else 
@@ -400,10 +400,10 @@ spec
    let (tvs, _) = unpackSort srt in
    if ~(length types = length tvs) then
      (error (env, 
-	     "\n  [B] Instantiation list (" ^ 
-	     (foldl (fn (arg, s) -> s ^ " " ^ (anyToString arg)) "" types) ^
+	     "\nInstantiation list (" ^ 
+	     (foldl (fn (arg, s) -> s ^ " " ^ (printSort arg)) "" types) ^
 	     " ) does not match argument list (" ^ 
-	     (foldl (fn (tv, s) -> s ^ " " ^ (anyToString tv)) "" tvs) ^
+	     (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs) ^
 	     " )",
 	     pos);
       srt)

@@ -56,7 +56,6 @@ AnnSpecPrinter qualifying spec
  %% ========================================================================
 
  op printTyVars                  : TyVars            -> String 
- op printTerm                    : [a] ATerm       a -> String
  op printSort                    : [a] ASort       a -> String 
  op printPattern                 : [a] APattern    a -> String
  op printSortScheme              : [a] ASortScheme a -> String 
@@ -786,7 +785,7 @@ AnnSpecPrinter qualifying spec
      | []     -> "[]"
      | v1::vs -> "[" ^ v1 ^ (foldl (fn (v, str) -> str ^","^ v) "" vs) ^ "]"
 
- def printTerm term = 
+def AnnSpecPrinter.printTerm term = 
    PrettyPrint.toString (format (80, ppTerm (initialize (asciiPrinter, false))
 				            ([], Top:ParentTerm) 
 					    term))

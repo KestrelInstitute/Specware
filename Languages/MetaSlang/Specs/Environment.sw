@@ -152,15 +152,14 @@ spec
  op arrow : Spec * Sort -> Sort * Sort
 
  def arrow (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt)
-    of Arrow (dom, rng, _) -> (dom, rng)
-     | _ -> System.fail "Could not get function space sort"
+  case stripSubsorts (sp, srt) of
+    | Arrow (dom, rng, _) -> (dom, rng)
+    | mystery -> System.fail ("Could not extract arrow sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
      
- 
  def product (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt)
-    of Product (fields, _) -> fields
-     | _ -> System.fail ("Could not extract product sort "^printSort srt)
+  case stripSubsorts (sp, srt) of
+    | Product (fields, _) -> fields
+    | mystery -> System.fail ("Could not extract product sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
 
  op  productSorts: Spec * Sort -> List Sort
  def productSorts (sp, srt) =
@@ -172,9 +171,9 @@ spec
      | _ -> [srt]
 
  def coproduct (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt)
-    of CoProduct (fields, _) -> fields
-     | _ -> System.fail "Could not extract co-product sort"
+  case stripSubsorts (sp, srt) of
+    | CoProduct (fields, _) -> fields
+    | mystery -> System.fail ("Could not extract co-product sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
   
  def domain (sp, srt) = 
   let (dom, _) = arrow (sp, srt) in dom
@@ -224,12 +223,10 @@ spec
 
  def inferType (sp, tm : MS.Term) = 
   case tm
-    of Apply      (t1, t2,               _) -> (case rangeOpt(sp,inferType(sp,t1))
-                                                  of Some rng -> rng
-                                                   | None -> 
-                                                     System.fail 
-                                                     ("Could not extract type for "^
-                                                      printTermWithSorts tm))
+    of Apply      (t1, t2,               _) -> (case rangeOpt(sp,inferType(sp,t1)) of
+                                                  | Some rng -> rng
+						  | None -> 
+						    System.fail ("inferType: Could not extract type for "^ printTermWithSorts tm))
      | Bind       _                         -> boolSort
      | Record     (fields,               a) -> Product(map (fn (id, t) -> 
 							    (id, inferType (sp, t)))
@@ -241,14 +238,13 @@ spec
      | Fun        (_, srt,               _) -> srt
      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternSort pat,
                                                        inferType (sp, body))
-     | Lambda     ([],                   _) -> System.fail 
-                                                "inferType: Ill formed lambda abstraction"
+     | Lambda     ([],                   _) -> System.fail "inferType: Ill formed lambda abstraction"
      | IfThenElse (_, t2, t3,            _) -> inferType (sp, t2)
      | Seq        ([],                   _) -> Product ([], noPos)
      | Seq        ([M],                  _) -> inferType (sp, M)
      | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
      | SortedTerm (_, srt,               _) -> srt						
-     | _ -> (System.print(tm);System.fail ("inferType: Non-exhaustive match"))
+     | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
 
 % def SpecEnvironment.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
 % def booleanSort : Sort = Boolean noPos
@@ -417,9 +413,9 @@ spec
   let res =
    case term 
      of Apply      (t1, t2,               _) -> 
-        (case stripSubsorts(sp,termSortEnv (sp, t1))
-           of Arrow (dom, rng, _)            -> rng
-            | _ -> System.fail ("Cannot extract sort of application "^ anyToString term))
+        (case stripSubsorts(sp,termSortEnv (sp, t1)) of
+           | Arrow (dom, rng, _)            -> rng
+	   | _ -> System.fail ("Cannot extract sort of application "^ printTerm term))
       | Bind       _                         -> boolSort
       | Record     (fields,               _) -> Product(map (fn (id, t)-> 
                                                              (id, termSortEnv (sp, t)))
@@ -434,7 +430,7 @@ spec
       | Lambda     ([],                   _) -> System.fail "Ill formed lambda abstraction"
       | IfThenElse (_, t2, t3,            _) -> termSortEnv   (sp, t2)
       | Seq        _                         -> mkProduct     []
-      | _                                    -> System.fail "Non-exhaustive match"
+      | mystery                              -> System.fail ("In termSortEnv, unrecognized term: " ^ printTerm mystery)
   in
   %let _ = writeLine("termSortEnv: "^printTerm(term)^"="^printSort(res)) in
   res

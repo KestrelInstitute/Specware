@@ -514,8 +514,7 @@ SpecToLisp qualifying spec {
 	  | None -> mkLLambda (["!x"], [], mkLVar "!x")
 	  | Some term -> mkLTerm (sp, dpn, vars, term))
 
-     | _ -> 
-       System.fail ("Unexpected termOp: " ^ (anyToString termOp))
+     | mystery -> System.fail ("In mkLTermOp, unexpected termOp: " ^ (anyToString mystery))
 
  op  flattenFailWith : MS.Term -> List (MS.Term)
  def flattenFailWith term =
