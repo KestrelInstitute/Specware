@@ -78,6 +78,7 @@ spec
  
  op relativeUidToSWPATH: UnitId * List UnitId -> UnitId
  def relativeUidToSWPATH(uid, swpath) =
+   let _ = String.writeLine("\n relativeUidToSWPATH UID = "^showUID(uid)^"\n swPath = "^(foldr concat "," (map (fn (path) -> (showUID(path)^" ; ")) swpath))) in 
    let foundSwUid = findOption (fn (swUid) -> relativeUidToUid(uid, swUid)) swpath in
    case foundSwUid of
      | Some res -> res
@@ -265,11 +266,13 @@ spec
 *)
 
 
-  op SpecCalc.evaluateProofGen : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean
-                                -> SpecCalc.Env ValueInfo
+  %% Dispatch functions to call proof gen for other terms not defines in specware
+  op SpecCalc.evaluateProofGenOther      : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
+  op SpecCalc.evaluateProofGenLocalOther : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
 
+
+  op SpecCalc.evaluateProofGen : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ValueInfo
   %% Need to add error detection code
-
   def SpecCalc.evaluateProofGen (valueInfo as (value,_,_), cterm, optFileNm, fromObligations?) =
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
      cUID <- SpecCalc.getUID(cterm);
@@ -284,8 +287,8 @@ spec
      case value of
        | Spec spc -> return (toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, false))
        | Morph morph -> return (toProofFileMorph (morph, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, false))
-       | _ -> raise (Unsupported ((positionOf cterm),
-				  "Can generate proofs only for Specs and Morphisms."));
+       | _ -> %raise (Unsupported ((positionOf cterm),  "Can generate proofs only for Specs and Morphisms."));
+       SpecCalc.evaluateProofGenOther(valueInfo, cterm, optFileNm, fromObligations?);
 %     let _ = System.fail ("evaluateProofGen ") in
      {print("Generated Proof file.");
       return valueInfo}}
@@ -304,8 +307,8 @@ spec
      case value of
        | Spec spc -> return (toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true))
        | Morph morph -> return (toProofFileMorph (morph, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true))
-       | _ -> raise (Unsupported ((positionOf cterm),
-				  "Can generate proofs only for Specs and Morphisms."));
+       | _ -> %raise (Unsupported ((positionOf cterm), "Can generate proofs only for Specs and Morphisms."));
+       SpecCalc.evaluateProofGenLocalOther(valueInfo, cterm, optFileName, fromObligations?);
      {print("Generated Proof file.");
       return valueInfo}}
 
@@ -329,7 +332,7 @@ spec
    case optFileNm
       of Some filNam ->
 	let fileUid = normalizeUID(pathStringToCanonicalUID filNam) in
-	let filePath = fileUid.path in
+	let filePath = addDevice?(fileUid.path) in
 	let fileUid = {path=butLast filePath, hashSuffix=None} in
 	return (Some fileUid, filNam, false)
        | _ ->
