@@ -3,6 +3,20 @@
 ## There are name conflicts for the product accessors for Procedures, PSpecs and ProcContext
 ## There are name conflicts for BSpecs and ProcContexts
 
+We would like to elaborate less often but there is a problem if we try
+to elaborate once and carry around elaborated specs. The static spec
+(which is referred to from the dynamic spec) may change as we move into
+an inner scope. In which case the dynamic spec must be re-elaborated 
+with respect to the new static spec.
+
+The better way would be to typecheck the program and then never call elaborate
+at all. Bit the problem remains that the dynamic spec in the context refers to
+a static spec that may change. it makes no sense to add the operator in both
+places.
+
+I suppose we could do a find operation on the static spec and then add the info
+to the dynamic spec
+
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
@@ -118,10 +132,8 @@ pass.
              setFinalModes bSpec (V.singleton finalV));
           proc <- return (makeProcedure (map (fn (x,y) -> x) procInfo.args)
                                  returnInfo
-                                 % statCtxtElab
-                                 pSpec.staticSpec
-                                 % dyCtxtElab
-                                 dyCtxt
+                                 statCtxtElab
+                                 dyCtxtElab
                                  bSpec);
           setProcedures pSpec (PolyMap.update pSpec.procedures (unQualified procName) proc)
         }

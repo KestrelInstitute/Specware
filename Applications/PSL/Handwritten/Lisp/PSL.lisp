@@ -4,7 +4,10 @@
 #+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
 
-(defvar Specware4 (specware::getenv "SPECWARE4"))
+(defvar Specware4 #+allegro(sys:getenv "SPECWARE4")
+                  #+mcl(ccl::getenv "SPECWARE4")
+                  #+cmu (cdr (assoc :SPECWARE4 ext:*environment-list*))
+          )
 
 ;; Used in printing out the license and about-specware command
 (defvar user::Specware-version "4.0")
