@@ -236,6 +236,7 @@
 
 (defvar *swe-print-as-slang?* nil)
 (defvar *swe-return-value?* nil)
+(defvar *expr-begin-offset* 2)		; Difference between beginning of expr in input and in file
 
 (defvar *tmp-counter* 0)
 
@@ -269,6 +270,9 @@
 	 (old-swpath (specware::getEnv "SWPATH"))
 	 (new-swpath (format nil #-mswindows "~Aswe/:~A:~A" #+mswindows "~A/swe/;~A;~A"
 			     Specware::temporaryDirectory *current-swe-spec-dir* old-swpath))
+	 (emacs::*goto-file-position-store?* t)
+	 (emacs::*goto-file-position-stored* nil)
+	 (parser-type-check-output)
 	 value)
     (declare (special SpecCalc::printElaborateSpecMessage?))
     ;; clear any old values or function definitions:
@@ -286,49 +290,81 @@
     (if (unwind-protect
 	    (progn
 	      (specware::setenv "SWPATH" new-swpath)
-	      (if *swe-use-interpreter?*
-		  (setq value (Specware::evalDefInSpec-2 tmp-uid `(:|Qualified| . ("swe" . "tmp"))))
-		(Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl))))
+	      (setq parser-type-check-output
+		(with-output-to-string (*standard-output*)
+		  (let ((*error-output* *standard-output*)
+			(SpecCalc::numberOfTypeErrorsToPrint 2))
+		    (if *swe-use-interpreter?*
+			(setq value (Specware::evalDefInSpec-2 tmp-uid `(:|Qualified| . ("swe" . "tmp"))))
+		      (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))))))
 	  (specware::setenv "SWPATH" old-swpath))
-	(if *swe-use-interpreter?*
-	    (if (eq (car value) :|None|)
-		(warn "No value for expression?")
-	      (if *swe-return-value?* (cdr value)
-		(MSInterpreter::printValue (cdr value))))
-	  (let (#+allegro *redefinition-warnings*)
-	    ;; Load resulting lisp code:
-	    (load (make-pathname :type "lisp" :defaults tmp-cl))
-	    (if *swe-return-value?* swe::tmp
-	      ;; Print result:
-	      (let ((*package* (find-package "SW-USER")))
-		(cond ((boundp 'swe::tmp)
-		       (if *swe-print-as-slang?*
-			   (format t "~%Value is ~%~/specware::pprint-dt/~%"
-				   swe::tmp)
-			 (format t "~%Value is ~S~2%" swe::tmp)))
-		      ((fboundp 'swe::tmp)
-		       (let* ((code #+allegro (excl::func_code #'swe::tmp)
-				    #-allegro (symbol-function 'swe::tmp))
-			      (auxfn (find-aux-fn code)))
-			 (format t "~%Function is ")
-			 (pprint code)
-			 (format t "~%")
-			 (when (fboundp auxfn)
-			   (format t "~%where ~A is " auxfn)
-			   (let ((fn (symbol-function auxfn)))
-			     (let ((code #+allegro (excl::func_code fn)
-					 #+cmu     (eval:interpreted-function-lambda-expression fn)
-					 #-(or allegro cmu) fn))
-			       (if (consp code)
-				   (pprint code)
-				 (format t "the compiled function ~A" fn))))
-			   (format t "~&~%"))))
-		      (t
-		       (warn "No value for expression?")))
-		(values)))))
+	(if emacs::*goto-file-position-stored*; Parse or type-check error
+	    (let ((linepos (second emacs::*goto-file-position-stored*))
+		  (charpos (third emacs::*goto-file-position-stored*)))
+	      (if (eq linepos 3)
+		  (format t "~vt^~%" (+ charpos *expr-begin-offset*))
+		(if (> linepos 3)
+		    (format t "Error: expression ends prematurely~%" emacs::*goto-file-position-stored*)
+		  (format t "Error in context: ~a~%" emacs::*goto-file-position-stored*)))
+	      (princ (trim-error-output parser-type-check-output)))
+	  (progn
+	    (princ parser-type-check-output)
+	    (if *swe-use-interpreter?*
+		(if (eq (car value) :|None|)
+		    (warn "No value for expression?")
+		  (if *swe-return-value?* (cdr value)
+		    (MSInterpreter::printValue (cdr value))))
+	      (let (#+allegro *redefinition-warnings*)
+		;; Load resulting lisp code:
+		(load (make-pathname :type "lisp" :defaults tmp-cl))
+		(if *swe-return-value?* swe::tmp
+		  ;; Print result:
+		  (let ((*package* (find-package "SW-USER")))
+		    (cond ((boundp 'swe::tmp)
+			   (if *swe-print-as-slang?*
+			       (format t "~%Value is ~%~/specware::pprint-dt/~%"
+				       swe::tmp)
+			     (format t "~%Value is ~S~2%" swe::tmp)))
+			  ((fboundp 'swe::tmp)
+			   (let* ((code #+allegro (excl::func_code #'swe::tmp)
+					#-allegro (symbol-function 'swe::tmp))
+				  (auxfn (find-aux-fn code)))
+			     (format t "~%Function is ")
+			     (pprint code)
+			     (format t "~%")
+			     (when (fboundp auxfn)
+			       (format t "~%where ~A is " auxfn)
+			       (let ((fn (symbol-function auxfn)))
+				 (let ((code #+allegro (excl::func_code fn)
+					     #+cmu     (eval:interpreted-function-lambda-expression fn)
+					     #-(or allegro cmu) fn))
+				   (if (consp code)
+				       (pprint code)
+				     (format t "the compiled function ~A" fn))))
+			       (format t "~&~%"))))
+			  (t
+			   (warn "No value for expression?")))
+		    (values)))))))
       "Specware Processing Failed!")))
+
 #+allegro
 (top-level:alias ("swe" :case-sensitive :string) (x) (swe x))
+
+;;; Remove file error comment. Could also massage line numbers.
+(defun trim-error-output (errstr)
+  (setq errstr (fix-position-references errstr "3."))
+  (let ((first-linefeed (position #\linefeed errstr))
+	(syntax-err-pos (search "Syntax error" errstr))
+	pos)
+    (setq errstr
+	  (if (and first-linefeed (string= (subseq errstr 0 10)  "Errors in "))
+	      (subseq errstr (+ first-linefeed 1))
+	    (if syntax-err-pos
+		(subseq errstr 0 syntax-err-pos)
+	      errstr)))
+    (when (setq pos (search " At line" errstr))
+      (setq errstr (concatenate 'string (subseq errstr 0 pos) (subseq errstr (+ pos 16)))))
+    errstr))
 
 (defun find-aux-fn (code)
   ;; step down through interpreted definitions to get past built-in stuff
@@ -345,6 +381,34 @@
 	   (find-aux-fn (caddr code)))
 	  (t
 	   fn))))
+
+(defun fix-position-references (str prefix)
+  (let ((pos 0))
+    (loop while (setq pos (search prefix str :start2 pos))
+      do (let ((endprefixpos (+ pos (length prefix)))
+	       endnumpos)
+	   (loop for i from endprefixpos
+	     while (digit-char-p (elt str i))
+	     do (setq endnumpos i))
+	   (when endnumpos
+	     (let ((rawlinepos (read-from-string str nil nil :start endprefixpos :end (1+ endnumpos))))
+	       (when (fixnump rawlinepos)
+		 (setq str (concatenate 'string
+					(subseq str 0 pos)
+					(format nil "~a" (+ rawlinepos *expr-begin-offset*))
+					(subseq str (1+ endnumpos)))))))
+	   (incf pos)		; ensure progress
+	   ))
+    str))
+
+(defun string-subst (str source target)
+  (let (pos)
+    (loop while (setq pos (search source str))
+	  do (setq str (concatenate 'string
+			 (subseq str 0 pos)
+			 target
+			 (subseq str (+ pos (length source))))))
+    str))
 
 
 ;;; --------------------------------------------------------------------------------
@@ -765,7 +829,6 @@
 (defun ld (file)
   (load (subst-home file)))
 
-#-allegro
 (defun pwd ()
   (princ (namestring (specware::current-directory)))
   (values))
@@ -777,11 +840,9 @@
 (defun cl (file)
   (specware::compile-and-load-lisp-file (subst-home file)))
 
-#-allegro
 (defun cf (file)
   (compile-file (subst-home file)))
 
-#-allegro
 (defun help (&optional command)
   (sw-help command))
 
@@ -856,7 +917,6 @@
 	   str))
   (values))
 
-#-allegro
 (defun pa (&optional pkgname)
   (if (null pkgname)
       (princ (package-name *package*))
@@ -866,10 +926,8 @@
 	(princ "Not a package"))))
   (values))
 
-#-allegro
 (defun untr () (untrace))
 
-#-allegro
 (defun tr (&optional (nms-string ""))
   (eval `(trace ,@(map 'list #'read-from-string (toplevel-parse-args nms-string)))))
 

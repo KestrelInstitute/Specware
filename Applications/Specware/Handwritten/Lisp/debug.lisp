@@ -39,10 +39,16 @@
 (defmacro f-break (&rest fns)
   `(break-functions ',fns))
 
+(defmacro f-b (&rest fns)
+  `(break-functions ',fns))
+
 #+allegro
 (top-level:alias ("f-break" 2) (&rest fns) (break-functions fns))
 
 (defmacro f-unbreak (&rest fns)
+  `(unbreak-functions ',fns))
+
+(defmacro f-unb (&rest fns)
   `(unbreak-functions ',fns))
 
 #+allegro
@@ -172,13 +178,21 @@
 		 (cons (fourth fm) (fifth fm))
 	       fm))
 	 (fn (if (consp (car fm))
-		 (second (car fm))
+		 (if (eq (caar fm) 'LABELS)
+		     (car fm)
+		   (second (car fm)))
 	       (car fm)))
+	 (fn (if (or (symbolp fn) (listp fn))
+		 fn
+	       (EXCL::EXTERNAL-FN_SYMDEF fn)))
 	 (EXCL::*INHIBIT-TRACE* nil)
-	 (*dont-break-next-call* (and (member fn *currently-broken-fns*)
-				      (gethash (fdefinition fn)
-					       excl::*fwrap-hash-table*))))
-    (apply fn (cdr fm))))
+	 (*dont-break-next-call* (and (member fn *currently-broken-fns* :test 'equal)
+				      (or (not (symbolp fn))
+					  (gethash (fdefinition fn)
+						   excl::*fwrap-hash-table*)))))
+    ;(format t "fn: ~a nb: ~a args: ~a~%" fn *dont-break-next-call* (cdr fm))
+    (apply (if (functionp fn) fn (eval `(function ,fn)))
+	   (cdr fm))))
 
 #+allegro
 (defun bev ()
