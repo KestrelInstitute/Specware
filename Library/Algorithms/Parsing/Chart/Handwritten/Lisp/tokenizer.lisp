@@ -91,7 +91,7 @@
     (assign-tokenizer-codes word-symbol-table number-continue-chars          +number-continue-code+)
     (assign-tokenizer-codes word-symbol-table non-word-symbol-continue-chars +non-word-symbol-continue-code+)
     ;; codes that are legal after a word symbol is started:
-    (assign-tokenizer-code  whitespace-table #\#                             +char-literal-start-code+) ; first, so it can be overridden
+    (assign-tokenizer-code  word-symbol-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
     (assign-tokenizer-codes word-symbol-table non-word-symbol-start-chars    +non-word-symbol-start-code+)
     (assign-tokenizer-codes word-symbol-table number-start-chars             +number-start-code+) ; probably overridden by +word-symbol-continue-code+
     (assign-tokenizer-code  word-symbol-table string-quote-char              +string-quote-code+)
