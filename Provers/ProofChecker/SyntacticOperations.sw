@@ -13,8 +13,7 @@ spec
       (conjoinAll empty = nullary tru) &&
       (fa(e) conjoinAll (singleton e) = e) &&
       (fa(e,exprs) exprs ~= empty =>
-                   conjoinAll (e |> exprs) =
-                   binary (conjunction, e, conjoinAll exprs)))
+         conjoinAll (e |> exprs) = e &&& conjoinAll exprs))
 
   op disjoinAll : Expressions -> Expression
   def disjoinAll =
@@ -22,8 +21,7 @@ spec
       (disjoinAll empty = nullary fals) &&
       (fa(e) disjoinAll (singleton e) = e) &&
       (fa(e,exprs) exprs ~= empty =>
-                   disjoinAll (e |> exprs) =
-                   binary (disjunction, e, disjoinAll exprs)))
+         disjoinAll (e |> exprs) = e ||| disjoinAll exprs))
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -32,14 +30,12 @@ spec
 
   op patt2expr : Pattern -> Expression
   def patt2expr = fn
-    | variable(v,_)    -> nullary (variable v)
-    | embedding(t,c,p) -> binary (application,
-                                  embedder (t, c),
-                                  patt2expr p)
+    | variable(v,_)    -> EVAR v
+    | embedding(t,c,p) -> (EMBED t c) __ (patt2expr p)
     | record(fS,pS)    -> let eS = map (patt2expr, pS) in
-                          nary (record fS, eS)
+                          ERECORD fS eS
     | tuple pS         -> let eS = map (patt2expr, pS) in
-                          nary (tuple, eS)
+                          ETUPLE eS
     | alias(_,p)       -> patt2expr p
 
 
@@ -49,21 +45,15 @@ spec
 
   op pattAliasAssumptions : Pattern -> Expression
   def pattAliasAssumptions = fn
-    | variable _       -> nullary tru
+    | variable _       -> TRUE
     | embedding(_,_,p) -> pattAliasAssumptions p
     | record(_,pS)     -> conjoinAll (map (pattAliasAssumptions, pS))
     | tuple pS         -> conjoinAll (map (pattAliasAssumptions, pS))
-    | alias((v,_),p)   -> binary (conjunction,
-                                  binary (equation,
-                                          nullary (variable v),
-                                          patt2expr p),
-                                  pattAliasAssumptions p)
+    | alias((v,_),p)   -> EVAR v == patt2expr p &&& pattAliasAssumptions p
 
   op pattAssumptions : Pattern * Expression -> Expression
   def pattAssumptions(p,e) =
-    binary (conjunction,
-            binary (equation, e, patt2expr p),
-            pattAliasAssumptions p)
+    e == patt2expr p &&& pattAliasAssumptions p
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -120,16 +110,37 @@ spec
     | _                       -> empty
 
 
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % items declared in a context:
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%
+  % ops in an expression:
+  %%%%%%%%%%%%%%%%%%%%%%%
 
-  op contextElementTypeNames : ContextElement -> FSet TypeName
-  op contextElementOps       : ContextElement -> FSet Operation
-  op contextElementTypeVars  : ContextElement -> FSet TypeVariable
-  op contextElementVars      : ContextElement -> FSet Variable
+  op exprOps : Expression -> FSet Operation
+  def exprOps = fn
+    | unary(_,e)              -> exprOps e
+    | binary(_,e1,e2)         -> exprOps e1 \/ exprOps e2
+    | ifThenElse(e0,e1,e2)    -> exprOps e0 \/
+                                 exprOps e1 \/
+                                 exprOps e2
+    | nary(_,eS)              -> unionAll (map (exprOps, eS))
+    | binding(_,bvS,e)        -> exprOps e
+    | opInstance(o,_)         -> singleton o
+    | cas(e,branches)         -> let (_, eS) = unzip branches in
+                                 exprOps e \/ unionAll (map (exprOps, eS))
+    | recursiveLet(bvS,eS,e)  -> unionAll (map (exprOps, eS)) \/ exprOps e
+    | nonRecursiveLet(p,e,e1) -> exprOps e \/ exprOps e1
+    | _                       -> empty
 
-  def contextElementTypeNames = fn
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % items declared or defined in a context:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op contextElementTypes    : ContextElement -> FSet TypeName
+  op contextElementOps      : ContextElement -> FSet Operation
+  op contextElementTypeVars : ContextElement -> FSet TypeVariable
+  op contextElementVars     : ContextElement -> FSet Variable
+
+  def contextElementTypes = fn
     | typeDeclaration(tn,_) -> singleton tn
     | _                     -> empty
 
@@ -145,15 +156,32 @@ spec
     | varDeclaration(v,_) -> singleton v
     | _                   -> empty
 
-  op contextTypeNames : Context -> FSet TypeName
-  op contextOps       : Context -> FSet Operation
-  op contextTypeVars  : Context -> FSet TypeVariable
-  op contextVars      : Context -> FSet Variable
+  op contextTypes    : Context -> FSet TypeName
+  op contextOps      : Context -> FSet Operation
+  op contextTypeVars : Context -> FSet TypeVariable
+  op contextVars     : Context -> FSet Variable
 
-  def contextTypeNames cx = unionAll (map (contextElementTypeNames, cx))
-  def contextOps       cx = unionAll (map (contextElementOps,       cx))
-  def contextTypeVars  cx = unionAll (map (contextElementTypeVars,  cx))
-  def contextVars      cx = unionAll (map (contextElementVars,      cx))
+  def contextTypes    cx = unionAll (map (contextElementTypes,    cx))
+  def contextOps      cx = unionAll (map (contextElementOps,      cx))
+  def contextTypeVars cx = unionAll (map (contextElementTypeVars, cx))
+  def contextVars     cx = unionAll (map (contextElementVars,     cx))
+
+  op contextDefinesType? : Context * TypeName -> Boolean
+  def contextDefinesType?(cx,tn) =
+    (ex (tvS: TypeVariables, t:Type) typeDefinition (tn, tvS, t) in? cx)
+
+  op contextDefinesOp? : Context * Operation -> Boolean
+  def contextDefinesOp?(cx,o) =
+    (ex (tvS:TypeVariables, e:Expression) opDefinition (tvS, o, e) in? cx)
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % multiple type variable declarations:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op multiTypeVarDecls : TypeVariables -> Context
+  def multiTypeVarDecls tvS =
+    map (embed tVarDeclaration, tvS)
 
 
   %%%%%%%%%%%%%%%%%%%%%

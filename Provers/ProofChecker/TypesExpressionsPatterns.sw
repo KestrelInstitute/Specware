@@ -84,7 +84,7 @@ spec
 
   type UnaryExprOperator =
     | recordProjection Field
-    | tupleProjection  Nat
+    | tupleProjection  PosNat
     | relaxator
     | quotienter
     | negation
@@ -138,7 +138,11 @@ spec
 
   Another difference with LD is that here embedding patterns are decorated by
   types, not necessarily sum types. The inference rules require the decorating
-  type of an embedding pattern to be a sum type. *)
+  type of an embedding pattern to be a sum type.
+
+  A third difference is that, since we model product types explicitly and not
+  as abbreviations of record types with predefined fields, we must model tuple
+  patterns, accordingly. *)
 
   type Pattern =
     | variable  BoundVar
@@ -239,5 +243,170 @@ spec
    => (fa(t) predT t)
    && (fa(e) predE e)
    && (fa(p) predP p)
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % ops to construct types/expressions/patterns, resembling Metaslang syntax:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  % types:
+
+  op BOOL : Type
+  def BOOL = embed boolean
+
+  op TVAR : TypeVariable -> Type
+  def TVAR = embed variable
+
+  op --> infixl 30 : Type * Type -> Type
+  def --> = embed arrow
+
+  op SUM : Constructors -> Type?s -> Type
+  def SUM cS t?S = sum (cS, t?S)
+
+  op TYPE : TypeName -> Types -> Type
+  def TYPE tn tS = nary (instance tn, tS)
+
+  op TYPEmt : TypeName -> Type  % for monomorphic types
+  def TYPEmt tn = TYPE tn empty
+
+  op TRECORD : Fields -> Types -> Type
+  def TRECORD fS tS = nary (record fS, tS)
+
+  op PRODUCT : Types -> Type
+  def PRODUCT tS = nary (product, tS)
+
+  op \\ infixl 30 : Type * Expression -> Type
+     % can't use `||'
+  def \\ (t,e) = subQuot (embed sub, t, e)
+
+  op // infixl 30 : Type * Expression -> Type
+  def // (t,e) = subQuot (quotien, t, e)
+
+  % expressions:
+
+  op EVAR : Variable -> Expression
+  def EVAR v = nullary (variable v)
+
+  op TRUE : Expression
+  def TRUE = nullary tru
+
+  op FALSE : Expression
+  def FALSE = nullary fals
+
+  op O infixl 40 : Expression * Field -> Expression
+     % `O' is a (big) dot `.'
+  def O (e,f) = unary (recordProjection f, e)
+
+  op OO infixl 40 : Expression * PosNat -> Expression
+     % need to distinguish dot for records from dot for tuples
+  def OO (e,i) = unary (tupleProjection i, e)
+
+  op RELAX : Expression -> Expression
+  def RELAX r = unary (relaxator, r)
+
+  op QUOTIENT : Expression -> Expression
+  def QUOTIENT q = unary (quotienter, q)
+
+  op NOT : Expression -> Expression
+  def NOT e = unary (negation, e)
+
+  op __ infixl 40 : Expression * Expression -> Expression
+     % double underscore is incospicuous enough to look almost like blank
+  def __ (e1,e2) = binary (application, e1, e2)
+
+  op == infixl 30 : Expression * Expression -> Expression
+  def == (e1,e2) = binary (equation, e1, e2)
+
+  op =/= infixl 30 : Expression * Expression -> Expression
+  def =/= (e1,e2) = binary (inequation, e1, e2)
+
+  op <<< infixl 35 : Expression * Expression -> Expression
+  def <<< (e1,e2) = binary (recordUpdate, e1, e2)
+
+  op RESTRICT : Expression -> Expression -> Expression
+  def RESTRICT r e = binary (restriction, r, e)
+
+  op CHOOSE : Expression -> Expression -> Expression
+  def CHOOSE q e = binary (choice, q, e)
+
+  op &&& infixl 25 : Expression * Expression -> Expression
+  def &&& (e1,e2) = binary (conjunction, e1, e2)
+
+  op ||| infixl 24 : Expression * Expression -> Expression
+  def ||| (e1,e2) = binary (disjunction, e1, e2)
+
+  op ==> infixl 23 : Expression * Expression -> Expression
+  def ==> (e1,e2) = binary (implication, e1, e2)
+
+  op <==> infixl 22 : Expression * Expression -> Expression
+  def <==> (e1,e2) = binary (equivalence, e1, e2)
+
+  op ERECORD : Fields -> Expressions -> Expression
+  def ERECORD fS eS = nary (record fS, eS)
+
+  op ETUPLE : Expressions -> Expression
+  def ETUPLE eS = nary (tuple, eS)
+
+  op PAIR : Expression -> Expression -> Expression
+  def PAIR e1 e2 = ETUPLE (e1 |> e2 |> empty)
+
+  op FN : BoundVar -> Expression -> Expression
+  def FN bv e = binding (abstraction, singleton bv, e)
+
+  op FNN : BoundVars -> Expression -> Expression
+  def FNN bvS e = binding (abstraction, bvS, e)
+
+  op FA : BoundVar -> Expression -> Expression
+  def FA bv e = binding (universal, singleton bv, e)
+
+  op FAA : BoundVars -> Expression -> Expression
+  def FAA bvS e = binding (universal, bvS, e)
+
+  op EX : BoundVar -> Expression -> Expression
+  def EX bv e = binding (existential, singleton bv, e)
+
+  op EXX : BoundVars -> Expression -> Expression
+  def EXX bvS e = binding (existential, bvS, e)
+
+  op EX1 : BoundVar -> Expression -> Expression
+  def EX1 bv e = binding (existential1, singleton bv, e)
+
+  op EXX1 : BoundVars -> Expression -> Expression
+  def EXX1 bvS e = binding (existential1, bvS, e)
+
+  op OP : Operation -> Types -> Expression
+  def OP o tS = opInstance(o,tS)
+
+  op OPmt : Operation -> Expression  % for monomorphic ops
+  def OPmt o = OP o empty
+
+  op EMBED : Type -> Constructor -> Expression
+  def EMBED t c = embedder (t, c)
+
+  op CASE : Expression -> FSeq (Pattern * Expression) -> Expression
+  def CASE e branches = cas (e, branches)
+
+  op LETDEF : BoundVars -> Expressions -> Expression -> Expression
+  def LETDEF bvS eS e = recursiveLet (bvS, eS, e)
+
+  op LET : Pattern -> Expression -> Expression -> Expression
+  def LET p e e1 = nonRecursiveLet (p, e, e1)
+
+  % patterns:
+
+  op PVAR : BoundVar -> Pattern
+  def PVAR = embed variable
+
+  op PEMBED : Type -> Constructor -> Pattern -> Pattern
+  def PEMBED t c p = embedding (t, c, p)
+
+  op PRECORD : Fields -> Patterns -> Pattern
+  def PRECORD fS pS = record (fS, pS)
+
+  op PTUPLE : Patterns -> Pattern
+  def PTUPLE pS = tuple pS
+
+  op AS infixl 30 : BoundVar * Pattern -> Pattern
+  def AS (bv,p) = alias (bv, p)
 
 endspec
