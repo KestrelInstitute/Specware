@@ -1,6 +1,6 @@
 PFunctions qualifying spec
 
-  import Logic
+  import Predicates
 
   (* Functions are always total in Metaslang. Partial functions can be modeled
   using Option:
@@ -25,7 +25,7 @@ PFunctions qualifying spec
 
   op finite? : [a,b] PFunction(a,b) -> Boolean
   def [a,b] finite? f =
-    Logic.finite? (fn(x:a) -> definedAt?(f,x))
+    Predicates.finite? (fn(x:a) -> definedAt?(f,x))
 
   type FFunction(a,b) = (PFunction(a,b) | finite?)
 

@@ -1,6 +1,6 @@
 FSeq qualifying spec
 
-  import Logic
+  import Predicates
 
   (* A finite sequence can be viewed as a function f having an initial segment
   {i:Nat | i < n} of the naturals as domain; n is the length and f(i) is the
@@ -106,6 +106,11 @@ FSeq qualifying spec
   op forall? : [a] FSeq a * Predicate a -> Boolean
   def forall?(s,p) =
     (fa (i:Nat) i < length s => p (s!i))
+
+  % every `i'-th element satisfies predicate, which depends on `i':
+  op foralli? : [a] FSeq a * Predicate (Nat * a) -> Boolean
+  def foralli?(s,p) =
+    (fa (i:Nat) i < length s => p (i, s!i))
 
   % some element satisfies predicate:
   op exists? : fa(a) FSeq a * Predicate a -> Boolean

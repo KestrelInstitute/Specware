@@ -1,4 +1,8 @@
-% OL = obligations Logic   % crash
+OP = obligations Predicates
+
+PP1 = prove the_Obligation in OP  % yes
+PP2 = prove min_Obligation in OP  % no
+PP3 = prove max_Obligation in OP  % no
 
 
 OPF = obligations PartialFunctions
