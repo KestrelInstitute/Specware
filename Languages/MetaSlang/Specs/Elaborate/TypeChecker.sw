@@ -660,10 +660,10 @@ spec {
           elaborateSortForTerm (env, trm, srt, binaryBoolSort);
           Fun (Or, srt, pos))
 
-    | Fun (Cond, srt, pos) -> 
+    | Fun (Implies, srt, pos) -> 
          (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
           elaborateSortForTerm (env, trm, srt, binaryBoolSort);
-          Fun (Cond, srt, pos))
+          Fun (Implies, srt, pos))
 
     | Fun (Iff, srt, pos) -> 
          (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
@@ -928,13 +928,13 @@ spec {
                         | _                    -> Nonfix term)
                   | Fun (And,       _, _) -> Infix (term, (Left, 12))
                   | Fun (Or,        _, _) -> Infix (term, (Left, 13))
-                  | Fun (Cond,      _, _) -> Infix (term, (Left, 14))
+                  | Fun (Implies,   _, _) -> Infix (term, (Left, 14))
                   | Fun (Iff,       _, _) -> Infix (term, (Left, 15))
                   | Fun (Equals,    _, _) -> Infix (term, (Left, 20))
                   | Fun (NotEquals, _, _) -> Infix (term, (Left, 20))
                   | _ -> Nonfix term
            in 
-           let term = resolveInfixes (env,tagTermWithInfixInfo, pos, terms) in
+           let term = resolveInfixes (Some env, tagTermWithInfixInfo, pos, terms) in
            elaborateTerm (env, term, term_sort))
 
     | term -> (%System.print term;
