@@ -152,7 +152,8 @@
    (1 :SC-SPEC-MORPH)
    (1 :SC-HIDE)
    (1 :SC-EXPORT)
-   (1 :SC-GENERATE))
+   (1 :SC-GENERATE)
+   (1 ::SC-OBLIGATIONS))
   1)
 
 ;;; ========================================================================
@@ -1348,3 +1349,11 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :MAPS-TO ()
   (:tuple "+->")
 )
+
+;; ========================================================================
+;;;  SC-GENERATE
+;;; ========================================================================
+
+(define-sw-parser-rule :SC-OBLIGATIONS ()
+  (:tuple "obligations" (1 :SC-TERM))
+  (make-sc-obligations 1 ':left-lcb ':right-lcb))

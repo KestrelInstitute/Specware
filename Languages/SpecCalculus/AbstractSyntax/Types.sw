@@ -77,6 +77,7 @@ one to override an existing definition.
 The following is the sort given to us by the parser.
 
 \begin{spec}
+
   sort Term a = (Term_ a) * a
   sort Term_ a = 
     | Print (Term a)
@@ -127,6 +128,13 @@ The third argument is an optional file name to store the result.
 
 \begin{spec}
     | Generate (String * (Term a) * Option String)
+\end{spec}
+
+Obligations takes a spec or a a morphism and returns a spec including
+the proof obligations as conjectures.
+
+\begin{spec}
+    | Obligations (Term a)
 \end{spec}
 
 The following are declarations that appear in a file or listed

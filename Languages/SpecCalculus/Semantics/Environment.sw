@@ -77,10 +77,11 @@ URI_Dependency.
 \begin{spec}
   sort TimeStamp = Time          % Not a fixnum
   sort URI_Dependency = List URI
+  sort ValidatedURIs = List URI
   sort ValueInfo = Value * TimeStamp * URI_Dependency
   sort GlobalContext = PolyMap.Map (URI, ValueInfo)
   sort LocalContext  = PolyMap.Map (RelativeURI, ValueInfo)
-  sort State = GlobalContext * LocalContext * Option URI
+  sort State = GlobalContext * LocalContext * Option URI * ValidatedURIs
 
   op ppValueInfo : ValueInfo -> Doc
   def ppValueInfo (value,timeStamp,depURIs) =
@@ -157,40 +158,40 @@ are used.
 \begin{spec}
   op bindInGlobalContext : URI -> ValueInfo -> Env ()
   def bindInGlobalContext uri value =
-    fn (globalContext,localContext,currentURI) ->
-      (Ok (), (update globalContext uri value, localContext,currentURI))
+    fn (globalContext,localContext,currentURI,validatedURIs) ->
+      (Ok (), (update globalContext uri value, localContext,currentURI,validatedURIs))
 
   op removeFromGlobalContext : URI -> Env ()
   def removeFromGlobalContext uri =
-    fn (globalContext,localContext,currentURI) ->
-      (Ok (), (remove globalContext uri, localContext,currentURI))
+    fn (globalContext,localContext,currentURI,validatedURIs) ->
+      (Ok (), (remove globalContext uri, localContext,currentURI,validatedURIs))
 
   op lookupInGlobalContext : URI -> Env (Option ValueInfo)
   def lookupInGlobalContext uri =
-    fn state as (globalContext,localContext,currentURI) ->
+    fn state as (globalContext,localContext,currentURI,validatedURIs) ->
       (Ok (evalPartial globalContext uri), state)
 
   op getGlobalContext : Env GlobalContext
-  def getGlobalContext = fn (globalContext,localContext,uri) ->
-    (Ok globalContext, (globalContext,localContext,uri))
+  def getGlobalContext = fn (globalContext,localContext,uri,validatedURIs) ->
+    (Ok globalContext, (globalContext,localContext,uri,validatedURIs))
 
   op setGlobalContext : GlobalContext -> Env ()
   def setGlobalContext newGlobalContext =
-    fn (globalContext,localContext,uri) ->
-    (Ok (), (newGlobalContext,localContext,uri))
+    fn (globalContext,localContext,uri,validatedURIs) ->
+    (Ok (), (newGlobalContext,localContext,uri,validatedURIs))
 
   op bindInLocalContext : RelativeURI -> ValueInfo -> Env ()
   def bindInLocalContext uri value =
-    fn (globalContext,localContext,currentURI) ->
-      (Ok (), (globalContext, update localContext uri value,currentURI))
+    fn (globalContext,localContext,currentURI,validatedURIs) ->
+      (Ok (), (globalContext, update localContext uri value,currentURI,validatedURIs))
 
   op lookupInLocalContext : RelativeURI -> Env (Option ValueInfo)
   def lookupInLocalContext uri =
-    fn state as (globalContext,localContext,currentURI) ->
+    fn state as (globalContext,localContext,currentURI,validatedURIs) ->
       (Ok (evalPartial localContext uri), state)
 
   op showLocalContext : Env String
-  def showLocalContext = fn state as (globalContext,localContext,uri) ->
+  def showLocalContext = fn state as (globalContext,localContext,uri,validatedURIs) ->
     (Ok (ppFormat (ppMap ppRelativeURI ppValueInfo localContext)), state)
 
   op printLocalContext : Env ()
@@ -200,7 +201,7 @@ are used.
     }
 
   op showGlobalContext : Env String
-  def showGlobalContext = fn state as (globalContext,localContext,uri) ->
+  def showGlobalContext = fn state as (globalContext,localContext,uri,validatedURIs) ->
     (Ok (ppFormat (ppMap (fn uri -> ppString (showURI uri))
               ppValueInfo globalContext)), state)
 
@@ -227,13 +228,13 @@ a new URI, we must abandon the local context in the URI.
 
 \begin{spec}
   op getLocalContext : Env LocalContext
-  def getLocalContext = fn (globalContext,localContext,uri) ->
-    (Ok localContext, (globalContext,localContext,uri))
+  def getLocalContext = fn (globalContext,localContext,uri,validatedURIs) ->
+    (Ok localContext, (globalContext,localContext,uri,validatedURIs))
 
   op setLocalContext : LocalContext -> Env ()
   def setLocalContext newLocalContext =
-    fn (globalContext,localContext,uri) ->
-    (Ok (), (globalContext,newLocalContext,uri))
+    fn (globalContext,localContext,uri,validatedURIs) ->
+    (Ok (), (globalContext,newLocalContext,uri,validatedURIs))
 
   op clearLocalContext : Env ()
   def clearLocalContext = setLocalContext emptyMap
@@ -243,23 +244,36 @@ The corresponding operations for retrieving and setting the current URI.
 
 \begin{spec}
   op getCurrentURI : Env URI
-  def getCurrentURI = fn state as (globalContext,localContext,optURI) ->
+  def getCurrentURI = fn state as (globalContext,localContext,optURI,validatedURIs) ->
     (case optURI of
       | None -> (Exception (Fail "No current URI"), state)
       | Some uri -> (Ok uri, state))
 
   op setCurrentURI : URI -> Env ()
   def setCurrentURI newURI =
-    fn (globalContext,localContext,oldURI) ->
-    (Ok (), (globalContext,localContext, Some newURI))
+    fn (globalContext,localContext,oldURI,validatedURIs) ->
+    (Ok (), (globalContext,localContext, Some newURI,validatedURIs))
 \end{spec}
+
+\begin{spec}
+  op  validatedURI?: URI -> Env Boolean
+  def validatedURI? uri =
+    fn state as (globalContext,localContext,currentURI,validatedURIs) ->
+      (Ok (member(uri,validatedURIs)), state)
+
+  op  setValidatedURI: URI -> Env ()
+  def setValidatedURI uri =
+    fn (globalContext,localContext,currentURI,validatedURIs) ->
+      (Ok (), (globalContext,localContext,currentURI,cons(uri,validatedURIs)))
+\end{spec}
+
 
 The initial state within Specware has no URI's evaluated and a current
 URI that corresponds to "/". The latter needs thought.
 
 \begin{spec}
   op initialSpecwareState : State
-  def initialSpecwareState = (emptyMap, emptyMap, Some {path=["/"], hashSuffix=None})
+  def initialSpecwareState = (emptyMap, emptyMap, Some {path=["/"], hashSuffix=None},[])
 \end{spec}
 
 There is no caching of computed values to files at present. This means

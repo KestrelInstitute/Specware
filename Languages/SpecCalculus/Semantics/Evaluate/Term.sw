@@ -15,6 +15,7 @@ SpecCalc qualifying spec {
  import DiagMorphism 
  import Generate      
  import Translate      
+ import Obligations
  import Print      
 \end{spec}
 
@@ -59,6 +60,8 @@ This is a monadic interpreter for the Spec Calculus.
 
     | Translate (sub_term, translation) ->
         SpecCalc.evaluateTranslate sub_term translation
+
+    | Obligations(sub_term) -> SpecCalc.evaluateObligations sub_term
 
     | Generate (language, sub_term as (term,position), optFile) -> {
           (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;

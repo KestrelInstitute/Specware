@@ -240,18 +240,23 @@ are not are removed from the environment.
 \begin{spec}
   op validateCache : URI -> Env Boolean
   def validateCache uri =
-    {optValue <- lookupInGlobalContext uri;
-     case optValue of
-       | None -> return false
-       | Some (_,timeStamp,depURIs) ->
-         %% the foldM does a forall, but no early stop
-         {rVal <- foldM (fn val -> (fn depURI -> {dVal <- validateCache depURI;
-                                                  return (val & dVal)}))
-                    true depURIs;
-          let val = rVal & upToDate?(uri,timeStamp) in
-          if val then return true
-           else {removeFromGlobalContext uri;
-                 return false}}}
+    {validated? <- validatedURI? uri;
+     if validated?
+       then return true
+     else
+       {optValue <- lookupInGlobalContext uri;
+	case optValue of
+	  | None -> return false
+	  | Some (_,timeStamp,depURIs) ->
+	    %% the foldM does a forall, but no early stop
+	    {rVal <- foldM (fn val -> (fn depURI -> {dVal <- validateCache depURI;
+						     return (val & dVal)}))
+		       true depURIs;
+	     let val = rVal & upToDate?(uri,timeStamp) in
+	     if val then {setValidatedURI uri;
+			  return true}
+	      else {removeFromGlobalContext uri;
+		    return false}}}}
          
   op upToDate?: URI * TimeStamp -> Boolean
   def upToDate?(uri,timeStamp) =

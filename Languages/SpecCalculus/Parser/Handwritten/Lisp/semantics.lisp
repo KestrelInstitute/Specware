@@ -855,3 +855,11 @@ If we want the precedence to be optional:
                                     (cons :|Some| optFilNm))))
         (make-pos l r)))
 
+
+;; ========================================================================
+;;;  SC-OBLIGATIONS
+;;; ========================================================================
+
+(defun make-sc-obligations (term l r)
+  (cons (cons :|Obligations| term)
+    (make-pos l r)))
