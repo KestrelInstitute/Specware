@@ -406,13 +406,15 @@ their unit terms.</para>
 ||   :sw <unit-identifier>
 ]]
 
-<para>The unit identifier must not contain ``#''. &Specware; attempts
-to resolve the unit identifier. If it is a relative unit identifier,
-it is resolved as if it occurred inside a single-unit file in the Lisp
-current directory.  However, the file obtained at the third step must
-be a multi-unit file, and not a single-unit file.  If it is indeed a
-multi-unit file, &Specware; parses and evaluates all the unit
-definitions inside the file.</para>
+<para>The unit identifier must not contain ``#'' and the the file must
+not contain a unit of the same name as the file (without the directory
+and extension). &Specware; attempts to resolve the unit identifier. If
+it is a relative unit identifier, it is resolved as if it occurred
+inside a single-unit file in the Lisp current directory.  However, the
+file obtained at the third step must be a multi-unit file, and not a
+single-unit file.  If it is indeed a multi-unit file, &Specware;
+parses and evaluates all the unit definitions inside the file.</para>
+
 
 </section>
 

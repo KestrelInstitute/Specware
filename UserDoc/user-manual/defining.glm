@@ -157,7 +157,8 @@ text:</para>
 ||      sort Y
 ||    endspec
 ||
-||    C = spec
+||    three = spec
+||      import B
 ||      sort Z
 ||    endspec
 ]]
@@ -165,7 +166,7 @@ text:</para>
 <para>This file defines two specs, one containing just a sort [[Y]],
 the other containing just a sort [[Z]]. The identifier of the first
 spec is [[/one/two/three#B]], the identifier of the second spec is
-[[one/two/three#C]].</para>
+[[/one/two/three#three]].</para>
 
 <para>As a particular instance of the case of multiple units per file,
 it is possible to have just one unit definition in the file. This is
@@ -182,6 +183,14 @@ in this manual we use the term ``multiple-unit file'' to denote a file
 that contains one or more unit definitions. The term ``single-unit
 file'' is instead used to denote a file that only contains a unit
 term.</para>
+
+<para>As a convenience, a unit in a multiple-unit file with
+the same name as the file (without the directory and extension) may be
+referred to with a URI for the file as a whole. For example, in the
+current case, the identifier [[/one/two/three]] refers to the same
+spec as [[/one/two/three#three]]. This feature supports a style of
+having one primary unit in a file with auxiliary units that are
+used to define the primary unit.</para>
 
 </section>
 

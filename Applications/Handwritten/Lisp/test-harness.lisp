@@ -69,7 +69,7 @@ be the option to run each (test ...) form in a fresh image.
   ;; Then recursively test the sub-directories
   (loop for dir in dirs
      do (let* ((dirpath (if (stringp dir)
-			    (make-pathname :directory dir)
+			    (make-pathname :directory dir :name :wild)
 			  dir)))
 	  (loop for dir-item in (directory dirpath)
 		unless (equal (pathname-name dir-item) "CVS")
@@ -172,7 +172,7 @@ be the option to run each (test ...) form in a fresh image.
     "/"
     file))
 
-(defun test-1 (name &key sw swe swe-spec swl swll lisp
+(defun test-1 (name &key sw swe swe-spec swl swll lisp show
 			 output (output-predicate 'equal)
 			 (value "--NotAValue--")
 			 (value-predicate 'equal)
@@ -192,8 +192,10 @@ be the option to run each (test ...) form in a fresh image.
 				  (swe-test swe (normalize-input swe-spec))
 				  (if (not (null swl))
 				      (cl-user::swl (normalize-input swl))
-				    (if (not (null lisp))
-					(eval (read-from-string (normalize-input lisp)))))))))))))
+				    (if (not (null show))
+					(cl-user::show (normalize-input show))
+				      (if (not (null lisp))
+					  (eval (read-from-string (normalize-input lisp))))))))))))))
       (setq test-output (normalize-output test-output))
       (when emacs::*goto-file-position-stored*
 	(setf (car emacs::*goto-file-position-stored*)
@@ -230,7 +232,7 @@ be the option to run each (test ...) form in a fresh image.
 (defun normalize-output (str)
   (if (stringp str)
       (let ((str (replace-string str (directory-namestring *test-temporary-directory*) "$TESTDIR/")))
-	(setq str (replace-string str "~" (specware::getenv "HOME")))
+	(setq str (replace-string str "~/" (concatenate 'string (specware::getenv "HOME") "/")))
 	(replace-string str specware::specware4 "$SPECWARE"))
     str))
 

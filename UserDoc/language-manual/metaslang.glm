@@ -731,6 +731,11 @@ file <"C:/units/Layout/Tools/Pivot.sw">,
 while [[Props#SDF]] refers to the `unit-term of
 `infile-unit-definition [[SDF = ...]] contained
 in file  <"C:/units/Layout/Props.sw">.
+As a special case, a `unit-term with the same name as the file may be
+referenced without a `fragment-identifier. For example, in the current
+case, if the file  <"C:/units/Layout/Props.sw"> contains the  `unit-term of
+`infile-unit-definition [[Props = ...]], then this `unit-term can be referred to
+either by [[Props#Props]] or [[Props]].
 </para>
 <para>
 The `unit-identifier must identify a `unit-definition as

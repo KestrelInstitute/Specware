@@ -30,68 +30,56 @@
 ;;; Elaborating diagram-colimit at $TESTDIR/colimit#C
 ;;; Elaborating spec at $TESTDIR/colimit#E
 ")
+      ("Out of order sub-units"
+       :sw "order"
+       :output ";;; Elaborating spec at $TESTDIR/order#order
+;;; Elaborating spec at $TESTDIR/order#B
+;;; Elaborating spec at $TESTDIR/order#C
+")
+      ("Circular sub-unit"
+       :sw "genC"
+       :output "Circular definition: $TESTDIR/genC#GCD")
+      ("Implicit polymorphic op defined inferred"
+       :sw "ImplPoly"
+       :output ";;; Elaborating spec at $TESTDIR/ImplPoly
+")
+      ("Quotient Pattern"
+       :swll "QuotientPattern"
+       :output ";;; Elaborating spec at $TESTDIR/QuotientPattern
+;;; Generating lisp file /tmp/cl-current-file.lisp
+")
+      ("Restrict Obligations"
+       :show "RestrictObligation#O"
+       :output ";;; Elaborating obligator at $TESTDIR/RestrictObligation#O
+;;; Elaborating spec at $TESTDIR/RestrictObligation#A
+;;; Elaborating spec at $SPECWARE/Library/Base/WFO
+
+spec  
+ import A
+ import /Library/Base/WFO
+ op f : {p : Integer * Integer | p.1 > ~(p.2)} -> Nat
+ def f (x, y) = restrict(nonNeg?)(x + y)
+ op + infixl 25 : Nat * Nat -> Nat
+ op WFO.wfo : fa(a) (a * a -> Boolean) -> Boolean
+ def WFO.wfo pred = 
+     fa(p : a -> Boolean) 
+      ex(y : a) p y => ex(y : a) (p y & fa(x : a) (p x => ~(pred(x, y))))
+ op nonNeg? : Integer -> Boolean
+ conjecture f_Obligation is 
+    fa(F : {p : Integer * Integer | p.1 > ~(p.2)}, n : Integer) 
+
+     ((F.1 > ~(F.2)) & 
+     (nonNeg?((case F
+                 of (x, y) -> restrict(nonNeg?)(x + y))) & 
+     (n = (case F
+             of (x, y) -> restrict(nonNeg?)(x + y))))) => (-1 < n)
+ conjecture f_Obligation0 is 
+    fa(y : Integer, x : Integer) (x > ~ y) => nonNeg?(x + y)
+endspec
+
+")
       ("libtest" :swll "libtest"
 		 :output ";;; Elaborating spec at $TESTDIR/libtest
 ;;; Generating lisp file /tmp/cl-current-file.lisp
 ")
       )
-
-;;; Tutorial example
-(test ("FindMatches" :sw "$SPECWARE/UserDoc/tutorial/example/MatchingSpecs#FindMatches"
-                     :output ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#FindMatches
-;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#WordMatching
-;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Words
-;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Symbols
-;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Messages
-;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#SymbolMatching
-;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Matches
-")
-      ("FindMatches_Ref" :sw "$SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref"
-                         :output ";;; Elaborating spec morphism-term at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref
-;;; Elaborating spec-substitution at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches
-;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches0
-;;; Elaborating spec morphism-term at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching_Ref
-;;; Elaborating spec-substitution at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching
-;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching0
-;;; Elaborating spec morphism-term at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols_Ref
-;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols
-")
-      ("MatchingProofs" :sw "$SPECWARE/UserDoc/tutorial/example/MatchingProofs"
-                       :output ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p1
-;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#SymbolMatching_Oblig
-;;; Elaborating spec at $SPECWARE/Library/Base/WFO
-;;; Elaborating spec at $SPECWARE/Library/Base/ProverBase
-p1: Conjecture symb_matches?_Obligation in MatchingObligations#SymbolMatching_Oblig is Proved!
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p1.log
-;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p3
-;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#FindMatches0_Oblig
-p3: Conjecture find_matches_aux_Obligation in MatchingObligations#FindMatches0_Oblig is NOT proved.
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p3.log
-;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p4
-p4: Conjecture word_matching_Obligation in MatchingObligations#FindMatches0_Oblig is Proved!
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p4.log
-;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5
-p5: Conjecture word_matching_Obligation0 in MatchingObligations#FindMatches0_Oblig is NOT proved.
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p5.log
-;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p6
-p6: Conjecture word_matching_Obligation1 in MatchingObligations#FindMatches0_Oblig is NOT proved.
-    Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p6.log
-")
-      ("swl find-matches" :swl "$SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches find-matches"
-                       :output ";;; Generating lisp file find-matches.lisp
-"
-		       :files '("$TESTDIR/find-matches.lisp"))
-      ("Load find-matches.lisp" :lisp "(specware::compile-and-load-lisp-file \"$TESTDIR/find-matches.lisp\")")
-      ("swll MatchingTest#Test" :swll "$SPECWARE/UserDoc/tutorial/example/MatchingTest#Test"
-                       :output ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingTest#Test
-;;; Generating lisp file /tmp/cl-current-file.lisp
-")
-      ("test_find_matches" :swe "test_find_matches(\"**V*ALN**EC*E*S\",
-                                                   [\"CERAMIC\", \"CHESS\", \"DECREE\", \"FOOTMAN\",
-                                                    \"INLET\", \"MOLOCH\", \"OCELOT\", \"PROFUSE\",
-                                                    \"RESIDE\", \"REVEAL\", \"SECRET\", \"SODIUM\",
-                                                    \"SPECIES\", \"VESTIGE\", \"WALNUT\", \"YOGURT\"])"
-			   :swe-spec "$SPECWARE/UserDoc/tutorial/example/MatchingTest#Test"
-			   :value '((3 . "WALNUT") (7 . "SPECIES") (8 . "SECRET")
-				    (0 . "REVEAL") (8 . "DECREE") (10 . "CHESS")))
-)
