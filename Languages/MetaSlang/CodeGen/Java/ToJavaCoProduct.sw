@@ -57,7 +57,7 @@ op sumToConsMethodDecl: Id * Id * List (Id * Sort) -> MethDecl * Collected
 def sumToConsMethodDecl(id, c, args) =
   let (formalParams,col) = fieldsToFormalParams(args) in
   let constBody = mkSumConstructBody(mkSummandId(id, c), length args) in
-  ((([Static], Some (tt(id)), c, formalParams, []), Some (constBody)),col)
+  ((([Static,Public], Some (tt(id)), c, formalParams, []), Some (constBody)),col)
 
 op mkSumConstructBody: Id * Nat -> Block
 def mkSumConstructBody(id, n) =
