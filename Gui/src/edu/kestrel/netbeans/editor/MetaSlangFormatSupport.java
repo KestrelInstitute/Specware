@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:48  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -31,7 +34,7 @@ public class MetaSlangFormatSupport extends ExtFormatSupport {
 
     private TokenContextPath tokenContextPath;
 
-    private boolean DEBUG = false;
+    private boolean DEBUG = true;
 
     public MetaSlangFormatSupport(FormatWriter formatWriter) {
         this(formatWriter, MetaSlangTokenContext.contextPath);
@@ -273,6 +276,9 @@ public class MetaSlangFormatSupport extends ExtFormatSupport {
 	    if (t != null) {
 		TokenItem bt = findSyntacticBlock(t, false);
 		if (bt != null) {
+                    if (DEBUG) {
+                        Util.log("MetaSlangFormatSupport.findIndent: getTokenIndent = "+getTokenIndent(bt)+", getShiftWidth = "+getShiftWidth());
+                    }
 		    indent = getTokenIndent(bt) + getShiftWidth();
 		} 
 	    }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/04/23 01:14:40  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.5  2003/02/18 18:13:04  weilyn
  * Added support for imports.
  *
@@ -491,7 +494,6 @@ public final class SpecElement extends MemberElement {
         printer.print("endspec"); // NOI18N
 
         if (topLevel) {
-	    printer.println("");
 	    printer.println("");
 	}
 

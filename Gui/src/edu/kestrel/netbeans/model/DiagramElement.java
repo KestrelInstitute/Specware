@@ -50,11 +50,9 @@ public final class DiagramElement extends MemberElement {
     public DiagramElement(MemberElement.Impl impl, Element parent) {
         super(impl, parent);
 	if (parent instanceof SourceElement) {
-            System.out.println("DiagramElement constructor: parent instanceof SOURCELEEMNT");
 	    this.source = (SourceElement) parent;
 	    this.topLevel = true;
 	} else {
-            System.out.println("DiagramElement constructor: source is null");
             this.source = null;
 	    this.topLevel = false;
 	}
@@ -140,26 +138,24 @@ public final class DiagramElement extends MemberElement {
 
         printer.markDiagram(this, printer.HEADER_BEGIN); // HEADER begin
         if (topLevel) {
-	    printer.println(getName()+" =");
+	    printer.print(getName()+" = ");
 	}
 	printer.print(HEADER_FORMAT.format(this));
 
         printer.markDiagram(this, printer.HEADER_END); // HEADER end
 
         printer.markDiagram(this, printer.BODY_BEGIN); // BODY begin
-        printer.println(""); // NOI18N
+        printer.print(" {"); // NOI18N
 
         if (print(getDiagElems(), printer)) {
             printer.println(""); // NOI18N
             printer.println(""); // NOI18N
         }
 
-        printer.println(""); // NOI18N
+        printer.println("}"); // NOI18N
         printer.markDiagram(this, printer.BODY_END); // BODY end
-//        printer.print("endspec"); // NOI18N
 
         if (topLevel) {
-	    printer.println("");
 	    printer.println("");
 	}
 

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/04/23 01:08:08  weilyn
+ * Added morphism target/source
+ *
  * Revision 1.4  2003/02/17 04:29:16  weilyn
  * Added support for expressions.
  *
@@ -131,7 +134,7 @@ public final class ElementFormat extends Format {
     /** Magic characters for all kinds of the formating tags.
     * The position of the characters is used as index to the following array.
     */
-    private static final String PROPERTIES_NAMES_INDEX = "nspceurt"; // NOI18N
+    private static final String PROPERTIES_NAMES_INDEX = "nspceurti"; // NOI18N
 
     /** Array of names of all kinds properties which could be included
     * in the pattern string.
@@ -145,6 +148,7 @@ public final class ElementFormat extends Format {
         ElementProperties.PROP_PATH,                //u for uri
         ElementProperties.PROP_SOURCE_UNIT_ID,      //r
         ElementProperties.PROP_TARGET_UNIT_ID,      //t
+        ElementProperties.PROP_PROOFSTRING,         //i for "prove ... _in_" (running out of letters..!)
     };
 
     /** Status constants for the parser. */
@@ -301,7 +305,7 @@ public final class ElementFormat extends Format {
                 params = parseParams(s.substring(2));
             }
 
-            if ("nsceurt".indexOf(c) != -1) { // NOI18N
+            if ("nsceurti".indexOf(c) != -1) { // NOI18N
                 switch (params.length) {
                 case 0: return new Tag(c, "", ""); // NOI18N
                 case 2: return new Tag(c, params[0], params[1]);
@@ -437,6 +441,9 @@ public final class ElementFormat extends Format {
                     break;
                 case 't':
                     buf.append(((MorphismElement)element).getTargetUnitID());
+                    break;
+                case 'i':
+                    buf.append(((ProofElement)element).getProofString());
                     break;
                 }
 

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:14:38  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.7  2003/04/01 02:29:36  weilyn
  * Added support for diagrams and colimits
  *
@@ -215,7 +218,6 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
     }
 
     public DiagramElementImpl createDiagram(Element src) {
-        System.out.println("DefaultLangModel.createDiagram");
         DiagramElementImpl c = new DiagramElementImpl(this);
         getWrapper().wrapDiagram(c, src);
         c.setParent(src);
@@ -700,10 +702,10 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
             ColimitElementImpl impl = (ColimitElementImpl)getElementImpl(target);
             impl.updateMembers(propertyName, els, orderIndices, optMap);
         } else {
-	    Util.log("DefaultLangModel.updateMembers() : "+propertyName+" els = "+els.length);
-	    Util.log("DefaultLangModel.updateMembers() orderIndices = "+Util.print(orderIndices)+" optMap = "+Util.print(optMap));
+	    //Util.log("DefaultLangModel.updateMembers() : "+propertyName+" els = "+els.length);
+	    //Util.log("DefaultLangModel.updateMembers() orderIndices = "+Util.print(orderIndices)+" optMap = "+Util.print(optMap));
             SourceElementImpl impl = (SourceElementImpl)getElementImpl(target);
-	    Util.log("DefaultLangModel.updateMembers() impl = "+impl);
+	    //Util.log("DefaultLangModel.updateMembers() impl = "+impl);
             impl.updateMembers(propertyName, els, orderIndices, optMap);
         }
     }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/29 03:13:55  weilyn
+ * Added support for morphism nodes.
+ *
  * Revision 1.5  2003/03/13 01:23:55  gilham
  * Handle Latex comments.
  * Report Lexer errors.
@@ -73,7 +76,8 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final int LPAREN_ID = INT_LITERAL_ID + 1;    // (
     public static final int RPAREN_ID = LPAREN_ID + 1;         // )
     public static final int STAR_ID = RPAREN_ID + 1;           // *
-    public static final int COMMA_ID = STAR_ID + 1;            // ,
+    public static final int MAPS_TO_ID = STAR_ID + 1;          // +->
+    public static final int COMMA_ID = MAPS_TO_ID + 1;         // ,
     public static final int ARROW_ID = COMMA_ID + 1;           // ->
     public static final int DOT_ID = ARROW_ID + 1;             // .
     public static final int DOTDOT_ID = DOT_ID + 1;            // ..
@@ -82,7 +86,8 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final int COLONCOLON_ID = COLON_ID + 1;      // ::
     public static final int SEMICOLON_ID = COLONCOLON_ID + 1;  // ;
     public static final int BACKWARDSARROW_ID = SEMICOLON_ID + 1; // <-
-    public static final int LBRACKET_ID = BACKWARDSARROW_ID + 1; // [
+    public static final int EQUALS_ID = BACKWARDSARROW_ID + 1; // =
+    public static final int LBRACKET_ID = EQUALS_ID + 1;       // [
     public static final int RBRACKET_ID = LBRACKET_ID + 1;     // ]
     public static final int UBAR_ID = RBRACKET_ID + 1;         // _
     public static final int LBRACE_ID = UBAR_ID + 1;           // {
@@ -187,6 +192,7 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final BaseImageTokenID LPAREN = new BaseImageTokenID("lparen", LPAREN_ID, OPERATORS, "(");
     public static final BaseImageTokenID RPAREN = new BaseImageTokenID("rparen", RPAREN_ID, OPERATORS, ")");
     public static final BaseImageTokenID STAR = new BaseImageTokenID("star", STAR_ID, OPERATORS, "*");
+    public static final BaseImageTokenID MAPS_TO = new BaseImageTokenID("maps_to", MAPS_TO_ID, OPERATORS, "+->");
     public static final BaseImageTokenID COMMA = new BaseImageTokenID("comma", COMMA_ID, OPERATORS, ",");
     public static final BaseImageTokenID ARROW = new BaseImageTokenID("arrow", ARROW_ID, OPERATORS, "->");
     public static final BaseImageTokenID DOT = new BaseImageTokenID("dot", DOT_ID, OPERATORS, ".");
@@ -196,6 +202,7 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final BaseImageTokenID COLONCOLON = new BaseImageTokenID("coloncolon", COLONCOLON_ID, OPERATORS, "::");
     public static final BaseImageTokenID SEMICOLON = new BaseImageTokenID("semicolon", SEMICOLON_ID, OPERATORS, ";");
     public static final BaseImageTokenID BACKWARDSARROW = new BaseImageTokenID("backwardsarrow", BACKWARDSARROW_ID, OPERATORS, "<-");
+    public static final BaseImageTokenID EQUALS = new BaseImageTokenID("equals", EQUALS_ID, OPERATORS, "=");
     public static final BaseImageTokenID LBRACKET = new BaseImageTokenID("lbracket", LBRACKET_ID, OPERATORS, "[");
     public static final BaseImageTokenID RBRACKET = new BaseImageTokenID("rbracket", RBRACKET_ID, OPERATORS, "]");
     public static final BaseImageTokenID UBAR = new BaseImageTokenID("ubar", UBAR_ID, OPERATORS, "_");

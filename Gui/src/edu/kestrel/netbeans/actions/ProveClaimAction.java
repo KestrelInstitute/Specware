@@ -23,6 +23,7 @@ import org.openide.util.actions.NodeAction;
 import java.io.OutputStream;
 
 import edu.kestrel.netbeans.MetaSlangDataObject;
+import edu.kestrel.netbeans.Util;
 import edu.kestrel.netbeans.lisp.LispProcessManager;
 import edu.kestrel.netbeans.model.ClaimElement;
 import edu.kestrel.netbeans.model.Element;
@@ -100,7 +101,6 @@ public class ProveClaimAction extends NodeAction {
         // Open ProveClaimWizard and present node's info
         
         Element el = (Element)node.getCookie(Element.class);
-        LispProcessManager.writeToOutput("element is "+el.getClass());
         ClaimElement claimElement = null;
         SpecElement parentSpecElement = null;
         if (el instanceof ClaimElement) {
@@ -127,12 +127,14 @@ public class ProveClaimAction extends NodeAction {
     }
 
     private void createProofFile(/*Prove*/SpecElement e, Node node, ProveCustomizer cust) {
+       
         String qualifiedSpecName;
-        String specName = node.getParentNode().getParentNode().getName();
+        Node parentSpecNode = node.getParentNode().getParentNode();
+        String specName = parentSpecNode.getName();
         if (specName.equals("")) {
-            qualifiedSpecName = node.getParentNode().getParentNode().getParentNode().getName();
+            qualifiedSpecName = parentSpecNode.getParentNode().getName();
         } else {
-            qualifiedSpecName = node.getParentNode().getParentNode().getParentNode().getName();
+            qualifiedSpecName = parentSpecNode.getParentNode().getName();
             qualifiedSpecName += "#" + specName;
         }
         String proveCommand = "";
@@ -161,6 +163,19 @@ public class ProveClaimAction extends NodeAction {
               proveCommand += "\"";
         }
 
+
+	/*MetaSlangDataObject dataObj = (MetaSlangDataObject) (parentSpecNode.getParentNode()).getCookie(DataObject.class);
+	FileObject fileObj = dataObj.getPrimaryFile();
+        String pathName = "";
+        try {
+            pathName = fileObj.getFileSystem().getSystemName();
+        } catch (FileStateInvalidException fsie) {
+            Util.log("ProveClaimAction.createProofFile caught FileStateInvalidException: "+fsie.getMessage());
+        }
+        String fileName = fileObj.getPackageName('/');
+        */
+        
+ 
         FileObject folder = Repository.getDefault().find("Demo_Examples", null, null);
         FileObject proofFile = null;
         try {

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:15:43  weilyn
+ * ClaimCustomizer.java
+ *
  * Revision 1.7  2003/04/01 02:29:39  weilyn
  * Added support for diagrams and colimits
  *
@@ -102,11 +105,11 @@ interface IconStrings {
         "edu/kestrel/resources/images/DiagElemNodeIcon"; // NOI18N
      
      static final String SOURCE_CATEGORY =
-        "edu/kestrel/resources/images/DiagElemNodeIcon"; // NOI18N
+        "edu/kestrel/resources/images/arrow"; // NOI18N
      
      static final String TARGET_CATEGORY =
-        "edu/kestrel/resources/images/DiagElemNodeIcon"; // NOI18N
+        "edu/kestrel/resources/images/arrow"; // NOI18N
      
      static final String OBJECT =
-        "edu/kestrel/resources/images/URINodeIcon"; // NOI18N     
+        "edu/kestrel/resources/images/UnitIDNodeIcon"; // NOI18N     
 }

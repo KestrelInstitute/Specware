@@ -1,9 +1,3 @@
-/*
- * LispProcessManager.java
- *
- * Created on February 13, 2003, 6:49 PM
- */
-
 package edu.kestrel.netbeans.lisp;
 
 /* Use sockets instead
@@ -11,8 +5,16 @@ import com.franz.jlinker.TranStruct;
 import com.franz.jlinker.JavaLinkDist;
 import com.franz.jlinker.LispConnector;
 */
+
+import java.io.*;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.lang.ClassNotFoundException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 
 //hacky stuff:
 import org.openide.nodes.Node;
@@ -24,15 +26,12 @@ import edu.kestrel.netbeans.parser.ParseSourceRequest;
 
 import edu.kestrel.netbeans.Util;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.io.*;
-
 import org.openide.TopManager;
 import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.Repository;
 import org.openide.text.CloneableEditor;
 import org.openide.text.CloneableEditorSupport;
+import org.openide.util.Utilities;
 import org.openide.windows.InputOutput;
 import org.openide.windows.OutputWriter;
 
@@ -41,11 +40,14 @@ import org.openide.windows.OutputWriter;
  *
  * @author  weilyn
  */
-public class LispProcessManager {
+public class LispSocketManager {
+    private static final boolean DEBUG = true;
+    private static final String END_OF_PARAMETER_MARKER = "ENDPARAMETER";
+    
     private static Set machines = new HashSet() ;
     private static String lispFile     = "";
-    private static String lispHost     = "";
-    private static int    lispPort     = 4321;
+    private static String lispHost     = "localhost";
+    private static int    lispPort     = 4323;
     private static int    pollInterval = 1000;
     private static int    pollCount    = 300;
     private static int    javaTimeout   = -1;
@@ -56,142 +58,252 @@ public class LispProcessManager {
     static private ExternalLispProcess lispServer = null;
     static private Process lispProcess = null;
     
+    static private ServerSocket serverSocket = null;
     static private Socket lispSocket = null;
-    static private BufferedReader toLispStream = null;
-    static private OutputStream fromLispStream = null;
- 
-    static private lispProcessManagerClass = Class.forname("LispProcessManager");
-    static private stringClass = Class.forname("String");
+    static private BufferedReader fromLispStream = null;
+    static private OutputStream toLispStream = null;
+    static private Thread readThread = null;
+    static private Thread serverSocketThread = null;
+    
+    static private Class lispSocketManagerClass;
+    static private Class stringClass;
+    
+    // These prevent infinite calls to connectToLisp() in case something weird happened
+    static private int numConnectionTries = 0;
+    static private final int MAX_TRIES = 2;
    
-    /** Creates a new instance of LispProcessManager */
-    public LispProcessManager() {
+    /** Creates a new instance of LispSocketManager */
+    public LispSocketManager() {
     }
-
-    public static boolean connectToLisp() {
-        if (JavaLinkDist.query(true)) {
-            //writeToOutput("LispProcessManager.connectToLisp --> Already Connected");
-            return true;
-        } else if (JavaLinkDist.connect(lispHost, lispPort, javaHost, javaPort, pollInterval, javaTimeout)) {
-            //writeToOutput("LispProcessManager.connectToLisp --> New Connection Established");
-            return true;
-        } else {
-            //writeToOutput("LispProcessManager.connectToLisp --> Failed to Connect to LISP " + JavaLinkDist.query());
-            //writeToOutput("LispServer = "+ lispServer + "\n Lisp Process "+lispProcess + "\n");
-
-            if (lispServer == null){
-                lispServer = new ExternalLispProcess();
-                try {
-                    lispProcess = lispServer.createProcess();
-                    //writeToOutput("****  lispServer.createProcess returned "+lispProcess);
-                    Thread.sleep(5000);
-                    
-                    String s = null;
-                    BufferedReader stdInput = new BufferedReader(new 
-                         InputStreamReader(lispProcess.getInputStream()));
-
-                    BufferedReader stdError = new BufferedReader(new 
-                         InputStreamReader(lispProcess.getErrorStream()));
-
-                    // read the output from the command
-                    //System.out.println("Here is the standard output of the command:\n");
-                    while ((s = stdInput.readLine()) != null) {
-                        System.out.println(s);
-                    }
-
-                    // read any errors from the attempted command
-                    //System.out.println("Here is the standard error of the command (if any):\n");
-                    while ((s = stdError.readLine()) != null) {
-                        System.out.println(s);
-                    }
-
-                } catch (Exception e) {
-                    writeToOutput("LispProcessManager.connectToLisp.Exception \""+e+"\" while starting Lisp");
+    
+    private static class FromLispReader implements Runnable {
+        FromLispReader() {
+        }
+        
+        public void run() {
+            try {
+                while (!readThread.isInterrupted()) {
+                    Util.log("LispSocketManager.FromLispReader.run is about to call lispCallBack()");
+                    lispCallBack();
                 }
-//                writeToOutput("LispProcessManager.connectToLisp --> Calling Connect to Lisp again");
-                if (lispProcess != null) {
-                    return connectToLisp();
-                }
+            } catch (Exception e) {
+                Util.log("LispSocketManager.FromLispReader.run caught " + e.getClass().getName() + ": " + e.getMessage());
             }
-            return false;
         }
     }
-    /*   lispSocket = socket(lispHost,lispPort);
-   toLispStream = new BufferedReader(new InputStreamReader(lispSocket.getInputStream()));
-   fromLispStream = lispSocket.getOutputStream();
-   lispSocket.close();
-   if (toLispStream.ready()){};
-    */
-   
-    public static void lispCallBack() {
-	String methodName = fromLispStream.readLine();
-	// Assumes next line is an integer: add catch for NumberFormatException
-	int numParams = decode(fromLispStream.readLine());
-	String[] params = new String[numParams];
-	Class[] paramClasses = new Class[numParams]
-	for(int i = 0; i < numParams; i++) {
-	    params[i] = fromLispStream.readLine();
-	    paramClasses[i] = stringClass;
-	};
-	Method m = lispProcessManagerClass.getMethod(methodName,paramClasses);
-	try {m.invoke(params)}
-	  catch (Exception _e) {
-	      
-	  }
+    
+    private static class SocketConnector implements Runnable {
+        SocketConnector() {
+        }
+        
+        public void run() {
+            /*try {
+                
+                if (DEBUG) {
+                    Util.log("SocketConnector's serverSocket is "+serverSocket);
+                }
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.SocketConnector.run caught exception: "+ioe.getMessage());
+            }*/
+        }
     }
-				     
+    
+    public static boolean connectToLisp() {
+        if (lispServer == null || lispProcess == null || lispSocket == null) {
+            try {
+                //serverSocketThread = new Thread(new SocketConnector());
+                //serverSocketThread.start();
+                if (serverSocket == null) {
+                    serverSocket = new ServerSocket(lispPort);
+                }
+                
+                if (DEBUG) {
+                    Util.log("LispSocketManager.connectToLisp about to call serverSocket.accept; port is "+serverSocket.getLocalPort());
+                }
+                
+/*                lispSocket = serverSocket.accept();
+                
+                if (DEBUG) {
+                    Util.log("LispSocketManager.connectToLisp done with serverSocket.accept");
+                }
+*/                
+                lispPort = serverSocket.getLocalPort();
+                if (DEBUG) {
+                    Util.log("LispSocketManager.connectToLisp got lispPort = "+lispPort);
+                }
+                
+                /*System.setProperty("SpecBeansSocketPort", Integer.toString(lispPort));
+                if (DEBUG) {
+                    Util.log("All properties: "+System.getProperties());
+                }*/
+
+                lispServer = new ExternalLispProcess();
+
+                lispProcess = lispServer.createProcess();
+                Thread.sleep(5000);
+
+                if (DEBUG) {
+                    Util.log("lispServer = "+lispServer+"; lispProcess = "+lispProcess);
+                }
+                
+                lispSocket = serverSocket.accept();//new Socket(lispHost, lispPort);
+                if (DEBUG) {
+                    Util.log("LispSocketManager.connectToLisp: lispSocket.isConnected() = "+lispSocket.isConnected());
+                }
+                toLispStream = lispSocket.getOutputStream();
+                fromLispStream = new BufferedReader(new InputStreamReader(lispSocket.getInputStream()));
+                if (DEBUG) {
+                    Util.log("LispSocketManager.connectToLisp has fromLispStream = "+fromLispStream);
+                }
+
+                lispSocketManagerClass = Class.forName("edu.kestrel.netbeans.lisp.LispSocketManager");
+                stringClass = Class.forName("java.lang.String");
+                
+                readThread = new Thread(new FromLispReader());
+                readThread.start();
+                
+                return true;
+                
+            } catch (UnknownHostException uhe) {
+                 Util.log("LispSocketManager caught UnknownHostException: "+uhe.getMessage());
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.connectToLisp got IOException: "+ioe.getMessage());
+            } catch (ClassNotFoundException cnfe) {
+                Util.log("LispSocketManager caught ClassNotFoundException: "+cnfe.getMessage());
+            } catch (InterruptedException ie) {
+                Util.log("LispSocketManager caught InterruptedException: "+ie.getMessage());
+            }
+            return false;
+        } else {
+            if (lispSocket.isConnected() && !lispSocket.isInputShutdown() && !lispSocket.isOutputShutdown()) {
+               return true;
+            } else {
+                destroyLispProcess();
+                return connectToLisp();
+            }
+        }
+    }
+
+    public static void lispCallBack() {
+        try {
+            String methodName = fromLispStream.readLine();
+            if (DEBUG) {
+                Util.log("LispSocketManager.lispCallBack read methodName = "+methodName);
+            }
+            // Assumes next line is an integer: add catch for NumberFormatException
+            int numParams = (Integer.decode(fromLispStream.readLine())).intValue();
+            if (DEBUG) {
+                Util.log("LispSocketManager.lispCallBack read numParams = "+numParams);
+            }
+            String[] params = new String[numParams];
+            Class[] paramClasses = new Class[numParams];
+
+            for(int i = 0; i < numParams; i++) {
+                String oneLine = fromLispStream.readLine();
+                String oneParam = "";
+                while (!oneLine.equals(END_OF_PARAMETER_MARKER)) {
+                    oneParam = oneParam + oneLine + "\n";
+                    oneLine = fromLispStream.readLine();
+                }
+                params[i] = oneParam;
+                if (DEBUG) {
+                    Util.log("LispSocketManager.lispCallBAck read param[" + i + "] = "+params[i]);
+                }
+                paramClasses[i] = stringClass;
+            }
+            Method m = lispSocketManagerClass.getMethod(methodName,paramClasses);
+            if (DEBUG) {
+                Util.log("LispSocketManager.lispCallBack created Method m = " + m);
+            }
+            m.invoke(null, params);
+        } catch (IOException ioe) {
+            Util.log("LispSocketManager.lispCallBack caught IOException: " + ioe.getMessage());
+        } catch (NoSuchMethodException nsme) {
+            Util.log("LispSocketManager.lispCallBack caught NoSuchMethodException: " + nsme.getMessage());
+        } catch (IllegalAccessException iae) {
+            Util.log("LispSocketManager.lispCallBack caught IllegalAccessException: " + iae.getMessage());
+        } catch (InvocationTargetException ite) {
+            Util.log("LispSocketManager.lispCallBack caught InvocationTargetException: " + ite.getMessage());
+        }
+    }
 
     public static void destroyLispProcess() {
+        // first exit from lisp
+        if (lispSocket != null && lispSocket.isConnected()) {
+            String message = "(exit)";
+            
+            if (DEBUG) {
+                Util.log ("LispSocketManager.destroyLispProcess sending message: "+message);
+            }
+
+            try {
+                toLispStream.write(message.getBytes());
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.destroyLispProcess caught exception: "+ioe.getMessage());
+            }
+        }      
         if (lispProcess != null) {
-//            writeToOutput("\n Destroying Lisp Process "+lispProcess);
             lispProcess.destroy();
             lispProcess = null;
             lispServer = null;
+            try {
+                //toLispStream.close();
+                //fromLispStream.close();
+                lispSocket.shutdownInput();
+                lispSocket.shutdownOutput();
+                lispSocket.close();
+                readThread.interrupt();
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.destroyLispProcess caught exception: "+ioe.getMessage());
+            }
         }
     }
     
 
     public static void processUnit(String pathName, String fileName) {
         if (connectToLisp()) {
-            TranStruct [] ARGS = new TranStruct[2];
-            TranStruct [] RES;
-            ARGS[0] = JavaLinkDist.newDistOb(pathName);
-            ARGS[1] = JavaLinkDist.newDistOb(fileName);
-            com.franz.jlinker.LispConnector.go(false, null);
-            //Set focus to Specware Status tab
-            writeToSpecwareStatus("");
-            try {
-                RES = JavaLinkDist.invokeInLispEx(3, JavaLinkDist.newDistOb("USER::PROCESS-UNIT"), ARGS);
-//               Util.log("Done.");
-                if (com.franz.jlinker.JavaLinkDist.stringP(RES[0])) {
-                    Util.log("Error while generating code for: \n"+ RES[0]);
-                } else {
-//                    Util.log("Call succeeded");
-                }
-            } catch (JavaLinkDist.JLinkerException ex) {
-                Util.log("Exception in generateCode "+ ex);
+            String message = "";
+            message = message + "(USER::PROCESS-UNIT ";
+            message = message + "\"" + pathName;
+            message = message + (Utilities.isWindows() ? "\\\" " : "/\" ");
+            message = message + "\"" + fileName + "\"";
+            message = message + ")";
+            
+            if (DEBUG) {
+                Util.log ("LispSocketManager.processUnit sending message: "+message);
             }
-        } else {
-//            writeToOutput("LispProcessManager.generateCode ==> No Connection to Lisp");
+
+            try {
+                toLispStream.write(message.getBytes());
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.processUnit caught exception: "+ioe.getMessage());
+            }
         }
     }
     
     // This is called from specware
     public static void setProcessUnitResults(String results) {
         writeToSpecwareStatus(results);
-        FileObject fileObj = Repository.getDefault().find("Demo_Examples", null, null);
-        if (fileObj != null)
-            fileObj.refresh();
     }
 
     // Entry point from lisp interface that takes only strings
     public static void setProcessUnitResults(String pathName, String fileName,
 					     String lineNum, String colNum, String errorMsg) {
 	// decode can throw NumberFormatException
-	setProcessUnitResults(pathName,fileName,decode(lineNum),decode(colNum),errorMsg)
+        if (DEBUG) {
+            Util.log("called setProcessUnitResults with all Strings");
+        }
+	setProcessUnitResults(pathName, fileName, (Integer.decode(lineNum)).intValue(), 
+                              (Integer.decode(colNum)).intValue(), errorMsg);
+    }
 
     public static void setProcessUnitResults(String pathName, String fileName,
 					     int lineNum, int colNum, String errorMsg) {
         FileObject fileObj = Repository.getDefault().find(pathName, fileName, "sw");
+        if (DEBUG) {
+            Util.log("called setProcessUnitResults with pathName = "+pathName+" and fileName = "+fileName+" and got fileObj = "+fileObj);
+        }
+
         if (fileObj != null) {
             // SLIGHT HACK: ParseSourceRequest is the same class used for the netbeans parsing stuff...
             // should probably create different class for the Specware processing stuff
@@ -201,105 +313,53 @@ public class LispProcessManager {
     
     public static void generateLispCode(String pathName, String fileName) {
         if (connectToLisp()) {
-            TranStruct [] ARGS = new TranStruct[2];
-            TranStruct [] RES;
-            ARGS[0] = JavaLinkDist.newDistOb(pathName);
-            ARGS[1] = JavaLinkDist.newDistOb(fileName);
-            com.franz.jlinker.LispConnector.go(false, null);
-            //Set focus to Specware Status tab
-            writeToSpecwareStatus("");
-            try {
-                RES = JavaLinkDist.invokeInLispEx(3, JavaLinkDist.newDistOb("USER::GENERATE-LISP"), ARGS);
-//               Util.log("Done.");
-                if (com.franz.jlinker.JavaLinkDist.stringP(RES[0])) {
-                    Util.log("Error while generating code for: \n"+ RES[0]);
-                } else {
-//                    Util.log("Call succeeded");
-                }
-            } catch (JavaLinkDist.JLinkerException ex) {
-                Util.log("Exception in generateCode "+ ex);
+            String message = "";
+            message = message + "(USER::GENERATE-LISP ";
+            message = message + "\"" + pathName + "\" ";
+            message = message + "\"" + fileName + "\"";
+            message = message + ")";
+            
+            if (DEBUG) {
+                Util.log ("LispSocketManager.generateLisp sending message: "+message);
             }
-        } else {
-//            writeToOutput("LispProcessManager.generateCode ==> No Connection to Lisp");
-        }
+
+            try {
+                toLispStream.write(message.getBytes());
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.generateLisp caught exception: "+ioe.getMessage());
+            }
+        }    
     }
     
     public static void setGenerateLispResults(String pathName, String fileName, String results) {
         writeToSpecwareStatus(results);
-
-        // TOTAL HACK: 14 is the length of "Demo_Examples/", which is the path to fileName in Weilyn's setup from the
-        //  mounted local directory C:\Program Files\Specware4\Gui\src
-        String nonQualifiedFileName = fileName.substring(14);
-        
-        // Do a refresh of Demo_Examples folder to show the possibly newly created "lisp" folder
-        FileObject fileObj = Repository.getDefault().find("Demo_Examples", null, null);
-        if (fileObj != null) fileObj.refresh();
-        // Do a refresh of lisp folder to show the newly generated file
-        fileObj = Repository.getDefault().find("Demo_Examples.lisp", null, null);
-        if (fileObj != null) fileObj.refresh();
-        
-        // TODO: Open the new lisp file in the editor as a text file
-        fileObj = Repository.getDefault().find("Demo_Examples.lisp", nonQualifiedFileName, "lisp");
-        if (fileObj != null) {
-//            CloneableEditorSupport editSupp = new CloneableEditorSupport(new CloneableEditorSupport.Env(fileObj));
-//            CloneableEditor editor = new CloneableEditor(editSupp);
-            
-        }
     }
         
     public static void generateJavaCode(String pathName, String fileName) {
         if (connectToLisp()) {
-            TranStruct [] ARGS = new TranStruct[2];
-            TranStruct [] RES;
-            ARGS[0] = JavaLinkDist.newDistOb(pathName);
-            ARGS[1] = JavaLinkDist.newDistOb(fileName);
-            com.franz.jlinker.LispConnector.go(false, null);
-            //Set focus to Specware Status tab
-            writeToSpecwareStatus("");
-            try {
-                RES = JavaLinkDist.invokeInLispEx(3, JavaLinkDist.newDistOb("USER::GENERATE-JAVA"), ARGS);
-//               Util.log("Done.");
-                if (com.franz.jlinker.JavaLinkDist.stringP(RES[0])) {
-                    Util.log("Error while generating code for: \n"+ RES[0]);
-                } else {
-//                    Util.log("Call succeeded");
-                }
-            } catch (JavaLinkDist.JLinkerException ex) {
-                Util.log("Exception in generateCode "+ ex);
+            String message = "";
+            message = message + "(USER::GENERATE-JAVA ";
+            message = message + "\"" + pathName;
+            message = message + (Utilities.isWindows() ? "\\\" " : "/\" ");
+            message = message + "\"" + fileName + "\"";
+            message = message + ")";
+            
+            if (DEBUG) {
+                Util.log ("LispSocketManager.generateJavaCode sending message: "+message);
             }
-        } else {
-//            writeToOutput("LispProcessManager.generateCode ==> No Connection to Lisp");
+
+            try {
+                toLispStream.write(message.getBytes());
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.generateJavaCode caught exception: "+ioe.getMessage());
+            }
         }
     }
     
     public static void setGenerateJavaResults(String pathName, String fileName, String results) {
         writeToSpecwareStatus(results);
-        // TOTAL HACK: 14 is the length of "Demo_Examples/", which is the path to fileName in Weilyn's setup from the
-        //  mounted local directory C:\Program Files\Specware4\Gui\src
-        String nonQualifiedFileName = fileName.substring(14);
+    }
 
-        // Do a refresh of Demo_Examples folder to show the possibly newly created "java" folder
-        FileObject fileObj = Repository.getDefault().find("Demo_Examples", null, null);
-        if (fileObj != null) fileObj.refresh();
-        // Do a refresh of java folder to show the newly generated file
-        fileObj = Repository.getDefault().find("Demo_Examples.java", null, null);
-        if (fileObj != null) fileObj.refresh();
-  
-        // TODO: Open the new java file in the editor
-        fileObj = Repository.getDefault().find("Demo_Examples.java", nonQualifiedFileName, "java");
-        if (fileObj != null) {
-//            CloneableEditorSupport editSupp = new CloneableEditorSupport(new CloneableEditorSupport.Env(fileObj));
-//            CloneableEditor editor = new CloneableEditor(editSupp);
-            
-        }
-    }
-    
-    public static void writeToOutput(String s) {
-        InputOutput outputStream = TopManager.getDefault().getIO("Debug: LispProcessManager", false);
-        OutputWriter writer = outputStream.getOut();
-        writer.println(s);
-    }
-    
     public static void writeToSpecwareStatus(String s) {
         InputOutput outputStream = TopManager.getDefault().getIO("Specware Output", false);
         outputStream.select();

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/04/23 01:16:26  weilyn
+ * DiagElemInfo.java
+ *
  * Revision 1.4  2003/04/01 02:29:44  weilyn
  * Added support for diagrams and colimits
  *
@@ -35,6 +38,8 @@ import edu.kestrel.netbeans.codegen.DocumentBinding;
 import edu.kestrel.netbeans.codegen.TextBinding;
 
 public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater {
+    private static final boolean DEBUG = false;
+    
     public static final int SPEC = 0;
     public static final int PROOF = 1;
     public static final int MORPHISM = 2;
@@ -164,7 +169,9 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
     }
 
     public void updateElement(LangModel.Updater model, Element target) throws SourceException {
-	//Util.log("SourceInfo.updateElement model = "+model+" Target = "+target);
+	if (DEBUG) {
+            Util.log("SourceInfo.updateElement model = "+model+" Target = "+target);
+        }
         super.updateElement(model, target);
         super.updateBase(target);        
         SourceElement source = (SourceElement)target;
@@ -195,7 +202,9 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
 		throw new InternalError("Illegal member type"); // NOI18N
             }
             ChildCollection col = memberLists[kind];
-	    Util.log("SourceInfo.updateElement kind = "+kind+" Col = "+col+" CurrentMembers = "+Util.print(curMembers));
+	    if (DEBUG) {
+                Util.log("SourceInfo.updateElement kind = "+kind+" Col = "+col+" CurrentMembers = "+Util.print(curMembers));
+            }
             if (col == null && curMembers.length == 0)
                 continue;            
             int[] IDs, map;
@@ -212,7 +221,9 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
 		col.mapChildren(newEls, whole);
         }
         model.updateMemberOrder(source, ElementProperties.PROP_MEMBERS, whole);
-	//Util.log("SourceInfo.updateElement source specs "+Util.print(source.getSpecs()));
+	if (DEBUG) {
+            Util.log("SourceInfo.updateElement source specs "+Util.print(source.getSpecs()));
+        }
     }
     
     private static final class SpecFinder extends ElementMatch.AbstractFinder {
@@ -257,9 +268,13 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         allMembers.add(member);
         if (memberLists[kind] == null)
             initializeChildren(kind);
-	//Util.log("SourceInfo.addMember Kind = "+kind+" Member = "+member+" all Members.size() = "+ index);
-	//Util.log("SourceInfo.addMember memberList["+kind+"] = "+memberLists[kind]);
+	if (DEBUG) {
+            Util.log("SourceInfo.addMember Kind = "+kind+" Member = "+member+" all Members.size() = "+ index);
+            Util.log("SourceInfo.addMember memberList["+kind+"] = "+memberLists[kind]);
+        }
         memberLists[kind].addChild((BaseElementInfo)member, index);
-	//Util.log("SourceInfo.addMember after adding child allMembers.size() = "+ allMembers.size() );
+	if (DEBUG) {
+            Util.log("SourceInfo.addMember after adding child allMembers.size() = "+ allMembers.size() );
+        }
     }
 }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.27  2003/04/23 01:16:24  weilyn
+ * DiagElemInfo.java
+ *
  * Revision 1.26  2003/04/01 02:29:42  weilyn
  * Added support for diagrams and colimits
  *
@@ -153,7 +156,18 @@ private scDecl
       ignore2=scTerm[true, unitIdToken]
     ;
 
-private scTerm[boolean isTopLevel, Token unitIdToken] returns[Object term]//[ElementFactory.Item item]
+private scTerm[boolean isTopLevel, Token unitIdToken] returns[Object term]
+{
+    term = null;
+//    ElementFactory.Item item = null;
+//    String unitID = null;
+}
+    : ( term=scTermPrefix[isTopLevel, unitIdToken]
+        scTermPostfix
+      )                     
+    ;
+
+private scTermPrefix[boolean isTopLevel, Token unitIdToken] returns[Object term]//[ElementFactory.Item item]
 {
     term = null;
     ElementFactory.Item item = null;
@@ -161,7 +175,7 @@ private scTerm[boolean isTopLevel, Token unitIdToken] returns[Object term]//[Ele
 }
     : ( unitID=scUnitID[unitIdToken]
       | item=scBasicTerm[unitIdToken]
-      | item=scSubstitute[unitIdToken]
+//      | item=scSubstitute[unitIdToken]
       )                     
                                     {if (unitID != null) {
                                             term = unitID;
@@ -171,6 +185,13 @@ private scTerm[boolean isTopLevel, Token unitIdToken] returns[Object term]//[Ele
                                      }
                                     }
     ;
+
+private scTermPostfix //[boolean isTopLevel, Token unitIdToken] returns[Object term]//[ElementFactory.Item item]
+    : ( scSubstituteTermList
+       |
+      )
+    ;
+
 
 // These are the non-left-recursive terms
 private scBasicTerm[Token unitIdToken] returns[ElementFactory.Item item]
@@ -188,6 +209,7 @@ private scBasicTerm[Token unitIdToken] returns[ElementFactory.Item item]
     | item=scGenerate[unitIdToken]
     | item=scObligations[unitIdToken]
     | item=scProve[unitIdToken]
+    | item=scParenthesizedTerm[unitIdToken]
     ;
 
 
@@ -206,7 +228,9 @@ private scSubstitute[Token unitIdToken] returns[ElementFactory.Item substitute]
     substitute = null;
     ElementFactory.Item ignore = null;
 }
-    : ignore=scBasicTerm[null]
+    : (ignore=scBasicTerm[null]
+       | scUnitID[null]
+      )
       scSubstituteTermList
     ;
 
@@ -261,7 +285,9 @@ private scTranslate[Token unitIdToken] returns[ElementFactory.Item translate]
     : "translate"
       ignore=scTerm[false, null]
       "by"
+      LBRACE
       nameMap
+      RBRACE
     ;
 
 private scQualify[Token unitIdToken] returns[ElementFactory.Item qualify]
@@ -392,18 +418,22 @@ private scProve[Token unitIdToken] returns[ElementFactory.Item proof]
     proof = null;
     Object item = null;
     ElementFactory.Item childItem = null;
-    String ignore = null;
+    String strItem = null;
     Token headerEnd = null;
     List children = new LinkedList();
     String name = (unitIdToken == null) ? "" : unitIdToken.getText();
+    String proofString = "";
 }
     : begin:"prove"                     {headerEnd = begin;}
-      childItem=claimName               //{if (childItem != null) children.add(childItem);}
-      "in"
-      item=scTerm[false, null]     //{if (item instanceof ElementFactory.Item) children.add((ElementFactory.Item)item);}
-      (childItem=proverAssertions)?     //{if (childItem != null) children.add(childItem);}
-      (childItem=proverOptions)?        //{if (childItem != null) children.add(childItem);}
-                                        {proof = builder.createProof(name);
+      strItem=claimName                 {proofString += strItem;}  //{if (childItem != null) children.add(childItem);}
+      "in"                              {proofString += " in ";}
+      item=scTerm[false, null]          {if (item instanceof String) 
+                                            proofString += (String)item;
+                                         //TODO: else if (item instanceof ElementFactory.Item)
+                                        }  
+      (strItem=proverAssertions)?       {proofString += " " + strItem;}   //{if (childItem != null) children.add(childItem);}
+      (strItem=proverOptions)?          {proofString += " " + strItem;}   //{if (childItem != null) children.add(childItem);}
+                                        {proof = builder.createProof(name, proofString);
                                          if (unitIdToken != null) {
                                             begin = unitIdToken;
                                          }
@@ -412,6 +442,15 @@ private scProve[Token unitIdToken] returns[ElementFactory.Item proof]
                                          }
     ;
 
+private scParenthesizedTerm[Token unitIdToken] returns[ElementFactory.Item parenTerm]
+{
+    parenTerm = null;
+}
+    : begin:LPAREN
+      scTerm[false, unitIdToken]
+      RPAREN
+    ;
+    
 //---------------------------------------------------------------------------
 
 private fullURIPath returns[String path]
@@ -468,7 +507,7 @@ private sortNameMapItem returns[String mapItem]
     : ("sort"                           {mapItem = "sort ";}
       )?
       text=qualifiableSortNames         {mapItem = mapItem + text;}
-      nonWordSymbol["+->"]              {mapItem = mapItem + " +-> ";}
+      MAPS_TO                           {mapItem = mapItem + " +-> ";}
       text=qualifiableSortNames         {mapItem = mapItem + text;}
     ;
 
@@ -480,7 +519,7 @@ private opNameMapItem returns[String mapItem]
     : ("op"                             {mapItem = "op ";}
       )?
       text=annotableQualifiableName     {mapItem = mapItem + text;}
-      nonWordSymbol["+->"]              {mapItem = mapItem + " +-> ";}
+      MAPS_TO                           {mapItem = mapItem + " +-> ";}
       text=annotableQualifiableName     {mapItem = mapItem + text;}
     ;
 
@@ -517,7 +556,7 @@ private scDiagNode returns[ElementFactory.Item diagNode]
 }
     : partialName=name                  {headerEnd = begin = LT(0);
                                          nodeName = partialName;}
-      nonWordSymbol["+->"]              {nodeName = nodeName + " +-> ";}
+      MAPS_TO                           {nodeName = nodeName + " +-> ";}
       item=scTerm[false, null]          {if (item instanceof ElementFactory.Item)
                                             nodeName = nodeName + ((ElementFactory.Item)item).toString();
                                          else if (item instanceof String)
@@ -543,7 +582,7 @@ private scDiagEdge returns[ElementFactory.Item diagEdge]
       partialName=name                    {edgeName = edgeName + partialName;}
       arrow:ARROW                         {edgeName = edgeName + " " + arrow.getText() + " ";}
       partialName=name                    {edgeName = edgeName + partialName;}
-      nonWordSymbol["+->"]                {edgeName = edgeName + " +-> ";}
+      MAPS_TO                             {edgeName = edgeName + " +-> ";}
       item=scTerm[false, null]            {if (item instanceof ElementFactory.Item) 
                                                 edgeName = edgeName + ((ElementFactory.Item)item).toString();
                                            else if (item instanceof String)
@@ -568,32 +607,31 @@ private scSubstituteTermList
 
 //------------------------------------------------------------------------------
 
-private claimName returns[ElementFactory.Item claimName]
+private claimName returns[String claimName]
 {
     claimName = null;
-    String ignore = null;
 }
-    : ignore=name
+    : claimName=name
     ;
 
-private proverAssertions returns[ElementFactory.Item assertionsItem]
+private proverAssertions returns[String assertionsItem]
 {
-    assertionsItem = null;
+    assertionsItem = "";
     String anAssertion = null;
 }
-    : "using" 
-      (anAssertion=name
-       | COMMA anAssertion=name
+    : "using"                           {assertionsItem += " using ";}     
+      (anAssertion=name                 {assertionsItem += anAssertion;}
+       | COMMA anAssertion=name         {assertionsItem += ", " + anAssertion;}
       )+
     ;
 
-private proverOptions returns[ElementFactory.Item optionsItem]
+private proverOptions returns[String optionsItem]
 {
-    optionsItem = null;
+    optionsItem = "";
     String anOption = null;
 }
-    : "options"
-      (anOption=literal
+    : "options"                         {optionsItem += " options ";}
+      (anOption=literal                 {optionsItem += anOption + " ";}
       )+
     ;
 
@@ -702,8 +740,16 @@ private qualifiableSortNames returns[String sortName]
 private qualifiableSortName returns[String sortName]
 {
     sortName = null;
-}   
-    : sortName=unqualifiedSortName
+    String qlf = null;
+}
+    : (qlf=qualifier DOT)?
+      ( sortName=name
+      | sortName=wildcardPattern
+      )
+                            {if (qlf != null) sortName = qlf + "." + sortName;}
+    ;
+/*
+sortName=unqualifiedSortName
     | sortName=qualifiedSortName
     ;
 
@@ -711,7 +757,7 @@ private unqualifiedSortName returns[String sortName]
 {
     sortName = null;
 }
-    : sortName=nonKeywordName
+    : sortName=name
     ;
 
 private qualifiedSortName returns[String sortName]
@@ -721,8 +767,8 @@ private qualifiedSortName returns[String sortName]
 }
     : text=qualifier             {sortName = text;}
       dot:DOT                    {sortName = sortName + ".";}
-      text=nonKeywordName        {sortName = sortName + text;}
-    ;
+      text=name                  {sortName = sortName + text;}
+    ;*/
 
 private idName returns[String name]
 {
@@ -790,8 +836,9 @@ private qualifiableOpName returns[String opName]
     String qlf = null;
 }
     : (qlf=qualifier DOT)?
-      opName=opName
-                            {if (qlf != null) opName = qlf + "." + opName;}
+      ( opName=opName
+      | opName=wildcardPattern
+      )                             {if (qlf != null) opName = qlf + "." + opName;}
     ;
 
 private opName returns[String opName]
@@ -882,10 +929,11 @@ private opDefinition returns[ElementFactory.Item def]
       (ignore=sortVariableBinder
       )?
       name=qualifiableOpNames
+      (params=formalOpParameters
+      )?
       (COLON sort
       )?
-      (equals
-       | params=formalOpParameters equals) 
+      equals
       expr=expression            {def = builder.createDef(name, params, expr);
                                   ParserUtil.setBounds(builder, def, begin, LT(0));
                                  }
@@ -953,7 +1001,8 @@ private pattern returns[String pattern]
     String text = null;
 }
     : pattern=basicPattern
-    | pattern=annotatedPattern
+      (COLON sort
+      )?
     ;
 
 private annotatedPattern returns[String pattern]
@@ -1126,11 +1175,12 @@ private specialSymbol returns[String text]
 
     | STAR                  {text = "*";}
     | ARROW                 {text = "->";}
+    | BACKWARDSARROW        {text = "<-";}
     | COLON                 {text = ":";}
     | VERTICALBAR           {text = "|";}
     | COLONCOLON            {text = "::";}
     | SEMICOLON             {text = ";";}
-//    | DOT                   {text = ".";}
+    | DOT                   {text = ".";}
     ;
 
 private literal returns[String text]
@@ -1400,6 +1450,12 @@ options {
   paraphrase = "'<-'";
 }
     :  "<-"
+    ;
+MAPS_TO
+options {
+    paraphrase = "'+->'";
+}
+    : "+->"
     ;
 SLASH
 options {

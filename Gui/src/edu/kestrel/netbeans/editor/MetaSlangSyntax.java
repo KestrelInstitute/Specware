@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/03/19 21:34:36  gilham
+ * Fixed parseToken()  to handle  comment blocks not ended with  "\begin{spec}".
+ *
  * Revision 1.7  2003/03/19 19:21:26  weilyn
  * Added ISI_LATEX_COMMENT as a last buffer state
  *
@@ -65,7 +68,7 @@ public class MetaSlangSyntax extends Syntax {
     private static final int ISA_LPAREN = ISI_INT + 1; // after '('
     private static final int ISA_BSLASH = ISA_LPAREN + 1; // after '\'
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public MetaSlangSyntax() {
         tokenContextPath = MetaSlangTokenContext.contextPath;

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/04/23 01:14:38  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.5  2003/04/01 02:29:36  weilyn
  * Added support for diagrams and colimits
  *
@@ -27,6 +30,8 @@
 
 package edu.kestrel.netbeans.model;
 
+import java.util.*;
+
 import edu.kestrel.netbeans.Util;
 
 /**
@@ -36,6 +41,9 @@ import edu.kestrel.netbeans.Util;
  *
  */
 class DefaultInsertStrategy implements Positioner {
+    
+    private static final boolean DEBUG = true;
+    
     public Element[] findInsertPositions(Element container, Element[] els, Acceptor posAcceptor) {
         Element[] siblings = findElements(container, els[0]);;
         Element[] refs = new Element[els.length];
@@ -93,7 +101,40 @@ class DefaultInsertStrategy implements Positioner {
     private Element[] findElements(Element container, Element selector) {
 	if (container instanceof SourceElement) {
 	    SourceElement source = (SourceElement) container;
-	    if (selector instanceof SpecElement) {
+
+            Vector allElements = new Vector();
+            
+            // insert new containers at the end rather than after a sibling
+            Element[] currArray;
+            currArray = source.getSpecs();
+            for (int i = 0; i < currArray.length; i++) {
+                allElements.add(currArray[i]);
+            }
+            currArray = source.getProofs();
+            for (int i = 0; i < currArray.length; i++) {
+                allElements.add(currArray[i]);
+            }
+            currArray = source.getDiagrams();
+            for (int i = 0; i < currArray.length; i++) {
+                allElements.add(currArray[i]);
+            }
+            currArray = source.getMorphisms();
+            for (int i = 0; i < currArray.length; i++) {
+                allElements.add(currArray[i]);
+            }
+            currArray = source.getColimits();
+            for (int i = 0; i < currArray.length; i++) {
+                allElements.add(currArray[i]);
+            }
+            
+            Element[] allElemsArray = new Element[allElements.size()];
+            allElements.copyInto(allElemsArray);
+            if (DEBUG) {
+                Util.log("DefaultInsertStrategy.findElements: num elements found is "+allElements.size());
+            }
+            return allElemsArray;
+            
+/*	    if (selector instanceof SpecElement) {
 		return getFirstNonEmpty(source, 0);
 	    } else if (selector instanceof ProofElement) {
                 return getFirstNonEmpty(source, 1);
@@ -103,8 +144,6 @@ class DefaultInsertStrategy implements Positioner {
                 return getFirstNonEmpty(source, 3);
             } else if (selector instanceof ColimitElement) {
                 return getFirstNonEmpty(source, 4);
-            } /*else if (selector instanceof URIElement) {
-                return getFirstNonEmpty(source, 5);
             } */
 	} else if (container instanceof SpecElement) {
 	    SpecElement spec = (SpecElement) container;
@@ -123,22 +162,19 @@ class DefaultInsertStrategy implements Positioner {
             ProofElement proof = (ProofElement) container;
             //TODO
         } else if (container instanceof MorphismElement) {
-            MorphismElement proof = (MorphismElement) container;
+            MorphismElement morphism = (MorphismElement) container;
             //TODO
         } else if (container instanceof DiagramElement) {
             DiagramElement diagram = (DiagramElement) container;
             //TODO
         } else if (container instanceof ColimitElement) {
-            ColimitElement diagram = (ColimitElement) container;
+            ColimitElement colimit = (ColimitElement) container;
             //TODO
-        } else if (container instanceof ProofElement) {
-            ProofElement proof = (ProofElement) container;
-            //TODO
-        } 
+        }
 	return null;
     }
         
-    private Element[] getFirstNonEmpty(SourceElement container, int startPos) {
+/*    private Element[] getFirstNonEmpty(SourceElement container, int startPos) {
 	//Util.log("*** DefaultInsertStrategy.getFirstNonEmpty(): startPos="+startPos);
         Element[] items;
         
@@ -173,7 +209,7 @@ class DefaultInsertStrategy implements Positioner {
 	    return items;
 	}
         return null;
-    }
+    }*/
 
     private Element[] getFirstNonEmpty(SpecElement container, int startPos) {
         Element[] items;

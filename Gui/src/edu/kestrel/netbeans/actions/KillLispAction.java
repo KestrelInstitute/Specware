@@ -1,9 +1,3 @@
-/*
- * StartLispAction.java
- *
- * Created on February 14, 2003, 12:34 PM
- */
-
 package edu.kestrel.netbeans.actions;
 
 import org.openide.filesystems.FileObject;
@@ -25,13 +19,13 @@ import org.openide.filesystems.FileStateInvalidException;
  *
  * @author  weilyn
  */
-public class StartLispAction extends NodeAction {
+public class KillLispAction extends NodeAction {
     /** generated Serialized Version UID */
     static final long serialVersionUID = 5089785814030008826L;
 
     /* execute code for the nodes */
     protected void performAction (Node[] activatedNodes) {
-        startLisp();
+        killLisp();
     }
     
     protected boolean enable(Node[] arr) {
@@ -58,19 +52,16 @@ public class StartLispAction extends NodeAction {
     * @return text to display at status line
     */
     protected String message () {
-        return NbBundle.getMessage(StartLispAction.class, "CTL_ConnectingToLisp");
+        return NbBundle.getMessage(StartLispAction.class, "CTL_KillingLisp");
     }
 
     /** Execute code for a node.
     * @param node the node
     */
-    void startLisp () {
+    void killLisp () {
         TopManager.getDefault ().setStatusText (message ());
-        if (LispSocketManager.connectToLisp()) {
-            TopManager.getDefault ().setStatusText (NbBundle.getMessage(StartLispAction.class, "CTL_ConnectedToLisp"));
-        } else {
-            TopManager.getDefault ().setStatusText (NbBundle.getMessage(StartLispAction.class, "CTL_NoConnectionToLisp"));    
-        }
+	LispSocketManager.destroyLispProcess();
+        TopManager.getDefault ().setStatusText ("");
     }
     
     /* Human presentable name of the action. This should be
@@ -78,14 +69,14 @@ public class StartLispAction extends NodeAction {
     * @return the name of the action
     */
     public String getName() {
-        return NbBundle.getMessage(StartLispAction.class, "StartLisp");
+        return NbBundle.getMessage(KillLispAction.class, "KillLisp");
     }
 
     /* Help context where to find more about the action.
     * @return the help context for this action
     */
     public HelpCtx getHelpCtx() {
-        return new HelpCtx(StartLispAction.class);
+        return new HelpCtx(KillLispAction.class);
     }
     
 }

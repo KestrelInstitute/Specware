@@ -29,7 +29,7 @@ import edu.kestrel.netbeans.codegen.ElementPrinter;
 public final class ProofElement extends MemberElement {
     /** Formats for the header - used in code generator */
     private static final ElementFormat HEADER_FORMAT = 
-        new ElementFormat("proof"); // NOI18N
+        new ElementFormat("prove"); // NOI18N
 
     /** source element we are attached to */
     private SourceElement source;
@@ -85,6 +85,15 @@ public final class ProofElement extends MemberElement {
     
     public void setSource(SourceElement source) {
         this.source = source;
+    }
+    
+    public String getProofString() {
+        return getProofImpl().getProofString();
+    }
+    
+    public void setProofString(String proofString) throws SourceException {
+        Util.log("ProofElement.setProofString called with "+proofString);
+        getProofImpl().setProofString(proofString);
     }
     
     //================== TODO: ADD THESE METHODS FOR EACH SUB-ELEMENT ===============================
@@ -166,14 +175,15 @@ public final class ProofElement extends MemberElement {
 
         printer.markProof(this, printer.HEADER_BEGIN); // HEADER begin
         if (topLevel) {
-	    printer.println(getName()+" =");
+	    printer.print(getName()+" = ");
 	}
 	printer.print(HEADER_FORMAT.format(this));
 
         printer.markProof(this, printer.HEADER_END); // HEADER end
 
         printer.markProof(this, printer.BODY_BEGIN); // BODY begin
-        printer.println(""); // NOI18N
+        printer.print(" ");
+        printer.print(getProofString()); // NOI18N
 
 /*        if (print(getImports(), printer)) {
             printer.println(""); // NOI18N
@@ -185,7 +195,6 @@ public final class ProofElement extends MemberElement {
 //        printer.print("endspec"); // NOI18N
 
         if (topLevel) {
-	    printer.println("");
 	    printer.println("");
 	}
 
@@ -258,6 +267,10 @@ public final class ProofElement extends MemberElement {
      * @see ProofElement
      */
     public static interface Impl extends MemberElement.Impl {
+        
+        public String getProofString();
+
+        public void setProofString(String proofString) throws SourceException;        
 
         //==============TODO======================
         /** Change the set of imports.
@@ -284,10 +297,13 @@ public final class ProofElement extends MemberElement {
     /** Memory based implementation of the element factory.
      */
     static final class Memory extends MemberElement.Memory implements Impl {
+        private String proofString;
+        
         /** collection of imports */
 //        private MemoryCollection.Import imports;       
 
         public Memory() {
+            proofString = "";
         }
 
         /** Copy constructor.
@@ -300,6 +316,7 @@ public final class ProofElement extends MemberElement {
         /** Late initialization of initialization of copy elements.
         */
         public void copyFrom (ProofElement copyFrom) {
+            setProofString(copyFrom.getProofString()); 
 //            changeImports (copyFrom.getImports (), SET);
         }
 
@@ -354,5 +371,15 @@ public final class ProofElement extends MemberElement {
             return (ProofElement)element;
         }
 
+        public String getProofString() {
+            return this.proofString;
+        }
+        
+        public void setProofString(String proofString) {
+            String old = this.proofString;
+            this.proofString = proofString;
+            firePropertyChange (PROP_PROOFSTRING, old, proofString);
+         }
+        
     }
 } 

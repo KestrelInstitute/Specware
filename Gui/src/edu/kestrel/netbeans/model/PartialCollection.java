@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:01  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -135,7 +138,9 @@ abstract class PartialCollection extends IndexedPropertyBase {
      */
     public void addMembers(Element[] els) throws SourceException {
         if (els.length == 0) return;
-        Util.log("PartialCollection.addMembers "+this+" els to be added "+els.length);
+        if (DEBUG) {
+            Util.log("PartialCollection.addMembers "+this+" els to be added "+els.length);
+        }
         Element[] insertingEls = new Element[els.length];
         Element[] elements = getElements();
         for (int i = 0; i < els.length; i++) {
@@ -151,7 +156,9 @@ abstract class PartialCollection extends IndexedPropertyBase {
         // needs to be inserted first (if it is also new one)
         Map m = new HashMap(precedings.length * 4 / 3);
 
-        Util.log("PartialCollection.addMembers "+this+" allMembers.length = "+allElems.length+" precedings.length =  "+precedings.length);
+        if (DEBUG) {
+            Util.log("PartialCollection.addMembers "+this+" allMembers.length = "+allElems.length+" precedings.length =  "+precedings.length);
+        }
         for (int i = 0; i < precedings.length; i++) {
             // throw exception if prev is not a member.
             Object o = m.get(precedings[i]);
@@ -190,10 +197,12 @@ abstract class PartialCollection extends IndexedPropertyBase {
                     newElems[newPos] = newEl;
                     newPositions[newPos] = newGlobalPos;
                     
-                    Util.log("*** PartialCollection.addMembers: newGlobalIndices["+inserted+"]="+newGlobalPos); // NOI18N
-                    Util.log("*** PartialCollection.addMembers: insertIndices["+inserted+"]="+newPos); // NOI18N
-                    Util.log("*** PartialCollection.addMembers: newElems["+newPos+"]="+((MemberElement)newEl).getName()); // NOI18N
-                    Util.log("*** PartialCollection.addMembers: newPositions["+newPos+"]="+newGlobalPos); // NOI18N
+                    if (DEBUG) {
+                        Util.log("*** PartialCollection.addMembers: newGlobalIndices["+inserted+"]="+newGlobalPos); // NOI18N
+                        Util.log("*** PartialCollection.addMembers: insertIndices["+inserted+"]="+newPos); // NOI18N
+                        Util.log("*** PartialCollection.addMembers: newElems["+newPos+"]="+((MemberElement)newEl).getName()); // NOI18N
+                        Util.log("*** PartialCollection.addMembers: newPositions["+newPos+"]="+newGlobalPos); // NOI18N
+                    }
                     
                     inserted++;
                     newPos++;
@@ -201,7 +210,7 @@ abstract class PartialCollection extends IndexedPropertyBase {
                     dependent = m.get(newEl);
                 } while (dependent != null);
                 // inserted everything chained after prevElem
-            } else {
+            } else if (DEBUG) {
                 Util.log("*** PartialCollection.addMembers: dependent is null inserted = "+inserted); // NOI18N
             }
             if (oldGlobalPos >= allElems.length)  break;
@@ -236,21 +245,29 @@ abstract class PartialCollection extends IndexedPropertyBase {
         events.fireVetoableChange(evt);
         try {
             ignoreContentChange = true;
-            Util.log("PartialCollection.addMembers Before MemberCollection change members this = "+this+" allMembers = "+allMembers.getElements().length);
+            if (DEBUG) {
+                Util.log("PartialCollection.addMembers Before MemberCollection change members this = "+this+" allMembers = "+allMembers.getElements().length);
+            }
             allMembers.changeMembers(chng);
-            Util.log("PartialCollection.addMembers After MemberCollection change Memberss this = "+this+" allMembers = "+allMembers.getElements().length);
+            if (DEBUG) {
+                Util.log("PartialCollection.addMembers After MemberCollection change Memberss this = "+this+" allMembers = "+allMembers.getElements().length);
+            }
         } finally {
             ignoreContentChange = false;
         }
         events.addPropertyChange(evt);
         this.elements = newElems;
-        Util.log("PartialCollection.addMembers this = "+this+" Setting positions to "+Util.print(newPositions));
+        if (DEBUG) {
+            Util.log("PartialCollection.addMembers this = "+this+" Setting positions to "+Util.print(newPositions));
+        }
         this.positions = newPositions;
         sanityCheck();
     }
     
     public void removeMembers(Element[] els) throws SourceException {
-        Util.log("PartialCollection.removeMembers "+this+" els to be removed "+Util.print(els));
+        if (DEBUG) {
+            Util.log("PartialCollection.removeMembers "+this+" els to be removed "+Util.print(els));
+        }
         Element[] elements = getElements();
         int[] removeIndices = createIdentityMap(els);
         // sanity check:
@@ -259,9 +276,13 @@ abstract class PartialCollection extends IndexedPropertyBase {
                 String errorMessage = "";
                 for (int j = 0 ; j < elements.length ; j++) {
                     errorMessage += ("\n"+elements[j].toString());
-                    Util.log("PartialCollection.removeMembers element ["+j+"] = "+ elements[j]);
+                    if (DEBUG) {
+                        Util.log("PartialCollection.removeMembers element ["+j+"] = "+ elements[j]);
+                    }
                 } // end of for (int j = 0 ; j < elements.length ; j++)
-                Util.log("PartialCollection.removeMembers element ["+i+"] = "+ elements[i]+" does not exist");
+                if (DEBUG) {
+                    Util.log("PartialCollection.removeMembers element ["+i+"] = "+ elements[i]+" does not exist");
+                }
                 throw new SourceException("PartialCollection.removeMembers \n Element \n"+elements[i].toString()+" \n does not exist"); // NOI18N
             }
         }
@@ -347,7 +368,9 @@ abstract class PartialCollection extends IndexedPropertyBase {
     }
     
     public void setMembers(Element[] members) throws SourceException {
-        Util.log("PartialCollection.setMember elements = "+members.length);
+        if (DEBUG) {
+            Util.log("PartialCollection.setMember elements = "+members.length);
+        }
         Change chng;
         Element[] els = getElements();
         Element[] newEls = createEmpty(members.length);
@@ -356,9 +379,13 @@ abstract class PartialCollection extends IndexedPropertyBase {
         boolean copied = false;
         for (int i = 0; i < map.length; i++) {
             if (map[i] == -1) {
-                Util.log("PartialCollection.SetMembers before Copy Element element to be copied "+members[i]);
+                if (DEBUG) {
+                    Util.log("PartialCollection.SetMembers before Copy Element element to be copied "+members[i]);
+                }
                 newEls[i] = copyElement(members[i]);
-                Util.log("PartialCollection.SetMembers after copyElement new element = "+newEls[i]);
+                if (DEBUG) {
+                    Util.log("PartialCollection.SetMembers after copyElement new element = "+newEls[i]);
+                }
                 copied = true;
             } else {
                 newEls[i] = members[i];
@@ -521,9 +548,13 @@ abstract class PartialCollection extends IndexedPropertyBase {
         try {
             ignoreContentChange = true;
             // delegate the actual change to the MemberCollection. Change object now
-            Util.log("PartialCollection.doSetMembers "+this+"\n change = "+chng+"\n allMembers = "+allMembers.getElements().length);
+            if (DEBUG) {
+                Util.log("PartialCollection.doSetMembers "+this+"\n change = "+chng+"\n allMembers = "+allMembers.getElements().length);
+            }
             allMembers.changeMembers(chng);
-            Util.log("PartialCollection.doSetMembers after calling changeMembers allMembers = "+allMembers.getElements().length);
+            if (DEBUG) {
+                Util.log("PartialCollection.doSetMembers after calling changeMembers allMembers = "+allMembers.getElements().length);
+            }
             System.err.println("PartialCollection.doSetMembers after calling changeMembers allMembers = "+allMembers.getElements().length);
         } catch (SourceException ex){
             Util.log("PartialCollection.doSetMembers Source Exception in changeMembers for "+allMembers);
@@ -531,11 +562,15 @@ abstract class PartialCollection extends IndexedPropertyBase {
         } finally {
             ignoreContentChange = false;
         }
-        Util.log("PartialCollection.doSetMembers this = "+this+" Setting positions to "+newPositions);
+        if (DEBUG) {
+            Util.log("PartialCollection.doSetMembers this = "+this+" Setting positions to "+newPositions);
+        }
         this.positions = newPositions;
         // revalidate the cached element array.
         this.elements = newElements;
-        Util.log("PartialCollection.doSetMembers  newElements "+newElements.length +" this.elements = "+this.elements.length); // NOI18N
+        if (DEBUG) {
+            Util.log("PartialCollection.doSetMembers  newElements "+newElements.length +" this.elements = "+this.elements.length); // NOI18N
+        }
         System.err.println("PartialCollection.doSetMembers  newElements "+newElements.length +" this.elements = "+this.elements.length); // NOI18N
         sanityCheck();
         events.addPropertyChange(multiEvt);
@@ -568,15 +603,21 @@ abstract class PartialCollection extends IndexedPropertyBase {
         if (ignoreContentChange)
             return;
         int l = getElements().length;
-        Util.log("PartialCollection.contentSlotsChanged Current Collection = "+this);
-        Util.log("PartialCollection.contentSlotsChanged size of elements = "+l);
-        Util.log("PartialCollection.contentSlotsChanged positions = "+positions +" offsets = "+offsets);
-        Util.log("PartialCollection.contentSlotsChanged positions = "+positions.length +" offsets = "+offsets.length);
+        if (DEBUG) {
+            Util.log("PartialCollection.contentSlotsChanged Current Collection = "+this);
+            Util.log("PartialCollection.contentSlotsChanged size of elements = "+l);
+            Util.log("PartialCollection.contentSlotsChanged positions = "+positions +" offsets = "+offsets);
+            Util.log("PartialCollection.contentSlotsChanged positions = "+positions.length +" offsets = "+offsets.length);
+        }
         for (int i = 0; i < l; i++) {
-            Util.log("PartialCollection.contentSlotsChanged positions["+i+"] = "+positions[i]);
+            if (DEBUG) {
+                Util.log("PartialCollection.contentSlotsChanged positions["+i+"] = "+positions[i]);
+            }
             //Util.log("PartialCollection.contentSlotsChanged offsets = "+offsets[positions[i]]);
             //if (offsets.length > positions[i]) {
-	    Util.log("PartialCollection.contentSlotsChanged offsets = "+offsets[positions[i]]);
+            if (DEBUG) {
+                Util.log("PartialCollection.contentSlotsChanged offsets = "+offsets[positions[i]]);
+            }
 	    positions[i] += offsets[positions[i]];
 	    //}
         }
@@ -609,11 +650,12 @@ abstract class PartialCollection extends IndexedPropertyBase {
     }
     
     public void changeMembers(Element[] items, int operation) throws SourceException {
-        Util.log("PartialCollection.changeMembers "+this+" Element "+items.length+" operation = "+operation);
-        for (int i = 0 ; i < items.length; i++){
-            Util.log("PartialCollection.changeMembers Element ["+i+"]"+items[i]);
+        if (DEBUG) {
+            Util.log("PartialCollection.changeMembers "+this+" Element "+items.length+" operation = "+operation);
+            for (int i = 0 ; i < items.length; i++){
+                Util.log("PartialCollection.changeMembers Element ["+i+"]"+items[i]);
+            }
         }
-        
         switch (operation) {
             case SpecElementImpl.ADD:
                 addMembers(items);
@@ -622,7 +664,6 @@ abstract class PartialCollection extends IndexedPropertyBase {
                 removeMembers(items);
                 break;
             case SpecElementImpl.SET:
-                Util.log("PartialCollection.changeMembers Setting Items");
                 setMembers(items);
                 break;
             default:

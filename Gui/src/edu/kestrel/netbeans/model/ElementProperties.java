@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/04/23 01:14:39  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.8  2003/04/01 02:29:37  weilyn
  * Added support for diagrams and colimits
  *
@@ -71,6 +74,8 @@ public interface ElementProperties {
     public static final String PROP_EXPRESSION = "expression"; // NOI18N        
 
     public static final String PROP_PROOFS = "proofs"; // NOI18N        
+    
+    public static final String PROP_PROOFSTRING = "proof_string"; // NOI18N        
 
     public static final String PROP_MORPHISMS = "morphisms"; // NOI18N         
     

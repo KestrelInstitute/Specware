@@ -16,6 +16,8 @@ import edu.kestrel.netbeans.codegen.TextBinding;
  *
  */
 public class ColimitInfo extends BaseElementInfo {
+    private static final boolean DEBUG = false;
+    
     public static final int DIAGRAM = 0;
 
     Collection           allMembers;
@@ -57,13 +59,17 @@ public class ColimitInfo extends BaseElementInfo {
     }
     
     public void updateElement(LangModel.Updater model, Element target) throws SourceException {
-        Util.log("ColimitInfo.updateElement this = "+this+" target "+target);
+        if (DEBUG) {
+            Util.log("ColimitInfo.updateElement this = "+this+" target "+target);
+        }
         super.updateElement(model, target);
         super.updateBase(target);
         
         ColimitElement colimit = (ColimitElement)target;
 
-        //Util.log("Updating colimit properties of " + name); // NOI18N
+        if (DEBUG) {
+            Util.log("Updating colimit properties of " + name); // NOI18N
+        }
         
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
@@ -101,13 +107,17 @@ public class ColimitInfo extends BaseElementInfo {
     public Element createModelImpl(LangModel.Updater model, Element parent) {
         ElementImpl impl;
 
-        //Util.log("*** ColimitInfo.createModelImpl: Creating a colimit " + name); // NOI18N
+        if (DEBUG) {
+            Util.log("*** ColimitInfo.createModelImpl: Creating a colimit " + name); // NOI18N
+        }
 	impl = model.createColimit(parent);
         return impl.getElement();
     }
     
     public void addMember(int kind, BaseElementInfo member) {
-        //Util.log("*** ColimitInfo.addMember: " + member.name); // NOI18N
+        if (DEBUG) {
+            Util.log("*** ColimitInfo.addMember: " + member.name); // NOI18N
+        }
         member.parent = this;
         int index = allMembers.size();
         allMembers.add(member);

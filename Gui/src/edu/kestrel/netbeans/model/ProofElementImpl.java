@@ -23,6 +23,8 @@ class ProofElementImpl extends MemberElementImpl implements ProofElement.Impl, E
     private MemberCollection        members;
 
     private static final long serialVersionUID = -7718381719188756697L;
+
+    private String proofString;
     
     // Construction
     ///////////////////////////////////////////////////////////////////////////////////
@@ -223,4 +225,33 @@ class ProofElementImpl extends MemberElementImpl implements ProofElement.Impl, E
     public Element[] getElements() {
         return members.getElements();
     }
+    
+    public String getProofString() {
+        return this.proofString;
+    }
+    
+    public void setProofString(String proofString) throws SourceException {
+        Util.log("ProofElementImpl.setProofString called with "+proofString);
+        Object token = takeLock();
+        try {
+            PropertyChangeEvent evt;
+            if (!isCreated()) {
+                /*if (proofString.equals(this.proofString)) {
+                    Util.log("ProofElementImpl.setProofString returning because proofString hasn't changed");
+                    return;
+                }*/
+                evt = new PropertyChangeEvent(getElement(), PROP_PROOFSTRING, this.proofString, proofString);
+                // no constraings on the Initializer... only check vetoable listeners.
+                checkVetoablePropertyChange(evt);
+                getProofBinding().changeProofString(proofString);
+                addPropertyChange(evt);
+            }
+            this.proofString = proofString;
+            Util.log("ProofElementImpl.setProofString has this.proofString = "+this.proofString);
+            commit();
+        } finally {
+            releaseLock(token);
+        }    
+    }
+    
 }

@@ -208,13 +208,12 @@ public class MorphismElement extends MemberElement {
         printer.markMorphism(this, printer.BODY_BEGIN); // BODY begin
         printer.print(" "); // NOI18N
         printer.print(getSourceUnitID().toString());
-        printer.println(" -> "); // NOI18N
+        printer.print(" -> "); // NOI18N
         printer.print(getTargetUnitID().toString());
         printer.println(" {} ");
         printer.markMorphism(this, printer.BODY_END); // BODY end
 
         if (topLevel) {
-	    printer.println("");
 	    printer.println("");
 	}
 

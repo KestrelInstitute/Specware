@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/04/23 01:16:24  weilyn
+ * DiagElemInfo.java
+ *
  * Revision 1.8  2003/04/01 02:29:41  weilyn
  * Added support for diagrams and colimits
  *
@@ -88,7 +91,7 @@ public interface ElementFactory {
     /** Creates an element for a proof.
 	@param name Name of the proof.
     */
-    public Item createProof(String name);
+    public Item createProof(String name, String proofString);
     
     /** Creates an element for a morphism.
      *	@param name Name of the morphism.

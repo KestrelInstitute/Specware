@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:10:24  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:16:04  weilyn
  * Added support for defs.
  *
@@ -37,6 +40,9 @@ import edu.kestrel.netbeans.codegen.TextBinding;
  *
  */
 public class SpecInfo extends BaseElementInfo {
+    
+    private static final boolean DEBUG = false;    
+    
     public static final int SORT = 0;
     public static final int OP = 1;
     public static final int DEF = 2;
@@ -110,13 +116,17 @@ public class SpecInfo extends BaseElementInfo {
     }
     
     public void updateElement(LangModel.Updater model, Element target) throws SourceException {
-        Util.log("SpecInfo.updateElement this = "+this+" target "+target);
+        if (DEBUG) {
+            Util.log("SpecInfo.updateElement this = "+this+" target "+target);
+        }
         super.updateElement(model, target);
         super.updateBase(target);
         
         SpecElement spec = (SpecElement)target;
 
-        //Util.log("Updating spec properties of " + name); // NOI18N
+        if (DEBUG) {
+            Util.log("Updating spec properties of " + name); // NOI18N
+        }
         
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
@@ -166,13 +176,17 @@ public class SpecInfo extends BaseElementInfo {
     public Element createModelImpl(LangModel.Updater model, Element parent) {
         ElementImpl impl;
 
-        //Util.log("*** SpecInfo.createModelImpl: Creating a spec " + name); // NOI18N
+        if (DEBUG) {
+            Util.log("*** SpecInfo.createModelImpl: Creating a spec " + name); // NOI18N
+        }
 	impl = model.createSpec(parent);
         return impl.getElement();
     }
     
     public void addMember(int kind, BaseElementInfo member) {
-        //Util.log("*** SpecInfo.addMember: " + member.name); // NOI18N
+        if (DEBUG) {
+            Util.log("*** SpecInfo.addMember: " + member.name); // NOI18N
+        }
         member.parent = this;
         int index = allMembers.size();
         allMembers.add(member);

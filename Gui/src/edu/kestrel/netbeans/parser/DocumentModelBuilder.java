@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/04/23 01:16:24  weilyn
+ * DiagElemInfo.java
+ *
  * Revision 1.8  2003/04/01 02:29:41  weilyn
  * Added support for diagrams and colimits
  *
@@ -142,8 +145,8 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
     /** Creates an element for a proof.
 	@param name Name of the proof.
     */
-    public Item createProof(String name) {
-	ProofInfo info = new ProofInfo(name);
+    public Item createProof(String name, String proofString) {
+	ProofInfo info = new ProofInfo(name, proofString);
 	if (DEBUG) {
 	    Util.log("*** DocumentModelBuilder.createProof(): "+info);
 	}
@@ -351,7 +354,9 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 
 	BaseElementInfo childInfo = (BaseElementInfo) child;
 	childInfo.parent = parent;
-	Util.log("DocumentModelBuilder.setParent Parent = "+parent);
+        if (DEBUG) {
+            Util.log("DocumentModelBuilder.setParent Parent = "+parent);
+        }
 	if (parent == null) {
 	    // must be a top-level class:
 	    if (child instanceof SpecInfo) {

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/04/23 01:14:39  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.4  2003/04/01 02:29:38  weilyn
  * Added support for diagrams and colimits
  *
@@ -48,6 +51,9 @@ import edu.kestrel.netbeans.Util;
  * do nothing (parse, getStatus).
  */
 public class SourceElementImpl extends MemberElementImpl implements SourceElement.Impl, ElementOrder {
+    
+    private static final boolean DEBUG = false;    
+    
     /** Reference keeping a collection of ElementImpls residing here.
      */
   private SpecCollection  specs;
@@ -468,7 +474,9 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         allElems = members.getElements();
         for (int i = 0; i < allElems.length; i++) {
             ElementImpl impl = members.getElementImpl(allElems[i]);
-            Util.log("SourceElementImpl.notifyRemove calling notifyRemove on "+impl);
+            if (DEBUG) {
+                Util.log("SourceElementImpl.notifyRemove calling notifyRemove on "+impl);
+            }
             impl.notifyRemove();
         }
         super.notifyRemove();

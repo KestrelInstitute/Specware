@@ -14,6 +14,7 @@ import org.openide.nodes.Node;
 import org.openide.cookies.FilterCookie;
 import org.openide.util.WeakListener;
 
+import edu.kestrel.netbeans.Util;
 import edu.kestrel.netbeans.model.*;
 
 
@@ -21,6 +22,8 @@ import edu.kestrel.netbeans.model.*;
 * Semantics are similar to those of {@link SourceChildren}.
 */
 public class MorphismChildren extends Children.Keys implements FilterCookie {
+    
+    private static final boolean DEBUG = false;
 
     /** Converts property names to filter. */
     protected static HashMap              propToFilter;
@@ -147,7 +150,9 @@ public class MorphismChildren extends Children.Keys implements FilterCookie {
     * The node is created using node factory.
     */
     protected Node[] createNodes (final Object key) {
-        System.out.println("MorphismChildren.createNodes with key="+key);
+        if (DEBUG) {
+            Util.log("MorphismChildren.createNodes with key="+key);
+        }
         if (key != null) {
             return new Node[] { hookNodeName(factory.createUnitIDObjectNode(key)) };
         }

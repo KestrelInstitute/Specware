@@ -195,20 +195,20 @@ public class ProveCustomizer extends javax.swing.JPanel {
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField timeLimitTextField;
-    private javax.swing.JLabel resolutionLabel;
-    private javax.swing.JPanel jPanel4;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JComboBox usingComboBox;
-    private javax.swing.JLabel nameLabel;
-    private javax.swing.JLabel optionsLabel;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JLabel usingLabel;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JLabel nameLabel;
     private javax.swing.JTextField nameTextField;
+    private javax.swing.JLabel optionsLabel;
+    private javax.swing.JLabel resolutionLabel;
+    private javax.swing.JTextField timeLimitTextField;
     private javax.swing.JComboBox useResolutionComboBox;
+    private javax.swing.JComboBox usingComboBox;
+    private javax.swing.JLabel usingLabel;
     // End of variables declaration//GEN-END:variables
     
 }

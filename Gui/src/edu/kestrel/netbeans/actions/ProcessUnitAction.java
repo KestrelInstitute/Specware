@@ -17,6 +17,7 @@ import org.openide.util.actions.NodeAction;
 
 import edu.kestrel.netbeans.MetaSlangDataObject;
 import edu.kestrel.netbeans.lisp.LispProcessManager;
+import edu.kestrel.netbeans.lisp.LispSocketManager;
 import edu.kestrel.netbeans.model.SourceElement;
 
 
@@ -88,7 +89,7 @@ public class ProcessUnitAction extends NodeAction {
             pathName = fileObj.getFileSystem().getSystemName();
         } catch (FileStateInvalidException e) {}
         String fileName = fileObj.getPackageName('/'); 
-        LispProcessManager.processUnit(pathName, fileName);
+        LispSocketManager.processUnit(pathName, fileName);
     }
 
     /* Help context where to find more about the action.

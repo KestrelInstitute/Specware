@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:15:43  weilyn
+ * ClaimCustomizer.java
+ *
  * Revision 1.7  2003/04/01 02:29:39  weilyn
  * Added support for diagrams and colimits
  *
@@ -125,7 +128,6 @@ public class FilterFactory implements ElementNodeFactory {
     * @return a diagElem node instance
     */
     public Node createDiagElemNode (DiagElemElement element) {
-        System.out.println("FilterFactory.createDiagElemNode");
         return delegate.createDiagElemNode( element );
     }
     
@@ -134,7 +136,6 @@ public class FilterFactory implements ElementNodeFactory {
     * @return a diagram node instance
     */
     public Node createDiagramNode (DiagramElement element) {
-        System.out.println("FilterFactory.createDiagramNode");
         return delegate.createDiagramNode( element );
     }
 
@@ -143,7 +144,6 @@ public class FilterFactory implements ElementNodeFactory {
     * @return a proof node instance
     */
     public Node createColimitNode (ColimitElement element) {
-        Util.trace("Filterfactory.createColimitNode");
         return delegate.createColimitNode( element );
     }
 

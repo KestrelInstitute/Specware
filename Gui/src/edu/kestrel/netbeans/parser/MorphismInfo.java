@@ -72,9 +72,7 @@ public class MorphismInfo extends BaseElementInfo {
         MorphismElement morphism = (MorphismElement)target;
 //        SourceElement src = morphism.findSource();
         UnitID sourceElem = UnitID.get(sourceString);
-        System.out.println("MorphismInfo.updateElement has sourceElem = "+sourceElem);
         UnitID targetElem = UnitID.get(targetString);
-        System.out.println("MorphismInfo.updateElement has targetElem = "+targetElem);
         morphism.setSourceUnitID(sourceElem);
         morphism.setTargetUnitID(targetElem);
 

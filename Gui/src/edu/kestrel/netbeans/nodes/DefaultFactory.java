@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/04/26 02:36:06  weilyn
+ * Commented out MorphismCategorizingChildren.refreshKeys because it gave exceptions on UnitID classes
+ *
  * Revision 1.9  2003/04/23 01:15:42  weilyn
  * ClaimCustomizer.java
  *
@@ -958,7 +961,6 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
      */
     MorphismElementCategoryNode(int index, ElementNodeFactory factory, MorphismElement element, boolean writeable) {
       this(index, new MorphismChildren(factory, element));
-      System.out.println("DefaultFactory.MorphismElementCategoryNode with index = "+index);
       this.element = element;
       newTypeIndex = writeable ? index : -1;
       switch (index) {

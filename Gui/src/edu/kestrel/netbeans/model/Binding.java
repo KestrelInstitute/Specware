@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/04/23 01:11:50  weilyn
+ * Added morphism source/target support
+ *
  * Revision 1.8  2003/04/01 02:29:36  weilyn
  * Added support for diagrams and colimits
  *
@@ -169,6 +172,7 @@ public interface Binding {
     }
     
     public interface Proof extends Member, Container {
+        public void changeProofString(String proofString) throws SourceException;
     }
     
     public interface Morphism extends Member, Container {
