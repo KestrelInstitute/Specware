@@ -305,6 +305,24 @@ BSpec qualifying spec
         } in
         (newBSpec,newMode)
 
+  op BSpec.copyMode : BSpec -> Mode -> (BSpec * Mode)
+  def BSpec.copyMode bSpec mode =
+      let newMode = {
+          vertex = Pair (Nat (bSpec.nextIdx,idOf mode), substOf mode),
+          modeSpec = modeSpec mode
+        } in
+      let newBSpec = {
+          modes = Cons (newMode, bSpec.modes),
+          transitions = bSpec.transitions,
+          outTrans = bSpec.outTrans, 
+          inTrans = bSpec.inTrans,
+          initial = bSpec.initial,
+          final = bSpec.final,
+          nextIdx = bSpec.nextIdx + 1,
+          id = bSpec.id
+        } in
+        (newBSpec,newMode)
+
   op BSpec.addMode : BSpec -> Mode -> BSpec
   def BSpec.addMode bSpec newMode = {
           modes = Cons (newMode, bSpec.modes),

@@ -158,8 +158,8 @@ PE qualifying spec
         }
     }
           
-  op makeNewProcId : Id.Id -> Subst.Subst -> Env Id.Id
-  def makeNewProcId (Qualified (qual,id)) subst = return (Qualified (qual,id ^ "_" ^ (show subst)))
+  op makeProcId : Id.Id -> Subst.Subst -> Env Id.Id
+  def makeProcId (Qualified (qual,id)) subst = return (Qualified (qual,id ^ "_" ^ (show subst)))
 
            def mkEquality t0 t1 ty =
              let 
@@ -265,7 +265,7 @@ PE qualifying spec
        if traceRewriting > 0 then
          print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
        (newOscSpec,newBSpec) <- specializeBSpec oldOscSpec (bSpec procInfo) extendedSubst newOscSpec;
-       newProcId <- makeNewProcId procId extendedSubst;
+       newProcId <- makeProcId procId extendedSubst;
        newBSpec <- removeNilTransitions newBSpec;
        if traceRewriting > 0 then
          print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n") else return ();
@@ -383,19 +383,121 @@ PE qualifying spec
        return (newOscSpec,equalTerm,postcondition)
      }
    }
+
+  op specialProc :
+           Oscar.Spec
+       -> (Oscar.Spec * MS.Term)
+       -> Env (Option (Oscar.Spec * BSpec * Option Op.Ref * Procedure))
+  def specialProc oldOscSpec (newOscSpec, callTerm) = {
+    (procId,procSort,procInfo,callArg) <-
+      case callTerm of
+        | Apply (Fun (Op (procId,fxty),procSort,pos),callArg,_) ->
+             (case evalPartial (procedures newOscSpec, procId) of
+                | None -> raise (SpecError (noPos, "application is not a procedure call" ^ (printTerm callTerm)))
+                | Some procInfo -> return (procId,procSort,procInfo,callArg))
+        | _ -> raise (SpecError (noPos, "Term to be specialized: " ^ (System.anyToString callTerm) ^ " is not an application"));
+    if traceRewriting > 0 then
+      print ("specializing " ^ (Id.show procId) ^ " with term " ^ (printTerm callTerm) ^ "\n") else return ();
+    (argTerm,returnTerm,storeTerm) <-
+      case callArg of
+        | (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) -> return (argTerm,returnTerm,storeTerm)
+        | _ -> raise (SpecError (noPos, "Argument is not record"));
+    callReturnOpRef <-
+      case returnTerm of
+        | Fun (Op (id,fxty),srt,pos) -> return (Some (removePrime id))
+        | Var _ -> return None
+        | Record ([],_) -> return None
+        | _ -> raise (SpecError (noPos, "Return term is invalid: " ^ (anyToString returnTerm)));
+    argList <-
+      case argTerm of
+        | Record (fields,_) -> return (map (fn (x,y) -> y) fields)
+        | _ -> return [argTerm]; % there is only one.
+    (paramSort,returnSort,storeSort) <-
+      case procSort of
+        | Base (qid, [paramSort,returnSort,storeSort],_) -> return (paramSort,returnSort,storeSort)
+        | _ -> raise (SpecError (noPos, "Argument is not record"));
+    paramSortList <-
+      case paramSort of
+        | Product (fields,_) -> return (map (fn (x,y) -> y) fields)
+        | _ -> return [paramSort];
+    (oldStore,newStore) <-
+      case storeTerm of
+        | Record ([(_,oldStore),(_,newStore)],_) -> return (oldStore,newStore)
+        | _ -> raise (SpecError (noPos, "Store is not a pair"));
+    storeList <-
+      case oldStore of
+        | Record (fields,_) -> return (map (fn (x,y) -> y) fields)
+        | _ -> return [oldStore];
+    (subst,residParams,residArgs,residSorts) <-
+       let
+         def partitionArgs (params,args,sorts) =
+           case (params,args,sorts) of
+             | ([],[],[]) -> return ([],[],[],[])
+             | (param::params,arg::args,srt::sorts) -> {
+                    (subst,residParams,residArgs,residSorts) <- partitionArgs (params,args,sorts);
+                    if (groundTerm? arg) then {
+                      varInfo <- deref (specOf (Mode.modeSpec (initial (bSpec procInfo))), param);
+                      return (cons (varInfo withTerm arg,subst), residParams,residArgs,residSorts)
+                    } else 
+                      return (subst, cons (param,residParams), cons (arg, residArgs), cons (srt,residSorts))
+                 }
+             | _ -> fail ("mismatched lists in partitionArgs: "
+                    ^ "\n  parameters=" ^ (anyToString procInfo.parameters) 
+                    ^ "\n  argList=" ^ (anyToString argList) 
+                    ^ "\n  paramSortList=" ^ (anyToString paramSortList) 
+                    ^ "\n")
+       in
+         partitionArgs (procInfo.parameters,argList,paramSortList);
+
+    (extendedSubst,residStateVars,residStateArgs,residStateSorts) <-
+       let
+         def partitionState subst stateVars stateArgs =
+           case (stateVars,stateArgs) of
+             | ([],[]) -> return (subst,[],[],[])
+             | (stateVar::stateVars,stateArg::stateArgs) -> {
+                    (subst,residStateVars,residStateArgs,residStateSorts) <- partitionState subst stateVars stateArgs;
+                    varInfo <- deref (specOf procInfo.modeSpec, stateVar);
+                    if (groundTerm? stateArg) then
+                      return (cons (varInfo withTerm stateArg,subst),residStateVars,residStateArgs,residStateSorts)
+                    else 
+                      return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (type varInfo, residStateSorts))
+                 }
+             | _ -> fail ("mismatched lists in partitionState"
+                    ^ "\n  varsInScope=" ^ (anyToString (varsInScope procInfo))
+                    ^ "\n  storeList=" ^ (anyToString storeList)
+                    ^ "\n") 
+        in
+          partitionState subst (varsInScope procInfo) storeList;
+
+     if extendedSubst = [] then {
+       if traceRewriting > 0 then
+         print ("omitting specialization of bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
+       % return (newOscSpec,newBSpec,callReturnOpRef,procInfo)
+       return None
+     }
+     else {
+       newProcId <- makeProcId procId extendedSubst;
+       case evalPartial (procedures newOscSpec, newProcId) of
+         | Some procInfo -> return (Some (newOscSpec, bSpec procInfo, callReturnOpRef, procInfo))
+         | None -> {
+             if traceRewriting > 0 then
+                print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
+             (newOscSpec,newBSpec) <- specializeBSpec oldOscSpec (bSpec procInfo) extendedSubst newOscSpec;
+             newBSpec <- removeNilTransitions newBSpec;
+             if traceRewriting > 0 then
+               print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n") else return ();
+             newProc <- return (Proc.makeProcedure residParams residStateVars
+                               None
+                               (modeSpec procInfo)
+                               newBSpec);
+             newOscSpec <- addProcedure newOscSpec newProcId newProc;
+             return (Some (newOscSpec,newBSpec,callReturnOpRef,procInfo))
+          }
+     }
+   }
 \end{spec}
 
 \begin{spec}
-  % op makeNewVertex : Vrtx.Vertex -> Subst.Subst -> Env Vrtx.Vertex
-  % def makeNewVertex vertex sub = return (Pair (vertex,sub))
-
-  % op makeNewEdge : Edg.Edge -> Subst.Subst -> Subst.Subst -> Env Edg.Edge
-  % def makeNewEdge edge pre post = return (Triple (edge,pre,post))
-
-  % op connect : BSpec -> Vrtx.Vertex -> Vrtx.Vertex -> Edg.Edge -> TransSpec -> Env BSpec
-  % def connect bSpec first last edge transSpec =
-    % return (addTrans bSpec first last edge (modeSpec transSpec) (forwMorph transSpec) (backMorph transSpec))
-
   op specializeBSpec :
         Oscar.Spec
      -> BSpec
@@ -408,7 +510,8 @@ PE qualifying spec
       initialSpec <- hideVariables (modeSpec (initial oldBSpec)) precondition;
       (newBSpec,newMode) <- return (deriveBSpec oldBSpec precondition initialSpec);
       %% newBSpec <- return (BSpec.make first initialSpec);
-      fold (specializeTransition oldBSpec oldOscSpec newMode precondition) (newOscSpec,newBSpec) (outTrans oldBSpec (initial oldBSpec))
+      fold (specialTrans oldBSpec oldOscSpec newMode precondition) (newOscSpec,newBSpec) (outTrans oldBSpec (initial oldBSpec))
+      % fold (specializeTransition oldBSpec oldOscSpec newMode precondition) (newOscSpec,newBSpec) (outTrans oldBSpec (initial oldBSpec))
     }
 \end{spec}
 
@@ -447,7 +550,115 @@ PE qualifying spec
          | _ -> return (newOscSpec,transSpec)
     in
       foldVariants procInv (newOscSpec,transSpec) (modeSpec transSpec)
+
+
+  op filterReturn : Mode -> ReturnInfo -> Option Op.Ref -> Subst.Subst
+  def filterReturn {vertex,modeSpec} optReturnId optCallReturnId =
+    case vertex of
+      | Pair (vrtx,subst) ->
+          (case (optReturnId,optCallReturnId) of
+            | (Some returnId,Some callReturnId) ->
+                 let
+                   def findReturn subst =
+                     case subst of
+                       | [] -> []
+                       | opInfo::rest ->
+                          if (idOf opInfo) = returnId then
+                            [opInfo withId callReturnId]
+                          else
+                            findReturn rest
+                 in
+                   findReturn subst
+            | _ -> [])
+      | _ -> []
+
+  op renameReturn : Mode -> ReturnInfo -> Option Op.Ref -> Mode
+  def renameReturn (mode as {vertex,modeSpec}) optReturnId optCallReturnId =
+    case vertex of
+      | Pair (vrtx,subst) ->
+          (case (optReturnId,optCallReturnId) of
+            | (Some returnId,Some callReturnId) ->
+                 let newSubst = map (fn opInfo ->
+                   if (idOf opInfo) = returnId then
+                     opInfo withId callReturnId
+                   else
+                     opInfo) subst
+                 in
+                   {vertex=Pair (vrtx,newSubst),modeSpec=modeSpec}
+            | _ -> mode)
+      | _ -> mode
+
+  op findVertex : List (Mode * Mode) -> Mode -> Option Mode
+  def findVertex pairs mode =
+    case pairs of
+      | [] -> None
+      | (old,new)::rest ->
+           if Mode.eq? (old,mode) then
+             Some new
+           else
+             findVertex rest mode
+
+  op specialProcCall : 
+        BSpec
+     -> Oscar.Spec
+     -> Mode
+     -> (Oscar.Spec * BSpec)
+     -> Transition
+     -> Env (Option (Oscar.Spec * BSpec))
+  def specialProcCall oldBSpec oldOscSpec newSourceMode (newOscSpec,newBSpec) transition =
+    let
+      def procInv (newOscSpec,newBSpec,found) claim =
+       case (claimType claim, idOf claim) of
+         | (Axiom, "call") -> {
+             result <- specialProc oldOscSpec (newOscSpec,term claim);
+             case result of
+               | None -> return (newOscSpec,newBSpec,found)
+               | Some (newOscSpec,procBSpec,optCallReturnRef,procInfo) ->
+                   let
+                     def inlineTransition src (newBSpec,visited,finals) transition = {
+                         dst <- return (target transition);
+                         (newDst,successors,newBSpec,visited,newFinals) <-
+                            case findVertex visited dst of
+                              | None ->
+                                   let (newBSpec,newDst) = copyMode newBSpec dst in
+                                   let newFinals =
+                                     if Mode.member? (final oldBSpec) dst then
+                                       Cons (newDst,finals)
+                                     else
+                                       finals
+                                   in
+                                     return (newDst, outTrans oldBSpec dst, newBSpec, Cons ((dst,newDst),visited),newFinals)
+                              | Some newDst -> return (newDst,[],newBSpec,visited,finals);
+                          (newBSpec,newTrans) <- return (newTrans newBSpec src newDst (transSpec transition));
+                          foldM (inlineTransition newDst) (newBSpec,visited,newFinals) successors
+                        }
+                     def tryFinal oldOscSpec oldBSpec (newOscSpec,newBSpec) mode =
+                       let subst = filterReturn mode procInfo.returnInfo optCallReturnRef in
+                       foldM (specialTrans oldBSpec oldOscSpec mode subst) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
+                       %% foldM (specializeTransition oldBSpec oldOscSpec mode subst) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
+                   in {
+                     (newBSpec,visited,finals) <- foldM (inlineTransition newSourceMode) (newBSpec,[],[]) (outTrans procBSpec (initial procBSpec));
+                     (newOscSpec,newBSpec) <- foldM (tryFinal oldOscSpec oldBSpec) (newOscSpec,newBSpec) finals;
+                     return (newOscSpec,newBSpec,true)
+                   }
+            }
+         | _ -> return (newOscSpec,newBSpec,found)
+    in {
+      (newOscSpec,newBSpec,found) <- foldVariants procInv (newOscSpec,newBSpec,false) (modeSpec (Transition.transSpec transition));
+      if found then
+        return (Some (newOscSpec,newBSpec))
+      else
+        return None
+    }
 \end{spec}
+
+Now we look at the transition in the procedure being inline. If it is a procedure call,
+then we want to recurse and inline the called procedure.
+
+When we inline a bspec, we make a fresh copy of it using reindexBSpec.
+
+We make provision (to be implemented later) to introduce a transition that
+copies fills in the calling arguments.
 
 The next is function is where the specialization of edges is done. This is where
 the propagation is done.
@@ -523,6 +734,76 @@ associated with the edge.
           foldM (specializeTransition oldBSpec oldOscSpec newTargetMode postcondition) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
         else
           return (newOscSpec,newBSpec)
+      }
+    }
+
+  op specialTrans :
+        BSpec
+     -> Oscar.Spec
+     -> Mode
+     -> Subst.Subst
+     -> (Oscar.Spec * BSpec)
+     -> Transition
+     -> Env (Oscar.Spec * BSpec)
+  def specialTrans oldBSpec oldOscSpec newSourceMode precondition (newOscSpec,newBSpec) transition = {
+      if traceRewriting > 1 then
+        print ("specializing transition " ^ (Edg.show (edge transition)) ^ " precondition " ^ (show precondition) ^ "\n") else return ();
+      %% oldTargetVertex <- return (GraphMap.eval (target (shape (system oldBSpec)), edge));
+      oldTargetSpec <- return (modeSpec (target transition));
+      transSpec <- return (Transition.transSpec transition);
+      transSpec <- applySubst (Transition.transSpec transition, precondition);
+      if traceRewriting > 1 then
+        print "about to simplify\n" else return ();
+      transSpec <- simplifyVariants (modeSpec newOscSpec) transSpec;
+      if provablyInconsistent? transSpec then
+        return (newOscSpec,newBSpec)
+      else {
+        result <- specialProcCall oldBSpec oldOscSpec newSourceMode (newOscSpec,newBSpec) transition;
+        case result of
+          | Some (newOscSpec,newBSpec) -> return (newOscSpec,newBSpec)
+          | None -> {
+              postcondition <- projectPostSubst transSpec;
+              if traceRewriting > 1 then
+                print ("specializing edge " ^ (Edg.show (edge transition)) ^ " postcondition " ^ (show postcondition) ^ "\n") else return ();
+      
+              %% newTargetVertex <- makeNewVertex oldTargetVertex postcondition;
+      
+              %%% postcondition may include bindings for variables not appearing in the target spec (eg because
+              %%% of "let" construct). When calculating the new target spec and new mode, we should restrict
+              %%% the postcondition to only the variables appearing in the target. Note, however, that when
+              %%% calculating the new transition we need the whole postcondition.
+              targetConstraint <- return (Subst.filter (fn varInfo -> member? (variables (modeSpec (Transition.target transition)), Op.idOf varInfo)) postcondition);
+              newTargetSpec <- hideVariables (modeSpec (Transition.target transition)) targetConstraint;
+              (newBSpec,newTargetMode,targetIsNew?) <- return (deriveMode oldBSpec (Transition.target transition) newBSpec targetConstraint newTargetSpec);
+      
+              newTransSpec <- hideVariables transSpec precondition postcondition;
+              % newEdge <- makeNewEdge edge precondition postcondition;
+      
+              (newBSpec,newTransition) <- return (deriveTransition transition newBSpec newSourceMode newTargetMode precondition postcondition newTransSpec);
+      
+              % if traceRewriting > 1 then
+                % print ("newEdge: " ^ (Edg.show (edge newTransition)) ^ "\n") else return ();
+      
+              %% newTargetSpec <- hideVariables oldTargetSpec postcondition;
+              %% targetIsNew? <- return (~(VrtxSet.member? (vertices (shape (system newBSpec)), newTargetVertex)));
+      
+      %%        if traceRewriting > 1 then
+      %%          print ("target: " ^ (Vrtx.show newTargetVertex) ^ " is new? " ^ (show targetIsNew?) ^ "\n") else return ();
+      %%
+      %%        newBSpec <-
+      %%          if targetIsNew? then
+      %%            if Mode.member? (final oldBSpec) (target transition) then
+      %%              return (addFinalMode newBSpec newTargetVertex newTargetSpec)
+      %%            else
+      %%              return (addMode newBSpec newTargetVertex newTargetSpec)
+      %%          else
+      %%            return newBSpec;
+              %% newBSpec <- connect newBSpec newSrcVertex newTargetVertex newEdge newTransSpec;       
+              if targetIsNew? then
+                foldM (specialTrans oldBSpec oldOscSpec newTargetMode postcondition) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
+              else
+                return (newOscSpec,newBSpec)
+        }
       }
     }
 
