@@ -86,30 +86,13 @@ UnitId_Dependency.
 
   op setBase : ((Option RelativeUnitId) * Spec) -> Env ()
   def setBase (baseInfo as (_, base_spec)) = 
-    let base_sort_names = 
-        foldriAQualifierMap (fn (q, id, _, names) ->
-			     cons (Qualified(q, id), names))
-	                    [mkQualifiedId("Boolean", "Boolean"),
-			     mkUnQualifiedId "Boolean"] 
-			    base_spec.sorts
-    in
-    let base_op_names = 
-        foldriAQualifierMap (fn (q, id, _, names) ->
-			     cons (Qualified(q, id), names))
-	                    [] 
-			    base_spec.ops
-    in			    
-    let base_names = (base_sort_names, base_op_names) in			   
     {
      writeGlobalVar ("BaseInfo",  baseInfo);
-     writeGlobalVar ("BaseNames", base_names)  % cache for quick access
+     setBaseNames base_spec
     }
 
   op getBase : Env ((Option RelativeUnitId) * Spec)
   def getBase = readGlobalVar "BaseInfo"
-
-  op getBaseNamesM : Env (QualifiedIds * QualifiedIds)
-  def getBaseNamesM = readGlobalVar "BaseNames"
 
   op getBaseSpec : () -> Spec
   def getBaseSpec() =
@@ -124,10 +107,41 @@ UnitId_Dependency.
   op clearBaseNames : Env ()
   def clearBaseNames =  writeGlobalVar ("BaseNames", [])
 
+  op clearBaseNames_fromLisp : () -> ()
+  def clearBaseNames_fromLisp () =
+    run clearBaseNames
+
   op getBaseNames : () -> QualifiedIds * QualifiedIds
   def getBaseNames () =
-    let prog = {x <- getBaseNamesM; return x} in
-    run prog
+    let prog = {x <- readGlobalVar "BaseNames"; 
+		return x}
+    in
+      run prog
+
+  op setBaseNames : Spec -> Env ()
+  def setBaseNames base_spec =
+    let base_sort_names = 
+        foldriAQualifierMap (fn (q, id, _, names) ->
+			     cons (Qualified(q, id), names))
+	                    [mkQualifiedId("Boolean", "Boolean"),
+			     mkUnQualifiedId "Boolean"] 
+			    base_spec.sorts
+    in
+    let base_op_names = 
+        foldriAQualifierMap (fn (q, id, _, names) ->
+			     cons (Qualified(q, id), names))
+	                    [] 
+			    base_spec.ops
+    in			    
+    let base_names = (base_sort_names, base_op_names) in			   
+    writeGlobalVar ("BaseNames", base_names)  % cache for quick access
+
+  op setBaseNames_fromLisp : () -> ()
+  def setBaseNames_fromLisp () =
+    let prog = {(_, base_spec) <- getBase;
+		setBaseNames base_spec}
+    in 
+      run prog
 
   op showGlobalContext : Env String
   def showGlobalContext = {

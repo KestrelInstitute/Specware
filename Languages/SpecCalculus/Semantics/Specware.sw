@@ -13,6 +13,7 @@ Specware qualifying spec
   import ../../MetaSlang/Transformations/Interpreter % for MSInterpreter.eval
   import ../AbstractSyntax/Printer % for showUI
   import /Languages/XML/XML        % for XML I/O
+
 \end{spec}
 
 The following is what starts Specware. It initializes the state and
@@ -109,16 +110,17 @@ get a unit from a unit id string.
 \end{spec}
 
 \begin{spec}
+  op initializeInterpreterBase : () -> () % defined in toplevel.lisp
+
   op intializeSpecware : () -> Boolean
   def initializeSpecware () =
     let prog = { (optBaseUnitId,_) <- getBase;
 		 case optBaseUnitId of
 		   | None   -> 
 		     { 
-		      %% maybe following two should be invoked inseparably...
 		      emptyGlobalContext;
-		      clearBaseNames;
 		      setBaseToPath "/Library/Base";
+		      return (initializeInterpreterBase ()); 
 		      return true }
 		   | Some _ -> return false }
     in
@@ -131,8 +133,8 @@ get a unit from a unit id string.
     let prog = {
       %% maybe following two should be invoked inseparably...
       emptyGlobalContext;
-      clearBaseNames;
       reloadBase;
+      return (initializeInterpreterBase ()); 
       return true
     } in
     run (catch prog toplevelHandler)

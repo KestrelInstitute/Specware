@@ -20,6 +20,7 @@ spec
           }
         def prog () = {
             setBase (None,initialSpecInCat); % ?? emptySpec ??
+	    clearBaseNames;
             val <- evaluateReturnUID internalPosition relativeUnitId;
             case val of
                 | ((Spec spc,_,_),unitId) -> {
