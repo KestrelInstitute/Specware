@@ -223,7 +223,9 @@
       ;; Non-user commands
       (set-base (cl-user::set-base argstr))
       (show-base-unit-id (cl-user::show-base-unit-id))
-      ((lisp l) (with-break-possibility (lisp-value (eval (read-from-string argstr)))))
+      ((lisp l) (with-break-possibility
+		 (lisp-value (multiple-value-list
+			      (eval (read-from-string argstr))))))
       (cl (with-break-possibility (cl-user::cl argstr)))
       (ld (with-break-possibility (cl-user::ld argstr)))
       (cf (cl-user::cf argstr))
