@@ -2,6 +2,7 @@ JGen qualifying spec
 
 import ToJavaBase
 import ToJavaStatements
+import Monad
 
 op mkEqualityBodyForSum: List Field -> Java.Expr * Collected
 def mkEqualityBodyForSum(fields) =
@@ -109,10 +110,10 @@ def mkSumEqMethBody(clsId, consId, summandId, flds) =
   %let negateInstanceExpr = CondExp (Un (Un (LogNot, Prim (Paren (instanceExpr)))) , None) in
   ([mkIfStmt(tagEqExpr, [s, Stmt (Return (Some (eqExpr)))], [Stmt (Return (Some (CondExp (Un (Prim (Bool false)), None))))])],col)
 
-op coProductToClsDecls: Id * Sort * Spec -> (List ClsDecl) * Collected
-def coProductToClsDecls(id, srtDef as CoProduct (summands, _), spc) =
-  let tagFieldDecl = fieldToFldDecl("tag", "Integer") in
-  let def mkTagCFieldDeclsFromSummands(summands, sumNum) = 
+op coProductToClsDecls: Id * Sort -> JGenEnv ()
+def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
+   let tagFieldDecl = fieldToFldDecl("tag", "Integer") in
+   let def mkTagCFieldDeclsFromSummands(summands, sumNum) = 
         (case summands of
 	   | Nil -> []
 	   | (cons, _)::rest -> 
@@ -120,8 +121,8 @@ def coProductToClsDecls(id, srtDef as CoProduct (summands, _), spc) =
 	      let varInit = (Expr (CondExp (Un (Prim (IntL sumNum)), None))):VarInit in
 	      let fldDecl = ([Static,Final], tt("Integer"), (varDeclId, (Some varInit)), []):FldDecl in
 	      List.cons(fldDecl, mkTagCFieldDeclsFromSummands(rest, sumNum+1))) in
-  let tagCFieldDecls = mkTagCFieldDeclsFromSummands(summands, 1) in
-  let (sumConstructorMethDecls,col0) = foldl (fn(summand,(summands,col)) ->
+   let tagCFieldDecls = mkTagCFieldDeclsFromSummands(summands, 1) in
+   let (sumConstructorMethDecls,col0) = foldl (fn(summand,(summands,col)) ->
 				       let (summand,col0) =
 				         case summand of
 					   | (cons, Some (Product (args, _))) -> sumToConsMethodDecl(id, cons, args)
@@ -139,6 +140,10 @@ def coProductToClsDecls(id, srtDef as CoProduct (summands, _), spc) =
   let sumClsDecls = foldr (fn((clsdecl,_),clsdecls) -> cons(clsdecl,clsdecls)) [] sumClsDeclsCols in
   let col1 = foldl (fn((_,col0),col) -> concatCollected(col0,col)) nothingCollected sumClsDeclsCols in
   let col = concatCollected(col0,col1) in
-  (cons(sumTypeClsDecl, sumClsDecls),col)
+  %(cons(sumTypeClsDecl, sumClsDecls),col)
+  {
+   addClsDecls(cons(sumTypeClsDecl, sumClsDecls));
+   addCollected col
+  }
 
 endspec

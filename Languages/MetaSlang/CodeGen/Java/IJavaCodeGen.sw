@@ -15,6 +15,16 @@ spec
   type JSpec = Java.CompUnit
   type JavaSpec = JSpec
 
+  type JcgInfo = {
+		  clsDecls : List ClsDecl,
+		  collected : Collected
+		 }
+
+  type Collected = {
+		    arrowclasses : List Java.ClsDecl,
+		    productSorts : List Sort
+		   }
+
   %% OPERATIONS
 
   (**

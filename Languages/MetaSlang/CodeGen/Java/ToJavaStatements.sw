@@ -406,9 +406,14 @@ def translateCaseCasesToSwitches(tcx, _(* caseType *), caseExpr, cres, cases, k0
   let
     def translateCaseCaseToSwitch(c, ks, ls) =
       case c of
-        | (EmbedPat (cons, argsPat, coSrt, b), _, body) ->
+        | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
 	  let (patVars,ok?) = getVarsPattern(argsPat) in
-	  if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
+	  if ~ ok? then
+	    (
+	     patternNotSupported pat;
+	     %issueUnsupportedError(b,"pattern not supported");
+	     ((([],[]),k0,l0),nothingCollected))
+	  else
 	  let subId = mkSub(cons, l) in
 	  %let sumdType = mkSumd(cons, caseType) in
 	  let newTcx = addSubsToTcx(tcx, patVars, subId) in
@@ -433,8 +438,7 @@ def translateCaseCasesToSwitches(tcx, _(* caseType *), caseExpr, cres, cases, k0
 	let switchLab = Default in
 	let switchElement = ([switchLab],caseBlock) in
 	((switchElement,newK,newL),col)
-       | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
-		       ((([],[]),ks,ls),nothingCollected))
+       | (pat,_,_) -> (patternNotSupported pat; ((([],[]),ks,ls),nothingCollected))
   in
     let
       def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =
@@ -448,6 +452,28 @@ def translateCaseCasesToSwitches(tcx, _(* caseType *), caseExpr, cres, cases, k0
 	    ((List.cons(hdSwitch, restSwitch), restK, restL),col)
     in
       translateCasesToSwitchesRec(cases, k0, l0, false)
+
+op patternNotSupported: Pattern -> () 
+def patternNotSupported pat =
+  let
+    def errmsg whatpat =
+      issueUnsupportedError(patAnn(pat),whatpat^"-pattern not supported: "^printPattern(pat))
+  in
+  case pat of
+    | AliasPat _ -> errmsg "alias"
+    | VarPat _ -> errmsg "var"
+    | EmbedPat _ -> errmsg "embed"
+    | WildPat _ -> errmsg "wild"
+    | RecordPat _ -> errmsg "record"
+    | BoolPat _ -> errmsg "boolean"
+    | NatPat _ -> errmsg "nat"
+    | StringPat _ -> errmsg "string"
+    | CharPat _ -> errmsg "char"
+    | RelaxPat _ -> errmsg "relax"
+    | QuotientPat _ -> errmsg "quotient"
+    | SortedPat _ -> errmsg "sorted"
+    | _ -> errmsg "unknown"
+
 
 op addSubsToTcx: TCx * List Id * Id -> TCx
 def addSubsToTcx(tcx, args, subId) =
@@ -580,9 +606,12 @@ def translateCaseCasesToSwitchesRet(tcx, _(* caseType *), caseExpr, cases, k0, l
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         case c of
-          | (EmbedPat (cons, argsPat, coSrt, b), _, body) ->
+          | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
 	    let (patVars,ok?) = getVarsPattern(argsPat) in
-	    if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
+	    if ~ ok? then
+	      (patternNotSupported pat;((([],[]),k0,l0),nothingCollected))
+	      %(issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected))
+	    else
 	    let subId = mkSub(cons, l) in
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
@@ -606,7 +635,8 @@ def translateCaseCasesToSwitchesRet(tcx, _(* caseType *), caseExpr, cases, k0, l
 	    let switchLab = Default in
 	    let switchElement = ([switchLab],caseBlock) in
 	    ((switchElement,newK,newL),col)
-	  | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
+	  | (pat,_,_) -> (patternNotSupported pat;
+			  %issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
 			     ((([],[]),ks,ls),nothingCollected))
   in
   let def translateCasesToSwitchesRec(cases,kr,lr,hasDefaultLabel?) =
@@ -680,9 +710,14 @@ def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, _(* caseType *), caseExpr, ca
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         case c of
-          | (EmbedPat (cons, argsPat, coSrt, b), _, body) ->
+          | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
 	    let (patVars,ok?) = getVarsPattern(argsPat) in
-	    if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
+	    if ~ ok? then
+	      (
+	       patternNotSupported pat;
+	       %issueUnsupportedError(b,"pattern not supported");
+	       ((([],[]),k0,l0),nothingCollected))
+	    else
 	    let subId = mkSub(cons, l) in
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
@@ -706,7 +741,9 @@ def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, _(* caseType *), caseExpr, ca
 	    let switchLab = Default in
 	    let switchElement = ([switchLab],caseBlock) in
 	    ((switchElement,newK,newL),col)
-	  | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
+	  | (pat,_,_) -> (
+			  patternNotSupported pat;
+			  %issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
 			     ((([],[]),ks,ls),nothingCollected))
   in
    let def translateCasesToSwitchesRec(cases,kr,lr,hasDefaultLabel?) =
@@ -780,9 +817,14 @@ def translateCaseCasesToSwitchesAsgV(oldVId, tcx, _(* caseType *), caseExpr, cas
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         case c of
-          | (EmbedPat (cons, argsPat, coSrt, b), _, body) ->
+          | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
 	    let (patVars,ok?) = getVarsPattern(argsPat) in
-	    if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
+	    if ~ ok? then
+	      (
+	       patternNotSupported pat;
+	       %issueUnsupportedError(b,"pattern not supported");
+	       ((([],[]),k0,l0),nothingCollected))
+	    else
 	    let subId = mkSub(cons, l) in
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
@@ -807,7 +849,9 @@ def translateCaseCasesToSwitchesAsgV(oldVId, tcx, _(* caseType *), caseExpr, cas
 	    let switchLab = Default in
 	    let switchElement = ([switchLab],caseBlock) in
 	    ((switchElement,newK,newL),col)
-	  | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
+	  | (pat,_,_) -> (
+			  patternNotSupported pat;
+			  %issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
 			     ((([],[]),ks,ls),nothingCollected))
   in
    let def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =
@@ -880,9 +924,13 @@ def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, _(* caseType *), caseExpr, c
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         case c of
-          | (EmbedPat (cons, argsPat, coSrt, b), _, body) ->
+          | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
 	    let (patVars,ok?) = getVarsPattern(argsPat) in
-	    if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
+	    if ~ ok? then (
+			   patternNotSupported pat;
+			   %issueUnsupportedError(b,"pattern not supported");
+			   ((([],[]),k0,l0),nothingCollected))
+	    else
 	    let subId = mkSub(cons, l) in
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
@@ -907,7 +955,9 @@ def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, _(* caseType *), caseExpr, c
 	    let switchLab = Default in
 	    let switchElement = ([switchLab],caseBlock) in
 	    ((switchElement,newK,newL),col)
-	  | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
+	  | (pat,_,_) -> (
+			  patternNotSupported pat;
+			  %issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
 			     ((([],[]),ks,ls),nothingCollected))
   in
    let def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =

@@ -12,69 +12,85 @@ import /Languages/Java/JavaPrint
 import /Languages/MetaSlang/Transformations/LambdaLift
 import /Languages/MetaSlang/Transformations/RecordMerge
 
-sort JcgInfo = {
-		clsDecls : List ClsDecl,
-		collected : Collected
-	       }
+import Monad
 
-sort ArrowType = List Sort * Sort
+type ArrowType = List Sort * Sort
 
-sort Type = JGen.Type
+type Type = JGen.Type
 
-op clsDeclsFromSorts: Spec -> JcgInfo
-def clsDeclsFromSorts(spc) =
-  let initialJcgInfo = {
-			clsDecls = [],
-			collected = nothingCollected
-		       }
+op clsDeclsFromSorts: Spec -> JGenEnv JcgInfo
+def clsDeclsFromSorts spc =
+  {
+   putEnvSpec spc;
+   primClsDecl <- return mkPrimOpsClsDecl;
+   foldM (fn _ -> fn (q,id,sortInfo) ->
+	  sortToClsDecls(q,id,sortInfo))
+         () (sortsAsList spc);
+   addClsDecl primClsDecl;
+   getJcgInfo
+  }
+
+%op sortToClsDeclsM: Qualifier * Id * SortInfo -> JGenEnv ()
+%def sortToClsDeclsM(q,id,sortInfo) =
+%  {
+%   jcginfo <- getJcgInfo;
+%   spc <- getEnvSpec;
+%   jcginfo <- return (sortToClsDecls(q,id,sortInfo,spc,jcginfo));
+%   putJcgInfo jcginfo
+%  }
+
+op checkSubsortFormat: Sort -> JGenEnv ()
+def checkSubsortFormat srt =
+  let ok = case srt of
+	     | Subsort  (_,Fun(Op _,_,_),_) -> true
+	     | Subsort  _                   -> false
+	     | Quotient (_,Fun(Op _,_,_),_) -> true
+	     | Quotient _                   -> false
+	     | _ -> true
   in
-   let primClsDecl = mkPrimOpsClsDecl in
-   let jcginfo =
-   (foldriAQualifierMap (fn (qualifier, id, sort_info, jcginfo) -> 
-			 let newjcginfo = sortToClsDecls(qualifier, id, sort_info, spc, jcginfo) in
-			 newjcginfo)
-    initialJcgInfo spc.sorts)
-   in
-     concatClsDecls({clsDecls=[primClsDecl],collected=nothingCollected},jcginfo)
+  if ok then return () else
+    raise(UnsupportedSubsortTerm(printSort srt),sortAnn(srt))
 
-op sortToClsDecls: Qualifier * Id * SortInfo * Spec * JcgInfo -> JcgInfo
-def sortToClsDecls (_(* qualifier *), id, sort_info, spc, jcginfo) =
-  let clsDecls = jcginfo.clsDecls in
-  if definedSortInfo? sort_info then
-    let srtDef = firstSortDefInnerSort sort_info in
-    let ok? = case srtDef of
-		| Subsort  (_,Fun(Op _,_,_),_) -> true
-		| Subsort  _                   -> false
-		| Quotient (_,Fun(Op _,_,_),_) -> true
-		| Quotient _                   -> false
-		| _ -> true
-    in
-    if ~ok? then
-      %let _ = print srtDef in
-      (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported: \"sort "^id^" = "^printSort(srtDef)^"\"\n*** Reason: restriction term is not of the form \"opname x\""); 
-       jcginfo)
-    else if baseType? (spc, srtDef) then
-      (issueUnsupportedError(sortAnn(srtDef),"sort definition: \"sort "^id^" = "^printSort(srtDef)^"\" ignored.");
-       jcginfo)
-    else
-      let (newClsDecls,col) = 
-          %let _ = writeLine("sort "^id^" = "^printSort srtDef) in
-          case srtDef of
-	    | Product   (fields,                    _) -> productToClsDecls   (id, srtDef, spc)
-	    | CoProduct (summands,                  _) -> coProductToClsDecls (id, srtDef, spc)
-	    | Quotient  (superSort, quotientPred,   _) -> quotientToClsDecls  (id, superSort, quotientPred, spc)
-	    | Subsort   (superSort, pred,           _) -> subSortToClsDecls   (id, superSort, pred,         spc)
-	    | Base      (Qualified (qual, id1), [], _) -> userTypeToClsDecls  (id, id1)
-	    | Boolean   _                              -> userTypeToClsDecls  (id, "Boolean")
-	    | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
-	      (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported");
-	       (jcginfo.clsDecls, nothingCollected))
-      in
-      let newjcginfo = newJcgInfo (newClsDecls, col) in
-      concatJcgInfo (jcginfo, newjcginfo)
-      %appendClsDecls(jcginfo,newClsDecls)
-  else
-    jcginfo
+op checkBaseTypeAlias: Sort -> JGenEnv ()
+def checkBaseTypeAlias srt =
+  {
+   spc <- getEnvSpec;
+   if baseType?(spc,srt) then
+     {
+      println (warn(sortAnn srt,"alias definition for base type \""^printSort(srt)^"\" ignored."));
+      return ()
+     }
+   else return ()
+  }
+
+op sortToClsDecls: Qualifier * Id * SortInfo -> JGenEnv ()
+def sortToClsDecls (_(* qualifier *), id, sort_info) =
+   if definedSortInfo? sort_info then
+     {
+      srtDef <- return(firstSortDefInnerSort sort_info);
+      checkSubsortFormat srtDef;
+      checkBaseTypeAlias srtDef;
+      case srtDef of
+	| Product   (fields,                    _) -> productToClsDecls   (id, srtDef)
+	| CoProduct (summands,                  _) -> coProductToClsDecls (id, srtDef)
+	| Quotient  (superSort, quotientPred,   _) -> quotientToClsDecls  (id, superSort,quotientPred)
+	| Subsort   (superSort, pred,           _) -> subSortToClsDecls   (id, superSort,pred)
+	| Base      (Qualified (qual, id1), [], _) -> userTypeToClsDecls  (id, id1)
+	| Boolean   _                              -> userTypeToClsDecls  (id, "Boolean")
+	| _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
+	  raise(NotSupported("sort definition: "^printSort(srtDef)),sortAnn(srtDef))
+     }
+   else
+     return ()
+
+(**
+ * sort A = B is translated to the empty class A extending B (A and B are user sorts).
+ * class A extends B {}
+ *)
+op userTypeToClsDecls: Id * Id -> JGenEnv ()
+def userTypeToClsDecls(id,superid) =
+  let clsDecl = ([], (id, Some ([],superid), []), emptyClsBody) in
+  addClsDecl clsDecl
 
 op addFldDeclToClsDecls: Id * FldDecl * JcgInfo -> JcgInfo
 def addFldDeclToClsDecls(srtId, fldDecl, jcginfo) =
@@ -489,6 +505,7 @@ def modifyClsDeclsFromOp (spc, _ (*qual*), id, op_info, jcginfo) =
   let (_, opsrt, trm) = unpackFirstOpDef op_info in
   let clsDecls = jcginfo.clsDecls in
   let dompreds = srtDomPreds opsrt in
+  %let srt = termSort(trm) in
   let srt = inferType (spc, trm) in
   let srt = foldRecordsForOpSort(spc,srt) in
   let srtrng = unfoldBase(spc,srtRange(srt)) in
@@ -578,24 +595,35 @@ def modifyClsDeclsFromOp (spc, _ (*qual*), id, op_info, jcginfo) =
 
 % --------------------------------------------------------------------------------
 
-op insertClsDeclsForCollectedProductSorts : Spec * JcgInfo -> JcgInfo
-def insertClsDeclsForCollectedProductSorts(spc,jcginfo) =
-  let psrts = jcginfo.collected.productSorts in
-  if psrts = [] then jcginfo else
-  let psrts = uniqueSort (fn(s1,s2) -> compare((srtId s1).1,(srtId s2).1)) psrts in
-  let jcginfo = clearCollectedProductSorts(jcginfo) in
-  %let tmp = List.show "," (map printSort psrts) in
-  %let _ = writeLine("collected product sorts:"^newline^tmp) in
-  let
-    def insertSort (srt, jcginfo) =
-      let (id,_) = srtId srt in
-      let sort_info = {names = [mkUnQualifiedId id],
-		       dfn   = srt}
-      in
-	sortToClsDecls (UnQualified, id, sort_info, spc, jcginfo)
-  in
-  let jcginfo = foldr insertSort jcginfo psrts in
-  insertClsDeclsForCollectedProductSorts (spc, jcginfo)
+op insertClsDeclsForCollectedProductSorts : JGenEnv JcgInfo
+def insertClsDeclsForCollectedProductSorts =
+  {
+   jcginfo <- getJcgInfo;
+   let psrts = jcginfo.collected.productSorts in
+   if psrts = [] then
+     return jcginfo
+   else
+     let psrts = uniqueSort (fn(s1,s2) -> compare((srtId s1).1,(srtId s2).1)) psrts in
+     let jcginfo = clearCollectedProductSorts(jcginfo) in
+     %let tmp = List.show "," (map printSort psrts) in
+     %let _ = writeLine("collected product sorts:"^newline^tmp) in
+     let
+       def insertSort (srt) =
+	 let (id,_) = srtId srt in
+	 let sort_info = {names = [mkUnQualifiedId id],
+			  dfn   = srt}
+	 in
+	 sortToClsDecls (UnQualified, id, sort_info)
+     in
+%  let jcginfo = foldr insertSort jcginfo psrts in
+%  insertClsDeclsForCollectedProductSorts (spc, jcginfo)
+     {
+      putJcgInfo jcginfo;
+      foldM (fn _ -> fn srt -> insertSort srt) () psrts;
+      insertClsDeclsForCollectedProductSorts
+     }
+  }
+   
 
 
 
@@ -753,21 +781,31 @@ def transformSpecForJavaCodeGen basespc spc =
   %jspc
 
 %op generateJavaCodeFromTransformedSpec: Spec -> JSpec
-def generateJavaCodeFromTransformedSpec spc =
-  let jcginfo = clsDeclsFromSorts(spc) in
-  let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
-  let arrowcls = jcginfo.collected.arrowclasses in
-  let jcginfo = insertClsDeclsForCollectedProductSorts(spc,jcginfo) in
-  let clsDecls = jcginfo.clsDecls in
-  let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
-  let clsDecls = clsDecls ++ arrowcls in
-  let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
-  let imports = [] in
-  let jspc = (None, imports, clsOrInterfDecls) in
-  let jspc = mapJName mapJavaIdent jspc in
-%  let jfiles = processOptions(jspc,optspec,filename) in
-%  let _ = app printJavaFile jfiles in
-  jspc
+def JGen.generateJavaCodeFromTransformedSpec spc =
+  let (res,_) = generateJavaCodeFromTransformedSpecM spc initialState in
+  case res of
+    | Ok jspc -> jspc
+    | Exception e -> efail e
+
+op generateJavaCodeFromTransformedSpecM: Spec -> JGenEnv JSpec
+def generateJavaCodeFromTransformedSpecM spc =
+  {
+   jcginfo  <- clsDeclsFromSorts(spc);
+   jcginfo <- return(modifyClsDeclsFromOps(spc, jcginfo));
+   arrowcls <- return(jcginfo.collected.arrowclasses);
+   insertClsDeclsForCollectedProductSorts;
+   jcginfo <- getJcgInfo;
+   let clsDecls = jcginfo.clsDecls in
+   let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
+   let clsDecls = clsDecls ++ arrowcls in
+   let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
+   let imports = [] in
+   let jspc = (None, imports, clsOrInterfDecls) in
+   let jspc = mapJName mapJavaIdent jspc in
+   %  let jfiles = processOptions(jspc,optspec,filename) in
+   %  let _ = app printJavaFile jfiles in
+   return jspc
+  }
 
 % --------------------------------------------------------------------------------
 
@@ -797,6 +835,10 @@ def specToJava(basespc,spc,optspec,filename) =
   let jspc = generateJavaCodeFromTransformedSpec spc in
   let jfiles = processOptions(jspc,optspec,filename) in
   let _ = List.app printJavaFile jfiles in
+  if jgendebug? then fail("failing, because jgendebug? flag is true") else 
   jspc
+
+op jgendebug? : Boolean
+def jgendebug? = false
 
 endspec

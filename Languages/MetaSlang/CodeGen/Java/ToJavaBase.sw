@@ -10,12 +10,9 @@ import ../../Transformations/LambdaLift
 import ../../Transformations/PatternMatch
 import ../../Transformations/HigherOrderMatching
 
-sort ToExprSort = Block * Java.Expr * Nat * Nat
+import IJavaCodeGen
 
-sort Collected = {
-		  arrowclasses : List Java.ClsDecl,
-		  productSorts : List Sort
-		 }
+sort ToExprSort = Block * Java.Expr * Nat * Nat
 
 op baseSrtToJavaType: Sort -> Java.Type
 def baseSrtToJavaType(srt) =
@@ -92,16 +89,6 @@ def appendMethodBody(m as (methHdr,methBody),b) =
 op mkPrimOpsClsDecl: ClsDecl
 def mkPrimOpsClsDecl =
   ([], (primitiveClassName, None, []), emptyClsBody)
-
-(**
- * sort A = B is translated to the empty class A extending B (A and B are user sorts).
- * class A extends B {}
- *)
-op userTypeToClsDecls: Id * Id -> List ClsDecl * Collected
-def userTypeToClsDecls(id,superid) =
-%  ([], (id, None, []), emptyClsBody)
-  ([([], (id, Some ([],superid), []), emptyClsBody)],nothingCollected)
-
 
 op varsToFormalParams: Spec -> Vars -> List FormPar * Collected
 def varsToFormalParams spc vars =
@@ -295,6 +282,7 @@ def tt_v3 spc srt =
     | TyVar id -> 
       let id = "Object" in
       (mkJavaObjectType(id),nothingCollected)
+    | Subsort(srt,_,_) -> tt_v3 spc srt
     | _ ->
       (case findMatchingUserTypeOption(spc,srt) of
 	 | Some usrt -> tt_v3 spc usrt

@@ -2,6 +2,7 @@ JGen qualifying spec
 
 import ToJavaBase
 import ToJavaStatements
+import Monad
 
 op mkSubSortTypeClsDecl: Id * Id * List FldDecl * List MethDecl * List ConstrDecl -> ClsDecl
 def mkSubSortTypeClsDecl(id, _(*superSortId*), subSortFieldDecls, subSortMethodDecls, subSortConstrDecls) =
@@ -10,9 +11,11 @@ def mkSubSortTypeClsDecl(id, _(*superSortId*), subSortFieldDecls, subSortMethodD
    setConstrs(setMethods(setFlds(emptyClsBody, subSortFieldDecls), subSortMethodDecls), subSortConstrDecls))
 
 
-op subSortToClsDecls: Id * Sort * MS.Term * Spec -> List ClsDecl * Collected
-def subSortToClsDecls(id, superSort, pred, spc) =
-  case superSort of
+op subSortToClsDecls: Id * Sort * MS.Term -> JGenEnv ()
+def subSortToClsDecls(id, superSort, pred) =
+  {
+   spc <- getEnvSpec;
+   case superSort of
     % TODO: add case for Boolean [but sort of weird to have subsort of Boolean]
     | Base (Qualified (q, superSortId), _, b) ->
     (case pred of
@@ -24,12 +27,16 @@ def subSortToClsDecls(id, superSort, pred, spc) =
        let subSortMethodBody = [Stmt (Return (Some (mkJavaEq(thisRelax, eqargRelax, superSortId))))] in
        let subSortMethodDecl = setMethodBody(subSortMethodDecl, subSortMethodBody) in
        let (subSortConstrDecl,col) = mkSubSortConstrDecl(id, superSortId, superSort, predId,spc) in
-       ([mkSubSortTypeClsDecl(id, superSortId, [relaxFieldDecl], [subSortMethodDecl], [subSortConstrDecl])],col)
-       | _ -> (issueUnsupportedError(b,"unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.");
-	       ([],nothingCollected))
+       %([mkSubSortTypeClsDecl(id, superSortId, [relaxFieldDecl], [subSortMethodDecl], [subSortConstrDecl])],col)
+       let clsDecl = mkSubSortTypeClsDecl(id, superSortId, [relaxFieldDecl], [subSortMethodDecl], [subSortConstrDecl]) in
+       {
+	addClsDecl clsDecl;
+	addCollected col
+       }
+       | _ -> raise(UnsupportedSubsort(printTerm pred),termAnn pred)
       )
-    | _ -> (issueUnsupportedError(termAnn(pred),"unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.");
-	    ([],nothingCollected))
+    | _ -> raise(UnsupportedSubsortTerm(printSort superSort),sortAnn superSort)
+   }
 
 op mkSubSortConstrDecl: Id  * Id * Sort * Id * Spec -> ConstrDecl * Collected
 def mkSubSortConstrDecl(id, superSortId, superSort, predId,spc) =

@@ -58,6 +58,12 @@ def identifyIntSorts spc =
 
 % --------------------------------------------------------------------------------
 
+op specStripSubSorts: Spec -> Spec
+def specStripSubSorts spc =
+  mapSpec (fn t -> t,fn(srt) -> stripSubsorts(spc,srt), fn p -> p) spc
+
+% --------------------------------------------------------------------------------
+
 (**
  * transforms "let _ = t1 in t2" into "(t1;t2)"
  *)

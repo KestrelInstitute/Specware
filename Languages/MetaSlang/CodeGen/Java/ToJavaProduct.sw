@@ -2,6 +2,7 @@ JGen qualifying spec
 
 import ToJavaBase
 import ToJavaStatements
+import Monad
 
 op mkProdConstrDecl: Id * List (Id * Sort) * Spec -> ConstrDecl * Collected
 def mkProdConstrDecl(id,fields,spc) =
@@ -35,24 +36,30 @@ op mkProductTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl -> 
 def mkProductTypeClsDecl(id, prodFieldsDecl, prodMethodDecls, constrDecls) =
   ([], (id, None, []), setConstrs(setMethods(setFlds(emptyClsBody, prodFieldsDecl), prodMethodDecls), constrDecls))
 
-op productToClsDecls: Id * Sort * Spec -> List ClsDecl * Collected
-def productToClsDecls(id, srtDef as Product (fields, _),spc) =
-  %let prodFieldsDecls = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFldDecl(fieldProj, fieldType)) fields in
-  let (prodFieldsDecls,col1) = foldl (fn((fieldProj,fieldType),(decls,col)) ->
+op productToClsDecls: Id * Sort -> JGenEnv ()
+def productToClsDecls(id, srtDef as Product (fields, _)) =
+  {
+   spc <- getEnvSpec;
+   let (prodFieldsDecls,col1) = foldl (fn((fieldProj,fieldType),(decls,col)) ->
 				      %let _ = writeLine("fieldType = "^printSort(fieldType)) in
 				      let (fieldType,col0) = findMatchingUserTypeCol(spc,fieldType) in
 				      let (fieldTypeId,col1) = srtId fieldType in
 				      let decl = fieldToFldDecl(fieldProj, fieldTypeId) in
 				      (concat(decls,[decl]),concatCollected(col,concatCollected(col0,col1)))
 				     ) ([],nothingCollected) fields
-  in
-  let (equalityConjunction,col2) = mkEqualityBodyForProduct(fields) in
-  let prodMethodDecl =  mkEqualityMethDecl(id) in
-  let prodMethodBody = [Stmt (Return (Some (equalityConjunction)))] in
-  let prodMethodDecl = setMethodBody(prodMethodDecl, prodMethodBody) in
-  let (prodConstrDecls,col3) = mkProdConstrDecl(id,fields,spc) in
-  let col = concatCollected(col1,concatCollected(col2,col3)) in
-  ([mkProductTypeClsDecl(id, prodFieldsDecls, [prodMethodDecl], [prodConstrDecls])],col)
+   in
+   let (equalityConjunction,col2) = mkEqualityBodyForProduct(fields) in
+   let prodMethodDecl =  mkEqualityMethDecl(id) in
+   let prodMethodBody = [Stmt (Return (Some (equalityConjunction)))] in
+   let prodMethodDecl = setMethodBody(prodMethodDecl, prodMethodBody) in
+   let (prodConstrDecls,col3) = mkProdConstrDecl(id,fields,spc) in
+   let clsDecl = mkProductTypeClsDecl(id, prodFieldsDecls, [prodMethodDecl], [prodConstrDecls]) in
+   let col = concatCollected(col1,concatCollected(col2,col3)) in
+   {
+    addClsDecl clsDecl;
+    addCollected col
+   }
+  }
 
 op mkEqualityBodyForProduct: List Field -> Java.Expr * Collected
 def mkEqualityBodyForProduct(fields) =
