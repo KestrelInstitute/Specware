@@ -2862,11 +2862,11 @@ has three inhabitants.
 ||    | `let-expression
 ||    | `if-expression
 ||    | `quantification
+||    | `annotated-expression
 ||    | `tight-expression
 ||
 ||`tight-expression ::=
 ||      `application
-||    | `annotated-expression
 ||    | `restrict-expression
 ||    | `closed-expression
 ||
@@ -3186,6 +3186,48 @@ So [[fa x (x = x)]], for example, is ungrammatical.
 </para>
 </section>
 <!-- ***************************************************************** -->
+<section id="Annotated-expressions"><title>Annotated-expressions</title>
+<para>
+<<
+||`annotated-expression ::= `tight-expression : `sort
+>>
+Restriction.
+In an `annotated-expression
+<replaceable>E</replaceable>[[ : ]]<replaceable>S</replaceable>, the `expression
+<replaceable>E</replaceable> must have sort
+<replaceable>S</replaceable>.
+</para>
+<!-- ================================================================= -->
+<para>
+Sample `annotated-expression:
+[[
+||    [] : List Arg
+||    Positive : Sign
+]]
+The value of an `annotated-expression
+<replaceable>E</replaceable>[[ : ]]<replaceable>S</replaceable> is the value of
+<replaceable>E</replaceable>.
+</para>
+<!-- ================================================================= -->
+<para>
+The sort of some `expressions is polymorphic.  For example,
+for any sort <replaceable>T</replaceable>,
+[[[]]] denotes the empty list of sort [[List ]]<replaceable>T</replaceable>.
+Likewise, `constructors of parameterized sum sorts can be
+polymorphic, as the constructor [[None]] of
+[[
+||    sort Option a = | Some a | None
+]]
+Further, overloaded `constructors have an ambiguous sort.
+By annotating such polymorphic or sort-ambiguous
+`expressions with a `sort, their sort can
+be disambiguated, which is required unless an
+unambiguous sort can already be inferred from the context.
+Annotation, even when redundant, can further help to
+increase clarity.
+</para>
+</section>
+<!-- ***************************************************************** -->
 <section id="Applications"><title>Applications</title>
 <para>
 <<
@@ -3197,7 +3239,9 @@ So [[fa x (x = x)]], for example, is ungrammatical.
 ||
 ||`actual-parameter ::= `closed-expression
 ||
-||`infix-application ::= `actual-parameter `op-name `actual-parameter
+||`infix-application ::= `operand `op-name `operand
+||
+||`operand ::= `tight-expression
 >>
 Sample `applications:
 [[
@@ -3205,33 +3249,23 @@ Sample `applications:
 ||    f x (g y)
 ||    x + 1
 ]]
-Disambiguation.
-The grammar for `application is ambiguous for cases
-like
-<replaceable>P N Q</replaceable>, in which
-<replaceable>P</replaceable> and
-<replaceable>Q</replaceable> are `closed-expressions, and
-<replaceable>N</replaceable> is the `name of an infix operator.
-The ambiguity is resolved in favor of the reading
-as an `infix-application, and then the
-`infix-application <replaceable>P N Q</replaceable>
-is equivalent to the `prefix-application
-<replaceable>N</replaceable>[[ (]]<replaceable>P</replaceable>[[, ]]<replaceable>Q</replaceable>[[)]].
-For example, in the second example `application
-[[f x (g y)]] given above,
-if [[x]] is an infix operator,
-the `application is an `infix-application
-equivalent to `prefix-application [[x (f, g y)]].
-If [[x]] is not defined as an infix operator, or is a
-`local-variable in scope, the `application is the same as
-the unconditionally unambiguous version [[(f x) (g y)]].
-Note that the resolution of the ambiguity does not rely on
-information about the sorts.  Even if
-[[(f x) (g y)]] is sort-correct and
-[[x (f, g y)]] is not, the latter interpretation is chosen
-for disambiguating [[f x (g y)]]
-whenever [[x]] is an infix operator in the context, and
-consequently [[f x (g y)]] is then also sort-incorrect.
+Restriction.
+The `op-name of an infix operator, whether qualified or
+unqualified, may not be used without more as an
+`actual-parameter or `operand.
+To use an infix `op as an `actual-parameter or `operand, it
+must be enclosed in parentheses, as for example in the
+`prefix-applications [[foldl (+) 0]] and [[foldl ( *) 1]]
+or the `infix-application [[(<) o ival]].
+Note the space between ``[[(]]'' and ``[[*]]'', since without
+space ``[[(*]]'' signals the start of a `comment.
+</para>
+<!--====================================================================-->
+<para>
+Restriction.
+The `op-name of an `infix-application must have been
+declared as an infix operator
+(see under <link linkend="Op-declarations"><emphasis>Op-declarations</emphasis></link>).
 </para>
 <!-- ================================================================= -->
 <para>
@@ -3240,7 +3274,7 @@ An `infix-application
 <replaceable>P M Q N R</replaceable>, in which
 <replaceable>P</replaceable>,
 <replaceable>Q</replaceable> and
-<replaceable>R</replaceable> are `actual-parameters and
+<replaceable>R</replaceable> are `operands and
 <replaceable>M</replaceable> and
 <replaceable>N</replaceable> are infix operators,
 is interpreted as either
@@ -3379,48 +3413,6 @@ a subsort of [[Nat]], to accommodate the division operator
 But note that implicit restriction engenders the same proof
 obligation as results when using an explicit
 `restrict-expression.
-</para>
-</section>
-<!-- ***************************************************************** -->
-<section id="Annotated-expressions"><title>Annotated-expressions</title>
-<para>
-<<
-||`annotated-expression ::= `tight-expression : `sort
->>
-Restriction.
-In an `annotated-expression
-<replaceable>E</replaceable>[[ : ]]<replaceable>S</replaceable>, the `expression
-<replaceable>E</replaceable> must have sort
-<replaceable>S</replaceable>.
-</para>
-<!-- ================================================================= -->
-<para>
-Sample `annotated-expression:
-[[
-||    [] : List Arg
-||    Positive : Sign
-]]
-The value of an `annotated-expression
-<replaceable>E</replaceable>[[ : ]]<replaceable>S</replaceable> is the value of
-<replaceable>E</replaceable>.
-</para>
-<!-- ================================================================= -->
-<para>
-The sort of some `expressions is polymorphic.  For example,
-for any sort <replaceable>T</replaceable>,
-[[[]]] denotes the empty list of sort [[List ]]<replaceable>T</replaceable>.
-Likewise, `constructors of parameterized sum sorts can be
-polymorphic, as the constructor [[None]] of
-[[
-||    sort Option a = | Some a | None
-]]
-Further, overloaded `constructors have an ambiguous sort.
-By annotating such polymorphic or sort-ambiguous
-`expressions with a `sort, their sort can
-be disambiguated, which is required unless an
-unambiguous sort can already be inferred from the context.
-Annotation, even when redundant, can further help to
-increase clarity.
 </para>
 </section>
 <!-- ***************************************************************** -->

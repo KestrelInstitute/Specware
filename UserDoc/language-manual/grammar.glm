@@ -488,11 +488,11 @@ easy reference.
 ||    | `let-expression
 ||    | `if-expression
 ||    | `quantification
+||    | `annotated-expression
 ||    | `tight-expression
 ||  
 ||  `tight-expression ::=
 ||      `application
-||    | `annotated-expression
 ||    | `restrict-expression
 ||    | `closed-expression
 ||  
@@ -574,6 +574,14 @@ easy reference.
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
+<formalpara><title>Annotated-expressions</title>
+<para>
+<<
+||  `annotated-expression ::= `tight-expression : `sort
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
 <formalpara><title>Applications</title>
 <para>
 <<
@@ -585,7 +593,9 @@ easy reference.
 ||  
 ||  `actual-parameter ::= `closed-expression
 ||  
-||  `infix-application ::= `actual-parameter `op-name `actual-parameter
+||  `infix-application ::= `operand `op-name `operand
+||  
+||  `operand ::= `tight-expression
 >>
 </para>
 </formalpara>
@@ -594,14 +604,6 @@ easy reference.
 <para>
 <<
 ||  `restrict-expression ::= restrict `closed-expression `closed-expression
->>
-</para>
-</formalpara>
-<!-- ***************************************************************** -->
-<formalpara><title>Annotated-expressions</title>
-<para>
-<<
-||  `annotated-expression ::= `tight-expression : `sort
 >>
 </para>
 </formalpara>
