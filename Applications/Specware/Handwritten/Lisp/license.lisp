@@ -11,7 +11,7 @@
 
 (setf *restart-init-function*
    #'(lambda ()
-       (format t "                              Specware ~A
+       (format t "~%                              Specware ~A
 \"Specware (tm)\" is a registered trademark of Kestrel Development
 Corp.
 
