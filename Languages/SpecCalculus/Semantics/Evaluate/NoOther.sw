@@ -19,7 +19,7 @@ SpecCalc qualifying spec
     raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
-  def SpecCalc.evaluateOtherSpecMorph _ _ _ (* spc morph rules *) pos = {
+  def SpecCalc.evaluateOtherSpecMorph _(* dom *) _(* cod *) _(* rules *) pos = {
     unitId <- getCurrentUID;
     raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
