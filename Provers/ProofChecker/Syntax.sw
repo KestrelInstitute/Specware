@@ -17,8 +17,9 @@ spec
 
   % useful abbreviations:
 
-  type Type?    = Option Type
-  type Pattern? = Option Pattern
+  type Type?       = Option Type
+  type Expression? = Option Expression
+  type Pattern?    = Option Pattern
 
   type Types       = FSeq Type
   type Expressions = FSeq Expression

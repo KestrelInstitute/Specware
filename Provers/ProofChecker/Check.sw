@@ -637,6 +637,29 @@ spec
     else   FAIL
     | _ -> FAIL
 
+  op checkCaseBranchTheorem :
+     Context -> Context -> Expression -> Expression -> Expression -> Proof ->
+     MayFail Expression
+  def checkCaseBranchTheorem cx varCx negAsm posAsm e prf =
+    case checkTheoremEquation prf of OK (cx1, mustBeE, e0) ->
+    if mustBeE = e
+    && maxCommonPrefix (cx, cx1) = cx
+    && length cx1 = length cx + length varCx + 2 then
+    case last cx1 of axioM (_, tvS, e1) ->
+    if tvS = empty
+    && e1 = posAsm
+    && subFromLong (cx1, length cx + 1, length varCx) = varCx then
+    case cx1 ! (length cx) of axioM (_, tvS, e1) ->
+    if tvS = empty
+    && e1 = negAsm then
+    OK e0
+    else   FAIL
+    | _ -> FAIL
+    else   FAIL
+    | _ -> FAIL
+    else   FAIL
+    | _ -> FAIL
+
   op checkPatt : Proof -> MayFail (Context * Pattern * Type)
   def checkPatt prf =
     case check prf of
@@ -1547,33 +1570,236 @@ spec
       | _ -> FAIL)
       else   FAIL
       | _ -> FAIL)
+    | thEmbedderSurjective (prf, c, v, v1) ->
+      (case checkSumType prf of OK (cx, cS, t?S) ->
+      if v ~= v1 then
+      let n:Nat = length cS in
+      if length t?S = n then
+      let disjuncts:Expressions = seqSuchThat (fn(i:Nat) ->
+        if i < n then
+          Some (case (t?S!i) of
+                  | Some t ->
+                    EX v1 t (VAR v == EMBED (SUM cS t?S) (cS!i) @ VAR v1)
+                  | None ->
+                    VAR v == EMBED (SUM cS t?S) (cS!i))
+        else None) in
+      OK (theoreM (cx, FA v (SUM cS t?S) (disjoinAll disjuncts)))
+      else   FAIL
+      else   FAIL
+      | _ -> FAIL)
+    | thEmbeddersDistinct (prf, ci, cj, vi?, vj?) ->
+      (case checkSumType prf of OK (cx, cS, t?S) ->
+      if noRepetitions? cS
+      && ci in? cS
+      && cj in? cS
+      && length t?S = length cS then
+      let i:Nat = indexOf (cS, ci) in
+      let j:Nat = indexOf (cS, cj) in
+      (case (t?S!i, t?S!j) of
+         | (Some ti, Some tj) ->
+           (case (vi?, vj?) of
+              | (Some vi, Some vj) ->
+                if vi ~= vj then
+                  OK (theoreM (cx, FAA (seq2(vi,vj)) (seq2(ti,tj))
+                                       (EMBED (SUM cS t?S) ci @ VAR vi ~==
+                                        EMBED (SUM cS t?S) cj @ VAR vj)))
+                else FAIL
+              | _ -> FAIL)
+         | (Some ti, None) ->
+           (case (vi?, vj?) of
+              | (Some vi, None) ->
+                OK (theoreM (cx, FA vi ti (EMBED (SUM cS t?S) ci @ VAR vi ~==
+                                           EMBED (SUM cS t?S) cj)))
+              | _ -> FAIL)
+         | (None, Some tj) ->
+           (case (vi?, vj?) of
+              | (None, Some vj) ->
+                OK (theoreM (cx, FA vj tj (EMBED (SUM cS t?S) ci ~==
+                                           EMBED (SUM cS t?S) cj @ VAR vj)))
+              | _ -> FAIL)
+         | (None, None) ->
+           if (vi?, vj?) = (None, None) then
+             OK (theoreM (cx, EMBED (SUM cS t?S) ci ~== EMBED (SUM cS t?S) cj))
+           else FAIL)
+      else   FAIL
+      | _ -> FAIL)
+    | thEmbedderInjective (prf, c, v1, v2) ->
+      (case checkSumType prf of OK (cx, cS, t?S) ->
+      (case checkConstructorType? (SUM cS t?S) c of OK (Some t) ->
+      if v1 ~= v2 then
+      OK (theoreM (cx, FAA (seq2(v1,v2)) (seq2(t,t))
+                           (VAR v1 ~== VAR v2 ==>
+                            EMBED (SUM cS t?S) c @ VAR v1 ~==
+                            EMBED (SUM cS t?S) c @ VAR v2)))
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | thRelaxatorSatisfiesPredicate (prf, v) ->
+      (case checkSubType prf of OK (cx, t, r) ->
+      OK (theoreM (cx, FA v (t\r) (r @ (RELAX r @ VAR v))))
+      | _ -> FAIL)
+    | thRelaxatorInjective (prf, v1, v2) ->
+      (case checkSubType prf of OK (cx, t, r) ->
+      if v1 ~= v2 then
+      OK (theoreM (cx, FAA (seq2(v1,v2)) (seq2(t\r,t\r))
+                           (VAR v1 ~== VAR v2 ==>
+                            RELAX r @ VAR v1 ~== RELAX r @ VAR v2)))
+      else   FAIL
+      | _ -> FAIL)
+    | thRelexatorSurjective (prf, v, v1) ->
+      (case checkSubType prf of OK (cx, t, r) ->
+      if v ~= v1 then
+      OK (theoreM (cx, FA v t
+                          (r @ VAR v ==>
+                           EX v1 (t\r) (VAR v == RELAX r @ VAR v1))))
+      else   FAIL
+      | _ -> FAIL)
+    | thRestriction (prf, v) ->
+      (case checkSubType prf of OK (cx, t, r) ->
+      OK (theoreM (cx, FA v (t\r) (RESTRICT r (RELAX r @ VAR v) == VAR v)))
+      | _ -> FAIL)
+    | thQuotienterSurjective (prf, v, v1) ->
+      (case checkQuotientType prf of OK (cx, t, q) ->
+      if v ~= v1 then
+      OK (theoreM (cx, FA v (t/q) (EX v1 t (QUOTIENT q @ VAR v1 == VAR v))))
+      else   FAIL
+      | _ -> FAIL)
+    | thQuotienterEquivClass (prf, v1, v2) ->
+      (case checkQuotientType prf of OK (cx, t, q) ->
+      if v1 ~= v2 then
+      OK (theoreM (cx, FAA (seq2(v1,v2)) (seq2(t,t))
+                           (q @ PAIR (VAR v1) (VAR v2) <==>
+                            QUOTIENT q @ VAR v1 == QUOTIENT q @ VAR v2)))
+      else   FAIL
+      | _ -> FAIL)
+    | thChoice (prf, v) ->
+      (case checkExpr prf of
+         OK (cx, binary (choice, q, e),
+                 arrow (subQuot (quotienT, t, mustBeQ), t1)) ->
+      if mustBeQ = q
+      && ~(v in? exprFreeVars e) then
+      OK (theoreM (cx, FA v t
+                          (CHOOSE q e @ (QUOTIENT q @ VAR v) == e @ VAR v)))
+      else   FAIL
+      | _ -> FAIL)
+    | thCase (prf, prfS) ->
+      (case checkExpr prf of OK (cx, casE (e, pS, eS), t) ->
+      let n:Nat = length pS in
+      if n > 0
+      && length eS = n
+      && length prfS = n then
+      let caseMatches:Expressions = seqSuchThat (fn(i:Nat) ->
+        if i < n then Some (let (vS,tS) = pattVarsWithTypes (pS!i) in
+                            EXX vS tS (pattAssumptions (pS!i, e)))
+        else None) in
+      let varCxS:FSeq Context = seqSuchThat (fn(i:Nat) ->
+        if i < n then Some (multiVarDecls (pattVarsWithTypes (pS!i)))
+        else None) in
+      let negAsmS:Expressions = seqSuchThat (fn(i:Nat) ->
+        if i < n then Some (conjoinAll (seqSuchThat (fn(j:Nat) ->
+                             if j < i then Some (~~ (caseMatches!j))
+                                      else None)))
+                 else None) in
+      let posAsmS:Expressions = seqSuchThat (fn(i:Nat) ->
+        if i < n then Some (pattAssumptions (pS!i, e))
+                 else None) in
+      let def aux (i:Nat, e0?:Expression?) : MayFail Expression =
+            if i = n then
+              case e0? of Some e0 -> OK e0
+                        | None    -> FAIL   % never happens
+            else
+              case checkCaseBranchTheorem
+                     cx (varCxS!i) (negAsmS!i) (posAsmS!i) (eS!i) (prfS!i) of
+                | OK e0 ->
+                  (case e0? of Some mustBeE0 -> if mustBeE0 = e0 then
+                                                  aux (i+1, Some e0)
+                                                else FAIL
+                             | None -> aux (i+1, Some e0))
+                | _ -> FAIL
+      in
+      (case aux (0, None) of OK e0 ->
+      OK (theoreM (cx, CASE e pS eS == e0))
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+    | thRecursiveLet (prfEx, prfTh) ->
+      (case checkExpr prfEx of OK (cx, recursiveLet (vS, tS, eS, e), t) ->
+      let n:Nat = length vS in
+      if length tS = n
+      && length eS = n then
+      (case checkTheoremEquation prfTh of OK (cx1, mustBeLetDef, e0) ->
+      let conjuncts:Expressions = seqSuchThat (fn(i:Nat) ->
+        if i < n then Some (VAR (vS!i) == (eS!i))
+        else None) in
+      (case checkExtraAxiom (cx ++ multiVarDecls (vS, tS)) cx1 of
+         OK (_, mustBeEmpty, mustBeConjoinAllConjuncts) ->
+      if mustBeConjoinAllConjuncts = conjoinAll conjuncts
+      && toSet vS /\ exprFreeVars e0 = empty then
+      OK (theoreM (cx, LETDEF vS tS eS e == e0))
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+    | thAbbrevTrue (prf, v) ->
+      (case checkContext prf of OK cx ->
+      OK (theoreM (cx, TRUE <==> FN v BOOL (VAR v) == FN v BOOL (VAR v)))
+      | _ -> FAIL)
+    | thAbbrevFalse (prf, v) ->
+      (case checkContext prf of OK cx ->
+      OK (theoreM (cx, FALSE <==> FN v BOOL (VAR v) == FN v BOOL TRUE))
+      | _ -> FAIL)
+    | thAbbrevNegation prf ->
+      (case checkExpr prf of OK (cx, unary (negation, e), boolean) ->
+      OK (theoreM (cx, ~~e <==> IF e FALSE TRUE))
+      | _ -> FAIL)
+    | thAbbrevInequation prf ->
+      (case checkExpr prf of OK (cx, binary (inequation, e1, e2), boolean) ->
+      OK (theoreM (cx, (e1 ~== e2) <==> ~~(e1 == e2)))
+      | _ -> FAIL)
+    | thAbbrevConjunction prf ->
+      (case checkExpr prf of OK (cx, binary (conjunction, e1, e2), boolean) ->
+      OK (theoreM (cx, e1 &&& e2 <==> IF e1 e2 FALSE))
+      | _ -> FAIL)
+    | thAbbrevDisjunction prf ->
+      (case checkExpr prf of OK (cx, binary (disjunction, e1, e2), boolean) ->
+      OK (theoreM (cx, e1 ||| e2 <==> IF e1 TRUE e2))
+      | _ -> FAIL)
+    | thAbbrevImplication prf ->
+      (case checkExpr prf of OK (cx, binary (implication, e1, e2), boolean) ->
+      OK (theoreM (cx, e1 ==> e2 <==> IF e1 e2 TRUE))
+      | _ -> FAIL)
+    | thAbbrevEquivalence prf ->
+      (case checkExpr prf of OK (cx, binary (equivalence, e1, e2), boolean) ->
+      OK (theoreM (cx, (e1 <==> e2) == (e1 == e2)))
+      | _ -> FAIL)
+    | thAbbrevUniversal prf ->
+      (case checkExpr prf of OK (cx, binding (universal, vS, tS, e), boolean) ->
+      OK (theoreM (cx, FAA vS tS e <==> FNN vS tS e == FNN vS tS TRUE))
+      | _ -> FAIL)
+    | thAbbrevExistential prf ->
+      (case checkExpr prf of OK (cx, binding (existential, vS, tS, e), boolean) ->
+      OK (theoreM (cx, EXX vS tS e <==> ~~(FAA vS tS (~~e))))
+      | _ -> FAIL)
+    | thAbbrevExistential1 (prf, vS1) ->
+      (case checkExpr prf of OK (cx, binding (existential1, vS, tS, e), boolean) ->
+      if noRepetitions? vS
+      && length vS1 = length vS then
+      let esbs:ExprSubstitution = FMap.fromSequences (vS, map (VAR, vS1)) in
+      if toSet vS /\ toSet vS1 = empty
+      && exprSubstOK? (e, esbs) then
+      OK (theoreM (cx, EXX1 vS tS e <==>
+                       EXX vS tS (e &&&
+                                  FAA vS1 tS (exprSubst esbs e ==>
+                                              TUPLE (map (VAR, vS)) ==
+                                              TUPLE (map (VAR, vS1))))))
+      else   FAIL
+      else   FAIL
+      | _ -> FAIL)
+    | thAbbrevNonRecursiveLet prf ->
+      (case checkExpr prf of OK (cx, nonRecursiveLet (p, e, e1), t) ->
+      OK (theoreM (cx, LET p e e1 == CASE e (singleton p) (singleton e1)))
+      | _ -> FAIL)
 
-(*@@@
-    | thEmbedderSurjective          Proof * Constructor * Variable * Variable
-    | thEmbeddersDistinct           Proof * Constructor * Constructor
-                                          * Variable? * Variable?
-    | thEmbedderInjective           Proof * Constructor * Variable * Variable
-    | thRelaxatorSatisfiesPredicate Proof * Variable
-    | thRelaxatorInjective          Proof * Variable * Variable
-    | thRelexatorSurjective         Proof * Variable * Variable
-    | thRestriction                 Proof * Variable
-    | thQuotienterSurjective        Proof * Variable * Variable
-    | thQuotienterEquivClass        Proof * Variable * Variable
-    | thChoice                      Proof * Variable
-    | thCase                        Proof * Proofs
-    | thRecursiveLet                Proof * Proof
-    | thAbbrevTrue                  Proof * Variable
-    | thAbbrevFalse                 Proof * Variable
-    | thAbbrevNegation              Proof
-    | thAbbrevInequation            Proof
-    | thAbbrevConjunction           Proof
-    | thAbbrevDisjunction           Proof
-    | thAbbrevImplication           Proof
-    | thAbbrevEquivalence           Proof
-    | thAbbrevUniversal             Proof
-    | thAbbrevExistential           Proof
-    | thAbbrevExistential1          Proof * Variables
-    | thAbbrevNonRecursiveLet       Proof
-*)
 
 endspec
