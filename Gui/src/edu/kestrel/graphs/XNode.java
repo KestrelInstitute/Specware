@@ -126,7 +126,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
     /** sets some initial node value using a counter variable.
      */
     protected void setInitialValue() {
-        setUserObject("N_"+(nodeCnt++));
+        setUserObject("node_"+(nodeCnt++));
     }
     
     /** returns the Model Node of this node; creates a new model node, if this hasn't done before.

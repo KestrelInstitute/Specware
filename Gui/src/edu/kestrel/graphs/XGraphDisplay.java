@@ -49,6 +49,10 @@ public class XGraphDisplay extends JGraph implements Storable {
      */
     protected ModelContainerNode modelNode = null;
     
+    /** this field holds the explcitly set model node of this graph.
+     */
+    protected ModelContainerNode explicitModelRootNode = null;
+    
     protected PortView highlightedPortView = null;
     
     /**
@@ -223,8 +227,21 @@ public class XGraphDisplay extends JGraph implements Storable {
         return modelNode;
     }
     
-    /** returns the model node of the graph, which is determined by looking for the common parent node of the root
+    /** sets the root node of this graph explicitly; all nodes in the graph will be children of this node; the graph must
+     * be empty to do this.
+     */
+    public void setModelRootNode(ModelContainerNode mnode) {
+        if (isEmpty()) {
+            explicitModelRootNode = mnode;
+        }
+    }
+    
+    /** returns the model node of the graph, which is either 
+     * <ul>
+     * <li> determined by looking for the common parent node of the root
      * nodes of the graph; if they don't have a common parent node, then the model root node of the graph is returned.
+     * <li> the mode node which has explicitly been set for this graph.
+     * </ul>
      */
     public ModelContainerNode getModelNode() {
         ModelNode[] rootNodes = getModelNodesOfRoots();

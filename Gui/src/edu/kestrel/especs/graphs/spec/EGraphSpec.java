@@ -28,6 +28,7 @@ public class EGraphSpec extends XGraphSpec {
         addDrawingMode(new DrawingModeAddText());
         //addDrawingMode(new DrawingModeAddImportEdge());
         //addDrawingMode(new DrawingModeAddContainerBox());
+        addDrawingMode(new DrawingModeAddEllipse());
         addDrawingMode(new DrawingModeZoom());
         if (Dbg.isDebug()) {
             addDrawingMode(new DrawingModeDebug());
