@@ -27,6 +27,7 @@
 	     (format t "~&Syntax error: No term or decls in file ~A~%"
 		     fileName))
 	   '(:|None|))
+	  ;; revised to fix Bug 001: "No error msg when processing files with multiple and un-named specs"
 	  ((null (rest raw-results))
 	   (let* ((raw-result (first  raw-results))
 		  ; (start    (first  raw-result))  
@@ -46,6 +47,7 @@
 		   fileName)
 	   '(:|None|)))))
 
+;;; obsolete?
 ;;; (defun parseFileMsg (fileName) 
 ;;;   (let* ((*parser-source* (list :file fileName))
 ;;; 	 (session (parse-file fileName *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
@@ -98,6 +100,7 @@
 				   nil)
 				 (if (null raw-results) (list "no result") nil)))))
 
+	  ;; revised per parseFile above
 	  ((null (rest raw-results))
 	   (let* ((raw-result (first  raw-results))
 		  ; (start    (first  raw-result))  
