@@ -49,8 +49,9 @@ def sortToClsDecls (_(* qualifier *), id, sort_info, spc, jcginfo) =
 		| Quotient _                   -> false
 		| _ -> true
     in
-    if ~ok? then 
-      (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported: "^printSort(srtDef)); 
+    if ~ok? then
+      %let _ = print srtDef in
+      (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported: \"sort "^id^" = "^printSort(srtDef)^"\"\n*** Reason: restriction term is not of the form \"opname x\""); 
        jcginfo)
     else if baseType? (spc, srtDef) then
       (issueUnsupportedError(sortAnn(srtDef),"sort definition: \"sort "^id^" = "^printSort(srtDef)^"\" ignored.");

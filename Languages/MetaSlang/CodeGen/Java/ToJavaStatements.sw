@@ -45,7 +45,7 @@ def termToExpression_internal(tcx, term, k, l, spc, _ (*addRelaxChoose?*)) =
 	      | Base (Qualified (q, srtId), _, _) -> ((mts, mkQualJavaExpr(srtId, id), k, l),nothingCollected)
 	      | Boolean _                         -> ((mts, mkQualJavaExpr("Boolean", id), k, l),nothingCollected)
 	      | Arrow(dom,rng,_) -> translateLambdaToExpr(tcx,term,k,l,spc)
-	      | _ -> unsupportedInTerm(term,k,l,"term not supported by Java code generator")
+	      | _ -> unsupportedInTerm(term,k,l,"term not supported by Java code generator: "^(printTerm term))
 	      )
       | Fun (Nat (n),_,__) -> ((mts, mkJavaNumber(n), k, l),nothingCollected)
       | Fun (Bool (b),_,_) -> ((mts, mkJavaBool(b), k, l),nothingCollected)
@@ -66,7 +66,8 @@ def termToExpression_internal(tcx, term, k, l, spc, _ (*addRelaxChoose?*)) =
 	     if caseTerm?(term)
 	       then translateCaseToExpr(tcx, term, k, l, spc)
 	     else
-	       unsupportedInTerm(term,k,l,"term not supported by Java code generator")
+	       %let _ = print term in
+	       unsupportedInTerm(term,k,l,"term not supported by Java code generator(2): "^(printTerm term))
 
 
 def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =

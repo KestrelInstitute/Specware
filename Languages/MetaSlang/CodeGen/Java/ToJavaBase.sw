@@ -385,7 +385,8 @@ def srtId_internal(srt,addIds?) =
     %| _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
     | Subsort(srt,_,_) -> srtId_internal(srt,addIds?)
     | Quotient(srt,_,_) -> srtId_internal(srt,addIds?)
-    | _ -> (issueUnsupportedError(sortAnn(srt),"sort format not supported: "^printSort(srt));
+    | _ -> %let _ = print srt in
+           (issueUnsupportedError(sortAnn(srt),"sort format not supported: "^printSort(srt));
 	    ([tt_v2 "ERRORSORT"],"ERRORSORT",nothingCollected))
 
 op getJavaTypeId: Java.Type -> Id
