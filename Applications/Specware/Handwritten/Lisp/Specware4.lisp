@@ -18,8 +18,10 @@
 (setq extensions:*efficiency-note-cost-threshold* 30)
 #+cmu
 (setq c::*compile-print* nil)
-#+mcl
+;#+mcl
 ;(egc t)					; Turn on ephemeral gc
+#+mcl
+(ccl::set-lisp-heap-gc-threshold (* 16777216 4))
 
 ;; Used in printing out the license and about-specware command
 (defvar cl-user::Specware-version "4.0")
@@ -177,6 +179,14 @@
 (push  'cl-user::sw-re-init cl-user::*restart-actions*)
 #+cmu
 (push  'cl-user::sw-re-init ext:*after-save-initializations*)
+#+mcl
+(push  'cl-user::sw-re-init ccl:*lisp-startup-functions*)
+
+;;; Set gc parameters
+#+mcl
+(push  #'(lambda () (ccl::set-lisp-heap-gc-threshold (* 16777216 4)))
+       ccl:*lisp-startup-functions*)
+
 
 ;;; Set temporaryDirectory
 #+allegro
