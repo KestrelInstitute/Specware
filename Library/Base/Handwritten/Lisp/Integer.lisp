@@ -42,8 +42,8 @@
 ;;; (defun |!<-1| (x)
 ;;;   (< (car x) (cdr x)))
 
-(defun |!>| (x y) 
-  (> x y))
+;;; (defun |!>| (x y) 
+;;;  (> x y))
 
 ;;; (defun |!>-1| (x) 
 ;;;;  (> (car x) (cdr x)))

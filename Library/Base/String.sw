@@ -8,17 +8,17 @@ String qualifying spec {
   import Compare
   import List
 
-  op concat : String * String -> String
+  op concat       : String * String -> String
   op ++ infixl 11 : String * String -> String
-  op ^ infixl 11 : String * String -> String
-  op length : String -> Nat
+  op ^  infixl 11 : String * String -> String
+  op length       : String -> Nat
 
   % def ++(s1,s2) = concat(s1,s2)
   % def ^(s1,s2)  = concat(s1,s2)
 
-  op toScreen : String -> ()
+  op toScreen  : String -> ()
   op writeLine : String -> ()
-  op newline : String
+  op newline   : String
 
   op map : (Char -> Char) -> String -> String
   op all : (Char -> Boolean) -> String -> Boolean

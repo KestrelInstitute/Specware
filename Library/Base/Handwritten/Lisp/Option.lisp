@@ -6,20 +6,20 @@
 
 ;;; Definitions
 
-(defun compare-1-1 (comp x) 
-  (let ((pV4 (cons (car x) (cdr x)))) 
-    (block 
-     nil 
-     (let ((pV6 (cdr pV4))
-           (pV5 (car pV4))) 
-       (if (eq (car pV5) :|None|) 
-           (if (eq (car pV6) :|Some|) (return '(:|Less|))) 
-           (if (eq (car pV5) :|Some|) 
-               (if (eq (car pV6) :|Some|) 
-                   (return (funcall comp (cons (cdr pV5) (cdr pV6)))) 
-                   (if (eq (car pV6) :|None|) (return '(:|Greater|))))))) 
-     (return '(:|equal|)))))
-                            
+;;; (defun compare-1-1 (comp x) 
+;;;   (let ((pV4 (cons (car x) (cdr x)))) 
+;;;     (block 
+;;;      nil 
+;;;      (let ((pV6 (cdr pV4))
+;;;            (pV5 (car pV4))) 
+;;;        (if (eq (car pV5) :|None|) 
+;;;            (if (eq (car pV6) :|Some|) (return '(:|Less|))) 
+;;;            (if (eq (car pV5) :|Some|) 
+;;;                (if (eq (car pV6) :|Some|) 
+;;;                    (return (funcall comp (cons (cdr pV5) (cdr pV6)))) 
+;;;                    (if (eq (car pV6) :|None|) (return '(:|Greater|))))))) 
+;;;      (return '(:|equal|)))))
+;;;                             
 ;;; (defun compare (x1) #'(lambda (x2) (compare-1-1 x1 x2)))
                                                         
 (defun left (a) (cons :|Left| a))

@@ -34,9 +34,9 @@
   (lisp::format t "~A" x)
   (lisp::format t "~%"))
 
-;;; (defconstant newline
-;;;   (format nil "~c" #\newline))
-;;; 
+(defconstant newline
+  (format nil "~c" #\newline))
+
 ;;; (defun newline (ignore)
 ;;;   (declare (ignore ignore))
 ;;;   newline)
