@@ -23,6 +23,8 @@ Prover qualifying spec
     case trm of
       | SortedTerm(t,_,_) ->
         mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, srt, t, prevArgs)
+      | Pi(srts,t,a) ->
+	Pi(srts,mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, srt, t, prevArgs),a)
       | _ ->
     % case arrowOpt(sp, srt) of
     %  | Some(dom, rng) ->
@@ -135,10 +137,16 @@ Prover qualifying spec
 
   def unLambdaDef (spc, srt, name, term) =
     let new_equality = mkUncurryEquality (spc, srt, name, term) in
+    let (srt_vars,new_equality,piPos) =
+        case new_equality of
+	  | Pi tp -> tp
+	  | _ -> ([],new_equality,noPos)
+    in
     let faVars       = freeVars new_equality in
     let new_equality = mkBind (Forall, faVars, new_equality) in
     let eqltyWithPos = withAnnT (new_equality, termAnn term) in
-    [eqltyWithPos]
+    [if srt_vars = [] then eqltyWithPos
+      else Pi(srt_vars,eqltyWithPos,piPos)]
 
 (*    if functionSort? (spc, srt)
       then

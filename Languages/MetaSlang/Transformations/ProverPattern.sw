@@ -188,6 +188,7 @@ Prover qualifying spec
       | IfThenElse(_) -> removePatternIfThenElse(spc, term)
       | SortedTerm(_) -> removePatternSortedTerm(term)
       | Seq(trmlst,_) -> removePatternSeq(spc, trmlst)
+      | Pi(_,t,_) -> removePatternTerm(spc, t)
 
 def removePatternCase(spc, term) =
   let caseTerm = caseTerm(term) in
