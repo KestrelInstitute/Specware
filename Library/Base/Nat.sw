@@ -52,7 +52,7 @@ Nat qualifying spec {
   def pred n = n - 1
 
   def div (n,m) =
-    if n < m then 0 else 1 + (n - m div m)
+    if n < m then 0 else 1 + ((n - m) div m)
 
   def succ n = n + 1
 
