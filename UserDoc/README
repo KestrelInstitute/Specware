@@ -1,8 +1,19 @@
-Specware 4.0 README
-===================
+Specware 4.0 README - November 2002
+===================================
 
+This file contains information about the differences between version
+4.0 of Specware and versions 3.x.  Please see the product website
 
+http://www.specware.org
 
+for updates and development news.  In addition, we would appreciate
+any feedback from users on the Specware language, environment,
+interface with the SNARK theorem prover, and other issues so that we
+may incorporate this information into the next release.  The product
+website will also provide a means for submitting this feedback.
+
+Please refer to the documentation included with the distribution
+package for details on using Specware 4.0.
 
 
 =============================================
