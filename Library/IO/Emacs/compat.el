@@ -50,12 +50,13 @@
 			 common-lisp-host
 			 common-lisp-image-file)
     (setq sw:common-lisp-buffer-name common-lisp-buffer-name)
-    (allegro common-lisp-buffer-name
-	     (concat common-lisp-image-name " "
-		     (if common-lisp-image-arguments
-			 common-lisp-image-arguments "")
-		     (if common-lisp-image-file
-			 (concat " -I " common-lisp-image-file) ""))))
+    (cmulisp common-lisp-buffer-name
+;	     (concat common-lisp-image-name " "
+;                     (if common-lisp-image-arguments
+;                         common-lisp-image-arguments "")
+;                     (if common-lisp-image-file
+;                         (concat " -I " common-lisp-image-file) ""))
+	     ))
   (defun extract-sexp ()
     "Delete the S-expression containing the S-expression that starts at point
      and replace it with the S-expression that starts at the point."
@@ -85,9 +86,10 @@
   (defun sw:find-unbalanced-parenthesis ()
     (interactive)
     (find-unbalanced-region-lisp (point-min) (point-max)))
-  (defvar *specware-buffer-name* "common-lisp")
+  (defvar *specware-buffer-name* "*specware*")
   (push 'specware-mode ilisp-modes)
   (defun inferior-lisp-running-p ()
-    (with-current-buffer *specware-buffer-name*
-      (not (equal comint-status " :exit")))))
+    (and (buffer-live-p *specware-buffer-name*)
+	 (with-current-buffer *specware-buffer-name*
+	   (not (equal comint-status " :exit"))))))
 
