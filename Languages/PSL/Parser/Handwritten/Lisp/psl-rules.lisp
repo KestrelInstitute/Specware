@@ -33,7 +33,7 @@
 
 (define-sw-parser-rule :SC-PSL-DEFINITION ()
   (:tuple "psl" "{" (1 (:optional :PROCSPEC-ELEMS)) "}")
-  (make-procspec 1 ':left-lc ':right-lc))
+  (make-procspec 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PROCSPEC-ELEMS ()
   (1 (:repeat :PROCSPEC-ELEM nil))
@@ -59,7 +59,7 @@
     "(" (:optional (2 :PSL-PROC-PARAMS)) ")"
     ":" (3 :SORT)
     (:optional (:tuple "{" (4 :PSL-COMMAND-SEQ) "}")))
-  (make-psl-proc-def 1 2 3 4 ':left-lc ':right-lc))
+  (make-psl-proc-def 1 2 3 4 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-PROC-PARAMS ()
   (1 (:repeat :PSL-PROC-PARAM ","))
@@ -86,46 +86,46 @@
 
 (define-sw-parser-rule :PSL-RELATION ()
   (:tuple "<|" (1 :EXPRESSION) "|>")
-  (make-psl-relation 1 ':left-lc ':right-lc))
+  (make-psl-relation 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :VARDECL ()
   (:tuple "op" (1 :QUALIFIABLE-OP-NAMES) ":" (2 :SORT-SCHEME))
-  (make-psl-var-decl 1 2 ':left-lc ':right-lc))
+  (make-psl-var-decl 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-IF ()
   (:tuple "if" "{" (1 (:repeat :PSL-ALTERNATIVE "|")) "}")
-  (make-psl-if (list . 1) ':left-lc ':right-lc))
+  (make-psl-if (list . 1) ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-DO ()
   (:tuple "do" "{" (1 (:repeat :PSL-ALTERNATIVE "|")) "}")
-  (make-psl-do (list . 1) ':left-lc ':right-lc))
+  (make-psl-do (list . 1) ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-CASE ()
   (:tuple "case" (1 :EXPRESSION) "{" (2 (:repeat :PSL-CASE-BRANCH "|")) "}")
-  (make-psl-case 1 (list . 2) ':left-lc ':right-lc))
+  (make-psl-case 1 (list . 2) ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-LET ()
   (:tuple "let"
     (1 :PROCSPEC-ELEMS)
     "in" "{"
     (2 :PSL-COMMAND-SEQ) "}")
-  (make-psl-let 1 2 ':left-lc ':right-lc))
+  (make-psl-let 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-SKIP ()
   (:tuple "skip")
-  (make-psl-skip ':left-lc ':right-lc))
+  (make-psl-skip ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-RETURN ()
   (:tuple "return" (1 :EXPRESSION))
-  (make-psl-return 1 ':left-lc ':right-lc))
+  (make-psl-return 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-ASSIGN ()
   (:tuple (1 :EXPRESSION) ":=" (2 :EXPRESSION))
-  (make-psl-assign 1 2 ':left-lc ':right-lc))
+  (make-psl-assign 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-EXEC ()
   (:tuple (1 :EXPRESSION))
-  (make-psl-exec 1 ':left-lc ':right-lc))
+  (make-psl-exec 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-COMMAND-SEQ ()
   (1 (:repeat :PSL-COMMAND ";"))
@@ -133,8 +133,8 @@
 
 (define-sw-parser-rule :PSL-ALTERNATIVE ()
   (:tuple (1 :EXPRESSION) "->" (2 :PSL-COMMAND-SEQ))
-  (make-psl-alternative 1 2 ':left-lc ':right-lc))
+  (make-psl-alternative 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-CASE-BRANCH ()
   (:tuple (1 :PATTERN) "->" (2 :PSL-COMMAND-SEQ))
-  (make-psl-case-branch 1 2 ':left-lc ':right-lc))
+  (make-psl-case-branch 1 2 ':left-lcb ':right-lcb))
