@@ -7,6 +7,7 @@ SpecCalc qualifying spec {
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import UnitId/Utilities                                % for uidToString, if used...
   import Spec/AccessSpec
+  import Spec/EquivPreds
 \end{spec}
 
 For morphisms, evaluate the domain and codomain terms, and check
@@ -288,6 +289,8 @@ Should we check to see if qid is in cod_map??
 	 (Some cod_info) <- return (findTheOp (cod_spec, cod_qid));
 	 (_,cod_sort,_)  <- return (unpackFirstOpDef cod_info);
 	 if equalSort? (translated_sort, cod_sort) then
+	   return ()
+	 else if equivSort? cod_spec (translated_sort, cod_sort) then
 	   return ()
 	 else
 	   let msg = "Inconsistent signature mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
