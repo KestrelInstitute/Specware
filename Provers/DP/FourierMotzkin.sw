@@ -124,10 +124,10 @@ FM qualifying spec
   def gcd(i, j) =
     let def gcdAux(i,j) =
     if i > j
-      then gcd(i rem j, j)
+      then gcd(i - j, j)
     else
       if i < j
-	then gcd(i, j rem i)
+	then gcd(i, j - i)
       else i in
     gcdAux(abs(i), abs(j))
 
