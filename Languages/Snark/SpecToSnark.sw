@@ -88,7 +88,13 @@ snark qualifying spec {
 	Lisp.list[declare_predicate,
 		  Lisp.quote(Lisp.symbol("SNARK", "embed?")), Lisp.nat(2)],
 	Lisp.list[declare_constant,
-		  Lisp.quote(Lisp.symbol("SNARK", "embed_Nil")), Lisp.symbol("KEYWORD","SORT"),  Lisp.quote(Lisp.symbol("SNARK","List"))]
+		  Lisp.quote(Lisp.symbol("SNARK", "embed_Nil")), Lisp.symbol("KEYWORD","SORT"),  Lisp.quote(Lisp.symbol("SNARK","List"))],
+	Lisp.list[declare_constant,
+		  Lisp.quote(Lisp.symbol("SNARK", "nil")), Lisp.symbol("KEYWORD","SORT"),  Lisp.quote(Lisp.symbol("SNARK","List"))],
+	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "length")), Lisp.nat(1),
+		   Lisp.symbol("KEYWORD","SORT"),
+		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "NUMBER"),
+					 Lisp.symbol("SNARK", "List")])]
 
        ]
 						    

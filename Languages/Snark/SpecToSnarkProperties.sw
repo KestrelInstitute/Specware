@@ -319,7 +319,8 @@ snark qualifying spec
   op snarkPropertiesFromProperty: Context * Spec * Property -> List LispCell
 
   def snarkPropertiesFromProperty(context, spc, prop as (ptype, name, tyvars, fmla)) =
-    let liftedFmlas = proverPattern(fmla) in
+    %let liftedFmlas = proverPattern(fmla) in
+    let liftedFmlas = [fmla] in
     map (fn (liftedFmla) -> let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], liftedFmla) in
                              Lisp.list [snark_assert, Lisp.quote(snarkFmla),
 					Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)])
@@ -342,7 +343,8 @@ snark qualifying spec
   op snarkConjectureRemovePattern: Context * Spec * Property -> LispCell
 
   def snarkConjectureRemovePattern(context, spc, prop as (ptype, name, tyvars, fmla)) =
-    let liftedFmlas = proverPattern(fmla) in
+    %let liftedFmlas = proverPattern(fmla) in
+    let liftedFmlas = [fmla] in
     let liftedConjecture = mkConj(liftedFmlas) in
     let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], liftedConjecture) in
       Lisp.list [snark_prove, Lisp.quote(snarkFmla),
