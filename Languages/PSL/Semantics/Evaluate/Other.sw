@@ -54,11 +54,10 @@ SpecCalc qualifying spec {
   def SpecCalc.evaluateOtherPrint oscarSpec pos = {
        base <- baseOscarSpec;
        oscarString <- OscarEnv.show oscarSpec (modeSpec base);
-       print (oscarString ^ "\n");
-       conv <- convertOscarSpec oscarSpec;
-       convString <- return (OscarStruct.show conv (modeSpec base));
-       print (oscarString ^ "\n structured \n" ^ convString)
-       % print (oscarString ^ "\n")
+       % conv <- convertOscarSpec oscarSpec;
+       % convString <- return (OscarStruct.show conv (modeSpec base));
+       % print (oscarString ^ "\n structured \n" ^ convString)
+       print (oscarString ^ "\n")
     }
 
   def SpecCalc.evaluateOtherSpecMorph
