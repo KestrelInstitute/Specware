@@ -639,6 +639,10 @@ MetaSlang qualifying spec {
      | (TwoNames  x1,       TwoNames  x2)       -> (x1.1 = x2.1) & (x1.2 = x2.2)
      | (OneName   x1,       TwoNames  x2)       -> x1.1 = x2.2
      | (TwoNames  x1,       OneName   x2)       -> x1.2 = x2.1
+     | (Op(Qualified x1,_), TwoNames  x2)       -> (x1.1 = x2.1) & (x1.2 = x2.2)
+     | (TwoNames  x1, Op(Qualified x2,_))       -> (x1.1 = x2.1) & (x1.2 = x2.2)
+     | (OneName   x1, Op(Qualified x2,_))       -> x1.1 = x2.2
+     | (Op(Qualified x1,_), OneName   x2)       -> x1.2 = x2.1
     
      | _ -> false
 
