@@ -303,16 +303,18 @@ The term in the component must evaluate to a morphism.
                        | Error   (String * String)  % error msg, problematic string
 \end{spec}
 
-The following are callable from the parser.
+The following are invoked from the parser:
 
 \begin{spec}
+
+  op mkTerm        : fa (a) (Term a)                                                        * a -> SpecFile a
+  op mkDecls       : fa (a) (List (Decl a))                                                 * a -> SpecFile a
 
   op mkPrint       : fa (a) (Term a)                                                        * a -> Term a
   op mkProve       : fa (a) ClaimName * Term a * ProverName * Assertions * ProverOptions    * a -> Term a
   op mkUnitId      : fa (a) RelativeUID                                                     * a -> Term a
   op mkSpec        : fa (a) (List (SpecElem a))                                             * a -> Term a
   op mkDiag        : fa (a) (List (DiagElem a))                                             * a -> Term a
-  op mkOther       : fa (a) (OtherTerm a)                                                   * a -> Term a
   op mkColimit     : fa (a) (Term a)                                                        * a -> Term a
   op mkSpecMorph   : fa (a) (Term a) * (Term a) * (List (SpecMorphRule a))                  * a -> Term a
   op mkDiagMorph   : fa (a) (Term a) * (Term a) * (List (DiagMorphRule a))                  * a -> Term a
@@ -327,7 +329,14 @@ The following are callable from the parser.
   op mkSubst       : fa (a) (Term a) * (Term a)                                             * a -> Term a
   op mkObligations : fa (a) (Term a)                                                        * a -> Term a
   op mkReduce      : fa (a) (ATerm a) * (Term a)                                            * a -> Term a
+  op mkOther       : fa (a) (OtherTerm a)                                                   * a -> Term a
 
+  %% SpecFile's    
+
+  def mkTerm        (term,                      pos) = (Term        term,                        pos)
+  def mkDecls       (decls,                     pos) = (Decls       decls,                       pos)
+
+  %% Term's
 
   def mkPrint       (term,                      pos) = (Print       term,                        pos)
   def mkProve       (claim_name, term, prover_name, assertions, prover_options, pos) 

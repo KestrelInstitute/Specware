@@ -103,12 +103,10 @@
 ;;; ========================================================================
 
 (defun make-sc-toplevel-term (sc-term l r)
-  (cons (cons :|Term| sc-term)
-        (make-pos l r)))
+  (speccalc::mkTerm-2 sc-term (make-pos l r)))
 
 (defun make-sc-toplevel-decls (sc-decls l r)
-  (cons (cons :|Decls| sc-decls)
-        (make-pos l r)))
+  (speccalc::mkDecls-2 sc-decls (make-pos l r)))
 
 (defun make-sc-decl (name sc-term l r)
   (declare (ignore l r))
@@ -119,7 +117,6 @@
 ;;; ========================================================================
 
 (defun make-sc-print (term l r)
-  ; (cons (cons :|Print| term) (make-pos l r))
   (SpecCalc::mkPrint-2 term (make-pos l r)))
 
 ;;; ========================================================================
@@ -127,30 +124,29 @@
 ;;; ========================================================================
 
 (defun make-sc-absolute-unit-id (sc-unit-id-path optional-hash-name l r)
-  (cons (cons :|UnitId|
-              (cons :|SpecPath_Relative|
-                    (cons
-                       (if (eq :unspecified optional-hash-name)
-                          (cons :|None| nil)
-                          (cons :|Some| optional-hash-name))
-                       sc-unit-id-path)))
-	    (make-pos l r)))
+  (let ((uid
+	 (cons :|SpecPath_Relative|
+	       (cons
+		(if (eq :unspecified optional-hash-name)
+		    (cons :|None| nil)
+		  (cons :|Some| optional-hash-name))
+		sc-unit-id-path))))
+    (speccalc::mkUnitId-2 uid (make-pos l r))))
 
 (defun make-sc-relative-unit-id (sc-unit-id-path optional-hash-name l r)
-  (cons (cons :|UnitId|
-              (cons :|UnitId_Relative|
-                    (cons
-                       (if (eq :unspecified optional-hash-name)
-                          (cons :|None| nil)
-                          (cons :|Some| optional-hash-name))
-                       sc-unit-id-path)))
-	    (make-pos l r)))
+  (let ((uid 
+	 (cons :|UnitId_Relative|
+	       (cons
+		(if (eq :unspecified optional-hash-name)
+		    (cons :|None| nil)
+		  (cons :|Some| optional-hash-name))
+		sc-unit-id-path))))
+    (speccalc::mkUnitId-2 uid (make-pos l r))))
 
 ;;;(defun make-sc-specpath-unit-id (sc-unit-id-path l r)
 ;;;  (cons (cons :|UnitId| (cons :|SpecPath| sc-unit-id-path))
 ;;;        (make-pos l r)))
 ;;;
-
 
 ;;; ========================================================================
 ;;;  SC-SPEC-DEFINITION
@@ -181,8 +177,7 @@
 (defun make-spec-definition (optional-qualifier declaration-sequence l r)
   :comment "A specification"
   (setq *varcounter* 0)
-  (let* ((spec_def (cons (cons :|Spec| declaration-sequence)
-                         (make-pos l r))))
+  (let* ((spec_def (speccalc::mkSpec-2 declaration-sequence (make-pos l r))))
     (if (eq :unspecified optional-qualifier)
         spec_def
       (make-sc-qualify optional-qualifier spec_def l r))))
@@ -494,12 +489,14 @@ If we want the precedence to be optional:
 
 (defun make-let-binding-term (recless-let-binding expression l r)
   (cons :|Let|
-        (vector (cons recless-let-binding nil) expression
+        (vector (cons recless-let-binding nil) 
+		expression
                 (make-pos l r))))
 
 (defun make-rec-let-binding-term (rec-let-binding-sequence expression l r)
   (cons :|LetRec|
-        (vector rec-let-binding-sequence expression
+        (vector rec-let-binding-sequence 
+		expression
                 (make-pos l r))))
 
 (defun make-recless-let-binding (pattern expression l r)
@@ -794,20 +791,17 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-let   (sc-decls sc-term l r)
-  (cons (cons :|Let| (cons sc-decls sc-term))
-        (make-pos l r)))
+  (speccalc::mkLet-3 sc-decls sc-term (make-pos l r)))
 
 (defun make-sc-where (sc-decls sc-term l r)
-  (cons (cons :|Where| (cons sc-decls sc-term))
-        (make-pos l r)))
+  (speccalc::mkWhere-3 sc-decls sc-term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-QUALIFY
 ;;; ========================================================================
 
 (defun make-sc-qualify (qualifer sc-term l r)
-  (cons (cons :|Qualify| (cons sc-term qualifer))
-        (make-pos l r)))
+  (speccalc::mkQualify-3 sc-term qualifer (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-HIDE
@@ -815,12 +809,10 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-hide (name-list sc-term l r)
-  (cons (cons :|Hide| (cons name-list sc-term))
-	(make-pos l r)))
+  (speccalc::mkHide-3 name-list sc-term (make-pos l r)))
 
 (defun make-sc-export (name-list sc-term l r)
-  (cons (cons :|Export| (cons name-list sc-term))
-	(make-pos l r)))
+  (speccalc::mkExport-3 name-list sc-term (make-pos l r)))
 
 (defun make-sc-sort-ref      (sort-ref             l r)  
   (declare (ignore l r))
@@ -851,8 +843,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-translate (sc-term sc-translate-expr l r)
-  (cons (cons :|Translate| (cons sc-term sc-translate-expr))
-        (make-pos l r)))
+  (speccalc::mkTranslate-3 sc-term sc-translate-expr (make-pos l r)))
 
 (defun make-sc-translate-expr (rules l r)
   (cons rules
@@ -889,8 +880,7 @@ If we want the precedence to be optional:
 
 (defun make-sc-spec-morph (dom-sc-term cod-sc-term rules l r)
   ;; (let ((rules (if (eq rules :unspecified) nil rules))) ...)
-  (cons (cons :|SpecMorph| (vector dom-sc-term cod-sc-term rules))
-	    (make-pos l r)))
+  (speccalc::mkSpecMorph-4 dom-sc-term cod-sc-term rules (make-pos l r)))
 
 ;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
 ;;;  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
@@ -917,8 +907,7 @@ If we want the precedence to be optional:
 
 (defun make-sc-diag (sc-diag-elems l r)
   :comment "A diagram"
-  (cons (cons :|Diag| sc-diag-elems)
-        (make-pos l r)))
+  (speccalc::mkDiag-2 sc-diag-elems (make-pos l r)))
 
 (defun make-sc-diag-node (node-name sc-term l r)
   (cons (cons :|Node| (cons node-name sc-term))
@@ -933,18 +922,14 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-colimit (diag l r)
-  ; (cons (cons :|Colimit| diag) (make-pos l r))
-  (speccalc::mkColimit-2 diag (make-pos l r))
-  )
+  (speccalc::mkColimit-2 diag (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-SUBSTITUTE
 ;;; ========================================================================
 
 (defun make-sc-substitute (spec-term morph-term l r)
-  ; (cons (cons :|Subst| (cons spec-term morph-term)) (make-pos l r))
-  (speccalc::mkSubst-3 spec-term morph-term (make-pos l r))
-  )
+  (speccalc::mkSubst-3 spec-term morph-term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH
@@ -965,19 +950,17 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-generate (target-language sc-term optFilNm l r)
-  (cons (cons :|Generate| (vector target-language sc-term
-                                  (if (equal optFilNm :unspecified)
-                                      '(:|None|)
-				    (let* (
-					   (fname (if (stringp optFilNm)
-						      optFilNm
-						    (string optFilNm)
-						    )
-						  )
-					   )
-				       (cons :|Some| fname)
-				       ))))
-        (make-pos l r)))
+  (let ((opt-filename
+	 (if (equal optFilNm :unspecified)
+	     '(:|None|)
+	   (let ((fname (if (stringp optFilNm)
+			    optFilNm
+			  (string optFilNm))))
+	     (cons :|Some| fname)))))
+    (speccalc::mkGenerate-4 target-language 
+			    sc-term
+			    opt-filename
+			    (make-pos l r))))
 
 
 ;; ========================================================================
@@ -985,9 +968,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-obligations (term l r)
-  ; (cons (cons :|Obligations| term) (make-pos l r))
-  (speccalc::mkObligations-2 term (make-pos l r))
-  )
+  (speccalc::mkObligations-2 term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-PROVE
@@ -997,8 +978,7 @@ If we want the precedence to be optional:
   (let ((prover-name (if (eq prover-name :unspecified) "Snark" prover-name))
 	(assertions  (if (eq assertions  :unspecified) (cons :|All| nil) (cons :|Explicit| assertions)))
 	(options     (if (eq options     :unspecified) (cons :|OptionString| nil) options)))
-    (cons (cons :|Prove| (vector claim-name spec-term prover-name assertions options))
-	  (make-pos l r))))
+    (speccalc::mkProve-6 claim-name spec-term prover-name assertions options (make-pos l r))))
 
 (defun make-sc-prover-options (name_or_string)
   (cond ((stringp name_or_string) 
@@ -1010,16 +990,12 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-reduce (ms-term sc-term l r)
-  ;; (cons (cons :|Reduce| (cons ms-term sc-term)) (make-pos l r))
-  (speccalc::mkReduce-3 ms-term sc-term (make-pos l r))
-  )
+  (speccalc::mkReduce-3 ms-term sc-term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-EXTEND
 ;;; ========================================================================
 
 (defun make-sc-extend (term l r)
-  ; (cons (cons :|ExtendMorph| term) (make-pos l r))
-  (speccalc::mkExtendMorph-2 term (make-pos l r))
-  )
+  (speccalc::mkExtendMorph-2 term (make-pos l r)))
 
