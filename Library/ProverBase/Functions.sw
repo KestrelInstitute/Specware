@@ -1,20 +1,8 @@
 Functions qualifying spec
 
-  type Function(a,b) = a -> b
-  type Injection(a,b)  = (Function(a,b) | injective?)
-  type Surjection(a,b) = (Function(a,b) | surjective?)
-  type Bijection(a,b)  = (Function(a,b) | bijective?)
+  axiom id_def is fa (x) id x = x
 
-  op id          : [a] Function(a,a)
-  op o infixl 24 : [a,b,c] Function(b,c) * Function(a,b) -> Function(a,c)
-  op injective?  : [a,b] Function(a,b) -> Boolean
-  op surjective? : [a,b] Function(a,b) -> Boolean
-  op bijective?  : [a,b] Function(a,b) -> Boolean
-  op inverse     : [a,b] Bijection(a,b) -> Bijection(b,a)
-
-  def id x = x
-
-  def o (f,g) x = f(g x)
+  axiom compose_def is fa (f, g, x) (o(f, g)) x = f(g(x))
 
   axiom injective?_def is [a,b]
     fa (f : a -> b) injective? f <=> (fa (x:a,y:a) f x = f y => x = y)

@@ -193,7 +193,7 @@ Prover qualifying spec
 		 let unTupleAxioms = [] in
 		 %let _ = if true && id = "p" then writeLine ("initialFmla: "^printTerm initialFmla) else () in
 		 %let _ = if true && id = "length_Object$1$_$Object$2" then debug ("initialFmla: "^printTerm initialFmla) else () in
-		 let liftedFmlas = proverPattern initialFmla in
+		 let liftedFmlas = proverPattern(spc, initialFmla) in
 		 %let simplifiedLiftedFmlas = map (fn fmla -> simplify (spc, fmla)) liftedFmlas in
 		 %let _ = if id = "p" then map (fn lf -> writeLine ("LiftedAxioms: " ^ printTerm lf)) liftedFmlas else [] in
 		 let defAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) liftedFmlas in
@@ -215,7 +215,7 @@ Prover qualifying spec
       let pos = sortAnn srt in
       let qid = Qualified (q, id) in
       let subTypeFmla = opSubsortAxiom (spc, qid, srt) in
-      let liftedFmlas = proverPattern subTypeFmla in
+      let liftedFmlas = proverPattern(spc, subTypeFmla) in
       let subTypeAxioms =
           map (fn (fmla : MS.Term) -> 
 	       (Axiom, 

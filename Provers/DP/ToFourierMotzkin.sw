@@ -396,7 +396,7 @@ MSToFM qualifying spec
       | Fun ((Bool true), Boolean(_), _) -> (fmTrue, context)
       | Fun ((Bool false), Boolean(_), _) -> (fmFalse, context)
       | Fun (Nat (n) ,_,_) -> (Poly (mkConstantPoly(n)), context)
-      | Fun(f, srt, _) -> toFMTermConstant(context, sp, term, f)
+      | Fun(f, srt, _) -> toFMTermConstant(context, term, f)
       | Var (v, _) -> toFMVar(context, sp, v)
       | _ -> let (newVar, newContext) = toNewFMVar(term, context) in (newVar, newContext) in
     let map = FMMap.update(newContext.map, term, resTerm) in
@@ -424,14 +424,9 @@ MSToFM qualifying spec
 	  | UnSupported -> toNewFMVar(term, cntxt)
 	  | _ -> (reducedTerm, cntxt)
     else 
-      let (resPoly, context) =
-        case args of 
-	  | [] -> toFMTermConstant(cntxt, spc, term, f)
-	  | _ -> let (newVar, newContext) = toNewFMVar(term, cntxt) in (newVar, newContext) in
-      if termSort(term) = boolSort
-	then (fmEquals(resPoly, fmTrue), context)
-      else (resPoly, context)
-
+      case args of 
+	| [] -> toFMTermConstant(cntxt, term, f)
+	| _ -> let (newVar, newContext) = toNewFMVar(term, cntxt) in (newVar, newContext)
 
   op toFMVar:  Context * Spec * MS.Var -> FMTerm * Context
   def toFMVar (context, spc, var as (v, s)) =
@@ -442,8 +437,8 @@ MSToFM qualifying spec
     let fmVarList = map (fn (v, s) -> Poly (mkPoly1(mkMonom(1, v)))) vars in
       fmVarList
 
-  op toFMTermConstant: Context * Spec * MS.Term * Fun -> FMTerm * Context
-  def toFMTermConstant(cntxt, spc, term, f) =
+  op toFMTermConstant: Context * MS.Term * Fun -> FMTerm * Context
+  def toFMTermConstant(cntxt, term, f) =
     let resTerm = 
     case f of
       | Op (qid, _) -> Poly (mkPoly1(mkMonom(1, printQualifiedId(qid)^"$C")))
@@ -524,14 +519,14 @@ MSToFM qualifying spec
     case tm of
       | Constant coef -> mkInt(coef)
       | Monom (coef, var) ->
-        if coef = 1 then fromFMTermVar(spc, var, context)
+        if coef = 1 then fromFMTermVar(var, context)
 	else
 	  let coefTerm = mkInt(coef) in
-	  let varTerm = fromFMTermVar(spc, var, context) in
+	  let varTerm = fromFMTermVar(var, context) in
 	  mkMult(coefTerm, varTerm)
 
-op fromFMTermVar: Spec * FM.Var * Context -> MS.Term
-  def fromFMTermVar(spc, var, context) =
+op fromFMTermVar: FM.Var * Context -> MS.Term
+  def fromFMTermVar(var, context) =
     let revMap = context.revMap in
     case FMMap.apply(revMap, Poly (mkPoly1(mkMonom(1, var)))) of
       | Some MSTerm -> MSTerm

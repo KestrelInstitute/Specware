@@ -575,6 +575,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 		     | Arrow (_, srt, _) -> srt
 		     | _ -> srt)
       in
+      let cpsrt = unfoldBeforeCoProduct(spc, cpsrt) in
       (case cpsrt of
 	| Base (sqid, insttv as _::_, _) ->
           %% constructor Cons could become Cons_Nat for List (Nat), etc.
@@ -591,6 +592,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 		     | Arrow (srt, _, _) -> srt
 		     | _ -> srt)
       in
+      let cpsrt = unfoldBeforeCoProduct(spc, cpsrt) in
       %let _ = writeLine("Constuctor pred sort: "^printSort(cpsrt)) in
       (case cpsrt of
 	| Base (sqid, insttv as _::_, _) ->

@@ -69,8 +69,8 @@ snark qualifying spec
   def snarkPBaseSort(spc, s:Sort, rng?):LispCell = 
     let s = unfoldBaseUnInterp(spc, s) in
 	          case s of
-		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-		    | Base(Qualified("Nat","PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+		    %| Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+		    %| Base(Qualified("Nat","PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL")
 		    %| Base(Qualified(qual,id),_,_) -> let res = findPBuiltInSort(spc, Qualified(qual,id), rng?) in
@@ -244,8 +244,7 @@ snark qualifying spec
 		 Lisp.cons(Lisp.symbol("SNARK","embed?"), Lisp.list[Lisp.symbol("SNARK",id),snarkArg])
        | Choose -> 
 	      (case args of
-		| [f, a] -> let tm = mkApply(f, a) in
-		            let simpTm = simplifyOne sp tm in
+		| [f, a] -> let tm = simplifiedApply(f, a, sp) in
 			    mkSnarkFmla(context, sp, dpn, vars, [], tm)
 	        | _ -> mkSnarkFmla(context, sp, dpn, vars, [], arg))
        | Not ->
@@ -386,8 +385,7 @@ snark qualifying spec
       | Restrict -> let [tm] = args in mkSnarkTerm(context, sp, dpn, vars, tm)
       | Choose -> 
 	      (case args of
-		| [f, a] -> let tm = mkApply(f, a) in
-		            let simpTm = simplify sp tm in
+		| [f, a] -> let tm = simplifiedApply(f, a, sp) in
 			    mkSnarkTerm(context, sp, dpn, vars, tm)
 	        | _ -> mkSnarkTerm(context, sp, dpn, vars, arg))
       | Quotient -> mkSnarkTerm(context, sp, dpn, vars, arg)
