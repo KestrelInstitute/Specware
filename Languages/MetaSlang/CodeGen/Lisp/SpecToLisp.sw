@@ -542,10 +542,30 @@ def mkLTerm (sp,dpn,vars,term : Term) =
            (case term
               of Apply (term_,terms_) -> 
                  countOccurrence2(x,count,Cons(term_,terms_ @ terms))
-               | Lambda(vars,body) -> 2 (* give up *)
+
+               | Lambda(vars,body) -> 
+		 %% Was: 2 (* give up *) 
+		 %% Never do a real subsitution, but if there are no 
+		 %% occurences, return count of 0 to trigger vacuous
+		 %% subsitution that allows us to drop unused arg.
+		 %% This hack has the desired effect, since even one
+		 %% occurrence will return a count of 2, inhibiting 
+		 %% substitution:
+                 2 * countOccurrence2(x,count,cons(body,terms))
+
                | Let(vars,terms1,body) -> 
                  countOccurrence2(x,count,cons(body,terms1 @ terms))
-               | Letrec(vars,terms1,body) -> 2 (* give up *)
+
+               | Letrec(vars,terms1,body) -> 
+		 %% Was: 2 (* give up *)
+		 %% Never do a real subsitution, but if there are no 
+		 %% occurences, return count of 0 to trigger vacuous
+		 %% subsitution that allows us to drop unused arg.
+		 %% This hack has the desired effect, since even one
+		 %% occurrence will return a count of 2, inhibiting 
+		 %% substitution:
+                 2 * countOccurrence2(x,count,cons(body,terms1 @ terms))
+
                | If(t1,t2,t3) -> countOccurrence2(x,count,[t1,t2,t3] @ terms)
                | IfThen(t1,t2) -> countOccurrence2(x,count,[t1,t2] @ terms)
                | Seq terms1 ->  countOccurrence2(x,count,terms1 @ terms)
@@ -721,30 +741,39 @@ def mkLTerm (sp,dpn,vars,term : Term) =
 %
 % Count along multiplicity of a variable in the let bound arguments.
 % This prevents capture in sequential substitution.
+% ?? Example please...
 %
            let terms = cons(body,args)          in
            let xNumArgs = 
                List.map (fn(x,arg) ->
                            if simpleTerm arg then
+			     %% If arg is a constant, why do we not substitute if
+			     %%  there are 2 or more occurrences of the var among 
+			     %%  the args (ignoring the body)?
+                             %% Why not always substitute? (I.e. return count of 0 or 1)
+			     %% Is this related to the capture issue above?
 			     (x, countOccurrence2(x,0,args),  arg)
                            else if pure arg then
 			     (x, countOccurrence2(x,0,terms), arg)
                            else 
+			     %% arg has possible side effects, 
+			     %% so leave it in place as arg to let var,
+			     %% and don't substitute into body
 			     (x, 2,                           arg)) 
                          xArgs                              
            in
            let (xs,args,body)  = 
                 foldr (fn ((x,num,arg),(xs,args,body)) -> 
-                                % if num = 0, then presumably x and arg
-                                % both vanish from result
-                                if num < 2 then
-				  (xs, 
-				   args, 
-				   substitute (x,arg) body)
-                                else 
-				  (cons(x,xs),
-				   cons(arg,args),
-				   body)) 
+		       %% If num = 0, then x and arg will vanish from result.
+		       %% This happens only if arg is pure or simpleTerm.
+		       if num < 2 then
+			 (xs, 
+			  args, 
+			  substitute (x,arg) body)
+		       else 
+			 (cons(x,xs),
+			  cons(arg,args),
+			  body)) 
 		      ([],[],body) 
 		      xNumArgs
            in
