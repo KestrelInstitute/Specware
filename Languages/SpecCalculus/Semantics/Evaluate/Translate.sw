@@ -79,6 +79,10 @@ Note: The code below does not yet match the documentation above, but should.
     {
      translation_maps <- makeTranslationMaps require_monic? spc expr;
      raise_any_pending_exceptions;
+     % reconstructed_expr <- reconstructTranslationExpr translation_maps;
+     % print ("\n========\n");
+     % print (showTerm (Translate ((Quote (Spec spc), noPos), expr), noPos));
+     % print ("\n========\n");
      %%
      %% translation_maps is now an explicit map for which each name in its 
      %% domain refers to a particular type or op in the domain spec.  
@@ -124,7 +128,8 @@ Note: The code below does not yet match the documentation above, but should.
     } 
 
   sort TranslationMap  = AQualifierMap (QualifiedId * Aliases) 
-  sort TranslationMaps = TranslationMap * TranslationMap
+  sort TranslationMaps = {op_id_map:   TranslationMap,
+			  sort_id_map: TranslationMap}
 
   op  makeTranslationMaps : Boolean -> Spec -> TranslateExpr Position -> SpecCalc.Env TranslationMaps
   def makeTranslationMaps require_monic? dom_spec (translation_rules, position) =
@@ -531,7 +536,8 @@ Note: The code below does not yet match the documentation above, but should.
        when require_monic?
         {complain_if_type_collisions_with_priors (sorts, sort_map);
 	 complain_if_op_collisions_with_priors   (ops, op_map)};
-       return (op_map, sort_map)
+       return {op_id_map   = op_map, 
+	       sort_id_map = sort_map}
        }
        
 
@@ -594,7 +600,7 @@ Note: The code below does not yet match the documentation above, but should.
   %% some situations, those errors should be raised while TranslationMaps is being 
   %% created, not here.
   op  auxTranslateSpec : Spec -> TranslationMaps -> Position -> SpecCalc.Env Spec
-  def auxTranslateSpec spc (op_id_map, sort_id_map) position =
+  def auxTranslateSpec spc {op_id_map, sort_id_map} position =
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
     %% TODO: ?? Change UnQualified to new_q in all qualified names ??
     let
