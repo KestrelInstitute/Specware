@@ -720,13 +720,19 @@ If we want the precedence to be optional:
 ;;;  SC-EXPORT
 ;;; ========================================================================
 
-(defun make-sc-hide (sc-name-expr sc-term l r)
-  (cons (cons :|Hide| (cons sc-name-expr sc-term))
-        (make-pos l r)))
+(defun make-sc-hide (opt-name-list sc-term l r)
+  (let* ((name-list (if (eq :unspecified opt-name-list)
+                        nil
+                        opt-name-list)))
+      (cons (cons :|Hide| (cons name-list sc-term))
+            (make-pos l r))))
 
-(defun make-sc-export (sc-name-expr sc-term l r)
-  (cons (cons :|Export| (cons sc-name-expr sc-term))
-        (make-pos l r)))
+(defun make-sc-export (opt-name-list sc-term l r)
+  (let* ((name-list (if (eq :unspecified opt-name-list)
+                        nil
+                        opt-name-list)))
+      (cons (cons :|Export| (cons name-list sc-term))
+            (make-pos l r))))
 
 ;;; ========================================================================
 ;;;  SC-TRANSLATE
@@ -752,9 +758,13 @@ If we want the precedence to be optional:
 ;;;  SC-SPEC-MORPH
 ;;; ========================================================================
 
-(defun make-sc-spec-morph (dom-sc-term cod-sc-term sc-spec-morph-elems l r)
-  (cons (cons :|SpecMorph| (vector dom-sc-term cod-sc-term sc-spec-morph-elems))
-        (make-pos l r)))
+(defun make-sc-spec-morph (dom-sc-term cod-sc-term opt-sc-spec-morph-elems l r)
+  (let* ((sc-spec-morph-elems (if (eq :unspecified opt-sc-spec-morph-elems)
+                                  nil
+                                  opt-sc-spec-morph-elems)))
+     (cons (cons :|SpecMorph|
+                 (vector dom-sc-term cod-sc-term sc-spec-morph-elems))
+           (make-pos l r))))
 
 (defun make-sc-spec-morph-elem (qualifiable-name-dom qualifiable-name-cod l r)
   (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))

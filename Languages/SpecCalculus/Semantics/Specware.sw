@@ -1,4 +1,4 @@
-\section{Specware toplevel read/eval/print loop}
+\section{Specware toplevel}
 
 Synchronized with r1.11 SW4/Languages/SpecCalculus/Semantics/Specware.sl
 
@@ -172,10 +172,12 @@ enter the Lisp debugger as this indicates an internal (Specware) error.
                "Syntax error: "
              ^ msg
          | URINotFound (position,uri) ->
-               "No such URI: "
+               "Could not find unit: "
              ^ (showRelativeURI uri)
-             ^ " referenced from "
-             ^ (showPosition position)
+             ^ (if position = pos0 then
+                  ""
+                else
+                  (" referenced from " ^ (showPosition position)))
          | TypeCheck (position,str) ->
                "Type error: "
              ^ str

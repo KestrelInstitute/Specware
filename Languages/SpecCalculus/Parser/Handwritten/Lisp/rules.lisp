@@ -1196,19 +1196,24 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-HIDE ()
-  (:tuple "hide" (1 :SC-NAME-EXPR) "in" (2 :SC-TERM))
+  (:tuple "hide" "{" (:optional :QUALIFIABLE-NAME-LIST) "}" "in" (2 :SC-TERM))
   (make-sc-hide 1 2 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :SC-EXPORT ()
-  (:tuple "export" (1 :SC-NAME-EXPR) "from" (2 :SC-TERM))
+  (:tuple "export" "{" (:optional :QUALIFIABLE-NAME-LIST) "}" "from" (2 :SC-TERM))
   (make-sc-export 1 2 ':left-lc ':right-lc))
 
 ;; Right now we simply list the names to hide or export. Later
 ;; we might provide some sort of expressions or patterns
 ;; that match sets of identifiers.
-(define-sw-parser-rule :SC-NAME-EXPR ()
-  (:tuple "{" (1 (:repeat :QUALIFIABLE-NAME ",")) "}")
-  (list . 1))
+;; (define-sw-parser-rule :SC-NAME-EXPR ()
+;;   (:tuple "{" (1 (:optional :QUALIFIABLE-NAME-LIST)) "}")
+;; (list . 1))
+
+(define-sw-parser-rule :QUALIFIABLE-NAME-LIST ()
+  (1 (:repeat :QUALIFIABLE-NAME ","))
+  (list . 1)
+)
 
 ;;; ========================================================================
 ;;;  SC-TRANSLATE
@@ -1249,9 +1254,13 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-SPEC-MORPH ()
-  (:tuple "morphism" (2 :SC-TERM) "->" (3 :SC-TERM)
-	  "{" (1 (:repeat :SC-SPEC-MORPH-ELEM ",")) "}")
-  (make-sc-spec-morph 2 3 (list . 1) ':left-lc ':right-lc))
+  (:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM)
+	  "{" (3 (:optional :SC-SPEC-MORPH-ELEM-LIST)) "}")
+  (make-sc-spec-morph 1 2 3 ':left-lc ':right-lc))
+
+(define-sw-parser-rule :SC-SPEC-MORPH-ELEM-LIST ()
+  (1 (:repeat :SC-SPEC-MORPH-ELEM ","))
+  (list . 1))
 
 (define-sw-parser-rule :SC-SPEC-MORPH-ELEM ()
   (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))

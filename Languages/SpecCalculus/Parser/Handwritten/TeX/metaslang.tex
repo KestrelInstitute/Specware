@@ -490,15 +490,16 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {SC\char45COLIMIT} \> $::=$ \> \>    \grterminal {colimit}\  \grnonterminal {SC\char45TERM}
 \\
-\\ \grnonterminal {SC\char45SPEC\char45MORPH} \> $::=$ \> \>   \grterminal {morphism}  \grnonterminal {SC\char45TERM}  \grterminal {\char45\char62}  \grnonterminal {SC\char45TERM}\\  \>  \>  \>\ \ \ \ \ \ \ \ \ \ \ \   \grterminal {\{}  \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} 
-\\  \>  \>  \> \ \ \ \ \ \ \ \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \bnfrepeatclose  \grterminal {\}}
+\\ \grnonterminal {SC\char45SPEC\char45MORPH} \> $::=$ \> \>   \grterminal {morphism}  \grnonterminal {SC\char45TERM}  \grterminal {\char45\char62}  \grnonterminal {SC\char45TERM}\\  \>  \>  \>\ \ \ \ \ \ \ \ \ \ \ \   \grterminal {\{}\\  \>  \>  \>\ \ \ \ \ \ \ \ \ \ \ \   \bnfoptionalopen \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM\char45LIST} \bnfoptionalclose  \grterminal {\}}
+\\
+\\ \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM\char45LIST} \> $::=$ \> \> \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} 
+\\  \>  \>  \>  \bnfrepeatopen \grterminal {\char44} \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \bnfrepeatclose
 \\
 \\ \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \> $::=$ \> \>   \grnonterminal {QUALIFIABLE\char45OP\char45NAME}  \grnonterminal {MAPS\char45TO}\\  \>  \>  \>  \grnonterminal {QUALIFIABLE\char45OP\char45NAME}
 \\
-\\ \grnonterminal {SC\char45HIDE} \> $::=$ \> \>    \grterminal {hide}\  \grnonterminal {SC\char45NAME\char45EXPR}\  \grterminal {in}\  \grnonterminal {SC\char45TERM}
+\\ \grnonterminal {SC\char45HIDE} \> $::=$ \> \>   \grterminal {hide}  \grterminal {\{}  \bnfoptionalopen \grnonterminal {QUALIFIABLE\char45NAME\char45LIST} \bnfoptionalclose  \grterminal {\}}\\  \>  \>  \>\ \   \grterminal {in}  \grnonterminal {SC\char45TERM}
 \\
-\\ \grnonterminal {SC\char45NAME\char45EXPR} \> $::=$ \> \>   \grterminal {\{}  \grnonterminal {QUALIFIABLE\char45NAME} 
-\\  \>  \>  \> \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {QUALIFIABLE\char45NAME} \bnfrepeatclose  \grterminal {\}}
+\\ \grnonterminal {QUALIFIABLE\char45NAME\char45LIST} \> $::=$ \> \> \grnonterminal {QUALIFIABLE\char45NAME} \bnfrepeatopen \grterminal {\char44} \grnonterminal {QUALIFIABLE\char45NAME} \bnfrepeatclose
 \\
 \\ \grnonterminal {QUALIFIABLE\char45NAME} \> $::=$ \> \>   \grnonterminal {UNQUALIFIED\char45NAME} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {QUALIFIED\char45NAME}
@@ -507,7 +508,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {QUALIFIED\char45NAME} \> $::=$ \> \>    \grnonterminal {QUALIFIER}\  \grterminal {\char46}\  \grnonterminal {NAME}
 \\
-\\ \grnonterminal {SC\char45EXPORT} \> $::=$ \> \>    \grterminal {export}\  \grnonterminal {SC\char45NAME\char45EXPR}\  \grterminal {from}\  \grnonterminal {SC\char45TERM}
+\\ \grnonterminal {SC\char45EXPORT} \> $::=$ \> \>   \grterminal {export}  \grterminal {\{}  \bnfoptionalopen \grnonterminal {QUALIFIABLE\char45NAME\char45LIST} \bnfoptionalclose  \grterminal {\}}\\  \>  \>  \>\ \   \grterminal {from}  \grnonterminal {SC\char45TERM}
 \\
 \\ \grnonterminal {SC\char45GENERATE} \> $::=$ \> \>    \grterminal {generate}\  \grnonterminal {NAME}\  \grnonterminal {SC\char45TERM}\  \bnfoptionalopen    \grterminal {in}\  \grnonterminal {STRING} \bnfoptionalclose
 \\

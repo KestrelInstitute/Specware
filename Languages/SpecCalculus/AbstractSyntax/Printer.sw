@@ -30,23 +30,39 @@ SpecCalc qualifying spec {
   op showURI : URI -> String
   def showURI uri = ppFormat (ppURI uri)
 
+%   op ppURI : URI -> Doc
+%   def ppURI {path,hashSuffix}  = 
+%     let def ppElem elem =
+%       ppConcat [
+%           ppString "\"",
+%           ppString elem,
+%           ppString "\""
+%         ]
+%     in
+%       ppConcat [
+%           ppString "[",
+%           ppSep (ppString " ") (map ppElem path),
+%           (case hashSuffix of
+%             | None -> ppNil
+%             | Some suffix -> ppString (" # " ^ suffix)),
+%           ppString "]"
+%         ]
+
   op ppURI : URI -> Doc
-  def ppURI {path,hashSuffix}  = 
-    let def ppElem elem =
-      ppConcat [
-          ppString "\"",
-          ppString elem,
-          ppString "\""
-        ]
-    in
-      ppConcat [
-          ppString "[",
-          ppSep (ppString " ") (map ppElem path),
-          (case hashSuffix of
-            | None -> ppNil
-            | Some suffix -> ppString (" # " ^ suffix)),
-          ppString "]"
-        ]
+  def ppURI uri = ppAppend (ppString "/") (ppURIlocal uri)
+
+  op ppURIlocal : URI -> Doc
+  def ppURIlocal {path,hashSuffix} =
+    let prefix = ppSep (ppString "/") (map ppString path) in
+    case hashSuffix of
+      | None -> prefix
+      | Some suffix -> ppAppend prefix (ppString ("#" ^ suffix))
+
+  op ppRelativeURI : RelativeURI -> Doc
+  def ppRelativeURI relURI =
+    case relURI of
+        | SpecPath_Relative uri -> ppAppend (ppString "/") (ppURIlocal uri)
+        | URI_Relative uri -> ppURIlocal uri
 
   op showRelativeURI : RelativeURI -> String
   def showRelativeURI uri = ppFormat (ppRelativeURI uri)
@@ -199,12 +215,6 @@ SpecCalc qualifying spec {
             ppString " |-> ",
             ppTerm term
           ]
-
-  op ppRelativeURI : RelativeURI -> Doc
-  def ppRelativeURI relURI =
-    case relURI of
-        | SpecPath_Relative uri -> ppAppend (ppString "/") (ppURI uri)
-        | URI_Relative uri -> ppURI uri
 
   op ppDecls : fa (a) List (Decl a) -> Doc
   def ppDecls decls =
