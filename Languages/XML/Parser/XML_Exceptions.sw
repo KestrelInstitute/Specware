@@ -2,16 +2,21 @@ XML qualifying spec
 
   import ../Utilities/XML_Base
   import ../Utilities/XML_Unicode
+  import EntityMaps
 
   sort State = {exceptions : List XML_Exception, % for deferred processing
 		messages   : List String,
 		utext      : UString,
+		ge_defs    : GE_Map,
+		pe_defs    : PE_Map,
 		context    : Processing_Environment}
 
   def initialState (uchars : UChars) : State =
     {exceptions = [], 
      messages   = [], 
      utext      = uchars,
+     ge_defs    = empty_map,
+     pe_defs    = empty_map,
      context    = default_processing_environment}
 
   sort Processing_Environment = {tracing? : Boolean} % could add verbosity, etc.

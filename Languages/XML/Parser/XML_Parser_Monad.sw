@@ -62,6 +62,8 @@ XML qualifying spec
         | (Exception x, newState) -> handler x {exceptions = cons (x, newState.exceptions),
 						messages   = newState.messages,
 						utext      = newState.utext,
+						ge_defs    = newState.ge_defs,
+						pe_defs    = newState.pe_defs,
 						context    = newState.context})
 
 
@@ -103,24 +105,28 @@ XML qualifying spec
   %% could have the first half of an element, or part of an
   %% attribute value, etc.
    op define_parameter_entity : Name * UChars -> Env ()
-  def define_parameter_entity (name, value) = 
+  def define_parameter_entity (name, uchars) = 
     fn state ->
      (Ok (),
       {exceptions = state.exceptions,
        messages   = state.messages,
        utext      = state.utext,
+       ge_defs    = state.ge_defs,
+       pe_defs    = update (state.pe_defs, name, uchars),
        context    = state.context})
 
   %% The replacement text for general entities must match the
   %% production for "content", so we can store the result of
   %% such a parse.
    op define_general_entity : Name * Content -> Env ()
-  def define_general_entity (name, value) = 
+  def define_general_entity (name, content) = 
     fn state ->
      (Ok (),
       {exceptions = state.exceptions,
        messages   = state.messages,
        utext      = state.utext,
+       ge_defs    = update (state.ge_defs, name, content),
+       pe_defs    = state.pe_defs,
        context    = state.context})
 
   %% --------------------------------------------------------------------------------
@@ -143,6 +149,8 @@ XML qualifying spec
       {exceptions = state.exceptions,
        messages   = state.messages,
        utext      = state.utext,
+       ge_defs    = state.ge_defs,
+       pe_defs    = state.pe_defs,
        context    = {tracing? = true}})
 
    op stop_tracing  : () -> Env ()
@@ -152,6 +160,8 @@ XML qualifying spec
        {exceptions = state.exceptions,
 	messages   = state.messages,
 	utext      = state.utext,
+	ge_defs    = state.ge_defs,
+	pe_defs    = state.pe_defs,
 	context    = {tracing? = false}})
 
    op trace : String -> Env ()
@@ -180,6 +190,8 @@ XML qualifying spec
 	{exceptions = cons (except, state.exceptions),
 	 messages   = state.messages,
 	 utext      = state.utext,
+	 ge_defs    = state.ge_defs,
+	 pe_defs    = state.pe_defs,
 	 context    = state.context})
 
   %% --------------------------------------------------------------------------------
