@@ -203,6 +203,22 @@ MetaSlang qualifying spec {
      | IfThenElse (_,_,_, a) -> a
      | Seq        (_,     a) -> a
 
+ op withAnnT: fa(a) ATerm a * a -> ATerm a 
+ def withAnnT(t, a) = 
+  case t of
+     | Apply      (t1, t2,_) -> Apply(t1, t2, a)
+     | ApplyN     (l,     _) -> ApplyN(l, a)
+     | Record     (l,     _) -> Record(l, a)
+     | Bind       (b, l, t, _) -> Bind(b, l, t, a)
+     | Let        (l,t,   _) -> Let (l, t, a)
+     | LetRec     (l,r,   _) -> LetRec(l, t, a)
+     | Var        (v,     _) -> Var (v, a)
+     | SortedTerm (t,s,   _) -> SortedTerm(t, s, a)
+     | Fun        (f,s,   _) -> Fun(f, s, a)
+     | Lambda     (m,     _) -> Lambda(m, a)
+     | IfThenElse (t1,t2,t3, _) -> IfThenElse(t1, t2, t3, a)
+     | Seq        (l,     _) -> Seq(l, a)
+
  op sortAnn: fa(a) ASort a -> a
  def sortAnn(s) =
   case s of

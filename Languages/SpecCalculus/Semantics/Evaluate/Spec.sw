@@ -8,8 +8,11 @@ SpecCalc qualifying spec {
   import URI/Utilities
   % import ../../../MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
+  import /Languages/MetaSlang/Transformations/DefToAxiom
   import Spec/Utilities
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
+
+  sort Env a = SpecCalc.Env a
 
 \end{spec}
 
@@ -40,7 +43,8 @@ and then qualify the resulting spec if the spec was given a name.
     (pos_spec,TS,depURIs) <- evaluateSpecElems emptySpec spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
-    return (Spec compressed_spec,TS,depURIs)
+    full_spec <- explicateHiddenAxiomsM compressed_spec;
+    return (Spec full_spec,TS,depURIs)
   }
 \end{spec}
 
@@ -168,5 +172,16 @@ of there are explicit imports or the spec is in a directory that ends in
      | [_,_]                -> false
      | ["Library","Base",_] -> true
      | _::r                 -> baseSpecPath? r
+
+\end{spec}
+
+\begin{spec}
+
+  
+  op explicateHiddenAxiomsM: PosSpec -> Env Spec
+  def explicateHiddenAxiomsM spc =
+    return (explicateHiddenAxioms spc)
+
 }
+
 \end{spec}
