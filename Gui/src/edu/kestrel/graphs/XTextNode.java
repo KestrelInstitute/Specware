@@ -284,7 +284,7 @@ public class XTextNode extends XNode implements XTextEditorEditable {
         //getModelNode().setValue(t.trim(),true);
     }
     
-    public XTextEditor createEditorPane() {
+    public XElementEditor createEditorPane() {
         return new XTextEditor(this);
     }
     

@@ -236,7 +236,7 @@ public class XGraphDisplay extends JGraph implements Storable {
         }
     }
     
-    /** returns the model node of the graph, which is either 
+    /** returns the model node of the graph, which is either
      * <ul>
      * <li> determined by looking for the common parent node of the root
      * nodes of the graph; if they don't have a common parent node, then the model root node of the graph is returned.
@@ -681,6 +681,52 @@ public class XGraphDisplay extends JGraph implements Storable {
         return res;
     }
     
+    static public final int SCALE_ONLY_IF_TOO_BIG = 0;
+    static public final int ALWAYS_SCALE = 1;
+    
+    /** sets the scale of the graph to fit into the current size of the graph display widget.
+     * @param when determines, when the scaling is done. Possible values:
+     * <ul>
+     * <li><code>SCALE_ONLY_IF_TOO_BIG</code> only scales the graph, if the elements are too big to fit
+     * <li><code>ALWAYS_SCALE</code> (default) always performs the scaling, which means that the elements are possibly
+     * enlarged.
+     * </ul>
+     */
+    public void scaleToFit(int bw, int when) {
+        XGraphView gv = getXGraphView();
+        CellView[] roots = gv.getRoots();
+        if (roots.length == 0) return;
+        Rectangle elemsize = null;
+        for(int i=0;i<roots.length;i++) {
+            if (i==0)
+                elemsize = new Rectangle(roots[i].getBounds());
+            else
+                elemsize.add(roots[i].getBounds());
+        }
+        elemsize.grow(bw,bw);
+        Rectangle graphsize = getVisibleRect();
+        Dbg.pr("scaleToFit: graphsize="+graphsize);
+        Dbg.pr("             elemsize="+elemsize);
+        if (elemsize.width == 0 || elemsize.height == 0) return;
+        double xscaleFactor = ((double)graphsize.width/(double)elemsize.width);
+        double yscaleFactor = ((double)graphsize.height/(double)elemsize.height);
+        double scaleFactor = Math.min(xscaleFactor,yscaleFactor);
+        Dbg.pr("scale factors: x="+xscaleFactor+", y="+yscaleFactor);
+        if (when == SCALE_ONLY_IF_TOO_BIG && scaleFactor >= 1.0) {
+            return;
+        }
+        translateAllViews(-elemsize.x,-elemsize.y, false);
+        setScale(scaleFactor);
+    }
+    
+    public void zoomIn() {
+        setScale(getScale()*2);
+    }
+    
+    public void zoomOut() {
+        setScale(getScale()/2);
+    }
+    
     /** translates all views according to the given dx,dy values.
      * @param allowNegativeCoordinates if true, views are translated as given by dx,dy; if false,
      * the views are only translated, so that no view gets negative coordinates. In any case, all
@@ -701,9 +747,19 @@ public class XGraphDisplay extends JGraph implements Storable {
                 if (b.y+dy0<0) dy0=-b.y;
             }
         gv.startGroupTranslate();
-        gv.translateViews(views,dx0,dy0);
+        gv.translateViewsInGroup(views,dx0,dy0);
         gv.endGroupTranslate();
         updateViews(views);
+    }
+    
+    public void translateSelection(int dx, int dy) {
+        if (dx == 0 && dy == 0) return;
+        XGraphView gv = getXGraphView();
+        XNodeView[] sviews = gv.getSelectedNodeViews(this);
+        gv.startGroupTranslate();
+        gv.translateViewsInGroup(sviews, dx,dy);
+        gv.endGroupTranslate();
+        repaint();
     }
     
     /** translates the all views, so that the topleft corner of the topleftmose view element
@@ -1211,12 +1267,15 @@ public class XGraphDisplay extends JGraph implements Storable {
     }
     
     protected static String Element = "Element";
+    protected static String ScaleFactor = "ScaleFactor";
+    
     
     /** returns an element properties object representing this graph for use in io operations.
      */
     public ElementProperties getElementProperties(ReadWriteOperation wop) {
         ElementProperties props = wop.createElementProperties(this);
         props.setValueProperty(getValue());
+        props.setProperty(ScaleFactor,new Double(getScale()).toString());
         Object[] cells = getXGraphModel().getRootCells();
         for(int i=0;i<cells.length;i++) {
             if (cells[i] instanceof Storable) {
@@ -1232,6 +1291,13 @@ public class XGraphDisplay extends JGraph implements Storable {
     public void initFromElementProperties(ReadWriteOperation rwop, ElementProperties props) {
         setValue(props.getValueProperty());
         setApplication(rwop.getAppl());
+        Object sfstr = props.getProperty(ScaleFactor);
+        if (sfstr instanceof String) {
+            try {
+                double scaleFactor = new Double((String)sfstr).doubleValue();
+                setScale(scaleFactor);
+            } catch (NumberFormatException ex) {}
+        }
         Dbg.pr("{ initFromElementProperties in XGraphDisplay "+this+"...");
         /*
         ArrayList elist = new ArrayList();

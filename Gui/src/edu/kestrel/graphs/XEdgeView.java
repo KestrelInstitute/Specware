@@ -735,7 +735,7 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
      */
     protected String getDisplayLabel(String label) {
         if (isCollapseLabel()) {
-            return XTextNode.getCollapsedString(label);
+            return edge.getCollapsedLabel(label);
         }
         return label;
     }

@@ -337,21 +337,10 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
         return (detachedView != null);
     }
     
-    public Object clone_() {
-        //Dbg.pr("cloning XEdge...");
-        Object obj = super.clone();
-        if (Dbg.isDebug2()) {
-            if (obj instanceof XEdge) {
-                ((XEdge)obj).setUserObject();
-            }
-        }
-        return obj;
-    }
-    
     /** creates a clone of this edge; calls init() for initializing the cloned edge.
      */
     public XEdge cloneEdge() {
-        Dbg.pr("cloning XEdge "+this+"...");
+        //Dbg.pr("cloning XEdge "+this+"...");
         XEdge edge = (XEdge) clone();
         edge.init();
         return edge;
@@ -442,6 +431,13 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
     
     public boolean isCollapseLabel() {
         return collapseLabel;
+    }
+    
+    /** this method computes the short form of the given text string and is used to computer the collapsed
+     * label in case the edge supports expanding/collapsing of its label text.
+     */
+    public String getCollapsedLabel(String fullLabel) {
+        return XTextNode.getCollapsedString(fullLabel);
     }
     
     /** method to update the relevant data stored in the view object in this object. This method is called by the
@@ -687,7 +683,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
         getModelEdge().sync();
     }
     
-    public XTextEditor createEditorPane() {
+    public XElementEditor createEditorPane() {
         return new XTextEditor(this);
     }    
     
