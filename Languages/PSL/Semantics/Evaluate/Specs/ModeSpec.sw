@@ -2,22 +2,27 @@
 
 This is still under development.
 
-The issue is as follows. As in ASMs we had previously distinguished
-static and dynamic specs. Static specs contain names whose meaning is
-fixed in all worlds.  Dynamic spec reflects things that can change.
-The ops in the dynamic spec are variables. The static spec
-is imported into the dynamic spec. Thus static operators cannot
-refer to dynamic variables.
+As in ASMs we had previously distinguished static and dynamic
+specs. Static specs contain names whose meaning is fixed in all worlds.
+Dynamic spec reflects things that can change.  The ops in the dynamic spec
+are variables. The static spec is imported into the dynamic spec. Thus
+static operators cannot refer to dynamic variables.
 
-This is problematic as one might start, for example, with sets
-in the static spec (a functional data structure), and then refine it
-to something that, while still functional, is implemented, for example,
+This is problematic as one might start, for example, with sets in
+the static spec (a functional data structure), and then refine it to
+something that, while still functional, is implemented, for example,
 with linked lists.  The latter is defined only in the dynamic spec.
 
+If the above separation is adhered to, then such a refinement is not
+possible as ops in the static spec cannot be defined in terms of names
+in the dynamic spec.
+
 Also, one might want to define auxilliary functions that have a fixed
-meaning but defined in terms of the dynamic variables. Thus the
-functions cannot appear on the left side, but nevertheless, they are
-dynamic.
+meaning but defined in terms of the dynamic variables. An invariant on
+a heap might be one example. Such a function would by dynamic as it is
+defined in terms of variables and yet it makes no sense to call it a
+variable and it makes no sense that such a function appear on the left
+side of an assignment.
 
 The alternative is to make a different distinction. There is only one spec
 plus additional information that describes whether something is assignable
@@ -37,8 +42,6 @@ ModeSpec qualifying spec {
       spc : Spec,
       variables : IdSet.Set
     }
-
-  sort BSpec.Object = ModeSpec
 
   op specOf : ModeSpec -> Spec
   def specOf modeSpec = modeSpec.spc
@@ -67,22 +70,20 @@ ModeSpec qualifying spec {
       variables = variables modeSpec
     }
 
-  sort BSpec.Arrow = Morphism
-
-  op addConstant : ModeSpec -> OpInfo -> Env ModeSpec
-  def addConstant modeSpec opInfo = {
+  op addConstant : ModeSpec -> OpInfo -> Position -> Env ModeSpec
+  def addConstant modeSpec opInfo position = {
       newSpec <- insert (specOf modeSpec) opInfo;
       return (modeSpec withSpec newSpec)
     }
 
-  op addVariable : ModeSpec -> OpInfo -> Env ModeSpec
-  def addVariable modeSpec opInfo = {
+  op addVariable : ModeSpec -> OpInfo -> Position -> Env ModeSpec
+  def addVariable modeSpec opInfo position = {
       newSpec <- insert (specOf modeSpec) opInfo;
       return (make newSpec (IdSet.insert (variables modeSpec) (name opInfo)))
     }
 
-  op addProperty : ModeSpec -> Property -> Env ModeSpec
-  def addProperty modeSpec property =
+  op addProperty : ModeSpec -> Property -> Position -> Env ModeSpec
+  def addProperty modeSpec property position =
     return (modeSpec withSpec (insert (specOf modeSpec) property))
 
   op elaborate : ModeSpec -> Env ModeSpec
@@ -90,5 +91,18 @@ ModeSpec qualifying spec {
       elabSpec <- Spec.elaborate (specOf modeSpec);
       return (modeSpec withSpec elabSpec)
     }
+
+  op pp : ModeSpec -> Doc
+  def pp modeSpec =
+    ppConcat [
+      pp "spec=",
+      pp (specOf modeSpec),
+      ppNewline,
+      pp "variables=",
+      pp (variables modeSpec)
+    ]
+
+  op foldOverVariables : fa (a) (a -> OpInfo -> a) -> a -> ModeSpec -> a
+  op foldOverOps : fa (a) (a -> OpInfo -> a) -> a -> ModeSpec -> a
 }
 \end{spec}

@@ -1,7 +1,17 @@
 \section{Naive Predicative BSpecs}
 
-This is the same as ../Multipointed except that the target
-category is monomorphic. See the comments in the above.
+BSpecs in an abstract category. A BSpec is a system interpreted as a
+flow graph and having a designated start state.
+
+The term ``multipointed'' refers to the possibility that there may be
+many end states as well.
+
+The term ``predicative'' refers to the fact that the forward
+and backward morphisms are an epimorphic pair in the labelling
+category. This is not exploited at present.
+
+Seems odd that we need to qualify things with \Qualifier{Vertex}
+and \Qualifier{Edge}.
 
 \begin{spec}
 BSpec qualifying spec {
@@ -22,20 +32,20 @@ BSpec qualifying spec {
   op system : BSpec -> System
   def system bSpec = bSpec.system
 
-  op make : VertexSet.Vertex -> Object -> BSpec
+  op make : Vertex.Vertex -> Object -> BSpec
   def make first spc = {
     initial = first,
-    final = VertexSet.empty,
-    system = labelVertex (addVertex emptySystem first) first spc 
+    final = empty,
+    system = labelVertex (addVertex empty first) first spc 
   }
 
   op addMode : BSpec -> Vertex.Vertex -> Object -> BSpec
   def addMode bSpec vertex spc =
     bSpec withSystem (labelVertex (addVertex (system bSpec) vertex) vertex spc)
 
-  op mapBSpec : BSpec -> (Object -> Object) -> (Arrow -> Arrow) -> BSpec
-  def mapBSpec bSpec objMap arrMap =
-    bSpec withSystem (mapSystem (system bSpec) objMap arrMap)
+  % op mapBSpec : BSpec -> (Object -> Object) -> (Arrow -> Arrow) -> BSpec
+  % def mapBSpec bSpec objMap arrMap =
+  %   bSpec withSystem (mapSystem (system bSpec) objMap arrMap)
 
   op addTrans :
        BSpec 
@@ -64,31 +74,21 @@ BSpec qualifying spec {
   }
 \end{spec}
 
-The first function retrieves the spec associated with a transition. Bear in
-mind that the transition (edge) is "tagged" so if $f$ is an edge, you
-pass (Just $f$) as the name of the transition.
-
-Because of the twist, the desired spec is in the image of the vertex map
-rather than the edge map. 
+The first function retrieves the spec associated with a transition.
+Because of the twist, the desired spec is in the image of the vertex
+map rather than the edge map.
 
 \begin{spec}
   op transitionSpec : BSpec -> Edge.Edge -> Object
-  def transitionSpec bSpec edge = 
-      PolyMap.eval (vertexMap (functor (system bSpec))) (Tag (1,edge))
+  def transitionSpec bSpec edge = eval (vertexMap (system bSpec)) (Edge edge)
 \end{spec}
 
 The next function retrieves the spec associated with a state or mode.
 
 \begin{spec}
   op modeSpec : BSpec -> Vertex.Vertex -> Object
-  def modeSpec bSpec vertex =
-    PolyMap.eval (vertexMap (functor (system bSpec))) (Tag (0,vertex))
+  def modeSpec bSpec vertex = eval (vertexMap (system bSpec)) (Vertex vertex)
 \end{spec}
-
-Given a transition, this returns the static operators for the transition. The
-static operators are those not forming part of the machine state.
-
-The latter has not been implemented yet.
 
 Naive pretty printing of \BSpecs
 
@@ -99,7 +99,7 @@ Naive pretty printing of \BSpecs
       pp "{initial = ",
       pp (initial bSpec),
       pp ", final = ",
-      pp final,
+      pp (final bSpec),
       ppNewline,
       pp "system = ",
       ppNewline,

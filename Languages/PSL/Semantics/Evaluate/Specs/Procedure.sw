@@ -1,24 +1,19 @@
 \section{Abstract sort for procedures}
 
-This spec defines the sort corresponding to the semantic value
-of a PSL procedure.
+This spec defines the sort corresponding to the semantic value of a PSL /
+Oscar procedure.
 
 The list of strings, \verb+parameters+, gives the formal parameters to
-the procedure.  These are strings but an alternative might be to uses
-sort \verb+var+ from the MetaSlang abstract syntax as this includes
-the identifier name together with its sort. Strings may be sufficient,
-however, since once we have a semantic representation, we don't need
-the types anymore. Parameters are call by value.
+the procedure.  These are strings but an alternative might be to also
+include the sort for the variables.  Parameters are call by value.
 
-The field \verb+dynamicSpec+ records the variables in scope at the
-point where the procedure is declared. It does not include the formal
-parameters of the procedure. This might later be renamed "variables".
+The field \verb+modeSpec+ records the ops, sorts and variables in scope
+at the point where the procedure is declared. It does not include the
+formal parameters of the procedure.
 
-Similarly the fields \verb+staticSpec+ is a static context containing
-the constants in scope where the procedure is declared. This includes
-a static operator defining a predicate that encapsulates the effect
-of the procedure. This operator has the same name as the procedure.
-This spec might later be renamed "constants".
+The ops include a static operator defining a predicate that encapsulates
+the effect of the procedure. This operator has the same name as the
+procedure.
 
 The field \verb+bSpec+ holds the ``flow graph'' for the procedure
 represented as a \emph{predicative multipointed bspec}.  Multipointed
@@ -26,12 +21,17 @@ means that the graph has a single start state but possibly many final
 states.
 
 \begin{spec}
-Procedure qualifying spec {
+Proc qualifying spec {
   import ModeSpec
+  import translate /Languages/BSpecs/Predicative/Multipointed by {
+      Cat.Object +-> ModeSpec.ModeSpec,
+      Cat.Arrow +-> ModeSpec.Morphism
+    }
 
-  import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed/Monomorphic
+  sort ReturnInfo = Option {returnId : Id, returnType : Type}
 
-  sort ReturnInfo = Option {returnName : String, returnSort : ASort Position}
+  op ReturnInfo.make : Id -> Type -> ReturnInfo
+  def ReturnInfo.make id type = Some {returnId = id, returnType = type}
 
   sort Procedure = {
     parameters : List String,
@@ -47,6 +47,18 @@ Procedure qualifying spec {
     modeSpec = modeSpec,
     bSpec = bSpec
   }
+
+  op parameters : Procedure -> List String
+  def parameters proc = proc.parameters
+
+  op bSpec : Procedure -> BSpec
+  def bSpec proc = proc.bSpec
+
+  op returnInfo : Procedure -> ReturnInfo
+  def returnInfo proc = proc.returnInfo
+
+  op modeSpec : Procedure -> ModeSpec
+  def modeSpec proc = proc.modeSpec
 \end{spec}
 
 The field \verb+returnName+ holds the name of the identifier within the
@@ -72,27 +84,30 @@ handle name clashes properly.
   def pp proc =
     ppConcat [
       pp "params=(",
-      ppSep (pp ",") (map pp proc.parameters),
-      pp "), return=",
-      case proc.returnInfo of
-        | None -> ppNil
-        | Some {returnName,returnSort} -> pp returnName,
+      ppSep (pp ",") (map pp (parameters proc)),
+      pp "), returnInfo=[",
+      pp (returnInfo proc),
+      pp "]",
       ppNewline,
-      pp "bspec=",
+      pp "bSpec=",
       ppNewline,
       pp "  ",
       ppIndent (pp (bSpec proc))
     ]
 
-  op show : Procedure -> String
-  def show proc =
-      "params=("
-      ^ (List.show "," proc.parameters)   %%% Why do we need the qualifier?
-      ^ "), return="
-      ^ (case proc.returnInfo of
-          | None -> ""
-          | Some {returnName,returnSort} -> returnName)
-      ^ "\nbspec=\n"
-      ^ (ppFormat (pp (bSpec proc)))
+  op ReturnInfo.pp : ReturnInfo -> Doc
+  def ReturnInfo.pp info =
+    case info of
+      | None -> pp "None"
+      | Some {returnId,returnType} ->
+          ppConcat [
+            pp "returnId=",
+            pp returnId,
+            pp " returnType=",
+            pp returnType
+          ]
+
+   op show : Procedure -> String 
+   def show proc = ppFormat (pp proc)
 }
 \end{spec}

@@ -46,3 +46,6 @@ def Eval.names x : Op -> IdSet.Id = eval names x
 This doesn't make sense. Names must be something that gets carried around.
 
 
+Should I be able to create an OpInfo outside the scope of a spec?
+
+

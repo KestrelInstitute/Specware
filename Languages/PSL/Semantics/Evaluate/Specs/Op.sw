@@ -29,11 +29,12 @@ Op qualifying spec
   op withType infixl 18 : OpInfo * Type -> OpInfo
   op withTerm infixl 18 : OpInfo * MS.Term -> OpInfo
 
-  op OpWithFixity.make : Id -> MS.Term -> Type -> Fixity -> OpInfo 
-  op make : Id -> MS.Term -> Type -> OpInfo 
+  op OpWithFixity.makeOp : Id -> MS.Term -> Type -> Fixity -> OpInfo 
+  op makeOp : Id -> MS.Term -> Type -> OpInfo 
 
-  op OpWithFixityEnv.make : Id -> MS.Term -> Type -> Fixity -> Env OpInfo 
-  op OpEnv.make : Id -> MS.Term -> Type -> Env OpInfo 
+  op OpWithFixityEnv.makeOp : Id -> MS.Term -> Type -> Fixity -> Env OpInfo 
+  op OpEnv.makeOp : Id -> MS.Term -> Type -> Env OpInfo 
+  op OpNoTermEnv.makeOp : Id -> Type -> Env OpInfo
 
   op pp : OpInfo -> Doc
   op show : OpInfo -> String

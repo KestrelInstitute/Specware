@@ -1,5 +1,7 @@
 \section{A simple specification for Graphs}
 
+This should be an extension of the spec appearing in ../Graphs. Perhaps later.
+
 The translates need sorting out. 
 
 \begin{spec}
@@ -19,6 +21,7 @@ in
     import EdgeSet qualifying EdgeSet
 
     import GraphMap qualifying (translate (translate ../Maps/Finite by {
+        KeyValue._ +-> EdgeVertex._,
         Dom._ +-> Edge._,
         Cod._ +-> Vertex._
       }) by {
@@ -49,13 +52,13 @@ identity of a vertex, how do we specify the source and target of an edge?
 
 \begin{spec}
   op empty : Graph
-  op GraphVertex.insert : Graph -> Vertex -> Graph
+  op insertVertex : Graph -> Vertex -> Graph
 \end{spec}
 
 When we add an edge, we also add the src and target of the edge.
 
 \begin{spec}
-  op GraphEdge.insert : Graph -> Edge -> Vertex -> Vertex -> Graph
+  op insertEdge : Graph -> Edge -> Vertex -> Vertex -> Graph
 \end{spec}
 
 Next we define a signature for a pair of fold functions. The idea with
@@ -80,29 +83,19 @@ to the graphs.
 
 begin{spec}
   def pp graph = 
-     let def ppPair (x,y) = 
-       ppConcat [
-         pp x,
-         ppString "+->",
-         pp y
-     ] in
-     ppConcat [
-       pp "Vertices = {",
-       pp (vertices graph),
-       pp "}",
-       ppNewline,
-       pp "Edges = {",
-       pp (edges graph),
-       pp "}",
-       ppNewline,
-       pp "Source map = {",
-       ppSep (ppString ",") (map ppPair (mapToList (src graph))),
-       pp "}",
-       ppNewline,
-       pp "Target map = {",
-       ppSep (pp ",") (map ppPair (mapToList (target graph))),
-       pp "}"
-     ]
+    ppConcat [
+      pp "Vertices = ",
+      pp (vertices graph),
+      ppNewline,
+      pp "Edges = ",
+      pp (edges graph),
+      ppNewline,
+      pp "Source map = ",
+      pp (src graph),
+      ppNewline,
+      pp "Target map = ",
+      pp (target graph)
+    ]
 end{spec}
 
 \begin{spec}

@@ -80,10 +80,10 @@ What about updating the ops en-masse?
 
 \begin{spec}
   op ops : Spec -> OpSet.Set
-  op withOps infixl 17 : Spec -> OpSet.Set -> Spec
+  op withOps infixl 17 : Spec * OpSet.Set -> Spec
 
   op sorts : Spec -> SortSet.Set
-  op withSorts infixl 17 : Spec -> SortSet.Set -> Spec
+  op withSorts infixl 17 : Spec * SortSet.Set -> Spec
 
   op properties : Spec -> List Property
 \end{spec}
@@ -319,6 +319,13 @@ Perhaps there should be two make steps.
 How do we create a new reference? If we wish to refine this
 to code where \Sort{OpRef} is \Sort{QualifiedId} then
 we need to pass an argument to any \Op{newRef} operator.
+
+\begin{spec}
+  op pp : Spec -> Doc
+
+  op show : Spec -> String
+  def show spc = ppFormat (pp spc)
+\end{spec}
 
 \begin{spec}
 endspec

@@ -6,7 +6,7 @@ need dependent types to do this in terms of homsets?}
 
 \begin{spec}
 spec {
-  import /Library/PrettyPrinter/WadlerLindig
+  import /Library/Structures/Data/Pretty
 
   sort Object
   sort Arrow

@@ -8,7 +8,7 @@ of the functor is determined by what the maps do on the vertices
 and edges of the graph underlying the sketch.
 
 Note the following. In
-\specref{Library/Structures/Data/Categories/Functors/Polymorphic},
+\UnitId{Library/Structures/Data/Categories/Functors/Polymorphic},
 the sort Functor is defined over 4 type variables. The first two are
 the types of the objects and arrows in the domain category. The other
 two for the codomain category. In contrast, here there are only type
@@ -21,51 +21,57 @@ in the generating graph, since as a rule, whereas the number of edges
 in the generating graph may be finite, there may not be a finite number
 of paths in the free category.
 
-Note that import Maps are qualified with "PolyMap". This is to distinguish
-it from the monomorphic maps used elsewhere. See the file NameSpaces
-for more on this.
-
 The names of some of these operators clash with Cats and Graphs.
 
-We use polymorphic maps but probably should import two copies
-of monomorphic maps.
-
 \begin{spec}
-spec {
-  import Sketch qualifying /Library/Structures/Data/Categories/Sketches/Monomorphic
+Functor qualifying spec {
+  import /Library/Structures/Data/Pretty
+  import Shape qualifying /Library/Structures/Data/Categories/Sketches
   import Cat qualifying /Library/Structures/Math/Cat
-  import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic 
+  import EdgeMap qualifying (translate (translate /Library/Structures/Data/Maps/Finite by {
+      KeyValue._ +-> EdgeCat._,
+      Dom._ +-> Edge._,
+      Cod._ +-> Cat._
+    }) by {
+      Edge.Dom +-> Edge.Edge,
+      Cat.Cod +-> Cat.Arrow
+    })
+
+  import VertexMap qualifying (translate (translate /Library/Structures/Data/Maps/Finite by {
+      KeyValue._ +-> VertexCat._,
+      Dom._ +-> Vertex._,
+      Cod._ +-> Cat._
+    }) by {
+      Vertex.Dom +-> Vertex.Vertex,
+      Cat.Cod +-> Cat.Object
+    })
 
   sort Functor
 
   op dom : Functor -> Sketch
-  op vertexMap : Functor -> PolyMap.Map (Vertex.Elem,Object)
-  op edgeMap : Functor -> PolyMap.Map (Edge.Elem,Arrow)
+  op vertexMap : Functor -> VertexMap.Map
+  op edgeMap : Functor -> EdgeMap.Map 
 
-  op emptyFunctor : Functor
-  op makeFunctor :
-            Sketch
-         -> PolyMap.Map (Vertex.Elem,Object)
-         -> PolyMap.Map (Edge.Elem,Arrow)
-         -> Functor
+  op empty : Functor
+  op make : Sketch -> VertexMap.Map -> EdgeMap.Map -> Functor
 \end{spec}
 
 When pretty printing a functor, we don't print the domain or codomain. 
 Printing the domain (generator) is not unreasonable.
 
 \begin{spec}
-  op ppFunctor : Functor -> Pretty
-  def ppFunctor functor = 
+  op pp : Functor -> Doc
+  def pp functor = 
     ppConcat [
       pp "Vertex Map =",
       ppNewline,
       pp "  ",
-      ppIndent (PolyMap.ppMap Vertex.ppElem ppObject (vertexMap functor)),
+      ppIndent (pp (vertexMap functor)),
       ppNewline,
       pp "Edge Map =",
       ppNewline,
       pp "  ",
-      ppIndent (PolyMap.ppMap Edge.ppElem ppArrow (edgeMap functor))
+      ppIndent (pp (edgeMap functor))
    ]
 }
 \end{spec}

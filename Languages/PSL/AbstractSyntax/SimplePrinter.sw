@@ -8,13 +8,13 @@ SpecCalc qualifying spec {
   import ../../MetaSlang/Specs/SimplePrinter
   import Types
 
-  op ppPSpecTerm : fa (a) List (PSpecElem a) -> Doc
-  def ppPSpecTerm pSpecElems =
+  op ppOscarSpecTerm : fa (a) List (OscarSpecElem a) -> Doc
+  def ppOscarSpecTerm pSpecElems =
           ppConcat [
             ppString "psl {",
             ppNewline,
             ppString "  ",
-            ppIndent (ppSep ppNewline (map ppPSpecElem pSpecElems)),
+            ppIndent (ppSep ppNewline (map ppOscarSpecElem pSpecElems)),
             ppNewline,
             ppString "}"
           ]
@@ -61,7 +61,7 @@ SpecCalc qualifying spec {
             ppString "let",
             ppNewline,
             ppString "  ",
-            ppIndent (ppSep ppNewline (map ppPSpecElem decls)),
+            ppIndent (ppSep ppNewline (map ppOscarSpecElem decls)),
             ppNewline,
             ppString "in {",
             ppNewline,
@@ -113,8 +113,8 @@ SpecCalc qualifying spec {
       ppSep (ppAppend ppNewline (ppString "| ")) (map ppAlt alts)
     ]
 
-  op ppPSpecElem : fa(a) PSpecElem a -> Pretty
-  def ppPSpecElem (decl,_) = 
+  op ppOscarSpecElem : fa(a) OscarSpecElem a -> Pretty
+  def ppOscarSpecElem (decl,_) = 
     case decl of
       | Sort (names,(tyVars,defs)) -> 
           ppConcat [
@@ -145,8 +145,8 @@ SpecCalc qualifying spec {
             ppProcInfo procInfo
           ]
 
-  op ppPSpecElems : fa(a) List (PSpecElem a) -> Pretty
-  def ppPSpecElems decls = ppSep ppNewline (map ppPSpecElem decls)
+  op ppOscarSpecElems : fa(a) List (OscarSpecElem a) -> Pretty
+  def ppOscarSpecElems decls = ppSep ppNewline (map ppOscarSpecElem decls)
 
   op ppProcInfo : fa (a) ProcInfo a -> Pretty
   def ppProcInfo procInfo =

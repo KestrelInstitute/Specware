@@ -24,10 +24,10 @@ syntax appear as \verb+op+s in the abstract syntax with an associated
 defining term.
 
 \begin{spec}
-  sort PSpecElem a = (PSpecElem_ a) * a
+  sort OscarSpecElem a = (OscarSpecElem_ a) * a
 
   sort Ident = String
-  sort PSpecElem_ a =
+  sort OscarSpecElem_ a =
     | Import (SpecCalc.Term a)
     | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
     | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
@@ -64,7 +64,7 @@ needs some thought.
     | Case       (ATerm a) * (List (Case a))
     | Do         List (Alternative a)
     | Assign     (ATerm a) * (ATerm a)
-    | Let        List (PSpecElem a) * (Command a)
+    | Let        List (OscarSpecElem a) * (Command a)
     | Seq        List (Command a)
     | Relation   (ATerm a)
     | Return     Option (ATerm a)

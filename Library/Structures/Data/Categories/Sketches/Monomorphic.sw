@@ -1,5 +1,7 @@
 \section{Monomorphic Sketches}
 
+This is to be deprecated in favour of ../Sketches.sw
+
 A sketch is a finitary presentation of a category. Put another way,
 a sketch generates a category. A common ingredient in a sketch is
 a graph. On top of that there are many varieties of sketches. An

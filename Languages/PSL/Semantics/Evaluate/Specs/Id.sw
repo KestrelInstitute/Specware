@@ -30,11 +30,11 @@ let
   Id = spec
     import Set 
 
-    op make : String -> String -> Id
-    op UnQualifiedId.make : String -> Id
+    op makeId : String -> String -> Id
+    op UnQualifiedId.makeId : String -> Id
 
-    op IdEnv.make : String -> String -> Env Id
-    op UnQualifiedIdEnv.make : String -> Env Id
+    op IdEnv.makeId : String -> String -> Env Id
+    op UnQualifiedIdEnv.makeId : String -> Env Id
     
     op pp : Id -> Doc
     op show : Id -> String
