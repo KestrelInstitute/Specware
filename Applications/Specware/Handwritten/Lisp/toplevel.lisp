@@ -115,6 +115,7 @@
 	     (when (and (> len 3)
 			(string= (subseq str (- len 3)) ".sw"))
 	       (setq str (subseq str 0 (- len 3)))))
+	   (setq str (substitute #\/ #\\ str))
 	   (setq *temp-file-in-use?* nil)
 	   (unless (unitIdString? str)
 	     ;; spec calc term. Need to put it in a temporary file

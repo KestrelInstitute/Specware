@@ -1,7 +1,7 @@
 (cl-user::sw-init)
 
 ;;; Tutorial example
-(test ("FindMatches" :sw "$SPECWARE/UserDoc/tutorial/example/MatchingSpecs#FindMatches"
+(test ("FindMatches" :sw "/UserDoc/tutorial/example/MatchingSpecs#FindMatches"
                      :output ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#FindMatches
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#WordMatching
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Words
@@ -10,7 +10,7 @@
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#SymbolMatching
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Matches
 ")
-      ("FindMatches_Ref" :sw "$SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref"
+      ("FindMatches_Ref" :sw "/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref"
                          :output ";;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref
 ;;; Elaborating spec-substitution at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches0
@@ -20,7 +20,7 @@
 ;;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols_Ref
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols
 ")
-      ("MatchingProofs" :sw "$SPECWARE/UserDoc/tutorial/example/MatchingProofs"
+      ("MatchingProofs" :sw "/UserDoc/tutorial/example/MatchingProofs"
                        :output ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p1
 ;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#SymbolMatching_Oblig
 ;;; Elaborating spec at $SPECWARE/Library/Base/WFO
@@ -42,13 +42,13 @@ p5: Conjecture word_matching_Obligation0 in MatchingObligations#FindMatches0_Obl
 p6: Conjecture word_matching_Obligation1 in MatchingObligations#FindMatches0_Oblig is NOT proved.
     Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p6.log
 ")
-      ("swl find-matches" :swl "$SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches $TESTDIR/find-matches"
+      ("swl find-matches" :swl "/UserDoc/tutorial/example/MatchingRefinements#FindMatches $TESTDIR/find-matches"
                        :output ";;; Generating lisp file $TESTDIR/find-matches.lisp
 "
 		       :files '("$TESTDIR/find-matches.lisp"))
       ("Load find-matches.lisp" :lisp "(let (#+allegro excl:*redefinition-warnings*)
                                          (specware::compile-and-load-lisp-file \"$TESTDIR/find-matches.lisp\"))")
-      ("swll MatchingTest#Test" :swll "$SPECWARE/UserDoc/tutorial/example/MatchingTest#Test"
+      ("swll MatchingTest#Test" :swll "/UserDoc/tutorial/example/MatchingTest#Test"
 				:output ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingTest#Test
 ;;; Generating lisp file /tmp/cl-current-file.lisp
 ")

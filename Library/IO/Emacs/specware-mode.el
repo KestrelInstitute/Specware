@@ -145,9 +145,9 @@ accepted in lieu of prompting."
       ["Generate Lisp" sw:generate-lisp t]
       ["Generate & Load Lisp" (sw:generate-lisp t) t]
       ["Generate Local Lisp"  sw:gcl-current-file t]
-      ["Evaluate Region (:swe)" sw:evaluate-region (mark)]
-      ["Set :swe Spec" sw:set-swe-spec t]
-      [":cd to this directory" cd-current-directory t] 
+      ["Evaluate Region" sw:evaluate-region (mark)]
+      ["ctext Spec" sw:set-swe-spec t]
+      ["cd to this directory" cd-current-directory t] 
       ["Find Definition" sw:meta-point t]
       ["Find Next Definition" sw:continue-meta-point
        *pending-specware-meta-point-results*]

@@ -64,6 +64,23 @@ be the option to run each (test ...) form in a fresh image.
 (defmacro run-test-directories  (&body dirs)
   `(run-test-directories-fn '(,@dirs)))
 
+(defun parse-device-directory (str)
+  (let ((found-index (position #\: str)))
+    (if found-index
+	(values (subseq str 0 found-index)
+		(subseq str (1+ found-index)))
+      (values nil str))))
+
+(defun normalize-directory (dir)
+  #-allegro dir
+  #+allegro
+  ;; Work around allegro bug in directory
+  (let ((name (namestring dir)))
+    (multiple-value-bind (dev dir)
+	(parse-device-directory name)
+      (make-pathname :directory dir
+		     :device dev))))
+
 (defun run-test-directories-rec-fn (dirs)
   ;; First run the tests for the directories themselves
   (run-test-directories-fn dirs)
@@ -74,8 +91,7 @@ be the option to run each (test ...) form in a fresh image.
 			  dir)))
 	  (loop for dir-item in (directory dirpath)
 		unless (equal (pathname-name dir-item) "CVS")
-		do ;; Work around allegro bug in directory
-		   #+allegro (setq dir-item (make-pathname :directory (namestring dir-item))) 
+		do (setq dir-item (normalize-directory dir-item))
 		   (when (specware::directory? dir-item)
 		     (run-test-directories-rec-fn (list dir-item)))))))
 
@@ -157,13 +173,17 @@ be the option to run each (test ...) form in a fresh image.
     (apply 'test-1 args)))
 
 (defun swe-test (swe-str swe-spec)
-  (let ((cl-user::*swe-return-value?* t)
-	(cl-user::*current-swe-spec* (if (and swe-spec
-					      (not (eql (aref swe-spec 0) #\/))
-					      (> (length swe-spec) 1)
-					      (not (eql (aref swe-spec 1) #\:)))
-					 (in-current-dir swe-spec)
-				       swe-spec)))
+  (let* ((cl-user::*swe-return-value?* t)
+	 (full-swe-spec (if (and swe-spec
+				 (not (eql (aref swe-spec 0) #\/))
+				 (> (length swe-spec) 1)
+				 (not (eql (aref swe-spec 1) #\:)))
+			    (in-current-dir swe-spec)
+			  swe-spec))
+	 (pos (position #\/ full-swe-spec :from-end t))
+	 (cl-user::*current-swe-spec*
+	  (if pos (subseq full-swe-spec pos) full-swe-spec))
+	 (cl-user::*current-swe-spec-dir* (and pos (subseq full-swe-spec 0 pos))))
     (cl-user::swe swe-str)))
 
 (defun in-current-dir (file)
