@@ -108,7 +108,7 @@
   (setq *current-swe-spec* x)
   (format t "~&Subsequent :swe commands will now import ~A~%" x))
 
-(defvar *swe-print-as-slang?* t)
+(defvar *swe-print-as-slang?* nil)
 
 (defun swe (x)
   (let* ((tmp-uid "swe_tmp")
