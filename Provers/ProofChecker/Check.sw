@@ -32,86 +32,124 @@ spec
 
 
   op checkExtraTypeVars : Context * Context -> MayFail TypeVariables
-  def checkExtraTypeVars = the (fn checkExtraTypeVars ->
-    (fa (cx:Context, tvS:TypeVariables)
-       checkExtraTypeVars (cx, cx ++ multiTypeVarDecls tvS) = OK tvS) &&
-    (fa (cx1:Context, cx2:Context)
-       ~(ex (tvS:TypeVariables) cx2 = cx1 ++ multiTypeVarDecls tvS) =>
-       checkExtraTypeVars (cx1, cx2) = Fail noExtraTypeVars))
+  def checkExtraTypeVars(cx1,cx2) =
+    if length cx1 <= length cx2
+    && firstN (cx2, length cx1) = cx1 then
+    let cxExtra = lastN (cx2, length cx2 - length cx1) in
+    if forall? (cxExtra, embed? typeVarDeclaration) then
+    let def getTypeVar (ce:ContextElement) : Option TypeVariable =
+          case ce of typeVarDeclaration tv -> Some tv
+                   | _                     -> None in
+    let tvS:TypeVariables = removeNones (map (getTypeVar, cxExtra)) in
+    OK tvS
+    else FAIL
+    else FAIL
 
   op checkTypeDecl : Context * TypeName -> MayFail Nat
-  def checkTypeDecl = the (fn checkTypeDecl ->
-    (fa (cx1:Context, tn:TypeName, n:Nat, cx2:Context)
-       ~(tn in? contextTypes cx1 \/ contextTypes cx2) =>
-       checkTypeDecl (cx1 <| typeDeclaration(tn,n) ++ cx2, tn) = OK n) &&
-    (fa (cx:Context, tn:TypeName)
-       ~(tn in? contextTypes cx) =>
-       checkTypeDecl (cx, tn) = Fail noTypeDecl))
-(*
-  op cxFindOpDecl : Context * Operation -> Option (TypeVariables * Type)
-  def cxFindOpDecl = the (fn cxFindOpDecl ->
-    (fa (cx1:Context, o:Operation, tvS:TypeVariables, t:Type, cx2:Context)
-       ~(o in? contextOps cx1 \/ contextOps cx2) =>
-       cxFindOpDecl (cx1 <| opDeclaration(o,tvS,t) ++ cx2, o) = Some(tvS,t)) &&
-    (fa (cx:Context, o:Operation)
-       ~(o in? contextOps cx) =>
-       cxFindOpDecl (cx, o) = None))
+  def checkTypeDecl(cx,tn) =
+    if cx = empty then FAIL
+    else case first cx of
+           | typeDeclaration(tn1,n) ->
+             if tn1 = tn then OK n
+             else checkTypeDecl (rtail cx, tn)
+           | _ -> checkTypeDecl (rtail cx, tn)
+
+  op checkOpDecl : Context * Operation -> MayFail (TypeVariables * Type)
+  def checkOpDecl(cx,o) =
+    if cx = empty then FAIL
+    else case first cx of
+           | opDeclaration(o1,tvS,t) ->
+             if o1 = o then OK (tvS, t)
+             else checkOpDecl (rtail cx, o)
+           | _ -> checkOpDecl (rtail cx, o)
 
 
-  op check : Proof -> Option Judgement   % defined below
+  op check : Proof -> MayFail Judgement   % defined below
 
-
-  op checkContext : Proof -> Option Context
+  op checkContext : Proof -> MayFail Context
   def checkContext prf =
     case check prf of
-      | Some (wellFormedContext cx) -> Some cx
-      | _ -> None
+      | OK (wellFormedContext cx) -> OK cx
+      | _ -> FAIL
+
+  op checkType : Proof -> MayFail (Context * Type)
+  def checkType prf =
+    case check prf of
+      | OK (wellFormedType (cx, t)) -> OK (cx, t)
+      | _ -> FAIL
+
+  op checkTypesWithContext : Proofs * Context -> MayFail Types
+  def checkTypesWithContext(prfS,cx) =
+    let def aux (prfS:Proofs, tS:Types) : MayFail Types =
+          if prfS = empty then OK tS
+          else case checkTypeWithContext (first prfS, cx) of
+                 | OK t -> aux (rtail prfS, tS <| t)
+                 | FAIL -> FAIL in
+    aux (prfS, empty)
+
+  op checkTypeWithContext : Proof * Context -> MayFail Type
+  def checkTypeWithContext(prf,cx) =
+    case check prf of
+      | OK (wellFormedType (cx1, t)) ->
+        if cx1 = cx then OK t else FAIL
+      | _ -> FAIL
+
+  op checkExpr : Proof -> MayFail (Context * Expression * Type)
+  def checkExpr prf =
+    case check prf of
+      | OK (wellTypedExpr (cx, e, t)) -> OK (cx, e, t)
+      | _ -> FAIL
+
+  op checkTheorem : Proof -> MayFail (Context * Expression)
+  def checkTheorem prf =
+    case check prf of
+      | OK (theoreM (cx, e)) -> OK (cx, e)
+      | _ -> FAIL
 
 
   def check = fn
 
     %%%%%%%%%% well-formed contexts:
     | cxEmpty ->
-      Some (wellFormedContext empty)
-    | cxTypeDecl (prfCx, tn, n) ->
-      (case checkContext prfCx of Some cx ->
+      OK (wellFormedContext empty)
+    | cxTypeDecl (prf, tn, n) ->
+      (case checkContext prf of OK cx ->
       if ~(tn in? contextTypes cx) then
-      Some (wellFormedContext (cx <| typeDeclaration (tn, n)))
-      else   None
-      | _ -> None)
-    | cxOpDecl (prfCx, prfType, o) ->
-      (case checkContext prfCx of Some cx ->
+      OK (wellFormedContext (cx <| typeDeclaration (tn, n)))
+      else   FAIL
+      | _ -> FAIL)
+    | cxOpDecl (prfCx, prfTy, o) ->
+      (case checkContext prfCx of OK cx ->
       if ~(o in? contextOps cx) then
-      (case check prfType of Some (wellFormedType (cx1, t)) ->
-      (case checkExtraTypeVars (cx, cx1) of Some tvS ->
-      Some (wellFormedContext (cx <| opDeclaration (o, tvS, t)))
-      | _ -> None)
-      | _ -> None)
-      else   None
-      | _ -> None)
-    | cxTypeDef (prfCx, prfType, tn) ->
-      (case checkContext prfCx of Some cx ->
-      (case checkTypeDecl (cx, tn) of Some n ->
+      (case checkType prfTy of OK (cx1, t) ->
+      (case checkExtraTypeVars (cx, cx1) of OK tvS ->
+      OK (wellFormedContext (cx <| opDeclaration (o, tvS, t)))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+    | cxTypeDef (prfCx, prfTy, tn) ->
+      (case checkContext prfCx of OK cx ->
+      (case checkTypeDecl (cx, tn) of OK n ->
       if ~(contextDefinesType? (cx, tn)) then
-      (case check prfType of Some (wellFormedType (cx1, t)) ->
-      (case checkExtraTypeVars (cx, cx1) of Some tvS ->
+      (case checkType prfTy of OK (cx1, t) ->
+      (case checkExtraTypeVars (cx, cx1) of OK tvS ->
       if length tvS = n then
-      Some (wellFormedContext (cx <| typeDefinition (tn, tvS, t)))
-      else   None
-      | _ -> None)
-      | _ -> None)
-      else   None
-      | _ -> None)
-      | _ -> None)
-    | cxOpDef (prfCx, prfTheorem, o) ->
-      (case checkContext prfCx of Some cx ->
-      (case cxFindOpDecl (cx, o) of Some (tvS, t) ->
+      OK (wellFormedContext (cx <| typeDefinition (tn, tvS, t)))
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | cxOpDef (prfCx, prfTh, o) ->
+      (case checkContext prfCx of OK cx ->
+      (case checkOpDecl (cx, o) of OK (tvS, t) ->
       if ~(contextDefinesOp? (cx, o)) then
-      (case check prfTheorem of
-        Some (theoreM (cx1, binding
-                             (existential1, vS, tS,
-                              binary (equality, nullary (variable v), e)))) ->
-      (case checkExtraTypeVars (cx, cx1) of Some tvS1 ->
+      (case checkTheorem prfTh of
+        OK (cx1, binding (existential1, vS, tS,
+                          binary (equality, nullary (variable v), e))) ->
+      (case checkExtraTypeVars (cx, cx1) of OK tvS1 ->
       if noRepetitions? tvS
       && length tvS = length tvS1 then
       let tsbs:TypeSubstitution = FMap.fromSequences (tvS, map (TVAR, tvS1)) in
@@ -119,105 +157,100 @@ spec
       && tS = singleton (typeSubstInType tsbs t)
       && ~(o in? exprOps e) then
       let esbs:ExprSubstitution = FMap.singleton (v, OPP o (map (TVAR, tvS1))) in
-      Some (wellFormedContext (cx <| opDefinition (o, tvS1, exprSubst esbs e)))
-      else   None
-      else   None
-      | _ -> None)
-      | _ -> None)
-      else   None
-      | _ -> None)
-      | _ -> None)
-    | cxAxiom (prfCx, prfExpr, an) ->
-      (case checkContext prfCx of Some cx ->
+      OK (wellFormedContext (cx <| opDefinition (o, tvS1, exprSubst esbs e)))
+      else   FAIL
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | cxAxiom (prfCx, prfEx, an) ->
+      (case checkContext prfCx of OK cx ->
       if ~(an in? contextAxioms cx) then
-      (case check prfExpr of Some (wellTypedExpr (cx1, e, boolean)) ->
-      (case checkExtraTypeVars (cx, cx1) of Some tvS ->
-      Some (wellFormedContext (cx <| axioM (an, tvS, e)))
-      | _ -> None)
-      | _ -> None)
-      else   None
-      | _ -> None)
-    | cxTypeVarDecl (prfCx, tv) ->
-      (case checkContext prfCx of Some cx ->
+      (case checkExpr prfEx of OK (cx1, e, boolean) ->
+      (case checkExtraTypeVars (cx, cx1) of OK tvS ->
+      OK (wellFormedContext (cx <| axioM (an, tvS, e)))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+    | cxTypeVarDecl (prf, tv) ->
+      (case checkContext prf of OK cx ->
       if ~(tv in? contextTypeVars cx) then
-      Some (wellFormedContext (cx <| typeVarDeclaration tv))
-      else   None
-      | _ -> None)
-    | cxVarDecl (prfCx, prfType, v) ->
-      (case checkContext prfCx of Some cx ->
+      OK (wellFormedContext (cx <| typeVarDeclaration tv))
+      else   FAIL
+      | _ -> FAIL)
+    | cxVarDecl (prfCx, prfTy, v) ->
+      (case checkContext prfCx of OK cx ->
       if ~(v in? contextVars cx) then
-      (case check prfType of Some (wellFormedType (cx, t)) ->
-      Some (wellFormedContext (cx <| varDeclaration (v, t)))
-      | _ -> None)
-      else   None
-      | _ -> None)
+      (case checkTypeWithContext (prfTy, cx) of OK t ->
+      OK (wellFormedContext (cx <| varDeclaration (v, t)))
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
 
     %%%%%%%%%% well-formed specs:
-    | speC prfCx ->
-      (case checkContext prfCx of Some cx ->
+    | speC prf ->
+      (case checkContext prf of OK cx ->
       if contextTypeVars cx = empty
       && contextVars cx = empty then
-      Some (wellFormedSpec cx)
-      else   None
-      | _ -> None)
+      OK (wellFormedSpec cx)
+      else   FAIL
+      | _ -> FAIL)
 
     %%%%%%%%%% well-formed types:
-    | tyBoolean prfCx ->
-      (case checkContext prfCx of Some cx ->
-      Some (wellFormedType (cx, BOOL))
-      | _ -> None)
-    | tyVariable (prfCx, tv) ->
-      (case checkContext prfCx of Some cx ->
+    | tyBoolean prf ->
+      (case checkContext prf of OK cx ->
+      OK (wellFormedType (cx, BOOL))
+      | _ -> FAIL)
+    | tyVariable (prf, tv) ->
+      (case checkContext prf of OK cx ->
       if tv in? contextTypeVars cx then
-      Some (wellFormedType (cx, TVAR tv))
-      else   None
-      | _ -> None)
-    | tyArrow (prfType1, prfType2) ->
-      (case check prfType1 of Some (wellFormedType (cx, t1)) ->
-      (case check prfType2 of Some (wellFormedType (cx, t2)) ->
-      Some (wellFormedType (cx, t1 --> t2))
-      | _ -> None)
-      | _ -> None)
-    | tySum (prfCx, prfType?s, cS) ->
-      (case checkContext prfCx of Some cx ->
-      if length prfType?s = length cS
+      OK (wellFormedType (cx, TVAR tv))
+      else   FAIL
+      | _ -> FAIL)
+    | tyArrow (prf1, prf2) ->
+      (case checkType prf1 of OK (cx, t1) ->
+      (case checkTypeWithContext (prf2, cx) of OK t2 ->
+      OK (wellFormedType (cx, t1 --> t2))
+      | _ -> FAIL)
+      | _ -> FAIL)
+(*
+    | tySum (prfCx, prfTy?s, cS) ->
+      (case checkContext prfCx of OK cx ->
+      if length prfTy?s = length cS
       && noRepetitions? cS
       && length cS > 0 then
+
       let n:PosNat = length cS in
-      if (fa(prf:Proof) Some prf in? prfType?s =>
-            (ex(t:Type) check prf = Some (wellFormedType (cx, t)))) then
+      if (fa(prf:Proof) OK prf in? prfType?s =>
+            (ex(t:Type) check prf = OK (wellFormedType (cx, t)))) then
       let t?S:Type?s = the (fn t?S ->
           length t?S = n &&
           (fa(i:Nat) i < n =>
              t?S ! i =
              (case prfType?s ! i of
-                | Some prf ->
-                  Some (the (fn t:Type ->
-                          check prf = Some (wellFormedType (cx, t))))
-                | None -> None))) in
-      Some (wellFormedType (cx, SUM cS t?S))
-      else   None
-      else   None
-      | _ -> None)
-*)
-(*
-    | tyInstance (prfCx, prfTypes, tn) ->
-      (case checkContext prfCx of Some cx ->
-      (case cxFindType (cx, tn) = Some n ->
-      if length prfTypes = n then
-      let j?S:FSeq (Option Judgement) = map (check, prfTypes) in
-      if ...
-      let tS:Types = the (fn tS ->
-         length tS = n &&
-         (fa(i:Nat) i < n
+                | OK prf ->
+                  OK (the (fn t:Type ->
+                          check prf = OK (wellFormedType (cx, t))))
+                | FAIL -> FAIL))) in
+      OK (wellFormedType (cx, SUM cS t?S))
+      else   FAIL
 
-         pj (wellFormedContext cx)
-      && typeDeclaration (tn, n) in? cx
-      && length tS = n
-      && (fa(i:Nat) i < n =>
-            pj (wellFormedType (cx, tS!i)))
-      => pj (wellFormedType (cx, TYPE tn tS)))
+      else   FAIL
+      | _ -> FAIL)
 *)
+    | tyInstance (prfCx, prfTyS, tn) ->
+      (case checkContext prfCx of OK cx ->
+      (case checkTypeDecl (cx, tn) of OK n ->
+      if length prfTyS = n then
+      (case checkTypesWithContext (prfTyS, cx) of OK tS ->
+      OK (wellFormedType (cx, TYPE tn tS))
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
 
 
 endspec

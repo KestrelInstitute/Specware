@@ -128,6 +128,16 @@ FSeq qualifying spec
                               then seqFunction s (i + k)
                               else None)
 
+  % extract sequence of first n elements:
+  op firstN : [a] {(s,n) : FSeq a * Nat | n <= length s} -> FSeq a
+  def firstN(s,n) =
+    subFromLong (s, 0, n)
+
+  % extract sequence of last n elements:
+  op lastN : [a] {(s,n) : FSeq a * Nat | n <= length s} -> FSeq a
+  def lastN(s,n) =
+    subFromLong (s, length s - n, n)
+
   % fold starting from left end:
   op foldl : [a,b] FSeq a * b * (b * a -> b) -> b
   def [a,b] foldl =

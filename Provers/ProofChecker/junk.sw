@@ -4,6 +4,33 @@ again. *)
 
 
 
+%%% non-constructive ops for checking proofs:
+
+  def checkExtraTypeVars = the (fn checkExtraTypeVars ->
+    (fa (cx:Context, tvS:TypeVariables)
+       checkExtraTypeVars (cx, cx ++ multiTypeVarDecls tvS) = OK tvS) &&
+    (fa (cx1:Context, cx2:Context)
+       ~(ex (tvS:TypeVariables) cx2 = cx1 ++ multiTypeVarDecls tvS) =>
+       checkExtraTypeVars (cx1, cx2) = Fail noExtraTypeVars))
+
+  def checkTypeDecl = the (fn checkTypeDecl ->
+    (fa (cx1:Context, tn:TypeName, n:Nat, cx2:Context)
+       ~(tn in? contextTypes cx1 \/ contextTypes cx2) =>
+       checkTypeDecl (cx1 <| typeDeclaration(tn,n) ++ cx2, tn) = OK n) &&
+    (fa (cx:Context, tn:TypeName)
+       ~(tn in? contextTypes cx) =>
+       checkTypeDecl (cx, tn) = Fail noTypeDecl))
+
+  def checkOpDecl = the (fn checkOpDecl ->
+    (fa (cx1:Context, o:Operation, tvS:TypeVariables, t:Type, cx2:Context)
+       ~(o in? contextOps cx1 \/ contextOps cx2) =>
+       checkOpDecl (cx1 <| opDeclaration(o,tvS,t) ++ cx2, o) = Some(tvS,t)) &&
+    (fa (cx:Context, o:Operation)
+       ~(o in? contextOps cx) =>
+       checkOpDecl (cx, o) = None))
+
+
+
 %%% case expressions with FSeq (Pattern * Expression)
 
     | casE            Expression * FSeq (Pattern * Expression)
