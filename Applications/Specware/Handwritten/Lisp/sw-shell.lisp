@@ -74,6 +74,8 @@
 (defun in-specware-shell? ()
   *in-specware-shell?*)
 
+(setq *debugger-hook* #'(lambda (ignore1 ignore2) (set-specware-shell nil)))
+
 (defun specware-shell0 ()
   (specware-shell t))
 
@@ -83,6 +85,7 @@
 	 (cl:*package* cl:*package*)
 	 (sw-shell-pkg (find-package :SWShell))
 	 * ** ***
+	 / // ///
 	 ch)
     (emacs::eval-in-emacs "(set-comint-prompt)")
     (setq *emacs-eval-form-after-prompt* nil)
@@ -154,7 +157,10 @@
   (when val
     (setq *** **
 	  ** *
-	  * (car val)))
+	  * (car val)
+	  /// //
+	  // /
+	  / val))
   (values-list val))
 
 (defun process-sw-shell-command (command argstr)
