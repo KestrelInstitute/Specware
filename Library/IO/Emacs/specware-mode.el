@@ -977,12 +977,34 @@ If anyone has a good algorithm for this..."
   (let ((len (length filename)))
     (when (equal ".sw" (substring filename (- len 3)))
       (setq filename (substring filename 0 (- len 3))))
-    (sw::normalize-filename filename)))
+    (setq filename (sw::normalize-filename filename))
+    (name-relative-to-swpath filename)))
 
 (defun sw::normalize-filename (filename)
   (setq filename (replace-in-string filename "\\\\" "/"))
   (replace-in-string filename "Program Files" "Progra~1"))
-  
+
+(defun get-swpath ()
+  (let ((rawpath (sw:eval-in-lisp "(specware::getenv \"SWPATH\")"))
+	(delim (if (eq window-system 'mswindows) ?\; ?:))
+	(result ())
+	pos)
+    (while (setq pos (position delim rawpath))
+      (push (substring rawpath 0 pos) result)
+      (setq rawpath (substring rawpath (+ pos 1))))
+    (push rawpath result)
+    (nreverse result)))
+
+(defun name-relative-to-swpath (filename)
+  (let ((swpath (get-swpath)))
+    (loop for dir in swpath
+	  do (if (string-equal dir (substring filename 0 (length dir)))
+		 (let ((rel-filename (substring filename (length dir))))
+		   (return (if (eq (elt rel-filename 0) ?/)
+			       rel-filename
+			     (concat "/" rel-filename)))))
+	  finally (return filename))))
+
 (defun sw:process-unit (unitid)
   (interactive (list (read-from-minibuffer "Process Unit: "
 					   (sw::file-to-specware-unit-id
@@ -1051,7 +1073,7 @@ If anyone has a good algorithm for this..."
 	 (qualifier (car pr))
 	 (sym (cadr pr)))
     (message "Requesting info from Lisp...")
-    (let ((sym (if (and (> (length sym) 3)(equal (substring sym 0 2) "|!"))
+    (let ((sym (if (and (> (length sym) 3) (equal (substring sym 0 2) "|!"))
 		   (substring sym 2 -1)
 		 sym)))
       (let ((results (sw:eval-in-lisp (make-search-form qualifier sym))))
