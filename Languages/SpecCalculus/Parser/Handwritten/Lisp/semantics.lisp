@@ -3,6 +3,7 @@
 (in-package "PARSER4")
 
 ;; (defpackage "METASLANG")
+(defpackage "SPECCALC")
 (defpackage "STANDARDSPEC")
 (defpackage "MS")
 (defpackage "POSITION")
@@ -118,8 +119,8 @@
 ;;; ========================================================================
 
 (defun make-sc-print (term l r)
-  (cons (cons :|Print| term)
-    (make-pos l r)))
+  ; (cons (cons :|Print| term) (make-pos l r))
+  (SpecCalc::mkPrint-2 term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-UNIT-ID
@@ -932,16 +933,18 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-colimit (diag l r)
-  (cons (cons :|Colimit| diag)
-        (make-pos l r)))
+  ; (cons (cons :|Colimit| diag) (make-pos l r))
+  (speccalc::mkColimit-2 diag (make-pos l r))
+  )
 
 ;;; ========================================================================
 ;;;  SC-SUBSTITUTE
 ;;; ========================================================================
 
 (defun make-sc-substitute (spec-term morph-term l r)
-  (cons (cons :|Subst| (cons spec-term morph-term))
-        (make-pos l r)))
+  ; (cons (cons :|Subst| (cons spec-term morph-term)) (make-pos l r))
+  (speccalc::mkSubst-3 spec-term morph-term (make-pos l r))
+  )
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH
@@ -982,8 +985,9 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-obligations (term l r)
-  (cons (cons :|Obligations| term)
-    (make-pos l r)))
+  ; (cons (cons :|Obligations| term) (make-pos l r))
+  (speccalc::mkObligations-2 term (make-pos l r))
+  )
 
 ;;; ========================================================================
 ;;;  SC-PROVE
@@ -1006,14 +1010,16 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-reduce (ms-term sc-term l r)
-  (cons (cons :|Reduce| (cons ms-term sc-term))
-    (make-pos l r)))
+  ;; (cons (cons :|Reduce| (cons ms-term sc-term)) (make-pos l r))
+  (speccalc::mkReduce-3 ms-term sc-term (make-pos l r))
+  )
 
 ;;; ========================================================================
 ;;;  SC-EXTEND
 ;;; ========================================================================
 
 (defun make-sc-extend (term l r)
-  (cons (cons :|ExtendMorph| term)
-    (make-pos l r)))
+  ; (cons (cons :|ExtendMorph| term) (make-pos l r))
+  (speccalc::mkExtendMorph-2 term (make-pos l r))
+  )
 

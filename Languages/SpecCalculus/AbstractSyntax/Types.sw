@@ -303,10 +303,53 @@ The term in the component must evaluate to a morphism.
                        | Error   (String * String)  % error msg, problematic string
 \end{spec}
 
-The next is callable from the parser.
+The following are callable from the parser.
 
 \begin{spec}
-  op mkOther : fa (a) (OtherTerm a) * a -> Term a
-  def mkOther (other,position) = (Other other, position)
+
+  op mkPrint       : fa (a) (Term a)                                                        * a -> Term a
+  op mkProve       : fa (a) ClaimName * Term a * ProverName * Assertions * ProverOptions    * a -> Term a
+  op mkUnitId      : fa (a) RelativeUID                                                     * a -> Term a
+  op mkSpec        : fa (a) (List (SpecElem a))                                             * a -> Term a
+  op mkDiag        : fa (a) (List (DiagElem a))                                             * a -> Term a
+  op mkOther       : fa (a) (OtherTerm a)                                                   * a -> Term a
+  op mkColimit     : fa (a) (Term a)                                                        * a -> Term a
+  op mkSpecMorph   : fa (a) (Term a) * (Term a) * (List (SpecMorphRule a))                  * a -> Term a
+  op mkDiagMorph   : fa (a) (Term a) * (Term a) * (List (DiagMorphRule a))                  * a -> Term a
+  op mkExtendMorph : fa (a) (Term a)                                                        * a -> Term a
+  op mkQualify     : fa (a) (Term a) * Name                                                 * a -> Term a
+  op mkTranslate   : fa (a) (Term a) * (TranslateExpr a)                                    * a -> Term a
+  op mkLet         : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
+  op mkWhere       : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
+  op mkHide        : fa (a) (List (NameExpr a)) * (Term a)                                  * a -> Term a
+  op mkExport      : fa (a) (List (NameExpr a)) * (Term a)                                  * a -> Term a
+  op mkGenerate    : fa (a) String * (Term a) * (Option String)                             * a -> Term a
+  op mkSubst       : fa (a) (Term a) * (Term a)                                             * a -> Term a
+  op mkObligations : fa (a) (Term a)                                                        * a -> Term a
+  op mkReduce      : fa (a) (ATerm a) * (Term a)                                            * a -> Term a
+
+
+  def mkPrint       (term,                      pos) = (Print       term,                        pos)
+  def mkProve       (claim_name, term, prover_name, assertions, prover_options, pos) 
+                                                     = (Prove       (claim_name, term, prover_name, assertions, prover_options), pos) 
+  def mkUnitId      (uid,                       pos) = (UnitId      uid,                         pos)
+  def mkSpec        (elements,                  pos) = (Spec        elements,                    pos)
+  def mkDiag        (elements,                  pos) = (Diag        elements,                    pos)
+  def mkColimit     (diag,                      pos) = (Colimit     diag,                        pos)
+  def mkSpecMorph   (dom_term, cod_term, rules, pos) = (SpecMorph   (dom_term, cod_term, rules), pos)
+  def mkDiagMorph   (dom_term, cod_term, rules, pos) = (DiagMorph   (dom_term, cod_term, rules), pos)
+  def mkExtendMorph (term,                      pos) = (ExtendMorph term,                        pos)
+  def mkQualify     (term, name,                pos) = (Qualify     (term, name),                pos)
+  def mkTranslate   (term, translate_expr,      pos) = (Translate   (term, translate_expr),      pos)
+  def mkLet         (decls, term,               pos) = (Let         (decls, term),               pos)
+  def mkWhere       (decls, term,               pos) = (Where       (decls, term),               pos)
+  def mkHide        (name_exprs, term,          pos) = (Hide        (name_exprs, term),          pos)
+  def mkExport      (name_exprs, term,          pos) = (Export      (name_exprs, term),          pos)
+  def mkGenerate    (lang, term, opt_file,      pos) = (Generate    (lang, term, opt_file),      pos)
+  def mkSubst       (spec_term, sm_term,        pos) = (Subst       (spec_term, sm_term),        pos)
+  def mkObligations (term,                      pos) = (Obligations (term),                      pos)
+  def mkReduce      (term_a, term_b,            pos) = (Reduce      (term_a, term_b),            pos)
+  def mkOther       (other,                     pos) = (Other       other,                       pos)
+
 endspec
 \end{spec}
