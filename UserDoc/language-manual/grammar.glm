@@ -11,9 +11,10 @@ easy reference.
 <formalpara><title>Models</title>
 <para>
 <<
-||  `spec ::= `spec-form
-||  
 ||  `op ::= `op-name
+>>
+<<
+||  `spec ::= `spec-form
 >>
 </para>
 </formalpara>
@@ -507,7 +508,9 @@ easy reference.
 ||    | `list-display
 ||    | `structor
 ||    | ( `expression )
+||    | ( `inbuilt-infix )
 ||  
+||  `inbuilt-infix ::= => | '|'| | && | = | ~=
 >>
 </para>
 </formalpara>
@@ -593,9 +596,11 @@ easy reference.
 ||  
 ||  `actual-parameter ::= `closed-expression
 ||  
-||  `infix-application ::= `operand `op-name `operand
+||  `infix-application ::= `operand `infix-operator `operand
 ||  
 ||  `operand ::= `tight-expression
+||  
+||  `infix-operator ::= `op-name | `inbuilt-infix
 >>
 </para>
 </formalpara>
