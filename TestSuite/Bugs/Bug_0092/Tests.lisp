@@ -9,7 +9,6 @@
 
 spec  
  import S
- import /Library/Base/WFO
 endspec
 
 ")
