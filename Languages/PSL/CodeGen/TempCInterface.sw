@@ -1,5 +1,5 @@
 spec
- sort CGen.CSpec
+ sort CSpec
  sort Id.Id
  sort Proc.Procedure
  sort Spec.Spec

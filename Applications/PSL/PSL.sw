@@ -6,6 +6,7 @@
 let PSL =
   spec 
     import AuxPSL
+    import /Languages/PSL/Semantics/Evaluate/Other
     import /Languages/PSL/CodeGen/ToC
   endspec
 in generate lisp PSL

@@ -9,7 +9,7 @@ SpecCalc qualifying spec {
   import /Languages/SpecCalculus/Semantics/Evaluate/Substitute
   import Transformations/PartialEval
   import Transformations/Inline
-  import ../../CodeGen/TempCInterface
+  import CGen qualifying ../../CodeGen/TempCInterface
 
   % This doesn't belong here.
   op Convert.mapToList : fa (a,b) FinitePolyMap.Map (a,b) -> List (a * b)
