@@ -157,7 +157,7 @@ Prover qualifying spec
 	  let opName = mkQualifiedId(qname, name) in
 	  let initialFmla = hd (unLambdaDef(spc, srt, opName, term)) in
 	  let liftedFmlas = proverPattern(initialFmla) in
-	  let axioms = map (fn(fmla:Term) -> (Axiom, name^"_def", [], fmla)) liftedFmlas in
+	  let axioms = map (fn(fmla:Term) -> (Axiom, name^"_def", [], withAnnT(fmla, pos))) liftedFmlas in
 	  %%let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
 	  	%let _ = writeLine(name^": in axiomFromOpDef Def part") in
             axioms

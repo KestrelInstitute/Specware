@@ -25,7 +25,7 @@ SpecCalc qualifying spec {
 	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
                | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
      expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
-     _ <- return(writeString(printSpec(subtractSpec expandedSpec baseSpec)));
+     %_ <- return(writeString(printSpec(subtractSpec expandedSpec baseSpec)));
      prover_options <- 
        (case possible_options of
 	  | OptionString prover_options -> return (prover_options)

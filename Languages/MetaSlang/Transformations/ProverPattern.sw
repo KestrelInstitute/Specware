@@ -158,7 +158,7 @@ def removePatternCase(term) =
 	  | (hdBodyVars, hdBodyCond, hdBody)::tlBodyCTs ->
 	    let tlCondTerms = recurseDownBodyCondTerms(hdCaseVars, caseCond, tlBodyCTs) in
 	    let newCondTerm = (hdCaseVars++hdBodyVars, Utilities.mkAnd(hdBodyCond, caseCond), hdBody):CondTerm in
-	    let _ = writeLine("hdBody = "^printTerm(hdBody)) in
+	    %let _ = writeLine("hdBody = "^printTerm(hdBody)) in
 	    cons(newCondTerm, tlCondTerms) in
   let def combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars:List(Var), caseCTs, bodyCTs) =
         case caseCTs of
@@ -173,14 +173,14 @@ def removePatternCase(term) =
         let bodyCondTerms = removePattern(body) in
 	let patTerms = patternToTerms(pat) in
 	let patVars = foldl(fn(term, res) -> freeVars(term)++res) [] patTerms in
-	let _ = writeLine("CaseCase: "^printPattern(pat)^", "^printTerm(cond)^", "^printTerm(body)) in
+	%let _ = writeLine("CaseCase: "^printPattern(pat)^", "^printTerm(cond)^", "^printTerm(body)) in
 	let res = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, caseTermCondTerms, bodyCondTerms) in
-	let _ = map (fn (ct) -> writeLine("CaseCaseRes: "^printCondTerm(ct))) res in
+	%let _ = map (fn (ct) -> writeLine("CaseCaseRes: "^printCondTerm(ct))) res in
 	res in
   let res = foldl (fn (singleCase, resCondTerms) -> removePatternCaseCase(singleCase)++resCondTerms) [] cases in
-  let _ = writeLine("RemovePatternCase: "^printTerm(term)) in
-  let _ = writeLine(natToString(length(cases))^ " cases.") in
-  let _ = map (fn (ct) -> writeLine(printCondTerm(ct))) res in
+  %let _ = writeLine("RemovePatternCase: "^printTerm(term)) in
+  %let _ = writeLine(natToString(length(cases))^ " cases.") in
+  %let _ = map (fn (ct) -> writeLine(printCondTerm(ct))) res in
   res
 
   op removePatternApply: Term -> CondTerms
@@ -319,14 +319,6 @@ def removePatternCase(term) =
     let def varsCondRecurse(vars, cond) =
           let condTermsForCond = removePattern(cond) in
 	  map (fn (vs, c, t) -> (vars++vs, Utilities.mkAnd(c, t))) condTermsForCond in
-(*    let def crossVarsConds(varsConds1, varsConds2) =
-          case varsConds1 of
-	    | Nil -> []
-	    | (hdVars, hdCond)::tlVarsConds1 ->
-	      let newHdVarsConds = map (fn (vars, cond) -> (hdVars++vars, Utilities.mkAnd(hdCond, cond))) varsConds2 in
-	      let newTlVarsConds = crossVarsConds(tlVarsConds1, varsConds2) in
-	      newHdVarsConds++newTlVarsConds in
-*)
     let def patternTermListToVarsConds(patternTermList) =
           let _ = debug("patternTermList") in
 	  let varsCondsList = map (fn (pat, term) -> varsCondRecurse(patternAndTermToVarsConds(pat, term))) patternTermList in
@@ -337,15 +329,6 @@ def removePatternCase(term) =
 		(vars1++vars2, Utilities.mkAnd(cond1, cond2)) in
 	  let def finalFun(x) = x in
 	  generalCrossProduct(varsCondsList, initialFun, interimFun, finalFun) in
-(*          case patternTermList of
-	    | Nil -> []
-	    | (hdPat, hdTerm)::tlPTL -> 
-	      let hdVarsConds = varsCondRecurse(patternAndTermToVarsConds(hdPat, hdTerm)) in
-	      let tlVarsConds = patternTermListToVarsConds(tlPTL) in
-	      let res = crossVarsConds(hdVarsConds, tlVarsConds) in
-	      let _ = map (fn(vars, cond) -> writeLine("patternTermListToVarsCons: "^ (foldl (fn (var, string) -> printTerm(mkVar(var))^","^string) "" vars) ^";" ^printTerm(cond))) res in
-	      res in
-*)
     let def crossLetTerms(patVarsConds, bodyCondTerms) =
 	  case patVarsConds of
 	    | Nil -> []
@@ -355,7 +338,7 @@ def removePatternCase(term) =
 	      hdCondTerms++tlCondTerms in
     let patVarsConds = patternTermListToVarsConds(patternTermList) in
     let res =  crossLetTerms(patVarsConds, newBodyCondTerms) in
-    let _ = writeLine("removePatternLet: "^printTerm(term)) in
+    %let _ = writeLine("removePatternLet: "^printTerm(term)) in
     res
 
   op removePatternVar: Term -> CondTerms
@@ -365,8 +348,6 @@ def removePatternCase(term) =
   def removePatternFun(term) = [([], mkTrue(), term)]
 
   op removePatternLambda: Term -> CondTerms
-  (*def removePatternLambda(term as Lambda(Match, b)) =*)
-    
 
   op removePatternIfThenElse: Term -> CondTerms
   def removePatternIfThenElse(term as IfThenElse(condTerm, thenTerm, elseTerm, b)) =
