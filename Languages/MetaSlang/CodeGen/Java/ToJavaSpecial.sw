@@ -16,12 +16,26 @@ spec
       def infixOp(binOp,t1,t2) =
         let ((s1,argexpr1,k,l),col1) = termToExpression(tcx,t1,k,l,spc) in
         let ((s2,argexpr2,k,l),col2) = termToExpression(tcx,t2,k,l,spc) in
-	let expr = CondExp(Bin(binOp,Un(Prim(Paren(argexpr1))),Un(Prim(Paren(argexpr2)))),None) in
+	let expr = CondExp(Bin(binOp,
+			       Un(Prim(Paren(argexpr1))),
+			       Un(Prim(Paren(argexpr2)))),
+			   None) in
 	Some ((s1++s2,expr,k,l),concatCollected(col1,col2))
     in
     let
       def stringConcat(t1,t2) =
 	infixOp(Plus,t1,t2)
+    in
+    let
+      def stringCompare(binOp,t1,t2) =
+        let Var ((var_name,_), _) = t1 in
+        let ((s,arg_expr, k,l),col) = termToExpression(tcx,t2,k,l,spc) in
+	let minv = MethInv (mkViaPrimMI (Name ([], var_name), "compareTo", [arg_expr])) in
+	let expr = CondExp(Bin(binOp,
+			       Un (Prim minv),
+			       Un (Prim (IntL 0))),
+			   None) in
+	Some ((s,expr,k,l),col)
     in
     let
       def intToString(t) =
@@ -96,26 +110,34 @@ spec
 	let newexpr = mkPrim(NewClsInst(ForCls(([],"Object"),[],Some clsbody))) in
 	let expr = mkMethExprInv(newexpr,mname,[argexpr]) in
 	Some ((s,expr,k,l),col)
+
       | Apply(Fun(Op(Qualified("String","writeLine"),_),_,_),t,_) -> 
         let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
 	let expr = mkMethInvName((["System","out"],"println"),[argexpr]) in
 	Some ((s,expr,k,l),col)
+
       | Apply(Fun(Op(Qualified("String","toScreen"),_),_,_),t,_) -> 
         let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
 	let expr = mkMethInvName((["System","out"],"println"),[argexpr]) in
 	Some ((s,expr,k,l),col)
+
       | Apply(Fun(Op(Qualified("String","concat"),_),_,_),Record([(_,t1),(_,t2)],_),_) -> stringConcat(t1,t2)
-      | Apply(Fun(Op(Qualified("String","++"),_),_,_),Record([(_,t1),(_,t2)],_),_) -> stringConcat(t1,t2)
-      | Apply(Fun(Op(Qualified("String","^"),_),_,_),Record([(_,t1),(_,t2)],_),_) -> stringConcat(t1,t2)
+      | Apply(Fun(Op(Qualified("String","++"),    _),_,_),Record([(_,t1),(_,t2)],_),_) -> stringConcat(t1,t2)
+      | Apply(Fun(Op(Qualified("String","^"),     _),_,_),Record([(_,t1),(_,t2)],_),_) -> stringConcat(t1,t2)
+      | Apply(Fun(Op(Qualified("String","<"),     _),_,_),Record([(_,t1),(_,t2)],_),_) -> stringCompare(Lt,t1,t2)
+      | Apply(Fun(Op(Qualified("String",">"),     _),_,_),Record([(_,t1),(_,t2)],_),_) -> stringCompare(Gt,t1,t2)
+
       | Fun(Op(Qualified("String","newline"),_),_,_) ->
 	let sep = mkJavaString "line.separator" in
 	let expr = mkMethInvName((["System"],"getProperty"),[sep]) in
 	Some ((mts,expr,k,l),nothingCollected)
+
       | Apply(Fun(Op(Qualified("String","length"),_),_,_),t,_) -> 
         let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
 	let opid = "length" in
 	let expr = mkMethExprInv(argexpr,opid,[]) in
 	Some ((s,expr,k,l),col)
+
       | Apply(Fun(Op(Qualified("String","substring"),_),_,_),Record([(_,t1),(_,t2),(_,t3)],_),_) ->
         let ((s1,argexpr1,k,l),col1) = termToExpression(tcx,t1,k,l,spc) in
         let ((s2,argexpr2,k,l),col2) = termToExpression(tcx,t2,k,l,spc) in
