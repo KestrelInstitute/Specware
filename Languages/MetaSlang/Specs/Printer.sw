@@ -1246,16 +1246,28 @@ def AnnSpecPrinter.printTerm term =
 	 | Op qid ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo ->
-	        ppOpDeclOp context (~afterOp?) (opinfo,result))
+	        ppOpDeclOp context (~afterOp?) (opinfo,result)
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
+		(0, []))
 	 | OpDef qid ->
 	   (case findTheOp(spc,qid) of
-	      | Some opinfo -> ppOpDeclDef context (opinfo,result))
+	      | Some opinfo -> ppOpDeclDef context (opinfo,result)
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
+		(0, []))
 	 | Sort qid ->
 	   (case findTheSort(spc,qid) of
-	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result))
+	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result)
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
+		(0, []))
 	 | SortDef qid ->
 	   (case findTheSort(spc,qid) of
-	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result))
+	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result)
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
+		(0, []))
 	 | Property prop ->
 	   (index+1,
 	    Cons(ppProperty context (index, prop),ppResult))
@@ -1268,7 +1280,10 @@ def AnnSpecPrinter.printTerm term =
 	      | Some opinfo ->
 		if qid1 = qid2
 		  then ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
-		else ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result)))
+		else ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid1 ^ "\n") in
+		(0, []))
 	   | el :: r_els -> ppSpecElement(el,afterOp?,aux(r_els,(embed? Op) el,result))
    in
      aux(elements,true,result)
@@ -1306,16 +1321,28 @@ def AnnSpecPrinter.printTerm term =
 	 | Op qid ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo ->
-	        ppOpDeclOp context (~afterOp?) (opinfo,result))
+	        ppOpDeclOp context (~afterOp?) (opinfo,result)
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
+		(0, []))
 	 | OpDef qid ->
 	   (case findTheOp(spc,qid) of
-	      | Some opinfo -> ppOpDeclDef context (opinfo,result))
+	      | Some opinfo -> ppOpDeclDef context (opinfo,result)
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
+		(0, []))
 	 | Sort qid ->
 	   (case findTheSort(spc,qid) of
-	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result))
+	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result)
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
+		(0, []))
 	 | SortDef qid ->
 	   (case findTheSort(spc,qid) of
-	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result))
+	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result)
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
+		(0, []))
 	 | Property prop ->
 	   (index+1,
 	    Cons(ppProperty context (index, prop),ppResult))
@@ -1328,7 +1355,10 @@ def AnnSpecPrinter.printTerm term =
 	      | Some opinfo ->
 		if qid1 = qid2
 		  then ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
-		else ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result)))
+		else ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
+	      | _ -> 
+	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid1 ^ "\n") in
+		(0, []))
 	   | el :: r_els -> ppSpecElement(el,afterOp?,aux(r_els,(embed? Op) el,result))
    in
      aux(elements,true,result)
