@@ -6,6 +6,10 @@
   :swl "S"
   :output '(";;; Elaborating spec at $TESTDIR/S"
 	    ";;; Generating lisp file $TESTDIR/lisp/S.lisp"
+	    (:optional
+	     ";; ensure-directories-exist: creating $TESTDIR/lisp/S.lisp")
+	    (:optional
+	     ";; Directory $TESTDIR/lisp/ does not exist, will create.")
 	    ""))
 
  ("Bug 0025 : Problem with code generation / libraries failing ot include all the defun's needed in .lisp [test lisp]"
