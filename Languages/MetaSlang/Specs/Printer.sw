@@ -83,6 +83,7 @@ AnnSpecPrinter qualifying spec {
   op ppProperty                   : fa(a) context -> Nat * AProperty a -> Line
   op ppSpec                       : fa(a) context -> ASpec a -> Pretty  
   op ppSpecR                      : fa(a) context -> ASpec a -> Pretty
+  op ppSpecHidingImportedSortsOps : fa(a) context -> ASpec a -> Pretty
   op ppSpecAll                    : fa(a) context -> ASpec a -> Pretty
   op ppSortDecls                  : fa(a) context -> ASortMap a -> Lines
   op ppOpDecls                    : fa(a) context -> AOpMap a -> Lines
@@ -958,6 +959,43 @@ AnnSpecPrinter qualifying spec {
                (ppSortDecls context sorts)
                ++
                (ppOpDecls context ops)
+               ++
+               (ListUtilities.mapWithIndex (ppProperty context) properties)
+               ++
+               [(0, pp.EndSpec),
+                (0, string "")])
+
+  def ppSpecHidingImportedSortsOps context  {importInfo = {imports, importedSpec=_,localOps,localSorts},
+					     sorts, ops, properties} = 
+
+      let pp : ATermPrinter = context.pp in
+      let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
+      blockAll(0,
+               [(0, blockFill(0,
+                              [(0, pp.Spec),
+                               (0, string " ")]))]
+               ++
+               (map (fn (spec_ref, spc) -> (1,prettysFill [pp.Import, string spec_ref])) imports) 
+               ++
+	       (let (index,pps) = foldl (fn (Qualified(qualifier,id), index_and_lines) ->
+					 case findAQualifierMap (sorts, qualifier, id) of
+					   | None -> index_and_lines
+					   | Some sort_info ->
+					     ppSortDecl context (qualifier, id, sort_info, index_and_lines))
+		                        (0,[])
+                                        localSorts
+		in
+		pps)
+               ++
+	       (let (index,pps) = foldl (fn (Qualified(qualifier,id), index_and_lines) ->
+					 case findAQualifierMap (ops, qualifier, id) of
+					   | None -> index_and_lines
+					   | Some op_info ->
+					     ppOpDecl context (qualifier, id, op_info, index_and_lines))
+		                        (0,[])
+                                        localOps
+		in
+		pps)
                ++
                (ListUtilities.mapWithIndex (ppProperty context) properties)
                ++
