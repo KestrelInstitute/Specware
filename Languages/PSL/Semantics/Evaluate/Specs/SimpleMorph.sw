@@ -16,7 +16,7 @@ SpecMorph qualifying spec
   def changedVars morph = morph.changedVars
 
   op makeMorphism : ModeSpec -> ModeSpec -> OpRefSet.Set -> Morphism
-  def makeMorphism dom cod changedVars = {
+  def makeMorphism _ _ (* dom cod *) changedVars = {
       changedVars = changedVars
     }
 
