@@ -32,30 +32,30 @@ Char qualifying spec
     chr = inverse ord
 
   axiom isUpperCase_def is
-    fa (c : Char) isUpperCase c <=> (ord #A <= ord c && ord c <= ord #Z)
+    fa (c:Char) isUpperCase c <=> (ord #A <= ord c && ord c <= ord #Z)
 
   axiom isLowerCase_def is
-    fa (c : Char) isLowerCase c <=> (ord #a <= ord c && ord c <= ord #z)
+    fa (c:Char) isLowerCase c <=> (ord #a <= ord c && ord c <= ord #z)
 
   axiom isAlpha_def is
-    fa (c : Char) isAlpha c <=> isUpperCase c || isLowerCase c
+    fa (c:Char) isAlpha c <=> isUpperCase c || isLowerCase c
 
   axiom isNum_def is
-    fa (c : Char) isNum c <=> (ord #0 <= ord c && ord c <= ord #9)
+    fa (c:Char) isNum c <=> (ord #0 <= ord c && ord c <= ord #9)
 
   axiom isAlphaNum_def is
-    fa (c : Char) isAlphaNum c <=> isAlpha c || isNum c
+    fa (c:Char) isAlphaNum c <=> isAlpha c || isNum c
 
   axiom isAscii_def is
-    fa (c : Char) isAscii c <=> ord c < 128
+    fa (c:Char) isAscii c <=> ord c < 128
 
   axiom toUpperCase_def is
-    fa (c : Char) toUpperCase c = (if isLowerCase c
+    fa (c:Char) toUpperCase c = (if isLowerCase c
                                    then chr(ord c - ord #a + ord #A)
                                    else c)
 
   axiom toLowerCase_def is
-    fa (c : Char) toLowerCase c  = (if isUpperCase c
+    fa (c:Char) toLowerCase c  = (if isUpperCase c
                                     then chr(ord c - ord #A + ord #a)
                                     else c)
 

@@ -42,14 +42,14 @@ String qualifying spec
     fa (s : String) length s = List.length(explode s)
 
   axiom concat_def is
-    fa (s1,s2 : String)
+    fa (s1 : String, s2 : String)
        concat(s1,s2) = implode(List.concat(explode s1,explode s2))
 
   axiom concat2_def is
-    fa (s1,s2 : String) (s1 ++ s2) = concat(s1,s2)
+    fa (s1 : String, s2 : String) (s1 ++ s2) = concat(s1,s2)
 
   axiom concat3_def is
-    fa (s1,s2 : String) (s1 ^ s2) = concat(s1,s2)
+    fa (s1 : String, s2 : String) (s1 ^ s2) = concat(s1,s2)
 
   axiom map_def is
     fa (f : Char -> Char, s : String)
@@ -68,7 +68,7 @@ String qualifying spec
        sub(s,n) = nth(explode s,n)
 
   axiom substring_def is
-    fa (s : String, i : Nat, j : Nat) 
+    fa (s : String, i : Nat, j : Nat)
       i <= j && j <= length s 
       =>
       substring(s,i,j) = implode(sublist(explode s,i,j))
@@ -84,10 +84,10 @@ String qualifying spec
        translate subst s = concatList(map subst (explode s))
 
   axiom lt_def is
-    fa (s1,s2 : String) s1 lt s2 <=> compare(s1,s2) = Less
+    fa (s1 : String, s2 : String) s1 lt s2 <=> compare(s1,s2) = Less
 
   axiom leq_def is
-    fa (s1,s2 : String)  s1 leq s2  <=>  s1 lt s2  || s1 = s2
+    fa (s1 : String, s2 : String)  s1 leq s2  <=>  s1 lt s2  || s1 = s2
 
   axiom newline_def is
     newline = "\n"

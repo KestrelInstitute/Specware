@@ -34,7 +34,7 @@ Integer qualifying spec
 
   % negating distinct positive integers yield distinct negative ones:
   axiom unary_minus_injective_on_positives is
-    fa(n1,n2:PosNat) n1 ~= n2 => -n1 ~= -n2
+    fa(n1:PosNat, n2:PosNat) n1 ~= n2 => -n1 ~= -n2
 
   % negating a negative integer yields the positive one we started from:
   axiom minus_negative is
@@ -72,42 +72,43 @@ Integer qualifying spec
   axiom addition_def1 is
     fa(i:Integer) i+0 = i && 0+i = i
   axiom addition_def2 is
-    fa(n1,n2:PosNat)   n1  +   n2  = plus(n1,n2)
-                  && (-n1) + (-n2) = -(plus(n1,n2))
-                  &&   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
-                                                    else minus(n1,n2))
-                  && (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
-                                                    else -(minus(n1,n2)))
+    fa(n1:PosNat, n2:PosNat)
+           n1  +   n2  = plus(n1,n2)
+      && (-n1) + (-n2) = -(plus(n1,n2))
+      &&   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
+                                        else minus(n1,n2))
+      && (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
+                                        else -(minus(n1,n2)))
 
   axiom subtraction_def is
-    fa (x,y : Integer) (x - y) = x + (- y)
+    fa (x:Integer, y:Integer) (x - y) = x + (- y)
 
   axiom multiplication_def is
-    fa (x,y : Integer) 0 * y = 0
-                     && (x+1) * y = x * y + y
-                     && (x-1) * y = x * y - y
+    fa (x:Integer, y:Integer) 0 * y = 0
+                       && (x+1) * y = x * y + y
+                       && (x-1) * y = x * y - y
     % since every integer is reachable from 0 by adding or subtracting 1
     % zero or more times, this axiom completely defines multiplication
 
   axiom division_def is
-    fa (x : Integer, y : NonZeroInteger, z : Integer)
+    fa (x:Integer, y:NonZeroInteger, z:Integer)
        % truncate result of exact division towards 0:
        x div y = z <=> abs z = abs x div abs y  % abs of result
                      && (x * y >= 0 => z >= 0)  % sign of
                      && (x * y <= 0 => z <= 0)  % result
 
   axiom remainder_def is
-    fa (x : Integer, y : NonZeroInteger)
+    fa (x:Integer, y:NonZeroInteger)
        x rem y = x - y * (x div y)
 
   axiom less_than_equal_def is
-    fa (x,y : Integer) x <= y <=> natural? (y - x)
+    fa (x:Integer, y:Integer) x <= y <=> natural? (y - x)
 
   theorem natural?_and_less_than_equal is
     fa(i:Integer) natural? i <=> 0 <= i
 
   axiom less_than_def is
-    fa (x,y : Integer) x < y <=> (x <= y && x ~= y)
+    fa (x:Integer, y:Integer) x < y <=> (x <= y && x ~= y)
 
   def >= (x,y) = y <= x
 

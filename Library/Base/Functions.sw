@@ -17,10 +17,10 @@ Functions qualifying spec
   def o (f,g) x = f(g x)
 
   axiom injective?_def is type fa(a,b)
-    fa (f : a -> b) injective? f <=> (fa (x,y : a) f x = f y => x = y)
+    fa (f : a -> b) injective? f <=> (fa (x:a,y:a) f x = f y => x = y)
 
   axiom surjective?_def is type fa(a,b)
-    fa (f : a -> b) surjective? f <=> (fa (y : b) (ex (x : a) f x = y))
+    fa (f : a -> b) surjective? f <=> (fa (y:b) (ex (x:a) f x = y))
 
   axiom bijective?_def is type fa(a,b)
     fa (f : a -> b) bijective? f <=> injective? f && surjective? f

@@ -25,7 +25,7 @@ Option qualifying spec
        | (Some x,Some y) -> comp (x,y)
        | (None,  Some _) -> Less
        | (Some _,None)   -> Greater
-       | _               -> Equal
+%       | _               -> Equal
 
   def mapOption f opt =
     case opt of
