@@ -199,9 +199,9 @@ spec
 	       let tcc  = <= (tcc,gamma,M,tau2,tau) 		   in
 	       checkLambda(tcc,gamma,rules,sigma1,Some N2)
 	     | Fun(Restrict,s,_) ->
-	       let (dom,ran) = arrow(spc,s)				   in
-	       let tcc  = (tcc,gamma) |- N2 ?? dom		   in
-	       let tcc  = <= (tcc,gamma,N2,dom,ran) 		   in
+	       let (dom,ran) = arrow(spc,s)			   in
+	       let tcc  = (tcc,gamma) |- N2 ?? ran		   in
+	       let tcc  = <= (tcc,gamma,N2,ran,tau) 		   in
 	       tcc
 	     | _ ->
 	   let tcc  = (tcc,gamma) |- N1 ?? sigma1 	           in

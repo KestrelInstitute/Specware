@@ -1,5 +1,5 @@
 A = spec
-op Nat.+  infixl 25: Nat * Nat -> Nat
+%op Nat.+  infixl 25: Nat * Nat -> Nat
 op nonNeg?: Integer -> Boolean
 
 op f: {p: Integer * Integer | p.1 > - p.2}  -> Nat

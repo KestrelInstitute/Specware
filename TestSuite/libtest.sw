@@ -459,40 +459,40 @@ spec
 % String [113]:  op translate     : (Char -> String) -> String -> String
     tester ("(translate ( fn(c)->implode[c,c] ) ( \"2B\" )) = \"22BB\"", (translate ( fn(c)->implode[c,c] ) ( "2B" )) = "22BB");
     tester ("let F = id ( translate ( fn(c)->implode[c,c] )) in (F ( \"2B\" )) = \"22BB\"", let F = id ( translate ( fn(c)->implode[c,c] )) in (F ( "2B" )) = "22BB");
-% String [114]:  op lt  infixl 20 : String * String -> Boolean
-    tester ("(lt ( \"\" , \"\" )) = false", (lt ( "" , "" )) = false);
-    tester ("let A = id ( \"\" , \"\" ) in (lt A) = false", let A = id ( "" , "" ) in (lt A) = false);
-    tester ("(lt ( \"\" , \"1\" )) = true", (lt ( "" , "1" )) = true);
-    tester ("let A = id ( \"\" , \"1\" ) in (lt A) = true", let A = id ( "" , "1" ) in (lt A) = true);
-    tester ("(lt ( \"0\" , \"1\" )) = true", (lt ( "0" , "1" )) = true);
-    tester ("let A = id ( \"0\" , \"1\" ) in (lt A) = true", let A = id ( "0" , "1" ) in (lt A) = true);
-    tester ("(lt ( \"09\" , \"1\" )) = true", (lt ( "09" , "1" )) = true);
-    tester ("let A = id ( \"09\" , \"1\" ) in (lt A) = true", let A = id ( "09" , "1" ) in (lt A) = true);
-    tester ("(lt ( \"1\" , \"\" )) = false", (lt ( "1" , "" )) = false);
-    tester ("let A = id ( \"1\" , \"\" ) in (lt A) = false", let A = id ( "1" , "" ) in (lt A) = false);
-    tester ("(lt ( \"1\" , \"1\" )) = false", (lt ( "1" , "1" )) = false);
-    tester ("let A = id ( \"1\" , \"1\" ) in (lt A) = false", let A = id ( "1" , "1" ) in (lt A) = false);
-    tester ("(lt ( \"10\" , \"1\" )) = false", (lt ( "10" , "1" )) = false);
-    tester ("let A = id ( \"10\" , \"1\" ) in (lt A) = false", let A = id ( "10" , "1" ) in (lt A) = false);
-    tester ("(lt ( \"2\" , \"1\" )) = false", (lt ( "2" , "1" )) = false);
-    tester ("let A = id ( \"2\" , \"1\" ) in (lt A) = false", let A = id ( "2" , "1" ) in (lt A) = false);
-% String [115]:  op leq infixl 20 : String * String -> Boolean
-    tester ("(leq ( \"\" , \"\" )) = true", (leq ( "" , "" )) = true);
-    tester ("let A = id ( \"\" , \"\" ) in (leq A) = true", let A = id ( "" , "" ) in (leq A) = true);
-    tester ("(leq ( \"\" , \"1\" )) = true", (leq ( "" , "1" )) = true);
-    tester ("let A = id ( \"\" , \"1\" ) in (leq A) = true", let A = id ( "" , "1" ) in (leq A) = true);
-    tester ("(leq ( \"0\" , \"1\" )) = true", (leq ( "0" , "1" )) = true);
-    tester ("let A = id ( \"0\" , \"1\" ) in (leq A) = true", let A = id ( "0" , "1" ) in (leq A) = true);
-    tester ("(leq ( \"09\" , \"1\" )) = true", (leq ( "09" , "1" )) = true);
-    tester ("let A = id ( \"09\" , \"1\" ) in (leq A) = true", let A = id ( "09" , "1" ) in (leq A) = true);
-    tester ("(leq ( \"1\" , \"\" )) = false", (leq ( "1" , "" )) = false);
-    tester ("let A = id ( \"1\" , \"\" ) in (leq A) = false", let A = id ( "1" , "" ) in (leq A) = false);
-    tester ("(leq ( \"1\" , \"1\" )) = true", (leq ( "1" , "1" )) = true);
-    tester ("let A = id ( \"1\" , \"1\" ) in (leq A) = true", let A = id ( "1" , "1" ) in (leq A) = true);
-    tester ("(leq ( \"10\" , \"1\" )) = false", (leq ( "10" , "1" )) = false);
-    tester ("let A = id ( \"10\" , \"1\" ) in (leq A) = false", let A = id ( "10" , "1" ) in (leq A) = false);
-    tester ("(leq ( \"2\" , \"1\" )) = false", (leq ( "2" , "1" )) = false);
-    tester ("let A = id ( \"2\" , \"1\" ) in (leq A) = false", let A = id ( "2" , "1" ) in (leq A) = false);
+% String [114]:  op <  infixl 20 : String * String -> Boolean
+    tester ("(< ( \"\" , \"\" )) = false", (< ( "" , "" )) = false);
+    tester ("let A = id ( \"\" , \"\" ) in (< A) = false", let A = id ( "" , "" ) in (< A) = false);
+    tester ("(< ( \"\" , \"1\" )) = true", (< ( "" , "1" )) = true);
+    tester ("let A = id ( \"\" , \"1\" ) in (< A) = true", let A = id ( "" , "1" ) in (< A) = true);
+    tester ("(< ( \"0\" , \"1\" )) = true", (< ( "0" , "1" )) = true);
+    tester ("let A = id ( \"0\" , \"1\" ) in (< A) = true", let A = id ( "0" , "1" ) in (< A) = true);
+    tester ("(< ( \"09\" , \"1\" )) = true", (< ( "09" , "1" )) = true);
+    tester ("let A = id ( \"09\" , \"1\" ) in (< A) = true", let A = id ( "09" , "1" ) in (< A) = true);
+    tester ("(< ( \"1\" , \"\" )) = false", (< ( "1" , "" )) = false);
+    tester ("let A = id ( \"1\" , \"\" ) in (< A) = false", let A = id ( "1" , "" ) in (< A) = false);
+    tester ("(< ( \"1\" , \"1\" )) = false", (< ( "1" , "1" )) = false);
+    tester ("let A = id ( \"1\" , \"1\" ) in (< A) = false", let A = id ( "1" , "1" ) in (< A) = false);
+    tester ("(< ( \"10\" , \"1\" )) = false", (< ( "10" , "1" )) = false);
+    tester ("let A = id ( \"10\" , \"1\" ) in (< A) = false", let A = id ( "10" , "1" ) in (< A) = false);
+    tester ("(< ( \"2\" , \"1\" )) = false", (< ( "2" , "1" )) = false);
+    tester ("let A = id ( \"2\" , \"1\" ) in (< A) = false", let A = id ( "2" , "1" ) in (< A) = false);
+% String [115]:  op <= infixl 20 : String * String -> Boolean
+    tester ("(<= ( \"\" , \"\" )) = true", (<= ( "" , "" )) = true);
+    tester ("let A = id ( \"\" , \"\" ) in (<= A) = true", let A = id ( "" , "" ) in (<= A) = true);
+    tester ("(<= ( \"\" , \"1\" )) = true", (<= ( "" , "1" )) = true);
+    tester ("let A = id ( \"\" , \"1\" ) in (<= A) = true", let A = id ( "" , "1" ) in (<= A) = true);
+    tester ("(<= ( \"0\" , \"1\" )) = true", (<= ( "0" , "1" )) = true);
+    tester ("let A = id ( \"0\" , \"1\" ) in (<= A) = true", let A = id ( "0" , "1" ) in (<= A) = true);
+    tester ("(<= ( \"09\" , \"1\" )) = true", (<= ( "09" , "1" )) = true);
+    tester ("let A = id ( \"09\" , \"1\" ) in (<= A) = true", let A = id ( "09" , "1" ) in (<= A) = true);
+    tester ("(<= ( \"1\" , \"\" )) = false", (<= ( "1" , "" )) = false);
+    tester ("let A = id ( \"1\" , \"\" ) in (<= A) = false", let A = id ( "1" , "" ) in (<= A) = false);
+    tester ("(<= ( \"1\" , \"1\" )) = true", (<= ( "1" , "1" )) = true);
+    tester ("let A = id ( \"1\" , \"1\" ) in (<= A) = true", let A = id ( "1" , "1" ) in (<= A) = true);
+    tester ("(<= ( \"10\" , \"1\" )) = false", (<= ( "10" , "1" )) = false);
+    tester ("let A = id ( \"10\" , \"1\" ) in (<= A) = false", let A = id ( "10" , "1" ) in (<= A) = false);
+    tester ("(<= ( \"2\" , \"1\" )) = false", (<= ( "2" , "1" )) = false);
+    tester ("let A = id ( \"2\" , \"1\" ) in (<= A) = false", let A = id ( "2" , "1" ) in (<= A) = false);
 % String [116]:  op newline       : String
     tester ("(newline) = \"\\n\"", (newline) = "\n");
 % String [117]:  op toScreen      : String -> ()  % deprecated
