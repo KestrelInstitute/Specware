@@ -920,7 +920,7 @@ def getDeclaredQualifiedIds(spc) =
    op basicQualifiedId? : QualifiedId -> Boolean
 
   def basicQualifiers = [
-			 "Boolean", 
+			 "Boolean",    % can appear in raw translation rules
 			 "Char", 
 			 "Compare",
 			 "Functions",  % TODO: add Relations ?

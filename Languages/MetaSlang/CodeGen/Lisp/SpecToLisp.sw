@@ -253,8 +253,8 @@ def mkLEqualityOp(sp,srt) =
                   if natSort?(s)  % intSort?(s)
                     then " = "
                   else
-                  (case stripSubsorts(sp,s)
-                     of (Base (Qualified("Boolean","Boolean"),_,_)) -> "eq"
+                  (case stripSubsorts(sp,s) of
+		      %| (Base (Qualified("Boolean","Boolean"),_,_)) -> "eq"
                       %| (Base (Local("Boolean"),_,_)) -> "eq"
 		      | Boolean _ -> "eq"
                       | (Base (Qualified("Nat","Nat"),_,_)) -> " = "

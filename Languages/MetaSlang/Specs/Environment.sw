@@ -226,7 +226,7 @@ spec
                                                      System.fail 
                                                      ("Could not extract type for "^
                                                       printTermWithSorts tm))
-     | Bind       _                         -> boolSort()
+     | Bind       _                         -> boolSort
      | Record     (fields,               a) -> Product(map (fn (id, t) -> 
 							    (id, inferType (sp, t)))
 						         fields,
@@ -415,7 +415,7 @@ spec
         (case stripSubsorts(sp,termSortEnv (sp, t1))
            of Arrow (dom, rng, _)            -> rng
             | _ -> System.fail ("Cannot extract sort of application "^ anyToString term))
-      | Bind       _                         -> boolSort()
+      | Bind       _                         -> boolSort
       | Record     (fields,               _) -> Product(map (fn (id, t)-> 
                                                              (id, termSortEnv (sp, t)))
                                                             fields,

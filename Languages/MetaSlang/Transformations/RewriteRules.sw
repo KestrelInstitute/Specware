@@ -417,10 +417,7 @@ is rewritten to
  	| _ -> 
      let def visitConjunct str formula =
        case formula of
-	 | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),
-		 Record([(_,M),(_,N)], _),_) -> 
-             (visitConjunct (str ^ " (l)") M)
-               ++ (visitConjunct (str ^ " (r)") N)
+	 % | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),		 Record([(_,M),(_,N)], _),_) ->              (visitConjunct (str ^ " (l)") M)               ++ (visitConjunct (str ^ " (r)") N)
 	 | Apply(Fun(And,_,_), Record([(_,M),(_,N)], _),_) -> 
              (visitConjunct (str ^ " (l)") M)
                ++ (visitConjunct (str ^ " (r)") N)
@@ -439,9 +436,7 @@ is rewritten to
 	 bound(Forall:Binder,0,formula,freeVars,[]) in
      let (condition,fml) = 
 	  case formula of 
-            | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
-		Record([(_,M),(_,N)], _),_) -> 
-		(Some (substitute(M,S)): Option MS.Term,N)
+            % | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),Record([(_,M),(_,N)], _),_) -> (Some (substitute(M,S)): Option MS.Term,N)
             | Apply(Fun(Implies,_,_), Record([(_,M),(_,N)], _),_) -> 
 		(Some (substitute(M,S)): Option MS.Term,N)
 	    | _ -> (None,formula)
@@ -534,26 +529,26 @@ is rewritten to
 		        = case axiomRule context
 				(Axiom:PropertyType,
 				 mkUnQualifiedId("Context-condition: " ^printTerm c),
-				 tvs, mkEquality(boolSort(),c,mkTrue()))
+				 tvs, mkEquality(boolSort,c,mkTrue()))
 			    of Some rule -> List.cons(rule,rules)
 			     | None -> rules
 		   in 
 		   case c of
-		     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),nc,_) -> 
-		       (case axiomRule context
-			  (Axiom:PropertyType,
-			   mkUnQualifiedId("Context-condition: " ^printTerm nc
-			   ^" = false"),
-			   tvs, mkEquality(boolSort(),nc,mkFalse()))
-			  of 
-			   | Some rule -> List.cons(rule,rules)
-			   | None -> rules)
+		     % | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),nc,_) -> 
+		     %   (case axiomRule context
+		     %   (Axiom:PropertyType,
+		     %    mkUnQualifiedId("Context-condition: " ^printTerm nc
+		     %    ^" = false"),
+		     %    tvs, mkEquality(boolSort,nc,mkFalse()))
+		     %   of 
+		     %    | Some rule -> List.cons(rule,rules)
+		     %    | None -> rules)
 		     | Apply(Fun(Not,_,_), nc,_) -> 
 		       (case axiomRule context
 			  (Axiom:PropertyType,
 			   mkUnQualifiedId("Context-condition: " ^printTerm nc
 			   ^" = false"),
-			   tvs, mkEquality(boolSort(),nc,mkFalse()))
+			   tvs, mkEquality(boolSort,nc,mkFalse()))
 			  of 
 			   | Some rule -> List.cons(rule,rules)
 			   | None -> rules)

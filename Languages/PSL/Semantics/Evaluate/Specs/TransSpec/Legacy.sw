@@ -271,7 +271,7 @@ for lists.
                       if isPrimedName? qid then {
                         varInfo <- findTheVariable modeSpec qid;
                         newModeSpec <- addVariable modeSpec (varInfo withTerm N) pos;
-                        return (newModeSpec, Fun (Bool true,boolSort(),pos))
+                        return (newModeSpec, Fun (Bool true,boolSort,pos))
                       } else
                         return (modeSpec,formula)
                 % | Apply (Fun (Op(qid,fxty),_,_), arg,pos) -> {
@@ -279,7 +279,7 @@ for lists.
                 %       newTuple <- return (mkTuple [mkOp (makeId "update))
                 %       newTerm <- return mkApply;
                 %       newModeSpec <- addVariable modeSpec (varInfo withTerm N) pos;
-                %       return (newModeSpec, Fun (Bool true,boolSort(),pos))
+                %       return (newModeSpec, Fun (Bool true,boolSort,pos))
                 %    }
                 | _ -> return (modeSpec,formula))
           | _ -> return (modeSpec,formula))

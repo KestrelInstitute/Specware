@@ -858,7 +858,7 @@ SpecsToI2L qualifying spec {
     foldr (fn((fid,fsrt),body) ->
 	   let b = sortAnn(osrt) in
 	   let projsrt = Arrow(osrt,fsrt,b) in
-	   let eqsort = Arrow(Product([("1",fsrt),("2",fsrt)],b),boolASort b,b) in
+	   let eqsort = Arrow(Product([("1",fsrt),("2",fsrt)],b),Boolean b,b) in
 	   let proj = Fun(Project(fid),projsrt,b) in
 	   let t1 = Apply(proj,varx,b) in
 	   let t2 = Apply(proj,vary,b) in

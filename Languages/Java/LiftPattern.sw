@@ -32,6 +32,7 @@ def unSupported x =
  *)
 op baseType?: Spec * Sort -> Boolean
 def baseType?(spc,typ) =
+  %% TODO: is this a complete set?  See basicQualifiers
   if boolSort?(typ) or integerSort?(typ) or natSort?(typ) or stringSort?(typ) or charSort?(typ)
     then true
   else sortIsUnrefinedInSpec?(spc,typ)
@@ -49,8 +50,9 @@ def baseTypeAlias?(spc,srt) =
 
 
 
-op builtinBaseTypeId?: Id -> Boolean
+op builtinBaseTypeId?: Id -> Boolean  
 def builtinBaseTypeId?(id) =
+  %% TODO: is this a complete set?  See basicQualifiers
   id = "Boolean" or id = "Integer" or id = "Nat" or id = "String" or id = "Char"
 
 
@@ -226,7 +228,7 @@ def opRange(spc, oper) =
   let opinfo = findAllOps(spc, oper) in
   case opinfo of
     | (_,_,(_,srt),_)::_ -> srtRange(srt)
-    | _ -> let _ = unSupported(oper) in boolSort()
+    | _ -> let _ = unSupported(oper) in boolSort
 
 op srtDom: Sort -> List Sort
 op srtRange: Sort -> Sort
