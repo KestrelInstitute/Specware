@@ -193,7 +193,7 @@ SpecCalc qualifying spec {
       | Conjecture -> ppString "conjecture"
       | any ->
            fail ("No match in ppPropertyType with: '"
-              ^ (System.toString any)
+              ^ (anyToString any)
               ^ "'")
 }
 \end{spec}

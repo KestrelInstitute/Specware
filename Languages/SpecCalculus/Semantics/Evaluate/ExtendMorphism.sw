@@ -336,7 +336,7 @@ def substOpMap (opMap, term) =
      let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
      let result = Lisp.apply(Lisp.symbol("CL","FUNCALL"),
 			[Lisp.list [Lisp.symbol("SNARK","LAMBDA"),Lisp.nil(),snarkEvalForm]]) in
-     let proved = ":PROOF-FOUND" = System.toString(result) in
+     let proved = ":PROOF-FOUND" = anyToString(result) in
      %%let _ = displayProofResult(proof_name, claim_type, claim_name, spec_name, proved, snarkLogFileName) in
        proved
 

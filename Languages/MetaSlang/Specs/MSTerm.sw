@@ -262,7 +262,7 @@ MS qualifying spec
               mkApply(mkSelect (id, srt, fieldSort), term)
             | _ -> System.fail "Selection index not found in product")
       | _ -> System.fail ("CoProduct sort expected for mkSelectTerm "^
-                           System.toString  srt)
+                           anyToString  srt)
 
 
  op negateTerm: Term -> Term

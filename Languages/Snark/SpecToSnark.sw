@@ -382,7 +382,7 @@ snark qualifying spec {
 
   def ppLispCell(t:LispCell) =
 %    string (toString(LISP.PPRINT(t)))
-    string (toString(t))
+    string (anyToString(t))
   
 
   def ppSpec (s : SnarkSpec) : PrettyPrint.Pretty =

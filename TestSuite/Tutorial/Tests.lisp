@@ -10,13 +10,13 @@
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Matches
 ")
       ("FindMatches_Ref" :sw "$SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref"
-                         :output ";;; Elaborating spec morphism-term at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref
+                         :output ";;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref
 ;;; Elaborating spec-substitution at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches0
-;;; Elaborating spec morphism-term at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching_Ref
+;;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching_Ref
 ;;; Elaborating spec-substitution at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#WordMatching0
-;;; Elaborating spec morphism-term at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols_Ref
+;;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols_Ref
 ;;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols
 ")
       ("MatchingProofs" :sw "$SPECWARE/UserDoc/tutorial/example/MatchingProofs"

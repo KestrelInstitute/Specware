@@ -411,8 +411,7 @@ spec {
      of Apply      (t1, t2,               _) -> 
         (case stripSubsorts(sp,termSortEnv (sp, t1))
            of Arrow (dom, rng, _)            -> rng
-            | _ -> System.fail ("Cannot extract sort of application "^
-                                System.toString term))
+            | _ -> System.fail ("Cannot extract sort of application "^ anyToString term))
       | Bind       _                         -> boolSort
       | Record     (fields,               _) -> Product(map (fn (id, t)-> 
                                                              (id, termSortEnv (sp, t)))

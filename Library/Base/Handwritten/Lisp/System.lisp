@@ -9,8 +9,8 @@
 ;;; op debug     : fa(a) String -> a
 (defun |!debug| (s) (when specwareDebug? (break "~a" s)))
 
-;;; op toString : fa(a) a -> String
-(defun toString (s) (let ((*print-pretty* nil)) (format nil "~S" s)))
+;;; op anyToString : fa(a) a -> String
+(defun anyToString (s) (let ((*print-pretty* nil)) (format nil "~S" s)))
 
 ;;; op print    : fa(a) a -> a
 (defun |!print| (x) (print x))

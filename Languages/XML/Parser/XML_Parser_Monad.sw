@@ -194,7 +194,7 @@ XML qualifying spec
   def raise_later except =
     fn state ->
      let _ = (if Wizard_Fail_Hard? then
-		fail (System.toString except)
+		fail (anyToString except)
 	      else
 		())
      in
@@ -213,7 +213,7 @@ XML qualifying spec
   def raise_now except = fn state ->
     let _ =
       if  Wizard_Fail_Hard? then
-        fail (System.toString except)
+        fail (anyToString except)
       else
         ()
     in

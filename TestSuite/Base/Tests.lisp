@@ -51,8 +51,8 @@
        ("(compare ( true , true )) = Equal" :swe "(compare ( true , true )) = Equal" :value t)
        ("let A = id ( true , true ) in (compare A) = Equal" :swe "let A = id ( true , true ) in (compare A) = Equal" :value t)
        ;; Boolean [120]:  op toString : Boolean -> String  ;; deprecated
-       ("(Boolean.toString ( true )) = \"true\"" :swe "(Boolean.toString ( true )) = \"true\"" :value t)
-       ("(Boolean.toString ( false )) = \"false\"" :swe "(Boolean.toString ( false )) = \"false\"" :value t)
+       ("(toString ( true )) = \"true\"" :swe "(toString ( true )) = \"true\"" :value t)
+       ("(toString ( false )) = \"false\"" :swe "(toString ( false )) = \"false\"" :value t)
        ;; Boolean [129]:  op show : Boolean -> String
        ("(show ( true )) = \"true\"" :swe "(show ( true )) = \"true\"" :value t)
        ("(show ( false )) = \"false\"" :swe "(show ( false )) = \"false\"" :value t)
@@ -119,7 +119,7 @@
        ("(compare ( #5 , #4 )) = Greater" :swe "(compare ( #5 , #4 )) = Greater" :value t)
        ("let A = id ( #5 , #4 ) in (compare A) = Greater" :swe "let A = id ( #5 , #4 ) in (compare A) = Greater" :value t)
        ;; Char [123]:  op toString    : Char -> String     ;; deprecated
-       ("(Char.toString ( #A )) = \"A\"" :swe "(Char.toString ( #A )) = \"A\"" :value t)
+       ("(toString ( #A )) = \"A\"" :swe "(toString ( #A )) = \"A\"" :value t)
        ;; Char [135]:  op show    : Char -> String
        ("(show ( #A )) = \"A\"" :swe "(show ( #A )) = \"A\"" :value t)
 
@@ -212,7 +212,7 @@
        ("(compare ( 5 , 4 )) = Greater" :swe "(compare ( 5 , 4 )) = Greater" :value t)
        ("let A = id ( 5 , 4 ) in (compare A) = Greater" :swe "let A = id ( 5 , 4 ) in (compare A) = Greater" :value t)
        ;; Integer [121]:  op toString : Integer -> String  ;; deprecated
-       ("(Integer.toString ( 123 )) = \"123\"" :swe "(Integer.toString ( 123 )) = \"123\"" :value t)
+       ("(toString ( 123 )) = \"123\"" :swe "(toString ( 123 )) = \"123\"" :value t)
        ;; Integer [132]:  op show : Integer -> String
        ("(Integer.show ( 123 )) = \"123\"" :swe "(Integer.show ( 123 )) = \"123\"" :value t)
        ;; Integer [124]:  op intToString    : Integer -> String
@@ -359,7 +359,7 @@
        ("(posNat? ( 0 )) = false" :swe "(posNat? ( 0 )) = false" :value t)
        ("(posNat? ( 1 )) = true" :swe "(posNat? ( 1 )) = true" :value t)
        ;; Nat [122]:  op toString     : Nat -> String      ;; deprecated
-       ("(Nat.toString ( 123 )) = \"123\"" :swe "(Nat.toString ( 123 )) = \"123\"" :value t)
+       ("(toString ( 123 )) = \"123\"" :swe "(toString ( 123 )) = \"123\"" :value t)
        ;; Nat [133]:  op show     : Nat -> String
        ("(Nat.show ( 123 )) = \"123\"" :swe "(Nat.show ( 123 )) = \"123\"" :value t)
        ;; Nat [126]:  op natToString  : Nat -> String

@@ -105,7 +105,7 @@ SpecCalc qualifying spec
         
       | _ -> 
 		"Unknown exception: " 
-              ^ (System.toString except)
+              ^ (anyToString except)
 
   op  numberOfTypeErrorsToPrint: Nat
   def numberOfTypeErrorsToPrint = 20

@@ -85,7 +85,7 @@ Raise an exception. Should this be called throw?
   def SpecCalc.raise except = fn state -> 
     let _ =
       if specwareWizard? then
-        fail (System.toString except)
+        fail (anyToString except)
       else
         ()
     in

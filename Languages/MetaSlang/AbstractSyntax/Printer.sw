@@ -162,7 +162,7 @@ AnnTermPrinter qualifying spec {
      string s
    else 
      % Ad hoc treatment for LaTeX
-     let s = String.translate (fn #^ -> "++" | ## -> "\\#" | #_ -> "\\_" | #& -> "\\&" | ch -> Char.toString ch) s in
+     let s = String.translate (fn #^ -> "++" | ## -> "\\#" | #_ -> "\\_" | #& -> "\\&" | ch -> toString ch) s in
      %   if String.sub(s,0) = #^
      %   then lengthString (2,"{\\tt ++}")
      %   else

@@ -9,7 +9,8 @@ System qualifying spec
   op debug    : fa(a) String -> a % calls lisp's break if the specwareDebug? flag is set.
   op specwareDebug?   : Boolean % Tests whether the specwareDebug? flag is set.
 
-  op toString : fa(a) a -> String
+  %% Renamed from toString to avoid ambiguity with monomorphic toStrings
+  op anyToString : fa(a) a -> String
   op print    : fa(a) a -> a
 
   op warn     : fa(a) String -> a

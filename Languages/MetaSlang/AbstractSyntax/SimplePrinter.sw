@@ -204,7 +204,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 	      ppGrConcat [ppATerm tm, ppString": ",ppBreak,ppASort srt]
           | any ->
                fail ("No match in ppATerm with: '"
-                  ^ (System.toString any)
+                  ^ (anyToString any)
                   ^ "'"))
 
   op ppBinder : Binder -> Pretty
@@ -299,7 +299,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | SortedPat (pat,srt,_) -> ppAPattern pat
       | any ->
            fail ("No match in ppAPattern with: '"
-              ^ (System.toString any)
+              ^ (anyToString any)
               ^ "'")
 
 
@@ -362,7 +362,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
       | any ->
            fail ("No match in ppAFun with: '"
-              ^ (System.toString any)
+              ^ (anyToString any)
               ^ "'")
 
   def omittedQualifiers = ["Boolean","Integer","Nat","Double","List","String","Char"]
@@ -391,7 +391,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Unspecified -> ppNil % ppString "Unspecified"
       | any ->
            fail ("No match in ppFixity with: '"
-              ^ (System.toString any)
+              ^ (anyToString any)
               ^ "'")
 
   op isSimpleSort? : fa (a) ASort a -> Boolean
@@ -513,7 +513,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 
       | any ->
            fail ("No match in ppASort with: '"
-              ^ (System.toString any)
+              ^ (anyToString any)
               ^ "'")
 
   op isFiniteList : fa (a) ATerm a -> Option (List (ATerm a))

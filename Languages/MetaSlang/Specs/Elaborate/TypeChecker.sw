@@ -949,49 +949,57 @@ spec {
     | MetaTyVar _ -> None
     | rsort ->
 	let srtPos = sortAnn srt in
-	(case filter (consistentSortOp? (env, withAnnS (rsort, srtPos))) terms of
+	(case filter (consistentSortOp? (env, withAnnS (rsort, srtPos),true)) terms of
 	   | [] -> (error (env,
 		     "No matches for op "^id^" of sort "^ printSort srt,
 		      pos);
 			None)
-	   | [term]        -> Some term
+	   | [term] -> Some term
 	   | tms ->
 	      if env.firstPass? then
 		None
-	      else %% If there is a valid unqualified term then prefer that because you
-		   %% cannot explicitly
-		let def findUnqualified tms =
-		   case tms of
-		     | [] -> None
-		     | tm::rtms ->
-			 (case tm of
-			    |Fun (OneName  (     _,_), _, _) -> Some tm
-			    | Fun (TwoNames (id1, _,_), _, _) ->
-			       if id1 = UnQualified then
-				 Some tm
-			       else
-				 findUnqualified rtms
-			    | _ -> findUnqualified rtms)
-		in
-		  (case findUnqualified tms of
-		    | Some term -> Some term
-		    | None ->
-			(error (env,
-			       "Several matches for overloaded op "
-			       ^ id
-			       ^ " of sort "
-			       ^ printSort srt
-			       ^ (foldl (fn (tm, str) -> str ^
-				    (case tm of
-				       | Fun (OneName  (     id2, _), _, _) -> " "^id2
-				       | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
-				     " : "
-				     terms),
-			 pos); None)))
+	      else
+	      (let exactTerms = filter (consistentSortOp? (env, withAnnS (rsort, srtPos),false)) terms in
+	       let remTerms = if exactTerms = [] then tms else exactTerms in
+	       case remTerms of
+		 %% If only one term matches including subsorts, choose it
+		 | [term] -> Some term
+	         | _ ->
+	       %% If there is a valid unqualified term then prefer that because you
+	       %% cannot explicitly qualify with unqualified!
+	       let def findUnqualified tms =
+		  case tms of
+		    | [] -> None
+		    | tm::rtms ->
+			(case tm of
+			   |Fun (OneName  (     _,_), _, _) -> Some tm
+			   | Fun (TwoNames (id1, _,_), _, _) ->
+			      if id1 = UnQualified then
+				Some tm
+			      else
+				findUnqualified rtms
+			   | _ -> findUnqualified rtms)
+	       in
+		 (case findUnqualified remTerms of
+		   | Some term -> Some term
+		   | None ->
+		       (error (env,
+			      "Several matches for overloaded op "
+			      ^ id
+			      ^ " of sort "
+			      ^ printSort srt
+			      ^ (foldl (fn (tm, str) -> str ^
+				   (case tm of
+				      | Fun (OneName  (     id2, _), _, _) -> " "^id2
+				      | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
+				    " : "
+				    tms),
+			       pos);
+			None))))
 
-  def consistentSortOp? (env, srt1) (Fun (_, srt2, _)) =
+  def consistentSortOp? (env, srt1, ignoreSubsorts?) (Fun (_, srt2, _)) =
    %% calls unifySorts, but then resets metatyvar links to None...
-   consistentSorts? (env, srt1, srt2)
+   consistentSorts? (env, srt1, srt2, ignoreSubsorts?)
 
   % ========================================================================
 
@@ -1000,7 +1008,7 @@ spec {
 
   def elaborateSortForTerm (env, term, givenSort, expectedSort) = 
    %% unifySorts has side effect of modifying metaTyVar links
-   let (success, msg) = unifySorts env givenSort expectedSort in
+   let (success, msg) = unifySorts env true givenSort expectedSort in
    ((if success then
        ()
      else
@@ -1041,7 +1049,7 @@ spec {
   def elaborateSort (env, s1, s2) = 
    let s1Checked = checkSort (env, s1) in
    %% unifySorts has side effect of modifying metatyvar links
-   let (success, msg) = unifySorts env s1Checked s2 in
+   let (success, msg) = unifySorts env true s1Checked s2 in
    ((if success then
        ()
      else             

@@ -62,8 +62,8 @@ spec
     tester ("(compare ( true , true )) = Equal", (compare ( true , true )) = Equal);
     tester ("let A = id ( true , true ) in (compare A) = Equal", let A = id ( true , true ) in (compare A) = Equal);
 % Boolean [120]:  op toString : Boolean -> String  % deprecated
-    tester ("(Boolean.toString ( true )) = \"true\"", (Boolean.toString ( true )) = "true");
-    tester ("(Boolean.toString ( false )) = \"false\"", (Boolean.toString ( false )) = "false");
+    tester ("(toString ( true )) = \"true\"", (toString ( true )) = "true");
+    tester ("(toString ( false )) = \"false\"", (toString ( false )) = "false");
 % Boolean [129]:  op show : Boolean -> String
     tester ("(show ( true )) = \"true\"", (show ( true )) = "true");
     tester ("(show ( false )) = \"false\"", (show ( false )) = "false");
@@ -130,7 +130,7 @@ spec
     tester ("(compare ( #5 , #4 )) = Greater", (compare ( #5 , #4 )) = Greater);
     tester ("let A = id ( #5 , #4 ) in (compare A) = Greater", let A = id ( #5 , #4 ) in (compare A) = Greater);
 % Char [123]:  op toString    : Char -> String     % deprecated
-    tester ("(Char.toString ( #A )) = \"A\"", (Char.toString ( #A )) = "A");
+    tester ("(toString ( #A )) = \"A\"", (toString ( #A )) = "A");
 % Char [135]:  op show    : Char -> String
     tester ("(show ( #A )) = \"A\"", (show ( #A )) = "A");
 
@@ -223,7 +223,7 @@ spec
     tester ("(compare ( 5 , 4 )) = Greater", (compare ( 5 , 4 )) = Greater);
     tester ("let A = id ( 5 , 4 ) in (compare A) = Greater", let A = id ( 5 , 4 ) in (compare A) = Greater);
 % Integer [121]:  op toString : Integer -> String  % deprecated
-    tester ("(Integer.toString ( 123 )) = \"123\"", (Integer.toString ( 123 )) = "123");
+    tester ("(toString ( 123 )) = \"123\"", (toString ( 123 )) = "123");
 % Integer [132]:  op show : Integer -> String
     tester ("(Integer.show ( 123 )) = \"123\"", (Integer.show ( 123 )) = "123");
 % Integer [124]:  op intToString    : Integer -> String
@@ -369,7 +369,7 @@ spec
     tester ("(posNat? ( 0 )) = false", (posNat? ( 0 )) = false);
     tester ("(posNat? ( 1 )) = true", (posNat? ( 1 )) = true);
 % Nat [122]:  op toString     : Nat -> String      % deprecated
-    tester ("(Nat.toString ( 123 )) = \"123\"", (Nat.toString ( 123 )) = "123");
+    tester ("(toString ( 123 )) = \"123\"", (toString ( 123 )) = "123");
 % Nat [133]:  op show     : Nat -> String
     tester ("(Nat.show ( 123 )) = \"123\"", (Nat.show ( 123 )) = "123");
 % Nat [126]:  op natToString  : Nat -> String

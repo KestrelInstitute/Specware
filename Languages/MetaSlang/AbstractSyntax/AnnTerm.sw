@@ -285,12 +285,12 @@ MetaSlang qualifying spec {
         (case termSort t1 of
            | Arrow(dom,rng,_) -> rng
            | _ -> System.fail ("Cannot extract sort of application " 
-                                                  ^ System.toString term))
+                                                  ^ anyToString term))
      | ApplyN     ([t1,t2], _) ->
         (case termSort t1 of
            | Arrow(dom,rng,_) -> rng
            | _ -> System.fail ("Cannot extract sort of application "
-                                                  ^ System.toString term))
+                                                  ^ anyToString term))
      | Bind       (_,_,_,   a) -> mkABase (Qualified ("Boolean", "Boolean"), [], a)
      | Record     (fields,  a) -> Product(List.map (fn (id,t) -> (id,termSort t)) fields, 
                                           a)
