@@ -10,6 +10,7 @@ spec {
   import Spec/Utilities
   import ../Utilities
   import Util
+  import Spec
   import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
 
   op sortScheme : fa (a) AOpInfo a -> ASortScheme a
@@ -136,7 +137,7 @@ never mixed in the specs labeling \BSpecs.
                      (tyVarsOf returnSort,returnSort)
                      None dyCtxt internalPosition;
    pSpec <- setDynamicSpec pSpec dyCtxt;
-   dyCtxtElab <- elaborateSpec dyCtxt; 
+   dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
    statCtxtElab <- elaborateSpec statCtxt; 
    first <- return (mkNatVertexEdge cnt); 
    last <- return (mkNatVertexEdge (cnt+1)); 
@@ -326,8 +327,9 @@ under the assumption that they are never used. Needs thought.
           (bSpec,cnt,pSpec) <- compileAlternatives pSpec first first bSpec cnt alts; 
           axm <- return (disjList (map (fn ((guard,term),_) -> guard) alts));
           dyCtxt <- dynamicSpec pSpec;
+          staticCtxt <- staticSpec pSpec;
           apexSpec <- return (addAxiom (("guard", [], axm), dyCtxt));
-          apexElab <- elaborateSpec apexSpec;
+          apexElab <- elaborateInContext apexSpec staticCtxt;
           morph1 <- mkMorph (modeSpec bSpec first) apexElab [] [];
           morph2 <- mkMorph (modeSpec bSpec last) apexElab [] [];
           newEdge <- return (mkNatVertexEdge cnt);
@@ -536,8 +538,9 @@ This should be an invariant. Must check.
 \begin{spec}
       | Skip -> {
           dyCtxt <- dynamicSpec pSpec;
+          staticCtxt <- staticSpec pSpec;
           apexSpec <- return (addAxiom (("assign", [], mkTrue ()),dyCtxt));  % why bother?
-          apexElab <- elaborateSpec apexSpec; 
+          apexElab <- elaborateInContext apexSpec staticCtxt; 
           morph1 <- mkMorph (modeSpec bSpec first) apexElab [] [];
           morph2 <- mkMorph (modeSpec bSpec last) apexElab [] [];
           newEdge <- return (mkNatVertexEdge cnt); 
@@ -559,6 +562,7 @@ This should be an invariant. Must check.
   def compileAssign pSpec first last bSpec cnt trm1 trm2 = {
     (leftId, leftPrimedTerm) <- return (processLHS trm1); 
     dyCtxt <- dynamicSpec pSpec;
+    staticCtxt <- staticSpec pSpec;
     apexSpec <- 
        (case findTheOp (dyCtxt,leftId) of
           | None ->
@@ -605,7 +609,7 @@ type variables.
 
 \begin{spec}
     apexSpec <- return (addAxiom (("assign",[],axm),apexSpec)); 
-    apexElab <- elaborateSpec apexSpec; 
+    apexElab <- elaborateInContext apexSpec staticCtxt; 
 \end{spec}
 
 The remainder of this case, creates and labels the opspan for the transition.
@@ -712,6 +716,7 @@ So the following doesn't handle the situation where the name are captured by lam
 
   def compileAxiomStmt pSpec first last bSpec cnt trm = {
     dyCtxt <- dynamicSpec pSpec;
+    staticCtxt <- staticSpec pSpec;
     names <- return (freeNames trm);
     primedNames <- return (filter isPrimedName? names);
     apexSpec <- foldM (fn spc -> fn qualId ->
@@ -722,7 +727,7 @@ So the following doesn't handle the situation where the name are captured by lam
          | Some (names,fixity,sortScheme,optTerm) ->
                   addOp [qualId] fixity sortScheme optTerm spc internalPosition)) dyCtxt primedNames; 
       apexSpec <- return (addAxiom (("axiom stmt",[],trm),apexSpec));
-      apexElab <- elaborateSpec apexSpec; 
+      apexElab <- elaborateInContext apexSpec staticCtxt; 
       morph1 <- mkMorph (modeSpec bSpec first) apexElab [] [];
       morph2 <- mkMorph (modeSpec bSpec last) apexElab [] (map (fn name -> (removePrime name, name)) primedNames);
       newEdge <- return (mkNatVertexEdge cnt);
@@ -906,7 +911,8 @@ end{spec}
       | [cmd] -> compileCommand pSpec first last bSpec cnt cmd   
       | cmd::rest -> {
             dyCtxt <- dynamicSpec pSpec;
-            dyElab <- elaborateSpec dyCtxt; 
+            staticCtxt <- staticSpec pSpec;
+            dyElab <- elaborateInContext dyCtxt staticCtxt; 
             newVertex <- return (mkNatVertexEdge cnt); 
             bSpec <- return (addMode bSpec newVertex dyElab);
             (bSpec,cnt,pSpec) <-
@@ -936,12 +942,13 @@ results), and it is used by \verb+compileCommand+ (which calls
 
   def compileAlternative pSpec first last bSpec cnt ((trm,cmd),pos) = {
       dyCtxt <- dynamicSpec pSpec;
-      dyElab <- elaborateSpec dyCtxt;
+      staticCtxt <- staticSpec pSpec;
+      dyElab <- elaborateInContext dyCtxt staticCtxt;
       newVertex <- return (mkNatVertexEdge cnt); 
       bSpec <- return (addMode bSpec newVertex dyElab); 
       newEdge <- return (mkNatVertexEdge (cnt + 1)); 
       apexSpec <- return (addAxiom (("guard",[],trm),dyCtxt)); 
-      apexElab <- elaborateSpec apexSpec;
+      apexElab <- elaborateInContext apexSpec staticCtxt;
       morph1 <- mkMorph (modeSpec bSpec first) apexElab [] []; 
       morph2 <- mkMorph dyElab apexElab [] []; 
       bSpec <- return (addTrans bSpec first newVertex newEdge apexElab morph1 morph2);
@@ -1211,9 +1218,19 @@ be elaborated in a context including the static spec.
 The call to \verb+emptyEnv_ms+ retrieves a base environment consisting
 of the specs for \verb+Nat+, \verb+Integer+, \emph{etc}.
 
-begin{spec}
-  op elaborateInContext : Spec_ast -> Spec_ast -> Spec_ms
-  def elaborateInContext static dynamic =
+Second argument is context .. another spec.
+
+\begin{spec}
+  op elaborateInContext : ASpec Position -> ASpec Position -> SpecCalc.Env (ASpec ())
+  def elaborateInContext spc static = {
+      staticElab <- elaborateSpec static;
+      uri <- pathToRelativeURI "Static";
+      spc <- mergeImport (URI uri,internalPosition) staticElab spc internalPosition;
+      spcElab <- elaborateSpec spc;
+      return spcElab
+    }
+\end{spec}
+
     let specs = StringMap_listItems (emptyEnv_ms ()) in
     let static_elab = elaborateSpec_ast (specs,static) in
     let static_ms = toMetaSlang_ast static_elab in
@@ -1225,7 +1242,7 @@ begin{spec}
     let specs = StringMap_listItems (emptyEnv_ms ()) in
     let static_elab = elaborateSpec_ast (specs,static) in
       toMetaSlang_ast static_elab 
-end{spec}
+\end{spec}
 
 
 -----

@@ -1,4 +1,5 @@
 (defpackage "SPECWARE")
+(defpackage "SPECCAT")
 (in-package "SPECWARE")
 
 (defvar Specware4 (sys:getenv "SPECWARE4"))
@@ -46,16 +47,21 @@
 
 ;; Define functions for saving/restoring the
 ;; Specware state to/from the lisp environment
-(compile-and-load-lisp-file "specware-state")
+(compile-and-load-lisp-file (concatenate 'string
+  Specware4 "/Applications/Specware/Handwritten/Lisp/specware-state"))
+
+(defun SPECCAT::colimit-1 (x) (x))
 
 ;; Now load the generated lisp code.  
 (compile-and-load-lisp-file "../../lisp/PSL.lisp")
 
 ;; Stephen's toplevel aliases 
-(compile-and-load-lisp-file "toplevel")
+(compile-and-load-lisp-file (concatenate 'string
+  Specware4 "/Applications/Specware/Handwritten/Lisp/toplevel"))
 
 ;; Debugging utilities
-(compile-and-load-lisp-file "debug")
+(compile-and-load-lisp-file (concatenate 'string
+  Specware4 "/Applications/Specware/Handwritten/Lisp/debug"))
 
 (make-system (concatenate 'string
     Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
@@ -63,6 +69,9 @@
     Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
 
 (make-system "../../../Specware/UI/Emacs/Handwritten/Lisp")
+
+;;; Preload the base specs
+(user::sw "/Library/Base")
 
 ;;; (sw) (format t "~2%To bootstrap, run (boot)~%")
 ;;; (sw) (format t "~%That will run :sw /Applications/Specware/Specware4~2%")

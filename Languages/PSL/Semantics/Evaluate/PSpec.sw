@@ -40,26 +40,40 @@ They are procedures in context.
 %         -> List (PSpecElem Position)
 %         -> Env (PSpec Position * TimeStamp * URI_Dependency)
 
+  op fixPSpec : PSpec Position -> PSpec ()
+  def fixPSpec pSpec = {
+       staticSpec = convertPosSpecToSpec pSpec.staticSpec,
+       dynamicSpec = convertPosSpecToSpec pSpec.dynamicSpec,
+       procedures = pSpec.procedures
+     } 
+
   def evaluatePSpecElems initialPSpec pSpecElems = {
       (pSpecWithImports,timeStamp,depURIs)
           <- foldM evaluatePSpecImportElem (initialPSpec,0,[]) pSpecElems;
       pSpec <- foldM evaluatePSpecStaticContextElem pSpecWithImports pSpecElems;
-      static <- staticSpec pSpec;
-      dynamic <- dynamicSpec pSpec;
-      staticElab <- elaborateSpec static;
-      uri <- pathToRelativeURI "Static";
-      dynamic <- mergeImport (URI uri,internalPosition) staticElab dynamic internalPosition;
-      pSpec <- setDynamicSpec pSpec dynamic;
+      % base <- baseSpec;
+      % print "evaluatePSpecElems: .. after static and import\n";
+      % print (ppFormat (ppPSpecLess (fixPSpec pSpec) base));
+      % static <- staticSpec pSpec;
+      % dynamic <- dynamicSpec pSpec;
+      % staticElab <- elaborateSpec static;
+      % uri <- pathToRelativeURI "Static";
+      % dynamic <- mergeImport (URI uri,internalPosition) staticElab dynamic internalPosition;
+      % pSpec <- setDynamicSpec pSpec dynamic;
       pSpec <- foldM evaluatePSpecDynamicContextElem pSpec pSpecElems;
+      % print "evaluatePSpecElems: .. after dynamic before proc elements\n";
+      % print (ppFormat (ppPSpecLess (fixPSpec pSpec) base));
       pSpec <- foldM evaluatePSpecProcElem pSpec pSpecElems;
+      % print "evaluatePSpecElems: .. after proc elements\n";
+      % print (ppFormat (ppPSpecLess (fixPSpec pSpec) base));
       return (pSpec,timeStamp,depURIs)
     }
   
-  op baseSpec : SpecCalc.Env (ASpec Position)
+  op baseSpec : SpecCalc.Env (ASpec ())
   def baseSpec = {
-      (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "adding base import")
+      (Spec base,_,_) <- SpecCalc.evaluateURI (Internal "base spec")
            (SpecPath_Relative {path = ["Library","Base"], hashSuffix = None});
-      return (convertSpecToPosSpec baseSpec)
+      return base
     }
 
   op evaluatePSpecImportElem :
@@ -129,7 +143,7 @@ They are procedures in context.
       | Var (names,(fxty,srtScheme,optTerm)) -> {
             dynamic <- dynamicSpec pSpec;
             dynamic <- addOp names fxty srtScheme optTerm dynamic position;
-            setStaticSpec pSpec dynamic
+            setDynamicSpec pSpec dynamic
           }
       | _ -> return pSpec
 \end{spec}
@@ -142,25 +156,20 @@ body of some procedure. Don't we want to elaborate as we go along?
   op PosSpec.mkTyVar : String -> ASort Position
   def PosSpec.mkTyVar name = TyVar (name, internalPosition)
 
+  op staticBase : SpecCalc.Env (ASpec ())
+  def staticBase = {
+      (Spec base,_,_) <- SpecCalc.evaluateURI (Internal "static base spec")
+           (SpecPath_Relative {path = ["Library","PSL","Base"], hashSuffix = None});
+      return base
+    }
+
   op basePSpec : SpecCalc.Env (PSpec Position)
   def basePSpec = {
-    (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "psl base import")
-           (SpecPath_Relative {path = ["Library","PSL","Base"], hashSuffix = None});
-    baseSpec <- return (convertSpecToPosSpec baseSpec);
-%     deltaSort <- return (Some (PosSpec.mkProduct [PosSpec.mkTyVar "a", PosSpec.mkTyVar "a"]));
-%     procSort <- return (Some
-%                  (PosSpec.mkArrow
-%                    (PosSpec.mkProduct [
-%                       PosSpec.mkTyVar "args",
-%                       PosSpec.mkTyVar "rtn",
-%                       PosSpec.mkPBase (unQualified "Delta", [PosSpec.mkTyVar "store"])],
-%                     PosSpec.boolPSort)));
-%     staticSpec <- addSort [unQualified "Delta"] ["a"] deltaSort emptySpec internalPosition;
-%     staticSpec <- addSort [unQualified "Proc"]  ["args","rtn","store"] procSort staticSpec internalPosition;
+    base <- staticBase;
+    base <- return (convertSpecToPosSpec base);
     dynamicSpec <- return emptySpec;
-    % let dynamic = addImport ("Static", dynamic)
     return {
-        staticSpec = baseSpec,
+        staticSpec = base,
         dynamicSpec = dynamicSpec,
         procedures = PolyMap.emptyMap
       }
