@@ -63,6 +63,7 @@ fi
 cd "$SPECWARE4"/Applications/Specware
 
 export SWPATH; SWPATH="$SPECWARE4":.
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Specware/bin/linux/exit-on-errors
 
 if [ -f lisp ]; then
    echo "Failed to $act, $SPECWARE4/Applications/Specware/lisp is not a directory" 2>&1
@@ -131,15 +132,11 @@ echo " "
 echo "Loading Specware ... (for dumplisp)"
 echo " "
 $LISP -I big-alisp.dxl -batch <<-XXXX
-	(load "Specware4.lisp")
+	(load "$EXIT_ON_ERRORS")
+	(set-gc-parameters t)
+	(exiting-on-errors 
+	  (load "Specware4.lisp"))
+	(compact-memory t)
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
-	  ;; We want to keep the newspace segments relatively small.
-	  (setf (sys::gsgc-parameter :free-percent-new) 5) ; default is 25
-	  (setf (sys::gsgc-parameter :expansion-free-percent-new) 10) ; default is 35
-	  ;; But we want to make the oldspace segments large, 
-	  ;; since this reduces the number of them, which speeds up gc.
-	  (setf (sys::gsgc-parameter :expansion-free-percent-old) 90) ; default is 35
-	  (sys::gsgc-parameters)
-	  (room t)
 	  (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
 XXXX

@@ -248,14 +248,12 @@ echo "Loading Specware ... (for dumplisp)"
 echo " "
 $LISP -I big-alisp.dxl -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
+	(set-gc-parameters t)
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
-        (setf (sys::gsgc-parameter :free-percent-new) 5) ; default is 25
-        (setf (sys::gsgc-parameter :expansion-free-percent-new) 10) ; default is 35
-        (setf (sys::gsgc-parameter :expansion-free-percent-old) 90) ; default is 35
-        (sys::gsgc-parameters)
-        (room t)
-	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
+	(compact-memory t)
+	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
+	  (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
 XXXX
 RC=$?
 

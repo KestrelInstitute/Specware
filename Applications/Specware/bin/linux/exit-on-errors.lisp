@@ -50,3 +50,26 @@
   #-Allegro
   (format t "enlarge-stack is currently a no-op for non-Allegro lisp")
   )
+
+(defun set-gc-parameters (&optional verbose?)
+  (setf (sys::gsgc-parameter :free-percent-new)            5) ; default is 25
+  (setf (sys::gsgc-parameter :expansion-free-percent-new) 10) ; default is 35
+  (setf (sys::gsgc-parameter :expansion-free-percent-old) 90) ; default is 35
+  (setf (sys::gsgc-parameter :expansion-free-percent-old) 90) ; default is 35
+  (setf (sys::gsgc-parameter :generation-spread)           2) ; default is  4, range is 0-26 
+  (when verbose?
+    (sys::gsgc-parameters)
+    (room t)))
+
+(defun compact-memory (&optional verbose?)
+  (gc)
+  (sys::resize-areas :old            #x2000000  ; make oldspace at least this large
+		     :global-gc      t          ; trigger global gc to compact oldspace
+		     :tenure         t          ; move data from newspace into oldspace
+		     :expand         t          ; expand oldspace if necessary
+		     :sift-old-areas t          ; combine adjacent oldspaces
+		     :pack-heap      nil        ; do not make topmost oldspace as small as possible
+		     )
+  (when verbose?
+    (sys::gsgc-parameters)
+    (room t)))
