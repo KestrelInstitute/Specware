@@ -136,10 +136,34 @@ spec
              else checkTypeDef (rtail cx) tn
            | _ -> checkTypeDef (rtail cx) tn
 
+  op checkOpDef : Context -> Operation -> MayFail (TypeVariables * Expression)
+  def checkOpDef cx o =
+    if cx = empty then FAIL
+    else case first cx of
+           | opDefinition(o1,tvS,e) ->
+             if o1 = o then OK (tvS, e)
+             else checkOpDef (rtail cx) o
+           | _ -> checkOpDef (rtail cx) o
+
+  op checkAxiom : Context -> AxiomName -> MayFail (TypeVariables * Expression)
+  def checkAxiom cx an =
+    if cx = empty then FAIL
+    else case first cx of
+           | axioM(an1,tvS,e) ->
+             if an1 = an then OK (tvS, e)
+             else checkAxiom (rtail cx) an
+           | _ -> checkAxiom (rtail cx) an
+
   op checkTypeSubstitution : TypeVariables -> Types -> MayFail TypeSubstitution
   def checkTypeSubstitution tvS tS =
     if noRepetitions? tvS && length tvS = length tS
     then OK (FMap.fromSequences (tvS, tS))
+    else FAIL
+
+  op checkExprSubstitution : Variables -> Expressions -> MayFail ExprSubstitution
+  def checkExprSubstitution vS eS =
+    if noRepetitions? vS && length vS = length eS
+    then OK (FMap.fromSequences (vS, eS))
     else FAIL
 
   op checkFieldType : Type -> Field -> MayFail Type
@@ -400,6 +424,90 @@ spec
               | FAIL    -> FAIL
           else FAIL
 
+  op exprSubstAt :
+     Expression * Expression * Expression * Position -> MayFail Expression
+  def exprSubstAt(e,old,new,pos) =
+    if pos = empty then
+      if old = e then OK new
+      else FAIL
+    else
+      let i   = first pos in
+      let pos = rtail pos in
+      case e of
+        | unary(eo,e) ->
+          if i = 0 then
+            case exprSubstAt (e, old, new, pos) of
+              | OK newE -> OK (unary (eo, newE))
+              | FAIL    -> FAIL
+          else FAIL
+        | binary(eo,e1,e2) ->
+          if i = 1 then
+            case exprSubstAt (e1, old, new, pos) of
+              | OK newE1 -> OK (binary (eo, newE1, e2))
+              | FAIL     -> FAIL
+          else if i = 2 then
+            case exprSubstAt (e2, old, new, pos) of
+              | OK newE2 -> OK (binary (eo, e1, newE2))
+              | FAIL     -> FAIL
+          else FAIL
+        | ifThenElse(e0,e1,e2) ->
+          if i = 0 then
+            case exprSubstAt (e0, old, new, pos) of
+              | OK newE0 -> OK (ifThenElse (newE0, e1, e2))
+              | FAIL     -> FAIL
+          else if i = 1 then
+            case exprSubstAt (e1, old, new, pos) of
+              | OK newE1 -> OK (ifThenElse (e0, newE1, e2))
+              | FAIL     -> FAIL
+          else if i = 2 then
+            case exprSubstAt (e2, old, new, pos) of
+              | OK newE2 -> OK (ifThenElse (e0, e1, newE2))
+              | FAIL     -> FAIL
+          else FAIL
+        | nary(eo,eS) ->
+          if i < length eS then
+            case exprSubstAt (eS!i, old, new, pos) of
+              | OK newEi -> OK (nary (eo, update (eS, i, newEi)))
+              | FAIL     -> FAIL
+          else FAIL
+        | binding(eo,vS,tS,e) ->
+          if i = 0 then
+            case exprSubstAt (e, old, new, pos) of
+              | OK newE -> OK (binding (eo, vS, tS, newE))
+              | FAIL    -> FAIL
+          else FAIL
+        | casE(e,pS,eS) ->
+          if i = 0 then
+            case exprSubstAt (e, old, new, pos) of
+              | OK newE -> OK (casE (newE, pS, eS))
+              | FAIL    -> FAIL
+          else if i <= length eS then
+            case exprSubstAt (eS!(i-1), old, new, pos) of
+                | OK newEi -> OK (casE (e, pS, update (eS, i, newEi)))
+                | FAIL     -> FAIL
+          else FAIL
+        | recursiveLet(vS,tS,eS,e) ->
+          if i = 0 then
+            case exprSubstAt (e, old, new, pos) of
+              | OK newE -> OK (recursiveLet (vS, tS, eS, newE))
+              | FAIL    -> FAIL
+          else if i <= length eS then
+            case exprSubstAt (eS!i, old, new, pos) of
+              | OK newEi -> OK (recursiveLet (vS, tS, update (eS, i, newEi), e))
+              | FAIL     -> FAIL
+          else FAIL
+        | nonRecursiveLet(p,e,e1) ->
+          if i = 0 then
+            case exprSubstAt (e, old, new, pos) of
+              | OK newE -> OK (nonRecursiveLet (p, newE, e1))
+              | FAIL    -> FAIL
+          else if i = 1 then
+            case exprSubstAt (e1, old, new, pos) of
+              | OK newE1 -> OK (nonRecursiveLet (p, e, newE1))
+              | FAIL     -> FAIL
+          else FAIL
+        | _ -> FAIL
+
 
   op check : Proof -> MayFail Judgement   % defined below
 
@@ -529,11 +637,33 @@ spec
     else   FAIL
     | _ -> FAIL
 
+  op checkPatt : Proof -> MayFail (Context * Pattern * Type)
+  def checkPatt prf =
+    case check prf of
+      | OK (wellTypedPatt (cx, p, t)) -> OK (cx, p, t)
+      | _ -> FAIL
+
+  op checkPattWithContext : Context -> Proof -> MayFail (Pattern * Type)
+  def checkPattWithContext cx prf =
+    case check prf of
+      | OK (wellTypedPatt (cx1, p, t)) ->
+        if cx1 = cx then OK (p, t) else FAIL
+      | _ -> FAIL
+
   op checkPattWithContextAndType : Context -> Type -> Proof -> MayFail Pattern
   def checkPattWithContextAndType cx t prf =
     case check prf of
       | OK (wellTypedPatt (cx1, p, t1)) ->
         if cx1 = cx && t1 = t then OK p else FAIL
+      | _ -> FAIL
+
+  op checkPattsWithContextAndTypes :
+     Context -> Types -> Proofs -> MayFail Patterns
+  def checkPattsWithContextAndTypes cx tS prfS =
+    case checkSequence (map (checkPattWithContext cx, prfS)) of
+      | OK paTyS ->
+        let (pS, tS1) = unzip paTyS in
+        if tS1 = tS then OK pS else FAIL
       | _ -> FAIL
 
   op checkTheorem : Proof -> MayFail (Context * Expression)
@@ -1159,7 +1289,9 @@ spec
     | exEquivalentTypes (prfEx, prfTE) ->
       (case checkExpr prfEx of OK (cx, e, t) ->
       (case checkTypeEquivalenceWithContext cx prfTE of OK (t0, t1) ->
+      if t0 = t then
       OK (wellTypedExpr (cx, e, t1))
+      else FAIL
       | _ -> FAIL)
       | _ -> FAIL)
     | exAlphaAbstraction (prf, oldV, newV) ->
@@ -1205,31 +1337,218 @@ spec
       else   FAIL
       | _ -> FAIL)
 
-(*@@@
     %%%%%%%%%% well-typed patterns:
-    | paVariable        Proof * Variable
-    | paEmbedding0      Proof * Constructor
-    | paEmbedding1      Proof * Proof * Constructor
-    | paRecord          Proof * Proofs
-    | paTuple           Proof * Proofs
-    | paAlias           Proof * Variable
-    | paEquivalentTypes Proof * Proof
+    | paVariable (prf, v) ->
+      (case checkType prf of OK (cx, t) ->
+      if ~(v in? contextVars cx) then
+      OK (wellTypedPatt (cx, PVAR v t, t))
+      else   FAIL
+      | _ -> FAIL)
+    | paEmbedding0 (prf, c) ->
+      (case checkSumType prf of OK (cx, cS, t?S) ->
+      (case checkConstructorType? (SUM cS t?S) c of OK None ->
+      OK (wellTypedPatt (cx, PEMBE (SUM cS t?S) c, SUM cS t?S))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | paEmbedding1 (prfTy, prfPa, c) ->
+      (case checkSumType prfTy of OK (cx, cS, t?S) ->
+      (case checkConstructorType? (SUM cS t?S) c of OK (Some ti) ->
+      (case checkPattWithContextAndType cx ti prfPa of OK p ->
+      OK (wellTypedPatt (cx, PEMBED (SUM cS t?S) c p, SUM cS t?S))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | paRecord (prf, prfS) ->
+      (case checkRecordType prf of OK (cx, fS, tS) ->
+      (case checkPattsWithContextAndTypes cx tS prfS of OK pS ->
+      OK (wellTypedPatt (cx, PRECORD fS pS, TRECORD fS tS))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | paTuple (prf, prfS) ->
+      (case checkProductType prf of OK (cx, tS) ->
+      (case checkPattsWithContextAndTypes cx tS prfS of OK pS ->
+      OK (wellTypedPatt (cx, PTUPLE pS, PRODUCT tS))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | paAlias (prf, v) ->
+      (case checkPatt prf of OK (cx, p, t) ->
+      if ~(v in? contextVars cx) then
+      OK (wellTypedPatt (cx, AS v t p, t))
+      else   FAIL
+      | _ -> FAIL)
+    | paEquivalentTypes (prfPa, prfTE) ->
+      (case checkPatt prfPa of OK (cx, p, t) ->
+      (case checkTypeEquivalenceWithContext cx prfTE of OK (t0, t1) ->
+      if t0 = t then
+      OK (wellTypedPatt (cx, p, t1))
+      else FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+
     %%%%%%%%%% theorems:
-    | thAxiom                       Proof * Proofs * TypeVariables * AxiomName
-    | thOpDef                       Proof * Proofs * Operation
-    | thSubstitution                Proof * Proof * Position
-    | thTypeSubstitution            Proof * Proof * Position
-    | thBoolean                     Proof * Variable
-    | thCongruence                  Proof * Proof * Proof
-    | thExtensionality              Proof * Proof * Variable
-    | thAbstraction                 Proof
-    | thIfThenElse                  Proof * Proof * Proof
-    | thRecord                      Proof * Variable * Variables
-    | thTuple                       Proof * Variable * Variables
-    | thRecordProjection            Proof * Field
-    | thTupleProjection             Proof * PosNat
-    | thRecordUpdate1               Proof * Proof * Field
-    | thRecordUpdate2               Proof * Proof * Field
+    | thAxiom (prfCx, prfTyS, tvS, an) ->
+      (case checkContext prfCx of OK cx ->
+      (case checkAxiom cx an of OK (tvS, e) ->
+      (case checkTypesWithContext cx prfTyS of OK tS ->
+      (case checkTypeSubstitution tvS tS of OK tsbs ->
+      OK (theoreM (cx, typeSubstInExpr tsbs e))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | thOpDef (prfCx, prfTyS, o) ->
+      (case checkContext prfCx of OK cx ->
+      (case checkOpDef cx o of OK (tvS, e) ->
+      (case checkTypesWithContext cx prfTyS of OK tS ->
+      (case checkTypeSubstitution tvS tS of OK tsbs ->
+      OK (theoreM (cx, OPP o tS == typeSubstInExpr tsbs e))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | thSubstitution (prfTh, prfEq, pos) ->
+      (case checkTheorem prfTh of OK (cx, e) ->
+      (case checkTheoremEquation prfEq of OK (cx1, e1, e2) ->
+      if cx1 = cx then
+      (case exprSubstAt (e, e1, e2, pos) of OK newE ->
+      OK (theoreM (cx, newE))
+      | _ -> FAIL)
+      else FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | thTypeSubstitution (prfTh, prfTE, pos) ->
+      (case checkTheorem prfTh of OK (cx, e) ->
+      (case checkTypeEquivalenceWithContext cx prfTE of OK (t1, t2) ->
+      (case typeSubstInExprAt (e, t1, t2, pos) of OK newE ->
+      OK (theoreM (cx, newE))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | thBoolean (prf, v) ->
+      (case checkExpr prf of OK (cx, e, arrow (boolean, boolean)) ->
+      if ~(v in? exprFreeVars e) then
+      OK (theoreM (cx, e @ TRUE &&& e @ FALSE <==> FA v BOOL e @ VAR v))
+      else   FAIL
+      | _ -> FAIL)
+    | thCongruence (prf1, prf2, prf3) ->
+      (case checkExpr prf1 of OK (cx, e1, t) ->
+      (case checkExprWithContextAndType cx t prf2 of OK e2 ->
+      (case checkExprWithContext cx prf3 of OK (e, arrow (t0, t1)) ->
+      if t0 = t then
+      OK (theoreM (cx, e1 == e2 ==> e @ e1 == e @ e2))
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | thExtensionality (prf1, prf2, v) ->
+      (case checkExpr prf1 of OK (cx, e1, arrow (t, t1)) ->
+      (case checkExprWithContextAndType cx (t --> t1) prf2 of OK e2 ->
+      if ~(v in? exprFreeVars e1 \/ exprFreeVars e2) then
+      OK (theoreM (cx, e1 == e2 <==>
+                       FA v t e1 @ VAR v == e2 @ VAR v))
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | thAbstraction prf ->
+      (case checkExpr prf of
+         OK (cx, binary (equation, binding (abstraction, vS, tS, e),
+                                   nary (tuple, eS)), t) ->
+      (case checkExprSubstitution vS eS of OK esbs ->
+      if exprSubstOK? (e, esbs) then
+      OK (theoreM (cx, FNN vS tS e @ TUPLE eS == exprSubst esbs e))
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | thIfThenElse (prf0, prf1, prf2) ->
+      (case checkExpr prf0 of OK (cx, ifThenElse (e0, e1, e2), t) ->
+      (case checkTheoremEquation prf1 of OK (cx1, mustBeE1, e) ->
+      (case checkExtraAxiom cx cx1 of OK (_, mustBeEmpty, mustBeE0) ->
+      if mustBeEmpty = empty
+      && mustBeE0 = e0
+      && mustBeE1 = e1 then
+      (case checkTheoremEquation prf1 of OK (cx2, mustBeE2, mustBeE) ->
+      (case checkExtraAxiom cx cx2 of OK (_, mustBeEmpty, mustBeNotE0) ->
+      if mustBeEmpty = empty
+      && mustBeNotE0 = ~~ e0
+      && mustBeE2 = e2
+      && mustBeE = e then
+      OK (theoreM (cx, IF e0 e1 e2 == e))
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | thRecord (prf, v, vS) ->
+      (case checkRecordType prf of OK (cx, fS, tS) ->
+      if noRepetitions? (v |> vS)
+      && length vS = length tS then
+      OK (theoreM (cx, FA v (TRECORD fS tS)
+                          (EXX1 vS tS (VAR v == RECORD fS (map (VAR, vS))))))
+      else   FAIL
+      | _ -> FAIL)
+    | thTuple (prf, v, vS) ->
+      (case checkProductType prf of OK (cx, tS) ->
+      if noRepetitions? (v |> vS)
+      && length vS = length tS then
+      OK (theoreM (cx, FA v (PRODUCT tS)
+                          (EXX1 vS tS (VAR v == TUPLE (map (VAR, vS))))))
+      else   FAIL
+      | _ -> FAIL)
+    | thRecordProjection (prf, f) ->
+      (case checkExpr prf of
+         OK (cx, nary (record fS, eS), nary (record mustBeFS, tS)) ->
+      if mustBeFS = fS
+      && noRepetitions? fS
+      && f in? fS then
+      let i:Nat = indexOf (fS, f) in
+      if i < length eS then
+      OK (theoreM (cx, (RECORD fS eS) DOTr f == (eS!i)))
+      else   FAIL
+      else   FAIL
+      | _ -> FAIL)
+    | thTupleProjection (prf, i) ->
+      (case checkExpr prf of OK (cx, nary (tuple, eS), nary (product, tS)) ->
+      if i <= length eS then
+      OK (theoreM (cx, (TUPLE eS) DOTt i == (eS!(i-1))))
+      else   FAIL
+      | _ -> FAIL)
+    | thRecordUpdate1 (prf1, prf2, f) ->
+      (case checkExpr prf1 of
+         OK (cx, nary (record fS1, eS1), nary (record mustBeFS1, tS1)) ->
+      if mustBeFS1 = fS1 then
+      (case checkExprWithContext cx prf2 of
+         OK (nary (record fS2, eS2), nary (record mustBeFS2, tS2)) ->
+      if mustBeFS2 = fS2
+      && f in? fS1
+      && ~(f in? fS2)
+      && noRepetitions? fS1 then
+      let i:Nat = indexOf (fS1, f) in
+      OK (theoreM (cx,
+                   (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr f == (eS1!i)))
+      else   FAIL
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+    | thRecordUpdate2 (prf1, prf2, f) ->
+      (case checkExpr prf1 of
+         OK (cx, nary (record fS1, eS1), nary (record mustBeFS1, tS1)) ->
+      if mustBeFS1 = fS1 then
+      (case checkExprWithContext cx prf2 of
+         OK (nary (record fS2, eS2), nary (record mustBeFS2, tS2)) ->
+      if mustBeFS2 = fS2
+      && f in? fS2
+      && noRepetitions? fS2 then
+      let i:Nat = indexOf (fS2, f) in
+      OK (theoreM (cx,
+                   (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr f == (eS2!i)))
+      else   FAIL
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+
+(*@@@
     | thEmbedderSurjective          Proof * Constructor * Variable * Variable
     | thEmbeddersDistinct           Proof * Constructor * Constructor
                                           * Variable? * Variable?
