@@ -1221,6 +1221,33 @@ They are the formal expression of the requirement that the step from
 $S'$ to
 $T'$ is a proper refinement.
 </para>
+
+<para>
+For example, in
+[[
+||  S = spec endspec
+||  T = spec sort Bullion = (Char | isAlpha) endspec
+||  M = morphism S -> T {Boolean -> Bullion}
+]]
+the type-name [[Boolean]], which originates from a library spec,
+is subject to translation.  Therefore, [[M]] is not a proper morphism.
+Further, in
+[[
+||  S = spec
+||         op f : Nat -> Nat
+||         axiom ff is fa(n:Nat) f(n) ~= f(n+1)
+||      endspec
+||
+||  T = spec
+||         def f(n:Nat) = n*n rem 5
+||      endspec
+||
+||  M = morphism S -> T
+]]
+axiom [[ff]] does not follow from (the axiom implied by) the `op-definition
+for [[f]] in `spec [[T]], since [[f(2)]] = [[f(3)]] = 4.
+Therefore, [[M]] is not a proper morphism here either.
+</para>
 </section>
 <!-- ***************************************************************** -->
 <!--
