@@ -17,7 +17,7 @@ endspec
 
 SymbolMatching = spec
   import Symbols
-   
+
   op symb_matches? : Symbol * Option Symbol -> Boolean
   def symb_matches?(s,os) = case os of Some s1 -> s = s1
                                      | None    -> true
@@ -25,7 +25,7 @@ endspec
 
 
 WordMatching = spec
- 
+
   import Words
   import Messages
   import SymbolMatching

@@ -4,7 +4,7 @@ endspec
 
 
 Symbols_Ref = morphism MatchingSpecs#Symbols ->
-                       MatchingRefinements# Symbols {}
+                       MatchingRefinements#Symbols {}
 
 
 WordMatching0 = spec
@@ -57,8 +57,8 @@ FindMatches0 = spec
       foldl (fn(wrd,mtchs) ->
                case find_matches_aux(msg,wrd,0)
                  of Some pos ->
-		    Cons({word = wrd, position = pos},
-		         mtchs)
+                    Cons({word = wrd, position = pos},
+                         mtchs)
                   | None -> mtchs)
             Nil
             wrds
@@ -74,8 +74,8 @@ FindMatches0 = spec
 endspec
 
 
-FindMatches_Ref0 = morphism MatchingSpecs#FindMatches -> 
-		            FindMatches0 {}
+FindMatches_Ref0 = morphism MatchingSpecs#FindMatches ->
+                            FindMatches0 {}
 
 
 FindMatches = FindMatches0[WordMatching_Ref]
