@@ -143,23 +143,11 @@ class ColimitB extends Member implements Binding.Colimit, TextBinding.Container 
         ElementBinding prevBinding= null;
 	Element[] models = null;
 
-/*        for (int kind = 0; kind < 7; kind++) {
+        for (int kind = 0; kind < 7; kind++) {
             
             switch (kind) {
                 case 0:
-                    models = orig.getSorts();
-                    break;
-                case 1:
-                    models = orig.getOps();
-                    break;
-                case 2:
-                    models = orig.getDefs();
-                    break;                    
-                case 3:
-                    models = orig.getClaims();
-                    break;
-                case 4:
-                    models = orig.getImports();
+                    models = orig.getDiagrams();
                     break;
             }
             if (empty && models.length > 0) {
@@ -172,6 +160,6 @@ class ColimitB extends Member implements Binding.Colimit, TextBinding.Container 
                 container.insertChild(b, prevBinding, null);
                 prevBinding = b;
             }
-        }*/
+        }
     }
 }
