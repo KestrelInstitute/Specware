@@ -11,6 +11,7 @@ spec
  def mapAQualifierMap = map 
  def mapiAQualifierMap f m = mapi (fn ((q,id),v) -> f(q,id,v)) m
  def appAQualifierMap = app
+ def appiAQualifierMap = appi
  def qualifiers m =
     foldi (fn((qname,_),_,quals) -> cons(qname,quals)) [] m
  def qualifierIds m = 
