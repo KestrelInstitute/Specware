@@ -12,6 +12,7 @@
 
 (defvar emacs::*procs* 0)
 
+#-mcl
 (defun emacs::make-process (sym)
   ;; *terminal-io* is already a background stream
   (let* 

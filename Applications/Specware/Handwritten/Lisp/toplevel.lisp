@@ -1,4 +1,4 @@
-(in-package :user)
+(in-package :cl-user)
 (defpackage :SpecCalc)
 
 ;; Toplevel Lisp aliases for Specware
@@ -92,6 +92,13 @@
 (top-level:alias ("swdbg" :case-sensitive) (&optional (b nil b?))
    (if b? (princ (setq System-spec::specwareDebug? b))
           (princ System-spec::specwareDebug?)))
+
+(defun swpath  (&optional str)
+  (if (null str)
+      (princ (specware::getenv "SWPATH"))
+    (let ((str (string str)))
+      (speccalc::checkSpecPathsExistence str)
+      (princ (setf (specware::getenv "SWPATH") (string str))))))
 
 #+allegro
 (top-level:alias ("swpath" :case-sensitive) (&optional str)

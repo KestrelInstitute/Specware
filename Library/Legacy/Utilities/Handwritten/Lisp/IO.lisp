@@ -159,6 +159,7 @@
 ;;; The following used by send-message-to-lisp
 (defvar emacs::*procs* 0)
 
+#-mcl
 (defun makeProcess (sym)
   (let* 
       ((procNum emacs::*procs*)
@@ -183,5 +184,6 @@
 	(*standard-output* *terminal-io*))
     (eval x)))
 
+#+(or allegro Lispworks)
 (defun emacs::kill-process (procName)
   (mp::process-kill (mp::process-name-to-process procName)))

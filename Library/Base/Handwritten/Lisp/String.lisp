@@ -28,11 +28,11 @@
 ;;;    (concatenate 'string (car x) (cdr x)))
 
 (defun toScreen (x)
-  (lisp::format t "~A" x))
+  (common-lisp::format t "~A" x))
 
 (defun writeLine (x)
-  (lisp::format t "~A" x)
-  (lisp::format t "~%"))
+  (common-lisp::format t "~A" x)
+  (common-lisp::format t "~%"))
 
 (defconstant newline
   (format nil "~c" #\newline))

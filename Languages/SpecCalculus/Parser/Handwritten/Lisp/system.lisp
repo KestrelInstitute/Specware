@@ -33,7 +33,7 @@
 
 ;; ========
 
-(user::compile-and-load-local-file "tokenizer")
+(cl-user::compile-and-load-local-file "tokenizer")
 
 (defparameter *specware4-tokenizer*
   #'extract-specware4-tokens-from-file)
@@ -41,10 +41,10 @@
 ;; *specware4-parser* is referenced in semantics.lisp, so declare it first...
 (defparameter *specware4-parser* nil)
 
-(user::compile-and-load-local-file "semantics")
-(user::compile-and-load-local-file "parser-interface")
+(cl-user::compile-and-load-local-file "semantics")
+(cl-user::compile-and-load-local-file "parser-interface")
 
-(setq *specware4-parser* (load-parser (user::local-file "rules") :name 'SPECWARE4-PARSER :case-sensitive? t))
+(setq *specware4-parser* (load-parser (cl-user::local-file "rules") :name 'SPECWARE4-PARSER :case-sensitive? t))
   
 (progn
   ;;(comment "===================================================================================")
@@ -56,7 +56,7 @@
   ;;(comment "===================================================================================")
   )
 
-(defun user::test-specware4-parser (&optional (file "Languages/SpecCalculus/Parser/test.spec"))
+(defun cl-user::test-specware4-parser (&optional (file "Languages/SpecCalculus/Parser/test.spec"))
   ;; (parse-file file *meta-slang-parser* *meta-slang-tokenizer*)
   (format t "~&~%;;; SPECWARE4 Parsing ~A~%" file)
   (let* ((*parser-source* (list :file file))
@@ -69,5 +69,5 @@
     (print (mapcar #'eval (third res1)))))
 
 (progn
-  (format t "~&;     To test specware4 parser: (user::test-specware4-parser <file defaulting to test.spec>)~%")
+  (format t "~&;     To test specware4 parser: (cl-user::test-specware4-parser <file defaulting to test.spec>)~%")
   )

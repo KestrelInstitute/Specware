@@ -1,4 +1,4 @@
-(in-package :user)
+(in-package :cl-user)
 
 ;; These are functions / variables related to the saving/restoring of
 ;; the Specware state to/from the lisp environment.  This must be loaded
@@ -25,7 +25,7 @@
   (SPECWARE::saveSpecwareState-1 (vector glob loc optUri validatedURIs)))
 
 (defun SPECWARE::saveSpecwareState-1 (State)
-  (setq user::*specware-global-context* (svref State 0))
+  (setq cl-user::*specware-global-context* (svref State 0))
   (cons '(:|Ok|) State))
 
 (defun SPECWARE::restoreSavedSpecwareState

@@ -1,4 +1,4 @@
-(in-package "USER")
+(in-package "CL-USER")
 
 (defun current-directory ()
   #+allegro(excl::current-directory)

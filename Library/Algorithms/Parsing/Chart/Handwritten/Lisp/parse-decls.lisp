@@ -66,7 +66,7 @@
 			     &key 
 			     (case-sensitive? nil)
 			     (rule-package    (find-package "KEYWORD"))
-			     (symbol-package  lisp::*package*))
+			     (symbol-package  common-lisp::*package*))
   #+DEBUG-PARSER 
   (progn
     (terpri)

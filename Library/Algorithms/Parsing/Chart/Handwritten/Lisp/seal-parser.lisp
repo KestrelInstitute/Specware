@@ -6,7 +6,7 @@
 			 (name (intern (gensym "PARSER-") "KEYWORD"))
 			 (case-sensitive? nil)
 			 (rule-package    (find-package "KEYWORD"))
-			 (symbol-package  lisp::*package*))
+			 (symbol-package  common-lisp::*package*))
   (let ((new-parser (new-parser name 
 				:case-sensitive? case-sensitive?
 				:rule-package    rule-package

@@ -31,26 +31,29 @@
   ;; (lisp::format t "Changing to: ~A~%" directory)
   #+allegro(excl::chdir directory)
   #+Lispworks (hcl:change-directory directory)
-  #+mcl (ccl:cwd directory)
+  #+mcl (ccl::%chdir directory)
   #+cmu (setf (extensions:default-directory) directory)
-  (setq common-lisp::*default-pathname-defaults* (current-directory)))
+  (setq common-lisp::*default-pathname-defaults*
+	(make-pathname :directory (current-directory))))
 
 (defun getenv (varname)
   #+allegro (sys:getenv varname)
+  #+mcl (ccl::getenv varname)
   #+cmucl (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*)))
 
-#+Lispworks
+#+(or mcl Lispworks)
 (defun make-system (new-directory)
   (let ((*default-pathname-defaults*
 	 (make-pathname :name (concatenate 'string new-directory "/")
 			:defaults
-			system::*current-working-pathname*))
+			#+Lispworks system::*current-working-pathname*
+			#-Lispworks *default-pathname-defaults*))
 	(old-directory (current-directory)))
     (change-directory new-directory)
     (unwind-protect (load "system.lisp")
       (change-directory old-directory))))
 
-#-Lispworks
+#-(or mcl Lispworks)
 (defun make-system (new-directory)
   (let ((old-directory (current-directory)))
     (change-directory new-directory)
@@ -73,13 +76,20 @@
   #+lispworks (hcl::getenv x) 		;?
   )
 
+(defvar *fasl-type*
+  #+allegro "fasl"
+  #+mcl     "dfsl")
+
 (unless (fboundp 'compile-file-if-needed)
   ;; Conditional because of an apparent Allegro bug in generate-application
   ;; where excl::compile-file-if-needed compiles even if not needed
   (defun compile-file-if-needed (file)
     #+allegro (excl::compile-file-if-needed file)
     #+Lispworks (hcl:compile-file-if-needed file)
-    #+(or cmu mcl) (when t 
+    #+(or cmu mcl) (when (> (file-write-date file)
+			    (or (file-write-date (make-pathname :defaults file
+								:type *fasl-type*))
+				0)) 
 		     (compile-file file))))
 
 (defun compile-and-load-lisp-file (file)

@@ -3,7 +3,7 @@
 
 (defun initialize (test size) 
   (let ((test (car test)))
-    (lisp::make-hash-table
+    (common-lisp::make-hash-table
      :size size
      :test (cond ((eq test :|EQ|) #'eq)
 		 ((eq test :|EQL|) #'eql)

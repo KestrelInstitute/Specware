@@ -177,7 +177,7 @@
 	      (index  (second result)))
 	  (let ((error-msg 
 		 (format nil "~A at position ~D" 
-			 (if (eq (type-of signal) 'lisp::end-of-file)
+			 (if (eq (type-of signal) 'common-lisp::end-of-file)
 			     "Premature EOF for expression starting"
 			   signal)
 			 index)))

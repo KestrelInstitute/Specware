@@ -8,9 +8,9 @@
 ;;;The next three variable initializations need to be changed when going to a new minor version
 
 ;; Used in printing out the license and about-specware command
-(defvar user::Specware-version "4.0")
-(defvar user::Specware-version-name "Specware-4-0")
-(defvar user::Specware-patch-level "1")
+(defvar cl-user::Specware-version "4.0")
+(defvar cl-user::Specware-version-name "Specware-4-0")
+(defvar cl-user::Specware-patch-level "1")
 
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-0")
@@ -60,7 +60,7 @@
 	      (setq highest-patch-number patch-num)
 	      (setq highest-patch-file file))))
     (when (> highest-patch-number 0)
-      (setq user::Specware-patch-level highest-patch-number)
+      (setq cl-user::Specware-patch-level highest-patch-number)
       (ignore-errors (load highest-patch-file)))))
 
 #+allegro

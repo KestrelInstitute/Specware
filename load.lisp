@@ -1,4 +1,4 @@
-(in-package :user)
+(in-package :cl-user)
 
 (terpri) ; purely cosmetic
 

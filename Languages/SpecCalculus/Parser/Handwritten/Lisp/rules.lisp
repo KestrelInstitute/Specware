@@ -73,7 +73,7 @@
 
 (define-sw-parser-rule :NON_KEYWORD_NAME ()
   (1 :SYMBOL)
-  (lisp::symbol-name (quote 1)))
+  (common-lisp::symbol-name (quote 1)))
 
 (define-sw-parser-rule :EQUALS ()
   (:anyof "=" "is"))

@@ -180,7 +180,7 @@
     (let ((alist nil))
       (labels ((collect (pattern value)
 		 (cond ((#+allegro excl:fixnump
-			 #+Lispworks cl-user::fixnump
+			 #+(or mcl Lispworks) cl-user::fixnump
 			 pattern)
 			;;(comment "New pair: ~S ~S" pattern value)
 			(push (cons pattern value) alist))

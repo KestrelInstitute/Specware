@@ -10,9 +10,9 @@
           )
 
 ;; Used in printing out the license and about-specware command
-(defvar user::Specware-version "4.0")
-(defvar user::Specware-version-name "Specware-4-0")
-(defvar user::Specware-patch-level "1")
+(defvar cl-user::Specware-version "4.0")
+(defvar cl-user::Specware-version-name "Specware-4-0")
+(defvar cl-user::Specware-patch-level "1")
 
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-0")
@@ -108,11 +108,11 @@
 			  Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
 
 ;;; Preload the base specs
-(user::sw "/Library/Base")
+(cl-user::sw "/Library/Base")
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
-(defun user::boot ()
-  (user::sw "/Applications/Specware/Specware4")
+(defun cl-user::boot ()
+  (cl-user::sw "/Applications/Specware/Specware4")
   )

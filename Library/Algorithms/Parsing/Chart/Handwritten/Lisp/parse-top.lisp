@@ -18,12 +18,12 @@
   (when-debugging
    (setq *current-parser-session* nil)
    (reset-parser-debug-vars))
-  (sys::gc) 
+  (specware::gc) 
   ;;
   (incf-timing-data 'initial-gc)
   (let* ((package (or package 
 		      (parser-symbol-package parser)
-		      lisp::*package*))
+		      common-lisp::*package*))
 	 (session (make-parse-session 
 		   :file                 file
 		   :parser               parser

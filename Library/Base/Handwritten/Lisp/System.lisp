@@ -40,7 +40,8 @@
 ;;;  op temporaryDirectory : String
 (defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
                                              #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-					     #+cmu "/tmp/"))
+					     #+(or mcl cmu) "/tmp/"
+					     ))
 
 
 ;;; op withRestartHandler : fa (a) String * (() -> ()) * (() -> a) -> a

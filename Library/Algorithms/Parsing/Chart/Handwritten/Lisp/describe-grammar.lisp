@@ -6,7 +6,7 @@
 (defparameter *MAX-BNF-WIDTH* 40)
 
 #+allegro				; Fix for other dialects later
-(defun user::show-grammar (&optional just-rerun-latex?)
+(defun cl-user::show-grammar (&optional just-rerun-latex?)
   (let ((parser-ps-file (print-grammar-ps-file just-rerun-latex?)))
     (format t "~&~%--------------------------------------------------------------------------------~%")
     (format t "~&Type QUIT to exit from gs ~2%")
@@ -338,6 +338,6 @@
 
 #+allegro				; Fix for other dialects later
 (eval-when (load)
-  (format t "~&;     To create grammar.ps and display using ~A: (user::show-grammar)~%" 
+  (format t "~&;     To create grammar.ps and display using ~A: (cl-user::show-grammar)~%" 
 	  (get-ps-viewer)))
 

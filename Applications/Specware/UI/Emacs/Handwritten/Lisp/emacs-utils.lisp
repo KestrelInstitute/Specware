@@ -55,6 +55,7 @@ Notes:
 (defun looking-for-mspe-object(string)
   (eval-in-emacs (format nil "(looking-for-mspe-object ~S)" string)))
 
+#+allegro
 (defun select-term-in-spec ()
   (setq *select-term-number-in-spec* nil)
   (unwind-protect
@@ -98,6 +99,7 @@ Notes:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar *input-term-from-window*)
 
+#+allegro
 (defun open-input-window ()
   (eval-in-emacs "(open-input-window)")
   (setq *input-term-from-window* nil)
@@ -151,6 +153,7 @@ Notes:
 
 (defvar *input-choice-from-window*)
 
+#+allegro
 (defun open-multiple-choice-window (choices)
   (eval-in-emacs (format nil "(open-choice-window '~S)" choices))
   (setq *input-choice-from-window* nil)

@@ -1,4 +1,4 @@
-(in-package "USER")
+(in-package "CL-USER")
 
 (specware::make-system ".")
 
