@@ -33,8 +33,23 @@ cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
 
 cd Handwritten/Lisp
 
-# I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
+# We load the new Specware4.lisp twice, each in a fresh lisp session. The
+# first time compiles everything.  This may not be necessary but it is
+# easier just to load it twice rather than to try to figure out if something
+# needs to be compiled.
+$LISP <<-XXXX
+    (load "Specware4.lisp")
+XXXX
 
+# The second time is just to do the dumplisp. If we do it in one go,
+# and something needs compiling, the generated dxl file is almost 4
+# times larger.
+#
+# I once added a (gc) between the load and the dumplisp, and the dxl
+# file became 10k bigger. Go figure.
+#
+# I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
+# Do we need it here?
 $LISP <<-XXXX
 	(load "Specware4.lisp")
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))

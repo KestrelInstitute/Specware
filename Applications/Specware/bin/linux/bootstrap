@@ -4,27 +4,31 @@
 # That is,
 #  - it saves the old generated Specware4.lisp and Specware4.dxl (ie world)
 #  - it starts Specware4 
-#      - it first tries to run an existing image
+#      - it first tries to run a lisp session with an existing dxl image
 #      - if that fails it tries to load Specware from previously generated lisp
 #  - applies Specware to itself (sw "/Applications/Specware/Specware4")
 #     to generate a new Specware4.lisp,
-#  - starts a fresh lisp image,
+#  - starts a fresh lisp session
+#  - loads the new Specware (under Handwritten/Lisp, (load "Specware4.lisp"))
+#    (this compiles everything)
+#  - starts a fresh lisp session again
 #  - loads the new Specware (under Handwritten/Lisp, (load "Specware4.lisp"))
 #  - dumps a world into the bin directory
 
 # Perhaps there should be a different script for bootstrapping from lisp
-# (bootstrap-from-lisp?.
+# (bootstrap-from-lisp?).
 
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. The 'set -v' turns on echoing of
 # lines read. This will be removed later.
 
-# Is there a way to inhibit all the warnings (eg unused variable)
-# when Lisp loads?
-
 set -v
 
 # We assume SPECWARE4 has been set.
+if [ -z $SPECWARE4 ]; then
+    echo "Failed to bootstrap, SPECWARE4 environment variable not set"
+    exit 1
+fi
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
@@ -39,6 +43,9 @@ cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
 # tabs are removed.  Thus the tabs that follow are significant. If you
 # change them to spaces, the end of the "here-document" is not recognized
 # (the XXXX).
+
+# Is there a way to inhibit all the warnings (eg unused variable)
+# when Lisp loads?
 
 SWPATH=$SPECWARE4:.
 
@@ -64,8 +71,23 @@ fi
 
 cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
 
-# I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
+# We load the new Specware4.lisp twice, each in a fresh lisp session. The
+# first time compiles everything.  As we have just generated a new
+# lisp file for Specware, we are certain something needs to be compiled.
+# We could do the load and compile up above in the lisp that generated it,
+# but that seems weird to me ...
+$LISP <<-XXXX
+	(load "Specware4.lisp")
+XXXX
 
+# The second time is just to do the dumplisp. If we do it in one
+# go, the generated dxl file is almost 4 times larger.
+#
+# I once added a (gc) between the load and the dumplisp, and the dxl
+# file became 10k bigger. Go figure.
+#
+# I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
+# Do we need it here?
 $LISP <<-XXXX
 	(load "Specware4.lisp")
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
