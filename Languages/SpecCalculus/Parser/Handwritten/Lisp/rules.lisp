@@ -1250,7 +1250,7 @@ If we want the precedence to be optional:
 ;; we might provide some sort of expressions or patterns
 ;; that match sets of identifiers.
 ;; (define-sw-parser-rule :SC-NAME-EXPR ()
-;;   (:tuple "{" (1 (:optional :QUALIFIABLE-NAME-LIST)) "}")
+;;   (:tuple "{" (1 (:optional :QUALIFIABLE-AMBIGUOUS-NAME-LIST)) "}")
 ;; (list . 1))
 
 (define-sw-parser-rule :SC-DECL-REFS ()
@@ -1329,23 +1329,23 @@ If we want the precedence to be optional:
   ;; When we're not sure if its a sort/op/axiom ref...
   ;; "[A.]X" "([A.]X)", but X cannot be "="
   (:anyof 
-   ((:tuple     (1 :QUALIFIABLE-NAME)     )  1)  ; "[A.]f"  
-   ((:tuple "(" (1 :QUALIFIABLE-NAME) ")" )  1)  ; "([A.]f)"
+   ((:tuple     (1 :QUALIFIABLE-AMBIGUOUS-NAME)     )  1)  ; "[A.]f"  
+   ((:tuple "(" (1 :QUALIFIABLE-AMBIGUOUS-NAME) ")" )  1)  ; "([A.]f)"
    ))
 
 ;;; ------------------------------------------------------------------------
-;;;  QUALIFIABLE-NAME (might refer to sort/op/axiom)
+;;;  QUALIFIABLE-AMBIGUOUS-NAME (might refer to sort/op/axiom)
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :QUALIFIABLE-NAME ()
+(define-sw-parser-rule :QUALIFIABLE-AMBIGUOUS-NAME ()
   ;; might be sort or op name, but will be of the form XXX or QQQ.XXX
-  (:anyof :UNQUALIFIED-NAME :QUALIFIED-NAME))
+  (:anyof :UNQUALIFIED-AMBIGUOUS-NAME :QUALIFIED-AMBIGUOUS-NAME))
 
-(define-sw-parser-rule :UNQUALIFIED-NAME ()
+(define-sw-parser-rule :UNQUALIFIED-AMBIGUOUS-NAME ()
   (1 :NAME)
   (list 1))
 
-(define-sw-parser-rule :QUALIFIED-NAME ()
+(define-sw-parser-rule :QUALIFIED-AMBIGUOUS-NAME ()
   (:tuple (1 :QUALIFIER) "." (2 :NAME))
   (list 1 2))
 
