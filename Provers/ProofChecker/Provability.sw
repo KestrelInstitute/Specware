@@ -226,7 +226,7 @@ spec
       && length cS = length t?S
       && length cS > 0
       && (fa(i:Nat) i < length cS =>
-            (case t?S elem i of
+            (case t?S!i of
                | Some t -> pj (wellFormedType (cx, t))
                | None   -> true))
       => pj (wellFormedType (cx, SUM cS t?S)))
@@ -236,7 +236,7 @@ spec
       && typeDeclaration (tn, n) in? cx
       && length tS = n
       && (fa(i:Nat) i < n =>
-            pj (wellFormedType (cx, tS elem i)))
+            pj (wellFormedType (cx, tS!i)))
       => pj (wellFormedType (cx, TYPE tn tS)))
     | tyRecord ->
       (fa (cx:Context, fS:Fields, tS:Types)
@@ -244,13 +244,13 @@ spec
       && noRepetitions? fS
       && length fS = length tS
       && (fa(i:Nat) i < length fS =>
-            pj (wellFormedType (cx, tS elem i)))
+            pj (wellFormedType (cx, tS!i)))
       => pj (wellFormedType (cx, TRECORD fS tS)))
     | tyProduct ->
       (fa (cx:Context, tS:Types)
          pj (wellFormedContext cx)
       && (fa(i:Nat) i < length tS =>
-            pj (wellFormedType (cx, tS elem i)))
+            pj (wellFormedType (cx, tS!i)))
       => pj (wellFormedType (cx, PRODUCT tS)))
     | tySub ->
       (fa (cx:Context, r:Expression, t:Type)
@@ -281,7 +281,7 @@ spec
          pj (wellFormedContext cx)
       && typeDefinition (tn, tvS, t) in? cx
       && (fa(i:Nat) i < length tvS =>
-            pj (wellFormedType (cx, tS elem i)))
+            pj (wellFormedType (cx, tS!i)))
       && noRepetitions? tvS
       && length tvS = length tS
       && tsbs = FMap.fromSequences (tvS, tS)
@@ -356,12 +356,12 @@ spec
          pj (wellTypedExpr (cx, e, TRECORD fS tS))
       && i < length fS
       && i < length tS
-      => pj (wellTypedExpr (cx, e DOTr (fS elem i), tS elem i)))
+      => pj (wellTypedExpr (cx, e DOTr (fS!i), tS!i)))
     | exTupleProjection ->
       (fa (cx:Context, e:Expression, tS:Types, i:PosNat)
          pj (wellTypedExpr (cx, e, PRODUCT tS))
       && i <= length tS
-      => pj (wellTypedExpr (cx, e DOTt i, tS elem (i-1))))
+      => pj (wellTypedExpr (cx, e DOTt i, tS!(i-1))))
     | exRelaxator ->
       (fa (cx:Context, t:Type, r:Expression)
          pj (wellFormedType (cx, t \ r))
@@ -438,14 +438,14 @@ spec
          pj (wellFormedType (cx, TRECORD fS tS))
       && length tS = length eS
       && (fa(i:Nat) i < length eS =>
-            pj (wellTypedExpr (cx, eS elem i, tS elem i)))
+            pj (wellTypedExpr (cx, eS!i, tS!i)))
       => pj (wellTypedExpr (cx, RECORD fS eS, TRECORD fS tS)))
     | exTuple ->
       (fa (cx:Context, tS:Types, eS:Expressions)
          pj (wellFormedType (cx, PRODUCT tS))
       && length tS = length eS
       && (fa(i:Nat) i < length eS =>
-            pj (wellTypedExpr (cx, eS elem i, tS elem i)))
+            pj (wellTypedExpr (cx, eS!i, tS!i)))
       => pj (wellTypedExpr (cx, TUPLE eS, PRODUCT tS)))
     | exAbstraction ->
       (fa (cx:Context, vS:Variables, tS:Types, bvS:BoundVariables,
@@ -479,7 +479,7 @@ spec
          pj (wellFormedContext cx)
       && opDeclaration (o, tvS, t) in? cx
       && (fa(i:Nat) i < length tS =>
-            pj (wellFormedType (cx, tS elem i)))
+            pj (wellFormedType (cx, tS!i)))
       && noRepetitions? tvS
       && length tvS = length tS
       && tsbs = FMap.fromSequences (tvS, tS)
@@ -489,16 +489,16 @@ spec
          pj (wellFormedType (cx, SUM cS t?S))
       && i < length cS
       && i < length t?S
-      && t?S elem i = None
-      => pj (wellTypedExpr (cx, EMBED (SUM cS t?S) (cS elem i), SUM cS t?S)))
+      && t?S!i = None
+      => pj (wellTypedExpr (cx, EMBED (SUM cS t?S) (cS!i), SUM cS t?S)))
     | exEmbedder1 ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, i:Nat, t:Type)
          pj (wellFormedType (cx, SUM cS t?S))
       && i < length cS
       && i < length t?S
-      && t?S elem i = Some t
+      && t?S!i = Some t
       => pj (wellTypedExpr
-               (cx, EMBED (SUM cS t?S) (cS elem i), t --> SUM cS t?S)))
+               (cx, EMBED (SUM cS t?S) (cS!i), t --> SUM cS t?S)))
     | exCase ->
       (fa (cx:Context, e:Expression, n:PosNat, pS:Patterns, eS:Expressions,
            t:Type, t1:Type, caseMatches:Expressions, posCxS:FSeq Context,
@@ -506,33 +506,30 @@ spec
          pj (wellTypedExpr (cx, e, t))
       && length pS = n
       && (fa(i:Nat) i < n =>
-            pj (wellTypedPatt (cx, pS elem i, t)))
+            pj (wellTypedPatt (cx, pS!i, t)))
       && length caseMatches = n
       && (fa(i:Nat) i < n =>
-            caseMatches elem i =
-            EXX (pattBoundVars (pS elem i))
-                (pattAssumptions (pS elem i, e)))
+            caseMatches!i =
+            EXX (pattBoundVars (pS!i))
+                (pattAssumptions (pS!i, e)))
       && pj (theoreM (cx, disjoinAll caseMatches))
       && length posCxS = n
       && length posAnS = n
       && (fa(i:Nat) i < n =>
-            posCxS elem i =
-            multiVarDecls (pattBoundVars (pS elem i))
-              <| axioM (posAnS elem i, empty, pattAssumptions (pS elem i, e)))
+            posCxS!i =
+            multiVarDecls (pattBoundVars (pS!i))
+              <| axioM (posAnS!i, empty, pattAssumptions (pS!i, e)))
       && length negCxS = n
       && length negAnS = n
       && (fa(i:Nat) i < n =>
             (let conjuncts:Expressions = the (fn conjuncts ->
-                 length conjuncts = i &&
-                 (fa(j:Nat) j < i =>
-                    conjuncts elem j = ~~ (caseMatches elem j))) in
-             negCxS elem i =
-             singleton (axioM (negAnS elem i, empty, conjoinAll conjuncts))))
+                   length conjuncts = i &&
+                   (fa(j:Nat) j < i => conjuncts!j = ~~ (caseMatches!j))) in
+             negCxS!i =
+             singleton (axioM (negAnS!i, empty, conjoinAll conjuncts))))
       && length eS = n
       && (fa(i:Nat) i < n =>
-            pj (wellTypedExpr (cx ++ (negCxS elem i) ++ (posCxS elem i),
-                               eS elem i,
-                               t1)))
+            pj (wellTypedExpr (cx ++ (negCxS!i) ++ (posCxS!i), eS!i, t1)))
       => pj (wellTypedExpr (cx, CASE e pS eS, t1)))
     | exRecursiveLet ->
       (* Since here we have defined unique existentials (`EXX1') to bind
@@ -564,7 +561,7 @@ spec
       && oldBvS = zip (oldVS, tS)
       && pj (wellTypedExpr (cx, FNN oldBvS e, t))
       && i < length oldVS
-      && oldVi = oldVS elem i
+      && oldVi = oldVS!i
       && esbs = FMap.singleton (oldVi, VAR newVi)
       && ~(newVi in? toSet oldVS \/ exprFreeVars e \/ captVars oldVi e)
       && newVS = update (oldVS, i, newVi)
@@ -578,9 +575,9 @@ spec
            esbs:ExprSubstitution)
          pj (wellTypedExpr (cx, CASE e oldPS oldES, t))
       && i < length oldPS
-      && oldPi = oldPS elem i
+      && oldPi = oldPS!i
       && i < length oldES
-      && oldEi = oldES elem i
+      && oldEi = oldES!i
       && oldV in? pattVars oldPi
       && esbs = FMap.singleton (oldV, VAR newV)
       && ~(newV in? pattVars oldPi \/ exprFreeVars oldEi \/ captVars oldV oldEi)
@@ -598,7 +595,7 @@ spec
       && oldBvS = zip (oldVS, tS)
       && pj (wellTypedExpr (cx, LETDEF oldBvS oldES oldE, t))
       && i < length oldVS
-      && oldVi = oldVS elem i
+      && oldVi = oldVS!i
       && esbs = FMap.singleton (oldVi, VAR newVi)
       && ~(newVi in? toSet oldVS \/ captVars oldVi oldE \/ exprFreeVars oldE \/
                      unionAll (map (exprFreeVars, oldES)) \/
@@ -620,32 +617,32 @@ spec
          pj (wellFormedType (cx, SUM cS t?S))
       && i < length cS
       && i < length t?S
-      && t?S elem i = None
-      => pj (wellTypedPatt (cx, PEMBE (SUM cS t?S) (cS elem i), SUM cS t?S)))
+      && t?S!i = None
+      => pj (wellTypedPatt (cx, PEMBE (SUM cS t?S) (cS!i), SUM cS t?S)))
     | paEmbedding1 ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, p:Pattern, t:Type, i:Nat)
          pj (wellFormedType (cx, SUM cS t?S))
       && pj (wellTypedPatt (cx, p, t))
       && i < length cS
       && i < length t?S
-      && t?S elem i = Some t
-      => pj (wellTypedPatt (cx, PEMBED (SUM cS t?S) (cS elem i) p, SUM cS t?S)))
+      && t?S!i = Some t
+      => pj (wellTypedPatt (cx, PEMBED (SUM cS t?S) (cS!i) p, SUM cS t?S)))
     | paRecord ->
       (fa (cx:Context, fS:Fields, tS:Types, pS:Patterns)
          pj (wellFormedType (cx, TRECORD fS tS))
       && length pS = length tS
       && (fa(i:Nat) i < length pS =>
-            pj (wellTypedPatt (cx, pS elem i, tS elem i)))
+            pj (wellTypedPatt (cx, pS!i, tS!i)))
       && (fa(i:Nat,j:Nat) i < length pS && j < length pS && i ~= j =>
-            pattVars (pS elem i) /\ pattVars (pS elem j) = empty)
+            pattVars (pS!i) /\ pattVars (pS!j) = empty)
       => pj (wellTypedPatt (cx, PRECORD fS pS, TRECORD fS tS)))
     | paTuple ->
       (fa (cx:Context, tS:Types, pS:Patterns)
          pj (wellFormedType (cx, PRODUCT tS))
       && (fa(i:Nat) i < length pS =>
-            pj (wellTypedPatt (cx, pS elem i, tS elem i)))
+            pj (wellTypedPatt (cx, pS!i, tS!i)))
       && (fa(i:Nat,j:Nat) i < length pS && j < length pS && i ~= j =>
-            pattVars (pS elem i) /\ pattVars (pS elem j) = empty)
+            pattVars (pS!i) /\ pattVars (pS!j) = empty)
       => pj (wellTypedPatt (cx, PTUPLE pS, PRODUCT tS)))
     | paAlias ->
       (fa (cx:Context, v:Variable, t:Type, p:Pattern)
@@ -665,7 +662,7 @@ spec
          pj (wellFormedContext cx)
       && axioM (an, tvS, e) in? cx
       && (fa(i:Nat) i < length tS =>
-            pj (wellFormedType (cx, tS elem i)))
+            pj (wellFormedType (cx, tS!i)))
       && noRepetitions? tvS
       && length tvS = length tS
       && tsbs = FMap.fromSequences (tvS, tS)
@@ -676,7 +673,7 @@ spec
          pj (wellFormedContext cx)
       && opDefinition (o, tvS, e) in? cx
       && (fa(i:Nat) i < length tS =>
-            pj (wellFormedType (cx, tS elem i)))
+            pj (wellFormedType (cx, tS!i)))
       && noRepetitions? tvS
       && length tvS = length tS
       && tsbs = FMap.fromSequences (tvS, tS)
@@ -755,12 +752,12 @@ spec
          pj (wellTypedExpr (cx, RECORD fS eS, TRECORD fS tS))
       && i < length fS
       && i < length eS
-      => pj (theoreM (cx, (RECORD fS eS) DOTr (fS elem i) == (eS elem i))))
+      => pj (theoreM (cx, (RECORD fS eS) DOTr (fS!i) == (eS!i))))
     | thTupleProjection ->
       (fa (cx:Context, tS:Types, eS:Expressions, i:Nat)
          pj (wellTypedExpr (cx, TUPLE eS, PRODUCT tS))
       && i < length eS
-      => pj (theoreM (cx, (TUPLE eS) DOTt (i+1) == (eS elem i))))
+      => pj (theoreM (cx, (TUPLE eS) DOTt (i+1) == (eS!i))))
     | thRecordUpdate1 ->
       (fa (cx:Context, fS1:Fields, fS2:Fields, tS1:Types, tS2:Types,
            eS1:Expressions, eS2:Expressions, i:Nat)
@@ -768,10 +765,10 @@ spec
       && pj (wellTypedExpr (cx, RECORD fS2 eS2, TRECORD fS2 tS2))
       && i < length fS1
       && i < length eS1
-      && ~((fS1 elem i) in? fS2)
+      && ~(fS1!i in? fS2)
       && pj (theoreM (cx,
-                      (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr (fS1 elem i)
-                      == (eS1 elem i))))
+                      (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr (fS1!i)
+                      == (eS1!i))))
     | thRecordUpdate2 ->
       (fa (cx:Context, fS1:Fields, fS2:Fields, tS1:Types, tS2:Types,
            eS1:Expressions, eS2:Expressions, i:Nat)
@@ -780,8 +777,8 @@ spec
       && i < length fS2
       && i < length eS2
       => pj (theoreM (cx,
-                      (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr (fS2 elem i)
-                      == (eS2 elem i))))
+                      (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr (fS2!i)
+                      == (eS2!i))))
     | thEmbedderSurjective ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, v:Variable, v1:Variable,
            disjuncts:Expressions)
@@ -790,11 +787,11 @@ spec
       && length disjuncts = length cS
       && v ~= v1
       && (fa(i:Nat) i < length disjuncts =>
-            disjuncts elem i =
-            (case (t?S elem i) of
+            disjuncts!i =
+            (case (t?S!i) of
                | Some t -> EX (v1,t)
-                              (VAR v == EMBED (SUM cS t?S) (cS elem i) @ VAR v1)
-               | None   -> VAR v == EMBED (SUM cS t?S) (cS elem i)))
+                              (VAR v == EMBED (SUM cS t?S) (cS!i) @ VAR v1)
+               | None   -> VAR v == EMBED (SUM cS t?S) (cS!i)))
       => pj (theoreM (cx, FA (v, SUM cS t?S) (disjoinAll disjuncts))))
     | thEmbeddersDistinct ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, i:Nat, j:Nat,
@@ -807,19 +804,19 @@ spec
       && i ~= j
       && vi ~= vj
       && conclusion =
-         (case (t?S elem i, t?S elem j) of
+         (case (t?S!i, t?S!j) of
             | (Some ti, Some tj) ->
               FAA (seq2 ((vi,ti), (vj,tj)))
-                  (EMBED (SUM cS t?S) (cS elem i) @ VAR vi ~==
-                   EMBED (SUM cS t?S) (cS elem j) @ VAR vj)
+                  (EMBED (SUM cS t?S) (cS!i) @ VAR vi ~==
+                   EMBED (SUM cS t?S) (cS!j) @ VAR vj)
             | (Some ti, None) ->
-              FA (vi, ti) (EMBED (SUM cS t?S) (cS elem i) @ VAR vi ~==
-                           EMBED (SUM cS t?S) (cS elem j))
+              FA (vi, ti) (EMBED (SUM cS t?S) (cS!i) @ VAR vi ~==
+                           EMBED (SUM cS t?S) (cS!j))
             | (None, Some tj) ->
-              FA (vj, tj) (EMBED (SUM cS t?S) (cS elem i) ~==
-                           EMBED (SUM cS t?S) (cS elem j) @ VAR vj)
+              FA (vj, tj) (EMBED (SUM cS t?S) (cS!i) ~==
+                           EMBED (SUM cS t?S) (cS!j) @ VAR vj)
             | (None, None) ->
-              EMBED (SUM cS t?S) (cS elem i) ~== EMBED (SUM cS t?S) (cS elem j))
+              EMBED (SUM cS t?S) (cS!i) ~== EMBED (SUM cS t?S) (cS!j))
       => pj (theoreM (cx, conclusion)))
     | thEmbedderInjective ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, v1:Variable, v2:Variable,
@@ -827,12 +824,12 @@ spec
          pj (wellFormedType (cx, SUM cS t?S))
       && i < length cS
       && i < length t?S
-      && t?S elem i = Some ti
+      && t?S!i = Some ti
       && v1 ~= v2
       => pj (theoreM (cx, FAA (seq2 ((v1,ti), (v2,ti)))
                               (VAR v1 ~== VAR v2 ==>
-                               EMBED (SUM cS t?S) (cS elem i) @ VAR v1 ~==
-                               EMBED (SUM cS t?S) (cS elem i) @ VAR v2))))
+                               EMBED (SUM cS t?S) (cS!i) @ VAR v1 ~==
+                               EMBED (SUM cS t?S) (cS!i) @ VAR v2))))
     | thRelaxatorSatisfiesPredicate ->
       (fa (cx:Context, t:Type, r:Expression, v:Variable)
          pj (wellFormedType (cx, t \ r))
@@ -882,26 +879,26 @@ spec
       && length posCxS = n
       && length posAnS = n
       && (fa(i:Nat) i < n =>
-            posCxS elem i =
-            multiVarDecls (pattBoundVars (pS elem i))
-              <| axioM (posAnS elem i, empty, pattAssumptions (pS elem i, e)))
+            posCxS!i =
+            multiVarDecls (pattBoundVars (pS!i))
+              <| axioM (posAnS!i, empty, pattAssumptions (pS!i, e)))
       && length negCxS = n
       && length negAnS = n
       && (fa(i:Nat) i < n =>
             (let conjuncts:Expressions = the (fn conjuncts ->
                  length conjuncts = i &&
                  (fa(j:Nat) j < i =>
-                    conjuncts elem j =
-                    FAA (pattBoundVars (pS elem i))
-                        (pattAssumptions (pS elem i, e)))) in
-             negCxS elem i =
-             singleton (axioM (negAnS elem i, empty, conjoinAll conjuncts))))
+                    conjuncts!j =
+                    FAA (pattBoundVars (pS!i))
+                        (pattAssumptions (pS!i, e)))) in
+             negCxS!i =
+             singleton (axioM (negAnS!i, empty, conjoinAll conjuncts))))
       && length eS = n
       && (fa(i:Nat) i < n =>
-            pj (theoreM (cx ++ (negCxS elem i) ++ (posCxS elem i),
-                         (eS elem i) == e0)))
+            pj (theoreM (cx ++ (negCxS!i) ++ (posCxS!i),
+                         (eS!i) == e0)))
       && (fa(i:Nat) i < n =>
-            exprFreeVars e0 /\ pattVars (pS elem i) = empty)
+            exprFreeVars e0 /\ pattVars (pS!i) = empty)
       => pj (theoreM (cx, CASE e pS eS == e0)))
     | thRecursiveLet ->
       (fa (cx:Context, vS:Variables, tS:Types, bvS:BoundVariables, eS:Expressions,
@@ -914,8 +911,8 @@ spec
       && length eS = n
       && length conjuncts = n
       && (fa(i:Nat) i < n =>
-            conjuncts elem i =
-            (VAR (vS elem i) == (eS elem i)))
+            conjuncts!i =
+            (VAR (vS!i) == (eS!i)))
       && pj (theoreM (cx ++ multiVarDecls bvS
                         <| axioM (an, empty, conjoinAll conjuncts),
                       e == e0))

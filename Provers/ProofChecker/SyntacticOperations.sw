@@ -102,8 +102,8 @@ spec
                                  let vSets =
                                      seqSuchThat (fn(i:Nat) ->
                                        if i < n
-                                       then Some (exprFreeVars (eS elem i)
-                                                   -- pattVars (pS elem i))
+                                       then Some (exprFreeVars (eS!i)
+                                                   -- pattVars (pS!i))
                                        else None) in
                                  exprFreeVars e \/ unionAll vSets
     | recursiveLet(bvS,eS,e)  -> let (vS,_) = unzip bvS in
@@ -326,13 +326,12 @@ spec
                                      seqSuchThat (fn(i:Nat) ->
                                        if i < n
                                        then Some (undefineMulti
-                                                    (sbs, pattVars (pS elem i)))
+                                                    (sbs, pattVars (pS!i)))
                                        else None) in
                                  let newES =
                                      seqSuchThat (fn(i:Nat) ->
                                        if i < n
-                                       then Some (exprSubst (branchSbss elem i)
-                                                            (eS         elem i))
+                                       then Some (exprSubst (branchSbss!i) (eS!i))
                                        else None) in
                                  casE (exprSubst sbs e, pS, newES)
     | recursiveLet(bvS,eS,e)  -> let (vS,_) = unzip bvS in
@@ -366,10 +365,10 @@ spec
                                  let varSets =
                                      seqSuchThat (fn(i:Nat) ->
                                        if i < n
-                                       then if u in? exprFreeVars (eS elem i) &&
-                                               ~(u in? pattVars (pS elem i))
-                                            then Some (pattVars (pS elem i) \/
-                                                       captVars u (eS elem i))
+                                       then if u in? exprFreeVars (eS!i) &&
+                                               ~(u in? pattVars (pS!i))
+                                            then Some (pattVars (pS!i) \/
+                                                       captVars u (eS!i))
                                             else Some empty
                                        else None) in
                                  unionAll varSets \/ captVars u e
@@ -443,7 +442,7 @@ spec
     (fa (old:Type, new:Type, pos:Position, cS:Constructors, t?S:Type?s,
          i:Nat, ti:Type, newTi:Type)
        i < length t?S &&
-       t?S elem i = Some ti &&
+       t?S!i = Some ti &&
        typeSubstInTypeAt (ti, old, new, pos, newTi) =>
        typeSubstInTypeAt (sum (cS, t?S), old, new, (i+1) |> pos,
                           sum (cS, update(t?S,i,Some newTi))))
@@ -451,7 +450,7 @@ spec
     (fa (old:Type, new:Type, pos:Position, tc:NaryTypeConstruct, tS:Types,
          i:Nat, newTi:Type)
        i < length tS &&
-       typeSubstInTypeAt (tS elem i, old, new, pos, newTi) =>
+       typeSubstInTypeAt (tS!i, old, new, pos, newTi) =>
        typeSubstInTypeAt (nary (tc, tS), old, new, (i+1) |> pos,
                           nary (tc, update(tS,i,newTi))))
     &&
@@ -507,7 +506,7 @@ spec
     (fa (old:Type, new:Type, pos:Position, eo:NaryExprOperator, eS:Expressions,
          i:Nat, newEi:Expression)
        i < length eS &&
-       typeSubstInExprAt (eS elem i, old, new, pos, newEi) =>
+       typeSubstInExprAt (eS!i, old, new, pos, newEi) =>
        typeSubstInExprAt (nary (eo, eS), old, new, (i+1) |> pos,
                           nary (eo, update(eS,i,newEi))))
     &&
@@ -515,7 +514,7 @@ spec
          vS:Variables, tS:Types, e:Expression, i:Nat, newTi:Type)
        i < length vS &&
        length vS = length tS &&
-       typeSubstInTypeAt (tS elem i, old, new, pos, newTi) =>
+       typeSubstInTypeAt (tS!i, old, new, pos, newTi) =>
        typeSubstInExprAt (binding (eo, zip (vS, tS), e), old, new, (i+1) |> pos,
                           binding (eo, zip (vS, update(tS,i,newTi)), e)))
     &&
@@ -528,7 +527,7 @@ spec
     (fa (old:Type, new:Type, pos:Position, o:Operation, tS:Types,
          i:Nat, newTi:Type)
        i < length tS &&
-       typeSubstInTypeAt (tS elem i, old, new, pos, newTi) =>
+       typeSubstInTypeAt (tS!i, old, new, pos, newTi) =>
        typeSubstInExprAt (opInstance (o, tS), old, new, (i+1) |> pos,
                           opInstance (o, update(tS,i,newTi))))
     &&
@@ -550,7 +549,7 @@ spec
     (fa (old:Type, new:Type, pos:Position,
          e:Expression, pS:Patterns, eS:Expressions, i:Nat, newPi:Pattern)
        i < length pS &&
-       typeSubstInPattAt (pS elem i, old, new, pos, newPi) =>
+       typeSubstInPattAt (pS!i, old, new, pos, newPi) =>
        typeSubstInExprAt (casE (e, pS, eS), old, new, (2*i+1) |> pos,
                           casE (e, update(pS,i,newPi), eS)))
     &&
@@ -558,7 +557,7 @@ spec
          pS:Patterns, eS:Expressions, newEi:Expression)
        i < length pS &&
        length pS = length eS &&
-       typeSubstInExprAt (eS elem i, old, new, pos, newEi) =>
+       typeSubstInExprAt (eS!i, old, new, pos, newEi) =>
        typeSubstInExprAt (casE (e, pS, eS), old, new, (2*i+2) |> pos,
                           casE (e, pS, update(eS,i,newEi))))
     &&
@@ -566,7 +565,7 @@ spec
          eS:Expressions, e:Expression, i:Nat, newTi:Type)
        i < length vS &&
        length vS = length tS &&
-       typeSubstInTypeAt (tS elem i, old, new, pos, newTi) =>
+       typeSubstInTypeAt (tS!i, old, new, pos, newTi) =>
        typeSubstInExprAt (recursiveLet (zip (vS, tS), eS, e),
                           old, new, (2*i+1) |> pos,
                           recursiveLet (zip (vS, update(tS,i,newTi)), eS, e)))
@@ -575,7 +574,7 @@ spec
          eS:Expressions, e:Expression, i:Nat, newEi:Expression)
        i < length vS &&
        length vS = length tS &&
-       typeSubstInExprAt (eS elem i, old, new, pos, newEi) =>
+       typeSubstInExprAt (eS!i, old, new, pos, newEi) =>
        typeSubstInExprAt (recursiveLet (zip (vS, tS), eS, e),
                           old, new, (2*i+2) |> pos,
                           recursiveLet (zip (vS, tS), update(eS,i,newEi), e)))
@@ -625,13 +624,13 @@ spec
     (fa (old:Type, new:Type, pos:Position, fS:Fields, pS:Patterns,
          i:Nat, newPi:Pattern)
        i < length pS &&
-       typeSubstInPattAt (pS elem i, old, new, pos, newPi) =>
+       typeSubstInPattAt (pS!i, old, new, pos, newPi) =>
        typeSubstInPattAt (record (fS, pS), old, new, (i+1) |> pos,
                           record (fS, update(pS,i,newPi))))
     &&
     (fa (old:Type, new:Type, pos:Position, pS:Patterns, i:Nat, newPi:Pattern)
        i < length pS &&
-       typeSubstInPattAt (pS elem i, old, new, pos, newPi) =>
+       typeSubstInPattAt (pS!i, old, new, pos, newPi) =>
        typeSubstInPattAt (tuple pS, old, new, (i+1) |> pos,
                           tuple (update(pS,i,newPi))))
     &&
@@ -697,7 +696,7 @@ spec
     &&
     (fa (old:Expression, new:Expression, pos:Position,
          eo:NaryExprOperator, eS:Expressions, i:Nat, newEi:Expression)
-       exprSubstAt (eS elem i, old, new, pos, newEi) =>
+       exprSubstAt (eS!i, old, new, pos, newEi) =>
        exprSubstAt (nary (eo, eS), old, new, (i+1) |> pos,
                     nary (eo, update(eS,i,newEi))))
     &&
@@ -716,7 +715,7 @@ spec
     (fa (old:Expression, new:Expression, pos:Position, e:Expression,
          pS:Patterns, eS:Expressions, i:Nat, newEi:Expression)
        i < length eS &&
-       exprSubstAt (eS elem i, old, new, pos, newEi) =>
+       exprSubstAt (eS!i, old, new, pos, newEi) =>
        exprSubstAt (casE (e, pS, eS), old, new, (i+1) |> pos,
                     casE (e, pS, update(eS,i,newEi))))
     &&
@@ -729,7 +728,7 @@ spec
     (fa (old:Expression, new:Expression, pos:Position, bvS:BoundVariables,
          eS:Expressions, e:Expression, i:Nat, newEi:Expression)
        i < length bvS &&
-       exprSubstAt (eS elem i, old, new, pos, newEi) =>
+       exprSubstAt (eS!i, old, new, pos, newEi) =>
        exprSubstAt (recursiveLet (bvS, eS, e), old, new, (i+1) |> pos,
                     recursiveLet (bvS, update(eS,i,newEi), e)))
     &&
@@ -766,25 +765,25 @@ spec
                                    else if i = 1 then captVarsAt(pos,e1)
                                    else (assert (i = 2); captVarsAt(pos,e2))
            | nary(_,eS)              -> (assert (1 <= i && i <= length eS);
-                                         captVarsAt (pos, eS elem (i-1)))
+                                         captVarsAt (pos, eS!(i-1)))
            | binding(_,bvS,e)        -> (assert (i = 0);
                                          let (vS,_) = unzip bvS in
                                          captVarsAt(pos,e) \/ toSet vS)
            | casE(e,pS,eS)           -> if i = 0 then captVarsAt(pos,e)
                                         else
                                           (assert (1 <= i && i <= length eS);
-                                           captVarsAt (pos, eS elem (i-1)) \/
+                                           captVarsAt (pos, eS!(i-1)) \/
                                            (if i <= length pS
                                                % in well-formed expressions,
                                                % i <= length pS = length eS
-                                            then pattVars (pS elem (i-1))
+                                            then pattVars (pS!(i-1))
                                             else empty))
            | recursiveLet(bvS,eS,e)  -> let (vS,_) = unzip bvS in
                                         toSet vS \/
                                         (if i = 0
                                          then captVarsAt(pos,e)
                                          else (assert (1 <= i && i <= length bvS);
-                                               captVarsAt (pos, eS elem (i-1))))
+                                               captVarsAt (pos, eS!(i-1))))
            | nonRecursiveLet(p,e,e1) -> if i = 0 then captVarsAt(pos,e)
                                         else
                                           (assert (i = 1);
