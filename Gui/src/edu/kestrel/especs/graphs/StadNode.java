@@ -66,6 +66,8 @@ public class StadNode extends XContainerNode {
         v.viewOptionsCollapsed.setBorderWidth(1);
         v.viewOptionsCollapsed.setUseGradientPaint(true);
         v.viewOptionsCollapsed.setGradientPaintTopLeftColor(bgColor);
+        v.viewOptionsCollapsed.setTextDisplayOption(v.viewOptions.BOUNDS_ARE_ADJUSTED_TO_TEXT);
+        v.viewOptionsCollapsed.setBoundsAreAdjustedExactlyToText(false);
         // expanded
         v.viewOptionsExpanded.setUseBorder(true);
         v.viewOptionsExpanded.setBorderWidth(1);
