@@ -32,7 +32,7 @@ in the places they are used at present, no such paths are expected.
         | c :: #: :: r -> (Char.toString(toUpperCase c)) ^ ":" ^ (implode r)
         | _ -> (getCurrentDirectory ()) ++ "/" ++ str
     in
-      {path = splitStringAtChar #/ absoluteString, hashSuffix = None}
+      {path = addDevice?(splitStringAtChar #/ absoluteString), hashSuffix = None}
 
 \end{spec}
 
