@@ -103,6 +103,7 @@
 
 (defun run-plain-lisp ()
   (interactive)
+  (sleep-for 1)
   (when (inferior-lisp-running-p)
     (sw:exit-lisp)
     (sleep-for 2))
@@ -155,7 +156,7 @@
   (setq *specware-continue-form* form)
   (set-process-sentinel (get-buffer-process *specware-buffer-name*)
 			'continue-emacs-computation)
-  (simulate-input-expression ":exit"))
+  (simulate-input-expression "(cl-user::exit)"))
 
 (defun build-specware4 (in-current-dir?)
   (interactive "P")
