@@ -26,6 +26,11 @@ spec
   % free variables in expression:
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  (* In LD, free variables of subtype and quotient type predicates are not
+  considered in the syntax because the well-typedness rules for expression
+  force such predicates to have no free variables. However, here it is easier
+  to consider them because of the way we have factored expressions. *)
+
   op exprFreeVars : Expression -> FSet Name
 
   op exprSeqFreeVars : FSeq Expression -> FSet Name
@@ -33,22 +38,16 @@ spec
     unionAll (toSet (map (exprFreeVars, exprs)))
 
   def exprFreeVars = fn
-    | variable v               -> singleton v
-    | opInstance _             -> empty
-    | application(e1,e2)       -> exprFreeVars e1 \/ exprFreeVars e2
-    | abstraction((v,_),e)     -> exprFreeVars e wout v
-    | equation(e1,e2)          -> exprFreeVars e1 \/ exprFreeVars e2
+    | nullary(variable v)      -> singleton v
+    | unary(_,e)               -> exprFreeVars e
+    | binary(_,e1,e2)          -> exprFreeVars e1 \/ exprFreeVars e2
     | ifThenElse(e0,e1,e2)     -> exprFreeVars e0 \/
-                                  exprFreeVars e1 \/ exprFreeVars e2
-    | record comps             -> let (_, exprs) = unzip comps in
-                                  exprSeqFreeVars exprs
-    | recordProjection(e,_)    -> exprFreeVars e
-    | recordUpdate(e1,e2)      -> exprFreeVars e1 \/ exprFreeVars e2
-    | embedder _               -> empty
-    | relaxator _              -> empty
-    | restriction(_,e)         -> exprFreeVars e
-    | quotienter _             -> empty
-    | choice(_,e)              -> exprFreeVars e
+                                  exprFreeVars e1 \/
+                                  exprFreeVars e2
+    | nary(_,exprs)            -> exprSeqFreeVars exprs
+    | binding(_,(v,_),e)       -> exprFreeVars e wout v
+    | multiBinding(_,binds,e)  -> let (vars, _) = unzip binds in
+                                  exprFreeVars e -- toSet vars
     | cas(e,branches)          -> let (patts,exprs) = unzip branches in
                                   let varSets =
                                       seqSuchThat (fn(i:Nat) ->
@@ -65,23 +64,9 @@ spec
                                   let (vars, _) = unzip binds in
                                   (exprSeqFreeVars exprs \/ exprFreeVars e)
                                   -- toSet vars
-    | tru                      -> empty
-    | fals                     -> empty
-    | negation e               -> exprFreeVars e
-    | conjunction(e1,e2)       -> exprFreeVars e1 \/ exprFreeVars e2
-    | disjunction(e1,e2)       -> exprFreeVars e1 \/ exprFreeVars e2
-    | implication(e1,e2)       -> exprFreeVars e1 \/ exprFreeVars e2
-    | equivalence(e1,e2)       -> exprFreeVars e1 \/ exprFreeVars e2
-    | inequation(e1,e2)        -> exprFreeVars e1 \/ exprFreeVars e2
-    | universal(binds,e)       -> let (vars, _) = unzip binds in
-                                  exprFreeVars e -- toSet vars
-    | existential(binds,e)     -> let (vars, _) = unzip binds in
-                                  exprFreeVars e -- toSet vars
-    | existential1((v,_),e)    -> exprFreeVars e wout v
     | nonRecursiveLet(p,e,e1)  -> exprFreeVars e \/
                                   (exprFreeVars e1 -- pattVars p)
-    | tuple exprs              -> exprSeqFreeVars exprs
-    | tupleProjection(e,_)     -> exprFreeVars e
+    | _                        -> empty
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % types, ops, type variables, and variables declared in context:

@@ -14,8 +14,8 @@ spec
   (* Unlike LD, we model all expression abbreviations (e.g. universal and
   existential quantification) explicitly.
 
-  Another difference with LD is that we do not capture certain distinctness
-  requirements (e.g. of record fields) in the syntax but we do that in the
+  Another difference with LD is that we do not capture certain requirements
+  (e.g. distinctness of record fields) in the syntax but we do that in the
   inference rules. In this way, we keep the syntax simpler.
 
   A third difference is that here embedders are decorated by types, not
@@ -25,50 +25,72 @@ spec
   % useful notion (frequently used):
   type TypedVar = Name * Type
 
-  type Expression =
-    | variable         Name
-    | opInstance       Name * FSeq Type
-    | application      Expression * Expression
-    | abstraction      TypedVar * Expression
-    | equation         Expression * Expression
-    | ifThenElse       Expression * Expression * Expression
-    | record           FSeq (Name * Expression)
-    | recordProjection Expression * Name
-    | recordUpdate     Expression * Expression
-    | embedder         Type * Name
-    | relaxator        Expression
-    | restriction      Expression * Expression
-    | quotienter       Expression
-    | choice           Expression * Expression
-    | cas(*e*)         Expression * FSeqNE (Pattern * Expression)
-    | recursiveLet     FSeqNE (TypedVar * Expression) * Expression
+  type NullaryExprOperator =
+    | variable Name
     | tru(*e*)
     | fals(*e*)
-    | negation         Expression
-    | conjunction      Expression * Expression
-    | disjunction      Expression * Expression
-    | implication      Expression * Expression
-    | equivalence      Expression * Expression
-    | inequation       Expression * Expression
-    | universal        (FSeqNE TypedVar) * Expression
-    | existential      (FSeqNE TypedVar) * Expression
-    | existential1     TypedVar * Expression
-    | nonRecursiveLet  Pattern * Expression * Expression
-    | tuple            FSeqNE Expression
-    | tupleProjection  Expression * PosNat
+
+  type UnaryExprOperator =
+    | recordProjection Name
+    | tupleProjection  Nat
+    | relaxator
+    | quotienter
+    | negation
+
+  type BinaryExprOperator =
+    | application
+    | equation
+    | inequation
+    | recordUpdate
+    | restriction
+    | choice
+    | conjunction
+    | disjunction
+    | implication
+    | equivalence
+
+  type NaryExprOperator =
+    | record FSeq Name
+    | tuple
+
+  type BindingExprOperator =
+    | abstraction
+    | existential1
+
+  type MultiBindingExprOperator =
+    | universal
+    | existential
+
+  type Expression =
+    | nullary         NullaryExprOperator
+    | unary           UnaryExprOperator * Expression
+    | binary          BinaryExprOperator * Expression * Expression
+    | ifThenElse      Expression * Expression * Expression
+    | nary            NaryExprOperator * FSeq Expression
+    | binding         BindingExprOperator * TypedVar * Expression
+    | multiBinding    MultiBindingExprOperator * FSeqNE TypedVar * Expression
+    | opInstance      Name * FSeq Type
+    | embedder        Type * Name
+    | cas(*e*)        Expression * FSeqNE (Pattern * Expression)
+    | recursiveLet    FSeqNE (TypedVar * Expression) * Expression
+    | nonRecursiveLet Pattern * Expression * Expression
 
   op conjoinAll : FSeq Expression -> Expression
   def conjoinAll =
     the (fn (conjoinAll : FSeq Expression -> Expression) ->
-      (conjoinAll empty = tru) &&
-      (fa(e,exprs) conjoinAll (e |> exprs) =
-                   conjunction (e, conjoinAll exprs)))
+      (conjoinAll empty = nullary tru) &&
+      (fa(e) conjoinAll (singleton e) = e) &&
+      (fa(e,exprs) exprs ~= empty =>
+                   conjoinAll (e |> exprs) =
+                   binary (conjunction, e, conjoinAll exprs)))
 
   op disjoinAll : FSeq Expression -> Expression
   def disjoinAll =
     the (fn (disjoinAll : FSeq Expression -> Expression) ->
-      (disjoinAll empty = tru) &&
-      (fa(e,exprs) disjoinAll (e |> exprs) =
-                   disjunction (e, disjoinAll exprs)))
+      (disjoinAll empty = nullary fals) &&
+      (fa(e) disjoinAll (singleton e) = e) &&
+      (fa(e,exprs) exprs ~= empty =>
+                   disjoinAll (e |> exprs) =
+                   binary (disjunction, e, disjoinAll exprs)))
 
 endspec

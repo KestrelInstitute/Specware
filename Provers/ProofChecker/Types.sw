@@ -15,23 +15,30 @@ spec
   names.
 
   Another difference with LD is that we do not require fields of record types
-  and constructors of sum types to be distinct in the syntax. We
-  incorporate such a requirement into the inference rules for well-typedness,
-  thus keeping the syntax simpler.
+  and constructors of sum types to be distinct and we do not require their
+  number to match the number of types. We incorporate such requirements into
+  the inference rules for well-formedness of types, thus keeping the syntax
+  simpler.
 
-  A third difference is that here we model explicitly components of sum types
+  A third difference is that here we explicitly model components of sum types
   that have no type (using `Option'), as opposed to implicitly assuming the
   empty record type as in LD. *)
 
+  type NaryTypeConstruct =
+    | instance Name
+    | record   FSeq Name
+    | product
+
+  type SubOrQuotientTypeConstruct =
+    | sub
+    | quotien(*t*)
+
   type Type =
     | boolean
-    | variable     Name
-    | instance     Name * FSeq Type
-    | arrow        Type * Type
-    | record       FSeq (Name * Type)
-    | product      FSeq Type
-    | sum          FSeqNE (Name * Option Type)
-    | sub          Type * Expression
-    | quotien(*t*) Type * Expression
+    | variable Name
+    | arrow    Type * Type
+    | sum      FSeqNE Name * FSeqNE (Option Type)
+    | nary     NaryTypeConstruct * FSeq Type
+    | subQuot  SubOrQuotientTypeConstruct * Type * Expression
 
 endspec

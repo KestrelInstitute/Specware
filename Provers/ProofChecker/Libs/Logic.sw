@@ -87,4 +87,12 @@ Logic qualifying spec
   def min prop =
     the (fn pred -> minimallySatisfies?(pred,prop))
 
+
+  %%%%%%%%%%%%%
+  % assertions:
+  %%%%%%%%%%%%%
+
+  op assert : [a] {b : Boolean | b = true} -> a -> a
+  def assert a x = x
+
 endspec 

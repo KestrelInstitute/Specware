@@ -7,12 +7,13 @@ spec
 
   op patt2expr : Pattern -> Expression
   def patt2expr = fn
-    | variable(v,_)           -> variable v
-    | embedding(typ,constr,p) -> application (embedder (typ, constr),
-                                              patt2expr p)
+    | variable(v,_)           -> nullary (variable v)
+    | embedding(typ,constr,p) -> binary (application,
+                                         embedder (typ, constr),
+                                         patt2expr p)
     | record comps            -> let (fields, patts) = unzip comps in
                                  let exprs = map (patt2expr, patts) in
-                                 record (zip (fields, exprs))
+                                 nary (record fields, exprs)
     | alias(_,p)              -> patt2expr p
 
   op pattBindings : Pattern -> FSeq TypedVar
@@ -25,16 +26,20 @@ spec
 
   op pattAliasAssumptions : Pattern -> Expression
   def pattAliasAssumptions = fn
-    | variable _       -> tru
+    | variable _       -> nullary tru
     | embedding(_,_,p) -> pattAliasAssumptions p
     | record comps     -> let (_, patts) = unzip comps in
                           conjoinAll (map (pattAliasAssumptions, patts))
-    | alias((v,_),p)   -> conjunction (equation (variable v,
-                                                 patt2expr p),
-                                       pattAliasAssumptions p)
+    | alias((v,_),p)   -> binary (conjunction,
+                                  binary (equation,
+                                          nullary (variable v),
+                                          patt2expr p),
+                                  pattAliasAssumptions p)
 
   op pattAssumptions : Pattern * Expression -> Expression
   def pattAssumptions(p,e) =
-    conjunction (equation (e, patt2expr p), pattAliasAssumptions p)
+    binary (conjunction,
+            binary (equation, e, patt2expr p),
+            pattAliasAssumptions p)
 
 endspec
