@@ -45,42 +45,35 @@ public class LispProcessManager {
 
     public static boolean connectToLisp() {
         if (JavaLinkDist.query(true)) {
-            System.out.println("ModeMachineManager.connectToLisp --> Already Connected");
-            writeToOutput("ModeMachineManager.connectToLisp --> Already Connected");
+//            writeToOutput("LispProcessManager.connectToLisp --> Already Connected");
             return true;
         } else if (JavaLinkDist.connect(lispHost, lispPort, javaHost, javaPort, pollInterval, javaTimeout)) {
-            System.out.println("ModeMachineManager.connectToLisp --> New Connection Established");
-            writeToOutput("ModeMachineManager.connectToLisp --> New Connection Established");
+//            writeToOutput("LispProcessManager.connectToLisp --> New Connection Established");
             return true;
         } else {
-            System.out.println("ModeMachineManager.connectToLisp --> Failed to Connect to LISP " + JavaLinkDist.query());
-            writeToOutput("ModeMachineManager.connectToLisp --> Failed to Connect to LISP " + JavaLinkDist.query());
-            writeToOutput("LispServer = "+ lispServer + "\n Lisp Process "+lispProcess + "\n");
-            //destroyLispProcess();
-            //lispServer = null;
+//            writeToOutput("LispProcessManager.connectToLisp --> Failed to Connect to LISP " + JavaLinkDist.query());
+//            writeToOutput("LispServer = "+ lispServer + "\n Lisp Process "+lispProcess + "\n");
             if (lispServer == null){
                 lispServer = new ExternalLispProcess();
                 try {
                     lispProcess = lispServer.createProcess();
-                    writeToOutput("****  lispServer.createProcess returned "+lispServer);
+//                    writeToOutput("****  lispServer.createProcess returned "+lispServer);
                     Thread.sleep(5000);
                 } catch (Exception e) {
-                    writeToOutput("ModeMachineManager.connectToLisp.Exception "+e+" starting Lisp");
+                    writeToOutput("LispProcessManager.connectToLisp.Exception "+e+" starting Lisp");
                 }
-                writeToOutput("ModeMachineManager.connectToLisp --> Calling Connect to Lisp again");
+//                writeToOutput("LispProcessManager.connectToLisp --> Calling Connect to Lisp again");
                 if (lispProcess != null) {
                     return connectToLisp();
                 }
             }
-            //destroyLispProcess(); 
-            //lispServer = null;
             return false;
         }
     }
     
     public static void destroyLispProcess() {
         if (lispProcess != null) {
-            writeToOutput("\n Destroying Lisp Process "+lispProcess);
+//            writeToOutput("\n Destroying Lisp Process "+lispProcess);
             lispProcess.destroy();
             lispProcess = null;
             lispServer = null;
@@ -88,34 +81,47 @@ public class LispProcessManager {
     }
     
     public static void processUnit(String pathName, String fileName) {
-	Util.log("*** LispProcessManager.processUnit(): pathName="+pathName+", fileName="+fileName);
+//	Util.log("*** LispProcessManager.processUnit(): pathName="+pathName+", fileName="+fileName);
         if (connectToLisp()) {
             TranStruct [] ARGS = new TranStruct[2];
             TranStruct [] RES;
             ARGS[0] = JavaLinkDist.newDistOb(pathName);
             ARGS[1] = JavaLinkDist.newDistOb(fileName);
             com.franz.jlinker.LispConnector.go(false, null);
-            Util.log("Processing unit ..."+ fileName);
+            //Set focus to Specware Status tab
+            writeToSpecwareStatus("");
             try {
                 RES = JavaLinkDist.invokeInLispEx(3, JavaLinkDist.newDistOb("USER::PROCESS-UNIT"), ARGS);
-                Util.log("Done.");
+//               Util.log("Done.");
                 if (com.franz.jlinker.JavaLinkDist.stringP(RES[0])) {
                     Util.log("Error while generating code for scheduler: \n"+ RES[0]);
                 } else {
-                    Util.log("Call succeeded");
+//                    Util.log("Call succeeded");
                 }
             } catch (JavaLinkDist.JLinkerException ex) {
                 Util.log("Exception in generateCode "+ ex);
             }
         } else {
-            writeToOutput("ModeMachineManager.generateCode ==> No Connection to Lisp");
+//            writeToOutput("LispProcessManager.generateCode ==> No Connection to Lisp");
         }
     }
     
-    protected static InputOutput outputStream = TopManager.getDefault().getIO("MachineManager", false);
-    protected static OutputWriter writer = outputStream.getOut();
+    // THis is called from specware
+    public static void setProcessUnitResults(String results) {
+        writeToSpecwareStatus(results);
+        
+    }
+    
     public static void writeToOutput(String s) {
-        //System.out.println(s);
+        InputOutput outputStream = TopManager.getDefault().getIO("LispProcessManager", false);
+        OutputWriter writer = outputStream.getOut();
         writer.println(s);
-    }    
+    }
+    
+    public static void writeToSpecwareStatus(String s) {
+        InputOutput outputStream = TopManager.getDefault().getIO("Specware Status", false);
+        outputStream.select();
+        OutputWriter writer = outputStream.getOut();
+        writer.println(s);
+    }
 }
