@@ -66,11 +66,9 @@ myapp: main.o QuickSort.o $(GCLIB)
 	$(CC) -o $@ $^ $(LDLIBS)
 
 
-# If, for some reason, you have to supply an explicit rule for
-# compiling a Specware generated C file, you have to make sure to
-# include $(CPPFLAGS) on the command line. Note, that this should
-# normally not be necessary; it should suffice to just modify the
-# CPPFLAGS variable; for that reason, this rule is commented out:
+# If, for instance for using certain optimizer flags, you have to
+# supply an explicit rule for compiling a Specware generated C file,
+# you have to make sure to include $(CPPFLAGS) on the command line.
 
-#QuickSort.o: QuickSort.c QuickSort.h
-#	$(CC) $(CPPFLAGS) -o $@ -c $< 
+queens.o: queens.c queens.h
+	$(CC) -O3 $(CPPFLAGS) -o $@ -c $< 

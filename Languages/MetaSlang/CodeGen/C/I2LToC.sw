@@ -427,7 +427,7 @@ I2LToC qualifying spec {
   % handle special cases of types:
 
   op c4TypeSpecial: CgContext * CSpec * I2L.Type -> Option(CSpec * CType)
-  def c4TypeSpecial(ctxt,cspc,typ) =
+  def c4TypeSpecial(_,cspc,typ) =
     if bitStringSpecial then
       case typ of
 	| Base(_,"BitString") -> Some (cspc,UnsignedInt)
