@@ -836,8 +836,8 @@ resulting string."
 	      ;; "//\\|/~\\|.\\$"
 	      (if (memq system-type '(windows-nt cygwin32))
 		  ;; // is meaningful
-		  "/~\\|.\\$"
-		"//\\|/~\\|.\\$")
+		  "/~"
+		"//\\|/~")
 	      (minibuffer-prompt-end)
 	      t))
 	(delete-region (minibuffer-prompt-end) (1+ (point))))
