@@ -308,10 +308,10 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
   let def modElts(elts,minfo,ops,srts) =
         List.foldl (fn (el,(r_elts,minfo,ops,srts)) ->
 	       case el of
-		 | OpDef qid ->
-		   let Some opinfo = findTheOp(spc,qid) in
-		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
-		   let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = []
+		 | Sort qid ->
+		   let Some sortinfo = findTheSort(spc,qid) in
+		   let (srts,new_minfo) = processSortinfo(qid,sortinfo,srts,minfo) in
+		   let el_s = if keepPolyMorphic? || firstSortDefTyVars sortinfo = []
 		               then [el] else []
 		   in
 		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
@@ -319,6 +319,20 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		   let Some sortinfo = findTheSort(spc,qid) in
 		   let (srts,new_minfo) = processSortinfo(qid,sortinfo,srts,minfo) in
 		   let el_s = if keepPolyMorphic? || firstSortDefTyVars sortinfo = []
+		               then [el] else []
+		   in
+		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
+		 | Op qid ->
+		   let Some opinfo = findTheOp(spc,qid) in
+		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
+		   let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = []
+		               then [el] else []
+		   in
+		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
+		 | OpDef qid ->
+		   let Some opinfo = findTheOp(spc,qid) in
+		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
+		   let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = []
 		               then [el] else []
 		   in
 		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
