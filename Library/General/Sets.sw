@@ -125,6 +125,12 @@ Set qualifying spec
   op imap : [a,b] (a -> b) -> Set b -> Set a
   def imap f s = fn x -> f x in? s
 
+  (* A function f from a to b generates a Set b, namely the set of all
+  y:b such that y = f x for some x:a. *)
+
+  op setGeneratedBy : [a,b] (a -> b) -> Set b
+  def setGeneratedBy f = map f full
+
   % finite cardinality:
   op finite? : [a] Set a -> Boolean
   def [a] finite? s =
