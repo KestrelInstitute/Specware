@@ -292,7 +292,11 @@ def tt_v3M srt =
      | Product([],_) -> return(JVoid)
      | Product(_,_) ->
        {
+	srt <- case findMatchingUserTypeOption(spc,srt) of
+	         | Some usrt -> return usrt
+	         | None -> return srt;
 	sid <- srtIdM(srt);
+	println("tt_v3M: found product type: "^(printSort srt)^" --> "^sid);
 	return(mkJavaObjectType sid)
        }
      | TyVar id -> 
