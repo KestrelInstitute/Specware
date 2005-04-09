@@ -119,7 +119,7 @@ Set qualifying spec
 
   % map function over set:
   op map : [a,b] (a -> b) -> Set a -> Set b
-  def map f s = fn y -> (ex(x) y = f x)
+  def map f s = fn y -> (ex(x) x in? s && y = f x)
 
   % inversely map function over set:
   op imap : [a,b] (a -> b) -> Set b -> Set a
