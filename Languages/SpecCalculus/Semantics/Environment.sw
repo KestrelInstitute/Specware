@@ -52,25 +52,20 @@ TimeStamp that is latest of the TimeStamps of the files of its
 UnitId_Dependency.
 
 \begin{spec}
-  sort TimeStamp = Time          % Not a fixnum
-  op futureTimeStamp: TimeStamp		% > than any TimeStamp in foreseeable future
-  def futureTimeStamp = 9999999999
-  sort UnitId_Dependency = List UnitId
-  sort ValidatedUIDs = List UnitId
-  sort ValueInfo = Value * TimeStamp * UnitId_Dependency
-  %% See validateCache in Evaluate/UnitId.sw -- it chases dependencies recursively,
-  %% so we should not need to take unions of dependencies.
 
   sort GlobalContext = PolyMap.Map (UnitId, ValueInfo)
   sort LocalContext  = PolyMap.Map (RelativeUID, ValueInfo)
   % sort State = GlobalContext * LocalContext * Option UnitId * ValidatedUIDs
 
+  %% ppValueInfo uses Printer, which uses Types,
+  %% so this can't easily be defined in Types.sw
   op ppValueInfo : ValueInfo -> Doc
   def ppValueInfo (value,timeStamp,depUIDs) =
     ppConcat([ppValue value,
               ppString (Nat.toString timeStamp)]
              ++
 	     (map ppUID depUIDs))
+
 \end{spec}
 
 \begin{spec}

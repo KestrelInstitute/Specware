@@ -10,6 +10,7 @@ defining an abstract type SpecCalc.Term a, which is refined below.
 *)
   import ../../MetaSlang/Specs/StandardSpec 
   import /Library/Legacy/Utilities/Lisp % for LispCell
+  import /Library/IO/Primitive/IO       % for Time
 (*
 All the objects in the abstract syntax are polymorphic and defined at
 two levels.  The first level pairs the type the type parameter. The
@@ -29,6 +30,18 @@ position information is always the second component.
 
   def valueOf    (value, _       ) = value
   def positionOf (_,     position) = position
+
+  sort TimeStamp = Time               % In general, can be over 32 bits -- not a fixnum
+  op oldestTimeStamp: TimeStamp	      % < than any recent TimeStamp -- perhaps never used
+  op futureTimeStamp: TimeStamp	      % > than any TimeStamp in foreseeable future
+  def oldestTimeStamp = 0               
+  def futureTimeStamp = 9999999999     % NOTE: this is 34 bits, i.e., a bignum
+  sort UnitId_Dependency = List UnitId
+  sort ValidatedUIDs = List UnitId
+  sort ValueInfo = Value * TimeStamp * UnitId_Dependency
+  %% See validateCache in Evaluate/UnitId.sw -- it chases dependencies recursively,
+  %% so we should not need to take unions of dependencies.
+
 (*
 The following is the toplevel returned by the parser. (I don't like
 the name of this type. Ok: changed from SpecFile to SpecTerm)
@@ -160,7 +173,7 @@ using the definitions and axioms of the spec as rules.
 Quote is used to capture an internally created value and turn it
 into a Term when needed.
 *)
-    | Quote Value
+    | Quote ValueInfo
 (*
 The following is a hook for creating applications that are 
 extensions to Specware.  If more than one new term is needed,

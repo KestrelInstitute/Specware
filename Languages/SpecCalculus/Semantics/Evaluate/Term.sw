@@ -73,6 +73,6 @@ This is a monadic interpreter for the Spec Calculus.
     | Generate    args            -> SpecCalc.evaluateGenerate    args pos
     | Reduce      (msTerm,scTerm) -> SpecCalc.reduce              msTerm scTerm pos
     | Other       args            -> SpecCalc.evaluateOther       args pos  % used for extensions to Specware
-    | Quote       value           -> return (value, futureTimeStamp, []) % Probably should never be called.
+    | Quote       value_info      -> return value_info
 }
 \end{spec}

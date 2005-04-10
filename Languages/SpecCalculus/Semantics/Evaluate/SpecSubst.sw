@@ -61,7 +61,10 @@ SpecCalc qualifying spec
 				 %% in which case, see if sm cached a term used to construct it
 				 case sm.sm_tm of
 				   | Some (SpecMorph (dom_spec_tm,_,_),_) -> dom_spec_tm
-				   | _ -> (Quote (Spec dom_spec),sm_tm.2) % could check cache first
+				   | _ -> 
+				     %% TODO: determine true timestamp and dependencies
+				     let dom_value_info = (Spec dom_spec, oldestTimeStamp, []) in
+				     (Quote dom_value_info, sm_tm.2) % could check cache first
 
     in
     let cod_spec           = SpecCalc.cod sm            in     % cod(M)

@@ -25,7 +25,7 @@ SpecCalc qualifying spec
  import Types
  import ../../MetaSlang/Specs/SimplePrinter % based on /Library/PrettyPrinter/WadlerLindig
 
-  op ppValue : Value -> Doc
+  op ppValueInfo : ValueInfo -> Doc
 
  %% never called...
   op showSpecTerm : [a] SpecTerm a -> String
@@ -293,8 +293,8 @@ SpecCalc qualifying spec
 	ppConcat [ppString "obligations ",
 		  ppTerm term]
 
-      | Quote value -> 
-	ppValue value
+      | Quote value_info -> 
+	ppValueInfo value_info
 
       | Other other_term -> 
 	ppOtherTerm other_term
