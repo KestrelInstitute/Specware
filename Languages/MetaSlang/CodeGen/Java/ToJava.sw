@@ -43,6 +43,7 @@ def clsDeclsFromSorts spc =
    primitiveClassName <- getPrimitiveClassName;
    putEnvSpec spc;
    primClsDecl <- return (mkPrimOpsClsDecl primitiveClassName);
+   % print("\nprimClsDecl: [" ^ anyToString primClsDecl ^ "]\n");
    foldM (fn _ -> fn (q,id,sortInfo) ->
 	  sortToClsDecls(q,id,sortInfo))
          () (sortsAsList spc);
@@ -555,15 +556,33 @@ def modifyClsDeclsFromOps =
 op modifyClsDeclsFromOp: Id * Id * OpInfo -> JGenEnv ()
 def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
   {
+   %% print("\nmodifyClsDeclsFromOp: [" ^ id ^ "]\n");
    spc <- getEnvSpec;
    %clsDecls <- getClsDecls;
    let (_, opsrt, trm) = unpackFirstOpDef op_info in
+   let opsrt = case opsrt of
+		 | Base(Qualified("Accord","ProcType"),[arg_type,rtype,_],pos) ->
+                   let new_type = Arrow (arg_type, rtype, pos) in
+                   %% let _ = writeLine("Revising " ^ printSort opsrt ^ " to " ^ printSort new_type) in
+		   new_type
+		 | Arrow (_, Base(Qualified("Accord","ProcType"),[arg_type,rtype,_],_), pos) ->
+                   let new_type = Arrow (arg_type, rtype, pos) in
+                   %% let _ = writeLine("Revising " ^ printSort opsrt ^ " to " ^ printSort new_type) in
+		   new_type
+		 | _ -> 
+		   opsrt
+   in
+   %% let _ = toScreen("\n OpSort = [" ^ printSort opsrt ^ "]\n") in
    let dompreds = srtDomPreds opsrt in
    %let srt = termSort(trm) in
    let srt = inferType (spc, trm) in
+   %% let _ = toScreen("\n Sort = [" ^ printSort srt ^ "]\n") in
    let srt = foldRecordsForOpSort(spc,srt) in
+   %% let _ = toScreen("\n Sort = [" ^ printSort srt ^ "]\n") in
    let srtrng = unfoldBase(spc,srtRange(srt)) in
+   %% let _ = toScreen("\n Sort Range = [" ^ printSort srtrng ^ "]\n") in
    let opsrtrng = unfoldBase(spc,srtRange(opsrt)) in
+   %let _ = toScreen("\n OpSort Range = [" ^ printSort opsrtrng ^ "]\n") in
    %let _ = writeLine("op "^id^": opsort="^printSort(opsrtrng)^", termsort="^printSort(srtrng)) in
    %let _ = writeLine("op "^id^": "^printSort(srt)) in
    let trm = mapTerm (Functions.id,(fn Subsort(srt,_,_) -> srt | Quotient(srt,_,_) -> srt | srt -> srt),Functions.id) trm in
@@ -806,7 +825,15 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = translateRecordMergeInSpec spc in
   let spc = identifyIntSorts spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
+  %% let _ = toScreen("\n================================\n") in
+  %% let _ = toScreen("\nPoly:\n") in
+  %% let _ = toScreen(printSpecFlat spc) in
+  %% let _ = toScreen("\n================================\n") in
   let spc = poly2mono(spc,false) in
+  %% let _ = toScreen("\n================================\n") in
+  %% let _ = toScreen("\nMono:\n") in
+  %% let _ = toScreen(printSpecFlat spc) in
+  %% let _ = toScreen("\n================================\n") in
   let spc = unfoldSortAliases spc in
   let spc = letWildPatToSeq spc in
   let spc = lambdaLift(spc) in
