@@ -39,6 +39,8 @@ def JGen.metaSlangTermsToJavaExprs terms =
 
 op clsDeclsFromSorts: Spec -> JGenEnv ()
 def clsDeclsFromSorts spc =
+  %% If there is no definition for a sort,
+  %% we assume it is referring to an external java type (see README.JavaCodeGen)
   {
    primitiveClassName <- getPrimitiveClassName;
    putEnvSpec spc;
@@ -548,9 +550,13 @@ def modifyClsDeclsFromOps =
    spc <- getEnvSpec;
    %clsDecls <- getClsDecls;
    opsAsList <- return (opsAsList spc);
+   create_field? <- getCreateFieldFun;
    foldM (fn _ -> fn(qualifier,id,opinfo) ->
-	  modifyClsDeclsFromOp(qualifier,id,opinfo)
-	 ) () opsAsList
+	  if create_field? opinfo.dfn then
+	    modifyClsDeclsFromOp(qualifier,id,opinfo)
+	  else
+	    return ())
+         () opsAsList
   }
 
 op modifyClsDeclsFromOp: Id * Id * OpInfo -> JGenEnv ()
