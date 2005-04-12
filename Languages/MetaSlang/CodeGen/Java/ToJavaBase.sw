@@ -867,15 +867,16 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
 			       (ensureMod(mods,Public),id,fpars,throws,block)) constrs
 	    in
 	    let meths = map (fn((mods,rettype,id,fpars,throws),body) ->
-			     let fpars = (if id = "main" && (member (Public, mods) || member (id, publicOps)) then
-					    %% publicOps is temp hack, still needed by Prism
-					    let new_fpars = [(false, (Name ([], "String"), 1), ("args", 0))] in
-					    let old = PrettyPrint.toString (format (0, ppFormPars fpars)) in
-					    let new = PrettyPrint.toString (format (0, ppFormPars new_fpars)) in
-					    let _ = toScreen("\n;;; Changing public static void main args from (" ^ old ^ ") to (" ^ new ^ ")\n") in
-					    new_fpars
-					  else 
-					    fpars)
+			     let (fpars,body) = (if id = "main" && (member (Public, mods) || member (id, publicOps)) then
+						   %% publicOps is temp hack, still needed by Prism
+						   let new_fpars = [(false, (Name ([], "String"), 1), ("args", 0))] in
+						   let old = PrettyPrint.toString (format (0, ppFormPars fpars)) in
+						   let new = PrettyPrint.toString (format (0, ppFormPars new_fpars)) in
+						   let body = validateMainMethodBody body in
+						   let _ = toScreen("\n;;; changing public static void main args from (" ^ old ^ ") to (" ^ new ^ ")\n") in
+						   (new_fpars,body)
+						 else 
+						   (fpars,body))
 			      in
 			      let mods = if member(id,publicOps) then ensureMod(mods,Public) else mods in
 			      ((mods,rettype,id,fpars,throws),body)) meths
@@ -898,6 +899,61 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
   in
     (pkg,imp,cidecls)
 
+op flattenBlock: Block -> Block
+def flattenBlock b = flatten (map flattenBlockStmt b)
+
+op flattenBlockStmt: BlockStmt -> Block
+def flattenBlockStmt bstmt =
+  case bstmt of
+    | Stmt(Block b) -> flattenBlock b
+    | _ -> [bstmt]
+
+(*
+ * remove any return expr statements from the method's body; this is needed, in case a method
+ * named "main" is translated into the form expected by Java "public static void main(String[] args)"
+ *)
+op Body.validateMainMethodBody: Option Block -> Option Block
+def Body.validateMainMethodBody optblock =
+  case optblock of
+    | Some block -> Some(validateMainMethodBody block)
+    | None -> None
+
+op Block.validateMainMethodBody: Block -> Block
+def Block.validateMainMethodBody b = flattenBlock(map validateMainMethodBody b)
+
+op BlockStmt.validateMainMethodBody: BlockStmt -> BlockStmt
+def BlockStmt.validateMainMethodBody bstmt =
+  case bstmt of
+    | Stmt stmt -> Stmt(validateMainMethodBody stmt)
+    | _ -> bstmt
+
+op Stmt.validateMainMethodBody: Stmt -> Stmt
+def Stmt.validateMainMethodBody stmt =
+  case stmt of
+    | Block b -> Block(validateMainMethodBody b)
+    | Labeled(id,s) -> Labeled(id,validateMainMethodBody s)
+    | If(e,s1,opts2) -> If(e,validateMainMethodBody s1,
+			   case opts2 of
+			     | None -> None
+			     | Some s2 -> Some(validateMainMethodBody s2))
+    | For(init,e,upd,s) -> For(init,e,upd,validateMainMethodBody s)
+    | While(e,s) -> While(e,validateMainMethodBody s)
+    | Do(s,e) -> Do(validateMainMethodBody s,e)
+    | Try(b,plist,optblock) ->
+      let b = map validateMainMethodBody b in
+      let plist = map (fn(fp,b) -> (fp,validateMainMethodBody b)) plist in
+      let optblock = (case optblock of
+			| None -> None
+                        | Some b -> Some(validateMainMethodBody b))
+      in
+      Try(b,plist,optblock)
+    | Switch(e,swbl) ->
+      let swbl = map (fn(swlabels,b) -> (swlabels,validateMainMethodBody b)) swbl in
+      Switch(e,swbl)
+    | Synchronized(e,b) -> Synchronized(e,validateMainMethodBody b)
+    | Return None -> Return None
+    | Return(Some e) -> Block [Stmt(Expr e),Stmt(Return None)]
+    | _ -> stmt
 
 op findMatchingUserTypeM: Sort -> JGenEnv Sort
 def findMatchingUserTypeM srt =

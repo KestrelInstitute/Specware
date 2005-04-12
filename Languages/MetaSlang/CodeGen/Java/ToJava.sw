@@ -844,6 +844,9 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = letWildPatToSeq spc in
   let spc = lambdaLift(spc) in
   %let spc = distinctVariable(spc) in
+  %% let _ = toScreen("\n================================\n") in
+  %% let _ = toScreen(printSpecFlat spc) in
+  %% let _ = toScreen("\n================================\n") in
   spc
 
 %op generateJavaCodeFromTransformedSpec: Spec -> JSpec
@@ -856,6 +859,9 @@ def JGen.generateJavaCodeFromTransformedSpec spc =
 op generateJavaCodeFromTransformedSpecM: Spec -> JGenEnv JSpec
 def generateJavaCodeFromTransformedSpecM spc =
   {
+   %println("\n--------------- SPEC PASSED TO JGEN");
+   %println(printSpecVerbose spc);
+   %println("\n--------------- END SPEC PASSED TO JGEN\n");
    sep <- getSep;
    clsDeclsFromSorts spc;
    modifyClsDeclsFromOps;
