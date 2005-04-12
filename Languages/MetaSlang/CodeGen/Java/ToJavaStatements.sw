@@ -50,8 +50,11 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 	    case localVarFun id of
 	      | Some jexpr -> return (mts,jexpr,k,l)
 	      | None ->
-	        (if baseType?(spc,srt) then
-		   return (mts,mkQualJavaExpr(primitiveClassName,id),k,l)
+	        (if builtinBaseType?(srt) then
+		   %{
+		    %println(";;; "^id^" has primitive type: "^(printSort srt));
+		    return (mts,mkQualJavaExpr(primitiveClassName,id),k,l)
+		   %}
 		 else
 		   (case srt of
 		      | Base (Qualified (q, srtId), _, _) -> return (mts, mkQualJavaExpr(srtId, id), k, l)
