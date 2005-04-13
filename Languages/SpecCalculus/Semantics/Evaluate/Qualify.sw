@@ -92,7 +92,7 @@ Change UnQualified to new_qualifier in all qualified names
 	    case el of
 	      | Import (sp_tm,sp,els) ->
 	        if qualifiedSpec? sp then el
-		  else Import(sp_tm,convertElementsRec sp,convertElements els)
+		  else Import(sp_tm,sp,convertElements els)
 	      | Op      qid -> Op      (translateQualifiedId qid)
 	      | OpDef   qid -> OpDef   (translateQualifiedId qid)
 	      | Sort    qid -> Sort    (translateQualifiedId qid)

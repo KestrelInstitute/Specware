@@ -61,7 +61,7 @@
    SUCCESS    ::= TranslationBuiltIn.mkSuccess TERM
  *)
 
-PatternMatch qualifying spec { 
+PatternMatch qualifying spec
   import ArityNormalize
    
   % import MetaSlangPrint	% imported by ArityNormalize
@@ -121,11 +121,11 @@ PatternMatch qualifying spec {
 		   of Some t -> printTerm t
 		    | _ -> ""))
   
-  sort Rule  = List(Pattern) * MS.Term * MS.Term
-  sort Rules = List Rule
+  type Rule  = List(Pattern) * MS.Term * MS.Term
+  type Rules = List Rule
   
 
-  sort Context = {counter    : Ref Nat,
+  type Context = {counter    : Ref Nat,
 		  spc        : Spec,
 		  funName    : String,
 		  errorIndex : Ref Nat,
@@ -472,9 +472,12 @@ PatternMatch qualifying spec {
   
   
   def abstract(vs:List(String * Var),t:MS.Term,srt):MS.Term = 
-      let srt = mkArrow(match_type(srt),srt) in
-      let oper = mkOp(Qualified("TranslationBuiltIn","block"),srt) in
-      let t  = mkApply(oper,t) in
+      let st? = simplifyPatternMatchResult t in
+      let t  = case st? of
+                 | Some t -> t
+                 | _ -> mkApply(mkOp(Qualified("TranslationBuiltIn","block"),
+				     mkArrow(match_type(srt),srt)),t)
+      in
       let pat = 
           case vs of [(_,v)] -> mkVarPat v
 	     | _ -> RecordPat(map (fn(l,v)-> (l,mkVarPat v)) vs,noPos)
@@ -797,6 +800,57 @@ def eliminateTerm context term =
        | Seq(terms,a) -> Seq(map (eliminateTerm context) terms,a)
 
 
+ op  simplifyPatternMatchResult: MS.Term -> Option MS.Term
+ def simplifyPatternMatchResult t =
+   let def simpRec(t1,t2) =
+         case t1 of
+	   | IfThenElse(p,x,y,pos) ->
+	     (case simpSuccess x of
+		| Some sx ->
+		  (case simpRec(y,t2) of
+		    | Some ny -> Some(IfThenElse(p,sx,ny,pos))
+		    | None -> None)
+		| None -> None)
+	   | Fun(Op(Qualified("TranslationBuiltIn","mkBreak"),_),_,_) -> simpSuccess t2
+	   | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkSuccess"),_),_,_),st1,_) ->
+	     Some st1			% t2 is unreachable
+	   | Let(matches,st1,pos) ->
+	     (case simpRec(st1,t2) of
+	       | Some nt1 -> Some(Let(matches,nt1,pos))
+	       | None -> None)
+	   | Apply(Fun(Op(Qualified("TranslationBuiltIn","failWith"),_),_,_),
+		   Record ([("1",st1),("2",ft2)],_),_) ->
+	     (case simpRec(ft2,t2) of
+	       | Some nft2 -> simpRec(st1,nft2)
+	       | None -> None)
+	   | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkFail"),_),_,_),_,_) -> Some t1
+	   | _ -> None
+       def simpSuccess t =
+	 case t of
+	   | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkSuccess"),_),_,_),t1,_) -> Some t1
+	   | Let(matches,t1,pos) ->
+	     (case simpSuccess t1 of
+	       | Some nt1 -> Some(Let(matches,nt1,pos))
+	       | None -> None)
+	   | Apply(Fun(Op(Qualified("TranslationBuiltIn","failWith"),_),_,_),
+		   Record ([("1",t1),("2",t2)],_),_) ->
+	     simpRec(t1,t2)
+	   | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkFail"),_),_,_),_,_) -> Some t
+	   | _ -> None         
+   in
+   case t of
+     | Apply(Fun(Op(Qualified("TranslationBuiltIn","failWith"),_),_,_),
+	     Record ([("1",t1),("2",t2)],_),_) ->
+       simpRec(t1,t2)
+     | _ -> None
+     
+ op  simpLamBody: MS.Term -> MS.Term
+ def simpLamBody t =
+   case t of
+     | Lambda([(pat,c,Apply(Lambda([(VarPat(v,_),_,body)],_),wVar as (Var(w,_)),_))],pos) ->
+       Lambda([(pat,c,substitute(body,[(v,wVar)]))],pos)
+     | _ -> t
+
 %- --------------------------------------------------------------------------------
 %- checks whether Record is a Product or a user-level Record
 
@@ -860,6 +914,7 @@ def eliminateTerm context term =
 					let (tvs, srt, term) = unpackTerm dfn in
 					let new_srt = eliminateSort (mkContext id) srt in
 					let new_tm  = eliminateTerm (mkContext id) term in
+					let new_tm = simpLamBody new_tm in
 					maybePiTerm (tvs, SortedTerm (new_tm, new_srt, termAnn term)))
 				       old_defs
 			       in
@@ -875,7 +930,8 @@ def eliminateTerm context term =
       qualified? = spc.qualified?
      }
 
-}
+endspec
+
 
 
 

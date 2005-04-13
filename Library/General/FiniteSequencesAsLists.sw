@@ -233,7 +233,7 @@ FSeq qualifying spec
   type InjectiveFSeq a = (FSeq a | noRepetitions?)
 
   op positionOf : [a] {(s,x) : InjectiveFSeq a * a | x in? s} -> Nat
-  def [a] positionOf (first::rest, x) =
+  def positionOf (first::rest, x) =
     if first = x then 0
     else 1 + positionOf (rest, x)
 

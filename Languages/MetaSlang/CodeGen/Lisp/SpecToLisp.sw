@@ -446,18 +446,22 @@ SpecToLisp qualifying spec {
      | (Bool   b, srt, _) -> mkLBool   b
      | (Char   c, srt, _) -> mkLChar   c
 
-     | (Op (id, _), srt, _) -> 
-       let arity = opArity (sp, id, srt) in
-       (case optArgs of
-	  | None ->
-	    let pid = printPackageId (id, dpn) in
-	    if functionSort? (sp, srt) then
-	      mkLUnaryFnRef (pid, arity, vars)
-	    else 
-	      Const (Parameter pid)
-	  | Some term ->
-	    mkLApplyArity (id, dpn, arity, vars, 
-			   mkLTermList (sp, dpn, vars, term)))
+     | (Op (id, _), srt, _) ->
+       (case id of
+	  | Qualified ("TranslationBuiltIn", "mkFail") ->
+	    mkLApply(mkLOp "error",case optArgs of Some term -> mkLTermList(sp, dpn, vars, term))
+	  | _ ->
+	let arity = opArity (sp, id, srt) in
+	(case optArgs of
+	   | None ->
+	     let pid = printPackageId (id, dpn) in
+	     if functionSort? (sp, srt) then
+	       mkLUnaryFnRef (pid, arity, vars)
+	     else 
+	       Const (Parameter pid)
+	   | Some term ->
+	     mkLApplyArity (id, dpn, arity, vars, 
+			    mkLTermList (sp, dpn, vars, term))))
 
      | (Embed (id, true), srt, _) ->
        let rng = range (sp, srt) in

@@ -79,6 +79,7 @@ Note: The code below does not yet match the documentation above, but should.
     {
      translation_maps <- makeTranslationMaps require_monic? spc expr;
      raise_any_pending_exceptions;
+
      % reconstructed_expr <- reconstructTranslationExpr translation_maps;
      % print ("\n========\n");
      % print (showTerm (Translate ((Quote (Spec spc), noPos), expr), noPos));
@@ -104,10 +105,10 @@ Note: The code below does not yet match the documentation above, but should.
      %%
      %% Now we produce a new spec using these unmbiguous maps.
      %% Note that auxTranslateSpec is not expected to raise any errors.
-     %%
+     
      spc <- auxTranslateSpec spc translation_maps pos;
      raise_any_pending_exceptions; % should never happen here
-     %%
+     
      %% Next we worry about traditional captures in which a (global) op Y,
      %% used under a binding of var X, is renamed to X.   Internally, this 
      %% is not a problem, since the new refs to op X are distinguishable 
@@ -117,13 +118,13 @@ Note: The code below does not yet match the documentation above, but should.
      %% 
      %% So we do alpha conversions if a bound var has an op of the same
      %% name under its scope:
-     %%
+     
      spc <- return (removeVarOpCaptures spc);
-     %%
+     
      %% One final pass to see if we've managed to collapse necessarily 
      %% distinct types (e.g. A = X * Y and B = Z | p), or necessarily
      %% distinct ops (e.g. op i = 4 and op j = "oops") onto the same name.
-     %%
+     
      complainIfAmbiguous (compressDefs spc) pos
     } 
 
@@ -705,6 +706,8 @@ Note: The code below does not yet match the documentation above, but should.
 			       | SortDef qid -> SortDef (translateOpQualifiedId sort_id_map qid)
 			       | Property (pt, nm, tvs, term) ->
 			         Property (pt, (translateOpQualifiedId op_id_map nm), tvs, term)
+%			       | Import(sp_tm,sp,els) ->
+%				 Import((Translate(sp_tm,translation_tm),noPos),sp,els)
 			       | _ -> el)
 			    elements,
 	     qualified? = false}	% conservative
