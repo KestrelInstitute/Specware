@@ -3,7 +3,7 @@
  * to java.lang method (String utilities)
  *)
 
-%JGen qualifying
+JGen qualifying
 spec
 
   import ToJavaBase
