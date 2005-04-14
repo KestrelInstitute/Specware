@@ -42,7 +42,7 @@ spec
 	 | [] -> None
 	 | dfn :: _ ->
 	   let (tvs, srt, def1) = unpackTerm dfn in
-	   if (tvs ~= []) & hoFnSort? (spc, srt)  & unfoldable? (Qualified (q, id), def1) then
+	   if hoFnSort? (spc, srt)  & unfoldable? (Qualified (q, id), def1) then
 	     let numCurryArgs = curryShapeNum(spc,srt) in
              % see note below about debugging indexing error
              % let _ = toScreen ("\n numCurryArgs = " ^ (toString numCurryArgs) ^ " for " ^ (anyToString srt) ^ "\n") in

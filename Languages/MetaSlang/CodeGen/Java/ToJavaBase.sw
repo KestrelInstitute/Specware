@@ -1,6 +1,7 @@
 JGen qualifying spec
 
 import IJavaCodeGen
+import ToJavaPatternMatch
 %import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
@@ -8,7 +9,6 @@ import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 import /Languages/Java/JavaPrint % ppFormPars
 %import /Languages/SpecCalculus/Semantics/Exception
 import ../../Transformations/LambdaLift
-import ../../Transformations/PatternMatch
 import ../../Transformations/HigherOrderMatching
 
 import IJavaCodeGen
@@ -179,8 +179,8 @@ def mkThrowFunEq() = mkThrowException("illegal function equality")
 def mkThrowMalf() = mkThrowException("malformed sum value") 
 def mkThrowUnexp() = mkThrowException("unexpected sum value") 
 
-op mkDefaultCase: Match * Spec -> List (List SwitchLab * List BlockStmt)
-def mkDefaultCase(_(* cases *), _(* spc *)) =
+op mkDefaultCase: () -> List (List SwitchLab * List BlockStmt)
+def mkDefaultCase() =
   let swlabel = [Default] in
   let stmt = mkThrowMalf() in
   [(swlabel,[Stmt stmt])]
@@ -1094,13 +1094,10 @@ def fieldsAreNumbered(fields) =
  * compares the summand sort with the match and returns the list of constructor ids
  * that are not present in the match.
  *)
-op getMissingConstructorIds: Sort * Match -> List Id
+op getMissingConstructorIds: Sort * List(Id * MS.Term) -> List Id
 def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
   let missingsummands = filter (fn(constrId,_) -> 
-				case find (fn(pat,_,_) ->
-					   case pat of
-					     | EmbedPat(id,_,_,_) -> id = constrId
-					     | _ -> false) cases of
+				case find (fn(id,_) -> id = constrId) cases of
 				  | Some _ -> false
 				  | None -> true) summands
   in

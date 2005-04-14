@@ -11,6 +11,7 @@ import ToJavaSpecial
 import /Languages/Java/JavaPrint
 import /Languages/MetaSlang/Transformations/LambdaLift
 import /Languages/MetaSlang/Transformations/RecordMerge
+import /Languages/MetaSlang/Transformations/InstantiateHOFns
 
 import Monad
 
@@ -45,7 +46,6 @@ def clsDeclsFromSorts spc =
    primitiveClassName <- getPrimitiveClassName;
    putEnvSpec spc;
    primClsDecl <- return (mkPrimOpsClsDecl primitiveClassName);
-   % print("\nprimClsDecl: [" ^ anyToString primClsDecl ^ "]\n");
    foldM (fn _ -> fn (q,id,sortInfo) ->
 	  sortToClsDecls(q,id,sortInfo))
          () (sortsAsList spc);
@@ -297,28 +297,24 @@ def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
    split <- return(splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars);
    case split of
      | Some(vars1,varh,vars2) ->
-
-       if caseTerm?(body)
-	 then 
-	   case caseTerm(body) of
-	     | Var (var,_) ->
-	       if equalVar?(varh, var) then
-		 addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body)
-	       else
-		 addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body)
-	     | _ -> addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body)
-       else addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body)
-
+       (case parseCoProductCase body of
+	  | Some(case_term as Var(var,_),cases,opt_other) ->
+	    if equalVar?(varh, var) then
+	      addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, cases, opt_other, case_term)
+	    else
+	      addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body)
+	  | _ -> addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body))
      | _ -> raise(Fail("cannot find user type in arguments of op "^opId),termAnn(trm))
   }
 
-op addCaseMethodsToClsDeclsM: Id * List Type * List(Option JGen.Term) * Type * List Var * JGen.Term -> JGenEnv ()
-def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
+op addCaseMethodsToClsDeclsM: Id * List Type * List(Option JGen.Term) * Type * List Var
+                                 * List(Id * JGen.Term) * Option JGen.Term * JGen.Term -> JGenEnv ()
+def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, cases, opt_other, case_term) =
   {
    spc <- getEnvSpec;
    rngId <- srtIdM rng;
    Some (vars1, varh, vars2) <- return(splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars);
-   defaultMethodDecl <- mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars1++vars2,body);
+   defaultMethodDecl <- mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars1++vars2,opt_other);
    fpars <- varsToFormalParamsM (vars1++vars2);
    methodDecl <- return(([], Some (tt(rngId)), opId, fpars , []), None);
    (_, Base (Qualified(q, srthId), _, _)) <- return varh;
@@ -346,7 +342,7 @@ def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
 	     }
 	  };
    let methodDecl = setMethodBody(methodDecl,assertStmt) in
-   addMethDeclToSummandsM(opId, srthId, methodDecl, body)
+   addMethDeclToSummandsM(opId, srthId, methodDecl, cases, opt_other, case_term)
   }
   
 op addNonCaseMethodsToClsDeclsM: Id * List Type * List(Option JGen.Term) * Type * List Var * JGen.Term -> JGenEnv ()
@@ -408,15 +404,14 @@ def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
 %   return res
 %  }
 
-op mkDefaultMethodForCaseM: Id * List Type * List(Option JGen.Term) * Type * List Var * JGen.Term -> JGenEnv (Option MethDecl)
-def mkDefaultMethodForCaseM(opId,_(* dom *),_(* dompreds *),rng,vars,body) =
+op mkDefaultMethodForCaseM: Id * List Type * List(Option JGen.Term) * Type * List Var
+                               * Option JGen.Term -> JGenEnv (Option MethDecl)
+def mkDefaultMethodForCaseM(opId,_(* dom *),_(* dompreds *),rng,vars,opt_other) =
   %let (mods,opt_mbody) = ([Abstract],None) in
   {
    rngId <- srtIdM rng;
    let opt = 
-       let caseTerm = caseTerm(body) in
-       let cases = caseCases(body) in
-       case findVarOrWildPat(cases) of
+       case opt_other of
 	 | Some t -> None
 	 | _ -> Some ([Abstract],None)
    in
@@ -453,8 +448,8 @@ def unfoldToCoProduct(spc,srt) =
  * each sub-class get one method, except in the case where there is a "default" (wild- or var-pattern) 
  * case and the constructor is not mentioned as case in the case construct.
  *)
- op  addMethDeclToSummandsM: Id * Id * MethDecl * JGen.Term -> JGenEnv ()
- def addMethDeclToSummandsM (opId, srthId, methodDecl, body) =
+ op  addMethDeclToSummandsM: Id * Id * MethDecl * List(Id * JGen.Term) * Option JGen.Term * JGen.Term -> JGenEnv ()
+ def addMethDeclToSummandsM (opId, srthId, methodDecl,  cases, opt_other, case_term) =
    {
     spc <- getEnvSpec;
     case findAllSorts (spc, mkUnQualifiedId srthId) of
@@ -465,29 +460,28 @@ def unfoldToCoProduct(spc,srt) =
 	  let srt = firstSortDefInnerSort info in % consider only first definition
 	  case srt of
 	    | CoProduct (summands, _) ->
-
-	      let caseTerm = caseTerm(body) in
-	      let cases = caseCases(body) in
 	      % find the missing constructors:
 	      let missingsummands = getMissingConstructorIds(srt,cases) in
 	      {
-	       case findVarOrWildPat cases of
+	       case opt_other of
 		 | Some _ -> return() % don't add anything for the missing summands in presence of a default case
 		 | None   ->
 		   foldM (fn _ -> fn consId ->
 			  addMissingSummandMethDeclToClsDeclsM(opId,srthId,consId,methodDecl)
 			 ) () missingsummands;
-		   foldM (fn _ -> fn(pat,_,cb) ->
-			  addSumMethDeclToClsDeclsM(opId,srthId,caseTerm,pat,cb,methodDecl)
-			 ) () cases
+	       foldM (fn _ -> fn(id,cb) ->
+		      addSumMethDeclToClsDeclsM(opId,srthId,case_term,id,cb,methodDecl))
+	         () (case opt_other of
+		       | Some other -> Cons(("_",other),cases)
+		       | None -> cases)
 	      }
 
-	     | _ -> raise(Fail("sort is not a CoProduct: "^srthId),termAnn body)
+	     | _ -> raise(Fail("sort is not a CoProduct: "^srthId),termAnn case_term)
 
 	else
-	  raise(Fail("sort has no definition: "^srthId),termAnn body)
+	  raise(Fail("sort has no definition: "^srthId),termAnn case_term)
 
-     | _ -> raise(Fail("sort not found: " ^ srthId),termAnn body)
+     | _ -> raise(Fail("sort not found: " ^ srthId),termAnn case_term)
    }
 
 op addMissingSummandMethDeclToClsDeclsM: Id * Id * Id * MethDecl -> JGenEnv ()
@@ -497,34 +491,27 @@ def addMissingSummandMethDeclToClsDeclsM(opId,srthId,consId,methodDecl) =
   let newMethDecl = appendMethodBody(methodDecl,body) in
   addMethDeclToClsDeclsM(opId,summandId,newMethDecl)
 
-op addSumMethDeclToClsDeclsM: Id * Id * JGen.Term * Pattern * JGen.Term * MethDecl -> JGenEnv ()
-def addSumMethDeclToClsDeclsM(opId, srthId, caseTerm, pat, body, methodDecl) =
+op addSumMethDeclToClsDeclsM: Id * Id * JGen.Term * Id * JGen.Term * MethDecl -> JGenEnv ()
+def addSumMethDeclToClsDeclsM(opId, srthId, case_term, id, cb, methodDecl) =
   let
-    def addMethodM(classid,vids,args) =
+    def addMethodM(classid,vids) =
       %let _ = writeLine("adding method "^opId^" in class "^classid^"...") in
       let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
       let tcx = foldr (fn(vid,tcx) -> StringMap.insert(tcx,vid,thisExpr)) empty vids in
-      %let tcx = StringMap.insert(empty, vId, thisExpr) in
-      let tcx = addArgsToTcx(tcx, args) in
       {
-       (jbody, k, l) <- termToExpressionRetM(tcx, body, 1, 1);
+       (jbody, k, l) <- termToExpressionRetM(tcx, cb, 1, 1);
        newMethDecl <- return(appendMethodBody(methodDecl,jbody));
        addMethDeclToClsDeclsM(opId,classid,newMethDecl)
       }
   in
-    case caseTerm of
+    case case_term of
       | Var ((vId, vSrt), b) ->
-        (case pat of
-	   | EmbedPat (cons, argsPat, coSrt, _) ->
-	     let (args,ok?) = getVarsPattern(argsPat) in
-	     if ~ ok? then return () else
-	       let summandId = mkSummandId(srthId, cons) in
-	       addMethodM(summandId,[vId],args)
-	   | VarPat((vid,_),_) -> addMethodM(srthId,[vid,vId],[])
-	   | WildPat _ -> addMethodM(srthId,[vId],[])
-	   | _ -> raise(UnsupportedPattern(printPattern pat),termAnn(caseTerm)) 
-	)
-      | _ -> raise(UnsupportTermInCase(printTerm caseTerm),termAnn(caseTerm))
+        if id = "_"
+	  then addMethodM(srthId,[vId])
+	else
+        let summandId = mkSummandId(srthId, id) in
+	addMethodM(summandId,[vId])
+      | _ -> raise(UnsupportTermInCase(printTerm case_term),termAnn(case_term))
 
 
 op addArgsToTcx: TCx * List Id -> TCx
@@ -831,18 +818,12 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = translateRecordMergeInSpec spc in
   let spc = identifyIntSorts spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
-  %% let _ = toScreen("\n================================\n") in
-  %% let _ = toScreen("\nPoly:\n") in
-  %% let _ = toScreen(printSpecFlat spc) in
-  %% let _ = toScreen("\n================================\n") in
   let spc = poly2mono(spc,false) in
-  %% let _ = toScreen("\n================================\n") in
-  %% let _ = toScreen("\nMono:\n") in
-  %% let _ = toScreen(printSpecFlat spc) in
-  %% let _ = toScreen("\n================================\n") in
   let spc = unfoldSortAliases spc in
   let spc = letWildPatToSeq spc in
-  let spc = lambdaLift(spc) in
+  let spc = instantiateHOFns spc in
+  let spc = lambdaLift spc in
+  let spc = translateMatchJava spc in
   %let spc = distinctVariable(spc) in
   %% let _ = toScreen("\n================================\n") in
   %% let _ = toScreen(printSpecFlat spc) in
