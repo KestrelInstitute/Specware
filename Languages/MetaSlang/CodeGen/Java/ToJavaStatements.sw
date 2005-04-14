@@ -110,7 +110,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 			| None -> false
 			| Some opinfo ->
 			  let dfn = opinfo.dfn in
-			  let _ = writeLine(";; definition term for id "^id^": "^(printTerm dfn)) in
+			  %let _ = writeLine(";; definition term for id "^id^": "^(printTerm dfn)) in
 			  let def stripSortedTerm trm =
 			       (case trm of
 				  | SortedTerm(trm,_,_) -> stripSortedTerm trm
