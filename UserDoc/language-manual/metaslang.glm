@@ -466,22 +466,7 @@ Restriction.
 In general, `simple-names can be chosen freely.
 However, the following <emphasis>reserved symbols</emphasis> have a
 special meaning and must not be used for `simple-names:
-<!-- !! echo RESWORDS | abc -w meta -->
-[[
-||    as              embed?        in               prove
-||    axiom           endspec       infixl           qualifying
-||    case            ex            infixr           quotient
-||    choose          fa            is               spec
-||    colimit         false         let              then
-||    conjecture      fn            morphism         theorem
-||    def             from          obligations      translate
-||    diagram         generate      of               true
-||    else            if            op               type
-||    embed           import        project          where
-||
-||    :         ::        |         =>        ||       &&
-||    <-        ->        +->       =         ~=       <<
-]]
+&reswords;
 They each count as a single `symbol, and no whitespace is
 allowed inside any reserved symbol.
 </para>

@@ -22,6 +22,9 @@ GLM2DBKSRC= $(SRC)/glm2dbk.c
 $(GLM2DBK): $(GLM2DBKSRC)
 	cc -O $(GLM2DBKSRC) -o $(GLM2DBK)
 
+MKRESWORDS= bin/mkreswords
+MKGRAMMAR= bin/mkgrammar
+
 DB2PDF= ../bin/db2pdf -E9999
 
 DB2HTML= ../bin/db2html -E9999
@@ -35,6 +38,7 @@ PDFDBK= bookinfo.dbk \
         disclaimer.dbk \
         intro.dbk \
         metaslang.dbk \
+        reswords.dbk \
         grammar.dbk \
         libraries.dbk
 
@@ -48,6 +52,7 @@ HTMDBK= bookinfo-htm.dbk \
         disclaimer-htm.dbk \
         intro-htm.dbk \
         metaslang-htm.dbk \
+        reswords-htm.dbk \
         grammar-htm.dbk \
         libraries-htm.dbk
 
@@ -98,29 +103,11 @@ metaslang.dbk: Makefile $(GLM2DBK) metaslang.glm
 	 fi
 	$(GLM2DBKMS) -pdf metaslang.glm > metaslang.dbk
 
-usage.dbk: Makefile $(GLM2DBK) usage.glm
-	@if test -r usage.dbk; \
-	 then /bin/mv -f usage.dbk usage.dbk.old; \
+reswords.dbk: Makefile $(GLM2DBK) reswords.glm
+	@if test -r reswords.dbk; \
+	 then /bin/mv -f reswords.dbk reswords.dbk.old; \
 	 fi
-	$(GLM2DBKMS) -pdf usage.glm > usage.dbk
-
-install.dbk: Makefile $(GLM2DBK) install.glm
-	@if test -r install.dbk; \
-	 then /bin/mv -f install.dbk install.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -pdf install.glm > install.dbk
-
-trouble.dbk: Makefile $(GLM2DBK) trouble.glm
-	@if test -r trouble.dbk; \
-	 then /bin/mv -f trouble.dbk trouble.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -pdf trouble.glm > trouble.dbk
-
-differences.dbk: Makefile $(GLM2DBK) differences.glm
-	@if test -r differences.dbk; \
-	 then /bin/mv -f differences.dbk differences.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -pdf differences.glm > differences.dbk
+	$(GLM2DBKGR) -pdf reswords.glm > reswords.dbk
 
 grammar.dbk: Makefile $(GLM2DBK) grammar.glm
 	@if test -r grammar.dbk; \
@@ -159,29 +146,11 @@ metaslang-htm.dbk: Makefile $(GLM2DBK) metaslang.glm
 	 fi
 	$(GLM2DBKMS) -htm metaslang.glm > metaslang-htm.dbk
 
-usage-htm.dbk: Makefile $(GLM2DBK) usage.glm
-	@if test -r usage-htm.dbk; \
-	 then /bin/mv -f usage-htm.dbk usage-htm.dbk.old; \
+reswords-htm.dbk: Makefile $(GLM2DBK) reswords.glm
+	@if test -r reswords-htm.dbk; \
+	 then /bin/mv -f reswords-htm.dbk reswords-htm.dbk.old; \
 	 fi
-	$(GLM2DBKMS) -htm usage.glm > usage-htm.dbk
-
-install-htm.dbk: Makefile $(GLM2DBK) install.glm
-	@if test -r install-htm.dbk; \
-	 then /bin/mv -f install-htm.dbk install-htm.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -htm install.glm > install-htm.dbk
-
-trouble-htm.dbk: Makefile $(GLM2DBK) trouble.glm
-	@if test -r trouble-htm.dbk; \
-	 then /bin/mv -f trouble-htm.dbk trouble-htm.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -htm trouble.glm > trouble-htm.dbk
-
-differences-htm.dbk: Makefile $(GLM2DBK) differences.glm
-	@if test -r differences-htm.dbk; \
-	 then /bin/mv -f differences-htm.dbk differences-htm.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -htm differences.glm > differences-htm.dbk
+	$(GLM2DBKGR) -pdf reswords.glm > reswords-htm.dbk
 
 grammar-htm.dbk: Makefile $(GLM2DBK) grammar.glm
 	@if test -r grammar-htm.dbk; \
@@ -195,12 +164,17 @@ libraries-htm.dbk: Makefile $(GLM2DBK) libraries.glm
 	 fi
 	$(GLM2DBKMS) -htm libraries.glm > libraries-htm.dbk
 
-grammar.glm: Makefile metaslang.glm grammar.preamble \
-             bin/mkgrammar
+reswords.glm: Makefile reswords-list.txt $(MKRESWORDS)
+	@if test -r reswords.glm; \
+	 then /bin/mv -f reswords.glm reswords.glm.old; \
+	 fi
+	$(MKRESWORDS) reswords-list.txt > reswords.glm
+
+grammar.glm: Makefile metaslang.glm grammar.preamble $(MKGRAMMAR)
 	@if test -r grammar.glm; \
 	 then /bin/mv -f grammar.glm grammar.glm.old; \
 	 fi
-	bin/mkgrammar
+	$(MKGRAMMAR)
 
 clean:
 	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log $(SLM).out \

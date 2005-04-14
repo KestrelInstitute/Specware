@@ -15,10 +15,7 @@
  <!ENTITY disclaimer SYSTEM "disclaimer.dbk">
  <!ENTITY intro SYSTEM "intro.dbk">
  <!ENTITY metaslang SYSTEM "metaslang.dbk">
- <!ENTITY usage SYSTEM "usage.dbk">
- <!ENTITY install SYSTEM "install.dbk">
- <!ENTITY trouble SYSTEM "trouble.dbk">
- <!ENTITY differences SYSTEM "differences.dbk">
+ <!ENTITY reswords SYSTEM "reswords.dbk">
  <!ENTITY grammar SYSTEM "grammar.dbk">
  <!ENTITY libraries SYSTEM "libraries.dbk">
 
