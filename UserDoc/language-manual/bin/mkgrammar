@@ -1,8 +1,7 @@
 #!/bin/sh
-# this is ../bin/mkgrammar
-self=`/bin/basename $0`
-LHOME=`echo echo ~lambert | ksh`
-LBIN=$LHOME/bin
+# this is bin/mkgrammar
+self=mkgrammar
+
 ARCH=unknown
 if [ -x /bin/uname ]
 then ARCH=`/bin/uname -p`
@@ -17,7 +16,9 @@ if [ "$ARCH" = unknown ]
 then echo "$self: no uname/arch program found" >&2
      exit 1
 fi
-abc=$LBIN/$ARCH/abc-bin
+
+LHOME=`echo echo ~lambert | sh`
+abc=$LHOME/bin/$ARCH/abc-bin
 LABC=$LHOME/abc
 
 if [ ! -r $abc ]
