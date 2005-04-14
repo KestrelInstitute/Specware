@@ -29,30 +29,29 @@
 
 (defconst symbol-sep "[^-_?a-z0-9A-Z]")
 
-;; reserved symbols that introduce names:
+;; reserved symbols that introduce named entities:
 (defconst specware-definition-introducing-words
-  (regexp-opt '(
-             ;; core specware:
-                "axiom"
-                "conjecture"
-                "def"
-                "diagram"
-		"morphism"
-                "op"
-                "spec"
-                "theorem"
-                "type"
-                "where"
-             ;; accord extension:
-                "espec"
-                "espec-refinement"
-		"interpretation"
-		"ip-scheme"
-                "ip-scheme-morphism"
-                "mode"
-                "module"
-                "stad"
-		)))
+    (regexp-opt '(
+   ;; core specware:
+      "axiom"
+      "conjecture"
+      "def"
+      "op"
+      "theorem"
+      "type"
+   ;; accord extension:
+      "diagram"
+      "espec"
+      "espec-refinement"
+      "interpretation"
+      "ip-scheme"
+      "ip-scheme-morphism"
+      "mode"
+      "module"
+      "morphism"
+      "spec"
+      "stad"
+      )))
 
 (defconst specware-definition-regexp
     (concat "\\(^\\|" symbol-sep "\\)\\("
@@ -60,15 +59,19 @@
 	    "\\)"
 	    "[^-_?a-z0-9A-Z,:\"}`\n]+") )
 
-;; other reserved symbols:
+;; reserved symbols:
 (defconst specware-keywords
     '(
    ;; core specware:
       "as"
+      "axiom"
       "by"
       "case"
       "choose"
       "colimit"
+      "conjecture"
+      "def"
+      "diagram"
       "else"
       "embed"
       "embed?"
@@ -86,17 +89,29 @@
       "infixr"
       "is"
       "let"
+      "morphism"
       "obligations"
       "of"
+      "op"
+      "options"
+      "project"
+      "prove"
       "qualifying"
       "quotient"
+      "spec"
       "then"
+      "theorem"
       "translate"
       "true"
+      "type"
+      "using"
+      "where"
+      "with"
    ;; accord extension:
       "arcs"
       "compile"
       "cond"
+      "diagram"
       "do"
       "end"
       "end-diagram"
@@ -112,17 +127,26 @@
       "end-step"
       "end-while"
       "end-with"
+      "espec"
+      "espec-refinement"
       "final"
       "guard"
       "initial"
+      "interpretation"
+      "ip-scheme"
+      "ip-scheme-morphism"
+      "mode"
+      "module"
+      "morphism"
+      "spec"
       "nodes"
       "prog"
       "progmap"
       "specmap"
+      "stad"
       "step"
       "when"
       "while"
-      "with"
       ))
 
 (defconst specware-keywords-regexp
@@ -163,8 +187,8 @@
 		      specware-keywords-regexp
 		      "\\)" symbol-sep)
 	      1 'font-lock-reserved-word-face 'keep)
-	"&" "=>" "=" "~" "<" ">" "->" "<-" ";" ":" "::" ":=" "|" "_"
-	"\\." "!" "*"			; no? "}" "{" "]" "\\[" "(" ")"
+	"&&" "||" "=>" "=" "~=" "~" "<" ">" "->" "<-" ";" ":" "::" ":=" "|" "_"
+	"+->" "\\." "!" "*" "<<"           ; no? "}" "{" "]" "\\[" "(" ")"
 ;;;	; Fixed width if % followed by 2 spaces, %%%, tab, or space--- or nothing
 ;;;	'("\\(%+\\(  \\|%%%\\|\t\\| \t\\| ---\\|---\\|$\\).*$\\)"
 ;;;	  1 font-lock-fixed-width-comment-face t)
