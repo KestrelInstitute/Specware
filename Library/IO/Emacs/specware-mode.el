@@ -198,6 +198,7 @@ accepted in lieu of prompting."
   (define-key map "\C-c\C-e" 'sw:evaluate-region)
   (define-key map "\C-c\C-s" 'sw:set-swe-spec)
   (define-key map "\C-c\C-u" 'sw:cl-unit)
+  (define-key map "\C-ca"    'sw:apropos-symbol)
   (define-key map "\C-c!"    'cd-current-directory)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
@@ -1145,6 +1146,11 @@ If anyone has a good algorithm for this..."
   (let ((filename (sw::file-to-specware-unit-id (dired-get-filename))))
     (lisp-or-specware-command ":sw " "proc " filename)))
 
+(defun sw:apropos-symbol ()
+  (interactive)
+  (let ((sym (sw::get-symbol-at-point)))
+    (simulate-input-expression (format "(apropos \"%s\")" (upcase sym)))))
+
 (when (boundp 'dired-mode-map)
   (define-key dired-mode-map "\C-cp" 'sw:dired-process-current-file)
   (define-key dired-mode-map "\C-c!" 'cd-current-directory))
@@ -1363,6 +1369,7 @@ If anyone has a good algorithm for this..."
     (or symbol
 	(if (and up-p (null symbol))
 	    (sw::get-symbol-at-point)))))
+
 
 ;;;; Prompt regexp for specware shell
 (defvar *lisp-prompt-regexp*)		; make buffer local?
