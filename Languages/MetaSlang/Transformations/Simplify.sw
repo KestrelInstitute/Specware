@@ -65,7 +65,7 @@ spec
      case term
        of Var _ -> true
 	| Record(fields,_) -> List.all (fn(_,t)-> sideEffectFree t) fields
-	| Apply(Fun(Embed _,_,_),t,_) -> sideEffectFree t
+	| Apply(Fun(f,_,_),t,_) -> knownSideEffectFreeFn? f & sideEffectFree t
 	| Fun _ -> true
 	| IfThenElse(t1,t2,t3,_) -> 
 		(sideEffectFree t1) 
@@ -212,44 +212,44 @@ spec
      case tryEvalOne term of
        | Some cterm -> cterm
        | _ ->
-     case term
-       of Let(decl1::decl2::decls,body,_) -> 
-	  simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(List.cons(decl2,decls),body))))
-	%% let y = x in f y  --> f x
-	| Let([(VarPat(v,_),wVar as (Var(w,_)))],body,_) ->
-	  substitute(body,[(v,wVar)])
-	%% Do equivalent for apply lambda
-	%% case y of x -> f x  -->  f y
-	| Apply(Lambda([(VarPat(v,_),_,body)],_),wVar as (Var(w,_)),_) ->
-	  substitute(body,[(v,wVar)])
-	%% case y of _ -> z  -->  z if y side-effect free
-	| Apply(Lambda([(WildPat(_,_),_,body)],_),tm,_) ->
-	  if sideEffectFree tm then body else term
-	| Let([(VarPat(v,_),letTerm as (Apply(Fun(Restrict,_,_),(Var _),_)))],
-	      body,_) ->
-	  substitute(body,[(v,letTerm)]) 
-	%% Distribution of terms over application
-	%% (if p then x else y) z --> if p then x z else y z
-	| Apply(IfThenElse(t1,t2,t3,a),tm,_) ->
-	  if simpleTerm? tm
-	    then IfThenElse(t1,simplifiedApply(t2,tm,spc),simplifiedApply(t3,tm,spc),a)
-	    else term
-	%% (let x = y in f) z --> let x = y in f z
-	| Apply(Let(binds,body,a),tm,_) ->
-	  if simpleTerm? tm
-	    then Let(binds,simplifiedApply(body,tm,spc),a)
-	    else term
-	%% (letrec x = y in f) z --> let x = y in f z
-	| Apply(LetRec(binds,body,a),tm,_) ->
-	  if simpleTerm? tm
-	    then LetRec(binds,simplifiedApply(body,tm,spc),a)
-	    else term
-	%% (case x of p1 -> e1 p2 -> e2 ...) z  --> case x of p1 -> e1 z p2 -> e2 .z ..
-	| Apply(Apply(Lambda(cases,a1),x,a2),tm,_) ->
-	  if simpleTerm? tm
-	    then Apply(Lambda(map (fn (p,pred,ei) -> (p,pred,simplifiedApply(ei,tm,spc))) cases,a1),
-		       x,a2)
-	    else term	%% let y = <exp> in f y  --> f <exp> where y occurs once in f and no side-effects
+     case term of
+       | Let(decl1::decl2::decls,body,_) -> 
+	 simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(Cons(decl2,decls),body))))
+       %% let y = x in f y  --> f x
+       | Let([(VarPat(v,_),wVar as (Var(w,_)))],body,pos) ->
+	 substitute(body,[(v,wVar)])
+       %% Do equivalent for apply lambda
+       %% case y of x -> f x  -->  f y
+       | Apply(Lambda([(VarPat(v,_),_,body)],_),wVar as (Var(w,_)),_) ->
+	 substitute(body,[(v,wVar)])
+       %% case y of _ -> z  -->  z if y side-effect free
+       | Apply(Lambda([(WildPat(_,_),_,body)],_),tm,_) ->
+	 if sideEffectFree tm then body else term
+       | Let([(VarPat(v,_),letTerm as (Apply(Fun(Restrict,_,_),(Var _),_)))],
+	     body,_) ->
+	 substitute(body,[(v,letTerm)]) 
+       %% Distribution of terms over application
+       %% (if p then x else y) z --> if p then x z else y z
+       | Apply(IfThenElse(t1,t2,t3,a),tm,_) ->
+	 if simpleTerm? tm
+	   then IfThenElse(t1,simplifiedApply(t2,tm,spc),simplifiedApply(t3,tm,spc),a)
+	   else term
+       %% (let x = y in f) z --> let x = y in f z
+       | Apply(Let(binds,body,a),tm,_) ->
+	 if simpleTerm? tm
+	   then Let(binds,simplifiedApply(body,tm,spc),a)
+	   else term
+       %% (letrec x = y in f) z --> let x = y in f z
+       | Apply(LetRec(binds,body,a),tm,_) ->
+	 if simpleTerm? tm
+	   then LetRec(binds,simplifiedApply(body,tm,spc),a)
+	   else term
+       %% (case x of p1 -> e1 p2 -> e2 ...) z  --> case x of p1 -> e1 z p2 -> e2 .z ..
+       | Apply(Apply(Lambda(cases,a1),x,a2),tm,_) ->
+	 if simpleTerm? tm
+	   then Apply(Lambda(map (fn (p,pred,ei) -> (p,pred,simplifiedApply(ei,tm,spc))) cases,a1),
+		      x,a2)
+	   else term	%% let y = <exp> in f y  --> f <exp> where y occurs once in f and no side-effects
 %	| Let([(VarPat((id,_),_),tm)],body,_) -> 
 %	  let
 %	     def replace(term) = 
@@ -258,19 +258,19 @@ spec
 %		    | _ -> term
 %	  in
 %	     mapTerm(replace,fn x -> x,fn p -> p) body
-	%% Quantification simplification
-	%% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
-	| Bind(Forall,_,_,_) -> simplifyForall spc (forallComponents term)
-        | Bind(Exists,_,_,_) -> simplifyExists(existsComponents term)
-	| Apply(Fun(Project i,_,_),Record(m,_),_) ->
-	  (case getField(m,i) of
-	    | Some fld -> fld
-	    | None -> term)
-	| Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) ->
-	  mkSimpImplies(t1,t2)
-	| _ -> case simplifyCase spc term of
-	        | Some tm -> tm
-	        | None -> tupleInstantiate spc term
+       %% Quantification simplification
+       %% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
+       | Bind(Forall,_,_,_) -> simplifyForall spc (forallComponents term)
+       | Bind(Exists,_,_,_) -> simplifyExists(existsComponents term)
+       | Apply(Fun(Project i,_,_),Record(m,_),_) ->
+	 (case getField(m,i) of
+	   | Some fld -> fld
+	   | None -> term)
+       | Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) ->
+	 mkSimpImplies(t1,t2)
+       | _ -> case simplifyCase spc term of
+	       | Some tm -> tm
+	       | None -> tupleInstantiate spc term
 
   op  simplifyForall: Spec -> List Var * List MS.Term * MS.Term -> MS.Term
   def simplifyForall spc (vs,cjs,bod) =

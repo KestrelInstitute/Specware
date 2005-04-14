@@ -10,6 +10,7 @@ import ToJavaHO
 import ToJavaSpecial
 import /Languages/Java/JavaPrint
 import /Languages/MetaSlang/Transformations/LambdaLift
+import /Languages/MetaSlang/Transformations/Simplify
 import /Languages/MetaSlang/Transformations/RecordMerge
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
 
@@ -827,6 +828,7 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = instantiateHOFns spc in
   let spc = lambdaLift spc in
   let spc = translateMatchJava spc in
+  let spc = simplifySpec spc in
   %let spc = distinctVariable(spc) in
   %% let _ = toScreen("\n================================\n") in
   %% let _ = toScreen(printSpecFlat spc) in
