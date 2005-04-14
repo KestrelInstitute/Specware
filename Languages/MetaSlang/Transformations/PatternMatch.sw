@@ -411,11 +411,15 @@ PatternMatch qualifying spec
               
 
   def coproductFields(spc,srt) = 
-      case unfoldBase(spc,srt)
-        of CoProduct(fields,_) -> fields
-	 | Subsort(tau,_,_) -> coproductFields(spc,tau)
-         | _ -> System.fail 
-		("CoProduct sort expected, but got "^printSort srt)
+    let srt = unfoldBase(spc,srt) in
+    case srt of
+      | CoProduct(fields,_) -> fields
+      | Subsort(tau,_,_) -> coproductFields(spc,tau)
+      | Base (Qualified ("List", "List"), [x], _) -> 
+        [("Nil",  None), 
+	 ("Cons", Some (Product ([("1", x), ("2", srt)], 
+				 sortAnn srt)))]
+      | _ -> System.fail ("CoProduct sort expected, but got "^printSort srt)
 
   def partitionConstructors(context,t,rules) =
       let
