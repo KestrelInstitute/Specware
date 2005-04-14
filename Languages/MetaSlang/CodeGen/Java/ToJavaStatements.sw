@@ -1,4 +1,4 @@
-JGen qualifying
+%JGen qualifying
 spec
 
 import ToJavaBase
@@ -106,10 +106,21 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
    let
     def opvarcase(q,id) =
       %let _ = writeLine(";; translateApplyToExpr: id="^id^", term="^(printTerm term)) in
-      let _ = (case AnnSpec.findTheOp(spc,Qualified(q,id)) of
-		 | None -> writeLine(";;; "^id^" not found in spec!?")
-		 | Some opinfo -> writeLine(";;; definition term found for "^id^": "^(printTermWithSorts opinfo.dfn))
-	      ) in
+      let isField? = (case AnnSpec.findTheOp(spc,Qualified(q,id)) of
+			| None -> false
+			| Some opinfo ->
+			  let dfn = opinfo.dfn in
+			  let _ = writeLine(";; definition term for id "^id^": "^(printTerm dfn)) in
+			  let def stripSortedTerm trm =
+			       (case trm of
+				  | SortedTerm(trm,_,_) -> stripSortedTerm trm
+				  | _ -> trm)
+			  in
+			  (case stripSortedTerm dfn of
+			     | Any _ -> true
+			     | _ -> false
+			    ))
+      in
       let srt = inferTypeFoldRecords(spc,term) in
       let args = applyArgsToTerms(argsTerm) in
       % use the sort of the operator for the domain, if possible; this
@@ -144,7 +155,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 		  translatePrimBaseApplToExprM(tcx, id, argsTerm, k, l)
 	  else translateBaseArgsApplToExprM(tcx, id, argsTerm, rng, k, l)
       else
-	translateUserApplToExprM(tcx, id, dom, argsTerm, k, l)
+	translateUserApplToExprM(tcx, id, dom, argsTerm, k, l, isField?)
    in
    case opTerm of
      | Fun (Restrict,      srt, _) ->
@@ -358,8 +369,9 @@ def translateBaseArgsApplToExprM(tcx, opId, argsTerm, rng, k, l) =
      }
   }
 
-op translateUserApplToExprM: TCx * Id * List JGen.Type * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
-def translateUserApplToExprM(tcx, opId, dom, argsTerm, k, l) =
+op translateUserApplToExprM: TCx * Id * List JGen.Type * Term * Nat * Nat * Boolean -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateUserApplToExprM(tcx, opId, dom, argsTerm, k, l, isField?) =
+  %let _ = writeLine(";; argsTerm for op "^opId^": "^(printTermWithSorts argsTerm)) in
   let args = applyArgsToTerms(argsTerm) in
   %let _ = writeLine(";; dom type for "^opId^": "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
   {
@@ -373,11 +385,17 @@ def translateUserApplToExprM(tcx, opId, dom, argsTerm, k, l) =
 	  if (length args) = 2 then 
 	    return (newBlock, mkBinExp(opId,javaArgs), newK, newL)
 	  else
-	    return (newBlock,mkUnExp(opId,javaArgs), newK, newL)
+	    if isField? && (length javaArgs = 0) then
+	      return (newBlock,mkVarJavaExpr opId, newK, newL)
+	    else
+	      return (newBlock,mkUnExp(opId,javaArgs), newK, newL)
 	else
 	  let topJArg = nth(javaArgs, h) in
 	  let resJArgs = deleteNth(h, javaArgs) in
-	  return (newBlock, mkMethExprInv(topJArg, opId, resJArgs), newK, newL)
+	    if isField? && (length resJArgs = 0) then
+	      return (newBlock,mkFieldAccess(topJArg,opId), newK, newL)
+	    else
+	      return (newBlock, mkMethExprInv(topJArg, opId, resJArgs), newK, newL)
        }
     | _ -> raise(NoUserTypeInApplArgList(printTerm argsTerm),termAnn argsTerm)
   }

@@ -590,6 +590,11 @@ op mkMethExprInv: Java.Expr * Id * List Java.Expr -> Java.Expr
 def mkMethExprInv(topJArg, opId, javaArgs) =
   CondExp (Un (Prim (MethInv (ViaPrim (Paren (topJArg), opId, javaArgs)))), None)
 
+op mkFieldAccess: Java.Expr * Id -> Java.Expr
+def mkFieldAccess(objexpr,fid) =
+  let fldAcc = ViaPrim(Paren(objexpr),fid) in
+  CondExp (Un (Prim(mkFldAccPr fldAcc)), None)
+
 (**
  * takes the ids from the formal pars and constructs a method invocation to the given opId
  *)
