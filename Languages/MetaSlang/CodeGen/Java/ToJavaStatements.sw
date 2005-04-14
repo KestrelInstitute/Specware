@@ -66,7 +66,7 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 		      | Arrow(dom,rng,_) -> translateLambdaToExprM(tcx,term,k,l)
 		      | _ -> 
 		        let _ = print term in
-			raise(UnsupportedTermFormat((printTerm term)^" [2]"),termAnn term)
+			raise(UnsupportedTermFormat((printTermWithSorts term)^" [2]"),termAnn term)
 			 ))
 	   }
 	 | Fun (Nat (n),_,__) -> return(mts, mkJavaNumber(n), k, l)
@@ -104,7 +104,12 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
   {
    spc <- getEnvSpec;
    let
-    def opvarcase(id) =
+    def opvarcase(q,id) =
+      %let _ = writeLine(";; translateApplyToExpr: id="^id^", term="^(printTerm term)) in
+      let _ = (case AnnSpec.findTheOp(spc,Qualified(q,id)) of
+		 | None -> writeLine(";;; "^id^" not found in spec!?")
+		 | Some opinfo -> writeLine(";;; definition term found for "^id^": "^(printTermWithSorts opinfo.dfn))
+	      ) in
       let srt = inferTypeFoldRecords(spc,term) in
       let args = applyArgsToTerms(argsTerm) in
       % use the sort of the operator for the domain, if possible; this
@@ -118,10 +123,10 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 			      srt
 			     ) args
       in
-      %let _ = writeLine("dom of op "^id^": "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
       let args = insertRestricts(spc,dom,args) in
       let argsTerm = exchangeArgTerms(argsTerm,args) in
       let rng = srt in
+      %let _ = writeLine("rng of op "^id^": "^printSort(rng)) in
       if all (fn (srt) ->
 	      notAUserType?(spc,srt) %or baseTypeAlias?(spc,srt)
 	     ) dom
@@ -164,7 +169,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
        }
      | Fun (Op (Qualified (q, id), _), _, _) ->
        let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
-       opvarcase(id)
+       opvarcase(q,id)
      | _ -> translateOtherTermApplyM(tcx,opTerm,argsTerm,k,l)
     %| _ -> (writeLine("translateApplyToExpr: not yet supported term: "^printTerm(term));errorResultExp(k,l))
 
@@ -319,12 +324,14 @@ op translatePrimBaseApplToExprM: TCx * Id * Term * Nat * Nat -> JGenEnv (Block *
 def translatePrimBaseApplToExprM(tcx, opId, argsTerm, k, l) =
   {
    primitiveClassName <- getPrimitiveClassName;
+   %%println(";; translating to primitive function call: "^opId^"()...");
    translateBaseApplToExprM(tcx,opId,argsTerm,k,l,primitiveClassName)
   }
 
 op translateBaseApplToExprM: TCx * Id * Term * Nat * Nat * Id -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def translateBaseApplToExprM(tcx, opId, argsTerm, k, l, clsId) =
   let args = applyArgsToTerms(argsTerm) in
+  %let _ = writeLine(";; opid: "^opId^", args: "^(printTerm argsTerm)) in
   {
    (newBlock, javaArgs, newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
    let res = if javaBaseOp?(opId)
@@ -354,6 +361,7 @@ def translateBaseArgsApplToExprM(tcx, opId, argsTerm, rng, k, l) =
 op translateUserApplToExprM: TCx * Id * List JGen.Type * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def translateUserApplToExprM(tcx, opId, dom, argsTerm, k, l) =
   let args = applyArgsToTerms(argsTerm) in
+  %let _ = writeLine(";; dom type for "^opId^": "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
   {
    spc <- getEnvSpec;
    case findIndex (fn(srt) -> userType?(spc,srt)) dom of
