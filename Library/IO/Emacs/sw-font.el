@@ -29,11 +29,29 @@
 
 (defconst symbol-sep "[^-_?a-z0-9A-Z]")
 
+;; reserved symbols that introduce names:
 (defconst specware-definition-introducing-words
-  (regexp-opt '("spec" "module" "op" "sort" "type" "espec" "espec-refinement" "stad" "mode"
-		"morphism" "diagram" "ip-scheme-morphism"
-		"ip-scheme" "conjecture" "axiom" "theorem"
-		"interpretation" "def"
+  (regexp-opt '(
+             ;; core specware:
+                "axiom"
+                "conjecture"
+                "def"
+                "diagram"
+		"morphism"
+                "op"
+                "spec"
+                "theorem"
+                "type"
+                "where"
+             ;; accord extension:
+                "espec"
+                "espec-refinement"
+		"interpretation"
+		"ip-scheme"
+                "ip-scheme-morphism"
+                "mode"
+                "module"
+                "stad"
 		)))
 
 (defconst specware-definition-regexp
@@ -42,19 +60,69 @@
 	    "\\)"
 	    "[^-_?a-z0-9A-Z,:\"}`\n]+") )
 
+;; other reserved symbols:
 (defconst specware-keywords
-    '("nodes" "arcs" "end-diagram"
-      "import" "let" "spec" "U" "qualifying"
-      "diagram" "from" "as" "compile"
-      "case" "if" "else" "fn" "then" "in" "of"
-      "fa" "or"
-      "colimit" "of" "by" "translate"
-      "import" "true" "false" "while" "end-while"
-      "end-spec" "endspec" "end-module" "is"
-      "prog" "end-prog" "step" "end-step" "with" "end-with"
-      "end-mode" "end-stad" "end-espec" "end-espec-refinement" "end-if"
-      "initial" "final" "when" "guard" "do"
-      "specmap" "end-specmap" "progmap" "end"
+    '(
+   ;; core specware:
+      "as"
+      "by"
+      "case"
+      "choose"
+      "colimit"
+      "else"
+      "embed"
+      "embed?"
+      "endspec"
+      "ex"
+      "fa"
+      "false"
+      "fn"
+      "from"
+      "generate"
+      "if"
+      "import"
+      "in"
+      "infixl"
+      "infixr"
+      "is"
+      "let"
+      "obligations"
+      "of"
+      "qualifying"
+      "quotient"
+      "then"
+      "translate"
+      "true"
+   ;; accord extension:
+      "arcs"
+      "compile"
+      "cond"
+      "do"
+      "end"
+      "end-diagram"
+      "end-espec"
+      "end-espec-refinement"
+      "end-if"
+      "end-mode"
+      "end-module"
+      "end-prog"
+      "end-spec"
+      "end-specmap"
+      "end-stad"
+      "end-step"
+      "end-while"
+      "end-with"
+      "final"
+      "guard"
+      "initial"
+      "nodes"
+      "prog"
+      "progmap"
+      "specmap"
+      "step"
+      "when"
+      "while"
+      "with"
       ))
 
 (defconst specware-keywords-regexp
