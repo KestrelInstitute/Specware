@@ -77,16 +77,16 @@ def checkSubsortFormat srt =
 	 raise(UnsupportedSubsortTerm(printSort srt),sortAnn(srt))
     }
 
-op checkBaseTypeAlias: SortInfo -> Sort -> JGenEnv ()
+op checkBaseTypeAlias: SortInfo -> Sort -> JGenEnv Boolean
 def checkBaseTypeAlias srt_info srt =
   {
    spc <- getEnvSpec;
    if baseType?(spc,srt) then
      {
-      println (warn(sortAnn srt,"Ignoring sort " ^ printAliases srt_info.names ^ " defined as alias for base type " ^printSort srt));
-      return ()
+      vprintln (warn(sortAnn srt,"Ignoring sort " ^ printAliases srt_info.names ^ " defined as alias for base type " ^printSort srt));
+      return true
      }
-   else return ()
+   else return false
   }
 
 op sortToClsDecls: Qualifier * Id * SortInfo -> JGenEnv ()
@@ -96,17 +96,20 @@ def sortToClsDecls (_(* qualifier *), id, sort_info) =
      {
       srtDef_a <- return(firstSortDefInnerSort sort_info);
       srtDef <- checkSubsortFormat srtDef_a;
-      checkBaseTypeAlias sort_info srtDef;
-      case srtDef of
-	| Product   (fields,                    _) -> productToClsDecls   (id, srtDef)
-	| CoProduct (summands,                  _) -> coProductToClsDecls (id, srtDef)
-	| Quotient  (superSort, quotientPred,   _) -> quotientToClsDecls  (id, superSort,quotientPred)
-	| Subsort   (superSort, pred,           _) -> subSortToClsDecls   (id, superSort,pred)
-	| Base      (Qualified (qual, id1), [], _) -> userTypeToClsDecls  (id, id1)
-	| Boolean   _                              -> userTypeToClsDecls  (id, "Boolean")
-	| _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
-	  raise(NotSupported("type definition: type "^id^" = "^printSort(srtDef)),sortAnn(srtDef))
-    }
+      base_type_alias? <- checkBaseTypeAlias sort_info srtDef;
+      if base_type_alias? then
+	return ()
+      else
+	case srtDef of
+	  | Product   (fields,                    _) -> productToClsDecls   (id, srtDef)
+	  | CoProduct (summands,                  _) -> coProductToClsDecls (id, srtDef)
+	  | Quotient  (superSort, quotientPred,   _) -> quotientToClsDecls  (id, superSort,quotientPred)
+	  | Subsort   (superSort, pred,           _) -> subSortToClsDecls   (id, superSort,pred)
+	  | Base      (Qualified (qual, id1), [], _) -> userTypeToClsDecls  (id, id1)
+	  | Boolean   _                              -> userTypeToClsDecls  (id, "Boolean")
+	  | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
+	    raise(NotSupported("type definition: type "^id^" = "^printSort(srtDef)),sortAnn(srtDef))
+       }
 
 (**
  * sort A = B is translated to the empty class A extending B (A and B are user sorts).
