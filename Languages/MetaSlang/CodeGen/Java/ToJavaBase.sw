@@ -477,9 +477,12 @@ def mkThisExpr() =
 op mkBaseJavaBinOp: Id -> Java.BinOp
 def mkBaseJavaBinOp(id) =
   case id of
-    | "&"  -> CdAnd  % was "&&" but I think that's buggy in Specware 4.0
+    | "&&"  -> CdAnd  % was "&&" but I think that's buggy in Specware 4.0
     | "or" -> CdOr
+    | "&" -> And
     | "=" -> Eq
+    | "==" -> Eq
+    | "!=" -> NotEq
     | ">" -> Gt
     | "<" -> Lt
     | ">=" -> Ge
@@ -487,8 +490,13 @@ def mkBaseJavaBinOp(id) =
     | "+" -> Plus
     | "-" -> Minus
     | "*" -> Mul
+    | "|" -> InclOr
+    | "^" -> ExclOr
     | "div" -> Div
     | "rem" -> Rem
+    | "<<" -> LShft
+    | ">>" -> RShft
+    | ">>>" -> RShftSp
 
 op mkBaseJavaUnOp: Id -> Java.UnOp
 def mkBaseJavaUnOp(id) =
@@ -520,10 +528,15 @@ def mkBinExp(opId, javaArgs) =
   let [ja1, ja2] = javaArgs in
   CondExp (Bin (mkBaseJavaBinOp(opId), Un (Prim (Paren (ja1))), Un (Prim (Paren (ja2)))), None)
 
-op mkUnExp: Id * List Java.Expr -> Java.Expr
-def mkUnExp(opId, javaArgs) =
+op Id.mkUnExp: Id * List Java.Expr -> Java.Expr
+def Id.mkUnExp(opId, javaArgs) =
   let [ja] = javaArgs in
   CondExp (Un (Un (mkBaseJavaUnOp(opId), Prim (Paren (ja)))), None)
+
+op UnOp.mkUnExp: UnOp * List Java.Expr -> Java.Expr
+def UnOp.mkUnExp(unop, javaArgs) =
+  let [ja] = javaArgs in
+  CondExp (Un (Un (unop, Prim (Paren (ja)))), None)
 
 op mkJavaNot: Java.Expr -> Java.Expr
 def mkJavaNot e1 =

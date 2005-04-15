@@ -3,14 +3,14 @@
  * to java.lang method (String utilities)
  *)
 
-JGen qualifying
+%JGen qualifying
 spec
 
   import ToJavaBase
   import ToJavaStatements
   import Monad
 
-  op  specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
+  %op  specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
   def specialTermToExpressionM(tcx,term,k,l) =
     %let _ = writeLine("specialTermToExpression: term="^printTerm(term)) in
     let
@@ -98,6 +98,24 @@ spec
 	 return(Some (s,expr,k,l))
 	}
     in
+
+    %% this is part of the BitString hack (see below):
+    let
+      def bitStringOp1(opid,t1,k,l) =
+	{
+	 (block,e1,k,l) <- termToExpressionM(tcx,t1,k,l);
+	 let res = mkUnExp(BitNot,[e1]) in
+	 return (Some(block,res,k,l))
+	}
+      def bitStringOp(opid,t1,t2,k,l) =
+	{
+	 (block,[e1,e2],k,l) <- translateTermsToExpressionsM(tcx,[t1,t2],k,l);
+	 let res = mkBinExp(opid,[e1,e2]) in
+	 return (Some(block,res,k,l))
+	}
+    in
+    %% ----------------------------------------------
+
     case term of
       | Apply(Apply(Fun(Op(Qualified(newq,"new"),_),_,_),Fun(Op(Qualified(_,className),_),_,_),_),arg,_) ->
         let _ = writeLine("found new, qualifier="^newq^", className="^className^", args="^(printTerm arg)) in
@@ -222,6 +240,24 @@ spec
       | Apply(Fun(Op(Qualified("Char",fun as "isUpperCase"),_),_,_),t,_) -> charFun(fun,t)
       | Apply(Fun(Op(Qualified("Char",fun as "toLowerCase"),_),_,_),t,_) -> charFun(fun,t)
       | Apply(Fun(Op(Qualified("Char",fun as "toUpperCase"),_),_,_),t,_) -> charFun(fun,t)
+
+      %% special cases for the BitString class (hack)
+      | Apply(Fun(Op(Qualified(_,"complement"),_),_, _), t1,b) -> bitStringOp1(BitNot,t1,k,l)
+      | Apply(Fun(Op(Qualified(_,"notZero"),_),_, _), t1,b) ->
+	{
+	 (block,e1,k,l) <- termToExpressionM(tcx,t1,k,l);
+	 let res = mkBinExp("!=",[e1,mkJavaNumber 0]) in
+	 return (Some(block,res,k,l))
+	}
+      | Apply(Fun(Op(Qualified(_,"leftShift"),_),_, _), Record([(_,t1),(_,t2)],_),b) -> bitStringOp("<<",t1,t2,k,l)
+      | Apply(Fun(Op(Qualified(_,"rightShift"),_),_, _), Record([(_,t1),(_,t2)],_),b) -> bitStringOp(">>>",t1,t2,k,l)
+      | Apply(Fun(Op(Qualified(_,"andBits"),_),_, _), Record([(_,t1),(_,t2)],_),b) -> bitStringOp("&",t1,t2,k,l)
+      | Apply(Fun(Op(Qualified(_,"xorBits"),_),_, _), Record([(_,t1),(_,t2)],_),b) -> bitStringOp("^",t1,t2,k,l)
+      | Apply(Fun(Op(Qualified(_,"orBits"),_),_, _), Record([(_,t1),(_,t2)],_),b) -> bitStringOp("|",t1,t2,k,l)
+      %% -------------------------------------------
+
+
+
       | Apply(Fun(Op(qid as Qualified(qual,id),_),opsrt,_),argterm,b) ->
 	if builtinBaseTypeId?(qual) then return None else
 	%let _ = writeLine("checking for method call of "^qual^"."^id) in
@@ -254,6 +290,13 @@ spec
 	  %let _ = writeLine("    "^(printQualifiedId qid)^" *not* found in spec."^(printSpec spc)) in
 	  return None
        }
+
+      % more special cases for the BitString library (hack)
+      | Fun(Op(Qualified(q,"Zero"),_),_,_) -> return(Some([],mkJavaNumber 0,0,0))
+      | Fun(Op(Qualified(q,"One"),_),_,_) -> return(Some([],mkJavaNumber 1,0,0))
+      % ---------------------------------------------------
+
+
       | _ -> return None
 
 endspec
