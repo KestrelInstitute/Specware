@@ -875,7 +875,6 @@ def generateJavaCodeFromTransformedSpecM spc =
    let jspc = (None, imports, clsOrInterfDecls) in
    let jspc = mapJName (mapJavaIdent sep) jspc in
    let jspc = mapJName (fn | "BitString" -> "int" | id -> id) jspc in
-   let jspc 
    return jspc
   }
 
