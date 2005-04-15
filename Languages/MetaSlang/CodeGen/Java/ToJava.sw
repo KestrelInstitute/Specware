@@ -83,10 +83,10 @@ def checkBaseTypeAlias srt_info srt =
   {
    spc <- getEnvSpec;
    if baseType?(spc,srt) then
-     {
-      vprintln (warn(sortAnn srt,"Ignoring sort " ^ printAliases srt_info.names ^ " defined as alias for base type " ^printSort srt));
+     %{
+      %vprintln (warn(sortAnn srt,"Ignoring sort " ^ printAliases srt_info.names ^ " defined as alias for base type " ^printSort srt));
       return true
-     }
+     %}
    else return false
   }
 
@@ -95,22 +95,36 @@ def sortToClsDecls (_(* qualifier *), id, sort_info) =
    if ~(definedSortInfo? sort_info) then return ()
    else
      {
-      srtDef_a <- return(firstSortDefInnerSort sort_info);
-      srtDef <- checkSubsortFormat srtDef_a;
-      base_type_alias? <- checkBaseTypeAlias sort_info srtDef;
-      if base_type_alias? then
+      ignoreTypeDefFun <- getIgnoreTypeDefFun;
+      if ignoreTypeDefFun id then
+	%let _ = writeLine("*** ignoring type definition for "^id) in
 	return ()
       else
-	case srtDef of
-	  | Product   (fields,                    _) -> productToClsDecls   (id, srtDef)
-	  | CoProduct (summands,                  _) -> coProductToClsDecls (id, srtDef)
-	  | Quotient  (superSort, quotientPred,   _) -> quotientToClsDecls  (id, superSort,quotientPred)
-	  | Subsort   (superSort, pred,           _) -> subSortToClsDecls   (id, superSort,pred)
-	  | Base      (Qualified (qual, id1), [], _) -> userTypeToClsDecls  (id, id1)
-	  | Boolean   _                              -> userTypeToClsDecls  (id, "Boolean")
-	  | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
-	    raise(NotSupported("type definition: type "^id^" = "^printSort(srtDef)),sortAnn(srtDef))
-       }
+	{
+	 srtDef_a <- return(firstSortDefInnerSort sort_info);
+	 srtDef <- checkSubsortFormat srtDef_a;
+	 base_type_alias? <- checkBaseTypeAlias sort_info srtDef;
+	 %if base_type_alias? then
+	 %return ()
+	 %else
+	 case srtDef of
+	   | Product   (fields,                    _) -> productToClsDecls   (id, srtDef)
+	   | CoProduct (summands,                  _) -> coProductToClsDecls (id, srtDef)
+	   | Quotient  (superSort, quotientPred,   _) -> quotientToClsDecls  (id, superSort,quotientPred)
+	   | Subsort   (superSort, pred,           _) -> subSortToClsDecls   (id, superSort,pred)
+	   | Base      (Qualified (qual, id1), [], _) ->
+	     if base_type_alias? then
+	       let _ = writeLine(";; adding type alias: "^id^" = "^id1) in
+	       addTypeAlias(id, id1)
+	     else
+	       userTypeToClsDecls(id,id1)
+	   | Boolean   _                              ->
+	     let _ = writeLine(";; adding type alias: "^id^" = Boolean") in
+	     addTypeAlias(id, "Boolean")
+	   | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
+	     raise(NotSupported("type definition: type "^id^" = "^printSort(srtDef)),sortAnn(srtDef))
+	}
+     }
 
 (**
  * sort A = B is translated to the empty class A extending B (A and B are user sorts).
@@ -861,6 +875,7 @@ def generateJavaCodeFromTransformedSpecM spc =
    let jspc = (None, imports, clsOrInterfDecls) in
    let jspc = mapJName (mapJavaIdent sep) jspc in
    let jspc = mapJName (fn | "BitString" -> "int" | id -> id) jspc in
+   let jspc 
    return jspc
   }
 

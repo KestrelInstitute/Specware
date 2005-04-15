@@ -102,8 +102,8 @@ def unfoldSortAliases spc =
       let (tvs, srt) = unpackFirstSortDef info in
       let Base (qid, psrts, _) = srt in
       let qid0 = Qualified (q0, id0) in
-      % let _ = writeLine ("sort alias found: "^printQualifiedId qid0^" = "^printQualifiedId qid) in
-      % let srts = filter (fn (q1, id1, _) -> ~((q1 = q0) && (id1 = id0))) srts in
+      %let _ = writeLine ("sort alias found: "^printQualifiedId qid0^" = "^printQualifiedId qid) in
+      %let srts = filter (fn (q1, id1, _) -> ~((q1 = q0) && (id1 = id0))) srts in
       let sortmap = foldl (fn ((q, id, info), srtmap) ->
 			   let new_names = filter (fn Qualified(q1,id1) -> ~((q1 = q0) && (id1 = id0))) info.names in
 			   case new_names of
@@ -124,8 +124,11 @@ def unfoldSortAliases spc =
         def mapSrt s =
 	  case s of
 	    | Base (qid2, srts, b) -> if qid2 = qid0 then 
+				     %let Qualified(_,id) = qid in
+				     %let Qualified(_,id2) = qid2 in
+				     %let _ = writeLine("---> replacing type "^id2^" with "^id) in
 				     Base (qid,  psrts, b)
-				   else 
+				   else
 				     Base (qid2, srts,  b)
 	    | _ -> s
       in
