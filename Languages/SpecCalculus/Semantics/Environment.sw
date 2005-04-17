@@ -61,10 +61,24 @@ UnitId_Dependency.
   %% so this can't easily be defined in Types.sw
   op ppValueInfo : ValueInfo -> Doc
   def ppValueInfo (value,timeStamp,depUIDs) =
-    ppConcat([ppValue value,
-              ppString (Nat.toString timeStamp)]
+    ppConcat([ppString "[Value: ",
+	      ppValue value,
+	      ppString "]",
+	      ppNewline,
+	      ppString "[Timestamp: ",
+              ppString (Nat.toString timeStamp),
+	      ppString "]",
+	      ppNewline,
+	      ppString "[Dependencies: "]
              ++
-	     (map ppUID depUIDs))
+	     (foldl (fn (uid, docs) -> 
+		     case docs of
+		       | [] -> [ppUID uid]
+		       | _  -> docs ++ [ppNewline, ppUID uid])
+	            [] 
+		    depUIDs)
+	     ++
+	     [ppString "]"])
 
 \end{spec}
 
