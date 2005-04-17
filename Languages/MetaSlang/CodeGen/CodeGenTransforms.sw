@@ -369,6 +369,9 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 	      else 
 		foldriAQualifierMap
 		  (fn (q, id, info, map) ->
+		   if q = "Accord" && id = "Update" then
+		     insertAQualifierMap (map, q, id, info)
+		   else
 		   case firstSortDefTyVars info of
 		     | [] -> insertAQualifierMap (map, q, id, info)
 		     | _ -> map)
@@ -397,6 +400,8 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
     | Base (qid0 as Qualified (q, id), insttv as _::_, b) ->
       %% We are trying to simplify instances of polymorphic sorts where
       %% all the type vars have been instantitated.
+      if q = "Accord" && id = "ProcType" then (srt, minfo) else
+      if q = "Accord" && id = "Update"   then (srt, minfo) else
       if exists (fn (TyVar _) -> true | s -> false) insttv then (srt, minfo) else
       let suffix = getSortNameSuffix insttv in
       let qid = Qualified (q, id^suffix) in

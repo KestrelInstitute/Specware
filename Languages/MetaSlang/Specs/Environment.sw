@@ -225,10 +225,19 @@ spec
     of Arrow (dom, rng, _) -> Some (dom, rng)
      | _ -> None
 
+ def ProcTypeOpt (sp : Spec, srt : Sort) = 
+  case stripSubsorts (sp, srt) of
+    | Base (Qualified ("Accord", "ProcType"), [dom, rng, _], _) ->
+      Some (dom, rng)
+    | _ -> None
+
  def rangeOpt (sp, srt) = 
-  case arrowOpt (sp, srt)
-    of None -> None
-     | Some (_, rng) -> Some rng
+  case arrowOpt (sp, srt) of
+    | None ->
+      (case ProcTypeOpt (sp, srt) of 
+	 | Some (_, rng) -> Some rng
+	 | _ -> None)
+    | Some (_, rng) -> Some rng
 
  def productOpt (sp : Spec, srt : Sort) = 
   case stripSubsorts (sp, srt)

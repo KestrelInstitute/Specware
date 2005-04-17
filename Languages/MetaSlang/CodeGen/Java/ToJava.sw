@@ -91,7 +91,7 @@ def checkBaseTypeAlias srt_info srt =
   }
 
 op sortToClsDecls: Qualifier * Id * SortInfo -> JGenEnv ()
-def sortToClsDecls (_(* qualifier *), id, sort_info) =
+def sortToClsDecls (q, id, sort_info) =
    if ~(definedSortInfo? sort_info) then return ()
    else
      {
@@ -122,6 +122,7 @@ def sortToClsDecls (_(* qualifier *), id, sort_info) =
 	     let _ = writeLine(";; adding type alias: "^id^" = Boolean") in
 	     addTypeAlias(id, "Boolean")
 	   | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
+	     if q = "Accord" && (id = "Update" || id = "ProcType") then return () else
 	     raise(NotSupported("type definition: type "^id^" = "^printSort(srtDef)),sortAnn(srtDef))
 	}
      }
