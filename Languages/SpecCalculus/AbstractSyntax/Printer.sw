@@ -25,7 +25,11 @@ SpecCalc qualifying spec
  import Types
  import ../../MetaSlang/Specs/SimplePrinter % based on /Library/PrettyPrinter/WadlerLindig
 
-  op ppValueInfo : ValueInfo -> Doc
+  %% ppValue is defined in /Languages/SpecCalculus/Semantics/Value, 
+  %% but we can't import that without circularity...
+
+  op ppValue : Value -> Doc  
+
 
  %% never called...
   op showSpecTerm : [a] SpecTerm a -> String
@@ -293,8 +297,8 @@ SpecCalc qualifying spec
 	ppConcat [ppString "obligations ",
 		  ppTerm term]
 
-      | Quote value_info -> 
-	ppValueInfo value_info
+      | Quote (value,_,_) -> 
+	ppValue value
 
       | Other other_term -> 
 	ppOtherTerm other_term
