@@ -77,6 +77,6 @@ spec
   op mkBinExp: Id * List Java.Expr -> Java.Expr
   op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
   op mkVarJavaExpr: Id -> Java.Expr
-
+  op mkNewClasInst: Id * List Java.Expr -> Java.Expr
 
 end-spec

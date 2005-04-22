@@ -19,6 +19,7 @@ op specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Blo
  *) 
 op termToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def termToExpressionM(tcx, term, k, l) =
+  %let _ = toScreen(";;; termToExpression: term="^ printTerm term) in
   {
    specialFun <- getSpecialFun;
    res <- specialFun(tcx,term,k,l);
@@ -105,7 +106,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
    spc <- getEnvSpec;
    let
     def opvarcase(q,id) =
-      %let _ = writeLine(";; translateApplyToExpr: id="^id^", term="^(printTerm term)) in
+      %let _ = writeLine(";; translateApplyToExpr: id="^id) in %^", term="^(printTerm term)) in
       let isField? = (case AnnSpec.findTheOp(spc,Qualified(q,id)) of
 			| None -> false
 			| Some opinfo ->

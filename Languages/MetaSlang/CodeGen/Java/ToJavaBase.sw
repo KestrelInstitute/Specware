@@ -263,6 +263,13 @@ def tt_v2(id) =
     | _ -> (Name ([], id), 0)
 
 
+op mapAliasesFun: List(String * String) -> String -> String
+def mapAliasesFun aliases id =
+  case aliases of
+    | [] -> id
+    | (id0,alias)::aliases -> if id = id0 then getJavaTypeId(tt_v2 alias)
+                              else mapAliasesFun aliases id 
+
 (**
  * returns whether or not the given type is the void type, i.e. the product type
  * with an empty field list
@@ -1169,12 +1176,24 @@ def mapJavaIdent sep id =
   let id = foldr (fn(#?,id) -> sep^"Q"^id
 		  | (#<,id) -> sep^"LT"^id
 		  | (#>,id) -> sep^"GT"^id
+		  | (#-,id) -> "_"^id
 		  | (c,id) -> Char.toString(c)^id) "" idarray
   in
     id
   %if javaKeyword? id then id^"$" else id
 
+% --------------------------------------------------------------------------------
 
+op isAnyTerm?: MS.Term -> Boolean
+def isAnyTerm? t =
+  let def stripSortedTerm trm =
+  (case trm of
+     | SortedTerm(trm,_,_) -> stripSortedTerm trm
+     | _ -> trm)
+  in
+  case stripSortedTerm t of
+    | Any _ -> true
+    | _ -> false
 
 % --------------------------------------------------------------------------------
 %

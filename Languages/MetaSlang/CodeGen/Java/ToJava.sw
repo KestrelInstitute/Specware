@@ -567,6 +567,7 @@ def modifyClsDeclsFromOps =
 
 op modifyClsDeclsFromOp: Id * Id * OpInfo -> JGenEnv ()
 def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
+  
   {
    %% print("\nmodifyClsDeclsFromOp: [" ^ id ^ "]\n");
    spc <- getEnvSpec;
@@ -667,6 +668,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
 	     primitiveClassName <- getPrimitiveClassName;
 	     (vars, body) <- return(srtTermDelta(srt, trm));
 	     optjexpr <-
+	        if isAnyTerm? trm then return None else
 	        (case trm of
 		   | Any _ -> return None
 		   | _ -> {
@@ -682,7 +684,8 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
 	   Base (Qualified (_, srtId), _, _) <- return srt;
 	   (vars, body) <- return(srtTermDelta(srt, trm));
 	   (_, jE, _, _) <- termToExpressionM(empty, body, 1, 1);
-	   let fldDecl = ([Static], tt(srtId), ((id, 0), Some (Expr (jE))), []) in
+	   let optjexpr = if isAnyTerm? trm then None else Some(Expr jE) in
+	   let fldDecl = ([Static], tt(srtId),((id, 0),optjexpr),[]) in
 	   addFldDeclToClsDeclsM(srtId, fldDecl)
 	  }
    }
@@ -834,11 +837,12 @@ def builtinSortOp(qid) =
 %op transformSpecForJavaCodeGen: Spec -> Spec -> Spec
 def transformSpecForJavaCodeGen basespc spc =
   %let _ = writeLine("transformSpecForJavaCodeGen...") in
+  let spc = unfoldSortAliases spc in
   let spc = translateRecordMergeInSpec spc in
   let spc = identifyIntSorts spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
   let spc = poly2mono(spc,false) in
-  let spc = unfoldSortAliases spc in
+  %let spc = unfoldSortAliases spc in
   let spc = letWildPatToSeq spc in
   let spc = instantiateHOFns spc in
   let spc = lambdaLift spc in
@@ -869,6 +873,7 @@ def generateJavaCodeFromTransformedSpecM spc =
    arrowcls <- getArrowClasses;
    insertClsDeclsForCollectedProductSorts;
    clsDecls <- getClsDecls;
+   typeNameAliases <- getTypeAliases;
    let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
    let clsDecls = clsDecls ++ arrowcls in
    let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
@@ -876,6 +881,7 @@ def generateJavaCodeFromTransformedSpecM spc =
    let jspc = (None, imports, clsOrInterfDecls) in
    let jspc = mapJName (mapJavaIdent sep) jspc in
    let jspc = mapJName (fn | "BitString" -> "int" | id -> id) jspc in
+   let jspc = mapJName (mapAliasesFun typeNameAliases) jspc in
    return jspc
   }
 
