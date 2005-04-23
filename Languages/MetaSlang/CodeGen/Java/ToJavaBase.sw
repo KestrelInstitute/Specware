@@ -471,6 +471,10 @@ def mkJavaString(s) =
 def mkJavaChar(c) =
   CondExp (Un (Prim (Char (c))), None)
 
+op mkJavaCastExpr: Java.Type * Java.Expr -> Java.Expr
+def mkJavaCastExpr(jtype,jexpr) =
+  CondExp(Un(Cast(jtype,Prim(Paren(jexpr)))),None)
+
 %op mkVarJavaExpr: Id -> Java.Expr
 def mkVarJavaExpr(id) = CondExp (Un (Prim (Name ([], id))), None)
 

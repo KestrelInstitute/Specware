@@ -765,18 +765,30 @@ def unfoldToSubsort(spc,srt) =
       | Subsort _ -> usrt
       | _ -> srt
 
+% ----------------------------------------
+op insertCast: Id * Id * Java.Expr -> Block -> JGenEnv Block
+def insertCast(typeId,cons,caseExpr) caseBlock =
+  {
+   sep <- getSep;
+   subTypeId <- return (mkSumd(cons,typeId,sep));
+   castExpr <- return(mkJavaCastExpr(mkJavaObjectType subTypeId,caseExpr));
+   return ([Stmt(Expr castExpr)]++caseBlock)
+  }
+% ----------------------------------------
+
 op translateCaseCasesToSwitchesRetM: TCx * Sort * Java.Expr * List(Id * Term) * Option Term * Nat * Nat * Nat
                                     -> JGenEnv (SwitchBlock * Nat * Nat)
 def translateCaseCasesToSwitchesRetM(tcx, coSrt, caseExpr, cases, opt_other, k0, l0, l) =
   let def translateCaseCaseToSwitch((cons,body), ks, ls) =
         {
 	 spc <- getEnvSpec;
-	 (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
 	 coSrt <- return(unfoldToSubsort(spc,coSrt));
 	 caseType <- srtIdM coSrt;
+	 (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	 caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
 	 let tagId = mkTagCId cons in
 	 let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	 let switchElement = ([switchLab], caseBlock) in
+	 let switchElement = ([switchLab],caseBlock) in
 	 return (switchElement, newK, newL)
 	}
   in
