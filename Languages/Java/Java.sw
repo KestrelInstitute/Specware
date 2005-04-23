@@ -634,5 +634,230 @@ def javaKeyword?(id) =
   id="static" or
   id="while"
 
+% --------------------------------------------------------------------------------
+
+% auxiliary type to extract the actual expression from a Java Expr, i.e. any
+% "wrapping" constructor is stripped from the expression.
+
+type ActualExpr = | Expr Expr
+                  | CondExp CondExp
+                  | BinExp BinExp
+                  | UnExp UnExp
+                  | Prim Prim
+
+% returns the actual expr, i.e. "wrapper" constructors are removed
+% in order to get the real contents of the expression
+op Expr.getActualExpr: Expr -> ActualExpr
+def Expr.getActualExpr e =
+  case e of
+    | CondExp ce -> getActualExpr ce
+    | _ -> Expr e
+
+op CondExp.getActualExpr: CondExp -> ActualExpr
+def CondExp.getActualExpr ce =
+  case ce of
+    | (be,None) -> getActualExpr be
+    | _ -> CondExp ce
+
+op BinExp.getActualExpr: BinExp -> ActualExpr
+def BinExp.getActualExpr be =
+  case be of
+    | Un ue -> getActualExpr ue
+    | _ -> BinExp be
+
+op UnExp.getActualExpr: UnExp -> ActualExpr
+def UnExp.getActualExpr ue =
+  case ue of
+    | Prim p -> getActualExpr p
+    | _ -> UnExp ue
+
+op Prim.getActualExpr: Prim -> ActualExpr
+def Prim.getActualExpr p =
+  case p of
+    | Paren e -> getActualExpr e
+    | _ -> Prim p
+
+% ----------------------------------------
+
+% wrap the ActualExpr so that it becomes a Java Expr
+op ActualExpr.wrap: ActualExpr -> Expr
+def ActualExpr.wrap ae =
+  case ae of
+    | Expr e -> e
+    | CondExp ce -> CondExp ce
+    | BinExp be -> wrap(CondExp (be,None))
+    | UnExp ue -> wrap(BinExp (Un ue))
+    | Prim p -> wrap(UnExp (Prim p))
+
+% --------------------------------------------------------------------------------
+
+op getMapExprFun: (Expr * Expr) -> Expr -> Expr
+def getMapExprFun(oldExpr,newExpr) e0 =
+  let actualOldExpr = getActualExpr oldExpr in
+  let actualE0 = getActualExpr e0 in
+  if actualE0 = actualOldExpr then newExpr
+  else e0
+
+op Expr.mapOneExpr: (Expr * Expr) -> Expr -> Expr
+def Expr.mapOneExpr (oldExpr,newExpr) =
+  let mex = getMapExprFun(oldExpr,newExpr) in
+  mapExpr mex
+
+op Block.mapOneExpr: (Expr * Expr) -> Block -> Block
+def Block.mapOneExpr(oldExpr,newExpr) =
+  let mex = getMapExprFun(oldExpr,newExpr) in
+  mapExpr mex
+
+
+% --------------------------------------------------------------------------------
+
+op Expr.mapExpr: (Expr -> Expr) -> Expr -> Expr
+def Expr.mapExpr mex e =
+  let e1 =
+    case e of
+      | CondExp ce -> CondExp(mapExpr mex ce)
+      | Ass(lhs,assignop,e) -> Ass(lhs,assignop,mapExpr mex e)
+  in
+  if e1 = e then mex e else e1
+
+op CondExp.mapExpr: (Expr -> Expr) -> CondExp -> CondExp
+def CondExp.mapExpr mex ce =
+  case ce of
+    | (be,None) -> (mapExpr mex be,None)
+    | (be,Some(e,ce)) -> (mapExpr mex be,Some(mapExpr mex e,mapExpr mex ce))
+
+
+op BinExp.mapExpr: (Expr -> Expr) -> BinExp -> BinExp
+def BinExp.mapExpr mex be =
+  case be of
+    | Bin(bop,be1,be2) -> Bin(bop,mapExpr mex be1,mapExpr mex be2)
+    | InstOf(be,ty) -> InstOf(mapExpr mex be,ty)
+    | Un ue -> Un(mapExpr mex ue)
+
+op UnExp.mapExpr: (Expr -> Expr) -> UnExp -> UnExp
+def UnExp.mapExpr mex ue =
+  case ue of
+    | Un(uop,ue) -> Un(uop,mapExpr mex ue)
+    | Cast(ty,ue) -> Cast(ty,mapExpr mex ue)
+    | PostUn(ue,puop) -> PostUn(mapExpr mex ue,puop)
+    | Prim p -> Prim(mapExpr mex p)
+
+op Prim.mapExpr: (Expr -> Expr) -> Prim -> Prim
+def Prim.mapExpr mex p =
+  case p of
+    | Paren e -> Paren(mapExpr mex e)
+    | NewClsInst nci -> NewClsInst(mapExpr mex nci)
+    | NewArr na -> NewArr(mapExpr mex na)
+    | FldAcc facc -> FldAcc(mapExpr mex facc)
+    | MethInv mi -> MethInv(mapExpr mex mi)
+    | ArrAcc aacc -> ArrAcc(mapExpr mex aacc)
+    | _ -> p
+
+
+
+op NewClsInst.mapExpr: (Expr -> Expr) -> NewClsInst -> NewClsInst
+def NewClsInst.mapExpr mex nci =
+  case nci of
+    | ForCls(n,es,optcb) ->
+      let es = map (mapExpr mex) es in
+      let optcb = mapOption (mapExpr mex) optcb in
+      ForCls(n,es,optcb)
+    | ForInnCls(p,id,es,optcb) ->
+      let p = mapExpr mex p in
+      let es = map (mapExpr mex) es in
+      let optcb = mapOption (mapExpr mex) optcb in
+      ForInnCls(p,id,es,optcb)
+
+op NewArr.mapExpr: (Expr -> Expr) -> NewArr -> NewArr
+def NewArr.mapExpr mex na =
+  case na of
+    | Arr(name,es,n) -> Arr(name,map (mapExpr mex) es,n)
+    | ArrWInit(name,n,ai) -> ArrWInit(name,n,mapExpr mex ai)
+
+op ArrInit.mapExpr: (Expr -> Expr) -> ArrInit -> ArrInit
+def ArrInit.mapExpr mex ai =
+  map (mapOption (mapExpr mex)) ai
+
+op VarInit.mapExpr: (Expr -> Expr) -> VarInit -> VarInit
+def VarInit.mapExpr mex vi =
+  case vi of
+    | Expr e -> Expr(mapExpr mex e)
+    | ArrInit ai -> ArrInit(mapExpr mex ai)
+
+op FldAcc.mapExpr: (Expr -> Expr) -> FldAcc -> FldAcc
+def FldAcc.mapExpr mex facc =
+  case facc of
+    | ViaPrim(p,id) -> ViaPrim(mapExpr mex p,id)
+    | _ -> facc
+
+op MethInv.mapExpr: (Expr -> Expr) -> MethInv -> MethInv
+def MethInv.mapExpr mex mi =
+  case mi of
+    | ViaName(name,es) -> ViaName(name,map (mapExpr mex) es)
+    | ViaPrim(p,id,es) -> ViaPrim(mapExpr mex p,id,map (mapExpr mex) es)
+    | ViaSuper(id,es) -> ViaSuper(id,map (mapExpr mex) es)
+    | ViaClsSuper(name,id,es) -> ViaClsSuper(name,id,map (mapExpr mex) es)
+
+op ArrAcc.mapExpr: (Expr -> Expr) -> ArrAcc -> ArrAcc
+def ArrAcc.mapExpr mex aacc =
+  case aacc of
+    | ViaName(name,e) -> ViaName(name,mapExpr mex e)
+    | ViaNoNewArray(p,e) -> ViaNoNewArray(mapExpr mex p,mapExpr mex e)
+
+op Block.mapExpr: (Expr -> Expr) -> Block -> Block
+def Block.mapExpr mex = map (mapExpr mex)
+
+op BlockStmt.mapExpr: (Expr -> Expr) -> BlockStmt -> BlockStmt
+def BlockStmt.mapExpr mex bstmt =
+  case bstmt of
+    | LocVarDecl(isfinal,ty,vdecl,vdecls) -> LocVarDecl(isfinal,ty,mapExpr mex vdecl,map (mapExpr mex) vdecls)
+    | ClsDecl(mods,ch,cb) -> ClsDecl(mods,ch,mapExpr mex cb)
+    | Stmt s -> Stmt(mapExpr mex s)
+
+op VarDecl.mapExpr: (Expr -> Expr) -> VarDecl -> VarDecl
+def VarDecl.mapExpr mex (vdid,optvi) =
+  (vdid,mapOption (mapExpr mex) optvi)
+
+op Stmt.mapExpr: (Expr -> Expr) -> Stmt -> Stmt
+def Stmt.mapExpr mex s =
+  case s of
+    | Block b -> Block(mapExpr mex b)
+    | Labeled(id,s) -> Labeled(id,mapExpr mex s)
+    | If(e,s,opts) -> If(mapExpr mex e,mapExpr mex s,mapOption (mapExpr mex) opts)
+    | For(optfi,opte,optfu,s) -> For(mapOption (mapExpr mex) optfi,
+				     mapOption (mapExpr mex) opte,
+				     mapOption (mapExpr mex) optfu,
+				     mapExpr mex s)
+    | While(e,s) -> While(mapExpr mex e,mapExpr mex s)
+    | Do(s,e) -> Do(mapExpr mex s,mapExpr mex e)
+    | Try(b,fpbs,optb) -> Try(mapExpr mex b,
+			      map (fn(fp,b) -> (fp,mapExpr mex b)) fpbs,
+			      mapOption (mapExpr mex) optb)
+    | Switch(e,sb) -> Switch(mapExpr mex e,
+			     map (fn(swlabs,b) -> (map (fn(JCase e) -> JCase(mapExpr mex e)
+							 | Default -> Default) swlabs,
+						   mapExpr mex b)) sb)
+    | Synchronized(e,b) -> Synchronized(mapExpr mex e,mapExpr mex b)
+    | Return opte -> Return(mapOption (mapExpr mex) opte)
+    | Throw e -> Throw(mapExpr mex e)
+    | Expr e -> Expr(mapExpr mex e)
+    | _ -> s
+
+
+op ForInit.mapExpr: (Expr -> Expr) -> ForInit -> ForInit
+def ForInit.mapExpr mex fi =
+  case fi of
+    | LocVarDecl(isfinal,ty,vdecl,vdecls) -> LocVarDecl(isfinal,ty,mapExpr mex vdecl,map (mapExpr mex) vdecls)
+    | StmtExprs(e,es) -> StmtExprs(mapExpr mex e,map (mapExpr mex) es)
+
+op ForUpdate.mapExpr: (Expr -> Expr) -> ForUpdate -> ForUpdate
+def ForUpdate.mapExpr mex (e,es) =
+  (mapExpr mex e,map (mapExpr mex) es)
+
+%%% TODO !!!
+op ClsBody.mapExpr: (Expr -> Expr) -> ClsBody -> ClsBody
+def ClsBody.mapExpr _(*mex*) cb = cb
+
+
 endspec
 

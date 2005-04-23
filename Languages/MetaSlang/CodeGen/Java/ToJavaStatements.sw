@@ -548,6 +548,7 @@ def translateCaseCasesToSwitchesM(tcx, coSrt, caseExpr, cres, cases, opt_other, 
        coSrt <- return(unfoldToSubsort(spc,coSrt));
        caseType <- srtIdM coSrt;
        tagId <- return(mkTagCId(cons));
+       caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
        switchLab <- return(JCase (mkFldAccViaClass(caseType, tagId)));
        switchElement <- return ([switchLab], caseBlock++[Stmt(Break None)]);
        return (switchElement, newK, newL)
@@ -772,7 +773,7 @@ def insertCast(typeId,cons,caseExpr) caseBlock =
    sep <- getSep;
    subTypeId <- return (mkSumd(cons,typeId,sep));
    castExpr <- return(mkJavaCastExpr(mkJavaObjectType subTypeId,caseExpr));
-   return ([Stmt(Expr castExpr)]++caseBlock)
+   return (mapOneExpr (caseExpr,castExpr) caseBlock)
   }
 % ----------------------------------------
 
@@ -874,6 +875,7 @@ def translateCaseCasesToSwitchesAsgNVM(oldVId, tcx, coSrt, caseExpr, cases, opt_
 	 coSrt <- return(unfoldToSubsort(spc,coSrt));
 	 tagId <- return(mkTagCId cons);
 	 caseType <- srtIdM coSrt;
+	 caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
 	 let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
 	 let switchElement = ([switchLab], caseBlock++[Stmt(Break None)]) in
 	 return (switchElement, newK, newL)
@@ -957,6 +959,7 @@ def translateCaseCasesToSwitchesAsgVM(oldVId, tcx, coSrt, caseExpr, cases, opt_o
 	   (caseBlock, newK, newL) <- termToExpressionAsgVM(oldVId, tcx, body, ks, ls);
 	   coSrt <- return(unfoldToSubsort(spc,coSrt));
 	   caseType <- srtIdM coSrt;
+	   caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
 	   tagId <- return(mkTagCId(cons));
 	   switchLab <- return(JCase (mkFldAccViaClass(caseType, tagId)));
 	   switchElement <- return ([switchLab], caseBlock++[Stmt(Break None)]);
@@ -1041,6 +1044,7 @@ def translateCaseCasesToSwitchesAsgFM(cId, fId, tcx, coSrt, caseExpr, cases, opt
 	 (caseBlock, newK, newL) <- termToExpressionAsgFM(cId, fId, tcx, body, ks, ls);
 	 coSrt <- return(unfoldToSubsort(spc,coSrt));
 	 caseType <- srtIdM coSrt;
+	 caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
 	 let tagId = mkTagCId(cons) in
 	 let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
 	 let switchElement = ([switchLab], caseBlock++[Stmt(Break None)]) in

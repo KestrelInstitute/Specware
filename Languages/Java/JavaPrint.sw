@@ -744,10 +744,12 @@ Java qualifying spec
                                      toPretty " ",
                                      ppUnExp(ue,false),
                                      if omitBrackets? then emptyPretty() else toPretty " )"]
-      | Cast (t,ue)   -> prettysNone [toPretty "(",
+      | Cast (t,ue)   -> prettysNone [toPretty "((",
                                       ppType t,
                                       toPretty ")",
-                                      ppUnExp(ue,false)]
+                                      ppUnExp(ue,false),
+				      toPretty ")"
+				     ]
       | PostUn (ue,o) -> prettysNone [ppUnExp(ue,false), 
                                       ppPostUnOp o]
       | Prim pm       -> ppPrim pm

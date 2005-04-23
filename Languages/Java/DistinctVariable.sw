@@ -1,4 +1,4 @@
-%JGen qualifying
+JGen qualifying
 spec
 
 import LiftPattern
@@ -147,17 +147,26 @@ def distinctVarIfThenElse(term as IfThenElse(t1, t2, t3, _), ids) =
     let res = MS.mkIfThenElse(newT1, newT2, newT3) in
     (withAnnT(res,termAnn(term)), newIds)
 
+op getPatternIds: Pattern -> List Id
+def getPatternIds pat =
+  case pat of
+    | VarPat((id,_),_) -> [id]
+    | _ -> []
+
 def distinctVarCase(term, ids) =
   let b = termAnn(term) in
   let caseTerm = caseTerm(term) in
   let (newCaseTerm, newIds1) = distinctVar(caseTerm, ids) in
   let cases = caseCases(term) in
-  let caseBodys = map (fn (pat, cond, patBody) -> patBody) cases in
-  let (newCaseBodys, newIds2) = distinctVars(caseBodys, newIds1) in
+  let (caseBodys,newIds2) = foldl (fn ((pat, cond, patBody),(caseBodies,ids)) -> 
+				   (caseBodies++[patBody],ids++(getPatternIds pat))
+				  ) ([],newIds1) cases
+  in
+  let (newCaseBodys, newIds3) = distinctVars(caseBodys, newIds2) in
   let newCases = ListPair.map (fn ((pat, cond, _), (newPatBody)) -> (pat, cond, newPatBody)) (cases, newCaseBodys) in
   let newTerm = mkApply(Lambda (newCases, b), newCaseTerm) in
   let newTerm = withAnnT(newTerm,termAnn(term)) in
-  (newTerm, newIds2)
+  (newTerm, newIds3)
 
 def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
   case letBindings of

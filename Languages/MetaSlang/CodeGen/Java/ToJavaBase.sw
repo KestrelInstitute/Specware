@@ -455,9 +455,11 @@ op mkJavaNumber: Integer -> Java.Expr
 def mkJavaNumber(i) =
   CondExp (Un (Prim (IntL (i))), None)
 
+op mkJavaBool: Boolean -> Java.Expr
 def mkJavaBool(b) =
   CondExp (Un (Prim (Bool (b))), None)
 
+op mkJavaString: String -> Java.Expr
 def mkJavaString(s) =
   let chars = explode s in
   let s = foldl (fn
@@ -468,14 +470,17 @@ def mkJavaString(s) =
   in
   CondExp (Un (Prim (String (s))), None)
 
+op mkJavaChar: Char -> Java.Expr
 def mkJavaChar(c) =
   CondExp (Un (Prim (Char (c))), None)
 
 op mkJavaCastExpr: Java.Type * Java.Expr -> Java.Expr
 def mkJavaCastExpr(jtype,jexpr) =
-  CondExp(Un(Cast(jtype,Prim(Paren(jexpr)))),None)
+  let cast = CondExp(Un(Cast(jtype,Prim(Paren(jexpr)))),None) in
+  cast
+  %CondExp (Un (Prim (Paren cast)), None)
 
-%op mkVarJavaExpr: Id -> Java.Expr
+op mkVarJavaExpr: Id -> Java.Expr
 def mkVarJavaExpr(id) = CondExp (Un (Prim (Name ([], id))), None)
 
 op mkQualJavaExpr: Id * Id -> Java.Expr
@@ -534,7 +539,7 @@ def javaBaseOp?(id) =
     | "~" -> true
     | _ -> false
 
-%op mkBinExp: Id * List Java.Expr -> Java.Expr
+op mkBinExp: Id * List Java.Expr -> Java.Expr
 def mkBinExp(opId, javaArgs) =
   let [ja1, ja2] = javaArgs in
   CondExp (Bin (mkBaseJavaBinOp(opId), Un (Prim (Paren (ja1))), Un (Prim (Paren (ja2)))), None)
@@ -602,7 +607,7 @@ def mkFldAssn(cId, vId, jT1) =
   let fldAcc = mkFldAccViaClass(cId, vId) in
   Stmt (Expr (Ass (FldAcc (ViaCls (([], cId), vId)), Assgn, jT1)))
 
-%op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
+op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
 def mkMethInvName(name, javaArgs) =
   CondExp (Un (Prim (MethInv (ViaName (name, javaArgs)))), None)
 
@@ -777,13 +782,14 @@ def mkMethDeclJustReturn(methodName,argTypeNames,retTypeName,argNameBase,retExpr
   let retStmt = mkReturnStmt(retExpr) in
   mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,retStmt)
 
+op mkNewClasInst: String * List Java.Expr -> Java.Expr
 def mkNewClasInst(id, javaArgs) =
   CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, None)))), None)
 
 (**
  * creates a "new" expression for an anonymous class with the given "local" class body
  *)
-def mkNewAnonymousClasInst(id, javaArgs,clsBody:ClsBody) =
+def mkNewAnonymousClasInst(id:String, javaArgs:List Java.Expr,clsBody:ClsBody) : Java.Expr =
   CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None)
 
 (**
@@ -791,12 +797,12 @@ def mkNewAnonymousClasInst(id, javaArgs,clsBody:ClsBody) =
  * only element of the "local" class body; it also returns the corresponding interface declaration
  * that is used for generating the arrow class interface
  *)
-def mkNewAnonymousClasInstOneMethod(id,javaArgs,methDecl) =
+def mkNewAnonymousClasInstOneMethod(id,javaArgs,methDecl)  =
   let clsBody = {handwritten=[],staticInits=[],flds=[],constrs=[],meths=[methDecl],clss=[],interfs=[]} in
   let exp = CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None) in
   let cldecl = mkArrowClassDecl(id,methDecl) in
   %let _ = writeLine("generated class decl: "^id) in
-  (exp,cldecl:Java.ClsDecl)
+  (exp:Java.Expr,cldecl:Java.ClsDecl)
 
 
 (**
