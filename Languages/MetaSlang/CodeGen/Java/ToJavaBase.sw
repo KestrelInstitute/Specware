@@ -289,7 +289,18 @@ def tt_v3M srt =
   {
    spc <- getEnvSpec;
    case srt of
-     | Base(Qualified(_,id),_,_) -> return (tt_v2 id)
+     | Base(Qualified(_,id),ptypes,_) -> 
+	if ptypes = [] then
+	  return (tt_v2 id)
+	else
+	  {
+	   id <- foldM (fn id -> fn srt ->
+			{
+			 srtId <- srtIdM srt;
+			 return (id^"_"^srtId)
+			}) id ptypes;
+	   return (tt_v2 id)
+	  }
      | Boolean _  -> return (tt_v2 "Boolean")
      | Arrow(srt0,srt1,_) -> 
        {
