@@ -78,17 +78,7 @@ def renameVarLetOldVar(letTerm, letBody, oldV, newV) =
     let res = mkLet([(mkVarPat(oldV), newLetTerm)], newLetBody) in
     withAnnT(res,termAnn(letTerm))
 
-
 op distinctVar: Term * List Id -> Term * List Id
-op distinctVars: List Term * List Id -> List Term * List Id
-
-op distinctVarApply: Term * List Id -> Term * List Id
-op distinctVarLambda: Term * List Id -> Term * List Id
-op distinctVarRecord: Term * List Id -> Term * List Id
-op distinctVarIfThenElse: Term * List Id -> Term * List Id
-op distinctVarLet: Term * List Id -> Term * List Id
-
-
 def distinctVar(term, ids) =
   if caseTerm?(term) then distinctVarCase(term, ids) else
   case term of
@@ -108,6 +98,7 @@ def distinctVar(term, ids) =
 			     (Seq(concat(terms,[t]),b),ids)) (Seq([],b),ids) terms
     | _ -> fail ("unsupported term format (in distinctVar)"^printTerm(term))
 
+op distinctVars: List Term * List Id -> List Term * List Id
 def distinctVars(terms, ids) =
   case terms of
     | [] -> ([], ids)
@@ -117,12 +108,14 @@ def distinctVars(terms, ids) =
     (cons(newTerm, restTerms), restIds)
 
 
+op distinctVarApply: Term * List Id -> Term * List Id
 def distinctVarApply(term as Apply (opTerm, argsTerm, _), ids) =
   let args = applyArgsToTerms(argsTerm) in
   let (newArgs, newIds) = distinctVars(args, ids) in
     let res = (mkApplication(opTerm, newArgs)) in
     (withAnnT(res,termAnn(term)), newIds)
 
+op distinctVarLambda: Term * List Id -> Term * List Id
 def distinctVarLambda(term as Lambda ([(pat, cond, body)],b), ids) =
   let argNames = patternNamesOpt(pat) in
     (case argNames of
@@ -134,6 +127,7 @@ def distinctVarLambda(term as Lambda ([(pat, cond, body)],b), ids) =
        %| _ -> fail("DistinctVarLambda with no args: "^printTerm(term))
      )
 
+op distinctVarRecord: Term * List Id -> Term * List Id
 def distinctVarRecord(term as Record (fields,_), ids) =
   let recordTerms = recordFieldsToTerms(fields) in
   let (newTerms, newIds) = distinctVars(recordTerms, ids) in
@@ -141,6 +135,7 @@ def distinctVarRecord(term as Record (fields,_), ids) =
     let res = (mkRecord(newFields)) in
     (withAnnT(res,termAnn(term)),newIds)
 
+op distinctVarIfThenElse: Term * List Id -> Term * List Id
 def distinctVarIfThenElse(term as IfThenElse(t1, t2, t3, _), ids) =
   let args = [t1, t2, t3] in
   let ([newT1, newT2, newT3], newIds) = distinctVars(args, ids) in
@@ -168,11 +163,13 @@ def distinctVarCase(term, ids) =
   let newTerm = withAnnT(newTerm,termAnn(term)) in
   (newTerm, newIds3)
 
+op distinctVarLet: Term * List Id -> Term * List Id
 def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
   case letBindings of
     | [(VarPat (v, _), letTerm)] ->
     let (vId, vSrt) = v in
     let (newLetTerm, newIds) = distinctVar(letTerm, ids) in
+    %let _ = writeLine(";;      let variable found: "^vId^", newIds=["^(foldl (fn(id,s) -> if s = "" then id else s^","^id) "" newIds)^"]") in
     if member(vId, newIds)
       then distinctVarLetNewVar(v, newLetTerm, letBody, newIds)
     else distinctVarLetNoNewVar(v, newLetTerm, letBody, newIds)
@@ -180,12 +177,15 @@ def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
 
 def distinctVarLetNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
   let newId = findNewId(vId, ids) in
+  %let _ = writeLine(";;      newId: "^newId) in
   let newIds = cons(vId, ids) in
   let newVar = (newId, vSrt) in
   let renamedLetBody = renameVar(letBody, variable, newVar) in
   let (newLetBody, finalIds) = distinctVar(renamedLetBody, newIds) in
   let res = (mkLet([(mkVarPat(newVar), letTerm)], newLetBody)) in
-  (withAnnT(res,termAnn(letTerm)),finalIds)
+  let newlet = withAnnT(res,termAnn(letTerm)) in
+  %let _ = writeLine(";;      new let-term: "^(printTerm newlet)) in
+  (newlet,finalIds)
 
 
 def distinctVarLetNoNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
@@ -205,20 +205,21 @@ def findNewId(vId, ids) =
 op mkNewId: Id * Nat -> Id
 
 def mkNewId(id, n) =
-  id ^ "___" ^ natToString(n)
+  id ^ "-" ^ natToString(n)
 
 op distinctVariable: Spec -> Spec
 
 def distinctVariable(spc) =
 %  let _ = writeLine("distinctVariable...") in
-  let newOpDefs = foldriAQualifierMap 
-                    (fn (q, id, info, result) ->
+  let (newOpDefs,nodefops) = foldriAQualifierMap 
+                    (fn (q, id, info,(result,nodefops)) ->
 		     case opInfoDefs info of
 		       | dfn::_ ->
 		         let (tvs, srt, term) = unpackTerm dfn in
 			 let origOp = mkQualifiedId (q, id) in
 			 let (formals, body) = srtTermDelta (srt, term) in
 			 let ids = map (fn (id, srt) -> id) formals in
+			 %let _ = writeLine("formal pars for op "^id^": "^(foldl (fn(id,s) -> if s = "" then id else s^","^id) "" ids)) in
 			 let (newTerm, newIds) = distinctVar (body, ids) in
 			 let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
 			   let origOpNewDef = (origOp, 
@@ -228,16 +229,21 @@ def distinctVariable(spc) =
 					       newTerm, 
 					       isConstantOp?) 
 			   in
-			     cons (origOpNewDef, result)
-		       | _ -> result)
-		    []
+			   (cons (origOpNewDef, result),nodefops)
+		       | dfns ->
+			 %let _ = writeLine(";; DistinctVariable: skipping op " ^q^"."^id^", because it has "^(Integer.toString (length dfns))^" definition terms") in
+			 (result,nodefops++[(q,id,info)]))
+		    ([],[])
 		    spc.ops 
   in
   let result = initialSpecInCat in % if we started instead with emptySpec, might we omit some built-in defs?
   let result = setSorts(result, spc.sorts) in
 %  let _ = writeLine("#newOpDefs="^(Integer.toString(length newOpDefs))) in
   let result = foldr addOpToSpec2 result newOpDefs in
+  let ops = foldr (fn((q,id,info),opmap) -> insertAQualifierMap(opmap,q,id,info)) result.ops nodefops in
+  let result = setOps(result,ops) in
 %  let result = setImportInfo(result,spc.importInfo) in
+%  let _ = writeLine(";; after distinctVar: \n"^(printSpec result)) in
    result
 
 

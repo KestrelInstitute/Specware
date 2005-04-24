@@ -544,7 +544,7 @@ def addOpToSpec((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term
   addOpToSpec2((oper,dom,rng,formals,body,false),spc)
    
 op addOpToSpec2: OpDef2 * Spec -> Spec
-def addOpToSpec2((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term, isConstantOp?: Boolean), spc:Spec) =
+def addOpToSpec2((oper as Qualified(q,id), dom:(List Sort), rng:Sort, formals:List Var, body:Term, isConstantOp?: Boolean), spc:Spec) =
   if basicQualifiedId? oper then
     spc
   else
@@ -558,7 +558,8 @@ def addOpToSpec2((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Ter
                | [] -> if isConstantOp? then body else mkLambda(mkTuplePat(varPatterns),body)
                | _ -> mkLambda(mkTuplePat(varPatterns), body)
   in
-  let (f, t) = srtTermDelta(srt, term) in
+  %let (f, t) = srtTermDelta(srt, term) in
+  %let _ = writeLine(";; addOpToSpec2: "^id^", bodyTerm=\n"^(printTerm body)) in
   run (addOp (oper, srt, term, spc))
    
 def addOp (oper, srt, term, spc) : SpecCalc.Env Spec =

@@ -11,6 +11,7 @@ op translateLambdaToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.
 %defined in ToJavaSpecial
 op specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
 
+op getPostSubstFun: JGenEnv (Java.Expr -> Java.Expr)
 
 
 (**
@@ -23,10 +24,12 @@ def termToExpressionM(tcx, term, k, l) =
   {
    specialFun <- getSpecialFun;
    res <- specialFun(tcx,term,k,l);
-   case res of
-     | Some res1 -> return res1
-     | None ->
-       termToExpression_internalM(tcx,term,k,l,true)
+   (b,jexpr,k,l) <- case res of
+		      | Some res1 -> return res1
+		      | None -> termToExpression_internalM(tcx,term,k,l,true);
+   postSubstFun <- getPostSubstFun;
+   jexpr <- return (mapExpr postSubstFun jexpr);
+   return (b,jexpr,k,l)
   }
 
 op termToExpression_internalM: TCx * JGen.Term * Nat * Nat * Boolean -> JGenEnv (Block * Java.Expr * Nat * Nat)

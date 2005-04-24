@@ -643,7 +643,7 @@ def mkVars(ids) =
  * E.g., (id,(Nat|even)  -> Some(Apply(even,id))
  * This only works, because the super sort of a restriction sort must be a flat sort, no records etc. 
 *)
-op mkAsrtTestAppl: Spec * (Term * Option Term) -> Option Term
+op mkAsrtTestAppl: Spec * (MS.Term * Option MS.Term) -> Option MS.Term
 def mkAsrtTestAppl(spc,(trm,optt)) =
   case optt of
     | Some t -> 
@@ -667,7 +667,7 @@ def mkAsrtTestAppl(spc,(trm,optt)) =
 (**
  * generates the conjunction of assertions for the given variable list
  *)
-op mkAsrtExpr: Spec * List Var * List(Option Term) -> Option Term
+op mkAsrtExpr: Spec * List Var * List(Option MS.Term) -> Option MS.Term
 def mkAsrtExpr(spc,vars,dompreds) =
   let vars = if length(dompreds) = 1 & length(vars) > 1
 	       then let (fields,_) = foldl (fn((id,srt),(fields,n)) ->
@@ -707,7 +707,7 @@ def mkAsrtExpr(spc,vars,dompreds) =
 (**
  * returns the restriction term for the given sort, if it has one.
  *)
-op getRestrictionTerm: Spec * Sort -> Option Term
+op getRestrictionTerm: Spec * Sort -> Option MS.Term
 def getRestrictionTerm(spc,srt) =
   %let _ = writeLine("get restriction term: "^printSort(srt)) in
   let srt = unfoldBase(spc,srt) in
@@ -1060,7 +1060,7 @@ def findMatchingUserTypeM srt =
  * inserts "restrict" structs, if there's a mismatch between the domain sorts and 
  * the sorts of the args
  *)
-op insertRestricts: Spec * List Sort * List Term -> List Term
+op insertRestricts: Spec * List Sort * List MS.Term -> List MS.Term
 def insertRestricts(spc,dom,args) =
   let
     def insertRestrict(domsrt,argterm) =
@@ -1142,7 +1142,7 @@ def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
  * search for the wild pattern in the match and returns the corresponding body, if it
  * has been found.
  *)
-op findVarOrWildPat: Match -> Option Term
+op findVarOrWildPat: Match -> Option MS.Term
 def findVarOrWildPat(cases) =
   case cases of
     | [] -> None

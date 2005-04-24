@@ -839,19 +839,20 @@ def transformSpecForJavaCodeGen basespc spc =
   %let _ = writeLine("transformSpecForJavaCodeGen...") in
   let spc = unfoldSortAliases spc in
   let spc = translateRecordMergeInSpec spc in
-  let spc = identifyIntSorts spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
+  let spc = identifyIntSorts spc in
   let spc = poly2mono(spc,false) in
-  %let spc = unfoldSortAliases spc in
   let spc = letWildPatToSeq spc in
   let spc = instantiateHOFns spc in
   let spc = lambdaLift spc in
   let spc = translateMatchJava spc in
+  %let _ = toScreen(printSpecFlat spc) in
   let spc = simplifySpec spc in
-  %let spc = distinctVariable(spc) in
-  %% let _ = toScreen("\n================================\n") in
-  %% let _ = toScreen(printSpecFlat spc) in
-  %% let _ = toScreen("\n================================\n") in
+  %let _ = toScreen(printSpecFlat spc) in
+  let spc = distinctVariable(spc) in
+  % let _ = toScreen("\n================================\n") in
+  % let _ = toScreen(printSpecFlat spc) in
+  % let _ = toScreen("\n================================\n") in
   spc
 
 %op generateJavaCodeFromTransformedSpec: Spec -> JSpec

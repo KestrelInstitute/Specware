@@ -175,7 +175,7 @@ spec
       | Apply(Fun(Op(Qualified("String","^"),     _),_,_),Record([(_,t1),(_,t2)],_),_) -> stringConcat(t1,t2)
       | Apply(Fun(Op(Qualified("String","<"),     _),_,_),Record([(_,t1),(_,t2)],_),_) -> stringCompare(Lt,t1,t2)
       | Apply(Fun(Op(Qualified("String",">"),     _),_,_),Record([(_,t1),(_,t2)],_),_) -> stringCompare(Gt,t1,t2)
-
+ 
       | Fun(Op(Qualified("String","newline"),_),_,_) ->
 	let sep = mkJavaString "line.separator" in
 	let expr = mkMethInvName((["System"],"getProperty"),[sep]) in
@@ -298,5 +298,22 @@ spec
 
 
       | _ -> return None
+
+
+  %op getPostSubstFun: JGenEnv (Java.Expr -> Java.Expr)
+  def getPostSubstFun =
+    {
+     primitiveClassName <- getPrimitiveClassName;
+     return (fn e ->
+	     case e of
+	       | CondExp (Un (Prim (MethInv (ViaPrim (Name([],"Primitive"),mname, [e1,e2])))), None) ->
+	         if mname = "min" || mname = "max" then
+		   CondExp (Un (Prim (MethInv (ViaPrim (Name([],"Math"),mname, [e1,e2])))), None)
+		 else e
+	       | _ -> e
+	    )
+    }
+
+
 
 endspec
