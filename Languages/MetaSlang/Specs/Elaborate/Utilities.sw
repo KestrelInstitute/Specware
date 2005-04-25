@@ -736,4 +736,19 @@ spec
      | Fun _ -> true
      | _ -> false
 
+ %% Used by the Accord extension to typechecker that considers f(x) to be a 
+ %% possible interpretation of x.f (if type of x is a subsort of domain of f)
+ %% Don't do any unification, to avoid coercing undeclared x to bogus type.
+  op subsort? : LocalEnv -> MS.Sort -> MS.Sort -> Boolean
+ def subsort? env x y =
+   let 
+     def aux x =
+       equalSort? (x, y) ||
+       (let x = unfoldSort (env, x) in
+        case x of
+	  | Subsort (x, _, _) -> aux x 
+	  | _ -> false)
+   in
+     aux x
+
 endspec
