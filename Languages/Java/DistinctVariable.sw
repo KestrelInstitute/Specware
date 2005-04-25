@@ -1,4 +1,4 @@
-%JGen qualifying
+JGen qualifying
 spec
 
 import LiftPattern
@@ -211,8 +211,8 @@ op distinctVariable: Spec -> Spec
 
 def distinctVariable(spc) =
 %  let _ = writeLine("distinctVariable...") in
-  let (newOpDefs,nodefops) = foldriAQualifierMap 
-                    (fn (q, id, info,(result,nodefops)) ->
+  let (newOpDefs,undefined_ops) = foldriAQualifierMap 
+                    (fn (q, id, info,(result,undefined_ops)) ->
 		     case opInfoDefs info of
 		       | dfn::_ ->
 		         let (tvs, srt, term) = unpackTerm dfn in
@@ -222,29 +222,36 @@ def distinctVariable(spc) =
 			 %let _ = writeLine("formal pars for op "^id^": "^(foldl (fn(id,s) -> if s = "" then id else s^","^id) "" ids)) in
 			 let (newTerm, newIds) = distinctVar (body, ids) in
 			 let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
-			   let origOpNewDef = (origOp, 
-					       srtDomKeepSubsorts srt, 
-					       srtRange srt, 
-					       formals, 
-					       newTerm, 
-					       isConstantOp?) 
-			   in
-			   (cons (origOpNewDef, result),nodefops)
+			 let origOpNewDef = (origOp, 
+					     srtDomKeepSubsorts srt, 
+					     srtRange srt, 
+					     formals, 
+					     newTerm, 
+					     isConstantOp?) 
+			 in
+			   (cons (origOpNewDef, result),undefined_ops)
 		       | dfns ->
-			 %let _ = writeLine(";; DistinctVariable: skipping op " ^q^"."^id^", because it has "^(Integer.toString (length dfns))^" definition terms") in
-			 (result,nodefops++[(q,id,info)]))
+			 (result,undefined_ops++[(q,id,info)]))
 		    ([],[])
 		    spc.ops 
   in
+(*
   let result = initialSpecInCat in % if we started instead with emptySpec, might we omit some built-in defs?
   let result = setSorts(result, spc.sorts) in
 %  let _ = writeLine("#newOpDefs="^(Integer.toString(length newOpDefs))) in
   let result = foldr addOpToSpec2 result newOpDefs in
-  let ops = foldr (fn((q,id,info),opmap) -> insertAQualifierMap(opmap,q,id,info)) result.ops nodefops in
+  let ops = foldr (fn((q,id,info),opmap) -> insertAQualifierMap(opmap,q,id,info)) result.ops undefined_ops in
   let result = setOps(result,ops) in
 %  let result = setImportInfo(result,spc.importInfo) in
 %  let _ = writeLine(";; after distinctVar: \n"^(printSpec result)) in
    result
+*)
 
+  let spc = spc << {ops = emptyAQualifierMap} in
+  let spc = foldr addOpToSpec2 spc newOpDefs in
+  let ops = foldr (fn((q,id,info),opmap) -> insertAQualifierMap(opmap,q,id,info)) spc.ops undefined_ops in
+  let spc = spc << {ops = ops} in
+%  let _ = writeLine(";; after distinctVar: \n"^(printSpec spc)) in
+  spc
 
 endspec
