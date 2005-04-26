@@ -78,5 +78,7 @@ spec
   op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
   op mkVarJavaExpr: Id -> Java.Expr
   op mkNewClasInst: Id * List Java.Expr -> Java.Expr
+  op changeTimeVars: BlockStmt -> BlockStmt
+
 
 end-spec

@@ -231,8 +231,8 @@ def mkFinalVarDeclM(varid,srt,exp) =
   {
    typ <- tt_v3M srt;
    let isfinal = true in
-   let vdecl = ((varid,0),Some(Expr exp)) in
-   return (LocVarDecl(isfinal,typ,vdecl,[]))
+   let vdecl = ((varid,0),Some(Expr exp)) : VarDecl in
+   return (changeTimeVars(LocVarDecl(isfinal,typ,vdecl,[])))
   }
 
 op isIdentityAssignment?: Java.BlockStmt -> Boolean
@@ -838,7 +838,7 @@ def mkArrowClassDecl(id,methDecl) =
 
 op mkVarDecl: Id * Id -> BlockStmt
 def mkVarDecl(v, srtId) =
-  LocVarDecl (false, tt(srtId), ((v, 0), None), [])
+  changeTimeVars(LocVarDecl (false, tt(srtId), ((v, 0), None), []))
   
 op mkNameAssn: Java.Name * Java.Name -> BlockStmt
 def mkNameAssn(n1, n2) =
@@ -850,7 +850,7 @@ def mkVarAssn(v, jT1) =
 
 op mkVarInit: Id * Id * Java.Expr -> BlockStmt
 def mkVarInit(vId, srtId, jInit) =
-  LocVarDecl (false, tt(srtId), ((vId, 0), Some ( Expr (jInit))), [])
+  changeTimeVars(LocVarDecl (false, tt(srtId), ((vId, 0), Some ( Expr (jInit))), []))
 
 op mkIfStmt: Java.Expr * Block * Block -> BlockStmt
 def mkIfStmt(jT0, b1, b2) =
@@ -1242,5 +1242,25 @@ op baseDir : Id
 def publicOps: List Id = []
 def packageName : Id = "specware.generated"
 def baseDir : Id = "."
+
+
+% --------------------------------------------------------------------------------
+
+% hack: change vars with "time" or "Time" and defined as "int" to be "long"
+
+%op changeTimeVars: BlockStmt -> BlockStmt
+def changeTimeVars bstmt =
+  case bstmt of
+    | LocVarDecl(isFinal,(Basic JInt,0),((id,n),optvarinit),[]) ->
+      let l = length id in
+      if l < 4 then bstmt else
+      let suf = substring(id,l-4,l) in
+      if suf = "time" || suf = "Time" then
+	let _ = writeLine(";; checking int "^id^"...") in
+	LocVarDecl(isFinal,(Basic Long,0),((id,n),optvarinit),[])
+      else
+	bstmt
+    | _ -> bstmt
+
 
 endspec

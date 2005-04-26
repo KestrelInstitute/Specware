@@ -908,7 +908,7 @@ Java qualifying spec
         | Short   -> "short"
         | Char    -> "char"
         | JInt    -> "int"
-        | Long    -> "int"
+        | Long    -> "long"
         | JFloat  -> "float"
         | Double  -> "double"
         | Void  -> "void"
