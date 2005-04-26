@@ -192,7 +192,7 @@ Prover qualifying spec
         %% new: fold over all defs (but presumably just one for now)
         foldl (fn (dfn, props) ->
 	       let (tvs, srt, term) = unpackTerm dfn in
-	       if localOp? (qid, spc) then
+	       if true then   % localOp? (qid, spc) then  %% Obsolete because of spec element sequentialization(?)
 		 let pos = termAnn term in
 		 let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in
 		 %let unTupledFmlas = foldRecordFmla (spc, srt, initialFmla) in
