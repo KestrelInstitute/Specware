@@ -92,7 +92,7 @@ SpecCalc qualifying spec
     let spc = removeQuotient spc in
     %let _ = writeLine("remQ") in
     %let _ = writeLine(printSpec spc) in
-    %let spc = instantiateHOFns spc in
+    %let spc = aux_instantiateHOFns spc in%
     %let _ = writeLine("instHO") in
     %let _ = writeLine(printSpec spc) in
     %let spc = lambdaToInner spc in
@@ -112,7 +112,7 @@ SpecCalc qualifying spec
     %let _ = writeLine(printSpec spc) in
     %let spc = conformOpDecls spc in
     %let spc = adjustAppl spc in
-    let spc = instantiateHOFns spc in
+    let spc = aux_instantiateHOFns spc true in  % temporary flag to enable test in makeUnfoldMap: tvs ~= []
     %let spc = simpSpecFMTerm spc in
     %let _ = writeLine("snd InsHO") in
     %let _ = writeLine(printSpec spc) in

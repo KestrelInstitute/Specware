@@ -7,10 +7,15 @@ spec
 
   op  instantiateHOFns: Spec -> Spec
   def instantiateHOFns spc =
+    aux_instantiateHOFns spc false
+
+  %% snark interface can call this directly to set flag to true
+  op  aux_instantiateHOFns: Spec -> Boolean -> Spec
+  def aux_instantiateHOFns spc snark_hack? =
     %let spc = renameInSpec spc in
     let spc = normalizeCurriedDefinitions spc in
     let spc = simplifySpec spc in
-    let m = makeUnfoldMap spc in
+    let m = makeUnfoldMap spc snark_hack? in
     %let m = mapAQualifierMap (renameDefInfo (emptyContext())) m in
     unFoldTerms(spc,m)
 
@@ -33,8 +38,8 @@ spec
   %% (params,defn body,indices of applied fn args,curried?,recursive?)
   sort DefInfo = List Pattern * Term * Sort * List Nat * Boolean * Boolean
 
-  op  makeUnfoldMap: Spec -> AQualifierMap DefInfo
-  def makeUnfoldMap spc =
+  op  makeUnfoldMap: Spec -> Boolean -> AQualifierMap DefInfo
+  def makeUnfoldMap spc snark_hack? =
     mapiPartialAQualifierMap
       (fn (q, id, info) -> 
        let (decls, defs) = opInfoDeclsAndDefs info in
@@ -43,7 +48,7 @@ spec
 	 | dfn :: _ ->
 	   let (tvs, srt, def1) = unpackTerm dfn in
 	   %% would like to remove tvs ~= [] condition but currently causes problem in Snark translation
-	   if tvs ~= [] && hoFnSort? (spc, srt)  && unfoldable? (Qualified (q, id), def1) then
+	   if (if snark_hack? then tvs ~= [] else true) && hoFnSort? (spc, srt)  && unfoldable? (Qualified (q, id), def1) then
 	     let numCurryArgs = curryShapeNum(spc,srt) in
              % see note below about debugging indexing error
              % let _ = toScreen ("\n numCurryArgs = " ^ (toString numCurryArgs) ^ " for " ^ (anyToString srt) ^ "\n") in
