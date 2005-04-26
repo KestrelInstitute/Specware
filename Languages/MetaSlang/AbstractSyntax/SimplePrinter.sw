@@ -309,7 +309,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                   ppString "}"
                 ])
       | WildPat (srt,_) -> ppString "_"
-      | StringPat (str,_) -> ppString str
+      | StringPat (str,_) -> ppString ("\"" ^ str ^ "\"")
       | BoolPat (b,_) -> ppBoolean b
       | CharPat (chr,_) -> ppString (Char.toString chr)
       | NatPat (int,_) -> ppString (Nat.toString int)      
@@ -394,7 +394,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           ]
       | Nat n -> ppString (Nat.toString n)
       | Char chr -> ppString (Char.toString chr)
-      | String str -> ppString str
+      | String str -> ppString ("\"" ^ str ^ "\"")
       | Bool b -> ppBoolean b
       | OneName (id,fxty) -> ppString id
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
