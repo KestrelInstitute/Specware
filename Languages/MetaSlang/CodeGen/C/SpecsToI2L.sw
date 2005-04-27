@@ -489,7 +489,7 @@ SpecsToI2L qualifying spec {
     let Qualified (spcname,lid) = qid in
     let id = (spcname,lid) in
     let id0 = (spcname,"__"^lid^"__") in
-    %let _ = writeLine("translating op "^lid^"...") in
+    %let _ = writeLine("translating op "^printQualifiedId qid^"...") in
     let srt = unfoldToArrow(spc,srt) in
     %let _ = writeLine("srt: "^printSort(srt)) in
     let typ = sort2type(unsetToplevel ctxt,spc,tvs,srt) in
