@@ -84,6 +84,23 @@ MetaSlang qualifying spec
    then id
    else q ^ "." ^ id
 
+ %% This is useful when printing names for Lisp, C, Java, etc.:
+  op printUnderbarQualifiedId : QualifiedId -> String
+ def printUnderbarQualifiedId (Qualified (q, id)) =
+   if q = UnQualified then
+     id
+   else
+     printQualifierUnderbarId (q, id)
+
+  op printQualifierUnderbarId : Qualifier * Id -> String
+ def printQualifierUnderbarId (q, id) =
+   if q = "Nat"     or
+      q = "String"  or
+      q = "Char"    or
+      q = UnQualified
+   then id
+   else q ^ "_" ^ id
+
  def printAliases aliases =
    case aliases of
      | [] -> fail "printAliases: empty name list"
