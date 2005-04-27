@@ -69,6 +69,7 @@ AnnSpecPrinter qualifying spec
  op printSpecToFile              : [a] String * ASpec a -> ()
  op printFlatSpecToFile          : [a] String * ASpec a -> ()
  op latexSpecToFile              : [a] String * ASpec a -> ()
+ op printSpecFlatToTerminal      : [a]          ASpec a -> ()
  op printSpecToTerminal          : [a]          ASpec a -> ()
  op printSpecWithSortsToTerminal : [a]          ASpec a -> ()
 
@@ -1398,6 +1399,10 @@ def AnnSpecPrinter.printTerm term =
 
  def printSpecFlat spc =
    PrettyPrint.toString (format (80, specToPrettyFlat spc))
+
+ def printSpecFlatToTerminal spc =
+   (toTerminal (format (80, specToPrettyFlat spc)); 
+    String.writeLine "")
    
  def printSpecToTerminal spc =
    (toTerminal (format (80, specToPretty spc)); 
