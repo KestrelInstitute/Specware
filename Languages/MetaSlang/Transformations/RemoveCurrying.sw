@@ -56,42 +56,53 @@ RemoveCurrying qualifying spec
 
    op addUnCurriedOps: Spec -> Spec
   def addUnCurriedOps spc =
-    let newOps =
-        foldriAQualifierMap
-	  (fn (q, id, info, new_ops) ->
-	   let pos = termAnn info.dfn in
-	   let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-	   case old_defs of
-	     | old_def :: _ ->
-	       (let (old_tvs, old_srt, old_tm) = unpackTerm old_def in
-		case newUncurriedOp (spc, id, old_srt) of
-		  | Some (new_id, new_srt) ->
-		    let new_ops = 
-		        (%% remove old defs, but insure at least one real decl
-			 let decls_but_no_defs = 
-                             case old_decls of
-			       | [] -> [maybePiTerm (old_tvs, SortedTerm (Any pos, old_srt, pos))]
-			       | _ -> old_decls
-			 in
-			 let new_dfn = maybeAndTerm (decls_but_no_defs, pos) in 
-			 insertAQualifierMap (new_ops, q, id, info << {dfn = new_dfn}))
-		    in
-		    %% Add definition of replacement (only bother with first def)
-		    %% TODO: Handle multiple defs??
-		    let new_dfn = maybePiTerm (old_tvs, SortedTerm (old_tm, new_srt, pos)) in
-		    insertAQualifierMap (new_ops, q, new_id,
-					 info << {names = [Qualified (q, new_id)],
-						  dfn   = new_dfn})
-		  | None -> new_ops)
-	     | _ ->
-	       (debug (q, id, info.fixity); 
-		new_ops))
-	  spc.ops
-	  spc.ops
+    let def doOp (old_el, q, id, info, r_elts, r_ops) =
+	  let pos = termAnn info.dfn in
+	  let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+	  case old_defs of
+	    | old_def :: _ ->
+	      (let (old_tvs, old_srt, old_tm) = unpackTerm old_def in
+	       case newUncurriedOp (spc, id, old_srt) of
+		 | Some (new_id, new_srt) ->
+		   let new_ops = 
+		       (%% remove old defs, but insure at least one real decl
+			let decls_but_no_defs = 
+			    case old_decls of
+			      | [] -> [maybePiTerm (old_tvs, SortedTerm (Any pos, old_srt, pos))]
+			      | _ -> old_decls
+			in
+			let new_dfn = maybeAndTerm (decls_but_no_defs, pos) in 
+			insertAQualifierMap (r_ops, q, id, info << {dfn = new_dfn}))
+		   in
+		   %% Add definition of replacement (only bother with first def)
+		   %% TODO: Handle multiple defs??
+		   let new_dfn = maybePiTerm (old_tvs, SortedTerm (old_tm, new_srt, pos)) in
+		   let new_ops = insertAQualifierMap (new_ops, q, new_id,
+						      info << {names = [Qualified (q, new_id)],
+							       dfn   = new_dfn})
+		   in
+		   let new_qid = Qualified(q, new_id) in
+		   (Cons(Op(new_qid),Cons(OpDef(new_qid),r_elts)),new_ops)
+		 | None -> (Cons(old_el,r_elts),r_ops))
+	    | _ -> (Cons(old_el,r_elts),r_ops)
+	def addUnCurried(elts,result) =
+          foldr
+	    (fn (el,(r_elts,r_ops)) ->
+	     case el of
+	      | Import (s_tm,i_sp,s_elts) ->
+		let (newElts,newOps) = addUnCurried(s_elts,([],r_ops)) in
+		(Cons(Import(s_tm,i_sp,newElts),r_elts),
+		 newOps)
+	      | OpDef(Qualified(q,id)) ->
+		(case findAQualifierMap(r_ops,q,id) of
+		  | Some info ->  doOp(el,q,id,info,r_elts,r_ops))
+	      | _ -> (Cons(el,r_elts),r_ops))
+	    result
+	    elts
     in
-      setOps (spc, newOps)
-
-  def debug tp = tp
+    let (newElts,newOps) = addUnCurried(spc.elements, ([],spc.ops)) in
+    spc << {ops        = newOps, 
+	    elements   = newElts}
 
   op  newUncurriedOp: Spec * Id * Sort -> Option (Id * Sort)
   def newUncurriedOp (spc, nm, srt) =
