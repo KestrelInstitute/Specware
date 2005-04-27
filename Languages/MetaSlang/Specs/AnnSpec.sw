@@ -542,6 +542,9 @@ AnnSpec qualifying spec
 
  %% Just removes duplicate imports although could also remove other duplicate elements
  %% but this would be more expensive and maybe not that helpful
+ %% Update: In fact, looking for all duplicates seems to take a lot of time.
+ %%         It added 9(!) minutes to the normal 3 or 4 minutes for processing 
+ %%         all the specs in Specware itself.
  op  removeDuplicateImports: Spec -> Spec
  def removeDuplicateImports spc =
    let def mapEls(els,imports) =
@@ -550,11 +553,22 @@ AnnSpec qualifying spec
 	   | el::r_els ->
 	     (case el of
 	       | Import (s_tm,i_sp,s_els) ->
-		 if member(i_sp,imports)
-		   then mapEls(r_els,imports)
-		   else let (reduced_s_els,imports) = mapEls(s_els,imports) in
-		        let (reduced_els,  imports) = mapEls(r_els,Cons(i_sp,imports)) in
-			(Cons(Import (s_tm,i_sp,reduced_s_els),reduced_els),imports)
+		 (case find (fn (s, _) -> i_sp = s) imports of
+		    | Some (_, prior_s_els) ->
+		      %% Even though i_sp is a duplicate, tricky_els might be non-empty.
+ 		      %% Imported elements can be updated even when the imported spec 
+		      %% itself is not.  (This happens with qualify, for example.)
+		      %% For efficiency, we only test for duplications of elements
+		      %% between two imports of the same spec.  
+		      let tricky_els = diff (s_els, prior_s_els) in
+		      %% add the new els we've seen to the set of elts associated with i_sp
+		      let revised_import = (i_sp, prior_s_els ++ tricky_els) in
+		      let (reduced_els, imports) = mapEls (r_els, Cons(revised_import, imports)) in
+		      (tricky_els ++ reduced_els, imports)
+		    | _ ->
+		      let (reduced_s_els,imports) = mapEls (s_els, imports) in
+		      let (reduced_els,  imports) = mapEls (r_els, Cons((i_sp,s_els), imports)) in
+		      (Cons(Import (s_tm,i_sp,reduced_s_els),reduced_els),imports))
 	       | _ ->
 		 let (reduced_els,imports) = mapEls(r_els,imports) in
 		 (Cons(el,reduced_els),imports))
