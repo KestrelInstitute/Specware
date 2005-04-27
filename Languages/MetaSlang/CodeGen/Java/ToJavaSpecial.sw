@@ -3,14 +3,14 @@
  * to java.lang method (String utilities)
  *)
 
-%JGen qualifying
+JGen qualifying
 spec
 
   import ToJavaBase
   import ToJavaStatements
   import Monad
 
-  %op  specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
+  op  specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
   def specialTermToExpressionM(tcx,term,k,l) =
     %let _ = writeLine("specialTermToExpression: term="^printTerm(term)) in
     let
@@ -300,7 +300,7 @@ spec
       | _ -> return None
 
 
-  %op getPostSubstFun: JGenEnv (Java.Expr -> Java.Expr)
+  op getPostSubstFun: JGenEnv (Java.Expr -> Java.Expr)
   def getPostSubstFun =
     {
      primitiveClassName <- getPrimitiveClassName;

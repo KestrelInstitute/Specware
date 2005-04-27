@@ -1,4 +1,4 @@
-%JGen qualifying
+JGen qualifying
 spec
 
 import ToJavaBase

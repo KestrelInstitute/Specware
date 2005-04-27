@@ -833,10 +833,13 @@ def builtinSortOp(qid) =
 		 i="^" or i="newline" or i="length" or i="substring"))
 
 % --------------------------------------------------------------------------------
+def printOriginalSpec? = false
+def printTransformedSpec? = false
 
 %op transformSpecForJavaCodeGen: Spec -> Spec -> Spec
 def transformSpecForJavaCodeGen basespc spc =
   %let _ = writeLine("transformSpecForJavaCodeGen...") in
+  let _ = if printOriginalSpec? then printSpecFlatToTerminal spc else () in
   let spc = unfoldSortAliases spc in
   let spc = translateRecordMergeInSpec spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
@@ -844,6 +847,7 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = poly2mono(spc,false) in
   let spc = letWildPatToSeq spc in
   let spc = instantiateHOFns spc in
+  let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
   let spc = lambdaLift spc in
   let spc = translateMatchJava spc in
   %let _ = toScreen(printSpecFlat spc) in
