@@ -130,14 +130,16 @@ coherence conditions of the morphism elements.
 	    return (op_map, sort_map)}
 	 else
 	   let
-	     def extend_sort_map (sort_q, sort_id, _ (* sort_info *), sort_map) =
+	     def extend_sort_map (sort_q, sort_id, info, sort_map) =
 	       if sort_q = dom_q then
 		 %% This is a candidate to be translated...
 		 case findAQualifierMap (sort_map, sort_q, sort_id) of
 		   | None -> 
 		     %% No rule yet for this candidate...
+		     let dom_qid = mkQualifiedId (dom_q, sort_id) in
 		     let new_cod_qid = mkQualifiedId (cod_q, sort_id) in
-		     return (insertAQualifierMap (sort_map, sort_q, sort_id, new_cod_qid))
+		     {cod_sort <- findCodSort position new_cod_qid dom_qid info.dfn;
+		      return (insertAQualifierMap (sort_map, sort_q, sort_id, cod_sort))}
 		   | _ -> 
 		     {raise_later (TranslationError ("Multiple (wild) rules for source type "^
 						     (explicitPrintQualifiedId (mkQualifiedId (sort_q, sort_id))),
@@ -152,6 +154,7 @@ coherence conditions of the morphism elements.
 		 case findAQualifierMap (op_map, op_q, op_id) of
 		   | None -> 
 		     %% No rule yet for this candidate...
+		     %let dom_qid = mkQualifiedId (dom, sort_id) in
 		     let new_cod_qid = mkQualifiedId (cod_q, op_id) in
 		     {new_cod_qid <- (if syntactic_qid? new_cod_qid then
 					{raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId new_cod_qid) ^ 
@@ -159,7 +162,8 @@ coherence conditions of the morphism elements.
 									position));
 					 return new_cod_qid}
 				      else return new_cod_qid);
-		      return (insertAQualifierMap (op_map, op_q, op_id, new_cod_qid)) }
+		      cod_op <- findCodOp position new_cod_qid;
+		      return (insertAQualifierMap (op_map, op_q, op_id, cod_op)) }
 		   | _ -> 
 		     %% Candidate already has a rule (e.g. via some explicit mapping)...
 		     {raise_later (TranslationError ("Multiple (wild) rules for source op "^
