@@ -5,6 +5,7 @@
 (defpackage :IO-SPEC)
 (defpackage :SYSTEM-SPEC)
 (defpackage :EMACS)
+(defpackage :TypeChecker)
 (defpackage :SWShell)
 ;; Toplevel Lisp aliases for Specware
 
@@ -496,6 +497,7 @@
 	 (*current-temp-file* tmp-sw)
 	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
 	 (SpecCalc::noElaboratingMessageFiles (list tmp-cl))
+	 (TypeChecker::complainAboutImplcitPolymorphicOps? nil)
 	 (old-swpath (specware::getEnv "SWPATH"))
 	 (new-swpath (format nil
 			     #-mswindows "~A:~A:~A" #+mswindows "~A;~A;~A"

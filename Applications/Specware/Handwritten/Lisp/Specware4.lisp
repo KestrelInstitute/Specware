@@ -127,6 +127,7 @@
 (defpackage "MAP-SPEC")
 (defpackage "ANNSPEC")
 (defpackage "METASLANG")
+(defpackage :TypeChecker)
 
 #||
 #+allegro

@@ -104,54 +104,47 @@ TypeChecker qualifying spec
 			info)
 	             sorts 
 
-      def elaborate_local_ops (ops, env, poly?, incr?) =
-	if incr?
-	  then
-	    foldl (fn (el,ops) ->
-		   case getQIdIfOp el of
-		     | None -> ops
-		     | Some(Qualified(q,id)) ->
-		   case findAQualifierMap(ops,q,id) of
-		     | Some info ->
-		       let
-			 def elaborate_dfn dfn =
-			   let pos = termAnn dfn in
-			   let (tvs, srt, tm) = unpackTerm dfn in
-			   if poly? = (tvs ~= []) then
-			     let _ = checkTyVars (env, tvs, pos) in
-			     let srt = checkSort (env, srt) in
-			     let xx = elaborateTermTop (env, tm, srt) in
-			     maybePiTerm (tvs, SortedTerm (xx, srt, pos))
-			   else 
-			     dfn
-		       in
-		       let new_defs = map elaborate_dfn (opInfoAllDefs info) in
-		       let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
-		       let new_info = info << {dfn = new_dfn} in
-		       insertAQualifierMap(ops,q,id,new_info))
-	       ops given_spec.elements
-	  else
-	    mapOpInfos (fn info ->
-			if someOpAliasIsLocal? (info.names, given_spec) then
-			  let
-			    def elaborate_dfn dfn =
-			      let pos = termAnn dfn in
-			      let (tvs, srt, tm) = unpackTerm dfn in
-			      if poly? = (tvs ~= []) then
-				let _ = checkTyVars (env, tvs, pos) in
-				let srt = checkSort (env, srt) in
-				let xx = elaborateTermTop (env, tm, srt) in
-				maybePiTerm (tvs, SortedTerm (xx, srt, pos))
-			      else 
-				dfn
-			  in
-			  let new_defs = map elaborate_dfn (opInfoAllDefs info) in
-			  let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
-			  let new_info = info << {dfn = new_dfn} in
-			  new_info
-			else
-			  info)
-		       ops
+      def elaborate_local_op_sorts (ops, env) =
+	mapOpInfos (fn info ->
+		    if someOpAliasIsLocal? (info.names, given_spec) then
+		      let def elaborate_srt dfn =
+		            let pos = termAnn dfn in
+			    let (tvs, srt, tm) = unpackTerm dfn in
+			    let _ = checkTyVars (env, tvs, pos) in
+			    let srt = checkSort (env, srt) in
+			    maybePiTerm (tvs, SortedTerm (tm, srt, pos))
+		      in
+			let new_defs = map elaborate_srt (opInfoAllDefs info) in
+			let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
+			let new_info = info << {dfn = new_dfn} in
+			new_info
+		    else
+		      info)
+	  ops
+
+      def elaborate_local_ops (ops, env, poly?) =
+	foldl (fn (el,ops) ->
+	       case getQIdIfOp el of
+		 | None -> ops
+		 | Some(Qualified(q,id)) ->
+	       case findAQualifierMap(ops,q,id) of
+		 | Some info ->
+		   let def elaborate_dfn dfn =
+			 let pos = termAnn dfn in
+			 let (tvs, srt, tm) = unpackTerm dfn in
+			 if poly? = (tvs ~= []) then
+			   let _ = checkTyVars (env, tvs, pos) in
+			   let srt = checkSort (env, srt) in
+			   let xx = elaborateTermTop (env, tm, srt) in
+			   maybePiTerm (tvs, SortedTerm (xx, srt, pos))
+			 else 
+			   dfn
+		   in
+		   let new_defs = map elaborate_dfn (opInfoAllDefs info) in
+		   let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
+		   let new_info = info << {dfn = new_dfn} in
+		   insertAQualifierMap(ops,q,id,new_info))
+	   ops given_spec.elements
 
       def elaborate_local_props (elts, env) =
 	map (fn el ->
@@ -193,11 +186,14 @@ TypeChecker qualifying spec
     let elaborated_sorts = elaborate_local_sorts (given_sorts, env_with_constrs) in
     let env_with_elaborated_sorts = setEnvSorts (env_with_constrs, elaborated_sorts) in
 
+    %% Elaborate sorts of ops
+    let elaborated_ops_0 = elaborate_local_op_sorts (given_ops,env_with_elaborated_sorts) in
+
     %% Elaborate ops (do polymorphic definitions first)
-    let elaborated_ops_a = elaborate_local_ops (given_ops,        env_with_elaborated_sorts, true, false)  in
-    let elaborated_ops_b = elaborate_local_ops (elaborated_ops_a, env_with_elaborated_sorts, false, true) in
-    let elaborated_ops_c = elaborate_local_ops (elaborated_ops_b, env_with_elaborated_sorts, true, true)  in
-    let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, env_with_elaborated_sorts, false, true) in
+    let elaborated_ops_a = elaborate_local_ops (elaborated_ops_0, env_with_elaborated_sorts, true)  in
+    let elaborated_ops_b = elaborate_local_ops (elaborated_ops_a, env_with_elaborated_sorts, false) in
+    let elaborated_ops_c = elaborate_local_ops (elaborated_ops_b, env_with_elaborated_sorts, true)  in
+    let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, env_with_elaborated_sorts, false) in
 
     %% Elaborate properties
     let elaborated_elts = elaborate_local_props (given_elts, env_with_elaborated_sorts) in
@@ -476,6 +472,8 @@ TypeChecker qualifying spec
    in
      maybePiTerm (new_tvs, SortedTerm (elaborated_tm, srt, pos))
 
+ def complainAboutImplcitPolymorphicOps? = true
+
  def collectUsedTyVars (srt, info, dfn, env) =
    let tv_cell = Ref [] : Ref TyVars in
    let 
@@ -497,11 +495,13 @@ TypeChecker qualifying spec
 	   (let {name = _, uniqueId, link} = ! mtv in
 	    case link of
 	      | Some s -> scan s
-	      | None   -> error (env, 
-				 "Incomplete type for op "^(printQualifiedId (primaryOpName info))
-				 ^":"^newline
-				 ^(printSort srt), 
-				 termAnn dfn))
+	      | None   -> if complainAboutImplcitPolymorphicOps?
+	                   then error (env, 
+				       "Incomplete type for op "^(printQualifiedId (primaryOpName info))
+				       ^":"^newline
+				       ^(printSort srt), 
+				       termAnn dfn)
+			   else ())
 	 | And (srts, _) -> app scan srts
 	 | Any _ -> ()
 
