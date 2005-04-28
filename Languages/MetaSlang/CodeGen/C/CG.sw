@@ -113,20 +113,19 @@ spec
     %let _ = writeLine(printSpec spc) in
     let spc = translateRecordMergeInSpec spc in
     let spc = identifyIntSorts spc in
+    %let _ = printSpecFlatToTerminal spc in
     let spc = if addmissingfrombase?
 		then addMissingFromBase(basespc,spc,builtinSortOp)
 	      else spc
     in
     let spc = removeCurrying spc in
     let spc = instantiateHOFns spc in
-    %let _ = writeLine(printSpec spc) in
+    %let _ = printSpecFlatToTerminal spc in
     %let spc = lambdaToInner spc in
     let spc = poly2mono(spc,false) in
-    %let _ = writeLine(printSpec spc) in
     let spc = addEqOpsToSpec spc in
     %let _ = printSpecWithSortsToTerminal spc in
     let spc = lambdaLift spc in
-    %let _ = writeLine(printSpec spc) in
     let (spc,constrOps) = addSortConstructorsToSpec spc in
     let spc = conformOpDecls spc in
     let spc = adjustAppl spc in

@@ -932,20 +932,25 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
     initSpec 
   else
     %let _ = writeLine ("added sorts && ops: "^newline^printSortOpInfos (minfo)) in
-    let srts = foldr (fn (info, map) -> 
-		      let Qualified (q, id) = primarySortName info in
-		      insertAQualifierMap (map, q, id, info))
-                     initSpec.sorts 
-		     minfo.sorts
+    let (srts,elts) = foldr (fn (info, (map,elts)) ->
+			     let qid = primarySortName info in
+			     let Qualified (q, id) = qid in
+			     (insertAQualifierMap (map, q, id, info),
+			      [SortDef qid] ++ elts))
+                       (initSpec.sorts,initSpec.elements)
+		       minfo.sorts
     in
-    let ops = foldr (fn (info, map) -> 
-		     let Qualified (q, id) = primaryOpName info in
-		     insertAQualifierMap (map, q, id, info))
-                    initSpec.ops 
-		    minfo.ops
+    let (ops,elts) = foldr (fn (info, (map,elts)) -> 
+			    let qid = primaryOpName info in
+			    let Qualified (q, id) = qid in
+			    (insertAQualifierMap (map, q, id, info),
+			     [Op qid,OpDef qid] ++ elts))
+		       (initSpec.ops,elts)
+		       minfo.ops
     in
     let initSpec = setSorts (initSpec, srts) in
-    let initSpec = setOps  (initSpec, ops)  in
+    let initSpec = setOps   (initSpec, ops)  in
+    let initSpec = setElements(initSpec, elts)  in
     addMissingFromBase (bspc, initSpec, ignore)
 
 
