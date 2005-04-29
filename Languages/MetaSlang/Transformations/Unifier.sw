@@ -73,14 +73,21 @@ spec
 		      else None)
 
      %% Fix!:: Currently name clashes with binding constructs are ignored
-     | (Bind(b1, vs1, x1, _), Bind(b2, vs2, x2, _))
-       -> if ~(b1 = b2)
+     | (Bind(b1, vs1, x1, _), Bind(b2, vs2, x2, _)) ->
+       if ~(b1 = b2)
 	   then None
 	  else
 	    %% Could check modulo alpha conversion...
 	    if equalList? (vs1, vs2, equalVar?)
 	     then unifyRec(x1, x2, sb,vs)
 	     else None
+
+     | (The(v1, x1, _), The(v2, x2, _)) -> 
+	 %% Could check modulo alpha conversion...
+         if equalVar? (v1, v2) then
+           unifyRec(x1, x2, sb,vs)
+         else
+           None
 
      | (Let(pts1, b1,_), Let(pts2, b2,_)) ->
        (case unifyRec(b1, b2, sb, vs) of

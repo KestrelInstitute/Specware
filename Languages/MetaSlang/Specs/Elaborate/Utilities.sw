@@ -712,6 +712,7 @@ spec
      | ApplyN     (ms,            _) -> exists (fn M -> occursT (mtv, M)) ms
      | Record     (fields,        _) -> exists (fn (_, M) -> occursT (mtv, M)) fields
      | Bind       (_, vars, body, _) -> exists (fn (_, s) -> occurs (mtv, s)) vars or occursT (mtv, body)
+     | The        ((_,s), body,   _) -> occurs (mtv, s) or occursT (mtv, body)
      | IfThenElse (M, N, P,       _) -> occursT (mtv, M) or occursT (mtv, N) or occursT (mtv, P)
      | Var        ((_, s),        _) -> occurs (mtv, s)
      | Fun        (_, s,          _) -> occurs (mtv, s)

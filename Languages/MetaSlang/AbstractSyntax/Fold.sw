@@ -27,6 +27,7 @@ spec {
              foldPattern tsp_folds (foldTerm tsp_folds (foldTerm tsp_folds acc cond) trm) pat) acc match
        | Bind (bnd, vars, trm, a) -> 
            foldTerm tsp_folds (foldl (fn ((id,srt),acc) -> foldSort tsp_folds acc srt) acc vars) trm
+       | The ((id,srt), trm, a) -> foldTerm tsp_folds (foldSort tsp_folds acc srt) trm
        | Apply (t1, t2,  a) -> foldTerm tsp_folds (foldTerm tsp_folds acc t1) t2
        | Seq (terms, a) -> 
            foldl (fn (trm,acc) -> foldTerm tsp_folds acc trm) acc terms

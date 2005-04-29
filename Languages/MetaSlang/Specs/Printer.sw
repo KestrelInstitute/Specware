@@ -501,10 +501,27 @@ AnnSpecPrinter qualifying spec
 	    prettysNone [pp.LP, 
 			 printLambda (context, path, pp.Lambda, match), 
 			 pp.RP]
+          | The ((id,srt),body,_) ->
+	      enclose(case parentTerm of
+			| Infix _ -> false % Add parens if inside an infix expr
+			| _ -> true,
+		      blockFill (0, [
+			    (0, prettysNone 
+			     [pp.The,
+                              pp.LP,
+		              pp.fromString id, 
+			      string " : ", 
+			      ppSort context ([2] ++ path, Top) srt,
+                              pp.RP, string " "
+                             ]), 
+			    (1, ppTerm context ([2] ++ path, parentTerm) body)]))
+              
+
 	  | Bind (binder, bound, body, _) ->
 	    let b = case binder of
 		      | Forall -> pp.Fa
 		      | Exists -> pp.Ex
+		      | Exists1 -> pp.Ex1
 	    in
 	    let 
 	      def ppBound (index, (id, srt)) =

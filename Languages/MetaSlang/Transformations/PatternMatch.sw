@@ -790,6 +790,8 @@ def eliminateTerm context term =
       | Bind(b,vars,t,a) -> 
 	Bind(b,map (fn(n,s)-> (n,eliminateSort context s)) vars,
 	     eliminateTerm context t,a)
+      | The((id,srt),t,a) -> 
+	The((id,eliminateSort context srt), eliminateTerm context t,a)
       | LetRec(decls,body,a) -> 
 	LetRec(map (fn ((n,s),t)->
 			     ((n,eliminateSort context s),

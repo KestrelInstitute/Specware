@@ -180,6 +180,7 @@ Prover qualifying spec
       | Apply(_) -> removePatternApply(spc, term)
       | Record(_) -> removePatternRecord(spc, term)
       | Bind (_) -> removePatternBind(spc, term)
+      | The (_) -> removePatternThe(spc, term)
       | Let(_) -> removePatternLet(spc, term)
       | LetRec(_) -> removePatternLetRec(term)
       | Var(_) -> removePatternVar(term)
@@ -313,6 +314,16 @@ def removePatternCase(spc, term) =
     let res = map (fn (condTerm) -> mkLeafCase(condTerm)) bodyConds in
     %let _ = writeLine("RemovePatternBind: "^printTerm(term)) in
     %let _ = map (fn (ct) -> writeLine(printCondTerm(ct))) res in
+    res
+
+  op removePatternThe: Spec * Term -> CondTerms
+  def removePatternThe(spc, term as The (var, body, b)) =
+    let bodyConds = removePatternTerm (spc, body) in
+    let def mkLeafCase(condTerm) =
+          let (newVars, newCond, newBody) = condTerm in
+	  let r = (newVars, mkTrue(), mkThe(var, mkSimpImplies(newCond, newBody))) in
+	  r in
+    let res = map (fn (condTerm) -> mkLeafCase(condTerm)) bodyConds in
     res
 
   op patternToTerms: Pattern -> List Term

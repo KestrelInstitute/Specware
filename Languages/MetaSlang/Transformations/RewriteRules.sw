@@ -431,8 +431,7 @@ is rewritten to
        of Conjecture -> None
 	| _ -> 
      let freeVars = [] in
-     let (freeVars,n,S,formula) = 
-	 bound(Forall:Binder,0,formula,freeVars,[]) in
+     let (freeVars,n,S,formula) = bound(Forall:Binder,0,formula,freeVars,[]) in
      let (condition,fml) = 
 	  case formula of 
             | Apply(Fun(Implies,_,_), Record([(_,M),(_,N)], _),_) -> 
@@ -487,10 +486,10 @@ is rewritten to
 	      else (x,srt)
 
 	  def doTerm(term:MS.Term):MS.Term = 
-	      case term
-		of Var(v,a) -> Var(doVar v,a)
-		 | Bind(qf,vars,body,a) -> 
-		   Bind(qf,List.map doVar vars,body,a)
+	      case term of
+		 | Var(v,a) -> Var(doVar v,a)
+		 | Bind(qf,vars,body,a) -> Bind(qf,List.map doVar vars,body,a)
+		 | The (var,body,a) -> The (doVar var,body,a)
 		 | term -> term
 	   def doPat(pat:Pattern):Pattern = 
 	       case pat

@@ -167,6 +167,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                       ppSep (ppString ",") (map ppField fields),
                       ppString "}"
                     ])
+          | The (var,term,_) ->
+              ppGrConcat [
+                ppString "the (",
+                ppAVarWithoutSort var,
+                ppString ") ",
+                ppATerm term
+              ]
           | Bind (binder,vars,term,_) ->
               ppGrConcat [
                 ppBinder binder,
@@ -243,8 +250,9 @@ infix with brackets. And similarly when we see an \verb+Equals+.
   op ppBinder : Binder -> Pretty
   def ppBinder binder =
     case binder of
-        Forall -> ppString "fa"
+      | Forall -> ppString "fa"
       | Exists -> ppString "ex"
+      | Exists1 -> ppString "ex1"
 
   op ppAVarWithoutSort : fa (a) AVar a -> Pretty
   def ppAVarWithoutSort (id, _(* srt *)) = ppString id

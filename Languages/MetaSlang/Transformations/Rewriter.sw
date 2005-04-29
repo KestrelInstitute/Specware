@@ -271,6 +271,9 @@ MetaSlangRewriter qualifying spec
          | Bind(qf,vars,M,b) -> 
 	   LazyList.map (fn (M,a) -> (Bind(qf,vars,M,b),a))
 		(rewriteTerm(solvers,boundVars ++ vars,M,rules))
+         | The (var,M,b) -> 
+	   LazyList.map (fn (M,a) -> (The(var,M,b),a))
+		(rewriteTerm(solvers,boundVars ++ [var],M,rules))
 	 | IfThenElse(M,N,P,b) -> 
    	   LazyList.map 
 		(fn (M,a) -> (IfThenElse(M,N,P,b),a)) 
@@ -346,6 +349,7 @@ MetaSlangRewriter qualifying spec
 	        | IfThenElse(t1,t2,t3,_) -> loop t1 & loop t2 & loop t3
 	        | Lambda(match,_) -> 
 	          all  (fn (_,_,M) -> loop M) match
+                | The(var,trm,_) -> loop trm
                 | Bind(bnd,vars,trm,_) -> loop trm
 	        | Apply(t1,t2,_) -> 
 	          (case isFlexVar?(term) 

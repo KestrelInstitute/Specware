@@ -501,6 +501,16 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
 	matchPairs (context,subst,insert(M,N,stack))
       | (IfThenElse(M1,M2,M3,_),IfThenElse(N1,N2,N3,_)) -> 
 	matchPairs(context,subst,insert(M1,N1,insert(M2,N2,insert(M3,N3,stack))))
+      | (The ((id1,srt1),M,_),The ((id2,srt2),N,_)) -> 
+          (case unifySorts(context,subst,srt1,srt2) of
+            | Some subst -> 
+               let x = freshBoundVar(context,srt1) in
+               let S1 = [((id1,srt1),Var(x,noPos))] in
+               let S2 = [((id2,srt2),Var(x,noPos))] in
+               let M = substitute(M,S1) in
+               let N = substitute(N,S2) in
+               matchPairs (context,subst,insert(M,N,stack))
+            | None -> [])
       | (M,_) -> 
 %	  let _ = writeLine "matchPair" in
 %	  let _ = writeLine(MetaSlangPrint.printTerm M) in
@@ -669,6 +679,7 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
         | Lambda((Cons((pat,_,body),_)), _) -> 
 	  mkArrow(patternSort pat,inferType(spc,subst,body))
         | Lambda([], _) -> System.fail "Ill formed lambda abstraction"
+        | The ((_,srt),_,_) -> srt
         | IfThenElse(_,t2,t3,_) -> inferType(spc,subst,t2)
         | Seq([],a) -> Product([],a)
         | Seq([M],_) -> inferType(spc,subst,M)
@@ -883,6 +894,7 @@ skolemization transforms a proper matching problem into an inproper one.
 	 | Seq(Ms, _) -> exists (occurs n) Ms
 	 | IfThenElse(M1,M2,M3,_) -> 
 	   occurs n M1 or occurs n M2 or occurs n M3
+	 | The (var,M,_) -> occurs n M
 	 | Bind(_,vars,M,_) -> occurs n M
 	 | Let(decls,M,_) -> 
 	   occurs n M or exists (occursP n) decls
@@ -939,6 +951,7 @@ skolemization transforms a proper matching problem into an inproper one.
 	   closedTermV(M2,bound) & 
 	   closedTermV(M3,bound)
 	 | Bind(_,vars,M,_) -> closedTermV(M,vars ++ bound)
+	 | The (var,M,_) -> closedTermV (M,Cons(var, bound))
 	 | Let(decls,M,_) -> 
 	   all (fn (_,M) -> closedTermV(M,bound)) decls 
 	   & 

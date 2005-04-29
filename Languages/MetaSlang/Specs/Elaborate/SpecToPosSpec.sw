@@ -83,6 +83,8 @@ def convertOpInfoToPOpInfo info = info
           Record(map(fn(f,t)-> (f,convertTermToPTerm t)) fields,pos)
         | Bind(b,vars,term,_) -> 
           Bind(b,convertVarsToPVars vars,convertTermToPTerm term,pos)
+        | The (var,term,_) -> 
+          The (convertVarToPVar var,convertTermToPTerm term,pos)
         | Let(decls,term,_) -> 
           Let(map (fn(pat,t)-> (convertPatternToPPattern pat,convertTermToPTerm t)) decls,convertTermToPTerm term,pos)
         | LetRec(defs,term,_) -> 

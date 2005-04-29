@@ -134,6 +134,7 @@ MetaSlang qualifying spec
   | ApplyN       List (ATerm b)                          * b % Before elaborateSpec
   | Record       List (Id * ATerm b)                     * b
   | Bind         Binder * List (AVar b)      * ATerm b   * b
+  | The          AVar b * ATerm b                        * b
   | Let          List (APattern b * ATerm b) * ATerm b   * b
   | LetRec       List (AVar b     * ATerm b) * ATerm b   * b
   | Var          AVar b                                  * b
@@ -151,6 +152,7 @@ MetaSlang qualifying spec
  type Binder =
   | Forall
   | Exists
+  | Exists1
 
  type AVar b = Id * ASort b
 
@@ -332,6 +334,7 @@ MetaSlang qualifying spec
      | Var        (_,     a) -> a
      | Fun        (_,_,   a) -> a
      | Lambda     (_,     a) -> a
+     | The        (_,_,   a) -> a
      | IfThenElse (_,_,_, a) -> a
      | Seq        (_,     a) -> a
      | SortedTerm (_,_,   a) -> a
@@ -346,6 +349,7 @@ MetaSlang qualifying spec
      | ApplyN     (l,        b) -> if a = b then tm else ApplyN     (l,          a)
      | Record     (l,        b) -> if a = b then tm else Record     (l,          a)
      | Bind       (x, l, t,  b) -> if a = b then tm else Bind       (x, l, t,    a)
+     | The        (v, t,     b) -> if a = b then tm else The        (v, t,       a)
      | Let        (l,t,      b) -> if a = b then tm else Let        (l, t,       a)
      | LetRec     (l,t,      b) -> if a = b then tm else LetRec     (l, t,       a)
      | Var        (v,        b) -> if a = b then tm else Var        (v,          a)
@@ -492,6 +496,7 @@ MetaSlang qualifying spec
      | LetRec     (_,term,  _)              -> termSort term
      | Var        ((_,srt), _)              -> srt
      | Fun        (_,srt,   _)              -> srt
+     | The        ((_,srt),_,_)             -> srt
      | Lambda     (Cons((pat,_,body),_), a) -> Arrow(patternSort pat, termSort body, a)
      | Lambda     ([],                   _) -> System.fail "termSort: Ill formed lambda abstraction"
      | IfThenElse (_,t2,t3, _)              -> termSort t2
@@ -586,6 +591,11 @@ MetaSlang qualifying spec
                                         %% Could check modulo alpha conversion...
                                         equalList? (vs1, vs2, equalVar?) &&
                                         equalTerm? (x1,  x2)
+
+     | (The       (v1, x1, _),
+        The       (v2, x2, _)) -> %% Could check modulo alpha conversion...
+                                    equalVar? (v1, v2) &&
+                                    equalTerm? (x1, x2)
 
      | (Let        (pts1, b1,    _),
         Let        (pts2, b2,    _)) -> equalTerm? (b1, b2) &&
@@ -828,6 +838,11 @@ MetaSlang qualifying spec
                                         equalList? (vs1, vs2, equalVarStruct?) &&
                                         equalTermStruct? (x1,  x2)
 
+     | (The       (v1, x1, _),
+        The       (v2, x2, _)) -> %% Could check modulo alpha conversion...
+                                      equalVarStruct? (v1,v2) &&
+                                      equalTermStruct? (x1,x2)
+
      | (Let        (pts1, b1,    _),
         Let        (pts2, b2,    _)) -> equalTermStruct? (b1, b2) &&
                                         equalList? (pts1, pts2,
@@ -1025,6 +1040,14 @@ MetaSlang qualifying spec
 	     term
 	   else
 	     Bind (bnd, newVars, newTrm, a)
+
+	 | The (var as (id,srt), trm, a) ->
+	   let newVar = (id, mapSort tsp srt) in
+	   let newTrm = mapRec trm in
+	   if newVar = var && newTrm = trm then
+	     term
+	   else
+	     The (newVar, newTrm, a)
 
 	 | Let (decls, bdy, a) ->
 	   let newDecls = map (fn (pat, trm) ->
@@ -1340,12 +1363,18 @@ MetaSlang qualifying spec
 	     Record(newRow,a)
 	       
 	 | Bind (bnd, vars, trm, a) ->
-	   let newVars = map (fn (id,srt)-> (id, srt)) vars in
 	   let newTrm = mapRec trm in
-	   if newVars = vars && newTrm = trm then
+	   if newTrm = trm then
 	     term
 	   else
-	     Bind (bnd, newVars, newTrm, a)
+	     Bind (bnd, vars, newTrm, a)
+		 
+	 | The (var, trm, a) ->
+	   let newTrm = mapRec trm in
+	   if newTrm = trm then
+	     term
+	   else
+	     The (var, newTrm, a)
 		 
 	 | Let (decls, bdy, a) ->
 	   let newDecls = map (fn (pat, trm) -> (pat, mapRec trm)) decls in
@@ -1430,6 +1459,8 @@ MetaSlang qualifying spec
 
       | Bind        (_,_,M,    _) -> existsSubTerm pred? M
 
+      | The         (_,M,      _) -> existsSubTerm pred? M
+
       | Let         (decls, M, _) -> existsSubTerm pred? M or
                                      exists (fn (_,M) -> existsSubTerm pred? M) decls
 
@@ -1474,6 +1505,8 @@ MetaSlang qualifying spec
      | Record    (fields, _)   -> foldl (fn ((_,M),val) -> foldSubTerms f val M) newVal fields
 
      | Bind      (_,_,M,    _) -> foldSubTerms f newVal M
+
+     | The       (_,M,      _) -> foldSubTerms f newVal M
 
      | Let       (decls, N, _) -> foldl (fn ((_,M),val) -> foldSubTerms f val M)
                                         (foldSubTerms f newVal N) 
@@ -1531,6 +1564,8 @@ MetaSlang qualifying spec
 					  val fields
 
 	 | Bind      (_,_,M,  _) -> foldSubTermsEvalOrder f val M
+
+	 | The       (_,M,    _) -> foldSubTermsEvalOrder f val M
 
 	 | Let       (decls,N,_) -> let dval = foldl (fn ((_, M), val) ->
 						      foldSubTermsEvalOrder f val M)
@@ -1615,6 +1650,9 @@ MetaSlang qualifying spec
 		       map (fn (id, srt)-> (id, replaceSort tsp srt)) vars,
 		       replaceRec trm,
 		       a)
+	  
+	| The        ((id,srt), trm, a) ->
+	  The        ((id, replaceSort tsp srt), replaceRec trm, a)
 	  
 	| Let         (decls, bdy, a) ->
 	  Let         (map (fn (pat, trm)-> (replacePattern tsp pat, replaceRec trm)) decls,
@@ -1807,6 +1845,8 @@ MetaSlang qualifying spec
 	 | Bind       (_, vars, trm, _) -> (app (fn (id, srt) -> appSort tsp srt) vars;
 					    appRec trm)
 
+	 | The        ((id,srt), trm,    _) -> (appSort tsp srt; appRec trm)
+
 	 | Let        (decls, bdy,   _) -> (app (fn (pat, trm) ->
 						 (appPattern tsp pat;
 						  appRec trm))
@@ -1869,8 +1909,7 @@ MetaSlang qualifying spec
 
      def appRec srt =
        %% Post-node traversal: leaves first
-       (appS (tsp, srt); 
-	srt_app srt)
+       (appS (tsp, srt); srt_app srt)
 
    in
      appRec srt
@@ -1895,9 +1934,7 @@ MetaSlang qualifying spec
         %| CharPat   ??
 	 | _                                  -> ()
 
-     def appRec pat = 
-       (appP (tsp, pat); 
-	pattern_app pat)
+     def appRec pat = (appP (tsp, pat); pattern_app pat)
 
    in
      appRec pat

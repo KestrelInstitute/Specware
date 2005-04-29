@@ -170,6 +170,7 @@
 
 (defparameter forall-op   (cons :|Forall| nil))
 (defparameter exists-op   (cons :|Exists| nil))
+(defparameter exists1-op  (cons :|Exists1| nil))
 
 (defparameter unspecified-fixity '(:|Unspecified|))
 
@@ -544,6 +545,15 @@ If we want the precedence to be optional:
 (defun make-if-expression (term1 term2 term3 l r)
   (cons :|IfThenElse|
         (vector term1 term2 term3
+                (make-pos l r))))
+
+;;; ------------------------------------------------------------------------
+;;;   THE (IOTA)
+;;; ------------------------------------------------------------------------
+
+(defun make-the (var expression l r)
+  (cons :|The|
+        (vector var expression
                 (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------

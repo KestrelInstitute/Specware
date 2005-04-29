@@ -804,6 +804,11 @@ TypeChecker qualifying spec
 		    rules,
 	       pos)
 
+      | The ((id,srt), term, pos) ->
+	let _ = elaborateSort (env, srt, term_sort) in
+        let env = addVariable (env,id,srt) in
+	The ((id,srt), elaborateTerm (env, term, type_bool), pos)
+
       | Bind (bind, vars, term, pos) ->
 	let _ = elaborateSort (env, term_sort, type_bool) in
 	let (vars, env) = 

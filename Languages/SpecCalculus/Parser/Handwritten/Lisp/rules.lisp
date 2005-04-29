@@ -669,9 +669,10 @@ If we want the precedence to be optional:
   (:anyof
    (1 :LAMBDA-FORM          :documentation "Function definition")
    (1 :CASE-EXPRESSION      :documentation "Case")
+   (1 :THE-EXPRESSION       :documentation "Iota")
    (1 :LET-EXPRESSION       :documentation "Let")
    (1 :IF-EXPRESSION        :documentation "If-then-else")
-   (1 :QUANTIFICATION       :documentation "Quantification (fa/ex)")
+   (1 :QUANTIFICATION       :documentation "Quantification (fa/ex/ex1)")
    (1 :ANNOTATED-EXPRESSION :documentation "Annotated (i.e. typed) expression")
    (1 :TIGHT-EXPRESSION     :documentation "Tight expression -- suitable for annotation")
    )
@@ -681,9 +682,10 @@ If we want the precedence to be optional:
   (:anyof
    (1 :LAMBDA-FORM          :documentation "Function definition")
    (1 :CASE-EXPRESSION      :documentation "Case")
+   (1 :THE-EXPRESSION       :documentation "Iota")
    (1 :LET-EXPRESSION       :documentation "Let")
    (1 :IF-EXPRESSION        :documentation "If-then-else")
-   (1 :QUANTIFICATION       :documentation "Quantification (fa/ex)")
+   (1 :QUANTIFICATION       :documentation "Quantification (fa/ex/ex1)")
    (1 :ANNOTATED-EXPRESSION :documentation "Annotated (i.e. typed) expression")
    (1 :TIGHT-EXPRESSION-NOT-STARTING-WITH-BRACKET :documentation "Tight expression -- suitable for annotation -- not starting with '['")
    )
@@ -691,9 +693,10 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :NON-BRANCH-EXPRESSION ()
   (:anyof
+   (1 :NON-BRANCH-THE-EXPRESSION  :documentation "Iota not ending in case or lambda")
    (1 :NON-BRANCH-LET-EXPRESSION  :documentation "Let not ending in case or lambda")
    (1 :NON-BRANCH-IF-EXPRESSION   :documentation "If-then-else not ending in case or lambda")
-   (1 :NON-BRANCH-QUANTIFICATION  :documentation "Quantification (fa/ex) not ending in case or lambda")
+   (1 :NON-BRANCH-QUANTIFICATION  :documentation "Quantification (fa/ex/ex1) not ending in case or lambda")
    (1 :ANNOTATED-EXPRESSION       :documentation "Annotated (i.e. typed) expression")
    (1 :TIGHT-EXPRESSION           :documentation "Tight expression -- suitable for annotation")
    )
@@ -866,6 +869,21 @@ If we want the precedence to be optional:
   (make-if-expression 1 2 3 ':left-lcb ':right-lcb)  :documentation "If-Then-Else")
 
 ;;; ------------------------------------------------------------------------
+;;;   THE-EXPRESSION
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :THE-EXPRESSION ()
+  (:tuple "the" "(" (1 :ANNOTATED-VARIABLE) ")" (2 :EXPRESSION))
+  (make-the 1 2 ':left-lcb ':right-lcb)
+  :documentation "Iota")
+
+(define-sw-parser-rule :NON-BRANCH-THE-EXPRESSION () ; as above, but not ending with "| .. -> .."
+  (:tuple "the" "(" (1 :ANNOTATED-VARIABLE) ")" (2 :NON-BRANCH-EXPRESSION))
+  (make-the 1 2 ':left-lcb ':right-lcb)
+  :documentation "Iota")
+
+
+;;; ------------------------------------------------------------------------
 ;;;   QUANTIFICATION
 ;;; ------------------------------------------------------------------------
 
@@ -882,7 +900,8 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :QUANTIFIER ()
   (:anyof
    ((:tuple "fa")  forall-op)
-   ((:tuple "ex")  exists-op)))
+   ((:tuple "ex")  exists-op)
+   ((:tuple "ex1") exists1-op)))
 
 (define-sw-parser-rule :LOCAL-VARIABLE-LIST ()
   (:tuple "(" (1 (:repeat+ :ANNOTATED-VARIABLE ",")) ")")

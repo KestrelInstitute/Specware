@@ -267,6 +267,7 @@ spec
      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternSort pat,
                                                        inferType (sp, body))
      | Lambda     ([],                   _) -> System.fail "inferType: Ill formed lambda abstraction"
+     | The        ((_,srt), _,           _) -> srt
      | IfThenElse (_, t2, t3,            _) -> inferType (sp, t2)
      | Seq        ([],                   _) -> Product ([], noPos)
      | Seq        ([M],                  _) -> inferType (sp, M)
@@ -452,11 +453,12 @@ spec
                                                         noPos)
       | Let        (_, t,                 _) -> termSortEnv   (sp, t)
       | LetRec     (_, t,                 _) -> termSortEnv   (sp, t)
-      | Var        ((id, srt),            _) -> unfoldToArrow (sp, srt)
+      | Var        ((_, srt),             _) -> unfoldToArrow (sp, srt)
       | Fun        (fun, srt,             _) -> unfoldToArrow (sp, srt)
       | Lambda     (Cons((pat,_,body),_), _) -> mkArrow (patternSort pat,
                                                          termSortEnv (sp, body))
       | Lambda     ([],                   _) -> System.fail "Ill formed lambda abstraction"
+      | The        ((_,srt),_,            _) -> unfoldToArrow (sp, srt)
       | IfThenElse (_, t2, t3,            _) -> termSortEnv   (sp, t2)
       | Seq        _                         -> mkProduct     []
       | SortedTerm (_, s,                 _) -> s

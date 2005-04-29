@@ -128,6 +128,12 @@ spec
          let term = renameTerm c term in
          Bind (b, idSrts, term, a))
 
+       | The ((id,srt), term, a) ->
+         savingEnvContext c (fn () ->
+         let newId = fresh c id in
+         let term = renameTerm c term in
+         The ((newId,srt), term, a))
+
        | Let (decls, term, a) ->
          savingEnvContext c (fn () ->
          let (pats, terms) = ListPair.unzip decls in

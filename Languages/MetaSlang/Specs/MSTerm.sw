@@ -70,6 +70,7 @@ MS qualifying spec
  op mkLet         : List (Pattern * Term) * Term  -> Term
  op mkLetRec      : List (Var     * Term) * Term  -> Term
  op mkLambda      : Pattern * Term                -> Term
+ op mkThe         : Var * Term                    -> Term
  op mkBind        : Binder * List Var * Term      -> Term
  op mkVar         : Var                           -> Term
  op mkFun         : Fun * Sort                    -> Term
@@ -82,6 +83,7 @@ MS qualifying spec
  def mkLet        (decls, term)   = Let        (decls, term,             termAnn(term))
  def mkLetRec     (decls, term)   = LetRec     (decls, term,             termAnn(term))
  def mkLambda     (pat,   term)   = Lambda     ([(pat, mkTrue(), term)], termAnn(term))
+ def mkThe        (var, term)     = The        (var, term,              termAnn(term))
  def mkBind       (b, vars, term) = Bind       (b, vars, term,           termAnn(term))
 
  def mkVar        v               = Var        (v,                       noPos)

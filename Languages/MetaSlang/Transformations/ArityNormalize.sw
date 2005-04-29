@@ -162,6 +162,7 @@ ArityNormalize qualifying spec {
         | Let _ -> None
         | LetRec _ -> None
         | Bind _ -> None
+        | The _ -> None
         | Lambda(match,_) -> 
           let mArity = matchArity match in
           if mArity = 1
@@ -375,6 +376,9 @@ ArityNormalize qualifying spec {
         | Bind(binder,vars,term,_) -> 
           let (usedNames,gamma) = insertVars(vars,(usedNames,gamma)) in
           mkBind(binder,vars,normalizeArity(sp,gamma,usedNames,term))
+        | The (var,term,_) -> 
+          let (usedNames,gamma) = insertVars([var],(usedNames,gamma)) in
+          mkThe (var,normalizeArity(sp,gamma,usedNames,term))
         | Let(decls,term,_) -> 
           let (decls,usedNames,gamma) = 
               foldr

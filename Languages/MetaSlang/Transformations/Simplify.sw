@@ -262,6 +262,7 @@ spec
        %% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
        | Bind(Forall,_,_,_) -> simplifyForall spc (forallComponents term)
        | Bind(Exists,_,_,_) -> simplifyExists(existsComponents term)
+       | Bind(Exists1,_,_,_) -> simplifyExists1(exists1Components term)
        | Apply(Fun(Project i,_,_),Record(m,_),_) ->
 	 (case getField(m,i) of
 	   | Some fld -> fld
@@ -366,6 +367,10 @@ spec
   op  simplifyExists: List Var * List MS.Term -> MS.Term
   def simplifyExists(vs,cjs) =
     mkSimpBind(Exists,vs,mkSimpConj cjs)    
+
+  op  simplifyExists1: List Var * List MS.Term -> MS.Term
+  def simplifyExists1(vs,cjs) =
+    mkSimpBind(Exists1,vs,mkSimpConj cjs)    
 
   def simplifyCase spc term =
     case term of

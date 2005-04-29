@@ -875,6 +875,19 @@ Utilities qualifying spec
 	(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
       | _ -> ([],[t])
 
+  %% Given an existential (one) quantification return list of quantified variables and conjuncts
+  op  exists1Components: [a] ATerm a -> List (AVar a) * List (ATerm a)
+  def exists1Components t =
+    case t of
+      | Bind(Exists1,vs,bod,_) ->
+	let (rVs,rLhsCjs) = exists1Components bod in
+	(vs ++ rVs,rLhsCjs)
+      | Apply(Fun(And,_,_), Record([("1",lhs),("2",rhs)],_),_) ->
+        let (lVs,lLhsCjs) = exists1Components lhs in
+        let (rVs,rLhsCjs) = exists1Components rhs in
+	(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
+      | _ -> ([],[t])
+
   op  constantTerm?: [a] ATerm a -> Boolean
   def constantTerm? t =
     case t of

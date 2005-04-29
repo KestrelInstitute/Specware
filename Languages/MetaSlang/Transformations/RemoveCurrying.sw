@@ -199,6 +199,12 @@ RemoveCurrying qualifying spec
 	if newM = M & newDecls = decls
 	  then tm
 	 else LetRec(newDecls,newM,a)
+      | The (var,term,a) ->
+	let newTerm = unCurryTermRec term in
+          if newTerm = term then
+            tm
+          else
+            The (var,newTerm,a)
       | IfThenElse(t1,t2,t3,a) ->
 	let newT1 = unCurryTermRec t1 in
 	let newT2 = unCurryTermRec t2 in

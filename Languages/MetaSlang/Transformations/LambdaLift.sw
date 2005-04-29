@@ -81,6 +81,7 @@ efficiently, but cmulisp may do better with local functions.
   | Apply        VarTerm * VarTerm
   | Record       List (Id * VarTerm)
   | Bind         Binder * List Var * VarTerm
+  | The          Var * VarTerm
   | Let	         List (Pattern * VarTerm) * VarTerm
   | LetRec       List (Var     * VarTerm) * VarTerm
   | Var          Var
@@ -187,6 +188,11 @@ efficiently, but cmulisp may do better with local functions.
        let body as (_, vs) = makeVarTerm body in
        let vars = diffVs (vs, bound) in
        (Bind (binder, bound, body), vars)
+
+     | The (var, body, a) -> 
+       let body as (_, vs) = makeVarTerm body in
+       let vars = diffVs (vs, [var]) in
+       (The (var, body), vars)
 
      | SortedTerm (t, srt, a) ->
        let (t, vars) = makeVarTerm t in
@@ -662,6 +668,10 @@ in
        let (opers, liftBody) = lambdaLiftTerm (env, body) in
        (opers, mkBind (binder, bound, liftBody))
        %System.fail "Unexpected binder"
+
+     | The (var, body) -> 
+       let (opers, liftBody) = lambdaLiftTerm (env, body) in
+       (opers, mkThe (var, liftBody))
 
      | _ -> System.fail "Unexpected term"
 

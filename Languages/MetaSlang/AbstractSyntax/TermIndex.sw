@@ -82,9 +82,11 @@ spec
       | (IfThenElse    (_,_,_,_)) ->  8 % was 2
       | (Bind (Forall,    _,_,_)) ->  9 % was 3
       | (Bind (Exists,    _,_,_)) -> 10 % was 4
-      | (Lambda                _) -> 11 % was 5
-      | (Let             (_,_,_)) -> 12 % was 6
-      | (LetRec          (_,_,_)) -> 13 % was 7
+      | (Bind (Exists1,   _,_,_)) -> 11 % was 4
+      | Lambda _                  -> 12 % was 5
+      | Let _                     -> 13 % was 6
+      | LetRec _                  -> 14 % was 7
+      | The _                     -> 15 
       | _ -> 0
 
  def subterms = 
