@@ -27,6 +27,9 @@ FSeq qualifying spec
   def seq_1 s =
     fn(i:Nat) -> if i < length s then Some (nth (s, i)) else None
 
+  op length : [a] FSeq a -> Nat
+  def length = List.length
+
   op @ infixl 30 : [a] {(s,i) : FSeq a * Nat | i < length s} -> a
   def @ = nth
 
@@ -61,6 +64,9 @@ FSeq qualifying spec
   op theElement : [a] SingletonFSeq a -> a
   def theElement s = hd s
 
+  op ++ infixl 25 : [a] FSeq a * FSeq a -> FSeq a
+  def ++ = List.++
+
   op |> infixr 25 : [a] a * FSeq a -> FSeq a
   def |> = cons
 
@@ -89,6 +95,9 @@ FSeq qualifying spec
                   | first::rest -> p (i, first) && aux (i+1, rest)
     in
     aux (0, s)
+
+  op exists? : [a] (a -> Boolean) -> FSeq a -> Boolean
+  def exists? = List.exists
 
   op exists1? : [a] (a -> Boolean) -> FSeq a -> Boolean
   def exists1? p = fn
@@ -126,6 +135,9 @@ FSeq qualifying spec
   op foldl : [a,b] (b * a -> b) -> b -> FSeq a -> b
   def foldl f c s = List.foldl (fn (x,y) -> f(y,x)) c s
 
+  op foldr : [a,b] (a * b -> b) -> b -> FSeq a -> b
+  def foldr = List.foldr
+
   op zip : [a,b] ((FSeq a * FSeq b) | equiLong) -> FSeq (a * b)
   def zip(s1,s2) =
     case (s1,s2) of
@@ -158,9 +170,15 @@ FSeq qualifying spec
         let (rest1, rest2, rest3) = unzip3 rest in
         (cons (first1, rest1), cons (first2, rest2), cons (first3, rest3))
 
+  op map : [a,b] (a -> b) -> FSeq a -> FSeq b
+  def map = List.map
+
   % copied from spec `FiniteSequences':
   op map2 : [a,b,c] (a * b -> c) -> ((FSeq a * FSeq b) | equiLong) -> FSeq c
   def map2 f (s1,s2) = map f (zip (s1, s2))
+
+  op filter : [a] (a -> Boolean) -> FSeq a -> FSeq a
+  def filter = List.filter
 
   op repeat : [a] a -> Nat -> FSeq a
   def repeat x n = tabulate (n, fn(i:Nat) -> x)
@@ -173,12 +191,12 @@ FSeq qualifying spec
 
   op equiExtendLeft : [a] FSeq a * FSeq a * a * a -> FSeq a * FSeq a
   def equiExtendLeft(s1,s2,x1,x2) =
-    if length s1 < length s2 then (extendLeft (s1, x1, length s2), s2)
+    if length s1 Integer.< length s2 then (extendLeft (s1, x1, length s2), s2)
     else (* length s1 >= length s2 *) (s1, extendLeft (s2, x2, length s1))
 
   op equiExtendRight : [a] FSeq a * FSeq a * a * a -> FSeq a * FSeq a
   def equiExtendRight(s1,s2,x1,x2) =
-    if length s1 < length s2 then (extendRight (s1, x1, length s2), s2)
+    if length s1 Integer.< length s2 then (extendRight (s1, x1, length s2), s2)
     else (* length s1 >= length s2 *) (s1, extendRight (s2, x2, length s1))
 
   op shiftLeft : [a] {(s,x,n) : FSeq a * a * Nat | n < length s} -> FSeq a
@@ -189,6 +207,9 @@ FSeq qualifying spec
 
   op reverse : [a] FSeq a -> FSeq a
   def reverse = List.rev
+
+  op flatten : [a] FSeq (FSeq a) -> FSeq a
+  def flatten = List.flatten
 
   op first : [a] NonEmptyFSeq a -> a
   def first = hd

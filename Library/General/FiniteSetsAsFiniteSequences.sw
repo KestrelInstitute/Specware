@@ -7,9 +7,9 @@ FSet qualifying spec
 
   op toFSet : [a] Bijection (FiniteSet a, FSet a)
   def toFSet finiteSet =  % not executable
-    the (fn set -> choose permutationOf
-                          (fn seq -> finiteSet = (fn x -> x in? seq))
-                          set)
+    the(set) choose permutationOf
+                    (fn seq -> finiteSet = (fn x -> x in? seq))
+                     set
 
   op fromFSet : [a] FSet a -> FiniteSet a
   def fromFSet set =

@@ -1,7 +1,5 @@
 Set qualifying spec
 
-  import LogicalOps
-
   % sets as predicates:
   type Set a = a -> Boolean
 
@@ -77,10 +75,6 @@ Set qualifying spec
 
   type NonEmptySet a = (Set a | nonEmpty?)
 
-  % return some (underspecified) member of non-empty set:
-  op someMember : [a] NonEmptySet a -> a
-  def someMember = some
-
   % set with all elements (lifting of `true' to sets):
   op full : [a] Set a
   def full = fn x -> true
@@ -107,7 +101,7 @@ Set qualifying spec
 
   % return (only) member of singleton set:
   op theMember : [a] SingletonSet a -> a
-  def theMember = the
+  def theMember s = the(x) x in? s
 
   % add member to set (triangle points towards set):
   op <| infixl 25 : [a] Set a * a -> Set a
@@ -143,9 +137,9 @@ Set qualifying spec
 
   % number of elements:
   op size : [a] FiniteSet a -> Nat
-  def size = the (fn size ->
+  def size = the(size)
     (size empty = 0) &&
-    (fa(s,x) size (s <| x) = 1 + size (s - x)))
+    (fa(s,x) size (s <| x) = 1 + size (s - x))
 
   op hasSize infixl 20 : [a] Set a * Nat -> Boolean
   def hasSize (s,n) = finite? s && size s = n
@@ -163,10 +157,10 @@ Set qualifying spec
     (fa (x:a, y:a, z:b) x in? s && y in? s => f(f(z,x),y) = f(f(z,y),x))
 
   op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b
-  def [a,b] fold = the (fn fold ->
+  def [a,b] fold = the(fold)
     (fa(c,f) fold (c, f, empty) = c) &&
     (fa(c,f,s,x) foldable? (c, f, s <| x) =>
-                 fold (c, f, s <| x) = f (fold (c, f, s - x), x)))
+                 fold (c, f, s <| x) = f (fold (c, f, s - x), x))
 
   % infinite cardinality:
   op infinite? : [a] Set a -> Boolean
@@ -203,7 +197,7 @@ Set qualifying spec
 
   % smallest set in set of sets:
   op min : [a] SetOfSetsWithMin a -> Set a
-  def min ss = the (fn s -> s isMinIn ss)
+  def min ss = the(s) s isMinIn ss
 
   % set is the largest in set of sets:
   op isMaxIn infixl 20 : [a] Set a * Set (Set a) -> Boolean
@@ -217,6 +211,6 @@ Set qualifying spec
 
   % smallest set in set of sets:
   op max : [a] SetOfSetsWithMax a -> Set a
-  def max ss = the (fn s -> s isMaxIn ss)
+  def max ss = the(s) s isMaxIn ss
 
 endspec

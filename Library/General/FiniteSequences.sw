@@ -41,11 +41,11 @@ FSeq qualifying spec
   def seq_1 = inverse seq
 
   op length : [a] FSeq a -> Nat
-  def length s = the (fn len -> (seq_1 s) definedOnInitialSegmentOfLength len)
+  def length s = the(len) (seq_1 s) definedOnInitialSegmentOfLength len
 
   % return `(i+1)'-th element (i.e. element at position `i'):
   op @ infixl 30 : [a] {(s,i) : FSeq a * Nat | i < length s} -> a
-  def @ (s,i) = the (fn x -> seq_1 s i = Some x)
+  def @ (s,i) = the(x) seq_1 s i = Some x
 
   % "totalization" of `@':
   op @@ infixl 30 : [a] FSeq a * Nat -> Option a
@@ -72,17 +72,17 @@ FSeq qualifying spec
   type SingletonFSeq a = (FSeq a | single?)
 
   op theElement : [a] SingletonFSeq a -> a
-  def theElement s = the (fn x -> s = single x)
+  def theElement s = the(x) s = single x
 
   % concatenate:
   op ++ infixl 25 : [a] FSeq a * FSeq a -> FSeq a
-  def ++ (s1,s2) = the (fn s ->
+  def ++ (s1,s2) = the(s)
     % resulting length is sum of lengths:
     length s = length s1 + length s2 &&
     % first `(length s1)' elements are from `s1':
     (fa(i:Nat) i < length s1 => s1 @ i = s @ i) &&
     % last `(length s2)' elements are from `s2':
-    (fa(i:Nat) i < length s2 => s2 @ i = s @ (i + length s1)))
+    (fa(i:Nat) i < length s2 => s2 @ i = s @ (i + length s1))
 
   % prepend element (`|>' points into sequence):
   op |> infixr 25 : [a] a * FSeq a -> FSeq a
@@ -118,7 +118,7 @@ FSeq qualifying spec
 
   % exactly one element satisfies predicate:
   op exists1? : [a] (a -> Boolean) -> FSeq a -> Boolean
-  def exists1? p s = (ex1 (fn(i:Nat) -> i < length s && p (s @ i)))
+  def exists1? p s = (ex1(i:Nat) i < length s && p (s @ i))
 
   % extract subsequence from `i' (inclusive) of length `n' (if `n = 0',
   % it may be `i = length s', even though it is not a valid position):
@@ -154,15 +154,15 @@ FSeq qualifying spec
 
   % fold starting from left end:
   op foldl : [a,b] (b * a -> b) -> b -> FSeq a -> b
-  def foldl = the (fn foldl ->
+  def foldl = the(foldl)
     (fa (f,c)     foldl f c empty = c) &&
-    (fa (f,c,s,x) foldl f c (s <| x) = f (foldl f c s, x)))
+    (fa (f,c,s,x) foldl f c (s <| x) = f (foldl f c s, x))
 
   % fold starting from right end:
   op foldr : [a,b] (a * b -> b) -> b -> FSeq a -> b
-  def foldr = the (fn foldr ->
+  def foldr = the(foldr)
       (fa (f,c)     foldr f c empty = c) &&
-      (fa (f,c,x,s) foldr f c (x |> s) = f (x, foldr f c s)))
+      (fa (f,c,x,s) foldr f c (x |> s) = f (x, foldr f c s))
 
   % make sequence of pairs from two sequences:
   op zip : [a,b] ((FSeq a * FSeq b) | equiLong) -> FSeq (a * b)
@@ -194,10 +194,10 @@ FSeq qualifying spec
   def map2 f (s1,s2) = map f (zip (s1, s2))
 
   op filter : [a] (a -> Boolean) -> FSeq a -> FSeq a
-  def filter = the (fn filter ->
+  def filter = the(filter)
     (fa(p)     filter p empty = empty) &&
     (fa(p,x,s) filter p (x |> s) =
-               (if p x then x |> filter p s else filter p s)))
+               (if p x then x |> filter p s else filter p s))
 
   op repeat : [a] a -> Nat -> FSeq a
   def repeat x n = seq (fn(i:Nat) -> if i < n then Some x else None)
@@ -235,9 +235,9 @@ FSeq qualifying spec
     if i < length s then Some (s @ (length s - i - 1)) else None)
 
   op flatten : [a] FSeq (FSeq a) -> FSeq a
-  def flatten = the (fn flatten ->
+  def flatten = the(flatten)
     (flatten empty = empty) &&
-    (fa(s,seqOfSeqs) flatten (s |> seqOfSeqs) = s ++ flatten seqOfSeqs))
+    (fa(s,seqOfSeqs) flatten (s |> seqOfSeqs) = s ++ flatten seqOfSeqs)
 
   op first : [a] NonEmptyFSeq a -> a
   def first s = s @ 0
@@ -261,15 +261,15 @@ FSeq qualifying spec
   type InjectiveFSeq a = (FSeq a | noRepetitions?)
 
   op positionOf : [a] {(s,x) : InjectiveFSeq a * a | x in? s} -> Nat
-  def positionOf(s,x) = the (fn(i:Nat) -> s@i = x)
+  def positionOf(s,x) = the(i:Nat) s@i = x
 
   op longestCommonPrefix : [a] FSeq a * FSeq a -> FSeq a
   def longestCommonPrefix(s1,s2) =
-    let len:Nat = the (fn len:Nat ->
+    let len:Nat = the(len:Nat)
       len <= length s1 &&
       len <= length s2 &&
       prefix (s1, len) = prefix (s2, len) &&
-      (length s1 = len || length s2 = len || s1 @ len ~= s2 @ len)) in
+      (length s1 = len || length s2 = len || s1 @ len ~= s2 @ len) in
     prefix (s1, len)
 
   op longestCommonSuffix : [a] FSeq a * FSeq a -> FSeq a
@@ -287,9 +287,9 @@ FSeq qualifying spec
 
   % element at position `i' moves to position `prm @ i':
   op permute : [a] ((FSeq a * Permutation) | equiLong) -> FSeq a
-  def permute(s,prm) = the (fn r ->
+  def permute(s,prm) = the(r)
       r equiLong s &&
-      (fa(i:Nat) i < length s => s @ i = r @ (prm@i)))
+      (fa(i:Nat) i < length s => s @ i = r @ (prm@i))
 
   op permutationOf infixl 20 : [a] FSeq a * FSeq a -> Boolean
   def permutationOf (s1,s2) =
@@ -302,6 +302,6 @@ FSeq qualifying spec
     % remove `None's:
     let s = filter (embed? Some) s in
     % remove `Some' wrapper:
-    the (fn r -> map (embed Some) r = s)
+    the(r) map (embed Some) r = s
 
 endspec

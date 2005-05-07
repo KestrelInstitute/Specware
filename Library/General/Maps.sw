@@ -12,7 +12,7 @@ Map qualifying spec
 
   % value of map at point, i.e. map application:
   op @ infixl 30 : [a,b] ((Map(a,b) * a) | definedAt) -> b
-  def @ (m,x) = the (fn y -> m(x,y))
+  def @ (m,x) = the(y) m(x,y)
 
   % "totalization" of `@' using `Option':
   op @@ infixl 30 : [a,b] Map(a,b) * a -> Option b
@@ -20,10 +20,10 @@ Map qualifying spec
 
   % update map (analogous to record update):
   op <<< infixl 25 : [a,b] Map(a,b) * Map(a,b) -> Map(a,b)
-  def <<< (m1,m2) = the (fn m ->
+  def <<< (m1,m2) = the(m)
     domain m = domain m1 \/ domain m2 &&
     (fa(x) x in? domain m =>
-           m @ x = (if m2 definedAt x then m2 @ x else m1 @ x)))
+           m @ x = (if m2 definedAt x then m2 @ x else m1 @ x))
 
   % update map at one point:
   op update : [a,b] Map(a,b) -> a -> b -> Map(a,b)
