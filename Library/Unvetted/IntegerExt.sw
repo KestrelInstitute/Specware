@@ -1,9 +1,12 @@
 (*
 2005:03:18
 AC
-
 Extension of the base spec Integer with exponentiation and ops for min/max of
 sets as well as minimizers/maximizers of integer-valued functions.
+
+2005:05:06
+AC
+Adapted spec to 'the' being now built-in.
 
 ISSUE:
 The notion of min/max(imizers) should be factored in a more general spec for
@@ -34,7 +37,7 @@ Integer qualifying spec
 
   % min integer in set:
   op minIn : (Set Integer | hasMin?) -> Integer
-  def minIn s = the (fn i -> i isMinIn s)
+  def minIn s = the(i) i isMinIn s
 
 
   % integer is maximum in set:
@@ -47,7 +50,7 @@ Integer qualifying spec
 
   % max integer in set:
   op maxIn : (Set Integer | hasMax?) -> Integer
-  def maxIn s = the (fn i -> i isMaxIn s)
+  def maxIn s = the(i) i isMaxIn s
 
 
   % value minimizes integer-valued function in set:

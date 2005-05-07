@@ -11,6 +11,10 @@ Changed definitions of rangeOO, rangeCO and rangeOC so that the
 Changed op-name int2rat to intToRat
 Added ops & defs for denominator, numerator, toString and compare
 
+2005:05:06
+AC
+Adapted spec to 'the' being now built-in.
+
 ISSUE:
 Here max : Set T -> T but Integer.max : T*T -> T for some T in
   {Integer, Rational}.  This should be made uniform one way or
@@ -131,7 +135,7 @@ Rational qualifying spec
   def hasMin? sr = (ex(r) r isMinIn sr)
 
   op min : (Set Rational | hasMin?) -> Rational
-  def min sr = the (fn r -> r isMinIn sr)
+  def min sr = the(r) r isMinIn sr
 
   op isMaxIn infixl 20 : Rational * Set Rational -> Boolean
   def isMaxIn (r, sr) = r in? sr && (fa(r1) r1 in? sr => r >= r1)
@@ -140,7 +144,7 @@ Rational qualifying spec
   def hasMax? sr = (ex(r) r isMaxIn sr)
 
   op max : (Set Rational | hasMax?) -> Rational
-  def max sr = the (fn r -> r isMaxIn sr)
+  def max sr = the(r) r isMaxIn sr
 
   op min2 : Rational * Rational -> Rational
   def min2(r1,r2) = if r1 <= r2 then r1 else r2
@@ -152,10 +156,10 @@ Rational qualifying spec
   def denominator r =
     let def maybeDen d = ex(n) r = rational(n, d) in
     let def leastSuchThat p = fn d -> p d && (fa(d2) p d2 => d <= d2)
-    in the (leastSuchThat maybeDen)
+    in the(d:PosNat) leastSuchThat maybeDen d
 
   op  numerator : Rational -> Integer
-  def numerator r = the (fn n -> r = rational(n, denominator r))
+  def numerator r = the(n) r = rational(n, denominator r)
 
   op  toString : Rational -> String
   def toString r =
@@ -185,20 +189,20 @@ Rational qualifying spec
        rs = rangeOC (r1, r2))}
 
   op inf : Range -> Rational  % this can be generalized
-  def inf = the (fn inf ->
+  def inf = the(inf)
     (fa(r1,r2) r1 <= r2 =>
                inf (rangeCC (r1, r2)) = r1 &&
                inf (rangeOO (r1, r2)) = r1 &&
                inf (rangeCO (r1, r2)) = r1 &&
-               inf (rangeOC (r1, r2)) = r1))
+               inf (rangeOC (r1, r2)) = r1)
 
   op sup : Range -> Rational  % this can be generalized
-  def sup = the (fn sup ->
+  def sup = the(sup)
     (fa(r1,r2) r1 <= r2 =>
                sup (rangeCC (r1, r2)) = r2 &&
                sup (rangeOO (r1, r2)) = r2 &&
                sup (rangeCO (r1, r2)) = r2 &&
-               sup (rangeOC (r1, r2)) = r2))
+               sup (rangeOC (r1, r2)) = r2)
 
   op allLess infixl 20 : Range * Range -> Boolean
   def allLess (rng1,rng2) = (fa(r1,r2) r1 in? rng1 && r2 in? rng2 => r1 < r2)
