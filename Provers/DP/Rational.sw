@@ -19,11 +19,16 @@ Rational qualifying spec
   op max           : Rational * Rational -> Rational
   op compare       : Rational * Rational -> Comparison
   op pred          : Nat -> Rational
+  op floor         : Rational -> Integer
+  op ceiling       : Rational -> Integer
 
   op intToRat: Integer -> Rational
   op ratToInt : Rational -> Integer
 
   op Rational_.- : Rational -> Rational
+
+  op equal: Rational * Rational -> Boolean
+  def equal(r1, r2) = (r1 = r2)
 
   op ratToString : Rational -> String
   op toString : Rational -> String
@@ -40,6 +45,9 @@ Rational qualifying spec
 
   def >= (r1,r2) = r2 >= r1
 
+  def min(r1, r2) = if r1 >= r2 then r2 else r1
+  def max(r1, r2) = if r1 <= r2 then r2 else r1
+
   % non-negative:
 
   op nonNegative? : Rational -> Boolean
@@ -52,7 +60,5 @@ Rational qualifying spec
   def compare(x,y)  = if x < y then Less
                  else if x > y then Greater
                  else (* x = y *)   Equal
-
-
 
 endspec
