@@ -79,7 +79,7 @@ SpecCalc qualifying spec
 				   | _ -> sm_tm
     in
     %% S - dom(M)
-    let residue = subtractSpecLeavingImportStubs(spc,dom_spec,dom_spec_term,cod_spec,cod_spec_term) in
+    let residue = subtractSpecLeavingStubs(spc,dom_spec,dom_spec_term,cod_spec,cod_spec_term) in
     {translated_residue <- applySpecMorphism sm residue position;  % M(S - dom(M))
      %% Add the elements separately so we can put preserve order
      new_spec <- specUnion [translated_residue, cod_spec << {elements = []}];     % M(S - dom(M)) U cod(M)
@@ -90,19 +90,18 @@ SpecCalc qualifying spec
 
   %% Version of subtractSpec that leaves stubs of replaced imports so that targets can be replaced at
   %% The same place as originals. If it 
-  op  subtractSpecLeavingImportStubs: Spec * Spec * SCTerm * Spec * SCTerm -> Spec
-  def subtractSpecLeavingImportStubs(x, y, y_spec_term, rep_spec, rep_spec_term) = 
+  op  subtractSpecLeavingStubs: Spec * Spec * SCTerm * Spec * SCTerm -> Spec
+  def subtractSpecLeavingStubs(x, y, y_spec_term, rep_spec, rep_spec_term) = 
     {%importInfo = x.importInfo,
      elements = let y_import = Import(y_spec_term, y, []) in
                 mapPartialSpecElements
-                  (fn el -> if sameSpecElement?(el,y_import)
-		             then Some(Import(rep_spec_term, rep_spec,[]))
-			    else if existsSpecElement? (fn el2 -> sameSpecElement?(el2, el))
-		                 y.elements
-			     then case el of
-			           | Import(x,y,_) -> Some(Import(x,y,[]))
-			           | _ -> None
-			    else Some el)
+                  (fn el ->
+		   case el of
+		     | Import(x,y,_) ->
+		       if sameSpecElement?(el,y_import)
+			 then Some(Import(rep_spec_term, rep_spec,[]))
+			 else Some(Import(x,y,[]))
+		     | _ -> Some el)
 		   x.elements,
      ops      = mapDiffOps   x.ops   y.ops,
      sorts    = mapDiffSorts x.sorts y.sorts,
@@ -121,7 +120,8 @@ SpecCalc qualifying spec
 				   else el1)
 		        result_elts
 	        else addSpecElementsReplacingImports(result_elts,imp_elts)
-	     | _ -> result_elts ++ [el])
+	     | Property _ -> result_elts ++ [el]
+	     | _ -> result_elts)
       elts1 elts2
 
   op  convertIdMap: QualifiedIdMap -> AQualifierMap (QualifiedId * Aliases)
