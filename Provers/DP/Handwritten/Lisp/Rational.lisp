@@ -153,5 +153,7 @@
   (the rational x))
 
 (defun ratToInt (x)
-  (declare (type integer x))
   (the integer (truncate x)))
+
+(defun |!ceiling| (x)
+  (the integer (ceiling x)))
