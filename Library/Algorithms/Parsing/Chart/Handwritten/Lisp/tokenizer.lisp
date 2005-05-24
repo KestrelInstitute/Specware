@@ -1151,7 +1151,7 @@
       (incf (extended-comment-state-byte   ec-state))
       (cond ((eq char #\newline)
 	     (incf (extended-comment-state-line   ec-state))
-	     (setf (extended-comment-state-column ec-state) 1))
+	     (setf (extended-comment-state-column ec-state) -1))
 	    (t
 	     (incf (extended-comment-state-column ec-state))))
       (cond ((and (eq char close-char-0)
