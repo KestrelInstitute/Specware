@@ -42,6 +42,7 @@ SpecCalc qualifying spec
      
      ppConcat [ppString "spec ",
 	       ppIndent (ppSep ppNewline (ppElements elements)),
+	       ppBreak,
 	       ppString "endspec"
 	      ]
 
