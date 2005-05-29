@@ -80,13 +80,31 @@ SpecCalc qualifying spec
     in
     %% S - dom(M)
     let residue = subtractSpecLeavingStubs(spc,dom_spec,dom_spec_term,cod_spec,cod_spec_term) in
-    {translated_residue <- applySpecMorphism sm residue position;  % M(S - dom(M))
+    {
+     %% print ("\n===================================\n");
+     %% print ("\nOriginal residue elements: \n");
+     %% mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) residue.elements;
+
+     translated_residue <- applySpecMorphism sm residue position;  % M(S - dom(M))
+
+     %% print ("\nTranslated residue elements: \n");
+     %% mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) translated_residue.elements;
+     %% print ("\nCodomain elements: \n");
+     %% mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) cod_spec.elements;
+
      %% Add the elements separately so we can put preserve order
      new_spec <- specUnion [translated_residue, cod_spec << {elements = []}];     % M(S - dom(M)) U cod(M)
-     return (removeDuplicateImports
-              (new_spec << {elements = addSpecElementsReplacingImports
-			                 (new_spec.elements,
-					  [Import(cod_spec_term, cod_spec, cod_spec.elements)])}))}
+     new_spec <- return (removeDuplicateImports
+			 (new_spec << {elements = addSpecElementsReplacingImports
+				       (new_spec.elements,
+					[Import(cod_spec_term, cod_spec, cod_spec.elements)])}));
+
+     %% print ("\nCombined elements: \n");
+     %% mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) new_spec.elements;
+     %% print ("\n===================================\n");
+
+     return new_spec
+     }
 
   %% Version of subtractSpec that leaves stubs of replaced imports so that targets can be replaced at
   %% The same place as originals. If it 

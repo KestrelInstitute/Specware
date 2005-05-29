@@ -622,8 +622,10 @@ Note: The code below does not yet match the documentation above, but should.
           def translateStep (old_q, old_id, old_info, new_op_map) =
 	    let primary_qid as Qualified (primary_q, primary_id) = primaryOpName old_info in
 	    if ~ (old_q = primary_q && old_id = primary_id) then
+	      % let _ = toScreen("\nIgnoring op info for " ^ old_q ^ "." ^ old_id ^ "\n") in
 	      return new_op_map
 	    else
+	      % let _ = toScreen("\nTranslating op info for " ^ old_q ^ "." ^ old_id ^ "\n") in
 	      {
 	       new_names <- foldM (fn new_qids -> fn old_qid ->
 				   foldM (fn new_qids -> fn new_qid ->
@@ -643,6 +645,7 @@ Note: The code below does not yet match the documentation above, but should.
 	                         (old_info << {names = new_names})
 				 new_names;
 	       foldM (fn new_op_map -> fn (Qualified (new_q, new_id)) ->
+		      % let _ = toScreen("\n  Inserting op info for " ^ new_q ^ "." ^ new_id ^ "\n") in
 		      return (insertAQualifierMap (new_op_map, new_q, new_id, new_info)))
 	             new_op_map  
 		     new_names
@@ -655,8 +658,10 @@ Note: The code below does not yet match the documentation above, but should.
           def translateStep (old_q, old_id, old_info, new_sort_map) =
 	    let Qualified (primary_q, primary_id) = primarySortName old_info in
 	    if ~ (old_q = primary_q && old_id = primary_id) then
+	      % let _ = toScreen("\nIgnoring sort info for " ^ old_q ^ "." ^ old_id ^ "\n") in
 	      return new_sort_map
 	    else
+	      % let _ = toScreen("\nTranslating sort info for " ^ old_q ^ "." ^ old_id ^ "\n") in
 	      {
 	       new_names <- foldM (fn new_qids -> fn old_qid ->
 				   foldM (fn new_qids -> fn new_qid ->
@@ -680,6 +685,7 @@ Note: The code below does not yet match the documentation above, but should.
 				    (old_info << {names = new_names})
 				    new_names;
 		  foldM (fn new_sort_map -> fn (Qualified (new_q, new_id)) ->
+			 % let _ = toScreen("\n  Inserting sort info for " ^ new_q ^ "." ^ new_id ^ "\n") in
 			 return (insertAQualifierMap (new_sort_map, new_q, new_id, new_info)))
 		        new_sort_map  
 			new_names 
@@ -688,28 +694,34 @@ Note: The code below does not yet match the documentation above, but should.
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_sorts 
 
     in
-    let {sorts, ops, elements, qualified?}
+    let s2 as {sorts, ops, elements, qualified?}
          = 
          mapSpec (translateOp op_id_map, translateSort sort_id_map, translatePattern) spc
     in 
+    let 
+      def translateElements elements =
+	mapSpecElements (fn el ->
+			 % let _ = toScreen("\nTranslating " ^ anyToString el ^ "\n") in
+			 case el of
+			   | Op      qid -> Op      (translateOpQualifiedId op_id_map qid)
+			   | OpDef   qid -> OpDef   (translateOpQualifiedId op_id_map qid) 
+			   | Sort    qid -> Sort    (translateOpQualifiedId sort_id_map qid) 
+			   | SortDef qid -> SortDef (translateOpQualifiedId sort_id_map qid)
+			   | Property (pt, nm, tvs, term) ->
+			     Property (pt, (translateOpQualifiedId op_id_map nm), tvs, term)
+			   % | Import(sp_tm,sp,els) ->
+			   %   Import(sp_tm, % (Translate(sp_tm,translation_tm),noPos),
+                           %          sp,
+                           %          translateElements els)
+			   | _ -> el)
+                        elements
+    in
     {
      newSorts <- translateSortMap sorts;
      newOps   <- translateOpMap   ops;
      return {sorts      = newSorts,
 	     ops        = newOps,
-	     elements   = mapSpecElements
-	                    (fn el ->
-			     case el of
-			       | Op      qid -> Op      (translateOpQualifiedId op_id_map qid)
-			       | OpDef   qid -> OpDef   (translateOpQualifiedId op_id_map qid) 
-			       | Sort    qid -> Sort    (translateOpQualifiedId sort_id_map qid) 
-			       | SortDef qid -> SortDef (translateOpQualifiedId sort_id_map qid)
-			       | Property (pt, nm, tvs, term) ->
-			         Property (pt, (translateOpQualifiedId op_id_map nm), tvs, term)
-%			       | Import(sp_tm,sp,els) ->
-%				 Import((Translate(sp_tm,translation_tm),noPos),sp,els)
-			       | _ -> el)
-			    elements,
+	     elements   = translateElements elements,
 	     qualified? = false}	% conservative
     }
 
