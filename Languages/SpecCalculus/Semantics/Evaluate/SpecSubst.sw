@@ -79,68 +79,91 @@ SpecCalc qualifying spec
 				   | _ -> sm_tm
     in
     %% S - dom(M)
-    let residue = subtractSpecLeavingStubs(spc,dom_spec,dom_spec_term,cod_spec,cod_spec_term) in
+    % let _ = toScreen ("\n===================================\n") in
+    % let _ = toScreen ("\nOriginal elements: \n") in
+    % let _ = app (fn el -> toScreen ("\n " ^ anyToString el ^ "\n")) spc.elements in
+
+    let residue = subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term) in
     {
-     %% print ("\n===================================\n");
-     %% print ("\nOriginal residue elements: \n");
-     %% mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) residue.elements;
+     % print ("\nOriginal residue elements: \n");
+     % mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) residue.elements;
 
      translated_residue <- applySpecMorphism sm residue position;  % M(S - dom(M))
 
-     %% print ("\nTranslated residue elements: \n");
-     %% mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) translated_residue.elements;
-     %% print ("\nCodomain elements: \n");
-     %% mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) cod_spec.elements;
+     % print ("\nTranslated residue elements: \n");
+     % mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) translated_residue.elements;
+     % print ("\nCodomain elements: \n");
+     % mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) cod_spec.elements;
 
      %% Add the elements separately so we can put preserve order
      new_spec <- specUnion [translated_residue, cod_spec << {elements = []}];     % M(S - dom(M)) U cod(M)
      new_spec <- return (removeDuplicateImports
-			 (new_spec << {elements = addSpecElementsReplacingImports
-				       (new_spec.elements,
-					[Import(cod_spec_term, cod_spec, cod_spec.elements)])}));
+			 (new_spec << {elements = 
+				       replaceImportStub (new_spec.elements,
+							  Import(cod_spec_term, cod_spec, cod_spec.elements))}));
 
-     %% print ("\nCombined elements: \n");
-     %% mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) new_spec.elements;
-     %% print ("\n===================================\n");
+     % print ("\nCombined elements: \n");
+     % mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) new_spec.elements;
+     % print ("\n===================================\n");
 
      return new_spec
      }
 
   %% Version of subtractSpec that leaves stubs of replaced imports so that targets can be replaced at
-  %% The same place as originals. If it 
-  op  subtractSpecLeavingStubs: Spec * Spec * SCTerm * Spec * SCTerm -> Spec
-  def subtractSpecLeavingStubs(x, y, y_spec_term, rep_spec, rep_spec_term) = 
-    {%importInfo = x.importInfo,
-     elements = let y_import = Import(y_spec_term, y, []) in
-                mapPartialSpecElements
-                  (fn el ->
-		   case el of
-		     | Import(x,y,_) ->
-		       if sameSpecElement?(el,y_import)
-			 then Some(Import(rep_spec_term, rep_spec,[]))
-			 else Some(Import(x,y,[]))
-		     | _ -> Some el)
-		   x.elements,
-     ops      = mapDiffOps   x.ops   y.ops,
-     sorts    = mapDiffSorts x.sorts y.sorts,
-     qualified? = x.qualified?}
+  %% The same place as originals. 
+  op  subtractSpecLeavingStubs: Spec * SCTerm * Spec * SCTerm * Spec * SCTerm -> Spec
+  def subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term) = 
+    let import_dom_spec = Import (dom_spec_term, dom_spec, []) in    
+    let 
+      def revise_elements elements =
+	map (fn el ->
+	     case el of
+	       | Import (tm, spc, import_elts) ->
+	         if sameSpecElement? (el, import_dom_spec) then
+		   Import (cod_spec_term, cod_spec, [])
+		 else if existsSpecElement? (fn el -> sameSpecElement? (el, import_dom_spec)) import_elts then
+		   Import ((Subst (tm, sm_tm), noPos),
+			   cod_spec, 
+			   revise_elements import_elts)
+		 else
+		   el % Import (tm, spc, [])
+	       | _ -> 
+		 el)
+	    elements
+    in
+    spc << {
+	    elements = revise_elements       spc.elements,
+	    ops      = mapDiffOps            spc.ops       dom_spec.ops,
+	    sorts    = mapDiffSorts          spc.sorts     dom_spec.sorts
+	   }
 
   %% 
-  op  addSpecElementsReplacingImports: SpecElements * SpecElements -> SpecElements
-  def addSpecElementsReplacingImports(elts1,elts2) =
-    foldl (fn (el,result_elts) ->
-	   case el of
-	     | Import(sp_tm,sp,imp_elts) ->
-	       if existsSpecElement? (fn el1 -> sameSpecElement?(el,el1)) result_elts
-		 then mapSpecElements
-		        (fn el1 -> if sameSpecElement?(el,el1)
-				     then Import(sp_tm,sp,sp.elements)
-				   else el1)
-		        result_elts
-	        else addSpecElementsReplacingImports(result_elts,imp_elts)
-	     | Property _ -> result_elts ++ [el]
-	     | _ -> result_elts)
-      elts1 elts2
+  op  replaceImportStub: SpecElements * SpecElement -> SpecElements
+  def replaceImportStub (elements, new_import) =
+    % let _ = toScreen("\nNEW IMPORT: " ^ anyToString new_import ^ "\n") in
+    let 
+      def revise_elements elements =
+	map (fn el ->
+	     % let _ = toScreen("\nRevising " ^ anyToString el ^ "\n") in
+	     case el of
+	       | Import (tm, spc, imported_elements) ->
+	         if imported_elements = [] && sameSpecElement? (el, new_import) then
+		   % let _ = toScreen("\nNEW IMPORT\n") in
+		   new_import
+		 else if existsSpecElement? (fn imported_element -> sameSpecElement? (imported_element, new_import)) 
+		                            imported_elements 
+			then
+		   % let _ = toScreen("\nContains new import...\n") in
+		   Import (tm, spc, revise_elements imported_elements)
+		 else
+		   % let _ = toScreen("\nMisc import\n") in
+		   el
+	       | _ ->
+		 % let _ = toScreen("\nNon-import\n") in
+		 el)
+	    elements
+    in
+      revise_elements elements
 
   op  convertIdMap: QualifiedIdMap -> AQualifierMap (QualifiedId * Aliases)
   def convertIdMap m =
