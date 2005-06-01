@@ -23,4 +23,6 @@ Ineq qualifying spec
   op poly: Ineq -> Poly
   op mkIneq: CompPred * Poly -> Ineq
 
+  op mkCounterExample: Var * Coef -> Ineq
+
 endspec

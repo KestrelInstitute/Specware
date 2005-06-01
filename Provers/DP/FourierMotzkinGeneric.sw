@@ -207,7 +207,8 @@ FM qualifying spec
     let lb = lowerBound(hdVar, hdVarIneqs) in
     let restIneqs = map (substitute hdVar lb) ineqSet in
     let restResult = generateCounterExampleInt(restIneqs) in
-    cons(mkIneq(Eq, Poly.plus(mkTerm(toCoef(1), hdVar), toPoly(toTerm(-lb)))), restResult)
+    cons(mkCounterExample(hdVar, lb), restResult)
+%    cons(mkCounterExample(Eq, Poly.plus(mkTerm(toCoef(1), hdVar), toPoly(toTerm(-lb)))), restResult)
 
   op substitute: Var -> Coef -> Ineq -> Ineq
   def substitute var val ineq =

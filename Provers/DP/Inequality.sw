@@ -24,6 +24,8 @@ Ineq qualifying spec
   op poly: Ineq -> Poly
   op mkIneq: CompPred * Poly -> Ineq
   op isIneq?: Ineq -> Boolean
+
+  op mkCounterExample: Var * Coef -> Ineq
 *)
 
 
@@ -66,9 +68,10 @@ Ineq qualifying spec
   def isNeq?(ineq) =
     compPred(ineq) = Neq
 
-  op isGtEq?: Ineq -> Boolean
+  op isGtEq?:Ineq -> Boolean
   def isGtEq?(ineq) =
-    compPred(ineq) = GtEq
+    compPred(ineq) = GtEq &&
+    constant(hdTerm(poly(ineq))) > toCoef(0)
 
   op isTrue?: Ineq -> Boolean
   def isTrue?(ineq) =
@@ -136,7 +139,7 @@ Ineq qualifying spec
 	if comp = GtEq then mkIneq(GtEq, p)
 	else if comp = Eq then mkIneq(Eq, p)
 	  else mkIneq(oppositeComp(comp), negate(p))
-  
+
   op normalizeZeroIneq: CompPred -> Ineq
   def normalizeZeroIneq(c) =
     if c = Gt or c = Lt or c = Neq then falseIneq
