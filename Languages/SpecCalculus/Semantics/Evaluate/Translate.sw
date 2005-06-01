@@ -701,7 +701,6 @@ Note: The code below does not yet match the documentation above, but should.
     let 
       def translateElements elements =
 	mapSpecElements (fn el ->
-			 % let _ = toScreen("\nTranslating " ^ anyToString el ^ "\n") in
 			 case el of
 			   | Op      qid -> Op      (translateOpQualifiedId op_id_map qid)
 			   | OpDef   qid -> OpDef   (translateOpQualifiedId op_id_map qid) 
@@ -709,13 +708,18 @@ Note: The code below does not yet match the documentation above, but should.
 			   | SortDef qid -> SortDef (translateOpQualifiedId sort_id_map qid)
 			   | Property (pt, nm, tvs, term) ->
 			     Property (pt, (translateOpQualifiedId op_id_map nm), tvs, term)
-			   | Import (sp_tm, spc, els) ->
+			   | Import (sp_tm, spc, els) ->  
+			     %% The Import expression we have just dispatched on was constructed 
+			     %% by mapSpecElements.  In particular, els was constructed by 
+			     %% applying this fn to each of the original imported elements. 
+			     %% So we don't want to recur again here, but we do want to tweak 
+			     %% the term:
 			     Import (case opt_translation_expr of
-				      | Some translation_expr ->
-				        (Translate (sp_tm, translation_expr), noPos)
-				      | _ -> sp_tm,
+				       | Some translation_expr ->
+				         (Translate (sp_tm, translation_expr), noPos)
+				       | _ -> sp_tm,
 				     spc,
-				     translateElements els)
+				     els)
 			   | _ -> el)
                         elements
     in
