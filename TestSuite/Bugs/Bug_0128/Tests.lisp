@@ -1,6 +1,6 @@
 (test-directories ".")
 
-(test ("Bug 128. Obligation shouldn't be proved if obligations generated in correct order"
+(test ("Bug 0128 : Obligation shouldn't be proved if obligations generated in correct order"
        :sw "orderOblig#P"
        :output '(";;; Elaborating proof-term at $TESTDIR/orderOblig#P"
 		 ";;; Elaborating obligator at $TESTDIR/orderOblig#O"
