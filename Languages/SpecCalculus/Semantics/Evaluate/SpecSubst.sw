@@ -31,25 +31,6 @@ SpecCalc qualifying spec
 	raise (TypeCheck (term_pos, warnAboutMissingItems sorts_msg ops_msg props_msg))
 
   def auxApplySpecMorphismSubstitution sm spc sm_tm position = 
-
-    %% let 
-    %%   def translate_op_names op_names =
-    %%	   let op_map = opMap sm in
-    %%	   List.map (fn qid -> 
-    %%		  case evalPartial op_map qid of
-    %%		    | Some qid -> qid
-    %%		    | _ -> qid)
-    %%	         op_names
-    %%		 
-    %%  def translate_sort_names sort_names =
-    %%    let sort_map = sortMap sm in
-    %%    List.map (fn qid -> 
-    %%		  case evalPartial sort_map qid of
-    %%		    | Some qid -> qid
-    %%		    | _ -> qid)
-    %%	         sort_names
-    %%    in
-
     %% Warning: this assumes that dom_spec is a subspec of spc
     %%    S' = M(S - dom(M)) U cod(M)
     let dom_spec           = SpecCalc.dom sm            in     % dom(M)
@@ -79,33 +60,16 @@ SpecCalc qualifying spec
 				   | _ -> sm_tm
     in
     %% S - dom(M)
-    % let _ = toScreen ("\n===================================\n") in
-    % let _ = toScreen ("\nOriginal elements: \n") in
-    % let _ = app (fn el -> toScreen ("\n " ^ anyToString el ^ "\n")) spc.elements in
 
     let residue = subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term) in
     {
-     % print ("\nOriginal residue elements: \n");
-     % mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) residue.elements;
-
      translated_residue <- applySpecMorphism sm residue position;  % M(S - dom(M))
-
-     % print ("\nTranslated residue elements: \n");
-     % mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) translated_residue.elements;
-     % print ("\nCodomain elements: \n");
-     % mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) cod_spec.elements;
-
      %% Add the elements separately so we can put preserve order
      new_spec <- specUnion [translated_residue, cod_spec << {elements = []}];     % M(S - dom(M)) U cod(M)
      new_spec <- return (removeDuplicateImports
 			 (new_spec << {elements = 
 				       replaceImportStub (new_spec.elements,
 							  Import(cod_spec_term, cod_spec, cod_spec.elements))}));
-
-     % print ("\nCombined elements: \n");
-     % mapM (fn el -> print("\n " ^ anyToString el ^ "\n")) new_spec.elements;
-     % print ("\n===================================\n");
-
      return new_spec
      }
 
@@ -140,26 +104,21 @@ SpecCalc qualifying spec
   %% 
   op  replaceImportStub: SpecElements * SpecElement -> SpecElements
   def replaceImportStub (elements, new_import) =
-    % let _ = toScreen("\nNEW IMPORT: " ^ anyToString new_import ^ "\n") in
     let 
       def revise_elements elements =
 	map (fn el ->
-	     % let _ = toScreen("\nRevising " ^ anyToString el ^ "\n") in
 	     case el of
 	       | Import (tm, spc, imported_elements) ->
 	         if imported_elements = [] && sameSpecElement? (el, new_import) then
-		   % let _ = toScreen("\nNEW IMPORT\n") in
 		   new_import
-		 else if existsSpecElement? (fn imported_element -> sameSpecElement? (imported_element, new_import)) 
+		 else if existsSpecElement? (fn imported_element -> 
+					     sameSpecElement? (imported_element, new_import)) 
 		                            imported_elements 
 			then
-		   % let _ = toScreen("\nContains new import...\n") in
 		   Import (tm, spc, revise_elements imported_elements)
 		 else
-		   % let _ = toScreen("\nMisc import\n") in
 		   el
 	       | _ ->
-		 % let _ = toScreen("\nNon-import\n") in
 		 el)
 	    elements
     in
@@ -181,7 +140,7 @@ SpecCalc qualifying spec
 	sort_id_map = convertIdMap (sortMap sm)}
    in
    %% Note that auxTranslateSpec is not expected to raise any errors.
-     auxTranslateSpec spc translation_maps position
+     auxTranslateSpec spc translation_maps None position
     
   %% ======================================================================  
   %%  Error handling...

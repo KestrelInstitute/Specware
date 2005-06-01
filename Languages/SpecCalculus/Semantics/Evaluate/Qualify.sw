@@ -90,9 +90,13 @@ Change UnQualified to new_qualifier in all qualified names
       def convertElements elts =
         let def qualifyElt el =
 	    case el of
-	      | Import (sp_tm,sp,els) ->
-	        if qualifiedSpec? sp then el
-		  else Import(sp_tm,sp,convertElements els)
+	      | Import (sp_tm, sp, els) ->
+	        Import ((Qualify (sp_tm, new_q), noPos),
+			sp,
+			if qualifiedSpec? sp then 
+			  els
+			else 
+			  convertElements els)
 	      | Op      qid -> Op      (translateQualifiedId qid)
 	      | OpDef   qid -> OpDef   (translateQualifiedId qid)
 	      | Sort    qid -> Sort    (translateQualifiedId qid)
@@ -106,10 +110,6 @@ Change UnQualified to new_qualifier in all qualified names
 	in
 	  List.map qualifyElt elts
 
-      def convertElementsRec sp =
-	let sp = setElements(sp,convertElements sp.elements) in
-	markQualified sp
-
       def convertSpec sp =
        let {sorts, ops, elements, qualified?}
            = mapSpecUnqualified (translateOp, translateSort, translatePattern) sp
@@ -118,11 +118,7 @@ Change UnQualified to new_qualifier in all qualified names
 	newSorts    <- convertSortMap sorts;
 	newOps      <- convertOpMap   ops;
 	newElements <- return (convertElements elements);
-	return {%importInfo = {imports         = imports,
-		%	      localOps        = map translateQualifiedId localOps,
-		%	      localSorts      = map translateQualifiedId localSorts,
-		%	      localProperties = map translateQualifiedId localProperties},  
-		sorts      = newSorts,
+	return {sorts      = newSorts,
 		ops        = newOps,
 		elements   = newElements,
 	        qualified? = true}

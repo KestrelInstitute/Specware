@@ -74,10 +74,10 @@ Note: The code below does not yet match the documentation above, but should.
   %% When called from Colimit, require_monic? is false, and we should avoid
   %% raising exceptions...
   op  translateSpec : Boolean -> Spec -> TranslateExpr Position -> Env Spec
-  def translateSpec require_monic? spc expr = 
-    let pos = positionOf expr in
+  def translateSpec require_monic? spc translation_expr = 
+    let pos = positionOf translation_expr in
     {
-     translation_maps <- makeTranslationMaps require_monic? spc expr;
+     translation_maps <- makeTranslationMaps require_monic? spc translation_expr;
      raise_any_pending_exceptions;
 
      % reconstructed_expr <- reconstructTranslationExpr translation_maps;
@@ -106,7 +106,7 @@ Note: The code below does not yet match the documentation above, but should.
      %% Now we produce a new spec using these unmbiguous maps.
      %% Note that auxTranslateSpec is not expected to raise any errors.
      
-     spc <- auxTranslateSpec spc translation_maps pos;
+     spc <- auxTranslateSpec spc translation_maps (Some translation_expr) pos;
      raise_any_pending_exceptions; % should never happen here
      
      %% Next we worry about traditional captures in which a (global) op Y,
@@ -600,8 +600,8 @@ Note: The code below does not yet match the documentation above, but should.
   %% In particular, if an operation such as translate wishes to signal errors in 
   %% some situations, those errors should be raised while TranslationMaps is being 
   %% created, not here.
-  op  auxTranslateSpec : Spec -> TranslationMaps -> Position -> SpecCalc.Env Spec
-  def auxTranslateSpec spc {op_id_map, sort_id_map} position =
+  op  auxTranslateSpec : Spec -> TranslationMaps -> Option (TranslateExpr Position) -> Position -> SpecCalc.Env Spec
+  def auxTranslateSpec spc {op_id_map, sort_id_map} opt_translation_expr position =
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
     %% TODO: ?? Change UnQualified to new_q in all qualified names ??
     let
@@ -709,10 +709,13 @@ Note: The code below does not yet match the documentation above, but should.
 			   | SortDef qid -> SortDef (translateOpQualifiedId sort_id_map qid)
 			   | Property (pt, nm, tvs, term) ->
 			     Property (pt, (translateOpQualifiedId op_id_map nm), tvs, term)
-			   % | Import(sp_tm,sp,els) ->
-			   %   Import(sp_tm, % (Translate(sp_tm,translation_tm),noPos),
-                           %          sp,
-                           %          translateElements els)
+			   | Import (sp_tm, spc, els) ->
+			     Import (case opt_translation_expr of
+				      | Some translation_expr ->
+				        (Translate (sp_tm, translation_expr), noPos)
+				      | _ -> sp_tm,
+				     spc,
+				     translateElements els)
 			   | _ -> el)
                         elements
     in
