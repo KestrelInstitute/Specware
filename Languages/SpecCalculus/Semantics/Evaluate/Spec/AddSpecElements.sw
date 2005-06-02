@@ -210,7 +210,7 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op addImport      : [a] Import                                 * ASpec a -> ASpec a
+ op addImport      : [a] (SpecCalc.Term Position * Spec)        * ASpec a -> ASpec a
  op addProperty    : [a] (AProperty a)                          * ASpec a -> ASpec a
  op addAxiom       : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
  op addConjecture  : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
@@ -219,12 +219,16 @@ SpecCalc qualifying spec
  op addConjectures : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
  op addTheorems    : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
 
-
  %% called by evaluateSpecImport
  def addImport ((specCalcTerm, imported_spec), spc) =
-   appendElement (spc, Import(specCalcTerm, imported_spec, imported_spec.elements))
+   appendElement (spc, Import (specCalcTerm, imported_spec, imported_spec.elements))
 
  %% called by evaluateSpecElem 
+
+ def addProperty (new_property, spc) =
+   let spc = setElements (spc, spc.elements ++ [Property new_property]) in
+   spc    % addLocalPropertyName(spc,propertyName new_property)
+
  def addAxiom       ((name, tvs, formula), spc) = addProperty ((Axiom      : PropertyType, name, tvs, formula), spc) 
  def addConjecture  ((name, tvs, formula), spc) = addProperty ((Conjecture : PropertyType, name, tvs, formula), spc) 
  def addTheorem     ((name, tvs, formula), spc) = addProperty ((Theorem    : PropertyType, name, tvs, formula), spc) 
@@ -234,10 +238,6 @@ SpecCalc qualifying spec
 
  def addConjectures (conjectures, spc) = foldl addConjecture spc conjectures
  def addTheorems    (theorems,    spc) = foldl addTheorem    spc theorems
-
- def addProperty (new_property, spc) =
-   let spc = setElements (spc, spc.elements ++ [Property new_property]) in
-   spc    % addLocalPropertyName(spc,propertyName new_property)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

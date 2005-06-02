@@ -9,9 +9,6 @@ AnnSpec qualifying spec
  %%%                Spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- %% Note:  ASpec refers to ImportedSpecs, which refers to Spec,
- %%        which is an instance of ASpec.
-
  %% StandardAnnotation is the annotation of fully resolved specs and terms
  %% i.e., sorts Spec, Term, Sort etc. Currently it is just Position,
  %% conceivably it could be more interesting in the future.
@@ -43,9 +40,6 @@ AnnSpec qualifying spec
 
  type Aliases        = QualifiedIds
  type QualifiedIds   = List QualifiedId
-
- type Imports = List Import
- type Import  = (SpecCalc.Term Position) * Spec
 
  type ASortMap  b = AQualifierMap (ASortInfo b) % i.e., Qualifier -> Id -> info
  type AOpMap    b = AQualifierMap (AOpInfo   b) % i.e., Qualifier -> Id -> info
@@ -484,8 +478,8 @@ AnnSpec qualifying spec
    mapPartial
      (fn el ->
       case f el of
-	| Some(Import (s_tm, i_sp, elts)) ->
-	  Some(Import (s_tm, i_sp, mapPartialSpecElements f elts))
+	| Some (Import (s_tm, i_sp, elts)) ->
+	  Some (Import (s_tm, i_sp, mapPartialSpecElements f elts))
 	| new_el -> new_el)
      elements
 
@@ -698,7 +692,6 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op emptySpec         : [a] ASpec         a
- op emptyImports      : Imports
  op emptyAElements    : [a] ASpecElements a
  op emptyASortMap     : [a] AQualifierMap a
  op emptyAOpMap       : [a] AQualifierMap a
@@ -706,7 +699,6 @@ AnnSpec qualifying spec
 
  %% Create new spec with altered name, imports, sorts, ops, elements, etc.
 
- op setImports       : [a] ASpec a * Imports          -> ASpec a
  op setLocalOps      : [a] ASpec a * OpNames          -> ASpec a
  op setLocalSorts    : [a] ASpec a * SortNames        -> ASpec a
  op setLocalElements : [a] ASpec a * PropertyNames    -> ASpec a
@@ -736,7 +728,6 @@ AnnSpec qualifying spec
  op allProperties     : Spec -> Properties
  op localSorts        : [a] ASpec a -> List QualifiedId
  op localOps          : [a] ASpec a -> List QualifiedId
- op localImports      : [a] ASpec a -> Imports
  op hasLocalSort?     : [a] ASpec a -> Boolean
  op hasLocalOp?       : [a] ASpec a -> Boolean
 
@@ -745,7 +736,6 @@ AnnSpec qualifying spec
  %%%                ImportedSpecs operations
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- def emptyImports       = []
  def [a] emptyAElements = []
  def emptyASortMap      = emptyAQualifierMap
  def emptyAOpMap        = emptyAQualifierMap
@@ -870,14 +860,6 @@ AnnSpec qualifying spec
 	     | OpDef _ -> true
 	     | _ -> false)
           spc.elements
-
- def localImports spc =
-   mapPartial (fn el ->
-	       case el of
-		 | Import (sp_tm, sp, _) -> Some (sp_tm, sp)
-		 | _ -> None)
-              spc.elements
-
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1022,26 +1004,5 @@ AnnSpec qualifying spec
 	      spec1.elements
    in
      spec1 << {elements = newElements}
-
- op  addDisjointImport: Spec * Spec -> Spec
- def addDisjointImport (spc, imported_spec) =
-   let
-     def mergeSortStep (imported_q, imported_id, imported_info, combined_psorts) =
-       insertAQualifierMap (combined_psorts,
-			    imported_q,
-			    imported_id,
-			    imported_info)
-     def mergeOpStep (imported_q, imported_id, imported_info, combined_pops) =
-       insertAQualifierMap (combined_pops,
-			    imported_q,
-			    imported_id,
-			    imported_info)
-   in
-   let newSorts = foldriAQualifierMap mergeSortStep spc.sorts imported_spec.sorts in
-   let spc      = setSorts (spc, newSorts)                                        in
-   let newOps   = foldriAQualifierMap mergeOpStep   spc.ops   imported_spec.ops   in
-   let spc      = setOps   (spc, newOps)                                          in
-   setElements (spc, spc.elements ++ imported_spec.elements)
-
 
 endspec
