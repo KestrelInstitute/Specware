@@ -95,7 +95,8 @@ RemoveCurrying qualifying spec
 		 newOps)
 	      | OpDef(Qualified(q,id)) ->
 		(case findAQualifierMap(r_ops,q,id) of
-		  | Some info ->  doOp(el,q,id,info,r_elts,r_ops))
+		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
+		   | _ -> fail(q ^ "." ^ id ^ " is not in spec " ^ printSpec spc))
 	      | _ -> (Cons(el,r_elts),r_ops))
 	    result
 	    elts
