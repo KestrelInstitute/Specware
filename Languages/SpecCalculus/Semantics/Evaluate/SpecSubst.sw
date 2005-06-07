@@ -135,9 +135,11 @@ SpecCalc qualifying spec
    %% The opMap and sortMap in sm are PolyMap's  :  dom_qid -> cod_qid
    %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
    %%  so we first convert formats...
-   let translation_maps = 
-       {op_id_map   = convertIdMap (opMap   sm),
-	sort_id_map = convertIdMap (sortMap sm)}
+   let translation_maps = {
+			   op_id_map   = convertIdMap (opMap   sm),
+			   sort_id_map = convertIdMap (sortMap sm),
+			   other_maps  = noOtherTranslationMaps
+			  }
    in
    %% Note that auxTranslateSpec is not expected to raise any errors.
      auxTranslateSpec spc translation_maps None position

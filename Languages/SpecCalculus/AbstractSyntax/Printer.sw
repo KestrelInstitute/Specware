@@ -148,6 +148,31 @@ SpecCalc qualifying spec
 		    ppSep (ppString ", ") (map ppTranslateRule translation),
 		    ppString "}"]
 
+      | Renaming (rules, _) ->
+	let 
+          def ppRule (rule, _(* position *)) = 
+	    case rule of          
+	      | Sort (left_qid, right_qid, aliases) ->
+	        ppConcat [ppString " type ",
+			  ppQualifier left_qid,
+			  ppString " +-> ",
+			  ppString (printAliases aliases)] % ppQualifier right_qid
+
+	      | Op ((left_qid,_), (right_qid, _), aliases) ->
+		ppConcat [ppString " op ",
+			  ppQualifier left_qid,
+			  ppString " +-> ",
+			  ppQualifier right_qid]
+
+	      | Ambiguous (left_qid, right_qid, aliases) ->
+		ppConcat [ppQualifier left_qid,
+			  ppString " +-> ",
+			  ppQualifier right_qid]
+	      | Other other_rule ->
+		ppOtherTranslateRule other_rule
+	in
+	  ppSep (ppString ", ") (map ppRule rules)
+
       | Let (decls, term) ->
         ppConcat [ppString "let",
 		  ppNewline,
@@ -460,6 +485,7 @@ SpecCalc qualifying spec
  %              ^ "'")
 
   op ppOtherTerm          : [a] OtherTerm          a -> Doc % Used for extensions to Specware
+  op ppOtherTranslateRule : [a] OtherTranslateRule a -> Doc % Used for extensions to Specware
 
 endspec
 \end{spec}

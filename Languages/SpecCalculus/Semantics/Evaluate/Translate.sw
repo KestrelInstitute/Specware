@@ -128,10 +128,6 @@ Note: The code below does not yet match the documentation above, but should.
      complainIfAmbiguous (compressDefs spc) pos
     } 
 
-  sort TranslationMap  = AQualifierMap (QualifiedId * Aliases) 
-  sort TranslationMaps = {op_id_map:   TranslationMap,
-			  sort_id_map: TranslationMap}
-
   op  makeTranslationMaps : Boolean -> Spec -> TranslateExpr Position -> SpecCalc.Env TranslationMaps
   def makeTranslationMaps require_monic? dom_spec (translation_rules, position) =
     %% translateSpec is used by Translate and Colimt
@@ -538,7 +534,8 @@ Note: The code below does not yet match the documentation above, but should.
         {complain_if_type_collisions_with_priors (sorts, sort_map);
 	 complain_if_op_collisions_with_priors   (ops, op_map)};
        return {op_id_map   = op_map, 
-	       sort_id_map = sort_map}
+	       sort_id_map = sort_map,
+	       other_maps  = noOtherTranslationMaps}
        }
        
 
@@ -601,7 +598,9 @@ Note: The code below does not yet match the documentation above, but should.
   %% some situations, those errors should be raised while TranslationMaps is being 
   %% created, not here.
   op  auxTranslateSpec : Spec -> TranslationMaps -> Option (TranslateExpr Position) -> Position -> SpecCalc.Env Spec
-  def auxTranslateSpec spc {op_id_map, sort_id_map} opt_translation_expr position =
+  def auxTranslateSpec spc translation_maps opt_translation_expr position =
+    let   op_id_map = translation_maps.op_id_map in
+    let sort_id_map = translation_maps.sort_id_map in
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
     %% TODO: ?? Change UnQualified to new_q in all qualified names ??
     let

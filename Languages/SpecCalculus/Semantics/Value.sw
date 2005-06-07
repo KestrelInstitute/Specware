@@ -11,6 +11,7 @@ SpecCalc qualifying spec
   sort Value =
     | Spec        Spec
     | Morph       Morphism
+    | Renaming    TranslationMaps
     | SpecPrism   SpecPrism       % tentative
     | SpecInterp  SpecInterp      % tentative
     | Diag        SpecDiagram       
@@ -20,6 +21,15 @@ SpecCalc qualifying spec
     | UnEvaluated SCTerm	  % To allow evaluation by need of multiple terms within a file
    %| DiagMorph
     | Other       OtherValue      % Used for extensions to Specware
+
+  type TranslationMaps = {op_id_map   : TranslationMap,
+			  sort_id_map : TranslationMap,
+			  other_maps  : OtherTranslationMaps}
+
+  type TranslationMap  = AQualifierMap (QualifiedId * Aliases) 
+
+  type OtherTranslationMaps 
+  op noOtherTranslationMaps : OtherTranslationMaps % various defs in app-specific files such as NoOther.sw
 
   (* tentative *)
   type SpecInterp = {dom : Spec,
@@ -45,6 +55,7 @@ SpecCalc qualifying spec
     case value of
       | Spec        spc           -> ppString (printSpec spc)
       | Morph       spec_morphism -> ppMorphism   spec_morphism
+      | Renaming    spec_renaming -> ppRenaming   spec_renaming
       | SpecPrism   spec_prism    -> ppPrism      spec_prism     % tentative
       | SpecInterp  spec_interp   -> ppInterp     spec_interp    % tentative
       | Diag        spec_diagram  -> ppDiagram    spec_diagram
@@ -53,6 +64,9 @@ SpecCalc qualifying spec
       | InProcess                 -> ppString "InProcess"
       | UnEvaluated _             -> ppString "some unevaluated term"
       | _                         -> ppString "<unrecognized value>"
+
+  def ppRenaming translation_maps =
+    ppString "<some spec renaming>"
 
   op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
 

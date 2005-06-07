@@ -126,6 +126,7 @@ to the domain and codomain of the morphisms.
     | ExtendMorph  (Term a)
     | Qualify      (Term a) * Name
     | Translate    (Term a) * (TranslateExpr a)
+    | Renaming     (TranslateExpr a)
 (*
 The intention is that \verb+let+ \emph{decls} \verb+in+ \emph{term}
 is the same as \emph{term} \verb+where+ \emph{decls}. The \verb+where+
@@ -216,12 +217,16 @@ to be used in the target info.
 
 Recall the type \verb+IdInfo+ is just a list of identifiers (names).
 *)
-  type TranslateExpr  a = List (TranslateRule a) * a
+  type TranslateExpr  a = (TranslateRules a) * a
+  type TranslateRules a = List (TranslateRule a)
   type TranslateRule  a = (TranslateRule_ a) * a
   type TranslateRule_ a =
     | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases, including name in second field
     | Sort      QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases, including name in second field
     | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases, including name in second field
+    | Other     (OtherTranslateRule a)
+
+  type OtherTranslateRule a % hook for extensions
 
   %% TODO: phase this out...
   type SpecMorphRule a = (SpecMorphRule_ a) * a
@@ -377,6 +382,7 @@ The following are invoked from the parser:
   op mkExtendMorph : fa (a) (Term a)                                                        * a -> Term a
   op mkQualify     : fa (a) (Term a) * Name                                                 * a -> Term a
   op mkTranslate   : fa (a) (Term a) * (TranslateExpr a)                                    * a -> Term a
+  op mkRenaming    : fa (a) (TranslateExpr a)                                               * a -> Term a
   op mkLet         : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
   op mkWhere       : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
   op mkHide        : fa (a) (List (NameExpr a)) * (Term a)                                  * a -> Term a
@@ -411,6 +417,7 @@ The following are invoked from the parser:
   def mkExtendMorph (term,                      pos) = (ExtendMorph term,                        pos)
   def mkQualify     (term, name,                pos) = (Qualify     (term, name),                pos)
   def mkTranslate   (term, translate_expr,      pos) = (Translate   (term, translate_expr),      pos)
+  def mkRenaming    (translate_expr,            pos) = (Renaming    translate_expr,              pos)
   def mkLet         (decls, term,               pos) = (Let         (decls, term),               pos)
   def mkWhere       (decls, term,               pos) = (Where       (decls, term),               pos)
   def mkHide        (name_exprs, term,          pos) = (Hide        (name_exprs, term),          pos)

@@ -26,8 +26,6 @@ spec
  %%                 Temporary hacks
  %% ================================================================================
 
- sort SpecCalc.TranslateRules a = List (SpecCalc.TranslateRule a)
-
  sort PropertyMap = List Property % TODO: convert   once properties are in qualified map
  sort MorphismPropMap          % TODO: make real once properties are in qualified map
 

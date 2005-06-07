@@ -9,6 +9,10 @@ SpecCalc qualifying spec
   import Signature
   import UnitId/Utilities
 
+  type OtherTranslateRule a = ()  
+  type OtherTranslationMaps = ()
+  def  noOtherTranslationMaps = ()
+
   def SpecCalc.evaluateOther _ (* args *) pos = {
     unitId <- getCurrentUID;
     raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId) ^ "\n"))
@@ -70,6 +74,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.15  2005/06/07 05:36:21  mcdonald
+%% revised error messages to be more informative/less misleading
+%%
 %% Revision 1.14  2005/04/01 21:43:23  gilham
 %% Changed evaluateProve to support OtherValues in addition to Specs.
 %% Fixed a problem with invalid file names for proof files.
