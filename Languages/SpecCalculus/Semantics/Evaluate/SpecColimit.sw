@@ -219,7 +219,7 @@ spec
   % let _ = showVertexToTranslateExprMaps vertex_to_sm_rules in
 
   %% -------------------------------------------------------------------------------------------------------------
-  %% (4)  Use the translation expressions to construct as a translation morphism the
+  %% (4)  Use the translation expressions to construct (as a translation morphism) the
   %%      cocone morphism for each vertex, and then merge their codomain specs to
   %%      create the apex spec.
   %% -------------------------------------------------------------------------------------------------------------
@@ -304,6 +304,7 @@ spec
    let rule  : TranslateRule  Position = (rule_, Internal "Colimit Op") in
    rule
 
+ %% op  makeTranslatePropRule : QualifiedId * QualifiedId * Aliases -> TranslateRule Position
  %% def makeTranslatePropRule (dom_qid, cod_qid, cod_aliases) -> 
  %%   let rule_ : TranslateRule_ Position = Prop (dom_qid, cod_qid, cod_aliases) in
  %%   let rule  : TranslateRule  Position = (rule_, Internal "Colimit Prop") in
@@ -578,13 +579,13 @@ spec
  %% ================================================================================
 
  %% Morphism[Sort/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
- def convertSortRules translate_rules = 
+ def convertSortRules translate_rules =
    foldl (fn ((Sort (dom_qid, cod_qid, aliases), _), new_sm_map) ->
 	  update new_sm_map dom_qid cod_qid)
          PolyMap.emptyMap
          translate_rules
 
- def convertOpRules translate_rules = 
+ def convertOpRules translate_rules =
    foldl (fn ((Op ((dom_qid, _), (cod_qid, _), aliases), _), new_sm_map) ->
 	  update new_sm_map dom_qid cod_qid)
          PolyMap.emptyMap 
@@ -682,7 +683,7 @@ spec
 
  %% --------------------------------------------------------------------------------
  
- op showVertexToTranslateExprMaps : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position) -> ()
+ op  showVertexToTranslateExprMaps : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position) -> ()
  def showVertexToTranslateExprMaps vertex_to_sm_rules =
    (toScreen "==========================================\n";
     foldMap (fn ignore -> fn vertex -> fn translate_expr ->
