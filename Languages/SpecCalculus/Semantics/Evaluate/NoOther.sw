@@ -16,22 +16,22 @@ SpecCalc qualifying spec
 
   def SpecCalc.evaluateOtherSubstitute _(* spec_tm *) _(* spec_value *) _(* morph_tm *) _(* morph_value *) pos = {
     unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+    raise (TypeCheck (pos, "Substitute: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherSpecMorph _(* dom *) _(* cod *) _(* rules *) pos = {
     unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+    raise (TypeCheck (pos, "SpecMorph: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherPrint _ (* value *) pos = {
     unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+    raise (TypeCheck (pos, "Print: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherGenerate _ _ (* args valueInfo *) pos = {
     unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+    raise (TypeCheck (pos, "Generate: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherQualify _ _ _ (* term valueinfo qualifier *) pos = {
@@ -41,17 +41,17 @@ SpecCalc qualifying spec
 
   def SpecCalc.evaluateOtherProve _ (* claimName, value, valueName, proverName, assertions, possibleOptions, baseOptions, answerVariable *) pos = {
     unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+    raise (TypeCheck (pos, "Prove: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherProofGen _ (* value, term, optFileName, fromObligations? *) pos = {
     unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+    raise (TypeCheck (pos, "ProofGen: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherProofGenLocal _ (* value, term, optFileName, fromObligations? *) pos = {
     unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+    raise (TypeCheck (pos, "ProofGenLocal: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherObligations _ (* value *) pos = {
@@ -70,6 +70,11 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.14  2005/04/01 21:43:23  gilham
+%% Changed evaluateProve to support OtherValues in addition to Specs.
+%% Fixed a problem with invalid file names for proof files.
+%% Fixed some bugs in the definition of unionProofDecls
+%%
 %% Revision 1.13  2005/02/10 09:53:05  mcdonald
 %% added hook for other obligations
 %%
