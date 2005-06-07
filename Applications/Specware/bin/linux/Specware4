@@ -59,6 +59,8 @@ fi
 
 SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
 
+export SWPATH=/
+
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then

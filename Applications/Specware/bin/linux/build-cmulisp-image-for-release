@@ -37,7 +37,7 @@ esac
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl /bin/lisp; do
+   for L in "$HOME"/cmucl/bin/lisp /usr/local/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl /bin/lisp; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
@@ -62,7 +62,7 @@ fi
 
 cd "$SPECWARE4"/Applications/Specware
 
-export SWPATH; SWPATH="$SPECWARE4":.
+export SWPATH; SWPATH=/
 EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
 
 if [ -f lisp ]; then
@@ -168,6 +168,7 @@ XXXX
 ##  TODO: copy highest-numbered patch from "$SPECWARE4"/Release/Linux/CMU/Patches
 ##/bin/cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.x86f          "$SPECWARE4"/distribution-cmulisp/Patches
 /bin/cp "$SPECWARE4"/Release/Linux/CMU/Specware-cmulisp                  "$SPECWARE4"/distribution-cmulisp/Specware
+/bin/cp "$SPECWARE4"/Release/Linux/CMU/SpecwareShell-cmulisp                  "$SPECWARE4"/distribution-cmulisp/SpecwareShell
 /bin/cp "$SPECWARE4"/Applications/Specware/bin/linux/Specware4.cmuimage  "$SPECWARE4"/distribution-cmulisp
 
 
@@ -189,4 +190,4 @@ find . -type d -name "CVS" -print | xargs /bin/rm -rf
 #  Make tar file
 # ================================================================================
 
-tar cvzf "$SPECWARE4"/Specware.tar *
+#tar cvzf "$SPECWARE4"/Specware.tar *

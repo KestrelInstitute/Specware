@@ -37,7 +37,7 @@ esac
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl /bin/lisp; do
+   for L in /usr/local/cmucl/bin/lisp "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /bin/lisp; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
