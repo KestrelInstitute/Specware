@@ -58,8 +58,9 @@
 (defvar Specware4 (specware::getenv "SPECWARE4"))
 
 #+cmu
-(compile-and-load-lisp-file (concatenate 'string
-					 Specware4 "/Applications/Handwritten/Lisp/cmucl-patch"))
+;(without-package-locks     ;; add in version 19
+ (compile-and-load-lisp-file (concatenate 'string
+					  Specware4 "/Applications/Handwritten/Lisp/cmucl-patch"));)
 ;#+sbcl
 ;(compile-and-load-lisp-file (concatenate 'string
 ;					 Specware4 "/Applications/Handwritten/Lisp/sbcl-patch"))
