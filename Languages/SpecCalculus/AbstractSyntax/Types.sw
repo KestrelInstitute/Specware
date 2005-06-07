@@ -219,9 +219,16 @@ Recall the type \verb+IdInfo+ is just a list of identifiers (names).
   type TranslateExpr  a = List (TranslateRule a) * a
   type TranslateRule  a = (TranslateRule_ a) * a
   type TranslateRule_ a =
-    | Sort      QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases
-    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases
-    | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases
+    | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases, including name in second field
+    | Sort      QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases, including name in second field
+    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases, including name in second field
+
+  %% TODO: phase this out...
+  type SpecMorphRule a = (SpecMorphRule_ a) * a
+  type SpecMorphRule_ a = 
+    | Ambiguous QualifiedId                 * QualifiedId 
+    | Sort      QualifiedId                 * QualifiedId
+    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort)
 (*
 A \verb+NameExpr+ denote the name of an op, type or claim. Lists of such
 expressions are used in \verb+hide+ and \verb+export+ terms to either
@@ -307,11 +314,6 @@ the interpreter handles only name to name maps for now.
 The tagging in the types below may be excessive given the \verb+ATerm+
 is already tagged.
 *)
-  type SpecMorphRule a = (SpecMorphRule_ a) * a
-  type SpecMorphRule_ a = 
-    | Sort      QualifiedId * QualifiedId
-    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort)
-    | Ambiguous QualifiedId * QualifiedId 
 (*
 The current syntax allows one to write morphisms mapping names to terms
 but only name/name mappings will be handled by the interpreter in the
@@ -433,4 +435,3 @@ The following are invoked from the parser:
     len > 1 && sub(s,len - 1) = #:
 
 endspec
-

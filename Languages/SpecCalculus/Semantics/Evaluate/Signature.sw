@@ -7,39 +7,44 @@ SpecCalc qualifying spec {
 
   %% Generic mechanism:
 
-  op evaluateTerm        : SCTerm                                                                   -> SpecCalc.Env Value
-  op evaluateLet         : List (Decl Position) -> SCTerm                                           -> SpecCalc.Env ValueInfo
+  op evaluateTerm             : SCTerm                                                           -> SpecCalc.Env Value
+  op evaluateLet              : List (Decl Position) -> SCTerm                                   -> SpecCalc.Env ValueInfo
 
   %% Specific kinds of terms:
 
-  op evaluateReturnUID   : Position -> RelativeUnitId -> Env (ValueInfo * UnitId)
-  op evaluateUID         : Position -> RelativeUnitId                                               -> SpecCalc.Env ValueInfo
-  op evaluateSpec        : List (SpecElem Position)                                     -> Position -> SpecCalc.Env ValueInfo
-  op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))                        -> SpecCalc.Env ValueInfo
-  op evaluateSpecPrism   : SCTerm * List SCTerm * PrismModeTerm Position                -> Position -> SpecCalc.Env ValueInfo  % tentative
-  op evaluateSpecInterp  : SCTerm * SCTerm * (SpecInterpRules Position)                 -> Position -> SpecCalc.Env ValueInfo  % tentative
-  op evaluateExtendMorph : SCTerm                                                                   -> SpecCalc.Env ValueInfo
-  op evaluateLispCompile : ValueInfo * SCTerm * Option String                                       -> SpecCalc.Env ValueInfo
-  op evaluateLispCompileLocal: ValueInfo * SCTerm * Option String                                   -> SpecCalc.Env ValueInfo
-  op evaluateJavaGen     : ValueInfo * (SpecCalc.Term Position) * Option String                     -> SpecCalc.Env ValueInfo
-  op evaluateDiag        : List (DiagElem Position)                                                 -> SpecCalc.Env ValueInfo
-  op evaluateDiagMorph   : SCTerm * SCTerm * (List (DiagMorphRule Position))                        -> SpecCalc.Env ValueInfo
-  op evaluateColimit     : SCTerm                                                                   -> SpecCalc.Env ValueInfo
-  op evaluateTermInfo    : SCTerm                                                                   -> SpecCalc.Env ValueInfo
-  op evaluatePrint       : SCTerm                                                                   -> SpecCalc.Env ValueInfo
-  op evaluateQualify     : SCTerm -> Qualifier                                                      -> SpecCalc.Env ValueInfo
-  op evaluateTranslate   : SCTerm -> TranslateExpr Position                                         -> SpecCalc.Env ValueInfo
-  op evaluateSubstitute  : SCTerm * SCTerm                                              -> Position -> SpecCalc.Env ValueInfo
-  op evaluateProve       : ClaimName * SCTerm * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar -> Position -> SpecCalc.Env ValueInfo
-  op evaluateObligations : SCTerm                                                                   -> SpecCalc.Env ValueInfo
-  op evaluateExpand      : SCTerm                                                       -> Position -> SpecCalc.Env ValueInfo
-  op evaluateGenerate    : String * SCTerm * Option String                              -> Position -> SpecCalc.Env ValueInfo
+  op evaluateReturnUID        : Position -> RelativeUnitId                                       -> SpecCalc.Env (ValueInfo * UnitId)
+  op evaluateUID              : Position -> RelativeUnitId                                       -> SpecCalc.Env ValueInfo
+  op evaluateSpec             : List (SpecElem Position)                             -> Position -> SpecCalc.Env ValueInfo
+  op evaluateSpecMorph        : SCTerm * SCTerm * (List (SpecMorphRule Position))                -> SpecCalc.Env ValueInfo
+  op evaluateSpecPrism        : SCTerm * List SCTerm * PrismModeTerm Position        -> Position -> SpecCalc.Env ValueInfo  % tentative
+  op evaluateSpecInterp       : SCTerm * SCTerm * (SpecInterpRules Position)         -> Position -> SpecCalc.Env ValueInfo  % tentative
+  op evaluateExtendMorph      : SCTerm                                                           -> SpecCalc.Env ValueInfo
+  op evaluateLispCompile      : ValueInfo * SCTerm * Option String                               -> SpecCalc.Env ValueInfo
+  op evaluateLispCompileLocal : ValueInfo * SCTerm * Option String                               -> SpecCalc.Env ValueInfo
+  op evaluateJavaGen          : ValueInfo * (SpecCalc.Term Position) * Option String             -> SpecCalc.Env ValueInfo
+  op evaluateDiag             : List (DiagElem Position)                                         -> SpecCalc.Env ValueInfo
+  op evaluateDiagMorph        : SCTerm * SCTerm * (List (DiagMorphRule Position))                -> SpecCalc.Env ValueInfo
+  op evaluateColimit          : SCTerm                                                           -> SpecCalc.Env ValueInfo
+  op evaluateTermInfo         : SCTerm                                                           -> SpecCalc.Env ValueInfo
+  op evaluatePrint            : SCTerm                                                           -> SpecCalc.Env ValueInfo
+  op evaluateQualify          : SCTerm -> Qualifier                                              -> SpecCalc.Env ValueInfo
+  op evaluateTranslate        : SCTerm -> TranslateExpr Position                                 -> SpecCalc.Env ValueInfo
+  op evaluateSubstitute       : SCTerm * SCTerm                                      -> Position -> SpecCalc.Env ValueInfo
+  op evaluateObligations      : SCTerm                                                           -> SpecCalc.Env ValueInfo
+  op evaluateExpand           : SCTerm                                               -> Position -> SpecCalc.Env ValueInfo
+  op evaluateGenerate         : String * SCTerm * Option String                      -> Position -> SpecCalc.Env ValueInfo
+  op evaluateProve            : ClaimName * SCTerm * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar ->
+                                                                                        Position -> SpecCalc.Env ValueInfo
+  %% Hooks for extensions to specware:
 
-  op setBaseToPath : String -> Env ()
-  op reloadBase : Env ()
+  op evaluateOther              : OtherTerm Position                                 -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOtherQualify       : SCTerm -> ValueInfo -> Qualifier                   -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOtherTranslate     : SCTerm -> ValueInfo -> SCTerm -> ValueInfo         -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOtherObligations   : OtherValue                                         -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOtherPrint         : OtherValue                                         -> Position -> SpecCalc.Env ()
+  op evaluateOtherProofGen      : OtherValue * SCTerm * Option String * Boolean      -> Position -> SpecCalc.Env ()
+  op evaluateOtherProofGenLocal : OtherValue * SCTerm * Option String * Boolean      -> Position -> SpecCalc.Env ()
 
-  %% Hook for extensions to specware
-  op evaluateOther       : OtherTerm Position -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherSpecMorph :
        ValueInfo
     -> ValueInfo
@@ -53,7 +58,6 @@ SpecCalc qualifying spec {
     -> Position
     -> SpecCalc.Env ValueInfo
 
-  op evaluateOtherPrint : OtherValue -> Position -> SpecCalc.Env ()
 
   op evaluateOtherGenerate :
        String * SCTerm * Option String
@@ -61,29 +65,33 @@ SpecCalc qualifying spec {
     -> Position
     -> SpecCalc.Env ValueInfo
 
-  op evaluateOtherQualify : SCTerm -> ValueInfo -> Qualifier -> Position -> SpecCalc.Env ValueInfo
-
-  op evaluateOtherProofGen      : OtherValue * SCTerm * Option String * Boolean -> Position -> SpecCalc.Env ()
-  op evaluateOtherProofGenLocal : OtherValue * SCTerm * Option String * Boolean -> Position -> SpecCalc.Env ()
-  op evaluateOtherObligations   : OtherValue                                    -> Position -> SpecCalc.Env ValueInfo
-  op evaluateOtherProve         : ClaimName * OtherValue * Option String * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar -> Position -> SpecCalc.Env Value
+  op evaluateOtherProve :
+       ClaimName * OtherValue * Option String * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar 
+    -> Position 
+    -> SpecCalc.Env Value
 
   %% Lower-level support routines:
 
-  op getUnitId : SCTerm -> SpecCalc.Env UnitId
+  op setBaseToPath : String -> Env ()
+  op reloadBase    : Env ()
+
+  op getUnitId    : SCTerm -> SpecCalc.Env UnitId
   op coerceToSpec : Value -> Value
 
   op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean
-  op Specware.getOptSpec: Option String -> Option Spec
+  op Specware.getOptSpec      : Option String -> Option Spec
 }
 \end{spec}
-
-
 
 %%
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.40  2005/04/01 21:43:24  gilham
+%% Changed evaluateProve to support OtherValues in addition to Specs.
+%% Fixed a problem with invalid file names for proof files.
+%% Fixed some bugs in the definition of unionProofDecls
+%%
 %% Revision 1.39  2005/02/10 09:53:05  mcdonald
 %% added hook for other obligations
 %%

@@ -459,7 +459,7 @@ SpecCalc qualifying spec
  %              ^ (Lisp_toString any)
  %              ^ "'")
 
-  op ppOtherTerm : [a] OtherTerm a -> Doc % Used for extensions to Specware
+  op ppOtherTerm          : [a] OtherTerm          a -> Doc % Used for extensions to Specware
 
 endspec
 \end{spec}

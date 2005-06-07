@@ -43,16 +43,16 @@ SpecCalc qualifying spec
  %op  ppValue : Value -> Doc
   def ppValue value =
     case value of
-      | Spec       spc           -> ppString (printSpec spc)
-      | Morph      spec_morphism -> ppMorphism   spec_morphism
-      | SpecPrism  spec_prism    -> ppPrism      spec_prism     % tentative
-      | SpecInterp spec_interp   -> ppInterp     spec_interp    % tentative
-      | Diag       spec_diagram  -> ppDiagram    spec_diagram
-      | Colimit    spec_colimit  -> ppColimit    spec_colimit
-      | Other      other_value   -> ppOtherValue other_value
-      | InProcess                -> ppString "InProcess"
-      | UnEvaluated x            -> ppString "some unevaluated term"
-      | _                        -> ppString "<unrecognized value>"
+      | Spec        spc           -> ppString (printSpec spc)
+      | Morph       spec_morphism -> ppMorphism   spec_morphism
+      | SpecPrism   spec_prism    -> ppPrism      spec_prism     % tentative
+      | SpecInterp  spec_interp   -> ppInterp     spec_interp    % tentative
+      | Diag        spec_diagram  -> ppDiagram    spec_diagram
+      | Colimit     spec_colimit  -> ppColimit    spec_colimit
+      | Other       other_value   -> ppOtherValue other_value
+      | InProcess                 -> ppString "InProcess"
+      | UnEvaluated _             -> ppString "some unevaluated term"
+      | _                         -> ppString "<unrecognized value>"
 
   op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
 
@@ -63,4 +63,5 @@ SpecCalc qualifying spec
   (* tentative *)
   def ppInterp {dom=_, med=_, cod=_, d2m=_, c2m=_} =
     ppString "<some interp>"
+
 endspec
