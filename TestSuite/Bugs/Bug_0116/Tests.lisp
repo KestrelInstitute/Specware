@@ -4,8 +4,8 @@
  ("Bug 0116 : Error in removeCurrying"
   :sw  "RemCurr#P"
   :output    '(
-	       ";;; Elaborating proof-term at $TESTDIR/RemCurr#P"
 	       ";;; Elaborating spec at $TESTDIR/RemCurr#S"
+	       ";;; Elaborating proof-term at $TESTDIR/RemCurr#P"
 	       (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/RemCurr/P.log")
 	       (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	       (:optional ";; Directory $TESTDIR/Snark/RemCurr/ does not exist, will create.")

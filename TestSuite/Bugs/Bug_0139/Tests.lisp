@@ -4,8 +4,8 @@
 
  ("Bug 0139 : Prover goes into debugger"
   :sw "Logic#Prove"
-  :output '(";;; Elaborating proof-term at $TESTDIR/Logic#Prove"
-	    ";;; Elaborating spec at $TESTDIR/Logic#Logic"
+  :output '(";;; Elaborating spec at $TESTDIR/Logic#Logic"
+	    ";;; Elaborating proof-term at $TESTDIR/Logic#Prove"
 	    (:alternatives
 	     (";; ensure-directories-exist: creating $TESTDIR/Snark/Logic/Prove.log")
 	     (";; ensure-directories-exist: creating"

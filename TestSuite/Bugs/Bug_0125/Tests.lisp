@@ -4,8 +4,8 @@
 
  ("Bug 0125 : Prover unsoundness when using PosNat"
   :sw "PosNat#p"
-  :output '(";;; Elaborating proof-term at $TESTDIR/PosNat#p"
-	    ";;; Elaborating spec at $TESTDIR/PosNat#s"
+  :output '(";;; Elaborating spec at $TESTDIR/PosNat#s"
+	    ";;; Elaborating proof-term at $TESTDIR/PosNat#p"
 	    (:optional
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char"
