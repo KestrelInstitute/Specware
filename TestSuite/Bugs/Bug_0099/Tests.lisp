@@ -4,9 +4,8 @@
 
  ("Bug 0099 : Extra 'let' in generated proof obligation"
   :show   "MinusOb#MinusProof" 
-  :output '(
+  :output '(";;; Elaborating obligator at $TESTDIR/MinusOb#ONat"
 	    ";;; Elaborating proof-term at $TESTDIR/MinusOb#MinusProof"
-	    ";;; Elaborating obligator at $TESTDIR/MinusOb#ONat"
 	    (:optional
 	     ";;; Elaborating spec at $SPECWARE/Library/Base/WFO"
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"

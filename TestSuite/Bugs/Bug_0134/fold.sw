@@ -14,10 +14,10 @@ S = spec
 
   type UniquelySatisfiedPredicate a = (Predicate a | uniquelySatisfied?)
 
-  op the : [a] UniquelySatisfiedPredicate a -> a
-  axiom the_def is [a]
+  op The : [a] UniquelySatisfiedPredicate a -> a
+  axiom The_def is [a]
     fa (p:UniquelySatisfiedPredicate a)
-       uniquelySatisfies? (the p, p)
+       uniquelySatisfies? (The p, p)
 
   type FSet a
 
@@ -35,7 +35,7 @@ S = spec
 
   op fold : [a,b] ((FSet a * b * (b * a -> b)) | foldable?) -> b
   def [a,b] fold =
-    the (fn (fold : ((FSet a * b * (b * a -> b)) | foldable?) -> b) ->
+    The (fn (fold : ((FSet a * b * (b * a -> b)) | foldable?) -> b) ->
       (fa(c,f) fold (empty, c, f) = c) &&
       (fa(s,x,c,f) foldable? (s with x, c, f) =>
                    fold (s with x, c, f) = f (fold (s wout x, c, f), x)))

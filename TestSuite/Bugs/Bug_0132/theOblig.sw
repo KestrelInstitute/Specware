@@ -14,13 +14,13 @@ S = spec
 
   type UniquelySatisfiedPredicate a = (Predicate a | uniquelySatisfied?)
 
-  op the : [a] UniquelySatisfiedPredicate a -> a
-  axiom the_def is [a]
+  op The : [a] UniquelySatisfiedPredicate a -> a
+  axiom The_def is [a]
     fa (p:UniquelySatisfiedPredicate a)
-       uniquelySatisfies? (the p, p)
+       uniquelySatisfies? (The p, p)
 
   op f : Nat -> Nat
-  def f n = the (fn m -> m = n)
+  def f n = The (fn m -> m = n)
 
 endspec
 

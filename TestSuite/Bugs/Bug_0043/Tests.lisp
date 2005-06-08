@@ -4,11 +4,11 @@
 
  ("Bug 0043 : Snark doesn't like Booleans"
   :show "Change#ShouldBeProvable" 
-  :output '(";;; Elaborating proof-term at $TESTDIR/Change#ShouldBeProvable"
-	    ";;; Elaborating obligator at $TESTDIR/Change#ShouldBeProvable"
+  :output '(";;; Elaborating obligator at $TESTDIR/Change#ShouldBeProvable"
 	    ";;; Elaborating spec-morphism at $TESTDIR/Change#FlipFlopImplementation"
 	    ";;; Elaborating spec at $TESTDIR/Change#Flipflop"
 	    ";;; Elaborating spec at $TESTDIR/Change#GiveNameToTilde"
+	    ";;; Elaborating proof-term at $TESTDIR/Change#ShouldBeProvable"
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare")

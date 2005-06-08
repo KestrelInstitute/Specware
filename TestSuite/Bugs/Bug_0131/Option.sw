@@ -1,6 +1,6 @@
 O = PFunctions qualifying spec
 
-  import /Provers/ProofChecker/Libs/Logic
+  import /Provers/ProofChecker/Libs
 
   (* Functions are always total in Metaslang. Partial functions can be modeled
   using Option:

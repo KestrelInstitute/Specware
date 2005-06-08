@@ -31,5 +31,10 @@ E = spec
      op bar : A -> A
     end-spec
 
-trans_spec = translate E by {A +-> A2}
+XX = translate E by {A +-> A2}
+trans_spec = spec
+              type AA
+              import XX
+              type ZZ
+             endspec
 
