@@ -871,9 +871,9 @@ AnnSpecPrinter qualifying spec
      | QuotientPat (pat, term, _) -> 
        enclose (enclosed, 
 		blockFill (0, 
-			   [(0, string "quotient("), 
-			    (0, ppTerm context ([1]++ path, Top) term), 
-			    (0, string " ?)" ), 
+			   [(0, string "quotient "), 
+			    (0, ppTerm    context ([1]++ path, Top)   term), 
+			    (0, string " "),
 			    (0, ppPattern context ([0]++ path, false) pat)]))
 
      | _ -> System.fail "Uncovered case for pattern"
