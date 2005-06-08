@@ -75,7 +75,9 @@
 (defun in-specware-shell? ()
   *in-specware-shell?*)
 
-(setq *debugger-hook* #'(lambda (ignore1 ignore2) (set-specware-shell nil)))
+(setq *debugger-hook* #'(lambda (ignore1 ignore2)
+			  (declare (ignore ignore1 ignore2)) 
+			  (set-specware-shell nil)))
 
 (defun specware-shell0 ()
   (specware-shell t))
