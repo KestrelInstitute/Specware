@@ -8,6 +8,7 @@ SpecCalc qualifying spec
 
   import Signature
   import /Languages/SpecCalculus/AbstractSyntax/Printer
+  import /Languages/SpecCalculus/Semantics/Value
   import UnitId/Utilities
 
   def SpecCalc.evaluateOther _ (* args *) pos = {
@@ -72,6 +73,8 @@ SpecCalc qualifying spec
 
   type OtherRenamings = ()       % Value
 
+  def ppOtherRenamings (_ : OtherRenamings) = ([] : List Doc)
+
   %%  -------------
 
 endspec
@@ -81,6 +84,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.19  2005/06/08 09:34:44  mcdonald
+%% factor out prettyprinting routine for RenamingExpr
+%%
 %% Revision 1.18  2005/06/08 08:32:25  mcdonald
 %% tweak OtherRenamingRule and OtherRenamings
 %%

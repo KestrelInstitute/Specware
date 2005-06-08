@@ -49,6 +49,8 @@ SpecCalc qualifying spec
   op  showValue : Value -> String
   def showValue value = ppFormat (ppValue value)
 
+  %% --------------------------------------------------------------------------------
+
  %op  ppValue : Value -> Doc
   def ppValue value =
     case value of
@@ -65,7 +67,32 @@ SpecCalc qualifying spec
       | _                         -> ppString "<unrecognized value>"
 
   def ppRenamings renamings =
-    ppString "<some renaming>"
+    let docs = (ppRenamingMap (ppString "type ") renamings.sort_renaming) ++ 
+               (ppRenamingMap (ppString "op ")   renamings.op_renaming)   ++
+	       (case renamings.other_renamings of
+		  | None -> []
+		  | Some other -> ppOtherRenamings other)
+    in
+    ppConcat [ppString "{",
+	      ppSep (ppString ", ") docs,
+	      ppString "}"]
+
+  op  ppRenamingMap : Doc -> Renaming -> List Doc
+  def ppRenamingMap type_or_op renaming =
+    foldriAQualifierMap (fn (dom_q, dom_id, (cod_qid as Qualified(cod_q, cod_id), _), docs) ->
+			 if dom_q = cod_q && dom_id = cod_id then
+			   %% don't print identity rules ...
+			   docs
+			 else
+			   [ppConcat [type_or_op,
+				      ppQualifier (Qualified(dom_q, dom_id)),
+				      ppString " +-> ",
+				      ppQualifier cod_qid]]
+			   ++ docs)
+                        []
+			renaming
+
+  op ppOtherRenamings : OtherRenamings -> List Doc
 
   op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
 
@@ -76,5 +103,7 @@ SpecCalc qualifying spec
   (* tentative *)
   def ppInterp {dom=_, med=_, cod=_, d2m=_, c2m=_} =
     ppString "<some interp>"
+
+  %% --------------------------------------------------------------------------------
 
 endspec
