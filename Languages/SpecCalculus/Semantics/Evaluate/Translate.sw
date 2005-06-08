@@ -529,13 +529,14 @@ Note: The code below does not yet match the documentation above, but should.
 			     }
     in
       {
-       (op_renaming, sort_renaming) <- foldM insert (emptyAQualifierMap, emptyAQualifierMap) renaming_rules;
+       (op_renaming, sort_renaming) <- foldM insert (emptyRenaming, emptyRenaming) renaming_rules;
        when require_monic?
         {complain_if_type_collisions_with_priors (sorts, sort_renaming);
 	 complain_if_op_collisions_with_priors   (ops, op_renaming)};
        return {
-	       op_renaming     = op_renaming, 
+	       ambig_renaming  = emptyRenaming,
 	       sort_renaming   = sort_renaming,
+	       op_renaming     = op_renaming, 
 	       other_renamings = None
 	      }
        }
@@ -564,27 +565,21 @@ Note: The code below does not yet match the documentation above, but should.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  translateOpQualifiedId   : Renaming -> QualifiedId -> QualifiedId
   op  translateSortQualifiedId : Renaming -> QualifiedId -> QualifiedId
-  op  translateOp              : Renaming -> MS.Term -> MS.Term
+  op  translateOpQualifiedId   : Renaming -> QualifiedId -> QualifiedId
   op  translateSort            : Renaming -> MS.Sort -> MS.Sort
-
-  def translateOpQualifiedId op_renaming (qid as Qualified (q, id)) =
-    case findAQualifierMap (op_renaming, q,id) of
-      | Some (nQId,_) -> nQId
-      | None -> qid
+  op  translateOp              : Renaming -> MS.Term -> MS.Term
+  op  translatePattern         : Pattern  -> Pattern
 
   def translateSortQualifiedId sort_renaming (qid as Qualified (q, id)) =
     case findAQualifierMap (sort_renaming, q,id) of
       | Some (nQId,_) -> nQId
       | None -> qid
 
-  def translateOp op_renaming op_term =
-    case op_term of
-      | Fun (Op (qid, fixity), srt, pos) ->
-	(let new_qid = translateOpQualifiedId op_renaming qid in
-	 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
-      | _ -> op_term
+  def translateOpQualifiedId op_renaming (qid as Qualified (q, id)) =
+    case findAQualifierMap (op_renaming, q,id) of
+      | Some (nQId,_) -> nQId
+      | None -> qid
 
   def translateSort sort_renaming sort_term =
     case sort_term of
@@ -593,6 +588,14 @@ Note: The code below does not yet match the documentation above, but should.
 	 if new_qid = qid then sort_term else Base (new_qid, srts, pos))
       | _ -> sort_term
 
+  def translateOp op_renaming op_term =
+    case op_term of
+      | Fun (Op (qid, fixity), srt, pos) ->
+	(let new_qid = translateOpQualifiedId op_renaming qid in
+	 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
+      | _ -> op_term
+
+  def translatePattern pat = pat
 
   %% auxTranslateSpec is used by Translate, Substitute, and (indirectly) Colimt
   %% It should avoid raising any errors.
@@ -616,15 +619,53 @@ Note: The code below does not yet match the documentation above, but should.
           | Some (_,new_aliases) -> new_aliases
           | None -> [qid]
   
-      def translatePattern pat = pat
-
-      def translateOpMap old_ops =
+      def translateSorts old_sorts =
         let 
-          def translateStep (old_q, old_id, old_info, new_op_renaming) =
+          def translateSortInfo (old_q, old_id, old_info, new_sorts) = 
+	    let Qualified (primary_q, primary_id) = primarySortName old_info in
+	    if ~ (old_q = primary_q && old_id = primary_id) then
+	      % let _ = toScreen("\nIgnoring sort info for " ^ old_q ^ "." ^ old_id ^ "\n") in
+	      return new_sorts
+	    else
+	      % let _ = toScreen("\nTranslating sort info for " ^ old_q ^ "." ^ old_id ^ "\n") in
+	      {
+	       new_names <- foldM (fn new_qids -> fn old_qid ->
+				   foldM (fn new_qids -> fn new_qid ->
+					  if member (new_qid, new_qids) then
+					    return new_qids
+					  else 
+					    return (Cons (new_qid, new_qids)))
+				         new_qids
+					 (translateSortQualifiedIdToAliases sort_renaming old_qid))
+	                          [] 
+				  old_info.names;
+	       new_names <- return (rev new_names);
+	       if member (unqualified_Boolean, new_names) || member (Boolean_Boolean, new_names) then
+		 return new_sorts
+	       else
+		 { 
+		  new_info <- foldM (fn merged_info -> fn (Qualified (new_q, new_id)) ->
+				     mergeSortInfo merged_info 
+						   (findAQualifierMap (new_sorts, new_q, new_id))
+						   position)
+				    (old_info << {names = new_names})
+				    new_names;
+		  foldM (fn new_sorts -> fn (Qualified (new_q, new_id)) ->
+			 % let _ = toScreen("\n  Inserting sort info for " ^ new_q ^ "." ^ new_id ^ "\n") in
+			 return (insertAQualifierMap (new_sorts, new_q, new_id, new_info)))
+		        new_sorts  
+			new_names 
+		 }}
+	in
+	  foldOverQualifierMap translateSortInfo emptyAQualifierMap old_sorts 
+
+      def translateOps old_ops =
+        let 
+          def translateOpInfo (old_q, old_id, old_info, new_ops) =
 	    let primary_qid as Qualified (primary_q, primary_id) = primaryOpName old_info in
 	    if ~ (old_q = primary_q && old_id = primary_id) then
 	      % let _ = toScreen("\nIgnoring op info for " ^ old_q ^ "." ^ old_id ^ "\n") in
-	      return new_op_renaming
+	      return new_ops
 	    else
 	      % let _ = toScreen("\nTranslating op info for " ^ old_q ^ "." ^ old_id ^ "\n") in
 	      {
@@ -641,72 +682,35 @@ Note: The code below does not yet match the documentation above, but should.
 	       new_names <- return (rev new_names);
 	       new_info <- foldM (fn merged_info -> fn (Qualified (new_q, new_id)) ->
 				  mergeOpInfo merged_info 
-					      (findAQualifierMap (new_op_renaming, new_q, new_id))
+					      (findAQualifierMap (new_ops, new_q, new_id))
 					      position)
 	                         (old_info << {names = new_names})
 				 new_names;
-	       foldM (fn new_op_renaming -> fn (Qualified (new_q, new_id)) ->
+	       foldM (fn new_ops -> fn (Qualified (new_q, new_id)) ->
 		      % let _ = toScreen("\n  Inserting op info for " ^ new_q ^ "." ^ new_id ^ "\n") in
-		      return (insertAQualifierMap (new_op_renaming, new_q, new_id, new_info)))
-	             new_op_renaming  
+		      return (insertAQualifierMap (new_ops, new_q, new_id, new_info)))
+	             new_ops
 		     new_names
 	      }
 	in
-	  foldOverQualifierMap translateStep emptyAQualifierMap old_ops 
-
-      def translateSortMap old_sorts =
-        let 
-          def translateStep (old_q, old_id, old_info, new_sort_renaming) =
-	    let Qualified (primary_q, primary_id) = primarySortName old_info in
-	    if ~ (old_q = primary_q && old_id = primary_id) then
-	      % let _ = toScreen("\nIgnoring sort info for " ^ old_q ^ "." ^ old_id ^ "\n") in
-	      return new_sort_renaming
-	    else
-	      % let _ = toScreen("\nTranslating sort info for " ^ old_q ^ "." ^ old_id ^ "\n") in
-	      {
-	       new_names <- foldM (fn new_qids -> fn old_qid ->
-				   foldM (fn new_qids -> fn new_qid ->
-					  if member (new_qid, new_qids) then
-					    return new_qids
-					  else 
-					    return (Cons (new_qid, new_qids)))
-				         new_qids
-					 (translateSortQualifiedIdToAliases sort_renaming old_qid))
-	                          [] 
-				  old_info.names;
-	       new_names <- return (rev new_names);
-	       if member (unqualified_Boolean, new_names) || member (Boolean_Boolean, new_names) then
-		 return new_sort_renaming
-	       else
-		{ 
-		 new_info <- foldM (fn merged_info -> fn (Qualified (new_q, new_id)) ->
-				     mergeSortInfo merged_info 
-						   (findAQualifierMap (new_sort_renaming, new_q, new_id))
-						   position)
-				    (old_info << {names = new_names})
-				    new_names;
-		  foldM (fn new_sort_renaming -> fn (Qualified (new_q, new_id)) ->
-			 % let _ = toScreen("\n  Inserting sort info for " ^ new_q ^ "." ^ new_id ^ "\n") in
-			 return (insertAQualifierMap (new_sort_renaming, new_q, new_id, new_info)))
-		        new_sort_renaming  
-			new_names 
-		}}
-	in
-	  foldOverQualifierMap translateStep emptyAQualifierMap old_sorts 
+	  foldOverQualifierMap translateOpInfo emptyAQualifierMap old_ops 
 
     in
     let s2 as {sorts, ops, elements, qualified?}
          = 
-         mapSpec (translateOp op_renaming, translateSort sort_renaming, translatePattern) spc
+         mapSpec (translateOp   op_renaming, 
+		  translateSort sort_renaming, 
+		  translatePattern)
+	         spc
     in 
     let 
       def translateElements elements =
 	mapSpecElements (fn el ->
 			 case el of
-			   | Op      qid -> Op      (translateOpQualifiedId op_renaming qid)
-			   | OpDef   qid -> OpDef   (translateOpQualifiedId op_renaming qid) 
 			   | Sort    qid -> Sort    (translateOpQualifiedId sort_renaming qid) 
 			   | SortDef qid -> SortDef (translateOpQualifiedId sort_renaming qid)
+			   | Op      qid -> Op      (translateOpQualifiedId   op_renaming qid)
+			   | OpDef   qid -> OpDef   (translateOpQualifiedId   op_renaming qid) 
 			   | Property (pt, nm, tvs, term) ->
 			     Property (pt, (translateOpQualifiedId op_renaming nm), tvs, term)
 			   | Import (sp_tm, spc, els) ->  
@@ -745,8 +749,8 @@ Note: The code below does not yet match the documentation above, but should.
                         elements
     in
     {
-     newSorts <- translateSortMap sorts;
-     newOps   <- translateOpMap   ops;
+     newSorts <- translateSorts sorts;
+     newOps   <- translateOps   ops;
      return {sorts      = newSorts,
 	     ops        = newOps,
 	     elements   = translateElements elements,

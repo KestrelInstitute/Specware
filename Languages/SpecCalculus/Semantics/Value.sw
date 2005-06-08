@@ -22,11 +22,15 @@ SpecCalc qualifying spec
    %| DiagMorph
     | Other       OtherValue      % Used for extensions to Specware
 
-  type Renamings = {op_renaming     : Renaming,
+  type Renamings = {ambig_renaming  : Renaming,
 		    sort_renaming   : Renaming,
+		    op_renaming     : Renaming,
 		    other_renamings : Option OtherRenamings}
 
   type Renaming = AQualifierMap (QualifiedId * Aliases) 
+
+  op  emptyRenaming : Renaming
+  def emptyRenaming = emptyAQualifierMap
 
   type OtherRenamings
 
@@ -67,7 +71,8 @@ SpecCalc qualifying spec
       | _                         -> ppString "<unrecognized value>"
 
   def ppRenamings renamings =
-    let docs = (ppRenamingMap (ppString "type ") renamings.sort_renaming) ++ 
+    let docs = (ppRenamingMap (ppString "")      renamings.ambig_renaming) ++ 
+               (ppRenamingMap (ppString "type ") renamings.sort_renaming) ++ 
                (ppRenamingMap (ppString "op ")   renamings.op_renaming)   ++
 	       (case renamings.other_renamings of
 		  | None -> []

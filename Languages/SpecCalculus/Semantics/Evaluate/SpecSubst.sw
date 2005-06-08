@@ -96,9 +96,9 @@ SpecCalc qualifying spec
 	    elements
     in
     spc << {
-	    elements = revise_elements       spc.elements,
-	    ops      = mapDiffOps            spc.ops       dom_spec.ops,
 	    sorts    = mapDiffSorts          spc.sorts     dom_spec.sorts
+	    ops      = mapDiffOps            spc.ops       dom_spec.ops,
+	    elements = revise_elements       spc.elements,
 	   }
 
   %% 
@@ -128,7 +128,8 @@ SpecCalc qualifying spec
   def convertIdMap m =
     foldMap (fn op_renaming -> fn (Qualified (dom_qualifier, dom_id)) -> fn cod_qid ->
 	     insertAQualifierMap (op_renaming, dom_qualifier, dom_id, (cod_qid, [cod_qid])))
-      emptyAQualifierMap m
+            emptyRenaming
+            m
 
   op  applySpecMorphism : Morphism -> Spec -> Position -> Env Spec 
   def applySpecMorphism sm spc position =
@@ -136,8 +137,9 @@ SpecCalc qualifying spec
    %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
    %%  so we first convert formats...
    let renamings = {
-		    op_renaming     = convertIdMap (opMap   sm),
+		    ambig_renaming  = emptyRenaming,
 		    sort_renaming   = convertIdMap (sortMap sm),
+		    op_renaming     = convertIdMap (opMap   sm),
 		    other_renamings = None
 		   }
    in
