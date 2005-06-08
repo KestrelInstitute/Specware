@@ -717,10 +717,30 @@ Note: The code below does not yet match the documentation above, but should.
 			     %% the term:
 			     Import (case opt_renaming_expr of
 				       | Some renaming_expr ->
-				         (Translate (sp_tm, renaming_expr), noPos)
+				         let (rules, _) = renaming_expr in
+					 let rules = foldl (fn (rule, rules) ->
+							    case rule of
+							      | (Sort (dom_qid, _, _), _) ->
+							        (case findTheSort (spc, dom_qid) of
+								   | Some _ -> [rule] ++ rules
+								   | _ -> rules)
+							      | (Op ((dom_qid, _), _, _), _) ->
+								(case findTheOp (spc, dom_qid) of
+								   | Some _ -> [rule] ++ rules
+								   | _ -> rules)
+							      | _ -> 
+								[rule] ++ rules)
+					                   []
+							   rules
+					 in
+					   (case rules of
+					      | [] -> sp_tm
+					      | _ -> 
+					        let renaming_expr = (rev rules, Internal "inner translate") in
+						(Translate (sp_tm, renaming_expr), noPos))
 				       | _ -> sp_tm,
 				     spc,
-				     els)
+				       els)
 			   | _ -> el)
                         elements
     in
