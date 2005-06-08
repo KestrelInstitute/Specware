@@ -38,8 +38,8 @@ SpecCalc qualifying spec {
    (optBaseUnitId,base_spec)     <- getBase;
    global_context                <- getGlobalContext;   
    currentUnitId                 <- getCurrentUnitId;
-   reverse_context <- return (foldr (fn (unitId, value_to_unit_id_map) -> 
-				     update value_to_unit_id_map
+   reverse_context <- return (foldr (fn (unitId, value_to_uid_map) -> 
+				     update value_to_uid_map
                                             ((eval global_context unitId).1) 
 				            (relativizeUID currentUnitId unitId))
 			            emptyMap

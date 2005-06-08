@@ -28,7 +28,7 @@ SpecCalc qualifying spec {
   op evaluateTermInfo         : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluatePrint            : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluateQualify          : SCTerm -> Qualifier                                              -> SpecCalc.Env ValueInfo
-  op evaluateTranslate        : SCTerm -> TranslateExpr Position                                 -> SpecCalc.Env ValueInfo
+  op evaluateTranslate        : SCTerm -> RenamingExpr Position                                  -> SpecCalc.Env ValueInfo
   op evaluateSubstitute       : SCTerm * SCTerm                                      -> Position -> SpecCalc.Env ValueInfo
   op evaluateObligations      : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluateExpand           : SCTerm                                               -> Position -> SpecCalc.Env ValueInfo
@@ -87,6 +87,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.41  2005/06/07 06:34:12  mcdonald
+%% cosmetic spacing (prep for things to come)
+%%
 %% Revision 1.40  2005/04/01 21:43:24  gilham
 %% Changed evaluateProve to support OtherValues in addition to Specs.
 %% Fixed a problem with invalid file names for proof files.

@@ -9,9 +9,9 @@ SpecCalc qualifying spec
   import Signature
   import UnitId/Utilities
 
-  type OtherTranslateRule a = ()  
-  type OtherTranslationMaps = ()
-  def  noOtherTranslationMaps = ()
+  type OtherRenamingRule a = ()  
+  type OtherRenamings = ()
+  def  noOtherRenamings = ()
 
   def SpecCalc.evaluateOther _ (* args *) pos = {
     unitId <- getCurrentUID;
@@ -74,6 +74,22 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.16  2005/06/07 20:18:49  mcdonald
+%% move TranslateRules from SpecColimit.sw to Types.sw
+%% redefine TranslateExpr via TranslateRules
+%%
+%% add Renaming case to SpecCalc.Term_
+%% add Other case to TranslateRule_
+%% add OtherTranslateRule as hook for extensions
+%% add printer for Renaming case of Term_
+%% add constructor for renaming case  [to be called from parser]
+%%
+%% add Renaming case to SpecCalc.Value
+%% move TranslationMaps from Translate.sw to Value.sw
+%% add other_maps field to TranslationMaps
+%% add OtherTranslationMaps as hook for extensions
+%% add printer for Renaming case of Value
+%%
 %% Revision 1.15  2005/06/07 05:36:21  mcdonald
 %% revised error messages to be more informative/less misleading
 %%

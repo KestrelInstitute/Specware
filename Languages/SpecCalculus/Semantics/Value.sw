@@ -11,7 +11,7 @@ SpecCalc qualifying spec
   sort Value =
     | Spec        Spec
     | Morph       Morphism
-    | Renaming    TranslationMaps
+    | Renamings   Renamings
     | SpecPrism   SpecPrism       % tentative
     | SpecInterp  SpecInterp      % tentative
     | Diag        SpecDiagram       
@@ -22,14 +22,14 @@ SpecCalc qualifying spec
    %| DiagMorph
     | Other       OtherValue      % Used for extensions to Specware
 
-  type TranslationMaps = {op_id_map   : TranslationMap,
-			  sort_id_map : TranslationMap,
-			  other_maps  : OtherTranslationMaps}
+  type Renamings = {op_renaming     : Renaming,
+		    sort_renaming   : Renaming,
+		    other_renamings : OtherRenamings}
 
-  type TranslationMap  = AQualifierMap (QualifiedId * Aliases) 
+  type Renaming = AQualifierMap (QualifiedId * Aliases) 
 
-  type OtherTranslationMaps 
-  op noOtherTranslationMaps : OtherTranslationMaps % various defs in app-specific files such as NoOther.sw
+  type OtherRenamings
+  op noOtherRenamings : OtherRenamings % various defs in app-specific files such as NoOther.sw
 
   (* tentative *)
   type SpecInterp = {dom : Spec,
@@ -55,7 +55,7 @@ SpecCalc qualifying spec
     case value of
       | Spec        spc           -> ppString (printSpec spc)
       | Morph       spec_morphism -> ppMorphism   spec_morphism
-      | Renaming    spec_renaming -> ppRenaming   spec_renaming
+      | Renamings   renamings     -> ppRenamings  renamings
       | SpecPrism   spec_prism    -> ppPrism      spec_prism     % tentative
       | SpecInterp  spec_interp   -> ppInterp     spec_interp    % tentative
       | Diag        spec_diagram  -> ppDiagram    spec_diagram
@@ -65,8 +65,8 @@ SpecCalc qualifying spec
       | UnEvaluated _             -> ppString "some unevaluated term"
       | _                         -> ppString "<unrecognized value>"
 
-  def ppRenaming translation_maps =
-    ppString "<some spec renaming>"
+  def ppRenamings renamings =
+    ppString "<some renaming>"
 
   op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
 

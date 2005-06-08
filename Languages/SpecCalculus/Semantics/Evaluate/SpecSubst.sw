@@ -126,8 +126,8 @@ SpecCalc qualifying spec
 
   op  convertIdMap: QualifiedIdMap -> AQualifierMap (QualifiedId * Aliases)
   def convertIdMap m =
-    foldMap (fn op_id_map -> fn (Qualified (dom_qualifier, dom_id)) -> fn cod_qid ->
-	     insertAQualifierMap (op_id_map, dom_qualifier, dom_id, (cod_qid, [cod_qid])))
+    foldMap (fn op_renaming -> fn (Qualified (dom_qualifier, dom_id)) -> fn cod_qid ->
+	     insertAQualifierMap (op_renaming, dom_qualifier, dom_id, (cod_qid, [cod_qid])))
       emptyAQualifierMap m
 
   op  applySpecMorphism : Morphism -> Spec -> Position -> Env Spec 
@@ -135,14 +135,14 @@ SpecCalc qualifying spec
    %% The opMap and sortMap in sm are PolyMap's  :  dom_qid -> cod_qid
    %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
    %%  so we first convert formats...
-   let translation_maps = {
-			   op_id_map   = convertIdMap (opMap   sm),
-			   sort_id_map = convertIdMap (sortMap sm),
-			   other_maps  = noOtherTranslationMaps
-			  }
+   let renamings = {
+		    op_renaming     = convertIdMap (opMap   sm),
+		    sort_renaming   = convertIdMap (sortMap sm),
+		    other_renamings = noOtherRenamings
+		   }
    in
    %% Note that auxTranslateSpec is not expected to raise any errors.
-     auxTranslateSpec spc translation_maps None position
+     auxTranslateSpec spc renamings None position
     
   %% ======================================================================  
   %%  Error handling...

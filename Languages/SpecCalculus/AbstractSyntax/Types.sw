@@ -125,8 +125,8 @@ to the domain and codomain of the morphisms.
     | DiagMorph    (Term a) * (Term a) * (List (DiagMorphRule a))
     | ExtendMorph  (Term a)
     | Qualify      (Term a) * Name
-    | Translate    (Term a) * (TranslateExpr a)
-    | Renaming     (TranslateExpr a)
+    | Translate    (Term a) * (RenamingExpr a)
+    | Renaming     (RenamingExpr a)
 (*
 The intention is that \verb+let+ \emph{decls} \verb+in+ \emph{term}
 is the same as \emph{term} \verb+where+ \emph{decls}. The \verb+where+
@@ -208,7 +208,7 @@ bound by a let or listed in a file are unstructured.
 
   type Decl a = Name * (Term a)
 (*
-A \verb+TranslateExpr+ denotes a mapping on the op and type names in a
+A \verb+RenamingExpr+ denotes a mapping on the op and type names in a
 spec. Presumably, in the longer term there will a pattern matching syntax
 to simplify the task of uniformly renaming a collection of operators
 and types or for requalifying things. For now, a translation is just a
@@ -217,16 +217,16 @@ to be used in the target info.
 
 Recall the type \verb+IdInfo+ is just a list of identifiers (names).
 *)
-  type TranslateExpr  a = (TranslateRules a) * a
-  type TranslateRules a = List (TranslateRule a)
-  type TranslateRule  a = (TranslateRule_ a) * a
-  type TranslateRule_ a =
+  type RenamingExpr  a = (RenamingRules a) * a
+  type RenamingRules a = List (RenamingRule a)
+  type RenamingRule  a = (RenamingRule_ a) * a
+  type RenamingRule_ a =
     | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases, including name in second field
     | Sort      QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases, including name in second field
     | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases, including name in second field
-    | Other     (OtherTranslateRule a)
+    | Other     (OtherRenamingRule a)
 
-  type OtherTranslateRule a % hook for extensions
+  type OtherRenamingRule a % hook for extensions
 
   %% TODO: phase this out...
   type SpecMorphRule a = (SpecMorphRule_ a) * a
@@ -244,7 +244,7 @@ patterns with wildcards to stand for a collection of names. For now,
 one must explicitly list them.
 
 There is some inconsistency here as NameExpr is not annotated with 
-a position as in TranslateExpr above.
+a position as in RenamingExpr above.
 *)
   type NameExpr a = | Sort       QualifiedId
                     | Op         QualifiedId * Option Sort
@@ -381,8 +381,8 @@ The following are invoked from the parser:
   op mkDiagMorph   : fa (a) (Term a) * (Term a) * (List (DiagMorphRule a))                  * a -> Term a
   op mkExtendMorph : fa (a) (Term a)                                                        * a -> Term a
   op mkQualify     : fa (a) (Term a) * Name                                                 * a -> Term a
-  op mkTranslate   : fa (a) (Term a) * (TranslateExpr a)                                    * a -> Term a
-  op mkRenaming    : fa (a) (TranslateExpr a)                                               * a -> Term a
+  op mkTranslate   : fa (a) (Term a) * (RenamingExpr a)                                     * a -> Term a
+  op mkRenaming    : fa (a) (RenamingExpr a)                                                * a -> Term a
   op mkLet         : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
   op mkWhere       : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
   op mkHide        : fa (a) (List (NameExpr a)) * (Term a)                                  * a -> Term a
@@ -416,7 +416,7 @@ The following are invoked from the parser:
 
   def mkExtendMorph (term,                      pos) = (ExtendMorph term,                        pos)
   def mkQualify     (term, name,                pos) = (Qualify     (term, name),                pos)
-  def mkTranslate   (term, translate_expr,      pos) = (Translate   (term, translate_expr),      pos)
+  def mkTranslate   (term, renaming_expr,       pos) = (Translate   (term, renaming_expr),       pos)
   def mkRenaming    (translate_expr,            pos) = (Renaming    translate_expr,              pos)
   def mkLet         (decls, term,               pos) = (Let         (decls, term),               pos)
   def mkWhere       (decls, term,               pos) = (Where       (decls, term),               pos)

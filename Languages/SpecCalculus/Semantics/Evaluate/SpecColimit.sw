@@ -13,7 +13,7 @@ spec
  %%    EquivalenceClass = List VQid
  %%    MFSetMap         = PolyMap.Map (VQid, {rank : Nat, parent : Option MFSetNode, value : VQid}
 
- import ../../AbstractSyntax/Types   % for TranslateExpr
+ import ../../AbstractSyntax/Types   % for RenamingExpr
  import ../Environment               % for fns called by getBaseSpec
  import UnitId                       % for evaluateUID
  import Diagram                      % for vertexName
@@ -59,9 +59,9 @@ spec
  %% ----
 
  %% Morphism[Sort/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
- op convertSortRules : SpecCalc.TranslateRules Position -> MorphismSortMap  
- op convertOpRules   : SpecCalc.TranslateRules Position -> MorphismOpMap
- op convertPropRules : SpecCalc.TranslateRules Position -> MorphismPropMap
+ op convertSortRules : SpecCalc.RenamingRules Position -> MorphismSortMap  
+ op convertOpRules   : SpecCalc.RenamingRules Position -> MorphismOpMap
+ op convertPropRules : SpecCalc.RenamingRules Position -> MorphismPropMap
 
  %% ================================================================================
  %%                 Primary routine defined in this spec
@@ -152,72 +152,73 @@ spec
   %% let _ = showVQidMaps [("sort", vqid_to_apex_qid_and_aliases_sort_map), ("op", vqid_to_apex_qid_and_aliases_op_map) (*, ("prop", vqid_to_apex_qid_and_aliases_prop_map) *)] in
 
   %% -------------------------------------------------------------------------------------------------------------
-  %% (3) Construct maps Vertex => TranslateExpr, where the translate expr 
+  %% (3) Construct maps Vertex => RenamingExpr, where the renaming expr 
   %%     maps each item from the vertex's spec into an item in the apex spec, 
   %%     using the cannonical structures for translation morphisms:
   %%
-  %%     sort TranslateExpr  a = List (TranslateRule a) * a
-  %%     sort TranslateRule  a = (TranslateRule_ a) * a
-  %%     sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId
+  %%     sort RenamingExpr  a = List (RenamingRule a) * a
+  %%     sort RenamingRule  a = (RenamingRule_ a) * a
+  %%     sort RenamingRule_ a = | Sort       QualifiedId                 * QualifiedId
   %%                             | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) 
   %%                             | Property   QualifiedId                 * QualifiedId
   %%                             | Ambiguous  QualifiedId                 * QualifiedId                 
   %%   
-  %%     Most of the new translate rules will be identity mappings, unless the 
+  %%     Most of the new renaming rules will be identity mappings, unless the 
   %%     disambiguating rules provide an explicit target.
   %%
   %%     After the apex spec is created, these maps will be used later to 
   %%     construct the cocone morphisms.
   %% -------------------------------------------------------------------------------------------------------------
 
-  let vertex_to_sm_sort_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateRules Position) =
-      makeVertexToTranslateRulesMap dg 
+  let vertex_to_sm_sort_rules : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingRules Position) =
+      makeVertexToRenamingRulesMap dg 
                                     vqid_to_apex_qid_and_aliases_sort_map
 				    extract_non_base_sorts
-                                    makeTranslateSortRule
+                                    makeRenamingSortRule
 
 
   in
-  let vertex_to_sm_op_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateRules Position) =
-      makeVertexToTranslateRulesMap dg 
+  let vertex_to_sm_op_rules : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingRules Position) =
+      makeVertexToRenamingRulesMap dg 
                                     vqid_to_apex_qid_and_aliases_op_map
 				    extract_non_base_ops
-                                    makeTranslateOpRule
+                                    makeRenamingOpRule
   in
 
-  %% let vertex_to_sm_prop_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateRules Position) =
-  %%     makeVertexToTranslateRulesMap dg 
+  %% let vertex_to_sm_prop_rules : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingRules Position) =
+  %%     makeVertexToRenamingRulesMap dg 
   %%                                   vqid_to_apex_qid_and_aliases_prop_map
   %%                                   extract_non_base_props
-  %%                                   makeTranslatePropRule
+  %%                                   makeRenamingPropRule
   %% in 
 
-  let vertex_to_sm_rules : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position) =
-      foldOverVertices (fn cocone_translations -> fn vertex ->
-			let cocone_sm_rules = (case evalPartial vertex_to_sm_sort_rules vertex of
-						 | Some translate_rules -> translate_rules
-						 | _ -> [])
-                                              ++			    
-                                              (case evalPartial vertex_to_sm_op_rules   vertex of
-						 | Some translate_rules -> translate_rules
-						 | _ -> [])
-					      %%  ++			    
-					      %%  (case evalPartial vertex_to_sm_prop_rules vertex of
-					      %%   | Some translate_rules -> translate_rules
-					      %%   | _ -> [])
+  let vertex_to_sm_rules : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingExpr Position) =
+      foldOverVertices (fn vertex_renaming_exprs -> fn vertex ->
+			let cocone_renaming_rules = 
+			    (case evalPartial vertex_to_sm_sort_rules vertex of
+			       | Some renaming_rules -> renaming_rules
+			       | _ -> [])
+			     ++			    
+			     (case evalPartial vertex_to_sm_op_rules   vertex of
+				  | Some renaming_rules -> renaming_rules
+				  | _ -> [])
+			     %%  ++			    
+			     %%  (case evalPartial vertex_to_sm_prop_rules vertex of
+			     %%   | Some renaming_rules -> renaming_rules
+			     %%   | _ -> [])
 			in
-			let translate_expr : TranslateExpr Position = (cocone_sm_rules, Internal "Colimit") in
-			update cocone_translations vertex translate_expr)
+			let renaming_expr : RenamingExpr Position = (cocone_renaming_rules, Internal "Colimit") in
+			update vertex_renaming_exprs vertex renaming_expr)
                       PolyMap.emptyMap
 		      dg
   in
 
   %% debugging
   % let _ = toScreen ("\nV2SM rules: "^ (anyToString vertex_to_sm_rules ) ^ "\n") in
-  % let _ = showVertexToTranslateExprMaps vertex_to_sm_rules in
+  % let _ = showVertexToRenamingExprMaps vertex_to_sm_rules in
 
   %% -------------------------------------------------------------------------------------------------------------
-  %% (4)  Use the translation expressions to construct (as a translation morphism) the
+  %% (4)  Use the renaming expressions to construct (as a translation morphism) the
   %%      cocone morphism for each vertex, and then merge their codomain specs to
   %%      create the apex spec.
   %% -------------------------------------------------------------------------------------------------------------
@@ -226,22 +227,22 @@ spec
       foldOverVertices
         (fn translated_specs -> fn vertex ->
            let vertex_spec             = vertexLabel dg          vertex in
-           let cocone_translation_expr = eval vertex_to_sm_rules vertex in
-	   % let _ = toScreen ("\nTranslation expr "^ (anyToString cocone_translation_expr) ^ "\n") in
+           let cocone_renaming_expr = eval vertex_to_sm_rules vertex in
+	   % let _ = toScreen ("\nRenaming expr "^ (anyToString cocone_renaming_expr) ^ "\n") in
 	   % let _ = toScreen ("\nSpec: "^ (printSpec vertex_spec) ^ "\n") in
 
            %% TODO:
-           %% It probably would be better to call auxTranslateSpec directly, 
+           %% It probably would be better to call auxRenamingSpec directly, 
            %% and thus reduce the opportunities for raising exceptions,
            %% but then we would need to get the maps into the right format:
            %%
-           %%   auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
+           %%   auxRenamingSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
            %% 
            %% The first arg to translateSpec says we don't require the morphism to be monic.
            %% Maybe the sense should really be that we don't want to raise any exceptions.
            %%
-           let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_translation_expr) in
-	   % let _ = toScreen ("\nTranslated Spec: "^ (printSpec translated_spec) ^ "\n") in
+           let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_renaming_expr) in
+	   % let _ = toScreen ("\nRenamingd Spec: "^ (printSpec translated_spec) ^ "\n") in
            cons (translated_spec, translated_specs))
          []
          dg
@@ -292,20 +293,20 @@ spec
 
  %% ====================================================================================================
 
- def makeTranslateSortRule (dom_qid, cod_qid, cod_aliases) =
-   let rule_ : TranslateRule_ Position = Sort (dom_qid, cod_qid, cod_aliases) in
-   let rule  : TranslateRule  Position = (rule_, Internal "Colimit Sort") in
+ def makeRenamingSortRule (dom_qid, cod_qid, cod_aliases) =
+   let rule_ : RenamingRule_ Position = Sort (dom_qid, cod_qid, cod_aliases) in
+   let rule  : RenamingRule  Position = (rule_, Internal "Colimit Sort") in
    rule
 
- def makeTranslateOpRule (dom_qid, cod_qid, cod_aliases) =
-   let rule_ : TranslateRule_ Position = Op ((dom_qid, None), (cod_qid, None), cod_aliases) in
-   let rule  : TranslateRule  Position = (rule_, Internal "Colimit Op") in
+ def makeRenamingOpRule (dom_qid, cod_qid, cod_aliases) =
+   let rule_ : RenamingRule_ Position = Op ((dom_qid, None), (cod_qid, None), cod_aliases) in
+   let rule  : RenamingRule  Position = (rule_, Internal "Colimit Op") in
    rule
 
- %% op  makeTranslatePropRule : QualifiedId * QualifiedId * Aliases -> TranslateRule Position
- %% def makeTranslatePropRule (dom_qid, cod_qid, cod_aliases) -> 
- %%   let rule_ : TranslateRule_ Position = Prop (dom_qid, cod_qid, cod_aliases) in
- %%   let rule  : TranslateRule  Position = (rule_, Internal "Colimit Prop") in
+ %% op  makeRenamingPropRule : QualifiedId * QualifiedId * Aliases -> RenamingRule Position
+ %% def makeRenamingPropRule (dom_qid, cod_qid, cod_aliases) -> 
+ %%   let rule_ : RenamingRule_ Position = Prop (dom_qid, cod_qid, cod_aliases) in
+ %%   let rule  : RenamingRule  Position = (rule_, Internal "Colimit Prop") in
  %%   rule
 
  %% ================================================================================
@@ -491,41 +492,41 @@ spec
     Qualified (revised qualifier, id)
 
  %% ================================================================================
- %% (3) Construct maps Vertex => List (TranslateRule a), where the translate expr 
+ %% (3) Construct maps Vertex => List (RenamingRule a), where the renaming expr 
  %%     maps each item from the vertex's spec into an item in the apex spec, 
  %%     using the cannonical structures for translation morphisms:
  %%
- %%     sort TranslateExpr  a = List (TranslateRule a) * a
- %%     sort TranslateRule  a = (TranslateRule_ a) * a
- %%     sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId                  * Aliases
+ %%     sort RenamingExpr  a = List (RenamingRule a) * a
+ %%     sort RenamingRule  a = (RenamingRule_ a) * a
+ %%     sort RenamingRule_ a = | Sort       QualifiedId                 * QualifiedId                  * Aliases
  %%                             | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort)  * Aliases
  %%                             | Property   QualifiedId                 * QualifiedId                  * Aliases
  %%                             | Ambiguous  QualifiedId                 * QualifiedId                  * Aliases      
  %%    
- %%     Most of the new translate rules will be identity mappings, unless the 
+ %%     Most of the new renaming rules will be identity mappings, unless the 
  %%     disambiguating rules provide an explicit target.
  %% ================================================================================
 
- op makeVertexToTranslateRulesMap : fa (info) SpecDiagram                                                              -> 
+ op makeVertexToRenamingRulesMap : fa (info) SpecDiagram                                                              -> 
                                               PolyMap.Map(VQid, QualifiedId * Aliases)                                 -> 
                 			      (Spec -> List (Qualifier * Id * info))                                   -> 
-                			      (QualifiedId * QualifiedId * Aliases -> SpecCalc.TranslateRule Position) ->
-                                              PolyMap.Map (Vertex.Elem, SpecCalc.TranslateRules Position)
+                			      (QualifiedId * QualifiedId * Aliases -> SpecCalc.RenamingRule Position) ->
+                                              PolyMap.Map (Vertex.Elem, SpecCalc.RenamingRules Position)
 
- def makeVertexToTranslateRulesMap dg 
+ def makeVertexToRenamingRulesMap dg 
                                    vqid_to_apex_qid_and_aliases
 				   select_items
-				   make_translate_rule 
+				   make_renaming_rule 
    = 
-   %% Build the map: vertex => TranslateRules Position
-   foldOverVertices (fn vertex_to_translation -> fn vertex : Vertex.Elem ->
+   %% Build the map: vertex => RenamingRules Position
+   foldOverVertices (fn vertex_to_renaming_rules -> fn vertex : Vertex.Elem ->
 		     let spc = vertexLabel dg vertex in
-		     let translate_rules = 
-			 foldl (fn ((qualifier, id, info), translate_rules) ->
+		     let renaming_rules = 
+			 foldl (fn ((qualifier, id, info), renaming_rules) ->
 				let vertex_qid = Qualified(qualifier,id) in
 				let vqid = (vertex, vertex_qid) in
 				let (apex_qid, apex_aliases) = eval vqid_to_apex_qid_and_aliases vqid in
-				let rule = make_translate_rule (vertex_qid, apex_qid, apex_aliases) in
+				let rule = make_renaming_rule (vertex_qid, apex_qid, apex_aliases) in
 				%% A rule is a no-op if it is just going to rename something to itself 
 				%% and moreover, that name is the primary name in the target.
 				let no_op? = case rule.1 of
@@ -534,13 +535,13 @@ spec
 					       | _ -> false
 				in
 				  if no_op? then
-				    translate_rules
+				    renaming_rules
 				  else
-				    Cons (rule, translate_rules))
+				    Cons (rule, renaming_rules))
 			       []
 			       (select_items spc)
 		     in 
-		     update vertex_to_translation vertex translate_rules)
+		     update vertex_to_renaming_rules vertex renaming_rules)
                     PolyMap.emptyMap
 		    dg
 
@@ -563,8 +564,8 @@ spec
    %%       
    run (catch monad localHandler) 
      
- def optTranslateSpec vertex_spec cocone_translation_expr : Env (Option Spec) = {
-    spc <- translateSpec vertex_spec cocone_translation_expr;
+ def optRenamingSpec vertex_spec cocone_renaming_expr : Env (Option Spec) = {
+    spc <- translateSpec vertex_spec cocone_renaming_expr;
     return (Some spc)}
    
  def optSpecUnion specs : Env (Option Spec) ={
@@ -577,23 +578,23 @@ spec
  %% ================================================================================
 
  %% Morphism[Sort/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
- def convertSortRules translate_rules =
+ def convertSortRules renaming_rules =
    foldl (fn ((Sort (dom_qid, cod_qid, aliases), _), new_sm_map) ->
 	  update new_sm_map dom_qid cod_qid)
          PolyMap.emptyMap
-         translate_rules
+         renaming_rules
 
- def convertOpRules translate_rules =
+ def convertOpRules renaming_rules =
    foldl (fn ((Op ((dom_qid, _), (cod_qid, _), aliases), _), new_sm_map) ->
 	  update new_sm_map dom_qid cod_qid)
          PolyMap.emptyMap 
-         translate_rules
+         renaming_rules
 
- %%% def convertPropRules translate_rules = 
+ %%% def convertPropRules renaming_rules = 
  %%%   foldl (fn ((Property (dom_qid, cod_qid), _), new_sm_map) ->
  %%%	      update new_sm_map dom_qid cod_qid)
  %%%         PolyMap.emptyMap 
- %%%         translate_rules
+ %%%         renaming_rules
 
  %% Misc support
  op  removeDuplicateOpSortElements: Spec -> Spec
@@ -681,19 +682,19 @@ spec
 
  %% --------------------------------------------------------------------------------
  
- op  showVertexToTranslateExprMaps : PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position) -> ()
- def showVertexToTranslateExprMaps vertex_to_sm_rules =
+ op  showVertexToRenamingExprMaps : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingExpr Position) -> ()
+ def showVertexToRenamingExprMaps vertex_to_sm_rules =
    (toScreen "==========================================\n";
-    foldMap (fn ignore -> fn vertex -> fn translate_expr ->
+    foldMap (fn ignore -> fn vertex -> fn renaming_expr ->
 	     (toScreen ("Translation for " ^ vertex ^ "\n\n");
-	      toScreen (ppFormat (ppTranslateExpr translate_expr));
+	      toScreen (ppFormat (ppRenamingExpr renaming_expr));
 	      toScreen "\n\n"))
             ()
             vertex_to_sm_rules;
     toScreen "==========================================\n")
 
- def ppTranslateExpr (translate_rules, _) =
-  let  def ppTranslateRule (rule, _(* position *)) = 
+ def ppRenamingExpr (rules, _) =
+  let  def ppRenamingRule (rule, _(* position *)) = 
 	       case rule of          
 		 | Sort (left_qid, right_qid, aliases) ->
   		   ppConcat [
@@ -716,7 +717,7 @@ spec
   in
     ppConcat [
 	      ppString "{",
-	      ppSep (ppString ", ") (map ppTranslateRule translate_rules),
+	      ppSep (ppString ", ") (map ppRenamingRule rules),
 	      ppString "}"]
 
  %% --------------------------------------------------------------------------------

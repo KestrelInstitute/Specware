@@ -121,9 +121,9 @@ SpecCalc qualifying spec
 		  ppString " qualifying ",
 		  ppTerm term]
 
-      | Translate (term, (translation, _)) ->
+      | Translate (term, (rules, _)) ->
 	let 
-          def ppTranslateRule (rule, _(* position *)) = 
+          def ppRenamingRule (rule, _(* position *)) = 
 	    case rule of          
 	      | Sort (left_qid, right_qid, aliases) ->
 	        ppConcat [ppString " type ",
@@ -145,12 +145,12 @@ SpecCalc qualifying spec
 	  ppConcat [ppString "translate (",
 		    ppTerm term,
 		    ppString ") by {",
-		    ppSep (ppString ", ") (map ppTranslateRule translation),
+		    ppSep (ppString ", ") (map ppRenamingRule rules),
 		    ppString "}"]
 
       | Renaming (rules, _) ->
 	let 
-          def ppRule (rule, _(* position *)) = 
+          def ppRenamingRule (rule, _(* position *)) = 
 	    case rule of          
 	      | Sort (left_qid, right_qid, aliases) ->
 	        ppConcat [ppString " type ",
@@ -169,9 +169,9 @@ SpecCalc qualifying spec
 			  ppString " +-> ",
 			  ppQualifier right_qid]
 	      | Other other_rule ->
-		ppOtherTranslateRule other_rule
+		ppOtherRenamingRule other_rule
 	in
-	  ppSep (ppString ", ") (map ppRule rules)
+	  ppSep (ppString ", ") (map ppRenamingRule rules)
 
       | Let (decls, term) ->
         ppConcat [ppString "let",
@@ -484,8 +484,8 @@ SpecCalc qualifying spec
  %              ^ (Lisp_toString any)
  %              ^ "'")
 
-  op ppOtherTerm          : [a] OtherTerm          a -> Doc % Used for extensions to Specware
-  op ppOtherTranslateRule : [a] OtherTranslateRule a -> Doc % Used for extensions to Specware
+  op ppOtherTerm         : [a] OtherTerm         a -> Doc % Used for extensions to Specware
+  op ppOtherRenamingRule : [a] OtherRenamingRule a -> Doc % Used for extensions to Specware
 
 endspec
 \end{spec}

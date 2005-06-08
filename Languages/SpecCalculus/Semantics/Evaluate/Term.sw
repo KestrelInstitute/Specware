@@ -65,7 +65,7 @@ This is a monadic interpreter for the Spec Calculus.
           SpecCalc.evaluateTermInfo sub_term
         }
 
-    | Translate   (sub_term, translation) -> SpecCalc.evaluateTranslate sub_term translation
+    | Translate   (tm, renaming_expr) -> SpecCalc.evaluateTranslate tm renaming_expr
 
     | Obligations (sub_term)      -> SpecCalc.evaluateObligations sub_term
     | Expand      (sub_term)      -> SpecCalc.evaluateExpand      sub_term pos

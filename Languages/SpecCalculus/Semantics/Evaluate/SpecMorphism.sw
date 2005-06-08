@@ -59,7 +59,7 @@ coherence conditions of the morphism elements.
       raise_any_pending_exceptions;
       sm <- buildSpecMorphism domSpec codSpec morphism_map position opt_sm_tm;
       raise_any_pending_exceptions;
-      % translation_maps <- return (convertMorphismMapToTranslationMap morphism_map);
+      % renamings <- return (convertMorphismMapToRenamings morphism_map);
       verifySignatureMappings domSpec codSpec sm position;
       raise_any_pending_exceptions;
       return sm
@@ -69,12 +69,12 @@ coherence conditions of the morphism elements.
   sort MorphismMaps = MorphismMap  * MorphismMap 
 
 (*
-  op  convertMorphismMapToTranslationMap : MorphismMaps -> TranslationMaps
-  def convertMorphismMapToTranslationMap morphism_maps =
+  op  convertMorphismMapToRenamings : MorphismMaps -> Renamings
+  def convertMorphismMapToRenamings morphism_maps =
     let (morphism_op_map, morphism_sort_map) = morphism_maps in
-    let translation_op_map   = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_op_map   in
-    let translation_sort_map = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_sort_map in
-    (translation_op_map, translation_sort_map)
+    let op_renaming   = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_op_map   in
+    let sort_renaming = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_sort_map in
+    (op_renaming, sort_renaming)
 *)
   op makeResolvedMapping :
         Spec
