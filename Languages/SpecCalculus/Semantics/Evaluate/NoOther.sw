@@ -7,11 +7,8 @@ extensions of Specware that don't use OtherTerm, OtherValue, etc.
 SpecCalc qualifying spec 
 
   import Signature
+  import /Languages/SpecCalculus/AbstractSyntax/Printer
   import UnitId/Utilities
-
-  type OtherRenamingRule a = ()  % Term
-
-  type OtherRenamings = ()       % Value
 
   def SpecCalc.evaluateOther _ (* args *) pos = {
     unitId <- getCurrentUID;
@@ -67,6 +64,16 @@ SpecCalc qualifying spec
 
   def SpecCalc.ppOtherTerm  _ (* term *)  = ppString "<some OtherTerm>"
 
+  %%  -------------
+
+  type OtherRenamingRule a = ()  % Term
+
+  def [a] ppOtherRenamingRule (_ : OtherRenamingRule a) = ppString "<some OtherRenamingRule>"
+
+  type OtherRenamings = ()       % Value
+
+  %%  -------------
+
 endspec
 \end{spec}
  
@@ -74,6 +81,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.18  2005/06/08 08:32:25  mcdonald
+%% tweak OtherRenamingRule and OtherRenamings
+%%
 %% Revision 1.17  2005/06/08 04:18:01  mcdonald
 %% TranslationMaps  => Renamings
 %% TranslationMap   => Renamings

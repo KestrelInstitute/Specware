@@ -121,57 +121,14 @@ SpecCalc qualifying spec
 		  ppString " qualifying ",
 		  ppTerm term]
 
-      | Translate (term, (rules, _)) ->
-	let 
-          def ppRenamingRule (rule, _(* position *)) = 
-	    case rule of          
-	      | Sort (left_qid, right_qid, aliases) ->
-	        ppConcat [ppString " type ",
-			  ppQualifier left_qid,
-			  ppString " +-> ",
-			  ppString (printAliases aliases)] % ppQualifier right_qid
+      | Translate (term, renaming_expr) ->
+	ppConcat [ppString "translate (",
+		  ppTerm term,
+		  ppString ") by ",
+		  ppRenamingExpr renaming_expr]
 
-	      | Op ((left_qid,_), (right_qid, _), aliases) ->
-		ppConcat [ppString " op ",
-			  ppQualifier left_qid,
-			  ppString " +-> ",
-			  ppQualifier right_qid]
-
-	      | Ambiguous (left_qid, right_qid, aliases) ->
-		ppConcat [ppQualifier left_qid,
-			  ppString " +-> ",
-			  ppQualifier right_qid]
-	in
-	  ppConcat [ppString "translate (",
-		    ppTerm term,
-		    ppString ") by {",
-		    ppSep (ppString ", ") (map ppRenamingRule rules),
-		    ppString "}"]
-
-      | Renaming (rules, _) ->
-	let 
-          def ppRenamingRule (rule, _(* position *)) = 
-	    case rule of          
-	      | Sort (left_qid, right_qid, aliases) ->
-	        ppConcat [ppString " type ",
-			  ppQualifier left_qid,
-			  ppString " +-> ",
-			  ppString (printAliases aliases)] % ppQualifier right_qid
-
-	      | Op ((left_qid,_), (right_qid, _), aliases) ->
-		ppConcat [ppString " op ",
-			  ppQualifier left_qid,
-			  ppString " +-> ",
-			  ppQualifier right_qid]
-
-	      | Ambiguous (left_qid, right_qid, aliases) ->
-		ppConcat [ppQualifier left_qid,
-			  ppString " +-> ",
-			  ppQualifier right_qid]
-	      | Other other_rule ->
-		ppOtherRenamingRule other_rule
-	in
-	  ppSep (ppString ", ") (map ppRenamingRule rules)
+      | Renaming renaming_expr ->
+	  ppRenamingExpr renaming_expr
 
       | Let (decls, term) ->
         ppConcat [ppString "let",
@@ -483,6 +440,35 @@ SpecCalc qualifying spec
  %           fail ("No match in ppPropertyType with: '"
  %              ^ (Lisp_toString any)
  %              ^ "'")
+
+  op  ppRenamingExpr : [a] RenamingExpr a -> Doc
+  def ppRenamingExpr (rules, _) =
+    let 
+      def ppRenamingRule (rule, _(* position *)) = 
+	case rule of          
+	  | Sort (left_qid, right_qid, aliases) ->
+	    ppConcat [ppString " type ",
+		      ppQualifier left_qid,
+		      ppString " +-> ",
+			ppString (printAliases aliases)] % ppQualifier right_qid
+	    
+	  | Op ((left_qid,_), (right_qid, _), aliases) ->
+	    ppConcat [ppString " op ",
+		      ppQualifier left_qid,
+		      ppString " +-> ",
+			ppQualifier right_qid]
+
+	  | Ambiguous (left_qid, right_qid, aliases) ->
+	    ppConcat [ppQualifier left_qid,
+		      ppString " +-> ",
+			ppQualifier right_qid]
+	  | Other other_rule ->
+	    ppOtherRenamingRule other_rule
+    in
+      ppConcat [ppString "{",
+		ppSep (ppString ", ") (map ppRenamingRule rules),
+		ppString "}"]
+
 
   op ppOtherTerm         : [a] OtherTerm         a -> Doc % Used for extensions to Specware
   op ppOtherRenamingRule : [a] OtherRenamingRule a -> Doc % Used for extensions to Specware

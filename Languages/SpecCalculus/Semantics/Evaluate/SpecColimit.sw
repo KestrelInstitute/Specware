@@ -685,40 +685,13 @@ spec
  op  showVertexToRenamingExprMaps : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingExpr Position) -> ()
  def showVertexToRenamingExprMaps vertex_to_sm_rules =
    (toScreen "==========================================\n";
-    foldMap (fn ignore -> fn vertex -> fn renaming_expr ->
+    foldMap (fn _ -> fn vertex -> fn renaming_expr ->
 	     (toScreen ("Translation for " ^ vertex ^ "\n\n");
 	      toScreen (ppFormat (ppRenamingExpr renaming_expr));
 	      toScreen "\n\n"))
             ()
             vertex_to_sm_rules;
     toScreen "==========================================\n")
-
- def ppRenamingExpr (rules, _) =
-  let  def ppRenamingRule (rule, _(* position *)) = 
-	       case rule of          
-		 | Sort (left_qid, right_qid, aliases) ->
-  		   ppConcat [
-			     ppQid left_qid,
-			     ppString " -> ",
-			     ppQid right_qid
-			    ] 
-		 | Op ((left_qid,_), (right_qid,_), aliases) ->
-		   ppConcat [
-			     ppQid left_qid,
-			     ppString " -> ",
-			     ppQid right_qid
-			    ] 
-		 | Ambiguous (left_qid, right_qid, aliases) ->
-		   ppConcat [
-			     ppQid left_qid,
-			     ppString " -> ",
-			     ppQid right_qid
-			    ] 
-  in
-    ppConcat [
-	      ppString "{",
-	      ppSep (ppString ", ") (map ppRenamingRule rules),
-	      ppString "}"]
 
  %% --------------------------------------------------------------------------------
 
