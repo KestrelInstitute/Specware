@@ -9,9 +9,9 @@ SpecCalc qualifying spec
   import Signature
   import UnitId/Utilities
 
-  type OtherRenamingRule a = ()  
-  type OtherRenamings = ()
-  def  noOtherRenamings = ()
+  type OtherRenamingRule a = ()  % Term
+
+  type OtherRenamings = ()       % Value
 
   def SpecCalc.evaluateOther _ (* args *) pos = {
     unitId <- getCurrentUID;
@@ -74,6 +74,15 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.17  2005/06/08 04:18:01  mcdonald
+%% TranslationMaps  => Renamings
+%% TranslationMap   => Renamings
+%% translation_maps => renamings
+%% translation_map  => renaming
+%% op_id_map        => op_renaming
+%% sort_id_map      => sort_renaming
+%% etc.
+%%
 %% Revision 1.16  2005/06/07 20:18:49  mcdonald
 %% move TranslateRules from SpecColimit.sw to Types.sw
 %% redefine TranslateExpr via TranslateRules
