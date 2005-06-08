@@ -68,14 +68,13 @@ coherence conditions of the morphism elements.
   sort MorphismMap = AQualifierMap QualifiedId
   sort MorphismMaps = MorphismMap  * MorphismMap 
 
-(*
-  op  convertMorphismMapToRenamings : MorphismMaps -> Renamings
-  def convertMorphismMapToRenamings morphism_maps =
-    let (morphism_op_map, morphism_sort_map) = morphism_maps in
-    let op_renaming   = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_op_map   in
-    let sort_renaming = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_sort_map in
-    (op_renaming, sort_renaming)
-*)
+%%  op  convertMorphismMapToRenamings : MorphismMaps -> Renamings
+%%  def convertMorphismMapToRenamings morphism_maps =
+%%    let (morphism_op_map, morphism_sort_map) = morphism_maps in
+%%    let op_renaming   = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_op_map   in
+%%    let sort_renaming = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_sort_map in
+%%    (op_renaming, sort_renaming)
+
   op makeResolvedMapping :
         Spec
      -> Spec
