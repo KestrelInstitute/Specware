@@ -96,9 +96,9 @@ SpecCalc qualifying spec
 	    elements
     in
     spc << {
-	    sorts    = mapDiffSorts          spc.sorts     dom_spec.sorts
+	    sorts    = mapDiffSorts          spc.sorts     dom_spec.sorts,
 	    ops      = mapDiffOps            spc.ops       dom_spec.ops,
-	    elements = revise_elements       spc.elements,
+	    elements = revise_elements       spc.elements
 	   }
 
   %% 
