@@ -24,12 +24,11 @@ SpecCalc qualifying spec
 
   type Renamings = {op_renaming     : Renaming,
 		    sort_renaming   : Renaming,
-		    other_renamings : OtherRenamings}
+		    other_renamings : Option OtherRenamings}
 
   type Renaming = AQualifierMap (QualifiedId * Aliases) 
 
   type OtherRenamings
-  op noOtherRenamings : OtherRenamings % various defs in app-specific files such as NoOther.sw
 
   (* tentative *)
   type SpecInterp = {dom : Spec,
