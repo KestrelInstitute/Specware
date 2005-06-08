@@ -533,9 +533,11 @@ Note: The code below does not yet match the documentation above, but should.
        when require_monic?
         {complain_if_type_collisions_with_priors (sorts, sort_renaming);
 	 complain_if_op_collisions_with_priors   (ops, op_renaming)};
-       return {op_renaming     = op_renaming, 
+       return {
+	       op_renaming     = op_renaming, 
 	       sort_renaming   = sort_renaming,
-	       other_renamings = noOtherRenamings}
+	       other_renamings = None
+	      }
        }
        
 

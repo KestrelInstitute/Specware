@@ -138,7 +138,7 @@ SpecCalc qualifying spec
    let renamings = {
 		    op_renaming     = convertIdMap (opMap   sm),
 		    sort_renaming   = convertIdMap (sortMap sm),
-		    other_renamings = noOtherRenamings
+		    other_renamings = None
 		   }
    in
    %% Note that auxTranslateSpec is not expected to raise any errors.
