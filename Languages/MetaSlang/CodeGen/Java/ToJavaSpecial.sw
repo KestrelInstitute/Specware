@@ -104,7 +104,7 @@ spec
       def bitStringOp1(opid,t1,k,l) =
 	{
 	 (block,e1,k,l) <- termToExpressionM(tcx,t1,k,l);
-	 let res = mkUnExp(BitNot,[e1]) in
+	 let res = mkUnExp(opid,[e1]) in
 	 return (Some(block,res,k,l))
 	}
       def bitStringOp(opid,t1,t2,k,l) =
