@@ -79,12 +79,12 @@ def checkSubsortFormat srt =
     }
 
 op checkBaseTypeAlias: SortInfo -> Sort -> JGenEnv Boolean
-def checkBaseTypeAlias srt_info srt =
+def checkBaseTypeAlias _(*info*) srt =
   {
    spc <- getEnvSpec;
    if baseType?(spc,srt) then
      %{
-      %vprintln (warn(sortAnn srt,"Ignoring sort " ^ printAliases srt_info.names ^ " defined as alias for base type " ^printSort srt));
+      %vprintln (warn(sortAnn srt,"Ignoring sort " ^ printAliases info.names ^ " defined as alias for base type " ^printSort srt));
       return true
      %}
    else return false
