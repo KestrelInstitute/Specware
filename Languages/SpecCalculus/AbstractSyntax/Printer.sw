@@ -450,18 +450,18 @@ SpecCalc qualifying spec
 	    ppConcat [ppString " type ",
 		      ppQualifier left_qid,
 		      ppString " +-> ",
-			ppString (printAliases aliases)] % ppQualifier right_qid
+		      ppString (printAliases aliases)] % ppQualifier right_qid
 	    
 	  | Op ((left_qid,_), (right_qid, _), aliases) ->
 	    ppConcat [ppString " op ",
 		      ppQualifier left_qid,
 		      ppString " +-> ",
-			ppQualifier right_qid]
+		      ppQualifier right_qid]
 
 	  | Ambiguous (left_qid, right_qid, aliases) ->
 	    ppConcat [ppQualifier left_qid,
 		      ppString " +-> ",
-			ppQualifier right_qid]
+		      ppQualifier right_qid]
 	  | Other other_rule ->
 	    ppOtherRenamingRule other_rule
     in
