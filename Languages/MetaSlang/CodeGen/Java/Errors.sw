@@ -7,6 +7,8 @@ sort Pos = Position.Position
 
 sort JGenException = JGenError * Pos
 sort JGenError =
+       | NoError % special constructor signaling no error, to avoid use of Option(JGenError)
+                 % note: for now, this is used only by checkraise, and checkraise is never called
        | NotSupported String
        | Fail String % generic error case
        | UnsupportedSubsortTerm String
