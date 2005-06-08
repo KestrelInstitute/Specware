@@ -839,7 +839,7 @@ spec
 					       hashSuffix = None}),
 		    noPos)
 
- def makeTypeCheckObligationSpec (spc,specCalcTerm) =
+ def makeTypeCheckObligationSpec (spc, _(*spc_tm*)) =
    %let spc = lambdaLift(instantiateHOFns(spc)) in
    case getOptSpec (Some "/Library/Base/WFO") of
      | None -> fail "Error in processing /Library/Base/WFO"
