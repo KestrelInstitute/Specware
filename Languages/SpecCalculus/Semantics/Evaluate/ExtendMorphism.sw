@@ -52,7 +52,7 @@ def extendMorphism(morph, base_spc) =
   let testAxiom = hd incompleteAxioms in
   let _ = if specwareDebug? then printTermToTerminal(testAxiom) else () in
   let (existentialTest, ansVars) = mkExistential(dom, testAxiom) in
-  let succ = proveForAns(ansVars, existentialTest, subtractSpec cod base_spc, base_spc, base_spc, [Lisp.list []], "foo.log") in
+  let succ = proveForAns(ansVars, existentialTest, subtractSpec cod base_spc, base_spc, [Lisp.list []], "foo.log") in
     if succ 
       then extendMorphismWithAnswer(morph, ansVars)
     else morph
@@ -318,9 +318,10 @@ def substOpMap (opMap, term) =
 									   hashSuffix = None});
 *)
  
- op proveForAns: Vars * Property * Spec * Spec * Spec * List LispCell * String -> Boolean
+ op proveForAns: Vars * Property * Spec * Spec * List LispCell * String -> Boolean
 
- def proveForAns(ansVars, claim, spc, base_hypothesis, base_spc, prover_options, snarkLogFileName) =
+ def proveForAns(ansVars, claim, spc, base_hypothesis, prover_options, snarkLogFileName) =
+   %% (removed base_spc as distinct arg)
    let (_ (* claim_type *),claim_name,_,_) = claim in
    %% let def claimType(ct) = 
    %%       case ct of
