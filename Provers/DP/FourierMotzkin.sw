@@ -115,6 +115,18 @@ FM qualifying spec
 	  | Neq -> c ~= zero
     else false
 
+  op equality?: Ineq -> Boolean
+  def equality?(ineq as (compPred, _)) =
+    case compPred of
+      | Eq -> true
+      | _ -> false
+
+  op gteq?: Ineq -> Boolean
+  def gteq?(ineq as (compPred, _)) =
+    case compPred of
+      | GtEq -> true
+      | _ -> false
+
   op mkNormIneq: CompPred * Poly -> Ineq
   def mkNormIneq(comp, p) =
     normalize(mkIneq(comp, p))
@@ -167,11 +179,21 @@ FM qualifying spec
   def hdVar(p) =
     termVar(hdTerm(p))
 
-  op ineqHdVar: Ineq -> Var
-  def ineqHdVar(ineq as (comp, poly)) = hdVar(poly)
+  op ineq.hdVar: Ineq -> Var
+  def ineq.hdVar(ineq as (comp, poly)) = hdVar(poly)
 
-  op ineqHdVarOpt: Ineq -> Option Var
-  def ineqHdVarOpt(ineq as (comp, poly)) =
+  op ineqSet.hdVar: IneqSet -> Var
+  def ineqSet.hdVar(ineqSet as (comp, poly)::rest) = 
+    case hdVarOpt(poly) of
+      | None -> hdVar(rest)
+      | Some var -> var
+
+  op ineq.hdVarOpt: Ineq -> Option Var
+  def ineq.hdVarOpt(ineq as (comp, poly)) =
+    hdVarOpt(poly)
+
+  op ineqSet.hdVarOpt: IneqSet -> Option Var
+  def ineqSet.hdVarOpt(ineqSet as (comp, poly)::_) =
     hdVarOpt(poly)
 
   op coefTimesTerm: Coef * Term -> Term
@@ -332,7 +354,7 @@ FM qualifying spec
 	    | _ -> [t1, t2] in
      let def buildRes(t, res) =
           case res of
-	    | [] -> [t]
+	    | [] -> (case t of | Constant c -> if c = zero then [] else [t] | _ -> [t])
 	    | _ ->
 	    let lastRes = last(res) in
 	    let butLastRes = butLast(res) in
@@ -454,25 +476,6 @@ FM qualifying spec
     let hdC2 = termCoef(hdT2) in
       hdV1 = hdV2 & hdC1 * hdC2 < zero
 
-  op chainIneq: Ineq * Ineq -> Ineq
-  def chainIneq(ineq1 as (comp1, poly1), ineq2 as (comp2, poly2)) =
-    let hdT1 = hdTerm(poly1) in
-    let hdT2 = hdTerm(poly2) in
-    let hdV1 = termVar(hdT1) in
-    let hdV2 = termVar(hdT2) in
-    let hdC1 = termCoef(hdT1) in
-    let hdC2 = termCoef(hdT2) in
-    let coefGcd = gcd(hdC1, hdC2) in
-    let p1Mult = hdC2 div coefGcd in
-    let p2Mult = hdC1 div coefGcd in
-    let newP1 = coefTimesPoly(p1Mult, poly1) in
-    let newP2 = coefTimesPoly(p2Mult, poly2) in
-    let newP = polyPlusPoly(newP1, newP2) in
-    %if zeroPoly?(newP) then chainZeroResult(newP1, newP2, comp1, comp2) else
-    let newComp = chainComp(comp1, comp2) in
-    let newIneq = (newComp, newP) in
-      newIneq
-
   op chainZeroResult: Poly * Poly * CompPred * CompPred -> Option Ineq
   def chainZeroResult(p1, p2, comp1, comp2) =
     case (comp1, comp2) of
@@ -528,12 +531,16 @@ FM qualifying spec
   def sortIneqSet(ineqSet) =
     uniqueSort ineq.compare ineqSet
 
-  op FMRefute?: IneqSet -> Boolean
+  op FMRefute?: IneqSet -> Option IneqSet
+  % FMRefute? takes a set if inequalities.
+  % If the set is unsatisfiable then FMRefute? returns None
+  % Otherwise FMRefute? returns a counterexample in the form
+  % of a set of equalities
   def FMRefute?(ineqSet) =
     if member(contradictIneqGt, ineqSet) or
       member(contradictIneqGtEq, ineqSet) or
       member(contradictIneqGtZero, ineqSet)      
-      then true
+      then None
     else 
     let ineqSet = sortIneqSet(ineqSet) in
     let ineqSet = integerPreProcess(ineqSet) in
@@ -545,8 +552,121 @@ FM qualifying spec
     if member(contradictIneqGt, completeIneqs) or
       member(contradictIneqGtEq, completeIneqs) or
       member(contradictIneqGtZero, completeIneqs)      
-      then true
-    else false
+      then None
+    else
+      let counter = generateCounterExample(completeIneqs) in
+      %let _ = writeLine("FMCounter:") in
+      %let _ = writeIneqs(counter) in
+	 Some counter
+
+  op generateCounterExample: IneqSet -> IneqSet
+  def generateCounterExample(ineqSet) =
+    let ineqSet = rev(ineqSet) in % we will traverse from fewer to more variables.
+    generateCounterExampleInt(ineqSet)
+
+  op splitList2: [a] ((a -> Boolean) * List a) -> (List a) * (List a)
+  def splitList2 (p, l) =
+    %let _ = writeLine("spl2") in
+    case splitList p l of
+      | None -> (l, [])
+      | Some (l1, e, l2) -> (l1, cons(e, l2))
+
+  op generateCounterExampleInt: IneqSet -> IneqSet
+  def generateCounterExampleInt(ineqSet) =
+    let (constIneqs, ineqSet) =
+    splitList2 ((fn (ineq) -> let optVar = ineq.hdVarOpt(ineq) in
+		 case optVar of
+		   | None -> false
+		   | Some _ -> true), ineqSet) in
+    if null ineqSet then [] else
+    let hdVar = hdVar ineqSet in
+    let (hdVarIneqs, restIneqs) =
+    splitList2 ((fn (ineq) -> let optVar = ineq.hdVarOpt(ineq) in
+		 case optVar of
+		   | Some _ -> ~(ineq.hdVar(ineq) = hdVar)
+		   | _ -> false), ineqSet) in
+    %let _ = writeIneqs(hdVarIneqs) in
+    let lb = lowerBound(hdVar, hdVarIneqs) in
+    let restIneqs = map (substitute hdVar lb) ineqSet in
+    let restResult = generateCounterExampleInt(restIneqs) in
+    cons(mkIneq(Eq, mkPoly2(mkMonom(toCoef 1, hdVar), mkConstantPoly(-lb))), restResult)
+
+  op substitute: Var -> Coef -> Ineq -> Ineq
+  def substitute var val ineq =
+    let (compOp, poly) = ineq in
+    let newPoly = map (substTerm var val) poly in
+    let newPoly = normalizePoly newPoly in
+    mkNormIneq(compOp, newPoly)
+
+  op substTerm: Var -> Coef -> Term -> Term
+  def substTerm var coef term =
+    case term of
+      | Constant _ -> term
+      | Monom(c, v) ->
+        if v = var
+	  then Constant(c * coef)
+	else term
+
+  op ineqs.lowerBound: Var * IneqSet -> Coef
+  def ineqs.lowerBound(var, ineqs) =
+    let eqs = filter equality? ineqs in
+    case eqs of
+      | ineq::_ ->
+        ineq.lowerBound(ineq)
+      | [] ->
+	let gteqs = filter gteq? ineqs in
+	if null gteqs then toCoef 0 else
+	let lbs = map ineq.lowerBound gteqs in
+	let lb = foldl max (hd(lbs)) (tl(lbs)) in
+	lb
+
+  op ineq.lowerBound: Ineq -> Coef
+  def ineq.lowerBound(ineq) =
+    case ineq of
+      | (Eq, poly) ->
+        % poly has to be of the form (coef * var + const = 0)
+        (case poly of
+	  | [(Monom(coef, var)), (Constant const)]
+	    -> let lb = ceiling((- const) div coef) in
+	       toCoef lb
+	  | _ -> toCoef 0 % If it is not of the above forms then lb is unconstrained
+	       )
+      | (GtEq, poly) ->
+        % poly has to be of the form (coef * var + const >= 0)
+	% const can be nil for 0
+        (case poly of
+	   | [(Monom(coef, var))]
+	     -> toCoef 0
+	   | [(Monom(coef, var)), (Constant const)]
+	     ->
+	       let lb = ceiling((- const) div coef) in
+	       toCoef lb
+	   | _ -> toCoef 0)
+      | (Gt, poly) ->
+        % poly has to be of the form (coef * var + const >= 0)
+        (case poly of
+	   | [(Monom(coef, var))]
+	     -> toCoef 1
+	   | [(Monom(coef, var)), (Constant const)]
+	     ->
+	       let lb = ceiling((- const) div coef) in
+	       toCoef lb
+	   | _ -> toCoef 0)
+      | _ -> toCoef 0 % If it is not of the above forms then lb is unconstrained
+
+  (*
+  op pickInstance: Ineq -> Ineq
+  def pickInstance(ineq as (comp, poly)) =
+    case comp of
+      | Eq -> pickInstanceEq(poly)
+      | Gt -> pickInstanceGt(poly)
+      | GtEq -> pickInstanceGtEq(poly)
+
+  op pickInstanceEq: Poly -> Ineq
+  def pickInstanceEq(poly) =
+    let vars = varsOf(poly) in
+    mkIneq(Eq, poly)
+*)
 
   op integerPreProcess: IneqSet -> IneqSet
   def integerPreProcess(ineqSet) =
@@ -581,16 +701,19 @@ FM qualifying spec
     case ineqSet of
       | [] -> ([], [])
       | hdIneq::tlIneq ->
-      case ineqHdVarOpt(hdIneq) of
+      case ineq.hdVarOpt(hdIneq) of
 	| Some ineqHdVar -> processIneq0(ineqHdVar, ineqSet)
 	| _ -> (ineqSet, [])
 
+  (* First finds all the ineqs that contain the largest remaining variable.
+     Then chains all the ineqs with that variable.
+     *)
   op processIneq0: Var * IneqSet -> IneqSet * IneqSet
   def processIneq0(var, ineqSet) =
     let (possibleChains, nonChains) =
-    case  splitList (fn (poly) -> let optVar = ineqHdVarOpt(poly) in
+    case  splitList (fn (ineq) -> let optVar = ineq.hdVarOpt(ineq) in
 		     case optVar of
-		       | Some hdVar -> ~(ineqHdVar(poly) = var)
+		       | Some hdVar -> ~(ineq.hdVar(ineq) = var)
 		       | _ -> true ) ineqSet of
       | None -> (ineqSet, [])
       | Some (possibleChains, firstNonChain, restNonChains) -> (possibleChains, [firstNonChain]++restNonChains) in
@@ -621,6 +744,10 @@ FM qualifying spec
     let _ = map (fn (ineq) -> writeLine(printIneq(ineq))) ineqs in
     ()
     
+  op writePolys: List Poly -> ()
+  def writePolys(polys) =
+    let _ = map (fn (poly) -> writeLine(printPoly(poly))) polys in
+    ()
 
   op printIneq: Ineq -> String
   def printIneq(ineq as (comp, poly)) =
