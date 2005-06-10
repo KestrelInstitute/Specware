@@ -24,12 +24,11 @@ SpecCalc qualifying spec
 
  import Types
  import ../../MetaSlang/Specs/SimplePrinter % based on /Library/PrettyPrinter/WadlerLindig
+ import /Languages/MetaSlang/Specs/Printer
+ import /Languages/SpecCalculus/Semantics/Value
 
   %% ppValue is defined in /Languages/SpecCalculus/Semantics/Value, 
   %% but we can't import that without circularity...
-
-  op ppValue : Value -> Doc  
-
 
  %% never called...
   op showSpecTerm : [a] SpecTerm a -> String
@@ -124,11 +123,11 @@ SpecCalc qualifying spec
       | Translate (term, renaming_expr) ->
 	ppConcat [ppString "translate (",
 		  ppTerm term,
-		  ppString ") by ",
-		  ppRenamingExpr renaming_expr]
+		  ppString ") by "% ,
+		 % ppRenamingExpr renaming_expr
+		 ]
 
-      | Renaming renaming_expr ->
-	  ppRenamingExpr renaming_expr
+%      | Renaming renaming_expr ->	  ppRenamingExpr renaming_expr
 
       | Let (decls, term) ->
         ppConcat [ppString "let",
@@ -441,8 +440,8 @@ SpecCalc qualifying spec
  %              ^ (Lisp_toString any)
  %              ^ "'")
 
-  op  ppRenamingExpr : [a] RenamingExpr a -> Doc
-  def ppRenamingExpr (rules, _) =
+  op  ppRenaming : Renaming -> Doc
+  def ppRenaming (rules, _) =
     let 
       def ppRenamingRule (rule, _(* position *)) = 
 	case rule of          
@@ -469,9 +468,42 @@ SpecCalc qualifying spec
 		ppSep (ppString ", ") (map ppRenamingRule rules),
 		ppString "}"]
 
+  op ppOtherTerm         : [a] OtherTerm   a -> Doc % Used for extensions to Specware
+  op ppOtherRenamingRule : OtherRenamingRule -> Doc % Used for extensions to Specware
 
-  op ppOtherTerm         : [a] OtherTerm         a -> Doc % Used for extensions to Specware
-  op ppOtherRenamingRule : [a] OtherRenamingRule a -> Doc % Used for extensions to Specware
+  %% --------------------------------------------------------------------------------
 
+  op  showValue : Value -> String
+  def showValue value = ppFormat (ppValue value)
+
+  %% --------------------------------------------------------------------------------
+
+  op  ppValue : Value -> Doc
+  def ppValue value =
+    case value of
+      | Spec        spc           -> ppString     (printSpec spc)
+      | Morph       spec_morphism -> ppMorphism   spec_morphism
+      | Renaming    renaming      -> ppRenaming   renaming
+      | SpecPrism   spec_prism    -> ppPrism      spec_prism     % tentative
+      | SpecInterp  spec_interp   -> ppInterp     spec_interp    % tentative
+      | Diag        spec_diagram  -> ppDiagram    spec_diagram
+      | Colimit     spec_colimit  -> ppColimit    spec_colimit
+      | Other       other_value   -> ppOtherValue other_value
+      | InProcess                 -> ppString "InProcess"
+      | UnEvaluated _             -> ppString "some unevaluated term"
+      | _                         -> ppString "<unrecognized value>"
+
+
+  op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
+
+  (* tentative *)
+  def ppPrism {dom=_, sms=_, pmode=_, tm=_} =
+    ppString "<some prism>"
+
+  (* tentative *)
+  def ppInterp {dom=_, med=_, cod=_, d2m=_, c2m=_} =
+    ppString "<some interp>"
+
+  %% --------------------------------------------------------------------------------
 endspec
 \end{spec}

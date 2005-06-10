@@ -13,7 +13,7 @@ spec
  %%    EquivalenceClass = List VQid
  %%    MFSetMap         = PolyMap.Map (VQid, {rank : Nat, parent : Option MFSetNode, value : VQid}
 
- import ../../AbstractSyntax/Types   % for RenamingExpr
+ import ../../AbstractSyntax/Types   % for Renaming
  import ../Environment               % for fns called by getBaseSpec
  import UnitId                       % for evaluateUID
  import Diagram                      % for vertexName
@@ -59,9 +59,9 @@ spec
  %% ----
 
  %% Morphism[Sort/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
- op convertSortRules : SpecCalc.RenamingRules Position -> MorphismSortMap  
- op convertOpRules   : SpecCalc.RenamingRules Position -> MorphismOpMap
- op convertPropRules : SpecCalc.RenamingRules Position -> MorphismPropMap
+ op convertSortRules : RenamingRules -> MorphismSortMap  
+ op convertOpRules   : RenamingRules -> MorphismOpMap
+ op convertPropRules : RenamingRules -> MorphismPropMap
 
  %% ================================================================================
  %%                 Primary routine defined in this spec
@@ -152,16 +152,18 @@ spec
   %% let _ = showVQidMaps [("sort", vqid_to_apex_qid_and_aliases_sort_map), ("op", vqid_to_apex_qid_and_aliases_op_map) (*, ("prop", vqid_to_apex_qid_and_aliases_prop_map) *)] in
 
   %% -------------------------------------------------------------------------------------------------------------
-  %% (3) Construct maps Vertex => RenamingExpr, where the renaming expr 
+  %% (3) Construct maps Vertex => Renaming, where the renaming 
   %%     maps each item from the vertex's spec into an item in the apex spec, 
   %%     using the cannonical structures for translation morphisms:
   %%
-  %%     sort RenamingExpr  a = List (RenamingRule a) * a
-  %%     sort RenamingRule  a = (RenamingRule_ a) * a
-  %%     sort RenamingRule_ a = | Sort       QualifiedId                 * QualifiedId
-  %%                             | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) 
-  %%                             | Property   QualifiedId                 * QualifiedId
-  %%                             | Ambiguous  QualifiedId                 * QualifiedId                 
+  %%       type Renaming      = RenamingRules * Position
+  %%       type RenamingRules = List RenamingRule
+  %%       type RenamingRule  = RenamingRule_ * Position
+  %%       type RenamingRule_ =
+  %%         | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   
+  %%         | Sort      QualifiedId                 * QualifiedId                 * SortNames 
+  %%         | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   
+  %%         | Other     OtherRenamingRule
   %%   
   %%     Most of the new renaming rules will be identity mappings, unless the 
   %%     disambiguating rules provide an explicit target.
@@ -170,7 +172,7 @@ spec
   %%     construct the cocone morphisms.
   %% -------------------------------------------------------------------------------------------------------------
 
-  let vertex_to_sm_sort_rules : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingRules Position) =
+  let vertex_to_sm_sort_rules : PolyMap.Map (Vertex.Elem, RenamingRules) =
       makeVertexToRenamingRulesMap dg 
                                     vqid_to_apex_qid_and_aliases_sort_map
 				    extract_non_base_sorts
@@ -178,22 +180,22 @@ spec
 
 
   in
-  let vertex_to_sm_op_rules : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingRules Position) =
+  let vertex_to_sm_op_rules : PolyMap.Map (Vertex.Elem, RenamingRules) =
       makeVertexToRenamingRulesMap dg 
                                     vqid_to_apex_qid_and_aliases_op_map
 				    extract_non_base_ops
                                     makeRenamingOpRule
   in
 
-  %% let vertex_to_sm_prop_rules : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingRules Position) =
+  %% let vertex_to_sm_prop_rules : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingRules) =
   %%     makeVertexToRenamingRulesMap dg 
   %%                                   vqid_to_apex_qid_and_aliases_prop_map
   %%                                   extract_non_base_props
   %%                                   makeRenamingPropRule
   %% in 
 
-  let vertex_to_sm_rules : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingExpr Position) =
-      foldOverVertices (fn vertex_renaming_exprs -> fn vertex ->
+  let vertex_to_sm_rules : PolyMap.Map (Vertex.Elem, Renaming) =
+      foldOverVertices (fn vertex_renamings -> fn vertex ->
 			let cocone_renaming_rules = 
 			    (case evalPartial vertex_to_sm_sort_rules vertex of
 			       | Some renaming_rules -> renaming_rules
@@ -207,8 +209,8 @@ spec
 			     %%   | Some renaming_rules -> renaming_rules
 			     %%   | _ -> [])
 			in
-			let renaming_expr : RenamingExpr Position = (cocone_renaming_rules, Internal "Colimit") in
-			update vertex_renaming_exprs vertex renaming_expr)
+			let renaming = (cocone_renaming_rules, Internal "Colimit") in
+			update vertex_renamings vertex renaming)
                       PolyMap.emptyMap
 		      dg
   in
@@ -226,9 +228,9 @@ spec
   let translated_specs : List Spec =
       foldOverVertices
         (fn translated_specs -> fn vertex ->
-           let vertex_spec             = vertexLabel dg          vertex in
-           let cocone_renaming_expr = eval vertex_to_sm_rules vertex in
-	   % let _ = toScreen ("\nRenaming expr "^ (anyToString cocone_renaming_expr) ^ "\n") in
+           let vertex_spec     = vertexLabel dg          vertex in
+           let cocone_renaming = eval vertex_to_sm_rules vertex in
+	   % let _ = toScreen ("\nRenaming expr "^ (anyToString cocone_renaming) ^ "\n") in
 	   % let _ = toScreen ("\nSpec: "^ (printSpec vertex_spec) ^ "\n") in
 
            %% TODO:
@@ -241,7 +243,7 @@ spec
            %% The first arg to translateSpec says we don't require the morphism to be monic.
            %% Maybe the sense should really be that we don't want to raise any exceptions.
            %%
-           let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_renaming_expr) in
+           let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_renaming) in
 	   % let _ = toScreen ("\nRenamingd Spec: "^ (printSpec translated_spec) ^ "\n") in
            cons (translated_spec, translated_specs))
          []
@@ -294,19 +296,19 @@ spec
  %% ====================================================================================================
 
  def makeRenamingSortRule (dom_qid, cod_qid, cod_aliases) =
-   let rule_ : RenamingRule_ Position = Sort (dom_qid, cod_qid, cod_aliases) in
-   let rule  : RenamingRule  Position = (rule_, Internal "Colimit Sort") in
+   let rule_ : RenamingRule_ = Sort (dom_qid, cod_qid, cod_aliases) in
+   let rule  : RenamingRule  = (rule_, Internal "Colimit Sort") in
    rule
 
  def makeRenamingOpRule (dom_qid, cod_qid, cod_aliases) =
-   let rule_ : RenamingRule_ Position = Op ((dom_qid, None), (cod_qid, None), cod_aliases) in
-   let rule  : RenamingRule  Position = (rule_, Internal "Colimit Op") in
+   let rule_ : RenamingRule_ = Op ((dom_qid, None), (cod_qid, None), cod_aliases) in
+   let rule  : RenamingRule  = (rule_, Internal "Colimit Op") in
    rule
 
- %% op  makeRenamingPropRule : QualifiedId * QualifiedId * Aliases -> RenamingRule Position
+ %% op  makeRenamingPropRule : QualifiedId * QualifiedId * Aliases -> RenamingRule
  %% def makeRenamingPropRule (dom_qid, cod_qid, cod_aliases) -> 
- %%   let rule_ : RenamingRule_ Position = Prop (dom_qid, cod_qid, cod_aliases) in
- %%   let rule  : RenamingRule  Position = (rule_, Internal "Colimit Prop") in
+ %%   let rule_ : RenamingRule_ = Prop (dom_qid, cod_qid, cod_aliases) in
+ %%   let rule  : RenamingRule  = (rule_, Internal "Colimit Prop") in
  %%   rule
 
  %% ================================================================================
@@ -507,18 +509,18 @@ spec
  %%     disambiguating rules provide an explicit target.
  %% ================================================================================
 
- op makeVertexToRenamingRulesMap : fa (info) SpecDiagram                                                              -> 
-                                              PolyMap.Map(VQid, QualifiedId * Aliases)                                 -> 
-                			      (Spec -> List (Qualifier * Id * info))                                   -> 
-                			      (QualifiedId * QualifiedId * Aliases -> SpecCalc.RenamingRule Position) ->
-                                              PolyMap.Map (Vertex.Elem, SpecCalc.RenamingRules Position)
+ op makeVertexToRenamingRulesMap : fa (info) SpecDiagram                                            -> 
+                                              PolyMap.Map(VQid, QualifiedId * Aliases)              -> 
+                			      (Spec -> List (Qualifier * Id * info))                -> 
+                			      (QualifiedId * QualifiedId * Aliases -> RenamingRule) ->
+                                              PolyMap.Map (Vertex.Elem, RenamingRules)
 
  def makeVertexToRenamingRulesMap dg 
                                    vqid_to_apex_qid_and_aliases
 				   select_items
 				   make_renaming_rule 
    = 
-   %% Build the map: vertex => RenamingRules Position
+   %% Build the map: vertex => RenamingRules
    foldOverVertices (fn vertex_to_renaming_rules -> fn vertex : Vertex.Elem ->
 		     let spc = vertexLabel dg vertex in
 		     let renaming_rules = 
@@ -564,8 +566,8 @@ spec
    %%       
    run (catch monad localHandler) 
      
- def optRenamingSpec vertex_spec cocone_renaming_expr : Env (Option Spec) = {
-    spc <- translateSpec vertex_spec cocone_renaming_expr;
+ def optRenamingSpec vertex_spec cocone_renaming : Env (Option Spec) = {
+    spc <- translateSpec vertex_spec cocone_renaming;
     return (Some spc)}
    
  def optSpecUnion specs : Env (Option Spec) ={
@@ -655,8 +657,7 @@ spec
 
  %% --------------------------------------------------------------------------------
 
- op showVQidMaps : List (String * PolyMap.Map (VQid, QualifiedId * Aliases)) -> ()
-
+ op  showVQidMaps : List (String * PolyMap.Map (VQid, QualifiedId * Aliases)) -> ()
  def showVQidMaps map_info =
    (toScreen "==========================================\n";
     app (fn (map_type, vqid_map) ->
@@ -682,12 +683,12 @@ spec
 
  %% --------------------------------------------------------------------------------
  
- op  showVertexToRenamingExprMaps : PolyMap.Map (Vertex.Elem, SpecCalc.RenamingExpr Position) -> ()
+ op  showVertexToRenamingExprMaps : PolyMap.Map (Vertex.Elem, Renaming) -> ()
  def showVertexToRenamingExprMaps vertex_to_sm_rules =
    (toScreen "==========================================\n";
-    foldMap (fn _ -> fn vertex -> fn renaming_expr ->
+    foldMap (fn _ -> fn vertex -> fn renaming ->
 	     (toScreen ("Translation for " ^ vertex ^ "\n\n");
-	      toScreen (ppFormat (ppRenamingExpr renaming_expr));
+	      toScreen (ppFormat (ppRenaming renaming));
 	      toScreen "\n\n"))
             ()
             vertex_to_sm_rules;
@@ -695,7 +696,7 @@ spec
 
  %% --------------------------------------------------------------------------------
 
- op showQidToClassIndices : PolyMap.Map (QualifiedId, List Integer) -> ()
+ op  showQidToClassIndices : PolyMap.Map (QualifiedId, List Integer) -> ()
  def showQidToClassIndices qid_to_class_indices =
    toScreen ("\nQualifiedId => <Number of Classes>:\n\n"                  
 	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn qid -> fn class_indices ->
@@ -707,7 +708,7 @@ spec
 				            []
 					    qid_to_class_indices))))
 
- op showIdToQualifiers : PolyMap.Map (Id, List Qualifier) -> ()
+ op  showIdToQualifiers : PolyMap.Map (Id, List Qualifier) -> ()
  def showIdToQualifiers id_to_qualifiers =
    toScreen ("\nId => Qualifiers:\n\n"                  
 	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn id -> fn qualifiers ->
@@ -720,15 +721,15 @@ spec
 	     ^ "------------------------------------------\n")
 
 
- op ppVQid : VQid -> Doc
+ op  ppVQid : VQid -> Doc
  def ppVQid (vertex, Qualified (qualifier, id)) = 
    ppString ("[" ^ (SpecCalc.vertexName vertex) ^ "]" ^ (showQid qualifier id))
 
- op ppQid : QualifiedId -> Doc
+ op  ppQid : QualifiedId -> Doc
  def ppQid (Qualified (qualifier, id)) = 
    ppString (showQid qualifier id)
 
- op showQid : Qualifier -> Id -> String
+ op  showQid : Qualifier -> Id -> String
  def showQid qualifier id =
    if qualifier = UnQualified then
      id

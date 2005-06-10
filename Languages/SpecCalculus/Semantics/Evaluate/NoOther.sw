@@ -67,9 +67,9 @@ SpecCalc qualifying spec
 
   %%  -------------
 
-  type OtherRenamingRule a = ()  % Term
+  type OtherRenamingRule = ()  % Term
 
-  def [a] ppOtherRenamingRule (_ : OtherRenamingRule a) = ppString "<some OtherRenamingRule>"
+  def ppOtherRenamingRule (_ : OtherRenamingRule) = ppString "<some OtherRenamingRule>"
 
   type OtherRenamings = ()       % Value
 
@@ -84,6 +84,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.20  2005/06/08 10:26:56  mcdonald
+%% add prettyprint for renaming values
+%%
 %% Revision 1.19  2005/06/08 09:34:44  mcdonald
 %% factor out prettyprinting routine for RenamingExpr
 %%

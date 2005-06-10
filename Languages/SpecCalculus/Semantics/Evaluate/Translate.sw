@@ -16,6 +16,48 @@ SpecCalc qualifying spec
   import Spec/VarOpCapture
   import UnitId/Utilities                                % for uidToString, if used...
 
+  type Translators = {ambigs : Translator,
+		      sorts  : Translator,
+		      ops    : Translator,
+		      others : Option OtherTranslators}
+
+  type Translator = AQualifierMap (QualifiedId * Aliases) 
+
+  op  emptyTranslator : Translator
+  def emptyTranslator = emptyAQualifierMap
+
+  type OtherTranslators
+
+  op  ppTranslators : Translators -> Doc
+  def ppTranslators translators =
+    let docs = (ppTranslatorMap (ppString "")      translators.ambigs) ++ 
+               (ppTranslatorMap (ppString "type ") translators.sorts)  ++ 
+               (ppTranslatorMap (ppString "op ")   translators.ops)    ++
+	       (case translators.others of
+		  | None -> []
+		  | Some other -> ppOtherTranslators other)
+    in
+    ppConcat [ppString "{",
+	      ppSep (ppString ", ") docs,
+	      ppString "}"]
+
+  op  ppTranslatorMap : Doc -> Translator -> List Doc
+  def ppTranslatorMap type_or_op translator =
+    foldriAQualifierMap (fn (dom_q, dom_id, (cod_qid as Qualified(cod_q, cod_id), _), docs) ->
+			 if dom_q = cod_q && dom_id = cod_id then
+			   %% don't print identity rules ...
+			   docs
+			 else
+			   [ppConcat [type_or_op,
+				      ppQualifier (Qualified(dom_q, dom_id)),
+				      ppString " +-> ",
+				      ppQualifier cod_qid]]
+			   ++ docs)
+                        []
+			translator
+
+  op ppOtherTranslators : OtherTranslators -> List Doc
+
 \end{spec}
 
 Perhaps evaluating a translation should yield a morphism rather than just 
@@ -23,14 +65,14 @@ a spec. Then perhaps we add dom and cod domain operations on morphisms.
 Perhaps the calculus is getting too complicated.
 
 \begin{spec}
-  def SpecCalc.evaluateTranslate term renaming_expr = {
+  def SpecCalc.evaluateTranslate term renaming pos = {
     unitId <- getCurrentUID;
     print (";;; Elaborating spec-translation at " ^ (uidToString unitId)^"\n");
     (value,timeStamp,depUIDs) <- evaluateTermInfo term;
     case coerceToSpec value of
       | Spec spc -> {
-            spcTrans <- translateSpec true spc renaming_expr;
-            return (Spec spcTrans,timeStamp,depUIDs)
+		     spcTrans <- translateSpec true spc renaming;
+		     return (Spec spcTrans,timeStamp,depUIDs)
 		    }
       | _ -> raise (TypeCheck (positionOf term,
 			       "translating a term that is not a specification"))
@@ -73,19 +115,19 @@ Note: The code below does not yet match the documentation above, but should.
   %% translateSpec is used by Translate and Colimt
   %% When called from Colimit, require_monic? is false, and we should avoid
   %% raising exceptions...
-  op  translateSpec : Boolean -> Spec -> RenamingExpr Position -> Env Spec
-  def translateSpec require_monic? spc renaming_expr = 
-    let pos = positionOf renaming_expr in
+  op  translateSpec : Boolean -> Spec -> Renaming -> Env Spec
+  def translateSpec require_monic? spc renaming = 
+    let pos = positionOf renaming in
     {
-     renamings <- makeRenamings require_monic? spc renaming_expr;
+     translators <- makeTranslators require_monic? spc renaming;
      raise_any_pending_exceptions;
 
-     % reconstructed_expr <- reconstructRenamingExpr renamings;
+     % reconstructed_expr <- reconstructTranslatorExpr translators;
      % print ("\n========\n");
      % print (showTerm (Translate ((Quote (Spec spc), noPos), expr), noPos));
      % print ("\n========\n");
      %%
-     %% renamings is now an explicit map for which each name in its 
+     %% translators is now an explicit map for which each name in its 
      %% domain refers to a particular type or op in the domain spec.  
      %%
      %% Each rule explicitly states that it is mapping a type or an op, 
@@ -93,7 +135,7 @@ Note: The code below does not yet match the documentation above, but should.
      %%
      %% No two lhs items (types or ops) map to the same rhs item.
      %%
-     %% makeRenamings will have raised various exceptions if it 
+     %% makeTranslators will have raised various exceptions if it 
      %% cannot guarantee all of this
      %% 
      %% [Note that if an unqualified Y refers to B.Y in the domain spec,  
@@ -106,7 +148,7 @@ Note: The code below does not yet match the documentation above, but should.
      %% Now we produce a new spec using these unmbiguous maps.
      %% Note that auxTranslateSpec is not expected to raise any errors.
      
-     spc <- auxTranslateSpec spc renamings (Some renaming_expr) pos;
+     spc <- auxTranslateSpec spc translators (Some renaming) pos;
      raise_any_pending_exceptions; % should never happen here
      
      %% Next we worry about traditional captures in which a (global) op Y,
@@ -128,8 +170,8 @@ Note: The code below does not yet match the documentation above, but should.
      complainIfAmbiguous (compressDefs spc) pos
     } 
 
-  op  makeRenamings : Boolean -> Spec -> RenamingExpr Position -> SpecCalc.Env Renamings
-  def makeRenamings require_monic? dom_spec (renaming_rules, position) =
+  op  makeTranslators : Boolean -> Spec -> Renaming -> SpecCalc.Env Translators
+  def makeTranslators require_monic? dom_spec (renaming_rules, position) =
     %% translateSpec is used by Translate and Colimt
     %% When called from Colimit, require_monic? is false, and we should avoid
     %% raising exceptions...
@@ -137,7 +179,7 @@ Note: The code below does not yet match the documentation above, but should.
     let ops   = dom_spec.ops   in
     let 
 
-      def complain_if_sort_collision (sorts, sort_renaming, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
+      def complain_if_sort_collision (sorts, sort_translator, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
 	let collisions =
 	    foldriAQualifierMap (fn (other_dom_q, other_dom_id, other_target, collisions) ->
 				 case other_target of
@@ -154,7 +196,7 @@ Note: The code below does not yet match the documentation above, but should.
 				     else
 				       collisions)
 	                        []
-				sort_renaming
+				sort_translator
 	in
 	 case collisions of
 	   | [] -> return ()
@@ -176,7 +218,7 @@ Note: The code below does not yet match the documentation above, but should.
 		return ()
 	       }
 
-      def complain_if_op_collision (ops, op_renaming, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
+      def complain_if_op_collision (ops, op_translator, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
 	let collisions =
 	    foldriAQualifierMap (fn (other_dom_q, other_dom_id, other_target, collisions) ->
 				 case other_target of
@@ -193,7 +235,7 @@ Note: The code below does not yet match the documentation above, but should.
 				     else
 				       collisions)
 	                        []
-				op_renaming
+				op_translator
 	in
 	 case collisions of
 	   | [] -> return ()
@@ -215,7 +257,7 @@ Note: The code below does not yet match the documentation above, but should.
 		return ()
 	       }
 
-      def complain_if_type_collisions_with_priors (sorts, sort_renaming) =
+      def complain_if_type_collisions_with_priors (sorts, sort_translator) =
 	foldOverQualifierMap (fn (dom_q, dom_id, (new_qid as Qualified(new_q,new_id),_), _) ->
 			      %% we're proposing to translate dom_q.dom_id into new_q.new_id
 			      case findAQualifierMap (sorts, new_q, new_id) of
@@ -224,9 +266,9 @@ Note: The code below does not yet match the documentation above, but should.
 				  return ()
 				| Some prior_info -> 
 				  %% new_q.new_id refers to a pre-existing type
-				  case findAQualifierMap (sort_renaming, new_q, new_id) of
+				  case findAQualifierMap (sort_translator, new_q, new_id) of
 				    | Some _ -> 
-				      %% but we're renaming new_q.new_id out of the way, so we're ok
+				      %% but we're translator new_q.new_id out of the way, so we're ok
 				      return ()
 				    | None ->
 				      %% new_q.new_id refers to a pre-existing type, and is not being renamed away
@@ -239,10 +281,10 @@ Note: The code below does not yet match the documentation above, but should.
 								       " into pre-existing, non-alias, untranslated " ^ (explicitPrintQualifiedId new_qid),
 								       position)))
 	                     ()
-			     sort_renaming
+			     sort_translator
 
 
-      def complain_if_op_collisions_with_priors (ops, op_renaming) =
+      def complain_if_op_collisions_with_priors (ops, op_translator) =
 	foldOverQualifierMap (fn (dom_q, dom_id, (new_qid as Qualified(new_q,new_id),_), _) ->
 			      %% we're proposing to translate dom_q.dom_id into new_q.new_id
 			      case findAQualifierMap (ops, new_q, new_id) of
@@ -251,9 +293,9 @@ Note: The code below does not yet match the documentation above, but should.
 				  return ()
 				| Some prior_info -> 
 				  %% new_q.new_id refers to a pre-existing op
-				  case findAQualifierMap (op_renaming, new_q, new_id) of
+				  case findAQualifierMap (op_translator, new_q, new_id) of
 				    | Some _ -> 
-				      %% but we're renaming new_q.new_id out of the way, so we're ok
+				      %% but we're translator new_q.new_id out of the way, so we're ok
 				      return ()
 				    | None ->
 				      %% new_q, new_id refers to a pre-existing op, and is not being renamed away
@@ -266,13 +308,13 @@ Note: The code below does not yet match the documentation above, but should.
 								       " into pre-existing, non-alias, untranslated " ^ (explicitPrintQualifiedId new_qid),
 								       position)))
 	                     ()
-			     op_renaming
+			     op_translator
 
 
-      def insert (op_renaming, sort_renaming) (renaming_rule, rule_pos) =
+      def insert (op_translator, sort_translator) (renaming_rule, rule_pos) =
 
 	let 
-          def add_type_rule op_renaming sort_renaming (dom_qid as Qualified (dom_q, dom_id)) dom_types cod_qid cod_aliases =
+          def add_type_rule op_translator sort_translator (dom_qid as Qualified (dom_q, dom_id)) dom_types cod_qid cod_aliases =
 	    case dom_types of
 	      | first_info :: other_infos ->
 	        (let primary_dom_qid as Qualified (primary_q, primary_id) = primarySortName first_info in
@@ -288,44 +330,44 @@ Note: The code below does not yet match the documentation above, but should.
 		    {
 		     raise_later (TranslationError ("Illegal to translate from base type : " ^ (explicitPrintQualifiedId dom_qid),
 						    rule_pos));
-		     return (op_renaming, sort_renaming)
+		     return (op_translator, sort_translator)
 		    }
 		  else
-		    case findAQualifierMap (sort_renaming, dom_q, dom_id) of
+		    case findAQualifierMap (sort_translator, dom_q, dom_id) of
 		      | None -> 
 		        {
 			 when require_monic?
-			   (complain_if_sort_collision (sorts, sort_renaming, dom_q, dom_id, cod_qid, rule_pos));
-			 new_sort_renaming <- return (insertAQualifierMap (sort_renaming, dom_q, dom_id, (cod_qid, cod_aliases)));
-			 new_sort_renaming <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
+			   (complain_if_sort_collision (sorts, sort_translator, dom_q, dom_id, cod_qid, rule_pos));
+			 new_sort_translator <- return (insertAQualifierMap (sort_translator, dom_q, dom_id, (cod_qid, cod_aliases)));
+			 new_sort_translator <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
 						   %% in rule X +-> Y, X refers to A.X
 						   %% so both X and A.X should translate to Y
-						   insertAQualifierMap (new_sort_renaming, primary_q, primary_id, (cod_qid, cod_aliases))
+						   insertAQualifierMap (new_sort_translator, primary_q, primary_id, (cod_qid, cod_aliases))
 						 else 
-						   new_sort_renaming);
-			 return (op_renaming, new_sort_renaming)
+						   new_sort_translator);
+			 return (op_translator, new_sort_translator)
 			 }
 		      | _  -> 
 			{
 			 raise_later (TranslationError ("Multiple rules for source type " ^ (explicitPrintQualifiedId dom_qid),
 							rule_pos));
-			 return (op_renaming, sort_renaming)
+			 return (op_translator, sort_translator)
 			}
 		else 
 		  {
 		   raise_later (TranslationError ("Ambiguous source type " ^ (explicitPrintQualifiedId dom_qid), 
 						  rule_pos));
-		   return (op_renaming, sort_renaming)
+		   return (op_translator, sort_translator)
 		  })
 	      | _ -> 
 		{
 		 raise_later (TranslationError ("Unrecognized source type " ^ (explicitPrintQualifiedId dom_qid),
 						rule_pos));
-		 return (op_renaming, sort_renaming)
+		 return (op_translator, sort_translator)
 		}
 		  
 	      
-	  def add_op_rule op_renaming sort_renaming (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
+	  def add_op_rule op_translator sort_translator (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
 	    case dom_ops of
 	      | first_op :: other_ops ->
 	        (let primary_dom_qid as Qualified (primary_q, primary_id) = primaryOpName first_op in
@@ -335,24 +377,24 @@ Note: The code below does not yet match the documentation above, but should.
 		     {
 		      raise_later (TranslationError ("Illegal to translate from base op: " ^ (explicitPrintQualifiedId dom_qid),
 						     rule_pos));
-		      return (op_renaming, sort_renaming)
+		      return (op_translator, sort_translator)
 		     }
 		   else
-		     case findAQualifierMap (op_renaming, dom_q, dom_id) of
+		     case findAQualifierMap (op_translator, dom_q, dom_id) of
 		       
 		       | None -> 
 		         %% No rule yet for dom_qid...
 		         {
 			  when require_monic?
-			   (complain_if_op_collision (ops, op_renaming, dom_q, dom_id, cod_qid, rule_pos));
-			  new_op_renaming <- return (insertAQualifierMap (op_renaming, dom_q, dom_id, (cod_qid, cod_aliases)));
-			  new_op_renaming <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
+			   (complain_if_op_collision (ops, op_translator, dom_q, dom_id, cod_qid, rule_pos));
+			  new_op_translator <- return (insertAQualifierMap (op_translator, dom_q, dom_id, (cod_qid, cod_aliases)));
+			  new_op_translator <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
 						  %% in rule X +-> Y, X refers to A.X
 						  %% so both X and A.X should translate to Y
-						  insertAQualifierMap (new_op_renaming, primary_q, primary_id, (cod_qid, cod_aliases))
+						  insertAQualifierMap (new_op_translator, primary_q, primary_id, (cod_qid, cod_aliases))
 						else 
-						  new_op_renaming);
-			  return (new_op_renaming, sort_renaming)
+						  new_op_translator);
+			  return (new_op_translator, sort_translator)
 			  }
 		       | _ -> 
 			 %% Already had a rule for dom_qid...
@@ -360,59 +402,59 @@ Note: The code below does not yet match the documentation above, but should.
 			  raise_later (TranslationError ("Multiple rules for source op "^
 							 (explicitPrintQualifiedId dom_qid),
 							 rule_pos));
-			  return (op_renaming, sort_renaming)
+			  return (op_translator, sort_translator)
 			 }
 		 else 
 		   {
 		    raise_later (TranslationError ("Ambiguous source op " ^ (explicitPrintQualifiedId dom_qid),
 						   rule_pos));
-		    return (op_renaming, sort_renaming)
+		    return (op_translator, sort_translator)
 		    })
 	      | _ -> 
 		{
 		 raise_later (TranslationError ("Unrecognized source op " ^ (explicitPrintQualifiedId dom_qid),
 						rule_pos));
-		 return (op_renaming, sort_renaming)
+		 return (op_translator, sort_translator)
 		 }
 		  
-	  def add_wildcard_rules op_renaming sort_renaming dom_q cod_q cod_aliases =
-	    %% Special hack for aggregate renamings: X._ +-> Y._
+	  def add_wildcard_rules op_translator sort_translator dom_q cod_q cod_aliases =
+	    %% Special hack for aggregate translators: X._ +-> Y._
 	    %% Find all dom sorts/ops qualified by X, and requalify them with Y
 	    (if basicQualifier? dom_q then
 	       {
 		raise_later (TranslationError ("Illegal to translate from base : " ^ dom_q, 
 					       position));
-		return (op_renaming, sort_renaming)
+		return (op_translator, sort_translator)
 		}
 	     else
 	       let
 
-		 def extend_sort_renaming (sort_q, sort_id, _ (* sort_info *), sort_renaming) =
+		 def extend_sort_translator (sort_q, sort_id, _ (* sort_info *), sort_translator) =
 		   if sort_q = dom_q then
 		     %% This is a candidate to be translated...
-		     case findAQualifierMap (sort_renaming, sort_q, sort_id) of
+		     case findAQualifierMap (sort_translator, sort_q, sort_id) of
 		       | None -> 
 		         %% No rule yet for this candidate...
 		         let new_cod_qid = mkQualifiedId (cod_q, sort_id) in
 			 {
 			  when require_monic? 
-			   (complain_if_sort_collision (sorts, sort_renaming, sort_q, sort_id, new_cod_qid, rule_pos));
-			  return (insertAQualifierMap (sort_renaming, sort_q, sort_id, (new_cod_qid, [new_cod_qid])))
+			   (complain_if_sort_collision (sorts, sort_translator, sort_q, sort_id, new_cod_qid, rule_pos));
+			  return (insertAQualifierMap (sort_translator, sort_q, sort_id, (new_cod_qid, [new_cod_qid])))
 			 }
 		       | _ -> 
 			 {
 			  raise_later (TranslationError ("Multiple (wild) rules for source type "^
 							 (explicitPrintQualifiedId (mkQualifiedId (sort_q, sort_id))),
 							 rule_pos));
-			  return sort_renaming
+			  return sort_translator
 			  }
 		   else
-		     return sort_renaming
+		     return sort_translator
 
-                 def extend_op_renaming (op_q, op_id, _ (* op_info *), op_renaming) =
+                 def extend_op_translator (op_q, op_id, _ (* op_info *), op_translator) =
 		   if op_q = dom_q then
 		     %% This is a candidate to be translated...
-		     case findAQualifierMap (op_renaming, op_q, op_id) of
+		     case findAQualifierMap (op_translator, op_q, op_id) of
 		       | None -> 
 		         %% No rule yet for this candidate...
 		         let new_cod_qid = mkQualifiedId (cod_q, op_id) in
@@ -438,8 +480,8 @@ Note: The code below does not yet match the documentation above, but should.
 					          new_cod_qid
 						  cod_aliases);
 			  when require_monic? 
-			   (complain_if_op_collision (ops, op_renaming, op_q, op_id, new_cod_qid, rule_pos));
-			  return (insertAQualifierMap (op_renaming, op_q, op_id, (new_cod_qid, [new_cod_qid])))
+			   (complain_if_op_collision (ops, op_translator, op_q, op_id, new_cod_qid, rule_pos));
+			  return (insertAQualifierMap (op_translator, op_q, op_id, (new_cod_qid, [new_cod_qid])))
 			 }
 		       | _ -> 
 			 %% Candidate already has a rule (e.g. via some explicit mapping)...
@@ -447,68 +489,68 @@ Note: The code below does not yet match the documentation above, but should.
 			  raise_later (TranslationError ("Multiple (wild) rules for source op "^
 							 (explicitPrintQualifiedId (mkQualifiedId (op_q, op_id))),
 							 rule_pos));
-			  return op_renaming
+			  return op_translator
 			  }
 						  
 		   else
-		     return op_renaming 
+		     return op_translator 
 	       in 
 		 {
 		  %% Check each dom type and op to see if this abstract ambiguous rule applies...
-		  sort_renaming <- foldOverQualifierMap extend_sort_renaming sort_renaming sorts;
-		  op_renaming   <- foldOverQualifierMap extend_op_renaming   op_renaming   ops;
-		  return (op_renaming, sort_renaming)
+		  sort_translator <- foldOverQualifierMap extend_sort_translator sort_translator sorts;
+		  op_translator   <- foldOverQualifierMap extend_op_translator   op_translator   ops;
+		  return (op_translator, sort_translator)
 		 })
 
     in
       case renaming_rule of
 	
-	%% TODO: ?? Add special hack for aggregate type renamings: X._ +-> Y._  ??
-	%% TODO: ?? Add special hack for aggregate op   renamings: X._ +-> Y._  ??
+	%% TODO: ?? Add special hack for aggregate type translators: X._ +-> Y._  ??
+	%% TODO: ?? Add special hack for aggregate op   translators: X._ +-> Y._  ??
 
         | Sort (dom_qid, cod_qid, cod_aliases) -> 
 	  if basicSortName? dom_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate from base type : " ^ (explicitPrintQualifiedId dom_qid),
 					    rule_pos));
-	     return (op_renaming, sort_renaming)
+	     return (op_translator, sort_translator)
 	    }
 	  else 
 	    let dom_types = findAllSorts (dom_spec, dom_qid) in
-	    add_type_rule op_renaming sort_renaming dom_qid dom_types cod_qid cod_aliases
+	    add_type_rule op_translator sort_translator dom_qid dom_types cod_qid cod_aliases
 
 	| Op   ((dom_qid, dom_type), (cod_qid, cod_type), cod_aliases) ->  
 	  if syntactic_qid? dom_qid then 
 	    {
 	     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId dom_qid) ^ "' is syntax, not an op, hence cannot be translated.",
 					    rule_pos));
-	     return (op_renaming, sort_renaming)
+	     return (op_translator, sort_translator)
 	    }
 	  else if basicOpName? dom_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate from base op: " ^ (explicitPrintQualifiedId dom_qid),
 					    rule_pos));
-	     return (op_renaming, sort_renaming)
+	     return (op_translator, sort_translator)
 	    }
 	  else 
 	    let dom_ops = findAllOps (dom_spec, dom_qid) in
-	    add_op_rule op_renaming sort_renaming dom_qid dom_ops cod_qid cod_aliases
+	    add_op_rule op_translator sort_translator dom_qid dom_ops cod_qid cod_aliases
 
 	| Ambiguous (Qualified(dom_q, "_"), Qualified(cod_q,"_"), cod_aliases) -> 
-	  add_wildcard_rules op_renaming sort_renaming dom_q cod_q cod_aliases
+	  add_wildcard_rules op_translator sort_translator dom_q cod_q cod_aliases
 
 	| Ambiguous (dom_qid, cod_qid, cod_aliases) -> 
 	  if syntactic_qid? dom_qid then 
 	    {
 	     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId dom_qid) ^ "' is syntax, not an op, hence cannot be translated.",
 					    rule_pos));
-	     return (op_renaming, sort_renaming)
+	     return (op_translator, sort_translator)
 	     }
 	  else if basicQualifiedId? dom_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate from base type or op: " ^ (explicitPrintQualifiedId dom_qid),
 					    rule_pos));
-	     return (op_renaming, sort_renaming)
+	     return (op_translator, sort_translator)
 	     }
 	  else
 	    %% Find a sort or an op, and proceed as above
@@ -518,26 +560,26 @@ Note: The code below does not yet match the documentation above, but should.
 	      | ([], []) -> {
 			     raise_later (TranslationError ("Unrecognized source type or op "^(explicitPrintQualifiedId dom_qid), 
 							    rule_pos));
-			     return (op_renaming, sort_renaming)
+			     return (op_translator, sort_translator)
 			     }
-	      | (_,  []) -> add_type_rule op_renaming sort_renaming dom_qid dom_types cod_qid cod_aliases
-	      | ([], _)  -> add_op_rule   op_renaming sort_renaming dom_qid dom_ops   cod_qid cod_aliases
+	      | (_,  []) -> add_type_rule op_translator sort_translator dom_qid dom_types cod_qid cod_aliases
+	      | ([], _)  -> add_op_rule   op_translator sort_translator dom_qid dom_ops   cod_qid cod_aliases
 	      | (_,  _)  -> {
 			     raise_later (TranslationError ("Ambiguous source type or op: "^(explicitPrintQualifiedId dom_qid),
 							    rule_pos));
-			     return (op_renaming, sort_renaming)
+			     return (op_translator, sort_translator)
 			     }
     in
       {
-       (op_renaming, sort_renaming) <- foldM insert (emptyRenaming, emptyRenaming) renaming_rules;
+       (op_translator, sort_translator) <- foldM insert (emptyTranslator, emptyTranslator) renaming_rules;
        when require_monic?
-        {complain_if_type_collisions_with_priors (sorts, sort_renaming);
-	 complain_if_op_collisions_with_priors   (ops, op_renaming)};
+        {complain_if_type_collisions_with_priors (sorts, sort_translator);
+	 complain_if_op_collisions_with_priors   (ops, op_translator)};
        return {
-	       ambig_renaming  = emptyRenaming,
-	       sort_renaming   = sort_renaming,
-	       op_renaming     = op_renaming, 
-	       other_renamings = None
+	       ambigs = emptyTranslator,
+	       sorts  = sort_translator,
+	       ops    = op_translator, 
+	       others = None
 	      }
        }
        
@@ -565,33 +607,33 @@ Note: The code below does not yet match the documentation above, but should.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  translateSortQualifiedId : Renaming -> QualifiedId -> QualifiedId
-  op  translateOpQualifiedId   : Renaming -> QualifiedId -> QualifiedId
-  op  translateSort            : Renaming -> MS.Sort -> MS.Sort
-  op  translateOp              : Renaming -> MS.Term -> MS.Term
+  op  translateSortQualifiedId : Translator -> QualifiedId -> QualifiedId
+  op  translateOpQualifiedId   : Translator -> QualifiedId -> QualifiedId
+  op  translateSort            : Translator -> MS.Sort -> MS.Sort
+  op  translateOp              : Translator -> MS.Term -> MS.Term
   op  translatePattern         : Pattern  -> Pattern
 
-  def translateSortQualifiedId sort_renaming (qid as Qualified (q, id)) =
-    case findAQualifierMap (sort_renaming, q,id) of
+  def translateSortQualifiedId sort_translator (qid as Qualified (q, id)) =
+    case findAQualifierMap (sort_translator, q,id) of
       | Some (nQId,_) -> nQId
       | None -> qid
 
-  def translateOpQualifiedId op_renaming (qid as Qualified (q, id)) =
-    case findAQualifierMap (op_renaming, q,id) of
+  def translateOpQualifiedId op_translator (qid as Qualified (q, id)) =
+    case findAQualifierMap (op_translator, q,id) of
       | Some (nQId,_) -> nQId
       | None -> qid
 
-  def translateSort sort_renaming sort_term =
+  def translateSort sort_translator sort_term =
     case sort_term of
       | Base (qid, srts, pos) ->
-	(let new_qid = translateSortQualifiedId sort_renaming qid in
+	(let new_qid = translateSortQualifiedId sort_translator qid in
 	 if new_qid = qid then sort_term else Base (new_qid, srts, pos))
       | _ -> sort_term
 
-  def translateOp op_renaming op_term =
+  def translateOp op_translator op_term =
     case op_term of
       | Fun (Op (qid, fixity), srt, pos) ->
-	(let new_qid = translateOpQualifiedId op_renaming qid in
+	(let new_qid = translateOpQualifiedId op_translator qid in
 	 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
       | _ -> op_term
 
@@ -600,22 +642,22 @@ Note: The code below does not yet match the documentation above, but should.
   %% auxTranslateSpec is used by Translate, Substitute, and (indirectly) Colimt
   %% It should avoid raising any errors.
   %% In particular, if an operation such as translate wishes to signal errors in 
-  %% some situations, those errors should be raised while Renamings is being 
+  %% some situations, those errors should be raised while Translators is being 
   %% created, not here.
-  op  auxTranslateSpec : Spec -> Renamings -> Option (RenamingExpr Position) -> Position -> SpecCalc.Env Spec
-  def auxTranslateSpec spc renamings opt_renaming_expr position =
-    let   op_renaming = renamings.op_renaming in
-    let sort_renaming = renamings.sort_renaming in
+  op  auxTranslateSpec : Spec -> Translators -> Option Renaming -> Position -> SpecCalc.Env Spec
+  def auxTranslateSpec spc translators opt_renaming position =
+    let sort_translator = translators.sorts in
+    let   op_translator = translators.ops   in
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
     %% TODO: ?? Change UnQualified to new_q in all qualified names ??
     let
-      def translateOpQualifiedIdToAliases op_renaming (qid as Qualified (q, id)) =
-        case findAQualifierMap (op_renaming, q,id) of
+      def translateOpQualifiedIdToAliases op_translator (qid as Qualified (q, id)) =
+        case findAQualifierMap (op_translator, q,id) of
           | Some (_,new_aliases) -> new_aliases
           | None -> [qid]
   
-      def translateSortQualifiedIdToAliases sort_renaming (qid as Qualified (q, id)) =
-        case findAQualifierMap (sort_renaming, q,id) of
+      def translateSortQualifiedIdToAliases sort_translator (qid as Qualified (q, id)) =
+        case findAQualifierMap (sort_translator, q,id) of
           | Some (_,new_aliases) -> new_aliases
           | None -> [qid]
   
@@ -636,7 +678,7 @@ Note: The code below does not yet match the documentation above, but should.
 					  else 
 					    return (Cons (new_qid, new_qids)))
 				         new_qids
-					 (translateSortQualifiedIdToAliases sort_renaming old_qid))
+					 (translateSortQualifiedIdToAliases sort_translator old_qid))
 	                          [] 
 				  old_info.names;
 	       new_names <- return (rev new_names);
@@ -676,7 +718,7 @@ Note: The code below does not yet match the documentation above, but should.
 					  else 
 					    return (Cons (new_qid, new_qids)))
 				         new_qids
-					 (translateOpQualifiedIdToAliases op_renaming old_qid))
+					 (translateOpQualifiedIdToAliases op_translator old_qid))
 	                          [] 
 				  old_info.names;
 	       new_names <- return (rev new_names);
@@ -698,8 +740,8 @@ Note: The code below does not yet match the documentation above, but should.
     in
     let s2 as {sorts, ops, elements, qualified?}
          = 
-         mapSpec (translateOp   op_renaming, 
-		  translateSort sort_renaming, 
+         mapSpec (translateOp   op_translator, 
+		  translateSort sort_translator, 
 		  translatePattern)
 	         spc
     in 
@@ -707,21 +749,20 @@ Note: The code below does not yet match the documentation above, but should.
       def translateElements elements =
 	mapSpecElements (fn el ->
 			 case el of
-			   | Sort    qid -> Sort    (translateOpQualifiedId sort_renaming qid) 
-			   | SortDef qid -> SortDef (translateOpQualifiedId sort_renaming qid)
-			   | Op      qid -> Op      (translateOpQualifiedId   op_renaming qid)
-			   | OpDef   qid -> OpDef   (translateOpQualifiedId   op_renaming qid) 
+			   | Sort    qid -> Sort    (translateOpQualifiedId sort_translator qid) 
+			   | SortDef qid -> SortDef (translateOpQualifiedId sort_translator qid)
+			   | Op      qid -> Op      (translateOpQualifiedId   op_translator qid)
+			   | OpDef   qid -> OpDef   (translateOpQualifiedId   op_translator qid) 
 			   | Property (pt, nm, tvs, term) ->
-			     Property (pt, (translateOpQualifiedId op_renaming nm), tvs, term)
+			     Property (pt, (translateOpQualifiedId op_translator nm), tvs, term)
 			   | Import (sp_tm, spc, els) ->  
 			     %% The Import expression we have just dispatched on was constructed 
 			     %% by mapSpecElements.  In particular, els was constructed by 
 			     %% applying this fn to each of the original imported elements. 
 			     %% So we don't want to recur again here, but we do want to tweak 
 			     %% the term:
-			     Import (case opt_renaming_expr of
-				       | Some renaming_expr ->
-				         let (rules, _) = renaming_expr in
+			     Import (case opt_renaming of
+				       | Some (rules, pos) ->
 					 let rules = foldl (fn (rule, rules) ->
 							    case rule of
 							      | (Sort (dom_qid, _, _), _) ->
@@ -740,8 +781,8 @@ Note: The code below does not yet match the documentation above, but should.
 					   (case rules of
 					      | [] -> sp_tm
 					      | _ -> 
-					        let renaming_expr = (rev rules, Internal "inner translate") in
-						(Translate (sp_tm, renaming_expr), noPos))
+					        let renaming = (rev rules, pos) in
+						(Translate (sp_tm, renaming), pos))
 				       | _ -> sp_tm,
 				     spc,
 				       els)

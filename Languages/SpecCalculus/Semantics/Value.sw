@@ -1,17 +1,17 @@
 SpecCalc qualifying spec
-  import /Languages/MetaSlang/Specs/Categories/AsRecord
-  import /Languages/MetaSlang/Specs/Printer
-  import /Languages/SpecCalculus/AbstractSyntax/Printer
-  import /Provers/Proof
+  %% Value.sw indirectly imports Types.sw
+  import /Languages/MetaSlang/Specs/Categories/AsRecord  % Morphism
+  import /Provers/Proof                                  % Proof
+  import /Library/IO/Primitive/IO                        % Time
 
-  sort OtherValue                % Used for extensions to Specware
+  sort ValueInfo = Value * TimeStamp * UnitId_Dependency
 
-  sort SCTerm			 % Defined in ../AbstractSyntax/Types
+  %% --------------------------------------------------------------------------------
 
   sort Value =
     | Spec        Spec
     | Morph       Morphism
-    | Renamings   Renamings
+    | Renaming    Renaming 
     | SpecPrism   SpecPrism       % tentative
     | SpecInterp  SpecInterp      % tentative
     | Diag        SpecDiagram       
@@ -22,92 +22,41 @@ SpecCalc qualifying spec
    %| DiagMorph
     | Other       OtherValue      % Used for extensions to Specware
 
-  type Renamings = {ambig_renaming  : Renaming,
-		    sort_renaming   : Renaming,
-		    op_renaming     : Renaming,
-		    other_renamings : Option OtherRenamings}
+  sort OtherValue                % Used for extensions to Specware
 
-  type Renaming = AQualifierMap (QualifiedId * Aliases) 
-
-  op  emptyRenaming : Renaming
-  def emptyRenaming = emptyAQualifierMap
-
-  type OtherRenamings
-
-  (* tentative *)
+  %% tentative for prism...
   type SpecInterp = {dom : Spec,
 		     med : Spec,
 		     cod : Spec,
 		     d2m : Morphism,
 		     c2m : Morphism}
 
-  (* tentative *)
-  type SpecPrism = {dom         : Spec,  
-		    sms         : List Morphism,
-		    pmode       : PrismMode,
-		    tm          : SCTerm}
+  type SpecPrism = {dom   : Spec,  
+		    sms   : List Morphism,
+		    pmode : PrismMode,
+		    tm    : SCTerm}
 
-  type PrismMode = | Uniform      PrismSelection
-                   | PerInstance  List SpecInterp
-
-  op  showValue : Value -> String
-  def showValue value = ppFormat (ppValue value)
+  type PrismMode = | Uniform     PrismSelection
+                   | PerInstance (List SpecInterp)
 
   %% --------------------------------------------------------------------------------
 
- %op  ppValue : Value -> Doc
-  def ppValue value =
-    case value of
-      | Spec        spc           -> ppString (printSpec spc)
-      | Morph       spec_morphism -> ppMorphism   spec_morphism
-      | Renamings   renamings     -> ppRenamings  renamings
-      | SpecPrism   spec_prism    -> ppPrism      spec_prism     % tentative
-      | SpecInterp  spec_interp   -> ppInterp     spec_interp    % tentative
-      | Diag        spec_diagram  -> ppDiagram    spec_diagram
-      | Colimit     spec_colimit  -> ppColimit    spec_colimit
-      | Other       other_value   -> ppOtherValue other_value
-      | InProcess                 -> ppString "InProcess"
-      | UnEvaluated _             -> ppString "some unevaluated term"
-      | _                         -> ppString "<unrecognized value>"
+  sort TimeStamp = Time               % In general, can be over 32 bits -- not a fixnum
 
-  def ppRenamings renamings =
-    let docs = (ppRenamingMap (ppString "")      renamings.ambig_renaming) ++ 
-               (ppRenamingMap (ppString "type ") renamings.sort_renaming) ++ 
-               (ppRenamingMap (ppString "op ")   renamings.op_renaming)   ++
-	       (case renamings.other_renamings of
-		  | None -> []
-		  | Some other -> ppOtherRenamings other)
-    in
-    ppConcat [ppString "{",
-	      ppSep (ppString ", ") docs,
-	      ppString "}"]
+  op  oldestTimeStamp : TimeStamp     % < than any recent TimeStamp -- perhaps never used
+  def oldestTimeStamp = 0               
 
-  op  ppRenamingMap : Doc -> Renaming -> List Doc
-  def ppRenamingMap type_or_op renaming =
-    foldriAQualifierMap (fn (dom_q, dom_id, (cod_qid as Qualified(cod_q, cod_id), _), docs) ->
-			 if dom_q = cod_q && dom_id = cod_id then
-			   %% don't print identity rules ...
-			   docs
-			 else
-			   [ppConcat [type_or_op,
-				      ppQualifier (Qualified(dom_q, dom_id)),
-				      ppString " +-> ",
-				      ppQualifier cod_qid]]
-			   ++ docs)
-                        []
-			renaming
+  op  futureTimeStamp : TimeStamp     % > than any TimeStamp in foreseeable future
+  def futureTimeStamp = 9999999999    % NOTE: this is 34 bits, i.e., a bignum
 
-  op ppOtherRenamings : OtherRenamings -> List Doc
+  %% --------------------------------------------------------------------------------
 
-  op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
+  sort UnitId_Dependency = List UnitId
 
-  (* tentative *)
-  def ppPrism {dom=_, sms=_, pmode=_, tm=_} =
-    ppString "<some prism>"
+  sort ValidatedUIDs     = List UnitId
 
-  (* tentative *)
-  def ppInterp {dom=_, med=_, cod=_, d2m=_, c2m=_} =
-    ppString "<some interp>"
+  %% See validateCache in Evaluate/UnitId.sw -- it chases dependencies recursively,
+  %% so we should not need to take unions of dependencies.
 
   %% --------------------------------------------------------------------------------
 

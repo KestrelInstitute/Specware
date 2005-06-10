@@ -28,7 +28,7 @@ SpecCalc qualifying spec {
   op evaluateTermInfo         : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluatePrint            : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluateQualify          : SCTerm -> Qualifier                                              -> SpecCalc.Env ValueInfo
-  op evaluateTranslate        : SCTerm -> RenamingExpr Position                                  -> SpecCalc.Env ValueInfo
+  op evaluateTranslate        : SCTerm -> Renaming                                   -> Position -> SpecCalc.Env ValueInfo
   op evaluateSubstitute       : SCTerm * SCTerm                                      -> Position -> SpecCalc.Env ValueInfo
   op evaluateObligations      : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluateExpand           : SCTerm                                               -> Position -> SpecCalc.Env ValueInfo
@@ -87,6 +87,15 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.42  2005/06/08 04:18:01  mcdonald
+%% TranslationMaps  => Renamings
+%% TranslationMap   => Renamings
+%% translation_maps => renamings
+%% translation_map  => renaming
+%% op_id_map        => op_renaming
+%% sort_id_map      => sort_renaming
+%% etc.
+%%
 %% Revision 1.41  2005/06/07 06:34:12  mcdonald
 %% cosmetic spacing (prep for things to come)
 %%
