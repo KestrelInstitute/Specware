@@ -222,11 +222,11 @@ FSeq qualifying spec
     if length s1 < length s2 then (extendRight (s1, x1, length s2), s2)
     else (* length s1 >= length s2 *) (s1, extendRight (s2, x2, length s1))
 
-  % short sequence leftward, filling with `x' and discarding first `n' elements:
+  % shift sequence leftward, filling with `x' and discarding first `n' elements:
   op shiftLeft : [a] {(s,x,n) : FSeq a * a * Nat | n < length s} -> FSeq a
   def shiftLeft(s,x,n) = removePrefix (extendRight (s, x, n), n)
 
-  % short sequence rightward, filling with `x' and discarding first `n' elements:
+  % shift sequence rightward, filling with `x' and discarding first `n' elements:
   op shiftRight : [a] {(s,x,n) : FSeq a * a * Nat | n < length s} -> FSeq a
   def shiftRight(s,x,n) = removeSuffix (extendLeft (s, x, n), n)
 
