@@ -126,7 +126,11 @@ MSToFM qualifying spec
 	                 | LitBool true -> [falseIneq]
 			 | Ineq conc -> [negateIneq(conc)]
                          | _ -> [] in
-	all (fn (hyps) -> FMRefute?(negConcs++hyps)) hypsDisjunct
+	all (fn (hyps) -> FMRefuteTop?(negConcs++hyps)) hypsDisjunct
+
+  op FMRefuteTop?: List Ineq -> Boolean
+  def FMRefuteTop?(ineqSet) =
+    FMRefute?(ineqSet) = None
 
   op flattenAndSplitHyps: List FMTerm -> List (List FM.Ineq)
   def flattenAndSplitHyps(hyps) =
@@ -211,6 +215,7 @@ MSToFM qualifying spec
        | Implies -> true
        | Iff     -> true
        | Equals  -> true
+       | NotEquals  -> true
        | _ -> false
 
   op fmInterpFun: Fun -> ((List FMTerm) -> FMTerm)
@@ -241,6 +246,7 @@ MSToFM qualifying spec
        | Implies -> (fn ([a1, a2]) -> fmImpl(a1, a2))
        | Iff     -> (fn ([a1, a2]) -> fmEquiv(a1, a2))
        | Equals  -> (fn ([a1, a2]) -> fmEquals(a1, a2))
+       | NotEquals  -> (fn ([a1, a2]) -> fmNotEquals(a1, a2))
 
   op fmNot: FMTerm -> FMTerm
   def fmNot(tm) =
@@ -278,6 +284,10 @@ MSToFM qualifying spec
       | (LitBool false, t2) -> fmNot(fmEquals(t2, Poly zeroPoly))
       | (t1, LitBool false) -> fmNot(fmEquals(t1, Poly zeroPoly))
       | _ -> UnSupported
+
+  op fmNotEquals: FMTerm * FMTerm -> FMTerm
+  def fmNotEquals(t1, t2) =
+    fmNot(fmEquals(t1, t2))
 
   op fmLtEq: FMTerm * FMTerm -> FMTerm
   def fmLtEq(t1, t2) =
