@@ -10,6 +10,7 @@ SpecCalc qualifying spec
   import /Languages/SpecCalculus/AbstractSyntax/Printer
   import /Languages/SpecCalculus/Semantics/Value
   import UnitId/Utilities
+  import Translate
 
   def SpecCalc.evaluateOther _ (* args *) pos = {
     unitId <- getCurrentUID;
@@ -71,9 +72,9 @@ SpecCalc qualifying spec
 
   def ppOtherRenamingRule (_ : OtherRenamingRule) = ppString "<some OtherRenamingRule>"
 
-  type OtherRenamings = ()       % Value
+  type OtherTranslators = ()   % Value -- see Translate.sw
 
-  def ppOtherRenamings (_ : OtherRenamings) = ([] : List Doc)
+  def ppOtherTranslators (_ : OtherTranslators) = ([] : List Doc)
 
   %%  -------------
 
@@ -84,6 +85,14 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.21  2005/06/10 20:51:45  mcdonald
+%% revised renaming/translate stuff yet again
+%% Renaming     => Translators (and localized to Translator.sw)
+%% RenamingExpr => Renaming
+%%
+%% moved things among Types.sw, Printer.sw, Value.sw to fix
+%% a perennial headache with things being badly placed
+%%
 %% Revision 1.20  2005/06/08 10:26:56  mcdonald
 %% add prettyprint for renaming values
 %%
