@@ -120,14 +120,11 @@ SpecCalc qualifying spec
 		  ppString " qualifying ",
 		  ppTerm term]
 
-      | Translate (term, renaming_expr) ->
+      | Translate (term, renaming) ->
 	ppConcat [ppString "translate (",
 		  ppTerm term,
-		  ppString ") by "% ,
-		 % ppRenamingExpr renaming_expr
-		 ]
-
-%      | Renaming renaming_expr ->	  ppRenamingExpr renaming_expr
+		  ppString ") by ",
+		  ppRenaming renaming]
 
       | Let (decls, term) ->
         ppConcat [ppString "let",
@@ -483,7 +480,6 @@ SpecCalc qualifying spec
     case value of
       | Spec        spc           -> ppString     (printSpec spc)
       | Morph       spec_morphism -> ppMorphism   spec_morphism
-      | Renaming    renaming      -> ppRenaming   renaming
       | SpecPrism   spec_prism    -> ppPrism      spec_prism     % tentative
       | SpecInterp  spec_interp   -> ppInterp     spec_interp    % tentative
       | Diag        spec_diagram  -> ppDiagram    spec_diagram
