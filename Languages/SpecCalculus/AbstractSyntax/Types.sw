@@ -114,7 +114,7 @@ SpecCalc qualifying spec
    | ExtendMorph  (Term a)
    | Qualify      (Term a) * Name
    | Translate    (Term a) * Renaming
-   | Renaming     Renaming
+%  | Renaming     Renaming
 
    %% The intention is that \verb+let+ \emph{decls} \verb+in+ \emph{term}
    %% is the same as \emph{term} \verb+where+ \emph{decls}. The \verb+where+
@@ -365,7 +365,7 @@ SpecCalc qualifying spec
  op mkExtendMorph : fa (a) (Term a)                                                        * a -> Term a
  op mkQualify     : fa (a) (Term a) * Name                                                 * a -> Term a
  op mkTranslate   : fa (a) (Term a) * Renaming                                             * a -> Term a
- op mkRenaming    : fa (a) Renaming                                                        * a -> Term a
+%op mkRenaming    : fa (a) Renaming                                                        * a -> Term a
  op mkLet         : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
  op mkWhere       : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
  op mkHide        : fa (a) (List (NameExpr a)) * (Term a)                                  * a -> Term a
@@ -400,7 +400,7 @@ SpecCalc qualifying spec
  def mkExtendMorph (term,                      pos) = (ExtendMorph term,                        pos)
  def mkQualify     (term, name,                pos) = (Qualify     (term, name),                pos)
  def mkTranslate   (term, renaming_expr,       pos) = (Translate   (term, renaming_expr),       pos)
- def mkRenaming    (translate_expr,            pos) = (Renaming    translate_expr,              pos)
+%def mkRenaming    (translate_expr,            pos) = (Renaming    translate_expr,              pos)
  def mkLet         (decls, term,               pos) = (Let         (decls, term),               pos)
  def mkWhere       (decls, term,               pos) = (Where       (decls, term),               pos)
  def mkHide        (name_exprs, term,          pos) = (Hide        (name_exprs, term),          pos)

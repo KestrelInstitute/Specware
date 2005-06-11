@@ -11,7 +11,7 @@ SpecCalc qualifying spec
   sort Value =
     | Spec        Spec
     | Morph       Morphism
-    | Renaming    Renaming 
+   %| Renaming    Renaming 
     | SpecPrism   SpecPrism       % tentative
     | SpecInterp  SpecInterp      % tentative
     | Diag        SpecDiagram       
