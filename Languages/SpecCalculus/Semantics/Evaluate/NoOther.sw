@@ -12,55 +12,49 @@ SpecCalc qualifying spec
   import UnitId/Utilities
   import Translate
 
-  def SpecCalc.evaluateOther _ (* args *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId) ^ "\n"))
-  }
+  def SpecCalc.evaluateOther _ (* args *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId) ^ "\n"))}
 
-  def SpecCalc.evaluateOtherSubstitute _(* spec_tm *) _(* spec_value *) _(* morph_tm *) _(* morph_value *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Substitute: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
-  }
+  def SpecCalc.evaluateOtherSubstitute _(* spec_tm *) _(* spec_value *) _(* morph_tm *) _(* morph_value *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "Substitute: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
-  def SpecCalc.evaluateOtherSpecMorph _(* dom *) _(* cod *) _(* rules *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "SpecMorph: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
-  }
+  def SpecCalc.evaluateOtherSpecMorph _(* dom *) _(* cod *) _(* rules *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "SpecMorph: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
-  def SpecCalc.evaluateOtherPrint _ (* value *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Print: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
-  }
+  def SpecCalc.evaluateOtherPrint _ (* value *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "Print: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
-  def SpecCalc.evaluateOtherGenerate _ _ (* args valueInfo *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Generate: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
-  }
+  def SpecCalc.evaluateOtherGenerate _ _ (* args valueInfo *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "Generate: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
-  def SpecCalc.evaluateOtherQualify _ _ _ (* term valueinfo qualifier *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
-  }
+  def SpecCalc.evaluateOtherQualify _ _ _ (* term valueinfo qualifier *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
-  def SpecCalc.evaluateOtherProve _ (* claimName, value, valueName, proverName, assertions, possibleOptions, baseOptions, answerVariable *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Prove: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
-  }
+  def SpecCalc.evaluateOtherTranslate _ _ _ (* term valueinfo renaming *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "Translate: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
-  def SpecCalc.evaluateOtherProofGen _ (* value, term, optFileName, fromObligations? *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "ProofGen: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
-  }
+  def SpecCalc.evaluateOtherProve _ (* claimName, value, valueName, proverName, assertions, possibleOptions, baseOptions, answerVariable *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "Prove: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
-  def SpecCalc.evaluateOtherProofGenLocal _ (* value, term, optFileName, fromObligations? *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "ProofGenLocal: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
-  }
+  def SpecCalc.evaluateOtherProofGen _ (* value, term, optFileName, fromObligations? *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "ProofGen: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
-  def SpecCalc.evaluateOtherObligations _ (* value *) pos = {
-    unitId <- getCurrentUID;
-    raise (TypeCheck (pos, "Obligations: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
-  }
+  def SpecCalc.evaluateOtherProofGenLocal _ (* value, term, optFileName, fromObligations? *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "ProofGenLocal: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
+
+  def SpecCalc.evaluateOtherObligations _ (* value *) pos = 
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "Obligations: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
   def SpecCalc.ppOtherValue _ (* value *) = ppString "<some OtherValue>"
 
@@ -85,6 +79,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.22  2005/06/10 21:38:03  mcdonald
+%% peculiar -- need to make types in a def more explicit
+%%
 %% Revision 1.21  2005/06/10 20:51:45  mcdonald
 %% revised renaming/translate stuff yet again
 %% Renaming     => Translators (and localized to Translator.sw)

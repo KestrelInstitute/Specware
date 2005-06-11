@@ -39,7 +39,7 @@ SpecCalc qualifying spec {
 
   op evaluateOther              : OtherTerm Position                                 -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherQualify       : SCTerm -> ValueInfo -> Qualifier                   -> Position -> SpecCalc.Env ValueInfo
-  op evaluateOtherTranslate     : SCTerm -> ValueInfo -> SCTerm -> ValueInfo         -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOtherTranslate     : SCTerm -> ValueInfo -> Renaming                    -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherObligations   : OtherValue                                         -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherPrint         : OtherValue                                         -> Position -> SpecCalc.Env ()
   op evaluateOtherProofGen      : OtherValue * SCTerm * Option String * Boolean      -> Position -> SpecCalc.Env ()
@@ -87,6 +87,14 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.43  2005/06/10 20:51:45  mcdonald
+%% revised renaming/translate stuff yet again
+%% Renaming     => Translators (and localized to Translator.sw)
+%% RenamingExpr => Renaming
+%%
+%% moved things among Types.sw, Printer.sw, Value.sw to fix
+%% a perennial headache with things being badly placed
+%%
 %% Revision 1.42  2005/06/08 04:18:01  mcdonald
 %% TranslationMaps  => Renamings
 %% TranslationMap   => Renamings

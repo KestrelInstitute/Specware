@@ -65,17 +65,21 @@ a spec. Then perhaps we add dom and cod domain operations on morphisms.
 Perhaps the calculus is getting too complicated.
 
 \begin{spec}
-  def SpecCalc.evaluateTranslate term renaming pos = {
-    unitId <- getCurrentUID;
-    print (";;; Elaborating spec-translation at " ^ (uidToString unitId)^"\n");
-    (value,timeStamp,depUIDs) <- evaluateTermInfo term;
-    case coerceToSpec value of
-      | Spec spc -> {
-		     spcTrans <- translateSpec true spc renaming;
-		     return (Spec spcTrans,timeStamp,depUIDs)
-		    }
-      | _ -> raise (TypeCheck (positionOf term,
-			       "translating a term that is not a specification"))
+  def SpecCalc.evaluateTranslate term renaming pos = 
+    {
+     unitId <- getCurrentUID;
+     print (";;; Elaborating spec-translation at " ^ (uidToString unitId)^"\n");
+     value_info as (value,timeStamp,depUIDs) <- evaluateTermInfo term;
+     case coerceToSpec value of
+       | Spec spc -> 
+         {
+	  spcTrans <- translateSpec true spc renaming;
+	  return (Spec spcTrans,timeStamp,depUIDs)
+	 }
+       | Other _ ->
+	 evaluateOtherTranslate term value_info renaming pos
+       | _ -> 
+	 raise (TypeCheck (pos, "translating a term that is not a specification"))
     }
 \end{spec}
 
