@@ -20,13 +20,12 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite")
-	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional ";; ensure-directories-exist: creating")
 	    (:optional ";;   $TESTDIR/Snark/Change/ShouldBeProvable.log")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Change/ShouldBeProvable.log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $TESTDIR/Snark/Change/ does not exist, will create.")
-	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "    Expanded spec file: $TESTDIR/Snark/Change/ShouldBeProvable.sw"
 	    "    Snark Log file: $TESTDIR/Snark/Change/ShouldBeProvable.log"
 	    "ShouldBeProvable: Conjecture change is Proved! using Snark."
