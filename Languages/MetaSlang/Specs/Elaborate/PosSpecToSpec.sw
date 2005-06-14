@@ -4,8 +4,7 @@ PosSpecToSpec qualifying spec
  import ../StandardSpec
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
 
- op convertPosSpecToSpec: Spec -> Spec
-
+ op  convertPosSpecToSpec: Spec -> Spec
  def convertPosSpecToSpec spc =
    let context = initializeMetaTyVars() in
    let
@@ -71,5 +70,39 @@ PosSpecToSpec qualifying spec
 
     qualified? = qualified?
    }
+
+
+ op  convertPosTermToTerm : MS.Term -> MS.Term
+ def convertPosTermToTerm tm =
+   let context = initializeMetaTyVars() in
+   let
+     def convertPTerm term =
+           case term of
+	     | ApplyN([t1,t2],pos) -> Apply(t1,t2,pos)
+	     | ApplyN (t1::t2::terms,pos) -> 
+	       convertPTerm (ApplyN([t1,ApplyN(cons(t2,terms),pos)],pos))
+	     | Fun (f,s,pos) -> Fun(convertPFun f,s,pos)
+	     | _ -> term
+     def convertPSort srt =
+           case srt of
+	     | MetaTyVar(tv,pos) -> 
+	       let {name,uniqueId,link} = ! tv in
+	       (case link
+		  of None -> TyVar (findTyVar(context,uniqueId),pos)
+		   | Some ssrt -> convertPSort ssrt)
+	     | _ -> srt
+     def convertPFun (f) = 
+           case f
+	     of PQuotient equiv  -> Quotient 
+	      | PChoose equiv    -> Choose
+	      | PRestrict pred   -> Restrict
+	      | PRelax pred      -> Relax
+	      | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
+	      | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
+	      | _ -> f
+   in
+   let tsp = (convertPTerm, convertPSort, fn x -> x) in
+   mapTerm tsp tm
+
 endspec
 
