@@ -23,7 +23,7 @@ Change UnQualified to new_qualifier in all qualified names
     case coerceToSpec value of
       | Spec spc -> 
         {
-	 qualified_spec <- qualifySpec spc new_q pos;
+	 qualified_spec <- qualifySpec spc new_q [] pos;
 	 compressed_spec <- complainIfAmbiguous (compressDefs qualified_spec) pos;
 	 return (Spec compressed_spec,timeStamp,depUnitIds)
 	}
@@ -32,97 +32,125 @@ Change UnQualified to new_qualifier in all qualified names
       | _ -> raise (TypeCheck (pos, "qualifying a term that is not a specification"))
    }
 
-  op qualifySpec : Spec -> Qualifier -> Position -> SpecCalc.Env Spec
-  def qualifySpec spc new_q position =
+  op  qualifySpec : Spec -> Qualifier -> Ids -> Position -> SpecCalc.Env Spec
+  def qualifySpec spc new_q immune_ids position =
+
+    %% For core Specware per se, immune_ids will be [].
+    %% But in some contexts (e.g. Accord) we might have "local" ops that 
+    %% we would prefer not to qualify.  
+    %% Moreover, by definition only unqualified names are candidates for 
+    %% qualification, so we need only check the ids of the "local" ops
+    %% (as opposed to checking against the full name).
+
     let
-      def translateQualifiedId (qid as Qualified (q, id)) =
-        if q = UnQualified then
-          Qualified (new_q, id)
-        else 
-          qid
-  
-      def translateOp op_term =
-        case op_term of
-         | Fun (Op (qid, fixity), srt, a) ->
-           let new_qid = translateQualifiedId qid in
-           if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a)
-         | _ -> op_term
-  
-      def translateSort sort_term =
+
+      def qualify_sort sort_term =
         case sort_term of
          | Base (qid, srts, a) ->
-           let new_qid = translateQualifiedId qid in
+           let new_qid = qualifySortId new_q qid in
            if new_qid = qid then sort_term else Base (new_qid, srts, a)
          | _ -> sort_term
   
-      def translatePattern pat = pat
+      def qualify_term op_term =
+        case op_term of
+         | Fun (Op (qid, fixity), srt, a) ->
+           let new_qid = qualifyOpId new_q immune_ids qid in
+           if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a)
+         | _ -> op_term
   
-      def convertOpMap opMap =
-        let def qualifyStep (q, id, info, new_map) =
-          %% Translation can cause names to become duplicated, so remove duplicates
-	  let new_names = rev (removeDuplicates (map translateQualifiedId info.names)) in
-          let new_info = info << {names = new_names} in
-          let new_q = if q = UnQualified then new_q else q in
-          let old_info = findAQualifierMap (new_map, new_q, id) in 
-	  {
-	   new_info <- mergeOpInfo new_info old_info position;
-	   %% Possibly the new name already is used
-	   return (insertAQualifierMap (new_map, new_q, id, new_info))
-	  } 
-	in
-        foldOverQualifierMap qualifyStep emptyAQualifierMap opMap 
+      def qualify_pattern pat = pat
   
-      def convertSortMap sortMap =
-        let def qualifyStep (q, id, info, new_map) =
-          %% Translation can cause names to become duplicated, so remove duplicates
-	  let new_names = rev (removeDuplicates (map translateQualifiedId info.names)) in
-          let new_info = info << {names = new_names} in
-          let new_q = if q = UnQualified then new_q else q in
-          let old_info = findAQualifierMap (new_map, new_q, id) in 
-	  {
-	   new_info <- mergeSortInfo new_info old_info position; 
-	   %% Possibly the new name already is used
-	   return (insertAQualifierMap (new_map, new_q, id, new_info))
-	  } 
+      def qualify_ops ops =
+        let 
+          def qualify_opinfo (q, id, info, new_map) =
+	    %% Translation can cause names to become duplicated, so remove duplicates
+	    let new_names = rev (removeDuplicates (List.map (qualifyOpId new_q immune_ids) info.names)) in
+	    let new_info = info << {names = new_names} in
+	    let new_q = if q = UnQualified && ~ (member (id, immune_ids)) then new_q else q in
+	    let old_info = findAQualifierMap (new_map, new_q, id) in 
+	    {
+	     %% The new name is possibly already used.
+	     new_info <- mergeOpInfo new_info old_info position;
+	     return (insertAQualifierMap (new_map, new_q, id, new_info))
+	    } 
 	in
-	  foldOverQualifierMap qualifyStep emptyAQualifierMap sortMap
+	  foldOverQualifierMap qualify_opinfo emptyAQualifierMap ops 
   
-      def convertElements elts =
-        let def qualifyElt el =
-	    case el of
-	      | Import (sp_tm, sp, els) ->
-	        Import ((Qualify (sp_tm, new_q), noPos),
-			sp,
-			if qualifiedSpec? sp then 
-			  els
-			else 
-			  convertElements els)
-	      | Op      qid -> Op      (translateQualifiedId qid)
-	      | OpDef   qid -> OpDef   (translateQualifiedId qid)
-	      | Sort    qid -> Sort    (translateQualifiedId qid)
-	      | SortDef qid -> SortDef (translateQualifiedId qid)
-	      | Property(pt, qid, tvs, fmla) ->
-	        %% Translation can cause names to become duplicated, but won't remove duplicates
-	        let new_name = translateQualifiedId qid in
-		let newProp = (pt, new_name, tvs, fmla) in
-		Property newProp
-	      | _ -> el
+      def qualify_sorts sorts =
+        let 
+          def qualify_sortinfo (q, id, info, new_map) =
+	    %% Translation can cause names to become duplicated, so remove duplicates
+	    let new_names = rev (removeDuplicates (map (qualifySortId new_q) info.names)) in
+	    let new_info = info << {names = new_names} in
+	    let new_q = if q = UnQualified then new_q else q in
+	    let old_info = findAQualifierMap (new_map, new_q, id) in 
+	    {
+	     %% The new name is possibly already used.
+	     new_info <- mergeSortInfo new_info old_info position; 
+	     return (insertAQualifierMap (new_map, new_q, id, new_info))
+	    } 
 	in
-	  List.map qualifyElt elts
-
-      def convertSpec sp =
-       let {sorts, ops, elements, qualified?}
-           = mapSpecUnqualified (translateOp, translateSort, translatePattern) sp
-       in 
-       {
-	newSorts    <- convertSortMap sorts;
-	newOps      <- convertOpMap   ops;
-	newElements <- return (convertElements elements);
-	return {sorts      = newSorts,
-		ops        = newOps,
-		elements   = newElements,
-	        qualified? = true}
-       }
+	  foldOverQualifierMap qualify_sortinfo emptyAQualifierMap sorts
+    in
+    let {sorts, ops, elements, qualified?} = 
+        mapSpecUnqualified (qualify_term, qualify_sort, qualify_pattern) spc
     in 
-      convertSpec spc
+      {
+       newSorts    <- qualify_sorts sorts;
+       newOps      <- qualify_ops   ops;
+       newElements <- return (qualifySpecElements new_q immune_ids elements);
+       return {sorts      = newSorts,
+	       ops        = newOps,
+	       elements   = newElements,
+	       qualified? = true}
+       }
+
+  %% Accord prefers to have qualifySpecElements and qualifySpecElement
+  %% as standalone functions (not local to qualifySpec) so it can call 
+  %% them from other contexts, as when qualifying modules, classes, etc.
+
+  op  qualifySpecElements : Qualifier -> Ids -> SpecElements -> SpecElements
+  def qualifySpecElements new_q immune_ids elts =
+    List.map (qualifySpecElement new_q immune_ids) elts
+
+  op  qualifySpecElement : Qualifier -> Ids -> SpecElement -> SpecElement
+  def qualifySpecElement new_q immune_ids el =
+    case el of
+      | Import (sp_tm, sp, els) ->
+        if qualifiedSpec? sp then 
+	  el
+	else 
+	  Import ((Qualify (sp_tm, new_q), noPos),
+		  sp,
+		  qualifySpecElements new_q immune_ids els)
+      | Op      qid -> Op      (qualifyOpId   new_q immune_ids qid)
+      | OpDef   qid -> OpDef   (qualifyOpId   new_q immune_ids qid)
+      | Sort    qid -> Sort    (qualifySortId new_q qid)
+      | SortDef qid -> SortDef (qualifySortId new_q qid)
+      | Property(pt, qid, tvs, fmla) ->
+	%% Translation can cause names to become duplicated, but won't remove duplicates
+	let new_name = qualifyPropertyId new_q qid in
+	let newProp = (pt, new_name, tvs, fmla) in
+	Property newProp
+      | _ -> el
+
+  def qualifyOpId new_q immune_ids (qid as Qualified (q, id)) =
+    if q = UnQualified && ~ (member (id, immune_ids)) then
+      Qualified (new_q, id)
+    else 
+      qid
+
+  def qualifySortId new_q (qid as Qualified (q, id)) =
+    if q = UnQualified then
+      Qualified (new_q, id)
+    else 
+      qid
+
+  def qualifyPropertyId new_q (qid as Qualified (q, id)) =
+    if q = UnQualified then
+      Qualified (new_q, id)
+    else 
+      qid
+  
+
 endspec
