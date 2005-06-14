@@ -1,5 +1,6 @@
 spec
- sort MetaSlang.Id = String
+ sort MetaSlang.Id        = String
+ sort MetaSlang.Ids       = List Id
  sort MetaSlang.Qualifier = Id
  sort AQualifierMap b
  %sort SpecCalc.Monad a
