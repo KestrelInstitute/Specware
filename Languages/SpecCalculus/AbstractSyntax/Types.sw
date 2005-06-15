@@ -243,11 +243,11 @@ SpecCalc qualifying spec
  type SpecElem a = (SpecElem_ a) * a
 
  type SpecElem_ a =
-   | Import List (Term a)
-   | Sort   List QualifiedId          * ASort a
-   | Op     List QualifiedId * Fixity * ATerm a
-   | Claim  (AProperty a)
-
+   | Import  List (Term a)
+   | Sort    List QualifiedId          * ASort a
+   | Op      List QualifiedId * Fixity * ATerm a
+   | Claim   (AProperty a)
+   | Comment String
 
  %% These are used by the parser to create SpecElem's
  %% They can be changed to adapt to new structures for SpecElem's

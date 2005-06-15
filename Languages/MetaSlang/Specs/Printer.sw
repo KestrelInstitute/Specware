@@ -1289,6 +1289,17 @@ def AnnSpecPrinter.printTerm term =
 	 | Property prop ->
 	   (index+1,
 	    Cons(ppProperty context (index, prop),ppResult))
+	 | Comment str ->
+	   (index+1,
+	    if exists (fn char -> char = #\n) str then
+	      [(0, string " (* "),
+	       (2, string str),
+	       (0, string " *) ")]
+	      ++
+	      ppResult
+	    else
+	      Cons ((0, string (" %% " ^ str)),
+		    ppResult))
 
      def aux(elements,afterOp?,result) =
          case elements of
@@ -1364,6 +1375,17 @@ def AnnSpecPrinter.printTerm term =
 	 | Property prop ->
 	   (index+1,
 	    Cons(ppProperty context (index, prop),ppResult))
+	 | Comment str ->
+	   (index+1,
+	    if exists (fn char -> char = #\n) str then
+	      [(0, string " (* "),
+	       (2, string str),
+	       (0, string " *) ")]
+	      ++
+	      ppResult
+	    else
+	      Cons ((0, string (" %% " ^ str)),
+		    ppResult))
 
      def aux(elements,afterOp?,result) =
          case elements of

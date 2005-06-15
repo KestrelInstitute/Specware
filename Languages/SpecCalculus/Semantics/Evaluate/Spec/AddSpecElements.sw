@@ -218,6 +218,7 @@ SpecCalc qualifying spec
  op addTheoremLast : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
  op addConjectures : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
  op addTheorems    : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
+ op addComment     : [a] String                                 * ASpec a -> ASpec a
 
  %% called by evaluateSpecImport
  def addImport ((specCalcTerm, imported_spec), spc) =
@@ -238,6 +239,10 @@ SpecCalc qualifying spec
 
  def addConjectures (conjectures, spc) = foldl addConjecture spc conjectures
  def addTheorems    (theorems,    spc) = foldl addTheorem    spc theorems
+
+ def addComment     (str, spc) = 
+   let spc = setElements (spc, spc.elements ++ [Comment str]) in
+   spc    % addLocalPropertyName(spc,propertyName new_property)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -97,17 +97,15 @@ axioms, etc.
 		  })
               spc               
               terms
-      | Sort (names, dfn) ->
-          addSort names dfn spc position
-      | Op (names, fxty, dfn) ->
-          addOp names fxty dfn spc position
-      | Claim (Axiom, name, tyVars, term) ->
-          return (addAxiom ((name,tyVars,term), spc)) 
-      | Claim (Theorem, name, tyVars, term) ->
-          return (addTheorem ((name,tyVars,term), spc))
-      | Claim (Conjecture, name, tyVars, term) ->
-          return (addConjecture ((name,tyVars,term), spc))
-      | Claim _ -> error "evaluateSpecElem: unsupported claim type"
+      | Sort    (names,       dfn)               -> addSort names      dfn spc position
+      | Op      (names, fxty, dfn)               -> addOp   names fxty dfn spc position
+
+      | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((name,tyVars,term), spc)) 
+      | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((name,tyVars,term), spc))
+      | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((name,tyVars,term), spc))
+      | Claim   _                                -> error "evaluateSpecElem: unsupported claim type"
+
+      | Comment str                              -> return (addComment    (str, spc))
 
   def mergeImport spec_term imported_spec spec_a position =
     let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, (spc, combined_sorts)) =
