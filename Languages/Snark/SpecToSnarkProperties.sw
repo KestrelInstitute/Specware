@@ -369,7 +369,7 @@ snark qualifying spec
                 of Record(flds,_) -> map(fn (_, term) -> term) flds
 	         | _ -> [arg] in
     case f of
-      | Op(Qualified(Integer_, "-"),_) ->
+      | Op(Qualified("Integer_", "-"),_) ->
 	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK","-"), Lisp.cons(Lisp.nat(0), Lisp.list snarkArgs))
       | Op(Qualified(qual,id),_) ->
