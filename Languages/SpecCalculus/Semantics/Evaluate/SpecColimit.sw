@@ -243,7 +243,7 @@ spec
            %% The first arg to translateSpec says we don't require the morphism to be monic.
            %% Maybe the sense should really be that we don't want to raise any exceptions.
            %%
-           let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_renaming) in
+           let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_renaming []) in
 	   % let _ = toScreen ("\nRenamingd Spec: "^ (printSpec translated_spec) ^ "\n") in
            cons (translated_spec, translated_specs))
          []

@@ -19,6 +19,7 @@ SpecCalc qualifying spec
   type Translators = {ambigs : Translator,
 		      sorts  : Translator,
 		      ops    : Translator,
+		      props  : Translator,
 		      others : Option OtherTranslators}
 
   type Translator = AQualifierMap (QualifiedId * Aliases) 
@@ -30,9 +31,10 @@ SpecCalc qualifying spec
 
   op  ppTranslators : Translators -> Doc
   def ppTranslators translators =
-    let docs = (ppTranslatorMap (ppString "")      translators.ambigs) ++ 
-               (ppTranslatorMap (ppString "type ") translators.sorts)  ++ 
-               (ppTranslatorMap (ppString "op ")   translators.ops)    ++
+    let docs = (ppTranslatorMap (ppString "")          translators.ambigs) ++ 
+               (ppTranslatorMap (ppString "type ")     translators.sorts)  ++ 
+               (ppTranslatorMap (ppString "op ")       translators.ops)    ++
+               (ppTranslatorMap (ppString "property ") translators.props)  ++
 	       (case translators.others of
 		  | None -> []
 		  | Some other -> ppOtherTranslators other)
@@ -73,7 +75,7 @@ Perhaps the calculus is getting too complicated.
      case coerceToSpec value of
        | Spec spc -> 
          {
-	  spcTrans <- translateSpec true spc renaming;
+	  spcTrans <- translateSpec true spc renaming [];
 	  return (Spec spcTrans,timeStamp,depUIDs)
 	 }
        | Other _ ->
@@ -119,11 +121,11 @@ Note: The code below does not yet match the documentation above, but should.
   %% translateSpec is used by Translate and Colimt
   %% When called from Colimit, require_monic? is false, and we should avoid
   %% raising exceptions...
-  op  translateSpec : Boolean -> Spec -> Renaming -> Env Spec
-  def translateSpec require_monic? spc renaming = 
+  op  translateSpec : Boolean -> Spec -> Renaming -> QualifiedIds -> Env Spec
+  def translateSpec require_monic? spc renaming immune_op_names = 
     let pos = positionOf renaming in
     {
-     translators <- makeTranslators require_monic? spc renaming;
+     translators <- makeTranslators require_monic? spc renaming immune_op_names;
      raise_any_pending_exceptions;
 
      % reconstructed_expr <- reconstructTranslatorExpr translators;
@@ -174,8 +176,8 @@ Note: The code below does not yet match the documentation above, but should.
      complainIfAmbiguous (compressDefs spc) pos
     } 
 
-  op  makeTranslators : Boolean -> Spec -> Renaming -> SpecCalc.Env Translators
-  def makeTranslators require_monic? dom_spec (renaming_rules, position) =
+  op  makeTranslators : Boolean -> Spec -> Renaming -> QualifiedIds -> SpecCalc.Env Translators
+  def makeTranslators require_monic? dom_spec (renaming_rules, position) immune_op_names =
     %% translateSpec is used by Translate and Colimt
     %% When called from Colimit, require_monic? is false, and we should avoid
     %% raising exceptions...
@@ -536,6 +538,8 @@ Note: The code below does not yet match the documentation above, but should.
 					    rule_pos));
 	     return (op_translator, sort_translator)
 	    }
+	  else if member (dom_qid, immune_op_names) then
+	    return (op_translator, sort_translator)
 	  else 
 	    let dom_ops = findAllOps (dom_spec, dom_qid) in
 	    add_op_rule op_translator sort_translator dom_qid dom_ops cod_qid cod_aliases
@@ -559,20 +563,24 @@ Note: The code below does not yet match the documentation above, but should.
 	  else
 	    %% Find a sort or an op, and proceed as above
 	    let dom_types = findAllSorts (dom_spec, dom_qid) in
-	    let dom_ops   = findAllOps   (dom_spec, dom_qid) in
+	    let dom_ops   = if member (dom_qid, immune_op_names) then [] else findAllOps (dom_spec, dom_qid) in
 	    case (dom_types, dom_ops) of
 	      | ([], []) -> {
-			     raise_later (TranslationError ("Unrecognized source type or op "^(explicitPrintQualifiedId dom_qid), 
-							    rule_pos));
+			     if member (dom_qid, immune_op_names) && ~ (null (findAllOps (dom_spec, dom_qid))) then
+			       raise_later (TranslationError ("Source op "^(explicitPrintQualifiedId dom_qid) ^ " is immune to translation", 
+							      rule_pos))
+			     else
+			       raise_later (TranslationError ("Unrecognized source type or op "^(explicitPrintQualifiedId dom_qid), 
+							      rule_pos));
 			     return (op_translator, sort_translator)
-			     }
+			    }
 	      | (_,  []) -> add_type_rule op_translator sort_translator dom_qid dom_types cod_qid cod_aliases
 	      | ([], _)  -> add_op_rule   op_translator sort_translator dom_qid dom_ops   cod_qid cod_aliases
 	      | (_,  _)  -> {
 			     raise_later (TranslationError ("Ambiguous source type or op: "^(explicitPrintQualifiedId dom_qid),
 							    rule_pos));
 			     return (op_translator, sort_translator)
-			     }
+			    }
     in
       {
        (op_translator, sort_translator) <- foldM insert (emptyTranslator, emptyTranslator) renaming_rules;
@@ -583,10 +591,10 @@ Note: The code below does not yet match the documentation above, but should.
 	       ambigs = emptyTranslator,
 	       sorts  = sort_translator,
 	       ops    = op_translator, 
+	       props  = op_translator,   % TODO: make this distinct
 	       others = None
 	      }
        }
-       
 
   def basicCodSortName? qid =
     let base_spec = getBaseSpec () in
@@ -611,33 +619,27 @@ Note: The code below does not yet match the documentation above, but should.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  translateSortQualifiedId : Translator -> QualifiedId -> QualifiedId
-  op  translateOpQualifiedId   : Translator -> QualifiedId -> QualifiedId
-  op  translateSort            : Translator -> MS.Sort -> MS.Sort
-  op  translateOp              : Translator -> MS.Term -> MS.Term
-  op  translatePattern         : Pattern  -> Pattern
+  op  translateQualifiedId : Translator -> QualifiedId -> QualifiedId
+  op  translateSortRef     : Translator -> MS.Sort -> MS.Sort
+  op  translateOpRef       : Translator -> MS.Term -> MS.Term
+  op  translatePattern     : Pattern  -> Pattern
 
-  def translateSortQualifiedId sort_translator (qid as Qualified (q, id)) =
-    case findAQualifierMap (sort_translator, q,id) of
+  def translateQualifiedId translator (qid as Qualified (q, id)) =
+    case findAQualifierMap (translator, q,id) of
       | Some (nQId,_) -> nQId
       | None -> qid
 
-  def translateOpQualifiedId op_translator (qid as Qualified (q, id)) =
-    case findAQualifierMap (op_translator, q,id) of
-      | Some (nQId,_) -> nQId
-      | None -> qid
-
-  def translateSort sort_translator sort_term =
+  def translateSortRef sort_translator sort_term =
     case sort_term of
       | Base (qid, srts, pos) ->
-	(let new_qid = translateSortQualifiedId sort_translator qid in
+	(let new_qid = translateQualifiedId sort_translator qid in
 	 if new_qid = qid then sort_term else Base (new_qid, srts, pos))
       | _ -> sort_term
 
-  def translateOp op_translator op_term =
+  def translateOpRef op_translator op_term =
     case op_term of
       | Fun (Op (qid, fixity), srt, pos) ->
-	(let new_qid = translateOpQualifiedId op_translator qid in
+	(let new_qid = translateQualifiedId op_translator qid in
 	 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
       | _ -> op_term
 
@@ -655,17 +657,17 @@ Note: The code below does not yet match the documentation above, but should.
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
     %% TODO: ?? Change UnQualified to new_q in all qualified names ??
     let
-      def translateOpQualifiedIdToAliases op_translator (qid as Qualified (q, id)) =
-        case findAQualifierMap (op_translator, q,id) of
-          | Some (_,new_aliases) -> new_aliases
-          | None -> [qid]
-  
       def translateSortQualifiedIdToAliases sort_translator (qid as Qualified (q, id)) =
         case findAQualifierMap (sort_translator, q,id) of
           | Some (_,new_aliases) -> new_aliases
           | None -> [qid]
   
-      def translateSorts old_sorts =
+      def translateOpQualifiedIdToAliases op_translator (qid as Qualified (q, id)) =
+        case findAQualifierMap (op_translator, q,id) of
+          | Some (_,new_aliases) -> new_aliases
+          | None -> [qid]
+  
+      def translateSortInfos old_sorts =
         let 
           def translateSortInfo (old_q, old_id, old_info, new_sorts) = 
 	    let Qualified (primary_q, primary_id) = primarySortName old_info in
@@ -705,7 +707,7 @@ Note: The code below does not yet match the documentation above, but should.
 	in
 	  foldOverQualifierMap translateSortInfo emptyAQualifierMap old_sorts 
 
-      def translateOps old_ops =
+      def translateOpInfos old_ops =
         let 
           def translateOpInfo (old_q, old_id, old_info, new_ops) =
 	    let primary_qid as Qualified (primary_q, primary_id) = primaryOpName old_info in
@@ -742,65 +744,69 @@ Note: The code below does not yet match the documentation above, but should.
 	  foldOverQualifierMap translateOpInfo emptyAQualifierMap old_ops 
 
     in
-    let s2 as {sorts, ops, elements, qualified?}
-         = 
-         mapSpec (translateOp   op_translator, 
-		  translateSort sort_translator, 
-		  translatePattern)
-	         spc
-    in 
-    let 
-      def translateElements elements =
-	mapSpecElements (fn el ->
-			 case el of
-			   | Sort    qid -> Sort    (translateOpQualifiedId sort_translator qid) 
-			   | SortDef qid -> SortDef (translateOpQualifiedId sort_translator qid)
-			   | Op      qid -> Op      (translateOpQualifiedId   op_translator qid)
-			   | OpDef   qid -> OpDef   (translateOpQualifiedId   op_translator qid) 
-			   | Property (pt, nm, tvs, term) ->
-			     Property (pt, (translateOpQualifiedId op_translator nm), tvs, term)
-			   | Import (sp_tm, spc, els) ->  
-			     %% The Import expression we have just dispatched on was constructed 
-			     %% by mapSpecElements.  In particular, els was constructed by 
-			     %% applying this fn to each of the original imported elements. 
-			     %% So we don't want to recur again here, but we do want to tweak 
-			     %% the term:
-			     Import (case opt_renaming of
-				       | Some (rules, pos) ->
-					 let rules = foldl (fn (rule, rules) ->
-							    case rule of
-							      | (Sort (dom_qid, _, _), _) ->
-							        (case findTheSort (spc, dom_qid) of
-								   | Some _ -> [rule] ++ rules
-								   | _ -> rules)
-							      | (Op ((dom_qid, _), _, _), _) ->
-								(case findTheOp (spc, dom_qid) of
-								   | Some _ -> [rule] ++ rules
-								   | _ -> rules)
-							      | _ -> 
-								[rule] ++ rules)
-					                   []
-							   rules
-					 in
-					   (case rules of
-					      | [] -> sp_tm
-					      | _ -> 
-					        let renaming = (rev rules, pos) in
-						(Translate (sp_tm, renaming), pos))
-				       | _ -> sp_tm,
-				     spc,
-				       els)
-			   | _ -> el)
-                        elements
+    let {sorts, ops, elements, qualified?} =
+        mapSpec (translateOpRef   op_translator, 
+		 translateSortRef sort_translator, 
+		 translatePattern)
+	        spc
     in
     {
-     newSorts <- translateSorts sorts;
-     newOps   <- translateOps   ops;
-     return {sorts      = newSorts,
-	     ops        = newOps,
-	     elements   = translateElements elements,
+     new_sorts    <- translateSortInfos sorts;
+     new_ops      <- translateOpInfos   ops;
+     new_elements <- return (translateSpecElements translators opt_renaming elements);
+     return {sorts      = new_sorts,
+	     ops        = new_ops,
+	     elements   = new_elements,
 	     qualified? = false}	% conservative
     }
+
+  op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> SpecElements
+  def translateSpecElements translators opt_renaming elements =
+    mapSpecElements (translateSpecElement translators opt_renaming) elements
+
+  op  translateSpecElement : Translators -> Option Renaming -> SpecElement -> SpecElement
+  def translateSpecElement translators opt_renaming el =
+    case el of
+      | Sort    qid -> Sort    (translateQualifiedId translators.sorts qid) 
+      | SortDef qid -> SortDef (translateQualifiedId translators.sorts qid)
+      | Op      qid -> Op      (translateQualifiedId   translators.ops   qid)
+      | OpDef   qid -> OpDef   (translateQualifiedId   translators.ops   qid) 
+      | Property (pt, nm, tvs, term) ->
+        Property (pt, (translateQualifiedId translators.props nm), tvs, term)
+      | Import (sp_tm, spc, els) ->  
+	%% The Import expression we have just dispatched on was constructed 
+	%% by mapSpecElements.  In particular, els was constructed by 
+	%% applying this fn to each of the original imported elements. 
+	%% So we don't want to recur again here, but we do want to tweak 
+	%% the term:
+	let new_tm = 
+	    case opt_renaming of
+	      | Some (rules, pos) ->
+	        let rules = foldl (fn (rule, rules) ->
+				   case rule of
+				     | (Sort (dom_qid, _, _), _) ->
+				       (case findTheSort (spc, dom_qid) of
+					  | Some _ -> [rule] ++ rules
+					  | _ -> rules)
+				     | (Op ((dom_qid, _), _, _), _) ->
+				       (case findTheOp (spc, dom_qid) of
+					  | Some _ -> [rule] ++ rules
+					  | _ -> rules)
+				     | _ -> 
+				       [rule] ++ rules)
+		                  []
+				  rules
+		in
+		  (case rules of
+		     | [] -> sp_tm
+		     | _ -> 
+		       let renaming = (rev rules, pos) in
+		       (Translate (sp_tm, renaming), pos))
+              | _ -> sp_tm
+	in
+	  Import (new_tm, spc, els)
+      | _ -> el
+
 
 endspec
 \end{spec}
