@@ -323,11 +323,17 @@ SpecCalc qualifying spec
   op ppSpecElem : [a] SpecElem a -> Doc
  def ppSpecElem (elem, _) = 
    case elem of
-     | Import term                   -> ppConcat [ppString "import ",
-						  ppSep (ppString ", ") (map ppTerm term)]
-     | Sort   (aliases, dfn)         -> myppASortInfo (aliases, dfn)
-     | Op     (aliases, fixity, dfn) -> myppAOpInfo   (aliases, fixity, dfn)
-     | Claim  property               -> ppAProperty   property
+     | Import  term                   -> ppConcat [ppString "import ",
+						   ppSep (ppString ", ") (map ppTerm term)]
+     | Sort    (aliases, dfn)         -> myppASortInfo (aliases, dfn)
+     | Op      (aliases, fixity, dfn) -> myppAOpInfo   (aliases, fixity, dfn)
+     | Claim   property               -> ppAProperty   property
+     | Comment str                    -> if exists (fn char -> char = #\n) str then
+                                           ppConcat [ppString " (* ",
+						     ppString str,
+						     ppString " *) "]
+					 else
+					   ppString (" %% " ^ str)
 
   op ppIdInfo : List QualifiedId -> Doc
  def ppIdInfo qids = ppSep (ppString ",") (map ppString (map printQualifiedId qids))
