@@ -322,7 +322,9 @@ snark qualifying spec
 	let bndVarsPred:MS.Term = (foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List Var))):MS.Term in
 	let newTerm = case bndr of
 	                | Forall -> Utilities.mkSimpImplies(bndVarsPred, term)
-	                | Exists -> Utilities.mkAnd(bndVarsPred, term) in
+	                | Exists -> Utilities.mkAnd(bndVarsPred, term) 
+	                | Exists1 -> fail ("mkSnarkFmla doesn't handle Exists1 (uniqueness quantifier)")
+	in
 	let snarkFmla = mkSnarkFmla(context, sp, dpn, StringSet.addList(vars, newVars), globalVars, newTerm) in
 	   Lisp.list [Lisp.symbol("SNARK",bndrString bndr),
 		      snarkBndList,
