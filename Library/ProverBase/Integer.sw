@@ -129,9 +129,15 @@ PrInteger qualifying spec
   axiom pred_def is
      fa (x: Integer) pred x = x - 1
 
+%  axiom less_less_equal is
+%     fa(x: Integer,y: Integer) x < y  <=> x+1 <= y
 
-  axiom plus_greater_equal is
-     fa (x: Integer, y: Integer, z: Integer) x >= z && y >= z => x + y >= z
+%  axiom plus_gt_zero is fa(x,y,z,w) x + y <= z && 0 <= y => x <= z
+
+  axiom plus_minus is fa(x,y,z) x+y = z <=>  x = z-y
+
+%  axiom plus_greater_equal is
+%     fa (x: Integer, y: Integer, z: Integer) x >= z && y >= z => x + y >= z
 
   axiom plus_greater_chain is
      fa (x: Integer, y: Integer, z: Integer) x + y >= 0 && (- y) + z >= 0 => x + z >= 0
