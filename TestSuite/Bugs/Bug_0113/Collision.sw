@@ -63,7 +63,6 @@ Ok3 = translate S by {X +-> Y, Y +-> X}
 
 Ok4 = translate S by {Y +-> X, X +-> Y}
 
-
 Ok5 = translate S by {p +-> q, q +-> r}
 
 Ok6 = translate S by {q +-> r, p +-> q}
