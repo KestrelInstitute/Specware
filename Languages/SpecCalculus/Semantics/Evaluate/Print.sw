@@ -29,7 +29,7 @@ SpecCalc qualifying spec {
  %  uidToString          produces (unparseable) UnitId's that are relative to the root of the OS, using ~ for home,    e.g. "~/foo"
  %  relativeUID_ToString produces (parseable?)  UnitId's that are relativized to the currentUID, using ".." to ascend, e.g. "foo" or "../../foo"
        
- sort ReverseContext = PolyMap.Map (Value, RelativeUnitId)
+ sort ReverseContext = PolyMap.Map (Value, RelativeUID)
 
  def printSpecExpanded? = false
 

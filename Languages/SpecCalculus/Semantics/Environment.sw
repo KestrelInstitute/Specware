@@ -87,7 +87,7 @@ UnitId_Dependency.
   def initGlobalVars =
     run {
       print "\nDeclaring globals ...";
-      newGlobalVar ("BaseInfo", (None : Option RelativeUnitId, initialSpecInCat)); % as opposed to emptySpec, which doesn't contain Boolean, etc.
+      newGlobalVar ("BaseInfo", (None : Option RelativeUID, initialSpecInCat)); % as opposed to emptySpec, which doesn't contain Boolean, etc.
       newGlobalVar ("BaseNames", ([] : QualifiedIds)); % cache for quick access
       newGlobalVar ("GlobalContext", PolyMap.emptyMap);
       newGlobalVar ("LocalContext", PolyMap.emptyMap);
@@ -98,14 +98,14 @@ UnitId_Dependency.
       return ()
     }
 
-  op setBase : ((Option RelativeUnitId) * Spec) -> Env ()
+  op setBase : ((Option RelativeUID) * Spec) -> Env ()
   def setBase (baseInfo as (_, base_spec)) = 
     {
      writeGlobalVar ("BaseInfo",  baseInfo);
      setBaseNames base_spec
     }
 
-  op getBase : Env ((Option RelativeUnitId) * Spec)
+  op getBase : Env ((Option RelativeUID) * Spec)
   def getBase = readGlobalVar "BaseInfo"
 
 % op getBaseSpec : () -> Spec % declared in /Languages/MetaSlang/Specs/Printer
@@ -119,7 +119,7 @@ UnitId_Dependency.
       run prog 
 
 
-  op getBaseSpecUID : () -> RelativeUnitId
+  op getBaseSpecUID : () -> RelativeUID
   def getBaseSpecUID() =
     let prog = {
        (optBaseUnitId,baseSpec) <- getBase;
@@ -139,7 +139,7 @@ UnitId_Dependency.
       } in
     run prog 
 
-  op  importOfSpec: Option RelativeUnitId * Spec -> Spec
+  op  importOfSpec: Option RelativeUID * Spec -> Spec
   def importOfSpec(optUnitId,spc) =
     spc << {elements = case optUnitId of
 			 | None -> []
@@ -243,15 +243,15 @@ The local context is where "let" bindings are deposied
 
 \begin{spec}
   op bindInLocalContext : RelativeUID -> ValueInfo -> Env ()
-  def bindInLocalContext relativeUnitId value = {
+  def bindInLocalContext relative_uid value = {
       localContext <- readGlobalVar "LocalContext";
-      writeGlobalVar ("LocalContext", update localContext relativeUnitId value)
+      writeGlobalVar ("LocalContext", update localContext relative_uid value)
     }
 
   op lookupInLocalContext : RelativeUID -> Env (Option ValueInfo)
-  def lookupInLocalContext relativeUnitId = {
+  def lookupInLocalContext relative_uid = {
       localContext <- readGlobalVar "LocalContext";
-      return (evalPartial localContext relativeUnitId)
+      return (evalPartial localContext relative_uid)
     }
 
   op showLocalContext : Env String

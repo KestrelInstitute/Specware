@@ -205,8 +205,8 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
       unitId <- pathToCanonicalUID ".";
       setCurrentUnitId unitId;
       path_body <- return (removeSWsuffix path);
-      relativeUnitId <- pathToRelativeUID path_body;
-      setBaseToRelativeUnitId relativeUnitId;
+      relative_uid <- pathToRelativeUID path_body;
+      setBaseToRelativeUID relative_uid;
       return true
     } in
     runSpecCommand (catch prog toplevelHandler) 
@@ -217,8 +217,8 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
       (optBaseUnitId,baseSpec) <- getBase;
       case optBaseUnitId of
         | None -> print "There is no base specification."
-        | Some relativeUnitId ->
-            print ("Identifier of base spec: " ^ (showRelativeUID relativeUnitId));
+        | Some relative_uid ->
+            print ("Identifier of base spec: " ^ (showRelativeUID relative_uid));
       return true
     } in
     run (catch prog toplevelHandler) 

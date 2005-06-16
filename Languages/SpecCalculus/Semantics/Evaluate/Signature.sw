@@ -12,8 +12,8 @@ SpecCalc qualifying spec {
 
   %% Specific kinds of terms:
 
-  op evaluateReturnUID        : Position -> RelativeUnitId                                       -> SpecCalc.Env (ValueInfo * UnitId)
-  op evaluateUID              : Position -> RelativeUnitId                                       -> SpecCalc.Env ValueInfo
+  op evaluateReturnUID        : Position -> RelativeUID                                          -> SpecCalc.Env (ValueInfo * UnitId)
+  op evaluateUID              : Position -> RelativeUID                                          -> SpecCalc.Env ValueInfo
   op evaluateSpec             : List (SpecElem Position)                             -> Position -> SpecCalc.Env ValueInfo
   op evaluateSpecMorph        : SCTerm * SCTerm * (List (SpecMorphRule Position))                -> SpecCalc.Env ValueInfo
   op evaluateSpecPrism        : SCTerm * List SCTerm * PrismModeTerm Position        -> Position -> SpecCalc.Env ValueInfo  % tentative
@@ -87,6 +87,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.44  2005/06/11 00:05:36  mcdonald
+%% added evaluateOtherTranslate
+%%
 %% Revision 1.43  2005/06/10 20:51:45  mcdonald
 %% revised renaming/translate stuff yet again
 %% Renaming     => Translators (and localized to Translator.sw)

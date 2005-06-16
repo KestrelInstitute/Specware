@@ -384,7 +384,7 @@ handled correctly.
 (*
 Used so toplevel UI functions can find out whether a unitId has up-to-date version in cache. 
 *)
-  op  checkInCache? : RelativeUnitId -> Env Boolean
+  op  checkInCache? : RelativeUID -> Env Boolean
   def checkInCache? unitId =
     { uidList <- generateUIDList unitId;
       optValue <- searchContextForUID uidList;

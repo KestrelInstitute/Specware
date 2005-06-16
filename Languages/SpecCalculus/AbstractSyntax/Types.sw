@@ -63,7 +63,6 @@ SpecCalc qualifying spec
    | UnitId_Relative UnitId
    | SpecPath_Relative UnitId
 
- type RelativeUnitId = RelativeUID
 
  %% The type \verb+Name+ is used everywhere that one can expect a
  %% non-structured identifier.  This includes for instance, the names of
