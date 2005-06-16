@@ -25,7 +25,7 @@ O = PFunctions qualifying spec
 
   op finite? : [a,b] PFunction(a,b) -> Boolean
   def [a,b] finite? f =
-    Logic.finite? (fn(x:a) -> definedAt?(f,x))
+    Set.finite? (fn(x:a) -> definedAt?(f,x))
 
   type FFunction(a,b) = (PFunction(a,b) | finite?)
 
