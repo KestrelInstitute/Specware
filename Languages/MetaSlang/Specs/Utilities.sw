@@ -262,6 +262,8 @@ Utilities qualifying spec
 	deleteVars(vars1 ++ vars2,List.map (fn(v,_) -> v) decls)
       | Bind(b,vars,M,_)  -> 
 	deleteVars(freeVarsRec(M),vars)
+      | The (var, M, _) ->
+	delete (var, freeVarsRec M)
       | IfThenElse(t1,t2,t3,_) -> 
 	freeVarsRec(t1) ++ freeVarsRec(t2) ++ freeVarsRec(t3)
       | Seq(tms,_) -> foldr (fn (trm,vs) -> vs ++ freeVarsRec trm) [] tms
@@ -433,6 +435,11 @@ Utilities qualifying spec
 	      let (vars,sub,freeNames) = substBoundVars(vars,sub,freeNames) in
 	      Bind(b,
 		   vars,
+		   substitute2(M,sub,freeNames),
+		   a)
+	    | The(var,M,a)  -> 
+	      let ([var],sub,freeNames) = substBoundVars([var],sub,freeNames) in
+	      The (var, 
 		   substitute2(M,sub,freeNames),
 		   a)
 	    | IfThenElse(t1,t2,t3,a) -> 
