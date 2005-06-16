@@ -5,6 +5,7 @@
   :sw  "NeedWFO"
   :output '(";;; Elaborating spec at $TESTDIR/NeedWFO#S"
 	    ";;; Elaborating obligator at $TESTDIR/NeedWFO#O"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    ""
 	    "spec  "
 	    " import /Library/Base/WFO"
@@ -39,4 +40,4 @@
 	    "P1: Conjecture f_Obligation1 in O is NOT proved using Snark."
 	    "    Snark Log file: $TESTDIR/Snark/NeedWFO/P1.log"
 	    ""))
-
+ )
