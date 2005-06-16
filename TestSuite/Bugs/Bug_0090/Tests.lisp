@@ -6,6 +6,7 @@
   :show   "caseContext#O"
   :output '(";;; Elaborating obligator at $TESTDIR/caseContext#O"
 	    ";;; Elaborating spec at $TESTDIR/caseContext#S"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    ""
 	    "spec  "
 	    " import /Library/Base/WFO"
@@ -21,4 +22,5 @@
 	    "endspec"
 	    ""
 	    ""))
+ )
 
