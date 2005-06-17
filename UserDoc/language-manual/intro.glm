@@ -30,7 +30,7 @@ properties of operations, and theorems that follow logically
 from axioms.</para>
 
 <para>A morphism is a relationship between specifications that
-describes how the properties of one map to the properties of
+describes how the properties of one map relate to the properties of
 another. Morphisms describe both part-of and is-a
 relationships. You can propagate theorems from one
 specification to another using morphisms; for example, if the
