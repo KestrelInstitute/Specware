@@ -1,48 +1,23 @@
 SpecCalc qualifying spec 
 
  import ../../Environment
+ import EquivPreds
 
-% --------------------------------------------------------------------------------
-%%% (**
-%%%  * merges the two given specs into one
-%%%  *)
-%%% 
-%%%  op  mergeSpecs: Spec * Spec -> Spec
-%%%  def mergeSpecs (spc1, spc2) =
-%%% %   let importInfo = {
-%%% %		     imports = listUnion(spc1.importInfo.imports,spc2.importInfo.imports),
-%%% %		     localOps = listUnion(spc1.importInfo.localOps,spc2.importInfo.localOps),
-%%% %		     localSorts = listUnion(spc1.importInfo.localSorts,spc2.importInfo.localSorts),
-%%% %		     localProperties = listUnion(spc1.importInfo.localProperties,spc2.importInfo.localProperties)
-%%% %		    }
-%%% %   in
-%%%    let srts = foldriAQualifierMap
-%%%                 (fn (q, id, info, map) ->
-%%% 		 insertAQualifierMap (map, q, id, info))
-%%% 		spc1.sorts 
-%%% 		spc2.sorts
-%%%    in
-%%%    let ops = foldriAQualifierMap
-%%%                (fn (q, id, info, map) ->
-%%% 		insertAQualifierMap (map, q, id, info))
-%%% 	       spc1.ops 
-%%% 	       spc2.ops
-%%%    in
-%%%    let elts = mergeSpecElements(spc1.elements,spc2.elements)
-%%%    in
-%%%    let spc = initialSpecInCat in  % maybe emptySpec would be ok, but this is safer
-%%%    let spc = setSorts    (spc, srts)  in
-%%%    let spc = setOps      (spc, ops)   in
-%%%    let spc = setElements (spc, elts) in
-%%%    spc
-%%% 
-%%%  op  mergeSpecElements: SpecElements * SpecElements -> SpecElements
-%%% ??? Is this used ???
+ op  mergeSortInfo : SortMap -> OpMap -> SortInfo -> Position -> Env SortMap
+ def mergeSortInfo sorts ops new_info pos =
+   {
+    merged_info <- foldM (fn merged_info -> fn (Qualified (q, id)) ->
+			  aux_merge_sortinfo sorts ops merged_info (findAQualifierMap (sorts, q, id)) pos)
+                         new_info
+			 new_info.names;
+    foldM (fn sorts -> fn Qualified(q, id) ->
+	   return (insertAQualifierMap (sorts, q, id, merged_info)))
+          sorts
+	  merged_info.names  % new and old
+   }
 
- % ------------------------------------------------------------------------
-
-  op mergeSortInfo : SortInfo -> Option SortInfo -> Position -> SpecCalc.Env SortInfo
- def mergeSortInfo new_info opt_old_info pos =
+  op aux_merge_sortinfo : SortMap -> OpMap -> SortInfo -> Option SortInfo -> Position -> SpecCalc.Env SortInfo
+ def aux_merge_sortinfo sorts ops new_info opt_old_info pos =
    case opt_old_info of
      | None -> return new_info
      | Some old_info ->
@@ -58,44 +33,47 @@ SpecCalc qualifying spec
                            ^"\n "^(printTyVars old_tvs)
                            ^"\n "^(printTyVars new_tvs)))
        else
-       %  case (definedSort? old_dfn, definedSort? new_dfn) of
-       %   | (false, _)     -> return (new_info << {names = names})
-       %   | (_,     false) -> return (old_info << {names = names})
-       %   | _            -> 
-	     let (old_decls, old_defs) = sortInfoDeclsAndDefs old_info in
-	     let (new_decls, new_defs) = sortInfoDeclsAndDefs new_info in
-	     let combined_decls =
-	         foldl (fn (new_decl, combined_decls) ->
-			if exists (fn old_decl -> equalSort? (new_decl, old_decl)) combined_decls then
-			  combined_decls
-			else
-			  cons (new_decl, combined_decls))
-		       old_decls
-		       new_decls
-	     in
-	     let combined_defs =
-	         foldl (fn (new_def, combined_defs) ->
-			if exists (fn old_def -> equalSort? (new_def, old_def)) combined_defs then
-			  combined_defs
-			else
-			  cons (new_def, combined_defs))
-		        old_defs
-                        new_defs
-             in
-             %%% defer checks for errors until later, after the caller 
-             %%% of this has had a chance to call compressDefs   
-             %%% if length combined_defs > 1 then
-             %%%   raise (SpecError (pos, 
-             %%%                         foldl (fn (scheme, msg) -> msg ^ "\n" ^ (printSortScheme scheme)) 
-             %%%                               ("Merged versions of Sort "^(printAliases names)^" have different definitions:\n")
-             %%%                               combined_defs))
-             %%% else
-	     let combined_dfn = maybeAndSort (combined_decls ++ combined_defs, sortAnn new_info.dfn) in
-	     return {names = names, dfn = combined_dfn}
+	 let (old_decls, old_defs) = sortInfoDeclsAndDefs old_info in
+	 let (new_decls, new_defs) = sortInfoDeclsAndDefs new_info in
+	 let env_spec = make_env_spec_for_equivalences sorts ops in
+	 let combined_decls =
+	     foldl (fn (new_decl, combined_decls) ->
+		    if exists (fn old_decl -> equivSort? env_spec false (new_decl, old_decl)) combined_decls then
+		      combined_decls
+		    else
+		      cons (new_decl, combined_decls))
+	           old_decls
+		   new_decls
+	 in
+	 let combined_defs =
+	     foldl (fn (new_def, combined_defs) ->
+		    if exists (fn old_def -> equivSort? env_spec false (new_def, old_def)) combined_defs then
+		      combined_defs
+		    else
+		      cons (new_def, combined_defs))
+	           old_defs
+		   new_defs
+	 in
+	 %% Defer checks for duplicate defs until later, after the caller 
+	 %% has had a chance to call compressDefs in the new context.
+	 let combined_dfn = maybeAndSort (combined_decls ++ combined_defs, sortAnn new_info.dfn) in
+	 return {names = names, dfn = combined_dfn}
 
-  op mergeOpInfo : OpInfo -> Option OpInfo -> Position -> SpecCalc.Env OpInfo 
- def mergeOpInfo new_info opt_old_info pos =
+ op  mergeOpInfo : SortMap -> OpMap -> OpInfo -> Position -> Env OpMap
+ def mergeOpInfo sorts ops new_info pos =
+   {
+    merged_info <- foldM (fn merged_info -> fn (Qualified (q, id)) ->
+			  aux_merge_opinfo sorts ops merged_info (findAQualifierMap (ops, q, id)) pos)
+                         new_info
+			 new_info.names;
+    foldM (fn ops -> fn Qualified (q, id) ->
+	   return (insertAQualifierMap (ops, q, id, merged_info)))
+          ops 
+	  merged_info.names  % new and old
+   }
 
+  op aux_merge_opinfo : SortMap -> OpMap -> OpInfo -> Option OpInfo -> Position -> SpecCalc.Env OpInfo 
+ def aux_merge_opinfo sorts ops new_info opt_old_info pos =
    case opt_old_info of
      | None -> return new_info
      | Some old_info ->
@@ -120,10 +98,9 @@ SpecCalc qualifying spec
 			     print_fixity (old_info.fixity)))
 
        else
+	 let env_spec = make_env_spec_for_equivalences sorts ops in
 	 let (old_tvs, old_srt, _) = unpackFirstOpDef old_info in
 	 let (new_tvs, new_srt, _) = unpackFirstOpDef new_info in
-
-         %% TODO:  Need smarter test here?
          let happy? =
 	     case ((old_tvs, old_srt), (new_tvs, new_srt)) of
 	       | (([], MetaTyVar _), _)  -> 
@@ -135,7 +112,11 @@ SpecCalc qualifying spec
 	       | _ ->
                  %%  Old:  op ... : fa (...) ...  OR  def fa (...) ...  
                  %%  New:  op ... : fa (...) ...  OR  def fa (...) ...  
-		 new_tvs = old_tvs
+		 %%  equivSort? doesn't yet handle alpha equivalence, but some day it might,
+		 %%  so compare the complete Pi sorts as opposed to testing tvs and srts 
+		 %%  separately here.
+		 equivSort? env_spec false (maybePiSort (old_tvs, old_srt),
+					    maybePiSort (new_tvs, new_srt))
          in
            if ~ happy? then
 	     let old_srt = maybePiSort (old_tvs, old_srt) in
@@ -151,40 +132,43 @@ SpecCalc qualifying spec
 				  else
 				    "\n")))
            else
-            % case (definedTerm? old_dfn, definedTerm? new_dfn) of
-            %   | (false, _    ) -> return (new_info << {names = combined_names})
-            %   | (_,     false) -> return (old_info << {names = combined_names})
-            %   | _            -> 
-	         let (old_decls, old_defs) = opInfoDeclsAndDefs old_info in
-	         let (new_decls, new_defs) = opInfoDeclsAndDefs new_info in
-		 let combined_decls =
-	             foldl (fn (new_decl, combined_decls) ->
-			    if exists (fn old_decl -> equalTerm? (new_decl, old_decl)) combined_decls then
-			      combined_decls
-			    else
-			      cons (new_decl, combined_decls))
-		           old_decls
-			   new_decls
-		 in
-                 let combined_defs =
-                      foldl (fn (new_def, combined_defs) ->
-                             if exists (fn old_def -> equalTerm? (new_def, old_def)) combined_defs then
-                               combined_defs
-                             else
-                               cons (new_def, combined_defs))
-		            old_defs
-                            new_defs
-                  in
-                  %%% defer checks for errors until later, after the caller 
-                  %%% of this has had a chance to call compressDefs   
-                  %%% if length combined_defs > 1 then
-                  %%%  raise (SpecError (pos, 
-                  %%%                    foldl (fn (scheme, msg) -> msg ^ "\n" ^ (printTermScheme scheme)) 
-                  %%%                          ("Merged versions of op "^(printAliases combined_names)^" have different definitions:\n")
-                  %%%                          combined_defs))
-                  %%% else
-		  let combined_dfn = maybeAndTerm (combined_decls ++ combined_defs, termAnn new_info.dfn) in
-		  return (new_info << {names = combined_names, 
-				       dfn   = combined_dfn,
-				       fullyQualified? = false})
+	     let (old_decls, old_defs) = opInfoDeclsAndDefs old_info in
+	     let (new_decls, new_defs) = opInfoDeclsAndDefs new_info in
+	     let combined_decls =
+	     foldl (fn (new_decl, combined_decls) ->
+		    if exists (fn old_decl -> equivTerm? env_spec (new_decl, old_decl)) combined_decls then
+		      combined_decls
+		    else
+		      cons (new_decl, combined_decls))
+	           old_decls
+		   new_decls
+	     in
+	     let combined_defs =
+	         foldl (fn (new_def, combined_defs) ->
+			if exists (fn old_def -> equivTerm? env_spec (new_def, old_def)) combined_defs then
+			  combined_defs
+			else
+			  cons (new_def, combined_defs))
+		      old_defs
+		      new_defs
+	     in
+	     %% defer checks for duplicate defs until later, after the caller 
+             %% has had a chance to call compressDefs   
+	     let combined_dfn = maybeAndTerm (combined_decls ++ combined_defs, termAnn new_info.dfn) in
+	     return (new_info << {names           = combined_names, 
+				  dfn             = combined_dfn,
+				  fullyQualified? = false})
+
+  op  make_env_spec_for_equivalences : SortMap -> OpMap -> Spec
+  def make_env_spec_for_equivalences sorts ops =
+    %% The environment constructed for equivSorts? and equivTerms? (cf. unify code) 
+    %% really only cares about the sorts and ops, but expects them packaged as a spec.
+    {
+     sorts      = sorts,
+     ops        = ops,
+     elements   = emptyElements,  % never viewed
+     qualified? = false           % never viewed
+     }
+
+
 endspec

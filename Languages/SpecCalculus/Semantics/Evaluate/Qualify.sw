@@ -60,44 +60,35 @@ Change UnQualified to new_qualifier in all qualified names
   
       def qualify_pattern pat = pat
   
-      def qualify_ops ops =
+      def qualify_sorts sorts ops =
         let 
-          def qualify_opinfo (q, id, info, new_map) =
+          def qualify_sortinfo (q, _, info, new_sorts) =
+	    let revised_q = if q = UnQualified then new_q else q in
 	    %% Translation can cause names to become duplicated, so remove duplicates
-	    let new_names = rev (removeDuplicates (List.map (qualifyOpId new_q immune_ids) info.names)) in
-	    let new_info = info << {names = new_names} in
-	    let new_q = if q = UnQualified && ~ (member (id, immune_ids)) then new_q else q in
-	    let old_info = findAQualifierMap (new_map, new_q, id) in 
-	    {
-	     %% The new name is possibly already used.
-	     new_info <- mergeOpInfo new_info old_info position;
-	     return (insertAQualifierMap (new_map, new_q, id, new_info))
-	    } 
+	    let new_names = rev (removeDuplicates (map (qualifySortId revised_q) info.names)) in % revised_q was new_q ??
+	    let new_info  = info << {names = new_names} in
+	    mergeSortInfo new_sorts ops new_info position
+	in
+	  foldOverQualifierMap qualify_sortinfo emptyAQualifierMap sorts
+
+      def qualify_ops sorts ops =
+        let 
+          def qualify_opinfo (q, id, info, new_ops) =
+	    let revised_q = if q = UnQualified && ~ (member (id, immune_ids)) then new_q else q in
+	    %% Translation can cause names to become duplicated, so remove duplicates
+	    let new_names = rev (removeDuplicates (List.map (qualifyOpId revised_q immune_ids) info.names)) in % revised_q was new_q ??
+	    let new_info  = info << {names = new_names} in
+	    mergeOpInfo sorts new_ops new_info position
 	in
 	  foldOverQualifierMap qualify_opinfo emptyAQualifierMap ops 
   
-      def qualify_sorts sorts =
-        let 
-          def qualify_sortinfo (q, id, info, new_map) =
-	    %% Translation can cause names to become duplicated, so remove duplicates
-	    let new_names = rev (removeDuplicates (map (qualifySortId new_q) info.names)) in
-	    let new_info = info << {names = new_names} in
-	    let new_q = if q = UnQualified then new_q else q in
-	    let old_info = findAQualifierMap (new_map, new_q, id) in 
-	    {
-	     %% The new name is possibly already used.
-	     new_info <- mergeSortInfo new_info old_info position; 
-	     return (insertAQualifierMap (new_map, new_q, id, new_info))
-	    } 
-	in
-	  foldOverQualifierMap qualify_sortinfo emptyAQualifierMap sorts
     in
     let {sorts, ops, elements, qualified?} = 
         mapSpecUnqualified (qualify_term, qualify_sort, qualify_pattern) spc
     in 
       {
-       newSorts    <- qualify_sorts sorts;
-       newOps      <- qualify_ops   ops;
+       newSorts    <- qualify_sorts sorts ops;
+       newOps      <- qualify_ops   sorts ops;
        newElements <- return (qualifySpecElements new_q immune_ids elements);
        return {sorts      = newSorts,
 	       ops        = newOps,

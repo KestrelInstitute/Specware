@@ -107,35 +107,34 @@ axioms, etc.
 
       | Comment str                              -> return (addComment    (str, spc))
 
-  def mergeImport spec_term imported_spec spec_a position =
-    let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, (spc, combined_sorts)) =
-	let oldSortInfo = findAQualifierMap (combined_sorts,imported_qualifier, imported_id) in {
-	mergedSorts <- SpecCalc.mergeSortInfo imported_sort_info oldSortInfo position;
-	return (spc,
-		insertAQualifierMap (combined_sorts,
-				     imported_qualifier,
-				     imported_id,
-				   mergedSorts))
-        } in
-    let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, (spc, combined_ops)) =
-	let oldOpInfo = findAQualifierMap (combined_ops,imported_qualifier, imported_id) in {
-	mergedOps <- SpecCalc.mergeOpInfo imported_op_info oldOpInfo position;
-	return (spc,
-		insertAQualifierMap (combined_ops,
-				     imported_qualifier,
-				     imported_id,
-				     mergedOps))
-	} in
+  def mergeImport spec_term imported_spec old_spec pos =
+    let sorts = old_spec.sorts in
+    let ops   = old_spec.ops   in
     {
-      spec_b <- return (addImport ((spec_term, imported_spec), spec_a));
-      (_, sorts_b) <- if spec_a.sorts = emptySpec.sorts then return (spec_b,imported_spec.sorts)
-                       else foldOverQualifierMap mergeSortStep (spec_b, spec_b.sorts) imported_spec.sorts;
-      spec_c <- return (setSorts (spec_b, sorts_b));
-      (_, ops_c) <- if spec_a.ops = emptySpec.ops then return (spec_c,imported_spec.ops)
-                     else foldOverQualifierMap mergeOpStep (spec_c, spec_c.ops) imported_spec.ops;
-      spec_d <- return (setOps (spec_c, ops_c));
-      return spec_d
+     new_spec  <- return (addImport ((spec_term, imported_spec), old_spec));
+
+     new_sorts <- if sorts = emptySpec.sorts then 
+                    return imported_spec.sorts
+		  else 
+		    %% TODO: fold over just infos?
+		    foldOverQualifierMap (fn (q, id, info, sorts) ->
+					  mergeSortInfo sorts new_spec.ops info pos)
+		                         sorts 
+				         imported_spec.sorts;
+
+     new_ops   <- if ops = emptySpec.ops then 
+                    return imported_spec.ops
+		  else 
+		    %% TODO: fold over just infos?
+		    foldOverQualifierMap (fn (q, id, info, ops) ->
+					  mergeOpInfo new_sorts ops info pos)
+		                         ops
+					 imported_spec.ops;
+
+    return (new_spec << {sorts = new_sorts,
+			 ops   = new_ops})
     }
+
 \end{spec}
 
 The following wraps the existing \verb+elaborateSpec+ in a monad until

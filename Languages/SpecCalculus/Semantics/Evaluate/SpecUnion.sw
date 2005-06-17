@@ -7,10 +7,10 @@ SpecUnion qualifying spec
  import Spec/MergeSpecs
  import Spec/CompressSpec
 
- op specUnion  : List Spec -> Env Spec
- op sortsUnion : List Spec -> Env SortMap
- op opsUnion   : List Spec -> Env OpMap
- op eltsUnion : List Spec -> Env SpecElements
+ op specUnion  : List Spec            -> Env Spec
+ op sortsUnion : List Spec            -> Env SortMap
+ op opsUnion   : List Spec -> SortMap -> Env OpMap
+ op eltsUnion  : List Spec            -> Env SpecElements
 
  %% specUnion is called by specColimit to create apex spec, 
  %% and also by applySpecMorphismSubstitution to stich together 
@@ -29,13 +29,13 @@ SpecUnion qualifying spec
 %			    localProperties = merged_local_elts} 
 %  in
   {
-   merged_sorts  <- sortsUnion specs;
-   merged_ops    <- opsUnion   specs;
+   merged_sorts <- sortsUnion specs;
+   merged_ops   <- opsUnion   specs merged_sorts;
    merged_elts  <- eltsUnion specs;
-   merged_spec   <- return {sorts      = merged_sorts,
-			    ops        = merged_ops,
-			    elements   = merged_elts,
-			    qualified? = false};
+   merged_spec  <- return {sorts      = merged_sorts,
+			   ops        = merged_ops,
+			   elements   = merged_elts,
+			   qualified? = false};
    return (compressDefs (removeDuplicateImports merged_spec))
   }
 
@@ -56,14 +56,15 @@ SpecUnion qualifying spec
 %%%        specs
 
  def sortsUnion specs =
+  let ops = (hd specs).ops in
   foldM (fn combined_sorts -> fn next_spec -> 
-	 unionSortMaps combined_sorts next_spec.sorts)
+	 unionSortMaps combined_sorts next_spec.sorts ops)
         emptySortMap 
 	specs
 
- def opsUnion specs = 
+ def opsUnion specs sorts = 
   foldM (fn combined_ops -> fn next_spec -> 
-	 unionOpMaps combined_ops next_spec.ops)
+	 unionOpMaps combined_ops next_spec.ops sorts)
         emptyOpMap
 	specs
 
@@ -73,56 +74,35 @@ SpecUnion qualifying spec
         [] % emptyElts
 	specs
  
-
- def unionSortMaps old_sort_map new_sort_map =
+ def unionSortMaps old_sorts new_sorts ops =
    %% Jan 8, 2003: Fix for bug 23
-   %% Assertion: If new_sort_map at a given name refers to an info, then it will
+   %% Assertion: If new_sorts at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
    let 
-      def augmentSortMap (new_q, new_id, new_info, merged_sort_map) =
-        let Qualified (primary_q, primary_id) = primarySortName new_info in
-        if new_q = primary_q & new_id = primary_id then
+      def augmentSortMap (q, id, info, sorts) =
+        let Qualified (primary_q, primary_id) = primarySortName info in
+        if q = primary_q & id = primary_id then
           %% Assertion: We take this branch exactly once per new info.
-          let optional_old_info = findAQualifierMap (merged_sort_map, new_q, new_id) in
-	  %% It would be better if initialSpecInCat were somehow replaced with
-	  %% a more informative spec for resolving equivalent sorts,
-	  %% but its not obvious what spec(s) to pass in here.
-	  %% Perhaps the entire spec union algorithm needs revision...
-	  {merged_info <- mergeSortInfo new_info optional_old_info noPos;
-	   all_names <- return (merged_info.names);    % new and old names
-	   foldM (fn merged_sort_map -> fn  Qualified(q, id) ->
-		  return (insertAQualifierMap (merged_sort_map, q, id, merged_info)))
-     	         merged_sort_map 
-                 all_names}
-	else
-	  return merged_sort_map
+	  mergeSortInfo sorts ops info noPos
+        else
+	  return sorts
    in
-    foldOverQualifierMap augmentSortMap old_sort_map new_sort_map 
+    foldOverQualifierMap augmentSortMap old_sorts new_sorts
 
- def unionOpMaps old_op_map new_op_map =
+ def unionOpMaps old_ops new_ops sorts =
    %% Jan 8, 2003: Fix for bug 23
    %% Assertion: If new_op_map at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
    let 
-      def augmentOpMap (new_q, new_id, new_info, merged_op_map) =
-        let Qualified (primary_q, primary_id) = primaryOpName new_info in
-        if new_q = primary_q & new_id = primary_id then
+      def augmentOpMap (q, id, info, ops) =
+        let Qualified (primary_q, primary_id) = primaryOpName info in
+        if q = primary_q & id = primary_id then
           %% Assertion: We take this branch exactly once per new info.
-          let optional_old_info = findAQualifierMap (merged_op_map, new_q, new_id) in
-	  %% It would be better if initialSpecInCat were somehow replaced with
-	  %% a more informative spec for resolving equivalent ops,
-	  %% but its not obvious what spec(s) to pass in here.
-	  %% Perhaps the entire spec union algorithm needs revision...
-	  {merged_info <- mergeOpInfo new_info optional_old_info noPos;
-	   all_names <- return (merged_info.names);    % new and old
-	   foldM (fn merged_op_map -> fn Qualified(q, id) ->
-		  return (insertAQualifierMap (merged_op_map, q, id, merged_info)))
-     	         merged_op_map 
-                 all_names}
+	  mergeOpInfo sorts ops info noPos
 	else
-	  return merged_op_map
+	  return ops
    in
-    foldOverQualifierMap augmentOpMap old_op_map new_op_map 
+    foldOverQualifierMap augmentOpMap old_ops new_ops
 
  def unionElts old_elts new_elts =
    %% TODO:  These might refer incorrectly into old specs
