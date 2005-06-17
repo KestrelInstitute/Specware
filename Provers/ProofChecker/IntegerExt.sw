@@ -1,3 +1,12 @@
+(* This spec is copied from Specware4/Library/Unvetted. It is copied, as
+opposed to just referenced, for stability: specs under Unvetted may change at
+any time (see README under that directory). Eventually, when this spec becomes
+part of the standard library (i.e. it is moved from Unvetted to some other
+directory), this copy can be replaced by a reference to the (stable) library
+spec. *)
+
+
+
 (*
 2005:03:18
 AC
