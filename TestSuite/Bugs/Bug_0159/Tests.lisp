@@ -2,7 +2,7 @@
 
 (test 
 
- ("Bug 0159 [s1]: Substitution fails on imports of imports: wreaks havoc on Accord."
+ ("Bug 0159 [s] : Substitution fails on imports of imports: wreaks havoc on Accord."
   :show  "subst_spec"
   :output '((:optional ";;; Elaborating spec-substitution at $TESTDIR/subst_spec#subst_spec")
 	    (:optional ";;; Elaborating spec at $TESTDIR/subst_spec#C")
@@ -24,7 +24,7 @@
 	    ""
 	    ""))
 
- ("Bug 0159 [s2]: Substitution fails on imports of imports: wreaks havoc on Accord."
+ ("Bug 0159 [sx]: Substitution fails on imports of imports: wreaks havoc on Accord."
   :showx  "subst_spec"
   :output '(
 	    ""
@@ -35,8 +35,8 @@
 	    " def foo nats = map((fn n -> if n = 0 then false else true)) nats"
 	    " type B"
 	    " "
-	    " op  bar : B -> B"
-	    " def bar nats = map((fn n -> if n = 0 then false else true)) nats"
+	    " op  baz : List(Nat) -> List(Boolean)"
+	    " def baz nats = map((fn n -> if n = 0 then false else true)) nats"
 	    " type Z"
 	    " type A2"
 	    " type W"
@@ -47,7 +47,7 @@
 	    ""
 	    ""))
 
- ("Bug 0159 [t1]: Substitution fails on imports of imports: wreaks havoc on Accord."
+ ("Bug 0159 [t] : Substitution fails on imports of imports: wreaks havoc on Accord."
   :show  "trans_spec"
   :output '(
 	    (:optional ";;; Elaborating spec-translation at $TESTDIR/trans_spec#trans_spec")
@@ -67,7 +67,7 @@
 	    ""
 	    ""))
 
- ("Bug 0159 [t2]: Substitution fails on imports of imports: wreaks havoc on Accord."
+ ("Bug 0159 [tx]: Substitution fails on imports of imports: wreaks havoc on Accord."
   :showx  "trans_spec"
   :output '(
 	    ""
@@ -87,7 +87,7 @@
 	    ""
 	    ""))
 
- ("Bug 0159 [q1]: Substitution fails on imports of imports: wreaks havoc on Accord."
+ ("Bug 0159 [q] : Substitution fails on imports of imports: wreaks havoc on Accord."
   :show  "qualify_spec"
   :output '(
 	    (:optional ";;; Elaborating spec at $TESTDIR/qualify_spec#qualify_spec")
@@ -107,7 +107,7 @@
 	    ""
 	    ""))
 
- ("Bug 0159 [q2]: Substitution fails on imports of imports: wreaks havoc on Accord."
+ ("Bug 0159 [qx]: Substitution fails on imports of imports: wreaks havoc on Accord."
   :showx  "qualify_spec"
   :output '(
 	    ""

@@ -14,8 +14,8 @@ A = spec
     end-spec
 
 T = spec
-     op bar : List Nat -> List Boolean
-     def bar nats =
+     op baz : List Nat -> List Boolean
+     def baz nats =
        map (fn(n:Nat) -> if n=0 then false else true) nats
     endspec
 

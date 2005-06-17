@@ -14,11 +14,29 @@
 	    ";;; Elaborating spec at $TESTDIR/EquivalentSorts#CC"
 	    ""
 	    "spec  "
-	    " type {A, B, C}"
+	    (:alternatives
+	     " type {A, B, C}"
+	     " type {A, C, B}"
+	     " type {B, A, C}"
+	     " type {B, C, A}"
+	     " type {C, A, B}"
+	     " type {C, B, A}"
+	     )
 	    " import Foo"
 	    (:alternatives 
 	     " type {A, B, C} = List(Nat * Nat)"
-	     " type {A, B, C} = Foo(Nat)")
+	     " type {A, B, C} = Foo(Nat)"
+	     " type {A, C, B} = List(Nat * Nat)"
+	     " type {A, C, B} = Foo(Nat)"
+	     " type {B, A, C} = List(Nat * Nat)"
+	     " type {B, A, C} = Foo(Nat)"
+	     " type {B, C, A} = List(Nat * Nat)"
+	     " type {B, C, A} = Foo(Nat)"
+	     " type {C, A, B} = List(Nat * Nat)"
+	     " type {C, A, B} = Foo(Nat)"
+	     " type {C, B, A} = List(Nat * Nat)"
+	     " type {C, B, A} = Foo(Nat)"
+	     )
 	    "endspec"
 	    ""
 	    ""))
