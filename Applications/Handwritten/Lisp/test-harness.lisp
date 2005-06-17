@@ -148,14 +148,30 @@ be the option to run each (test ...) form in a fresh image.
       (format t "~%;;;; Running test suite in directory ~a~%" *test-directory*))
     (ensure-directories-exist *test-temporary-directory*)
     (specware::change-directory *test-temporary-directory*)
-    (unwind-protect (with-open-file (str path :direction :input)
-		      (loop (let ((form (read str nil ':eof)))
-			      (if (eq form ':eof)
-				  (return)
-				(eval form)))))
-      (specware::change-directory old-directory))
-    ;; force-ouput so we can monitor interim results of long-running test suites:
-    (force-output)))
+    (tagbody
+     (unwind-protect 
+	 (handler-case
+	     (with-open-file (str path :direction :input)
+	       (loop (let ((form (read str nil ':eof)))
+		       (if (eq form ':eof)
+			   (return)
+			 (eval form)))))
+	   ;; the most common problem is likely to be a missing close paren,
+	   ;; so report eof specifically
+	   (end-of-file ()
+			(setq problem? t)
+			(warn "Unexpected EOF with ~A" path))
+	   (error (condition)
+		  (setq problem? t)
+		  (warn "Unexpected problem with ~A: ~S" path condition)))
+       (progn
+	 ;; always try to recover and proceed to the next test
+	 (specware::change-directory old-directory)
+	 ;; force-ouput so we can monitor interim results of long-running test suites:
+	 (force-output)
+	 ;; the go here aborts any attempt to throw out to higher levels...
+	 (go survive)))
+     survive)))
 
 (defmacro test-files (&body files)
   `(test-files-fn '(,@files)))
