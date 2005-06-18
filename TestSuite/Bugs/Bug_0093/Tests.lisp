@@ -4,14 +4,17 @@
 
  ("Bug 0093 : No check on clashing defs in colimit"
   :show   "IncompatColimit"
-  :output '(";;; Elaborating spec at $TESTDIR/IncompatColimit#I"
+  :output '(
+
+	    ";;; Elaborating diagram-colimit at $TESTDIR/IncompatColimit#IncompatColimit"
+	    ";;; Elaborating diagram-term at $TESTDIR/IncompatColimit#D"
+	    ";;; Elaborating spec at $TESTDIR/IncompatColimit#I"
 	    ";;; Elaborating spec at $TESTDIR/IncompatColimit#I1"
 	    ";;; Elaborating spec at $TESTDIR/IncompatColimit#I2"
-	    ";;; Elaborating diagram-colimit at $TESTDIR/IncompatColimit#NN1N2"
-	    ";;; Elaborating diagram-term at $TESTDIR/IncompatColimit#NN1N2"
-	    ";;; Elaborating spec-morphism at $TESTDIR/IncompatColimit#NN1N2"
-	    ";;; Elaborating spec-morphism at $TESTDIR/IncompatColimit#NN1N2"
-	    "Type error: "
+	    ";;; Elaborating spec-morphism at $TESTDIR/IncompatColimit#D"
+	    ";;; Elaborating spec-morphism at $TESTDIR/IncompatColimit#D"
+	    ""
+	    "Error in colimit: "
 	    ""
 	    "Ambiguous ops:"
 	    ""
@@ -23,6 +26,5 @@
 	    "  1"
 	    ""
 	    " found in $TESTDIR/IncompatColimit.sw"
-	    "13.16-19.0"))
-
+	    "21.26-21.26"))
  )

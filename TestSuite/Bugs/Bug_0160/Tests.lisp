@@ -10,10 +10,22 @@
 	    ";;; Elaborating spec at $TESTDIR/subst_spec#A"
 	    ";;; Elaborating spec-morphism at $TESTDIR/subst_spec#M"
 	    ";;; Elaborating spec at $TESTDIR/subst_spec#B"
-	    "Error in specification: Merged versions of Op foo have different sorts:"
-	    " B -> B"
-	    " List(Nat) -> List(Boolean)"
+	    "Error in specification: "
 	    ""
-	    " found in no position"
-	    ""))
+	    "Ambiguous ops:"
+	    ""
+	    " (* Warning: Multiple declarations for following op *) "
+	    " op  foo : (List Nat -> List Boolean)"
+	    " op  foo : (B -> B)"
+	    " def foo ="
+	    "  (fn nats ->"
+	    "    ((map (fn n ->"
+	    "      if (n = 0) then"
+	    "        false"
+	    "      else"
+	    "        true)) nats))"
+	    ""
+	    " found in $TESTDIR/subst_spec.sw"
+	    "22.13-22.16"))
+
  )
