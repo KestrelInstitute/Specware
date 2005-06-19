@@ -608,7 +608,7 @@ FM qualifying spec
 	else term
 
   op ineqs.lowerBound: Var * IneqSet -> Coef
-  def ineqs.lowerBound(var, ineqs) =
+  def ineqs.lowerBound(_, ineqs) =
     let eqs = filter equality? ineqs in
     case eqs of
       | ineq::_ ->
