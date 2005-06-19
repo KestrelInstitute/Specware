@@ -12,20 +12,21 @@ SpecCalc qualifying spec
    {
     unitId <- getCurrentUID;
     print (";;; Elaborating diagram-colimit at " ^ (uidToString unitId) ^ "\n");
-    (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
+    (value, ts, uids) <- SpecCalc.evaluateTermInfo term;
     case value of
       | Diag dgm -> 
-        (let cod_cat = cod (functor (dgm)) in 
-	 % cod_cat is presumably the category of specs
-	 let colimit_fn = colimit cod_cat in  
-	 % colimit fn is presumably specColimit.
+        (let cod_cat    = cod (functor (dgm)) in  % cod_cat is presumably the category of specs
+	 let colimit_fn = colimit cod_cat     in  % colimit fn is presumably specColimit. 
 	 case colimit_fn dgm of
 	   | (Some initial_cocone, _) ->
-	     return (Colimit initial_cocone, timeStamp, depUIDs)
+	     {
+	      raise_any_pending_exceptions;       % e.g. if two defs are given to same op
+	      return (Colimit initial_cocone, ts, uids)
+	     }
 	   | (_, Some error_msg) ->
-	     raise (TypeCheck (positionOf term, error_msg)))
+	     raise (ColimitError (positionOf term, error_msg)))
       | _ -> 
-	raise (TypeCheck (positionOf term, "argument of colimit is not a spec diagram"))
+	raise (ColimitError (positionOf term, "argument of colimit is not a spec diagram"))
     }
   }
 
