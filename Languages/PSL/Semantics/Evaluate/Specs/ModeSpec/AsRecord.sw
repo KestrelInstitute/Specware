@@ -474,7 +474,7 @@ ModeSpec qualifying spec
 
   % op join : ModeSpec -> ModeSpec -> Env ModeSpec
   def ModeSpec.join term ms1 ms2 position = {
-    newSpc <- mergeImport term (specOf ms1) (specOf ms2) position;
+    newSpc <- mergeImport term (specOf ms1) (specOf ms2);
     return {
         spc = newSpc,
         variables = union (variables ms1, variables ms2),

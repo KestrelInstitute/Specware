@@ -91,7 +91,7 @@ axioms, etc.
 	       {
 		(value,_,_) <- evaluateTermInfo term;
 		(case coerceToSpec value of
-		   | Spec impSpec -> mergeImport term impSpec spc position
+		   | Spec impSpec -> mergeImport term impSpec spc 
 		   %% Already checked
 		   | _ -> raise (Fail ("Shouldn't happen!")))
 		  })
@@ -107,7 +107,7 @@ axioms, etc.
 
       | Comment str                              -> return (addComment    (str, spc))
 
-  def mergeImport spec_term imported_spec old_spec pos =
+  def mergeImport spec_term imported_spec old_spec =
     let sorts = old_spec.sorts in
     let ops   = old_spec.ops   in
     {

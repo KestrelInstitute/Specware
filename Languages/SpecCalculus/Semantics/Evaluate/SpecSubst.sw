@@ -68,7 +68,7 @@ SpecCalc qualifying spec
 
     let residue = subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term) in
     {
-     translated_residue <- applySpecMorphism sm residue pos;  % M(S - dom(M))
+     translated_residue <- applySpecMorphism sm residue;  % M(S - dom(M))
      %% Add the elements separately so we can put preserve order
      new_spec <- specUnion [translated_residue, cod_spec << {elements = []}] pos;     % M(S - dom(M)) U cod(M)
      new_spec <- return (new_spec << {elements = 
@@ -138,8 +138,8 @@ SpecCalc qualifying spec
             emptyTranslator
             m
 
-  op  applySpecMorphism : Morphism -> Spec -> Position -> Env Spec 
-  def applySpecMorphism sm spc position =
+  op  applySpecMorphism : Morphism -> Spec -> Env Spec 
+  def applySpecMorphism sm spc =
    %% The opMap and sortMap in sm are PolyMap's  :  dom_qid -> cod_qid
    %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
    %%  so we first convert formats...
@@ -154,7 +154,7 @@ SpecCalc qualifying spec
 		   }
    in
    %% Note that auxTranslateSpec is not expected to raise any errors.
-     auxTranslateSpec spc translators None position
+     auxTranslateSpec spc translators None
     
   %% ======================================================================  
   %%  Error handling...

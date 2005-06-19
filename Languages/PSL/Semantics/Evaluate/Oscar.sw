@@ -91,7 +91,7 @@ They are procedures in context.
        case value of
          | Other impOscarSpec -> join term oscarSpec impOscarSpec (positionOf term)
          | Spec impSpec -> {
-               newSpec <- mergeImport term impSpec (specOf (modeSpec oscarSpec)) (positionOf term);
+               newSpec <- mergeImport term impSpec (specOf (modeSpec oscarSpec));
                let newRules = specRules (context (modeSpec oscarSpec)) newSpec in
                let allRules = mergeDemodRules [demodRules newRules, rewriteRules (modeSpec oscarSpec)] in
                return (oscarSpec withModeSpec (((modeSpec oscarSpec) withSpec newSpec) withRewriteRules allRules))
@@ -170,7 +170,7 @@ begin{spec}
   def baseOscarSpec = {
     base <- staticBase;
     uri <- pathToRelativeURI "/Library/PSL/Base";
-    dynamicSpec <- mergeImport (URI uri,internalPosition) base emptySpec internalPosition;
+    dynamicSpec <- mergeImport (URI uri,internalPosition) base emptySpec;
     % dynamicSpec <- return (setImportedSpec(dynamicSpec,base));
     return {
         staticSpec = base,

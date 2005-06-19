@@ -120,7 +120,7 @@ SpecCalc qualifying spec
      %%
      %% Now we produce a new spec using these unmbiguous maps.
      %% Note that auxTranslateSpec is not expected to raise any errors.
-     spc <- auxTranslateSpec spc translators (Some renaming) pos;
+     spc <- auxTranslateSpec spc translators (Some renaming);
      return spc
     } 
 
@@ -576,8 +576,8 @@ SpecCalc qualifying spec
   %% In particular, if an operation such as translate wishes to signal errors in 
   %% some situations, those errors should be raised while Translators is being 
   %% created, not here.
-  op  auxTranslateSpec : Spec -> Translators -> Option Renaming -> Position -> SpecCalc.Env Spec
-  def auxTranslateSpec spc translators opt_renaming position =
+  op  auxTranslateSpec : Spec -> Translators -> Option Renaming -> SpecCalc.Env Spec
+  def auxTranslateSpec spc translators opt_renaming =
     let sort_translator = translators.sorts in
     let   op_translator = translators.ops   in
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
