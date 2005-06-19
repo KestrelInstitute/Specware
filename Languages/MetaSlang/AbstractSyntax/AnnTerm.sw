@@ -222,7 +222,14 @@ MetaSlang qualifying spec
   | OneName        Id * Fixity         % Before elaborateSpec
   | TwoNames       Id * Id * Fixity    % Before elaborateSpec
 
- type Fixity        = | Nonfix | Infix Associativity * Precedence | Unspecified
+ type Fixity        = | Nonfix 
+                      | Infix Associativity * Precedence 
+                      | Unspecified 
+                      %% The following is used only when combining specs,
+                      %% as within colimit, to allow us to delay the
+                      %% raising of errors at inopportune times.
+                      | Error (List Fixity) 
+
  type Associativity = | Left | Right
  type Precedence    = Nat
 

@@ -420,18 +420,21 @@ infix with brackets. And similarly when we see an \verb+Equals+.
   op ppFixity : Fixity -> Pretty
   def ppFixity fix =
     case fix of
-      | Infix (Left,n) ->
-          ppConcat [
-            ppString "infixl ",
-            ppString (Nat.toString n)
-          ]
-      | Infix (Right,n) ->
-          ppConcat [
-            ppString "infixr ",
-            ppString (Nat.toString n)
-          ]
-      | Nonfix -> ppNil % ppString "Nonfix"
-      | Unspecified -> ppNil % ppString "Unspecified"
+      | Infix (Left,  n) -> ppConcat [
+				      ppString "infixl ",
+				      ppString (Nat.toString n)
+				     ]
+      | Infix (Right, n) -> ppConcat [
+				      ppString "infixr ",
+				      ppString (Nat.toString n)
+				     ]
+      | Nonfix           -> ppNil % ppString "Nonfix"
+      | Unspecified      -> ppNil % ppString "Unspecified"
+      | Error fixities   -> ppConcat [
+				      ppString "conflicting fixities: [",
+				      ppSep (ppString ",") (map ppFixity fixities),
+				      ppString "]"
+				     ]
       | mystery -> fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
   op isSimpleSort? : fa (a) ASort a -> Boolean
