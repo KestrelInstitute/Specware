@@ -143,9 +143,9 @@ SpecCalc qualifying spec
 	  listUnion (vars_op_names, tm_op_names))
 
      | Let (decls, body, a) ->
-       let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
-       let (new_decls, decls_changed?, decls_op_names, captures) = 
-           foldl (fn (decl as (pat, tm), (new_decls, decls_changed?, decls_op_names, captures)) ->
+       let (new_body, changed?, body_op_names) = deconflictTermRec body in
+       let (new_decls, changed?, decls_op_names, captures) = 
+           foldl (fn (decl as (pat, tm), (new_decls, changed?, decls_op_names, captures)) ->
 		  let pvars = patVars pat in
 		  let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec  pat in
 		  let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec tm  in
@@ -157,14 +157,13 @@ SpecCalc qualifying spec
 				            captures
 					    pvars)
 		  in
-		  (decls ++ [(new_pat, new_tm)],
-		   decls_changed? || pat_changed? || tm_changed?,
+		  (new_decls ++ [(new_pat, new_tm)],
+		   changed? || pat_changed? || tm_changed?,
 		   listUnion (pat_op_names, listUnion (tm_op_names, decls_op_names)),
 		   new_captures))
-	         ([],false,[],[])
+	         ([], changed?,[],[])
 		 decls
        in
-       let changed? = decls_changed? || body_changed? in
        let new_term =
            if changed? then
 	     Let (new_decls, new_body, a)
@@ -174,7 +173,7 @@ SpecCalc qualifying spec
        let new_term =
            case captures of
 	     | [] -> new_term
-	     | _ ->  substitute2(new_term,[],StringSet.addList (empty, body_op_names))
+	     | _ ->  substitute2 (new_term, [], StringSet.addList (empty, body_op_names))
        in
 	 (new_term,
 	  changed? || (captures ~= []),
@@ -278,6 +277,27 @@ SpecCalc qualifying spec
 	 (new_term,
 	  matches_changed? || (matches_captures ~= []),
 	  matches_op_names)
+
+     | The (var as (id, srt), tm, a) ->
+       let (new_tm, tm_changed?, tm_op_names) = deconflictTermRec tm in
+       let (new_srt, srt_changed?, op_names) = deconflictSortRec srt in
+       let capture? = member (id, tm_op_names) in
+       let changed? = srt_changed? || tm_changed? in
+       let new_term = 
+           if changed? then
+	     The ((id, new_srt), new_tm, a)
+	   else
+	     term
+       in
+       let new_term = 
+           if capture? then
+	     substitute2(new_term,[],StringSet.addList (empty, tm_op_names))
+	   else
+	     new_term
+       in
+	 (new_term,
+	  changed? || capture?,
+	  listUnion (op_names, tm_op_names))
 
      | IfThenElse (t1, t2, t3, a) ->
        let (new_t1, t1_changed?, t1_op_names) = deconflictTermRec t1 in
