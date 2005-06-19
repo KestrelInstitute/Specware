@@ -11,8 +11,8 @@
 
  ("OWL: theorem_one_gtq" 
   :sw "axioms#theorem_one_gtq"
-  :output '(";;; Elaborating proof-term at $TESTDIR/axioms#theorem_one_gtq"
-	    ";;; Elaborating spec at $TESTDIR/axioms#owlnat"
+  :output '(";;; Elaborating spec at $TESTDIR/axioms#owlnat"
+	    ";;; Elaborating proof-term at $TESTDIR/axioms#theorem_one_gtq"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare"

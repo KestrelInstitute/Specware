@@ -70,8 +70,8 @@
       
  ("Tutorial: MatchingProofs p5"
   :sw "/UserDoc/tutorial/example/MatchingProofs#p5"
-  :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5"
-	    ";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#WordMatching0_Oblig"
+  :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#WordMatching0_Oblig"
+	    ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5.log"
 	    "p5: Conjecture word_matches_at?_Obligation in MatchingObligations#WordMatching0_Oblig is Proved! using simple inequality reasoning."
