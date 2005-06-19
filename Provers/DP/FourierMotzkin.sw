@@ -711,12 +711,16 @@ FM qualifying spec
   op processIneq0: Var * IneqSet -> IneqSet * IneqSet
   def processIneq0(var, ineqSet) =
     let (possibleChains, nonChains) =
-    case  splitList (fn (ineq) -> let optVar = ineq.hdVarOpt(ineq) in
-		     case optVar of
-		       | Some hdVar -> ~(ineq.hdVar(ineq) = var)
-		       | _ -> true ) ineqSet of
-      | None -> (ineqSet, [])
-      | Some (possibleChains, firstNonChain, restNonChains) -> (possibleChains, [firstNonChain]++restNonChains) in
+        case  splitList (fn (ineq) -> 
+			 let optVar = ineq.hdVarOpt(ineq) in
+			 case optVar of
+			   | Some _ -> ~(ineq.hdVar(ineq) = var)
+			   | _ -> true ) 
+	                ineqSet 
+          of
+	   | None -> (ineqSet, [])
+	   | Some (possibleChains, firstNonChain, restNonChains) -> (possibleChains, [firstNonChain]++restNonChains) 
+    in
     let possibleChains = integerPreProcess(possibleChains) in
     let newIneqs = processPossibleIneqs(possibleChains) in
     let newIneqSet = newIneqs++nonChains in
