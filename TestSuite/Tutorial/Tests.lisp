@@ -44,10 +44,10 @@
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System"
 	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite"
- 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional ";; ensure-directories-exist: creating $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1.log")
 	    (:optional ";; Directory $SPECWARE/UserDoc/tutorial/example/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/ does not exist, will create.")
+ 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1.log"
 	    "p1: Conjecture symb_matches?_Obligation in MatchingObligations#SymbolMatching_Oblig is Proved! using Snark."
