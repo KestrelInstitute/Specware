@@ -78,7 +78,9 @@ SpecCalc qualifying spec {
   op getUnitId    : SCTerm -> SpecCalc.Env UnitId
   op coerceToSpec : Value -> Value
 
-  op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean
+  op Specware.toplevelHandler       : Exception -> SpecCalc.Env Boolean
+  op Specware.toplevelHandlerOption : [a] Exception -> SpecCalc.Env (Option a)
+
   op Specware.getOptSpec      : Option String -> Option Spec
 }
 \end{spec}
@@ -87,6 +89,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.45  2005/06/16 01:45:07  mcdonald
+%% deprecated RelativeUnitId replaced by RelativeUID
+%%
 %% Revision 1.44  2005/06/11 00:05:36  mcdonald
 %% added evaluateOtherTranslate
 %%
