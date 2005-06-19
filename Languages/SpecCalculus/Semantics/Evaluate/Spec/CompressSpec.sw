@@ -69,22 +69,22 @@ SpecCalc qualifying spec
      | ([], [])  -> None
      | ([], [_]) -> None
      | ([_],[])  -> None
-     | ([_],[_]) -> None
      | _ ->
        let pos = termAnn info.dfn in
        let new_decls =
            foldl (fn (old_decl, new_decls) ->
+		  let old_sort = termSort old_decl in
 		  if exists (fn new_decl -> 
-			     let old_sort = termSort old_decl in
 			     let new_sort = termSort new_decl in
 			     equivSort? spc false (old_sort, new_sort))
 		            new_decls 
 		    then
 		      new_decls
 		  else
-		    cons (old_decl, new_decls))
+		    cons (SortedTerm (Any noPos, old_sort, noPos),
+			  new_decls))
 	         []
-		 old_decls
+		 (old_decls ++ old_defs)
        in
        let new_defs =
            foldl (fn (old_def, new_defs) ->
@@ -119,38 +119,64 @@ SpecCalc qualifying spec
                            []
 			   spc.sorts
    in
-   let ambiguous_ops = 
-       foldriAQualifierMap (fn (_, _, info, ambiguous_ops) ->
-			    let (decls, defs) = opInfoDeclsAndDefs info in
-			    if length decls <= 1 && length defs <= 1 then
-			      ambiguous_ops
-			    else
-			      ListUtilities.insert (info, ambiguous_ops))
+   let bad_fixity_ops = 
+       foldriAQualifierMap (fn (_, _, info, bad_ops) ->
+			    case info.fixity of
+			      | Error _ -> ListUtilities.insert (info, bad_ops)
+			      | _ -> bad_ops)
                            []
 			   spc.ops
    in
-     if ambiguous_sorts = [] & ambiguous_ops = [] then
-       (Some spc, None)
-     else
-       let sort_msg = 
-           case ambiguous_sorts of
-	     | [] -> ""
-	     | _ ->
-	       (foldl (fn (sort_info, msg) ->
-		       msg ^ (ppFormat (ppASortInfo sort_info)))
-		      "\nAmbiguous types:\n"
-		      ambiguous_sorts)
-	       ^ "\n"
-       in
-       let op_msg = 
-           case ambiguous_ops of
-	     | [] -> ""
-	     | _ ->
-	       (foldl (fn (opinfo, msg) ->
-		       msg ^ (ppFormat (ppAOpInfo opinfo)))
-		      "\nAmbiguous ops:\n"
-		      ambiguous_ops)
-       in
-	 (None, Some ("\n" ^ sort_msg ^ op_msg ^ "\n"))
+   let ambiguous_ops = 
+       foldriAQualifierMap (fn (_, _, info, ambiguous_ops) ->
+			    let (decls, defs) = opInfoDeclsAndDefs info in
+			    case (decls, defs) of
+			      | ([],  [])  -> ambiguous_ops
+			      | ([],  [_]) -> ambiguous_ops
+			      | ([_], [])  -> ambiguous_ops
+			      | ([x], [y]) -> 
+			        let xsort = termSort x in
+				let ysort = termSort y in
+			        if equivSort? spc false (xsort, ysort) then
+				  ambiguous_ops
+				else
+				  ListUtilities.insert (info, ambiguous_ops)
+			      | _ ->
+			        ListUtilities.insert (info, ambiguous_ops))
+                           []
+			   spc.ops
+   in
+   if ambiguous_sorts = [] & bad_fixity_ops = [] & ambiguous_ops = [] then
+     (Some spc, None)
+   else
+     let sort_msg = 
+         case ambiguous_sorts of
+	   | [] -> ""
+	   | _ ->
+	     (foldl (fn (sort_info, msg) ->
+		     msg ^ (ppFormat (ppASortInfo sort_info)))
+	            "\nAmbiguous types:\n"
+		    ambiguous_sorts)
+	     ^ "\n"
+     in
+     let fixity_msg = 
+         case bad_fixity_ops of
+	   | [] -> ""
+	   | _ ->
+	     (foldl (fn (opinfo, msg) ->
+		     msg ^ (printAliases opinfo.names) ^ " : " ^ (ppFormat (ppFixity opinfo.fixity)))
+	            "\nOps with multiple fixities:\n"
+		    bad_fixity_ops)
+     in
+     let op_msg = 
+         case ambiguous_ops of
+	   | [] -> ""
+	   | _ ->
+	     (foldl (fn (opinfo, msg) ->
+		     msg ^ (ppFormat (ppAOpInfo opinfo)))
+	            "\nAmbiguous ops:\n"
+		    ambiguous_ops)
+     in
+       (None, Some ("\n" ^ sort_msg ^ fixity_msg ^ op_msg ^ "\n"))
 
 endspec
