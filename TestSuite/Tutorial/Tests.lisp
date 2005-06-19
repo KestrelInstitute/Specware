@@ -29,6 +29,8 @@
  ("Tutorial: MatchingProofs p1"
   :sw "/UserDoc/tutorial/example/MatchingProofs#p1"
   :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#SymbolMatching_Oblig"
+	    (:optional ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#SymbolMatching")
+	    (:optional ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Symbols")
 	    ";;; Elaborating spec at $SPECWARE/Library/Base/WFO"
 	    ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p1"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
@@ -42,7 +44,7 @@
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System"
 	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite"
-	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
+ 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional ";; ensure-directories-exist: creating $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1.log")
 	    (:optional ";; Directory $SPECWARE/UserDoc/tutorial/example/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/ does not exist, will create.")
