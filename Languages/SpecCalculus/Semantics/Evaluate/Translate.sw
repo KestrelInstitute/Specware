@@ -1,20 +1,21 @@
-\subsection{Spec Translation}
 
-TODO: This has file suffers greatly from having to accommodate the representation
-of specs, ops, sorts and ids. 
+%% TODO: This has file suffers greatly from having to accommodate the representation
+%% of specs, ops, sorts and ids. 
+%% 
+%% Also the parser seems to set up a cod_aliases field. I would argue that
+%% this should be removed from the parser. I disagree. I, on the other hand,
+%% agree with myself. I couldn't agree more.
 
-Also the parser seems to set up a cod_aliases field. I would argue that
-this should be removed from the parser. I disagree. I, on the other hand,
-agree with myself. I couldn't agree more.
-
-\begin{spec}
 SpecCalc qualifying spec
+
   import Signature 
   import Spec/CompressSpec
   import Spec/AccessSpec
   import Spec/MergeSpecs
   import Spec/VarOpCapture
   import UnitId/Utilities                                % for uidToString, if used...
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   type Translators = {ambigs : Translator,
 		      sorts  : Translator,
@@ -29,110 +30,76 @@ SpecCalc qualifying spec
 
   type OtherTranslators
 
-  op  ppTranslators : Translators -> Doc
-  def ppTranslators translators =
-    let docs = (ppTranslatorMap (ppString "")          translators.ambigs) ++ 
-               (ppTranslatorMap (ppString "type ")     translators.sorts)  ++ 
-               (ppTranslatorMap (ppString "op ")       translators.ops)    ++
-               (ppTranslatorMap (ppString "property ") translators.props)  ++
-	       (case translators.others of
-		  | None -> []
-		  | Some other -> ppOtherTranslators other)
-    in
-    ppConcat [ppString "{",
-	      ppSep (ppString ", ") docs,
-	      ppString "}"]
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  ppTranslatorMap : Doc -> Translator -> List Doc
-  def ppTranslatorMap type_or_op translator =
-    foldriAQualifierMap (fn (dom_q, dom_id, (cod_qid as Qualified(cod_q, cod_id), _), docs) ->
-			 if dom_q = cod_q && dom_id = cod_id then
-			   %% don't print identity rules ...
-			   docs
-			 else
-			   [ppConcat [type_or_op,
-				      ppQualifier (Qualified(dom_q, dom_id)),
-				      ppString " +-> ",
-				      ppQualifier cod_qid]]
-			   ++ docs)
-                        []
-			translator
+  %% Perhaps evaluating a translation should yield a morphism rather than just 
+  %% a spec. Then perhaps we add dom and cod domain operations on morphisms.
+  %% Perhaps the calculus is getting too complicated.
 
-  op ppOtherTranslators : OtherTranslators -> List Doc
-
-\end{spec}
-
-Perhaps evaluating a translation should yield a morphism rather than just 
-a spec. Then perhaps we add dom and cod domain operations on morphisms.
-Perhaps the calculus is getting too complicated.
-
-\begin{spec}
   def SpecCalc.evaluateTranslate term renaming pos = 
     {
      unitId <- getCurrentUID;
      print (";;; Elaborating spec-translation at " ^ (uidToString unitId)^"\n");
-     value_info as (value,timeStamp,depUIDs) <- evaluateTermInfo term;
+     value_info as (value, ts, uids) <- evaluateTermInfo term;
      case coerceToSpec value of
        | Spec spc -> 
          {
-	  spcTrans <- translateSpec true spc renaming [];
-	  return (Spec spcTrans,timeStamp,depUIDs)
+	  new_spec <- translateSpec true spc renaming [];
+	  new_spec <- complainIfAmbiguous new_spec pos;
+	  raise_any_pending_exceptions;  % should never happen, but...
+	  return (Spec new_spec, ts, uids)
 	 }
        | Other _ ->
 	 evaluateOtherTranslate term value_info renaming pos
        | _ -> 
 	 raise (TypeCheck (pos, "translating a term that is not a specification"))
     }
-\end{spec}
 
-To translate a spec means to recursively descend the hierarchy of imports
-and translate names. This can raise exceptions since ops may end up with
-the same names.
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %% To translate a spec means to recursively descend the hierarchy of imports
+  %% and translate names. This can raise exceptions since ops may end up with
+  %% the same names.
+  %% 
+  %% If the following, assume we are given the rule "<lhs> +-> <rhs>"
+  %% 
+  %% We lookup <lhs> in the domain spec to find a domain item, raising an exception
+  %% if nothing can be found.  The rules are intended to be the same as those used
+  %% when linking names in formulas within a spec, but the keywords "type" and "op" 
+  %% are allowed here to disambiguate an otherwise missing context:
+  %% 
+  %%   "type [A.]X"   will look at types only
+  %%   "op   [A.]X"   will look at ops   only
+  %%   "[A.]X"        will look at types and ops, raising an exception if there are both
+  %%   "[A.]f : B.X"  will lookup [A.]f of type [B.]X
+  %%   "X"            will find unqualified "X" in preference to "A.X" if both exist.
+  %% 
+  %% Translate all references to the found item into <rhs>, with the following
+  %% caveats:
+  %% 
+  %%  If <rhs> lacks an explicit qualifier, the rhs item is unqualified.
+  %% 
+  %%  Multiple lhs items may not map to the same rhs item.
+  %% 
+  %% Note: The code below does not yet match the documentation above, but should.
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-If the following, assume we are given the rule "<lhs> +-> <rhs>"
-
-We lookup <lhs> in the domain spec to find a domain item, raising an exception
-if nothing can be found.  The rules are intended to be the same as those used
-when linking names in formulas within a spec, but the keywords "type" and "op" 
-are allowed here to disambiguate an otherwise missing context:
-
-\begin{verbatim}
-  "type [A.]X"   will look at types only
-  "op   [A.]X"   will look at ops   only
-  "[A.]X"        will look at types and ops, raising an exception if there are both
-  "[A.]f : B.X"  will lookup [A.]f of type [B.]X
-  "X"            will find unqualified "X" in preference to "A.X" if both exist.
-\end{verbatim}
-
-Translate all references to the found item into <rhs>, with the following
-caveats:
-
-\begin{itemize}
-\item If <rhs> lacks an explicit qualifier, the rhs item is unqualified.
-
-\item Multiple lhs items may not map to the same rhs item.
-
-\end{itemize}
-
-Note: The code below does not yet match the documentation above, but should.
-
-\begin{spec}
-
-  %% translateSpec is used by Translate and Colimt
-  %% When called from Colimit, require_monic? is false, and we should avoid
-  %% raising exceptions...
+  %% translateSpec is used by Translate and Colimit
   op  translateSpec : Boolean -> Spec -> Renaming -> QualifiedIds -> Env Spec
-  def translateSpec require_monic? spc renaming immune_op_names = 
+  def translateSpec allow_exceptions? spc renaming immune_op_names = 
+    %%
+    %% WARNING:  When require_monic? is false, as when called from colimit,
+    %% translateSpec (and the routines it calls) must not raise any errors,
+    %% either directly or deferred.  I.e., we may call raise and/or raise_later
+    %% only if require_monic? is true.
+    %%
+    %% The colimit code invokes the monad produced here through a special 
+    %% call to run that is not prepared to handle exceptions.
+    %%
     let pos = positionOf renaming in
     {
-     translators <- makeTranslators require_monic? spc renaming immune_op_names;
-     raise_any_pending_exceptions;
-
-     % reconstructed_expr <- reconstructTranslatorExpr translators;
-     % print ("\n========\n");
-     % print (showTerm (Translate ((Quote (Spec spc), noPos), expr), noPos));
-     % print ("\n========\n");
-     %%
+     translators <- makeTranslators allow_exceptions? spc renaming immune_op_names;
+     when allow_exceptions?
+      raise_any_pending_exceptions;
      %% translators is now an explicit map for which each name in its 
      %% domain refers to a particular type or op in the domain spec.  
      %%
@@ -153,33 +120,16 @@ Note: The code below does not yet match the documentation above, but should.
      %%
      %% Now we produce a new spec using these unmbiguous maps.
      %% Note that auxTranslateSpec is not expected to raise any errors.
-     
      spc <- auxTranslateSpec spc translators (Some renaming) pos;
-     raise_any_pending_exceptions; % should never happen here
-     
-     %% Next we worry about traditional captures in which a (global) op Y,
-     %% used under a binding of var X, is renamed to X.   Internally, this 
-     %% is not a problem, since the new refs to op X are distinguishable 
-     %% from the refs to var X, but printing the resulting formula loses
-     %% that distinction, so refs to the op X that are under the binding 
-     %% of var X would be read back in as refs to the var X.
-     %% 
-     %% So we do alpha conversions if a bound var has an op of the same
-     %% name under its scope:
-     
-     spc <- return (removeVarOpCaptures spc);
-     
-     %% One final pass to see if we've managed to collapse necessarily 
-     %% distinct types (e.g. A = X * Y and B = Z | p), or necessarily
-     %% distinct ops (e.g. op i = 4 and op j = "oops") onto the same name.
-     
-     complainIfAmbiguous (compressDefs spc) pos
+     return spc
     } 
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   op  makeTranslators : Boolean -> Spec -> Renaming -> QualifiedIds -> SpecCalc.Env Translators
-  def makeTranslators require_monic? dom_spec (renaming_rules, position) immune_op_names =
+  def makeTranslators allow_exceptions? dom_spec (renaming_rules, position) immune_op_names =
     %% translateSpec is used by Translate and Colimt
-    %% When called from Colimit, require_monic? is false, and we should avoid
+    %% When called from Colimit, allow_exceptions? is false, and we should avoid
     %% raising exceptions...
     let sorts = dom_spec.sorts in
     let ops   = dom_spec.ops   in
@@ -342,7 +292,7 @@ Note: The code below does not yet match the documentation above, but should.
 		    case findAQualifierMap (sort_translator, dom_q, dom_id) of
 		      | None -> 
 		        {
-			 when require_monic?
+			 when allow_exceptions?
 			   (complain_if_sort_collision (sorts, sort_translator, dom_q, dom_id, cod_qid, rule_pos));
 			 new_sort_translator <- return (insertAQualifierMap (sort_translator, dom_q, dom_id, (cod_qid, cod_aliases)));
 			 new_sort_translator <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
@@ -391,7 +341,7 @@ Note: The code below does not yet match the documentation above, but should.
 		       | None -> 
 		         %% No rule yet for dom_qid...
 		         {
-			  when require_monic?
+			  when allow_exceptions?
 			   (complain_if_op_collision (ops, op_translator, dom_q, dom_id, cod_qid, rule_pos));
 			  new_op_translator <- return (insertAQualifierMap (op_translator, dom_q, dom_id, (cod_qid, cod_aliases)));
 			  new_op_translator <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
@@ -443,7 +393,7 @@ Note: The code below does not yet match the documentation above, but should.
 		         %% No rule yet for this candidate...
 		         let new_cod_qid = mkQualifiedId (cod_q, sort_id) in
 			 {
-			  when require_monic? 
+			  when allow_exceptions? 
 			   (complain_if_sort_collision (sorts, sort_translator, sort_q, sort_id, new_cod_qid, rule_pos));
 			  return (insertAQualifierMap (sort_translator, sort_q, sort_id, (new_cod_qid, [new_cod_qid])))
 			 }
@@ -485,7 +435,7 @@ Note: The code below does not yet match the documentation above, but should.
 						     return cod_qid)
 					          new_cod_qid
 						  cod_aliases);
-			  when require_monic? 
+			  when allow_exceptions? 
 			   (complain_if_op_collision (ops, op_translator, op_q, op_id, new_cod_qid, rule_pos));
 			  return (insertAQualifierMap (op_translator, op_q, op_id, (new_cod_qid, [new_cod_qid])))
 			 }
@@ -584,7 +534,7 @@ Note: The code below does not yet match the documentation above, but should.
     in
       {
        (op_translator, sort_translator) <- foldM insert (emptyTranslator, emptyTranslator) renaming_rules;
-       when require_monic?
+       when allow_exceptions?
         {complain_if_type_collisions_with_priors (sorts, sort_translator);
 	 complain_if_op_collisions_with_priors   (ops, op_translator)};
        return {
@@ -595,6 +545,8 @@ Note: The code below does not yet match the documentation above, but should.
 	       others = None
 	      }
        }
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def basicCodSortName? qid =
     let base_spec = getBaseSpec () in
@@ -618,32 +570,6 @@ Note: The code below does not yet match the documentation above, but should.
       | _ -> true
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  op  translateQualifiedId : Translator -> QualifiedId -> QualifiedId
-  op  translateSortRef     : Translator -> MS.Sort -> MS.Sort
-  op  translateOpRef       : Translator -> MS.Term -> MS.Term
-  op  translatePattern     : Pattern  -> Pattern
-
-  def translateQualifiedId translator (qid as Qualified (q, id)) =
-    case findAQualifierMap (translator, q,id) of
-      | Some (nQId,_) -> nQId
-      | None -> qid
-
-  def translateSortRef sort_translator sort_term =
-    case sort_term of
-      | Base (qid, srts, pos) ->
-	(let new_qid = translateQualifiedId sort_translator qid in
-	 if new_qid = qid then sort_term else Base (new_qid, srts, pos))
-      | _ -> sort_term
-
-  def translateOpRef op_translator op_term =
-    case op_term of
-      | Fun (Op (qid, fixity), srt, pos) ->
-	(let new_qid = translateQualifiedId op_translator qid in
-	 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
-      | _ -> op_term
-
-  def translatePattern pat = pat
 
   %% auxTranslateSpec is used by Translate, Substitute, and (indirectly) Colimt
   %% It should avoid raising any errors.
@@ -686,7 +612,7 @@ Note: The code below does not yet match the documentation above, but should.
 		 return sorts
 	       else
 		 let new_info = info << {names = new_names} in
-		 mergeSortInfo sorts spc.ops new_info position
+		 return (mergeSortInfo sorts new_info)
 	      }
 	in
 	  foldOverQualifierMap translateSortInfo emptyAQualifierMap old_sorts 
@@ -694,7 +620,7 @@ Note: The code below does not yet match the documentation above, but should.
       def translateOpInfos old_ops =
         let 
           def translateOpInfo (q, id, info, ops) =
-	    let primary_qid as Qualified (primary_q, primary_id) = primaryOpName info in
+	    let Qualified (primary_q, primary_id) = primaryOpName info in
 	    if ~ (q = primary_q && id = primary_id) then
 	      return ops
 	    else
@@ -711,7 +637,7 @@ Note: The code below does not yet match the documentation above, but should.
 				  info.names;
 	       new_names <- return (rev new_names);
 	       let new_info = info << {names = new_names} in
-	       mergeOpInfo spc.sorts ops new_info position
+	       return (mergeOpInfo ops new_info)
 	      }
 	in
 	  foldOverQualifierMap translateOpInfo emptyAQualifierMap old_ops 
@@ -726,11 +652,52 @@ Note: The code below does not yet match the documentation above, but should.
      new_sorts    <- translateSortInfos s.sorts;
      new_ops      <- translateOpInfos   s.ops;
      new_elements <- return (translateSpecElements translators opt_renaming s.elements);
-     return {sorts      = new_sorts,
-	     ops        = new_ops,
-	     elements   = new_elements,
-	     qualified? = false}	% conservative
+     new_spec     <- return {sorts      = new_sorts,
+			     ops        = new_ops,
+			     elements   = new_elements,
+			     qualified? = false};	% conservative
+
+     %% Next we worry about traditional captures in which a (global) op Y,
+     %% used under a binding of var X, is renamed to X.   Internally, this 
+     %% is not a problem, since the new refs to op X are distinguishable 
+     %% from the refs to var X, but printing the resulting formula loses
+     %% that distinction, so refs to the op X that are under the binding 
+     %% of var X would be read back in as refs to the var X.
+     %% 
+     %% So we do alpha conversions if a bound var has an op of the same
+     %% name under its scope:
+     new_spec     <- return (removeVarOpCaptures new_spec);
+     new_spec     <- return (compressDefs        new_spec);
+     return new_spec
     }
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op  translateQualifiedId : Translator -> QualifiedId -> QualifiedId
+  op  translateSortRef     : Translator -> MS.Sort -> MS.Sort
+  op  translateOpRef       : Translator -> MS.Term -> MS.Term
+  op  translatePattern     : Pattern  -> Pattern
+
+  def translateQualifiedId translator (qid as Qualified (q, id)) =
+    case findAQualifierMap (translator, q,id) of
+      | Some (nQId,_) -> nQId
+      | None -> qid
+
+  def translateSortRef sort_translator sort_term =
+    case sort_term of
+      | Base (qid, srts, pos) ->
+	(let new_qid = translateQualifiedId sort_translator qid in
+	 if new_qid = qid then sort_term else Base (new_qid, srts, pos))
+      | _ -> sort_term
+
+  def translateOpRef op_translator op_term =
+    case op_term of
+      | Fun (Op (qid, fixity), srt, pos) ->
+	(let new_qid = translateQualifiedId op_translator qid in
+	 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
+      | _ -> op_term
+
+  def translatePattern pat = pat
 
   op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> SpecElements
   def translateSpecElements translators opt_renaming elements =
@@ -779,6 +746,40 @@ Note: The code below does not yet match the documentation above, but should.
 	  Import (new_tm, spc, els)
       | _ -> el
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op  ppTranslators : Translators -> Doc
+  def ppTranslators translators =
+    let docs = (ppTranslatorMap (ppString "")          translators.ambigs) ++ 
+               (ppTranslatorMap (ppString "type ")     translators.sorts)  ++ 
+               (ppTranslatorMap (ppString "op ")       translators.ops)    ++
+               (ppTranslatorMap (ppString "property ") translators.props)  ++
+	       (case translators.others of
+		  | None -> []
+		  | Some other -> ppOtherTranslators other)
+    in
+    ppConcat [ppString "{",
+	      ppSep (ppString ", ") docs,
+	      ppString "}"]
+
+  op  ppTranslatorMap : Doc -> Translator -> List Doc
+  def ppTranslatorMap type_or_op translator =
+    foldriAQualifierMap (fn (dom_q, dom_id, (cod_qid as Qualified(cod_q, cod_id), _), docs) ->
+			 if dom_q = cod_q && dom_id = cod_id then
+			   %% don't print identity rules ...
+			   docs
+			 else
+			   [ppConcat [type_or_op,
+				      ppQualifier (Qualified(dom_q, dom_id)),
+				      ppString " +-> ",
+				      ppQualifier cod_qid]]
+			   ++ docs)
+                        []
+			translator
+
+  op ppOtherTranslators : OtherTranslators -> List Doc
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 endspec
 \end{spec}

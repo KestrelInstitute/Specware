@@ -1,39 +1,41 @@
-(* Name Qualifing in Specs *)
-
 SpecCalc qualifying spec 
 
   import Signature 
-  import Spec/CompressSpec
   import Spec/MergeSpecs
-(*
-To qualify a spec means to change all unqualified names to qualified
-names. This can raise exceptions since qualifying a name may identify
-it with a name that already exists.
+  import Spec/VarOpCapture
+  import Spec/CompressSpec
 
-The current version need not visit the imported specs as the hierarchy
-is flattened,
+  %% To qualify a spec means to change all unqualified names to qualified
+  %% names. This can raise exceptions since qualifying a name may identify
+  %% it with a name that already exists.
+  %% 
+  %% The current version need not visit the imported specs as the hierarchy
+  %% is flattened,
+  %% 
+  %% Change UnQualified to new_qualifier in all qualified names
 
-Change UnQualified to new_qualifier in all qualified names
-*)
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def SpecCalc.evaluateQualify sc_term new_q = 
    let pos = positionOf sc_term in
    {
-    value_info as (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo sc_term;
+    value_info as (value, ts, uids) <- SpecCalc.evaluateTermInfo sc_term;
     case coerceToSpec value of
       | Spec spc -> 
         {
 	 qualified_spec <- qualifySpec spc new_q [] pos;
-	 compressed_spec <- complainIfAmbiguous (compressDefs qualified_spec) pos;
-	 return (Spec compressed_spec,timeStamp,depUnitIds)
+	 return (Spec qualified_spec, ts, uids)
 	}
       | Other other -> 
 	evaluateOtherQualify sc_term value_info new_q pos
       | _ -> raise (TypeCheck (pos, "qualifying a term that is not a specification"))
    }
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  %% qualifySpec is also called from Accord
   op  qualifySpec : Spec -> Qualifier -> Ids -> Position -> SpecCalc.Env Spec
-  def qualifySpec spc new_q immune_ids position =
+  def qualifySpec spc new_q immune_ids pos =
 
     %% For core Specware per se, immune_ids will be [].
     %% But in some contexts (e.g. Accord) we might have "local" ops that 
@@ -60,25 +62,25 @@ Change UnQualified to new_qualifier in all qualified names
   
       def qualify_pattern pat = pat
   
-      def qualify_sorts sorts ops =
+      def qualify_sorts sorts =
         let 
-          def qualify_sortinfo (q, _, info, new_sorts) =
+          def qualify_sortinfo (q, _, info, sorts) =
 	    let revised_q = if q = UnQualified then new_q else q in
 	    %% Translation can cause names to become duplicated, so remove duplicates
 	    let new_names = rev (removeDuplicates (map (qualifySortId revised_q) info.names)) in % revised_q was new_q ??
 	    let new_info  = info << {names = new_names} in
-	    mergeSortInfo new_sorts ops new_info position
+	    return (mergeSortInfo sorts new_info)
 	in
 	  foldOverQualifierMap qualify_sortinfo emptyAQualifierMap sorts
 
-      def qualify_ops sorts ops =
+      def qualify_ops ops =
         let 
-          def qualify_opinfo (q, id, info, new_ops) =
+          def qualify_opinfo (q, id, info, ops) =
 	    let revised_q = if q = UnQualified && ~ (member (id, immune_ids)) then new_q else q in
 	    %% Translation can cause names to become duplicated, so remove duplicates
 	    let new_names = rev (removeDuplicates (List.map (qualifyOpId revised_q immune_ids) info.names)) in % revised_q was new_q ??
 	    let new_info  = info << {names = new_names} in
-	    mergeOpInfo sorts new_ops new_info position
+	    return (mergeOpInfo ops new_info)
 	in
 	  foldOverQualifierMap qualify_opinfo emptyAQualifierMap ops 
   
@@ -86,15 +88,22 @@ Change UnQualified to new_qualifier in all qualified names
     let {sorts, ops, elements, qualified?} = 
         mapSpecUnqualified (qualify_term, qualify_sort, qualify_pattern) spc
     in 
-      {
-       newSorts    <- qualify_sorts sorts ops;
-       newOps      <- qualify_ops   sorts ops;
-       newElements <- return (qualifySpecElements new_q immune_ids elements);
-       return {sorts      = newSorts,
-	       ops        = newOps,
-	       elements   = newElements,
-	       qualified? = true}
-       }
+    {
+     newSorts    <- qualify_sorts sorts;
+     newOps      <- qualify_ops   ops;
+     newElements <- return (qualifySpecElements new_q immune_ids elements);
+     new_spec    <- return {sorts      = newSorts,
+			    ops        = newOps,
+			    elements   = newElements,
+			    qualified? = true};
+     new_spec    <- return (removeVarOpCaptures new_spec);
+     new_spec    <- return (compressDefs        new_spec);
+     new_spec    <- complainIfAmbiguous new_spec pos;
+     raise_any_pending_exceptions;
+     return new_spec
+    }
+      
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% Accord prefers to have qualifySpecElements and qualifySpecElement
   %% as standalone functions (not local to qualifySpec) so it can call 
@@ -143,5 +152,6 @@ Change UnQualified to new_qualifier in all qualified names
     else 
       qid
   
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 endspec

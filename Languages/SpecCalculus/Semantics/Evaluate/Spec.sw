@@ -117,8 +117,8 @@ axioms, etc.
                     return imported_spec.sorts
 		  else 
 		    %% TODO: fold over just infos?
-		    foldOverQualifierMap (fn (q, id, info, sorts) ->
-					  mergeSortInfo sorts new_spec.ops info pos)
+		    foldOverQualifierMap (fn (_, _, info, sorts) ->
+					  return (mergeSortInfo sorts info))
 		                         sorts 
 				         imported_spec.sorts;
 
@@ -126,8 +126,8 @@ axioms, etc.
                     return imported_spec.ops
 		  else 
 		    %% TODO: fold over just infos?
-		    foldOverQualifierMap (fn (q, id, info, ops) ->
-					  mergeOpInfo new_sorts ops info pos)
+		    foldOverQualifierMap (fn (_, _, info, ops) ->
+					  return (mergeOpInfo ops info))
 		                         ops
 					 imported_spec.ops;
 

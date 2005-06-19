@@ -29,13 +29,6 @@ spec
  sort PropertyMap = List Property % TODO: convert   once properties are in qualified map
  sort MorphismPropMap          % TODO: make real once properties are in qualified map
 
-
- %% ================================================================================
- %%                 Context
- %% ================================================================================
- 
- op toplevelHandler : Exception -> SpecCalc.Env Boolean % defined in Specware.sw
-
  %% ================================================================================
  %%                 Local structures
  %% ================================================================================
@@ -72,7 +65,7 @@ spec
  %%  be modified to better reflect that reality.
  %% ================================================================================
 
- def specColimit dg =
+ def specColimit dg =  % TODO: would be nice to have Position, but Cat structure precludes that
 
   let base_spec = getBaseImportSpec () in  % TODO: base spec should be an arg to specColimit, or part of monad
 
@@ -240,25 +233,29 @@ spec
            %%
            %%   auxRenamingSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
            %% 
-           %% The first arg to translateSpec says we don't require the morphism to be monic.
-           %% Maybe the sense should really be that we don't want to raise any exceptions.
+           %% For now at least, the first arg to translateSpec says we don't 
+	   %% want to raise any exceptions.
            %%
-           let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_renaming []) in
-	   % let _ = toScreen ("\nRenamingd Spec: "^ (printSpec translated_spec) ^ "\n") in
+           let translated_spec = 
+	       run (translateSpec false 
+		                  (subtractSpec vertex_spec base_spec) % vertex_spec ?
+				  cocone_renaming 
+		                  []) 
+	   in
            cons (translated_spec, translated_specs))
          []
          dg
   in
-  let apex_spec = run (specUnion (Cons (base_spec, translated_specs))) in
+
+  let apex_spec = auxSpecUnion (Cons (base_spec, translated_specs)) in
   let apex_spec = removeDuplicateOpSortElements apex_spec in
+  let apex_spec = compressDefs apex_spec in
 
   %% -------------------------------------------------------------------------------------------------------------
   %% (4a) Test for ambiguity in result
   %% -------------------------------------------------------------------------------------------------------------
 
-  let apex_spec = compressDefs apex_spec in
   let (opt_apex_spec, opt_msg) = auxComplainIfAmbiguous apex_spec in
-
   case (opt_apex_spec, opt_msg) of
     | (_,       Some msg) -> (None, opt_msg)
     | (Some apex_spec, _) ->

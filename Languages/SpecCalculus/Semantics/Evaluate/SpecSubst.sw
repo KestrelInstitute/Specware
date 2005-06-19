@@ -1,36 +1,41 @@
-(** Substitution (Prototype) **)
-
-(* Dialog about adding this feature is at end of file *)
+%% Substitution (Prototype)
+%% Dialog about adding this feature is at end of file
 
 SpecCalc qualifying spec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import Translate                                    % for auxTranslateSpec
   import SpecUnion                                    % for specUnion
 
-  op applySpecMorphismSubstitution    : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
-  op auxApplySpecMorphismSubstitution : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  op  applySpecMorphismSubstitution  : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
   def applySpecMorphismSubstitution sm original_spec sm_tm term_pos =
-    let sub_spec             = SpecCalc.dom sm in
+    let sub_spec             = SpecCalc.dom sm                     in
     let should_be_empty_spec = subtractSpec sub_spec original_spec in
-    let sorts_msg = printNamesInAQualifierMap should_be_empty_spec.sorts in
-    let ops_msg   = printNamesInAQualifierMap should_be_empty_spec.ops   in
-    let props_msg = (foldl (fn (el,str) ->
-			    case el of
-			      | Property(_, prop_name, _, _) ->
-			        if str = "" then printQualifiedId(prop_name)
-				  else str^", "^printQualifiedId(prop_name)
-			      | _ -> str) % Should check other items?
-		       ""			 
-		       should_be_empty_spec.elements)
+    let sorts_msg            = printNamesInAQualifierMap should_be_empty_spec.sorts in
+    let ops_msg              = printNamesInAQualifierMap should_be_empty_spec.ops   in
+    let props_msg = 
+        foldl (fn (el,str) ->
+	       case el of
+		 | Property(_, prop_name, _, _) ->
+		   if str = "" then 
+		     printQualifiedId (prop_name)
+		   else 
+		     str ^ ", " ^ printQualifiedId (prop_name)
+		 | _ -> str) % Should check other items?
+	      ""			 
+	      should_be_empty_spec.elements
     in
-    case (sorts_msg, ops_msg, props_msg) of
-      | ("", "", "") ->
-        auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos
-      | _ ->
-	raise (TypeCheck (term_pos, warnAboutMissingItems sorts_msg ops_msg props_msg))
+      case (sorts_msg, ops_msg, props_msg) of
+	| ("", "", "") ->
+	  auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos
+	| _ ->
+	  raise (TypeCheck (term_pos, warnAboutMissingItems sorts_msg ops_msg props_msg))
 
-  def auxApplySpecMorphismSubstitution sm spc sm_tm position = 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op  auxApplySpecMorphismSubstitution : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
+  def auxApplySpecMorphismSubstitution sm spc sm_tm pos =
     %% Warning: this assumes that dom_spec is a subspec of spc
     %%    S' = M(S - dom(M)) U cod(M)
     let dom_spec           = SpecCalc.dom sm            in     % dom(M)
@@ -63,13 +68,16 @@ SpecCalc qualifying spec
 
     let residue = subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term) in
     {
-     translated_residue <- applySpecMorphism sm residue position;  % M(S - dom(M))
+     translated_residue <- applySpecMorphism sm residue pos;  % M(S - dom(M))
      %% Add the elements separately so we can put preserve order
-     new_spec <- specUnion [translated_residue, cod_spec << {elements = []}];     % M(S - dom(M)) U cod(M)
-     new_spec <- return (removeDuplicateImports
-			 (new_spec << {elements = 
-				       replaceImportStub (new_spec.elements,
-							  Import(cod_spec_term, cod_spec, cod_spec.elements))}));
+     new_spec <- specUnion [translated_residue, cod_spec << {elements = []}] pos;     % M(S - dom(M)) U cod(M)
+     new_spec <- return (new_spec << {elements = 
+				      replaceImportStub (new_spec.elements,
+							 Import(cod_spec_term, cod_spec, cod_spec.elements))});
+     new_spec <- return (removeDuplicateImports new_spec);
+     new_spec <- return (removeVarOpCaptures    new_spec);
+     new_spec <- return (compressDefs           new_spec);
+     new_spec <- complainIfAmbiguous new_spec pos;
      return new_spec
      }
 
@@ -101,7 +109,6 @@ SpecCalc qualifying spec
 	    elements = revise_elements       spc.elements
 	   }
 
-  %% 
   op  replaceImportStub: SpecElements * SpecElement -> SpecElements
   def replaceImportStub (elements, new_import) =
     let 
@@ -173,20 +180,13 @@ SpecCalc qualifying spec
     ^
     "  in substitution term"
 
-
-  op printNamesInAQualifierMap : fa (a) AQualifierMap a -> String
+  op  printNamesInAQualifierMap : fa (a) AQualifierMap a -> String
   def printNamesInAQualifierMap qmap =
     foldriAQualifierMap (fn (qualifier, id, _, str) ->
 			 let qid = printQualifierDotId (qualifier, id) in
 			 if str = "" then qid else str^", "^qid)
                         ""
 			qmap 
-
-%%%  %% As of 11/18/02, no one uses this...
-%%%  op countKeysInAQualifierMap : fa (a) AQualifierMap a -> Nat
-%%%  def countKeysInAQualifierMap qmap =
-%%%    foldriAQualifierMap (fn (_, _, _, n) -> n + 1) 0 qmap
-
 
 endspec
 
