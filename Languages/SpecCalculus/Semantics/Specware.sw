@@ -517,8 +517,8 @@ sense that no toplevel functions return anything.
        print message;
      return false}
 
-  op toplevelHandlerOption : fa(a) Exception -> SpecCalc.Env (Option a)
-  def toplevelHandlerOption except =
+  % op toplevelHandlerOption : [a] Exception -> SpecCalc.Env (Option a)% See Signature.sw
+  def [a] toplevelHandlerOption (except) : SpecCalc.Env (Option a) =
     {cleanupGlobalContext;		% Remove InProcess entries
      message <- return (printException except);
      return (gotoErrorLocation except);
@@ -544,6 +544,8 @@ sense that no toplevel functions return anything.
       | SpecError    (position,_) -> Some position
       | MorphError   (position,_) -> Some position
       | DiagError    (position,_) -> Some position
+      | ColimitError (position,_) -> Some position
+      | TranslationError (_,position) -> Some position
       | TypeCheck    (position,_) -> Some position
       | Proof        (position,_) -> Some position
       | TypeCheckErrors errs      -> getFirstRealPosition errs
