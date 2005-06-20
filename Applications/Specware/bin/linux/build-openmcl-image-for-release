@@ -1,0 +1,202 @@
+#!/bin/bash --noprofile
+
+# This script creates a Specware4 image (.openmcl-image file). It does not
+# do a bootstrap. That is, it does not generate a new Specware4.lisp.
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See man bash for details. The 'set -v' turns on echoing of
+# lines read. this will be removed later.
+
+act='build image'
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+# set -v
+
+# Test whether SPECWARE4 has been set
+
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+
+case "$SPECWARE" in
+    /*) : ok;;
+    *)  SPECWARE="`pwd`/$SPECWARE";;
+esac
+
+# Try to find lisp executable:
+
+if [ -z "$LISP" ]; then
+   for L in /Applications/ccl/dppccl /usr/local/bin/dppccl "$HOME"/ccl/dppccl; do
+      if [ -x "$L" ]; then
+         LISP="$L"; break
+      fi
+   done
+fi
+
+if [ -z "$LISP" ]; then
+   echo "Failed to $act, no LISP executable found" 2>&1
+   exit 1
+fi
+
+if [ ! -x "$LISP" ]; then
+   echo "Failed to $act, $LISP is not executable" 2>&1
+   exit 1
+fi
+
+if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
+   echo "Failed to $act: could not find directory
+   $SPECWARE4/Applications/Specware" 2>&1
+   exit 1
+fi
+
+cd "$SPECWARE4"/Applications/Specware
+
+export SWPATH; SWPATH="$SPECWARE4":.
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+
+if [ -f lisp ]; then
+   echo "Failed to $act, $SPECWARE4/Applications/Specware/lisp is not a directory" 2>&1
+   exit 1
+fi
+
+
+if [ ! -f lisp/Specware4.lisp -a ! -f Specware4-base.lisp ] ; then
+   echo "Failed to $act: could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp
+   or $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+   exit 1
+fi
+
+if [ ! -f lisp/Specware4.lisp ]; then
+    echo "Could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp,
+    using cvs saved lisp, $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+    if [ ! -d lisp ]; then
+	echo "/bin/mkdir lisp"
+	/bin/mkdir lisp
+    fi
+    echo "/bin/cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
+    /bin/cp -p -f Specware4-base.lisp lisp/Specware4.lisp
+fi
+
+if [ Specware4-base.lisp -nt lisp/Specware4.lisp ]; then
+    echo "$SPECWARE4/Applications/Specware/lisp/Specware4.lisp is older than
+    cvs saved lisp, $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+    echo "Using $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+    if [ ! -d lisp ]; then
+	echo "/bin/mkdir lisp"
+	/bin/mkdir lisp
+    fi
+    echo "/bin/cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
+    /bin/cp -p -f Specware4-base.lisp lisp/Specware4.lisp
+fi
+
+/bin/cp -f bin/linux/Specware4.openmcl-image bin/linux/Specware4-save.openmcl-image
+
+cd Handwritten/Lisp
+
+# We load the new Specware4.lisp twice, each in a fresh lisp session. The
+# first time compiles everything.  This may not be necessary but it is
+# easier just to load it twice rather than to try to figure out if something
+# needs to be compiled.
+
+echo " "
+echo "Loading Specware ... (for compiling lisp files)"
+echo " "
+$LISP <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  (load "Specware4.lisp"))
+	(quit)
+XXXX
+
+# The second time is just to do the dumplisp. If we do it in one go,
+# and something needs compiling, the generated dxl file is almost 4
+# times larger.
+
+
+echo " "
+echo "Loading Specware ... (for dumplisp)"
+echo " "
+$LISP <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(load "$MEMORY_MANAGEMENT")
+	(progn  ;exiting-on-errors 
+	  (load "BuildPreamble.lisp")
+	  (load "Specware4.lisp")
+	  (load "license.lisp"))
+	(set-gc-parameters-for-use nil)
+	(ccl:save-application "$SPECWARE4/Applications/Specware/bin/linux/Specware4.openmcl-image")
+XXXX
+RC=$?
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "Building specware release using openmcl failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+# Now, build the rest of the directory tree.
+
+if [ -d "$SPECWARE4"/distribution-openmcl ]; then
+    if [ ! -d "$SPECWARE4"/distribution-openmcl-backup ]; then
+	/bin/mkdir "$SPECWARE4"/distribution-openmcl-backup
+    fi
+    /bin/rm -rf "$SPECWARE4"/distribution-openmcl-backup/*
+    /bin/mv  -f "$SPECWARE4"/distribution-openmcl/* "$SPECWARE4"/distribution-openmcl-backup/ 
+else
+    /bin/mkdir "$SPECWARE4"/distribution-openmcl
+fi
+
+DISTDIR="$SPECWARE4"/distribution-openmcl/Specware
+/bin/mkdir $DISTDIR
+
+$LISP <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(load "$MEMORY_MANAGEMENT")
+	(set-gc-parameters-for-build nil)
+	(exiting-on-errors
+	  (load "$SPECWARE4/Applications/Handwritten/Lisp/load-utilities")
+;	  (trace specware::make-directory specware::copy-directory specware::delete-directory specware::copy-file)
+	  (defun in-specware-dir (file) (concatenate 'string "$SPECWARE4/" file))
+	  (defun in-distribution-dir (file) (concatenate 'string "$DISTDIR/" file))
+	  (load "copy-files-for-distribution.lisp"))
+	(quit)
+XXXX
+
+##  TODO: copy highest-numbered patch from "$SPECWARE4"/Release/Mac/openmcl/Patches
+##/bin/cp "$SPECWARE4"/Release/Mac/openmcl/Patches/patch-4-0-6.x86f          "$DISTDIR"/Patches
+/bin/cp "$SPECWARE4"/Release/Mac/openmcl/Specware "$DISTDIR"/Specware
+/bin/cp "$SPECWARE4"/Release/Mac/openmcl/Specware.sh "$DISTDIR"/Specware.sh
+/bin/cp "$SPECWARE4"/Applications/Specware/bin/linux/Specware4.openmcl-image  "$DISTDIR"
+
+
+# ================================================================================
+#  Patches
+# ================================================================================
+
+mkdir -p ${SPECWARE4}/distribution-openmcl/Patches
+
+# ================================================================================
+#  Delete CVS stuff  (should already be done, but something may have been missed in copy-files-for-distribution.lisp
+# ================================================================================
+
+cd ${SPECWARE4}/distribution-openmcl
+find . -type d -name "CVS" -print | xargs /bin/rm -rf 
+
+
+# ================================================================================
+#  Make tar file
+# ================================================================================
+
+#tar cvf "$SPECWARE4"/Specware.tar *

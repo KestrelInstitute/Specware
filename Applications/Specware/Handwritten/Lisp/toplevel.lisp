@@ -1059,7 +1059,7 @@
 (defun swpath  (&optional str)
   (setq str (strip-extraneous str))
   (let ((newpath (if (or (null str) (equal str ""))
-		     (specware::getenv "SWPATH")
+		     (or (specware::getenv "SWPATH") "")
 		   (let ((str (normalize-path (string str) nil)))
 		     (if (speccalc::checkSpecPathsExistence str)
 			 (progn (specware::setenv "SWPATH" (string str))
@@ -1083,6 +1083,9 @@
 	    #+mswindows"~{~a~^;~}"
 	    #-mswindows"~{~a~^:~}"
 	    path-dirs-c-sw)))
+
+(defun get-swpath ()
+  (normalize-path (or (specware::getenv "SWPATH") "") t))
 
 #+allegro
 (top-level:alias ("swpath" :case-sensitive :string) (&optional str)

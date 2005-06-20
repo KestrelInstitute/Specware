@@ -78,3 +78,7 @@
 
 #+cmu
 (push 'load-specware-patch-if-present ext:*after-save-initializations*)
+
+#+mcl
+(push 'load-specware-patch-if-present ccl:*lisp-startup-functions*)
+
