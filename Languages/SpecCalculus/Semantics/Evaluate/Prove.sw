@@ -31,6 +31,7 @@ SpecCalc qualifying spec
      print (";;; Elaborating proof-term at " ^ (uidToString unitId) ^ "\n");
      (optBaseUnitId,baseSpec) <- getBase;
      baseProverSpec <- getBaseProverSpec;
+     baseProverSpec <- return(subtractSpecProperties(baseProverSpec,baseSpec));
      rewriteProverSpec <- getRewriteProverSpec;
      proverLogFileName <- UIDtoLogFile(unitId, if proverName = "Both" then "Snark" else proverName, "log");
      finalSpecFileName <- UIDtoLogFile(unitId, if proverName = "Both" then "Snark" else proverName, "sw");
