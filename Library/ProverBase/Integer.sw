@@ -51,14 +51,14 @@ PrInteger qualifying spec
 
   axiom addition_def1 is
     fa(i:Integer) i+0 = i && 0+i = i
-  axiom addition_def2 is
-    fa(n1:PosNat, n2:PosNat)
-           n1  +   n2  = plus(n1,n2)
-      && (-n1) + (-n2) = -(plus(n1,n2))
-      &&   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
-                                        else minus(n1,n2))
-      && (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
-                                        else -(minus(n1,n2)))
+%  axiom addition_def2 is
+%    fa(n1:PosNat, n2:PosNat)
+%           n1  +   n2  = plus(n1,n2)
+%      && (-n1) + (-n2) = -(plus(n1,n2))
+%      &&   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
+%                                        else minus(n1,n2))
+%      && (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
+%                                        else -(minus(n1,n2)))
 
   axiom subtraction_def is
     fa (x:Integer, y:Integer) (x - y) = x + (- y)
@@ -70,12 +70,12 @@ PrInteger qualifying spec
     % since every integer is reachable from 0 by adding or subtracting 1
     % zero or more times, this axiom completely defines multiplication
 
-  axiom division_def is
-    fa (x:Integer, y:NonZeroInteger, z:Integer)
-       % truncate result of exact division towards 0:
-       x div y = z <=> abs z = abs x div abs y  % abs of result
-                     && (x * y >= 0 => z >= 0)  % sign of
-                     && (x * y <= 0 => z <= 0)  % result
+%  axiom division_def is
+%    fa (x:Integer, y:NonZeroInteger, z:Integer)
+%       % truncate result of exact division towards 0:
+%       x div y = z <=> abs z = abs x div abs y  % abs of result
+%                     && (x * y >= 0 => z >= 0)  % sign of
+%                     && (x * y <= 0 => z <= 0)  % result
 
   axiom remainder_def is
     fa (x:Integer, y:NonZeroInteger)
@@ -87,8 +87,8 @@ PrInteger qualifying spec
   theorem natural?_and_less_than_equal is
     fa(i:Integer) natural? i <=> 0 <= i
 
-  axiom less_than_def is
-    fa (x:Integer, y:Integer) x < y <=> (x <= y && x ~= y)
+%  axiom less_than_def is
+%    fa (x:Integer, y:Integer) x < y <=> (x <= y && x ~= y)
 
   axiom greater_than_equal_def is
     fa (x:Integer, y:Integer) (>= (x,y)) = (y <= x)
@@ -129,15 +129,15 @@ PrInteger qualifying spec
   axiom pred_def is
      fa (x: Integer) pred x = x - 1
 
-%  axiom less_less_equal is
-%     fa(x: Integer,y: Integer) x < y  <=> x+1 <= y
+  axiom less_less_equal is
+     fa(x: Integer,y: Integer) x < y  <=> x+1 <= y
 
 %  axiom plus_gt_zero is fa(x,y,z,w) x + y <= z && 0 <= y => x <= z
 
-  axiom plus_minus is fa(x,y,z) x+y = z <=>  x = z-y
+%  axiom plus_minus is fa(x,y,z) x+y = z <=>  x = z-y
 
-%  axiom plus_greater_equal is
-%     fa (x: Integer, y: Integer, z: Integer) x >= z && y >= z => x + y >= z
+  axiom plus_greater_equal is
+     fa (x: Integer, y: Integer, z: Integer) x >= z && y >= z => x + y >= z + z
 
   axiom plus_greater_chain is
      fa (x: Integer, y: Integer, z: Integer) x + y >= 0 && (- y) + z >= 0 => x + z >= 0

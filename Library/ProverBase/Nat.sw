@@ -45,7 +45,7 @@ PrNat qualifying spec
   axiom minus_def2 is
     fa(n1:Nat, n2:Nat) lte(n2,n1) => minus(succ n1,succ n2) = minus(n1,n2)
 
-  theorem minus_def is
-    fa(n1: Nat, n2: Nat, n3: Nat) lte(n2, n1) && minus(n1, n2) = n3 => n1 = plus(n2, n3)
+%  theorem minus_def is
+%    fa(n1: Nat, n2: Nat, n3: Nat) lte(n2, n1) && minus(n1, n2) = n3 => n1 = plus(n2, n3)
 
 endspec
