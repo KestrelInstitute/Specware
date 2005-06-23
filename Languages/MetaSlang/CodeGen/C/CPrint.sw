@@ -56,6 +56,9 @@ CPrint qualifying spec {
 	      case clist
 		of [] -> []
                  | #\" :: clist -> List.concat([#\\,#\"],ppQuoteCharList(clist))
+                 %% following fixes bug 162:
+                 %% C code generation should print newlines within strings as "\n"
+                 | #\n :: clist -> List.concat([#\\,#n],ppQuoteCharList(clist)) 
 		 | c :: clist -> List.cons(c,ppQuoteCharList(clist))
     in
     String.implode(ppQuoteCharList(String.explode(s)))
