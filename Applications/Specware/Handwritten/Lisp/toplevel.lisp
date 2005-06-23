@@ -880,14 +880,14 @@
 	  (when *make-verbose* 
 	    (format t ";; invoking make command:  ~A -f ~A~%" make-command make-file))
 	  (maybe-restore-swpath)
-	  (run-cmd make-command "-f" (format nil "~A" make-file)))
+	  (run-cmd make-command (list "-f" (format nil "~A" make-file))))
       ;; else: no make-args
       (progn
 	(format t "No previous unit evaluated")
 	(if (IO-SPEC::fileExistsAndReadable make-file)
 	    (progn
 	      (format t "; using existing make-file ~s...~%" make-file)
-	      (run-cmd make-command "-f" (format nil "~A" make-command make-file))
+	      (run-cmd make-command (list "-f" (format nil "~A" make-file)))
 	      )
 	  (format t " and no previous make-file found; please supply a unit-id as argument.~%")
 	  )))))

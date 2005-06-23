@@ -9,7 +9,7 @@ spec
   import Java
   import Generate
 
-  op Specware.run_cmd : String -> () % defined in toplevel.lisp
+  op Specware.run_cmd : String * List String -> () % defined in toplevel.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -95,15 +95,14 @@ spec
 		  "	$(CC) -o " ^ cbase ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ cbase ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
      return (writeStringToFile (s, makefile));
      dir       <- return (device ^ (uidToFullPath {path = c_dir, hashSuffix = None}));
-     make_cmd  <- return ((case getEnv "SPECWARE4_MAKE" of
+     make_fn   <- return ((case getEnv "SPECWARE4_MAKE" of
 			     | Some s -> s
-			     | _ -> "make") ^ 
-			  " -f swcmake.mk");
+			     | _ -> "make"));
      here <- return (pwdAsString());
      print (";;; Connecting to ");
      return (cd dir);
-     print ("\n;;; Running cmd: " ^ make_cmd ^ "\n");
-     return (run_cmd make_cmd);
+     print ("\n;;; Running cmd to make C version: " ^ make_fn ^ "-f swcmake.mk\n");
+     return (run_cmd (make_fn, ["-f", "swcmake.mk"]));
      print (";;; Connecting back to ");
      return (cd here);
      print ("\n")
@@ -137,17 +136,15 @@ spec
      return (specToJava(baseSpec, spc0, Some option_spec, javaFileName));
 
      %% Compile java files to class files, 
-     compile_cmd  <- return ("javac -sourcepath `pwd` " ^ version ^ "/java/Primitive.java");
-     print (";;; Compiling java files: " ^ compile_cmd ^ "\n");
-     return (run_cmd compile_cmd);
-
+     print (";;; Compiling java files: javac -sourcepath `pwd`" ^ version ^ "/java/Primitive.java");
+     return (run_cmd ("javac", ["-sourcepath", "`pwd`" ^ version ^ "/java/Primitive.java"]));
 
      %% Create script to invoke java interpreter on given class files
      script      <- return ("#!/bin/sh\n\ncd `/usr/bin/dirname $0`\n\njava -cp ../.. " ^ version ^ "/java/Primitive $*");
      script_file <- return (version ^ "/java/" ^ (last uid.path));
      print (";;; Writing script to invoke java program: " ^ script_file ^ "\n");
      return (writeStringToFile (script, script_file));
-     return (run_cmd ("chmod a+x " ^ script_file))
+     return (run_cmd ("chmod", ["a+x", script_file]))
     }
 
   op  mkOptionsSpec : String -> Env ValueInfo
