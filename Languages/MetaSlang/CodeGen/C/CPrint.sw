@@ -5,6 +5,7 @@ CPrint qualifying spec {
   import C
   import /Languages/MetaSlang/Specs/Printer
 
+  op Specware.currentDeviceAsString : () -> String % defined in toplevel.lisp
 
   def ppBaseType (s : String, p : Pretty) : Pretty =
     prettysNone [string s, p]
@@ -219,6 +220,11 @@ CPrint qualifying spec {
     prettysAll (List.map ppStmt ss)
 
   def ppInclude (s : String) : Pretty =
+    let s = (if msWindowsSystem? && member (hd (explode s), [#\\, #/]) then
+	       (currentDeviceAsString ()) ^ s
+	     else
+	       s)
+    in
     prettysAll
     [strings ["#include \"", s, "\""],
      emptyPretty ()]     

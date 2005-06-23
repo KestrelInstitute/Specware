@@ -91,9 +91,29 @@ CUtils qualifying spec {
      varDefns = cspc.varDefns,
      fnDefns = cspc.fnDefns
     }
+
+  %% CMacros is a list of names of macros defined in SWC_Common.h
+  %% E.g. "String_Less" expands to "strcmp", so we should avoid
+  %% adding another declaration for strcmp.
+  op  SWC_Common_Macros : List String
+  def SWC_Common_Macros = ["String_PlusPlus",
+			   "String_Caret",
+			   "Caret",
+			   "writeLine",
+			   "String_toScreen",
+			   "toString",
+			   "Nat_toString",
+			   "Less",
+			   "Greater",
+			   "String_Less",
+			   "fail"]
+
   op addFn: CSpec * FnDecl -> CSpec
   def addFn(cspc,X as (fname,_,_)) =
     %let _ = writeLine("adding fndecl for "^fname^"...") in
+    if member (fname, SWC_Common_Macros) then
+      cspc
+    else
     {
      name = cspc.name,
      includes = cspc.includes,

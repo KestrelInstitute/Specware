@@ -73,10 +73,11 @@ spec
      print (";;; Filename: " ^ filename ^ "\n");
      return (ensureDirectoriesExist filename);
 
-     junk <- evaluateCGen (spec_info, Some filename);
-     makefile <- return (uidToFullPath (uid << {path = c_dir ++ ["swcmake.mk"]}));
+     junk   <- evaluateCGen (spec_info, Some filename);
+     device <- return (Specware.currentDeviceAsString ());
+     path   <- return ([device] ++ c_dir ++ ["swcmake.mk"]);
+     makefile <- return (uidToFullPath (uid << {path = path}));
      print (";;; Local Makefile: " ^ makefile ^ "\n");
-
      sw_make_file <- return (case getEnv "SPECWARE4" of
 			       | Some s -> s ^ "/Languages/MetaSlang/CodeGen/C/Clib/Makerules"
 			       | _ -> "oops");
@@ -93,15 +94,23 @@ spec
 		  cbase ^ ": " ^ cbase ^ ".o $(HWSRC) $(USERFILES) $(GCLIB)\n" ^
 		  "	$(CC) -o " ^ cbase ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ cbase ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
      return (writeStringToFile (s, makefile));
-     cd_cmd        <- return ("cd " ^ (uidToFullPath {path = c_dir, hashSuffix = None}));
-     make_cmd      <- return ((case getEnv "SPECWARE4_MAKE" of
-				 | Some s -> s
-				 | _ -> "make") ^ 
-			      " -f swcmake.mk");
-     full_make_cmd <- return (cd_cmd ^ " ; " ^ make_cmd);
-     print (";;; Make command: " ^ full_make_cmd ^ "\n");
-     return (run_cmd full_make_cmd)
+     dir       <- return (device ^ (uidToFullPath {path = c_dir, hashSuffix = None}));
+     make_cmd  <- return ((case getEnv "SPECWARE4_MAKE" of
+			     | Some s -> s
+			     | _ -> "make") ^ 
+			  " -f swcmake.mk");
+     here <- return (pwdAsString());
+     print (";;; Connecting to ");
+     return (cd dir);
+     print ("\n;;; Running cmd: " ^ make_cmd ^ "\n");
+     return (run_cmd make_cmd);
+     print (";;; Connecting back to ");
+     return (cd here);
+     print ("\n")
      }
+
+  op Specware.cd                    : String -> () % defined in toplevel.lisp -- side effect: prints arg to screen
+  op Specware.pwdAsString           : () -> String % defined in toplevel.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

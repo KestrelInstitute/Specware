@@ -1143,6 +1143,13 @@
   (princ (namestring (specware::current-directory)))
   (values))
 
+(defun specware::pwdAsString-0 () ; used by make
+  (namestring (specware::current-directory)))
+
+(defun specware::currentDeviceAsString-0 () ; used by make and CPrint
+  (let ((x (pathname-device (specware::current-directory))))
+    (if (stringp x) (concatenate 'string x ":") ""))) 
+
 (defun specware::exit ()
   #+allegro (exit)
   #-allegro (quit))
