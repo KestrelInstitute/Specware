@@ -204,9 +204,11 @@ CUtils qualifying spec {
      defines = cspc.defines,
      constDefns = cspc.constDefns,
      vars = cspc.vars,
-     fns = if overwrite 
-	     then filter (fn(fname0,_,_) -> fname ~= fname0) cspc.fns
-	   else cspc.fns,
+     %% Following fixes bug 163: "C code generation needs all (or at least more) fn decls in .h file"
+     %% Even if the fn is getting a definition, we should produce a decl in the .h file.
+     %% Otherwise, if it is referenced before it is defined it may get the default type 
+     %% assignment (i.e., return value of int), which may conflict with the correct type.
+     fns = cspc.fns, % if overwrite then filter (fn(fname0,_,_) -> fname ~= fname0) cspc.fns else cspc.fns,
      axioms = cspc.axioms,
      structUnionTypeDefns = cspc.structUnionTypeDefns,
      varDefns = cspc.varDefns,
