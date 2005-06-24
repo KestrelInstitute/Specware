@@ -17,7 +17,7 @@ Trace qualifying spec
   notion of time, which can be instantiated to be integers, rationals, reals,
   or others (e.g. records consisting of a date and a time). *)
 
-  import RationalNumbers
+  import Rational
 
   type Time = NonNegativeRational
 
