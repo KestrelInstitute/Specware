@@ -8,6 +8,12 @@ imperative-looking Metaslang.
 It should be integrated with spec Monad in this same directory (e.g. derived
 from it).
 
+2005:06:24
+AC
+
+Changed associativity of >> and >>> from left to right.
+
+Added op ignoreResult, to discard the result of a monadic computation.
 *)
 
 Monad qualifying spec
@@ -20,11 +26,11 @@ Monad qualifying spec
   op RETURN0 : [state] StateMonad(state,())  % specialized unit operator
   def RETURN0 = RETURN ()
 
-  op >> infixl 25 : [state,a,b]  % bind operator
+  op >> infixr 25 : [state,a,b]  % bind operator
      StateMonad(state,a) * (a -> StateMonad(state,b)) -> StateMonad(state,b)
   def >> (first, next) = fn st -> let (st1, x) = first st in next x st1
 
-  op >>> infixl 25 : [state,a]  % specialized bind operator
+  op >>> infixr 25 : [state,a]  % specialized bind operator
      StateMonad(state,()) * StateMonad(state,a) -> StateMonad(state,a)
   def >>> (m1,m2) = m1 >> (fn _ -> m2)
 
@@ -38,5 +44,8 @@ Monad qualifying spec
   op IF0 : [state]  % monadic if-then
      Boolean -> StateMonad(state,()) -> StateMonad(state,())
   def IF0 b m = IF b m NOP
+
+  op ignoreResult : [state,a] StateMonad(state,a) -> StateMonad(state,())
+  def ignoreResult m = m >> (fn _ -> NOP)
 
 endspec
