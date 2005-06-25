@@ -26,7 +26,11 @@ SpecCalc qualifying spec
 	 | Some v -> v
      def ppAOp qId = ppAOpInfo (lookupOp qId)
      def ppASort qId = ppASortInfo (lookupSort qId)
-     def ppComment str = ppString str	% !! May need to change
+     def ppComment str = 
+       if exists (fn chr -> chr = #\n) str then
+	 ppConcat [ppString "(*", ppString str, ppString "*)"]
+       else
+	 ppString (";; " ^ str)	
      def ppElements elts =
        foldr (fn (el,result) ->
 	      case el of
@@ -58,7 +62,11 @@ SpecCalc qualifying spec
 	 | Some v -> v
      def ppAOp qId = ppAOpInfo (lookupOp qId)
      def ppASort qId = ppASortInfo (lookupSort qId)
-     def ppComment str = ppString str	% !! May need to change
+     def ppComment str = 
+       if exists (fn chr -> chr = #\n) str then
+	 ppConcat [ppString "(*", ppString str, ppString "*)"]
+       else
+	 ppString (";; " ^ str)	
      def ppElements elts =
        foldr (fn (el,result) ->
 	      case el of
