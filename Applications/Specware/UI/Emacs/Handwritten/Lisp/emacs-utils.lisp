@@ -41,7 +41,7 @@ Notes:
   ;; The parent emacs process should now be on a path to die.
   ;; We don't really care if it dies before or after the 
   ;; following command kills lisp:
-  (exit-from-lisp 0))
+  (cl-user::exit-from-lisp 0))
 
 (defvar *select-term-number-in-spec*)
 
