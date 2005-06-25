@@ -1,4 +1,4 @@
-spec
+SpecCalc qualifying spec
   import UnitId
   import UnitId/Utilities
   import ../Value
