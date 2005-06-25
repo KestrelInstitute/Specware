@@ -15,6 +15,9 @@
 
 (defvar *show-results?* nil)
 
+(defparameter *internal-parser-position* 
+  (cons :|Internal| "built-in from parser"))
+
 ;;; ========================================================================
 ;;;  Misc utilities
 ;;; ========================================================================
@@ -153,9 +156,6 @@
 ;;;  http://www.specware.org/manual/html/modules.html
 ;;;  TODO: In doc: Change references to modules
 ;;; ========================================================================
-
-(defparameter *internal-parser-position* 
-  (cons :|Internal| "built-in from parser"))
 
 (defun make-internal-sort (name)
   (cons :|Base| 
