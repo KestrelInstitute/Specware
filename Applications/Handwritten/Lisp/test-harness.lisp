@@ -159,10 +159,10 @@ be the option to run each (test ...) form in a fresh image.
 	   ;; the most common problem is likely to be a missing close paren,
 	   ;; so report eof specifically
 	   (end-of-file ()
-			(setq problem? t)
+			; (setq problem? t)
 			(warn "Unexpected EOF with ~A" path))
 	   (error (condition)
-		  (setq problem? t)
+		  ; (setq problem? t)
 		  (warn "Unexpected problem with ~A: ~S" path condition)))
        (progn
 	 ;; always try to recover and proceed to the next test
