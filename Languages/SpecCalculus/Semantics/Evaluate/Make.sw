@@ -108,8 +108,8 @@ spec
      print ("\n")
      }
 
-  op Specware.cd                    : String -> () % defined in toplevel.lisp -- side effect: prints arg to screen
-  op Specware.pwdAsString           : () -> String % defined in toplevel.lisp
+  op Specware.cd                    : String -> () % defined in Preface.lisp -- side effect: prints arg to screen
+  op Specware.pwdAsString           : () -> String % defined in Preface.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
