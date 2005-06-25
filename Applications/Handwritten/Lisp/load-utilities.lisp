@@ -345,9 +345,9 @@
     #+gcl     (lisp:system (format nil "mkdir ~a" dir))))
 
 (defun copy-directory (source target &optional (recursive? t))
-  #+allegro(sys::copy-directory source target)
-  ;#+cmu (unix::copy-directory source target)
-  #-allegro
+  ;; #+allegro (sys::copy-directory source target) ;  buggy when recursive? is nil
+  ;; #-allegro
+  ;; this is the desired behavior
   (let* ((source-dirpath (if (stringp source)
 			     (parse-namestring (ensure-final-slash source))
 			   source))
@@ -359,7 +359,7 @@
       (make-directory target-dirpath))
     (loop for dir-item in (directory source-dirpath)
       do (if (and recursive? (directory? dir-item))
-	     (copy-directory dir-item (extend-directory target-dirpath dir-item))
+	     (copy-directory dir-item (extend-directory target-dirpath dir-item) t)
 	   (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))
 
 (defun specware::delete-directory (dir &optional (contents? t))
