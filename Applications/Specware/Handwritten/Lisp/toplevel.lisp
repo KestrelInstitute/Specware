@@ -56,20 +56,6 @@
 #+allegro
 (top-level:alias ("sw-help" :string) (&optional com) (sw-help com))
 
-(defun home-dir ()
-  (specware::getenv #+mswindows "HOMEPATH" #-mswindows "HOME"))
-    
-;;; Normalization utilities
-(defun subst-home (path)
-  (when (stringp path)
-    (setq path (substitute #\/ #\\ path))
-    (when (and (>= (length path) 2) (equal (subseq path 0 2) "~/"))
-      (setq path (concatenate 'string (home-dir) (subseq path 1))))
-    (setq path (string-subst path " ~/" (concatenate 'string " " (home-dir) "/")))
-    (when #+mswindows t #-mswindows nil
-	  (setq path (string-subst path "/Program Files/" "/Progra~1/"))))
-  path)
-
 (defun strip-extraneous (str)
   (let ((len (length str)))
     (if (> len 0)
@@ -650,17 +636,6 @@
 	   ))
     str))
 
-(defun string-subst (str source target)
-  (let (pos)
-    (loop while (setq pos (search source str :test #+mswindows #'string-equal
-				                   #-mswindows #'string=))
-	  do (setq str (concatenate 'string
-			 (subseq str 0 pos)
-			 target
-			 (subseq str (+ pos (length source))))))
-    str))
-
-
 ;;; --------------------------------------------------------------------------------
 ;;;
 ;;; Java Gen
@@ -1099,56 +1074,12 @@
       (princ (specware::setenv "SWPATH" (string str)))))
   (values))
 
-(defun under-ilisp? ()
-  (and (find-package "ILISP")
-       (find-symbol "ILISP-COMPILE" "ILISP")))
-
-(defun specware::cd (&optional (dir ""))
-  (if (equal dir "")
-      (setq dir (home-dir))
-    (setq dir (subst-home dir)))
-  (let ((new-dir (specware::current-directory))
-	(error? nil))
-    (loop while (and (not error?) (> (length dir) 1) (equal (subseq dir 0 2) ".."))
-      do (setq dir (subseq dir (if (and (> (length dir) 2) (eq (elt dir 2) #\/))
-				   3 2)))
-      (let* ((olddirpath (pathname-directory new-dir))
-	     (pathlen (length olddirpath)))
-	(if (< pathlen 2)
-	    (progn (warn "At top of directory tree")
-		   (setq error? t))
-	  (setq new-dir (make-pathname :directory (subseq olddirpath 0 (- pathlen 1))
-				       :defaults new-dir)))))
-    (unless error?
-      (setq new-dir (specware::dir-to-path dir new-dir))
-      (when (specware::change-directory new-dir)
-	(let* ((dirpath new-dir)
-	       (newdir (namestring dirpath)))
-	  (emacs::eval-in-emacs (format nil "(set-default-directory ~s)"
-					(specware::ensure-final-slash newdir)))
-	  (when (under-ilisp?)
-	    (emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
-                                               (cons default-directory nil))"
-					  (specware::ensure-final-slash newdir)))))))
-    (princ (namestring (specware::current-directory)))
-    (values)))
-
-(unless (fboundp 'cd)
-  (defun cd (&optional (dir "")) (specware::cd dir)))
-
 (defun ld (file)
   (load (subst-home file)))
 
 (defun pwd ()
   (princ (namestring (specware::current-directory)))
   (values))
-
-(defun specware::pwdAsString-0 () ; used by make
-  (namestring (specware::current-directory)))
-
-(defun specware::currentDeviceAsString-0 () ; used by make and CPrint
-  (let ((x (pathname-device (specware::current-directory))))
-    (if (stringp x) (concatenate 'string x ":") ""))) 
 
 (defun specware::exit ()
   #+allegro (exit)

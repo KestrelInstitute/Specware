@@ -8,64 +8,59 @@
 (defvar *developer?* nil)
 ;(defparameter *specware-shell-readtable* (make-readtable))
 
-(defparameter *sw-shell-help-strings*
-  '(("help" . "[command] Prints help information for command, or, with no argument, all commands.")
-    ("cd" . "[dir] Connect to directory. With no argument, displays the current directory.")
-    ("dir" . "List .sw files in current directory.")
-    ("dirr" . "List .sw files in current directory and recursively in subdirectories.")
-    ("path" . "[dirseq] Sets the current Specware path.
+(defparameter *sw-shell-help-strings* 
+  '(("help"      . "[command] Prints help information for command, or, with no argument, all commands.")
+    ("cd"        . "[dir] Connect to directory. With no argument, displays the current directory.")
+    ("dir"       . "List .sw files in current directory.")
+    ("dirr"      . "List .sw files in current directory and recursively in subdirectories.")
+    ("path"      . "[dirseq] Sets the current Specware path.
                   With no argument, displays the current Specware path.")
-    ("proc" . "[unit-term] Processes the unit. 
+    ("proc"      . "[unit-term] Processes the unit. 
                   With no argument, processes the last processed unit.")
-    ("p" . "[unit-term] Abbreviation for proc.")
-    ("cinit" . "Clears Spec unit cache.")    
-    ("show" . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
-    ("showx" . "[unit-term] Like `show' but shows all types and ops including imports.")
-    ("prove" . "[proof arguments] Abbreviation for proc prove ...")
-    ("prwb" . "[on] Include the base hypothesis when invokig Snark.")
-    ("punits" . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
+    ("p"         . "[unit-term] Abbreviation for proc.")
+    ("cinit"     . "Clears Spec unit cache.")    
+    ("show"      . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
+    ("showx"     . "[unit-term] Like `show' but shows all types and ops including imports.")
+    ("prove"     . "[proof arguments] Abbreviation for proc prove ...")
+    ("prwb"      . "[on] Include the base hypothesis when invokig Snark.")
+    ("punits"    . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
-    ("lpunits" . "[unit-identifier [filename]] Like `punits' but only for local conjectures.")
-    ("ctext" . "[spec-term] Sets the current context for eval commands.
+    ("lpunits"   . "[unit-identifier [filename]] Like `punits' but only for local conjectures.")
+    ("ctext"     . "[spec-term] Sets the current context for eval commands.
                   With no arguments displays context.")
-    ("eval" . "[expression] Evaluates expression with respect to current context.")
-    ("e" . "[expression] Abbreviation for eval.")
+    ("eval"      . "[expression] Evaluates expression with respect to current context.")
+    ("e"         . "[expression] Abbreviation for eval.")
     ("eval-lisp" . "[expression] Like `eval' except the expression is translated to Lisp and evaluated in Lisp.")
-    ("gen-lisp" . "[spec-term [filename]] Generates Lisp code for unit in filename.
+    ("gen-lisp"  . "[spec-term [filename]] Generates Lisp code for unit in filename.
                   With no argument uses last processed unit.")
     ("lgen-lisp" . "[spec-term [filename]] Like `gen-lisp' but only generates Lisp for local definitions of spec.")
-    ("gen-c" . "[spec-term [filename]] Generates C code for unit in filename.
+    ("gen-c"     . "[spec-term [filename]] Generates C code for unit in filename.
                   With no argument uses last processed unit.")
-    ("make" . "[spec-term] Generate C code with makefile and call make on it.")
-    ("gen-java" . "[spec-term [option-spec]] Generates Java code for unit in filename.
+    ("make"      . "[spec-term] Generate C code with makefile and call make on it.")
+    ("gen-java"  . "[spec-term [option-spec]] Generates Java code for unit in filename.
                   With no argument uses last processed unit.")
-; obsolete
-;    ("j-config" . "Show configuration parameters for Java generation.")
-;    ("j-config-dir" . "[dir] Set base directory to be used by gen-java.")
-;    ("j-config-make-public" . "[names] Set public names to be used by gen-java.")
-;    ("j-config-pkg" . "[pkg] Set package name to be used by gen-java.")
-;    ("j-config-reset" . "Restore default configuration parameters for Java generation.")
-    ("ld" . "[filename] Load Lisp file filename.")
-    ("cf" . "[filename] Compile Lisp file filename.")
-    ("cl" . "[filename] Compile and load Lisp file filename.")
-    ("exit" . "Exits shell and Lisp.")
-    ("quit" . "Alias for exit.")
+    ("ld"        . "[filename] Load Lisp file filename.")
+    ("cf"        . "[filename] Compile Lisp file filename.")
+    ("cl"        . "[filename] Compile and load Lisp file filename.")
+    ("exit"      . "Exits shell and Lisp.")
+    ("quit"      . "Alias for exit.")
     ))
 
-(defparameter *sw-shell-dev-help-strings*
+(defparameter *sw-shell-dev-help-strings* ; common to all shells
   '(("set-base" . "[unit-id] Sets base spec to unit-id")
-    ("lisp" . "[lisp expr] Evaluate lisp expression.")
-    ("l" . "[lisp expr] Abbreviation for lisp.")
-    ("tr" . "[lisp function names] Trace functions.")
-    ("untr" . "Untrace all traced functions.")
-    ("f-b" . "[lisp function names] Break functions.")
-    ("f-unb" . "[lisp function names] Unreak functions. No argument means all broken functions")
-    ("pa" . "[package name] Set package for lisp forms.")
-    ("dev" . "[on] Set *developer?*. No argument gives current setting.")
-    ("wiz" . "[on] Set SpecCalc::specwareWizard?. No argument gives current setting.")
-    ("swdbg" . "[on] Set System-spec::specwareDebug?. No argument gives current setting.")))
+    ("lisp"     . "[lisp expr] Evaluate lisp expression.")
+    ("l"        . "[lisp expr] Abbreviation for lisp.")
+    ("tr"       . "[lisp function names] Trace functions.")
+    ("untr"     . "Untrace all traced functions.")
+    ("f-b"      . "[lisp function names] Break functions.")
+    ("f-unb"    . "[lisp function names] Unreak functions. No argument means all broken functions")
+    ("pa"       . "[package name] Set package for lisp forms.")
+    ("dev"      . "[on] Set *developer?*. No argument gives current setting.")
+    ("wiz"      . "[on] Set SpecCalc::specwareWizard?. No argument gives current setting.")
+    ("swdbg"    . "[on] Set System-spec::specwareDebug?. No argument gives current setting.")))
 
-(defun print-shell-prompt () (princ *prompt* *standard-output*))
+(defun print-shell-prompt () 
+  (princ *prompt* *standard-output*))
 
 (defvar *emacs-eval-form-after-prompt* nil)
 
@@ -85,7 +80,7 @@
 (defvar *sw-shell-print-level* 8)
 (defvar *sw-shell-print-length* 16)
 
-(defun specware-shell (exiting-lisp?)
+(defun aux-specware-shell (exiting-lisp? sw-shell-command-processor)
   (let  ((magic-eof-cookie (cons :eof nil))
 	 (number-of-eofs 0)
 	 (cl:*package* cl:*package*)
@@ -130,7 +125,9 @@
 			 (return))
 			((not (eq form magic-eof-cookie))
 			 (let ((results
-				(multiple-value-list (sw-shell-command form))))
+				(multiple-value-list 
+				 (sw-shell-command sw-shell-command-processor
+						   form))))
 			   (dolist (result results)
 			     (fresh-line)
 			     (prin1 result)))
@@ -152,14 +149,16 @@
       (unless exiting-lisp?
 	(format t "~%Exiting Specware Shell. :sw-shell to reenter.~%")))))
 
-(defun sw-shell-command (command)
+(defun sw-shell-command (sw-shell-command-processor command)
   (let ((ch (read-char-no-hang *standard-input* nil nil)))
     (when (and ch (not (eq ch #\Newline)))
       (unread-char ch))
-    (if (or (null ch)          ; interactive, end of command
-	    (eq ch #\Newline)) ; batch, first char after whitespace is newline      
-	(process-sw-shell-command command nil)
-      (process-sw-shell-command command (read-line)))))
+    (funcall sw-shell-command-processor 
+	     command 
+	     (if (or (null ch)          ; interactive, end of command
+		     (eq ch #\Newline)) ; batch, first char after whitespace is newline      
+		 nil
+	       (read-line)))))
 
 (defmacro with-break-possibility (&rest fms)
   `(progn (set-specware-shell nil)
@@ -174,110 +173,6 @@
 	  // /
 	  / val))
   (values-list val))
-
-(defun process-sw-shell-command (command argstr)
-  (if (and (consp command) (null argstr))
-      (lisp-value (multiple-value-list (eval command)))
-    (case command
-      (help (let ((cl-user::*sw-help-strings*
-		   (if *developer?*
-		       (concatenate 'list *sw-shell-help-strings* *sw-shell-dev-help-strings*)
-		     *sw-shell-help-strings*)))
-	      (cl-user::sw-help argstr)))
-      (cd (if (null argstr)
-	      (princ (namestring (specware::current-directory)))
-	    (specware::cd argstr))
-	  (values))
-      (pwd (princ (namestring (specware::current-directory)))
-	   (values))
-      (dir (cl-user::ls (or argstr "")))
-      (dirr (cl-user::dirr (or argstr "")))
-      (path (cl-user::swpath argstr))
-      ((proc p) (cl-user::sw argstr) (values))
-      (show (cl-user::show argstr) (values))
-      (showx (cl-user::showx argstr) (values))
-      (cinit (cl-user::sw-init))
-      (gen-lisp (cl-user::swl argstr) (values))
-      (lgen-lisp (cl-user::swll argstr) (values))
-      (gen-c (cl-user::swc argstr) (values))
-      (make (if (null argstr) 
-		(cl-user::make)
-	      (cl-user::make argstr)))
-      (gen-java (cl-user::swj argstr) (values))
-; obsolete
-;      (j-config (cl-user::swj-config))
-;      (j-config-dir (cl-user::swj-config-dir argstr))
-;      (j-config-make-public (cl-user::swj-config-make-public argstr))
-;      (j-config-pkg (cl-user::swj-config-pkg argstr))
-;      (j-config-reset (cl-user::swj-config-reset))
-      (prove (cl-user::sw (concatenate 'string "prove " argstr)) (values))
-      (prwb (if argstr (cl-user::swprb argstr) (cl-user::swprb)))
-      (punits (cl-user::swpf argstr))
-      (lpunits (cl-user::lswpf argstr))	; No local version yet
-      (ctext (if (null argstr)
-		 (progn (if cl-user::*current-swe-spec*
-			    (format t "~&Current context: ~a" cl-user::*current-swe-spec*)
-			  (format t "~&Current context: Base Spec"))
-			(values))
-	       (if (string= argstr "None")
-		   (progn (setq cl-user::*current-swe-spec* nil)
-			  (format t "~&Subsequent evaluation commands will import just the base spec.~%"))
-		 (cl-user::swe-spec argstr))))
-      ((eval e) (let ((cl-user::*swe-use-interpreter?* t)
-		      (argstr (or argstr *last-eval-expr*))
-		      (cl-user::*expr-begin-offset* (if (eq command 'e) -12 -9)))
-		  (if (null argstr)
-		      (warn "No previous eval command.")
-		    (progn (setq *last-eval-expr* argstr)
-			   (cl-user::swe argstr)
-			   (values)))))
-      ((eval-lisp el) (let ((cl-user::*swe-use-interpreter?* nil)
-			    (argstr (or argstr *last-eval-expr*))
-			    (cl-user::*expr-begin-offset* (if (eq command 'el) -11 -4)))
-			(if (null argstr)
-			    (warn "No previous eval command.")
-			  (progn (setq *last-eval-expr* argstr)
-				 (cl-user::swe argstr)
-				 (values)))))
-      ;; Non-user commands
-      (set-base (cl-user::set-base argstr))
-      (show-base-unit-id (cl-user::show-base-unit-id))
-      ((lisp l) (with-break-possibility
-		 (lisp-value (multiple-value-list
-			      (eval (read-from-string argstr))))))
-      (cl (with-break-possibility (cl-user::cl argstr)))
-      (ld (with-break-possibility (cl-user::ld argstr)))
-      (cf (cl-user::cf argstr))
-      (tr (cl-user::tr argstr))
-      (untr (cl-user::untr))
-      (f-b (when (fboundp 'cl-user::f-b)
-	     (cl-user::f-b argstr)))
-      (f-unb (when (fboundp 'cl-user::f-unb)
-	       (cl-user::f-unb (or argstr ""))))
-      (pa (cl-user::pa argstr))
-      (dev (if argstr
-	       (princ (setq *developer?* (if (member argstr '("nil" "NIL" "off") :test 'string=)
-					     nil t)))
-	     (princ *developer?*))
-	   (values))
-      (wiz (if argstr (cl-user::wiz argstr) (cl-user::wiz)))
-      (swdbg (if argstr (cl-user::swdbg argstr) (cl-user::swdbg)))
-      (com (let ((cl:*package* (find-package "CL-USER")))
-	     (multiple-value-bind (command pos)
-		 (read-from-string argstr)
-	       (if (fboundp command)
-		   (let ((com-argstr (subseq argstr pos)))
-		     (if (string= com-argstr "")
-			 (funcall command)
-		       (funcall command com-argstr)))
-		 (format t "Unknown command: ~a." command)))))
-      (t (format t "Unknown command `~a'. Type `help' to see available commands."
-		 (string-downcase command))
-	 (values)))))
-
-;;; Add commands for entering shell from Lisp shell
-(defun cl-user::sw-shell ()
-  (specware-shell nil))
 
 #|| Didn't pan out
 (defvar original-error #'error)
@@ -316,9 +211,116 @@
   t)
 ||#
 
+;;; ================================================================================
+;;; Replicate and revise this portion for other shells (prism, accord, etc.)
+;;; ================================================================================
+
+(setq cl-user::*sw-help-strings*
+  (append cl-user::*sw-help-strings*
+	  '((":sw-shell" . "Run Specware Shell"))))
+
 #+allegro
 (top-level:alias ("sw-shell") () (specware-shell nil))
 
-(setq cl-user::*sw-help-strings*
-  (concatenate 'list cl-user::*sw-help-strings*
-	       '((":sw-shell" . "Run Specware Shell"))))
+;;; Add commands for entering shell from Lisp shell
+(defun cl-user::sw-shell ()
+  (specware-shell nil))
+
+(defun specware-shell (exiting-lisp?)
+  (aux-specware-shell exiting-lisp? #'process-sw-shell-command))
+
+;; Specware uses this for sw-shell-command-processor
+;; Other systems (e.g. prism or accord) may use related functions...
+(defun process-sw-shell-command (command argstr)
+  (if (and (consp command) (null argstr))
+      (lisp-value (multiple-value-list (eval command)))
+    (case command
+      (help      (let ((cl-user::*sw-help-strings*
+			(append *sw-shell-help-strings*
+				(if *developer?*
+				    *sw-shell-dev-help-strings*
+				  '()))))
+		   (cl-user::sw-help argstr) ; refers to cl-user::*sw-help-strings*
+		   ))
+      (cd        (if (null argstr)
+		     (princ (namestring (specware::current-directory)))
+		   (specware::cd argstr))
+		 (values))
+      (pwd       (princ (namestring (specware::current-directory))) (values))
+      (dir       (cl-user::ls     (or argstr "")))
+      (dirr      (cl-user::dirr   (or argstr "")))
+      (path      (cl-user::swpath argstr))
+      ((proc p)  (cl-user::sw     argstr) (values))
+      (show      (cl-user::show   argstr) (values))
+      (showx     (cl-user::showx  argstr) (values))
+      (cinit     (cl-user::sw-init))
+      (gen-lisp  (cl-user::swl    argstr) (values))
+      (lgen-lisp (cl-user::swll   argstr) (values))
+      (gen-c     (cl-user::swc    argstr) (values))
+      (make      (if (null argstr) (cl-user::make) (cl-user::make argstr)))
+      (gen-java  (cl-user::swj    argstr) (values))
+      (prove     (cl-user::sw (concatenate 'string "prove " argstr)) (values))
+      (prwb      (if argstr (cl-user::swprb argstr) (cl-user::swprb)))
+      (punits    (cl-user::swpf   argstr))
+      (lpunits   (cl-user::lswpf  argstr)) ; No local version yet
+      (ctext     (if (null argstr)
+		     (progn (if cl-user::*current-swe-spec*
+				(format t "~&Current context: ~a" cl-user::*current-swe-spec*)
+			      (format t "~&Current context: Base Spec"))
+			    (values))
+		   (if (string= argstr "None")
+		       (progn (setq cl-user::*current-swe-spec* nil)
+			      (format t "~&Subsequent evaluation commands will import just the base spec.~%"))
+		     (cl-user::swe-spec argstr))))
+      ((eval e)  (let ((cl-user::*swe-use-interpreter?* t)
+		       (argstr (or argstr *last-eval-expr*))
+		       (cl-user::*expr-begin-offset* (if (eq command 'e) -12 -9)))
+		   (if (null argstr)
+		       (warn "No previous eval command.")
+		     (progn (setq *last-eval-expr* argstr)
+			    (cl-user::swe argstr)
+			    (values)))))
+      ((eval-lisp el) 
+                 (let ((cl-user::*swe-use-interpreter?* nil)
+		       (argstr (or argstr *last-eval-expr*))
+		       (cl-user::*expr-begin-offset* (if (eq command 'el) -11 -4)))
+		   (if (null argstr)
+		       (warn "No previous eval command.")
+		     (progn (setq *last-eval-expr* argstr)
+			    (cl-user::swe argstr)
+			    (values)))))
+      ;; Non-user commands
+      (set-base          (cl-user::set-base argstr))
+      (show-base-unit-id (cl-user::show-base-unit-id))
+
+      ((lisp l)  (with-break-possibility (lisp-value (multiple-value-list (eval (read-from-string argstr))))))
+      (cl        (with-break-possibility (cl-user::cl argstr)))
+      (ld        (with-break-possibility (cl-user::ld argstr)))
+      (cf        (cl-user::cf argstr))
+      (tr        (cl-user::tr argstr))
+      (untr      (cl-user::untr))
+      (f-b       (when (fboundp 'cl-user::f-b)
+		   (cl-user::f-b argstr)))
+      (f-unb     (when (fboundp 'cl-user::f-unb)
+		   (cl-user::f-unb (or argstr ""))))
+      (pa        (cl-user::pa argstr))
+      (dev       (princ (if argstr
+			    (setq *developer?* (not (member argstr '("nil" "NIL" "off") :test 'string=)))
+			  *developer?*))
+		 (values))
+      (wiz       (if argstr (cl-user::wiz   argstr) (cl-user::wiz)))
+      (swdbg     (if argstr (cl-user::swdbg argstr) (cl-user::swdbg)))
+      (com       (let ((cl:*package* (find-package "CL-USER")))
+		   (multiple-value-bind (command pos)
+		       (read-from-string argstr)
+		     (if (fboundp command)
+			 (let ((com-argstr (subseq argstr pos)))
+			   (if (string= com-argstr "")
+			       (funcall command)
+			     (funcall command com-argstr)))
+		       (format t "Unknown command: ~a." command)))))
+      ;;
+      (t (format t "Unknown command `~a'. Type `help' to see available commands."
+		 (string-downcase command))
+	 (values)))))
+
