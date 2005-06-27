@@ -72,18 +72,20 @@ SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
 echo " "
 cd $APP_DIR
 $BATCH_LISP <<-XXXX
-	#+Allegro (format t "Allegro version%") 
-	#+CMU     (format t "CMU version%") 
-        #+MCL     (format t "OpenMCL version%") 
-	(load "$EXIT_ON_ERRORS") 
-	(load "$MEMORY_MANAGEMENT") 
-	(load "$SAVE_IMAGE") 
-	#+Allegro (compact-memory nil 0 32000000)   ; not verbose
-	#+Allegro (set-gc-parameters-for-build nil) ; not verbose
-	(exiting-on-errors 
+	(progn
+	 #+Allegro (format t "~&Allegro version~%") 
+	 #+CMU     (format t "~&CMU version~%") 
+         #+MCL     (format t "~&OpenMCL version~%") 
+	 (load "$EXIT_ON_ERRORS") 
+	 (load "$MEMORY_MANAGEMENT") 
+	 (load "$SAVE_IMAGE") 
+	 #+Allegro (compact-memory nil 0 32000000)   ; not verbose
+	 #+Allegro (set-gc-parameters-for-build nil) ; not verbose
+	 (exiting-on-errors 
 	  (load "$MAIN_BUILD_FILE"))
-        (format t "Writing ~A~%" "${BIN_DIR}/$IMAGE")
-	(when (fboundp (quote gc)) (gc))
+         (format t "~&Writing ~A~%" "${BIN_DIR}/$IMAGE")
+	 (when (fboundp (quote gc)) (gc))
+	 )
         (save-this-lisp-image "${BIN_DIR}/$IMAGE")
         (exit-from-lisp 0)
 XXXX

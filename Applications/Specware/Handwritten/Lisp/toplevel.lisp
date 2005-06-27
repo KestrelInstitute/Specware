@@ -1148,14 +1148,10 @@
 
 (defun ls (&optional (str ""))
   (let* ((dirpath  (specware::dir-to-path str))
-	 (contents #-mcl (directory dirpath)
-		   #+mcl (directory (merge-pathnames (make-pathname :name :wild) dirpath)
-				    :directories t :all nil))
+	 (contents (sw-directory dirpath))
 	 (sw-files (loop for p in contents
 		     when (or (string= (pathname-type p) "sw")
-			      (specware::directory?
-			       #+allegro (parse-namestring (specware::ensure-final-slash (namestring p)))
-			       #-allegro p))
+			      (specware::directory? p))
 		     collect p)))
     (list-files sw-files)
     (values)))
@@ -1172,9 +1168,7 @@
   (values))
 
 (defun list-directory-rec (dir)
-  (let* ((contents #-mcl(directory dir)
-		   #+mcl(directory (merge-pathnames (make-pathname :name :wild) dir)
-				   :directories t :all nil))
+  (let* ((contents (sw-directory dir))
 	 (sw-files (loop for p in contents
 		     when (string= (pathname-type p) "sw")
 		     collect p)))
@@ -1183,9 +1177,7 @@
       (list-files sw-files))
     (loop for p in contents
       unless (equal (pathname-name p) "CVS")
-      do ;; Work around allegro bug in directory
-          #+allegro (setq p (parse-namestring (specware::ensure-final-slash (namestring p))))
-	  (when (specware::directory? p)
+      do (when (specware::directory? p)
 	   (list-directory-rec p))))
   )
 

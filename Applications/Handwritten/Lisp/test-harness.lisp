@@ -87,7 +87,7 @@ be the option to run each (test ...) form in a fresh image.
 		     :device dev))))
 
 (defun sorted-directory (dirpath)
-  (sort (directory dirpath) 
+  (sort (specware::sw-directory dirpath)
 	#'(lambda (a b) 
 	    (string<= (namestring a) (namestring b)))))
 
@@ -198,8 +198,8 @@ be the option to run each (test ...) form in a fresh image.
 	  ;(ensure-directories-exist target)
 	  (if *quiet-copy?*
 	      (with-output-to-string (*standard-output*)
-		(specware::copy-directory source target nil))
-	    (specware::copy-directory source target nil)))))
+		(specware::copy-directory source target t))
+	    (specware::copy-directory source target t)))))
 
 (defmacro test (&body test-forms)
   ; (setq *global-test-counter* 0)

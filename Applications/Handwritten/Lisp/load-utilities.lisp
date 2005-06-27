@@ -324,9 +324,16 @@
 (defun directory? (pathname)
   (and (null (pathname-name pathname))
        (null (pathname-type pathname))
-       (not (null #-mcl (directory pathname)
-		  #+mcl (directory (merge-pathnames (make-pathname :name :wild) pathname)
-				   :directories t)))))
+       (not (null (sw-directory pathname)))))
+
+(defun sw-directory (pathname &optional recursive?)
+  (directory #-mcl pathname
+	     #+mcl (merge-pathnames (make-pathname :name :wild) pathname)
+	     :allow-other-keys      t             ; permits implementation-specific keys to be ignored by other implementations
+	     :directories           t             ; specific to mcl
+	     :all                   recursive?    ; specific to mcl
+	     :directories-are-files nil           ; specific to allegro -- we never want this option, but it defaults to T (!)
+	     ))
 
 (defun extend-directory (dir ext-dir)
   (make-pathname :directory
@@ -357,8 +364,9 @@
 			   target)))
     (unless (probe-file target-dirpath)
       (make-directory target-dirpath))
-    (loop for dir-item in (directory source-dirpath)
-      do (if (and recursive? (directory? dir-item))
+    (loop for dir-item in (sw-directory source-dirpath)
+      do
+      (if (and recursive? (directory? dir-item))
 	     (copy-directory dir-item (extend-directory target-dirpath dir-item) t)
 	   (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))
 
@@ -369,9 +377,9 @@
     (excl:delete-directory dir))
   #-allegro
   (if contents?
-      (loop for dir-item in (directory (if (stringp dir)
-					   (parse-namestring dir)
-					 dir))
+      (loop for dir-item in (sw-directory (if (stringp dir)
+					      (parse-namestring dir)
+					    dir))
 	do (if (directory? dir-item)
 	       (specware::delete-directory dir-item contents?)
 	     (delete-file dir-item)))
