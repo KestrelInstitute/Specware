@@ -33,7 +33,7 @@ type State = {
 	      ignoreSubsorts : Boolean,
 	      verbose : Boolean,
 	      sep : String, % the string used for Java class name generation, default "$"
-	      transformSpecFun : Spec -> Spec,
+	      transformSpecFun : AccordNamedSpec -> AccordNamedSpec,    % used by Accord
 	      localVarToJExpr : String -> Option Java.Expr, % return some java expression if the string is a local parameter
 	      specialFun: SpecialFunType,
               createFieldFun : MS.Term -> Boolean,
@@ -42,6 +42,11 @@ type State = {
 		                                    % generated for the accord classes
               isClassNameFun : String -> Boolean % returns true if the given ident is a currently visible classname
 	     }
+
+%% same as NamedSpec in Accord/Sources/Semantics
+%% but it's not clear what that file and this one import in common...
+type AccordNamedSpec = {term : SpecCalc.Term Position,
+			spc  : Spec}
 
 op initialState : State
 def initialState = {
@@ -242,12 +247,12 @@ def setSep sep =
   fn state ->
   (Ok (), state << { sep = sep })
 
-op getTransformSpecFun: JGenEnv (Spec -> Spec)
+op getTransformSpecFun: JGenEnv (AccordNamedSpec -> AccordNamedSpec)
 def getTransformSpecFun =
   fn state ->
   (Ok state.transformSpecFun, state)
 
-op setTransformSpecFun: (Spec -> Spec) -> JGenEnv ()
+op setTransformSpecFun: (AccordNamedSpec -> AccordNamedSpec) -> JGenEnv ()
 def setTransformSpecFun tfun =
   fn state ->
   (Ok (), state << { transformSpecFun = tfun })
