@@ -1148,7 +1148,7 @@
 
 (defun ls (&optional (str ""))
   (let* ((dirpath  (specware::dir-to-path str))
-	 (contents (sw-directory dirpath))
+	 (contents (specware::sw-directory dirpath))
 	 (sw-files (loop for p in contents
 		     when (or (string= (pathname-type p) "sw")
 			      (specware::directory? p))
@@ -1168,7 +1168,7 @@
   (values))
 
 (defun list-directory-rec (dir)
-  (let* ((contents (sw-directory dir))
+  (let* ((contents (specware::sw-directory dir))
 	 (sw-files (loop for p in contents
 		     when (string= (pathname-type p) "sw")
 		     collect p)))
