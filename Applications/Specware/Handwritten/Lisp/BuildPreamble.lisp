@@ -11,6 +11,8 @@
 (defvar cl-user::Specware-version-name "Specware-4-1")
 (defvar cl-user::Specware-patch-level "3")
 
+(push ':SPECWARE-DISTRIBUTION *features*)
+
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-1")
 
@@ -81,4 +83,3 @@
 
 #+mcl
 (push 'load-specware-patch-if-present ccl:*lisp-startup-functions*)
-
