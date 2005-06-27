@@ -20,12 +20,14 @@
 
 
 (defun explode (s) 
-  (reduce #'cons s :from-end t :initial-value nil))
+  ;; (reduce #'cons s :from-end t :initial-value nil)) ; ugh... uses generic sequence functions to treat string as list, then rebuilds list
+  (coerce s 'list) ; let lisp do something smart
+  )
 
 (defun implode (s) 
-  (apply #'concatenate 
-         (cons 'string
-               (mapcar #'string s))))
+  ;; (apply #'concatenate (cons 'string (mapcar #'string s))) ; brain damage -- hugely inefficient
+  (coerce s 'string) ; let lisp do something smart
+  )
 
 (defun |!length| (x)
   (declare (type cl:simple-base-string x))
