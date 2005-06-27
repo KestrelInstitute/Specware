@@ -163,12 +163,13 @@ else
 			 ;; finish evaluating the load of Specware4.lisp to create the 
 			 ;; Specware package before the reader sees a reference to it.
 			 (format t "~%--------------------------------------------------------------------------------~%")
-			 (exiting-on-errors 
-			   (Specware::initializeSpecware-0) 
-			   (if (swl "/Applications/Specware/Specware4")
-                             ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
-			     (exit 0)
-			     (exit 22))))
+			 )
+			(exiting-on-errors 
+			  (Specware::initializeSpecware-0) 
+			  (if (swl "/Applications/Specware/Specware4")
+                            ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+			    (exit 0)
+			    (exit 22)))
 		XXXX
                 RC=$?
 	else
@@ -202,12 +203,13 @@ else
 			    ;; finish evaluating the load of Specware4.lisp to create the 
 			    ;; Specware package before the reader sees a reference to it.
 			    (format t "~%--------------------------------------------------------------------------------~%")
-			    (exiting-on-errors 
-			      (Specware::initializeSpecware-0) 
-			      (if (swl "/Applications/Specware/Specware4")
-                                ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
-				(exit 0)
-			        (exit 33))))
+			    (values))
+			   (exiting-on-errors 
+			     (Specware::initializeSpecware-0) 
+			     (if (swl "/Applications/Specware/Specware4")
+                               ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+			       (exit 0)
+			       (exit 33)))
 			XXXX
 			RC=$?
 		else
