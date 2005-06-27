@@ -123,6 +123,12 @@ spec
   op FA2 : Variable * Type * Variable * Type * Expression -> Expression
   def FA2 (v1,t1,v2,t2,e) = FA (v1, t1, FA (v2, t2, e))
 
+  % 3-variable universal quantification:
+  % API private
+  op FA3 : Variable * Type * Variable * Type * Variable * Type *
+           Expression -> Expression
+  def FA3 (v1,t1,v2,t2,v3,t3,e) = FA (v1, t1, FA (v2, t2, FA (v3, t3, e)))
+
   % existential quantifier:
   op EXq : Type -> Expression
   def EXq t = let p:Variable = abbr 0 in
