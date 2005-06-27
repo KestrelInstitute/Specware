@@ -127,14 +127,17 @@ if [   -f bin/linux/Specware4.dxl \
         echo " "
 	bin/linux/Specware4-text -batch <<-XXXX
                 :swpath
-		(load "$EXIT_ON_ERRORS")    
-		(load "$MEMORY_MANAGEMENT") 
-		(enlarge-stack)
-		(exiting-on-errors 
-		  (if (swl "/Applications/Specware/Specware4")
-                    ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
-		    (exit 0)
-		    (exit 11)))
+		(progn
+		 (format t "~%--------------------------------------------------------------------------------~%")
+		 (load "$EXIT_ON_ERRORS")    
+		 (load "$MEMORY_MANAGEMENT") 
+		 (enlarge-stack)
+		 (format t "~%--------------------------------------------------------------------------------~%")
+		 (exiting-on-errors 
+		   (if (swl "/Applications/Specware/Specware4")
+                     ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+		     (exit 0)
+		     (exit 11))))
 	XXXX
         RC=$?
 else
@@ -148,20 +151,24 @@ else
                 echo " "
 		cd Handwritten/Lisp
 		$LISP -batch <<-XXXX
-			(load "$EXIT_ON_ERRORS")
-		        (load "$MEMORY_MANAGEMENT") 
-			(enlarge-stack)
-			(exiting-on-errors 
-			  (load "Specware4.lisp"))
-			;; We have two separate exiting-on-errors forms because we must
-			;; finish evaluating the load of Specware4.lisp to create the 
-			;; Specware package before the reader sees a reference to it.
-			(exiting-on-errors 
-			  (Specware::initializeSpecware-0) 
-			  (if (swl "/Applications/Specware/Specware4")
-                            ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
-			    (exit 0)
-			    (exit 22)))
+			(progn
+			 (format t "~%--------------------------------------------------------------------------------~%")
+			 (load "$EXIT_ON_ERRORS")
+		         (load "$MEMORY_MANAGEMENT") 
+			 (enlarge-stack)
+			 (format t "~%--------------------------------------------------------------------------------~%")
+			 (exiting-on-errors 
+			   (load "Specware4.lisp"))
+			 ;; We have two separate exiting-on-errors forms because we must
+			 ;; finish evaluating the load of Specware4.lisp to create the 
+			 ;; Specware package before the reader sees a reference to it.
+			 (format t "~%--------------------------------------------------------------------------------~%")
+			 (exiting-on-errors 
+			   (Specware::initializeSpecware-0) 
+			   (if (swl "/Applications/Specware/Specware4")
+                             ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+			     (exit 0)
+			     (exit 22))))
 		XXXX
                 RC=$?
 	else
@@ -183,20 +190,24 @@ else
 			echo " "
 			cd Handwritten/Lisp
 			$LISP -batch <<-XXXX
+			   (progn
+			    (format t "~%--------------------------------------------------------------------------------~%")
 			    (load "$EXIT_ON_ERRORS")
 		            (load "$MEMORY_MANAGEMENT") 
 			    (enlarge-stack)
+			    (format t "~%--------------------------------------------------------------------------------~%")
 			    (exiting-on-errors 
 			      (load "Specware4.lisp"))
 			    ;; We have two separate exiting-on-errors forms because we must
 			    ;; finish evaluating the load of Specware4.lisp to create the 
 			    ;; Specware package before the reader sees a reference to it.
+			    (format t "~%--------------------------------------------------------------------------------~%")
 			    (exiting-on-errors 
 			      (Specware::initializeSpecware-0) 
 			      (if (swl "/Applications/Specware/Specware4")
                                 ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
 				(exit 0)
-			        (exit 33)))
+			        (exit 33))))
 			XXXX
 			RC=$?
 		else
@@ -268,17 +279,20 @@ echo " "
 echo "Loading Specware ... (for dumplisp)"
 echo " "
 $LISP -I ${BIG_ALISP} -batch <<-XXXX
-	(load "$EXIT_ON_ERRORS")
-	(load "$MEMORY_MANAGEMENT") 
-	(compact-memory nil 0 32000000)   ; not verbose
-	(set-gc-parameters-for-build nil) ; not verbose
-	(exiting-on-errors 
-	  (load "Specware4.lisp"))
-	(compact-memory nil -1 0)         ; not verbose
-	(set-gc-parameters-for-use nil)   ; not verbose
-	; (list (quote ms::usingNewBooleans?) ms::usingNewBooleans?)
-	(setq ms::usingNewBooleans? t)
-	(list (quote ms::usingNewBooleans?) ms::usingNewBooleans?)
+	(progn
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (load "$EXIT_ON_ERRORS")
+	 (load "$MEMORY_MANAGEMENT") 
+	 (compact-memory nil 0 32000000)   ; not verbose
+	 (set-gc-parameters-for-build nil) ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (exiting-on-errors 
+	   (load "Specware4.lisp"))
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (compact-memory nil -1 0)         ; not verbose
+	 (set-gc-parameters-for-use nil)   ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (values))
         (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX
 RC=$?

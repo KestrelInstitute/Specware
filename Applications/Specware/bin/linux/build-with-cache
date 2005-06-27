@@ -113,17 +113,23 @@ echo " "
 # use Specware4-save.dxl so that dump of Specware4.dxl won't crash running image
 "$LISP" -I "$SPECWARE4"/Applications/Specware/bin/linux/Specware4-save.dxl -batch <<-XXXX
 	:swpath
-	;; (load "$EXIT_ON_ERRORS")    ; already loaded
-	;; (load "$MEMORY_MANAGEMENT") ; already loaded
-	(compact-memory t 0 64000000)
-	(set-gc-parameters-for-build nil)
-	(exiting-on-errors 
-	  (unless (sw "/Applications/Specware/Specware4")
+	(progn
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 ;; (load "$EXIT_ON_ERRORS")    ; already loaded
+	 ;; (load "$MEMORY_MANAGEMENT") ; already loaded
+	 (compact-memory t 0 64000000)
+	 (set-gc-parameters-for-build nil)
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (exiting-on-errors 
+	   (unless (sw "/Applications/Specware/Specware4")
             ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
-            (exit 1)))
-	(compact-memory t -1 0)
-	(set-gc-parameters-for-use nil)
-	(format t "~%Dumping image with cached results of (sw \"/Applications/Specware/Specware4\")...~%")
+             (exit 1)))
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (compact-memory t -1 0)
+	 (set-gc-parameters-for-use nil)
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (format t "~%Dumping image with cached results of (sw \"/Applications/Specware/Specware4\")...~%")
+	 (values))
         (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX
 RC=$?

@@ -73,6 +73,7 @@ echo " "
 cd $APP_DIR
 $BATCH_LISP <<-XXXX
 	(progn
+         (format t "~%--------------------------------------------------------------------------------~%")
 	 #+Allegro (format t "~&Allegro version~%") 
 	 #+CMU     (format t "~&CMU version~%") 
          #+MCL     (format t "~&OpenMCL version~%") 
@@ -81,13 +82,17 @@ $BATCH_LISP <<-XXXX
 	 (load "$SAVE_IMAGE") 
 	 #+Allegro (compact-memory nil 0 32000000)   ; not verbose
 	 #+Allegro (set-gc-parameters-for-build nil) ; not verbose
+         (format t "~%--------------------------------------------------------------------------------~%")
 	 (exiting-on-errors 
 	  (load "$MAIN_BUILD_FILE"))
-         (format t "~&Writing ~A~%" "${BIN_DIR}/$IMAGE")
 	 (when (fboundp (quote gc)) (gc))
-	 )
+         (format t "~%--------------------------------------------------------------------------------~%")
+         (format t "~&Writing ~A~%" "${BIN_DIR}/$IMAGE")
+	 (values))
         (save-this-lisp-image "${BIN_DIR}/$IMAGE")
-        (exit-from-lisp 0)
+	(progn 
+	 (format t "~%--------------------------------------------------------------------------------~%")
+         (exit-from-lisp 0))
 XXXX
 RC=$?
 
