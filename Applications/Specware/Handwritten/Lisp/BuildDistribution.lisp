@@ -51,10 +51,10 @@
 
     ;; the image does not have a compiler neither during the build nor after.
     ;; The application has the interpreter only.
-    :include-compiler nil
+    :include-compiler t
 
     ;; which runtime? the other option is :dynamic which includes the compiler
-    :runtime :standard
+    :runtime :dynamic
   )
 
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/copy-files-for-distribution.lisp"))
