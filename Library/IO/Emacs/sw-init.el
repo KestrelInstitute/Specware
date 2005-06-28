@@ -14,7 +14,8 @@
 						    default-directory))
 			     (concat (getenv "SPECWARE4")))))
 	   (bin-dir (binary-directory specware4-dir))
-	   (world-name (concat bin-dir "/Specware4." *lisp-image-extension*)))
+	   (world-name (or (getenv "LISP_HEAP_IMAGE")
+			   (concat bin-dir "/Specware4." *lisp-image-extension*))))
 
       (setq sw:common-lisp-host "localhost")
       (setq-default sw::lisp-host sw:common-lisp-host)
@@ -46,9 +47,8 @@
       ;; A "HEAP_IMAGE" is what Franz calls an image and what Kestrel calls a world.
       ;; The suffix on such files is .dxl.
       ;;
-      (setq sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE"))
-      (unless (and sw:common-lisp-image-file (not in-current-dir?))
-	(setq sw:common-lisp-image-file world-name))
+      ;(setq sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE"))
+      (setq sw:common-lisp-image-file world-name)
       (setq sw:common-lisp-image-arguments
 	    (if *windows-system-p* '("+cn") nil))
       (when (getenv "SOCKET_INIT_FILE")
