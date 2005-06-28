@@ -27,7 +27,7 @@
 #+OPTIMIZE-PARSER (format t "~&;;; OPTIMIZE-PARSER feature is on.~%")
 #-OPTIMIZE-PARSER (format t "~&;;; OPTIMIZE-PARSER feature is off.~%")
 
-#+COMPILER ; don't delete fasl files if there is no compiler to recreate them
+#+(AND COMPILER (NOT SPECWARE-DISTRIBUTION)) ; don't delete fasl files if there is no compiler to recreate them
 (dolist (f (directory (format nil "~A/Library/Algorithms/Parsing/Chart/Handwritten/Lisp/*.~A" 
 			      specware::specware4
 			      specware::*fasl-type*)))
