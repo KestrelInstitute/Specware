@@ -4,6 +4,6 @@ spec
   directory that can be imported by external code that uses the proof
   checker. *)
 
-  import Judgements, OtherAbbreviations
+  import Proofs, OtherAbbreviations
 
 endspec
