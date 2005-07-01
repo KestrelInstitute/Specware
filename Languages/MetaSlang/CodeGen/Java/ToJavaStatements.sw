@@ -90,6 +90,14 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 	 | IfThenElse _ -> translateIfThenElseToExprM(tcx, term, k, l)
 	 | Let _ -> translateLetToExprM(tcx, term, k, l)
 	 | Lambda((pat,cond,body)::_,_) -> (*ToJavaHO*) translateLambdaToExprM(tcx,term,k,l)
+	 | Seq([t],_) -> termToExpressionM(tcx,t,k,l)
+	 | Seq(t1::terms,b) ->
+		  {
+		   (s1,expr,k,l) <- termToExpressionM(tcx,t1,k,l);
+		   s2 <- return [Stmt(Expr(expr))];
+		   (s3,res,k,l) <- termToExpressionM(tcx,Seq(terms,b),k,l);
+		   return (s1++s2++s3,res,k,l)
+		  }
 	 | Any _ -> return(mts,mkJavaNumber(888),k,l)
 	 | _ ->
 %	   if caseTerm?(term) then
@@ -97,7 +105,7 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 %	   else
 	       %unsupportedInTerm(term,k,l,"term not supported by Java code generator(2): "^(printTerm term))
 	     let _ = print term in
-	     raise(UnsupportedTermFormat((printTerm term)^" [1]"),termAnn term)
+	     raise(UnsupportedTermFormat((printTerm term)^" [1] in \"termToExpression_internalM\" "),termAnn term)
   }
 
 % --------------------------------------------------------------------------------
