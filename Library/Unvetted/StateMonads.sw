@@ -5,8 +5,10 @@ AC
 This is a polymorphic spec for a state monad, useful to write
 imperative-looking Metaslang.
 
-It should be integrated with spec Monad in this same directory (e.g. derived
-from it).
+Ideally, it should be derived from spec Monad in this same directory. However,
+the fact that the monad type here is polymorphic over two variables while the
+monad type in spec Monad is polymorphic over one variable, makes it impossible
+to derive this monad spec from spec Monad.
 
 2005:06:24
 AC
@@ -14,9 +16,16 @@ AC
 Changed associativity of >> and >>> from left to right.
 
 Added op ignoreResult, to discard the result of a monadic computation.
+
+2005:07:01
+AC
+
+Changed qualifier from Monad to StateMonad, to avoid conflicts with other
+monads.
 *)
 
-Monad qualifying spec
+
+StateMonad qualifying spec
 
   type StateMonad(state,a) = state -> state * a  % monad
 
