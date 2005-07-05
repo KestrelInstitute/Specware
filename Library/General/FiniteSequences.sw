@@ -304,4 +304,11 @@ FSeq qualifying spec
     % remove `Some' wrapper:
     the(r) map (embed Some) r = s
 
+  % sequences of `Option' values are have the same "shape" (i.e. same length
+  % and matching `None' and `Some' values at every position `i'):
+  op matchingOptionSeqs? : [a,b] FSeq (Option a) * FSeq (Option b) -> Boolean
+  def matchingOptionSeqs?(s1,s2) =
+    s1 equiLong s2 &&
+    (fa(i:Nat) i < length s1 => embed? None (s1@i) = embed? None (s2@i))
+
 endspec

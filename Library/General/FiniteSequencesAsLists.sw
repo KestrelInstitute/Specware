@@ -289,4 +289,10 @@ FSeq qualifying spec
     | None::rest -> removeNones rest
     | (Some x)::rest -> cons (x, removeNones rest)
 
+  op matchingOptionSeqs? : [a,b] FSeq (Option a) * FSeq (Option b) -> Boolean
+  def matchingOptionSeqs?(s1,s2) =
+    if s1 = empty then (s2 = empty) else
+    embed? None (hd s1) = embed? None (hd s2) &&
+    matchingOptionSeqs? (tl s1, tl s2)
+
 endspec
