@@ -56,13 +56,22 @@ SpecCalc qualifying spec
     let cod_spec           = SpecCalc.cod sm            in     % cod(M)
     let cod_spec_term      = case sm_tm of
 			       | (SpecMorph (_,cod_spec_tm,_),_) -> 
-				  cod_spec_tm
+                                 %% Given a normal spec morphism term, just extract the codomain spec term.
+                                 cod_spec_tm 
+			       | (Quote (Morph sm, ts, uids), pos) ->  
+				 %% Given a quoted spec morphism, build a quoted spec of the codomain.
+                                 (Quote (Spec sm.cod, ts, uids), pos)
 			       | _ -> 
-				 %% sm_tm could be a UnitId, which isn't very helpful
-				 %% in which case, see if sm cached a term used to construct it
+				 %% Given an obscure sm_tm (e.g. a UnitId), see if it contains a term used 
+				 %% to construct it, in which case deconstruct that as above.
 				 case sm.sm_tm of
-				   | Some (SpecMorph (_,cod_spec_tm,_),_) -> cod_spec_tm
-				   | _ -> sm_tm
+				   | Some (SpecMorph (_,cod_spec_tm,_),_) -> 
+				     cod_spec_tm
+				   | Some (Quote (Morph sm, ts, uids), pos) ->  
+				     (Quote (Spec sm.cod, ts, uids), pos)
+				   | _ -> 
+				     %% Give up -- cite the morphism term as the import target
+				     sm_tm
     in
     %% S - dom(M)
 
