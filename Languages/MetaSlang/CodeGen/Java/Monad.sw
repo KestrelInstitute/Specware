@@ -33,7 +33,7 @@ type State = {
 	      ignoreSubsorts : Boolean,
 	      verbose : Boolean,
 	      sep : String, % the string used for Java class name generation, default "$"
-	      transformSpecFun : AccordNamedSpec -> AccordNamedSpec,    % used by Accord
+	      transformSpecFun : Spec -> Spec,    % used by Accord
 	      localVarToJExpr : String -> Option Java.Expr, % return some java expression if the string is a local parameter
 	      specialFun: SpecialFunType,
               createFieldFun : MS.Term -> Boolean,
@@ -247,12 +247,12 @@ def setSep sep =
   fn state ->
   (Ok (), state << { sep = sep })
 
-op getTransformSpecFun: JGenEnv (AccordNamedSpec -> AccordNamedSpec)
+op getTransformSpecFun: JGenEnv (Spec -> Spec)
 def getTransformSpecFun =
   fn state ->
   (Ok state.transformSpecFun, state)
 
-op setTransformSpecFun: (AccordNamedSpec -> AccordNamedSpec) -> JGenEnv ()
+op setTransformSpecFun: (Spec -> Spec) -> JGenEnv ()
 def setTransformSpecFun tfun =
   fn state ->
   (Ok (), state << { transformSpecFun = tfun })
