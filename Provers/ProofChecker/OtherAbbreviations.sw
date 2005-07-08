@@ -154,37 +154,31 @@ spec
         FN (x, t/q, LET (t/q, t1, single y, single t,
                          QUOT (t/q) @ (VAR y), VAR x, (VAR f) @ (VAR y))))
 
-  (* In LD, an embedding test is labeled by a sum type and a
-  constructor. Here, we label it by the constructors of the sum type, the
-  optional component types of the sum type, and the constructor. Since here,
-  unlike LD, we model constructors without types, the definition of an
-  embedding test changes slightly for constructors without types, compared to
-  LD, because there is no existential quantification.
+  (* In LD, an embedding test is labeled by a sum type and a constructor.
+  Here, we label it by the constructors of the sum type, the component types
+  of the sum type, and the constructor.
 
   The sequence of constructors that is the first argument of EMBED? may have
   repeated constructors. Thus, we consider the minimum position in the
   sequence in which the constructor appears. The constructor may also not
   appear at all in the sequence; in that case, we define the abbreviation as
-  if the constructor had no type associated with it. Of course, external code
-  that uses the proof checker should always use EMBED? with a sequence of
-  distinct constructors that include the third argument constructor. *)
+  the description operator for booleans, as we do for binding conditionals
+  without branches (see above). Of course, external code that uses the proof
+  checker should always use EMBED? with a sequence of distinct constructors
+  that include the third argument constructor; otherwise, the embedding test
+  would not be well-typed. *)
 
-  op EMBED? : Constructors * Type?s * Constructor -> Expression
-  def EMBED? (cS,t?S,c) =
-    let n:Nat = min (length cS, length t?S) in
-      % if length cS ~= length t?S, excess constructors or optional types are
+  op EMBED? : Constructors * Types * Constructor -> Expression
+  def EMBED? (cS,tS,c) =
+    let n:Nat = min (length cS, length tS) in
+      % if length cS ~= length tS, excess constructors or optional types are
       % ignored (we avoid subtypes in public ops)
     let x:Variable = abbr 0 in
     let y:Variable = abbr 1 in
     if c in? cS then
-      % match constructor with corresponding optional type:
-      let i:Nat = minIn (fn(i:Integer) -> 0 <= i && i < n && cS@i = c) in
-      case t?S @ i of
-        | Some t -> FN (x, SUM(cS,t?S),  % as in LD
-                        EX (y, t, VAR x == EMBED (SUM(cS,t?S), c) @ (VAR y)))
-        | None -> FN (x, SUM(cS,t?S), VAR x == EMBED (SUM(cS,t?S), c))
-                  % simplified translation when constructor has no type
-    else  % consider as if constructor had no type associated with it:
-      FN (x, SUM(cS,t?S), VAR x == EMBED (SUM(cS,t?S), c))
+      let j:Nat = minIn (fn(j:Integer) -> 0 <= j && j < n && cS@j = c) in
+      FN (x, SUM(cS,tS), EX (y, tS@j, VAR x == EMBED (SUM(cS,tS), c) @ (VAR y)))
+    else
+      IOTA BOOL  % arbitrary
 
 endspec

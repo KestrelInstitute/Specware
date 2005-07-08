@@ -5,9 +5,7 @@ spec
   import Judgements, BasicAbbreviations, Substitutions
 
   (* It is convenient to define a meta type for rules, so that we can more
-  easily refer to them. The names of the rules are the same used in LD, except
-  that rule exEmbed in LD corresponds to two rules here, exEmbed0 and
-  exEmbed1, depending on whether the constructor has a type or not. *)
+  easily refer to them. The names of the rules are the same used in LD. *)
 
   type InferenceRule =
     % well-formed contexts:
@@ -59,8 +57,7 @@ spec
     | exIf
     | exThe
     | exProj
-    | exEmbed0
-    | exEmbed1
+    | exEmbed
     | exQuot
     | exSuper
     | exSub
@@ -209,23 +206,16 @@ spec
             pj (wellFormedType (cx, tS@i)))
       => pj (wellFormedType (cx, RECORD (fS, tS))))
     | tySum ->
-      (fa (cx:Context, cS:Constructors, t?S:Type?s)
-         (* Since here we explicitly model sum type components with no type,
-         we need to add well-formedness of cx in this rule because otherwise
-         if no sum type component has a type, then nothing would constrain
-         cx to be well-formed. *)
-         pj (wellFormedContext cx)
-         (* In LD, the syntax includes that cS are distinct and that cS and t?S
+      (fa (cx:Context, cS:Constructors, tS:Types)
+         (* In LD, the syntax includes that cS are distinct and that cS and tS
          have the same non-zero length. Here, we add them to this inference
          rule. *)
-      && noRepetitions? cS
-      && length cS = length t?S
+         noRepetitions? cS
+      && length cS = length tS
       && length cS > 0
       && (fa(i:Nat) i < length cS =>
-            (case t?S @ i of
-               | Some t -> pj (wellFormedType (cx, t))
-               | None   -> true))
-      => pj (wellFormedType (cx, SUM (cS, t?S))))
+            pj (wellFormedType (cx, tS@i)))
+      => pj (wellFormedType (cx, SUM (cS, tS))))
     | tyRestr ->
       (fa (cx:Context, r:Expression, t:Type)
          pj (wellTypedExpr (cx, r, t --> BOOL))
@@ -297,26 +287,17 @@ spec
             pj (typeEquivalence (cx, tS@i, tS1@i)))
       => pj (typeEquivalence (cx, RECORD (fS, tS), RECORD (fS, tS1))))
     | teSum ->
-      (fa (cx:Context, t?S:Type?s, t?S1:Type?s, cS:Constructors)
-         (* Since here we explicitly model sum type components with no type,
-         we need to add well-formedness of cx in this rule because otherwise
-         if no sum type component has a type, then nothing would constrain
-         cx to be well-formed. *)
-         pj (wellFormedContext cx)
-         (* In LD, the syntax includes that cS are distinct and that cS and t?S
-         and tS?1 have the same non-zero length. Here, we add them to this
+      (fa (cx:Context, tS:Types, tS1:Types, cS:Constructors)
+         (* In LD, the syntax includes that cS are distinct and that cS and tS
+         and tS1 have the same non-zero length. Here, we add them to this
          inference rule. *)
-      && noRepetitions? cS
-      && length cS = length t?S
-      && length t?S = length t?S1
+         noRepetitions? cS
+      && length cS = length tS
+      && length tS = length tS1
       && length cS > 0
-      && (fa(i:Nat) i < length t?S =>
-            (case t?S @ i of
-               | Some t -> (ex(t1:Type) t?S1 @ i = Some t1
-                                     && pj (typeEquivalence (cx, t, t1)))
-               % absent types in t?S match absent types in t?S1
-               | None   -> t?S1 @ i = None))
-      => pj (typeEquivalence (cx, SUM (cS, t?S), SUM (cS, t?S1))))
+      && (fa(i:Nat) i < length tS =>
+            pj (typeEquivalence (cx, tS@i, tS1@i)))
+      => pj (typeEquivalence (cx, SUM (cS, tS), SUM (cS, tS1))))
     | teRestr ->
       (fa (cx:Context, t:Type, r:Expression, t1:Type, r1:Expression)
          pj (wellFormedType (cx, t\r))
@@ -341,16 +322,16 @@ spec
       => pj (typeEquivalence (cx, RECORD (fS, tS),
                                   RECORD (permute(fS,prm), (permute(tS,prm))))))
     | teSumOrd ->
-      (fa (cx:Context, cS:Constructors, t?S:Type?s, prm:Permutation)
-         pj (wellFormedType (cx, SUM (cS, t?S)))
-         (* In LD, the syntax includes that cS and t?S have the same length.
+      (fa (cx:Context, cS:Constructors, tS:Types, prm:Permutation)
+         pj (wellFormedType (cx, SUM (cS, tS)))
+         (* In LD, the syntax includes that cS and tS have the same length.
          Here, we need to add it to this inference rule for the application
          of op permute to be well-typed. There is no need to require cS to be
          distinct and non-zero, because it is a meta theorem. *)
-      && length cS = length t?S
+      && length cS = length tS
       && length prm = length cS
-      => pj (typeEquivalence (cx, SUM (cS, t?S),
-                                  SUM (permute(cS,prm), permute(t?S,prm)))))
+      => pj (typeEquivalence (cx, SUM (cS, tS),
+                                  SUM (permute(cS,prm), permute(tS,prm)))))
 
     %%%%%%%%%% subtyping:
     | stRestr ->
@@ -390,40 +371,29 @@ spec
       && r = FN (v, RECORD (fS, tS1), ANDn conjuncts)
       => pj (subType (cx, RECORD (fS, tS), r, RECORD (fS, tS1))))
     | stSum ->
-      (fa (cx:Context, cS:Constructors, t?S:Type?s, rS:Expressions, t?S1:Type?s,
+      (fa (cx:Context, cS:Constructors, tS:Types, rS:Expressions, tS1:Types,
            r:Expression, v:Variable, v1:Variable, disjuncts:Expressions)
-         pj (wellFormedType (cx, SUM (cS, t?S)))
-         (* In LD, the syntax includes that cS and t?S and t?S1 have the same
+         pj (wellFormedType (cx, SUM (cS, tS)))
+         (* In LD, the syntax includes that cS and tS and tS1 have the same
          length. Here, it is a meta theorem but we need to add it to this
          inference rule for the application of @ on finite sequences to be
          well-typed. There is no need to require cS to be distinct and non-zero,
          because it is a meta theorem and is not needed for meta
          well-typedness. *)
-      && length cS = length t?S
-      && length t?S = length t?S1
-      && length t?S1 = length rS
+      && length cS = length tS
+      && length tS = length tS1
+      && length tS1 = length rS
       && (fa(i:Nat) i < length cS =>
-            (case t?S @ i of
-               | Some t -> (ex(t1:Type) t?S1 @ i = Some t1
-                                     && pj (subType (cx, t, rS@i, t1)))
-               % absent types in t?S match absent types in t?S1
-               | None -> t?S1 @ i = None))
+            pj (subType (cx, tS@i, rS@i, tS1@i)))
       && disjuncts = seq (fn(i:Nat) ->
            if i < length cS then
-             Some (case t?S1 @ i of
-                     | Some t1 ->
-                       EX (v1, t1,
-                           VAR v == EMBED (SUM(cS,t?S1), cS@i) @ VAR v1
-                           &&&
-                           (rS@i) @ VAR v1)
-                     | None ->
-                       % if i-th constructor has no type, the disjunct is
-                       % just that v equals the i-th constructor:
-                       VAR v == EMBED (SUM(cS,t?S1), cS@i))
-                       % note that rS@i is not used if t?S@i = t?S1 = None
+             Some (EX (v1, tS1@i,
+                       VAR v == EMBED (SUM(cS,tS1), cS@i) @ VAR v1
+                       &&&
+                       (rS@i) @ VAR v1))
            else None)
-      && r = FN (v, SUM (cS, t?S), ORn disjuncts)
-      => pj (subType (cx, SUM (cS, t?S), r, SUM (cS, t?S1))))
+      && r = FN (v, SUM (cS, tS), ORn disjuncts)
+      => pj (subType (cx, SUM (cS, tS), r, SUM (cS, tS1))))
     | stTE ->
       (fa (cx:Context, t1:Type, r:Expression, t2:Type, s1:Type, s2:Type)
          pj (subType (cx, t1, r, t2))
@@ -482,29 +452,17 @@ spec
       && j < length fS
       => pj (wellTypedExpr (cx, PROJECT (RECORD(fS,tS), fS@j),
                                 RECORD(fS,tS) --> tS@j)))
-    | exEmbed0 ->
-      (fa (cx:Context, cS:Constructors, t?S:Type?s, j:Nat)
-         pj (wellFormedType (cx, SUM (cS, t?S)))
-         (* In LD, the syntax includes that cS and t?S have the same length.
+    | exEmbed ->
+      (fa (cx:Context, cS:Constructors, tS:Types, j:Nat)
+         pj (wellFormedType (cx, SUM (cS, tS)))
+         (* In LD, the syntax includes that cS and tS have the same length.
          Here, we need to add it to this inference rule for the application
          of op @ on finite sequences to be well-typed. There is no need to
          require cS to be distinct and non-zero, because it is a meta theorem. *)
-      && length cS = length t?S
+      && length cS = length tS
       && j < length cS
-      && t?S @ j = None  % if no type, embedder has sum type:
-      => pj (wellTypedExpr (cx, EMBED (SUM(cS,t?S), cS@j), SUM (cS, t?S))))
-    | exEmbed1 ->
-      (fa (cx:Context, cS:Constructors, t?S:Type?s, j:Nat, tj:Type)
-         pj (wellFormedType (cx, SUM (cS, t?S)))
-         (* In LD, the syntax includes that cS and t?S have the same length.
-         Here, we need to add it to this inference rule for the application
-         of op @ on finite sequences to be well-typed. There is no need to
-         require cS to be distinct and non-zero, because it is a meta theorem. *)
-      && length cS = length t?S
-      && j < length cS
-      && t?S @ j = Some tj  % if type, embedder has function type (as in LD):
-      => pj (wellTypedExpr (cx, EMBED (SUM(cS,t?S), cS@j),
-                                tj --> SUM (cS, t?S))))
+      => pj (wellTypedExpr (cx, EMBED (SUM(cS,tS), cS@j),
+                                tS@j --> SUM (cS, tS))))
     | exQuot ->
       (fa (cx:Context, t:Type, q:Expression)
          pj (wellFormedType (cx, t/q))
@@ -663,60 +621,42 @@ spec
       => pj (theoreM (cx, FA2 (v, RECORD(fS,tS), v1, RECORD(fS,tS),
                                ANDn conjuncts ==> VAR v == VAR v1))))
     | thEmbSurj ->
-      (fa (cx:Context, cS:Constructors, t?S:Type?s, v:Variable, v1:Variable,
+      (fa (cx:Context, cS:Constructors, tS:Types, v:Variable, v1:Variable,
            disjuncts:Expressions)
-         pj (wellFormedType (cx, SUM (cS, t?S)))
+         pj (wellFormedType (cx, SUM (cS, tS)))
       && v ~= v1
-         (* In LD, the syntax includes that cS and t?S have the same length.
+         (* In LD, the syntax includes that cS and tS have the same length.
          Here, we need to add it to this inference rule for the application
          of op @ on finite sequences to be well-typed. There is no need to
          require cS to be distinct and non-zero, because it is a meta theorem. *)
-      && length cS = length t?S
+      && length cS = length tS
       && disjuncts = seq (fn(i:Nat) ->
            if i < length cS then
-             Some (case t?S @ i of
-                     | Some t ->
-                       EX (v1, t, VAR v == EMBED (SUM(cS,t?S), cS@i) @ VAR v1)
-                     | None ->  % if constructor has no type, no existential:
-                       VAR v == EMBED (SUM(cS,t?S), cS@i))
+             Some (EX (v1, tS@i, VAR v == EMBED (SUM(cS,tS), cS@i) @ VAR v1))
            else None)
-      => pj (theoreM (cx, FA (v, SUM(cS,t?S), ORn disjuncts))))
+      => pj (theoreM (cx, FA (v, SUM(cS,tS), ORn disjuncts))))
     | thEmbDist ->
-      (fa (cx:Context, cS:Constructors, t?S:Type?s, j:Nat, k:Nat,
-           vj:Variable, vk:Variable, conclusion:Expression)
-         pj (wellFormedType (cx, SUM (cS, t?S)))
+      (fa (cx:Context, cS:Constructors, tS:Types, j:Nat, k:Nat,
+           vj:Variable, vk:Variable)
+         pj (wellFormedType (cx, SUM (cS, tS)))
       && j ~= k
       && vj ~= vk
       && j < length cS  && k < length cS
-      && j < length t?S && k < length t?S
-      && conclusion =
-         (case (t?S @ j, t?S @ k) of
-          % universal quantifier(s) iff constructor(s) have type
-            | (Some tj, Some tk) ->
-              FA2 (vj, tj, vk, tk,
-                   EMBED (SUM(cS,t?S), cS@j) @ VAR vj ~==
-                   EMBED (SUM(cS,t?S), cS@k) @ VAR vk)
-            | (Some tj, None) ->
-              FA (vj, tj, EMBED (SUM(cS,t?S), cS@j) @ VAR vj ~==
-                          EMBED (SUM(cS,t?S), cS@k))
-            | (None, Some tk) ->
-              FA (vk, tk, EMBED (SUM(cS,t?S), cS@j) ~==
-                          EMBED (SUM(cS,t?S), cS@k) @ VAR vk)
-            | (None, None) ->
-              EMBED (SUM(cS,t?S), cS@j) ~== EMBED (SUM(cS,t?S), cS@k))
-      => pj (theoreM (cx, conclusion)))
+      && j < length tS && k < length tS
+      => pj (theoreM (cx, FA2 (vj, tS@j, vk, tS@k,
+                               EMBED (SUM(cS,tS), cS@j) @ VAR vj ~==
+                               EMBED (SUM(cS,tS), cS@k) @ VAR vk))))
     | thEmbInj ->
-      (fa (cx:Context, cS:Constructors, t?S:Type?s, v:Variable, v1:Variable,
-           j:Nat, tj:Type)
-         pj (wellFormedType (cx, SUM (cS, t?S)))
+      (fa (cx:Context, cS:Constructors, tS:Types,
+           v:Variable, v1:Variable, j:Nat)
+         pj (wellFormedType (cx, SUM (cS, tS)))
       && v ~= v1
       && j < length cS
-      && j < length t?S
-      && t?S @ j = Some tj  % if no type, injectivity is trivially satisfied
-      => pj (theoreM (cx, FA2 (v, tj, v1, tj,
+      && j < length tS
+      => pj (theoreM (cx, FA2 (v, tS@j, v1, tS@j,
                                VAR v ~== VAR v1 ==>
-                               EMBED (SUM(cS,t?S), cS@j) @ VAR v ~==
-                               EMBED (SUM(cS,t?S), cS@j) @ VAR v1))))
+                               EMBED (SUM(cS,tS), cS@j) @ VAR v ~==
+                               EMBED (SUM(cS,tS), cS@j) @ VAR v1))))
     | thQuotSurj ->
       (fa (cx:Context, t:Type, q:Expression, v:Variable, v1:Variable)
          pj (wellFormedType (cx, t/q))
@@ -739,19 +679,13 @@ spec
                               PROJECT (RECORD(fS,tS),  fS@j) @ VAR v ==
                               PROJECT (RECORD(fS,tS1), fS@j) @ VAR v))))
     | thEmbSub ->
-      (fa (cx:Context, cS:Constructors, t?S:Type?s, t?S1:Type?s, r:Expression,
-           j:Nat, v:Variable, conclusion:Expression)
-         pj (subType (cx, SUM (cS, t?S), r, SUM (cS, t?S1)))
+      (fa (cx:Context, cS:Constructors, tS:Types, tS1:Types, r:Expression,
+           j:Nat, v:Variable)
+         pj (subType (cx, SUM (cS, tS), r, SUM (cS, tS1)))
       && j < length cS
-      && j < length t?S
-      && (case t?S @ j of
-            | Some tj ->
-              conclusion = FA (v, tj, EMBED (SUM(cS,t?S),  cS@j) @ VAR v ==
-                                      EMBED (SUM(cS,t?S1), cS@j) @ VAR v)
-            | None ->  % if no type, no universal quantification:
-              conclusion = EMBED (SUM(cS,t?S),  cS@j) ==
-                           EMBED (SUM(cS,t?S1), cS@j))
-      => pj (theoreM (cx, conclusion)))
+      && j < length tS
+      => pj (theoreM (cx, FA (v, tS@j, EMBED (SUM(cS,tS),  cS@j) @ VAR v ==
+                                       EMBED (SUM(cS,tS1), cS@j) @ VAR v))))
     | thSub ->
       (fa (cx:Context, t:Type, r:Expression, t1:Type, e:Expression)
          pj (subType (cx, t, r, t1))

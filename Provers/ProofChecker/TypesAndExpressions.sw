@@ -27,13 +27,10 @@ spec
     | abbr Integer
 
   % useful definitions:
-
   type TypeVariables = FSeq TypeVariable
   type Variables     = FSeq Variable
   type Fields        = FSeq Field
   type Constructors  = FSeq Constructor
-
-  type Variable?     = Option Variable
 
   (* Types depend on expressions, which depend on types. So, we first declare
   the meta types for types and expressions, and then define them below. *)
@@ -42,12 +39,8 @@ spec
   type Expression  % defined below
 
   % useful definitions:
-
-  type Types  = FSeq Type
-  type Type?  = Option Type
-  type Type?s = FSeq Type?
-
-  type Expressions = FSeq Expression
+  type Types        = FSeq Type
+  type Expressions  = FSeq Expression
 
   (* Unlike LD, we do not impose certain requirements (e.g. that the fields of
   a record type must be distinct) in the syntax. We incorporate such
@@ -57,21 +50,17 @@ spec
   component types of record/sum types, i.e. we have two sequences instead of a
   sequence of pairs. This makes the syntax a little simpler. The requirement
   that the two sequences have the same length are incorporated into the
-  inference rules.
-
-  A third difference is that here we explicitly model components of sum types
-  that have no type (using Option), as opposed to implicitly assuming the
-  empty record type as in LD. *)
+  inference rules. *)
 
   type Type =
-    | BOOL                          % boolean
-    | VAR    TypeVariable           % type variable
-    | TYPE   TypeName * Types       % type instance
-    | ARROW  Type * Type            % arrow type
-    | RECORD Fields * Types         % record type
-    | SUM    Constructors * Type?s  % sum type
-    | RESTR  Type * Expression      % restriction type
-    | QUOT   Type * Expression      % quotient type
+    | BOOL                         % boolean
+    | VAR    TypeVariable          % type variable
+    | TYPE   TypeName * Types      % type instance
+    | ARROW  Type * Type           % arrow type
+    | RECORD Fields * Types        % record type
+    | SUM    Constructors * Types  % sum type
+    | RESTR  Type * Expression     % restriction type
+    | QUOT   Type * Expression     % quotient type
 
   % infix arrow type constructor:
   op --> infixl 20 : Type * Type -> Type
@@ -130,7 +119,6 @@ spec
         t1  : Type,
         t2  : Type,
         tS  : Types,
-        t?S : Type?s,
         e   : Expression,
         e0  : Expression,
         e1  : Expression,
@@ -141,7 +129,6 @@ spec
       && predT t1
       && predT t2
       && forall? predT tS
-      && forall? predT (removeNones t?S)
       && predE e
       && predE e0
       && predE e1
@@ -153,7 +140,7 @@ spec
       && predT (TYPE (tn, tS))
       && predT (t1 --> t2)
       && predT (RECORD (fS, tS))
-      && predT (SUM (cS, t?S))
+      && predT (SUM (cS, tS))
       && predT (t \ r)
       && predT (t / q)
       && predE (VAR v)

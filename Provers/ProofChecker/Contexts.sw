@@ -10,7 +10,7 @@ spec
   thus keeping the syntax simpler. *)
 
   type ContextElement =
-    | typeDeclaration    TypeName * Nat
+    | typeDeclaration    TypeName * Integer
     | opDeclaration      Operation * TypeVariables * Type
     | typeDefinition     TypeName  * TypeVariables * Type
     | opDefinition       Operation * TypeVariables * Expression

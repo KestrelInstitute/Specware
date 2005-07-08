@@ -30,7 +30,7 @@ spec
     | TYPE(tn,tS)   -> \\// (map typeOps tS)
     | ARROW(t1,t2)  -> typeOps t1 \/ typeOps t2
     | RECORD(fS,tS) -> \\// (map typeOps tS)
-    | SUM(cS,t?S)   -> \\// (map typeOps (removeNones t?S))
+    | SUM(cS,tS)    -> \\// (map typeOps tS)
     | RESTR(t,r)    -> typeOps t \/ exprOps r
     | QUOT(t,q)     -> typeOps t \/ exprOps q
 

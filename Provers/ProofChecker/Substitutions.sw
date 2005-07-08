@@ -21,7 +21,7 @@ spec
     | TYPE(tn,tS)   -> TYPE (tn, map (typeSubstInType sbs) tS)
     | ARROW(t1,t2)  -> ARROW (typeSubstInType sbs t1, typeSubstInType sbs t2)
     | RECORD(fS,tS) -> RECORD (fS, map (typeSubstInType sbs) tS)
-    | SUM(cS,t?S)   -> SUM (cS, map (mapOption (typeSubstInType sbs)) t?S)
+    | SUM(cS,tS)    -> SUM (cS, map (typeSubstInType sbs) tS)
     | RESTR(t,r)    -> RESTR (typeSubstInType sbs t, typeSubstInExpr sbs r)
     | QUOT(t,q)     -> QUOT (typeSubstInType sbs t, typeSubstInExpr sbs q)
 

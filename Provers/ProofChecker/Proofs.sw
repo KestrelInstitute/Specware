@@ -13,7 +13,7 @@ spec
   applied to such judgements. If it can, the function computes the judgement
   resulting from applying the rule. Otherwise, the function indicates a
   failure; of course, failures are propagated from subtree to supertrees. This
-  function is defined in spec Check.
+  function is defined in spec Checking.
 
   Since not all rules are such that there is a unique conclusion judgement for
   given premise judgements (e.g. rule cxTdec has a different conclusion for
@@ -32,10 +32,8 @@ spec
 
   type Proof  % defined below
 
-  % useful definitions:
-  type Proof?  = Option Proof
+  % useful definition:
   type Proofs  = FSeq Proof
-  type Proof?s = FSeq Proof?
 
   type Proof =
     % well-formed contexts:
@@ -55,7 +53,7 @@ spec
     | tyInst  Proof * Proofs * TypeName
     | tyArr   Proof * Proof
     | tyRec   Proof * Proofs * Fields
-    | tySum   Proof * Proof?s * Constructors
+    | tySum   Proof * Proofs * Constructors
     | tyRestr Proof
     | tyQuot  Proof * Proof * Proof
     % type equivalence:
@@ -66,7 +64,7 @@ spec
     | teInst   Proof * Proofs
     | teArr    Proof * Proof
     | teRec    Proof * Proofs * Fields
-    | teSum    Proof * Proof?s * Constructors
+    | teSum    Proof * Proofs * Constructors
     | teRestr  Proof * Proof * Proof
     | teQuot   Proof * Proof * Proof
     | teRecOrd Proof * FSeq Integer
@@ -76,7 +74,7 @@ spec
     | stRefl  Proof * Variable
     | stArr   Proof * Proof * Variable * Variable
     | stRec   Proof * Proofs * Variable
-    | stSum   Proof * Proof?s * Variable * Variable
+    | stSum   Proof * Proofs * Variable * Variable
     | stTE    Proof * Proof * Proof
     % well-typed expressions:
     | exVar      Proof * Variable
@@ -87,8 +85,7 @@ spec
     | exIf       Proof * Proof * Proof
     | exThe      Proof
     | exProj     Proof * Field
-    | exEmbed0   Proof * Constructor
-    | exEmbed1   Proof * Constructor
+    | exEmbed    Proof * Constructor
     | exQuot     Proof
     | exSuper    Proof * Proof
     | exSub      Proof * Proof * Proof
@@ -115,12 +112,12 @@ spec
     | thThe        Proof
     | thRec        Proof * Variable * Variable
     | thEmbSurj    Proof * Variable * Variable
-    | thEmbDist    Proof * Constructor * Constructor * Variable? * Variable?
+    | thEmbDist    Proof * Constructor * Constructor * Variable * Variable
     | thEmbInj     Proof * Constructor * Variable * Variable
     | thQuotSurj   Proof * Variable * Variable
     | thQuotEqCls  Proof * Variable * Variable
     | thProjSub    Proof * Variable * Field
-    | thEmbSub     Proof * Variable? * Constructor
+    | thEmbSub     Proof * Variable * Constructor
     | thSub        Proof * Proof
     % assumptions:
     | assume Judgement
@@ -138,9 +135,6 @@ spec
         v     : Variable,
         v1    : Variable,
         v2    : Variable,
-        v?    : Variable?,
-        v1?   : Variable?,
-        v2?   : Variable?,
         f     : Field,
         fS    : Fields,
         c     : Constructor,
@@ -155,14 +149,12 @@ spec
         prf1  : Proof,
         prf2  : Proof,
         prf3  : Proof,
-        prfS  : Proofs,
-        prf?S : Proof?s)
+        prfS  : Proofs)
          pred prf
       && pred prf1
       && pred prf2
       && pred prf3
       && forall? pred prfS
-      && forall? pred (removeNones prf?S)
       => pred cxMT
       && pred (cxTdec (prf, tn, n))
       && pred (cxOdec (prf1, prf2, o))
@@ -177,7 +169,7 @@ spec
       && pred (tyInst (prf, prfS, tn))
       && pred (tyArr (prf1, prf2))
       && pred (tyRec (prf, prfS, fS))
-      && pred (tySum (prf, prf?S, cS))
+      && pred (tySum (prf, prfS, cS))
       && pred (tyRestr prf)
       && pred (tyQuot (prf1, prf2, prf3))
       && pred (teDef (prf, prfS, tn))
@@ -187,7 +179,7 @@ spec
       && pred (teInst (prf, prfS))
       && pred (teArr (prf1, prf2))
       && pred (teRec (prf, prfS, fS))
-      && pred (teSum (prf, prf?S, cS))
+      && pred (teSum (prf, prfS, cS))
       && pred (teRestr (prf1, prf2, prf3))
       && pred (teQuot (prf1, prf2, prf3))
       && pred (teRecOrd (prf, iS))
@@ -196,7 +188,7 @@ spec
       && pred (stRefl (prf, v))
       && pred (stArr (prf1, prf2, v, v1))
       && pred (stRec (prf, prfS, v))
-      && pred (stSum (prf, prf?S, v, v1))
+      && pred (stSum (prf, prfS, v, v1))
       && pred (stTE (prf1, prf2, prf3))
       && pred (exVar (prf, v))
       && pred (exOp (prf, prfS, o))
@@ -206,8 +198,7 @@ spec
       && pred (exIf (prf1, prf2, prf3))
       && pred (exThe prf)
       && pred (exProj (prf, f))
-      && pred (exEmbed0 (prf, c))
-      && pred (exEmbed1 (prf, c))
+      && pred (exEmbed (prf, c))
       && pred (exQuot prf)
       && pred (exSuper (prf1, prf2))
       && pred (exSub (prf1, prf2, prf3))
@@ -233,12 +224,12 @@ spec
       && pred (thThe prf)
       && pred (thRec (prf, v, v1))
       && pred (thEmbSurj (prf, v, v1))
-      && pred (thEmbDist (prf, c1, c2, v1?, v2?))
+      && pred (thEmbDist (prf, c1, c2, v1, v2))
       && pred (thEmbInj (prf, c, v, v1))
       && pred (thQuotSurj (prf, v, v1))
       && pred (thQuotEqCls (prf, v, v1))
       && pred (thProjSub (prf, v, f))
-      && pred (thEmbSub (prf, v?, c))
+      && pred (thEmbSub (prf, v, c))
       && pred (thSub (prf1, prf2))
       && pred (assume jdg))
   %%%%% induction conclusion:

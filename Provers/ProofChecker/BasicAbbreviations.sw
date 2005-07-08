@@ -18,6 +18,10 @@ spec
   op PRODUCT : Types -> Type
   def PRODUCT tS = RECORD (firstNProductFields (length tS), tS)
 
+  % unit type:
+  op UNIT : Type
+  def UNIT = PRODUCT empty
+
   % combine n>1 expressions via application, i.e. e1 @ ... @ en:
   % API private
   op APPLYn : NonEmptyFSeq Expression -> Expression
@@ -190,5 +194,9 @@ spec
   % API private
   op PAIR : Type * Type * Expression * Expression -> Expression
   def PAIR (t1,t2,e1,e2) = TUPLE (single t1 <| t2, single e1 <| e2)
+
+  % empty record (= empty tuple):
+  op MTREC : Expression
+  def MTREC = TUPLE (empty, empty)
 
 endspec
