@@ -347,12 +347,18 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		   in
 		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
 		 | Op qid ->
-		   let Some opinfo = findTheOp(spc,qid) in
-		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
-		   let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = []
-		               then [el] else []
-		   in
-		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
+		   (case findTheOp (spc, qid) of
+		     | Some opinfo ->
+		       let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
+		       let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = []
+				    then [el] else []
+		       in
+			 incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
+		     | _ ->
+		       let infos = findAllOps (spc, qid) in
+		       fail ("Cannot find " ^ printQualifiedId qid ^ 
+			     "but could find " ^ (foldl (fn (info,s) -> s ++ " " ++ printAliases info.names) "" infos) ^
+			     "\nin spec\n" ^ printSpec spc))
 		 | OpDef qid ->
 		   let Some opinfo = findTheOp(spc,qid) in
 		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
