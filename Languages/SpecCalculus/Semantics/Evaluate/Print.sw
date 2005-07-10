@@ -87,6 +87,16 @@ SpecCalc qualifying spec {
    %% TODO: use reverse_context for imports ?
    AnnSpecPrinter.printSpecFlat (subtractSpec spc base_spec) 
 
+ %% This wants to live in /Languages/MetaSlang/Specs/Printer.sw,
+ %% but SpecCalc.Term is merely declared (not defined) there,
+ %% so the case dispatch won't typecheck.  Sigh.
+ def AnnSpecPrinter.ppImportTerm context import_directions im_sp_tm =
+   case im_sp_tm of
+     | (Quote (Spec spc, _, _), _) ->
+        AnnSpecPrinter.ppImportedSpec context spc import_directions 
+     | _ ->
+       string (indentString "  " (showTerm im_sp_tm))
+
  %% ======================================================================
  %% Morphism
  %% ======================================================================

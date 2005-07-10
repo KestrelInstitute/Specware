@@ -1242,20 +1242,17 @@ def AnnSpecPrinter.printTerm term =
 	     | NotSpec ign_specs ->
 	       if member(im_sp,ign_specs) then result
 	       else (index,
-		     Cons((1, prettysFill [context.pp.Import, 
-					   %% TODO: indenting this way isn't quite right,
-					   %% since it will indent inside string literals
-					   %% But pretty printers make it inordinately 
-					   %% difficult to do simple things like indentation.
-					   string (indentString "  " (showTerm im_sp_tm))]),
+		     Cons((1, blockFill (0,
+					 [(0, context.pp.Import), 
+					  (2, ppImportTerm context import_directions im_sp_tm)])),
 			  ppResult))
 	     | Verbose ->
 	       (index,
 		Cons((2, blockFill (0, 
-				    [(0, string "import "), 
-				     (0, string (showTerm im_sp_tm)), 
-				     (0, string " |-> "), 
-				     (0, ppSpecAll context im_sp)])),
+				    [(0, context.pp.Import),
+				     (2, ppImportTerm context import_directions im_sp_tm),
+				     (2, string " |-> "), 
+				     (2, ppSpecAll context im_sp)])),
 		     ppResult))
 	     | Recursive ->
 	       ppSpecElementsAux context spc
@@ -1317,6 +1314,28 @@ def AnnSpecPrinter.printTerm term =
    in
      aux(elements,true,result)
        
+ op  ppImportTerm : PrContext -> ImportDirections -> SpecCalc.Term Position -> Pretty
+
+ %% ppImportTerm wants to dispatch on the structure of the SpecCalc.Term, but that isn't defined here,
+ %% so ppImportTerm is defined over in /Languages/SpecCalculus/Semantics/Evaluate/Print.sw,
+ %% where SpecCalc.Term has been defined.
+ %% 
+ %%  def AnnSpecPrinter.ppImportTerm context import_directions im_sp_tm =
+ %%    case im_sp_tm of
+ %%      | (Quote (Spec spc, _, _), _) ->
+ %%         AnnSpecPrinter.ppImportedSpec context spc import_directions 
+ %%      | _ ->
+ %%        string (indentString "  " (showTerm im_sp_tm))
+ %% 
+ %% Note that ppImportTerm may call right back to ppImportedSpec, defined here:
+
+ op  ppImportedSpec : [a] PrContext -> ASpec a -> ImportDirections -> Pretty
+ def ppImportedSpec context spc import_directions =
+   let pp  = context.pp in
+   blockLinear (0,
+		[(0, pp.Spec)] ++
+		(ppSpecElements context spc import_directions spc.elements) ++
+		[(0, pp.EndSpec)])
 
  %% Identical tedt copy to body of ppASpecElementsAux, but different types
  def ppSpecElementsAux context spc import_directions elements result =
