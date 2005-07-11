@@ -12,7 +12,13 @@ to derive this monad spec from spec Monad.
 2005:07:09
 AC
 
-Added op mapSeq, to apply monadic computation to a sequence of values.
+Added op mapSeq, to apply a monadic computation to a sequence of values.
+
+2005:07:10
+AC
+
+Added op mapSeqSeq, to apply a sequence of monadic computations to a
+sequence of values.
 *)
 
 
@@ -47,6 +53,19 @@ ExceptionMonad qualifying spec
     if empty? s then RETURN empty
     else f (first s) >> (fn x ->
          mapSeq f (rtail s) >> (fn r ->
+         RETURN (x |> r)))
+
+  % apply sequence of monadic computations ff to equally long sequence s
+  % from left to right, returning resulting sequence if no exceptions,
+  % otherwise stop at first exception:
+
+  op mapSeqSeq : [exc,a,b]
+     {(ff,s) : FSeq (a -> ExceptionMonad(exc,b)) * FSeq a | ff equiLong s} ->
+     ExceptionMonad (exc, FSeq b)
+  def mapSeqSeq (ff,s) =
+    if empty? s then RETURN empty
+    else (first ff) (first s) >> (fn x ->
+         mapSeqSeq (rtail ff, rtail s) >> (fn r ->
          RETURN (x |> r)))
 
 endspec
