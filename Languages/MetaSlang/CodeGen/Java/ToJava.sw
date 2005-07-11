@@ -559,6 +559,8 @@ def modifyClsDeclsFromOps =
    create_field? <- getCreateFieldFun;
    foldM (fn _ -> fn(qualifier,id,opinfo) ->
 	  if create_field? opinfo.dfn then
+	    %% special hack for Accord to avoid generating Java-nonsense such as "static Object this"
+	    if id = "this" || id = "super" then return () else 
 	    modifyClsDeclsFromOp(qualifier,id,opinfo)
 	  else
 	    return ())
