@@ -44,7 +44,7 @@ SpecCalc qualifying spec
      case coerceToSpec value of
        | Spec spc -> 
          {
-	  new_spec <- translateSpec true spc renaming [];
+	  new_spec <- translateSpec true spc renaming [] false;
 	  new_spec <- complainIfAmbiguous new_spec pos;
 	  raise_any_pending_exceptions;  % should never happen, but...
 	  return (Spec new_spec, ts, uids)
@@ -84,10 +84,10 @@ SpecCalc qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% translateSpec is used by Translate and Colimit
-  op  translateSpec : Boolean -> Spec -> Renaming -> QualifiedIds -> Env Spec
-  def translateSpec allow_exceptions? spc renaming immune_op_names = 
+  op  translateSpec : Boolean -> Spec -> Renaming -> QualifiedIds -> Boolean -> Env Spec
+  def translateSpec allow_exceptions? spc renaming immune_op_names allow_extra_rules? = 
     %%
-    %% WARNING:  When require_monic? is false, as when called from colimit,
+    %% WARNING:  When allow_exceptions? is false, as when called from colimit,
     %% translateSpec (and the routines it calls) must not raise any errors,
     %% either directly or deferred.  I.e., we may call raise and/or raise_later
     %% only if require_monic? is true.
@@ -97,7 +97,7 @@ SpecCalc qualifying spec
     %%
     let pos = positionOf renaming in
     {
-     translators <- makeTranslators allow_exceptions? spc renaming immune_op_names;
+     translators <- makeTranslators allow_exceptions? spc renaming immune_op_names allow_extra_rules?;
      when allow_exceptions?
       raise_any_pending_exceptions;
      %% translators is now an explicit map for which each name in its 
@@ -126,8 +126,8 @@ SpecCalc qualifying spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  makeTranslators : Boolean -> Spec -> Renaming -> QualifiedIds -> SpecCalc.Env Translators
-  def makeTranslators allow_exceptions? dom_spec (renaming_rules, position) immune_op_names =
+  op  makeTranslators : Boolean -> Spec -> Renaming -> QualifiedIds -> Boolean -> SpecCalc.Env Translators
+  def makeTranslators allow_exceptions? dom_spec (renaming_rules, position) immune_op_names allow_extra_rules? =
     %% translateSpec is used by Translate and Colimt
     %% When called from Colimit, allow_exceptions? is false, and we should avoid
     %% raising exceptions...
@@ -316,11 +316,14 @@ SpecCalc qualifying spec
 		   return (op_translator, sort_translator)
 		  })
 	      | _ -> 
-		{
-		 raise_later (TranslationError ("Unrecognized source type " ^ (explicitPrintQualifiedId dom_qid),
-						rule_pos));
-		 return (op_translator, sort_translator)
-		}
+		if allow_extra_rules? then
+		  return (op_translator, sort_translator)
+		else
+		  {
+		   raise_later (TranslationError ("Unrecognized source type " ^ (explicitPrintQualifiedId dom_qid),
+						  rule_pos));
+		   return (op_translator, sort_translator)
+		  }
 		  
 	      
 	  def add_op_rule op_translator sort_translator (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
@@ -367,11 +370,14 @@ SpecCalc qualifying spec
 		    return (op_translator, sort_translator)
 		    })
 	      | _ -> 
-		{
-		 raise_later (TranslationError ("Unrecognized source op " ^ (explicitPrintQualifiedId dom_qid),
-						rule_pos));
-		 return (op_translator, sort_translator)
-		 }
+		if allow_extra_rules? then
+		  return (op_translator, sort_translator)
+		else
+		  {
+		   raise_later (TranslationError ("Unrecognized source op " ^ (explicitPrintQualifiedId dom_qid),
+						  rule_pos));
+		   return (op_translator, sort_translator)
+		  }
 		  
 	  def add_wildcard_rules op_translator sort_translator dom_q cod_q cod_aliases =
 	    %% Special hack for aggregate translators: X._ +-> Y._
@@ -520,8 +526,11 @@ SpecCalc qualifying spec
 			       raise_later (TranslationError ("Source op "^(explicitPrintQualifiedId dom_qid) ^ " is immune to translation", 
 							      rule_pos))
 			     else
-			       raise_later (TranslationError ("Unrecognized source type or op "^(explicitPrintQualifiedId dom_qid), 
-							      rule_pos));
+			       if allow_extra_rules? then
+				 return ()
+			       else
+				 raise_later (TranslationError ("Unrecognized source type or op "^(explicitPrintQualifiedId dom_qid), 
+								rule_pos));
 			     return (op_translator, sort_translator)
 			    }
 	      | (_,  []) -> add_type_rule op_translator sort_translator dom_qid dom_types cod_qid cod_aliases

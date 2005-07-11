@@ -240,7 +240,8 @@ spec
 	       run (translateSpec false 
 		                  (subtractSpec vertex_spec base_spec) % vertex_spec ?
 				  cocone_renaming 
-		                  []) 
+		                  []
+				  false) 
 	   in
            cons (translated_spec, translated_specs))
          []
