@@ -202,6 +202,10 @@ FSeq qualifying spec
   op repeat : [a] a -> Nat -> FSeq a
   def repeat x n = seq (fn(i:Nat) -> if i < n then Some x else None)
 
+  % all elements of sequence are equal:
+  op allEqualElements? : [a] FSeq a -> Boolean
+  def allEqualElements? s = (ex(n:Nat,x) s = repeat x n)
+
   % extend sequence leftward to length `n', filling with `x':
   op extendLeft : [a] {(s,x,n) : FSeq a * a * Nat | n >= length s} -> FSeq a
   def extendLeft(s,x,n) = repeat x (n - length s) ++ s

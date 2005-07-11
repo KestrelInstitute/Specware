@@ -183,6 +183,11 @@ FSeq qualifying spec
   op repeat : [a] a -> Nat -> FSeq a
   def repeat x n = tabulate (n, fn(i:Nat) -> x)
 
+  op allEqualElements? : [a] FSeq a -> Boolean
+  def allEqualElements? s =
+    empty? s ||
+    forall? (fn x -> x = hd s) (tl s)
+
   op extendLeft : [a] {(s,x,n) : FSeq a * a * Nat | n >= length s} -> FSeq a
   def extendLeft(s,x,n) = repeat x (n - length s) ++ s
 
