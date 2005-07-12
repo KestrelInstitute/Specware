@@ -1,4 +1,4 @@
-Map qualifying spec
+MapAC qualifying spec
 
   import Relations
 
