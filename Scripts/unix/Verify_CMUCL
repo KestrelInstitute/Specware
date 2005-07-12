@@ -12,7 +12,7 @@ echo "  ------------------------------------------------------------------------
 echo "  Verify_CMUCL:  Ensure that CMU CL executable exists:"
 echo " "
 
-for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl /bin/lisp; do
+for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/cmucl/bin/lisp /usr/local/bin/cmucl /bin/lisp; do
   if [ -x "$L" ]; then
     export LISP="$L"; break
   fi
