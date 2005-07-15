@@ -419,21 +419,18 @@ def translateRecordToExprM(tcx, term as Record (fields, _), k, l) =
    spc <- getEnvSpec;
    recordSrt <- return(inferTypeFoldRecords(spc,term));
    (newBlock, javaArgs, newK, newL) <- translateTermsToExpressionsM(tcx, recordTerms, k, l);
-   case fields of
-     | [] -> return (newBlock, mkNewClasInst("void", []), k, l)
-     | _ ->
-       case  findMatchingUserTypeOption(spc,recordSrt) of
-	 | Some (Base(Qualified(_,recordClassId),_,_)) ->
-	   return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
-	 | _  -> % otherwise fails if Some <not base>
-	   if fieldsAreNumbered fields then
-	     {
-	      recordClassId <- srtIdM recordSrt;
-	      addProductSort recordSrt;
-	      return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
-	     }
-	   else
-	     raise(NotSupported("product sort must be introduced as a sort definition"),termAnn term)
+   case  findMatchingUserTypeOption(spc,recordSrt) of
+     | Some (Base(Qualified(_,recordClassId),_,_)) ->
+       return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
+     | _  -> % otherwise fails if Some <not base>
+       if fieldsAreNumbered fields then
+	 {
+	  recordClassId <- srtIdM recordSrt;
+	  addProductSort recordSrt;
+	  return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
+	 }
+       else
+	 raise(NotSupported("product sort must be introduced as a sort definition"),termAnn term)
   }
 
 % --------------------------------------------------------------------------------
