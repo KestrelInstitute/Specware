@@ -20,7 +20,7 @@ op getPostSubstFun: JGenEnv (Java.Expr -> Java.Expr)
  *) 
 op termToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def termToExpressionM(tcx, term, k, l) =
-  %let _ = toScreen(";;; termToExpression: term="^ printTerm term) in
+  %let _ = toScreen( ";;; termToExpression: term=" ^ printTerm term ^ "\n") in
   {
    specialFun <- getSpecialFun;
    res <- specialFun(tcx,term,k,l);
@@ -419,18 +419,21 @@ def translateRecordToExprM(tcx, term as Record (fields, _), k, l) =
    spc <- getEnvSpec;
    recordSrt <- return(inferTypeFoldRecords(spc,term));
    (newBlock, javaArgs, newK, newL) <- translateTermsToExpressionsM(tcx, recordTerms, k, l);
-   case findMatchingUserTypeOption(spc,recordSrt) of
-     | Some (Base(Qualified(_,recordClassId),_,_)) ->
-       return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
-     | None -> %
-       if fieldsAreNumbered fields then
-	 {
-	  recordClassId <- srtIdM recordSrt;
-	  addProductSort recordSrt;
-	  return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
-	 }
-       else
-	 raise(NotSupported("product sort must be introduced as a sort definition"),termAnn term)
+   case fields of
+     | [] -> return (newBlock, mkNewClasInst("void", []), k, l)
+     | _ ->
+       case  findMatchingUserTypeOption(spc,recordSrt) of
+	 | Some (Base(Qualified(_,recordClassId),_,_)) ->
+	   return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
+	 | _  -> % otherwise fails if Some <not base>
+	   if fieldsAreNumbered fields then
+	     {
+	      recordClassId <- srtIdM recordSrt;
+	      addProductSort recordSrt;
+	      return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
+	     }
+	   else
+	     raise(NotSupported("product sort must be introduced as a sort definition"),termAnn term)
   }
 
 % --------------------------------------------------------------------------------
