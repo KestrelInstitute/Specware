@@ -165,6 +165,7 @@ def findMatchingUserTypeOption (spc, srtdef) =
   case srtdef of
     | Base    _ -> Some srtdef
     | Boolean _ -> Some srtdef
+    | Product ([],_) -> Some srtdef
     | _ ->
       let srts = sortsAsList spc in
       let srtPos = sortAnn srtdef in
