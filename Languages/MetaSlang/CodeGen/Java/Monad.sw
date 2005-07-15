@@ -11,6 +11,7 @@ import Java qualifying /Languages/Java/Java
 
 import Errors
 %import IJavaCodeGen
+import /Languages/SpecCalculus/Semantics/Wizard   % op specwareWizard? : Boolean
 
 sort JGenEnv a = State -> (Result a) * State
 
@@ -450,14 +451,28 @@ def ifM check f =
 
 op raise : fa(a) JGenException -> JGenEnv a
 def raise except = 
-  fn state -> (Exception except, state)
+  fn state -> 
+  let _ = if specwareWizard? then
+             %% This allows us to examine the stack at the time of the error
+             fail (anyToString except) % under specwareWizard?
+	  else
+	    ()
+  in
+  (Exception except, state)
 
 % conditional exception handling
 op checkraise: JGenException -> JGenEnv ()
 def checkraise except =
   case except of
     | (NoError,_) -> (fn state -> (Ok (), state))
-    | _ -> (fn state -> (Exception except, state))
+    | _ -> (fn state -> 
+	    let _ = if specwareWizard? then
+	              %% This allows us to examine the stack at the time of the error
+	              fail (anyToString except) % under specwareWizard?
+		    else
+		      ()
+	    in
+	      (Exception except, state))
 
 %% --------------------------------------------------------------------------------
 %%  Debugging -- normal control flow, but print message as immediate side effect

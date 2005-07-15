@@ -16,6 +16,7 @@ SpecCalc qualifying spec
     by {Monad._ +-> SpecCalc._}
   import /Library/IO/Primitive/IO
   import Value
+  import Wizard  % op specwareWizard? : Boolean
 
   %% To avoid name clashes, define undefinedGlobalVariable after importing 
   %% translated Monad stuff, as opposed to defining it in Exception.
@@ -93,8 +94,6 @@ The unit of the monad.
 Raise an exception. Should this be called throw?
 
 \begin{spec}
- %def specwareWizard? : Boolean = false  % doing this makes CMUCL compiler treat as a constant!
-   op specwareWizard? : Boolean          % see Specware4/Applications/Handwritten/Lisp/meta-slang-runtime.lisp
 
   % op raise : fa (a) Exception -> Env a
   def SpecCalc.raise except = fn state -> 
