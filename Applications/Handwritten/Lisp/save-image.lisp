@@ -160,7 +160,8 @@
 		   (format t "~& cmucl -core ~A~%~%" app-file))
 		  (t
 		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
-	    (process-close process)))))))
+	    ;(process-close process) ;; fn doesn't exist
+	    ))))))
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 Unknown

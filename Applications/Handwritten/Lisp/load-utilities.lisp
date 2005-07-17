@@ -274,7 +274,7 @@
   #+allegro(sys:copy-file source target)
   #+cmu(ext:run-program "cp" (list (namestring source)
 				   (namestring target)))
-  #+mcl(ccl:copy-file source target)
+  #+mcl(ccl:copy-file source target :if-exists :supersede)
   #+sbcl(sb-ext:run-program "/bin/cp" (list (namestring source)
 					    (namestring target)))
   #-(or allegro cmu sbcl mcl)
@@ -358,17 +358,19 @@
   (let* ((source-dirpath (if (stringp source)
 			     (parse-namestring (ensure-final-slash source))
 			   source))
-	 (source-dirpath (merge-pathnames (make-pathname :name :wild) source-dirpath))
+	 ;(source-dirpath (merge-pathnames (make-pathname :name :wild) source-dirpath))
 	 (target-dirpath (if (stringp target)
 			     (parse-namestring (ensure-final-slash target))
 			   target)))
-    (unless (probe-file target-dirpath)
-      (make-directory target-dirpath))
-    (loop for dir-item in (sw-directory source-dirpath)
-      do
-      (if (and recursive? (directory? dir-item))
-	     (copy-directory dir-item (extend-directory target-dirpath dir-item) t)
-	   (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))
+    (if #+mcl recursive? #-mcl nil
+	(ccl:run-program "cp" (list "-R" (namestring source-dirpath)
+				    (namestring target-dirpath)))
+      (progn (unless (probe-file target-dirpath)
+	       (make-directory target-dirpath))
+	     (loop for dir-item in (sw-directory source-dirpath)
+	       do (if (and recursive? (directory? dir-item))
+		      (copy-directory dir-item (extend-directory target-dirpath dir-item) t)
+		    (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))))
 
 (defun specware::delete-directory (dir &optional (contents? t))
   #+allegro
@@ -376,16 +378,19 @@
       (excl:delete-directory-and-files dir)
     (excl:delete-directory dir))
   #-allegro
+  (let* ((dirpath (if (stringp dir) (parse-namestring dir) dir))
+	 (dirstr (if (stringp dir) dir (namestring dirpath))))
   (if contents?
-      (loop for dir-item in (sw-directory (if (stringp dir)
-					      (parse-namestring dir)
-					    dir))
+      #+mcl (ccl:run-program "rm" (list "-R" dirstr))
+      #-mcl
+      (loop for dir-item in (sw-directory dirpath)
 	do (if (directory? dir-item)
 	       (specware::delete-directory dir-item contents?)
 	     (delete-file dir-item)))
-    #+cmu (unix:unix-rmdir dir)
-    #+gcl (lisp:system (format nil "rmdir ~a" dir))
-    #-(or cmu gcl) nil))				; No general way
+    #+cmu (unix:unix-rmdir dirstr)
+    #+gcl (lisp:system (format nil "rmdir ~a" dirstr))
+    #+mcl (ccl:run-program "rmdir" (list dirstr))
+    #-(or cmu gcl mcl) nil)))				; No general way
 
 (defun parent-directory (pathname)
   (let ((dir (pathname-directory pathname)))

@@ -57,6 +57,12 @@ fi
 
 SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
 
+# Ensure SWPATH is set
+
+if [ -z "$SWPATH" ]; then
+  SWPATH="/:$SPECWARE4"
+fi
+
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then

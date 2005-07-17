@@ -33,8 +33,8 @@
 			  (in-distribution-dir "Examples/Matching/"))
 (delete-file-if-present (in-distribution-dir "Examples/Matching/.cvsignore"))
 (specware::delete-directory (in-distribution-dir "Examples/Matching/CVS"))
-;;(specware::delete-directory (in-distribution-dir "Examples/Matching/Snark"))
-;;(specware::delete-directory (in-distribution-dir "Examples/Matching/lisp"))
+(specware::delete-directory (in-distribution-dir "Examples/Matching/Snark"))
+(specware::delete-directory (in-distribution-dir "Examples/Matching/lisp"))
 
 (specware::copy-directory (in-specware-dir "UserDoc/examples/")
 			  (in-distribution-dir "Examples/"))

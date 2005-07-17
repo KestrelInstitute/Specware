@@ -22,6 +22,10 @@
   (warn "ignoring non-[ALLEGRO/CMU/MCL/SBCL] RUN-CMD : ~A~{ ~A~}" cmd args))
 
 
+#+mcl
+(defun process-exit-code (process)
+  (ccl::external-process-%exit-code process))
+
 #+(or cmu mcl sbcl gcl) 
 (defun run-cmd (cmd args)
   (let ((process
