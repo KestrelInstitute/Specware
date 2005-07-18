@@ -428,8 +428,19 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
     | Base (qid0 as Qualified (q, id), insttv as _::_, b) ->
       %% We are trying to simplify instances of polymorphic sorts where
       %% all the type vars have been instantitated.
-      if q = "Accord" && id = "ProcType" then (srt, minfo) else
-      if q = "Accord" && id = "Update"   then (srt, minfo) else
+      if q = "Accord" && (id = "ProcType" || id = "Update") then 
+	%% process the args to ProcType or Update, but leave the
+	%% main type as ProcType or Uppdate..
+	let (new_args,minfo) = 
+	    foldl (fn (srt, (new_args,minfo)) -> 
+		   let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
+		   (new_args ++ [srt], minfo))
+	          ([], minfo)
+		  insttv
+	in
+	let new_srt =  Base (qid0, new_args, b) in
+	(new_srt, minfo) 
+      else
       if exists (fn (TyVar _) -> true | s -> false) insttv then (srt, minfo) else
       let suffix = getSortNameSuffix insttv in
       let qid = Qualified (q, id^suffix) in
