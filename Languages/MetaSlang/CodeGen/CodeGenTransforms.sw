@@ -429,8 +429,10 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
       %% We are trying to simplify instances of polymorphic sorts where
       %% all the type vars have been instantitated.
       if q = "Accord" && (id = "ProcType" || id = "Update") then 
-	%% process the args to ProcType or Update, but leave the
-	%% main type as ProcType or Uppdate..
+	%% Process the args to ProcType or Update, but leave the
+	%% main type as ProcType or Update.  These types control
+	%% later Accord processing and are eliminated by Accord
+	%% once their usefulness is over.
 	let (new_args,minfo) = 
 	    foldl (fn (srt, (new_args,minfo)) -> 
 		   let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
@@ -935,7 +937,9 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
 	       let minfo = addMissingFromSort (bspc, spc, ignore, srt, minfo) in
 	       addMissingFromTerm (bspc, spc, ignore, trm, minfo))
 	      minfo
-	      (opInfoDefs info))
+	      %% including all the defs, including the vacuous ones represented 
+	      %% as "Any" terms, so the types of ops get processed
+	      (opInfoAllDefs info)) 
        minfo 
        spc.ops
   in
