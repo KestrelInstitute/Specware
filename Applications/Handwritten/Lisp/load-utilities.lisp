@@ -362,9 +362,10 @@
 	 (target-dirpath (if (stringp target)
 			     (parse-namestring (ensure-final-slash target))
 			   target)))
-    (if #+mcl recursive? #-mcl nil
-	(ccl:run-program "cp" (list "-R" (namestring source-dirpath)
-				    (namestring target-dirpath)))
+    (if #+mcl recursive? 
+	#+mcl (ccl:run-program "cp" (list "-R" (namestring source-dirpath)
+					  (namestring target-dirpath)))
+	#-mcl nil nil
       (progn (unless (probe-file target-dirpath)
 	       (make-directory target-dirpath))
 	     (loop for dir-item in (sw-directory source-dirpath)
