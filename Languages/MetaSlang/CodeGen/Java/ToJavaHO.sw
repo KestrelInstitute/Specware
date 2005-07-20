@@ -126,7 +126,12 @@ spec
 	 let rexp = mkBinExp(id,[mkVarJavaExpr("arg1"),mkVarJavaExpr("arg2")]) in
 	 standaloneM(mkReturnStmt(rexp),(["int","int"],"boolean"),(["Integer","Integer"],"Boolean"),k,l)
      else
-     if (id = "~") & (spcname = "Integer")
+     if (id = "-") & (spcname = "Integer_")
+       then
+	 let rexp = mkUnExp("-",[mkVarJavaExpr("arg1")]) in
+	 standaloneM(mkReturnStmt(rexp),(["int"],"int"),(["Integer"],"Integer"),k,l)
+     else	 
+     if (id = "~") & (spcname = "Integer") % deprecated
        then
 	 let rexp = mkUnExp("-",[mkVarJavaExpr("arg1")]) in
 	 standaloneM(mkReturnStmt(rexp),(["int"],"int"),(["Integer"],"Integer"),k,l)
