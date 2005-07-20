@@ -825,6 +825,8 @@ def builtinSortOp(qid) =
   (q="Integer" & (i="Integer" or i="NonZeroInteger" or i="+" or i="-" or i="*" or i="div" or i="rem" or i="<=" or
 		  i=">" or i=">=" or i="toString" or i="intToString" or i="show" or i="stringToInt"))
   or
+  (q="Integer_" && i="-") % unary minus
+  or
   (q="Boolean" & (i="Boolean" or i="true" or i="false" or i="~" or i="&" or i="or" or
 		  i="=>" or i="<=>" or i="~="))
   or
@@ -887,7 +889,7 @@ def generateJavaCodeFromTransformedSpecM spc =
    let imports = [] in
    let jspc = (None, imports, clsOrInterfDecls) in
    let jspc = mapJName (mapJavaIdent sep) jspc in
-  %let jspc = mapJName (fn | "BitString" -> "int" | id -> id) jspc in  % ?? good grief
+   let jspc = mapJName (fn | "BitString" -> "int" | id -> id) jspc in 
    let jspc = mapJName (mapAliasesFun typeNameAliases) jspc in
    return jspc
   }
