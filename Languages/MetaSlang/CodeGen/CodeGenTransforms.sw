@@ -20,6 +20,8 @@ def builtinSortOp (Qualified (q, i)) =
   %||
   ((q="Integer" || q="Nat" || q="PosNat") && (i="Integer" || i="NonZeroInteger" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" || i="<" || i="~" ||
 		  i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"))
+  ||
+  (q="Integer_" && i="-") % unary minus
   % || (q="Boolean" && (i="Boolean" || i="true" || i="false" || i="~" || i="&&" || i="||" || i="=>" || i="<=>" || i="~="))
   ||
   (q="Char" && (i="Char" || i="chr" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
