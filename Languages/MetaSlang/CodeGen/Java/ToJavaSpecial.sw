@@ -256,7 +256,12 @@ spec
       | Apply(Fun(Op(Qualified(_,"orBits"),_),_, _), Record([(_,t1),(_,t2)],_),b) -> bitStringOp("|",t1,t2,k,l)
       %% -------------------------------------------
 
-
+      | Apply(Fun(Op(Qualified("Integer_","-"),_),_, _), t1,b) -> 
+	{
+	 (block,e1,k,l) <- termToExpressionM(tcx,t1,k,l);
+	 let res = UnOp.mkUnExp(Minus,[e1]) in
+	 return (Some(block,res,k,l))
+	}
 
       | Apply(Fun(Op(qid as Qualified(qual,id),_),opsrt,_),argterm,b) ->
 	if builtinBaseTypeId?(qual) then return None else
