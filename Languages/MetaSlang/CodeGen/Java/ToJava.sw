@@ -166,12 +166,6 @@ def addFldDeclToClsDeclsM(srtId, fldDecl) =
 
 op addMethDeclToClsDeclsM: Id * Id * MethDecl -> JGenEnv ()
 def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
-  let _ = if methDecl.1.3 = "concat_Boolean" then
-            let _ = writeLine ("Adding method to " ^ srtId ^ " : " ^ anyToString methDecl) in
-	    pause ()
-	  else
-	    ()
-  in
   {
    old_decls <- getClsDecls;
    let (revised_decls, found_class?) = 
