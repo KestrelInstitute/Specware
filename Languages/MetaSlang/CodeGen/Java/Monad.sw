@@ -118,16 +118,34 @@ def getImports =
   fn state ->
   (Ok state.imports, state)
 
-
 op addClsDecl: ClsDecl -> JGenEnv ()
 def addClsDecl decl =
   fn state ->
-  (Ok (), state << { clsDecls = state.clsDecls ++ [decl] })
+  (Ok (), maybeAddClsDecl (decl, state))
+
+op  maybeAddClsDecl : ClsDecl * State -> State
+def maybeAddClsDecl (decl, state) =
+  if member (decl, state.clsDecls) then
+    state
+  else
+    case find (fn old_decl -> old_decl.2.1 = decl.2.1) state.clsDecls of
+      | Some old_decl ->
+        % This currently seems to happen only when names in a class are 
+        % revised, e.g. "BitString" => "int", in which case the old and
+        % new decls would have the old and new names, respectively.
+        % let _ = writeLine ("Warning: In maybeAddClsDecl, monad now holds multiple distinct copies of class decl: " ^ decl.2.1) in
+	% let _ = writeLine ("-old-") in
+	% let _ = writeLine (anyToString old_decl) in
+	% let _ = writeLine ("-new-") in
+	% let _ = writeLine (anyToString decl) in
+        state << { clsDecls = state.clsDecls ++ [decl] }
+      | _ ->
+	state << { clsDecls = state.clsDecls ++ [decl] }
 
 op addClsDecls: List ClsDecl -> JGenEnv ()
 def addClsDecls decls =
   fn state ->
-  (Ok (), state << { clsDecls = state.clsDecls ++ decls })
+  (Ok (), foldl maybeAddClsDecl state decls) 
 
 op addInterfDecl: InterfDecl -> JGenEnv ()
 def addInterfDecl decl =
@@ -135,9 +153,14 @@ def addInterfDecl decl =
   (Ok (), state << { interfDecls = state.interfDecls ++ [decl] })
 
 op putClsDecls: List ClsDecl -> JGenEnv ()
-def putClsDecls clsDecls =
+def putClsDecls decls =
   fn state ->
-  (Ok (), state << { clsDecls = clsDecls })
+  (Ok (), state << { clsDecls = decls })
+
+op putInterfDecls: List InterfDecl -> JGenEnv ()
+def putInterfDecls decls =
+  fn state ->
+  (Ok (), state << { interfDecls = decls })
 
 op getClsDecls: JGenEnv (List ClsDecl)
 def getClsDecls =

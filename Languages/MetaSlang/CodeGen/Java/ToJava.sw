@@ -43,14 +43,14 @@ op clsDeclsFromSorts: Spec -> JGenEnv ()
 def clsDeclsFromSorts spc =
   %% If there is no definition for a sort,
   %% we assume it is referring to an external java type (see README.JavaCodeGen)
+
+  %% We don't need to pre-emptively add a primitive class decl here.
+  %% addMethDeclToClsDeclsM and addFldDeclToClsDeclsM now add it lazily if needed... 
   {
-   primitiveClassName <- getPrimitiveClassName;
    putEnvSpec spc;
-   primClsDecl <- return (mkPrimOpsClsDecl primitiveClassName);
    foldM (fn _ -> fn (q,id,sortInfo) ->
 	  sortToClsDecls(q,id,sortInfo))
-         () (sortsAsList spc);
-   addClsDecl primClsDecl
+         () (sortsAsList spc)
   }
 
 op checkSubsortFormat: Sort -> JGenEnv Sort
@@ -139,36 +139,61 @@ def userTypeToClsDecls(id,superid) =
 op addFldDeclToClsDeclsM: Id * FldDecl -> JGenEnv ()
 def addFldDeclToClsDeclsM(srtId, fldDecl) =
   {
-   clsDecls <- getClsDecls;
-   let clsDecls =
-          map (fn (cd as (lm, (cId, sc, si), cb)) -> 
-	       if cId = srtId
-		 then
-		   let newCb = setFlds(cb, cons(fldDecl, cb.flds)) in
-		   (lm, (cId, sc, si), newCb)
-	       else cd)
-	  clsDecls
+   old_decls <- getClsDecls;
+   let (revised_decls, found_class?) = 
+       foldl (fn (cd as (lm, (cId, sc, si), cb), (decls, found_class?)) ->
+	      if cId = srtId then
+		let newCb = setFlds(cb, cons(fldDecl, cb.flds)) in
+		([(lm, (cId, sc, si), newCb)] ++ decls, true)
+	      else 
+		([cd] ++ decls, found_class?))
+             ([], false)
+             old_decls
    in
-   putClsDecls clsDecls
-  }
-
+   let new_decls = 
+       if found_class? then 
+	 rev revised_decls
+       else 
+	 let cb       = Java.emptyClsBody in
+	 let newCb    = setFlds(cb, cons(fldDecl, cb.flds)) in
+	 let new_decl = ([], (srtId, None, []), newCb) in
+	 old_decls ++ [new_decl] % old_decls = rev revised_decls
+   in
+     putClsDecls new_decls
+    }
 
 % --------------------------------------------------------------------------------
 
 op addMethDeclToClsDeclsM: Id * Id * MethDecl -> JGenEnv ()
 def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
+  let _ = if methDecl.1.3 = "concat_Boolean" then
+            let _ = writeLine ("Adding method to " ^ srtId ^ " : " ^ anyToString methDecl) in
+	    pause ()
+	  else
+	    ()
+  in
   {
-   clsDecls <- getClsDecls;
-   let clsDecls =
-          map (fn (clsDecl as (lm, (clsId, sc, si), cb)) -> 
-	       if clsId = srtId
-		 then
-		   let newCb = setMethods(cb, cons(methDecl, cb.meths)) in
-		   (lm, (clsId, sc, si), newCb)
-	       else clsDecl)
-	  clsDecls
+   old_decls <- getClsDecls;
+   let (revised_decls, found_class?) = 
+       foldl (fn (cd as (lm, (cId, sc, si), cb), (decls, found_class?)) ->
+	      if cId = srtId then
+		let newCb = setMethods(cb, cons(methDecl, cb.meths)) in
+		([(lm, (cId, sc, si), newCb)] ++ decls, true)
+	      else 
+		([cd] ++ decls, found_class?))
+             ([], false)
+             old_decls
    in
-   putClsDecls clsDecls
+   let new_decls = 
+       if found_class? then 
+	 rev revised_decls
+       else 
+	 let cb       = Java.emptyClsBody in
+	 let newCb    = setMethods(cb, cons(methDecl, cb.meths)) in
+	 let new_decl = ([], (srtId, None, []), newCb) in
+	 old_decls ++ [new_decl] % old_decls = rev revised_decls
+   in
+     putClsDecls new_decls
   }
 
 
