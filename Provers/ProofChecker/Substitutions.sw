@@ -8,12 +8,20 @@ spec
   type variables and a sequence of types of the same length, here we use a
   finite map from type variables to types, which is more convenient. *)
 
-  type TypeSubstitution = FMap (TypeVariable, Type)
+  type TypeVarSubstitution a = FMap (TypeVariable, a)
+  op mkTypeVarSubstitution: [a] TypeVariables * FSeq a -> TypeVarSubstitution a
+  def mkTypeVarSubstitution(tvs, xs) =
+    fromSeqs(tvs, xs)
+
+  type TypeSubstitution = TypeVarSubstitution Type
+  op mkTypeSubstitution: TypeVariables * Types -> TypeSubstitution
+  def mkTypeSubstitution(tvs, ts) = mkTypeVarSubstitution(tvs, ts)
 
   % substitute type variables with types in types and expressions:
 
   op typeSubstInType : TypeSubstitution -> Type       -> Type
   op typeSubstInExpr : TypeSubstitution -> Expression -> Expression
+  op typeVarSubstInType : TypeVarSubstitution TypeVariable -> Type       -> Type
 
   def typeSubstInType sbs = fn
     | BOOL          -> BOOL
@@ -40,6 +48,32 @@ spec
     | PROJECT(t,f)       -> PROJECT (typeSubstInType sbs t, f)
     | EMBED(t,c)         -> EMBED (typeSubstInType sbs t, c)
     | QUOT t             -> QUOT (typeSubstInType sbs t)
+
+  def typeVarSubstInType sbs = fn
+    | BOOL          -> BOOL
+    | VAR tv        -> if sbs definedAt tv then VAR (sbs @ tv) else VAR tv
+    | TYPE(tn,tS)   -> TYPE (tn, map (typeVarSubstInType sbs) tS)
+    | ARROW(t1,t2)  -> ARROW (typeVarSubstInType sbs t1, typeVarSubstInType sbs t2)
+    | RECORD(fS,tS) -> RECORD (fS, map (typeVarSubstInType sbs) tS)
+    | SUM(cS,tS)    -> SUM (cS, map (typeVarSubstInType sbs) tS)
+    | RESTR(t,r)    -> RESTR (typeVarSubstInType sbs t, typeVarSubstInExpr sbs r)
+    | QUOT(t,q)     -> QUOT (typeVarSubstInType sbs t, typeVarSubstInExpr sbs q)
+
+  def typeVarSubstInExpr sbs = fn
+    | VAR v              -> VAR v
+    | OPI(o,tS)          -> OPI (o, map (typeVarSubstInType sbs) tS)
+    | APPLY(e1,e2)       -> APPLY (typeVarSubstInExpr sbs e1,
+                                   typeVarSubstInExpr sbs e2)
+    | FN(v,t,e)          -> FN (v, typeVarSubstInType sbs t, typeVarSubstInExpr sbs e)
+    | EQ(e1,e2)          -> EQ (typeVarSubstInExpr sbs e1,
+                                typeVarSubstInExpr sbs e2)
+    | IF(e0,e1,e2)       -> IF (typeVarSubstInExpr sbs e0,
+                                typeVarSubstInExpr sbs e1,
+                                typeVarSubstInExpr sbs e2)
+    | IOTA t             -> IOTA (typeVarSubstInType sbs t)
+    | PROJECT(t,f)       -> PROJECT (typeVarSubstInType sbs t, f)
+    | EMBED(t,c)         -> EMBED (typeVarSubstInType sbs t, c)
+    | QUOT t             -> QUOT (typeVarSubstInType sbs t)
 
   % true iff tsbs is substitution of tvS@i with tS@i:
 
