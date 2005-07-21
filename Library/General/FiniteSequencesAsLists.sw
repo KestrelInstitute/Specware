@@ -242,6 +242,15 @@ FSeq qualifying spec
     if first = x then 0
     else 1 + positionOf (rest, x)
 
+  op positionsOf : [a] FSeq a * a -> FSeq Nat
+  def [a] positionsOf(s,x) =
+    let def aux (posSeq : FSeq Nat, pos : Nat, s : FSeq a) : FSeq Nat =
+          if empty? s then posSeq
+          else if first s = x then aux (posSeq <| pos, pos+1, rtail s)
+               else aux (posSeq, pos+1, rtail s)
+    in
+    aux (empty, 0, s)
+
   op longestCommonPrefix : [a] FSeq a * FSeq a -> FSeq a
   def longestCommonPrefix(s1,s2) =
     case (s1, s2) of

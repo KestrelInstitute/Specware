@@ -267,6 +267,17 @@ FSeq qualifying spec
   op positionOf : [a] {(s,x) : InjectiveFSeq a * a | x in? s} -> Nat
   def positionOf(s,x) = the(i:Nat) s@i = x
 
+  % ordered sequence of positions in `s' at which `x' occurs:
+  op positionsOf : [a] FSeq a * a -> FSeq Nat
+  def positionsOf(s,x) = the (posSeq : FSeq Nat)
+    % posSeq only contains positions at which `x' occurs:
+    (fa(i:Nat) i < length posSeq =>
+               posSeq@i < length s && s @ (posSeq@i) = x) &&
+    % posSeq contains all positions at which `x' occurs:
+    (fa(i:Nat) i < length s && s@i ~= x => i nin? posSeq) &&
+    % the elements in posSeq are strictly increasing:
+    (fa(i:Nat) i < length posSeq - 1 => posSeq@i < posSeq@(i+1))
+
   op longestCommonPrefix : [a] FSeq a * FSeq a -> FSeq a
   def longestCommonPrefix(s1,s2) =
     let len:Nat = the(len:Nat)
