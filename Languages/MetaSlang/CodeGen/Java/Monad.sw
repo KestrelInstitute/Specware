@@ -125,23 +125,84 @@ def addClsDecl decl =
 
 op  maybeAddClsDecl : ClsDecl * State -> State
 def maybeAddClsDecl (decl, state) =
-  if member (decl, state.clsDecls) then
+  let old_decls = state.clsDecls in
+  if member (decl, old_decls) then
     state
   else
-    case find (fn old_decl -> old_decl.2.1 = decl.2.1) state.clsDecls of
+    case find (fn old_decl -> old_decl.2.1 = decl.2.1) old_decls of
       | Some old_decl ->
-        % This currently seems to happen only when names in a class are 
-        % revised, e.g. "BitString" => "int", in which case the old and
+        % This can happen in two cases -- 
+        % We might be revising names, e.g. "BitString" => "int", in which case the old and
         % new decls would have the old and new names, respectively.
-        % let _ = writeLine ("Warning: In maybeAddClsDecl, monad now holds multiple distinct copies of class decl: " ^ decl.2.1) in
-	% let _ = writeLine ("-old-") in
-	% let _ = writeLine (anyToString old_decl) in
-	% let _ = writeLine ("-new-") in
-	% let _ = writeLine (anyToString decl) in
-        state << { clsDecls = state.clsDecls ++ [decl] }
+        % Or we might be merging two independently generated versions of the class.
+        % To cover both cases, we merge, but prefer new to old.
+        let merged_decl = mergeClsDecls old_decl decl in
+	let new_decls = map (fn old_decl -> 
+			     if old_decl = decl then 
+			       merged_decl 
+			     else
+			       old_decl)
+	                    old_decls
+	in
+	  state << { clsDecls = new_decls }
       | _ ->
 	state << { clsDecls = state.clsDecls ++ [decl] }
 
+ op  mergeClsDecls : ClsDecl -> ClsDecl -> ClsDecl
+ def mergeClsDecls (mods_a, hdr_a, body_a) (mods_b, hdr_b, body_b) =
+   let new_mods = listUnion (mods_a, mods_b) in
+   let new_hdr  = if hdr_a = hdr_b then 
+                    hdr_a
+		  else
+		    let _ = writeLine ("?? Can't merge class hdrs, using first: " 		   
+				       ^ anyToString hdr_a ^ " " 
+				       ^ anyToString hdr_b)
+		    in
+		      hdr_a
+   in
+   %% The result for each merging of lists is almost  list_a ++ list_b, 
+   %% except that anything from list_a with the same name as something from 
+   %% list_b is suppressed.
+   %% Unfortunately, the location of the names to compare is different for 
+   %% each list, so this is verbose:
+   let new_fields = foldl (fn (a, fields) ->
+			   if exists (fn b -> b.3.1 = a.3.1) body_b.flds then
+			     fields
+			   else
+			     [a] ++ fields)
+			  body_b.flds
+			  body_a.flds
+   in
+   let new_methods = foldl (fn (a, methods) ->
+			    if exists (fn b -> b.1.3 = a.1.3) body_b.meths then
+			      methods
+			    else
+			      [a] ++ methods)
+                           body_b.meths
+			   body_a.meths
+   in
+   let new_constrs = foldl (fn (a, constrs) ->
+			    if exists (fn b -> b.2 = a.2) body_b.constrs then
+			      constrs
+			    else
+			      [a] ++ constrs)
+                           body_b.constrs
+			   body_a.constrs
+   in
+   let new_body = {
+		   handwritten = listUnion (body_a.handwritten, body_b.handwritten),
+		   staticInits = listUnion (body_a.staticInits, body_b.staticInits),
+		   flds        = new_fields,
+		   meths       = new_methods,
+		   constrs     = new_constrs,
+		   clss        = listUnion (body_a.clss,        body_b.clss),
+		   interfs     = listUnion (body_a.interfs,     body_b.interfs)
+		  }
+   in
+     (new_mods, new_hdr, new_body)
+     
+	    
+	    
 op addClsDecls: List ClsDecl -> JGenEnv ()
 def addClsDecls decls =
   fn state ->
