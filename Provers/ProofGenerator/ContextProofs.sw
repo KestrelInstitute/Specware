@@ -97,9 +97,9 @@ spec
     let cxProof = contextProof(cx) in
     let opDeclSeq = filter (fn (opDeclaration(o, tvs1, t)) -> o = oper | _ -> false) cx in
     let opDeclaration(_, tvs1, t) = theElement(opDeclSeq) in
-    let typeVarSubst = fromSeqs(tvs1, ts) in
+    let typeVarSubst = fromSeqs(tvs1, map VAR ts) in
     let operVar = uniqueDefVar in
-    let wfDefProof = assume (theoreM (cx ++ multiTypeVarDecls tvs1, EX1(operVar, typeVarSubstInType typeVarSubst t, replaceOperationWithVar(oper, operVar, exp)))) in
+    let wfDefProof = assume (theoreM (cx ++ multiTypeVarDecls tvs1, EX1(operVar, typeSubstInType typeVarSubst t, replaceOperationWithVar(oper, operVar, exp)))) in
     cxOdef(cxProof, wfDefProof, oper)
 
   op uniqueDefVar: Variable
