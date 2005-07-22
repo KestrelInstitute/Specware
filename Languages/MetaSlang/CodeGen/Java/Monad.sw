@@ -149,17 +149,25 @@ def maybeAddClsDecl (decl, state) =
 	state << { clsDecls = state.clsDecls ++ [decl] }
 
  op  mergeClsDecls : ClsDecl -> ClsDecl -> ClsDecl
- def mergeClsDecls (mods_a, hdr_a, body_a) (mods_b, hdr_b, body_b) =
-   let new_mods = listUnion (mods_a, mods_b) in
-   let new_hdr  = if hdr_a = hdr_b then 
-                    hdr_a
-		  else
-		    let _ = writeLine ("?? Can't merge class hdrs, using first: " 		   
-				       ^ anyToString hdr_a ^ " " 
-				       ^ anyToString hdr_b)
-		    in
-		      hdr_a
+ def mergeClsDecls (decl_a as (mods_a, (id_a, super_class_a, super_interf_a), body_a)) 
+                   (decl_b as (mods_b, (id_b, super_class_b, super_interf_b), body_b))
+   =
+   %% id_a must equal id_b for us to get here	      
+   let new_super_class =
+       case (super_class_a, super_class_b) of
+	 | (None, _)        -> super_class_b
+	 | (_,    None)     -> super_class_a  
+	 | (Some a, Some b) -> 
+	   if a = b then
+	     Some a
+	   else
+	     let _ = writeLine("Two different super classes for class " ^ id_a ^ " : " ^ anyToString a ^ " and " ^ anyToString b) in
+	     let _ = writeLine("Using first...") in
+	     Some a
    in
+   let new_super_interf = listUnion (super_interf_a, super_interf_b) in
+   let new_hdr  = (id_a, new_super_class, new_super_interf) in
+   let new_mods = listUnion (mods_a, mods_b) in
    %% The result for each merging of lists is almost  list_a ++ list_b, 
    %% except that anything from list_a with the same name as something from 
    %% list_b is suppressed.
