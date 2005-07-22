@@ -1194,10 +1194,12 @@ def packageNameToJavaName(s) =
 op mapJavaIdent: String -> Ident -> Ident
 def mapJavaIdent sep id =
   let idarray = explode(id) in
+  %% why sep for some but "_" for others ?
   let id = foldr (fn(#?,id) -> sep^"Q"^id
 		  | (#<,id) -> sep^"LT"^id
 		  | (#>,id) -> sep^"GT"^id
 		  | (#-,id) -> "_"^id
+		  | (#',id) -> sep^"Prime"^id % maybe "_Prime" ^ id ?
 		  | (c,id) -> Char.toString(c)^id) "" idarray
   in
     id
