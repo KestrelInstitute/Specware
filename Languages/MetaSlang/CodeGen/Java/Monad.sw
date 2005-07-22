@@ -138,7 +138,7 @@ def maybeAddClsDecl (decl, state) =
         % To cover both cases, we merge, but prefer new to old.
         let merged_decl = mergeClsDecls old_decl decl in
 	let new_decls = map (fn old_decl -> 
-			     if old_decl = decl then 
+			     if old_decl.2.1 = decl.2.1 then 
 			       merged_decl 
 			     else
 			       old_decl)
