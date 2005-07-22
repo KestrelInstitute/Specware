@@ -7,7 +7,8 @@ spec
   (* Unlike LD, we do not require the type variables appearing in an op
   declaration, type definition, op definition, or axiom to be distinct. This
   requirement is captured in the inference rules for well-formed contexts,
-  thus keeping the syntax simpler. *)
+  thus keeping the syntax simpler and avoiding subtypes (as explained in
+  README.txt). *)
 
   type ContextElement =
     | typeDeclaration    TypeName * Integer
@@ -20,6 +21,9 @@ spec
 
   type Context = FSeq ContextElement
 
+  % API private
+  type Contexts = FSeq Context
+
   (* Unlike LD, we do not introduce a type for specs as contexts without
   (type) variable declarations. Rather, we incorporate the requirement into
   the inference rule used to prove that a context is a well-formed spec. The
@@ -29,6 +33,6 @@ spec
 
   % API private
   op multiTypeVarDecls : TypeVariables -> Context
-  def multiTypeVarDecls tvS = map (embed typeVarDeclaration) tvS
+  def multiTypeVarDecls tvS = map typeVarDeclaration tvS
 
 endspec

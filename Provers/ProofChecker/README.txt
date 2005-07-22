@@ -5,20 +5,12 @@ Read that document first and refer to it while reading the .sw files in this
 directory. The document is referred to as "LD" (for "Logic Document") in the
 comments in the files.
 
-The proof checker developed a few months ago is currently being revised to
-reflect recent simplifying changes in the definition of the Metaslang logic in
-LD. At this moment, all the old files have been removed from the CVS
-repository but only some of the new files have been added. As a result, this
-directory currently contains only part of the proof checker. The remaining new
-files will be added as soon as they are available.
-
-External code that uses (what is currently available of) the proof checker
-should only import the top-level spec Spec. All other specs in this directory
-are auxiliary and should not be directly referenced by external code. This
-restriction is meant to isolate external code from certain changes in the
-proof checker, e.g. if a spec imported by spec Spec were renamed. In other
-words, spec Spec is public, while the other specs in this directory are
-private (to the proof checker).
+External code that uses the proof checker should only import the top-level
+spec Spec. All the other specs in this directory are auxiliary and should not
+be directly referenced by external code. This restriction is meant to isolate
+external code from certain changes in the proof checker, e.g. if a spec
+imported by spec Spec were renamed. In other words, spec Spec is public, while
+the other specs in this directory are private (to the proof checker).
 
 External code that imports spec Spec should directly reference only some of
 the types and ops available in spec Spec (i.e. introduced in the specs that
@@ -40,7 +32,8 @@ unless it is accompanied by the local comment "% API public".
 Besides types and ops, external code could also reference constructors. From
 the user's point of view, a constructor works very much like an op. The
 convention is that, as expected, a constructor is public iff its associated
-sum type is public. This is why we only explicitly consider types and ops.
+sum type is public. This is why the previous paragraph only explicitly
+mentions types and ops.
 
 Spec Spec and the public types and ops available there constitute the API for
 the proof checker. Currently Specware has no mechanisms to express and enforce
@@ -50,10 +43,37 @@ adhere to this API.
 None of the argument types of the public ops of the proof checker are
 subtypes. If a public op had an argument type that is a subtype (e.g. a
 non-empty finite sequence of expressions) then Specware's type-checking alone
-does not guarantee that external code never calls that op with the empty
-sequence of expressions as argument; proof obligations need to be discharged
-to guarantee that. However, users often do not discharge proof
-obligations. Thus, avoiding subtypes for arguments of public ops makes the
-proof checker more robust, forcing it to deal with values that would be
-outside the subtypes that would otherwise be used, as opposed to the
-unpredictable behavior resulting from violating a subtype.
+does not guarantee that external code never calls that op with a value of the
+supertype that does not belong to the subtype as argument (e.g. the empty
+sequence of expressions); proof obligations need to be discharged to guarantee
+that. However, users often do not discharge proof obligations. Thus, avoiding
+subtypes for arguments of public ops makes the proof checker more robust,
+forcing it to deal with values that would be outside the subtypes that would
+otherwise be used, as opposed to the unpredictable behavior resulting from
+violating a subtype.
+
+All the types and ops that comprise the proof checker have the qualifier
+MetaslangProofChecker (see spec Spec). This should avoid any conflicts with
+types and ops in external code, which would presumably not have such a
+qualifier.
+
+Some ops in spec Spec are not executable. In order to run the proof checker
+from external code that imports spec Spec, that external code should apply the
+refinement encoded by morphism Refinement, also in this directory. The
+refinement is applied by means of Specware's substitution operation. Thus,
+morphism Refinement is public. All the other morphisms in this directory are
+auxiliary and should not be referenced by external code; in other words, they
+are private (to the proof checker). Morphism refinement is part of the API to
+the proof checker.
+
+The proof checker specs import libraries whose types and ops do not have the
+qualifier MetaslangProofChecker (e.g. spec FiniteSequences). The substitution
+of morphism Refinement into spec Spec refines some of those library specs
+too. If the external code that uses the proof checker also includes those
+libraries, then the refinement of the proof checker determines how those
+libraries are refined; in other words, the external code cannot refine those
+libraries in different ways from the proof checker. This is probably not a
+problem in the near term.
+
+The file dependencies.pdf graphically depicts the dependencies among the
+Specware units in this directory.

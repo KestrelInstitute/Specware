@@ -4,11 +4,15 @@ spec
 
   import Contexts
 
-  (* This spec defines various ops related to syntactic entities that occur in
-  other syntactic entities, e.g. the free variables that occur in an
-  expression. *)
+  (* This spec is an executable version of spec Occurrences. Actually, only
+  two ops in spec Occurrences are not executable, namely ops
+  contextDefinesType? and contextDefinesOp?. Since currently Specware provides
+  no way of refining individual ops in a spec, we have to copy the other ops
+  and their (executable) definitions from spec Occurrences. This, which is
+  clearly not ideal, will change as soon as Specware provides better
+  refinement capabilities. *)
 
-  % free variables in expressions:
+  % the following are copied verbatim from spec Occurrences:
 
   op exprFreeVars : Expression -> FSet Variable
   def exprFreeVars = fn
@@ -18,8 +22,6 @@ spec
     | EQ(e1,e2)          -> exprFreeVars e1 \/ exprFreeVars e2
     | IF(e0,e1,e2)       -> exprFreeVars e0 \/ exprFreeVars e1 \/ exprFreeVars e2
     | _                  -> empty
-
-  % ops in types and expressions:
 
   op typeOps : Type       -> FSet Operation
   op exprOps : Expression -> FSet Operation
@@ -45,8 +47,6 @@ spec
     | PROJECT(t,f)       -> typeOps t
     | EMBED(t,c)         -> typeOps t
     | QUOT t             -> typeOps t
-
-  % items declared or defined in contexts:
 
   op contextElementTypes    : ContextElement -> FSet TypeName
   op contextElementOps      : ContextElement -> FSet Operation
@@ -86,12 +86,23 @@ spec
   def contextVars     cx = \\// (map contextElementVars     cx)
   def contextAxioms   cx = \\// (map contextElementAxioms   cx)
 
+  % the following are executable versions of the homonymous ops
+  % in spec Occurrences:
+
   op contextDefinesType? : Context * TypeName -> Boolean
   def contextDefinesType?(cx,tn) =
-    (ex (tvS:TypeVariables, t:Type) typeDefinition (tn, tvS, t) in? cx)
+    nonEmpty? cx &&
+    (case first cx of
+       | typeDefinition(tn1,_,_) ->
+         tn1 = tn || contextDefinesType? (rtail cx, tn)
+       | _ -> contextDefinesType? (rtail cx, tn))
 
   op contextDefinesOp? : Context * Operation -> Boolean
   def contextDefinesOp?(cx,o) =
-    (ex (tvS:TypeVariables, e:Expression) opDefinition (o, tvS, e) in? cx)
+    nonEmpty? cx &&
+    (case first cx of
+       | opDefinition(o1,_,_) ->
+         o1 = o || contextDefinesOp? (rtail cx, o)
+       | _ -> contextDefinesOp? (rtail cx, o))
 
 endspec

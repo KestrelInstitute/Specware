@@ -539,11 +539,13 @@ spec
       => pj (theoreM (cx, FN (v, t, e) == FN (v, t1, e1))))
     | thIfSubst ->
       (fa (cx:Context, e0:Expression, e1:Expression, e2:Expression, t:Type,
-           an1:AxiomName, an2:AxiomName, d1:Expression, d2:Expression)
+           an1:AxiomName, an2:AxiomName,
+           d0:Expression, d1:Expression, d2:Expression)
          pj (wellTypedExpr (cx, IF (e0, e1, e2), t))
+      && pj (theoreM (cx, e0 == d0))
       && pj (theoreM (cx <| axioM (an1, empty,    e0), e1 == d1))
       && pj (theoreM (cx <| axioM (an2, empty, ~~ e0), e2 == d2))
-      => pj (theoreM (cx, IF (e0, e1, e2) == IF (e0, d1, d2))))
+      => pj (theoreM (cx, IF (e0, e1, e2) == IF (d0, d1, d2))))
     | thTheSubst ->
       (fa (cx:Context, t:Type, t1:Type, t2:Type)
          pj (wellTypedExpr (cx, IOTA t, t2))

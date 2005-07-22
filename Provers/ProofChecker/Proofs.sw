@@ -2,18 +2,20 @@ spec
 
   % API public all
 
+  import Judgements
+
   (* A proof can be represented as a tree of inference rules. Inference rules
   that have N judgements as premises have N subtrees; in particular, if N = 0,
   the inference rule is a leaf.
 
   A proof of this form can be checked by means of a recursive function that
-  computes a judgement from a tree, the judgement being proved by the
-  tree. For each inference rule, the function recursively computes the
-  judgements proved by the subtrees and then checks whether the rule can be
-  applied to such judgements. If it can, the function computes the judgement
-  resulting from applying the rule. Otherwise, the function indicates a
-  failure; of course, failures are propagated from subtree to supertrees. This
-  function is defined in spec Checking.
+  computes a judgement from a tree, the judgement being proved by the tree.
+  For each inference rule, the function recursively computes the judgements
+  proved by the subtrees and then checks whether the rule can be applied to
+  such judgements. If it can, the function computes the judgement resulting
+  from applying the rule. Otherwise, the function indicates a failure; of
+  course, failures are propagated from subtree to supertrees. This function is
+  defined in spec Checker.
 
   Since not all rules are such that there is a unique conclusion judgement for
   given premise judgements (e.g. rule cxTdec has a different conclusion for
@@ -27,8 +29,6 @@ spec
 
   The constructors of proof trees are named after the inference rules in LD
   (cf. type InferenceRule in spec Provability). *)
-
-  import Judgements
 
   type Proof  % defined below
 
@@ -53,7 +53,7 @@ spec
     | tyInst  Proof * Proofs * TypeName
     | tyArr   Proof * Proof
     | tyRec   Proof * Proofs * Fields
-    | tySum   Proof * Proofs * Constructors
+    | tySum   Proofs * Constructors
     | tyRestr Proof
     | tyQuot  Proof * Proof * Proof
     % type equivalence:
@@ -64,7 +64,7 @@ spec
     | teInst   Proof * Proofs
     | teArr    Proof * Proof
     | teRec    Proof * Proofs * Fields
-    | teSum    Proof * Proofs * Constructors
+    | teSum    Proofs * Constructors
     | teRestr  Proof * Proof * Proof
     | teQuot   Proof * Proof * Proof
     | teRecOrd Proof * FSeq Integer
@@ -99,7 +99,7 @@ spec
     | thOpSubst    Proof * Proofs
     | thAppSubst   Proof * Proof * Proof
     | thAbsSubst   Proof * Proof * Proof
-    | thIfSubst    Proof * Proof * Proof
+    | thIfSubst    Proof * Proof * Proof * Proof
     | thTheSubst   Proof * Proof
     | thProjSubst  Proof * Proof
     | thEmbedSubst Proof * Proof
@@ -149,6 +149,7 @@ spec
         prf1  : Proof,
         prf2  : Proof,
         prf3  : Proof,
+        prf4  : Proof,
         prfS  : Proofs)
          pred prf
       && pred prf1
@@ -169,7 +170,7 @@ spec
       && pred (tyInst (prf, prfS, tn))
       && pred (tyArr (prf1, prf2))
       && pred (tyRec (prf, prfS, fS))
-      && pred (tySum (prf, prfS, cS))
+      && pred (tySum (prfS, cS))
       && pred (tyRestr prf)
       && pred (tyQuot (prf1, prf2, prf3))
       && pred (teDef (prf, prfS, tn))
@@ -179,7 +180,7 @@ spec
       && pred (teInst (prf, prfS))
       && pred (teArr (prf1, prf2))
       && pred (teRec (prf, prfS, fS))
-      && pred (teSum (prf, prfS, cS))
+      && pred (teSum (prfS, cS))
       && pred (teRestr (prf1, prf2, prf3))
       && pred (teQuot (prf1, prf2, prf3))
       && pred (teRecOrd (prf, iS))
@@ -211,7 +212,7 @@ spec
       && pred (thOpSubst (prf, prfS))
       && pred (thAppSubst (prf1, prf2, prf3))
       && pred (thAbsSubst (prf1, prf2, prf3))
-      && pred (thIfSubst (prf1, prf2, prf3))
+      && pred (thIfSubst (prf1, prf2, prf3, prf4))
       && pred (thTheSubst (prf1, prf2))
       && pred (thProjSubst (prf1, prf2))
       && pred (thEmbedSubst (prf1, prf2))
@@ -234,5 +235,137 @@ spec
       && pred (assume jdg))
   %%%%% induction conclusion:
    => (fa(prf) pred prf)
+
+  (* A proof is closed iff it does not use any assumption, i.e. it does not
+  contain constructor assume. *)
+
+  op closedProof? : Proof -> Boolean
+  def closedProof? = fn
+    | cxMT                                  -> true
+    | cxTdec       (prf, _, _)              -> closedProof? prf
+    | cxOdec       (prf1, prf2, _)          -> closedProof? prf1
+                                            && closedProof? prf2
+    | cxTdef       (prf1, prf2, _)          -> closedProof? prf1
+                                            && closedProof? prf2
+    | cxOdef       (prf1, prf2, _)          -> closedProof? prf1
+                                            && closedProof? prf2
+    | cxAx         (prf1, prf2, _)          -> closedProof? prf1
+                                            && closedProof? prf2
+    | cxTVdec      (prf, _)                 -> closedProof? prf
+    | cxVdec       (prf1, prf2, _)          -> closedProof? prf1
+                                            && closedProof? prf2
+    | speC         prf                      -> closedProof? prf
+    | tyBool       prf                      -> closedProof? prf
+    | tyVar        (prf, _)                 -> closedProof? prf
+    | tyInst       (prf, prfS, _)           -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | tyArr        (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | tyRec        (prf, prfS, _)           -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | tySum        (prfS, _)                -> forall? closedProof? prfS
+    | tyRestr      prf                      -> closedProof? prf
+    | tyQuot       (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | teDef        (prf, prfS, _)           -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | teRefl       prf                      -> closedProof? prf
+    | teSymm       prf                      -> closedProof? prf
+    | teTrans      (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | teInst       (prf, prfS)              -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | teArr        (prf1, prf2)             -> closedProof? prf1
+    | teRec        (prf, prfS, _)           -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | teSum        (prfS, _)                -> forall? closedProof? prfS
+    | teRestr      (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | teQuot       (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | teRecOrd     (prf, _)                 -> closedProof? prf
+    | teSumOrd     (prf, _)                 -> closedProof? prf
+    | stRestr      prf                      -> closedProof? prf
+    | stRefl       (prf, _)                 -> closedProof? prf
+    | stArr        (prf1, prf2, _, _)       -> closedProof? prf1
+                                            && closedProof? prf2
+    | stRec        (prf, prfS, _)           -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | stSum        (prf1, prfS, _, _)       -> closedProof? prf1
+                                            && forall? closedProof? prfS
+    | stTE         (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | exVar        (prf, _)                 -> closedProof? prf
+    | exOp         (prf, prfS, _)           -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | exApp        (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | exAbs        prf                      -> closedProof? prf
+    | exEq         (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | exIf         (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | exThe        prf                      -> closedProof? prf
+    | exProj       (prf, _)                 -> closedProof? prf
+    | exEmbed      (prf, _)                 -> closedProof? prf
+    | exQuot       prf                      -> closedProof? prf
+    | exSuper      (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | exSub        (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | exAbsAlpha   (prf, _)                 -> closedProof? prf
+    | thAx         (prf, prfS, _)           -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | thDef        (prf, prfS, _)           -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | thRefl       prf                      -> closedProof? prf
+    | thSymm       prf                      -> closedProof? prf
+    | thTrans      (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | thOpSubst    (prf, prfS)              -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | thAppSubst   (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | thAbsSubst   (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | thIfSubst    (prf1, prf2, prf3, prf4) -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | thTheSubst   (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | thProjSubst  (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | thEmbedSubst (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | thQuotSubst  (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | thSubst      (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | thBool       (prf, _, _)              -> closedProof? prf
+    | thExt        (prf, _, _, _)           -> closedProof? prf
+    | thAbs        prf                      -> closedProof? prf
+    | thIf         (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | thThe        prf                      -> closedProof? prf
+    | thRec        (prf, _, _)              -> closedProof? prf
+    | thEmbSurj    (prf, _, _)              -> closedProof? prf
+    | thEmbDist    (prf, _, _, _, _)        -> closedProof? prf
+    | thEmbInj     (prf, _, _, _)           -> closedProof? prf
+    | thQuotSurj   (prf, _, _)              -> closedProof? prf
+    | thQuotEqCls  (prf, _, _)              -> closedProof? prf
+    | thProjSub    (prf, _, _)              -> closedProof? prf
+    | thEmbSub     (prf, _, _)              -> closedProof? prf
+    | thSub        (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
+    | assume       _                        -> false
 
 endspec

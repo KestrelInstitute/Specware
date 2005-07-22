@@ -39,18 +39,19 @@ spec
   type Expression  % defined below
 
   % useful definitions:
-  type Types        = FSeq Type
-  type Expressions  = FSeq Expression
+  type Types       = FSeq Type
+  type Expressions = FSeq Expression
 
   (* Unlike LD, we do not impose certain requirements (e.g. that the fields of
   a record type must be distinct) in the syntax. We incorporate such
-  requirements into the inference rules, thus keeping the syntax simpler.
+  requirements into the inference rules, thus keeping the syntax simpler and
+  avoiding subtypes, as explained in README.txt.
 
-  Another difference is that we factor fields/constructors separately from the
-  component types of record/sum types, i.e. we have two sequences instead of a
-  sequence of pairs. This makes the syntax a little simpler. The requirement
-  that the two sequences have the same length are incorporated into the
-  inference rules. *)
+  Another difference with LD is that we factor fields/constructors separately
+  from the component types of record/sum types, i.e. we have two sequences
+  instead of a sequence of pairs. This makes the syntax a little simpler. The
+  requirement that the two sequences have the same length are incorporated
+  into the inference rules. *)
 
   type Type =
     | BOOL                         % boolean

@@ -26,11 +26,11 @@ spec
       % (we avoid subtypes in public ops)
     let eS:Expressions = seq (fn(i:Nat) ->
       % common fields come from second record y:
-      if i < n then Some (DOT (VAR y, tS@i, fS@i))
+      if i < n then Some (DOT (VAR y, t2, fS@i))
       % left-only fields come from first record x:
-      else if i < n+n1 then Some (DOT (VAR x, tS1@(i-n), fS1@(i-n)))
-      % right-only fields come from first record x:
-      else if i < n+n1+n2 then Some (DOT (VAR y, tS2@(i-n-n1), fS2@(i-n-n1)))
+      else if i < n+n1 then Some (DOT (VAR x, t1, fS1@(i-n)))
+      % right-only fields come from second record y:
+      else if i < n+n1+n2 then Some (DOT (VAR y, t2, fS2@(i-n-n1)))
       else None) in
     let e = REC (fS ++ fS1 ++ fS2, tS ++ tS1 ++ tS2, eS) in
     FN2 (x, t1, y, t2, e)
@@ -62,9 +62,10 @@ spec
   simply decorate abbreviation variables with integers. Thus, in order to
   fulfill the distinctness requirement, we define an op that takes as
   arguments the variables and expressions that decorate the "gamma" variables
-  in LD, and returns the abbr variable decorated by the minimum natural number
-  that does not decorate any abbr variable that appears among the input
-  variables or among the free variables of the input expressions. *)
+  in LD, and returns the abbreviation variable decorated by the minimum
+  natural number that does not decorate any abbreviation variable that appears
+  among the input variables or among the free variables of the input
+  expressions. *)
 
   % API private
   op minDistinctAbbrVar : Variables * Expressions -> Variable
@@ -89,9 +90,12 @@ spec
     if empty? brS then
       IOTA BOOL  % arbitrary
     else
+      % expand first branch:
       let (vS,tS,b,e) = first brS in
       let x:Variable = minDistinctAbbrVar (vS, single b <| e) in
       let branchResult:Expression = THE (x, t, EXX (vS, tS, b &&& VAR x == e)) in
+      % return expansion if only branch, otherwise introduce conditional
+      % and expand the other branches:
       if single? brS then branchResult
       else IF (EXX (vS, tS, b), branchResult, COND (t, rtail brS))
 
@@ -128,7 +132,7 @@ spec
 
   op LETDEF : Type * Variables * Types * Expressions * Expression -> Expression
   def LETDEF (t,vS,tS,eS,e) =
-    let tupleVS = TUPLE (tS, map (embed VAR) vS) in
+    let tupleVS = TUPLE (tS, map VAR vS) in
     let tupleES = TUPLE (tS, eS) in
     LET (PRODUCT tS, t,
          vS, tS,
@@ -171,12 +175,12 @@ spec
   op EMBED? : Constructors * Types * Constructor -> Expression
   def EMBED? (cS,tS,c) =
     let n:Nat = min (length cS, length tS) in
-      % if length cS ~= length tS, excess constructors or optional types are
-      % ignored (we avoid subtypes in public ops)
+      % if length cS ~= length tS, excess constructors or types are ignored
+      % (we avoid subtypes in public ops)
     let x:Variable = abbr 0 in
     let y:Variable = abbr 1 in
     if c in? cS then
-      let j:Nat = minIn (fn(j:Integer) -> 0 <= j && j < n && cS@j = c) in
+      let j:Nat = first (positionsOf (cS, c)) in
       FN (x, SUM(cS,tS), EX (y, tS@j, VAR x == EMBED (SUM(cS,tS), c) @ (VAR y)))
     else
       IOTA BOOL  % arbitrary

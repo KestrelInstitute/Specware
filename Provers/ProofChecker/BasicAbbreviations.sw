@@ -2,11 +2,11 @@ spec
 
   % API public default
 
+  import TypesAndExpressions
+
   (* This spec defines meta ops that capture the abbreviations introduced in
   Section 2 of LD. The abbreviations introduced in Section 6 of LD are covered
   in spec OtherAbreviations. *)
-
-  import TypesAndExpressions
 
   % return sequence [prod 1 ... prod n] of fields (empty if n=0):
   % API private
@@ -79,7 +79,7 @@ spec
   % n-ary disjunction:
   % API private
   op ORn : Expressions -> Expression
-  def ORn eS = if eS = empty then TRUE
+  def ORn eS = if eS = empty then FALSE
                else if single? eS then theElement eS
                else  first eS  |||  ORn (rtail eS)
 
@@ -179,7 +179,8 @@ spec
     let x:Variable = abbr n in
     let eS:Expressions =
         seq (fn(i:Nat) ->
-          if i < n then Some (DOT (VAR x, tS@i, fS@i) == VAR (xS@i)) else None) in
+          if i < n then Some (DOT (VAR x, RECORD(fS,tS), fS@i) == VAR (xS@i))
+          else None) in
     FNN (xS, tS, THE (x, RECORD(fS,tS), ANDn eS))
 
   % record:
