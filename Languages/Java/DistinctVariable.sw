@@ -207,51 +207,68 @@ op mkNewId: Id * Nat -> Id
 def mkNewId(id, n) =
   id ^ "-" ^ natToString(n)
 
-op distinctVariable: Spec -> Spec
-
-def distinctVariable(spc) =
-%  let _ = writeLine("distinctVariable...") in
-  let (newOpDefs,undefined_ops) = foldriAQualifierMap 
-                    (fn (q, id, info,(result,undefined_ops)) ->
-		     case opInfoDefs info of
-		       | dfn::_ ->
-		         let (tvs, srt, term) = unpackTerm dfn in
-			 let origOp = mkQualifiedId (q, id) in
-			 let (formals, body) = srtTermDelta (srt, term) in
-			 let ids = map (fn (id, srt) -> id) formals in
-			 %let _ = writeLine("formal pars for op "^id^": "^(foldl (fn(id,s) -> if s = "" then id else s^","^id) "" ids)) in
-			 let (newTerm, newIds) = distinctVar (body, ids) in
-			 let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
-			 let origOpNewDef = (origOp, 
-					     srtDomKeepSubsorts srt, 
-					     srtRange srt, 
-					     formals, 
-					     newTerm, 
-					     isConstantOp?) 
-			 in
-			   (cons (origOpNewDef, result),undefined_ops)
-		       | dfns ->
-			 (result,undefined_ops++[(q,id,info)]))
-		    ([],[])
-		    spc.ops 
-  in
-(*
-  let result = initialSpecInCat in % if we started instead with emptySpec, might we omit some built-in defs?
-  let result = setSorts(result, spc.sorts) in
-%  let _ = writeLine("#newOpDefs="^(Integer.toString(length newOpDefs))) in
-  let result = foldr addOpToSpec2 result newOpDefs in
-  let ops = foldr (fn((q,id,info),opmap) -> insertAQualifierMap(opmap,q,id,info)) result.ops undefined_ops in
-  let result = setOps(result,ops) in
-%  let result = setImportInfo(result,spc.importInfo) in
-%  let _ = writeLine(";; after distinctVar: \n"^(printSpec result)) in
-   result
-*)
-
-  let spc = spc << {ops = emptyAQualifierMap} in
-  let spc = foldr addOpToSpec2 spc newOpDefs in
-  let ops = foldr (fn((q,id,info),opmap) -> insertAQualifierMap(opmap,q,id,info)) spc.ops undefined_ops in
-  let spc = spc << {ops = ops} in
-%  let _ = writeLine(";; after distinctVar: \n"^(printSpec spc)) in
-  spc
+ %% JLM -- Fri Jul 22 01:40:10 PDT 2005
+ %% The following has been revised to be more direct and lighter weight.
+ %%
+ %% The goal here is to revise the opinfos in the sort.ops field, but note that 
+ %% this should not affect anything else (e.g. the elements field) since no names
+ %% are changed.
+ %%
+ %% The old code was rebuilding the entire spec, using the fairly heavyweight 
+ %% routine addOp that worries about merging ops, etc., none of which can happen here.
+ %% It also had the unfortunate side effect of turning all ops (local or imported)
+ %% into local ops.
+ %%
+ %% This code works by directly revising the sort.ops map, leaving everything
+ %% else in the spec untouched.  In particular, the structure of the elements 
+ %% (which contains merely names, not infos) is left unchanged, so the import
+ %% hierarchy is preserved.
+ %%
+ op  distinctVariable: Spec -> Spec
+ def distinctVariable(spc) =
+   %let _ = writeLine("distinctVariable...") in
+   let new_ops =
+       foldriAQualifierMap (fn (q, id, old_info, new_map) ->
+			    let qid = Qualified(q,id) in
+			    if basicQualifiedId? qid then
+			      insertAQualifierMap (new_map, q, id, old_info)
+			    else
+			      case opInfoDefs old_info of
+				| old_dfn :: _ ->
+			          let (old_tvs, old_srt, old_term) = unpackTerm old_dfn in
+				  %% srtTermDelta flattens record patterns -- is this desired?
+				  let (old_formals, old_body) = srtTermDelta (old_srt, old_term) in  
+				  let old_ids = map (fn (id, srt) -> id) old_formals in
+				  %let _ = writeLine("formal pars for op "^id^": "^(foldl (fn(id,s) -> if s = "" then id else s^","^id) "" ids)) in
+				  let (new_body, new_ids) = distinctVar (old_body, old_ids) in
+				  let isConstantOp? = case old_srt of Arrow _ -> false | _ -> true in
+				  let new_dom = srtDomKeepSubsorts old_srt in
+				  let new_rng = srtRange           old_srt in
+				  let new_srt = case new_dom of 
+				                  %% probably best to be consistent about adding annotation or not
+						  | [] -> if isConstantOp? then new_rng else mkArrow (mkProduct [], new_rng)
+						 %| [new_dom] -> withAnnS (mkArrow (new_dom, new_rng), sortAnn new_dom)
+						  | [new_dom] -> mkArrow (new_dom, new_rng) 
+						  | _ -> mkArrow (mkProduct new_dom, new_rng)
+				  in
+				  let new_varPatterns = map mkVarPat old_formals in
+				  let new_body = case new_varPatterns of
+						   | [] -> if isConstantOp? then 
+				                             new_body 
+							   else 
+							     mkLambda (mkTuplePat new_varPatterns, new_body)
+						 | _ -> mkLambda (mkTuplePat new_varPatterns, new_body)
+				  in
+				  let new_dfn  = SortedTerm (new_body, new_srt, termAnn old_dfn) in
+				  let new_info = old_info << {dfn = new_dfn} in
+				  insertAQualifierMap (new_map, q, id, new_info)
+			        | _ ->
+				  insertAQualifierMap (new_map, q, id, old_info))
+                           emptyAQualifierMap
+			   spc.ops
+   in
+   let spc = spc << {ops = new_ops} in
+   %let _ = writeLine(";; after distinctVar: \n"^(printSpec spc)) in
+   spc
 
 endspec
