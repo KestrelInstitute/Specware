@@ -143,7 +143,8 @@ def addFldDeclToClsDeclsM(srtId, fldDecl) =
    let (revised_decls, found_class?) = 
        foldl (fn (cd as (lm, (cId, sc, si), cb), (decls, found_class?)) ->
 	      if cId = srtId then
-		let newCb = setFlds(cb, cons(fldDecl, cb.flds)) in
+		let new_fields = if member (fldDecl, cb.flds) then cb.flds else cons(fldDecl, cb.flds) in
+		let newCb = setFlds(cb, new_fields) in
 		([(lm, (cId, sc, si), newCb)] ++ decls, true)
 	      else 
 		([cd] ++ decls, found_class?))
@@ -171,7 +172,8 @@ def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
    let (revised_decls, found_class?) = 
        foldl (fn (cd as (lm, (cId, sc, si), cb), (decls, found_class?)) ->
 	      if cId = srtId then
-		let newCb = setMethods(cb, cons(methDecl, cb.meths)) in
+		let new_methods = if member (methDecl, cb.meths) then cb.meths else cons(methDecl, cb.meths) in
+		let newCb = setMethods(cb, new_methods) in
 		([(lm, (cId, sc, si), newCb)] ++ decls, true)
 	      else 
 		([cd] ++ decls, found_class?))
