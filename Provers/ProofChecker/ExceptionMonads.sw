@@ -28,6 +28,11 @@ AC
 
 Added op mapSeqSeq, to apply a sequence of monadic computations to a
 sequence of values.
+
+2005:07:21
+AC
+
+Made op RETURN lowercase.
 *)
 
 
@@ -37,8 +42,8 @@ ExceptionMonad qualifying spec
     | RETURN a
     | THROW  exc
 
-  op RETURN : [exc,a] a -> ExceptionMonad(exc,a)  % unit operator
-  def RETURN x = RETURN x
+  op return : [exc,a] a -> ExceptionMonad(exc,a)  % unit operator
+  def return = RETURN
 
   op >> infixr 25 : [exc,a,b]  % bind operator
     ExceptionMonad(exc,a) * (a -> ExceptionMonad(exc,b)) ->
