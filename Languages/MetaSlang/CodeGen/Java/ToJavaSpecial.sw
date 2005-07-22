@@ -118,7 +118,7 @@ spec
 
     case term of
       | Apply(Apply(Fun(Op(Qualified(newq,"new"),_),_,_),Fun(Op(Qualified(_,className),_),_,_),_),arg,_) ->
-        let _ = writeLine("found new, qualifier="^newq^", className="^className^", args="^(printTerm arg)) in
+        %let _ = writeLine("found new, qualifier="^newq^", className="^className^", args="^(printTerm arg)) in
 	let args = (case arg of
 		      | Record(fields,_) -> map (fn(_,t) -> t) fields
 		      | _ -> [arg])
@@ -278,7 +278,7 @@ spec
 	        let t1srt = unfoldBase(spc,inferTypeFoldRecords(spc,t1)) in
 		let t1srt = findMatchingUserType(spc,t1srt) in
 		%let _ = writeLine("  --> t1srt="^(printSort t1srt)) in
-		if ~(builtinBaseType? t1srt) && ~(sortIsDefinedInSpec?(spc,t1srt)) then
+		if ~(builtinBaseType? t1srt) && (sortIsDefinedInSpec?(spc,t1srt)) then
 		 %let _ = writeLine("   found java method call to "^printQualifiedId(qid)) in
 		 let opid = id in
 		 {
@@ -288,6 +288,7 @@ spec
 		  return(Some (s1++s2,expr,k,l))
 		 }
 	       else
+		 %let _ = writeLine("   did not find java method call to "^printQualifiedId(qid)) in
 		 % check whether the qualifier is present
 		 check4StaticOrNew(qual,id,allargs)
 	     | [] -> check4StaticOrNew(qual,id,[]))
