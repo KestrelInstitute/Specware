@@ -9,6 +9,9 @@ spec
   finite map from type variables to types, which is more convenient. *)
 
   type TypeSubstitution = FMap (TypeVariable, Type)
+  op mkTypeSubstitution: TypeVariables * Types -> TypeSubstitution
+  def mkTypeSubstitution(tvs, ts) =
+    fromSeqs(tvs, ts)
 
   % substitute type variables with types in types and expressions:
 
