@@ -118,7 +118,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
    let
     def opvarcase(q,id) =
       %let _ = writeLine(";; translateApplyToExpr: id="^id) in %^", term="^(printTerm term)) in
-      let isField? = (case AnnSpec.findTheOp(spc,Qualified(q,id)) of
+     let isField? = (case AnnSpec.findTheOp(spc,Qualified(q,id)) of
 			| None -> false
 			| Some opinfo ->
 			  let dfn = opinfo.dfn in
@@ -133,41 +133,59 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 			     | _ -> false
 			    ))
       in
-      let srt = inferTypeFoldRecords(spc,term) in
-      let args = applyArgsToTerms(argsTerm) in
+      let rng = inferTypeFoldRecords(spc,term) in
+      let args = applyArgsToTerms argsTerm in
       % use the sort of the operator for the domain, if possible; this
       % avoid problems like: the operator is defined on the restriction type, but
       % the args have the unrestricted type
-      let dom = case opTerm of
-		  | Fun(Op(_),opsrt,_) -> srtDom(opsrt)
-		  | _ -> map (fn(arg) ->
-			      let srt = inferTypeFoldRecords(spc,arg) in
-			      %findMatchingUserType(spc,srt)
-			      srt
-			     ) args
+      let dom_sorts = case opTerm of
+			| Fun (Op _, opsrt, _) -> srtDom opsrt
+			| _ -> map (fn arg ->
+				    let srt = inferTypeFoldRecords (spc, arg) in
+				    %findMatchingUserType(spc,srt)
+				    srt)
+                                   args
       in
-      let args = insertRestricts(spc,dom,args) in
-      let argsTerm = exchangeArgTerms(argsTerm,args) in
-      let rng = srt in
-      %let _ = writeLine("rng of op "^id^": "^printSort(rng)) in
-      if all (fn (srt) ->
-	      notAUserType?(spc,srt) %or baseTypeAlias?(spc,srt)
-	     ) dom
-	then
-	  %let _ = writeLine("no user type in "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
-	  if notAUserType?(spc,rng)
-	    then
-	      case utlist_internal (fn(srt) -> userType?(spc,srt) & ~(baseTypeAlias?(spc,srt))) (concat(dom,[srt])) of
-		| Some s ->
-		  {
-		   sid <- srtIdM s;
-		   translateBaseApplToExprM(tcx,id,argsTerm,k,l,sid)
-		  }
-		| None ->
-		  translatePrimBaseApplToExprM(tcx, id, argsTerm, k, l)
-	  else translateBaseArgsApplToExprM(tcx, id, argsTerm, rng, k, l)
+      let args = insertRestricts (spc, dom_sorts, args) in
+      let argsTerm = exchangeArgTerms (argsTerm, args) in
+
+      %% The tests here should be consistent with those in addMethodFromOpToClsDeclsM, defined in ToJava.sw,
+      %% which places methods in classes.
+      %%
+      %% let debug_dom = case dom_sorts of [dom] -> dom | _ -> mkProduct dom_sorts in 
+      %% let _ = writeLine("\n;;; Finding class assignment for invocation of " ^ printTerm opTerm ^ " : " ^ printSort debug_dom ^ " -> " ^ printSort rng) in
+
+      if all (fn (srt) -> notAUserType? (spc, srt)) dom_sorts then
+	%% let _ = writeLine(";;; no user type directly in domain " ^ printSort debug_dom) in
+	if notAUserType? (spc, rng) then
+	  %% let _ = writeLine (";;; range " ^ printSort rng ^ " is not a user type") in
+	  %% the following call to utlist_internal should be consistent with ut, which calls userType? but not baseTypeAlias?
+	  case utlist_internal (fn srt -> userType? (spc, srt) (* & ~(baseTypeAlias? (spc, srt))*)) (concat (dom_sorts, [rng])) of
+	    | Some usrt ->
+	      {
+	       classId <- srtIdM usrt;
+	        %% let _ = writeLine(";;; ut found user type " ^ printSort usrt) in
+	        %% let _ = writeLine(";;; --> static method in class " ^ classId ^ "\n") in
+	        %% v3:p45:r8
+	       translateBaseApplToExprM(tcx,id,argsTerm,k,l,classId)
+	      }
+	    | None ->
+	       %% let _ = writeLine(";;; ut found no user types among " ^ printSort debug_dom ^ " -> " ^ printSort rng) in
+ 	       %% let _ = writeLine(";;; --> static method in class Primitive\n") in
+	       %% v3:p46:r1
+	      translatePrimBaseApplToExprM(tcx, id, argsTerm, k, l)
+	else
+	    %% {
+	    %% classId <- srtIdM rng;
+	    %% let _ = writeLine(";;; --> method in class " ^ classId ^ ", with primitive args\n") in
+	  translateBaseArgsApplToExprM(tcx, id, argsTerm, rng, k, l)
+	    %% }
       else
-	translateUserApplToExprM(tcx, id, dom, argsTerm, k, l, isField?)
+	  %% {
+	  %% classId <- srtIdM rng;
+	  %% let _ = writeLine(";;; --> method in class " ^ classId ^ ", with at least one user-type arg\n") in
+	translateUserApplToExprM(tcx, id, dom_sorts, argsTerm, k, l, isField?)
+	  %% }
    in
    case opTerm of
      | Fun (Restrict,      srt, _) ->

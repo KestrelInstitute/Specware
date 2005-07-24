@@ -201,31 +201,45 @@ op addMethodFromOpToClsDeclsM: Id * Sort * List(Option JGen.Term) * JGen.Term ->
 def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
   {
    spc <- getEnvSpec;
-   let dom = srtDom(srt) in
-   let rng = srtRange(srt) in
-   %let _ = writeLine(";;; op "^opId^": "^printSort(srt)) in
-   if all (fn (srt) -> notAUserType?(spc,srt)) dom
-     then
-       %let _ = writeLine("  no user type in domain") in
-       if notAUserType?(spc,rng)
-	 then
-	   %let _ = writeLine("  range is no user type") in
-	   case ut(spc,srt) of
-	     | Some usrt ->
-	     %let _ = writeLine("  ut found user type "^printSort(usrt)) in
-	     % v3:p45:r8
-	     {
-	      classId <- srtIdM usrt;
-	      addStaticMethodToClsDeclsM(opId,srt,dom,dompreds,rng,trm,classId)
-	     }
-	     | None ->
-	     %let _ = writeLine(";;; -> static method in class Primitive") in
-	     % v3:p46:r1
-	       addPrimMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm)
-       else
-	 addPrimArgsMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm)
+   let dom_sorts = srtDom   srt in
+   let rng       = srtRange srt in
+
+   %% The tests here should be consistent with those in translateApplyToExprM, defined in ToJavaStatements.sw,
+   %% which creates method invocations assuming a class placement
+   %%
+   %% let debug_dom = case dom_sorts of [dom] -> dom | _ -> mkProduct dom_sorts in 
+   %% let _ = writeLine("\n;;; Finding class assignment for op " ^ opId ^ ": " ^ printSort srt) in
+
+   if all (fn (srt) -> notAUserType?(spc,srt)) dom_sorts then
+     %% let _ = writeLine(";;; no user type directly in domain " ^ printSort debug_dom) in
+     if notAUserType? (spc, rng) then
+       %% let _ = writeLine (";;; range " ^ printSort rng ^ " is not a user type") in
+       case ut (spc, srt) of
+	 | Some usrt ->
+	   {
+	    classId <- srtIdM usrt;
+	     %% let _ = writeLine(";;; ut found user type " ^ printSort usrt) in
+	     %% let _ = writeLine(";;; --> static method in class " ^ classId ^ "\n") in
+	     %% v3:p45:r8
+	    addStaticMethodToClsDeclsM(opId,srt,dom_sorts,dompreds,rng,trm,classId)
+	   }
+	 | None ->
+ 	    %% let _ = writeLine(";;; ut found no user types among " ^ printSort srt) in
+	    %% let _ = writeLine(";;; --> static method in class Primitive\n") in
+	    %% v3:p46:r1
+	   addPrimMethodToClsDeclsM(opId, srt, dom_sorts, dompreds, rng, trm)
+     else
+         %% {
+	 %% classId <- srtIdM rng;
+	 %% let _ = writeLine(";;; --> method in class " ^ classId ^ ", with primitive args\n") in
+       addPrimArgsMethodToClsDeclsM(opId, srt, dom_sorts, dompreds, rng, trm)
+         %% }
    else
-     addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm)
+       %% {
+       %% classId <- srtIdM rng;
+       %% let _ = writeLine(";;; --> method in class " ^ classId ^ ", with at least one user-type arg\n") in
+     addUserMethodToClsDeclsM(opId, srt, dom_sorts, dompreds, rng, trm)
+       %% }
   }
 
 op addStaticMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGen.Term) * JGen.Type * JGen.Term * Id -> JGenEnv ()
