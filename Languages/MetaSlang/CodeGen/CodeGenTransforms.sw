@@ -718,10 +718,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 		(fun, srt1, minfo) 
 	      else
 		let ntvs = map (fn (id, _) -> id) (filter (fn (id, TyVar _) -> true | _ -> false) tvsubst0) in
-		%% TODO: we need to do something better when id is like "++" -- current code generates bad java names such as ++_foo for operators
-		%% let id = if id = "++" then "concat" else id in        % maybe to something like this, but general?
-		let suffix = getSortNameFromTyVarSubst tvsubst in
-		let nqid = Qualified (q ^ suffix, id ^ suffix) in
+		let nqid = Qualified (q, id ^ getSortNameFromTyVarSubst tvsubst) in
 		let names = cons (nqid, (filter (fn qid0 -> qid0 ~= qid) info.names)) in
 		%let _ = writeLine ("  New op name:"^ (printQualifiedId nqid)) in
 		%let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
