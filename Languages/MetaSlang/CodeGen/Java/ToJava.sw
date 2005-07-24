@@ -214,7 +214,18 @@ def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
      %% let _ = writeLine(";;; no user type directly in domain " ^ printSort debug_dom) in
      if notAUserType? (spc, rng) then
        %% let _ = writeLine (";;; range " ^ printSort rng ^ " is not a user type") in
-       case ut (spc, srt) of
+
+       %% For now, (userType? A) and (baseTypeAlias? A) can be both be true for A, even though this contradicts v3.  
+       %% (See LiftPattern.sw for some discussion.)
+       %% In this case, an op such as foldl : (A * B -> B) -> B -> List_A -> B will go into:
+       %%   class A      if the ~baseTypeAlias? test is not used
+       %%   class List_A if the ~baseTypeAlias? test is used
+       %% More generally, using that test increases the likelihood an op will be moved to the Primitive class.
+
+       %% As given here, without the call to baseTypeAlias, this is equivalent to:
+       %%  case ut (spc, srt) of ...
+       %% We present it this way for clarity and for consistency with translateApplyToExprM
+       case utlist_internal (fn srt -> userType? (spc, srt) (* & ~(baseTypeAlias? (spc, srt)) *) ) (concat (dom_sorts, [rng])) of
 	 | Some usrt ->
 	   {
 	    classId <- srtIdM usrt;

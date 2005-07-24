@@ -160,19 +160,20 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 	if notAUserType? (spc, rng) then
 	  %% let _ = writeLine (";;; range " ^ printSort rng ^ " is not a user type") in
 	  %% the following call to utlist_internal should be consistent with ut, which calls userType? but not baseTypeAlias?
+	  %% See the comments there about the effects of calling baseTypeAlias? 
 	  case utlist_internal (fn srt -> userType? (spc, srt) (* & ~(baseTypeAlias? (spc, srt))*)) (concat (dom_sorts, [rng])) of
 	    | Some usrt ->
 	      {
 	       classId <- srtIdM usrt;
-	        %% let _ = writeLine(";;; ut found user type " ^ printSort usrt) in
-	        %% let _ = writeLine(";;; --> static method in class " ^ classId ^ "\n") in
-	        %% v3:p45:r8
+	         %% let _ = writeLine(";;; ut found user type " ^ printSort usrt) in
+	         %% let _ = writeLine(";;; --> static method in class " ^ classId ^ "\n") in
+	         %% v3:p45:r8
 	       translateBaseApplToExprM(tcx,id,argsTerm,k,l,classId)
 	      }
 	    | None ->
-	       %% let _ = writeLine(";;; ut found no user types among " ^ printSort debug_dom ^ " -> " ^ printSort rng) in
- 	       %% let _ = writeLine(";;; --> static method in class Primitive\n") in
-	       %% v3:p46:r1
+	        %% let _ = writeLine(";;; ut found no user types among " ^ printSort debug_dom ^ " -> " ^ printSort rng) in
+ 	        %% let _ = writeLine(";;; --> static method in class Primitive\n") in
+	        %% v3:p46:r1
 	      translatePrimBaseApplToExprM(tcx, id, argsTerm, k, l)
 	else
 	    %% {
