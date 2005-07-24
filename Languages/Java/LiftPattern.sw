@@ -1,4 +1,4 @@
-%JGen qualifying
+JGen qualifying
 spec
 
 import /Languages/MetaSlang/Specs/Utilities
@@ -31,27 +31,28 @@ def unSupported x =
  * a base type wrt. code generation are the builtin base types Boolean,Nat,Integer,Char,String
  * and also those types that do *not* have a definition in the spec, i.e. those which
  * are just declared.
+ * TODO:  v3:p1 says base types are exactly Boolean, Int, Char  -- resolve this
  *)
 op baseType?: Spec * Sort -> Boolean
 def baseType? (spc, typ) =
   %let _ = writeLine("baseType? "^(printSort typ)^"...") in
   %% TODO: is this a complete set?  See basicQualifiers
-  boolSort?    typ || 
-  integerSort? typ || 
-  natSort?     typ || 
-  stringSort?  typ || 
-  charSort?    typ ||
+  boolSort?    typ ||   % v3:p1 
+  integerSort? typ ||   % v3:p1 
+  natSort?     typ ||   % v3:p1 says NO  -- TODO: resolve this
+  stringSort?  typ ||   % v3:p1 says NO  -- TODO: resolve this
+  charSort?    typ ||   % v3:p1 
   (case typ of
-     | Base _ -> ~ (sortIsDefinedInSpec? (spc, typ))
+     | Base _ -> ~ (sortIsDefinedInSpec? (spc, typ))  % v3:p1 says NO -- TODO: resolve this
      | _ -> false)
 
  op builtinBaseType?: Sort -> Boolean
 def builtinBaseType? typ =
-  boolSort?    typ || 
-  integerSort? typ || 
-  natSort?     typ || 
-  stringSort?  typ || 
-  charSort?    typ
+  boolSort?    typ || % v3:p1 
+  integerSort? typ || % v3:p1 
+  natSort?     typ || % v3:p1 says NO  -- TODO: resolve this
+  stringSort?  typ || % v3:p1 says NO  -- TODO: resolve this
+  charSort?    typ    % v3:p1 
 
  op baseTypeAlias?: Spec * Sort -> Boolean
 def baseTypeAlias? (spc, srt) =
@@ -67,28 +68,35 @@ def baseTypeAlias? (spc, srt) =
  op builtinBaseTypeId?: Id -> Boolean  
 def builtinBaseTypeId? id =
   %% TODO: is this a complete set?  See basicQualifiers
-  id = "Boolean" ||
-  id = "Integer" ||
-  id = "Nat"     ||
-  id = "String"  ||
-  id = "Char"
+  id = "Boolean" || % v3:p1 
+  id = "Integer" || % v3:p1 
+  id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
+  id = "String"  || % v3:p1 
+  id = "Char"       % v3:p1 says NO  -- TODO: resolve this
 
  op baseTypeId?: Spec * Id -> Boolean
 def baseTypeId? (spc, id) =
-  id = "Boolean" ||
-  id = "Integer" ||
-  id = "Nat"     ||
-  id = "String"  || 
-  id = "Char"    ||
-  ~ (sortIdIsDefinedInSpec? (spc, id))
+  id = "Boolean" || % v3:p1 
+  id = "Integer" || % v3:p1 
+  id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
+  id = "String"  || % v3:p1 says NO  -- TODO: resolve this
+  id = "Char"    || % v3:p1 
+  ~ (sortIdIsDefinedInSpec? (spc, id)) % v3:p1 says NO: resolve this
 
 op userType?: Spec * Sort -> Boolean
 
 (**
- * extended the definition of userType? to not only check whether it's not a base type, because it's also not a user
- * type, if it's something different then a name of a type identifier, e.g., an arrow type
+ * extended the definition of userType? to check not only that it is not a base type, 
+ * but also that it is the name of a type, as opposed to being a complex type such as arrow type
+ *
+ * TODO: v3:p2 says "Each user-defined type has a definition that is a type product, sum, restriction, or quotient."
+ * So if srt expands to a base sort, v3 says it is not a user type.
+ * Note that this would have at least the effect of shifting more methods into Primitive.java
+ * I'm not sure what other effects there might be.
+ * 
  *)
 def userType?(spc,srt) =
+  % let srt = unfoldBase (spc, srt) in  % v3:p2 would imply this -- TODO: resolve this
   if baseType?(spc,srt) then false
   else
     (case srt of
@@ -101,7 +109,7 @@ def userType?(spc,srt) =
 def notAUserType?(spc,srt) = ~(userType?(spc,srt))
 
 (**
- * implementation of the ut function as defined in v3:p38
+ * implementation of the ut function as defined in v3:p38 (but see notes above for baseType? and userType?)
  * returns the first user type occuring in the type srt from left to right, where the constituent of
  * each srt is also considered in case srt is an arrow type
  *)
