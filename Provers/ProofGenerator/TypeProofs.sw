@@ -2,66 +2,62 @@ spec
 
   % API public typeProof
 
-  import ../ProofChecker/Proofs, ../ProofChecker/TypesAndExpressionsAPI, ../ProofChecker/Substitutions, ../ProofChecker/BasicAbbreviations
+  import ../ProofChecker/Proofs, ../ProofChecker/Substitutions, ../ProofChecker/BasicAbbreviations
   
   (* In this spec we define a function that takes a context and a type
   and generates a proof that the type is well-formed. *)
 
-  op wellFormedContextAssumption: Context -> Proof
-  def wellFormedContextAssumption(cx) =
-    assume (wellFormedContext cx)
-
+  op falseProof: Context -> Proof
+  def falseProof(cx) =
+    assume (theoreM (cx, FALSE))
+  
   op wellTypedExpressionAssumption: Context * Expression * Type -> Proof
   def wellTypedExpressionAssumption(cx, expr, ty) =
     assume (wellTypedExpr(cx, expr, ty))
 
-  op tyBoolProof: Context * Type -> Proof
-  def tyBoolProof(cx, ty) =
-    let cxProof = wellFormedContextAssumption(cx) in
-    tyBool(cxProof)
+  op tyBoolProof: Proof * Context * Type -> Proof
+  def tyBoolProof(cxPrf, cx, ty) =
+    tyBool(cxPrf)
 
-  op tyVarProof: Context * Type -> Proof
-  def tyVarProof(cx, ty) =
+  op tyVarProof: Proof * Context * Type -> Proof
+  def tyVarProof(cxPrf, cx, ty) =
     let VAR tv = ty in
-    let cxProof = wellFormedContextAssumption(cx) in
     let tvs = contextTypeVars(cx) in
     if ~(tv in? tvs)
-      then fail("tyVarProof")
-    else tyVar(cxProof, tv)
+      then falseProof(cx)
+    else tyVar(cxPrf, tv)
 
-  op tyInstProof: Context * Type -> Proof
-  def tyInstProof(cx, ty) =
-    let cxProof = wellFormedContextAssumption(cx) in
+  op tyInstProof: Proof * Context * Type -> Proof
+  def tyInstProof(cxPrf, cx, ty) =
     let TYPE (tn, ts) = ty in
-    let tProofs = map (fn (t) -> typeProof(cx, t)) ts in
-    tyInst(cxProof, tProofs, tn)
+    let tProofs = map (fn (t) -> typeProof(cxPrf, cx, t)) ts in
+    tyInst(cxPrf, tProofs, tn)
 
-  op tyArrProof: Context * Type -> Proof
-  def tyArrProof(cx, ty) =
+  op tyArrProof: Proof * Context * Type -> Proof
+  def tyArrProof(cxPrf, cx, ty) =
     let ARROW(t1, t2) = ty in
-    let t1Proof = typeProof(cx, t1) in
-    let t2Proof = typeProof(cx, t2) in
+    let t1Proof = typeProof(cxPrf, cx, t1) in
+    let t2Proof = typeProof(cxPrf, cx, t2) in
     tyArr(t1Proof, t2Proof)
 
-  op tyRecProof: Context * Type -> Proof
-  def tyRecProof(cx, ty) =
-    let cxProof = wellFormedContextAssumption(cx) in
+  op tyRecProof: Proof * Context * Type -> Proof
+  def tyRecProof(cxPrf, cx, ty) =
     let RECORD (flds, ts) = ty in
-    let tProofs = map (fn (t) -> typeProof(cx, t)) ts in
-    tyRec(cxProof, tProofs, flds)
+    let tProofs = map (fn (t) -> typeProof(cxPrf, cx, t)) ts in
+    tyRec(cxPrf, tProofs, flds)
 
-  op tySumProof: Context * Type -> Proof
-  def tySumProof(cx, ty) =
+  op tySumProof: Proof * Context * Type -> Proof
+  def tySumProof(cxPrf, cx, ty) =
     let SUM (cstrs, ts) = ty in
-    let tProofs = map (fn (t) -> typeProof(cx, t)) ts in
+    let tProofs = map (fn (t) -> typeProof(cxPrf, cx, t)) ts in
     tySum(tProofs, cstrs)
 
-  op tyRestrProof: Context * Type -> Proof
-  def tyRestrProof(cx, ty) =
+  op tyRestrProof: Proof * Context * Type -> Proof
+  def tyRestrProof(cxPrf, cx, ty) =
     let RESTR (st, expr) = ty in
     if exprFreeVars expr = empty
       then tyRestr(wellTypedExpressionAssumption(cx, expr, ARROW(st, BOOL)))
-    else fail("tyRestrProof")
+    else falseProof(cx)
 
   op v: Variable
   op v1: Variable
@@ -72,8 +68,8 @@ spec
 
   axiom distinctVars is v1 ~= v2 && u1 ~= u2 && u2 ~= u3 &&u1 ~= u3
   
-  op tyQuotProof: Context * Type -> Proof
-  def tyQuotProof(cx, ty) =
+  op tyQuotProof: Proof * Context * Type -> Proof
+  def tyQuotProof(cxPrf, cx, ty) =
     let QUOT (t, q) = ty in
     let refProof = assume (theoreM (cx, FA (v, t, q @ PAIR (t, t, VAR v, VAR v)))) in
     let symProof = assume (theoreM (cx, FA2 (v1, t, v2, t,
@@ -89,9 +85,19 @@ spec
 
     if exprFreeVars q = empty
       then     tyQuot(refProof, symProof, transProof)
-    else fail("tyQuotProof")
+    else falseProof(cx)
 
 
-  op typeProof: Context * Type -> Proof
+  op typeProof: Proof * Context * Type -> Proof
+  def typeProof(cxPrf, cx, ty) =
+    case ty of
+      | BOOL -> tyBoolProof(cxPrf, cx, ty)
+      | VAR _ -> tyVarProof(cxPrf, cx, ty)
+      | TYPE _ -> tyInstProof(cxPrf, cx, ty)
+      | ARROW _ -> tyArrProof(cxPrf, cx, ty)
+      | RECORD _ -> tyRecProof(cxPrf, cx, ty)
+      | SUM _ -> tySumProof(cxPrf, cx, ty)
+      | RESTR _ -> tyRestrProof(cxPrf, cx, ty)
+      | QUOT _ -> tyQuotProof(cxPrf, cx, ty)
 
 endspec

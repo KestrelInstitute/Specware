@@ -2,7 +2,8 @@ spec
 
   % API public contextProof
 
-  import ../ProofChecker/Proofs, ../ProofChecker/TypesAndExpressionsAPI, ../ProofChecker/Substitutions, ../ProofChecker/BasicAbbreviations
+  import ../ProofChecker/Proofs, ../ProofChecker/Substitutions, ../ProofChecker/BasicAbbreviations
+  import TypeProofs
   
   (* In this spec we define a function that takes a context and
   generates a proof that the context is well-formed. *)
@@ -58,10 +59,44 @@ spec
   type TypeVarDeclarationContextElement = (ContextElement | typeVarDeclaration?)
   type VarDeclarationContextElement = (ContextElement | varDeclaration?)
   
+  op wellFormedTypeProof: Proof * Context * Type -> Proof
+  def wellFormedTypeProof(cxProof, cx, t) =
+    typeProof(cxProof, cx, t)
+  
   op wellFormedTypeAssumption: Context * Type -> Proof
   def wellFormedTypeAssumption(cx, t) =
     assume (wellFormedType(cx, t))
 
+  (*
+   Take a proof that a context is well-formed, a context,
+   a type variable, and generate a new context that includes
+   the type variable declaration and associated proof of
+   well-formedness.
+   *)
+
+  op typeVarDeclarationContextAndProof: Proof * Context * TypeVariable -> Proof * Context
+  def typeVarDeclarationContextAndProof(cxPrf, cx, tv) =
+    let tvd = typeVarDeclaration(tv) in
+    let cx = cx <| tvd in
+    let cxPrf = cxTVdec(cxPrf, tv) in
+    (cxPrf, cx)
+
+  (*
+   Take a proof that a context is well-formed, a context, a seq
+   of type variables and generate a new context that includes the
+   type variable declarations associated proof of well-formedness.
+   *)
+
+  op typeVarDeclarationsContextAndProof: Proof * Context * TypeVariables -> Proof * Context
+  def typeVarDeclarationsContextAndProof(cxPrf, cx, tvs) =
+    if empty?(tvs)
+      then (cxPrf, cx)
+    else
+      let tv = first(tvs) in
+      let tvs = rtail(tvs) in
+      let (cxPrf, cx) = typeVarDeclarationContextAndProof(cxPrf, cx, tv) in
+      typeVarDeclarationsContextAndProof(cxPrf, cx, tvs)
+  
   op typeVarDeclarations: TypeVariables -> Context
   def typeVarDeclarations(tvs) =
     if empty?(tvs) then empty
@@ -81,14 +116,16 @@ spec
   def cxOdecProof(cx, od) =
     let opDeclaration(oper, tvs, t) = od in
     let cxProof = contextProof(cx) in
-    let wfTProof = wellFormedTypeAssumption(cx ++ typeVarDeclarations(tvs), t) in
+    let (wftCxPrf, wftCx) = typeVarDeclarationsContextAndProof(cxProof, cx, tvs) in
+    let wfTProof = wellFormedTypeProof(wftCxPrf, wftCx, t) in
     cxOdec(cxProof, wfTProof, oper)
 
   op cxTDefProof: Context * TypeDefinitionContextElement -> Proof
   def cxTDefProof(cx, td) =
     let typeDefinition (tn, tvs, t) = td in
     let cxProof = contextProof(cx) in
-    let wfTProof = wellFormedTypeAssumption(cx ++ typeVarDeclarations(tvs), t) in
+    let (wftCxPrf, wftCx) = typeVarDeclarationsContextAndProof(cxProof, cx, tvs) in
+    let wfTProof = wellFormedTypeProof(wftCxPrf, wftCx, t) in
     cxTdef(cxProof, wfTProof, tn)
 
   op cxOdefProof: Context * OpDefinitionContextElement -> Proof
@@ -96,6 +133,7 @@ spec
     let opDefinition(oper, ts, exp) = od in
     let cxProof = contextProof(cx) in
     let opDeclSeq = filter (fn (opDeclaration(o, tvs1, t)) -> o = oper | _ -> false) cx in
+    if length(opDeclSeq) ~= 1 then falseProof(cx) else
     let opDeclaration(_, tvs1, t) = theElement(opDeclSeq) in
     let typeVarSubst = fromSeqs(tvs1, map VAR ts) in
     let operVar = uniqueDefVar in
@@ -141,7 +179,8 @@ spec
   def cxAxProof(cx, axd) =
     let axioM(an, tvs, exp) = axd in
     let cxProof = contextProof(cx) in
-    let wfTProof = wellFormedTypeAssumption(cx ++ typeVarDeclarations(tvs), BOOL) in
+    let (wftCxPrf, wftCx) = typeVarDeclarationsContextAndProof(cxProof, cx, tvs) in
+    let wfTProof = wellFormedTypeProof(wftCxPrf, wftCx, BOOL) in
     cxAx(cxProof, wfTProof, an)
 
   op cxTVdecProof: Context * TypeVarDeclarationContextElement -> Proof
@@ -154,7 +193,7 @@ spec
   def cxVdecProof(cx, vd) =
     let varDeclaration(v, t) = vd in
     let cxProof = contextProof(cx) in
-    let wfTProof = wellFormedTypeAssumption(cx, t) in
+    let wfTProof = wellFormedTypeProof(cxProof, cx, t) in
     cxVdec(cxProof, wfTProof, v)
 
   op contextProof: Context -> Proof
