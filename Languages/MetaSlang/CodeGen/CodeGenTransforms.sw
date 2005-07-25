@@ -77,7 +77,7 @@ def letWildPatToSeq spc =
     def lettoseq (t) =
       case t of
 	| Let ([(WildPat _, t1)], t2, b) -> 
-	  lettoseq (Seq ([t1, t2], b))
+	  lettoseq (Seq ([t1,t2], b))
 	| Seq ((Seq (terms0, _))::terms, b) ->
 	  lettoseq (Seq (concat (terms0, terms), b))
 	| _ -> t
