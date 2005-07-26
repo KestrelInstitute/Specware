@@ -99,6 +99,7 @@
       "qualifying"
       "quotient"
       "spec"
+      "the"
       "then"
       "theorem"
       "translate"
