@@ -21,8 +21,8 @@ spec
     | typeVarNotDeclared               Context * TypeVariable
     | varNotDeclared                   Context * Variable
     | typeAlreadyDeclared              Context * TypeName
-    | typeAlreadyDefined               Context * TypeName
     | opAlreadyDeclared                Context * Operation
+    | typeAlreadyDefined               Context * TypeName
     | opAlreadyDefined                 Context * Operation
     | axiomAlreadyDeclared             Context * AxiomName
     | typeVarAlreadyDeclared           Context * TypeVariable
