@@ -13,9 +13,14 @@ would not be a subspec of the spec resulting after substituting (4).
 For the same reason, we cannot just apply the refinements (1), (2), and (4) to
 spec Spec (which would be the natural thing to do, intuitively). *)
 
-MetaslangProofChecker qualifying
-(CheckerAndOtherAbbreviations
-   [OtherAbbreviations_Refinement]
-   [Occurrences_Refinement]
-   [Primitives_Instantiation]
-   [/Library/General/FiniteStructuresAsListsMorphism])
+MetaslangProofChecker qualifying spec
+
+  import CheckerAndOtherAbbreviations
+         [OtherAbbreviations_Refinement]
+         [Occurrences_Refinement]
+         [Primitives_Instantiation]
+         [/Library/General/FiniteStructuresAsListsMorphism]
+  import Printer
+         [/Library/General/FiniteStructuresAsListsMorphism]
+
+endspec

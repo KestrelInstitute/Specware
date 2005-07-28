@@ -4,6 +4,6 @@ MetaslangProofChecker qualifying spec
   directory that can be imported by external code that uses the proof
   checker. *)
 
-  import CheckerAndOtherAbbreviations[Primitives_Instantiation]
+  import CheckerAndOtherAbbreviations[Primitives_Instantiation], Printer
 
 endspec

@@ -1,0 +1,488 @@
+spec
+
+  % API private default
+
+  import Failures[Primitives_Instantiation]
+
+  (* This spec consists of ops that convert judgements, failure, and all their
+  syntactic components, to strings. These conversions enable printing such
+  syntactic entities in a human-readable form. Printing is not part of the
+  proof checking process per se, but is useful to debug proofs.
+
+  Since primitives can be any strings, it is easy to imagine situations in
+  which a printed out string is ambiguous or unclear. However, if only
+  "reasonable" strings are used as primitives, the printing defined in this
+  spec should produce unambiguous and clear strings. *)
+
+  % polymorphic op to print sequence of things with given separator:
+  op printSeq : [a] (a -> String) -> String -> FSeq a -> String
+  def printSeq printElem separator seq =
+    if empty? seq then ""
+    else if single? seq then printElem (theElement seq)
+    else printElem (first seq) ++ separator
+      ++ printSeq printElem separator (rtail seq)
+
+  % synonym, for uniformity with the other ops in this spec:
+  op printInteger : Integer -> String
+  def printInteger = intToString
+
+  op printIntegers : FSeq Integer -> String
+  def printIntegers = printSeq printInteger ","
+
+  op printTypeName : TypeName -> String
+  def printTypeName = id
+
+  op printOperation : Operation -> String
+  def printOperation = project 1
+
+  op printTypeVariable : TypeVariable -> String
+  def printTypeVariable = id
+
+  op printTypeVariables : TypeVariables -> String
+  def printTypeVariables = printSeq printTypeVariable ","
+
+  op printUserVariable : UserVariable -> String
+  def printUserVariable = id
+
+  op printUserField : UserField -> String
+  def printUserField = id
+
+  op printConstructor : Constructor -> String
+  def printConstructor = id
+
+  op printConstructors : Constructors -> String
+  def printConstructors = printSeq printConstructor ","
+
+  op printAxiomName : AxiomName -> String
+  def printAxiomName = id
+
+  op printField : Field -> String
+  def printField = fn
+    | user f -> printUserField f
+    | prod i -> printInteger i
+
+  op printFields : Fields -> String
+  def printFields = printSeq printField ","
+
+  op printVariable : Variable -> String
+  def printVariable = fn
+    | user v -> printUserVariable v
+    | abbr i -> "V[" ++ printInteger i ++ "]"  % e.g. abbr 3 -> V[3]
+
+  op printType       : Type       -> String  % defined below
+  op printExpression : Expression -> String  % defined below
+
+  op printTypes : Types -> String
+  def printTypes = printSeq printType ","
+
+  op printTypeInstance : TypeName * Types -> String
+  def printTypeInstance (tn,tS) =
+    if empty? tS then printTypeName tn  % avoid "[]" if no type arguments
+                 else printTypeName tn ++ "[" ++ printTypes tS ++ "]"
+
+  op printArrowType : Type * Type -> String
+  def printArrowType (t1,t2) =
+    "(" ++ printType t1 ++ " -> " ++ printType t2 ++ ")"
+
+  op printRecordTypeComponent : Field * Type -> String
+  def printRecordTypeComponent (f,t) =
+    printField f ++ ":" ++ printType t
+
+  op printRecordType : Fields * Types -> String
+  def printRecordType (fS,tS) =
+    let n:Nat = min (length fS, length tS) in
+    let fS = prefix (fS, n) in
+    let tS = prefix (tS, n) in
+    "{" ++ printSeq printRecordTypeComponent ", " (zip(fS,tS)) ++ "}" ++
+    % if there are extra fields or component types (if the record type is
+    % not well-formed), append them to record type printout between "#":
+    (if length fS <= n then ""
+     else "#" ++ printFields (removePrefix(fS,n)) ++ "#") ++
+    (if length tS <= n then ""
+     else "#" ++ printTypes (removePrefix(tS,n)) ++ "#")
+
+  op printSumTypeComponent : Constructor * Type -> String
+  def printSumTypeComponent (c,t) =
+    printConstructor c ++ " " ++ printType t
+
+  op printSumType : Constructors * Types -> String
+  def printSumType (cS,tS) =
+    let n:Nat = min (length cS, length tS) in
+    let cS = prefix (cS, n) in
+    let tS = prefix (tS, n) in
+    "(" ++ printSeq printSumTypeComponent " | " (zip(cS,tS)) ++ ")" ++
+    % if there are extra constructors or component types (if the sum type is
+    % not well-formed), append them to sum type printout between "#":
+    (if length cS <= n then ""
+     else "#" ++ printConstructors (removePrefix(cS,n)) ++ "#") ++
+    (if length tS <= n then ""
+     else "#" ++ printTypes (removePrefix(tS,n)) ++ "#")
+
+  op printRestrictionType : Type * Expression -> String
+  def printRestrictionType (t,r) =
+   "(" ++ printType t ++ " | " ++ printExpression r ++ ")"
+
+  op printQuotientType : Type * Expression -> String
+  def printQuotientType (t,q) =
+   "(" ++ printType t ++ " /" ++ printExpression q ++ ")"
+
+  def printType = fn
+    | BOOL         -> "Boolean"
+    | VAR tv       -> printTypeVariable tv
+    | TYPE tn_tS   -> printTypeInstance tn_tS
+    | ARROW t1_t2  -> printArrowType t1_t2
+    | RECORD fS_tS -> printRecordType fS_tS
+    | SUM cS_tS    -> printSumType cS_tS
+    | RESTR t_r    -> printRestrictionType t_r
+    | QUOT t_q     -> printQuotientType t_q
+
+  op printOpInstance : Operation * Types -> String
+  def printOpInstance (o,tS) =
+    if empty? tS then printOperation o  % avoid "[]" if no type arguments
+                 else printOperation o ++ "[" ++ printTypes tS ++ "]"
+
+  op printApplication : Expression * Expression -> String
+  def printApplication (e1,e2) =
+    printExpression e1 ++ " " ++ printExpression e2
+
+  op printAbstraction : Variable * Type * Expression -> String
+  def printAbstraction (v,t,e) =
+   "(fn (" ++ printVariable v ++ ":" ++ printType t ++ ") -> "
+   ++ printExpression e ++ ")"
+
+  op printEquality : Expression * Expression -> String
+  def printEquality (e1,e2) =
+    "(" ++ printExpression e1 ++ " = " ++ printExpression e2 ++ ")"
+
+  op printConditional : Expression * Expression * Expression -> String
+  def printConditional (e0,e1,e2) =
+    "if (" ++ printExpression e0 ++ ") then ("
+           ++ printExpression e1 ++ ") else ("
+           ++ printExpression e2 ++ ")"
+
+  op printDescriptor : Type -> String
+  def printDescriptor t =
+    "the[" ++ printType t ++ "]"
+
+  op printProjector : Type * Field -> String
+  def printProjector (t,f) =
+    "project[" ++ printType t ++ "," ++ printField f ++ "]"
+
+  op printEmbedder : Type * Constructor -> String
+  def printEmbedder (t,c) =
+    "embed[" ++ printType t ++ "," ++ printConstructor c ++ "]"
+
+  op printQuotienter : Type -> String
+  def printQuotienter t =
+    "quotient[" ++ printType t ++ "]"
+
+  def printExpression = fn
+    | VAR v       -> printVariable v
+    | OPI o_tS    -> printOpInstance o_tS
+    | APPLY e1_e2 -> printApplication e1_e2
+    | FN v_t_e    -> printAbstraction v_t_e
+    | EQ e1_e2    -> printEquality e1_e2
+    | IF e0_e1_e2 -> printConditional e0_e1_e2
+    | IOTA t      -> printDescriptor t
+    | PROJECT t_f -> printProjector t_f
+    | EMBED t_c   -> printEmbedder t_c
+    | QUOT t      -> printQuotienter t
+
+  op printTypeDeclaration : TypeName * Integer -> String
+  def printTypeDeclaration (tn,n) =
+    "type " ++ printTypeName tn ++ ":" ++ printInteger n ++ newline
+
+  op printOpDeclaration : Operation * TypeVariables * Type -> String
+  def printOpDeclaration (o,tvS,t) =
+    "op " ++ printOperation o ++ " : {" ++ printTypeVariables tvS ++
+    "} " ++ printType t ++ newline
+
+  op printTypeDefinition : TypeName * TypeVariables * Type -> String
+  def printTypeDefinition (tn,tvS,t) =
+    "def " ++ printTypeName tn ++ "[" ++ printTypeVariables tvS ++
+    "] = " ++ printType t ++ newline
+
+  op printOpDefinition : Operation * TypeVariables * Expression -> String
+  def printOpDefinition (o,tvS,e) =
+    "def {" ++ printTypeVariables tvS ++ "} " ++ printOperation o ++
+    " = " ++ printExpression e ++ newline
+
+  op printAxiom : AxiomName * TypeVariables * Expression -> String
+  def printAxiom (an,tvS,e) =
+    "axiom " ++ printAxiomName an ++ " is {" ++ printTypeVariables tvS ++
+    "} " ++ printExpression e ++ newline
+
+  op printTypeVarDeclaration : TypeVariable -> String
+  def printTypeVarDeclaration tv =
+    "var " ++ printTypeVariable tv ++ newline
+
+  op printVarDeclaration : Variable * Type -> String
+  def printVarDeclaration (v,t) =
+    "var " ++ printVariable v ++ " : " ++ printType t ++ newline
+
+  op printContextElement : ContextElement -> String
+  def printContextElement = fn
+    | typeDeclaration tn_n    -> printTypeDeclaration tn_n
+    | opDeclaration o_tvS_t   -> printOpDeclaration o_tvS_t
+    | typeDefinition tn_tvS_t -> printTypeDefinition tn_tvS_t
+    | opDefinition o_tvS_e    -> printOpDefinition o_tvS_e
+    | axioM an_tvS_e          -> printAxiom an_tvS_e
+    | typeVarDeclaration tv   -> printTypeVarDeclaration tv
+    | varDeclaration v_t      -> printVarDeclaration v_t
+    % each context element is printed in its own line
+
+  op printContext : Context -> String
+  def printContext cx =
+    "[#" ++ foldl (++) "" (map printContextElement cx) ++ "#]" ++ newline
+    % context consists of one line for each element, between "[#" and "#]"
+
+  op printContexts : Contexts -> String
+  def printContexts = printSeq printContext ""
+
+  op turnStyle : String
+  def turnStyle = " |---" ++ newline  % in its own line
+
+  op printWellFormedContext : Context -> String
+  def printWellFormedContext cx =
+    turnStyle ++ printContext cx ++ " : CONTEXT" ++ newline
+
+  op printWellFormedSpec : Context -> String
+  def printWellFormedSpec cx =
+    turnStyle ++ printContext cx ++ " : SPEC" ++ newline
+
+  op printWellFormedType : Context * Type -> String
+  def printWellFormedType (cx,t) =
+    printContext cx ++ turnStyle ++ printType t ++ " : TYPE" ++ newline
+
+  op printTypeEquivalence : Context * Type * Type -> String
+  def printTypeEquivalence (cx,t1,t2) =
+    printContext cx ++ turnStyle ++
+    printType t1 ++ " = " ++ printType t2 ++ newline
+
+  op printSubType : Context * Type * Expression * Type -> String
+  def printSubType (cx,t1,r,t2) =
+    printContext cx ++ turnStyle ++
+    printType t1 ++ " <[" ++ printExpression r ++ "] " ++ printType t2 ++ newline
+
+  op printWellTypedExpr : Context * Expression * Type -> String
+  def printWellTypedExpr (cx,e,t) =
+    printContext cx ++ turnStyle ++
+    printExpression e ++ " : " ++ printType t ++ newline
+
+  op printTheorem : Context * Expression -> String
+  def printTheorem (cx,e) =
+    printContext cx ++ turnStyle ++
+    printExpression e ++ newline
+
+  % API public
+  op printJudgement : Judgement -> String
+  def printJudgement = fn
+    | wellFormedContext cx     -> printWellFormedContext cx
+    | wellFormedSpec cx        -> printWellFormedSpec cx
+    | wellFormedType cx_t      -> printWellFormedType cx_t
+    | typeEquivalence cx_t1_t2 -> printTypeEquivalence cx_t1_t2
+    | subType cx_t1_r_t2       -> printSubType cx_t1_r_t2
+    | wellTypedExpr cx_e_t     -> printWellTypedExpr cx_e_t
+    | theoreM cx_e             -> printTheorem cx_e
+
+  % API public
+  op printFailure : Failure -> String
+  def printFailure = fn
+    | badPermutation prm ->
+      "bad permutation: " ++ printIntegers prm ++ newline
+    | wrongPermutationLength prm ->
+      "wrong permutation length: " ++ printIntegers prm ++ newline
+    | fieldNotFound (f, fS, tS) ->
+      "field " ++ printField f ++
+      " not found in " ++ printRecordType(fS,tS) ++ newline
+    | constructorNotFound (c, cS, tS) ->
+      "constructor " ++ printConstructor c ++
+      " not found in " ++ printSumType(cS,tS) ++ newline
+    | typeNotDeclared (cx, tn) ->
+      "type " ++ printTypeName tn ++
+      " not declared in" ++ newline ++ printContext cx
+    | opNotDeclared (cx, o) ->
+      "op " ++ printOperation o ++
+      " not declared in" ++ newline ++ printContext cx
+    | typeNotDefined (cx, tn) ->
+      "type " ++ printTypeName tn ++
+      " not defined in" ++ newline ++ printContext cx
+    | opNotDefined (cx, o) ->
+      "op " ++ printOperation o ++
+      " not defined in" ++ newline ++ printContext cx
+    | axiomNotDeclared (cx, an) ->
+      "axiom " ++ printAxiomName an ++
+      " not declared in" ++ newline ++ printContext cx
+    | typeVarNotDeclared (cx, tv) ->
+      "type variable " ++ printTypeVariable tv ++
+      " not declared in" ++ newline ++ printContext cx
+    | varNotDeclared (cx, v) ->
+      "variable " ++ printVariable v ++
+      " not declared in" ++ newline ++ printContext cx
+    | typeAlreadyDeclared (cx, tn) ->
+      "type " ++ printTypeName tn ++
+      " already declared in" ++ newline ++ printContext cx
+    | opAlreadyDeclared (cx, o) ->
+      "op " ++ printOperation o ++
+      " already declared in" ++ newline ++ printContext cx
+    | typeAlreadyDefined (cx, tn) ->
+      "type " ++ printTypeName tn ++
+      " already defined in" ++ newline ++ printContext cx
+    | opAlreadyDefined (cx, o) ->
+      "op " ++ printOperation o ++
+      " already defined in" ++ newline ++ printContext cx
+    | axiomAlreadyDeclared (cx, an) ->
+      "axiom " ++ printAxiomName an ++
+      " already declared in" ++ newline ++ printContext cx
+    | typeVarAlreadyDeclared (cx, tv) ->
+      "type variable " ++ printTypeVariable tv ++
+      " already declared in" ++ newline ++ printContext cx
+    | varAlreadyDeclared (cx, v) ->
+      "variable " ++ printVariable v ++
+      " already declared in" ++ newline ++ printContext cx
+    | typeVarInSpec cx ->
+      "spec contains type variable:" ++ newline ++ printContext cx
+    | varInSpec cx ->
+      "spec contains variable:" ++ newline ++ printContext cx
+    | negativeTypeArity (tn, i) ->
+      "type " ++ printTypeName tn ++ " has negative arity " ++
+      printInteger i ++ newline
+    | wrongTypeArity (tn, rightArity, wrongArity) ->
+      "type " ++ printTypeName tn ++ " has arity " ++
+      printInteger wrongArity ++ " instead of " ++
+      printInteger rightArity ++ newline
+    | badTypeSubstitution (tvS, tS) ->
+      "bad type substitution: " ++ printTypeVariables tvS ++ " <- " ++
+      printTypes tS ++ newline
+    | badSubstitution (v, e) ->
+      "bad substitution: " ++ printVariable v ++ " <- " ++
+      printExpression e ++ newline
+    | notWFContext jdg ->
+      "judgement is not well-formed context:" ++ newline ++
+      printJudgement jdg
+    | notWFType jdg ->
+      "judgement is not well-formed type:" ++ newline ++
+      printJudgement jdg
+    | notTypeEquiv jdg ->
+      "judgement is not type equivalence:" ++ newline ++
+      printJudgement jdg
+    | notSubtype jdg ->
+      "judgement is not subtype:" ++ newline ++
+      printJudgement jdg
+    | notWFType jdg ->
+      "judgement is not well-typed expression:" ++ newline ++
+      printJudgement jdg
+    | notTheorem jdg ->
+      "judgement is not theorem:" ++ newline ++
+      printJudgement jdg
+    | notBoolean t ->
+      "not boolean type: " ++ printType t ++ newline
+    | notTypeInstance t ->
+      "not type instance: " ++ printType t ++ newline
+    | notArrowType t ->
+      "not arrow type: " ++ printType t ++ newline
+    | notRecordType t ->
+      "not record type: " ++ printType t ++ newline
+    | notSumType t ->
+      "not sum type: " ++ printType t ++ newline
+    | notRestrictionType t ->
+      "not restriction type: " ++ printType t ++ newline
+    | notQuotientType t ->
+      "not quotient type: " ++ printType t ++ newline
+    | notOpInstance e ->
+      "not op instance: " ++ printExpression e ++ newline
+    | notApplication e ->
+      "not application: " ++ printExpression e ++ newline
+    | notAbstraction e ->
+      "not abstraction: " ++ printExpression e ++ newline
+    | notEquality e ->
+      "not equality: " ++ printExpression e ++ newline
+    | notConditional e ->
+      "not conditional: " ++ printExpression e ++ newline
+    | notDescriptor e ->
+      "not descriptor: " ++ printExpression e ++ newline
+    | notProjector e ->
+      "not projector: " ++ printExpression e ++ newline
+    | notEmbedder e ->
+      "not embedder: " ++ printExpression e ++ newline
+    | notQuotienter e ->
+      "not quotienter: " ++ printExpression e ++ newline
+    | notForall e ->
+      "not universal quantifier: " ++ printExpression e ++ newline
+    | notExists1 e ->
+      "not unique existential quantifier: " ++ printExpression e ++ newline
+    | badRecordType (fS, tS) ->
+      "bad record type: " ++ printRecordType (fS, tS) ++ newline
+    | badSumType (cS, tS) ->
+      "bad sum type: " ++ printSumType (cS, tS) ++ newline
+    | badRestrictionType (t, r) ->
+      "bad restriction type: " ++ printRestrictionType (t, r) ++ newline 
+    | badQuotientType (t, q) ->
+      "bad quotient type: " ++ printQuotientType (t, q) ++ newline
+    | wrongContext (rightCx, wrongCx) ->
+      "found context" ++ newline ++ printContext wrongCx ++
+      "instead of" ++ newline ++ printContext rightCx
+    | notEqualContexts cxS ->
+      "not all equal contexts:" ++ newline ++ printContexts cxS
+    | notPrefixContext (cx1, cx2) ->
+      "context" ++ newline ++ printContext cx1 ++
+      "is not a prefix of" ++ newline ++ printContext cx2 ++ newline
+    | notAllTypeVarDecls cx ->
+      "not all type variables:" ++ newline ++ printContext cx
+    | contextNotEndingInVar cx ->
+      "context does not end with variable:" ++ newline ++ printContext cx
+    | contextNotEndingInAxiom cx ->
+      "context does not end with axiom:" ++ newline ++ printContext cx
+    | wrongType (rightT, wrongT) ->
+      "found type " ++ printType wrongT ++
+      " instead of " ++ printType rightT ++ newline
+    | wrongLeftType (rightT, wrongT) ->
+      "found left-hand type " ++ printType wrongT ++
+      " instead of " ++ printType rightT ++ newline
+    | wrongLeftTypes (rightTS, wrongTS) ->
+      "found left-hand types " ++ printTypes wrongTS ++
+      " instead of " ++ printTypes rightTS ++ newline
+    | wrongLeftSubtype (rightT, wrongT) ->
+      "found subtype " ++ printType wrongT ++
+      " instead of " ++ printType rightT ++ newline
+    | wrongLeftSubtypes (rightTS, wrongTS) ->
+      "found subtypes " ++ printTypes wrongTS ++
+      " instead of " ++ printTypes rightTS ++ newline
+    | wrongRightSubtype (rightT, wrongT) ->
+      "found supertype " ++ printType wrongT ++
+      " instead of " ++ printType rightT ++ newline
+    | wrongFields (rightFS, wrongFS) ->
+      "found fields " ++ printFields wrongFS ++
+      " instead of " ++ printFields rightFS ++ newline
+    | wrongConstructors (rightCS, wrongCS) ->
+      "found constructors " ++ printConstructors wrongCS ++
+      " instead of " ++ printConstructors rightCS ++ newline
+    | wrongExpression (rightE, wrongE) ->
+      "found expression " ++ printExpression wrongE ++
+      " instead of " ++ printExpression rightE ++ newline
+    | wrongTheorem (rightE, wrongE) ->
+      "found theorem " ++ printExpression wrongE ++
+      " instead of " ++ printExpression rightE ++ newline
+    | wrongLeftExpression (rightE, wrongE) ->
+      "found left-hand expression " ++ printExpression wrongE ++
+      " instead of " ++ printExpression rightE ++ newline
+    | wrongLastAxiom (rightE, wrongE) ->
+      "found last axiom " ++ printExpression wrongE ++
+      " instead of " ++ printExpression rightE ++ newline
+    | opInOpDefTheorem (o, e) ->
+      "op " ++ printOperation o ++ " occurs in " ++ printExpression e ++ newline
+    | nonMonomorphicAxiom celem ->
+      "not monomorphic axiom:" ++ printContextElement celem
+    | nonDistinctFields fS ->
+      "fields are not distinct: " ++ printFields fS ++ newline
+    | nonDistinctConstructors cS ->
+      "constructors are not distinct: " ++ printConstructors cS ++ newline
+    | nonDistinctVariables (v1, v2) ->
+      "variables " ++ printVariable v1 ++ " and " ++
+      printVariable v2 ++ " are not distinct" ++ newline
+    | noConstructors ->
+      "no constructors" ++ newline
+    | wrongNumberOfProofs ->
+      "wrong number of proofs" ++ newline
+
+endspec
