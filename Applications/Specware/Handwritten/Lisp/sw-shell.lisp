@@ -80,7 +80,7 @@
 (defvar *sw-shell-print-level* 8)
 (defvar *sw-shell-print-length* 16)
 
-(defun aux-specware-shell (exiting-lisp? sw-shell-command-processor)
+(defun aux-specware-shell (exiting-lisp? sw-shell-command-processor &optional (banner "Specware Shell~%"))
   (let  ((magic-eof-cookie (cons :eof nil))
 	 (number-of-eofs 0)
 	 (cl:*package* cl:*package*)
@@ -93,7 +93,7 @@
 	 ch)
     (emacs::eval-in-emacs "(set-comint-prompt)")
     (setq *emacs-eval-form-after-prompt* nil)
-    (format t "Specware Shell~%")
+    (format t banner)
     (unwind-protect
 	(loop
 	  (set-specware-shell t)
