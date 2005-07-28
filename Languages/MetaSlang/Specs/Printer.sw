@@ -344,6 +344,32 @@ AnnSpecPrinter qualifying spec
 			  ppSort context ([0, 0] ++ path, Top) srt1]
 	   else
 	     prettysNone [pp.fromString id, string ".", pp.fromString p]
+	 | (Fun (Project p, srt1, _), tm as Fun _) ->
+	   if printSort? context then
+	     prettysNone [ppTerm context (path, parentTerm) tm,
+			  string ":", 
+			  ppSort context ([0, 1] ++ path, Top) (termSort tm),
+			  string ".", 
+			  string p, 
+			  string ":", 
+			  ppSort context ([0, 0] ++ path, Top) srt1]
+	   else
+	     prettysNone [ppTerm context (path, parentTerm) tm, string ".", pp.fromString p]
+	 | (Fun (Project p, srt1, _), tm) ->
+	   if printSort? context then
+	     prettysNone [string "(",
+			  ppTerm context (path, parentTerm) tm,
+			  string ":", 
+			  ppSort context ([0, 1] ++ path, Top) (termSort tm),
+			  string ").",
+			  string p, 
+			  string ":", 
+			  ppSort context ([0, 0] ++ path, Top) srt1]
+	   else
+	     prettysNone [string "(",
+			  ppTerm context (path, parentTerm) tm, 
+			  string ").", 
+			  pp.fromString p]
 	 | _ -> 
 	   blockFill (0, 
 		      [(0, ppTerm context ([0] ++ path, Top) t1), 
