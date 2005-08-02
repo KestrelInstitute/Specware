@@ -27,10 +27,12 @@
 (require "fileutil")
 
 
-;; Override normal definition because of an apparent Allegro bug in
-;; generate-application where excl::compile-file-if-needed compiles
-;; even if not needed
-#+allegro
+;;; If there is a compiler, then fasl files will have been deleted
+;;; to avoid version incompatibilities, in which case we need the
+;;; normal definition of compile-file-if-needed
+;;; But if there is no compiler, then we should avoid attempting
+;;; to call it.
+#-COMPILER
 (defun compile-file-if-needed (file) file)
 
 ;;;Patch .fasl files will be named in the form "patch-4-1-x.fasl" and
