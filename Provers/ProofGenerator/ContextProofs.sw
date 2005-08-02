@@ -2,63 +2,13 @@ spec
 
   % API public contextProof
 
-  import ../ProofChecker/Proofs, ../ProofChecker/Substitutions, ../ProofChecker/BasicAbbreviations
+  import ../ProofChecker/Spec
+  import ContextAPI
   import TypeProofs
   
   (* In this spec we define a function that takes a context and
   generates a proof that the context is well-formed. *)
 
-  op typeDeclaration?: ContextElement -> Boolean
-  def typeDeclaration?(ce) =
-    case ce of
-      | typeDeclaration _ -> true
-      | _ -> false
-
-  op opDeclaration?: ContextElement -> Boolean
-  def opDeclaration?(ce) =
-    case ce of
-      | opDeclaration _ -> true
-      | _ -> false
-
-  op typeDefinition?: ContextElement -> Boolean
-  def typeDefinition?(ce) =
-    case ce of
-      | typeDefinition _ -> true
-      | _ -> false
-
-  op opDefinition?: ContextElement -> Boolean
-  def opDefinition?(ce) =
-    case ce of
-      | opDefinition _ -> true
-      | _ -> false
-
-  op axioM?: ContextElement -> Boolean
-  def axioM?(ce) =
-    case ce of
-      | axioM _ -> true
-      | _ -> false
-
-  op typeVarDeclaration?: ContextElement -> Boolean
-  def typeVarDeclaration?(ce) =
-    case ce of
-      | typeVarDeclaration _ -> true
-      | _ -> false
-
-  op varDeclaration?: ContextElement -> Boolean
-  def varDeclaration?(ce) =
-    case ce of
-      | varDeclaration _ -> true
-      | _ -> false
-
-
-  type TypeDeclarationContextElement = (ContextElement | typeDeclaration?)
-  type OpDeclarationContextElement = (ContextElement | opDeclaration?)
-  type TypeDefinitionContextElement = (ContextElement | typeDefinition?)
-  type OpDefinitionContextElement = (ContextElement | opDefinition?)
-  type AxioMContextElement = (ContextElement | axioM?)
-  type TypeVarDeclarationContextElement = (ContextElement | typeVarDeclaration?)
-  type VarDeclarationContextElement = (ContextElement | varDeclaration?)
-  
   op wellFormedTypeProof: Proof * Context * Type -> Proof
   def wellFormedTypeProof(cxProof, cx, t) =
     typeProof(cxProof, cx, t)
