@@ -1,6 +1,6 @@
 spec
 
-  % API private all
+  % API public default
 
   import Occurrences
 
@@ -43,6 +43,7 @@ spec
 
   % true iff tsbs is substitution of tvS@i with tS@i:
 
+  % API private
   op isTypeSubstFrom? : TypeSubstitution * TypeVariables * Types -> Boolean
   def isTypeSubstFrom?(tsbs,tvS,tS) =
     noRepetitions? tvS && length tvS = length tS && tsbs = fromSeqs (tvS, tS)
@@ -62,6 +63,7 @@ spec
 
   % variables captured at free occurrences of given variable in expression:
 
+  % API private
   op captVars : Variable -> Expression -> FSet Variable
   def captVars u = fn
     | APPLY(e1,e2)       -> captVars u e1 \/ captVars u e2
@@ -74,6 +76,7 @@ spec
 
   % true iff substitution of u with d in e causes no variable capture:
 
+  % API private
   op exprSubstOK? : Variable -> Expression -> Expression -> Boolean
   def exprSubstOK? u d e =
     exprFreeVars d /\ captVars u e = empty
