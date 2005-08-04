@@ -104,12 +104,14 @@ spec
   op teRecordProof: Proof * Context * TypeDefinitionContextElement -> Type -> Type * Proof
   def teRecordProof(cxP, cx, tdCE) t =
     let RECORD (flds, typs) = t in
+    let (flds, typs) = sortFldsTypes(flds, typs) in
     let (newTs, newTPs) = applyTypeDefInTypes(cxP, cx, tdCE) typs in
     (RECORD (flds, newTs), teRec(cxP, newTPs, flds))
 
   op teSumProof: Proof * Context * TypeDefinitionContextElement -> Type -> Type * Proof
   def teSumProof(cxP, cx, tdCE) t =
     let SUM (cstrs, typs) = t in
+    let (cstrs, typs) = sortCnstrsTypes(cstrs, typs) in
     let (newTs, newTPs) = applyTypeDefInTypes(cxP, cx, tdCE) typs in
     (SUM (cstrs, newTs), teSum(newTPs, cstrs))
 
@@ -261,5 +263,40 @@ spec
       if t1X = t2X then Some p
 	else None
 
+  op sortSeq: [a] FSeq a * (a * a -> Boolean) -> FSeq a
+  def sortSeq(s, lte) =
+    if empty?(s) then s
+    else
+      let hd = first(s) in
+      let tl = rtail(s) in
+      let tl = sortSeq(tl, lte) in
+      insertSeq(hd, tl, lte)
+
+  op insertSeq: [a] a * FSeq a * (a * a -> Boolean) -> FSeq a
+  def insertSeq(x, s, lte) =
+    if empty?(s) then single(x)
+    else
+      let hd = first(s) in
+      let tl = rtail(s) in
+      if lte(x, hd) then x |> s
+      else hd |> insertSeq(x, tl, lte)
+
+  op fldLTE: Field * Field -> Boolean
+  op cnstrLTE: Constructor * Constructor -> Boolean
+
+  op sortDualSeqs: [a, b] FSeq a * FSeq b * (a * a -> Boolean) -> (FSeq a * FSeq b)
+  def sortDualSeqs(s1, s2, lte1) =
+    let s1s2 = zip(s1, s2) in
+    let lte = fn((s1a, _), (s1b, _)) -> lte1(s1a, s1b) in
+    let sorteds1s2 = sortSeq(s1s2, lte) in
+    unzip(sorteds1s2)
+
+  op sortFldsTypes: Fields * Types -> (Fields * Types)
+  def sortFldsTypes(flds, typs) =
+    sortDualSeqs(flds, typs, fldLTE)
+
+  op sortCnstrsTypes: Constructors * Types -> (Constructors * Types)
+  def sortCnstrsTypes(cnstrs, typs) =
+    sortDualSeqs(cnstrs, typs, cnstrLTE)
 
 endspec
