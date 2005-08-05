@@ -77,6 +77,7 @@
       "embed?"
       "endspec"
       "ex"
+      "ex1"
       "fa"
       "false"
       "fn"
