@@ -285,7 +285,7 @@ spec
        | Other other -> SpecCalc.evaluateOtherProofGen(other, cterm, optFileNm, fromObligations?) (positionOf(cterm))
        | _ -> raise (Unsupported ((positionOf cterm),  "Can generate proofs only for Specs and Morphisms."));
 %     let _ = System.fail ("evaluateProofGen ") in
-     {print("Generated Proof file.");
+     {print("Generated Proof file: " ^ proofFileName ^ "\n");
       return valueInfo}}
 
   op SpecCalc.evaluateProofGenLocal : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean
@@ -371,6 +371,11 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.26  2005/04/01 21:43:24  gilham
+%% Changed evaluateProve to support OtherValues in addition to Specs.
+%% Fixed a problem with invalid file names for proof files.
+%% Fixed some bugs in the definition of unionProofDecls
+%%
 %% Revision 1.25  2005/03/23 02:13:34  westfold
 %% Major update to include sequence of spec elements in spec.
 %%
