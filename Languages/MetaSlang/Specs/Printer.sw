@@ -912,7 +912,7 @@ AnnSpecPrinter qualifying spec
 			       prettysLinear (addSeparator sep 
 					      (mapWithIndex (fn (i, x) ->
 							     f (cons (i, path), x)) ps))]
-		               ++ [pp.Where,ppTerm context ([1]++ path, Top) term]
+		               ++ [pp.Bar,ppTerm context ([1]++ path, Top) term]
 			       ++ [right])
 	    in
 	    if isShortTuple (1, row) then
@@ -933,7 +933,7 @@ AnnSpecPrinter qualifying spec
 	     enclose (enclosed, 
 		      blockFill (0, 
 				 [(0, ppPattern context ([0]++ path, false) pat), 
-				  (0, string  " | "), 
+				  (0, pp.Bar), 
 				  (0, ppTerm context ([1]++ path, Top) term)])))
 
      | _ -> System.fail "Uncovered case for pattern"
