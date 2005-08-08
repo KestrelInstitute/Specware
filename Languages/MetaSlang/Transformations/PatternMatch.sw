@@ -490,7 +490,7 @@ PatternMatch qualifying spec
       in
       Lambda([(pat,mkTrue(),t)],noPos)
 
-  def match(context,vars,rules:Rules,default,break) = 
+  def match(context,vars,rules,default,break) = 
       case vars
         of [] -> foldr 
                  (fn((_,cond,body),default) -> 
@@ -509,6 +509,8 @@ PatternMatch qualifying spec
          | Relax(pat,pred) -> 
            matchSubsort(context,pred,vars,rules,default,break)
 	 | Restricted(pat,bool_exp) ->
+	   %% This should be unnecessary because top-level Restricteds have been removed
+	   %% in eliminateTerm
 	   matchRestricted(context,bool_exp,vars,rules,default,break)
          | Quotient _ -> matchQuotient(context,vars,rules,default,break)
       
@@ -739,6 +741,12 @@ def eliminateTerm context term =
 
 	 %%%	 let _ = writeLine "Elimination from lambda " in
 	 let _ = checkUnreachableCase(context,term,rules) in
+         %%% Move RestrictedPat conditions to condition
+	 let rules = map (fn (RestrictedPat(pat,rcond,_),cond,bdy) ->
+			     (pat,mkSimpConj[rcond,cond],bdy)
+			     | rule -> rule)
+	               rules
+	 in			      
 	 let (pat,cond,bdy) = hd rules in
 	 let bdySort = inferType(context.spc,bdy) in
 	 let vs = freshVars(arity,context,pat) in
@@ -873,7 +881,7 @@ def eliminateTerm context term =
        Lambda([(pat,c,substitute(body,[(v,wVar)]))],pos)
      | _ -> t
 
-%- --------------------------------------------------------------------------------
+%- -------------------------------------Ø-------------------------------------------
 %- checks whether Record is a Product or a user-level Record
 
  op isShortTuple : fa(A) Nat * List(Id * A) -> Boolean
