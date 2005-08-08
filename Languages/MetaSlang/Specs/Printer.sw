@@ -903,38 +903,39 @@ AnnSpecPrinter qualifying spec
 			    (0, string " "),
 			    (0, ppPattern context ([0]++ path, false) pat)]))
 
-     | RestrictedPat (pat, term, _) -> 
-       (case pat of
-	  | RecordPat (row, _) ->
-	    %% This probably isn't quite right as far as formatting the "|" term
-	    let def ppListPathPlus path f (left, sep, right) ps = 
-	          prettysNone ([left,
-			       prettysLinear (addSeparator sep 
-					      (mapWithIndex (fn (i, x) ->
-							     f (cons (i, path), x)) ps))]
-		               ++ [pp.Bar,ppTerm context ([1]++ path, Top) term]
-			       ++ [right])
-	    in
-	    if isShortTuple (1, row) then
-	      ppListPathPlus path 
-	        (fn (path, (id, pat)) -> ppPattern context (path, true) pat) 
-		(pp.LP, pp.Comma, pp.RP) 
-		row
-	    else
-	      let 
-		def ppEntry (path, (id, pat)) = 
-		  blockFill (0, 
-			     [(0, prettysNone [pp.fromString id, string " ", pp.Equals, string " "]), 
-			      (2, 
-			       prettysFill [ppPattern context (path, true) pat])])
-	      in
-		ppListPathPlus path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
-	   | _ ->
+     | RestrictedPat (pat, term, _) ->
+%% Don't want restriction expression inside parentheses in normal case statement
+%       (case pat of
+%	  | RecordPat (row, _) ->
+%	    %% This probably isn't quite right as far as formatting the "|" term
+%	    let def ppListPathPlus path f (left, sep, right) ps = 
+%	          prettysNone ([left,
+%			       prettysLinear (addSeparator sep 
+%					      (mapWithIndex (fn (i, x) ->
+%							     f (cons (i, path), x)) ps))]
+%		               ++ [pp.Bar,ppTerm context ([1]++ path, Top) term]
+%			       ++ [right])
+%	    in
+%	    if isShortTuple (1, row) then
+%	      ppListPathPlus path 
+%	        (fn (path, (id, pat)) -> ppPattern context (path, true) pat) 
+%		(pp.LP, pp.Comma, pp.RP) 
+%		row
+%	    else
+%	      let 
+%		def ppEntry (path, (id, pat)) = 
+%		  blockFill (0, 
+%			     [(0, prettysNone [pp.fromString id, string " ", pp.Equals, string " "]), 
+%			      (2, 
+%			       prettysFill [ppPattern context (path, true) pat])])
+%	      in
+%		ppListPathPlus path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
+%	   | _ ->
 	     enclose (enclosed, 
 		      blockFill (0, 
-				 [(0, ppPattern context ([0]++ path, false) pat), 
+				 [(0, ppPattern context ([0]++ path, true) pat), 
 				  (0, pp.Bar), 
-				  (0, ppTerm context ([1]++ path, Top) term)])))
+				  (0, ppTerm context ([1]++ path, Top) term)])) %)
 
      | _ -> System.fail "Uncovered case for pattern"
       
