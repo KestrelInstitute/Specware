@@ -337,6 +337,37 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppATerm term,
             ppString ")"
           ]
+      | RestrictedPat (pat,term,_) -> 
+        (case pat of
+	   | RecordPat (fields,_) ->
+	     (case fields of
+	       | [] -> ppGrConcat [ppString "() | ",ppATerm term]
+	       | ("1",_)::_ ->
+		   let def ppField (_,pat) = ppAPattern pat in
+		   ppConcat [
+		     ppString "(",
+		     ppSep (ppString ",") (map ppField fields),
+		     ppString " | ",
+		     ppATerm term,
+		     ppString ")"
+		   ]
+	       | _ ->
+		   let def ppField (x,pat) =
+		     ppConcat [
+		       ppString x,
+		       ppString "=",
+		       ppAPattern pat
+		     ] in
+		   ppConcat [
+		     ppString "{",
+		     ppSep (ppString ",") (map ppField fields),
+		     ppString " | ",
+		     ppATerm term,
+		     ppString "}"
+		   ])
+	       | _ -> ppGrConcat [ppAPattern pat,
+				  ppString " | ",
+				  ppATerm term])
       | SortedPat (pat,srt,_) -> ppAPattern pat
       | mystery -> fail ("No match in ppAPattern with: '" ^ (anyToString mystery) ^ "'")
 

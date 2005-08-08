@@ -303,9 +303,10 @@ PatternMatch qualifying spec
   def tack x xss = Cons(Cons(x,hd xss),tl xss)
 
 
-  sort RuleType = 
+  type RuleType = 
      | Var | Con | Alias  Pattern * Pattern
      | Relax  Pattern * MS.Term | Quotient  Pattern * MS.Term
+     | Restricted Pattern * MS.Term 
 
   def ruleType (q:Rule) : RuleType = 
       case q
@@ -320,6 +321,7 @@ PatternMatch qualifying spec
          | ((CharPat _)::_,_,_)    -> Con
          | ((RelaxPat (pat,pred,_))::_,_,_) -> Relax (pat,pred)
          | ((QuotientPat(pat,pred,_))::_,_,_) -> Quotient(pat,pred) 
+         | ((RestrictedPat(pat,bool_expr,_))::_,_,_) -> Restricted(pat,bool_expr)
       
 
   op printRule: fa(a) List(APattern a) * ATerm a * ATerm a -> ()
@@ -371,7 +373,7 @@ PatternMatch qualifying spec
 		   constructor CONSTR.
 		
  *)
-  sort DestructedRule = MS.Term * List(MS.Term) * List(Pattern * MS.Term) * Pattern * Rules
+  type DestructedRule = MS.Term * List(MS.Term) * List(Pattern * MS.Term) * Pattern * Rules
   op partitionConstructors : Context * MS.Term * Rules -> List(DestructedRule)
 
   op  freshVar : Context * Sort -> Var
@@ -489,7 +491,7 @@ PatternMatch qualifying spec
       Lambda([(pat,mkTrue(),t)],noPos)
 
   def match(context,vars,rules:Rules,default,break) = 
-      (case vars
+      case vars
         of [] -> foldr 
                  (fn((_,cond,body),default) -> 
 		    failWith context 
@@ -498,17 +500,18 @@ PatternMatch qualifying spec
          | Cons _ -> 
 	   let rules = (partition ruleType rules) in
            foldr (matchRules (context,break,vars)) default rules
-      )
   
   def matchRules (context,break,vars) (rules,default) = 
-      (case ruleType (hd rules)
+      case ruleType (hd rules)
         of Var -> matchVar(context,vars,rules,default,break)
          | Con -> matchCon(context,vars,rules,default,break)
 	 | Alias(p1,p2) -> matchAlias(context,p1,p2,vars,rules,default,break)
          | Relax(pat,pred) -> 
            matchSubsort(context,pred,vars,rules,default,break)
+	 | Restricted(pat,bool_exp) ->
+	   matchRestricted(context,bool_exp,vars,rules,default,break)
          | Quotient _ -> matchQuotient(context,vars,rules,default,break)
-      )
+      
   def matchVar(context,terms,rules,default,break) = 
       let t = hd terms in
       let terms = tl terms in
@@ -533,12 +536,14 @@ PatternMatch qualifying spec
 		   break rulePartition
       in
 	 failWith context rule default
+
   def matchAlias(context,pat1,pat2,terms,rules,default,break) = 
       let t = hd terms in
       let rules = map (fn( (Cons(_,pats),cond,e):Rule)->
 				(Cons(pat1,Cons(pat2,pats)),cond,e):Rule)
 		  rules in
       match(context,cons(t,terms),rules,default,break)
+
   def matchSubsort(context,pred,t::terms,rules,default,break) =
       let _(* srt *) = inferType(context.spc,t) in
       let t1     = mkRestrict(context.spc,{pred = pred,term = t}) in
@@ -551,6 +556,15 @@ PatternMatch qualifying spec
 				match(context,cons(t1,terms),rules,break,break),
 				break))
 	default 
+
+  def matchRestricted(context,bool_expr,t::terms,rules,default,break) =
+      let rules  = map (fn((RestrictedPat(p,_,_))::pats,cond,e) ->
+			(cons(p,pats),mkSimpConj [cond,bool_expr],e)
+		         | rl -> rl)
+                     rules
+      in
+       match(context,Cons(t,terms),rules,default,break) 
+
   def matchQuotient(context:Context,t::terms,rules,default,break) = 
       let Quotient(srt,pred,_)  = unfoldBase(context.spc, inferType(context.spc,t))  in
 %%
@@ -561,7 +575,7 @@ PatternMatch qualifying spec
       let f = mkLambda(VarPat(v,noPos),Var(v,noPos))                    in
       let t1 = mkApply(mkChooseFun(pred,srt,srt,f),t)	  in
       let rules  = map (fn((Cons((QuotientPat(p,pred,_)):Pattern,pats),cond,e):Rule) ->
-			      (Cons(p,pats),cond,e):Rule) rules in
+			      (Cons(p,pats),cond,e)) rules in
       failWith context
       (match(context,cons(t1,terms),rules,break,break))
       default 	
@@ -629,6 +643,8 @@ def eliminatePattern context pat =
 	 RelaxPat(eliminatePattern context p,eliminateTerm context t,a)
        | QuotientPat (p,t,a) ->
 	 QuotientPat(eliminatePattern context p,eliminateTerm context t,a)
+       | RestrictedPat (p,t,a) ->
+	 RestrictedPat(eliminatePattern context p,eliminateTerm context t,a)
 
 def eliminateSort context srt =
     case srt
@@ -979,7 +995,7 @@ endspec
 
  *)
 
-sort con = 
+type con = 
  | CON :: {arity : Nat, span : Nat, name : String}
  | RELAX :: Term
  | QUOTIENT :: Term
@@ -1022,7 +1038,7 @@ def arity (c:con) =
  *  Internal simplified pattern representation 
  *)
 
-sort pattern = 
+type pattern = 
   | Var :: String * Sort
   | Con :: con * List[pattern] * Sort
   | Alias :: pattern * pattern
@@ -1083,7 +1099,7 @@ def patternSort(pat:pattern):Sort =
 
 (* Term descriptions *)
 
-sort termd =
+type termd =
   | Pos :: con * List[termd]       (* All arguments in proper order *)
   | Neg :: List[con]                (* No duplicates                 *)
 
@@ -1118,7 +1134,7 @@ def bots n = tabulate(n, fn _ -> Bot())
  *) 
 
 
-sort context = List[con * Option[termd] * List[termd]]
+type context = List[con * Option[termd] * List[termd]]
 
 def augment(context:context,dsc) = 
     case context
@@ -1130,7 +1146,7 @@ def augment(context:context,dsc) =
 
 
 
-sort matchresult = | Yes | No | Maybe
+type matchresult = | Yes | No | Maybe
 
 def staticmatch (pcon:con) (td:termd) : matchresult = 
     case (pcon,td)
@@ -1174,7 +1190,7 @@ def builddsc(ctx,dsc0:termd,work) =
 
 (* Runtime data access and matching actions *)
 
-sort access = 
+type access = 
  | Select :: String
  | Project :: Nat
  | Restrict :: Term
@@ -1198,9 +1214,9 @@ def printAccess (access:access) =
        | Restrict s -> "restrict_"^printTerm s
        | Choose s -> "choose_"^printTerm s
 
-sort var = String * Sort
+type var = String * Sort
 
-sort test = 
+type test = 
  | Embedded :: String * var
  | Relaxed  :: Term * var
  | Condition :: Term
@@ -1219,10 +1235,10 @@ def printTest(test:test) =
         | Relaxed(s,(var,srt)) -> printTerm s^"?("^var^")"
         | Condition term -> printTerm term)
 
-sort decl = var * access * var
+type decl = var * access * var
 
 
-sort dec =
+type dec =
   | Failure
   | Success :: Term			(* right-hand side *)
   | IfEq :: test * decision * decision
@@ -1416,7 +1432,7 @@ def checkExhaustive(dag as Ref {tree,refs}:decision):Term =
 		| _ -> mkLet(map mkDecl decls,d)
 	     ))
 
-sort MatchResult = | Redundant | NonExhaustive :: Term | Ok  
+type MatchResult = | Redundant | NonExhaustive :: Term | Ok  
 
     
 def checkMatch (spc,rules: Match): MatchResult = 

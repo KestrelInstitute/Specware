@@ -110,19 +110,20 @@ efficiently, but cmulisp may do better with local functions.
 
  def patternVars (pat:Pattern): List Var = 
    case pat of
-     | VarPat      (v,              _) -> [v]
-     | RecordPat   (fields,         _) -> foldr (fn ((_, p), vs)-> patternVars p ++ vs) [] fields
-     | WildPat     _                   -> []
-     | EmbedPat    (_, Some pat, _, _) -> patternVars pat
-     | EmbedPat    (_, None, _,     _) -> []
-     | AliasPat    (pat1, pat2,     _) -> concat (patternVars pat1, patternVars pat2)
-     | RelaxPat    (pat, _,         _) -> patternVars pat
-     | QuotientPat (pat, _,         _) -> patternVars pat
-     | SortedPat   (pat, _,         _) -> patternVars pat
-     | StringPat   _                   -> []
-     | BoolPat     _                   -> []
-     | CharPat     _                   -> []
-     | NatPat      _                   -> []
+     | VarPat       (v,              _) -> [v]
+     | RecordPat    (fields,         _) -> foldr (fn ((_, p), vs)-> patternVars p ++ vs) [] fields
+     | WildPat      _                   -> []
+     | EmbedPat     (_, Some pat, _, _) -> patternVars pat
+     | EmbedPat     (_, None, _,     _) -> []
+     | AliasPat     (pat1, pat2,     _) -> concat (patternVars pat1, patternVars pat2)
+     | RelaxPat     (pat, _,         _) -> patternVars pat
+     | QuotientPat  (pat, _,         _) -> patternVars pat
+     | RestrictedPat(pat, _,         _) -> patternVars pat
+     | SortedPat    (pat, _,         _) -> patternVars pat
+     | StringPat    _                   -> []
+     | BoolPat      _                   -> []
+     | CharPat      _                   -> []
+     | NatPat       _                   -> []
      | _ -> System.fail("Unexpected pattern in match normalized expression: "^printPattern pat)
 
  def makeVarTerm (term:Term) = 

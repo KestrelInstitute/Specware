@@ -1,5 +1,4 @@
 MetaSlang qualifying spec
- import /Library/Base
  import /Library/Legacy/Utilities/State  % for MetaTyVar's
  import /Library/Legacy/DataStructures/ListPair
 
@@ -175,18 +174,19 @@ MetaSlang qualifying spec
   | Any                                                b  % e.g. "sort S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
 
  type APattern b =
-  | AliasPat     APattern b * APattern b             * b
-  | VarPat       AVar b                              * b
-  | EmbedPat     Id * Option (APattern b) * ASort b  * b
-  | RecordPat    List(Id * APattern b)               * b
-  | WildPat      ASort b                             * b
-  | BoolPat      Boolean                             * b
-  | NatPat       Nat                                 * b
-  | StringPat    String                              * b
-  | CharPat      Char                                * b
-  | RelaxPat     APattern b * ATerm b                * b
-  | QuotientPat  APattern b * ATerm b                * b
-  | SortedPat    APattern b * ASort b                * b  % Before elaborateSpec
+  | AliasPat      APattern b * APattern b             * b
+  | VarPat        AVar b                              * b
+  | EmbedPat      Id * Option (APattern b) * ASort b  * b
+  | RecordPat     List(Id * APattern b)               * b
+  | WildPat       ASort b                             * b
+  | BoolPat       Boolean                             * b
+  | NatPat        Nat                                 * b
+  | StringPat     String                              * b
+  | CharPat       Char                                * b
+  | RelaxPat      APattern b * ATerm b                * b
+  | QuotientPat   APattern b * ATerm b                * b
+  | RestrictedPat APattern b * ATerm b                * b
+  | SortedPat     APattern b * ASort b                * b  % Before elaborateSpec
 
  type AFun b =
 
@@ -388,34 +388,35 @@ MetaSlang qualifying spec
   op patAnn: [a] APattern a -> a
  def patAnn pat =
    case pat of
-     | AliasPat    (_,_,   a) -> a
-     | VarPat      (_,     a) -> a
-     | EmbedPat    (_,_,_, a) -> a
-     | RecordPat   (_,     a) -> a
-     | WildPat     (_,     a) -> a
-     | BoolPat     (_,     a) -> a
-     | NatPat      (_,     a) -> a
-     | StringPat   (_,     a) -> a
-     | CharPat     (_,     a) -> a
-     | RelaxPat    (_,_,   a) -> a
-     | QuotientPat (_,_,   a) -> a
-     | SortedPat   (_,_,   a) -> a
+     | AliasPat     (_,_,   a) -> a
+     | EmbedPat     (_,_,_, a) -> a
+     | RecordPat    (_,     a) -> a
+     | WildPat      (_,     a) -> a
+     | BoolPat      (_,     a) -> a
+     | NatPat       (_,     a) -> a
+     | StringPat    (_,     a) -> a
+     | CharPat      (_,     a) -> a
+     | RelaxPat     (_,_,   a) -> a
+     | QuotientPat  (_,_,   a) -> a
+     | RestrictedPat(_,_,   a) -> a
+     | SortedPat    (_,_,   a) -> a
 
   op withAnnP: [a] APattern a * a -> APattern a
  def withAnnP (pat, b) =
    case pat of
-     | AliasPat    (p1,p2,   a) -> if b = a then pat else AliasPat    (p1,p2,   b)
-     | VarPat      (v,       a) -> if b = a then pat else VarPat      (v,       b)
-     | EmbedPat    (i,p,s,   a) -> if b = a then pat else EmbedPat    (i,p,s,   b)
-     | RecordPat   (f,       a) -> if b = a then pat else RecordPat   (f,       b)
-     | WildPat     (s,       a) -> if b = a then pat else WildPat     (s,       b)
-     | BoolPat     (bp,      a) -> if b = a then pat else BoolPat     (bp,      b)
-     | NatPat      (n,       a) -> if b = a then pat else NatPat      (n,       b)
-     | StringPat   (s,       a) -> if b = a then pat else StringPat   (s,       b)
-     | CharPat     (c,       a) -> if b = a then pat else CharPat     (c,       b)
-     | RelaxPat    (p,t,     a) -> if b = a then pat else RelaxPat    (p,t,     b)
-     | QuotientPat (p,t,     a) -> if b = a then pat else QuotientPat (p,t,     b)
-     | SortedPat   (p,s,     a) -> if b = a then pat else SortedPat   (p,s,     b)
+     | AliasPat      (p1,p2,   a) -> if b = a then pat else AliasPat     (p1,p2,   b)
+     | VarPat        (v,       a) -> if b = a then pat else VarPat       (v,       b)
+     | EmbedPat      (i,p,s,   a) -> if b = a then pat else EmbedPat     (i,p,s,   b)
+     | RecordPat     (f,       a) -> if b = a then pat else RecordPat    (f,       b)
+     | WildPat       (s,       a) -> if b = a then pat else WildPat      (s,       b)
+     | BoolPat       (bp,      a) -> if b = a then pat else BoolPat      (bp,      b)
+     | NatPat        (n,       a) -> if b = a then pat else NatPat       (n,       b)
+     | StringPat     (s,       a) -> if b = a then pat else StringPat    (s,       b)
+     | CharPat       (c,       a) -> if b = a then pat else CharPat      (c,       b)
+     | RelaxPat      (p,t,     a) -> if b = a then pat else RelaxPat     (p,t,     b)
+     | QuotientPat   (p,t,     a) -> if b = a then pat else QuotientPat  (p,t,     b)
+     | RestrictedPat (p,t,     a) -> if b = a then pat else RestrictedPat(p,t,     b)
+     | SortedPat     (p,s,     a) -> if b = a then pat else SortedPat    (p,s,     b)
 
   op withAnnS: [a] ASort a * a -> ASort a
  def withAnnS (srt, a) =
@@ -533,18 +534,22 @@ MetaSlang qualifying spec
 
  def patternSort pat =
    case pat of
-     | AliasPat    (p1,_,    _) -> patternSort p1
-     | VarPat      ((_,s),   _) -> s
-     | EmbedPat    (_,_,s,   _) -> s
-     | RecordPat   (fields,  a) -> Product (map (fn (id, p) -> (id, patternSort p)) fields, a)
-     | WildPat     (srt,     _) -> srt
-     | BoolPat     (_,       a) -> Boolean a
-     | NatPat      (n,       a) -> mkABase  (Qualified ("Nat",     "Nat"),     [], a)
-     | StringPat   (_,       a) -> mkABase  (Qualified ("String",  "String"),  [], a)
-     | CharPat     (_,       a) -> mkABase  (Qualified ("Char",    "Char"),    [], a)
-     | RelaxPat    (p, pred, a) -> Subsort  (patternSort p, pred,                  a)
-     | QuotientPat (p, t,    a) -> Quotient (patternSort p, t,                     a)
-     | SortedPat   (_, srt,  _) -> srt
+     | AliasPat     (p1,_,    _) -> patternSort p1
+     | VarPat       ((_,s),   _) -> s
+     | EmbedPat     (_,_,s,   _) -> s
+     | RecordPat    (fields,  a) -> Product (map (fn (id, p) -> (id, patternSort p)) fields, a)
+     | WildPat      (srt,     _) -> srt
+     | BoolPat      (_,       a) -> Boolean a
+     | NatPat       (n,       a) -> mkABase  (Qualified ("Nat",     "Nat"),     [], a)
+     | StringPat    (_,       a) -> mkABase  (Qualified ("String",  "String"),  [], a)
+     | CharPat      (_,       a) -> mkABase  (Qualified ("Char",    "Char"),    [], a)
+     | RelaxPat     (p, pred, a) -> Subsort  (patternSort p, pred,                  a)
+     | QuotientPat  (p, t,    a) -> Quotient (patternSort p, t,                     a)
+     | RestrictedPat(p, t,    a) ->
+       %% Subsort  (patternSort p,Lambda([(p,mkTrueA a,t)],a),a)
+       %% Subsort is correct but would require generalization in Lambda case of termSort
+       patternSort p
+     | SortedPat    (_, srt,  _) -> srt
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Equalities
@@ -749,29 +754,32 @@ MetaSlang qualifying spec
                                                         label1 = label2 &&
                                                         equalPattern? (x1, x2))
 
-     | (WildPat     (s1,          _),
-        WildPat     (s2,          _)) -> equalSort? (s1, s2)
+     | (WildPat      (s1,          _),
+        WildPat      (s2,          _)) -> equalSort? (s1, s2)
 
-     | (BoolPat     (x1,          _),
-        BoolPat     (x2,          _)) -> x1 = x2
+     | (BoolPat      (x1,          _),
+        BoolPat      (x2,          _)) -> x1 = x2
 
-     | (NatPat      (x1,          _),
-        NatPat      (x2,          _)) -> x1 = x2
+     | (NatPat       (x1,          _),
+        NatPat       (x2,          _)) -> x1 = x2
 
-     | (StringPat   (x1,          _),
-        StringPat   (x2,          _)) -> x1 = x2
+     | (StringPat    (x1,          _),
+        StringPat    (x2,          _)) -> x1 = x2
 
-     | (CharPat     (x1,          _),
-        CharPat     (x2,          _)) -> x1 = x2
+     | (CharPat      (x1,          _),
+        CharPat      (x2,          _)) -> x1 = x2
 
-     | (RelaxPat    (x1, t1,      _),
-        RelaxPat    (x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
+     | (RelaxPat     (x1, t1,      _),
+        RelaxPat     (x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
 
-     | (QuotientPat (x1, t1,      _),
-        QuotientPat (x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
+     | (QuotientPat  (x1, t1,      _),
+        QuotientPat  (x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
 
-     | (SortedPat   (x1, t1,      _),
-        SortedPat   (x2, t2,      _)) -> equalPattern? (x1, x2) && equalSort? (t1, t2)
+     | (RestrictedPat(x1, t1,      _),
+        RestrictedPat(x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
+
+     | (SortedPat    (x1, t1,      _),
+        SortedPat    (x2, t2,      _)) -> equalPattern? (x1, x2) && equalSort? (t1, t2)
 
      | _ -> false
 
@@ -963,29 +971,32 @@ MetaSlang qualifying spec
 						     label1 = label2 &&
 						     equalPatternStruct? (x1, x2))
 
-     | (WildPat     (s1,          _),
-        WildPat     (s2,          _)) -> equalSort? (s1, s2)
+     | (WildPat      (s1,          _),
+        WildPat      (s2,          _)) -> equalSort? (s1, s2)
 
-     | (BoolPat     (x1,          _),
-        BoolPat     (x2,          _)) -> x1 = x2
+     | (BoolPat      (x1,          _),
+        BoolPat      (x2,          _)) -> x1 = x2
 
-     | (NatPat      (x1,          _),
-        NatPat      (x2,          _)) -> x1 = x2
+     | (NatPat       (x1,          _),
+        NatPat       (x2,          _)) -> x1 = x2
 
-     | (StringPat   (x1,          _),
-        StringPat   (x2,          _)) -> x1 = x2
+     | (StringPat    (x1,          _),
+        StringPat    (x2,          _)) -> x1 = x2
 
-     | (CharPat     (x1,          _),
-        CharPat     (x2,          _)) -> x1 = x2
+     | (CharPat      (x1,          _),
+        CharPat      (x2,          _)) -> x1 = x2
 
-     | (RelaxPat    (x1, t1,      _),
-        RelaxPat    (x2, t2,      _)) -> equalPatternStruct? (x1, x2) && equalTermStruct? (t1, t2)
+     | (RelaxPat     (x1, t1,      _),
+        RelaxPat     (x2, t2,      _)) -> equalPatternStruct? (x1, x2) && equalTermStruct? (t1, t2)
 
-     | (QuotientPat (x1, t1,      _),
-        QuotientPat (x2, t2,      _)) -> equalPatternStruct? (x1, x2) && equalTermStruct? (t1, t2)
+     | (QuotientPat  (x1, t1,      _),
+        QuotientPat  (x2, t2,      _)) -> equalPatternStruct? (x1, x2) && equalTermStruct? (t1, t2)
 
-     | (SortedPat   (x1, _,       _),
-        SortedPat   (x2, _,       _)) -> equalPatternStruct? (x1, x2)
+     | (RestrictedPat(x1, t1,      _),
+        RestrictedPat(x2, t2,      _)) -> equalPatternStruct? (x1, x2) && equalTermStruct? (t1, t2)
+
+     | (SortedPat    (x1, _,       _),
+        SortedPat    (x2, _,       _)) -> equalPatternStruct? (x1, x2)
 
      | _ -> false
 
@@ -1316,6 +1327,14 @@ MetaSlang qualifying spec
 	     pattern
 	   else
 	     QuotientPat (newPat, newTrm, a)
+			 
+	 | RestrictedPat (pat, trm, a) ->
+	   let newPat = mapRec pat in
+	   let newTrm = mapTerm tsp trm in
+	   if newPat = pat && newTrm = trm then
+	     pattern
+	   else
+	     RestrictedPat (newPat, newTrm, a)
 			 
 	 | SortedPat (pat, srt, a) ->
 	   let newPat = mapRec pat in
@@ -1771,29 +1790,32 @@ MetaSlang qualifying spec
      def replace pattern =
        case pattern of
 
-	 | AliasPat    (           p1,            p2, a) ->
-           AliasPat    (replaceRec p1, replaceRec p2, a)
+	 | AliasPat     (           p1,            p2, a) ->
+           AliasPat     (replaceRec p1, replaceRec p2, a)
 
-	 | VarPat      ((v,                 srt), a) ->
-	   VarPat      ((v, replaceSort tsp srt), a)
+	 | VarPat       ((v,                 srt), a) ->
+	   VarPat       ((v, replaceSort tsp srt), a)
 
-	 | EmbedPat    (id, Some             pat,                  srt, a) ->
-	   EmbedPat    (id, Some (replaceRec pat), replaceSort tsp srt, a)
+	 | EmbedPat     (id, Some             pat,                  srt, a) ->
+	   EmbedPat     (id, Some (replaceRec pat), replaceSort tsp srt, a)
 	   
-	 | EmbedPat    (id, None,                                  srt, a) ->
-	   EmbedPat    (id, None,                  replaceSort tsp srt, a)
+	 | EmbedPat     (id, None,                                  srt, a) ->
+	   EmbedPat     (id, None,                  replaceSort tsp srt, a)
 	   
-	 | RecordPat   (                                     fields, a) ->
-	   RecordPat   (map (fn (id,p)-> (id, replaceRec p)) fields, a)
+	 | RecordPat    (                                     fields, a) ->
+	   RecordPat    (map (fn (id,p)-> (id, replaceRec p)) fields, a)
 	   
-	 | WildPat     (                srt, a) ->
-	   WildPat     (replaceSort tsp srt, a)
+	 | WildPat      (                srt, a) ->
+	   WildPat      (replaceSort tsp srt, a)
 
-	 | RelaxPat    (           pat,                 trm, a) ->
-	   RelaxPat    (replaceRec pat, replaceTerm tsp trm, a)
+	 | RelaxPat     (           pat,                 trm, a) ->
+	   RelaxPat     (replaceRec pat, replaceTerm tsp trm, a)
 	   
-	 | QuotientPat (           pat,                 trm, a) ->
-	   QuotientPat (replaceRec pat, replaceTerm tsp trm, a)
+	 | QuotientPat  (           pat,                 trm, a) ->
+	   QuotientPat  (replaceRec pat, replaceTerm tsp trm, a)
+
+	 | RestrictedPat(           pat,                 trm, a) ->
+	   RestrictedPat(replaceRec pat, replaceTerm tsp trm, a)
 
        % | SortedPat ??
        % | BoolPat   ??
@@ -1926,20 +1948,21 @@ MetaSlang qualifying spec
 
      def appP (tsp, pat) =
        case pat of
-	 | AliasPat    (p1, p2,            _) -> (appRec p1; appRec p2)
-	 | VarPat      ((v, srt),          _) -> appSort tsp srt
-	 | EmbedPat    (id, Some pat, srt, _) -> (appRec pat; appSort tsp srt)
-	 | EmbedPat    (id, None, srt,     _) -> appSort tsp srt
-	 | RecordPat   (fields,            _) -> app (fn (id, p) -> appRec p) fields
-	 | WildPat     (srt,               _) -> appSort tsp srt
-	 | RelaxPat    (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
-	 | QuotientPat (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
+	 | AliasPat     (p1, p2,            _) -> (appRec p1; appRec p2)
+	 | VarPat       ((v, srt),          _) -> appSort tsp srt
+	 | EmbedPat     (id, Some pat, srt, _) -> (appRec pat; appSort tsp srt)
+	 | EmbedPat     (id, None, srt,     _) -> appSort tsp srt
+	 | RecordPat    (fields,            _) -> app (fn (id, p) -> appRec p) fields
+	 | WildPat      (srt,               _) -> appSort tsp srt
+	 | RelaxPat     (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
+	 | QuotientPat  (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
+	 | RestrictedPat(pat, trm,          _) -> (appRec pat; appTerm tsp trm)
         %| SortedPat ??
         %| BoolPat   ??
         %| NatPat    ??
 	%| StringPat ??
         %| CharPat   ??
-	 | _                                  -> ()
+	 | _                                   -> ()
 
      def appRec pat = (appP (tsp, pat); pattern_app pat)
 

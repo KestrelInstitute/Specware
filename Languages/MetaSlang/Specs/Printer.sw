@@ -267,10 +267,11 @@ AnnSpecPrinter qualifying spec
 
  def [a] singletonPattern (pat : APattern a) = 
    case pat of
-     | AliasPat    _ -> false
-     | RelaxPat    _ -> false
-     | QuotientPat _ -> false
-     | _             -> true
+     | AliasPat      _ -> false
+     | RelaxPat      _ -> false
+     | QuotientPat   _ -> false
+     | RestrictedPat _ -> false
+     | _               -> true
 
 
  def printLambda (context, path, marker, match) = 
@@ -901,6 +902,39 @@ AnnSpecPrinter qualifying spec
 			    (0, ppTerm    context ([1]++ path, Top)   term), 
 			    (0, string " "),
 			    (0, ppPattern context ([0]++ path, false) pat)]))
+
+     | RestrictedPat (pat, term, _) -> 
+       (case pat of
+	  | RecordPat (row, _) ->
+	    %% This probably isn't quite right as far as formatting the "|" term
+	    let def ppListPathPlus path f (left, sep, right) ps = 
+	          prettysNone ([left,
+			       prettysLinear (addSeparator sep 
+					      (mapWithIndex (fn (i, x) ->
+							     f (cons (i, path), x)) ps))]
+		               ++ [pp.Where,ppTerm context ([1]++ path, Top) term]
+			       ++ [right])
+	    in
+	    if isShortTuple (1, row) then
+	      ppListPathPlus path 
+	        (fn (path, (id, pat)) -> ppPattern context (path, true) pat) 
+		(pp.LP, pp.Comma, pp.RP) 
+		row
+	    else
+	      let 
+		def ppEntry (path, (id, pat)) = 
+		  blockFill (0, 
+			     [(0, prettysNone [pp.fromString id, string " ", pp.Equals, string " "]), 
+			      (2, 
+			       prettysFill [ppPattern context (path, true) pat])])
+	      in
+		ppListPathPlus path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
+	   | _ ->
+	     enclose (enclosed, 
+		      blockFill (0, 
+				 [(0, ppPattern context ([0]++ path, false) pat), 
+				  (0, string  " | "), 
+				  (0, ppTerm context ([1]++ path, Top) term)])))
 
      | _ -> System.fail "Uncovered case for pattern"
       

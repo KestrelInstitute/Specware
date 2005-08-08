@@ -204,6 +204,9 @@ spec
        | QuotientPat (p, t, a) ->
 	 QuotientPat (renamePattern c p, renameClosedTerm c t, a)
 
+       | RestrictedPat (p, t, a) ->
+	 RestrictedPat (renamePattern c p, renameClosedTerm c t, a)
+
        | _ -> p
 
 endspec

@@ -624,6 +624,7 @@ def patternNotSupported pat =
     | CharPat _ -> errmsg "char"
     | RelaxPat _ -> errmsg "relax"
     | QuotientPat _ -> errmsg "quotient"
+    | RestrictedPat _ -> errmsg "restricted pattern"
     | SortedPat _ -> errmsg "sorted"
     | _ -> errmsg "unknown"
 
@@ -645,6 +646,7 @@ def patternNotSupportedM pat =
     | CharPat _ -> errmsg "char"
     | RelaxPat _ -> errmsg "relax"
     | QuotientPat _ -> errmsg "quotient"
+    | RestrictedPat _ -> errmsg "restricted pattern"
     | SortedPat _ -> errmsg "sorted"
     | _ -> errmsg "unknown"
 

@@ -1227,18 +1227,23 @@ If we want the precedence to be optional:
    ))
 
 (define-sw-parser-rule :BRANCH ()
-  (:tuple (1 :PATTERN) "->" (2 :EXPRESSION))
+  (:tuple (1 :TOP-PATTERN) "->" (2 :EXPRESSION))
   (make-branch 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :NON-BRANCH-BRANCH () ; as above, but not ending with "| .. -> .."
   ;; i.e., a branch that doesn't end in a branch
-  (:tuple (1 :PATTERN) "->" (2 :NON-BRANCH-EXPRESSION))
+  (:tuple (1 :TOP-PATTERN) "->" (2 :NON-BRANCH-EXPRESSION))
   (make-branch 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  PATTERN
 ;;;  http://www.specware.org/manual/html/matchesandpatterns.html
 ;;; ========================================================================
+
+(define-sw-parser-rule :TOP-PATTERN ()
+  (:anyof
+   :PATTERN
+   :RESTRICTED-PATTERN))
 
 (define-sw-parser-rule :PATTERN ()
   (:anyof
@@ -1283,6 +1288,9 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :RELAX-PATTERN ()
   (:tuple "relax"    (1 :CLOSED-EXPRESSION) (2 :TIGHT-PATTERN))  (make-relax-pattern      1 2   ':left-lcb ':right-lcb) :documentation "Relax pattern")
+
+(define-sw-parser-rule :RESTRICTED-PATTERN ()
+  (:tuple (1 :TIGHT-PATTERN) "|" (2 :EXPRESSION))                (make-restricted-pattern 1 2   ':left-lcb ':right-lcb) :documentation "Restricted pattern")
 
 (define-sw-parser-rule :VARIABLE-PATTERN ()
   (1 :LOCAL-VARIABLE)                                            (make-variable-pattern   1     ':left-lcb ':right-lcb) :documentation "Variable pattern")

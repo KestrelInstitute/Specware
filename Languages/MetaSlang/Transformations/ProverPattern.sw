@@ -338,6 +338,7 @@ def removePatternCase(spc, term) =
       | CharPat(char, b) -> [mkChar(char)]
       | NatPat(nat, b) -> [mkNat(nat)]
       | WildPat(srt, _) -> [mkWildVar(srt)]
+      | RestrictedPat(p,_,_) -> patternToTerms p
       | _ -> fail("pattern not supported")
 
   op aliasPatternToTerms: Pattern -> List Term

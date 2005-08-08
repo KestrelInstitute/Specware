@@ -191,7 +191,10 @@ SpecCalc qualifying spec
      | (QuotientPat (x1, t1,      _),
         QuotientPat (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
 
-     | (SortedPat   (x1, t1,      _),
+     | (RestrictedPat (x1, t1,      _),
+        RestrictedPat (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
+
+      | (SortedPat   (x1, t1,      _),
         SortedPat   (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivSort? spc false (t1, t2)
 
      | _ -> false)

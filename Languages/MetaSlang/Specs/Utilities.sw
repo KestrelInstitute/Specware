@@ -48,6 +48,8 @@ Utilities qualifying spec
         | WildPat(srt,_) -> None
         | RelaxPat(pat,cond,_)     -> None %% Not implemented
         | QuotientPat(pat,cond,_)  -> None %% Not implemented
+        | RestrictedPat(pat,cond,_)  ->
+	  patternToTerm pat		% cond ??
 %	| AliasPat(VarPat(v, _),p,_) -> 
 %	  (case patternToTerm(p) 
 %             of None -> None
@@ -94,6 +96,7 @@ Utilities qualifying spec
      | RecordPat(fields,_)    -> exists (fn (_,p) -> isPatBound(v,p)) fields
      | RelaxPat(p,_,_)        -> isPatBound(v,p)
      | QuotientPat(p,_,_)     -> isPatBound(v,p)
+     | RestrictedPat(p,_,_)   -> isPatBound(v,p)
      | _ -> false
 
  op replace : MS.Term * List (MS.Term * MS.Term) -> MS.Term
@@ -190,7 +193,7 @@ Utilities qualifying spec
      ((id,s),sub,freeNames)
 
  def repPattern(pat,sub,freeNames) = 
-   case pat:Pattern
+   case pat
      of VarPat(v,a) ->
         let (v,sub,freeNames) = repBoundVar(v,sub,freeNames) in
 	(VarPat(v,a),sub,freeNames) 
@@ -217,6 +220,9 @@ Utilities qualifying spec
       | RelaxPat(pat,trm,a) -> 	
 	let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
 	(RelaxPat(pat,trm,a),sub,freeNames)
+      | RestrictedPat(pat,trm,a) -> 
+	let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
+	(RestrictedPat(pat,trm,a),sub,freeNames)
       | _ -> (pat,sub,freeNames)
 
 
@@ -299,6 +305,7 @@ Utilities qualifying spec
       | NatPat  _              -> []
       | RelaxPat(p,_,_)        -> patVars p
       | QuotientPat(p,_,_)     -> patVars p
+      | RestrictedPat(p,_,_)     -> patVars p
 
  op  getParams: Pattern -> List Pattern
  def getParams(pat:Pattern) = 
@@ -523,6 +530,9 @@ Utilities qualifying spec
       | RelaxPat(pat,trm,a) -> 	
 	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
 	(RelaxPat(pat,trm,a),sub,freeNames)
+      | RestrictedPat(pat,trm,a) -> 
+	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
+	(RestrictedPat(pat,trm,a),sub,freeNames)
       | _ -> 
 	(pat,sub,freeNames)
 
@@ -704,6 +714,10 @@ Utilities qualifying spec
 	QuotientPat(letRecToLetTermPattern(p),
 		    letRecToLetTermTerm(t),
 		    a)
+      | RestrictedPat(p,t,a) -> 
+	RestrictedPat(letRecToLetTermPattern(p),
+		      letRecToLetTermTerm(t),
+		      a)
       | _ -> pat
 
  op letRecToLetTermFun: Fun -> Fun
@@ -754,6 +768,7 @@ Utilities qualifying spec
 	       | QuotientPat(p,_,_) -> loopP(p,vs)
 	       | RelaxPat(p,_,_) -> loopP(p,vs)
 	       | AliasPat(p1,p2,_) -> loopP(p1,loopP(p2,vs))
+	       | RestrictedPat(p,_,_) -> loopP(p,vs)
 	       | _ -> vs
      in
      loopP(p,[])

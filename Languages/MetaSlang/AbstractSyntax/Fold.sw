@@ -63,6 +63,7 @@ spec {
        | EmbedPat (id, None, srt, a) -> foldSort tsp_folds acc srt
        | RelaxPat (pat, trm, a) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat
        | QuotientPat (pat, trm, a) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat
+       | RestrictedPat (pat, trm, a) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat
        | VarPat ((v, srt), a) -> foldSort tsp_folds acc srt
        | WildPat (srt, a) -> foldSort tsp_folds acc srt
        | RecordPat (fields, a) -> foldl (fn ((id, pat),acc) -> foldPattern tsp_folds acc pat) acc fields

@@ -609,6 +609,17 @@ SpecCalc qualifying spec
 	changed?,
 	listUnion (pat_op_names, tm_op_names))
 
+     | RestrictedPat (pat, tm, a) ->
+       let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec pat in
+       let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec tm  in
+       let changed? = pat_changed? || tm_changed? in
+       (if changed? then
+	  RestrictedPat (new_pat, new_tm, a)
+	else
+	  pattern,
+	changed?,
+	listUnion (pat_op_names, tm_op_names))
+
      | SortedPat (pat, srt, a) ->
        let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec  pat in
        let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in

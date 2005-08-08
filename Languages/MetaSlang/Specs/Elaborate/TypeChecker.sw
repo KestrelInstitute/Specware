@@ -1579,7 +1579,11 @@ TypeChecker qualifying spec
 					 type_bool, pos)) in
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, v, seenVars) in
 	(QuotientPat (pat, term, pos), env, seenVars)
-      | p -> (System.print p; System.fail "Nonexhaustive")
+      | RestrictedPat (pat, term, pos) ->
+	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort1, seenVars) in
+	let term = elaborateTerm (env, term,  type_bool) in
+	(RestrictedPat (pat, term, pos), env, seenVars)
+       | p -> (System.print p; System.fail "Nonexhaustive")
 
 
   % ========================================================================

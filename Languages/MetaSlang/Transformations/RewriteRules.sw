@@ -196,7 +196,7 @@ Extract rewrite rules from function definition.
         | (None,_) -> Some cond
 	| (Some cond1,_) -> Some (Utilities.mkAnd(cond1,cond))
 
- sort PatternToTermOut = 
+ type PatternToTermOut = 
       Option (MS.Term * List (Nat * Sort) * List (Var * MS.Term))
 
  op patternToTerm : 
@@ -239,6 +239,7 @@ Extract rewrite rules from function definition.
           Some(w,List.cons((num,srt),vars),S)
         | RelaxPat(pat,cond,_)     -> None %% Not implemented
         | QuotientPat(pat,cond,_)  -> None %% Not implemented
+        | RestrictedPat(pat,cond,_)  -> None %% Not implemented
 	| AliasPat(VarPat(v, _),p,_) -> 
 	  (case patternToTerm(context,p,vars,S) 
              of None -> None

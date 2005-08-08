@@ -27,8 +27,8 @@ spec
 \subsection{Sort declarations}
 
 \begin{spec} 
- sort Term = MS.Term
- sort Context = 
+ type Term = MS.Term
+ type Context = 
       { 
         spc         : Spec,
         trace 	    : Boolean,
@@ -59,10 +59,10 @@ spec
 % A substitution maps type variables to sorts and 
 % flexible variables to terms.
 
- sort Subst    = StringMap Sort * NatMap.Map MS.Term
- sort OptTerm  = Option MS.Term
+ type Subst    = StringMap Sort * NatMap.Map MS.Term
+ type OptTerm  = Option MS.Term
 
- sort Stack = {new : List (MS.Term * MS.Term), flex:  List (MS.Term * MS.Term)}
+ type Stack = {new : List (MS.Term * MS.Term), flex:  List (MS.Term * MS.Term)}
 
 \end{spec}
 
@@ -210,7 +210,7 @@ $\beta$ contraction.
 	      | DontKnow -> None)
 	| _ :: rules -> None
 
- sort MatchResult = | Match (List (Var * MS.Term)) | NoMatch | DontKnow
+ type MatchResult = | Match (List (Var * MS.Term)) | NoMatch | DontKnow
 
  op  patternMatch : Pattern * MS.Term * List (Var * MS.Term) -> MatchResult 
 
@@ -829,6 +829,8 @@ N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau
 	    if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
 	  | (QuotientPat(p1,t1,_),QuotientPat(p2,t2,_)) -> 
 	    if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
+	  | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) -> 
+	    if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
 	  | _ -> 
 	     case matchIrefutablePattern(context,pat1,S1)
 	       of None -> None
@@ -975,7 +977,7 @@ skolemization transforms a proper matching problem into an inproper one.
 
   op unifySorts : Context * Subst * Sort * Sort -> Option Subst
 
-  sort Unification = 
+  type Unification = 
     | NotUnify  Sort * Sort 
     | Unify     Subst 
 

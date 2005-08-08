@@ -486,6 +486,10 @@ spec
        let (gamma,trm) = bindPattern(gamma,p,tau1)
        in
        (gamma,mkApply(mkFun(Quotient,mkArrow(tau1,tau)),trm))
+     | RestrictedPat(p,pred,_) 	-> 
+       let (gamma,trm) = bindPattern(gamma,p,tau) in
+       let gamma = assertCond(pred,gamma) in
+       (gamma,trm)
 
 %% Well-foundedness condition
 

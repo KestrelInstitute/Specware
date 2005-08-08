@@ -659,6 +659,10 @@ def p2mPattern (spc, modifyConstructors?, pat, minfo) =
       let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
       let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
       (QuotientPat (pat, t, b), minfo)
+    | RestrictedPat (pat, t, b) ->
+      let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
+      let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
+      (RestrictedPat (pat, t, b), minfo)
     | SortedPat (pat, s, b) ->
       let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
       let (s, minfo) = p2mSort (spc, modifyConstructors?, s, minfo) in
@@ -1067,15 +1071,16 @@ def addMissingFromPattern (bspc, spc, ignore, pat, minfo) =
   let def ams (s, minfo) = addMissingFromSort (bspc, spc, ignore, s, minfo) in
   let def amp (p, minfo) = addMissingFromPattern (bspc, spc, ignore, p, minfo) in
   case pat of
-    | AliasPat   (p1, p2,       _) -> amp (p2, amp (p1, minfo))
-    | VarPat     ((_, srt),     _) -> ams (srt, minfo)
-    | EmbedPat   (_, Some p, s, _) -> amp (p, ams (s, minfo))
-    | EmbedPat   (_, None,   s, _) -> ams (s, minfo)
-    | RecordPat  (fields,       _) -> foldl (fn ((_, p), minfo) -> amp (p, minfo)) minfo fields
-    | WildPat    (s,            _) -> ams (s, minfo)
-    | RelaxPat   (p, t,         _) -> amp (p, amt (t, minfo))
-    | QuotientPat (p, t,         _) -> amp (p, amt (t, minfo))
-    | SortedPat  (p, s,         _) -> amp (p, ams (s, minfo))
+    | AliasPat     (p1, p2,       _) -> amp (p2, amp (p1, minfo))
+    | VarPat       ((_, srt),     _) -> ams (srt, minfo)
+    | EmbedPat     (_, Some p, s, _) -> amp (p, ams (s, minfo))
+    | EmbedPat     (_, None,   s, _) -> ams (s, minfo)
+    | RecordPat    (fields,       _) -> foldl (fn ((_, p), minfo) -> amp (p, minfo)) minfo fields
+    | WildPat      (s,            _) -> ams (s, minfo)
+    | RelaxPat     (p, t,         _) -> amp (p, amt (t, minfo))
+    | QuotientPat  (p, t,         _) -> amp (p, amt (t, minfo))
+    | RestrictedPat(p, t,         _) -> amp (p, amt (t, minfo))
+    | SortedPat    (p, s,         _) -> amp (p, ams (s, minfo))
     | _ -> minfo
 
 %--------------------------------------------------------------------------------
