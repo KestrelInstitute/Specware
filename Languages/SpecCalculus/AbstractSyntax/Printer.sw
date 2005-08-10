@@ -374,7 +374,10 @@ SpecCalc qualifying spec
 	      ppAOpDefs (aliases, defs)]
 
   op ppAOpDecl : [a] Aliases * Fixity * List (ATerm a) -> Doc
- def ppAOpDecl (aliases, fixity, dfn :: _) =
+ def ppAOpDecl (aliases, fixity, dfns) =
+   case dfns of
+     | [] -> ppNil
+     | dfn::_ ->
    let (tvs, srt, _) = unpackTerm dfn in
    ppConcat [ppString "op ",
 	     ppIdInfo aliases,
