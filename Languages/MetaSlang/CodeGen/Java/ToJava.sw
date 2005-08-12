@@ -315,7 +315,7 @@ def mkAssertFromDomM dom =
 op mkPrimArgsMethodBodyM: JGen.Term -> JGenEnv Block
 def mkPrimArgsMethodBodyM body =
   {
-   (b,_,_) <- termToExpressionRetM(empty,body,1,1);
+   (b,_,_) <- termToExpressionRetM(empty,body,1,1,false);
    return b
   }
 
@@ -363,7 +363,7 @@ def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
    case split of
      | Some(vars1,varh,vars2) ->
        (case parseCoProductCase body of
-	  | Some(case_term as Var(var,_),cases,opt_other) ->
+	  | Some(case_term as Var(var,_),cases,opt_other,false) ->
 	    if equalVar?(varh, var) then
 	      addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, cases, opt_other, case_term)
 	    else
@@ -494,7 +494,7 @@ def mkNonCaseMethodBodyM(vId, body) =
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
   let tcx = StringMap.insert(empty, vId, thisExpr) in
   {
-   (b, k, l) <- termToExpressionRetM(tcx, body, 1, 1);
+   (b, k, l) <- termToExpressionRetM(tcx, body, 1, 1, false);
    return b
   }
 
@@ -564,7 +564,7 @@ def addSumMethDeclToClsDeclsM(opId, srthId, case_term, id, cb, methodDecl) =
       let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
       let tcx = foldr (fn(vid,tcx) -> StringMap.insert(tcx,vid,thisExpr)) empty vids in
       {
-       (jbody, k, l) <- termToExpressionRetM(tcx, cb, 1, 1);
+       (jbody, k, l) <- termToExpressionRetM(tcx, cb, 1, 1, false);
        newMethDecl <- return(appendMethodBody(methodDecl,jbody));
        addMethDeclToClsDeclsM(opId,classid,newMethDecl)
       }

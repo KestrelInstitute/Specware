@@ -854,7 +854,7 @@ def mkVarInit(vId, srtId, jInit) =
 
 op mkIfStmt: Java.Expr * Block * Block -> BlockStmt
 def mkIfStmt(jT0, b1, b2) =
-  Stmt (If (jT0, Block (b1), Some (Block (b2))))
+  Stmt (If (jT0, Block (b1), if b2 = [] then None else Some (Block (b2))))
 
 op mkReturnStmt: Java.Expr -> Stmt
 def mkReturnStmt(expr) =

@@ -89,7 +89,7 @@ spec
 		   };
 	      return (concat(block0,locvdecl),tcx2)
 	     }) ([],tcx) freeVars;
-      (s,_,_) <- termToExpressionRetM(tcx0,body,1,1);
+      (s,_,_) <- termToExpressionRetM(tcx0,body,1,1,false);
       parNames <- return(mkParamsFromPattern pat);
       (_,e,_,_) <- standAloneFromSortWithParNamesM(Block s,termSrt,parNames,k,l);
       return(block,e,k,l)

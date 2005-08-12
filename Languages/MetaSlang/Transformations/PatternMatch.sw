@@ -63,6 +63,7 @@
 
 PatternMatch qualifying spec
   import ArityNormalize
+  import Simplify
    
   % import MetaSlangPrint	% imported by ArityNormalize
 
@@ -840,7 +841,15 @@ def eliminateTerm context term =
 		  (case simpRec(y,t2) of
 		    | Some ny -> Some(IfThenElse(p,sx,ny,pos))
 		    | None -> None)
-		| None -> None)
+		| None ->
+	      if simpleSuccTerm? t2
+		then case simpRec(x,t2) of
+		      | Some sx ->
+		        (case simpRec(y,t2) of
+			   | Some ny -> Some(IfThenElse(p,sx,ny,pos))
+			   | None -> None)
+		      | None -> None
+		else None)
 	   | Fun(Op(Qualified("TranslationBuiltIn","mkBreak"),_),_,_) -> simpSuccess t2
 	   | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkSuccess"),_),_,_),st1,_) ->
 	     Some st1			% t2 is unreachable
@@ -851,7 +860,7 @@ def eliminateTerm context term =
 	   | Apply(Fun(Op(Qualified("TranslationBuiltIn","failWith"),_),_,_),
 		   Record ([("1",st1),("2",ft2)],_),_) ->
 	     (case simpRec(ft2,t2) of
-	       | Some nft2 -> simpRec(st1,nft2)
+	       | Some nft2 -> simpRec(st1,simpLet nft2)
 	       | None -> None)
 	   | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkFail"),_),_,_),_,_) -> Some t1
 	   | _ -> None
@@ -871,7 +880,7 @@ def eliminateTerm context term =
    case t of
      | Apply(Fun(Op(Qualified("TranslationBuiltIn","failWith"),_),_,_),
 	     Record ([("1",t1),("2",t2)],_),_) ->
-       simpRec(t1,t2)
+       simpRec(t1,simpLet t2)
      | _ -> None
      
  op  simpLamBody: MS.Term -> MS.Term
@@ -880,6 +889,27 @@ def eliminateTerm context term =
      | Lambda([(pat,c,Apply(Lambda([(VarPat(v,_),_,body)],_),wVar as (Var(w,_)),_))],pos) ->
        Lambda([(pat,c,substitute(body,[(v,wVar)]))],pos)
      | _ -> t
+
+ op  simpLet: MS.Term -> MS.Term
+ def simpLet t =
+   case t of
+     | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkSuccess"),a1),t1,a2),st1,a3) ->
+       Apply(Fun(Op(Qualified("TranslationBuiltIn","mkSuccess"),a1),t1,a2),simpLet st1,a3)
+     | Let([(VarPat (id,_),e)],body,_) ->
+       (case countVarRefs(body,id)
+	  of 0 -> if sideEffectFree e then body else t
+	   | _ -> t)
+     | _ -> t
+
+ op  simpleSuccTerm?: MS.Term -> Boolean
+ def simpleSuccTerm? t =
+   case t of
+     | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkSuccess"),_),_,_),st1,_) ->
+       simpleSuccTerm? st1
+     | Var _ -> true
+     | Fun _ -> true
+     | Record([],_) -> true
+     | _ -> false
 
 %- -------------------------------------Ø-------------------------------------------
 %- checks whether Record is a Product or a user-level Record

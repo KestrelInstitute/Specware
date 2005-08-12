@@ -22,34 +22,45 @@ def translateMatchJava spc =
 	   id,id)
     spc
 
-op  parseCoProductCase: MS.Term -> Option(MS.Term * List (Id * MS.Term) * Option MS.Term)
+op  parseCoProductCase: MS.Term -> Option(MS.Term * List (Id * MS.Term) * Option MS.Term * Boolean)
 
 def parseCoProductCase term =
-  let def makeCases(id,case_tm,then_exp,els_exp) =
+  let def makeCases(id,case_tm,then_exp,els_exp,block?) =
         let def parseRest t =
 	      case t of
 		| IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm1,_),
 			     then_exp,els_exp, _)  ->
 		  if equalTerm?(case_tm,case_tm1)
 		    then let (cases,otherwise_tm) = parseRest els_exp in
-			 (Cons((id,then_exp),cases),otherwise_tm)
-		    else ([],Some t)
+			 (Cons((id,simpSuccess (then_exp,block?)),cases),otherwise_tm)
+		    else ([],Some (simpSuccess (t,block?)))
 		| Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"), _), _, _) ->
 		  ([],None)		% No otherwise case
-		| _ -> ([],Some t)
+		| _ -> ([],Some (simpSuccess(t,block?)))
 	in
 	let (cases,otherwise_tm) = parseRest els_exp in
-	Some(case_tm,Cons((id,then_exp),cases),otherwise_tm)
+	Some(case_tm,Cons((id,then_exp),cases),otherwise_tm,block?)
+      def simpSuccess (tm,block?) =
+	if block?
+	  then case tm of
+	         | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"), _), _, _), s_tm,_) ->
+	           s_tm
+		 | IfThenElse(p,x,y,a) ->
+		   IfThenElse(p,simpSuccess(x,block?),y,a)
+		 | _ -> tm
+	  else tm
   in
   case term of
     | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "block"), _), _, _),
-	      Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"), _), _, _),
-		     IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm,_),
-				then_exp, els_exp, _), _), _) ->
-      makeCases(id,case_tm,then_exp,els_exp)
+	     Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"), _), _, _),
+		    Record([("1",IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm,_),
+					    then_exp, els_exp, _)),
+			    ("2",default)],_) , _), _)
+      ->
+      makeCases(id,case_tm,then_exp,simpSuccess(default,true),true)
     | IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm,_),
 		 then_exp, els_exp, _) ->
-      makeCases(id,case_tm,then_exp,els_exp)      
+      makeCases(id,case_tm,then_exp,els_exp,false)      
     | _ -> None
 
 %op  coProductCase?: Term * Boolean -> Boolean

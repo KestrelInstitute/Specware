@@ -3,7 +3,7 @@ spec
 
 import ToJavaBase
 
-sort Term = JGen.Term
+type Term = JGen.Term
 
 % defined in ToJavaHO
 op translateLambdaToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
@@ -43,8 +43,8 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
      | None -> 
        %let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
    case parseCoProductCase term of
-     | Some(case_term,cases,opt_other) ->
-       translateCaseToExprM(tcx, case_term, cases, opt_other, k, l)
+     | Some(case_term,cases,opt_other,block?) ->
+       translateCaseToExprM(tcx, case_term, cases, opt_other, k, l, block?)
      | None ->
        case term of
 	 | SortedTerm(t,_,_) -> termToExpressionM(tcx,t,k,l)
@@ -504,8 +504,8 @@ def translateLetToExprM(tcx, term as Let (letBindings, letBody, _), k, l) =
     return (b0++b1, jLetBody, k1, l1)
    }
 
-op translateLetRetM: TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
-def translateLetRetM(tcx, term as Let (letBindings, letBody, _), k, l) =
+op translateLetRetM: TCx * Term * Nat * Nat * Boolean -> JGenEnv (Block * Nat * Nat)
+def translateLetRetM(tcx, term as Let (letBindings, letBody, _), k, l, break?) =
   {
    spc <- getEnvSpec;
    (b0, k0, l0) <-
@@ -522,13 +522,13 @@ def translateLetRetM(tcx, term as Let (letBindings, letBody, _), k, l) =
 	      | _ -> patternNotSupportedM bind_pr.1)
        ([],k,l)
        letBindings;
-    (b1, k1, l1) <- termToExpressionRetM(tcx, letBody, k0, l0);
+    (b1, k1, l1) <- termToExpressionRetM(tcx, letBody, k0, l0, break?);
     return (b0++b1, k1, l1)
    }
 
-op translateCaseToExprM: TCx * Term * List(Id * Term) * Option Term * Nat * Nat
+op translateCaseToExprM: TCx * Term * List(Id * Term) * Option Term * Nat * Nat * Boolean
                         -> JGenEnv (Block * Java.Expr * Nat * Nat)
-def translateCaseToExprM(tcx, case_term, cases, opt_other, k, l) =
+def translateCaseToExprM(tcx, case_term, cases, opt_other, k, l, block?) =
   {
    spc <- getEnvSpec;
    case_term_Type <- return(inferTypeFoldRecords(spc,case_term));
@@ -543,11 +543,13 @@ def translateCaseToExprM(tcx, case_term, cases, opt_other, k, l) =
 	    return (caseTermBlock, mkVarJavaExpr(tgt), k0, l0)
 	   };
     cres <- return(mkCres l);
+    cresSrt <- srtIdM(inferTypeFoldRecords(spc,(hd cases).2));
+    cresDecl <- return(mkVarDecl(cres,cresSrt));
     (casesSwitches, finalK, finalL)
       <- translateCaseCasesToSwitchesM(tcx, case_term_Type, caseTermJExpr, cres, cases, opt_other, k0, l0, l);
     switchStatement <- return(Stmt (Switch (caseTermJExpr, casesSwitches)));
     cresJavaExpr <- return(mkVarJavaExpr cres);
-    return (caseTermBlock++[switchStatement], cresJavaExpr, finalK, finalL)
+    return (caseTermBlock++[cresDecl]++[switchStatement], cresJavaExpr, finalK, finalL)
    }
 
 op getVarsPattern: Option Pattern -> List Id * Boolean
@@ -591,7 +593,7 @@ def translateCaseCasesToSwitchesM(tcx, coSrt, caseExpr, cres, cases, opt_other, 
 	    (case opt_other of
 	       | Some other_tm ->
 		 {
-		  (caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr);
+		  (caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr, true);
 		  let switchLab = Default in
 		  let switchElement = ([switchLab],caseBlock) in
 		  return ([switchElement],newK,newL)
@@ -695,25 +697,25 @@ def translateTermsToExpressionsM(tcx, terms, k, l) =
        return (newBody++restBody, cons(jTerm, restJTerms), restK, restL)
       }
 
-op termToExpressionRetM: TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
-def termToExpressionRetM(tcx, term, k, l) =
+op termToExpressionRetM: TCx * Term * Nat * Nat * Boolean -> JGenEnv (Block * Nat * Nat)
+def termToExpressionRetM(tcx, term, k, l, break?) =
 %  if caseTerm?(term)
 %    then translateCaseRetM(tcx, term, k, l)
 %  else
   case parseCoProductCase term of
-    | Some(case_term,cases,opt_other) ->
-      translateCaseRetM(tcx, case_term, cases, opt_other, k, l)
+    | Some(case_term,cases,opt_other,block?) ->
+      translateCaseRetM(tcx, case_term, cases, opt_other, k, l, break?, block?)
     | None ->
   case term of
-    | IfThenElse _ -> translateIfThenElseRetM(tcx, term, k, l)
-    | Let _ -> translateLetRetM(tcx,term,k,l)
+    | IfThenElse _ -> translateIfThenElseRetM(tcx, term, k, l, break?)
+    | Let _ -> translateLetRetM(tcx,term,k,l,break?)
     | Record ([],_) -> return ([Stmt(Return None)],k,l)
-    | Seq([t],_) -> termToExpressionRetM(tcx,t,k,l)
+    | Seq([t],_) -> termToExpressionRetM(tcx,t,k,l,break?)
     | Seq(t1::terms,b) ->
       {
        (s1,expr,k,l) <- termToExpressionM(tcx,t1,k,l);
        s2 <- return [Stmt(Expr(expr))];
-       (s3,k,l) <- termToExpressionRetM(tcx,Seq(terms,b),k,l);
+       (s3,k,l) <- termToExpressionRetM(tcx,Seq(terms,b),k,l,break?);
        return (s1++s2++s3,k,l)
       }
     | Apply(Fun(Op(Qualified("System","fail"),_),_,_),t,_) ->
@@ -725,6 +727,24 @@ def termToExpressionRetM(tcx, term, k, l) =
        block <- return [Stmt throwStmt];
        return (block,k,l)
       }
+    | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "block"), _), _, _),
+	     Apply(Fun(Op(Qualified("TranslationBuiltIn","failWith"),_),_,_),
+		   Record([("1",condStat), ("2",default)],_),_),_) ->
+      %% Generated by pattern match compiler (constructor case handled above)
+      {
+       (s1,k,l) <- termToExpressionRetM(tcx, condStat, k, l, break?);
+       (s2,k,l) <- termToExpressionRetM(tcx, default, k, l, break?);
+       return (s1++s2,k,l)
+       }
+    | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkSuccess"),_),_,_),t,_) ->
+      %% Generated by pattern match compiler
+      termToExpressionRetM(tcx, t, k, l, break?)
+    | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkBreak"),_),_,_),t,_) ->
+      %% Generated by pattern match compiler
+      return (if break? then [Stmt(Break None)] else [],k,l)
+    | Fun(Op(Qualified("TranslationBuiltIn","mkBreak"),_),_,_) ->
+      %% Generated by pattern match compiler
+      return (if break? then [Stmt(Break None)] else [],k,l)
     | Apply(Fun(Op(Qualified("TranslationBuiltIn","mkFail"),_),_,_),t,_) ->
       %% Generated by pattern match compiler
       let def mkPrim p = CondExp(Un(Prim p),None) in
@@ -749,20 +769,21 @@ def termToExpressionRetM(tcx, term, k, l) =
 
 % --------------------------------------------------------------------------------
 
-op translateIfThenElseRetM: TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
-def translateIfThenElseRetM(tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
+op translateIfThenElseRetM: TCx * Term * Nat * Nat * Boolean -> JGenEnv (Block * Nat * Nat)
+def translateIfThenElseRetM(tcx, term as IfThenElse(t0, t1, t2, _), k, l, break?) =
   {
    (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
-   (b1, k1, l1) <- termToExpressionRetM(tcx, t1, k0, l0);
-   (b2, k2, l2) <- termToExpressionRetM(tcx, t2, k1, l1);
+   (b1, k1, l1) <- termToExpressionRetM(tcx, t1, k0, l0, break?);
+   (b2, k2, l2) <- termToExpressionRetM(tcx, t2, k1, l1, break?);
    let ifStmt = mkIfStmt(jT0, b1, b2) in
    return (b0++[ifStmt], k2, l2)
   }
 
 % --------------------------------------------------------------------------------
 
-op translateCaseRetM: TCx * Term * List(Id * Term) * Option Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
-def translateCaseRetM(tcx, case_term, cases, opt_other, k, l) =
+op translateCaseRetM: TCx * Term * List(Id * Term) * Option Term * Nat * Nat * Boolean * Boolean 
+                    -> JGenEnv (Block * Nat * Nat)
+def translateCaseRetM(tcx, case_term, cases, opt_other, k, l, break?, block?) =
   {
    spc <- getEnvSpec;
    case_term_Type <- return(inferTypeFoldRecords(spc,case_term));
@@ -779,7 +800,7 @@ def translateCaseRetM(tcx, case_term, cases, opt_other, k, l) =
 	     return (caseTermBlock, mkVarJavaExpr(tgt), k0, l0)
 	    };
    (casesSwitches, finalK, finalL)
-      <- translateCaseCasesToSwitchesRetM(tcx, case_term_Type, caseTermJExpr, cases, opt_other, k0, l0, l);
+      <- translateCaseCasesToSwitchesRetM(tcx, case_term_Type, caseTermJExpr, cases, opt_other, break?, k0, l0, l);
    switchStatement <- return(Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)));
    return(caseTermBlock++[switchStatement], finalK, finalL)
   }
@@ -809,15 +830,15 @@ def insertCast(typeId,cons,caseExpr) caseBlock =
   }
 % ----------------------------------------
 
-op translateCaseCasesToSwitchesRetM: TCx * Sort * Java.Expr * List(Id * Term) * Option Term * Nat * Nat * Nat
+op translateCaseCasesToSwitchesRetM: TCx * Sort * Java.Expr * List(Id * Term) * Option Term * Boolean * Nat * Nat * Nat
                                     -> JGenEnv (SwitchBlock * Nat * Nat)
-def translateCaseCasesToSwitchesRetM(tcx, coSrt, caseExpr, cases, opt_other, k0, l0, l) =
+def translateCaseCasesToSwitchesRetM(tcx, coSrt, caseExpr, cases, opt_other, break?, k0, l0, l) =
   let def translateCaseCaseToSwitch((cons,body), ks, ls) =
         {
 	 spc <- getEnvSpec;
 	 coSrt <- return(unfoldToSubsort(spc,coSrt));
 	 caseType <- srtIdM coSrt;
-	 (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	 (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls, true);
 	 caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
 	 let tagId = mkTagCId cons in
 	 let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
@@ -831,12 +852,14 @@ def translateCaseCasesToSwitchesRetM(tcx, coSrt, caseExpr, cases, opt_other, k0,
 	     (case opt_other of
 	        | Some other_tm ->
 		  {
-		   (caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr);
+		   (caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr, true);
 		   let switchLab = Default in
 		   let switchElement = ([switchLab],caseBlock) in
 		   return ([switchElement],newK,newL)
 		  }
-	        | _ -> return(mkDefaultCase(), kr, lr))
+	        | _ -> return(if break? then [([Default],[Stmt(Break None)])]
+			        else mkDefaultCase(),
+			      kr, lr))
 	   | hdCase::restCases ->
 	     {
 	      (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
@@ -851,8 +874,8 @@ def translateCaseCasesToSwitchesRetM(tcx, coSrt, caseExpr, cases, opt_other, k0,
 op termToExpressionAsgNVM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 def termToExpressionAsgNVM(srtId, vId, tcx, term, k, l) =
   case parseCoProductCase term of
-    | Some(case_term,cases,opt_other) ->
-      translateCaseAsgNVM(srtId, vId, tcx, case_term, cases, opt_other, k, l)
+    | Some(case_term,cases,opt_other,block?) ->
+      translateCaseAsgNVM(srtId, vId, tcx, case_term, cases, opt_other, k, l,block?)
     | None ->
   case term of
     | IfThenElse _ -> translateIfThenElseAsgNVM(srtId, vId, tcx, term, k, l)
@@ -874,9 +897,9 @@ def translateIfThenElseAsgNVM(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _)
    return ([varDecl]++b0++[ifStmt], k2, l2)
   }
 
-op translateCaseAsgNVM: Id * Id * TCx * Term * List(Id * Term) * Option Term * Nat * Nat
+op translateCaseAsgNVM: Id * Id * TCx * Term * List(Id * Term) * Option Term * Nat * Nat * Boolean
                        -> JGenEnv (Block * Nat * Nat)
-def translateCaseAsgNVM(vSrtId, vId, tcx, case_term, cases, opt_other, k, l) =
+def translateCaseAsgNVM(vSrtId, vId, tcx, case_term, cases, opt_other, k, l, block?) =
   {
    spc <- getEnvSpec;
    case_term_Type <- return(inferTypeFoldRecords(spc,case_term));
@@ -919,7 +942,7 @@ def translateCaseCasesToSwitchesAsgNVM(oldVId, tcx, coSrt, caseExpr, cases, opt_
 	     (case opt_other of
 	       | Some other_tm ->
 		 {
-		  (caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr);
+		  (caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr, true);
 		  let switchLab = Default in
 		  let switchElement = ([switchLab],caseBlock) in
 		  return ([switchElement],newK,newL)
@@ -937,8 +960,8 @@ def translateCaseCasesToSwitchesAsgNVM(oldVId, tcx, coSrt, caseExpr, cases, opt_
 op termToExpressionAsgVM: Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 def termToExpressionAsgVM(vId, tcx, term, k, l) =
   case parseCoProductCase term of
-    | Some(case_term,cases,opt_other) ->
-      translateCaseAsgVM(vId, tcx, case_term, cases, opt_other, k, l)
+    | Some(case_term,cases,opt_other,block?) ->
+      translateCaseAsgVM(vId, tcx, case_term, cases, opt_other, k, l, block?)
     | None ->
   case term of
     | IfThenElse _ -> translateIfThenElseAsgVM(vId, tcx, term, k, l)
@@ -959,9 +982,9 @@ def translateIfThenElseAsgVM(vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) 
    return (b0++[ifStmt], k2, l2)
   }
 
-op translateCaseAsgVM: Id * TCx * Term * List(Id * Term) * Option Term * Nat * Nat
+op translateCaseAsgVM: Id * TCx * Term * List(Id * Term) * Option Term * Nat * Nat * Boolean
                        -> JGenEnv (Block * Nat * Nat)
-def translateCaseAsgVM(vId, tcx, case_term, cases, opt_other, k, l) =
+def translateCaseAsgVM(vId, tcx, case_term, cases, opt_other, k, l, block?) =
   {
    spc <- getEnvSpec;
    case_term_Type <- return(inferTypeFoldRecords(spc,case_term));
@@ -1005,7 +1028,7 @@ def translateCaseCasesToSwitchesAsgVM(oldVId, tcx, coSrt, caseExpr, cases, opt_o
 	  (case opt_other of
 	     | Some other_tm ->
 	       {
-		(caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr);
+		(caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr, true);
 		let switchLab = Default in
 		let switchElement = ([switchLab],caseBlock) in
 		return ([switchElement],newK,newL)
@@ -1024,8 +1047,8 @@ def translateCaseCasesToSwitchesAsgVM(oldVId, tcx, coSrt, caseExpr, cases, opt_o
 op termToExpressionAsgFM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 def termToExpressionAsgFM(cId, fId, tcx, term, k, l) =
   case parseCoProductCase term of
-    | Some(case_term,cases,opt_other) ->
-      translateCaseAsgFM(cId, fId, tcx, case_term,cases,opt_other, k, l)
+    | Some(case_term,cases,opt_other,block?) ->
+      translateCaseAsgFM(cId, fId, tcx, case_term,cases,opt_other, k, l, block?)
     | None ->
   case term of
     | IfThenElse _ -> translateIfThenElseAsgFM(cId, fId, tcx, term, k, l)
@@ -1046,8 +1069,9 @@ def translateIfThenElseAsgFM(cId, fId, tcx, term as IfThenElse(t0, t1, t2, _), k
    return (b0++[ifStmt], k2, l2)
   }
 
-op translateCaseAsgFM: Id * Id * TCx * Term * List(Id * Term) * Option Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
-def translateCaseAsgFM(cId, fId, tcx, case_term, cases, opt_other, k, l) =
+op translateCaseAsgFM: Id * Id * TCx * Term * List(Id * Term) * Option Term * Nat * Nat * Boolean
+                       -> JGenEnv (Block * Nat * Nat)
+def translateCaseAsgFM(cId, fId, tcx, case_term, cases, opt_other, k, l, block?) =
   {
    spc <- getEnvSpec;
    case_term_Type <- return(inferTypeFoldRecords(spc,case_term));
@@ -1089,7 +1113,7 @@ def translateCaseCasesToSwitchesAsgFM(cId, fId, tcx, coSrt, caseExpr, cases, opt
 	     (case opt_other of
 	        | Some other_tm ->
 		  {
-		   (caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr);
+		   (caseBlock, newK, newL) <- termToExpressionRetM(tcx, other_tm, kr, lr, true);
 		   let switchLab = Default in
 		   let switchElement = ([switchLab],caseBlock) in
 		   return ([switchElement],newK,newL)
