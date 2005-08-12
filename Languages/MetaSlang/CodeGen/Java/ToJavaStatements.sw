@@ -547,7 +547,7 @@ def translateCaseToExprM(tcx, case_term, cases, opt_other, k, l, block?) =
     cresDecl <- return(mkVarDecl(cres,cresSrt));
     (casesSwitches, finalK, finalL)
       <- translateCaseCasesToSwitchesM(tcx, case_term_Type, caseTermJExpr, cres, cases, opt_other, k0, l0, l);
-    switchStatement <- return(Stmt (Switch (caseTermJExpr, casesSwitches)));
+    switchStatement <- return(Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)));
     cresJavaExpr <- return(mkVarJavaExpr cres);
     return (caseTermBlock++[cresDecl]++[switchStatement], cresJavaExpr, finalK, finalL)
    }
