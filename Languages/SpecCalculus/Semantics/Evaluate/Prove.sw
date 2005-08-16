@@ -419,12 +419,13 @@ SpecCalc qualifying spec
    
    Lisp.list
    [Lisp.list([Lisp.symbol("SNARK","INITIALIZE")]),
-    Lisp.list([Lisp.symbol("SNARK","RUN-TIME-LIMIT"), Lisp.nat(20)]),
+    Lisp.list([Lisp.symbol("SNARK","RUN-TIME-LIMIT"), Lisp.nat(10)]),
     Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]),
     Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-SORTS"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-PARAMODULATION"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-CONDITIONAL-ANSWER-CREATION"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-WELL-SORTING"), Lisp.bool(false)])]
    Lisp.++ (Lisp.list snarkSortDecl)
