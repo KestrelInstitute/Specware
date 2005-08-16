@@ -220,11 +220,7 @@ spec
 	 substitute(body,[(v,wVar)])
        %% Normalize simple lambda application to let
        | Apply(Lambda([(VarPat vp,_,body)],_),t,pos) ->
-	 Let([(VarPat vp,t)],body,pos)
-       %% Do equivalent for apply lambda
-       %% case y of x -> f x  -->  f y
-%       | Apply(Lambda([(VarPat(v,_),_,body)],_),wVar as (Var(w,_)),_) ->
-%	 substitute(body,[(v,wVar)])
+	 simplifyOne spc (Let([(VarPat vp,t)],body,pos))
        %% case y of _ -> z  -->  z if y side-effect free
        | Apply(Lambda([(WildPat(_,_),_,body)],_),tm,_) ->
 	 if sideEffectFree tm then body else term
