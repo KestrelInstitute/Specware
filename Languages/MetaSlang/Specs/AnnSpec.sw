@@ -78,9 +78,9 @@ AnnSpec qualifying spec
  op  sameSpecElement?: [a] ASpecElement a * ASpecElement a -> Boolean
  def sameSpecElement? (e1, e2) =
    case e1 of
-     | Import (_, s1, _) ->
+     | Import (s1_tm, s1, _) ->
        (case e2 of
-	  | Import (_, s2, _) -> s1 = s2
+	  | Import (s2_tm, s2, _) -> sameSCTerm? (s1_tm, s2_tm) 
 	  | _ -> false)
      | Property p1 ->
        (case e2 of
