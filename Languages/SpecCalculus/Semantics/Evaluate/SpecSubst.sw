@@ -10,6 +10,7 @@ SpecCalc qualifying spec
 
   op  applySpecMorphismSubstitution  : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
   def applySpecMorphismSubstitution sm original_spec sm_tm term_pos =
+    if sm.dom = original_spec then return sm.cod else
     let sub_spec             = SpecCalc.dom sm                     in
     let should_be_empty_spec = subtractSpec sub_spec original_spec in
     let sorts_msg            = printNamesInAQualifierMap should_be_empty_spec.sorts in
