@@ -25,14 +25,18 @@ type Type = JGen.Type
 %op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (Block * Java.Expr)
 def JGen.metaSlangTermToJavaExpr term =
   {
-   (block,expr,_,_) <- termToExpressionM(empty,term,0,0);
+   cres_counter <- getCresCounter;
+   (block,expr,_,new_counter) <- termToExpressionM(empty,term,0,cres_counter);
+   setCresCounter new_counter;
    return (block,expr)
   }
 
 %op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (Block * List Java.Expr)
 def JGen.metaSlangTermsToJavaExprs terms =
   {
-   (block,exprs,_,_) <- translateTermsToExpressionsM(empty,terms,0,0);
+   cres_counter <- getCresCounter;
+   (block,exprs,_,new_counter) <- translateTermsToExpressionsM(empty,terms,0,cres_counter);
+   setCresCounter new_counter;
    return (block,exprs)
   }
 
