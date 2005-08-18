@@ -150,5 +150,8 @@ SpecCalc qualifying spec {
                                          ^ lang
                                          ^ " yet"))
     }
+
+  def SpecCalc.otherSameSCTerm? (_, _) = false
+
 }
 \end{spec}
