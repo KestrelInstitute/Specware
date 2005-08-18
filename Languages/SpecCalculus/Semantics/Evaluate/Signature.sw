@@ -82,13 +82,20 @@ SpecCalc qualifying spec {
   op Specware.toplevelHandlerOption : [a] Exception -> SpecCalc.Env (Option a)
 
   op Specware.getOptSpec      : Option String -> Option Spec
+
+  op SpecCalc.otherSameSCTerm? : [a] SpecCalc.Term a * SpecCalc.Term a -> Boolean
+
 }
+
 \end{spec}
 
 %%
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.46  2005/06/19 05:50:06  mcdonald
+%% move op for toplevelHandlerOption from Specware.sw to Signature.sw
+%%
 %% Revision 1.45  2005/06/16 01:45:07  mcdonald
 %% deprecated RelativeUnitId replaced by RelativeUID
 %%

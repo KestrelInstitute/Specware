@@ -3,6 +3,13 @@ SpecCalc qualifying spec
   import UnitId/Utilities
   import ../Value
 
+  def AnnSpec.sameSCTerm? (x, y) =
+    case (x.1, y.1) of
+      | (Quote x, Quote y) -> x.1 = y.1
+      | (Other _, _) -> otherSameSCTerm? (x, y)
+      | (_, Other _) -> otherSameSCTerm? (x, y)
+      | _ -> x.1 = y.1
+
   op setBaseToPath : String -> Env ()
   def setBaseToPath path = {
       relative_uid <- pathToRelativeUID path;

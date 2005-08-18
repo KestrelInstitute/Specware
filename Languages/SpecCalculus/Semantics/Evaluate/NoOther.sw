@@ -12,6 +12,8 @@ SpecCalc qualifying spec
   import UnitId/Utilities
   import Translate
 
+  def SpecCalc.otherSameSCTerm? (_, _) = false
+
   def SpecCalc.evaluateOther _ (* args *) pos = 
     {unitId <- getCurrentUID;
      raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId) ^ "\n"))}
@@ -79,6 +81,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.23  2005/06/11 00:05:36  mcdonald
+%% added evaluateOtherTranslate
+%%
 %% Revision 1.22  2005/06/10 21:38:03  mcdonald
 %% peculiar -- need to make types in a def more explicit
 %%

@@ -16,5 +16,8 @@ spec
  sort SpecCalc.Term a
 
  op SpecCalc.showTerm : fa (a) SpecCalc.Term a -> String
+
+ op sameSCTerm? : [a] SpecCalc.Term a * SpecCalc.Term a -> Boolean
+
 endspec
 \end{spec}
