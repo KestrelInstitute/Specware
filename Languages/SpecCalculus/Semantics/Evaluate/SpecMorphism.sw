@@ -332,7 +332,18 @@ Should we check to see if qid is in cod_map??
            %% Otherwise, if the identity map works, use that
            case findAQualifierMap (cod_map, q, id) of
              | Some _ -> return (update new_map (Qualified (q,id)) (Qualified (q,id))) % identity
-             | _ -> raise (MorphError (position, "No mapping for " ^ q ^ "." ^ id)) %return new_map
+             | _ -> 
+	       %% My apologies for this temporary hack for Accord -- no easy way to handle it otherwise
+	       let q = "Target_Sig_Spec" in
+	       case findAQualifierMap (cod_map, q, id) of
+		 | Some _ -> return (update new_map (Qualified (q,id)) (Qualified (q,id))) % identity
+		 | _ -> 
+		   let xx = wildFindUnQualified (cod_map, id) in
+		   let msg = "No mapping for " ^ q ^ "." ^ id ^ ", but did find " ^ anyToString xx in
+		   let _ = writeLine(anyToString msg) in
+		   raise (MorphError (noPos, msg))
+
+
     in
       foldOverQualifierMap compl emptyMap dom_map
 
