@@ -67,7 +67,7 @@ PatternMatch qualifying spec
    
   % import MetaSlangPrint	% imported by ArityNormalize
 
-  op  translateMatch : Spec -> Spec
+  op  translateMatch : Spec -> Option(Ref Nat) -> Spec
 
   def match_type(srt) = mkBase(Qualified("TranslationBuiltIn","Match"),[srt])
 
@@ -938,15 +938,17 @@ def eliminateTerm context term =
 *****)
 	 
 
- def translateMatch spc = 
+ def translateMatch spc opt_counter = 
    % sjw: Moved (Ref 0) in-line so it is reexecuted for each call so the counter is reinitialized for each
    % call. (This was presumably what was intended as otherwise there would be no need for mkContext
    % to be a function). This means that compiled functions will have the same generated variables
    % independent of the rest of the file.
-   %let counter = (Ref 0) : Ref Nat in
+   % opt_counter is added so Accord can avoid resetting counter over an accord program
    let 
      def mkContext funName =
-       {counter    = Ref 0,
+       {counter    = case opt_counter of
+	               | Some ctr -> ctr
+	               | None -> Ref 0,
 	spc        = spc,
 	funName    = funName, % used when constructing error messages
 	errorIndex = Ref 0,   % used to distinguish error messages

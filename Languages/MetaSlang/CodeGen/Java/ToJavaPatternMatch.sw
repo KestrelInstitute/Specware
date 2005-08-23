@@ -14,7 +14,7 @@ TranslationBuiltIn.mkFail (for when no case applies) translates to an error.00
 
 op  translateMatchJava: Spec -> Spec
 def translateMatchJava spc =
-  let spc = translateMatch spc in
+  let spc = translateMatch spc None in
   mapSpec (fn t -> case t of
 	             | Let([(VarPat(v,_),vt as (Apply(Fun(Select _,_,_),_,_)))], body, _) ->
 	               substitute(body,[(v,vt)])
