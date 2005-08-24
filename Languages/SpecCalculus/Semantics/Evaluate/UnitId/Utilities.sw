@@ -431,7 +431,9 @@ emacs interface functions.
     case evalPartial globalContext unitId of
       | None -> ([],seenUIDs)
       | Some(Spec spc,_,depUIDs) ->
-        findDefiningUIDforOp (opId, spc, unitId, depUIDs, globalContext, Cons(unitId,seenUIDs), rec?)
+        findDefiningUIDforOp (opId, spc, unitId,
+			      filter (fn uid -> ~(member(uid,seenUIDs))) depUIDs,
+			      globalContext, Cons(unitId,seenUIDs), rec?)
 
   op  findUnitIdforUnit: Value * GlobalContext -> Option UnitId
   def findUnitIdforUnit (val, globalContext) =
