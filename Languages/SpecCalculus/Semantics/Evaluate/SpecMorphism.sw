@@ -334,9 +334,9 @@ Should we check to see if qid is in cod_map??
              | Some _ -> return (update new_map (Qualified (q,id)) (Qualified (q,id))) % identity
              | _ -> 
 	       %% My apologies for this temporary hack for Accord -- no easy way to handle it otherwise
-	       let q = "Target_Sig_Spec" in
-	       case findAQualifierMap (cod_map, q, id) of
-		 | Some _ -> return (update new_map (Qualified (q,id)) (Qualified (q,id))) % identity
+	       let xq = "Target_Sig_Spec" in
+	       case findAQualifierMap (cod_map, xq, id) of
+		 | Some _ -> return (update new_map (Qualified (q,id)) (Qualified (xq,id))) % foo +-> Target_Sig_Spec.foo
 		 | _ -> 
 		   let xx = wildFindUnQualified (cod_map, id) in
 		   let msg = "No mapping for " ^ q ^ "." ^ id ^ ", but did find " ^ anyToString xx in
@@ -358,29 +358,34 @@ Should we check to see if qid is in cod_map??
 	  | _ ->
 	    let dom_qid         = Qualified (dom_q, dom_id) in
 	    let translated_sort = translateSortViaSM (dom_sort, sortMap, opMap) in
-	    let Some cod_qid    = evalPartial sortMap dom_qid in
-	    let (Some cod_info) = findTheSort (cod_spec, cod_qid) in
-	    % let cod_sort        = firstSortDefInnerSort cod_info in
-	    case sortInfoDefs cod_info of
-	      | [] -> 
-	         let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^
-		           "\nThe domain type   " ^ (printQualifiedId dom_qid) ^ " has a definition: " ^ (printSort dom_sort) ^ 
-			   "\nbut translates to " ^ (printQualifiedId cod_qid) ^ ", which does not."
-		 in
-		   raise (MorphError (pos, msg))
-	      | dfn :: _ -> 
-	        let cod_sort = sortInnerSort dfn in
-		if equalSort? (translated_sort, cod_sort) then
-		  return ()
-		else if equivSort? cod_spec false (translated_sort, cod_sort) then
-		  return ()
-		else 
-		  let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
-		            "\nThe domain type " ^ (printSort dom_sort) ^
-			    "\n  translates to " ^ (printSort translated_sort) ^
-			    "\n   which is not " ^ (printSort cod_sort)
-		  in
-		    raise (MorphError (pos, msg))
+	    case evalPartial sortMap dom_qid of
+	      | Some cod_qid ->
+	        (case findTheSort (cod_spec, cod_qid) of
+		   | Some cod_info ->
+		     % let cod_sort        = firstSortDefInnerSort cod_info in
+		     (case sortInfoDefs cod_info of
+			| [] ->
+			  let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^
+			            "\nThe domain type   " ^ (printQualifiedId dom_qid) ^ " has a definition: " ^ (printSort dom_sort) ^ 
+				    "\nbut translates to " ^ (printQualifiedId cod_qid) ^ ", which does not."
+			  in
+			    raise (MorphError (pos, msg))
+			| dfn :: _ -> 
+			  let cod_sort = sortInnerSort dfn in
+			  if equalSort? (translated_sort, cod_sort) then
+			    return ()
+			  else if equivSort? cod_spec false (translated_sort, cod_sort) then
+			    return ()
+			  else 
+			    let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+			              "\nThe domain type " ^ (printSort dom_sort) ^
+				      "\n  translates to " ^ (printSort translated_sort) ^
+				      "\n   which is not " ^ (printSort cod_sort)
+			    in
+			      raise (MorphError (pos, msg)))
+		   | _ -> raise (MorphError (pos, "Peculiar: No type named " ^ printQualifiedId cod_qid ^ " could be found in the codomain spec.")))
+	      | _ ->
+		   raise (MorphError (pos, "Peculiar: No rule could be found for sort " ^ printQualifiedId dom_qid))
 
       def verify_op_type (dom_q, dom_id, dom_info : OpInfo, _) = 
 	let (_,dom_sort,dom_dfn) = unpackFirstOpDef dom_info in
@@ -389,28 +394,33 @@ Should we check to see if qid is in cod_map??
 	  | _ ->
 	    let dom_qid         = Qualified (dom_q, dom_id) in
 	    let translated_sort = translateSortViaSM (dom_sort, sortMap, opMap) in
-	    let Some cod_qid    = evalPartial opMap dom_qid in
-	    let Some cod_info   = findTheOp (cod_spec, cod_qid) in
-	    let dom_defined?    = case dom_dfn of | Any _ -> false | _ -> true in
-	    if dom_defined? && (opInfoDefs cod_info = []) then
-	      let msg = "Inconsistent op def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^
-		        "\nThe domain op     " ^ (printQualifiedId dom_qid) ^ " has a definition: " ^ (printTerm dom_dfn) ^ 
-			"\nbut translates to " ^ (printQualifiedId cod_qid) ^ ", which does not."
-	      in
-		raise (MorphError (pos, msg))
-	    else
-	      let cod_sort        = firstOpDefInnerSort cod_info in
-	      if equalSort? (translated_sort, cod_sort) then
-		return ()
-	      else if equivSort? cod_spec false (translated_sort, cod_sort) then
-		return ()
-	      else
-		let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
-		          "\nThe domain type " ^ (printSort dom_sort) ^
-			  "\n  translates to " ^ (printSort translated_sort) ^
-			  "\n   which is not " ^ (printSort cod_sort)
-		in
-		  raise (MorphError (pos, msg))
+	    case evalPartial opMap dom_qid of
+	      | Some cod_qid ->
+	        (case findTheOp (cod_spec, cod_qid) of
+		   | Some cod_info ->
+		     let dom_defined? = case dom_dfn of | Any _ -> false | _ -> true in
+		       if dom_defined? && (opInfoDefs cod_info = []) then
+			 let msg = "Inconsistent op def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^
+			           "\nThe domain op     " ^ (printQualifiedId dom_qid) ^ " has a definition: " ^ (printTerm dom_dfn) ^ 
+				   "\nbut translates to " ^ (printQualifiedId cod_qid) ^ ", which does not."
+			 in
+			   raise (MorphError (pos, msg))
+		       else
+			 let cod_sort        = firstOpDefInnerSort cod_info in
+			 if equalSort? (translated_sort, cod_sort) then
+			   return ()
+			 else if equivSort? cod_spec false (translated_sort, cod_sort) then
+			   return ()
+			 else
+			   let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+			             "\nThe domain type " ^ (printSort dom_sort) ^
+				     "\n  translates to " ^ (printSort translated_sort) ^
+				     "\n   which is not " ^ (printSort cod_sort)
+			   in
+			     raise (MorphError (pos, msg))
+		   | _ -> raise (MorphError (pos, "Peculiar: No op named " ^ printQualifiedId cod_qid ^ " could be found in the codomain spec.")))
+	      | _ -> raise (MorphError (pos, "Peculiar: No rule could be found for op " ^ printQualifiedId dom_qid))
+			 
     in
       {
        foldOverQualifierMap verify_sort_def () dom_spec.sorts;
