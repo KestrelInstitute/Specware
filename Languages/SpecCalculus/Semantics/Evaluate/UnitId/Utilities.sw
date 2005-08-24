@@ -365,9 +365,9 @@ emacs interface functions.
       | None -> []
       | Some globalContext ->
           let unitId = pathStringToCanonicalUID(uidStr,false) in
-            case findDefiningUIDforOpInContext(qId,unitId,globalContext,false)
-               ++ findDefiningUIDforSortInContext(qId,unitId,globalContext,false) of
-              | []     -> removeDuplicates(searchForDefiningUID(qId,optGlobalContext))
+            case (findDefiningUIDforOpInContext(qId,unitId,globalContext,[],false)).1
+               ++ (findDefiningUIDforSortInContext(qId,unitId,globalContext,[],false)).1 of
+              | []     -> removeDuplicates((searchForDefiningUID(qId,optGlobalContext)))
               | result -> removeDuplicates result
 
   op  searchForDefiningUID : QualifiedId * (Option GlobalContext) -> List (String * String)
@@ -376,33 +376,33 @@ emacs interface functions.
       | None -> []
       | Some globalContext ->
         removeDuplicates
-          (searchForDefiningUIDforOp(qId,globalContext,false)
-           ++ searchForDefiningUIDforSort(qId,globalContext,false))
+          ((searchForDefiningUIDforOp(qId,globalContext,[],false))
+           ++ (searchForDefiningUIDforSort(qId,globalContext,[],false)))
 
   op  findDefiningUIDforOp
-       : QualifiedId * Spec * UnitId * List UnitId * GlobalContext * Boolean
-           -> List (String * String)
-  def findDefiningUIDforOp(opId,spc,unitId,depUIDs,globalContext,rec?) =
-    let def findLocalUID opId =
+       : QualifiedId * Spec * UnitId * List UnitId * GlobalContext * List UnitId * Boolean
+           -> List (String * String) * List UnitId
+  def findDefiningUIDforOp(opId,spc,unitId,depUIDs,globalContext,seenUIDs,rec?) =
+    let def findLocalUID (opId,seenUIDs) =
           if localOp?(opId,spc)
-	    then [("Op", uidToFullPath unitId)]
+	    then ([("Op", uidToFullPath unitId)],seenUIDs)
 	  else
-	    foldr (fn (unitId,result) ->
-		   findDefiningUIDforOpInContext(opId,unitId,globalContext,true)
-		   ++ result)
-	          [] 
+	    foldr (fn (unitId,(result,seenUIDs)) ->
+		   let (new,seenUIDs) = findDefiningUIDforOpInContext(opId,unitId,globalContext,seenUIDs,true) in
+		   (new ++ result, seenUIDs))
+	          ([],seenUIDs) 
 		  depUIDs
     in   
     %% If being called recursively, we have already identified a particlar op in its spec and
     %% we are trying to find it local spec in imports so use findTheOp instead of findAllOps
     if rec? then
       case findTheOp(spc,opId) of
-	| Some _ -> findLocalUID opId
+	| Some _ -> findLocalUID (opId,seenUIDs)
 	| None   ->
           case opId of
 	    | Qualified (q, id) ->
 	      (if q = UnQualified then
-		 []
+		 ([],seenUIDs)
 		 %% If the spec was imported using "qualifiying" then the original def may be unqualified
 	       else 
 		 findDefiningUIDforOp (Qualified (UnQualified, id),
@@ -410,22 +410,28 @@ emacs interface functions.
 				       unitId,
 				       depUIDs,
 				       globalContext,
+				       seenUIDs,
 				       true))
-	    | _ -> [] 
+	    | _ -> ([],seenUIDs) 
     else 
       case findAllOps (spc, opId) of
-	| [] -> []
+	| [] -> ([],seenUIDs)
 	| infos ->
-          foldr (fn (info,val) -> (findLocalUID (primaryOpName info)) ++ val)
-	        []
+	  %% This is the top-level version so seenUIDs should be [] and returned seenUIDs will be ignored
+	  %% seenUIDs for one op shouldn't affect seenUIDs for another
+          foldr (fn (info,(val,_)) ->
+		 let (nval,seenUIDs) = findLocalUID (primaryOpName info,seenUIDs) in
+		 (nval ++ val,seenUIDs))
+	        ([],seenUIDs)
 		infos
 
-  op  findDefiningUIDforOpInContext: QualifiedId * UnitId * GlobalContext * Boolean -> List (String * String)
-  def findDefiningUIDforOpInContext (opId, unitId, globalContext, rec?) =
+  op  findDefiningUIDforOpInContext: QualifiedId * UnitId * GlobalContext * List UnitId * Boolean
+                                     -> List (String * String) * List UnitId
+  def findDefiningUIDforOpInContext (opId, unitId, globalContext, seenUIDs, rec?) =
     case evalPartial globalContext unitId of
-      | None -> []
+      | None -> ([],seenUIDs)
       | Some(Spec spc,_,depUIDs) ->
-        findDefiningUIDforOp (opId, spc, unitId, depUIDs, globalContext, rec?)
+        findDefiningUIDforOp (opId, spc, unitId, depUIDs, globalContext, Cons(unitId,seenUIDs), rec?)
 
   op  findUnitIdforUnit: Value * GlobalContext -> Option UnitId
   def findUnitIdforUnit (val, globalContext) =
@@ -435,49 +441,56 @@ emacs interface functions.
 	       | None -> if val = vali then Some unitId else None)
       None globalContext
 
-  op  searchForDefiningUIDforOp: QualifiedId * GlobalContext * Boolean -> List (String * String)
-  def searchForDefiningUIDforOp (opId, globalContext, rec?) =
+  op  searchForDefiningUIDforOp: QualifiedId * GlobalContext * List UnitId * Boolean
+                                -> List (String * String)
+  def searchForDefiningUIDforOp (opId, globalContext, seenUIDs, rec?) =
+    %% Currently rec? is always false
     foldMap (fn result -> fn unitId -> fn (val,_,depUIDs) ->
 	     case result of
 	       | _::_ -> result		% After finding any stop looking
 	       | []   ->
 	     case val of
 	       | Spec spc ->
-	         findDefiningUIDforOp (opId,
-				       spc,
-				       unitId,
-				       depUIDs,
-				       globalContext,
-				       rec?)
+	         (findDefiningUIDforOp (opId,
+					spc,
+					unitId,
+					depUIDs,
+					globalContext,
+					seenUIDs,
+					rec?)).1
 	       | _ -> [])
       []
       globalContext
 
-  op  findDefiningUIDforSort : QualifiedId * Spec * UnitId * List UnitId * GlobalContext * Boolean -> List (String * String)
-  def findDefiningUIDforSort (sortId, spc, unitId, depUIDs, globalContext, rec?) =
-    let def findLocalUID sortId =
+  op  findDefiningUIDforSort : QualifiedId * Spec * UnitId * List UnitId * GlobalContext * List UnitId * Boolean
+                               -> List (String * String) * List UnitId
+  def findDefiningUIDforSort (sortId, spc, unitId, depUIDs, globalContext, seenUIDs, rec?) =
+    let def findLocalUID (sortId,seenUIDs) =
           if localSort? (sortId, spc) then
-	    [("Sort", uidToFullPath unitId)]
+	    ([("Sort", uidToFullPath unitId)],seenUIDs)
 	  else
-	    foldr (fn (unitId,result) ->
-		   findDefiningUIDforSortInContext (sortId,
-						    unitId,
-						    globalContext,
-						    true)
-		   ++ result)
-	          [] 
+	    foldr (fn (unitId,(result,seenUIDs)) ->
+		   let (new,seenUIDs)
+		      = findDefiningUIDforSortInContext (sortId,
+							 unitId,
+							 globalContext,
+							 seenUIDs,
+							 true)
+		   in
+		   (new ++ result,seenUIDs))
+	          ([],seenUIDs) 
 		  depUIDs
     in   
     %% If being called recursively, we have already identified a particlar sort in its spec and
     %% we are trying to find it local spec in imports so use findTheSort instead of findAllSorts
     if rec? then
       case findTheSort (spc, sortId) of
-	| Some _ -> findLocalUID sortId
+	| Some _ -> findLocalUID (sortId,seenUIDs)
 	| None   ->
           case sortId of
 	    | Qualified (q, id) ->
 	      (if q = UnQualified then
-		 []
+		 ([],seenUIDs)
 		 %% If the spec was imported using "qualifiying" then the original def may be unqualified
 	       else 
 		 findDefiningUIDforSort (Qualified (UnQualified, id),
@@ -485,32 +498,40 @@ emacs interface functions.
 					 unitId,
 					 depUIDs,
 					 globalContext,
+					 seenUIDs,
 					 true))
-	    | _ -> [] 
+	    | _ -> ([],seenUIDs) 
     else 
       case findAllSorts(spc,sortId) of
-	| [] -> []
+	| [] -> ([],seenUIDs)
 	| infos ->
-          foldr (fn (info, val) -> (findLocalUID (primarySortName info)) ++ val)
-	        []
+	  %% This is the top-level version so seenUIDs should be [] and returned seenUIDs will be ignored
+	  %% seenUIDs for one op shouldn't affect seenUIDs for another
+          foldr (fn (info, (val,_)) ->
+		 let (nval,seenUIDs) = findLocalUID (primarySortName info,seenUIDs) in
+		 (nval ++ val,seenUIDs))
+	        ([],seenUIDs)
 		infos
 
-  op  findDefiningUIDforSortInContext : QualifiedId * UnitId * GlobalContext * Boolean -> List (String * String)
-  def findDefiningUIDforSortInContext (sortId, unitId, globalContext, rec?) =
+  op  findDefiningUIDforSortInContext : QualifiedId * UnitId * GlobalContext * List UnitId * Boolean
+                                       -> List (String * String) * List UnitId
+  def findDefiningUIDforSortInContext (sortId, unitId, globalContext, seenUIDs, rec?) =
     case evalPartial globalContext unitId of
-      | None -> []
+      | None -> ([],seenUIDs)
       | Some (Spec spc, _, depUIDs) ->
-        findDefiningUIDforSort (sortId, spc, unitId, depUIDs, globalContext, rec?)
+        findDefiningUIDforSort (sortId, spc, unitId,
+				filter (fn uid -> ~(member(uid,seenUIDs))) depUIDs,
+				globalContext, Cons(unitId, seenUIDs), rec?)
 
-  op  searchForDefiningUIDforSort : QualifiedId * GlobalContext * Boolean -> List (String * String)
-  def searchForDefiningUIDforSort (sortId, globalContext, rec?) =
+  op  searchForDefiningUIDforSort : QualifiedId * GlobalContext * List UnitId * Boolean -> List (String * String)
+  def searchForDefiningUIDforSort (sortId, globalContext, seenUIDs, rec?) =
     foldMap (fn result -> fn unitId -> fn (val, _, depUIDs) ->
 	     case result of
 	       | _::_ -> result		% After finding any stop looking
 	       | []   ->
 	     case val of
 	       | Spec spc ->
-	         findDefiningUIDforSort (sortId, spc, unitId, depUIDs, globalContext, rec?)
+	         (findDefiningUIDforSort (sortId, spc, unitId, depUIDs, globalContext, seenUIDs, rec?)).1
 	       | _ -> [])
       []
       globalContext
