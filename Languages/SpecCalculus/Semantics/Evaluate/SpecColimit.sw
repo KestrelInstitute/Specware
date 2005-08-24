@@ -395,14 +395,17 @@ spec
 			  ->
 			  let (apex_qid, aliases) =
 			      case eval qid_to_class_indices qid of
-				| [_] -> 
+				| [n] -> 
+				  %% let _ = writeLine("unique class index for " ^ printQualifiedId qid ^ " = " ^ anyToString n) in
 				  (qid, aliases) % unique, no need to disambiguate
-				| _   -> 
+				| nn   -> 
 				  if qid = Boolean_Boolean or qid = unqualified_Boolean then
 				    (Boolean_Boolean, [Boolean_Boolean])
 				  else
-				    (reviseQId (vertex, qualifier, id, id_to_qualifiers),
-				     aliases)
+				    %% let _ = writeLine("ambigous class indices for " ^ printQualifiedId qid ^ " = " ^ anyToString nn) in
+				    let new_qid = reviseQId (vertex, qualifier, id, id_to_qualifiers) in
+				    %% let _ = writeLine("revising " ^ printQualifiedId qid ^ " to " ^ printQualifiedId new_qid) in
+				    (new_qid, aliases)
 			  in
 			    (cons (apex_qid, aliases),
 			     update local_map vqid apex_qid))
