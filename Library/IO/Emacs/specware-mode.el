@@ -1212,7 +1212,9 @@ If anyone has a good algorithm for this..."
     (goto-char 0)
     (let ((qsym (regexp-quote sym)))
       (or (if sort?
-	      (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+" qsym "\\b") nil t)
+	      (or (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+" qsym "\\b") nil t)
+		  ;; type fie.foo
+		  (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+\\w+\\." qsym "\\b") nil t))
 	    (if (null current-prefix-arg)
 		(or (re-search-forward (concat "\\bdef\\s-+" qsym "\\b") nil t)
 		    (re-search-forward	; def fa(a) foo
