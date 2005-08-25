@@ -95,6 +95,7 @@ UnitId_Dependency.
       newGlobalVar ("ValidatedUnitIds",[]);
       newGlobalVar ("CommandInProgress?",false);
       newGlobalVar ("PrismChoices",[]);
+      newGlobalVar ("Counter",0);
       return ()
     }
 
@@ -321,6 +322,14 @@ while there is a transition from names with "UnitId" to "UnitId".
   def setValidatedUnitId unitId = {
       validatedUnitIds <- readGlobalVar "ValidatedUnitIds";
       writeGlobalVar ("ValidatedUnitIds", cons(unitId,validatedUnitIds))
+    }
+
+  % retrieves a fresh natural number (used for variable name generation in proof checker)
+  op freshNat : Env Nat
+  def freshNat = {
+      n <- readGlobalVar "Counter";
+      writeGlobalVar ("Counter", n+1);
+      return n
     }
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
