@@ -132,8 +132,8 @@ PatternMatch qualifying spec
 		  errorIndex : Ref Nat,
 		  term       : Option MS.Term}
 
-  def storeTerm(tm,{counter, spc, funName, errorIndex, term}) =
-    {counter=counter, spc=spc, funName=funName, errorIndex=errorIndex, term=Some tm}
+  def storeTerm (tm, ctx) =
+    ctx << {term = Some tm}
 
 %  op mkProjectTerm : Spec * Id * MS.Term -> MS.Term
 %  def mkProjectTerm = SpecEnvironment.mkProjectTerm
@@ -947,7 +947,7 @@ def eliminateTerm context term =
    let 
      def mkContext funName =
        {counter    = case opt_counter of
-	               | Some ctr -> ctr
+	               | Some ctr -> ctr % (ctr := (! ctr) + 1; ctr)
 	               | None -> Ref 0,
 	spc        = spc,
 	funName    = funName, % used when constructing error messages
