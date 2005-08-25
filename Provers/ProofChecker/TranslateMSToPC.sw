@@ -37,6 +37,19 @@
 % For some reason, I need "embed" in front of the constructor "prefix" for the
 % typechecker to do the right thing.
 
+% There seems to be a bug in the MetaSlang representation
+% if I define
+%
+% op plus : Nat * Nat -> Nat
+% def plus (x,y) = x
+%
+% there there is only one opdef, but if I define
+%
+% op plus : [a] a * a -> a
+% def plus (x,y) = x
+%
+% there there is only one opdef and a op declaration as well
+
 Translate qualifying spec
   % import BasicAbbreviations
   % import OtherAbbreviations
@@ -120,30 +133,32 @@ Translate qualifying spec
                   }
              }
           | Op qid -> {
+              % print ("Op:" ^ (printQualifiedId qid) ^ "\n");
               opInfo <- findInMap spc.ops qid;
               case opInfo.dfn of
-                | Pi (tyVars,SortedTerm (Any _,typ,_),_) -> {
+                | Pi (tyVars,SortedTerm (_,typ,_),_) -> {
                        newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
                        newType <- Type.msToPC spc typ;
                        return (fSeq <| (opDeclaration (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newType)))
                     }
-                | Pi (tyVars,SortedTerm (term,typ,_),_) -> {
-                       newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
-                       newTerm <- msToPC spc term;
-                       return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newTerm)))
-                    }
-                | SortedTerm (_,Pi (tyVars,typ,pos),_) -> {
-                      newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
-                      newType <- Type.msToPC spc typ;
-                      return (fSeq <| (opDeclaration (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newType)))
-                    }
-                | SortedTerm (_,typ,_) -> {
-                      newType <- Type.msToPC spc typ;
-                      return (fSeq <| (opDeclaration (qidToOperation qid (convertFixity opInfo.fixity), empty, newType)))
-                    }
+%%                 | Pi (tyVars,SortedTerm (term,typ,_),_) -> {
+%%                        newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
+%%                        newTerm <- msToPC spc term;
+%%                        return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newTerm)))
+%%                     }
+%%                 | SortedTerm (_,Pi (tyVars,typ,pos),_) -> {
+%%                       newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
+%%                       newType <- Type.msToPC spc typ;
+%%                       return (fSeq <| (opDeclaration (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newType)))
+%%                     }
+                 | SortedTerm (_,typ,_) -> {
+                       newType <- Type.msToPC spc typ;
+                       return (fSeq <| (opDeclaration (qidToOperation qid (convertFixity opInfo.fixity), empty, newType)))
+                     }
                 | _ -> raise (Fail ("translateMSToPC: specToContext: ill-formed declaration for op " ^ (printQualifiedId qid) ^ " term = " ^ (System.anyToString opInfo.dfn)))
              }
            | OpDef qid -> {
+              % print ("OpDef:" ^ (printQualifiedId qid) ^ "\n");
                opInfo <- findInMap spc.ops qid;
                case opInfo.dfn of
                  | Pi (tyVars,SortedTerm (term,typ,_),_) -> {
@@ -183,132 +198,152 @@ Translate qualifying spec
   def Term.msToPC spc trm =
     case trm of
       | Apply (Fun (And,srt,_),Record ([("1",t1),("2",t2)],_),_) -> {
-            t1PC <- msToPC spc t1;
-            t2PC <- msToPC spc t2;
-            return (t1PC &&& t2PC)
-          }
+          t1PC <- msToPC spc t1;
+          t2PC <- msToPC spc t2;
+          return (t1PC &&& t2PC)
+        }
       | Apply (Fun (Or,srt,_),Record ([("1",t1),("2",t2)],_),_) -> {
-            t1PC <- msToPC spc t1;
-            t2PC <- msToPC spc t2;
-            return (t1PC ||| t2PC)
-          }
+          t1PC <- msToPC spc t1;
+          t2PC <- msToPC spc t2;
+          return (t1PC ||| t2PC)
+        }
       | Apply (Fun (Implies,srt,_),Record ([("1",t1),("2",t2)],_),_) -> {
-            t1PC <- msToPC spc t1;
-            t2PC <- msToPC spc t2;
-            return (t1PC ==> t2PC)
-          }
+          t1PC <- msToPC spc t1;
+          t2PC <- msToPC spc t2;
+          return (t1PC ==> t2PC)
+        }
       | Apply (Fun (Iff,srt,_),Record ([("1",t1),("2",t2)],_),_) -> {
-            t1PC <- msToPC spc t1;
-            t2PC <- msToPC spc t2;
-            return (t1PC <==> t2PC)
-          }
+          t1PC <- msToPC spc t1;
+          t2PC <- msToPC spc t2;
+          return (t1PC <==> t2PC)
+        }
       | Apply (Fun (Equals,srt,_),Record ([("1",t1),("2",t2)],_),_) -> {
-            t1PC <- msToPC spc t1;
-            t2PC <- msToPC spc t2;
-            return (t1PC == t2PC)
-          }
+          t1PC <- msToPC spc t1;
+          t2PC <- msToPC spc t2;
+          return (t1PC == t2PC)
+        }
       | Apply (Fun (NotEquals,srt,_),Record ([("1",t1),("2",t2)],_),_) -> {
-            t1PC <- msToPC spc t1;
-            t2PC <- msToPC spc t2;
-            return (t1PC ~== t2PC)
-          }
+          t1PC <- msToPC spc t1;
+          t2PC <- msToPC spc t2;
+          return (t1PC ~== t2PC)
+        }
       % | Apply (Fun (RecordMerge,srt,_),Record ([("1",t1),("2",t2)],_),_) -> {
             % t1PC <- msToPC spc t1;
             % t2PC <- msToPC spc t2;
             % return (t1PC <<< t2PC)
           % }
       | Apply (Fun (Project id,srt,_),term,_) -> {
-            termPC <- msToPC spc term;
-            typePC <- msToPC spc (inferType (spc,term));
-            if natConvertible id then
-              return (DOT (termPC, typePC, prod (stringToNat id)))
-            else
-              return (DOT (termPC, typePC, user (idToUserField id)))
-          }
+          termPC <- msToPC spc term;
+          typePC <- msToPC spc (inferType (spc,term));
+          if natConvertible id then
+            return (DOT (termPC, typePC, prod (stringToNat id)))
+          else
+            return (DOT (termPC, typePC, user (idToUserField id)))
+        }
       % | Apply (Quotient,arg,pos) -> return (nullary truE)   % ???
       | Apply(Fun (Embed(id,b),srt,_),arg,_) -> {
-            newType <- Type.msToPC spc srt;
-            argExpr <- Term.msToPC spc arg;
-            return ((EMBED (newType, idToConstructor id)) @ argExpr)
-          }
+          newType <- Type.msToPC spc srt;
+          argExpr <- Term.msToPC spc arg;
+          return ((EMBED (newType, idToConstructor id)) @ argExpr)
+        }
       | Apply (Fun (Not,srt,_),t,_) -> {
-            tPC <- msToPC spc t;
-            return (~~ tPC)
-          }
+          tPC <- msToPC spc t;
+          return (~~ tPC)
+        }
       | Apply (f,a,pos) -> {
-            fPC <- msToPC spc f;
-            aPC <- msToPC spc a;
-            return (fPC @ aPC)
-          }
+          fPC <- msToPC spc f;
+          aPC <- msToPC spc a;
+          return (fPC @ aPC)
+        }
       | ApplyN (terms,pos) -> raise (Fail "trying to translate MetaSlang ApplyN for proof checker")
       | Record (pairs as (("1",_)::_),pos) -> {
-            elems <- mapListToFSeq (fn pair -> msToPC spc pair.2) pairs;
-            types <- mapListToFSeq (fn pair -> msToPC spc (inferType (spc,pair.2))) pairs;
-            return (TUPLE (types,elems))
-          }
+          elems <- mapListToFSeq (fn pair -> msToPC spc pair.2) pairs;
+          types <- mapListToFSeq (fn pair -> msToPC spc (inferType (spc,pair.2))) pairs;
+          return (TUPLE (types,elems))
+        }
       | Record (pairs,pos) -> {
-            fields <- mapListToFSeq (fn pair -> return (user (idToUserField pair.1))) pairs;
-            types <- mapListToFSeq (fn pair -> msToPC spc (inferType (spc,pair.2))) pairs;
-            exprs <- mapListToFSeq (fn pair -> msToPC spc pair.2) pairs;
-            return (REC (fields,types,exprs))
-          }
+          fields <- mapListToFSeq (fn pair -> return (user (idToUserField pair.1))) pairs;
+          types <- mapListToFSeq (fn pair -> msToPC spc (inferType (spc,pair.2))) pairs;
+          exprs <- mapListToFSeq (fn pair -> msToPC spc pair.2) pairs;
+          return (REC (fields,types,exprs))
+        }
       | Bind (Forall,vars,term,pos) -> {
-            vs <- mapListToFSeq (fn aVar -> return (idToVariable aVar.1)) vars;
-            types <- mapListToFSeq (fn aVar -> msToPC spc aVar.2) vars;
-            newTerm <- msToPC spc term;
-            return (FAA (vs,types,newTerm))
-          }
+          vs <- mapListToFSeq (fn aVar -> return (idToVariable aVar.1)) vars;
+          types <- mapListToFSeq (fn aVar -> msToPC spc aVar.2) vars;
+          newTerm <- msToPC spc term;
+          return (FAA (vs,types,newTerm))
+        }
       | Bind (Exists,vars,term,pos) -> {
-            vs <- mapListToFSeq (fn aVar -> return (idToVariable aVar.1)) vars;
-            types <- mapListToFSeq (fn aVar -> msToPC spc aVar.2) vars;
-            newTerm <- msToPC spc term;
-            return (EXX (vs,types,newTerm))
-          }
+          vs <- mapListToFSeq (fn aVar -> return (idToVariable aVar.1)) vars;
+          types <- mapListToFSeq (fn aVar -> msToPC spc aVar.2) vars;
+          newTerm <- msToPC spc term;
+          return (EXX (vs,types,newTerm))
+        }
       | Let ((lhs,rhs)::rest,term,pos) -> {
-            newRhs <- msToPC spc rhs;
-            (vars,types,newGuard) <- Pattern.msToPC spc newRhs lhs;
-            newType <- Type.msToPC spc (inferType (spc,term));
-            if rest = [] then {
-              newTerm <- Term.msToPC spc term;
-              return (COND (newType, single (vars,types,newGuard,newTerm)))
-            }
-            else {
-              newTerm <- Term.msToPC spc (Let (rest,term,pos));
-              return (COND (newType, single (vars,types,newGuard,newTerm)))
-            }
+          newRhs <- msToPC spc rhs;
+          (vars,types,newGuard) <- Pattern.msToPC spc newRhs lhs;
+          newType <- Type.msToPC spc (inferType (spc,term));
+          if rest = [] then {
+            newTerm <- Term.msToPC spc term;
+            return (COND (newType, single (vars,types,newGuard,newTerm)))
           }
+          else {
+            newTerm <- Term.msToPC spc (Let (rest,term,pos));
+            return (COND (newType, single (vars,types,newGuard,newTerm)))
+          }
+        }
       | Let ([],term,pos) -> Term.msToPC spc term
       | LetRec (bindings,term,pos) -> {
-            vs <- mapListToFSeq (fn (var,rhs) -> return (idToVariable var.1)) bindings;
-            types <- mapListToFSeq (fn (var,rhs) -> Type.msToPC spc var.2) bindings;
-            exprs <- mapListToFSeq (fn (var,rhs) -> Term.msToPC spc rhs) bindings;
-            expr <- Term.msToPC spc term;
-            typ <- Type.msToPC spc (inferType (spc,term));
-            return (LETDEF (typ,vs,types,exprs,expr))
-          }
+          vs <- mapListToFSeq (fn (var,rhs) -> return (idToVariable var.1)) bindings;
+          types <- mapListToFSeq (fn (var,rhs) -> Type.msToPC spc var.2) bindings;
+          exprs <- mapListToFSeq (fn (var,rhs) -> Term.msToPC spc rhs) bindings;
+          expr <- Term.msToPC spc term;
+          typ <- Type.msToPC spc (inferType (spc,term));
+          return (LETDEF (typ,vs,types,exprs,expr))
+        }
       | IfThenElse (pred,yes,no,pos) -> {
-            newPred <- msToPC spc pred;
-            newYes <- msToPC spc yes;
-            newNo <- msToPC spc no;
-            return (IF (newPred,newYes,newNo))
-          }
-      | Fun (Op(id,fxty),typ,_) -> {
-            newType <- Type.msToPC spc typ; 
-            return (OPI (qidToOperation id (convertFixity fxty),empty))         % ???
+          newPred <- msToPC spc pred;
+          newYes <- msToPC spc yes;
+          newNo <- msToPC spc no;
+          return (IF (newPred,newYes,newNo))
+        }
+      | Fun (Op(id,fxty),typ,_) ->
+          let
+            def lookup l id =
+              case l of
+                | [] -> raise (Fail ("matchType: failed to find instance for type variable: " ^ id))
+                | (name,typ)::rest ->
+                    if id = name then
+                      return typ
+                    else
+                      lookup rest id
+          in {
+            % print ("msToPC: term=" ^ (printTerm trm) ^ " type=" ^ (printSort typ) ^ "\n");
+            opInfo <- findInMap spc.ops id;
+            case opInfo.dfn of
+              | Pi (tyVars,SortedTerm (_,abstTyp,_),_) -> {
+                  % print ("msToPC: abstract type=" ^ (printSort abstTyp) ^ "\n");
+                  subs <- catch (matchType spc abstTyp typ)
+                     (fn (Fail str) -> raise (Fail (str ^ "\nTerm.msToPC: abstTyp=" ^ (printSort abstTyp) ^ " typ=" ^ (printSort typ))));
+                  types <- mapListToFSeq (fn tyVar -> lookup subs tyVar) tyVars;
+                  return (OPI (qidToOperation id (convertFixity fxty),types)) 
+                }
+              | SortedTerm (_,typ,_) -> return (OPI (qidToOperation id (convertFixity fxty),empty)) 
+              | _ -> raise (Fail "trying to translate empty MetaSlang match for proof checker")
           }
       | Fun (Embed(id,b),srt,_) ->  {
-            newType <- Type.msToPC spc srt;
-            return ((EMBED (newType, idToConstructor id)) @ MTREC)
-          }
+          newType <- Type.msToPC spc srt;
+          return ((EMBED (newType, idToConstructor id)) @ MTREC)
+        }
       | Lambda ([],pos) ->
           raise (Fail "trying to translate empty MetaSlang match for proof checker")
       | Lambda ((match as ((pat,guard,rhs)::_)),pos) -> {
-            var <- newVar;
-            branches <- mapListToFSeq (GuardedExpr.msToPC spc (VAR var)) match;
-            lhsType <- Type.msToPC spc (patternSort pat);
-            rhsType <- Type.msToPC spc (inferType (spc,rhs));
-            return (FN (var, lhsType, COND (rhsType,branches)))
-          }
+          var <- newVar;
+          branches <- mapListToFSeq (GuardedExpr.msToPC spc (VAR var)) match;
+          lhsType <- Type.msToPC spc (patternSort pat);
+          rhsType <- Type.msToPC spc (inferType (spc,rhs));
+          return (FN (var, lhsType, COND (rhsType,branches)))
+        }
       | Seq (term::rest,pos) ->
           if rest = [] then 
             Term.msToPC spc term
@@ -326,17 +361,93 @@ Translate qualifying spec
       | Fun (Bool true,srt,pos) -> return TRUE
       | Fun (Bool false,srt,pos) -> return FALSE
       | Fun (Quotient,srt,pos) -> {
-            newType <- Type.msToPC spc srt;
-            return (QUOT newType)
-          }
+          newType <- Type.msToPC spc srt;
+          return (QUOT newType)
+        }
       | Var ((id,srt),pos) -> return (VAR (idToVariable id))
       | _ -> {
-          print ("Term.msToPC: no match\n");
-          % print (printTerm trm);
-          print (System.anyToString trm);
-          print ("term = " ^ (printTerm trm) ^ "\n");
-          raise (Fail "no match in Term.msToPC")
-        }
+         print ("Term.msToPC: no match\n");
+         % print (printTerm trm);
+         print (System.anyToString trm);
+         print ("term = " ^ (printTerm trm) ^ "\n");
+         raise (Fail "no match in Term.msToPC")
+       }
+
+  op zip : [a,b] List a -> List b -> List (a * b)
+  def zip l1 l2 =
+    case (l1,l2) of
+      | ([],_) -> []
+      | (_,[]) -> []
+      | (x::xs,y::ys) -> Cons ((x,y),zip xs ys)
+
+  % Operator references that appear in a proof checker abstract syntax
+  % tree are accompanied by a sequence of types. These types are the
+  % instantiations of the type variables (if any) associated with the
+  % declaration of the type of the op. This information is not directly
+  % recorded in the Metaslang abstract syntax. The function below recovers
+  % this information, in the form of a substitution, by matching a
+  % particular type instance (t2) with the abstract type declaration (t1).
+  % The latter is assumed to be free of type variables.
+
+  op matchType : Spec -> MS.Sort -> MS.Sort -> Env (List (TyVar * Type))
+  def matchType spc t1 t2 =
+    % case (unfoldBase (spc,t1),unfoldBase (spc,t2)) of
+    case (t1,t2) of
+      | (Arrow (l1,l2,_), Arrow (r1,r2,_)) -> {
+           sub1 <- matchType spc l1 r1;
+           sub2 <- matchType spc l2 r2;
+           return (sub1 List.++ sub2)
+         }
+      | (Product (lFlds,_), Product (rFlds,_)) -> {
+           subs <- mapListToFSeq (fn ((_,l),(_,r)) -> matchType spc l r) (zip lFlds rFlds);
+           return (List.foldl List.concat [] subs)
+         }
+      | (CoProduct (lSums,_), CoProduct (rSums,_)) ->
+         let
+           def f pair =
+             case pair of
+               | ((_,None),(_,None)) -> return []
+               | ((_,Some lTyp),(_,Some rTyp)) -> matchType spc lTyp rTyp
+               | _ -> raise (Fail "bad")
+         in {
+           subs <- mapListToFSeq f (zip lSums rSums);
+           return (List.foldl List.concat [] subs)
+         }
+      | (Quotient (lTyp,lTerm,_), Quotient (rTyp,rTerm,_)) -> matchType spc lTyp rTyp
+      | (Subsort (lTyp,lTerm,_), Subsort (rTyp,rTerm,_)) -> matchType spc lTyp rTyp
+      | (Base (qid1,types1,_),Base (qid,types2,_)) ->
+           foldM (fn subs1 -> fn (t1,t2) -> {
+             subs2 <- matchType spc t1 t2;
+             return (subs1 List.++ subs2)
+           }) [] (zip types1 types2)
+%%       | (_,Base (qid,[],_)) -> {
+%%            typeInfo <- findInMap spc.sorts qid;
+%%            matchType spc t1 typeInfo.dfn
+%%          }
+%%       | (Base (qid,types,_),_) -> {
+%%            typeInfo <- findInMap spc.sorts qid; case typeInfo.dfn of
+%%              | Pi (tyVars,typ,_) -> {
+%%                   newType <- return (substSort (zip tyVars types, typ));
+%%                   matchType spc newType t2
+%%                 }
+%%              | _ -> raise (Fail "matchType: mismatch of ")
+%%           }
+%%       | (_,Base (qid,types,_)) -> {
+%%            typeInfo <- findInMap spc.sorts qid; case typeInfo.dfn of
+%%              | Pi (tyVars,typ,_) -> {
+%%                   newType <- return (substSort (zip tyVars types, typ));
+%%                   matchType spc t1 newType
+%%                 }
+%%              | _ -> raise (Fail "matchType: mismatch of ")
+%%           }
+%%       | (TyVar _,TyVar _) -> raise (Fail "matchType: type instance contains type variables")
+      | (TyVar (id,_),_) -> {
+            newType <- catch (msToPC spc t2)
+               (fn (Fail str) -> raise (Fail (str ^ "\nmatchType: matching type var " ^ id ^ " with type: " ^ (printSort t2))));
+            return [(id, newType)]
+          }
+      | (_, TyVar _) -> raise (Fail "matchType: type instance contains type variables")
+      | (_, _) -> return []
 
   op OptType.msToPC : Spec -> Option MS.Sort -> SpecCalc.Env Type
   def OptType.msToPC spc typ? =
