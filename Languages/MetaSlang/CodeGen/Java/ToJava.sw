@@ -767,10 +767,10 @@ def insertClsDeclsForCollectedProductSorts =
 	 }
       in
 	{
-	 psrts0 <- getProductSorts;
+	 %psrts0 <- getProductSorts;
 	 %println("#psrts0 ="^(Integer.toString(length psrts0)));
 	 mapM (fn srt -> insertSort srt) psrts;
-	 psrts1 <- getProductSorts;
+	 %psrts1 <- getProductSorts;
 	 %println("#psrts1 ="^(Integer.toString(length psrts1)));
 	 %ifM ((length psrts1) > (length psrts0))
 	 %   insertClsDeclsForCollectedProductSorts;
@@ -890,8 +890,9 @@ def builtinSortOp(qid) =
 def printOriginalSpec? = false
 def printTransformedSpec? = false
 
-%op transformSpecForJavaCodeGen: Spec -> Spec -> Spec
-def transformSpecForJavaCodeGen basespc spc =
+%op transformSpecForJavaCodeGen: Spec -> Spec -> Option(Ref Nat) -> Spec
+def transformSpecForJavaCodeGen basespc spc opt_counter =
+  % opt_counter is added so Accord can avoid resetting counter over an accord program
   %let _ = writeLine("transformSpecForJavaCodeGen...") in
   let _ = if printOriginalSpec? then printSpecFlatToTerminal spc else () in
   let spc = unfoldSortAliases spc in
@@ -903,7 +904,7 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = instantiateHOFns spc in
   let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
   let spc = lambdaLift spc in
-  let spc = translateMatchJava spc in
+  let spc = translateMatchJava spc opt_counter in
   %let _ = toScreen(printSpecFlat spc) in
   let spc = simplifySpec spc in
   %let _ = toScreen(printSpecFlat spc) in
@@ -949,7 +950,7 @@ def generateJavaCodeFromTransformedSpecM spc =
 op specToJava : Spec * Spec * Option Spec * String -> JSpec
 
 def specToJava(basespc,spc,optspec,filename) =
-  let spc = transformSpecForJavaCodeGen basespc spc in
+  let spc = JGen.transformSpecForJavaCodeGen basespc spc None in
   let jspc = generateJavaCodeFromTransformedSpec spc in
   let jfiles = processOptions(jspc,optspec,filename) in
   let _ = List.app printJavaFile jfiles in
