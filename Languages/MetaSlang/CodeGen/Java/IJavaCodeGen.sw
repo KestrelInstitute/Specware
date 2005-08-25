@@ -33,7 +33,7 @@ spec
   (**
    * performs the transformation as required by the Java code generation
    *)
-  op transformSpecForJavaCodeGen: (* basespec: *) Spec -> (* spc: *) Spec -> Spec
+  op transformSpecForJavaCodeGen: (* basespec: *) Spec -> (* spc: *) Spec -> (* opt_counter: *) Option(Ref Nat) -> Spec
 
   (**
    * takes a spec which is supposed to be the result of the above
