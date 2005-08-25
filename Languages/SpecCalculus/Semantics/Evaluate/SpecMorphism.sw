@@ -57,7 +57,7 @@ coherence conditions of the morphism elements.
     {
       morphism_map <- makeResolvedMapping domSpec codSpec rawMapping;
       raise_any_pending_exceptions;
-      sm <- buildSpecMorphism domSpec codSpec morphism_map position opt_sm_tm;
+      sm <- buildSpecMorphism domSpec codSpec morphism_map opt_sm_tm;
       raise_any_pending_exceptions;
       % renamings <- return (convertMorphismMapToRenamings morphism_map);
       verifySignatureMappings domSpec codSpec sm position;
@@ -289,12 +289,11 @@ coherence conditions of the morphism elements.
          Spec 
       -> Spec 
       -> (AQualifierMap QualifiedId) * (AQualifierMap QualifiedId)
-      -> Position
       -> Option SCTerm
       -> Env Morphism
-  def buildSpecMorphism domSpec codSpec (opMap,sortMap) position opt_sm_tm = {
-      newOpMap <- completeMorphismMap opMap domSpec.ops codSpec.ops position;
-      newSortMap <- completeMorphismMap sortMap domSpec.sorts codSpec.sorts position;
+  def buildSpecMorphism domSpec codSpec (opMap,sortMap) opt_sm_tm = {
+      newOpMap   <- completeMorphismMap opMap   domSpec.ops   codSpec.ops;
+      newSortMap <- completeMorphismMap sortMap domSpec.sorts codSpec.sorts;
       return {
           dom     = domSpec,
           cod     = codSpec,
@@ -321,10 +320,9 @@ Should we check to see if qid is in cod_map??
     fa(a,b) AQualifierMap QualifiedId
          -> AQualifierMap a
          -> AQualifierMap b
-         -> Position
          -> Env (PolyMap.Map (QualifiedId, QualifiedId))
 
-  def completeMorphismMap trans_map dom_map cod_map position =
+  def completeMorphismMap trans_map dom_map cod_map =
     let def compl (q, id, _ (* val *), new_map) =
       case findAQualifierMap (trans_map, q, id) of
         | Some qid -> return (update new_map (Qualified (q,id)) qid) % explicit
@@ -333,17 +331,13 @@ Should we check to see if qid is in cod_map??
            case findAQualifierMap (cod_map, q, id) of
              | Some _ -> return (update new_map (Qualified (q,id)) (Qualified (q,id))) % identity
              | _ -> 
-	       %% My apologies for this temporary hack for Accord -- no easy way to handle it otherwise
-	       let xq = "Target_Sig_Spec" in
-	       case findAQualifierMap (cod_map, xq, id) of
-		 | Some _ -> return (update new_map (Qualified (q,id)) (Qualified (xq,id))) % foo +-> Target_Sig_Spec.foo
-		 | _ -> 
-		   let xx = wildFindUnQualified (cod_map, id) in
-		   let msg = "No mapping for " ^ q ^ "." ^ id ^ ", but did find " ^ anyToString xx in
-		   let _ = writeLine(anyToString msg) in
+	       case wildFindUnQualified (cod_map, id) of
+		 | [] -> 
+		   let msg = "No mapping for " ^ q ^ "." ^ id in
 		   raise (MorphError (noPos, msg))
-
-
+		 | targets ->
+		   let msg = "No unique mapping for " ^ q ^ "." ^ id ^ " -- found " ^ toString (length targets) ^ " candidates" in
+		   raise (MorphError (noPos, msg))
     in
       foldOverQualifierMap compl emptyMap dom_map
 
