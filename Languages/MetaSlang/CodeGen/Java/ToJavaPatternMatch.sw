@@ -12,10 +12,10 @@ TranslationBuiltIn.mkFail (for when no case applies) translates to an error.00
 
 *)
 
-op  translateMatchJava: Spec -> Option(Ref Nat) -> Spec
-def translateMatchJava spc opt_counter =
+op  translateMatchJava: Spec -> Spec
+def translateMatchJava spc =
   % opt_counter is added so Accord can avoid resetting counter over an accord program
-  let spc = translateMatch spc opt_counter in
+  let spc = translateMatch spc in
   mapSpec (fn t -> case t of
 	             | Let([(VarPat(v,_),vt as (Apply(Fun(Select _,_,_),_,_)))], body, _) ->
 	               substitute(body,[(v,vt)])

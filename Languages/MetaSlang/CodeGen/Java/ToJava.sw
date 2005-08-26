@@ -890,9 +890,8 @@ def builtinSortOp(qid) =
 def printOriginalSpec? = false
 def printTransformedSpec? = false
 
-%op transformSpecForJavaCodeGen: Spec -> Spec -> Option(Ref Nat) -> Spec
-def transformSpecForJavaCodeGen basespc spc opt_counter =
-  % opt_counter is added so Accord can avoid resetting counter over an accord program
+%op transformSpecForJavaCodeGen: Spec -> Spec -> Spec
+def transformSpecForJavaCodeGen basespc spc =
   %let _ = writeLine("transformSpecForJavaCodeGen...") in
   let _ = if printOriginalSpec? then printSpecFlatToTerminal spc else () in
   let spc = unfoldSortAliases spc in
@@ -904,7 +903,7 @@ def transformSpecForJavaCodeGen basespc spc opt_counter =
   let spc = instantiateHOFns spc in
   let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
   let spc = lambdaLift spc in
-  let spc = translateMatchJava spc opt_counter in
+  let spc = translateMatchJava spc in
   %let _ = toScreen(printSpecFlat spc) in
   let spc = simplifySpec spc in
   %let _ = toScreen(printSpecFlat spc) in
@@ -950,7 +949,7 @@ def generateJavaCodeFromTransformedSpecM spc =
 op specToJava : Spec * Spec * Option Spec * String -> JSpec
 
 def specToJava(basespc,spc,optspec,filename) =
-  let spc = JGen.transformSpecForJavaCodeGen basespc spc None in
+  let spc = JGen.transformSpecForJavaCodeGen basespc spc in
   let jspc = generateJavaCodeFromTransformedSpec spc in
   let jfiles = processOptions(jspc,optspec,filename) in
   let _ = List.app printJavaFile jfiles in

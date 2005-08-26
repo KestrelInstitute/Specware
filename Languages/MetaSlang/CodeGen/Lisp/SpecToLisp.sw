@@ -1355,7 +1355,7 @@ SpecToLisp qualifying spec {
    let spc = (if removeCurrying?   then removeCurrying   spc else spc) in
    let spc = (if instantiateHOFns? then	instantiateHOFns spc else spc) in
    let spc = (if lambdaLift?       then lambdaLift       spc else spc) in
-   let spc = translateMatch spc None in
+   let spc = translateMatch spc in
    let spc = translateRecordMergeInSpec spc in
    let spc = arityNormalize             spc in
    let lisp_spec = lisp spc in
