@@ -349,7 +349,13 @@ spec
                      let sm            = edgeLabel dg edge in
 		     let source_vertex = source_fn    edge in
 		     let target_vertex = target_fn    edge in
-                     foldMap (fn mfset_map -> fn dom_qid -> fn cod_qid -> 
+		     let explicit_qid_map = sm_qid_map sm in
+		     foldl (fn ((q, id, _), mfset_map) ->
+			    let dom_qid = Qualified(q, id) in
+			    let cod_qid = case evalPartial explicit_qid_map dom_qid of
+					    | Some cod_qid -> cod_qid
+					    | _ -> dom_qid
+			    in
 			      case evalPartial mfset_map (source_vertex, dom_qid) of
 				| None -> mfset_map
 				| Some dom_mfset_node ->
@@ -357,9 +363,9 @@ spec
 				    | None -> mfset_map
 				    | Some cod_mfset_node ->
 				      merge mfset_map dom_mfset_node cod_mfset_node)
-                             mfset_map  
-			     (sm_qid_map sm))
-                    initial_mfset_vqid_map               
+		           mfset_map 
+			   (select_items (dom sm)))
+		    initial_mfset_vqid_map
 		    dg
   in
  
