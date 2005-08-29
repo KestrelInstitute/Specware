@@ -262,14 +262,26 @@ MetaSlang qualifying spec
   op maybeAndSort : [b] List (ASort b) * b -> ASort b
  def maybeAndSort (srts, pos) =
    let compressed_sorts =
-       foldl (fn (srt, new_srts) ->
-	      case sortInnerSort srt of
-	       %| Any _ -> new_srts % causes evil
-		| _ -> 
-		  if exists (fn new_srt -> equalSort? (srt, new_srt)) new_srts then
-		    new_srts
+       foldl (fn (srt, pending_srts) ->
+	      case pending_srts of
+		| [] -> [srt]
+		| [pending_srt] ->
+		  (case (sortInnerSort srt, sortInnerSort pending_srt) of
+		     | (Any _ , _)     -> [pending_srt]
+		     | (_,      Any _) -> [srt]
+		     | _ ->
+		       case sortInnerSort srt of
+			 | Any _ -> pending_srts
+			 | _ ->
+			   if exists (fn pending_srt -> equalSort? (srt, pending_srt)) pending_srts then
+			     pending_srts
+			   else
+			     pending_srts ++ [srt])
+		| _ ->
+		  if exists (fn pending_srt -> equalSort? (srt, pending_srt)) pending_srts then
+		    pending_srts
 		  else
-		    new_srts ++ [srt])
+		    pending_srts ++ [srt])
              []
 	     srts
    in
@@ -281,21 +293,38 @@ MetaSlang qualifying spec
   op maybeAndTerm : [b] List (ATerm b) * b -> ATerm b
  def maybeAndTerm (tms, pos) =
    let compressed_terms =
-       foldl (fn (tm, new_tms) ->
-	      case termInnerTerm tm of
-	       %| Any _ -> new_tms   % causes evil
-		| _ -> 
-		  if exists (fn new_tm -> equalTerm? (tm, new_tm)) new_tms then
-		    new_tms
+       foldl (fn (tm, pending_tms) ->
+	      case pending_tms of
+		| [] -> [tm]
+		| [pending_tm] ->
+		  (case (termInnerTerm tm, termInnerTerm pending_tm) of
+		     | (Any _, _)    -> 
+		       if equalSort? (termSort tm, termSort pending_tm) then
+			 [pending_tm]
+		       else
+			 [pending_tm, tm]
+		     | (_,    Any _) -> 
+		       if equalSort? (termSort tm, termSort pending_tm) then
+			 [tm]
+		       else
+			 [pending_tm, tm]
+		     | _ ->
+		       if exists (fn pending_tm -> equalTerm? (tm, pending_tm)) pending_tms then
+			 pending_tms
+		       else
+			 pending_tms ++ [tm])
+		| _ ->
+		  if exists (fn pending_tm -> equalTerm? (tm, pending_tm)) pending_tms then
+		    pending_tms
 		  else
-		    new_tms ++ [tm])
+		    pending_tms ++ [tm])
              []
 	     tms
    in
-   case compressed_terms of
-     | []   -> Any pos
-     | [tm] -> tm
-     | _    -> And (tms, pos)
+     case compressed_terms of
+       | []   -> Any pos
+       | [tm] -> tm
+       | _    -> And (tms, pos)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
