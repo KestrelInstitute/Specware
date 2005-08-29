@@ -6,26 +6,24 @@ SpecCalc qualifying spec
 
  op  compressDefs : Spec -> Spec
  def compressDefs spc =
-   let new_sorts = foldriAQualifierMap 
-                     (fn (q, id, old_info, revised_sorts) ->
-		      case compressSortDefs spc old_info of
-			| Some new_info -> insertAQualifierMap (revised_sorts, q, id, new_info)
-			| _             -> revised_sorts)
-		     spc.sorts
-		     spc.sorts
-   in
-   let new_ops = foldriAQualifierMap 
-                   (fn (q, id, old_info, revised_ops) ->
-		    case compressOpDefs spc old_info of
-		      | Some new_info -> insertAQualifierMap (revised_ops, q, id, new_info)
-		      | _             -> revised_ops)
-		   spc.ops
-		   spc.ops
-   in
-   let new_spec =  spc << {sorts = new_sorts,
-			   ops   = new_ops}
-   in
-   new_spec
+   spc << {
+	   sorts    = compressSorts    spc,
+	   ops      = compressOps      spc,
+	   elements = compressElements spc
+	  }
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op  compressSorts : Spec -> ASortMap Position
+ def compressSorts spc =
+   %% this compresses the definition for each individual sort
+   %% it does not coalesce similar sorts
+   foldriAQualifierMap (fn (q, id, old_info, revised_sorts) ->
+			case compressSortDefs spc old_info of
+			  | Some new_info -> insertAQualifierMap (revised_sorts, q, id, new_info)
+			  | _             -> revised_sorts)
+                       spc.sorts
+		       spc.sorts   
 
  op  compressSortDefs : Spec -> SortInfo -> Option SortInfo 
  def compressSortDefs spc info =
@@ -53,15 +51,29 @@ SpecCalc qualifying spec
 		    then
 		      new_defs
 		  else
-		    cons (old_def, new_defs))
+		    %% just cons here -- let maybeAndSort remove redundant Any's
+		    cons (old_def, new_defs)) 
 	         []
 		 old_defs
        in
        let new_names = removeDuplicates info.names in
-       let new_dfn   = maybeAndSort (old_decls ++ new_defs, pos) in
+       let new_dfn   = maybeAndSort (old_decls ++ new_defs, pos) in % TODO: write and use version of maybeAndSort that uses equivSort?, not equalSort?
        Some (info << {names = new_names,
 		      dfn   = new_dfn})
         
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op  compressOps : Spec -> AOpMap Position
+ def compressOps spc =
+   %% this compresses the definition for each individual op
+   %% it does not coalesce similar ops
+   foldriAQualifierMap (fn (q, id, old_info, revised_ops) ->
+			case compressOpDefs spc old_info of
+			  | Some new_info -> insertAQualifierMap (revised_ops, q, id, new_info)
+			  | _             -> revised_ops)
+                       spc.ops
+		       spc.ops
+
  op  compressOpDefs : Spec -> OpInfo -> Option OpInfo
  def compressOpDefs spc info =
    let (old_decls, old_defs) = opInfoDeclsAndDefs info in
@@ -91,15 +103,34 @@ SpecCalc qualifying spec
 		  if exists (fn new_def -> equivTerm? spc (old_def, new_def)) new_defs then
 		    new_defs
 		  else
+		    %% just cons here -- let maybeAndTerm remove redundant Any's
 		    cons (old_def, new_defs))
 	         []
 		 old_defs
        in
        let new_names = removeDuplicates info.names in
-       let new_dfn = maybeAndTerm (new_decls ++ new_defs, pos) in
+       let new_dfn = maybeAndTerm (new_decls ++ new_defs, pos) in  % TODO: write and use version of maybeAndTerm that uses equivTerm?, not equalTerm?
        Some (info << {names = new_names,
 		      dfn   = new_dfn})
 	          
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op  compressElements : Spec -> SpecElements
+ def compressElements spc =
+   %% this coalesces equal top-level elements [feeble--might be thwarted by positions]
+   %% TODO: make this more agressive -- at least look among imported elements for prior elements
+   %% TODO: use equivTerm? to compare axiom/thorem/conjecture bodies
+   %% TODO: consider recursive version -- but perhaps some philosophical concens wrt pruning among imported elements
+   foldl (fn (elt, prior_elts) ->
+	  if member (elt, prior_elts) then
+	    prior_elts
+	  else
+	    prior_elts ++ [elt])
+         []   
+	 spc.elements
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op  complainIfAmbiguous : Spec -> Position -> Env Spec
  def complainIfAmbiguous spc pos =
