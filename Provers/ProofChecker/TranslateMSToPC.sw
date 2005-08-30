@@ -50,19 +50,11 @@
 %
 % there there is only one opdef and a op declaration as well
 
-Translate qualifying spec
-  % import BasicAbbreviations
-  % import OtherAbbreviations
+spec
+  import Spec
   import /Languages/MetaSlang/AbstractSyntax/AnnTerm
   import /Languages/MetaSlang/Specs/Environment
   import /Languages/SpecCalculus/Semantics/Environment  % for the Specware monad
-  import Implementation
-
-  op +++ infixl 25    : [a]   FSeq a * FSeq a -> FSeq a
-  def +++ = List.++
-
-  op fSeqLength : [a] FSeq a -> Nat
-  def fSeqLength = List.length
 
   type Subst = List (Constructor * Operation)
 
@@ -83,7 +75,7 @@ Translate qualifying spec
 %%             lookup subst
 %%       | _ -> expr
    
-  op specToContext : Spec -> SpecCalc.Env MetaslangProofChecker.Context
+  op specToContext : Spec -> SpecCalc.Env Context
   def specToContext spc =
     let
       def specElemToContextElems fSeq elem = 
@@ -94,12 +86,12 @@ Translate qualifying spec
             % defined later.
           | Import (specTerm,spc,elements) -> {
               otherCtxt <- specToContext spc;
-              return (fSeq +++ otherCtxt)
+              return (fSeq ++ otherCtxt)
             }
           | Sort qid -> {
               typeInfo <- findInMap spc.sorts qid;
               case typeInfo.dfn of
-                | Pi (tyVars,typ,_) -> return (fSeq <| (typeDeclaration (qidToTypeName qid, fSeqLength tyVars)))
+                | Pi (tyVars,typ,_) -> return (fSeq <| (typeDeclaration (qidToTypeName qid, length tyVars)))
                 | typ -> return (fSeq <| (typeDeclaration (qidToTypeName qid, 0)))
             }
           | SortDef qid -> {
@@ -400,7 +392,7 @@ Translate qualifying spec
          }
       | (Product (lFlds,_), Product (rFlds,_)) -> {
            subs <- mapListToFSeq (fn ((_,l),(_,r)) -> matchType spc l r) (zip lFlds rFlds);
-           return (List.foldl List.concat [] subs)
+           return (foldl List.concat [] subs)
          }
       | (CoProduct (lSums,_), CoProduct (rSums,_)) ->
          let
@@ -411,7 +403,7 @@ Translate qualifying spec
                | _ -> raise (Fail "bad")
          in {
            subs <- mapListToFSeq f (zip lSums rSums);
-           return (List.foldl List.concat [] subs)
+           return (foldl List.concat [] subs)
          }
       | (Quotient (lTyp,lTerm,_), Quotient (rTyp,rTerm,_)) -> matchType spc lTyp rTyp
       | (Subsort (lTyp,lTerm,_), Subsort (rTyp,rTerm,_)) -> matchType spc lTyp rTyp
@@ -526,7 +518,7 @@ Translate qualifying spec
       | AliasPat (pat1,pat2,_) -> {
           (vars1,types1,expr1) <- Pattern.msToPC spc expr pat1;
           (vars2,types2,expr2) <- Pattern.msToPC spc expr pat2;
-          return (vars1+++vars2, types1+++types2, expr1 &&& expr2)
+          return (vars1 ++ vars2, types1 ++ types2, expr1 &&& expr2)
         }
       | VarPat ((id,typ), b) -> {
           newType <- Type.msToPC spc typ;
@@ -546,13 +538,13 @@ Translate qualifying spec
            foldM (fn (vars,types,newExpr) -> fn (n,pat) -> {
               fieldType <- Type.msToPC spc (patternSort pat);
               (fVars,fType,fExpr) <- Pattern.msToPC spc (DOT (expr, fieldType, prod (stringToNat n))) pat;
-              return (vars+++fVars,types+++fType,newExpr &&& fExpr)
+              return (vars ++ fVars,types ++ fType,newExpr &&& fExpr)
             }) (empty,empty,TRUE) fields
       | RecordPat (fields,_) -> 
            foldM (fn (vars,types,newExpr) -> fn (id,pat) -> {
               fieldType <- Type.msToPC spc (patternSort pat);
               (fVars,fType,fExpr) <- Pattern.msToPC spc (DOT (expr, fieldType, user (idToUserField id))) pat;
-              return (vars+++fVars,types+++fType,newExpr &&& fExpr)
+              return (vars ++ fVars,types ++ fType,newExpr &&& fExpr)
             }) (empty,empty,TRUE) fields
       | StringPat (string, b) -> return (empty,empty,(primString string) == expr)
       | BoolPat (bool, b) -> return (empty,empty,expr)
@@ -706,7 +698,7 @@ Translate qualifying spec
     % computeUpperMatrix pairs =
       % case pairs of
         % | [] -> []
-        % | sumTerm::rest -> (map (fn x -> (sumTerm,x)) rest) +++ (computeUpperMatrix rest)
+        % | sumTerm::rest -> (map (fn x -> (sumTerm,x)) rest)  List.++  (computeUpperMatrix rest)
             %  
     % (a::l)  zip a with l and then do the same to l
 endspec
