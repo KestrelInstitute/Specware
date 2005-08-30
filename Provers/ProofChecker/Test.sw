@@ -1,14 +1,11 @@
 % Temporary test function for translation.
 
-Translate qualifying spec
-  import /Languages/SpecCalculus/Semantics/Specware  % for the Specware monad
-  import translate TranslateMSToPC by {Set._ +-> Blech._}
-
-  op +++ infixl 25    : [a]   FSeq a * FSeq a -> FSeq a
-  def +++ = List.++
-
-  op fSeqLength : [a] FSeq a -> Nat
-  def fSeqLength = List.length
+let
+M = morphism Spec -> Implementation {}
+T = Translate qualifying spec
+  import translate /Languages/SpecCalculus/Semantics/Specware by {Set._ +-> SWSet._} % for the Specware monad
+  
+  import TranslateMSToPC
 
   op test : String -> Boolean
   def test path =
@@ -35,5 +32,7 @@ Translate qualifying spec
       return true
     } in
     runSpecCommand (catch prog toplevelHandler)
-endspec
+  endspec
+in
+(T [M])
 
