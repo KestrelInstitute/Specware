@@ -2,54 +2,6 @@
 
 % This file will be moved.
 
-% There are some outstanding issues. First, in AC's abstract syntax, an
-% instance of an operator is accompanied by instantiations for any type
-% variables for that operator. The code below, does not try to recover what
-% those instantiations are.
-
-% A number of functions have been left unspecified. This includes functions
-% for converting identifiers (strings) in MetaSlang to identifiers in the
-% proof checker abstract syntax. It also includes a monadic function
-% for generating fresh variable names.
-
-% Errors in /usr/home/kestrel/lindsay/Work/Specware/Specware4/Provers/ProofChecker/TranslateMSToPC.sw
-% 53.27-53.28     : Several matches for overloaded op ++ of type Context * Context -> Context :  FSeq.++ List.++
-% 58.92-58.97     : Several matches for overloaded op length of type MetaSlang.TyVars -> Integer :  FSeq.length List.length
-% 345.23-345.24   : Several matches for overloaded op ++ of type Variables * Variables -> Variables :  FSeq.++ List.++
-% 345.38-345.39   : Several matches for overloaded op ++ of type Types * Types -> Types :  FSeq.++ List.++
-% 365.26-365.27   : Several matches for overloaded op ++ of type Variables * Variables -> Variables :  FSeq.++ List.++
-% 365.39-365.40   : Several matches for overloaded op ++ of type Types * Types -> Types :  FSeq.++ List.++
-% 371.26-371.27   : Several matches for overloaded op ++ of type Variables * Variables -> Variables :  FSeq.++ List.++
-% 371.39-371.40   : Several matches for overloaded op ++ of type Types * Types -> Types :  FSeq.++ List.++
-% 428.88-428.90   : Several matches for overloaded op map of type Char -> Expression -> List(Char) -> List(Expression) :FSeq.map List.map
-% 446.6-446.10    : Several matches for overloaded op foldr of type Expression * Expression -> Expression ->
-%    Expression -> List(Expression) -> Expression :  FSeq.foldr List.foldr
-% CL-USER(7):
-
-% Problems with spec "Implementation"
-
-% The point is that the implementation *defines* FSeq.++ to be List.++ but then the overloader doesn't know that they are
-% the same function.
-
-% If we then do a translate of FSeq.++ to List.++ we also get an error:
-% 21.37-21.57     : Error in translation: Illegal to translate op FSeq.++ into pre-existing, non-alias, untranslated List.++
-
-% For some reason, I need "embed" in front of the constructor "prefix" for the
-% typechecker to do the right thing.
-
-% There seems to be a bug in the MetaSlang representation
-% if I define
-%
-% op plus : Nat * Nat -> Nat
-% def plus (x,y) = x
-%
-% there there is only one opdef, but if I define
-%
-% op plus : [a] a * a -> a
-% def plus (x,y) = x
-%
-% there there is only one opdef and a op declaration as well
-
 spec
   import Spec
   import /Languages/MetaSlang/AbstractSyntax/AnnTerm

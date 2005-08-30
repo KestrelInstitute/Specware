@@ -1,11 +1,9 @@
 % Temporary test function for translation.
 
-let
-M = morphism Spec -> Implementation {}
-T = Translate qualifying spec
+Translate qualifying spec
   import translate /Languages/SpecCalculus/Semantics/Specware by {Set._ +-> SWSet._} % for the Specware monad
   
-  import TranslateMSToPC
+  import TranslateMSToPC[Refinement]
 
   op test : String -> Boolean
   def test path =
@@ -32,7 +30,5 @@ T = Translate qualifying spec
       return true
     } in
     runSpecCommand (catch prog toplevelHandler)
-  endspec
-in
-(T [M])
+endspec
 
