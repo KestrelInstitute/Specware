@@ -8,6 +8,7 @@ spec
  %% in categories where morphisms are discrete maps of items within objects 
  %% (as opposed to categories where morphisms are continuous functions, etc.).
  import translate /Library/Structures/Data/QuotientSets/Monomorphic/MFSet by {MFSet.Element +-> VQid}
+ %% import translate /Library/Structures/Data/QuotientSets/Monomorphic/MFSetViaRefs by {Element +-> VQid}
  %%  In particular, after translation we have the following sorts:
  %%    QuotientSet      = List (List VQidToQidRule)
  %%    EquivalenceClass = List VQid
