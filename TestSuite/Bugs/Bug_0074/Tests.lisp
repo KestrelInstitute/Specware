@@ -14,15 +14,16 @@
 	    ";;; Elaborating spec at $TESTDIR/EquivalentSorts#CC"
 	    ""
 	    "spec  "
-	    (:alternatives
-	     " type {A, B, C}"
-	     " type {A, C, B}"
-	     " type {B, A, C}"
-	     " type {B, C, A}"
-	     " type {C, A, B}"
-	     " type {C, B, A}"
-	     )
-	    " import Foo"
+	    ;; :optional  :alternatives doesn't work yet, 
+	    ;;  so this is the clumsy workaround:
+	    (:alternatives 
+	     (" type {A, B, C}" " import Foo")
+	     (" type {A, C, B}" " import Foo")
+	     (" type {B, A, C}" " import Foo")
+	     (" type {B, C, A}" " import Foo")
+	     (" type {C, A, B}" " import Foo")
+	     (" type {C, B, A}" " import Foo")
+	     (" import Foo"))
 	    (:alternatives 
 	     " type {A, B, C} = List(Nat * Nat)"
 	     " type {A, B, C} = Foo(Nat)"
