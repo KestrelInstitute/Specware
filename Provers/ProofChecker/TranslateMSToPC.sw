@@ -47,32 +47,104 @@ spec
                 | typ -> return (fSeq <| (typeDeclaration (qidToTypeName qid, 0)))
             }
           | SortDef qid -> {
-%%               typeInfo <- findInMap spc.sorts qid;
-%%               if recursiveSumOfProducts? spc qid then
-%%                 let
-%%                   def summandToOp sums =
-%%                     case sums of
-%%                       | (name, None) ->
-%%                           let newOpName = idToOperation (name ^ "$" ^ (printQualifiedId qid)) in 
-%%                           (opDeclaration (newOpName,newTyVars,newType),(idToConstructor name,newOpName))
-%%                       | (name, Some (TyVar (tVar,_))) -> 
-%%                       | (name, Some (typ as (Product (fields,_)))) -> 
-%%                           newOpName <- return (idToOperation (name ^ "$" ^ (printQualifiedId qid))); 
-%%                           prodType <- msToPC spc typ;
-%%                           typeVarTypes <- mapListToFSeq (fn tyVar -> return (VAR (idToTypeVariable tyVar))
-%%                           newType <- return (prodType ---> (TYPE (qidToTypeName qid, typeVarTypes)))
-%%                           (opDeclaration (newOpName,newTyVars,newType),(idToConstructor name,newOpName))
-%%                 in
-%%               else {
               typeInfo <- findInMap spc.sorts qid;
               case typeInfo.dfn of
-                | Pi (tyVars,typ,_) -> {
+                | Pi (tyVars,typ as (CoProduct (sums,_)),_) -> {
                      newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
-                     newType <- Type.msToPC spc typ;
-                     return (fSeq <| (typeDefinition (qidToTypeName qid, newTyVars, newType)))
+                     test? <- recursiveSumOfProducts? spc qid;
+                     if test? then
+                       let
+                         def idToOperation str = qidToOperation (mkUnQualifiedId str) (embed prefix)
+                         def summandToOp summand =
+                           case summand of
+                             | (name, None) -> {
+                                 newOpName <- return ((printQualifiedId qid) ^ "$" ^ name);
+                                 newOperator <- return (idToOperation newOpName);
+                                 typeVarTypes <- mapListToFSeq (fn tyVar -> return (VAR (idToTypeVariable tyVar))) tyVars;
+                                 newType <- return (TYPE (qidToTypeName qid, typeVarTypes));
+                                 % return (opDeclaration (newOpName,newTyVars,newType)) % ,(idToConstructor name,newOperator))
+                                 return (newOpName,newOperator,newTyVars,newType) % ,(idToConstructor name,newOperator))
+                                }
+                             | (name, Some typ) -> {
+                                 newOpName <- return ((printQualifiedId qid) ^ "$" ^ name);
+                                 newOperator <- return (idToOperation newOpName);
+                                 typeVarTypes <- mapListToFSeq (fn tyVar -> return (VAR (idToTypeVariable tyVar))) tyVars;
+                                 srcType <- Type.msToPC spc typ;
+                                 newType <- return (srcType --> (TYPE (qidToTypeName qid, typeVarTypes)));
+                                 % return (opDeclaration (newOpName,newTyVars,newType)) % ,(idToConstructor name,newOpName))
+                                 return (newOpName,newOperator,newTyVars,newType) % ,(idToConstructor name,newOpName))
+                                }
+                          def injectiveAxiom axms (opName,oper,typeVars,typ) =
+                            case typ of
+                              | ARROW (srcType,tar) -> {
+                                    lVar <- newVar;
+                                    rVar <- newVar;
+                                    newTerm <- return (FA2 (lVar,srcType,rVar,srcType,
+                                                   (EQ (APPLY (OPI (oper,empty),VAR lVar),APPLY (OPI (oper,empty),VAR rVar)))
+                                               ==> (EQ (VAR lVar,VAR rVar))));
+                                    return (axms <| (axioM ("injective$" ^ opName,typeVars,newTerm)))
+                                  }
+                              | _ -> return axms
+                          def disjointFrom op1 operators =
+                            case operators of
+                              | [] -> return empty
+                              | op2::rest ->
+                                 (case (op1,op2) of
+                                   | ((name1,oper1,tyVars1,ARROW (src1,tar1)),(name2,oper2,tyVars2,ARROW (src2,tar2))) -> {
+                                       var1 <- newVar;
+                                       var2 <- newVar;
+                                       newTerm <- return (FA2 (var1,src1,var2,src2,
+                                               ~~ (EQ (APPLY (OPI (oper1,empty),VAR var1),APPLY (OPI (oper2,empty),VAR var2)))));
+                                       newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,tyVars1,newTerm));
+                                       moreAxioms <- disjointFrom op1 rest;
+                                       return (newAxiom |> moreAxioms) 
+                                     }
+                                   | ((name1,oper1,tyVars1,typ1),(name2,oper2,tyVars2,ARROW (src2,tar2))) -> {
+                                       var2 <- newVar;
+                                       newTerm <- return (FA (var2,src2,
+                                               ~~ (EQ (OPI (oper1,empty),APPLY (OPI (oper2,empty),VAR var2)))));
+                                       newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,tyVars1,newTerm));
+                                       moreAxioms <- disjointFrom op1 rest;
+                                       return (newAxiom |> moreAxioms) 
+                                     }
+                                   | ((name1,oper1,tyVars1,ARROW (src1,tar1)),(name2,oper2,tyVars2,typ2)) -> {
+                                       var1 <- newVar;
+                                       newTerm <- return (FA (var1,src1,
+                                               ~~ (EQ (APPLY (OPI (oper1,empty),VAR var1),OPI (oper2,empty)))));
+                                       newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,tyVars1,newTerm));
+                                       moreAxioms <- disjointFrom op1 rest;
+                                       return (newAxiom |> moreAxioms) 
+                                     }
+                                   | ((name1,oper1,tyVars1,typ1),(name2,oper2,tyVars2,typ2)) -> {
+                                       newTerm <- return (~~ (EQ (OPI (oper1,empty),OPI (oper2,empty))));
+                                       newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,tyVars1,newTerm));
+                                       moreAxioms <- disjointFrom op1 rest;
+                                       return (newAxiom |> moreAxioms)
+                                     })
+                          def disjointAxioms operators =
+                            case operators of
+                              | op1::rest -> {
+                                  op1Axioms <- disjointFrom op1 rest;
+                                  restAxioms <- disjointAxioms rest;
+                                  return (op1Axioms ++ restAxioms)
+                                }
+                              | _ -> return empty
+                       in {
+                         print ("Recursive sum of products " ^ (printQualifiedId qid) ^ "\n");
+                         newOperators <- mapM summandToOp sums;
+                         decls <- mapListToFSeq (fn opr -> return (opDeclaration (opr.2,opr.3,opr.4))) newOperators;
+                         injAxioms <- foldM injectiveAxiom FSeq.empty newOperators;
+                         disjAxioms <- disjointAxioms newOperators;
+                         return ((fSeq <| (typeDeclaration (qidToTypeName qid, length tyVars))) ++ decls ++ injAxioms ++ disjAxioms)
+                       }
+                     else {
+                       print ("Not recursive sum of products " ^ (printQualifiedId qid) ^ "\n");
+                       newType <- Type.msToPC spc typeInfo.dfn;
+                       return (fSeq <| (typeDefinition (qidToTypeName qid, newTyVars, newType)))
+                     }
                   }
                 | typ -> {
-                     newType <- Type.msToPC spc typ;
+                     newType <- Type.msToPC spc typeInfo.dfn;
                      return (fSeq <| (typeDefinition (qidToTypeName qid, empty, newType)))
                   }
              }
@@ -534,8 +606,6 @@ spec
   op mapListToFSeq : fa(a,b) (a -> b) -> List a -> FSeq b
   def mapListToFSeq f list = foldl (fn (x,fSeq) -> (f x) |> fSeq) empty list
 
-  % op MonadFSeq.map : fa(a,b) (a -> SpecCalc.Env b) -> FSeq a -> SpecCalc.Env (FSeq b)
-
   op MSToPCTranslateMonad.mapListToFSeq : fa(a,b) (a -> SpecCalc.Env b) -> List a -> SpecCalc.Env (FSeq b)
   def MSToPCTranslateMonad.mapListToFSeq f list =
     case list of
@@ -603,13 +673,13 @@ spec
   % to the same type.
   %
   % A more comprehensive scheme would need handle mutually recursive type definitions
-  % presumably using some some of toplogical sort.
+  % presumably using some sort of toplogical sort.
  
   op recursiveSumOfProducts? : Spec -> QualifiedId -> SpecCalc.Env Boolean
   def recursiveSumOfProducts? spc qid = {
     typeInfo <- findInMap spc.sorts qid;
     case typeInfo.dfn of
-      | CoProduct (pairs,_) -> 
+      | Pi (tyVars,CoProduct (pairs,_),_) -> 
           let
             def checkSums sums =
               case sums of
