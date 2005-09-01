@@ -1,6 +1,6 @@
 spec
 
-  import TypesAndExpressions
+  import ../ProofChecker/Spec
 
   (* This spec provides an abstract datatype API for Types and
   Expressions. *)
@@ -60,11 +60,17 @@ spec
 
   type FNExpr = (Expression | FN?)
 
-  op mkFN: Operation * Types -> FNExpr
+  op mkFN: Variable * Type * Expression -> FNExpr
+  def mkFN(v, t, e) = FN(v, t, e)
   
-  op typE: FNExpr -> Type
+  op fnVar: FNExpr -> Variable
+  def fnVar(FN(v,_,_)) = v
 
-  op expr: FNExpr -> Expression
+  op fnVarType: FNExpr -> Type
+  def fnVarType(FN(_,t,_)) = t
+
+  op fnBody: FNExpr -> Expression
+  def fnBody(FN(_,_,b)) = b
 
 %  axiom FNa1 is fa (var_v: Variable, type_v: Type, expr_v: Expression) var(mkFN(var_v, type_v, expr_v)) = var_v
 %  axiom FNa2 is fa (oper_v: Operation, types_v: Types) types(mkFN(oper_v, types_v)) = types_v
@@ -77,6 +83,12 @@ spec
       | _ -> false
 
   type EQExpr = (Expression | EQ?)
+
+  op eqLhs: EQExpr -> Expression
+  def eqLhs(EQ(l, r)) = l
+
+  op eqRhs: EQExpr -> Expression
+  def eqRhs(EQ(l, r)) = r
 
   op IF?: Expression -> Boolean
   def IF?(e) =
@@ -117,5 +129,78 @@ spec
       | _ -> false
 
   type QUOTExpr = (Expression | QUOT?)
+
+  op TYPE?: Type -> Boolean
+  def TYPE?(t) =
+    case t of
+      | TYPE _ -> true
+      | _ -> false
+
+  type TYPEType = (Type | TYPE?)
+
+  op TYPESName: TYPEType -> TypeName
+  def TYPEName(TYPE(tn, _)) = tn
+
+  op TYPEtypes: TYPEType -> Types
+  def TYPEtypes(TYPE(_, ts)) = ts
+
+  op ARROW?: Type -> Boolean
+  def ARROW?(t) =
+    case t of
+      | ARROW _ -> true
+      | _ -> false
+
+  type ARROWType = (Type | ARROW?)
+
+  op domain: ARROWType -> Type
+  def domain(ARROW(t1, _)) = t1
+
+  op range: ARROWType -> Type
+  def range(ARROW(_, t2)) = t2
+
+  op RECORD?: Type -> Boolean
+  def RECORD?(t) =
+    case t of
+      | RECORD _ -> true
+      | _ -> false
+
+  type RECORDType = (Type | RECORD?)
+
+  op RECfields: RECORDType -> Fields
+  def RECfields(RECORD(flds, _)) = flds
+
+  op RECtypes: RECORDType -> Types
+  def RECtypes(RECORD(_, types)) = types
+
+  op SUM?: Type -> Boolean
+  def SUM?(t) =
+    case t of
+      | SUM _ -> true
+      | _ -> false
+
+  type SUMType = (Type | SUM?)
+
+  op SUMcnstrs: SUMType -> Constructors
+  def SUMcnstrs(SUM(cs, _)) = cs
+
+  op SUMtypes: SUMType -> Types
+  def SUMtypes(SUM(_, types)) = types
+
+  op RESTR?: Type -> Boolean
+  def RESTR?(t) =
+    case t of
+      | RESTR (t, r) -> true
+      | _ -> false
+
+  type RESTRType = (Type | RESTR?)
+
+  op superType: RESTRType -> Type
+  def superType(t) =
+    let RESTR (st, _) = t in st
+
+  op restrictPred: RESTRType -> Expression
+  def restrictPred(t) =
+    let RESTR (_, r) = t in r
+
 
 endspec

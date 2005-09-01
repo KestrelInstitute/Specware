@@ -10,9 +10,13 @@ spec
   op falseProof: Context -> Proof
   def falseProof(cx) =
     assume (theoreM (cx, FALSE))
+
+  op proofObligationAssumption: Context * Expression -> Proof
+  def proofObligationAssumption(cx, exp) =
+    assume (theoreM (cx, exp))
   
-  op wellTypedExpressionAssumption: Context * Expression * Type -> Proof
-  def wellTypedExpressionAssumption(cx, expr, ty) =
+  op wellTypedExpressionAssumptionWithType: Context * Expression * Type -> Proof
+  def wellTypedExpressionAssumptionWithType(cx, expr, ty) =
     assume (wellTypedExpr(cx, expr, ty))
 
   op tyBoolProof: Proof * Context * Type -> Proof
@@ -56,8 +60,10 @@ spec
   def tyRestrProof(cxPrf, cx, ty) =
     let RESTR (st, expr) = ty in
     if exprFreeVars expr = empty
-      then tyRestr(wellTypedExpressionAssumption(cx, expr, ARROW(st, BOOL)))
+      then tyRestr(wellTypedExpressionAssumptionWithType(cx, expr, ARROW(st, BOOL)))
     else falseProof(cx)
+
+  op uniqueDefVar: Variable
 
   op v: Variable
   op v1: Variable

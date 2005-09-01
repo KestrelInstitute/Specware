@@ -6,13 +6,11 @@ spec
 %  import ../ProofChecker/Proofs, ../ProofChecker/Substitutions, ../ProofChecker/BasicAbbreviations
   import ContextAPI
   
-  (* In this spec we define a function that takes a context and a type
-  and generates a proof that the type is well-formed. *)
+  (* In this spec we define a function that takes two types and a
+  context and generates a proof that the types are equivalent in the
+  given context. *)
 
   op axiomName: Expression -> AxiomName
-
-  op mkTypeSubstitution: TypeVariables * Types -> TypeSubstitution
-  def mkTypeSubstitution(tvs, ts) = fromSeqs(tvs, ts)
 
   op wellFormedTypeAssumption: Context -> Type -> Proof
   def wellFormedTypeAssumption cx t =
@@ -250,14 +248,18 @@ spec
 	(typeSubstInType subst td, teDef(cxP, tProofs, tn))
     else (t, teRefl(wellFormedTypeAssumption cx t))
 
+  op expandTypeWithContext: Proof * Context -> Type -> Type * Proof
+  def expandTypeWithContext (cxP, cx) t =
+    let typeDefs = filter typeDefinition? cx in
+    applyTypeDefsInType (cxP, typeDefs) t
+  
   op typeEquivalent?: Proof * Context * Type * Type -> Option Proof
   def typeEquivalent?(cxP, cx, t1, t2) =
     if circularContext?(cx)
       then fail("Circular context in typeEquivalent?")
     else
-      let typeDefs = filter typeDefinition? cx in
-      let (t1X, p1) = applyTypeDefsInType (cxP, typeDefs) t1 in
-      let (t2X, p2) = applyTypeDefsInType (cxP, typeDefs) t2 in
+      let (t1X, p1) = expandTypeWithContext(cxP, cx) t1 in
+      let (t2X, p2) = expandTypeWithContext (cxP, cx) t2 in
       let p2 = teSymm(p2) in
       let p = teTrans(p1, p2) in
       if t1X = t2X then Some p

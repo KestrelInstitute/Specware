@@ -90,8 +90,6 @@ spec
     let wfDefProof = assume (theoreM (cx ++ multiTypeVarDecls tvs1, EX1(operVar, typeSubstInType typeVarSubst t, replaceOperationWithVar(oper, operVar, exp)))) in
     cxOdef(cxProof, wfDefProof, oper)
 
-  op uniqueDefVar: Variable
-
   op replaceOperationWithVar: Operation * Variable * Expression -> Expression
   def replaceOperationWithVar(oper, var, expr) =
     case expr of
