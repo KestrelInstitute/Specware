@@ -51,8 +51,7 @@ spec
 		       parent = Ref None,
 		       value  = value}
 	   in
-	     (node.parent := Some node;
-	      update new_mu_set_map key node))
+	     update new_mu_set_map key node)
           emptyMap
           given_map
 			 
@@ -62,28 +61,29 @@ spec
  def merge map node_a node_b =
   let def find_root node =
        case ! node.parent of
-        | Some parent ->
-          if node = parent then
-	    node
-	  else
-	    find_root parent
+        | Some parent -> find_root parent
 	| _ -> node
   in
   let root_a = find_root node_a in
   let root_b = find_root node_b in
-  let rank_a = ! root_a.rank in
-  let rank_b = ! root_b.rank in
-  let _ = if rank_a > rank_b then
-	    root_b.parent := Some root_a
-	  else
-	    root_a.parent := Some root_b
-  in
-  let _ = if rank_a = rank_b then
-            root_b.rank := 1 + ! root_b.rank
-	  else
-	    ()
-  in
+  if root_a = root_b then
     map
+  else
+    let rank_a = ! root_a.rank in
+    let rank_b = ! root_b.rank in
+    let _ = if rank_a > rank_b then
+              let _ = if root_a = root_b then writeLine "oops 1" else () in
+	      root_b.parent := Some root_a
+	    else 
+	      let _ = if root_a = root_b then writeLine "oops 2" else () in
+	      root_a.parent := Some root_b
+    in
+    let _ = if rank_a = rank_b then
+              root_b.rank := 1 + ! root_b.rank
+	    else
+	      ()
+    in
+      map
 
  %%  ========================================================================
 
