@@ -429,7 +429,7 @@ ArityNormalize qualifying spec {
 	   %% we pass the pV? test in reduceTerm,
 	   %% which allows use to include an ignore decl
            %% if the var is not used in the body
-           let (name,usedNames) = freshName("pV",usedNames) in
+           let (name,usedNames) = freshName("apV",usedNames) in
            let x = (name,dom) in
            (Lambda([(VarPat(x,noPos),mkTrue(),
                      mkArityApply(sp,dom,term,mkVar x,usedNames))],noPos))
