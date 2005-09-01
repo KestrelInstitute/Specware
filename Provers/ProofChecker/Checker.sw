@@ -343,7 +343,7 @@ spec
   op checkLastTypeVars : Context -> Context -> M TypeVariables
   def checkLastTypeVars cx cx1 =
     % first check that cx is a prefix of cx1:
-    ensure (length cx < length cx1 && prefix (cx1, length cx) = cx)
+    ensure (length cx <= length cx1 && prefix (cx1, length cx) = cx)
            (notPrefixContext (cx, cx1)) >>>
     % then check that the extra portion of cx1 solely consists of type variables:
     checkAllTypeVarDecls (removePrefix (cx1, length cx))

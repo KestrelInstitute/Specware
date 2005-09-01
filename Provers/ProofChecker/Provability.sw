@@ -392,7 +392,7 @@ spec
                        &&&
                        (rS@i) @ VAR v1))
            else None)
-      && r = FN (v, SUM (cS, tS), ORn disjuncts)
+      && r = FN (v, SUM (cS, tS1), ORn disjuncts)
       => pj (subType (cx, SUM (cS, tS), r, SUM (cS, tS1))))
     | stTE ->
       (fa (cx:Context, t1:Type, r:Expression, t2:Type, s1:Type, s2:Type)

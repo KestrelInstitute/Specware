@@ -106,6 +106,9 @@ spec
   def mostGeneralTypeRecord(cxP, cx, t) =
     let rfs = RECfields(t) in
     let rts = RECtypes(t) in
+    let mgpsMgts = map (mostGeneralType(cxP, cx)) rts in
+    let (mgPs, mgTs) = unzip mgpsMgts in
+    
     
     
 mostGeneralTypeArrow(cxP, cx, t)
