@@ -19,7 +19,8 @@
                            (equalp (cadr first-form) \"SpecwareRuntime\")))
               (load \"lisp/S.lisp\") 
               (print (sw-user::foo-2 \"abc\" \"def\"))))"
-  :output '(""
+  :output '((:optional "")
+	    (:optional "")
 	    "(T T) "
 	    (:optional
 	     "Warning: BOOLEAN-SPE:COMPARE-2, :OPERATOR was defined in $SPECWARE/Applications/Specware/lisp/Specware4.lisp and is now being defined in"
@@ -73,10 +74,10 @@
 	     "Warning: INTEGER-SPE:COMPARE, :OPERATOR was defined in $SPECWARE/Applications/Specware/lisp/Specware4.lisp and is now being defined in"
 	     "         $TESTDIR/lisp/S.lisp")
 	    (:optional
-	     "Warning: LIST-SPE:HD, :OPERATOR was defined in $SPECWARE/Applications/Specware/lisp/Specware4.lisp and is now being defined in"
+	     "Warning: LIST-SPE:TL, :OPERATOR was defined in $SPECWARE/Applications/Specware/lisp/Specware4.lisp and is now being defined in"
 	     "         $TESTDIR/lisp/S.lisp")
 	    (:optional
-	     "Warning: LIST-SPE:TL, :OPERATOR was defined in $SPECWARE/Applications/Specware/lisp/Specware4.lisp and is now being defined in"
+	     "Warning: LIST-SPE:HD, :OPERATOR was defined in $SPECWARE/Applications/Specware/lisp/Specware4.lisp and is now being defined in"
 	     "         $TESTDIR/lisp/S.lisp")
 	    (:optional
 	     "Warning: INTEGER-SPE:INTCONVERTIBLE, :OPERATOR was defined in $SPECWARE/Applications/Specware/lisp/Specware4.lisp and is now being defined in"
@@ -342,7 +343,11 @@
 	    (:optional
 	     "Warning: STRING-SPE:!>, :OPERATOR was defined in $SPECWARE/Applications/Specware/lisp/Specware4.lisp and is now being defined in"
 	     "         $TESTDIR/lisp/S.lisp")
-	    ""
-	    "T ")
-  )
+	    (:optional "")
+	    (:optional "")
+	    "T "
+	    (:optional "")
+	    (:optional "")
+	    ))
  )
+
