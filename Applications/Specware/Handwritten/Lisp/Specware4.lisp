@@ -185,6 +185,17 @@
 
     ;; Test harness
     "Applications/Handwritten/Lisp/test-harness"
+
+    ;; XML-RPC
+    "Library/IO/XmlRpc/s-xml/package"
+    "Library/IO/XmlRpc/s-xml/xml"
+    "Library/IO/XmlRpc/s-xml-rpc/base64"
+    "Library/IO/XmlRpc/s-xml-rpc/package"
+    "Library/IO/XmlRpc/s-xml-rpc/sysdeps"
+    "Library/IO/XmlRpc/s-xml-rpc/xml-rpc"
+    "Library/IO/XmlRpc/s-xml-rpc/extensions"
+    "Library/IO/XmlRpc/load-xml-rpc"
+
     )
   )
 
