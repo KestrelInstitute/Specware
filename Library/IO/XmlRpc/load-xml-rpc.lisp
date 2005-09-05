@@ -3,17 +3,17 @@
 (defpackage :s-xml)
 (defpackage :s-xml-rpc)
 
-(defvar Specware4 (specware::getenv "SPECWARE4"))
+;(defvar Specware4 (specware::getenv "SPECWARE4"))
 
-(defvar *xml-rpc-dir* (concatenate 'string Specware4 "/Library/IO/XmlRpc"))
+;(defvar *xml-rpc-dir* (concatenate 'string Specware4 "/Library/IO/XmlRpc"))
 
-(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml/package"))
-(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml/xml"))
-(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/base64"))
-(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/package"))
-(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/sysdeps"))
-(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/xml-rpc"))
-(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/extensions"))
+;(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml/package"))
+;(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml/xml"))
+;(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/base64"))
+;(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/package"))
+;(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/sysdeps"))
+;(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/xml-rpc"))
+;(compile-and-load-lisp-file (concatenate 'string *xml-rpc-dir* "/s-xml-rpc/extensions"))
 
 
 (in-package :common-lisp-user)
