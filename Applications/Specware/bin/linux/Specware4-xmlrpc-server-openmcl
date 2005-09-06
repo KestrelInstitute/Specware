@@ -2,14 +2,18 @@
 #
 # starts specware as xml-rpc server at port 2935 or at the port specified using the
 # "-port n" command line option
-#
+# The "-load <lisp-file>" option can be used to pre-load any application specific functionality
+# into the specware image. This file typically contains information and function definitions regarding
+# functionality exported via the xml-rpc interface.
+# 
 # this is basically a copy of the Specware4-shell script with a modified lisp call
 
 XMLRPC_SERVERPORT=2935
-
+LOAD_LISP_FILE=""
 while [ $# -gt 0 ]; do
     case $1 in
     -port) shift;XMLRPC_SERVERPORT=$1;;
+    -l*) shift;LOAD_LISP_FILE=$1;;
     esac
     shift
 done
@@ -102,6 +106,13 @@ fi
 
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4."$IMAGE_EXTENSION"
 
-"$LISP" -I "$LISP_HEAP_IMAGE" -e "(progn (setq emacs::*use-emacs-interface?* nil) \
-    (Specware::initializeSpecware-0) \
-    (start-xml-rpc-server ${XMLRPC_SERVERPORT}))"
+EVAL="(progn "
+EVAL="${EVAL}(setq emacs::*use-emacs-interface?* nil) "
+EVAL="${EVAL}(Specware::initializeSpecware-0) "
+if [ ! -z "${LOAD_LISP_FILE}" ] ; then
+    EVAL="${EVAL} (specware::compile-and-load-lisp-file \"${LOAD_LISP_FILE}\") "
+fi
+EVAL="${EVAL}(start-xml-rpc-server ${XMLRPC_SERVERPORT}) "
+EVAL="${EVAL})"
+
+"$LISP" -I "$LISP_HEAP_IMAGE" -e "${EVAL}"
