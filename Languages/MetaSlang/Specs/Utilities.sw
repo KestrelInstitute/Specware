@@ -490,7 +490,7 @@ Utilities qualifying spec
    if StringSet.member(freeNames,id) then
      let id2 = StringUtilities.freshName(id,freeNames) in
      let sub2 = cons(((id,s),mkVar(id2,s)),sub) in
-     ((id2,s),sub2,freeNames)
+     ((id2,s),sub2,StringSet.add(freeNames,id2))
    else
      ((id,s),sub,freeNames)
 
