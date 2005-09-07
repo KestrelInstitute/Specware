@@ -951,6 +951,7 @@ SpecToLisp qualifying spec {
  def pV? var_name =
    case explode var_name of
      | #p :: #V :: digits -> all isNum digits % lexer gets upset if no space between "::#"
+     | #a :: #p :: #V :: digits -> all isNum digits
      | _ -> false
 
  def reduceTerm (term : LispTerm) = 
