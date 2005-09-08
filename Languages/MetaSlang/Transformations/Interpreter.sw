@@ -304,7 +304,11 @@ spec
 	(case a of
 	  | RecordVal rm -> findField(id,rm)
 	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
-      %| Fun(Embedded id,srt,_) ->
+      | Fun(Embedded id,srt,_) ->
+	(case a of
+	  | Constructor(constr_id,_) -> Bool(id=constr_id)
+	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
+	
       %| Fun(Select id,srt,_) ->
       | _ -> Unevaluated(mkApply(ft,valueToTerm a))
 
