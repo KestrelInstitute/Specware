@@ -601,13 +601,16 @@ TypeChecker qualifying spec
 	   | None -> undeclaredResolving (env,trm,id,term_sort,pos))
 
     % | Fun (Select id,srt,pos) -> Fun (Select id,srt,pos)      (*** Not checked ***)
-      | Fun (Embedded id, srt, pos) -> 
-	let srt = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
-	((case unfoldSort (env, srt) of
+      | Fun (Embedded id, srt, pos) ->
+	let a = freshMetaTyVar ("Embedded", pos) in
+	let ty = Arrow(a, type_bool, pos) in
+	(elaborateSortForTerm (env, trm, ty, term_sort);
+	 elaborateSortForTerm (env, trm, srt, ty);
+	 (case unfoldSort (env, srt) of
 	    | Arrow (dom, _, _) -> 
 	      (case isCoproduct (env, dom) of
 		 | Some fields -> 
-	           if exists (fn (id2, _) -> id = id2) fields then
+		   if exists (fn (id2, _) -> id = id2) fields then
 		     ()
 		   else
 		     error (env, 
