@@ -113,4 +113,16 @@
 	    "P2: Conjecture twoMakesMakeAMatch2 in O1 is Proved! using simple inequality reasoning."
 	    ""))
 
+ ("twk_message 9/8/05 a"
+  :sw "Embed?"
+  :output '(";;; Elaborating spec at $TESTDIR/Embed?"
+	    ""))
+ ("twk_message 9/8/05 b"
+  :swe "embed? XX (XX 5)"
+  :swe-spec "Embed?"
+  :value '(:|Bool| . T))
+ ("twk_message 9/8/05 c"
+  :swe "embed? XX (YY 5)"
+  :swe-spec "Embed?"
+  :value '(:|Bool| . NIL))
  )
