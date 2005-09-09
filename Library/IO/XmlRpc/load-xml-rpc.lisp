@@ -1,3 +1,4 @@
+(in-package :common-lisp-user)
 (format t "loading xml-rpc...~%")
 
 #+allegro
@@ -5,7 +6,6 @@
 
 #+allegro
 (progn
-  (in-package :common-lisp-user)
 
   (defvar *xml-rpc-server-id*)
   (defun start-xml-rpc-server (port)
@@ -21,8 +21,6 @@
 (progn
   (defpackage :s-xml)
   (defpackage :s-xml-rpc)
-
-  (in-package :common-lisp-user)
 
   (defun start-xml-rpc-server (port) 
     (s-xml-rpc:start-xml-rpc-server :port port)
