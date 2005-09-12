@@ -706,6 +706,15 @@ spec
     checkSameType mustBe_t t >> (fn _ ->
     OK (cx, t, e)))))
 
+  (* Check proof of well-typed equality, returning the context, left-hand
+  side, right-hand side, and type (type of the equality, not of the
+  expressions, i.e. BOOL or some type equivalent to it). *)
+  op checkWTEquality : Proof -> M (Context * Expression * Expression * Type)
+  def checkWTEquality prf =
+    checkWTExpr prf >> (fn (cx, e, t) ->
+    checkEquality e >> (fn (e1, e2) ->
+    OK (cx, e1, e2, t)))
+
   (* Check proof of well-typed conditional, returning the context, condition,
   branches, and type. *)
   op checkWTConditional :
@@ -1279,6 +1288,11 @@ spec
       (let cx1 = cx <| varDeclaration (v, t) in
       checkTheoremEqualityWithContextAndLeftExpr cx1 e prf3 >> (fn e1 ->
       OK (theoreM (cx, FN (v, t, e) == FN (v, t1, e1)))))))
+    | thEqSubst (prf, prf1, prf2) ->
+      checkWTEquality prf >> (fn (cx, e1, e2, _) ->
+      checkTheoremEqualityWithContextAndLeftExpr cx e1 prf1 >> (fn d1 ->
+      checkTheoremEqualityWithContextAndLeftExpr cx e2 prf2 >> (fn d2 ->
+      OK (theoreM (cx, (e1 == e2) == (d1 == d2))))))
     | thIfSubst (prf, prf0, prf1, prf2) ->
       checkWTConditional prf >> (fn (cx, e0, e1, e2, _) ->
       checkTheoremEqualityWithContextAndLeftExpr cx e0 prf0 >> (fn d0 ->
