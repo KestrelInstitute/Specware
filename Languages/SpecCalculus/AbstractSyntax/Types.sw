@@ -76,6 +76,7 @@ SpecCalc qualifying spec
 
  type Name       = String
  type ProverName = Name
+ type PCClaimName  = | WellFormed | Claim QualifiedId
  type ClaimName  = QualifiedId
 
  %% In a basic Specware image, OtherTerm is unspecified, but in an extension
@@ -90,6 +91,7 @@ SpecCalc qualifying spec
  type Term_ a = 
    | Print   (Term a)
    | Prove   ClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar
+   | ProofCheck   PCClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions
    | UnitId  RelativeUID
    | Spec    List (SpecElem a)
    | Diag    List (DiagElem a)
@@ -353,6 +355,7 @@ SpecCalc qualifying spec
 
  op mkPrint       : fa (a) (Term a)                                                        * a -> Term a
  op mkProve       : fa (a) ClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar   * a -> Term a
+ op mkProofCheck  : fa (a) PCClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * a -> Term a
  op mkUnitId      : fa (a) RelativeUID                                                     * a -> Term a
  op mkSpec        : fa (a) (List (SpecElem a))                                             * a -> Term a
  op mkDiag        : fa (a) (List (DiagElem a))                                             * a -> Term a
@@ -386,6 +389,8 @@ SpecCalc qualifying spec
  def mkPrint       (term,                      pos) = (Print       term,                        pos)
  def mkProve       (claim_name, term, prover_name, assertions, prover_options, includeBase?, answer_var, pos) 
                                                      = (Prove       (claim_name, term, prover_name, assertions, prover_options, includeBase?, answer_var), pos) 
+ def mkProofCheck  (claim_name, term, prover_name, assertions, prover_options, includeBase?, pos) 
+                                                     = (ProofCheck  (claim_name, term, prover_name, assertions, prover_options, includeBase?), pos) 
  def mkUnitId      (uid,                       pos) = (UnitId      uid,                         pos)
  def mkSpec        (elements,                  pos) = (Spec        elements,                    pos)
  def mkDiag        (elements,                  pos) = (Diag        elements,                    pos)

@@ -91,7 +91,8 @@
    ((:tuple "print")       "print")	; so we can use print as a op-name
    ((:tuple "with")        "with")	; so we can use with as a op-name
    ((:tuple "Snark")       "Snark")	; so we can use Snark as a unit-identifier
-   ((:tuple "answerVar")       "answerVar")	; so we can use answerVar a unit-identifier
+   ((:tuple "answerVar")   "answerVar")	; so we can use answerVar a unit-identifier
+   ((:tuple "Checker")     "Checker")	; so we can use Checker a unit-identifier
    ((:tuple (1 :NON-KEYWORD-NAME)) 1)
    ))
 
@@ -1636,7 +1637,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-PROVE ()
-  (:tuple "prove" (1 :QUALIFIABLE-CLAIM-NAME) "in" (2 :SC-TERM)
+  (:tuple "prove" (1 :PROVER-CLAIM) "in" (2 :SC-TERM)
 	  (:optional (:tuple "with"    (3 :PROVER-NAME)))
 	  (:optional (:tuple "using"   (4 :PROVER-ASSERTIONS)))
 	  (:optional (:tuple "options" (5 :PROVER-OPTIONS)))
@@ -1644,7 +1645,12 @@ If we want the precedence to be optional:
   (make-sc-prover 1 2 3 4 5 7 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PROVER-NAME ()
-  (:anyof "Snark" "PVS" "FourierM"))
+  (:anyof "Snark" "PVS" "FourierM" "Checker"))
+
+(define-sw-parser-rule :PROVER-CLAIM ()
+  (:anyof 
+   "WELLFORMED"
+   :QUALIFIABLE-CLAIM-NAME))
 
 (define-sw-parser-rule :PROVER-ASSERTIONS ()
   (:anyof 

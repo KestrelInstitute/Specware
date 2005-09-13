@@ -251,7 +251,7 @@ The following corresponds to the :show command.
         return (foldMap (fn lst -> fn dom -> fn _ (* cod *) -> Cons (dom, lst)) 
 		        [] 
 			globalContext);
-      print (ppFormat (ppSep ppNewline (map (fn unitId -> ppString (uidToString unitId)) uidList)));
+      print (ppFormat (ppSep ppNewline (List.map (fn unitId -> ppString (uidToString unitId)) uidList)));
       return true
     } in
     run (catch prog toplevelHandler) 

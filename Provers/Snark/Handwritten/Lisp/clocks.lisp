@@ -163,4 +163,10 @@
         (decf total-ticks (symbol-value clk))))
     (/ total-ticks float-internal-time-units-per-second)))
 
+(defun print_total_run_time-0 (&optional (excluded-clocks *excluded-clocks*))
+  (let ((total-seconds (total-run-time excluded-clocks)))
+    (if (> 9.95 total-seconds)
+        (format nil "~,1F" total-seconds)
+        (format nil "~D" (round total-seconds)))))
+
 ;;; clocks.lisp EOF

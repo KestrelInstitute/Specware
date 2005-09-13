@@ -202,13 +202,6 @@ SpecCalc qualifying spec
  def UIDtoProofName (unitId as {path,hashSuffix}) =
     hashSuffix
 
- op SpecTermToSpecName: SCTerm -> (Option String)
- def SpecTermToSpecName (scterm as (term,_)) =
-   case term of
-     | UnitId rUID -> Some (showRelativeUID(rUID))
-     | Spec _ -> None
-     | _ -> None
-
  op claimNameMatch: ClaimName * ClaimName -> Boolean
  def claimNameMatch(cn, pn) =
    let Qualified(cq, cid) = cn in
@@ -265,58 +258,83 @@ SpecCalc qualifying spec
      | [p] -> printQualifiedId(p)
      | p :: ps -> printQualifiedId(p)^", "^printMissingHypothesis(ps)
 
- op displayProofResult: String * (Option String) * String * ClaimName * (Option String) * Boolean -> Boolean
- def displayProofResult(proverName, proofName, claimType, claimName, specName, proved) =
+ op displayProofResult: String * (Option String) * String * ClaimName * (Option String) * Boolean * String-> Boolean
+ def displayProofResult(proverName, proofName, claimType, claimName, specName, proved, runTime) =
    let _ =
    case proofName of
      | None -> 
          (case specName of
-	   | None -> displaySingleAnonymousProofResult(proverName, claimType, claimName, proved)
-	   | Some specName -> displaySingleProofResult(proverName, claimType, claimName, specName, proved))
+	   | None -> displaySingleAnonymousProofResult(proverName, claimType, claimName, proved, runTime)
+	   | Some specName -> displaySingleProofResult(proverName, claimType, claimName, specName, proved, runTime))
      | Some proofName ->
 	 case specName of
-	   | None -> displayMultipleAnonymousProofResult(proverName, proofName, claimType, claimName, proved)
+	   | None -> displayMultipleAnonymousProofResult(proverName, proofName, claimType, claimName, proved, runTime)
 	   | Some specName -> 
-	       displayMultipleProofResult(proverName, proofName, claimType, claimName, specName, proved) in
+	       displayMultipleProofResult(proverName, proofName, claimType, claimName, specName, proved, runTime) in
      proved
 
 
-  def displaySingleAnonymousProofResult(proverName, claimType, claimName, proved) =
+  def displaySingleAnonymousProofResult(proverName, claimType, claimName, proved, runTime) =
     let provedString = provedString(proved) in
     let proverString = proverString(proverName) in
-    let _ = writeLine(claimType^" "^printQualifiedId(claimName)^" "^provedString^" "^proverString) in
+    let timeString = timeString(runTime) in
+    let _ = writeLine(claimType^" "^printQualifiedId(claimName)^provedString^proverString^timeString) in
       proved
 
-  def displaySingleProofResult(proverName, claimType, claimName, specName, proved) =
+  def displaySingleProofResult(proverName, claimType, claimName, specName, proved, runTime) =
     let provedString = provedString(proved) in
     let proverString = proverString(proverName) in
-    let _ = writeLine(claimType^" "^printQualifiedId(claimName)^" in "^specName^" "^provedString^" "^proverString) in
+    let timeString = timeString(runTime) in
+    let _ = writeLine(claimType^" "^printQualifiedId(claimName)^" in "^specName^provedString^proverString^timeString) in
       proved
 
-  def displayMultipleAnonymousProofResult(proverName, proofName, claimType, claimName, proved) =
+  def displayMultipleAnonymousProofResult(proverName, proofName, claimType, claimName, proved, runTime) =
     let provedString = provedString(proved) in
     let proverString = proverString(proverName) in
-    let _ = writeLine(proofName^": "^claimType^" "^printQualifiedId(claimName)^" "^provedString^" "^proverString) in
+    let timeString = timeString(runTime) in
+    let _ = writeLine(proofName^": "^claimType^" "^printQualifiedId(claimName)^provedString^proverString^timeString) in
       proved
 
-  def displayMultipleProofResult(proverName, proofName, claimType, claimName, specName, proved) =
-    let provedString = if proved then "is Proved!" else "is NOT proved" in
+  def displayMultipleProofResult(proverName, proofName, claimType, claimName, specName, proved, runTime) =
+    let provedString = provedString(proved) in
     let proverString = proverString(proverName) in
-    let _ = writeLine(proofName^": "^claimType^" "^printQualifiedId(claimName)^" in "^specName^" "^provedString^" "^proverString) in
+    let timeString = timeString(runTime) in
+    let _ = writeLine(proofName^": "^claimType^" "^printQualifiedId(claimName)^" in "^specName^provedString^proverString^timeString) in
       proved
+
+ op MES.PRINT_TOTAL_RUN_TIME: () -> LispCell
+
+ op snarkRunTime: () -> String
+ def snarkRunTime() =
+   let rt = MES.PRINT_TOTAL_RUN_TIME() in
+   LispString(rt)
+
+ op printSnarkClocks: () -> LispCell
+ def printSnarkClocks() =
+   let evalForm = Lisp.list([Lisp.symbol("SNARK","PRINT-CLOCKS")]) in
+   Lisp.apply(Lisp.symbol("CL","FUNCALL"),
+			     [Lisp.eval(Lisp.list [Lisp.symbol("CL","FUNCTION"),
+						   Lisp.list [Lisp.symbol("SNARK","LAMBDA"),
+							      Lisp.nil(),evalForm]])])
 
  op provedString: Boolean -> String
  def provedString(proved) =
    if proved
-     then "is Proved!"
-   else "is NOT proved."
+     then " is Proved!"
+   else " is NOT proved"
 
  op proverString: String -> String
  def proverString(proverName) =
    case proverName of
-     | "FourierM" -> "using simple inequality reasoning."
-     | "Snark" -> "using Snark."
+     | "FourierM" -> " using simple inequality reasoning"
+     | "Snark" -> " using Snark"
 
+ op timeString: String -> String
+ def timeString(runTime) =
+   if runTime = "FM"
+     then "."
+   else " in "^runTime^" seconds."
+   
  op proveWithHypothesis: Option String * Property * List Property * Spec * Option String * List Property * Spec *
                          List Property * Spec *
                          String * List LispCell * Boolean * AnswerVar * String -> Boolean
@@ -381,8 +399,9 @@ SpecCalc qualifying spec
 			     [Lisp.eval(Lisp.list [Lisp.symbol("CL","FUNCTION"),
 						   Lisp.list [Lisp.symbol("SNARK","LAMBDA"),
 							      Lisp.nil(),snarkEvalForm]])]) in
+     let runTime = snarkRunTime() in
      let proved = ":PROOF-FOUND" = anyToString(result) in
-     let _ = displayProofResult(proverName, proofName, claimType, claimName, specName, proved) in
+     let _ = displayProofResult(proverName, proofName, claimType, claimName, specName, proved, runTime) in
        proved
 
  op proveWithHypothesisFM: Option String * Property * Spec * Option String * String * Boolean -> Boolean
@@ -402,9 +421,10 @@ SpecCalc qualifying spec
    %let fmPropertyHypothesis = foldr (fn (prop, list) -> [toFMProperty(context, spc, prop)]++list) [] hypothesis in
    %let fmHypothesis = fmSubsortHypothesis ++ fmPropertyHypothesis in
    %let fmConjecture = toFMProperty(context, spc, claim) in
+   let runTime = "FM" in
    let proved = proveMSProb(spc, [], claim) in
    let _ = if proved || ~preProof?
-	     then displayProofResult(proverName, proofName, claimType, claimName, specName, proved)
+	     then displayProofResult(proverName, proofName, claimType, claimName, specName, proved, runTime)
 	   else proved in
    proved
 
@@ -467,9 +487,9 @@ SpecCalc qualifying spec
 		      Lisp.list [Lisp.symbol("CL-USER","*STANDARD-OUTPUT*"),
 				 Lisp.symbol("CL-USER","LOGFILE")],
 		      Lisp.list [Lisp.symbol("CL-USER","*PRINT-LEVEL*"),
-				 Lisp.symbol("CL-USER","NIL")],
+				 Lisp.list[]],
 		      Lisp.list [Lisp.symbol("CL-USER","*PRINT-LENGTH*"),
-				 Lisp.symbol("CL-USER","NIL")]],
+				 Lisp.list[]]],
 	   Lisp.list([Lisp.symbol("CL","WRITE-LINE"), Lisp.string("Snark is invoked by evaluating:")]),
 	   Lisp.list([Lisp.symbol("CL","PPRINT"),
 		      Lisp.quote(Lisp.list[Lisp.symbol("CL","LET"), Lisp.list []] Lisp.++ snarkProverDecls)])

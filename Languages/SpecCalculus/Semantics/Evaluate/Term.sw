@@ -20,6 +20,7 @@ SpecCalc qualifying spec {
  import Substitute      
  import Print      
  import Prove
+ import translate ProofCheck by {Set._ +-> PCSet._}
  import Expand			
  import Reduce
 
@@ -70,6 +71,7 @@ This is a monadic interpreter for the Spec Calculus.
     | Obligations (sub_term)      -> SpecCalc.evaluateObligations sub_term
     | Expand      (sub_term)      -> SpecCalc.evaluateExpand      sub_term pos
     | Prove       args            -> SpecCalc.evaluateProve       args pos
+    | ProofCheck  args            -> SpecCalc.evaluateProofCheck  args pos
     | Generate    args            -> SpecCalc.evaluateGenerate    args pos
     | Reduce      (msTerm,scTerm) -> SpecCalc.reduce              msTerm scTerm pos
     | Other       args            -> SpecCalc.evaluateOther       args pos  % used for extensions to Specware

@@ -87,7 +87,7 @@ spec
     let opDeclaration(_, tvs1, t) = theElement(opDeclSeq) in
     let typeVarSubst = fromSeqs(tvs1, map VAR ts) in
     let operVar = uniqueDefVar in
-    let wfDefProof = assume (theoreM (cx ++ multiTypeVarDecls tvs1, EX1(operVar, typeSubstInType typeVarSubst t, replaceOperationWithVar(oper, operVar, exp)))) in
+    let wfDefProof = assume (theoreM (cx ++ multiTypeVarDecls tvs1, EX1(operVar, typeSubstInType typeVarSubst t, VAR operVar == replaceOperationWithVar(oper, operVar, exp)))) in
     cxOdef(cxProof, wfDefProof, oper)
 
   op replaceOperationWithVar: Operation * Variable * Expression -> Expression

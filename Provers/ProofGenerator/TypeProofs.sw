@@ -2,11 +2,22 @@ spec
 
   % API public typeProof
 
-  import ../ProofChecker/Spec
+  import ../ProofChecker/Spec, UniqueVars
   
   (* In this spec we define a function that takes a context and a type
   and generates a proof that the type is well-formed. *)
 
+(*  op uniqueDefVar: Variable
+
+  op v: Variable
+  op v1: Variable
+  op v2: Variable
+  op u1: Variable
+  op u2: Variable
+  op u3: Variable
+
+  axiom distinctVars is v1 ~= v2 && u1 ~= u2 && u2 ~= u3 &&u1 ~= u3
+*)
   op falseProof: Context -> Proof
   def falseProof(cx) =
     assume (theoreM (cx, FALSE))
@@ -63,17 +74,6 @@ spec
       then tyRestr(wellTypedExpressionAssumptionWithType(cx, expr, ARROW(st, BOOL)))
     else falseProof(cx)
 
-  op uniqueDefVar: Variable
-
-  op v: Variable
-  op v1: Variable
-  op v2: Variable
-  op u1: Variable
-  op u2: Variable
-  op u3: Variable
-
-  axiom distinctVars is v1 ~= v2 && u1 ~= u2 && u2 ~= u3 &&u1 ~= u3
-  
   op tyQuotProof: Proof * Context * Type -> Proof
   def tyQuotProof(cxPrf, cx, ty) =
     let QUOT (t, q) = ty in

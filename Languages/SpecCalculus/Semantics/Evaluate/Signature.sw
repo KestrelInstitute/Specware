@@ -70,6 +70,11 @@ SpecCalc qualifying spec {
     -> Position 
     -> SpecCalc.Env Value
 
+  op evaluateOtherProofCheck :
+       PCClaimName * OtherValue * Option String * ProverName * Assertions * ProverOptions * ProverBaseOptions 
+    -> Position 
+    -> SpecCalc.Env Value
+
   %% Lower-level support routines:
 
   op setBaseToPath : String -> Env ()
@@ -93,6 +98,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.47  2005/08/18 13:32:51  mcdonald
+%% prep for improved test comparing scterms
+%%
 %% Revision 1.46  2005/06/19 05:50:06  mcdonald
 %% move op for toplevelHandlerOption from Specware.sw to Signature.sw
 %%

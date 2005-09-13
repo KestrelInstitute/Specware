@@ -559,5 +559,12 @@ emacs interface functions.
    in
      findPaths(spc1,[])
 
+ op SpecTermToSpecName: SCTerm -> (Option String)
+ def SpecTermToSpecName (scterm as (term,_)) =
+   case term of
+     | UnitId rUID -> Some (showRelativeUID(rUID))
+     | Spec _ -> None
+     | _ -> None
+
 
 endspec

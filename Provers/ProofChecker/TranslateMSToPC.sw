@@ -2,6 +2,7 @@
 
 % This file will be moved.
 
+Translate qualifying
 spec
   import Spec
   import /Languages/MetaSlang/AbstractSyntax/AnnTerm
