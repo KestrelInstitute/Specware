@@ -230,7 +230,7 @@ FSeq qualifying spec
   op shiftLeft : [a] {(s,x,n) : FSeq a * a * Nat | n < length s} -> FSeq a
   def shiftLeft(s,x,n) = removePrefix (extendRight (s, x, n), n)
 
-  % shift sequence rightward, filling with `x' and discarding first `n' elements:
+  % shift sequence rightward, filling with `x' and discarding last `n' elements:
   op shiftRight : [a] {(s,x,n) : FSeq a * a * Nat | n < length s} -> FSeq a
   def shiftRight(s,x,n) = removeSuffix (extendLeft (s, x, n), n)
 
