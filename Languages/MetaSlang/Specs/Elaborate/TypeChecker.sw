@@ -31,29 +31,29 @@ TypeChecker qualifying spec
 
   %% ========================================================================
 
-  op elaboratePosSpec         : Spec * Filename -> Result
+  op elaboratePosSpec           : Spec * Position.Filename -> Result
 
-  op unlinkRec                : MS.Sort -> MS.Sort
-  op undeterminedSort?        : MS.Sort -> Boolean
-  op elaborateSort            : LocalEnv * MS.Sort    * MS.Sort            -> MS.Sort
-  op elaborateCheckSortForTerm: LocalEnv * MS.Term    * MS.Sort * MS.Sort  -> MS.Sort 
-  op elaborateSortForTerm     : LocalEnv * MS.Term    * MS.Sort * MS.Sort  -> MS.Sort
-  op resolveNameFromSort      : LocalEnv * MS.Term*Id * MS.Sort * Position -> MS.Term
-  op elaborateTerm            : LocalEnv * MS.Term    * MS.Sort            -> MS.Term
-  op elaboratePattern         : LocalEnv * MS.Pattern * MS.Sort            -> MS.Pattern * LocalEnv
+  op unlinkRec                  : MS.Sort -> MS.Sort
+  op undeterminedSort?          : MS.Sort -> Boolean
+  op elaborateSort              : LocalEnv * MS.Sort    * MS.Sort            -> MS.Sort
+  op elaborateCheckSortForTerm  : LocalEnv * MS.Term    * MS.Sort * MS.Sort  -> MS.Sort 
+  op elaborateSortForTerm       : LocalEnv * MS.Term    * MS.Sort * MS.Sort  -> MS.Sort
+  op resolveNameFromSort        : LocalEnv * MS.Term*Id * MS.Sort * Position -> MS.Term
+  op single_pass_elaborate_term : LocalEnv * MS.Term    * MS.Sort            -> MS.Term
+  op elaboratePattern           : LocalEnv * MS.Pattern * MS.Sort            -> MS.Pattern * LocalEnv
 
-  op mkEmbed0                 : LocalEnv * MS.Sort         * Id              -> Option Id
-  op mkEmbed1                 : LocalEnv * MS.Sort * MS.Term * Id * Position -> Option MS.Term
-  op lookupEmbedId            : LocalEnv * Id * MS.Sort                      -> Option (Option MS.Sort)
-  op isCoproduct              : LocalEnv * MS.Sort                           -> Option (List (Id * Option MS.Sort))
-  op mkProject                : LocalEnv * Id * MS.Sort * Position           -> Option MS.Term
+  op mkEmbed0                   : LocalEnv * MS.Sort         * Id              -> Option Id
+  op mkEmbed1                   : LocalEnv * MS.Sort * MS.Term * Id * Position -> Option MS.Term
+  op lookupEmbedId              : LocalEnv * Id * MS.Sort                      -> Option (Option MS.Sort)
+  op isCoproduct                : LocalEnv * MS.Sort                           -> Option (List (Id * Option MS.Sort))
+  op mkProject                  : LocalEnv * Id * MS.Sort * Position           -> Option MS.Term
 
-  op undeclaredName           : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
-  op ambiguousCons            : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
-  op undeclaredResolving      : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
-  op undeclared2              : LocalEnv * MS.Term * Id * Id * MS.Sort * Position -> MS.Term
+  op undeclaredName             : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
+  op ambiguousCons              : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
+  op undeclaredResolving        : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
+  op undeclared2                : LocalEnv * MS.Term * Id * Id * MS.Sort * Position -> MS.Term
 
-  op pass2Error               : LocalEnv * MS.Sort * Message * Position -> ()
+  op pass2Error                 : LocalEnv * MS.Sort * Message * Position -> ()
 
   %% ========================================================================
 
@@ -135,7 +135,7 @@ TypeChecker qualifying spec
 			 if poly? = (tvs ~= []) then
 			   let _ = checkTyVars (env, tvs, pos) in
 			   let srt = checkSort (env, srt) in
-			   let xx = elaborateTermTop (env, tm, srt) in
+			   let xx = single_pass_elaborate_term_top (env, tm, srt) in
 			   maybePiTerm (tvs, SortedTerm (xx, srt, pos))
 			 else 
 			   dfn
@@ -150,7 +150,7 @@ TypeChecker qualifying spec
 	map (fn el ->
 	     case el of
 	       | Property (prop_type, name, tvs, fm) ->
-	         let elaborated_fm = elaborateTermTop (env, fm, type_bool) in
+	         let elaborated_fm = single_pass_elaborate_term_top (env, fm, type_bool) in
 	         Property(prop_type, name, tvs, elaborated_fm)
 	       | _ -> el)
 	    elts
@@ -225,7 +225,7 @@ TypeChecker qualifying spec
   % ========================================================================
  
   def TypeChecker.checkSort (env, srt) = 
-    %% checkSort calls elaborateTerm, which calls checkSort
+    %% checkSort calls single_pass_elaborate_term, which calls checkSort
     case srt of
 
       | TyVar _ -> srt
@@ -331,7 +331,7 @@ TypeChecker qualifying spec
                                   type_bool, 
                                   pos) 
 	in
-        let new_relation = elaborateTerm (env, given_relation, new_rel_sort) in
+        let new_relation = single_pass_elaborate_term (env, given_relation, new_rel_sort) in
 	if given_base_sort = new_base_sort && given_relation = new_relation then 
 	  srt
 	else 
@@ -340,7 +340,7 @@ TypeChecker qualifying spec
       | Subsort (given_super_sort, given_predicate, pos) -> 
         let new_super_sort = checkSort (env, given_super_sort) in
         let new_pred_sort  = Arrow (new_super_sort, type_bool, pos) in
-        let new_predicate  = elaborateTerm (env, given_predicate, new_pred_sort) in
+        let new_predicate  = single_pass_elaborate_term (env, given_predicate, new_pred_sort) in
 	if given_super_sort = new_super_sort && given_predicate = new_predicate then 
 	  srt
 	else 
@@ -405,7 +405,7 @@ TypeChecker qualifying spec
   def resolveMetaTyVars trm =
     mapTerm (id,resolveMetaTyVar,id) trm
 
-  %% elaborateTerm calls elaborateCheckSortForTerm, 
+  %% single_pass_elaborate_term calls elaborateCheckSortForTerm, 
   %% which calls elaborateSortForTerm, 
   %% which calls unifySorts, 
   %%  which side-effects links for metaTyVar's via 
@@ -455,7 +455,7 @@ TypeChecker qualifying spec
    let (tvs, srt, tm) = unpackTerm dfn in
    let _ = checkTyVars (env, tvs, pos) in
    let srt = checkSort (env, srt) in
-   let elaborated_tm = elaborateTermTop (env, tm, srt) in
+   let elaborated_tm = single_pass_elaborate_term_top (env, tm, srt) in
    %% If tm is Any (as in an Op declaration), then elaborated_tm will be tm.
    let tvs_used = collectUsedTyVars (srt, info, dfn, env) in
    let new_tvs =
@@ -509,12 +509,15 @@ TypeChecker qualifying spec
      let _ = scan srt in
      ! tv_cell
 
-  def elaborateTermTop (env, trm, term_sort) =
-    let trm = elaborateTerm(env, trm, term_sort) in
+  op  elaborateTerm : LocalEnv * MS.Term    * MS.Sort            -> MS.Term                       % backward compatibility for Forges Legacy
+  def elaborateTerm (env, trm, term_sort) = single_pass_elaborate_term_top (env, trm, term_sort)  % backward compatibility for Forges Legacy
+
+  def single_pass_elaborate_term_top (env, trm, term_sort) =
+    let trm = single_pass_elaborate_term(env, trm, term_sort) in
     %% Resolve now rather than later to release space
     resolveMetaTyVars trm
 
-  def elaborateTerm (env, trm, term_sort) =
+  def single_pass_elaborate_term (env, trm, term_sort) =
     case trm of
 
       | Fun (OneName (id, fixity), srt, pos) ->
@@ -629,7 +632,7 @@ TypeChecker qualifying spec
 	let a = freshMetaTyVar ("PChoose_a", pos) in
 	let b = freshMetaTyVar ("PChoose_b", pos) in
 	let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
-	let equiv = elaborateTerm (env, equiv, ty1) in
+	let equiv = single_pass_elaborate_term (env, equiv, ty1) in
 	let ty2 = Arrow (Quotient (a, equiv, pos), b, pos) in
 	let ty3 = Arrow (a, b, pos) in
 	let fv = ("F",ty3) in
@@ -647,7 +650,7 @@ TypeChecker qualifying spec
       | Fun (PQuotient equiv, srt, pos) ->  % Has sort a -> Quotient(a, equiv)
 	let a = freshMetaTyVar ("PQuotient", pos) in
 	let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
-	let equiv = elaborateTerm (env, equiv, ty1) in 
+	let equiv = single_pass_elaborate_term (env, equiv, ty1) in 
 	let ty2 = Arrow (a, Quotient (a, equiv, pos), pos) in
 	(elaborateSortForTerm (env, trm, ty2, term_sort);
 	 elaborateSortForTerm (env, trm, srt, ty2);
@@ -676,7 +679,7 @@ TypeChecker qualifying spec
       | Fun (PRelax pred, srt, pos) -> % Has sort Subsort(a, pred) -> a
 	let a = freshMetaTyVar ("PRelax", pos) in
 	let ty1 = Arrow (a, type_bool, pos) in
-	let pred = elaborateTerm (env, pred, ty1) in
+	let pred = single_pass_elaborate_term (env, pred, ty1) in
 	let ty2 = Arrow (Subsort (a, pred, pos), a, pos) in
 	(elaborateSortForTerm (env, trm, ty2, term_sort);
 	 elaborateSortForTerm (env, trm, srt, ty2);
@@ -690,7 +693,7 @@ TypeChecker qualifying spec
       | Fun (PRestrict pred, srt, pos) -> % Has sort a -> Subsort(a, pred)
 	let a = freshMetaTyVar ("PRestrict", pos) in
 	let ty1 = Arrow (a, type_bool, pos) in
-	let pred = elaborateTerm (env, pred, ty1) in
+	let pred = single_pass_elaborate_term (env, pred, ty1) in
 	let ty2 = Arrow (a, Subsort (a, pred, pos), pos) in
 	(elaborateSortForTerm (env, trm, ty2, term_sort);
 	 elaborateSortForTerm (env, trm, srt, ty2);
@@ -713,12 +716,12 @@ TypeChecker qualifying spec
           def elaborateDecl env ((id, srt), bdy) = 
 	    let terms = findVarOrOps (env, id, pos) in
 	    let srt = termSort (hd terms) in
-	    let bdy = elaborateTerm (env, bdy, srt) in
+	    let bdy = single_pass_elaborate_term (env, bdy, srt) in
 	    ((id, srt), bdy)
 	in
 	let env = foldr declareFun env decls in
 	let decls = map (elaborateDecl env) decls in
-	let bdy = elaborateTerm (env, body, term_sort) in
+	let bdy = single_pass_elaborate_term (env, body, term_sort) in
 	LetRec (decls, bdy, pos)
 
       | Let (decls, body, pos) -> 
@@ -736,18 +739,18 @@ TypeChecker qualifying spec
 		    (pat, (SortedTerm (bdy, srt, pos)):MS.Term)
 		  | _ -> (pat, bdy)
 	    in             
-	    let bdy = elaborateTerm (env0, bdy, alpha) in
+	    let bdy = single_pass_elaborate_term (env0, bdy, alpha) in
 	    let (pat, env) = elaboratePattern (env, pat, alpha) in
 	    (cons ((pat, bdy), decls), env)
 	in         
 	let (decls, env) = foldr doDeclaration ([], env) decls in
-	let body = elaborateTerm (env, body, term_sort) in 
+	let body = single_pass_elaborate_term (env, body, term_sort) in 
 	Let (decls, body, pos)
 
       | IfThenElse (test, thenTrm, elseTrm, pos) -> 
-	let test = elaborateTerm (env, test, type_bool) in
-	let thenTrm = elaborateTerm (env, thenTrm, term_sort) in 
-	let elseTrm = elaborateTerm (env, elseTrm, term_sort) in
+	let test = single_pass_elaborate_term (env, test, type_bool) in
+	let thenTrm = single_pass_elaborate_term (env, thenTrm, term_sort) in 
+	let elseTrm = single_pass_elaborate_term (env, elseTrm, term_sort) in
 	IfThenElse (test, thenTrm, elseTrm, pos)
 
       | Record (row, pos) -> 
@@ -784,7 +787,7 @@ TypeChecker qualifying spec
 	let trow = ListPair.zip (row, tyrows) in
 	let row = map (fn ((id, t), (id_, ty))->
 		       if id = id_ then
-			 (id, elaborateTerm (env, t, ty))
+			 (id, single_pass_elaborate_term (env, t, ty))
 		       else 
 			 (error (env, "Field-name "^id^
 				 " is not the one imposed by sort constraint.  Expected field-name is: "^
@@ -801,8 +804,8 @@ TypeChecker qualifying spec
 	let _     = elaborateSort (env, ty, term_sort) in 
 	Lambda (map (fn (pat, cond, term)->
 		     let (pat, env) = elaboratePattern (env, pat, alpha) in
-		     let term = elaborateTerm (env, term, beta) in
-		     let cond = elaborateTerm (env, cond, type_bool) in
+		     let term = single_pass_elaborate_term (env, term, beta) in
+		     let cond = single_pass_elaborate_term (env, cond, type_bool) in
 		     (pat, cond, term)) 
 		    rules,
 	       pos)
@@ -810,7 +813,7 @@ TypeChecker qualifying spec
       | The ((id,srt), term, pos) ->
 	let _ = elaborateSort (env, srt, term_sort) in
         let env = addVariable (env,id,srt) in
-	The ((id,srt), elaborateTerm (env, term, type_bool), pos)
+	The ((id,srt), single_pass_elaborate_term (env, term, type_bool), pos)
 
       | Bind (bind, vars, term, pos) ->
 	let _ = elaborateSort (env, term_sort, type_bool) in
@@ -823,11 +826,11 @@ TypeChecker qualifying spec
 		  vars 
 	in
         let vars = rev vars in
-	Bind (bind, vars, elaborateTerm (env, term, term_sort), pos)
+	Bind (bind, vars, single_pass_elaborate_term (env, term, term_sort), pos)
 
       | SortedTerm (term, srt, _) ->
         let srt  = elaborateSort (env, srt, term_sort) in
-	let term = elaborateTerm (env, term, srt) in
+	let term = single_pass_elaborate_term (env, term, srt) in
 	term
 
       | Seq (terms, pos) -> 
@@ -835,10 +838,10 @@ TypeChecker qualifying spec
           def elab ts = 
 	    case ts of
 	      | [] -> []
-	      | [t] -> [elaborateTerm (env, t, term_sort)]
+	      | [t] -> [single_pass_elaborate_term (env, t, term_sort)]
 	      | (t::ts) -> 
 	        let alpha = freshMetaTyVar ("Seq", pos) in
-		let t = elaborateTerm (env, t, alpha) in
+		let t = single_pass_elaborate_term (env, t, alpha) in
 		cons (t, elab ts)
 	in
 	  Seq (elab terms, pos)
@@ -846,26 +849,26 @@ TypeChecker qualifying spec
       | ApplyN ([t1 as Fun (Embedded _, _, _), t2], pos) -> 
         let alpha = freshMetaTyVar ("ApplyN_Embedded", pos) in
 	let ty    = Arrow (alpha, term_sort, pos) in
-	let t2    = elaborateTerm (env, t2, alpha) in
-	let t1    = elaborateTerm (env, t1, ty) in
+	let t2    = single_pass_elaborate_term (env, t2, alpha) in
+	let t1    = single_pass_elaborate_term (env, t1, ty) in
 	ApplyN ([t1, t2], pos)
 
       | ApplyN ([t1 as Fun (Project _, _, _), t2], pos) -> 
 	let alpha = freshMetaTyVar ("ApplyN_Project", pos) in
 	let ty    = Arrow (alpha, term_sort, pos) in
-	let t2    = elaborateTerm (env, t2, alpha) in
-	let t1    = elaborateTerm (env, t1, ty) in
+	let t2    = single_pass_elaborate_term (env, t2, alpha) in
+	let t1    = single_pass_elaborate_term (env, t1, ty) in
 	ApplyN ([t1, t2], pos)
 	
       | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
         let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
 	let ty    = Arrow (alpha, term_sort, pos) in
-	let t1    = elaborateTermHead(env,t1,ty,trm) in
-	let t2    = elaborateTerm (env, t2, alpha) in
+	let t1    = single_pass_elaborate_term_head(env,t1,ty,trm) in
+	let t2    = single_pass_elaborate_term (env, t2, alpha) in
 	%% Repeated for help in overload resolution once argument type is known
 	let t1    = (if env.firstPass? then
 		       case t1 of
-			 | Fun(OneName _,_,_) -> elaborateTerm (env, t1, ty)
+			 | Fun(OneName _,_,_) -> single_pass_elaborate_term (env, t1, ty)
 			 | _ -> t1
 		     else 
 		       t1)
@@ -891,8 +894,8 @@ TypeChecker qualifying spec
       | ApplyN ([t1, t2], pos) ->
 	let alpha = freshMetaTyVar ("ApplyN_2", pos) in
 	let ty    = Arrow (alpha, term_sort, pos) in
-	let t2    = elaborateTerm (env, t2, alpha) in
-	let t1    = elaborateTerm (env, t1, ty) in
+	let t2    = single_pass_elaborate_term (env, t2, alpha) in
+	let t1    = single_pass_elaborate_term (env, t1, ty) in
 	ApplyN ([t1, t2], pos)
 
       | ApplyN (terms, pos) ->
@@ -930,7 +933,7 @@ TypeChecker qualifying spec
 	      | _ -> Nonfix term
 	in 
 	let term = resolveInfixes (Some env, tagTermWithInfixInfo, pos, terms) in
-	let new = elaborateTerm (env, term, term_sort) in
+	let new = single_pass_elaborate_term (env, term, term_sort) in
 	new
 
       %% These should only appear as the head of an apply (see one of the ApplyN cases above):
@@ -947,7 +950,7 @@ TypeChecker qualifying spec
 
   def cantuse inbuilt = "Can't use inbuilt operator '"++inbuilt++"' as an expression -- use '("++inbuilt++")' instead."
 
-  def elaborateTermHead(env,t1,ty,trm) =
+  def single_pass_elaborate_term_head(env,t1,ty,trm) =
     case t1 of
       | Fun (Not, srt, pos) -> 
 	(elaborateSortForTerm (env, trm, srt, ty);
@@ -1005,7 +1008,7 @@ TypeChecker qualifying spec
 	    | None -> notEnoughInfo()))
 
       | _ ->
-	elaborateTerm (env, t1, ty)
+	single_pass_elaborate_term (env, t1, ty)
 
    op makeEqualityType : Sort * Position -> Sort
   def makeEqualityType (srt, pos) =
@@ -1208,7 +1211,7 @@ TypeChecker qualifying spec
   def mybreak () = ()
     
   % ========================================================================
-  %% Called inside elaborateTerm 
+  %% Called inside single_pass_elaborate_term 
 
   def mkEmbed0 (env, srt, id) =
     case lookupEmbedId (env, id, srt) of
@@ -1443,7 +1446,7 @@ TypeChecker qualifying spec
        (Fun (OneName (id, Nonfix), srt, pos)) : MS.Term)
 
   % ========================================================================
-  %% Called inside elaborateTerm 
+  %% Called inside single_pass_elaborate_term 
   % ========================================================================
 
   def elaboratePattern (env, p, sort1) =
@@ -1568,7 +1571,7 @@ TypeChecker qualifying spec
 	in
 	  (RecordPat (rev r, pos), env, seenVars)
       | RelaxPat (pat, term, pos) -> 
-	let term = elaborateTerm (env, term, 
+	let term = single_pass_elaborate_term (env, term, 
 				 Arrow (sort1, type_bool, pos)) in
 	let sort2 = (Subsort (sort1, term, pos)) in
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort2, seenVars) in
@@ -1577,14 +1580,14 @@ TypeChecker qualifying spec
 	let v = freshMetaTyVar ("QuotientPat", pos) in
 	let sort2 = (Quotient (v, term, pos)) in
 	let _ = elaborateSort (env, sort2, sort1) in
-	let term = elaborateTerm (env, term, 
+	let term = single_pass_elaborate_term (env, term, 
 				  Arrow (Product ([("1", v), ("2", v)], pos), 
 					 type_bool, pos)) in
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, v, seenVars) in
 	(QuotientPat (pat, term, pos), env, seenVars)
       | RestrictedPat (pat, term, pos) ->
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort1, seenVars) in
-	let term = elaborateTerm (env, term,  type_bool) in
+	let term = single_pass_elaborate_term (env, term,  type_bool) in
 	(RestrictedPat (pat, term, pos), env, seenVars)
        | p -> (System.print p; System.fail "Nonexhaustive")
 
