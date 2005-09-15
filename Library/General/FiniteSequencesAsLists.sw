@@ -27,8 +27,8 @@ FSeq qualifying spec
   def seq_1 s =
     fn(i:Nat) -> if i < length s then Some (nth (s, i)) else None
 
-  op length : [a] FSeq a -> Nat
-  def length = List.length
+%  op length : [a] FSeq a -> Nat
+%  def length = List.length
 
   op @ infixl 30 : [a] {(s,i) : FSeq a * Nat | i < length s} -> a
   def @ = nth
@@ -64,8 +64,8 @@ FSeq qualifying spec
   op theElement : [a] SingletonFSeq a -> a
   def theElement s = hd s
 
-  op ++ infixl 25 : [a] FSeq a * FSeq a -> FSeq a
-  def ++ = List.++
+%  op ++ infixl 25 : [a] FSeq a * FSeq a -> FSeq a
+%  def ++ = List.++
 
   op |> infixr 25 : [a] a * FSeq a -> FSeq a
   def |> = cons
@@ -135,8 +135,8 @@ FSeq qualifying spec
   op foldl : [a,b] (b * a -> b) -> b -> FSeq a -> b
   def foldl f c s = List.foldl (fn (x,y) -> f(y,x)) c s
 
-  op foldr : [a,b] (a * b -> b) -> b -> FSeq a -> b
-  def foldr = List.foldr
+%  op foldr : [a,b] (a * b -> b) -> b -> FSeq a -> b
+%  def foldr = List.foldr
 
   op zip : [a,b] ((FSeq a * FSeq b) | equiLong) -> FSeq (a * b)
   def zip(s1,s2) =
@@ -170,18 +170,18 @@ FSeq qualifying spec
         let (rest1, rest2, rest3) = unzip3 rest in
         (cons (first1, rest1), cons (first2, rest2), cons (first3, rest3))
 
-  op map : [a,b] (a -> b) -> FSeq a -> FSeq b
-  def map = List.map
+%  op map : [a,b] (a -> b) -> FSeq a -> FSeq b
+%  def map = List.map
 
   % copied from spec `FiniteSequences':
   op map2 : [a,b,c] (a * b -> c) -> ((FSeq a * FSeq b) | equiLong) -> FSeq c
   def map2 f (s1,s2) = map f (zip (s1, s2))
 
-  op filter : [a] (a -> Boolean) -> FSeq a -> FSeq a
-  def filter = List.filter
+%  op filter : [a] (a -> Boolean) -> FSeq a -> FSeq a
+%  def filter = List.filter
 
   op repeat : [a] a -> Nat -> FSeq a
-  def repeat x n = tabulate (n, fn(i:Nat) -> x)
+  def repeat x n = tabulate (n, fn(_ : Nat) -> x)
 
   op allEqualElements? : [a] FSeq a -> Boolean
   def allEqualElements? s =
@@ -213,8 +213,8 @@ FSeq qualifying spec
   op reverse : [a] FSeq a -> FSeq a
   def reverse = List.rev
 
-  op flatten : [a] FSeq (FSeq a) -> FSeq a
-  def flatten = List.flatten
+%  op flatten : [a] FSeq (FSeq a) -> FSeq a
+%  def flatten = List.flatten
 
   op first : [a] NonEmptyFSeq a -> a
   def first = hd
