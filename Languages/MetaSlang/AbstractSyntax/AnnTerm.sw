@@ -759,6 +759,20 @@ MetaSlang qualifying spec
 					      true
 					      (srts1, srts2)
 
+     %% The following two cases handle comparisons of "X" with "And (X, Y)"
+     %%  where X and Y are equivalent, but not equal, sorts.
+     %%
+     %% This can happen for the sort of the dfn field of an opinfo
+     %%  for some op that had both a decl and a def, which gave it two
+     %%  sorts that are equivalent, but not equal.
+     %%
+     %% This was noticed as a problem for subsitution, which calls subtractSpec and 
+     %% then complains if any sorts and ops from the dom spec of the morphism have
+     %% failed to find a match in the spec that morphism is being applied to.
+
+     | (And (srts1, _),  _) -> foldl (fn (s1, eq?) -> eq? || equalSort? (s1, s2)) false srts1
+     | (_,  And (srts2, _)) -> foldl (fn (s2, eq?) -> eq? || equalSort? (s1, s2)) false srts2
+
      | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
      | _ -> false
