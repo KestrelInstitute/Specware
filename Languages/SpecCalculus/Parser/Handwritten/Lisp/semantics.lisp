@@ -1050,7 +1050,7 @@ If we want the precedence to be optional:
 	  (speccalc::mkProofCheck-7  claim-name spec-term prover-name assertions options baseOptions (make-pos l r)))
       (if (equal prover-name "Checker")
 	  (let ((claim-name (cons :|Claim| claim-name)))
-	    (speccalc::mkProofCheck-7  spec-term prover-name assertions options baseOptions (make-pos l r)))
+	    (speccalc::mkProofCheck-7  claim-name spec-term prover-name assertions options baseOptions (make-pos l r)))
 	(speccalc::mkProve-8 claim-name spec-term prover-name assertions options baseOptions answerVar (make-pos l r))))))
 
 (defun make-sc-prover-options (name_or_string)
