@@ -439,9 +439,6 @@ TypeChecker qualifying spec
       | None -> undeclaredName (env, trm, id, srt, pos)
       | _    -> ambiguousCons (env, trm, id, srt, pos)
 
-  op my_break : () -> ()
-
-
  def checkOp (info, env) =
    let (old_decls, old_defs) = opInfoDeclsAndDefs info in
    let new_decls_and_defs  = map (fn tm -> checkOpDef  (tm, info, env)) 
@@ -513,7 +510,7 @@ TypeChecker qualifying spec
   def elaborateTerm (env, trm, term_sort) = single_pass_elaborate_term_top (env, trm, term_sort)  % backward compatibility for Forges Legacy
 
   def single_pass_elaborate_term_top (env, trm, term_sort) =
-    let trm = single_pass_elaborate_term(env, trm, term_sort) in
+    let trm = single_pass_elaborate_term (env, trm, term_sort) in
     %% Resolve now rather than later to release space
     resolveMetaTyVars trm
 
@@ -538,6 +535,7 @@ TypeChecker qualifying spec
 		     | _ -> System.fail "Variable or constant expected"))
 	   | [] -> 
 	     resolveNameFromSort (env, trm, id, srt, pos))
+
       | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
 	(let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
 	 %% Either Qualified (id1, id2) or field selection
@@ -562,17 +560,17 @@ TypeChecker qualifying spec
 		  let 
                     def projectRow (big_term, big_sort, row, id2) =
 		      %% See if id2 is one of the field selectors for the big sort.
-		      (case row of
-			 | [] -> undeclared2 (env, trm, id1, id2, term_sort, pos)
-			 | (field_id, field_sort) :: row -> 
-			   if id2 = field_id then
-			     let field_sort = checkSort (env, field_sort) in
-			     let projector : MS.Term = Fun (Project id2, Arrow (big_sort, field_sort, pos), pos) in
-			     let projection = (ApplyN ([projector, big_term], pos)) : MS.Term in
-			     let _ = elaborateSortForTerm (env, projection, field_sort, term_sort) in
-			     projection
-			   else
-			     projectRow (big_term, big_sort, row, id2))
+		      case row of
+			| [] -> undeclared2 (env, trm, id1, id2, term_sort, pos)
+			| (field_id, field_sort) :: row -> 
+			  if id2 = field_id then
+			    let field_sort = checkSort (env, field_sort) in
+			    let projector : MS.Term = Fun (Project id2, Arrow (big_sort, field_sort, pos), pos) in
+			    let projection = (ApplyN ([projector, big_term], pos)) : MS.Term in
+			    let _ = elaborateSortForTerm (env, projection, field_sort, term_sort) in
+			    projection
+			  else
+			    projectRow (big_term, big_sort, row, id2)
 		    def getProduct srt : Option (List (String * MS.Sort)) = 
 		      (case unfoldSort (env, srt) of
 			 | Product (row,       _) -> Some row
@@ -582,7 +580,6 @@ TypeChecker qualifying spec
 		    %% See if big_term is a product or a subsort of a product
 		    (case getProduct big_sort of
 		       | Some row -> projectRow (big_term, big_sort, row, id2)
-		       | None     -> undeclared2 (env, trm, id1, id2, term_sort, pos)
 		       | _        -> undeclared2 (env, trm, id1, id2, term_sort, pos))
 	   | _ -> 
 	     %% Both id1.id2 and id1 fail to refer to anything
@@ -592,6 +589,7 @@ TypeChecker qualifying spec
           %% id1.id2 is ambiguous??  That shouldn't be possible.
 	  undeclared2 (env, trm, id1, id2, term_sort, pos)
 	 )
+
       | Fun (Embed (id, _), srt, pos) -> 
 	let _  (* srt *) = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
 	%% using term_sort instead of srt in the following was cause of bug 110 : "[] read as bogus Nil"
@@ -863,8 +861,8 @@ TypeChecker qualifying spec
       | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
         let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
 	let ty    = Arrow (alpha, term_sort, pos) in
-	let t1    = single_pass_elaborate_term_head(env,t1,ty,trm) in
-	let t2    = single_pass_elaborate_term (env, t2, alpha) in
+	let t1    = single_pass_elaborate_term_head (env, t1, ty, trm) in
+	let t2    = single_pass_elaborate_term      (env, t2, alpha) in
 	%% Repeated for help in overload resolution once argument type is known
 	let t1    = (if env.firstPass? then
 		       case t1 of
@@ -950,7 +948,7 @@ TypeChecker qualifying spec
 
   def cantuse inbuilt = "Can't use inbuilt operator '"++inbuilt++"' as an expression -- use '("++inbuilt++")' instead."
 
-  def single_pass_elaborate_term_head(env,t1,ty,trm) =
+  def single_pass_elaborate_term_head (env, t1, ty, trm) =
     case t1 of
       | Fun (Not, srt, pos) -> 
 	(elaborateSortForTerm (env, trm, srt, ty);
@@ -1204,12 +1202,9 @@ TypeChecker qualifying spec
 	let msg = newLines ["Could not match type " ^ printSort s1, 
 			    "                with " ^ printSort s2]
 	in
-	  let _ = mybreak () in
 	  error (env, msg, chooseNonZeroPos (sortAnn s1, sortAnn s2)));
      s1Checked)
 
-  def mybreak () = ()
-    
   % ========================================================================
   %% Called inside single_pass_elaborate_term 
 
@@ -1570,26 +1565,30 @@ TypeChecker qualifying spec
 	      ([], env, seenVars) r
 	in
 	  (RecordPat (rev r, pos), env, seenVars)
+
       | RelaxPat (pat, term, pos) -> 
-	let term = single_pass_elaborate_term (env, term, 
-				 Arrow (sort1, type_bool, pos)) in
+	let term = single_pass_elaborate_term (env, term, Arrow (sort1, type_bool, pos)) in
 	let sort2 = (Subsort (sort1, term, pos)) in
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort2, seenVars) in
 	(RelaxPat (pat, term, pos), env, seenVars)
+
       | QuotientPat (pat, term, pos) ->
 	let v = freshMetaTyVar ("QuotientPat", pos) in
 	let sort2 = (Quotient (v, term, pos)) in
 	let _ = elaborateSort (env, sort2, sort1) in
 	let term = single_pass_elaborate_term (env, term, 
-				  Arrow (Product ([("1", v), ("2", v)], pos), 
-					 type_bool, pos)) in
+					       Arrow (Product ([("1", v), ("2", v)], pos), 
+						      type_bool, pos)) 
+	in
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, v, seenVars) in
 	(QuotientPat (pat, term, pos), env, seenVars)
+
       | RestrictedPat (pat, term, pos) ->
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort1, seenVars) in
 	let term = single_pass_elaborate_term (env, term,  type_bool) in
 	(RestrictedPat (pat, term, pos), env, seenVars)
-       | p -> (System.print p; System.fail "Nonexhaustive")
+
+      | p -> (System.print p; System.fail "Nonexhaustive")
 
 
   % ========================================================================
