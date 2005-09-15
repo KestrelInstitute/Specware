@@ -15,23 +15,41 @@ SpecCalc qualifying spec
     let should_be_empty_spec = subtractSpec sub_spec original_spec in
     let sorts_msg            = printNamesInAQualifierMap should_be_empty_spec.sorts in
     let ops_msg              = printNamesInAQualifierMap should_be_empty_spec.ops   in
+    let 
+      def collect_clashing_sorts_and_ops (elts, sorts, ops) =
+	foldl (fn (el, (sorts, ops)) ->
+	       case el of
+		 | Sort    qid -> (if member (qid, sorts) then sorts else sorts ++ [qid], ops)
+		 | SortDef qid -> (if member (qid, sorts) then sorts else sorts ++ [qid], ops)
+		 | Op      qid -> (sorts, if member (qid, ops) then ops else ops ++ [qid])
+		 | OpDef   qid -> (sorts, if member (qid, ops) then ops else ops ++ [qid])
+		 | Import (_, _, elts) ->  collect_clashing_sorts_and_ops (elts, sorts, ops)
+		 | _ -> (sorts, ops))
+	      (sorts, ops)
+	      elts
+    in
+    let (clashing_sort_names, clashing_op_names) = 
+        collect_clashing_sorts_and_ops (should_be_empty_spec.elements, [], []) 
+    in
     let props_msg = 
         foldl (fn (el,str) ->
 	       case el of
 		 | Property(_, prop_name, _, _) ->
 		   if str = "" then 
-		     printQualifiedId (prop_name)
+		     printQualifiedId prop_name
 		   else 
-		     str ^ ", " ^ printQualifiedId (prop_name)
+		     str ^ ", " ^ printQualifiedId prop_name
 		 | _ -> str) % Should check other items?
 	      ""			 
 	      should_be_empty_spec.elements
     in
-      case (sorts_msg, ops_msg, props_msg) of
-	| ("", "", "") ->
+      case (sorts_msg, ops_msg, props_msg, clashing_sort_names, clashing_op_names) of
+	| ("", "", "", [], []) ->
 	  auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos
 	| _ ->
-	  raise (TypeCheck (term_pos, warnAboutMissingItems sorts_msg ops_msg props_msg))
+	  raise (TypeCheck (term_pos, 
+			    warnAboutMissingItems sorts_msg ops_msg props_msg 
+			                          clashing_sort_names clashing_op_names))
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -95,18 +113,23 @@ SpecCalc qualifying spec
   %% The same place as originals. 
   op  subtractSpecLeavingStubs: Spec * SCTerm * Spec * SCTerm * Spec * SCTerm -> Spec
   def subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term) = 
-    let import_dom_spec = Import (dom_spec_term, dom_spec, []) in    
+    %let import_dom_spec = Import (dom_spec_term, dom_spec, []) in    
     let 
       def revise_elements elements =
 	map (fn el ->
 	     case el of
 	       | Import (tm, spc, import_elts) ->
-	         if sameSpecElement? (el, import_dom_spec) then
+	         if sameSCTerm? (tm, dom_spec_term) then
 		   Import (cod_spec_term, cod_spec, [])
-		 else if existsSpecElement? (fn el -> sameSpecElement? (el, import_dom_spec)) import_elts then
-		   Import ((Subst (tm, sm_tm), noPos),
-			   cod_spec, 
-			   revise_elements import_elts)
+		 else if existsSpecElement? (fn el -> 
+					     case el of
+					       | Import (tm, _, _) -> sameSCTerm? (tm, dom_spec_term)
+					       | _ -> false)
+		                            import_elts 
+			then
+			  Import ((Subst (tm, sm_tm), noPos),
+				  cod_spec, 
+				  revise_elements import_elts)
 		 else
 		   el % Import (tm, spc, [])
 	       | _ -> 
@@ -121,15 +144,19 @@ SpecCalc qualifying spec
 
   op  replaceImportStub: SpecElements * SpecElement -> SpecElements
   def replaceImportStub (elements, new_import) =
+    let Import (new_import_tm, _, _) = new_import in
     let 
       def revise_elements elements =
 	map (fn el ->
 	     case el of
 	       | Import (tm, spc, imported_elements) ->
-	         if imported_elements = [] && sameSpecElement? (el, new_import) then
+	         if imported_elements = [] && sameSCTerm? (tm, new_import_tm) then
 		   new_import
 		 else if existsSpecElement? (fn imported_element -> 
-					     sameSpecElement? (imported_element, new_import)) 
+					     case imported_element of
+					       | Import (import_tm, _, _) ->
+					         sameSCTerm? (import_tm, new_import_tm)
+					       | _ -> false)
 		                            imported_elements 
 			then
 		   Import (tm, spc, revise_elements imported_elements)
@@ -170,7 +197,7 @@ SpecCalc qualifying spec
   %%  Error handling...
   %% ======================================================================  
 
-  def warnAboutMissingItems sorts_msg ops_msg props_msg =
+  def warnAboutMissingItems sorts_msg ops_msg props_msg sort_names op_names =
     %% At least one of the messages should be non-empty
     "\n" ^
     (if sorts_msg = "" then 
@@ -188,7 +215,21 @@ SpecCalc qualifying spec
      else
        "  These axioms, etc. from the domain of the morphism are not in the source spec: " ^ props_msg  ^ "\n")
     ^
-    "  in substitution term"
+    (if sort_names = [] then
+       ""  
+     else
+       "  These sorts from the domain of the morphism are defined differently in the source spec: " ^ 
+       (foldl (fn (qid, s) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" sort_names)
+       ^ "\n")
+    ^
+    (if op_names = [] then
+       ""  
+     else
+       "  These ops from the domain of the morphism are defined differently in the source spec: " ^ 
+       (foldl (fn (qid, s) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" op_names)
+       ^ "\n")
+    ^
+    " in substitution term "
 
   op  printNamesInAQualifierMap : fa (a) AQualifierMap a -> String
   def printNamesInAQualifierMap qmap =
