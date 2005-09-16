@@ -225,79 +225,88 @@ Utilities qualifying spec
 	(RestrictedPat(pat,trm,a),sub,freeNames)
       | _ -> (pat,sub,freeNames)
 
-
  %----------------------
  def freeVars (M) = 
    let vars = freeVarsRec(M) in
    removeDuplicateVars vars
 
  op removeDuplicateVars: List Var -> List Var
- def removeDuplicateVars(l) = 
-    case l of
-      | [] -> l 
-      | var::l -> insertVar (var,removeDuplicateVars(l))
+ def removeDuplicateVars vars = 
+   case vars of
+     | [] -> []
+     | var :: vars -> insertVar (var, removeDuplicateVars vars)
 
- def insertVar (e, l) = 
-    case l of
-      | [] -> [e]
-      | e1::l1 ->
-          if equalVar?(e, e1) then
-            l
-          else
-            Cons (e1, insertVar (e, l1))
+ def insertVar (new_var, vars) = 
+   if (exists (fn v -> equalVar? (v, new_var)) vars) then
+     vars
+   else
+     Cons (new_var, vars)
 
+ def deleteVar (var_to_remove, vars) = 
+   List.filter (fn v -> ~(equalVar? (v, var_to_remove))) vars
 
- def freeVarsRec(M:MS.Term) =   
-   case M
-     of Var(v,_) -> [v]
-      | Apply(M1,M2,_)   -> freeVarsRec(M1) ++ freeVarsRec(M2)
-      | Record(fields,_) -> freeVarsList fields
-      | Fun _            -> []
-      | Lambda(rules,_)  -> List.foldr (fn (rl,vs) -> vs ++ freeVarsMatch rl) [] rules
-      | Let(decls,M,_)   -> 
-        let (patVars,trmVars) = List.foldr (fn((p,trm),(vs1,vs2)) -> 
-					    (patVars  p ++ vs1,
-					     freeVarsRec trm ++ vs2))
-                                           ([],[]) decls
-	in
-        let mVars = freeVarsRec(M) in
-	trmVars ++ (deleteVars(mVars,patVars)) 
-      | LetRec(decls,M,_) -> 
-	let vars1 = freeVarsRec M in
-	let vars2 = freeVarsList(decls) in
-	deleteVars(vars1 ++ vars2,List.map (fn(v,_) -> v) decls)
-      | Bind(b,vars,M,_)  -> 
-	deleteVars(freeVarsRec(M),vars)
-      | The (var, M, _) ->
-	delete (var, freeVarsRec M)
-      | IfThenElse(t1,t2,t3,_) -> 
-	freeVarsRec(t1) ++ freeVarsRec(t2) ++ freeVarsRec(t3)
-      | Seq(tms,_) -> foldr (fn (trm,vs) -> vs ++ freeVarsRec trm) [] tms
-      | SortedTerm(t,_,_) -> freeVarsRec t
-      | Pi(_,t,_) -> freeVarsRec t
+ def insertVars (vars_to_add,    original_vars) = List.foldl insertVar original_vars vars_to_add
+ def deleteVars (vars_to_remove, original_vars) = List.foldl deleteVar original_vars vars_to_remove
+
+ def freeVarsRec (M : MS.Term) =   
+   case M of
+     | Var    (v,      _) -> [v]
+
+     | Apply  (M1, M2, _) -> insertVars (freeVarsRec M1, freeVarsRec M2)
+
+     | Record (fields, _) -> freeVarsList fields
+
+     | Fun    _           -> []
+
+     | Lambda (rules,  _) -> foldl (fn (rl, vars) -> insertVars (freeVarsMatch rl, vars)) [] rules
+
+     | Let (decls, M,  _) -> 
+       let (pVars, tVars) =
+           foldl (fn ((pat, trm), (pVars, tVars)) -> 
+		  (insertVars (patVars     pat, pVars),
+		   insertVars (freeVarsRec trm, tVars)))
+	         ([], []) 
+		 decls
+       in
+       let mVars = freeVarsRec M in
+       insertVars (tVars, deleteVars (pVars, mVars))
+
+     | LetRec (decls, M, _) -> 
+       let pVars = List.map (fn (v, _) -> v) decls in
+       let tVars = freeVarsList decls in
+       let mVars = freeVarsRec  M in
+       deleteVars (pVars, insertVars (tVars, mVars))
+
+     | Bind (_, vars, M, _) -> deleteVars (vars, freeVarsRec M)
+     | The  (var,     M, _) -> deleteVar  (var,  freeVarsRec M)
+
+     | IfThenElse (t1, t2, t3, _) -> 
+       insertVars (freeVarsRec t1, insertVars (freeVarsRec t2, freeVarsRec t3))
+
+     | Seq (tms, _) -> foldl (fn (tm, vars) -> insertVars (freeVarsRec tm, vars)) [] tms
+
+     | SortedTerm (tm, _, _) -> freeVarsRec tm
+
+     | Pi (_, tm, _) -> freeVarsRec tm
 
  op  freeVarsList : [a] List(a * MS.Term) -> Vars
- def freeVarsList list = 
-   List.foldr (fn ((_,trm),vs) -> vs ++ freeVarsRec trm) [] list
+ def freeVarsList tms = 
+   foldl (fn ((_,tm), vars) -> insertVars (freeVarsRec tm, vars)) [] tms
 
- def deleteVars(vars1,vars2) = 
-   List.foldr ListUtilities.delete vars1 vars2
-
- def freeVarsMatch (pat,cond,body) = 
-   let vars  = patVars pat in
-   let vars1 = freeVarsRec cond in
-   let vars2 = freeVarsRec body in
-   deleteVars(vars1 ++ vars2,vars)
+ def freeVarsMatch (pat, cond, body) = 
+   let pvars = patVars     pat  in
+   let cvars = freeVarsRec cond in
+   let bvars = freeVarsRec body in
+   deleteVars (pvars, insertVars (cvars, bvars))
 
  op  patVars: Pattern -> List Var
  def patVars(pat:Pattern) = 
    case pat
-     of AliasPat(p1,p2,_)      -> patVars(p1) ++ patVars(p2)
+     of AliasPat(p1,p2,_)      -> insertVars (patVars p1, patVars p2)
       | VarPat(v,_)            -> [v]
       | EmbedPat(_,Some p,_,_) -> patVars p
       | EmbedPat _             -> []
-      | RecordPat(fields,_)    -> List.foldr (fn ((_,p),vars) -> patVars p ++ vars) 
-                                             [] fields
+      | RecordPat(fields,_)    -> foldl (fn ((_,p),vars) -> insertVars (patVars p, vars)) [] fields
       | WildPat _              -> []
       | StringPat _            -> []
       | BoolPat _              -> []
@@ -305,7 +314,7 @@ Utilities qualifying spec
       | NatPat  _              -> []
       | RelaxPat(p,_,_)        -> patVars p
       | QuotientPat(p,_,_)     -> patVars p
-      | RestrictedPat(p,_,_)     -> patVars p
+      | RestrictedPat(p,_,_)   -> patVars p
 
  op  getParams: Pattern -> List Pattern
  def getParams(pat:Pattern) = 
@@ -486,7 +495,7 @@ Utilities qualifying spec
               ([],sub,freeNames) vars
 	
  def substBoundVar((id,s),sub,freeNames) = 
-   let sub = deleteVar((id,s),sub,[]) in
+   let sub = deleteVarFromSub((id,s),sub,[]) in
    if StringSet.member(freeNames,id) then
      let id2 = StringUtilities.freshName(id,freeNames) in
      let sub2 = cons(((id,s),mkVar(id2,s)),sub) in
@@ -494,12 +503,12 @@ Utilities qualifying spec
    else
      ((id,s),sub,freeNames)
 
- def deleteVar(v,sub,sub2) = 
+ def deleteVarFromSub(v,sub,sub2) = 
    case sub
      of []         -> sub2
       | (w,M)::sub -> if v.1 = w.1
 		      then sub ++ sub2
-		      else deleteVar(v,sub,cons((w,M),sub2))
+		      else deleteVarFromSub (v, sub, cons((w,M),sub2))
 
  def substPattern(pat,sub,freeNames) = 
    case pat:Pattern
