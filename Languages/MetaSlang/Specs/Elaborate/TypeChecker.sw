@@ -492,13 +492,15 @@ TypeChecker qualifying spec
 	   (let {name = _, uniqueId, link} = ! mtv in
 	    case link of
 	      | Some s -> scan s
-	      | None   -> if complainAboutImplcitPolymorphicOps?
-	                   then error (env, 
-				       "Incomplete type for op "^(printQualifiedId (primaryOpName info))
-				       ^":"^newline
-				       ^(printSort srt), 
-				       termAnn dfn)
-			   else ())
+	      | None -> 
+ 	        %% Specware reports an error here.
+	        %% Accord doesn't, so can go on to interpret "x.y' as "y(x)" in some cases
+	        if complainAboutImplcitPolymorphicOps? then
+		  error (env, 
+			 "Incomplete type for op " ^ (printQualifiedId (primaryOpName info)) ^ ":\n" ^(printSort srt), 
+			 termAnn dfn)
+		else 
+		  ())
 	 | And (srts, _) -> app scan srts
 	 | Any _ -> ()
 
@@ -580,15 +582,18 @@ TypeChecker qualifying spec
 		    %% See if big_term is a product or a subsort of a product
 		    (case getProduct big_sort of
 		       | Some row -> projectRow (big_term, big_sort, row, id2)
-		       | _        -> undeclared2 (env, trm, id1, id2, term_sort, pos))
-	   | _ -> 
-	     %% Both id1.id2 and id1 fail to refer to anything
-	     undeclared2 (env, trm, id1, id2, term_sort, pos)
-          )
-        | _ -> 
-          %% id1.id2 is ambiguous??  That shouldn't be possible.
-	  undeclared2 (env, trm, id1, id2, term_sort, pos)
-	 )
+		       | _ ->
+		         %% Specware just reports an error here
+		         %% Accord checks to see if id2 refers to a function whose domain is big_sort
+		         undeclared2 (env, trm, id1, id2, term_sort, pos))
+	        | [] -> 
+		  %% both id1.id2 id1 fail to refer to anything
+		  undeclared2 (env, trm, id1, id2, term_sort, pos)
+		| big_terms ->
+		  %% id1 is ambiguous
+		  %% Specware just reports an error here
+		  %% Accord checks to see if id2 (id1) typechecks
+		  undeclared2 (env, trm, id1, id2, term_sort, pos)))
 
       | Fun (Embed (id, _), srt, pos) -> 
 	let _  (* srt *) = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
@@ -1107,21 +1112,31 @@ TypeChecker qualifying spec
 			       pos);
 			None)
 	       | [term] -> Some term
-	       | tms ->
+	       | consistent_terms ->
 	         if env.firstPass? then
 		   None
 		 else
-		   (let exactTerms = filter (consistentSortOp? (env, withAnnS (rsort, srtPos),false)) terms in
-		    let remTerms = if exactTerms = [] then tms else exactTerms in
-		    case remTerms of
+		   (let consistent_terms_with_exactly_matching_subtypes = 
+		        filter (consistentSortOp? (env, withAnnS (rsort, srtPos), false)) 
+			       consistent_terms
+		    in
+		    let plausible_terms = if consistent_terms_with_exactly_matching_subtypes = [] then 
+		                            consistent_terms 
+					  else 
+					    consistent_terms_with_exactly_matching_subtypes 
+		    in
+		    case plausible_terms of
 		      %% If only one term matches including subsorts, choose it
 	              | [term] -> Some term
 		      | _ ->
 		        %% If there is a valid unqualified term then prefer that because you
 		        %% cannot explicitly qualify with unqualified!
-			case findUnqualified remTerms of
+			case findUnqualified plausible_terms of
 			  | Some term -> Some term
 			  | None ->
+			    %% Specware just reports an error here
+			    %% Accord looks to see if there is a unique most-precise term,
+			    %% preferring f : A|p -> B to f : A -> B
 			    (error (env,
 				    "Several matches for overloaded op " ^ id ^ " of " ^
 				    (printMaybeAndType srt) ^
@@ -1130,7 +1145,7 @@ TypeChecker qualifying spec
 					       | Fun (OneName  (     id2, _), _, _) -> " "^id2
 					       | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
 				           " : "
-					   tms),
+					   consistent_terms),
 				    pos);
 			     None)))
 
@@ -1466,26 +1481,26 @@ TypeChecker qualifying spec
       | StringPat _ -> (elaborateSort (env, sort1, type_string); (p, env, seenVars))
       | CharPat   _ -> (elaborateSort (env, sort1, type_char);   (p, env, seenVars))
       | VarPat ((id, srt), pos) -> 
-         let srt = elaborateSort (env, srt, sort1)  in 
-           (case lookupEmbedId (env, id, srt) of
-              | Some None -> (EmbedPat (id, None, srt, pos), env, seenVars)
-              | Some _ -> 
-                     (error (env, "Constructor "^id^" expects an argument, but was given none", pos);
-                      % raise (TypeCheck (pos, "Constructor "^id^" expects an argument, but was given none"));
-                      (VarPat ((id, srt), pos), env, seenVars))
-              | None ->
-                 if undeterminedSort? srt then
-                   (case StringMap.find (env.constrs, id) of
-                     | None ->
-		       let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
-		       (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars)
-                     | Some [srt_info] ->
-                                 let (_, c_srt) = metafySort srt_info in
-                                 (VarPat ((id, c_srt), pos), env, seenVars)
-                     | Some _ -> (VarPat ((id, srt), pos), env, seenVars))
-                 else
-		   let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
-                   (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars))
+        let srt = elaborateSort (env, srt, sort1)  in 
+	(case lookupEmbedId (env, id, srt) of
+	   | Some None -> (EmbedPat (id, None, srt, pos), env, seenVars)
+	   | Some _ -> 
+	     (error (env, "Constructor "^id^" expects an argument, but was given none", pos);
+	      % raise (TypeCheck (pos, "Constructor "^id^" expects an argument, but was given none"));
+	      (VarPat ((id, srt), pos), env, seenVars))
+	   | None ->
+	     if undeterminedSort? srt then
+	       (case StringMap.find (env.constrs, id) of
+		  | None ->
+		    let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
+		    (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars)
+		  | Some [srt_info] ->
+		    let (_, c_srt) = metafySort srt_info in
+		    (VarPat ((id, c_srt), pos), env, seenVars)
+		  | Some _ -> (VarPat ((id, srt), pos), env, seenVars))
+	     else
+	       let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
+	       (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars))
       | SortedPat (pat, srt, _) -> 
 	let srt = elaborateSort (env, srt, sort1) in
 	let (p, env, seenVars) = elaboratePatternRec (env, pat, srt, seenVars) in
