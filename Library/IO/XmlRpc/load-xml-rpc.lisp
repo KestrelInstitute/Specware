@@ -1,10 +1,10 @@
 (in-package :common-lisp-user)
 (format t "loading xml-rpc...~%")
 
-#+allegro
+#+allegro #-ALLEGRO-V6.1  ; not sure what the right test here is
 (require :xml-rpc)
 
-#+allegro
+#+allegro #-ALLEGRO-V6.1  ; not sure what the right test here is
 (progn
 
   (defvar *xml-rpc-server-id*)
