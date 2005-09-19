@@ -66,7 +66,7 @@ The conditions for a diagram expression to be valid include:
            (termValue,termTime,termDeps) <- evaluateTermInfo term;
            case termValue of
              | Spec spc -> {
-                    newDgm <- addLabelledVertex dgm nodeId spc (positionOf term);
+                    newDgm <- addLabeledVertex dgm nodeId spc (positionOf term);
                     return (newDgm, max (timeStamp,termTime), listUnion (depUIDs, termDeps))
                   }
              | _ -> raise (TypeCheck (positionOf term, "diagram node not labeled with a specification"))
@@ -91,8 +91,8 @@ The conditions for a diagram expression to be valid include:
                                        ^ edgeId
                                        ^ " has inconsisent source and/or target"))
                 else {
-                    dgm1 <- addLabelledVertex dgm domNode (dom morph) (positionOf term);
-                    dgm2 <- addLabelledVertex dgm1 codNode (cod morph) (positionOf term);
+                    dgm1 <- addLabeledVertex dgm domNode (dom morph) (positionOf term);
+                    dgm2 <- addLabeledVertex dgm1 codNode (cod morph) (positionOf term);
                     let dgm3 = labelEdge (addEdge dgm2 edgeId domNode codNode) edgeId morph in
                       return (dgm3, max (timeStamp,termTime), listUnion (depUIDs, termDeps))
                   }
@@ -105,13 +105,13 @@ and the edge must be labeled with the same morphism
 if edge is not in the diagram then addLa
 
 \begin{spec}
-  op addLabelledVertex :
+  op addLabeledVertex :
        SpecDiagram 
     -> Vertex.Elem
     -> Spec
     -> Position
     -> Env SpecDiagram
-  def addLabelledVertex dgm nodeId spc position =
+  def addLabeledVertex dgm nodeId spc position =
     if vertexInDiagram? dgm nodeId then
       if (spc = vertexLabel dgm nodeId) then
         return dgm
