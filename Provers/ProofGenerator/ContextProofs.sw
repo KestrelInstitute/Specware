@@ -4,7 +4,7 @@ spec
 
   import ../ProofChecker/Spec
   import ContextAPI
-  import TypeProofs
+  import TypeExpressionProofs
   
   (* In this spec we define a function that takes a context and
   generates a proof that the context is well-formed. *)
@@ -13,9 +13,10 @@ spec
   def wellFormedTypeProof(cxProof, cx, t) =
     typeProof(cxProof, cx, t)
   
-  op wellFormedTypeAssumption: Context * Type -> Proof
+(*  op wellFormedTypeAssumption: Context * Type -> Proof
   def wellFormedTypeAssumption(cx, t) =
     assume (wellFormedType(cx, t))
+*)
 
   (*
    Take a proof that a context is well-formed, a context,

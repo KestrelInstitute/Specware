@@ -187,7 +187,7 @@ spec
     let (newe2, e2P) = applyTypeDefInExpr (cxP, cx, tdCE) e2 in
     let newE = EQ (newe1, newe2) in
     let exprTypeAssumption = wellTypedExpressionAssumption(cx, e) in
-    let eqPrf = mkEqSubstProof(cx, newE, exprTypeAssumption, e1P, e2P) in
+    let eqPrf = thEqSubst(exprTypeAssumption, e1P, e2P) in
     (newE, eqPrf)
 
   op thIfSubstProof: Proof * Context * TypeDefinitionContextElement -> Expression -> Expression * Proof
@@ -300,5 +300,9 @@ spec
   op sortCnstrsTypes: Constructors * Types -> (Constructors * Types)
   def sortCnstrsTypes(cnstrs, typs) =
     sortDualSeqs(cnstrs, typs, cnstrLTE)
+
+  op teReflProof: Proof * Context * Type -> Proof
+  def teReflProof(cxP, cx, t) =
+    teRefl(wellFormedTypeAssumption cx t)
 
 endspec

@@ -3,7 +3,7 @@ spec
   % API private all
 
   import ../ProofChecker/Spec
-  import ContextAPI, TypesAndExpressionsAPI, SubTypeProofs
+  import ContextAPI, TypesAndExpressionsAPI, GeneralTypes, TypeProofs
   
   (* In this spec we define a function that takes a typed expression
   and a context and generates a proof that the expression is
@@ -79,38 +79,106 @@ spec
       let _ = fail("exEqProof") in
       (falseProof(cx), BOOL)
 
-  op mostGeneralType: (Proof * Context) -> Type -> Proof * Type
-  def mostGeneralType(cxP, cx) t =
-    case t of
-      | BOOL -> (let (p,_) = stReflProof(cxP, cx, t) in p, BOOL)
-      | VAR _ -> (let (p,_) = stReflProof(cxP, cx, t) in p, t)
-      | TYPE _ -> (let (p,_) = stReflProof(cxP, cx, t) in p, t)
-      | ARROW _ -> mostGeneralTypeArrow(cxP, cx, t)
-      | RECORD _ -> mostGeneralTypeRecord(cxP, cx, t)
-      | SUM _ -> mostGeneralTypeSum(cxP, cx, t)
-      | RESTR _ -> mostGeneralTypeRestr(cxP, cx, t)
-      | QUOT _ -> mostGeneralTypeQuot(cxP, cx, t)
+  op exTEProof: Proof * Context * Type * Type * Proof * Proof -> Proof
+  def exTEProof(cxP, cx, t1, t2, expP, teP) =
+    let (t1SubT1P,_) = stReflProof(cxP, cx, t1) in
+    let t1TET1P = teReflProof(cxP, cx, t1) in
+    let t1SubT2P = stTE(t1SubT1P, t1TET1P, teP) in
+    exSuper(expP, t1SubT2P)
 
-  op mostGeneralTypeArrow: Proof * Context * ARROWType -> Proof * Type
-  def mostGeneralTypeArrow(cxP, cx, t) =
-    let dT = domain(t) in
-    let rT = range(t) in
-    let (mgrp, mgrt) = mostGeneralType(cxP, cx) rT in
-    let mgT = ARROW(dT, mgrt) in
-    let (rangeSubP, r) = subTypeProof(cxP, cx, t, mgT) in
-    let dTP = typeProof(cxP, cx, dT) in
-    let r1 = (FN (v, dT --> mgrt, FA (v1, dT, r @ (VAR v @ VAR v1)))) in
-      (stArr(dTP, rangeSubP, v, v1), mgT)
+  op exIfProof: Proof * Context * IFExpr -> Proof * Type
+  def exIfProof(cxP, cx, ifE) =
+    let e1 = ifCond(ifE) in
+    let e2 = ifThen(ifE) in
+    let e3 = ifElse(ifE) in
+    let (e1P, e1T) = typeExpProof(cxP, cx, e1) in
+    let (e2P, e2T) = typeExpProof(cxP, cx, e2) in
+    let (e3P, e3T) = typeExpProof(cxP, cx, e3) in
+    let (e1TBoolP, _) = subTypeProof(cxP, cx, e1T, BOOL) in
+    let e1BoolP = exSuper(e1P, e1TBoolP) in
+    let (mgP2, mgT2) = mostGeneralType(cxP, cx) e2T in
+    let (mgP3, mgT3) = mostGeneralType(cxP, cx) e3T in
+    case typeEquivalent?(cxP, cx, mgT2, mgT3) of
+      | Some teP ->
+      (case subTypeProof(cxP, cx, e2T, e3T) of
+	 | (_, FALSE) ->
+	 (case subTypeProof(cxP, cx, e3T, e2T) of
+	    | (_, FALSE) ->
+	    let e2MGT2P = exSuper(e2P, mgP2) in
+	    let e3MGT3P = exSuper(e3P, mgP3) in
+	    let e3MGT2P = exTEProof(cxP, cx, mgT2, mgT3, e3MGT3P, teP) in
+	    (exIf(e1TBoolP, e2MGT2P, e3MGT2P), mgT2)
+            | (t3STt2P, _) ->
+	    let e3T2P = exSuper(e3P, t3STt2P) in
+	    (exIf(e1TBoolP, e2P, e3T2P), e2T))
+	 | (t2STt3P, _) ->
+	 let e2T3P = exSuper(e2P, t2STt3P) in
+	 (exIf(e1TBoolP, e2T3P, e3P), e3T))
+       | _ -> 
+       let _ = fail("exIfProof") in
+       (falseProof(cx), BOOL)
 
-  op mostGeneralTypeRecord: Proof * Context * ARROWType -> Proof * Type
-  def mostGeneralTypeRecord(cxP, cx, t) =
-    let rfs = RECfields(t) in
-    let rts = RECtypes(t) in
-    let mgpsMgts = map (mostGeneralType(cxP, cx)) rts in
-    let (mgPs, mgTs) = unzip mgpsMgts in
-    
-    
-    
-mostGeneralTypeArrow(cxP, cx, t)
+  op exTheProof: Proof * Context * IOTAExpr -> Proof * Type
+  def exTheProof(cxP, cx, theE) =
+    let IOTA(t) = theE in
+    let iotaT = ((t --> BOOL) \ EX1q t) --> t in
+    let tP = typeProof(cxP, cx, t) in
+    (exThe(tP), iotaT)
+
+  op exProjProof: Proof * Context * PROJECTExpr -> Proof * Type
+  def exProjProof(cxP, cx, projE) =
+    let PROJECT(t, fj) = projE in
+    if RECORD?(t)
+      then
+	let fS = RECfields(t) in
+	let tS = RECtypes(t) in
+	if fj in? fS
+	  then
+	    let j = positionOf(fS, fj) in
+	    let tj = tS @ j in
+	    let projT = t --> tj in
+	    let tP = typeProof(cxP, cx, t) in
+	    (exProj(tP, fj), projT)
+	else
+	  let _ = fail("exProjProof") in
+	  (falseProof(cx), BOOL)
+    else
+      let _ = fail("exProjProof") in
+      (falseProof(cx), BOOL)
+
+  op exEmbedProof: Proof * Context * EMBEDExpr -> Proof * Type
+  def exEmbedProof(cxP, cx, embedE) =
+    let EMBED(t, cj) = embedE in
+    if SUM?(t)
+      then
+	let cS = SUMcnstrs(t) in
+	let tS = SUMtypes(t) in
+	if cj in? cS
+	  then
+	    let j = positionOf(cS, cj) in
+	    let tj = tS @ j in
+	    let embedT = tj --> t in
+	    let tP = typeProof(cxP, cx, t) in
+	    (exEmbed(tP, cj), embedT)
+	else
+	  let _ = fail("exEmbedProof") in
+	  (falseProof(cx), BOOL)
+    else
+      let _ = fail("exEmbedProof") in
+      (falseProof(cx), BOOL)
+
+  op exQuotProof: Proof * Context * QUOTExpr -> Proof * Type
+  def exQuotProof(cxP, cx, quotE) =
+    let QUOT(qt) = quotE in
+    if QUOTT?(qt)
+      then
+	let t = quotType(qt) in
+	let r = quotPred(qt) in
+	let quotType = t --> qt in
+	let qtP = typeProof(cxP, cx, qt) in
+	(exQuot(qtP), quotType)
+    else
+       let _ = fail("exQuotProof") in
+       (falseProof(cx), BOOL)
 
 endspec

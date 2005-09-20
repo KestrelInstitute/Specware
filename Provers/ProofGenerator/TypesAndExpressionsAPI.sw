@@ -98,6 +98,15 @@ spec
 
   type IFExpr = (Expression | IF?)
 
+  op ifCond: IFExpr -> Expression
+  def ifCond(IF(c,_,_)) = c
+
+  op ifThen: IFExpr -> Expression
+  def ifThen(IF(_,t,_)) = t
+
+  op ifElse: IFExpr -> Expression
+  def ifElse(IF(_,_,e)) = e
+
   op IOTA?: Expression -> Boolean
   def IOTA?(e) =
     case e of
@@ -202,5 +211,20 @@ spec
   def restrictPred(t) =
     let RESTR (_, r) = t in r
 
+  op QUOTT?: Type -> Boolean
+  def QUOTT?(t) =
+    case t of
+      | QUOT (t, r) -> true
+      | _ -> false
+
+  type QUOTType = (Type | QUOTT?)
+
+  op quotType: QUOTType -> Type
+  def quotType(t) =
+    let QUOT (st, _) = t in st
+
+  op quotPred: QUOTType -> Expression
+  def quotPred(t) =
+    let QUOT (_, r) = t in r
 
 endspec
