@@ -2,7 +2,7 @@ spec
 
   % API public typeProof
 
-  import ../ProofChecker/Spec, UniqueVars
+  import ../ProofChecker/Spec, UniqueVars, ProofGenSig, TypeEquivalenceProofs
   
   (* In this spec we define a function that takes a context and a type
   and generates a proof that the type is well-formed. *)
@@ -71,7 +71,11 @@ spec
   def tyRestrProof(cxPrf, cx, ty) =
     let RESTR (st, expr) = ty in
     if exprFreeVars expr = empty
-      then tyRestr(wellTypedExpressionAssumptionWithType(cx, expr, ARROW(st, BOOL)))
+      then
+	let (expP, expT) = typeExpProof(cxPrf, cx, expr) in
+	case typeEquivalent?(cxPrf, cx, expT, ARROW(st, BOOL)) of
+	  | Some _ -> tyRestr(expP)
+	  | _ -> falseProof(cx)
     else falseProof(cx)
 
   op tyQuotProof: Proof * Context * Type -> Proof

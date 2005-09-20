@@ -145,7 +145,7 @@ spec
     let wfTProof = wellFormedTypeProof(cxProof, cx, t) in
     cxVdec(cxProof, wfTProof, v)
 
-  op contextProof: Context -> Proof
+%  op contextProof: Context -> Proof
   def contextProof(cx) =
     if empty?(cx)
       then cxMTProof(cx)

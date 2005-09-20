@@ -3,13 +3,13 @@ spec
   % API private all
 
   import ../ProofChecker/Spec
-  import ContextAPI, TypesAndExpressionsAPI, GeneralTypes, TypeProofs
+  import ContextAPI, TypesAndExpressionsAPI, GeneralTypes, TypeProofs, ProofGenSig
   
   (* In this spec we define a function that takes a typed expression
   and a context and generates a proof that the expression is
   well-typed in the given context. *)
 
-  op typeExpProof: Proof * Context * Expression -> Proof * Type
+%  op typeExpProof: Proof * Context * Expression -> Proof * Type
 
   op exVarProof: Proof * Context * VARExpr -> Proof * Type
   def exVarProof(cxP, cx, varE) =
@@ -24,7 +24,7 @@ spec
     let opSeq = filter (fn (opDeclaration(od, _, _)) -> opI = od | _ -> false) cx in
     let opDeclaration(_, tvs, t) = theElement opSeq in
     let ts = types(opIE) in
-    let typeProofs = map (wellFormedTypeAssumption cx) ts in
+    let typeProofs = map (fn (t) -> typeProof(cxP, cx, t)) ts in
     let typeSubst = mkTypeSubstitution(tvs, ts) in
     let tI = typeSubstInType typeSubst t in
     (exOp(cxP, typeProofs, opI), tI)
