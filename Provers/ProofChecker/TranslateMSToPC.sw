@@ -2,7 +2,6 @@
 
 % This file will be moved.
 
-Translate qualifying
 spec
   import Spec
   import /Languages/MetaSlang/AbstractSyntax/AnnTerm
@@ -144,6 +143,12 @@ spec
                        return (fSeq <| (typeDefinition (qidToTypeName qid, newTyVars, newType)))
                      }
                   }
+                | Pi (tyVars,Any _,_) -> return (fSeq <| (typeDeclaration (qidToTypeName qid, length tyVars)))
+                | Pi (tyVars,typ,_) -> {
+                     newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
+                     newType <- Type.msToPC spc typ;
+                     return (fSeq <| (typeDefinition (qidToTypeName qid, newTyVars, newType)))
+                  }
                 | typ -> {
                      newType <- Type.msToPC spc typeInfo.dfn;
                      return (fSeq <| (typeDefinition (qidToTypeName qid, empty, newType)))
@@ -199,7 +204,6 @@ spec
                newTerm <- msToPC spc term;
                return (fSeq <| (axioM (propNameToAxiomName propName, newTyVars,newTerm)))
              }
-               
            | Property (Theorem,propName,tyVars,term) -> {
                newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
                newTerm <- msToPC spc term;
@@ -512,13 +516,13 @@ spec
       | Boolean _ -> return BOOL
       | TyVar (id,_) -> return (VAR (idToTypeVariable id))
       | MetaTyVar _ ->
-           raise (Fail "trying to translate MetaSlang meta type variable for proof checker")
-      | Pi (typeVars,types,_) ->
-           raise (Fail "trying to translate MetaSlang type scheme for proof checker")
+           raise (Fail ("trying to translate MetaSlang meta type variable for proof checker: " ^ (printSort typ)))
+      | Pi _ ->
+           raise (Fail ("trying to translate MetaSlang type scheme for proof checker: " ^ (printSort typ)))
       | And (types,_) -> 
-           raise (Fail "trying to translate MetaSlang join type for proof checker")
+           raise (Fail ("trying to translate MetaSlang join type for proof checker: " ^ (printSort typ)))
       | Any _ ->
-           raise (Fail "trying to translate MetaSlang any type for proof checker")
+           raise (Fail ("trying to translate MetaSlang any type for proof checker: " ^ (printSort typ)))
       | _ -> {
           print ("Type.msToPC: no match\n");
           print ("type = " ^ (printSort typ) ^ "\n");

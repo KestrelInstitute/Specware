@@ -8,6 +8,12 @@ spec
   % op x : Nat
   % def x = 1
 
+
+  type Choose (a,b,c) =
+    | A a
+    | B b
+    | C c
+
   op plus : [a] a * a -> a
   def plus(x,y) = x
 
