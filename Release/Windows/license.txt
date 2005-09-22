@@ -6,9 +6,9 @@ Its reproduction or disclosure, in whole or in part, or the production of deriva
 
 Kestrel  hereby acknowledges that the Franz Programs and related documentation are 'commercial computer software' provided in accordance with FAR 12.212 and DFARS 227.7202 and are, therefore, subject to Contractor's standard licensing terms therefor.
 
-This version of Specware (tm) includes SNARK, which is available under the Mozilla Public License for download at http://www.ai.sri.com/~stickel/snark.tar.gz.  A copy of the License and of files modified by Kestrel can be found on the Specware (tm) distribution CD under the SNARK directory.
+This version of Specware (tm) includes SNARK, which is available under the Mozilla Public License for download at http://www.ai.sri.com/~stickel/snark.tar.gz.  A copy of the License and of files modified by Kestrel can be found in the Specware (tm) distribution under the SNARK directory.
 
-Copyright (c) 1988-2004 by Kestrel Institute, Kestrel Development Corporation and Kestrel Technology, LLC. All rights reserved.
+Copyright (c) 1988-2005 by Kestrel Institute, Kestrel Development Corporation and Kestrel Technology, LLC. All rights reserved.
 
 Use of a copyright notice is precautionary only and does not imply publication or disclosure.
 
