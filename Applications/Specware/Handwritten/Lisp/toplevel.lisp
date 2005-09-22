@@ -880,6 +880,32 @@
 
 ;; --------------------------------------------------------------------------------
 
+(defvar *last-swpc-args* nil)
+
+(defun swpc (&optional args)
+  (let ((r-args (if (not (null args))
+		    (extract-final-file-name args)
+		  *last-swpc-args*)))
+    (if r-args
+	(progn (setq *last-swpc-args* r-args)
+	       (swpc-internal (string (first r-args))
+			      (if (not (null (second r-args)))
+				  (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
+
+(defun swpc-internal (x &optional y)
+  (let ((emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
+    (let ((val (Specware::evaluateProofCheck_fromLisp-2
+		(norm-unitid-str (string x))
+		(if y (cons :|Some| (string (subst-home y)))
+		  '(:|None|)))))
+      (show-error-position emacs::*goto-file-position-stored* 1)
+      (maybe-restore-swpath)
+      val)))
+
+;; --------------------------------------------------------------------------------
+
 (defun swpf-internal (x &optional y &key (obligations t))
   (let ((emacs::*goto-file-position-store?* t)
 	(emacs::*goto-file-position-stored* nil))

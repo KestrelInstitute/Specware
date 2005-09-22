@@ -22,7 +22,8 @@
     ("show"      . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
     ("showx"     . "[unit-term] Like `show' but shows all types and ops including imports.")
     ("prove"     . "[proof arguments] Abbreviation for proc prove ...")
-    ("proofcheck". "[spec-term] Abbreviation for proc prove WELLFORMED [spec-term] with Checker ..")
+    ("proofcheck". "[unit-identifier] Abbreviation for proc prove WELLFORMED [unit-identifier] with Checker ..")
+    ("pc"        . "[unit-identifier] Abbreviation for proc prove WELLFORMED [unit-identifier] with Checker ..")
     ("prwb"      . "[on] Include the base hypothesis when invokig Snark.")
     ("punits"    . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
@@ -261,7 +262,8 @@
       (make      (if (null argstr) (cl-user::make) (cl-user::make argstr)))
       (gen-java  (cl-user::swj    argstr) (values))
       (prove     (cl-user::sw (concatenate 'string "prove " argstr)) (values))
-      (proofcheck (cl-user::sw (concatenate 'string "prove WELLFORMED " argstr)) (values))
+      (proofcheck (cl-user::swpc argstr))
+      (pc        (cl-user::swpc argstr))
       (prwb      (if argstr (cl-user::swprb argstr) (cl-user::swprb)))
       (punits    (cl-user::swpf   argstr))
       (lpunits   (cl-user::lswpf  argstr)) ; No local version yet
