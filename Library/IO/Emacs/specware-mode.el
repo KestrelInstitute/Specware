@@ -1182,7 +1182,7 @@ If anyone has a good algorithm for this..."
 		 sym)))
       (let ((results (sw:eval-in-lisp (make-search-form qualifier sym))))
 	(message nil)
-	(if (member results '(nil NIL))
+	(if (member results '(nil NIL Error:))
 	    (error "Can't find definition of %s." name)
 	  (goto-specware-meta-point-definition sym results))))))
 
