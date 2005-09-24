@@ -519,11 +519,11 @@ emacs interface functions.
                                        -> List (String * String) * List UnitId
   def findDefiningUIDforSortInContext (sortId, unitId, globalContext, seenUIDs, rec?) =
     case evalPartial globalContext unitId of
-      | None -> ([],seenUIDs)
       | Some (Spec spc, _, depUIDs) ->
         findDefiningUIDforSort (sortId, spc, unitId,
 				filter (fn uid -> ~(member(uid,seenUIDs))) depUIDs,
 				globalContext, Cons(unitId, seenUIDs), rec?)
+      | _ -> ([],seenUIDs)
 
   op  searchForDefiningUIDforSort : QualifiedId * GlobalContext * List UnitId * Boolean -> List (String * String)
   def searchForDefiningUIDforSort (sortId, globalContext, seenUIDs, rec?) =
