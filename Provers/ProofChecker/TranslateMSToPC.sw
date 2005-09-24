@@ -602,8 +602,8 @@ spec
   op qidToOperation : QualifiedId -> MetaslangProofChecker.Fixity -> Operation
   def qidToOperation qid fxty = (printQualifiedId qid,fxty)
 
-  op newVar : SpecCalc.Env Variable
-  def newVar = {
+  op  TranslateMSToPC.newVar : SpecCalc.Env Variable
+  def TranslateMSToPC.newVar = {
     n <- freshNat;   % in the Specware monad
     return (abbr n)
   }
