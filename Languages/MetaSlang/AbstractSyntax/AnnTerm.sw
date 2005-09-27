@@ -1467,7 +1467,7 @@ MetaSlang qualifying spec
 		     
 	 | Lambda (match, a) ->
 	   let newMatch = map (fn (pat, cond, trm)->
-			       (pat, mapRec cond, mapRec trm))
+			       (mapPat1 pat, mapRec cond, mapRec trm))
 	                      match 
 	   in
 	     if newMatch = match then
@@ -1508,6 +1508,12 @@ MetaSlang qualifying spec
        %% apply map to leaves, then apply map to result
        f (mapT term)
 
+     def mapPat1 pat =
+       case pat of
+	 %% RestrictedPats can only occur at top level
+	 | RestrictedPat(spat,tm,a) -> RestrictedPat(spat,mapRec tm,a)
+	 | _ -> pat
+
    in
      mapRec term
 
@@ -1540,7 +1546,8 @@ MetaSlang qualifying spec
 				     
       | Fun         _             -> false
 
-      | Lambda      (rules,    _) -> exists (fn (_, c, M) -> 
+      | Lambda      (rules,    _) -> exists (fn (p, c, M) ->
+					     existsSubTermPat pred? p or
 					     existsSubTerm pred? c or
 					     existsSubTerm pred? M)
                                             rules
@@ -1559,6 +1566,13 @@ MetaSlang qualifying spec
 
       | Any                    _  -> false
       )				    
+
+ op  existsSubTermPat : [b] (ATerm b -> Boolean) -> APattern b -> Boolean
+ def existsSubTermPat pred? pat =
+   case pat of
+     | RestrictedPat(_,t,_) -> existsSubTerm pred? t
+     | _ -> false
+
 
  %% folds function over all the subterms in top-down order
  %% Other orders such as evaluation order would be useful
@@ -1589,8 +1603,8 @@ MetaSlang qualifying spec
 
      | Fun _                   -> newVal
 
-     | Lambda    (rules,    _) -> foldl (fn ((_, c, M),val) ->
-					 foldSubTerms f (foldSubTerms f val c) M)
+     | Lambda    (rules,    _) -> foldl (fn ((p, c, M),val) ->
+					 foldSubTerms f (foldSubTerms f (foldSubTermsPat f val p) c) M)
 					newVal rules
 
      | IfThenElse(M, N, P,  _) -> foldSubTerms f
@@ -1608,6 +1622,13 @@ MetaSlang qualifying spec
     %| And       (tms,      _) -> foldl (fn (tm,val) -> foldSubTerms f val tm) newVal tms % really want join/meet of fold results
 
      | Any                  _  -> newVal
+
+ op  foldSubTermsPat : [b,r] (ATerm b * r -> r) -> r -> APattern b -> r
+ def foldSubTermsPat f val pat =
+   case pat of
+     | RestrictedPat(_,t,_) -> foldSubTerms f val t
+     | _ -> val
+
 
   op foldSubTermsEvalOrder : [b,r] (ATerm b * r -> r) -> r -> ATerm b -> r
  def foldSubTermsEvalOrder f val term =
@@ -1655,17 +1676,18 @@ MetaSlang qualifying spec
 				    %% lambda is evaluated before its contents
 				    %% this is an approximation as we don't know when
 				    %% contents will be evaluated
-				    foldl (fn ((_, c, M), val) ->
+				    foldl (fn ((p, c, M), val) ->
 					   foldSubTermsEvalOrder f
-					                         (foldSubTermsEvalOrder f val c) 
-								 M)
-					  val rules
+					     (foldSubTermsEvalOrder f
+					        (foldSubTermsEvalOrderPat f val p) c) 
+					     M)
+					val rules
 
          | IfThenElse(M,N,P,  _) -> foldSubTermsEvalOrder f
-				 	                  (foldSubTermsEvalOrder f
-							                         (foldSubTermsEvalOrder f val M) 
-										 N)
-							  P
+				      (foldSubTermsEvalOrder f
+				        (foldSubTermsEvalOrder f val M) 
+					N)
+				      P
 
 	 | Seq       (Ms,     _) -> foldl (fn (M, val) ->
 					   foldSubTermsEvalOrder f val M)
@@ -1684,6 +1706,11 @@ MetaSlang qualifying spec
        | Lambda _ -> recVal
        | _        -> f (term, recVal)
 
+ op  foldSubTermsEvalOrderPat : [b,r] (ATerm b * r -> r) -> r -> APattern b -> r
+ def foldSubTermsEvalOrderPat f val pat =
+   case pat of
+     | RestrictedPat(_,t,_) -> foldSubTermsEvalOrder f val t
+     | _ -> val
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Replacement
