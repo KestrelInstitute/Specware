@@ -540,8 +540,8 @@ Utilities qualifying spec
 	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
 	(RelaxPat(pat,trm,a),sub,freeNames)
       | RestrictedPat(pat,trm,a) -> 
-	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
-	(RestrictedPat(pat,trm,a),sub,freeNames)
+	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in 
+	(RestrictedPat(pat,substitute2(trm,sub,freeNames),a),sub,freeNames)
       | _ -> 
 	(pat,sub,freeNames)
 
