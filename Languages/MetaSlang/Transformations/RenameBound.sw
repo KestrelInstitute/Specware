@@ -164,12 +164,12 @@ spec
        | Lambda (pcts, a) ->
          Lambda
          (List.map
-          (fn (pat, cond, term) ->
+          (fn (pat, condn, term) ->
            savingEnvContext c (fn () ->
            let pat  = renamePattern c pat in
-           let cond = renameTerm c cond in
+           let cond = renameTerm c condn in
            let term = renameTerm c term in
-           (pat, cond, term)))
+           (pat, condn, term)))
           pcts, a)
 
        | IfThenElse (t1, t2, t3, a) ->
@@ -205,7 +205,7 @@ spec
 	 QuotientPat (renamePattern c p, renameClosedTerm c t, a)
 
        | RestrictedPat (p, t, a) ->
-	 RestrictedPat (renamePattern c p, renameClosedTerm c t, a)
+	 RestrictedPat (renamePattern c p, renameTerm c t, a)
 
        | _ -> p
 
