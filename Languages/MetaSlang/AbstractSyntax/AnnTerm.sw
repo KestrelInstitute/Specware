@@ -43,7 +43,7 @@ MetaSlang qualifying spec
  def unqualified_Boolean = mkUnQualifiedId "Boolean"               % used by translate
  def Boolean_Boolean     = mkQualifiedId ("Boolean", "Boolean")    % used by translate
  def syntactic_qid? (Qualified(q,id)) =                            % used by translate, morphism
-   if q = "Boolean" or q = UnQualified then                        % used by translate, morphism
+   if q = "Boolean" || q = UnQualified then                        % used by translate, morphism
      (case id of
 	| "~"   -> true
 	| "&"   -> true  % TODO: deprecate
@@ -76,9 +76,9 @@ MetaSlang qualifying spec
 
   op printQualifierDotId : Qualifier * Id -> String
  def printQualifierDotId (q, id) =
-   if q = "Nat"     or
-      q = "String"  or
-      q = "Char"    or
+   if q = "Nat"     ||
+      q = "String"  ||
+      q = "Char"    ||
       q = UnQualified
    then id
    else q ^ "." ^ id
@@ -93,9 +93,9 @@ MetaSlang qualifying spec
 
   op printQualifierUnderbarId : Qualifier * Id -> String
  def printQualifierUnderbarId (q, id) =
-   if q = "Nat"     or
-      q = "String"  or
-      q = "Char"    or
+   if q = "Nat"     ||
+      q = "String"  ||
+      q = "Char"    ||
       q = UnQualified
    then id
    else q ^ "_" ^ id
@@ -724,7 +724,7 @@ MetaSlang qualifying spec
         MetaTyVar (mtv2,    _)) ->
        let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
        let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
-       id1 = id2 or
+       id1 = id2 ||
        (case (link1,link2) of
 	  %% This case handles the situation where an
 	  %%  unlinked MetaTyVar is compared against itself.
@@ -1523,10 +1523,10 @@ MetaSlang qualifying spec
 
   op existsSubTerm : [b] (ATerm b -> Boolean) -> ATerm b -> Boolean
  def existsSubTerm pred? term =
-   pred? term or
+   pred? term ||
    (case term of
 
-      | Apply       (M, N,     _) -> existsSubTerm pred? M or existsSubTerm pred? N
+      | Apply       (M, N,     _) -> existsSubTerm pred? M || existsSubTerm pred? N
 
       | ApplyN      (Ms,       _) -> exists (existsSubTerm pred?) Ms
 
@@ -1536,10 +1536,10 @@ MetaSlang qualifying spec
 
       | The         (_,M,      _) -> existsSubTerm pred? M
 
-      | Let         (decls, M, _) -> existsSubTerm pred? M or
+      | Let         (decls, M, _) -> existsSubTerm pred? M ||
                                      exists (fn (_,M) -> existsSubTerm pred? M) decls
 
-      | LetRec      (decls, M, _) -> existsSubTerm pred? M or
+      | LetRec      (decls, M, _) -> existsSubTerm pred? M ||
 				     exists (fn (_,M) -> existsSubTerm pred? M) decls
 
       | Var         _             -> false
@@ -1547,13 +1547,13 @@ MetaSlang qualifying spec
       | Fun         _             -> false
 
       | Lambda      (rules,    _) -> exists (fn (p, c, M) ->
-					     existsSubTermPat pred? p or
-					     existsSubTerm pred? c or
+					     existsSubTermPat pred? p ||
+					     existsSubTerm pred? c ||
 					     existsSubTerm pred? M)
                                             rules
 
-      | IfThenElse  (M, N, P,  _) -> existsSubTerm pred? M or
-			  	     existsSubTerm pred? N or
+      | IfThenElse  (M, N, P,  _) -> existsSubTerm pred? M ||
+			  	     existsSubTerm pred? N ||
 				     existsSubTerm pred? P
 
       | Seq         (Ms,       _) -> exists (existsSubTerm pred?) Ms
