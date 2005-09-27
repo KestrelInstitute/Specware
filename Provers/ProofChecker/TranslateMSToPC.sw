@@ -2,6 +2,7 @@
 
 % This file will be moved.
 
+Translate qualifying
 spec
   import Spec
   import /Languages/MetaSlang/AbstractSyntax/AnnTerm
@@ -518,6 +519,7 @@ spec
       | MetaTyVar _ ->
            raise (Fail ("trying to translate MetaSlang meta type variable for proof checker: " ^ (printSort typ)))
       | Pi _ ->
+           let _ = fail("trying to translate MetaSlang type scheme for proof checker") in
            raise (Fail ("trying to translate MetaSlang type scheme for proof checker: " ^ (printSort typ)))
       | And (types,_) -> 
            raise (Fail ("trying to translate MetaSlang join type for proof checker: " ^ (printSort typ)))
