@@ -8,7 +8,11 @@ SpecCalc qualifying spec
       | (Quote x, Quote y) -> x.1 = y.1
       | (Other _, _) -> otherSameSCTerm? (x, y)
       | (_, Other _) -> otherSameSCTerm? (x, y)
-      | _ -> x.1 = y.1
+      | _ -> 
+	case (x.1, y.1) of
+	  | (Qualify (x, q1), Qualify (y, q2)) -> q1 = q2 && sameSCTerm? (x, y)
+	  %% TODO: "=" is a very crude test, so there are other cases to worry about 
+	  | _ -> x.1 = y.1
 
   op setBaseToPath : String -> Env ()
   def setBaseToPath path = {
