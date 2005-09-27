@@ -61,6 +61,7 @@ SpecCalc qualifying spec
     | MorphError          Position * String
     | TranslationError    String * Position
     | ColimitError        Position * String
+    | SubstError          Position * String
     | CircularDefinition  UnitId
     | Proof               Position * String
     | UndefinedGlobalVar  String
@@ -85,6 +86,7 @@ SpecCalc qualifying spec
       | MorphError          (pos, msg) -> (Some (pos, false), "Error in morphism: " ^ msg)
       | TranslationError    (msg, pos) -> (Some (pos, false), "Error in translation: " ^ msg)
       | ColimitError        (pos, msg) -> (Some (pos, false), "\nError in colimit: " ^ msg)
+      | SubstError          (pos, msg) -> (Some (pos, false), "\nError in substitution: " ^ msg)
       | CircularDefinition  uid        -> (None,              "Circular definition: " ^ showUID uid)
       | Proof               (pos, msg) -> (Some (pos, false), "Proof error: " ^ msg)
       | UndefinedGlobalVar  name       -> (None,              "Undefined global var: " ^ name)
