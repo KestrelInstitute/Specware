@@ -518,11 +518,10 @@ PatternMatch qualifying spec
   def matchVar(context,terms,rules,default,break) = 
       let t = hd terms in
       let terms = tl terms in
-      let rules = 
-	  map
-		 (fn ((Cons(pat,pats),cond,body):Rule) ->
-		     (pats,substPat(cond,pat,t),substPat(body,pat,t))
-		   | _ -> System.fail "Empty list of patterns ") rules
+      let rules = map (fn ((Cons(pat,pats),condn,body):Rule) ->
+		       (pats,substPat(condn,pat,t),substPat(body,pat,t))
+                        | _ -> System.fail "Empty list of patterns ")
+                    rules
       in
       match(context,terms,rules,default,break)
 
@@ -637,12 +636,12 @@ def eliminatePattern context pat =
 	 EmbedPat(i,None,eliminateSort context s,a)
        | RecordPat(fields,a) -> 
 	 RecordPat(map (fn(i,p)-> (i,eliminatePattern context p)) fields,a)
-       | WildPat(s,a) -> VarPat(freshVar(context,eliminateSort context s),a)
+       | WildPat(s,a)   -> VarPat(freshVar(context,eliminateSort context s),a)
        | StringPat(s,a) -> StringPat(s,a)
-       | BoolPat(b,a)    -> BoolPat(b,a)
-       | CharPat(ch,a)   -> CharPat(ch,a)
-       | NatPat(n,a)     -> NatPat(n,a)
-       | RelaxPat(p,t,a)  ->
+       | BoolPat(b,a)   -> BoolPat(b,a)
+       | CharPat(ch,a)  -> CharPat(ch,a)
+       | NatPat(n,a)    -> NatPat(n,a)
+       | RelaxPat(p,t,a) ->
 	 RelaxPat(eliminatePattern context p,eliminateTerm context t,a)
        | QuotientPat (p,t,a) ->
 	 QuotientPat(eliminatePattern context p,eliminateTerm context t,a)
