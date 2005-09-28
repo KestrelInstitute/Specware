@@ -114,4 +114,33 @@
 	    "endspec"
 	    ""
 	    ""))
+
+ ("swe Pattern A"
+  :swe "v"
+  :swe-spec "SubstRestrictedPat#A"
+  :value '(:|Int| . 3))
+
+ ("Simplify Restrict Pattern A"
+  :swll "SubstRestrictedPat#A"
+  :output ";;; Generating lisp file /tmp/lgen_lisp_tmp.lisp
+")
+
+ ("el Pattern A"
+  :lisp "(sw-user::f '(5))"
+  :value 5)
+
+ ("swe Pattern B"
+  :swe "(g [3])"
+  :swe-spec "SubstRestrictedPat#B"
+  :value '(:|Int| . 3))
+
+ ("Simplify Restrict Pattern B"
+  :swll "SubstRestrictedPat#B"
+  :output ";;; Generating lisp file /tmp/lgen_lisp_tmp.lisp
+")
+
+ ("el Pattern B"
+  :lisp "(sw-user::g '(5))"
+  :value 5)
  )
+
