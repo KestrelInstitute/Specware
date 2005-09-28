@@ -76,4 +76,5 @@ libraries in different ways from the proof checker. This is probably not a
 problem in the near term.
 
 The file dependencies.pdf graphically depicts the dependencies among the
-Specware units in this directory.
+Specware units in this directory. This file is generated from the file
+dependencies.ppt.
