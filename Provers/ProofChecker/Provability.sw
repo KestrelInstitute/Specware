@@ -537,6 +537,13 @@ spec
       && pj (typeEquivalence (cx, t, t1))
       && pj (theoreM (cx <| varDeclaration (v,t), e == e1))
       => pj (theoreM (cx, FN (v, t, e) == FN (v, t1, e1))))
+    | thEqSubst ->
+      (fa (cx:Context, e1:Expression, e2:Expression, t:Type,
+           d1:Expression, d2:Expression)
+         pj (wellTypedExpr (cx, e1 == e2, t))
+      && pj (theoreM (cx, e1 == d1))
+      && pj (theoreM (cx, e2 == d2))
+      => pj (theoreM (cx, (e1 == e2) == (d1 == d2))))
     | thIfSubst ->
       (fa (cx:Context, e0:Expression, e1:Expression, e2:Expression, t:Type,
            an1:AxiomName, an2:AxiomName,
