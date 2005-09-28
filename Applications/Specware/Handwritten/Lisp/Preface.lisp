@@ -58,7 +58,7 @@
 		    (format t "~&;;; Looking for ")
 		    (let ((rc
 			   #+UNIX      (run-shell-command cmd 
-							  :output       *standard-output* 
+							  :output       *TERMINAL-IO* ; *standard-output* 
 							  :error-output :output 
 							  :wait t) 
 			   #+MSWINDOWS (run-shell-command cmd 
@@ -74,7 +74,7 @@
       (let ((cmd (format nil "~A~{ ~A~}" fn args)))
 	(let ((rc
 	       #+UNIX      (run-shell-command cmd 
-					      :output       *standard-output* 
+					      :output        *TERMINAL-IO*      ; *standard-output* 
 					      :error-output :output 
 					      :wait t) 
 	       #+MSWINDOWS (run-shell-command cmd 
