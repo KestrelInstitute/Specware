@@ -19,10 +19,34 @@ SpecCalc qualifying spec
       def collect_clashing_sorts_and_ops (elts, sorts, ops) =
 	foldl (fn (el, (sorts, ops)) ->
 	       case el of
-		 | Sort    qid -> (if member (qid, sorts) then sorts else sorts ++ [qid], ops)
-		 | SortDef qid -> (if member (qid, sorts) then sorts else sorts ++ [qid], ops)
-		 | Op      qid -> (sorts, if member (qid, ops) then ops else ops ++ [qid])
-		 | OpDef   qid -> (sorts, if member (qid, ops) then ops else ops ++ [qid])
+		 | Sort    qid -> 
+		   (case findAllSorts (should_be_empty_spec, qid) of
+		      | [] -> 
+		        let _ = writeLine ("Internal confusion: Sort    but no info for " ^ printQualifiedId qid) in
+			(sorts, ops)
+		      | _ ->
+			(if member (qid, sorts) then sorts else sorts ++ [qid], ops))
+		 | SortDef qid -> 
+		   (case findAllSorts (should_be_empty_spec, qid) of
+		      | [] -> 
+		        let _ = writeLine ("Internal confusion: SortDef but no info for " ^ printQualifiedId qid) in
+			(sorts, ops)
+		      | _ ->
+			(if member (qid, sorts) then sorts else sorts ++ [qid], ops))
+		 | Op      qid -> 
+		   (case findAllOps (should_be_empty_spec, qid) of
+		      | [] -> 
+		        let _ = writeLine ("Internal confusion: Op      but no info for " ^ printQualifiedId qid) in
+			(sorts, ops)
+		      | _ ->
+			(sorts, if member (qid, ops) then ops else ops ++ [qid]))
+		 | OpDef   qid -> 
+		   (case findAllOps (should_be_empty_spec, qid) of
+		      | [] -> 
+		        let _ = writeLine ("Internal confusion: OpDef   but no info for " ^ printQualifiedId qid) in
+			(sorts, ops)
+		      | _ -> 
+			(sorts, if member (qid, ops) then ops else ops ++ [qid]))
 		 | Import (_, _, elts) ->  collect_clashing_sorts_and_ops (elts, sorts, ops)
 		 | _ -> (sorts, ops))
 	      (sorts, ops)
@@ -45,6 +69,12 @@ SpecCalc qualifying spec
     in
       case (sorts_msg, ops_msg, props_msg, clashing_sort_names, clashing_op_names) of
 	| ("", "", "", [], []) ->
+	  auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos
+	| ("", "", "", _, _) ->
+	  let _ = writeLine ("------------------------------------------") in 
+	  let _ = writeLine ("Warning: for now, ignoring these problems:") in
+	  let _ = writeLine (warnAboutMissingItems "" "" "" clashing_sort_names clashing_op_names) in
+	  let _ = writeLine ("------------------------------------------") in 
 	  auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos
 	| _ ->
 	  raise (TypeCheck (term_pos, 
