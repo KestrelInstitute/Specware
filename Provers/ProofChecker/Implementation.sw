@@ -20,7 +20,5 @@ MetaslangProofChecker qualifying spec
          [Occurrences_Refinement]
          [Primitives_Instantiation]
          [/Library/General/FiniteStructuresAsListsMorphism]
-  import Printer
-         [/Library/General/FiniteStructuresAsListsMorphism]
 
 endspec
