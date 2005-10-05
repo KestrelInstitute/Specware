@@ -1,28 +1,29 @@
 spec
 
-  import ../ProofChecker/Spec
+  % API public all
 
-  (* This spec defines an extension of types and expressions, in which the
-  abbreviations defined in specs BasicAbbreviations and OtherAbbreviations are
-  first-class (extended) types and expressions. Extended types and
-  expressions, when printed, are more readable than the core types and
-  expressions defined in spec TypesAndExpressions, in which all abbreviations
-  are expanded.
+  import ProofChecker#Spec
 
-  Why not use this extended syntax everywhere in the proof checker, instead of
-  the core syntax with abbreviations? For greater simplicity. If we used the
+  (* This spec defines an extension of the core types and expressions used by
+  the proof checker. In this extension, abbreviations such as TRUE are
+  first-class types and expressions. Extended types and expressions, when
+  printed, are more readable than the core types and expressions of the proof
+  checker, into which all abbreviations are expanded.
+
+  Why not use this extended syntax also in the proof checker, instead of the
+  core syntax with abbreviations? For greater simplicity. If we used the
   extended syntax defined in this spec in the proof checker, we would have to
   add inference rules for all the additional types and expressions. By
   defining abbreviations instead, we keep the logic simple and minimal, and we
   completely formalize the meaning of abbreviations by means of their
-  definitions (in specs BasicAbbreviations and OtherAbbreviations).
+  definitions.
 
-  The constructors used in this spec are the same as the ones in spec
-  TypesAndExpressions and as the ops in specs BasicAbbreviations and
-  OtherAbbreviations, whenever possible. The only case in which it is not
-  possible is when the ops in specs BasicAbbreviations and OtherAbbreviations
-  are non-word symbols, which cannot be used as constructors. This is clearly
-  indicated in the type definition below. *)
+  The constructors used in this spec are the same as the constructors of the
+  core types and expressions (e.g. VAR) and the ops that define the
+  abbreviations (e.g. TRUE), whenever possible. The only cases in which this
+  is not possible is when the ops that define the abbreviations are non-word
+  symbols (e.g. &&&), which cannot be used as constructors. These cases are
+  clearly indicated in the type definition below. *)
 
   type ExtType
   type ExtExpression
@@ -33,9 +34,7 @@ spec
   % we need to extend binding branches too:
   type ExtBindingBranch =
        Variables * ExtTypes * ExtExpression * ExtExpression
-  type ExtBindingBranches = NonEmptyFSeq ExtBindingBranch
-       % since this type is private, we can use the subtype for non-empty
-       % sequences (recall that we avoid subtypes in public ops)
+  type ExtBindingBranches = FSeq ExtBindingBranch
 
   type ExtType =
     % core:

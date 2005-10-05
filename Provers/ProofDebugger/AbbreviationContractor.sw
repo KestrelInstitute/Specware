@@ -1,14 +1,15 @@
 spec
 
+  % API private default
+
   import ExtendedTypesAndExpressions
 
   (* This spec defines ops to "reverse" the abbreviation expansions defined in
-  specs BasicAbbreviations and OtherAbbreviations. The ops defined in this
-  spec map types and expressions of (meta) types Type and Expression to
-  extended types and expressions of (meta) types ExtType and ExtExpression,
-  attempting to replace the types and expressions that result from epanding
-  abbreviations with the abbreviations themselves, which are first-class
-  extended types and expressions.
+  the proof checker. The ops defined in this spec map types and expressions of
+  (meta) types Type and Expression to extended types and expressions of (meta)
+  types ExtType and ExtExpression, attempting to replace the types and
+  expressions that result from epanding abbreviations with the abbreviations
+  themselves, which are first-class extended types and expressions.
 
   Suppose that we start with an extended type or expression that only contains
   user fields and variables (i.e. no prod fields or abbr variables). Suppose
@@ -208,9 +209,9 @@ spec
      contractExpr contr e1, contractExpr contr e2)
 
   (* We define one contraction for each expression abbreviation. The
-  definitions are derived by "reversing" the abbreviation definitions in specs
-  BasicAbbreviations and OtherAbbreviations. The contractions are mostly
-  straightforward, but some specific comments are given for some of them.
+  definitions are derived by "reversing" the abbreviation definitions in the
+  proof checker. The contractions are mostly straightforward, but some
+  specific comments are given for some of them.
 
   Each contraction assumes that the previous contractions have already been
   applied. So, for instance, the contraction of FALSE can assume that TRUE has
@@ -395,9 +396,6 @@ spec
           else (outTS, e)
         | _ ->  (outTS, e)
     in
-    (* The following function is a copy of op ANDn defined in spec
-    BasicAbbreviations, which is not imported by this spec (thus, op ANDn is
-    not available here. *)
     let def ANDn (eS:ExtExpressions) : ExtExpression =
       if eS = empty then embed TRUE
       else if single? eS then theElement eS
@@ -553,10 +551,10 @@ spec
   def contractCase e =
     (* The following function performs the inverse transformation on binding
     branches of the transformation operated in the definition of the CASE
-    abbreviation in spec OtherAbbreviations. We define it on sequences of
-    binding branches, as opposed to single binding branches, because this
-    inverse transformation may fail (if the binding branch does not have the
-    expected form); failure is modeled via Option. *)
+    abbreviation in the proof checker. We define it on sequences of binding
+    branches, as opposed to single binding branches, because this inverse
+    transformation may fail (if the binding branch does not have the expected
+    form); failure is modeled via Option. *)
     let def transformBranches
             (outBrS: ExtBindingBranches,   % accumulator
              inBrS : ExtBindingBranches)   % branches to transform
@@ -658,6 +656,7 @@ spec
   expressions. (The contractions appear in reversed order because prefix
   function application takes place right-to-left. *)
 
+  % API public
   op contractTypeAll : Type -> ExtType
   def contractTypeAll t =
     (contractType contractEmbeddingTest
@@ -694,6 +693,7 @@ spec
     (contractType contractTrue
     (embedExtType t)))))))))))))))))))))))))))))))))
 
+  % API public
   op contractExprAll : Expression -> ExtExpression
   def contractExprAll t =
     (contractExpr contractEmbeddingTest

@@ -2,15 +2,14 @@ spec
 
   % API private default
 
-  import Failures[Primitives_Instantiation]
+  import ProofChecker#Spec
 
   (* This spec consists of ops that convert judgements, failure, and all their
   syntactic components, to strings. These conversions enable printing such
-  syntactic entities in a human-readable form. Printing is not part of the
-  proof checking process per se, but is useful to debug proofs.
+  syntactic entities in a human-readable form.
 
   Since primitives can be any strings, it is easy to imagine situations in
-  which a printed out string is ambiguous or unclear. However, if only
+  which a printed-out string is ambiguous or unclear. However, if only
   "reasonable" strings are used as primitives, the printing defined in this
   spec should produce unambiguous and clear strings. *)
 
@@ -233,7 +232,8 @@ spec
 
   op printContext : Context -> String
   def printContext cx =
-    "[#" ++ foldl (++) "" (map printContextElement cx) ++ "#]" ++ newline
+    "[#" ++ newline ++ foldl (++) "" (map printContextElement cx) ++
+    "#]" ++ newline
     % context consists of one line for each element, between "[#" and "#]"
 
   op printContexts : Contexts -> String
