@@ -96,15 +96,15 @@ be the option to run each (test ...) form in a fresh image.
   (run-test-directories-fn dirs)
   ;; Then recursively test the sub-directories
   (loop for dir in dirs
-      do (let* ((dirpath (if (stringp dir)
-			     (make-pathname :directory dir :name :wild)
-			   dir)))
-	   ;; sort the directory items to make runs more predictable
-	   (loop for dir-item in (sorted-directory dirpath)
-	       unless (equal (pathname-name dir-item) "CVS")
-	       do (setq dir-item (normalize-directory dir-item))
-		  (when (specware::directory? dir-item)
-		    (run-test-directories-rec-fn (list dir-item)))))))
+    do (let* ((dirpath (if (stringp dir)
+			   (make-pathname :directory dir :name :wild)
+			 dir)))
+	 ;; sort the directory items to make runs more predictable
+	 (loop for dir-item in (sorted-directory dirpath)
+	   unless (equal (pathname-name dir-item) "CVS")
+	   do (setq dir-item (normalize-directory dir-item))
+	   (when (specware::directory? dir-item)
+	     (run-test-directories-rec-fn (list dir-item)))))))
 
 (defun run-test-directories-fn (dirs)
   (setq specware::specware4 (specware::getenv "SPECWARE4"))
