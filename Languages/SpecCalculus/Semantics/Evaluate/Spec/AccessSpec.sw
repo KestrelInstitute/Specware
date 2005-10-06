@@ -79,6 +79,7 @@ def getStringAttributesFromSpec spc =
 
   op sortIdIsDefinedInSpec?: Spec * Id -> Boolean
  def sortIdIsDefinedInSpec? (spc, id) =
+   %%TODO: fix this -- hideously inefficient, and dubious semantics
    let srts = sortsAsList spc in
    case find (fn (_, id0, _) -> id0 = id) srts of
      | Some (_,_,info) -> definedSortInfo? info
@@ -86,11 +87,17 @@ def getStringAttributesFromSpec spc =
 
  op opIdIsDefinedInSpec?: Spec * Id -> Boolean
  def opIdIsDefinedInSpec?(spc,id) =
+   %%TODO: fix this -- hideously inefficient, and dubious semantics
    let ops = opsAsList spc in
    case find (fn (_, id0, _) -> id0 = id) ops of
      | Some (_,_,info) -> definedOpInfo? info
      | _ -> false
 
+ op  definedOp? : Spec * QualifiedId -> Boolean
+ def definedOp? (spc,qid) =
+   case findTheOp (spc, qid) of
+     | Some info -> definedOpInfo? info
+     | _ -> false
 
 % --------------------------------------------------------------------------------
 (**
