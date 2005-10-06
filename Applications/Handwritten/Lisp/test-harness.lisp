@@ -191,10 +191,12 @@ be the option to run each (test ...) form in a fresh image.
   `(test-directories-fn '(,@dirs)))
 
 (defun test-directories-fn (dirs)
+  (finish-output t)
   (loop for dir in dirs
      do (let* ((dirpath (make-pathname :directory (if (equal dir ".") nil dir)))
 	       (source (merge-pathnames dirpath *test-directory*))
 	       (target (merge-pathnames dirpath *test-temporary-directory*)))
+	  (finish-output t)
 	  ;(ensure-directories-exist target)
 	  (if *quiet-copy?*
 	      (with-output-to-string (*standard-output*)

@@ -58,12 +58,15 @@
 		    (format t "~&;;; Looking for ")
 		    (let ((rc
 			   #+UNIX      (run-shell-command cmd 
-							  :output       *TERMINAL-IO* ; *standard-output* 
+							  ;; run-shell-command has problems if
+							  ;; the output stream is a string stream,
+							  ;; so stick to tried-and-true *terminal-io*
+							  :output          *terminal-io*  ; *standard-output* 
 							  :error-output :output 
 							  :wait t) 
 			   #+MSWINDOWS (run-shell-command cmd 
-							  ;; :output       *standard-output* ; mysterious problems under windows
-							  ;; :error-output :output           ; mysterious problems under windows
+							  ;; :output       *terminal-io*  ; *standard-output* ; mysterious problems under windows
+							  ;; :error-output :output        ; mysterious problems under windows
 							  :wait t)
 			   #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
 		      (let ((pair (cons fn (equal rc 0))))
@@ -74,11 +77,14 @@
       (let ((cmd (format nil "~A~{ ~A~}" fn args)))
 	(let ((rc
 	       #+UNIX      (run-shell-command cmd 
-					      :output        *TERMINAL-IO*      ; *standard-output* 
+					      ;; run-shell-command has problems if
+					      ;; the output stream is a string stream,
+					      ;; so stick to tried-and-true *terminal-io*
+					      :output          *terminal-io*     ; *standard-output* 
 					      :error-output :output 
 					      :wait t) 
 	       #+MSWINDOWS (run-shell-command cmd 
-					      ;; :output       *standard-output* ; mysterious problems under windows
+					      ;; :output       *terminal-io*     ; *standard-output* ; mysterious problems under windows
 					      ;; :error-output :output           ; mysterious problems under windows
 					      :wait t)
 	       #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
