@@ -71,8 +71,8 @@ def builtinBaseTypeId? id =
   id = "Boolean" || % v3:p1 
   id = "Integer" || % v3:p1 
   id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
-  id = "String"  || % v3:p1 
-  id = "Char"       % v3:p1 says NO  -- TODO: resolve this
+  id = "String"  || % v3:p1 says NO  -- TODO: resolve this
+  id = "Char"       % v3:p1 
 
  op baseTypeId?: Spec * Id -> Boolean
 def baseTypeId? (spc, id) =
