@@ -55,17 +55,13 @@
   ;; so cache the result to avoid needless verbiage.
   (let ((pair (or (assoc fn *known-programs* :test 'equalp)
 		  (let ((cmd (format nil "which ~A" fn)))
-		    (format t "~&;;; Looking for ")
 		    (let ((rc
 			   #+UNIX      (run-shell-command cmd 
-							  ;; run-shell-command has problems if
-							  ;; the output stream is a string stream,
-							  ;; so stick to tried-and-true *terminal-io*
-							  :output          *terminal-io*  ; *standard-output* 
+							  :output        *standard-output* ; as oppposed to *terminal-io*
 							  :error-output :output 
 							  :wait t) 
 			   #+MSWINDOWS (run-shell-command cmd 
-							  ;; :output       *terminal-io*  ; *standard-output* ; mysterious problems under windows
+							  ;; :output       *standard-output* ; mysterious problems under windows
 							  ;; :error-output :output        ; mysterious problems under windows
 							  :wait t)
 			   #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
@@ -77,19 +73,17 @@
       (let ((cmd (format nil "~A~{ ~A~}" fn args)))
 	(let ((rc
 	       #+UNIX      (run-shell-command cmd 
-					      ;; run-shell-command has problems if
-					      ;; the output stream is a string stream,
-					      ;; so stick to tried-and-true *terminal-io*
-					      :output          *terminal-io*     ; *standard-output* 
+					      :output       *standard-output* 
 					      :error-output :output 
 					      :wait t) 
 	       #+MSWINDOWS (run-shell-command cmd 
-					      ;; :output       *terminal-io*     ; *standard-output* ; mysterious problems under windows
+					      ;; :output       *standard-output* ; mysterious problems under windows
 					      ;; :error-output :output           ; mysterious problems under windows
 					      :wait t)
 	       #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
 	  (unless (equal rc 0)
 	    (warn "Return code from ~S was non-zero: ~S" cmd rc)))))
+    (finish-output *standard-output*)
     (values)))
   
 ;;; --------
