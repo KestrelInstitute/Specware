@@ -65,9 +65,12 @@ spec
 	if (length s) < size then s else substring(s,0,size)
     in
     let
-      def check4StaticOrNew(classid,opid,allargs) =
-	%let _ = writeLine("check4StaticOrNew: classid="^classid^", opid="^opid) in
-	if (classid = UnQualified) then return None
+      def check4StaticOrNew (classid, opid, allargs) =
+	%let _ = writeLine ("    check4StaticOrNew: classid = " ^ classid ^ ", opid = " ^ opid) in
+	if (classid = UnQualified) then 
+	  %let _ = writeLine ("    Unqualified class (which means???)") in
+	  %let _ = writeLine ("    ------------") in
+	  return None
 	else
 	  {
 	   (s,argexprs,k,l) <- translateTermsToExpressionsM(tcx,allargs,k,l);
@@ -76,12 +79,16 @@ spec
 	   let expr = if stringPrefix(opid,3) = "new"
 			then
 			 % invoke the constructor
+			  %let _ = writeLine ("    Constructor") in
+			  %let _ = writeLine ("    ------------") in
 			  (CondExp (Un (Prim (NewClsInst(ForCls(([],classid), argexprs, None)))), None))
 		      else
 			% invoke the static method
+			%let _ = writeLine ("    Static method") in
+			%let _ = writeLine ("    ------------") in
 			mkMethInvName(([classid],opid),argexprs)
 	   in
-	   return(Some (s,expr,k,l))
+	     return(Some (s,expr,k,l))
 	  }
     in
     let
@@ -263,39 +270,77 @@ spec
 	 return (Some(block,res,k,l))
 	}
 
-      | Apply(Fun(Op(qid as Qualified(qual,id),_),opsrt,_),argterm,b) ->
-	if builtinBaseTypeId?(qual) then return None else
-	%let _ = writeLine("checking for method call of "^qual^"."^id) in
-	let argterms = applyArgsToTerms(argterm) in
-	%if ~(opIdIsDefinedInSpec?(spc,id)) then
-	{
-	 spc <- getEnvSpec;
-	 if (case AnnSpec.findTheOp(spc,qid) of Some _ -> false | _ -> true) then
-	   (case argterms of
-	      | allargs as (t1::argterms) ->
-	        % check whether the first argument has an unrefined sort
-	        %let _ = writeLine("  --> checking for method call: "^printTerm(t1)) in
-	        let t1srt = unfoldBase(spc,inferTypeFoldRecords(spc,t1)) in
-		let t1srt = findMatchingUserType(spc,t1srt) in
-		%let _ = writeLine("  --> t1srt="^(printSort t1srt)) in
-		if ~(builtinBaseType? t1srt) && (sortIsDefinedInSpec?(spc,t1srt)) then
-		 %let _ = writeLine("   found java method call to "^printQualifiedId(qid)) in
-		 let opid = id in
-		 {
-		  (s1,objexpr,k,l) <- termToExpressionM(tcx,t1,k,l);
-		  (s2,argexprs,k,l) <- translateTermsToExpressionsM(tcx,argterms,k,l);
-		  let expr = mkMethExprInv(objexpr,opid,argexprs) in
-		  return(Some (s1++s2,expr,k,l))
-		 }
-	       else
-		 %let _ = writeLine("   did not find java method call to "^printQualifiedId(qid)) in
-		 % check whether the qualifier is present
-		 check4StaticOrNew(qual,id,allargs)
-	     | [] -> check4StaticOrNew(qual,id,[]))
+      | Apply (Fun (Op (qid as Qualified (q, id), _), opsrt,_), argterm, b) ->
+	if builtinJavaBaseTypeId? q then 
+	  % let _ = writeLine ("    Method within built-in base class: " ^ q ^ "." ^ id) in
+	  % let _ = writeLine ("    ------------") in
+	  return None 
 	else
-	  %let _ = writeLine("    "^(printQualifiedId qid)^" *not* found in spec."^(printSpec spc)) in
-	  return None
-       }
+	  let argterms = applyArgsToTerms(argterm) in
+	  {
+	   spc          <- getEnvSpec;
+	   var_to_jexpr <- getLocalVarToJExprFun;
+	   if definedOp? (spc, qid) then
+	     % let _ = writeLine ("    Op is defined: " ^ q ^ "." ^ id) in
+	     % let _ = writeLine ("    ------------") in
+	     return None
+	   else 
+	     case var_to_jexpr id of
+	       | Some jexpr ->
+	         %%  TODO: we should probably handle this situation here:
+	         %%    For the two "None" cases here, isField? will be true for id in translateApplyToExprM,
+	         %%    so translateUserApplToExprM will convert from method invocation to field ref.
+	         (case argterm of 
+		    | Fun (Op (Qualified (var_q, var_id), _), Base (Qualified (type_q,type_id), _, _), _) ->
+		      if var_id = "this" && var_q = type_id then
+			%% foo(this) [which would be interpreted as this.foo] => foo 
+			return (Some ([], jexpr, k, l)) % TODO: are k and l the right thing to use here?
+		      else
+			return None % see note above
+		    | _ -> 
+			return None) % see note above
+	       | _ ->
+		 % let _ = writeLine("    Not a defined op " ^ q ^ "." ^ id) in
+		 % let _ = case AnnSpec.findTheOp (spc, qid) of
+		 %	       | Some info -> writeLine ("    Type = " ^ printSort (termSort info.dfn))
+		 %	       | _ -> writeLine ("    Not even declared.")
+		 % in
+		 (case argterms of
+		    | allargs as (t1 :: argterms) ->
+		      % check whether the first argument has an unrefined sort
+		      %let _ = writeLine ("  --> checking for method call based on first arg: " ^ printTerm t1) in
+		      let t1srt = unfoldBase (spc, inferTypeFoldRecords (spc, t1)) in
+		      let t1srt = findMatchingUserType (spc, t1srt) in
+		      % let _ = writeLine ("  --> t1srt=" ^ printSort t1srt) in
+		      if builtinJavaBaseType? t1srt then
+			% let _ = writeLine ("    Type of first arg in " ^ printTerm term ^ "\n    is builtin:: " ^ printSort t1srt) in
+			% let _ = writeLine ("    did not find java method call to " ^ printQualifiedId qid) in
+			% let _ = writeLine ("    see if new or static: " ^ printQualifiedId qid) in
+			% check whether the qualifier is present
+			check4StaticOrNew (q, id, allargs)
+		      else if sortIsDefinedInSpec? (spc, t1srt) then
+			% let _ = writeLine ("    Type of first arg in " ^ printTerm term ^ "\n    has current definition:  "^printSort t1srt) in
+			% let _ = writeLine ("    Presume hand-coded class (STATIC) method is defined for " ^ printQualifiedId qid) in
+			% let _ = writeLine ("    ------------") in
+			% check whether the qualifier is present
+			check4StaticOrNew (q, id, allargs)
+		      else
+			% let _ = writeLine ("    Type of first arg in " ^ printTerm term ^ "\n    has no current definition: " ^ printSort t1srt) in
+			% let _ = writeLine ("    presume hand-coded instance (NON-static) method definition exists for for " ^ printQualifiedId qid) in
+			% let _ = writeLine ("    ------------") in
+			let opid = id in
+			{
+			 (s1, objexpr,  k, l) <- termToExpressionM            (tcx, t1,       k, l);
+			 (s2, argexprs, k, l) <- translateTermsToExpressionsM (tcx, argterms, k, l);
+			 let expr = mkMethExprInv (objexpr, opid, argexprs) in
+			 return (Some (s1++s2, expr, k, l))
+			}
+		    | [] -> 
+		      %let _ = writeLine ("    No args in " ^ printTerm term) in
+		      %let _ = writeLine ("    Did not find java method call to " ^ printQualifiedId qid) in
+		      %let _ = writeLine ("    see if new or static: " ^ printQualifiedId qid) in
+		      check4StaticOrNew (q, id, []))
+		   }
 
       % more special cases for the BitString library (hack)
       | Fun(Op(Qualified(q,"Zero"),_),_,_) -> return(Some([],mkJavaNumber 0,0,0))
@@ -306,20 +351,32 @@ spec
       | _ -> return None
 
 
+  op  builtinJavaBaseType?: Sort -> Boolean
+  def builtinJavaBaseType? typ =
+    boolSort?    typ || % v3:p1 
+    integerSort? typ || % v3:p1 
+    natSort?     typ || % v3:p1 says NO  -- TODO: resolve this
+    stringSort?  typ || % v3:p1 says NO  -- TODO: resolve this
+    charSort?    typ    % v3:p1 
+
+  op  builtinJavaBaseTypeId?: Id -> Boolean  
+  def builtinJavaBaseTypeId? id =
+  %% TODO: is this a complete set?  See basicQualifiers
+    id = "Boolean" || % v3:p1 
+    id = "Integer" || % v3:p1 
+    id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
+    id = "String"  || % v3:p1 says NO  -- TODO: resolve this
+    id = "Char"       % v3:p1 
+
   op getPostSubstFun: JGenEnv (Java.Expr -> Java.Expr)
   def getPostSubstFun =
-    {
-     primitiveClassName <- getPrimitiveClassName;
-     return (fn e ->
-	     case e of
-	       | CondExp (Un (Prim (MethInv (ViaPrim (Name([],"Primitive"),mname, [e1,e2])))), None) ->
-	         if mname = "min" || mname = "max" then
-		   CondExp (Un (Prim (MethInv (ViaPrim (Name([],"Math"),mname, [e1,e2])))), None)
-		 else e
-	       | _ -> e
-	    )
-    }
-
+    return (fn e ->
+	    case e of
+	      | CondExp (Un (Prim (MethInv (ViaPrim (Name([],"Primitive"), mname, [e1, e2])))), None) ->
+	        if mname = "min" || mname = "max" then
+		  CondExp (Un (Prim (MethInv (ViaPrim (Name([], "Math"), mname, [e1, e2])))), None)
+		else e
+	      | _ -> e)
 
 
 endspec
