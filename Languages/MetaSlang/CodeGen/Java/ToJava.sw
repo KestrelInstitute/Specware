@@ -898,7 +898,11 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = translateRecordMergeInSpec spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
   let spc = identifyIntSorts spc in
-  let spc = poly2mono(spc,false) in
+
+  let spc = poly2mono(spc,false) in % false means we do not keep declarations for polymorphic sorts and ops in the new spec
+
+  %% Specs from here on may be evil -- they can have terms that refer to undeclared ops!
+
   let spc = letWildPatToSeq spc in
   let spc = instantiateHOFns spc in
   let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
