@@ -33,9 +33,10 @@ type State = {
 	      primitiveClassName : String,
 	      ignoreSubsorts : Boolean,
 	      verbose : Boolean,
-	      sep : String, % the string used for Java class name generation, default "$"
-	      transformSpecFun : Spec -> Spec,    % used by Accord
-	      localVarToJExpr : String -> Option Java.Expr, % return some java expression if the string is a local parameter
+	      sep : String, % the string used for Java class name generation, default "_"
+	      transformSpecFun : Spec -> Spec,              % Accord
+	      localVarToJExpr : String -> Option Java.Expr, % Accord: return some java expression if the string is a local parameter
+	      definedOps : List QualifiedId,                % Accord: list of ops defined across many specs
 	      specialFun: SpecialFunType,
               createFieldFun : MS.Term -> Boolean,
 	      ignoreTypeDefFun : String -> Boolean, % returns true, if the code generation should ignore the type definition for 
@@ -63,9 +64,10 @@ def initialState = {
 		    primitiveClassName = "Primitive",
 		    ignoreSubsorts = false,
 		    verbose = true,
-		    sep = "$",
+		    sep = "_",
 		    transformSpecFun = (fn spc -> spc),
 		    localVarToJExpr = (fn _ -> None),
+		    definedOps      = [],
 		    specialFun = (fn _ -> return None),
 		    createFieldFun = (fn tm -> 
 				      %% Suppress field declarations for undefined functions
@@ -361,6 +363,16 @@ op setLocalVarToJExprFun: (String -> Option Java.Expr) -> JGenEnv ()
 def setLocalVarToJExprFun tfun =
   fn state ->
   (Ok (), state << { localVarToJExpr = tfun })
+
+op  getDefinedOps: JGenEnv (List QualifiedId)
+def getDefinedOps =
+  fn state ->
+  (Ok state.definedOps, state)
+
+op  setDefinedOps: List QualifiedId -> JGenEnv ()
+def setDefinedOps qids =
+  fn state ->
+  (Ok (), state << { definedOps = qids })
 
 op getSpecialFun: JGenEnv SpecialFunType
 def getSpecialFun =
