@@ -99,6 +99,12 @@ def getStringAttributesFromSpec spc =
      | Some info -> definedOpInfo? info
      | _ -> false
 
+ op  declaredOp? : Spec * QualifiedId -> Boolean
+ def declaredOp? (spc,qid) =
+   case findTheOp (spc, qid) of
+     | Some _ -> true
+     | _ -> false
+
 % --------------------------------------------------------------------------------
 (**
  * returns the list of qualified id's that are declared in the spec (sorts and ops)
