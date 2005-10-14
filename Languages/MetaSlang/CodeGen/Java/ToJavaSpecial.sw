@@ -66,28 +66,31 @@ spec
     in
     let
       def check4StaticOrNew (classid, opid, allargs) =
-	%let _ = writeLine ("    check4StaticOrNew: classid = " ^ classid ^ ", opid = " ^ opid) in
+	% let _ = writeLine ("    check4StaticOrNew: classid = " ^ classid ^ ", opid = " ^ opid) in
 	if (classid = UnQualified) then 
-	  %let _ = writeLine ("    Unqualified class (which means???)") in
-	  %let _ = writeLine ("    ------------") in
+	  % let _ = writeLine ("    Unqualified class (which means???)") in
+	  % let _ = writeLine ("    ------------") in
 	  return None
 	else
 	  {
 	   (s,argexprs,k,l) <- translateTermsToExpressionsM(tcx,allargs,k,l);
 	   % check, whether prefix of op is "new"; in this special case,
 	   % the constructor of the class is invoked
-	   let expr = if stringPrefix(opid,3) = "new"
-			then
-			 % invoke the constructor
-			  %let _ = writeLine ("    Constructor") in
-			  %let _ = writeLine ("    ------------") in
-			  (CondExp (Un (Prim (NewClsInst(ForCls(([],classid), argexprs, None)))), None))
+	   let expr = if stringPrefix(opid,3) = "new" then
+	                % invoke the constructor
+                	% let _ = writeLine ("    Constructor") in
+			(CondExp (Un (Prim (NewClsInst(ForCls(([],classid), argexprs, None)))), None))
 		      else
 			% invoke the static method
-			%let _ = writeLine ("    Static method") in
-			%let _ = writeLine ("    ------------") in
+			%% Accord note:  expressions such as  foo.field can arrive here (with opid = "field"),
+			%%               to produce field(foo), which later transforms to foo.field
+			% let _ = writeLine ("    Static method") in
+			% let _ = writeLine ("    fn   = " ^ classid ^ "#" ^ opid) in
+			% let _ = writeLine ("    args = " ^ anyToString argexprs) in
 			mkMethInvName(([classid],opid),argexprs)
 	   in
+	     % let _ = writeLine ("    Expr = " ^ anyToString expr) in
+	     % let _ = writeLine ("    ------------") in
 	     return(Some (s,expr,k,l))
 	  }
     in
@@ -125,7 +128,7 @@ spec
 
     case term of
       | Apply(Apply(Fun(Op(Qualified(newq,"new"),_),_,_),Fun(Op(Qualified(_,className),_),_,_),_),arg,_) ->
-        %let _ = writeLine("found new, qualifier="^newq^", className="^className^", args="^(printTerm arg)) in
+       %let _ = writeLine("found new, qualifier="^newq^", className="^className^", args="^(printTerm arg)) in
 	let args = (case arg of
 		      | Record(fields,_) -> map (fn(_,t) -> t) fields
 		      | _ -> [arg])
@@ -271,76 +274,90 @@ spec
 	}
 
       | Apply (Fun (Op (qid as Qualified (q, id), _), opsrt,_), argterm, b) ->
-	if builtinJavaBaseTypeId? q then 
-	  % let _ = writeLine ("    Method within built-in base class: " ^ q ^ "." ^ id) in
-	  % let _ = writeLine ("    ------------") in
-	  return None 
-	else
-	  let argterms = applyArgsToTerms(argterm) in
-	  {
-	   spc          <- getEnvSpec;
-	   var_to_jexpr <- getLocalVarToJExprFun;
-	   if definedOp? (spc, qid) then
-	     % let _ = writeLine ("    Op is defined: " ^ q ^ "." ^ id) in
-	     % let _ = writeLine ("    ------------") in
-	     return None
-	   else 
-	     case var_to_jexpr id of
-	       | Some jexpr ->
-	         %%  TODO: we should probably handle this situation here:
-	         %%    For the two "None" cases here, isField? will be true for id in translateApplyToExprM,
-	         %%    so translateUserApplToExprM will convert from method invocation to field ref.
-	         (case argterm of 
-		    | Fun (Op (Qualified (var_q, var_id), _), Base (Qualified (type_q,type_id), _, _), _) ->
-		      if var_id = "this" && var_q = type_id then
-			%% foo(this) [which would be interpreted as this.foo] => foo 
-			return (Some ([], jexpr, k, l)) % TODO: are k and l the right thing to use here?
-		      else
-			return None % see note above
-		    | _ -> 
-			return None) % see note above
-	       | _ ->
-		 % let _ = writeLine("    Not a defined op " ^ q ^ "." ^ id) in
-		 % let _ = case AnnSpec.findTheOp (spc, qid) of
-		 %	       | Some info -> writeLine ("    Type = " ^ printSort (termSort info.dfn))
-		 %	       | _ -> writeLine ("    Not even declared.")
-		 % in
-		 (case argterms of
-		    | allargs as (t1 :: argterms) ->
-		      % check whether the first argument has an unrefined sort
-		      %let _ = writeLine ("  --> checking for method call based on first arg: " ^ printTerm t1) in
-		      let t1srt = unfoldBase (spc, inferTypeFoldRecords (spc, t1)) in
-		      let t1srt = findMatchingUserType (spc, t1srt) in
-		      % let _ = writeLine ("  --> t1srt=" ^ printSort t1srt) in
-		      if builtinJavaBaseType? t1srt then
-			% let _ = writeLine ("    Type of first arg in " ^ printTerm term ^ "\n    is builtin:: " ^ printSort t1srt) in
-			% let _ = writeLine ("    did not find java method call to " ^ printQualifiedId qid) in
-			% let _ = writeLine ("    see if new or static: " ^ printQualifiedId qid) in
-			% check whether the qualifier is present
-			check4StaticOrNew (q, id, allargs)
-		      else if sortIsDefinedInSpec? (spc, t1srt) then
-			% let _ = writeLine ("    Type of first arg in " ^ printTerm term ^ "\n    has current definition:  "^printSort t1srt) in
-			% let _ = writeLine ("    Presume hand-coded class (STATIC) method is defined for " ^ printQualifiedId qid) in
-			% let _ = writeLine ("    ------------") in
-			% check whether the qualifier is present
-			check4StaticOrNew (q, id, allargs)
-		      else
-			% let _ = writeLine ("    Type of first arg in " ^ printTerm term ^ "\n    has no current definition: " ^ printSort t1srt) in
-			% let _ = writeLine ("    presume hand-coded instance (NON-static) method definition exists for for " ^ printQualifiedId qid) in
-			% let _ = writeLine ("    ------------") in
-			let opid = id in
-			{
-			 (s1, objexpr,  k, l) <- termToExpressionM            (tcx, t1,       k, l);
-			 (s2, argexprs, k, l) <- translateTermsToExpressionsM (tcx, argterms, k, l);
-			 let expr = mkMethExprInv (objexpr, opid, argexprs) in
-			 return (Some (s1++s2, expr, k, l))
-			}
-		    | [] -> 
-		      %let _ = writeLine ("    No args in " ^ printTerm term) in
-		      %let _ = writeLine ("    Did not find java method call to " ^ printQualifiedId qid) in
-		      %let _ = writeLine ("    see if new or static: " ^ printQualifiedId qid) in
-		      check4StaticOrNew (q, id, []))
-		   }
+	{
+	 var_to_jexpr <- getLocalVarToJExprFun;  % var_to_jexpr is a hook added for Accord
+	 case var_to_jexpr id of             
+           | Some jexpr ->       
+	     %%  For now, only Accord comes here.
+	     %%  TODO: we should probably handle this situation here:
+	     %%    For the two "None" cases here, isField? will be true for id in translateApplyToExprM,
+	     %%    so translateUserApplToExprM will convert from method invocation to field ref.
+	     (case argterm of 
+		| Fun (Op (Qualified (var_q, var_id), _), Base (Qualified (type_q, type_id), _, _), _) ->
+		  %% presumably type_q = type_id, but we probably don't care
+		  if var_q = type_id && var_id = "this" then
+		    %% foo(this) [which would be interpreted as this.foo] => foo 
+		    % let _ = writeLine ("    [Accord] Declared op indexing off 'this' in : " ^ myPrintTerm term) in
+		    % let _ = writeLine ("    ------------") in
+		    return (Some ([], jexpr, k, l)) % TODO: are k and l the right thing to use here?
+		  else
+		    % let _ = writeLine ("    [Accord] Declared Instance var/method [A] in : " ^ myPrintTerm term) in
+		    % let _ = writeLine ("    ------------") in
+		    return None % see note above
+		| _ -> 
+		  % let _ = writeLine ("    [Accord] Declared Instance var/method [B] in : " ^ myPrintTerm term) in
+		  % let _ = writeLine ("    ------------") in
+		  return None) % see note above
+	   | _ -> 
+	     if builtinJavaBaseTypeId? q then 
+	       % let _ = writeLine ("    Method within built-in base class: " ^ q ^ "." ^ id) in
+	       % let _ = writeLine ("    ------------") in
+	       return None 
+	     else
+	       let argterms = applyArgsToTerms argterm in
+	       {
+		spc          <- getEnvSpec;
+		defined_ops  <- getDefinedOps;  % Accord uses this to keep track of ops defined across many specs
+
+		%% WARNING:  The spec we just obtained here may not be completely kosher!
+		%%           It was created by a call to transformSpecForJavaCodeGen,
+		%%           which calls poly2mono, which can remove the declarations 
+		%%           for sorts and ops, even if there are references to them
+		%%           in terms throughout the spec.
+
+		if member (qid, defined_ops) || definedOp? (spc, qid) then  % even declaredOp? can be false here!
+		  % let _ = writeLine ("    Normal declared op in: " ^ myPrintTerm term) in
+		  % let _ = writeLine ("    ------------") in
+		  return None
+		else
+		  % let _ = writeLine ("    Polymorphic op is not declared as such in: " ^ myPrintTerm term) in
+		  % let _ = writeLine ("    ------------") in
+		  (case argterms of
+		     | allargs as (t1 :: argterms) ->
+		       % check whether the first argument has an unrefined sort
+		       % let _ = writeLine ("  --> checking for method call based on first arg: " ^ myPrintTerm t1) in
+		       let t1srt = unfoldBase (spc, inferTypeFoldRecords (spc, t1)) in
+		       let t1srt = findMatchingUserType (spc, t1srt) in
+		       % let _ = writeLine ("  --> t1srt=" ^ myPrintSort t1srt) in
+		       if builtinJavaBaseType? t1srt then
+			 % let _ = writeLine ("    Type of first arg in " ^ myPrintTerm term ^ "\n    is builtin:: " ^ myPrintSort t1srt) in
+			 % let _ = writeLine ("    did not find java method call to " ^ printQualifiedId qid) in
+			 % let _ = writeLine ("    see if new or static: " ^ printQualifiedId qid) in
+			 % check whether the qualifier is present
+			 check4StaticOrNew (q, id, allargs)
+		       else if (sortIsDefinedInSpec? (spc, t1srt)) then
+			 % let _ = writeLine ("    Type of first arg in " ^ myPrintTerm term ^ "\n    is defined:  "^ myPrintSort t1srt) in
+			 % let _ = writeLine ("    see if new or static: " ^ printQualifiedId qid) in
+			 % let _ = writeLine ("    ------------") in
+			 % check whether the qualifier is present
+			 check4StaticOrNew (q, id, allargs)
+		       else
+			 % let _ = writeLine ("    Type of first arg in " ^ myPrintTerm term ^ "\n    has no current definition: " ^ myPrintSort t1srt) in
+			 % let _ = writeLine ("    presume non-static library method definition exists for for " ^ printQualifiedId qid) in
+			 % let _ = writeLine ("    ------------") in
+			 let opid = id in
+			 {
+			  (s1, objexpr,  k, l) <- termToExpressionM            (tcx, t1,       k, l);
+			  (s2, argexprs, k, l) <- translateTermsToExpressionsM (tcx, argterms, k, l);
+			  let expr = mkMethExprInv (objexpr, opid, argexprs) in
+			  return (Some (s1++s2, expr, k, l))
+			 }
+		     | [] -> 
+		       % let _ = writeLine ("    No args in " ^ myPrintTerm term) in
+		       % let _ = writeLine ("    Did not find java method call to " ^ printQualifiedId qid) in
+		       % let _ = writeLine ("    see if new or static: " ^ printQualifiedId qid) in
+		       check4StaticOrNew (q, id, []))
+		    }}
 
       % more special cases for the BitString library (hack)
       | Fun(Op(Qualified(q,"Zero"),_),_,_) -> return(Some([],mkJavaNumber 0,0,0))
@@ -350,6 +367,30 @@ spec
 
       | _ -> return None
 
+ %%  op myPrintSort : MS.Sort -> String
+ %%  def myPrintSort tm =
+ %%    my_trim_whitespace(printSort tm)
+ %%
+ %%  op myPrintTerm : MS.Term -> String
+ %%  def myPrintTerm tm =
+ %%     my_trim_whitespace(printTerm tm)
+ %%
+ %%  def my_trim_whitespace (s : String) : String =
+ %%    let 
+ %%       def trim chars =
+ %%	 let (_, new) = 
+ %%	     foldl (fn (char, (saw_space?, new)) ->
+ %%		    case char of
+ %%		      | #\s  -> (true, if saw_space? then new else cons(#\s, new))
+ %%		      | #\t  -> (true, if saw_space? then new else cons(#\s, new))
+ %%		      | #\n  -> (true, if saw_space? then new else cons(#\s, new))
+ %%		      | _ -> (false, cons(char, new)))
+ %%	           (true, [])
+ %%		   chars
+ %%	 in
+ %%	   rev new
+ %%    in
+ %%      implode (trim (explode s))
 
   op  builtinJavaBaseType?: Sort -> Boolean
   def builtinJavaBaseType? typ =
