@@ -24,15 +24,51 @@ spec
 %    let defn = renameTerm c defn in
 %    (vs,defn,defsrt,fnIndices,curried?,recursive?)
 
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %% mapSpecNotingOpNames is a variant of mapSpec that allows us to use the name
+ %% of an op in the tranformations being done on terms within it.
+ %% If necessary, it could be generalized to do something similar for types.
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op  mapSpecNotingOpNames : (QualifiedId -> (ATerm Position -> ATerm Position)) *
+			    (ASort    Position -> ASort    Position) *
+    		            (APattern Position -> APattern Position)
+			     -> Spec -> Spec
+
+ def mapSpecNotingOpNames (op_fn, sort_fn, pat_fn) spc =
+   let outer_tsp = (op_fn (mkUnQualifiedId "outside_of_any_op"), sort_fn, pat_fn) in
+   spc << {
+	   sorts        = mapSpecSorts          outer_tsp spc.sorts,
+	   ops          = mapSpecOpsNotingName  op_fn sort_fn pat_fn spc.ops,
+	   elements     = mapSpecProperties     outer_tsp spc.elements
+	  }
+
+ op  mapSpecOpsNotingName : (QualifiedId -> (ATerm Position -> ATerm Position)) -> 
+			    (ASort    Position -> ASort    Position) ->
+			    (APattern Position -> APattern Position) ->
+			    AOpMap Position -> AOpMap Position
+
+ def mapSpecOpsNotingName op_fn sort_fn pat_fn ops =
+   mapOpInfos (fn info -> 
+	       let inner_tsp = (op_fn (primaryOpName info), sort_fn, pat_fn) in
+	       %% now the the tsp knows the name of the op
+	       info << {dfn = mapTerm inner_tsp info.dfn})
+              ops
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   op  unFoldTerms: Spec * AQualifierMap DefInfo -> Spec
   def unFoldTerms(spc,m) =
     let simplifyTerm = simplify spc in
-    mapSpec (fn t -> maybeUnfoldTerm(t,m,simplifyTerm,spc),id,id)
-      spc
+    mapSpecNotingOpNames (fn outer_qid -> (fn t -> maybeUnfoldTerm(outer_qid,t,m,simplifyTerm,spc)),
+			  id,
+			  id)
+                         spc
 
-  op  unfoldInTerm: Term * AQualifierMap DefInfo * (Term -> Term) * Spec -> Term
-  def unfoldInTerm(tm,m,simplifyTerm,spc) =
-    mapSubTerms (fn t -> maybeUnfoldTerm(t,m,simplifyTerm,spc))
+  op  unfoldInTerm: QualifiedId * Term * AQualifierMap DefInfo * (Term -> Term) * Spec -> Term
+  def unfoldInTerm(outer_qid,tm,m,simplifyTerm,spc) =
+    mapSubTerms (fn t -> maybeUnfoldTerm(outer_qid, t,m,simplifyTerm,spc))
       tm
 
   %% (params,defn body,indices of applied fn args,curried?,recursive?)
@@ -185,8 +221,8 @@ spec
 
   def sizeTerm t = foldSubTerms (fn (_,sum) -> sum + 1) 0 t
 
-  op  maybeUnfoldTerm: Term * AQualifierMap DefInfo * (Term -> Term) * Spec -> Term
-  def maybeUnfoldTerm(t,unfoldMap,simplifyTerm,spc) =
+  op  maybeUnfoldTerm: QualifiedId * Term * AQualifierMap DefInfo * (Term -> Term) * Spec -> Term
+  def maybeUnfoldTerm(outer_qid, t,unfoldMap,simplifyTerm,spc) =
    case t of
      | Apply (f,a,_) ->
        (case f of
@@ -200,7 +236,7 @@ spec
 		      & exists (fn i -> constantTerm?(getTupleArg(a,i)))
 		          fnIndices
 		  then makeUnfoldedTerm
-		         (f,termToList a,inferType(spc,t),
+		         (outer_qid, f,termToList a,inferType(spc,t),
 			  sortMatch(defsrt,srt,spc),
 			  vs,defn,fnIndices,recursive?,qid,id,
 			  unfoldMap,simplifyTerm,spc)
@@ -218,7 +254,7 @@ spec
 			   if curried? & (length args = length vs)
 			     & exists (fn i -> constantTerm?(nth(args,i)))
 			         fnIndices
-			    then makeUnfoldedTerm(f,args,inferType(spc,t),
+			    then makeUnfoldedTerm(outer_qid, f,args,inferType(spc,t),
 						  sortMatch(defsrt,srt,spc),
 						  vs,defn,fnIndices,recursive?,
 						  qid,id,unfoldMap,simplifyTerm,spc)
@@ -227,11 +263,11 @@ spec
 	  | _ -> t)
      | _ -> t
 
-  op  makeUnfoldedTerm: Term * List Term * Sort * TyVarSubst * List Pattern * Term
+  op  makeUnfoldedTerm: QualifiedId * Term * List Term * Sort * TyVarSubst * List Pattern * Term
                          * List Nat * Boolean * QualifiedId * String
                          * AQualifierMap DefInfo * (Term -> Term) * Spec
                       -> Term
-  def makeUnfoldedTerm(_ (* f *), args, resultSort, tyVarSbst, vs, defbody, fnIndices,
+  def makeUnfoldedTerm(outer_qid, _(* f *), args, resultSort, tyVarSbst, vs, defbody, fnIndices,
 		       recursive?, qid, nm, unfoldMap, simplifyTerm, spc) =
 
     let replaceIndices = filter (fn i -> constantTerm?(nth(args,i))
@@ -247,7 +283,7 @@ spec
     let remainingParams = map (fn i -> nth(  vs,i)) remainingIndices in
     let remainingArgs   = map (fn i -> nth(args,i)) remainingIndices in
     if recursive?
-      then makeRecursiveLocalDef(qid,nm,defbody,resultSort,tyVarSbst,
+      then makeRecursiveLocalDef(outer_qid,qid,nm,defbody,resultSort,tyVarSbst,
 				 remainingParams, remainingArgs,remainingIndices,
 				 vSubst,simplifyTerm)
       else
@@ -262,7 +298,7 @@ spec
 
       let newTm = makeLet(remainingParams,remainingArgs,defbody) in
       let newTm = substitute(newTm,vSubst) in
-      unfoldInTerm(simplifyTerm(newTm),unfoldMap,simplifyTerm,spc)
+      unfoldInTerm(outer_qid, simplifyTerm(newTm),unfoldMap,simplifyTerm,spc)
 
 
   def adjustBindingsToAvoidCapture (remainingParams, remainingArgs, (* params, *) args, defbody) =
@@ -340,6 +376,8 @@ spec
     else	
       (remainingParams, remainingArgs)
 
+  op  my_x_counter : () -> Nat
+
   %% Returns nm if it is not referenced in t, otherwise adds -i to
   %% to make it unique
   op  locallyUniqueName: Id * Term -> Id
@@ -359,11 +397,16 @@ spec
                  | _ -> false)
       t
 
-  def makeRecursiveLocalDef(qid,nm,defbody,resultSort,tyVarSubst,remainingParams,
+  def makeRecursiveLocalDef(outer_qid,qid,nm,defbody,resultSort,tyVarSubst,remainingParams,
 			    remainingArgs,remainingIndices,vSubst,simplifyTerm) =
     %% check name conflict with args and defbody. defbody should be safe
     %% because user can't put "--" in identifier, but to be safe
-    let localFnName = locallyUniqueName(nm^"--local",
+    %% We ignore provided "nm" (its probably equal to the id part of qid),
+    %% and compute a new "nm" using the entire qualified id.
+    let prefix = (let Qualified(q,xid) = outer_qid in 
+		  if q = UnQualified then xid else q ^ "_" ^ xid)
+    in
+    let localFnName = locallyUniqueName(prefix^"_"^nm^"--local",
 					%% Just to give context of var names to avoid
 					mkTuple(cons(defbody,remainingArgs)))
     in
