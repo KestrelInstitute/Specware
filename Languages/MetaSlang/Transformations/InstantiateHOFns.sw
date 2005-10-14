@@ -3,7 +3,7 @@ spec
   import Simplify
   import CurryUtils
   import ../Specs/Utilities
-  sort Term = MS.Term
+  type Term = MS.Term
 
   op  instantiateHOFns: Spec -> Spec
   def instantiateHOFns spc =
@@ -17,7 +17,8 @@ spec
     let spc = simplifySpec spc in
     let m = makeUnfoldMap spc snark_hack? in
     %let m = mapAQualifierMap (renameDefInfo (emptyContext())) m in
-    unFoldTerms(spc,m)
+    let spc = unFoldTerms(spc,m) in
+    spc
 
 %  def renameDefInfo c (vs,defn,defsrt,fnIndices,curried?,recursive?) =
 %    let vs = map (renamePattern c) vs in
@@ -72,7 +73,7 @@ spec
       tm
 
   %% (params,defn body,indices of applied fn args,curried?,recursive?)
-  sort DefInfo = List Pattern * Term * Sort * List Nat * Boolean * Boolean
+  type DefInfo = List Pattern * Term * Sort * List Nat * Boolean * Boolean
 
   op  makeUnfoldMap: Spec -> Boolean -> AQualifierMap DefInfo
   def makeUnfoldMap spc snark_hack? =
@@ -435,7 +436,7 @@ spec
     simplifyTerm(mkLetRec([(localFn,localDef)],
 			  mkApply(mkVar localFn,newArgTerm)))
 
-  sort TyVarSubst = List(Id * Sort)
+  type TyVarSubst = List(Id * Sort)
   def instantiateTyVars(s,tyVarSubst) =
     case s of
       | TyVar (name, _) ->
