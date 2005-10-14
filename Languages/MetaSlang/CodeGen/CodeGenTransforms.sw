@@ -1159,16 +1159,16 @@ def addSortConstructorsFromSort (spc, forSnark?, qid, info) =
 
  op getConstructorOpName: QualifiedId * String -> QualifiedId
 def getConstructorOpName (qid as Qualified (q, id), consid) =
-  % the two $'s are important: that how the constructor op names are
+  % the two _'s are important: that how the constructor op names are
   % distinguished from other opnames (hack)
-  let sep = "$$" in
+  let sep = "__" in
   Qualified (q, id^sep^consid)
 
  op getConstructorOpNameForSnark: QualifiedId * String -> QualifiedId
 def getConstructorOpNameForSnark (qid as Qualified (q, id), consid) =
-  % the two $'s are important: that how the constructor op names are
+  % the two __'s are important: that how the constructor op names are
   % distinguished from other opnames (hack)
-  let sep = "_" in
+  let sep = "__" in
   Qualified (q, "embed"^sep^consid)
 
 % this is used to distinguish "real" product from "record-products"
@@ -1745,7 +1745,7 @@ def addEqOpsFromSort (spc, qid, info) =
 
 op getEqOpQid: QualifiedId -> QualifiedId
 def getEqOpQid (Qualified (q, id)) =
-  Qualified (q, "eq$" ^ id)
+  Qualified (q, "eq_" ^ id)
 
 % --------------------------------------------------------------------------------
 

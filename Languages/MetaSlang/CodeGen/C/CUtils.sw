@@ -1142,7 +1142,7 @@ CUtils qualifying spec {
   def splitCSpec(cspc) = 
     let
       def filterFnDefn isHdr (fndefn as (fname,_,_,_)) =
-	isHdr = exists (fn(c) -> c = #$) fname
+	isHdr = exists (fn(c) -> c = #_) fname
       %def filterFnDecl isHdr (fndecl as (fname,_,_)) =
 	%isHdr = exists (fn(c) -> c = #$) fname
     in

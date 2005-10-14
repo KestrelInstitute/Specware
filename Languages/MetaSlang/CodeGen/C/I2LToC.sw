@@ -165,13 +165,13 @@ I2LToC qualifying spec {
     if ctype = Void then (vname,Int) else (vname,ctype)
 
   (*
-   * for each non-constant variable definition X an function get$X() and a
+   * for each non-constant variable definition X an function get_X() and a
    * boolean variable _X_initialized is generated 
    *)
   op c4NonConstVarDef: CgContext * Id * CType * CSpec * Block * CExp -> CSpec
   def c4NonConstVarDef(ctxt,vname,ctype,cspc,block as (decls,stmts),cexpr) =
-    let initfname = "get$"^vname in
-    let valuevname = vname^"$value" in
+    let initfname = "get_"^vname in
+    let valuevname = vname^"_value" in
     let cspc = addDefine(cspc,vname^" "^initfname^"()") in
     let cspc = addVarDefn(cspc,(valuevname,ctype,NULL)) in
     let condexp = Binary(Eq,Var(valuevname,ctype),NULL) in
@@ -1234,9 +1234,9 @@ I2LToC qualifying spec {
 
   op getConstructorOpNameFromQName: (String * String) * String -> String
   def getConstructorOpNameFromQName(qname,consid) =
-    % the two $'s are important: that how the constructor op names are
+    % the two _'s are important: that how the constructor op names are
     % distinguished from other opnames (hack)
-    let sep = "$$" in
+    let sep = "__" in
     let s = qname2id qname in
     s^sep^consid
 

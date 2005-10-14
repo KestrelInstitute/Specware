@@ -25,7 +25,7 @@ SpecsToI2L qualifying spec {
 		    specname       : String, % not (yet) used
 		    isToplevel     : Boolean, % not used
 		    useRefTypes    : Boolean, % always true
-		    constrOps      : List(QualifiedId), % not used, constrOps are distinguished by their name (contain "$$")
+		    constrOps      : List(QualifiedId), % not used, constrOps are distinguished by their name (contain "__")
 		    currentOpSort  : Option(QualifiedId)
 		   }
 
@@ -60,13 +60,13 @@ SpecsToI2L qualifying spec {
       | Some (qid as Qualified(q,id)) -> %~(member(qid,ctxt.constrOps))
         %let _ = writeLine("useConstrCalls, id="^id) in
         let expl = concat(String.explode q, String.explode id) in
-	let (indl,_) = List.foldl (fn(c,(indl,n)) -> if c = #$ then (cons(n,indl),n+1) else (indl,n+1)) ([],0) expl in
-	%% indl records positions of $'s in name
+	let (indl,_) = List.foldl (fn(c,(indl,n)) -> if c = #_ then (cons(n,indl),n+1) else (indl,n+1)) ([],0) expl in
+	%% indl records positions of _'s in name
 	case indl of
 	  | n :: m :: _ -> 
-	    %% if the name ends with $$xyz then we assume its a constructor
-	    %% Note that indl could be something like (27 26 10) if the name has one or more additional $'s
-	    %% preceeding the final $$xyz, so [n :: m] would be the wrong pattern to search for.
+	    %% if the name ends with __xyz then we assume its a constructor
+	    %% Note that indl could be something like (27 26 10) if the name has one or more additional _'s
+	    %% preceeding the final __xyz, so [n :: m] would be the wrong pattern to search for.
 	    %% See bug 161:  "C generation failed for constructors with args of complex types"
 	    if n = m+1 then
 	      %let _ = writeLine("constructor op: \""^(printQualifiedId qid)^"\"") in
@@ -793,7 +793,7 @@ SpecsToI2L qualifying spec {
 
   op getEqOpQid: QualifiedId -> QualifiedId
   def getEqOpQid(Qualified(q,id)) =
-    Qualified(q,"eq$"^id)
+    Qualified(q,"eq_"^id)
 
   op equalsExpression: CgContext * Spec * Term * Term -> Expr
   def equalsExpression(ctxt,spc,t1,t2) =

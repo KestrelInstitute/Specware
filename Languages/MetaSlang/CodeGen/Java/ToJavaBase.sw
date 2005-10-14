@@ -1203,7 +1203,7 @@ def mapJavaIdent sep id =
 		  | (c,id) -> Char.toString(c)^id) "" idarray
   in
     id
-  %if javaKeyword? id then id^"$" else id
+  %if javaKeyword? id then id^"_" else id
 
 % --------------------------------------------------------------------------------
 
