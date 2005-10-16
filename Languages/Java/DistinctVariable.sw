@@ -1,4 +1,4 @@
-%JGen qualifying
+JGen qualifying
 spec
 
 import LiftPattern
@@ -61,22 +61,29 @@ def renameVarMatch((pat, cond, patBody), oldV, newV) =
   
 def renameVarLet(term as Let (letBindings, letBody, _), oldV, newV) =
   case letBindings of
-    | [(VarPat (v, _), letTerm)] ->
+    | [(vpat as VarPat (v, _), letTerm)] ->
     if equalVar?(v, oldV)
       then renameVarLetNewVar(letTerm, letBody, oldV, newV)
-    else renameVarLetOldVar(letTerm, letBody, oldV, newV)
+    else renameVarLetOldVar(letTerm, letBody, vpat, oldV, newV)
     | _ -> fail "unsupported in renameVarLet"
 
 def renameVarLetNewVar(letTerm, letBody, oldV, newV) =
+  %% let old = ... in ... old ...
+  %%  =>
+  %% let new = ... in ... new ...
   let newLetTerm = renameVar(letTerm, oldV, newV) in
-    let res = mkLet([(mkVarPat(newV), newLetTerm)], letBody) in
-    withAnnT(res,termAnn(letTerm))
+  let res = mkLet([(mkVarPat(newV), newLetTerm)], letBody) in
+  withAnnT(res,termAnn(letTerm))
 
-def renameVarLetOldVar(letTerm, letBody, oldV, newV) =
+def renameVarLetOldVar(letTerm, letBody, vpat, oldV, newV) =
+  %% If the var for the let is not the old var, leave it alone!
+  %% let V = ... old ... in ... old ...
+  %%  =>
+  %% let V = ... new ... in ... new ...
   let newLetTerm = renameVar(letTerm, oldV, newV) in
   let newLetBody = renameVar(letBody, oldV, newV) in
-    let res = mkLet([(mkVarPat(oldV), newLetTerm)], newLetBody) in
-    withAnnT(res,termAnn(letTerm))
+  let res = mkLet([(vpat, newLetTerm)], newLetBody) in
+  withAnnT(res,termAnn(letTerm))
 
 op distinctVar: Term * List Id -> Term * List Id
 def distinctVar(term, ids) =
