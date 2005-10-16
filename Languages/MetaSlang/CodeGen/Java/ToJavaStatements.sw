@@ -697,6 +697,30 @@ def translateTermsToExpressionsM(tcx, terms, k, l) =
        return (newBody++restBody, cons(jTerm, restJTerms), restK, restL)
       }
 
+op  remove_returns : Block -> Block
+def remove_returns block =
+  %% Poor man's solution to get rid of unwanted returns.
+  %% It would be better if they were never generated at all...
+  foldl (fn (block_stmt, block) ->
+	 block ++ 
+	 (case block_stmt of
+	    | Stmt (Return None)        -> []
+	    | Stmt (Return (Some expr)) -> [Stmt (Expr expr)]
+	    | Stmt (If (cond_expr, then_stmt, opt_else_stmt)) ->
+	      let then_stmt = case then_stmt of
+				| Block block -> Block (remove_returns block)
+				| _ -> then_stmt
+	      in
+	      let opt_else_stmt = (case opt_else_stmt of
+				     | Some (Block block) -> Some (Block (remove_returns block))
+				     | _ -> opt_else_stmt)
+	      in
+	      [Stmt (If (cond_expr, then_stmt, opt_else_stmt))]
+	    %% Todo: handle switch, block, etc.?
+	    | _ -> [block_stmt]))
+        []
+	block
+
 op termToExpressionRetM: TCx * Term * Nat * Nat * Boolean -> JGenEnv (Block * Nat * Nat)
 def termToExpressionRetM(tcx, term, k, l, break?) =
 %  if caseTerm?(term)
@@ -713,10 +737,19 @@ def termToExpressionRetM(tcx, term, k, l, break?) =
     | Seq([t],_) -> termToExpressionRetM(tcx,t,k,l,break?)
     | Seq(t1::terms,b) ->
       {
-       (s1,expr,k,l) <- termToExpressionM(tcx,t1,k,l);
-       s2 <- return [Stmt(Expr(expr))];
+       % was:
+       % (s1,expr,k,l) <- termToExpressionM(tcx,t1,k,l);
+       % s2 <- return [Stmt(Expr(expr))];
+       %
+       % Using termToExpressionRetM instead of termToExpressionM for the non-final terms
+       % of the sequence avoids some needless conversions of statements into expressions.
+       % It would be ideal to have a variant of termToExpressionRetM that suppresses 
+       % returns, but that turns out to be amazingly messy.
+       % For now, we instead just clean up some obvious top-level stuff with remove_returns.
+       (s1,k,l) <- termToExpressionRetM(tcx,t1,k,l,break?);
+       s1       <- return (remove_returns s1);
        (s3,k,l) <- termToExpressionRetM(tcx,Seq(terms,b),k,l,break?);
-       return (s1++s2++s3,k,l)
+       return (s1++s3,k,l)
       }
     | Apply(Fun(Op(Qualified("System","fail"),_),_,_),t,_) ->
       let def mkPrim p = CondExp(Un(Prim p),None) in
