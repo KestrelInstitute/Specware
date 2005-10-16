@@ -141,16 +141,25 @@ spec
         let expr = mkMethInvName((["System"],"currentTimeMillis"),[]) in
 	return(Some([],expr,k,l))
 
-      | Apply (Fun (Op (Qualified ("System", "fail"), _), _, _), arg, _) ->
-
+      | Apply (Fun (Op (Qualified ("System", "fail"), _), 
+		    Arrow (dom_type, cod_type, _), 
+		    _), 
+	       arg, 
+	       _) 
+	->
 	%% We want to turn System.fail into a throw expression, 
 	%% but throw is a statement, so we construct the following 
 	%% (somewhat tricky) Java expression that throws an exception:
 	%%
-	%% (new Object() { public void throwException(String s) {
+	%% (new Object() { public <return_type> throwException(String s) {
         %%                     throw new IllegalArgumentException(s);
         %%                 }
-        %%               }).throwException (arg_expr)
+        %%               }).throwException (<arg_expr>)
+        %%
+	%% where <return_type> is the translation of the codomain of the 
+	%%                       arrow type assigned to fail by the type-checker,
+	%%
+	%%   and <arg_expr>    is the translation of the argument to fail, a string
 
 	let 
           def mk_prim p = 
@@ -161,15 +170,16 @@ spec
 	in
         {
          (s, arg_expr, k, l) <- termToExpressionM (tcx, arg, k, l);
+	 java_result_type    <- tt_v3M cod_type;
 
 	 let name_of_throwing_method = "throwException"         in
 	 let var_name                = "msg"                    in
-	 let string_type : Java.Type = (Name ([], "String"), 0) in
-
+	 let java_string_type        = (Name ([], "String"), 0) in % should be same as tt_v3M dom_type 
+	 
 	 let throwing_method_hdr : MethHeader = ([Public], 
-						 None, 
+						 Some java_result_type,
 						 name_of_throwing_method,
-						 [(false, string_type, (var_name, 0))], 
+						 [(false, java_string_type, (var_name, 0))], 
 						 []) 
 	 in
 	 let throwing_block   = (let new_exception = mk_new ("IllegalArgumentException",
