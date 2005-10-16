@@ -127,6 +127,7 @@ spec
     %% ----------------------------------------------
 
     case term of
+
       | Apply(Apply(Fun(Op(Qualified(newq,"new"),_),_,_),Fun(Op(Qualified(_,className),_),_,_),_),arg,_) ->
        %let _ = writeLine("found new, qualifier="^newq^", className="^className^", args="^(printTerm arg)) in
 	let args = (case arg of
@@ -135,35 +136,62 @@ spec
 	in
 	check4StaticOrNew(className,"new",args)
 	%return None
+
       | Apply(Fun(Op(Qualified(_,"currentTimeMillis"),_),_,_),_,_) ->
         let expr = mkMethInvName((["System"],"currentTimeMillis"),[]) in
 	return(Some([],expr,k,l))
-      | Apply(Fun(Op(Qualified("System","fail"),_),_,_),t,_) ->
+
+      | Apply (Fun (Op (Qualified ("System", "fail"), _), _, _), arg, _) ->
+
+	%% We want to turn System.fail into a throw expression, 
+	%% but throw is a statement, so we construct the following 
+	%% (somewhat tricky) Java expression that throws an exception:
+	%%
+	%% (new Object() { public void throwException(String s) {
+        %%                     throw new IllegalArgumentException(s);
+        %%                 }
+        %%               }).throwException (arg_expr)
+
+	let 
+          def mk_prim p = 
+	    CondExp (Un (Prim p), None) 
+
+	  def mk_new (class_name, args, opt_body) = 
+	    mk_prim (NewClsInst (ForCls (([], class_name), args, opt_body)))
+	in
         {
-	 (s,argexpr,k,l) <- termToExpressionM(tcx,t,k,l);
-	 %let expr = mkMethInvName((["System","out"],"println"),[argexpr]) in
-	 let def mkPrim p = CondExp(Un(Prim p),None) in
-	 % this constructs the following Java expression that throws an exception:
-	 % (new Object() { public void throwException(String s) {
-         %                     throw new IllegalArgumentException(s);
-         %                 }
-         %               }).throwException(argexpr)
-	 let mname = "throwException" in
-	 let varname = "msg" in
-	 let stringtype:Java.Type = (Name ([],"String"),0) in
-	 let methheader:MethHeader = ([Public],None,mname,[(false,stringtype,(varname,0))],[]) in
-	 let newException = mkPrim(NewClsInst(ForCls(([],"IllegalArgumentException"),[mkPrim(Name ([],varname))],None))) in
-	 let throwStmt = Throw(newException) in
-	 let block = [Stmt throwStmt] in
-	 let meth = (methheader,Some block) in
-	 let clsbody = {
-			handwritten = [], staticInits = [], flds = [], constrs = [],
-			meths = [meth], clss = [], interfs = []
-		       }
+         (s, arg_expr, k, l) <- termToExpressionM (tcx, arg, k, l);
+
+	 let name_of_throwing_method = "throwException"         in
+	 let var_name                = "msg"                    in
+	 let string_type : Java.Type = (Name ([], "String"), 0) in
+
+	 let throwing_method_hdr : MethHeader = ([Public], 
+						 None, 
+						 name_of_throwing_method,
+						 [(false, string_type, (var_name, 0))], 
+						 []) 
 	 in
-	 let newexpr = mkPrim(NewClsInst(ForCls(([],"Object"),[],Some clsbody))) in
-	 let expr = mkMethExprInv(newexpr,mname,[argexpr]) in
-	 return(Some(s,expr,k,l))
+	 let throwing_block   = (let new_exception = mk_new ("IllegalArgumentException",
+							     [mk_prim (Name ([], var_name))],
+							     None)
+				 in
+				   [Stmt (Throw new_exception)])
+	 in
+	 let throwing_method  = (throwing_method_hdr, Some throwing_block) in
+	 let local_class_body = {
+				 handwritten = [],
+				 staticInits = [], 
+				 flds        = [], 
+				 constrs     = [],
+				 meths       = [throwing_method], 
+				 clss        = [], 
+				 interfs     = []
+				}
+	 in
+	 let new_local_class_expr = mk_new ("Object", [], Some local_class_body) in
+	 let throwing_expr = mkMethExprInv (new_local_class_expr, name_of_throwing_method, [arg_expr]) in
+	 return (Some (s, throwing_expr, k, l))
 	}
 
       | Apply(Fun(Op(Qualified("String","writeLine"),_),_,_),t,_) -> 
