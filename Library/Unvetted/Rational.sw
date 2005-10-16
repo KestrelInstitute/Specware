@@ -15,6 +15,13 @@ Added ops & defs for denominator, numerator, toString and compare
 AC
 Adapted spec to 'the' being now built-in.
 
+2005:10:15
+AC
+Changed qualifier from Rational to RationalNumber, in order to avoid
+conflicts when (copies of) this spec are used together with the spec
+in Specware4/Provers/DP (see "NOTE" below).
+
+
 ISSUE:
 Here max : Set T -> T but Integer.max : T*T -> T for some T in
   {Integer, Rational}.  This should be made uniform one way or
@@ -27,7 +34,7 @@ There is some overlap (compare below was copied from there),
 
 *)
 
-Rational qualifying spec
+RationalNumber qualifying spec
 
   % construction:
 
@@ -112,7 +119,7 @@ Rational qualifying spec
   def <= (r1,r2) = r1 < r2 || r1 = r2
 
   op >= infixl 20 : Rational * Rational -> Boolean
-  def >= (r1,r2) = r2 >= r1
+  def >= (r1,r2) = r2 <= r1
 
   % non-negative:
 
