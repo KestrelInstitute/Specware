@@ -8,6 +8,11 @@ bitwise logical operations over sequences of the same length. It also defines
 a conversion to natural numbers in the obvious way, according to the big
 endian order.
 
+2005:10:19
+AC
+
+Added conversion from bit sequences to byte sequences.
+
 ISSUE:
 There should probably be additional conversions among nibbles, bytes, and
 words.
@@ -27,16 +32,16 @@ BitSeq qualifying spec
   op and infixl 25 : ((FSeq Bit * FSeq Bit) | equiLong) -> FSeq Bit
   def and (bs1,bs2) = map2 (and) (bs1, bs2)
 
-  op ior infixl 25 : ((FSeq Bit * FSeq Bit) | equiLong) -> FSeq Bit
+  op ior infixl 24 : ((FSeq Bit * FSeq Bit) | equiLong) -> FSeq Bit
   def ior (bs1,bs2) = map2 (ior) (bs1, bs2)
 
-  op xor infixl 25 : ((FSeq Bit * FSeq Bit) | equiLong) -> FSeq Bit
+  op xor infixl 24 : ((FSeq Bit * FSeq Bit) | equiLong) -> FSeq Bit
   def xor (bs1,bs2) = map2 (xor) (bs1, bs2)
 
   op nand infixl 25 : ((FSeq Bit * FSeq Bit) | equiLong) -> FSeq Bit
   def nand (bs1,bs2) = map2 (nand) (bs1, bs2)
 
-  op nor infixl 25 : ((FSeq Bit * FSeq Bit) | equiLong) -> FSeq Bit
+  op nor infixl 24 : ((FSeq Bit * FSeq Bit) | equiLong) -> FSeq Bit
   def nor (bs1,bs2) = map2 (nor) (bs1, bs2)
 
   % nibbles, bytes, and words (since the size of words is not very standard,
@@ -63,6 +68,12 @@ BitSeq qualifying spec
   def word64ToBytes =
     inverse (fn(byt1,byt2,byt3,byt4,byt5,byt6,byt7,byt8) ->
                 byt1 ++ byt2 ++ byt3 ++ byt4 ++ byt5 ++ byt6 ++ byt7 ++ byt8)
+
+  % convert bit sequence to byte sequence
+  % (bit sequence length must be multiple of 8):
+
+  op bitsToBytes : {bits : FSeq Bit | (length bits) rem 8 = 0} -> FSeq Byte
+  def bitsToBytes bits = the(bytes) (flatten bytes = bits)
 
   % relationship with natural numbers (big endian; for little endian, reverse):
 
