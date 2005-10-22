@@ -85,6 +85,9 @@ WadlerLindig qualifying spec
     | DocBreak String
     | DocGroup Doc
   
+  op WadlerLindig.^  infixl 25  : Doc * Doc -> Doc
+  def WadlerLindig.^ (x,y) = ppCons x y
+
   op ppCons : Doc -> Doc -> Doc
   def ppCons x y = 
     case (x,y) of
