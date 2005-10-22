@@ -23,6 +23,11 @@ IO qualifying spec {
   op readBytesFromFile     : Filename -> List Byte
   op writeBytesToFile      : List Byte * Filename -> ()
 
+  op readStringFromFile    : Filename -> String
+  % All the cons's make the following overflow the stack
+  % def readStringFromFile filename =
+  %   implode (map chr (readBytesFromFile filename))
+
   op writeStringToFile : String *  Filename -> ()
   def writeStringToFile (string, filename) =
     writeBytesToFile (map ord (explode string),
