@@ -104,6 +104,8 @@
     "Library/Base/Handwritten/Lisp/Char.lisp"
     "Library/Base/Handwritten/Lisp/System.lisp"
     "Library/Base/Handwritten/Lisp/String.lisp"
+    "Library/Unvetted/Handwritten/Lisp/Double.lisp"
+    "Library/Unvetted/Handwritten/Lisp/Complex.lisp"
     "Library/IO/Primitive/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
