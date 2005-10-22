@@ -15,7 +15,7 @@
 (defun anyToString (s) (let ((*print-pretty* nil)) (format nil "~S" s)))
 
 ;;; op print    : fa(a) a -> a
-(defun |!print| (x) (print x))
+(defun |!print| (x) (print x) (force-output))
 
 ;;; op warn     : fa(a) String -> a
 (defun |!warn| (s) (warn "~a" s))
