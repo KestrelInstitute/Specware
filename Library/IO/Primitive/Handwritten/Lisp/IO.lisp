@@ -88,7 +88,9 @@
 ;;;         (format nil "~A" (file-error-pathname condition))
 ;;;         (format nil "~A" condition)))))))
 
-(defun readStringFromFile (filename) (excl::file-contents filename))
+(defun readStringFromFile (filename)
+  #+allegro(excl::file-contents filename)
+  #-allegro nil)			; Fix!!!
 
 (defun readBytesFromFile (filename)
   (let ((eof (cons nil nil))
