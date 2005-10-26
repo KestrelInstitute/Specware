@@ -30,6 +30,7 @@ spec
    
   op specToContext : Spec -> SpecCalc.Env Context
   def specToContext spc =
+    %let _ = fail("specToContext") in
     let
       def specElemToContextElems fSeq elem = 
         case elem of
@@ -480,6 +481,7 @@ spec
   % Convert a type in MetaSlang abstract syntax to a type in the proof checker's abstract syntax.
   op Type.msToPC : Spec -> MS.Sort -> SpecCalc.Env Type
   def Type.msToPC spc typ =
+    %let _ = fail("typetopc") in
     case typ of
       | Arrow (ty1,ty2,_) -> {
            newTy1 <- msToPC spc ty1;
@@ -690,28 +692,26 @@ spec
           let
             def checkSums sums =
               case sums of
-                | [] -> true
+                | [] -> false
                 | (name, None)::rest -> checkSums rest
                 | (name, Some (TyVar (tVar,_)))::rest -> checkSums rest
                 | (name, Some (Base (otherQid,typs,_)))::rest ->
-                    if (qid = otherQid) then
-                      checkSums rest
+                    if (qid = otherQid) then true
                     else
-                      false
+                      checkSums rest
                 | (name, Some (Product (fields,_)))::rest -> 
-                    if checkFields fields then
-                      checkSums rest
+                    if checkFields fields then true
                     else
-                      false
+                      checkSums rest
+
             def checkFields fields =
               case fields of
-                | [] -> true
+                | [] -> false
                 | (name, TyVar (tVar,_))::rest -> checkFields rest
                 | (name, Base (otherQid,typs,_))::rest ->
-                    if (qid = otherQid) then
-                      checkFields rest
+                    if (qid = otherQid) then true
                     else
-                      false
+                      checkFields rest
           in
             return (checkSums pairs)
       | _ -> return false
