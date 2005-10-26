@@ -90,7 +90,16 @@
 
 (defun readStringFromFile (filename)
   #+allegro(excl::file-contents filename)
-  #-allegro nil)			; Fix!!!
+  #-allegro
+  (let ((eof (cons nil nil)))
+    (if (probe-file filename)
+	(with-open-file (s filename)
+	  (with-output-to-string (str)
+	    (do ((char (read-char s nil eof) 
+		       (read-char s nil eof)))
+		((eq char eof) str)
+	      (write-char char str))))
+      (error "Can't find file ~a" filename))))
 
 (defun readBytesFromFile (filename)
   (let ((eof (cons nil nil))
