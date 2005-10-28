@@ -2,8 +2,8 @@ SpecCalc qualifying spec
 %  import translate /Languages/SpecCalculus/Semantics/Specware by {Set._ +-> SWSet._} % for the Specware monad
   import /Provers/ProofChecker/TranslateMSToPC[/Provers/ProofChecker/Refinement]
   import /Provers/ProofGenerator/ContextProofsI
+  import /Provers/ProofDebugger/Print[/Provers/ProofChecker/Refinement]%, /Provers/ProofDebugger/ProofPrinter[/Provers/ProofChecker/Refinement]
 % import /Provers/ProofDebugger/Printer
-
  % import Prove
   import UnitId
   import /Library/IO/Primitive/IO
@@ -35,11 +35,10 @@ SpecCalc qualifying spec
       proofChecked <-
       case checkedProof of
 	% Actually ckeck that the judgement is well formed context of ctxt.
-	%| RETURN j -> {print (printJudgement(j)); (return true)}
-	%| THROW exc -> {print (printFailure(exc)); (return false)};
-	| RETURN j ->  return true
-	| THROW exc -> return false;
-      % print (printContext ctxt);
+	| RETURN j -> {SpecCalc.print (printJudgement(j)); (return true)}
+	| THROW exc -> {SpecCalc.print (printFailure(exc)); (return false)};
+      SpecCalc.print (printContext ctxt);
+      print (printProof ctxtProof);
       return (Proof {status = if proofChecked then Proved else Unproved,
 		     unit = unitId})
     }

@@ -413,6 +413,47 @@ getOptSpec returns Some spc if the given string evaluates to a spec
 \end{spec}
 
 \begin{spec}
+  op evaluateProofCheck_fromLisp : String * Option String -> Boolean
+  def evaluateProofCheck_fromLisp (path,targetFile) = 
+    let target =
+      case targetFile of
+        | None -> None
+        | Some name -> Some (name^".sw") in
+    let prog = {
+      cleanEnv;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
+      path_body <- return (removeSWsuffix path);
+      unitId <- pathToRelativeUID path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      spcInfo <- evaluateUID position unitId;
+      catch {
+        (val,_,_) <- evaluateUID position unitId;
+        case val of
+          | Spec spc -> {
+              ctxt <- specToContext spc;
+	      %fail "foo";
+              SpecCalc.print (SpecCalc.printContext ctxt);
+	      ctxtProof <- return (contextProof ctxt);
+	      %SpecCalc.print (printProof ctxtProof);
+	      checkedProof <- return (check ctxtProof);
+	      case checkedProof of
+		% Actually ckeck that the judgement is well formed context of ctxt.
+		| RETURN j -> SpecCalc.print (SpecCalc.printJudgement(j))
+		| THROW exc -> SpecCalc.print (SpecCalc.printFailure(exc));
+              return ()
+            }
+          | _ -> {
+              print "Unit is not a spec";
+              return ()
+            }
+      } (fileNameHandler unitId);
+      return true
+    } in
+    runSpecCommand (catch prog toplevelHandler)
+\end{spec}
+
+\begin{spec}
   op evaluateProofGen_fromLisp : String * Option String * Boolean -> Boolean
   def evaluateProofGen_fromLisp (path,targetFile, fromObligations?) = 
     let target =
