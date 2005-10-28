@@ -42,11 +42,6 @@ spec
   def RECUPDATE (fS,tS,fS1,tS1,fS2,tS2) (e1,e2) =
     RECUPDATER(fS,tS,fS1,tS1,fS2,tS2) @ e1 @ e2
 
-  % simple let:
-
-  op LETSIMP : Variable * Type * Expression * Expression -> Expression
-  def LETSIMP (v,t,e,e1) = FN(v,t,e1) @ e
-
   % branches of binding conditional or pattern matching:
 
   type BindingBranch = Variables * Types *  % bound variables
@@ -76,14 +71,13 @@ spec
       % and i does not decorate any variable in vS or free in eS:
       (abbr i) nin? (toSet vS \/ \\// (map exprFreeVars eS))))
 
-  (* LD defines a binding conditional to consist of one or more
-  branches. Since here we avoid subtypes in public ops, we allow a binding
-  conditional to have no branches. Therefore, we must define what expression
-  is abbreviated by a binding conditional with no branches. We arbitrarily
-  pick the description operator for booleans, which is probably unlikely to
-  occur in an real-world spec. External code that uses the proof checker
-  should not use op COND to create a binding conditional with zero
-  branches. *)
+  (* LD defines a binding conditional to consist of one or more branches.
+  Since here we avoid subtypes in public ops, we allow a binding conditional
+  to have no branches. Therefore, we must define what expression is
+  abbreviated by a binding conditional with no branches. We arbitrarily pick
+  the description operator for booleans, which is probably unlikely to occur
+  in an real-world spec. External code that uses the proof checker should not
+  use op COND to create a binding conditional with zero branches. *)
 
   op COND : Type * BindingBranches -> Expression
   def COND (t,brS) =
@@ -107,26 +101,33 @@ spec
   def CASE (t,t1,e,brS) =
     % collect all variables bound by branches:
     let allVS:Variables = foldl (++) empty (map (project 1) brS) in
-    % collect all patterns in branches:
-    let allPS:Expressions = map (project 3) brS in
-    % collect all result expressions in branches:
-    let allES:Expressions = map (project 4) brS in
-    % pick a distinct abbreviation variable x:
-    let x = minDistinctAbbrVar (allVS, allPS ++ allES) in
-    % auxiliary function that transforms a branch:
-    let def transformBranch (br:BindingBranch) : BindingBranch =
-      % turn pattern into equality with abbreviation variable x
-      % (leave bound variables, types, and result expression unchanged):
-      let (vS,tS,p,e) = br in
-      (vS, tS, VAR x == p, e) in
-    % definition of case expression:
-    LETSIMP (x, t, e, COND (t1, map transformBranch brS))
+    % expand to COND if not capture of free variables in target e:
+    if toSet allVS /\ exprFreeVars e = empty then
+      % auxiliary function that transforms a branch:
+      let def transformBranch (br:BindingBranch) : BindingBranch =
+        % turn pattern into equality with target e
+        % (leave bound variables, types, and result expression unchanged):
+        let (vS,tS,p,r) = br in
+        (vS, tS, e == p, r) in
+      COND (t1, map transformBranch brS)
+    % expand to nested CASE's if free variables in e would be captured:
+    else (* toSet allVS /\ exprFreeVars e ~= empty *)
+      % pick a distinct abbreviation variable x:
+      let x = minDistinctAbbrVar (allVS, single e) in
+      % nested CASE's:
+      CASE (t, t1, e,
+            single (single x, single t, VAR x, CASE (t, t1, VAR x, brS)))
 
   % non-recursive let:
 
   op LET : Type * Type * Variables * Types *
            Expression * Expression * Expression -> Expression
   def LET (t,t1,vS,tS,p,e,e1) = CASE (t, t1, e, single (vS, tS, p, e1))
+
+  % simple let:
+
+  op LETSIMP : Type * Variable * Type * Expression * Expression -> Expression
+  def LETSIMP (t1,v,t,e,e1) = LET (t, t1, single v, single t, VAR v, e, e1)
 
   % recursive let:
 

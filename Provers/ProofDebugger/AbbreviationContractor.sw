@@ -184,8 +184,6 @@ spec
       embed RECUPDATE
         (fS,  map contrType tS, fS1, map contrType tS1, fS2, map contrType tS2,
          contrExpr e1, contrExpr e2)
-    | LETSIMP(v,t,e,e1)      -> embed LETSIMP (v, contrType t,
-                                               contrExpr e, contrExpr e1)
     | COND(t,brS)            -> embed COND (contrType t,
                                             map (contractBranch contr) brS)
     | CASE(t,t1,e,brS)       -> embed CASE (contrType t,
@@ -195,6 +193,8 @@ spec
     | LET(t,t1,vS,tS,p,e,e1) -> embed LET (contrType t, contrType t1, vS,
                                            map contrType tS, contrExpr p,
                                            contrExpr e, contrExpr e1)
+    | LETSIMP(t1,v,t,e,e1)   -> embed LETSIMP (t1, v, contrType t,
+                                               contrExpr e, contrExpr e1)
     | LETDEF(t,vS,tS,eS,e)   -> embed LETDEF (contrType t, vS, map contrType tS,
                                               map contrExpr eS, contrExpr e)
     | CHOOSE(t,q,t1)         -> embed CHOOSE (contrType t, contrExpr q,
@@ -489,11 +489,6 @@ spec
       embed RECUPDATE (fS, tS, fS1, tS1, fS2, tS2, e1, e2)
     | e -> e
 
-  op contractSimpleLet : Contraction
-  def contractSimpleLet = fn
-    | APPLY (FN (v, t, e1), e) -> embed LETSIMP (v, t, e, e1)
-    | e -> e
-
   op contractBindingConditional : Contraction
   def contractBindingConditional e =
     (* Any expression can be reduced to an EXX expression. This is witnessed
@@ -547,8 +542,8 @@ spec
           | Some (t, vS, tS, b, e0) -> embed COND (t, single (vS, tS, b, e0))
           | None -> e)
 
-  op contractCase : Contraction
-  def contractCase e =
+  op contractCaseFromCond : Contraction
+  def contractCaseFromCond e =
     (* The following function performs the inverse transformation on binding
     branches of the transformation operated in the definition of the CASE
     abbreviation in the proof checker. We define it on sequences of binding
@@ -556,27 +551,53 @@ spec
     transformation may fail (if the binding branch does not have the expected
     form); failure is modeled via Option. *)
     let def transformBranches
-            (outBrS: ExtBindingBranches,   % accumulator
-             inBrS : ExtBindingBranches)   % branches to transform
-            : Option ExtBindingBranches =  % transformed branches
-      if empty? inBrS then Some outBrS
+            (outBrS: ExtBindingBranches,  % accumulator
+             inBrS : ExtBindingBranches,  % branches to transform
+             eS    : ExtExpressions)      % target expressions found in branches
+            : Option (ExtBindingBranches  % transformed branches
+                    * ExtExpressions) =   % target expressions found in branches
+      if empty? inBrS then Some (outBrS, eS)
       else
         case first inBrS of
-          | (vS, tS, EQ (VAR (abbr _), p), e) ->
-            transformBranches (outBrS <| (vS, tS, p, e), ltail inBrS)
-            (* We do not check the exact value of i, which will always be
-            correct if we contract expressions obtained by expanding
-            user-provided expressions that do not contain abbr variables. *)
+          | (vS, tS, EQ (e, p), r) ->
+            transformBranches (outBrS <| (vS, tS, p, e), ltail inBrS, eS <| e)
           | _ -> None
     in
     case e of
-      | LETSIMP (abbr _, t, e, COND (t1, brS)) ->
-        (* We do not check the exact value of i, which will always be correct
-        if we contract expressions obtained by expanding user-provided
-        expressions that do not contain abbr variables. *)
-        (case transformBranches (empty, brS) of
-          | Some brS -> embed CASE (t, t1, e, brS)
+      | COND (t1, brS) ->
+        (case transformBranches (empty, brS, empty) of
+          | Some (brS, eS) ->
+            if allEqualElements? eS && nonEmpty? eS then
+              (* Note that we cannot determine the first type t for CASE from
+              the expansion to COND (it can only be determined from the
+              expansion to nested CASES's, cf. LD). We arbitrarily pick type
+              BOOL, assuming that the type will not be printed anyhow. *)
+              embed CASE (BOOL, t1, first eS (* = any element of eS *), brS)
+            else e
           | None -> e)
+      | e -> e
+
+  op contractCaseFromNestedCases : Contraction
+  def contractCaseFromNestedCases e =
+    case e of
+      | CASE (BOOL, t1, e, brS) ->
+              % previous op assigns BOOL as target type to CASE
+        if single? brS then
+          let (vS, tS, p, r) = theElement brS in
+          if single? vS && single? tS then
+            let v = theElement vS in
+            let t = theElement tS in
+            case (v, p, r) of
+              | (abbr _, VAR (abbr _),  % we do not check the indices of abbr
+                 CASE (BOOL, mustBe_t1, VAR (abbr _), mustBe_brS)) ->
+                       % previous op assigns BOOL as target type to CASE
+                if mustBe_t1 = t1 && mustBe_brS = brS then
+                  embed CASE (t, t1, e, brS)
+                              % we restore the correct target type t
+                else e
+              | _ -> e
+          else e
+        else e
       | e -> e
 
   op contractNonRecursiveLet : Contraction
@@ -585,6 +606,15 @@ spec
       if single? brS then
         let (vS, tS, p, e1) = theElement brS in
         embed LET (t, t1, vS, tS, p, e0, e1)
+      else e
+    | e -> e
+
+  op contractSimpleLet : Contraction
+  def contractSimpleLet = fn
+    | LET (t, t1, vS, mustBe_single_t, mustBe_VAR_v, e, e1) ->
+      if single? vS && mustBe_VAR_v = VAR (theElement vS) &&
+         mustBe_single_t = single t then
+        embed LETSIMP (t1, theElement vS, t, e, e1)
       else e
     | e -> e
 
@@ -662,10 +692,11 @@ spec
     (contractType contractEmbeddingTest
     (contractType contractChooser
     (contractType contractRecursiveLet
-    (contractType contractNonRecursiveLet
-    (contractType contractCase
-    (contractType contractBindingConditional
     (contractType contractSimpleLet
+    (contractType contractNonRecursiveLet
+    (contractType contractCaseFromNestedCases
+    (contractType contractCaseFromCond
+    (contractType contractBindingConditional
     (contractType contractRecordUpdate
     (contractType contractRecordUpdater
     (contractType contractTuple
@@ -691,7 +722,7 @@ spec
     (contractType contractNot
     (contractType contractFalse
     (contractType contractTrue
-    (embedExtType t)))))))))))))))))))))))))))))))))
+    (embedExtType t))))))))))))))))))))))))))))))))))
 
   % API public
   op contractExprAll : Expression -> ExtExpression
@@ -699,10 +730,11 @@ spec
     (contractExpr contractEmbeddingTest
     (contractExpr contractChooser
     (contractExpr contractRecursiveLet
-    (contractExpr contractNonRecursiveLet
-    (contractExpr contractCase
-    (contractExpr contractBindingConditional
     (contractExpr contractSimpleLet
+    (contractExpr contractNonRecursiveLet
+    (contractExpr contractCaseFromNestedCases
+    (contractExpr contractCaseFromCond
+    (contractExpr contractBindingConditional
     (contractExpr contractRecordUpdate
     (contractExpr contractRecordUpdater
     (contractExpr contractTuple
@@ -728,6 +760,6 @@ spec
     (contractExpr contractNot
     (contractExpr contractFalse
     (contractExpr contractTrue
-    (embedExtExpr t)))))))))))))))))))))))))))))))))
+    (embedExtExpr t))))))))))))))))))))))))))))))))))
 
 endspec

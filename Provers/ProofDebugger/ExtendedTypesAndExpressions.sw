@@ -88,11 +88,11 @@ spec
     | RECUPDATER Fields * ExtTypes * Fields * ExtTypes * Fields * ExtTypes
     | RECUPDATE  Fields * ExtTypes * Fields * ExtTypes * Fields * ExtTypes *
                  ExtExpression * ExtExpression
-    | LETSIMP    Variable * ExtType * ExtExpression * ExtExpression
     | COND       ExtType * ExtBindingBranches
     | CASE       ExtType * ExtType * ExtExpression * ExtBindingBranches
     | LET        ExtType * ExtType * Variables * ExtTypes *
                  ExtExpression * ExtExpression * ExtExpression
+    | LETSIMP    ExtType * Variable * ExtType * ExtExpression * ExtExpression
     | LETDEF     ExtType * Variables * ExtTypes * ExtExpressions * ExtExpression
     | CHOOSE     ExtType * ExtExpression * ExtType
     | EMBED?     Constructors * ExtTypes * Constructor
@@ -183,10 +183,10 @@ spec
       && predE (embed TUPLE (tS, eS))
       && predE (embed RECUPDATER (fS, tS, fS1, tS1, fS2, tS2))
       && predE (embed RECUPDATE (fS, tS, fS1, tS1, fS2, tS2, e1, e2))
-      && predE (embed LETSIMP (v, t, e, e1))
       && predE (embed COND (t, brS))
       && predE (embed CASE (t, t1, e, brS))
       && predE (embed LET (t, t1, vS, tS, p, e, e1))
+      && predE (embed LETSIMP (t1, v, t, e, e1))
       && predE (embed LETDEF (t, vS, tS, eS, e))
       && predE (embed CHOOSE (t, e, t1))
       && predE (embed EMBED? (cS, tS, c)))

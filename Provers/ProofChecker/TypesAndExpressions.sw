@@ -13,10 +13,10 @@ spec
 
   LD postulates "gamma", "psi", and "phi" names, used as bound variables in
   the expressions that define abbreviations. The "gamma" names may be primed,
-  indexed by positive natural numbers, and indexed by (sequences of) variables
-  and expressions. This variety is motivated by clarity of exposition in LD,
-  but here it is sufficient to introduce variable names for abbreviations that
-  are indexed by integers (again, we avoid naturals or positive naturals). *)
+  indexed by positive natural numbers, and indexed by variables and
+  expressions. This variety is motivated by clarity of exposition in LD, but
+  here it is sufficient to introduce variable names for abbreviations that are
+  indexed by integers (again, we avoid naturals or positive naturals). *)
 
   type Field =
     | user UserField

@@ -36,9 +36,6 @@ spec
   def RECUPDATE (fS,tS,fS1,tS1,fS2,tS2) (e1,e2) =
     RECUPDATER(fS,tS,fS1,tS1,fS2,tS2) @ e1 @ e2
 
-  op LETSIMP : Variable * Type * Expression * Expression -> Expression
-  def LETSIMP (v,t,e,e1) = FN(v,t,e1) @ e
-
   type BindingBranch = Variables * Types *
                        Expression *
                        Expression
@@ -96,17 +93,22 @@ spec
   op CASE : Type * Type * Expression * BindingBranches -> Expression
   def CASE (t,t1,e,brS) =
     let allVS:Variables = foldl (++) empty (map (project 1) brS) in
-    let allPS:Expressions = map (project 3) brS in
-    let allES:Expressions = map (project 4) brS in
-    let x = minDistinctAbbrVar (allVS, allPS ++ allES) in
-    let def transformBranch (br:BindingBranch) : BindingBranch =
-      let (vS,tS,p,e) = br in
-      (vS, tS, VAR x == p, e) in
-    LETSIMP (x, t, e, COND (t1, map transformBranch brS))
+    if toSet allVS /\ exprFreeVars e = empty then
+      let def transformBranch (br:BindingBranch) : BindingBranch =
+        let (vS,tS,p,r) = br in
+        (vS, tS, e == p, r) in
+      COND (t1, map transformBranch brS)
+    else
+      let x = minDistinctAbbrVar (allVS, single e) in
+      CASE (t, t1, e,
+            single (single x, single t, VAR x, CASE (t, t1, VAR x, brS)))
 
   op LET : Type * Type * Variables * Types *
            Expression * Expression * Expression -> Expression
   def LET (t,t1,vS,tS,p,e,e1) = CASE (t, t1, e, single (vS, tS, p, e1))
+
+  op LETSIMP : Type * Variable * Type * Expression * Expression -> Expression
+  def LETSIMP (t1,v,t,e,e1) = LET (t, t1, single v, single t, VAR v, e, e1)
 
   op LETDEF : Type * Variables * Types * Expressions * Expression -> Expression
   def LETDEF (t,vS,tS,eS,e) =
