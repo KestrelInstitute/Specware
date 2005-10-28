@@ -614,6 +614,9 @@ spec
 	| (_, Pi _) ->
 	  unify (env, srt1, sortInnerSort srt2, pairs, ignoreSubsorts?)
 
+	| (Any _, _) -> Unify pairs
+	| (_, Any _) -> Unify pairs
+
 	| _ ->
 	  if ignoreSubsorts? then
 	    case (srt1, srt2) of
@@ -706,6 +709,7 @@ spec
 				    | MetaTyVar (mtv1, _) -> mtv = mtv1 
 				    | t -> occurs (mtv, t))
      | And       (srts,    _) -> exists (fn s -> occurs (mtv, s)) srts
+     | Any                  _ -> false
 
  def occursT (mtv, pred) =
    case pred of
