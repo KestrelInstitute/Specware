@@ -258,8 +258,9 @@
      (format (if *windows-system-p*
 ;;
 ;; Paulo's "magic number": #x7d200000
-;;		 "(build-lisp-image %S :c-heap-start  #x7d200000 :oldspace #x100)"
-		 "(build-lisp-image %S :c-heap-start  #x7c623000 :oldspace #x100)"
+		 "(build-lisp-image %S :c-heap-start  #x7d200000 :oldspace #x100)"
+;;		 "(build-lisp-image %S :c-heap-start  #x7c623000 :oldspace #x100)"
+;;       	 "(build-lisp-image %S :c-heap-start  #x7e000000 :oldspace #x100)"
 	       "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)")
 	     base-world-name))
     (sit-for 4)
