@@ -9,12 +9,12 @@
 ;; Used in printing out the license and about-specware command
 (defvar cl-user::Accord-version "4.1")
 (defvar cl-user::Accord-version-name "Accord-4-1")
-(defvar cl-user::Accord-patch-level "3")
+(defvar cl-user::Accord-patch-level "4")
 (defvar cl-user::Accord-name "Accord")	; Name of directory and startup files
 
 (defvar cl-user::Specware-version "4.1")
 (defvar cl-user::Specware-version-name "Specware-4-1")
-(defvar cl-user::Specware-patch-level "3")
+(defvar cl-user::Specware-patch-level "4")
 
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-1")
