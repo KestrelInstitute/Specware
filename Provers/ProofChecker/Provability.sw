@@ -55,6 +55,7 @@ spec
     | exAbs
     | exEq
     | exIf
+    | exIf0
     | exThe
     | exProj
     | exEmbed
@@ -436,6 +437,12 @@ spec
          pj (wellTypedExpr (cx, e0, BOOL))
       && pj (wellTypedExpr (cx <| axioM (an1, empty,    e0), e1, t))
       && pj (wellTypedExpr (cx <| axioM (an2, empty, ~~ e0), e2, t))
+      => pj (wellTypedExpr (cx, IF (e0, e1, e2), t)))
+    | exIf0 ->
+      (fa (cx:Context, e0:Expression, e1:Expression, e2:Expression, t:Type)
+         pj (wellTypedExpr (cx, e0, BOOL))
+      && pj (wellTypedExpr (cx, e1, t))
+      && pj (wellTypedExpr (cx, e2, t))
       => pj (wellTypedExpr (cx, IF (e0, e1, e2), t)))
     | exThe ->
       (fa (cx:Context, t:Type)

@@ -642,6 +642,14 @@ spec
     check prf >> (fn wellTypedExpr (cx, e, t) -> OK (cx, e, t)
                    | jdg -> FAIL (notWTExpr jdg))
 
+  (* Like previous op but also check that the context coincides with the
+  argument, returning only the expression and type. *)
+  op checkWTExprWithContext : Context -> Proof -> M (Expression * Type)
+  def checkWTExprWithContext cx prf =
+    checkWTExpr prf >> (fn (mustBe_cx, t, e) ->
+    checkSameContext mustBe_cx cx >> (fn _ ->
+    OK (t, e)))
+
   (* Like previous op but also check that the type coincides with the
   argument, returning only the context and expression. *)
   op checkWTExprWithType : Type -> Proof -> M (Context * Expression)
@@ -1219,6 +1227,11 @@ spec
       checkWTProposition prf0 >> (fn (cx, e0) ->
       checkWTIfThenBranch cx e0 prf1 >> (fn (e1, t) ->
       checkWTIfElseBranch cx e0 t prf2 >> (fn e2 ->
+      OK (wellTypedExpr (cx, IF (e0, e1, e2), t)))))
+    | exIf0 (prf0, prf1, prf2) ->
+      checkWTProposition prf0 >> (fn (cx, e0) ->
+      checkWTExprWithContext cx prf1 >> (fn (e1, t) ->
+      checkWTExprWithContextAndType cx t prf2 >> (fn e2 ->
       OK (wellTypedExpr (cx, IF (e0, e1, e2), t)))))
     | exThe prf ->
       checkWFType prf >> (fn (cx, t) ->

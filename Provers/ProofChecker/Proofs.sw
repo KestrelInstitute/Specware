@@ -83,6 +83,7 @@ spec
     | exAbs      Proof
     | exEq       Proof * Proof
     | exIf       Proof * Proof * Proof
+    | exIf0      Proof * Proof * Proof
     | exThe      Proof
     | exProj     Proof * Field
     | exEmbed    Proof * Constructor
@@ -198,6 +199,7 @@ spec
       && pred (exAbs prf)
       && pred (exEq (prf1, prf2))
       && pred (exIf (prf1, prf2, prf3))
+      && pred (exIf0 (prf1, prf2, prf3))
       && pred (exThe prf)
       && pred (exProj (prf, f))
       && pred (exEmbed (prf, c))
@@ -310,6 +312,9 @@ spec
     | exEq         (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
     | exIf         (prf1, prf2, prf3)       -> closedProof? prf1
+                                            && closedProof? prf2
+                                            && closedProof? prf3
+    | exIf0        (prf1, prf2, prf3)       -> closedProof? prf1
                                             && closedProof? prf2
                                             && closedProof? prf3
     | exThe        prf                      -> closedProof? prf
