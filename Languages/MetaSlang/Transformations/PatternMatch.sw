@@ -670,6 +670,7 @@ def eliminateSort context srt =
        | TyVar _ -> srt
        | And (srts,     a) -> And (map (eliminateSort context) srts, a)
        | Pi  (tvs, srt, a) -> Pi  (tvs, eliminateSort context srt, a)
+       | Any _ -> srt
 
 (*
  * Generate the default catch all case
