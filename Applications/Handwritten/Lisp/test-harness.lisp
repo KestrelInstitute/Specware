@@ -404,9 +404,6 @@ be the option to run each (test ...) form in a fresh image.
 	     (and (consp x)
 		  (eq (car x) :alternatives)))
 
-	   (lines-match? (x y)
-	     (equalp x y))
-
 	   (extend-match (wanted saw)
 	     (cond ((null wanted)
 		    (values wanted saw))
@@ -458,5 +455,28 @@ be the option to run each (test ...) form in a fresh image.
 		    (reverse s-middle)
 		    partial-match-at-end?))))))))
 
+
+(defun lines-match? (x y)
+  ;; x is the pattern: ? matches any char in y, * matches any sequence in y
+  (labels ((matches? (x y)
+             (do ((x x (cdr x))
+		  (y y (cdr y)))
+		 ((or (null x) (null y))
+		  (and (null y) (or (null x) (equal x '(#\*)))))
+	       (unless (eq (car x) (car y))
+		 (case (car x)
+		   (#\? 
+		    (return 
+		     (matches? (cdr x) (cdr y))))
+		   (#\*
+		    (return 
+		     (or (matches? (cdr x) (cdr y)) ; matches 1 char
+			 (matches? (cdr x) y)       ; matches 0 chars
+			 (matches? x (cdr y)))))      ; matches multiple chars
+		   (t
+		    (return nil)))))))
+    (or (equalp x y)
+	(matches? (coerce x 'list)
+		  (coerce y 'list)))))
 
     
