@@ -284,7 +284,7 @@ spec
     | e -> e
 
   op contractNonEquality : Contraction
-  def contractNonEnequality = fn
+  def contractNonEquality = fn
     | NEG (EQ (e1, e2)) -> NEQ (e1, e2)
     | e -> e
 
