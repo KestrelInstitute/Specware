@@ -28,7 +28,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "    Expanded spec file: $TESTDIR/Snark/Change/ShouldBeProvable.sw"
 	    "    Snark Log file: $TESTDIR/Snark/Change/ShouldBeProvable.log"
-	    "ShouldBeProvable: Conjecture change is Proved! using Snark."
+	    "ShouldBeProvable: Conjecture change is Proved! using Snark*."
 	    ""
 	    ""
 	    ""))

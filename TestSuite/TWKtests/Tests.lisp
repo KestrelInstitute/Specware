@@ -61,7 +61,7 @@
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/Switch/p1.sw")
 	    "    Snark Log file: $TESTDIR/Snark/Switch/p1.log"
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
-	    "p1: Conjecture doubleswitchidentity in aspec is Proved! using Snark."
+	    "p1: Conjecture doubleswitchidentity in aspec is Proved! using Snark*."
 	    ""))
 
  ("twk_message 6/18/04"
@@ -79,7 +79,7 @@
 	    (:optional ";;   create.")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/ThreeValue/ThreeP.sw")
 	    "    Snark Log file: $TESTDIR/Snark/ThreeValue/ThreeP.log"
-	    "ThreeP: Theorem threedifferent in ThreeValuesDef is Proved! using Snark."
+	    "ThreeP: Theorem threedifferent in ThreeValuesDef is Proved! using Snark*."
 	    ""))
 
  ("twk_message 8/2/04"
@@ -94,7 +94,7 @@
 	    (:optional ";; Directory $TESTDIR/Snark/MathFact/ does not exist, will create.")
 	    "    Expanded spec file: $TESTDIR/Snark/MathFact/sum_spec_p1.sw"
 	    "    Snark Log file: $TESTDIR/Snark/MathFact/sum_spec_p1.log"
-	    "sum_spec_p1: Conjecture sum_zero in sum_spec_obs is Proved! using Snark."
+	    "sum_spec_p1: Conjecture sum_zero in sum_spec_obs is Proved! using Snark*."
 	    ""))
       
  ("twk_message 8/13/04"
@@ -106,11 +106,11 @@
 	    (:optional ";; Directory $TESTDIR/Snark/Tuples/ does not exist, will create.")
 	    "    Expanded spec file: $TESTDIR/Snark/Tuples/P1.sw"
 	    "    Snark Log file: $TESTDIR/Snark/Tuples/P1.log"
-	    "P1: Conjecture twoMakesMakeAMatch1 in O1 is Proved! using Snark."
+	    "P1: Conjecture twoMakesMakeAMatch1 in O1 is Proved! using Snark*."
 	    ";;; Elaborating proof-term at $TESTDIR/Tuples#P2"
 	    "    Expanded spec file: $TESTDIR/Snark/Tuples/P2.sw"
 	    "    Snark Log file: $TESTDIR/Snark/Tuples/P2.log"
-	    "P2: Conjecture twoMakesMakeAMatch2 in O1 is Proved! using simple inequality reasoning."
+	    "P2: Conjecture twoMakesMakeAMatch2 in O1 is Proved! using simple inequality reasoning*."
 	    ""))
 
  ("twk_message 9/8/05 a"

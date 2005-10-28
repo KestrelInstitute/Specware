@@ -16,5 +16,5 @@
 		   ";;   create."))
 		 "    Expanded spec file: $TESTDIR/Snark/orderOblig/P.sw"
 		 "    Snark Log file: $TESTDIR/Snark/orderOblig/P.log"
-		 "P: Conjecture d_Obligation in O is NOT proved using Snark."
+		 "P: Conjecture d_Obligation in O is NOT proved using Snark*."
 		 "")))

@@ -50,7 +50,7 @@
  	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1.log"
-	    "p1: Conjecture symb_matches?_Obligation in MatchingObligations#SymbolMatching_Oblig is Proved! using Snark."
+	    "p1: Conjecture symb_matches?_Obligation in MatchingObligations#SymbolMatching_Oblig is Proved! using Snark*."
 	    ""))
 
  ("Tutorial: MatchingProofs p2" 
@@ -59,7 +59,7 @@
 	    ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p2"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2.log"
-	    "p2: Conjecture word_matches_at?_Obligation in MatchingObligations#WordMatching_Oblig is Proved! using simple inequality reasoning."
+	    "p2: Conjecture word_matches_at?_Obligation in MatchingObligations#WordMatching_Oblig is Proved! using simple inequality reasoning*."
 	    ""))
 
  ("Tutorial: MatchingProofs p3" 
@@ -67,7 +67,7 @@
   :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p3"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3.log"
-	    "p3: Conjecture word_matches_at?_Obligation0 in MatchingObligations#WordMatching_Oblig is Proved! using simple inequality reasoning."
+	    "p3: Conjecture word_matches_at?_Obligation0 in MatchingObligations#WordMatching_Oblig is Proved! using simple inequality reasoning*."
 	    ""))
       
  ("Tutorial: MatchingProofs p5"
@@ -76,7 +76,7 @@
 	    ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5.log"
-	    "p5: Conjecture word_matches_at?_Obligation in MatchingObligations#WordMatching0_Oblig is Proved! using simple inequality reasoning."
+	    "p5: Conjecture word_matches_at?_Obligation in MatchingObligations#WordMatching0_Oblig is Proved! using simple inequality reasoning*."
 	    ""))
 
  ("Tutorial: MatchingProofs p6" 
@@ -84,7 +84,7 @@
   :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p6"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p6.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p6.log"
-	    "p6: Conjecture word_matches_at?_Obligation0 in MatchingObligations#WordMatching0_Oblig is Proved! using simple inequality reasoning."
+	    "p6: Conjecture word_matches_at?_Obligation0 in MatchingObligations#WordMatching0_Oblig is Proved! using simple inequality reasoning*."
 	    ""))
 
  ("Tutorial: MatchingProofs p7" 
@@ -92,7 +92,7 @@
   :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p7"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p7.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p7.log"
-	    "p7: Conjecture word_matches_at?_Obligation1 in MatchingObligations#WordMatching0_Oblig is NOT proved using Snark."
+	    "p7: Conjecture word_matches_at?_Obligation1 in MatchingObligations#WordMatching0_Oblig is NOT proved using Snark*."
 	    ""))
 
  ("Tutorial: MatchingProofs p8" 
@@ -100,7 +100,7 @@
   :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p8"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p8.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p8.log"
-	    "p8: Conjecture word_matches_aux?_Obligation in MatchingObligations#WordMatching0_Oblig is NOT proved using Snark."
+	    "p8: Conjecture word_matches_aux?_Obligation in MatchingObligations#WordMatching0_Oblig is NOT proved using Snark*."
 	    ""))
 
  ("Tutorial: MatchingProofs p9" 
@@ -108,7 +108,7 @@
   :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p9"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p9.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p9.log"
-	    "p9: Conjecture word_matches_aux?_Obligation0 in MatchingObligations#WordMatching0_Oblig is NOT Proved using Snark."
+	    "p9: Conjecture word_matches_aux?_Obligation0 in MatchingObligations#WordMatching0_Oblig is NOT Proved using Snark*."
 	    ""))
 
  ("Tutorial: MatchingProofs p10"
@@ -116,7 +116,7 @@
   :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p10"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p10.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p10.log"
-	    "p10: Conjecture word_matches_aux?_Obligation1 in MatchingObligations#WordMatching0_Oblig is Proved! using Snark."
+	    "p10: Conjecture word_matches_aux?_Obligation1 in MatchingObligations#WordMatching0_Oblig is Proved! using Snark*."
 	    ""))
 
  ("Tutorial: MatchingProofs p12"
@@ -125,7 +125,7 @@
 	    ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p12"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p12.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p12.log"
-	    "p12: Conjecture find_matches_Obligation in MatchingObligations#FindMatches0_Oblig is Proved! using Snark."
+	    "p12: Conjecture find_matches_Obligation in MatchingObligations#FindMatches0_Oblig is Proved! using Snark*."
 	    ""))
 
  ("Tutorial: MatchingProofs p13"
@@ -133,7 +133,7 @@
   :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p13"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p13.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p13.log"
-	    "p13: Conjecture find_matches_aux_Obligation in MatchingObligations#FindMatches0_Oblig is Proved! using simple inequality reasoning."
+	    "p13: Conjecture find_matches_aux_Obligation in MatchingObligations#FindMatches0_Oblig is Proved! using simple inequality reasoning*."
 	    ""))
 
  ("Tutorial: MatchingProofs p14"
@@ -141,7 +141,7 @@
   :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p14"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p14.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p14.log"
-	    "p14: Conjecture find_matches_aux_Obligation0 in MatchingObligations#FindMatches0_Oblig is NOT Proved using Snark."
+	    "p14: Conjecture find_matches_aux_Obligation0 in MatchingObligations#FindMatches0_Oblig is NOT Proved using Snark*."
 	    ""))
       
  ("Tutorial: MatchingProofs p15"
@@ -151,7 +151,7 @@
 	    ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p15"
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p15.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p15.log"
-	    "p15: Conjecture match_finding in MatchingObligations#FindMatches_Ref0_Oblig is NOT Proved using Snark."
+	    "p15: Conjecture match_finding in MatchingObligations#FindMatches_Ref0_Oblig is NOT Proved using Snark*."
 	    ""))
       	    
  ("Tutorial: swl find-matches" 

@@ -27,7 +27,7 @@
 	    (:optional ";; Directory $TESTDIR/Snark/PosNat/ does not exist, will create.")
 	    "    Expanded spec file: $TESTDIR/Snark/PosNat/p.sw"
 	    "    Snark Log file: $TESTDIR/Snark/PosNat/p.log"
-	    "p: Conjecture c in s is NOT proved using Snark."
+	    "p: Conjecture c in s is NOT proved using Snark*."
 	    ""))
 
  )
