@@ -441,7 +441,7 @@ TypeChecker qualifying spec
 
  def checkOp (info, env) =
    let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-   let new_decls_and_defs  = map (fn tm -> checkOpDef  (tm, info, env)) 
+   let new_decls_and_defs  = map (fn tm -> checkOpDef  (tm, info, env))
                                  (old_decls ++ old_defs)
    in
    let new_dfn = maybeAndTerm (new_decls_and_defs, termAnn info.dfn) in
@@ -469,8 +469,6 @@ TypeChecker qualifying spec
    in
      maybePiTerm (new_tvs, SortedTerm (elaborated_tm, srt, pos))
 
- def complainAboutImplcitPolymorphicOps? = true
-
  def collectUsedTyVars (srt, info, dfn, env) =
    let tv_cell = Ref [] : Ref TyVars in
    let 
@@ -493,14 +491,9 @@ TypeChecker qualifying spec
 	    case link of
 	      | Some s -> scan s
 	      | None -> 
- 	        %% Specware reports an error here.
-	        %% Accord doesn't, so can go on to interpret "x.y' as "y(x)" in some cases
-	        if complainAboutImplcitPolymorphicOps? then
-		  error (env, 
-			 "Incomplete type for op " ^ (printQualifiedId (primaryOpName info)) ^ ":\n" ^(printSort srt), 
-			 termAnn dfn)
-		else 
-		  ())
+	        error (env, 
+		       "Incomplete type for op " ^ (printQualifiedId (primaryOpName info)) ^ ":\n" ^(printSort srt), 
+		       termAnn dfn))
 	 | And (srts, _) -> app scan srts
 	 | Any _ -> ()
 
