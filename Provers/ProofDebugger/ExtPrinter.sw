@@ -232,8 +232,8 @@ spec
   def printRECUPDATEExpression(fs1, ts1, fs2, s2, fs3, ts3, e1, e2) =
     "RECUPDATE"
 
-  op printLETSIMPExpression: Variable * ExtType * ExtExpression * ExtExpression -> String
-  def printLETSIMPExpression(v, t, e1, e2) =
+  op printLETSIMPExpression: ExtType * Variable * ExtType * ExtExpression * ExtExpression -> String
+  def printLETSIMPExpression(t1, v, t2, e1, e2) =
     "LETSIMP"
 
   op printCONDExpression: ExtType * ExtBindingBranches -> String
@@ -306,7 +306,7 @@ spec
     | TUPLE(ts, es) -> printTUPLEExpression(ts, es)
     | RECUPDATER(fs, ts, fs1, ts1, fs2, ts2) -> printRECUPDATERExpression(fs, ts, fs1, ts1, fs2, ts2)
     | RECUPDATE(fs, ts, fs1, ts1, fs2, ts2, e1, e2) -> printRECUPDATEExpression(fs, ts, fs1, ts1, fs2, ts2, e1, e2)
-    | LETSIMP(v, t, e1, e2) -> printLETSIMPExpression(v, t, e1, e2)
+    | LETSIMP(t1, v, t2, e1, e2) -> printLETSIMPExpression(t1, v, t2, e1, e2)
     | COND(t, bbs) -> printCONDExpression(t, bbs)
     | CASE(t1, t2, e, bbs) -> printCASEExpression(t1, t2, e, bbs)
     | LET(t1, t2, vs, ts, e1, e2, e3) -> printLETExpression(t1, t2, vs, ts, e1, e2, e3)
