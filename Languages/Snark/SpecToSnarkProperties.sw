@@ -527,7 +527,8 @@ snark qualifying spec
   op snarkAnswer: Context * Spec * Property * Vars -> LispCell
 
   def snarkAnswer(context, spc, prop as (ptype, pname as Qualified(qname, name), tyvars, fmla), ansVars) =
-    let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, ansVars, fmla) in
+    %% ansVars don't have to be global in newer versions of SNARK
+    let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], fmla) in
     let snarkAnsVars = map (fn (v) -> snarkVar(v)) ansVars in
     let snarkAnsTerm = Lisp.list ([Lisp.symbol("SNARK","ANS")] ++ snarkAnsVars) in
       Lisp.list [snark_prove, Lisp.quote(snarkFmla),
