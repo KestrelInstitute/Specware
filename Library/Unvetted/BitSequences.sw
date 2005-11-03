@@ -91,7 +91,7 @@ BitSeq qualifying spec
   op fromNat : {(n,len) : Nat * Nat | n < 2 ** len} -> FSeq Bit
   def fromNat (n,len) = the(bs) length bs = len && toNat bs = n
 
-  op toNibble : {n:Nat | n < 2 ** 4} -> FSeq Bit
+  op toNibble : {n:Nat | n < 2 ** 4} -> Nibble
   def toNibble n = fromNat (n, 4)
 
   op toByte : {n:Nat | n < 2 ** 8} -> Byte
