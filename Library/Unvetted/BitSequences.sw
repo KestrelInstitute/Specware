@@ -13,6 +13,12 @@ AC
 
 Added conversion from bit sequences to byte sequences.
 
+2005:11:02
+AC
+
+Added conversions from natural numbers to bit sequences.
+
+
 ISSUE:
 There should probably be additional conversions among nibbles, bytes, and
 words.
@@ -22,7 +28,7 @@ words.
 
 BitSeq qualifying spec
 
-  import Bits, /Library/General/FiniteSequences
+  import Bits, IntegerExt, /Library/General/FiniteSequences
 
   % bitwise logical operations:
 
@@ -81,5 +87,23 @@ BitSeq qualifying spec
   def toNat bs =
     if bs = empty then 0
     else toNat (ltail bs) * 2 + last bs
+
+  op fromNat : {(n,len) : Nat * Nat | n < 2 ** len} -> FSeq Bit
+  def fromNat (n,len) = the(bs) length bs = len && toNat bs = n
+
+  op toNibble : {n:Nat | n < 2 ** 4} -> FSeq Bit
+  def toNibble n = fromNat (n, 4)
+
+  op toByte : {n:Nat | n < 2 ** 8} -> Byte
+  def toByte n = fromNat (n, 8)
+
+  op toWord16 : {n:Nat | n < 2 ** 16} -> Byte
+  def toWord16 n = fromNat (n, 16)
+
+  op toWord32 : {n:Nat | n < 2 ** 32} -> Byte
+  def toWord32 n = fromNat (n, 32)
+
+  op toWord64 : {n:Nat | n < 2 ** 64} -> Byte
+  def toWord64 n = fromNat (n, 64)
 
 endspec

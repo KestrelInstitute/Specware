@@ -14,7 +14,7 @@ TwosComplement qualifying spec
   integer). We consider the bit sequence in big endian format, i.e. the sign
   bit is the first one and the least significant bit is the last one. *)
 
-  import BitSequences, IntegerExt
+  import BitSequences
 
   type TCNumber = NonEmptyFSeq Bit
 
