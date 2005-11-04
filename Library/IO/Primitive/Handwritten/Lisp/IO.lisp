@@ -114,6 +114,7 @@
       '(:|None|))))
 
 (defun writeBytesToFile-2 (bytes filename)
+  (ensure-directories-exist filename)
   (with-open-file (s filename :element-type 'unsigned-byte
 		   :direction :output
 		   :if-exists :supersede)
