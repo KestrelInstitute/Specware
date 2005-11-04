@@ -7,6 +7,7 @@ spec
  import ../Printer        % for error messages
  import /Library/Legacy/DataStructures/MergeSort % for combining error messages
  import /Library/Legacy/DataStructures/ListPair  % misc utility
+ import /Library/Unvetted/StringUtilities        % search
 
  op SpecCalc.equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean % defined in EquivPreds, but importing that would be circular
 
@@ -172,35 +173,6 @@ spec
                    StringMap.empty 
 		   sorts
 
- %% Find position of first occurrence of s1 in s2, or None
-  op String.search : String * String -> Option Nat
- def String.search (s1, s2) =
-   let sz1 = length s1 in
-   let sz2 = length s2 in
-   let 
-     def loop i =
-       if i + sz1 > sz2 then 
-	 None
-       else if testSubseqEqual? (s1, s2, 0, i) then
-	 Some i
-       else 
-	 loop (i + 1)
-   in 
-     loop 0
-
- op  testSubseqEqual? : String * String * Nat * Nat -> Boolean
- def testSubseqEqual? (s1, s2, i1, i2) =
-   let sz1 = length s1 in
-   let 
-     def loop i =
-       if i1 + i >= sz1 then 
-	 true
-       else 
-	 sub (s1, i1 + i) = sub (s2, i2 + i) 
-	 && 
-	 loop (i + 1)
-   in 
-     loop 0
 
  %% These errors are more likely to be the primary cause of a type error than other errors
  def priorityErrorStrings = ["could not be identified","No matches for "]
