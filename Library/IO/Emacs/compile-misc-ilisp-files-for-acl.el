@@ -16,7 +16,7 @@
 
 (unless (and (file-executable-p allegro-program)
 	     (not (file-directory-p allegro-program)))
-  (setq allegro-program "/usr/local/acl/acl62/alisp"))
+  (setq allegro-program "/usr/local/acl/acl70/alisp"))
 
 (unless (and (file-executable-p allegro-program)
 	     (not (file-directory-p allegro-program)))

@@ -53,7 +53,6 @@
 	    (if *windows-system-p* '("+cn") nil))
       (when (getenv "SOCKET_INIT_FILE")
 	(set-socket-init-for-specware))
-
       (let ((log-warning-minimum-level 'error))
 	;; Don't show spurious warning message
 	(sw:common-lisp sw:common-lisp-buffer-name
@@ -169,11 +168,20 @@
 
 (defun ensure-specware-running ()
   (unless (inferior-lisp-running-p)
-    (sit-for 0.5 t)
-    (unless (inferior-lisp-running-p)
+    ;; first wait 10 seconds to see if existing lisp starts
+    (unless (dotimes (i 100)
+	      (sit-for 0.1 t)
+	      (when (inferior-lisp-running-p)
+		(return t)))
+      ;; timed out -- see if we should and can start lisp
       (if *specware-auto-start*
 	  (progn (run-specware4)
-		 (sit-for 0.1 t))
+		 ;; similar wait for up to 10 seconds
+		 (dotimes (i 100)
+		   (sit-for 0.1 t)
+		   (when (inferior-lisp-running-p)
+		     (return t)))
+		 (error "Could not start Specware."))
 	(error "Specware not running. Do M-x run-specware4")))))
 
 ;; (simulate-input-expression "t")
@@ -182,6 +190,7 @@
   (let ((win (get-buffer-window *specware-buffer-name*)))
     (if win (select-window win)
       (sw:switch-to-lisp)))
+  (pop-to-buffer *specware-buffer-name*) ; might want to choose explicit frame
   (goto-char (point-max))
   (insert str)
   (inferior-lisp-newline))
@@ -256,11 +265,12 @@
     ;; Currently
     (sw:eval-in-lisp-no-value
      (format (if *windows-system-p*
-;;
-;; Paulo's "magic number": #x7d200000
-		 "(build-lisp-image %S :c-heap-start  #x7d200000 :oldspace #x100)"
-;;		 "(build-lisp-image %S :c-heap-start  #x7c623000 :oldspace #x100)"
-;;       	 "(build-lisp-image %S :c-heap-start  #x7e000000 :oldspace #x100)"
+		 ;; various configurations that were used in Allegro 6.2 for windows:
+		 ;; "(build-lisp-image %S :c-heap-start  #x7d200000 :oldspace #x100)" ; Paulo's "magic number"
+		 ;; "(build-lisp-image %S :c-heap-start  #x7c623000 :oldspace #x100)"
+		 ;; "(build-lisp-image %S :c-heap-start  #x7e000000 :oldspace #x100)"
+		 "(build-lisp-image %S)"
+	       ;; non-windows:
 	       "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)")
 	     base-world-name))
     (sit-for 4)
