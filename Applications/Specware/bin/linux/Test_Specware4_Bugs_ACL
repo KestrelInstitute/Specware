@@ -36,6 +36,7 @@ $xemacs -no-init-file \
 	-title "Specware4" \
 	-l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
 	-eval "(set-face-background 'default \"lightyellow\")" \
+	-eval "(run-specware4)" \
 	-eval "(sw:eval-in-lisp \"(load (compile-file \\\"$SPECWARE4/Applications/Handwritten/Lisp/test-harness\\\"))\")" \
 	-eval "(sw:eval-in-lisp \"(setq specware-test::*quiet-about-dirs?* t)\")" \
 	-eval "(setq fi:lisp-evalserver-number-reads 100000)" \
