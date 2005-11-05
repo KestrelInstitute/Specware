@@ -69,6 +69,7 @@
        (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
       (goto-char (point-max))
       (simulate-input-expression "(swshell::specware-shell nil)")
+      (sleep-for .1)
       )))
 
 (defun binary-directory (specware-dir)
@@ -168,20 +169,25 @@
 
 (defun ensure-specware-running ()
   (unless (inferior-lisp-running-p)
-    ;; first wait 10 seconds to see if existing lisp starts
-    (unless (dotimes (i 100)
-	      (sit-for 0.1 t)
-	      (when (inferior-lisp-running-p)
-		(return t)))
+    ;; first wait up to 10 seconds to see if existing lisp is available
+    (if (dotimes (i 100)
+	  (message "Checking to see if existing lisp is running in buffer %S -- %S" sw:common-lisp-buffer-name (- 100 i))
+	  (sit-for 0.1 t)
+	  (when (inferior-lisp-running-p)
+	    (return t)))
+	(message "Pre-existing Specware is running..")
       ;; timed out -- see if we should and can start lisp
       (if *specware-auto-start*
-	  (progn (run-specware4)
-		 ;; similar wait for up to 10 seconds
-		 (dotimes (i 100)
-		   (sit-for 0.1 t)
-		   (when (inferior-lisp-running-p)
-		     (return t)))
-		 (error "Could not start Specware."))
+	  (progn     
+	    (run-specware4)
+	    ;; similar wait for up to 10 seconds
+	    (if (dotimes (i 100)
+		  (message "Checking to see if new lisp has started in buffer %S -- %S" sw:common-lisp-buffer-name (- 100 i))
+		  (sit-for 0.1 t)
+		  (when (inferior-lisp-running-p)
+		    (return t)))
+		(message "New Specware now runnning...")
+	      (error "Could not start Specware.")))
 	(error "Specware not running. Do M-x run-specware4")))))
 
 ;; (simulate-input-expression "t")
