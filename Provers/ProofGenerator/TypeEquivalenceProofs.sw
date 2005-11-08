@@ -2,7 +2,7 @@ spec
 
   % API public typeProof
 
-  import ../ProofChecker/Spec
+  import ../ProofChecker/Spec, TypesAndExpressionsAPI, ProofGenSig
 %  import ../ProofChecker/Proofs, ../ProofChecker/Substitutions, ../ProofChecker/BasicAbbreviations
   import ContextAPI
   
@@ -14,6 +14,7 @@ spec
 
   op wellFormedTypeAssumption: Context -> Type -> Proof
   def wellFormedTypeAssumption cx t =
+    let _ = fail("wfta") in
     assume (wellFormedType(cx, t))
 
   op mkEqSubstProof: Context * Expression * Proof * Proof * Proof -> Proof
@@ -45,6 +46,7 @@ spec
 
   op circularContextAux?: Context * FMap(TypeName, FSet TypeName) -> Boolean
   def circularContextAux?(cx, dep) =
+    if empty?(cx) then false else
     let ce = first(cx) in
     let cx = rtail(cx) in
     if typeDefinition?(ce) then
@@ -61,13 +63,13 @@ spec
 
   op applyTypeDefsInType: Proof * (Context | forall? typeDefinition?) -> Type -> Type * Proof
   def applyTypeDefsInType (cxP, cx) t =
-    if empty? cx then (t, teRefl (wellFormedTypeAssumption cx t))
+    if empty? cx then (t, teRefl (typeProof(cxP, cx, t)))
     else
       let tdCE = first cx in
       let cx = rtail cx in
       let (t1, t1P) = applyTypeDefInType (cxP, cx, tdCE) t in
       let (tf, tfP) = applyTypeDefsInType (cxP, cx) t1 in
-      if t = tf then (tf, teRefl (wellFormedTypeAssumption cx t))
+      if t = tf then (tf, teRefl(typeProof(cxP, cx, t)))
       else applyTypeDefsInType (cxP, cx) tf
 
 
@@ -124,7 +126,7 @@ spec
   op teQuotProof: Proof * Context * TypeDefinitionContextElement -> Type -> Type * Proof
   def teQuotProof(cxP, cx, tdCE) t =
     let QUOT (st, q) = t in
-    let wftp = wellFormedTypeAssumption cx t in
+    let wftp = typeProof(cxP, cx, t) in
     let (newSt, stP) = applyTypeDefInType(cxP, cx, tdCE) st in
     let (newQ, qP) = applyTypeDefInExpr(cxP, cx, tdCE) q in
     (QUOT (newSt, newQ), teQuot(wftp, stP, qP))
@@ -244,9 +246,9 @@ spec
     if ttn = tn
       then
 	let subst = mkTypeSubstitution(tvs, tts) in
-	let tProofs = map (wellFormedTypeAssumption cx) tts in
+	let tProofs = map (fn(t) -> typeProof(cxP, cx, t)) tts in
 	(typeSubstInType subst td, teDef(cxP, tProofs, tn))
-    else (t, teRefl(wellFormedTypeAssumption cx t))
+    else (t, teRefl(typeProof(cxP, cx, t)))
 
   op expandTypeWithContext: Proof * Context -> Type -> Type * Proof
   def expandTypeWithContext (cxP, cx) t =
@@ -303,6 +305,6 @@ spec
 
   op teReflProof: Proof * Context * Type -> Proof
   def teReflProof(cxP, cx, t) =
-    teRefl(wellFormedTypeAssumption cx t)
+    teRefl(typeProof(cxP, cx, t))
 
 endspec

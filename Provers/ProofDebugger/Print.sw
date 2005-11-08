@@ -22,7 +22,7 @@ spec
     let sep = "\n"^(ind n) in
     if empty?(ps)
       then ""
-    else printProofAux(first ps, n)^printProofsAux(rtail ps, n)
+    else printProofAux(first ps, n)^sep^printProofsAux(rtail ps, n)
 
   op printProofAux: Proof * Nat -> String
   def printProofAux(prf, n) =
@@ -44,7 +44,7 @@ spec
     | tyBool(p) -> "(tyBool"^pSep^printProofAux(p, sn)^")"
     | tyVar(p, tv) -> "(tyVar"^sep^printTypeVariable(tv)^pSep^printProofAux(p, sn)^")"
     | tyInst(p, ps, tn) -> "(tyInst"^sep^printTypeName(tn)^pSep^printProofAux(p, sn)^printProofsAux(ps, sn)^")"
-    | tyArr(p, p2) -> "(tyArr"^pSep^printProofAux(p, sn)^printProofAux(p2, sn)^")"
+    | tyArr(p, p2) -> "(tyArr"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | tyRec(p, ps, flds) -> "(tyRec"^sep^printFields(flds)^pSep^printProofAux(p, sn)^pSep^printProofsAux(ps, sn)^")"
     | tySum(ps, cnstrs) -> "(tySum"^sep^printConstructors(cnstrs)^pSep^printProofsAux(ps, sn)^")"
     | tyRestr(p) -> "(tyRestr"^pSep^printProofAux(p, sn)^")"

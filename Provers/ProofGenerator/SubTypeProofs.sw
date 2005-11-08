@@ -12,6 +12,7 @@ spec
 
   op wellFormedContextAssumption: Context -> Proof
   def wellFormedContextAssumption(cx) =
+    let _ = fail("wfca") in
     assume (wellFormedContext cx)
 
   op stRestrProof: Proof * Context * Type * RESTRType -> Proof * Expression
@@ -27,6 +28,10 @@ spec
     let r = FN (v, t, TRUE) in
     let tP = typeProof(cxP, cx, t) in
     (stRefl(tP, v), r)
+    (*
+    if check? tP then
+    (stRefl(tP, v), r) else fail("strefl")
+     *)
 
   op stArrProof: Proof * Context * ARROWType * ARROWType  -> Proof * Expression
   def stArrProof(cxP, cx, subT, t) =
@@ -102,18 +107,30 @@ spec
 
   op subTypeProofX: Proof * Context * Type * Type  -> Proof * Expression
   def subTypeProofX(cxP, cx, subT, t) =
+    let (prf, exp) =
     let (subTX, subTEP) = expandTypeWithContext(cxP, cx) subT in
     let (TX, TEP) = expandTypeWithContext(cxP, cx) t in
+    (*
+    if ~(check? subTEP) then fail("subtypex subtep") else
+    if ~(check? TEP) then fail("subtypex tep") else
+      *)
     let (subXP, r) =
-    if subTX = TX then stReflProof(cxP, cx, TX)
+    if subTX = TX then check1(stReflProof(cxP, cx, TX))
     else
       case (subTX, TX) of
-	| (RESTR _, _) -> stRestrProof(cxP, cx, subT, t)
-        | (ARROW _, ARROW _) -> stArrProof(cxP, cx, subT, t)
-	| (RECORD _, RECORD _) -> stRecProof(cxP, cx, subT, t)
-	| (SUM _, SUM _) -> stSumProof(cxP, cx, subT, t)
+	| (RESTR _, _) -> check1(stRestrProof(cxP, cx, subT, t))
+        | (ARROW _, ARROW _) -> check1(stArrProof(cxP, cx, subT, t))
+	| (RECORD _, RECORD _) -> check1(stRecProof(cxP, cx, subT, t))
+	| (SUM _, SUM _) -> check1(stSumProof(cxP, cx, subT, t))
 	| _ -> (falseProof cx, FALSE) in
-    (stTE(subXP, subTEP, TEP), r)
+    check1((stTE(subXP, subTEP, TEP), r)) in
+    (prf, exp)
+    %if check? prf then (prf, exp) else fail("subtypeproofx")
+%    case check prf of
+%	| RETURN j -> (prf, exp)
+%	| THROW exc -> %let _ = print (printFailure(exc)) in 
+%	let _ = fail "subTypeProofX" in (prf, exp)
+
 
 
   op expandSubType: Proof * Context * ARROWType -> Proof * Type

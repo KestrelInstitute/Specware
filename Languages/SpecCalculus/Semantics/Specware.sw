@@ -432,15 +432,15 @@ getOptSpec returns Some spc if the given string evaluates to a spec
         case val of
           | Spec spc -> {
               ctxt <- specToContext spc;
-	      %fail "foo";
               SpecCalc.print (SpecCalc.printContext ctxt);
 	      ctxtProof <- return (contextProof ctxt);
+	      %_ <- fail "foo";
 	      %SpecCalc.print (printProof ctxtProof);
 	      checkedProof <- return (check ctxtProof);
-	      case checkedProof of
+	      case checkedProof initialState of
 		% Actually ckeck that the judgement is well formed context of ctxt.
-		| RETURN j -> SpecCalc.print (SpecCalc.printJudgement(j))
-		| THROW exc -> SpecCalc.print (SpecCalc.printFailure(exc));
+		| (RETURN j, _) -> SpecCalc.print (SpecCalc.printJudgement(j))
+		| (THROW exc, _) -> SpecCalc.print (SpecCalc.printFailure(exc));
               return ()
             }
           | _ -> {

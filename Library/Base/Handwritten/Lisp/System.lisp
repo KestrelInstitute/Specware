@@ -6,7 +6,7 @@
 (defvar System-spec::proverUseBase? t)
 
  ;;; op fail     : fa(a) String -> a
-(defun fail (s) (error "~a" s))
+(defun fail (s) (break "~a" s))
 
 ;;; op debug     : fa(a) String -> a
 (defun |!debug| (s) (when specwareDebug? (break "~a" s)))

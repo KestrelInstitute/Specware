@@ -2,7 +2,7 @@ spec
 
   % API private default
 
-  import Proofs, Failures, Substitutions, BasicAbbreviations
+  import Substitutions, BasicAbbreviations, State
 
   (* This spec defines the function, mentioned in specs Proofs and Failures,
   that recursively checks whether a proof is valid, returning a judgement or a
@@ -10,13 +10,17 @@ spec
   ops, also defined in this spec. Op check and the auxiliary ops are monadic;
   they use the exception monad defined in spec Failures. *)
 
+  (* DAC: 2005/11/07:
+   Added State to the checker monad.  Initially the state only includes a simple
+   map as Alist to implement memoization.  See check and checkInt comments. *)
+
   (* Ensure that boolean condition holds. If it does not hold, return the
   failure provided as argument, otherwise return nothing. This op is
   essentially a shortcut for an if-then-else that can be composed via the
   monadic bind operator. *)
   op ensure : Boolean -> Failure -> M ()
   def ensure cond fail =
-    if cond then OK () else FAIL fail
+    if cond then OK () else let _ = (System.fail "ensure") in FAIL fail
 
   (* Check whether a finite sequence of integers is a permutation (see spec
   FiniteSequences in the Specware library). If it is, return it as a
@@ -368,9 +372,9 @@ spec
     % check that cx is cx1 minus the ending axiom:
     ensure (ltail cx1 = cx) (notPrefixContext (cx, cx1)) >> (fn _ ->
     % extract axiom info:
-    (let axioM (an, mustBe_empty, mustBe_e) = last cx in
+    (let axioM (an, mustBe_empty, mustBe_e) = last cx1 in
     % check that axiom has zero type variables and the given formula:
-    ensure (empty? mustBe_empty) (nonMonomorphicAxiom (last cx)) >> (fn _ ->
+    ensure (empty? mustBe_empty) (nonMonomorphicAxiom (last cx1)) >> (fn _ ->
     ensure (mustBe_e = e) (wrongLastAxiom (mustBe_e, e)) >> (fn _ ->
     % return axiom name:
     OK an)))))
@@ -386,8 +390,20 @@ spec
   finally we define op check itself. Op check is the only public op defined in
   this spec *)
 
+  (* DAC: Added checkInt.  check now first calls checkMemo to test
+  whether we have checked this proof before.  If so we return the
+  previous result.  Otherwise we call checkInt (original unmemoized
+  version of check) and save that result in the memo for future
+  use. *)
+
   % API public
-  op check : Proof -> M Judgement   % defined below
+  op check : Proof -> M Judgement
+  def check(p) =
+    checkMemo p >>
+    (fn | Some res -> OK res
+        | None -> checkInt p >> (fn res -> putMemo(p, res)))
+
+  op checkInt : Proof -> M Judgement   % defined below
 
   (* Check proof of well-formed context, returning context. *)
   op checkWFContext : Proof -> M Context
@@ -640,7 +656,7 @@ spec
   op checkWTExpr : Proof -> M (Context * Expression * Type)
   def checkWTExpr prf =
     check prf >> (fn wellTypedExpr (cx, e, t) -> OK (cx, e, t)
-                   | jdg -> FAIL (notWTExpr jdg))
+                   | jdg -> fail("notWTExpr")) %FAIL (notWTExpr jdg))
 
   (* Like previous op but also check that the context coincides with the
   argument, returning only the expression and type. *)
@@ -1006,7 +1022,7 @@ spec
 
   % we finally define op check:
 
-  def check = fn
+  def checkInt = fn
 
     %%%%%%%%%% well-formed contexts:
     | cxMT ->

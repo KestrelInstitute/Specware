@@ -5,6 +5,24 @@ spec
   (* This spec provides an abstract datatype API for Types and
   Expressions. *)
 
+  op check?: Proof -> Boolean
+  def check?(p) =
+    case (check p initialState) of
+      | (RETURN _, _) -> true
+      | (THROW _, _) -> false
+
+  op check0: Proof -> Proof
+  def check0(p) =
+    if true || check? p
+      then p
+    else fail("check0")
+
+  op check1: [a] Proof * a -> Proof * a
+  def check1(p, x) =
+    if true || check? p
+      then (p, x)
+    else fail("check1")
+
   op VAR?: Expression -> Boolean
   def VAR?(e) =
     case e of
@@ -16,6 +34,7 @@ spec
   op mkVAR: Variable -> VARExpr
 
   op var: VARExpr -> Variable
+  def var(VAR(v)) = v
 
   axiom VARa1 is fa (var_v: Variable) var(mkVAR(var_v)) = var_v
   axiom VARc is fa (var_e: VARExpr) mkVAR(var(var_e)) = var_e
@@ -31,8 +50,10 @@ spec
   op mkOPI: Operation * Types -> OPIExpr
   
   op oper: OPIExpr -> Operation
+  def oper(OPI(oper,_)) = oper
 
   op types: OPIExpr -> Types
+  def types(OPI(_, ts)) = ts
 
   axiom OPIa1 is fa (oper_v: Operation, types_v: Types) oper(mkOPI(oper_v, types_v)) = oper_v
   axiom OPIa2 is fa (oper_v: Operation, types_v: Types) types(mkOPI(oper_v, types_v)) = types_v
@@ -47,7 +68,10 @@ spec
   type APPLYExpr = (Expression | APPLY?)
 
   op  exp1: APPLYExpr -> Expression
+  def exp1(APPLY(e, _)) = e
+
   op  exp2: APPLYExpr -> Expression
+  def exp2(APPLY(_, e)) = e
 
   op mkAPPLY: Expression * Expression -> APPLYExpr
 

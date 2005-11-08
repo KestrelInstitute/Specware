@@ -97,9 +97,8 @@ spec
       then     tyQuot(refProof, symProof, transProof)
     else falseProof(cx)
 
-
-  op typeProof: Proof * Context * Type -> Proof
   def typeProof(cxPrf, cx, ty) =
+    let p =
     case ty of
       | BOOL -> tyBoolProof(cxPrf, cx, ty)
       | VAR _ -> tyVarProof(cxPrf, cx, ty)
@@ -108,6 +107,8 @@ spec
       | RECORD _ -> tyRecProof(cxPrf, cx, ty)
       | SUM _ -> tySumProof(cxPrf, cx, ty)
       | RESTR _ -> tyRestrProof(cxPrf, cx, ty)
-      | QUOT _ -> tyQuotProof(cxPrf, cx, ty)
+      | QUOT _ -> tyQuotProof(cxPrf, cx, ty) in
+   p
+   %if check? p then p else let _ = fail("typeProof") in p
 
 endspec

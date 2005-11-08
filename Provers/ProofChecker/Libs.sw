@@ -10,6 +10,6 @@ spec
 
   import /Library/General/FiniteStructures
   import IntegerExt
-  import ExceptionMonads
+  import ProofCheckerMonad
          
 endspec

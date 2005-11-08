@@ -96,15 +96,15 @@ spec
   We use the name "M", despite its shortness, because it is inconspicuous.
   After all, the purpose of monads is exactly to "hide" certain details. *)
 
-  type M a = ExceptionMonad (Failure, a)
+  type M a = PCMonad (Failure, a)
 
   (* It is convenient to introduce shorter synonyms for the constructors of
   the exception monad for normal and exceptional results. *)
 
   op OK : [a] a -> M a
-  def OK = RETURN
+  def OK = return
 
   op FAIL : [a] Failure -> M a
-  def FAIL = THROW
+  def FAIL = throw
 
 endspec

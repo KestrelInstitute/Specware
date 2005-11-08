@@ -129,8 +129,8 @@ spec
     let axioM(an, tvs, exp) = axd in
     let cxProof = contextProof(cx) in
     let (wftCxPrf, wftCx) = typeVarDeclarationsContextAndProof(cxProof, cx, tvs) in
-    let wfTProof = wellFormedTypeProof(wftCxPrf, wftCx, BOOL) in
-    cxAx(cxProof, wfTProof, an)
+    let expBoolProof = expIsBoolProof(wftCxPrf, wftCx, exp) in
+    cxAx(cxProof, expBoolProof, an)
 
   op cxTVdecProof: Context * TypeVarDeclarationContextElement -> Proof
   def cxTVdecProof(cx, tvd) =

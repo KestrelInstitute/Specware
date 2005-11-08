@@ -9,7 +9,7 @@ spec
   def FSeq.//\\ seqOfSets = foldl (/\) (first seqOfSets) (rtail seqOfSets)
 
   op FSeq.\\// : [a] FSeq (FSet a) -> FSet a
-  def FSeq.\\// = foldl (/\) empty
+  def FSeq.\\// = foldl (\/) empty
 
   % copied from spec `FiniteStructures':
   op FMap.//\\ : [a,b] NonEmptyFMap (a, FSet b) -> FSet b
