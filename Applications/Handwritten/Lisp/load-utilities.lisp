@@ -23,7 +23,8 @@
 ;; are likely to be used for many of the generated lisp applications?
 
 (defun current-directory ()
-  ;; we need consistency:  all pathnames, or all strings, or all lists of strings, ...
+  ;; we need consistency: all pathnames, or all strings, or all lists
+  ;; of strings, ...
   #+allegro   (excl::current-directory)      ; pathname
   #+Lispworks (hcl:get-working-directory)    ; ??       (current-pathname)
   #+mcl       (ensure-final-slash (ccl::current-directory-name))  ; ??
@@ -86,10 +87,8 @@
   ;; (lisp::format t "Changing to: ~A~%" directory)
   (let ((dirpath (dir-to-path directory)))
     (setq directory (namestring dirpath))
-    (if (#-clisp probe-file
-	 #+clisp ext:probe-directory
-	         #-clisp (remove-final-slash directory)  ; remove necessary in some cl's
-	         #+clisp directory) 
+    (if #-clisp (probe-file (remove-final-slash directory)) ; remove necessary in some cl's
+        #+clisp (ext:probe-directory directory) 
 	(progn
 	  #+allegro   (excl::chdir          directory)
 	  #+Lispworks (hcl:change-directory directory)
