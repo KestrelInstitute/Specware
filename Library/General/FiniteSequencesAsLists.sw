@@ -1,6 +1,6 @@
 FSeq qualifying spec
 
-  import /Library/General/Sets
+  import /Library/General/Orders
 
   % copied from spec `FiniteSequences':
   op definedOnInitialSegmentOfLength infixl 20 : [a]
@@ -242,7 +242,7 @@ FSeq qualifying spec
     if first = x then 0
     else 1 + positionOf (rest, x)
 
-  op positionsOf : [a] FSeq a * a -> FSeq Nat
+  op positionsOf : [a] FSeq a * a -> InjectiveFSeq Nat
   def [a] positionsOf(s,x) =
     let def aux (posSeq : FSeq Nat, pos : Nat, s : FSeq a) : FSeq Nat =
           if empty? s then posSeq
@@ -296,6 +296,25 @@ FSeq qualifying spec
         (case removeOne (first1, s2) of
            | None -> false
            | Some rest2 -> rest1 permutationOf rest2)
+
+  op sorted? : [a] LinearOrder a -> FSeq a -> Boolean
+  def [a] sorted? ord s =
+    let def sortedAux? (previous:a, s:FSeq a) : Boolean =
+          case s of
+            | [] -> true
+            | x::s -> ord (previous,x) && sortedAux? (x, s)
+    in
+    case s of
+      | [] -> true
+      | x::s -> sortedAux? (x, s)
+
+  op sortt : [a] LinearOrder a -> FSeq a -> FSeq a
+  def sortt ord = fn
+    | [] -> nil
+    | x::s ->
+      let smaller    = filter (fn y -> ord(y,x) && y ~= x) s in
+      let largerOrEq = filter (fn y -> ord(x,y)) s in
+      (sortt ord smaller) <| x ++ (sortt ord largerOrEq)
 
   op removeNones : [a] FSeq (Option a) -> FSeq a
   def removeNones = fn

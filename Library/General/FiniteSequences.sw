@@ -21,7 +21,7 @@ FSeq qualifying spec
   be isomorphic to the subtype of functions defined on some initial segment of
   the naturals, leaving the possibility open to refinements as morphisms. *)
 
-  import Sets
+  import Orders
 
   op definedOnInitialSegmentOfLength infixl 20 : [a]
      (Nat -> Option a) * Nat -> Boolean
@@ -268,7 +268,7 @@ FSeq qualifying spec
   def positionOf(s,x) = the(i:Nat) s@i = x
 
   % ordered sequence of positions in `s' at which `x' occurs:
-  op positionsOf : [a] FSeq a * a -> FSeq Nat
+  op positionsOf : [a] FSeq a * a -> InjectiveFSeq Nat
   def positionsOf(s,x) = the (posSeq : FSeq Nat)
     % posSeq only contains positions at which `x' occurs:
     (fa(i:Nat) i < length posSeq =>
@@ -309,6 +309,15 @@ FSeq qualifying spec
   op permutationOf infixl 20 : [a] FSeq a * FSeq a -> Boolean
   def permutationOf (s1,s2) =
     (ex(prm:Permutation) prm equiLong s1 && permute(s1,prm) = s2)
+
+  % true iff sequence is ordered according to given linear order:
+  op sorted? : [a] LinearOrder a -> FSeq a -> Boolean
+  def sorted? ord s = (fa(i:Nat) i < length s => ord (s@i, s@(i+1)))
+
+  % sort sequence according to given linear order
+  % ("sort" is currently prohibited for backward compatibility):
+  op sortt : [a] LinearOrder a -> FSeq a -> FSeq a
+  def sortt ord s = the(s1) s1 permutationOf s && sorted? ord s1
 
   % remove all `None's from a sequence of `Option' values
   % (and also remove the `Some' wrapper from the remaining values):
