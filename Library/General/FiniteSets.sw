@@ -95,6 +95,9 @@ FSet qualifying spec
   op map : [a,b] (a -> b) -> FSet a -> FSet b
   def map f s = toFSet (map f (fromFSet s))
 
+  op FSet.mapPartial : [a,b] (a -> Option b) -> FSet a -> FSet b
+  def [a, b] mapPartial (f:(a -> Option b)) (s:FSet a) = toFSet (Set.mapPartial f (fromFSet s):FiniteSet(b))
+
   op size : [a] FSet a -> Nat
   def size s = size (fromFSet s)
 

@@ -189,6 +189,10 @@ FSeq qualifying spec
   def map f s = seq (fn(i:Nat) ->
     if i < length s then Some (f (s @ i)) else None)
 
+  op mapPartial: [a,b] (a -> Option b) -> FSeq a -> FSeq b
+  def mapPartial f s = seq (fn (i: Nat) ->
+    if i < length s then f (s @ i) else None)
+
   % apply binary function to all pairs from two sequences:
   op map2 : [a,b,c] (a * b -> c) -> ((FSeq a * FSeq b) | equiLong) -> FSeq c
   def map2 f (s1,s2) = map f (zip (s1, s2))

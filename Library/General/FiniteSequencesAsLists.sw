@@ -173,6 +173,9 @@ FSeq qualifying spec
 %  op map : [a,b] (a -> b) -> FSeq a -> FSeq b
 %  def map = List.map
 
+  op mapPartial : [a,b] (a -> Option b) -> FSeq a -> FSeq b
+  def mapPartial = List.mapPartial
+
   % copied from spec `FiniteSequences':
   op map2 : [a,b,c] (a * b -> c) -> ((FSeq a * FSeq b) | equiLong) -> FSeq c
   def map2 f (s1,s2) = map f (zip (s1, s2))

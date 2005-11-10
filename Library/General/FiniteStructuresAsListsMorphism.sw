@@ -4,5 +4,6 @@ morphism /Library/General/FiniteStructures -> FiniteStructuresAsLists
    FSeq.length  +-> List.length,
    FSeq.foldr   +-> List.foldr,
    FSeq.map     +-> List.map,
+   FSeq.mapPartial +-> List.mapPartial,
    FSeq.filter  +-> List.filter,
    FSeq.flatten +-> List.flatten}

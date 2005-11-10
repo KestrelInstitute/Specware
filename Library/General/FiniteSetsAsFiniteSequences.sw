@@ -114,6 +114,12 @@ FSet qualifying spec
            (fn seq -> quotient permutationOf (map f seq))
            set
 
+  op mapPartial : [a,b] (a -> Option b) -> FSet a -> FSet b
+  def mapPartial f set =
+    choose permutationOf
+           (fn seq -> quotient permutationOf (mapPartial f seq))
+           set
+
   op size : [a] FSet a -> Nat
   def size s = choose permutationOf length s
 

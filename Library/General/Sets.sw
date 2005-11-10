@@ -115,6 +115,10 @@ Set qualifying spec
   op map : [a,b] (a -> b) -> Set a -> Set b
   def map f s = fn y -> (ex(x) x in? s && y = f x)
 
+  % partial map function over set:
+  op mapPartial : [a,b] (a -> Option b) -> Set a -> Set b
+  def mapPartial f s = fn y -> (ex(x) x in? s && Some y = f x)
+
   % inversely map function over set:
   op imap : [a,b] (a -> b) -> Set b -> Set a
   def imap f s = fn x -> f x in? s
