@@ -87,24 +87,4 @@ spec
     | noConstructors
     | wrongNumberOfProofs
 
-  (* To improve the readability of the checking function defined in spec
-  Checker, we introduce an exception monad whose exceptions are the failures
-  defined just above. It is not appropriate to explain (exception) monads
-  here; so, the unfamiliar reader is referred to the literature, for instance
-  Philip Wadler's "Monads for functional programming".
-
-  We use the name "M", despite its shortness, because it is inconspicuous.
-  After all, the purpose of monads is exactly to "hide" certain details. *)
-
-  type M a = PCMonad (Failure, a)
-
-  (* It is convenient to introduce shorter synonyms for the constructors of
-  the exception monad for normal and exceptional results. *)
-
-  op OK : [a] a -> M a
-  def OK = return
-
-  op FAIL : [a] Failure -> M a
-  def FAIL = throw
-
 endspec

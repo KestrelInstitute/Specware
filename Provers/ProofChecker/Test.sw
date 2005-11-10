@@ -46,9 +46,9 @@ Translate qualifying spec
         case val of
           | Spec spc -> {
               ctxt <- specToContext spc;
+	      %fail "foo";
 	      ctxtProof <- return (contextProof ctxt);
 	      checkedProof <- return (check ctxtProof);
-	      %fail "foo";
 	      case checkedProof of
 		% Actually ckeck that the judgement is well formed context of ctxt.
 		| RETURN j -> print (printJudgement(j))

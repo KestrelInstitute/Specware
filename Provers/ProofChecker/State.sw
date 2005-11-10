@@ -1,36 +1,37 @@
 spec
 
-  import ProofCheckerMonad, /Library/Structures/Data/Maps/SimpleAsAlist, Proofs, Failures
+  import /Library/Structures/Data/Maps/SimpleAsAlist, Proofs, Failures
 
-  type PCMonad.State =
+  type State =
     {Memo: Map.Map(Proof, Judgement)}
 
-  def PCMonad.initialState = {Memo = emptyMap}
+  op initialState: State
+  def initialState = {Memo = emptyMap}
 
-  op memo?: Proof -> M Boolean
-  def memo?(p) =
+  op PCState.memo?: Proof -> State -> Boolean
+  def PCState.memo?(p) =
     fn state ->
     let memo = state.Memo in
     let res =
     case apply(memo, p) of
       | Some _ -> true
       | None -> false in
-    (RETURN res, state)
+    res
 
-  op checkMemo: Proof -> M (Option (Judgement))
-  def checkMemo(p) =
+  op PCState.checkMemo: Proof -> State -> Option (Judgement)
+  def PCState.checkMemo(p) =
     fn state ->
     let memo = state.Memo in
     let res = apply(memo, p) in
-    (RETURN res, state)
+    res
 
-  op putMemo: Proof * Judgement -> M Judgement
-  def putMemo(p, j) =
+  op PCState.putMemo: Proof * Judgement -> State -> State
+  def PCState.putMemo(p, j) =
     fn state ->
     let memo = state.Memo in
     let memo = update(memo, p, j) in
     let state = {Memo = memo} in
-    (RETURN j, state)
+    state
 
 endspec
 

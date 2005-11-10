@@ -2,71 +2,50 @@
 2005:11:04
 DC
 
-This is a polymorphic spec for a state plus exception monad.  It is inspired
-by looking at Alessandro's exception monad and the JavaCard state monad.
-
-Ideally, it should be composed of the exception monad and state monad, but to do
-this requires spec parameters which we can achieve with morphisms, but that is
-too cumbersome at this point.
-
 *)
 
 
-PCMonad qualifying spec
+spec
 
-  type State
+  import /Library/Unvetted/StateAndExceptionMonad
+  %import %State%, %Failures
+  import State
 
-  type PCMonad(exc,a) = State -> Result (exc, a) * State
+  type PCMonad(exc, a) = Monad(State,exc,a)
 
-  type Result (exc, a) =
-    | RETURN a
-    | THROW  exc
+  (* To improve the readability of the checking function defined in spec
+  Checker, we introduce a monad whose exceptions are the failures
+  defined in Failures. It is not appropriate to explain (exception) monads
+  here; so, the unfamiliar reader is referred to the literature, for instance
+  Philip Wadler's "Monads for functional programming".
 
-  op return : [exc,a] a -> PCMonad(exc,a)  % unit operator
-  def return x = fn state -> (RETURN x, state)
+  We use the name "M", despite its shortness, because it is inconspicuous.
+  After all, the purpose of monads is exactly to "hide" certain details. *)
 
-  op throw : [exc,a] exc -> PCMonad(exc,a)  % unit operator
-  def throw x = fn state -> (THROW x, state)
+  type M a = Monad (State, Failure, a)
 
-  op initialState: State
+  (* It is convenient to introduce shorter synonyms for the constructors of
+  the exception monad for normal and exceptional results. *)
 
-  op >> infixr 25 : [exc,a,b]  % bind operator
-    PCMonad(exc,a) * (a -> PCMonad(exc,b)) ->
-    PCMonad(exc,b)
-  def >> (first,next) =
+  op OK : [a] a -> M a
+  def OK = return
+
+  op FAIL : [a] Failure -> M a
+  def FAIL = throw
+
+  op memo?: Proof -> M Boolean
+  def memo?(p) =
     fn state ->
-      case first state of
-	| (THROW  e, newState) -> (THROW e, newState)
-	| (RETURN x, newState) -> next x newState
+    (RETURN (memo? p state), state)
 
-  op >>> infixr 25 : [exc,a]  % specialized bind operator
-     PCMonad(exc,()) * PCMonad(exc,a) -> PCMonad(exc,a)
-  def >>> (m1,m2) = m1 >> (fn _ -> m2)
+  op checkMemo: Proof -> M (Option (Judgement))
+  def checkMemo(p) =
+    fn state ->
+    (RETURN (checkMemo p state), state)
 
-  import /Library/General/FiniteSequences
-
-  % apply monadic computation f to sequence s from left to right, returning
-  % resulting sequence if no exceptions, otherwise stop at first exception:
-
-  op mapSeq : [exc,a,b] (a -> PCMonad(exc,b)) -> FSeq a ->
-                        PCMonad (exc, FSeq b)
-  def mapSeq f s =
-    if empty? s then return empty
-    else f (first s) >> (fn x ->
-         mapSeq f (rtail s) >> (fn r ->
-         return (x |> r)))
-
-  % apply sequence of monadic computations ff to equally long sequence s
-  % from left to right, returning resulting sequence if no exceptions,
-  % otherwise stop at first exception:
-
-  op mapSeqSeq : [exc,a,b]
-     {(ff,s) : FSeq (a -> PCMonad(exc,b)) * FSeq a | ff equiLong s} ->
-     PCMonad (exc, FSeq b)
-  def mapSeqSeq (ff,s) =
-    if empty? s then return empty
-    else (first ff) (first s) >> (fn x ->
-         mapSeqSeq (rtail ff, rtail s) >> (fn r ->
-         return (x |> r)))
+  op putMemo: Proof * Judgement -> M Judgement
+  def putMemo(p, j) =
+    fn state ->
+    (RETURN j, (putMemo (p, j) state))
 
 endspec

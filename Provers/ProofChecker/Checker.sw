@@ -2,7 +2,7 @@ spec
 
   % API private default
 
-  import Substitutions, BasicAbbreviations, State
+  import Substitutions, BasicAbbreviations, ProofCheckerMonad
 
   (* This spec defines the function, mentioned in specs Proofs and Failures,
   that recursively checks whether a proof is valid, returning a judgement or a

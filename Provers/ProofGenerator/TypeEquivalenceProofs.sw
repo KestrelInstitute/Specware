@@ -2,15 +2,13 @@ spec
 
   % API public typeProof
 
-  import ../ProofChecker/Spec, TypesAndExpressionsAPI, ProofGenSig
+  import ../ProofChecker/Spec, TypesAndExpressionsAPI, ProofGenSig, UniqueAxiomNames
 %  import ../ProofChecker/Proofs, ../ProofChecker/Substitutions, ../ProofChecker/BasicAbbreviations
   import ContextAPI
   
   (* In this spec we define a function that takes two types and a
   context and generates a proof that the types are equivalent in the
   given context. *)
-
-  op axiomName: Expression -> AxiomName
 
   op wellFormedTypeAssumption: Context -> Type -> Proof
   def wellFormedTypeAssumption cx t =
@@ -53,7 +51,7 @@ spec
       let tn = typeDefinitionTypeName(ce) in
       let td = typeDefinitionType(ce) in
       let tdTypeNames = typeTypeNames(td) in
-      let typeDefDependencies = \\// (map (fn (tn) -> dep @ tn) tdTypeNames) in
+      let typeDefDependencies = \\// (mapPartial (fn (tn) -> dep @@ tn) tdTypeNames) in
       if tn in? typeDefDependencies
 	then true
       else
@@ -118,7 +116,7 @@ spec
   op teRestrProof: Proof * Context * TypeDefinitionContextElement -> Type -> Type * Proof
   def teRestrProof(cxP, cx, tdCE) t =
     let RESTR (st, r) = t in
-    let wftp = wellFormedTypeAssumption cx t in
+    let wftp = typeProof(cxP, cx, t) in
     let (newSt, stP) = applyTypeDefInType(cxP, cx, tdCE) st in
     let (newR, rP) = applyTypeDefInExpr(cxP, cx, tdCE) r in
     (RESTR (newSt, newR), teRestr(wftp, stP, rP))
@@ -147,7 +145,7 @@ spec
       | VAR _ -> (e, thRefl(wellTypedExpressionAssumption(cx, e)))
       | OPI (oper, typs) -> thOpSubstProof (cxP, cx, tdCE) e
       | APPLY (e1, e2) -> thAppSubstProof(cxP, cx, tdCE) e
-      | FN (v, t, e) -> thAbsSubstProof (cxP, cx, tdCE) e
+      | FN (v, t, e1) -> thAbsSubstProof (cxP, cx, tdCE) e
       | EQ (e1, e2) -> thEqSubstProof (cxP, cx, tdCE) e
       | IF (e1, e2, e3) -> thIfSubstProof (cxP, cx, tdCE) e
       | IOTA (t) -> thTheSubstProof (cxP, cx, tdCE) e
@@ -196,10 +194,10 @@ spec
   def thIfSubstProof (cxP, cx, tdCE) e =
     let IF (e1, e2, e3) = e in
     let (newe1, e1P) = applyTypeDefInExpr (cxP, cx, tdCE) e1 in
-    let thenCx = cx <| axioM(axiomName(e1), empty, e1) in
+    let thenCx = cx <| axioM(newAxiomName(cx, "thenBranchAx"), empty, e1) in
     let (newe2, e2P) = applyTypeDefInExpr (cxP, thenCx, tdCE) e2 in
     let notE1 = ~~ e1 in
-    let elseCx = cx <| axioM(axiomName(notE1), empty, notE1) in
+    let elseCx = cx <| axioM(newAxiomName(cx, "elseBranchAx"), empty, notE1) in
     let (newe3, e3P) = applyTypeDefInExpr (cxP, elseCx, tdCE) e3 in
     let newE = IF (newe1, newe2, newe3) in
     let exprTypeAssumption = wellTypedExpressionAssumption(cx, e) in
@@ -285,23 +283,34 @@ spec
       if lte(x, hd) then x |> s
       else hd |> insertSeq(x, tl, lte)
 
-  op fldLTE: Field * Field -> Boolean
-  op cnstrLTE: Constructor * Constructor -> Boolean
+  op Field.<= infixl 20: Field * Field -> Boolean
+  def Field.<=(f1, f2) =
+    case (f1, f2) of
+      | (prod n1, prod n2) -> n1 <= n2
+      | (prod _, _) -> true
+      | (_, prod _) -> false
+      | (user s1, user s2) -> s1 <= s2
+
+(*
+  op Constructor.<= infixl 20: Constructor * Constructor -> Boolean
+  def Constructor.<(c1, c2) =
+    c1 String.<= c2
+*)
 
   op sortDualSeqs: [a, b] FSeq a * FSeq b * (a * a -> Boolean) -> (FSeq a * FSeq b)
   def sortDualSeqs(s1, s2, lte1) =
     let s1s2 = zip(s1, s2) in
     let lte = fn((s1a, _), (s1b, _)) -> lte1(s1a, s1b) in
-    let sorteds1s2 = sortSeq(s1s2, lte) in
+    let sorteds1s2 = sortt lte s1s2 in
     unzip(sorteds1s2)
 
   op sortFldsTypes: Fields * Types -> (Fields * Types)
   def sortFldsTypes(flds, typs) =
-    sortDualSeqs(flds, typs, fldLTE)
+    sortDualSeqs(flds, typs, <=)
 
   op sortCnstrsTypes: Constructors * Types -> (Constructors * Types)
   def sortCnstrsTypes(cnstrs, typs) =
-    sortDualSeqs(cnstrs, typs, cnstrLTE)
+    sortDualSeqs(cnstrs, typs, <=)
 
   op teReflProof: Proof * Context * Type -> Proof
   def teReflProof(cxP, cx, t) =
