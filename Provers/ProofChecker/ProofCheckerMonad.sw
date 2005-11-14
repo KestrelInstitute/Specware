@@ -7,11 +7,7 @@ DC
 
 spec
 
-  import /Library/Unvetted/StateAndExceptionMonad
-  %import %State%, %Failures
   import State
-
-  type PCMonad(exc, a) = Monad(State,exc,a)
 
   (* To improve the readability of the checking function defined in spec
   Checker, we introduce a monad whose exceptions are the failures
