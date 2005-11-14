@@ -9,21 +9,27 @@ Ideally, it should be composed of the exception monad and state monad, but to do
 this requires spec parameters which we can achieve with morphisms, but that is
 too cumbersome at this point.
 
+2005:11:14
+AC
+- Renamed spec from StateAndExceptionMonad to StateAndExceptionMonads for
+consistency with specs StateMonads and ExceptionMonads.
+- Switched order of type Result and type Monad to maintain ordered references.
+- Removed comment "% unit operator" from declaration of op throw.
 *)
 
 
 StateExceptionMonad qualifying spec
 
-  type Monad(state, exc, a) = state -> Result (exc, a) * state
-
   type Result (exc, a) =
     | RETURN a
     | THROW  exc
 
+  type Monad (state, exc, a) = state -> Result (exc, a) * state
+
   op return : [state, exc, a] a -> Monad(state,exc,a)  % unit operator
   def return x = fn state -> (RETURN x, state)
 
-  op throw : [state,exc,a] exc -> Monad(state,exc,a)  % unit operator
+  op throw : [state,exc,a] exc -> Monad(state,exc,a)
   def throw x = fn state -> (THROW x, state)
 
   op >> infixr 25 : [state,exc,a,b]  % bind operator
@@ -45,7 +51,7 @@ StateExceptionMonad qualifying spec
   % resulting sequence if no exceptions, otherwise stop at first exception:
 
   op mapSeq : [state,exc,a,b] (a -> Monad(state,exc,b)) -> FSeq a ->
-                        Monad (state,exc, FSeq b)
+                              Monad (state,exc, FSeq b)
   def mapSeq f s =
     if empty? s then return empty
     else f (first s) >> (fn x ->
