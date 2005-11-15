@@ -8,6 +8,8 @@
 
 #+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
+#+allegro
+(setq excl:*record-source-file-info* nil) ; workaround for annoying bug
 #+cmu
 (setq ext:*gc-verbose* nil)
 #+cmu
