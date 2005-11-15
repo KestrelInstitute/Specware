@@ -9,6 +9,7 @@ spec
   updated, as opposed to just updating this single spec). *)
 
   import /Library/General/FiniteStructures
+  import /Library/Structures/Data/Maps/SimpleAsAlist
   import IntegerExt
   import StateAndExceptionMonads
          

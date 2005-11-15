@@ -397,6 +397,11 @@ spec
   use. *)
 
   % API public
+
+  op runCheck: Proof -> Result(Failure, Judgement)
+  def runCheck p =
+    run check p
+
   op check : Proof -> M Judgement
   def check(p) =
     checkMemo p >>

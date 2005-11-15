@@ -436,11 +436,11 @@ getOptSpec returns Some spc if the given string evaluates to a spec
 	      ctxtProof <- return (contextProof ctxt);
 	      %_ <- fail "foo";
 	      %SpecCalc.print (printProof ctxtProof);
-	      checkedProof <- return (check ctxtProof);
-	      case checkedProof initialState of
+	      checkedProof <- return (runCheck ctxtProof);
+	      case checkedProof of
 		% Actually ckeck that the judgement is well formed context of ctxt.
-		| (RETURN j, _) -> SpecCalc.print (SpecCalc.printJudgement(j))
-		| (THROW exc, _) -> SpecCalc.print (SpecCalc.printFailure(exc));
+		| RETURN j -> SpecCalc.print (SpecCalc.printJudgement(j))
+		| THROW exc -> SpecCalc.print (SpecCalc.printFailure(exc));
               return ()
             }
           | _ -> {

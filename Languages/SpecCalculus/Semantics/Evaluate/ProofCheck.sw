@@ -31,12 +31,12 @@ SpecCalc qualifying spec
       ctxt <- specToContext spc;
       %fail "foo";
       ctxtProof <- return (contextProof ctxt);
-      checkedProof <-  return (check ctxtProof);
-       proofChecked <-
-      case checkedProof initialState of
+      checkedProof <-  return (runCheck ctxtProof);
+      proofChecked <-
+      case checkedProof of
 	% Actually ckeck that the judgement is well formed context of ctxt.
-	| (RETURN j, _) -> {SpecCalc.print (printJudgement(j)); (return true)}
-	| (THROW exc,_) -> {SpecCalc.print (printFailure(exc)); (return false)};
+	| RETURN j -> {SpecCalc.print (printJudgement(j)); (return true)}
+	| THROW exc -> {SpecCalc.print (printFailure(exc)); (return false)};
 
       SpecCalc.print (printContext ctxt);
       print (printProof ctxtProof);
