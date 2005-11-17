@@ -22,44 +22,52 @@ STEP B: Do CVS updates for Specware
 STEP C:  Build Specware
 
  1. Go to C:\Specware4\Applications\Specware\bin\windows
-    Double-click Specware4.cmd. 
+    
+ Either:
 
- 2. If XEmacs doesn't start up and try to load Specware, edit Specware4.cmd to
+ 2. Double-click build.cmd
+    wait for the message "It is safe to exit"
+    exit from lisp
+
+ 3. Double-click bootstrap.cmd
+    wait for the message "It is safe to exit"
+    exit from lisp
+
+ Or:
+
+ 2. Double-click Specware4.cmd. 
+
+ 3. If XEmacs doesn't start up and try to load Specware, edit Specware4.cmd to
     ensure that the XEmacs variable is set correctly for your system. 
 
- 3. If this was a fresh check-out, and you are asked, 
+ 4. If this was a fresh check-out, and you are asked, 
       "Continue waiting for ACL to startup (y/n)?" 
     answer 
       'n'.
 
- 4. Do M-x build-specware4-from-base
+ 5. Do M-x build-specware4-from-base
+    wait for the message "It is safe to exit"
+    do not exit from lisp
 
- 5. Do M-x bootstrap-specware4
+ 6. Do M-x bootstrap-specware4
+    wait for the message "It is safe to exit"
+    exit from lisp
 
 STEP D: Start Specware, and create the Allegro distribution directory
-
- 0. Delete the directory C:\SpecwareReleases\Specware-4-1-4\Specware\distribution-Allegro
-    if it already exists
 
  1. Go to C:\Specware4\Applications\Specware\bin\windows
 
  2. Double-click Specware4.cmd
 
  3. Possibly:
-      Open C:\Specware4\Applications\Specware\Handwritten\Lisp\BuildDistribution.lisp 
+      Open C:\Specware4\Applications\Specware\Handwritten\Lisp\BuildDistribution_ACL.lisp 
        for editing in XEmacs.
       Set Specware-name, Specware-version, Specware-version-name as appropriate.
 
  4. In the "*Specware Shell*" buffer, type:
 
-    [
-     To get around an allegro bug you may have to do
-      ld c:\Program Files\acl62\code\build
-      ld c:\Program Files\acl62\code\genapp
-    ]
-
-    :cd /Specware4/Applications/Specware/Handwritten/Lisp
-    :ld BuildDistribution.lisp
+    cd C:/Specware4/Applications/Specware/Handwritten/Lisp
+    ld BuildDistribution_ACL.lisp
 
     [This should create a distribution directory under Specware4/... that contains 
      the Allegro stuff needed to run Specware as a stand-alone application, as well 
@@ -67,21 +75,9 @@ STEP D: Start Specware, and create the Allegro distribution directory
     Stephen Westfold wrote BuildRuntime.lisp and knows more.
 
 
-(STEP pre-E): Copy the distribution directory to where InstallShield is expecting it
-
-  1. Copy the Specware4 directory under C:\Specware4\distribution\, 
-
-  2  Paste it into C:\SpecwareReleases\Specware-4-1-4\Specware\distribution-Allegro\Windows.
-
-     (TODO: fix the lisp function to do this automatically in BuildRuntime) 
-     Copy and rename 
-       C:\Specware4\Release\Windows\Patches\empty-patch-template.fasl 
-     to   
-       C:\SpecwareReleases\Specware-4-1-4\Specware\distribution-Allegro\Windows\Specware4\Patches\
-
 STEP E: Create the InstallShield package
 
-  1.  Open InstallShield (Start -> Programs -> InstallShield -> Developer)
+  1.  Open InstallShield (Start -> Programs -> InstallShield -> InstallShield 10.5)
 
   2. Either:
 
@@ -100,7 +96,7 @@ STEP E: Create the InstallShield package
         Application Information:    
 
               Kestrel
-              Specware4
+              Specware
               4.1.4
               www.specware.com
 
@@ -124,13 +120,14 @@ STEP E: Create the InstallShield package
 
         Application Shortcuts:
 
-              Specware            => $P(absoluteInstallLocation)/Specware.cmd
-              Specware Shell      => $P(absoluteInstallLocation)/Specware Shell.cmd
+              Specware4            => $P(absoluteInstallLocation)/Specware4.cmd
+              Specware4 Shell      => $P(absoluteInstallLocation)/Specware4 Shell.cmd
+              icons for these are at C:/Specware4/Release/Windows/S.ico
 
         Application Interview:
 
               "Yes" to "Do you wnat the user to be shown a license agreement?"
-              License Agreement File:  C:/SpecwareReleases/Specware-4-1-4/Windows/ClickThruSpecwareLicense.lic
+              License Agreement File:  C:/Specware4/Release/WindowsLicense.txt
 
         Build Installattion:
 
