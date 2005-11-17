@@ -7,9 +7,9 @@
 ;;;The next three variable initializations need to be changed when going to a new minor version
 
 ;; Used in printing out the license and about-specware command
-(defvar cl-user::Specware-version "4.1")
-(defvar cl-user::Specware-version-name "Specware-4-1")
-(defvar cl-user::Specware-patch-level "4")
+(defparameter cl-user::Specware-version      "4.1")
+(defparameter cl-user::Specware-version-name "Specware-4-1")
+(defparameter cl-user::Specware-patch-level  "4")
 
 (push ':SPECWARE-DISTRIBUTION *features*)
 
