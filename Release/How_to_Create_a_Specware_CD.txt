@@ -52,7 +52,7 @@ STEP C:  Build Specware
  6. Do M-x bootstrap-specware4
     wait for the message "It is safe to exit"
     exit from lisp
-
+
 STEP D: Start Specware, and create the Allegro distribution directory
 
  1. Go to C:\Specware4\Applications\Specware\bin\windows
@@ -69,12 +69,14 @@ STEP D: Start Specware, and create the Allegro distribution directory
     cd C:/Specware4/Applications/Specware/Handwritten/Lisp
     ld BuildDistribution_ACL.lisp
 
-    [This should create a distribution directory under Specware4/... that contains 
-     the Allegro stuff needed to run Specware as a stand-alone application, as well 
-     as the necessary subdirectories (e.g. Documentation, Example, Library, etc.).  
-    Stephen Westfold wrote BuildRuntime.lisp and knows more.
+    This should create a distribution directory under 
 
+      C;/SpecwareReleases/Specware-4-1-4/Windows/Specware4
 
+    containing the Allegro stuff needed to run Specware as a stand-alone application,
+    as well as some necessary subdirs (e.g. Documentation, Example, Library, etc.).  
+
+
 STEP E: Create the InstallShield package
 
   1.  Open InstallShield (Start -> Programs -> InstallShield -> InstallShield 10.5)
@@ -95,71 +97,153 @@ STEP E: Create the InstallShield package
 
         Application Information:    
 
-              Kestrel
-              Specware
-              4.1.4
-              www.specware.com
+            Kestrel
+            Specware
+            4.1.4
+            www.specware.com
 
         Installation Requirements: 
 
-              Windows Platform support
+            Windows Platform support
 
         Installation Architecture:
 
-              Specware
+            Specware
               - Feature 1
 
         Application Files:
 
-              Specware.cmd        => C:/SpecwareReleases/Specware-4-1-4/Windows/Specware.cmd
-              Specware Shell.cmd  => C:/SpecwareReleases/Specware-4-1-4/Windows/Specware Shell.cmd
+            Specware4  => C:/SpecwareReleases/Specware-4-1-4/Windows/Specware4
 
-        Application Launchers:
-
-              <none>
+        Application Launchers:   <none>
 
         Application Shortcuts:
 
-              Specware4            => $P(absoluteInstallLocation)/Specware4.cmd
-              Specware4 Shell      => $P(absoluteInstallLocation)/Specware4 Shell.cmd
-              icons for these are at C:/Specware4/Release/Windows/S.ico
+          Make four entries (two copies of each)
 
-        Application Interview:
+            Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
+            Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
+            Specware4 (no Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
+            Specware4 (no Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
 
-              "Yes" to "Do you wnat the user to be shown a license agreement?"
-              License Agreement File:  C:/Specware4/Release/WindowsLicense.txt
+          Switch to "Installation Designer"
+             
+          In "View List" window at left, right-click, then "Expand All"
+          Select "Shortcuts"                          
 
-        Build Installattion:
+
+          In middle "Explorer" window
+          Select the first "Specware4", then edit its properties in window at right:
 
-              "Single Executable"         
-              "Run Installer after Build"  (optional)
+             Standard Properties:
+                Active             true
+                Display Name       Specware4
+                Folder             $P(displayName)  [or $P(bean5.displayName) etc.]
+                Name               Specware4
+		Target             $P(absoluteInstallationLocation)/Specware4.cmd
 
-        Click on "Build Installation"
+             Open platform-Specific Properites
+             Scroll down to "Windows"
+             Turn on with "Enable", then
+                Foldercontext             Program Menu for All Users
+                Icon                      C:/Specware4/Release/Windows/S.ico
+                Icon file type            Bundled
+                Platform Specific Targer  <blank>
 
-        ============================================        
-        If you selected "Run Installer after Build" then InstallShield 
-        will prompt to install Specware on this machine.  
-        ============================================        
+          Select the second "Specware4" and edit its properties in window at right:
+
+             Standard Properites:
+                Active             true
+                Display Name       Specware4
+                Folder             
+                Name               Specware4
+		Target             $P(absoluteInstallationLocation)/Specware4.cmd
+
+             Open platform-Specific Properites
+             Scroll down to "Windows"
+             Turn on with "Enable", then
+                Foldercontext             Desktop for All Users
+                Icon                      C:/Specware4/Release/Windows/S.ico
+                Icon file type            Bundled
+                Platform Specific Targer  <blank>
+
+
+          Select the first "Specware4 (no Emacs)" and edit its properties in window at right:
+
+             Standard Properites:
+                Active             true
+                Display Name       Specware4 (no Emacs)
+                Folder             $P(displayName)       [or $P(bean5.displayName) etc.]
+                Name               Specware4 (no Emacs)
+		Target             $P(absoluteInstallationLocation)/Specware4 Shell.cmd
+
+             Open platform-Specific Properites
+             Scroll down to "Windows"
+             Turn on with "Enable", then
+                Foldercontext             Program Menu for All Users
+                Icon                      C:/Specware4/Release/Windows/S.ico
+                Icon file type            Bundled
+                Platform Specific Targer  <blank>
 
 
+          Select the second "Specware4 (no Emacs)" and edit its properties in window at right:
+
+             Standard Properites:
+                Active             true
+                Display Name       Specware4 (no Emacs)
+                Folder             
+                Name               Specware4 (no Emacs)
+		Target             $P(absoluteInstallationLocation)/Specware4 Shell.cmd
+
+             Open platform-Specific Properites
+             Scroll down to "Windows"
+             Turn on with "Enable", then
+                Foldercontext             Desktop for All Users
+                Icon                      C:/Specware4/Release/Windows/S.ico
+                Icon file type            Bundled
+                Platform Specific Targer  <blank>
+
+
+        Returning to the Project Assistant:
+
+        Installation Interview:
+
+           "Yes" to "Do you wnat the user to be shown a license agreement?"
+                    License Agreement File:  C:/Specware4/Release/WindowsLicense.txt
+
+           "Yes" to "Do you want your users to be prompted to modify...?"
+
+           "No"  to "Do you want users to be able to selectively install parts of your application?"
+
+
+        Build Installation
+
+           Select "CD-ROM"
+
+           Maybe select "Run Installer after Build"  (optional)
+
+           Click on "Build Installation"
+
+           ============================================        
+           If you selected "Run Installer after Build" then InstallShield 
+           will prompt to install Specware on this machine.  
+           ============================================        
+
 STEP F: Copy the installation to the CD directory
 
-  1. Go to Tools -> Open Release Folder.  
+  1. Still withing InstallShield, go to (Tools -> Open Release Folder)
 
-  2. Copy everything in the window that pops up.  
+  2. Double-click on dsk1 to open it.
 
-  3. Paste everything into C:\SpecwareReleases\Specware-4-1-4\Specware\Windows\CD\
+  3. Copy everything in the resulting window (about ten files).
 
-  4. Edit C:\SpecwareReleases\Specware-4-1-4\Specware\Windows\CD\Autorun.inf 
-     to point to Windows/setup.exe instead, and move Autorun.inf up one level to 
-     C:\SpecwareReleases\Specware-4-1-4\Specware\Windows\CD 
-     so that Windows will find it when the CD is inserted into the user's machine.
+  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Windows\
+     [This dir was prepared in step D4 by BuildDistribution_ACL.cmd]
 
-
-     *** To add a shortcut, right-click "Desktop" and select "New shortcut to preexisting file". 
-         Type "Specware4.cmd" as the filename. 
-         Add a second shortcut to the same file under "Taskbar/Start Menu/Programs Menu".  
-         Rename both shortcut names as "Specware 4.1".
+  ??? To add a shortcut, right-click "Desktop" and select "New shortcut to preexisting file". 
+      Type "Specware4.cmd" as the filename. 
+      Add a second shortcut to the same file under "Taskbar/Start Menu/Programs Menu".  
+      Rename both shortcut names as "Specware 4.1".
 
 
 STEP G: Copy CMUlisp files over to Windows
@@ -178,14 +262,14 @@ STEP H: CREATE LABEL
   2. Use the CD LabelMaker software to insert a jpg into the label template.
 
   3. Insert a sheet of the label stickers into P6200, with the label side up.  Print to P6200.
-
+
 STEP I: Burn the CD
 
   1. Insert a blank CD into the PlexWriter drive on Core-Win.
 
   2. Open Nero (Start -> Programs -> Ahead Nero -> Nero - Burning Rom)
 
-  3. Click Next, Next, Next, Next, Finish through the first wizard that pops up.
+  3. Click  Next, Next, Next, Next, Finish  through the first wizard that pops up.
 
   4. In the right side window labeled File Browser, move to C:\SpecwareReleases\Specware-4-1-4\Specware\Windows\CD
 
@@ -195,7 +279,7 @@ STEP I: Burn the CD
 
   7. Rename the CD from NEW to Specware-4-1-4 by right-clicking the NEW label in the leftmost panel and selecting Rename.
 
-  8. Go to File -> Write CD, and then click Burn in the window that pops up.
+  8. Go to (File -> Write CD), and then click Burn in the window that pops up.
 
   9. Wait. 
      Click Done when the burning process is completed.  
