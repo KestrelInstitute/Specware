@@ -1,3 +1,11 @@
+;;; This file is used to load the files for a specware image.
+;;;
+;;; (Do not confuse it with the file ../../lisp/Specware4.lisp
+;;;  that is generated from .sw sources.)
+;;;
+;;; Among other things, this file is referenced by generate-application in
+;;; BuildDistribution_ACL.lisp
+
 (defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
 
@@ -57,15 +65,21 @@
 			     :defaults "../../../Handwritten/Lisp/load-utilities"
 			     :type     "lisp"))
 
-(defvar Specware4 (specware::getenv "SPECWARE4"))
+(defparameter Specware4 (specware::getenv "SPECWARE4"))
+
+(defparameter Specware-dir 
+    (let ((dir (substitute #\/ #\\ Specware4)))
+      (if (eq (schar dir (1- (length dir))) #\/)
+	  dir
+	(concatenate 'string dir "/"))))
+
+(defun in-specware-dir (file) (concatenate 'string Specware-dir file))
 
 #+cmu
 ;(without-package-locks     ;; add in version 19
- (compile-and-load-lisp-file (concatenate 'string
-					  Specware4 "/Applications/Handwritten/Lisp/cmucl-patch"));)
+ (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch")) ; )
 ;#+sbcl
-;(compile-and-load-lisp-file (concatenate 'string
-;					 Specware4 "/Applications/Handwritten/Lisp/sbcl-patch"))
+;(compile-and-load-lisp-file (in-specware-dir "/Applications/Handwritten/Lisp/sbcl-patch"))
 
 (defun ignore-warning (condition)
    (declare (ignore condition))
@@ -73,8 +87,7 @@
 
 (handler-bind ((warning #'ignore-warning))
   (load (make-pathname
-	 :defaults (concatenate 'string Specware4
-				"/Provers/Snark/Handwritten/Lisp/snark-system")
+	 :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
 	 :type     "lisp")))
 
 (format t "Loading Snark.")
@@ -89,7 +102,14 @@
 
 ;; The following uses make-system from load-utilities above.
 ;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.
-(make-system (concatenate 'string Specware4 "/Applications/Specware/UI/Emacs/Handwritten/Lisp"))
+(make-system (in-specware-dir "Applications/Specware/UI/Emacs/Handwritten/Lisp"))
+
+;; We need to preload the (artificial to Allegro) :emacs-mule external 
+;; character format.
+;; Otherwise, Specware distribution images created by generate-application 
+;; (see BuildDistribution_ACL.lisp) will complain at startup that :emacs-mule
+;; cannot be found.
+#+Allegro (excl::find-external-format :emacs-mule)
 
 ;; The following list should be generated automatically. That is, the
 ;; files listed below define functions that are declared in specs
@@ -123,8 +143,7 @@
     )
   )
 
-(map 'list #'(lambda (file)
-               (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+(map 'list #'(lambda (file) (compile-and-load-lisp-file (in-specware-dir file)))
      HandwrittenFiles
      )
 
@@ -206,16 +225,14 @@
 ;(handler-bind ((warning #'ignore-warning))
   (map 'list #'(lambda (file)
 		 (list 33 file)
-		 (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+		 (compile-and-load-lisp-file (in-specware-dir file)))
        SpecwareRuntime
        );)
 
 ;; Load the parser library and the language specific parser files (grammar etc.)
-(make-system (concatenate 'string
-			  Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
+(make-system (in-specware-dir "Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
 
-(make-system (concatenate 'string
-			  Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
+(make-system (in-specware-dir "Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
 ;;; Initialization includes preloading the base spec.
 ;;; (Specware::initializeSpecware-0) ; Now happens in startup actions (see bootstrap script)
@@ -225,8 +242,7 @@
   (format t "Checking  command-line arguments: ~a~%" (system:command-line-arguments))
   (when (member "socket" (system:command-line-arguments)
 		:test 'equal)
-    (load (concatenate 'string
-	    Specware4 "/Gui/src/Lisp/specware-socket-init"))))
+    (load (in-specware-dir "Gui/src/Lisp/specware-socket-init"))))
 
 #+allegro
 (push 'start-java-connection? excl:*restart-actions*)

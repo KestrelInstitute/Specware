@@ -17,22 +17,43 @@
 (defparameter cl-user::Specware-version-name "Specware-4-1")
 (defparameter cl-user::Specware-patch-level  "4")
 
-;; normalize-path converts "\" to "/" and postpends "/"
-(defparameter Specware-dir (normalize-path (sys:getenv "SPECWARE4") nil))
-(defparameter Allegro-dir  (normalize-path (sys:getenv "ALLEGRO")   nil))
+(defun fix-dir (dir)
+  (let ((dir (substitute #\/ #\\ dir)))
+    (if (eq (schar dir (1- (length dir))) #\/)
+	dir
+      (concatenate 'string dir "/"))))
+    
+(defparameter Specware-dir (fix-dir (sys:getenv "SPECWARE4")))
+(defparameter Allegro-dir  (fix-dir (sys:getenv "ALLEGRO")))
 
-(defun in-specware-dir (file) (concatenate 'string Specware4-dir file))
-(defun in-lisp-dir     (file) (concatenate 'string Allegro-dir   file))
+(defun in-specware-dir (file) (concatenate 'string Specware-dir file))
+(defun in-lisp-dir     (file) (concatenate 'string Allegro-dir  file))
 
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-1")
 
-;; dist-dir-name is the sub-directory to receive this particular distribution.
-;; In particular, this is where generate-application puts all its stuff.
-(defparameter dist-dir-name "distribution/")
+(defparameter distribution-directory "")
 
-(defparameter distribution-directory 
-  (in-specware-dir  (concatenate 'string dist-dir-name Specware-name "/")))
+(let* ((d1 (format nil "C:/SpecwareReleases/~A-~A/"
+		   specware-version-name	 
+		   specware-patch-level))
+       (d2 (concatenate 'string d1 "Specware/"))
+       (d3 (concatenate 'string d2 "Windows/"))
+       (d4 (concatenate 'string d3 "Specware4/")))
+  (format t "~%")
+  (unless (probe-file d1) 
+    (format t "~&;;; Making new ~A~%" d1)
+    (specware::make-directory d1))
+  (unless (probe-file d2)
+    (format t "~&;;; Making new ~A~%" d2)
+    (specware::make-directory d2))
+  (unless (probe-file d3)
+    (format t "~&;;; Making new ~A~%" d3)
+    (specware::make-directory d3))
+  (when (probe-file d4)
+    (format t "~&;;; Deleting old version of ~A~%" d4)
+    (excl::delete-directory-and-files d4))
+  (setq distribution-directory d4))
 
 (defun in-distribution-dir (file) (concatenate 'string distribution-directory file))
 
@@ -71,7 +92,7 @@
  (list (in-specware-dir "Release/Windows/Specware4.cmd")
        (in-specware-dir "Release/Windows/Specware4 Shell.cmd")
        (in-specware-dir "Applications/Specware/Handwritten/Lisp/StartShell.lisp")
-       (in-specware-dir "Scripts/Windows/check-and-set-environment.cmd"))
+       (in-specware-dir "Applications/Specware/bin/windows/check-and-set-environment.cmd"))
  
  ;; Possible option instead of excl::delete-directory-and-files call
  :allow-existing-directory t
@@ -86,7 +107,7 @@
 
 ;;; Specware4 directory
 
-(format t "~&;;; Copying Tests, Documentation, Patches, accord.el to distribution directory~%")
+(format t "~2&;;; Copying Tests, Documentation, Patches, accord.el to distribution directory~%")
 
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/copy-files-for-distribution.lisp"))
 
@@ -94,16 +115,31 @@
 
 (format t "~&;;; Copying emacs xeli dir to distribution directory~%")
 
-(specware::make-directory (in-distribution-dir "Library"))
-(specware::make-directory (in-distribution-dir "Library/IO"))
-(specware::make-directory (in-distribution-dir "Library/IO/Emacs"))
-(specware::make-directory (in-distribution-dir "Library/IO/Emacs/xeli/"))
+(let ((dir (in-distribution-dir "Library")))
+  (unless (probe-file dir)
+    (format t "~&;;; Making new ~A~%" dir)
+    (specware::make-directory dir)))
+
+(let ((dir (in-distribution-dir "Library/IO")))
+  (unless (probe-file dir)
+    (format t "~&;;; Making new ~A~%" dir)
+    (specware::make-directory dir)))
+
+(let ((dir (in-distribution-dir "Library/IO/Emacs")))
+  (unless (probe-file dir)
+    (format t "~&;;; Making new ~A~%" dir)
+    (specware::make-directory dir)))
+
+(let ((dir (in-distribution-dir "Library/IO/Emacs/xeli/")))
+  (when (probe-file dir)
+    (format t "~&;;; Deleting old ~A~%" dir)
+    (excl::delete-directory-and-files dir)))
 
 (specware::copy-directory (in-lisp-dir "xeli/") (in-distribution-dir "Library/IO/Emacs/xeli/"))
 
 (format t "~%;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 (format t "~&Now have ~A~%" (in-distribution-dir ""))
-(format t "~&[This completes STEP D in How_To_Create_Accord_CD.txt]~%")
+(format t "~&;;; [This completes STEP D in How_To_Create_Accord_CD.txt]~%")
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 
 (format t "~&It is safe to exit now~%")
