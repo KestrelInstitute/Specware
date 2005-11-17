@@ -76,12 +76,11 @@ STEP D: Start Specware, and create the Allegro distribution directory
     containing the Allegro stuff needed to run Specware as a stand-alone application,
     as well as some necessary subdirs (e.g. Documentation, Example, Library, etc.).  
 
-
 STEP E: Create the InstallShield package
 
   1.  Open InstallShield (Start -> Programs -> InstallShield -> InstallShield 10.5)
 
-  2. Either:
+  2.  Either:
 
        Click on "Create a new project..." in the left side panel.
        Click on "Universal Installer Project"
@@ -89,7 +88,7 @@ STEP E: Create the InstallShield package
        Enter "Location:" as 
         "C:\Documents and Settings\core\My Documents\InstallShield X Universal Projects\"
 
-     Or (if Specware project already exists):
+      Or (if Specware project already exists):
 
        Click on Specware-4-1-4-Windows.uip in main InstallShield window
 
@@ -116,7 +115,7 @@ STEP E: Create the InstallShield package
             Specware4  => C:/SpecwareReleases/Specware-4-1-4/Windows/Specware4
 
         Application Launchers:   <none>
-
+
         Application Shortcuts:
 
           Make four entries (two copies of each)
@@ -131,7 +130,6 @@ STEP E: Create the InstallShield package
           In "View List" window at left, right-click, then "Expand All"
           Select "Shortcuts"                          
 
-
           In middle "Explorer" window
           Select the first "Specware4", then edit its properties in window at right:
 
@@ -204,9 +202,9 @@ STEP E: Create the InstallShield package
                 Platform Specific Targer  <blank>
 
 
-        Returning to the Project Assistant:
+        Return to the Project Assistant
 
-        Installation Interview:
+        Installation Interview
 
            "Yes" to "Do you wnat the user to be shown a license agreement?"
                     License Agreement File:  C:/Specware4/Release/WindowsLicense.txt
@@ -228,7 +226,7 @@ STEP E: Create the InstallShield package
            If you selected "Run Installer after Build" then InstallShield 
            will prompt to install Specware on this machine.  
            ============================================        
-
+
 STEP F: Copy the installation to the CD directory
 
   1. Still withing InstallShield, go to (Tools -> Open Release Folder)
@@ -244,7 +242,6 @@ STEP F: Copy the installation to the CD directory
       Type "Specware4.cmd" as the filename. 
       Add a second shortcut to the same file under "Taskbar/Start Menu/Programs Menu".  
       Rename both shortcut names as "Specware 4.1".
-
 
 STEP G: Copy CMUlisp files over to Windows
 
@@ -295,18 +292,14 @@ STEP J:: Stick the label on the CD
 
   4. Take the CD off and make sure the label is fully adhered to the CD.
 
-
 STEP K: Test
 
   1. Install Specware 4.1.4
 
   2. Run the examples & tests.
 
-
 STEP L: Tag the sources in CVS with the release version (rel-4-1-4)
  	See http://intranet/specware/intranet/cvs-cheatsheet.html 
-
-
 
 For Help:
 
