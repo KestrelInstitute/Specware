@@ -40,13 +40,9 @@
 ;;;directory.  Old patch files will not be removed or overwritten.
 
 (defun patch-directory ()
-  (let ((specware-dir (specware::getEnv "SPECWARE4")))
-    ;; system-spec::getEnv returns  (:|Some| . <string>)  or  (:|None|)
-    ;;    specware::getEnv returns  <string>              or  NIL.
-    ;; system-spec package is missing in cmulisp release, for some reason
-    (if (equal specware-dir nil)
-	(warn "patch-directory: SPECWARE4 environment variable not set")
-      (concatenate 'string specware-dir "/Patches/"))))
+  (if (equal specware-dir nil)
+      (warn "patch-directory: SPECWARE4 environment variable not set")
+    (in-specware-dir "Patches/")))
 
 (defun patch-number (path)
   (or (ignore-errors
