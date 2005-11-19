@@ -1,33 +1,13 @@
 % Translation from MetaSlang abstract syntax to proof checker abstract syntax.
+% have special case for (f e) that doesn't expand the case
+% in th case of a fn x (with a single var) .. don't expand.
 
-% This file will be moved.
-
-Translate qualifying
-spec
+Translate qualifying spec
   import Spec
   import /Languages/MetaSlang/AbstractSyntax/AnnTerm
   import /Languages/MetaSlang/Specs/Environment
   import /Languages/SpecCalculus/Semantics/Environment  % for the Specware monad
 
-  type Subst = List (Constructor * Operation)
-
-%%   op applyConstructorSubst : Subst -> Expression -> Expression
-%%   def applyConstructorSubst subst expr =
-%%     case expr of
-%%       | EMBED (typ,constr) = 
-%%           let
-%%             def lookup l =
-%%               case l of
-%%                 | [] -> expr
-%%                 | (constructor,opr)::rest ->
-%%                    if constructor = constr then
-%%                      OPI (opr,empty)     % !!!???
-%%                    else
-%%                      lookup rest
-%%           in
-%%             lookup subst
-%%       | _ -> expr
-   
   op specToContext : Spec -> SpecCalc.Env Context
   def specToContext spc =
     %let _ = fail("specToContext") in
@@ -53,94 +33,92 @@ spec
               case typeInfo.dfn of
                 | Pi (tyVars,typ as (CoProduct (sums,_)),_) -> {
                      newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
+                     typeVarTypes <- mapListToFSeq (fn tyVar -> return (VAR (idToTypeVariable tyVar))) tyVars;
+                     % typeVarTypes <- map (fn tyVar -> return (VAR tyVar)) newTyVars;
                      test? <- recursiveSumOfProducts? spc qid;
                      if test? then
                        let
-                         def idToOperation str = qidToOperation (mkUnQualifiedId str) (embed prefix)
+                         def idToOperation str = qidToOperation (mkUnQualifiedId str) (embed prefix)     % {{{
                          def summandToOp summand =
                            case summand of
                              | (name, None) -> {
-                                 newOpName <- return ((printQualifiedId qid) ^ "$" ^ name);
+                                 newOpName <- return (constructorToOpName qid name);
                                  newOperator <- return (idToOperation newOpName);
-                                 typeVarTypes <- mapListToFSeq (fn tyVar -> return (VAR (idToTypeVariable tyVar))) tyVars;
                                  newType <- return (TYPE (qidToTypeName qid, typeVarTypes));
-                                 % return (opDeclaration (newOpName,newTyVars,newType)) % ,(idToConstructor name,newOperator))
-                                 return (newOpName,newOperator,newTyVars,newType) % ,(idToConstructor name,newOperator))
+                                 return (newOpName,newOperator,newType) 
                                 }
                              | (name, Some typ) -> {
-                                 newOpName <- return ((printQualifiedId qid) ^ "$" ^ name);
+                                 newOpName <- return (constructorToOpName qid name);
                                  newOperator <- return (idToOperation newOpName);
-                                 typeVarTypes <- mapListToFSeq (fn tyVar -> return (VAR (idToTypeVariable tyVar))) tyVars;
                                  srcType <- Type.msToPC spc typ;
                                  newType <- return (srcType --> (TYPE (qidToTypeName qid, typeVarTypes)));
-                                 % return (opDeclaration (newOpName,newTyVars,newType)) % ,(idToConstructor name,newOpName))
-                                 return (newOpName,newOperator,newTyVars,newType) % ,(idToConstructor name,newOpName))
+                                 return (newOpName,newOperator,newType)
                                 }
-                          def injectiveAxiom axms (opName,oper,typeVars,typ) =
-                            case typ of
-                              | ARROW (srcType,tar) -> {
-                                    lVar <- newVar;
-                                    rVar <- newVar;
-                                    newTerm <- return (FA2 (lVar,srcType,rVar,srcType,
-                                                   (EQ (APPLY (OPI (oper,empty),VAR lVar),APPLY (OPI (oper,empty),VAR rVar)))
-                                               ==> (EQ (VAR lVar,VAR rVar))));
-                                    return (axms <| (axioM ("injective$" ^ opName,typeVars,newTerm)))
-                                  }
-                              | _ -> return axms
-                          def disjointFrom op1 operators =
-                            case operators of
-                              | [] -> return empty
-                              | op2::rest ->
-                                 (case (op1,op2) of
-                                   | ((name1,oper1,tyVars1,ARROW (src1,tar1)),(name2,oper2,tyVars2,ARROW (src2,tar2))) -> {
-                                       var1 <- newVar;
-                                       var2 <- newVar;
-                                       newTerm <- return (FA2 (var1,src1,var2,src2,
-                                               ~~ (EQ (APPLY (OPI (oper1,empty),VAR var1),APPLY (OPI (oper2,empty),VAR var2)))));
-                                       newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,tyVars1,newTerm));
-                                       moreAxioms <- disjointFrom op1 rest;
-                                       return (newAxiom |> moreAxioms) 
-                                     }
-                                   | ((name1,oper1,tyVars1,typ1),(name2,oper2,tyVars2,ARROW (src2,tar2))) -> {
-                                       var2 <- newVar;
-                                       newTerm <- return (FA (var2,src2,
-                                               ~~ (EQ (OPI (oper1,empty),APPLY (OPI (oper2,empty),VAR var2)))));
-                                       newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,tyVars1,newTerm));
-                                       moreAxioms <- disjointFrom op1 rest;
-                                       return (newAxiom |> moreAxioms) 
-                                     }
-                                   | ((name1,oper1,tyVars1,ARROW (src1,tar1)),(name2,oper2,tyVars2,typ2)) -> {
-                                       var1 <- newVar;
-                                       newTerm <- return (FA (var1,src1,
-                                               ~~ (EQ (APPLY (OPI (oper1,empty),VAR var1),OPI (oper2,empty)))));
-                                       newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,tyVars1,newTerm));
-                                       moreAxioms <- disjointFrom op1 rest;
-                                       return (newAxiom |> moreAxioms) 
-                                     }
-                                   | ((name1,oper1,tyVars1,typ1),(name2,oper2,tyVars2,typ2)) -> {
-                                       newTerm <- return (~~ (EQ (OPI (oper1,empty),OPI (oper2,empty))));
-                                       newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,tyVars1,newTerm));
-                                       moreAxioms <- disjointFrom op1 rest;
-                                       return (newAxiom |> moreAxioms)
-                                     })
-                          def disjointAxioms operators =
-                            case operators of
-                              | op1::rest -> {
-                                  op1Axioms <- disjointFrom op1 rest;
-                                  restAxioms <- disjointAxioms rest;
-                                  return (op1Axioms ++ restAxioms)
-                                }
-                              | _ -> return empty
+                         def injectiveAxiom axms (opName,oper,typ) =
+                           case typ of
+                             | ARROW (srcType,tar) -> {
+                                   lVar <- newVar;
+                                   rVar <- newVar;
+                                   newTerm <- return (FA2 (lVar,srcType,rVar,srcType,
+                                                  (EQ (APPLY (OPI (oper,typeVarTypes),VAR lVar),APPLY (OPI (oper,typeVarTypes),VAR rVar)))
+                                              ==> (EQ (VAR lVar,VAR rVar))));
+                                   return (axms <| (axioM ("injective$" ^ opName,newTyVars,newTerm)))
+                                 }
+                             | _ -> return axms
+                         def disjointFrom op1 operators =
+                           case operators of
+                             | [] -> return empty
+                             | op2::rest ->
+                                (case (op1,op2) of
+                                  | ((name1,oper1,ARROW (src1,tar1)),(name2,oper2,ARROW (src2,tar2))) -> {
+                                      var1 <- newVar;
+                                      var2 <- newVar;
+                                      newTerm <- return (FA2 (var1,src1,var2,src2,
+                                              ~~ (EQ (APPLY (OPI (oper1,empty),VAR var1),APPLY (OPI (oper2,empty),VAR var2)))));
+                                      newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,newTyVars,newTerm));
+                                      moreAxioms <- disjointFrom op1 rest;
+                                      return (newAxiom |> moreAxioms) 
+                                    }
+                                  | ((name1,oper1,typ1),(name2,oper2,ARROW (src2,tar2))) -> {
+                                      var2 <- newVar;
+                                      newTerm <- return (FA (var2,src2,
+                                              ~~ (EQ (OPI (oper1,typeVarTypes),APPLY (OPI (oper2,typeVarTypes),VAR var2)))));
+                                      newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,newTyVars,newTerm));
+                                      moreAxioms <- disjointFrom op1 rest;
+                                      return (newAxiom |> moreAxioms) 
+                                    }
+                                  | ((name1,oper1,ARROW (src1,tar1)),(name2,oper2,typ2)) -> {
+                                      var1 <- newVar;
+                                      newTerm <- return (FA (var1,src1,
+                                              ~~ (EQ (APPLY (OPI (oper1,typeVarTypes),VAR var1),OPI (oper2,typeVarTypes)))));
+                                      newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,newTyVars,newTerm));
+                                      moreAxioms <- disjointFrom op1 rest;
+                                      return (newAxiom |> moreAxioms) 
+                                    }
+                                  | ((name1,oper1,typ1),(name2,oper2,typ2)) -> {
+                                      newTerm <- return (~~ (EQ (OPI (oper1,typeVarTypes),OPI (oper2,typeVarTypes))));
+                                      newAxiom <- return (axioM ("disjoint$" ^ name1 ^ "$" ^ name2,newTyVars,newTerm));
+                                      moreAxioms <- disjointFrom op1 rest;
+                                      return (newAxiom |> moreAxioms)
+                                    })
+                         def disjointAxioms operators =
+                           case operators of
+                             | op1::rest -> {
+                                 op1Axioms <- disjointFrom op1 rest;
+                                 restAxioms <- disjointAxioms rest;
+                                 return (op1Axioms ++ restAxioms)
+                               }
+                             | _ -> return empty     % }}}
                        in {
                          print ("Recursive sum of products " ^ (printQualifiedId qid) ^ "\n");
                          newOperators <- mapM summandToOp sums;
-                         decls <- mapListToFSeq (fn opr -> return (opDeclaration (opr.2,opr.3,opr.4))) newOperators;
+                         decls <- mapListToFSeq (fn opr -> return (opDeclaration (opr.2,newTyVars,opr.3))) newOperators;
                          injAxioms <- foldM injectiveAxiom FSeq.empty newOperators;
                          disjAxioms <- disjointAxioms newOperators;
                          return ((fSeq <| (typeDeclaration (qidToTypeName qid, length tyVars))) ++ decls ++ injAxioms ++ disjAxioms)
                        }
                      else {
-                       print ("Not recursive sum of products " ^ (printQualifiedId qid) ^ "\n");
+                       print ("Not a recursive sum of products " ^ (printQualifiedId qid) ^ "\n");
                        newType <- Type.msToPC spc typeInfo.dfn;
                        return (fSeq <| (typeDefinition (qidToTypeName qid, newTyVars, newType)))
                      }
@@ -414,7 +392,6 @@ spec
 
   op matchType : Spec -> MS.Sort -> MS.Sort -> Env (List (TyVar * Type))
   def matchType spc t1 t2 =
-    % case (unfoldBase (spc,t1),unfoldBase (spc,t2)) of
     case (t1,t2) of
       | (Arrow (l1,l2,_), Arrow (r1,r2,_)) -> {
            sub1 <- matchType spc l1 r1;
@@ -567,6 +544,7 @@ spec
           (vars,types,boolExpr) <- Pattern.msToPC spc (VAR var) pat;
           return (var |> vars,newType |> types, ((EMBED (newType, idToConstructor id)) @ (VAR var)) == expr)
         }
+      %%% Change to not descend into term .. separate pass for "as".
       | RecordPat (fields as (("1",_)::_),_) ->
            foldM (fn (vars,types,newExpr) -> fn (n,pat) -> {
               fieldType <- Type.msToPC spc (patternSort pat);
@@ -606,10 +584,11 @@ spec
   op qidToOperation : QualifiedId -> MetaslangProofChecker.Fixity -> Operation
   def qidToOperation qid fxty = (printQualifiedId qid,fxty)
 
-  op  TranslateMSToPC.newVar : SpecCalc.Env Variable
-  def TranslateMSToPC.newVar = {
+  op newVar : SpecCalc.Env Variable
+  def newVar = {
     n <- freshNat;   % in the Specware monad
     return (abbr n)
+%%% Change to produce user vars (as strings)
   }
 
   op mapListToFSeq : fa(a,b) (a -> b) -> List a -> FSeq b
@@ -625,7 +604,10 @@ spec
           return (xNew |> xsNew)
         }
 
-  op MSToPCTranslateMonad.mapQualifierMapToFSeq : fa(a,b) (Qualifier * Id * a -> SpecCalc.Env b) -> AQualifierMap a -> SpecCalc.Env (FSeq b)
+  op MSToPCTranslateMonad.mapQualifierMapToFSeq :
+    fa(a,b) (Qualifier * Id * a -> SpecCalc.Env b)
+         -> AQualifierMap a
+         -> SpecCalc.Env (FSeq b)
   def MSToPCTranslateMonad.mapQualifierMapToFSeq f qMap =
     let
       def newF (qual,id,a,rest) = {
@@ -692,30 +674,36 @@ spec
           let
             def checkSums sums =
               case sums of
-                | [] -> false
+                | [] -> true
                 | (name, None)::rest -> checkSums rest
                 | (name, Some (TyVar (tVar,_)))::rest -> checkSums rest
                 | (name, Some (Base (otherQid,typs,_)))::rest ->
-                    if (qid = otherQid) then true
-                    else
+                    if (qid = otherQid) then
                       checkSums rest
+                    else
+                      false
                 | (name, Some (Product (fields,_)))::rest -> 
-                    if checkFields fields then true
-                    else
+                    if checkFields fields then
                       checkSums rest
+                    else
+                      false
 
             def checkFields fields =
               case fields of
-                | [] -> false
+                | [] -> true
                 | (name, TyVar (tVar,_))::rest -> checkFields rest
                 | (name, Base (otherQid,typs,_))::rest ->
-                    if (qid = otherQid) then true
-                    else
+                    if (qid = otherQid) then
                       checkFields rest
+                    else
+                      false
           in
             return (checkSums pairs)
       | _ -> return false
     }
+
+  op constructorToOpName : QualifiedId -> String -> String
+  def constructorToOpName qid name = (printQualifiedId qid) ^ "$" ^ name
 
   op convertFixity : MetaSlang.Fixity ->  MetaslangProofChecker.Fixity
   def convertFixity fxty =
@@ -723,11 +711,4 @@ spec
       | Nonfix -> embed prefix
       | Infix _ -> infix
       | Unspecified -> embed prefix
-
-    % computeUpperMatrix pairs =
-      % case pairs of
-        % | [] -> []
-        % | sumTerm::rest -> (map (fn x -> (sumTerm,x)) rest)  List.++  (computeUpperMatrix rest)
-            %  
-    % (a::l)  zip a with l and then do the same to l
 endspec
