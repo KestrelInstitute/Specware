@@ -27,7 +27,7 @@ echo.
 echo Preparing to offer to install Specware 4.1.4 ...
 echo.
 echo Once InstallShield starts (which can take awhile, so be patient),
-echo you should press "Next", then "Install", then "Finish".
+echo you should press "Next", "Next", "Next", "Install", "Finish".
 echo.
 echo (To do so, you will need to accept the click-thru license terms.)
 echo. 
