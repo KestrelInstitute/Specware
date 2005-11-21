@@ -194,9 +194,23 @@
 (specware::copy-file (in-specware-dir "Release/Autorun.inf")
 		     (in-cd-dir "Autorun.inf"))
 
-(format t "~&;;; Adding Installer.cmd for Windows: ~A~%" (in-cd-dir "Installer.cmd"))
-(specware::copy-file (in-specware-dir "Release/Installer.cmd")
-		     (in-cd-dir "Installer.cmd"))
+(format t "~&;;; Adding install script for Windows: ~A~%" (in-cd-dir "InstallOnWindows.cmd"))
+(specware::copy-file (in-specware-dir "Release/InstallOnWindows.cmd")
+		     (in-cd-dir "InstallOnWindows.cmd"))
+
+(format t "~&;;; Adding install script for Linux: ~A~%" (in-cd-dir "InstallOnLinux"))
+(specware::copy-file (in-specware-dir "Release/InstallOnLinux")
+		     (in-cd-dir "InstallOnLinux"))
+
+(format t "~&;;; Adding install script for Mac: ~A~%" (in-cd-dir "InstallOnMac"))
+(specware::copy-file (in-specware-dir "Release/InstallOnMac")
+		     (in-cd-dir "InstallOnMac"))
+
+;;; ============ EMPTY DIRS TO RECEIVE INSTALLSHIELD RESULTS ============
+
+(make-dir-if-missing (concatenate 'string *CD-dir* "Windows"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Linux"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Mac"))
 
 (format t "~&;;;~%")
 (format t "~&;;;     ===~%")
