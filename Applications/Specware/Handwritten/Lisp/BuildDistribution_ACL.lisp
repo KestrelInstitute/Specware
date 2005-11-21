@@ -1,21 +1,15 @@
 ;; This file builds a distribution directory for Windows/Allegro Runtime Specware.
+;; Perhaps it should be under Specware4/Release/ instead -- it refers to several
+;; files on that directory.
 
 (defpackage :Specware)
 
 (format t "~%;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 (format t "~&About to build distribution dir for Specware under Allegro on Windows.~%")
-(format t "~&[See STEP D in How_to_Create_a_Specware_CD.txt]~%")
+(format t "~&[This implements STEP D in How_to_Create_a_Specware_CD.txt]~%")
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 
-#+Allegro (require "BUILD")  ; workaround for annoying bug
-#+Allegro (require "genapp") ; workaround for annoying bug
-
-;; These two definitions might not be needed here
-;; They are in BuildPreamble.lisp where they are needed
-(defparameter Specware-name "Specware4")	; Name of directory and startup files
-(defparameter cl-user::Specware-version      "4.1")
-(defparameter cl-user::Specware-version-name "Specware-4-1")
-(defparameter cl-user::Specware-patch-level  "4")
+;;; ============ UTILITIES ============
 
 (defun fix-dir (dir)
   (let ((dir (substitute #\/ #\\ dir)))
@@ -23,49 +17,76 @@
 	dir
       (concatenate 'string dir "/"))))
     
-(defparameter Specware-dir (fix-dir (sys:getenv "SPECWARE4")))
-(defparameter Allegro-dir  (fix-dir (sys:getenv "ALLEGRO")))
+(defun delete-file-if-present (file &optional msg)
+  (when (probe-file file)
+    (if (null msg)
+	(format t "~&;;; Deleting file ~A~%" file)
+      (format t "~&;;; ~A~%" msg))
 
-(defun in-specware-dir (file) (concatenate 'string Specware-dir file))
-(defun in-lisp-dir     (file) (concatenate 'string Allegro-dir  file))
+    (delete-file file)))
 
-;; Used in patch detection and about-specware command
-(defvar Major-Version-String "4-1")
+(defun delete-dir-if-present (dir &optional msg)
+  (when (probe-file dir)
+    (if (null msg)
+	(format t "~&;;; Deleting dir  ~A~%" dir)
+      (format t "~&;;; ~A~%" msg))
+    (specware::delete-directory dir)))
 
-(defparameter distribution-directory "")
+(defun make-dir-if-missing (dir)
+  (unless (probe-file dir)
+    (format t "~&;;; Making new    ~A~%" dir)
+    (specware::make-directory dir)))
 
-(let* ((d1 (format nil "C:/SpecwareReleases/~A-~A/"
-		   specware-version-name	 
-		   specware-patch-level))
-       (d2 (concatenate 'string d1 "Specware/"))
-       (d3 (concatenate 'string d2 "Windows/"))
-       (d4 (concatenate 'string d3 "Specware4/")))
-  (format t "~%")
-  (unless (probe-file d1) 
-    (format t "~&;;; Making new ~A~%" d1)
-    (specware::make-directory d1))
-  (unless (probe-file d2)
-    (format t "~&;;; Making new ~A~%" d2)
-    (specware::make-directory d2))
-  (unless (probe-file d3)
-    (format t "~&;;; Making new ~A~%" d3)
-    (specware::make-directory d3))
-  (when (probe-file d4)
-    (format t "~&;;; Deleting old version of ~A~%" d4)
-    (excl::delete-directory-and-files d4))
-  (setq distribution-directory d4))
+#+Allegro (require "BUILD")  ; workaround for annoying bug
+#+Allegro (require "genapp") ; workaround for annoying bug
 
-(defun in-distribution-dir (file) (concatenate 'string distribution-directory file))
+;;; ============ PARAMETERS ============
+
+;; Specware-name and Specware-Version might not be needed here.
+;; They are in BuildPreamble.lisp where they are needed.
+
+(defparameter Specware-name                  "Specware4")	; Name of directory and startup files
+(defparameter cl-user::Specware-version      "4.1")
+(defparameter cl-user::Specware-version-name "Specware-4-1")
+(defparameter cl-user::Specware-patch-level  "4")
+(defparameter Major-Version-String           "4-1")		; for patch detection, about-specware command
+
+(defparameter *Specware-dir*      (fix-dir (sys:getenv "SPECWARE4")))
+(defparameter *Allegro-dir*       (fix-dir (sys:getenv "ALLEGRO")))
+
+(defparameter *Release-dir*       (format nil "C:/SpecwareReleases/~A-~A/"
+					  specware-version-name	 
+					  specware-patch-level))
+(defparameter *Windows-dir*       (concatenate 'string *release-dir* "Windows/"))
+(defparameter *Distribution-dir*  (concatenate 'string *windows-dir* "Specware4/"))
+(defparameter *CD-dir*            (concatenate 'string *release-dir* "CD/"))
+
+(defun in-specware-dir     (file) (concatenate 'string *Specware-dir*     file))
+(defun in-lisp-dir         (file) (concatenate 'string *Allegro-dir*      file))
+(defun in-release-dir      (file) (concatenate 'string *Release-dir*      file))
+(defun in-distribution-dir (file) (concatenate 'string *Distribution-dir* file))
+(defun in-cd-dir           (file) (concatenate 'string *CD-dir*           file))
+
+;;; =========== DELETE OLD DIRECTORIES, CREATE NEW  ============== 
 
 (format t "~%")
+(format t "~&;;; Preparing distribution directory prior to generate-application ...~%")
+
+(make-dir-if-missing *Release-dir*)
+(make-dir-if-missing *Windows-dir*)
 
 ;; If the application directory already exists, then we delete it.
 ;; Note that generate-application will complain and die if the directory exists.
 ;; [or perhaps not, if  :allow-existing-directory t]
 
-(when (probe-file distribution-directory)
-  (format t "~&;;; Deleting old directory: ~A~%" distribution-directory)
-  (excl::delete-directory-and-files distribution-directory))
+(delete-dir-if-present *Distribution-dir*
+		       (format nil
+			       "Deleting old distribution dir: ~A"
+			       *Distribution-dir*))
+
+(format t "~%")
+
+;;; =========== GENERATE STANDALONE LISP APPLICATION ============== 
 
 (format t "~&;;; Calling excl:generate-application~%")
 
@@ -81,7 +102,7 @@
 
  ;; this is the directory where the application is to go
  ;; (plus accompanying files) 
- distribution-directory
+ *distribution-dir*
 
  ;; a list of files to load 
  ;; [current directory is Specware4/Applications/Specware/Handwritten/Lisp/]
@@ -105,42 +126,26 @@
  :runtime :dynamic
  )
 
-;;; Specware4 directory
+;;; =========== BUILD DISTRIBUTION DIRECTORY ============== 
 
 (format t "~2&;;; Copying Tests, Documentation, Patches, accord.el to distribution directory~%")
 
-(load (in-specware-dir "Applications/Specware/Handwritten/Lisp/copy-files-for-distribution.lisp"))
+(load (in-specware-dir "Applications/Specware/Handwritten/Lisp/CopyFilesForDistribution.lisp"))
+(load (in-specware-dir "Applications/Specware/Handwritten/Lisp/show-dirs.lisp"))
 
-;;; Emacs support
+(format t "~&;;; Current status of release directory:~%;;;~%")
+(show-dirs *release-dir* 3 ";;; ")
 
-(format t "~&;;; Copying emacs xeli dir to distribution directory~%")
-
-(let ((dir (in-distribution-dir "Library")))
-  (unless (probe-file dir)
-    (format t "~&;;; Making new ~A~%" dir)
-    (specware::make-directory dir)))
-
-(let ((dir (in-distribution-dir "Library/IO")))
-  (unless (probe-file dir)
-    (format t "~&;;; Making new ~A~%" dir)
-    (specware::make-directory dir)))
-
-(let ((dir (in-distribution-dir "Library/IO/Emacs")))
-  (unless (probe-file dir)
-    (format t "~&;;; Making new ~A~%" dir)
-    (specware::make-directory dir)))
-
-(let ((dir (in-distribution-dir "Library/IO/Emacs/xeli/")))
-  (when (probe-file dir)
-    (format t "~&;;; Deleting old ~A~%" dir)
-    (excl::delete-directory-and-files dir)))
-
-(specware::copy-directory (in-lisp-dir "xeli/") (in-distribution-dir "Library/IO/Emacs/xeli/"))
-
-(format t "~%;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
-(format t "~&Now have ~A~%" (in-distribution-dir ""))
-(format t "~&;;; [This completes STEP D in How_To_Create_Accord_CD.txt]~%")
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
+(format t "~&;;;~%")
+(format t "~&;;; We now have ~A~%" (in-distribution-dir ""))
+(format t "~&;;;~%")
+(format t "~&;;; This completes STEP D in How_To_Create_Accord_CD.txt]~%")
+(format t "~&;;; Next you will run InstallShield to build dirs to be placed on CD.~%")
+(format t "~&;;;~%")
+(format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
+
+;;; =========== DONE ============== 
 
 (format t "~&It is safe to exit now~%")
 
