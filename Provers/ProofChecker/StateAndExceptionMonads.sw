@@ -11,8 +11,8 @@ spec. *)
 2005:11:04
 DC
 
-This is a polymorphic spec for a state plus exception monad.  It is inspired
-by looking at Alessandro's exception monad and the JavaCard state monad.
+This is a polymorphic spec for a state plus exception monad. It is inspired by
+looking at specs ExceptionMonads and StateMonads.
 
 Ideally, it should be composed of the exception monad and state monad, but to do
 this requires spec parameters which we can achieve with morphisms, but that is
@@ -24,6 +24,7 @@ AC
 consistency with specs StateMonads and ExceptionMonads.
 - Switched order of type Result and type Monad to maintain ordered references.
 - Removed comment "% unit operator" from declaration of op throw.
+
 *)
 
 

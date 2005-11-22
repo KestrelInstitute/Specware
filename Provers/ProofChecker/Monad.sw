@@ -1,35 +1,34 @@
-(*
-2005:11:04
-DC
-
-*)
-
-
 spec
 
-  % API Private
+  % API private default
 
-  import State
+  import States, Failures
 
   (* To improve the readability of the checking function defined in spec
-  Checker, we introduce a monad whose exceptions are the failures
-  defined in Failures. It is not appropriate to explain (exception) monads
-  here; so, the unfamiliar reader is referred to the literature, for instance
-  Philip Wadler's "Monads for functional programming".
+  Checker, we introduce a monad whose states are the ones defined in spec
+  States and whose exceptions are the failures defined in spec Failures. It is
+  not appropriate to explain monads here; so, the unfamiliar reader is
+  referred to the literature, for instance Philip Wadler's "Monads for
+  functional programming".
 
   We use the name "M", despite its shortness, because it is inconspicuous.
   After all, the purpose of monads is exactly to "hide" certain details. *)
 
+  % API public
   type M a = Monad (State, Failure, a)
 
   (* It is convenient to introduce shorter synonyms for the constructors of
   the exception monad for normal and exceptional results. *)
 
+  % API public
   op OK : [a] a -> M a
   def OK = return
 
+  % API public
   op FAIL : [a] Failure -> M a
   def FAIL = throw
+
+  % monadic ops to provide access to the state of the monad:
 
   op memo?: Proof -> M Boolean
   def memo?(p) =
@@ -46,9 +45,9 @@ spec
     fn state ->
     (RETURN j, (putMemoS (p, j) state))
 
-  (* run provides a mechanism to transform an ProofChecker internal
-  monadic function into a function appropriate for calling externally
-  by ignoring the internal monadic state, cf. runCheck in Cheker.sw *)
+  (* Op run provides a mechanism to transform a proof checker internal monadic
+  function into a function appropriate for calling externally by ignoring the
+  internal monadic state, cf. runCheck in Checker.sw *)
 
   op run: [a, b] (a -> M b) -> a -> Result (Failure, b)
   def run f x =
