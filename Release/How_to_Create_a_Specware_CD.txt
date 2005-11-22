@@ -2,11 +2,23 @@ How to Create a Specware 4.1.4 CD (with XEmacs & for Windows)
 
 Last updated:Mon Nov 21, 2005, by JLM
 
-This assumes you're working on the machine named Core-Win
+This assumes "here" is the machine named Core-Win
 (currently in the third office from the front stairs).
 
+The step order is as follows:
 
-STEP A: Uninstall previous Specware (if necessary)
+First these:  Windows-A/B/C/D/E/F/G  [A/B/C/D on Windows machine, E/F/G here]
+                                     [The Windows machine can be here]
+
+                Linux-A/B/C/D/E/F/G  [A/B/C/D on Linux   machine, E/F/G here]
+
+                  Mac-A/B/C/D/E/F/G  [A/B/C/D on Mac     machine, E/F/G here] 
+
+Then these:   CD-A/B/C               [here]
+
+Then these:   TEST and TAG-CVS       [here]
+
+STEP Windows-A: Uninstall previous Specware (if necessary)
 
   1.  Go to Start -> Settings -> Control Panels
 
@@ -16,14 +28,14 @@ STEP A: Uninstall previous Specware (if necessary)
 
   4.  Click ok to uninstall Specware.
 
-STEP B: Do CVS updates for Specware
+STEP Windows-B: Do CVS updates for Specware
 
  1. Open WinCVS (Start -> Programs -> WinCVS -> WinCVS)
 
  2. Update the Specware4 development directory (C:\Specware4)
 
 
-STEP C:  Build Specware
+STEP Windows-C:  Build Specware
 
  1. Go to C:\Specware4\Applications\Specware\bin\windows
     
@@ -57,7 +69,7 @@ STEP C:  Build Specware
     wait for the message "It is safe to exit"
     exit from lisp
 
-STEP D: Start Specware, and create the Allegro distribution directory
+STEP Windows-D: Start Specware, and create the Allegro distribution directory
 
  1. Go to C:\Specware4\Applications\Specware\bin\windows
 
@@ -91,8 +103,13 @@ STEP D: Start Specware, and create the Allegro distribution directory
                                             Windows/             <empty>
                                             Linux/               <empty>
                                             Mac/                 <empty>
+
+STEP Windows-E: Copy the Windows files to here 
+
+      This is a no-op: the Windows files are already here.
+
 
-STEP E: Create the InstallShield package for Windows installation
+STEP Windows-F: Create the InstallShield package for Windows installation
 
   1.  Open InstallShield (Start -> Programs -> InstallShield -> InstallShield 10.5)
 
@@ -243,7 +260,7 @@ STEP E: Create the InstallShield package for Windows installation
            will prompt to install Specware on this machine.  
            ============================================        
 
-STEP F: Copy the installation to the CD directory
+STEP Windows-G: Copy the installation to the CD directory
 
   1. Still withing InstallShield, go to (Tools -> Open Release Folder)
 
@@ -255,18 +272,22 @@ STEP F: Copy the installation to the CD directory
      [This dir was prepared in step D4 by BuildDistribution_ACL.cmd]
 
 
-STEP G: Copy CMUlisp files over to Windows
+STEP Linux-A/B/C/D: Prepare CMUlisp files
 
   1.  Have Stephen Westfold or Jim McDonald build Specware on a Linux machine.
+      (Similar to steps Windows-A/B/C/D, but on Linux)
+
+
+STEP Linux-E: Copy the CMULisp files to here
 
   2.  Copy the resulting Linux files from <wherever they are> 
                                      to C:\SpecwareReleases\Specware-4-1-4\Linux\
 
-STEP H: Create the InstallShield package for Windows installation (similar to step E)
+STEP Linux-F: Create the InstallShield package for Windows installation 
 
-   Similar to step E, but select Specware-4-1-4-Linux.uip
+   Similar to step Windows-E, but select Specware-4-1-4-Linux.uip
 
-STEP I: Copy the Linux installation to the CD directory           (similar to step F)
+STEP Linux-G: Copy the Linux installation to the CD directory          
 
   1. Still withing InstallShield, go to (Tools -> Open Release Folder)
 
@@ -277,17 +298,42 @@ STEP I: Copy the Linux installation to the CD directory           (similar to st
   4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Linux\
 
 
-STEP J: CREATE LABEL
+STEP Mac-A/B/C/D: Prepare CMUlisp files
+
+  1.  Have Stephen Westfold build Specware on a Mac machine.
+      (Similar to steps Windows-A/B/C/D, but on Mac)
+
+STEP Mac-E: Copy the CMULisp files to here
+
+  2.  Copy the resulting Mac files from <wherever they are> 
+                                     to C:\SpecwareReleases\Specware-4-1-4\Mac\
+
+STEP Mac-F: Create the InstallShield package for Windows installation 
+
+   Similar to step Windows-E, but select Specware-4-1-4-Mac.uip
+
+STEP Mac-G: Copy the Mac installation to the CD directory          
+
+  1. Still withing InstallShield, go to (Tools -> Open Release Folder)
+
+  2. Double-click on dsk1 to open it.
+
+  3. Copy everything from the resulting window (currently eight files).
+
+  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Mac\
+
+
+STEP CD-A: CREATE LABEL
 
   1. Create a CD label using PowerPoint and/or Paintshop.  
-     Include "Specware", the release date, version, type of release (Windows and Linux), 
+     Include "Specware", the release date, version, type of release (e.g., Windows and Linux), 
      and the copyright jabber.
 
   2. Use the CD LabelMaker software to insert a jpg into the label template.
 
   3. Insert a sheet of the label stickers into P6200, with the label side up.  Print to P6200.
 
-STEP K: Burn the CD
+STEP CD-B: Burn the CD
 
   1. Insert a blank CD into the PlexWriter drive on Core-Win.
 
@@ -309,7 +355,7 @@ STEP K: Burn the CD
      Click Done when the burning process is completed.  
      Nero can then be closed without saving anything.
 
-STEP L:: Stick the label on the CD
+STEP CD-C:: Stick the label on the CD
 
   1. Stick the label sticky-side up on the purple thing.
 
@@ -319,14 +365,17 @@ STEP L:: Stick the label on the CD
 
   4. Take the CD off and make sure the label is fully adhered to the CD.
 
-STEP M: Test
+
+STEP Test
 
   1. Install Specware 4.1.4
 
   2. Run the examples & tests.
 
-STEP N: Tag the sources in CVS with the release version (rel-4-1-4)
- 	See http://intranet/specware/intranet/cvs-cheatsheet.html 
+STEP TAG-CVS
+
+   Tag the sources in CVS with the release version (rel-4-1-4)
+   See http://intranet/specware/intranet/cvs-cheatsheet.html 
 
 For Help:
 

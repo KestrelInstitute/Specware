@@ -140,7 +140,7 @@
 (format t "~&;;;~%")
 (format t "~&;;; We now have ~A~%" (in-distribution-dir ""))
 (format t "~&;;;~%")
-(format t "~&;;; This completes STEP D in How_To_Create_Accord_CD.txt]~%")
+(format t "~&;;; This completes Step Windows-D in How_To_Create_Accord_CD.txt]~%")
 (format t "~&;;; Next you will run InstallShield to build dirs to be placed on CD.~%")
 (format t "~&;;;~%")
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
