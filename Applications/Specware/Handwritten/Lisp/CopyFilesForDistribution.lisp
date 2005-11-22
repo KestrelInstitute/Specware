@@ -179,9 +179,9 @@
 ;; Windows\setupwin32.exe for the user when the CD is inserted.
 ;;
 ;; Later the results from InstallShield will be put under
-;;   C:/SpecwareReleases/Specware-4-1-4/CD/Windows/
-;;   C:/SpecwareReleases/Specware-4-1-4/CD/Linux/
-;;   C:/SpecwareReleases/Specware-4-1-4/CD/Mac/
+;;   C:/SpecwareReleases/Specware-4-1-4/CD/Windows/Specware4/
+;;   C:/SpecwareReleases/Specware-4-1-4/CD/Linux/Specware4/
+;;   C:/SpecwareReleases/Specware-4-1-4/CD/Mac/Specware4/
 ;;   ...
 
 
@@ -209,8 +209,11 @@
 ;;; ============ EMPTY DIRS TO RECEIVE INSTALLSHIELD RESULTS ============
 
 (make-dir-if-missing (concatenate 'string *CD-dir* "Windows"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Windows/Specware4"))
 (make-dir-if-missing (concatenate 'string *CD-dir* "Linux"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Linux/Specware4"))
 (make-dir-if-missing (concatenate 'string *CD-dir* "Mac"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Mac/Specware4"))
 
 (format t "~&;;;~%")
 (format t "~&;;;     ===~%")

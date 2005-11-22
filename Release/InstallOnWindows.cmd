@@ -1,7 +1,7 @@
 @echo off
 
-echo This script runs two installations in sequence:
-echo First XEmacs 21.4.10, then Specware 4.1.4
+echo This script runs three installations in sequence:
+echo First XEmacs 21.4.10, then Specware 4.1.4, then Accord 4.1.4
 echo.
 echo Preparing to offer to install xemacs 21.4.10 ...
 echo.
@@ -32,17 +32,34 @@ echo.
 echo (To do so, you will need to accept the click-thru license terms.)
 echo. 
 
-Windows\setup.jar
+Windows\Specware4\setup.jar
 
 echo.
-echo Assuming you chose to install them, both XEmacs 21.4.10 and 
-echo Specware 4.1.4 should now be available.
+echo Preparing to offer to install Specware 4.1.4 ...
 echo.
-echo Unless you chose elsewhere, Specware 4.1.4 lives at 
+echo Once InstallShield starts (which can take awhile, so be patient),
+echo you should press "Next", "Next", "Next", "Install", "Finish".
+echo.
+echo (To do so, you will need to accept the click-thru license terms.)
+echo. 
+
+Windows\Accord\setup.jar
+
+echo.
+echo Assuming you chose to install them, XEmacs 21.4.10, Specware 4.1.4,
+echo and Accord 4.1.4 should now all be available.
+echo.
+echo Unless you chose elsewhere, Specware 4.1.4 and Accord 4.1.4 live at 
 echo.
 echo   C:\Program Files\Kestrel\Specware-4-1-4
+echo   C:\Program Files\Kestrel\Accord-4-1-4
 echo.
 echo There should be two desktop icons to run Specware:
+echo.
+echo  one that runs with    XEMacs (normal usage)
+echo  one that runs without XEmacs
+echo. 
+echo There should also be two desktop icons to run Accord:
 echo.
 echo  one that runs with    XEMacs (normal usage)
 echo  one that runs without XEmacs

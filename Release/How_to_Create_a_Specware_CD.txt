@@ -96,13 +96,13 @@ STEP Windows-D: Start Specware, and create the Allegro distribution directory
     We should also now have a CD directory with some installation scripts on it, plus 
     some some empty directories (to be filled later with the results of InstallShield):
 
-      C;/SpecwareReleases/Specware-4-1-4/CD/Autorun.inf            -- will automatically invoke InstallOnWindows.cmd
+      C:\SpecwareReleases\Specware-4-1-4\CD\Autorun.inf            -- will automatically invoke InstallOnWindows.cmd
                                             InstallOnWindows.cmd   -- script to install XEmacs and/or Specware
                                             InstallOnLinux         -- script to install Specware
                                             InstallOnMac           -- currently a no-op
-                                            Windows/             <empty>
-                                            Linux/               <empty>
-                                            Mac/                 <empty>
+                                            Windows\Specware4\   <empty>
+                                            Linux\Specware4\     <empty>
+                                            Mac\Specware4\       <empty>
 
 STEP Windows-E: Copy the Windows files to here 
 
@@ -156,10 +156,10 @@ STEP Windows-F: Create the InstallShield package for Windows installation
 
           Make four entries (two copies of each)
 
-            Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
-            Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
-            Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
-            Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
+           Specware4            => $P(absoluteInstallLocation)/Specware4.cmd        C:/Specware4/Release/Windows/S.ico
+           Specware4            => $P(absoluteInstallLocation)/Specware4.cmd        C:/Specware4/Release/Windows/S.ico
+           Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd  C:/Specware4/Release/Windows/S.ico
+           Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd  C:/Specware4/Release/Windows/S.ico
 
           Switch to "Installation Designer"
              
@@ -236,7 +236,6 @@ STEP Windows-F: Create the InstallShield package for Windows installation
                 Icon file type            Bundled
                 Platform Specific Targer  <blank>
 
-
         Return to the Project Assistant
 
         Installation Interview:
@@ -260,7 +259,7 @@ STEP Windows-F: Create the InstallShield package for Windows installation
            If you selected "Run Installer after Build" then InstallShield 
            will prompt to install Specware on this machine.  
            ============================================        
-
+
 STEP Windows-G: Copy the installation to the CD directory
 
   1.  Still within InstallShield, go to (Tools -> Open Release Folder)
@@ -269,7 +268,7 @@ STEP Windows-G: Copy the installation to the CD directory
 
   3.  Copy everything from the resulting window (currently eight files).
 
-  4.  Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Windows\
+  4.  Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Windows\Specware4\
       [This dir was prepared in step Windows-D.4 by BuildDistribution_ACL.cmd]
 
 
@@ -278,11 +277,12 @@ STEP Linux-A/B/C/D: Prepare CMUlisp files
   1.  Have Stephen Westfold or Jim McDonald build Specware on a Linux machine.
       (Similar to steps Windows-A/B/C/D, but on Linux)
 
-
 STEP Linux-E: Copy the CMULisp files to here
 
-  1.  Copy the resulting Linux files from <wherever they are> 
-                                     to C:\SpecwareReleases\Specware-4-1-4\Linux\
+  1.  Copy the resulting Linux files 
+       from unix location such as
+            \\Unix-homedirs\Kestrel\mcdonald\Specware4\distribution-cmulisp
+         to C:\SpecwareReleases\Specware-4-1-4\Linux\Specware4\
 
 STEP Linux-F: Create the InstallShield package for Linux installation 
 
@@ -324,97 +324,19 @@ STEP Linux-F: Create the InstallShield package for Linux installation
 
         Application Files:
 
-            Specware4  => C:/SpecwareReleases/Specware-4-1-4/Linux  [?]
+            Specware4     => C:/SpecwareReleases/Specware-4-1-4/Linux/Specware4
+            Specware      => C:/SpecwareReleases/Specware-4-1-4/Linux/Specware4/Specware
+            SpecwareShell => C:/SpecwareReleases/Specware-4-1-4/Linux/Specware4/SpecwareShell
 
+            Then select (Installation Designer -> Application Data ->  Files).
+            For both Specware and SpecwareShell, select (Edit -> Attributes)
+            and then select Execute for Owner/Group/World.
+            Then return to Project Assistant
+      
         Application Launchers:   <none>
 
-        Application Shortcuts:
+        Application Shortcuts:   <none>
 
-          [? prune stuff irrelevant for linux ?]
-             
-??          Make four entries (two copies of each)
-??
-??            Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
-??            Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
-??            Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
-??            Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
-??
-??          Switch to "Installation Designer"
-??          In "View List" window at left, right-click, then "Expand All"
-??          Select "Shortcuts"                          
-??
-??          In middle "Explorer" window
-??          Select the first "Specware4", then edit its properties in window at right:
-??
-??             Standard Properties:
-??                Active             true
-??                Display Name       Specware4
-??                Folder             $P(displayName)  [or $P(bean5.displayName) etc.]
-??                Name               Specware4
-??		Target             $P(absoluteInstallationLocation)/Specware4.cmd
-??
-??             Open platform-Specific Properites
-??             Scroll down to "Linux"
-??             Turn on with "Enable", then
-??                Foldercontext             Program Menu for All Users
-??                Icon                      C:/Specware4/Release/Windows/S.ico
-??                Icon file type            Bundled
-??                Platform Specific Targer  <blank>
-??
-??          Select the second "Specware4" and edit its properties in window at right:
-??
-??             Standard Properites:
-??                Active             true
-??                Display Name       Specware4
-??                Folder             
-??                Name               Specware4
-??		Target             $P(absoluteInstallationLocation)/Specware4.cmd
-??
-??             Open platform-Specific Properites
-??             Scroll down to "Linux"
-??             Turn on with "Enable", then
-??                Foldercontext             Desktop for All Users
-??                Icon                      C:/Specware4/Release/Windows/S.ico
-??                Icon file type            Bundled
-??                Platform Specific Targer  <blank>
-??
-
-??          Select the first "Specware4 (no Emacs)" and edit its properties in window at right:
-??
-??             Standard Properites:
-??                Active             true
-??                Display Name       Specware4 (no Emacs)
-??                Folder             $P(displayName)       [or $P(bean5.displayName) etc.]
-??                Name               Specware4 (no Emacs)
-??		Target             $P(absoluteInstallationLocation)/Specware4 Shell.cmd
-??
-??             Open platform-Specific Properites
-??             Scroll down to "Linux"
-??             Turn on with "Enable", then
-??                Foldercontext             Program Menu for All Users
-??                Icon                      C:/Specware4/Release/Windows/S.ico
-??                Icon file type            Bundled
-??                Platform Specific Targer  <blank>
-??
-??
-??          Select the second "Specware4 (no Emacs)" and edit its properties in window at right:
-??
-??             Standard Properites:
-??                Active             true
-??                Display Name       Specware4 (no Emacs)
-??                Folder             
-??                Name               Specware4 (no Emacs)
-??		Target             $P(absoluteInstallationLocation)/Specware4 Shell.cmd
-??
-??             Open platform-Specific Properites
-??             Scroll down to "Linux"
-??             Turn on with "Enable", then
-??                Foldercontext             Desktop for All Users
-??                Icon                      C:/Specware4/Release/Windows/S.ico
-??                Icon file type            Bundled
-??                Platform Specific Targer  <blank>
-??
-
         Return to the Project Assistant
 
         Installation Interview
@@ -441,7 +363,7 @@ STEP Linux-G: Copy the Linux installation to the CD directory
 
   3. Copy everything from the resulting window (currently three files).
 
-  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Linux\
+  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Linux\Specware4\
 
 
 STEP Mac-A/B/C/D: Prepare CMUlisp files
@@ -452,7 +374,7 @@ STEP Mac-A/B/C/D: Prepare CMUlisp files
 STEP Mac-E: Copy the CMULisp files to here
 
   2.  Copy the resulting Mac files from <wherever they are> 
-                                     to C:\SpecwareReleases\Specware-4-1-4\Mac\
+                                     to C:\SpecwareReleases\Specware-4-1-4\Mac\Specware4\
 
 STEP Mac-F: Create the InstallShield package for Windows installation 
 
@@ -466,7 +388,7 @@ STEP Mac-G: Copy the Mac installation to the CD directory
 
   3. Copy everything from the resulting window (currently eight files).
 
-  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Mac\
+  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Mac\Specware4\
 
 
 STEP CD-A: CREATE LABEL
@@ -493,7 +415,8 @@ STEP CD-B: Burn the CD
 
   6. Copy the XEmacs installation folder (I put it on the Desktop for now) to the top level of the CD.
 
-  7. Rename the CD from NEW to Specware-4-1-4 by right-clicking the NEW label in the leftmost panel and selecting Rename.
+  7. Rename the CD from NEW to Specware-4-1-4 by right-clicking the NEW label in the leftmost panel 
+     and selecting Rename.
 
   8. Go to (File -> Write CD), and then click Burn in the window that pops up.
 

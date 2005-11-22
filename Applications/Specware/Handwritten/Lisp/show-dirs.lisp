@@ -27,7 +27,11 @@
 			 (let ((level (1+ level)))
 			   (dolist (file sub-files) 
 			     (list-files file level)))
-		       (push (list (subseq (format nil "~A/" file) trim)
+		       (push (list (subseq (format nil (if (member #\\ (coerce (namestring file) 'list))
+							   "~A\\" 
+							   "~A/")
+						   file) 
+					   trim)
 				   (length sub-files))
 			     lines)))
 		 (push (list (subseq (namestring file) trim))

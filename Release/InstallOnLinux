@@ -4,7 +4,7 @@ echo "Preparing to offer to install Specware 4.1.4 ..."
 
 HERE=`dirname $0`
 
-$HERE/Linux/setuplinux.bin
+$HERE/Linux/Specware4/setuplinux.bin
 
 sleep 10
 

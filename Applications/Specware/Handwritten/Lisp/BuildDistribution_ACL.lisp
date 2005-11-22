@@ -57,9 +57,9 @@
 (defparameter *Release-dir*       (format nil "C:/SpecwareReleases/~A-~A/"
 					  specware-version-name	 
 					  specware-patch-level))
+(defparameter *CD-dir*            (concatenate 'string *release-dir* "CD/"))
 (defparameter *Windows-dir*       (concatenate 'string *release-dir* "Windows/"))
 (defparameter *Distribution-dir*  (concatenate 'string *windows-dir* "Specware4/"))
-(defparameter *CD-dir*            (concatenate 'string *release-dir* "CD/"))
 
 (defun in-specware-dir     (file) (concatenate 'string *Specware-dir*     file))
 (defun in-lisp-dir         (file) (concatenate 'string *Allegro-dir*      file))
@@ -73,13 +73,22 @@
 (format t "~&;;; Preparing distribution directory prior to generate-application ...~%")
 
 (make-dir-if-missing *Release-dir*)
-(make-dir-if-missing *Windows-dir*)
+(make-dir-if-missing (in-release-dir "Windows"))
+(make-dir-if-missing (in-release-dir "Linux"))
+(make-dir-if-missing (in-release-dir "Linux/Specware4"))
+(make-dir-if-missing (in-release-dir "Mac"))
+(make-dir-if-missing (in-release-dir "Mac/Specware4"))
+
+(make-dir-if-missing *CD-dir*)
+(make-dir-if-missing (in-cd-dir "Windows"))
+(make-dir-if-missing (in-cd-dir "Linux"))
+(make-dir-if-missing (in-cd-dir "Mac"))
 
 ;; If the application directory already exists, then we delete it.
 ;; Note that generate-application will complain and die if the directory exists.
 ;; [or perhaps not, if  :allow-existing-directory t]
 
-(delete-dir-if-present *Distribution-dir*
+(delete-dir-if-present *Distribution-dir* ; "Windows/Specware4"
 		       (format nil
 			       "Deleting old distribution dir: ~A"
 			       *Distribution-dir*))
