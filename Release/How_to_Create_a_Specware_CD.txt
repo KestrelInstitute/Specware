@@ -1,6 +1,10 @@
 How to Create a Specware 4.1.4 CD (with XEmacs & for Windows)
 
-Last updated: Nov 17, 2005, by JLM
+Last updated:Mon Nov 21, 2005, by JLM
+
+This assumes you're working on the machine named Core-Win
+(currently in the third office from the front stairs).
+
 
 STEP A: Uninstall previous Specware (if necessary)
 
@@ -69,14 +73,26 @@ STEP D: Start Specware, and create the Allegro distribution directory
     cd C:/Specware4/Applications/Specware/Handwritten/Lisp
     ld BuildDistribution_ACL.lisp
 
-    This should create a distribution directory under 
+    We should now have a distribution directory under 
 
-      C;/SpecwareReleases/Specware-4-1-4/Windows/Specware4
+      C;/SpecwareReleases/Specware-4-1-4/Windows/Specware4/
 
     containing the Allegro stuff needed to run Specware as a stand-alone application,
     as well as some necessary subdirs (e.g. Documentation, Example, Library, etc.).  
+    (This directory will provide input to InstallShield.)
 
-STEP E: Create the InstallShield package
+    We should also now have a CD directory with some installation scripts on it, plus 
+    some some empty directories (to be filled later with the results of InstallShield):
+
+      C;/SpecwareReleases/Specware-4-1-4/CD/Autorun.inf            -- will automatically invoke InstallOnWindows.cmd
+                                            InstallOnWindows.cmd   -- script to install XEmacs and/or Specware
+                                            InstallOnLinux         -- script to install Specware
+                                            InstallOnMac           -- currently a no-op
+                                            Windows/             <empty>
+                                            Linux/               <empty>
+                                            Mac/                 <empty>
+
+STEP E: Create the InstallShield package for Windows installation
 
   1.  Open InstallShield (Start -> Programs -> InstallShield -> InstallShield 10.5)
 
@@ -233,24 +249,35 @@ STEP F: Copy the installation to the CD directory
 
   2. Double-click on dsk1 to open it.
 
-  3. Copy everything in the resulting window (about ten files).
+  3. Copy everything in the resulting window (currently eight files).
 
   4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Windows\
      [This dir was prepared in step D4 by BuildDistribution_ACL.cmd]
 
-  ??? To add a shortcut, right-click "Desktop" and select "New shortcut to preexisting file". 
-      Type "Specware4.cmd" as the filename. 
-      Add a second shortcut to the same file under "Taskbar/Start Menu/Programs Menu".  
-      Rename both shortcut names as "Specware 4.1".
-
+
 STEP G: Copy CMUlisp files over to Windows
 
-  1.  Talk to Stephen Westfold or Jim McDonald and ask them to build Specware on a Linux machine.
+  1.  Have Stephen Westfold or Jim McDonald build Specware on a Linux machine.
 
-  2.  Copy Linux files from J:\<wherever they are> 
-                         to C:\SpecwareReleases\Specware-4-1-4\CD\Linux\
+  2.  Copy the resulting Linux files from <wherever they are> 
+                                     to C:\SpecwareReleases\Specware-4-1-4\Linux\
 
-STEP H: CREATE LABEL
+STEP H: Create the InstallShield package for Windows installation (similar to step E)
+
+   Similar to step E, but select Specware-4-1-4-Linux.uip
+
+STEP I: Copy the Linux installation to the CD directory           (similar to step F)
+
+  1. Still withing InstallShield, go to (Tools -> Open Release Folder)
+
+  2. Double-click on dsk1 to open it.
+
+  3. Copy everything from the resulting window (currently eight files).
+
+  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Linux\
+
+
+STEP J: CREATE LABEL
 
   1. Create a CD label using PowerPoint and/or Paintshop.  
      Include "Specware", the release date, version, type of release (Windows and Linux), 
@@ -259,8 +286,8 @@ STEP H: CREATE LABEL
   2. Use the CD LabelMaker software to insert a jpg into the label template.
 
   3. Insert a sheet of the label stickers into P6200, with the label side up.  Print to P6200.
-
-STEP I: Burn the CD
+
+STEP K: Burn the CD
 
   1. Insert a blank CD into the PlexWriter drive on Core-Win.
 
@@ -282,7 +309,7 @@ STEP I: Burn the CD
      Click Done when the burning process is completed.  
      Nero can then be closed without saving anything.
 
-STEP J:: Stick the label on the CD
+STEP L:: Stick the label on the CD
 
   1. Stick the label sticky-side up on the purple thing.
 
@@ -292,13 +319,13 @@ STEP J:: Stick the label on the CD
 
   4. Take the CD off and make sure the label is fully adhered to the CD.
 
-STEP K: Test
+STEP M: Test
 
   1. Install Specware 4.1.4
 
   2. Run the examples & tests.
 
-STEP L: Tag the sources in CVS with the release version (rel-4-1-4)
+STEP N: Tag the sources in CVS with the release version (rel-4-1-4)
  	See http://intranet/specware/intranet/cvs-cheatsheet.html 
 
 For Help:
