@@ -4,7 +4,7 @@
 
 (format t "~%;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 (format t "~&About to build distribution dir for Specware under CMUCL on Linux.~%")
-(format t "~&[This implements Step Windows-D in How_to_Create_a_Specware_CD.txt]~%")
+(format t "~&[This implements Step Linux-D in How_to_Create_a_Specware_CD.txt]~%")
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 
 ;;; ============ UTILITIES ============

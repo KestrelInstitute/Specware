@@ -140,6 +140,61 @@
 (format t "~2&;;; Copying Tests, Documentation, Patches, accord.el to distribution directory~%")
 
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/CopyFilesForDistribution.lisp"))
+
+
+;;; ============ AUTORUN FILES FOR CD ============
+
+(format t "~&;;;~%")
+(format t "~&;;;     ===~%")
+(format t "~&;;;~%")
+
+;; Set up the directory that will hold the CD contents:
+;;   C:/SpecwareReleases/Specware-4-1-4/CD/
+;;
+;; Put in the Autorun.inf file that will automatically invoke
+;; Windows\setupwin32.exe for the user when the CD is inserted.
+;;
+;; Later the results from InstallShield will be put under
+;;   C:/SpecwareReleases/Specware-4-1-4/CD/Windows/Specware4/
+;;   C:/SpecwareReleases/Specware-4-1-4/CD/Linux/Specware4/
+;;   C:/SpecwareReleases/Specware-4-1-4/CD/Mac/Specware4/
+;;   ...
+
+
+(delete-dir-if-present *cd-dir*)
+(sleep 1) ; avoid stupid race condition in Windows
+
+(make-dir-if-missing *cd-dir*)
+
+(format t "~&;;; Adding Autorun for Windows: ~A~%" (in-cd-dir "Autorun.inf"))
+(specware::copy-file (in-specware-dir "Release/Autorun.inf")
+		     (in-cd-dir "Autorun.inf"))
+
+(format t "~&;;; Adding install script for Windows: ~A~%" (in-cd-dir "InstallOnWindows.cmd"))
+(specware::copy-file (in-specware-dir "Release/InstallOnWindows.cmd")
+		     (in-cd-dir "InstallOnWindows.cmd"))
+
+(format t "~&;;; Adding install script for Linux: ~A~%" (in-cd-dir "InstallOnLinux"))
+(specware::copy-file (in-specware-dir "Release/InstallOnLinux")
+		     (in-cd-dir "InstallOnLinux"))
+
+(format t "~&;;; Adding install script for Mac: ~A~%" (in-cd-dir "InstallOnMac"))
+(specware::copy-file (in-specware-dir "Release/InstallOnMac")
+		     (in-cd-dir "InstallOnMac"))
+
+;;; ============ EMPTY DIRS TO RECEIVE INSTALLSHIELD RESULTS ============
+
+(make-dir-if-missing (concatenate 'string *CD-dir* "Windows"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Windows/Specware4"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Linux"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Linux/Specware4"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Mac"))
+(make-dir-if-missing (concatenate 'string *CD-dir* "Mac/Specware4"))
+
+(format t "~&;;;~%")
+
+;;; ============ SHOW RESULTS ============
+
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/show-dirs.lisp"))
 
 (format t "~&;;; Current status of release directory:~%;;;~%")
@@ -153,8 +208,6 @@
 (format t "~&;;; Next you will run InstallShield to build dirs to be placed on CD.~%")
 (format t "~&;;;~%")
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
-
-;;; =========== DONE ============== 
 
 (format t "~&It is safe to exit now~%")
 
