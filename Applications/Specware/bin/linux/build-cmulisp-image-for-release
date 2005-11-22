@@ -158,10 +158,7 @@ fi
 $LISP <<-XXXX
 	(load "$EXIT_ON_ERRORS")
 	(exiting-on-errors
-	  (load "$SPECWARE4/Applications/Handwritten/Lisp/load-utilities")
-	  (defun in-specware-dir (file) (concatenate 'string "$SPECWARE4/" file))
-	  (defun in-distribution-dir (file) (concatenate 'string "$SPECWARE4/distribution-cmulisp/" file))
-	  (load "copy-files-for-distribution.lisp"))
+	  (load "BuildDistribution_CMUCL.lisp"))
 	(quit)
 XXXX
 
