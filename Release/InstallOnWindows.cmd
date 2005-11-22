@@ -32,7 +32,7 @@ echo.
 echo (To do so, you will need to accept the click-thru license terms.)
 echo. 
 
-Windows\setupwin32.exe
+Windows\setup.jar
 
 echo.
 echo Assuming you chose to install them, both XEmacs 21.4.10 and 
@@ -44,7 +44,7 @@ echo   C:\Program Files\Kestrel\Specware-4-1-4
 echo.
 echo There should be two desktop icons to run Specware:
 echo.
-echo  one that runs under XEMacs (normal usage)
+echo  one that runs with    XEMacs (normal usage)
 echo  one that runs without XEmacs
 echo.
 
