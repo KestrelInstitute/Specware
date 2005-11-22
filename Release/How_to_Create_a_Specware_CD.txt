@@ -93,16 +93,21 @@ STEP Windows-D: Start Specware, and create the Allegro distribution directory
     as well as some necessary subdirs (e.g. Documentation, Example, Library, etc.).  
     (This directory will provide input to InstallShield.)
 
-    We should also now have a CD directory with some installation scripts on it, plus 
-    some some empty directories (to be filled later with the results of InstallShield):
+    We should now have Linux/Spcware4 and Windows/Specware4 dirs containing
+    pre-InstallShield build results.
 
-      C:\SpecwareReleases\Specware-4-1-4\CD\Autorun.inf            -- will automatically invoke InstallOnWindows.cmd
-                                            InstallOnWindows.cmd   -- script to install XEmacs and/or Specware
-                                            InstallOnLinux         -- script to install Specware
-                                            InstallOnMac           -- currently a no-op
-                                            Windows\Specware4\   <empty>
-                                            Linux\Specware4\     <empty>
-                                            Mac\Specware4\       <empty>
+    We should also have a CD directory with some installation scripts on it, plus 
+    some some empty dirs (to be filled later with the results of InstallShield).
+
+    C:\SpecwareReleases\Specware-4-1-4\CD\Autorun.inf            -- will automatically invoke InstallOnWindows.cmd
+                                          InstallOnLinux         -- script to install Specware
+                                          InstallOnMac           -- currently a no-op
+                                          InstallOnWindows.cmd   -- script to install XEmacs and/or Specware
+                                          Linux\Specware4\      <empty>
+                                          Mac\Specware4\        <empty>
+                                          Windows\Specware4\    <empty>
+                                       Linux\Specware4\         <misc stuff>
+                                       Windows\Specware4\       <misc stuff>
 
 STEP Windows-E: Copy the Windows files to here 
 
