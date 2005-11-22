@@ -321,9 +321,10 @@
 		 (princ char ostream)))))))))
 
 (defun directory? (pathname)
-  (and (null (pathname-name pathname))
-       (null (pathname-type pathname))
-       (not (null (sw-directory pathname)))))
+  #+Allegro (excl::file-directory-p pathname)
+  #-Allegro (and (null (pathname-name pathname))
+		 (null (pathname-type pathname))
+		 (not (null (sw-directory pathname)))))
 
 (defun sw-directory (pathname &optional recursive?)
   (directory #-mcl pathname
