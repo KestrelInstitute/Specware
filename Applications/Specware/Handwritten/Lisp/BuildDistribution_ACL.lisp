@@ -6,7 +6,7 @@
 
 (format t "~%;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 (format t "~&About to build distribution dir for Specware under Allegro on Windows.~%")
-(format t "~&[This implements STEP D in How_to_Create_a_Specware_CD.txt]~%")
+(format t "~&[This implements Step Windows-D in How_to_Create_a_Specware_CD.txt]~%")
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 
 ;;; ============ UTILITIES ============

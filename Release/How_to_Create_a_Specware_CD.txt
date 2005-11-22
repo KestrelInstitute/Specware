@@ -1,4 +1,4 @@
-How to Create a Specware 4.1.4 CD (with XEmacs & for Windows)
+How to Create a Specware 4.1.4 CD
 
 Last updated:Mon Nov 21, 2005, by JLM
 
@@ -20,67 +20,67 @@ Then these:   TEST and TAG-CVS       [here]
 
 STEP Windows-A: Uninstall previous Specware (if necessary)
 
-  1.  Go to Start -> Settings -> Control Panels
+  1. Go to Start -> Settings -> Control Panels
 
-  2.  Double-click Add/Remove Programs
+  2. Double-click Add/Remove Programs
 
-  3.  Scroll down to Specware4.1 (or similar) and click Change/Remove
+  3. Scroll down to Specware4.1 (or similar) and click Change/Remove
 
-  4.  Click ok to uninstall Specware.
+  4. Click ok to uninstall Specware
 
 STEP Windows-B: Do CVS updates for Specware
 
- 1. Open WinCVS (Start -> Programs -> WinCVS -> WinCVS)
+  1. Open WinCVS (Start -> Programs -> WinCVS -> WinCVS)
 
- 2. Update the Specware4 development directory (C:\Specware4)
+  2. Update the Specware4 development directory (C:\Specware4)
 
 
 STEP Windows-C:  Build Specware
 
- 1. Go to C:\Specware4\Applications\Specware\bin\windows
+  1. Go to C:\Specware4\Applications\Specware\bin\windows
     
- Either:
+  Either:
 
- 2. Double-click build.cmd
-    wait for the message "It is safe to exit"
-    exit from lisp
+  2. Double-click build.cmd
+     wait for the message "It is safe to exit"
+     exit from lisp
 
- 3. Double-click bootstrap.cmd
-    wait for the message "It is safe to exit"
-    exit from lisp
+  3. Double-click bootstrap.cmd
+     wait for the message "It is safe to exit"
+     exit from lisp
 
- Or:
+  Or:
 
- 2. Double-click Specware4.cmd. 
+  2. Double-click Specware4.cmd. 
 
- 3. If XEmacs doesn't start up and try to load Specware, edit Specware4.cmd to
-    ensure that the XEmacs variable is set correctly for your system. 
+  3. If XEmacs doesn't start up and try to load Specware, edit Specware4.cmd to
+     ensure that the XEmacs variable is set correctly for your system. 
 
- 4. If this was a fresh check-out, and you are asked, 
-      "Continue waiting for ACL to startup (y/n)?" 
-    answer 
-      'n'.
+  4. If this was a fresh check-out, and you are asked, 
+       "Continue waiting for ACL to startup (y/n)?" 
+     answer 
+       'n'.
 
- 5. Do M-x build-specware4-from-base
-    wait for the message "It is safe to exit"
-    do not exit from lisp
+  5. Do M-x build-specware4-from-base
+     wait for the message "It is safe to exit"
+     do not exit from lisp
 
- 6. Do M-x bootstrap-specware4
-    wait for the message "It is safe to exit"
-    exit from lisp
+  6. Do M-x bootstrap-specware4
+     wait for the message "It is safe to exit"
+     exit from lisp
 
 STEP Windows-D: Start Specware, and create the Allegro distribution directory
 
- 1. Go to C:\Specware4\Applications\Specware\bin\windows
+  1. Go to C:\Specware4\Applications\Specware\bin\windows
 
- 2. Double-click Specware4.cmd
+  2. Double-click Specware4.cmd
 
- 3. Possibly:
-      Open C:\Specware4\Applications\Specware\Handwritten\Lisp\BuildDistribution_ACL.lisp 
-       for editing in XEmacs.
-      Set Specware-name, Specware-version, Specware-version-name as appropriate.
+  3. Possibly:
+       Open C:\Specware4\Applications\Specware\Handwritten\Lisp\BuildDistribution_ACL.lisp 
+        for editing in XEmacs.
+       Set Specware-name, Specware-version, Specware-version-name as appropriate.
 
- 4. In the "*Specware Shell*" buffer, type:
+  4. In the "*Specware Shell*" buffer, type:
 
     cd C:/Specware4/Applications/Specware/Handwritten/Lisp
     ld BuildDistribution_ACL.lisp
@@ -107,20 +107,19 @@ STEP Windows-D: Start Specware, and create the Allegro distribution directory
 STEP Windows-E: Copy the Windows files to here 
 
       This is a no-op: the Windows files are already here.
-
 
 STEP Windows-F: Create the InstallShield package for Windows installation
 
-  1.  Open InstallShield (Start -> Programs -> 
-                          InstallShield -> 
-                          InstallShield 10.5 Tools -> 
-                          InstallShield 10.5 Universal IDE)
+  1. Open InstallShield (Start -> Programs -> 
+                         InstallShield -> 
+                         InstallShield 10.5 Tools -> 
+                         InstallShield 10.5 Universal IDE)
 
-  2.  If Specware project already exists:
+  2. If Specware project already exists:
 
        Click on Specware-4-1-4-Windows.uip in main InstallShield window
 
-      else:
+     else:
 
        Click on "Create a new project..." in the left side panel.
        Click on "Universal Installer Project"
@@ -159,8 +158,8 @@ STEP Windows-F: Create the InstallShield package for Windows installation
 
             Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
             Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
-            Specware4 (no Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
-            Specware4 (no Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
+            Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
+            Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
 
           Switch to "Installation Designer"
              
@@ -201,7 +200,6 @@ STEP Windows-F: Create the InstallShield package for Windows installation
                 Icon                      C:/Specware4/Release/Windows/S.ico
                 Icon file type            Bundled
                 Platform Specific Targer  <blank>
-
 
           Select the first "Specware4 (no Emacs)" and edit its properties in window at right:
 
@@ -241,7 +239,7 @@ STEP Windows-F: Create the InstallShield package for Windows installation
 
         Return to the Project Assistant
 
-        Installation Interview
+        Installation Interview:
 
            "Yes" to "Do you wnat the user to be shown a license agreement?"
                     License Agreement File:  C:/Specware4/Release/WindowsLicense.txt
@@ -250,8 +248,7 @@ STEP Windows-F: Create the InstallShield package for Windows installation
 
            "No"  to "Do you want users to be able to selectively install parts of your application?"
 
-
-        Build Installation
+        Build Installation:
 
            Select "CD-ROM"
 
@@ -266,14 +263,14 @@ STEP Windows-F: Create the InstallShield package for Windows installation
 
 STEP Windows-G: Copy the installation to the CD directory
 
-  1. Still withing InstallShield, go to (Tools -> Open Release Folder)
+  1.  Still within InstallShield, go to (Tools -> Open Release Folder)
 
-  2. Double-click on dsk1 to open it.
+  2.  Double-click on dsk1 to open it.
 
-  3. Copy everything from the resulting window (currently eight files).
+  3.  Copy everything from the resulting window (currently eight files).
 
-  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Windows\
-     [This dir was prepared in step Windows-D.4 by BuildDistribution_ACL.cmd]
+  4.  Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Windows\
+      [This dir was prepared in step Windows-D.4 by BuildDistribution_ACL.cmd]
 
 
 STEP Linux-A/B/C/D: Prepare CMUlisp files
@@ -284,7 +281,7 @@ STEP Linux-A/B/C/D: Prepare CMUlisp files
 
 STEP Linux-E: Copy the CMULisp files to here
 
-  2.  Copy the resulting Linux files from <wherever they are> 
+  1.  Copy the resulting Linux files from <wherever they are> 
                                      to C:\SpecwareReleases\Specware-4-1-4\Linux\
 
 STEP Linux-F: Create the InstallShield package for Linux installation 
@@ -339,8 +336,8 @@ STEP Linux-F: Create the InstallShield package for Linux installation
 ??
 ??            Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
 ??            Specware4            => $P(absoluteInstallLocation)/Specware4.cmd         C:/Specware4/Release/Windows/S.ico
-??            Specware4 (no Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
-??            Specware4 (no Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
+??            Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
+??            Specware4 (no_Emacs) => $P(absoluteInstallLocation)/Specware4 Shell.cmd   C:/Specware4/Release/Windows/S.ico
 ??
 ??          Switch to "Installation Designer"
 ??          In "View List" window at left, right-click, then "Expand All"
@@ -490,7 +487,7 @@ STEP CD-B: Burn the CD
 
   3. Click  Next, Next, Next, Next, Finish  through the first wizard that pops up.
 
-  4. In the right side window labeled File Browser, move to C:\SpecwareReleases\Specware-4-1-4\Specware\Windows\CD
+  4. In the right side window labeled File Browser, move to C:\SpecwareReleases\Specware-4-1-4\CD
 
   5. Copy everything in this directory, and paste it into the left side window labeled ISO1.
 
