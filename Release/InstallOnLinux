@@ -1,18 +1,10 @@
 #!/bin/sh
 
-echo "0 = [$0]"
-echo "* = [$*]"
-echo "pwd = `/bin/pwd`"
-
 echo "Preparing to offer to install Specware 4.1.4 ..."
 
-HERE=`/bin/dirname $0`
-echo "/bin/dirname = [$HERE]"
+HERE=`dirname $0`
 
-sleep 300
-
-echo "Running [$HERE/Linux/setuplinux.bin]"
 $HERE/Linux/setuplinux.bin
-echo "Done Running"
 
-sleep 300
+sleep 10
+
