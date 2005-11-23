@@ -75,10 +75,8 @@ STEP Windows-D: Start Specware, and create the Allegro distribution directory
 
   2. Double-click Specware4.cmd
 
-  3. Possibly:
-       Open C:\Specware4\Applications\Specware\Handwritten\Lisp\BuildDistribution_ACL.lisp 
-        for editing in XEmacs.
-       Set Specware-name, Specware-version, Specware-version-name as appropriate.
+  3. Possibly: Edit C:\Specware4\Applications\Specware\Handwritten\Lisp\BuildDistribution_ACL.lisp 
+               Set Specware-name, Specware-version, Specware-version-name as appropriate.
 
   4. In the "*Specware Shell*" buffer, type:
 
@@ -86,33 +84,55 @@ STEP Windows-D: Start Specware, and create the Allegro distribution directory
     ld BuildDistribution_ACL.lisp
 
     We should now have a distribution directory under 
-
       C;/SpecwareReleases/Specware-4-1-4/Windows/Specware4/
 
-    containing the Allegro stuff needed to run Specware as a stand-alone application,
-    as well as some necessary subdirs (e.g. Documentation, Example, Library, etc.).  
-    (This directory will provide input to InstallShield.)
-
+     containing the Allegro stuff needed to run Specware as a stand-alone application,
+     as well as some necessary subdirs (e.g. Documentation, Example, Library, etc.).  
+     (This directory will provide input to InstallShield.)
     We should now have Linux/Spcware4 and Windows/Specware4 dirs containing
-    pre-InstallShield build results.
-
+     pre-InstallShield build results.
     We should also have a CD directory with some installation scripts on it, plus 
-    some some empty dirs (to be filled later with the results of InstallShield).
+     some some empty dirs (to be filled later with the results of InstallShield).
+    You should see this message:
 
-    C:\SpecwareReleases\Specware-4-1-4\CD\Autorun.inf            -- will automatically invoke InstallOnWindows.cmd
-                                          InstallOnLinux         -- script to install Specware
-                                          InstallOnMac           -- currently a no-op
-                                          InstallOnWindows.cmd   -- script to install XEmacs and/or Specware
-                                          Linux\Specware4\      <empty>
-                                          Mac\Specware4\        <empty>
-                                          Windows\Specware4\    <empty>
-                                       Linux\Specware4\         <misc stuff>
-                                       Windows\Specware4\       <misc stuff>
-
+    ;;; Current status of release directory:
+    ;;;
+    ;;; C:/SpecwareReleases/Specware-4-1-4/
+    ;;; -----------------------------------
+    ;;;  CD\Autorun.inf
+    ;;;     InstallOnLinux
+    ;;;     InstallOnMac
+    ;;;     InstallOnWindows.cmd
+    ;;;     Linux\Specware4\                [ 0 files]
+    ;;;     Mac\Specware4\                  [ 0 files]
+    ;;;     Windows\Specware4\              [ 0 files]
+    ;;;  Linux\Specware4\Documentation\     [ 4 files]
+    ;;;                  Examples\          [ 4 files]
+    ;;;                  Languages\         [ 1 files]
+    ;;;                  Library\           [ 6 files]
+    ;;;                  Patches\           [ 0 files]
+    ;;;                  Specware
+    ;;;                  Specware4.cmuimage
+    ;;;                  SpecwareShell
+    ;;;  Windows\Specware4\acli701.dll
+    ;;;                    check-and-set-environment.cmd
+    ;;;                    Documentation\   [ 4 files]
+    ;;;                    Examples\        [ 4 files]
+    ;;;                    Languages\       [ 1 files]
+    ;;;                    Library\         [ 6 files]
+    ;;;                    Patches\         [ 0 files]
+    ;;;                    Specware4 Shell.cmd
+    ;;;                    Specware4.cmd
+    ;;;                    Specware4.dxl
+    ;;;                    Specware4.exe
+    ;;;                    Specware4.lic
+    ;;;                    StartShell.lisp
+    ;;;                    system-dlls\     [ 1 files]
+
 STEP Windows-E: Copy the Windows files to here 
 
       This is a no-op: the Windows files are already here.
-
+
 STEP Windows-F: Create the InstallShield package for Windows installation
 
   1. Open InstallShield (Start -> Programs -> 
