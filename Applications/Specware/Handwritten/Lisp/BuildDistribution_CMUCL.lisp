@@ -45,17 +45,14 @@
 ;; Specware-name and Specware-Version might not be needed here.
 ;; They are in BuildPreamble.lisp where they are needed.
 
-(defparameter Specware-name                  "Specware4")	; Name of directory and startup files
+(defparameter Specware-name                  "Specware4")	; Name of dir and startup files
 (defparameter cl-user::Specware-version      "4.1")
 (defparameter cl-user::Specware-version-name "Specware-4-1")
 (defparameter cl-user::Specware-patch-level  "4")
-(defparameter Major-Version-String           "4-1")		; for patch detection, about-specware command
+(defparameter Major-Version-String           "4-1")		; patch detection, about-specware cmd
 
-(defparameter *Allegro-dir*       (format nil "~A/" (specware::getenv "ALLEGRO")))
 (defparameter *Distribution-dir*  (concatenate 'string *specware-dir* "/distribution-cmulisp/"))
 
-
-(defun in-lisp-dir         (file) (concatenate 'string *Allegro-dir*      file))
 (defun in-distribution-dir (file) (concatenate 'string *Distribution-dir* file))
 
 ;;; =========== BUILD DISTRIBUTION DIRECTORY ============== 
@@ -63,14 +60,18 @@
 (format t "~2&;;; Copying Tests, Documentation, Patches, accord.el to distribution directory~%")
 
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/CopyFilesForDistribution.lisp"))
+(load (in-specware-dir "Applications/Specware/Handwritten/Lisp/show-dirs.lisp"))
 
+(format t "~&;;; Current status of distribution directory:~%;;;~%")
+(show-dirs *distribution-dir* 3 ";;; ")
 
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 (format t "~&;;;~%")
 (format t "~&;;; We now have ~A~%" (in-distribution-dir ""))
 (format t "~&;;;~%")
 (format t "~&;;; This completes Step Linux-D in How_To_Create_a_Specware_CD.txt]~%")
-(format t "~&;;; Next you will copy the new dir over to the Core-Win Windows machine~%")
+(format t "~&;;; Next you will copy the new distribution dir over to the Core-Win ~%")
+(format t "~&;;; Windows machine and proceed over there~%")
 (format t "~&;;;~%")
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 
