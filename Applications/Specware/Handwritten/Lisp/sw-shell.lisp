@@ -304,9 +304,9 @@
       (tr        (cl-user::tr argstr))
       (untr      (cl-user::untr))
       (f-b       (when (fboundp 'cl-user::f-b)
-		   (cl-user::f-b argstr)))
+		   (funcall 'cl-user::f-b argstr)))
       (f-unb     (when (fboundp 'cl-user::f-unb)
-		   (cl-user::f-unb (or argstr ""))))
+		   (funcall 'cl-user::f-unb (or argstr ""))))
       (pa        (cl-user::pa argstr))
       (dev       (princ (if argstr
 			    (setq *developer?* (not (member argstr '("nil" "NIL" "off") :test 'string=)))
