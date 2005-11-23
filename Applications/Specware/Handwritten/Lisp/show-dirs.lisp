@@ -1,6 +1,9 @@
 (in-package "USER")
 
 (defun show-dirs (file &optional (max-level 4) (prefix ""))
+  (let ((foo (namestring file)))
+    (unless (member (schar foo (1- (length foo))) '(#\/ #\\))
+      (setq file (format nil "~A/" foo))))
   (let ((trim (length (namestring file)))
 	(lines  '()))
     (format t "~&~A~A~%" prefix file)
@@ -17,7 +20,7 @@
 		   (when (member (car chars) '(#\/ #\\))
 		     (setq suffix (cdr chars))))))
 	     (list-files (file level)
-	       (if (file-directory-p file)
+	       (if (specware::directory? file)
 		   (let* ((foo (namestring file))
 			  (sub-files (directory 
 				      (if (member (schar foo (1- (length foo))) '(#\/ #\\))
