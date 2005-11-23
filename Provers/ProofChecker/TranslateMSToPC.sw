@@ -235,8 +235,8 @@ Translate qualifying spec
           % }
       | Apply (Fun (Project id,srt,_),term,_) -> {
           termPC <- msToPC spc term;
-          typePC <- msToPC spc (inferType (spc,term));
-          if natConvertible id then
+          typePC <- msToPC spc (inferType (spc,term));%srt
+          if natConvertible id then let _ = fail(printSort srt) in
             return (DOT (termPC, typePC, prod (stringToNat id)))
           else
             return (DOT (termPC, typePC, user (idToUserField id)))
@@ -545,12 +545,20 @@ Translate qualifying spec
           return (var |> vars,newType |> types, ((EMBED (newType, idToConstructor id)) @ (VAR var)) == expr)
         }
       %%% Change to not descend into term .. separate pass for "as".
-      | RecordPat (fields as (("1",_)::_),_) ->
+      %%% Above comment put here byLindsay.
+      %%% I changed the code as below and don't understand his comment.
+      | RecordPat (fields as (("1",_)::_),_) -> {
+      %let _ = fail "recPat" in
+        recTypes <- foldM (fn (res) -> (fn (n,pat) -> {
+			fieldType <- Type.msToPC spc (patternSort pat);
+			return (res FSeq.<| fieldType)})) empty fields;
+	let recFields = firstNProductFields (length fields) in
+	let recType = RECORD(recFields, recTypes) in
            foldM (fn (vars,types,newExpr) -> fn (n,pat) -> {
-              fieldType <- Type.msToPC spc (patternSort pat);
-              (fVars,fType,fExpr) <- Pattern.msToPC spc (DOT (expr, fieldType, prod (stringToNat n))) pat;
+              (fVars,fType,fExpr) <- Pattern.msToPC spc (DOT (expr, recType, prod (stringToNat n))) pat;
               return (vars ++ fVars,types ++ fType,newExpr &&& fExpr)
             }) (empty,empty,TRUE) fields
+						 }
       | RecordPat (fields,_) -> 
            foldM (fn (vars,types,newExpr) -> fn (id,pat) -> {
               fieldType <- Type.msToPC spc (patternSort pat);
