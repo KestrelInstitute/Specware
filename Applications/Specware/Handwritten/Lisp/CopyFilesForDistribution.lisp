@@ -1,4 +1,4 @@
-;;; Loaded from BuildDistribution_ACL.lisp
+;;; Loaded from BuildDistribution_{$LISP}.lisp 
 ;;; Moves a variety of files to the distribution directory.
 
 ;;; Assumes distribution dir is something like:
@@ -54,17 +54,6 @@
 		      "../Applications/Specware/Handwritten/Lisp/ProvideSpecwareRuntime")
       collect (in-specware-dir (format nil "Library/~a.lisp" fil)))
    (in-distribution-dir "Library/SpecwareRuntime.lisp"))
-
-;;; ============ EMACS SUPPORT ============
-
-
-(format t "~&;;;~%")
-(if (probe-file (in-distribution-dir "Library/IO/Emacs/xeli/"))
-    (format t "~&;;; Getting Allegro/emacs interface already in specware libarary. ...~%")
-  (progn
-    (format t "~&;;; Getting Allegro/emacs interface from ~A ...~%" (in-lisp-dir "xeli/"))
-    (specware::copy-directory (in-lisp-dir "xeli/") 
-			      (in-distribution-dir "Library/IO/Emacs/xeli/"))))
 
 ;;; ============ EXAMPLES ============
 

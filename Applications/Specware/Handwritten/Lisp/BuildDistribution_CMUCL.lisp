@@ -57,9 +57,12 @@
 
 ;;; =========== BUILD DISTRIBUTION DIRECTORY ============== 
 
-(format t "~2&;;; Copying Tests, Documentation, Patches, accord.el to distribution directory~%")
+(format t "~2&;;; Copying Tests, Documentation, Patches to distribution directory~%")
 
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/CopyFilesForDistribution.lisp"))
+
+;;; ============ SHOW RESULTS ============
+
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/show-dirs.lisp"))
 
 (format t "~&;;; Current status of distribution directory:~%;;;~%")

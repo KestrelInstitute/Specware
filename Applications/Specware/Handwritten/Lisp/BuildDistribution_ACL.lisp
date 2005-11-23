@@ -37,19 +37,19 @@
     (format t "~&;;; Making new    ~A~%" dir)
     (specware::make-directory dir)))
 
-#+Allegro (require "BUILD")  ; workaround for annoying bug
-#+Allegro (require "genapp") ; workaround for annoying bug
+(require "BUILD")  ; workaround for annoying bug
+(require "genapp") ; workaround for annoying bug
 
 ;;; ============ PARAMETERS ============
 
 ;; Specware-name and Specware-Version might not be needed here.
 ;; They are in BuildPreamble.lisp where they are needed.
 
-(defparameter Specware-name                  "Specware4")	; Name of directory and startup files
+(defparameter Specware-name                  "Specware4")	; Name of dir and startup files
 (defparameter cl-user::Specware-version      "4.1")
 (defparameter cl-user::Specware-version-name "Specware-4-1")
 (defparameter cl-user::Specware-patch-level  "4")
-(defparameter Major-Version-String           "4-1")		; for patch detection, about-specware command
+(defparameter Major-Version-String           "4-1")		; patch detection, about-specware cmd
 
 (defparameter *Specware-dir*      (fix-dir (sys:getenv "SPECWARE4")))
 (defparameter *Allegro-dir*       (fix-dir (sys:getenv "ALLEGRO")))
@@ -137,10 +137,19 @@
 
 ;;; =========== BUILD DISTRIBUTION DIRECTORY ============== 
 
-(format t "~2&;;; Copying Tests, Documentation, Patches, accord.el to distribution directory~%")
+(format t "~2&;;; Copying Tests, Documentation, Patches to distribution directory~%")
 
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/CopyFilesForDistribution.lisp"))
 
+;;; ============ EMACS SUPPORT ============
+
+(format t "~&;;;~%")
+(if (probe-file (in-distribution-dir "Library/IO/Emacs/xeli/"))
+    (format t "~&;;; Getting Allegro/emacs interface already in specware libarary. ...~%")
+  (progn
+    (format t "~&;;; Getting Allegro/emacs interface from ~A ...~%" (in-lisp-dir "xeli/"))
+    (specware::copy-directory (in-lisp-dir "xeli/") 
+			      (in-distribution-dir "Library/IO/Emacs/xeli/"))))
 
 ;;; ============ AUTORUN FILES FOR CD ============
 
@@ -204,7 +213,7 @@
 (format t "~&;;;~%")
 (format t "~&;;; We now have ~A~%" (in-distribution-dir ""))
 (format t "~&;;;~%")
-(format t "~&;;; This completes Step Windows-D in How_To_Create_Accord_CD.txt]~%")
+(format t "~&;;; This completes Step Windows-D in How_To_Create_a_Specware_CD.txt]~%")
 (format t "~&;;; Next you will run InstallShield to build dirs to be placed on CD.~%")
 (format t "~&;;;~%")
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
