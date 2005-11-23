@@ -1,7 +1,0 @@
-#!/bin/sh
-
-echo "Preparing to offer to install Specware 4.1.4 ..."
-
-echo "Mac version not available on this CD"
-
-exit 1
