@@ -1,7 +1,12 @@
 #!/bin/sh
 
+xemacs=/Applications/XEmacs.app/Contents/MacOS/XEmacs
+if [ -z "$xemacs" ]; then
 xemacs=`which xemacs`
-act='launch Specware'
+if [ -z "$xemacs" ]; then
+  xemacs="/sw/bin/xemacs"
+fi
+fi
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
