@@ -508,7 +508,7 @@ reinitialization.  With a prefix, get the binary extensions again."
     (when waitp
       (while (ilisp-value 'ilisp-initializing t)
 	(accept-process-output)
-	(sit-for 0)))))
+	(sit-for 0.1)))))
 
 ;;;
 (defun ilisp-init-and-sync ()
