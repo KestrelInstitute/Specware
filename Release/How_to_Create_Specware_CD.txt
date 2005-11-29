@@ -24,7 +24,7 @@ STEP Windows-A: Uninstall previous Specware (if necessary)
 
   2. Double-click Add/Remove Programs
 
-  3. Scroll down to Specware4.1 (or similar) and click Change/Remove
+  3. Scroll down to Specware-4-1-4 and click Change/Remove
 
   4. Click ok to uninstall Specware
 
@@ -84,8 +84,7 @@ STEP Windows-D: Start Specware, and create the Allegro distribution directory
     ld BuildDistribution_ACL.lisp
 
     We should now have a distribution directory under 
-      C;/SpecwareReleases/Specware-4-1-4/Windows/Specware4/
-
+      C:/SpecwareReleases/Specware-4-1-4/Windows/Specware4/
      containing the Allegro stuff needed to run Specware as a stand-alone application,
      as well as some necessary subdirs (e.g. Documentation, Example, Library, etc.).  
      (This directory will provide input to InstallShield.)
@@ -158,7 +157,7 @@ STEP Windows-F: Create the InstallShield package for Windows installation
         Application Information:    
 
             Kestrel
-            Specware
+            Specware-4-1-4
             4.1.4
             www.specware.com
 
@@ -328,13 +327,12 @@ STEP Linux-F: Create the InstallShield package for Linux installation
        Enter "Location:" as 
         "C:\Documents and Settings\core\My Documents\InstallShield X Universal Projects\"
 
-
   3. Click on "Project Assistant", then step through the following stages:
 
         Application Information:    
 
             Kestrel
-            Specware
+            Specware-4-1-4
             4.1.4
             www.specware.com
 
@@ -357,9 +355,9 @@ STEP Linux-F: Create the InstallShield package for Linux installation
             For both Specware and SpecwareShell, select (Edit -> Attributes)
             and then select Execute for Owner/Group/World.
             Then return to Project Assistant
-      
-        Application Launchers:   <none>
 
+        Application Launchers:   <none>
+
         Application Shortcuts:   <none>
 
         Return to the Project Assistant
@@ -391,12 +389,12 @@ STEP Linux-G: Copy the Linux installation to the CD directory
   4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Linux\Specware4\
 
 
-STEP Mac-A/B/C/D: Prepare CMUlisp files
+STEP Mac-A/B/C/D: Prepare OpenMCL files
 
   1.  Have Stephen Westfold build Specware on a Mac machine.
       (Similar to steps Windows-A/B/C/D, but on Mac)
 
-STEP Mac-E: Copy the CMULisp files to here
+STEP Mac-E: Copy the OpenMCL files to here
 
   2.  Copy the resulting Mac files from <wherever they are> 
                                      to C:\SpecwareReleases\Specware-4-1-4\Mac\Specware4\
