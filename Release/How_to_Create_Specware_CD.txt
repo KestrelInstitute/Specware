@@ -7,16 +7,25 @@ This assumes "here" is the machine named Core-Win
 
 The step order is as follows:
 
-First these:  Windows-A/B/C/D/E/F/G  [A/B/C/D on Windows machine, E/F/G here]
-                                     [The Windows machine can be here]
+The step order is as follows:
 
-                Linux-A/B/C/D/E/F/G  [A/B/C/D on Linux   machine, E/F/G here]
+First these:  Windows A/B/C/D  on Windows machine (could be here)
+                Linux A/B/C/D  on Linux   machine
+                  Mac A/B/C/D  on Mac     machine
 
-                  Mac-A/B/C/D/E/F/G  [A/B/C/D on Mac     machine, E/F/G here] 
+Then these:   Windows E/F/G    here 
+              Linux   E/F/G    here
+              Mac     E/F/G    here
 
-Then these:   CD-A/B/C               [here]
+Then these:   CD A/B/C         here
 
-Then these:   TEST and TAG-CVS       [here]
+Then these:   CD-TEST          virgin Windows/Linux/Mac machines
+
+Then these:   FTP-??           here
+
+Then these:   FTP-TEST         here
+
+Then these:   TAG-CVS          here
 
 STEP Windows-A: Uninstall previous Specware (if necessary)
 
@@ -288,12 +297,15 @@ STEP Windows-G: Copy the installation to the CD directory
 
   1.  Still within InstallShield, go to (Tools -> Open Release Folder)
 
-  2.  Double-click on dsk1 to open it.
+  2.  Double-click on disk1 to open it, should see these 8 files:
+        ...
 
-  3.  Copy everything from the resulting window (currently eight files).
+  3.  Also open C:\SpecwareReleases\Specware-4-1-4\CD\Windows\Specware4\
+      Pay attention to directory!                  ==
 
-  4.  Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Windows\Specware4\
       [This dir was prepared in step Windows-D.4 by BuildDistribution_ACL.cmd]
+
+  4.  Copy all 8 files from disk1 to C:\SpecwareReleases\Specware-4-1-4\CD\Windows\Specware4\
 
 
 STEP Linux-A/B/C/D: Prepare CMUlisp files
@@ -382,11 +394,12 @@ STEP Linux-G: Copy the Linux installation to the CD directory
 
   1. Still within InstallShield, go to (Tools -> Open Release Folder)
 
-  2. Double-click on dsk1 to open it.
+  2. Double-click on disk1 to open it (should see 3 files).
 
-  3. Copy everything from the resulting window (currently three files).
+  3. Also open C:\SpecwareReleases\Specware-4-1-4\CD\Linux\Specware4\
+     Pay attention to directory!                  ==
 
-  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Linux\Specware4\
+  4. Copy all 3 files from disk1 to C:\SpecwareReleases\Specware-4-1-4\CD\Linux\Specware4\
 
 
 STEP Mac-A/B/C/D: Prepare OpenMCL files
@@ -407,11 +420,12 @@ STEP Mac-G: Copy the Mac installation to the CD directory
 
   1. Still withing InstallShield, go to (Tools -> Open Release Folder)
 
-  2. Double-click on dsk1 to open it.
+  2. Double-click on disk1 to open it (should see 3 files).
 
-  3. Copy everything from the resulting window (currently eight files).
+  3. Also open C:\SpecwareReleases\Specware-4-1-4\CD\Mac\Specware4\
+     Pay attention to directory!                  ==
 
-  4. Paste everything into C:\SpecwareReleases\Specware-4-1-4\CD\Mac\Specware4\
+  4. Copy all 3 files from disk1 to C:\SpecwareReleases\Specware-4-1-4\CD\Mac\Specware4\
 
 
 STEP CD-A: CREATE LABEL
@@ -458,9 +472,21 @@ STEP CD-C:: Stick the label on the CD
   4. Take the CD off and make sure the label is fully adhered to the CD.
 
 
-STEP Test
+STEP CD-Test
 
-  1. Install Specware 4.1.4
+  1. Install Specware 4.1.4 from the CD onto virgin Windows/Linux/Mac machines
+
+  2. Run the examples & tests.
+
+STEP FTP ??
+
+  1. Prepare obscure FTP location
+
+  2. Move CD dirs there
+
+STEP FTP-Test
+
+  1. Install Specware 4.1.4 via FTP download onto virgin Windows/Linux/Mac machines
 
   2. Run the examples & tests.
 
