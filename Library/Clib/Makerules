@@ -1,0 +1,32 @@
+#
+# common make rules for generated C files from Specware
+#
+
+CC = gcc
+LD = gcc
+
+# the directory for the Boehm garbage collector:
+GCDIR = $(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/gc6.2
+
+ifeq "$(USEGC)" "no"
+  SWGC = -USWGC
+  GCLIB =
+  GCINCLUDE =
+else
+  SWGC = -DSWGC
+  GCLIB = $(GCDIR)/gc.a
+  GCINCLUDE = -I$(GCDIR)/include
+endif
+
+LDLIBS := $(LDLIBS) $(GCLIB)
+CPPFLAGS :=  -w $(SWGC) $(CPPFLAGS) -I$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib $(GCINCLUDE)
+
+dummyall:
+	@echo "   *** Please specify your target on"
+	@echo "   *** the command line or place it in"
+	@echo "   *** front of the \"#include\" statement"
+	@echo "   *** in the Makefile."
+
+
+$(GCLIB):
+	cd $(GCDIR) ; $(MAKE)
