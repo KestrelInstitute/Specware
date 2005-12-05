@@ -165,7 +165,7 @@ Makefile in it. The corresponding include statement in a user Makefile
 would then be as follows:
 
 [[
-||   include $$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules
+||   include $$(SPECWARE4)/Library/Clib/Makerules
 ]]
 where environment variable <"SPECWARE4"> is set to the installation
 directory of &Specware;, e.g., <"C:/progra~1/Specware4.1">.

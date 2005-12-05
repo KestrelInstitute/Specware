@@ -105,7 +105,7 @@ using a Makefile and including the supplied C generator system
 Makefile in it. The corresponding include statement in a user Makefile
 would then be as follows:
 
-   include $(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules
+   include $(SPECWARE4)/Library/Clib/Makerules
 
 This file set the CPPFLAGS and CFLAGS make variables to include the
 paths and library necessary for successfully compiling the generated
@@ -133,7 +133,7 @@ Specware-generated C code. The easiest way to build the gc-library is
 described in the example Makefile mentioned above: simple add the
 variable $(GCLIB) to the list of dependencies in your main Makefile
 target. Alternatively, this can be done by hand by changing to the
-directory "$SPECWARE4/Languages/MetaSlang/CodeGen/C/Clib/gc6.2" and
+directory "$SPECWARE4/Library/Clib/gc6.2" and
 then running "make". After successful completion of this command, a
 file named "gc.a" should be present in that directory.
 

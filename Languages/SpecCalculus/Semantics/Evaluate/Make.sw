@@ -79,7 +79,7 @@ spec
      makefile <- return (uidToFullPath (uid << {path = path}));
      print (";;; Local Makefile: " ^ makefile ^ "\n");
      sw_make_file <- return (case getEnv "SPECWARE4" of
-			       | Some s -> s ^ "/Languages/MetaSlang/CodeGen/C/Clib/Makerules"
+			       | Some s -> s ^ "/Library/Clib/Makerules"
 			       | _ -> "oops");
      print (";;; Specware Make file: " ^ sw_make_file ^ "\n");
      s <- return ("# ----------------------------------------------\n" ^

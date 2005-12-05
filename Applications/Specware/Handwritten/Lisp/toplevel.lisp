@@ -800,7 +800,7 @@
 		      *last-make-args*))
 	 (make-command (if (specware::getenv "SPECWARE4_MAKE") (specware::getenv "SPECWARE4_MAKE") "make"))
 	 (user-make-file-suffix ".mk")
-	 (sw-make-file "$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules")
+	 (sw-make-file "$(SPECWARE4)/Library/Clib/Makerules")
 	 (make-file "swcmake.mk"))
     (setq *last-make-args* make-args)
     (if make-args

@@ -14,7 +14,7 @@ all: myapp
 
 # mandatory; this includes the settings needed for the generated
 # code to compile; it sets CPPFLAGS and LDLIBS variables
-include $(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules
+include $(SPECWARE4)/Library/Clib/Makerules
 
 # optional: augment the CPPFLAGS
 CPPFLAGS := -g $(CPPFLAGS)
@@ -41,7 +41,7 @@ CPPFLAGS := -g $(CPPFLAGS)
 # even need to specify a separate Makefile, because the above included Makerules
 # contains all the neccessary variable settings:
 #
-#   make -f $SPECWARE4/Languages/MetaSlang/CodeGen/C/Clib/Makerules foo
+#   make -f $SPECWARE4/Library/Clib/Makerules foo
 #
 # would be sufficient in that case.
 
