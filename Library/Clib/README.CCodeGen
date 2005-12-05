@@ -1,0 +1,170 @@
+
+MetaSlang/C Code Generator
+--------------------------
+
+The C code generator can either be called from the Lisp prompt or
+using the SpecCalc "generate" construct inside a .sw file. In both
+cases, an additional parameter can be supplied specifying the base
+name of the C source and header files into which the C code will be
+generated.
+
+Lisp Prompt:
+- - - - - -
+
+    :swc <UnitId> [<c-file-base-name>]
+
+Example:
+    :swc QuickSort QuickSort
+
+where QuickSort.sw contains the spec that is to be translated into the
+C files QuickSort.h and QuickSort.c
+
+Inside a .sw file: (works for MetaSlang and Accord sources)
+- - - - - - - - - 
+
+generate c <spec-term> in "<c-file-base-name>"
+
+Example contents of a .sw file generating c code:
+
+  generate c QuickSort in "QuickSort.c"
+
+This would have the same result as the above command line variant. The
+suffix ".c" can be omitted or not.
+
+
+Generating, Compiling and Running the generated C code using ":make"
+--------------------------------------------------------------------
+
+The easiest and recommended way of generating C code and compiling it
+is by using thee buillt-in top-level-alias
+
+  :make <unit-id>
+
+at the Lisp prompt. This command does the following things:
+- it invokes the "swc" command on the given unit-id and uses the name
+  of the unit-id as file name for the generated C code ("#"'s are
+  replaced by "_"'s). For example,
+
+     :make foo#bar
+
+  would invoke ":swc foo#bar foo_bar.c"
+- if the C code generation has been successful, a customized Makefile
+  is generated into "swcmake.mk". This file will include references to
+  the built-in Makerules and define the targets and dependencies in a
+  way that it compiles and executable with the same name as the
+  generated C-files with removed suffix, i.e. for the above example
+  the name of the executable would be "foo_bar".
+
+  By convention, if a file named <unit>_main.c or <unit>_test.c exists,
+  it will be automatically included in the build process; <unit>_test.c
+  will only be used, if <unit>_main.c does not exist. For the above
+  example this would mean that, if a file named "foo_bar.c" exists, it
+  would be included in the build.
+
+  In addition to the built-in Makerules file, the generated make-file
+  "swcmake.mk" will also include a unit-specific make-file in the
+  current directory called <executable>.mk, i.e. in the above example
+  "foo_bar.mk". This file can be used to set the make variables CFLAGS
+  and USERFILES, which are used as follows:
+
+  CFLAGS:    the value of the CFLAGS variable is used in calls to the C
+             compiler (gcc) and usually contains example-specific flags,
+             e.g., optimizer flags. Example:
+
+                   CFLAGS = -O3
+
+  USERFILES: the value of the USERFILES make variable is used in calls
+             for the final compilation and linking of the
+             executable. It usually lists additional C-files (.o
+             and/or .c files) that the example needs to be a fully
+             stand-alone application.
+
+  Other make variables that are used in the generated/predefined rules
+  are LDFLAGS (can be used to add addtional libraries, etc.), CPPFLAGS
+  (see below), and USEGC (see below).
+
+- finally, the actual "make" shell-command is called with the
+  generated make-file "swcmake.mk" top-level make-file. By default,
+  the actual command called is "make" assuming a program with this
+  name is available in the current shell settings. The system
+  environment variable SPECWARE4_MAKE can be used to overwrite this
+  default behaviour: if SPECWARE4_MAKE is set, the value of it is used
+  as make command.
+
+
+Compiling and Running the generated C code without using :make
+--------------------------------------------------------------
+
+The generated C code is designed to contain as minimal as possible
+references outside the generated code, but there are still some
+builtin routines that are referred to. For that reason, the C compiler
+needs a few extra arguments specifying system include paths and the
+location of the garbage collector library that is used in the
+generated code. The easiest way of compiling the generated code is by
+using a Makefile and including the supplied C generator system
+Makefile in it. The corresponding include statement in a user Makefile
+would then be as follows:
+
+   include $(SPECWARE4)/Library/Clib/Makerules
+
+This file set the CPPFLAGS and CFLAGS make variables to include the
+paths and library necessary for successfully compiling the generated
+code. If additions to this variables need to be done, one can either
+define the corresponding variable before the above include statement
+in the Makefile or use the ":=" assignment after the include statement
+to prevent "make" to recursively process the variable. Example
+
+   CPPFLAGS := -g -pg $(CPPFLAGS)
+
+would be a valid statement for augmenting the CPPFLAGS after the
+include statement. See
+
+  $SPECWARE4/Languages/MetaSlang/CodeGen/C/Examples/Makefile
+
+for an annotated example Makefile.
+
+Garbage Collector
+-----------------
+By default, the generated C code generates calls to the public-domain
+garbage collector written by H. Boehm (see
+http://www.hpl.hp.com/personal/Hans_Boehm/gc/). The library needs to
+be built once on a fresh Specware4 tree and will then be used by the
+Specware-generated C code. The easiest way to build the gc-library is
+described in the example Makefile mentioned above: simple add the
+variable $(GCLIB) to the list of dependencies in your main Makefile
+target. Alternatively, this can be done by hand by changing to the
+directory "$SPECWARE4/Library/Clib/gc6.2" and
+then running "make". After successful completion of this command, a
+file named "gc.a" should be present in that directory.
+
+Disabling the Garbage Collector
+- - - - - - - - - - - - - - - -
+To disable the garbage collector simply put the variable definition
+
+USEGC = no
+
+*in front of* the line including the above Makerules file. This will 
+prevent the generated code from calling the allocation function of the
+garbage collector and the garbage collector library will not be bound
+to the executable.
+
+
+Supplying a C "main" function
+-----------------------------
+If you want to create a stand-alone C application using the
+Specware-generated code, you have to supply a main function. This can
+be done either by directly defining an unqualified MetaSlang operator
+"main" like this
+
+    op main: () -> ()
+    def main () ...
+
+or by hand-coding a main C function in a separate C file, from where
+the Specware-generated code would be called. Note, that currently,
+passing command line arguments is not yet supported, if you define a
+MetaSlang main operator directly. See the Examples directory for
+examples of both a hand-written main c function that calls the
+generated code and a MetaSlang definition of the main operator.
+
+[Accord users can define a toplevel proc/espec as "main"]
+
