@@ -1,4 +1,3 @@
- # $Id$
 	.arch ev6
 
         .text
