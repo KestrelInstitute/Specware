@@ -67,10 +67,10 @@
       (wait-for-prompt 0.1)
       (sw:eval-in-lisp-no-value
        (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
-      (goto-char (point-max))
-      (simulate-input-expression "(swshell::specware-shell nil)")
-      (sleep-for .1)
-      )))
+      (let ((init-form (or (getenv "SPECWARE_INIT_FORM") "(swshell::specware-shell nil)")))
+	(goto-char (point-max))
+	(simulate-input-expression init-form)
+	(sleep-for .1)))))
 
 (defun binary-directory (specware-dir)
   (concat specware-dir

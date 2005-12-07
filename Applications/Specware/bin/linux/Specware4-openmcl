@@ -26,9 +26,9 @@ fi
 
 # Ensure SPECWARE4 is set to full pathname:
 
-case "$SPECWARE" in
+case "$SPECWARE4" in
     /*) : ok;;
-    *)  SPECWARE="`pwd`/$SPECWARE";;
+    *)  SPECWARE4="`pwd`/$SPECWARE4";;
 esac
 
 echo "\$SPECWARE4=$SPECWARE4"
@@ -49,9 +49,9 @@ fi
 
 # Ensure SPECWARE4 is set to full pathname:
 
-case "$SPECWARE" in
+case "$SPECWARE4" in
     /*) : ok;;
-    *)  SPECWARE="`pwd`/$SPECWARE";;
+    *)  SPECWARE4="`pwd`/$SPECWARE4";;
 esac
 
 if [ ! -d "$SPECWARE4"/Applications/Specware ]; then

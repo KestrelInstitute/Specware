@@ -1013,7 +1013,7 @@ If anyone has a good algorithm for this..."
   filename)
 
 (defun get-swpath ()
-  (let ((rawpath (sw:eval-in-lisp "(specware::getenv \"SWPATH\")"))
+  (let ((rawpath (or (sw:eval-in-lisp "(cl-user::get-swpath)") ""))
 	(delim (if (eq window-system 'mswindows) ?\; ?:))
 	(result ())
 	(specware4 (sw:eval-in-lisp "(specware::getenv \"SPECWARE4\")"))
@@ -1068,7 +1068,7 @@ If anyone has a good algorithm for this..."
 		    (return (if (eq (elt rel-filename 0) ?/)
 				rel-filename
 			      (concat "/" rel-filename)))))))
-       finally (let ((oldpath (sw:eval-in-lisp "(specware::getenv \"SWPATH\")"))
+       finally (let ((oldpath (sw:eval-in-lisp "(cl-user::get-swpath)"))
 		     (head-dir-uid (split-filename-for-path filename)))
 		 (lisp-or-specware-command
 		  ":swpath " "path "
