@@ -39,7 +39,7 @@ SpecCalc qualifying spec
 	| THROW exc -> {SpecCalc.print (printFailure(exc)); (return false)};
 
       SpecCalc.print (printContext ctxt);
-      print (printProof ctxtProof);
+      SpecCalc.print (printProof ctxtProof);
       return (Proof {status = if proofChecked then Proved else Unproved,
 		     unit = unitId})
     }
