@@ -7,6 +7,8 @@ Translate qualifying spec
   import /Languages/MetaSlang/AbstractSyntax/AnnTerm
   import /Languages/MetaSlang/Specs/Environment
   import /Languages/SpecCalculus/Semantics/Environment  % for the Specware monad
+  %import ../ProofDebugger/Printer
+  import ../ProofDebugger/Print
 
   op specToContext : Spec -> SpecCalc.Env Context
   def specToContext spc =
@@ -184,6 +186,11 @@ Translate qualifying spec
                newTerm <- msToPC spc term;
                return (fSeq <| (axioM (propNameToAxiomName propName, newTyVars,newTerm)))
              }
+           | Property (Conjecture,propName,tyVars,term) -> {
+               newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
+               newTerm <- msToPC spc term;
+               return (fSeq <| (axioM (propNameToAxiomName propName, newTyVars,newTerm)))
+             }
            | Property (Theorem,propName,tyVars,term) -> {
                newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
                newTerm <- msToPC spc term;
@@ -197,6 +204,7 @@ Translate qualifying spec
   % Convert a term in MetaSlang abstract syntax to a term in the proof checker's abstract syntax.
   op Term.msToPC : Spec -> MS.Term -> SpecCalc.Env Expression
   def Term.msToPC spc trm =
+    %let _ = fail(printTerm trm) in
     case trm of
       | Apply (Fun (And,srt,_),Record ([("1",t1),("2",t2)],_),_) -> {
           t1PC <- msToPC spc t1;
@@ -246,6 +254,19 @@ Translate qualifying spec
           newType <- Type.msToPC spc srt;
           argExpr <- Term.msToPC spc arg;
           return ((EMBED (newType, idToConstructor id)) @ argExpr)
+        }
+      | Apply(Fun (Embedded(id),Arrow(dom, _, _) ,_),arg,_) -> {
+
+
+          unfoldedDom <- return (unfoldBase(spc, dom));
+          case unfoldedDom of
+	    | CoProduct (sums, _) -> {
+		constructors <- mapListToFSeq (fn (id,typ?) -> return (idToConstructor id)) sums;
+		types <- mapListToFSeq (fn (id,typ?) -> OptType.msToPC spc typ?) sums;
+                argExpr <- Term.msToPC spc arg;
+                return ((EMBED? (constructors, types, idToConstructor id)) @ argExpr)
+               }
+            | _ -> raise (Fail "trying to translate MetaSlang Embedded for non CoProduct.")
         }
       | Apply (Fun (Not,srt,_),t,_) -> {
           tPC <- msToPC spc t;
@@ -366,7 +387,8 @@ Translate qualifying spec
           return (QUOT newType)
         }
       | Var ((id,srt),pos) -> return (VAR (idToVariable id))
-      | _ -> {
+      | _ -> let _ = fail("no match in Term.msToPC") in
+	     {
          print ("Term.msToPC: no match\n");
          % print (printTerm trm);
          print (System.anyToString trm);
@@ -484,7 +506,9 @@ Translate qualifying spec
            newTerm <- Term.msToPC spc term;
            return (QUOT (newType,newTerm))
           }
-      | Subsort (typ,term,_) -> {
+      | Subsort (typ,term,_) -> 
+      %let _ = fail("subsort") in
+				{
            newType <- Type.msToPC spc typ;
            newTerm <- Term.msToPC spc term;
            return (RESTR (newType,newTerm))
