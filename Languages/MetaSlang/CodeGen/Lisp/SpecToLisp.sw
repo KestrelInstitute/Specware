@@ -621,6 +621,11 @@ SpecToLisp qualifying spec {
      | Record (fields, _) -> List.map (fn (_, t) -> mkLTerm (sp, dpn, vars, t)) fields
      | _ -> [mkLTerm (sp, dpn, vars, term)]
 
+ %% Make a special op for the message format to ensure that terms built by mkLTerm 
+ %% can be recognized by warn_about_non_constructive_defs
+ op  non_constructive_format_msg : LispTerm
+ def non_constructive_format_msg = mkLString "Non-constructive Term: ~A~%       where ~{~A = ~S~^, ~}"
+
  def mkLTerm (sp, dpn, vars, term : MS.Term) = 
    case fullCurriedApplication (sp, dpn, vars, term) of
      | Some lTerm -> lTerm
@@ -743,7 +748,7 @@ SpecToLisp qualifying spec {
 	 | _ -> 
 	   let pos = (termAnn term) in
 	   let tm_str = printTerm_OnOneLine term in
-	   (System.warn ("Non-constructive term " ^ (printIfExternal pos) ^ ": " ^ tm_str);
+	   (%% System.warn ("Non-constructive term " ^ (printIfExternal pos) ^ ": " ^ tm_str);
 	    %%
 	    %% The overall effect of the code constructed here
 	    %% is to produce something like this at runtime:
@@ -761,7 +766,7 @@ SpecToLisp qualifying spec {
 		      %% take two things from the argument list and then:
 		      %%  print the first (a string) using ~A (so no surrounding quotes),
 		      %%  print the second (a value) using ~S (so use quotes, etc.),
-		      mkLString ("Non-constructive Term: ~A~%       where ~{~A = ~S~^, ~}"),
+		      non_constructive_format_msg,       % cf. warn_about_non_constructive_defs
 		      mkLString tm_str,
 		      %% The following will produce a form something like 
 		      %% (list "aa" aa "foo" foo" xyz "xyz")
@@ -1368,6 +1373,7 @@ SpecToLisp qualifying spec {
 	     (opInfoDefs info)
    in
      let defs = foldriAQualifierMap mkLOpDef [] spc.ops in
+     let _    = warn_about_non_constructive_defs defs   in
      {name          = defPkgName, 
       extraPackages = extraPackages, 
       ops           = List.map (fn (n, _) -> n) defs, 
@@ -1375,6 +1381,32 @@ SpecToLisp qualifying spec {
       opDefns       = defs
      } : LispSpec
       
+ op  warn_about_non_constructive_defs : List(String * ListADT.LispTerm) -> ()
+ def warn_about_non_constructive_defs defs =
+   %% mkLTerm incorporates non_constructive_format_msg into certain calls to error
+   app (fn (uname, tm) ->
+	if calls_specific_error? tm non_constructive_format_msg then
+	  System.warn ("Non-constructive def for " ^ uname)
+	else
+	  ())
+       defs
+
+ op  calls_specific_error? : LispTerm -> LispTerm -> Boolean
+ def calls_specific_error? tm format_str =
+   let 
+      def aux tm =
+	case tm of
+	  | Apply  (Op "CL:ERROR", msg :: _) -> msg = format_str
+	  | Apply  (tm, tms)       -> aux tm || exists aux tms
+	  | Lambda (_,   _,   tm)  -> aux tm
+	  | If     (tm1, tm2, tm3) -> aux tm1 || aux tm2 || aux tm3
+	  | IfThen (tm1, tm2)      -> aux tm1 || aux tm2
+	  | Let    (_, tms, tm)    -> exists aux tms || aux tm
+	  | Letrec (_, tms, tm)    -> exists aux tms || aux tm
+	  | Seq    tms             -> exists aux tms
+	  | _                      -> false
+   in
+     aux tm
 
  op toLisp        : Spec -> LispSpec
  op toLispEnv     : Spec -> LispSpec
