@@ -184,21 +184,21 @@
     #+Lispworks (hcl:compile-file-if-needed file)
     #+(or cmu mcl sbcl gcl clisp)
     (when (> (file-write-date file)
-	     (let ((fasl-file (probe-file (make-pathname :defaults file
-							 :type *fasl-type*))))
-	       (if fasl-file (or (file-write-date fasl-file) 0)
-		 0))) 
+	     (let ((pn (make-pathname :defaults file :type *fasl-type*)))
+	       (let ((fasl-file (probe-file pn)))
+		 (if fasl-file (or (file-write-date fasl-file) 0)
+		   0))))
       (compile-file file))))
 
 (defun compile-and-load-lisp-file (file)
-   (let ((filep (make-pathname :defaults file :type "lisp")))
-     ;(format t "C: ~a~%" filep)
-     ;(compile-file filep)
-     ;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
-     (compile-file-if-needed filep)
-     ;; scripts depend upon the following returning true iff successful
-     (load (make-pathname :defaults filep :type *fasl-type*)))
-   )
+  (let ((filep (make-pathname :defaults file :type "lisp")))
+    ;;(format t "C: ~a~%" filep)
+    ;;(compile-file filep)
+    ;;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
+    (compile-file-if-needed filep)
+    ;; scripts depend upon the following returning true iff successful
+    (load (make-pathname :defaults filep :type *fasl-type*))
+    ))
 
 (defun load-lisp-file (file &rest ignore)
   (declare (ignore ignore))
@@ -399,7 +399,6 @@
 	pathname
       (make-pathname :directory (butlast dir)))))
 
-
 (unless (fboundp 'cl-user::without-redefinition-warnings)
   (defmacro cl-user::without-redefinition-warnings (&body body)
     `(let ((cl-user::*redefinition-warnings* nil))
@@ -409,3 +408,4 @@
   #+gcl
   (defmacro define-compiler-macro (name vl &rest body)
     `(si::define-compiler-macro ,name ,vl,@ body)))
+

@@ -57,20 +57,20 @@
 ;;    make-system
 ;;    change-directory
 ;;    current-directory
-
-(compile-and-load-lisp-file (format nil "~A/Release/Generic/~A" 
-				    (specware::getenv "SPECWARE4") 
-				    "LoadUtilities.lisp"))
+;;
+(let ((utils (format nil "~A/Release/Generic/LoadUtilities.lisp" (specware::getenv "SPECWARE4"))))
+  (load utils)
+  (compile-and-load-lisp-file utils))
 
 (defparameter Specware4 (specware::getenv "SPECWARE4"))
 
-(defparameter Specware-dir 
+(defparameter *Specware-dir*
     (let ((dir (substitute #\/ #\\ Specware4)))
       (if (eq (schar dir (1- (length dir))) #\/)
 	  dir
 	(concatenate 'string dir "/"))))
 
-(defun in-specware-dir (file) (concatenate 'string Specware-dir file))
+(defun in-specware-dir (file) (concatenate 'string *Specware-dir* file))
 
 #+cmu
 ;(without-package-locks     ;; add in version 19

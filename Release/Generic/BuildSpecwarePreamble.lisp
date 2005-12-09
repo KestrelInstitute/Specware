@@ -30,7 +30,7 @@
 ;;; normal definition of compile-file-if-needed
 ;;; But if there is no compiler, then we should avoid attempting
 ;;; to call it.
-#-COMPILER
+#+(and allegro (not COMPILER))
 (defun compile-file-if-needed (file) file)
 
 ;;;Patch .fasl files will be named in the form "patch-4-1-x.fasl" and
@@ -38,9 +38,16 @@
 ;;;directory.  Old patch files will not be removed or overwritten.
 
 (defun patch-directory ()
-  (if (equal specware-dir nil)
+  (declare (special *specware-dir*))
+  (if (equal *specware-dir* nil)
       (warn "patch-directory: SPECWARE4 environment variable not set")
     (in-specware-dir "Patches/")))
+
+(defvar *fasl-type* 
+  #+Allegro "fasl"
+  #+CMU     "x86f"
+  #-(or Allegro CMU) "unknown"
+  )
 
 (defun patch-number (path)
   (or (ignore-errors
