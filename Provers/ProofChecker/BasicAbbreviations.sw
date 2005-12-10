@@ -9,7 +9,6 @@ spec
   in spec OtherAbreviations. *)
 
   % return sequence [prod 1 ... prod n] of fields (empty if n=0):
-  % API private
   op firstNProductFields : Nat -> Fields
   def firstNProductFields n =
     seq (fn(i:Nat) -> if i < n then Some (prod (i+1)) else None)

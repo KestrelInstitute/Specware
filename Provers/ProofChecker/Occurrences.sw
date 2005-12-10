@@ -12,12 +12,12 @@ spec
 
   op exprFreeVars : Expression -> FSet Variable
   def exprFreeVars = fn
-    | VAR v              -> single v
-    | APPLY(e1,e2)       -> exprFreeVars e1 \/ exprFreeVars e2
-    | FN(v,t,e)          -> exprFreeVars e -- single v
-    | EQ(e1,e2)          -> exprFreeVars e1 \/ exprFreeVars e2
-    | IF(e0,e1,e2)       -> exprFreeVars e0 \/ exprFreeVars e1 \/ exprFreeVars e2
-    | _                  -> empty
+    | VAR v        -> single v
+    | APPLY(e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
+    | FN(v,t,e)    -> exprFreeVars e -- single v
+    | EQ(e1,e2)    -> exprFreeVars e1 \/ exprFreeVars e2
+    | IF(e0,e1,e2) -> exprFreeVars e0 \/ exprFreeVars e1 \/ exprFreeVars e2
+    | _            -> empty
 
   % ops in types and expressions:
 
