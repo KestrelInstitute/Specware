@@ -113,7 +113,7 @@ spec
 
   The three ops defined below process a type, expression, or binding branch by
   first recursively processing its constituent types, expressions, and binding
-  branche and then, in the case of an expression, by applying the contraction
+  branches and then, in the case of an expression, by applying the contraction
   to the expression. The contractions defined in this spec are such that they
   leave the expression unchanged if it is not recognized as the expansion of
   some abbreviation. *)
@@ -433,7 +433,7 @@ spec
                                  e:ExtExpression)       % current expression
                                 : ExtExpressions =      % constituents of the
       case e of                                         % nested applications
-        | APPLY (e1, e2) -> processApplications (e2 |> outES, e1)
+        | APPLY (fun, arg) -> processApplications (arg |> outES, fun)
           % we are decomposing APPLY(...APPLY(APPLY(e0,e1),e2)...,en)
         | _ -> e |> outES
     in
@@ -447,10 +447,8 @@ spec
   op contractTuple : Contraction
   def contractTuple = fn
     | e as REC (fS, tS, eS) ->
-      if fS = seq (fn(i:Nat) ->  % = firstNProductFields (length fS)
-                     if i < length fS then Some (prod (i+1)) else None) then
-        embed TUPLE (tS, eS)
-      else e
+      if fS = firstNProductFields (length fS)
+      then embed TUPLE (tS, eS) else e
     | e -> e
 
   op contractRecordUpdater : Contraction
@@ -528,10 +526,10 @@ spec
     comprise a COND, we can expect the else branch of each IF to have been
     already contracted into a COND. *)
     case e of
-      | IF (ifCond, ifThen, COND (t, brS)) ->
+      | IF (ifTest, ifThen, COND (t, brS)) ->
         (case processBranchResult ifThen of
           | Some (mustBe_t, vS, tS, b, e0) ->
-            let (mustBe_vS, mustBe_tS, mustBe_b) = viewAsEXX ifCond in 
+            let (mustBe_vS, mustBe_tS, mustBe_b) = viewAsEXX ifTest in 
             if mustBe_vS = vS && mustBe_tS = tS &&
                mustBe_b = b && mustBe_t = t then
               embed COND (t, (vS, tS, b, e0) |> brS)
@@ -560,7 +558,14 @@ spec
       else
         case first inBrS of
           | (vS, tS, EQ (e, p), r) ->
-            transformBranches (outBrS <| (vS, tS, p, e), ltail inBrS, eS <| e)
+            (* We need to check that no free variable of e is bound in the
+            binding branch. Without this check, we could end up contracting
+            COND's whose condition happens to be an equality into a CASE, even
+            if the left-hand side happens to contain variables among vS, which
+            would yield a non-equivalent expression. *)
+            if toSet vS /\ exprFreeVars e = empty then
+              transformBranches (outBrS <| (vS, tS, p, e), rtail inBrS, eS <| e)
+            else None
           | _ -> None
     in
     case e of
@@ -570,7 +575,7 @@ spec
             if allEqualElements? eS && nonEmpty? eS then
               (* Note that we cannot determine the first type t for CASE from
               the expansion to COND (it can only be determined from the
-              expansion to nested CASES's, cf. LD). We arbitrarily pick type
+              expansion to nested CASE's, cf. LD). We arbitrarily pick type
               BOOL, assuming that the type will not be printed anyhow. *)
               embed CASE (BOOL, t1, first eS (* = any element of eS *), brS)
             else e
@@ -588,10 +593,10 @@ spec
             let v = theElement vS in
             let t = theElement tS in
             case (v, p, r) of
-              | (abbr _, VAR (abbr _),  % we do not check the indices of abbr
-                 CASE (BOOL, mustBe_t1, VAR (abbr _), mustBe_brS)) ->
+              | (abbr _, VAR mustBe_v,  % we do not check the indices of abbr
+                 CASE (BOOL, mustBe_t1, VAR mustAlsoBe_v, brS)) ->
                        % previous op assigns BOOL as target type to CASE
-                if mustBe_t1 = t1 && mustBe_brS = brS then
+                if mustBe_v = v && mustAlsoBe_v = v && mustBe_t1 = t1 then
                   embed CASE (t, t1, e, brS)
                               % we restore the correct target type t
                 else e

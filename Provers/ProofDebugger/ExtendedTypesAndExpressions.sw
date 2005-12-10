@@ -194,4 +194,46 @@ spec
    => (fa(t) predT t)
    && (fa(e) predE e)
 
+  % free variables in extended expressions and binding branches:
+
+  op exprFreeVars   : ExtExpression    -> FSet Variable
+  op branchFreeVars : ExtBindingBranch -> FSet Variable
+
+  def exprFreeVars = fn
+    | VAR v          -> single v
+    | APPLY(e1,e2)   -> exprFreeVars e1 \/ exprFreeVars e2
+    | FN(v,t,e)      -> exprFreeVars e -- single v
+    | EQ(e1,e2)      -> exprFreeVars e1 \/ exprFreeVars e2
+    | IF(e0,e1,e2)   -> exprFreeVars e0 \/ exprFreeVars e1 \/ exprFreeVars e2
+    | NEG e          -> exprFreeVars e
+    | AND    (e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
+    | OR     (e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
+    | IMPLIES(e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
+    | EQUIV  (e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
+    | NEQ    (e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
+    | THE(v,t,e)     -> exprFreeVars e -- single v
+    | FA(v,t,e)      -> exprFreeVars e -- single v
+    | FAA(vS,tS,e)   -> exprFreeVars e -- toSet vS
+    | EX(v,t,e)      -> exprFreeVars e -- single v
+    | EXX(vS,tS,e)   -> exprFreeVars e -- toSet vS
+    | EX1(v,t,e)     -> exprFreeVars e -- single v
+    | DOT(e,t,f)     -> exprFreeVars e
+    | REC(fS,tS,eS)  -> \\// (map exprFreeVars eS)
+    | TUPLE(tS,eS)   -> \\// (map exprFreeVars eS)
+    | RECUPDATE(fS,tS,fS1,tS1,fS2,tS2,e1,e2) -> exprFreeVars e1 \/
+                                                exprFreeVars e2
+    | COND(t,brS)            -> \\// (map branchFreeVars brS)
+    | CASE(t,t1,e,brS)       -> exprFreeVars e \/
+                                \\// (map branchFreeVars brS)
+    | LET(t,t1,vS,tS,p,e,e1) -> exprFreeVars e \/
+                                ((exprFreeVars p \/ exprFreeVars e1)
+                                 -- toSet vS)
+    | LETSIMP(t1,v,t,e,e1)   -> exprFreeVars e \/ (exprFreeVars e1 -- single v)
+    | LETDEF(t,vS,tS,eS,e)   -> exprFreeVars e \/
+                                (\\// (map exprFreeVars eS) -- toSet vS)
+    | _                      -> empty
+
+  def branchFreeVars (vS,tS,e1,e2) =
+    (exprFreeVars e1 \/ exprFreeVars e2) -- toSet vS
+
 endspec
