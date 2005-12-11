@@ -136,7 +136,7 @@ spec
   op printFalse : String
   def printFalse = "false"
 
-  op printNOT : String
+  op printNot : String
   def printNot = "NOT"
 
   op printNEGExpression: ExtExpression -> String
@@ -283,7 +283,7 @@ spec
 
     | TRUE        -> printTrue
     | FALSE       -> printFalse
-    | NOT         -> printNOT
+    | NOT         -> printNot
     | NEG (e)     -> printNEGExpression e  % cannot use "~~"
     | AND (e1,e2) -> printANDExpression(e1, e2)
     | OR  (e1,e2) -> printORExpression(e1, e2)
