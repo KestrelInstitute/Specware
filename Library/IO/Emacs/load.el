@@ -22,6 +22,16 @@
 ;; This defvar just eliminates a compilation warning message.
 (defvar sw:specware-emacs-files) ; see defconst in files.el
 
+(defvar sw:common-lisp-buffer-name     nil)
+(defvar sw:common-lisp-directory       nil)
+(defvar sw:common-lisp-image-name      nil)
+(defvar sw:common-lisp-image-arguments nil)
+(defvar sw:common-lisp-host            nil)
+(defvar sw:common-lisp-image-file      nil)
+(defvar sw::lisp-host                  nil)
+(defvar fi:allegro-run-status-string   nil)
+(defvar comint-status                  nil)
+
 (sw:load-specware-emacs-file "files")
 
 (mapc 'sw:load-specware-emacs-file sw:specware-emacs-files)

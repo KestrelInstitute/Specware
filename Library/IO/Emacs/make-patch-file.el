@@ -101,6 +101,9 @@
 
   
 ;;; Adapted from compare-w
+(defvar result1 nil)
+(defvar result2 nil)
+
 (defun sw:compare-buffers-1 (b1 b2)
   (let* ((p1 (point b1)) (p2 (point b2))
 	 (opoint1 p1)    (opoint2 p2)
