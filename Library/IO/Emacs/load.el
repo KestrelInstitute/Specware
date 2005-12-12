@@ -22,7 +22,7 @@
 ;; This defvar just eliminates a compilation warning message.
 (defvar sw:specware-emacs-files) ; see defconst in files.el
 
-(defvar sw:common-lisp-buffer-name     nil)
+;(defvar sw:common-lisp-buffer-name     nil)
 (defvar sw:common-lisp-directory       nil)
 (defvar sw:common-lisp-image-name      nil)
 (defvar sw:common-lisp-image-arguments nil)
