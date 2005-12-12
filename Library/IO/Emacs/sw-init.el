@@ -204,7 +204,16 @@
 (defvar *specware-continue-form* nil)
 (defvar *last-specware-continue-form* nil)
 
+(defvar *sentinel-data* '()) ; for debugging continue-form-when-ready
+
 (defun continue-emacs-computation (process event)
+  ;; for debugging continue-form-when-ready...
+  (setq *sentinel-data* 
+	;; use format to capture current descriptions
+	(cons (list (current-time-string)
+		    (format "%S" process) 
+		    (list 'event (format "%S" event)))
+	      *sentinel-data*))
   (let ((fm *specware-continue-form*))
     (setq *last-specware-continue-form* fm)
     (setq *specware-continue-form* nil)
@@ -212,12 +221,28 @@
 
 (defun continue-form-when-ready (form)
   (setq *specware-continue-form* form)
-  (set-process-sentinel (get-buffer-process *specware-buffer-name*)
-			'continue-emacs-computation)
+  (let ((sw-proc (get-buffer-process *specware-buffer-name*)))
+    ;; for debugging continue-form-when-ready...
+    (setq *sentinel-data* 
+	  ;; use format to capture current descriptions...
+	  (cons (list (current-time-string)
+		      (format "%S" sw-proc)
+		      (list (list 'old-sentinel (format "%S" (process-sentinel sw-proc)))
+			    (list 'new-sentinel 'continue-emacs-computation (format "%S" form))))
+		*sentinel-data*))
+    (set-process-sentinel sw-proc 'continue-emacs-computation))
   (simulate-input-expression "(specware::exit)"))
 
 (defun delete-continuation ()
-  (set-process-sentinel (get-buffer-process *specware-buffer-name*) nil))
+  (let ((sw-proc (get-buffer-process *specware-buffer-name*)))
+    ;; for debugging continue-form-when-ready...
+    (setq *sentinel-data* 
+	  ;; use format to capture current descriptions...
+	  (cons (list (current-time-string) 
+		      (format "%S" sw-proc)
+		      (list 'delete-continuation))
+		*sentinel-data*))
+    (set-process-sentinel sw-proc nil)))
 
 (defun build-specware4 (&optional in-current-dir?)
   (interactive "P")
