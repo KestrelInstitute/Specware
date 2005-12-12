@@ -74,7 +74,8 @@
     (room)))
 
 (defun compact-memory (&optional verbose? (fence -1) (old 0))
-  #-ALLEGRO-V6.2 (declare (ignore fence))
+  #-ALLEGRO      (declare (ignore fence))
+  #+ALLEGRO-V6.1 (declare (ignore fence))
   #-Allegro      (declare (ignore old))
   (format t "~3%;;; Restructure memory to compact old spaces, etc.~2%")
   (when verbose?
@@ -97,7 +98,7 @@
 		(room))
 	      ;; close all but the latest oldspace areas, so their contents
 	      ;; won't be gc'd again and again...
-	      #+ALLEGRO-V6.2 
+	      #-ALLEGRO-V6.1
 	      (setf (sys::gsgc-parameter :open-old-area-fence) fence)
 	      (gc t)
 	      (when verbose?
