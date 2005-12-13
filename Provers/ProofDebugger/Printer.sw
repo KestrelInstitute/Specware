@@ -369,7 +369,7 @@ spec
     | notSubtype jdg ->
       "judgement is not subtype:" ++ newline ++
       printJudgement jdg
-    | notWFType jdg ->
+    | notWTExpr jdg ->
       "judgement is not well-typed expression:" ++ newline ++
       printJudgement jdg
     | notTheorem jdg ->
