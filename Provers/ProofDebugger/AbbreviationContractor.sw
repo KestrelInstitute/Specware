@@ -418,6 +418,22 @@ spec
             embed RECC (fS, tS)
           else e
         else e
+      % since when we attempt this contraction we have already contracted
+      % product types, we must explicitly deal with product types here:
+      | THE (abbr mustBe_n, PRODUCT mustBe_tS, descBody) ->
+        if mustBe_n = n && mustBe_tS = tS then
+          let eS:ExtExpressions =
+              seq (fn(i:Nat) ->
+                if i < n then
+                  Some (EQ (embed DOT (VAR (abbr n),
+                                       embed PRODUCT tS,
+                                       prod (i+1)),
+                            VAR (abbr i)))
+                else None) in
+          if descBody = ANDn eS then
+            embed RECC (firstNProductFields (length tS), tS)
+          else e
+        else e
       | _ -> e
 
   op contractRecord : Contraction
@@ -441,7 +457,19 @@ spec
     let eS = processApplications (empty, e) in
     % check whether first constituent is a record constructor:
     case first eS of  % result of function processApplications is never empty
-      | RECC (fS, tS) -> embed REC (fS, tS, rtail eS)
+      | RECC (fS, tS) ->
+        (* Remember that we process expressions bottom-up, processing
+        subexpressions before their containing expressions. Without the test
+        in the following if-then-else, applying processApplications to the
+        record constructor alone (which is processed its application to the
+        expression for the first record component) would yield a singleton
+        sequence consisting of the record constructor, and we would return REC
+        (fS, tS, empty), which is not what we want. The test of the if delays
+        the contraction until we are processing the right (outermost)
+        application. *)
+        if length (rtail eS) = length fS then
+          embed REC (fS, tS, rtail eS)
+        else e
       | _ -> e
 
   op contractTuple : Contraction
@@ -564,7 +592,7 @@ spec
             if the left-hand side happens to contain variables among vS, which
             would yield a non-equivalent expression. *)
             if toSet vS /\ exprFreeVars e = empty then
-              transformBranches (outBrS <| (vS, tS, p, e), rtail inBrS, eS <| e)
+              transformBranches (outBrS <| (vS, tS, p, r), rtail inBrS, eS <| e)
             else None
           | _ -> None
     in
@@ -585,7 +613,7 @@ spec
   op contractCaseFromNestedCases : Contraction
   def contractCaseFromNestedCases e =
     case e of
-      | CASE (BOOL, t1, e, brS) ->
+      | CASE (BOOL, t1, e0, brS) ->
               % previous op assigns BOOL as target type to CASE
         if single? brS then
           let (vS, tS, p, r) = theElement brS in
@@ -597,7 +625,7 @@ spec
                  CASE (BOOL, mustBe_t1, VAR mustAlsoBe_v, brS)) ->
                        % previous op assigns BOOL as target type to CASE
                 if mustBe_v = v && mustAlsoBe_v = v && mustBe_t1 = t1 then
-                  embed CASE (t, t1, e, brS)
+                  embed CASE (t, t1, e0, brS)
                               % we restore the correct target type t
                 else e
               | _ -> e
@@ -616,10 +644,10 @@ spec
 
   op contractSimpleLet : Contraction
   def contractSimpleLet = fn
-    | LET (t, t1, vS, mustBe_single_t, mustBe_VAR_v, e, e1) ->
+    | e as LET (t, t1, vS, mustBe_single_t, mustBe_VAR_v, e0, e1) ->
       if single? vS && mustBe_VAR_v = VAR (theElement vS) &&
          mustBe_single_t = single t then
-        embed LETSIMP (t1, theElement vS, t, e, e1)
+        embed LETSIMP (t1, theElement vS, t, e0, e1)
       else e
     | e -> e
 
@@ -727,11 +755,12 @@ spec
     (contractType contractNot
     (contractType contractFalse
     (contractType contractTrue
-    (embedExtType t))))))))))))))))))))))))))))))))))
+    (contractProductsInType
+    (embedExtType t)))))))))))))))))))))))))))))))))))
 
   % API public
   op contractExprAll : Expression -> ExtExpression
-  def contractExprAll t =
+  def contractExprAll e =
     (contractExpr contractEmbeddingTest
     (contractExpr contractChooser
     (contractExpr contractRecursiveLet
@@ -765,6 +794,7 @@ spec
     (contractExpr contractNot
     (contractExpr contractFalse
     (contractExpr contractTrue
-    (embedExtExpr t))))))))))))))))))))))))))))))))))
+    (contractProductsInExpr
+    (embedExtExpr e)))))))))))))))))))))))))))))))))))
 
 endspec
