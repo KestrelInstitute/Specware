@@ -54,38 +54,30 @@
   ;; There is no simple way to get "which" to avoid printing to the terminal,
   ;; so cache the result to avoid needless verbiage.
   (let ((pair (or (assoc fn *known-programs* :test 'equalp)
-		  (let ((cmd (format nil "which ~A" fn)))
-		    (let ((rc
-			   #+UNIX      (run-shell-command cmd 
-							  :output        *standard-output* ; as oppposed to *terminal-io*
-							  :error-output :output 
-							  :wait t) 
-			   #+MSWINDOWS (run-shell-command cmd 
-							  ;; :output       *standard-output* ; mysterious problems under windows
-							  ;; :error-output :output        ; mysterious problems under windows
-							  :wait t)
-			   #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
-		      (let ((pair (cons fn (equal rc 0))))
-			(push pair *known-programs*)
-			pair))))))
+		  (let ((happy? (aux-run-cmd (format nil "which ~A" fn))))
+		    (let ((pair (cons fn happy?)))
+		      (push pair *known-programs*)
+		      pair)))))
     (if (null (cdr pair))
 	(warn "Function given to run-cmd could not be found: ~A ~{~A ~}" fn args)
-      (let ((cmd (format nil "~A~{ ~A~}" fn args)))
-	(let ((rc
-	       #+UNIX      (run-shell-command cmd 
-					      :output       *standard-output* 
-					      :error-output :output 
-					      :wait t) 
-	       #+MSWINDOWS (run-shell-command cmd 
-					      ;; :output       *standard-output* ; mysterious problems under windows
-					      ;; :error-output :output           ; mysterious problems under windows
-					      :wait t)
-	       #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
-	  (unless (equal rc 0)
-	    (warn "Return code from ~S was non-zero: ~S" cmd rc)))))
+      (aux-run-cmd (format nil "~A~{ ~A~}" fn args)))
     (finish-output *standard-output*)
     (values)))
   
+#+allegro
+(defun aux-run-cmd (cmd)
+  ;; If provided, :input and :output args to run-shell-command must refer
+  ;; to file streams, not *terminal-io*, string strings, etc.
+  (let ((rc 
+	 #+(OR UNIX MSWINDOWS) (run-shell-command cmd :error-output :output :wait t)
+	 #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
+    (cond ((equal rc 0)
+	   t)
+	  ;; #+MSWINDOWS (equal rc 2) ;; unclear if this can happen under "ok" conditions
+	  (t
+	   (warn "Return code from ~S was non-zero: ~S" cmd rc)
+	   nil))))
+
 ;;; --------
 ;; The following is in ./Languages/SpecCalculus/Semantics/Evaluate/Make.sw:
 ;;;
