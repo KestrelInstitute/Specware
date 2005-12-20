@@ -69,7 +69,8 @@
   ;; If provided, :input and :output args to run-shell-command must refer
   ;; to file streams, not *terminal-io*, string strings, etc.
   (let ((rc 
-	 #+(OR UNIX MSWINDOWS) (run-shell-command cmd :error-output :output :wait t)
+	 #+UNIX      (run-shell-command cmd :wait t :error-output :output)
+	 #+MSWINDOWS (run-shell-command cmd :wait t)
 	 #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
     (cond ((equal rc 0)
 	   t)
