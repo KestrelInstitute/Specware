@@ -43,7 +43,8 @@
 	 #+gcl  (lisp:system (format nil "~a ~a" cmd args))))
     (let ((rc (process-exit-code process)))
       (unless (equal rc 0)
-	(warn "Return code from run-shell-command was non-zero: ~S" rc))))
+	;; (warn "Return code from run-shell-command was non-zero: ~S" rc)
+	nil)))
   (values))
 
 (defparameter *known-programs* '())
@@ -66,17 +67,23 @@
   
 #+allegro
 (defun aux-run-cmd (cmd)
-  ;; If provided, :input and :output args to run-shell-command must refer
-  ;; to file streams, not *terminal-io*, string strings, etc.
+  ;; :input and :output args to run-shell-command must refer to file streams, 
+  ;; not *terminal-io*, string strings, etc.
+  ;; There doesn't seem to be a concept of :error-output on windows
   (let ((rc 
-	 #+UNIX      (run-shell-command cmd :wait t :error-output :output)
-	 #+MSWINDOWS (run-shell-command cmd :wait t)
-	 #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
+	 (cond ((eq (type-of *standard-output*) 'excl::FILE-SIMPLE-STREAM)
+		#+UNIX      (run-shell-command cmd :wait t :output *standard-output* :error-output :output) 
+		#+MSWINDOWS (run-shell-command cmd :wait t :output *standard-output*) 
+		#-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1))
+	       (t
+		#+UNIX      (run-shell-command cmd :wait t :error-output :output) 
+		#+MSWINDOWS (run-shell-command cmd :wait t)
+		#-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))))
     (cond ((equal rc 0)
 	   t)
 	  ;; #+MSWINDOWS (equal rc 2) ;; unclear if this can happen under "ok" conditions
 	  (t
-	   (warn "Return code from ~S was non-zero: ~S" cmd rc)
+	   ;; (warn "Return code from ~S was non-zero: ~S" cmd rc)
 	   nil))))
 
 ;;; --------
