@@ -4,10 +4,6 @@ spec
 
   import Occurrences
 
-  (* While in LD a type substitution is described by a sequence of distinct
-  type variables and a sequence of types of the same length, here we use a
-  finite map from type variables to types, which is more convenient. *)
-
   type TypeSubstitution = FMap (TypeVariable, Type)
 
   % substitute type variables with types in types and expressions:
