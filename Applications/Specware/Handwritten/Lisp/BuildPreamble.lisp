@@ -71,11 +71,8 @@
       (setq cl-user::Specware-patch-level highest-patch-number)
       (ignore-errors (load highest-patch-file)))))
 
-#+allegro
-(push 'load-specware-patch-if-present cl-user::*restart-actions*)
-
-#+cmu
-(push 'load-specware-patch-if-present ext:*after-save-initializations*)
-
-#+mcl
-(push 'load-specware-patch-if-present ccl:*lisp-startup-functions*)
+(push 'load-specware-patch-if-present 
+       #+allegro cl-user::*restart-actions*
+       #+cmu     ext:*after-save-initializations*
+       #+mcl     ccl:*lisp-startup-functions*
+       #+sbcl    sb-int:*after-save-initializations*)

@@ -194,15 +194,12 @@
 #+allegro
 (push 'start-java-connection? excl:*restart-actions*)
 
-;;; Load base in correct location
-#+allegro
-(push  'Specware::initializeSpecware-0 cl-user::*restart-actions*)
-#+cmu
-(push  'Specware::initializeSpecware-0 ext:*after-save-initializations*)
-#+mcl
-(push  'Specware::initializeSpecware-0 ccl:*lisp-startup-functions*)
-#+sbcl
-(push  'Specware::initializeSpecware-0 sb-int:*after-save-initializations*)
+;;; Load base in correct location at startup
+(push  'Specware::initializeSpecware-0 
+       #+allegro cl-user::*restart-actions*
+       #+cmu     ext:*after-save-initializations*
+       #+mcl     ccl:*lisp-startup-functions*
+       #+sbcl    sb-int:*after-save-initializations*)
 
 ;;; Set gc parameters at startup
 #+mcl
@@ -219,10 +216,13 @@
 (progn (setq ext:*environment-list* ())
        (setq lisp::lisp-environment-list ()))
 
+;;; Set temporaryDirectory at startup
+(push  'setTemporaryDirectory 
+       #+allegro cl-user::*restart-actions*
+       #+cmu     ext:*after-save-initializations*
+       #+mcl     ccl:*lisp-startup-functions*
+       #+sbcl    sb-int:*after-save-initializations*)
 
-;;; Set temporaryDirectory
-#+allegro
-(push  'setTemporaryDirectory cl-user::*restart-actions*)
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/PSL/PSL~2%")

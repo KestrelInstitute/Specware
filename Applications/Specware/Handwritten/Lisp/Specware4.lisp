@@ -247,15 +247,12 @@
 #+allegro
 (push 'start-java-connection? excl:*restart-actions*)
 
-;;; Load base in correct location
-#+allegro
-(push  'Specware::initializeSpecware-0 cl-user::*restart-actions*)
-#+cmu
-(push  'Specware::initializeSpecware-0 ext:*after-save-initializations*)
-#+mcl
-(push  'Specware::initializeSpecware-0 ccl:*lisp-startup-functions*)
-#+sbcl
-(push  'Specware::initializeSpecware-0 sb-int:*after-save-initializations*)
+;;; Load base in correct location at startup
+(push  'Specware::initializeSpecware-0 
+       #+allegro cl-user::*restart-actions*
+       #+cmu     ext:*after-save-initializations*
+       #+mcl     ccl:*lisp-startup-functions*
+       #+sbcl    sb-int:*after-save-initializations*)
 
 #+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
@@ -269,8 +266,11 @@
 
 
 ;;; Set temporaryDirectory at startup
-#+allegro
-(push  'setTemporaryDirectory cl-user::*restart-actions*)
+(push  'setTemporaryDirectory 
+       #+allegro cl-user::*restart-actions*
+       #+cmu     ext:*after-save-initializations*
+       #+mcl     ccl:*lisp-startup-functions*
+       #+sbcl    sb-int:*after-save-initializations*)
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
