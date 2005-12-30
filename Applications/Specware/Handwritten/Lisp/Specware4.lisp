@@ -268,7 +268,7 @@
        (setq lisp::lisp-environment-list ()))
 
 
-;;; Set temporaryDirectory
+;;; Set temporaryDirectory at startup
 #+allegro
 (push  'setTemporaryDirectory cl-user::*restart-actions*)
 
