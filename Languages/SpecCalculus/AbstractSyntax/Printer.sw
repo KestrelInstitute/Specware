@@ -387,7 +387,7 @@ SpecCalc qualifying spec
 					| Left  -> " infixl "
 					| Right -> " infixr "),
 			    ppString (toString precedence)]
-		| -> ppNil),
+		| _ -> ppNil),
 	     ppString " : ",
 	     (case tvs of
 		| [] -> ppNil
