@@ -260,10 +260,12 @@
        sb-int:*after-save-initializations*)
 
 ;;; Clear load environment vars
-#+cmu
-(progn (setq ext:*environment-list* ())
-       (setq lisp::lisp-environment-list ()))
-
+;;; TODO: Why?  
+;;;       The built image presumably will create a new environemnt lisp when it starts,
+;;;       so it's not clear what this accomplishes.
+;;; #+cmu
+;;; (progn (setq ext:*environment-list* ())
+;;;        (setq lisp::lisp-environment-list ()))
 
 ;;; Set temporaryDirectory at startup
 (push  'setTemporaryDirectory 
