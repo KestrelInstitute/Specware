@@ -381,6 +381,13 @@ SpecCalc qualifying spec
    let (tvs, srt, _) = unpackTerm dfn in
    ppConcat [ppString "op ",
 	     ppIdInfo aliases,
+	     (case fixity of
+		| Infix (associativity, precedence) -> 
+		  ppConcat [ppString (case associativity of
+					| Left  -> " infixl "
+					| Right -> " infixr "),
+			    ppString (toString precedence)]
+		| -> ppNil),
 	     ppString " : ",
 	     (case tvs of
 		| [] -> ppNil
