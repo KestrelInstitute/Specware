@@ -314,3 +314,4 @@ else if cmp -s Specware4.lisp ../Specware4-base.lisp; then
   echo " "
   echo "The bootstrap reached a fixed point"
 fi
+fi
