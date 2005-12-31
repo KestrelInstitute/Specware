@@ -310,4 +310,7 @@ cd "$SPECWARE4"/Applications/Specware/lisp
 if cmp -s Specware4.lisp Specware4-save.lisp; then
   echo " "
   echo "The bootstrap reached a fixed point"
+else if cmp -s Specware4.lisp ../Specware4-base.lisp; then
+  echo " "
+  echo "The bootstrap reached a fixed point"
 fi
