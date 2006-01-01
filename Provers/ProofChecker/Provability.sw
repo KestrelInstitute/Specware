@@ -304,12 +304,14 @@ spec
          pj (wellFormedType (cx, t\r))
       && pj (typeEquivalence (cx, t, t1))
       && pj (theoreM (cx, r == r1))
+      && exprFreeVars r1 = empty
       => pj (typeEquivalence (cx, t\r, t1\r1)))
     | teQuot ->
       (fa (cx:Context, t:Type, q:Expression, t1:Type, q1:Expression)
          pj (wellFormedType (cx, t/q))
       && pj (typeEquivalence (cx, t, t1))
       && pj (theoreM (cx, q == q1))
+      && exprFreeVars q1 = empty
       => pj (typeEquivalence (cx, t/q, t1/q1)))
     | teRecOrd ->
       (fa (cx:Context, fS:Fields, tS:Types, prm:Permutation)

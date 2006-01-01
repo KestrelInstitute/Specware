@@ -1152,12 +1152,14 @@ spec
       checkWFRestrictionType prf1 >> (fn (cx, t, r) ->
       checkTypeEquivWithContextAndLeftType cx t prf2 >> (fn t1 ->
       checkTheoremEqualityWithContextAndLeftExpr cx r prf3 >> (fn r1 ->
-      OK (typeEquivalence (cx, t\r, t1\r1)))))
+      ensure (exprFreeVars r1 = empty) (badRestrictionType (t1, r1)) >> (fn _ ->
+      OK (typeEquivalence (cx, t\r, t1\r1))))))
     | teQuot (prf1, prf2, prf3) ->
       checkWFQuotientType prf1 >> (fn (cx, t, q) ->
       checkTypeEquivWithContextAndLeftType cx t prf2 >> (fn t1 ->
       checkTheoremEqualityWithContextAndLeftExpr cx q prf3 >> (fn q1 ->
-      OK (typeEquivalence (cx, t/q, t1/q1)))))
+      ensure (exprFreeVars q1 = empty) (badRestrictionType (t1, q1)) >> (fn _ ->
+      OK (typeEquivalence (cx, t/q, t1/q1))))))
     | teRecOrd (prf, prm) ->
       checkWFRecordType prf >> (fn (cx, fS, tS) ->
       checkPermutation prm >> (fn(prm1:Permutation) ->
