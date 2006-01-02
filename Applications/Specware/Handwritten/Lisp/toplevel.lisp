@@ -31,8 +31,10 @@
     (":swj-config-reset" . "Restore default configuration parameters for Java generation")
     (":swl" . "Generate Lisp code for unit")
     (":swll" . "Generate Lisp code for local definition of unit, and compile and load")
-    (":swpath" . "Query (no arg) or set SWPATH"))
-  )
+    (":swpath" . "Query (no arg) or set SWPATH")
+    ;; following is useful when running without XEmacs to provide access to shell
+    #+mswindows (":bash" . "With no args, run the bash shell.\nFor bash fn arg1 .. argn, run fn on args in bash shell [no spaces allowed in any arg]")
+    ))
 
 (defun sw-help (&optional command)
   (if command
@@ -1278,3 +1280,12 @@
 (defun sc-val (str)
   (let ((id-str (norm-unitid-str str)))
   (cddr (specware::evaluateunitid id-str))))
+
+;; following is useful when running without XEmacs to provide access to shell
+#+mswindows 
+(top-level:alias ("bash" :string) (&optional (str "")) 
+		 (cond ((equal str "")
+			(specware::run_cmd "bash"))
+		       (t
+			(let ((fn_and_args (speccalc::splitstringatchar-1-1 #\Space str))) ; TODO: not quite right -- shouldn't break strings, etc.
+			  (specware::run_cmd-2 (car fn_and_args) (cdr fn_and_args))))))
