@@ -44,7 +44,6 @@
     ("ld"        . "[filename] Load Lisp file filename.")
     ("cf"        . "[filename] Compile Lisp file filename.")
     ("cl"        . "[filename] Compile and load Lisp file filename.")
-    #+mswindows
     ("bash"      . "[fn [args]] Applies fn to args in bash shell. [No spaces allowed in args.]
                   With no argument, starts subordinate bash shell.")
     ("exit"      . "Exits shell and Lisp.")
@@ -326,6 +325,7 @@
 			       (funcall command)
 			     (funcall command com-argstr)))
 		       (format t "Unknown command: ~a." command)))))
+      (bash      (cl-user::bash argstr))
       ;;
       (t (format t "Unknown command `~a'. Type `help' to see available commands."
 		 (string-downcase command))

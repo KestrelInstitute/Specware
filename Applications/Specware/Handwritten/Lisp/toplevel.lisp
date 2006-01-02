@@ -33,7 +33,7 @@
     (":swll" . "Generate Lisp code for local definition of unit, and compile and load")
     (":swpath" . "Query (no arg) or set SWPATH")
     ;; following is useful when running without XEmacs to provide access to shell
-    #+mswindows (":bash" . "With no args, run the bash shell.\nFor bash fn arg1 .. argn, run fn on args in bash shell [no spaces allowed in any arg]")
+    (":bash" . "With no args, run the bash shell.\nFor bash fn arg1 .. argn, run fn on args in bash shell [no spaces allowed in any arg]")
     ))
 
 (defun sw-help (&optional command)
@@ -1282,10 +1282,12 @@
   (cddr (specware::evaluateunitid id-str))))
 
 ;; following is useful when running without XEmacs to provide access to shell
-#+mswindows 
+#+allegro
 (top-level:alias ("bash" :string) (&optional (str "")) 
-		 (cond ((equal str "")
-			(specware::run_cmd "bash"))
-		       (t
-			(let ((fn_and_args (speccalc::splitstringatchar-1-1 #\Space str))) ; TODO: not quite right -- shouldn't break strings, etc.
-			  (specware::run_cmd-2 (car fn_and_args) (cdr fn_and_args))))))
+  (bash str))
+
+(defun bash (&optional (str ""))
+  (if (equal str "")
+      (specware::run_cmd "bash")
+    (let ((fn_and_args (speccalc::splitstringatchar-1-1 #\Space str))) ; TODO: not quite right -- shouldn't break strings, etc.
+      (specware::run_cmd-2 (car fn_and_args) (cdr fn_and_args)))))
