@@ -19,10 +19,16 @@ while [ $# -gt 0 ]; do
 done
 
 act='launch Specware'
+defaultxemacs=/Applications/XEmacs.app/Contents/MacOS/XEmacs
+if [ -x $defaultxemacs ]; then
+    xemacs=$defaultxemacs
+fi
 
-xemacs=`which xemacs`
 if [ -z "$xemacs" ]; then
-  xemacs="/sw/bin/xemacs"
+    xemacs=`which xemacs`
+    if [ -z "$xemacs" ]; then
+	xemacs="/sw/bin/xemacs"
+    fi
 fi
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
