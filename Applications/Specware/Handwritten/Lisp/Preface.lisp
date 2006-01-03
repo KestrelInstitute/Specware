@@ -60,7 +60,7 @@
 		      (push pair *known-programs*)
 		      pair)))))
     (if (null (cdr pair))
-	(warn "Function given to run-cmd could not be found: ~A ~{~A ~}" fn args)
+	(warn "Function ~A given to run-cmd could not be found.  Args were: ~{~A ~}" fn args)
       (aux-run-cmd (format nil "~A~{ ~A~}" fn args)))
     (finish-output *standard-output*)
     (values)))
