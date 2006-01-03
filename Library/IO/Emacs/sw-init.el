@@ -50,7 +50,15 @@
       ;(setq sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE"))
       (setq sw:common-lisp-image-file world-name)
       (setq sw:common-lisp-image-arguments
-	    (if *windows-system-p* '("+cn") nil))
+	;; From http://www.franz.com/support/documentation/7.0/doc/startup.htm#command-line-args-1
+	;; +c : Start Allegro CL without a console window. 
+	;; (Normally, there is a console window to read/write standard I/O. 
+	;;  If you close the console window, the Lisp will be killed.) 
+	;; Note that there will not be an icon in the system tray regardless
+	;; of whether +R or +RR are specified when there is no console. 
+	;; (Having the console minimized with +cm, non-activated with +cn, or
+	;;  hidden with +cx does not affect whether there is a system tray icon.)
+	(if *windows-system-p* '("+c") nil))
       (when (getenv "SOCKET_INIT_FILE")
 	(set-socket-init-for-specware))
       (let ((log-warning-minimum-level 'error))
@@ -58,9 +66,7 @@
 	(sw:common-lisp sw:common-lisp-buffer-name
 			sw:common-lisp-directory
 			sw:common-lisp-image-name
-			(if *windows-system-p*
-			    (cons "+cn" sw:common-lisp-image-arguments)
-			  sw:common-lisp-image-arguments)
+			sw:common-lisp-image-arguments
 			sw:common-lisp-host
 			sw:common-lisp-image-file
 			))
@@ -120,7 +126,8 @@
   (setq sw:common-lisp-image-file (or (and (boundp 'sw:common-lisp-image-file) sw:common-lisp-image-file)
 				      (getenv "LISP_HEAP_IMAGE")))
   (setq sw:common-lisp-image-arguments
-    (if *windows-system-p* '("+cn") nil))
+    ;; see note above
+    (if *windows-system-p* '("+c") nil))
 
   (let ((log-warning-minimum-level 'error))
     (sw:common-lisp sw:common-lisp-buffer-name
@@ -155,7 +162,8 @@
   (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
   (setq sw:common-lisp-image-file nil)
   (setq sw:common-lisp-image-arguments
-    (if *windows-system-p* '("+cn") nil))
+    ;; see note above
+    (if *windows-system-p* '("+c") nil))
 
   (let ((log-warning-minimum-level 'error))
     (sw:common-lisp sw:common-lisp-buffer-name
@@ -494,7 +502,8 @@
     (setq sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE"))
     (setq sw:common-lisp-image-file world-name)
     (setq sw:common-lisp-image-arguments
-      (if *windows-system-p* '("+cn") nil))
+      ;; see note above
+      (if *windows-system-p* '("+c") nil))
     (when (getenv "SOCKET_INIT_FILE")
       (set-socket-init-for-specware))
 
@@ -503,9 +512,7 @@
       (sw:common-lisp sw:common-lisp-buffer-name
 		      sw:common-lisp-directory
 		      sw:common-lisp-image-name
-		      (if *windows-system-p*
-			  (cons "+cn" sw:common-lisp-image-arguments)
-			sw:common-lisp-image-arguments)
+		      sw:common-lisp-image-arguments
 		      sw:common-lisp-host
 		      sw:common-lisp-image-file
 		      ))
