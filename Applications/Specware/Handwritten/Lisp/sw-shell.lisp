@@ -44,7 +44,8 @@
     ("ld"        . "[filename] Load Lisp file filename.")
     ("cf"        . "[filename] Compile Lisp file filename.")
     ("cl"        . "[filename] Compile and load Lisp file filename.")
-    ("bash"      . "[fn [args]] Applies fn to args in bash shell. [No spaces allowed in args.]
+    ("bash"      . "[fn [args]] Applies fn to args in bash shell.
+                  No spaces allowed in args.
                   With no argument, starts subordinate bash shell.")
     ("exit"      . "Exits shell and Lisp.")
     ("quit"      . "Alias for exit.")

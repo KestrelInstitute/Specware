@@ -1287,7 +1287,22 @@
   (bash str))
 
 (defun bash (&optional (str ""))
-  (if (equal str "")
-      (specware::run_cmd "bash")
-    (let ((fn_and_args (speccalc::splitstringatchar-1-1 #\Space str))) ; TODO: not quite right -- shouldn't break strings, etc.
-      (specware::run_cmd-2 (car fn_and_args) (cdr fn_and_args)))))
+  (catch 'nevermind
+    (if (and (stringp str) (> (length str) 0))
+	(let* ((fn_and_args 
+		;; TODO: not quite right -- shouldn't break on spaces within strings, etc.
+		(speccalc::splitstringatchar-1-1 #\Space str)) 
+	       (fn   (car fn_and_args))
+	       (args (cdr fn_and_args)))
+	  (handler-bind ((error 
+			  #'(lambda (x)
+			      (format t "~%~A~%" x)
+			      (format t "~%~A doesn't seem to be accessible.~%" fn)
+			      (throw 'nevermind nil))))
+	    (specware::run_cmd-2 fn args)))
+      (handler-bind ((error 
+		      #'(lambda (x)
+			  (format t "~%The bash shell doesn't seem to be available.~%")
+			  (format t "~&(It is installed as part of the Cygwin installation.)~%")
+			  (throw 'nevermind nil))))
+	(specware::run_cmd "bash")))))
