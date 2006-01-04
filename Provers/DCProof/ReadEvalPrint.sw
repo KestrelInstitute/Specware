@@ -1,12 +1,30 @@
 spec
 
-  import /Library/Structures/Data/Monad
+  import Monad[/Library/General/FiniteSequencesAsListsMorphism]
+  import /Library/Structures/Data/Monad/ImpureIO
 
-  type IO a = Monad a
+  type IO a = M a
+
+  op ReadError: Exception
 
   op read: IO String
+  def read =
+    {
+     val <- return (readLine(IO.stdin));
+     case val of
+       | Ok a -> return a
+       | _ -> throw ReadError
+    }
+
+  op WriteError: Exception
 
   op print: String -> IO ()
+  def print(s) =
+    {
+     ss <- print;
+     val <- return (String.writeLine ss);
+     return ()
+      }
 
   op while: IO Boolean -> IO () -> IO ()
   def while pred body =
@@ -18,6 +36,29 @@ spec
 	 }
 
   op eval: String -> IO Boolean
+  def eval s = 
+    case s of
+      | "split" -> evalSplit
+      | "propax" -> evalPropax
+      | "done" -> return true
+
+  op evalSplit: IO Boolean
+  def evalSplit =
+    {
+     t <- tree;
+     n <- return (focus(t));
+     f <- return (n.formula);
+     (sgs, vf) <- return(andStep(f));
+     return false
+    }
+
+  op evalPropax: IO Boolean
+  def evalPropax =
+    {
+     t <- tree;
+
+     return false
+    }
 
   op readEvalPrint: IO ()
   def readEvalPrint =

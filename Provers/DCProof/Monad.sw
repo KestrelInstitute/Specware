@@ -2,7 +2,7 @@ spec
 
   % API private default
 
-  import States, Failures
+  import StateAndExceptionMonads, State, Exceptions, ExtProofsAPI
 
   (* To improve the readability of the checking function defined in spec
   Checker, we introduce a monad whose states are the ones defined in spec
@@ -15,7 +15,7 @@ spec
   After all, the purpose of monads is exactly to "hide" certain details. *)
 
   % API public
-  type M a = Monad (State, Failure, a)
+  type M a = Monad (State, Exception, a)
 
   (* It is convenient to introduce shorter synonyms for the constructors of
   the exception monad for normal and exceptional results. *)
@@ -25,11 +25,22 @@ spec
   def OK = return
 
   % API public
-  op FAIL : [a] Failure -> M a
+  op FAIL : [a] Exception -> M a
   def FAIL = throw
 
   % monadic ops to provide access to the state of the monad:
 
+  op Monad.print: M String
+  def Monad.print =
+    fn state ->
+    (RETURN(State.print(state)), state)
+
+  op Monad.tree: M TreeX
+  def Monad.tree =
+    fn state ->
+    (RETURN(state.tree), state)
+
+  (*
   op memo?: Proof -> M Boolean
   def memo?(p) =
     fn state ->
@@ -45,11 +56,13 @@ spec
     fn state ->
     (RETURN j, (putMemoS (p, j) state))
 
+*)
+
   (* Op run provides a mechanism to transform a proof checker internal monadic
   function into a function appropriate for calling externally by ignoring the
   internal monadic state, cf. runCheck in Checker.sw *)
 
-  op run: [a, b] (a -> M b) -> a -> Result (Failure, b)
+  op run: [a, b] (a -> M b) -> a -> Result (Exception, b)
   def run f x =
     let (res,_) = f x initialState in
     res

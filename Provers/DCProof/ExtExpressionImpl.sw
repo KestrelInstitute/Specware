@@ -21,8 +21,12 @@ ExpressionI = spec
   def Prover.mkAndExpr(c1, c2) =
     mkAnd(c1, c2)
 
+  def Prover.mkTrueExpr = mkTrue()
+
+  def Prover.print(e) = printTerm(e)
+
 endspec
 
 MSExprInterface = morphism Prover qualifying ExtTypesAPI -> ExpressionI {}
-MetaSlangExtExpr = (Prover qualifying ProofGoals)[MSExprInterface]
+MetaSlangExtExpr = (Prover qualifying ProofGoalsImpl#ProofGoalsImpl1)[MSExprInterface]
 

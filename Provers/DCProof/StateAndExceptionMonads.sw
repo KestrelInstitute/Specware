@@ -42,18 +42,18 @@ StateExceptionMonad qualifying spec
   op throw : [state,exc,a] exc -> Monad(state,exc,a)
   def throw x = fn state -> (THROW x, state)
 
-  op >> infixr 25 : [state,exc,a,b]  % bind operator
+  op monadBind : [state,exc,a,b]  % bind operator
     Monad(state,exc,a) * (a -> Monad(state,exc,b)) ->
     Monad(state,exc,b)
-  def >> (first,next) =
+  def monadBind (first,next) =
     fn state ->
       case first state of
 	| (THROW  e, newState) -> (THROW e, newState)
 	| (RETURN x, newState) -> next x newState
 
-  op >>> infixr 25 : [state,exc,a]  % specialized bind operator
-     Monad(state,exc,()) * Monad(state,exc,a) -> Monad(state,exc,a)
-  def >>> (m1,m2) = m1 >> (fn _ -> m2)
+  op monadSeq : [state,exc,a,b]  % specialized bind operator
+     Monad(state,exc,a) * Monad(state,exc,b) -> Monad(state,exc,b)
+  def monadSeq (m1,m2) = monadBind (m1, (fn _ -> m2))
 
   import /Library/General/FiniteSequences
 
@@ -64,9 +64,9 @@ StateExceptionMonad qualifying spec
                               Monad (state,exc, FSeq b)
   def mapSeq f s =
     if empty? s then return empty
-    else f (first s) >> (fn x ->
-         mapSeq f (rtail s) >> (fn r ->
-         return (x |> r)))
+    else {x <- f (first s);
+          r <- mapSeq f (rtail s);
+          return (x |> r)}
 
   % apply sequence of monadic computations ff to equally long sequence s
   % from left to right, returning resulting sequence if no exceptions,
@@ -77,8 +77,8 @@ StateExceptionMonad qualifying spec
      Monad (state,exc, FSeq b)
   def mapSeqSeq (ff,s) =
     if empty? s then return empty
-    else (first ff) (first s) >> (fn x ->
-         mapSeqSeq (rtail ff, rtail s) >> (fn r ->
-         return (x |> r)))
+    else {x <- (first ff) (first s);
+          r <- mapSeqSeq (rtail ff, rtail s);
+         return (x |> r)}
 
 endspec

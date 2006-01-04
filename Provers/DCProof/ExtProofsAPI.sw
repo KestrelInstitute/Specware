@@ -11,4 +11,7 @@ spec
 
   op andElim: Proof * Proof -> Proof
 
+  op trueProof?: Boolean
+  op trueProof: Proof
+
 endspec
