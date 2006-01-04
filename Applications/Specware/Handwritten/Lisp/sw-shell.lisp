@@ -36,11 +36,11 @@
     ("gen-lisp"  . "[spec-term [filename]] Generates Lisp code for unit in filename.
                   With no argument uses last processed unit.")
     ("lgen-lisp" . "[spec-term [filename]] Like `gen-lisp' but only generates Lisp for local definitions of spec.")
+    ("gen-java"  . "[spec-term [option-spec]] Generates Java code for unit in filename.
+                  With no argument uses last processed unit.")
     ("gen-c"     . "[spec-term [filename]] Generates C code for unit in filename.
                   With no argument uses last processed unit.")
     ("make"      . "[spec-term] Generate C code with makefile and call make on it.")
-    ("gen-java"  . "[spec-term [option-spec]] Generates Java code for unit in filename.
-                  With no argument uses last processed unit.")
     ("ld"        . "[filename] Load Lisp file filename.")
     ("cf"        . "[filename] Compile Lisp file filename.")
     ("cl"        . "[filename] Compile and load Lisp file filename.")
