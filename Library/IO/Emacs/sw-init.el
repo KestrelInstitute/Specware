@@ -49,16 +49,38 @@
       ;;
       ;(setq sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE"))
       (setq sw:common-lisp-image-file world-name)
+
       (setq sw:common-lisp-image-arguments
+
 	;; From http://www.franz.com/support/documentation/7.0/doc/startup.htm#command-line-args-1
-	;; +c : Start Allegro CL without a console window. 
-	;; (Normally, there is a console window to read/write standard I/O. 
-	;;  If you close the console window, the Lisp will be killed.) 
-	;; Note that there will not be an icon in the system tray regardless
-	;; of whether +R or +RR are specified when there is no console. 
-	;; (Having the console minimized with +cm, non-activated with +cn, or
-	;;  hidden with +cx does not affect whether there is a system tray icon.)
-	(if *windows-system-p* '("+c") nil))
+        ;;
+	;; +c   Start Allegro CL without a console window. 
+	;;      (Normally, there is a console window to read/write standard I/O. 
+	;;      If you close the console window, the Lisp will be killed.) 
+	;;      Note that there will not be an icon in the system tray regardless
+	;;      of whether +R or +RR are specified when there is no console. 
+	;;      (Having the console minimized with +cm, non-activated with +cn, or
+	;;      hidden with +cx does not affect whether there is a system tray icon.)
+	;; +cm  Start the console window in a minimized state.
+	;; +cn 	Start the console window, but don't activate the console window. 
+	;;      This allows Lisp to be started so as to not interfere with the currently selected window.
+	;; +cx 	Start the console in a hidden state. 
+        ;;      Double-clicking on the tray icon will make the console visible.
+	;;      See also the right-click menu on the tray icon.
+	;;
+	;; In other words:
+        ;;
+	;;  +c  makes Allegro invisible
+	;;  +cn leaves the Allegro window open, but behind other windows
+	;;  +cm minimizes the Allegro window
+        ;;  +cx minimizes the Allegro window down to a tiny icon in the tray
+        ;;	    
+	;; We use +cm (+cn and +cx would also be ok), because +c makes it too easy 
+        ;; to leave Specware zombies behind if the user just exists from XEmacs 
+	;; (which runs as a separate proccess communicating with Specware).
+
+	(if *windows-system-p* '("+cm") nil)) 
+
       (when (getenv "SOCKET_INIT_FILE")
 	(set-socket-init-for-specware))
       (let ((log-warning-minimum-level 'error))
@@ -126,8 +148,7 @@
   (setq sw:common-lisp-image-file (or (and (boundp 'sw:common-lisp-image-file) sw:common-lisp-image-file)
 				      (getenv "LISP_HEAP_IMAGE")))
   (setq sw:common-lisp-image-arguments
-    ;; see note above
-    (if *windows-system-p* '("+c") nil))
+    (if *windows-system-p* '("+cm") nil)) ; see note above
 
   (let ((log-warning-minimum-level 'error))
     (sw:common-lisp sw:common-lisp-buffer-name
@@ -162,8 +183,7 @@
   (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
   (setq sw:common-lisp-image-file nil)
   (setq sw:common-lisp-image-arguments
-    ;; see note above
-    (if *windows-system-p* '("+c") nil))
+    (if *windows-system-p* '("+cm") nil)) ; see note above
 
   (let ((log-warning-minimum-level 'error))
     (sw:common-lisp sw:common-lisp-buffer-name
@@ -502,8 +522,7 @@
     (setq sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE"))
     (setq sw:common-lisp-image-file world-name)
     (setq sw:common-lisp-image-arguments
-      ;; see note above
-      (if *windows-system-p* '("+c") nil))
+      (if *windows-system-p* '("+cm") nil)) ; see note above
     (when (getenv "SOCKET_INIT_FILE")
       (set-socket-init-for-specware))
 
