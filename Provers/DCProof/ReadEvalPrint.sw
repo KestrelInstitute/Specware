@@ -40,23 +40,29 @@ spec
     case s of
       | "split" -> evalSplit
       | "propax" -> evalPropax
-      | "done" -> return true
+      | _ -> return true
 
   op evalSplit: IO Boolean
   def evalSplit =
     {
-     t <- tree;
-     n <- return (focus(t));
+     tx <- treeX;
+     n <- return (focus(tx));
      f <- return (n.formula);
-     (sgs, vf) <- return(andStep(f));
+     case (andStep(f)) of
+       | Some (sgs, vf) -> addSubgoals(sgs)
+       | None -> return ();
      return false
     }
 
   op evalPropax: IO Boolean
   def evalPropax =
     {
-     t <- tree;
-
+     tx <- treeX;
+     n <- return (focus(tx));
+     f <- return (n.formula);
+     case (trueStep(f)) of
+       | Some(sgs, vf) -> {addSubgoals(sgs); nextGoal}
+       | None -> return ();
      return false
     }
 

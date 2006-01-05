@@ -35,10 +35,20 @@ spec
     fn state ->
     (RETURN(State.print(state)), state)
 
-  op Monad.tree: M TreeX
-  def Monad.tree =
+  op Monad.treeX: M TreeX
+  def Monad.treeX =
     fn state ->
-    (RETURN(state.tree), state)
+    (RETURN(state.treeX), state)
+
+  op Monad.addSubgoals: FSeq Goal -> M ()
+  def Monad.addSubgoals(gs) =
+    fn state ->
+    ((RETURN()), (addSubgoals(state, gs)))
+
+  op Monad.nextGoal: M ()
+  def Monad.nextGoal =
+    fn state ->
+    ((RETURN()), (nextGoal(state)))
 
   (*
   op memo?: Proof -> M Boolean

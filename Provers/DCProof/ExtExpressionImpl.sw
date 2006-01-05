@@ -21,6 +21,9 @@ ExpressionI = spec
   def Prover.mkAndExpr(c1, c2) =
     mkAnd(c1, c2)
 
+  def Prover.trueExpr?(e) =
+    (case e of Fun(Bool true,_,_) -> true | _ -> false)
+
   def Prover.mkTrueExpr = mkTrue()
 
   def Prover.print(e) = printTerm(e)

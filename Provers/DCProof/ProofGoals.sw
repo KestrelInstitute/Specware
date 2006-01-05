@@ -20,7 +20,7 @@ spec
   def trueGoal?(g) =
     trueExpr?(goalExpr(g))
 
-  type Step = Goal -> FSeq Goal * (FSeq Proof -> Proof)
+  type Step = Goal -> Option (FSeq Goal * (FSeq Proof -> Proof))
 
   op andStep: Step
 
@@ -34,17 +34,17 @@ spec
 	let g2 = addConc(e2, g) in
 	let goals = g1 |> g2 |> empty in
 	let andValid = fn (ps) -> andElim(first(ps), first(rtail(ps))) in
-	(goals, andValid)
-    else
-      (g |> empty, fn (ps) -> first(ps))
+	Some (goals, andValid)
+    else None
+      
 
   op trueStep: Step
   def trueStep(g) =
     if trueGoal?(g)
       then
 	let trueValid = fn (ps) -> trueProof in
-	(empty, trueValid)
+	Some (empty, trueValid)
     else
-      (g |> empty, fn (ps) -> first(ps))
+      None
 
 endspec
