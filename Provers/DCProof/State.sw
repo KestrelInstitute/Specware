@@ -30,6 +30,11 @@ spec
     let tx = s.treeX in
     let newTx = nextLeaf(tx) in
     {treeX = newTx}
+
+  op proven: State -> Boolean
+  def proven(s) =
+    let tx = s.treeX in
+    allProven?(tree(tx))
     
 %  def initialState = {}
 

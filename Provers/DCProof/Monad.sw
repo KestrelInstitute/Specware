@@ -50,6 +50,11 @@ spec
     fn state ->
     ((RETURN()), (nextGoal(state)))
 
+  op Monad.proven: M Boolean
+  def Monad.proven =
+    fn state ->
+    ((RETURN (proven(state))), state)
+
   (*
   op memo?: Proof -> M Boolean
   def memo?(p) =

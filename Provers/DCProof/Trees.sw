@@ -62,10 +62,13 @@ spec
       case find(pred, first(ch)) of
 	| Some t -> Some t
 	| None -> Tree.findChildren(pred, rtail(ch))
+
+  op allProven?: Tree -> Boolean
+  def allProven?(t) =
+    case find ((fn n -> ~(n.proven)), t) of
+      | Some _ -> false
+      | None -> true
     
-
-
-  
   op mkNodeTrue: Node -> Node
   def mkNodeTrue(n) =
     {formula = n.formula, proven = true, step = n.step, label = n.label}

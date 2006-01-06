@@ -39,7 +39,7 @@ spec
   def eval s = 
     case s of
       | "split" -> evalSplit
-      | "propax" -> evalPropax
+      | "triv" -> evalTriv
       | _ -> return true
 
   op evalSplit: IO Boolean
@@ -54,16 +54,21 @@ spec
      return false
     }
 
-  op evalPropax: IO Boolean
-  def evalPropax =
+  op evalTriv: IO Boolean
+  def evalTriv =
     {
      tx <- treeX;
      n <- return (focus(tx));
      f <- return (n.formula);
      case (trueStep(f)) of
-       | Some(sgs, vf) -> {addSubgoals(sgs); nextGoal}
+       | Some(sgs, vf) -> addSubgoals(sgs)
        | None -> return ();
-     return false
+     done <- proven;
+     if done
+       then return true
+     else
+       {nextGoal;
+	return false}
     }
 
   op readEvalPrint: IO ()

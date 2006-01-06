@@ -18,11 +18,15 @@ spec
 
   op mkTrueExpr: TrueExpr
 
+
+  op test: Expression
+  def test = mkAndExpr(mkTrueExpr, mkTrueExpr)
+
   op test1: Expression
   def test1 = mkAndExpr(mkAndExpr(mkTrueExpr, mkTrueExpr), mkTrueExpr)
 
-  op test: Expression
-  def test = mkAndExpr(mkTrueExpr,mkAndExpr(mkTrueExpr, mkTrueExpr))
+  op test2: Expression
+  def test2 = mkAndExpr(mkTrueExpr,mkAndExpr(mkTrueExpr, mkTrueExpr))
 
 endspec
 
