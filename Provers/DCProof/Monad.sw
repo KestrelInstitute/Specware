@@ -2,7 +2,7 @@ spec
 
   % API private default
 
-  import StateAndExceptionMonads, State, Exceptions, ExtProofsAPI
+  import StateAndExceptionMonads, State, Exceptions
 
   (* To improve the readability of the checking function defined in spec
   Checker, we introduce a monad whose states are the ones defined in spec

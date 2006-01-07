@@ -1,0 +1,1 @@
+ReadEvalPrint[/Library/General/FiniteSequencesAsListsMorphism][GoalsI#GoalExprInterface][ExtExpressionImpl#MSExprInterface]

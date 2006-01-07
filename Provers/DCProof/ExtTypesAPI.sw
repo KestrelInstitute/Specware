@@ -1,4 +1,4 @@
-spec
+Expr qualifying spec
 
   type Expression
   op print: Expression -> String
@@ -17,6 +17,13 @@ spec
   type TrueExpr = (Expression | trueExpr?)
 
   op mkTrueExpr: TrueExpr
+
+  op eqExpr?: Expression -> Boolean
+  type EqExpr = (Expression | eqExpr?)
+
+  op lhs: EqExpr -> Expression
+  op rhs: EqExpr -> Expression
+  op mkEqExpr: Expression * Expression -> Expression
 
 
   op test: Expression

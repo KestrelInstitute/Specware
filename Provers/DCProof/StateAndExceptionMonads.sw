@@ -28,7 +28,7 @@ consistency with specs StateMonads and ExceptionMonads.
 *)
 
 
-StateExceptionMonad qualifying spec
+SStateExceptionMonad qualifying spec
 
   type Result (exc, a) =
     | RETURN a

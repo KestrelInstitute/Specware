@@ -4,6 +4,8 @@ I = spec
 
   type Goals.Goal = Expr.Expression
 
+  def Goals.print = Expr.print
+  
   def Goals.goalExpr (g) = g
 
   def Goals.addConc(e, g) = e

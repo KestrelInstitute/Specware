@@ -57,13 +57,15 @@ spec
     if eqExpr?(goalExpr(g))
       then
 	let e1 = lhs(goalExpr(g)) in
-	let e2 = lhs(goalExpr(g)) in
-	let e = mkEqExpr(e2, e2) in
+	let e2 = rhs(goalExpr(g)) in
+	let e = mkEqExpr(e2, e1) in
 	let newG = addConc(e, g) in
 	let goals = newG |> empty in
 	let valid = fn (ps) -> thSymm(first(ps)) in
 	Some (goals, valid)
     else
       None
+
+  op thIffStep
 
 endspec

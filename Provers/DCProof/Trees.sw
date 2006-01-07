@@ -2,7 +2,8 @@ spec
 
   import /Library/General/FiniteSequences
   %import ExtTypesAPI
-  import ExtExpressionImpl#MetaSlangExtExpr
+  %import ExtExpressionImpl#MetaSlangExtExpr
+  import GoalsA
 
   op find: [a] (a * a -> Boolean) * a * FSeq a -> Option Nat
   def find(f, x, s) =
@@ -22,7 +23,7 @@ spec
 
   type Tree = Node * FSeq Tree
 
-  type Node = {formula: Expression, proven: Boolean, step: String, label: String}
+  type Node = {formula: Goal, proven: Boolean, step: String, label: String}
   def Node.print(n) =
     print(n.formula)
 

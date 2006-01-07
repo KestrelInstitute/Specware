@@ -1,6 +1,7 @@
 spec
 
-  import Monad[/Library/General/FiniteSequencesAsListsMorphism]
+  import Monad%[/Library/General/FiniteSequencesAsListsMorphism]
+  import ProofGoals
   import /Library/Structures/Data/Monad/ImpureIO
 
   type IO a = M a
@@ -81,6 +82,11 @@ spec
        then return ()
      else readEvalPrint
     }
+
+  op testProof: () -> Boolean
+  def testProof () =
+    let _ = readEvalPrint initialState in
+    true
 
 endspec
 

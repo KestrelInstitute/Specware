@@ -14,4 +14,8 @@ spec
   op trueProof?: Boolean
   op trueProof: Proof
 
+  op thRefl: Proof
+  op thSubst: Proof * Proof -> Proof
+  op thSymm: Proof -> Proof
+
 endspec
