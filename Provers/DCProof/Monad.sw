@@ -30,25 +30,40 @@ spec
 
   % monadic ops to provide access to the state of the monad:
 
-  op Monad.print: M String
-  def Monad.print =
+  op Monad.print: String -> M String
+  def Monad.print s =
     fn state ->
-    (RETURN(State.print(state)), state)
+    (RETURN(s^State.print(state)), state)
+
+  op Monad.printTree: M String
+  def Monad.printTree =
+    fn state ->
+    (RETURN(printTree(state)), state)
 
   op Monad.treeX: M TreeX
   def Monad.treeX =
     fn state ->
     (RETURN(state.treeX), state)
 
-  op Monad.addSubgoals: FSeq Goal -> M ()
-  def Monad.addSubgoals(gs) =
+  op Monad.addSubgoals: FSeq Goal * String -> M ()
+  def Monad.addSubgoals(gs, step) =
     fn state ->
-    ((RETURN()), (addSubgoals(state, gs)))
+    ((RETURN()), (addSubgoals(state, gs, step)))
+
+  op Monad.setStep: String -> M ()
+  def Monad.setStep(step) =
+    fn state ->
+    ((RETURN()), (setStep(state, step)))
 
   op Monad.nextGoal: M ()
   def Monad.nextGoal =
     fn state ->
     ((RETURN()), (nextGoal(state)))
+
+  op Monad.propagateProven: M ()
+  def Monad.propagateProven =
+    fn state ->
+    ((RETURN()), (propagateProven(state)))
 
   op Monad.proven: M Boolean
   def Monad.proven =

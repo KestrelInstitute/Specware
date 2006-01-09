@@ -22,7 +22,7 @@ spec
   op print: String -> IO ()
   def print(s) =
     {
-     ss <- print;
+     ss <- print s;
      val <- return (String.writeLine ss);
      return ()
       }
@@ -36,12 +36,85 @@ spec
 	else return ()
 	 }
 
-  op eval: String -> IO Boolean
+  type SStep = (String * Step)
+  
+  op eval: String -> IO StepRes
   def eval s = 
     case s of
-      | "split" -> evalSplit
-      | "triv" -> evalTriv
-      | _ -> return true
+      | "split" -> evalStep("andElim", andStep)
+      | "triv" -> evalStep("trueTh", trueStep)
+      | "try" -> evalTry(("andElim", andStep), ("trueTh", trueStep))
+     % | "repeat" -> evalRepeat (try(andStep, trueStep))
+      | _ -> return Exit
+
+(*  op try: SStep * SStep -> SStep
+  def try(s1, s2) =
+    fn f ->
+    case s1 f of
+      | Some res -> Some res
+      | None -> s2 f
+*)
+
+  op evalTry: SStep * SStep -> IO StepRes
+  def evalTry(s1, s2) =
+    {
+     res0 <- evalStep s1;
+     case res0 of
+       | Proven -> return Proven
+       | Unchanged -> evalStep s2
+       | Changed -> return Changed
+       | Exit -> return Exit
+    }
+     
+
+(*  op repeat: Step -> Step
+  def repeat(s) =
+    fn f ->
+    case s f of
+      | Some res -> (repeat(s))res
+      | None -> None
+*)
+
+  type StepRes = | Proven | Unchanged | Changed | Exit
+  
+  op evalRepeat: SStep -> IO StepRes
+  def evalRepeat step =
+    {
+     res0 <- evalStep step;
+     case res0 of
+       | Proven -> return Proven
+       | Unchanged -> return Unchanged
+       | Changed -> evalRepeat step
+       | Exit -> return Exit
+    }
+
+  op evalStep: SStep -> IO StepRes
+  def evalStep (stepName, step) =
+    {
+     tx <- treeX;
+     n <- return (focus(tx));
+     f <- return (n.formula);
+     case (step(f)) of
+       | Some (sgs, vf) -> 
+          {
+	   addSubgoals(sgs, stepName);
+	   propagateProven;
+	   done <- proven;
+	   if done
+	     then
+	       {
+		 _ <- return (writeLine("QED"));
+		 setStep stepName;
+		 pt <- printTree;
+		 _ <- return (writeLine pt);
+		 return Proven
+		}
+	   else
+	     {setStep stepName;
+	      nextGoal;
+	      return Changed}}
+       | None -> return (Unchanged)
+    }
 
   op evalSplit: IO Boolean
   def evalSplit =
@@ -50,7 +123,7 @@ spec
      n <- return (focus(tx));
      f <- return (n.formula);
      case (andStep(f)) of
-       | Some (sgs, vf) -> addSubgoals(sgs)
+       | Some (sgs, vf) -> addSubgoals(sgs, "split")
        | None -> return ();
      return false
     }
@@ -62,7 +135,7 @@ spec
      n <- return (focus(tx));
      f <- return (n.formula);
      case (trueStep(f)) of
-       | Some(sgs, vf) -> addSubgoals(sgs)
+       | Some(sgs, vf) -> addSubgoals(sgs, "triv")
        | None -> return ();
      done <- proven;
      if done
@@ -75,12 +148,13 @@ spec
   op readEvalPrint: IO ()
   def readEvalPrint =
     {
-     print "Hi";
+     print "Goal ";
      cmd <- read;
-     done <- eval cmd;
-     if done
-       then return ()
-     else readEvalPrint
+     evalRes <- eval cmd;
+     case evalRes of
+       | Exit -> return ()
+       | Proven -> return ()
+       | _ -> readEvalPrint
     }
 
   op testProof: () -> Boolean
