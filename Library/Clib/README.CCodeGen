@@ -32,7 +32,7 @@ This would have the same result as the above command line variant. The
 suffix ".c" can be omitted or not.
 
 
-Generating, Compiling and Running the generated C code using ":make"
+Generating, Compiling and Building the generated C code using ":make"
 --------------------------------------------------------------------
 
 The easiest and recommended way of generating C code and compiling it
@@ -91,8 +91,7 @@ at the Lisp prompt. This command does the following things:
   default behaviour: if SPECWARE4_MAKE is set, the value of it is used
   as make command.
 
-
-Compiling and Running the generated C code without using :make
+Compiling and Building the generated C code without using :make
 --------------------------------------------------------------
 
 The generated C code is designed to contain as minimal as possible
@@ -167,4 +166,28 @@ examples of both a hand-written main c function that calls the
 generated code and a MetaSlang definition of the main operator.
 
 [Accord users can define a toplevel proc/espec as "main"]
+
+
+Running the generated program using "bash"
+--------------------------------------------------------------------
+
+- Once "make" has built a new program, you can test it by running
+  the "bash" command directly from the Specware or Accord shell.
+  E.g., having built the program "gcd" that takes two integer arguments,
+  you could test it with the following command:
+
+    bash gcd 33 44
+
+  If your PATH environment variable doesn't include "." to get the 
+  current directory, you might need to enter this command instead, 
+  to force bash to look in the current directory:
+
+    bash ./gcd 33 44
+
+  You can also simply type bash with no args to get a subordinate 
+  interactive bash shell, from which you can test as expected.
+  In this case, you will need to exit from the bash shell to resume
+  using the Specware or Accord shell.
+
+
 
