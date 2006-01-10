@@ -27,7 +27,7 @@ of derivative works therefrom without the express signed permission
 of Kestrel Institute,  Kestrel Development Corporation and Kestrel
 Technology, LLC is prohibited.
 
-Copyright (c) 1988-2005 by Kestrel Institute, Kestrel Development
+Copyright (c) 1988-2006 by Kestrel Institute, Kestrel Development
 Corporation and Kestrel Technology, LLC. All rights reserved.
 
 Use of a copyright notice is precautionary only and does not imply
