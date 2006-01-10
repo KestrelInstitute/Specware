@@ -5,6 +5,7 @@
 xemacs=`which xemacs`
 act='launch Specware'
 
+OLDPATH=$PATH
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
 # Test whether SPECWARE4 has been set
@@ -89,6 +90,7 @@ export LISP_EXECUTABLE
 export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 
+PATH=$OLDPATH
 $xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
        $* \
        -eval "(run-specware4)" &
