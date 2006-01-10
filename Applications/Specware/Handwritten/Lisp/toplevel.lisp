@@ -1318,8 +1318,10 @@
 			  #+MSWINDOWS (format t "~&(It is installed as part of the Cygwin installation.)~%")
 			  (return-from bash nil))))
 	;; ACCORD feature is set by $ACCORD/Scripts/Lisp/BuildPreamble.lisp at build time
-        #-ACCORD (format t "~&Interactive bash shell:~%Type exit to return to Specware Shell.~2%")
-        #+ACCORD (format t "~&Interactive bash shell:~%Type exit to return to Accord Shell.~2%")
+	(format t 
+		(if (member :ACCORD lisp::*features*)
+		     "~&Interactive bash shell:~%Type exit to return to Accord Shell.~2%"
+		  "~&Interactive bash shell:~%Type exit to return to Specware Shell.~2%"))
 	(specware::setenv "PS1" 
 			  #-cmu "bash> " 
 			  #+cmu  ""      ; avoid hysteresis problem that causes prompt to print after input is entered
@@ -1328,7 +1330,8 @@
 	(finish-output)
 	(unwind-protect
 	    (specware::run_cmd-2 "bash" (list "-i"))
-	  #-ACCORD (format t "~2&Back in Specware Shell.~2%")
-	  #+ACCORD (format t "~2&Back in Accord Shell.~2%")
+	  (format t (if (member :ACCORD lisp::*features*)
+			"~2&Back in Accord Shell.~2%"
+		      "~2&Back in Specware Shell.~2%"))
 	  )))))
 
