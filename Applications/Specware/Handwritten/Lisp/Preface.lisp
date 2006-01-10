@@ -37,10 +37,11 @@
 	 ;;   output           (if-output-exists :error) 
 	 ;;   (error :output)  (if-error-exists :error) 
 	 ;;   status-hook
-	 #+cmu  (ext:run-program    cmd args :output *standard-output* :error :output :wait t)
-	 #+mcl  (ccl:run-program    cmd args :output *standard-output* :error :output :wait t)
-	 #+sbcl (sb-ext:run-program cmd args :output *standard-output* :error :output :wait t)
-	 #+gcl  (lisp:system (format nil "~a ~a" cmd args))))
+	 #+cmu  (ext:run-program    cmd args :input t :output *standard-output* :error :output :wait t )
+	 #+mcl  (ccl:run-program    cmd args :output *standard-output* :error :output :wait t) ; TODO: add :input t ??
+	 #+sbcl (sb-ext:run-program cmd args :output *standard-output* :error :output :wait t) ; TODO: add :input t ??
+	 #+gcl  (lisp:system (format nil "~a ~a" cmd args))              
+	 ))
     (let ((rc (process-exit-code process)))
       (unless (equal rc 0)
 	;; (warn "Return code from run-shell-command was non-zero: ~S" rc)
@@ -51,19 +52,9 @@
 
 #+allegro
 (defun run-cmd (fn args)
-  ;; first try to verify that fn actually exists
-  ;; There is no simple way to get "which" to avoid printing to the terminal,
-  ;; so cache the result to avoid needless verbiage.
-  (let ((pair (or (assoc fn *known-programs* :test 'equalp)
-		  (let ((happy? (aux-run-cmd (format nil "which ~A" fn))))
-		    (let ((pair (cons fn happy?)))
-		      (push pair *known-programs*)
-		      pair)))))
-    (if (null (cdr pair))
-	(warn "Function ~A given to run-cmd could not be found.  Args were: ~{~A ~}" fn args)
-      (aux-run-cmd (format nil "~A~{ ~A~}" fn args)))
-    (finish-output *standard-output*)
-    (values)))
+  (aux-run-cmd (format nil "~A~{ ~A~}" fn args))
+  (finish-output *standard-output*)
+  (values))
   
 #+allegro
 (defun aux-run-cmd (cmd)

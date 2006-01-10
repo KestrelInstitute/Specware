@@ -1287,7 +1287,7 @@
   (bash str))
 
 (defun bash (&optional (str ""))
-  (catch 'nevermind
+  (block return-from-bash
     (if (and (stringp str) (> (length str) 0))
 	(let* ((fn_and_args 
 		;; TODO: not quite right -- shouldn't break on spaces within strings, etc.
@@ -1296,13 +1296,39 @@
 	       (args (cdr fn_and_args)))
 	  (handler-bind ((error 
 			  #'(lambda (x)
-			      (format t "~%~A~%" x)
-			      (format t "~%~A doesn't seem to be accessible.~%" fn)
-			      (throw 'nevermind nil))))
+			      (declare (ignore x))
+			      (handler-bind ((error 
+					      #'(lambda (x)
+						  (format t "~%~A~%" x)
+						  (format t "~%~A doesn't seem to be accessible.~%" fn)
+						  (print str)
+						  (format t "~&Trying again with call to to bash using arg ~S" str)
+						  (return-from return-from-bash nil))))
+				(return-from return-from-bash
+				  (progn
+				    (format t "~&In bash shell:~%")
+				    (specware::setenv "PS1" "") ; no need for prompt given one command
+				    (finish-output)
+				    (specware::run_cmd-2 "bash" (list "-c" str))))))))
 	    (specware::run_cmd-2 fn args)))
       (handler-bind ((error 
 		      #'(lambda (x)
+			  (declare (ignore x))
 			  (format t "~%The bash shell doesn't seem to be available.~%")
-			  (format t "~&(It is installed as part of the Cygwin installation.)~%")
-			  (throw 'nevermind nil))))
-	(specware::run_cmd "bash")))))
+			  #+MSWINDOWS (format t "~&(It is installed as part of the Cygwin installation.)~%")
+			  (return-from bash nil))))
+	;; ACCORD feature is set by $ACCORD/Scripts/Lisp/BuildPreamble.lisp at build time
+        #-ACCORD (format t "~&Interactive bash shell:~%Type exit to return to Specware Shell.~2%")
+        #+ACCORD (format t "~&Interactive bash shell:~%Type exit to return to Accord Shell.~2%")
+	(specware::setenv "PS1" 
+			  #-cmu "bash> " 
+			  #+cmu  ""      ; avoid hysteresis problem that causes prompt to print after input is entered
+			  )
+	#+cmu (format t "~&Note: PS1 (the shell prompt) is deliberately set to \"\" since prompts would appear *after* input.~2%")
+	(finish-output)
+	(unwind-protect
+	    (specware::run_cmd-2 "bash" (list "-i"))
+	  #-ACCORD (format t "~2&Back in Specware Shell.~2%")
+	  #+ACCORD (format t "~2&Back in Accord Shell.~2%")
+	  )))))
+
