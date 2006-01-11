@@ -17,5 +17,6 @@ spec
   op thRefl: Proof
   op thSubst: Proof * Proof -> Proof
   op thSymm: Proof -> Proof
+  op thIf: Proof * Proof -> Proof
 
 endspec

@@ -4,29 +4,28 @@ I = spec
   import ExtTypesAPI
   %import /Library/Legacy/DataStructures/ListUtilities
 
-  type Expr.Expression = MetaslangProofChecker.Expression
+  type Expr.Expression = MetaslangProofDebugger.ExtExpression
 
   def Expr.andExpr?(e) =
-    let ce = contractExprAll e in
-    case ce of
+    case e of
       | AND _ -> true
       | _ -> false
 
   def Expr.conj1(e) =
-    let IF (c1, _, _) = e in
+    let AND (c1, _) = e in
     c1
 
   def Expr.conj2(e) =
-    let  IF (_, c2, _) = e in
+    let  AND (_, c2) = e in
     c2
 
   def Expr.mkAndExpr(c1, c2) =
-    c1 &&& c2
+    AND(c1, c2)
 
   def Expr.trueExpr?(e) =
-    (contractExprAll e) = embed TRUE
+    e = embed TRUE
 
-  def Expr.mkTrueExpr = TRUE
+  def Expr.mkTrueExpr = embed TRUE
 
   def Expr.eqExpr?(e) =
     case e of
@@ -42,7 +41,7 @@ I = spec
     r
 
   def Expr.mkEqExpr(l, r) =
-    l == r
+    EQ(l, r)
 
   def Expr.ifExpr?(e) =
     case e of
@@ -65,21 +64,20 @@ I = spec
     IF(e0, e1, e2)
 
   def Expr.notExpr?(e) =
-    let ce = contractExprAll(e) in
-    case ce of
+    case e of
       | NEG _ -> true
       | _ -> false
 
   def Expr.notArg(e) =
-    let APPLY(_, e0) = e in
+    let NEG(e0) = e in
     e0
 
   def Expr.mkNotExpr(e) =
-    ~~ e
+     NEG e
 
   def Expr.print(e) =
     %let e = contractExprAll(e) in
-    Base.printExpression(e)
+    printExpression(e)
 
 endspec
 

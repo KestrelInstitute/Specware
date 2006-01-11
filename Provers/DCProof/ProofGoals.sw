@@ -57,12 +57,27 @@ spec
     if eqExpr?(goalExpr(g))
       then
 	let e1 = lhs(goalExpr(g)) in
-	let e2 = lhs(goalExpr(g)) in
-	let e = mkEqExpr(e2, e2) in
+	let e2 = rhs(goalExpr(g)) in
+	let e = mkEqExpr(e2, e1) in
 	let newG = addConc(e, g) in
 	let goals = newG |> empty in
 	let valid = fn (ps) -> thSymm(first(ps)) in
 	Some (goals, valid)
+    else
+      None
+
+  op thIfStep: Step
+  def thIfStep(g) =
+    let eg = goalExpr(g) in
+    if eqExpr?(eg) & ifExpr?(lhs(eg))
+      then
+	let e = lhs(eg) in
+	let e0 = ifCond(e) in
+	let e1 = ifThen(e) in
+	let e2 = ifElse(e) in
+        let g1 = addConc(mkEqExpr(e1, rhs(eg)), addHyp(e0, g)) in
+	let g2 = addConc(mkEqExpr(e2, rhs(eg)), addHyp(mkNotExpr(e0), g)) in
+	Some (g1 |> g2 |> empty, fn (ps) -> thIf(first(ps), first(rtail(ps))))
     else
       None
 

@@ -36,24 +36,34 @@ spec
 	else return ()
 	 }
 
-  type SStep = (String * Step)
+  type SStep = Goal -> Option (FSeq Goal * String)
+
+  op conv: String * Step -> SStep
+  def conv (sn, s) =
+    fn f ->
+    case s f of
+      | Some (sgs, v) -> Some (sgs, sn)
+      | None -> None
   
   op eval: String -> IO StepRes
   def eval s = 
     case s of
-      | "split" -> evalStep("andElim", andStep)
-      | "triv" -> evalStep("trueTh", trueStep)
-      | "try" -> evalTry(("andElim", andStep), ("trueTh", trueStep))
-     % | "repeat" -> evalRepeat (try(andStep, trueStep))
+      | "split" -> evalStep(conv("andElim", andStep))
+      | "triv" -> evalStep(conv("trueTh", trueStep))
+      | "refl" -> evalStep(conv("thRefl", reflStep))
+      | "subst" -> evalStep(conv("thSubst", thSubstTrue))
+      | "symm" -> evalStep(conv("thSymm", thSymmStep))
+      | "if" -> evalStep(conv("thIf", thIfStep))
+      | "try" -> evalTry(conv("andElim", andStep), conv("trueTh", trueStep))
+      | "repeat" -> evalRepeat (try(conv("andElim",andStep), conv("trueth",trueStep)))
       | _ -> return Exit
 
-(*  op try: SStep * SStep -> SStep
+  op try: SStep * SStep -> SStep
   def try(s1, s2) =
     fn f ->
     case s1 f of
       | Some res -> Some res
       | None -> s2 f
-*)
 
   op evalTry: SStep * SStep -> IO StepRes
   def evalTry(s1, s2) =
@@ -89,7 +99,7 @@ spec
     }
 
   op evalStep: SStep -> IO StepRes
-  def evalStep (stepName, step) =
+  def evalStep step =
     {
      tx <- treeX;
      n <- return (focus(tx));
@@ -97,6 +107,7 @@ spec
      case (step(f)) of
        | Some (sgs, vf) -> 
           {
+	   stepName <- return vf;
 	   addSubgoals(sgs, stepName);
 	   propagateProven;
 	   done <- proven;

@@ -25,6 +25,22 @@ Expr qualifying spec
   op rhs: EqExpr -> Expression
   op mkEqExpr: Expression * Expression -> Expression
 
+  op ifExpr?: Expression -> Boolean
+  type IfExpr = (Expression | ifExpr?)
+
+  op ifCond: IfExpr -> Expression
+  op ifThen: IfExpr -> Expression
+  op ifElse: IfExpr -> Expression
+
+  op mkIfExpr: Expression * Expression * Expression -> Expression
+
+  op notExpr?: Expression -> Boolean
+  type NotExpr = (Expression | notExpr?)
+
+  op notArg: NotExpr -> Expression
+
+  op mkNotExpr: Expression -> NotExpr
+
 
   op test: Expression
   def test = mkAndExpr(mkTrueExpr, mkTrueExpr)

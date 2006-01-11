@@ -36,17 +36,18 @@ spec
   def Tree.printAux(t, n) =
     let sn = succind(n) in
     let sep = "\n"^(ind sn) in
+    let sep = "(" in
     if empty? (children(t))
       then
 	(node(t)).step
     else
-      "("^((node(t)).step)^sep^(printAux(children(t), sn))^")"
+      ((node(t)).step)^sep^(printAux(children(t), sn))^")"
 
   op Trees.printAux: FSeq Tree * Nat -> String
   def Trees.printAux(ts, n) =
-    let sep = "\n"^(ind n) in
-    if empty? ts
-      then ""
+    let sep = ", " in
+    if empty? (rtail ts)
+      then printAux(first(ts),n)
     else
       printAux(first(ts), n)^sep^printAux(rtail(ts), n)
 
