@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# Use the directory of this file as the default value of SPECWARE4
+# Note: $0 may refer to a Specware or SpecwareShell script invoking this...
+
+INVOKED_HERE=`dirname $0`
+cd $INVOKED_HERE
+HERE=`pwd`
+
+#########################################################################
+# Use the directory of this file as the value of SPECWARE4
+# Warn if this changes it.
+
+if [ "$SPECWARE4" == "" ]; then
+   : do nothing
+elif [ "$SPECWARE4" == "$INVOKED_HERE" ]; then
+   : do nothing
+elif [ "$SPECWARE4" == "$HERE" ]; then
+   : do nothing
+else
+   echo "Ignoring prior SPECWARE4 : $SPECWARE4"
+fi
+
+SPECWARE4=$ERE
+
+#########################################################################
+
+# Test whether SPECWARE4 is a directory
+
+if [ ! -d "$SPECWARE4" ]; then
+   echo  "SPECWARE4       = $SPECWARE4"
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+case "$SPECWARE4" in
+    .)  SPECWARE4=`pwd`;;
+    /*) : do nothing ;;
+    *)  SPECWARE4="`pwd`/$SPECWARE4";;
+esac
+
+echo  "SPECWARE4       = $SPECWARE4"
+export SPECWARE4
+cd "$SPECWARE4"
+
+#########################################################################
+
+LISP_DIRECTORY=$SPECWARE4/  # The directory the lisp image will connect to
+echo  "LISP_DIRECTORY  = $LISP_DIRECTORY"
+export LISP_DIRECTORY
+
+#########################################################################
+
+# Ensure SWPATH is set
+
+if [ -z "$SWPATH" ]; then
+  SWPATH="/"
+  export SWPATH
+fi
+
+echo  "SWPATH          = $SWPATH"
+export SWPATH
+

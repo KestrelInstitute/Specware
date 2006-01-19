@@ -1,0 +1,31 @@
+#!/bin/sh
+
+act='launch Specware in CMUCL, using ilisp interface to XEmacs'
+
+OLD_PATH=$PATH
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+
+# Use the directory of this file as the default value of SPECWARE4
+# Note: $0 may refer to Specware or SpecwareShell script invoking this...
+
+INVOKED_HERE=`dirname $0`
+cd $INVOKED_HERE
+HERE=`pwd`
+
+. $HERE/Find_Specware4
+. $HERE/Find_CMUCL
+
+LISP_HEAP_IMAGE="$SPECWARE4"/Specware4.cmuimage
+echo  "LISP_HEAP_IMAGE = $LISP_HEAP_IMAGE"
+export LISP_HEAP_IMAGE
+
+. $HERE/Find_XEmacs
+
+PATH=$OLD_PATH
+
+$XEMACS -geometry 180x70+180+2 \
+        -name  "Specware" \
+        -title "Specware" \
+        -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
+        $* \
+        -f run-specware4 &

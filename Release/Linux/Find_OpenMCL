@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# Try to find lisp executable for OpenMCL
+# avoid using exit unless there's an error, as this is invoked via . from superior shell
+
+INVOKED_HERE=`dirname $0`
+cd "$INVOKED_HERE"
+HERE=`pwd`
+
+# Use pre-existing value for LISP if it is executable and has an expected name
+HAVE_LISP=false
+if [ -n "$LISP" ]; then
+  OLD_LISP=$LISP
+  BASENAME=`basename "$LISP"`
+  if [ "$BASENAME" == "dppccl" ]; then
+    if [ -x "$LISP" ]; then
+      HAVE_LISP=true
+    fi
+  fi
+fi
+
+if [ "$HAVE_LISP" != "true" ]; then
+  # Otherwise, look for an executable candidate
+  for L in "$HERE"/dppccl /usr/local/bin/dppccl /Applications/ccl/dppccl $HOME/ccl/dppccl; do
+    if [ -x "$L" ]; then
+      LISP="$L"
+    fi
+  done
+fi
+
+if [ -z "$LISP" ]; then
+   echo "Failed to $act, no LISP executable found" 2>&1
+   exit 1
+fi
+
+if [ ! -x "$LISP" ]; then
+   echo "Failed to $act, $LISP is not executable" 2>&1
+   exit 1
+fi
+
+echo  "LISP            = $LISP"
+export LISP
+
+LISP_EXECUTABLE=$LISP
+echo  "LISP_EXECUTABLE = $LISP_EXECUTABLE"
+export LISP_EXECUTABLE
