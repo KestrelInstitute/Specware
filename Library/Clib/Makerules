@@ -6,7 +6,7 @@ CC = gcc
 LD = gcc
 
 # the directory for the Boehm garbage collector:
-GCDIR = $(SPECWARE4)/Library/Clib/gc6.2
+GCDIR = $(ACCORD)/Sources/Library/Clib/gc6.2
 
 ifeq "$(USEGC)" "no"
   SWGC = -USWGC
@@ -19,7 +19,7 @@ else
 endif
 
 LDLIBS := $(LDLIBS) $(GCLIB)
-CPPFLAGS :=  -w $(SWGC) $(CPPFLAGS) -I$(SPECWARE4)/Library/Clib $(GCINCLUDE)
+CPPFLAGS :=  -w $(SWGC) $(CPPFLAGS) -I$(ACCORD)/Sources/Library/Clib $(GCINCLUDE)
 
 dummyall:
 	@echo "   *** Please specify your target on"

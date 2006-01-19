@@ -1,4 +1,4 @@
-# Example Makefile for compiling Specware-generated C code
+# Example Makefile for compiling Accord-generated C code
 # See ../README.CCodeGen for additional information.
 # This file and the description is tailored for the GNU version of make.
 
@@ -14,17 +14,17 @@ all: myapp
 
 # mandatory; this includes the settings needed for the generated
 # code to compile; it sets CPPFLAGS and LDLIBS variables
-include $(SPECWARE4)/Library/Clib/Makerules
+include $(ACCORD)/Sources/Library/Clib/Makerules
 
 # optional: augment the CPPFLAGS
 CPPFLAGS := -g $(CPPFLAGS)
 
-# The following assumes that you have the Specware code generated into 
+# The following assumes that you have the Accord code generated into 
 # files QuickSort.[ch]
 
 # Variant 1:
 
-# If you have defined a main operator in Specware (see
+# If you have defined a main operator in Accord (see
 # ../README.CCodeGen) then you don't need to specify a rule for the
 # main target, because make's implicit rules already take care of
 # everything. For instance, if your MetaSlang code defines an (unqualified!)
@@ -41,7 +41,7 @@ CPPFLAGS := -g $(CPPFLAGS)
 # even need to specify a separate Makefile, because the above included Makerules
 # contains all the neccessary variable settings:
 #
-#   make -f $SPECWARE4/Library/Clib/Makerules foo
+#   make -f $ACCORD/Sources/Library/Clib/Makerules foo
 #
 # would be sufficient in that case.
 
@@ -53,7 +53,7 @@ CPPFLAGS := -g $(CPPFLAGS)
 # rule that uses the variables defined in the includes Makerules file to build
 # main from the file main.c and QuickSort.c. The dependency to $(GCLIB) is added
 # to automatically compile the garbage collection library that come with the
-# Specware distribution. For that, you must have write permission on the Specware
+# Accord distribution. For that, you must have write permission on the Accord
 # distribution tree; otherwise omit the dependency to $(GCLIB) here.
 main: QuickSort.o $(GCLIB)
 
@@ -67,7 +67,7 @@ myapp: main.o QuickSort.o $(GCLIB)
 
 
 # If, for instance for using certain optimizer flags, you have to
-# supply an explicit rule for compiling a Specware generated C file,
+# supply an explicit rule for compiling a Accord generated C file,
 # you have to make sure to include $(CPPFLAGS) on the command line.
 
 queens.o: queens.c queens.h
