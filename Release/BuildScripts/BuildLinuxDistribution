@@ -1,0 +1,30 @@
+#!/bin/sh
+
+INVOKED_HERE=`dirname $0`
+cd "$INVOKED_HERE"
+HERE=`pwd`
+cd "$HERE"
+
+if [ "$1" == "" ]; then
+  VERBOSE=nil
+else
+  VERBOSE=t
+fi
+
+# assume specware and distribution are sibling directories for any given developer...
+SPECWARE_DIR="$HERE/../.."
+DISTRIBUTION_DIR="$SPECWARE_DIR/../Distribution"
+
+if [ ! -d "$DISTRIBUTION_DIR" ]; then
+  echo "Can't find distribution directory: $DISTRIBUTION_DIR"
+  exit -1
+fi
+
+echo OK OK
+/usr/share/cmulisp/bin/lisp <<EOF
+	(load "BuildLinuxDistribution.lisp")
+	(load-builder "$HERE/" "$DISTRIBUTION_DIR/Scripts/")
+	(prepare_release 4 1 4 "$SPECWARE_DIR/" "$DISTRIBUTION_DIR/Releases/Specware-4-1-4/" "$VERBOSE")
+	(quit)
+EOF
+
