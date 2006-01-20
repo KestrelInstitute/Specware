@@ -20,7 +20,6 @@ if [ ! -d "$DISTRIBUTION_DIR" ]; then
   exit -1
 fi
 
-echo OK OK
 /usr/share/cmulisp/bin/lisp <<EOF
 	(load "BuildLinuxDistribution.lisp")
 	(load-builder "$HERE/" "$DISTRIBUTION_DIR/Scripts/")
