@@ -21,9 +21,9 @@ if [ ! -d "$DISTRIBUTION_DIR" ]; then
 fi
 
 /usr/share/cmulisp/bin/lisp <<EOF
-	(load "BuildLinuxDistribution.lisp")
+	(load "BuildSpecwareDistribution.lisp")
 	(load-builder "$HERE/" "$DISTRIBUTION_DIR/Scripts/")
-	(prepare_release 4 1 4 "$SPECWARE_DIR/" "$DISTRIBUTION_DIR/Releases/Specware-4-1-4/" "$VERBOSE")
+	(prepare_specware_release 4 1 4 "$SPECWARE_DIR/" "$DISTRIBUTION_DIR/Releases/Specware-4-1-4/" "$VERBOSE")
 	(quit)
 EOF
 

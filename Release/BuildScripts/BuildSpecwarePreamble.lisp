@@ -12,7 +12,7 @@
 (defparameter cl-user::Specware-patch-level  "4")
 (defparameter Major-Version-String           "4-1") ; Used in patch detection and about-specware command
 
-(push ':SPECWARE-DISTRIBUTION *features*)
+(push ':SPECWARE-DISTRIBUTION *features*) ; used by parser
 
 ;;; Normally autoloaded, but we want to preload them for a stand-alone world
 #+(and allegro mswindows)
@@ -24,14 +24,20 @@
 #+allegro
 (require "fileutil")
 
-
 ;;; If there is a compiler, then fasl files will have been deleted
 ;;; to avoid version incompatibilities, in which case we need the
 ;;; normal definition of compile-file-if-needed
 ;;; But if there is no compiler, then we should avoid attempting
 ;;; to call it.
-#+(and allegro (not COMPILER))
+#-(or COMPILER NEW-COMPILER)
 (defun compile-file-if-needed (file) file)
+
+;;; Override normal definition because of an apparent Allegro bug in
+;;; generate-application where excl::compile-file-if-needed compiles
+;;; even if not needed
+;;; Comment out for now to see if problem has gone away...
+;;; #+ALLEGRO 
+;;; (defun compile-file-if-needed (file) file)
 
 ;;;Patch .fasl files will be named in the form "patch-4-1-x.fasl" and
 ;;;will probably be copied into a Patches folder in the installation
@@ -78,7 +84,7 @@
       (setq cl-user::Specware-patch-level highest-patch-number)
       (ignore-errors (load highest-patch-file)))))
 
-(push 'load-specware-patch-if-present 
+(push 'load-specware-patch-if-present
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*

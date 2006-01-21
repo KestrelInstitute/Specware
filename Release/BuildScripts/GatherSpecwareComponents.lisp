@@ -35,7 +35,7 @@
 ;;; ================================================================================
 
 ;; "defparameter" means new value is always used
-(defparameter Specware-name                  "Specware4")	; Name of dir and startup files
+(defparameter Specware-name            "Specware4")	; Name of dir and startup files
 
 ;; "defvar" means any pre-existing value is retained
 (defvar cl-user::Specware-version      "4.1")
@@ -65,7 +65,7 @@
 ;;; Toplevel
 ;;; ================================================================================
 
-(defun user::prepare_release (i j k specware-dir release-dir &optional (*verbose* t))
+(defun user::prepare_specware_release (i j k specware-dir release-dir &optional (*verbose* t))
   (ensure-subdirs-exist release-dir)
   (let ((specware-dir (truename specware-dir))
 	(release-dir  (truename release-dir)))
@@ -127,22 +127,22 @@
 	    (mapcar #'(lambda (entry)
 		       (let ((subdirs (first  entry))
 			     (name    (second entry)))
-			 (make-pathname :directory (append (pathname-directory specware-dir) subdirs)
+			 (make-pathname :directory (append (pathname-directory source-dir) subdirs)
 					:name      name
 					:type      "lisp"
 					:defaults  specware-dir)))
-		   '((("Library" "Base"                      "Handwritten" "Lisp") "Integer")
-		     (("Library" "Base"                      "Handwritten" "Lisp") "Nat")
-		     (("Library" "Base"                      "Handwritten" "Lisp") "Char")
-		     (("Library" "Base"                      "Handwritten" "Lisp") "String")
-		     (("Library" "Base"                      "Handwritten" "Lisp") "System")
-		     (("Library" "IO" "Primitive"            "Handwritten" "Lisp") "IO")
-		     (("Library" "Legacy" "Utilities"        "Handwritten" "Lisp") "State")
-		     (("Library" "Legacy" "Utilities"        "Handwritten" "Lisp") "IO")
-		     (("Library" "Legacy" "Utilities"        "Handwritten" "Lisp") "Lisp")
-		     (("Library" "Structures" "Data" "Monad" "Handwritten" "Lisp") "State")
-		     (("Applications"                        "Handwritten" "Lisp") "meta-slang-runtime")
-		     (("Applications" "Specware"             "Handwritten" "Lisp") "ProvideSpecwareRuntime")
+		   '((("Base"                      "Handwritten" "Lisp") "meta-slang-runtime")
+		     (("Base"                      "Handwritten" "Lisp") "ProvideSpecwareRuntime")
+		     (("Base"                      "Handwritten" "Lisp") "Integer")
+		     (("Base"                      "Handwritten" "Lisp") "Nat")
+		     (("Base"                      "Handwritten" "Lisp") "Char")
+		     (("Base"                      "Handwritten" "Lisp") "String")
+		     (("Base"                      "Handwritten" "Lisp") "System")
+		     (("IO" "Primitive"            "Handwritten" "Lisp") "IO")
+		     (("Legacy" "Utilities"        "Handwritten" "Lisp") "State")
+		     (("Legacy" "Utilities"        "Handwritten" "Lisp") "IO")
+		     (("Legacy" "Utilities"        "Handwritten" "Lisp") "Lisp")
+		     (("Structures" "Data" "Monad" "Handwritten" "Lisp") "State")
 		     )))
 	  (temp-file 
 	   (merge-pathnames (ensure-subdir-exists component-dir "Base") 
@@ -527,19 +527,18 @@
 
 (defun prepare_Specware_Generic (specware-dir release-dir)
   (print-minor "Specware" "generic")
-  (let* ((source-dir       (ensure-subdirs-exist specware-dir))
-	 ;;
-	 (target-dir    (ensure-subdirs-exist release-dir "Components" "Specware" "Generic")))
+  (let ((source-dir (ensure-subdirs-exist specware-dir))
+	(target-dir (ensure-subdirs-exist release-dir "Components" "Specware" "Generic")))
 
     ;; Icons
-    (copy-dist-file (make-pathname :name "S"  :type "ico" :defaults (extend-directory source-dir "Release" "Generic"))
-		    (make-pathname :name "S"  :type "ico" :defaults target-dir))
+    (copy-dist-file (make-pathname :name "S" :type "ico" :defaults (extend-directory source-dir "Release" "Generic"))
+		    (make-pathname :name "S" :type "ico" :defaults target-dir))
     
-    (copy-dist-file (make-pathname :name "specware_logo"  :type "xpm" :defaults (extend-directory source-dir "Release" "Generic"))
-		    (make-pathname :name "specware_logo"  :type "xpm" :defaults target-dir))
+    (copy-dist-file (make-pathname :name "specware_logo" :type "xpm" :defaults (extend-directory source-dir "Release" "Generic"))
+		    (make-pathname :name "specware_logo" :type "xpm" :defaults target-dir))
     
     ;; Documentation
-    (let ((source-doc-dir (extend-directory source-dir "UserDoc"))
+    (let ((source-doc-dir (extend-directory     source-dir "UserDoc"))
 	  (target-doc-dir (ensure-subdirs-exist target-dir "Documentation")))
       ;; (format t "~&;;;~%")
       (format t "~&;;;   Getting Documentation ...~%")
@@ -587,14 +586,13 @@
 #+Linux
 (defun prepare_Specware_Linux (specware-dir release-dir)
   (print-minor "Specware" "Linux")
-  (let* ((source-dir             (ensure-subdirs-exist specware-dir))
-	 (source-generic-dir     (ensure-subdirs-exist source-dir "Release" "Generic"))
-	 (source-buildscript-dir (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
-	 (source-linux-dir       (ensure-subdirs-exist source-dir "Release" "Linux"))
-	 (source-linux-cmucl-dir (ensure-subdirs-exist source-dir "Release" "Linux" "CMUCL"))
-	 (source-utils-dir       (ensure-subdirs-exist source-dir "Applications" "Handwritten" "Lisp"))
+  (let* ((source-dir              (ensure-subdirs-exist specware-dir))
+	 (source-buildscripts-dir (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
+	 (source-generic-dir      (ensure-subdirs-exist source-dir "Release" "Generic"))
+	 (source-linux-dir        (ensure-subdirs-exist source-dir "Release" "Linux"))
+	 (source-linux-cmucl-dir  (ensure-subdirs-exist source-dir "Release" "Linux" "CMUCL"))
 	 ;;
-	 (target-dir             (ensure-subdirs-exist release-dir "Components" "Specware" "Linux")))
+	 (target-dir              (ensure-subdirs-exist release-dir "Components" "Specware" "Linux")))
 
     ;; Installation Scripts
 
@@ -604,29 +602,21 @@
 				   target-dir
 
 				   ;; a list of files to load into the new application
-				   (list (merge-pathnames source-buildscript-dir "LoadUtilities.lisp")
-					 (merge-pathnames source-buildscript-dir "BuildSpecwarePreamble.lisp")  
-					 (merge-pathnames source-utils-dir       "MemoryManagement.lisp")
-					 (merge-pathnames source-buildscript-dir "LoadSpecware.lisp")
-					 (merge-pathnames source-generic-dir     "SpecwareLicense.lisp")
-					 (merge-pathnames source-utils-dir       "CompactMemory.lisp"))
+				   (list (merge-pathnames source-buildscripts-dir "LoadUtilities.lisp")
+					 (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")  
+					 (merge-pathnames source-buildscripts-dir "MemoryManagement.lisp")
+					 (merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
+					 (merge-pathnames source-buildscripts-dir "CompactMemory.lisp")
+					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))
 
-				   ;; (let ((specware-build-dir (ensure-subdirs-exist source-dir "Applications" "Specware" "Handwritten" "Lisp")) 
-				   ;; 
-				   ;; (list (merge-pathnames specware-build-dir "BuildPreamble.lisp")
-				   ;; (merge-pathnames specware-build-dir "Specware4.lisp")
-				   ;; (merge-pathnames specware-build-dir "license.lisp")
-				   ;; (merge-pathnames  generic-build-dir "compact-memory.lisp")))
-
-				   ;; A list of files to copy to the target directory
+				   ;; a list of files to copy to the distribution directory
 				   (list (merge-pathnames source-linux-cmucl-dir "Specware")
 					 (merge-pathnames source-linux-cmucl-dir "SpecwareShell")
 					 (merge-pathnames source-linux-cmucl-dir "Find_CMUCL")
 					 (merge-pathnames source-linux-dir       "Find_Specware4")
 					 (merge-pathnames source-linux-dir       "Find_XEmacs")
 					 (merge-pathnames source-generic-dir     "StartSpecwareShell.lisp")
-					 (merge-pathnames source-generic-dir     "SpecwareClickThruLicense.txt")
-					 )
+					 (merge-pathnames source-generic-dir     "SpecwareClickThruLicense.txt"))
 				   t)
     ;; Patches
     (prepare_patch_dir source-dir target-dir)
@@ -642,10 +632,10 @@
 (defun prepare_Specware_Windows (specware-dir release-dir)
   (print-minor "Specware" "Windows")
   (let* ((source-dir                 (ensure-subdirs-exist specware-dir))
+	 (source-buildscripts-dir    (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
 	 (source-generic-dir         (ensure-subdirs-exist source-dir "Release" "Generic"))
 	 (source-windows-dir         (ensure-subdirs-exist source-dir "Release" "Windows"))
 	 (source-windows-allegro-dir (ensure-subdirs-exist source-dir "Release" "Windows" "Allegro"))
-	 (source-utils-dir           (ensure-subdirs-exist source-dir "Applications" "Handwritten" "Lisp"))
 	 ;;
 	 (target-dir                 (ensure-subdirs-exist release-dir "Components" "Specware" "Windows")))
 
@@ -657,22 +647,21 @@
 				   target-dir
 
 				   ;; a list of files to load into the new application
-				   (list (merge-pathnames source-generic-dir         "LoadUtilities.lisp")
-					 (merge-pathnames source-generic-dir         "BuildSpecwarePreamble.lisp")  
-					 (merge-pathnames source-utils-dir           "MemoryManagement.lisp")
-					 (merge-pathnames source-generic-dir         "LoadSpecware.lisp")
-					 (merge-pathnames source-generic-dir         "SpecwareLicense.lisp")
-					 (merge-pathnames source-utils-dir           "CompactMemory.lisp"))
+				   (list (merge-pathnames source-buildscripts-dir "LoadUtilities.lisp")
+					 (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")
+					 (merge-pathnames source-buildscripts-dir "MemoryManagement.lisp")
+					 (merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
+					 (merge-pathnames source-buildscripts-dir "CompactMemory.lisp"))
+					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp")
 
 				   ;; a list of files to copy to the distribution directory
 				   (list (merge-pathnames source-windows-allegro-dir "Specware.cmd")
 					 (merge-pathnames source-windows-allegro-dir "SpecwareShell.cmd")
-					 (merge-pathnames source-windows-allegro-dir "CheckSpecwareVars.cmd")
-					 (merge-pathnames source-windows-allegro-dir "CheckXEmacsVar.cmd")
-					 (merge-pathnames source-windows-allegro-dir "CheckXEmacsVar2.cmd")
+					 (merge-pathnames source-windows-allegro-dir "Find_Specware_App.cmd")
+					 (merge-pathnames source-windows-dir         "Find_Specware4.cmd")
+					 (merge-pathnames source-windows-dir         "Find_XEmacs.cmd")
 					 (merge-pathnames source-generic-dir         "StartSpecwareShell.lisp")
 					 (merge-pathnames source-generic-dir         "SpecwareClickThruLicense.txt"))
-					 
 				   t)
     ;; CVS is perversely hardwired to refuse accept *.exe files.
     ;; They are presumed to be binary files and hence outside it's purview.
@@ -701,7 +690,7 @@
       (format t "~&;;;  -j suppresses directories in names~%")
       (format t "~&;;;  -9 is highest compression level~%")
       (excl::run-shell-command zip-cmd))
-
+    ;; Patches
     (prepare_patch_dir source-dir target-dir)
     ))
 

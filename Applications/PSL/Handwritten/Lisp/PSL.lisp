@@ -141,7 +141,7 @@
 (defvar SpecwareRuntime
   '(
     ;; Functions that are assumed by the MetaSlang to Lisp compiler
-    "Applications/Handwritten/Lisp/meta-slang-runtime"
+    "Library/Base/Handwritten/Lisp/meta-slang-runtime"
 
     ;; XML support -- this provides hooks for reading/writing ad hoc structures
     ;; that are not grounded in normal base specs such as Boolean, Integer, etc.

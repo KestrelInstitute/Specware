@@ -30,7 +30,7 @@
 ;;; normal definition of compile-file-if-needed
 ;;; But if there is no compiler, then we should avoid attempting
 ;;; to call it.
-#-COMPILER
+#-(or COMPILER NEW-COMPILER) ; cmucl has NEW-COMPILER (sigh)
 (defun compile-file-if-needed (file) file)
 
 ;;;Patch .fasl files will be named in the form "patch-4-1-x.fasl" and

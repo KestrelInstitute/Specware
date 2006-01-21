@@ -1,5 +1,3 @@
-(warn "THIS VERSION OF meta-slang-runtime.lisp IS DEPRECATED -- real version now in Specware4/Library/Base/Handwritten/Lisp/")
-
 ;; This file defines general utilities that are necessary to 
 ;; connect EXTENDED-SLANG specs with lisp code.
 ;; The functions here are referenced in code produced by 

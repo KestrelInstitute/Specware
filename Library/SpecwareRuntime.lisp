@@ -39,7 +39,8 @@
       (load (make-pathname :defaults filep :type nil)))))
 
 
-(loop for fil in '("Base/Handwritten/Lisp/Integer"
+(loop for fil in '("Base/Handwritten/Lisp/meta-slang-runtime" ; equality, etc.
+		   "Base/Handwritten/Lisp/Integer"
 		   "Base/Handwritten/Lisp/Nat"
 		   "Base/Handwritten/Lisp/Char"
 		   "Base/Handwritten/Lisp/String"
@@ -48,8 +49,7 @@
 		   "Legacy/Utilities/Handwritten/Lisp/State"
 		   "Legacy/Utilities/Handwritten/Lisp/IO"
 		   "Legacy/Utilities/Handwritten/Lisp/Lisp"
-		   "Structures/Data/Monad/Handwritten/Lisp/State"
-		   "../Applications/Handwritten/Lisp/meta-slang-runtime")
-      do (compile-and-load-lisp-file (format nil "~a/Library/~a" *specware4* fil)))
+		   "Structures/Data/Monad/Handwritten/Lisp/State")
+  do (compile-and-load-lisp-file (format nil "~a/Library/~a" *specware4* fil)))
 
 (provide "SpecwareRuntime")
