@@ -11,19 +11,32 @@ else
   VERBOSE=t
 fi
 
-# assume specware and distribution are sibling directories for any given developer...
-SPECWARE_DIR="$HERE/../.."
-DISTRIBUTION_DIR="$SPECWARE_DIR/../Distribution"
+echo "SPECWARE4    = $SPECWARE4"
+echo "DISTRIBUTION = $DISTRIBUTION"
 
-if [ ! -d "$DISTRIBUTION_DIR" ]; then
-  echo "Can't find distribution directory: $DISTRIBUTION_DIR"
+if [ -z "$SPECWARE4" ]; then
+  echo "SPECWARE4 not defined"
+  exit -1
+fi
+
+if [ -z "$DISTRIBUTION" ]; then
+  echo "DISTRIBUTION not defined"
+  exit -1
+fi
+
+if [ ! -d "$SPECWARE4" ]; then
+  echo "Can't find Specware4 directory: $SPECWARE4"
+  exit -1
+fi
+
+if [ ! -d "$DISTRIBUTION" ]; then
+  echo "Can't find distribution directory: $DISTRIBUTION"
   exit -1
 fi
 
 /usr/share/cmulisp/bin/lisp <<EOF
 	(load "BuildSpecwareDistribution.lisp")
-	(load-builder "$HERE/" "$DISTRIBUTION_DIR/Scripts/")
-	(prepare_specware_release 4 1 4 "$SPECWARE_DIR/" "$DISTRIBUTION_DIR/Releases/Specware-4-1-4/" "$VERBOSE")
+        (build-specware-release 4 1 4 "$SPECWARE4/" "$DISTRIBUTION/" "$VERBOSE")
 	(quit)
 EOF
 
