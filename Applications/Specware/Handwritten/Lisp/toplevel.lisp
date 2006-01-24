@@ -1319,7 +1319,7 @@
 			  (return-from bash nil))))
 	;; ACCORD feature is set by $ACCORD/Scripts/Lisp/BuildPreamble.lisp at build time
 	(format t 
-		(if (member :ACCORD lisp::*features*)
+		(if (member :ACCORD cl::*features*)
 		     "~&Interactive bash shell:~%Type exit to return to Accord Shell.~2%"
 		  "~&Interactive bash shell:~%Type exit to return to Specware Shell.~2%"))
 	(specware::setenv "PS1" 
@@ -1330,7 +1330,7 @@
 	(finish-output)
 	(unwind-protect
 	    (specware::run_cmd-2 "bash" (list "-i"))
-	  (format t (if (member :ACCORD lisp::*features*)
+	  (format t (if (member :ACCORD cl::*features*)
 			"~2&Back in Accord Shell.~2%"
 		      "~2&Back in Specware Shell.~2%"))
 	  )))))
