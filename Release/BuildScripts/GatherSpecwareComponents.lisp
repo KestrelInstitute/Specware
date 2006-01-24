@@ -65,10 +65,9 @@
 ;;; Toplevel
 ;;; ================================================================================
 
-(defun user::prepare_specware_release (i j k specware-dir release-dir &optional (*verbose* t))
-  (ensure-subdirs-exist release-dir)
+(defun user::prepare_specware_release (i j k specware-dir distribution-dir &optional (*verbose* t))
   (let ((specware-dir (truename specware-dir))
-	(release-dir  (truename release-dir)))
+	(release-dir  (truename (ensure-subdirs-exist distribution-dir "Releases" "Specware-4-1-4"))))
     (setq Major-Version-String           (format nil "~D-~D" i j))
     (setq cl-user::Specware-version      (format nil "~D.~D" i j))
     (setq cl-user::Specware-patch-level  (format nil "~D" k))
@@ -186,6 +185,7 @@
 
 #+MSWindows
 (defun prepare_Specware_Lib_Windows (specware-dir release-dir)
+  (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Windows")
   (let* ((lib-dir          (ensure-subdirs-exist release-dir "Components" "Specware_Lib"))
 	 (generic-dir      (ensure-subdirs-exist lib-dir "Generic" "Base" "Handwritten" "Lisp"))
@@ -415,7 +415,8 @@
 		(t
 		 (let* ((gen-dist-file (make-pathname :directory (append (pathname-directory source-clib-dir) 
 									 (cdr (pathname-directory (car x)))) 
-						      :defaults (car x)))
+						      :device    (pathname-device source-clib-dir)
+						      :defaults  (car x)))
 			(source-file (car y))
 			(xn (substitute #\/ #\\ (enough-namestring gen-dist-file source-clib-dir)))
 			(yn (substitute #\/ #\\ (enough-namestring source-file   source-clib-dir))))
@@ -651,8 +652,8 @@
 					 (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")
 					 (merge-pathnames source-buildscripts-dir "MemoryManagement.lisp")
 					 (merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
-					 (merge-pathnames source-buildscripts-dir "CompactMemory.lisp"))
-					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp")
+					 (merge-pathnames source-buildscripts-dir "CompactMemory.lisp")
+					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))
 
 				   ;; a list of files to copy to the distribution directory
 				   (list (merge-pathnames source-windows-allegro-dir "Specware.cmd")
