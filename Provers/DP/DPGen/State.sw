@@ -3,7 +3,7 @@ spec
   % API private all
 
   import /Library/Structures/Data/Maps/SimpleAsAlist
-  import ../IneqSig
+  import InferenceRules
 
   (* This spec defines the state that the proof checker monad uses. Currently
   the state only includes a Memo for caching the results of the check function
@@ -16,8 +16,7 @@ spec
   that the "S" at the end of these names is used to distinguish them from the
   functions with similar names defined in Monad. *)
 
-  type InferenceRule
-  type Info = Ineq * Ineq * InferenceRule
+  type Info = Proof
   type State =
     {ineqInfo: Map.Map(Ineq, Info)}
            % from /Library/Structures/Data/Maps/SimpleAsAlist

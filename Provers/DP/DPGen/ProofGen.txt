@@ -1,0 +1,118 @@
+Proof generation from Fourier Motzkin Decision procedure.
+
+I. Basic inference rules.
+  Instead of using the most primitive inference rules such as
+symmetry, reflexivity, etc, we can use slightly higher inference
+rules that can still be checked easily and with high confidence, but
+from which can also ultimately be generated the lower level rules.
+
+These higher rules roughly correspond to the basic steps in the
+Fourier Motzkin procedure.
+
+Inference rules:
+
+   NZ Chaining:  
+              cx |- p1 >= 0
+              cx |- p2 >= 0
+              p1 = c1*x + ...
+              p2 = c2*x + ...
+              c1 * c2 < 0
+              p = p1*abs(c2) + p2*abs(c1)
+              p \= 0
+             ------------------------------
+              cx |- p >= 0
+
+  NEQ Chaining:
+              cx |- p >= 0
+              cx |- p \= 0
+             ----------------
+              cx |- p > 0
+
+  Integer Narrowing
+              cx |- p > 0
+             --------------
+              cx |- p - 1 >= 0
+
+  
+  Z Chaining:
+              cx |- p1 >= 0
+              cx |- p2 >= 0
+              p1 = c1*x + ...
+              p2 = c2*x + ...
+              c1 * c2 < 0
+              p = p1*abs(c2) + p2*abs(c1)
+              p = 0
+             ------------------------------
+              cx |- p1*abs(c2) = p2*abs(c1)
+
+  ZNEQ Chaining: (Redundant given NEQ Chaining)
+              cx |- p1 >= 0
+              cx |- p2 /= 0
+              p1 = c1*x + ...
+              p2 = c2*x + ...
+              c1 * c2 < 0
+              p = p1*abs(c2) + p2*abs(c1)
+              p = 0
+             ------------------------------
+              cx |- p1*abs(c2) > 0
+
+  Axiom:
+              i in cx
+             ------------------------------
+              cx |- i
+
+  NormGTEQ:
+              cx |- p >= 0
+              cx |- p = p1
+             ------------------------------
+              cx |- p1 >= 0
+
+  Norm:       cx |- i
+              i` = norm(i)
+             ------------------------------
+              cx |- i'
+
+  Contradict:
+              cx |- c >= 0
+              c < 0
+             ------------------------------
+              Bottom
+
+  ContradictGT:
+              cx |- x > x
+             ------------------------------
+              Bottom
+
+
+II. Code Instrumentation
+  The code will be instrumented to generate proofs using the above
+inference rules.  There are two obvious approaches to take:
+
+  1) Modify each function in the code to return proofs that the
+function performs the correct operation.
+
+    This would require extensive modification of the code and
+potentially incur a large runtime overhead.
+
+  2) Generate a proof by analyzing the output of the Fourier Motzkin
+procedure.
+
+   To use this method we need to ensure that the procedure generates
+sufficent information to generate a proof. (i.e. Bottom is not a
+sufficient result)
+
+   Currently the procedure does maintain and return all the
+computed equalities.
+
+One approach is to modify the inequality datastructure in such a way that
+all computed inequalities keep track of their parent inequalities and
+possibly how they were computed (rougly which inference rule was
+used).  From this information we can trace a contradictory inequality
+back to it's initial source inequalities and which steps were used
+along the way.  This should be sufficient inforation to generate a
+proof of the contradiction using the above inference rules.
+
+One main detail that might still need to be worked out is generating
+proofs for inequality normalization.  This arguably can be done as
+part of generating low level proofs from the above higher-level
+inference steps.

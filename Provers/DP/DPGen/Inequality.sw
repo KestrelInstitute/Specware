@@ -192,19 +192,38 @@ Ineq qualifying spec
 	let newP1 = coefTimesPoly(p1Mult, poly1) in
 	let newP2 = coefTimesPoly(p2Mult, poly2) in
 	let newP = normalize(polyPlusPoly(newP1, newP2)) in
-	if zero?(newP) then chainZeroResult(newP1, newP2, comp1, comp2) else
-	let newComp = chainComp(comp1, comp2) in
-	let newIneq = normalize(mkNormIneq(newComp, newP)) in
-	return (Some newIneq)
+	if zero?(newP) 
+	  then 
+	    {
+	     res <- return (chainZeroResult(newP1, newP2, comp1, comp2));
+	     case res of
+	       | Some newIneq ->
+	       {
+		info1 <- getInfo(ineq1);
+		info2 <- getInfo(ineq2);
+		putInfo(newIneq, chainZIR(info1, info2));
+		return (Some newIneq)
+	       }
+	       | _ -> return None
+	      }
+	else
+	  let newComp = chainComp(comp1, comp2) in
+	  let newIneq = normalize(mkNormIneq(newComp, newP)) in
+	  {
+	   info1 <- getInfo(ineq1);
+	   info2 <- getInfo(ineq2);
+	   putInfo(newIneq, chainNZIR(info1, info2));
+	   return (Some newIneq)
+	  }
     else return None
 
-  op chainZeroResult: Poly * Poly * CompPred * CompPred -> M (Option Ineq)
+  op chainZeroResult: Poly * Poly * CompPred * CompPred -> (Option Ineq)
   def chainZeroResult(p1, p2, comp1, comp2) =
-    if comp1 = GtEq && comp2 = GtEq then return (Some (mkIneq(Eq, p1)))
-    else if comp1 = GtEq && comp2 = Neq then return (Some (mkIneq(GtEq, polyMinusOne(p1))))
-    else if comp1 = Neq && comp2 = GtEq then return (Some (mkIneq(GtEq, polyMinusOne(p1))))
-    else if comp1 = Neq && comp2 = Neq then return None
-    else return (Some contradictIneqGt)
+    if comp1 = GtEq && comp2 = GtEq then (Some (mkIneq(Eq, p1)))
+    else if comp1 = GtEq && comp2 = Neq then (Some (mkIneq(GtEq, polyMinusOne(p1))))
+    else if comp1 = Neq && comp2 = GtEq then (Some (mkIneq(GtEq, polyMinusOne(p1))))
+    else if comp1 = Neq && comp2 = Neq then None
+    else (Some contradictIneqGt)
 
   op chainComp: CompPred * CompPred -> CompPred
   def chainComp(comp1, comp2) =

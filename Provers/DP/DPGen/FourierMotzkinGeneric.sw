@@ -87,6 +87,7 @@ FM qualifying spec
 
   op tightenWithNeqInteger: Ineq -> Ineq -> M Ineq
   def tightenWithNeqInteger neq ineq2 =
+    let res =
     let poly1 = poly(neq) in
     let poly2 = poly(ineq2) in
     let comp2 = compPred(ineq2) in
@@ -113,12 +114,25 @@ FM qualifying spec
 	  then let newP = polyMinusOne(poly2) in
 	       return (mkNormIneq(GtEq, newP))
 	else return ineq2
-    else return ineq2
+    else return ineq2 in
+      {
+       info1 <- getInfo(neq);
+       info2 <- getInfo(ineq2);
+       newIneq <- res;
+       putInfo(newIneq, chainNEQIR(info1, info2));
+       res
+       }
 
   op tightenGTInteger: Ineq -> M Ineq
   def tightenGTInteger (ineq) =
     case compPredConstructor(compPred(ineq)) of
-      | Gt -> return (mkNormIneq(GtEq, polyMinusOne(poly(ineq))))
+      | Gt -> 
+      {
+       newIneq <- return (mkNormIneq(GtEq, polyMinusOne(poly(ineq))));
+       info <- getInfo(ineq);
+       putInfo(newIneq, narrowIntIR(info));
+       return newIneq
+       }
       | _ -> return ineq
 
   op ineqsChainAbleP: Ineq * Ineq -> Boolean
@@ -147,22 +161,23 @@ FM qualifying spec
   % Otherwise FMRefute? returns a counterexample in the form
   % of a set of equalities
   def FMRefute?(ineqSet) =
+    let res =
     let _ = writeLine("FM: input:") in
     let _ = writeIneqs(ineqSet) in
-    let ineqSet = normalize(ineqSet) in
+    let ineqSetN = normalize(ineqSet) in
     let _ = writeLine("FM: Norm:") in
-    let _ = writeIneqs(ineqSet) in
-    if member(contradictIneqGt, ineqSet) or
-      member(contradictIneqGtEq, ineqSet) or
-      member(contradictIneqGtZero, ineqSet)      
+    let _ = writeIneqs(ineqSetN) in
+    if member(contradictIneqGt, ineqSetN) or
+      member(contradictIneqGtEq, ineqSetN) or
+      member(contradictIneqGtZero, ineqSetN)      
       then return None
     else 
       {
-       ineqSet <- return (sortIneqSet(ineqSet));
-       ineqSet <- integerPreProcess(ineqSet);
+       ineqSet <- return (sortIneqSet(ineqSetN));
+       ineqSet <- integerPreProcess(ineqSetN);
        _ <- return(writeLine("FM: INTEGER:"));
-       _ <- return(writeIneqs(ineqSet));
-       completeIneqs <- fourierMotzkin(ineqSet);
+       _ <- return(writeIneqs(ineqSetN));
+       completeIneqs <- fourierMotzkin(ineqSetN);
        _ <- return(writeLine("FM: output:"));
        _ <- return(writeIneqs(completeIneqs));
        if member(contradictIneqGt, completeIneqs) or
@@ -175,7 +190,12 @@ FM qualifying spec
 	 _ <- return(writeLine("FMCounter:"));
 	  _ <- return(writeIneqSet(counter));
 	 return (Some counter)
-	}}
+	}} in
+      {
+       mapSeq (fn i -> putInfo(i, axiomIR(i))) ineqSet;
+       res
+      }
+
 
   op writeIneqs: List Ineq -> ()
   def writeIneqs(ineqs) =
