@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage{latexsym}
+\usepackage[text={6.15in,9in},centering]{geometry}
+
+\input{macros}
+
+\begin{document}
+
+\title{The Logic of \MS}
+\author{Alessandro Coglio}
+\maketitle
+
+\begin{center}
+{\Large DRAFT; PLEASE DO NOT DISTRIBUTE}
+\end{center}
+
+\input{intro}
+\input{syntax}
+\input{proofth}
+\input{props}
+\input{models}
+\input{other}
+
+\appendix
+
+\input{proofs}
+
+\section*{Acknowledgments}
+
+Peter Homeier has carefully reviewed this document and has provided very
+useful feedback. He has also formalized the \MS\ logic in the HOL theorem
+prover and is using HOL to prove the (meta) theorems contained in this
+document.
+
+%\bibliographystyle{alpha}
+\bibliographystyle{unsrt}
+\bibliography{bib}
+
+\end{document}

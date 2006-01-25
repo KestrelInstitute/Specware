@@ -1,0 +1,263 @@
+\newcommand{\NOT}{\neg}
+\newcommand{\AND}{\ \wedge\ }
+\newcommand{\OR}{\ \vee\ }
+\newcommand{\IMPLIES}{\ \Rightarrow\ }
+\newcommand{\NIMPLIES}{\ \not\Rightarrow\ }
+\newcommand{\IFF}{\ \Leftrightarrow\ }
+\newcommand{\FORALL}[2]{\forall#1.\ \ #2}
+\newcommand{\FORALLL}[2]{\begin{array}{c}\forall#1.\\#2\end{array}}
+\newcommand{\EXISTS}[2]{\exists#1.\ \ #2}
+\newcommand{\EXISTSL}[2]{\begin{array}{c}\exists#1.\\#2\end{array}}
+\newcommand{\NEXISTS}[2]{\not\!\exists\,#1.\ \ #2}
+\newcommand{\NEXISTSL}[2]{\begin{array}{c}\not\!\exists\,#1.\\#2\end{array}}
+
+\newcommand{\cond}[3]{\left\{\!\!\begin{array}{ll}
+                       #2 & \mbox{if}\quad#1\\
+                       #3 & \mbox{otherwise}
+                      \end{array}\right.}
+\newcommand{\condS}[3]{\left\{\!\!\begin{array}{ll}
+                        #2 & \mbox{if}\quad#1\\\ \\
+                        #3 & \mbox{otherwise}
+                       \end{array}\right.}
+\newcommand{\condL}[3]{\left\{\!\!\begin{array}{l}
+                        #2 \\
+                        \quad\quad\quad\mbox{if}\quad#1\\
+                        #3 \quad\quad\quad \mbox{otherwise}
+                       \end{array}\right.}
+\newcommand{\condLL}[3]{\left\{\!\!\begin{array}{l}
+                         #2 \\
+                         \quad\quad\quad\mbox{if}\quad#1\\
+                         \ \\
+                         #3 \\
+                         \quad\quad\quad\mbox{otherwise}
+                        \end{array}\right.}
+\newcommand{\condII}[5]{\left\{\!\!\begin{array}{ll}
+                         #2 & \mbox{if}\quad#1\\
+                         #4 & \mbox{if}\quad#3\\
+                         #5 & \mbox{otherwise}
+                        \end{array}\right.}
+
+\newcommand{\Setf}[1]{\mathcal{P}_\omega(#1)}
+\newcommand{\Set}[1]{\mathcal{P}(#1)}
+\newcommand{\set}[1]{\widetilde{#1}}
+\newcommand{\setI}[1]{\{#1\}}
+\newcommand{\setII}[2]{\{#1,#2\}}
+\newcommand{\setIII}[3]{\{#1,#2,#3\}}
+\newcommand{\setIV}[4]{\{#1,#2,#3,#4\}}
+\newcommand{\setV}[5]{\{#1,#2,#3,#4,#5\}}
+\newcommand{\setVI}[6]{\{#1,#2,#3,#4,#5,#6\}}
+\newcommand{\setVII}[7]{\{#1,#2,#3,#4,#5,#6,#7\}}
+\newcommand{\setVIII}[8]{\{#1,#2,#3,#4,#5,#6,#7,#8\}}
+\newcommand{\setFT}[2]{\{#1,\ldots,#2\}}
+\newcommand{\setST}[2]{\{#1\mid#2\}}
+\newcommand{\setSTL}[2]{\{\!\!\!\begin{array}[t]{l}#1\mid\\#2\}\end{array}}
+\newcommand{\setSTLL}[3]{\{#1\mid\!\!\begin{array}[t]{l}#2\}#3\end{array}}
+\newcommand{\subseteqf}{\subseteq_\mathrm{f}}
+\newcommand{\setdefII}[4]
+ {\begin{array}{r@{\ }l}#1=&#3\\#2&#4\end{array}}
+\newcommand{\setdefIII}[5]
+ {\begin{array}{r@{\ }l}#1=&#3\\#2&#4\\#2&#5\end{array}}
+\newcommand{\setdefIV}[6]
+ {\begin{array}{r@{\ }l}#1=&#3\\#2&#4\\#2&#5\\#2&#6\end{array}}
+\newcommand{\setdefV}[7]
+ {\begin{array}{r@{\ }l}#1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\end{array}}
+\newcommand{\setdefVI}[8]
+ {\begin{array}{r@{\ }l}
+  #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8
+  \end{array}}
+\newcommand{\setdefVII}[9]
+ {\begin{array}{r@{\ }l}
+  #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9
+  \end{array}}
+%\newcommand{\setdefVIIIoI}[6]
+% {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\}
+%\newcommand{\setdefVIIIoII}[5]
+% {#1&#2\\#1&#3\\#1&#4\\#1&#5 \end{array}}
+\newcommand{\setdefVIIIoI}[9]
+ {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9\\}
+\newcommand{\setdefVIIIoII}[2]
+ {#1&#2\end{array}}
+%\newcommand{\setdefIXoI}[6]
+% {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\}
+%\newcommand{\setdefIXoII}[6]
+% {#1&#2\\#1&#3\\#1&#4\\#1&#5\\#1&#6 \end{array}}
+\newcommand{\setdefIXoI}[9]
+ {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9\\}
+\newcommand{\setdefIXoII}[3]
+ {#1&#2\\#1&#3\end{array}}
+%\newcommand{\setdefXoI}[7]
+% {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\}
+%\newcommand{\setdefXoII}[6]
+% {#1&#2\\#1&#3\\#1&#4\\#1&#5\\#1&#6 \end{array}}
+\newcommand{\setdefXoI}[9]
+ {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9\\}
+\newcommand{\setdefXoII}[4]
+ {#1&#2\\#1&#3\\#1&#4\end{array}}
+\newcommand{\setdefXIoI}[9]
+ {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9\\}
+\newcommand{\setdefXIoII}[5]
+ {#1&#2\\#1&#3\\#1&#4\\#1&#5\end{array}}
+%\newcommand{\setdefXIIoI}[8]
+% {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\}
+%\newcommand{\setdefXIIoII}[7]
+% {#1&#2\\#1&#3\\#1&#4\\#1&#5\\#1&#6\\#1&#7 \end{array}}
+\newcommand{\setdefXIIoI}[9]
+ {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9\\}
+\newcommand{\setdefXIIoII}[6]
+ {#1&#2\\#1&#3\\#1&#4\\#1&#5\\#1&#6\end{array}}
+\newcommand{\setdefXIIIoI}[9]
+ {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9\\}
+\newcommand{\setdefXIIIoII}[7]
+ {#1&#2\\#1&#3\\#1&#4\\#1&#5\\#1&#6\\#1&#7\end{array}}
+\newcommand{\setdefXIVoI}[9]
+ {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9\\}
+\newcommand{\setdefXIVoII}[8]
+ {#1&#2\\#1&#3\\#1&#4\\#1&#5\\#1&#6\\#1&#7\\#1&#8\end{array}}
+\newcommand{\setdefXVoI}[9]
+ {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9\\}
+\newcommand{\setdefXVoII}[9]
+ {#1&#2\\#1&#3\\#1&#4\\#1&#5\\#1&#6\\#1&#7\\#1&#8\\#1&#9\end{array}}
+\newcommand{\setdefXVIoI}[9]
+ {\begin{array}{r@{\ }l} #1=&#3\\#2&#4\\#2&#5\\#2&#6\\#2&#7\\#2&#8\\#2&#9\\}
+\newcommand{\setdefXVIoII}[9]
+ {#1&#2\\#1&#3\\#1&#4\\#1&#5\\#1&#6\\#1&#7\\#1&#8\\#1&#9\\}
+\newcommand{\setdefXVIoIII}[2]
+ {#1&#2\end{array}}
+
+\newcommand{\Seq}[1]{#1^\ast}
+\newcommand{\SeqNE}[1]{#1^+}
+\newcommand{\SeqNR}[1]{#1^{(\ast)}}
+\newcommand{\SeqNER}[1]{#1^{(+)}}
+\newcommand{\seq}[1]{\overline{#1}}
+\newcommand{\seqO}{\epsilon}
+\newcommand{\seqI}[1]{#1}
+\newcommand{\seqII}[2]{#1,#2}
+\newcommand{\seqIII}[3]{#1,#2,#3}
+\newcommand{\seqFT}[2]{#1,\ldots,#2}
+\newcommand{\seqTF}[1]{\ldots,#1,\ldots}
+\newcommand{\seqFIT}[3]{#1,\ldots,#2,\ldots,#3}
+\newcommand{\seqof}[2]{(#2)_{#1}}
+\newcommand{\seqlen}[1]{|#1|}
+\newcommand{\seqdel}[2]{\mathit{del}(#1,#2)}
+\newcommand{\cons}[2]{\seqII{#1}{#2}}
+\newcommand{\snoc}[2]{\seqII{#1}{#2}}
+
+\newcommand{\tupI}[1]{\langle#1\rangle}
+\newcommand{\tupII}[2]{\langle#1,#2\rangle}
+\newcommand{\tupIII}[3]{\langle#1,#2,#3\rangle}
+\newcommand{\tupIV}[4]{\langle#1,#2,#3,#4\rangle}
+\newcommand{\tupV}[5]{\langle#1,#2,#3,#4,#5\rangle}
+\newcommand{\tupVI}[6]{\langle#1,#2,#3,#4,#5,#6\rangle}
+\newcommand{\tupVII}[7]{\langle#1,#2,#3,#4,#5,#6,#7\rangle}
+\newcommand{\tupXoI}[5]{\langle#1,#2,#3,#4,#5,}
+\newcommand{\tupXoII}[5]{#1,#2,#3,#4,#5\rangle}
+\newcommand{\tupXIIIoI}[7]{\langle#1,#2,#3,#4,#5,#6,#7,}
+\newcommand{\tupXIIIoII}[6]{#1,#2,#3,#4,#5,#6\rangle}
+
+\newcommand{\Func}[2]{#1\to#2}
+\newcommand{\Funcinj}[2]{#1\hookrightarrow#2}
+\newcommand{\Funcbij}[2]{#1\leftrightarrow#2}
+\newcommand{\Funcf}[2]{#1\stackrel{\mathrm{f}}{\to}#2}
+\newcommand{\Funcp}[2]{#1\stackrel{\mathrm{p}}{\to}#2}
+\newcommand{\func}[3]{#1:\Func{#2}{#3}}
+\newcommand{\funcinj}[3]{#1:\Funcinj{#2}{#3}}
+\newcommand{\funcbij}[3]{#1:\Funcbij{#2}{#3}}
+\newcommand{\funcp}[3]{#1:\Funcp{#2}{#3}}
+\newcommand{\funcf}[3]{#1:\Funcf{#2}{#3}}
+\newcommand{\funcdep}[4]{#1:\Func{(#3\!:\!#2)}{#4}}
+\newcommand{\funI}[2]{\{#1\mapsto#2\}}
+\newcommand{\fun}[3]{\{#2\mapsto#3\}_{#1}}
+\newcommand{\funchg}[3]{#1[#2\mapsto#3]}
+\newcommand{\funchgFT}[5]{#1\{#2\mapsto#3\}\ldots\{#4\mapsto#5\}}
+\newcommand{\funrestr}[2]{#1\!\downarrow_{#2}}
+\newcommand{\funrestrc}[2]{#1\!\uparrow_{#2}}
+\newcommand{\emptyfun}{\vec{\emptyset}}
+\newcommand{\dom}[1]{\mathcal{D}(#1)}
+\newcommand{\rng}[1]{\mathcal{R}(#1)}
+
+\newcommand{\fmly}[2]{\{#1\}_{#2}}
+
+\newcommand{\unarel}[2]{#1\subseteq#2}
+\newcommand{\binrel}[3]{#1\subseteq#2\times#3}
+\newcommand{\binrelEQ}[2]{#1\subseteq#2\times#2}
+\newcommand{\ternrel}[4]{#1\subseteq#2\times#3\times#4}
+\newcommand{\quatrel}[5]{#1\subseteq#2\times#3\times#4\times#5}
+\newcommand{\pentrel}[6]{#1\subseteq#2\times#3\times#4\times#5\times#6}
+\newcommand{\relIV}[5]{#1\subseteq#2\times#3\times#4\times#5}
+\newcommand{\relV}[6]{#1\subseteq#2\times#3\times#4\times#5\times#6}
+\newcommand{\relVI}[7]{#1\subseteq#2\times#3\times#4\times#5\times#6\times#7}
+\newcommand{\relVII}[8]
+ {#1\subseteq#2\times#3\times#4\times#5\times#6\times#7\times#8}
+\newcommand{\relVIII}[9]
+ {#1\subseteq#2\times#3\times#4\times#5\times#6\times#7\times#8\times#9}
+\newcommand{\relIXoI}[5]
+ {#1\subseteq#2\times#3\times#4\times#5\times}
+\newcommand{\relIXoII}[5]
+ {#1\times#2\times#3\times#4\times#5}
+\newcommand{\relXoI}[6]
+ {#1\subseteq#2\times#3\times#4\times#5\times#6\times}
+\newcommand{\relXoII}[5]
+ {#1\times#2\times#3\times#4\times#5}
+\newcommand{\relXIoI}[6]
+ {#1\subseteq#2\times#3\times#4\times#5\times#6\times}
+\newcommand{\relXIoII}[6]
+ {#1\times#2\times#3\times#4\times#5\times#6}
+\newcommand{\relXIIoI}[7]
+ {#1\subseteq#2\times#3\times#4\times#5\times#6\times#7\times}
+\newcommand{\relXIIoII}[6]
+ {#1\times#2\times#3\times#4\times#5\times#6}
+
+\newenvironment{eqlist}{\begin{array}{l@{\ }c@{\ }l}}{\end{array}}
+\newenvironment{eqlistC}{\begin{array}{r@{\ }c@{\ }l}}{\end{array}} % centered
+\newcommand{\eqitem}[2]{#1&=&#2\\}
+\newcommand{\eqitemC}[3]{#1\IMPLIES#2&=&#3\\}
+\newcommand{\eqitemCC}[4]
+ {\begin{array}[b]{r}#1\AND\\#2\end{array}\!\!\!\IMPLIES#3&=&#4\\}
+\newcommand{\eqitemCL}[3]{#1\IMPLIES\\#2&=&#3\\}
+\newcommand{\eqdots}{&\vdots&\\}
+\newcommand{\iffitem}[2]{#1&\IFF&#2\\}
+\newcommand{\impitem}[2]{#1&\IMPLIES&#2\\}
+
+\newenvironment{lrulelist}{\begin{array}{rcl}}{\end{array}}
+\newcommand{\lruleO}[1]{#1\\}
+\newcommand{\lruleI}[2]{#1&\Leftarrow&#2\\}
+\newcommand{\lruleII}[3]{#1&\Leftarrow&#2\\&\AND&#3\\}
+\newcommand{\lruleIII}[4]{#1&\Leftarrow&#2\\&\AND&#3\\&\AND&#4\\}
+
+\newcommand{\rrule}[3]
+ {\frac{\begin{array}{c}#1\end{array}}{#2}\quad\mbox{(#3)}}
+\newcommand{\rruleO}[2]{\rrule{}{#1}{#2}}
+\newcommand{\rruleI}[3]{\rrule{#1}{#2}{#3}}
+\newcommand{\rruleII}[4]{\rrule{#1\\#2}{#3}{#4}}
+\newcommand{\rruleIII}[5]{\rrule{#1\\#2\\#3}{#4}{#5}}
+\newcommand{\rruleIV}[6]{\rrule{#1\\#2\\#3\\#4}{#5}{#6}}
+\newcommand{\rruleV}[7]{\rrule{#1\\#2\\#3\\#4\\#5}{#6}{#7}}
+\newcommand{\rruleVI}[8]{\rrule{#1\\#2\\#3\\#4\\#5\\#6}{#7}{#8}}
+\newcommand{\rruleVII}[9]{\rrule{#1\\#2\\#3\\#4\\#5\\#6\\#7}{#8}{#9}}
+
+\newcommand{\rruleN}[2]
+ {\frac{\begin{array}{c}#1\end{array}}{#2}}
+\newcommand{\rruleNO}[1]{\rruleN{}{#1}}
+\newcommand{\rruleNI}[2]{\rruleN{#1}{#2}}
+\newcommand{\rruleNII}[3]{\rruleN{#1\\#2}{#3}}
+\newcommand{\rruleNIII}[4]{\rruleN{#1\\#2\\#3}{#4}}
+\newcommand{\rruleNIV}[5]{\rruleN{#1\\#2\\#3\\#4}{#5}}
+\newcommand{\rruleNV}[6]{\rruleN{#1\\#2\\#3\\#4\\#5}{#6}}
+\newcommand{\rruleNVI}[7]{\rruleN{#1\\#2\\#3\\#4\\#5\\#6}{#7}}
+\newcommand{\rruleNVII}[8]{\rruleN{#1\\#2\\#3\\#4\\#5\\#6\\#7}{#8}}
+\newcommand{\rruleNVIII}[9]{\rruleN{#1\\#2\\#3\\#4\\#5\\#6\\#7\\#8}{#9}}
+\newcommand{\rruleNIX}[2]{\rruleN{#1}{#2}}
+\newcommand{\rruleNIXp}[9]{#1\\#2\\#3\\#4\\#5\\#6\\#7\\#8\\#9}
+\newcommand{\rruleNIXc}[1]{#1}
+\newcommand{\rruleNX}[2]{\rruleN{#1}{#2}}
+\newcommand{\rruleNXpI}[9]{#1\\#2\\#3\\#4\\#5\\#6\\#7\\#8\\#9\\}
+\newcommand{\rruleNXpII}[1]{#1}
+\newcommand{\rruleNXc}[1]{#1}
+\newcommand{\rruleNXI}[2]{\rruleN{#1}{#2}}
+\newcommand{\rruleNXIpI}[9]{#1\\#2\\#3\\#4\\#5\\#6\\#7\\#8\\#9\\}
+\newcommand{\rruleNXIpII}[2]{#1\\#2}
+\newcommand{\rruleNXIc}[1]{#1}
+
+\newcommand{\N}{\mathbf{N}} % naturals
+\newcommand{\NP}{\N_+} % positive naturals
+\newcommand{\Z}{\mathbf{Z}} % mathematical integers

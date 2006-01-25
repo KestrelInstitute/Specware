@@ -1,0 +1,1414 @@
+\section{Properties}
+\label{props}
+
+\subsection{Additional notions}
+
+In order to prove certain properties of the syntax and proof theory formalized
+in \secref{syntax} and \secref{proofth}, we introduce some additional notions.
+Those notions have not been introduced earlier because they are not needed to
+define the \MS\ logic, but only to express and prove properties about it.
+
+%We extend $\efvarY$ to context elements and contexts
+%\[
+%\begin{eqlist}
+%\eqitem{\efvar{\tdecO}} {\emptyset}
+%\eqitem{\efvar{\odecO}} {\emptyset}
+%\eqitem{\efvar{\tdefO}} {\emptyset}
+%%\eqitem{\efvar{\odefO}} {\efvar{\expr}}
+%\eqitem{\efvar{\axO}}   {\efvar{\expr}}
+%\eqitem{\efvar{\lemO}}  {\efvar{\expr}}
+%\eqitem{\efvar{\tvdecO}}{\emptyset}
+%\eqitem{\efvar{\vdecO}} {\emptyset}
+%\end{eqlist}
+%\]
+%\[
+%\begin{eqlist}
+%\eqitem{\efvar{\mtcx}}      {\emptyset}
+%\eqitem{\efvar{\cx_1,\cx_2}}{\efvar{\cx_1}\cup\efvar{\cx_2}}
+%\end{eqlist}
+%\]
+
+We extend expression substitution to context elements and contexts
+\[
+\begin{eqlistC}
+\eqitem{\esbsO{(\tdecO)}} {\tdecO}
+\eqitem{\esbsO{(\odecO)}} {\odecO}
+\eqitem{\esbsO{(\tdefO)}} {\tdefO}
+%\eqitem{\esbsO{(\odefO)}} {\odef{\tvarS}{\onam}{\esbsO{\expr}}}
+\eqitem{\esbsO{(\axO)}}   {\ax{\tvarS}{\esbsO{\expr}}}
+\eqitem{\esbsO{(\lemO)}}  {\lem{\tvarS}{\esbsO{\expr}}}
+\eqitem{\esbsO{(\tvdecO)}}{\tvdecO}
+\eqitem{\esbsO{(\vdecO)}} {\vdecO}
+\end{eqlistC}
+\]
+\[
+\begin{eqlistC}
+\eqitem{\esbsO{\mtcx}}        {\mtcx}
+\eqitem{\esbsO{(\cx_1,\cx_2)}}{\esbsO{\cx_1},\esbsO{\cx_2}}
+\end{eqlistC}
+\]
+Note that $\esbsO{(\vdecO)}=\vdecO$ even if $\varI=\var$, because a variable
+declaration ``works'' more or less like a binder (and the $\var$ in $\absO$ is
+unchanged under substitution).
+
+The function $\func{\ftvarY}{\Typ+\Expr+\Cxel+\Cx}{\Setf{\Nam}}$ returns the
+free type variables of a type, expression, or context (element)
+\[
+\begin{eqlist}
+\eqitem{\ftvar{\bool}}  {\emptyset}
+\eqitem{\ftvar{\tvar}}  {\setI{\tvar}}
+\eqitem{\ftvar{\tinstO}}{\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\tarrO}} {\ftvar{\typ_1}\cup\ftvar{\typ_2}}
+\eqitem{\ftvar{\trecO}} {\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\tsumO}} {\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\tsubO}} {\ftvar{\typ}\cup\ftvar{\tspred}}
+\eqitem{\ftvar{\tquotO}}{\ftvar{\typ}\cup\ftvar{\tqpred}}
+\end{eqlist}
+\]
+\[
+\begin{eqlist}
+\eqitem{\ftvar{\var}}    {\emptyset}
+\eqitem{\ftvar{\opO}}    {\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\appO}}   {\ftvar{\expr_1}\cup\ftvar{\expr_2}}
+\eqitem{\ftvar{\absO}}   {\ftvar{\typ}\cup\ftvar{\expr}}
+\eqitem{\ftvar{\eqO}}    {\ftvar{\expr_1}\cup\ftvar{\expr_2}}
+\eqitem{\ftvar{\iifO}}   {\ftvar{\expr_0}\cup
+                          \ftvar{\expr_1}\cup\ftvar{\expr_2}}
+\eqitem{\ftvar{\descopO}}{\ftvar{\typ}}
+\eqitem{\ftvar{\projopO}}{\ftvar{\trecO}}
+\eqitem{\ftvar{\embedO}} {\ftvar{\tsumO}}
+\eqitem{\ftvar{\quotO}}  {\ftvar{\tquotO}}
+\end{eqlist}
+\]
+\[
+\begin{eqlist}
+\eqitem{\ftvar{\tdecO}} {\emptyset}
+\eqitem{\ftvar{\odecO}} {\ftvar{\typ}-\tvarS}
+\eqitem{\ftvar{\tdefO}} {\ftvar{\typ}-\tvarS}
+\eqitem{\ftvar{\axO}}   {\ftvar{\expr}-\tvarS}
+\eqitem{\ftvar{\lemO}}  {\ftvar{\expr}-\tvarS}
+\eqitem{\ftvar{\tvdecO}}{\emptyset}
+\eqitem{\ftvar{\vdecO}} {\ftvar{\typ}}
+\end{eqlist}
+\]
+\[
+\begin{eqlist}
+\eqitem{\ftvar{\mtcx}}      {\emptyset}
+\eqitem{\ftvar{\cx_1,\cx_2}}{\ftvar{\cx_1}\cup\ftvar{\cx_2}}
+\end{eqlist}
+\]
+Note that the type variables that occur in a type or expression are always
+free; the only bound type variables are the $\tvarS$ in context elements.
+
+We extend type substitution to context elements, contexts, and type
+substitution themselves
+\[
+\begin{eqlistC}
+\eqitem{\tsbsO{(\tdecO)}}
+       {\tdecO}
+\eqitem{\tsbsO{(\odecO)}}
+       {\odec{\onam}{\tvarS}{\tsbs{\typ}{\funrestrc{\tsbsmap}{\tvarS}}}}
+\eqitem{\tsbsO{(\tdefO)}}
+       {\tdef{\tnam}{\tvarS}{\tsbs{\typ}{\funrestrc{\tsbsmap}{\tvarS}}}}
+\eqitem{\tsbsO{(\axO)}}
+       {\ax{\tvarS}{\tsbs{\expr}{\funrestrc{\tsbsmap}{\tvarS}}}}
+\eqitem{\tsbsO{(\lemO)}}
+       {\lem{\tvarS}{\tsbs{\expr}{\funrestrc{\tsbsmap}{\tvarS}}}}
+\eqitem{\tsbsO{(\tvdecO)}}
+       {\tvdecO}
+\eqitem{\tsbsO{(\vdecO)}}
+       {\vdec{\var}{\tsbsO{\typ}}}
+\end{eqlistC}
+\]
+\[
+\begin{eqlistC}
+\eqitem{\tsbsO{\mtcx}}        {\mtcx}
+\eqitem{\tsbsO{(\cx_1,\cx_2)}}{\tsbsO{\cx_1},\tsbsO{\cx_2}}
+\end{eqlistC}
+\]
+\[
+\tsbs{\tsbsmap}{\tsbsmap'} =
+\setST{\tupII{\tvar}{\tsbs{\tsbsmap(\tvar)}{\tsbsmap'}}}{\tvar\in\dom{\tsbsmap}}
+\]
+
+The function $\func{\ctvarY}{(\Cxel+\Cx)\times\Nam}{\Setf{\Nam}}$ returns the
+type variables that would be captured if a type variable $\tvarI$ were
+substituted with those type variables in a context (element), i.e.\ all the
+variables bound in the (context) element at the free occurrences of $\tvarI$
+in the context (element)
+\[
+\begin{eqlist}
+\eqitem{\ctvarO{\tdecO}}
+       {\emptyset}
+\eqitem{\ctvarO{\odecO}}
+       {\cond{\tvarI\in\ftvar{\typ}-\tvarS}{\tvarS}{\emptyset}}
+\eqitem{\ctvarO{\tdefO}}
+       {\cond{\tvarI\in\ftvar{\typ}-\tvarS}{\tvarS}{\emptyset}}
+\eqitem{\ctvarO{\axO}}
+       {\cond{\tvarI\in\ftvar{\expr}-\tvarS}{\tvarS}{\emptyset}}
+\eqitem{\ctvarO{\lemO}}
+       {\cond{\tvarI\in\ftvar{\expr}-\tvarS}{\tvarS}{\emptyset}}
+\eqitem{\ctvarO{\tvdecO}}
+       {\emptyset}
+\eqitem{\ctvarO{\vdecO}}
+       {\emptyset}
+\end{eqlist}
+\]
+\[
+\begin{eqlist}
+\eqitem{\ctvarO{\mtcx}}        {\emptyset}
+\eqitem{\ctvarO{(\cx_1,\cx_2)}}{\ctvarO{\cx_1}\cup\ctvarO{\cx_2}}
+\end{eqlist}
+\]
+
+The relation $\binrel{\tsbsokY}{\Cx}{(\Funcp{\Nam}{\Typ})}$ captures the
+condition that the substitution $\tsbsO{\cx}$ causes no free type variables in
+$\cx$ to be captured and does not substitute any type variable declared in
+$\cx$
+\[
+\tsbsok{\cx}{\tsbsmap}
+ \IFF
+(\FORALL{\tvar\in\dom{\tsbsmap}}
+        {\ftvar{\tsbsmap(\tvar)}\cap\ctvar{\cx}{\tvar}=\emptyset})
+ \AND
+\dom{\tsbsmap}\cap\cxtvarO=\emptyset
+\]
+Given $\tvarS\in\SeqNR{\Nam}$ and $\typS\in\Seq{\Typ}$ such that
+$\seqlen{\tvarS}=\seqlen{\typS}$, we may write
+$\tsbsok{\cx}{\setST{\tupII{\tvar_i}{\typ_i}}{1\leq i\leq n}}$ as just
+$\tsbslashok{\cx}{\tvarS}{\typS}$.
+
+
+\subsection{Syntactic properties}
+
+Expression substitution only takes place at the free occurrences of the
+variable that is substituted. Thus, if the variable is not free in the
+expression, substitution causes no change and no variable capture:
+
+\begin{theorem}\label{thm-esbs-not-free}
+\[
+\varI\not\in\efvar{\expr}\IMPLIES
+\cvarvO{\expr}=\emptyset\AND
+\esbsokO{\expr}\AND
+\esbsO{\expr}=\expr
+\]
+\end{theorem}
+
+Since expression substitution only substitutes the free occurrences of the
+variable, the variable itself is not captured at those occurrences:
+
+\begin{theorem}\label{thm-var-not-capt}
+\[
+\varI\not\in\cvarvO{\expr}
+\]
+\end{theorem}
+
+It is always possible to substitute a variable with itself and the
+substitution causes no change:
+
+\begin{theorem}\label{thm-esbs-id}
+\[
+\esbsok{\expr}{\varI}{\varI}\AND
+\esbs{\expr}{\varI}{\varI}=\expr
+\]
+\end{theorem}
+
+The following four theorems say that if a substitution causes no capture in a
+compound expression, it does not cause capture in the component expressions
+either:
+
+\begin{theorem}\label{thm-esbsok-app}
+\[
+\esbsokO{\appO}\IMPLIES\esbsokO{\expr_1}\AND\esbsokO{\expr_2}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-esbsok-eq}
+\[
+\esbsokO{\eqO}\IMPLIES\esbsokO{\expr_1}\AND\esbsokO{\expr_2}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-esbsok-if}
+\[
+\esbsokO{\iifO}\IMPLIES
+\esbsokO{\expr_0}\AND\esbsokO{\expr_1}\AND\esbsokO{\expr_2}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-esbsok-abs}
+\[
+\esbsokO{\absO}\AND\varI\neq\var\IMPLIES\esbsokO{\expr}
+\]
+\end{theorem}
+
+In the last theorem, the condition $\varI\neq\var$ is used in the proof and is
+in fact necessary, because in general
+$\esbsokO{\absO}\NIMPLIES\esbsokO{\expr}$, as shown by the counter-example
+$\varI=\var$, $\expr=\abs{\varII}{\typ}{\var}$, and $\exprI=\varII$.
+
+If we substitute $\varI$ with $\exprI$ in $\expr$, we remove $\varI$ from the
+free variables of $\expr$ and add the free variables of $\exprI$. This is
+actually true only if $\varI$ is free in $\expr$ (otherwise the substitution
+causes no change) and no variable is captured (otherwise the captured
+variables of $\exprI$ would not contribute to the free variables of the result
+of substitution):
+
+\begin{theorem}\label{thm-efvar-of-esbs}
+\[
+\varI\in\efvar{\expr}\AND
+\esbsokO{\expr}\IMPLIES
+\efvar{\esbsO{\expr}}=(\efvar{\expr}-\setI{\varI})\cup\efvar{\exprI}
+\]
+\end{theorem}
+
+If we substitute $\varI$ with an expression $\exprI$ that does not have
+$\varI$ among its free variables, the resulting expression does not have
+$\varI$ among its free variables (provided that the substitution captured no
+variables):
+
+\begin{theorem}\label{thm-var-not-in-esbs-of-var}
+\[
+\esbsokO{\expr}\AND\varI\not\in\efvar{\exprI}\IMPLIES
+\varI\not\in\efvar{\esbsO{\expr}}
+\]
+\end{theorem}
+
+Two expression substitutions commute if their variables do not ``interact'':
+
+\begin{theorem}\label{thm-esbs-comm}
+\[
+\varI\neq\varI'\AND
+\varI\not\in\efvar{\exprI'}\AND
+\varI'\not\in\efvar{\exprI}\IMPLIES
+\esbs{\esbs{\expr}{\varI}{\exprI}}{\varI'}{\exprI'}=
+\esbs{\esbs{\expr}{\varI'}{\exprI'}}{\varI}{\exprI}
+\]
+\end{theorem}
+
+If we substitute first $\varI$ with $\exprI$ and then $\varI$ with $\exprI'$,
+we obtain the same result as directly substituting $\varI$ with
+$\esbs{\exprI}{\varI}{\exprI'}$:
+
+\begin{theorem}\label{thm-esbs-esbs-of-same-var}
+\[
+\esbs{\esbs{\expr}{\varI}{\exprI}}{\varI}{\exprI'}=
+\esbs{\expr}{\varI}{\esbs{\exprI}{\varI}{\exprI'}}
+\]
+\end{theorem}
+
+Variable renaming is idempotent:
+
+\begin{theorem}\label{thm-var-rename-idemp}
+\[
+\esbsren{\esbsren{\expr}}=\esbsren{\expr}
+\]
+\end{theorem}
+
+Substituting $\varII$ with $\exprI$ (such that no capture takes place) and
+then renaming $\varI$ to $\varI'$ is equivalent to substituting $\varII$ with
+the renaming applied to $\exprI$ (which renames the free occurrences of
+$\varI$ in $\exprI$) and then applying the renaming to the result (which
+renames the free occurrences of $\varI$ in the original expression $\expr$):
+
+\begin{theorem}\label{thm-esbs-then-rename}
+\[
+\esbsok{\expr}{\varII}{\exprI}\IMPLIES
+\esbsren{\esbs{\expr}{\varII}{\exprI}}=
+\esbsren{\esbs{\expr}{\varII}{\esbsren{\exprI}}}
+\]
+\end{theorem}
+
+In an expression $\expr$, renaming $\varI$ to $\varI'$ and then back $\varI'$
+to $\varI$ leaves $\expr$ unchanged, provided that $\varI'$ is not captured
+(otherwise the captured occurrences would not be renamed back to $\varI$) and
+does not already occur free in $\expr$ (otherwise we do not obtain $\expr$ at
+the end, because all free occurrences of $\varI'$ disappear when we rename
+$\varI'$ to $\varI$):
+
+\begin{theorem}\label{thm-esbs-inverse}
+\[
+\esbsok{\expr}{\varI}{\varI'}\AND
+\varI'\not\in\efvar{\expr}\IMPLIES
+\esbs{\esbsren{\expr}}{\varI'}{\varI}=\expr
+\]
+\end{theorem}
+
+If we rename a variable $\varI$ to $\varI'$ in an expression then the
+variables captured at the free occurrences of $\varI$ in the original
+expression coincide with those captured at the free occurrences of $\varI'$ in
+the transformed expression (provided that $\varI'$ is not captured in the
+renaming and that $\varI'$ was not already free in the original expression):
+
+\begin{theorem}\label{thm-capt-rename1}
+\[
+\esbsok{\expr}{\varI}{\varI'}\AND
+\varI'\not\in\efvar{\expr}\IMPLIES
+\cvarvO{\expr}=\cvarv{\esbsren{\expr}}{\varI'}
+\]
+\end{theorem}
+
+If we rename a variable $\varI$ to $\varI'$ in an expression then the
+variables captured at the free occurrences of a third variable $\varII$ in the
+original expression coincide with those captured at the free occurrences of
+$\varII$ in the transformed expression (provided that $\varI'$ is not captured
+in the renaming):
+
+\begin{theorem}\label{thm-capt-rename2}
+\[
+\esbsok{\expr}{\varI}{\varI'}\AND
+\varII\neq\varI\AND
+\varII\neq\varI'\IMPLIES
+\cvarv{\expr}{\varII}=\cvarv{\esbsren{\expr}}{\varII}
+\]
+\end{theorem}
+
+Renaming bound variables does not change free variables, provided that the
+renaming causes no capture (not only the substitution
+$\esbs{\expr}{\var}{\var'}$ must cause no capture, but also $\var'$ must not
+occur free in $\expr$, otherwise it would be captured by the top-level
+$\abs{\var'}{\typ}{\ldots}$):
+
+\begin{theorem}\label{thm-alpha-same-free-vars}
+\[
+\var'\not\in\efvar{\expr}\cup\cvarv{\expr}{\var}\IMPLIES
+\efvar{\absO}=\efvar{\abs{\var'}{\typ}{\esbs{\expr}{\var}{\var'}}}
+\]
+\end{theorem}
+
+Type substitution does not change free and captured variables:
+
+\begin{theorem}\label{thm-tsbs-same-free-vars}
+\[
+\efvar{\tsbsO{\expr}}=\efvar{\expr}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-tsbs-same-capt-vars}
+\[
+\cvarvO{\tsbsO{\expr}}=\cvarvO{\expr}
+\]
+\end{theorem}
+
+If we substitute $\varI$ with $\exprI$ in an $\expr$, we add the free type
+variables of $\exprI$ to those of $\expr$ if $\varI$ is free in $\expr$
+(otherwise we add no type variables):
+
+\begin{theorem}\label{thm-ftvar-of-esbs}
+{\rm
+\[
+\ftvar{\esbsO{\expr}}=
+\ftvar{\expr}\cup\cond{\varI\in\efvar{\expr}}{\ftvar{\exprI}}{\emptyset}
+\]
+}
+\end{theorem}
+
+Variable renaming does not change free type variables:
+
+\begin{theorem}\label{thm-rename-same-free-tvars}
+\[
+\ftvar{\esbsren{\expr}}=\ftvar{\expr}
+\]
+\end{theorem}
+
+Applying a type substitution $\tsbsmap$ to the result of a variable
+substitution $\esbsO{\expr}$ is like applying $\tsbsmap$ to $\expr$ and
+$\exprI$ and then performing the variable substitution:
+
+\begin{theorem}\label{thm-tsbs-of-esbs}
+\[
+\tsbsO{\esbsO{\expr}} = \esbs{\tsbsO{\expr}}{\varI}{\tsbsO{\exprI}}
+\]
+\end{theorem}
+
+Variable renaming commutes with type substitution:
+
+\begin{theorem}\label{thm-esbs-tsbs-comm}
+\[
+\tsbsO{\esbsren{\expr}}=\esbsren{\tsbsO{\expr}}
+\]
+\end{theorem}
+
+Expression substitution does not change the type, op, and (type) variable
+declarations in a context, does not change the type definitions in a context,
+and applies to the axioms and lemmas in a context:
+
+\begin{theorem}\label{thm-esbs-cx-decl}
+\[
+\begin{eqlistC}
+\eqitem {\cxtnam{\esbsO{\cx}}} {\cxtnamO}
+\eqitem {\cxonam{\esbsO{\cx}}} {\cxonamO}
+\eqitem {\cxtvar{\esbsO{\cx}}} {\cxtvarO}
+\eqitem {\cxvar {\esbsO{\cx}}} {\cxvarO}
+\iffitem {\tdecO\in\cx}  {\tdecO\in\esbsO{\cx}}
+\iffitem {\odecO\in\cx}  {\odecO\in\esbsO{\cx}}
+\iffitem {\tdefO\in\cx}  {\tdefO\in\esbsO{\cx}}
+%\impitem {\odefO\in\cx}  {\odef{\tvarS}{\onam}{\esbsO{\expr}}\in\esbsO{\cx}}
+\impitem {\axO\in\cx}    {\ax{\tvarS}{\esbsO{\expr}}\in\esbsO{\cx}}
+\impitem {\lemO\in\cx}   {\lem{\tvarS}{\esbsO{\expr}}\in\esbsO{\cx}}
+\iffitem {\tvdecO\in\cx} {\tvdecO\in\esbsO{\cx}}
+\iffitem {\vdecO\in\cx}  {\vdecO\in\esbsO{\cx}}
+\end{eqlistC}
+\]
+\end{theorem}
+
+An empty type substitution causes no change:
+\begin{theorem}\label{thm-tsbs-id}
+\[
+\tOeOc\in\Typ+\Expr+\Cxel+\Cx
+\ \ \IMPLIES\ \
+\tsbs{\tOeOc}{\emptyset}=\tOeOc
+\]
+\end{theorem}
+
+In a type substitution, only the type variables that are free in the type,
+expression, or context (element) matter (i.e.\ we can eliminate the other type
+variables from the domain of the substitution):
+
+\begin{theorem}\label{thm-tsbs-ftvar}
+\[
+\tOeOc\in\Typ+\Expr+\Cxel+\Cx
+\ \ \IMPLIES\ \
+\tsbsO{\tOeOc}=\tsbs{\tOeOc}{\funrestr{\tsbsmap}{\ftvar{\tOeOc}}}
+\]
+\end{theorem}
+
+If none of the type variables substituted by a type substitution appears in
+the type, expression, or context (element) to which the type substitution is
+applied, then the type, expression, or context (element) is unchanged:
+
+\begin{theorem}\label{thm-tsbs-not-free}
+\[
+\tOeOc\in\Typ+\Expr+\Cxel+\Cx
+\ \ \AND\ \
+\dom{\tsbsmap}\cap\ftvar{\tOeOc}=\emptyset
+\ \ \IMPLIES\ \
+\tsbsO{\tOeOc}=\tOeOc
+\]
+\end{theorem}
+
+If we apply a type substitution $\tsbsmap$ to a type or expression $\tOe$, the
+free type variables that are substituted are replaced by the free type
+variables of the types that replace those type variables:
+
+\begin{theorem}\label{thm-ftvar-of-tsbs}
+\[
+\tOe\in\Typ+\Expr
+\ \ \IMPLIES\ \
+\ftvar{\tsbsO{\tOe}}
+\ \ =\ \
+(\ftvar{\tOe}-\dom{\tsbsmap})
+\ \ \cup
+\bigcup_{\tvarI\in\ftvar{\tOe}\cap\dom{\tsbsmap}}\ftvar{\tsbsmap(\tvarI)}
+\]
+\end{theorem}
+
+Applying two type substitutions $\tsbsmap$ and $\tsbsmap'$ one after the other
+to a type or expression is like applying $\tsbs{\tsbsmap}{\tsbsmap'}$,
+provided that $\tsbsmap'$ does not substitute type variables that are free in
+the type or expression but are not in the domain of $\tsbsmap$:
+
+\begin{theorem}\label{thm-tsbs-tsbs}
+\[
+\tOe\in\Typ+\Expr
+\ \ \AND\ \
+(\ftvar{\tOe}-\dom{\tsbsmap})\cap\dom{\tsbsmap'}=\emptyset
+\ \ \IMPLIES\ \
+\tsbs{\tsbs{\tOe}{\tsbsmap}}{\tsbsmap'} =
+\tsbs{\tOe}{\tsbs{\tsbsmap}{\tsbsmap'}}
+\]
+\end{theorem}
+
+Applying a type substitutions $\tsbsmap$ followed by another type substitution
+$\tsbsmap'$ is like applying $\tsbsmap'$ followed by
+$\tsbs{\tsbsmap}{\tsbsmap'}$, under certain conditions:
+
+\begin{theorem}\label{thm-tsbs-tsbs2}
+\[
+\begin{array}{l}
+\tOe\in\Typ+\Expr
+\\
+\dom{\tsbsmap}\cap\dom{\tsbsmap'}=\emptyset
+\\
+(\FORALL{\tvarI\in\ftvar{\tOe}\cap\dom{\tsbsmap'}}
+        {\ftvar{\tsbsmap'(\tvarI)}\cap\dom{\tsbsmap}=\emptyset})
+\\
+\ \ \IMPLIES\\
+\tsbs{\tsbsO{\tOe}}{\tsbsmap'} =
+\tsbs{\tsbs{\tOe}{\tsbsmap'}}{\tsbs{\tsbsmap}{\tsbsmap'}}
+\end{array}
+\]
+\end{theorem}
+
+\subsection{Properties of abbreviations}
+
+The following five theorems show that $\efvarY$,
+% $\opsinY$,
+$\esbsY$, $\cvarvY$, $\tsbsY$, and $\ftvarY$ ``extend'' to the abbreviations
+defined in \secref{syntax} as expected.
+
+\begin{theorem}\label{thm-efvar-abbrev}
+\[
+\begin{eqlist}
+\eqitem{\efvar{\true}}
+       {\emptyset}
+\eqitem{\efvar{\false}}
+       {\emptyset}
+\eqitem{\efvar{\negaop}}
+       {\emptyset}
+\eqitem{\efvar{\conjO}}
+       {\efvar{\expr_1}\cup\efvar{\expr_2}}
+\eqitem{\efvar{\disjO}}
+       {\efvar{\expr_1}\cup\efvar{\expr_2}}
+\eqitem{\efvar{\implO}}
+       {\efvar{\expr_1}\cup\efvar{\expr_2}}
+\eqitem{\efvar{\iiffop}}
+       {\emptyset}
+\eqitem{\efvar{\iiffO}}
+       {\efvar{\expr_1}\cup\efvar{\expr_2}}
+\eqitem{\efvar{\neeqO}}
+       {\efvar{\expr_1}\cup\efvar{\expr_2}}
+\eqitem{\efvar{\descO}}
+       {\efvar{\expr}-\setI{\var}}
+\eqitem{\efvar{\faopO}}
+       {\emptyset}
+\eqitem{\efvar{\faO}}
+       {\efvar{\expr}-\setI{\var}}
+\eqitem{\efvar{\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}}
+       {\efvar{\expr}-\varS}
+\eqitem{\efvar{\fa{\varS}{\typS}{\expr}}}
+       {\efvar{\expr}-\varS}
+\eqitem{\efvar{\exopO}}
+       {\emptyset}
+\eqitem{\efvar{\exO}}
+       {\efvar{\expr}-\setI{\var}}
+\eqitem{\efvar{\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}}
+       {\efvar{\expr}-\varS}
+\eqitem{\efvar{\ex{\varS}{\typS}{\expr}}}
+       {\efvar{\expr}-\varS}
+\eqitem{\efvar{\exIopO}}
+       {\emptyset}
+\eqitem{\efvar{\exIO}}
+       {\efvar{\expr}-\setI{\var}}
+\eqitem{\efvar{\projO}}
+       {\efvar{\expr}}
+\eqitem{\efvar{\rcop}}
+       {\emptyset}
+\eqitem{\efvar{\recO}}
+       {\bigcup_i\efvar{\expr_i}}
+\eqitem{\efvar{\tupleO}}
+       {\bigcup_i\efvar{\expr_i}}
+\end{eqlist}
+\]
+\end{theorem}
+
+%\begin{theorem}\label{thm-opsin-abbrev}
+%\[
+%\begin{eqlist}
+%\eqitem{\opsin{\true}}
+%       {\emptyset}
+%\eqitem{\opsin{\false}}
+%       {\emptyset}
+%\eqitem{\opsin{\negaop}}
+%       {\emptyset}
+%\eqitem{\opsin{\conjO}}
+%       {\opsin{\expr_1}\cup\opsin{\expr_2}}
+%\eqitem{\opsin{\disjO}}
+%       {\opsin{\expr_1}\cup\opsin{\expr_2}}
+%\eqitem{\opsin{\implO}}
+%       {\opsin{\expr_1}\cup\opsin{\expr_2}}
+%\eqitem{\opsin{\iiffop}}
+%       {\emptyset}
+%\eqitem{\opsin{\iiffO}}
+%       {\opsin{\expr_1}\cup\opsin{\expr_2}}
+%\eqitem{\opsin{\neeqO}}
+%       {\opsin{\expr_1}\cup\opsin{\expr_2}}
+%\eqitem{\opsin{\descO}}
+%       {\opsin{\typ}\cup\opsin{\expr}}
+%\eqitem{\opsin{\faopO}}
+%       {\opsin{\typ}}
+%\eqitem{\opsin{\faO}}
+%       {\opsin{\typ}\cup\opsin{\expr}}
+%\eqitem{\opsin{\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}}
+%       {\opsin{\expr}\cup\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\fa{\varS}{\typS}{\expr}}}
+%       {\opsin{\expr}\cup\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\exopO}}
+%       {\opsin{\typ}}
+%\eqitem{\opsin{\exO}}
+%       {\opsin{\typ}\cup\opsin{\expr}}
+%\eqitem{\opsin{\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}}
+%       {\opsin{\expr}\cup\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\ex{\varS}{\typS}{\expr}}}
+%       {\opsin{\expr}\cup\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\exIopO}}
+%       {\opsin{\typ}}
+%\eqitem{\opsin{\exIO}}
+%       {\opsin{\typ}\cup\opsin{\expr}}
+%\eqitem{\opsin{\projO}}
+%       {\opsin{\expr}\cup\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\recopO}}
+%       {\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\rectO}}
+%       {\bigcup_i\opsin{\typ_i}\cup\opsin{\expr_i}}
+%\eqitem{\opsin{\tupleO}}
+%       {\bigcup_i\opsin{\typ_i}\cup\opsin{\expr_i}}
+%\end{eqlist}
+%\]
+%\end{theorem}
+
+\begin{theorem}\label{thm-esbs-abbrev}
+\[
+\begin{eqlistC}
+\eqitem{\esbsO{\true}}
+       {\true}
+\eqitem{\esbsO{\false}}
+       {\false}
+\eqitem{\esbsO{\negaop}}
+       {\negaop}
+\eqitem{\esbsO{(\conjO)}}
+       {\conj{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\eqitem{\esbsO{(\disjO)}}
+       {\disj{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\eqitem{\esbsO{(\implO)}}
+       {\impl{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\eqitem{\esbsO{\iiffop}}
+       {\iiffop}
+\eqitem{\esbsO{(\iiffO)}}
+       {\iiff{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\eqitem{\esbsO{(\neeqO)}}
+       {\neeq{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\eqitem{\esbsO{(\descO)}}
+       {\cond{\varI=\var}{\descO}{\desc{\var}{\typ}{\esbsO{\expr}}}}
+\eqitem{\esbsO{\faopO}}
+       {\faopO}
+\eqitem{\esbsO{(\faO)}}
+       {\cond{\varI=\var}{\faO}{\fa{\var}{\typ}{\esbsO{\expr}}}}
+\eqitem{\esbsO{(\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr})}}
+       {\cond{\varI\in\varS}
+             {\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+             {\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}
+                  {\esbsO{\expr}}}}
+\eqitem{\esbsO{(\fa{\varS}{\typS}{\expr})}}
+       {\cond{\varI\in\varS}
+             {\fa{\varS}{\typS}{\expr}}
+             {\fa{\varS}{\typS}{\esbsO{\expr}}}}
+\eqitem{\esbsO{\exopO}}
+       {\exopO}
+\eqitem{\esbsO{(\exO)}}
+       {\cond{\varI=\var}{\exO}{\ex{\var}{\typ}{\esbsO{\expr}}}}
+\eqitem{\esbsO{(\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr})}}
+       {\cond{\varI\in\varS}
+             {\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+             {\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}
+                  {\esbsO{\expr}}}}
+\eqitem{\esbsO{(\ex{\varS}{\typS}{\expr})}}
+       {\cond{\varI\in\varS}
+             {\ex{\varS}{\typS}{\expr}}
+             {\ex{\varS}{\typS}{\esbsO{\expr}}}}
+\eqitem{\esbsO{\exIopO}}
+       {\exIopO}
+\eqitem{\esbsO{(\exIO)}}
+       {\cond{\varI=\var}{\exIO}{\exI{\var}{\typ}{\esbsO{\expr}}}}
+\eqitem{\esbsO{(\projO)}}
+       {\proj{\esbsO{\expr}}{\fnam}}
+\eqitem{\esbsO{\rcop}}
+       {\rcop}
+\eqitem{\esbsO{\recO}}
+       {\rec{i}{\fnam_i}{\esbsO{\expr_i}}}
+\eqitem{\esbsO{\tupleO}}
+       {\tuple{\seqFT{\esbsO{\expr_1}}{\esbsO{\expr_n}}}}
+\end{eqlistC}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-cvarv-abbrev}
+\[
+\begin{eqlist}
+\eqitem{\cvarvO{\true}}
+       {\emptyset}
+\eqitem{\cvarvO{\false}}
+       {\emptyset}
+\eqitem{\cvarvO{\negaop}}
+       {\emptyset}
+\eqitem{\cvarvO{\conjO}}
+       {\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+\eqitem{\cvarvO{\disjO}}
+       {\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+\eqitem{\cvarvO{\implO}}
+       {\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+\eqitem{\cvarvO{\iiffop}}
+       {\emptyset}
+\eqitem{\cvarvO{\iiffO}}
+       {\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+\eqitem{\cvarvO{\neeqO}}
+       {\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+\eqitem{\cvarvO{\descO}}
+       {\cond{\varI\in\efvar{\expr}-\setI{\var}}
+             {\setI{\var}\cup\cvarvO{\expr}}
+             {\emptyset}}
+\eqitem{\cvarvO{\faopO}}
+       {\emptyset}
+\eqitem{\cvarvO{\faO}}
+       {\cond{\varI\in\efvar{\expr}-\setI{\var}}
+             {\setI{\var}\cup\cvarvO{\expr}}
+             {\emptyset}}
+\eqitem{\cvarvO{\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}}
+       {\cond{\varI\in\efvar{\expr}-\varS}
+             {\varS\cup\cvarvO{\expr}}
+             {\emptyset}}
+\eqitem{\cvarvO{\fa{\varS}{\typS}{\expr}}}
+       {\cond{\varI\in\efvar{\expr}-\varS}
+             {\varS\cup\cvarvO{\expr}}
+             {\emptyset}}
+\eqitem{\cvarvO{\exopO}}
+       {\emptyset}
+\eqitem{\cvarvO{\exO}}
+       {\cond{\varI\in\efvar{\expr}-\setI{\var}}
+             {\setI{\var}\cup\cvarvO{\expr}}
+             {\emptyset}}
+\eqitem{\cvarvO{\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}}
+       {\cond{\varI\in\efvar{\expr}-\varS}
+             {\varS\cup\cvarvO{\expr}}
+             {\emptyset}}
+\eqitem{\cvarvO{\ex{\varS}{\typS}{\expr}}}
+       {\cond{\varI\in\efvar{\expr}-\varS}
+             {\varS\cup\cvarvO{\expr}}
+             {\emptyset}}
+\eqitem{\cvarvO{\exIopO}}
+       {\emptyset}
+\eqitem{\cvarvO{\exIO}}
+       {\cond{\varI\in\efvar{\expr}-\setI{\var}}
+             {\setI{\var}\cup\cvarvO{\expr}}
+             {\emptyset}}
+\eqitem{\cvarvO{\projO}}
+       {\cvarvO{\expr}}
+\eqitem{\cvarvO{\rcop}}
+       {\emptyset}
+\eqitem{\cvarvO{\recO}}
+       {\bigcup_i\cvarvO{\expr_i}}
+\eqitem{\cvarvO{\tupleO}}
+       {\bigcup_i\cvarvO{\expr_i}}
+\end{eqlist}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-tsbs-abbrev}
+\[
+\begin{eqlistC}
+\eqitem{\tsbsO{\true}}
+       {\true}
+\eqitem{\tsbsO{\false}}
+       {\false}
+\eqitem{\tsbsO{\negaop}}
+       {\negaop}
+\eqitem{\tsbsO{(\conjO)}}
+       {\conj{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\eqitem{\tsbsO{(\disjO)}}
+       {\disj{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\eqitem{\tsbsO{(\implO)}}
+       {\impl{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\eqitem{\tsbsO{\iiffop}}
+       {\emptyset}
+\eqitem{\tsbsO{(\iiffO)}}
+       {\iiff{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\eqitem{\tsbsO{(\neeqO)}}
+       {\neeq{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\eqitem{\tsbsO{(\descO)}}
+       {\desc{\var}{\tsbsO{\typ}}{\tsbsO{\expr}}}
+\eqitem{\tsbsO{\faopO}}
+       {\faop{\tsbsO{\typ}}}
+\eqitem{\tsbsO{(\faO)}}
+       {\fa{\var}{\tsbsO{\typ}}{\tsbsO{\expr}}}
+\eqitem{\tsbsO{(\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr})}}
+       {\faS{\seqFT{\bnd{\var_1}{\tsbsO{\typ_1}}}{\bnd{\var_n}{\tsbsO{\typ_n}}}}
+            {\tsbsO{\expr}}}
+\eqitem{\tsbsO{(\fa{\varS}{\typS}{\expr})}}
+       {\fa{\varS}{\tsbsO{\typS}}{\tsbsO{\expr}}}
+\eqitem{\tsbsO{\exopO}}
+       {\exop{\tsbsO{\typ}}}
+\eqitem{\tsbsO{(\exO)}}
+       {\ex{\var}{\tsbsO{\typ}}{\tsbsO{\expr}}}
+\eqitem{\tsbsO{(\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr})}}
+       {\exS{\seqFT{\bnd{\var_1}{\tsbsO{\typ_1}}}{\bnd{\var_n}{\tsbsO{\typ_n}}}}
+            {\tsbsO{\expr}}}
+\eqitem{\tsbsO{(\ex{\varS}{\typS}{\expr})}}
+       {\ex{\varS}{\tsbsO{\typS}}{\tsbsO{\expr}}}
+\eqitem{\tsbsO{\exIopO}}
+       {\exIop{\tsbsO{\typ}}}
+\eqitem{\tsbsO{(\exIO)}}
+       {\exI{\var}{\tsbsO{\typ}}{\tsbsO{\expr}}}
+\eqitem{\tsbsO{(\projO)}}
+       {\proj{\tsbsO{\expr}}{\fnam}}
+\eqitem{\tsbsO{\recopO}}
+       {\recop{\trec{i}{\fnam_i}{\tsbsO{\typ_i}}}}
+\eqitem{\tsbsO{\rectO}}
+       {\rect{i}{\fnam_i}{\tsbsO{\typ_i}}{\tsbsO{\expr_i}}}
+\eqitem{\tsbsO{\tupleO}}
+       {\tuple{\seqFT{\tsbsO{\expr_1}}{\tsbsO{\expr_n}}}}
+\end{eqlistC}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-ftvar-abbrev}
+\[
+\begin{eqlist}
+\eqitem{\ftvar{\true}}
+       {\emptyset}
+\eqitem{\ftvar{\false}}
+       {\emptyset}
+\eqitem{\ftvar{\negaop}}
+       {\emptyset}
+\eqitem{\ftvar{\conjO}}
+       {\ftvar{\expr_1}\cup\ftvar{\expr_2}}
+\eqitem{\ftvar{\disjO}}
+       {\ftvar{\expr_1}\cup\ftvar{\expr_2}}
+\eqitem{\ftvar{\implO}}
+       {\ftvar{\expr_1}\cup\ftvar{\expr_2}}
+\eqitem{\ftvar{\iiffop}}
+       {\emptyset}
+\eqitem{\ftvar{\iiffO}}
+       {\ftvar{\expr_1}\cup\ftvar{\expr_2}}
+\eqitem{\ftvar{\neeqO}}
+       {\ftvar{\expr_1}\cup\ftvar{\expr_2}}
+\eqitem{\ftvar{\descO}}
+       {\ftvar{\typ}\cup\ftvar{\expr}}
+\eqitem{\ftvar{\faopO}}
+       {\ftvar{\typ}}
+\eqitem{\ftvar{\faO}}
+       {\ftvar{\typ}\cup\ftvar{\expr}}
+\eqitem{\ftvar{\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}}
+       {\ftvar{\expr}\cup\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\fa{\varS}{\typS}{\expr}}}
+       {\ftvar{\expr}\cup\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\exopO}}
+       {\ftvar{\typ}}
+\eqitem{\ftvar{\exO}}
+       {\ftvar{\typ}\cup\ftvar{\expr}}
+\eqitem{\ftvar{\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}}
+       {\ftvar{\expr}\cup\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\ex{\varS}{\typS}{\expr}}}
+       {\ftvar{\expr}\cup\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\exIopO}}
+       {\ftvar{\typ}}
+\eqitem{\ftvar{\exIO}}
+       {\ftvar{\typ}\cup\ftvar{\expr}}
+\eqitem{\ftvar{\projO}}
+       {\ftvar{\expr}\cup\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\recopO}}
+       {\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\rectO}}
+       {\bigcup_i(\ftvar{\typ_i}\cup\ftvar{\expr_i})}
+\eqitem{\ftvar{\tupleO}}
+       {\bigcup_i(\ftvar{\typ_i}\cup\ftvar{\expr_i})}
+\end{eqlist}
+\]
+\end{theorem}
+
+\subsection{Proof-theoretical properties}
+
+Any prefix of a well-formed context is itself well-formed:
+
+\begin{theorem}\label{thm-cxprefix}
+\[
+\cxwf{\seqII{\cx_1}{\cx_2}}\ \ \IMPLIES\ \ \cxwf{\cx_1}
+\]
+\end{theorem}
+
+If we derive a judgement with some context, that context is well-formed:
+
+\begin{theorem}\label{thm-cxwf}
+\[
+\jcxdots{\cx}\ \ \IMPLIES\ \ \cxwf{\cx}
+\]
+\end{theorem}
+
+The following four theorems say that well-formed contexts have no duplicate
+types, ops, and (type) variables:
+
+\begin{theorem}\label{thm-cx-uniq-typ}
+\[
+\cxwf{\cx_1,\tdecO,\cx_2}\IMPLIES\tnam\not\in\cxtnam{\cx_1,\cx_2}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-cx-uniq-op}
+\[
+\cxwf{\cx_1,\odecO,\cx_2}\IMPLIES\onam\not\in\cxonam{\cx_1,\cx_2}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-cx-uniq-tvar}
+\[
+\cxwf{\cx_1,\tvdecO,\cx_2}\IMPLIES\tvar\not\in\cxtvar{\cx_1,\cx_2}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-cx-uniq-var}
+\[
+\cxwf{\cx_1,\vdecO,\cx_2}\IMPLIES\var\not\in\cxvar{\cx_1,\cx_2}
+\]
+\end{theorem}
+
+The type of an op declared in a well-formed context is well-formed in the
+prefix of the context that precedes the op, extended with the type variables
+over which the op is polymorphic:
+
+\begin{theorem}\label{thm-op-type-wf}
+\[
+\cxwf{\cx_1,\odecO,\cx_2}\ \ \IMPLIES\ \ 
+\isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}
+\]
+\end{theorem}
+
+A type definition in a well-formed context defines a type previously declared
+in the context with the right arity, and the defining type is well-formed in
+the prefix of the context that precedes the type definition, extended with the
+type variable arguments of the defined type:
+
+\begin{theorem}\label{thm-tdef-wf}
+\[
+\cxwf{\cx_1,\tdefO,\cx_2}
+\ \ \IMPLIES\ \
+\tdec{\tnam}{\seqlen{\tvarS}}\in\cx_1
+\ \ \AND\ \
+\isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}
+\]
+%\begin{array}{rl}
+%\cxwf{\cx_1,\tdefO,\cx_2}
+%\IMPLIES & \tdec{\tnam}{\seqlen{\tvarS}}\in\cx_1 \\
+%\AND     & \isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}
+%\end{array}
+\end{theorem}
+
+An axiom declared in a well-formed context is well-typed (with type $\bool$)
+in the prefix of the context that precedes the axiom, extended with the type
+variables over which the axiom is polymorphic:
+
+\begin{theorem}\label{thm-ax-wt}
+\[
+\cxwf{\cx_1,\axO,\cx_2}\ \ \IMPLIES\ \
+\hasty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}{\bool}
+\]
+\end{theorem}
+
+A lemma declared in a well-formed context is a theorem in the prefix of the
+context that precedes the lemma, extended with the type variables over which
+the lemma is polymorphic:
+
+\begin{theorem}\label{thm-lem-theo}
+\[
+\cxwf{\cx_1,\lemO,\cx_2}\ \ \IMPLIES\ \
+\theo{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}
+\]
+\end{theorem}
+
+The type of a variable declared in a well-formed context is well-formed in the
+prefix of the context that precedes the variable declaration:
+
+\begin{theorem}\label{thm-var-type-wf}
+\[
+\cxwf{\cx_1,\vdecO,\cx_2}\ \ \IMPLIES\ \ \isty{\cx_1}{\typ}
+\]
+\end{theorem}
+
+The domain and range types of a well-formed arrow type are well-formed:
+
+\begin{theorem}\label{thm-tarr-inv}
+\[
+\istyO{\tarrO}\ \ \IMPLIES\ \ \istyO{\typ_1}\ \ \AND\ \ \istyO{\typ_2}
+\]
+\end{theorem}
+
+The predicate of a well-formed restriction or quotient type has no free
+variables:
+
+\begin{theorem}\label{thm-no-free-vars-in-types}
+\[
+\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\istyO{\tsubO}  & \efvar{\tspred}=\emptyset\\
+\istyO{\tquotO} & \efvar{\tqpred}=\emptyset
+\end{array}
+\]
+\end{theorem}
+
+The subtype predicates that appear in (provable) subtype judgements have no
+free variables:
+
+\begin{theorem}\label{thm-subpred-no-free-vars}
+\[
+\issubO{\typ_1}{\tspred}{\typ_2}\IMPLIES\efvar{\tspred}=\emptyset
+\]
+\end{theorem}
+
+All the free variables in a well-typed expression or a theorem are declared in
+the context:
+
+\begin{theorem}\label{thm-free-var-in-cx}
+\[
+\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\hastyO{\expr}{\typ} & \efvar{\expr}\subseteq\cxvarO \\
+\theoO{\expr}        & \efvar{\expr}\subseteq\cxvarO
+\end{array}
+\]
+\end{theorem}
+
+All the free variables in an axiom or lemma in a well-formed context are
+declared before the axiom or lemma:
+
+\begin{theorem}\label{thm-free-var-in-prev-cx}
+\[
+\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\cxwf{\cx_1,\axO, \cx_2} & \efvar{\expr}\subseteq\cxvar{\cx_1} \\
+\cxwf{\cx_1,\lemO,\cx_2} & \efvar{\expr}\subseteq\cxvar{\cx_1}
+\end{array}
+\]
+\end{theorem}
+
+All the free type variables in the types and expressions to the right of a
+provable judgement $\jcxdots{\cx}$ are declared in $\cx$, and all the free
+type variables in a context element of a well-formed context are declared
+before the context element:
+
+\begin{theorem}\label{thm-free-tvar-in-cx}
+\[
+\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\istyO{\typ} &
+ \cxtvarO\supseteq\ftvar{\typ} \\
+\teqO{\typ_1}{\typ_2} &
+ \cxtvarO\supseteq\ftvar{\typ_1}\cup\ftvar{\typ_2} \\
+\issubO{\typ_1}{\tspred}{\typ_2} &
+ \cxtvarO\supseteq\ftvar{\typ_1}\cup\ftvar{\tspred}\cup\ftvar{\typ_2} \\
+\hastyO{\expr}{\typ} &
+ \cxtvarO\supseteq\ftvar{\expr}\cup\ftvar{\typ} \\
+\theoO{\expr} &
+ \cxtvarO\supseteq\ftvar{\expr} \\
+\cxwf{\cx_1,\cxel,\cx_2} &
+ \ftvar{\cxel}\subseteq\cxtvar{\cx_1}
+\end{array}
+\]
+\end{theorem}
+
+The derivation of a judgement does not depend on the choice of the names for
+the variables in the derivation. So, if we replace a variable declared in the
+context of the judgement with a fresh one\footnote{The adjective ``fresh''
+means that the variable does not occur anywhere in the (judgements that
+comprise the) derivation that is under discussion. This notion could be made
+more formal, but it should be sufficiently clear as stated.} and perform the
+substitution in the rest of the judgement accordingly, the judgement is still
+provable:
+
+\begin{theorem}\label{thm-deriv-rename-var}
+\[
+\begin{array}{@{\fresh{\varI'}\ \ \AND\ \ }l@{\ \ \IMPLIES\ \ }l}
+\cxwf{\cxv} &
+ \cxwf{\cxvI} \\
+\isty{\cxv}{\typ} &
+ \isty{\cxvI}{\typ} \\
+\teq{\cxv}{\typ_1}{\typ_2} &
+ \teq{\cxvI}{\typ_1}{\typ_2} \\
+\issub{\cxv}{\typ_1}{\tspred}{\typ_2} &
+ \issub{\cxvI}{\typ_1}{\tspred}{\typ_2} \\
+\hasty{\cxv}{\expr}{\typ} &
+ \hasty{\cxvI}{\esbsren{\expr}}{\typ} \\
+\theo{\cxv}{\expr} &
+ \theo{\cxvI}{\esbsren{\expr}}
+\end{array}
+\]
+\end{theorem}
+
+The \MS\ logic is monotonic, in the sense that anything can be derived in a
+bigger context that can be derived in a smaller context:
+
+\begin{theorem}\label{thm-mono}
+\[
+\begin{array}{@{\cxwf{\cx_1,\cx,\cx_2}\ \ \AND\ \ }l@{\ \ \IMPLIES\ \ }l}
+\isty{\cx_1,\cx_2}{\typ} &
+ \isty{\cx_1,\cx,\cx_2}{\typ} \\
+\teq{\cx_1,\cx_2}{\typ_1}{\typ_2} &
+ \teq{\cx_1,\cx,\cx_2}{\typ_1}{\typ_2} \\
+\issub{\cx_1,\cx_2}{\typ_1}{\tspred}{\typ_2} &
+ \issub{\cx_1,\cx,\cx_2}{\typ_1}{\tspred}{\typ_2} \\
+\hasty{\cx_1,\cx_2}{\expr}{\typ} &
+ \hasty{\cx_1,\cx,\cx_2}{\expr}{\typ} \\
+\theo{\cx_1,\cx_2}{\expr} &
+ \theo{\cx_1,\cx,\cx_2}{\expr}
+\end{array}
+\]
+\end{theorem}
+
+The following theorem says that if we derive a judgement
+$\jcxdots{\cx_1,\tvdec{\tvarIS},\cx_3}$, then we can substitute the $\tvarIS$
+with well-formed types $\typIS$, under certain conditions:
+
+\begin{theorem}\label{thm-tsbs-jdg}
+\[
+\begin{array}{l}
+\FORALL{i}{\isty{\cx_1,\cx_2}{\typI_i}}
+\\
+\tsbslashok{\cx_3}{\tvarIS}{\typIS}
+\\
+\cxwf{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+\\
+\ \ \IMPLIES\\
+\left(
+\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ} &
+\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+     {\tsbslash{\typ}{\tvarIS}{\typIS}} \\
+\teq{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ_1}{\typ_2} &
+\teq{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+    {\tsbslash{\typ_1}{\tvarIS}{\typIS}}
+    {\tsbslash{\typ_2}{\tvarIS}{\typIS}} \\
+\issub{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ_1}{\tspred}{\typ_2} &
+\issub{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+      {\tsbslash{\typ_1}{\tvarIS}{\typIS}}
+      {\tsbslash{\tspred}{\tvarIS}{\typIS}}
+      {\tsbslash{\typ_2}{\tvarIS}{\typIS}} \\
+\hasty{\cx_1,\tvdec{\tvarIS},\cx_3}{\expr}{\typ} &
+\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+      {\tsbslash{\expr}{\tvarIS}{\typIS}}
+      {\tsbslash{\typ}{\tvarIS}{\typIS}} \\
+\theo{\cx_1,\tvdec{\tvarIS},\cx_3}{\expr} &
+\theo{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+     {\tsbslash{\expr}{\tvarIS}{\typIS}}
+\end{array}
+\right)
+\end{array}
+\]
+\end{theorem}
+
+The following theorems prove derived well-typedness rules for the
+abbreviations defined in \secref{syntax}:
+
+\begin{theorem}\label{thm-cxvdecbool}
+{\rm
+\[
+\rruleII
+ {\cxwfO}
+ {\var\not\in\cxvarO}
+ {\cxwf{\snoc{\cx}{\vdec{\var}{\bool}}}}
+ {\Rcxvdecbool}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-axmono}
+{\rm
+\[
+\rruleI
+ {\hastyO{\expr}{\bool}}
+ {\cxwf{\snoc{\cx}{\axM{\expr}}}}
+ {\Rcxaxmono}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-eidbool}
+{\rm
+\[
+\rruleI
+ {\cxwfO}
+ {\hastyO{\abs{\var}{\bool}{\var}}{\tarr{\bool}{\bool}}}
+ {\Reidbool}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-etrue}
+{\rm
+\[
+\rruleI
+ {\cxwfO}
+ {\hastyO{\true}{\bool}}
+ {\Retrue}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-econsttrue}
+{\rm
+\[
+\rruleI
+ {\istyO{\typ}}
+ {\hastyO{\abs{\var}{\typ}{\true}}{\tarr{\typ}{\bool}}}
+ {\Reconsttrue}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-efalse}
+{\rm
+\[
+\rruleI
+ {\cxwfO}
+ {\hastyO{\false}{\bool}}
+ {\Refalse}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-enot}
+{\rm
+\[
+\rruleI
+ {\cxwfO}
+ {\hastyO{\negaop}{\tarr{\bool}{\bool}}}
+ {\Renot}
+\]
+}
+\end{theorem}
+
+In the proof of the previous theorem, we use \ReifO, not \Reif. An attempt to
+use \Reif\ causes a circularity, where in order to prove that $\negaop$ is
+well-typed one has to first prove that $\negaop$ is well-typed. The reader can
+try a backward derivation of
+$\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\iif{\varfx}{\false}{\true}}{\bool}$
+where the first rule applied backwards is \Reif: while the first two premises
+(i.e.\ $\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\varfx}{\bool}$ and
+$\hasty{\snoc{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\axM{\varfx}}}{\false}{\bool}$)
+can be derived with ease, the third premise (i.e.\
+$\hasty{\snoc{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\axM{\nega{\varfx}}}}
+{\true}{\bool}$) requires proving
+$\cxwf{\snoc{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\axM{\nega{\varfx}}}}$ (so that
+we can use \Retrue), which requires proving
+$\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\nega{\varfx}}{\bool}$ (so that we
+can use \Rcxax), which requires proving
+$\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\negaop}{\tarr{\bool}{\bool}}$ (so
+that we can use \Reapp), which causes a circularity. The arguments just given
+do not constitute a formal proof of the necessity of rule \ReifO, but they do
+suggest te existence of such a proof.
+
+\begin{theorem}\label{thm-enega}
+{\rm
+\[
+\rruleI
+ {\hastyO{\expr}{\bool}}
+ {\hastyO{\negaO}{\bool}}
+ {\Renega}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-econj}
+{\rm
+\[
+\rruleII
+ {\hastyO{\expr_1}{\bool}}
+ {\hasty{\snoc{\cx}{\axM{\expr_1}}}{\expr_2}{\bool}}
+ {\hastyO{\conjO}{\bool}}
+ {\Reconj}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-edisj}
+{\rm
+\[
+\rruleII
+ {\hastyO{\expr_1}{\bool}}
+ {\hasty{\snoc{\cx}{\axM{\nega{\expr_1}}}}{\expr_2}{\bool}}
+ {\hastyO{\disjO}{\bool}}
+ {\Redisj}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-eimpl}
+{\rm
+\[
+\rruleII
+ {\hastyO{\expr_1}{\bool}}
+ {\hasty{\snoc{\cx}{\axM{\expr_1}}}{\expr_2}{\bool}}
+ {\hastyO{\implO}{\bool}}
+ {\Reimpl}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-eiff}
+{\rm
+\[
+\rruleI
+ {\cxwfO}
+ {\hastyO{\iiffop}{\tarr{\bool}{\tarr{\bool}{\bool}}}}
+ {\Reiff}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-ecoimpl}
+{\rm
+\[
+\rruleII
+ {\hastyO{\expr_1}{\bool}}
+ {\hastyO{\expr_2}{\bool}}
+ {\hastyO{\iiffO}{\bool}}
+ {\Recoimpl}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-eneq}
+{\rm
+\[
+\rruleII
+ {\hastyO{\expr_1}{\typ}}
+ {\hastyO{\expr_2}{\typ}}
+ {\hastyO{\neeqO}{\bool}}
+ {\Reneq}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-efaop}
+{\rm
+\[
+\rruleI
+ {\istyO{\typ}}
+ {\hastyO{\faopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+ {\Refaop}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-efa}
+{\rm
+\[
+\rruleI
+ {\hasty{\snoc{\cx}{\vdecO}}{\expr}{\bool}}
+ {\hastyO{\faO}{\bool}}
+ {\Refa}
+\]
+}
+\end{theorem}
+
+%\begin{theorem}\label{thm-eexop}
+%{\rm
+%\[
+%\rruleI
+% {\istyO{\typ}}
+% {\hastyO{\exopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+% {\Reexop}
+%\]
+%}
+%\end{theorem}
+
+%\begin{theorem}\label{thm-eex}
+%{\rm
+%\[
+%\rruleI
+% {\hasty{\snoc{\cx}{\vdecO}}{\expr}{\bool}}
+% {\hastyO{\exO}{\bool}}
+% {\Reex}
+%\]
+%}
+%\end{theorem}
+
+%\begin{theorem}
+%{\rm
+%\[
+%\rrule
+%\]
+%}
+%\end{theorem}

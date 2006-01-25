@@ -1,0 +1,903 @@
+\section{Syntax}
+\label{syntax}
+
+\subsection{Names}
+
+We postulate the existence of an infinite set of names
+\[
+\Nam
+\]
+
+%We assume that $\Nam$ contains a distinguished name $\projnam{i}$ for every
+%positive natural $i\in\NP$, such that $\projnam{i}\neq\projnam{j}$ if $i\neq
+%j$ and such that $\Nam-\setST{\projnam{i}}{i\in\NP}$ is still infinite.
+
+\subsection{Types}
+
+We inductively define the set of types as
+\[
+\setdefVIIIoI
+ {\Typ}
+ {+}
+ {\setI{\bool}}
+ {\setST{\tvar}{\tvar\in\Nam}}
+ {\setST{\tinstO}{\tnam\in\Nam\AND\typS\in\Seq{\Typ}}}
+ {\setST{\tarr{\typ_1}{\typ_2}}{\typ_1,\typ_2\in\Typ}}
+ {\setST{\trecFTO}{\fnamS\in\SeqNR{\Nam}\AND\typS\in\Seq{\Typ}}}
+ {\setST{\tsumFTO}{\cnamS\in\SeqNER{\Nam}\AND\typS\in\SeqNE{\Typ}}}
+ {\setST{\tsubO}{\typ\in\Typ\AND\tspred\in\Expr}}
+\setdefVIIIoII
+ {+}
+ {\setST{\tquotO}{\typ\in\Typ\AND\tqpred\in\Expr}}
+\]
+where $\Expr$ is defined later.\footnote{Types depend on expressions, which
+depend on types. Thus, types and expressions are inductively defined together,
+not separately. Their definitions are presented separately only for
+readability.}
+
+Explanation:
+\begin{itemize}
+\item
+There is a type $\bool$ for boolean (i.e.\ truth) values.
+\item
+A name $\tvar$ is a type variable.
+\item
+A type instance $\tinstO$ is obtained by combining a type name $\tnam$ with
+zero or more argument types $\typS$. We may write $\tinst{\tnam}{\seqO}$ as
+just $\tnam$.
+\item
+An arrow type $\tarrO$ consists of a domain $\typ_1$ and a range $\typ_2$.
+\item
+Record types $\trecO$ (resp.\ sum types $\tsumO$) consist of typed fields
+$\fnam_i$ (resp.\ constructors $\cnam_i$). Note that record types may have no
+fields (denoted $\trecmt$), while sum types always have constructors. All the
+fields (resp.\ constructors) of a record (resp.\ sum) type must be distinct
+names. The case of no type $\typ_i$ associated to a constructor $\cnam_i$ in a
+sum type as defined in \cite{lm} is captured by $\typ_i$ being $\trecmt$ in
+the definition above: given a spec as defined in \cite{lm}, one can imagine to
+add $\trecmt$ where a constructor has no type, and add the empty record as
+argument to $\cnam_i$ in expressions and patterns where needed.
+\item
+Restriction types $\tsubO$ and quotient types $\tquotO$ are obtained by
+combining types $\typ$ with expressions $\tspred$ and $\tqpred$ (meant to be
+suitable predicates). Restriction and quotient types create the dependency of
+types on expressions. Restriction types as defined above also capture
+comprehension types as defined in \cite{lm}: as mentioned in \cite{lm}, a
+comprehension type can be turned into a restriction type by re-combining the
+pattern and expression into a lambda expression.
+\end{itemize}
+
+We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\tprodO}
+        {\trec{i}{\projnam{i}}{\typ_i}}
+\end{abblist}
+\]
+where each $\projnam{i}$ is a fixed but unspecified name in $\Nam$ such that
+$\projnam{i}\neq\projnam{j}$ if $i\neq j$. Thus, record types as defined above
+also capture product types as defined in \cite{lm}; the names $\projnam{i}$
+capture the natural literal fields used in \cite{lm}.
+
+\subsection{Expressions}
+
+We inductively define the set of expressions as
+\[
+\setdefXoI
+ {\Expr}
+ {+}
+ {\setST{\var}{\var\in\Nam}}
+ {\setST{\opO}{\onam\in\Nam\AND\typS\in\Seq{\Typ}}}
+ {\setST{\appO}{\expr_1,\expr_2\in\Expr}}
+ {\setST{\absO}{\var\in\Nam\AND\typ\in\Typ\AND\expr\in\Expr}}
+ {\setST{\eqO}{\expr_1,\expr_2\in\Expr}}
+% {\setST{\iifopO}{\typ\in\Typ}}
+ {\setST{\iifO}{\expr_0,\expr_1,\expr_2\in\Expr}}
+ {\setST{\descopO}{\typ\in\Typ}}
+% {\setST{\descO}{\var\in\Nam\AND\typ\in\Typ\AND\expr\in\Expr}}
+\setdefXoII
+ {+}
+ {\setST{\projopO}{\trecO\in\Typ}}
+% {\setST{\projO}{\expr\in\Expr\AND\fnam\in\Nam}}
+ {\setST{\embedO}{\tsumO\in\Typ}}
+ {\setST{\quotO}{\tquotO\in\Typ}}
+\]
+
+Explanation:
+\begin{itemize}
+\item
+A name $\var$ is a variable.
+\item
+An op(eration) instance $\opO$ consists of an op name $\onam$ and zero or more
+types $\typS$ that instantiate the (generally, polymorphic) type of the
+declared op. We may write $\op{\onam}{\seqO}$ as just $\onam$.
+\item
+An application $\appO$ consists of a function $\expr_1$ juxtaposed to an
+argument $\expr_2$.
+\item
+A (lambda) abstraction $\absO$ consists of an argument $\var$ with an explicit
+type $\typ$ and a body $\expr$. Even though lambda expressions as defined in
+\cite{lm} may have branches with patterns, that does not increase
+expressivity: one can imagine to use a fresh variable as argument of the
+abstraction and a case expression (introduced later) on the fresh variable
+with the branches as the body.
+\item
+An equality $\eqO$ consists of a left-hand side $\expr_1$ and a right-hand
+side $\expr_2$.
+\item
+%The conditional operator $\iifopO$ is decorated by a type. It captures
+%if-then-else as defined in \cite{lm}: it operates on a boolean value and two
+%values of type $\typ$, selectively returning one of them. The conditional
+%operator is non-strict. We may write
+%$\app{\app{\app{\iifopO}{\expr_0}}{\expr_1}}{\expr_2}$ as just $\iifO$ when
+%the type is inferrable or irrelevant.
+A conditional $\iifO$ consists of a condition $\expr_0$, a ``then'' branch
+$\expr_1$, and an ``else'' branch $\expr_2$.
+\item
+The description operator $\descopO$ is tagged by a type. It operates on
+predicates over $\typ$ (i.e.\ over values of type $\tarr{\typ}{\bool}$) that
+are satisfied by a unique value of $\typ$, and its result is \emph{the} value
+that satisfies the predicate.
+%A description $\descO$, currently absent from \cite{lm}, consists of a typed
+%variable and a body (like an abstraction). Its informal meaning is the
+%following: $\expr$ must have type $\bool$ and be satisfied by exactly one
+%value of type $\typ$ assigned to $\var$; the result of $\descO$ is that unique
+%value. In other words, $\descO$ is the $\var$ of type $\typ$ that satisfies
+%$\expr$ (we say ``the'' because the value exists and is unique).
+\item
+A projector $\projopO$ is tagged by a record type and by a field of that
+record type. We may write $\projopO$ as just $\pjopO$ when the record type is
+inferrable or irrelevant.
+%A projection $\projO$ consists of an expression and a field.
+\item
+An embedder $\embedO$ is tagged by a sum type and by a constructor of that sum
+type. We may write $\embedO$ as just $\embO$ when the sum type is inferrable
+or irrelevant.
+\item
+A quotienter $\quotO$ is tagged by a quotient type. We may write $\quotO$ as
+just $\quo$ when the quotient type is inferrable or irrelevant.
+%\item
+%Instead of introducing equalities $\eqO$, we could have introduced an equality
+%operator $\eqopO$ to be applied to expressions $\expr_1$ and $\expr_2$
+%(analogously to the abbreviation $\iiffop$, introduced later). However, the
+%type $\typ$ decorating $\eqopO$ (necessary, otherwise the type of $\eqY$ would
+%be unclear) would make it necessary to introduce inference rules that relate
+%equalities of different types, e.g.\ a rule stating that $\eqtO$ implies
+%$\eqt{\typ'}{\expr_1}{\expr_2}$ if $\typ$ is a subtype of $\typ'$. We prefer
+%to avoid these additional rules and use undecorated, ``applied'' equalities.
+\end{itemize}
+
+We introduce the abbreviations (many of which are expressions defined in
+\cite{lm})
+\[
+\begin{abblist}
+\abbitem{\true}
+        {\eq{\abs{\varfx}{\bool}{\varfx}}{\abs{\varfx}{\bool}{\varfx}}}
+\abbitem{\false}
+        {\eq{\abs{\varfx}{\bool}{\varfx}}{\abs{\varfx}{\bool}{\true}}}
+\abbitem{\negaop}
+        {\abs{\varfx}{\bool}{(\iif{\varfx}{\false}{\true})}}
+%\abbitem{\negaO}
+%        {\iif{\expr}{\false}{\true}}
+\abbitem{\conjO}
+        {\iif{\expr_1}{\expr_2}{\false}}
+\abbitem{\disjO}
+        {\iif{\expr_1}{\true}{\expr_2}}
+\abbitem{\implO}
+        {\iif{\expr_1}{\expr_2}{\true}}
+\abbitem{\iiffop}
+        {\abs{\varfx}{\bool}{\abs{\varfx'}{\bool}{(\eq{\varfx}{\varfx'})}}}
+\abbitem{\iiffO}
+        {\app{\app{\iiffop}{\expr_1}}{\expr_2}}
+%\abbiteM{\iiffO}
+%        {\eqO}
+%        {\mbox{$\expr_1$ and $\expr_2$ have type $\bool$}}
+\abbitem{\neeqO}
+        {\nega{(\eqO)}}
+\abbitem{\descO}
+        {\app{\descopO}{(\absO)}}
+\abbitem{\faopO}
+        {\abs{\varfxpred}{\tarr{\typ}{\bool}}
+             {(\eq{\varfxpred}{\abs{\varfx}{\typ}{\true}})}}
+\abbitem{\faO}
+        {\app{\faopO}{(\absO)}}
+%        {\eq{\absO}{\abs{\var}{\typ}{\true}}}
+\abbitem{\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+        {\fa{\var_1}{\typ_1}{\ldots\fa{\var_n}{\typ_n}{\expr}}}
+\abbitem{\fa{\varS}{\typS}{\expr}}
+        {\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+\abbitem{\exopO}
+        {\abs{\varfxpred}{\tarr{\typ}{\bool}}
+             {\nega{(\fa{\varfx}{\typ}{\nega{(\app{\varfxpred}{\varfx})}})}}}
+\abbitem{\exO}
+        {\app{\exopO}{(\absO)}}
+%        {\nega{(\fa{\var}{\typ}{\nega{\expr}})}}
+\abbitem{\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+        {\ex{\var_1}{\typ_1}{\ldots\ex{\var_n}{\typ_n}{\expr}}}
+\abbitem{\ex{\varS}{\typS}{\expr}}
+        {\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+\abbitem{\exIopO}
+        {\abs{\varfxpred}{\tarr{\typ}{\bool}}
+             {(\ex{\varfx}{\typ}
+                  {(\conj{\app{\varfxpred}{\varfx}}
+                         {\fa{\varfx'}{\typ}
+                             {(\impl{\app{\varfxpred}{\varfx'}}
+                                    {\eq{\varfx'}{\varfx}})}})})}}
+\abbitem{\exIO}
+        {\app{\exIopO}{(\absO)}}
+%        {\ex{\var}
+%            {\typ}
+%            {(\conj{\expr}
+%                   {\fa{\var'}{\typ}
+%                       {\impl{\esbs{\expr}{\var}{\var'}}{\eq{\var}{\var'}}}})}}
+%        {\var'\neq\var\AND
+%         \var'\not\in\efvarO\AND
+%         \var'\not\in\cvarv{\expr}{\var}}
+%\abbitem{\absS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+%        {\abs{\var_1}{\typ_1}
+%             {\ldots\abs{\var_n}{\typ_n}{\expr}}}
+%\abbitem{\abs{\varS}{\typS}{\expr}}
+%        {\absS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+\abbitem{\projO}
+        {\app{\pjop{\fnam}}{\expr}}
+\abbitem{\recopO}
+        {\abs{\varfxI{1}}{\typ_1}
+             {\ldots\abs{\varfxI{n}}{\typ_n}
+                        {\desc{\varfx}{\trecO}
+                              {\conjI{i}{(\eq{\proj{\varfx}{\fnam_i}}
+                                             {\varfxI{i}})}}}}}
+\abbitem{\rectFTO}
+        {\app{\app{\recopO}{\expr_1}}{\ldots\;\expr_n}}
+\abbitem{\tuple{\seqFT{\expr_1}{\expr_n}}}
+        {\recFT{\projnam{1}}{\expr_1}{\projnam{n}}{\expr_n}}
+\end{abblist}
+\]
+where $\varfx$, $\varfx'$, $\varfxpred$, and each $\varfxI{i}$ are fixed but
+unspecified names in $\Nam$ such that they are all distinct.
+
+Explanation:
+\begin{itemize}
+\item
+The abbreviations $\true$ and $\false$ stand for logical truth and falsehood,
+respectively.
+%It is intended that infinitely many expressions are abbreviated by $\true$ or
+%$\false$, one for each $\var\in\Nam$. Note that $\abs{\var}{\bool}{\var}$ is
+%the simplest expression that is well-typed in every context, including the
+%empty context (contexts and well-typedness are defined later).
+\item
+The logical connectives for negation, conjunction, disjunction, and
+implication are defined in terms of conditionals.
+\item
+Coimplication is a synonym for equality, but only for booleans.
+\item
+Inequality is negation of equality.
+\item
+Stand-alone quantifiers are higher-order functions, but they can be written in
+binder form. Also the description operator can be written in binder form. Note
+that both $\faS{\seqO}{\expr}$ and $\exS{\seqO}{\expr}$ stand for $\expr$.
+\item
+A dotted projection $\projO$ abbreviates an applied projection whose record
+type is implicit; this is why no record type appears in $\projO$.
+\item
+A record constructor $\recopO$ is tagged by a record type and is defined by
+means of a description; records are characterized by their components. We may
+write $\recopO$ as just $\rcop$ when the record type is inferrable or
+irrelevant. Note that $\recop{\trecmt}$ denotes the empty record (a
+conjunction $\conjI{i}{\expr_i}$ consisting of no conjuncts, i.e.\ such that
+$n=0$, stands for $\true$).  The notation $\rectO$ is a more readable version
+of an applied record constructor. We may write $\rectO$ as just $\recO$ when
+the component types are inferrable or irrelevant.
+%A record $\recO$ abbreviates infinitely many expressions as well, one for each
+%$\var\in\Nam$ and $\typS\in\Seq{\Typ}$ satisfying the given restrictions (as
+%defined later, an expression may have more than one type). This abbreviation
+%makes use of a description because a record is characterized by its
+%components.
+\item
+A tuple $\tupleO$ captures tuple displays as defined in \cite{lm}. It
+abbreviates a record construction of a product type whose component types are
+implicit; this is why no component types appear in $\tupleO$.
+\end{itemize}
+
+%With the exception of unique existentials, all the above abbreviations
+%correspond to expressions defined in \cite{lm}. As shown later, all the other
+%constructs defined in \cite{lm}, including patterns, are captured as
+%abbreviations of the expressions introduced above.
+
+The function $\func{\efvarY}{\Expr}{\Setf{\Nam}}$ returns the free variables
+of an expression
+\[
+\begin{eqlist}
+\eqitem{\efvar{\var}}        {\setI{\var}}
+\eqitem{\efvar{\opO}}        {\emptyset}
+\eqitem{\efvar{\appO}}       {\efvar{\expr_1}\cup\efvar{\expr_2}}
+\eqitem{\efvar{\absO}}       {\efvar{\expr}-\setI{\var}}
+\eqitem{\efvar{\eqO}}        {\efvar{\expr_1}\cup\efvar{\expr_2}}
+\eqitem{\efvar{\iifO}}       {\efvar{\expr_0}\cup
+                              \efvar{\expr_1}\cup\efvar{\expr_2}}
+\eqitem{\efvar{\descopO}}    {\emptyset}
+\eqitem{\efvar{\pjop{\fnam}}}{\emptyset}
+\eqitem{\efvar{\emb{\cnam}}} {\emptyset}
+\eqitem{\efvar{\quo}}        {\emptyset}
+\end{eqlist}
+\]
+Note that we do not consider the free variables in expressions contained in
+types contained in expressions (e.g.\ we do not consider the free variables in
+$\tqpred$ as part of the free variables of $\quotO$). The reason is that, as
+defined later, all the expressions contained in well-formed types have no free
+variables.
+%The free variables of the quotient type predicate $\tqpred$ do not contribute
+%to the free variables of $\quotO$ because, as defined later, in well-formed
+%types and well-typed expressions those predicates have no free variables.
+
+\subsection{Contexts}
+
+We define the set of context elements as
+\[
+\setdefVII
+ {\Cxel}
+ {+}
+ {\setST{\tdecO}{\tnam\in\Nam\AND n\in\N}}
+ {\setST{\odecO}{\onam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
+ {\setST{\tdefO}{\tnam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
+% {\setST{\odefO}{\tvarS\in\SeqNR{\Nam}\AND\onam\in\Nam\AND\expr\in\Expr}}
+ {\setST{\axO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
+ {\setST{\lemO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
+ {\setST{\tvdecO}{\tvar\in\Nam}}
+ {\setST{\vdecO}{\var\in\Nam\AND\typ\in\Typ}}
+\]
+
+Explanation:
+\begin{itemize}
+\item
+A type declaration $\tdecO$ introduces a type name with an associated arity.
+The type variables of a type declaration as defined in \cite{lm} only serve to
+determine an arity and are otherwise irrelevant; thus, in the above definition
+we directly use the arity without type variables.
+\item
+An op(eration) declaration $\odecO$ introduces an op name with an associated
+type, polymorphic in the explicit type variables.
+\item
+A type definition $\tdefO$ assigns a type to a maximally generic type instance
+of some type name (i.e.\ an instance with distinct type variables as arguments
+to the type name). A combined type declaration and definition as defined in
+\cite{lm} is captured by a type declaration as defined above immediately
+followed by a type definition as defined above.
+%\item
+%An op definition $\odefO$ assigns an expression to an op name, polymorphic in
+%the explicit type variables. A combined op declaration and definition as
+%defined in \cite{lm} is captured by an op declaration as defined above
+%immediately followed by an op definition as defined above.
+\item
+An axiom $\axO$ introduces an expression (with type $\bool$, as defined
+later), polymorphic in the explicit type variables. We may write
+$\ax{\seqO}{\expr}$ as just $\axM{\expr}$.
+\item
+A lemma $\lemO$ captures a theorem or conjecture as defined in \cite{lm}. We
+may write $\lem{\seqO}{\expr}$ as just $\lemM{\expr}$.
+\item
+A type variable declaration $\tvdecO$ introduces a type variable. We may write
+$\seqFT{\tvdec{\tvar_1}}{\tvdec{\tvar_n}}$ as just
+$\tvdec{\seqFT{\tvar_1}{\tvar_n}}$.
+\item
+A variable declaration $\vdecO$ introduces a variable with a type.
+\end{itemize}
+
+We define the set of contexts as
+\[
+\Cx = \Seq{\Cxel}
+\]
+In other words, a context is a finite sequence of context elements.
+
+The function $\func{\cxtnamY}{\Cx}{\Setf{\Nam}}$ returns the type names
+declared in a context
+\[
+\begin{eqlist}
+\eqitem{\cxtnam{\mtcx}}
+       {\emptyset}
+\eqitem{\cxtnam{\cons{\cxel}{\cx}}}
+       {\cond{\cxel=\tdecO}
+             {\cxtnam{\cx}\cup\setI{\tnam}}
+             {\cxtnam{\cx}}}
+%\eqitem{\cxtnam{\cons{\tdecO}{\cx}}} {\cxtnam{\cx}\cup\setI{\tnam}}
+%\eqitem{\cxtnam{\cons{\odecO}{\cx}}} {\cxtnam{\cx}}
+%\eqitem{\cxtnam{\cons{\tdefO}{\cx}}} {\cxtnam{\cx}}
+%\eqitem{\cxtnam{\cons{\odefO}{\cx}}} {\cxtnam{\cx}}
+%\eqitem{\cxtnam{\cons{\axO}{\cx}}}   {\cxtnam{\cx}}
+%\eqitem{\cxtnam{\cons{\tvdecO}{\cx}}}{\cxtnam{\cx}}
+%\eqitem{\cxtnam{\cons{\vdecO}{\cx}}} {\cxtnam{\cx}}
+\end{eqlist}
+\]
+
+The function $\func{\cxonamY}{\Cx}{\Setf{\Nam}}$ returns the op names declared
+in a context
+\[
+\begin{eqlist}
+\eqitem{\cxonam{\mtcx}}
+       {\emptyset}
+\eqitem{\cxonam{\cons{\cxel}{\cx}}}
+       {\cond{\cxel=\odecO}
+             {\cxonam{\cx}\cup\setI{\onam}}
+             {\cxonam{\cx}}}
+%\eqitem{\cxonam{\cons{\tdecO}{\cx}}} {\cxonam{\cx}}
+%\eqitem{\cxonam{\cons{\odecO}{\cx}}} {\cxonam{\cx}\cup\setI{\onam}}
+%\eqitem{\cxonam{\cons{\tdefO}{\cx}}} {\cxonam{\cx}}
+%\eqitem{\cxonam{\cons{\odefO}{\cx}}} {\cxonam{\cx}}
+%\eqitem{\cxonam{\cons{\axO}{\cx}}}   {\cxonam{\cx}}
+%\eqitem{\cxonam{\cons{\tvdecO}{\cx}}}{\cxonam{\cx}}
+%\eqitem{\cxonam{\cons{\vdecO}{\cx}}} {\cxonam{\cx}}
+\end{eqlist}
+\]
+
+The function $\func{\cxtvarY}{\Cx}{\Setf{\Nam}}$ returns the type variables
+declared in a context
+\[
+\begin{eqlist}
+\eqitem{\cxtvar{\mtcx}}
+       {\emptyset}
+\eqitem{\cxtvar{\cons{\cxel}{\cx}}}
+       {\cond{\cxel=\tvdecO}
+             {\cxtvar{\cx}\cup\setI{\tvar}}
+             {\cxtvar{\cx}}}
+%\eqitem{\cxtvar{\cons{\tdecO}{\cx}}} {\cxtvar{\cx}}
+%\eqitem{\cxtvar{\cons{\odecO}{\cx}}} {\cxtvar{\cx}}
+%\eqitem{\cxtvar{\cons{\tdefO}{\cx}}} {\cxtvar{\cx}}
+%\eqitem{\cxtvar{\cons{\odefO}{\cx}}} {\cxtvar{\cx}}
+%\eqitem{\cxtvar{\cons{\axO}{\cx}}}   {\cxtvar{\cx}}
+%\eqitem{\cxtvar{\cons{\tvdecO}{\cx}}}{\cxtvar{\cx}\cup\setI{\tvar}}
+%\eqitem{\cxtvar{\cons{\vdecO}{\cx}}} {\cxtvar{\cx}}
+\end{eqlist}
+\]
+
+The function $\func{\cxvarY}{\Cx}{\Setf{\Nam}}$ returns the variables declared
+in a context
+\[
+\begin{eqlist}
+\eqitem{\cxvar{\mtcx}}
+       {\emptyset}
+\eqitem{\cxvar{\cons{\cxel}{\cx}}}
+       {\cond{\cxel=\vdecO}
+             {\cxvar{\cx}\cup\setI{\var}}
+             {\cxvar{\cx}}}
+%\eqitem{\cxvar{\cons{\tdecO}{\cx}}} {\cxvar{\cx}}
+%\eqitem{\cxvar{\cons{\odecO}{\cx}}} {\cxvar{\cx}}
+%\eqitem{\cxvar{\cons{\tdefO}{\cx}}} {\cxvar{\cx}}
+%\eqitem{\cxvar{\cons{\odefO}{\cx}}} {\cxvar{\cx}}
+%\eqitem{\cxvar{\cons{\axO}{\cx}}}   {\cxvar{\cx}}
+%\eqitem{\cxvar{\cons{\tvdecO}{\cx}}}{\cxvar{\cx}}
+%\eqitem{\cxvar{\cons{\vdecO}{\cx}}} {\cxvar{\cx}\cup\setI{\var}}
+\end{eqlist}
+\]
+
+\subsection{Specs}
+
+We define the set of spec(ification)s as
+\[
+\Spec = \setST{\cx\in\Cx}{\cxtvar{\cx}=\cxvar{\cx}=\emptyset}
+\]
+In other words, a spec is a context without type variable declarations and
+variable declarations.
+
+%\subsection{Occurring ops}
+
+%The function $\func{\opsinY}{\Typ+\Expr}{\Setf{\Nam}}$ returns the op names
+%occurring in a type or expression
+%\[
+%\begin{eqlist}
+%\eqitem{\opsin{\bool}}  {\emptyset}
+%\eqitem{\opsin{\tvar}}  {\emptyset}
+%\eqitem{\opsin{\tinstO}}{\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\tarrO}} {\opsin{\typ_1}\cup\opsin{\typ_2}}
+%\eqitem{\opsin{\trecO}} {\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\tsumO}} {\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\tsubO}} {\opsin{\typ}\cup\opsin{\tspred}}
+%\eqitem{\opsin{\tquotO}}{\opsin{\typ}\cup\opsin{\tqpred}}
+%\end{eqlist}
+%\]
+%\[
+%\begin{eqlist}
+%\eqitem{\opsin{\var}}    {\emptyset}
+%\eqitem{\opsin{\opO}}    {\setI{\onam}\cup\bigcup_i\opsin{\typ_i}}
+%\eqitem{\opsin{\appO}}   {\opsin{\expr_1}\cup\opsin{\expr_2}}
+%\eqitem{\opsin{\absO}}   {\opsin{\typ}\cup\opsin{\expr}}
+%\eqitem{\opsin{\eqO}}    {\opsin{\expr_1}\cup\opsin{\expr_2}}
+%\eqitem{\opsin{\iifO}}   {\opsin{\expr_0}\cup\opsin{\expr_1}\cup\opsin{\expr_2}}
+%\eqitem{\opsin{\descopO}}{\opsin{\typ}}
+%\eqitem{\opsin{\projopO}}{\opsin{\trecO}}
+%\eqitem{\opsin{\embedO}} {\opsin{\tsumO}}
+%\eqitem{\opsin{\quotO}}  {\opsin{\tquotO}}
+%\end{eqlist}
+%\]
+
+\subsection{Substitutions}
+
+\subsubsection{Type substitutions}
+
+The function
+$\func{\tsbsY}{(\Typ+\Expr)\times(\Funcp{\Nam}{\Typ})}{\Typ+\Expr}$
+substitutes each type variable $\tvar\in\dom{\tsbsmap}$, where
+$\funcp{\tsbsmap}{\Nam}{\Typ}$, with the type $\tsbsmap(\tvar)$ in a type or
+expression $x$ (written $\tsbsO{x}$)
+\[
+\begin{eqlistC}
+\eqitem{\tsbsO{\bool}}
+       {\bool}
+\eqitem{\tsbsO{\tvar}}
+       {\cond{\tvar\in\dom{\tsbsmap}}{\tsbsmap(\tvar)}{\tvar}}
+\eqitem{\tsbsO{\tinstO}}
+       {\tinst{\tnam}{\tsbsO{\typS}}}
+\eqitem{\tsbsO{(\tarrO)}}
+       {\tarr{\tsbsO{\typ_1}}{\tsbsO{\typ_2}}}
+\eqitem{\tsbsO{(\trecO)}}
+       {\trec{i}{\fnam_i}{\tsbsO{\typ_i}}}
+\eqitem{\tsbsO{(\tsumO)}}
+       {\tsum{i}{\cnam_i}{\tsbsO{\typ_i}}}
+\eqitem{\tsbsO{(\tsubO)}}
+       {\tsub{\tsbsO{\typ}}{\tsbsO{\tspred}}}
+\eqitem{\tsbsO{(\tquotO)}}
+       {\tquot{\tsbsO{\typ}}{\tsbsO{\tqpred}}}
+\end{eqlistC}
+\]
+\[
+\begin{eqlistC}
+\eqitem{\tsbsO{\var}}
+       {\var}
+\eqitem{\tsbsO{\opO}}
+       {\op{\onam}{\tsbsO{\typS}}}
+\eqitem{\tsbsO{(\appO)}}
+       {\app{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\eqitem{\tsbsO{(\absO)}}
+       {\abs{\var}{\tsbsO{\typ}}{\tsbsO{\expr}}}
+\eqitem{\tsbsO{(\eqO)}}
+       {\eq{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\eqitem{\tsbsO{(\iifO)}}
+       {\iif{\tsbsO{\expr_0}}{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\eqitem{\tsbsO{(\descopO)}}
+       {\descop{\tsbsO{\typ}}}
+\eqitem{\tsbsO{\left(\projopO\right)}}
+       {\projop{\tsbsO{\left(\trecO\right)}}{\fnam_j}}
+\eqitem{\tsbsO{\left(\embedO\right)}}
+       {\embed{\tsbsO{\left(\tsumO\right)}}{\cnam_j}}
+\eqitem{\tsbsO{\left(\quotO\right)}}
+       {\quot{\tsbsO{(\tquotO)}}}
+\end{eqlistC}
+\]
+where of course
+$\tsbsO{(\seqFT{\typ_1}{\typ_n})}=\seqFT{\tsbsO{\typ_1}}{\tsbsO{\typ_n}}$. Given
+$\tvarS\in\SeqNR{\Nam}$ and $\typS\in\Seq{\Typ}$ such that
+$\seqlen{\tvarS}=\seqlen{\typS}$, we may write
+$\tsbs{\typ}{\setST{\tupII{\tvar_i}{\typ_i}}{1\leq i\leq n}}$ as just
+$\tsbslash{\typ}{\tvarS}{\typS}$.
+
+%The position of a type occurrence in a type or expression can be identified by
+%a sequence of natural numbers that describes a path through the tree. We
+%define the set of all possible positions as
+%\[
+%\Pos=\Seq{\N}
+%\]
+
+%The relation
+%$\pentrel{\istsbsatY}{(\Typ+\Expr)}{\Typ}{\Typ}{\Pos}{(\Typ+\Expr)}$ captures
+%that $\tOe'$ is the result of substituting a type $\typI$ with a type $\typI'$
+%at position $\pos$ in a type or expression $\tOe$ (written
+%$\istsbsatO{\tOe}{\pos}{\tOe'}$)
+%\[
+%\begin{lrulelist}
+%\lruleO{\istsbsatO{\typI}{\seqO}{\typI'}}
+%\lruleI{\istsbsatO{\tinstO}{\cons{i}{\pos}}{\tinst{\tnam}{\seqTF{\typ_i'}}}}
+%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
+%\lruleI{\istsbsatO{(\tarrO)}{\cons{1}{\pos}}{(\tarr{\typ_1'}{\typ_2})}}
+%       {\istsbsatO{\typ_1}{\pos}{\typ_1'}}
+%\lruleI{\istsbsatO{(\tarrO)}{\cons{2}{\pos}}{(\tarr{\typ_1}{\typ_2'})}}
+%       {\istsbsatO{\typ_2}{\pos}{\typ_2'}}
+%\lruleI{\istsbsatO{(\trecO)}{\cons{i}{\pos}}{(\trecTF{\fnam_i}{\typ_i'})}}
+%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
+%\lruleI{\istsbsatO{(\tsumO)}{\cons{i}{\pos}}{(\tsumTF{\cnam_i}{\typ_i'})}}
+%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
+%\lruleI{\istsbsatO{(\tsubO)}{\cons{0}{\pos}}{(\tsub{\typ'}{\tspred})}}
+%       {\istsbsatO{\typ}{\pos}{\typ'}}
+%\lruleI{\istsbsatO{(\tsubO)}{\cons{1}{\pos}}{(\tsub{\typ}{\tspred'})}}
+%       {\istsbsatO{\tspred}{\pos}{\tspred'}}
+%\lruleI{\istsbsatO{(\tquotO)}{\cons{0}{\pos}}{(\tquot{\typ'}{\tqpred})}}
+%       {\istsbsatO{\typ}{\pos}{\typ'}}
+%\lruleI{\istsbsatO{(\tquotO)}{\cons{1}{\pos}}{(\tquot{\typ}{\tqpred'})}}
+%       {\istsbsatO{\tqpred}{\pos}{\tqpred'}}
+%\end{lrulelist}
+%\]
+%\[
+%\begin{lrulelist}
+%\lruleI{\istsbsatO{\opO}{\cons{i}{\pos}}{\op{\onam}{\seqTF{\typ_i'}}}}
+%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
+%\lruleI{\istsbsatO{(\appO)}{\cons{1}{\pos}}{(\app{\expr_1'}{\expr_2})}}
+%       {\istsbsatO{\expr_1}{\pos}{\expr_1'}}
+%\lruleI{\istsbsatO{(\appO)}{\cons{2}{\pos}}{(\app{\expr_1}{\expr_2'})}}
+%       {\istsbsatO{\expr_2}{\pos}{\expr_2'}}
+%\lruleI{\istsbsatO{(\absO)}{\cons{0}{\pos}}{(\abs{\var}{\typ'}{\expr})}}
+%       {\istsbsatO{\typ}{\pos}{\typ'}}
+%\lruleI{\istsbsatO{(\absO)}{\cons{1}{\pos}}{(\abs{\var}{\typ}{\expr'})}}
+%       {\istsbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\istsbsatO{(\eqO)}{\cons{1}{\pos}}{(\eq{\expr_1'}{\expr_2})}}
+%       {\istsbsatO{\expr_1}{\pos}{\expr_1'}}
+%\lruleI{\istsbsatO{(\eqO)}{\cons{2}{\pos}}{(\eq{\expr_1}{\expr_2'})}}
+%       {\istsbsatO{\expr_2}{\pos}{\expr_2'}}
+%\lruleI{\istsbsatO{(\iifO)}{\cons{0}{\pos}}{(\iif{\expr_0'}{\expr_1}{\expr_2})}}
+%       {\istsbsatO{\expr_0}{\pos}{\expr_0'}}
+%\lruleI{\istsbsatO{(\iifO)}{\cons{1}{\pos}}{(\iif{\expr_0}{\expr_1'}{\expr_2})}}
+%       {\istsbsatO{\expr_1}{\pos}{\expr_1'}}
+%\lruleI{\istsbsatO{(\iifO)}{\cons{2}{\pos}}{(\iif{\expr_0}{\expr_1}{\expr_2'})}}
+%       {\istsbsatO{\expr_2}{\pos}{\expr_2'}}
+%\lruleI{\istsbsatO{(\descO)}{\cons{0}{\pos}}{(\desc{\var}{\typ'}{\expr})}}
+%       {\istsbsatO{\typ}{\pos}{\typ'}}
+%\lruleI{\istsbsatO{(\descO)}{\cons{1}{\pos}}{(\desc{\var}{\typ}{\expr'})}}
+%       {\istsbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\istsbsatO{\projO}{\cons{0}{\pos}}{\proj{\expr'}{\fnam}}}
+%       {\istsbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\istsbsatO{(\embedO)}
+%                  {\cons{i}{\pos}}
+%                  {(\embed{\tsumTF{\cnam_i}{\typ_i'}}{\cnam_j})}}
+%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
+%\lruleI{\istsbsatO{\quotO}{\cons{0}{\pos}}{\quot{\tqpred'}}}
+%       {\istsbsatO{\tqpred}{\pos}{\tqpred'}}
+%\end{lrulelist}
+%\]
+
+\subsubsection{Expression substitutions}
+
+The function $\func{\esbsY}{\Expr\times\Nam\times\Expr}{\Expr}$ substitutes a
+variable $\varI$ with an expression $\exprI$ in an expression $\expr$ (written
+$\esbsO{\expr}$)
+\[
+\begin{eqlistC}
+\eqitem{\esbsO{\var}}
+       {\cond{\varI=\var}{\exprI}{\var}}
+\eqitem{\esbsO{\opO}}
+       {\opO}
+\eqitem{\esbsO{(\appO)}}
+       {\app{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\eqitem{\esbsO{(\absO)}}
+       {\cond{\varI=\var}{\absO}{\abs{\var}{\typ}{\esbsO{\expr}}}}
+\eqitem{\esbsO{(\eqO)}}
+       {\eq{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\eqitem{\esbsO{(\iifO)}}
+       {\iif{\esbsO{\expr_0}}{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\eqitem{\esbsO{(\descopO)}}
+       {\descopO}
+\eqitem{\esbsO{(\pjop{\fnam})}}
+       {\pjop{\fnam}}
+\eqitem{\esbsO{(\emb{\cnam})}}
+       {\emb{\cnam}}
+\eqitem{\esbsO{\quo}}
+       {\quo}
+\end{eqlistC}
+\]
+No substitution is performed in the expressions contained in types contained
+in expressions because, as already mentioned, such inner expressions have no
+free variables in well-formed types.
+
+%Given variables $\varS\in\SeqNR{\Nam}$ and expressions $\exprIS\in\Seq{\Expr}$
+%with $\seqlen{\varS}=\seqlen{\exprIS}$, we define the substitution of $\varS$
+%with $\exprIS$ in expressions as
+%\[
+%\begin{eqlistC}
+%\eqitem{\esbsO{\opO}}
+%       {\opO}
+%\eqitem{\esbsO{\var}}
+%       {\cond{\var=\var_i}{\exprI_i}{\var}}
+%\eqitem{\esbsO{(\appO)}}
+%       {\app{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+%\eqitem{\esbsO{(\absO)}}
+%       {\abs{\var}{\typ}{\esbsO{\expr}}}
+%\eqitem{\esbsO{(\eqO)}}
+%       {\eq{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+%\eqitem{\esbsO{(\iifO)}}
+%       {\iif{\esbsO{\expr_0}}{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+%\eqitem{\esbsO{\recO}}
+%       {\rec{i}{\fnam_i}{\esbsO{\expr_i}}}
+%\eqitem{\esbsO{(\projO)}}
+%       {\proj{\esbsO{\expr}}{\fnam}}
+%\eqitem{\esbsO{\left(\embedO\right)}}
+%       {\embedO}
+%\eqitem{\esbsO{\relxO}}
+%       {\relx{\esbsO{\tspred}}}
+%\eqitem{\esbsO{(\restrO)}}
+%       {\restr{\esbsO{\tspred}}{\esbsO{\expr}}}
+%\eqitem{\esbsO{\quotO}}
+%       {\quot{\esbsO{\tqpred}}}
+%\eqitem{\esbsO{(\choosO)}}
+%       {\choos{\esbsO{\tqpred}}{\esbsO{\expr}}}
+%\eqitem{\esbsO{(\caseO)}}
+%       {\case{\esbsO{\expr}}{i}{\pat_i}{\esbsO{\expr_i}}}
+%\eqitem{\esbsO{(\letrecO)}}
+%       {\letrec{\var}{\typ}{\esbsO{\expr}}{\esbsO{\expr'}}}
+%\end{eqlistC}
+%\]
+
+The function $\func{\cvarvY}{\Expr\times\Nam}{\Setf{\Nam}}$ returns the
+variables that would be captured if a variable $\varI$ were substituted with
+those variables in an expression $\expr$ (i.e.\ all the variables bound in
+$\expr$ at the free occurrences of $\varI$ in $\expr$)
+\[
+\begin{eqlist}
+\eqitem{\cvarvO{\var}}
+       {\emptyset}
+\eqitem{\cvarvO{\opO}}
+       {\emptyset}
+\eqitem{\cvarvO{\appO}}
+       {\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+\eqitem{\cvarvO{\absO}}
+       {\cond{\varI\in\efvar{\expr}-\setI{\var}}
+             {\setI{\var}\cup\cvarvO{\expr}}
+             {\emptyset}}
+\eqitem{\cvarvO{\eqO}}
+       {\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+\eqitem{\cvarvO{\iifO}}
+       {\cvarvO{\expr_0}\cup\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+\eqitem{\cvarvO{\descopO}}
+       {\emptyset}
+\eqitem{\cvarvO{\pjop{\fnam}}}
+       {\emptyset}
+\eqitem{\cvarvO{\emb{\cnam}}}
+       {\emptyset}
+\eqitem{\cvarvO{\quo}}
+       {\emptyset}
+\end{eqlist}
+\]
+
+The relation $\ternrel{\esbsokY}{\Expr}{\Nam}{\Expr}$ captures the condition
+that the substitution $\esbsO{\expr}$ causes no free variables in $\exprI$ to
+be captured
+\[
+\esbsok{\expr}{\varI}{\exprI}\IFF\efvar{\exprI}\cap\cvarvO{\expr}=\emptyset
+\]
+
+%Similarly to type occurrences in types and expressions, the position of an
+%expression occurrence in an expression can be identified by a sequence of
+%natural numbers that describes a path through the tree, i.e.\ an element of
+%$\Pos$ (defined earlier).
+
+%The relation $\pentrel{\isesbsatY}{\Expr}{\Expr}{\Expr}{\Pos}{\Expr}$ captures
+%that $\expr'$ is the result of substituting an expression $\exprI$ with an
+%expression $\exprI'$ at position $\pos$ in an expression $\expr$ (written
+%$\isesbsatO{\expr}{\pos}{\expr'}$)
+%\[
+%\begin{lrulelist}
+%\lruleO{\isesbsatO{\exprI}{\seqO}{\exprI'}}
+%\lruleI{\isesbsatO{(\appO)}{\cons{1}{\pos}}{(\app{\expr_1'}{\expr_2})}}
+%       {\isesbsatO{\expr_1}{\pos}{\expr_1'}}
+%\lruleI{\isesbsatO{(\appO)}{\cons{2}{\pos}}{(\app{\expr_1}{\expr_2'})}}
+%       {\isesbsatO{\expr_2}{\pos}{\expr_2'}}
+%\lruleI{\isesbsatO{(\absO)}{\cons{0}{\pos}}{(\abs{\var}{\typ}{\expr'})}}
+%       {\isesbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\isesbsatO{(\eqO)}{\cons{1}{\pos}}{(\eq{\expr_1'}{\expr_2})}}
+%       {\isesbsatO{\expr_1}{\pos}{\expr_1'}}
+%\lruleI{\isesbsatO{(\eqO)}{\cons{2}{\pos}}{(\eq{\expr_1}{\expr_2'})}}
+%       {\isesbsatO{\expr_2}{\pos}{\expr_2'}}
+%\lruleI{\isesbsatO{(\iifO)}{\cons{0}{\pos}}{(\iif{\expr_0'}{\expr_1}{\expr_2})}}
+%       {\isesbsatO{\expr_0}{\pos}{\expr_0'}}
+%\lruleI{\isesbsatO{(\iifO)}{\cons{1}{\pos}}{(\iif{\expr_0}{\expr_1'}{\expr_2})}}
+%       {\isesbsatO{\expr_1}{\pos}{\expr_1'}}
+%\lruleI{\isesbsatO{(\iifO)}{\cons{2}{\pos}}{(\iif{\expr_0}{\expr_1}{\expr_2'})}}
+%       {\isesbsatO{\expr_2}{\pos}{\expr_2'}}
+%\lruleI{\isesbsatO{(\descO)}{\cons{0}{\pos}}{(\desc{\var}{\typ}{\expr'})}}
+%       {\isesbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\isesbsatO{\projO}{\cons{0}{\pos}}{\proj{\expr'}{\fnam}}}
+%       {\isesbsatO{\expr}{\pos}{\expr'}}
+%\end{lrulelist}
+%\]
+
+%%\[
+%%\begin{eqlist}
+%%\eqitem{\osbsO{\exprI}{\seqO}}
+%%       {\exprI'}
+%%\eqitem{\osbsO{(\appO)}{\cons{1}{\pos}}}
+%%       {\app{\osbsO{\expr_1}{\pos}}{\expr_2}}
+%%\eqitem{\osbsO{(\appO)}{\cons{2}{\pos}}}
+%%       {\app{\expr_1}{\osbsO{\expr_2}{\pos}}}
+%%\eqitem{\osbsO{(\absO)}{\cons{0}{\pos}}}
+%%       {\abs{\var}{\typ}{\osbsO{\expr}{\pos}}}
+%%\eqitem{\osbsO{(\eqO)}{\cons{1}{\pos}}}
+%%       {\eq{\osbsO{\expr_1}{\pos}}{\expr_2}}
+%%\eqitem{\osbsO{(\eqO)}{\cons{2}{\pos}}}
+%%       {\eq{\expr_1}{\osbsO{\expr_2}{\pos}}}
+%%\eqitem{\osbsO{(\iifO)}{\cons{0}{\pos}}}
+%%       {\iif{\osbsO{\expr_0}{\pos}}{\expr_1}{\expr_2}}
+%%\eqitem{\osbsO{(\iifO)}{\cons{1}{\pos}}}
+%%       {\iif{\expr_0}{\osbsO{\expr_1}{\pos}}{\expr_2}}
+%%\eqitem{\osbsO{(\iifO)}{\cons{2}{\pos}}}
+%%       {\iif{\expr_0}{\expr_1}{\osbsO{\expr_2}{\pos}}}
+%%\eqitem{\osbsO{\recO}{\cons{i}{\pos}}}
+%%       {\recFIT{\fnam_1}{\expr_1}
+%%               {\fnam_i}{\osbsO{\expr_i}{\pos}}
+%%               {\fnam_n}{\expr_n}}
+%%\eqitem{\osbsO{(\projO)}{\cons{0}{\pos}}}
+%%       {\proj{\osbsO{\expr}{\pos}}{\fnam}}
+%%\eqitem{\osbsO{(\restrO)}{\cons{0}{\pos}}}
+%%       {\restr{\tspred}{\osbsO{\expr}{\pos}}}
+%%\eqitem{\osbsO{(\choosO)}{\cons{0}{\pos}}}
+%%       {\choos{\tqpred}{\osbsO{\expr}{\pos}}}
+%%\eqitem{\osbsO{(\caseO)}{\cons{0}{\pos}}}
+%%       {\case{\osbsO{\expr}{\pos}}{i}{\pat_i}{\expr_i}}
+%%\eqitem{\osbsO{(\caseO)}{\cons{i}{\pos}}}
+%%       {\caseFIT{\expr}{\pat_1}{\expr_1}
+%%                       {\pat_i}{\osbsO{\expr_i}{\pos}}
+%%                       {\pat_n}{\expr_n}}
+%%\eqitem{\osbsO{(\letrecO)}{\cons{0}{\pos}}}
+%%       {\letrec{\var}{\typ}{\osbsO{\expr}{\pos}}{\expr'}}
+%%\eqitem{\osbsO{(\letrecO)}{\cons{1}{\pos}}}
+%%       {\letrec{\var}{\typ}{\expr}{\osbsO{\expr'}{\pos}}}
+%%\end{eqlist}
+%%\]
+
+%The relation $\binrel{\posineY}{\Pos}{\Expr}$ captures legal positions in
+%expressions
+%\[
+%\posineO\IFF\EXISTS{\expr',\exprI,\exprI'}{\isesbsatO{\expr}{\pos}{\expr'}}
+%\]
+
+%%The function
+%%$\func{\expratY}
+%%      {\setST{\tupII{\expr}{\pos}\in\Expr\times\Pos}{\posine{\pos}{\expr}}}
+%%      {\Expr}$
+%%returns the subexpression at a given position in a superexpression
+%%\[
+%%\isesbsatO{\expr}{\pos}{\expr'}\IMPLIES\exprat{\expr}{\pos}=\exprI
+%%\]
+
+%%The function
+%%$\func{\esbsatY}
+%%      {\setST{\tupIV{\expr}{\exprI}{\exprI'}{\pos}
+%%              \in\Expr\times\Expr\times\Expr\times\Pos}
+%%             {\EXISTS{\expr'}{\isesbsatO{\expr}{\pos}{\expr'}}}}
+%%      {\Expr}$
+%%substitutes an expression $\exprI$ with an expression $\exprI'$ at position
+%%$\pos$ in an expression $\expr$ (written $\esbsatO{\expr}{\pos}$)
+%%\[
+%%\isesbsatO{\expr}{\pos}{\expr'}\IMPLIES\esbsatO{\expr}{\pos}=\expr'
+%%\]
+
+%The function
+%$\func{\cvarpY}
+%      {\setST{\tupII{\expr}{\pos}\in\Expr\times\Pos}{\posineO}}{\Setf{\Nam}}$
+%returns the variables that would be captured if they were substituted in an
+%expression $\expr$ at position $\pos$ (i.e.\ all the variables bound in $\expr$
+%at position $\pos$)
+%\[
+%\begin{eqlist}
+%\eqitem{\cvarp{\expr}{\seqO}}
+%       {\emptyset}
+%\eqitem{\cvarp{\appO}{(\cons{1}{\pos})}}
+%       {\cvarp{\expr_1}{\pos}}
+%\eqitem{\cvarp{\appO}{(\cons{2}{\pos})}}
+%       {\cvarp{\expr_2}{\pos}}
+%\eqitem{\cvarp{\absO}{(\cons{0}{\pos})}}
+%       {\setI{\var}\cup\cvarp{\expr}{\pos}}
+%\eqitem{\cvarp{\eqO}{(\cons{1}{\pos})}}
+%       {\cvarp{\expr_1}{\pos}}
+%\eqitem{\cvarp{\eqO}{(\cons{2}{\pos})}}
+%       {\cvarp{\expr_2}{\pos}}
+%\eqitem{\cvarp{\iifO}{(\cons{0}{\pos})}}
+%       {\cvarp{\expr_0}{\pos}}
+%\eqitem{\cvarp{\iifO}{(\cons{1}{\pos})}}
+%       {\cvarp{\expr_1}{\pos}}
+%\eqitem{\cvarp{\iifO}{(\cons{2}{\pos})}}
+%       {\cvarp{\expr_2}{\pos}}
+%\eqitem{\cvarp{\descO}{(\cons{0}{\pos})}}
+%       {\setI{\var}\cup\cvarp{\expr}{\pos}}
+%\eqitem{\cvarp{\projO}{(\cons{0}{\pos})}}
+%       {\cvarp{\expr}{\pos}}
+%\end{eqlist}
+%\]
+
+%The relation $\quatrel{\esbsatokY}{\Expr}{\Expr}{\Expr}{\Pos}$ captures the
+%condition that the substitution $\isesbsatO{\expr}{\pos}{\expr'}$ is defined
+%(for some $\expr'$), affects no free variables in $\exprI$ that are bound in
+%$\expr$, and causes no free variables in $\exprI'$ to be captured
+%\[
+%\esbsatok{\expr}{\exprI}{\exprI'}{\pos}
+%\IFF
+%\EXISTS{\expr'}
+%       {\isesbsatO{\expr}{\pos}{\expr'}
+%        \AND
+%        \efvar{\exprI}\cap\cvarp{\expr}{\pos}=\emptyset
+%        \AND
+%        \efvar{\exprI'}\cap\cvarp{\expr}{\pos}=\emptyset}
+%\]

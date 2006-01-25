@@ -1,0 +1,1165 @@
+\section{Proof theory}
+\label{proofth}
+
+The proof theory of the \MS\ logic includes not only rules to derive formulas
+(theorems), but also rules to derive typing judgements, type equivalences, and
+other judgements. The rules to derive such judgements are mutually recursive;
+even though they are presented separately in the following subsections, the
+rules are inductively defined all together.
+
+\subsection{Well-formed contexts}
+\label{wfcx-rules}
+
+We define a unary relation $\unarel{\cxwfY}{\Cx}$ to capture well-formed
+contexts as
+
+\[
+\rruleO
+ {\cxwf{\mtcx}}
+ {\Rcxmt}
+\]
+
+\[
+\rruleII
+ {\cxwfO}
+ {\tnam\not\in\cxtnam{\cx}}
+ {\cxwf{\snoc{\cx}{\tdecO}}}
+ {\Rcxtdec}
+\]
+
+\[
+\rruleIII
+ {\cxwfO}
+ {\onam\not\in\cxonam{\cx}}
+ {\isty{\snoc{\cx}{\tvdec{\tvarS}}}{\typ}}
+ {\cxwf{\snoc{\cx}{\odecO}}}
+ {\Rcxodec}
+\]
+
+\[
+\rruleV
+ {\cxwfO}
+ {\tdecO\in\cx}
+ {\tdefdots{\tnam}\not\in\cx}
+ {\isty{\snoc{\cx}{\tvdec{\tvarS}}}{\typ}}
+ {\seqlen{\tvarS}=n}
+ {\cxwf{\snoc{\cx}{\tdefO}}}
+ {\Rcxtdef}
+\]
+
+%\[
+%\rruleV
+% {\cxwfO}
+% {\odecO\in\cx}
+% {\odefdots{\onam}\not\in\cx}
+% {\theo{\snoc{\cx}{\tvdec{\tvarS'}}}
+%       {\exI{\var}{\tsbslash{\typ}{\tvarS}{\tvarS'}}{\eq{\var}{\expr}}}}
+% {\onam\not\in\opsin{\expr}}
+% {\cxwf{\snoc{\cx}{\odef{\tvarS'}
+%                        {\onam}
+%                        {\esbs{\expr}{\var}{\op{\onam}{\tvarS'}}}}}}
+% {\Rcxodef}
+%\]
+
+\[
+\rruleII
+ {\cxwfO}
+ {\hasty{\snoc{\cx}{\tvdec{\tvarS}}}{\expr}{\bool}}
+ {\cxwf{\snoc{\cx}{\axO}}}
+ {\Rcxax}
+\]
+
+\[
+\rruleII
+ {\cxwfO}
+ {\theo{\snoc{\cx}{\tvdec{\tvarS}}}{\expr}}
+ {\cxwf{\snoc{\cx}{\lemO}}}
+ {\Rcxlem}
+\]
+
+\[
+\rruleII
+ {\cxwfO}
+ {\tvar\not\in\cxtvar{\cx}}
+ {\cxwf{\snoc{\cx}{\tvdecO}}}
+ {\Rcxtvdec}
+\]
+
+\[
+\rruleIII
+ {\cxwfO}
+ {\var\not\in\cxvar{\cx}}
+ {\isty{\cx}{\typ}}
+ {\cxwf{\snoc{\cx}{\vdecO}}}
+ {\Rcxvdec}
+\]
+
+Eplanation:
+\begin{itemize}
+\item
+The empty context $\mtcx$ is well-formed. All other rules add context elements
+to well-formed contexts. Thus, a well-formed context is constructed
+incrementally starting with the empty one and adding suitable elements.
+\item
+A type declaration $\tdecO$ can be added to $\cx$ if $\tnam$ is not already
+declared in $\cx$.
+\item
+An op declaration $\odecO$ can be added to $\cx$ if $\onam$ is not already
+declared in $\cx$. The op's type $\typ$ must be well-formed (defined later) in
+$\cx$ extended with the type variables $\tvarS$, which must be distinct. Note
+that we do not require that all type variables in $\typ$ are among $\tvarS$,
+because there is no need for that restriction. However, since a well-formed
+spec has no type variable declarations, an op declaration in a well-formed
+spec automatically satisfies the restriction.
+\item
+A type definition $\tdefO$ can be added to $\cx$ if $\tnam$ is already
+declared but not already defined in $\cx$. The defining type $\typ$ must be
+well-formed in $\cx$ extended with the type variables $\tvarS$, which must be
+distinct and whose number must match the arity of $\tnam$. Similarly to op
+declarations, we do not require that all type variables in $\typ$ are among
+$\tvarS$, but such a restriction is automatically satisfied in a well-formed
+spec. Note that we allow vacuous type definitions such as
+$\tdef{\tnam}{\seqO}{\tnam}$ or
+$\seqII{\tdef{\tnam}{\seqO}{\tnam'}}{\tdef{\tnam'}{\seqO}{\tnam}}$, as well as
+other (mutually) recursive definitions that do not uniquely pin down the
+defined type such as the usual definition of lists; uniqueness can be enforced
+by suitable axioms (e.g.\ induction on lists). Unlike \cite{lm}, there is no
+implicit assumption of (mutually) recursively defined types having least
+fixpoint semantics because there is no general way to generate implicit axioms
+expressing least fixpoint semantics in the \MS\ type system.
+%\item
+%An op definition for $\onam$ can be added to $\cx$ if $\onam$ is already
+%declared but not already defined in $\cx$. It is allowed to use different type
+%variables $\tvarS'$ from the type variables $\tvarS$ used in the declaration
+%of $\onam$, as long as they are also distinct and are the same number (i.e.\
+%it is an injective renaming); accordingly, the type $\typ$ of $\onam$ becomes
+%$\tsbslash{\typ}{\tvarS}{\tvarS'}$. Of course, it is possible that
+%$\tvarS'=\tvarS$. The defining expression of $\onam$ must be such that there
+%is a unique solution to the equation obtained by replacing $\onam$ with some
+%variable $\var$ in the defining equation of $\onam$; turning ``replacement of
+%$\onam$ with $\var$'' around, the equation is $\eq{\var}{\expr}$ and the
+%defining expression of $\onam$ is $\esbs{\expr}{\var}{\op{\onam}{\tvarS'}}$.
+%The uniqueness of the solution is expressed as a theorem (defined later) in
+%$\cx$ extended with the type variables $\tvarS'$.
+\item
+A formula $\expr$ can be added to $\cx$ as an axiom if $\expr$ has type
+$\bool$ (defined later). In general, the axiom may be polymorphic in
+(distinct) type variables $\tvarS$. As in other cases, all type variables in
+$\expr$ are automatically in $\tvarS$ in well-formed specs, but that is not
+required in well-formed contexts in general.
+\item
+A formula $\expr$ can be added to $\cx$ as a lemma if it is a theorem (defined
+later). In general, the lemma may be polymorphic in (distinct) type variables
+$\tvarS$. As in other cases, all type variables in $\expr$ are automatically
+in $\tvarS$ in well-formed specs, but that is not required in well-formed
+contexts in general.
+\item
+A type variable declaration $\tvdecO$ can be added to $\cx$ if $\tvar$ is not
+already declared in $\cx$.
+\item
+A variable declaration $\vdecO$ can be added to $\cx$ if $\var$ is not already
+declared in $\cx$ and $\typ$ is well-formed type in $\cx$.
+\end{itemize}
+
+\subsection{Well-formed specs}
+
+We define a unary relation $\unarel{\spwfY}{\Spec}$ to capture well-formed
+specs as
+
+\[
+\rruleI
+ {\cxwf{\spec}}
+ {\spwfO}
+ {\Rspec}
+\]
+
+Note that the unary relation $\spwfY$ is defined on set $\Spec$, which, as
+previously defined, consists of all the contexts without type variable and
+variable declarations. Thus, there is no need to include, as part of this
+rule, the condition that $\spec$ does not contain any type variable and
+variable declaration. The rule just says that a spec (which has no type
+variable or variable declarations by definition) is well-formed as a spec if
+it is well-formed as a context.
+
+\subsection{Well-formed types}
+
+We define a binary relation $\binrel{\istyY}{\Cx}{\Typ}$ to capture
+well-formed types as
+
+\[
+\rruleI
+ {\cxwfO}
+ {\istyO{\bool}}
+ {\Rtbool}
+\]
+
+\[
+\rruleII
+ {\cxwfO}
+ {\tvar\in\cxtvarO}
+ {\istyO{\tvar}}
+ {\Rtvar}
+\]
+
+\[
+\rruleIV
+ {\cxwfO}
+ {\tdecO\in\cx}
+ {\seqlen{\typS}=n}
+ {\FORALL{i}{\istyO{\typ_i}}}
+ {\istyO{\tinstO}}
+ {\Rtinst}
+\]
+
+\[
+\rruleII
+ {\istyO{\typ_1}}
+ {\istyO{\typ_2}}
+ {\istyO{\tarrO}}
+ {\Rtarr}
+\]
+
+\[
+\rruleII
+ {\cxwfO}
+ {\FORALL{i}{\istyO{\typ_i}}}
+ {\istyO{\trecO}}
+ {\Rtrec}
+\]
+
+\[
+\rruleI
+ {\FORALL{i}{\istyO{\typ_i}}}
+ {\istyO{\tsumO}}
+ {\Rtsum}
+\]
+
+\[
+\rruleII
+ {\hastyO{\tspred}{\tarr{\typ}{\bool}}}
+ {\efvar{\tspred}=\emptyset}
+ {\istyO{\tsubO}}
+ {\Rtsub}
+\]
+
+\[
+\rruleV
+ {\theoO{\fa{\var}{\typ}{\app{\tqpred}{\tupleII{\var}{\var}}}}}
+ {\theoO{\faS{\seqII{\bnd{\var'}{\typ}}{\bnd{\var''}{\typ}}}
+             {\impl{\app{\tqpred}{\tupleII{\var'}{\var''}}}
+                   {\app{\tqpred}{\tupleII{\var''}{\var'}}}}}}
+ {\theoO{\faS{\seqIII{\bnd{\var_1}{\typ}}{\bnd{\var_2}{\typ}}{\bnd{\var_3}{\typ}}}
+             {\impl{\conj{\app{\tqpred}{\tupleII{\var_1}{\var_2}}}
+                         {\app{\tqpred}{\tupleII{\var_2}{\var_3}}}}
+                   {\app{\tqpred}{\tupleII{\var_1}{\var_3}}}}}}
+ {\var'\neq\var''\AND\var_1\neq\var_2\AND\var_2\neq\var_3\AND\var_1\neq\var_3}
+ {\efvar{\tqpred}=\emptyset}
+ {\istyO{\tquotO}}
+ {\Rtquot}
+\]
+
+Explanation:
+\begin{itemize}
+\item
+The type $\bool$ is well-formed in any well-formed context.
+\item
+A type variable is a well-formed type in any well-formed context that declares
+it.
+\item
+A type instance $\tinstO$ is well-formed in any well-formed context $\cx$ that
+declares $\tnam$ if the argument types are well-formed in $\cx$ and their
+number matches the arity of $\tnam$.
+\item
+The rules for arrow, record, and sum types are straightforward. Note that in
+$\Rtarr$ and $\Rtsum$ we do not explicitly require $\cx$ to be well-formed
+because the fact that a type is well-formed in a context implies that the
+context is well-formed (as proved later). However, the condition is explicit
+in $\Rtrec$ because a record type can have zero components (unlike a sum type
+that always has at least one component).
+\item
+For restriction types, we require the predicate to have type
+$\tarr{\typ}{\bool}$, which implies that $\typ$ is a well-formed type (as
+proved later). We also require that $\tspred$ has no free variables.
+\item
+For quotient types, we require the predicate to be an equivalence relation,
+i.e.\ that reflexivity, symmetry, and transitivity are theorems, which implies
+that $\typ$ and $\cx$ are well-formed, that $\tqpred$ has type
+$\tarr{\tprodII{\typ}{\typ}}{\bool}$, etc.\ (as proved later). The condition
+that the variables $\var'$, $\var''$, etc.\ are distinct is important: without
+it, the symmetry and transitivity requirements would effectively disappear
+(because the corresponding formulas would be trivially provable), thus only
+requiring the binary relation to be reflexive. We require that $\tqpred$ has
+no free variables.
+\end{itemize}
+
+\subsection{Type equivalence}
+
+We define a ternary relation $\ternrel{\teqY}{\Cx}{\Typ}{\Typ}$ to capture
+type equivalence as
+
+\[
+\rruleIII
+ {\cxwfO}
+ {\tdefO\in\cx}
+ {\FORALL{i}{\istyO{\typ_i}}}
+ {\teqO{\tinstO}{\tsbslash{\typ}{\tvarS}{\typS}}}
+ {\Rtedef}
+\]
+
+\[
+\rruleI
+ {\istyO{\typ}}
+ {\teqO{\typ}{\typ}}
+ {\Rterefl}
+\]
+
+%\[
+%\rruleII
+% {\teqO{\typ_1}{\typ_2}}
+% {\teqO{\typ_1}{\typ_3}}
+% {\teqO{\typ_2}{\typ_3}}
+% {\Rtesymmtrans}
+%\]
+
+\[
+\rruleI
+ {\teqO{\typ_1}{\typ_2}}
+ {\teqO{\typ_2}{\typ_1}}
+ {\Rtesymm}
+\]
+
+\[
+\rruleII
+ {\teqO{\typ_1}{\typ_2}}
+ {\teqO{\typ_2}{\typ_3}}
+ {\teqO{\typ_1}{\typ_3}}
+ {\Rtetrans}
+\]
+
+%\[
+%\rruleIII
+% {\istyO{\typ}}
+% {\teqO{\typ_1}{\typ_2}}
+% {\istsbsat{\typ}{\typ_1}{\typ_2}{\pos}{\typ'}}
+% {\teqO{\typ}{\typ'}}
+% {\Rtesbs}
+%\]
+
+\[
+\rruleII
+ {\istyO{\tinstO}}
+ {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
+ {\teqO{\tinstO}{\tinst{\tnam}{\typS'}}}
+ {\Rteinst}
+\]
+
+\[
+\rruleII
+ {\teqO{\typ_1}{\typ_1'}}
+ {\teqO{\typ_2}{\typ_2'}}
+ {\teqO{\tarr{\typ_1}{\typ_2}}{\tarr{\typ_1'}{\typ_2'}}}
+ {\Rtearr}
+\]
+
+\[
+\rruleII
+ {\cxwfO}
+ {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
+ {\teqO{\trecO}{\trec{i}{\fnam_i}{\typ_i'}}}
+ {\Rterec}
+\]
+
+\[
+\rruleI
+ {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
+ {\teqO{\tsumO}{\tsum{i}{\cnam_i}{\typ_i'}}}
+ {\Rtesum}
+\]
+
+\[
+\rruleIV
+ {\istyO{\tsubO}}
+ {\teqO{\typ}{\typ'}}
+ {\theoO{\eq{\tspred}{\tspred'}}}
+ {\efvar{\tspred'}=\emptyset}
+ {\teqO{\tsubO}{\tsub{\typ'}{\tspred'}}}
+ {\Rterestr}
+\]
+
+\[
+\rruleIV
+ {\istyO{\tquotO}}
+ {\teqO{\typ}{\typ'}}
+ {\theoO{\eq{\tqpred}{\tqpred'}}}
+ {\efvar{\tqpred'}=\emptyset}
+ {\teqO{\tquotO}{\tquot{\typ'}{\tqpred'}}}
+ {\Rtequot}
+\]
+
+\[
+\rruleII
+ {\istyO{\trecO}}
+ {\funcinj{\perm}{\setFT{1}{n}}{\setFT{1}{n}}}
+ {\teqO{\trecO}{\trec{i}{\fnam_{\perm(i)}}{\typ_{\perm(i)}}}}
+ {\Rterecord}
+\]
+
+\[
+\rruleII
+ {\istyO{\tsumO}}
+ {\funcinj{\perm}{\setFT{1}{n}}{\setFT{1}{n}}}
+ {\teqO{\tsumO}{\tsum{i}{\cnam_{\perm(i)}}{\typ_{\perm(i)}}}}
+ {\Rtesumord}
+\]
+
+%\[
+%\rruleIII
+% {\istyO{\tsubO}}
+% {\istyO{\tsub{\typ}{\tspred'}}}
+% {\theoO{\eq{\tspred}{\tspred'}}}
+% {\teqO{\tsubO}{\tsub{\typ}{\tspred'}}}
+% {\Rtesubpred}
+%\]
+
+%\[
+%\rruleIII
+% {\istyO{\tquotO}}
+% {\istyO{\tquot{\typ}{\tqpred'}}}
+% {\theoO{\eq{\tqpred}{\tqpred'}}}
+% {\teqO{\tquotO}{\tquot{\typ}{\tqpred'}}}
+% {\Rtequotpred}
+%\]
+
+Explanation:
+\begin{itemize}
+\item
+A type definition introduces type equivalences, one for each instance of the
+defining equation.
+\item
+Type equivalence is indeed an equivalence, i.e.\ reflexive, symmetric, and
+transitive.
+\item
+Type equivalence is a congruence with respect to syntactic (meta-)operations
+to construct types in the \MS\ type system, namely type instantiations, arrow
+types, record types, sum types, restriction types, and quotient types. In
+addition, equal restriction or quotient predicates give rise to equivalent
+restriction or quotient types. The conditions $\efvar{\tspred'}=\emptyset$ and
+$\efvar{\tqpred'}=\emptyset$ are needed for the satisfaction of certain
+properties of the proof theory (see \secref{props}).
+\item
+The order of the components of a record or sum type is unimportant: any
+permutation of the components yields equivalent types. In the rules, the
+permutation is captured by a bijective function $\perm$ on the record or sum
+indices $\setFT{1}{n}$ (the rules explicitly say that $\perm$ is injective
+only, but since domain and codomain are finite and equal, it follows that
+$\perm$ is also surjective, hence bijective).
+\end{itemize}
+
+\subsection{Subtyping}
+
+We define a quaternary relation $\quatrel{\issubY}{\Cx}{\Typ}{\Expr}{\Typ}$ to
+capture subtyping as
+
+\[
+\rruleI
+ {\istyO{\tsubO}}
+ {\issubO{\tsubO}{\tspred}{\typ}}
+ {\Rstsub}
+\]
+
+\[
+\rruleII
+ {\istyO{\typ}}
+ {\tspred=\abs{\var}{\typ}{\true}}
+ {\issubO{\typ}{\tspred}{\typ}}
+ {\Rstrefl}
+\]
+
+\[
+\rruleIV
+ {\istyO{\typ}}
+ {\issubO{\typ_1}{\tspred}{\typ_2}}
+ {\var\neq\var'}
+ {\tspred'=\abs{\var}
+               {\tarr{\typ}{\typ_2}}
+               {\fa{\var'}{\typ}{\app{\tspred}{(\app{\var}{\var'})}}}}
+ {\issubO{\tarr{\typ}{\typ_1}}{\tspred'}{\tarr{\typ}{\typ_2}}}
+ {\Rstarr}
+\]
+
+\[
+\rruleIII
+ {\istyO{\trecO}}
+ {\FORALL{i}{\issubO{\typ_i}{\tspred_i}{\typ_i'}}}
+ {\tspred=\abs{\var}
+              {\trec{i}{\fnam_i}{\typ_i'}}
+              {\conjI{i}{\app{\tspred_i}{\proj{\var}{\fnam_i}}}}}
+ {\issubO{\trecO}{\tspred}{\trec{i}{\fnam_i}{\typ_i'}}}
+ {\Rstrec}
+\]
+
+\[
+\rruleIV
+ {\istyO{\tsumO}}
+ {\FORALL{i}{\issubO{\typ_i}{\tspred_i}{\typ_i'}}}
+ {\tspred=\abs{\var}
+              {\tsum{i}{\cnam_i}{\typ_i'}}
+              {\disjI{i}
+                     {\ex{\var'}{\typ_i'}
+                         {(\conj{\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}
+                                {\app{\tspred_i}{\var'}})}}}}
+%              {\case{\var}
+%                    {i}
+%                    {\pemb{\cnam_i}{(\pvar{\var_i}{\typ_i'})}}
+%                    {\app{\tspred_i}{\var_i}}}}
+ {\var\neq\var'}
+ {\issubO{\tsumO}{\tspred}{\tsum{i}{\cnam_i}{\typ_i'}}}
+ {\Rstsum}
+\]
+
+%\[
+%\rruleIII
+% {\issubO{\typ_0}{\tspred_1}{\typ_1}}
+% {\issubO{\typ_1}{\tspred_2}{\typ_2}}
+% {\tspred=\abs{\var}
+%              {\typ_2}
+%              {(\conj{\app{\tspred_2}{\var}}{\app{\tspred_1}{\var}})}}
+% {\issubO{\typ_0}{\tspred}{\typ_2}}
+% {\Rsttrans}
+%\]
+
+\[
+\rruleIII
+ {\issubO{\typ_1}{\tspred}{\typ_2}}
+ {\teqO{\typ_1}{\typ_1'}}
+ {\teqO{\typ_2}{\typ_2'}}
+ {\issubO{\typ_1'}{\tspred}{\typ_2'}}
+ {\Rstteq}
+\]
+
+Explanation:
+\begin{itemize}
+\item
+Unsurprisingly, a restriction type $\tsubO$ is a subtype of $\typ$, with
+$\tspred$ being the predicate over the supertype $\typ$ that identifies the
+values that are also in the subtype $\tsubO$.
+\item
+Subtyping is reflexive, i.e.\ a (well-formed) type $\typ$ is a subtype of
+itself and the associated subtype predicate is always true.
+\item
+Arrow types are monotone in their range types with respect to subtyping. The
+associated predicate holds when all the values of the function satisfy the
+predicate associated to the range subtype. Note that the domain must be the
+same; while domain contravariance is used in some type systems with subtypes,
+it would violate extensionality (see explanation in \cite{pvs-seman}).
+\item
+Both record and sum types are monotone in their component types with respect
+to subtyping. The record subtype predicate holds when all the component
+subtype predicates hold on the record components. The sum subtype predicate
+holds when the appropriate component subtype predicate holds on the value of
+the sum type.
+\item
+Rule $\Rstteq$ states the substitutivity of equivalent types in subtype
+judgements.
+\end{itemize}
+
+We do not need a transitivity rule for subtyping. As defined later, subtyping
+judgements are only used to assign types to expressions, e.g.\ to assign a
+supertype to an expression of a subtype. So, instead of using transitivity of
+subtyping, rules for well-typed expressions can be applied multiple times,
+achieving the same effect.
+
+\subsection{Well-typed expressions}
+
+We define a ternary relation $\ternrel{\hastyY}{\Cx}{\Expr}{\Typ}$ to capture
+well-typed expressions as
+
+\[
+\rruleII
+ {\cxwfO}
+ {\vdecO\in\cx}
+ {\hastyO{\var}{\typ}}
+ {\Revar}
+\]
+
+\[
+\rruleIII
+ {\cxwfO}
+ {\odecO\in\cx}
+ {\FORALL{i}{\istyO{\typ_i}}}
+ {\hastyO{\opO}{\tsbslash{\typ}{\tvarS}{\typS}}}
+ {\Reop}
+\]
+
+\[
+\rruleII
+ {\hastyO{\expr_1}{\tarrO}}
+ {\hastyO{\expr_2}{\typ_1}}
+ {\hastyO{\appO}{\typ_2}}
+ {\Reapp}
+\]
+
+\[
+\rruleI
+ {\hasty{\snoc{\cx}{\vdecO}}{\expr}{\typ'}}
+ {\hastyO{\absO}{\tarr{\typ}{\typ'}}}
+ {\Reabs}
+\]
+
+\[
+\rruleII
+ {\hastyO{\expr_1}{\typ}}
+ {\hastyO{\expr_2}{\typ}}
+ {\hastyO{\eqO}{\bool}}
+ {\Reeq}
+\]
+
+\[
+\rruleIII
+ {\hastyO{\expr_0}{\bool}}
+ {\hasty{\snoc{\cx}{\axM{\expr_0}}}{\expr_1}{\typ}}
+ {\hasty{\snoc{\cx}{\axM{\nega{\expr_0}}}}{\expr_2}{\typ}}
+ {\hastyO{\iifO}{\typ}}
+ {\Reif}
+\]
+
+\[
+\rruleIII
+ {\hastyO{\expr}{\bool}}
+ {\hastyO{\expr_1}{\typ}}
+ {\hastyO{\expr_2}{\typ}}
+ {\hastyO{\iifO}{\typ}}
+ {\ReifO}
+\]
+
+\[
+\rruleI
+ {\istyO{\typ}}
+ {\hastyO{\descopO}{\tarr{\tsub{(\tarr{\typ}{\bool})}{\exIopO}}{\typ}}}
+ {\Redesc}
+\]
+
+\[
+\rruleI
+ {\istyO{\trecO}}
+ {\hastyO{\pjopO}{\tarr{\trecO}{\typ_j}}}
+ {\Reproj}
+\]
+
+\[
+\rruleI 
+ {\istyO{\tsumO}}
+ {\hastyO{\embO}{\tarr{\typ_j}{\tsumO}}}
+ {\Reembed}
+\]
+
+\[
+\rruleI
+ {\istyO{\tquotO}}
+ {\hastyO{\quo}{\tarr{\typ}{\tquotO}}}
+ {\Requot}
+\]
+
+%\[
+%\rruleII
+% {\hastyO{\expr}{\typ}}
+% {\teqO{\typ}{\typ'}}
+% {\hastyO{\expr}{\typ'}}
+% {\Reteq}
+%\]
+
+\[
+\rruleII
+ {\hastyO{\expr}{\typ}}
+ {\issubO{\typ}{\tspred}{\typ'}}
+ {\hastyO{\expr}{\typ'}}
+ {\Resuper}
+\]
+
+\[
+\rruleIII
+ {\hastyO{\expr}{\typ'}}
+ {\issubO{\typ}{\tspred}{\typ'}}
+ {\theoO{\app{\tspred}{\expr}}}
+ {\hastyO{\expr}{\typ}}
+ {\Resub}
+\]
+
+\[
+\rruleII
+ {\hastyO{\absO}{\typ'}}
+ {\var'\not\in\efvar{\expr}\cup\cvarv{\expr}{\var}}
+ {\hastyO{\abs{\var'}{\typ}{\esbs{\expr}{\var}{\var'}}}{\typ'}}
+ {\Reabsalpha}
+\]
+
+Explanation:
+\begin{itemize}
+\item
+A variable $\var$ declared in a well-formed context is a well-typed expression
+with the type $\typ$ given in its declaration.
+\item
+An op $\onam$ declared in a well-formed context can be instantiated via
+well-formed types $\typS$ whose number matches the number of type variables
+$\tvarS$. The result is a well-formed expression whose type is obtained by
+substituting $\tvarS$ with $\typS$ in the declared type $\typ$ of $\onam$.
+\item
+An application is well-typed if the function has an arrow type and the
+argument has the domain type of the arrow type. The type of the application is
+the range type of the arrow type.
+\item
+An abstraction is well-typed if the body is well-typed in the context extended
+with the declaration of the variable bound by the abstraction. The type of the
+abstraction is the arrow type that has the type of the variable as domain and
+the type of the body as range.
+\item
+An equality is well-typed with type $\bool$ if the left- and right-hand sides
+are both well-typed with a common type $\typ$.
+\item
+In the rule $\Reif$ for conditionals, the two branches must be well-typed,
+with a common type, in the context where the condition holds and does not
+hold, respectively. The additional assumption about the condition holding or
+not is realized by adding an axiom to the context. This rule makes
+conditionals non-strict. There is also a stronger rule $\ReifO$ that does not
+add any assumption about the condition to the context. The reason for rule
+$\ReifO$ and for why it does not seem derivable from $\Reif$, is given in
+\secref{props}.
+\item
+The description operator for a well-formed type is well-typed and denotes a
+function from the predicates over the type that are satisfied by a unique
+value to the type itself.
+\item
+A projector for a well-formed record type is well-typed and denotes a function
+from the record type to the corresponding component type.
+%A projection is well-typed if $\expr$ is well-typed with a record type. The
+%type of the projection is the component type of the record type that
+%corresponds to the field name.
+\item
+An embedded for a well-formed sum type is well-typed and denotes a function
+from the type corresponding to the constructor to the sum type.
+\item
+A quotienter for a well-formed quotient type is well-typed and denotes a
+function from the quotiented type to the quotient type.
+\item
+Rules $\Resuper$ and $\Resub$ link the notion of well-typed expressions to the
+notion of subtyping. If an expression $\expr$ has a subtype $\typ$, it also
+has any supertype $\typ'$. If an expression $\expr$ has a supertype $\typ'$,
+it also has any subtype $\typ$ such that the associated predicate holds on
+$\expr$. Note that rule $\Resuper$, in conjunction with rule $\Rstrefl$, can
+be used to show that if an expression $\expr$ has type $\typ$, it also has any
+type $\typ'$ equivalent to $\typ$.
+\item
+The last rule amounts to treating expressions up to alpha equivalence,
+allowing to rename bound variables maintaining well-typedness. Without this
+rule, the \MS\ logic would be non-monotone, because extending a context with
+variable declarations may invalidate conclusions about the well-typedness of
+expressions that bind those variables (e.g.\ if $\hastyO{\absO}{\typ'}$ were
+provable then $\hasty{\snoc{\cx}{\vdecO}}{\absO}{\typ'}$ would not be
+provable). This rule also allows variable hiding as described in \cite{lm}.
+\end{itemize}
+
+\subsection{Theorems}
+
+We define a binary relation $\binrel{\theoY}{\Cx}{\Expr}$ to capture theorems
+as
+
+\[
+\rruleIII
+ {\cxwfO}
+ {\axO\in\cx}
+ {\FORALL{i}{\istyO{\typ_i}}}
+ {\theoO{\tsbslash{\expr}{\tvarS}{\typS}}}
+ {\Rthax}
+\]
+
+%\[
+%\rruleIII
+% {\cxwfO}
+% {\odefO\in\cx}
+% {\FORALL{i}{\istyO{\typ_i}}}
+% {\theoO{\eq{\opO}{\tsbslash{\expr}{\tvarS}{\typS}}}}
+% {\Rthdef}
+%\]
+
+\[
+\rruleI
+ {\hastyOany{\expr}}
+ {\theoO{\eq{\expr}{\expr}}}
+ {\Rthrefl}
+\]
+
+\[
+\rruleI
+ {\theoO{\eq{\expr_1}{\expr_2}}}
+ {\theoO{\eq{\expr_2}{\expr_1}}}
+ {\Rthsymm}
+\]
+
+\[
+\rruleII
+ {\theoO{\eq{\expr_1}{\expr_2}}}
+ {\theoO{\eq{\expr_2}{\expr_3}}}
+ {\theoO{\eq{\expr_1}{\expr_3}}}
+ {\Rthtrans}
+\]
+
+\[
+\rruleII
+ {\hastyOany{\opO}}
+ {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
+ {\theoO{\eq{\opO}{\op{\onam}{\typS'}}}}
+ {\Rthopsbs}
+\]
+
+\[
+\rruleIII
+ {\hastyOany{\appO}}
+ {\theoO{\eq{\expr_1}{\expr_1'}}}
+ {\theoO{\eq{\expr_2}{\expr_2'}}}
+ {\theoO{\eq{\appO}{\app{\expr_1'}{\expr_2'}}}}
+ {\Rthappsbs}
+\]
+
+\[
+\rruleII
+ {\hastyOany{\absO}}
+ {\teqO{\typ}{\typ'}}
+ {\theoO{\eq{\absO}{\abs{\var}{\typ'}{\expr}}}}
+ {\Rthabssbs}
+\]
+
+\[
+\rruleIII
+ {\hastyOany{\eqO}}
+ {\theoO{\eq{\expr_1}{\expr_1'}}}
+ {\theoO{\eq{\expr_2}{\expr_2'}}}
+ {\theoO{\eq{(\eqO)}{(\eq{\expr_1'}{\expr_2'})}}}
+ {\Rtheqsbs}
+\]
+
+\[
+\rruleIV
+ {\hastyOany{\iifO}}
+ {\theo{\cx}{\eq{\expr_0}{\expr_0'}}}
+ {\theo{\snoc{\cx}{\axM{\expr_0}}}{\eq{\expr_1}{\expr_1'}}}
+ {\theo{\snoc{\cx}{\axM{\nega{\expr_0}}}}{\eq{\expr_2}{\expr_2'}}}
+ {\theoO{\eq{\iifO}{\iif{\expr_0'}{\expr_1'}{\expr_2'}}}}
+ {\Rthifsbs}
+\]
+
+\[
+\rruleII
+ {\hastyOany{\descopO}}
+ {\teqO{\typ}{\typ'}}
+ {\theoO{\eq{\descopO}{\descop{\typ'}}}}
+ {\Rthdescsbs}
+\]
+
+\[
+\rruleII
+ {\hastyOany{\projop{\trecO}{\fnam}}}
+ {\teqO{\trecO}{\trec{i}{\fnam_i'}{\typ_i'}}}
+ {\theoO{\eq{\projop{\trecO}{\fnam}}
+            {\projop{\trec{i}{\fnam_i'}{\typ_i'}}{\fnam}}}}
+ {\Rthprojsbs}
+\]
+
+\[
+\rruleII
+ {\hastyOany{\embed{\tsumO}{\cnam}}}
+ {\teqO{\tsumO}{\tsum{i}{\cnam_i'}{\typ_i'}}}
+ {\theoO{\eq{\embed{\tsumO}{\cnam}}
+            {\embed{\tsum{i}{\cnam_i'}{\typ_i'}}{\cnam}}}}
+ {\Rthembedsbs}
+\]
+
+\[
+\rruleII
+ {\hastyOany{\quotO}}
+ {\teqO{\tquotO}{\tquot{\typ'}{\tqpred'}}}
+ {\theoO{\eq{\quotO}{\quot{\tquot{\typ'}{\tqpred'}}}}}
+ {\Rthquotsbs}
+\]
+
+%\[
+%\rruleIV
+% {\theoO{\expr}}
+% {\theoO{\eqO}}
+% {\isesbsat{\expr}{\expr_1}{\expr_2}{\pos}{\expr'}}
+% {\esbsatok{\expr}{\expr_1}{\expr_2}{\pos}}
+% {\theoO{\expr'}}
+% {\Rthsbs}
+%\]
+
+\[
+\rruleII
+ {\theoO{\expr}}
+ {\theoO{\eq{\expr}{\expr'}}}
+ {\theoO{\expr'}}
+ {\Rthsbs}
+\]
+
+%\[
+%\rruleIII
+% {\theoO{\expr}}
+% {\teqO{\typ_1}{\typ_2}}
+% {\istsbsat{\expr}{\typ_1}{\typ_2}{\pos}{\expr'}}
+% {\theoO{\expr'}}
+% {\Rthtsbs}
+%\]
+
+\[
+\rruleII
+ {\cxwfO}
+ {\var\neq\var'}
+ {\theoO{\fa{\var}{\tarr{\bool}{\bool}}
+            {(\iiff{\conj{\app{\var}{\true}}{\app{\var}{\false}}}
+                   {(\fa{\var'}{\bool}{\app{\var}{\var'}})})}}}
+ {\Rthbool}
+\]
+
+%\[
+%\rruleIII
+% {\hastyO{\expr_1}{\typ}}
+% {\hastyO{\expr_2}{\typ}}
+% {\hastyO{\expr}{\tarr{\typ}{\typ'}}}
+% {\theoO{\impl{\eq{\expr_1}{\expr_2}}
+%              {\eq{\app{\expr}{\expr_1}}{\app{\expr}{\expr_2}}}}}
+% {\Rthcongr}
+%\]
+
+\[
+\rruleII
+ {\istyO{\tarr{\typ}{\typ'}}}
+ {\var\neq\var'\AND\var'\neq\var''\AND\var''\neq\var}
+ {\theoO{\faS{\seqII{\bnd{\var}{\tarr{\typ}{\typ'}}}
+                    {\bnd{\var'}{\tarr{\typ}{\typ'}}}}
+             {(\iiff{\eq{\var}{\var'}}
+                    {(\fa{\var''}{\typ}
+                         {\eq{\app{\var}{\var''}}
+                             {\app{\var'}{\var''}}})})}}}
+% {\hastyO{\expr_1}{\tarr{\typ}{\typ'}}}
+% {\hastyO{\expr_2}{\tarr{\typ}{\typ'}}}
+% {\var\not\in\efvar{\expr_1}\cup\efvar{\expr_2}}
+% {\theoO{\iiff{\eq{\expr_1}{\expr_2}}
+%              {(\fa{\var}{\typ}{\eq{\app{\expr_1}{\var}}
+%                                   {\app{\expr_2}{\var}}})}}}
+ {\Rthext}
+\]
+
+\[
+\rruleII
+ {\hastyOany{\app{(\absO)}{\expr'}}}
+ {\esbsok{\expr}{\var}{\expr'}}
+ {\theoO{\eq{\app{(\absO)}{\expr'}}{\esbs{\expr}{\var}{\expr'}}}}
+ {\Rthabs}
+\]
+
+\[
+\rruleIII
+ {\hastyOany{\iifO}}
+ {\theo{\snoc{\cx}{\axM{\expr_0}}}{\eq{\expr_1}{\expr}}}
+ {\theo{\snoc{\cx}{\axM{\nega{\expr_0}}}}{\eq{\expr_2}{\expr}}}
+ {\theoO{\eq{\iifO}{\expr}}}
+ {\Rthif}
+\]
+
+\[
+\rruleI
+ {\hastyO{\app{\descopO}{\expr}}{\typ}}
+ {\theoO{\app{\expr}{(\app{\descopO}{\expr})}}}
+% {\hastyO{\descO}{\typ}}
+% {\theoO{\app{(\absO)}{(\descO)}}}
+ {\Rthdesc}
+\]
+
+\[
+\rruleII
+ {\istyO{\trecO}}
+ {\var\neq\var'}
+ {\theoO
+  {\faS{\seqII{\bnd{\var}{\trecO}}{\bnd{\var'}{\trecO}}}
+       {(\impl{(\conjI{i}{\eq{\proj{\var}{\fnam_i}}{\proj{\var'}{\fnam_i}}})}
+              {\eq{\var}{\var'}})}}}
+ {\Rthrec}
+\]
+
+\[
+\rruleII
+ {\istyO{\tsumO}}
+ {\var\neq\var'}
+ {\theoO{\fa{\var}{\tsumO}
+            {\disjI{i}{\ex{\var'}{\typ_i}
+                          {\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}}}}}
+ {\Rthembsurj}
+\]
+
+\[
+\rruleIII
+ {\istyO{\tsumO}}
+ {j\neq k}
+ {\var\neq\var'}
+ {\theoO{\faS{\seqII{\bnd{\var}{\typ_j}}{\bnd{\var'}{\typ_k}}}
+             {\neeq{\app{\emb{\cnam_j}}{\var}}
+                   {\app{\emb{\cnam_k}}{\var'}}}}}
+ {\Rthembdist}
+\]
+
+\[
+\rruleII
+ {\istyO{\tsumO}}
+ {\var\neq\var'}
+ {\theoO{\faS{\seqII{\bnd{\var}{\typ_j}}{\bnd{\var'}{\typ_j}}}
+             {\impl{\neeq{\var}{\var'}}
+                   {\neeq{\app{\embO}{\var}}{\app{\embO}{\var'}}}}}}
+ {\Rthembinj}
+\]
+
+\[
+\rruleII
+ {\istyO{\tquotO}}
+ {\var\neq\var'}
+ {\theoO{\fa{\var}{\tquotO}
+            {\ex{\var'}{\typ}{\eq{\app{\quo}{\var'}}{\var}}}}}
+ {\Rthquotsurj}
+\]
+
+\[
+\rruleII
+ {\istyO{\tquotO}}
+ {\var\neq\var'}
+ {\theoO{\faS{\seqII{\bnd{\var}{\typ}}{\bnd{\var'}{\typ}}}
+             {\iiff{\app{\tqpred}{\tupleII{\var}{\var'}}}
+                   {\eq{\app{\quo}{\var}}{\app{\quo}{\var'}}}}}}
+ {\Rthquoteclass}
+\]
+
+\[
+\rruleI
+ {\issubO{\trecO}{\tspred}{\trec{i}{\fnam_i}{\typ_i'}}}
+ {\theoO{\fa{\var}{\trecO}
+            {\eq{\app{\projopO}{\var}}
+                {\app{\projop{\trec{i}{\fnam_i}{\typ_i'}}{\fnam_j}}{\var}}}}}
+ {\Rthprojsub}
+\]
+
+\[
+\rruleI
+ {\issubO{\tsumO}{\tspred}{\tsum{i}{\cnam_i}{\typ_i'}}}
+ {\theoO{\fa{\var}{\typ_j}
+            {\eq{\app{\embedO}{\var}}
+                {\app{\embed{\tsum{i}{\cnam_i}{\typ_i'}}{\cnam_j}}{\var}}}}}
+ {\Rthembsub}
+\]
+
+\[
+\rruleII
+ {\issubO{\typ}{\tspred}{\typ'}}
+ {\hastyO{\expr}{\typ}}
+ {\theoO{\app{\tspred}{\expr}}}
+ {\Rthsub}
+\]
+
+Explanation:
+\begin{itemize}
+\item
+Axioms in a well-formed context are readily instantiated into theorems, via
+rule $\Rthax$. More precisely, the type variables over which the axiom is
+polymorphic are replaced with well-formed types.
+%\item
+%Similarly, op definitions in a well-formed context are readily instantiated
+%into theorems, via rule $\Rthdef$.
+\item
+Rules $\Rthrefl$, $\Rthsymm$, and $\Rthtrans$ say that equality is an
+equivalence, i.e.\ reflexive, symmetric, and transitive.
+\item
+Rules $\Rthopsbs$ to $\Rthquotsbs$ state the substitutivity of equalities and
+type equivalences in expressions. Note that in rule $\Rthabssbs$ the context
+is extended with the variable bound by the abstraction; in rule $\Rthifsbs$
+the context is extended with an axiom saying that the condition is true or
+false.
+\item
+Rule $\Rthsbs$ says that anything equal to a theorem is itself a theorem.
+%\item
+%Rule $\Rthsbs$ allows the occurrence of an expression $\expr_1$ in a theorem
+%$\expr$ to be replaced with an expression $\expr_2$ provably equal to
+%$\expr_1$. Rules $\Rthsbsif$ is a variant that takes into account the context
+%of the branches.
+%\item
+%Rule $\Rthtsbs$ allows the occurrence of a type $\typ_1$ in a theorem $\expr$
+%to be replaced with an equivalent type $\typ_2$.
+\item
+Rule $\Rthbool$ asserts that $\true$ and $\false$ are the only values of type
+$\bool$.
+%Note that the variable $\var$ used in the universal quantification
+%must not occur free in $\expr$, otherwise it would be captured.
+%\item
+%Rule $\Rthcongr$ asserts that equality is a congruence with respect to any
+%function.
+\item
+Rule $\Rthext$ says that a function is characterized by its values over all
+the values of its domain, i.e.\ by extensionality.
+\item
+Rule $\Rthabs$ defines the semantics of lambda abstraction: the bound variable
+$\var$ is replaced with the argument $\expr'$ in the body $\expr$. The premise
+of the rule says that the application is well-typed.
+\item
+Rule $\Rthif$ defines the semantics of conditionals: a conditional equals an
+expression if both branches do, in the contexts extended with the assumption
+that the condition is true and false, respectively. Note the premise that
+requires the conditional to be well-typed.
+\item
+Rule $\Rthdesc$ says that a description satisfies the predicate associated to
+the description.
+\item
+Rule $\Rthrec$ says that a record is characterized by the values of its
+components.
+\item
+Rules $\Rthembsurj$, $\Rthembdist$, and $\Rthembinj$ characterize sum types.
+They say that every value of a sum type is the image of some constructor
+(i.e.\ the constructors are collectively surjective), that the images of
+distinct constructors are disjoint, and that each constructor is injective.
+\item
+Rules $\Rthquotsurj$ and $\Rthquoteclass$ characterize quotient types. The
+first rules says that $\quotO$ is a surjective function (i.e.\ every quotient
+value is obtained by applying it to some value of the quotiented type). The
+second rule says that $\quotO$ maps each value of the quotiented type to its
+equivalence class, which is a value of the quotient type.
+\item
+Rules $\Rthprojsub$ and $\Rthembsub$ say that projectors/embedders for
+record/sum subtypes agree with projectors/embedders for record/sum supertypes.
+\item
+Rule $\Rthsub$ says that every value of a subtype satisfies the predicate that
+characterizes the subtype with respect to a supertype.
+\end{itemize}
+
+\subsection{Proofs}
+
+The previous subsections have defined judgements of the forms
+\[
+\begin{array}{l}
+\cxwfO \\
+\spwfO \\
+\istyO{\typ} \\
+\teqO{\typ_1}{\typ_2} \\
+\issubO{\typ_1}{\tspred}{\typ_2} \\
+\hastyO{\expr}{\typ} \\
+\theoO{\expr}
+\end{array}
+\]
+by means of a set of inductive rules.
+
+A proof of a judgement is a finite sequence of judgements that ends with the
+proved judgement and where each judgement in the sequence is derived from
+preceding judgements using some rule.
+
+\
+
+\noindent
+[[[TO DO: Make sure that the rules for theorems are ``sufficient'', i.e.\ all
+truths ``of interest'' are indeed theorems derivable from the rules. Even
+though higher-order logic is notoriously incomplete, in practice theorem
+provers like PVS and HOL are sufficient to prove desired properties of
+formalized concepts without running into theoretical limitations. Perhaps the
+requirement boils down to prove completeness with respect to so-called
+``general models'' (cf.\ \cite{andrews}).]]]

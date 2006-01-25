@@ -1,0 +1,32 @@
+\section{Models}
+\label{models}
+
+[[[TO DO]]]
+
+This section defines the notion of model of a context (recall that specs are
+contexts without variable and type variable declarations).
+
+A model of a context is a mapping from names declared in the context to
+suitable set-theoretic entities. For instance, a type name $\tnam$ of arity
+$n$ is mapped to an $n$-ary function over sets (if $n=0$, the model maps the
+type name simply to a set). The mapping is extended to all well-formed types,
+which are mapped to sets, and to all well-typed expressions, which are mapped
+to elements of the sets that their types map to. The model must satisfy all
+the type definitions, op definitions, and axioms of the context.
+
+It should be possible to prove the soundness of the rules to derive judgements
+with respect to models.
+
+Since higher-order logic is notoriously incomplete, it is not possible to
+prove completeness of the rules to derive assertions. However, it should be
+possible to prove completeness with respect to general (a.k.a.\ Henkin)
+models. A general model is one in which the type $\tarrO$ is a subset of all
+functions from $\typ_1$ to $\typ_2$, and not necessarily the set of all such
+functions (as in standard models). Since there are more general models than
+standard models (a standard model is also a general model but not all general
+models are standard models), fewer formulas are true in all general models
+than in all standard models.
+
+Perhaps this section should also contain a proof of the consistency of the
+\MS\ logic, analogously to the proof of the consistency of the higher-order
+logic defined in \cite{andrews}.

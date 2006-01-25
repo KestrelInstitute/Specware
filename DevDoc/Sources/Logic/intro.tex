@@ -1,0 +1,91 @@
+\section{Introduction}
+
+This document formally defines the logic of the \MS\ language
+\cite{lm}, drawing ideas from \cite{andrews}, \cite{pvs-seman}, and
+\cite[Part II]{hol}.
+
+The rest of this section introduces the mathematical notation used in this
+document. \secref{syntax} defines the core (abstract) syntax of the \MS\ logic
+while \secref{proofth} defines its proof theory. \secref{props} states
+properties of the syntax and proof theory. \secref{models} defines a
+set-theoretic semantics of the \MS\ logic. \secref{other} shows how various
+\MS\ constructs are captured in terms of the core constructs. Finally,
+\secref{proofs} collects all the (meta) proofs of the (meta) theorems stated
+in the other sections.
+
+\subsection{Notation}
+
+We define the \MS\ logic in the usual semi-formal notation consisting of naive
+set theory and natural language. However, it is possible to define the \MS\
+logic in axiomatic set theory or any other sufficiently expressive formal
+language.\footnote{For example, Peter Homeier has formalized the \MS\ logic in
+the logic of the HOL theorem prover (see Acknowledgments section for
+details).}
+
+The (meta) logical notations $=$, $\forall$, $\exists$, $\neg$, $\wedge$,
+$\vee$, $\Rightarrow$, $\Leftrightarrow$, and $\ \not\!\!\!\!\ldots$ (e.g.\
+$\neq$) have the usual meaning.
+
+The set-theoretic notations $\in$, $\emptyset$, $\setST{\ldots}{\ldots}$,
+$\setI{\ldots}$, $\cup$, $\cap$, and $\subseteq$ have the usual meaning.
+
+$\N$ is the set of natural numbers, i.e.\ $\setIV{0}{1}{2}{\ldots}$.
+
+%$\NP$ is the set of positive natural numbers, i.e.\ $\setIV{1}{2}{3}{\ldots}$.
+
+If $A$ and $B$ are sets, $A-B$ is their difference, i.e.\ $\setST{x\in
+A}{x\not\in B}$.
+
+If $A$ and $B$ are sets, $A\times B$ is their cartesian product, i.e.\
+$\setST{\tupII{a}{b}}{a\in A\AND b\in B}$. This generalizes to $n>2$ sets.
+
+If $A$ and $B$ are sets, $A+B$ is their disjoint union, i.e.\
+$\setST{\tupII{0}{a}}{a\in A}\cup\setST{\tupII{1}{b}}{b\in B}$. The ``tags'' 0
+and 1 are always left implicit. This generalizes to $n>2$ sets.
+
+If $A$ and $B$ are sets: $\Funcp{A}{B}$ is the set of all partial functions
+from $A$ to $B$, i.e.\ $\setST{f\subseteq A\times
+B}{\FORALL{\tupII{a}{b_1},\tupII{a}{b_2}\in f}{b_1=b_2}}$; $\Func{A}{B}$ is
+the set of all total functions from $A$ to $B$, i.e.\
+$\setST{f\in\Funcp{A}{B}}{\FORALL{a\in A}{\EXISTS{b\in B}{\tupII{a}{b}\in
+f}}}$;
+%$\Funcf{A}{B}$ is the set of all finite functions from $A$ to $B$, i.e.\
+%$\setST{f\in\Funcp{A}{B}}{f\mbox{ is a finite set}}$;
+and $\Funcinj{A}{B}$ is the set of all total injective functions from $A$ to
+$B$, i.e.\ $\setST{f\in\Func{A}{B}}{\FORALL{\tupII{a_1}{b},\tupII{a_2}{b}\in
+f}{a_1=a_2}}$.
+We write $\funcp{f}{A}{B}$, $\func{f}{A}{B}$,
+%$\funcf{f}{A}{B}$,
+and $\funcinj{f}{A}{B}$ for $f\in\Funcp{A}{B}$, $f\in\Func{A}{B}$,
+%$f\in\Funcf{A}{B}$,
+and $f\in\Funcinj{A}{B}$, respectively.
+
+If $f$ is a function from $A$ to $B$: $\dom{f}$ is the domain of $f$, i.e.\
+$\setST{a\in A}{\EXISTS{b\in B}{\tupII{a}{b}\in f}}$; $\rng{f}$ is the range
+of $f$, i.e.\ $\setST{b\in B}{\EXISTS{a\in A}{\tupII{a}{b}\in f}}$.
+
+If $f$ is a function and $a\in\dom{f}$, $f(a)$ denotes the unique value such
+that $\tupII{a}{f(a)}\in f$.
+
+If $f$ is a function and $A$ is a set: $\funrestr{f}{A}$ denotes the
+restriction of $f$ to $A$, i.e.\ $\setST{\tupII{a}{f(a)}}{a\in\dom{f}\cap A}$
+(we may have $A\subseteq\dom{f}$ or not); $\funrestrc{f}{A}$ denotes the
+restriction of $f$ to $\dom{f}-A$, i.e.\ $\funrestr{f}{\dom{f}-A}$.
+
+If $A$ is a set, $\Setf{A}$ is the set of all finite subsets of $A$, i.e.\
+$\setST{S\subseteq A}{S\mbox{ finite}}$.
+
+If $A$ is a set, $\Seq{A}$ is the set of all finite sequences of elements of
+$A$, i.e.\ $\setST{\seqFT{x_1}{x_n}}{x_1\in A\AND\ldots\AND x_n\in A}$;
+$\SeqNE{A}$, $\SeqNR{A}$, and $\SeqNER{A}$ are the subsets of $\Seq{A}$ of
+non-empty sequences, sequences without repeated elements, and non-empty
+sequences without repeated elements, respectively.\footnote{Strictly speaking,
+our notation $\seqFT{x_1}{x_n}$ for sequences may lead to ambiguities, e.g.\
+if $s_1$ and $s_2$ are sequences, is $s_1,s_2$ the sequence of length 2 whose
+elements are $s_1$ and $s_2$, or is it the concatenation of $s_1$ and $s_2$?
+However, in this document, the intended meaning should be always clear from
+the symbols used and from mathematical context.} The empty sequence is written
+$\seqO$. A sequence $\seqFT{x_1}{x_n}$ is often written $\seq{x}$, leaving $n$
+implicit. The length of a sequence $s$ is written $\seqlen{s}$.  When a
+sequence is written where a set is expected, it stands for the set of its
+elements.

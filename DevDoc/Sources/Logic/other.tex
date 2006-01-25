@@ -1,0 +1,1329 @@
+\section{Other \MS\ constructs}
+\label{other}
+
+\subsection{Record updates}
+
+A record update as defined in \cite{lm} is just an abbreviation for an
+explicit record construction whose fields are assigned projections from the
+two expressions, as appropriate.
+
+A record updater has the form
+\[
+\recupopO
+\]
+where
+$\trecO,\trec{i}{\fnam_i'}{\typ_i'},\trec{i}{\fnam_i''}{\typ_i''}\in\Typ$ and
+$\fnamS'\cap\fnamS''=\emptyset$. Its type is
+\[
+\mbox{$\tarr{(\trecII{\trecO}{\trec{i}{\fnam_i'}{\typ_i'}})}
+      {\tarr{(\trecII{\trecO}{\trec{i}{\fnam_i''}{\typ_i''}})}
+            {(\trecIII{\trecO}{\trec{i}{\fnam_i'}{\typ_i'}}
+                              {\trec{i}{\fnam_i''}{\typ_i''}})}}$}
+\]
+i.e.\ it operates on two records whose common fields have the same types and
+returns a record with the union of all the fields. The resulting record is
+obtained by putting together the second record with the fields of the first
+one that do not appear in the second record. In other words, we start with the
+first record, overwrite the common fields with those from the second record,
+and add the extra fields from the second record. This is defined by the
+abbreviation
+\[
+\begin{abblist}
+\abbitem{\recupY}
+        {\abs{\varfxI{1}}{\typ'}
+             {\abs{\varfxI{2}}{\typ''}
+                  {\recIII{\fnamS}{(\proj{\varfxI{2}}{\fnamS})}
+                          {\fnamS'}{(\proj{\varfxI{1}}{\fnamS'})}
+                          {\fnamS''}{(\proj{\varfxI{2}}{\fnamS''})}}}}
+\end{abblist}
+\]
+where we leave the record types that tag $\recupY$ implicit, where $\typ'$ and
+$\typ''$ respectively stand for $\trecII{\trecO}{\trec{i}{\fnam_i'}{\typ_i'}}$
+and $\trecII{\trecO}{\trec{i}{\fnam_i''}{\typ_i''}}$, and where the notation
+$\fldasg{\fnamS}{\proj{\expr}{\fnamS}}$ stands for
+$\fldasgFT{\fnam_1}{\proj{\expr}{\fnam_1}}{\fnam_n}{\proj{\expr}{\fnam_n}}$.
+Recall that $\varfxI{i}$ are distinct fixed but unspecified names in $\Nam$,
+as previously explained.
+
+The infix form is defined by the abbreviation
+\[
+\begin{abblist}
+\abbitem{\recupO}
+        {\app{\app{\recupY}{\expr_1}}{\expr_2}}
+\end{abblist}
+\]
+where again we leave the tagging record types implicit.
+
+%Given an expression $\expr_1$ of type
+%$\trecII{\trecO}{\trec{j}{\fnam_j'}{\typ_j'}}$ and an expression $\expr_2$ of
+%type $\trecII{\trecO}{\trec{j}{\fnam_j''}{\typ_j''}}$ such that
+%$\seq{\fnam}'\cap\seq{\fnam}''=\emptyset$, we introduce the abbreviation
+%\[
+%\begin{abblist}
+%\abbitem{\recupO}
+%        {\recwrap{\inrecIII{\fnamS}{(\proj{\expr_2}{\fnamS})}
+%                           {\fnamS'}{(\proj{\expr_1}{\fnamS'})}
+%                           {\fnamS''}{(\proj{\expr_2}{\fnamS''})}}}
+%\end{abblist}
+%\]
+%where the notation $\fldasg{\fnamS}{\proj{\expr}{\fnamS}}$ stands for
+%$\inrecFT{\fnam_1}{\proj{\expr}{\fnam_1}}{\fnam_n}{\proj{\expr}{\fnam_n}}$.
+%In other words, fields that are only present in one of the operands retain
+%their values, while the common fields are assigned the values of the second
+%operand.
+
+\begin{theorem}\label{thm-recup}
+\[
+\begin{eqlist}
+\eqitem{\efvar{\recupY}}{\emptyset}
+\eqitem{\efvar{\recupO}}{\efvar{\expr_1}\cup\efvar{\expr_2}}
+%\eqitem{\opsin{\recupopO}}
+%       {\bigcup_i\opsin{\typ_i}\cup
+%        \bigcup_i\opsin{\typ_i'}\cup
+%        \bigcup_i\opsin{\typ_i''}}
+%\eqitem{\opsin{\recupO}}
+%       {\bigcup_i\opsin{\typ_i}\cup
+%        \bigcup_i\opsin{\typ_i'}\cup
+%        \bigcup_i\opsin{\typ_i''}\cup
+%        \opsin{\expr_1}\cup\opsin{\expr_2}}
+\eqitem{\tsbsO{\recupopO}}
+       {\recupop{\tprod{i}{\fnam_i}{\tsbsO{\typ_i}}}
+                {\tprod{i}{\fnam_i'}{\tsbsO{\typ_i'}}}
+                {\tprod{i}{\fnam_i''}{\tsbsO{\typ_i''}}}}
+\eqitem{\tsbsO{(\recupO)}}
+       {\recup{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\eqitem{\esbsO{\recupopO}}
+       {\recupopO}
+\eqitem{\esbsO{(\recupO)}}
+       {\recup{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\eqitem{\cvarvO{\recupY}}
+       {\emptyset}
+\eqitem{\cvarvO{\recupO}}
+       {\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+\end{eqlist}
+\]
+\end{theorem}
+
+%\subsection{Simple let expressions}
+
+%A simple let expression has the form
+%\[
+%\sletO
+%\]
+%where $\var\in\Nam$, $\typ\in\Typ$, and $\expr,\expr'\in\Expr$.
+
+%We introduce the abbreviation
+%\[
+%\begin{abblist}
+%\abbitem{\sletO}
+%        {\app{(\abs{\var}{\typ}{\expr'})}{\expr}}
+%\end{abblist}
+%\]
+%which captures the class of (non-recursive) let expressions defined in
+%\cite{lm} such that the pattern is just a variable. Let expressions with more
+%complex patterns are defined later.
+
+%\begin{theorem}
+%\[
+%\begin{eqlist}
+%\eqitem{\efvar{\sletO}}{\efvar{\expr}\cup(\efvar{\expr'}-\setI{\var})}
+%%\eqitem{\opsin{\sletO}}{\opsin{\typ}\cup\opsin{\expr}\cup\opsin{\expr'}}
+%\eqitem{\tsbsO{(\sletO)}}
+%       {\slet{\var}{\tsbsO{\typ}}{\tsbsO{\expr}}{\tsbsO{\expr'}}}
+%\eqitem{\esbsO{(\sletO)}}
+%       {\cond{\varI=\var}
+%             {\slet{\var}{\typ}{\esbsO{\expr}}{\expr'}}
+%             {\slet{\var}{\typ}{\esbsO{\expr}}{\esbsO{\expr'}}}}
+%\eqitem{\cvarvO{\sletO}}
+%       {\cond{\varI\in\efvar{\expr'}-\setI{\var}}
+%             {\cvarvO{\expr}\cup\setI{\var}\cup\cvarvO{\expr'}}
+%             {\cvarvO{\expr}}}
+%\end{eqlist}
+%\]
+%\end{theorem}
+%\begin{proof}
+%By straightforward calculation.
+%\end{proof}
+
+\subsection{Binding conditionals}
+
+A binding conditional, currently absent from \cite{lm}, has the form
+\[
+\bcondFTL{\typ}
+         {\bcondbrFT{\var_{1,1}}{\typ_{1,1}}{\var_{m_1,1}}{\typ_{m_1,1}}
+                    {\bexpr_1}{\expr_1}}
+         {\bcondbrFT{\var_{1,n}}{\typ_{1,n}}{\var_{m_n,n}}{\typ_{m_n,n}}
+                    {\bexpr_n}{\expr_n}}
+\]
+where $\typ\in\Typ$, $\seq{\varS}\in\SeqNE{(\SeqNR{\Nam})}$,
+$\seq{\typS}\in\SeqNE{(\Seq{\Typ})}$, and
+$\seq{\bexpr},\seq{\expr}\in\SeqNE{\Expr}$.
+
+Its intuitive meaning is the following. Each $\bexpr_i$ is a boolean
+expression: if $\bexpr_1$ holds, the result of the conditional is $\expr_1$;
+otherwise, if $\bexpr_2$ holds, the result is $\expr_2$; and so on. At least
+one $\bexpr_i$ must hold. Each branch $i$ binds zero or more variables
+$\varS_i$, whose scope is not only the condition $\bexpr_i$, but also the
+result expression $\expr_i$. Each branch $i$ reads as: if there exist
+$\varS_i$ with respective types $\typS_i$ such that $\bexpr_i$ holds, then the
+result is $\expr_i$, which can refer to the bound variables. The value of
+$\expr_i$ must be the same for all values assigned to $\varS_i$ that make
+$\bexpr_i$ true. All the $\expr_i$ must have type $\typ$.
+
+We introduce the abbreviations
+\[
+\begin{abblist}
+\abbitem{\bcondI{\typ}{\bcondbr{\varS}{\typS}{\bexpr}{\expr}}}
+        {\desc{\varfxI{\varS,\bexpr,\expr}}{\typ}
+              {\ex{\varS}{\typS}
+                  {(\conj{\bexpr}{\eq{\varfxI{\varS,\bexpr,\expr}}{\expr}})}}}
+\abbitem{\bcondFTL{\typ}{\bcondbr{\varS_1}{\typS_1}{\bexpr_1}{\expr_1}}
+                        {\bcondbr{\varS_n}{\typS_n}{\bexpr_n}{\expr_n}}\!\!\!}
+        {\iifL{(\ex{\varS_1}{\typS_1}{\bexpr_1})}
+              {(\desc{\varfxI{\varS_1,\bexpr_1,\expr_1}}{\typ}
+                     {\ex{\varS_1}{\typS_1}
+                         {(\conj{\bexpr_1}
+                                {\eq{\varfxI{\varS_1,\bexpr_1,\expr_1}}
+                                    {\expr_1}})}})}
+              {(\bcondFT{\typ}
+                        {\bcondbr{\varS_2}{\typS_2}{\bexpr_2}{\expr_2}}
+                        {\bcondbr{\varS_n}{\typS_n}{\bexpr_n}{\expr_n}})}}
+\end{abblist}
+\]
+where $\varfxI{\varS,\bexpr,\expr}$ is, for each triple
+$\tupIII{\varS}{\bexpr}{\expr}\in\Seq{\Nam}\times\Expr\times\Expr$, a fixed
+but unspecified name in $\Nam$ such that
+$\varfxI{\varS,\bexpr,\expr}\not\in\varS\cup\efvar{\bexpr}\cup\efvar{\expr}$
+and where the second abbreviation only applies when $n>1$.
+
+% COMMENT IN:
+
+%\begin{theorem}
+%\[
+%\begin{eqlist}
+%\eqitem{\efvar{\bcondO}}
+%       {\bigcup_i(\efvar{\bexpr_i}\cup\efvar{\expr_i})-\varS_i}
+%%\eqitem{\opsin{\bcondO}}
+%%       {\opsin{\typ}\cup
+%%        \bigcup_{i,j}\opsin{\typ_{j,i}}\cup
+%%        \bigcup_i\opsin{\bexpr_i}\cup\opsin{\expr_i}}
+
+%WRONG because gamma_(vS,b,e) != gamma_(vS[bS/tS],b[bS/tS],e[bS/tS]):
+%\eqitem{\tsbsO{(\bcondO)}}
+%       {\bcond{\tsbsO{\typ}}{i}
+%              {\bcondbr{\varS_i}{\tsbsO{\typS_i}}
+%              {\tsbsO{\bexpr_i}}{\tsbsO{\expr_i}}}}
+%==> need equality in the logic
+
+%\eqitem{\cvarvO{\bcondO}}
+%       {\bigcup_i\condL{\varI\in(\efvar{\bexpr_i}\cup\efvar{\expr_i})-\varS_i}
+%                       {\setI{\varfxI{\varS_i,\bexpr_i,\expr_i}}\cup
+%                        \varS_i\cup
+%                        \cvarvO{\bexpr_i}\cup
+%                        \cvarvO{\expr_i}}
+%                       {\emptyset}}
+%\end{eqlist}
+%\]
+%\end{theorem}
+%\begin{proof}
+%By induction on $n$ (= the number of branches) and straightforward calculation.
+%\end{proof}
+
+%\begin{theorem}
+%\[
+%\rruleNIII
+% {\hastyOany{\bcondO}}
+% {\esbsokO{\bcondO}}
+% {\FORALL{i}{\varI\neq\varfxI{\varS_i,\bexpr_i,\expr_i}}}
+% {\theoO{\eq{\esbsO{(\bcondO)}}
+%            {\bcondtall{\typ}{i}
+%                       {\cond{\varI\in\varS_i}
+%                             {\bcondbr{\varS_i}{\typS_i}{\bexpr_i}{\expr_i}}
+%                             {\bcondbr{\varS_i}{\typS_i}{\esbsO{\bexpr_i}}
+%                                                        {\esbsO{\expr_i}}}}}}}
+%\]
+%\end{theorem}
+%\begin{proof}
+%[[[TO DO]]]
+%\end{proof}
+
+\subsection{Pattern matching}
+
+A pattern matching expression, currently present in \cite{lm} in a more
+limited form than defined here, has the form
+\[
+\caseFTL{\typ}{\typ'}{\expr}
+        {\casebrFT{\var_{1,1}}{\typ_{1,1}}{\var_{m_1,1}}{\typ_{m_1,1}}
+                  {\pexpr_1}{\expr_1}}
+        {\casebrFT{\var_{1,n}}{\typ_{1,n}}{\var_{m_n,n}}{\typ_{m_n,n}}
+                  {\pexpr_n}{\expr_n}}
+\]
+where $\typ,\typ'\in\Typ$, $\expr\in\Expr$,
+$\seq{\varS}\in\SeqNE{(\SeqNR{\Nam})}$, $\seq{\typS}\in\SeqNE{(\Seq{\Typ})}$,
+and $\seq{\pexpr},\seq{\expr}\in\SeqNE{\Expr}$.
+
+Its intuitive meaning is the following. Each $\pexpr_i$ is a pattern
+expression of type $\typ$ against which $\expr$, which must also have type
+$\typ$, is compared: if $\expr$ matches $\pexpr_1$, the result of the case
+expression is $\expr_1$; otherwise, if $\expr$ matches $\pexpr_2$ holds, the
+result is $\expr_2$; and so on. The target expression $\expr$ must match at
+least one $\pexpr_i$. Each branch $i$ binds zero or more variables $\varS_i$,
+whose scope is not only the pattern $\pexpr_i$, but also the result expression
+$\expr_i$. Here, ``$\expr$ matches $\pexpr_i$'' means that
+$\eq{\expr}{\pexpr_i}$ for some values of $\varS_i$ of types $\typS_i$.  Every
+branch $i$ reads as: if there exist $\varS_i$ with respective types $\typS_i$
+such that $\eq{\expr}{\bexpr_i}$ holds, then the result is $\expr_i$, which
+can refer to the bound variables. The value of $\expr_i$ must be the same for
+all values assigned to $\varS_i$ that make $\eq{\expr}{\bexpr_i}$ true. All
+the $\expr_i$ must have type $\typ'$.
+
+We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\caseO}
+        {\condLL{\efvar{\expr}\cap\bigcup_i\varS_i=\emptyset}
+                {\bcond{\typ'}
+                       {i}
+                       {\bcondbr{\varS_i}{\typS_i}
+                                {(\eq{\expr}{\pexpr_i})}
+                                {\expr_i}}}
+                {\caseI{\typ}{\typ'}
+                       {\expr}
+                       {\casebr{\varfxI{\seq{\varS},\expr}}{\typ}
+                               {\varfxI{\seq{\varS},\expr}}
+                               {\case{\typ}{\typ'}
+                                     {\varfxI{\seq{\varS},\expr}}
+                                     {i}
+                                     {\casebr{\varS_i}{\typS_i}
+                                             {\pexpr_i}
+                                             {\expr_i}}}}}}
+%               {\sletL{\typ'}
+%                      {\varfxI{\seq{\varS},\seq{\pexpr},\seq{\expr}}}
+%                      {\typ}
+%                      {\expr}
+%                      {\bcond{\typ'}
+%                             {i}
+%                             {\bcondbr{\varS_i}{\typS_i}
+%                                      {(\eq{\varfxI{\seq{\varS},
+%                                                    \seq{\pexpr},
+%                                                    \seq{\expr}}}
+%                                           {\pexpr_i})}
+%                                      {\expr_i}}}}}
+%\abbitem{\caseFTL{\typ}{\typ'}{\expr}
+%                 {\casebr{\varS_1}{\typS_1}{\pexpr_1}{\expr_1}}
+%                 {\casebr{\varS_n}{\typS_n}{\pexpr_n}{\expr_n}}\!\!\!}
+%        {\bcondFTL{\typ'}
+%                  {\bcondbr{\varS_1}{\typS_1}
+%                           {(\eq{\varfxI{\seq{\varS},\seq{\pexpr},\seq{\expr}}}
+%                                {\pexpr_1})}
+%                           {\expr_1}}
+%                  {\bcondbr{\varS_n}{\typS_n}
+%                           {(\eq{\varfxI{\seq{\varS},\seq{\pexpr},\seq{\expr}}}
+%                                {\pexpr_n})}
+%                           {\expr_n}}}}
+\end{abblist}
+\]
+where $\varfxI{\seq{\varS},\expr}$ is, for each pair
+$\tupII{\seq{\varS}}{\expr}\in\SeqNE{(\SeqNR{\Nam})}\times\Expr$, a fixed but
+unspecified name in $\Nam$ such that
+$\varfxI{\seq{\varS},\expr}\not\in\bigcup_i\varS_i\cup\efvar{\expr}$.
+The nested case expressions
+$\caseI{\typ}{\typ'}{\expr}{\casebr{\varfxI{\seq{\varS},\expr}}{\typ}
+                                   {\varfxI{\seq{\varS},\expr}}
+                                   {\casedots}}$
+coincide with
+$\slet{\typ'}{\varfxI{\seq{\varS},\expr}}{\typ}{\expr}{\casedots}$ (see let
+expressions, introduced later), which should be more intuitive. The reason for
+introducing the extra $\varfxI{\seq{\varS},\expr}$ variable via a let
+expression when $\efvar{\expr}\cap\bigcup_i\varS_i\neq\emptyset$ is to prevent
+the bindings of the branches to capture free variables in the target
+expression $\expr$. Note that there is no circularity: both nested case
+expressions readily expand into binding conditionals, because of the
+hypothesis that
+$\varfxI{\seq{\varS},\expr}\not\in\bigcup_i\varS_i\cup\efvar{\expr}$.
+
+Here, the patterns $\pexpr_i$ can be any expressions. In \cite{lm}, patterns
+are a separate syntactic category, which can be regarded as a subset of
+expressions.
+
+Aliased patterns as defined in \cite{lm} can be easily captured as
+follows. Given an aliased pattern $(\paliasO)$ in a branch, first drop $\var$
+and all other alias variables that appear in any subpatterns of $\pexpr$,
+obtaining an alias-free pattern $\pexpr'$. Then, use the abbreviation
+expansion given above, obtaining a binding conditional where the branch
+condition is $\eq{\expr}{\pexpr'}$. Finally, conjoin that branch condition
+with equations that equate the alias variables with the patterns, e.g.\
+$\eq{\var}{\pexpr'}$, at the same time adding those variables, e.g.\
+$\bnd{\var}{\typ}$, to the variables $\bnd{\varS}{\typS}$ bound by the
+branch. An alternative to adding equations for the alias variables to the
+branch condition is to add simple let expressions for those variables in the
+result expression of the branch, e.g.\
+$\slet{\ldots}{\var}{\typ}{\pexpr'}{\ldots}$
+
+If the aliased patterns defined in \cite{lm} were generalized to allow an
+arbitrary pattern at the left of $\asY$, they could be captured as follows.
+First, recursively expand $\paliasgO$ into a sequence of alias-free patterns
+$\seqFT{\pexpr_1}{\pexpr_n}$ that are all equal to $\pexpr$ and
+$\pexpr'$. Then, use the conjunction $\conjI{i}{\eq{\expr}{\pexpr_i}}$ as the
+condition of the branch of the binding conditional. The potentially
+exponential expansion of $\paliasgO$ into $\seqFT{\pexpr_1}{\pexpr_n}$ can be
+avoided by first introducing fresh variables for each left-hand side of each
+$\asY$ in $\paliasgO$, then using the method described earlier for aliased
+patterns of the form $\paliasO$, and finally conjoining the branch condition
+with equations that equate the fresh variables to the corresponding left-hand
+sides.
+
+% COMMENT IN:
+
+%\begin{theorem}
+%\[
+%\begin{eqlist}
+%\eqitem{\efvar{\caseO}}
+%       {\efvar{\expr}\cup\bigcup_i(\efvar{\pexpr_i}\cup\efvar{\expr_i})-\varS_i}
+%%\eqitem{\opsin{\caseO}}
+%%       {\!\!\!\begin{array}[t]{l}
+%%        \opsin{\typ}\cup\opsin{\typ'}\cup\opsin{\expr}\cup\\
+%%        \bigcup_{i,j}\opsin{\typ_{j,i}}\cup
+%%        \bigcup_i\opsin{\pexpr_i}\cup\opsin{\expr_i}
+%%        \end{array}}
+%\eqitem{\tsbsO{(\caseO)}}
+%       {\case{\tsbsO{\typ}}{\tsbsO{\typ'}}{\tsbsO{\expr}}{i}
+%             {\casebr{\varS_i}{\tsbsO{\typS_i}}
+%                     {\tsbsO{\pexpr_i}}{\tsbsO{\expr_i}}}}
+%\eqitem{\cvarvO{\caseO}}
+%       {\cvarvO{\expr}\cup
+%        \bigcup_i\condL{\varI\in(\efvar{\pexpr_i}\cup\efvar{\expr_i})-\varS_i}
+%                       {\setI{\varfxI{\varS_i,
+%                                      \eq{\varfxI{\seq{\varS},
+%                                                  \seq{\pexpr},
+%                                                  \seq{\expr}}}
+%                                         {\pexpr_i},
+%                                      \expr_i}}\cup
+%                        \varS_i\cup
+%                        \cvarvO{\pexpr_i}\cup
+%                        \cvarvO{\expr_i}}
+%                       {\emptyset}}
+%\end{eqlist}
+%\]
+%\end{theorem}
+%\begin{proof}
+%By straightforward calculation.
+%\end{proof}
+
+%\begin{theorem}
+%\[
+%\rruleNIII
+% {\hastyOany{\caseO}}
+% {\esbsokO{\expr}}
+% {\varI\neq\varfxI{\seq{\varS},\seq{\pexpr},\seq{\expr}}\AND
+%  \FORALL{i}{\varI\neq\varfxI{\varS_i,\pexpr_i,\expr_i}}}
+% {\theoO{\eq{\esbsO{(\caseO)}}
+%            {\casetall{\typ}{\typ'}{\esbsO{\expr}}{i}
+%                      {\cond{\varI\in\varS_i}
+%                            {\casebr{\varS_i}{\typS_i}{\pexpr_i}{\expr_i}}
+%                            {\casebr{\varS_i}{\typS_i}{\esbsO{\pexpr_i}}
+%                                                      {\esbsO{\expr_i}}}}}}}
+%\]
+%\end{theorem}
+%\begin{proof}
+%[[[TO DO]]]
+%\end{proof}
+
+\subsection{Let expressions}
+
+\subsubsection{Non-recursive}
+
+As in \cite{lm}, a non-recursive let expression is defined as a case
+expression with one branch.
+
+A non-recursive let expression has the form
+\[
+\lettO
+\]
+where $\typ,\typ'\in\Typ$, $\varS\in\SeqNR{\Nam}$, $\typS\in\Seq{\Typ}$, and
+$\pexpr,\expr,\expr'\in\Expr$.
+
+We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\lettO}
+        {\caseI{\typ}{\typ'}{\expr}{\casebr{\varS}{\typS}{\pexpr}{\expr'}}}
+\end{abblist}
+\]
+which captures a generalization of non-recursive let expressions as defined in
+\cite{lm}, in the same way as the pattern matching defined here generalizes
+the pattern matching defined in \cite{lm}.
+
+% COMMENT IN:
+
+%\begin{theorem}
+%\[
+%\begin{eqlist}
+%\eqitem{\efvar{\lettO}}
+%       {\efvar{\expr}\cup((\efvar{\pexpr}\cup\efvar{\expr'})-\varS)}
+%%\eqitem{\opsin{\lettO}}
+%%       {\opsin{\typ}\cup\opsin{\typ'}\cup
+%%        \bigcup_i\opsin{\typ_i}\cup
+%%        \opsin{\pexpr}\cup\opsin{\expr}\cup\opsin{\expr'}}
+
+%ERROR: must be equality in the logic!
+%\eqitem{\tsbsO{(\lettO)}}
+%       {\lett{\tsbsO{\typ}}{\tsbsO{\typ'}}
+%             {\varS}{\tsbsO{\typS}}
+%             {\tsbsO{\pexpr}}{\tsbsO{\expr}}{\tsbsO{\expr'}}}
+
+%\end{eqlist}
+%\]
+%\end{theorem}
+%\begin{proof}
+%By straightforward calculation.
+%\end{proof}
+
+%\begin{theorem}
+%\[
+%\rruleNI
+% {\hastyOany{\lettO}}
+% {\theoO{\eq{\esbsO{(\lettO)}}
+%            {\cond{\varI\in\varS}
+%                  {\lett{\typ}{\typ'}
+%                        {\varS}{\typS}{\pexpr}{\esbsO{\expr}}{\expr'}}
+%                  {\lett{\typ}{\typ'}
+%                        {\varS}{\typS}{\esbsO{\pexpr}}
+%                                      {\esbsO{\expr}}
+%                                      {\esbsO{\expr'}}}}}}
+%\]
+%\end{theorem}
+%\begin{proof}
+%[[[TO DO]]]
+%\end{proof}
+
+\subsubsection{Simple}
+
+A simple let expression has the form
+\[
+\sletO
+\]
+where $\var\in\Nam$, $\typ,typ'\in\Typ$, and $\expr,\expr'\in\Expr$.
+
+We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\sletO}
+        {\lett{\typ}{\typ'}{\var}{\typ}{\var}{\expr}{\expr'}}
+\end{abblist}
+\]
+which captures a common kind of non-recursive let expression.
+
+\subsubsection{Recursive}
+
+Recursive let expressions are defined in terms of non-recursive let
+expressions and binding conditionals.
+
+A recursive let expression has the form
+\[
+\letrecFTO
+\]
+where $\typ\in\Typ$, $\varS\in\SeqNER{\Nam}$, $\typS\in\SeqNE{\Typ}$,
+$\exprS\in\SeqNE{\Expr}$, and $\expr\in\Expr$.
+
+We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\letrecO}
+        {\lett{\tprodO}{\typ}
+              {\varS}{\typS}
+              {\tuple{\varS}}
+              {\bcondI{\tprodO}
+                      {\bcondbr{\varS}{\typS}
+                               {\eq{\tuple{\varS}}{\tuple{\exprS}}}
+                               {\tuple{\varS}}}}
+              {\expr}}
+%        {\lett{\var}{\tprodO}{\var}
+%              {\desc{\var}{\tprodO}
+%                    {\conjI{i}{\eq{\proj{\var}{\projnam{i}}}
+%                                  {\esbsFT{\expr_i}
+%                                          {\var_1}{\proj{\var}{\projnam{1}}}
+%                                          {\var_n}{\proj{\var}{\projnam{n}}}}}}}
+%              {\expr}}
+\end{abblist}
+\]
+which captures recursive let expressions as defined in \cite{lm}.
+
+% COMMENT IN:
+
+%\begin{theorem}
+%\[
+%\begin{eqlist}
+%\eqitem{\efvar{\letrecO}}
+%       {(\efvar{\expr}\cup\bigcup_i\efvar{\expr_i})-\varS}
+%%\eqitem{\opsin{\letrecO}}
+%%       {\opsin{\typ}\cup\opsin{\expr}\cup
+%%        \bigcup_i\opsin{\typ_i}\cup\opsin{\expr_i}}
+
+%ERROR: must be equality in the logic!
+%\eqitem{\tsbsO{(\letrecO)}}
+%       {\letrec{\tsbsO{\typ}}{i}
+%               {\var_i}{\tsbsO{\typ_i}}{\tsbsO{\expr_i}}{\tsbsO{\expr}}}
+
+%\end{eqlist}
+%\]
+%\end{theorem}
+%\begin{proof}
+%By straightforward calculation.
+%\end{proof}
+
+%\begin{theorem}
+%\[
+%\rruleNI
+% {\hastyOany{\letrecO}}
+% {\theoO{\eq{\esbsO{(\letrecO)}}
+%            {\cond{\varI\in\varS}
+%                  {\letrec{\typ}{i}{\var_i}{\typ_i}{\expr_i}{\expr}}
+%                  {\letrec{\typ}{i}
+%                          {\var_i}{\typ_i}{\esbsO{\expr_i}}{\esbsO{\expr}}}}}}
+%\]
+%\end{theorem}
+%\begin{proof}
+%[[[TO DO]]]
+%\end{proof}
+
+\subsection{Choosers}
+
+A chooser has the form
+\[
+\choosO
+\]
+where $\tquotO,\typ'\in\Typ$.
+
+We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\choosO}
+        {\abs{\varfxfun}{\tsub{(\tarr{\typ}{\typ'})}{\tspred}}
+             {\abs{\varfx}{\tquotO}
+                  {(\lett{\tquotO}{\typ'}
+                         {\varfx'}{\typ}
+                         {\app{\quo}{\varfx'}}
+                         {\varfx}
+                         {\app{\varfxfun}{\varfx'}})}}}
+\end{abblist}
+\]
+where
+\[
+\tspred=\abs{\varfxfun}{\tarr{\typ}{\typ'}}
+            {\faS{\seqII{\bnd{\varfx}{\typ}}{\bnd{\varfx'}{\typ}}}
+                 {\impl{\app{\tqpred}{\tupleII{\varfx}{\varfx'}}}
+                       {\eq{\app{\varfxfun}{\varfx}}{\app{\varfxfun}{\varfx'}}}}}
+\]
+and where $\varfxfun$ is a fixed but unspecified name in $\Nam$ that is
+distinct from $\varfx$ and $\varfx'$ (which have been introduced earlier).
+
+% COMMENT IN:
+
+%\begin{theorem}
+%\[
+%\begin{eqlist}
+%\eqitem{\efvar{\choosO}}{\emptyset}
+%%\eqitem{\opsin{\choosO}}{\opsin{\typ}\cup\opsin{\tqpred}\cup\opsin{\typ'}}
+%\eqitem{\tsbsO{\choosO}}
+%       {\choos{\tsbsO{(\tquotO)}}{\tsbsO{\typ'}}}
+%\end{eqlist}
+%\]
+%\end{theorem}
+%\begin{proof}
+%By straightforward calculation.
+%\end{proof}
+%by thm 4.1:
+%CV(ch,u) = {}
+%ch[u/d] = ch
+
+%\begin{theorem}
+%\[
+%\rruleNI
+% {\hastyOany{\choosO}}
+% {\theoO{\eq{\esbsO{(\choosO)}}{\choosO}}}
+%\]
+%\end{theorem}
+%\begin{proof}
+%[[[TO DO]]]
+%\end{proof}
+
+\subsection{Embedding tests}
+
+An embedding test has the form
+\[
+\embedtestO
+\]
+where $\tsumO\in\Typ$.
+
+We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\embedtestO}
+        {\abs{\varfx}{\tsumO}
+             {\ex{\varfx'}{\typ_j}{\eq{\varfx}{\app{\embO}{\varfx'}}}}}
+\end{abblist}
+\]
+
+\begin{theorem}\label{thm-embtest}
+\[
+\begin{eqlist}
+\eqitem{\efvar{\embtestO}}{\emptyset}
+%\eqitem{\opsin{\embedtestO}}{\bigcup_i\opsin{\typ_i}}
+\eqitem{\tsbsO{(\embedtestO)}}
+       {\embedtest{\tsum{i}{\cnam_i}{\tsbsO{\typ_i}}}{\cnam_j}}
+\eqitem{\esbsO{(\embtestO)}}
+       {\embtestO}
+\eqitem{\cvarvO{\embtestO}}
+       {\emptyset}
+\end{eqlist}
+\]
+\end{theorem}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%% OTHER ABBREVIATIONS:
+
+%\item
+%A recursive let $\letrecO$ captures ``let def'' as defined in \cite{lm}.
+
+%\abbiteM{\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+%        {\fa{\var_1}{\typ_1}{\ldots\;\fa{\var_n}{\typ_n}{\expr}}}
+%        {n\geq0}
+%\abbiteM{\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+%        {\ex{\var_1}{\typ_1}{\ldots\;\ex{\var_n}{\typ_n}{\expr}}}
+%        {n\geq0}
+%\abbiteM{\fa{\varS}{\typS}{\expr}}
+%        {\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+%        {\seqlen{\varS}=\seqlen{\typS}\geq0}
+%\abbiteM{\ex{\varS}{\typS}{\expr}}
+%        {\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
+%        {\seqlen{\varS}=\seqlen{\typS}\geq0}
+% {\setST{\recupO}{\expr_1,\expr_2\in\Expr}}
+% {\setSTL{\condFT{\condbrFT{\var_{1,1}}{\typ_{1,1}}{\var_{m_1,1}}{\typ_{m_1,1}}
+%                           {\bexpr_1}{\expr_1}}
+%                 {\condbrFT{\var_{1,n}}{\typ_{1,n}}{\var_{m_n,n}}{\typ_{m_n,n}}
+%                           {\bexpr_n}{\expr_n}}}
+%         {\seq{\varS}\in\SeqNE{(\SeqNR{\Nam})}\AND
+%          \seq{\typS}\in\SeqNE{(\Seq{\Typ})}\AND
+%          \seq{\bexpr}\in\SeqNE{\Expr}\AND
+%          \seq{\expr}\in\SeqNE{\Expr}}}
+% {\setST{\caseFTO}{\expr\in\Expr\AND
+%                   \patS\in\SeqNE{\Pat}\AND\exprS\in\SeqNE{\Expr}}}
+% {\setST{\letrecFTO}{\varS\in\SeqNER{\Nam}\AND
+%                     \typS\in\SeqNE{\Typ}\AND
+%                     \exprS\in\SeqNE{\Expr}\AND
+%                     \expr\in\Expr}}
+
+%\abbiteM{\condbrnv{\bexpr}{\expr}}
+%        {\condbrmt{\bexpr}{\expr}}
+%        {\mbox{i.e.\ branch of binding conditional that binds no variables}}
+%\abbiteM{\condbr{\varS}{\typS}{\bexpr}{\expr}}
+%        {\condbrFT{\var_1}{\typ_1}{\var_m}{\typ_m}{\bexpr}{\expr}}
+%        {\mbox{if }\seqlen{\varS}=\seqlen{\typS}}
+%\abbitem{\iifO}
+%        {\condII{\condbrnv{\expr_0}{\expr_1}}{\condbrnv{\true}{\expr_2}}}
+
+%\abbitem{\lettO}
+%        {\caseI{\expr}{\pat}{\expr'}}
+
+%Note that both $\faS{\seqO}{\expr}$ and $\exS{\seqO}{\expr}$ abbreviate
+%$\expr$.
+
+
+%Embedding test expressions as defined in \cite{lm} are not explicitly modeled
+%here, either directly or as abbreviations. As explained in \cite{lm},
+%embedding test expressions can be easily rewritten as abstractions with
+%embedding case expressions.
+
+%Non-boolean literals and list displays as defined in \cite{lm} are not
+%explicitly modeled here, either directly or as abbreviations, because their
+%types are not necessarily part of every possible legal spec. They can be
+%regarded as abbreviations for more verbose and less readable expressions
+%obtained by applying ops defined in (library) specs for natural numbers,
+%characters, strings, and lists.
+
+%\eqitem{\efvar{\recO}}   {\bigcup_i\efvar{\expr_i}}
+%\eqitem{\efvar{\recupO}} {\efvar{\expr_1}\cup\efvar{\expr_2}}
+%\eqitem{\efvar{\choosO}} {\efvarO} %{\efvar{\tqpred}\cup\efvarO}
+%\eqitem{\efvar{\caseO}}  {\efvar{\expr}\cup
+%                          \bigcup_i(\efvar{\expr_i}-\pbvar{\pat_i})}
+%\eqitem{\efvar{\letrecO}}{(\efvar{\expr}\cup\bigcup_i\efvar{\expr_i})-\varS}
+
+%We introduce the following abbreviations
+%\[
+%\begin{abblist}
+%\abbitem{\tvdec{\seqFT{\tvar_1}{\tvar_n}}}
+%        {\seqFT{\tvdec{\tvar_1}}{\tvdec{\tvar_n}}}
+%\abbitem{\vdecS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}}
+%        {\seqFT{\vdec{\var_1}{\typ_1}}{\vdec{\var_n}{\typ_n}}}
+%\abbiteM{\vdec{\varS}{\typS}}
+%        {\vdecS{\seqFT{\var_1}{\var_n}}{\seqFT{\typ_1}{\typ_n}}}
+%        {\seqlen{\varS}=\seqlen{\typS}}
+%\end{abblist}
+%\]
+
+%\eqitem{\opsin{\recO}}   {\bigcup_i\opsin{\expr_i}}
+%\eqitem{\opsin{\recupO}} {\opsin{\expr_1}\cup\opsin{\expr_2}}
+%\eqitem{\opsin{\choosO}} {\opsin{\tqpred}\cup\opsin{\expr}}
+%\eqitem{\opsin{\caseO}}  {\opsin{\expr}\cup
+%                          \bigcup_i(\opsin{\pat_i}\cup\opsin{\expr_i})}
+%\eqitem{\opsin{\letrecO}}{\opsin{\expr}\cup
+%                          \bigcup_i(\opsin{\typ_i}\cup\opsin{\expr_i})}
+
+%\eqitem{\tsbsO{\recO}}
+%       {\rec{i}{\fnam_i}{\tsbsO{\expr_i}}}
+%\eqitem{\tsbsO{(\recupO)}}
+%       {\recup{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+%\eqitem{\tsbsO{(\choosO)}}
+%       {\choos{\tsbsO{\tqpred}}{\tsbsO{\expr}}}
+%\eqitem{\tsbsO{(\caseO)}}
+%       {\case{\tsbsO{\expr}}{i}{\tsbsO{\pat_i}}{\tsbsO{\expr_i}}}
+%\eqitem{\tsbsO{(\letrecO)}}
+%       {\letrec{i}{\var_i}{\tsbsO{\typ_i}}{\tsbsO{\expr_i}}{\tsbsO{\expr}}}
+
+%\[
+%\begin{lrulelist}
+%\lruleI{\istsbsatO{(\pvarO)}{\cons{0}{\pos}}{(\pvar{\var}{\typ'})}}
+%       {\istsbsatO{\typ}{\pos}{\typ'}}
+%\lruleI{\istsbsatO{(\pembO)}{\cons{0}{\pos}}{(\pemb{\cnam_j}{\pat'})}}
+%       {\istsbsatO{\pat}{\pos}{\pat'}}
+%\lruleI{\istsbsatO{(\pembedO)}
+%                  {\cons{i}{\pos}}
+%                  {(\pembed{\tsumTF{\cnam_i}{\typ_i'}}{\pat})}}
+%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
+%\lruleI{\istsbsatO{\preecO}{\cons{i}{\pos}}{\preecTF{\fnam_i}{\pat_i'}}}
+%       {\istsbsatO{\pat_i}{\pos}{\pat_i'}}
+%\lruleI{\istsbsatO{(\pasO)}{\cons{0}{\pos}}{(\pas{\var}{\typ'}{\pat})}}
+%       {\istsbsatO{\typ}{\pos}{\typ'}}
+%\lruleI{\istsbsatO{(\pasO)}{\cons{1}{\pos}}{(\pas{\var}{\typ}{\pat'})}}
+%       {\istsbsatO{\pat}{\pos}{\pat'}}
+%\end{lrulelist}
+%\]
+
+%\lruleI{\istsbsatO{\recO}{\cons{i}{\pos}}{\recTF{\fnam_i}{\expr_i'}}}
+%       {\istsbsatO{\expr_i}{\pos}{\expr_i'}}
+%\lruleI{\istsbsatO{(\recupO)}{\cons{1}{\pos}}{(\recup{\expr_1'}{\expr_2})}}
+%       {\istsbsatO{\expr_1}{\pos}{\expr_1'}}
+%\lruleI{\istsbsatO{(\recupO)}{\cons{2}{\pos}}{(\recup{\expr_1}{\expr_2'})}}
+%       {\istsbsatO{\expr_2}{\pos}{\expr_2'}}
+%\lruleI{\istsbsatO{(\choosO)}{\cons{0}{\pos}}{(\choos{\tqpred'}{\expr})}}
+%       {\istsbsatO{\tqpred}{\pos}{\tqpred'}}
+%\lruleI{\istsbsatO{(\choosO)}{\cons{1}{\pos}}{(\choos{\tqpred}{\expr'})}}
+%       {\istsbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\istsbsatO{(\caseO)}
+%                  {\cons{0}{\pos}}
+%                  {(\case{\expr'}{i}{\pat_i}{\expr_i})}}
+%       {\istsbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\istsbsatO{(\caseO)}
+%                  {\cons{2i-1}{\pos}}
+%                  {(\caseTF{\expr}{\pat_i'}{\expr_i})}}
+%       {\istsbsatO{\pat_i}{\pos}{\pat_i'}}
+%\lruleI{\istsbsatO{(\caseO)}
+%                  {\cons{2i}{\pos}}
+%                  {(\caseTF{\expr}{\pat_i}{\expr_i'})}}
+%       {\istsbsatO{\expr_i}{\pos}{\expr_i'}}
+%\lruleI{\istsbsatO{(\letrecO)}
+%                  {\cons{2i-1}{\pos}}
+%                  {(\letrecTF{\var_i}{\typ_i'}{\expr_i}{\expr})}}
+%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
+%\lruleI{\istsbsatO{(\letrecO)}
+%                  {\cons{2i}{\pos}}
+%                  {(\letrecTF{\var_i}{\typ_i}{\expr_i'}{\expr})}}
+%       {\istsbsatO{\expr_i}{\pos}{\expr_i'}}
+%\lruleI{\istsbsatO{(\letrecO)}
+%                  {\cons{0}{\pos}}
+%                  {(\letrec{i}{\var_i}{\typ_i}{\expr_i}{\expr'})}}
+%       {\istsbsatO{\expr}{\pos}{\expr'}}
+
+%\eqitem{\esbsO{\recO}}
+%       {\rec{i}{\fnam_i}{\esbsO{\expr_i}}}
+%\eqitem{\esbsO{(\recupO)}}
+%       {\recup{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+%\eqitem{\esbsO{(\choosO)}}
+%       {\choos{\tqpred}{\esbsO{\expr}}}
+%\eqitem{\esbsO{(\caseO)}}
+%       {\case{\esbsO{\expr}}{i}{\pat_i}
+%             {\cond{\varI\in\pbvar{\pat_i}}{\expr_i}{\esbsO{\expr_i}}}}
+%\eqitem{\esbsO{(\letrecO)}}
+%       {\cond{\varI\in\varS}
+%             {\letrecO}
+%             {\letrec{i}{\var_i}{\typ_i}{\esbsO{\expr_i}}{\esbsO{\expr}}}}
+
+%\eqitem{\cvarvO{\recO}}
+%       {\bigcup_i\cvarvO{\expr_i}}
+%\eqitem{\cvarvO{\recupO}}
+%       {\cvarvO{\expr_1}\cup\cvarvO{\expr_2}}
+%\eqitem{\cvarvO{\choosO}}
+%       {\cvarvO{\expr}}
+%\eqitem{\cvarvO{\caseO}}
+%       {\cvarvO{\expr}\cup
+%        \bigcup_i\cond{\varI\in\efvar{\expr_i}-\pbvar{\pat_i}}
+%                      {\pbvar{\pat_i}\cup\cvarvO{\expr_i}}
+%                      {\emptyset}}
+%\eqitem{\cvarvO{\letrecO}}
+%       {\cond{\varI\in(\efvar{\expr}\cup\bigcup_i\efvar{\expr_i})-\varS}
+%             {\varS\cup\cvarvO{\expr}\cup\bigcup_i\cvarvO{\expr_i}}
+%             {\emptyset}}
+
+%\lruleI{\isesbsatO{\recO}{\cons{i}{\pos}}{\recTF{\fnam_i}{\expr_i'}}}
+%       {\isesbsatO{\expr_i}{\pos}{\expr_i'}}
+%\lruleI{\isesbsatO{(\recupO)}{\cons{1}{\pos}}{(\recup{\expr_1'}{\expr_2})}}
+%       {\isesbsatO{\expr_1}{\pos}{\expr_1'}}
+%\lruleI{\isesbsatO{(\recupO)}{\cons{2}{\pos}}{(\recup{\expr_1}{\expr_2'})}}
+%       {\isesbsatO{\expr_2}{\pos}{\expr_2'}}
+%\lruleI{\isesbsatO{(\choosO)}{\cons{0}{\pos}}{(\choos{\tqpred}{\expr'})}}
+%       {\isesbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\isesbsatO{(\caseO)}
+%                  {\cons{0}{\pos}}
+%                  {(\case{\expr'}{i}{\pat_i}{\expr_i})}}
+%       {\isesbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\isesbsatO{(\caseO)}
+%                  {\cons{i}{\pos}}
+%                  {(\caseTF{\expr}{\pat_i}{\expr_i'})}}
+%       {\isesbsatO{\expr_i}{\pos}{\expr_i'}}
+%\lruleI{\isesbsatO{(\letrecO)}
+%                  {\cons{0}{\pos}}
+%                  {(\letrec{i}{\var_i}{\typ_i}{\expr_i}{\expr'})}}
+%       {\isesbsatO{\expr}{\pos}{\expr'}}
+%\lruleI{\isesbsatO{(\letrecO)}
+%                  {\cons{i}{\pos}}
+%                  {(\letrecTF{\var_i}{\typ_i}{\expr_i'}{\expr})}}
+%       {\isesbsatO{\expr_i}{\pos}{\expr_i'}}
+
+%\eqitem{\cvarp{\recO}{(\cons{i}{\pos})}}
+%       {\cvarp{\expr_i}{\pos}}
+%\eqitem{\cvarp{\recupO}{(\cons{1}{\pos})}}
+%       {\cvarp{\expr_1}{\pos}}
+%\eqitem{\cvarp{\recupO}{(\cons{2}{\pos})}}
+%       {\cvarp{\expr_2}{\pos}}
+%\eqitem{\cvarp{\choosO}{(\cons{0}{\pos})}}
+%       {\cvarp{\expr}{\pos}}
+%\eqitem{\cvarp{\caseO}{(\cons{0}{\pos})}}
+%       {\cvarp{\expr}{\pos}}
+%\eqitem{\cvarp{\caseO}{(\cons{i}{\pos})}}
+%       {\pbvar{\pat_i}\cup\cvarp{\expr_i}{\pos}}
+%\eqitem{\cvarp{\letrecO}{(\cons{0}{\pos})}}
+%       {\varS\cup\cvarp{\expr}{\pos}}
+%\eqitem{\cvarp{\letrecO}{(\cons{i}{\pos})}}
+%       {\varS\cup\cvarp{\expr_i}{\pos}}
+
+
+
+
+
+
+
+
+%%%%% RULES FOR ABBREVIATIONS:
+
+%\[
+%\rruleII
+% {\istyO{\trecO}}
+% {\FORALL{i}{\hastyO{\expr_i}{\typ_i}}}
+% {\hastyO{\recO}{\trecO}}
+% {\Rerec}
+%\]
+
+%\[
+%\rruleIII
+% {\hastyO{\expr_1}{\trecII{\trecO}{\trec{j}{\fnam_j'}{\typ_j'}}}}
+% {\hastyO{\expr_2}{\trecII{\trecO}{\trec{j}{\fnam_j''}{\typ_j''}}}}
+% {\seq{\fnam}'\cap\seq{\fnam}''=\emptyset}
+% {\hastyO{\recupO}{\trecIII{\trecO}
+%                           {\trec{j}{\fnam_j'}{\typ_j'}}
+%                           {\trec{j}{\fnam_j''}{\typ_j''}}}}
+% {\Rerecup}
+%\]
+
+%\[
+%\rruleV
+% {\istyO{\tquotO}}
+% {\hastyO{\expr}{\tarr{\typ}{\typ'}}}
+% {\theoO{\fa{\var}{\typ}
+%        {\fa{\var'}{\typ}
+%            {\impl{\app{\tqpred}{\tupleII{\var}{\var'}}}
+%                  {\eq{\app{\expr}{\var}}{\app{\expr}{\var'}}}}}}}
+% {\var\neq\var'}
+% {\var,\var'\not\in\efvar{\expr}}
+% {\hastyO{\choosO}{\tarr{\tquotO}{\typ'}}}
+% {\Rechoose}
+%\]
+
+%\[
+%\rruleVI
+% {\hastyO{\expr}{\typ}}
+% {\FORALL{i}{\phastyO{\pat_i}{\typ}}}
+% {\theoO{\disjI{i}{\exS{\patbnd{\pat_i}}{\patasm{\pat_i}{\expr}}}}}
+% {\FORALL{i}{\cxneg_i=\axM{\conjI{j<i}{\faS{\patbnd{\pat_j}}
+%                                           {\nega{\patasm{\pat_j}{\expr}}}}}}}
+% {\FORALL{i}{\cxpos_i=\seqII{\vdecS{\patbnd{\pat_i}}}
+%                            {\axM{\patasm{\pat_i}{\expr}}}}}
+% {\FORALL{i}{\hasty{\snoc{\snoc{\cx}{\cxneg_i}}{\cxpos_i}}{\expr_i}{\typ'}}}
+% {\hastyO{\caseO}{\typ'}}
+% {\Recase}
+%\]
+
+%\[
+%\rruleIII
+% {\theoO{\exI{\var}{\tprodO}
+%             {\conjI{i}{\eq{\proj{\var}{\projnam{i}}}
+%                           {\esbsFT{\expr_i}
+%                                   {\var_1}{\proj{\var}{\projnam{1}}}
+%                                   {\var_n}{\proj{\var}{\projnam{n}}}}}}}}
+% {\var\not\in\varS\cup\bigcup_i\efvar{\expr_i}}
+% {\hasty{\snoc{\cx}{\vdec{\varS}{\typS}}}{\expr}{\typ}}
+% {\hastyO{\letrecO}{\typ}}
+% {\Reletrec}
+%\]
+
+%\[
+%\rruleIII
+% {\hastyO{\caseTF{\expr}{\pat_i}{\expr_i}}{\typ}}
+% {\var\in\pbvar{\pat_i}}
+% {\var'\not\in\pbvar{\pat_i}\cup\efvar{\expr_i}\cup\cvarv{\expr_i}{\var}}
+% {\hastyO
+%   {\caseTF{\expr}{\psbs{\pat_i}{\var}{\var'}}{\esbs{\expr_i}{\var}{\var'}}}
+%   {\typ}}
+% {\Recasealpha}
+%\]
+
+%\[
+%\rruleIII
+% {\hastyO{\letrecO}{\typ}}
+% {\var_j'\not\in\varS\cup\efvar{\expr}\cup\cvarv{\expr}{\var_j}\cup
+%                \bigcup_i(\efvar{\expr_i}\cup\cvarv{\expr_i}{\var_j})}
+% {\FORALL{i\neq j}{\var_i'=\var_i}}
+% {\hastyO
+%   {\letrec{i}{\var_i'}{\typ_i}
+%              {\esbs{\expr_i}{\var_j}{\var_j'}}
+%              {\esbs{\expr}{\var_j}{\var_j'}}}
+%   {\typ}}
+% {\Reletrecalpha}
+%\]
+
+%\item
+%In order for a record update to be be well-typed, the record types of the
+%operands must agree on the types of their common fields. The resulting record
+%type consists of the union of the components comprising the two record types.
+%\item
+%A choice takes as argument an expression $\expr$ that denotes a function from
+%the quotiented type $\typ$ to some other type $\typ'$. The function must be a
+%congruence with respect to the predicate of the associated quotient type.  The
+%result is a well-typed expression that denotes a function from the quotient
+%type $\tquotO$ to $\typ'$. The condition that $\var$ and $\var'$ are distinct
+%is important: without it, the congruence requirement would effectively
+%disappear (because the corresponding formula would be trivially provable).
+%\item
+%For a case expression to be well-typed, the target expression $\expr$ and all
+%its patterns must have a common type $\typ$ (the notion of well-typed pattern
+%is defined later). In addition, $\expr$ must match at least one of the
+%patterns, as expressed by the disjunction quantified over $i$ (which can be
+%readily expanded into nested binary disjunctions). The order of the patterns
+%in a case expression is relevant: the meaning is that every branch $i$ assumes
+%not only that $\expr$ matches pattern $\pat_i$, but also that it does not
+%match any of the other patterns $\pat_j$ with $j<i$. The assumption that
+%$\expr$ matches $\pat_i$ is introduced as a ``positive'' context $\cxpos_i$,
+%which also introduces the variables bound by the pattern $\pat_i$. The
+%assumption that $\expr$ does not match any of the previous patterns is
+%introduced as a ``negative'' context $\cxneg_i$, with a conjunction quantified
+%over $j<i$ (which can be readily expanded into nested binary conjunctions;
+%note that the empty conjunction, for $i=1$, is regarded as $\true$). The
+%negative and positive contexts $\cxneg_i$ and $\cxpos_i$ are added to the
+%context $\cx$ (their relative order is actually unimportant) to assign some
+%type $\typ'$ to the branch expression $\expr_i$, which is also the type of the
+%whole case expression. The rule $\Recase$ is analogous to the rule $\Reif$ for
+%conditionals, with the extra complication that branches may bind variables and
+%that their order matters.
+%\item
+%In order for a recursive let to be well-typed, it is necessary that the
+%solution to the (in general, recursive) associated equation is unique,
+%similarly to the requirement for op definitions in well-formed contexts.
+%Indeed, as already mentioned, recursive let's capture ``let def'' as defined in
+%\cite{lm}, so it not surprising that they must satisfy requirements similar to
+%op definitions.
+
+%\[
+%\rruleIV
+% {\hastyO{\caseO}{\typ}}
+% {\FORALL{i}{\cxneg_i=\axM{\conjI{j<i}{\faS{\patbnd{\pat_j}}
+%                                           {\nega{\patasm{\pat_j}{\expr}}}}}}}
+% {\FORALL{i}{\cxpos_i=\seqII{\vdecS{\patbnd{\pat_i}}}
+%                            {\axM{\patasm{\pat_i}{\expr}}}}}
+% {\FORALL{i}{\theo{\snoc{\snoc{\cx}{\cxneg_i}}{\cxpos_i}}
+%                  {\eq{\expr_i}{\expr_i'}}}}
+% {\theoO{\eq{\caseO}{\case{\expr}{i}{\pat_i}{\expr_i'}}}}
+% {\Rthsbscase}
+%\]
+
+%\[
+%\rruleII
+% {\istyO{\trecO}}
+% {\cons{\var}{\varS}\mbox{ all distinct}}
+% {\theoO{\fa{\var}{\trecO}
+%            {(\ex{\varS}{\typS}{\eq{\var}{\rec{i}{\fnam_i}{\var_i}}})}}}
+% {\Rthrec}
+%\]
+
+%\[
+%\rruleI
+% {\hastyO{\recO}{\trecO}}
+% {\theoO{\eq{\proj{\recO}{\fnam_j}}{\expr_j}}}
+% {\Rthproj}
+%\]
+
+%\[
+%\rruleIII
+% {\hastyO{\recO}{\trecO}}
+% {\hastyO{\rec{j}{\fnam_j'}{\expr_j'}}{\trec{j}{\fnam_j'}{\typ_j'}}}
+% {\fnam_k\not\in\seq{\fnam}'}
+% {\theoO{\eq{\proj{(\recup{\recO}{\rec{j}{\fnam_j'}{\expr_j'}})}{\fnam_k}}
+%            {\expr_k}}}
+% {\Rthrecupsame}
+%\]
+
+%\[
+%\rruleII
+% {\hastyO{\recO}{\trecO}}
+% {\hastyO{\rec{j}{\fnam_j'}{\expr_j'}}{\trec{j}{\fnam_j'}{\typ_j'}}}
+% {\theoO{\eq{\proj{(\recup{\recO}{\rec{j}{\fnam_j'}{\expr_j'}})}{\fnam_k'}}
+%            {\expr_k'}}}
+% {\Rthrecupover}
+%\]
+
+%\[
+%\rruleII
+% {\hastyO{\choosO}{\tarr{\tquotO}{\typ'}}}
+% {\var\not\in\efvar{\expr}}
+% {\theoO{\fa{\var}{\typ}
+%            {\eq{\app{(\choosO)}{(\app{\quotO}{\var})}}
+%                {\app{\expr}{\var}}}}}
+% {\Rthchoose}
+%\]
+
+%\[
+%\rruleV
+% {\hastyO{\caseO}{\typ}}
+% {\FORALL{i}{\cxneg_i=\axM{\conjI{j<i}{\faS{\patbnd{\pat_j}}
+%                                           {\nega{\patasm{\pat_j}{\expr}}}}}}}
+% {\FORALL{i}{\cxpos_i=\seqII{\vdecS{\patbnd{\pat_i}}}
+%                            {\axM{\patasm{\pat_i}{\expr}}}}}
+% {\FORALL{i}{\theo{\snoc{\snoc{\cx}{\cxneg_i}}{\cxpos_i}}
+%                  {\eq{\expr_i}{\expr'}}}}
+% {\FORALL{i}{\efvar{\expr'}\cap\pbvar{\pat_i}=\emptyset}}
+% {\theoO{\eq{\caseO}{\expr'}}}
+% {\Rthcase}
+%\]
+
+%\[
+%\rruleIII
+% {\hastyO{\caseTF{\expr}{\pat_i}{\expr_i}}{\typ}}
+% {\var\in\pbvar{\pat_i}}
+% {\var'\not\in\pbvar{\pat_i}\cup\efvar{\expr_i}\cup\cvarv{\expr_i}{\var}}
+% {\theoO
+%   {\eq{\caseTF{\expr}{\pat_i}{\expr_i}}
+%       {\caseTF{\expr}{\psbs{\pat_i}{\var}{\var'}}{\esbs{\expr_i}{\var}{\var'}}}}}
+% {\Rthcasealpha}
+%\]
+
+%\[
+%\rruleIII
+% {\hastyO{\letrecO}{\typ}}
+% {\theo{\snoc{\snoc{\cx}{\vdec{\varS}{\typS}}}
+%                        {\axM{\conjI{i}{\eq{\var_i}{\expr_i}}}}}
+%       {\eq{\expr}{\expr'}}}
+% {\varS\cap\efvar{\expr'}=\emptyset}
+% {\theoO{\eq{\letrecO}{\expr'}}}
+% {\Rthletrec}
+%\]
+
+%\[
+%\rruleIII
+% {\hastyO{\letrecO}{\typ}}
+% {\var_j'\not\in\varS\cup\efvar{\expr}\cup\cvarv{\expr}{\var_j}\cup
+%                \bigcup_i(\efvar{\expr_i}\cup\cvarv{\expr_i}{\var_j})}
+% {\FORALL{i\neq j}{\var_i'=\var_i}}
+% {\theoO
+%   {\eq{\letrecO}
+%       {\letrec{i}{\var_i'}{\typ_i}
+%                  {\esbs{\expr_i}{\var_j}{\var_j'}}
+%                  {\esbs{\expr}{\var_j}{\var_j'}}}}}
+% {\Rthletrecalpha}
+%\]
+
+%Rules $\Rthrec$ and $\Rthproj$ characterize record types. The first rule says
+%that every value of a record type is a record; note that the variables $\var$
+%and $\varS$ used in the quantifiers of the theorem must be all distinct and
+%not already declared in the context. The second rule defines the semantics of
+%projections, at the same time constraining record construction, viewed as a
+%function, to be injective, because if records with different arguments were
+%mapped to the same value of the record type, the theorem asserted by the rule
+%would be violated.
+
+%\item
+%Rules $\Rthrecupsame$ and $\Rthrecupover$ define the semantics of record
+%updates: fields in either the first or second operand retain their original
+%values, while for common fields the second operand takes precedence.
+
+%\item
+%Rule $\Rthchoose$ defines the semantics of choices: the result of applying
+%$\choosO$ to an equivalence class of the quotient type is the same as applying
+%the choice argument $\expr$ to any member of the equivalence class. Recall
+%that the well-typedness of $\choosO$ includes the fact that $\expr$ maps
+%equivalent values to the same value (cf.\ rule $\Rechoose$).
+%\item
+%Rule $\Rthcase$ defines the semantics of case expressions. The context for
+%each branch is extended in the same way as in rule $\Recase$ (which defines
+%the well-typedness of case expressions). Instead of requiring every branch to
+%be well-typed, rule $\Rthcase$ requires the expression in every branch to be
+%provably equal to some expression $\expr'$. If such an expression has no free
+%variables bound by the patterns, then the case expression is provably equal to
+%$\expr'$. The requirement about no free variables bound by the patterns
+%ensures that the resulting expression is well-typed in the unextended context
+%in which the case expression is well-typed. This rule is analogous to $\Rthif$
+%for conditionals, with the extra complication that branches may bind variables
+%and that their order matters.
+%\item
+%Rule $\Rthcasealpha$ says that alpha-equivalent case expressions are equal in
+%the logic. This rule is needed to manipulate case expressions that bind
+%variables that happen to be in the context: since rule $\Rthcase$ extends the
+%context with the variables bound by the patterns, rule $\Rthcasealpha$ must be
+%first used to rename the pattern variables that happen to be declared in the
+%non-extended context; otherwise, the extended context would not be
+%well-formed.
+%\item
+%Rule $\Rthletrec$ defines the semantics of recursive let's. The context is
+%extended with the equality derived by the bindings and if the body $\expr$ is
+%provably equal to an expression $\expr'$ where the let-bound variables $\varS$
+%do not occur free, the whole recursive let is provably equal to $\expr'$.  The
+%requirement that $\varS$ do not occur free in $\expr'$ ensures that $\expr'$
+%is well-typed in the unextended context in which the recursive let is
+%well-typed.
+%\item
+%The purpose of rule $\Rthletrecalpha$ is analogous to $\Rthcasealpha$.
+
+
+\subsection{Op definitions}
+
+An op definition as defined in \cite{lm} has the form
+\[
+\odefO
+\]
+where $\onam\in\Nam$, $\tvarS,\tvarS'\in\SeqNR{\Nam}$, $\typ\in\Typ$,
+$\expr\in\Expr$, $\seqlen{\tvarS}=\seqlen{\tvarS'}$, and every $\opO$
+occurring in $\expr$ is such that $\typS=\tvarS'$. We introduce the
+abbreviation
+\[
+\begin{abblist}
+\abbitem{\odefO}
+        {\!\!\!\begin{array}[t]{l}
+         \lem{\tvarS'}{\exI{\varfxI{\expr}}
+                           {\tsbslash{\typ}{\tvarS}{\tvarS'}}
+                           {\eq{\varfxI{\expr}}{\expr'}}},
+         \\
+         \ax{\tvarS'}{\eq{\op{\onam}{\tvarS'}}{\expr}}
+         \end{array}}
+\end{abblist}
+\]
+where $\varfxI{\expr}$ is, for each expression $\expr\in\Expr$, a fixed but
+unspecified name in $\Nam$ such that $\varfxI{\expr}\not\in\efvar{\expr}$ and
+where $\expr'$ is the expression such that
+$\esbs{\expr'}{\varfxI{\expr}}{\op{\onam}{\tvarS'}}=\expr$. An op definition
+$\odefO$ must reference an op $\odecO$ previously declared in the context in
+which the op definition appears (if it does not, the addition of the axiom
+would not yield a well-formed context). The defining body $\expr$ may
+reference $\onam$ (in which case the op definition is recursive), but all the
+instances of $\onam$ must be the same, namely $\op{\onam}{\tvarS'}$. We may
+have $\tvarS'=\tvarS$, but in general it is allowed to ``rename'' $\tvarS$ to
+$\tvarS'$ when defining the op. The op definition is logically just an axiom
+(the one that the abbreviation expands into), with the proof obligation
+expressed by the lemma, namely that there is a unique value for
+$\op{\onam}{\tvarS'}$ that satisfies the definition (in order to express this
+obligation, we need to replace all occurrences of $\op{\onam}{\tvarS'}$ with a
+variable $\varfxI{\expr}$, obtaining $\expr'$; we cannot quantify over an op,
+only over a variable).
+
+The above notion of op definition is not fully satisfactory for two reasons.
+One is that an op declaration immediately followed by an op definition does
+not necessarily constitute a definitional extension (in the logical sense) of
+a context: given a consistent context that declares a type and constrains it
+to be empty (via a suitable axiom), a declaration and definition of an op of
+that type yields an extended context that is inconsistent. The other reason is
+that the notion allows vacuous definitions such as declaring two ops
+$\mathsf{f}$ and $\mathsf{g}$ of the same tyoe and then defining $\mathsf{f}$
+to be equal to $\mathsf{g}$ and $\mathsf{g}$ to be equal to $\mathsf{f}$.
+
+Those two shortcomings are overcome by the following notion of op definition,
+currently absent from \cite{lm} but more common in the literature. The form is
+\[
+\odefFTO
+\]
+where $\seq{\onam}\in\SeqNER{\Nam}$, $\seq{\tvarS}\in\SeqNE{(\SeqNR{\Nam})}$,
+$\typS\in\SeqNE{\Typ}$, $\exprS\in\SeqNE{\Expr}$, and, for every $i$, every
+$\op{\onam_i}{\typIS}$ occurring in $\exprS$ is such that $\typIS=\tvarS_i$.
+We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\odefFTO}
+        {\!\!\!\begin{array}[t]{l}
+         \lem{\tvarS}{\exI{\varfxI{\exprS}}{\tprodO}
+                          {\eq{\varfxI{\exprS}}{\tuple{\exprS'}}}}
+         \\
+         \odec{\onam_1}{\tvarS_1}{\typ_1}
+         \\\vdots\\
+         \odec{\onam_n}{\tvarS_n}{\typ_n}
+         \\
+         \ax{\tvarS_1}{\eq{\op{\onam_1}{\tvarS_1}}{\expr_1}}
+         \\\vdots\\
+         \ax{\tvarS_n}{\eq{\op{\onam_n}{\tvarS_n}}{\expr_n}}
+         \end{array}}
+\end{abblist}
+\]
+where $\varfxI{\exprS}$ is, for every $\exprS\in\SeqNE{\Expr}$, a fixed but
+unspecified name in $\Nam$ such that
+$\varfxI{\exprS}\not\in\bigcup_i\efvar{\expr_i}$, where $\expr_i'$ is the
+result of replacing each $\op{\onam_j}{\tvarS_j}$ with
+$\proj{\varfxI{\exprS}}{\projnam{j}}$ in $\expr_i$, and where
+$\tvarS\in\SeqNR{\Nam}$ is such that $\tvarS=\bigcup_i\tvarS_i$.
+
+The last abbreviation introduces $n\geq1$ ops via definitional extension. The
+proof obligation expressed by the lemma says that there are unique values of
+$\seqFT{\op{\onam_1}{\tvarS_1}}{\op{\onam_n}{\tvarS_n}}$ that satisfy the (in
+general, mutually recursive) defining equations.
+
+\subsection{Op constraints}
+
+An op constraint, currently absent from \cite{lm} (but present e.g.\ in
+\cite{hol}), has the form
+\[
+\oconFTO
+\]
+where $\seq{\onam}\in\SeqNER{\Nam}$, $\seq{\tvarS}\in\SeqNE{(\SeqNR{\Nam})}$,
+$\typS\in\SeqNE{\Typ}$, $\expr\in\Expr$, and, for every $i$, every
+$\op{\onam_i}{\typIS}$ occurring in $\expr$ is such that $\typIS=\tvarS_i$. We
+introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\oconFTO}
+        {\!\!\!\begin{array}[t]{l}
+         \lem{\tvarS}{\ex{\varfxI{\expr}}{\tprodO}{\expr'}}
+         \\
+         \odec{\onam_1}{\tvarS_1}{\typ_1}
+         \\\vdots\\
+         \odec{\onam_n}{\tvarS_n}{\typ_n}
+         \\
+         \ax{\tvarS}{\expr}
+         \end{array}}
+\end{abblist}
+\]
+where $\varfxI{\expr}$ is, for every $\expr\in\Expr$, a fixed but unspecified
+name in $\Nam$ such that $\varfxI{\expr}\not\in\efvar{\expr}$, where $\expr'$
+is the result of replacing each $\op{\onam_i}{\tvarS_i}$ with
+$\proj{\varfxI{\expr}}{\projnam{i}}$ in $\expr$, and where
+$\tvarS\in\SeqNR{\Nam}$ is such that $\tvarS=\bigcup_i\tvarS_i$.
+
+This abbreviation introduces $n\geq1$ ops via conservative extension. The
+proof obligation expressed by the lemma says that there exists at least one
+solution to the axiom (there may be more than one). The op declarations
+introduce the ops and the axiom expresses constraints on them.
