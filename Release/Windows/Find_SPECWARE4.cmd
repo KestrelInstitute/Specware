@@ -52,12 +52,6 @@ if "%SPECWARE4%"=="" (
     set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/Specware-4-1-4"
 )
 
-if not exist "%SPECWARE4%\Specware4.exe" (
-  echo Cannot find Specware4 executable %SPECWARE4%\Specware4.exe
-  pause
-  exit
-)
-
 rem ==========================================================================
 
 echo.
