@@ -3964,102 +3964,74 @@ variable not declared in $\cx$, i.e.\ $\var\not\in\cxvarO$; then we use rule
 
 
 
-%\subsection*{Proof of \thmref{thm-eexop}}
+\subsection*{Proof of \thmref{thm-eexop}}
 
-%\[
-%\rruleI
-% {\istyO{\typ}}
-% {\hastyO{\exopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
-% {\Reexop}
-%\]
-
-%\[
-%        {\abs{\varfxpred}{\tarr{\typ}{\bool}}
-%             {\nega{(\fa{\varfx}{\typ}{\nega{(\app{\varfxpred}{\varfx})}})}}}
-%\]
-
-%We first prove the derived rule
-%\[
-%\rruleII
-% {\cxwf{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}}
-% {\var'\neq\var}
-% {\hasty{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}
-%        {\fa{\var'}{\typ}{\nega{(\app{\var}{\var'})}}}{\bool}}
-% {\RtmpI}
-%\]
-%If $\var'\not\in\cxvarO$, the rule is derived as follows:
-%\begin{derivation}
-%\step{\cxwf{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}}
-%     {\hyp}
-%\step{\istyO{\tarr{\typ}{\bool}}}{\thmref{thm-var-type-wf}, 1}
-%\step{\istyO{\typ}}{\thmref{thm-tarr-inv}, 2}
-%\step{\isty{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}{\typ}}
-%     {\thmref{thm-mono}, 3, 1}
-%\step{\cxwf{\snoc{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}
-%                            {\vdec{\var'}{\typ}}}}
-%     {\Rcxvdec, 1, 4, \hyp\ $\var'\neq\var\AND\var'\not\in\cxvarO$}
-%\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}
-%                             {\vdec{\var'}{\typ}}}
-%            {\var}{\tarr{\typ}{\bool}}}
-%     {\Revar, 5}
-%\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}
-%                             {\vdec{\var'}{\typ}}}
-%            {\var'}{\typ}}
-%     {\Revar, 5}
-%\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}
-%                             {\vdec{\var'}{\typ}}}
-%            {\app{\var}{\var'}}{\bool}}
-%     {\Reapp, 6, 7}
-%\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}
-%                             {\vdec{\var'}{\typ}}}
-%            {\nega{(\app{\var}{\var'})}}{\bool}}
-%     {\Renega, 8}
-%\step{\hasty{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}
-%            {\fa{\var'}{\typ}{\nega{(\app{\var}{\var'})}}}{\bool}}
-%     {\Refa, 9}
-%\end{derivation}
-%If instead $\var'\in\cxvar{\cx}$, we can use a very analogous derivation to
-%derive
-%$\hasty{\snoc{\cx}{\vdec{\var}{\tarr{\typ}{\bool}}}}
-%       {\fa{\var''}{\typ}{\nega{(\app{\var}{\var''})}}}
-%       {\bool}$,
-%where $\var''\neq\var'$ is a fresh variable not declared in $\cx$, i.e.\
-%$\var''\not\in\cxvar{\cx}$; then we use rule......
-
-%TO DO: need exForAllAlpha
-
-%$\Reabsalpha$ to rename $\var''$ to $\var'$. This concludes the proof of rule
-%\RtmpI.
-
-%We now prove \Reiff. If $\varfx\not\in\cxvarO$, the rule is derived as
-%follows:
-%\begin{derivation}
-%\step{\cxwfO}
-%     {\hyp}
-%\step{\cxwf{\snoc{\cx}{\vdec{\varfx}{\bool}}}}
-%     {\Rcxvdecbool, 1}
-%\step{\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}
-%            {\abs{\varfx'}{\bool}{\eq{\varfx}{\varfx'}}}
-%            {\tarr{\bool}{\bool}}}
-%     {\RtmpI, 2, $\varfx\neq\varfx'$}
-%\step{\hastyO{\abs{\varfx}{\bool}{\abs{\varfx'}{\bool}{\eq{\varfx}{\varfx'}}}}
-%             {\tarr{\bool}{\tarr{\bool}{\bool}}}}
-%     {\Reabs, 3}
-%\end{derivation}
-%If instead $\varfx\in\cxvar{\cx}$, we can use a very analogous derivation to
-%derive
-%$\hastyO{\abs{\var}{\bool}{\abs{\varfx'}{\bool}{\eq{\var}{\varfx'}}}}
-%        {\tarr{\bool}{\tarr{\bool}{\bool}}}$,
-%where $\var\neq\varfx$ is a fresh variable not declared in $\cx$, i.e.\
-%$\var\not\in\cxvar{\cx}$; then we use rule $\Reabsalpha$ to rename $\var$ to
-%$\varfx$.
+Let $\varFXpred,\varFX\in\Nam$ such that $\varFXpred\neq\varFX$ and
+$\setII{\varFXpred}{\varFX}\cap(\cxvarO\cup\setII{\varfxpred}{\varfx})=
+\emptyset$. The rule is derived as follows:
+\begin{derivation}
+\step{\istyO{\typ}}{\hyp}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\bool}}{\Rtbool, 2}
+\step{\istyO{\tarr{\typ}{\bool}}}{\Rtarr, 1, 3}
+\step{\cxwf{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}}{\Rcxvdec, 2, 4}
+\step{\isty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\typ}}
+     {\thmref{thm-mono}, 1, 5}
+\step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
+            {\faopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+     {\Refaop, 6}
+\step{\cxwf{\snoc{\snoc{\cx}
+             {\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\vdec{\varFX}{\typ}}}}
+     {\Rcxvdec, 5, 6}
+\step{\hasty{\snoc{\snoc{\cx}
+              {\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\vdec{\varFX}{\typ}}}
+            {\varFXpred}{\tarr{\typ}{\bool}}}
+     {\Revar, 8}
+\step{\hasty{\snoc{\snoc{\cx}
+              {\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\vdec{\varFX}{\typ}}}
+            {\varFX}{\typ}}
+     {\Revar, 8}
+\step{\hasty{\snoc{\snoc{\cx}
+              {\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\vdec{\varFX}{\typ}}}
+            {\app{\varFXpred}{\varFX}}{\bool}}
+     {\Reapp, 9, 10}
+\step{\hasty{\snoc{\snoc{\cx}
+              {\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\vdec{\varFX}{\typ}}}
+            {\nega{(\app{\varFXpred}{\varFX})}}{\bool}}
+     {\Renega, 11}
+\step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
+            {\abs{\varFX}{\typ}{\nega{(\app{\varFXpred}{\varFX})}}}
+            {\tarr{\typ}{\bool}}}
+     {\Reabs, 12}
+\step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
+            {\abs{\varfx}{\typ}{\nega{(\app{\varFXpred}{\varfx})}}}
+            {\tarr{\typ}{\bool}}}
+     {\Reabsalpha, 13}
+\step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
+            {\fa{\varfx}{\typ}{\nega{(\app{\varFXpred}{\varfx})}}}
+            {\bool}}
+     {\Reapp, 7, 14}
+\step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
+            {\nega{(\fa{\varfx}{\typ}{\nega{(\app{\varFXpred}{\varfx})}})}}
+            {\bool}}
+     {\Renega, 15}
+\step{\hastyO{\abs{\varFXpred}{\tarr{\typ}{\bool}}
+                  {\nega{(\fa{\varfx}{\typ}
+                             {\nega{(\app{\varFXpred}{\varfx})}})}}}
+             {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+     {\Reabs, 16}
+\step{\hastyO{\abs{\varfxpred}{\tarr{\typ}{\bool}}
+                  {\nega{(\fa{\varfx}{\typ}
+                             {\nega{(\app{\varfxpred}{\varfx})}})}}}
+             {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+     {\Reabsalpha, 17}
+\end{derivation}
 
 
 
+\subsection*{Proof of \thmref{thm-eex}}
 
-%\subsection*{Proof of \thmref{thm-eex}}
-
-%Analogous to \thmref{thm-efa}, using \Reexop\ instead of \Refaop.
+Analogous to \thmref{thm-efa}, using \Reexop\ instead of \Refaop.
 
 
 
