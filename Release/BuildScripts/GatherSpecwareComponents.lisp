@@ -614,7 +614,7 @@
 				   (list (merge-pathnames source-linux-cmucl-dir "Specware")
 					 (merge-pathnames source-linux-cmucl-dir "SpecwareShell")
 					 (merge-pathnames source-linux-cmucl-dir "Find_CMUCL")
-					 (merge-pathnames source-linux-cmucl-dir "Find_Specware_App")
+					 (merge-pathnames source-linux-cmucl-dir "Find_Specware_App_CMUCL")
 					 (merge-pathnames source-linux-dir       "Find_XEMACS")
 					 (merge-pathnames source-linux-dir       "Find_SPECWARE4")
 					 (merge-pathnames source-linux-dir       "Update_Path")
@@ -661,7 +661,7 @@
 				   ;; a list of files to copy to the distribution directory
 				   (list (merge-pathnames source-windows-allegro-dir "Specware.cmd")
 					 (merge-pathnames source-windows-allegro-dir "SpecwareShell.cmd")
-					 (merge-pathnames source-windows-allegro-dir "Find_Specware_App.cmd")
+					 (merge-pathnames source-windows-allegro-dir "Find_Specware_App_ACL.cmd")
 					 (merge-pathnames source-windows-dir         "Find_XEMACS.cmd")
 					 (merge-pathnames source-windows-dir         "Find_SPECWARE4.cmd")
 					 (merge-pathnames source-windows-dir         "Update_Path.cmd")
