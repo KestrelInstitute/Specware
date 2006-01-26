@@ -15,7 +15,7 @@ call Find_XEMACS
 call Find_SPECWARE4
 call Update_Path
 call Update_SWPATH
-call Find_Specware_App
+call Find_Specware_App_ACL
 
 start "ignore" "%XEMACS_EXE%" -l "%SPECWARE4%\Library\IO\Emacs\Preface" -l "%SPECWARE4%\Library\IO\Emacs\xeli\fi-site-init" -l "%SPECWARE4%\Library\IO\Emacs\load" -f run-specware4
 
