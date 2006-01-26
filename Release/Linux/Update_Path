@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# Ensure Java in in PATH
+
+Prior_PATH="$PATH"
+
+############################################################################
+# This could be smarter about not adding things if they are already present.
+# You (the end user) may wish to modify this for your particular situation:
+
+# add Java to PATH
+# revise this to search list of candidates...
+
+CANDIDATE_JAVA=/usr/java/j2sdk1.4.2/bin
+if [ -f $CANDIDATE_JAVA ]; then
+  echo "augmenting PATH with $CANDIDATE_JAVA"
+  PATH="$PATH:$CANDIDATE_JAVA"
+fi
+
+############################################################################
+
+echo ""
+echo "prior PATH: $Prior_PATH"
+echo "final PATH: $PATH"
+echo ""
+

@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Ensure SWPATH is set
+
+Prior_SWPATH="$SWPATH"
+
+############################################################################
+
+if [ -z "$SWPATH" ]; then
+  SWPATH="/"
+  export SWPATH
+fi
+
+############################################################################
+
+export SWPATH
+
+echo  ""
+echo  "prior SWPATH: $Prior_SWPATH"
+echo  "final SWPATH: $SWPATH"
+echo  ""
+

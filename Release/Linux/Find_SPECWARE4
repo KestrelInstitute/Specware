@@ -1,14 +1,15 @@
 #!/bin/sh
 
-# Use the directory of this file as the default value of SPECWARE4
 # Note: $0 may refer to a Specware or SpecwareShell script invoking this...
 
 INVOKED_HERE=`dirname $0`
-cd $INVOKED_HERE
-HERE=`pwd`
+cd "$INVOKED_HERE"
+HERE="`pwd`"
+
+Prior_SPECWARE4="$SPECWARE4"
 
 #########################################################################
-# Use the directory of this file as the value of SPECWARE4
+# Use the directory of this file as the default value of SPECWARE4
 # Warn if this changes it.
 
 if [ "$SPECWARE4" == "" ]; then
@@ -21,9 +22,7 @@ else
    echo "Ignoring prior SPECWARE4 : $SPECWARE4"
 fi
 
-SPECWARE4=$ERE
-
-#########################################################################
+SPECWARE4=$HERE
 
 # Test whether SPECWARE4 is a directory
 
@@ -34,31 +33,21 @@ if [ ! -d "$SPECWARE4" ]; then
 fi
 
 # Ensure SPECWARE4 is set to full pathname:
+
 case "$SPECWARE4" in
     .)  SPECWARE4=`pwd`;;
     /*) : do nothing ;;
     *)  SPECWARE4="`pwd`/$SPECWARE4";;
 esac
 
-echo  "SPECWARE4       = $SPECWARE4"
 export SPECWARE4
-cd "$SPECWARE4"
 
 #########################################################################
 
-LISP_DIRECTORY=$SPECWARE4/  # The directory the lisp image will connect to
-echo  "LISP_DIRECTORY  = $LISP_DIRECTORY"
-export LISP_DIRECTORY
+echo ""
+echo "prior SPECWARE4: $Prior_SPECWARE4"
+echo "final SPECWARE4: $SPECWARE4"
+echo ""
 
-#########################################################################
 
-# Ensure SWPATH is set
-
-if [ -z "$SWPATH" ]; then
-  SWPATH="/"
-  export SWPATH
-fi
-
-echo  "SWPATH          = $SWPATH"
-export SWPATH
 

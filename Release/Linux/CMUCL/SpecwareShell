@@ -2,6 +2,8 @@
 
 act='launch Specware in CMUCL, no XEmacs'
 
+########################################################################
+
 OLD_PATH=$PATH
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
 
@@ -11,16 +13,17 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
 INVOKED_HERE=`dirname $0`
 cd $INVOKED_HERE
 HERE=`pwd`
-
-. $HERE/Find_Specware4
-. $HERE/Find_CMUCL
-
-LISP_HEAP_IMAGE="$SPECWARE4"/Specware4.cmuimage
-echo  "LISP_HEAP_IMAGE = $LISP_HEAP_IMAGE"
-export LISP_HEAP_IMAGE
-
-# . $HERE/Find_XEmacs
-
 PATH=$OLD_PATH
+
+########################################################################
+
+. $HERE/Find_SPECWARE4
+. $HERE/Find_CMUCL
+. $HERE/Update_Path
+. $HERE/Update_SWPATH
+. $HERE/Find_Specware_App_CMUCL
+
+
+########################################################################
 
 "$LISP" -core "$LISP_HEAP_IMAGE" -eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (exit))"

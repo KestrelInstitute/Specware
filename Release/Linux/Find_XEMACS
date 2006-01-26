@@ -1,5 +1,9 @@
 #!/bin/sh
 
+Prior_XEMACS="$XEMACS"
+
+#########################################################################
+
 OLD_PATH=$PATH
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
 
@@ -14,11 +18,17 @@ if [ ! -x "$XEMACS" ]; then
    echo "Failed to $act, $XEMACS is not executable" 2>&1
    exit 1
 fi
+PATH=$OLD_PATH
 
-echo  "XEMACS            = $XEMACS"
 export XEMACS
 
-PATH=$OLD_PATH
+#########################################################################
+
+echo ""
+echo "prior XEMACS: $Prior_XEMACS"
+echo "final XEMACS: $XEMACS"
+echo ""
+
 
 
 

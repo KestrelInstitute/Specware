@@ -2,10 +2,15 @@
 
 # Try to find lisp executable for CMU CL
 # avoid using exit unless there's an error, as this is invoked via . from superior shell
+# Note: $0 may refer to a Specware or SpecwareShell script invoking this...
 
 INVOKED_HERE=`dirname $0`
 cd "$INVOKED_HERE"
-HERE=`pwd`
+HERE="`pwd`"
+
+prior_LISP="$Prior_LISP"
+
+#########################################################################
 
 # Use pre-existing value for LISP if it is executable and has an expected name
 HAVE_LISP=false
@@ -19,8 +24,8 @@ if [ -n "$LISP" ]; then
   fi
 fi
 
+# Otherwise, look for an executable candidate
 if [ "$HAVE_LISP" != "true" ]; then
-  # Otherwise, look for an executable candidate
   for L in "$HERE"/lisp "$HOME"/cmucl/bin/lisp /usr/local/cmucl/bin/lisp /usr/lib/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl /bin/lisp ; do
     if [ -x "$L" ]; then
       LISP="$L"
@@ -38,10 +43,11 @@ if [ ! -x "$LISP" ]; then
    exit 1
 fi
 
-echo  "LISP            = $LISP"
 export LISP
 
-LISP_EXECUTABLE=$LISP
-echo  "LISP_EXECUTABLE = $LISP_EXECUTABLE"
-export LISP_EXECUTABLE
+#########################################################################
 
+echo ""
+echo "prior LISP: $Prior_LISP"
+echo "final LISP: $LISP"
+echo ""

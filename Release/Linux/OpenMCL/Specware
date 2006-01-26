@@ -2,6 +2,8 @@
 
 act='launch Specware in OpenMCL, using ilisp interface to XEmacs'
 
+########################################################################
+
 OLD_PATH=$PATH
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
 
@@ -11,21 +13,20 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
 INVOKED_HERE=`dirname $0`
 cd $INVOKED_HERE
 HERE=`pwd`
-
-. $HERE/Find_Specware4
-. $HERE/Find_OpenMCL
-
-LISP_HEAP_IMAGE="$SPECWARE4"/Specware4.openmcl-image
-echo  "LISP_HEAP_IMAGE = $LISP_HEAP_IMAGE"
-export LISP_HEAP_IMAGE
-
-. $HERE/Find_XEmacs
-
 PATH=$OLD_PATH
 
-$XEMACS -geometry 180x70+180+2 \
-        -name  "Specware" \
-        -title "Specware" \
+########################################################################
+
+. $HERE/Find_SPECWARE4
+. $HERE/Find_OpenMCL
+. $HERE/Update_Path
+. $HERE/Update_SWPATH
+. $HERE/Find_Specware_App_OpenMCL
+. $HERE/Find_XEMACS
+
+########################################################################
+
+$XEMACS -geometry 180x70+180+2 -name  "Specware" -title "Specware" \
         -l "$SPECWARE4"/Library/IO/Emacs/load-openmcl \
         $* \
         -f run-specware4 &
