@@ -25,7 +25,7 @@
 
 (defun build-specware-release (i j k specware-dir distribution-dir verbose?)
   (load-builder specware-dir distribution-dir)
-  (prepare_specware_release i j k specware-dir distribution-dir verbose?))
+  (funcall 'user::prepare_specware_release i j k specware-dir distribution-dir verbose?))
 
 
 
