@@ -155,12 +155,19 @@ FM qualifying spec
       | (_, Gt) -> Gt
       | _ -> GtEq
 
-  op FMRefute?: IneqSet -> M (Option IneqSet)
+  op FMRefute?: IneqSet -> Option IneqSet
+  def FMRefute?(ineqSet) =
+    let fmRes = run FMRefuteInt? ineqSet in
+    case fmRes of
+      | RETURN res -> res
+      | _ -> fail("fmRefute?")
+  
+  op FMRefuteInt?: IneqSet -> M (Option IneqSet)
   % FMRefute? takes a set if inequalities.
   % If the set is unsatisfiable then FMRefute? returns None
   % Otherwise FMRefute? returns a counterexample in the form
   % of a set of equalities
-  def FMRefute?(ineqSet) =
+  def FMRefuteInt?(ineqSet) =
     let res =
     let _ = writeLine("FM: input:") in
     let _ = writeIneqs(ineqSet) in
