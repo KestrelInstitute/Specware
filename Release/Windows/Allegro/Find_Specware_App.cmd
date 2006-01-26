@@ -1,8 +1,8 @@
 @echo off
 
-call Find_Specware4
+rem ==================== Specware image and directory ========================
 
-rem Set additional environment variables that depend on the previous ones.
+rem Set additional environment variables that depend on previous ones.
 rem The following environment variables are used within the emacs
 rem interface to find the executable and the Specware world to run.
 rem
@@ -20,5 +20,22 @@ rem named "specware".
 set "LISP_DIRECTORY=%SPECWARE4%/"
 set "LISP_EXECUTABLE=%SPECWARE4%/Specware4.exe"
 set "LISP_HEAP_IMAGE=%SPECWARE4%\Specware4.dxl"
+
+rem ==========================================================================
+
+echo.
+echo final LISP_DIRECTORY:  %LISP_DIRECTORY%
+echo final LISP_EXECUTABLE: %LISP_EXECUTABLE%
+echo final LISP_HEAP_IMAGE: %LISP_EXECUTABLE%
+echo.
+
+rem ==========================================================================
+
+rem You (the end user) may wish to modify the initial connected directory
+rem to suit your particular situation:
+
+echo Connecting to %LISP_DIRECTORY%
+cd "%LISP_DIRECTORY%"
+
 
 

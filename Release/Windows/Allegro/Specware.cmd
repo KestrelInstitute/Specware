@@ -11,8 +11,11 @@ rem but that is dreadful to contemplate.
 
 if exist Specware-4-1-4 ( cd Specware-4-1-4 )
 
+call Find_XEMACS
+call Find_SPECWARE4
+call Update_Path
+call Update_SWPATH
 call Find_Specware_App
-call Find_XEmacs
 
 start "ignore" "%XEMACS_EXE%" -l "%SPECWARE4%\Library\IO\Emacs\Preface" -l "%SPECWARE4%\Library\IO\Emacs\xeli\fi-site-init" -l "%SPECWARE4%\Library\IO\Emacs\load" -f run-specware4
 
