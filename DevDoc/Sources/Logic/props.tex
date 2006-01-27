@@ -1012,11 +1012,55 @@ prefix of the context that precedes the variable declaration:
 \]
 \end{theorem}
 
+A well-formed type variables is declared in the context:
+
+\begin{theorem}\label{thm-tvar-inv}
+\[
+\istyO{\tvar}\ \ \IMPLIES\ \ \tvar\in\cxtvarO
+\]
+\end{theorem}
+
+The type name of a well-formed type instance is declared in the context, with
+an arity that matches the type arguments, and each type argument is
+well-formed:
+
+\begin{theorem}\label{thm-tinst-inv}
+\[
+\istyO{\tinstO}
+\ \ \IMPLIES\ \
+\tdec{\tnam}{\seqlen{\typS}}\in\cx
+\ \ \AND\ \
+(\FORALL{i}{\istyO{\typ_i}})
+\]
+\end{theorem}
+
 The domain and range types of a well-formed arrow type are well-formed:
 
 \begin{theorem}\label{thm-tarr-inv}
 \[
 \istyO{\tarrO}\ \ \IMPLIES\ \ \istyO{\typ_1}\ \ \AND\ \ \istyO{\typ_2}
+\]
+\end{theorem}
+
+The component types of a well-formed record or sum type are well-formed:
+
+\begin{theorem}\label{thm-trec-inv}
+\[
+\istyO{\trecO}\ \ \IMPLIES\ \ (\FORALL{i}{\istyO{\typ_i}})
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-tsum-inv}
+\[
+\istyO{\tsumO}\ \ \IMPLIES\ \ (\FORALL{i}{\istyO{\typ_i}})
+\]
+\end{theorem}
+
+The predicate of a restriction type is well-typed, with the expected type:
+
+\begin{theorem}\label{thm-tspred-wt}
+\[
+\istyO{\tsubO}\ \ \IMPLIES\ \ \hastyO{\tspred}{\tarr{\typ}{\bool}}
 \]
 \end{theorem}
 

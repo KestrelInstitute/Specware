@@ -2069,10 +2069,47 @@ Analogous to \thmref{thm-op-type-wf}, using \Rcxvdec\ instead of \Rcxodec.
 
 
 
+\subsection*{Proof of \thmref{thm-tvar-inv}}
+
+The only rule that can derive a judgement of the form $\istyO{\tvar}$ is
+\Rtvar, which has $\tvar\in\cxtvarO$ as its premise.
+
+
+
+\subsection*{Proof of \thmref{thm-tinst-inv}}
+
+The only rule that can derive a judgement of the form $\istyO{\tinstO}$ is
+\Rtinst, which has $\tdecO\in\cx$, with $n=\seqlen{\typS}$, as well as
+$\FORALL{i}{\istyO{\typ_i}}$ as two of its premises.
+
+
+
 \subsection*{Proof of \thmref{thm-tarr-inv}}
 
 The only rule that can derive a judgement of the form $\istyO{\tarrO}$ is
 \Rtarr, which has $\istyO{\typ_1}$ and $\istyO{\typ_2}$ as its premises.
+
+
+
+\subsection*{Proof of \thmref{thm-trec-inv}}
+
+The only rule that can derive a judgement of the form $\istyO{\trecO}$ is
+\Rtrec, which has $\FORALL{i}{\istyO{\typ_i}}$ as one of its premises.
+
+
+
+\subsection*{Proof of \thmref{thm-tsum-inv}}
+
+The only rule that can derive a judgement of the form $\istyO{\tsumO}$ is
+\Rtsum, which has $\FORALL{i}{\istyO{\typ_i}}$ as its premise.
+
+
+
+\subsection*{Proof of \thmref{thm-tspred-wt}}
+
+The only rule that can derive a judgement of the form $\istyO{\tsubO}$ is
+\Rtsub, which has $\hastyO{\tspred}{\tarr{\typ}{\bool}}$ as one of its
+premises.
 
 
 
