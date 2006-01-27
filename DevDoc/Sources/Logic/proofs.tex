@@ -3775,6 +3775,18 @@ $\varfx$.
 
 
 
+\subsection*{Proof of \thmref{thm-econjO}}
+
+\begin{derivation}
+\step{\hastyO{\expr_1}{\bool}}{\hyp}
+\step{\hastyO{\expr_2}{\bool}}{\hyp}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\hastyO{\false}{\bool}}{\Refalse, 3}
+\step{\hastyO{\iif{\expr_1}{\expr_2}{\false}}{\bool}}{\ReifO, 1, 2, 4}
+\end{derivation}
+
+
+
 \subsection*{Proof of \thmref{thm-edisj}}
 
 \begin{derivation}
@@ -3788,6 +3800,18 @@ $\varfx$.
      {\hyp}
 \step{\hastyO{\iif{\expr_1}{\true}{\expr_2}}{\bool}}
      {\Reif, 1, 3, 4}
+\end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-edisjO}}
+
+\begin{derivation}
+\step{\hastyO{\expr_1}{\bool}}{\hyp}
+\step{\hastyO{\expr_2}{\bool}}{\hyp}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\hastyO{\true}{\bool}}{\Retrue, 3}
+\step{\hastyO{\iif{\expr_1}{\true}{\expr_2}}{\bool}}{\ReifO, 1, 4, 2}
 \end{derivation}
 
 
@@ -3807,6 +3831,18 @@ $\varfx$.
      {\hyp}
 \step{\hastyO{\iif{\expr_1}{\expr_2}{\true}}{\bool}}
      {\Reif, 1, 5, 4}
+\end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-eimplO}}
+
+\begin{derivation}
+\step{\hastyO{\expr_1}{\bool}}{\hyp}
+\step{\hastyO{\expr_2}{\bool}}{\hyp}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\hastyO{\true}{\bool}}{\Retrue, 3}
+\step{\hastyO{\iif{\expr_1}{\expr_2}{\true}}{\bool}}{\ReifO, 1, 2, 4}
 \end{derivation}
 
 
@@ -4032,6 +4068,152 @@ $\setII{\varFXpred}{\varFX}\cap(\cxvarO\cup\setII{\varfxpred}{\varfx})=
 \subsection*{Proof of \thmref{thm-eex}}
 
 Analogous to \thmref{thm-efa}, using \Reexop\ instead of \Refaop.
+
+
+
+\subsection*{Proof of \thmref{thm-eexIop}}
+
+Let $\varFXpred,\varFX,\varFX'\in\Nam$ such that they are distinct and
+$\setIII{\varFXpred}{\varFX}{\varFX'}\cap
+(\cxvarO\cup\setIII{\varfxpred}{\varfx}{\varfx'})=\emptyset$. The rule is
+derived as follows:
+\begin{derivation}
+\step{\istyO{\typ}}{\hyp}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\bool}}{\Rtbool, 2}
+\step{\istyO{\tarr{\typ}{\bool}}}{\Rtarr, 1, 3}
+\step{\cxwf{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\Rcxvdec, 2, 4}
+\step{\isty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}{\typ}}
+     {\thmref{thm-mono}, 1, 5}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
+            {\exopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+     {\Reexop, 6}
+\step{\cxwf{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}}
+     {\Rcxvdec, 5, 6}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
+            {\varFXpred}{\tarr{\typ}{\bool}}}
+     {\Revar, 8}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
+            {\varFX}{\typ}}
+     {\Revar, 8}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
+            {\app{\varFXpred}{\varFX}}{\bool}}
+     {\Reapp, 9, 10}
+\step{\isty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
+           {\typ}}
+     {\thmref{thm-mono}, 6, 8}
+\step{\cxwf{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},
+                \vdec{\varFX}{\typ},\vdec{\varFX'}{\typ}}}
+     {\Rcxvdec, 8, 12}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},
+                 \vdec{\varFX}{\typ},\vdec{\varFX'}{\typ}}
+            {\varFXpred}{\tarr{\typ}{\bool}}}
+     {\Revar, 13}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},
+                 \vdec{\varFX}{\typ},\vdec{\varFX'}{\typ}}
+            {\varFX}{\typ}}
+     {\Revar, 13}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},
+                 \vdec{\varFX}{\typ},\vdec{\varFX'}{\typ}}
+            {\varFX'}{\typ}}
+     {\Revar, 13}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},
+                 \vdec{\varFX}{\typ},\vdec{\varFX'}{\typ}}
+            {\eq{\varFX'}{\varFX}}{\bool}}
+     {\Reeq, 16, 15}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},
+                 \vdec{\varFX}{\typ},\vdec{\varFX'}{\typ}}
+            {\app{\varFXpred}{\varFX'}}{\bool}}
+     {\Reapp, 14, 16}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},
+                 \vdec{\varFX}{\typ},\vdec{\varFX'}{\typ}}
+            {\impl{\app{\varFXpred}{\varFX'}}{\eq{\varFX'}{\varFX}}}{\bool}}
+     {\ReimplO, 18, 17}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
+            {\faopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+     {\Refaop, 12}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
+            {\abs{\varFX'}{\typ}
+                 {(\impl{\app{\varFXpred}{\varFX'}}{\eq{\varFX'}{\varFX}})}}
+            {\tarr{\typ}{\bool}}}
+     {\Reabs, 19}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
+            {\abs{\varfx'}{\typ}
+                 {(\impl{\app{\varFXpred}{\varfx'}}{\eq{\varfx'}{\varFX}})}}
+            {\tarr{\typ}{\bool}}}
+     {\Reabsalpha, 21}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
+            {\fa{\varfx'}{\typ}
+                {(\impl{\app{\varFXpred}{\varfx'}}{\eq{\varfx'}{\varFX}})}}
+            {\bool}}
+     {\Reapp, 20, 22}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
+            {\conj{\app{\varFXpred}{\varFX}}
+                  {\fa{\varfx'}{\typ}
+                      {(\impl{\app{\varFXpred}{\varfx'}}
+                             {\eq{\varfx'}{\varFX}})}}}
+            {\bool}}
+     {\ReconjO, 11, 23}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
+            {\exopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+     {\Reexop, 6}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
+            {\abs{\varFX}{\typ}
+                 {(\conj{\app{\varFXpred}{\varFX}}
+                        {\fa{\varfx'}{\typ}
+                            {(\impl{\app{\varFXpred}{\varfx'}}
+                                   {\eq{\varfx'}{\varFX}})}})}}
+            {\tarr{\typ}{\bool}}}
+     {\Reabs, 24}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
+            {\abs{\varfx}{\typ}
+                 {(\conj{\app{\varFXpred}{\varfx}}
+                        {\fa{\varfx'}{\typ}
+                            {(\impl{\app{\varFXpred}{\varfx'}}
+                                   {\eq{\varfx'}{\varfx}})}})}}
+            {\tarr{\typ}{\bool}}}
+     {\Reabsalpha, 26}
+\step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
+            {\ex{\varfx}{\typ}
+                {(\conj{\app{\varFXpred}{\varfx}}
+                       {\fa{\varfx'}{\typ}
+                           {(\impl{\app{\varFXpred}{\varfx'}}
+                                  {\eq{\varfx'}{\varfx}})}})}}
+           {\bool}}
+     {\Reapp, 25, 27}
+\step{\hastyO{\abs{\varFXpred}{\tarr{\typ}{\bool}}
+                  {\ex{\varfx}{\typ}
+                      {(\conj{\app{\varFXpred}{\varfx}}
+                             {\fa{\varfx'}{\typ}
+                                 {(\impl{\app{\varFXpred}{\varfx'}}
+                                        {\eq{\varfx'}{\varfx}})}}})}}
+             {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+     {\Reabs, 28}
+\stepL{\hastyO{\abs{\varfxpred}{\tarr{\typ}{\bool}}
+                   {\ex{\varfx}{\typ}
+                       {(\conj{\app{\varfxpred}{\varfx}}
+                              {\fa{\varfx'}{\typ}
+                                  {(\impl{\app{\varfxpred}{\varfx'}}
+                                         {\eq{\varfx'}{\varfx}})}}})}}
+              {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+      {\Reabsalpha, 29}
+\end{derivation}
+
+
+\subsection*{Proof of \thmref{thm-eexI}}
+
+Analogous to \thmref{thm-efa}, using \ReexIop\ instead of \Refaop.
+
+
+
+\subsection*{Proof of \thmref{thm-edotO}}
+
+\begin{derivation}
+\step{\istyO{\trecO}}{\hyp}
+\step{\hastyO{\pjop{\fnam_j}}{\tarr{\trecO}{\typ_j}}}{\Reproj, 1}
+\step{\hastyO{\expr}{\trecO}}{\hyp}
+\step{\hastyO{\app{\pjop{\fnam_j}}{\expr}}{\typ_j}}{\Reapp, 2, 3}
+\end{derivation}
 
 
 

@@ -1302,6 +1302,18 @@ suggest te existence of such a proof.
 }
 \end{theorem}
 
+\begin{theorem}\label{thm-econjO}
+{\rm
+\[
+\rruleII
+ {\hastyO{\expr_1}{\bool}}
+ {\hastyO{\expr_2}{\bool}}
+ {\hastyO{\conjO}{\bool}}
+ {\ReconjO}
+\]
+}
+\end{theorem}
+
 \begin{theorem}\label{thm-edisj}
 {\rm
 \[
@@ -1314,6 +1326,18 @@ suggest te existence of such a proof.
 }
 \end{theorem}
 
+\begin{theorem}\label{thm-edisjO}
+{\rm
+\[
+\rruleII
+ {\hastyO{\expr_1}{\bool}}
+ {\hastyO{\expr_2}{\bool}}
+ {\hastyO{\disjO}{\bool}}
+ {\RedisjO}
+\]
+}
+\end{theorem}
+
 \begin{theorem}\label{thm-eimpl}
 {\rm
 \[
@@ -1322,6 +1346,18 @@ suggest te existence of such a proof.
  {\hasty{\snoc{\cx}{\axM{\expr_1}}}{\expr_2}{\bool}}
  {\hastyO{\implO}{\bool}}
  {\Reimpl}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-eimplO}
+{\rm
+\[
+\rruleII
+ {\hastyO{\expr_1}{\bool}}
+ {\hastyO{\expr_2}{\bool}}
+ {\hastyO{\implO}{\bool}}
+ {\ReimplO}
 \]
 }
 \end{theorem}
@@ -1404,6 +1440,41 @@ suggest te existence of such a proof.
 \]
 }
 \end{theorem}
+
+\begin{theorem}\label{thm-eexIop}
+{\rm
+\[
+\rruleI
+ {\istyO{\typ}}
+ {\hastyO{\exIopO}{(\tarr{\typ}{\bool})}{\bool}}
+ {\ReexIop}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-eexI}
+{\rm
+\[
+\rruleI
+ {\hasty{\snoc{\cx}{\vdecO}}{\expr}{\bool}}
+ {\hastyO{\exIO}{\bool}}
+ {\ReexI}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-edotO}
+{\rm
+\[
+\rruleII
+ {\istyO{\trecO}}
+ {\hastyO{\expr}{\trecO}}
+ {\hastyO{\proj{\expr}{\fnam_j}}{\typ_j}}
+ {\RedotO}
+\]
+}
+\end{theorem}
+
 
 %\begin{theorem}
 %{\rm
