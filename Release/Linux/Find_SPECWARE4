@@ -1,28 +1,31 @@
 #!/bin/sh
 
+# To get SPECWARE4, go up one directory level and then back down to Specware4.
+# If we are connected to Accord or some other sibling, we'll get to 
+# the right place, and if we are already connected to Specware4, 
+# this will just be some wasted motion.
+
 # Note: $0 may refer to a Specware or SpecwareShell script invoking this...
 
-INVOKED_HERE=`dirname $0`
-cd "$INVOKED_HERE"
-HERE="`pwd`"
+DIR_OF_INVOKED_SCRIPT=`dirname "$0"`
+PARENT=`dirname "$DIR_OF_INVOKED_SCRIPT"`
+cd "$PARENT/Specware-4-1-4"
+NEW_SPECWARE4="`pwd`"
 
 Prior_SPECWARE4="$SPECWARE4"
 
 #########################################################################
-# Use the directory of this file as the default value of SPECWARE4
-# Warn if this changes it.
+# Warn if this changes SPECWARE4.
 
 if [ "$SPECWARE4" == "" ]; then
    : do nothing
-elif [ "$SPECWARE4" == "$INVOKED_HERE" ]; then
-   : do nothing
-elif [ "$SPECWARE4" == "$HERE" ]; then
+elif [ "$SPECWARE4" == "$NEW_SPECWARE4" ]; then
    : do nothing
 else
-   echo "Ignoring prior SPECWARE4 : $SPECWARE4"
+   echo "Revising SPECWARE4"
 fi
 
-SPECWARE4=$HERE
+SPECWARE4=$NEW_SPECWARE4
 
 # Test whether SPECWARE4 is a directory
 
@@ -31,14 +34,6 @@ if [ ! -d "$SPECWARE4" ]; then
    echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
    exit 1
 fi
-
-# Ensure SPECWARE4 is set to full pathname:
-
-case "$SPECWARE4" in
-    .)  SPECWARE4=`pwd`;;
-    /*) : do nothing ;;
-    *)  SPECWARE4="`pwd`/$SPECWARE4";;
-esac
 
 export SPECWARE4
 
