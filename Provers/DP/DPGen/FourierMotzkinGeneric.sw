@@ -87,7 +87,6 @@ FM qualifying spec
 
   op tightenWithNeqInteger: Ineq -> Ineq -> M Ineq
   def tightenWithNeqInteger neq ineq2 =
-    let res =
     let poly1 = poly(neq) in
     let poly2 = poly(ineq2) in
     let comp2 = compPred(ineq2) in
@@ -111,26 +110,28 @@ FM qualifying spec
 	%let _ = writeLine("tighten ineq2: "^printIneq(ineq2)) in
 	%let _ = writeLine("tighten newP: "^printPoly(newP)) in
 	if zero?(newP)
-	  then let newP = polyMinusOne(poly2) in
-	       return (mkNormIneq(GtEq, newP))
+	  then
+	    let newP = polyMinusOne(poly2) in
+	    {
+	     newIneq0 <- (return (mkIneq(GtEq, newP)));
+	     info1 <- getInfo(neq);
+	     info2 <- getInfo(ineq2);
+	     putInfo(newIneq0, chainNEQIR(info1, info2, p1Mult, p2Mult));
+	     newIneq <- normalize(newIneq0);
+	     return newIneq
+	     }
 	else return ineq2
-    else return ineq2 in
-      {
-       info1 <- getInfo(neq);
-       info2 <- getInfo(ineq2);
-       newIneq <- res;
-       putInfo(newIneq, chainNEQIR(info1, info2));
-       res
-       }
+    else return ineq2
 
   op tightenGTInteger: Ineq -> M Ineq
   def tightenGTInteger (ineq) =
     case compPredConstructor(compPred(ineq)) of
       | Gt -> 
       {
-       newIneq <- return (mkNormIneq(GtEq, polyMinusOne(poly(ineq))));
+       ineq0 <- return (mkIneq(GtEq, polyMinusOne(poly(ineq))));
        info <- getInfo(ineq);
-       putInfo(newIneq, narrowIntIR(info));
+       putInfo(ineq0, narrowIntIR(info));
+       newIneq <- normalize(ineq0);
        return newIneq
        }
       | _ -> return ineq
@@ -155,58 +156,89 @@ FM qualifying spec
       | (_, Gt) -> Gt
       | _ -> GtEq
 
+  op check: Proof -> Boolean
+  def check(p) = true
+  
   op FMRefute?: IneqSet -> Option IneqSet
   def FMRefute?(ineqSet) =
     let fmRes = run FMRefuteInt? ineqSet in
     case fmRes of
-      | RETURN res -> res
+      | RETURN res ->
+      case res of
+	| Proof p ->
+	if check(p)
+	  then None
+	else
+	  fail("fmRefute? proof doesn't check")
+	| Counter c -> Some c
       | _ -> fail("fmRefute?")
-  
-  op FMRefuteInt?: IneqSet -> M (Option IneqSet)
+
+  type FMIntResult =
+    | Counter IneqSet
+    | Proof Proof
+
+  op getProof: IneqSet -> M (Option Proof)
+  def getProof(ineqSet) =
+    if member(contradictIneqGt, ineqSet)
+      then 
+	{
+	 p <- getInfo(contradictIneqGt);
+	 return (Some p)
+	}
+    else if member(contradictIneqGtEq, ineqSet)
+      then
+	{
+	 p <- getInfo(contradictIneqGtEq);
+	 return (Some p)
+	}
+    else if member(contradictIneqGtZero, ineqSet)
+      then 
+	{
+	 p <- getInfo(contradictIneqGtZero);
+	 return (Some p)
+	}
+    else return None
+
+  op FMRefuteInt?: IneqSet -> M FMIntResult
   % FMRefute? takes a set if inequalities.
   % If the set is unsatisfiable then FMRefute? returns None
   % Otherwise FMRefute? returns a counterexample in the form
   % of a set of equalities
   def FMRefuteInt?(ineqSet) =
-    let res =
-    let _ = writeLine("FM: input:") in
-    let _ = writeIneqs(ineqSet) in
-    let ineqSetN = normalize(ineqSet) in
-    let _ = writeLine("FM: Norm:") in
-    let _ = writeIneqs(ineqSetN) in
-    if member(contradictIneqGt, ineqSetN) or
-      member(contradictIneqGtEq, ineqSetN) or
-      member(contradictIneqGtZero, ineqSetN)      
-      then return None
-    else 
+    {
+     mapSeq (fn i -> putInfo(i, axiomIR(i))) ineqSet;
+    %let _ = writeLine("FM: input:") in
+    %let _ = writeIneqs(ineqSet) in
+     ineqSetN <- IneqSet.normalize(ineqSet);
+    %let _ = writeLine("FM: Norm:") in
+    %let _ = writeIneqs(ineqSetN) in
+     posP <- getProof(ineqSetN);
+     case posP of
+       | Some p -> return (Proof p)
+       | None ->
       {
-       ineqSet <- return (sortIneqSet(ineqSetN));
-       ineqSet <- integerPreProcess(ineqSetN);
-       _ <- return(writeLine("FM: INTEGER:"));
-       _ <- return(writeIneqs(ineqSetN));
-       completeIneqs <- fourierMotzkin(ineqSetN);
-       _ <- return(writeLine("FM: output:"));
-       _ <- return(writeIneqs(completeIneqs));
-       if member(contradictIneqGt, completeIneqs) or
-	 member(contradictIneqGtEq, completeIneqs) or
-	 member(contradictIneqGtZero, completeIneqs)      
-	 then return None
-       else
+       ineqSetS <- return (sortIneqSet(ineqSetN));
+       ineqSetI <- integerPreProcess(ineqSetS);
+       %_ <- return(writeLine("FM: INTEGER:"));
+       %_ <- return(writeIneqs(ineqSetN));
+       completeIneqs <- fourierMotzkin(ineqSetI);
+       %_ <- return(writeLine("FM: output:"));
+       %_ <- return(writeIneqs(completeIneqs));
+       posP <- getProof(completeIneqs);
+       case posP of
+	 | Some p -> return (Proof p)
+	 | None ->
 	 {
-	 counter <- return(generateCounterExample(completeIneqs));
-	 _ <- return(writeLine("FMCounter:"));
-	  _ <- return(writeIneqSet(counter));
-	 return (Some counter)
-	}} in
-      {
-       mapSeq (fn i -> putInfo(i, axiomIR(i))) ineqSet;
-       res
-      }
+	  counter <- return(generateCounterExample(completeIneqs));
+	  %_ <- return(writeLine("FMCounter:"));
+	  % _ <- return(writeIneqSet(counter));
+	  return (Counter counter)
+	}}}
 
 
   op writeIneqs: List Ineq -> ()
   def writeIneqs(ineqs) =
-    let _ = map (fn (ineq) -> writeLine(print(ineq))) ineqs in
+    let _ = map (fn (ineq) -> writeLine(Ineq.print(ineq))) ineqs in
     ()
 
   op generateCounterExample: IneqSet -> IneqSet
@@ -313,8 +345,8 @@ FM qualifying spec
 	      tightenAllNeqBounds(restNeqs, tightenedIneqs)
 	       } in
     {
-    ineqSet <- mapSeq tightenGTInteger ineqSet;
-    tightenAllNeqBounds(neqs, ineqSet)
+    ineqSetT <- mapSeq tightenGTInteger ineqSet;
+    tightenAllNeqBounds(neqs, ineqSetT)
      }
 
 endspec

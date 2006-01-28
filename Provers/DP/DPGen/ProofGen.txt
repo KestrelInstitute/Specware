@@ -68,7 +68,7 @@ Inference rules:
               cx |- p1 >= 0
 
   Norm:       cx |- i
-              i` = norm(i)
+              i` == i'
              ------------------------------
               cx |- i'
 

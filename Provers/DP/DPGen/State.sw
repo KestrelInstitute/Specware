@@ -3,7 +3,7 @@ spec
   % API private all
 
   import /Library/Structures/Data/Maps/SimpleAsAlist
-  import InferenceRules
+  import InferenceRules[InferenceRulesI#IRInterface]
 
   (* This spec defines the state that the proof checker monad uses. Currently
   the state only includes a Memo for caching the results of the check function
@@ -54,6 +54,7 @@ spec
   op State.getInfo: Ineq -> State -> Info
   def State.getInfo(i) =
     fn state ->
+    %let _ = writeLine("get: "^(print(i))) in
     let ineqInfo = state.ineqInfo in
     let Some res = apply(ineqInfo, i) in
     res
@@ -61,6 +62,7 @@ spec
   op State.putInfo: Ineq * Info -> State -> State
   def State.putInfo(i, info) =
     fn state ->
+    %let _ = writeLine("put: "^(print(i))) in
     let ineqInfo = state.ineqInfo in
     let ineqInfo = update(ineqInfo, i, info) in
     let state = {ineqInfo = ineqInfo} in

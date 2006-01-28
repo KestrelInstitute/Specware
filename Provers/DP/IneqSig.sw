@@ -17,6 +17,8 @@ Ineq qualifying spec
 
   type Ineq
 
+  op IneqS.print: Ineq -> String
+
   op isIneq?: Ineq -> Boolean
 
   op compPred: Ineq -> CompPred

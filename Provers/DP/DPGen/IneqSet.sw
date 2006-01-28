@@ -12,15 +12,17 @@ IneqSet qualifying spec
   def IneqSet.hdVarOpt(ineqSet) =
     hdVarOpt(hd(ineqSet))
   
-  op normalize: IneqSet -> IneqSet
+  op normalize: IneqSet -> M IneqSet
   def normalize(ineqSet) =
     if member(contradictIneqGt, ineqSet) or
       member(contradictIneqGtEq, ineqSet) or
       member(contradictIneqGtZero, ineqSet)
-      then [falseIneq]
+      then return ([falseIneq])
     else
-      let ineqSet = map normalize ineqSet in
-      sortIneqSet ineqSet
+      {
+       ineqSet <- mapSeq normalize ineqSet;
+       return (sortIneqSet ineqSet)
+      }
 
   
   op sortIneqSet: IneqSet -> IneqSet
@@ -44,7 +46,7 @@ IneqSet qualifying spec
 
   op writeIneqSet: IneqSet -> ()
   def writeIneqSet(ineqs) =
-    let _ = map (fn (ineq) -> writeLine(print(ineq))) ineqs in
+    let _ = map (fn (ineq) -> writeLine(Ineq.print(ineq))) ineqs in
     ()
     
 

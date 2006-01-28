@@ -117,7 +117,7 @@ Ineq qualifying spec
       compare(compPred(ineq1), compPred(ineq2))
     else polyRes
   
-  op normalize: Ineq -> Ineq
+  op normalize: Ineq -> M Ineq
     % normalize does NOT assume that the poly part of ineq is normalized.
   def normalize(ineq) =
     %let _ = writeLine("Noralize: "^print(ineq)) in
@@ -126,7 +126,11 @@ Ineq qualifying spec
     let normP = normalize(p) in
     let res = mkNormIneq(comp, normP) in
     %let _ = writeLine("Noralize out: "^print(res)) in
-    res
+    {
+     info <- getInfo(ineq);
+     putInfo(res, normIR(info, res));
+     return res
+    }
 
   op mkNormIneq: CompPred * Poly -> Ineq
     % normIneq DOES assume that poly is normalized
@@ -201,18 +205,19 @@ Ineq qualifying spec
 	       {
 		info1 <- getInfo(ineq1);
 		info2 <- getInfo(ineq2);
-		putInfo(newIneq, chainZIR(info1, info2));
+		putInfo(newIneq, chainZIR(info1, info2, p1Mult, p2Mult));
 		return (Some newIneq)
 	       }
 	       | _ -> return None
 	      }
 	else
 	  let newComp = chainComp(comp1, comp2) in
-	  let newIneq = normalize(mkNormIneq(newComp, newP)) in
 	  {
+	   ineq0 <- return (mkIneq(newComp, newP));
 	   info1 <- getInfo(ineq1);
 	   info2 <- getInfo(ineq2);
-	   putInfo(newIneq, chainNZIR(info1, info2));
+	   putInfo(ineq0, chainNZIR(info1, info2, p1Mult, p2Mult));
+	   newIneq <- normalize(ineq0);
 	   return (Some newIneq)
 	  }
     else return None
