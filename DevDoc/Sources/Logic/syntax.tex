@@ -49,14 +49,16 @@ just $\tnam$.
 An arrow type $\tarrO$ consists of a domain $\typ_1$ and a range $\typ_2$.
 \item
 Record types $\trecO$ (resp.\ sum types $\tsumO$) consist of typed fields
-$\fnam_i$ (resp.\ constructors $\cnam_i$). Note that record types may have no
-fields (denoted $\trecmt$), while sum types always have constructors. All the
-fields (resp.\ constructors) of a record (resp.\ sum) type must be distinct
-names. The case of no type $\typ_i$ associated to a constructor $\cnam_i$ in a
-sum type as defined in \cite{lm} is captured by $\typ_i$ being $\trecmt$ in
-the definition above: given a spec as defined in \cite{lm}, one can imagine to
-add $\trecmt$ where a constructor has no type, and add the empty record as
-argument to $\cnam_i$ in expressions and patterns where needed.
+$\fnam_i$ (resp.\ constructors $\cnam_i$). There exists one record type that
+has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only inhabitant is the
+empty record. A sum type, instead, always has at least one constructor. All
+the fields (resp.\ constructors) of a record (resp.\ sum) type must be
+distinct names. The case of no type $\typ_i$ associated to a constructor
+$\cnam_i$ in a sum type as defined in \cite{lm} is captured by $\typ_i$ being
+$\trecmt$ in the definition above: given a spec as defined in \cite{lm}, one
+can imagine to add $\trecmt$ where a constructor has no type, and add the
+empty record as argument to $\cnam_i$ in expressions and patterns where
+needed.
 \item
 Restriction types $\tsubO$ and quotient types $\tquotO$ are obtained by
 combining types $\typ$ with expressions $\tspred$ and $\tqpred$ (meant to be

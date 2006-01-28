@@ -1166,18 +1166,16 @@ bigger context that can be derived in a smaller context:
 
 \begin{theorem}\label{thm-mono}
 \[
-\begin{array}{@{\cxwf{\cx_1,\cx,\cx_2}\ \ \AND\ \ }l@{\ \ \IMPLIES\ \ }l}
-\isty{\cx_1,\cx_2}{\typ} &
- \isty{\cx_1,\cx,\cx_2}{\typ} \\
-\teq{\cx_1,\cx_2}{\typ_1}{\typ_2} &
- \teq{\cx_1,\cx,\cx_2}{\typ_1}{\typ_2} \\
-\issub{\cx_1,\cx_2}{\typ_1}{\tspred}{\typ_2} &
- \issub{\cx_1,\cx,\cx_2}{\typ_1}{\tspred}{\typ_2} \\
-\hasty{\cx_1,\cx_2}{\expr}{\typ} &
- \hasty{\cx_1,\cx,\cx_2}{\expr}{\typ} \\
-\theo{\cx_1,\cx_2}{\expr} &
- \theo{\cx_1,\cx,\cx_2}{\expr}
+\cxwf{\cx'}\ \ \AND\ \ \cx\subseteq\cx'\ \ \IMPLIES\ \
+\left(
+\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\istyO{\typ}                     & \isty{\cx'}{\typ}                     \\
+\teqO{\typ_1}{\typ_2}            & \teq{\cx'}{\typ_1}{\typ_2}            \\
+\issubO{\typ_1}{\tspred}{\typ_2} & \issub{\cx'}{\typ_1}{\tspred}{\typ_2} \\
+\hastyO{\expr}{\typ}             & \hasty{\cx'}{\expr}{\typ}             \\
+\theoO{\expr}                    & \theo{\cx'}{\expr}
 \end{array}
+\right)
 \]
 \end{theorem}
 
