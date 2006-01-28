@@ -532,11 +532,11 @@
 	(target-dir (ensure-subdirs-exist release-dir "Components" "Specware" "Generic")))
 
     ;; Icons
-    (copy-dist-file (make-pathname :name "S" :type "ico" :defaults (extend-directory source-dir "Release" "Generic"))
+    (copy-dist-file (make-pathname :name "S" :type "ico" :defaults (extend-directory specware-dir "Icons"))
 		    (make-pathname :name "S" :type "ico" :defaults target-dir))
     
-    (copy-dist-file (make-pathname :name "specware_logo" :type "xpm" :defaults (extend-directory source-dir "Release" "Generic"))
-		    (make-pathname :name "specware_logo" :type "xpm" :defaults target-dir))
+    (copy-dist-file (make-pathname :name "KestrelBird" :type "xpm" :defaults (extend-directory specware-dir "Icons"))
+		    (make-pathname :name "KestrelBird" :type "xpm" :defaults target-dir))
     
     ;; Documentation
     (let ((source-doc-dir (extend-directory     source-dir "UserDoc"))
@@ -619,8 +619,8 @@
 					 (merge-pathnames source-linux-dir       "Find_SPECWARE4")
 					 (merge-pathnames source-linux-dir       "Update_Path")
 					 (merge-pathnames source-linux-dir       "Update_SWPATH")
-					 (merge-pathnames source-generic-dir     "StartSpecwareShell.lisp")
-					 (merge-pathnames source-generic-dir     "SpecwareClickThruLicense.txt"))
+					 (merge-pathnames source-linux-dir       "SpecwareClickThruLicense_Linux.txt")
+					 (merge-pathnames source-generic-dir     "StartSpecwareShell.lisp"))
 				   t)
     ;; Patches
     (prepare_patch_dir source-dir target-dir)
@@ -666,8 +666,8 @@
 					 (merge-pathnames source-windows-dir         "Find_SPECWARE4.cmd")
 					 (merge-pathnames source-windows-dir         "Update_Path.cmd")
 					 (merge-pathnames source-windows-dir         "Update_SWPATH.cmd")
-					 (merge-pathnames source-generic-dir         "StartSpecwareShell.lisp")
-					 (merge-pathnames source-generic-dir         "SpecwareClickThruLicense.txt"))
+					 (merge-pathnames source-windows-dir         "SpecwareClickThruLicense_Windows.txt")
+					 (merge-pathnames source-generic-dir         "StartSpecwareShell.lisp"))
 				   t)
     ;; CVS is perversely hardwired to refuse accept *.exe files.
     ;; They are presumed to be binary files and hence outside it's purview.
