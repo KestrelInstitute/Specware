@@ -85,7 +85,12 @@
 (defvar *sw-shell-print-level* 8)
 (defvar *sw-shell-print-length* 16)
 
-(defun aux-specware-shell (exiting-lisp? sw-shell-command-processor &optional (banner "Specware Shell~%"))
+(defun aux-specware-shell (exiting-lisp?
+			   sw-shell-command-processor 
+			   &optional 
+			   (banner        "Specware Shell~%")
+			   (abort-message "Return to Specware Shell top level.")
+			   (exit-message  "Exiting Specware Shell. :sw-shell to reenter."))
   (let  ((magic-eof-cookie (cons :eof nil))
 	 (number-of-eofs 0)
 	 (cl:*package* cl:*package*)
@@ -108,51 +113,51 @@
 	    (emacs::eval-in-emacs *emacs-eval-form-after-prompt*)
 	    (setq *emacs-eval-form-after-prompt* nil))
 	  (catch ':top-level-reset	; Used by allegro :reset command
-	    (with-simple-restart (abort "Return to Specware Shell top level.")
+	    (with-simple-restart (abort abort-message)
 					;(set-specware-shell t)
-	      (loop while (member (setq ch (read-char *standard-input* nil nil)) '(#\Newline #\Space #\Tab))
-		    do ;; If user types a newline give a new prompt
-		       (when (and (eq ch #\Newline) (not start-up))
-			 (print-shell-prompt)))
-	      (setq start-up nil)
-	      (when ch
-		(unread-char ch))
-	      (catch #+allegro 'tpl::top-level-break-loop
-		     #+mcl :toplevel 
-		     #-(or allegro mcl) nil
-		(let ((form (read *standard-input* nil magic-eof-cookie)))
-		  (when (symbolp form)
-		    (setq form (intern (symbol-name form) sw-shell-pkg)))
-		  (cond ((member form '(quit exit))
-			 (setq exiting-lisp? t)
-			 (specware::exit))
-			((eq form 'ok)
-			 (return))
-			((not (eq form magic-eof-cookie))
-			 (let ((results
-				(multiple-value-list 
-				 (sw-shell-command sw-shell-command-processor
-						   form))))
-			   (dolist (result results)
-			     (fresh-line)
-			     (prin1 result)))
-			 (setf number-of-eofs 0))
-			((eql (incf number-of-eofs) 1)
-			 (let ((stream (make-synonym-stream '*terminal-io*)))
-			   (setf *standard-input* stream)
-			   (setf *standard-output* stream)
-			   (format t "~&Received EOF on *standard-input*, ~
+				 (loop while (member (setq ch (read-char *standard-input* nil nil)) '(#\Newline #\Space #\Tab))
+				   do;; If user types a newline give a new prompt
+				   (when (and (eq ch #\Newline) (not start-up))
+				     (print-shell-prompt)))
+				 (setq start-up nil)
+				 (when ch
+				   (unread-char ch))
+				 (catch #+allegro 'tpl::top-level-break-loop
+					#+mcl :toplevel 
+					#-(or allegro mcl) nil
+					(let ((form (read *standard-input* nil magic-eof-cookie)))
+					  (when (symbolp form)
+					    (setq form (intern (symbol-name form) sw-shell-pkg)))
+					  (cond ((member form '(quit exit))
+						 (setq exiting-lisp? t)
+						 (specware::exit))
+						((eq form 'ok)
+						 (return))
+						((not (eq form magic-eof-cookie))
+						 (let ((results
+							(multiple-value-list 
+							 (sw-shell-command sw-shell-command-processor
+									   form))))
+						   (dolist (result results)
+						     (fresh-line)
+						     (prin1 result)))
+						 (setf number-of-eofs 0))
+						((eql (incf number-of-eofs) 1)
+						 (let ((stream (make-synonym-stream '*terminal-io*)))
+						   (setf *standard-input* stream)
+						   (setf *standard-output* stream)
+						   (format t "~&Received EOF on *standard-input*, ~
 				  switching to *terminal-io*.~%")))
-			((> number-of-eofs eofs-before-quit)
-			 (format t "~&Received more than ~D EOFs; Aborting.~%"
-				 eofs-before-quit)
-			 (specware::exit))
-			(t
-			 (format t "~&Received EOF.~%"))))))))
+						((> number-of-eofs eofs-before-quit)
+						 (format t "~&Received more than ~D EOFs; Aborting.~%"
+							 eofs-before-quit)
+						 (specware::exit))
+						(t
+						 (format t "~&Received EOF.~%"))))))))
       
       (set-specware-shell nil)
       (unless exiting-lisp?
-	(format t "~%Exiting Specware Shell. :sw-shell to reenter.~%")))))
+	(format t "~%~A~%" exit-message)))))
 
 (defun sw-shell-command (sw-shell-command-processor command)
   (let ((ch (read-char-no-hang *standard-input* nil nil)))

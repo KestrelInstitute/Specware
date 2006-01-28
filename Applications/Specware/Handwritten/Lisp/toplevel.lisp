@@ -1322,11 +1322,8 @@
 		(if (member :ACCORD cl::*features*)
 		     "~&Interactive bash shell:~%Type exit to return to Accord Shell.~2%"
 		  "~&Interactive bash shell:~%Type exit to return to Specware Shell.~2%"))
-	(specware::setenv "PS1" 
-			  #-cmu "bash> " 
-			  #+cmu  ""      ; avoid hysteresis problem that causes prompt to print after input is entered
-			  )
-	#+cmu (format t "~&Note: PS1 (the shell prompt) is deliberately set to \"\" since prompts would appear *after* input.~2%")
+	;; (specware::setenv "PS1" "\\s-\\v\\$ ") ; to get something like "bash-2.05b$ "
+	#+cmu (format t "~&Note: The shell prompt may be unsynchronized, appearing *after* input.~2%")
 	(finish-output)
 	(unwind-protect
 	    (specware::run_cmd-2 "bash" (list "-i"))
