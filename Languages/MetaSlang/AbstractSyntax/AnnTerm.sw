@@ -1046,6 +1046,115 @@ MetaSlang qualifying spec
  def equalVarStruct? ((id1,_), (id2,_)) = id1 = id2
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%                equivTerm? (equal modulo alpa-conversion)
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op  equivTerm?: [a,b] ATerm a * ATerm b -> Boolean
+ def equivTerm?(t1,t2) = equivTermAux?(t1,t2,[])
+
+ type VarNameSubst = List(String * String)
+
+ op  equivTermAux?: [a,b] ATerm a * ATerm b * VarNameSubst -> Boolean
+ def equivTermAux? (t1, t2, sb) =
+   case (t1, t2) of
+
+     | (Apply      (x1, y1,      _),
+        Apply      (x2, y2,      _)) -> equivTermAux? (x1, x2, sb) && equivTermAux? (y1, y2, sb)
+
+     | (ApplyN     (xs1,         _),
+        ApplyN     (xs2,         _)) -> equalList? (xs1, xs2, fn(t1, t2) -> equivTermAux?(t1, t2, sb))
+
+     | (Record     (xs1,         _),
+        Record     (xs2,         _)) -> equalList? (xs1, xs2,
+                                                    fn ((label1, x1), (label2, x2)) ->
+                                                       label1 = label2 &&
+                                                       equivTermAux? (x1, x2, sb))
+
+     | (Bind       (b1, vs1, x1, _),
+        Bind       (b2, vs2, x2, _)) -> b1 = b2 &&
+                                        %% Could check modulo alpha conversion...
+                                        (case compareVarList (vs1, vs2, sb) of
+					   | Some new_sb -> equivTermAux? (x1,  x2, new_sb)
+					   | None -> false)
+
+     | (The       (v1, x1, _),
+        The       (v2, x2, _)) -> %% Could check modulo alpha conversion...
+                                    equalVarWrtSubst? (v1, v2, sb) &&
+                                    equivTermAux? (x1, x2, sb)
+
+     | (Let        (pts1, b1,    _),
+        Let        (pts2, b2,    _)) -> equivTermAux? (b1, b2, sb) &&
+                                        equalList? (pts1, pts2,
+                                                    fn ((p1, t1), (p2, t2)) ->
+						      %% Should return a subst
+                                                      equalPattern? (p1, p2) &&
+                                                      equivTermAux?    (t1, t2, sb))
+
+     | (LetRec     (vts1, b1,    _),
+        LetRec     (vts2, b2,    _)) -> equivTermAux? (b1, b2, sb) &&
+                                        equalList? (vts1, vts2,
+                                                    fn ((v1, t1), (v2, t2)) ->
+						      %% Should return a subst
+                                                     equalVar?  (v1, v2) &&
+                                                     equivTermAux? (t1, t2, sb))
+
+     | (Var        (v1,          _),
+        Var        (v2,          _)) -> equalVarWrtSubst? (v1, v2, sb)
+
+     | (Fun        (f1, s1,      _),
+        Fun        (f2, s2,      _)) -> equalFun? (f1, f2) && equalSort? (s1, s2)
+
+     | (Lambda     (xs1,         _),
+        Lambda     (xs2,         _)) -> equalList? (xs1, xs2,
+                                                    fn ((p1, c1, b1), (p2, c2, b2)) ->
+						      %% Should return a subst
+                                                      equalPattern?  (p1, p2) &&
+                                                      equivTermAux?     (c1, c2, sb) &&
+                                                      equivTermAux?     (b1, b2, sb))
+
+     | (IfThenElse (c1, x1, y1,  _),
+        IfThenElse (c2, x2, y2,  _)) -> equivTermAux? (c1, c2, sb) &&
+                                        equivTermAux? (x1, x2, sb) &&
+                                        equivTermAux? (y1, y2, sb)
+
+     | (Seq        (xs1,         _),
+        Seq        (xs2,         _)) -> equalList? (xs1, xs2, fn(t1, t2) -> equivTermAux?(t1, t2, sb))
+
+     | (SortedTerm (x1, s1,      _),
+        SortedTerm (x2, s2,      _)) -> equivTermAux? (x1, x2, sb) && equalSort? (s1, s2)
+
+     | (Pi         (tvs1, tm1,   _), 
+        Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equivTermAux? (tm1, tm2, sb) % TODO: handle alpha equivalence
+
+     | (And        (tms1,        _), 
+        And        (tms2,        _)) -> foldl (fn (t1, t2, eq?) -> eq? && equivTermAux? (t1, t2, sb))
+					      true
+					      (tms1, tms2)
+
+     | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
+
+     | _ -> false
+
+ op  compareVarList: [a,b] List (AVar a) * List (AVar b) * VarNameSubst -> Option VarNameSubst
+ def compareVarList(vs1,vs2,sb) =
+   if length vs1 ~= length vs2 then None
+   else
+   let def comp(vs1,vs2,sb) =
+         case (vs1,vs2) of
+	   | ([],[]) -> Some sb
+	   | ((id1,s1)::rvs1,(id2,s2)::rvs2) ->
+	     if equalSort?(s1, s2)
+	       then comp(rvs1,rvs2,if id1 = id2 then sb else Cons((id1,id2),sb))
+	       else None
+   in
+   comp(vs1,vs2,sb)
+
+ op  equalVarWrtSubst?: [a,b] AVar a * AVar b * VarNameSubst -> Boolean
+ def equalVarWrtSubst?((id1,_),(id2,_),sb) =
+   id1 = id2 or exists (fn (ids1,ids2) -> id2 = ids2) sb
+
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Mappings
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
