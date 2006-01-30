@@ -1,6 +1,6 @@
 SATFMI = SATFM qualifying spec
   import SATDPSig
-  import FourierMotzkinGeneric
+  import DPGen/FourierMotzkinGeneric
 
   type SAT.Formula = Ineq
 
