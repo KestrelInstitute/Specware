@@ -2189,10 +2189,41 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
 
 \subsection*{Proof of \thmref{thm-free-var-in-cx}}
 
-By induction on the derivation of the judgements in the antecedents of the
-implications:
+To prove the last two implications, it suffices to prove
+\[
+\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\cxwf{\snoc{\cx}{\axO}}  & \efvar{\expr}\subseteq\cxvarO \\
+\cxwf{\snoc{\cx}{\lemO}} & \efvar{\expr}\subseteq\cxvarO
+\end{array}
+\hspace{3em}(*)
+\]
+because
+\[
+\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\cxwf{\cx_1,\axO,\cx_2}  & \cxwf{\snoc{\cx_1}{\axO}} \\
+\cxwf{\cx_1,\lemO,\cx_2} & \cxwf{\snoc{\cx_1}{\lemO}}
+\end{array}
+\]
+by \thmref{thm-cxprefix}. We prove the first two implications of the original
+theorem statement and the two implications (*) by induction on the derivation
+of the judgements in the antecedents of the implications:
 
 \begin{bycase}
+
+\Case{\Rcxmt, \Rcxtdec, \Rcxodec, \Rcxtdef, \Rcxtvdec, \Rcxvdec}\\
+These rules are impossible because their conclusion is not a judgement of the
+form $\cxwf{\snoc{\cx}{\axO}}$ or $\cxwf{\snoc{\cx}{\lemO}}$.
+
+\Case{\Rcxax}
+\begin{derivation}
+\step{\cxwf{\snoc{\cx}{\axO}}}{\hyp}
+\step{\hasty{\snoc{\cx}{\tvdec{\tvarS}}}{\expr}{\bool}}{\thmref{thm-ax-wt}, 1}
+\step{\efvar{\expr}\subseteq\cxvar{\snoc{\cx}{\tvdec{\tvarS}}}=\cxvarO}
+     {\indhyp, 2}
+\end{derivation}
+
+\Case{\Rcxlem}\\
+Analogous to \Rcxax.
 
 \Case{\Reop, \Redesc, \Reproj, \Reembed, \Requot}\\
 $\efvar{\expr}=\emptyset$
@@ -2238,8 +2269,7 @@ Analogous to \Reapp.
 \step{\axO\in\cx}{\premof{\Rthax}}
 \step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\axO,\cx_2}}{1}
 \step{\cxwfO}{\premof{\Rthax}}
-\step{\hasty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}{\bool}}
-     {\thmref{thm-ax-wt}, 3, 2}
+\step{\cxwf{\snoc{\cx_1}{\axO}}}{\thmref{thm-cxprefix}, 3, 2}
 \step{\efvar{\expr}\subseteq\cxvar{\cx_1}}{\indhyp, 4}
 \step{\cxvar{\cx_1}\subseteq\cxvar{\cx}}{2}
 \step{\efvar{\tsbslash{\expr}{\tvarS}{\typS}}=\efvar{\expr}}
@@ -2321,20 +2351,6 @@ $\cx'=\snoc{\cx}{\axM{\ldots}}$ and so clearly $\cxvar{\cx'}=\cxvarO$).
 
 
 
-\subsection*{Proof of \thmref{thm-free-var-in-prev-cx}}
-
-The first implication is proved as follows:
-\begin{derivation}
-\step{\cxwf{\cx_1,\axO,\cx_2}}{\hyp}
-\step{\hasty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}{\bool}}{\thmref{thm-ax-wt}, 1}
-\step{\efvar{\expr}\subseteq\cxvar{\cx_1}}{\thmref{thm-free-var-in-cx}, 2}
-\end{derivation}
-
-\noindent
-The second implication is proved analogously.
-
-
-
 \subsection*{Proof of \thmref{thm-free-tvar-in-cx}}
 
 To prove the last implication, it suffices to prove
@@ -2346,14 +2362,14 @@ because
 \[
 \cxwf{\cx_1,\cxel,\cx_2}\ \ \IMPLIES\ \ \cxwf{\snoc{\cx_1}{\cxel}}
 \]
-by \thmref{thm-cxprefix}. We prove the first five implication of the original
+by \thmref{thm-cxprefix}. We prove the first five implications of the original
 theorem statement and the implication (*) by induction on the derivation of
 the judgements in the antecedents of the implications:
 
 \begin{bycase}
 
 \Case{\Rcxmt}\\
-This rule is impossible because $\cx_1,\cxel,\cx_2\neq\mtcx$.
+This rule is impossible because $\cx,\cxel\neq\mtcx$.
 
 \Case{\Rcxtdec, \Rcxtvdec}
 \StePO{\ftvar{\cxel}=\emptyset\subseteq\cxtvarO}

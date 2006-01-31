@@ -1086,28 +1086,31 @@ free variables:
 \end{theorem}
 
 All the free variables in a well-typed expression or a theorem are declared in
-the context:
+the context, and all the free variables in an axiom or lemma of a well-formed
+context are declared before the axiom or lemma:
 
 \begin{theorem}\label{thm-free-var-in-cx}
 \[
 \begin{array}{l@{\ \ \IMPLIES\ \ }l}
-\hastyO{\expr}{\typ} & \efvar{\expr}\subseteq\cxvarO \\
-\theoO{\expr}        & \efvar{\expr}\subseteq\cxvarO
-\end{array}
-\]
-\end{theorem}
-
-All the free variables in an axiom or lemma in a well-formed context are
-declared before the axiom or lemma:
-
-\begin{theorem}\label{thm-free-var-in-prev-cx}
-\[
-\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\hastyO{\expr}{\typ}     & \efvar{\expr}\subseteq\cxvarO       \\
+\theoO{\expr}            & \efvar{\expr}\subseteq\cxvarO       \\
 \cxwf{\cx_1,\axO, \cx_2} & \efvar{\expr}\subseteq\cxvar{\cx_1} \\
 \cxwf{\cx_1,\lemO,\cx_2} & \efvar{\expr}\subseteq\cxvar{\cx_1}
 \end{array}
 \]
 \end{theorem}
+
+%All the free variables in an axiom or lemma in a well-formed context are
+%declared before the axiom or lemma:
+
+%\begin{theorem}\label{thm-free-var-in-prev-cx}
+%\[
+%\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+%\cxwf{\cx_1,\axO, \cx_2} & \efvar{\expr}\subseteq\cxvar{\cx_1} \\
+%\cxwf{\cx_1,\lemO,\cx_2} & \efvar{\expr}\subseteq\cxvar{\cx_1}
+%\end{array}
+%\]
+%\end{theorem}
 
 All the free type variables in the types and expressions to the right of a
 provable judgement $\jcxdots{\cx}$ are declared in $\cx$, and all the free
