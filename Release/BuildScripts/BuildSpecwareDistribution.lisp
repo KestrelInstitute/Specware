@@ -24,8 +24,12 @@
       (my-load specware-buildscripts-pathname "GatherSpecwareComponents"))))
 
 (defun build-specware-release (i j k verbose?)
-  (let ((specware-dir     (concatenate 'string (sys::getenv "SPECWARE4")    "/"))
-	(distribution-dir (concatenate 'string (sys::getenv "DISTRIBUTION") "/")))
-    (load-builder specware-dir distribution-dir)
-    (funcall 'user::prepare_specware_release i j k specware-dir distribution-dir verbose?)))
+  (flet ((my-getenv (var)
+	   #+MSWindows (sys::getenv var)
+	   #+CMU       (cdr (assoc (intern var "KEYWORD") EXTENSIONS::*ENVIRONMENT-LIST*))
+	   #-(or MSWindows CMU) (sys::getenv var)))
+    (let ((specware-dir     (concatenate 'string (my-getenv "SPECWARE4")    "/"))	   
+	  (distribution-dir (concatenate 'string (my-getenv "DISTRIBUTION") "/")))
+      (load-builder specware-dir distribution-dir)
+      (funcall 'user::prepare_specware_release i j k specware-dir distribution-dir verbose?))))
 
