@@ -1,6 +1,7 @@
 FM qualifying spec
 
   import IneqSet
+  import ../DPCheck/InferenceRulesCheck
 
   op splitList2: [a] ((a -> Boolean) * List a) -> (List a) * (List a)
   def splitList2 (p, l) =
@@ -9,7 +10,7 @@ FM qualifying spec
       | None -> (l, [])
       | Some (l1, e, l2) -> (l1, cons(e, l2))
 
-  op fourierMotzkin: IneqSet -> M IneqSet
+  op fourierMotzkin: IneqSet -> Ineq.M IneqSet
   def fourierMotzkin(ineqSet) =
     case ineqSet of
       | [] -> return []
@@ -20,7 +21,7 @@ FM qualifying spec
       return (topVarIneqs++solvedNewIneqs)
        }
 
-  op fmStep: IneqSet -> M (IneqSet * IneqSet)
+  op fmStep: IneqSet -> Ineq.M (IneqSet * IneqSet)
   def fmStep(ineqSet) =
     case ineqSet of
       | [] -> return ([], [])
@@ -33,7 +34,7 @@ FM qualifying spec
      Then chains all the ineqs with that variable.
      *)
 
-  op splitPossibleChains: Var * IneqSet -> M (IneqSet * IneqSet)
+  op splitPossibleChains: Var * IneqSet -> Ineq.M (IneqSet * IneqSet)
   def splitPossibleChains(var, ineqSet) =
     let res as (respc, resnpc) =
     splitList2 ((fn (ineq) ->
@@ -49,7 +50,7 @@ FM qualifying spec
     %let _ = writeIneqs(resnpc) in
     return res
   
-  op processIneq0: Var * IneqSet -> M (IneqSet * IneqSet)
+  op processIneq0: Var * IneqSet -> Ineq.M (IneqSet * IneqSet)
   def processIneq0(var, ineqSet) =
     {
     (possibleChains, nonChains) <- splitPossibleChains(var, ineqSet);
@@ -62,7 +63,7 @@ FM qualifying spec
     return (possibleChains, newIneqSet)
      }
 
-  op processIneq1: Ineq * IneqSet -> M IneqSet
+  op processIneq1: Ineq * IneqSet -> Ineq.M IneqSet
   def processIneq1(ineq, possibleChains) =
     {
     newIneqs <- mapSeqPartial (fn (ineq2) -> chainIneqOpt(ineq, ineq2)) possibleChains;
@@ -71,11 +72,11 @@ FM qualifying spec
     %mapSeq return newIneqs
     %(foldl (fn (mi: M ineq, s: State) -> let (newIneq, newState) = monadSeq mi s in state newIneqs)
 
-  op processPossibleIneqs: IneqSet -> M IneqSet
+  op processPossibleIneqs: IneqSet -> Ineq.M IneqSet
   def processPossibleIneqs(possibleChains) =
     processPossibleIneqsAux(possibleChains, [])
 
-  op processPossibleIneqsAux: IneqSet * IneqSet -> M IneqSet
+  op processPossibleIneqsAux: IneqSet * IneqSet -> Ineq.M IneqSet
   def processPossibleIneqsAux(ineqSet, res) =
     case ineqSet of
       | [] -> return res
@@ -85,7 +86,7 @@ FM qualifying spec
       processPossibleIneqsAux(ineqSet, newIneqs++res)
        }
 
-  op tightenWithNeqInteger: Ineq -> Ineq -> M Ineq
+  op tightenWithNeqInteger: Ineq -> Ineq -> Ineq.M Ineq
   def tightenWithNeqInteger neq ineq2 =
     let poly1 = poly(neq) in
     let poly2 = poly(ineq2) in
@@ -123,7 +124,7 @@ FM qualifying spec
 	else return ineq2
     else return ineq2
 
-  op tightenGTInteger: Ineq -> M Ineq
+  op tightenGTInteger: Ineq -> Ineq.M Ineq
   def tightenGTInteger (ineq) =
     case compPredConstructor(compPred(ineq)) of
       | Gt -> 
@@ -156,9 +157,6 @@ FM qualifying spec
       | (_, Gt) -> Gt
       | _ -> GtEq
 
-  op check: Proof -> Boolean
-  def check(p) = true
-  
   op FMRefute?: IneqSet -> Option IneqSet
   def FMRefute?(ineqSet) =
     let fmRes = run FMRefuteInt? ineqSet in
@@ -166,7 +164,7 @@ FM qualifying spec
       | RETURN res ->
       case res of
 	| Proof p ->
-	if check(p)
+	if checkProof(p)
 	  then None
 	else
 	  fail("fmRefute? proof doesn't check")
@@ -177,7 +175,7 @@ FM qualifying spec
     | Counter IneqSet
     | Proof Proof
 
-  op getProof: IneqSet -> M (Option Proof)
+  op getProof: IneqSet -> Ineq.M (Option Proof)
   def getProof(ineqSet) =
     if member(contradictIneqGt, ineqSet)
       then 
@@ -199,7 +197,7 @@ FM qualifying spec
 	}
     else return None
 
-  op FMRefuteInt?: IneqSet -> M FMIntResult
+  op FMRefuteInt?: IneqSet -> Ineq.M FMIntResult
   % FMRefute? takes a set if inequalities.
   % If the set is unsatisfiable then FMRefute? returns None
   % Otherwise FMRefute? returns a counterexample in the form
@@ -328,7 +326,7 @@ FM qualifying spec
 	     else Coef.zero
 	  else Coef.zero % If it is not of the above forms then lb is unconstrained
 
-  op integerPreProcess: IneqSet -> M IneqSet
+  op integerPreProcess: IneqSet -> Ineq.M IneqSet
   def integerPreProcess(ineqSet) =
     let neqs = neqs(ineqSet) in
     let def tightenNeqBounds(neq, ineqSet) =

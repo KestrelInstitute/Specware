@@ -43,11 +43,11 @@ Inference rules:
               p = p1*abs(c2) + p2*abs(c1)
               p = 0
              ------------------------------
-              cx |- p1*abs(c2) = p2*abs(c1)
+              cx |- p1*abs(c2) = 0
 
   ZNEQ Chaining: (Redundant given NEQ Chaining)
-              cx |- p1 >= 0
-              cx |- p2 /= 0
+              cx |- p1 /= 0
+              cx |- p2 >= 0
               p1 = c1*x + ...
               p2 = c2*x + ...
               c1 * c2 < 0

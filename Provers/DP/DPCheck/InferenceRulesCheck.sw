@@ -42,10 +42,6 @@ spec
   def polyMinusPoly(p1, p2) =
     polyPlusPoly(p1, negatePoly(p2))
 
-  op polyPlusPoly: Poly * Poly -> Poly
-  def polyPlusPoly(p1, p2) =
-    p1
-
   op negatePoly: Poly -> Poly
   def negatePoly (p) =
     coefTimesPoly(minusOne, p)
@@ -69,15 +65,7 @@ spec
       then return (pIneq(p))
     else if normIR?(p)
       then
-	let p1 = p1(p) in
-	let ni = pIneq(p) in
-	{
-	 i1 <- check(p1);
-	 if Poly.zero?(polyMinusPoly(poly(i1), poly(ni)))
-	   & compPred(i1) = compPred(ni)
-	   then return i1
-	 else throw "Error"
-	  }
+	checkNormIR(p)
     else if chainNZIR?(p)
       then
 	checkChainNZIR(p)
@@ -90,6 +78,18 @@ spec
     else %if narrowIntIR(p) then
       checkNarrowIntIR(p)
 
+
+  op checkNormIR: Proof -> Check.M Ineq
+  def checkNormIR(p) =
+    let p1 = p1(p) in
+    {
+     i1 <- check(p1);
+     let comp = compPred(i1) in
+     let p = poly(i1) in
+     let normP = normalize(p) in
+     let res = mkNormIneq(comp, normP) in
+     return res
+     }
 
   op checkChainNZIR: Proof -> Check.M Ineq
   def checkChainNZIR(p) =
@@ -110,7 +110,7 @@ spec
      if hdVarI1 = hdVarI2  & compPred(i1) = compPred(i2) & compPred(i1) = GtEq
        && hdVarI1 ~= newHdVar
        then return newI
-     else throw "Error"
+     else throw "Error ChainNZ"
      }
 
   op checkChainNEQIR: Proof -> Check.M Ineq
@@ -130,7 +130,7 @@ spec
      newI <- return(mkIneq(Gt, coefTimesPoly(c1, poly1)));
      if Poly.zero?(newPoly) && hdVarI1 = hdVarI2  && compPred(i1) = compPred(i2) && compPred(i1) = GtEq
        then return newI
-     else throw "Error"
+     else throw "Error ChainNEQ"
      }
 
 
@@ -151,7 +151,7 @@ spec
      newI <- return(mkIneq(Eq, coefTimesPoly(c1, poly1)));
      if Poly.zero?(newPoly) && hdVarI1 = hdVarI2  && compPred(i1) = compPred(i2) && compPred(i1) = GtEq
        then return newI
-     else throw "Error"
+     else throw "Error ChainZ"
      }
 
 
@@ -165,7 +165,7 @@ spec
      newI <- return(mkIneq(GtEq, newPoly));
      if compPred(i1) = Gt
        then return newI
-     else throw "Error"
+     else throw "Error Narrow"
      }
      
       

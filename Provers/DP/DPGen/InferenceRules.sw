@@ -1,4 +1,4 @@
-spec
+IR qualifying spec
 
   import ../IneqSig
 

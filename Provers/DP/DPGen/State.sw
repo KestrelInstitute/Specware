@@ -3,7 +3,7 @@ spec
   % API private all
 
   import /Library/Structures/Data/Maps/SimpleAsAlist
-  import InferenceRules[InferenceRulesI#IRInterface]
+  import IR qualifying (InferenceRules[InferenceRulesI#IRInterface])
 
   (* This spec defines the state that the proof checker monad uses. Currently
   the state only includes a Memo for caching the results of the check function
