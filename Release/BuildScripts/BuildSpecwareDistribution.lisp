@@ -23,9 +23,9 @@
       (my-load distribution-scripts-pathname  "save-image")
       (my-load specware-buildscripts-pathname "GatherSpecwareComponents"))))
 
-(defun build-specware-release (i j k specware-dir distribution-dir verbose?)
-  (load-builder specware-dir distribution-dir)
-  (funcall 'user::prepare_specware_release i j k specware-dir distribution-dir verbose?))
-
-
+(defun build-specware-release (i j k verbose?)
+  (let ((specware-dir     (concatenate 'string (sys::getenv "SPECWARE4")    "/"))
+	(distribution-dir (concatenate 'string (sys::getenv "DISTRIBUTION") "/")))
+    (load-builder specware-dir distribution-dir)
+    (funcall 'user::prepare_specware_release i j k specware-dir distribution-dir verbose?)))
 

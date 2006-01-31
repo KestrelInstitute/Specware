@@ -261,6 +261,17 @@
     (set-process-sentinel sw-proc 'continue-emacs-computation))
   (simulate-input-expression "(specware::exit)"))
 
+(defun kill-lisp-and-then-emacs (&optional delay)
+  (when (null delay) (setq delay 10))
+  ;; mutual lisp/emacs suicide...
+  (message "Will automatically exit in %S seconds..." delay)
+  (sit-for delay)
+  (continue-form-when-ready
+   ;; continue-form-when-ready kills the sublisp process, 
+   ;; then waits for a status change signal on that process
+   ;; before processing the given command
+   (`(kill-emacs t))))
+  
 (defun delete-continuation ()
   (let ((sw-proc (get-buffer-process *specware-buffer-name*)))
     ;; for debugging continue-form-when-ready...
@@ -272,7 +283,11 @@
 		*sentinel-data*))
     (set-process-sentinel sw-proc nil)))
 
-(defun build-specware4 (&optional in-current-dir?)
+(defun build-specware4-and-then-exit (&optional in-current-dir?)
+  (interactive "P")
+  (build-specware4 in-current-dir? t))
+  
+(defun build-specware4 (&optional in-current-dir? auto-exit?)
   (interactive "P")
   (let* ((specware4-dir (sw::normalize-filename
 			 (if in-current-dir?
@@ -315,10 +330,14 @@
      (format "(namestring (specware::change-directory %S))" build-dir))
     (simulate-input-expression "(cl:time (load \"Specware4.lisp\"))")
     (continue-form-when-ready
+     ;; continue-form-when-ready kills the sublisp process, 
+     ;; then waits for a status change signal on that process
+     ;; before processing the given command
      (`(build-specware4-continue (, specware4-dir) (, build-dir) (, bin-dir)
-				 (, slash-dir) (, world-name) (, base-world-name))))))
+				 (, slash-dir) (, world-name) (, base-world-name)
+				 (, auto-exit?))))))
 
-(defun build-specware4-continue (specware4-dir build-dir bin-dir slash-dir world-name base-world-name)
+(defun build-specware4-continue (specware4-dir build-dir bin-dir slash-dir world-name base-world-name auto-exit?)
   (when base-world-name
     (run-plain-lisp 1)
     ;; Currently
@@ -375,12 +394,14 @@
 				     world-name))
   (simulate-input-expression
    (format "(let ((filename %S))
-	      (cond ((probe-file filename)
-		     (Format t \"~2&Wrote new ~A~2%%\" filename)
-		     (Format t \"~&It is safe to exit now..~%%\"))
-                    (t
-	             (warn \"Failed to write new ~A\" filename))))"
-	    world-name))
+             (cond ((probe-file filename)
+                    (format t \"~2&Wrote new ~A~2%%\" filename)
+    	            (format t \"~&It is safe to exit now..~%%\"))
+                   (t
+	            (warn \"Failed to write new ~A\" filename))))"
+	   world-name))
+  (when auto-exit?
+    (kill-lisp-and-then-emacs))
   )
 
 (defun build-specware4-from-base (in-current-dir?)
@@ -421,10 +442,17 @@
     (sw:eval-in-lisp-no-value (format "(namestring (specware::change-directory %S))" dir))
     (simulate-input-expression "(load \"Specware4.lisp\")")
     (continue-form-when-ready
+     ;; continue-form-when-ready kills the sublisp process, 
+     ;; then waits for a status change signal on that process
+     ;; before processing the given command
      (`(build-specware4-continue (, specware4-dir) (, dir) (, bin-dir)
 				 (, slash-dir) (, world-name) (, base-world-name))))))
 
-(defun bootstrap-specware4 (&optional in-current-dir?)
+(defun bootstrap-specware4-and-then-exit (&optional in-current-dir?)
+  (interactive "P")
+  (bootstrap-specware4 in-current-dir? t))
+
+(defun bootstrap-specware4 (&optional in-current-dir? auto-exit?)
   (interactive "P")
   (let ((specware4-dir (sw::normalize-filename
 			(if in-current-dir? (strip-final-slash default-directory)
@@ -444,7 +472,11 @@
                                #-allegro()")
     (simulate-input-expression "(cl:time (cl-user::boot))")
     (sit-for 5)
-    (continue-form-when-ready (`(build-specware4 (, specware4-dir))))))
+    (continue-form-when-ready 
+     ;; continue-form-when-ready kills the sublisp process, 
+     ;; then waits for a status change signal on that process
+     ;; before processing the given command
+     (`(build-specware4 (, specware4-dir) (, auto-exit?))))))
 
 
 (defun test-specware-bootstrap (in-current-dir?)

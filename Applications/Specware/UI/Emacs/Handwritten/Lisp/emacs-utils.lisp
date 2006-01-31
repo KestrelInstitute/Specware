@@ -31,20 +31,32 @@ Notes:
 	(lep::eval-in-emacs string)))
     #-allegro (format t "~a" string)))
 
-;; This is a special hack to simplify test scripts:
 (defun kill-emacs-and-then-lisp ()
+  ;; The problem this addresses is that of getting lisp and emacs to agree to
+  ;; mutual suicide.  The typical problem is that the initiator (lisp or emacs)
+  ;; manages to convince the other to die, but then waits forever for 
+  ;; confirmation from the now defunct partner before killing itself.
+  ;;
+  ;; NOTE: As is, this doesn't work under Allegro on Windows when invoked from
+  ;;       emacs via (sw::eval-in-lisp "(emacs::kill-meacs-and-then-lisp)").
+  ;;       Somehow the lisp process remains alive.
+  ;;       Perhaps some simple tweak would work, but continue-form-when-ready
+  ;;       in sw-init.el provides a rather different alternative solution:
+  ;;       Have emacs kill lisp, then upon receiving a status-change signal 
+  ;;       kill itself.
+  ;;
   ;; Send kill-emacs command while lisp is still running,
   ;;  so that communcation with xemacs remains active long
   ;;  enough for emacs to actually read the following command
   ;;  and react:
   (emacs::eval-in-emacs "(kill-emacs 0)") 
+  (sleep 1) ; probably not needed
   ;; The parent emacs process should now be on a path to die.
   ;; We don't really care if it dies before or after the 
   ;; following command kills lisp:
   (cl-user::exit-from-lisp 0))
 
 (defvar *select-term-number-in-spec*)
-
 
 ;;; Relies on select-mspe-object from msp-emacs.el (use M-x find-library)
 ;;; Extended from /usr/local/kiu/dev4/ki-patches/indep/msp-emacs.re
