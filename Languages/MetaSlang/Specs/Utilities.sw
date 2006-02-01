@@ -838,7 +838,7 @@ Utilities qualifying spec
 
  op mkSimpBind: Binder * List Var * MS.Term -> MS.Term
  def mkSimpBind(b, vars, term) =
-   if vars = [] or freeVars term = [] then term
+   if vars = [] or (freeVars term = [] & b = Forall) then term
      else Bind(b,vars,term,noPos)
 
  op  mkSimpImplies: MS.Term * MS.Term -> MS.Term
