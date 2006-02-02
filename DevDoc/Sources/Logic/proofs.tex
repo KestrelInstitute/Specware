@@ -21,7 +21,7 @@ we are left to prove
 \]
 which we do by induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
 \begin{derivation}
 \stepO{\cvarvO{\expr}=\emptyset}
       {\defof{\cvarvY}}
@@ -127,7 +127,7 @@ If $\varI\neq\var$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\var$, $\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}
+\Case{$\var$, $\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
 \begin{derivation}
 \step{\cvarvO{\expr}=\emptyset}
      {\defof{\cvarvY}}
@@ -193,7 +193,7 @@ We prove $\esbsok{\expr}{\varI}{\varI}$ as follows:
 \end{derivation}
 We prove $\esbs{\expr}{\varI}{\varI}=\expr$ by induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
 \StepO{\esbs{\expr}{\varI}{\varI}=\expr}
       {\defof{\esbsY}}
 %By definition of $\esbsY$.
@@ -305,7 +305,7 @@ If $\varI\in\efvar{\expr}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}\\
 $\efvar{\expr}=\emptyset\IMPLIES\varI\not\in\efvar{\expr}$
 %\begin{derivation}
 %\step{\efvar{\expr}=\emptyset}
@@ -420,7 +420,7 @@ If $\varI\in\efvar{\expr}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
 \StepO{\esbs{\esbs{\expr}{\varI}{\exprI}}{\varI'}{\exprI'}=
        \esbs{\expr}{\varI'}{\exprI'}=
        \expr=
@@ -519,7 +519,7 @@ By induction on $\expr$:
  \esbs{\var}{\varI}{\esbs{\exprI}{\varI}{\exprI'}}}
 {\defof{\esbsY}}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}:\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}:\\
 Similar to case $\var\neq\varI$ above.
 
 \Case{$\appO$}
@@ -581,7 +581,7 @@ If $\varI\neq\varI'$, the proof is by induction on $\expr$:
 \Case{$\var\neq\varI$}
 \StepO{\esbsren{\esbsren{\var}}=\var=\esbsren{\var}}{\defof{\esbsY}}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}:
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}:
 \StepO{\esbsren{\esbsren{\expr}}=\expr=\esbsren{\expr}}
       {\thmref{thm-esbs-not-free}}
 
@@ -649,7 +649,7 @@ $\esbsren{\esbs{\varII}{\varII}{\exprI}}
  \esbsren{\esbs{\var}{\varII}{\esbsren{\exprI}}}}
 {\defof{\esbsY}}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}:
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}:
 \StepO
 {\esbsren{\esbs{\expr}{\varII}{\exprI}}
  =
@@ -734,7 +734,7 @@ If $\varI\in\efvar{\exprI}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}\\
 $\esbs{\esbsren{\expr}}{\varI'}{\varI}=
  \esbs{\expr}{\varI'}{\varI}=
  \expr$
@@ -806,7 +806,7 @@ If $\varI\in\efvar{\absO}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}\\
 $\cvarvO{\expr}=
  \emptyset=
  \cvarv{\expr}{\varI'}=
@@ -893,7 +893,7 @@ If $\varI\in\efvar{\absO}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}\\
 $\esbsren{\expr}=\expr\IMPLIES
  \cvarv{\expr}{\varII}=\cvarv{\esbsren{\expr}}{\varII}$
 \Case{$\varI$}\\
@@ -1038,7 +1038,7 @@ $\efvar{\tsbsO{\opO}}
  \link{=}{\defof{\efvarY}}
  \efvar{\opO}$
 \end{links}
-\Case{$\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}\\
+\Case{$\descopO$, $\pjop{\fnam}$, $\quo$}\\
 Analogous to $\opO$.
 \Case{$\appO$}
 \begin{links}
@@ -1075,7 +1075,7 @@ $\efvar{\tsbsO{(\absO)}}
 By induction on $\expr$:
 \begin{bycase}
 
-\Case{$\var$, $\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}
+\Case{$\var$, $\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
 \StePO{\cvarvO{\tsbsO{\expr}}=\emptyset=\cvarvO{\expr}}
 
 \Case{$\appO$}
@@ -1123,7 +1123,7 @@ By induction on $\expr$:
 
 \begin{bycase}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
 %\StePO{\efvar{\expr}=\emptyset\AND\esbsO{\expr}=\expr}
 %\begin{links}
 %$\ftvar{\esbsO{\expr}}
@@ -1268,7 +1268,7 @@ $\tsbsO{\esbsO{\var}}
  \esbs{\tsbsO{\var}}{\varI}{\tsbsO{\exprI}}$
 \end{links}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
 \begin{links}
 $\tsbsO{\esbsO{\expr}}
  \link{=}{\thmref{thm-esbs-not-free}}
@@ -1348,7 +1348,7 @@ $\tsbsO{\esbsren{\expr}}
 % \link{=}{\defof{\tsbsY}}
 % \esbsren{\tsbsO{\opO}}$
 %\end{links}
-%\Case{$\descopO$, $\pjop{\fnam}$, $\emb{\cnam}$, $\quo$}\\
+%\Case{$\descopO$, $\pjop{\fnam}$, $\quo$}\\
 %Analogous to $\opO$.
 %\Case{$\appO$}
 %\begin{links}
@@ -2098,10 +2098,10 @@ The only rule that can derive a judgement of the form $\istyO{\trecO}$ is
 
 
 
-\subsection*{Proof of \thmref{thm-tsum-inv}}
+%\subsection*{Proof of \thmref{thm-tsum-inv}}
 
-The only rule that can derive a judgement of the form $\istyO{\tsumO}$ is
-\Rtsum, which has $\FORALL{i}{\istyO{\typ_i}}$ as its premise.
+%The only rule that can derive a judgement of the form $\istyO{\tsumO}$ is
+%\Rtsum, which has $\FORALL{i}{\istyO{\typ_i}}$ as its premise.
 
 
 
@@ -2125,12 +2125,15 @@ only rule that can derive a judgement of the form $\istyO{\tquotO}$ is
 \subsection*{Proof of \thmref{thm-subpred-no-free-vars}}
 
 By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
+
 \begin{bycase}
+
 \Case{\Rstsub}
 \begin{derivation}
 \step{\istyO{\tsubO}}{\premof{\Rstsub}}
 \step{\efvar{\tspred}=\emptyset}{\thmref{thm-no-free-vars-in-types}, 1}
 \end{derivation}
+
 \Case{\Rstrefl}
 \StepO{\efvar{\abs{\var}{\typ}{\true}}=\emptyset}{\thmref{thm-efvar-abbrev}}
 %\begin{links}
@@ -2142,6 +2145,7 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
 % \linK{=}
 % \emptyset$
 %\end{links}
+
 \Case{\Rstarr}
 \begin{derivation}
 \step{\efvar{\tspred}=\emptyset}{\indhyp}
@@ -2154,6 +2158,7 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
  \link{=}{1}
  \emptyset}
 \end{derivation}
+
 \Case{\Rstrec}
 \begin{derivation}
 \step{\FORALL{i}{\efvar{\tspred_i}=\emptyset}}{\indhyp}
@@ -2166,23 +2171,26 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
  \link{=}{1}
  \emptyset}
 \end{derivation}
-\Case{\Rstsum}
-\begin{derivation}
-\step{\FORALL{i}{\efvar{\tspred_i}=\emptyset}}{\indhyp}
-\steP
-{\efvar{\abs{\var}
-            {\tsum{i}{\cnam_i}{\typ_i'}}
-            {\disjI{i}
-                   {\ex{\var'}{\typ_i'}
-                       {(\conj{\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}
-                              {\app{\tspred_i}{\var'}})}}}}
- \link{=}{\thmref{thm-efvar-abbrev}}
- \bigcup_i\efvar{\tspred_i}-\setII{\var}{\var'}
- \link{=}{1}
- \emptyset}
-\end{derivation}
+
+%\Case{\Rstsum}
+%\begin{derivation}
+%\step{\FORALL{i}{\efvar{\tspred_i}=\emptyset}}{\indhyp}
+%\steP
+%{\efvar{\abs{\var}
+%            {\tsum{i}{\cnam_i}{\typ_i'}}
+%            {\disjI{i}
+%                   {\ex{\var'}{\typ_i'}
+%                       {(\conj{\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}
+%                              {\app{\tspred_i}{\var'}})}}}}
+% \link{=}{\thmref{thm-efvar-abbrev}}
+% \bigcup_i\efvar{\tspred_i}-\setII{\var}{\var'}
+% \link{=}{1}
+% \emptyset}
+%\end{derivation}
+
 \Case{\Rstteq}
 \StepO{\efvar{\tspred}=\emptyset}{\indhyp}
+
 \end{bycase}
 
 
@@ -2225,7 +2233,7 @@ form $\cxwf{\snoc{\cx}{\axO}}$ or $\cxwf{\snoc{\cx}{\lemO}}$.
 \Case{\Rcxlem}\\
 Analogous to \Rcxax.
 
-\Case{\Reop, \Redesc, \Reproj, \Reembed, \Requot}\\
+\Case{\Reop, \Redesc, \Reproj, \Requot}\\
 $\efvar{\expr}=\emptyset$
 
 \Case{\Revar}
@@ -2492,10 +2500,14 @@ the right part of the judgement $\jcxdots{\cx}$ is also a free type variable
 in some premise $\jcxdots{\cx'}$ of the rule such that
 $\cxtvar{\cx'}=\cxtvarO$ (the only rules in which $\cx'\neq\cx$ are
 \Reif, \Rthifsbs, \Rthif). We use \thmref{thm-ftvar-abbrev} for \Rtquot,
-\Rstrefl, \Rstarr, \Rstrec, \Rstsum, \Redesc, \Rthext, \Rthrec, \Rthembsurj,
-\Rthembdist, \Rthembinj, \Rthquotsurj, \Rthquoteclass, \Rthprojsub, and
-\Rthembsub. We use \thmref{thm-rename-same-free-tvars} for \Reabsalpha.
-We use \thmref{thm-ftvar-of-esbs} for \Rthabs.
+\Rstrefl, \Rstarr, \Rstrec,
+% \Rstsum,
+\Redesc, \Rthext, \Rthrec,
+%\Rthembsurj, \Rthembdist, \Rthembinj,
+\Rthquotsurj, \Rthquoteclass, and \Rthprojsub.
+%\Rthembsub.
+We use \thmref{thm-rename-same-free-tvars} for \Reabsalpha. We use
+\thmref{thm-ftvar-of-esbs} for \Rthabs.
 
 \end{bycase}
 
@@ -3022,11 +3034,13 @@ For \Rthsub\ we use the fact that $\efvar{\tspred}=\emptyset$ by
 $\esbsren{(\app{\tspred}{\expr})}=\app{\tspred}{\esbsren{\expr}}$ by
 \thmref{thm-esbs-not-free}.
 
-For \Rthbool, \Rthext, \Rthrec, \Rthembsurj, \Rthembdist, \Rthembinj,
-\Rthquotsurj, \Rthquoteclass, \Rthprojsub, and \Rthembsub\ we use the fact
-that the theorem $\expr$ that is the conclusion of the rule has no free
-variables (by \thmref{thm-efvar-abbrev} and, for \Rthquoteclass, also by
-\thmref{thm-no-free-vars-in-types}) and so $\esbsren{\expr}=\expr$ by
+For \Rthbool, \Rthext, \Rthrec,
+%\Rthembsurj, \Rthembdist, \Rthembinj,
+\Rthquotsurj, \Rthquoteclass, and \Rthprojsub
+% and \Rthembsub\
+we use the fact that the theorem $\expr$ that is the conclusion of the rule
+has no free variables (by \thmref{thm-efvar-abbrev} and, for \Rthquoteclass,
+also by \thmref{thm-no-free-vars-in-types}) and so $\esbsren{\expr}=\expr$ by
 \thmref{thm-esbs-not-free}.
 
 \end{bycase}
@@ -3626,9 +3640,12 @@ the rule instance and then we apply the rule to the transformed premises to
 obtain the conclusion with $\tvarIS$ replaced with $\typIS$. We use
 \thmref{thm-tsbs-same-free-vars} for \Rtsub, \Rtquot, \Rterestr, and \Rtequot.
 We use \thmref{thm-tsbs-abbrev} for \Rtquot, \Rstrefl, \Rstarr, \Rstrec,
-\Rstsum, \Reif, \Redesc, \Rthifsbs, \Rthbool, \Rthext, \Rthif, \Rthrec,
-\Rthembsurj, \Rthembdist, \Rthembinj, \Rthquotsurj, \Rthquoteclass,
-\Rthprojsub, and \Rthembsub. We use \thmref{thm-tsbs-same-free-vars},
+%\Rstsum,
+\Reif, \Redesc, \Rthifsbs, \Rthbool, \Rthext, \Rthif, \Rthrec,
+%\Rthembsurj, \Rthembdist, \Rthembinj,
+\Rthquotsurj, \Rthquoteclass, and \Rthprojsub.
+%and \Rthembsub.
+We use \thmref{thm-tsbs-same-free-vars},
 \thmref{thm-tsbs-same-capt-vars}, and \thmref{thm-esbs-tsbs-comm} for
 \Reabsalpha.
 
@@ -4251,9 +4268,9 @@ By straightforward calculation, using \thmref{thm-esbs-not-free} where needed.
 
 
 
-\subsection*{Proof of \thmref{thm-embtest}}
+%\subsection*{Proof of \thmref{thm-embtest}}
 
-By straightforward calculation, using \thmref{thm-esbs-not-free} where needed.
+%By straightforward calculation, using \thmref{thm-esbs-not-free} where needed.
 
 
 

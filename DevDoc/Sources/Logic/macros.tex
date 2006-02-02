@@ -16,6 +16,9 @@
 \newcommand{\abbitem}[2]{#1&\longrightarrow&#2\\}
 \newcommand{\abbiteM}[3]{#1&\longrightarrow&#2\\&&\mbox{where }#3\\}
 
+\newcommand{\abbvert}[2]
+ {\begin{array}{l}#1\\\\\hspace*{2em}\longrightarrow\\#2\end{array}}
+
 \newtheorem{theorem}{Theorem}[section]
 \newenvironment{proof}{\noindent\textbf{Proof:}}{$\Box$}
 \newcommand{\thmref}[1]{Theorem \ref{#1}}
@@ -97,14 +100,6 @@
 \newcommand{\tprod}[2]{\prod_{#1}{#2}}
 \newcommand{\tprodO}{\tprod{i}{\typ_i}}
 \newcommand{\tprodII}[2]{#1\times#2}
-
-\newcommand{\tsumFT}[4]{#1\;#2+\cdots+#3\;#4}
-\newcommand{\tsumFTO}{\tsumFT{\cnam_1}{\typ_1}{\cnam_n}{\typ_n}}
-\newcommand{\tsum}[3]{\sum_{#1}#2\;#3}
-\newcommand{\tsumO}{\tsum{i}{\cnam_i}{\typ_i}}
-%\newcommand{\tsumTF}[2]{\cdots+#1\;#2+\cdots}
-\newcommand{\cnam}{c}
-\newcommand{\cnamS}{\seq{c}}
 
 \newcommand{\tsub}[2]{#1|#2}
 \newcommand{\tsubO}{\tsub{\typ}{\tspred}}
@@ -191,11 +186,13 @@
 \newcommand{\nega}[1]{\neg\;#1}
 \newcommand{\negaO}{\nega{\expr}}
 
-\newcommand{\conj}[2]{#1\wedge#2}
+\newcommand{\conjY}{\wedge}
+\newcommand{\conj}[2]{#1\conjY#2}
 \newcommand{\conjO}{\conj{\expr_1}{\expr_2}}
 \newcommand{\conjI}[2]{\bigwedge_{#1}#2}
 
-\newcommand{\disj}[2]{#1\vee#2}
+\newcommand{\disjY}{\vee}
+\newcommand{\disj}[2]{#1\disjY#2}
 \newcommand{\disjO}{\disj{\expr_1}{\expr_2}}
 \newcommand{\disjI}[2]{\bigvee_{#1}#2}
 
@@ -353,6 +350,26 @@
 \newcommand{\tdefO}{\tdef{\tnam}{\tvarS}{\typ}}
 \newcommand{\tdefdots}[1]{\mathsf{def}\ #1\ldots}
 
+\newcommand{\cnam}{c}
+\newcommand{\cnamS}{\seq{c}}
+\newcommand{\recog}{g}
+\newcommand{\recogS}{\seq{g}}
+\newcommand{\optyp}{\typ^\circ}
+\newcommand{\optypS}{\seq{\optyp}}
+\newcommand{\notyp}{\mathsf{noty}}
+%\newcommand{\tsumFT}[4]{#1\;#2+\cdots+#3\;#4}
+%\newcommand{\tsumFTO}{\tsumFT{\cnam_1}{\typ_1}{\cnam_n}{\typ_n}}
+%\newcommand{\tsum}[3]{\sum_{#1}#2\;#3}
+%\newcommand{\tsumO}{\tsum{i}{\cnam_i}{\typ_i}}
+%%\newcommand{\tsumTF}[2]{\cdots+#1\;#2+\cdots}
+\newcommand{\tsumFT}[6]{#1\;#2\!:\!#3+\cdots+#4\;#5\!:\!#6}
+\newcommand{\tsumFTO}
+ {\tsumFT{\cnam_1}{\optyp_1}{\recog_1}{\cnam_n}{\optyp_n}{\recog_n}}
+\newcommand{\tsum}[4]{\sum_{#1}#2\;#3\!:\!#4}
+\newcommand{\tsumO}{\tsum{i}{\cnam_i}{\optyp_i}{\recog_i}}
+
+\newcommand{\tdefsum}[3]{\mathsf{def}\ #1[#2]=#3}
+
 \newcommand{\odec}[3]{\mathsf{op}\ #1\!:\!\{#2\}\;#3}
 \newcommand{\odecO}{\odec{\onam}{\tvarS}{\typ}}
 
@@ -368,6 +385,7 @@
                              {\opwty{\onam_n}{\tvarS_n}{\typ_n}}
                              {\expr_1}
                              {\expr_n}}
+\newcommand{\odefI}[4]{\mathsf{op}\ #1\!:\!\{#2\}\;#3=#4}
 
 \newcommand{\oconFT}[3]{\mathsf{op}\ #1,\ldots,#2::#3}
 \newcommand{\oconFTO}{\oconFT{\opwty{\onam_1}{\tvarS_1}{\typ_1}}
@@ -377,6 +395,14 @@
 \newcommand{\ax}[2]{\mathsf{ax}\ \{#1\}\ #2}
 \newcommand{\axO}{\ax{\tvarS}{\expr}}
 \newcommand{\axM}[1]{\mathsf{ax}\ #1}
+\newcommand{\axLdisjIV}[5]
+ {\!\!\!\begin{array}{r@{\ }l}
+  \mathsf{ax}\ \{#1\} & #2 \\ \disjY & #3 \\ \disjY & #4 \\ \disjY & #5
+  \end{array}}
+\newcommand{\axLconjIV}[5]
+ {\!\!\!\begin{array}{r@{\ }l}
+  \mathsf{ax}\ \{#1\} & #2 \\ \conjY & #3 \\ \conjY & #4 \\ \conjY & #5
+  \end{array}}
 
 \newcommand{\lem}[2]{\mathsf{lem}\ \{#1\}\ #2}
 \newcommand{\lemO}{\lem{\tvarS}{\expr}}

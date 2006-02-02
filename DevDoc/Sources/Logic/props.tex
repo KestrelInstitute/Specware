@@ -60,7 +60,7 @@ free type variables of a type, expression, or context (element)
 \eqitem{\ftvar{\tinstO}}{\bigcup_i\ftvar{\typ_i}}
 \eqitem{\ftvar{\tarrO}} {\ftvar{\typ_1}\cup\ftvar{\typ_2}}
 \eqitem{\ftvar{\trecO}} {\bigcup_i\ftvar{\typ_i}}
-\eqitem{\ftvar{\tsumO}} {\bigcup_i\ftvar{\typ_i}}
+%\eqitem{\ftvar{\tsumO}} {\bigcup_i\ftvar{\typ_i}}
 \eqitem{\ftvar{\tsubO}} {\ftvar{\typ}\cup\ftvar{\tspred}}
 \eqitem{\ftvar{\tquotO}}{\ftvar{\typ}\cup\ftvar{\tqpred}}
 \end{eqlist}
@@ -76,7 +76,7 @@ free type variables of a type, expression, or context (element)
                           \ftvar{\expr_1}\cup\ftvar{\expr_2}}
 \eqitem{\ftvar{\descopO}}{\ftvar{\typ}}
 \eqitem{\ftvar{\projopO}}{\ftvar{\trecO}}
-\eqitem{\ftvar{\embedO}} {\ftvar{\tsumO}}
+%\eqitem{\ftvar{\embedO}} {\ftvar{\tsumO}}
 \eqitem{\ftvar{\quotO}}  {\ftvar{\tquotO}}
 \end{eqlist}
 \]
@@ -1042,7 +1042,8 @@ The domain and range types of a well-formed arrow type are well-formed:
 \]
 \end{theorem}
 
-The component types of a well-formed record or sum type are well-formed:
+The component types of a well-formed record type are well-formed:
+%The component types of a well-formed record or sum type are well-formed:
 
 \begin{theorem}\label{thm-trec-inv}
 \[
@@ -1050,11 +1051,11 @@ The component types of a well-formed record or sum type are well-formed:
 \]
 \end{theorem}
 
-\begin{theorem}\label{thm-tsum-inv}
-\[
-\istyO{\tsumO}\ \ \IMPLIES\ \ (\FORALL{i}{\istyO{\typ_i}})
-\]
-\end{theorem}
+%\begin{theorem}\label{thm-tsum-inv}
+%\[
+%\istyO{\tsumO}\ \ \IMPLIES\ \ (\FORALL{i}{\istyO{\typ_i}})
+%\]
+%\end{theorem}
 
 The predicate of a restriction type is well-typed, with the expected type:
 

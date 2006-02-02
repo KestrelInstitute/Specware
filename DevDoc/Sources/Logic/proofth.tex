@@ -227,12 +227,12 @@ well-formed types as
  {\Rtrec}
 \]
 
-\[
-\rruleI
- {\FORALL{i}{\istyO{\typ_i}}}
- {\istyO{\tsumO}}
- {\Rtsum}
-\]
+%\[
+%\rruleI
+% {\FORALL{i}{\istyO{\typ_i}}}
+% {\istyO{\tsumO}}
+% {\Rtsum}
+%\]
 
 \[
 \rruleII
@@ -270,12 +270,17 @@ A type instance $\tinstO$ is well-formed in any well-formed context $\cx$ that
 declares $\tnam$ if the argument types are well-formed in $\cx$ and their
 number matches the arity of $\tnam$.
 \item
-The rules for arrow, record, and sum types are straightforward. Note that in
-$\Rtarr$ and $\Rtsum$ we do not explicitly require $\cx$ to be well-formed
-because the fact that a type is well-formed in a context implies that the
-context is well-formed (as proved later). However, the condition is explicit
-in $\Rtrec$ because a record type can have zero components (unlike a sum type
-that always has at least one component).
+The rules for arrow and record types are straightforward. Note that in
+$\Rtarr$ we do not explicitly require $\cx$ to be well-formed because the fact
+that a type is well-formed in a context implies that the context is
+well-formed (as proved later). However, the condition is explicit in $\Rtrec$
+because a record type can have zero components.
+%The rules for arrow, record, and sum types are straightforward. Note that in
+%$\Rtarr$ and $\Rtsum$ we do not explicitly require $\cx$ to be well-formed
+%because the fact that a type is well-formed in a context implies that the
+%context is well-formed (as proved later). However, the condition is explicit
+%in $\Rtrec$ because a record type can have zero components (unlike a sum type
+%that always has at least one component).
 \item
 For restriction types, we require the predicate to have type
 $\tarr{\typ}{\bool}$, which implies that $\typ$ is a well-formed type (as
@@ -369,12 +374,12 @@ type equivalence as
  {\Rterec}
 \]
 
-\[
-\rruleI
- {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
- {\teqO{\tsumO}{\tsum{i}{\cnam_i}{\typ_i'}}}
- {\Rtesum}
-\]
+%\[
+%\rruleI
+% {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
+% {\teqO{\tsumO}{\tsum{i}{\cnam_i}{\typ_i'}}}
+% {\Rtesum}
+%\]
 
 \[
 \rruleIV
@@ -404,30 +409,12 @@ type equivalence as
  {\Rterecord}
 \]
 
-\[
-\rruleII
- {\istyO{\tsumO}}
- {\funcinj{\perm}{\setFT{1}{n}}{\setFT{1}{n}}}
- {\teqO{\tsumO}{\tsum{i}{\cnam_{\perm(i)}}{\typ_{\perm(i)}}}}
- {\Rtesumord}
-\]
-
 %\[
-%\rruleIII
-% {\istyO{\tsubO}}
-% {\istyO{\tsub{\typ}{\tspred'}}}
-% {\theoO{\eq{\tspred}{\tspred'}}}
-% {\teqO{\tsubO}{\tsub{\typ}{\tspred'}}}
-% {\Rtesubpred}
-%\]
-
-%\[
-%\rruleIII
-% {\istyO{\tquotO}}
-% {\istyO{\tquot{\typ}{\tqpred'}}}
-% {\theoO{\eq{\tqpred}{\tqpred'}}}
-% {\teqO{\tquotO}{\tquot{\typ}{\tqpred'}}}
-% {\Rtequotpred}
+%\rruleII
+% {\istyO{\tsumO}}
+% {\funcinj{\perm}{\setFT{1}{n}}{\setFT{1}{n}}}
+% {\teqO{\tsumO}{\tsum{i}{\cnam_{\perm(i)}}{\typ_{\perm(i)}}}}
+% {\Rtesumord}
 %\]
 
 Explanation:
@@ -441,18 +428,18 @@ transitive.
 \item
 Type equivalence is a congruence with respect to syntactic (meta-)operations
 to construct types in the \MS\ type system, namely type instantiations, arrow
-types, record types, sum types, restriction types, and quotient types. In
-addition, equal restriction or quotient predicates give rise to equivalent
-restriction or quotient types. The conditions $\efvar{\tspred'}=\emptyset$ and
+types, record types, restriction types, and quotient types. In addition, equal
+restriction or quotient predicates give rise to equivalent restriction or
+quotient types. The conditions $\efvar{\tspred'}=\emptyset$ and
 $\efvar{\tqpred'}=\emptyset$ are needed for the satisfaction of certain
 properties of the proof theory (see \secref{props}).
 \item
-The order of the components of a record or sum type is unimportant: any
-permutation of the components yields equivalent types. In the rules, the
-permutation is captured by a bijective function $\perm$ on the record or sum
-indices $\setFT{1}{n}$ (the rules explicitly say that $\perm$ is injective
-only, but since domain and codomain are finite and equal, it follows that
-$\perm$ is also surjective, hence bijective).
+The order of the components of a record type is unimportant: any permutation
+of the components yields equivalent types. In the rule, the permutation is
+captured by a bijective function $\perm$ on the field indices $\setFT{1}{n}$
+(the rule explicitly says that $\perm$ is injective only, but since domain and
+codomain are finite and equal, it follows that $\perm$ is also surjective,
+hence bijective).
 \end{itemize}
 
 \subsection{Subtyping}
@@ -498,24 +485,20 @@ capture subtyping as
  {\Rstrec}
 \]
 
-\[
-\rruleIV
- {\istyO{\tsumO}}
- {\FORALL{i}{\issubO{\typ_i}{\tspred_i}{\typ_i'}}}
- {\tspred=\abs{\var}
-              {\tsum{i}{\cnam_i}{\typ_i'}}
-              {\disjI{i}
-                     {\ex{\var'}{\typ_i'}
-                         {(\conj{\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}
-                                {\app{\tspred_i}{\var'}})}}}}
-%              {\case{\var}
-%                    {i}
-%                    {\pemb{\cnam_i}{(\pvar{\var_i}{\typ_i'})}}
-%                    {\app{\tspred_i}{\var_i}}}}
- {\var\neq\var'}
- {\issubO{\tsumO}{\tspred}{\tsum{i}{\cnam_i}{\typ_i'}}}
- {\Rstsum}
-\]
+%\[
+%\rruleIV
+% {\istyO{\tsumO}}
+% {\FORALL{i}{\issubO{\typ_i}{\tspred_i}{\typ_i'}}}
+% {\tspred=\abs{\var}
+%              {\tsum{i}{\cnam_i}{\typ_i'}}
+%              {\disjI{i}
+%                     {\ex{\var'}{\typ_i'}
+%                         {(\conj{\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}
+%                                {\app{\tspred_i}{\var'}})}}}}
+% {\var\neq\var'}
+% {\issubO{\tsumO}{\tspred}{\tsum{i}{\cnam_i}{\typ_i'}}}
+% {\Rstsum}
+%\]
 
 %\[
 %\rruleIII
@@ -553,11 +536,14 @@ predicate associated to the range subtype. Note that the domain must be the
 same; while domain contravariance is used in some type systems with subtypes,
 it would violate extensionality (see explanation in \cite{pvs-seman}).
 \item
-Both record and sum types are monotone in their component types with respect
-to subtyping. The record subtype predicate holds when all the component
-subtype predicates hold on the record components. The sum subtype predicate
-holds when the appropriate component subtype predicate holds on the value of
-the sum type.
+Record types are monotonic in their component types with respect to
+subtyping. The record subtype predicate holds when all the component subtype
+predicates hold on the record components.
+%Both record and sum types are monotonic in their component types with respect
+%to subtyping. The record subtype predicate holds when all the component
+%subtype predicates hold on the record components. The sum subtype predicate
+%holds when the appropriate component subtype predicate holds on the value of
+%the sum type.
 \item
 Rule $\Rstteq$ states the substitutivity of equivalent types in subtype
 judgements.
@@ -646,12 +632,12 @@ well-typed expressions as
  {\Reproj}
 \]
 
-\[
-\rruleI 
- {\istyO{\tsumO}}
- {\hastyO{\embO}{\tarr{\typ_j}{\tsumO}}}
- {\Reembed}
-\]
+%\[
+%\rruleI 
+% {\istyO{\tsumO}}
+% {\hastyO{\embO}{\tarr{\typ_j}{\tsumO}}}
+% {\Reembed}
+%\]
 
 \[
 \rruleI
@@ -659,14 +645,6 @@ well-typed expressions as
  {\hastyO{\quo}{\tarr{\typ}{\tquotO}}}
  {\Requot}
 \]
-
-%\[
-%\rruleII
-% {\hastyO{\expr}{\typ}}
-% {\teqO{\typ}{\typ'}}
-% {\hastyO{\expr}{\typ'}}
-% {\Reteq}
-%\]
 
 \[
 \rruleII
@@ -734,9 +712,9 @@ from the record type to the corresponding component type.
 %A projection is well-typed if $\expr$ is well-typed with a record type. The
 %type of the projection is the component type of the record type that
 %corresponds to the field name.
-\item
-An embedded for a well-formed sum type is well-typed and denotes a function
-from the type corresponding to the constructor to the sum type.
+%\item
+%An embedded for a well-formed sum type is well-typed and denotes a function
+%from the type corresponding to the constructor to the sum type.
 \item
 A quotienter for a well-formed quotient type is well-typed and denotes a
 function from the quotiented type to the quotient type.
@@ -864,14 +842,14 @@ as
  {\Rthprojsbs}
 \]
 
-\[
-\rruleII
- {\hastyOany{\embed{\tsumO}{\cnam}}}
- {\teqO{\tsumO}{\tsum{i}{\cnam_i'}{\typ_i'}}}
- {\theoO{\eq{\embed{\tsumO}{\cnam}}
-            {\embed{\tsum{i}{\cnam_i'}{\typ_i'}}{\cnam}}}}
- {\Rthembedsbs}
-\]
+%\[
+%\rruleII
+% {\hastyOany{\embed{\tsumO}{\cnam}}}
+% {\teqO{\tsumO}{\tsum{i}{\cnam_i'}{\typ_i'}}}
+% {\theoO{\eq{\embed{\tsumO}{\cnam}}
+%            {\embed{\tsum{i}{\cnam_i'}{\typ_i'}}{\cnam}}}}
+% {\Rthembedsbs}
+%\]
 
 \[
 \rruleII
@@ -984,36 +962,36 @@ as
  {\Rthrec}
 \]
 
-\[
-\rruleII
- {\istyO{\tsumO}}
- {\var\neq\var'}
- {\theoO{\fa{\var}{\tsumO}
-            {\disjI{i}{\ex{\var'}{\typ_i}
-                          {\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}}}}}
- {\Rthembsurj}
-\]
+%\[
+%\rruleII
+% {\istyO{\tsumO}}
+% {\var\neq\var'}
+% {\theoO{\fa{\var}{\tsumO}
+%            {\disjI{i}{\ex{\var'}{\typ_i}
+%                          {\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}}}}}
+% {\Rthembsurj}
+%\]
 
-\[
-\rruleIII
- {\istyO{\tsumO}}
- {j\neq k}
- {\var\neq\var'}
- {\theoO{\faS{\seqII{\bnd{\var}{\typ_j}}{\bnd{\var'}{\typ_k}}}
-             {\neeq{\app{\emb{\cnam_j}}{\var}}
-                   {\app{\emb{\cnam_k}}{\var'}}}}}
- {\Rthembdist}
-\]
+%\[
+%\rruleIII
+% {\istyO{\tsumO}}
+% {j\neq k}
+% {\var\neq\var'}
+% {\theoO{\faS{\seqII{\bnd{\var}{\typ_j}}{\bnd{\var'}{\typ_k}}}
+%             {\neeq{\app{\emb{\cnam_j}}{\var}}
+%                   {\app{\emb{\cnam_k}}{\var'}}}}}
+% {\Rthembdist}
+%\]
 
-\[
-\rruleII
- {\istyO{\tsumO}}
- {\var\neq\var'}
- {\theoO{\faS{\seqII{\bnd{\var}{\typ_j}}{\bnd{\var'}{\typ_j}}}
-             {\impl{\neeq{\var}{\var'}}
-                   {\neeq{\app{\embO}{\var}}{\app{\embO}{\var'}}}}}}
- {\Rthembinj}
-\]
+%\[
+%\rruleII
+% {\istyO{\tsumO}}
+% {\var\neq\var'}
+% {\theoO{\faS{\seqII{\bnd{\var}{\typ_j}}{\bnd{\var'}{\typ_j}}}
+%             {\impl{\neeq{\var}{\var'}}
+%                   {\neeq{\app{\embO}{\var}}{\app{\embO}{\var'}}}}}}
+% {\Rthembinj}
+%\]
 
 \[
 \rruleII
@@ -1043,14 +1021,14 @@ as
  {\Rthprojsub}
 \]
 
-\[
-\rruleI
- {\issubO{\tsumO}{\tspred}{\tsum{i}{\cnam_i}{\typ_i'}}}
- {\theoO{\fa{\var}{\typ_j}
-            {\eq{\app{\embedO}{\var}}
-                {\app{\embed{\tsum{i}{\cnam_i}{\typ_i'}}{\cnam_j}}{\var}}}}}
- {\Rthembsub}
-\]
+%\[
+%\rruleI
+% {\issubO{\tsumO}{\tspred}{\tsum{i}{\cnam_i}{\typ_i'}}}
+% {\theoO{\fa{\var}{\typ_j}
+%            {\eq{\app{\embedO}{\var}}
+%                {\app{\embed{\tsum{i}{\cnam_i}{\typ_i'}}{\cnam_j}}{\var}}}}}
+% {\Rthembsub}
+%\]
 
 \[
 \rruleII
@@ -1074,10 +1052,8 @@ Rules $\Rthrefl$, $\Rthsymm$, and $\Rthtrans$ say that equality is an
 equivalence, i.e.\ reflexive, symmetric, and transitive.
 \item
 Rules $\Rthopsbs$ to $\Rthquotsbs$ state the substitutivity of equalities and
-type equivalences in expressions. Note that in rule $\Rthabssbs$ the context
-is extended with the variable bound by the abstraction; in rule $\Rthifsbs$
-the context is extended with an axiom saying that the condition is true or
-false.
+type equivalences in expressions. Note that in rule $\Rthifsbs$ the context is
+extended with an axiom saying that the condition is true or false.
 \item
 Rule $\Rthsbs$ says that anything equal to a theorem is itself a theorem.
 %\item
@@ -1091,8 +1067,6 @@ Rule $\Rthsbs$ says that anything equal to a theorem is itself a theorem.
 \item
 Rule $\Rthbool$ asserts that $\true$ and $\false$ are the only values of type
 $\bool$.
-%Note that the variable $\var$ used in the universal quantification
-%must not occur free in $\expr$, otherwise it would be captured.
 %\item
 %Rule $\Rthcongr$ asserts that equality is a congruence with respect to any
 %function.
@@ -1114,11 +1088,11 @@ the description.
 \item
 Rule $\Rthrec$ says that a record is characterized by the values of its
 components.
-\item
-Rules $\Rthembsurj$, $\Rthembdist$, and $\Rthembinj$ characterize sum types.
-They say that every value of a sum type is the image of some constructor
-(i.e.\ the constructors are collectively surjective), that the images of
-distinct constructors are disjoint, and that each constructor is injective.
+%\item
+%Rules $\Rthembsurj$, $\Rthembdist$, and $\Rthembinj$ characterize sum types.
+%They say that every value of a sum type is the image of some constructor
+%(i.e.\ the constructors are collectively surjective), that the images of
+%distinct constructors are disjoint, and that each constructor is injective.
 \item
 Rules $\Rthquotsurj$ and $\Rthquoteclass$ characterize quotient types. The
 first rules says that $\quotO$ is a surjective function (i.e.\ every quotient
@@ -1126,8 +1100,10 @@ value is obtained by applying it to some value of the quotiented type). The
 second rule says that $\quotO$ maps each value of the quotiented type to its
 equivalence class, which is a value of the quotient type.
 \item
-Rules $\Rthprojsub$ and $\Rthembsub$ say that projectors/embedders for
-record/sum subtypes agree with projectors/embedders for record/sum supertypes.
+Rule $\Rthprojsub$ says that projectors for record subtypes agree with
+projectors for record supertypes.
+%Rules $\Rthprojsub$ and $\Rthembsub$ say that projectors/embedders for
+%record/sum subtypes agree with projectors/embedders for record/sum supertypes.
 \item
 Rule $\Rthsub$ says that every value of a subtype satisfies the predicate that
 characterizes the subtype with respect to a supertype.

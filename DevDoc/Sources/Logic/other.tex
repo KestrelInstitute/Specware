@@ -648,37 +648,37 @@ distinct from $\varfx$ and $\varfx'$ (which have been introduced earlier).
 %[[[TO DO]]]
 %\end{proof}
 
-\subsection{Embedding tests}
+%\subsection{Embedding tests}
 
-An embedding test has the form
-\[
-\embedtestO
-\]
-where $\tsumO\in\Typ$.
+%An embedding test has the form
+%\[
+%\embedtestO
+%\]
+%where $\tsumO\in\Typ$.
 
-We introduce the abbreviation
-\[
-\begin{abblist}
-\abbitem{\embedtestO}
-        {\abs{\varfx}{\tsumO}
-             {\ex{\varfx'}{\typ_j}{\eq{\varfx}{\app{\embO}{\varfx'}}}}}
-\end{abblist}
-\]
+%We introduce the abbreviation
+%\[
+%\begin{abblist}
+%\abbitem{\embedtestO}
+%        {\abs{\varfx}{\tsumO}
+%             {\ex{\varfx'}{\typ_j}{\eq{\varfx}{\app{\embO}{\varfx'}}}}}
+%\end{abblist}
+%\]
 
-\begin{theorem}\label{thm-embtest}
-\[
-\begin{eqlist}
-\eqitem{\efvar{\embtestO}}{\emptyset}
-%\eqitem{\opsin{\embedtestO}}{\bigcup_i\opsin{\typ_i}}
-\eqitem{\tsbsO{(\embedtestO)}}
-       {\embedtest{\tsum{i}{\cnam_i}{\tsbsO{\typ_i}}}{\cnam_j}}
-\eqitem{\esbsO{(\embtestO)}}
-       {\embtestO}
-\eqitem{\cvarvO{\embtestO}}
-       {\emptyset}
-\end{eqlist}
-\]
-\end{theorem}
+%\begin{theorem}\label{thm-embtest}
+%\[
+%\begin{eqlist}
+%\eqitem{\efvar{\embtestO}}{\emptyset}
+%%\eqitem{\opsin{\embedtestO}}{\bigcup_i\opsin{\typ_i}}
+%\eqitem{\tsbsO{(\embedtestO)}}
+%       {\embedtest{\tsum{i}{\cnam_i}{\tsbsO{\typ_i}}}{\cnam_j}}
+%\eqitem{\esbsO{(\embtestO)}}
+%       {\embtestO}
+%\eqitem{\cvarvO{\embtestO}}
+%       {\emptyset}
+%\end{eqlist}
+%\]
+%\end{theorem}
 
 
 
@@ -1327,3 +1327,90 @@ This abbreviation introduces $n\geq1$ ops via conservative extension. The
 proof obligation expressed by the lemma says that there exists at least one
 solution to the axiom (there may be more than one). The op declarations
 introduce the ops and the axiom expresses constraints on them.
+
+\subsection{Sum types}
+
+A sum type has the form
+\[
+\tdefsum{\tnam}{\tvarS}{\tsumFTO}
+\]
+where $\cnamS\in\SeqNER{\Nam}$, $\recogS\in\SeqNER{\Nam}$,
+$\cnamS\cap\recogS=\emptyset$, and $\optypS\in\SeqNE{(\Typ+\setI{\notyp})}$.
+We introduce the abbreviation
+\[
+\abbvert
+ {\tdefsum{\tnam}{\tvarS}{\tsumO}}
+ {\vdots\\
+  \odec{\cnam_i}{\tvarS}
+       {\!\!\cond{\optyp_i\neq\notyp}
+               {\tarr{\optyp_i}{\tinst{\tnam}{\tvarS}}}
+               {\tinst{\tnam}{\tvarS}}}
+  \\\vdots\\
+  \ax{\tvarS}{\conjI{\optyp_i\neq\notyp}
+                    {(\faS{\seqII{\bnd{\varfx}{\optyp_i}}
+                                 {\bnd{\varfx'}{\optyp_i}}}
+                          {\impl{\eq{\app{\cnam_i}{\varfx}}
+                                    {\app{\cnam_i}{\varfx'}}}
+                                {\eq{\varfx}{\varfx'}}})}}
+  \\
+  \ax{\tvarS}{\fa{\varfx}{\tinst{\tnam}{\tvarS}}
+                 {\disj{\left(
+                        \disjI{\optyp_i=\notyp}{\eq{\varfx}{\cnam_i}}
+                        \right)}
+                       {\left(
+                        \disjI{\optyp_i\neq\notyp}
+                              {\ex{\varfx'}{\optyp_i}
+                                  {\eq{\varfx}{\app{\cnam_i}{\varfx'}}}}
+                        \right)}}}
+  \\
+  \axLconjIV{\tvarS}
+            {\left(
+             \conjI{i<j,\optyp_i=\optyp_j=\notyp}
+                   {\neeq{\cnam_i}{\cnam_j}}
+             \right)}
+            {\left(
+             \conjI{i<j,\optyp_i\neq\notyp,\optyp_j\neq\notyp}
+                   {\faS{\seqII{\bnd{\varfx}{\optyp_i}}
+                               {\bnd{\varfx'}{\optyp_j}}}
+                        {\neeq{\app{\cnam_i}{\varfx}}
+                              {\app{\cnam_j}{\varfx'}}}}
+             \right)}
+            {\left(
+             \conjI{i<j,\optyp_i=\notyp,\optyp_j\neq\notyp}
+                   {\fa{\varfx}{\optyp_j}
+                       {\neeq{\cnam_i}{\app{\cnam_j}{\varfx}}}}
+             \right)}
+            {\left(
+             \conjI{i<j,\optyp_i\neq\notyp,\optyp_j=\notyp}
+                   {\fa{\varfx}{\optyp_i}
+                       {\neeq{\app{\cnam_i}{\varfx}}{\cnam_j}}}
+             \right)}
+  \\\vdots\\
+  \odefI{\recog_i}{\tvarS}{\tarr{\tinst{\tnam}{\tvarS}}{\bool}}
+        {\abs{\varfx}{\tinst{\tnam}{\tvarS}}
+             {\cond{\optyp_i\neq\notyp}
+                   {\ex{\varfx'}{\optyp_i}
+                       {\eq{\varfx}{\app{\cnam_i}{\varfx'}}}}
+                   {\eq{\varfx}{\cnam_i}}}}
+  \\\vdots}
+\]
+
+Each summand of the sum type $\tinst{\tnam}{\tvarS}$ consists of a constructor
+$\cnam_i$, an optional type $\optyp_i$, and a recognizer $\recog_i$. Each
+constructor $\cnam_i$ is an op that returns a value of the sum type; if the
+optional type is absent (i.e.\ $\optyp_i=\notyp$), the constructor is a
+constant of the sum type; otherwise, it is a function from $\optyp_i$ to the
+sum type. The first axiom says that each constructor that has an associated
+type is an injective function (if it has no associated type, it is not a
+function but a constant). The second axiom says that every value of the sum
+type is either equal to a constructor without type (constant) or is in the
+image of a constructor with type (function). The third axiom says that
+different constructors yield different values of the sum type; it involves all
+the pairs of distinct constructors $\cnam_i$ and $\cnam_j$ once (via the
+condition $i<j$) and contains four kinds of conjuncts, depending on whether
+$\cnam_i$ and $\cnam_j$ have types or not. Recognizers are defined ops that
+decide whether a value of the sum type has been constructed with the
+corresponding constructors.
+
+This treatment of sum types is somewhat different from \cite{lm}, but
+\cite{lm} will soon change to have the same treatment given here.

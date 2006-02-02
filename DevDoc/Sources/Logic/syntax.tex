@@ -16,7 +16,7 @@ We postulate the existence of an infinite set of names
 
 We inductively define the set of types as
 \[
-\setdefVIIIoI
+\setdefVII
  {\Typ}
  {+}
  {\setI{\bool}}
@@ -24,10 +24,10 @@ We inductively define the set of types as
  {\setST{\tinstO}{\tnam\in\Nam\AND\typS\in\Seq{\Typ}}}
  {\setST{\tarr{\typ_1}{\typ_2}}{\typ_1,\typ_2\in\Typ}}
  {\setST{\trecFTO}{\fnamS\in\SeqNR{\Nam}\AND\typS\in\Seq{\Typ}}}
- {\setST{\tsumFTO}{\cnamS\in\SeqNER{\Nam}\AND\typS\in\SeqNE{\Typ}}}
+% {\setST{\tsumFTO}{\cnamS\in\SeqNER{\Nam}\AND\typS\in\SeqNE{\Typ}}}
  {\setST{\tsubO}{\typ\in\Typ\AND\tspred\in\Expr}}
-\setdefVIIIoII
- {+}
+%\setdefVIIIoII
+% {+}
  {\setST{\tquotO}{\typ\in\Typ\AND\tqpred\in\Expr}}
 \]
 where $\Expr$ is defined later.\footnote{Types depend on expressions, which
@@ -48,17 +48,22 @@ just $\tnam$.
 \item
 An arrow type $\tarrO$ consists of a domain $\typ_1$ and a range $\typ_2$.
 \item
-Record types $\trecO$ (resp.\ sum types $\tsumO$) consist of typed fields
-$\fnam_i$ (resp.\ constructors $\cnam_i$). There exists one record type that
-has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only inhabitant is the
-empty record. A sum type, instead, always has at least one constructor. All
-the fields (resp.\ constructors) of a record (resp.\ sum) type must be
-distinct names. The case of no type $\typ_i$ associated to a constructor
-$\cnam_i$ in a sum type as defined in \cite{lm} is captured by $\typ_i$ being
-$\trecmt$ in the definition above: given a spec as defined in \cite{lm}, one
-can imagine to add $\trecmt$ where a constructor has no type, and add the
-empty record as argument to $\cnam_i$ in expressions and patterns where
-needed.
+Record types $\trecO$ consist of typed fields $\fnam_i$. There exists one
+record type that has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only
+inhabitant is the empty record. All the fields of a record type must be
+distinct names.
+%\item
+%Record types $\trecO$ (resp.\ sum types $\tsumO$) consist of typed fields
+%$\fnam_i$ (resp.\ constructors $\cnam_i$). There exists one record type that
+%has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only inhabitant is the
+%empty record. A sum type, instead, always has at least one constructor. All
+%the fields (resp.\ constructors) of a record (resp.\ sum) type must be
+%distinct names. The case of no type $\typ_i$ associated to a constructor
+%$\cnam_i$ in a sum type as defined in \cite{lm} is captured by $\typ_i$ being
+%$\trecmt$ in the definition above: given a spec as defined in \cite{lm}, one
+%can imagine to add $\trecmt$ where a constructor has no type, and add the
+%empty record as argument to $\cnam_i$ in expressions and patterns where
+%needed.
 \item
 Restriction types $\tsubO$ and quotient types $\tquotO$ are obtained by
 combining types $\typ$ with expressions $\tspred$ and $\tqpred$ (meant to be
@@ -85,7 +90,7 @@ capture the natural literal fields used in \cite{lm}.
 
 We inductively define the set of expressions as
 \[
-\setdefXoI
+\setdefIXoI
  {\Expr}
  {+}
  {\setST{\var}{\var\in\Nam}}
@@ -93,15 +98,12 @@ We inductively define the set of expressions as
  {\setST{\appO}{\expr_1,\expr_2\in\Expr}}
  {\setST{\absO}{\var\in\Nam\AND\typ\in\Typ\AND\expr\in\Expr}}
  {\setST{\eqO}{\expr_1,\expr_2\in\Expr}}
-% {\setST{\iifopO}{\typ\in\Typ}}
  {\setST{\iifO}{\expr_0,\expr_1,\expr_2\in\Expr}}
  {\setST{\descopO}{\typ\in\Typ}}
-% {\setST{\descO}{\var\in\Nam\AND\typ\in\Typ\AND\expr\in\Expr}}
-\setdefXoII
+\setdefIXoII
  {+}
  {\setST{\projopO}{\trecO\in\Typ}}
-% {\setST{\projO}{\expr\in\Expr\AND\fnam\in\Nam}}
- {\setST{\embedO}{\tsumO\in\Typ}}
+% {\setST{\embedO}{\tsumO\in\Typ}}
  {\setST{\quotO}{\tquotO\in\Typ}}
 \]
 
@@ -126,13 +128,6 @@ with the branches as the body.
 \item
 An equality $\eqO$ consists of a left-hand side $\expr_1$ and a right-hand
 side $\expr_2$.
-\item
-%The conditional operator $\iifopO$ is decorated by a type. It captures
-%if-then-else as defined in \cite{lm}: it operates on a boolean value and two
-%values of type $\typ$, selectively returning one of them. The conditional
-%operator is non-strict. We may write
-%$\app{\app{\app{\iifopO}{\expr_0}}{\expr_1}}{\expr_2}$ as just $\iifO$ when
-%the type is inferrable or irrelevant.
 A conditional $\iifO$ consists of a condition $\expr_0$, a ``then'' branch
 $\expr_1$, and an ``else'' branch $\expr_2$.
 \item
@@ -140,21 +135,14 @@ The description operator $\descopO$ is tagged by a type. It operates on
 predicates over $\typ$ (i.e.\ over values of type $\tarr{\typ}{\bool}$) that
 are satisfied by a unique value of $\typ$, and its result is \emph{the} value
 that satisfies the predicate.
-%A description $\descO$, currently absent from \cite{lm}, consists of a typed
-%variable and a body (like an abstraction). Its informal meaning is the
-%following: $\expr$ must have type $\bool$ and be satisfied by exactly one
-%value of type $\typ$ assigned to $\var$; the result of $\descO$ is that unique
-%value. In other words, $\descO$ is the $\var$ of type $\typ$ that satisfies
-%$\expr$ (we say ``the'' because the value exists and is unique).
 \item
 A projector $\projopO$ is tagged by a record type and by a field of that
 record type. We may write $\projopO$ as just $\pjopO$ when the record type is
 inferrable or irrelevant.
-%A projection $\projO$ consists of an expression and a field.
-\item
-An embedder $\embedO$ is tagged by a sum type and by a constructor of that sum
-type. We may write $\embedO$ as just $\embO$ when the sum type is inferrable
-or irrelevant.
+%\item
+%An embedder $\embedO$ is tagged by a sum type and by a constructor of that sum
+%type. We may write $\embedO$ as just $\embO$ when the sum type is inferrable
+%or irrelevant.
 \item
 A quotienter $\quotO$ is tagged by a quotient type. We may write $\quotO$ as
 just $\quo$ when the quotient type is inferrable or irrelevant.
@@ -318,7 +306,7 @@ of an expression
                               \efvar{\expr_1}\cup\efvar{\expr_2}}
 \eqitem{\efvar{\descopO}}    {\emptyset}
 \eqitem{\efvar{\pjop{\fnam}}}{\emptyset}
-\eqitem{\efvar{\emb{\cnam}}} {\emptyset}
+%\eqitem{\efvar{\emb{\cnam}}} {\emptyset}
 \eqitem{\efvar{\quo}}        {\emptyset}
 \end{eqlist}
 \]
@@ -400,13 +388,6 @@ declared in a context
        {\cond{\cxel=\tdecO}
              {\cxtnam{\cx}\cup\setI{\tnam}}
              {\cxtnam{\cx}}}
-%\eqitem{\cxtnam{\cons{\tdecO}{\cx}}} {\cxtnam{\cx}\cup\setI{\tnam}}
-%\eqitem{\cxtnam{\cons{\odecO}{\cx}}} {\cxtnam{\cx}}
-%\eqitem{\cxtnam{\cons{\tdefO}{\cx}}} {\cxtnam{\cx}}
-%\eqitem{\cxtnam{\cons{\odefO}{\cx}}} {\cxtnam{\cx}}
-%\eqitem{\cxtnam{\cons{\axO}{\cx}}}   {\cxtnam{\cx}}
-%\eqitem{\cxtnam{\cons{\tvdecO}{\cx}}}{\cxtnam{\cx}}
-%\eqitem{\cxtnam{\cons{\vdecO}{\cx}}} {\cxtnam{\cx}}
 \end{eqlist}
 \]
 
@@ -420,13 +401,6 @@ in a context
        {\cond{\cxel=\odecO}
              {\cxonam{\cx}\cup\setI{\onam}}
              {\cxonam{\cx}}}
-%\eqitem{\cxonam{\cons{\tdecO}{\cx}}} {\cxonam{\cx}}
-%\eqitem{\cxonam{\cons{\odecO}{\cx}}} {\cxonam{\cx}\cup\setI{\onam}}
-%\eqitem{\cxonam{\cons{\tdefO}{\cx}}} {\cxonam{\cx}}
-%\eqitem{\cxonam{\cons{\odefO}{\cx}}} {\cxonam{\cx}}
-%\eqitem{\cxonam{\cons{\axO}{\cx}}}   {\cxonam{\cx}}
-%\eqitem{\cxonam{\cons{\tvdecO}{\cx}}}{\cxonam{\cx}}
-%\eqitem{\cxonam{\cons{\vdecO}{\cx}}} {\cxonam{\cx}}
 \end{eqlist}
 \]
 
@@ -440,13 +414,6 @@ declared in a context
        {\cond{\cxel=\tvdecO}
              {\cxtvar{\cx}\cup\setI{\tvar}}
              {\cxtvar{\cx}}}
-%\eqitem{\cxtvar{\cons{\tdecO}{\cx}}} {\cxtvar{\cx}}
-%\eqitem{\cxtvar{\cons{\odecO}{\cx}}} {\cxtvar{\cx}}
-%\eqitem{\cxtvar{\cons{\tdefO}{\cx}}} {\cxtvar{\cx}}
-%\eqitem{\cxtvar{\cons{\odefO}{\cx}}} {\cxtvar{\cx}}
-%\eqitem{\cxtvar{\cons{\axO}{\cx}}}   {\cxtvar{\cx}}
-%\eqitem{\cxtvar{\cons{\tvdecO}{\cx}}}{\cxtvar{\cx}\cup\setI{\tvar}}
-%\eqitem{\cxtvar{\cons{\vdecO}{\cx}}} {\cxtvar{\cx}}
 \end{eqlist}
 \]
 
@@ -460,13 +427,6 @@ in a context
        {\cond{\cxel=\vdecO}
              {\cxvar{\cx}\cup\setI{\var}}
              {\cxvar{\cx}}}
-%\eqitem{\cxvar{\cons{\tdecO}{\cx}}} {\cxvar{\cx}}
-%\eqitem{\cxvar{\cons{\odecO}{\cx}}} {\cxvar{\cx}}
-%\eqitem{\cxvar{\cons{\tdefO}{\cx}}} {\cxvar{\cx}}
-%\eqitem{\cxvar{\cons{\odefO}{\cx}}} {\cxvar{\cx}}
-%\eqitem{\cxvar{\cons{\axO}{\cx}}}   {\cxvar{\cx}}
-%\eqitem{\cxvar{\cons{\tvdecO}{\cx}}}{\cxvar{\cx}}
-%\eqitem{\cxvar{\cons{\vdecO}{\cx}}} {\cxvar{\cx}\cup\setI{\var}}
 \end{eqlist}
 \]
 
@@ -531,8 +491,8 @@ expression $x$ (written $\tsbsO{x}$)
        {\tarr{\tsbsO{\typ_1}}{\tsbsO{\typ_2}}}
 \eqitem{\tsbsO{(\trecO)}}
        {\trec{i}{\fnam_i}{\tsbsO{\typ_i}}}
-\eqitem{\tsbsO{(\tsumO)}}
-       {\tsum{i}{\cnam_i}{\tsbsO{\typ_i}}}
+%\eqitem{\tsbsO{(\tsumO)}}
+%       {\tsum{i}{\cnam_i}{\tsbsO{\typ_i}}}
 \eqitem{\tsbsO{(\tsubO)}}
        {\tsub{\tsbsO{\typ}}{\tsbsO{\tspred}}}
 \eqitem{\tsbsO{(\tquotO)}}
@@ -553,12 +513,12 @@ expression $x$ (written $\tsbsO{x}$)
        {\eq{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
 \eqitem{\tsbsO{(\iifO)}}
        {\iif{\tsbsO{\expr_0}}{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
-\eqitem{\tsbsO{(\descopO)}}
+\eqitem{\tsbsO{\descopO}}
        {\descop{\tsbsO{\typ}}}
 \eqitem{\tsbsO{\left(\projopO\right)}}
        {\projop{\tsbsO{\left(\trecO\right)}}{\fnam_j}}
-\eqitem{\tsbsO{\left(\embedO\right)}}
-       {\embed{\tsbsO{\left(\tsumO\right)}}{\cnam_j}}
+%\eqitem{\tsbsO{\left(\embedO\right)}}
+%       {\embed{\tsbsO{\left(\tsumO\right)}}{\cnam_j}}
 \eqitem{\tsbsO{\left(\quotO\right)}}
        {\quot{\tsbsO{(\tquotO)}}}
 \end{eqlistC}
@@ -661,12 +621,12 @@ $\esbsO{\expr}$)
        {\eq{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
 \eqitem{\esbsO{(\iifO)}}
        {\iif{\esbsO{\expr_0}}{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
-\eqitem{\esbsO{(\descopO)}}
+\eqitem{\esbsO{\descopO}}
        {\descopO}
 \eqitem{\esbsO{(\pjop{\fnam})}}
        {\pjop{\fnam}}
-\eqitem{\esbsO{(\emb{\cnam})}}
-       {\emb{\cnam}}
+%\eqitem{\esbsO{(\emb{\cnam})}}
+%       {\emb{\cnam}}
 \eqitem{\esbsO{\quo}}
        {\quo}
 \end{eqlistC}
@@ -737,8 +697,8 @@ $\expr$ at the free occurrences of $\varI$ in $\expr$)
        {\emptyset}
 \eqitem{\cvarvO{\pjop{\fnam}}}
        {\emptyset}
-\eqitem{\cvarvO{\emb{\cnam}}}
-       {\emptyset}
+%\eqitem{\cvarvO{\emb{\cnam}}}
+%       {\emptyset}
 \eqitem{\cvarvO{\quo}}
        {\emptyset}
 \end{eqlist}
