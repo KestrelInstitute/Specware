@@ -540,12 +540,10 @@ spec
       && pj (theoreM (cx, e2 == d2))
       => pj (theoreM (cx, e1 @ e2 == d1 @ d2)))
     | thAbsSubst ->
-      (fa (cx:Context, v:Variable, t:Type, e:Expression, e1:Expression,
-           t1:Type, t2:Type)
+      (fa (cx:Context, v:Variable, t:Type, e:Expression, t1:Type, t2:Type)
          pj (wellTypedExpr (cx, FN (v, t, e), t2))
       && pj (typeEquivalence (cx, t, t1))
-      && pj (theoreM (cx <| varDeclaration (v,t), e == e1))
-      => pj (theoreM (cx, FN (v, t, e) == FN (v, t1, e1))))
+      => pj (theoreM (cx, FN (v, t, e) == FN (v, t1, e))))
     | thEqSubst ->
       (fa (cx:Context, e1:Expression, e2:Expression, t:Type,
            d1:Expression, d2:Expression)

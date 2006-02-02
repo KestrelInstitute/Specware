@@ -1306,12 +1306,10 @@ spec
       checkTheoremEqualityWithContextAndLeftExpr cx e1 prf1 >> (fn d1 ->
       checkTheoremEqualityWithContextAndLeftExpr cx e2 prf2 >> (fn d2 ->
       OK (theoreM (cx, e1 @ e2 == d1 @ d2)))))
-    | thAbsSubst (prf1, prf2, prf3) ->
+    | thAbsSubst (prf1, prf2) ->
       checkWTAbstraction prf1 >> (fn (cx, v, t, e, _) ->
       checkTypeEquivWithContextAndLeftType cx t prf2 >> (fn t1 ->
-      (let cx1 = cx <| varDeclaration (v, t) in
-      checkTheoremEqualityWithContextAndLeftExpr cx1 e prf3 >> (fn e1 ->
-      OK (theoreM (cx, FN (v, t, e) == FN (v, t1, e1)))))))
+      OK (theoreM (cx, FN (v, t, e) == FN (v, t1, e)))))
     | thEqSubst (prf, prf1, prf2) ->
       checkWTEquality prf >> (fn (cx, e1, e2, _) ->
       checkTheoremEqualityWithContextAndLeftExpr cx e1 prf1 >> (fn d1 ->

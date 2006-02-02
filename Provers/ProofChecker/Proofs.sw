@@ -99,7 +99,7 @@ spec
     | thTrans      Proof * Proof
     | thOpSubst    Proof * Proofs
     | thAppSubst   Proof * Proof * Proof
-    | thAbsSubst   Proof * Proof * Proof
+    | thAbsSubst   Proof * Proof
     | thEqSubst    Proof * Proof * Proof
     | thIfSubst    Proof * Proof * Proof * Proof
     | thTheSubst   Proof * Proof
@@ -214,7 +214,7 @@ spec
       && pred (thTrans (prf1, prf2))
       && pred (thOpSubst (prf, prfS))
       && pred (thAppSubst (prf1, prf2, prf3))
-      && pred (thAbsSubst (prf1, prf2, prf3))
+      && pred (thAbsSubst (prf1, prf2))
       && pred (thEqSubst (prf1, prf2, prf3))
       && pred (thIfSubst (prf1, prf2, prf3, prf4))
       && pred (thTheSubst (prf1, prf2))
@@ -340,9 +340,8 @@ spec
     | thAppSubst   (prf1, prf2, prf3)       -> closedProof? prf1
                                             && closedProof? prf2
                                             && closedProof? prf3
-    | thAbsSubst   (prf1, prf2, prf3)       -> closedProof? prf1
+    | thAbsSubst   (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
-                                            && closedProof? prf3
     | thEqSubst    (prf1, prf2, prf3)       -> closedProof? prf1
                                             && closedProof? prf2
                                             && closedProof? prf3
