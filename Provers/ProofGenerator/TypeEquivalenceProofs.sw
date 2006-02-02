@@ -178,7 +178,7 @@ spec
     let (newE1, e1p) = applyTypeDefInExpr (cxP, newCx, tdCE) e1 in
     let newE = FN (v, newT, newE1) in
     let exprTypeAssumption = wellTypedExpressionAssumption(cx, e) in
-    (newE, thAbsSubst(exprTypeAssumption, tP, e1p))
+    (newE, thAbsSubst(exprTypeAssumption, tP))
 
   op thEqSubstProof: Proof * Context * TypeDefinitionContextElement -> Expression -> Expression * Proof
   def thEqSubstProof (cxP, cx, tdCE) e =
