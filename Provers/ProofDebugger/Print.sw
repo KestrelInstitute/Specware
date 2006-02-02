@@ -92,7 +92,7 @@ spec
     | thTrans(p, p2) -> "(thTrans"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | thOpSubst(p, ps) -> "(thOpSubst"^pSep^printProofsAux(p |> ps, sn)^")"
     | thAppSubst(p, p2, p3) -> "(thAppSubst"^pSep^printProofsAux(p |> p2 |> single(p3), sn)^")"
-    | thAbsSubst(p, p2, p3) -> "(thAbsSubst"^pSep^printProofsAux(p |> p2 |> single(p3), sn)^")"
+    | thAbsSubst(p, p2) -> "(thAbsSubst"^pSep^printProofsAux(p |> single p2, sn)^")"
     | thEqSubst(p, p2, p3) -> "(thEqSubst"^pSep^printProofsAux(p |> p2 |> single(p3), sn)^")"
     | thIfSubst(p, p2, p3, p4) -> "(thIfSubst"^pSep^printProofsAux(p |> p2 |> p3 |> single(p4), sn)^")"
     | thTheSubst(p, p2) -> "(thTheSubst"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
@@ -201,7 +201,7 @@ spec
     | thTrans(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
     | thOpSubst(p, ps) -> countProofAuxInt(p) + countProofsAuxInt(ps)
     | thAppSubst(p, p2, p3) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3)
-    | thAbsSubst(p, p2, p3) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3)
+    | thAbsSubst(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)% + countProofAuxInt(p3)
     | thEqSubst(p, p2, p3) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3)
     | thIfSubst(p, p2, p3, p4) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3) + countProofAuxInt(p4)
     | thTheSubst(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
