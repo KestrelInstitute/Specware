@@ -623,6 +623,7 @@
 					 (merge-pathnames source-linux-cmucl-dir "SpecwareShell")
 					 (merge-pathnames source-linux-cmucl-dir "Find_CMUCL")
 					 (merge-pathnames source-linux-cmucl-dir "Find_Specware_App_CMUCL")
+					 (merge-pathnames source-linux-dir       "install_gnome_desktop_icons_specware")
 					 (merge-pathnames source-linux-dir       "Find_XEMACS")
 					 (merge-pathnames source-linux-dir       "Find_SPECWARE4")
 					 (merge-pathnames source-linux-dir       "Update_Path")
