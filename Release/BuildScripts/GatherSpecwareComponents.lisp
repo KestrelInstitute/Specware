@@ -74,6 +74,14 @@
     (setq cl-user::Specware-version-name (format nil "Specware-~A" major-version-string))
 
     (format t "~&;;; Preparing release of ~A~%" cl-user::Specware-version-name)
+
+    ;; Oops: As written, this is overkill (literally!).
+    ;; In addition to deleting old versions of the files we're about to create,
+    ;; it will also delete files created on other operating systems.
+    ;; (when (probe-file release-dir)
+    ;;  (format t "~&Deleting old version of ~A~%" release-dir)
+    ;;  (generic-delete-directory release-dir t))
+      
     (prepare_Specware_Lib specware-dir release-dir)
     (prepare_XEmacs_Lib   specware-dir release-dir)
     (prepare_C_Lib        specware-dir release-dir)
