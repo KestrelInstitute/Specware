@@ -53,6 +53,7 @@ spec
   op contextElementTypeVars : ContextElement -> FSet TypeVariable
   op contextElementVars     : ContextElement -> FSet Variable
   op contextElementAxioms   : ContextElement -> FSet AxiomName
+  op contextElementLemmas   : ContextElement -> FSet LemmaName
 
   def contextElementTypes = fn
     | typeDeclaration(tn,_) -> single tn
@@ -74,17 +75,23 @@ spec
     | axioM(an,_,_) -> single an
     | _             -> empty
 
+  def contextElementLemmas = fn
+    | lemma(ln,_,_) -> single ln
+    | _             -> empty
+
   op contextTypes    : Context -> FSet TypeName
   op contextOps      : Context -> FSet Operation
   op contextTypeVars : Context -> FSet TypeVariable
   op contextVars     : Context -> FSet Variable
   op contextAxioms   : Context -> FSet AxiomName
+  op contextLemmas   : Context -> FSet LemmaName
 
   def contextTypes    cx = \\// (map contextElementTypes    cx)
   def contextOps      cx = \\// (map contextElementOps      cx)
   def contextTypeVars cx = \\// (map contextElementTypeVars cx)
   def contextVars     cx = \\// (map contextElementVars     cx)
   def contextAxioms   cx = \\// (map contextElementAxioms   cx)
+  def contextLemmas   cx = \\// (map contextElementLemmas   cx)
 
   op contextDefinesType? : Context * TypeName -> Boolean
   def contextDefinesType?(cx,tn) =

@@ -32,5 +32,6 @@ spec
   type UserField    = String
   type Constructor  = String
   type AxiomName    = String
+  type LemmaName    = String
 
 endspec

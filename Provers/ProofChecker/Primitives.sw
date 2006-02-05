@@ -18,8 +18,8 @@ spec
   cannot be accidentally used as a type name, because otherwise a
   type-checking error would occur).
 
-  While in LD axioms have no names, here they do, in order to provide a simple
-  way to refer to them (e.g. in proofs).
+  While in LD axioms and lemmas have no names, here they do, in order to
+  provide a simple way to refer to them (e.g. in proofs).
 
   Instead of postulating meta types for fields and variables along with ops to
   denote the distinguished fields and variables ("pi" fields etc.), we
@@ -41,5 +41,6 @@ spec
   import translate /Library/General/Type#Infinite by {X +-> UserField}
   import translate /Library/General/Type#Infinite by {X +-> Constructor}
   import translate /Library/General/Type#Infinite by {X +-> AxiomName}
+  import translate /Library/General/Type#Infinite by {X +-> LemmaName}
 
 endspec

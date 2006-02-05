@@ -290,6 +290,17 @@ spec
          else checkAxiom (rtail cx) an
        | _ -> checkAxiom (rtail cx) an))
 
+  (* Check whether a context includes a named lemma. If it does, return the
+  lemma information. *)
+  op checkLemma : Context -> LemmaName -> M (TypeVariables * Expression)
+  def checkLemma cx ln =
+    ensure (cx ~= empty) (lemmaNotDeclared (cx, ln)) >> (fn _ ->
+    (case first cx of
+       | lemma (ln1, tvS, e) ->
+         if ln1 = ln then OK (tvS, e)
+         else checkLemma (rtail cx) ln
+       | _ -> checkLemma (rtail cx) ln))
+
   (* Check whether a context declares a variable. If it does, return its
   type. *)
   op checkVarDecl : Context -> Variable -> M Type
@@ -814,10 +825,11 @@ spec
 
   (* Check proof of well-typed proposition in the given context extended with
   type variable declarations, returning the type variables and expression. In
-  other words, it checks a proof of the well-typedness of an axiom (the extra
-  type variables become those of the axiom); this is used for tule cxAx. *)
-  op checkWTAxiom : Context -> Proof -> M (TypeVariables * Expression)
-  def checkWTAxiom cx prf =
+  other words, it checks a proof of the well-typedness of an axiom or lemma
+  (the extra type variables become those of the axiom or lemma); this is used
+  for rules cxAx and cxLem. *)
+  op checkWTAxiomOrLemma : Context -> Proof -> M (TypeVariables * Expression)
+  def checkWTAxiomOrLemma cx prf =
     checkWTProposition prf >> (fn (cx1, e) ->
     checkLastTypeVars cx cx1 >> (fn tvS ->
     OK (tvS, e)))
@@ -1051,8 +1063,14 @@ spec
       checkWFContext prf >> (fn cx ->
       ensure (~(an in? contextAxioms cx))
              (axiomAlreadyDeclared (cx, an)) >> (fn _ ->
-      checkWTAxiom cx prf1 >> (fn (tvS, e) ->
+      checkWTAxiomOrLemma cx prf1 >> (fn (tvS, e) ->
       OK (wellFormedContext (cx <| axioM (an, tvS, e))))))
+    | cxLem (prf, prf1, ln) ->
+      checkWFContext prf >> (fn cx ->
+      ensure (~(ln in? contextLemmas cx))
+             (lemmaAlreadyDeclared (cx, ln)) >> (fn _ ->
+      checkWTAxiomOrLemma cx prf1 >> (fn (tvS, e) ->
+      OK (wellFormedContext (cx <| lemma (ln, tvS, e))))))
     | cxTVdec (prf, tv) ->
       checkWFContext prf >> (fn cx ->
       ensure (~(tv in? contextTypeVars cx))
@@ -1278,6 +1296,12 @@ spec
     | thAx (prf, prfS, an) ->
       checkWFContext prf >> (fn cx ->
       checkAxiom cx an >> (fn (tvS, e) ->
+      checkWFTypesWithContext cx prfS >> (fn tS ->
+      checkTypeSubstitution tvS tS >> (fn tsbs ->
+      OK (theoreM (cx, typeSubstInExpr tsbs e))))))
+    | thLem (prf, prfS, ln) ->
+      checkWFContext prf >> (fn cx ->
+      checkLemma cx ln >> (fn (tvS, e) ->
       checkWFTypesWithContext cx prfS >> (fn tS ->
       checkTypeSubstitution tvS tS >> (fn tsbs ->
       OK (theoreM (cx, typeSubstInExpr tsbs e))))))

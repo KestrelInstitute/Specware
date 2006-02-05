@@ -5,10 +5,10 @@ spec
   import TypesAndExpressions
 
   (* Unlike LD, we do not require the type variables appearing in an op
-  declaration, type definition, op definition, or axiom to be distinct. This
-  requirement is captured in the inference rules for well-formed contexts,
-  thus keeping the syntax simpler and avoiding subtypes (as explained in
-  README.txt). *)
+  declaration, type definition, op definition, axiom, or lemma to be distinct.
+  This requirement is captured in the inference rules for well-formed
+  contexts, thus keeping the syntax simpler and avoiding subtypes (as
+  explained in README.txt). *)
 
   type ContextElement =
     | typeDeclaration    TypeName * Integer
@@ -16,6 +16,7 @@ spec
     | typeDefinition     TypeName  * TypeVariables * Type
     | opDefinition       Operation * TypeVariables * Expression
     | axioM              AxiomName * TypeVariables * Expression
+    | lemma              LemmaName * TypeVariables * Expression
     | typeVarDeclaration TypeVariable
     | varDeclaration     Variable * Type
 

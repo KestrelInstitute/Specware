@@ -27,6 +27,14 @@ spec
   i.e. judgements that are assumed to be true. This feature is useful to
   build, effectively, "partial" proofs that can be "completed" later.
 
+  The proof trees defined here also include a rule thLem that is not present
+  in LD. The rule serves to turn a lemma in the context into a theorem in one
+  step, analogously to rule thAx for axioms. Rule thLem is not needed in LD
+  because lemmas in well-formed contexts are theorems, and so they can be
+  turned into theorems by repeating the steps of their proofs. For practical
+  purposes, especially given that proof trees, as explained in the previous
+  paragraph, include assumptions, it is convenient to have rule thLem here.
+
   The constructors of proof trees are named after the inference rules in LD
   (cf. type InferenceRule in spec Provability). *)
 
@@ -43,6 +51,7 @@ spec
     | cxTdef  Proof * Proof * TypeName
     | cxOdef  Proof * Proof * Operation
     | cxAx    Proof * Proof * AxiomName
+    | cxLem   Proof * Proof * LemmaName
     | cxTVdec Proof * TypeVariable
     | cxVdec  Proof * Proof * Variable
     % well-formed specs ("spec" is disallowed):
@@ -93,6 +102,7 @@ spec
     | exAbsAlpha Proof * Variable
     % theorems:
     | thAx         Proof * Proofs * AxiomName
+    | thLem        Proof * Proofs * LemmaName  % not present in LD
     | thDef        Proof * Proofs * Operation
     | thRefl       Proof
     | thSymm       Proof
@@ -144,6 +154,7 @@ spec
         c2    : Constructor,
         cS    : Constructors,
         an    : AxiomName,
+        ln    : LemmaName,
         n     : Integer,
         iS    : FSeq Integer,
         jdg   : Judgement,
@@ -208,6 +219,7 @@ spec
       && pred (exSub (prf1, prf2, prf3))
       && pred (exAbsAlpha (prf, v))
       && pred (thAx (prf, prfS, an))
+      && pred (thLem (prf, prfS, ln))
       && pred (thDef (prf, prfS, o))
       && pred (thRefl prf)
       && pred (thSymm prf)
@@ -328,6 +340,8 @@ spec
                                             && closedProof? prf3
     | exAbsAlpha   (prf, _)                 -> closedProof? prf
     | thAx         (prf, prfS, _)           -> closedProof? prf
+                                            && forall? closedProof? prfS
+    | thLem        (prf, prfS, _)           -> closedProof? prf
                                             && forall? closedProof? prfS
     | thDef        (prf, prfS, _)           -> closedProof? prf
                                             && forall? closedProof? prfS

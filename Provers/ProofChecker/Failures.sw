@@ -18,6 +18,7 @@ spec
     | typeNotDefined                   Context * TypeName
     | opNotDefined                     Context * Operation
     | axiomNotDeclared                 Context * AxiomName
+    | lemmaNotDeclared                 Context * LemmaName
     | typeVarNotDeclared               Context * TypeVariable
     | varNotDeclared                   Context * Variable
     | typeAlreadyDeclared              Context * TypeName
@@ -25,6 +26,7 @@ spec
     | typeAlreadyDefined               Context * TypeName
     | opAlreadyDefined                 Context * Operation
     | axiomAlreadyDeclared             Context * AxiomName
+    | lemmaAlreadyDeclared             Context * LemmaName
     | typeVarAlreadyDeclared           Context * TypeVariable
     | varAlreadyDeclared               Context * Variable
     | typeVarInSpec                    Context
