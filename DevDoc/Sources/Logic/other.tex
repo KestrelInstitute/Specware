@@ -1228,9 +1228,9 @@ abbreviation
 \]
 where $\varfxI{\expr}$ is, for each expression $\expr\in\Expr$, a fixed but
 unspecified name in $\Nam$ such that $\varfxI{\expr}\not\in\efvar{\expr}$ and
-where $\expr'$ is the expression such that
-$\esbs{\expr'}{\varfxI{\expr}}{\op{\onam}{\tvarS'}}=\expr$. An op definition
-$\odefO$ must reference an op $\odecO$ previously declared in the context in
+where $\expr'$ is the result of replacing every occurrence of
+$\op{\onam}{\tvarS'}$ with $\varfxI{\expr}$ in $\expr$. An op definition
+$\odefO$ should reference an op $\odecO$ previously declared in the context in
 which the op definition appears (if it does not, the addition of the axiom
 would not yield a well-formed context). The defining body $\expr$ may
 reference $\onam$ (in which case the op definition is recursive), but all the
