@@ -2,15 +2,48 @@ spec
 
   % API private all
 
-  import BasicAbbreviations, Occurrences
+  import BasicAbbreviations, Substitutions
 
   (* This spec is an executable version of spec OtherAbbreviations. Actually,
-  only one ops in spec OtherAbbreviations is not executable, namely op
+  only one op in spec OtherAbbreviations is not executable, namely op
   minDistinctAbbrVar. Since currently Specware provides no way of refining
   individual ops in a spec, we have to copy the other ops and their
   (executable) definitions from spec OtherAbbreviations. This, which is
   clearly not ideal, will change as soon as Specware provides better
   refinement capabilities. *)
+
+  (* We first define two auxiliary ops, used in the executable definition of
+  op minDistinctAbbrVar. *)
+
+  % convert set of abbreviation variables to the set of their indices
+  % (i.e. remove the abbr constructor layer):
+  op indicesOfAbbrVars : (FSet Variable | forall? (embed? abbr)) -> FSet Integer
+  def indicesOfAbbrVars vars =
+    % function to add the index of a variable to the current set of indices:
+    let def addIndex (indices      : FSet Integer,
+                      varToProcess : (Variable | embed? abbr))
+                     : FSet Integer =
+          let abbr index = varToProcess in indices <| index
+    in
+    % starting with the empty set, collect all the variable indices:
+    fold (empty, addIndex, vars)
+
+  % return minimum natural number not present in set of integers
+  % (negative integers are obviously ignored):
+  op minNaturalNotIn : FSet Integer -> Nat
+  def minNaturalNotIn iS =
+    % auxiliary function to iterate through naturals until a suitable
+    % one (i.e. that does not belong to iS) is found:
+    let def aux (n : Nat) : Nat = if n nin? iS then n else aux (n+1)
+    in
+    % start iteration at 0:
+    aux 0
+
+  op minDistinctAbbrVar : FSet Variable -> Variable
+  def minDistinctAbbrVar vS =
+    let abbrVS : FSet Variable = filter (embed? abbr) vS in
+    let indices : FSet Integer = indicesOfAbbrVars abbrVS in
+    abbr (minNaturalNotIn indices)
 
   % the following are copied verbatim from spec OtherAbbreviations:
 
@@ -42,50 +75,14 @@ spec
 
   type BindingBranches = FSeq BindingBranch
 
-  (* We now give an executable version of op minDistinctAbbrVar in spec
-  OtherAbbreviations. We first define two auxiliary ops, used in the
-  executable definition of op minDistinctAbbrVar. *)
-
-  % convert set of abbreviation variables to the set of their indices
-  % (i.e. remove the abbr constructor layer):
-  op indicesOfAbbrVars : (FSet Variable | forall? (embed? abbr)) -> FSet Integer
-  def indicesOfAbbrVars vars =
-    % function to add the index of a variable to the current set of indices:
-    let def addIndex (indices      : FSet Integer,
-                      vatToProcess : (Variable | embed? abbr))
-                     : FSet Integer =
-          let abbr index = vatToProcess in indices <| index
-    in
-    % starting with the empty set, collect all the variable indices:
-    fold (empty, addIndex, vars)
-
-  % return minimum natural number not present in set of integers
-  % (negative integers are obviously ignored):
-  op minNaturalNotIn : FSet Integer -> Nat
-  def minNaturalNotIn iS =
-    % auxiliary function to iterate through naturals until a suitable
-    % one (i.e. that does not belong to iS) is found:
-    let def aux (n : Nat) : Nat = if n nin? iS then n else aux (n+1)
-    in
-    % start iteration at 0:
-    aux 0
-
-  op minDistinctAbbrVar : Variables * Expressions -> Variable
-  def minDistinctAbbrVar (vS,eS) =
-    let allVars : FSet Variable = toSet vS \/ \\// (map exprFreeVars eS) in
-    let allAbbrVars : FSet Variable = filter (embed? abbr) allVars in
-    let allIndices : FSet Integer = indicesOfAbbrVars allAbbrVars in
-    abbr (minNaturalNotIn allIndices)
-
-  % the following are also copied verbatim from spec OtherAbbreviations:
-
   op COND : Type * BindingBranches -> Expression
   def COND (t,brS) =
     if empty? brS then
-      IOTA BOOL
+      TRUE @ TRUE
     else
       let (vS,tS,b,e) = first brS in
-      let x:Variable = minDistinctAbbrVar (vS, single b <| e) in
+      let x:Variable =
+          minDistinctAbbrVar (toSet vS \/ exprFreeVars b \/ exprFreeVars e) in
       let branchResult:Expression = THE (x, t, EXX (vS, tS, b &&& VAR x == e)) in
       if single? brS then branchResult
       else IF (EXX (vS, tS, b), branchResult, COND (t, rtail brS))
@@ -99,7 +96,7 @@ spec
         (vS, tS, e == p, r) in
       COND (t1, map transformBranch brS)
     else
-      let x = minDistinctAbbrVar (allVS, single e) in
+      let x = minDistinctAbbrVar (toSet allVS \/ exprFreeVars e) in
       CASE (t, t1, e,
             single (single x, single t, VAR x, CASE (t, t1, VAR x, brS)))
 
@@ -143,6 +140,18 @@ spec
       let j:Nat = first (positionsOf (cS, c)) in
       FN (x, SUM(cS,tS), EX (y, tS@j, VAR x == EMBED (SUM(cS,tS), c) @ (VAR y)))
     else
-      IOTA BOOL
+      TRUE @ TRUE
+
+  op OPDEF : TypeVariables * Operation * TypeVariables * Type * Expression *
+             LemmaName * AxiomName -> Context
+  def OPDEF (tvS1, o, tvS, t, e, ln, an) =
+    if tvS1 equiLong tvS && opInstancesInExpr o e = single (map VAR tvS1) then
+      let x:Variable = minDistinctAbbrVar (exprFreeVars e) in
+      let e1:Expression = exprSubstInExpr (OPI (o, map VAR tvS1)) (VAR x) e in
+      let t1:Type = typeSubstInType (fromSeqs (tvS, map VAR tvS1)) t in
+      single (lemma (ln, tvS1, EX1 (x, t1, VAR x == e1)))
+          <| (axioM (an, tvS1, OPI (o, map VAR tvS1) == e))
+    else
+      single (lemma (ln, empty, TRUE @ TRUE))
 
 endspec

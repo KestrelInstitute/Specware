@@ -212,15 +212,6 @@ spec
     % return bound variable, type, and body:
     OK (v, t, e))))
 
-  (* Like previous op (see explanatory comments for previous op) but check a
-  unique existential quantification rather than a universal quantification. *)
-  op checkUniqueExistential : Expression -> M (Variable * Type * Expression)
-  def checkUniqueExistential e =
-    checkApplication e >> (fn (mustBe_EX1q, mustBe_FN) ->
-    checkAbstraction mustBe_FN >> (fn (v, t, e) ->
-    ensure (mustBe_EX1q = EX1q t) (notExists1 mustBe_EX1q) >> (fn _ ->
-    OK (v, t, e))))
-
   (* Check whether two expressions are (syntactically) equal. *)
   op checkSameExpr : Expression -> Expression -> M ()
   def checkSameExpr e1 e2 =
@@ -267,17 +258,6 @@ spec
          if tn1 = tn then OK (tvS, t)
          else checkTypeDef (rtail cx) tn
        | _ -> checkTypeDef (rtail cx) tn))
-
-  (* Check whether a context defines an op. If it does, return its definition
-  information. *)
-  op checkOpDef : Context -> Operation -> M (TypeVariables * Expression)
-  def checkOpDef cx o =
-    ensure (cx ~= empty) (opNotDefined (cx, o)) >> (fn _ ->
-    (case first cx of
-       | opDefinition (o1, tvS, e) ->
-         if o1 = o then OK (tvS, e)
-         else checkOpDef (rtail cx) o
-       | _ -> checkOpDef (rtail cx) o))
 
   (* Check whether a context includes a named axiom. If it does, return the
   axiom information. *)
@@ -950,24 +930,6 @@ spec
     checkLastAxiom cx cx1 (~~ e0) >> (fn _ ->
     OK ()))
 
-  (* Check proof of existence and uniqueness theorem needed for rule cxOdef.
-  More precisely, given cx, t, and tvS, check that the proof proves
-    theoreM (cx ++ multiTypeVarDecls tvS1,
-             EX1 (v, typeSubstInType tsbs t, (VAR v == e)))
-  for some tvS1, v, e, and tsbs such that isTypeSubstFrom? (tsbs, tvS, map VAR
-  tvS1) holds (cf. cxOdef in spec Provability); return tvS1, v, and e. *)
-  op checkTheoremOpDef : Context -> Type -> TypeVariables -> Proof ->
-                         M (TypeVariables * Variable * Expression)
-  def checkTheoremOpDef cx t tvS prf =
-    checkTheorem prf >> (fn (cx1, e) ->
-    checkLastTypeVars cx cx1 >> (fn tvS1 ->
-    checkTypeSubstitution tvS (map VAR tvS1) >> (fn tsbs ->
-    checkUniqueExistential e >> (fn (v, t1, e) ->
-    checkSameType t1 (typeSubstInType tsbs t) >> (fn _ ->
-    checkEquality e >> (fn (mustBe_v, e) ->
-    ensure (mustBe_v = VAR v) (wrongLeftExpression (mustBe_v, VAR v)) >> (fn _ ->
-    OK (tvS, v, e))))))))
-
   (* Check proof of reflexivity theorem needed for rule tyQuot. More
   precisely, check that the proof proves
     theoreM (cx, FA (v, t, q @ PAIR (t, t, VAR v, VAR v)))
@@ -1051,14 +1013,6 @@ spec
       checkWFPolyType cx prf1 >> (fn (tvS, t) ->
       ensure (length tvS = n) (wrongTypeArity (tn, n, length tvS)) >> (fn _ ->
       OK (wellFormedContext (cx <| typeDefinition (tn, tvS, t))))))))
-    | cxOdef (prf, prf1, o) ->
-      checkWFContext prf >> (fn cx ->
-      checkOpDecl cx o >> (fn (tvS, t) ->
-      ensure (~(contextDefinesOp? (cx, o))) (opAlreadyDefined (cx, o)) >> (fn _ ->
-      checkTheoremOpDef cx t tvS prf1 >> (fn (tvS1, v, e) ->
-      ensure (~(o in? exprOps e)) (opInOpDefTheorem (o, e)) >> (fn _ ->
-      (let e1:Expression = exprSubst v (OPI (o, map VAR tvS1)) e in
-      OK (wellFormedContext (cx <| opDefinition (o, tvS1, e1)))))))))
     | cxAx (prf, prf1, an) ->
       checkWFContext prf >> (fn cx ->
       ensure (~(an in? contextAxioms cx))
@@ -1305,12 +1259,6 @@ spec
       checkWFTypesWithContext cx prfS >> (fn tS ->
       checkTypeSubstitution tvS tS >> (fn tsbs ->
       OK (theoreM (cx, typeSubstInExpr tsbs e))))))
-    | thDef (prf, prfS, o) ->
-      checkWFContext prf >> (fn cx ->
-      checkOpDef cx o >> (fn (tvS, e) ->
-      checkWFTypesWithContext cx prfS >> (fn tS ->
-      checkTypeSubstitution tvS tS >> (fn tsbs ->
-      OK (theoreM (cx, OPI (o, tS) == typeSubstInExpr tsbs e))))))
     | thRefl prf ->
       checkWTExpr prf >> (fn (cx, e, _) ->
       OK (theoreM (cx, e == e)))

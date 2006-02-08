@@ -13,8 +13,8 @@ spec
     | cxTdec
     | cxOdec
     | cxTdef
-    | cxOdef
     | cxAx
+    | cxLem
     | cxTVdec
     | cxVdec
     % well-formed specs ("spec" is disallowed):
@@ -65,7 +65,6 @@ spec
     | exAbsAlpha
     % theorems:
     | thAx
-    | thDef
     | thRefl
     | thSymm
     | thTrans
@@ -127,20 +126,6 @@ spec
          (* Distinctness of tvS is in the syntax in LD. We do not need to add
          it to this inference rule because it is a meta theorem. *)
       => pj (wellFormedContext (cx <| typeDefinition (tn, tvS, t))))
-    | cxOdef ->
-      (fa (cx:Context, o:Operation, tvS:TypeVariables, t:Type, tvS1:TypeVariables,
-           v:Variable, tsbs:TypeSubstitution, e:Expression, e1:Expression)
-         pj (wellFormedContext cx)
-      && opDeclaration (o, tvS, t) in? cx
-      && ~(contextDefinesOp? (cx, o))
-      && isTypeSubstFrom? (tsbs, tvS, map VAR tvS1)
-      && pj (theoreM (cx ++ multiTypeVarDecls tvS1,
-                      EX1 (v, typeSubstInType tsbs t, VAR v == e)))
-      && ~(o in? exprOps e)
-      && e1 = exprSubst v (OPI (o, map VAR tvS1)) e
-         (* Distinctness of tvS is in the syntax in LD. We do not need to add
-         it to this inference rule because it is a meta theorem. *)
-      => pj (wellFormedContext (cx <| opDefinition (o, tvS1, e1))))
     | cxAx ->
       (fa (cx:Context, tvS:TypeVariables, e:Expression, an:AxiomName)
          pj (wellFormedContext cx)
@@ -151,6 +136,16 @@ spec
          (* Distinctness of tvS is in the syntax in LD. We do not need to add
          it to this inference rule because it is a meta theorem. *)
       => pj (wellFormedContext (cx <| axioM (an, tvS, e))))
+    | cxLem ->
+      (fa (cx:Context, tvS:TypeVariables, e:Expression, ln:LemmaName)
+         pj (wellFormedContext cx)
+      && pj (theoreM (cx ++ multiTypeVarDecls tvS, e))
+         (* In LD, lemmas are unnamed. Here, we require distinct lemma names in
+         well-formed contexts. *)
+      && ~(ln in? contextLemmas cx)
+         (* Distinctness of tvS is in the syntax in LD. We do not need to add
+         it to this inference rule because it is a meta theorem. *)
+      => pj (wellFormedContext (cx <| lemma (ln, tvS, e))))
     | cxTVdec ->
       (fa (cx:Context, tv:TypeVariable)
          pj (wellFormedContext cx)
@@ -503,15 +498,6 @@ spec
             pj (wellFormedType (cx, tS@i)))
       && isTypeSubstFrom? (tsbs, tvS, tS)
       => pj (theoreM (cx, typeSubstInExpr tsbs e)))
-    | thDef ->
-      (fa (cx:Context, tvS:TypeVariables, o:Operation, e:Expression, tS:Types,
-           tsbs:TypeSubstitution)
-         pj (wellFormedContext cx)
-      && opDefinition (o, tvS, e) in? cx
-      && (fa(i:Nat) i < length tS =>
-            pj (wellFormedType (cx, tS@i)))
-      && isTypeSubstFrom? (tsbs, tvS, tS)
-      => pj (theoreM (cx, OPI (o, tS) == typeSubstInExpr tsbs e)))
     | thRefl ->
       (fa (cx:Context, e:Expression, t:Type)
          pj (wellTypedExpr (cx, e, t))

@@ -49,7 +49,6 @@ spec
     | cxTdec  Proof * TypeName * Integer
     | cxOdec  Proof * Proof * Operation
     | cxTdef  Proof * Proof * TypeName
-    | cxOdef  Proof * Proof * Operation
     | cxAx    Proof * Proof * AxiomName
     | cxLem   Proof * Proof * LemmaName
     | cxTVdec Proof * TypeVariable
@@ -103,7 +102,6 @@ spec
     % theorems:
     | thAx         Proof * Proofs * AxiomName
     | thLem        Proof * Proofs * LemmaName  % not present in LD
-    | thDef        Proof * Proofs * Operation
     | thRefl       Proof
     | thSymm       Proof
     | thTrans      Proof * Proof
@@ -173,8 +171,8 @@ spec
       && pred (cxTdec (prf, tn, n))
       && pred (cxOdec (prf1, prf2, o))
       && pred (cxTdef (prf1, prf2, tn))
-      && pred (cxOdef (prf1, prf2, o))
       && pred (cxAx (prf1, prf2, an))
+      && pred (cxLem (prf1, prf2, ln))
       && pred (cxTVdec (prf, tv))
       && pred (cxVdec (prf1, prf2, v))
       && pred (speC prf)
@@ -220,7 +218,6 @@ spec
       && pred (exAbsAlpha (prf, v))
       && pred (thAx (prf, prfS, an))
       && pred (thLem (prf, prfS, ln))
-      && pred (thDef (prf, prfS, o))
       && pred (thRefl prf)
       && pred (thSymm prf)
       && pred (thTrans (prf1, prf2))
@@ -263,9 +260,9 @@ spec
                                             && closedProof? prf2
     | cxTdef       (prf1, prf2, _)          -> closedProof? prf1
                                             && closedProof? prf2
-    | cxOdef       (prf1, prf2, _)          -> closedProof? prf1
-                                            && closedProof? prf2
     | cxAx         (prf1, prf2, _)          -> closedProof? prf1
+                                            && closedProof? prf2
+    | cxLem        (prf1, prf2, _)          -> closedProof? prf1
                                             && closedProof? prf2
     | cxTVdec      (prf, _)                 -> closedProof? prf
     | cxVdec       (prf1, prf2, _)          -> closedProof? prf1
@@ -342,8 +339,6 @@ spec
     | thAx         (prf, prfS, _)           -> closedProof? prf
                                             && forall? closedProof? prfS
     | thLem        (prf, prfS, _)           -> closedProof? prf
-                                            && forall? closedProof? prfS
-    | thDef        (prf, prfS, _)           -> closedProof? prf
                                             && forall? closedProof? prfS
     | thRefl       prf                      -> closedProof? prf
     | thSymm       prf                      -> closedProof? prf

@@ -2,7 +2,30 @@ spec
 
   % API public default
 
-  import BasicAbbreviations, Occurrences
+  import BasicAbbreviations, Substitutions
+
+  (* This spec defines meta ops that capture the abbreviations introduced in
+  Section 6 of LD. The abbreviations introduced in Section 2 of LD are covered
+  in spec BasicAbreviations. *)
+
+  (* In LD, the expansion of certain abbreviations (e.g. binding conditionals)
+  involve "gamma" variables decorated by variables and expressions, such that
+  the "gamma" variables are distinct from the decorating variables and from
+  the free variables of the decorating expressions. As explained in spec
+  TypesAndExpressions, here we simply decorate abbreviation variables with
+  integers. Thus, in order to fulfill the distinctness requirement, we define
+  an op that takes as argument a (finite) set of variables and returns the
+  abbreviation variable decorated by the minimum natural number that does not
+  decorate any abbreviation variable in the argument set. *)
+
+  % API private
+  op minDistinctAbbrVar : FSet Variable -> Variable
+  def minDistinctAbbrVar vS =
+    abbr (minIn (fn(i:Integer) ->  % min of the set of all i:Integer such that
+      % i is a natural:
+      i >= 0 &&
+      % and i does not decorate any variable in vS:
+      (abbr i) nin? vS))
 
   (* In LD, a record updater is labeled by three record types. Here, we label
   it by, essentially, three pairs, each pair consisting of a sequence of
@@ -50,43 +73,24 @@ spec
 
   type BindingBranches = FSeq BindingBranch
 
-  (* In LD, the expansions of a binding conditional contains "gamma" variables
-  decorated by variables and expressions, such that the "gamma" variables are
-  distinct from the decorating variables and from the free variables of the
-  decorating expressions. As explained in spec TypesAndExpressions, here we
-  simply decorate abbreviation variables with integers. Thus, in order to
-  fulfill the distinctness requirement, we define an op that takes as
-  arguments the variables and expressions that decorate the "gamma" variables
-  in LD, and returns the abbreviation variable decorated by the minimum
-  natural number that does not decorate any abbreviation variable that appears
-  among the input variables or among the free variables of the input
-  expressions. *)
-
-  % API private
-  op minDistinctAbbrVar : Variables * Expressions -> Variable
-  def minDistinctAbbrVar (vS,eS) =
-    abbr (minIn (fn(i:Integer) ->  % min of the set of all i:Integer such that
-      % i is a natural:
-      i >= 0 &&
-      % and i does not decorate any variable in vS or free in eS:
-      (abbr i) nin? (toSet vS \/ \\// (map exprFreeVars eS))))
-
   (* LD defines a binding conditional to consist of one or more branches.
   Since here we avoid subtypes in public ops, we allow a binding conditional
   to have no branches. Therefore, we must define what expression is
   abbreviated by a binding conditional with no branches. We arbitrarily pick
-  the description operator for booleans, which is probably unlikely to occur
-  in an real-world spec. External code that uses the proof checker should not
-  use op COND to create a binding conditional with zero branches. *)
+  the ill-typed application of TRUE to itself, whose occurrence would cause a
+  proof to fail (because it is ill-typed), thus signaling some kind of
+  problem. External code that uses the proof checker should not use op COND to
+  create a binding conditional with zero branches. *)
 
   op COND : Type * BindingBranches -> Expression
   def COND (t,brS) =
     if empty? brS then
-      IOTA BOOL  % arbitrary
+      TRUE @ TRUE  % arbitrary
     else
       % expand first branch:
       let (vS,tS,b,e) = first brS in
-      let x:Variable = minDistinctAbbrVar (vS, single b <| e) in
+      let x:Variable =
+          minDistinctAbbrVar (toSet vS \/ exprFreeVars b \/ exprFreeVars e) in
       let branchResult:Expression = THE (x, t, EXX (vS, tS, b &&& VAR x == e)) in
       % return expansion if only branch, otherwise introduce conditional
       % and expand the other branches:
@@ -113,7 +117,7 @@ spec
     % expand to nested CASE's if free variables in e would be captured:
     else (* toSet allVS /\ exprFreeVars e ~= empty *)
       % pick a distinct abbreviation variable x:
-      let x = minDistinctAbbrVar (allVS, single e) in
+      let x = minDistinctAbbrVar (toSet allVS \/ exprFreeVars e) in
       % nested CASE's:
       CASE (t, t1, e,
             single (single x, single t, VAR x, CASE (t, t1, VAR x, brS)))
@@ -167,11 +171,11 @@ spec
   repeated constructors. Thus, we consider the minimum position in the
   sequence in which the constructor appears. The constructor may also not
   appear at all in the sequence; in that case, we define the abbreviation as
-  the description operator for booleans, as we do for binding conditionals
-  without branches (see above). Of course, external code that uses the proof
-  checker should always use EMBED? with a sequence of distinct constructors
-  that include the third argument constructor; otherwise, the embedding test
-  would not be well-typed. *)
+  the ill-typed application of TRUE to itself, as we do for binding
+  conditionals without branches (see above). Of course, external code that
+  uses the proof checker should always use EMBED? with a sequence of distinct
+  constructors that include the third argument constructor; otherwise, the
+  embedding test would not be well-typed. *)
 
   op EMBED? : Constructors * Types * Constructor -> Expression
   def EMBED? (cS,tS,c) =
@@ -184,6 +188,34 @@ spec
       let j:Nat = first (positionsOf (cS, c)) in
       FN (x, SUM(cS,tS), EX (y, tS@j, VAR x == EMBED (SUM(cS,tS), c) @ (VAR y)))
     else
-      IOTA BOOL  % arbitrary
+      TRUE @ TRUE  % arbitrary
+
+  (* Here, unlike LD, lemmas and axioms have names. So, besides the arguments
+  that correspond to those in LD, the following op has two additional
+  arguments, one for the name of the lemma and one for the name of the axiom.
+
+  The op definition abbreviation captured by the following op is only defined
+  if tvS1 and tvS have the same length and the expression e is such that all
+  the instances of o that occur in e have tvS1 as arguments. If these
+  conditions are not satisfied, we arbitrarily define the following op to
+  return a context with the ill-typed application of TRUE to itself (recall
+  that public ops do not use subtypes). *)
+
+  op OPDEF : TypeVariables * Operation * TypeVariables * Type * Expression *
+             LemmaName * AxiomName -> Context
+  def OPDEF (tvS1, o, tvS, t, e, ln, an) =
+    if tvS1 equiLong tvS && opInstancesInExpr o e = single (map VAR tvS1) then
+      let x:Variable = minDistinctAbbrVar (exprFreeVars e) in
+      let e1:Expression = exprSubstInExpr (OPI (o, map VAR tvS1)) (VAR x) e in
+      let t1:Type = typeSubstInType (fromSeqs (tvS, map VAR tvS1)) t in
+      single (lemma (ln, tvS1, EX1 (x, t1, VAR x == e1)))
+          <| (axioM (an, tvS1, OPI (o, map VAR tvS1) == e))
+    else
+      single (lemma (ln, empty, TRUE @ TRUE))  % arbitrary
+
+  (* For now, we do not define meta ops for the other kind of op definition
+  formalized in LD (the one to declare and define n ops at one time) and for
+  the op constraints formalized in LD, because those are currently not in
+  Specware. *)
 
 endspec

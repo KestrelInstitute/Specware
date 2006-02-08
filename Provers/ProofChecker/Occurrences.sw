@@ -19,33 +19,6 @@ spec
     | IF(e0,e1,e2) -> exprFreeVars e0 \/ exprFreeVars e1 \/ exprFreeVars e2
     | _            -> empty
 
-  % ops in types and expressions:
-
-  op typeOps : Type       -> FSet Operation
-  op exprOps : Expression -> FSet Operation
-
-  def typeOps = fn
-    | BOOL          -> empty
-    | VAR tv        -> empty
-    | TYPE(tn,tS)   -> \\// (map typeOps tS)
-    | ARROW(t1,t2)  -> typeOps t1 \/ typeOps t2
-    | RECORD(fS,tS) -> \\// (map typeOps tS)
-    | SUM(cS,tS)    -> \\// (map typeOps tS)
-    | RESTR(t,r)    -> typeOps t \/ exprOps r
-    | QUOT(t,q)     -> typeOps t \/ exprOps q
-
-  def exprOps = fn
-    | VAR v              -> empty
-    | OPI(o,tS)          -> single o \/ \\// (map typeOps tS)
-    | APPLY(e1,e2)       -> exprOps e1 \/ exprOps e2
-    | FN(v,t,e)          -> typeOps t \/ exprOps e
-    | EQ(e1,e2)          -> exprOps e1 \/ exprOps e2
-    | IF(e0,e1,e2)       -> exprOps e0 \/ exprOps e1 \/ exprOps e2
-    | IOTA t             -> typeOps t
-    | PROJECT(t,f)       -> typeOps t
-    | EMBED(t,c)         -> typeOps t
-    | QUOT t             -> typeOps t
-
   % items declared or defined in contexts:
 
   op contextElementTypes    : ContextElement -> FSet TypeName
@@ -97,8 +70,35 @@ spec
   def contextDefinesType?(cx,tn) =
     (ex (tvS:TypeVariables, t:Type) typeDefinition (tn, tvS, t) in? cx)
 
-  op contextDefinesOp? : Context * Operation -> Boolean
-  def contextDefinesOp?(cx,o) =
-    (ex (tvS:TypeVariables, e:Expression) opDefinition (o, tvS, e) in? cx)
+  (* The following two ops collect all the op instances with op name o in a
+  type or expression. Since o is given as argument and is therefore known, the
+  ops just return the type arguments of the type instances. *)
+
+  op opInstancesInType : Operation -> Type       -> FSet Types
+  op opInstancesInExpr : Operation -> Expression -> FSet Types
+
+  def opInstancesInType o = fn
+    | BOOL          -> empty
+    | VAR tv        -> empty
+    | TYPE(tn,tS)   -> \\// (map (opInstancesInType o) tS)
+    | ARROW(t1,t2)  -> opInstancesInType o t1 \/ opInstancesInType o t2
+    | RECORD(fS,tS) -> \\// (map (opInstancesInType o) tS)
+    | SUM(cS,tS)    -> \\// (map (opInstancesInType o) tS)
+    | RESTR(t,r)    -> opInstancesInType o t \/ opInstancesInExpr o r
+    | QUOT(t,q)     -> opInstancesInType o t \/ opInstancesInExpr o q
+
+  def opInstancesInExpr o = fn
+    | VAR v        -> empty
+    | OPI(o1,tS)   -> (if o1 = o then single tS else empty) \/
+                      \\// (map (opInstancesInType o) tS)
+    | APPLY(e1,e2) -> opInstancesInExpr o e1 \/ opInstancesInExpr o e2
+    | FN(v,t,e)    -> opInstancesInType o t \/ opInstancesInExpr o e
+    | EQ(e1,e2)    -> opInstancesInExpr o e1 \/ opInstancesInExpr o e2
+    | IF(e0,e1,e2) -> opInstancesInExpr o e0 \/
+                      opInstancesInExpr o e1 \/ opInstancesInExpr o e2
+    | IOTA t       -> opInstancesInType o t
+    | PROJECT(t,f) -> opInstancesInType o t
+    | EMBED(t,c)   -> opInstancesInType o t
+    | QUOT t       -> opInstancesInType o t
 
 endspec
