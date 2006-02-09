@@ -85,7 +85,7 @@
     (prepare_Specware_Lib specware-dir release-dir)
     (prepare_XEmacs_Lib   specware-dir release-dir)
     (prepare_C_Lib        specware-dir release-dir)
-    (prepare_Specware     specware-dir release-dir)
+    (prepare_Specware     specware-dir release-dir distribution-dir)
     (print-blank)
     (print-break)
     (print-blank)
@@ -526,18 +526,24 @@
 ;;; Specware
 ;;; ================================================================================
 
-(defun prepare_Specware (specware-dir release-dir)
-  (print-major "Specware")
-  (prepare_Specware_Generic specware-dir release-dir)
-  #+Linux     (prepare_Specware_Linux   specware-dir release-dir)
-  #+Mac       (prepare_Specware_Mac     specware-dir release-dir)
-  #+MSWindows (prepare_Specware_Windows specware-dir release-dir)
-  )
+(defun prepare_Specware (specware-dir release-dir distribution-dir)
+  (let ((lisp-utilities-dir (truename (ensure-subdirs-exist distribution-dir "Lisp_Utilities"))))
+    (print-major "Specware")
+    (prepare_Specware_Generic specware-dir release-dir)
+    #+Linux     (prepare_Specware_Linux   specware-dir release-dir lisp-utilities-dir)
+    #+Mac       (prepare_Specware_Mac     specware-dir release-dir lisp-utilities-dir)
+    #+MSWindows (prepare_Specware_Windows specware-dir release-dir lisp-utilities-dir)
+    ))
 
 (defun prepare_Specware_Generic (specware-dir release-dir)
   (print-minor "Specware" "generic")
-  (let ((source-dir (ensure-subdirs-exist specware-dir))
-	(target-dir (ensure-subdirs-exist release-dir "Components" "Specware" "Generic")))
+  (let* ((source-dir  (ensure-subdirs-exist specware-dir))
+	 (generic-dir (ensure-subdirs-exist source-dir  "Release" "Generic"))
+	 (target-dir  (ensure-subdirs-exist release-dir "Components" "Specware" "Generic")))
+
+    ;; License file (InstallShield looks for this)
+    (copy-dist-file (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults generic-dir)
+		    (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults target-dir))
 
     ;; Icons
     (copy-dist-file (make-pathname :name "S" :type "ico" :defaults (extend-directory specware-dir "Icons"))
@@ -593,7 +599,7 @@
     ))
 
 #+Linux
-(defun prepare_Specware_Linux (specware-dir release-dir)
+(defun prepare_Specware_Linux (specware-dir release-dir lisp-utilities-dir)
   (print-minor "Specware" "Linux")
   (let* ((source-dir              (ensure-subdirs-exist specware-dir))
 	 (source-buildscripts-dir (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
@@ -611,11 +617,11 @@
 				   target-dir
 
 				   ;; a list of files to load into the new application
-				   (list (merge-pathnames source-buildscripts-dir "LoadUtilities.lisp")
+				   (list (merge-pathnames lisp-utilities-dir    "LoadUtilities.lisp")
+					 (merge-pathnames lisp-utilities-dir    "MemoryManagement.lisp")
+					 (merge-pathnames lisp-utilities-dir    "CompactMemory.lisp")
 					 (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")  
-					 (merge-pathnames source-buildscripts-dir "MemoryManagement.lisp")
 					 (merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
-					 (merge-pathnames source-buildscripts-dir "CompactMemory.lisp")
 					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))
 
 				   ;; a list of files to copy to the distribution directory
@@ -628,7 +634,6 @@
 					 (merge-pathnames source-linux-dir       "Find_SPECWARE4")
 					 (merge-pathnames source-linux-dir       "Update_Path")
 					 (merge-pathnames source-linux-dir       "Update_SWPATH")
-					 (merge-pathnames source-linux-dir       "SpecwareClickThruLicense_Linux.txt")
 					 (merge-pathnames source-generic-dir     "StartSpecwareShell.lisp"))
 				   t)
     ;; Patches
@@ -636,13 +641,13 @@
     ))
 
 #+Mac
-(defun prepare_Specware_Mac (specware-dir release-dir)
-  (declare (ignore specware-dir release-dir))
+(defun prepare_Specware_Mac (specware-dir release-dir lisp-utilities-dir)
+  (declare (ignore specware-dir release-dir lisp-utilities-dir))
   (print-minor "Specware" "Mac")
   )
 
 #+MSWindows
-(defun prepare_Specware_Windows (specware-dir release-dir)
+(defun prepare_Specware_Windows (specware-dir release-dir lisp-utilities-dir)
   (print-minor "Specware" "Windows")
   (let* ((source-dir                 (ensure-subdirs-exist specware-dir))
 	 (source-buildscripts-dir    (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
@@ -660,11 +665,11 @@
 				   target-dir
 
 				   ;; a list of files to load into the new application
-				   (list (merge-pathnames source-buildscripts-dir "LoadUtilities.lisp")
+				   (list (merge-pathnames lisp-utilities-dir    "LoadUtilities.lisp")
+					 (merge-pathnames lisp-utilities-dir    "MemoryManagement.lisp")
+					 (merge-pathnames lisp-utilities-dir    "CompactMemory.lisp")
 					 (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")
-					 (merge-pathnames source-buildscripts-dir "MemoryManagement.lisp")
 					 (merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
-					 (merge-pathnames source-buildscripts-dir "CompactMemory.lisp")
 					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))
 
 				   ;; a list of files to copy to the distribution directory
@@ -675,7 +680,6 @@
 					 (merge-pathnames source-windows-dir         "Find_SPECWARE4.cmd")
 					 (merge-pathnames source-windows-dir         "Update_Path.cmd")
 					 (merge-pathnames source-windows-dir         "Update_SWPATH.cmd")
-					 (merge-pathnames source-windows-dir         "SpecwareClickThruLicense_Windows.txt")
 					 (merge-pathnames source-generic-dir         "StartSpecwareShell.lisp"))
 				   t)
     ;; CVS is perversely hardwired to refuse accept *.exe files.

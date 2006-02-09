@@ -60,7 +60,7 @@
 ;;    change-directory
 ;;    current-directory
 ;;
-(let ((utils (format nil "~A/Release/BuildScripts/LoadUtilities.lisp" (specware::getenv "SPECWARE4"))))
+(let ((utils (format nil "~A/Lisp_Utilities/LoadUtilities.lisp" (specware::getenv "DISTRIBUTION"))))
   (load utils)
   (compile-and-load-lisp-file utils))
 
