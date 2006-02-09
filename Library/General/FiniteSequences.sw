@@ -332,7 +332,7 @@ FSeq qualifying spec
     % remove `Some' wrapper:
     the(r) map (embed Some) r = s
 
-  % sequences of `Option' values are have the same "shape" (i.e. same length
+  % sequences of `Option' values have the same "shape" (i.e. same length
   % and matching `None' and `Some' values at every position `i'):
   op matchingOptionSeqs? : [a,b] FSeq (Option a) * FSeq (Option b) -> Boolean
   def matchingOptionSeqs?(s1,s2) =
