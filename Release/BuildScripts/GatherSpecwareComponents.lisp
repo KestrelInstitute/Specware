@@ -527,8 +527,8 @@
 ;;; ================================================================================
 
 (defun prepare_Specware (specware-dir release-dir distribution-dir)
+  (print-major "Specware")
   (let ((lisp-utilities-dir (truename (ensure-subdirs-exist distribution-dir "Lisp_Utilities"))))
-    (print-major "Specware")
     (prepare_Specware_Generic specware-dir release-dir)
     #+Linux     (prepare_Specware_Linux   specware-dir release-dir lisp-utilities-dir)
     #+Mac       (prepare_Specware_Mac     specware-dir release-dir lisp-utilities-dir)
@@ -617,9 +617,9 @@
 				   target-dir
 
 				   ;; a list of files to load into the new application
-				   (list (merge-pathnames lisp-utilities-dir    "LoadUtilities.lisp")
-					 (merge-pathnames lisp-utilities-dir    "MemoryManagement.lisp")
-					 (merge-pathnames lisp-utilities-dir    "CompactMemory.lisp")
+				   (list (merge-pathnames lisp-utilities-dir      "LoadUtilities.lisp")
+					 (merge-pathnames lisp-utilities-dir      "MemoryManagement.lisp")
+					 (merge-pathnames lisp-utilities-dir      "CompactMemory.lisp")
 					 (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")  
 					 (merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
 					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))
