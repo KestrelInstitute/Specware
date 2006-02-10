@@ -55,6 +55,9 @@ spec
   op printAxiomName : AxiomName -> String
   def printAxiomName = id
 
+  op printLemmaName : LemmaName -> String
+  def printLemmaName = id
+
   op printField : Field -> String
   def printField = fn
     | user f -> printUserField f
@@ -201,14 +204,14 @@ spec
     "def " ++ printTypeName tn ++ "[" ++ printTypeVariables tvS ++
     "] = " ++ printType t ++ newline
 
-  op printOpDefinition : Operation * TypeVariables * Expression -> String
-  def printOpDefinition (o,tvS,e) =
-    "def {" ++ printTypeVariables tvS ++ "} " ++ printOperation o ++
-    " = " ++ printExpression e ++ newline
-
   op printAxiom : AxiomName * TypeVariables * Expression -> String
   def printAxiom (an,tvS,e) =
     "axiom " ++ printAxiomName an ++ " is {" ++ printTypeVariables tvS ++
+    "} " ++ printExpression e ++ newline
+
+  op printLemma : LemmaName * TypeVariables * Expression -> String
+  def printLemma (ln,tvS,e) =
+    "axiom " ++ printLemmaName ln ++ " is {" ++ printTypeVariables tvS ++
     "} " ++ printExpression e ++ newline
 
   op printTypeVarDeclaration : TypeVariable -> String
@@ -224,8 +227,8 @@ spec
     | typeDeclaration tn_n    -> printTypeDeclaration tn_n
     | opDeclaration o_tvS_t   -> printOpDeclaration o_tvS_t
     | typeDefinition tn_tvS_t -> printTypeDefinition tn_tvS_t
-    | opDefinition o_tvS_e    -> printOpDefinition o_tvS_e
     | axioM an_tvS_e          -> printAxiom an_tvS_e
+    | lemma ln_tvS_e          -> printLemma ln_tvS_e
     | typeVarDeclaration tv   -> printTypeVarDeclaration tv
     | varDeclaration v_t      -> printVarDeclaration v_t
     % each context element is printed in its own line
@@ -307,11 +310,11 @@ spec
     | typeNotDefined (cx, tn) ->
       "type " ++ printTypeName tn ++
       " not defined in" ++ newline ++ printContext cx
-    | opNotDefined (cx, o) ->
-      "op " ++ printOperation o ++
-      " not defined in" ++ newline ++ printContext cx
     | axiomNotDeclared (cx, an) ->
       "axiom " ++ printAxiomName an ++
+      " not declared in" ++ newline ++ printContext cx
+    | lemmaNotDeclared (cx, ln) ->
+      "lemma " ++ printLemmaName ln ++
       " not declared in" ++ newline ++ printContext cx
     | typeVarNotDeclared (cx, tv) ->
       "type variable " ++ printTypeVariable tv ++
@@ -328,11 +331,11 @@ spec
     | typeAlreadyDefined (cx, tn) ->
       "type " ++ printTypeName tn ++
       " already defined in" ++ newline ++ printContext cx
-    | opAlreadyDefined (cx, o) ->
-      "op " ++ printOperation o ++
-      " already defined in" ++ newline ++ printContext cx
     | axiomAlreadyDeclared (cx, an) ->
       "axiom " ++ printAxiomName an ++
+      " already declared in" ++ newline ++ printContext cx
+    | lemmaAlreadyDeclared (cx, ln) ->
+      "lemma " ++ printLemmaName ln ++
       " already declared in" ++ newline ++ printContext cx
     | typeVarAlreadyDeclared (cx, tv) ->
       "type variable " ++ printTypeVariable tv ++

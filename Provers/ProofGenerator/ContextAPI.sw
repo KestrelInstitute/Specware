@@ -23,16 +23,16 @@ spec
       | typeDefinition _ -> true
       | _ -> false
 
-  op opDefinition?: ContextElement -> Boolean
-  def opDefinition?(ce) =
-    case ce of
-      | opDefinition _ -> true
-      | _ -> false
-
   op axioM?: ContextElement -> Boolean
   def axioM?(ce) =
     case ce of
       | axioM _ -> true
+      | _ -> false
+
+  op lemma?: ContextElement -> Boolean
+  def lemma?(ce) =
+    case ce of
+      | lemma _ -> true
       | _ -> false
 
   op typeVarDeclaration?: ContextElement -> Boolean
@@ -51,8 +51,8 @@ spec
   type TypeDeclarationContextElement = (ContextElement | typeDeclaration?)
   type OpDeclarationContextElement = (ContextElement | opDeclaration?)
   type TypeDefinitionContextElement = (ContextElement | typeDefinition?)
-  type OpDefinitionContextElement = (ContextElement | opDefinition?)
   type AxioMContextElement = (ContextElement | axioM?)
+  type LemmaContextElement = (ContextElement | lemma?)
   type TypeVarDeclarationContextElement = (ContextElement | typeVarDeclaration?)
   type VarDeclarationContextElement = (ContextElement | varDeclaration?)
   

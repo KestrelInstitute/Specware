@@ -168,16 +168,22 @@ Translate qualifying spec
                  | Pi (tyVars,SortedTerm (term,typ,_),_) -> {
                        newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
                        newTerm <- msToPC spc term;
-                       return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newTerm)))
+% the following needs to be updated to reflect the elimination of opDefinition from the proof checker:
+                       return fSeq
+%                       return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newTerm)))
                      }
                  | SortedTerm (term,Pi (tyVars,typ,pos),_) -> {
                        newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
                        newTerm <- msToPC spc term;
-                       return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newTerm)))
+% the following needs to be updated to reflect the elimination of opDefinition from the proof checker:
+                       return fSeq
+%                       return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newTerm)))
                      }
                  | SortedTerm (term,typ,_) -> {
                        newTerm <- msToPC spc term;
-                       return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), empty, newTerm)))
+% the following needs to be updated to reflect the elimination of opDefinition from the proof checker:
+                       return fSeq
+%                       return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), empty, newTerm)))
                      }
                  | _ -> raise (Fail ("translateMSToPC: specToContext: ill-formed definition for op " ^ (printQualifiedId qid) ^ " term = " ^ (System.anyToString opInfo.dfn)))
              }

@@ -34,8 +34,8 @@ spec
     | cxTdec(p,tn, i) -> "(cxTdec"^sep^printTypeName(tn)^sep^printInteger(i)^pSep^printProofAux(p, sn)^")"
     | cxOdec(p, p2, oper) -> "(cxOdec"^sep^printOperation(oper)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | cxTdef(p, p2, tn) -> "(cxTdef"^sep^printTypeName(tn)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
-    | cxOdef(p, p2, oper) -> "(cxOdef"^sep^printOperation(oper)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | cxAx(p, p2, an) -> "(cxAx"^sep^printAxiomName(an)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
+    | cxLem(p, p2, ln) -> "(cxLem"^sep^printLemmaName(ln)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | cxTVdec(p, tv) -> "(cxTVdec"^sep^printTypeVariable(tv)^pSep^printProofAux(p, sn)^")"
     | cxVdec(p, p2, v) -> "(cxVdec"^sep^printVariable(v)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     % well-formed specs ("spec" is disallowed):
@@ -86,7 +86,6 @@ spec
     | exAbsAlpha(p, v) -> "(exAbsAlpha"^sep^printVariable(v)^pSep^printProofAux(p, sn)^")"
     % theorems:
     | thAx(p, ps, an) -> "(thAx"^sep^printAxiomName(an)^pSep^printProofAux(p, sn)^")"
-    | thDef(p, ps, oper) -> "(thDef"^sep^printOperation(oper)^pSep^printProofsAux(p |> ps, sn)^")"
     | thRefl(p) -> "(thRefl"^pSep^printProofAux(p, sn)^")"
     | thSymm(p) -> "(thSymm"^pSep^printProofAux(p, sn)^")"
     | thTrans(p, p2) -> "(thTrans"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
@@ -143,8 +142,8 @@ spec
     | cxTdec(p,tn, i) -> 1 + countProofAuxInt(p)
     | cxOdec(p, p2, oper) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
     | cxTdef(p, p2, tn) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
-    | cxOdef(p, p2, oper) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
     | cxAx(p, p2, an) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
+    | cxLem(p, p2, ln) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
     | cxTVdec(p, tv) -> 1 + countProofAuxInt(p)
     | cxVdec(p, p2, v) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
     % well-formed specs ("spec" is disallowed):
@@ -195,7 +194,6 @@ spec
     | exAbsAlpha(p, v) -> countProofAuxInt(p)
     % theorems:
     | thAx(p, ps, an) -> countProofAuxInt(p) + countProofsAuxInt(ps)
-    | thDef(p, ps, oper) -> countProofAuxInt(p) + countProofsAuxInt(ps)
     | thRefl(p) -> countProofAuxInt(p)
     | thSymm(p) -> countProofAuxInt(p)
     | thTrans(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)

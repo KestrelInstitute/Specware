@@ -79,6 +79,9 @@ spec
     let wfTProof = wellFormedTypeProof(wftCxPrf, wftCx, t) in
     cxTdef(cxProof, wfTProof, tn)
 
+% the following two ops are commented out to reflect the recent change in the
+% proof checker that op definitions are no longer primitive but abbreviations:
+(*
   op cxOdefProof: Context * OpDefinitionContextElement -> Proof
   def cxOdefProof(cx, od) =
     let opDefinition(oper, ts, exp) = od in
@@ -103,7 +106,7 @@ spec
 				  replaceOperationWithVar(oper, var, e1),
 				  replaceOperationWithVar(oper, var, e2))
       | _                  -> expr
-
+*)
 			     
 
 (*
@@ -132,6 +135,14 @@ spec
     let expBoolProof = expIsBoolProof(wftCxPrf, wftCx, exp) in
     cxAx(cxProof, expBoolProof, an)
 
+  op cxLemProof: Context * LemmaContextElement -> Proof
+  def cxLemProof(cx, lemd) =
+    let lemma(ln, tvs, exp) = lemd in
+    let cxProof = contextProof(cx) in
+    let lemProof =
+        proofObligationAssumption (cx ++ map typeVarDeclaration tvs, exp) in
+    cxLem(cxProof, lemProof, ln)
+
   op cxTVdecProof: Context * TypeVarDeclarationContextElement -> Proof
   def cxTVdecProof(cx, tvd) =
     let typeVarDeclaration(tv) = tvd in
@@ -155,8 +166,8 @@ spec
       if typeDeclaration?(ce) then cxTdecProof(cx, ce)
       else if opDeclaration?(ce) then cxOdecProof(cx, ce)
       else if typeDefinition?(ce) then cxTDefProof(cx, ce)
-      else if opDefinition?(ce) then cxOdefProof(cx, ce)
       else if axioM?(ce) then cxAxProof(cx, ce)
+      else if lemma?(ce) then cxLemProof(cx, ce)
       else if typeVarDeclaration?(ce) then cxTVdecProof(cx, ce)
       else (* if varDeclaration?(ce) then *) cxVdecProof(cx, ce)
 
