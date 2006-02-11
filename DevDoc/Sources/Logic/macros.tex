@@ -17,7 +17,7 @@
 \newcommand{\abbiteM}[3]{#1&\longrightarrow&#2\\&&\mbox{where }#3\\}
 
 \newcommand{\abbvert}[2]
- {\begin{array}{l}#1\\\\\hspace*{2em}\longrightarrow\\#2\end{array}}
+ {\begin{array}{l}#1\\\hspace*{2em}\longrightarrow\\#2\end{array}}
 
 \newtheorem{theorem}{Theorem}[section]
 \newenvironment{proof}{\noindent\textbf{Proof:}}{$\Box$}
@@ -105,10 +105,6 @@
 \newcommand{\tsubO}{\tsub{\typ}{\tspred}}
 \newcommand{\tspred}{r}
 
-\newcommand{\tquot}[2]{#1/#2}
-\newcommand{\tquotO}{\tquot{\typ}{\tqpred}}
-\newcommand{\tqpred}{q}
-
 \newcommand{\Expr}{\mathit{Exp}}
 \newcommand{\expr}{e} % avoid conflict with \exp
 \newcommand{\exprS}{\seq{\expr}}
@@ -166,10 +162,6 @@
 \newcommand{\embedO}{\embed{\tsumO}{\cnam_j}}
 \newcommand{\emb}[1]{\mathsf{emb}\;{#1}}
 \newcommand{\embO}{\emb{\cnam_j}}
-
-\newcommand{\quot}[1]{\mathsf{quo}_{#1}}
-\newcommand{\quotO}{\quot{\tquotO}}
-\newcommand{\quo}{\mathsf{quo}}
 
 \newcommand{\varfx}{\gamma}
 \newcommand{\varfxI}[1]{\varfx_{#1}}
@@ -369,6 +361,21 @@
 \newcommand{\tsumO}{\tsum{i}{\cnam_i}{\optyp_i}{\recog_i}}
 
 \newcommand{\tdefsum}[3]{\mathsf{def}\ #1[#2]=#3}
+
+\newcommand{\equival}[1]{\mathsf{equiv}_{#1}}
+
+\newcommand{\absconjIII}[5]
+ {\begin{array}[t]{r@{\;}l}
+  \lambda\bnd{#1}{#2}. & #3 \\ \conjY & #4 \\ \conjY & #5
+  \end{array}}
+
+\newcommand{\tquot}[4]{#1/#2\!:\!#3\!:\!#4}
+\newcommand{\tquotO}{\tquot{\typ}{\tqpred}{\quot}{\choo}}
+\newcommand{\tqpred}{\mathit{eq}}
+\newcommand{\quot}{\mathit{quo}}
+\newcommand{\choo}{\mathit{ch}}
+
+\newcommand{\tdefquot}[3]{\mathsf{def}\ #1[#2]=#3}
 
 \newcommand{\odec}[3]{\mathsf{op}\ #1\!:\!\{#2\}\;#3}
 \newcommand{\odecO}{\odec{\onam}{\tvarS}{\typ}}

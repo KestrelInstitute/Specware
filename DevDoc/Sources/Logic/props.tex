@@ -62,7 +62,7 @@ free type variables of a type, expression, or context (element)
 \eqitem{\ftvar{\trecO}} {\bigcup_i\ftvar{\typ_i}}
 %\eqitem{\ftvar{\tsumO}} {\bigcup_i\ftvar{\typ_i}}
 \eqitem{\ftvar{\tsubO}} {\ftvar{\typ}\cup\ftvar{\tspred}}
-\eqitem{\ftvar{\tquotO}}{\ftvar{\typ}\cup\ftvar{\tqpred}}
+%\eqitem{\ftvar{\tquotO}}{\ftvar{\typ}\cup\ftvar{\tqpred}}
 \end{eqlist}
 \]
 \[
@@ -77,7 +77,7 @@ free type variables of a type, expression, or context (element)
 \eqitem{\ftvar{\descopO}}{\ftvar{\typ}}
 \eqitem{\ftvar{\projopO}}{\ftvar{\trecO}}
 %\eqitem{\ftvar{\embedO}} {\ftvar{\tsumO}}
-\eqitem{\ftvar{\quotO}}  {\ftvar{\tquotO}}
+%\eqitem{\ftvar{\quotO}}  {\ftvar{\tquotO}}
 \end{eqlist}
 \]
 \[
@@ -592,12 +592,6 @@ defined in \secref{syntax} as expected.
        {\efvar{\expr}-\setI{\var}}
 \eqitem{\efvar{\projO}}
        {\efvar{\expr}}
-\eqitem{\efvar{\rcop}}
-       {\emptyset}
-\eqitem{\efvar{\recO}}
-       {\bigcup_i\efvar{\expr_i}}
-\eqitem{\efvar{\tupleO}}
-       {\bigcup_i\efvar{\expr_i}}
 \end{eqlist}
 \]
 \end{theorem}
@@ -712,12 +706,6 @@ defined in \secref{syntax} as expected.
        {\cond{\varI=\var}{\exIO}{\exI{\var}{\typ}{\esbsO{\expr}}}}
 \eqitem{\esbsO{(\projO)}}
        {\proj{\esbsO{\expr}}{\fnam}}
-\eqitem{\esbsO{\rcop}}
-       {\rcop}
-\eqitem{\esbsO{\recO}}
-       {\rec{i}{\fnam_i}{\esbsO{\expr_i}}}
-\eqitem{\esbsO{\tupleO}}
-       {\tuple{\seqFT{\esbsO{\expr_1}}{\esbsO{\expr_n}}}}
 \end{eqlistC}
 \]
 \end{theorem}
@@ -783,12 +771,6 @@ defined in \secref{syntax} as expected.
              {\emptyset}}
 \eqitem{\cvarvO{\projO}}
        {\cvarvO{\expr}}
-\eqitem{\cvarvO{\rcop}}
-       {\emptyset}
-\eqitem{\cvarvO{\recO}}
-       {\bigcup_i\cvarvO{\expr_i}}
-\eqitem{\cvarvO{\tupleO}}
-       {\bigcup_i\cvarvO{\expr_i}}
 \end{eqlist}
 \]
 \end{theorem}
@@ -840,12 +822,6 @@ defined in \secref{syntax} as expected.
        {\exI{\var}{\tsbsO{\typ}}{\tsbsO{\expr}}}
 \eqitem{\tsbsO{(\projO)}}
        {\proj{\tsbsO{\expr}}{\fnam}}
-\eqitem{\tsbsO{\recopO}}
-       {\recop{\trec{i}{\fnam_i}{\tsbsO{\typ_i}}}}
-\eqitem{\tsbsO{\rectO}}
-       {\rect{i}{\fnam_i}{\tsbsO{\typ_i}}{\tsbsO{\expr_i}}}
-\eqitem{\tsbsO{\tupleO}}
-       {\tuple{\seqFT{\tsbsO{\expr_1}}{\tsbsO{\expr_n}}}}
 \end{eqlistC}
 \]
 \end{theorem}
@@ -895,12 +871,6 @@ defined in \secref{syntax} as expected.
        {\ftvar{\typ}\cup\ftvar{\expr}}
 \eqitem{\ftvar{\projO}}
        {\ftvar{\expr}\cup\bigcup_i\ftvar{\typ_i}}
-\eqitem{\ftvar{\recopO}}
-       {\bigcup_i\ftvar{\typ_i}}
-\eqitem{\ftvar{\rectO}}
-       {\bigcup_i(\ftvar{\typ_i}\cup\ftvar{\expr_i})}
-\eqitem{\ftvar{\tupleO}}
-       {\bigcup_i(\ftvar{\typ_i}\cup\ftvar{\expr_i})}
 \end{eqlist}
 \]
 \end{theorem}
@@ -1065,15 +1035,11 @@ The predicate of a restriction type is well-typed, with the expected type:
 \]
 \end{theorem}
 
-The predicate of a well-formed restriction or quotient type has no free
-variables:
+The predicate of a well-formed restriction type has no free variables:
 
 \begin{theorem}\label{thm-no-free-vars-in-types}
 \[
-\begin{array}{l@{\ \ \IMPLIES\ \ }l}
-\istyO{\tsubO}  & \efvar{\tspred}=\emptyset\\
-\istyO{\tquotO} & \efvar{\tqpred}=\emptyset
-\end{array}
+\istyO{\tsubO}\ \ \IMPLIES\ \ \efvar{\tspred}=\emptyset
 \]
 \end{theorem}
 
@@ -1497,7 +1463,7 @@ suggest te existence of such a proof.
 \[
 \rruleI
  {\istyO{\typ}}
- {\hastyO{\exIopO}{(\tarr{\typ}{\bool})}{\bool}}
+ {\hastyO{\exIopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
  {\ReexIop}
 \]
 }

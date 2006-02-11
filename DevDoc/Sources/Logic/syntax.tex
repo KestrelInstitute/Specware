@@ -16,7 +16,7 @@ We postulate the existence of an infinite set of names
 
 We inductively define the set of types as
 \[
-\setdefVII
+\setdefVI
  {\Typ}
  {+}
  {\setI{\bool}}
@@ -28,7 +28,7 @@ We inductively define the set of types as
  {\setST{\tsubO}{\typ\in\Typ\AND\tspred\in\Expr}}
 %\setdefVIIIoII
 % {+}
- {\setST{\tquotO}{\typ\in\Typ\AND\tqpred\in\Expr}}
+% {\setST{\tquotO}{\typ\in\Typ\AND\tqpred\in\Expr}}
 \]
 where $\Expr$ is defined later.\footnote{Types depend on expressions, which
 depend on types. Thus, types and expressions are inductively defined together,
@@ -65,13 +65,12 @@ distinct names.
 %empty record as argument to $\cnam_i$ in expressions and patterns where
 %needed.
 \item
-Restriction types $\tsubO$ and quotient types $\tquotO$ are obtained by
-combining types $\typ$ with expressions $\tspred$ and $\tqpred$ (meant to be
-suitable predicates). Restriction and quotient types create the dependency of
-types on expressions. Restriction types as defined above also capture
-comprehension types as defined in \cite{lm}: as mentioned in \cite{lm}, a
-comprehension type can be turned into a restriction type by re-combining the
-pattern and expression into a lambda expression.
+Restriction types $\tsubO$ are obtained by combining types $\typ$ with
+expressions $\tspred$ (meant to be suitable predicates). Restriction types
+create the dependency of types on expressions. Restriction types as defined
+above also capture comprehension types as defined in \cite{lm}: as mentioned
+in \cite{lm}, a comprehension type can be turned into a restriction type by
+re-combining the pattern and expression into a lambda expression.
 \end{itemize}
 
 We introduce the abbreviation
@@ -90,7 +89,7 @@ capture the natural literal fields used in \cite{lm}.
 
 We inductively define the set of expressions as
 \[
-\setdefIXoI
+\setdefVIIIoI
  {\Expr}
  {+}
  {\setST{\var}{\var\in\Nam}}
@@ -100,11 +99,11 @@ We inductively define the set of expressions as
  {\setST{\eqO}{\expr_1,\expr_2\in\Expr}}
  {\setST{\iifO}{\expr_0,\expr_1,\expr_2\in\Expr}}
  {\setST{\descopO}{\typ\in\Typ}}
-\setdefIXoII
+\setdefVIIIoII
  {+}
  {\setST{\projopO}{\trecO\in\Typ}}
 % {\setST{\embedO}{\tsumO\in\Typ}}
- {\setST{\quotO}{\tquotO\in\Typ}}
+% {\setST{\quotO}{\tquotO\in\Typ}}
 \]
 
 Explanation:
@@ -143,9 +142,9 @@ inferrable or irrelevant.
 %An embedder $\embedO$ is tagged by a sum type and by a constructor of that sum
 %type. We may write $\embedO$ as just $\embO$ when the sum type is inferrable
 %or irrelevant.
-\item
-A quotienter $\quotO$ is tagged by a quotient type. We may write $\quotO$ as
-just $\quo$ when the quotient type is inferrable or irrelevant.
+%\item
+%A quotienter $\quotO$ is tagged by a quotient type. We may write $\quotO$ as
+%just $\quo$ when the quotient type is inferrable or irrelevant.
 %\item
 %Instead of introducing equalities $\eqO$, we could have introduced an equality
 %operator $\eqopO$ to be applied to expressions $\expr_1$ and $\expr_2$
@@ -230,20 +229,10 @@ We introduce the abbreviations (many of which are expressions defined in
 %        {\absS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
 \abbitem{\projO}
         {\app{\pjop{\fnam}}{\expr}}
-\abbitem{\recopO}
-        {\abs{\varfxI{1}}{\typ_1}
-             {\ldots\abs{\varfxI{n}}{\typ_n}
-                        {\desc{\varfx}{\trecO}
-                              {\conjI{i}{(\eq{\proj{\varfx}{\fnam_i}}
-                                             {\varfxI{i}})}}}}}
-\abbitem{\rectFTO}
-        {\app{\app{\recopO}{\expr_1}}{\ldots\;\expr_n}}
-\abbitem{\tuple{\seqFT{\expr_1}{\expr_n}}}
-        {\recFT{\projnam{1}}{\expr_1}{\projnam{n}}{\expr_n}}
 \end{abblist}
 \]
-where $\varfx$, $\varfx'$, $\varfxpred$, and each $\varfxI{i}$ are fixed but
-unspecified names in $\Nam$ such that they are all distinct.
+where $\varfx$, $\varfx'$, and $\varfxpred$ are fixed but unspecified names in
+$\Nam$ that are all distinct.
 
 Explanation:
 \begin{itemize}
@@ -268,24 +257,6 @@ that both $\faS{\seqO}{\expr}$ and $\exS{\seqO}{\expr}$ stand for $\expr$.
 \item
 A dotted projection $\projO$ abbreviates an applied projection whose record
 type is implicit; this is why no record type appears in $\projO$.
-\item
-A record constructor $\recopO$ is tagged by a record type and is defined by
-means of a description; records are characterized by their components. We may
-write $\recopO$ as just $\rcop$ when the record type is inferrable or
-irrelevant. Note that $\recop{\trecmt}$ denotes the empty record (a
-conjunction $\conjI{i}{\expr_i}$ consisting of no conjuncts, i.e.\ such that
-$n=0$, stands for $\true$).  The notation $\rectO$ is a more readable version
-of an applied record constructor. We may write $\rectO$ as just $\recO$ when
-the component types are inferrable or irrelevant.
-%A record $\recO$ abbreviates infinitely many expressions as well, one for each
-%$\var\in\Nam$ and $\typS\in\Seq{\Typ}$ satisfying the given restrictions (as
-%defined later, an expression may have more than one type). This abbreviation
-%makes use of a description because a record is characterized by its
-%components.
-\item
-A tuple $\tupleO$ captures tuple displays as defined in \cite{lm}. It
-abbreviates a record construction of a product type whose component types are
-implicit; this is why no component types appear in $\tupleO$.
 \end{itemize}
 
 %With the exception of unique existentials, all the above abbreviations
@@ -307,14 +278,14 @@ of an expression
 \eqitem{\efvar{\descopO}}    {\emptyset}
 \eqitem{\efvar{\pjop{\fnam}}}{\emptyset}
 %\eqitem{\efvar{\emb{\cnam}}} {\emptyset}
-\eqitem{\efvar{\quo}}        {\emptyset}
+%\eqitem{\efvar{\quo}}        {\emptyset}
 \end{eqlist}
 \]
 Note that we do not consider the free variables in expressions contained in
 types contained in expressions (e.g.\ we do not consider the free variables in
-$\tqpred$ as part of the free variables of $\quotO$). The reason is that, as
-defined later, all the expressions contained in well-formed types have no free
-variables.
+$\tspred$ as part of the free variables of $\op{\onam}{\tsubO}$). The reason
+is that, as defined later, all the expressions contained in well-formed types
+have no free variables.
 %The free variables of the quotient type predicate $\tqpred$ do not contribute
 %to the free variables of $\quotO$ because, as defined later, in well-formed
 %types and well-typed expressions those predicates have no free variables.
@@ -495,8 +466,8 @@ expression $x$ (written $\tsbsO{x}$)
 %       {\tsum{i}{\cnam_i}{\tsbsO{\typ_i}}}
 \eqitem{\tsbsO{(\tsubO)}}
        {\tsub{\tsbsO{\typ}}{\tsbsO{\tspred}}}
-\eqitem{\tsbsO{(\tquotO)}}
-       {\tquot{\tsbsO{\typ}}{\tsbsO{\tqpred}}}
+%\eqitem{\tsbsO{(\tquotO)}}
+%       {\tquot{\tsbsO{\typ}}{\tsbsO{\tqpred}}}
 \end{eqlistC}
 \]
 \[
@@ -519,8 +490,8 @@ expression $x$ (written $\tsbsO{x}$)
        {\projop{\tsbsO{\left(\trecO\right)}}{\fnam_j}}
 %\eqitem{\tsbsO{\left(\embedO\right)}}
 %       {\embed{\tsbsO{\left(\tsumO\right)}}{\cnam_j}}
-\eqitem{\tsbsO{\left(\quotO\right)}}
-       {\quot{\tsbsO{(\tquotO)}}}
+%\eqitem{\tsbsO{\left(\quotO\right)}}
+%       {\quot{\tsbsO{(\tquotO)}}}
 \end{eqlistC}
 \]
 where of course
@@ -627,8 +598,8 @@ $\esbsO{\expr}$)
        {\pjop{\fnam}}
 %\eqitem{\esbsO{(\emb{\cnam})}}
 %       {\emb{\cnam}}
-\eqitem{\esbsO{\quo}}
-       {\quo}
+%\eqitem{\esbsO{\quo}}
+%       {\quo}
 \end{eqlistC}
 \]
 No substitution is performed in the expressions contained in types contained
@@ -699,8 +670,8 @@ $\expr$ at the free occurrences of $\varI$ in $\expr$)
        {\emptyset}
 %\eqitem{\cvarvO{\emb{\cnam}}}
 %       {\emptyset}
-\eqitem{\cvarvO{\quo}}
-       {\emptyset}
+%\eqitem{\cvarvO{\quo}}
+%       {\emptyset}
 \end{eqlist}
 \]
 

@@ -21,7 +21,7 @@ we are left to prove
 \]
 which we do by induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}
 \begin{derivation}
 \stepO{\cvarvO{\expr}=\emptyset}
       {\defof{\cvarvY}}
@@ -127,7 +127,7 @@ If $\varI\neq\var$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\var$, $\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
+\Case{$\var$, $\opO$, $\descopO$, $\pjop{\fnam}$}
 \begin{derivation}
 \step{\cvarvO{\expr}=\emptyset}
      {\defof{\cvarvY}}
@@ -193,7 +193,7 @@ We prove $\esbsok{\expr}{\varI}{\varI}$ as follows:
 \end{derivation}
 We prove $\esbs{\expr}{\varI}{\varI}=\expr$ by induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}
 \StepO{\esbs{\expr}{\varI}{\varI}=\expr}
       {\defof{\esbsY}}
 %By definition of $\esbsY$.
@@ -305,7 +305,7 @@ If $\varI\in\efvar{\expr}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}\\
 $\efvar{\expr}=\emptyset\IMPLIES\varI\not\in\efvar{\expr}$
 %\begin{derivation}
 %\step{\efvar{\expr}=\emptyset}
@@ -420,7 +420,7 @@ If $\varI\in\efvar{\expr}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}
 \StepO{\esbs{\esbs{\expr}{\varI}{\exprI}}{\varI'}{\exprI'}=
        \esbs{\expr}{\varI'}{\exprI'}=
        \expr=
@@ -519,7 +519,7 @@ By induction on $\expr$:
  \esbs{\var}{\varI}{\esbs{\exprI}{\varI}{\exprI'}}}
 {\defof{\esbsY}}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}:\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}:\\
 Similar to case $\var\neq\varI$ above.
 
 \Case{$\appO$}
@@ -581,7 +581,7 @@ If $\varI\neq\varI'$, the proof is by induction on $\expr$:
 \Case{$\var\neq\varI$}
 \StepO{\esbsren{\esbsren{\var}}=\var=\esbsren{\var}}{\defof{\esbsY}}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}:
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}:
 \StepO{\esbsren{\esbsren{\expr}}=\expr=\esbsren{\expr}}
       {\thmref{thm-esbs-not-free}}
 
@@ -649,7 +649,7 @@ $\esbsren{\esbs{\varII}{\varII}{\exprI}}
  \esbsren{\esbs{\var}{\varII}{\esbsren{\exprI}}}}
 {\defof{\esbsY}}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}:
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}:
 \StepO
 {\esbsren{\esbs{\expr}{\varII}{\exprI}}
  =
@@ -734,7 +734,7 @@ If $\varI\in\efvar{\exprI}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}\\
 $\esbs{\esbsren{\expr}}{\varI'}{\varI}=
  \esbs{\expr}{\varI'}{\varI}=
  \expr$
@@ -806,7 +806,7 @@ If $\varI\in\efvar{\absO}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}\\
 $\cvarvO{\expr}=
  \emptyset=
  \cvarv{\expr}{\varI'}=
@@ -893,7 +893,7 @@ If $\varI\in\efvar{\absO}$:
 
 By induction on $\expr$:
 \begin{bycase}
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}\\
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}\\
 $\esbsren{\expr}=\expr\IMPLIES
  \cvarv{\expr}{\varII}=\cvarv{\esbsren{\expr}}{\varII}$
 \Case{$\varI$}\\
@@ -1038,7 +1038,7 @@ $\efvar{\tsbsO{\opO}}
  \link{=}{\defof{\efvarY}}
  \efvar{\opO}$
 \end{links}
-\Case{$\descopO$, $\pjop{\fnam}$, $\quo$}\\
+\Case{$\descopO$, $\pjop{\fnam}$}\\
 Analogous to $\opO$.
 \Case{$\appO$}
 \begin{links}
@@ -1075,7 +1075,7 @@ $\efvar{\tsbsO{(\absO)}}
 By induction on $\expr$:
 \begin{bycase}
 
-\Case{$\var$, $\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
+\Case{$\var$, $\opO$, $\descopO$, $\pjop{\fnam}$}
 \StePO{\cvarvO{\tsbsO{\expr}}=\emptyset=\cvarvO{\expr}}
 
 \Case{$\appO$}
@@ -1123,7 +1123,7 @@ By induction on $\expr$:
 
 \begin{bycase}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}
 %\StePO{\efvar{\expr}=\emptyset\AND\esbsO{\expr}=\expr}
 %\begin{links}
 %$\ftvar{\esbsO{\expr}}
@@ -1268,7 +1268,7 @@ $\tsbsO{\esbsO{\var}}
  \esbs{\tsbsO{\var}}{\varI}{\tsbsO{\exprI}}$
 \end{links}
 
-\Case{$\opO$, $\descopO$, $\pjop{\fnam}$, $\quo$}
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}
 \begin{links}
 $\tsbsO{\esbsO{\expr}}
  \link{=}{\thmref{thm-esbs-not-free}}
@@ -1906,9 +1906,7 @@ for the expressions that do not have free variables.
 By straightforward calculation, and by induction on $n$ for
 $\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}$ and for
 $\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}$. Recall that
-a projection $\projO$ is implicitly decorated by a record type $\trecO$ and
-that a tuple $\tuple{\exprS}$ is implicitly decorated by types $\typS$: the
-type substitution is implicitly carried out in those decorating types as well.
+a projection $\projO$ is implicitly decorated by a record type $\trecO$.
 
 
 
@@ -1917,8 +1915,7 @@ type substitution is implicitly carried out in those decorating types as well.
 By straightforward calculation, and by induction on $n$ for
 $\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}$ and for
 $\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}$. Recall that
-a projection $\projO$ is implicitly decorated by a record type $\trecO$ and
-that a tuple $\tuple{\exprS}$ is implicitly decorated by types $\typS$.
+a projection $\projO$ is implicitly decorated by a record type $\trecO$.
 
 
 
@@ -2116,9 +2113,7 @@ premises.
 \subsection*{Proof of \thmref{thm-no-free-vars-in-types}}
 
 The only rule that can derive a judgement of the form $\istyO{\tsubO}$ is
-\Rtsub, which has $\efvar{\tspred}=\emptyset$ as one of its premises. The
-only rule that can derive a judgement of the form $\istyO{\tquotO}$ is
-\Rtquot, which has $\efvar{\tqpred}=\emptyset$ as one of its premises.
+\Rtsub, which has $\efvar{\tspred}=\emptyset$ as one of its premises.
 
 
 
@@ -2233,7 +2228,7 @@ form $\cxwf{\snoc{\cx}{\axO}}$ or $\cxwf{\snoc{\cx}{\lemO}}$.
 \Case{\Rcxlem}\\
 Analogous to \Rcxax.
 
-\Case{\Reop, \Redesc, \Reproj, \Requot}\\
+\Case{\Reop, \Redesc, \Reproj}\\
 $\efvar{\expr}=\emptyset$
 
 \Case{\Revar}
@@ -2499,12 +2494,14 @@ Analogous to \Rtinst: each free type variable in the types and expressions in
 the right part of the judgement $\jcxdots{\cx}$ is also a free type variable
 in some premise $\jcxdots{\cx'}$ of the rule such that
 $\cxtvar{\cx'}=\cxtvarO$ (the only rules in which $\cx'\neq\cx$ are
-\Reif, \Rthifsbs, \Rthif). We use \thmref{thm-ftvar-abbrev} for \Rtquot,
+\Reif, \Rthifsbs, \Rthif). We use \thmref{thm-ftvar-abbrev} for
+% \Rtquot,
 \Rstrefl, \Rstarr, \Rstrec,
 % \Rstsum,
 \Redesc, \Rthext, \Rthrec,
 %\Rthembsurj, \Rthembdist, \Rthembinj,
-\Rthquotsurj, \Rthquoteclass, and \Rthprojsub.
+%\Rthquotsurj, \Rthquoteclass,
+and \Rthprojsub.
 %\Rthembsub.
 We use \thmref{thm-rename-same-free-tvars} for \Reabsalpha. We use
 \thmref{thm-ftvar-of-esbs} for \Rthabs.
@@ -3012,17 +3009,18 @@ For \Rtsub, we use the fact that $\efvar{\tspred}=\emptyset$ (explicit premise
 of the rule instance) and so $\esbsren{\tspred}=\tspred$ by
 \thmref{thm-esbs-not-free}.
 
-For \Rtquot, we use the fact that $\efvar{\tqpred}=\emptyset$ (explicit
-premise of the rule instance) and so by \thmref{thm-efvar-abbrev} the
-reflexivity, symmetry, and transitivity theorems in the premises of the rules
-instance have no free variables and therefore the substitution of $\varI$ with
-$\varI'$ leaves those theorems unchanged by \thmref{thm-esbs-not-free}.
+%For \Rtquot, we use the fact that $\efvar{\tqpred}=\emptyset$ (explicit
+%premise of the rule instance) and so by \thmref{thm-efvar-abbrev} the
+%reflexivity, symmetry, and transitivity theorems in the premises of the rules
+%instance have no free variables and therefore the substitution of $\varI$ with
+%$\varI'$ leaves those theorems unchanged by \thmref{thm-esbs-not-free}.
 
 For \Rterestr, we use the fact that $\efvar{\tspred}=\emptyset$ (by
 \thmref{thm-no-free-vars-in-types}) and that $\efvar{\tspred'}=\emptyset$
 (explicit premise of the rule instance), and therefore
 $\esbsren{(\eq{\tspred}{\tspred'})}=\eq{\tspred}{\tspred'}$ by
-\thmref{thm-esbs-not-free}. We use analogous reasoning for \Rtequot.
+\thmref{thm-esbs-not-free}.
+% We use analogous reasoning for \Rtequot.
 
 For \Resub\ we use the fact that $\efvar{\tspred}=\emptyset$ by
 \thmref{thm-no-free-vars-in-types} and so
@@ -3036,12 +3034,12 @@ $\esbsren{(\app{\tspred}{\expr})}=\app{\tspred}{\esbsren{\expr}}$ by
 
 For \Rthbool, \Rthext, \Rthrec,
 %\Rthembsurj, \Rthembdist, \Rthembinj,
-\Rthquotsurj, \Rthquoteclass, and \Rthprojsub
+%\Rthquotsurj, \Rthquoteclass,
+and \Rthprojsub
 % and \Rthembsub\
 we use the fact that the theorem $\expr$ that is the conclusion of the rule
-has no free variables (by \thmref{thm-efvar-abbrev} and, for \Rthquoteclass,
-also by \thmref{thm-no-free-vars-in-types}) and so $\esbsren{\expr}=\expr$ by
-\thmref{thm-esbs-not-free}.
+has no free variables (by \thmref{thm-efvar-abbrev}) and so
+$\esbsren{\expr}=\expr$ by \thmref{thm-esbs-not-free}.
 
 \end{bycase}
 
@@ -3638,12 +3636,18 @@ the judgement in the antecedent of the implication, we replace
 $\tvdec{\tvarIS}$ with $\cx_2$ and $\tvarIS$ with $\typIS$ in the premises of
 the rule instance and then we apply the rule to the transformed premises to
 obtain the conclusion with $\tvarIS$ replaced with $\typIS$. We use
-\thmref{thm-tsbs-same-free-vars} for \Rtsub, \Rtquot, \Rterestr, and \Rtequot.
-We use \thmref{thm-tsbs-abbrev} for \Rtquot, \Rstrefl, \Rstarr, \Rstrec,
+\thmref{thm-tsbs-same-free-vars} for \Rtsub,
+% \Rtquot,
+and \Rterestr.
+%, and \Rtequot.
+We use \thmref{thm-tsbs-abbrev} for
+% \Rtquot,
+\Rstrefl, \Rstarr, \Rstrec,
 %\Rstsum,
 \Reif, \Redesc, \Rthifsbs, \Rthbool, \Rthext, \Rthif, \Rthrec,
 %\Rthembsurj, \Rthembdist, \Rthembinj,
-\Rthquotsurj, \Rthquoteclass, and \Rthprojsub.
+%\Rthquotsurj, \Rthquoteclass,
+and \Rthprojsub.
 %and \Rthembsub.
 We use \thmref{thm-tsbs-same-free-vars},
 \thmref{thm-tsbs-same-capt-vars}, and \thmref{thm-esbs-tsbs-comm} for
@@ -4259,6 +4263,13 @@ Analogous to \thmref{thm-efa}, using \ReexIop\ instead of \Refaop.
 \step{\hastyO{\expr}{\trecO}}{\hyp}
 \step{\hastyO{\app{\pjop{\fnam_j}}{\expr}}{\typ_j}}{\Reapp, 2, 3}
 \end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-rec-tup}}
+
+By straightforward calculation. Recall that a tuple $\tuple{\exprS}$ is
+implicitly decorated by types $\typS$.
 
 
 

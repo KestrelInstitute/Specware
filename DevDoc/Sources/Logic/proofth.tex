@@ -242,21 +242,21 @@ well-formed types as
  {\Rtsub}
 \]
 
-\[
-\rruleV
- {\theoO{\fa{\var}{\typ}{\app{\tqpred}{\tupleII{\var}{\var}}}}}
- {\theoO{\faS{\seqII{\bnd{\var'}{\typ}}{\bnd{\var''}{\typ}}}
-             {\impl{\app{\tqpred}{\tupleII{\var'}{\var''}}}
-                   {\app{\tqpred}{\tupleII{\var''}{\var'}}}}}}
- {\theoO{\faS{\seqIII{\bnd{\var_1}{\typ}}{\bnd{\var_2}{\typ}}{\bnd{\var_3}{\typ}}}
-             {\impl{\conj{\app{\tqpred}{\tupleII{\var_1}{\var_2}}}
-                         {\app{\tqpred}{\tupleII{\var_2}{\var_3}}}}
-                   {\app{\tqpred}{\tupleII{\var_1}{\var_3}}}}}}
- {\var'\neq\var''\AND\var_1\neq\var_2\AND\var_2\neq\var_3\AND\var_1\neq\var_3}
- {\efvar{\tqpred}=\emptyset}
- {\istyO{\tquotO}}
- {\Rtquot}
-\]
+%\[
+%\rruleV
+% {\theoO{\fa{\var}{\typ}{\app{\tqpred}{\tupleII{\var}{\var}}}}}
+% {\theoO{\faS{\seqII{\bnd{\var'}{\typ}}{\bnd{\var''}{\typ}}}
+%             {\impl{\app{\tqpred}{\tupleII{\var'}{\var''}}}
+%                   {\app{\tqpred}{\tupleII{\var''}{\var'}}}}}}
+% {\theoO{\faS{\seqIII{\bnd{\var_1}{\typ}}{\bnd{\var_2}{\typ}}{\bnd{\var_3}{\typ}}}
+%             {\impl{\conj{\app{\tqpred}{\tupleII{\var_1}{\var_2}}}
+%                         {\app{\tqpred}{\tupleII{\var_2}{\var_3}}}}
+%                   {\app{\tqpred}{\tupleII{\var_1}{\var_3}}}}}}
+% {\var'\neq\var''\AND\var_1\neq\var_2\AND\var_2\neq\var_3\AND\var_1\neq\var_3}
+% {\efvar{\tqpred}=\emptyset}
+% {\istyO{\tquotO}}
+% {\Rtquot}
+%\]
 
 Explanation:
 \begin{itemize}
@@ -285,16 +285,16 @@ because a record type can have zero components.
 For restriction types, we require the predicate to have type
 $\tarr{\typ}{\bool}$, which implies that $\typ$ is a well-formed type (as
 proved later). We also require that $\tspred$ has no free variables.
-\item
-For quotient types, we require the predicate to be an equivalence relation,
-i.e.\ that reflexivity, symmetry, and transitivity are theorems, which implies
-that $\typ$ and $\cx$ are well-formed, that $\tqpred$ has type
-$\tarr{\tprodII{\typ}{\typ}}{\bool}$, etc.\ (as proved later). The condition
-that the variables $\var'$, $\var''$, etc.\ are distinct is important: without
-it, the symmetry and transitivity requirements would effectively disappear
-(because the corresponding formulas would be trivially provable), thus only
-requiring the binary relation to be reflexive. We require that $\tqpred$ has
-no free variables.
+%\item
+%For quotient types, we require the predicate to be an equivalence relation,
+%i.e.\ that reflexivity, symmetry, and transitivity are theorems, which implies
+%that $\typ$ and $\cx$ are well-formed, that $\tqpred$ has type
+%$\tarr{\tprodII{\typ}{\typ}}{\bool}$, etc.\ (as proved later). The condition
+%that the variables $\var'$, $\var''$, etc.\ are distinct is important: without
+%it, the symmetry and transitivity requirements would effectively disappear
+%(because the corresponding formulas would be trivially provable), thus only
+%requiring the binary relation to be reflexive. We require that $\tqpred$ has
+%no free variables.
 \end{itemize}
 
 \subsection{Type equivalence}
@@ -391,15 +391,15 @@ type equivalence as
  {\Rterestr}
 \]
 
-\[
-\rruleIV
- {\istyO{\tquotO}}
- {\teqO{\typ}{\typ'}}
- {\theoO{\eq{\tqpred}{\tqpred'}}}
- {\efvar{\tqpred'}=\emptyset}
- {\teqO{\tquotO}{\tquot{\typ'}{\tqpred'}}}
- {\Rtequot}
-\]
+%\[
+%\rruleIV
+% {\istyO{\tquotO}}
+% {\teqO{\typ}{\typ'}}
+% {\theoO{\eq{\tqpred}{\tqpred'}}}
+% {\efvar{\tqpred'}=\emptyset}
+% {\teqO{\tquotO}{\tquot{\typ'}{\tqpred'}}}
+% {\Rtequot}
+%\]
 
 \[
 \rruleII
@@ -428,10 +428,9 @@ transitive.
 \item
 Type equivalence is a congruence with respect to syntactic (meta-)operations
 to construct types in the \MS\ type system, namely type instantiations, arrow
-types, record types, restriction types, and quotient types. In addition, equal
-restriction or quotient predicates give rise to equivalent restriction or
-quotient types. The conditions $\efvar{\tspred'}=\emptyset$ and
-$\efvar{\tqpred'}=\emptyset$ are needed for the satisfaction of certain
+types, record types, and restriction types. In addition, equal restriction
+predicates give rise to equivalent restriction types. The condition
+$\efvar{\tspred'}=\emptyset$ is needed for the satisfaction of certain
 properties of the proof theory (see \secref{props}).
 \item
 The order of the components of a record type is unimportant: any permutation
@@ -639,12 +638,12 @@ well-typed expressions as
 % {\Reembed}
 %\]
 
-\[
-\rruleI
- {\istyO{\tquotO}}
- {\hastyO{\quo}{\tarr{\typ}{\tquotO}}}
- {\Requot}
-\]
+%\[
+%\rruleI
+% {\istyO{\tquotO}}
+% {\hastyO{\quo}{\tarr{\typ}{\tquotO}}}
+% {\Requot}
+%\]
 
 \[
 \rruleII
@@ -715,9 +714,9 @@ from the record type to the corresponding component type.
 %\item
 %An embedded for a well-formed sum type is well-typed and denotes a function
 %from the type corresponding to the constructor to the sum type.
-\item
-A quotienter for a well-formed quotient type is well-typed and denotes a
-function from the quotiented type to the quotient type.
+%\item
+%A quotienter for a well-formed quotient type is well-typed and denotes a
+%function from the quotiented type to the quotient type.
 \item
 Rules $\Resuper$ and $\Resub$ link the notion of well-typed expressions to the
 notion of subtyping. If an expression $\expr$ has a subtype $\typ$, it also
@@ -851,13 +850,13 @@ as
 % {\Rthembedsbs}
 %\]
 
-\[
-\rruleII
- {\hastyOany{\quotO}}
- {\teqO{\tquotO}{\tquot{\typ'}{\tqpred'}}}
- {\theoO{\eq{\quotO}{\quot{\tquot{\typ'}{\tqpred'}}}}}
- {\Rthquotsbs}
-\]
+%\[
+%\rruleII
+% {\hastyOany{\quotO}}
+% {\teqO{\tquotO}{\tquot{\typ'}{\tqpred'}}}
+% {\theoO{\eq{\quotO}{\quot{\tquot{\typ'}{\tqpred'}}}}}
+% {\Rthquotsbs}
+%\]
 
 %\[
 %\rruleIV
@@ -993,24 +992,24 @@ as
 % {\Rthembinj}
 %\]
 
-\[
-\rruleII
- {\istyO{\tquotO}}
- {\var\neq\var'}
- {\theoO{\fa{\var}{\tquotO}
-            {\ex{\var'}{\typ}{\eq{\app{\quo}{\var'}}{\var}}}}}
- {\Rthquotsurj}
-\]
+%\[
+%\rruleII
+% {\istyO{\tquotO}}
+% {\var\neq\var'}
+% {\theoO{\fa{\var}{\tquotO}
+%            {\ex{\var'}{\typ}{\eq{\app{\quo}{\var'}}{\var}}}}}
+% {\Rthquotsurj}
+%\]
 
-\[
-\rruleII
- {\istyO{\tquotO}}
- {\var\neq\var'}
- {\theoO{\faS{\seqII{\bnd{\var}{\typ}}{\bnd{\var'}{\typ}}}
-             {\iiff{\app{\tqpred}{\tupleII{\var}{\var'}}}
-                   {\eq{\app{\quo}{\var}}{\app{\quo}{\var'}}}}}}
- {\Rthquoteclass}
-\]
+%\[
+%\rruleII
+% {\istyO{\tquotO}}
+% {\var\neq\var'}
+% {\theoO{\faS{\seqII{\bnd{\var}{\typ}}{\bnd{\var'}{\typ}}}
+%             {\iiff{\app{\tqpred}{\tupleII{\var}{\var'}}}
+%                   {\eq{\app{\quo}{\var}}{\app{\quo}{\var'}}}}}}
+% {\Rthquoteclass}
+%\]
 
 \[
 \rruleI
@@ -1051,7 +1050,7 @@ polymorphic are replaced with well-formed types.
 Rules $\Rthrefl$, $\Rthsymm$, and $\Rthtrans$ say that equality is an
 equivalence, i.e.\ reflexive, symmetric, and transitive.
 \item
-Rules $\Rthopsbs$ to $\Rthquotsbs$ state the substitutivity of equalities and
+Rules $\Rthopsbs$ to $\Rthprojsbs$ state the substitutivity of equalities and
 type equivalences in expressions. Note that in rule $\Rthifsbs$ the context is
 extended with an axiom saying that the condition is true or false.
 \item
@@ -1093,12 +1092,12 @@ components.
 %They say that every value of a sum type is the image of some constructor
 %(i.e.\ the constructors are collectively surjective), that the images of
 %distinct constructors are disjoint, and that each constructor is injective.
-\item
-Rules $\Rthquotsurj$ and $\Rthquoteclass$ characterize quotient types. The
-first rules says that $\quotO$ is a surjective function (i.e.\ every quotient
-value is obtained by applying it to some value of the quotiented type). The
-second rule says that $\quotO$ maps each value of the quotiented type to its
-equivalence class, which is a value of the quotient type.
+%\item
+%Rules $\Rthquotsurj$ and $\Rthquoteclass$ characterize quotient types. The
+%first rules says that $\quotO$ is a surjective function (i.e.\ every quotient
+%value is obtained by applying it to some value of the quotiented type). The
+%second rule says that $\quotO$ maps each value of the quotiented type to its
+%equivalence class, which is a value of the quotient type.
 \item
 Rule $\Rthprojsub$ says that projectors for record subtypes agree with
 projectors for record supertypes.

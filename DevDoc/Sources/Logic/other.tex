@@ -1,6 +1,104 @@
 \section{Other \MS\ constructs}
 \label{other}
 
+\subsection{Records and tuples}
+
+A record constructor has the form
+\[
+\recopO
+\]
+where $\trecO\in\Typ$. We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\recopO}
+        {\abs{\varfxI{1}}{\typ_1}
+             {\ldots\abs{\varfxI{n}}{\typ_n}
+                        {\desc{\varfx}{\trecO}
+                              {\conjI{i}{(\eq{\proj{\varfx}{\fnam_i}}
+                                             {\varfxI{i}})}}}}}
+\end{abblist}
+\]
+where the $\varfxI{i}$ are fixed but unspecified names in $\Nam$ that are all
+distinct from each other and from $\varfx$. The record constructor $\recopO$
+maps $n$ arguments of the component types of the record type that tags the
+record constructor to the record with those arguments as components via the
+description operator (records are characterized by the values of their
+components). We may write $\recopO$ as just $\rcop$ when the record type is
+inferrable or irrelevant. Note that $\recop{\trecmt}$ denotes the empty record
+(a conjunction $\conjI{i}{\expr_i}$ consisting of no conjuncts, i.e.\ such
+that $n=0$, stands for $\true$).
+
+We introduce the abbreviations
+\[
+\begin{abblist}
+\abbitem{\rectFTO}
+        {\app{\app{\recopO}{\expr_1}}{\ldots\;\expr_n}}
+\abbitem{\tuple{\seqFT{\expr_1}{\expr_n}}}
+        {\recFT{\projnam{1}}{\expr_1}{\projnam{n}}{\expr_n}}
+\end{abblist}
+\]
+The notation $\rectO$ is a more readable version of an applied record
+constructor. We may write $\rectO$ as just $\recO$ when the component types
+are inferrable or irrelevant. A tuple $\tupleO$ captures tuple displays as
+defined in \cite{lm}: it abbreviates a record construction of a product type
+whose component types are implicit; this is why no component types appear in
+$\tupleO$.
+
+\begin{theorem}\label{thm-rec-tup}
+\[
+\begin{eqlist}
+\eqitem{\efvar{\rcop}}
+       {\emptyset}
+\eqitem{\efvar{\recO}}
+       {\bigcup_i\efvar{\expr_i}}
+\eqitem{\efvar{\tupleO}}
+       {\bigcup_i\efvar{\expr_i}}
+\end{eqlist}
+\]
+\[
+\begin{eqlistC}
+\eqitem{\esbsO{\rcop}}
+       {\rcop}
+\eqitem{\esbsO{\recO}}
+       {\rec{i}{\fnam_i}{\esbsO{\expr_i}}}
+\eqitem{\esbsO{\tupleO}}
+       {\tuple{\seqFT{\esbsO{\expr_1}}{\esbsO{\expr_n}}}}
+\end{eqlistC}
+\]
+\[
+\begin{eqlist}
+\eqitem{\cvarvO{\rcop}}
+       {\emptyset}
+\eqitem{\cvarvO{\recO}}
+       {\bigcup_i\cvarvO{\expr_i}}
+\eqitem{\cvarvO{\tupleO}}
+       {\bigcup_i\cvarvO{\expr_i}}
+\end{eqlist}
+\]
+\[
+\begin{eqlistC}
+\eqitem{\tsbsO{\recopO}}
+       {\recop{\trec{i}{\fnam_i}{\tsbsO{\typ_i}}}}
+\eqitem{\tsbsO{\rectO}}
+       {\rect{i}{\fnam_i}{\tsbsO{\typ_i}}{\tsbsO{\expr_i}}}
+\eqitem{\tsbsO{\tupleO}}
+       {\tuple{\seqFT{\tsbsO{\expr_1}}{\tsbsO{\expr_n}}}}
+\end{eqlistC}
+\]
+\[
+\begin{eqlist}
+\eqitem{\ftvar{\recopO}}
+       {\bigcup_i\ftvar{\typ_i}}
+\eqitem{\ftvar{\rectO}}
+       {\bigcup_i(\ftvar{\typ_i}\cup\ftvar{\expr_i})}
+\eqitem{\ftvar{\tupleO}}
+       {\bigcup_i(\ftvar{\typ_i}\cup\ftvar{\expr_i})}
+\end{eqlist}
+\]
+\end{theorem}
+
+
+
 \subsection{Record updates}
 
 A record update as defined in \cite{lm} is just an abbreviation for an
@@ -30,11 +128,11 @@ abbreviation
 \[
 \begin{abblist}
 \abbitem{\recupY}
-        {\abs{\varfxI{1}}{\typ'}
-             {\abs{\varfxI{2}}{\typ''}
-                  {\recIII{\fnamS}{(\proj{\varfxI{2}}{\fnamS})}
-                          {\fnamS'}{(\proj{\varfxI{1}}{\fnamS'})}
-                          {\fnamS''}{(\proj{\varfxI{2}}{\fnamS''})}}}}
+        {\abs{\varfx}{\typ'}
+             {\abs{\varfx'}{\typ''}
+                  {\recIII{\fnamS}{(\proj{\varfx'}{\fnamS})}
+                          {\fnamS'}{(\proj{\varfx}{\fnamS'})}
+                          {\fnamS''}{(\proj{\varfx'}{\fnamS''})}}}}
 \end{abblist}
 \]
 where we leave the record types that tag $\recupY$ implicit, where $\typ'$ and
@@ -42,8 +140,6 @@ $\typ''$ respectively stand for $\trecII{\trecO}{\trec{i}{\fnam_i'}{\typ_i'}}$
 and $\trecII{\trecO}{\trec{i}{\fnam_i''}{\typ_i''}}$, and where the notation
 $\fldasg{\fnamS}{\proj{\expr}{\fnamS}}$ stands for
 $\fldasgFT{\fnam_1}{\proj{\expr}{\fnam_1}}{\fnam_n}{\proj{\expr}{\fnam_n}}$.
-Recall that $\varfxI{i}$ are distinct fixed but unspecified names in $\Nam$,
-as previously explained.
 
 The infix form is defined by the abbreviation
 \[
@@ -77,6 +173,8 @@ where again we leave the tagging record types implicit.
 \begin{eqlist}
 \eqitem{\efvar{\recupY}}{\emptyset}
 \eqitem{\efvar{\recupO}}{\efvar{\expr_1}\cup\efvar{\expr_2}}
+\end{eqlist}
+\]
 %\eqitem{\opsin{\recupopO}}
 %       {\bigcup_i\opsin{\typ_i}\cup
 %        \bigcup_i\opsin{\typ_i'}\cup
@@ -86,16 +184,26 @@ where again we leave the tagging record types implicit.
 %        \bigcup_i\opsin{\typ_i'}\cup
 %        \bigcup_i\opsin{\typ_i''}\cup
 %        \opsin{\expr_1}\cup\opsin{\expr_2}}
+\[
+\begin{eqlist}
 \eqitem{\tsbsO{\recupopO}}
        {\recupop{\tprod{i}{\fnam_i}{\tsbsO{\typ_i}}}
                 {\tprod{i}{\fnam_i'}{\tsbsO{\typ_i'}}}
                 {\tprod{i}{\fnam_i''}{\tsbsO{\typ_i''}}}}
 \eqitem{\tsbsO{(\recupO)}}
        {\recup{\tsbsO{\expr_1}}{\tsbsO{\expr_2}}}
+\end{eqlist}
+\]
+\[
+\begin{eqlist}
 \eqitem{\esbsO{\recupopO}}
        {\recupopO}
 \eqitem{\esbsO{(\recupO)}}
        {\recup{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
+\end{eqlist}
+\]
+\[
+\begin{eqlist}
 \eqitem{\cvarvO{\recupY}}
        {\emptyset}
 \eqitem{\cvarvO{\recupO}}
@@ -190,11 +298,11 @@ We introduce the abbreviations
                         {\bcondbr{\varS_n}{\typS_n}{\bexpr_n}{\expr_n}})}}
 \end{abblist}
 \]
-where $\varfxI{\varS,\bexpr,\expr}$ is, for each triple
+where the second abbreviation only applies when $n>1$ and where
+$\varfxI{\varS,\bexpr,\expr}$ is, for each triple
 $\tupIII{\varS}{\bexpr}{\expr}\in\Seq{\Nam}\times\Expr\times\Expr$, a fixed
 but unspecified name in $\Nam$ such that
-$\varfxI{\varS,\bexpr,\expr}\not\in\varS\cup\efvar{\bexpr}\cup\efvar{\expr}$
-and where the second abbreviation only applies when $n>1$.
+$\varfxI{\varS,\bexpr,\expr}\not\in\varS\cup\efvar{\bexpr}\cup\efvar{\expr}$.
 
 % COMMENT IN:
 
@@ -587,36 +695,36 @@ which captures recursive let expressions as defined in \cite{lm}.
 %[[[TO DO]]]
 %\end{proof}
 
-\subsection{Choosers}
+%\subsection{Choosers}
 
-A chooser has the form
-\[
-\choosO
-\]
-where $\tquotO,\typ'\in\Typ$.
+%A chooser has the form
+%\[
+%\choosO
+%\]
+%where $\tquotO,\typ'\in\Typ$.
 
-We introduce the abbreviation
-\[
-\begin{abblist}
-\abbitem{\choosO}
-        {\abs{\varfxfun}{\tsub{(\tarr{\typ}{\typ'})}{\tspred}}
-             {\abs{\varfx}{\tquotO}
-                  {(\lett{\tquotO}{\typ'}
-                         {\varfx'}{\typ}
-                         {\app{\quo}{\varfx'}}
-                         {\varfx}
-                         {\app{\varfxfun}{\varfx'}})}}}
-\end{abblist}
-\]
-where
-\[
-\tspred=\abs{\varfxfun}{\tarr{\typ}{\typ'}}
-            {\faS{\seqII{\bnd{\varfx}{\typ}}{\bnd{\varfx'}{\typ}}}
-                 {\impl{\app{\tqpred}{\tupleII{\varfx}{\varfx'}}}
-                       {\eq{\app{\varfxfun}{\varfx}}{\app{\varfxfun}{\varfx'}}}}}
-\]
-and where $\varfxfun$ is a fixed but unspecified name in $\Nam$ that is
-distinct from $\varfx$ and $\varfx'$ (which have been introduced earlier).
+%We introduce the abbreviation
+%\[
+%\begin{abblist}
+%\abbitem{\choosO}
+%        {\abs{\varfxfun}{\tsub{(\tarr{\typ}{\typ'})}{\tspred}}
+%             {\abs{\varfx}{\tquotO}
+%                  {(\lett{\tquotO}{\typ'}
+%                         {\varfx'}{\typ}
+%                         {\app{\quo}{\varfx'}}
+%                         {\varfx}
+%                         {\app{\varfxfun}{\varfx'}})}}}
+%\end{abblist}
+%\]
+%where
+%\[
+%\tspred=\abs{\varfxfun}{\tarr{\typ}{\typ'}}
+%            {\faS{\seqII{\bnd{\varfx}{\typ}}{\bnd{\varfx'}{\typ}}}
+%                 {\impl{\app{\tqpred}{\tupleII{\varfx}{\varfx'}}}
+%                       {\eq{\app{\varfxfun}{\varfx}}{\app{\varfxfun}{\varfx'}}}}}
+%\]
+%and where $\varfxfun$ is a fixed but unspecified name in $\Nam$ that is
+%distinct from $\varfx$ and $\varfx'$ (which have been introduced earlier).
 
 % COMMENT IN:
 
@@ -1330,16 +1438,16 @@ introduce the ops and the axiom expresses constraints on them.
 
 \subsection{Sum types}
 
-A sum type has the form
+A sum type definition has the form
 \[
 \tdefsum{\tnam}{\tvarS}{\tsumFTO}
 \]
-where $\cnamS\in\SeqNER{\Nam}$, $\recogS\in\SeqNER{\Nam}$,
-$\cnamS\cap\recogS=\emptyset$, and $\optypS\in\SeqNE{(\Typ+\setI{\notyp})}$.
-We introduce the abbreviation
+where $\tnam\in\Nam$, $\tvarS\in\SeqNR{\Nam}$, $\cnamS\in\SeqNER{\Nam}$,
+$\recogS\in\SeqNER{\Nam}$, $\cnamS\cap\recogS=\emptyset$, and
+$\optypS\in\SeqNE{(\Typ+\setI{\notyp})}$.  We introduce the abbreviation
 \[
 \abbvert
- {\tdefsum{\tnam}{\tvarS}{\tsumO}}
+ {\tdefsum{\tnam}{\tvarS}{\tsumO}\\}
  {\vdots\\
   \odec{\cnam_i}{\tvarS}
        {\!\!\cond{\optyp_i\neq\notyp}
@@ -1412,5 +1520,95 @@ $\cnam_i$ and $\cnam_j$ have types or not. Recognizers are defined ops that
 decide whether a value of the sum type has been constructed with the
 corresponding constructors.
 
+Note that in order for a sum type definition to maintain the well-formedness
+of the context to which it is appended, it is necessary that the type name
+$\tnam$ is declared in the context with arity $\seqlen{\tvarS}$.
+
 This treatment of sum types is somewhat different from \cite{lm}, but
 \cite{lm} will soon change to have the same treatment given here.
+
+\subsection{Quotient types}
+
+We first introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem
+ {\equival{\typ}}
+ {\absconjIII{\varfxpred}
+             {\tarr{\tprodII{\typ}{\typ}}{\bool}}
+             {(\fa{\varfx}{\typ}{\app{\varfxpred}{\tupleII{\varfx}{\varfx}}})}
+             {(\faS{\seqII{\bnd{\varfx}{\typ}}{\bnd{\varfx'}{\typ}}}
+                   {\impl{\app{\varfxpred}{\tupleII{\varfx}{\varfx'}}}
+                         {\app{\varfxpred}{\tupleII{\varfx'}{\varfx}}}})}
+             {(\faS{\seqIII{\bnd{\varfx}{\typ}}
+                           {\bnd{\varfx'}{\typ}}
+                           {\bnd{\varfx''}{\typ}}}
+                   {\impl{\conj{\app{\varfxpred}{\tupleII{\varfx}{\varfx'}}}
+                               {\app{\varfxpred}{\tupleII{\varfx'}{\varfx''}}}}
+                         {\app{\varfxpred}{\tupleII{\varfx}{\varfx''}}}})}}
+\end{abblist}
+\]
+where $\varfx''$ is a fixed but unspecified in name in $\Nam$ that is distinct
+from $\varfx$, $\varfx'$, and $\varfxpred$. For every $\typ\in\Typ$,
+$\equival{\typ}$ is a predicate that says whether a binary predicate over
+$\typ$ is an equivalence, i.e.\ it is reflexive, symmetric, and transitive.
+
+A quotient type definition has the form
+\[
+\tdefquot{\tnam}{\tvarS}{\tquotO}
+\]
+where $\tnam\in\Nam$, $\tvarS\in\SeqNR{\Nam}$, $\typ\in\Typ$,
+$\tqpred\in\Expr$, $\efvar{\tqpred}=\emptyset$, $\quot\in\Nam$,
+$\choo\in\Nam$, and $\quot\neq\choo$. We introduce the abbreviation
+\[
+\abbvert
+ {\tdefquot{\tnam}{\tvarS}{\tquotO}}
+ {\lem{\tvarS}{\app{\equival{\typ}}{\tqpred}}
+  \\
+  \odec{\quot}{\tvarS}{\tarr{\typ}{\tinst{\tnam}{\tvarS}}}
+  \\
+  \ax{\tvarS}{\fa{\varfx}{\tinst{\tnam}{\tvarS}}
+                 {\ex{\varfx'}{\typ}
+                     {\eq{\app{\quot}{\varfx'}}{\varfx}}}}
+  \\
+  \ax{\tvarS}{\faS{\seqII{\bnd{\varfx}{\typ}}{\bnd{\varfx'}{\typ}}}
+                  {\iiff{\app{\tqpred}{\tupleII{\varfx}{\varfx'}}}
+                        {\eq{\app{\quot}{\varfx}}{\app{\quot}{\varfx'}}}}}
+  \\
+  \odefI{\choo}{\snoc{\tvarS}{\tvar}}
+        {\tarr{\typ'}{\tarr{\tinst{\tnam}{\tvarS}}{\tvar}}}
+        {\abs{\varfxfun}{\typ'}
+             {\abs{\varfx}{\tinst{\tnam}{\tvarS}}
+                  {\lett{\tinst{\tnam}{\tvarS}}{\tvar}
+                        {\varfx'}{\typ}
+                        {\app{\quot}{\varfx'}}
+                        {\varfx}
+                        {\app{\varfxfun}{\varfx'}}}}}}
+\]
+where $\varfxfun$ is a fixed but unspecified name in $\Nam$ that is distinct
+from $\varfx$ and $\varfx'$, where $\tvar\not\in\tvarS$, and where
+$\typ'=\tsub{(\tarr{\typ}{\tvar})}
+            {\abs{\varfxfun}{\tarr{\typ}{\tvar}}
+                 {(\faS{\seqII{\bnd{\varfx}{\typ}}{\bnd{\varfx'}{\typ}}}
+                       {\impl{\app{\tqpred}{\tupleII{\varfx}{\varfx'}}}
+                             {\eq{\app{\varfxfun}{\varfx}}
+                                 {\app{\varfxfun}{\varfx'}}}})}}$.
+
+The expression $\tqpred$ must denote an equivalence relation over the type
+$\typ$, as required by the lemma. The quotienter $\quot$ maps each value of
+$\typ$ to its equivalence class in $\tinst{\tnam}{\tvarS}$. This
+interpretation is enforced by the two axioms. One requires that $\quot$ is
+surjective, i.e.\ that every value in the quotient type
+$\tinst{\tnam}{\tvarS}$ is the image of some value in the base type
+$\typ$. The other axiom says that $\quot$ maps equivalent values to the same
+value (their equivalence class), and non-equivalent values to different
+equivalence classes.
+
+The chooser $\choo$ lifts a function over the base type to a function over the
+quotient type. In order for the lifting to make sense, the function over the
+base type must be invariant under $\tqpred$, i.e.\ it must map equivalent
+values to the same value. This constraint is expressed by the restriction type
+$\typ'$. The value of the lifted function over an equivalence class is then
+the value of the base function over any element of the equivalent class (they
+all give rise to the same value). Besides $\tvarS$, op $\choo$ is polymorphic
+over the range $\tvar$ of the function to be lifted.
