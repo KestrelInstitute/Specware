@@ -11,7 +11,7 @@ Notes:
 (mp::make-process &key name ...)
 (mp::process-run-function name-or-options prset-function &rest
 			  preset-arguments)
-(mp::process-kil process)
+(mp::process-kill process)
 
 
 |#
@@ -38,7 +38,7 @@ Notes:
   ;; confirmation from the now defunct partner before killing itself.
   ;;
   ;; NOTE: As is, this doesn't work under Allegro on Windows when invoked from
-  ;;       emacs via (sw::eval-in-lisp "(emacs::kill-meacs-and-then-lisp)").
+  ;;       emacs via (sw::eval-in-lisp "(emacs::kill-emacs-and-then-lisp)").
   ;;       Somehow the lisp process remains alive.
   ;;       Perhaps some simple tweak would work, but continue-form-when-ready
   ;;       in sw-init.el provides a rather different alternative solution:
@@ -49,8 +49,8 @@ Notes:
   ;;  so that communcation with xemacs remains active long
   ;;  enough for emacs to actually read the following command
   ;;  and react:
-  (emacs::eval-in-emacs "(kill-emacs 0)") 
-  (sleep 1) ; probably not needed
+  (emacs::eval-in-emacs "(progn (sit-for 2) (kill-emacs 0))")
+  ;; Note: We return here before the call to sit-for completes.
   ;; The parent emacs process should now be on a path to die.
   ;; We don't really care if it dies before or after the 
   ;; following command kills lisp:
