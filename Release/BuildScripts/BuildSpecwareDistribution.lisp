@@ -6,15 +6,9 @@
   (let* ((specware-buildscripts-dir 
 	  (make-pathname :directory (append (pathname-directory specware-dir) '("Release" "BuildScripts"))
 			 :defaults  specware-dir))
-	 (distribution-scripts-dir 
-	  (make-pathname :directory (append (pathname-directory distribution-dir) '("Scripts"))
-			 :defaults  distribution-dir))
 	 (lisp-utilities-dir 
 	  (make-pathname :directory (append (pathname-directory distribution-dir) '("Lisp_Utilities"))
-			 :defaults  distribution-dir))
-	 (specware-buildscripts-pathname (pathname specware-buildscripts-dir))
-	 (distribution-scripts-pathname  (pathname distribution-scripts-dir))
-	 (lisp-utilities-pathname        (pathname lisp-utilities-dir)))
+			 :defaults  distribution-dir)))
     (flet ((my-load (dir-pathname file)
 	     (let ((lisp-file (make-pathname :name file :type "lisp" :defaults dir-pathname))
 		   (fasl-file (make-pathname :name file :type "x86f" :defaults dir-pathname)))
@@ -25,7 +19,7 @@
       (my-load lisp-utilities-dir "dir-utils")
       (my-load lisp-utilities-dir "MemoryManagement")
       (my-load lisp-utilities-dir "save-image")
-      (my-load specware-buildscripts-pathname "GatherSpecwareComponents"))))
+      (my-load specware-buildscripts-dir "GatherSpecwareComponents"))))
 
 (defun build-specware-release (i j k verbose?)
   (flet ((my-getenv (var)
