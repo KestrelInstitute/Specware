@@ -2192,41 +2192,50 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
 
 \subsection*{Proof of \thmref{thm-free-var-in-cx}}
 
-To prove the last two implications, it suffices to prove
-\[
-\begin{array}{l@{\ \ \IMPLIES\ \ }l}
-\cxwf{\snoc{\cx}{\axO}}  & \efvar{\expr}\subseteq\cxvarO \\
-\cxwf{\snoc{\cx}{\lemO}} & \efvar{\expr}\subseteq\cxvarO
-\end{array}
-\hspace{3em}(*)
-\]
-because
-\[
-\begin{array}{l@{\ \ \IMPLIES\ \ }l}
-\cxwf{\cx_1,\axO,\cx_2}  & \cxwf{\snoc{\cx_1}{\axO}} \\
-\cxwf{\cx_1,\lemO,\cx_2} & \cxwf{\snoc{\cx_1}{\lemO}}
-\end{array}
-\]
-by \thmref{thm-cxprefix}. We prove the first two implications of the original
-theorem statement and the two implications (*) by induction on the derivation
-of the judgements in the antecedents of the implications:
+%To prove the last two implications, it suffices to prove
+%\[
+%\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+%\cxwf{\snoc{\cx}{\axO}}  & \efvar{\expr}\subseteq\cxvarO \\
+%\cxwf{\snoc{\cx}{\lemO}} & \efvar{\expr}\subseteq\cxvarO
+%\end{array}
+%\hspace{3em}(*)
+%\]
+%because
+%\[
+%\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+%\cxwf{\cx_1,\axO,\cx_2}  & \cxwf{\snoc{\cx_1}{\axO}} \\
+%\cxwf{\cx_1,\lemO,\cx_2} & \cxwf{\snoc{\cx_1}{\lemO}}
+%\end{array}
+%\]
+%by \thmref{thm-cxprefix}. We prove the first two implications of the original
+%theorem statement and the two implications (*) by induction on the derivation
+%of the judgements in the antecedents of the implications:
+
+We prove the first three implications by induction on the derivation of the
+judgements in the antecedents of the implications:
 
 \begin{bycase}
 
-\Case{\Rcxmt, \Rcxtdec, \Rcxodec, \Rcxtdef, \Rcxtvdec, \Rcxvdec}\\
-These rules are impossible because their conclusion is not a judgement of the
-form $\cxwf{\snoc{\cx}{\axO}}$ or $\cxwf{\snoc{\cx}{\lemO}}$.
+\Case{\Rcxmt}\\
+This rule is impossible because $\cx_1,\axO,\cx_2\neq\mtcx$.
 
-\Case{\Rcxax}
+\Case{\Rcxtdec, \Rcxodec, \Rcxtdef, \Rcxlem, \Rcxtvdec, \Rcxvdec}
 \begin{derivation}
-\step{\cxwf{\snoc{\cx}{\axO}}}{\hyp}
-\step{\hasty{\snoc{\cx}{\tvdec{\tvarS}}}{\expr}{\bool}}{\thmref{thm-ax-wt}, 1}
-\step{\efvar{\expr}\subseteq\cxvar{\snoc{\cx}{\tvdec{\tvarS}}}=\cxvarO}
-     {\indhyp, 2}
+\steP{\cx_2\neq\mtcx}
+\step{\EXISTS{\cx_2',\cxel}{\cx_2=\cx_2',\cxel}}{1}
+\step{\cxwf{\cx_1,\axO,\cx_2'}}{\premofrule, 2}
+\step{\efvar{\expr}\subseteq\cxvar{\cx_1}}{\indhyp, 3}
 \end{derivation}
 
-\Case{\Rcxlem}\\
-Analogous to \Rcxax.
+\Case{\Rcxax}\\
+If $\cx_2=\mtcx$:
+\begin{derivation}
+\step{\cxwf{\snoc{\cx_1}{\axO}}}{\hyp}
+\step{\hasty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}{\bool}}{\thmref{thm-ax-wt}, 1}
+\step{\efvar{\expr}\subseteq\cxvar{\snoc{\cx_1}{\tvdec{\tvarS}}}=\cxvar{\cx_1}}
+     {\indhyp, 2}
+\end{derivation}
+If $\cx_2\neq\mtcx$, the proof is analogous to \Rcxtdec.
 
 \Case{\Reop, \Redesc, \Reproj}\\
 $\efvar{\expr}=\emptyset$
@@ -2272,12 +2281,12 @@ Analogous to \Reapp.
 \step{\axO\in\cx}{\premof{\Rthax}}
 \step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\axO,\cx_2}}{1}
 \step{\cxwfO}{\premof{\Rthax}}
-\step{\cxwf{\snoc{\cx_1}{\axO}}}{\thmref{thm-cxprefix}, 3, 2}
-\step{\efvar{\expr}\subseteq\cxvar{\cx_1}}{\indhyp, 4}
+%\step{\cxwf{\snoc{\cx_1}{\axO}}}{\thmref{thm-cxprefix}, 3, 2}
+\step{\efvar{\expr}\subseteq\cxvar{\cx_1}}{\indhyp, 2, 3}
 \step{\cxvar{\cx_1}\subseteq\cxvar{\cx}}{2}
 \step{\efvar{\tsbslash{\expr}{\tvarS}{\typS}}=\efvar{\expr}}
      {\thmref{thm-tsbs-same-free-vars}}
-\step{\efvar{\tsbslash{\expr}{\tvarS}{\typS}}\subseteq\cxvarO}{7, 5, 6}
+\step{\efvar{\tsbslash{\expr}{\tvarS}{\typS}}\subseteq\cxvarO}{6, 4, 5}
 \end{derivation}
 
 %\Case{\Rthabssbs}
@@ -2351,6 +2360,15 @@ for which $\cx'\neq\cx$ are \Rthifsbs\ and \Rthif, where
 $\cx'=\snoc{\cx}{\axM{\ldots}}$ and so clearly $\cxvar{\cx'}=\cxvarO$).
 
 \end{bycase}
+
+The fourth implication is proved as follows:
+\begin{derivation}
+\step{\cxwf{\cx_1,\lemO,\cx_2}}{\hyp}
+\step{\cxwf{\cx_1,\lemO}}{\thmref{thm-cxprefix}, 1}
+\step{\theo{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}}{\thmref{thm-lem-theo}, 2}
+\step{\efvar{\expr}\subseteq\cxvar{\cx_1,\tvdec{\tvarS}}=\cxvar{\cx_1}}
+     {second implication of this theorem, 3}
+\end{derivation}
 
 
 
