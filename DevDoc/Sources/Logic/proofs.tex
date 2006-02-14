@@ -2395,32 +2395,73 @@ The theorem statement is equivalent to
 because $A \subseteq B \IFF A \cup B \subseteq B$ for all sets $A$ and $B$. We
 prove the above implications by induction on the derivation of the judgements
 in the antecedents of the implications\footnote{The reason for proving this
-re-statement of the theorem as opposed to the original statement is that the
-re-statement can be proved by simple rule induction, while the original
+restatement of the theorem as opposed to the original statement is that the
+restatement can be proved by simple rule induction, while the original
 statement requires induction on the size of the derivation, which is currently
 not explicitly formalized in this document and which involves a more laborious
-mechanical proof in theorem provers such as HOL.}:
-
-REVISE REVISE REVISE REVISE REVISE REVISE REVISE REVISE:
+mechanical proof in theorem provers like HOL.}:
 
 \begin{bycase}
 
 \Case{\Rcxmt}\\
-This rule is impossible because $\cx,\cxel\neq\mtcx$.
+This rule is impossible because $\cx_1,\cxel,\cx_2\neq\mtcx$.
 
-\Case{\Rcxtdec, \Rcxtvdec}
-\StePO{\ftvar{\cxel}=\emptyset\subseteq\cxtvarO}
-
-\Case{\Rcxodec}
+\Case{\Rcxtdec}\\
+If $\cx_2\neq\mtcx$:
 \begin{derivation}
-\step{\isty{\snoc{\cx}{\tvdec{\tvarS}}}{\typ}}{\premof{\Rcxodec}}
-\step{\ftvar{\typ}\subseteq\cxtvar{\cx}\cup\tvarS}{\indhyp, 1}
+\steP{\EXISTS{\cx_2',\cxel'}{\cx_2=\cx_2',\cxel'}}
+\step{\cxwf{\cx_1,\cxel,\cx_2'}}{\premof{\Rcxtdec}, 1}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{\indhyp, 2}
+\end{derivation}
+
+If $\cx_2=\mtcx$:
+\begin{derivation}
+\steP{\EXISTS{\tnam,n}{\cxel=\tdecO}}
+\step{\ftvar{\cxel}=\emptyset}{1}
+%\step{\cxwf{\cx_1}}{\premof{\Rcxtdec}}
+\end{derivation}
+
+If $\cx_1=\mtcx$:
+\begin{derivatioN}{2}
+\steP{\ftvar{\cx_1}=\cxtvar{\cx_1}=\emptyset}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{2, 3}
+\end{derivatioN}
+
+If $\cx_1\neq\mtcx$:
+\begin{derivatioN}{2}
+\steP{\EXISTS{\cx_1',\cxel'}{\cx_1=\cx_1',\cxel'}}
+\step{\cxwf{\cx_1}}{\premof{\Rcxtdec}, \hyp\ $\cx_2\neq\mtcx$}
+\steP
+{\cxtvar{\cx_1}
+ \link{\supseteq}{3}
+ \cxtvar{\cx_1'}
+ \link{\supseteq}{\indhyp, 4, 3}
+ \ftvar{\cx_1}}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{5, 2}
+\end{derivatioN}
+
+\Case{\Rcxtvdec}\\
+Analogous to \Rcxtdec.
+
+\Case{\Rcxodec}\\
+If $\cx_2\neq\mtcx$, the proof is analogous to \Rcxtdec.
+
+If $\cx_2=\mtcx$:
+\begin{derivation}
+\steP{\EXISTS{\onam,\tvarS,\typ}{\cxel=\odecO}}
+\step{\isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}}{\premof{\Rcxodec}}
+\step{\cxtvar{\cx_1}\cup\tvarS\supseteq
+      \ftvar{\cx_1}\cup\tvarS\cup\ftvar{\typ}}
+     {\indhyp, 2}
+
 \step{\cxwf{\snoc{\cx}{\tvdec{\tvarS}}}}{\thmref{thm-cxwf}, 1}
 \step{\tvarS\cap\cxtvarO=\emptyset}{\thmref{thm-cx-uniq-tvar}, 3}
 \step{(\cxtvarO\cup\tvarS)-\tvarS=\cxtvarO}{4}
 \step{\ftvar{\typ}-\tvarS\subseteq\cxtvarO}{2, 5}
 \step{\ftvar{\odecO}\subseteq\cxtvarO}{\defof{\ftvarY}}
 \end{derivation}
+
+REVISE REVISE REVISE REVISE REVISE REVISE REVISE REVISE:
 
 \Case{\Rcxtdef, \Rcxax, \Rcxlem}\\
 Analogous to \Rcxodec.
