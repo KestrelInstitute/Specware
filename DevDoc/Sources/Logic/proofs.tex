@@ -2392,14 +2392,39 @@ The theorem statement is equivalent to
  \cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}
 \end{array}
 \]
-because $A \subseteq B \IFF A \cup B \subseteq B$ for all sets $A$ and $B$. We
-prove the above implications by induction on the derivation of the judgements
-in the antecedents of the implications\footnote{The reason for proving this
-restatement of the theorem as opposed to the original statement is that the
-restatement can be proved by simple rule induction, while the original
-statement requires induction on the size of the derivation, which is currently
-not explicitly formalized in this document and which involves a more laborious
-mechanical proof in theorem provers like HOL.}:
+because $A \subseteq B \IFF A \cup B \subseteq B$ for all sets $A$ and $B$.
+
+Before proving the above implications, note that from the last one we can
+prove
+\[
+\cxwfO\ \ \IMPLIES\ \ \cxtvarO\supseteq\ftvar{\cx}
+\hspace{3em}(*)
+\]
+If $\cx=\mtcx$:
+\[
+\cxtvarO=\emptyset\supseteq\emptyset=\ftvar{\cx}
+\]
+If $\cx\neq\mtcx$:
+\begin{derivation}
+\steP{\EXISTS{\cx_0,\cxel}{\cx=\cx_0,\cxel}}
+\steP
+{\cxtvarO
+ \link{\supseteq}{1}
+ \cxtvar{\cx_0}
+ \link{\supseteq}{\hyp}
+ \ftvar{\cx_0,\cxel}
+ \link{=}{1}
+ \ftvar{\cx}}
+\end{derivation}
+This concludes the proof of $(*)$.
+
+We prove the six implications above by induction on the derivation of the
+judgements in the antecedents of the implications\footnote{The reason for
+proving this restatement of the theorem as opposed to the original statement
+is that the restatement can be proved by simple rule induction, while the
+original statement requires induction on the size of the derivation, which is
+currently not explicitly formalized in this document and which involves a more
+laborious mechanical proof in theorem provers like HOL.}:
 
 \begin{bycase}
 
@@ -2409,7 +2434,7 @@ This rule is impossible because $\cx_1,\cxel,\cx_2\neq\mtcx$.
 \Case{\Rcxtdec}\\
 If $\cx_2\neq\mtcx$:
 \begin{derivation}
-\steP{\EXISTS{\cx_2',\cxel'}{\cx_2=\cx_2',\cxel'}}
+\steP{\EXISTS{\cx_2',\tnam,n}{\cx_2=\cx_2',\tdecO}}
 \step{\cxwf{\cx_1,\cxel,\cx_2'}}{\premof{\Rcxtdec}, 1}
 \step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{\indhyp, 2}
 \end{derivation}
@@ -2418,27 +2443,10 @@ If $\cx_2=\mtcx$:
 \begin{derivation}
 \steP{\EXISTS{\tnam,n}{\cxel=\tdecO}}
 \step{\ftvar{\cxel}=\emptyset}{1}
-%\step{\cxwf{\cx_1}}{\premof{\Rcxtdec}}
+\step{\cxwf{\cx_1}}{\premof{\Rcxtdec}}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1}}{\indhyp, 3, $(*)$}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{4, 2}
 \end{derivation}
-
-If $\cx_1=\mtcx$:
-\begin{derivatioN}{2}
-\steP{\ftvar{\cx_1}=\cxtvar{\cx_1}=\emptyset}
-\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{2, 3}
-\end{derivatioN}
-
-If $\cx_1\neq\mtcx$:
-\begin{derivatioN}{2}
-\steP{\EXISTS{\cx_1',\cxel'}{\cx_1=\cx_1',\cxel'}}
-\step{\cxwf{\cx_1}}{\premof{\Rcxtdec}, \hyp\ $\cx_2\neq\mtcx$}
-\steP
-{\cxtvar{\cx_1}
- \link{\supseteq}{3}
- \cxtvar{\cx_1'}
- \link{\supseteq}{\indhyp, 4, 3}
- \ftvar{\cx_1}}
-\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{5, 2}
-\end{derivatioN}
 
 \Case{\Rcxtvdec}\\
 Analogous to \Rcxtdec.
@@ -2449,48 +2457,66 @@ If $\cx_2\neq\mtcx$, the proof is analogous to \Rcxtdec.
 If $\cx_2=\mtcx$:
 \begin{derivation}
 \steP{\EXISTS{\onam,\tvarS,\typ}{\cxel=\odecO}}
+\step{\ftvar{\cxel}=\ftvar{\typ}-\tvarS}{1}
 \step{\isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}}{\premof{\Rcxodec}}
-\step{\cxtvar{\cx_1}\cup\tvarS\supseteq
-      \ftvar{\cx_1}\cup\tvarS\cup\ftvar{\typ}}
-     {\indhyp, 2}
-
-\step{\cxwf{\snoc{\cx}{\tvdec{\tvarS}}}}{\thmref{thm-cxwf}, 1}
-\step{\tvarS\cap\cxtvarO=\emptyset}{\thmref{thm-cx-uniq-tvar}, 3}
-\step{(\cxtvarO\cup\tvarS)-\tvarS=\cxtvarO}{4}
-\step{\ftvar{\typ}-\tvarS\subseteq\cxtvarO}{2, 5}
-\step{\ftvar{\odecO}\subseteq\cxtvarO}{\defof{\ftvarY}}
+\step{\cxtvar{\cx_1}\cup\tvarS\supseteq\ftvar{\cx_1}\cup\ftvar{\typ}}
+     {\indhyp, 3}
+\step{(\cxtvar{\cx_1}\cup\tvarS)-\tvarS\supseteq
+      (\ftvar{\cx_1}\cup\ftvar{\typ})-\tvarS}
+     {4}
+\step{\cxwf{\snoc{\cx_1}{\tvdec{\tvarS}}}}{\thmref{thm-cxwf}, 3}
+\step{\tvarS\cap\cxtvar{\cx_1}=\emptyset}{\thmref{thm-cx-uniq-tvar}, 6}
+\step{(\cxtvar{\cx_1}\cup\tvarS)-\tvarS=\cxtvar{\cx_1}}{7}
+\step{\cxwf{\cx_1}}{\premof{\Rcxodec}}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1}}{\indhyp, 9, $(*)$}
+\step{\tvarS\cap\ftvar{\cx_1}=\emptyset}{7, 10}
+\step{\ftvar{\cx_1}-\tvarS=\ftvar{\cx_1}}{11}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{5, 8, 12, 2}
 \end{derivation}
-
-REVISE REVISE REVISE REVISE REVISE REVISE REVISE REVISE:
 
 \Case{\Rcxtdef, \Rcxax, \Rcxlem}\\
 Analogous to \Rcxodec.
 
-\Case{\Rcxvdec}
+\Case{\Rcxvdec}\\
+If $\cx_2\neq\mtcx$, the proof is analogous to \Rcxtdec.
+
+If $\cx_2=\mtcx$:
 \begin{derivation}
-\step{\istyO{\typ}}{\premof{\Rcxvdec}}
-\step{\ftvar{\typ}\subseteq\cxtvarO}{\indhyp, 1}
-\step{\ftvar{\vdecO}\subseteq\cxtvarO}{\defof{\ftvarY}, 2}
+\steP{\EXISTS{\var,\typ}{\cxel=\vdecO}}
+\step{\isty{\cx_1}{\typ}}{\premof{\Rcxvdec}}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1}\cup\ftvar{\typ}}{\indhyp, 2}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{3, 1}
 \end{derivation}
 
 \Case{\Rtbool}
-\StePO{\ftvar{\bool}=\emptyset\subseteq\cxtvarO}
+\begin{derivation}
+\step{\cxwfO}{\premof{\Rtbool}}
+\steP
+{\cxtvarO
+ \link{\supseteq}{\indhyp, 1, $(*)$}
+ \ftvar{\cx}
+ \link{=}{$\ftvar{\bool}=\emptyset$}
+ \ftvar{\cx}\cup\ftvar{\bool}}
+\end{derivation}
 
 \Case{\Rtvar}
-\begin{links}
-$\ftvar{\tvar}
- \linK{=}
- \setI{\tvar}
- \link{\subseteq}{$\tvar\in\cxtvarO$, \premof{\Rtvar}}
- \cxtvarO$
-\end{links}
+\begin{derivation}
+\step{\cxwfO}{\premof{\Rtvar}}
+\step{\cxtvarO\supseteq\ftvar{\cx}}{\indhyp, 1, $(*)$}
+\step{\tvar\in\cxtvarO}{\premof{\Rtvar}}
+\step{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\tvar}}{2, 3}
+\end{derivation}
 
 \Case{\Rtinst}
 \begin{derivation}
 \steP{\ftvar{\tinstO}=\bigcup_i\ftvar{\typ_i}}
 \step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Rtinst}}
-\step{\FORALL{i}{\ftvar{\typ_i}\subseteq\cxtvarO}}{\indhyp, 2}
-\step{\ftvar{\tinstO}\subseteq\cxtvarO}{1, 3}
+\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\typ_i}}}{\indhyp, 2}
+\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\typ_i}}}{3}
+\step{\cxtvarO\supseteq\ftvar{\tinstO}}{1, 4}
+\step{\cxwfO}{\premof{\Rtinst}}
+\step{\cxtvarO\supseteq\ftvar{\cx}}{\indhyp, 6, $(*)$}
+\step{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\tinstO}}{5, 7}
 \end{derivation}
 
 \Case{\Rtedef}
@@ -2501,19 +2527,27 @@ $\ftvar{\tvar}
       \bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}}
      {\thmref{thm-ftvar-of-tsbs}}
 \step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Rtedef}}
-\step{\FORALL{i}{\ftvar{\typ_i}\subseteq\cxtvarO}}{\indhyp, 3}
-\step{\ftvar{\tinstO}\subseteq\cxtvarO}{4, 1}
+\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\typ_i}}}{\indhyp, 3}
+\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\typ_i}}}{4}
+\step{\cxtvarO\supseteq\ftvar{\tinstO}}{5, 1}
 \step{\tdefO\in\cx}{\premof{\Rtedef}}
-\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\tdefO, \cx_2}}{6}
+\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\tdefO, \cx_2}}{7}
 \step{\cxwf{\cx}}{\premof{\Rtedef}}
-\step{\cxwf{\snoc{\cx_1}{\tdefO}}}{\thmref{thm-cxprefix}, 7, 8}
-\step{\ftvar{\tdefO}\subseteq\cxtvar{\cx_1}}{\indhyp, 9}
-\step{\ftvar{\typ}-\tvarS\subseteq\cxtvarO}{\defof{\ftvarY}, 7}
+\steP
+{\cxtvarO
+ \link{\supseteq}{8}
+ \cxtvar{\cx_1}
+ \link{\supseteq}{\indhyp, 9, 8}
+ \ftvar{\cx_1,\tdefO}
+ \linK{\supseteq}
+ \ftvar{\typ}-\tvarS}
 \steP{\bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}\subseteq
       \bigcup_i\ftvar{\typ_i}}
-\step{\ftvar{\tinstO}\cup\ftvar{\tsbslash{\typ}{\tvarS}{\typS}}
-      \subseteq\cxtvarO}
-     {5, 2, 11, 12, 4}
+\step{\cxtvarO\supseteq\bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}}{5, 11}
+\step{\cxtvarO\supseteq\ftvar{\cx}}{\indhyp, 9, $(*)$}
+\step{\cxtvarO\supseteq
+      \ftvar{\cx}\cup\ftvar{\tinstO}\cup\ftvar{\tsbslash{\typ}{\tvarS}{\typS}}}
+     {13, 6, 2, 10, 12}
 \end{derivation}
 
 \Case{\Revar}
@@ -2521,9 +2555,17 @@ $\ftvar{\tvar}
 \step{\vdecO\in\cx}{\premof{\Revar}}
 \step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\vdecO,\cx_2}}{1}
 \step{\cxwf{\cx}}{\premof{\Revar}}
-\step{\cxwf{\snoc{\cx_1}{\vdecO}}}{\thmref{thm-cxprefix}, 3, 2}
-\step{\ftvar{\typ}\subseteq\cxtvar{\cx_1}}{\indhyp, 4}
-\step{\ftvar{\typ}\subseteq\cxtvarO}{5, 2}
+\steP
+{\cxtvarO
+ \link{\supseteq}{2}
+ \cxtvar{\cx_1}
+ \link{\supseteq}{\indhyp, 3, 2}
+ \ftvar{\cx_1}\cup\ftvar{\typ}
+ \linK{\supseteq}
+ \ftvar{\typ}}
+\step{\cxwfO}{\premof{\Revar}}
+\step{\cxtvarO\supseteq\ftvar{\cx}}{\indhyp, 5, $(*)$}
+\step{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\typ}}{6, 4}
 \end{derivation}
 
 \Case{\Reop}\\
@@ -2532,48 +2574,31 @@ Analogous to \Rtedef.
 \Case{\Reabs}
 \begin{derivation}
 \step{\hasty{\snoc{\cx}{\vdecO}}{\expr}{\typ'}}{\premof{\Reabs}}
-\step{\ftvar{\expr}\cup\ftvar{\typ'}\subseteq\cxtvar{\snoc{\cx}{\vdecO}}}
+\step{\cxtvar{\cx,\vdecO}\supseteq
+      \ftvar{\cx,\vdecO}\cup\ftvar{\expr}\cup\ftvar{\typ'}}
      {\indhyp, 1}
-\steP{\cxtvar{\snoc{\cx}{\vdecO}}=\cxtvarO}
-\step{\ftvar{\expr}\cup\ftvar{\typ'}\subseteq\cxtvarO}{2, 3}
-\step{\cxwf{\snoc{\cx}{\vdecO}}}{\thmref{thm-cxwf}, 1}
-\step{\ftvar{\typ}\subseteq\cxtvarO}{\indhyp, 5}
-\step{\ftvar{\absO}\cup\ftvar{\tarr{\typ}{\typ'}}\subseteq\cxtvarO}{4, 6}
+\step{\cxtvarO\supseteq
+      \ftvar{\cx}\cup\ftvar{\typ}\cup\ftvar{\expr}\cup\ftvar{\typ'}}
+     {2}
+\steP{\ftvar{\absO}=\ftvar{\typ}\cup\ftvar{\expr}}
+\steP{\ftvar{\tarr{\typ}{\typ'}}=\ftvar{\typ}\cup\ftvar{\typ'}}
+\step{\cxtvarO\supseteq
+      \ftvar{\cx}\cup\ftvar{\absO}\cup\ftvar{\tarr{\typ}{\typ'}}}
+     {3, 4, 5}
 \end{derivation}
 
-\Case{\Rthax}
-\begin{derivation}
-\step{\ftvar{\tsbslash{\expr}{\tvarS}{\typS}}=
-      (\ftvar{\expr}-\tvarS)\cup
-      \bigcup_{\tvar_i\in\ftvar{\expr}}\ftvar{\typ_i}}
-     {\thmref{thm-ftvar-of-tsbs}}
-\step{\axO\in\cx}{\premof{\Rthax}}
-\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\axO,\cx_2}}{2}
-\step{\cxwfO}{\premof{\Rthax}}
-\step{\cxwf{\snoc{\cx_1}{\axO}}}{\thmref{thm-cxprefix}, 4, 3}
-\step{\ftvar{\axO}\subseteq\cxtvar{\cx_1}}{\indhyp, 5}
-\step{\ftvar{\expr}-\tvarS\subseteq\cxtvar{\cx}}{6, 3}
-\step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Rthax}}
-\step{\FORALL{i}{\ftvar{\typ_i}\subseteq\cxtvarO}}{\indhyp, 8}
-\step{\ftvar{\tsbslash{\expr}{\tvarS}{\typS}}\subseteq\cxtvarO}{1, 7, 9}
-\end{derivation}
-
-\Case{\Rthbool}
-\StepO{\ftvar{\fa{\var}{\tarr{\bool}{\bool}}
-                 {(\iiff{\conj{\app{\var}{\true}}{\app{\var}{\false}}}
-                        {(\fa{\var'}{\bool}{\app{\var}{\var'}})})}}=\emptyset}
-      {\thmref{thm-ftvar-abbrev}}
+\Case{\Rthax}\\
+Analogous to \Rtedef.
 
 \Case{\restrules}\\
-Analogous to \Rtinst: each free type variable in the types and expressions in
-the right part of the judgement $\jcxdots{\cx}$ is also a free type variable
-in some premise $\jcxdots{\cx'}$ of the rule such that
-$\cxtvar{\cx'}=\cxtvarO$ (the only rules in which $\cx'\neq\cx$ are
+Analogous to \Rtinst: each free type variable in the judgement $\jcxdots{\cx}$
+is also a free type variable in some premise $\jcxdots{\cx'}$ of the rule such
+that $\cxtvar{\cx'}=\cxtvarO$ (the only rules in which $\cx'\neq\cx$ are
 \Reif, \Rthifsbs, \Rthif). We use \thmref{thm-ftvar-abbrev} for
 % \Rtquot,
 \Rstrefl, \Rstarr, \Rstrec,
 % \Rstsum,
-\Redesc, \Rthext, \Rthrec,
+\Redesc, \Rthbool, \Rthext, \Rthrec,
 %\Rthembsurj, \Rthembdist, \Rthembinj,
 %\Rthquotsurj, \Rthquoteclass,
 and \Rthprojsub.
