@@ -318,8 +318,12 @@
 				  #-(or Linux MSWindows) (error "Unknown OS for xeli")
 				  specware-xeli-dir)))
       (copy-dist-directory source-xeli-dir
-			   (extend-directory franz-dir  "xeli")))
-
+			   (extend-directory franz-dir  "xeli")
+			   t
+			   #'(lambda (p) (member (pathname-type p)
+						 '("elbak" "elcbak")
+						 :test 'equalp))))
+    
     (dolist (file franz-files)
       (copy-dist-file (merge-pathnames source-dir file)
 		      (merge-pathnames franz-dir  file)))
