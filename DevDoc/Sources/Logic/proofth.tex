@@ -384,9 +384,9 @@ type equivalence as
 \[
 \rruleIV
  {\istyO{\tsubO}}
+ {\istyO{\tsub{\typ'}{\tspred'}}}
  {\teqO{\typ}{\typ'}}
  {\theoO{\eq{\tspred}{\tspred'}}}
- {\efvar{\tspred'}=\emptyset}
  {\teqO{\tsubO}{\tsub{\typ'}{\tspred'}}}
  {\Rterestr}
 \]
@@ -429,9 +429,11 @@ transitive.
 Type equivalence is a congruence with respect to syntactic (meta-)operations
 to construct types in the \MS\ type system, namely type instantiations, arrow
 types, record types, and restriction types. In addition, equal restriction
-predicates give rise to equivalent restriction types. The condition
-$\efvar{\tspred'}=\emptyset$ is needed for the satisfaction of certain
-properties of the proof theory (see \secref{props}).
+predicates give rise to equivalent restriction types. The premise
+$\istyO{\tsub{\typ'}{\tspred'}}$ in \Rterestr\ may be redundant, i.e.\
+derivable from the others, but this fact has not been established yet and so
+for now we have it as an explicit premise, which is needed to prove a theorem
+in \secref{props}.
 \item
 The order of the components of a record type is unimportant: any permutation
 of the components yields equivalent types. In the rule, the permutation is
@@ -585,8 +587,9 @@ well-typed expressions as
 \]
 
 \[
-\rruleI
+\rruleII
  {\hasty{\snoc{\cx}{\vdecO}}{\expr}{\typ'}}
+ {\istyO{\typ'}}
  {\hastyO{\absO}{\tarr{\typ}{\typ'}}}
  {\Reabs}
 \]
@@ -600,10 +603,11 @@ well-typed expressions as
 \]
 
 \[
-\rruleIII
+\rruleIV
  {\hastyO{\expr_0}{\bool}}
  {\hasty{\snoc{\cx}{\axM{\expr_0}}}{\expr_1}{\typ}}
  {\hasty{\snoc{\cx}{\axM{\nega{\expr_0}}}}{\expr_2}{\typ}}
+ {\istyO{\typ}}
  {\hastyO{\iifO}{\typ}}
  {\Reif}
 \]
@@ -688,7 +692,8 @@ the range type of the arrow type.
 An abstraction is well-typed if the body is well-typed in the context extended
 with the declaration of the variable bound by the abstraction. The type of the
 abstraction is the arrow type that has the type of the variable as domain and
-the type of the body as range.
+the type of the body as range. The premise $\istyO{\typ'}$ of \Reabs\ is
+needed to prove a theorem in \secref{props}.
 \item
 An equality is well-typed with type $\bool$ if the left- and right-hand sides
 are both well-typed with a common type $\typ$.
@@ -700,7 +705,10 @@ not is realized by adding an axiom to the context. This rule makes
 conditionals non-strict. There is also a stronger rule $\ReifO$ that does not
 add any assumption about the condition to the context. The reason for rule
 $\ReifO$ and for why it does not seem derivable from $\Reif$, is given in
-\secref{props}.
+\secref{props}. The premise $\istyO{\typ}$ in \Reif\ may be redundant, i.e.\
+derivable from the others, but this fact has not been established yet and so
+for now we have it as an explicit premise, which is needed to prove a theorem
+in \secref{props}.
 \item
 The description operator for a well-formed type is well-typed and denotes a
 function from the predicates over the type that are satisfied by a unique
