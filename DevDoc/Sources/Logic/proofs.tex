@@ -4539,6 +4539,7 @@ derived as follows:
 \end{derivation}
 
 
+
 \subsection*{Proof of \thmref{thm-eexI}}
 
 Analogous to \thmref{thm-efa}, using \ReexIop\ instead of \Refaop.
@@ -4553,6 +4554,399 @@ Analogous to \thmref{thm-efa}, using \ReexIop\ instead of \Refaop.
 \step{\hastyO{\expr}{\trecO}}{\hyp}
 \step{\hastyO{\app{\pjop{\fnam_j}}{\expr}}{\typ_j}}{\Reapp, 2, 3}
 \end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-equiv-types-wf}}
+
+By induction on the derivation of the type equivalence judgement:
+
+\begin{bycase}
+
+\Case{\Rtedef}
+\begin{derivation}
+\step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Rtedef}}
+\step{\tdefO\in\cx}{\premof{\Rtedef}}
+\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\tdefO,\cx_2}}{2}
+\step{\cxwfO}{\premof{\Rtedef}}
+\step{\tdec{\tnam}{\seqlen{\tvarS}}\in\cx_1
+      \ \AND\
+      \isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}}
+     {\thmref{thm-tdef-wf}, 4, 3}
+\step{\tdec{\tnam}{\seqlen{\tvarS}}\in\cx_1}{5}
+\step{\tdec{\tnam}{\seqlen{\tvarS}}\in\cx}{6, 3}
+\step{\istyO{\tinstO}}{\Rtinst, 4, 7, 1}
+\step{\isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}}{5}
+\step{\tsbslashok{\mtcx}{\tvarS}{\typS}}{\defof{\tsbsokY}}
+\step{\istyO{\tsbslash{\typ}{\tvarS}{\typS}}}
+     {\thmref{thm-tsbs-jdg}, 1, 10, 4, 9}
+\step{\istyO{\tinstO}\ \AND\ \istyO{\tsbslash{\typ}{\tvarS}{\typS}}}{8, 11}
+\end{derivation}
+
+\Case{\Rterefl}
+\StepO{\istyO{\typ}}{\premof{\Rterefl}}
+
+\Case{\Rtesymm}
+\begin{derivation}
+\step{\teqO{\typ_1}{\typ_2}}{\premof{\Rtesymm}}
+\step{\istyO{\typ_1}\ \AND\ \istyO{\typ_2}}{\indhyp, 1}
+\end{derivation}
+
+\Case{\Rtetrans}
+\begin{derivation}
+\step{\teqO{\typ_1}{\typ_2}}{\premof{\Rtetrans}}
+\step{\istyO{\typ_1}}{\indhyp, 1}
+\step{\teqO{\typ_2}{\typ_3}}{\premof{\Rtetrans}}
+\step{\istyO{\typ_3}}{\indhyp, 3}
+\step{\istyO{\typ_1}\ \AND\ \istyO{\typ_3}}{2, 4}
+\end{derivation}
+
+\Case{\Rteinst}
+\begin{derivation}
+\step{\istyO{\tinstO}}{\premof{\Rteinst}}
+\step{\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}{\premof{\Rteinst}}
+\step{\FORALL{i}{\istyO{\typ_i'}}}{\indhyp, 2}
+\step{\tdec{\tnam}{\seqlen{\typS}}\in\cx}{\thmref{thm-tinst-inv}, 1}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\tinst{\tnam}{\typS'}}}{\Rtinst, 5, 4, 1}
+\step{\istyO{\tinstO}\ \AND\ \istyO{\tinst{\tnam}{\typS'}}}{1, 6}
+\end{derivation}
+
+\Case{\Rtearr}
+\begin{derivation}
+\step{\teqO{\typ_1}{\typ_1'}}{\premof{\Rtearr}}
+\step{\istyO{\typ_1}\ \AND\ \istyO{\typ_1'}}{\indhyp, 1}
+\step{\teqO{\typ_2}{\typ_2'}}{\premof{\Rtearr}}
+\step{\istyO{\typ_2}\ \AND\ \istyO{\typ_2'}}{\indhyp, 3}
+\step{\istyO{\tarr{\typ_1}{\typ_2}}}{\Rtarr, 2, 4}
+\step{\istyO{\tarr{\typ_1'}{\typ_2'}}}{\Rtarr, 2, 4}
+\step{\istyO{\tarr{\typ_1}{\typ_2}}\ \AND\ \istyO{\tarr{\typ_1'}{\typ_2'}}}
+     {5, 6}
+\end{derivation}
+
+\Case{\Rterec}
+\begin{derivation}
+\step{\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}{\premof{\Rterec}}
+\step{\FORALL{i}{\istyO{\typ_i}\ \AND\ \istyO{\typ_i'}}}{\indhyp, 1}
+\step{\cxwfO}{\premof{\Rterec}}
+\step{\istyO{\trecO}}{\Rtrec, 3, 2}
+\step{\istyO{\trec{i}{\fnam_i}{\typ_i'}}}{\Rtrec, 3, 2}
+\step{\istyO{\trecO}\ \AND\ \istyO{\trec{i}{\fnam_i}{\typ_i'}}}{4, 5}
+\end{derivation}
+
+\Case{\Rterestr}
+\begin{derivation}
+\step{\istyO{\tsubO}}{\premof{\Rterestr}}
+\step{\istyO{\tsub{\typ'}{\tspred'}}}{\premof{\Rterestr}}
+\step{\istyO{\tsubO}\ \AND\ \istyO{\tsub{\typ'}{\tspred'}}}{1, 2}
+\end{derivation}
+
+\Case{\Rterecord}
+\begin{derivation}
+\step{\istyO{\trecO}}{\premof{\Rterecord}}
+\step{\FORALL{i}{\istyO{\typ_i}}}{\thmref{thm-trec-inv}, 1}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\trec{i}{\fnam_{\perm(i)}}{\typ_{\perm(i)}}}}{\Rtrec, 3, 2}
+\step{\istyO{\trecO}\ \AND\ \istyO{\trec{i}{\fnam_{\perm(i)}}{\typ_{\perm(i)}}}}
+     {1, 4}
+\end{derivation}
+
+\end{bycase}
+
+
+
+\subsection*{Proof of \thmref{thm-eteq}}
+
+\begin{derivation}
+\step{\teqO{\typ}{\typ'}}{\hyp}
+\step{\istyO{\typ}}{\thmref{thm-equiv-types-wf}, 1}
+\step{\issubO{\typ}{\abs{\var}{\typ}{\true}}{\typ}}{\Rstrefl, 2}
+\step{\teqO{\typ}{\typ}}{\Rterefl, 2}
+\step{\issubO{\typ}{\abs{\var}{\typ}{\true}}{\typ'}}{\Rstteq, 3, 4, 1}
+\step{\hastyO{\expr}{\typ}}{\hyp}
+\step{\hastyO{\expr}{\typ'}}{\Resuper, 6, 5}
+\end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-subtyping-wf}}
+
+The conjunction of this theorem and \thmref{thm-exty-wf} is proved by
+induction on the derivation of the antecedents of the two conjoined
+implications. Here we present the cases for the subtyping rules, while the
+cases for the well-typedness rules are presented in the next subsection.
+
+\begin{bycase}
+
+\Case{\Rstsub}
+\begin{derivation}
+\step{\istyO{\tsubO}}{\premof{\Rstsub}}
+\step{\hastyO{\tspred}{\tarr{\typ}{\bool}}}{\thmref{thm-tspred-wt}, 1}
+\step{\istyO{\tarr{\typ}{\bool}}}{\indhypthm{thm-exty-wf}, 2}
+\step{\istyO{\typ}}{\thmref{thm-tarr-inv}, 3}
+\step{\istyO{\tsubO}\ \AND\
+      \istyO{\typ}\ \AND\
+      \hastyO{\tspred}{\tarr{\typ}{\bool}}}
+     {1, 4, 2}
+\end{derivation}
+
+\Case{\Rstrefl}
+\begin{derivation}
+\step{\istyO{\typ}}{\premof{\Rstrefl}}
+\step{\hastyO{\abs{\var}{\typ}{\true}}{\tarr{\typ}{\bool}}}{\Reconsttrue, 1}
+\step{\istyO{\typ}\ \AND\ \hastyO{\abs{\var}{\typ}{\true}}{\tarr{\typ}{\bool}}}
+     {1, 2}
+\end{derivation}
+
+\Case{\Rstarr}
+\begin{derivation}
+\step{\issubO{\typ_1}{\tspred}{\typ_2}}{\premof{\Rstarr}}
+\step{\istyO{\typ_1}}{\indhyp, 1}
+\step{\istyO{\typ_2}}{\indhyp, 1}
+\step{\hastyO{\tspred}{\tarr{\typ_2}{\bool}}}{\indhyp, 1}
+\step{\istyO{\typ}}{\premof{\Rstarr}}
+\step{\istyO{\tarr{\typ}{\typ_1}}}{\Rtarr, 5, 2}
+\step{\istyO{\tarr{\typ}{\typ_2}}}{\Rtarr, 5, 3}
+\step{\cxwfO}{\thmref{thm-cxwf}, 5}
+\end{derivation}
+Pick a variable $\varI\in\Nam-(\cxvarO\cup\setII{\var}{\var'})$ (where $\var$
+and $\var'$ are the variables used in the instance of \Rstarr):
+\begin{derivatioN}{8}
+\step{\cxwf{\snoc{\cx}{\vdec{\varI}{\tarr{\typ}{\typ_2}}}}}
+     {\Rcxvdec, 8, 7}
+\step{\isty{\snoc{\cx}{\vdec{\varI}{\tarr{\typ}{\typ_2}}}}{\typ}}
+     {\thmref{thm-mono}, 9, 5}
+\end{derivatioN}
+Pick a variable $\varI'\in\Nam-(\cxvarO\cup\setIII{\var}{\var'}{\varI})$:
+\begin{derivatioN}{10}
+\step{\cxwf{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}}
+     {\Rcxvdec, 9, 10}
+\step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
+            {\varI}{\tarr{\typ}{\typ_2}}}
+     {\Revar, 11}
+\step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
+            {\varI'}{\typ}}
+     {\Revar, 11}
+\step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
+            {\app{\varI}{\varI'}}{\typ_2}}
+     {\Reapp, 12, 13}
+\step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
+            {\tspred}{\tarr{\typ_2}{\bool}}}
+     {\thmref{thm-mono}, 4, 11}
+\step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
+            {\app{\tspred}{(\app{\varI}{\varI'})}}{\bool}}
+     {\Reapp, 15, 14}
+\step{\isty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}{\bool}}
+     {\Rtbool, 9}
+\step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}
+            {\abs{\varI'}{\typ}{\app{\tspred}{(\app{\varI}{\varI'})}}}
+            {\tarr{\typ}{\bool}}}
+     {\Reabs, 16, 17}
+\step{\efvar{\tspred}=\emptyset}{\thmref{thm-subpred-no-free-vars}, 1}
+\step{\var'\not\in\efvar{\app{\tspred}{(\app{\varI}{\varI'})}}}
+     {19, \hyp\ $\varI\neq\var'$, \hyp\ $\varI'\neq\var'$}
+\steP
+{\cvarv{\app{\tspred}{(\app{\varI}{\varI'})}}{\varI'}
+ \linK{=}
+ \cvarv{\tspred}{\varI'}\cup\cvarv{\varI}{\varI'}\cup\cvarv{\varI'}{\varI'}
+ \link{=}{\thmref{thm-esbs-not-free}, 19, \defof{\cvarvY}}
+ \emptyset}
+\step{\var'\not\in\cvarv{\app{\tspred}{(\app{\varI}{\varI'})}}{\varI'}}
+     {21}
+\step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}
+            {\abs{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}
+            {\tarr{\typ}{\bool}}}
+     {\Reabsalpha, 18, 20, 22}
+\step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}
+            {\faopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+     {\Refaop, 10}
+\step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}
+            {\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}
+            {\bool}}
+     {\Reapp, 24, 23}
+\step{\istyO{\bool}}{\Rtbool, 8}
+\step{\hastyO{\abs{\varI}
+                  {\tarr{\typ}{\typ_2}}
+                  {\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}}
+             {\tarr{(\tarr{\typ}{\typ_2})}{\bool}}}
+     {\Reabs, 25, 26}
+\step{\efvar{\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}=
+      \setI{\varI}}
+     {\thmref{thm-efvar-abbrev}, 19, \hyp\ $\varI\neq\var'$}
+\step{\var\not\in\efvar{\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}}
+     {28, \hyp\ $\varI\neq\var$}
+\steP
+{\cvarv{\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}{\varI}
+ \link{=}{\thmref{thm-cvarv-abbrev}, 28}
+ \setI{\var'}\cup\cvarv{\app{\tspred}{(\app{\varI}{\var'})}}{\varI}
+ \link{=}{\thmref{thm-esbs-not-free}, 19, \defof{\cvarvY}}
+ \setI{\var'}}
+\step{\var\neq\var'}{\premof{\Rstarr}}
+\step{\var\not\in
+      \cvarv{\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}{\varI}}
+     {30, 31}
+\step{\hastyO{\abs{\var}
+                  {\tarr{\typ}{\typ_2}}
+                  {\fa{\var'}{\typ}{\app{\tspred}{(\app{\var}{\var'})}}}}
+             {\tarr{(\tarr{\typ}{\typ_2})}{\bool}}}
+     {\Reabsalpha, 27, 29, 32}
+\step{\istyO{\tarr{\typ}{\typ_1}}\ \AND\
+      \istyO{\tarr{\typ}{\typ_2}}\ \AND\\
+      \hastyO{\abs{\var}
+                  {\tarr{\typ}{\typ_2}}
+                  {\fa{\var'}{\typ}{\app{\tspred}{(\app{\var}{\var'})}}}}
+             {\tarr{(\tarr{\typ}{\typ_2})}{\bool}}}
+     {6, 7, 33}
+\end{derivatioN}
+
+\Case{\Rstrec}
+\begin{derivation}
+\step{\istyO{\trecO}}{\premof{\Rstrec}}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\FORALL{i}{\issubO{\typ_i}{\tspred_i}{\typ_i'}}}{\premof{\Rstrec}}
+\step{\FORALL{i}{\istyO{\typ_i'}}}{\indhyp, 3}
+\step{\istyO{\trec{i}{\fnam_i}{\typ_i'}}}{\Rtrec, 2, 4}
+\end{derivation}
+Pick a variable $\varI\in\Nam-(\cxvarO\cup\setI{\var})$ (where $\var$ is the
+variable used in the instance of \Rstrec):
+\begin{derivatioN}{5}
+\step{\cxwf{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}}{\Rcxvdec, 2, 5}
+\step{\isty{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}
+           {\trec{i}{\fnam_i}{\typ_i'}}}
+     {\thmref{thm-mono}, 5, 6}
+\step{\hasty{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}
+            {\varI}{\trec{i}{\fnam_i}{\typ_i'}}}
+     {\Revar, 6}
+\step{\FORALL{i}{\hasty{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}
+                       {\proj{\varI}{\fnam_i}}{\typ_i'}}}
+     {\RedotO, 7, 8}
+\step{\FORALL{i}{\hastyO{\tspred_i}{\tarr{\typ_i'}{\bool}}}}
+     {\indhyp, 3}
+\step{\FORALL{i}{\hasty{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}
+                       {\tspred_i}{\tarr{\typ_i'}{\bool}}}}
+     {\thmref{thm-mono}, 10, 6}
+\step{\FORALL{i}{\hasty{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}
+                       {\app{\tspred_i}{\proj{\varI}{\fnam_i}}}
+                       {\bool}}}
+     {\Reapp, 11, 9}
+\step{\hasty{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}{\true}{\bool}}
+     {\Retrue, 6}
+\step{\hasty{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}
+            {\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}
+            {\bool}}
+     {13\footnote{Recall that $\conjI{i}{\expr_i}=\true$ if $n=0$},
+      \ReconjO, 12}
+\step{\istyO{\bool}}{\Rtbool, 2}
+\step{\hastyO{\abs{\varI}{\trec{i}{\fnam_i}{\typ_i'}}
+                  {\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}}
+             {\tarr{\trec{i}{\fnam_i}{\typ_i'}}{\bool}}}
+     {\Reabs, 14, 15}
+\step{\FORALL{i}{\efvar{\tspred_i}=\emptyset}}
+     {\thmref{thm-subpred-no-free-vars}, 3}
+\step{\efvar{\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}=\setI{\varI}}
+     {\thmref{thm-efvar-abbrev}, 17}
+\step{\var\not\in\efvar{\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}}
+     {18, \hyp\ $\varI\neq\var$}
+\steP
+{\cvarv{\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}{\varI}
+ \link{=}{\thmref{thm-cvarv-abbrev}}
+ \bigcup_i\cvarv{\tspred_i}{\varI}\cup\cvarv{\varI}{\varI}
+ \link{=}{\thmref{thm-esbs-not-free}, 17, \defof{\cvarvY}}
+ \emptyset}
+\step{\var\not\in
+      \cvarv{\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}{\varI}}
+     {20}
+\step{\hastyO{\abs{\var}{\trec{i}{\fnam_i}{\typ_i'}}
+                  {\conjI{i}{\app{\tspred_i}{\proj{\var}{\fnam_i}}}}}
+             {\tarr{\trec{i}{\fnam_i}{\typ_i'}}{\bool}}}
+     {\Reabsalpha, 16, 19, 21}
+\step{\istyO{\trecO}\ \AND\
+      \istyO{\trec{i}{\fnam_i}{\typ_i'}}\ \AND\\
+      \hastyO{\abs{\var}{\trec{i}{\fnam_i}{\typ_i'}}
+                  {\conjI{i}{\app{\tspred_i}{\proj{\var}{\fnam_i}}}}}
+             {\tarr{\trec{i}{\fnam_i}{\typ_i'}}{\bool}}}
+     {1, 5, 22}
+\end{derivatioN}
+
+\Case{\Rstteq}
+\begin{derivation}
+\step{\teqO{\typ_1}{\typ_1'}}{\premof{\Rstteq}}
+\step{\istyO{\typ_1'}}{\thmref{thm-equiv-types-wf}, 1}
+\step{\teqO{\typ_2}{\typ_2'}}{\premof{\Rstteq}}
+\step{\istyO{\typ_2'}}{\thmref{thm-equiv-types-wf}, 3}
+\step{\issubO{\typ_1}{\tspred}{\typ_2}}{\premof{\Rstteq}}
+\step{\hastyO{\tspred}{\tarr{\typ_2}{\bool}}}{\indhyp, 5}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\bool}}{\Rtbool, 7}
+\step{\teqO{\bool}{\bool}}{\Rterefl, 8}
+\step{\teqO{\tarr{\typ_2}{\bool}}{\tarr{\typ_2'}{\bool}}}{\Rtearr, 3, 9}
+\step{\hastyO{\tspred}{\tarr{\typ_2'}{\bool}}}{\Reteq, 6, 10}
+\step{\istyO{\typ_1'}\ \AND\
+      \istyO{\typ_2'}\ \AND\
+      \hastyO{\tspred}{\tarr{\typ_2'}{\bool}}}
+     {2, 4, 11}
+\end{derivation}
+
+\end{bycase}
+
+
+\subsection*{Proof of \thmref{thm-exty-wf}}
+
+The conjunction of this theorem and \thmref{thm-subtyping-wf} is proved by
+induction on the derivation of the antecedents of the two conjoined
+implications. Here we present the cases for the well-typedness rules, while
+the cases for the subtyping rules are presented in the previous subsection.
+
+\begin{bycase}
+
+\Case{\Revar}
+\begin{derivation}
+\step{\vdecO\in\cx}{\premof{\Revar}}
+\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\vdecO,\cx_2}}{1}
+\step{\cxwfO}{\premof{\Revar}}
+\step{\isty{\cx_1}{\typ}}{\thmref{thm-var-type-wf}, 3, 2}
+\step{\istyO{\typ}}{\thmref{thm-mono}, 4, 3, 2}
+\end{derivation}
+
+\Case{\Reop}
+\begin{derivation}
+\step{\odecO\in\cx}{\premof{\Reop}}
+\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\odecO,\cx_2}}{1}
+\step{\cxwfO}{\premof{\Reop}}
+\step{\isty{\cx_1,\tvdec{\tvarS}}{\typ}}{\thmref{thm-op-type-wf}, 3, 2}
+\step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Reop}}
+\step{\tsbslashok{\mtcx}{\tvarS}{\typS}}{\defof{\tsbsokY}}
+\step{\istyO{\tsbslash{\typ}{\tvarS}{\typS}}}
+     {\thmref{thm-tsbs-jdg}, 5, 6, 3, 2, 4}
+\end{derivation}
+
+\Case{\Reapp}
+\begin{derivation}
+\step{\hastyO{\expr_1}{\tarrO}}{\premof{\Reapp}}
+\step{\istyO{\tarrO}}{\indhyp, 1}
+\step{\istyO{\typ_2}}{\thmref{thm-tarr-inv}, 2}
+\end{derivation}
+
+\Case{\Reabs}
+\begin{derivation}
+\step{\istyO{\typ'}}{\premof{\Reabs}}
+\step{\hasty{\cx,\vdecO}{\expr}{\typ'}}{\premof{\Reabs}}
+\step{\cxwf{\cx,\vdecO}}{\thmref{thm-cxwf}, 2}
+\step{\istyO{\typ}}{\thmref{thm-var-type-wf}, 3}
+\step{\istyO{\tarr{\typ}{\typ'}}}{\Rtarr, 4, 1}
+\end{derivation}
+
+\Case{\Reeq}
+\begin{derivation}
+\step{\hastyO{\expr_1}{\typ}}{\premof{\Reeq}}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\bool}}{\Rtbool, 2}
+\end{derivation}
+
+\Case{\Reif}
+\Step{\istyO{\typ}}
+
+\end{bycase}
 
 
 

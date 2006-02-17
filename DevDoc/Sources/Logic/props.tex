@@ -1492,6 +1492,52 @@ suggest te existence of such a proof.
 }
 \end{theorem}
 
+Equivalent types are well-formed:
+
+\begin{theorem}\label{thm-equiv-types-wf}
+\[
+\teqO{\typ_1}{\typ_2}\ \ \IMPLIES\ \ \istyO{\typ_1}\ \ \AND\ \ \istyO{\typ_2}
+\]
+\end{theorem}
+
+If an expression has a type $\typ$, it also has all types $\typ'$ that are
+equivalent to $\typ$:
+
+\begin{theorem}\label{thm-eteq}
+{\rm
+\[
+\rruleII
+ {\hastyO{\expr}{\typ}}
+ {\teqO{\typ}{\typ'}}
+ {\hastyO{\expr}{\typ'}}
+ {\Reteq}
+\]
+}
+\end{theorem}
+
+If a type is a subtype of another one, both types are well-formed; in
+addition, the predicate that defines the subtype is well-typed and is indeed a
+predicate over the supertype:
+
+\begin{theorem}\label{thm-subtyping-wf}
+\[
+\issubO{\typ_1}{\tspred}{\typ_2}
+\ \ \IMPLIES\ \
+\istyO{\typ_1}
+\ \ \AND\ \
+\istyO{\typ_2}
+\ \ \AND\ \
+\hastyO{\tspred}{\tarr{\typ_2}{\bool}}
+\]
+\end{theorem}
+
+The type of a well-typed expression is well-formed:
+
+\begin{theorem}\label{thm-exty-wf}
+\[
+\hastyO{\expr}{\typ}\ \ \IMPLIES\ \ \istyO{\typ}
+\]
+\end{theorem}
 
 %\begin{theorem}
 %{\rm
