@@ -4944,7 +4944,47 @@ the cases for the subtyping rules are presented in the previous subsection.
 \end{derivation}
 
 \Case{\Reif}
-\Step{\istyO{\typ}}
+\StepO{\istyO{\typ}}{\premof{\Reif}}
+
+\Case{\ReifO}
+\begin{derivation}
+\step{\hastyO{\expr_1}{\typ}}{\premof{\ReifO}}
+\step{\istyO{\typ}}{\indhyp, 1}
+\end{derivation}
+
+\Case{\Redesc}
+\begin{derivation}
+\step{\istyO{\typ}}{\premof{\Redesc}}
+\step{\hastyO{\exIopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}{\ReexIop, 1}
+\step{\efvar{\exIopO}=\emptyset}{\thmref{thm-efvar-abbrev}}
+\step{\istyO{\tsub{(\tarr{\typ}{\bool})}{\exIopO}}}{\Rtsub, 2, 3}
+\step{\istyO{\tarr{\tsub{(\tarr{\typ}{\bool})}{\exIopO}}{\typ}}}{\Rtarr, 4, 1}
+\end{derivation}
+
+\Case{\Reproj}
+\begin{derivation}
+\step{\istyO{\trecO}}{\premof{\Reproj}}
+\step{\istyO{\typ_j}}{\thmref{thm-trec-inv}, 1}
+\step{\istyO{\tarr{\trecO}{\typ_j}}}{\Rtarr, 1, 2}
+\end{derivation}
+
+\Case{\Resuper}
+\begin{derivation}
+\step{\issubO{\typ}{\tspred}{\typ'}}{\premof{\Resuper}}
+\step{\istyO{\typ'}}{\indhypthm{thm-subtyping-wf}, 1}
+\end{derivation}
+
+\Case{\Resub}
+\begin{derivation}
+\step{\issubO{\typ}{\tspred}{\typ'}}{\premof{\Resub}}
+\step{\istyO{\typ}}{\indhypthm{thm-subtyping-wf}, 1}
+\end{derivation}
+
+\Case{\Reabsalpha}
+\begin{derivation}
+\step{\hastyO{\absO}{\typ'}}{\premof{\Reabsalpha}}
+\step{\istyO{\typ'}}{\indhyp, 1}
+\end{derivation}
 
 \end{bycase}
 
