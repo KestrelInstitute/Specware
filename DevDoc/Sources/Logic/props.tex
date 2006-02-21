@@ -1539,6 +1539,24 @@ The type of a well-typed expression is well-formed:
 \]
 \end{theorem}
 
+Using the previous theorem, we can eliminate the first premise from rule
+\RedotO\ (however, note that \RedotO\ is used in the proof of
+\thmref{thm-subtyping-wf}, which is proved by induction together with
+\thmref{thm-exty-wf}):
+
+\begin{theorem}\label{thm-edot}
+{\rm
+\[
+\rruleI
+ {\hastyO{\expr}{\trecO}}
+ {\hastyO{\proj{\expr}{\fnam_j}}{\typ_j}}
+ {\Redot}
+\]
+}
+\end{theorem}
+
+
+
 %\begin{theorem}
 %{\rm
 %\[

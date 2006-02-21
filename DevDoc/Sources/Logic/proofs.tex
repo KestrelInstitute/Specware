@@ -4990,6 +4990,16 @@ the cases for the subtyping rules are presented in the previous subsection.
 
 
 
+\subsection*{Proof of \thmref{thm-edot}}
+
+\begin{derivation}
+\step{\hastyO{\expr}{\trecO}}{\hyp}
+\step{\istyO{\trecO}}{\thmref{thm-exty-wf}, 1}
+\step{\hastyO{\proj{\expr}{\fnam_j}}{\typ_j}}{\RedotO, 2, 1}
+\end{derivation}
+
+
+
 \subsection*{Proof of \thmref{thm-rec-tup}}
 
 By straightforward calculation. Recall that a tuple $\tuple{\exprS}$ is
