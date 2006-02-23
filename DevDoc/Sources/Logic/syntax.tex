@@ -674,6 +674,11 @@ $\expr$ at the free occurrences of $\varI$ in $\expr$)
 %       {\emptyset}
 \end{eqlist}
 \]
+If we view an expression $\expr$ as a tree, each free occurrence of $\varI$ in
+$\expr$ is reachable via a path in the tree that starts from the root. That
+path contains zero or more lambda binders, each with its own variable. Then
+$\cvarvO{\expr}$ is the set of all lambda-bound variables along all paths of
+all free occurrences of $\varI$ in $\expr$.
 
 The relation $\ternrel{\esbsokY}{\Expr}{\Nam}{\Expr}$ captures the condition
 that the substitution $\esbsO{\expr}$ causes no free variables in $\exprI$ to

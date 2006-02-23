@@ -304,7 +304,9 @@ If $\varI\in\efvar{\expr}$:
 \subsection*{Proof of \thmref{thm-efvar-of-esbs}}
 
 By induction on $\expr$:
+
 \begin{bycase}
+
 \Case{$\opO$, $\descopO$, $\pjop{\fnam}$}\\
 $\efvar{\expr}=\emptyset\IMPLIES\varI\not\in\efvar{\expr}$
 %\begin{derivation}
@@ -313,6 +315,7 @@ $\efvar{\expr}=\emptyset\IMPLIES\varI\not\in\efvar{\expr}$
 %\step{\varI\not\in\efvar{\expr}}
 %     {1}
 %\end{derivation}
+
 \Case{$\var$}
 \begin{links}
 $\efvar{\esbs{\var}{\varI}{\exprI}}
@@ -325,6 +328,7 @@ $\efvar{\esbs{\var}{\varI}{\exprI}}
  \link{=}{$\varI\in\efvar{\var}\IMPLIES\efvar{\var}=\setI{\varI}$}
  (\efvar{\var}-\setI{\varI})\cup\efvar{\exprI}$
 \end{links}
+
 \Case{$\appO$}\\
 If $\varI\in\efvar{\expr_1}\AND\varI\in\efvar{\expr_2}$:
 \begin{links}
@@ -365,9 +369,11 @@ analogous to the previous one, with $\expr_1$ and $\expr_2$ swapped.
 Finally,
 $\varI\not\in\efvar{\expr_1}\AND\varI\not\in\efvar{\expr_2}\IMPLIES
  \varI\not\in\efvar{\appO}$.
+
 \Case{$\eqO$, $\iifO$}\\
 Analogous to $\appO$, using \thmref{thm-esbsok-eq} and \thmref{thm-esbsok-if}
 instead of \thmref{thm-esbsok-app}.
+
 \Case{$\absO$}
 \begin{derivation}
 \step{\varI\in\efvar{\absO}}{\hyp}
@@ -885,6 +891,223 @@ If $\varI\in\efvar{\absO}$:
  \link{=}{2}
  \cvarv{\esbsren{(\absO)}}{\varI'}}
 \end{derivation}
+\end{bycase}
+
+
+
+\subsection*{Proof of \thmref{thm-cvar-of-esbs}}
+
+By induction on $\expr$:
+
+\begin{bycase}
+
+\Case{$\var$}
+\begin{derivation}
+\step{\var=\varI}{\hyp\ $\varI\in\efvar{\var}$}
+\step{\varII\not\in\efvar{\exprI}\IMPLIES\cvarv{\exprI}{\varII}=\emptyset}
+     {\thmref{thm-esbs-not-free}}
+\steP
+{\cvarv{\esbsO{\var}}{\varII}
+ \link{=}{1}
+ \cvarv{\exprI}{\varII}
+ \linK{=}
+ \emptyset\cup\cond{\varII\in\efvar{\exprI}}
+                   {\cvarv{\exprI}{\varII}}
+                   {\cvarv{\exprI}{\varII}}
+ \link{=}{2}
+ \cond{\varII\neq\varI}{\emptyset}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}{\cvarv{\exprI}{\varII}}{\emptyset}
+ \link{=}{$\cvarv{\var}{\varII}=\cvarv{\var}{\varI}=\emptyset$}
+ \cond{\varII\neq\varI}{\cvarv{\var}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\var}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}}
+\end{derivation}
+
+\Case{$\opO$, $\descopO$, $\pjop{\fnam}$}\\
+These cases are impossible because $\efvar{\expr}=\emptyset$.
+
+\Case{$\appO$}
+\begin{derivation}
+\step{\varI\in\efvar{\appO}}{\hyp}
+\step{\varI\in\efvar{\expr_1}\OR\varI\in\efvar{\expr_2}}{1}
+\step{\esbsokO{\appO}}{\hyp}
+\step{\esbsokO{\expr_1}\AND\esbsokO{\expr_2}}{\thmref{thm-esbsok-app}, 3}
+\end{derivation}
+If $\varI\in\efvar{\expr_1}\AND\varI\in\efvar{\expr_2}$:
+\begin{links}
+$\cvarv{\esbsO{(\appO)}}{\varII}
+ \linK{=}
+ \cvarv{\esbsO{\expr_1}}{\varII}\cup\cvarv{\esbsO{\expr_2}}{\varII}
+ \link{=}{\indhyp, 4}
+ \cond{\varII\neq\varI}{\cvarv{\expr_1}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\expr_1}{\varII}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+    \cup\\
+     \cond{\varII\neq\varI}{\cvarv{\expr_2}{\varII}}{\emptyset}
+      \cup
+       \cond{\varII\in\efvar{\exprI}}
+            {\cvarv{\expr_2}{\varII}\cup\cvarv{\exprI}{\varII}}
+            {\emptyset}
+ \linK{=}
+ \cond{\varII\neq\varI}
+      {\cvarv{\expr_1}{\varII}\cup\cvarv{\expr_2}{\varII}}
+      {\emptyset}
+  \cup\\
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\expr_1}{\varII}\cup
+         \cvarv{\expr_2}{\varII}\cup
+         \cvarv{\exprI}{\varII}}
+        {\emptyset}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\appO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\appO}{\varII}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}$
+\end{links}
+If $\varI\in\efvar{\expr_1}\AND\varI\not\in\efvar{\expr_2}$:
+\begin{derivatioN}{4}
+\step{\cvarv{\expr_2}{\varI}=\emptyset}{\thmref{thm-esbs-not-free}}
+\step{\varII=\varI\IMPLIES\cvarv{\expr_2}{\varII}=\emptyset}{5}
+\steP
+{\cvarv{\esbsO{(\appO)}}{\varII}
+ \linK{=}
+ \cvarv{\esbsO{\expr_1}}{\varII}\cup\cvarv{\esbsO{\expr_2}}{\varII}
+ \link{=}{\thmref{thm-esbs-not-free}}
+ \cvarv{\esbsO{\expr_1}}{\varII}\cup\cvarv{\expr_2}{\varII}
+ \link{=}{\indhyp, 4}
+ \cond{\varII\neq\varI}{\cvarv{\expr_1}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\expr_1}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+    \cup
+     \cvarv{\expr_2}{\varII}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\expr_1}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\expr_1}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+    \cup\\
+     \cond{\varII\neq\varI}{\cvarv{\expr_2}{\varII}}{\cvarv{\expr_2}{\varII}}
+ \link{=}{6}
+ \cond{\varII\neq\varI}{\cvarv{\expr_1}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\expr_1}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+    \cup\\
+     \cond{\varII\neq\varI}{\cvarv{\expr_2}{\varII}}{\emptyset}
+ \linK{=}
+ \cond{\varII\neq\varI}
+      {\cvarv{\expr_1}{\varII}\cup\cvarv{\expr_2}{\varII}}
+      {\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\expr_1}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\appO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\expr_1}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+ \link{=}{5}
+ \cond{\varII\neq\varI}{\cvarv{\appO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\expr_1}{\varI}\cup
+         \cvarv{\expr_2}{\varI}\cup
+         \cvarv{\exprI}{\varII}}
+        {\emptyset}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\appO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\appO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}}
+\end{derivatioN}
+If $\varI\not\in\efvar{\expr_1}\AND\varI\in\efvar{\expr_2}$, the proof is
+analogous to the previous one, with $\expr_1$ and $\expr_2$ swapped.
+
+\Case{$\absO$}
+\begin{derivation}
+\step{\varI\in\efvar{\absO}}{\hyp}
+\step{\varI\in\efvar{\expr}}{1}
+\step{\varI\neq\var}{1}
+\step{\esbsokO{\absO}}{\hyp}
+\step{\esbsokO{\expr}}{\thmref{thm-esbsok-abs}, 4, 3}
+\step{\cvarv{\esbsO{(\absO)}}{\varII}=
+      \cvarv{\abs{\var}{\typ}{\esbsO{\expr}}}{\varII}}{3}
+\step{\efvar{\esbsO{\expr}}=(\efvar{\expr}-\setI{\varI})\cup\efvar{\exprI}}
+     {\thmref{thm-efvar-of-esbs}, 2, 5}
+\end{derivation}
+If $\varII\not\in\efvar{\esbsO{\expr}}-\setI{\var}$:
+\begin{derivatioN}{7}
+\steP{\cvarv{\abs{\var}{\typ}{\esbsO{\expr}}}{\varII}=\emptyset}
+\end{derivatioN}
+If $\varII=\var$:
+\begin{derivatioN}{8}
+\steP{\cvarv{\absO}{\varII}=\emptyset}
+\step{\efvar{\exprI}\cap\cvarv{\absO}{\varI}=\emptyset}{4}
+\step{\cvarv{\absO}{\varI}=\setI{\var}\cup\cvarv{\expr}{\varI}}{2, 3}
+\step{\var\not\in\efvar{\exprI}}{10, 11}
+\step{\varII\not\in\efvar{\exprI}}{12, \hyp\ $\varII=\var$}
+\stepL
+{\cvarv{\esbsO{(\absO)}}{\varII}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}}
+{6, 8, 9, 13}
+\end{derivatioN}
+If $\varII\neq\var$:
+\begin{derivatioN}{8}
+\step{\varII\not\in(\efvar{\expr}-\setI{\varI})\cup\efvar{\exprI}}
+     {7, \hyp\ $\varII\not\in\efvar{\esbsO{\expr}}-\setI{\var}$}
+\step{\varII\not\in\efvar{\expr}-\setI{\varI}}{9}
+\step{\varII\neq\varI\IMPLIES\varII\not\in\efvar{\expr}}{10}
+\steP{\varII\not\in\efvar{\expr}\IMPLIES\cvarv{\absO}{\varII}=\emptyset}
+\step{\varII\not\in\efvar{\exprI}}{9}
+\stepL
+{\cvarv{\esbsO{(\absO)}}{\varII}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}}
+{6, 8, 11, 12, 13}
+\end{derivatioN}
+If $\varII\in\efvar{\esbsO{\expr}}-\setI{\var}$:
+\begin{derivatioN}{7}
+\steP
+{\cvarv{\abs{\var}{\typ}{\esbsO{\expr}}}{\varII}
+ \linK{=}
+ \setI{\var}\cup\cvarv{\esbsO{\expr}}{\varII}
+ \link{=}{\indhyp, 2, 5}
+ \setI{\var}
+  \cup
+   \cond{\varII\neq\varI}{\cvarv{\expr}{\varII}}{\emptyset}
+    \cup
+     \cond{\varII\in\efvar{\exprI}}
+          {\cvarv{\expr}{\varI}\cup\cvarv{\exprI}{\varII}}
+          {\emptyset}
+}
+\step{\varII\in\efvar{\esbsO{\expr}}\AND\varII\neq\var}
+     {\hyp\ $\varII\in\efvar{\esbsO{\expr}}-\setI{\var}$}
+\step{\varII\in(\efvar{\expr}-\setI{\varI})\cup\efvar{\exprI}}{9, 7}
+\step{\varII\neq\var}{9}
+\end{derivatioN}
+
 \end{bycase}
 
 

@@ -348,6 +348,41 @@ renaming and that $\varI'$ was not already free in the original expression):
 \]
 \end{theorem}
 
+The following theorem says how captured variables change under expression
+substitution, assuming that the substituted variable is free in the expression
+(otherwise no change takes place) and that no variable is captured. The
+relationship should be quite intuitive when thinking of expressions as trees
+and captured variables as the lambda-bound variables encountered along the
+paths in the trees. The substitution replaces each free occurrence of $\varI$
+in $\expr$ with $\exprI$. Thus, if $\varII$ is free in $\exprI$ we have to add
+the variables in the paths to free occurrences of $\varII$ in $\exprI$ to
+those in the paths to free occurrences of $\varI$ in $\expr$. If $\varII$ is
+not free in $\exprI$, there are no such paths. In addition, if
+$\varII\neq\varI$, we add the variables in the paths to the free occurrences
+of $\varII$ in $\expr$; if instead $\varII=\varI$, only the free occurrences
+of $\varII$ in $\exprI$ count.
+
+\begin{theorem}\label{thm-cvar-of-esbs}
+{\rm
+\[
+\begin{array}{l}
+\varI\in\efvar{\expr}
+\ \AND\
+\esbsokO{\expr}
+\ \IMPLIES\\
+\cvarv{\esbsO{\expr}}{\varII}=
+\cond{\varII\neq\varI}
+     {\cvarv{\expr}{\varII}}
+     {\emptyset}
+\cup
+\cond{\varII\in\efvar{\exprI}}
+     {\cvarv{\expr}{\varI}\cup\cvarv{\exprI}{\varII}}
+     {\emptyset}
+\end{array}
+\]
+}
+\end{theorem}
+
 If we rename a variable $\varI$ to $\varI'$ in an expression then the
 variables captured at the free occurrences of a third variable $\varII$ in the
 original expression coincide with those captured at the free occurrences of
