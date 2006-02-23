@@ -1106,6 +1106,120 @@ If $\varII\in\efvar{\esbsO{\expr}}-\setI{\var}$:
      {\hyp\ $\varII\in\efvar{\esbsO{\expr}}-\setI{\var}$}
 \step{\varII\in(\efvar{\expr}-\setI{\varI})\cup\efvar{\exprI}}{9, 7}
 \step{\varII\neq\var}{9}
+\step{\cvarv{\absO}{\varI}=\setI{\var}\cup\cvarv{\expr}{\varI}}{2, 3}
+\end{derivatioN}
+If $\varII\in\efvar{\exprI}\AND\varII\neq\varI$:
+\begin{derivatioN}{12}
+\step{\cvarv{\abs{\var}{\typ}{\esbsO{\expr}}}{\varII}=
+      \setI{\var}\cup
+       \cvarv{\expr}{\varII}\cup
+        \cvarv{\expr}{\varI}\cup
+         \cvarv{\exprI}{\varII}}
+     {8}
+\end{derivatioN}
+If $\varII\in\efvar{\expr}-\setI{\var}$:
+\begin{derivatioN}{13}
+\step
+{\cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+ \linK{=}
+ \setI{\var}\cup\cvarv{\expr}{\varII}\cup
+  \setI{\var}\cup\cvarv{\expr}{\varI}\cup
+   \cvarv{\exprI}{\varII}}
+{12}
+\stepL
+{\cvarv{\esbsO{(\absO)}}{\varII}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}}
+{6, 13, 14}
+\end{derivatioN}
+If $\varII\not\in\efvar{\expr}-\setI{\var}$:
+\begin{derivatioN}{13}
+\step
+{\cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+ \linK{=}
+ \emptyset\cup
+  \setI{\var}\cup\cvarv{\expr}{\varI}\cup
+   \cvarv{\exprI}{\varII}}
+{12}
+\step{\varII\not\in\efvar{\expr}}
+     {11, \hyp\ $\varII\not\in\efvar{\expr}-\setI{\var}$}
+\step{\cvarv{\expr}{\varII}=\emptyset}{\thmref{thm-esbs-not-free}, 15}
+\step{\cvarv{\abs{\var}{\typ}{\esbsO{\expr}}}{\varII}=
+      \setI{\var}\cup\cvarv{\expr}{\varI}\cup\cvarv{\exprI}{\varII}}
+     {16, 13}
+\stepL
+{\cvarv{\esbsO{(\absO)}}{\varII}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}}
+{6, 17, 14}
+\end{derivatioN}
+If $\varII\in\efvar{\exprI}\AND\varII=\varI$:
+\begin{derivatioN}{12}
+\step{\cvarv{\abs{\var}{\typ}{\esbsO{\expr}}}{\varII}=
+      \setI{\var}\cup\cvarv{\expr}{\varI}\cup\cvarv{\exprI}{\varII}}
+     {8}
+\step
+{\cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+ \linK{=}
+ \emptyset\cup\setI{\var}\cup\cvarv{\expr}{\varI}\cup\cvarv{\exprI}{\varII}}
+{12}
+\stepL
+{\cvarv{\esbsO{(\absO)}}{\varII}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}}
+{6, 13, 14}
+\end{derivatioN}
+If $\varII\not\in\efvar{\exprI}$:
+\begin{derivatioN}{12}
+\step{\varII\in\efvar{\expr}-\setI{\varI}}{10}
+\step{\varII\in\efvar{\expr}}{13}
+\step{\varII\neq\varI}{13}
+\step{\cvarv{\abs{\var}{\typ}{\esbsO{\expr}}}{\varII}=
+      \setI{\var}\cup\cvarv{\expr}{\varII}\cup\emptyset}
+     {8, 15, \hyp\ $\varII\not\in\efvar{\exprI}$}
+\step{\cvarv{\absO}{\varII}=\setI{\var}\cup\cvarv{\expr}{\varII}}{14, 11}
+\step
+{\cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}
+ \linK{=}
+ \setI{\var}\cup\cvarv{\expr}{\varII}\cup\emptyset}
+{15, 17, \hyp\ $\varII\not\in\efvar{\exprI}$}
+\step
+{\cvarv{\esbs{(\absO)}}{\varII}
+ \linK{=}
+ \cond{\varII\neq\varI}{\cvarv{\absO}{\varII}}{\emptyset}
+  \cup
+   \cond{\varII\in\efvar{\exprI}}
+        {\cvarv{\absO}{\varI}\cup\cvarv{\exprI}{\varII}}
+        {\emptyset}}
+{6, 16, 18}
 \end{derivatioN}
 
 \end{bycase}
