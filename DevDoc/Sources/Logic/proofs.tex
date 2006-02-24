@@ -2450,6 +2450,33 @@ The only rule that can derive a judgement of the form $\istyO{\tsubO}$ is
 
 
 
+\subsection*{Proof of \thmref{thm-eapp-inv}}
+
+The only rules that can derive a judgement of the form $(\hastyOany{\appO})$
+are \Reapp, \Resuper, and \Resub. For \Reapp, the theorem is readily proved
+from the premises of the rule. For \Resuper\ and \Resub, the theorem is proved
+by induction on the premise that has also the form $(\hastyOany{\appO})$.
+
+
+
+\subsection*{Proof of \thmref{thm-abs-arrty}}
+
+The only rules that can derive a judgement of the form $(\hastyOany{\absO})$
+are \Reabs, \Resuper, \Resub, and \Reabsalpha. For \Reabs, the theorem is
+readily proved from the conclusion of the rule. For \Resuper\ and \Resub, the
+theorem is proved by induction on the premise that has also the form
+$(\hastyOany{\absO})$. For \Reabsalpha, the theorem is proved as follows:
+\begin{derivation}
+\step{\hastyOany{\absO}}{\premof{\Reabsalpha}}
+\step{\EXISTS{\typ'}{\hastyO{\absO}{\tarr{\typ}{\typ'}}}}{\indhyp, 1}
+\step{\var'\not\in\efvar{\expr}\cup\cvarv{\expr}{\var}}{\premof{\Reabsalpha}}
+\step{\hastyO{\abs{\var'}{\typ}{\esbs{\expr}{\var}{\var'}}}
+             {\tarr{\typ}{\typ'}}}
+     {\Reabsalpha, 2, 3}
+\end{derivation}
+
+
+
 \subsection*{Proof of \thmref{thm-subpred-no-free-vars}}
 
 By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
@@ -5356,6 +5383,67 @@ the cases for the subtyping rules are presented in the previous subsection.
 \step{\theoO{\true}}{\Rthtrue, 2}
 \step{\theoO{\eq{\true}{\expr}}}{\Rthsymm, 1}
 \step{\theoO{\expr}}{\Rthsbs, 3, 4}
+\end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-thfaelimO}}
+
+\begin{derivation}
+\step{\faO=\app{(\abs{\varfxpred}{\tarr{\typ}{\bool}}
+                     {(\eq{\varfxpred}{\abs{\varfx}{\typ}{\true}})})}
+               {(\absO)}}
+     {\abb}
+\step{\hastyO{\faO}{\bool}}{\hyp}
+\step{\hastyO{\app{(\abs{\varfxpred}{\tarr{\typ}{\bool}}
+                        {(\eq{\varfxpred}{\abs{\varfx}{\typ}{\true}})})}
+                  {(\absO)}}
+             {\bool}}
+     {2, 1}
+\step{\cvarv{\eq{\varfxpred}{\abs{\varfx}{\typ}{\true}}}{\varfxpred}=
+      \emptyset}
+     {\thmref{thm-efvar-abbrev}}
+\step{\esbsok{\eq{\varfxpred}{\abs{\varfx}{\typ}{\true}}}
+             {\varfxpred}
+             {\absO}}
+     {4}
+\step{\theoO{\eq{\app{(\abs{\varfxpred}{\tarr{\typ}{\bool}}
+                        {(\eq{\varfxpred}{\abs{\varfx}{\typ}{\true}})})}
+                  {(\absO)}}
+                {(\eq{\absO}{\abs{\varfx}{\typ}{\true}})}}}
+     {\Rthabs, 3, 5}
+\step{\theoO{\eq{\faO}
+                {(\eq{\absO}{\abs{\varfx}{\typ}{\true}})}}}
+     {6, 1}
+\step{\theoO{\faO}}{\hyp}
+\step{\theoO{\eq{\absO}{\abs{\varfx}{\typ}{\true}}}}{\Rthsbs, 8, 7}
+\step{\hastyO{\expr'}{\typ}}{\hyp}
+\step{\theoO{\eq{\expr'}{\expr'}}}{\Rthrefl, 10}
+\step{\hastyOany{\absO}}{\thmref{thm-eapp-inv}, 3}
+\step{\EXISTS{\typ'}{\hastyO{\absO}{\tarr{\typ}{\typ'}}}}
+     {\thmref{thm-abs-arrty}, 12}
+\step{\hastyOany{\app{(\absO)}{\expr'}}}{\Reapp, 13, 10}
+\step{\theoO{\eq{\app{(\absO)}{\expr'}}
+                {\app{(\abs{\varfx}{\typ}{\true})}{\expr'}}}}
+     {\Rthappsbs, 14, 9, 11}
+\step{\esbsok{\expr}{\var}{\expr'}}{\hyp}
+\step{\theoO{\eq{\app{(\absO)}{\expr'}}{\esbs{\expr}{\var}{\expr'}}}}
+     {\Rthabs, 14, 16}
+\step{\istyO{\typ}}{\thmref{thm-exty-wf}, 10}
+\step{\hastyO{\abs{\varfx}{\typ}{\true}}{\tarr{\typ}{\bool}}}
+     {\Reconsttrue, 18}
+\step{\hastyOany{\app{(\abs{\varfx}{\typ}{\true})}{\expr'}}}{\Reapp, 19, 10}
+\step{\cvarv{\true}{\varfx}=\emptyset}{\thmref{thm-cvarv-abbrev}}
+\step{\esbsok{\true}{\varfx}{\expr'}}{21}
+\step{\theoO{\eq{\app{(\abs{\varfx}{\typ}{\true})}{\expr'}}{\true}}}
+     {\Rthabs, 20, 22}
+\step{\theoO{\eq{\esbs{\expr}{\var}{\expr'}}{\app{(\absO)}{\expr'}}}}
+     {\Rthsymm, 17}
+\step{\theoO{\eq{\esbs{\expr}{\var}{\expr'}}
+                {\app{(\abs{\varfx}{\typ}{\true})}{\expr'}}}}
+     {\Rthtrans, 24, 15}
+\step{\theoO{\eq{\esbs{\expr}{\var}{\expr'}}{\true}}}{\Rthtrans, 25, 23}
+\step{\theoO{\esbs{\expr}{\var}{\expr'}}}{\Rtheqtrue, 26}
 \end{derivation}
 
 

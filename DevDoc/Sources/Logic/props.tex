@@ -1078,6 +1078,29 @@ The predicate of a well-formed restriction type has no free variables:
 \]
 \end{theorem}
 
+For each well-typed application, the first expression (function) has an arrow
+type and the second expression (argument) has the domain type:
+
+\begin{theorem}\label{thm-eapp-inv}
+\[
+\hastyOany{\appO}
+\ \ \IMPLIES\ \ 
+\EXISTS{\typ_1,\typ_2}
+       {\hastyO{\expr_1}{\tarrO}\ \AND\ \hastyO{\expr_2}{\typ_1}}
+\]
+\end{theorem}
+
+A well-typed abstraction has an arrow type whose domain is the type of its
+bound variable:
+
+\begin{theorem}\label{thm-abs-arrty}
+\[
+\hastyOany{\absO}
+\ \ \IMPLIES\ \
+\EXISTS{\typ'}{\hastyO{\absO}{\tarr{\typ}{\typ'}}}
+\]
+\end{theorem}
+
 The subtype predicates that appear in (provable) subtype judgements have no
 free variables:
 
@@ -1617,6 +1640,23 @@ theorem:
 }
 \end{theorem}
 
+A universally quantified theorem can be instantiated with any well-typed
+expression whose type matches the universally quantified variable's and whose
+substitution does not cause capture:
+
+\begin{theorem}\label{thm-thfaelimO}
+{\rm
+\[
+\rruleIV
+ {\hastyO{\faO}{\bool}}
+ {\theoO{\faO}}
+ {\hastyO{\expr'}{\typ}}
+ {\esbsok{\expr}{\var}{\expr'}}
+ {\theoO{\esbs{\expr}{\var}{\expr'}}}
+ {\RthfaelimO}
+\]
+}
+\end{theorem}
 
 %\begin{theorem}
 %{\rm

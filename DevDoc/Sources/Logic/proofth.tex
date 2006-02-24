@@ -531,7 +531,7 @@ values that are also in the subtype $\tsubO$.
 Subtyping is reflexive, i.e.\ a (well-formed) type $\typ$ is a subtype of
 itself and the associated subtype predicate is always true.
 \item
-Arrow types are monotone in their range types with respect to subtyping. The
+Arrow types are monotonic in their range types with respect to subtyping. The
 associated predicate holds when all the values of the function satisfy the
 predicate associated to the range subtype. Note that the domain must be the
 same; while domain contravariance is used in some type systems with subtypes,
@@ -693,7 +693,7 @@ An abstraction is well-typed if the body is well-typed in the context extended
 with the declaration of the variable bound by the abstraction. The type of the
 abstraction is the arrow type that has the type of the variable as domain and
 the type of the body as range. The premise $\istyO{\typ'}$ of \Reabs\ is
-needed to prove a theorem in \secref{props}.
+needed to prove \thmref{thm-exty-wf}.
 \item
 An equality is well-typed with type $\bool$ if the left- and right-hand sides
 are both well-typed with a common type $\typ$.
@@ -707,8 +707,8 @@ add any assumption about the condition to the context. The reason for rule
 $\ReifO$ and for why it does not seem derivable from $\Reif$, is given in
 \secref{props}. The premise $\istyO{\typ}$ in \Reif\ may be redundant, i.e.\
 derivable from the others, but this fact has not been established yet and so
-for now we have it as an explicit premise, which is needed to prove a theorem
-in \secref{props}.
+for now we have it as an explicit premise, which is needed to prove
+\thmref{thm-exty-wf}.
 \item
 The description operator for a well-formed type is well-typed and denotes a
 function from the predicates over the type that are satisfied by a unique
@@ -736,7 +736,7 @@ type $\typ'$ equivalent to $\typ$.
 \item
 The last rule amounts to treating expressions up to alpha equivalence,
 allowing to rename bound variables maintaining well-typedness. Without this
-rule, the \MS\ logic would be non-monotone, because extending a context with
+rule, the \MS\ logic would be non-monotonic, because extending a context with
 variable declarations may invalidate conclusions about the well-typedness of
 expressions that bind those variables (e.g.\ if $\hastyO{\absO}{\typ'}$ were
 provable then $\hasty{\snoc{\cx}{\vdecO}}{\absO}{\typ'}$ would not be
