@@ -1590,6 +1590,32 @@ Using the previous theorem, we can eliminate the first premise from rule
 }
 \end{theorem}
 
+The expression $\true$ is a theorem:
+
+\begin{theorem}\label{thm-thtrue}
+{\rm
+\[
+\rruleI
+ {\cxwfO}
+ {\theoO{\true}}
+ {\Rthtrue}
+\]
+}
+\end{theorem}
+
+Proving that an expression equals $\true$ implies that the expression is a
+theorem:
+
+\begin{theorem}\label{thm-theqtrue}
+{\rm
+\[
+\rruleI
+ {\theoO{\eq{\expr}{\true}}}
+ {\theoO{\expr}}
+ {\Rtheqtrue}
+\]
+}
+\end{theorem}
 
 
 %\begin{theorem}

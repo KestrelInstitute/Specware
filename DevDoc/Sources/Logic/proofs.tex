@@ -5337,6 +5337,29 @@ the cases for the subtyping rules are presented in the previous subsection.
 
 
 
+\subsection*{Proof of \thmref{thm-thtrue}}
+
+\begin{derivation}
+\step{\cxwfO}{\hyp}
+\step{\hastyO{\abs{\varfx}{\bool}{\varfx}}{\tarr{\bool}{\bool}}}{\Reidbool, 1}
+\step{\theoO{\eq{\abs{\varfx}{\bool}{\varfx}}{\abs{\varfx}{\bool}{\varfx}}}}
+     {\Rthrefl, 2}
+\end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-theqtrue}}
+
+\begin{derivation}
+\step{\theoO{\eq{\expr}{\true}}}{\hyp}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\theoO{\true}}{\Rthtrue, 2}
+\step{\theoO{\eq{\true}{\expr}}}{\Rthsymm, 1}
+\step{\theoO{\expr}}{\Rthsbs, 3, 4}
+\end{derivation}
+
+
+
 \subsection*{Proof of \thmref{thm-rec-tup}}
 
 By straightforward calculation. Recall that a tuple $\tuple{\exprS}$ is
