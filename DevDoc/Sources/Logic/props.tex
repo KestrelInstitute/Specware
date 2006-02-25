@@ -1253,8 +1253,32 @@ with well-formed types $\typIS$, under certain conditions:
 \]
 \end{theorem}
 
-The following theorems prove derived well-typedness rules for the
-abbreviations defined in \secref{syntax}:
+The following theorems prove derived well-formedness rules for contexts:
+
+\begin{theorem}\label{thm-cxvdecI}
+{\rm
+\[
+\rruleII
+ {\istyO{\typ}}
+ {\var\not\in\cxvarO}
+ {\cxwf{\snoc{\cx}{\vdecO}}}
+ {\RcxvdecI}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-cxvdecII}
+{\rm
+\[
+\rruleIII
+ {\istyO{\typ}}
+ {\cxwf{\cx,\cx'}}
+ {\var\not\in\cxvar{\cx,\cx'}}
+ {\cxwf{\cx,\cx',\vdecO}}
+ {\RcxvdecII}
+\]
+}
+\end{theorem}
 
 \begin{theorem}\label{thm-cxvdecbool}
 {\rm
@@ -1275,6 +1299,31 @@ abbreviations defined in \secref{syntax}:
  {\hastyO{\expr}{\bool}}
  {\cxwf{\snoc{\cx}{\axM{\expr}}}}
  {\Rcxaxmono}
+\]
+}
+\end{theorem}
+
+The following theorems prove derived well-typedness rules for expressions,
+including the abbreviations defined in \secref{syntax}:
+
+\begin{theorem}\label{thm-eabsbool}
+{\rm
+\[
+\rruleI
+ {\hasty{\cx,\vdecO}{\expr}{\bool}}
+ {\hastyO{\absO}{\tarr{\typ}{\bool}}}
+ {\Reabsbool}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-eid}
+{\rm
+\[
+\rruleI
+ {\istyO{\typ}}
+ {\hastyO{\abs{\var}{\typ}{\var}}{\tarr{\typ}{\typ}}}
+ {\Reid}
 \]
 }
 \end{theorem}
@@ -1534,6 +1583,18 @@ suggest te existence of such a proof.
  {\hasty{\snoc{\cx}{\vdecO}}{\expr}{\bool}}
  {\hastyO{\exIO}{\bool}}
  {\ReexI}
+\]
+}
+\end{theorem}
+
+\begin{theorem}\label{thm-efaalphaO}
+{\rm
+\[
+\rruleII
+ {\hasty{\cx,\vdecO}{\expr}{\bool}}
+ {\var'\not\in\efvar{\expr}\cup\cvarv{\expr}{\var}}
+ {\hastyO{\fa{\var'}{\typ}{\esbs{\expr}{\var}{\var'}}}{\bool}}
+ {\RefaalphaO}
 \]
 }
 \end{theorem}

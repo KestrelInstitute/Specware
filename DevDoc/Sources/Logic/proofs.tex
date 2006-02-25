@@ -4280,6 +4280,29 @@ We use \thmref{thm-tsbs-same-free-vars},
 
 
 
+\subsection*{Proof of \thmref{thm-cxvdecI}}
+
+\begin{derivation}
+\step{\istyO{\typ}}{\hyp}
+\step{\cxwfO}{\thmref{thm-cxwf}, 1}
+\step{\var\not\in\cxvarO}{\hyp}
+\step{\cxwf{\snoc{\cx}{\vdecO}}}{\Rcxvdec, 2, 3, 1}
+\end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-cxvdecII}}
+
+\begin{derivation}
+\step{\istyO{\typ}}{\hyp}
+\step{\cxwf{\cx,\cx'}}{\hyp}
+\step{\isty{\cx,\cx'}{\typ}}{\thmref{thm-mono}, 1, 2}
+\step{\var\not\in\cxvar{\cx,\cx'}}{\hyp}
+\step{\cxwf{\cx,\cx',\vdecO}}{\RcxvdecI, 3, 4}
+\end{derivation}
+
+
+
 \subsection*{Proof of \thmref{thm-cxvdecbool}}
 
 \begin{derivation}
@@ -4302,6 +4325,33 @@ We use \thmref{thm-tsbs-same-free-vars},
      {\thmref{thm-cxwf}, 1}
 \step{\cxwf{\snoc{\cx}{\axM{\expr}}}}
      {\Rcxax, 2, 1}
+\end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-eabsbool}}
+
+\begin{derivation}
+\step{\hasty{\cx,\vdecO}{\expr}{\bool}}{\hyp}
+\step{\cxwf{\cx,\vdecO}}{\thmref{thm-cxwf}, 1}
+\step{\cxwfO}{\thmref{thm-cxprefix}, 2}
+\step{\istyO{\bool}}{\Rtbool, 3}
+\step{\hastyO{\absO}{\tarr{\typ}{\bool}}}{\Reabs, 1, 4}
+\end{derivation}
+
+
+
+\subsection*{Proof of \thmref{thm-eid}}
+
+Pick a variable $\vaR\in\Nam-(\cxvarO\cup\setI{\var})$:
+
+\begin{derivation}
+\step{\istyO{\typ}}{\hyp}
+\step{\cxwf{\cx,\vdec{\vaR}{\typ}}}{\RcxvdecI, 1, \hyp\ $\vaR\not\in\cxvarO$}
+\step{\hasty{\cx,\vdec{\vaR}{\typ}}{\vaR}{\typ}}{\Revar, 2}
+\step{\hastyO{\abs{\vaR}{\typ}{\vaR}}{\tarr{\typ}{\typ}}}{\Reabs, 3, 1}
+\step{\hastyO{\abs{\var}{\typ}{\var}}{\tarr{\typ}{\typ}}}
+     {\Reabsalpha, 4, \hyp\ $\vaR\neq\var$}
 \end{derivation}
 
 
@@ -4908,6 +4958,23 @@ derived as follows:
 
 Analogous to \thmref{thm-efa}, using \ReexIop\ instead of \Refaop.
 
+
+
+\subsection*{Proof of \thmref{thm-efaalphaO}}
+
+\begin{derivation}
+\step{\hasty{\cx,\vdecO}{\expr}{\bool}}{\hyp}
+\step{\hastyO{\absO}{\tarr{\typ}{\bool}}}{\Reabsbool, 1}
+\step{\var'\not\in\efvar{\expr}\cup\cvarv{\expr}{\var}}{\hyp}
+\step{\hastyO{\abs{\var'}{\typ}{\esbs{\expr}{\var}{\var'}}}
+             {\tarr{\typ}{\bool}}}
+     {\Reabsalpha, 2, 3}
+\step{\cxwf{\cx,\vdecO}}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\typ}}{\thmref{thm-var-type-wf}, 5}
+\step{\hastyO{\faopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}{\Refaop, 6}
+\step{\hastyO{\fa{\var'}{\typ}{\esbs{\expr}{\var}{\var'}}}{\bool}}
+     {\Reapp, 7, 4}
+\end{derivation}
 
 
 \subsection*{Proof of \thmref{thm-edotO}}
