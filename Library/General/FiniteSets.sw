@@ -1,7 +1,7 @@
 FSet qualifying spec
 
   (* The spec `Sets' defines a subtype `FiniteSet' for finite sets. In
-  principle, this subtype could be used in specs and then refined, e.g. in
+  principle, that subtype could be used in specs and then refined, e.g. in
   terms of lists, to obtain an executable implementation. In practice,
   currently Specware requires morphisms, which are used to express refinement,
   to map subtypes to subtypes.
@@ -96,7 +96,8 @@ FSet qualifying spec
   def map f s = toFSet (map f (fromFSet s))
 
   op FSet.mapPartial : [a,b] (a -> Option b) -> FSet a -> FSet b
-  def [a, b] mapPartial (f:(a -> Option b)) (s:FSet a) = toFSet (Set.mapPartial f (fromFSet s):FiniteSet(b))
+  def [a, b] mapPartial (f:(a -> Option b)) (s:FSet a) =
+    toFSet (Set.mapPartial f (fromFSet s):FiniteSet(b))
 
   op size : [a] FSet a -> Nat
   def size s = size (fromFSet s)
