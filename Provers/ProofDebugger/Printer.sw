@@ -4,9 +4,9 @@ spec
 
   import ProofChecker#Spec
 
-  (* This spec consists of ops that convert judgements, failure, and all their
-  syntactic components, to strings. These conversions enable printing such
-  syntactic entities in a human-readable form.
+  (* This spec consists of ops that convert judgements, failures, and all
+  their syntactic components, to strings. These conversions enable printing
+  such syntactic entities in a human-readable form.
 
   Since primitives can be any strings, it is easy to imagine situations in
   which a printed-out string is ambiguous or unclear. However, if only
@@ -45,12 +45,6 @@ spec
 
   op printUserField : UserField -> String
   def printUserField = id
-
-  op printConstructor : Constructor -> String
-  def printConstructor = id
-
-  op printConstructors : Constructors -> String
-  def printConstructors = printSeq printConstructor ","
 
   op printAxiomName : AxiomName -> String
   def printAxiomName = id
@@ -103,30 +97,9 @@ spec
     (if length tS <= n then ""
      else "#" ++ printTypes (removePrefix(tS,n)) ++ "#")
 
-  op printSumTypeComponent : Constructor * Type -> String
-  def printSumTypeComponent (c,t) =
-    printConstructor c ++ " " ++ printType t
-
-  op printSumType : Constructors * Types -> String
-  def printSumType (cS,tS) =
-    let n:Nat = min (length cS, length tS) in
-    let cS = prefix (cS, n) in
-    let tS = prefix (tS, n) in
-    "(" ++ printSeq printSumTypeComponent " | " (zip(cS,tS)) ++ ")" ++
-    % if there are extra constructors or component types (if the sum type is
-    % not well-formed), append them to sum type printout between "#":
-    (if length cS <= n then ""
-     else "#" ++ printConstructors (removePrefix(cS,n)) ++ "#") ++
-    (if length tS <= n then ""
-     else "#" ++ printTypes (removePrefix(tS,n)) ++ "#")
-
   op printRestrictionType : Type * Expression -> String
   def printRestrictionType (t,r) =
    "(" ++ printType t ++ " | " ++ printExpression r ++ ")"
-
-  op printQuotientType : Type * Expression -> String
-  def printQuotientType (t,q) =
-   "(" ++ printType t ++ " /" ++ printExpression q ++ ")"
 
   def printType = fn
     | BOOL         -> "Boolean"
@@ -134,9 +107,7 @@ spec
     | TYPE tn_tS   -> printTypeInstance tn_tS
     | ARROW t1_t2  -> printArrowType t1_t2
     | RECORD fS_tS -> printRecordType fS_tS
-    | SUM cS_tS    -> printSumType cS_tS
     | RESTR t_r    -> printRestrictionType t_r
-    | QUOT t_q     -> printQuotientType t_q
 
   op printOpInstance : Operation * Types -> String
   def printOpInstance (o,tS) =
@@ -170,14 +141,6 @@ spec
   def printProjector (t,f) =
     "project[" ++ printType t ++ "," ++ printField f ++ "]"
 
-  op printEmbedder : Type * Constructor -> String
-  def printEmbedder (t,c) =
-    "embed[" ++ printType t ++ "," ++ printConstructor c ++ "]"
-
-  op printQuotienter : Type -> String
-  def printQuotienter t =
-    "quotient[" ++ printType t ++ "]"
-
   def printExpression = fn
     | VAR v       -> printVariable v
     | OPI o_tS    -> printOpInstance o_tS
@@ -187,8 +150,6 @@ spec
     | IF e0_e1_e2 -> printConditional e0_e1_e2
     | IOTA t      -> printDescriptor t
     | PROJECT t_f -> printProjector t_f
-    | EMBED t_c   -> printEmbedder t_c
-    | QUOT t      -> printQuotienter t
 
   op printTypeDeclaration : TypeName * Integer -> String
   def printTypeDeclaration (tn,n) =
@@ -298,9 +259,6 @@ spec
     | fieldNotFound (f, fS, tS) ->
       "field " ++ printField f ++
       " not found in " ++ printRecordType(fS,tS) ++ newline
-    | constructorNotFound (c, cS, tS) ->
-      "constructor " ++ printConstructor c ++
-      " not found in " ++ printSumType(cS,tS) ++ newline
     | typeNotDeclared (cx, tn) ->
       "type " ++ printTypeName tn ++
       " not declared in" ++ newline ++ printContext cx
@@ -386,12 +344,8 @@ spec
       "not arrow type: " ++ printType t ++ newline
     | notRecordType t ->
       "not record type: " ++ printType t ++ newline
-    | notSumType t ->
-      "not sum type: " ++ printType t ++ newline
     | notRestrictionType t ->
       "not restriction type: " ++ printType t ++ newline
-    | notQuotientType t ->
-      "not quotient type: " ++ printType t ++ newline
     | notOpInstance e ->
       "not op instance: " ++ printExpression e ++ newline
     | notApplication e ->
@@ -406,22 +360,14 @@ spec
       "not descriptor: " ++ printExpression e ++ newline
     | notProjector e ->
       "not projector: " ++ printExpression e ++ newline
-    | notEmbedder e ->
-      "not embedder: " ++ printExpression e ++ newline
-    | notQuotienter e ->
-      "not quotienter: " ++ printExpression e ++ newline
     | notForall e ->
       "not universal quantifier: " ++ printExpression e ++ newline
     | notExists1 e ->
       "not unique existential quantifier: " ++ printExpression e ++ newline
     | badRecordType (fS, tS) ->
       "bad record type: " ++ printRecordType (fS, tS) ++ newline
-    | badSumType (cS, tS) ->
-      "bad sum type: " ++ printSumType (cS, tS) ++ newline
     | badRestrictionType (t, r) ->
       "bad restriction type: " ++ printRestrictionType (t, r) ++ newline 
-    | badQuotientType (t, q) ->
-      "bad quotient type: " ++ printQuotientType (t, q) ++ newline
     | wrongContext (rightCx, wrongCx) ->
       "found context" ++ newline ++ printContext wrongCx ++
       "instead of" ++ newline ++ printContext rightCx
@@ -457,9 +403,6 @@ spec
     | wrongFields (rightFS, wrongFS) ->
       "found fields " ++ printFields wrongFS ++
       " instead of " ++ printFields rightFS ++ newline
-    | wrongConstructors (rightCS, wrongCS) ->
-      "found constructors " ++ printConstructors wrongCS ++
-      " instead of " ++ printConstructors rightCS ++ newline
     | wrongExpression (rightE, wrongE) ->
       "found expression " ++ printExpression wrongE ++
       " instead of " ++ printExpression rightE ++ newline
@@ -472,19 +415,13 @@ spec
     | wrongLastAxiom (rightE, wrongE) ->
       "found last axiom " ++ printExpression wrongE ++
       " instead of " ++ printExpression rightE ++ newline
-    | opInOpDefTheorem (o, e) ->
-      "op " ++ printOperation o ++ " occurs in " ++ printExpression e ++ newline
     | nonMonomorphicAxiom celem ->
       "not monomorphic axiom:" ++ printContextElement celem
     | nonDistinctFields fS ->
       "fields are not distinct: " ++ printFields fS ++ newline
-    | nonDistinctConstructors cS ->
-      "constructors are not distinct: " ++ printConstructors cS ++ newline
     | nonDistinctVariables (v1, v2) ->
       "variables " ++ printVariable v1 ++ " and " ++
       printVariable v2 ++ " are not distinct" ++ newline
-    | noConstructors ->
-      "no constructors" ++ newline
     | wrongNumberOfProofs ->
       "wrong number of proofs" ++ newline
 

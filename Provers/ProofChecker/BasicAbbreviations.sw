@@ -17,6 +17,11 @@ spec
   op PRODUCT : Types -> Type
   def PRODUCT tS = RECORD (firstNProductFields (length tS), tS)
 
+  % binary product type:
+  % API private:
+  op PRODUCT2 : Type * Type -> Type
+  def PRODUCT2 (t1,t2) = PRODUCT (single t1 <| t2)
+
   % unit type:
   op UNIT : Type
   def UNIT = PRODUCT empty
@@ -166,37 +171,5 @@ spec
   % dotted projection:
   op DOT : Expression * Type * Field -> Expression
   def DOT (e,t,f) = PROJECT(t,f) @ e
-
-  % record constructor:
-  op RECC : Fields * Types -> Expression
-  def RECC (fS,tS) =
-    let n:Nat = min (length fS, length tS) in
-      % if length fS ~= length tS, excess fields or types are ignored
-      % (we avoid subtypes in public ops)
-    let xS:Variables =
-        seq (fn(i:Nat) -> if i < n then Some (abbr i) else None) in
-    let x:Variable = abbr n in
-    let eS:Expressions =
-        seq (fn(i:Nat) ->
-          if i < n then Some (DOT (VAR x, RECORD(fS,tS), fS@i) == VAR (xS@i))
-          else None) in
-    FNN (xS, tS, THE (x, RECORD(fS,tS), ANDn eS))
-
-  % record:
-  op REC : Fields * Types * Expressions -> Expression
-  def REC (fS,tS,eS) = APPLYn (RECC (fS, tS) |> eS)
-
-  % records with natural literal fields:
-  op TUPLE : Types * Expressions -> Expression
-  def TUPLE (tS,eS) = REC (firstNProductFields (length tS), tS, eS)
-
-  % tuples with two components:
-  % API private
-  op PAIR : Type * Type * Expression * Expression -> Expression
-  def PAIR (t1,t2,e1,e2) = TUPLE (single t1 <| t2, single e1 <| e2)
-
-  % empty record (= empty tuple):
-  op MTREC : Expression
-  def MTREC = TUPLE (empty, empty)
 
 endspec

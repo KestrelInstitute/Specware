@@ -26,9 +26,7 @@ spec
     | TYPE(tn,tS)   -> uniqueConcat (map typeVarsInType tS)
     | ARROW(t1,t2)  -> typeVarsInType t1 +++ typeVarsInType t2
     | RECORD(fS,tS) -> uniqueConcat (map typeVarsInType tS)
-    | SUM(cS,tS)    -> uniqueConcat (map typeVarsInType tS)
     | RESTR(t,r)    -> typeVarsInType t +++ typeVarsInExpr r
-    | QUOT(t,q)     -> typeVarsInType t +++ typeVarsInExpr q
 
   def typeVarsInExpr = fn
     | VAR v              -> empty
@@ -39,7 +37,5 @@ spec
     | IF(e0,e1,e2)       -> typeVarsInExpr e0 +++ typeVarsInExpr e1 +++ typeVarsInExpr e2
     | IOTA t             -> typeVarsInType t
     | PROJECT(t,f)       -> typeVarsInType t
-    | EMBED(t,c)         -> typeVarsInType t
-    | QUOT t             -> typeVarsInType t
 
 endspec

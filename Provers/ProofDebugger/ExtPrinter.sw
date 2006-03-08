@@ -2,7 +2,6 @@ spec
 
   % API private default
 
-
   import AbbreviationContractor, Base qualifying Printer
 
   (* This spec consists of ops that convert judgements, failure, and all their
@@ -48,30 +47,9 @@ spec
     (if length tS <= n then ""
      else "#" ++ printTypes (removePrefix(tS,n)) ++ "#")
 
-  op printSumTypeComponent : Constructor * ExtType -> String
-  def printSumTypeComponent (c,t) =
-    printConstructor c ++ " " ++ printType t
-
-  op printSumType : Constructors * ExtTypes -> String
-  def printSumType (cS,tS) =
-    let n:Nat = min (length cS, length tS) in
-    let cS = prefix (cS, n) in
-    let tS = prefix (tS, n) in
-    "(" ++ printSeq printSumTypeComponent " | " (zip(cS,tS)) ++ ")" ++
-    % if there are extra constructors or component types (if the sum type is
-    % not well-formed), append them to sum type printout between "#":
-    (if length cS <= n then ""
-     else "#" ++ printConstructors (removePrefix(cS,n)) ++ "#") ++
-    (if length tS <= n then ""
-     else "#" ++ printTypes (removePrefix(tS,n)) ++ "#")
-
   op printRestrictionType : ExtType * ExtExpression -> String
   def printRestrictionType (t,r) =
    "(" ++ printType t ++ " | " ++ printExpression r ++ ")"
-
-  op printQuotientType : ExtType * ExtExpression -> String
-  def printQuotientType (t,q) =
-   "(" ++ printType t ++ " /" ++ printExpression q ++ ")"
 
   op printProductType : ExtTypes -> String
   def printProductType (tS) =
@@ -84,11 +62,8 @@ spec
     | TYPE tn_tS   -> printTypeInstance tn_tS
     | ARROW t1_t2  -> printArrowType t1_t2
     | RECORD fS_tS -> printRecordType fS_tS
-    | SUM cS_tS    -> printSumType cS_tS
     | RESTR t_r    -> printRestrictionType t_r
-    | QUOT t_q     -> printQuotientType t_q
-
-    | PRODUCT ts -> printProductType ts
+    | PRODUCT ts   -> printProductType ts
 
   op printOpInstance : Operation * ExtTypes -> String
   def printOpInstance (o,tS) =
@@ -122,14 +97,6 @@ spec
   def printProjector (t,f) =
     "project[" ++ printType t ++ "," ++ printField f ++ "]"
 
-  op printEmbedder : ExtType * Constructor -> String
-  def printEmbedder (t,c) =
-    "embed[" ++ printType t ++ "," ++ printConstructor c ++ "]"
-
-  op printQuotienter : ExtType -> String
-  def printQuotienter t =
-    "quotient[" ++ printType t ++ "]"
-
   op printTrue : String
   def printTrue = "true"
 
@@ -142,8 +109,6 @@ spec
   op printNEGExpression: ExtExpression -> String
   def printNEGExpression(e) =
     "NOT " ++ printExpression(e)
-
-% Expression
 
   op printANDExpression : ExtExpression * ExtExpression -> String
   def printANDExpression(e1, e2) =
@@ -160,8 +125,8 @@ spec
   op printIFFExpression : String
   def printIFFExpression = "IFF"
 
-  op printEQUIVExpression : ExtExpression * ExtExpression -> String
-  def printEQUIVExpression(e1, e2) =
+  op printEQVExpression : ExtExpression * ExtExpression -> String
+  def printEQVExpression(e1, e2) =
     printExpression(e1) ++ " == " ++ printExpression(e2)
 
   op printNEQExpression: ExtExpression * ExtExpression -> String
@@ -178,12 +143,14 @@ spec
 
   op printFAExpression: Variable * ExtType * ExtExpression -> String
   def printFAExpression(v, t, e) =
-    "FA " ++ (printVariable(v)) ++ ": " ++ (printType(t)) ++ "." ++ (printExpression(e))
+    "FA " ++ (printVariable(v)) ++ ": " ++ (printType(t)) ++ "." ++
+    (printExpression(e))
 
   op printFAAExpression: Variables * ExtTypes * ExtExpression -> String
   def printFAAExpression(vs, ts, e) =
     let vts = zip(vs, ts) in
-    "FA (" ++ (printSeq (fn (v, t) -> (printVariable v) ++ ": " ++ (printType(t))) ", " vts) ++ ")" ++ printExpression(e)
+    "FA (" ++ (printSeq (fn (v, t) -> (printVariable v) ++ ": " ++
+    (printType(t))) ", " vts) ++ ")" ++ printExpression(e)
 
   op printEXqExpression: ExtType -> String
   def printEXqExpression(t) =
@@ -191,12 +158,14 @@ spec
 
   op printEXExpression: Variable * ExtType * ExtExpression -> String
   def printEXExpression(v, t, e) =
-    "EX " ++ (printVariable(v)) ++ ": " ++ (printType(t)) ++ "." ++ (printExpression(e))
+    "EX " ++ (printVariable(v)) ++ ": " ++ (printType(t)) ++ "." ++
+    (printExpression(e))
 
   op printEXXExpression: Variables * ExtTypes * ExtExpression -> String
   def printEXXExpression(vs, ts, e) =
     let vts = zip(vs, ts) in
-    "EX (" ++ (printSeq (fn (v, t) -> (printVariable v) ++ ": " ++ (printType(t))) ", " vts) ++ ")" ++ printExpression(e)
+    "EX (" ++ (printSeq (fn (v, t) -> (printVariable v) ++ ": " ++
+    (printType(t))) ", " vts) ++ ")" ++ printExpression(e)
 
   op printEX1qExpression: ExtType -> String
   def printEX1qExpression(t) =
@@ -204,7 +173,8 @@ spec
 
   op printEX1Expression: Variable * ExtType * ExtExpression -> String
   def printEX1Expression(v, t, e) =
-    "EX! " ++ (printVariable(v)) ++ ": " ++ (printType(t)) ++ "." ++ (printExpression(e))
+    "EX! " ++ (printVariable(v)) ++ ": " ++ (printType(t)) ++ "." ++
+    (printExpression(e))
 
   op printDOTExpression: ExtExpression * ExtType * Field -> String
   def printDOTExpression(e, t, f) =
@@ -218,21 +188,26 @@ spec
   op printRECExpression: Fields * ExtTypes * ExtExpressions -> String
   def printRECExpression(fs, ts, es) =
     let ftes = zip3(fs, ts, es) in
-    "<" ++ (printSeq (fn (f, t, e) -> (printField f) ++ ": " ++ (printType(t)) ++ " := " ++ printExpression(e)) ", " ftes) ++ ">"
+    "<" ++ (printSeq (fn (f, t, e) -> (printField f) ++ ": " ++
+    (printType(t)) ++ " := " ++ printExpression(e)) ", " ftes) ++ ">"
 
   op printTUPLEExpression: ExtTypes * ExtExpressions -> String
   def printTUPLEExpression(ts, es) =
     "<" ++ (printSeq printExpression ", " es) ++ ">"
 
-  op printRECUPDATERExpression: Fields * ExtTypes * Fields * ExtTypes * Fields * ExtTypes -> String
+  op printRECUPDATERExpression:
+     Fields * ExtTypes * Fields * ExtTypes * Fields * ExtTypes -> String
   def printRECUPDATERExpression(fs1, ts1, fs2, ts2, fs3, ts3) =
     "RECUPDATER"
 
-  op printRECUPDATEExpression: Fields * ExtTypes * Fields * ExtTypes * Fields * ExtTypes * ExtExpression * ExtExpression -> String
+  op printRECUPDATEExpression:
+     Fields * ExtTypes * Fields * ExtTypes * Fields * ExtTypes *
+     ExtExpression * ExtExpression -> String
   def printRECUPDATEExpression(fs1, ts1, fs2, s2, fs3, ts3, e1, e2) =
     "RECUPDATE"
 
-  op printLETSIMPExpression: ExtType * Variable * ExtType * ExtExpression * ExtExpression -> String
+  op printLETSIMPExpression:
+     ExtType * Variable * ExtType * ExtExpression * ExtExpression -> String
   def printLETSIMPExpression(t1, v, t2, e1, e2) =
     "LETSIMP"
 
@@ -240,80 +215,73 @@ spec
   def printCONDExpression(t, bbs) =
     "COND(" ++ (printSeq printBindingBranch ";/n" bbs) ++ ")"
 
-  op printBindingBranch: Variables * ExtTypes * ExtExpression  * ExtExpression -> String
+  op printBindingBranch:
+     Variables * ExtTypes * ExtExpression  * ExtExpression -> String
   def printBindingBranch(vs, ts, e1, e2) =
     let vsts = zip(vs, ts) in
-    "(" ++ (printSeq (fn (v, t) -> (printVariable v) ++ ":" ++ printType t) ", " vsts) ++ " -> " ++ printExpression e1 ++ " => " ++ printExpression e2 ++ ")"
+    "(" ++ (printSeq (fn (v, t) -> (printVariable v) ++ ":" ++
+    printType t) ", " vsts) ++ " -> " ++ printExpression e1 ++
+    " => " ++ printExpression e2 ++ ")"
 
-  op printCASEExpression: ExtType * ExtType * ExtExpression * ExtBindingBranches -> String
+  op printCASEExpression:
+     ExtType * ExtType * ExtExpression * ExtBindingBranches -> String
   def printCASEExpression(t1, t2, e, bbs) =
     "CASE"
 
-  op printLETExpression: ExtType * ExtType * Variables * ExtTypes * ExtExpression * ExtExpression * ExtExpression -> String
+  op printLETExpression:
+     ExtType * ExtType * Variables * ExtTypes *
+     ExtExpression * ExtExpression * ExtExpression -> String
   def printLETExpression(t1, t2, vs, ts, e1, e2, e3) =
     "LET"
                  
-  op printLETDEFExpression: ExtType * Variables * ExtTypes * ExtExpressions * ExtExpression -> String
+  op printLETDEFExpression:
+     ExtType * Variables * ExtTypes * ExtExpressions * ExtExpression -> String
   def printLETDEFExpression(t, vs, ts, e1, e2) =
     "LETDEF"
 
-  op printCHOOSEExpression: ExtType * ExtExpression * ExtType -> String
-  def printCHOOSEExpression(t1, e, t2) =
-    "CHOOSE"
-
-  op printEMBED?Expression: Constructors * ExtTypes * Constructor -> String
-  def printEMBED?Expression(cs, ts, c) =
-    "EMBED?"
-
   def printExpression(e) =
-%    let sn = succind n in
-%    let lSep = "\n"^(ind sn) in
-%    let sep = ", " in
     case e of
-    | VAR v       -> printVariable v
-    | OPI o_tS    -> printOpInstance o_tS
-    | APPLY e1_e2 -> printApplication e1_e2
-    | FN v_t_e    -> printAbstraction v_t_e
-    | EQ e1_e2    -> printEquality e1_e2
-    | IF e0_e1_e2 -> printConditional e0_e1_e2
-    | IOTA t      -> printDescriptor t
-    | PROJECT t_f -> printProjector t_f
-    | EMBED t_c   -> printEmbedder t_c
-    | QUOT t      -> printQuotienter t
-
-    | TRUE        -> printTrue
-    | FALSE       -> printFalse
-    | NOT         -> printNot
-    | NEG (e)     -> printNEGExpression e  % cannot use "~~"
-    | AND (e1,e2) -> printANDExpression(e1, e2)
-    | OR  (e1,e2) -> printORExpression(e1, e2)
+    | VAR v          -> printVariable v
+    | OPI o_tS       -> printOpInstance o_tS
+    | APPLY e1_e2    -> printApplication e1_e2
+    | FN v_t_e       -> printAbstraction v_t_e
+    | EQ e1_e2       -> printEquality e1_e2
+    | IF e0_e1_e2    -> printConditional e0_e1_e2
+    | IOTA t         -> printDescriptor t
+    | PROJECT t_f    -> printProjector t_f
+    | TRUE           -> printTrue
+    | FALSE          -> printFalse
+    | NOT            -> printNot
+    | NEG (e)        -> printNEGExpression e
+    | AND (e1,e2)    -> printANDExpression(e1, e2)
+    | OR  (e1,e2)    -> printORExpression(e1, e2)
     | IMPLIES(e1,e2) -> printIMPLIESExpression(e1, e2)
-    | IFF         -> printIFFExpression
-    | EQUIV(e1, e2) -> printEQUIVExpression(e1, e2)
-    | NEQ(e1,e2)   -> printNEQExpression(e1, e2)
-    | THE(v,t, e) -> printTHEExpression(v, t, e)
-    | FAq(t)      -> printFAqExpression(t)
-    | FA(v, t, e) -> printFAExpression(v, t, e)
+    | IFF            -> printIFFExpression
+    | EQV(e1, e2)    -> printEQVExpression(e1, e2)
+    | NEQ(e1,e2)     -> printNEQExpression(e1, e2)
+    | THE(v,t, e)    -> printTHEExpression(v, t, e)
+    | FAq(t)         -> printFAqExpression(t)
+    | FA(v, t, e)    -> printFAExpression(v, t, e)
     | FAA(vs, ts, e) -> printFAAExpression(vs, ts, e)
-    | EXq(t)       -> printEXqExpression(t)
-    | EX(v, t, e)  -> printEXExpression(v, t, e)
+    | EXq(t)         -> printEXqExpression(t)
+    | EX(v, t, e)    -> printEXExpression(v, t, e)
     | EXX(vs, ts, e) -> printEXXExpression(vs, ts, e)
-    | EX1q(t)      -> printEX1qExpression(t)
-    | EX1(v, t, e) -> printEX1Expression(v, t, e)
-    | DOT(e, t, f) -> printDOTExpression(e, t, f)
-    | RECC(fs, ts) -> printRECCExpression(fs, ts)
-    | REC(fs, ts, es) -> printRECExpression(fs, ts, es)
-    | TUPLE(ts, es) -> printTUPLEExpression(ts, es)
-    | RECUPDATER(fs, ts, fs1, ts1, fs2, ts2) -> printRECUPDATERExpression(fs, ts, fs1, ts1, fs2, ts2)
-    | RECUPDATE(fs, ts, fs1, ts1, fs2, ts2, e1, e2) -> printRECUPDATEExpression(fs, ts, fs1, ts1, fs2, ts2, e1, e2)
+    | EX1q(t)        -> printEX1qExpression(t)
+    | EX1(v, t, e)   -> printEX1Expression(v, t, e)
+    | DOT(e, t, f)   -> printDOTExpression(e, t, f)
+    | RECC(fs, ts)   -> printRECCExpression(fs, ts)
+    | REC(fs, ts, es)-> printRECExpression(fs, ts, es)
+    | TUPLE(ts, es)  -> printTUPLEExpression(ts, es)
+    | RECUPDATER(fs, ts, fs1, ts1, fs2, ts2) ->
+      printRECUPDATERExpression(fs, ts, fs1, ts1, fs2, ts2)
+    | RECUPDATE(fs, ts, fs1, ts1, fs2, ts2, e1, e2) ->
+      printRECUPDATEExpression(fs, ts, fs1, ts1, fs2, ts2, e1, e2)
     | LETSIMP(t1, v, t2, e1, e2) -> printLETSIMPExpression(t1, v, t2, e1, e2)
     | COND(t, bbs) -> printCONDExpression(t, bbs)
     | CASE(t1, t2, e, bbs) -> printCASEExpression(t1, t2, e, bbs)
-    | LET(t1, t2, vs, ts, e1, e2, e3) -> printLETExpression(t1, t2, vs, ts, e1, e2, e3)
+    | LET(t1, t2, vs, ts, e1, e2, e3) ->
+      printLETExpression(t1, t2, vs, ts, e1, e2, e3)
     | LETDEF(t, vs, ts, e1, e2) -> printLETDEFExpression(t, vs, ts, e1, e2)
-    | CHOOSE(t1, e, t2) -> printCHOOSEExpression(t1, e, t2)
-    | EMBED?(cs, ts, c) -> printEMBED?Expression(cs, ts, c)
-
 
   op printOpDeclaration : Operation * TypeVariables * ExtType -> String
   def printOpDeclaration (o,tvS,t) =
@@ -415,9 +383,6 @@ spec
     | fieldNotFound (f, fS, tS) ->
       "field " ++ printField f ++
       " not found in " ++ printRecordType(fS,tS) ++ newline
-    | constructorNotFound (c, cS, tS) ->
-      "constructor " ++ printConstructor c ++
-      " not found in " ++ printSumType(cS,tS) ++ newline
     | typeNotDeclared (cx, tn) ->
       "type " ++ printTypeName tn ++
       " not declared in" ++ newline ++ printContext cx
@@ -489,7 +454,7 @@ spec
     | notSubtype jdg ->
       "judgement is not subtype:" ++ newline ++
       printJudgement jdg
-    | notWFType jdg ->
+    | notWTExpr jdg ->
       "judgement is not well-typed expression:" ++ newline ++
       printJudgement jdg
     | notTheorem jdg ->
@@ -503,12 +468,8 @@ spec
       "not arrow type: " ++ printType t ++ newline
     | notRecordType t ->
       "not record type: " ++ printType t ++ newline
-    | notSumType t ->
-      "not sum type: " ++ printType t ++ newline
     | notRestrictionType t ->
       "not restriction type: " ++ printType t ++ newline
-    | notQuotientType t ->
-      "not quotient type: " ++ printType t ++ newline
     | notOpInstance e ->
       "not op instance: " ++ printExpression e ++ newline
     | notApplication e ->
@@ -523,22 +484,14 @@ spec
       "not descriptor: " ++ printExpression e ++ newline
     | notProjector e ->
       "not projector: " ++ printExpression e ++ newline
-    | notEmbedder e ->
-      "not embedder: " ++ printExpression e ++ newline
-    | notQuotienter e ->
-      "not quotienter: " ++ printExpression e ++ newline
     | notForall e ->
       "not universal quantifier: " ++ printExpression e ++ newline
     | notExists1 e ->
       "not unique existential quantifier: " ++ printExpression e ++ newline
     | badRecordType (fS, tS) ->
       "bad record type: " ++ printRecordType (fS, tS) ++ newline
-    | badSumType (cS, tS) ->
-      "bad sum type: " ++ printSumType (cS, tS) ++ newline
     | badRestrictionType (t, r) ->
       "bad restriction type: " ++ printRestrictionType (t, r) ++ newline 
-    | badQuotientType (t, q) ->
-      "bad quotient type: " ++ printQuotientType (t, q) ++ newline
     | wrongContext (rightCx, wrongCx) ->
       "found context" ++ newline ++ printContext wrongCx ++
       "instead of" ++ newline ++ printContext rightCx
@@ -574,9 +527,6 @@ spec
     | wrongFields (rightFS, wrongFS) ->
       "found fields " ++ printFields wrongFS ++
       " instead of " ++ printFields rightFS ++ newline
-    | wrongConstructors (rightCS, wrongCS) ->
-      "found constructors " ++ printConstructors wrongCS ++
-      " instead of " ++ printConstructors rightCS ++ newline
     | wrongExpression (rightE, wrongE) ->
       "found expression " ++ printExpression wrongE ++
       " instead of " ++ printExpression rightE ++ newline
@@ -589,19 +539,13 @@ spec
     | wrongLastAxiom (rightE, wrongE) ->
       "found last axiom " ++ printExpression wrongE ++
       " instead of " ++ printExpression rightE ++ newline
-    | opInOpDefTheorem (o, e) ->
-      "op " ++ printOperation o ++ " occurs in " ++ printExpression e ++ newline
     | nonMonomorphicAxiom celem ->
       "not monomorphic axiom:" ++ printContextElement celem
     | nonDistinctFields fS ->
       "fields are not distinct: " ++ printFields fS ++ newline
-    | nonDistinctConstructors cS ->
-      "constructors are not distinct: " ++ printConstructors cS ++ newline
     | nonDistinctVariables (v1, v2) ->
       "variables " ++ printVariable v1 ++ " and " ++
       printVariable v2 ++ " are not distinct" ++ newline
-    | noConstructors ->
-      "no constructors" ++ newline
     | wrongNumberOfProofs ->
       "wrong number of proofs" ++ newline
 

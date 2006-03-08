@@ -27,10 +27,11 @@ spec
     | abbr Integer
 
   % useful definitions:
+  type Operations    = FSeq Operation
   type TypeVariables = FSeq TypeVariable
   type Variables     = FSeq Variable
   type Fields        = FSeq Field
-  type Constructors  = FSeq Constructor
+  type AxiomNames    = FSeq AxiomName
 
   (* Types depend on expressions, which depend on types. So, we first declare
   the meta types for types and expressions, and then define them below. *)
@@ -47,21 +48,19 @@ spec
   requirements into the inference rules, thus keeping the syntax simpler and
   avoiding subtypes, as explained in README.txt.
 
-  Another difference with LD is that we factor fields/constructors separately
-  from the component types of record/sum types, i.e. we have two sequences
-  instead of a sequence of pairs. This makes the syntax a little simpler. The
-  requirement that the two sequences have the same length are incorporated
-  into the inference rules. *)
+  Another difference with LD is that we factor fields separately from the
+  component types of record types, i.e. we have two sequences instead of a
+  sequence of pairs. This makes the syntax a little simpler. The requirement
+  that the two sequences have the same length are incorporated into the
+  inference rules. *)
 
   type Type =
-    | BOOL                         % boolean
-    | VAR    TypeVariable          % type variable
-    | TYPE   TypeName * Types      % type instance
-    | ARROW  Type * Type           % arrow type
-    | RECORD Fields * Types        % record type
-    | SUM    Constructors * Types  % sum type
-    | RESTR  Type * Expression     % restriction type
-    | QUOT   Type * Expression     % quotient type
+    | BOOL                      % boolean
+    | VAR    TypeVariable       % type variable
+    | TYPE   TypeName * Types   % type instance
+    | ARROW  Type * Type        % arrow type
+    | RECORD Fields * Types     % record type
+    | RESTR  Type * Expression  % restriction type
 
   % infix arrow type constructor:
   op --> infixl 20 : Type * Type -> Type
@@ -71,14 +70,9 @@ spec
   op \ infixl 30 : Type * Expression -> Type
   def \ = RESTR
 
-  % infix quotient type constructor:
-  op / infixl 30 : Type * Expression -> Type
-  def / = QUOT
-
-  (* Unlike LD, here projectors/embedders/quotienters/etc. are decorated by
-  types, not necessarily record/sum/quotient types. Again, this keeps the
-  syntax simpler. The inference rules require the decorating types to be of
-  the appropriate form. *)
+  (* Unlike LD, here projectors are decorated by types, not necessarily record
+  types. Again, this keeps the syntax simpler. The inference rules require the
+  decorating types to be of the appropriate form. *)
 
   type Expression =
     | VAR     Variable                              % variable
@@ -89,8 +83,6 @@ spec
     | IF      Expression * Expression * Expression  % conditional
     | IOTA    Type                                  % descriptor
     | PROJECT Type * Field                          % projector
-    | EMBED   Type * Constructor                    % embedder
-    | QUOT    Type                                  % quotienter
 
   % infix application (we cannot use juxtaposition):
   op @ infixl 30 : Expression * Expression -> Expression
@@ -114,8 +106,6 @@ spec
         v   : Variable,
         f   : Field,
         fS  : Fields,
-        c   : Constructor,
-        cS  : Constructors,
         t   : Type,
         t1  : Type,
         t2  : Type,
@@ -124,8 +114,7 @@ spec
         e0  : Expression,
         e1  : Expression,
         e2  : Expression,
-        r   : Expression,
-        q   : Expression)
+        r   : Expression)
          predT t
       && predT t1
       && predT t2
@@ -135,15 +124,12 @@ spec
       && predE e1
       && predE e2
       && predE r
-      && predE q
       => predT BOOL
       && predT (VAR tv)
       && predT (TYPE (tn, tS))
       && predT (t1 --> t2)
       && predT (RECORD (fS, tS))
-      && predT (SUM (cS, tS))
       && predT (t \ r)
-      && predT (t / q)
       && predE (VAR v)
       && predE (OPI (o, tS))
       && predE (e1 @ e2)
@@ -151,9 +137,7 @@ spec
       && predE (e1 == e2)
       && predE (IF (e0, e1, e2))
       && predE (IOTA t)
-      && predE (PROJECT (t, f))
-      && predE (EMBED (t, c))
-      && predE (QUOT t))
+      && predE (PROJECT (t, f)))
   %%%%% induction conclusion:
    => (fa(t) predT t)
    && (fa(e) predE e)

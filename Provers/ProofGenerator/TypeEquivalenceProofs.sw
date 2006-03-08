@@ -33,9 +33,7 @@ spec
       | TYPE (tn, typs) -> (\\// (map typeTypeNames typs)) <| tn
       | ARROW (t1, t2) -> typeTypeNames(t1) \/ typeTypeNames(t2)
       | RECORD (_, typs) -> \\// (map typeTypeNames typs)
-      | SUM (_, typs) ->  \\// (map typeTypeNames typs)
       | RESTR (t, _) -> typeTypeNames(t)
-      | QUOT (t, _) -> typeTypeNames(t)
 
   op circularContext?: Context -> Boolean
   def circularContext?(cx) =
@@ -80,9 +78,7 @@ spec
       %expandTypeDef(tdCE, TYPE (ttn, applyTypeDefInTypes (cxP, tdCE) typs))
       | ARROW _ -> teArrowProof(cxP, cx, tdCE) t
       | RECORD _ -> teRecordProof(cxP, cx, tdCE) t
-      | SUM _ -> teSumProof(cxP, cx, tdCE) t
       | RESTR _ -> teRestrProof(cxP, cx, tdCE) t
-      | QUOT _ -> teQuotProof(cxP, cx, tdCE) t
 
   op teInstProof: Proof * Context * TypeDefinitionContextElement -> Type -> Type * Proof
   def teInstProof(cxP, cx, tdCE) t =
@@ -106,13 +102,6 @@ spec
     let (newTs, newTPs) = applyTypeDefInTypes(cxP, cx, tdCE) typs in
     (RECORD (flds, newTs), teRec(cxP, newTPs, flds))
 
-  op teSumProof: Proof * Context * TypeDefinitionContextElement -> Type -> Type * Proof
-  def teSumProof(cxP, cx, tdCE) t =
-    let SUM (cstrs, typs) = t in
-    let (cstrs, typs) = sortCnstrsTypes(cstrs, typs) in
-    let (newTs, newTPs) = applyTypeDefInTypes(cxP, cx, tdCE) typs in
-    (SUM (cstrs, newTs), teSum(newTPs, cstrs))
-
   op teRestrProof: Proof * Context * TypeDefinitionContextElement -> Type -> Type * Proof
   def teRestrProof(cxP, cx, tdCE) t =
     let RESTR (st, r) = t in
@@ -120,14 +109,6 @@ spec
     let (newSt, stP) = applyTypeDefInType(cxP, cx, tdCE) st in
     let (newR, rP) = applyTypeDefInExpr(cxP, cx, tdCE) r in
     (RESTR (newSt, newR), teRestr(wftp, stP, rP))
-
-  op teQuotProof: Proof * Context * TypeDefinitionContextElement -> Type -> Type * Proof
-  def teQuotProof(cxP, cx, tdCE) t =
-    let QUOT (st, q) = t in
-    let wftp = typeProof(cxP, cx, t) in
-    let (newSt, stP) = applyTypeDefInType(cxP, cx, tdCE) st in
-    let (newQ, qP) = applyTypeDefInExpr(cxP, cx, tdCE) q in
-    (QUOT (newSt, newQ), teQuot(wftp, stP, qP))
 
   op applyTypeDefInTypes: Proof * Context * TypeDefinitionContextElement -> Types -> FSeq Type * FSeq Proof
   def applyTypeDefInTypes (cxP, cx, tdCE) typs =
@@ -150,8 +131,6 @@ spec
       | IF (e1, e2, e3) -> thIfSubstProof (cxP, cx, tdCE) e
       | IOTA (t) -> thTheSubstProof (cxP, cx, tdCE) e
       | PROJECT (t, f) -> thProjSubstProof (cxP, cx, tdCE) e
-      | EMBED (t, c) -> thEmbedSubstProof (cxP, cx, tdCE) e
-      | QUOT (t) -> thQuotSubstProof (cxP, cx, tdCE) e
 
   op thOpSubstProof: Proof * Context * TypeDefinitionContextElement -> Expression -> Expression * Proof
   def thOpSubstProof (cxP, cx, tdCE) e =
@@ -219,22 +198,6 @@ spec
     let exprTypeAssumption = wellTypedExpressionAssumption(cx, e) in
     (newE, thProjSubst(exprTypeAssumption, tP))
 
-  op thEmbedSubstProof: Proof * Context * TypeDefinitionContextElement -> Expression -> Expression * Proof
-  def thEmbedSubstProof (cxP, cx, tdCE) e =
-    let EMBED (t, c) = e in
-    let (newT, tP) = applyTypeDefInType (cxP, cx, tdCE) t in
-    let newE = EMBED (newT, c) in
-    let exprTypeAssumption = wellTypedExpressionAssumption(cx, e) in
-    (newE, thEmbedSubst(exprTypeAssumption, tP))
-
-  op thQuotSubstProof: Proof * Context * TypeDefinitionContextElement -> Expression -> Expression * Proof
-  def thQuotSubstProof (cxP, cx, tdCE) e =
-    let QUOT (t) = e in
-    let (newT, tP) = applyTypeDefInType (cxP, cx, tdCE) t in
-    let newE = QUOT (newT) in
-    let exprTypeAssumption = wellTypedExpressionAssumption(cx, e) in
-    (newE, thQuotSubst(exprTypeAssumption, tP))
-
   op expandTypeDef: Proof * Context * TypeDefinitionContextElement -> Type -> Type * Proof
   def expandTypeDef(cxP, cx, tdCE) t =
     let tn = typeDefinitionTypeName(tdCE) in
@@ -291,12 +254,6 @@ spec
       | (_, prod _) -> false
       | (user s1, user s2) -> s1 <= s2
 
-(*
-  op Constructor.<= infixl 20: Constructor * Constructor -> Boolean
-  def Constructor.<(c1, c2) =
-    c1 String.<= c2
-*)
-
   op sortDualSeqs: [a, b] FSeq a * FSeq b * (a * a -> Boolean) -> (FSeq a * FSeq b)
   def sortDualSeqs(s1, s2, lte1) =
     let s1s2 = zip(s1, s2) in
@@ -307,10 +264,6 @@ spec
   op sortFldsTypes: Fields * Types -> (Fields * Types)
   def sortFldsTypes(flds, typs) =
     sortDualSeqs(flds, typs, <=)
-
-  op sortCnstrsTypes: Constructors * Types -> (Constructors * Types)
-  def sortCnstrsTypes(cnstrs, typs) =
-    sortDualSeqs(cnstrs, typs, <=)
 
   op teReflProof: Proof * Context * Type -> Proof
   def teReflProof(cxP, cx, t) =

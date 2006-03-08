@@ -39,7 +39,6 @@ spec
   import translate /Library/General/Type#Infinite by {X +-> TypeVariable}
   import translate /Library/General/Type#Infinite by {X +-> UserVariable}
   import translate /Library/General/Type#Infinite by {X +-> UserField}
-  import translate /Library/General/Type#Infinite by {X +-> Constructor}
   import translate /Library/General/Type#Infinite by {X +-> AxiomName}
   import translate /Library/General/Type#Infinite by {X +-> LemmaName}
 

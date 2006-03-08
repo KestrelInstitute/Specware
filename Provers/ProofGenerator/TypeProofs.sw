@@ -61,12 +61,6 @@ spec
     let tProofs = map (fn (t) -> typeProof(cxPrf, cx, t)) ts in
     tyRec(cxPrf, tProofs, flds)
 
-  op tySumProof: Proof * Context * Type -> Proof
-  def tySumProof(cxPrf, cx, ty) =
-    let SUM (cstrs, ts) = ty in
-    let tProofs = map (fn (t) -> typeProof(cxPrf, cx, t)) ts in
-    tySum(tProofs, cstrs)
-
   op tyRestrProof: Proof * Context * Type -> Proof
   def tyRestrProof(cxPrf, cx, ty) =
     let RESTR (st, expr) = ty in
@@ -78,25 +72,6 @@ spec
 	  | _ -> falseProof(cx)
     else falseProof(cx)
 
-  op tyQuotProof: Proof * Context * Type -> Proof
-  def tyQuotProof(cxPrf, cx, ty) =
-    let QUOT (t, q) = ty in
-    let refProof = assume (theoreM (cx, FA (v, t, q @ PAIR (t, t, VAR v, VAR v)))) in
-    let symProof = assume (theoreM (cx, FA2 (v1, t, v2, t,
-					     q @ PAIR (t, t, VAR v1, VAR v2)
-					     ==>
-					     q @ PAIR (t, t, VAR v2, VAR v1)))) in
-    let transProof = assume (theoreM (cx, FA3 (u1, t, u2, t, u3, t,
-					       q @ PAIR (t, t, VAR u1, VAR u2)
-					       &&&
-					       q @ PAIR (t, t, VAR u2, VAR u3)
-					       ==>
-					       q @ PAIR (t, t, VAR u1,  VAR u3)))) in
-
-    if exprFreeVars q = empty
-      then     tyQuot(refProof, symProof, transProof)
-    else falseProof(cx)
-
   def typeProof(cxPrf, cx, ty) =
     let p =
     case ty of
@@ -105,9 +80,7 @@ spec
       | TYPE _ -> tyInstProof(cxPrf, cx, ty)
       | ARROW _ -> tyArrProof(cxPrf, cx, ty)
       | RECORD _ -> tyRecProof(cxPrf, cx, ty)
-      | SUM _ -> tySumProof(cxPrf, cx, ty)
-      | RESTR _ -> tyRestrProof(cxPrf, cx, ty)
-      | QUOT _ -> tyQuotProof(cxPrf, cx, ty) in
+      | RESTR _ -> tyRestrProof(cxPrf, cx, ty) in
    p
    %if check? p then p else let _ = fail("typeProof") in p
 

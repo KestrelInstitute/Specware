@@ -43,9 +43,7 @@ spec
     | TYPE    TypeName * ExtTypes
     | ARROW   ExtType * ExtType
     | RECORD  Fields * ExtTypes
-    | SUM     Constructors * ExtTypes
     | RESTR   ExtType * ExtExpression
-    | QUOT    ExtType * ExtExpression
     % extension:
     | PRODUCT ExtTypes  % product type
 
@@ -59,8 +57,6 @@ spec
     | IF      ExtExpression * ExtExpression * ExtExpression
     | IOTA    ExtType
     | PROJECT ExtType * Field
-    | EMBED   ExtType * Constructor
-    | QUOT    ExtType
     % extension:
     | TRUE
     | FALSE
@@ -70,7 +66,7 @@ spec
     | OR         ExtExpression * ExtExpression  % cannot use "|||"
     | IMPLIES    ExtExpression * ExtExpression  % cannot use "==>"
     | IFF
-    | EQUIV      ExtExpression * ExtExpression  % cannot use "~=="
+    | EQV        ExtExpression * ExtExpression  % cannot use "~=="
     | NEQ        ExtExpression * ExtExpression
     | THE        Variable * ExtType * ExtExpression
     | FAq        ExtType
@@ -94,8 +90,6 @@ spec
                  ExtExpression * ExtExpression * ExtExpression
     | LETSIMP    ExtType * Variable * ExtType * ExtExpression * ExtExpression
     | LETDEF     ExtType * Variables * ExtTypes * ExtExpressions * ExtExpression
-    | CHOOSE     ExtType * ExtExpression * ExtType
-    | EMBED?     Constructors * ExtTypes * Constructor
 
   axiom induction_on_extended_types_and_expressions is
     fa (predT : ExtType       -> Boolean,
@@ -110,8 +104,6 @@ spec
         fS  : Fields,
         fS1 : Fields,
         fS2 : Fields,
-        c   : Constructor,
-        cS  : Constructors,
         t   : ExtType,
         t1  : ExtType,
         t2  : ExtType,
@@ -125,7 +117,6 @@ spec
         eS  : ExtExpressions,
         p   : ExtExpression,
         r   : ExtExpression,
-        q   : ExtExpression,
         brS : ExtBindingBranches)
          predT t
       && predT t1
@@ -136,7 +127,6 @@ spec
       && predE e1
       && predE e2
       && predE r
-      && predE q
       && forall? (fn(br:ExtBindingBranch) -> let (vS, tS, p, e) = br in
                     forall? predT tS && predE p && predE e) brS
       => predT BOOL
@@ -144,9 +134,7 @@ spec
       && predT (TYPE (tn, tS))
       && predT (ARROW (t1, t2))
       && predT (RECORD (fS, tS))
-      && predT (SUM (cS, tS))
       && predT (RESTR (t, r))
-      && predT (QUOT (t, q))
       && predT (embed PRODUCT tS)
       && predE (VAR v)
       && predE (OPI (o, tS))
@@ -156,8 +144,6 @@ spec
       && predE (IF (e0, e1, e2))
       && predE (IOTA t)
       && predE (PROJECT (t, f))
-      && predE (EMBED (t, c))
-      && predE (QUOT t)
       && predE (embed TRUE)
       && predE (embed FALSE)
       && predE (embed NOT)
@@ -166,7 +152,7 @@ spec
       && predE (OR (e1, e2))
       && predE (IMPLIES (e1, e2))
       && predE (embed IFF)
-      && predE (EQUIV (e1, e2))
+      && predE (EQV (e1, e2))
       && predE (NEQ (e1, e2))
       && predE (embed THE (v, t, e))
       && predE (embed FAq t)
@@ -187,9 +173,7 @@ spec
       && predE (embed CASE (t, t1, e, brS))
       && predE (embed LET (t, t1, vS, tS, p, e, e1))
       && predE (embed LETSIMP (t1, v, t, e, e1))
-      && predE (embed LETDEF (t, vS, tS, eS, e))
-      && predE (embed CHOOSE (t, e, t1))
-      && predE (embed EMBED? (cS, tS, c)))
+      && predE (embed LETDEF (t, vS, tS, eS, e)))
   %%%%% induction conclusion:
    => (fa(t) predT t)
    && (fa(e) predE e)
@@ -209,7 +193,7 @@ spec
     | AND    (e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
     | OR     (e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
     | IMPLIES(e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
-    | EQUIV  (e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
+    | EQV    (e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
     | NEQ    (e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
     | THE(v,t,e)     -> exprFreeVars e -- single v
     | FA(v,t,e)      -> exprFreeVars e -- single v

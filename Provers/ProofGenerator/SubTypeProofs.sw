@@ -79,25 +79,6 @@ spec
     let types = RECtypes(t) in
     expandSubType(cxP, cx, t)
 
-  op stSumProof: Proof * Context * SUMType * SUMType  -> Proof * Expression
-  def stSumProof(cxP, cx, subT, t) =
-    let subCs = SUMcnstrs(subT) in
-    let cs = SUMcnstrs(t) in
-    let subTypes = SUMtypes(subT) in
-    let types = SUMtypes(t) in
-    let tP = typeProof(cxP, cx, subT) in
-    let prf_predSeq = map2 (fn (subti, ti) -> subTypeProofX(cxP, cx, subti, ti)) (subTypes, types) in
-    let (prfs, preds) = unzip prf_predSeq in
-    let disjuncts = seq (fn(i:Nat) ->
-           if i < length cs then
-             Some (EX (v1, types@i,
-                       VAR v == EMBED (SUM(cs,types), cs@i) @ VAR v1
-                       &&&
-                       (preds@i) @ VAR v1))
-           else None) in
-     let r = FN (v, SUM (cs, types), ORn disjuncts) in
-    (stSum(tP, prfs, v, v1), r)
-
   op stTEProof: Proof * Context * Type * Type  -> Proof * Expression
   def stTEProof(cxP, cx, subT, t) =
     let (subTX, subTEP) = expandTypeWithContext(cxP, cx) subT in
@@ -121,7 +102,6 @@ spec
 	| (RESTR _, _) -> check1(stRestrProof(cxP, cx, subT, t))
         | (ARROW _, ARROW _) -> check1(stArrProof(cxP, cx, subT, t))
 	| (RECORD _, RECORD _) -> check1(stRecProof(cxP, cx, subT, t))
-	| (SUM _, SUM _) -> check1(stSumProof(cxP, cx, subT, t))
 	| _ -> (falseProof cx, FALSE) in
     check1((stTE(subXP, subTEP, TEP), r)) in
     (prf, exp)

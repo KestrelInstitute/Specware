@@ -5,23 +5,22 @@ spec
   import Contexts
 
   (* This spec is an executable version of spec Occurrences. Actually, only
-  two ops in spec Occurrences are not executable, namely ops
-  contextDefinesType? and contextDefinesOp?. Since currently Specware provides
-  no way of refining individual ops in a spec, we have to copy the other ops
-  and their (executable) definitions from spec Occurrences. This, which is
-  clearly not ideal, will change as soon as Specware provides better
-  refinement capabilities. *)
+  one op in spec Occurrences is not executable, namely op contextDefinesType?.
+  Since currently Specware provides no way of refining individual ops in a
+  spec, we have to copy the other ops and their (executable) definitions from
+  spec Occurrences. This is not ideal but will change as soon as Specware
+  provides better refinement capabilities. *)
 
   % the following are copied verbatim from spec Occurrences:
 
   op exprFreeVars : Expression -> FSet Variable
   def exprFreeVars = fn
-    | VAR v              -> single v
-    | APPLY(e1,e2)       -> exprFreeVars e1 \/ exprFreeVars e2
-    | FN(v,t,e)          -> exprFreeVars e -- single v
-    | EQ(e1,e2)          -> exprFreeVars e1 \/ exprFreeVars e2
-    | IF(e0,e1,e2)       -> exprFreeVars e0 \/ exprFreeVars e1 \/ exprFreeVars e2
-    | _                  -> empty
+    | VAR v        -> single v
+    | APPLY(e1,e2) -> exprFreeVars e1 \/ exprFreeVars e2
+    | FN(v,t,e)    -> exprFreeVars e -- single v
+    | EQ(e1,e2)    -> exprFreeVars e1 \/ exprFreeVars e2
+    | IF(e0,e1,e2) -> exprFreeVars e0 \/ exprFreeVars e1 \/ exprFreeVars e2
+    | _            -> empty
 
   op contextElementTypes    : ContextElement -> FSet TypeName
   op contextElementOps      : ContextElement -> FSet Operation
@@ -90,9 +89,7 @@ spec
     | TYPE(tn,tS)   -> \\// (map (opInstancesInType o) tS)
     | ARROW(t1,t2)  -> opInstancesInType o t1 \/ opInstancesInType o t2
     | RECORD(fS,tS) -> \\// (map (opInstancesInType o) tS)
-    | SUM(cS,tS)    -> \\// (map (opInstancesInType o) tS)
     | RESTR(t,r)    -> opInstancesInType o t \/ opInstancesInExpr o r
-    | QUOT(t,q)     -> opInstancesInType o t \/ opInstancesInExpr o q
 
   def opInstancesInExpr o = fn
     | VAR v        -> empty
@@ -105,7 +102,5 @@ spec
                       opInstancesInExpr o e1 \/ opInstancesInExpr o e2
     | IOTA t       -> opInstancesInType o t
     | PROJECT(t,f) -> opInstancesInType o t
-    | EMBED(t,c)   -> opInstancesInType o t
-    | QUOT t       -> opInstancesInType o t
 
 endspec

@@ -17,9 +17,7 @@ spec
     | TYPE(tn,tS)   -> TYPE (tn, map (typeSubstInType sbs) tS)
     | ARROW(t1,t2)  -> ARROW (typeSubstInType sbs t1, typeSubstInType sbs t2)
     | RECORD(fS,tS) -> RECORD (fS, map (typeSubstInType sbs) tS)
-    | SUM(cS,tS)    -> SUM (cS, map (typeSubstInType sbs) tS)
     | RESTR(t,r)    -> RESTR (typeSubstInType sbs t, typeSubstInExpr sbs r)
-    | QUOT(t,q)     -> QUOT (typeSubstInType sbs t, typeSubstInExpr sbs q)
 
   def typeSubstInExpr sbs = fn
     | VAR v        -> VAR v
@@ -32,8 +30,6 @@ spec
                           typeSubstInExpr sbs e2)
     | IOTA t       -> IOTA (typeSubstInType sbs t)
     | PROJECT(t,f) -> PROJECT (typeSubstInType sbs t, f)
-    | EMBED(t,c)   -> EMBED (typeSubstInType sbs t, c)
-    | QUOT t       -> QUOT (typeSubstInType sbs t)
 
   % true iff tsbs is substitution of tvS@i with tS@i:
 
@@ -93,9 +89,7 @@ spec
     | TYPE(tn,tS)   -> TYPE (tn, map (exprSubstInType d1 d2) tS)
     | ARROW(t1,t2)  -> ARROW (exprSubstInType d1 d2 t1, exprSubstInType d1 d2 t2)
     | RECORD(fS,tS) -> RECORD (fS, map (exprSubstInType d1 d2) tS)
-    | SUM(cS,tS)    -> SUM (cS, map (exprSubstInType d1 d2) tS)
     | RESTR(t,r)    -> RESTR (exprSubstInType d1 d2 t, exprSubstInExpr d1 d2 r)
-    | QUOT(t,q)     -> QUOT (exprSubstInType d1 d2 t, exprSubstInExpr d1 d2 q)
 
   def exprSubstInExpr d1 d2 e =
     if e = d1 then d2 else
@@ -110,7 +104,5 @@ spec
                           exprSubstInExpr d1 d2 e2)
     | IOTA t       -> IOTA (exprSubstInType d1 d2 t)
     | PROJECT(t,f) -> PROJECT (exprSubstInType d1 d2 t, f)
-    | EMBED(t,c)   -> EMBED (exprSubstInType d1 d2 t, c)
-    | QUOT t       -> QUOT (exprSubstInType d1 d2 t)
 
 endspec

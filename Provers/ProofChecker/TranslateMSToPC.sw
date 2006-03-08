@@ -1,3 +1,15 @@
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% WARNING: some of the code below is temporarily commented out because the code
+% needs to be updated to conform to recent changes in the Metaslang logic and
+% proof checker
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
 % Translation from MetaSlang abstract syntax to proof checker abstract syntax.
 % have special case for (f e) that doesn't expand the case
 % in th case of a fn x (with a single var) .. don't expand.
@@ -11,6 +23,7 @@ Translate qualifying spec
   import ../ProofDebugger/Print
 
   op specToContext : Spec -> SpecCalc.Env Context
+(* temporarily commented out:
   def specToContext spc =
     %let _ = fail("specToContext") in
     let
@@ -206,9 +219,10 @@ Translate qualifying spec
           % | Comment str ->
     in
       foldM specElemToContextElems empty spc.elements
-      
+*)      
   % Convert a term in MetaSlang abstract syntax to a term in the proof checker's abstract syntax.
   op Term.msToPC : Spec -> MS.Term -> SpecCalc.Env Expression
+(* temporarily commented out:
   def Term.msToPC spc trm =
     %let _ = fail(printTerm trm) in
     case trm of
@@ -401,7 +415,7 @@ Translate qualifying spec
          print ("term = " ^ (printTerm trm) ^ "\n");
          raise (Fail "no match in Term.msToPC")
        }
-
+*)
   op zip : [a,b] List a -> List b -> List (a * b)
   def zip l1 l2 =
     case (l1,l2) of
@@ -485,6 +499,7 @@ Translate qualifying spec
 
   % Convert a type in MetaSlang abstract syntax to a type in the proof checker's abstract syntax.
   op Type.msToPC : Spec -> MS.Sort -> SpecCalc.Env Type
+(* temporarily commented out:
   def Type.msToPC spc typ =
     %let _ = fail("typetopc") in
     case typ of
@@ -539,7 +554,7 @@ Translate qualifying spec
           print ("type = " ^ (printSort typ) ^ "\n");
           raise (Fail "no match in Type.msToPC")
         }
-
+*)
   % The second argument is the expression to which we will identify (equate) with all patterns.
   op GuardedExpr.msToPC : Spec -> Expression -> (MS.Pattern * MS.Term * MS.Term) -> SpecCalc.Env BindingBranch
   def GuardedExpr.msToPC spc expr (pattern,guard,term) = {
@@ -553,6 +568,7 @@ Translate qualifying spec
   % are bound by the match, the types of the variables and a boolean valued expression (a guard)
   % that represents the pattern.
   op Pattern.msToPC : Spec -> Expression -> MS.Pattern -> SpecCalc.Env (Variables * Types * Expression)
+(* temporarily commented out:
   def Pattern.msToPC spc expr pattern = 
     case pattern of
       | AliasPat (pat1,pat2,_) -> {
@@ -600,15 +616,16 @@ Translate qualifying spec
       | CharPat (char, b) -> return (empty,empty,(primChar char) == expr)
       | NatPat (nat, b) -> return (empty,empty,(primNat nat) == expr)
       | WildPat (srt, _) -> return (empty,empty,TRUE)
-
+*)
   op idToUserField : String -> UserField
   def idToUserField s = s
 
   op idToVariable : String -> Variable
   def idToVariable s = user s
 
-  op idToConstructor : String -> Constructor
-  def idToConstructor s = s
+% temporarily commented out:
+%  op idToConstructor : String -> Constructor
+%  def idToConstructor s = s
 
   op idToTypeVariable : String -> TypeVariable
   def idToTypeVariable s = s
@@ -677,6 +694,7 @@ Translate qualifying spec
   % Construct a expression in the proof checker's abstract syntax that encodes the given
   % list of elements of the given type.
   op primList : Type -> List Expression -> Expression
+(* temporarily commented out:
   def primList typ l =
     let nil = (EMBED (listType typ, idToConstructor "Nil")) @ MTREC in
     let def cons (a, l) =
@@ -684,7 +702,7 @@ Translate qualifying spec
       (EMBED (listType typ, idToConstructor "Cons")) @ p
     in
       List.foldr cons nil l
-
+*)
   op listType : Type -> Type
   def listType typ = TYPE (qidToTypeName (Qualified ("List","List")), single typ)
 

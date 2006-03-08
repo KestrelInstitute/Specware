@@ -30,7 +30,6 @@ spec
   type TypeVariable = String
   type UserVariable = String
   type UserField    = String
-  type Constructor  = String
   type AxiomName    = String
   type LemmaName    = String
 

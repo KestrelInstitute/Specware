@@ -23,9 +23,7 @@ spec
       | EQ _ -> exEqProof(cxP, cx, exp)
       | IF _ -> exIfProof(cxP, cx, exp)
       | IOTA _ -> exTheProof(cxP, cx, exp)
-      | PROJECT _ -> exProjProof(cxP, cx, exp)
-      | EMBED _ -> exEmbedProof(cxP, cx, exp)
-      | QUOT _ -> exQuotProof(cxP, cx, exp) in
+      | PROJECT _ -> exProjProof(cxP, cx, exp) in
       %let pl = countProof(prf) in
       %let _ = writeLine("number of steps in proof for: "^printExpression(exp)^" is:" ^toString(pl)) in
       check1(prf, typ)
@@ -308,40 +306,5 @@ spec
     else
       let _ = fail("exProjProof") in
       (falseProof(cx), BOOL)
-
-  op exEmbedProof: Proof * Context * EMBEDExpr -> Proof * Type
-  def exEmbedProof(cxP, cx, embedE) =
-    let EMBED(t, cj) = embedE in
-    if SUM?(t)
-      then
-	let cS = SUMcnstrs(t) in
-	let tS = SUMtypes(t) in
-	if cj in? cS
-	  then
-	    let j = positionOf(cS, cj) in
-	    let tj = tS @ j in
-	    let embedT = tj --> t in
-	    let tP = typeProof(cxP, cx, t) in
-	    (exEmbed(tP, cj), embedT)
-	else
-	  let _ = fail("exEmbedProof") in
-	  (falseProof(cx), BOOL)
-    else
-      let _ = fail("exEmbedProof") in
-      (falseProof(cx), BOOL)
-
-  op exQuotProof: Proof * Context * QUOTExpr -> Proof * Type
-  def exQuotProof(cxP, cx, quotE) =
-    let QUOT(qt) = quotE in
-    if QUOTT?(qt)
-      then
-	let t = quotType(qt) in
-	let r = quotPred(qt) in
-	let quotType = t --> qt in
-	let qtP = typeProof(cxP, cx, qt) in
-	(exQuot(qtP), quotType)
-    else
-       let _ = fail("exQuotProof") in
-       (falseProof(cx), BOOL)
 
 endspec

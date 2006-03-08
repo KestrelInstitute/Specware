@@ -61,9 +61,7 @@ spec
     | tyInst  Proof * Proofs * TypeName
     | tyArr   Proof * Proof
     | tyRec   Proof * Proofs * Fields
-    | tySum   Proofs * Constructors
     | tyRestr Proof
-    | tyQuot  Proof * Proof * Proof
     % type equivalence:
     | teDef    Proof * Proofs * TypeName
     | teRefl   Proof
@@ -72,17 +70,13 @@ spec
     | teInst   Proof * Proofs
     | teArr    Proof * Proof
     | teRec    Proof * Proofs * Fields
-    | teSum    Proofs * Constructors
     | teRestr  Proof * Proof * Proof
-    | teQuot   Proof * Proof * Proof
     | teRecOrd Proof * FSeq Integer
-    | teSumOrd Proof * FSeq Integer
     % subtyping:
     | stRestr Proof
     | stRefl  Proof * Variable
     | stArr   Proof * Proof * Variable * Variable
     | stRec   Proof * Proofs * Variable
-    | stSum   Proof * Proofs * Variable * Variable
     | stTE    Proof * Proof * Proof
     % well-typed expressions:
     | exVar      Proof * Variable
@@ -94,8 +88,6 @@ spec
     | exIf0      Proof * Proof * Proof
     | exThe      Proof
     | exProj     Proof * Field
-    | exEmbed    Proof * Constructor
-    | exQuot     Proof
     | exSuper    Proof * Proof
     | exSub      Proof * Proof * Proof
     | exAbsAlpha Proof * Variable
@@ -112,8 +104,6 @@ spec
     | thIfSubst    Proof * Proof * Proof * Proof
     | thTheSubst   Proof * Proof
     | thProjSubst  Proof * Proof
-    | thEmbedSubst Proof * Proof
-    | thQuotSubst  Proof * Proof
     | thSubst      Proof * Proof
     | thBool       Proof * Variable * Variable
     | thExt        Proof * Variable * Variable * Variable
@@ -121,13 +111,7 @@ spec
     | thIf         Proof * Proof * Proof
     | thThe        Proof
     | thRec        Proof * Variable * Variable
-    | thEmbSurj    Proof * Variable * Variable
-    | thEmbDist    Proof * Constructor * Constructor * Variable * Variable
-    | thEmbInj     Proof * Constructor * Variable * Variable
-    | thQuotSurj   Proof * Variable * Variable
-    | thQuotEqCls  Proof * Variable * Variable
     | thProjSub    Proof * Variable * Field
-    | thEmbSub     Proof * Variable * Constructor
     | thSub        Proof * Proof
     % assumptions:
     | assume Judgement
@@ -147,10 +131,6 @@ spec
         v2    : Variable,
         f     : Field,
         fS    : Fields,
-        c     : Constructor,
-        c1    : Constructor,
-        c2    : Constructor,
-        cS    : Constructors,
         an    : AxiomName,
         ln    : LemmaName,
         n     : Integer,
@@ -181,9 +161,7 @@ spec
       && pred (tyInst (prf, prfS, tn))
       && pred (tyArr (prf1, prf2))
       && pred (tyRec (prf, prfS, fS))
-      && pred (tySum (prfS, cS))
       && pred (tyRestr prf)
-      && pred (tyQuot (prf1, prf2, prf3))
       && pred (teDef (prf, prfS, tn))
       && pred (teRefl prf)
       && pred (teSymm prf)
@@ -191,16 +169,12 @@ spec
       && pred (teInst (prf, prfS))
       && pred (teArr (prf1, prf2))
       && pred (teRec (prf, prfS, fS))
-      && pred (teSum (prfS, cS))
       && pred (teRestr (prf1, prf2, prf3))
-      && pred (teQuot (prf1, prf2, prf3))
       && pred (teRecOrd (prf, iS))
-      && pred (teSumOrd (prf, iS))
       && pred (stRestr prf)
       && pred (stRefl (prf, v))
       && pred (stArr (prf1, prf2, v, v1))
       && pred (stRec (prf, prfS, v))
-      && pred (stSum (prf, prfS, v, v1))
       && pred (stTE (prf1, prf2, prf3))
       && pred (exVar (prf, v))
       && pred (exOp (prf, prfS, o))
@@ -211,8 +185,6 @@ spec
       && pred (exIf0 (prf1, prf2, prf3))
       && pred (exThe prf)
       && pred (exProj (prf, f))
-      && pred (exEmbed (prf, c))
-      && pred (exQuot prf)
       && pred (exSuper (prf1, prf2))
       && pred (exSub (prf1, prf2, prf3))
       && pred (exAbsAlpha (prf, v))
@@ -228,8 +200,6 @@ spec
       && pred (thIfSubst (prf1, prf2, prf3, prf4))
       && pred (thTheSubst (prf1, prf2))
       && pred (thProjSubst (prf1, prf2))
-      && pred (thEmbedSubst (prf1, prf2))
-      && pred (thQuotSubst (prf1, prf2))
       && pred (thSubst (prf1, prf2))
       && pred (thBool (prf, v, v1))
       && pred (thExt (prf, v, v1, v2))
@@ -237,13 +207,7 @@ spec
       && pred (thIf (prf1, prf2, prf3))
       && pred (thThe prf)
       && pred (thRec (prf, v, v1))
-      && pred (thEmbSurj (prf, v, v1))
-      && pred (thEmbDist (prf, c1, c2, v1, v2))
-      && pred (thEmbInj (prf, c, v, v1))
-      && pred (thQuotSurj (prf, v, v1))
-      && pred (thQuotEqCls (prf, v, v1))
       && pred (thProjSub (prf, v, f))
-      && pred (thEmbSub (prf, v, c))
       && pred (thSub (prf1, prf2))
       && pred (assume jdg))
   %%%%% induction conclusion:
@@ -276,11 +240,7 @@ spec
                                             && closedProof? prf2
     | tyRec        (prf, prfS, _)           -> closedProof? prf
                                             && forall? closedProof? prfS
-    | tySum        (prfS, _)                -> forall? closedProof? prfS
     | tyRestr      prf                      -> closedProof? prf
-    | tyQuot       (prf1, prf2, prf3)       -> closedProof? prf1
-                                            && closedProof? prf2
-                                            && closedProof? prf3
     | teDef        (prf, prfS, _)           -> closedProof? prf
                                             && forall? closedProof? prfS
     | teRefl       prf                      -> closedProof? prf
@@ -292,22 +252,15 @@ spec
     | teArr        (prf1, prf2)             -> closedProof? prf1
     | teRec        (prf, prfS, _)           -> closedProof? prf
                                             && forall? closedProof? prfS
-    | teSum        (prfS, _)                -> forall? closedProof? prfS
     | teRestr      (prf1, prf2, prf3)       -> closedProof? prf1
                                             && closedProof? prf2
                                             && closedProof? prf3
-    | teQuot       (prf1, prf2, prf3)       -> closedProof? prf1
-                                            && closedProof? prf2
-                                            && closedProof? prf3
     | teRecOrd     (prf, _)                 -> closedProof? prf
-    | teSumOrd     (prf, _)                 -> closedProof? prf
     | stRestr      prf                      -> closedProof? prf
     | stRefl       (prf, _)                 -> closedProof? prf
     | stArr        (prf1, prf2, _, _)       -> closedProof? prf1
                                             && closedProof? prf2
     | stRec        (prf, prfS, _)           -> closedProof? prf
-                                            && forall? closedProof? prfS
-    | stSum        (prf1, prfS, _, _)       -> closedProof? prf1
                                             && forall? closedProof? prfS
     | stTE         (prf1, prf2, prf3)       -> closedProof? prf1
                                             && closedProof? prf2
@@ -328,8 +281,6 @@ spec
                                             && closedProof? prf3
     | exThe        prf                      -> closedProof? prf
     | exProj       (prf, _)                 -> closedProof? prf
-    | exEmbed      (prf, _)                 -> closedProof? prf
-    | exQuot       prf                      -> closedProof? prf
     | exSuper      (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
     | exSub        (prf1, prf2, prf3)       -> closedProof? prf1
@@ -361,10 +312,6 @@ spec
                                             && closedProof? prf2
     | thProjSubst  (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
-    | thEmbedSubst (prf1, prf2)             -> closedProof? prf1
-                                            && closedProof? prf2
-    | thQuotSubst  (prf1, prf2)             -> closedProof? prf1
-                                            && closedProof? prf2
     | thSubst      (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
     | thBool       (prf, _, _)              -> closedProof? prf
@@ -375,13 +322,7 @@ spec
                                             && closedProof? prf3
     | thThe        prf                      -> closedProof? prf
     | thRec        (prf, _, _)              -> closedProof? prf
-    | thEmbSurj    (prf, _, _)              -> closedProof? prf
-    | thEmbDist    (prf, _, _, _, _)        -> closedProof? prf
-    | thEmbInj     (prf, _, _, _)           -> closedProof? prf
-    | thQuotSurj   (prf, _, _)              -> closedProof? prf
-    | thQuotEqCls  (prf, _, _)              -> closedProof? prf
     | thProjSub    (prf, _, _)              -> closedProof? prf
-    | thEmbSub     (prf, _, _)              -> closedProof? prf
     | thSub        (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
     | assume       _                        -> false

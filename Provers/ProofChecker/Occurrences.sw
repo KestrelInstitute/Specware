@@ -83,9 +83,7 @@ spec
     | TYPE(tn,tS)   -> \\// (map (opInstancesInType o) tS)
     | ARROW(t1,t2)  -> opInstancesInType o t1 \/ opInstancesInType o t2
     | RECORD(fS,tS) -> \\// (map (opInstancesInType o) tS)
-    | SUM(cS,tS)    -> \\// (map (opInstancesInType o) tS)
     | RESTR(t,r)    -> opInstancesInType o t \/ opInstancesInExpr o r
-    | QUOT(t,q)     -> opInstancesInType o t \/ opInstancesInExpr o q
 
   def opInstancesInExpr o = fn
     | VAR v        -> empty
@@ -98,7 +96,5 @@ spec
                       opInstancesInExpr o e1 \/ opInstancesInExpr o e2
     | IOTA t       -> opInstancesInType o t
     | PROJECT(t,f) -> opInstancesInType o t
-    | EMBED(t,c)   -> opInstancesInType o t
-    | QUOT t       -> opInstancesInType o t
 
 endspec

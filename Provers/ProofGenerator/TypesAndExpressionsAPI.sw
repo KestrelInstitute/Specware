@@ -147,22 +147,6 @@ spec
 
   type PROJECTExpr = (Expression | PROJECT?)
 
-  op EMBED?: Expression -> Boolean
-  def EMBED?(e) =
-    case e of
-      | EMBED _ -> true
-      | _ -> false
-
-  type EMBEDExpr = (Expression | EMBED?)
-
-  op QUOT?: Expression -> Boolean
-  def QUOT?(e) =
-    case e of
-      | QUOT _ -> true
-      | _ -> false
-
-  type QUOTExpr = (Expression | QUOT?)
-
   op TYPE?: Type -> Boolean
   def TYPE?(t) =
     case t of
@@ -205,20 +189,6 @@ spec
   op RECtypes: RECORDType -> Types
   def RECtypes(RECORD(_, types)) = types
 
-  op SUM?: Type -> Boolean
-  def SUM?(t) =
-    case t of
-      | SUM _ -> true
-      | _ -> false
-
-  type SUMType = (Type | SUM?)
-
-  op SUMcnstrs: SUMType -> Constructors
-  def SUMcnstrs(SUM(cs, _)) = cs
-
-  op SUMtypes: SUMType -> Types
-  def SUMtypes(SUM(_, types)) = types
-
   op RESTR?: Type -> Boolean
   def RESTR?(t) =
     case t of
@@ -234,21 +204,5 @@ spec
   op restrictPred: RESTRType -> Expression
   def restrictPred(t) =
     let RESTR (_, r) = t in r
-
-  op QUOTT?: Type -> Boolean
-  def QUOTT?(t) =
-    case t of
-      | QUOT (t, r) -> true
-      | _ -> false
-
-  type QUOTType = (Type | QUOTT?)
-
-  op quotType: QUOTType -> Type
-  def quotType(t) =
-    let QUOT (st, _) = t in st
-
-  op quotPred: QUOTType -> Expression
-  def quotPred(t) =
-    let QUOT (_, r) = t in r
 
 endspec

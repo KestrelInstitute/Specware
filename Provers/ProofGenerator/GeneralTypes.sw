@@ -19,9 +19,7 @@ spec
       | TYPE _ -> t
       | ARROW _ -> mostGeneralTypeArrow(cxP, cx, t)
       | RECORD _ -> mostGeneralTypeRecord(cxP, cx, t)
-      | SUM _ -> mostGeneralTypeSum(cxP, cx, t)
       | RESTR _ -> mostGeneralTypeRestr(cxP, cx, t)
-      | QUOT _ -> mostGeneralTypeQuot(cxP, cx, t)
 
   op mostGeneralTypeArrow: Proof * Context * ARROWType -> Type
   def mostGeneralTypeArrow(cxP, cx, t) =
@@ -39,19 +37,8 @@ spec
     let mgT = RECORD(rfs, mgTs) in
     mgT
 
-  op mostGeneralTypeSum: Proof * Context * SUMType -> Type
-  def mostGeneralTypeSum(cxP, cx, t) =
-    let cnstrs = SUMcnstrs(t) in
-    let typs = SUMtypes(t) in
-    let mgTs = map (mostGeneralTypeAux(cxP, cx)) typs in
-    let mgT = SUM(cnstrs, mgTs) in
-    mgT
-
   op mostGeneralTypeRest: Proof * Context * RESTRType -> Type
   def mostGeneralTypeRestr(cxP, cx, t) =
     superType(t)
-
-  op mostGeneralTypeQuot: Proof * Context * QUOTType -> Type
-  def mostGeneralTypeQuot(cxP, cx, t) = t
 
 endspec

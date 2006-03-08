@@ -46,9 +46,7 @@ spec
     | TYPE(tn,tS)   -> TYPE (tn, map embedExtType tS)
     | ARROW(t1,t2)  -> ARROW (embedExtType t1, embedExtType t2)
     | RECORD(fS,tS) -> RECORD (fS, map embedExtType tS)
-    | SUM(cS,tS)    -> SUM (cS, map embedExtType tS)
     | RESTR(t,r)    -> RESTR (embedExtType t, embedExtExpr r)
-    | QUOT(t,q)     -> QUOT (embedExtType t, embedExtExpr q)
 
   def embedExtExpr = fn
     | VAR v        -> VAR v
@@ -59,8 +57,6 @@ spec
     | IF(e0,e1,e2) -> IF (embedExtExpr e0, embedExtExpr e1, embedExtExpr e2)
     | IOTA t       -> IOTA (embedExtType t)
     | PROJECT(t,f) -> PROJECT (embedExtType t, f)
-    | EMBED(t,c)   -> EMBED (embedExtType t, c)
-    | QUOT t       -> QUOT (embedExtType t)
 
   (* There is only one type abbreviation, the one for product types. The
   following ops reconstruct product types, by replacing record types whose
@@ -78,11 +74,8 @@ spec
                        if fS = firstNProductFields (length tS) then
                          embed PRODUCT tS1
                        else RECORD (fS, tS1)
-    | SUM(cS,tS)    -> SUM (cS, map contractProductsInType tS)
     | RESTR(t,r)    -> RESTR (contractProductsInType t,
                               contractProductsInExpr r)
-    | QUOT(t,q)     -> QUOT (contractProductsInType t,
-                             contractProductsInExpr q)
     | t             -> t
 
   def contractProductsInExpr = fn
@@ -98,8 +91,6 @@ spec
                           contractProductsInExpr e2)
     | IOTA t       -> IOTA (contractProductsInType t)
     | PROJECT(t,f) -> PROJECT (contractProductsInType t, f)
-    | EMBED(t,c)   -> EMBED (contractProductsInType t, c)
-    | QUOT t       -> QUOT (contractProductsInType t)
     | e            -> e
 
   (* Since there are many expression abbreviations, we define generic ops to
@@ -134,9 +125,7 @@ spec
     | TYPE(tn,tS)   -> TYPE (tn, map contrType tS)
     | ARROW(t1,t2)  -> ARROW (contrType t1, contrType t2)
     | RECORD(fS,tS) -> RECORD (fS, map contrType tS)
-    | SUM(cS,tS)    -> SUM (cS, map contrType tS)
     | RESTR(t,r)    -> RESTR (contrType t, contrExpr r)
-    | QUOT(t,q)     -> QUOT (contrType t, contrExpr q)
     | PRODUCT tS    -> embed PRODUCT (map contrType tS)
 
   def contractExpr contr e =
@@ -152,8 +141,6 @@ spec
     | IF(e0,e1,e2)   -> IF (contrExpr e0, contrExpr e1, contrExpr e2)
     | IOTA t         -> IOTA (contrType t)
     | PROJECT(t,f)   -> PROJECT (contrType t, f)
-    | EMBED  (t,c)   -> EMBED   (contrType t, c)
-    | QUOT t         -> QUOT (contrType t)
     | TRUE           -> embed TRUE
     | FALSE          -> embed FALSE
     | NOT            -> embed NOT
@@ -162,7 +149,7 @@ spec
     | OR     (e1,e2) -> OR      (contrExpr e1, contrExpr e2)
     | IMPLIES(e1,e2) -> IMPLIES (contrExpr e1, contrExpr e2)
     | IFF            -> embed IFF
-    | EQUIV  (e1,e2) -> EQUIV   (contrExpr e1, contrExpr e2)
+    | EQV    (e1,e2) -> EQV     (contrExpr e1, contrExpr e2)
     | NEQ    (e1,e2) -> NEQ     (contrExpr e1, contrExpr e2)
     | THE(v,t,e)     -> embed THE (v, contrType t, contrExpr e)
     | FAq t          -> embed FAq  (contrType t)
@@ -197,9 +184,6 @@ spec
                                                contrExpr e, contrExpr e1)
     | LETDEF(t,vS,tS,eS,e)   -> embed LETDEF (contrType t, vS, map contrType tS,
                                               map contrExpr eS, contrExpr e)
-    | CHOOSE(t,q,t1)         -> embed CHOOSE (contrType t, contrExpr q,
-                                              contrType t1)
-    | EMBED?(cS,tS,c)        -> embed EMBED? (cS, map contrType tS, c)
     % apply contraction:
     in contr e
 
@@ -280,7 +264,7 @@ spec
 
   op contractEquivalence : Contraction
   def contractEquivalence = fn
-    | APPLY (APPLY (IFF, e1), e2) -> EQUIV (e1, e2)
+    | APPLY (APPLY (IFF, e1), e2) -> EQV (e1, e2)
     | e -> e
 
   op contractNonEquality : Contraction
@@ -678,43 +662,6 @@ spec
       else e
     | e -> e
 
-  op contractChooser : Contraction
-  def contractChooser = fn
-    | e as FN (abbr 0, RESTR (ARROW (t, t1), r),
-           FN (abbr 1, QUOT (mustBe_t, q),
-           LET (mustBe_tq, mustBe_t1, mustBe_single_abbr2, mustBe_single_t,
-                APPLY (QUOT mustAlsoBe_tq, VAR (abbr 2)),
-                VAR (abbr 1),
-                APPLY (VAR (abbr 0), VAR (abbr 2))))) ->
-      if mustBe_t = t &&
-         mustBe_t1 = t1 &&
-         mustBe_tq = embed QUOT (t, q) &&
-         mustAlsoBe_tq = embed QUOT (t, q) &&
-         mustBe_single_abbr2 = single (abbr 2) &&
-         mustBe_single_t = single t &&
-         r = FN (abbr 0, ARROW (t, t1),
-             embed FA (abbr 1, t,
-             embed FA (abbr 2, t,
-             IMPLIES
-               (APPLY (q, embed TUPLE (single t <| t,
-                                       single (VAR (abbr 1)) <| VAR (abbr 2))),
-                EQ (APPLY (VAR (abbr 0), VAR (abbr 1)),
-                    APPLY (VAR (abbr 0), VAR (abbr 2))))))) then
-        embed CHOOSE (t, q, t1)
-      else e
-    | e -> e
-
-  op contractEmbeddingTest : Contraction
-  def contractEmbeddingTest = fn
-    | e as FN (abbr 0, SUM (cS, tS),
-               EX (abbr 1, tj,
-                   EQ (VAR (abbr 0),
-                       APPLY (EMBED (SUM (mustBe_cS, mustBe_tS), c),
-                              VAR (abbr 1))))) ->
-      if mustBe_cS = cS && mustBe_tS = tS then embed EMBED? (cS, tS, c)
-      else e
-    | e -> e
-
   (* The following two ops contract all abbreviations in types and
   expressions. (The contractions appear in reversed order because prefix
   function application takes place right-to-left. *)
@@ -722,8 +669,6 @@ spec
   % API public
   op contractTypeAll : Type -> ExtType
   def contractTypeAll t =
-    (contractType contractEmbeddingTest
-    (contractType contractChooser
     (contractType contractRecursiveLet
     (contractType contractSimpleLet
     (contractType contractNonRecursiveLet
@@ -756,13 +701,11 @@ spec
     (contractType contractFalse
     (contractType contractTrue
     (contractProductsInType
-    (embedExtType t)))))))))))))))))))))))))))))))))))
+    (embedExtType t)))))))))))))))))))))))))))))))))
 
   % API public
   op contractExprAll : Expression -> ExtExpression
   def contractExprAll e =
-    (contractExpr contractEmbeddingTest
-    (contractExpr contractChooser
     (contractExpr contractRecursiveLet
     (contractExpr contractSimpleLet
     (contractExpr contractNonRecursiveLet
@@ -795,6 +738,6 @@ spec
     (contractExpr contractFalse
     (contractExpr contractTrue
     (contractProductsInExpr
-    (embedExtExpr e)))))))))))))))))))))))))))))))))))
+    (embedExtExpr e)))))))))))))))))))))))))))))))))
 
 endspec

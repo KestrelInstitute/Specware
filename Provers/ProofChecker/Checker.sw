@@ -64,17 +64,6 @@ spec
       OK (fS, tS))
     | t -> FAIL (notRecordType t)
 
- (* Check whether a type is a sum type with non-zero distinct constructors and
- with a matching number of component types. If it is, return its constructors
- and component types. *)
-  op checkSumType : Type -> M (Constructors * Types)
-  def checkSumType = fn
-    | SUM (cS, tS) ->
-      ensure (cS equiLong tS && noRepetitions? cS && nonEmpty? cS)
-             (badSumType (cS, tS)) >> (fn _ ->
-      OK (cS, tS))
-    | t -> FAIL (notSumType t)
-
   (* Check whether a type is a restriction type whose predicate has no free
   variables. If it is, return its base type and predicate. *)
   op checkRestrictionType : Type -> M (Type * Expression)
@@ -83,15 +72,6 @@ spec
       ensure (exprFreeVars r = empty) (badRestrictionType (t, r)) >> (fn _ ->
       OK (t, r))
     | t -> FAIL (notRestrictionType t)
-
-  (* Check whether a type is a quotient type whose predicate has no free
-  variables. If it is, return its quotiented type and predicate type. *)
-  op checkQuotientType : Type -> M (Type * Expression)
-  def checkQuotientType = fn
-    | QUOT (t, q) ->
-      ensure (exprFreeVars q = empty) (badQuotientType (t, q)) >> (fn _ ->
-      OK (t, q))
-    | t -> FAIL (notQuotientType t)
 
   (* Check whether a field appears in a record type (the record type is
   represented by its fields and component types). If it does, return its
@@ -103,17 +83,6 @@ spec
   def checkFieldType f (fS,tS) =
     ensure (f in? fS) (fieldNotFound (f, fS, tS)) >> (fn _ ->
     OK (tS @ (positionOf(fS,f))))
-
-  (* Check whether a constructor appears in a sum type (the sum type is
-  represented by its constructors and component types). If it does, return its
-  associated component type. *)
-  op checkConstructorType :
-     Constructor ->
-     {(cS,tS) : Constructors * Types | noRepetitions? cS && cS equiLong tS} ->
-     M Type
-  def checkConstructorType c (cS,tS) =
-    ensure (c in? cS) (constructorNotFound (c, cS, tS)) >> (fn _ ->
-    OK (tS @ (positionOf(cS,c))))
 
   (* Check whether two types are (syntactically) equal. *)
   op checkSameType : Type -> Type -> M ()
@@ -172,28 +141,6 @@ spec
       ensure (f in? fS) (fieldNotFound (f, fS, tS)) >> (fn _ ->
       OK (fS, tS, f)))
     | e -> FAIL (notProjector e)
-
-  (* Check whether an expression is an embedder tagged by a sum type and whose
-  constructor belongs to the sum type. If it is, return the sum type
-  (represented by its constructors and component types) and the
-  constructor. *)
-  op checkEmbedder : Expression -> M (Constructors * Types * Constructor)
-  def checkEmbedder = fn
-    | EMBED (t, c) ->
-      checkSumType t >> (fn (cS, tS) ->
-      ensure (c in? cS) (constructorNotFound (c, cS, tS)) >> (fn _ ->
-      OK (cS, tS, c)))
-    | e -> FAIL (notEmbedder e)
-
-  (* Check whether an expression is a quotienter tagged by a quotient type. If
-  it is, return the base type and predicate that constitute the quotient
-  type. *)
-  op checkQuotienter : Expression -> M (Type * Expression)
-  def checkQuotienter = fn
-    | QUOT t ->
-      checkQuotientType t >> (fn (t, q) ->
-      OK (t, q))
-    | e -> FAIL (notQuotienter e)
 
   (* Check whether an expression is a universal quantification. If it is,
   return its bound variable, type, and body. A universal quantification is an
@@ -459,14 +406,6 @@ spec
     checkRecordType t >> (fn (fS, tS) ->
     OK (cx, fS, tS)))
 
-  (* Check proof of well-formed sum type, returning context, constructors, and
-  component types. *)
-  op checkWFSumType : Proof -> M (Context * Constructors * Types)
-  def checkWFSumType prf =
-    checkWFType prf >> (fn (cx, t) ->
-    checkSumType t >> (fn (cS, tS) ->
-    OK (cx, cS, tS)))
-
   (* Check proof of well-formed restriction type, returning context, base
   type, and predicate. *)
   op checkWFRestrictionType : Proof -> M (Context * Type * Expression)
@@ -474,14 +413,6 @@ spec
     checkWFType prf >> (fn (cx, t) ->
     checkRestrictionType t >> (fn (t, r) ->
     OK (cx, t, r)))
-
-  (* Check proof of well-formed quotient type, returning context, base type,
-  and predicate. *)
-  op checkWFQuotientType : Proof -> M (Context * Type * Expression)
-  def checkWFQuotientType prf =
-    checkWFType prf >> (fn (cx, t) ->
-    checkQuotientType t >> (fn (t, q) ->
-    OK (cx, t, q)))
 
   (* Check proof of equivalent types, returning context and types. *)
   op checkTypeEquiv : Proof -> M (Context * Type * Type)
@@ -541,22 +472,6 @@ spec
   def checkRecordTypeEquivWithContextAndLeftType cx t prf =
     checkTypeEquivWithContextAndLeftType cx t prf >> (fn t1 ->
     checkRecordType t1)
-
-  (* Check proof of equivalence of the given type to a sum type in the given
-  context, returning the sum type's constructors and component types. *)
-  op checkSumTypeEquivWithContextAndLeftType :
-     Context -> Type -> Proof -> M (Constructors * Types)
-  def checkSumTypeEquivWithContextAndLeftType cx t prf =
-    checkTypeEquivWithContextAndLeftType cx t prf >> (fn t1 ->
-    checkSumType t1)
-
-  (* Check proof of equivalence of the given type to a quotient type in the
-  given context, returning the quotient type's base type and predicate. *)
-  op checkQuotientTypeEquivWithContextAndLeftType :
-     Context -> Type -> Proof -> M (Type * Expression)
-  def checkQuotientTypeEquivWithContextAndLeftType cx t prf =
-    checkTypeEquivWithContextAndLeftType cx t prf >> (fn t1 ->
-    checkQuotientType t1)
 
   (* Check proof of subtype, returning context, subtype, predicate, and
   supertype. *)
@@ -620,18 +535,6 @@ spec
     checkRecordType t1 >> (fn (mustBe_fS, tS1) ->
     ensure (mustBe_fS = fS) (wrongFields (mustBe_fS, fS)) >> (fn _ ->
     OK (cx, fS, tS, r, tS1)))))
-
-  (* Check subtype relation between two sum types with the same constructors
-  in the same order, returning the context, constructors, subtype's component
-  types, predicate, and supertype's component types. *)
-  op checkSubtypeSum :
-     Proof -> M (Context * Constructors * Types * Expression * Types)
-  def checkSubtypeSum prf =
-    checkSubtype prf >> (fn (cx, t, r, t1) ->
-    checkSumType t >> (fn (cS, tS) ->
-    checkSumType t1 >> (fn (mustBe_cS, tS1) ->
-    ensure (mustBe_cS = cS) (wrongConstructors (mustBe_cS, cS)) >> (fn _ ->
-    OK (cx, cS, tS, r, tS1)))))
 
   (* Check proof of well-typed expression, returning the context, expression,
   and type. *)
@@ -747,25 +650,6 @@ spec
     checkProjector e >> (fn (fS, tS, f) ->
     OK (cx, fS, tS, f, t)))
 
-  (* Check proof of well-typed embedder, returning the context, constructors
-  of the sum type that tags the embedder, component types of the sum type that
-  tags the embedder, constructor of the embedder, and type of the embedder. *)
-  op checkWTEmbedder :
-     Proof -> M (Context * Constructors * Types * Constructor * Type)
-  def checkWTEmbedder prf =
-    checkWTExpr prf >> (fn (cx, e, t) ->
-    checkEmbedder e >> (fn (cS, tS, c) ->
-    OK (cx, cS, tS, c, t)))
-
-  (* Check proof of well-typed quotienter, returning the context, base type of
-  the quotient type that tags the quotienter, predicate of the quotient type
-  that tags the quotienter, and type of the quotienter. *)
-  op checkWTQuotienter : Proof -> M (Context * Type * Expression * Type)
-  def checkWTQuotienter prf =
-    checkWTExpr prf >> (fn (cx, e, t1) ->
-    checkQuotienter e >> (fn (t, q) ->
-    OK (cx, t, q, t1)))
-
   (* Check proof of well-formed expression in a context that ends with a
   variable declaration, returning the context minus the variable declaration,
   variable, type of the variable, expression, and type of the expression. In
@@ -805,11 +689,10 @@ spec
 
   (* Check proof of well-typed proposition in the given context extended with
   type variable declarations, returning the type variables and expression. In
-  other words, it checks a proof of the well-typedness of an axiom or lemma
-  (the extra type variables become those of the axiom or lemma); this is used
-  for rules cxAx and cxLem. *)
-  op checkWTAxiomOrLemma : Context -> Proof -> M (TypeVariables * Expression)
-  def checkWTAxiomOrLemma cx prf =
+  other words, it checks a proof of the well-typedness of an axiom (the extra
+  type variables become those of the axiom); this is used for rule cxAx. *)
+  op checkWTAxiom : Context -> Proof -> M (TypeVariables * Expression)
+  def checkWTAxiom cx prf =
     checkWTProposition prf >> (fn (cx1, e) ->
     checkLastTypeVars cx cx1 >> (fn tvS ->
     OK (tvS, e)))
@@ -930,60 +813,16 @@ spec
     checkLastAxiom cx cx1 (~~ e0) >> (fn _ ->
     OK ()))
 
-  (* Check proof of reflexivity theorem needed for rule tyQuot. More
-  precisely, check that the proof proves
-    theoreM (cx, FA (v, t, q @ PAIR (t, t, VAR v, VAR v)))
-  for some cx, v, t, and q; return cx, v, t, and q. *)
-  op checkTheoremReflexivity :
-     Proof -> M (Context * Variable * Type * Expression)
-  def checkTheoremReflexivity prf =
-    checkTheorem prf >> (fn (cx, e) ->
-    checkUniversal e >> (fn (v, t, e) ->
-    checkApplication e >> (fn (q, mustBe_v_v) ->
-    checkSameExpr mustBe_v_v (PAIR (t, t, VAR v, VAR v)) >> (fn _ ->
-    OK (cx, v, t, q)))))
+  (* Check proof of theorem in the given context extended with type variable
+  declarations, returning the type variables and formula. In other words, it
+  checks a proof of a lemma (the extra type variables become those of the
+  axiom); this is used for rule cxLem. *)
 
-  (* Check proof of symmetry theorem needed for rule tyQuot. More precisely,
-  given cx, t, and q, check that the proof proves
-    theoreM (cx, FA2 (v1, t, v2, t,
-                      q @ PAIR (t, t, VAR v1, VAR v2) ==>
-                      q @ PAIR (t, t, VAR v2, VAR v1)))
-  for some distinct v1 and v2. *)
-  op checkTheoremSymmetry :
-     Context -> Type -> Expression -> Proof -> M ()
-  def checkTheoremSymmetry cx t q prf =
-    checkTheoremWithContext cx prf >> (fn e ->
-    checkUniversal e >> (fn (v1, mustBe_t, e) ->
-    checkSameType mustBe_t t >> (fn _ ->
-    checkUniversal e >> (fn (v2, mustBe_t, e) ->
-    checkSameType mustBe_t t >> (fn _ ->
-    ensure (v1 ~= v2) (nonDistinctVariables (v1, v2)) >> (fn _ ->
-    checkSameExpr e (q @ PAIR (t, t, VAR v1, VAR v2) ==>
-                     q @ PAIR (t, t, VAR v2, VAR v1)) >> (fn _ ->
-    OK ())))))))
-
-  (* Check proof of transitivity theorem needed for rule tyQuot. More
-  precisely, given cx, t, and q, check that the proof proves
-    theoreM (cx, FA3 (v1, t, v2, t, v3, t,
-                      q @ PAIR (t, t, VAR v1, VAR v2) &&&
-                      q @ PAIR (t, t, VAR v2, VAR v3) ==>
-                      q @ PAIR (t, t, VAR v1, VAR v3)))
-  for some distinct v1, v2, and v3. *)
-  op checkTheoremTransitivity : Context -> Type -> Expression -> Proof -> M ()
-  def checkTheoremTransitivity cx t q prf =
-    checkTheoremWithContext cx prf >> (fn e ->
-    checkUniversal e >> (fn (v1, mustBe_t, e) ->
-    checkSameType mustBe_t t >> (fn _ ->
-    checkUniversal e >> (fn (v2, mustBe_t, e) ->
-    checkSameType mustBe_t t >> (fn _ ->
-    checkUniversal e >> (fn (v3, mustBe_t, e) ->
-    checkSameType mustBe_t t >> (fn _ ->
-    ensure (v1 ~= v2) (nonDistinctVariables (v1, v2)) >> (fn _ ->
-    ensure (v2 ~= v3) (nonDistinctVariables (v2, v3)) >> (fn _ ->
-    ensure (v3 ~= v1) (nonDistinctVariables (v3, v1)) >> (fn _ ->
-    checkSameExpr e (q @ PAIR (t, t, VAR v1, VAR v2) &&&
-                     q @ PAIR (t, t, VAR v2, VAR v3) ==>
-                     q @ PAIR (t, t, VAR v1, VAR v3))))))))))))
+  op checkTheoremLemma : Context -> Proof -> M (TypeVariables * Expression)
+  def checkTheoremLemma cx prf =
+    checkTheorem prf >> (fn (cx1, e) ->
+    checkLastTypeVars cx cx1 >> (fn tvS ->
+    OK (tvS, e)))
 
   % op that actually checks a proof, if the proof is not memo'd:
 
@@ -1017,13 +856,13 @@ spec
       checkWFContext prf >> (fn cx ->
       ensure (~(an in? contextAxioms cx))
              (axiomAlreadyDeclared (cx, an)) >> (fn _ ->
-      checkWTAxiomOrLemma cx prf1 >> (fn (tvS, e) ->
+      checkWTAxiom cx prf1 >> (fn (tvS, e) ->
       OK (wellFormedContext (cx <| axioM (an, tvS, e))))))
     | cxLem (prf, prf1, ln) ->
       checkWFContext prf >> (fn cx ->
       ensure (~(ln in? contextLemmas cx))
              (lemmaAlreadyDeclared (cx, ln)) >> (fn _ ->
-      checkWTAxiomOrLemma cx prf1 >> (fn (tvS, e) ->
+      checkTheoremLemma cx prf1 >> (fn (tvS, e) ->
       OK (wellFormedContext (cx <| lemma (ln, tvS, e))))))
     | cxTVdec (prf, tv) ->
       checkWFContext prf >> (fn cx ->
@@ -1066,22 +905,10 @@ spec
       ensure (noRepetitions? fS) (nonDistinctFields fS) >> (fn _ ->
       checkWFTypesWithContext cx prfS >> (fn tS ->
       OK (wellFormedType (cx, RECORD (fS, tS)))))))
-    | tySum (prfS, cS) ->
-      ensure (length prfS = length cS) wrongNumberOfProofs >> (fn _ ->
-      ensure (noRepetitions? cS) (nonDistinctConstructors cS) >> (fn _ ->
-      ensure (nonEmpty? cS) noConstructors >> (fn _ ->
-      checkWFTypes prfS >> (fn (cx, tS) ->
-      OK (wellFormedType (cx, SUM (cS, tS)))))))
     | tyRestr prf ->
       checkWTPredicate prf >> (fn (cx, r, t) ->
       ensure (exprFreeVars r = empty) (badRestrictionType (t, r)) >> (fn _ ->
       OK (wellFormedType (cx, t\r))))
-    | tyQuot (prf1, prf2, prf3) ->
-      checkTheoremReflexivity prf1 >> (fn (cx, v, t, q) ->
-      checkTheoremSymmetry cx t q prf2 >> (fn _ ->
-      checkTheoremTransitivity cx t q prf3 >> (fn _ ->
-      ensure (exprFreeVars q = empty) (badQuotientType (t, q)) >> (fn _ ->
-      OK (wellFormedType (cx, t/q))))))
 
     %%%%%%%%%% type equivalence:
     | teDef (prf, prfS, tn) ->
@@ -1114,36 +941,18 @@ spec
       ensure (noRepetitions? fS) (nonDistinctFields fS) >> (fn _ ->
       checkTypeEquivsWithContext cx prfS >> (fn (tS, tS1) ->
       OK (typeEquivalence (cx, RECORD (fS, tS), RECORD (fS, tS1)))))))
-    | teSum (prfS, cS) ->
-      ensure (length prfS = length cS) wrongNumberOfProofs >> (fn _ ->
-      ensure (noRepetitions? cS) (nonDistinctConstructors cS) >> (fn _ ->
-      ensure (nonEmpty? cS) noConstructors >> (fn _ ->
-      checkTypeEquivs prfS >> (fn (cx, tS, tS1) ->
-      OK (typeEquivalence (cx, SUM (cS, tS), SUM (cS, tS1)))))))
     | teRestr (prf1, prf2, prf3) ->
       checkWFRestrictionType prf1 >> (fn (cx, t, r) ->
       checkTypeEquivWithContextAndLeftType cx t prf2 >> (fn t1 ->
       checkTheoremEqualityWithContextAndLeftExpr cx r prf3 >> (fn r1 ->
       ensure (exprFreeVars r1 = empty) (badRestrictionType (t1, r1)) >> (fn _ ->
       OK (typeEquivalence (cx, t\r, t1\r1))))))
-    | teQuot (prf1, prf2, prf3) ->
-      checkWFQuotientType prf1 >> (fn (cx, t, q) ->
-      checkTypeEquivWithContextAndLeftType cx t prf2 >> (fn t1 ->
-      checkTheoremEqualityWithContextAndLeftExpr cx q prf3 >> (fn q1 ->
-      ensure (exprFreeVars q1 = empty) (badRestrictionType (t1, q1)) >> (fn _ ->
-      OK (typeEquivalence (cx, t/q, t1/q1))))))
     | teRecOrd (prf, prm) ->
       checkWFRecordType prf >> (fn (cx, fS, tS) ->
       checkPermutation prm >> (fn(prm1:Permutation) ->
       ensure (length prm1 = length fS) (wrongPermutationLength prm) >> (fn _ ->
       OK (typeEquivalence (cx, RECORD (fS, tS),
                                RECORD (permute(fS,prm1), permute(tS,prm1)))))))
-    | teSumOrd (prf, prm) ->
-      checkWFSumType prf >> (fn (cx, cS, tS) ->
-      checkPermutation prm >> (fn(prm1:Permutation) ->
-      ensure (length prm1 = length cS) (wrongPermutationLength prm) >> (fn _ ->
-      OK (typeEquivalence (cx, SUM (cS, tS),
-                               SUM (permute(cS,prm1), permute(tS,prm1)))))))
 
     %%%%%%%%%% subtyping:
     | stRestr prf ->
@@ -1167,17 +976,6 @@ spec
         else None) in
       let r:Expression = FN (v, RECORD (fS, tS1), ANDn conjuncts) in
       OK (subType (cx, RECORD (fS, tS), r, RECORD (fS, tS1))))))
-    | stSum (prf, prfS, v, v1) ->
-      checkWFSumType prf >> (fn (cx, cS, tS) ->
-      checkSubtypesWithContextAndLeftTypes cx tS prfS >> (fn (rS, tS1) ->
-      (let disjuncts:Expressions = seq (fn(i:Nat) ->
-        if i < length cS then
-          Some (EX (v1, tS1@i, VAR v == EMBED (SUM(cS,tS1), cS@i) @ VAR v1
-                               &&& rS@i @ VAR v1))
-        else None) in
-      ensure (v ~= v1) (nonDistinctVariables (v, v1)) >> (fn _ ->
-      (let r:Expression = FN (v, SUM (cS, tS1), ORn disjuncts) in
-      OK (subType (cx, SUM (cS, tS), r, SUM (cS, tS1))))))))
     | stTE (prf, prf1, prf2) ->
       checkSubtype prf >> (fn (cx, t1, r, t2) ->
       checkTypeEquivWithContextAndLeftType cx t1 prf1 >> (fn s1 ->
@@ -1224,13 +1022,6 @@ spec
       checkFieldType f (fS, tS) >> (fn t ->
       OK (wellTypedExpr (cx, PROJECT (RECORD(fS,tS), f),
                              RECORD(fS,tS) --> t))))
-    | exEmbed (prf, c) ->
-      checkWFSumType prf >> (fn (cx, cS, tS) ->
-      checkConstructorType c (cS, tS) >> (fn t ->
-      OK (wellTypedExpr (cx, EMBED (SUM(cS,tS), c), t --> SUM (cS, tS)))))
-    | exQuot prf ->
-      checkWFQuotientType prf >> (fn (cx, t, q) ->
-      OK (wellTypedExpr (cx, QUOT (t/q), t --> t/q)))
     | exSuper (prf1, prf2) ->
       checkWTExpr prf1 >> (fn (cx, e, t) ->
       checkSubtypeWithContextAndLeftType cx t prf2 >> (fn (r, t1) ->
@@ -1303,17 +1094,6 @@ spec
         (fn (fS1, tS1) ->
       OK (theoreM (cx, PROJECT (RECORD(fS,tS), f) ==
                        PROJECT (RECORD(fS1,tS1), f)))))
-    | thEmbedSubst (prf1, prf2) ->
-      checkWTEmbedder prf1 >> (fn (cx, cS, tS, c, _) ->
-      checkSumTypeEquivWithContextAndLeftType cx (SUM(cS,tS)) prf2 >>
-        (fn (cS1, tS1) ->
-      OK (theoreM (cx, EMBED (SUM(cS,tS), c) ==
-                       EMBED (SUM(cS1,tS1), c)))))
-    | thQuotSubst (prf1, prf2) ->
-      checkWTQuotienter prf1 >> (fn (cx, t, q, _) ->
-      checkQuotientTypeEquivWithContextAndLeftType cx (t/q) prf2 >>
-        (fn (t1, q1) ->
-      OK (theoreM (cx, QUOT (t/q) == QUOT (t1/q1)))))
     | thSubst (prf1, prf2) ->
       checkTheorem prf1 >> (fn (cx, e) ->
       checkTheoremEqualityWithContextAndLeftExpr cx e prf2 >> (fn e1 ->
@@ -1356,52 +1136,11 @@ spec
         else None) in
       OK (theoreM (cx, FA2 (v, RECORD(fS,tS), v1, RECORD(fS,tS),
                             ANDn conjuncts ==> VAR v == VAR v1))))))
-    | thEmbSurj (prf, v, v1) ->
-      checkWFSumType prf >> (fn (cx, cS, tS) ->
-      ensure (v ~= v1) (nonDistinctVariables (v, v1)) >> (fn _ ->
-      (let disjuncts:Expressions = seq (fn(i:Nat) ->
-        if i < length cS then
-          Some (EX (v1, tS@i, VAR v == EMBED (SUM(cS,tS), cS@i) @ VAR v1))
-        else
-          None) in
-      OK (theoreM (cx, FA (v, SUM(cS,tS), ORn disjuncts))))))
-    | thEmbDist (prf, cj, ck, vj, vk) ->
-      checkWFSumType prf >> (fn (cx, cS, tS) ->
-      checkConstructorType cj (cS, tS) >> (fn tj ->
-      checkConstructorType ck (cS, tS) >> (fn tk ->
-      ensure (vj ~= vk) (nonDistinctVariables (vj, vk)) >> (fn _ ->
-      OK (theoreM (cx, FA2 (vj, tj, vk, tk,
-                            EMBED (SUM(cS,tS), cj) @ VAR vj ~==
-                            EMBED (SUM(cS,tS), ck) @ VAR vk)))))))
-    | thEmbInj (prf, c, v, v1) ->
-      checkWFSumType prf >> (fn (cx, cS, tS) ->
-      ensure (v ~= v1) (nonDistinctVariables (v, v1)) >> (fn _ ->
-      checkConstructorType c (cS, tS) >> (fn t ->
-      OK (theoreM (cx, FA2 (v, t, v1, t,
-                            VAR v ~== VAR v1 ==>
-                            EMBED (SUM(cS,tS), c) @ VAR v ~==
-                            EMBED (SUM(cS,tS), c) @ VAR v1))))))
-    | thQuotSurj (prf, v, v1) ->
-      checkWFQuotientType prf >> (fn (cx, t, q) ->
-      ensure (v ~= v1) (nonDistinctVariables (v, v1)) >> (fn _ ->
-      OK (theoreM (cx, FA (v, t/q,
-                           EX (v1, t, QUOT (t/q) @ VAR v1 == VAR v))))))
-    | thQuotEqCls (prf, v, v1) ->
-      checkWFQuotientType prf >> (fn (cx, t, q) ->
-      ensure (v ~= v1) (nonDistinctVariables (v, v1)) >> (fn _ ->
-      OK (theoreM (cx, FA2 (v, t, v1, t,
-                            q @ PAIR (t, t, VAR v, VAR v1) <==>
-                            QUOT (t/q) @ VAR v == QUOT (t/q) @ VAR v1)))))
     | thProjSub (prf, v, f) ->
       checkSubtypeRecord prf >> (fn (cx, fS, tS, _, tS1) ->
       OK (theoreM (cx, FA (v, RECORD(fS,tS),
                            PROJECT (RECORD(fS,tS),  f) @ VAR v ==
                            PROJECT (RECORD(fS,tS1), f) @ VAR v))))
-    | thEmbSub (prf, v, c) ->
-      checkSubtypeSum prf >> (fn (cx, cS, tS, _, tS1) ->
-      checkConstructorType c (cS, tS) >> (fn t ->
-      OK (theoreM (cx, FA (v, t, EMBED (SUM(cS,tS),  c) @ VAR v ==
-                                 EMBED (SUM(cS,tS1), c) @ VAR v)))))
     | thSub (prf1, prf2) ->
       checkSubtype prf1 >> (fn (cx, t, r, t1) ->
       checkWTExprWithContextAndType cx t prf2 >> (fn e ->
