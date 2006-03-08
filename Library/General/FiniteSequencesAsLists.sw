@@ -30,7 +30,10 @@ FSeq qualifying spec
 %  op length : [a] FSeq a -> Nat
 %  def length = List.length
 
-  op @ infixl 30 : [a] {(s,i) : FSeq a * Nat | i < length s} -> a
+  op  inRange? : [a] FSeq a * Nat -> Boolean
+  def inRange? (s, i) = i < length s
+
+  op @ infixl 30 : [a] {(s,i) : FSeq a * Nat | inRange? (s, i)} -> a
   def @ = nth
 
   % copied from spec `FiniteSequences':
