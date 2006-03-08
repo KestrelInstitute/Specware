@@ -43,8 +43,11 @@ FSeq qualifying spec
   op length : [a] FSeq a -> Nat
   def length s = the(len) (seq_1 s) definedOnInitialSegmentOfLength len
 
+  op  inRange? : [a] FSeq a * Nat -> Boolean
+  def inRange? (s, i) = i < length s
+
   % return `(i+1)'-th element (i.e. element at position `i'):
-  op @ infixl 30 : [a] {(s,i) : FSeq a * Nat | i < length s} -> a
+  op @ infixl 30 : [a] {(s,i) : FSeq a * Nat | inRange? (s, i)} -> a
   def @ (s,i) = the(x) seq_1 s i = Some x
 
   % "totalization" of `@':
