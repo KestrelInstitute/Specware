@@ -447,7 +447,11 @@ I2LToC qualifying spec {
     let (cspc,block,cexpr) = mergeBlockIntoExpr(cspc,block,cexpr) in
     (cspc,block,cexpr)
 
-  op c4Expression__: CgContext * CSpec * CBlock * I2L.Expression * Boolean * Boolean -> CSpec * CBlock * CExp
+  % note: "c4Expression__:" is a legal token under the proposed new syntax that
+  %       allows "__" to connect word and non-word syllables within a token.
+  %       Thus a space character will be mandatory here.
+  %       "c4Expression_:" will continue parsing as three tokens.
+  op c4Expression__ : CgContext * CSpec * CBlock * I2L.Expression * Boolean * Boolean -> CSpec * CBlock * CExp
   def c4Expression__(ctxt,cspc,block as (decls,stmts),exp as (expr,typ),islhs,forInitializer) =
     let
       def addProjections(cexpr,projections) =
