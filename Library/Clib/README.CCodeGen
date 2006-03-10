@@ -132,7 +132,7 @@ Specware-generated C code. The easiest way to build the gc-library is
 described in the example Makefile mentioned above: simple add the
 variable $(GCLIB) to the list of dependencies in your main Makefile
 target. Alternatively, this can be done by hand by changing to the
-directory "$SPECWARE4/Library/Clib/gc6.2" and
+directory "$SPECWARE4/Library/Clib/gc6.6" and
 then running "make". After successful completion of this command, a
 file named "gc.a" should be present in that directory.
 
