@@ -3034,9 +3034,12 @@ assigned to it in the environment.
 ||`lambda-form ::= fn `match
 ||
 >>
-Sample `lambda-form:
+Sample `lambda-forms:
 [[
 ||    fn (s : String) -> s ^ "."
+||
+||    fn | Point _      -> 0
+||       | Line(z0, z1) -> dist(z0, z1)
 ]]
 The value of a `lambda-form is a partial or total function.
 If the value determined for a `lambda-form as described
@@ -4528,8 +4531,9 @@ constructor of the sum type.
 <<
 ||`match ::= [ '| ] `branch { '| `branch }*
 ||
-||`branch ::= `pattern -> `expression
+||`branch ::= `pattern [ `guard ] -> `expression
 ||
+||`guard ::= '| `expression
 >>
 Sample `matches:
 [[
@@ -4540,6 +4544,8 @@ Sample `matches:
 ||
 ||    | Empty -> true
 ||    | Push {top = _, pop = rest} -> hasBottom? rest
+||
+||    | Line(z0, z1) | z0 ~= z1 -> dist(z0, z1)
 ]]
 Restriction.
 In a `match, given the environment, there must be a
@@ -4549,6 +4555,10 @@ $T$ to which the `expression of each
 `branch conforms, and then the `match has type
 [[$S$ -> $T$]].
 The `pattern of each `branch then has type $S$.
+</para>
+<para>
+Restriction.
+The type of the `expression of a `guard must be [[Boolean]]
 </para>
 <!-- ================================================================= -->
 <para>
@@ -4598,27 +4608,40 @@ $x$ for $B$.
 </para>
 <!-- ================================================================= -->
 <para>
+The meaning of a ``guardless'' `branch [[$P$ -> $R$]], where $P$ is a
+`pattern and $R$ an `expression, is the same as that
+of the `branch [[$P$ | true -> $R$]] with a `guard that always succeeds.
+</para>
+<para>
 Acceptance and return value $y$, if
 any, of a value $x$ for a `branch
-[[$P$ -> $E$]] in an environment
+[[$P$ | $G$ -> $R$]] in an environment
 $C$ are determined as follows.
 If `pattern $P$ rejects
 $x$, the `branch rejects
 $x$, and does not return a value.
 (For acceptance by a `pattern, see under <link linkend="Patterns"><emphasis>Patterns</emphasis></link>.)
-Otherwise, $y$ is the value of
-`expression $E$ in the environment
+Otherwise, let $C'$ be environment
 $C$ extended with the acceptance
 binding of `pattern $P$ for
 $x$.
+If `pattern $P$ accepts $x$, but the value of
+`expression $G$ in the environment
+$C'$ is false, the `branch also rejects
+$x$, and does not return a value.
+Otherwise, when the `pattern accepts $x$ and the `guard succeeds,
+the `branch accepts $x$ and the return value
+$y$ is the value of
+`expression $R$ in the environment
+$C'$.
 </para>
 <!-- ================================================================= -->
 <para>
 For example, in
 [[
 ||   case z of
-||     | (x, true)  -> Some x
-||     | (_, false) -> None
+||      | (x, true)  -> Some x
+||      | (_, false) -> None
 ]]
 if [[z]] has value [[(3, true)]], the first branch accepts this
 value with acceptance binding [[x = 3]].
@@ -4629,6 +4652,14 @@ value with empty acceptance binding (empty since there are no
 <quote>accepting</quote> `local-variables in `pattern
 [[(_, false)]]), and the return value is [[None]]
 (interpreted in the original environment).
+</para>
+<para>
+Here is a way of achieving the same result using a `guard:
+[[
+||   case z of
+||      | (x, b) | b -> Some x
+||      | _          -> None
+]]
 </para>
 </section>
 <!--  ***************************************************************** -->

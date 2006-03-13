@@ -793,8 +793,9 @@ easy reference.
 <<
 ||  `match ::= [ '| ] `branch { '| `branch }*
 ||  
-||  `branch ::= `pattern -> `expression
+||  `branch ::= `pattern [ `guard ] -> `expression
 ||  
+||  `guard ::= '| `expression
 >>
 </para>
 </formalpara>
