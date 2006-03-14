@@ -163,13 +163,24 @@ easy reference.
 ||  
 ||  `name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
 ||  
-||  `name-map-item ::= `type-name-map-item | `op-name-map-item
+||  `name-map-item ::=
+||     `type-name-map-item
+||   | `op-name-map-item
+||   | `wildcard-map-item
 ||  
 ||  `type-name-map-item ::= [ type ] `name +-> `name
 ||  
 ||  `op-name-map-item ::= [ op ] `annotable-name +-> `annotable-name
 ||  
 ||  `annotable-name ::= `name [ : `type-descriptor ]
+||  
+||  `wildcard-map-item ::= `wildcard +-> `wildcard
+||  
+||  `wildcard ::= `simple-wildcard | `qualified-wildcard
+||  
+||  `simple-wildcard ::= _
+||  
+||  `qualified-wildcard ::= `qualifier . `simple-wildcard
 >>
 </para>
 </formalpara>
