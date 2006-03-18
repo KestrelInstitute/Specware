@@ -166,7 +166,7 @@ We introduce the abbreviations (many of which are expressions defined in
 \abbitem{\false}
         {\eq{\abs{\varfx}{\bool}{\varfx}}{\abs{\varfx}{\bool}{\true}}}
 \abbitem{\negaop}
-        {\abs{\varfx}{\bool}{(\iif{\varfx}{\false}{\true})}}
+        {\abs{\varfx}{\bool}{(\eq{\varfx}{\false})}}
 %\abbitem{\negaO}
 %        {\iif{\expr}{\false}{\true}}
 \abbitem{\conjO}
@@ -245,8 +245,10 @@ respectively.
 %the simplest expression that is well-typed in every context, including the
 %empty context (contexts and well-typedness are defined later).
 \item
-The logical connectives for negation, conjunction, disjunction, and
-implication are defined in terms of conditionals.
+Negation is defined as equality with $\false$.
+\item
+The logical connectives for conjunction, disjunction, and implication are
+defined in terms of conditionals.
 \item
 Coimplication is a synonym for equality, but only for booleans.
 \item
@@ -295,12 +297,12 @@ have no free variables.
 
 We define the set of context elements as
 \[
-\setdefVII
+\setdefVI
  {\Cxel}
  {+}
  {\setST{\tdecO}{\tnam\in\Nam\AND n\in\N}}
  {\setST{\odecO}{\onam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
- {\setST{\tdefO}{\tnam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
+% {\setST{\tdefO}{\tnam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
 % {\setST{\odefO}{\tvarS\in\SeqNR{\Nam}\AND\onam\in\Nam\AND\expr\in\Expr}}
  {\setST{\axO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
  {\setST{\lemO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
@@ -318,12 +320,12 @@ we directly use the arity without type variables.
 \item
 An op(eration) declaration $\odecO$ introduces an op name with an associated
 type, polymorphic in the explicit type variables.
-\item
-A type definition $\tdefO$ assigns a type to a maximally generic type instance
-of some type name (i.e.\ an instance with distinct type variables as arguments
-to the type name). A combined type declaration and definition as defined in
-\cite{lm} is captured by a type declaration as defined above immediately
-followed by a type definition as defined above.
+%\item
+%A type definition $\tdefO$ assigns a type to a maximally generic type instance
+%of some type name (i.e.\ an instance with distinct type variables as arguments
+%to the type name). A combined type declaration and definition as defined in
+%\cite{lm} is captured by a type declaration as defined above immediately
+%followed by a type definition as defined above.
 %\item
 %An op definition $\odefO$ assigns an expression to an op name, polymorphic in
 %the explicit type variables. A combined op declaration and definition as
@@ -343,6 +345,14 @@ $\tvdec{\seqFT{\tvar_1}{\tvar_n}}$.
 \item
 A variable declaration $\vdecO$ introduces a variable with a type.
 \end{itemize}
+
+Context elements do not include type abbreviations as defined in \cite{lm}
+because we consider such type abbreviations to be always exhaustively expanded
+in the \MS\ logic. The expansion also works for polymorphic type
+abbreviations, e.g.\ if $\tinst{\tnam}{\tvarS}$ is defined as a type
+abbreviation for $\typ$, then $\tinstO$ expands to
+$\tsbslash{\typ}{\tvarS}{\typS}$. Sum and quotient type definitions as defined
+in \cite{lm} are formalized in \secref{sum-types} and \secref{quot-types}.
 
 We define the set of contexts as
 \[

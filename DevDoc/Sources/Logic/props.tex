@@ -33,7 +33,7 @@ We extend expression substitution to context elements and contexts
 \begin{eqlistC}
 \eqitem{\esbsO{(\tdecO)}} {\tdecO}
 \eqitem{\esbsO{(\odecO)}} {\odecO}
-\eqitem{\esbsO{(\tdefO)}} {\tdefO}
+%\eqitem{\esbsO{(\tdefO)}} {\tdefO}
 %\eqitem{\esbsO{(\odefO)}} {\odef{\tvarS}{\onam}{\esbsO{\expr}}}
 \eqitem{\esbsO{(\axO)}}   {\ax{\tvarS}{\esbsO{\expr}}}
 \eqitem{\esbsO{(\lemO)}}  {\lem{\tvarS}{\esbsO{\expr}}}
@@ -84,7 +84,7 @@ free type variables of a type, expression, or context (element)
 \begin{eqlist}
 \eqitem{\ftvar{\tdecO}} {\emptyset}
 \eqitem{\ftvar{\odecO}} {\ftvar{\typ}-\tvarS}
-\eqitem{\ftvar{\tdefO}} {\ftvar{\typ}-\tvarS}
+%\eqitem{\ftvar{\tdefO}} {\ftvar{\typ}-\tvarS}
 \eqitem{\ftvar{\axO}}   {\ftvar{\expr}-\tvarS}
 \eqitem{\ftvar{\lemO}}  {\ftvar{\expr}-\tvarS}
 \eqitem{\ftvar{\tvdecO}}{\emptyset}
@@ -108,8 +108,8 @@ substitution themselves
        {\tdecO}
 \eqitem{\tsbsO{(\odecO)}}
        {\odec{\onam}{\tvarS}{\tsbs{\typ}{\funrestrc{\tsbsmap}{\tvarS}}}}
-\eqitem{\tsbsO{(\tdefO)}}
-       {\tdef{\tnam}{\tvarS}{\tsbs{\typ}{\funrestrc{\tsbsmap}{\tvarS}}}}
+%\eqitem{\tsbsO{(\tdefO)}}
+%       {\tdef{\tnam}{\tvarS}{\tsbs{\typ}{\funrestrc{\tsbsmap}{\tvarS}}}}
 \eqitem{\tsbsO{(\axO)}}
        {\ax{\tvarS}{\tsbs{\expr}{\funrestrc{\tsbsmap}{\tvarS}}}}
 \eqitem{\tsbsO{(\lemO)}}
@@ -142,8 +142,8 @@ in the context (element)
        {\emptyset}
 \eqitem{\ctvarO{\odecO}}
        {\cond{\tvarI\in\ftvar{\typ}-\tvarS}{\tvarS}{\emptyset}}
-\eqitem{\ctvarO{\tdefO}}
-       {\cond{\tvarI\in\ftvar{\typ}-\tvarS}{\tvarS}{\emptyset}}
+%\eqitem{\ctvarO{\tdefO}}
+%       {\cond{\tvarI\in\ftvar{\typ}-\tvarS}{\tvarS}{\emptyset}}
 \eqitem{\ctvarO{\axO}}
        {\cond{\tvarI\in\ftvar{\expr}-\tvarS}{\tvarS}{\emptyset}}
 \eqitem{\ctvarO{\lemO}}
@@ -477,7 +477,7 @@ and applies to the axioms and lemmas in a context:
 \eqitem {\cxvar {\esbsO{\cx}}} {\cxvarO}
 \iffitem {\tdecO\in\cx}  {\tdecO\in\esbsO{\cx}}
 \iffitem {\odecO\in\cx}  {\odecO\in\esbsO{\cx}}
-\iffitem {\tdefO\in\cx}  {\tdefO\in\esbsO{\cx}}
+%\iffitem {\tdefO\in\cx}  {\tdefO\in\esbsO{\cx}}
 %\impitem {\odefO\in\cx}  {\odef{\tvarS}{\onam}{\esbsO{\expr}}\in\esbsO{\cx}}
 \impitem {\axO\in\cx}    {\ax{\tvarS}{\esbsO{\expr}}\in\esbsO{\cx}}
 \impitem {\lemO\in\cx}   {\lem{\tvarS}{\esbsO{\expr}}\in\esbsO{\cx}}
@@ -966,25 +966,25 @@ over which the op is polymorphic:
 \]
 \end{theorem}
 
-A type definition in a well-formed context defines a type previously declared
-in the context with the right arity, and the defining type is well-formed in
-the prefix of the context that precedes the type definition, extended with the
-type variable arguments of the defined type:
+%A type definition in a well-formed context defines a type previously declared
+%in the context with the right arity, and the defining type is well-formed in
+%the prefix of the context that precedes the type definition, extended with the
+%type variable arguments of the defined type:
 
-\begin{theorem}\label{thm-tdef-wf}
-\[
-\cxwf{\cx_1,\tdefO,\cx_2}
-\ \ \IMPLIES\ \
-\tdec{\tnam}{\seqlen{\tvarS}}\in\cx_1
-\ \ \AND\ \
-\isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}
-\]
-%\begin{array}{rl}
+%\begin{theorem}\label{thm-tdef-wf}
+%\[
 %\cxwf{\cx_1,\tdefO,\cx_2}
-%\IMPLIES & \tdec{\tnam}{\seqlen{\tvarS}}\in\cx_1 \\
-%\AND     & \isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}
-%\end{array}
-\end{theorem}
+%\ \ \IMPLIES\ \
+%\tdec{\tnam}{\seqlen{\tvarS}}\in\cx_1
+%\ \ \AND\ \
+%\isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}
+%\]
+%%\begin{array}{rl}
+%%\cxwf{\cx_1,\tdefO,\cx_2}
+%%\IMPLIES & \tdec{\tnam}{\seqlen{\tvarS}}\in\cx_1 \\
+%%\AND     & \isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}
+%%\end{array}
+%\end{theorem}
 
 An axiom declared in a well-formed context is well-typed (with type $\bool$)
 in the prefix of the context that precedes the axiom, extended with the type
@@ -1147,8 +1147,8 @@ before the context element:
 \begin{array}{l@{\ \ \IMPLIES\ \ }l}
 \istyO{\typ} &
  \cxtvarO\supseteq\ftvar{\typ} \\
-\teqO{\typ_1}{\typ_2} &
- \cxtvarO\supseteq\ftvar{\typ_1}\cup\ftvar{\typ_2} \\
+%\teqO{\typ_1}{\typ_2} &
+% \cxtvarO\supseteq\ftvar{\typ_1}\cup\ftvar{\typ_2} \\
 \issubO{\typ_1}{\tspred}{\typ_2} &
  \cxtvarO\supseteq\ftvar{\typ_1}\cup\ftvar{\tspred}\cup\ftvar{\typ_2} \\
 \hastyO{\expr}{\typ} &
@@ -1177,8 +1177,8 @@ provable:
  \cxwf{\cxvI} \\
 \isty{\cxv}{\typ} &
  \isty{\cxvI}{\typ} \\
-\teq{\cxv}{\typ_1}{\typ_2} &
- \teq{\cxvI}{\typ_1}{\typ_2} \\
+%\teq{\cxv}{\typ_1}{\typ_2} &
+% \teq{\cxvI}{\typ_1}{\typ_2} \\
 \issub{\cxv}{\typ_1}{\tspred}{\typ_2} &
  \issub{\cxvI}{\typ_1}{\tspred}{\typ_2} \\
 \hasty{\cxv}{\expr}{\typ} &
@@ -1198,7 +1198,7 @@ bigger context that can be derived in a smaller context:
 \left(
 \begin{array}{l@{\ \ \IMPLIES\ \ }l}
 \istyO{\typ}                     & \isty{\cx'}{\typ}                     \\
-\teqO{\typ_1}{\typ_2}            & \teq{\cx'}{\typ_1}{\typ_2}            \\
+%\teqO{\typ_1}{\typ_2}            & \teq{\cx'}{\typ_1}{\typ_2}            \\
 \issubO{\typ_1}{\tspred}{\typ_2} & \issub{\cx'}{\typ_1}{\tspred}{\typ_2} \\
 \hastyO{\expr}{\typ}             & \hasty{\cx'}{\expr}{\typ}             \\
 \theoO{\expr}                    & \theo{\cx'}{\expr}
@@ -1231,10 +1231,10 @@ with well-formed types $\typIS$, under certain conditions:
 \isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ} &
 \isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
      {\tsbslash{\typ}{\tvarIS}{\typIS}} \\
-\teq{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ_1}{\typ_2} &
-\teq{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
-    {\tsbslash{\typ_1}{\tvarIS}{\typIS}}
-    {\tsbslash{\typ_2}{\tvarIS}{\typIS}} \\
+%\teq{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ_1}{\typ_2} &
+%\teq{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+%    {\tsbslash{\typ_1}{\tvarIS}{\typIS}}
+%    {\tsbslash{\typ_2}{\tvarIS}{\typIS}} \\
 \issub{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ_1}{\tspred}{\typ_2} &
 \issub{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
       {\tsbslash{\typ_1}{\tvarIS}{\typIS}}
@@ -1383,25 +1383,25 @@ including the abbreviations defined in \secref{syntax}:
 }
 \end{theorem}
 
-In the proof of the previous theorem, we use \ReifO, not \Reif. An attempt to
-use \Reif\ causes a circularity, where in order to prove that $\negaop$ is
-well-typed one has to first prove that $\negaop$ is well-typed. The reader can
-try a backward derivation of
-$\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\iif{\varfx}{\false}{\true}}{\bool}$
-where the first rule applied backwards is \Reif: while the first two premises
-(i.e.\ $\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\varfx}{\bool}$ and
-$\hasty{\snoc{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\axM{\varfx}}}{\false}{\bool}$)
-can be derived with ease, the third premise (i.e.\
-$\hasty{\snoc{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\axM{\nega{\varfx}}}}
-{\true}{\bool}$) requires proving
-$\cxwf{\snoc{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\axM{\nega{\varfx}}}}$ (so that
-we can use \Retrue), which requires proving
-$\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\nega{\varfx}}{\bool}$ (so that we
-can use \Rcxax), which requires proving
-$\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\negaop}{\tarr{\bool}{\bool}}$ (so
-that we can use \Reapp), which causes a circularity. The arguments just given
-do not constitute a formal proof of the necessity of rule \ReifO, but they do
-suggest te existence of such a proof.
+%In the proof of the previous theorem, we use \ReifO, not \Reif. An attempt to
+%use \Reif\ causes a circularity, where in order to prove that $\negaop$ is
+%well-typed one has to first prove that $\negaop$ is well-typed. The reader can
+%try a backward derivation of
+%$\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\iif{\varfx}{\false}{\true}}{\bool}$
+%where the first rule applied backwards is \Reif: while the first two premises
+%(i.e.\ $\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\varfx}{\bool}$ and
+%$\hasty{\snoc{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\axM{\varfx}}}{\false}{\bool}$)
+%can be derived with ease, the third premise (i.e.\
+%$\hasty{\snoc{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\axM{\nega{\varfx}}}}
+%{\true}{\bool}$) requires proving
+%$\cxwf{\snoc{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\axM{\nega{\varfx}}}}$ (so that
+%we can use \Retrue), which requires proving
+%$\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\nega{\varfx}}{\bool}$ (so that we
+%can use \Rcxax), which requires proving
+%$\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\negaop}{\tarr{\bool}{\bool}}$ (so
+%that we can use \Reapp), which causes a circularity. The arguments just given
+%do not constitute a formal proof of the necessity of rule \ReifO, but they do
+%suggest te existence of such a proof.
 
 \begin{theorem}\label{thm-enega}
 {\rm
@@ -1611,28 +1611,28 @@ suggest te existence of such a proof.
 }
 \end{theorem}
 
-Equivalent types are well-formed:
+%Equivalent types are well-formed:
 
-\begin{theorem}\label{thm-equiv-types-wf}
-\[
-\teqO{\typ_1}{\typ_2}\ \ \IMPLIES\ \ \istyO{\typ_1}\ \ \AND\ \ \istyO{\typ_2}
-\]
-\end{theorem}
+%\begin{theorem}\label{thm-equiv-types-wf}
+%\[
+%\teqO{\typ_1}{\typ_2}\ \ \IMPLIES\ \ \istyO{\typ_1}\ \ \AND\ \ \istyO{\typ_2}
+%\]
+%\end{theorem}
 
-If an expression has a type $\typ$, it also has all types $\typ'$ that are
-equivalent to $\typ$:
+%If an expression has a type $\typ$, it also has all types $\typ'$ that are
+%equivalent to $\typ$:
 
-\begin{theorem}\label{thm-eteq}
-{\rm
-\[
-\rruleII
- {\hastyO{\expr}{\typ}}
- {\teqO{\typ}{\typ'}}
- {\hastyO{\expr}{\typ'}}
- {\Reteq}
-\]
-}
-\end{theorem}
+%\begin{theorem}\label{thm-eteq}
+%{\rm
+%\[
+%\rruleII
+% {\hastyO{\expr}{\typ}}
+% {\teqO{\typ}{\typ'}}
+% {\hastyO{\expr}{\typ'}}
+% {\Reteq}
+%\]
+%}
+%\end{theorem}
 
 If a type is a subtype of another one, both types are well-formed; in
 addition, the predicate that defines the subtype is well-typed and is indeed a
