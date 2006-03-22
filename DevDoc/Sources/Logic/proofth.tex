@@ -476,13 +476,14 @@ capture subtyping as
 \]
 
 \[
-\rruleIII
+\rruleIV
  {\istyO{\trecO}}
  {\FORALL{i}{\issubO{\typ_i}{\tspred_i}{\typ_i'}}}
+ {\funcinj{\perm}{\setFT{1}{n}}{\setFT{1}{n}}}
  {\tspred=\abs{\var}
-              {\trec{i}{\fnam_i}{\typ_i'}}
+              {\trec{i}{\fnam_{\perm(i)}}{\typ_{\perm(i)}'}}
               {\conjI{i}{\app{\tspred_i}{\proj{\var}{\fnam_i}}}}}
- {\issubO{\trecO}{\tspred}{\trec{i}{\fnam_i}{\typ_i'}}}
+ {\issubO{\trecO}{\tspred}{\trec{i}{\fnam_{\perm(i)}}{\typ_{\perm(i)}'}}}
  {\Rstrec}
 \]
 
@@ -539,7 +540,12 @@ it would violate extensionality (see explanation in \cite{pvs-seman}).
 \item
 Record types are monotonic in their component types with respect to
 subtyping. The record subtype predicate holds when all the component subtype
-predicates hold on the record components.
+predicates hold on the record components. The components can be re-ordered,
+i.e.\ the order of record components is irrelevant. In the rule, the
+permutation is captured by a bijective function $\perm$ on the field indices
+$\setFT{1}{n}$ (the rule explicitly says that $\perm$ is injective only, but
+since domain and codomain are finite and equal, it follows that $\perm$ is
+also surjective, hence bijective).
 %Both record and sum types are monotonic in their component types with respect
 %to subtyping. The record subtype predicate holds when all the component
 %subtype predicates hold on the record components. The sum subtype predicate
