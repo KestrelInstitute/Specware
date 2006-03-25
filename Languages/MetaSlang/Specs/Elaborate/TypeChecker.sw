@@ -781,13 +781,13 @@ TypeChecker qualifying spec
 	in
 	let tyrows = unfoldConstraint (term_sort) in
 	let trow = ListPair.zip (row, tyrows) in
-	let row = map (fn ((id, t), (id_, ty))->
-		       if id = id_ then
+	let row = map (fn ((id, t), (id2, ty))->
+		       if id = id2 then
 			 (id, single_pass_elaborate_term (env, t, ty))
 		       else 
 			 (error (env, "Field-name "^id^
 				 " is not the one imposed by sort constraint.  Expected field-name is: "^
-				 id_, pos);
+				 id2, pos);
 		      (id, t)))
 	              trow
 	in
