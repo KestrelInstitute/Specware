@@ -191,15 +191,15 @@ SpecCalc qualifying spec
    in
    let ppWarnings = 
        case (decls,defs) of
-	 | (_ ::_::_, _::_::_) -> [ppNewline, 
-				   ppString " (* Warning: Multiple declarations and definitions for following op *) ",
-				   ppNewline]
-	 | (_ ::_::_,       _) -> [ppNewline, 
-				   ppString " (* Warning: Multiple declarations for following op *) ",
-				   ppNewline]
-	 | (_,        _::_::_) -> [ppNewline, 
-				   ppString " (* Warning: Multiple definitions for following op *) ",
-				   ppNewline]
+	 | (_ :: _ :: _, _ :: _ :: _) -> [ppNewline, 
+					  ppString " (* Warning: Multiple declarations and definitions for following op *) ",
+					  ppNewline]
+	 | (_ :: _ :: _, _)           -> [ppNewline, 
+					  ppString " (* Warning: Multiple declarations for following op *) ",
+					  ppNewline]
+	 | (_,           _ :: _ :: _) -> [ppNewline, 
+					  ppString " (* Warning: Multiple definitions for following op *) ",
+					  ppNewline]
 	 | _ -> []
    in
    let ppDecls =

@@ -111,7 +111,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                           (ppAppend (ppATerm term2) (ppString ")"))
                         ]))
                       ])
-          | Apply (Lambda (match as (_::_::_),_), term,_) ->
+          | Apply (Lambda (match as (_ :: _ :: _), _), term,_) ->
               ppIndent (ppGrConcat [
                 ppString "case ",
                 ppATerm term,
@@ -148,7 +148,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           | Record (fields,_) ->      
               (case fields of
                 | [] -> ppString "()"
-                | ("1",_)::_ ->
+                | ("1",_) :: _ ->
                     let def ppField (_,y) = ppATerm y in
                     ppConcat [
                       ppString "(",
