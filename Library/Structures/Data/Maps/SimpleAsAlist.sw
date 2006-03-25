@@ -135,7 +135,7 @@ meaningless unless an implementation is assumed.
       def g (key,item,m) = 
         case f item of
           | None -> m
-          | (Some item_) -> update (m, key, item_)
+          | (Some new_item) -> update (m, key, new_item)
     in
       foldi g emptyMap m
 
@@ -144,7 +144,7 @@ meaningless unless an implementation is assumed.
       def g (key,item,m) = 
         case f (key,item) of
           | None -> m
-          | (Some item_) -> update (m, key, item_)
+          | (Some new_item) -> update (m, key, new_item)
     in
       foldi g emptyMap m
 
