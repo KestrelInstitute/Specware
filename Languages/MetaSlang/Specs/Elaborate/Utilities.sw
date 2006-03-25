@@ -507,23 +507,23 @@ spec
 	    | Unify pairs -> unify (env, t2, s2, pairs, ignoreSubsorts?)
 	    | notUnify -> notUnify)
 
-       | (Quotient (ty, trm, _), Quotient (ty_, trm_, _)) ->
-	 if equalTermStruct? (trm, trm_) then
-	   unify (env, ty, ty_, pairs, ignoreSubsorts?)
+       | (Quotient (ty, trm, _), Quotient (ty2, trm2, _)) ->
+	 if equalTermStruct? (trm, trm2) then
+	   unify (env, ty, ty2, pairs, ignoreSubsorts?)
 	 else 
 	   NotUnify (srt1, srt2)
 
 	   %                 if trm = trm_ then
-	   %                   unify (ty, ty_, pairs, ignoreSubsorts?) 
+	   %                   unify (ty, ty2, pairs, ignoreSubsorts?) 
 	   %                 else 
 	   %                   NotUnify (srt1, srt2)
-	   %               | (Subsort (ty, trm, _), Subsort (ty_, trm_, _)) -> 
+	   %               | (Subsort (ty, trm, _), Subsort (ty2, trm2, _)) -> 
 	   %                  if trm = trm_ then
 	   %                    unify (ty, ty_, pairs) 
 	   %                  else 
 	   %                    NotUnify (srt1, srt2)
 
-	| (Base (id, ts, pos1), Base (id_, ts_, pos2)) -> 
+	| (Base (id, ts, pos1), Base (id2, ts2, pos2)) -> 
 	  if exists (fn (p1, p2) -> 
 		     %% p = (srt1, srt2) 
 		     %% need predicate that chases metavar links
@@ -532,16 +532,16 @@ spec
 	            pairs 
 	    then
 	      Unify pairs
-	  else if id = id_ then
-	    unifyL (env, srt1, srt2, ts, ts_, pairs, ignoreSubsorts?, unify)
+	  else if id = id2 then
+	    unifyL (env, srt1, srt2, ts, ts2, pairs, ignoreSubsorts?, unify)
 	  else 
-	    let s1_ = unfoldSort (env, srt1) in
-	    let s2_ = unfoldSort (env, srt2) in
-	    if equalSort? (s1, s1_) & equalSort? (s2_, s2) then
+	    let s1x = unfoldSort (env, srt1) in
+	    let s2x = unfoldSort (env, srt2) in
+	    if equalSort? (s1, s1x) & equalSort? (s2x, s2) then
 	      NotUnify  (srt1, srt2)
 	    else 
-	      unify (env, withAnnS (s1_, pos1), 
-		     withAnnS (s2_, pos2), 
+	      unify (env, withAnnS (s1x, pos1), 
+		     withAnnS (s2x, pos2), 
 		     cons ((s1, s2), pairs), 
 		     ignoreSubsorts?)
 
@@ -595,11 +595,11 @@ spec
 	      | (Subsort (ty, _, _), ty2) -> unify (env, ty, ty2, pairs, ignoreSubsorts?)
 	      | (ty, Subsort (ty2, _, _)) -> unify (env, ty, ty2, pairs, ignoreSubsorts?)
 	      | (Base _, _) -> 
-	        let s1_ = unfoldSort (env, srt1) in
-		if equalSort? (s1, s1_) then
+	        let s1x = unfoldSort (env, srt1) in
+		if equalSort? (s1, s1x) then
 		  NotUnify (srt1, srt2)
 		else 
-		  unify (env, s1_, s2, pairs, ignoreSubsorts?)
+		  unify (env, s1x, s2, pairs, ignoreSubsorts?)
 	      | (_, Base _) ->
 		let s3 = unfoldSort (env, srt2) in
 		if equalSort? (s2, s3) then
