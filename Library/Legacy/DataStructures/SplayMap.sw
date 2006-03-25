@@ -334,10 +334,10 @@ SplayMap qualifying spec {
 
   def unionWith f (m1, m2) = 
     let
-      def ins f (key, x, m) = 
+      def ins f (key, new_val, m) = 
         case find(m, key) of
-          | None -> insert (m, key, x)
-          | Some x_ -> insert (m, key, f(x, x_))
+          | None         -> insert (m, key, new_val)
+          | Some old_val -> insert (m, key, f(new_val, old_val))
     in
       if (numItems m1 > numItems m2) then
         foldli (ins (fn (a, b) -> f(b, a))) m1 m2
@@ -346,10 +346,10 @@ SplayMap qualifying spec {
 
   def unionWithi f (m1, m2) = 
     let
-      def ins f (key, x, m) = 
+      def ins f (key, new_val, m) = 
         case find (m, key) of
-          | None -> insert (m, key, x)
-          | Some x_ -> insert (m, key, f (key, x, x_))
+          | None         -> insert (m, key, new_val)
+          | Some old_val -> insert (m, key, f (key, new_val, old_val))
     in
       if (numItems m1 > numItems m2) then
         foldli (ins (fn (k, a, b) -> f(k, b, a))) m1 m2
@@ -361,10 +361,10 @@ SplayMap qualifying spec {
       (* iterate over the elements of m1, checking for membership in m2 *)
       def intersect f (m1, m2) = 
         let
-          def ins (key, x, m) = 
+          def ins (key, new_val, m) = 
             case find (m2, key) of
-              | None -> m
-              | Some x_ -> insert (m, key, f (x, x_))
+              | None         -> m
+              | Some old_val -> insert (m, key, f (new_val, old_val))
         in
           foldli ins (empty(compOf m1)) m1
     in
@@ -378,10 +378,10 @@ SplayMap qualifying spec {
       (* iterate over the elements of m1, checking for membership in m2 *)
       def intersect f (m1, m2) = 
         let
-          def ins (key, x, m) = 
+          def ins (key, new_val, m) = 
             case find(m2, key) of
               | None -> m
-              | Some x_ -> insert(m, key, f(key, x, x_))
+              | Some old_val -> insert(m, key, f(key, new_val, old_val))
         in
           foldli ins (empty(compOf m1)) m1
     in
@@ -426,7 +426,7 @@ SplayMap qualifying spec {
       def g (key, item, m) = 
         case f item of
           | None -> m
-          | (Some item_) -> insert (m, key, item_)
+          | (Some revised_item) -> insert (m, key, revised_item)
     in
       foldli g (empty (compOf m)) m
 
@@ -435,7 +435,7 @@ SplayMap qualifying spec {
       def g (key, item, m) = 
         case f (key, item) of
           | None -> m
-          | (Some item_) -> insert (m, key, item_)
+          | (Some revised_item) -> insert (m, key, revised_item)
     in
       foldli g (empty (compOf m)) m
 
