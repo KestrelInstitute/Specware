@@ -39,8 +39,8 @@ Infix qualifying spec
 	 case terms of
 	   | [] -> []
 	   | [t] -> [t]
-	   | (Nonfix t)::(Nonfix t_)::tags -> 
-		  applyPrefixes(cons(Nonfix(ApplyN([t,t_],pos)),tags))
+	   | (Nonfix t)::(Nonfix t2)::tags -> 
+		  applyPrefixes(cons(Nonfix(ApplyN([t,t2],pos)),tags))
 	   | t::tags -> cons (t,applyPrefixes tags)
    in
    let tagged = map tagTermWithInfixInfo terms in
