@@ -47,59 +47,59 @@ SplayTree qualifying spec {
 
   def adj compf sp = 
     case sp of
-      | SplayNil -> (No,SplayNil,SplayNil)
-      | SplayObj {value,left,right} ->
+      | SplayNil -> (No, SplayNil, SplayNil)
+      | SplayObj {value, left, right} ->
         (case compf value of
           | Equal -> (Eq value, left, right)
           | Greater ->
-             (case left of
-               | SplayNil -> (Gt value,SplayNil,right)
-               | SplayObj {value = value_,left = left_,right = right_} ->
-                (case compf value_ of
-                   | Equal -> (Eq value_,left_,SplayObj{value = value,left = right_,right = right})
-                   | Greater ->
-                      (case left_ 
-                         of SplayNil -> (Gt value_,left_,SplayObj{value = value,left = right_,right = right})
-                          | _ -> 
-                            let (V,L,R) = adj compf left_ in
-                            let rchild = mkSplayObj{value = value,left = right_,right = right} in
-                              (V,L,SplayObj{value = value_,left = R,right = rchild}))
-                   | _ ->
-                      (case right_ of
-                         | SplayNil -> (Lt value_,left_,SplayObj{value = value,left = right_,right = right})
+	    (case left of
+               | SplayNil -> (Gt value, SplayNil, right)
+               | SplayObj {value = left_V, left = left_L, right = left_R} ->
+                 (case compf left_V of
+		    | Equal -> (Eq left_V, left_L, SplayObj {value = value, left = left_R, right = right})
+		    | Greater ->
+		      (case left_L of
+                         | SplayNil -> (Gt left_V, left_L, SplayObj {value = value, left = left_R, right = right})
+			 | _ -> 
+			   let (V, L, R) = adj compf left_L in
+			   let rchild = mkSplayObj {value = value, left = left_R, right = right} in
+			   (V, L, SplayObj {value = left_V, left = R, right = rchild}))
+		    | _ ->
+                      (case left_R of
+                         | SplayNil -> (Lt left_V, left_L, SplayObj {value = value, left = left_R, right = right})
                          | _ ->
-                           let (V,L,R) = adj compf right_ in
-                           let rchild = mkSplayObj{value = value,left = R,right = right} in
-                           let lchild = mkSplayObj{value = value_,left = left_,right = L} in
-                           (V,lchild,rchild))))
+                           let (V, L, R) = adj compf left_R in
+                           let rchild = mkSplayObj {value = value,  left = R,      right = right} in
+                           let lchild = mkSplayObj {value = left_V, left = left_L, right = L} in
+                           (V, lchild, rchild))))
           | _ (* Less *) -> 
             (case right of
-              | SplayNil -> (Lt value,left,SplayNil)
-              | SplayObj {value = value_,left = left_,right = right_} ->
-                (case compf value_ of
-                  | Equal -> (Eq value_,SplayObj{value = value,left = left,right = left_},right_)
+              | SplayNil -> (Lt value, left, SplayNil)
+              | SplayObj {value = right_V, left = right_L, right = right_R} ->
+                (case compf right_V of
+                  | Equal -> (Eq right_V, SplayObj {value = value, left = left, right = right_L}, right_R)
                   | Less ->
-                   (case right_ of
-                      | SplayNil -> (Lt value_,SplayObj{value = value,left = left,right = left_},right_)
+                   (case right_R of
+                      | SplayNil -> (Lt right_V, SplayObj {value = value, left = left, right = right_L}, right_R)
                       | _ ->
-                         let (V,L,R) = adj compf right_ in
-                         let lchild = mkSplayObj{value = value,left = left,right = left_} in
-                         (V,SplayObj{value = value_,left = lchild,right = L},R))
+                         let (V, L, R) = adj compf right_R in
+                         let lchild = mkSplayObj {value = value, left = left, right = right_L} in
+                         (V, SplayObj {value = right_V, left = lchild, right = L}, R))
                   | _ ->
-                   (case left_ of
-                      | SplayNil -> (Gt value_,SplayObj{value = value,left = left,right = left_},right_)
+                   (case right_L of
+                      | SplayNil -> (Gt right_V, SplayObj {value = value, left = left, right = right_L}, right_R)
                       | _ ->
-                        let (V,L,R) = adj compf left_ in
-                        let rchild = mkSplayObj{value = value_,left = R,right = right_} in
-                        let lchild = mkSplayObj{value = value,left = left,right = L} in
-                        (V,lchild,rchild)))))
+                        let (V, L, R) = adj compf right_L in
+                        let rchild = mkSplayObj {value = right_V, left = R,    right = right_R} in
+                        let lchild = mkSplayObj {value = value,   left = left, right = L} in
+                        (V, lchild, rchild)))))
 
   def splay (compf, root) = 
     case adj compf root of
-      | (No,_,_) -> (Greater,SplayNil)
-      | (Eq v,l,r) -> (Equal,SplayObj{value = v,left = l,right = r})
-      | (Lt v,l,r) -> (Less,SplayObj{value = v,left = l,right = r})
-      | (Gt v,l,r) -> (Greater,SplayObj{value = v,left = l,right = r})
+      | (No,_,_)   -> (Greater, SplayNil)
+      | (Eq v,l,r) -> (Equal,   SplayObj{value = v,left = l,right = r})
+      | (Lt v,l,r) -> (Less,    SplayObj{value = v,left = l,right = r})
+      | (Gt v,l,r) -> (Greater, SplayObj{value = v,left = l,right = r})
       
   def lrotate sp = 
     case sp of
