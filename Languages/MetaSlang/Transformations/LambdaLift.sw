@@ -76,8 +76,8 @@ efficiently, but cmulisp may do better with local functions.
  * Term decorated with free variables in each sub-expression.
  *)
 
- sort VarTerm = VarTerm_ * FreeVars
- sort VarTerm_ = 
+ sort VarTerm = VarTermBody * FreeVars
+ sort VarTermBody = 
   | Apply        VarTerm * VarTerm
   | Record       List (Id * VarTerm)
   | Bind         Binder * List Var * VarTerm

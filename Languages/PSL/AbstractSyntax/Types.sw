@@ -26,10 +26,10 @@ defining term.
 ### The name of the procedure should be a qualified id.
 
 \begin{spec}
-  sort OscarSpecElem a = (OscarSpecElem_ a) * a
+  sort OscarSpecElem a = (OscarSpecElemBody a) * a
 
   sort Ident = String
-  sort OscarSpecElem_ a =
+  sort OscarSpecElemBody a =
     | Import (List (SpecCalc.Term a))
     | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
     | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
@@ -102,8 +102,8 @@ both a \verb+let+ command and a MetaSlang \verb+let+ expression. This
 needs some thought.
 
 \begin{spec}
-  sort Command a = (Command_ a) * a
-  sort Command_ a = 
+  sort Command a = (CommandBody a) * a
+  sort CommandBody a = 
     | If         List (Alternative a)
     | Case       (ATerm a) * (List (Case a))
     | Do         List (Alternative a)
@@ -166,10 +166,10 @@ since, with guards, the case statement subsumes it.
 Perhaps the guard term in the case should be made \verb+Option+al.
 
 \begin{spec}
-  sort Alternative a = (Alternative_ a) * a
-  sort Alternative_ a = (ATerm a) * (Command a)
-  sort Case a = (Case_ a) * a
-  sort Case_ a = (List (AVar a)) * (APattern a) * (ATerm a) * (Command a)
+  sort Alternative a = (AlternativeBody a) * a
+  sort AlternativeBody a = (ATerm a) * (Command a)
+  sort Case a = (CaseBody a) * a
+  sort CaseBody a = (List (AVar a)) * (APattern a) * (ATerm a) * (Command a)
 
   op mkCaseBranch : (List (AVar Position)) * (APattern Position) * (Command Position) * Position -> Case Position
   def mkCaseBranch (vars,pat,cmd,pos) = ((vars,pat,mkTrueA pos,cmd),pos)

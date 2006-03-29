@@ -465,23 +465,23 @@ spec
 			 | (None,None) -> pairs 
 			 | ((Some ss1),(Some ss2)) -> match(ss1,ss2,pairs))
 		   else pairs)
-	  | (Quotient(ty,trm,_),Quotient(ty_,trm_,_)) -> 
-	    match(ty,ty_,pairs)
+	  | (Quotient(ty,_,_),Quotient(ty2,_,_)) -> 
+	    match(ty,ty2,pairs)
 	  | (Subsort(ty,_,_),ty2) -> match(ty,ty2,pairs)
 	  | (ty,Subsort(ty2,_,_)) -> match(ty,ty2,pairs)
-	  | (Base(id,ts,pos1),Base(id_,ts_,pos2)) ->
-	    if id = id_
-	      then matchL(ts,ts_,pairs,match)
+	  | (Base(id,ts,pos1),Base(id2,ts2,pos2)) ->
+	    if id = id2
+	      then matchL(ts,ts2,pairs,match)
 	      else
-		let s2_ = unfoldBase(spc,srt2) in
-		if equalSort?(srt2,s2_)
+		let s2x = unfoldBase(spc,srt2) in
+		if equalSort?(srt2,s2x)
 		  then pairs
-		else match(srt1,s2_,pairs)
+		else match(srt1,s2x,pairs)
 	  | (_,Base _) ->
-	    let s2_ = unfoldBase(spc,srt2) in
-	    if equalSort?(srt2,s2_)
+	    let s2x = unfoldBase(spc,srt2) in
+	    if equalSort?(srt2,s2x)
 	     then pairs
-	     else match(srt1,s2_,pairs)
+	     else match(srt1,s2x,pairs)
 	  | _ -> pairs
   in match(s1,s2,[])
 

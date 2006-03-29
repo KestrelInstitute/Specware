@@ -1046,24 +1046,24 @@ skolemization transforms a proper matching problem into an inproper one.
 		 (case unify(subst,t1,s1,equals)
 		    of Unify (subst) -> unify(subst,t2,s2,equals)
 		     | notUnify -> notUnify)
-	       | (Quotient(ty,trm1,_),Quotient(ty_,trm2,_)) -> 
+	       | (Quotient(ty1,trm1,_),Quotient(ty2,trm2,_)) -> 
 		 if trm1 = trm2
-		    then unify(subst,ty,ty_,equals)
+		    then unify(subst,ty1,ty2,equals)
 		 else NotUnify (srt1,srt2)
 	       | (Subsort(ty,_,_),ty2) -> unify(subst,ty,ty2,equals)
 	       | (ty,Subsort(ty2,_,_)) -> unify(subst,ty,ty2,equals)
-	       | (srt1 as Base(id,ts,_),srt2 as Base(id_,ts_,_)) -> 
+	       | (srt1 as Base(id1,ts1,_),srt2 as Base(id2,ts2,_)) -> 
 		 if exists (fn p -> p = (srt1,srt2)) equals
 		    then Unify (subst)
 		 else 
-		 if id = id_ 
-		    then unifyL(subst,srt1,srt2,ts,ts_,equals,unify)
+		 if id1 = id2 
+		    then unifyL(subst,srt1,srt2,ts1,ts2,equals,unify)
 	         else 
-		 let s1_ = SpecEnvironment.unfoldBase(spc,srt1) in
-		 let s2_ = SpecEnvironment.unfoldBase(spc,srt2) in
-		 if srt1 = s1_ & s2_ = srt2
+		 let s1 = SpecEnvironment.unfoldBase(spc,srt1) in
+		 let s2 = SpecEnvironment.unfoldBase(spc,srt2) in
+		 if srt1 = s1 & s2 = srt2
 		    then  NotUnify (srt1,srt2)
-		 else unify(subst,s1_,s2_,cons((srt1,srt2),equals))
+		 else unify(subst,s1,s2,cons((srt1,srt2),equals))
 	       | (TyVar(v, _),TyVar(w, _)) -> 
 		 if v = w then Unify subst else Unify (insert(v,srt2,subst))
 	       | (TyVar(v, _),_) -> 
@@ -1075,15 +1075,15 @@ skolemization transforms a proper matching problem into an inproper one.
 			 then NotUnify (srt1,srt2)
 		     else Unify(insert(v,srt1,subst))
 	       | (srt1 as Base _,srt2) -> 
- 		  let  s1_ = SpecEnvironment.unfoldBase(spc,srt1) in
-		  if srt1 = s1_
+ 		  let  s1 = SpecEnvironment.unfoldBase(spc,srt1) in
+		  if srt1 = s1
 		     then NotUnify (srt1,srt2)
-	 	  else unify(subst,s1_,srt2,cons((srt1,srt2),equals))
+	 	  else unify(subst,s1,srt2,cons((srt1,srt2),equals))
 	       | (srt1,srt2 as Base _) ->
-		 let s2_ = SpecEnvironment.unfoldBase(spc,srt2)  in
-		 if srt2 = s2_
+		 let s2 = SpecEnvironment.unfoldBase(spc,srt2)  in
+		 if srt2 = s2
 		     then NotUnify (srt1,srt2)
-		 else unify(subst,srt1,s2_,cons((srt1,srt2),equals))
+		 else unify(subst,srt1,s2,cons((srt1,srt2),equals))
 	       | _ -> NotUnify(srt1,srt2)
       in
       case unifyL(subst,srt1,srt2,[srt1],[srt2],[],unify)

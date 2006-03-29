@@ -13,7 +13,7 @@ SplaySet qualifying spec {
   op empty        : fa(key) (key * key -> Comparison) -> Set key
   op singleton    : fa(key) (key * key -> Comparison) * key -> Set key
   op add          : fa(key) Set key * key -> Set key 
-  op add_         : fa(key) key * Set key -> Set key
+  op add_rev      : fa(key) key * Set key -> Set key
   op addList      : fa(key) Set key * List key -> Set key
   op delete       : fa(key) Set key * key -> Set key
   op member       : fa(key) Set key * key -> Boolean
@@ -70,8 +70,8 @@ SplaySet qualifying spec {
 
   def empty comp = EMPTY comp 
 
-  def compf (comp, k) k_ =
-    comp (k_, k)
+  def compf (comp, k) k2 =
+    comp (k2, k)
 
   def singleton(comp,v) = 
     SET {root = Ref(SplayObj{value = v,left = SplayNil,right = SplayNil}),
@@ -104,7 +104,7 @@ SplaySet qualifying spec {
           let (cnt,t) = insert comp (v,(nobj,State.! root)) in
           SET {comp = comp,nobj = cnt,root = Ref t}
 
-  def add_ (s, x) = add(x, s)
+  def add_rev (s, x) = add(x, s)
 
   (* Insert a list of items. *)
 
@@ -177,20 +177,20 @@ SplaySet qualifying spec {
              | Greater -> memberT(comp,x,right)
              | _ -> true)
 
-  (* true if every item in t is in t_ *)
-  def treeIn (comp,t,t_) = 
-    case t of
+  (* true if every item in t is in t2 *)
+  def treeIn (comp,t1,t2) = 
+    case t1 of
       | SplayNil -> true
       | SplayObj{value,left = SplayNil,right = SplayNil} -> 
-           memberT(comp,value,t_)
+           memberT(comp,value,t2)
       | SplayObj{value,left,right = SplayNil} -> 
-           memberT(comp,value, t_) & treeIn(comp,left,t_)
+           memberT(comp,value, t2) & treeIn(comp,left, t2)
       | SplayObj{value,left = SplayNil,right} -> 
-           memberT(comp,value, t_) & treeIn(comp,right,t_)
+           memberT(comp,value, t2) & treeIn(comp,right,t2)
       | SplayObj{value,left,right} -> 
-             memberT(comp,value, t_)
-           & treeIn(comp,left,t_) 
-           & treeIn(comp,right,t_)
+             memberT(comp,value, t2)
+           & treeIn(comp,left, t2) 
+           & treeIn(comp,right,t2)
 
 
   %
@@ -268,13 +268,13 @@ SplaySet qualifying spec {
       | (s, SplayObj{value,left,right}) ->
           (case split(comp,value,s) of
              | (Some v, l, r) ->
-                 let (l_,lcnt) = intersectionSplay(comp,l,left) in
-                 let (r_,rcnt) = intersectionSplay(comp,r,right) in
-                 (SplayObj{value = v,left = l_,right = r_},lcnt + rcnt + 1)
+                 let (l2,lcnt) = intersectionSplay(comp,l,left) in
+                 let (r2,rcnt) = intersectionSplay(comp,r,right) in
+                 (SplayObj{value = v,left = l2,right = r2},lcnt + rcnt + 1)
              | (_,l,r) ->
-                 let (l_,lcnt) = intersectionSplay(comp,l,left) in
-                 let (r_,rcnt) = intersectionSplay(comp,r,right) in
-                 (join(l_,r_),lcnt + rcnt))
+                 let (l2,lcnt) = intersectionSplay(comp,l,left) in
+                 let (r2,rcnt) = intersectionSplay(comp,r,right) in
+                 (join(l2,r2),lcnt + rcnt))
                
   def count(sp,n) = 
     case sp of
@@ -296,9 +296,9 @@ SplaySet qualifying spec {
       | (s,SplayNil) -> (s,count(s,0))
       | (s,SplayObj{value,right,left}) ->
           let (_,l,r) = split(comp,value,s) in
-          let (l_,lcnt) = diffSplay(comp,l,left) in
-          let (r_,rcnt) = diffSplay(comp,r,right) in
-          (join(l_,r_),lcnt + rcnt)
+          let (l2,lcnt) = diffSplay(comp,l,left) in
+          let (r2,rcnt) = diffSplay(comp,r,right) in
+          (join(l2,r2),lcnt + rcnt)
 
   def union (set1,set2) = 
     case (set1,set2) of
@@ -315,9 +315,9 @@ SplaySet qualifying spec {
       | (_,SplayNil) -> (sp1,count(sp1,0))
       | (_,SplayObj {value,right,left}) -> 
           let (_,l,r) = split (comp,value,sp1) in
-          let (l_,lcnt) = unionSplay (comp,l,left) in
-          let (r_,rcnt) = unionSplay (comp,r,right) in
-            (SplayObj {value = value,right = r_,left = l_},lcnt + rcnt + 1)
+          let (l2,lcnt) = unionSplay (comp,l,left) in
+          let (r2,rcnt) = unionSplay (comp,r,right) in
+	  (SplayObj {value = value,right = r2,left = l2},lcnt + rcnt + 1)
 
   def map f set = 
     case set of
@@ -378,11 +378,11 @@ SplaySet qualifying spec {
     case sp of
       | SplayNil -> tree
       | SplayObj{value,left,right} -> 
-          let t_ = filterSplay comp (p,right,filterSplay comp (p,left,tree)) in
+          let t2 = filterSplay comp (p,right,filterSplay comp (p,left,tree)) in
           if p value then
-            insert comp (value,t_)
+            insert comp (value,t2)
           else
-            t_
+            t2
 
   def exists p set = 
     case set of

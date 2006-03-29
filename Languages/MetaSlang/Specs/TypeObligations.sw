@@ -443,15 +443,15 @@ spec
       | VarPat(v as (_,srt),_) -> 
 	let gamma1 = insert(v,gamma) in
 	returnPattern(gamma1,mkVar(v),srt,tau)
-      | EmbedPat(constr,Some p,tau_,_) -> 
+      | EmbedPat(constr,Some p,tau2,_) -> 
 	let tau1 = patternSort p in
 	let (gamma1,t1) = bindPattern(gamma,p,tau1) in
 	let t2 = mkApply(mkFun(Embed(constr,true),
-			       mkArrow(tau1,tau_)),
+			       mkArrow(tau1,tau2)),
 			 t1) in
-	returnPattern(gamma1,t2,tau_,tau)
-      | EmbedPat(constr,None,tau_,_) -> 
-	returnPattern(gamma,mkFun(Embed(constr,false),tau_),tau_,tau)
+	returnPattern(gamma1,t2,tau2,tau)
+      | EmbedPat(constr,None,tau2,_) -> 
+	returnPattern(gamma,mkFun(Embed(constr,false),tau2),tau2,tau)
       | RecordPat(fields,_) -> 
 	let fs     = product(getSpec gamma,tau) in
 	let fields = ListPair.zip(fs,fields)    in

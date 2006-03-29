@@ -144,18 +144,18 @@ CPrint qualifying spec {
 
   op ppExp_internal : Exp * Boolean -> Pretty
   def ppExp_internal (e : Exp, inOneLine: Boolean) : Pretty =
-    let prettysFill_ = if inOneLine then prettysNone else prettysFill in
+    let prettysFill   = if inOneLine then prettysNone else prettysFill in
     let prettysLinear = if inOneLine then prettysNone else prettysLinear in
     case e
       of Const v            -> ppConst v
        | Fn (s, ts, t)      -> string (cId s)
        | Var (s, t)         -> string (cId s)
-       | Apply (e, es)      -> prettysFill_ [ppExp_internal(e,inOneLine), prettysNone [string " ", ppExpsInOneline es]]
+       | Apply (e, es)      -> prettysFill [ppExp_internal(e,inOneLine), prettysNone [string " ", ppExpsInOneline es]]
        | Unary (u, e)       -> prettysNone
                                  (if unaryPrefix? u
                                   then [ppUnary u, ppExpRec(e,inOneLine)]
                                   else [ppExpRec(e,inOneLine), ppUnary u])
-       | Binary (b, e1, e2) -> prettysFill_ [ppExpRec(e1,inOneLine), ppBinary b, ppExpRec(e2,inOneLine)]
+       | Binary (b, e1, e2) -> prettysFill [ppExpRec(e1,inOneLine), ppBinary b, ppExpRec(e2,inOneLine)]
        | Cast (t, e)        -> parens (prettysNone [parens (ppPlainType t), string " ", ppExp_internal(e,inOneLine)])
        | StructRef (Unary (Contents, e), s) -> 
 			       prettysNone [ppExpRec(e,inOneLine), strings [" -> ", (cId s)]]
@@ -166,7 +166,7 @@ CPrint qualifying spec {
                                  [prettysNone [ppExpRec(e1,inOneLine), string " ? "],
                                   prettysNone [ppExpRec(e2,inOneLine), string " : "],
                                   ppExpRec(e3,inOneLine)]
-       | Comma (e1, e2)     -> parens (prettysFill_ [ppExp_internal(e1,inOneLine), string ", ", ppExp_internal(e2,inOneLine)])
+       | Comma (e1, e2)     -> parens (prettysFill [ppExp_internal(e1,inOneLine), string ", ", ppExp_internal(e2,inOneLine)])
        | SizeOfType t       -> prettysNone [string "sizeof (", ppPlainType t, string ")"]
        | SizeOfExp e        -> prettysNone [string "sizeof (", ppExp_internal(e,inOneLine), string ")"]
        | Field es -> prettysNone [if inOneLine then ppExpsCurlyInOneline es 

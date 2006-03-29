@@ -132,7 +132,7 @@ List the key/range pairs in order of appearance.
       def g m key item = 
         case f item of
           | None -> m
-          | (Some item_) -> update m key item_
+          | (Some revised_item) -> update m key revised_item
     in
       foldMap g emptyMap m
 

@@ -37,8 +37,8 @@ SpecCalc qualifying spec
  %% \mathit{term}$ or contain a single term. This should not be polymorphic.
  %% The type parameter should be instantiated with the type \verb+Position+.
 
- type SpecTerm  a = (SpecTerm_ a) * a
- type SpecTerm_ a =
+ type SpecTerm  a = (SpecTermBody a) * a
+ type SpecTermBody a =
    | Term  (Term a)
    | Decls (List (Decl a))
 
@@ -87,8 +87,8 @@ SpecCalc qualifying spec
 
  %% The following is the type given to us by the parser.
 
- type Term a = (Term_ a) * a
- type Term_ a = 
+ type Term a = (TermBody a) * a
+ type TermBody a = 
    | Print   (Term a)
    | Prove   ClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar
    | ProofCheck   PCClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions
@@ -204,8 +204,8 @@ SpecCalc qualifying spec
 
  type Renaming      = RenamingRules * Position
  type RenamingRules = List RenamingRule
- type RenamingRule  = RenamingRule_ * Position
- type RenamingRule_ =
+ type RenamingRule  = RenamingRuleBody * Position
+ type RenamingRuleBody =
    | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases, including name in second field
    | Sort      QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases, including name in second field
    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases, including name in second field
@@ -214,8 +214,8 @@ SpecCalc qualifying spec
  type OtherRenamingRule % hook for extensions
 
  %% TODO: phase this out...
- type SpecMorphRule a = (SpecMorphRule_ a) * a
- type SpecMorphRule_ a = 
+ type SpecMorphRule a = (SpecMorphRuleBody a) * a
+ type SpecMorphRuleBody a = 
    | Ambiguous QualifiedId                 * QualifiedId 
    | Sort      QualifiedId                 * QualifiedId
    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort)
@@ -241,9 +241,9 @@ SpecCalc qualifying spec
 
  %% A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops types etc.
 
- type SpecElem a = (SpecElem_ a) * a
+ type SpecElem a = (SpecElemBody a) * a
 
- type SpecElem_ a =
+ type SpecElemBody a =
    | Import  List (Term a)
    | Sort    List QualifiedId          * ASort a
    | Op      List QualifiedId * Fixity * ATerm a
@@ -287,8 +287,8 @@ SpecCalc qualifying spec
  %% edges in the resulting shape may be tuples and equivalence classes. It
  %% remains to be seen whether we need a concrete syntax for this.
 
- type DiagElem a = (DiagElem_ a) * a
- type DiagElem_ a =
+ type DiagElem a = (DiagElemBody a) * a
+ type DiagElemBody a =
    | Node NodeId * (Term a)
    | Edge EdgeId * NodeId * NodeId * (Term a)
  type NodeId = Name
@@ -316,8 +316,8 @@ SpecCalc qualifying spec
  %% between diagrams. The components are indexed by vertices in the shape.
  %% The term in the component must evaluate to a morphism.
 
- type DiagMorphRule  a = (DiagMorphRule_ a) * a
- type DiagMorphRule_ a =
+ type DiagMorphRule  a = (DiagMorphRuleBody a) * a
+ type DiagMorphRuleBody a =
    | ShapeMap    Name * Name
    | NatTranComp Name * (Term a) 
 
@@ -334,8 +334,8 @@ SpecCalc qualifying spec
   
  type AnswerVar = Option Var
 
- type  SpecInterpRules  a = (SpecInterpRules_ a) * a
- type  SpecInterpRules_ a = 
+ type  SpecInterpRules  a = (SpecInterpRulesBody a) * a
+ type  SpecInterpRulesBody a = 
    %% This is the form used by Specware 2 -- a cospan, where the codomain-to-mediator.
    %% morphism is presumably a definitional extension.
    %% Alternatively, this could be expressed as symbol to term mappings,

@@ -375,7 +375,7 @@ SpecsToI2L qualifying spec {
   % e.g. unfold to sort of the form {n:Nat|n<C} which is needed to generate arrays
   op unfoldToSpecials: Spec * Sort -> Sort
   def unfoldToSpecials(_(*spc*),srt) = srt
-  def unfoldToSpecials_(spc,srt) =
+  def unfoldToSpecials1(spc,srt) =
   let
     def unfoldToSpecials0(srt) =
       let

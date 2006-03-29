@@ -545,7 +545,7 @@ emacs interface functions.
       | s :: _ -> deviceString? s
 
  %%% Find relationship between Specs
- op  importPathsBetween: Spec * Spec -> List (List (Term_ Position))
+ op  importPathsBetween: Spec * Spec -> List (List (TermBody Position))
  def importPathsBetween(spc1,spc2) =
    let def findPaths(sp,path) =
          if sp = spc2

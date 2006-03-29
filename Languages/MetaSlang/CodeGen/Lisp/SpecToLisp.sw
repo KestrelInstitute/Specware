@@ -812,8 +812,8 @@ SpecToLisp qualifying spec {
      | [] -> count 
      | Cons (term, terms) -> 
        case term of
-	 | Apply (term_, terms_) -> 
-	   countOccurrence2 (x, count, Cons (term_, terms_ ++ terms))
+	 | Apply (t1, terms1) -> 
+	   countOccurrence2 (x, count, Cons (t1, terms1 ++ terms))
 
 	 | Lambda (vars, _, body) -> 
 	   %% Was: 2 (* give up *) 

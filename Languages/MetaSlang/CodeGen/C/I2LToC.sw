@@ -441,18 +441,14 @@ I2LToC qualifying spec {
   %                                                                     %
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op c4Expression_: CgContext * CSpec * CBlock * I2L.Expression * Boolean * Boolean -> CSpec * CBlock * CExp
-  def c4Expression_(ctxt,cspc,block as (decls,stmts),exp as (expr,typ),islhs,forInitializer) =
-    let (cspc,block,cexpr) = c4Expression__(ctxt,cspc,block,exp,islhs,forInitializer) in
+  op c4Expression1 : CgContext * CSpec * CBlock * I2L.Expression * Boolean * Boolean -> CSpec * CBlock * CExp
+  def c4Expression1 (ctxt,cspc,block as (decls,stmts),exp as (expr,typ),islhs,forInitializer) =
+    let (cspc,block,cexpr) = c4Expression2(ctxt,cspc,block,exp,islhs,forInitializer) in
     let (cspc,block,cexpr) = mergeBlockIntoExpr(cspc,block,cexpr) in
     (cspc,block,cexpr)
 
-  % note: "c4Expression__:" is a legal token under the proposed new syntax that
-  %       allows "__" to connect word and non-word syllables within a token.
-  %       Thus a space character will be mandatory here.
-  %       "c4Expression_:" will continue parsing as three tokens.
-  op c4Expression__ : CgContext * CSpec * CBlock * I2L.Expression * Boolean * Boolean -> CSpec * CBlock * CExp
-  def c4Expression__(ctxt,cspc,block as (decls,stmts),exp as (expr,typ),islhs,forInitializer) =
+  op c4Expression2 : CgContext * CSpec * CBlock * I2L.Expression * Boolean * Boolean -> CSpec * CBlock * CExp
+  def c4Expression2(ctxt,cspc,block as (decls,stmts),exp as (expr,typ),islhs,forInitializer) =
     let
       def addProjections(cexpr,projections) =
 	case projections of
@@ -544,7 +540,7 @@ I2LToC qualifying spec {
 	c4StructExpr(ctxt,cspc,block,typ,exprs,fieldnames,forInitializer)
 
       | Project(expr,id) ->
-	let (cspc,block,cexpr) = c4Expression_(ctxt,cspc,block,expr,islhs,forInitializer) in
+	let (cspc,block,cexpr) = c4Expression1 (ctxt,cspc,block,expr,islhs,forInitializer) in
 	let id = getProjectionFieldName id in
 	let cexpr = if ctxt.useRefTypes then Unary(Contents,cexpr) else cexpr in
 	(cspc,block,StructRef(cexpr,id))
@@ -770,15 +766,15 @@ I2LToC qualifying spec {
   def c4Expression(ctxt,cspc,block,exp) =
     case c4SpecialExpr(ctxt,cspc,block,exp) of
       | Some res -> res
-      | None -> c4Expression_(ctxt,cspc,block,exp,false,false)
+      | None -> c4Expression1 (ctxt,cspc,block,exp,false,false)
 
   op c4LhsExpression: CgContext * CSpec * CBlock * I2L.Expression -> CSpec * CBlock * CExp
   def c4LhsExpression(ctxt,cspc,block,exp) =
-    c4Expression_(ctxt,cspc,block,exp,true,false)
+    c4Expression1 (ctxt,cspc,block,exp,true,false)
 
   op c4InitializerExpression: CgContext * CSpec * CBlock * I2L.Expression -> CSpec * CBlock * CExp
   def c4InitializerExpression(ctxt,cspc,block,exp) =
-    c4Expression_(ctxt,cspc,block,exp,false,true)
+    c4Expression1 (ctxt,cspc,block,exp,false,true)
 
 
   % --------------------------------------------------------------------------------
@@ -805,11 +801,11 @@ I2LToC qualifying spec {
     % if forInitializer then
     %  c4StructExprForInitializer(ctxt,cspc,block,typ,exprs,fieldnames)
     % else
-    c4StructExpr_(ctxt,cspc,block,typ,exprs,fieldnames)
+    c4StructExpr2(ctxt,cspc,block,typ,exprs,fieldnames)
       
 
-  op c4StructExpr_: CgContext * CSpec * CBlock * I2L.Type * Expressions * List(String) -> CSpec * CBlock * CExp
-  def c4StructExpr_(ctxt,cspc,block,typ,exprs,fieldnames) =
+  op c4StructExpr2: CgContext * CSpec * CBlock * I2L.Type * Expressions * List(String) -> CSpec * CBlock * CExp
+  def c4StructExpr2(ctxt,cspc,block,typ,exprs,fieldnames) =
     %let types = List.map (fn(_,t) -> t) exprs in
     let (cspc,block as (decls,stmts),fexprs) = c4Expressions(ctxt,cspc,block,exprs) in
     %let (cspc,ftypes) = c4Types(ctxt,cspc,types) in

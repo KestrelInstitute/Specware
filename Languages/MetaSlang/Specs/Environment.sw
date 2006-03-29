@@ -21,7 +21,7 @@ spec
  op makeEnv     : List Spec              -> SpecEnvironment
  op empty       : ()                     -> SpecEnvironment
  op add         : SpecEnvironment * Spec -> SpecEnvironment 
- op add_        : Spec * SpecEnvironment -> SpecEnvironment 
+ op add_rev     : Spec * SpecEnvironment -> SpecEnvironment 
  op unfoldBase  : Spec * Sort -> Sort 
  op unfoldBaseV : Spec * Sort * Boolean -> Sort 
  op inferType   : Spec * MS.Term -> Sort

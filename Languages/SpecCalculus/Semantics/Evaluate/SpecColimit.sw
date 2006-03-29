@@ -152,8 +152,8 @@ spec
   %%
   %%       type Renaming      = RenamingRules * Position
   %%       type RenamingRules = List RenamingRule
-  %%       type RenamingRule  = RenamingRule_ * Position
-  %%       type RenamingRule_ =
+  %%       type RenamingRule  = RenamingRuleBody * Position
+  %%       type RenamingRuleBody =
   %%         | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   
   %%         | Sort      QualifiedId                 * QualifiedId                 * SortNames 
   %%         | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   
@@ -295,19 +295,19 @@ spec
  %% ====================================================================================================
 
  def makeRenamingSortRule (dom_qid, cod_qid, cod_aliases) =
-   let rule_ : RenamingRule_ = Sort (dom_qid, cod_qid, cod_aliases) in
-   let rule  : RenamingRule  = (rule_, Internal "Colimit Sort") in
+   let rule_body : RenamingRuleBody = Sort (dom_qid, cod_qid, cod_aliases) in
+   let rule      : RenamingRule     = (rule_body, Internal "Colimit Sort") in
    rule
 
  def makeRenamingOpRule (dom_qid, cod_qid, cod_aliases) =
-   let rule_ : RenamingRule_ = Op ((dom_qid, None), (cod_qid, None), cod_aliases) in
-   let rule  : RenamingRule  = (rule_, Internal "Colimit Op") in
+   let rule_body : RenamingRuleBody = Op ((dom_qid, None), (cod_qid, None), cod_aliases) in
+   let rule      : RenamingRule     = (rule_body, Internal "Colimit Op") in
    rule
 
  %% op  makeRenamingPropRule : QualifiedId * QualifiedId * Aliases -> RenamingRule
  %% def makeRenamingPropRule (dom_qid, cod_qid, cod_aliases) -> 
- %%   let rule_ : RenamingRule_ = Prop (dom_qid, cod_qid, cod_aliases) in
- %%   let rule  : RenamingRule  = (rule_, Internal "Colimit Prop") in
+ %%   let rule_ : RenamingRuleBody = Prop (dom_qid, cod_qid, cod_aliases) in
+ %%   let rule  : RenamingRule     = (rule_, Internal "Colimit Prop") in
  %%   rule
 
  %% ================================================================================
@@ -507,8 +507,8 @@ spec
  %%     using the cannonical structures for translation morphisms:
  %%
  %%     sort RenamingExpr  a = List (RenamingRule a) * a
- %%     sort RenamingRule  a = (RenamingRule_ a) * a
- %%     sort RenamingRule_ a = | Sort       QualifiedId                 * QualifiedId                  * Aliases
+ %%     sort RenamingRule  a = (RenamingRuleBody a) * a
+ %%     sort RenamingRuleBody a = | Sort       QualifiedId                 * QualifiedId                  * Aliases
  %%                             | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort)  * Aliases
  %%                             | Property   QualifiedId                 * QualifiedId                  * Aliases
  %%                             | Ambiguous  QualifiedId                 * QualifiedId                  * Aliases      
