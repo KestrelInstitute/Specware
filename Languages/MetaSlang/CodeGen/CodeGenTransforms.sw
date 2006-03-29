@@ -21,7 +21,9 @@ def builtinSortOp (Qualified (q, i)) =
   ((q="Integer" || q="Nat" || q="PosNat") && (i="Integer" || i="NonZeroInteger" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" || i="<" || i="~" ||
 		  i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"))
   ||
-  (q="Integer_" && i="-") % unary minus
+  (q="Integer_" && i="-")  % unary minus -- deprecated, will soon be impossible
+  ||
+  (q="IntegerAux" && i="-") % unary minus -- replace for "Integer_"
   % || (q="Boolean" && (i="Boolean" || i="true" || i="false" || i="~" || i="&&" || i="||" || i="=>" || i="<=>" || i="~="))
   ||
   (q="Char" && (i="Char" || i="chr" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
@@ -468,7 +470,7 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
 		    if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
 		      let tvsubst = zip (tvs, insttv) in
 		      %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
-		      let names = cons (qid, (filter (fn qid_ -> qid_ ~= qid0) names)) in 
+		      let names = cons (qid, (filter (fn qid1 -> qid1 ~= qid0) names)) in 
 		      let sinfo = {names = names, 
 				   dfn   = Any noPos} 
 		      in
@@ -479,7 +481,7 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
 		  | (_::_, _) ->
 		    let tvsubst = zip (tvs, insttv) in
 		    %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
-		    let names = cons (qid, (filter (fn qid_ -> qid_ ~= qid0) names)) in 
+		    let names = cons (qid, (filter (fn qid1 -> qid1 ~= qid0) names)) in 
 		    let srtdef = applyTyVarSubst2Sort (srtdef, tvsubst) in
 		    let srtdef = (if modifyConstructors? then
 				    addSortSuffixToConstructors (srtdef, suffix)
@@ -684,8 +686,8 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 	| Base (sqid, insttv as _::_, _) ->
           %% constructor Cons could become Cons_Nat for List (Nat), etc.
 	  if exists (fn (TyVar _) -> true | s -> false) insttv then (fun, srt1, minfo) else
-	  let id_ = id ^ (getSortNameSuffix insttv) in
-	  let fun = Embed (if modifyConstructors? then id_ else id, b?) in
+	  let id2 = id ^ (getSortNameSuffix insttv) in
+	  let fun = Embed (if modifyConstructors? then id2 else id, b?) in
 	  (fun, srt1, minfo)
        %| Boolean is same as default case
 	| _ -> (fun, srt1, minfo))
@@ -702,9 +704,9 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 	| Base (sqid, insttv as _::_, _) ->
           %% constructor Cons could become Cons_Nat for List (Nat), etc.
 	  if exists (fn (TyVar _) -> true | s -> false) insttv then (fun, srt1, minfo) else
-	  let id_ = id ^ (getSortNameSuffix insttv) in
-	  let fun = Embedded (if modifyConstructors? then id_ else id) in
-	  %let _ = writeLine("Generated: "^ printTerm(mkEmbedded(id_, srt1))) in
+	  let id2 = id ^ (getSortNameSuffix insttv) in
+	  let fun = Embedded (if modifyConstructors? then id2 else id) in
+	  %let _ = writeLine("Generated: "^ printTerm(mkEmbedded(id2, srt1))) in
 	  (fun, srt1, minfo)
        %| Boolean is same as default case
 	| _ -> (fun, srt1, minfo))
