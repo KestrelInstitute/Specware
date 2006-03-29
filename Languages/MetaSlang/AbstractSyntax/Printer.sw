@@ -99,8 +99,8 @@ AnnTermPrinter qualifying spec {
               qualifier = "Nat"       or 
               qualifier = "String"    or
               qualifier = "Integer"   or
-	      qualifier = "Integer_"   or ; deprecated, will soon be impossible
-	      qualifier = "IntegerAux" or ; replacement for "Integer_"
+	      qualifier = "Integer_"   or % deprecated, will soon be impossible
+	      qualifier = "IntegerAux" or % replacement for "Integer_"
               qualifier = "General"   or
               qualifier = "Char"      or
               qualifier = "List" 
