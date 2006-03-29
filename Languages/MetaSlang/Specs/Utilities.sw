@@ -970,7 +970,7 @@ Utilities qualifying spec
  op  sortFromField: List(Id * MS.Term) * Sort -> Sort
  def sortFromField(fields,defaultS) =
    case fields
-     of (_,Fun(_,s,_))::_-> s
+     of (_,Fun(_,s,_)) :: _ -> s
       | _ -> defaultS
 
  def sortFromArg(arg: MS.Term,defaultS:Sort): Sort =
