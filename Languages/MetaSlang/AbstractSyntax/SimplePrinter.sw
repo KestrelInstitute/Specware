@@ -440,7 +440,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
       | mystery -> fail ("No match in ppAFun with: '" ^ (anyToString mystery) ^ "'")
 
-  def omittedQualifiers = ["Integer","Nat","Double","List","String","Char"]  % "Integer_" "Option" ...?
+  def omittedQualifiers = ["Integer","Nat","Double","List","String","Char"]  % "IntegerAux" "Option" ...?
 
   op ppQualifiedId : QualifiedId -> Pretty
   def ppQualifiedId (Qualified (qualifier,id)) =
