@@ -1,5 +1,5 @@
 (defpackage "INTEGER-SPEC")
-(defpackage :Integer_)
+(defpackage :IntegerAux)
 (IN-PACKAGE "INTEGER-SPEC")
 
 
@@ -31,7 +31,7 @@
   (declare (integer x))
   (the-int (- 0 x)))
 
-(defun Integer_::|!-| (x)
+(defun IntegerAux::|!-| (x)
   (declare (integer x))
   (the-int (- 0 x)))
 

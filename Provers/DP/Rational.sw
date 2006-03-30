@@ -25,7 +25,7 @@ Rational qualifying spec
   op intToRat: Integer -> Rational
   op ratToInt : Rational -> Integer
 
-  op Rational_.- : Rational -> Rational
+  op RationalAux.- : Rational -> Rational
 
   op equal: Rational * Rational -> Boolean
   def equal(r1, r2) = (r1 = r2)

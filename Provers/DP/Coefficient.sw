@@ -1,6 +1,6 @@
 Coef qualifying spec
 
-  type Coef_.Coef
+  type CoefAux.Coef
   op zero: Coef
   op one: Coef
   op minusOne: Coef
@@ -9,9 +9,9 @@ Coef qualifying spec
 
   op nonNegative?: Coef -> Boolean
 
-  type Coef_.NonNegativeCoef = (Coef | nonNegative?)
+  type CoefAux.NonNegativeCoef = (Coef | nonNegative?)
 
-  op Coef_.- : Coef -> Coef
+  op CoefAux.- : Coef -> Coef
   op +   infixl 25 : Coef * Coef -> Coef
   op -   infixl 25 : Coef * Coef -> Coef
   op *   infixl 27 : Coef * Coef -> Coef

@@ -1,5 +1,5 @@
 (defpackage "RATIONAL-SPEC")
-(defpackage :Rational_)
+(defpackage :RationalAux)
 (IN-PACKAGE "RATIONAL-SPEC")
 
 
@@ -42,7 +42,7 @@
   (declare (rational x))
   (the-rat (- 0 x)))
 
-(defun Rational_::|!-| (x)
+(defun RationalAux::|!-| (x)
   (declare (rational x))
   (the-rat (- 0 x)))
 
