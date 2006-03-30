@@ -8,7 +8,7 @@
    :size-of-character-set       128
    ;;
    :word-symbol-start-chars     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-   :word-symbol-continue-chars  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz?_0123456789'"
+   :word-symbol-continue-chars  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz?0123456789'"
    ;;
    :non-word-symbol-start-chars    "!@$^&*~+-=|<>/:\\`?'"  ; note: we need to repeat \ here, since lisp removes one
    :non-word-symbol-continue-chars "!@$^&*~+-=|<>/:\\`?'"  ; note: we need to repeat \ here, since lisp removes one
@@ -33,8 +33,8 @@
    ;; Fri Apr 23 17:00:23 PDT 2004
    ;; "type" is now just a keyword synonym for "sort", and is no longer a symbol
 
-   :ad-hoc-keywords             '("end-spec" "_" ".." "reduce" "expand") ; "using" "options" 
-   :ad-hoc-symbols              '("__" "reduce" "expand")                ; "using" "options" 
+   :ad-hoc-keywords             '("end-spec" ".." "reduce" "expand") ; "using" "options" ; "_" 
+   :ad-hoc-symbols              '("reduce" "expand")                 ; "using" "options" ; "__" 
    :ad-hoc-numbers              '()
    ;;
    :comment-to-eol-chars        "%"
@@ -48,6 +48,7 @@
    ;;
    :case-sensitive?             t
    ;;
+   ;; Underbar #\_ is implicitly given its own code as a syllable separator
    ))
 
 

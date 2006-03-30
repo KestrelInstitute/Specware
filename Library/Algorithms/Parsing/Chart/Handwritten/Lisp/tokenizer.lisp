@@ -76,6 +76,7 @@
     (assign-tokenizer-codes whitespace-table number-continue-chars          +number-continue-code+)
     ;; codes that are legal after whitespace is started:
     (assign-tokenizer-code  whitespace-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
+    (assign-tokenizer-code  whitespace-table #\_                            +wildcard-code+)           ; first, so it can be overridden
     (assign-tokenizer-codes whitespace-table word-symbol-start-chars        +word-symbol-start-code+)
     (assign-tokenizer-codes whitespace-table non-word-symbol-start-chars    +non-word-symbol-start-code+)
     (assign-tokenizer-codes whitespace-table number-start-chars             +number-start-code+)
@@ -92,6 +93,7 @@
     (assign-tokenizer-codes word-symbol-table non-word-symbol-continue-chars +non-word-symbol-continue-code+)
     ;; codes that are legal after a word symbol is started:
     (assign-tokenizer-code  word-symbol-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
+    (assign-tokenizer-code  word-symbol-table #\_                            +syllable-separator-code+) ; first, so it can be overridden
     (assign-tokenizer-codes word-symbol-table non-word-symbol-start-chars    +non-word-symbol-start-code+)
     (assign-tokenizer-codes word-symbol-table number-start-chars             +number-start-code+) ; probably overridden by +word-symbol-continue-code+
     (assign-tokenizer-code  word-symbol-table string-quote-char              +string-quote-code+)
@@ -108,6 +110,7 @@
     (assign-tokenizer-codes non-word-symbol-table word-symbol-continue-chars     +word-symbol-continue-code+)
     ;; codes that are legal after a non-word symbol is started:
     (assign-tokenizer-code  non-word-symbol-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
+    (assign-tokenizer-code  non-word-symbol-table #\_                            +syllable-separator-code+) ; first, so it can be overridden
     (assign-tokenizer-codes non-word-symbol-table word-symbol-start-chars        +word-symbol-start-code+)
     (assign-tokenizer-codes non-word-symbol-table number-start-chars             +number-start-code+) ; proably survive as final code 
     (assign-tokenizer-code  non-word-symbol-table string-quote-char              +string-quote-code+)
@@ -122,6 +125,7 @@
     (assign-tokenizer-codes number-table number-start-chars              +number-start-code+)
     (assign-tokenizer-codes number-table word-symbol-continue-chars      +word-symbol-continue-code+)
     (assign-tokenizer-codes number-table non-word-symbol-continue-chars  +non-word-symbol-continue-code+)
+    (assign-tokenizer-code  number-table #\_                             +syllable-separator-code+) ; first, so it can be overridden
     ;; codes that are illegal after a number is started, but might become legal:
     (assign-tokenizer-codes number-table word-symbol-start-chars         +word-symbol-start-code+)
     (assign-tokenizer-codes number-table non-word-symbol-start-chars     +non-word-symbol-start-code+)
@@ -201,6 +205,8 @@
 			(,+comment-to-eol-code+           . +comment-to-eol-code+)
 			(,+whitespace-code+               . +whitespace-code+)
 			(,+char-literal-start-code+       . +char-literal-start-code+)
+			(,+syllable-separator-code+       . +syllable-separator-code+)
+			(,+wildcard-code+                 . +wildcard-code+)
 			(0                                . "...")
 			)))
 	   (comment "============================================================================")
@@ -353,8 +359,7 @@
 		     (return nil))
 		    (t
 		     (push (list (or (and (or (eq type :AD-HOC) 
-					      (eq type :WORD-SYMBOL)
-					      (eq type :NON-WORD-SYMBOL))
+					      (eq type :SYMBOL))
 					  (gethash value ht-ad-hoc-types))
 				     type)
 				 value 
@@ -517,11 +522,13 @@
 				  (when (or (and (or (eq this-char-dispatch-code #.+word-symbol-start-code+)
 						     (eq this-char-dispatch-code #.+word-symbol-continue-code+))
 						 (or (eq next-char-dispatch-code #.+word-symbol-start-code+)
-						     (eq next-char-dispatch-code #.+word-symbol-continue-code+)))
+						     (eq next-char-dispatch-code #.+word-symbol-continue-code+)
+						     (eq next-char-dispatch-code #.+syllable-separator-code+)))
 					    (and (or (eq this-char-dispatch-code #.+non-word-symbol-start-code+)
 						     (eq this-char-dispatch-code #.+non-word-symbol-continue-code+))
 						 (or (eq next-char-dispatch-code #.+non-word-symbol-start-code+)
-						     (eq next-char-dispatch-code #.+non-word-symbol-continue-code+))))
+						     (eq next-char-dispatch-code #.+non-word-symbol-continue-code+)
+						     (eq next-char-dispatch-code #.+syllable-separator-code+))))
 				    ;; put back all but the first char of the ad-hoc-string
 				    (let ((n (1- (length ad-hoc-string))))
 				      (dotimes (i n)
@@ -573,6 +580,7 @@
 	  ;; normal termination
 	  (#.+word-symbol-start-code+        (go start-word-symbol))
 	  (#.+non-word-symbol-start-code+    (go start-non-word-symbol))
+	  (#.+wildcard-code+                 (go start-wildcard))
 	  (#.+number-start-code+             (go start-number))
 	  (#.+string-quote-code+             (go start-string))
 	  (#.+separator-code+                (go start-separator))
@@ -634,12 +642,36 @@
 	;;
 	(set-first-positions)
 	;; 
-	(return-values :NON-WORD-SYMBOL (svref separator-tokens char-code))
+	(return-values :SYMBOL (svref separator-tokens char-code))
 	;;
+	;; ======================================================================
+	;;                 WILDCARD (single underbar), but also __, ___, etc.
+	;; ======================================================================
+	;; 
+       start-wildcard
+	;;
+	(set-first-positions)
+	;;
+       extend-wildcard
+	;; 
+	(push char token-chars)
+	(set-last-positions)
+	(local-read-char char char-code
+			 (go terminate-word-symbol-with-eof)
+			 ()
+			 (go terminate-word-symbol-with-extended-comment))
+
+	(case (svref whitespace-table char-code)
+	  (#.+wildcard-code+ (go extend-wildcard)))
+
+	(local-unread-char char)
+	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
+
 	;; ======================================================================
 	;;                 WORD-SYMBOL
 	;; ======================================================================
 	;; 
+
        start-word-symbol
 	;;
 	(set-first-positions)
@@ -659,6 +691,7 @@
 	(case (svref word-symbol-table char-code)
 	  ;; majority
 	  (#.+word-symbol-continue-code+     (go extend-word-symbol))
+	  (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
 	  ;; normal termination
 	  (#.+whitespace-code+               (go terminate-word-symbol-with-whitespace))
 	  ;; less likely 
@@ -675,13 +708,16 @@
 	  (#.+number-continue-code+          (go terminate-word-symbol-with-continue-number)) 
 	  (otherwise                         (go unrecognized-char-while-scanning-word-symbol)))
 
+       terminate-word-symbol-with-start-non-word-symbol
+        (go terminate-word-symbol)
+
        unrecognized-char-while-scanning-word-symbol
 	(termination-warning char char-code "word symbol" "" ", which is unrecognized")
 	(go terminate-word-symbol)
 	;;
        terminate-word-symbol-with-continue-number ; weird
 	(termination-warning char char-code "word symbol" "" ", which can continue but not start  a number")
-	(return-values-using-prior-last :WORD-SYMBOL (coerce (nreverse token-chars) 'string))
+	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
 	;;
        terminate-word-symbol-with-continue-non-word-symbol ; weird
 	(termination-warning char char-code "word symbol" "" ", which can continue but not start a non-word symbol")
@@ -695,7 +731,7 @@
 	;;(termination-warning char char-code "word symbol" "" "is a beginning of a number")
 	(go terminate-word-symbol)
 	;;
-       terminate-word-symbol-with-start-non-word-symbol
+
        terminate-word-symbol-with-start-separator
        terminate-word-symbol-with-start-string
        terminate-word-symbol-with-start-char-literal
@@ -713,7 +749,7 @@
 	;;
        terminate-word-symbol-with-eof
 	;; 
-	(return-values-using-prior-last :WORD-SYMBOL (coerce (nreverse token-chars) 'string))
+	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
 	;;
 	;; ======================================================================
 	;; NON-WORD-SYMBOL
@@ -735,6 +771,7 @@
 	(case (svref non-word-symbol-table char-code)
 	  ;; majority
 	  (#.+non-word-symbol-continue-code+ (go extend-non-word-symbol))
+	  (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
 	  ;; non-word termination
 	  (#.+whitespace-code+               (go terminate-non-word-symbol-with-whitespace))
 	  ;; less likely 
@@ -757,14 +794,12 @@
 	;;
        terminate-non-word-symbol-with-continue-number ; weird
 	(termination-warning char char-code "non-word symbol" "" ", which can continue but not start a number")
-	(return-values-using-prior-last :NON-WORD-SYMBOL (coerce (nreverse token-chars) 'string))
+	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
 	;;
        terminate-non-word-symbol-with-continue-word-symbol 
-	;;   this may happen in patterns, e.g. (y::_), where :: means a cons pattern, and underbar is a special keyword to match anything
-	;;   it also may happen with forms like ::?, where the question mark is dubious, hence:
-	(unless (eq char #\_)
-	  (termination-warning char char-code "non-word symbol" "" ", which can continue but not start a word symbol"))
-	(go terminate-non-word-symbol)
+       ;;   with forms such as "::?", where the question mark is dubious, print a warning
+        (termination-warning char char-code "non-word symbol" "" ", which can continue but not start a word symbol")
+        (go terminate-non-word-symbol)
 	;;
        terminate-non-word-symbol-with-start-non-word-symbol
 	(termination-warning char char-code "non-word symbol" "" ", which can start a non-word symbol but not continue one")
@@ -792,7 +827,38 @@
 	;;
        terminate-non-word-symbol-with-eof
 	;; 
-	(return-values-using-prior-last :NON-WORD-SYMBOL (coerce (nreverse token-chars) 'string))
+	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
+
+	;; ======================================================================
+	;;                 SYLLABLE
+	;; ======================================================================
+	;; 
+       extend-symbol-with-new-syllable
+
+	(push char token-chars)
+	(set-last-positions)
+	(local-read-char char char-code
+			 (go terminate-word-symbol-with-eof)
+			 ()
+			 (go terminate-word-symbol-with-extended-comment))
+	;; 
+	(case (svref word-symbol-table char-code)
+	  ;; normal continutation
+	  (#.+word-symbol-start-code+        (go extend-word-symbol))
+	  (#.+word-symbol-continue-code+     (go extend-word-symbol))
+	  (#.+non-word-symbol-start-code+    (go extend-non-word-symbol))
+	  (#.+non-word-symbol-continue-code+ (go extend-non-word-symbol))
+	  (#.+wildcard-code+                 (go extend-symbol-with-new-syllable))
+	  ;; 
+	  (otherwise                         (go terminate-symbol-but-preserve-wildcard)))
+
+       terminate-symbol-but-preserve-wildcard
+
+	(local-unread-char char)
+	(local-unread-char #\_)
+ 	(return-values-using-prior-last :SYMBOL (coerce (nreverse (cdr token-chars)) 'string))
+
+
 	;;
 	;; ======================================================================
 	;;                 CHARACTER

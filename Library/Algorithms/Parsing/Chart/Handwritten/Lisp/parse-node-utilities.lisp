@@ -136,7 +136,7 @@
 						(gethash (second token) ht-string-to-keyword-rules)
 					      nil)))
 		(case (first token) 
-		  ((:WORD-SYMBOL :NON-WORD-SYMBOL)             
+		  (:SYMBOL ; (:WORD-SYMBOL :NON-WORD-SYMBOL)             
 		   (cond ((null specific-keyword-rule)
 			  (add-partial-node session generic-symbol-rule   forward-node 0))
 			 (keywords-are-keywords-only?

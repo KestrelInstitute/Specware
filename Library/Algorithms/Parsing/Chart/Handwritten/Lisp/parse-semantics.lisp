@@ -253,8 +253,9 @@
     (parser-token-rule
      (let ((token-type  (first  node-semantics))
 	   (token-value (second node-semantics)))
-       (cond ((member token-type '(:WORD-SYMBOL 
-				   :NON-WORD-SYMBOL 
+       (cond ((member token-type '(:SYMBOL
+				   ; :WORD-SYMBOL 
+				   ; :NON-WORD-SYMBOL 
 				   :AD-HOC-SYMBOL-ONLY 
 				   :AD-HOC-KEYWORD-AND-SYMBOL-ONLY 
 				   :AD-HOC-SYMBOL-AND-NUMBER-ONLY

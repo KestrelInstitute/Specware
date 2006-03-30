@@ -23,6 +23,9 @@
 (defconstant +comment-to-eol-code+           13)
 (defconstant +char-literal-start-code+       14)
 
+(defconstant +syllable-separator-code+       15)  ; underbar in some contexts
+(defconstant +wildcard-code+                 16)  ; underbar in other contexts
+
 (defconstant +maybe-open-comment-code+       -1)
 (defconstant +maybe-start-of-ad-hoc-token+   -2)
 
