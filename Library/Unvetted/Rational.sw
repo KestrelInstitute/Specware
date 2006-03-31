@@ -68,10 +68,10 @@ RationalNumber qualifying spec
 
   % arithmetic:
 
-  op Rational_.- : Rational -> Rational
+  op RationalAux.- : Rational -> Rational
      % qualifier needed to avoid confusion with binary -;
      % ending "_" to minimize conflicts with user-defined qualifiers
-  def Rational_.- r = choose equiv? (fn(num,den) -> rational (-num, den)) r
+  def RationalAux.- r = choose equiv? (fn(num,den) -> rational (-num, den)) r
 
   op + infixl 25 : Rational * Rational -> Rational
   def + (r1,r2) =

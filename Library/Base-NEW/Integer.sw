@@ -18,7 +18,7 @@ Integer qualifying spec
   type Nat.Nat = (Integer | natural?)
 
   % unary minus:
-  op Integer_.- : Integer -> Integer
+  op IntegerAux.- : Integer -> Integer
      % qualifier needed to avoid confusion with binary -;
      % ending "_" to avoid conflicts with user-defined qualifiers
 

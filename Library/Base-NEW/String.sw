@@ -135,7 +135,7 @@ String qualifying spec
   def Integer.stringToInt s =
     let firstchar::_ = explode s in
     if firstchar = #-
-    then Integer_.- (stringToNat(substring(s,1,length s)))
+    then IntegerAux.- (stringToNat(substring(s,1,length s)))
     else stringToNat s
 
   op Nat.natToString : Nat -> String
