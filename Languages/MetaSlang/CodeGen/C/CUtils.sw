@@ -411,7 +411,9 @@ CUtils qualifying spec {
   def printCTypes sep types =
     (foldl (fn(t,s) -> s^sep^(printCType t)) "" types)
 
-  op printCSpecToX: CSpec * String * Boolean * (|File|Terminal|String)-> String
+  type Destination = | File | Terminal | String
+
+  op printCSpecToX: CSpec * String * Boolean * Destination -> String
   def printCSpecToX (cspc,fname,asHeader,X) =
     let pr = if asHeader
 	     then CPrint.ppHeaderSpec(cspc)
