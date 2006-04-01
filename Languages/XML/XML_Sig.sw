@@ -133,7 +133,7 @@ XML qualifying spec
   %%  [K1]  document  ::=  XMLDecl? MiscList doctypedecl? MiscList element MiscList
   %% -------------------------------------------------------------------------------------------------
 
-  sort Document = {xmldecl : Option XMLDecl,
+  type Document = {xmldecl : Option XMLDecl,
 		   misc1   : MiscList,
 		   dtd     : DocTypeDecl,
 		   misc2   : MiscList,
@@ -144,13 +144,13 @@ XML qualifying spec
   %%  [K2]  MiscList  ::=  Misc*
   %% -------------------------------------------------------------------------------------------------
 
-  sort MiscList = List Misc
+  type MiscList = List Misc
 
   %% -------------------------------------------------------------------------------------------------
   %%  [27]  Misc      ::=  Comment | PI | S
   %% -------------------------------------------------------------------------------------------------
 
-  sort Misc = | Comment     Comment
+  type Misc = | Comment     Comment
               | PI          PI
               | WhiteSpace  WhiteSpace
 
@@ -205,7 +205,7 @@ XML qualifying spec
   %%    to treat XMLDecl as a special case of ElementTag (as opposed to being a special case of PI).
   %% -------------------------------------------------------------------------------------------------
 
-  sort XMLDecl = (ElementTag | well_formed_xml_decl?)
+  type XMLDecl = (ElementTag | well_formed_xml_decl?)
 
   def well_formed_xml_decl? tag =
     (tag.prefix  = ustring "?") &
@@ -233,7 +233,7 @@ XML qualifying spec
   %%    TextDecl  ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
   %% -------------------------------------------------------------------------------------------------
 
-  sort TextDecl = (ElementTag | well_formed_text_decl?) % similar to XMLDecl
+  type TextDecl = (ElementTag | well_formed_text_decl?) % similar to XMLDecl
 
   def well_formed_text_decl? tag =
     (tag.prefix = ustring "?") &
@@ -330,7 +330,7 @@ XML qualifying spec
   %%  [K5]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix
   %% -------------------------------------------------------------------------------------------------
 
-  sort ElementTag = {prefix     : ElementTagPrefix,
+  type ElementTag = {prefix     : ElementTagPrefix,
 		     name       : ElementName,
 		     attributes : ElementAttributes,
 		     whitespace : WhiteSpace,
@@ -340,7 +340,7 @@ XML qualifying spec
   %%  [K6]  ElementTagPrefix   ::=  ( '?' | '/'  | '' )
   %% -------------------------------------------------------------------------------------------------
 
-  sort ElementTagPrefix = (UChars | element_tag_prefix?)
+  type ElementTagPrefix = (UChars | element_tag_prefix?)
 
   def element_tag_prefix?  (prefix : UChars) : Boolean =
     case prefix of
@@ -353,13 +353,13 @@ XML qualifying spec
   %%  [K7]  ElementName        ::=  NmToken
   %% -------------------------------------------------------------------------------------------------
 
-  sort ElementName = NmToken
+  type ElementName = NmToken
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K8]  ElementAttributes  ::=  List ElementAttribute
   %% -------------------------------------------------------------------------------------------------
 
-  sort ElementAttributes = List ElementAttribute
+  type ElementAttributes = List ElementAttribute
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K9]  ElementAttribute   ::=  S NmToken S? '=' S? AttValue
@@ -378,7 +378,7 @@ XML qualifying spec
   %%  [Definition: If the entity is not internal, it is an external entity, ...]
   %% -------------------------------------------------------------------------------------------------
 
-  sort ElementAttribute = {w1    : WhiteSpace,
+  type ElementAttribute = {w1    : WhiteSpace,
 			   name  : NmToken,
 			   w2    : WhiteSpace,
 			   %% =
@@ -452,7 +452,7 @@ XML qualifying spec
   %% [K10]  ElementTagPostfix  ::=  ( '?' | '/'  | '' )
   %% -------------------------------------------------------------------------------------------------
 
-  sort ElementTagPostfix = (UChars | element_tag_postfix?)
+  type ElementTagPostfix = (UChars | element_tag_postfix?)
 
   def element_tag_postfix?  (postfix : UChars) : Boolean =
     case postfix of
@@ -557,14 +557,14 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   %% This is the logical DTD:
-  sort DocTypeDecl = {internal : Option InternalDTD,
+  type DocTypeDecl = {internal : Option InternalDTD,
 		      external : Option ExternalDTD,
 		      entities : List ExtParsedEnt}           % external general parsed entities
 
   %% This is the physical internal subset we parse first:
   %% The ExternalId is a URI used to locate the external subset,
   %% which is parsed according to rule K15.
-  sort InternalDTD = {w1          : WhiteSpace,
+  type InternalDTD = {w1          : WhiteSpace,
 		      name        : Name,
 		      %% Note: w2 is None exactly when external_id is None
 		      w2          : Option WhiteSpace,
@@ -611,7 +611,7 @@ XML qualifying spec
   %%  [K12]  InternalDecls    ::=  '[' InternalDecl* ']' S?
   %% -------------------------------------------------------------------------------------------------
 
-  sort InternalDecls = {decls : List InternalDecl,
+  type InternalDecls = {decls : List InternalDecl,
 			w1    : WhiteSpace}
 
   %% -------------------------------------------------------------------------------------------------
@@ -623,7 +623,7 @@ XML qualifying spec
   %%    InternalDecl ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S
   %% -------------------------------------------------------------------------------------------------
 
-  sort InternalDecl = (Decl | internal_decl?)
+  type InternalDecl = (Decl | internal_decl?)
 
   def internal_decl? (decl : Decl) : Boolean =
     case decl of
@@ -654,7 +654,7 @@ XML qualifying spec
   %%  confused by the similarity of the two subsets.)
   %% -------------------------------------------------------------------------------------------------
 
-  sort Decl = %% *[29] markupdecl
+  type Decl = %% *[29] markupdecl
               | Element     ElementDecl
               | Attributes  AttlistDecl
               | Entity      EntityDecl    % [WFC: PEs in Internal Subset]
@@ -732,26 +732,26 @@ XML qualifying spec
   %%  [K15]  ExternalDTD         ::=  TextDecl? ExternalDecls
   %% -------------------------------------------------------------------------------------------------
 
-  sort ExternalDTD = {textdecl : Option TextDecl,
+  type ExternalDTD = {textdecl : Option TextDecl,
 		      decls    : ExternalDecls}
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K16]  ExternalDecls       ::=  ExternalDecl*
   %% -------------------------------------------------------------------------------------------------
 
-  sort ExternalDecls = List ExternalDecl
+  type ExternalDecls = List ExternalDecl
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K17]  ExternalDecl        ::=  Decl
   %% -------------------------------------------------------------------------------------------------
 
-  sort ExternalDecl = Decl
+  type ExternalDecl = Decl
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K18]  includeSect         ::=  '<![' S? 'INCLUDE' S? '[' ExternalDecls ']]>'
   %% -------------------------------------------------------------------------------------------------
 
-  sort IncludeSect = {w1    : WhiteSpace,
+  type IncludeSect = {w1    : WhiteSpace,
 		      w2    : WhiteSpace,
 		      decls : ExternalDecls}
 
@@ -759,7 +759,7 @@ XML qualifying spec
   %%  [K19]  ignoreSect          ::=  '<![' S? 'IGNORE' S? '[' ignoreSectContents ']]>'
   %% -------------------------------------------------------------------------------------------------
 
-  sort IgnoreSect = {w1       : WhiteSpace,
+  type IgnoreSect = {w1       : WhiteSpace,
           	     w2       : WhiteSpace,
 		     contents : IgnoreSectContents}
 
@@ -767,14 +767,14 @@ XML qualifying spec
   %%   [64]  ignoreSectContents  ::=  Ignore ('<![' ignoreSectContents ']]>' Ignore)*
   %% -------------------------------------------------------------------------------------------------
 
-  sort IgnoreSectContents = {prefix   : Ignore,
+  type IgnoreSectContents = {prefix   : Ignore,
 			     contents : List (IgnoreSectContents * Ignore)}
 
   %% -------------------------------------------------------------------------------------------------
   %%   [65]  Ignore              ::=  Char* - (Char* ('<![' | ']]>') Char*)
   %% -------------------------------------------------------------------------------------------------
 
-  sort Ignore = (UChars | ignorable?)
+  type Ignore = (UChars | ignorable?)
 
   def ignorable? uchars =
     (~ (sublist? (ustring "<![", uchars)))
@@ -840,7 +840,7 @@ XML qualifying spec
   %%   [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>'
   %% -------------------------------------------------------------------------------------------------
 
-  sort ElementDecl = {w1       : WhiteSpace,
+  type ElementDecl = {w1       : WhiteSpace,
 		      name     : Name,
 		      w2       : WhiteSpace,
 		      contents : ContentSpec,
@@ -850,7 +850,7 @@ XML qualifying spec
   %%   [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children
   %% -------------------------------------------------------------------------------------------------
 
-  sort ContentSpec = | Empty
+  type ContentSpec = | Empty
                      | Any
                      | Mixed    Mixed
                      | Children Children
@@ -865,7 +865,7 @@ XML qualifying spec
   %%    must be a choice or seq, not a simple name.
   %% -------------------------------------------------------------------------------------------------
 
-  sort Children = (CP | well_formed_children?)
+  type Children = (CP | well_formed_children?)
 
   def well_formed_children? cp =
     case cp.body of
@@ -877,14 +877,14 @@ XML qualifying spec
   %%  [K21]  cp           ::=  cpbody Repeater
   %% -------------------------------------------------------------------------------------------------
 
-  sort CP = {body     : CPBody,
+  type CP = {body     : CPBody,
 	     repeater : Repeater}
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K22]  cpbody       ::=  Name | choice | seq
   %% -------------------------------------------------------------------------------------------------
 
-  sort CPBody = | Name   Name
+  type CPBody = | Name   Name
                 | Choice Choice
                 | Seq    Seq
 
@@ -892,19 +892,19 @@ XML qualifying spec
   %%  [K23]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')'
   %% -------------------------------------------------------------------------------------------------
 
-  sort Choice = {alternatives : NE_List (WhiteSpace * CP * WhiteSpace)}
+  type Choice = {alternatives : NE_List (WhiteSpace * CP * WhiteSpace)}
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K24]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')'
   %% -------------------------------------------------------------------------------------------------
 
-  sort Seq    = {items        :    List (WhiteSpace * CP * WhiteSpace)}
+  type Seq    = {items        :    List (WhiteSpace * CP * WhiteSpace)}
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K25]  Repeater     ::=  ('?' | '*' | '+' | '')
   %% -------------------------------------------------------------------------------------------------
 
-  sort Repeater = | ZeroOrOne | ZeroOrMore | OneOrMore | One
+  type Repeater = | ZeroOrOne | ZeroOrMore | OneOrMore | One
 
   %% -------------------------------------------------------------------------------------------------
   %%   [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')'
@@ -912,7 +912,7 @@ XML qualifying spec
   %%  Note: if the list is empty, it ends with ")", if non-empty, ")*"
   %% -------------------------------------------------------------------------------------------------
 
-  sort Mixed = {w1    : WhiteSpace,
+  type Mixed = {w1    : WhiteSpace,
 		names : List (WhiteSpace * WhiteSpace * Name),
 		w2    : WhiteSpace}
 
@@ -991,7 +991,7 @@ XML qualifying spec
   %%   [52]  AttlistDecl     ::=  '<!ATTLIST' S Name AttDef* S? '>'
   %% -------------------------------------------------------------------------------------------------
 
-  sort AttlistDecl = {w1   : WhiteSpace,
+  type AttlistDecl = {w1   : WhiteSpace,
 		      name : Name,        % of element type
 		      defs : List AttDef,
 		      w2   : WhiteSpace}
@@ -1000,7 +1000,7 @@ XML qualifying spec
   %%   [53]  AttDef          ::=  S Name S AttType S DefaultDecl
   %% -------------------------------------------------------------------------------------------------
 
-  sort AttDef = {w1       : WhiteSpace,
+  type AttDef = {w1       : WhiteSpace,
 		 name     : Name,
 		 w2       : WhiteSpace,
 		 att_type : AttType,
@@ -1022,7 +1022,7 @@ XML qualifying spec
   %%                            | Enumeration
   %% -------------------------------------------------------------------------------------------------
 
-  sort AttType = %% flatten *[54]  AttType  ::=  StringType | TokenizedType | EnumeratedType
+  type AttType = %% flatten *[54]  AttType  ::=  StringType | TokenizedType | EnumeratedType
                  %% *[55] StringType
                  | String
                  %% *[56] TokenizedType
@@ -1041,7 +1041,7 @@ XML qualifying spec
   %%   [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')'
   %% -------------------------------------------------------------------------------------------------
 
-  sort NotationType = {w1     : WhiteSpace,
+  type NotationType = {w1     : WhiteSpace,
 		       w2     : WhiteSpace,
 		       first  : Name,
 		       others : List (WhiteSpace * WhiteSpace * Name),
@@ -1051,7 +1051,7 @@ XML qualifying spec
   %%   [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')'
   %% -------------------------------------------------------------------------------------------------
 
-  sort Enumeration = {w1     : WhiteSpace,
+  type Enumeration = {w1     : WhiteSpace,
 		      first  : NmToken,
 		      others : List (WhiteSpace * WhiteSpace * NmToken),
 		      w2     : WhiteSpace}
@@ -1060,7 +1060,7 @@ XML qualifying spec
   %%   [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue)
   %% -------------------------------------------------------------------------------------------------
 
-  sort DefaultDecl = | Required
+  type DefaultDecl = | Required
                      | Implied
                      | Fixed    (Option WhiteSpace) * AttValue
 
@@ -1183,14 +1183,14 @@ XML qualifying spec
   %%   [70]  EntityDecl     ::=  GEDecl | PEDecl
   %% -------------------------------------------------------------------------------------------------
 
-  sort EntityDecl = | GE GEDecl
+  type EntityDecl = | GE GEDecl
                     | PE PEDecl
 
   %% -------------------------------------------------------------------------------------------------
   %%   [71]  GEDecl         ::=  '<!ENTITY' S       Name S EntityDef S? '>'
   %% -------------------------------------------------------------------------------------------------
 
-  sort GEDecl = {w1   : WhiteSpace,
+  type GEDecl = {w1   : WhiteSpace,
 		 name : Name,
 		 w2   : WhiteSpace,
 		 edef : EntityDef,
@@ -1205,7 +1205,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   %%  See associated parameter-entity symbol table in monad.
-  sort PEDecl = {w1    : WhiteSpace,
+  type PEDecl = {w1    : WhiteSpace,
 		 w2    : WhiteSpace,
 		 name  : Name,
 		 w3    : WhiteSpace,
@@ -1236,7 +1236,7 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  sort EntityDef = | Value    EntityValue
+  type EntityDef = | Value    EntityValue
                    | External (ExternalID * Option NDataDecl)
 
   %% -------------------------------------------------------------------------------------------------
@@ -1259,14 +1259,14 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  sort PEDef = | Value    EntityValue
+  type PEDef = | Value    EntityValue
                | External ExternalID
 
   %% -------------------------------------------------------------------------------------------------
   %%   [76]  NDataDecl      ::=  S 'NDATA' S Name
   %% -------------------------------------------------------------------------------------------------
 
-  sort NDataDecl = {w1   : WhiteSpace,
+  type NDataDecl = {w1   : WhiteSpace,
 		    w2   : WhiteSpace,
 		    name : Name}
 
@@ -1279,7 +1279,7 @@ XML qualifying spec
   %%    ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral
   %% -------------------------------------------------------------------------------------------------
 
-  sort ExternalID = (GenericID | well_formed_external_id?)
+  type ExternalID = (GenericID | well_formed_external_id?)
 
   def well_formed_external_id? generic =
     case generic.system of
@@ -1290,7 +1290,7 @@ XML qualifying spec
   %%  [K28]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %% -------------------------------------------------------------------------------------------------
 
-  sort GenericID = {w1     : WhiteSpace,
+  type GenericID = {w1     : WhiteSpace,
 		    public : Option PubidLiteral,
 		    w2     : WhiteSpace,
 		    system : Option SystemLiteral}
@@ -1299,7 +1299,7 @@ XML qualifying spec
   %%  [K29]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>'
   %% -------------------------------------------------------------------------------------------------
 
-  sort NotationDecl = {w1   : WhiteSpace,
+  type NotationDecl = {w1   : WhiteSpace,
 		       name : Name,
 		       w2   : WhiteSpace,
 		       id   : GenericID,
@@ -1325,14 +1325,14 @@ XML qualifying spec
   %%  [K30]  PI        ::= '<?' PITarget (S PIValue)? '?>'
   %% -------------------------------------------------------------------------------------------------
 
-  sort PI = {target : PITarget,
+  type PI = {target : PITarget,
 	     value  : Option (WhiteSpace * PIValue)}
 
   %% -------------------------------------------------------------------------------------------------
   %%   [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
   %% -------------------------------------------------------------------------------------------------
 
-  sort PITarget = (Name | pi_target?)
+  type PITarget = (Name | pi_target?)
 
   def pi_target? name =
     ~ (xml_prefix? name)
@@ -1341,7 +1341,7 @@ XML qualifying spec
   %%  [K31]  PIValue   ::= Char* - (Char* '?>' Char*)
   %% -------------------------------------------------------------------------------------------------
 
-  sort PIValue  = (UString | pi_value?)
+  type PIValue  = (UString | pi_value?)
 
   def pi_value? ustr =
     ~ (substring? (ustring "?>", ustr))
@@ -1424,10 +1424,10 @@ XML qualifying spec
   %%    The Name in an element's end-tag must match the element type in the start-tag.
   %% -------------------------------------------------------------------------------------------------
 
-  sort Element = | Empty EmptyElemTag
+  type Element = | Empty EmptyElemTag
                  | Full  (PossibleElement | element_types_match?)
 
-  sort PossibleElement = {stag    : STag,
+  type PossibleElement = {stag    : STag,
 			  content : Content,
 			  etag    : ETag}
 
@@ -1454,7 +1454,7 @@ XML qualifying spec
   %%    No attribute name may appear more than once in the same start-tag or empty-element tag.
   %% -------------------------------------------------------------------------------------------------
 
-  sort STag = ((ElementTag | well_formed_start_tag?) | unique_attributes?)
+  type STag = ((ElementTag | well_formed_start_tag?) | unique_attributes?)
 
   def well_formed_start_tag? tag =
     (null tag.prefix)          &
@@ -1497,7 +1497,7 @@ XML qualifying spec
   %%    where Name is not a variant of 'xml'
   %% ----------------------------------------------------------------------------------------------------
 
-  sort ETag = (ElementTag | well_formed_end_tag?)
+  type ETag = (ElementTag | well_formed_end_tag?)
 
   def well_formed_end_tag? tag =
     (tag.prefix = [47])        &
@@ -1509,14 +1509,14 @@ XML qualifying spec
   %%  [K34]  content       ::=  (CharData? content_item)* CharData?
   %% -------------------------------------------------------------------------------------------------
 
-  sort Content = {items   : List (Option CharData * Content_Item),
+  type Content = {items   : List (Option CharData * Content_Item),
 		  trailer : Option CharData}
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K35]  content_item  ::=  element | Reference | CDSect | PI | Comment
   %% -------------------------------------------------------------------------------------------------
 
-  sort Content_Item = | Element   Element
+  type Content_Item = | Element   Element
                       | Reference Reference
                       | CDSect    CDSect
                       | PI        PI
@@ -1537,7 +1537,7 @@ XML qualifying spec
   %%    No attribute name may appear more than once in the same start-tag or empty-element tag.
   %% -------------------------------------------------------------------------------------------------
 
-  sort EmptyElemTag = ((ElementTag | well_formed_empty_tag?) | unique_attributes?)
+  type EmptyElemTag = ((ElementTag | well_formed_empty_tag?) | unique_attributes?)
 
   def well_formed_empty_tag? tag =
     (null tag.prefix)          &
@@ -1560,7 +1560,7 @@ XML qualifying spec
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  sort ExtParsedEnt = {text    : TextDecl,
+  type ExtParsedEnt = {text    : TextDecl,
 		       content : Content}
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1600,7 +1600,7 @@ XML qualifying spec
   %%   [3]  S         ::=  (#x20 | #x9 | #xD | #xA)+
   %% -------------------------------------------------------------------------------------------------
 
-  sort WhiteSpace = (UChars | whitespace?)    %  [3]
+  type WhiteSpace = (UChars | whitespace?)    %  [3]
 
   def whitespace? (chars : UChars) : Boolean =
     all? white_char? chars
@@ -1611,7 +1611,7 @@ XML qualifying spec
   %%  [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
   %% -------------------------------------------------------------------------------------------------
 
-  sort CharData = (UString | char_data?)
+  type CharData = (UString | char_data?)
 
   def char_data? ustr =
     (all? char_data_char? ustr)                 % i.e.g, char?, but not '<' or '%'
@@ -1622,7 +1622,7 @@ XML qualifying spec
   %%  [15]  Comment   ::=  '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
   %% -------------------------------------------------------------------------------------------------
 
-  sort Comment = (UString | comment?)
+  type Comment = (UString | comment?)
 
   def comment? ustr =
     ~ (substring? (ustring "--", ustr))
@@ -1634,7 +1634,7 @@ XML qualifying spec
   %%  [21]  CDEnd     ::=  ']]>'
   %% -------------------------------------------------------------------------------------------------
 
-  sort CDSect = {cdata : (UString | cdata?)}
+  type CDSect = {cdata : (UString | cdata?)}
 
   def cdata? ustr =
     ~ (substring? (ustring "]]>", ustr))
@@ -1668,10 +1668,10 @@ XML qualifying spec
   %%    [9]  EntityValue     ::=  '"' ([^%&"] | PEReference | Reference)* '"'  |  "'" ([^%&'] | PEReference | Reference)* "'"
   %% -------------------------------------------------------------------------------------------------
 
-  sort EntityValue = {qchar : QuoteChar,
+  type EntityValue = {qchar : QuoteChar,
 		      items : List EntityValue_Item}
 
-  sort EntityValue_Item = | NonRef UString
+  type EntityValue_Item = | NonRef UString
                           | PERef  PEReference
                           | Ref    Reference
 
@@ -1688,18 +1688,18 @@ XML qualifying spec
   %%  TODO
   %% -------------------------------------------------------------------------------------------------
 
-  sort AttValue = {qchar : QuoteChar,
+  type AttValue = {qchar : QuoteChar,
 		   items : List AttValue_Item,
 		   value : UString} % result of concatenating all items, resolving refs along the way
 
-  sort AttValue_Item = | NonRef UString
+  type AttValue_Item = | NonRef UString
                        | Ref    Reference
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K37]  SystemLiteral   ::=  QuotedText
   %% -------------------------------------------------------------------------------------------------
 
-  sort SystemLiteral = QuotedText
+  type SystemLiteral = QuotedText
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K38]  PubidLiteral    ::=  QuotedText
@@ -1711,7 +1711,7 @@ XML qualifying spec
   %%    PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
   %% -------------------------------------------------------------------------------------------------
 
-  sort PubidLiteral  = (QuotedText | well_formed_pubid_literal?)
+  type PubidLiteral  = (QuotedText | well_formed_pubid_literal?)
 
   def well_formed_pubid_literal? quoted_text =
     (all? pubid_char? quoted_text.text)
@@ -1720,11 +1720,11 @@ XML qualifying spec
   %%  [K39]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'")
   %% -------------------------------------------------------------------------------------------------
 
-  sort QuotedText = (BoundedText | quoted_text?)
+  type QuotedText = (BoundedText | quoted_text?)
 
   def quoted_text? btext = ~ (member (btext.qchar, btext.text))
 
-  sort BoundedText = {qchar : QuoteChar,
+  type BoundedText = {qchar : QuoteChar,
 		      text  : UString}
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1788,7 +1788,8 @@ XML qualifying spec
   %%    Characters referred to using character references must match the production for Char.
   %% -------------------------------------------------------------------------------------------------
 
-  sort CharRef = {style : | Decimal | Hex,
+  type NumberBase = | Decimal | Hex
+  type CharRef = {style : NumberBase,
 		  %% note that char? can be true for large values (> 2^16) up to #x10FFFF
 		  char  : (UChar | char?)}
 
@@ -1796,7 +1797,7 @@ XML qualifying spec
   %%  [67]  Reference    ::=  EntityRef | CharRef
   %% -------------------------------------------------------------------------------------------------
 
-  sort Reference = | Entity EntityRef
+  type Reference = | Entity EntityRef
                    | Char   CharRef
 
   %% -------------------------------------------------------------------------------------------------
@@ -1829,7 +1830,7 @@ XML qualifying spec
   %%    indirectly.
   %% -------------------------------------------------------------------------------------------------
 
-  sort EntityRef = {name : (Name | entity_declared?)}
+  type EntityRef = {name : (Name | entity_declared?)}
 
   op entity_declared? : Name -> Boolean   % TODO -- tricky
 
@@ -1854,7 +1855,7 @@ XML qualifying spec
   %%  TODO
   %% -------------------------------------------------------------------------------------------------
 
-  sort PEReference = {name : Name}
+  type PEReference = {name : Name}
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Names                                                                               %%%
@@ -1890,7 +1891,7 @@ XML qualifying spec
   %%  [5]  Name      ::=  (Letter | '_' | ':') (NameChar)*
   %% -------------------------------------------------------------------------------------------------
 
-  sort Name  = (UString | name?)
+  type Name  = (UString | name?)
 
   def name? ustr =
     case ustr of
@@ -1904,13 +1905,13 @@ XML qualifying spec
   %%  [6]  Names     ::=  Name (S Name)*
   %% -------------------------------------------------------------------------------------------------
 
-  sort Names = Name * List (WhiteSpace * Name)
+  type Names = Name * List (WhiteSpace * Name)
 
   %% -------------------------------------------------------------------------------------------------
   %%  [7]  Nmtoken   ::=  (NameChar)+
   %% -------------------------------------------------------------------------------------------------
 
-  sort NmToken  = (UString | nm_token?)
+  type NmToken  = (UString | nm_token?)
 
   def nm_token? ustr =
     all? name_char? ustr
@@ -1919,7 +1920,7 @@ XML qualifying spec
   %%  [8]  Nmtokens  ::=  Nmtoken (S Nmtoken)*
   %% -------------------------------------------------------------------------------------------------
 
-  sort NmTokens = NmToken * List (WhiteSpace * NmToken)
+  type NmTokens = NmToken * List (WhiteSpace * NmToken)
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Chars                                                                               %%%
@@ -2087,21 +2088,21 @@ XML qualifying spec
     (char = UChar.double_quote) or
     (char = UChar.apostrophe)
 
-  sort WhiteChar            = (UChar | white_char?)            %  [3]
-  sort Letter               = (UChar | letter?)                %  [84]
-  sort BaseChar             = (UChar | base_char?)             %  [85]
-  sort IdeographicChar      = (UChar | ideographic_char?)      %  [86]
-  sort CombingingChar       = (UChar | combining_char?)        %  [87]
-  sort Digit                = (UChar | digit?)                 %  [88]
-  sort ExtenderChar         = (UChar | extender_char?)         %  [89]
-  sort NameChar             = (UChar | name_char?)             %  [4]
-  sort NameStartChar        = (UChar | name_start_char?)       %  [5]
-  sort PubidChar            = (UChar | pubid_char?)            %  [13]
-  sort HexDigit             = (UChar | hex_digit?)             %  [66]
-  sort VersionNumChar       = (UChar | version_num_char?)      % *[26]
-  sort EncNameChar          = (UChar | enc_name_char?)         % *[81]
-  sort LatinAlphabeticChar? = (UChar | latin_alphabetic_char?) % *[81]
-  sort QuoteChar            = (UChar | quote_char?)            %  [9] [10] *[11] *[12] *[24] *[32] *[80] [K37]
+  type WhiteChar            = (UChar | white_char?)            %  [3]
+  type Letter               = (UChar | letter?)                %  [84]
+  type BaseChar             = (UChar | base_char?)             %  [85]
+  type IdeographicChar      = (UChar | ideographic_char?)      %  [86]
+  type CombingingChar       = (UChar | combining_char?)        %  [87]
+  type Digit                = (UChar | digit?)                 %  [88]
+  type ExtenderChar         = (UChar | extender_char?)         %  [89]
+  type NameChar             = (UChar | name_char?)             %  [4]
+  type NameStartChar        = (UChar | name_start_char?)       %  [5]
+  type PubidChar            = (UChar | pubid_char?)            %  [13]
+  type HexDigit             = (UChar | hex_digit?)             %  [66]
+  type VersionNumChar       = (UChar | version_num_char?)      % *[26]
+  type EncNameChar          = (UChar | enc_name_char?)         % *[81]
+  type LatinAlphabeticChar? = (UChar | latin_alphabetic_char?) % *[81]
+  type QuoteChar            = (UChar | quote_char?)            %  [9] [10] *[11] *[12] *[24] *[32] *[80] [K37]
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Table of WFC, KC, and VC entries                                                    %%%

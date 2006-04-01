@@ -78,7 +78,7 @@ XML qualifying spec
   def parse_char_ref (start  : UChars,
 		      tail   : UChars,
 		      parser : UChars -> Required Nat,
-		      style  : | Decimal | Hex,
+		      style  : NumberBase,
 		      desc   : String)
     : Required Reference =
     {
