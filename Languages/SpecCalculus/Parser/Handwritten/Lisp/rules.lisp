@@ -375,7 +375,7 @@
 
 ;;;  TODO: In doc: sort-definition now uses qualified name, not just name
 (define-sw-parser-rule :SORT-DEFINITION ()
-  (:tuple :KW-TYPE (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)) :EQUALS (3 :SORT))
+  (:tuple :KW-TYPE (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)) :EQUALS (3 :SORT-DEF-RHS))
   (make-sort-definition 1 2 3 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
@@ -483,9 +483,16 @@ If we want the precedence to be optional:
 ;;;   http://www.specware.org/manual/html/sorts.html
 ;;; ========================================================================
 
-(define-sw-parser-rule :SORT ()
+(define-sw-parser-rule :SORT-DEF-RHS () ; as in rhs of  T x = | A x | B x
   (:anyof
    (1 :SORT-SUM                :documentation "Co-product sort")
+   (1 :SORT-QUOTIENT           :documentation "Sort quotient")
+   (1 :SORT                    :documentation "Function sort")
+   )
+  1)
+
+(define-sw-parser-rule :SORT () ; anywhere
+  (:anyof
    (1 :SORT-ARROW              :documentation "Function sort")
    (1 :SLACK-SORT              :documentation "Slack sort")
    )
@@ -511,7 +518,6 @@ If we want the precedence to be optional:
    (1 :SORT-RECORD             :documentation "Sort record")
    (1 :SORT-RESTRICTION        :documentation "Sort restriction")
    (1 :SORT-COMPREHENSION      :documentation "Sort comprehension")
-   (1 :SORT-QUOTIENT           :documentation "Sort quotient")
    (1 :PARENTHESIZED-SORT      :documentation "Parenthesized Sort")
    )
   1)
@@ -521,6 +527,8 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :SORT-SUM ()
+  ;; NOTE: Sort sums are now treated as abbreviations in the rhs of sort defs,
+  ;;       and cannot be used elsewhere.
   (:tuple (1 (:repeat+ :SORT-SUMMAND nil)))
   (make-sort-sum 1 ':left-lcb ':right-lcb))
 
@@ -530,6 +538,17 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :CONSTRUCTOR ()
   :NAME)
+
+;;; ------------------------------------------------------------------------
+;;;   SORT-QUOTIENT
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :SORT-QUOTIENT ()
+  ;; NOTE: Sort quotients are now treated as abbreviations in the rhs of sort defs,
+  ;;       and cannot be used elsewhere.
+  ;; TODO: [still relevant given above?] In doc: sort-quotient relation is expression, but that's ambiguous -- need tight-expression 
+  (:tuple (1 :CLOSED-SORT) "/" (2 :TIGHT-EXPRESSION)) ; CLOSED-EXPRESSION?
+  (make-sort-quotient 1 2 ':left-lcb ':right-lcb) :documentation "Quotient")
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-ARROW
@@ -642,15 +661,6 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :SORT-COMPREHENSION ()
   (:tuple "{" (1 :ANNOTATED-PATTERN) "|" (2 :EXPRESSION) "}")
   (make-sort-comprehension 1 2 ':left-lcb ':right-lcb) :documentation "Sort comprehension")
-
-;;; ------------------------------------------------------------------------
-;;;   SORT-QUOTIENT
-;;; ------------------------------------------------------------------------
-
-;;;  TODO: In doc: sort-quotient relation is expression, but that's ambiguous -- need tight-expression
-(define-sw-parser-rule :SORT-QUOTIENT ()
-  (:tuple (1 :CLOSED-SORT) "/" (2 :TIGHT-EXPRESSION)) ; CLOSED-EXPRESSION?
-  (make-sort-quotient 1 2 ':left-lcb ':right-lcb) :documentation "Quotient")
 
 ;;; ------------------------------------------------------------------------
 ;;;   PARENTHESIZED-SORT
