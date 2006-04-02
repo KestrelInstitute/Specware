@@ -14,7 +14,6 @@ spec
     | wellFormedContext Context
     | wellFormedSpec    Context  % no type for specs (see spec Contexts)
     | wellFormedType    Context * Type
-    | typeEquivalence   Context * Type * Type
     | subType           Context * Type * Expression * Type
     | wellTypedExpr     Context * Expression * Type
     | theoreM           Context * Expression

@@ -66,10 +66,6 @@ spec
   def contextAxioms   cx = \\// (map contextElementAxioms   cx)
   def contextLemmas   cx = \\// (map contextElementLemmas   cx)
 
-  op contextDefinesType? : Context * TypeName -> Boolean
-  def contextDefinesType?(cx,tn) =
-    (ex (tvS:TypeVariables, t:Type) typeDefinition (tn, tvS, t) in? cx)
-
   (* The following two ops collect all the op instances with op name o in a
   type or expression. Since o is given as argument and is therefore known, the
   ops just return the type arguments of the type instances. *)

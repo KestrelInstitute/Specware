@@ -12,7 +12,6 @@ spec
     | cxMT
     | cxTdec
     | cxOdec
-    | cxTdef
     | cxAx
     | cxLem
     | cxTVdec
@@ -26,22 +25,11 @@ spec
     | tyArr
     | tyRec
     | tyRestr
-    % type equivalence:
-    | teDef
-    | teRefl
-    | teSymm
-    | teTrans
-    | teInst
-    | teArr
-    | teRec
-    | teRestr
-    | teRecOrd
     % subtyping:
     | stRestr
     | stRefl
     | stArr
     | stRec
-    | stTE
     % well-typed expressions:
     | exVar
     | exOp
@@ -49,7 +37,6 @@ spec
     | exAbs
     | exEq
     | exIf
-    | exIf0
     | exThe
     | exProj
     | exSuper
@@ -60,12 +47,8 @@ spec
     | thRefl
     | thSymm
     | thTrans
-    | thOpSubst
     | thAppSubst
-    | thAbsSubst
     | thIfSubst
-    | thTheSubst
-    | thProjSubst
     | thSubst
     | thBool
     | thExt
@@ -100,16 +83,6 @@ spec
          (* Distinctness of tvS is in the syntax in LD. We do not need to add
          it to this inference rule because it is a meta theorem. *)
       => pj (wellFormedContext (cx <| opDeclaration (o, tvS, t))))
-    | cxTdef ->
-      (fa (cx:Context, tn:TypeName, n:Nat, tvS:TypeVariables, t:Type)
-         pj (wellFormedContext cx)
-      && typeDeclaration (tn, n) in? cx
-      && ~(contextDefinesType? (cx, tn))
-      && pj (wellFormedType (cx ++ multiTypeVarDecls tvS, t))
-      && length tvS = n
-         (* Distinctness of tvS is in the syntax in LD. We do not need to add
-         it to this inference rule because it is a meta theorem. *)
-      => pj (wellFormedContext (cx <| typeDefinition (tn, tvS, t))))
     | cxAx ->
       (fa (cx:Context, tvS:TypeVariables, e:Expression, an:AxiomName)
          pj (wellFormedContext cx)
@@ -191,72 +164,6 @@ spec
       && exprFreeVars r = empty
       => pj (wellFormedType (cx, t\r)))
 
-    %%%%%%%%%% type equivalence:
-    | teDef ->
-      (fa (cx:Context, tn:TypeName, tvS:TypeVariables, t:Type,
-           tS:Types, tsbs:TypeSubstitution)
-         pj (wellFormedContext cx)
-      && typeDefinition (tn, tvS, t) in? cx
-      && (fa(i:Nat) i < length tvS =>
-            pj (wellFormedType (cx, tS@i)))
-      && isTypeSubstFrom? (tsbs, tvS, tS)
-      => pj (typeEquivalence (cx, TYPE (tn, tS), typeSubstInType tsbs t)))
-    | teRefl ->
-      (fa (cx:Context, t:Type)
-         pj (wellFormedType (cx, t))
-      => pj (typeEquivalence (cx, t, t)))
-    | teSymm ->
-      (fa (cx:Context, t1:Type, t2:Type)
-         pj (typeEquivalence (cx, t1, t2))
-      => pj (typeEquivalence (cx, t2, t1)))
-    | teTrans ->
-      (fa (cx:Context, t1:Type, t2:Type, t3:Type)
-         pj (typeEquivalence (cx, t1, t2))
-      && pj (typeEquivalence (cx, t2, t3))
-      => pj (typeEquivalence (cx, t1, t3)))
-    | teInst ->
-      (fa (cx:Context, tn:TypeName, tS:Types, tS1:Types)
-         pj (wellFormedType (cx, TYPE (tn, tS)))
-      && length tS = length tS1
-      && (fa(i:Nat) i < length tS =>
-            pj (typeEquivalence (cx, tS@i, tS1@i)))
-      => pj (typeEquivalence (cx, TYPE (tn, tS), TYPE (tn, tS1))))
-    | teArr ->
-      (fa (cx:Context, t:Type, s:Type, t1:Type, s1:Type)
-         pj (typeEquivalence (cx, t, t1))
-      && pj (typeEquivalence (cx, s, s1))
-      => pj (typeEquivalence (cx, t --> s, t1 --> s1)))
-    | teRec ->
-      (fa (cx:Context, tS:Types, tS1:Types, fS:Fields)
-         pj (wellFormedContext cx)
-         (* In LD, the syntax includes that fS are distinct and that fS and tS
-         and tS1 have the same length. Here, we add it to this inference
-         rule. *)
-      && noRepetitions? fS
-      && length fS = length tS
-      && length tS = length tS1
-      && (fa(i:Nat) i < length tS =>
-            pj (typeEquivalence (cx, tS@i, tS1@i)))
-      => pj (typeEquivalence (cx, RECORD (fS, tS), RECORD (fS, tS1))))
-    | teRestr ->
-      (fa (cx:Context, t:Type, r:Expression, t1:Type, r1:Expression)
-         pj (wellFormedType (cx, t\r))
-      && pj (typeEquivalence (cx, t, t1))
-      && pj (theoreM (cx, r == r1))
-      && exprFreeVars r1 = empty
-      => pj (typeEquivalence (cx, t\r, t1\r1)))
-    | teRecOrd ->
-      (fa (cx:Context, fS:Fields, tS:Types, prm:Permutation)
-         pj (wellFormedType (cx, RECORD (fS, tS)))
-         (* In LD, the syntax includes that fS and tS have the same length.
-         Here, we need to add it to this inference rule for the application of
-         op permute to be well-typed. There is no need to require fS to be
-         distinct, because it is a meta theorem. *)
-      && length fS = length tS
-      && length prm = length fS
-      => pj (typeEquivalence (cx, RECORD (fS, tS),
-                                  RECORD (permute(fS,prm), (permute(tS,prm))))))
-
     %%%%%%%%%% subtyping:
     | stRestr ->
       (fa (cx:Context, t:Type, r:Expression)
@@ -277,7 +184,7 @@ spec
       => pj (subType (cx, t --> t1, r1, t --> t2)))
     | stRec ->
       (fa (cx:Context, fS:Fields, tS:Types, rS:Expressions, tS1:Types,
-           r:Expression, v:Variable, conjuncts:Expressions)
+           prm:Permutation, r:Expression, v:Variable, conjuncts:Expressions)
          pj (wellFormedType (cx, RECORD (fS, tS)))
          (* In LD, the syntax includes that fS and tS and tS1 have the same
          length. Here, they are meta theorems but we need to add them to this
@@ -287,19 +194,15 @@ spec
       && length fS = length tS
       && length tS = length tS1
       && length tS1 = length rS
+      && length rS = length prm
       && (fa(i:Nat) i < length tS =>
             pj (subType (cx, tS@i, rS@i, tS1@i)))
       && conjuncts = seq (fn(i:Nat) ->
            if i < length fS then Some ((rS@i) @ DOT (VAR v, tS@i, fS@i))
            else None)
-      && r = FN (v, RECORD (fS, tS1), ANDn conjuncts)
-      => pj (subType (cx, RECORD (fS, tS), r, RECORD (fS, tS1))))
-    | stTE ->
-      (fa (cx:Context, t1:Type, r:Expression, t2:Type, s1:Type, s2:Type)
-         pj (subType (cx, t1, r, t2))
-      && pj (typeEquivalence (cx, t1, s1))
-      && pj (typeEquivalence (cx, t2, s2))
-      => pj (subType (cx, s1, r, s2)))
+      && r = FN (v, RECORD (permute(fS,prm), permute(tS1,prm)), ANDn conjuncts)
+      => pj (subType (cx, RECORD (fS, tS), r,
+                          RECORD (permute(fS,prm), permute(tS1,prm)))))
 
     %%%%%%%%%% well-typed expressions:
     | exVar ->
@@ -324,6 +227,7 @@ spec
     | exAbs ->
       (fa (cx:Context, v:Variable, t:Type, e:Expression, t1:Type)
          pj (wellTypedExpr (cx <| varDeclaration (v,t), e, t1))
+      && pj (wellFormedType (cx, t1))
       => pj (wellTypedExpr (cx, FN (v, t, e), t --> t1)))
     | exEq ->
       (fa (cx:Context, e1:Expression, e2:Expression, t:Type)
@@ -336,12 +240,7 @@ spec
          pj (wellTypedExpr (cx, e0, BOOL))
       && pj (wellTypedExpr (cx <| axioM (an1, empty,    e0), e1, t))
       && pj (wellTypedExpr (cx <| axioM (an2, empty, ~~ e0), e2, t))
-      => pj (wellTypedExpr (cx, IF (e0, e1, e2), t)))
-    | exIf0 ->
-      (fa (cx:Context, e0:Expression, e1:Expression, e2:Expression, t:Type)
-         pj (wellTypedExpr (cx, e0, BOOL))
-      && pj (wellTypedExpr (cx, e1, t))
-      && pj (wellTypedExpr (cx, e2, t))
+      && pj (wellFormedType (cx, t))
       => pj (wellTypedExpr (cx, IF (e0, e1, e2), t)))
     | exThe ->
       (fa (cx:Context, t:Type)
@@ -398,13 +297,6 @@ spec
          pj (theoreM (cx, e1 == e2))
       && pj (theoreM (cx, e2 == e3))
       => pj (theoreM (cx, e1 == e3)))
-    | thOpSubst ->
-      (fa (cx:Context, o:Operation, tS:Types, tS1:Types, t:Type)
-         pj (wellTypedExpr (cx, OPI (o, tS), t))
-      && length tS = length tS1
-      && (fa(i:Nat) i < length tS =>
-            pj (typeEquivalence (cx, tS@i, tS1@i)))
-      => pj (theoreM (cx, OPI (o, tS) == OPI (o, tS1))))
     | thAppSubst ->
       (fa (cx:Context, e1:Expression, e2:Expression, t:Type,
            d1:Expression, d2:Expression)
@@ -412,11 +304,6 @@ spec
       && pj (theoreM (cx, e1 == d1))
       && pj (theoreM (cx, e2 == d2))
       => pj (theoreM (cx, e1 @ e2 == d1 @ d2)))
-    | thAbsSubst ->
-      (fa (cx:Context, v:Variable, t:Type, e:Expression, t1:Type, t2:Type)
-         pj (wellTypedExpr (cx, FN (v, t, e), t2))
-      && pj (typeEquivalence (cx, t, t1))
-      => pj (theoreM (cx, FN (v, t, e) == FN (v, t1, e))))
     | thEqSubst ->
       (fa (cx:Context, e1:Expression, e2:Expression, t:Type,
            d1:Expression, d2:Expression)
@@ -433,17 +320,6 @@ spec
       && pj (theoreM (cx <| axioM (an1, empty,    e0), e1 == d1))
       && pj (theoreM (cx <| axioM (an2, empty, ~~ e0), e2 == d2))
       => pj (theoreM (cx, IF (e0, e1, e2) == IF (d0, d1, d2))))
-    | thTheSubst ->
-      (fa (cx:Context, t:Type, t1:Type, t2:Type)
-         pj (wellTypedExpr (cx, IOTA t, t2))
-      && pj (typeEquivalence (cx, t, t1))
-      => pj (theoreM (cx, IOTA t == IOTA t1)))
-    | thProjSubst ->
-      (fa (cx:Context, t:Type, t1:Type, f:Field, t2:Type)
-         pj (wellTypedExpr (cx, PROJECT (t, f), t2))
-      && pj (typeEquivalence (cx, t, t1))
-         % it is a meta theorem that t and t1 are (equivalent to) product types
-      => pj (theoreM (cx, PROJECT (t, f) == PROJECT (t1, f))))
     | thSubst ->
       (fa (cx:Context, e:Expression, e1:Expression)
          pj (theoreM (cx, e))

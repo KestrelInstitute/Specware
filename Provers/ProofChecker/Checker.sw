@@ -195,17 +195,6 @@ spec
          else checkOpDecl (rtail cx) o
        | _ -> checkOpDecl (rtail cx) o))
 
-  (* Check whether a context defines a type. If it does, return its definition
-  information. *)
-  op checkTypeDef : Context -> TypeName -> M (TypeVariables * Type)
-  def checkTypeDef cx tn =
-    ensure (cx ~= empty) (typeNotDefined (cx, tn)) >> (fn _ ->
-    (case first cx of
-       | typeDefinition (tn1, tvS, t) ->
-         if tn1 = tn then OK (tvS, t)
-         else checkTypeDef (rtail cx) tn
-       | _ -> checkTypeDef (rtail cx) tn))
-
   (* Check whether a context includes a named axiom. If it does, return the
   axiom information. *)
   op checkAxiom : Context -> AxiomName -> M (TypeVariables * Expression)
@@ -354,6 +343,14 @@ spec
     checkSameContext mustBe_cx cx >> (fn _ ->
     OK t))
 
+  (* Like previous op but also check that the type coincides with the
+  argument. *)
+  op checkWFTypeWithContextAndType : Context -> Type -> Proof -> M ()
+  def checkWFTypeWithContextAndType cx t prf =
+    checkWFTypeWithContext cx prf >> (fn mustBe_t ->
+    checkSameType mustBe_t t >> (fn _ ->
+    OK ()))
+
   (* Check one or more proofs of well-formed types with the same context,
   returning the common context and the types. Note that the requirement of a
   non-zero number of proofs serves to ensure that there is a context to return
@@ -413,65 +410,6 @@ spec
     checkWFType prf >> (fn (cx, t) ->
     checkRestrictionType t >> (fn (t, r) ->
     OK (cx, t, r)))
-
-  (* Check proof of equivalent types, returning context and types. *)
-  op checkTypeEquiv : Proof -> M (Context * Type * Type)
-  def checkTypeEquiv prf =
-    check prf >> (fn typeEquivalence (cx, t1, t2) -> OK (cx, t1, t2)
-                   | jdg -> FAIL (notTypeEquiv jdg))
-
-  (* Like previous op but also check that the context coincides with the
-  argument, returning only the types. *)
-  op checkTypeEquivWithContext : Context -> Proof -> M (Type * Type)
-  def checkTypeEquivWithContext cx prf =
-    checkTypeEquiv prf >> (fn (mustBe_cx, t1, t2) ->
-    checkSameContext mustBe_cx cx >> (fn _ ->
-    OK (t1, t2)))
-
-  (* Like previous op but also check that the left-hand type coincides with
-  the argument, returning only the right-hand type. *)
-  op checkTypeEquivWithContextAndLeftType : Context -> Type -> Proof -> M Type
-  def checkTypeEquivWithContextAndLeftType cx t1 prf =
-    checkTypeEquivWithContext cx prf >> (fn (mustBe_t1, t2) ->
-    ensure (mustBe_t1 = t1) (wrongLeftType (mustBe_t1, t1)) >> (fn _ ->
-    OK t2))
-
-  (* Check one or more proofs of equivalent types with the same context,
-  returning the common context and the left- and the right-hand types. Note
-  that the requirement of a non-zero number of proofs serves to ensure that
-  there is a context to return (which would not be the case with zero proofs).
-  (Op allEqualElements? is defined in the library spec FiniteSequences.) *)
-  op checkTypeEquivs : (NonEmptyFSeq Proof) -> M (Context * Types * Types)
-  def checkTypeEquivs prfS =
-    mapSeq checkTypeEquiv prfS >> (fn tripleS ->
-    let (cxS, tS, tS1) = unzip3 tripleS in
-    ensure (allEqualElements? cxS) (notEqualContexts cxS) >> (fn _ ->
-    OK (first cxS, tS, tS1)))
-
-  (* Like previous op but also check that the context coincides with the
-  argument, returning only the left- and right-hand types. Since the context
-  is given, there is no need to require a non-zero number of proofs. *)
-  op checkTypeEquivsWithContext : Context -> Proofs -> M (Types * Types)
-  def checkTypeEquivsWithContext cx prfS =
-    mapSeq (checkTypeEquivWithContext cx) prfS >> (fn pairS ->
-    OK (unzip pairS))
-
-  (* Like previous op but also check that the left-hand types coincide with
-  the argument, returning only the right-hand types. *)
-  op checkTypeEquivsWithContextAndLeftTypes :
-     Context -> Types -> Proofs -> M Types
-  def checkTypeEquivsWithContextAndLeftTypes cx tS prfS =
-    checkTypeEquivsWithContext cx prfS >> (fn (mustBe_tS, tS1) ->
-    ensure (mustBe_tS = tS) (wrongLeftTypes (mustBe_tS, tS)) >> (fn _ ->
-    OK tS1))
-
-  (* Check proof of equivalence of the given type to a record type in the
-  given context, returning the record type's fields and component types. *)
-  op checkRecordTypeEquivWithContextAndLeftType :
-     Context -> Type -> Proof -> M (Fields * Types)
-  def checkRecordTypeEquivWithContextAndLeftType cx t prf =
-    checkTypeEquivWithContextAndLeftType cx t prf >> (fn t1 ->
-    checkRecordType t1)
 
   (* Check proof of subtype, returning context, subtype, predicate, and
   supertype. *)
@@ -844,14 +782,6 @@ spec
       ensure (~(o in? contextOps cx)) (opAlreadyDeclared (cx, o)) >> (fn _ ->
       checkWFPolyType cx prf1 >> (fn (tvS, t) ->
       OK (wellFormedContext (cx <| opDeclaration (o, tvS, t))))))
-    | cxTdef (prf, prf1, tn) ->
-      checkWFContext prf >> (fn cx ->
-      checkTypeDecl cx tn >> (fn(n:Nat) ->
-      ensure (~(contextDefinesType? (cx, tn)))
-             (typeAlreadyDefined (cx, tn)) >> (fn _ ->
-      checkWFPolyType cx prf1 >> (fn (tvS, t) ->
-      ensure (length tvS = n) (wrongTypeArity (tn, n, length tvS)) >> (fn _ ->
-      OK (wellFormedContext (cx <| typeDefinition (tn, tvS, t))))))))
     | cxAx (prf, prf1, an) ->
       checkWFContext prf >> (fn cx ->
       ensure (~(an in? contextAxioms cx))
@@ -910,50 +840,6 @@ spec
       ensure (exprFreeVars r = empty) (badRestrictionType (t, r)) >> (fn _ ->
       OK (wellFormedType (cx, t\r))))
 
-    %%%%%%%%%% type equivalence:
-    | teDef (prf, prfS, tn) ->
-      checkWFContext prf >> (fn cx ->
-      checkTypeDef cx tn >> (fn (tvS, t) ->
-      checkWFTypesWithContext cx prfS >> (fn tS ->
-      checkTypeSubstitution tvS tS >> (fn tsbs ->
-      OK (typeEquivalence (cx, TYPE (tn, tS), typeSubstInType tsbs t))))))
-    | teRefl prf ->
-      checkWFType prf >> (fn (cx, t) ->
-      OK (typeEquivalence (cx, t, t)))
-    | teSymm prf ->
-      checkTypeEquiv prf >> (fn (cx, t1, t2) ->
-      OK (typeEquivalence (cx, t2, t1)))
-    | teTrans (prf1, prf2) ->
-      checkTypeEquiv prf1 >> (fn (cx, t1, t2) ->
-      checkTypeEquivWithContextAndLeftType cx t2 prf2 >> (fn t3 ->
-      OK (typeEquivalence (cx, t1, t3))))
-    | teInst (prf, prfS) ->
-      checkWFTypeInstance prf >> (fn (cx, tn, tS) ->
-      checkTypeEquivsWithContextAndLeftTypes cx tS prfS >> (fn tS1 ->
-      OK (typeEquivalence (cx, TYPE (tn, tS), TYPE (tn, tS1)))))
-    | teArr (prf1, prf2) ->
-      checkTypeEquiv prf1 >> (fn (cx, t1, s1) ->
-      checkTypeEquivWithContext cx prf2 >> (fn (t2, s2) ->
-      OK (typeEquivalence (cx, t1 --> t2, s1 --> s2))))
-    | teRec (prf, prfS, fS) ->
-      checkWFContext prf >> (fn cx ->
-      ensure (length prfS = length fS) wrongNumberOfProofs >> (fn _ ->
-      ensure (noRepetitions? fS) (nonDistinctFields fS) >> (fn _ ->
-      checkTypeEquivsWithContext cx prfS >> (fn (tS, tS1) ->
-      OK (typeEquivalence (cx, RECORD (fS, tS), RECORD (fS, tS1)))))))
-    | teRestr (prf1, prf2, prf3) ->
-      checkWFRestrictionType prf1 >> (fn (cx, t, r) ->
-      checkTypeEquivWithContextAndLeftType cx t prf2 >> (fn t1 ->
-      checkTheoremEqualityWithContextAndLeftExpr cx r prf3 >> (fn r1 ->
-      ensure (exprFreeVars r1 = empty) (badRestrictionType (t1, r1)) >> (fn _ ->
-      OK (typeEquivalence (cx, t\r, t1\r1))))))
-    | teRecOrd (prf, prm) ->
-      checkWFRecordType prf >> (fn (cx, fS, tS) ->
-      checkPermutation prm >> (fn(prm1:Permutation) ->
-      ensure (length prm1 = length fS) (wrongPermutationLength prm) >> (fn _ ->
-      OK (typeEquivalence (cx, RECORD (fS, tS),
-                               RECORD (permute(fS,prm1), permute(tS,prm1)))))))
-
     %%%%%%%%%% subtyping:
     | stRestr prf ->
       checkWFRestrictionType prf >> (fn (cx, t, r) ->
@@ -968,19 +854,18 @@ spec
       ensure (v ~= v1) (nonDistinctVariables (v, v1)) >> (fn _ ->
       (let r1:Expression = FN (v, t --> t2, FA (v1, t, r @ (VAR v @ VAR v1))) in
       OK (subType (cx, t --> t1, r1, t --> t2))))))
-    | stRec (prf, prfS, v) ->
+    | stRec (prf, prfS, v, prm) ->
       checkWFRecordType prf >> (fn (cx, fS, tS) ->
       checkSubtypesWithContextAndLeftTypes cx tS prfS >> (fn (rS, tS1) ->
+      checkPermutation prm >> (fn(prm1:Permutation) ->
+      ensure (length prm1 = length fS) (wrongPermutationLength prm) >> (fn _ ->
       (let conjuncts:Expressions = seq (fn(i:Nat) ->
         if i < length fS then Some ((rS@i) @ DOT (VAR v, RECORD(fS,tS1), fS@i))
         else None) in
-      let r:Expression = FN (v, RECORD (fS, tS1), ANDn conjuncts) in
-      OK (subType (cx, RECORD (fS, tS), r, RECORD (fS, tS1))))))
-    | stTE (prf, prf1, prf2) ->
-      checkSubtype prf >> (fn (cx, t1, r, t2) ->
-      checkTypeEquivWithContextAndLeftType cx t1 prf1 >> (fn s1 ->
-      checkTypeEquivWithContextAndLeftType cx t2 prf2 >> (fn s2 ->
-      OK (subType (cx, s1, r, s2)))))
+      let r:Expression =
+          FN (v, RECORD (permute(fS,prm1), permute(tS1,prm1)), ANDn conjuncts) in
+      OK (subType (cx, RECORD (fS, tS), r,
+                       RECORD (permute(fS,prm1), permute(tS1,prm1)))))))))
 
     %%%%%%%%%% well-typed expressions:
     | exVar (prf, v) ->
@@ -997,23 +882,20 @@ spec
       checkWTFunction prf >> (fn (cx, e1, t1, t2) ->
       checkWTExprWithContextAndType cx t1 prf1 >> (fn e2 ->
       OK (wellTypedExpr (cx, e1 @ e2, t2))))
-    | exAbs prf ->
-      checkWTAbstractionBody prf >> (fn (cx, v, t, e, t1) ->
-      OK (wellTypedExpr (cx, FN (v, t, e), t --> t1)))
+    | exAbs (prf1, prf2) ->
+      checkWTAbstractionBody prf1 >> (fn (cx, v, t, e, t1) ->
+      checkWFTypeWithContextAndType cx t1 prf2 >> (fn _ ->
+      OK (wellTypedExpr (cx, FN (v, t, e), t --> t1))))
     | exEq (prf1, prf2) ->
       checkWTExpr prf1 >> (fn (cx, e1, t) ->
       checkWTExprWithContextAndType cx t prf2 >> (fn e2 ->
       OK (wellTypedExpr (cx, e1 == e2, BOOL))))
-    | exIf (prf0, prf1, prf2) ->
+    | exIf (prf0, prf1, prf2, prf3) ->
       checkWTProposition prf0 >> (fn (cx, e0) ->
       checkWTIfThenBranch cx e0 prf1 >> (fn (e1, t) ->
       checkWTIfElseBranch cx e0 t prf2 >> (fn e2 ->
-      OK (wellTypedExpr (cx, IF (e0, e1, e2), t)))))
-    | exIf0 (prf0, prf1, prf2) ->
-      checkWTProposition prf0 >> (fn (cx, e0) ->
-      checkWTExprWithContext cx prf1 >> (fn (e1, t) ->
-      checkWTExprWithContextAndType cx t prf2 >> (fn e2 ->
-      OK (wellTypedExpr (cx, IF (e0, e1, e2), t)))))
+      checkWFTypeWithContextAndType cx t prf3 >> (fn _ ->
+      OK (wellTypedExpr (cx, IF (e0, e1, e2), t))))))
     | exThe prf ->
       checkWFType prf >> (fn (cx, t) ->
       OK (wellTypedExpr (cx, IOTA t, ((t --> BOOL) \ EX1q t) --> t)))
@@ -1060,19 +942,11 @@ spec
       checkTheoremEquality prf1 >> (fn (cx, e1, e2) ->
       checkTheoremEqualityWithContextAndLeftExpr cx e2 prf2 >> (fn e3 ->
       OK (theoreM (cx, e1 == e3))))
-    | thOpSubst (prf, prfS) ->
-      checkWTOpInstance prf >> (fn (cx, o, tS, _) ->
-      checkTypeEquivsWithContextAndLeftTypes cx tS prfS >> (fn tS1 ->
-      OK (theoreM (cx, OPI (o, tS) == OPI (o, tS1)))))
     | thAppSubst (prf, prf1, prf2) ->
       checkWTApplication prf >> (fn (cx, e1, e2, _) ->
       checkTheoremEqualityWithContextAndLeftExpr cx e1 prf1 >> (fn d1 ->
       checkTheoremEqualityWithContextAndLeftExpr cx e2 prf2 >> (fn d2 ->
       OK (theoreM (cx, e1 @ e2 == d1 @ d2)))))
-    | thAbsSubst (prf1, prf2) ->
-      checkWTAbstraction prf1 >> (fn (cx, v, t, e, _) ->
-      checkTypeEquivWithContextAndLeftType cx t prf2 >> (fn t1 ->
-      OK (theoreM (cx, FN (v, t, e) == FN (v, t1, e)))))
     | thEqSubst (prf, prf1, prf2) ->
       checkWTEquality prf >> (fn (cx, e1, e2, _) ->
       checkTheoremEqualityWithContextAndLeftExpr cx e1 prf1 >> (fn d1 ->
@@ -1084,16 +958,6 @@ spec
       checkTheoremEqualityIfSubst cx     e0  e1 prf1 >> (fn d1 ->
       checkTheoremEqualityIfSubst cx (~~ e0) e2 prf2 >> (fn d2 ->
       OK (theoreM (cx, IF (e0, e1, e2) == IF (d0, d1, d2)))))))
-    | thTheSubst (prf1, prf2) ->
-      checkWTDescriptor prf1 >> (fn (cx, t, _) ->
-      checkTypeEquivWithContextAndLeftType cx t prf2 >> (fn t1 ->
-      OK (theoreM (cx, IOTA t == IOTA t1))))
-    | thProjSubst (prf1, prf2) ->
-      checkWTProjector prf1 >> (fn (cx, fS, tS, f, _) ->
-      checkRecordTypeEquivWithContextAndLeftType cx (RECORD(fS,tS)) prf2 >>
-        (fn (fS1, tS1) ->
-      OK (theoreM (cx, PROJECT (RECORD(fS,tS), f) ==
-                       PROJECT (RECORD(fS1,tS1), f)))))
     | thSubst (prf1, prf2) ->
       checkTheorem prf1 >> (fn (cx, e) ->
       checkTheoremEqualityWithContextAndLeftExpr cx e prf2 >> (fn e1 ->

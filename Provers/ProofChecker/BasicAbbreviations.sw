@@ -59,7 +59,7 @@ spec
   % negation:
   op NOT : Expression
   def NOT = let x:Variable = abbr 0 in
-            FN (x, BOOL, IF (VAR x, FALSE, TRUE))
+            FN (x, BOOL, VAR x == FALSE)
 
   % applied negation:
   op ~~ : Expression -> Expression

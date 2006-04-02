@@ -37,8 +37,8 @@ spec
     let mgT = RECORD(rfs, mgTs) in
     mgT
 
-  op mostGeneralTypeRest: Proof * Context * RESTRType -> Type
+  op mostGeneralTypeRestr: Proof * Context * RESTRType -> Type
   def mostGeneralTypeRestr(cxP, cx, t) =
-    superType(t)
+    mostGeneralTypeAux (cxP, cx) (superType(t))
 
 endspec

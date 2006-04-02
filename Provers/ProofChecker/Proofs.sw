@@ -48,7 +48,6 @@ spec
     | cxMT
     | cxTdec  Proof * TypeName * Integer
     | cxOdec  Proof * Proof * Operation
-    | cxTdef  Proof * Proof * TypeName
     | cxAx    Proof * Proof * AxiomName
     | cxLem   Proof * Proof * LemmaName
     | cxTVdec Proof * TypeVariable
@@ -62,30 +61,18 @@ spec
     | tyArr   Proof * Proof
     | tyRec   Proof * Proofs * Fields
     | tyRestr Proof
-    % type equivalence:
-    | teDef    Proof * Proofs * TypeName
-    | teRefl   Proof
-    | teSymm   Proof
-    | teTrans  Proof * Proof
-    | teInst   Proof * Proofs
-    | teArr    Proof * Proof
-    | teRec    Proof * Proofs * Fields
-    | teRestr  Proof * Proof * Proof
-    | teRecOrd Proof * FSeq Integer
     % subtyping:
     | stRestr Proof
     | stRefl  Proof * Variable
     | stArr   Proof * Proof * Variable * Variable
-    | stRec   Proof * Proofs * Variable
-    | stTE    Proof * Proof * Proof
+    | stRec   Proof * Proofs * Variable * FSeq Integer
     % well-typed expressions:
     | exVar      Proof * Variable
     | exOp       Proof * Proofs * Operation
     | exApp      Proof * Proof
-    | exAbs      Proof
+    | exAbs      Proof * Proof
     | exEq       Proof * Proof
-    | exIf       Proof * Proof * Proof
-    | exIf0      Proof * Proof * Proof
+    | exIf       Proof * Proof * Proof * Proof
     | exThe      Proof
     | exProj     Proof * Field
     | exSuper    Proof * Proof
@@ -97,13 +84,9 @@ spec
     | thRefl       Proof
     | thSymm       Proof
     | thTrans      Proof * Proof
-    | thOpSubst    Proof * Proofs
     | thAppSubst   Proof * Proof * Proof
-    | thAbsSubst   Proof * Proof
     | thEqSubst    Proof * Proof * Proof
     | thIfSubst    Proof * Proof * Proof * Proof
-    | thTheSubst   Proof * Proof
-    | thProjSubst  Proof * Proof
     | thSubst      Proof * Proof
     | thBool       Proof * Variable * Variable
     | thExt        Proof * Variable * Variable * Variable
@@ -150,7 +133,6 @@ spec
       => pred cxMT
       && pred (cxTdec (prf, tn, n))
       && pred (cxOdec (prf1, prf2, o))
-      && pred (cxTdef (prf1, prf2, tn))
       && pred (cxAx (prf1, prf2, an))
       && pred (cxLem (prf1, prf2, ln))
       && pred (cxTVdec (prf, tv))
@@ -162,27 +144,16 @@ spec
       && pred (tyArr (prf1, prf2))
       && pred (tyRec (prf, prfS, fS))
       && pred (tyRestr prf)
-      && pred (teDef (prf, prfS, tn))
-      && pred (teRefl prf)
-      && pred (teSymm prf)
-      && pred (teTrans (prf1, prf2))
-      && pred (teInst (prf, prfS))
-      && pred (teArr (prf1, prf2))
-      && pred (teRec (prf, prfS, fS))
-      && pred (teRestr (prf1, prf2, prf3))
-      && pred (teRecOrd (prf, iS))
       && pred (stRestr prf)
       && pred (stRefl (prf, v))
       && pred (stArr (prf1, prf2, v, v1))
-      && pred (stRec (prf, prfS, v))
-      && pred (stTE (prf1, prf2, prf3))
+      && pred (stRec (prf, prfS, v, iS))
       && pred (exVar (prf, v))
       && pred (exOp (prf, prfS, o))
       && pred (exApp (prf1, prf2))
-      && pred (exAbs prf)
+      && pred (exAbs (prf1, prf2))
       && pred (exEq (prf1, prf2))
-      && pred (exIf (prf1, prf2, prf3))
-      && pred (exIf0 (prf1, prf2, prf3))
+      && pred (exIf (prf1, prf2, prf3, prf4))
       && pred (exThe prf)
       && pred (exProj (prf, f))
       && pred (exSuper (prf1, prf2))
@@ -193,13 +164,9 @@ spec
       && pred (thRefl prf)
       && pred (thSymm prf)
       && pred (thTrans (prf1, prf2))
-      && pred (thOpSubst (prf, prfS))
       && pred (thAppSubst (prf1, prf2, prf3))
-      && pred (thAbsSubst (prf1, prf2))
       && pred (thEqSubst (prf1, prf2, prf3))
       && pred (thIfSubst (prf1, prf2, prf3, prf4))
-      && pred (thTheSubst (prf1, prf2))
-      && pred (thProjSubst (prf1, prf2))
       && pred (thSubst (prf1, prf2))
       && pred (thBool (prf, v, v1))
       && pred (thExt (prf, v, v1, v2))
@@ -222,8 +189,6 @@ spec
     | cxTdec       (prf, _, _)              -> closedProof? prf
     | cxOdec       (prf1, prf2, _)          -> closedProof? prf1
                                             && closedProof? prf2
-    | cxTdef       (prf1, prf2, _)          -> closedProof? prf1
-                                            && closedProof? prf2
     | cxAx         (prf1, prf2, _)          -> closedProof? prf1
                                             && closedProof? prf2
     | cxLem        (prf1, prf2, _)          -> closedProof? prf1
@@ -241,44 +206,25 @@ spec
     | tyRec        (prf, prfS, _)           -> closedProof? prf
                                             && forall? closedProof? prfS
     | tyRestr      prf                      -> closedProof? prf
-    | teDef        (prf, prfS, _)           -> closedProof? prf
-                                            && forall? closedProof? prfS
-    | teRefl       prf                      -> closedProof? prf
-    | teSymm       prf                      -> closedProof? prf
-    | teTrans      (prf1, prf2)             -> closedProof? prf1
-                                            && closedProof? prf2
-    | teInst       (prf, prfS)              -> closedProof? prf
-                                            && forall? closedProof? prfS
-    | teArr        (prf1, prf2)             -> closedProof? prf1
-    | teRec        (prf, prfS, _)           -> closedProof? prf
-                                            && forall? closedProof? prfS
-    | teRestr      (prf1, prf2, prf3)       -> closedProof? prf1
-                                            && closedProof? prf2
-                                            && closedProof? prf3
-    | teRecOrd     (prf, _)                 -> closedProof? prf
     | stRestr      prf                      -> closedProof? prf
     | stRefl       (prf, _)                 -> closedProof? prf
     | stArr        (prf1, prf2, _, _)       -> closedProof? prf1
                                             && closedProof? prf2
-    | stRec        (prf, prfS, _)           -> closedProof? prf
+    | stRec        (prf, prfS, _, _)        -> closedProof? prf
                                             && forall? closedProof? prfS
-    | stTE         (prf1, prf2, prf3)       -> closedProof? prf1
-                                            && closedProof? prf2
-                                            && closedProof? prf3
     | exVar        (prf, _)                 -> closedProof? prf
     | exOp         (prf, prfS, _)           -> closedProof? prf
                                             && forall? closedProof? prfS
     | exApp        (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
-    | exAbs        prf                      -> closedProof? prf
+    | exAbs        (prf1, prf2)             -> closedProof? prf1
+                                            && closedProof? prf2
     | exEq         (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
-    | exIf         (prf1, prf2, prf3)       -> closedProof? prf1
+    | exIf         (prf1, prf2, prf3, prf4) -> closedProof? prf1
                                             && closedProof? prf2
                                             && closedProof? prf3
-    | exIf0        (prf1, prf2, prf3)       -> closedProof? prf1
-                                            && closedProof? prf2
-                                            && closedProof? prf3
+                                            && closedProof? prf4
     | exThe        prf                      -> closedProof? prf
     | exProj       (prf, _)                 -> closedProof? prf
     | exSuper      (prf1, prf2)             -> closedProof? prf1
@@ -295,23 +241,15 @@ spec
     | thSymm       prf                      -> closedProof? prf
     | thTrans      (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
-    | thOpSubst    (prf, prfS)              -> closedProof? prf
-                                            && forall? closedProof? prfS
     | thAppSubst   (prf1, prf2, prf3)       -> closedProof? prf1
                                             && closedProof? prf2
                                             && closedProof? prf3
-    | thAbsSubst   (prf1, prf2)             -> closedProof? prf1
-                                            && closedProof? prf2
     | thEqSubst    (prf1, prf2, prf3)       -> closedProof? prf1
                                             && closedProof? prf2
                                             && closedProof? prf3
     | thIfSubst    (prf1, prf2, prf3, prf4) -> closedProof? prf1
                                             && closedProof? prf2
                                             && closedProof? prf3
-    | thTheSubst   (prf1, prf2)             -> closedProof? prf1
-                                            && closedProof? prf2
-    | thProjSubst  (prf1, prf2)             -> closedProof? prf1
-                                            && closedProof? prf2
     | thSubst      (prf1, prf2)             -> closedProof? prf1
                                             && closedProof? prf2
     | thBool       (prf, _, _)              -> closedProof? prf

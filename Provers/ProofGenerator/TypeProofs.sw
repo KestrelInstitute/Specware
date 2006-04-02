@@ -2,22 +2,11 @@ spec
 
   % API public typeProof
 
-  import ../ProofChecker/Spec, UniqueVars, ProofGenSig, TypeEquivalenceProofs
+  import ../ProofChecker/Spec, UniqueVars, ProofGenSig
   
   (* In this spec we define a function that takes a context and a type
   and generates a proof that the type is well-formed. *)
 
-(*  op uniqueDefVar: Variable
-
-  op v: Variable
-  op v1: Variable
-  op v2: Variable
-  op u1: Variable
-  op u2: Variable
-  op u3: Variable
-
-  axiom distinctVars is v1 ~= v2 && u1 ~= u2 && u2 ~= u3 &&u1 ~= u3
-*)
   op falseProof: Context -> Proof
   def falseProof(cx) =
     assume (theoreM (cx, FALSE))
@@ -67,9 +56,8 @@ spec
     if exprFreeVars expr = empty
       then
 	let (expP, expT) = typeExpProof(cxPrf, cx, expr) in
-	case typeEquivalent?(cxPrf, cx, expT, ARROW(st, BOOL)) of
-	  | Some _ -> tyRestr(expP)
-	  | _ -> falseProof(cx)
+        if expT = ARROW(st,BOOL) then tyRestr(expP)
+	else falseProof(cx)
     else falseProof(cx)
 
   def typeProof(cxPrf, cx, ty) =

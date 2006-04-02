@@ -160,11 +160,6 @@ spec
     "op " ++ printOperation o ++ " : {" ++ printTypeVariables tvS ++
     "} " ++ printType t ++ newline
 
-  op printTypeDefinition : TypeName * TypeVariables * Type -> String
-  def printTypeDefinition (tn,tvS,t) =
-    "def " ++ printTypeName tn ++ "[" ++ printTypeVariables tvS ++
-    "] = " ++ printType t ++ newline
-
   op printAxiom : AxiomName * TypeVariables * Expression -> String
   def printAxiom (an,tvS,e) =
     "axiom " ++ printAxiomName an ++ " is {" ++ printTypeVariables tvS ++
@@ -187,7 +182,6 @@ spec
   def printContextElement = fn
     | typeDeclaration tn_n    -> printTypeDeclaration tn_n
     | opDeclaration o_tvS_t   -> printOpDeclaration o_tvS_t
-    | typeDefinition tn_tvS_t -> printTypeDefinition tn_tvS_t
     | axioM an_tvS_e          -> printAxiom an_tvS_e
     | lemma ln_tvS_e          -> printLemma ln_tvS_e
     | typeVarDeclaration tv   -> printTypeVarDeclaration tv
@@ -218,11 +212,6 @@ spec
   def printWellFormedType (cx,t) =
     printContext cx ++ turnStyle ++ printType t ++ " : TYPE" ++ newline
 
-  op printTypeEquivalence : Context * Type * Type -> String
-  def printTypeEquivalence (cx,t1,t2) =
-    printContext cx ++ turnStyle ++
-    printType t1 ++ " = " ++ printType t2 ++ newline
-
   op printSubType : Context * Type * Expression * Type -> String
   def printSubType (cx,t1,r,t2) =
     printContext cx ++ turnStyle ++
@@ -244,7 +233,6 @@ spec
     | wellFormedContext cx     -> printWellFormedContext cx
     | wellFormedSpec cx        -> printWellFormedSpec cx
     | wellFormedType cx_t      -> printWellFormedType cx_t
-    | typeEquivalence cx_t1_t2 -> printTypeEquivalence cx_t1_t2
     | subType cx_t1_r_t2       -> printSubType cx_t1_r_t2
     | wellTypedExpr cx_e_t     -> printWellTypedExpr cx_e_t
     | theoreM cx_e             -> printTheorem cx_e
@@ -265,9 +253,6 @@ spec
     | opNotDeclared (cx, o) ->
       "op " ++ printOperation o ++
       " not declared in" ++ newline ++ printContext cx
-    | typeNotDefined (cx, tn) ->
-      "type " ++ printTypeName tn ++
-      " not defined in" ++ newline ++ printContext cx
     | axiomNotDeclared (cx, an) ->
       "axiom " ++ printAxiomName an ++
       " not declared in" ++ newline ++ printContext cx
@@ -286,9 +271,6 @@ spec
     | opAlreadyDeclared (cx, o) ->
       "op " ++ printOperation o ++
       " already declared in" ++ newline ++ printContext cx
-    | typeAlreadyDefined (cx, tn) ->
-      "type " ++ printTypeName tn ++
-      " already defined in" ++ newline ++ printContext cx
     | axiomAlreadyDeclared (cx, an) ->
       "axiom " ++ printAxiomName an ++
       " already declared in" ++ newline ++ printContext cx
@@ -323,9 +305,6 @@ spec
       printJudgement jdg
     | notWFType jdg ->
       "judgement is not well-formed type:" ++ newline ++
-      printJudgement jdg
-    | notTypeEquiv jdg ->
-      "judgement is not type equivalence:" ++ newline ++
       printJudgement jdg
     | notSubtype jdg ->
       "judgement is not subtype:" ++ newline ++
@@ -385,12 +364,6 @@ spec
     | wrongType (rightT, wrongT) ->
       "found type " ++ printType wrongT ++
       " instead of " ++ printType rightT ++ newline
-    | wrongLeftType (rightT, wrongT) ->
-      "found left-hand type " ++ printType wrongT ++
-      " instead of " ++ printType rightT ++ newline
-    | wrongLeftTypes (rightTS, wrongTS) ->
-      "found left-hand types " ++ printTypes wrongTS ++
-      " instead of " ++ printTypes rightTS ++ newline
     | wrongLeftSubtype (rightT, wrongT) ->
       "found subtype " ++ printType wrongT ++
       " instead of " ++ printType rightT ++ newline

@@ -25,7 +25,8 @@ spec
    well-formedness.
    *)
 
-  op typeVarDeclarationContextAndProof: Proof * Context * TypeVariable -> Proof * Context
+  op typeVarDeclarationContextAndProof:
+     Proof * Context * TypeVariable -> Proof * Context
   def typeVarDeclarationContextAndProof(cxPrf, cx, tv) =
     let tvd = typeVarDeclaration(tv) in
     let cx = cx <| tvd in
@@ -38,7 +39,8 @@ spec
    type variable declarations associated proof of well-formedness.
    *)
 
-  op typeVarDeclarationsContextAndProof: Proof * Context * TypeVariables -> Proof * Context
+  op typeVarDeclarationsContextAndProof:
+     Proof * Context * TypeVariables -> Proof * Context
   def typeVarDeclarationsContextAndProof(cxPrf, cx, tvs) =
     if empty?(tvs)
       then (cxPrf, cx)
@@ -70,62 +72,6 @@ spec
     let (wftCxPrf, wftCx) = typeVarDeclarationsContextAndProof(cxProof, cx, tvs) in
     let wfTProof = wellFormedTypeProof(wftCxPrf, wftCx, t) in
     cxOdec(cxProof, wfTProof, oper)
-
-  op cxTDefProof: Context * TypeDefinitionContextElement -> Proof
-  def cxTDefProof(cx, td) =
-    let typeDefinition (tn, tvs, t) = td in
-    let cxProof = contextProof(cx) in
-    let (wftCxPrf, wftCx) = typeVarDeclarationsContextAndProof(cxProof, cx, tvs) in
-    let wfTProof = wellFormedTypeProof(wftCxPrf, wftCx, t) in
-    cxTdef(cxProof, wfTProof, tn)
-
-% the following two ops are commented out to reflect the recent change in the
-% proof checker that op definitions are no longer primitive but abbreviations:
-(*
-  op cxOdefProof: Context * OpDefinitionContextElement -> Proof
-  def cxOdefProof(cx, od) =
-    let opDefinition(oper, ts, exp) = od in
-    let cxProof = contextProof(cx) in
-    let opDeclSeq = filter (fn (opDeclaration(o, tvs1, t)) -> o = oper | _ -> false) cx in
-    if length(opDeclSeq) ~= 1 then falseProof(cx) else
-    let opDeclaration(_, tvs1, t) = theElement(opDeclSeq) in
-    let typeVarSubst = fromSeqs(tvs1, map VAR ts) in
-    let operVar = uniqueDefVar in
-    let wfDefProof = assume (theoreM (cx ++ multiTypeVarDecls tvs1, EX1(operVar, typeSubstInType typeVarSubst t, VAR operVar == replaceOperationWithVar(oper, operVar, exp)))) in
-    cxOdef(cxProof, wfDefProof, oper)
-
-  op replaceOperationWithVar: Operation * Variable * Expression -> Expression
-  def replaceOperationWithVar(oper, var, expr) =
-    case expr of
-      | VAR _              -> expr
-      | OPI (o, t)         -> if o = oper then VAR var else expr
-      | APPLY(e1,e2)       -> APPLY (replaceOperationWithVar(oper, var, e1), replaceOperationWithVar(oper, var, e2))
-      | FN(v,t,b)          -> FN (v, t, replaceOperationWithVar(oper, var, b))
-      | EQ(e1,e2)          -> EQ (replaceOperationWithVar(oper, var, e1), replaceOperationWithVar(oper, var, e2))
-      | IF(e0,e1,e2)       -> IF (replaceOperationWithVar(oper, var, e0),
-				  replaceOperationWithVar(oper, var, e1),
-				  replaceOperationWithVar(oper, var, e2))
-      | _                  -> expr
-*)
-			     
-
-(*
-    | cxOdef ->
-      (fa (cx:Context, o:Operation, tvS:TypeVariables, t:Type, tvS1:TypeVariables,
-           v:Variable, tsbs:TypeSubstitution, e:Expression, e1:Expression)
-         pj (wellFormedContext cx)
-      && opDeclaration (o, tvS, t) in? cx
-      && ~(contextDefinesOp? (cx, o))
-      && isTypeSubstFrom? (tsbs, tvS, map VAR tvS1)
-      && pj (theoreM (cx ++ multiTypeVarDecls tvS1,
-                      EX1 (v, typeSubstInType tsbs t, VAR v == e)))
-      && ~(o in? exprOps e)
-      && e1 = exprSubst v (OPI (o, map VAR tvS1)) e
-         (* Distinctness of tvS is in the syntax in LD. We do not need to add
-         it to this inference rule because it is a meta theorem. *)
-      => pj (wellFormedContext (cx <| opDefinition (o, tvS1, e1))))
-
-*)
 
   op cxAxProof: Context * AxioMContextElement -> Proof
   def cxAxProof(cx, axd) =
@@ -165,7 +111,6 @@ spec
       let cx = ltail(cx) in
       if typeDeclaration?(ce) then cxTdecProof(cx, ce)
       else if opDeclaration?(ce) then cxOdecProof(cx, ce)
-      else if typeDefinition?(ce) then cxTDefProof(cx, ce)
       else if axioM?(ce) then cxAxProof(cx, ce)
       else if lemma?(ce) then cxLemProof(cx, ce)
       else if typeVarDeclaration?(ce) then cxTVdecProof(cx, ce)

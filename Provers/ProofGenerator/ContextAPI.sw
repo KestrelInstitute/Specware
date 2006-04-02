@@ -17,12 +17,6 @@ spec
       | opDeclaration _ -> true
       | _ -> false
 
-  op typeDefinition?: ContextElement -> Boolean
-  def typeDefinition?(ce) =
-    case ce of
-      | typeDefinition _ -> true
-      | _ -> false
-
   op axioM?: ContextElement -> Boolean
   def axioM?(ce) =
     case ce of
@@ -50,25 +44,9 @@ spec
 
   type TypeDeclarationContextElement = (ContextElement | typeDeclaration?)
   type OpDeclarationContextElement = (ContextElement | opDeclaration?)
-  type TypeDefinitionContextElement = (ContextElement | typeDefinition?)
   type AxioMContextElement = (ContextElement | axioM?)
   type LemmaContextElement = (ContextElement | lemma?)
   type TypeVarDeclarationContextElement = (ContextElement | typeVarDeclaration?)
   type VarDeclarationContextElement = (ContextElement | varDeclaration?)
   
-  op typeDefinitionTypeName: TypeDefinitionContextElement -> TypeName
-  def typeDefinitionTypeName(ce) =
-    let typeDefinition(tn, _, _) = ce in
-    tn
-
-  op typeDefinitionTypeVariables: TypeDefinitionContextElement -> TypeVariables
-  def typeDefinitionTypeVariables(ce) =
-    let typeDefinition(_, tvs, _) = ce in
-    tvs
-
-  op typeDefinitionType: TypeDefinitionContextElement -> Type
-  def typeDefinitionType(ce) =
-    let typeDefinition(_, _, t) = ce in
-    t
-
 endspec

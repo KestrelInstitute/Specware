@@ -33,7 +33,6 @@ spec
     | cxMT -> "(cxMT)"
     | cxTdec(p,tn, i) -> "(cxTdec"^sep^printTypeName(tn)^sep^printInteger(i)^pSep^printProofAux(p, sn)^")"
     | cxOdec(p, p2, oper) -> "(cxOdec"^sep^printOperation(oper)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
-    | cxTdef(p, p2, tn) -> "(cxTdef"^sep^printTypeName(tn)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | cxAx(p, p2, an) -> "(cxAx"^sep^printAxiomName(an)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | cxLem(p, p2, ln) -> "(cxLem"^sep^printLemmaName(ln)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | cxTVdec(p, tv) -> "(cxTVdec"^sep^printTypeVariable(tv)^pSep^printProofAux(p, sn)^")"
@@ -47,30 +46,18 @@ spec
     | tyArr(p, p2) -> "(tyArr"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | tyRec(p, ps, flds) -> "(tyRec"^sep^printFields(flds)^pSep^printProofAux(p, sn)^pSep^printProofsAux(ps, sn)^")"
     | tyRestr(p) -> "(tyRestr"^pSep^printProofAux(p, sn)^")"
-    % type equivalence:
-    | teDef(p, ps, tn) -> "(teDef"^sep^printTypeName(tn)^pSep^printProofAux(p, sn)^pSep^printProofsAux(ps, sn)^")"
-    | teRefl(p) -> "(teRefl"^pSep^printProofAux(p, sn)^")"
-    | teSymm(p) -> "(teSymm"^pSep^printProofAux(p, sn)^")"
-    | teTrans(p, p2) -> "(teTrans"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
-    | teInst(p, ps) -> "(teInst"^pSep^printProofAux(p, sn)^pSep^printProofsAux(ps, sn)^")"
-    | teArr(p, p2) -> "(teArr"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
-    | teRec(p, ps, flds) -> "(teRec"^sep^printFields(flds)^pSep^printProofAux(p, sn)^pSep^printProofsAux(ps, sn)^")"
-    | teRestr(p, p2, p3) -> "(teRestr"^pSep^printProofsAux(p |> p2 |> single(p3), sn)^")"
-    | teRecOrd(p, ns) -> "(teRecOrd"^sep^printIntegers(ns)^pSep^printProofAux(p, sn)^")"
     % subtyping:
     | stRestr(p) -> "(stRestr"^pSep^printProofAux(p, sn)^")"
     | stRefl(p, v) -> "(stRefl"^sep^printVariable(v)^pSep^printProofAux(p, sn)^")"
     | stArr(p, p2, v, v2) -> "(stArr"^sep^printVariable(v)^sep^printVariable(v2)^pSep^printProofAux(p, sn)^")"
-    | stRec(p, ps, v) -> "(stRec"^sep^printVariable(v)^pSep^printProofsAux(p |> ps, sn)^")"
-    | stTE(p, p2, p3) -> "(stTE"^pSep^printProofsAux(p |> p2 |> single(p3), sn)^")"
+    | stRec(p, ps, v, prm) -> "(stRec"^sep^printVariable(v)^pSep^printProofsAux(p |> ps, sn)^pSep^printIntegers(prm)^")"
     % well-typed expressions:
     | exVar(p, v) -> "(exVar"^sep^printVariable(v)^pSep^printProofAux(p, sn)^")"
     | exOp(p, ps, oper) -> "(exOp"^sep^printOperation(oper)^pSep^printProofsAux(p |> ps, sn)^")"
     | exApp(p, p2) -> "(exApp"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
-    | exAbs(p) -> "(exAbs"^pSep^printProofAux(p, sn)^")"
+    | exAbs(p,p2) -> "(exAbs"^pSep^printProofsAux(p |> single(p2), sn)^")"
     | exEq(p, p2) -> "(exEq"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
-    | exIf(p, p2, p3) -> "(exIf"^pSep^printProofsAux(p |> p2 |> single(p3), sn)^")"
-    | exIf0(p, p2, p3) -> "(exIf0"^pSep^printProofsAux(p |> p2 |> single(p3), sn)^")"
+    | exIf(p, p2, p3, p4) -> "(exIf"^pSep^printProofsAux(p |> p2 |> p3 |> single(p4), sn)^")"
     | exThe(p) -> "(exThe"^pSep^printProofAux(p, sn)^")"
     | exProj(p, fld) -> "(exProj"^sep^printField(fld)^pSep^printProofAux(p, sn)^")"
     | exSuper(p, p2) -> "(exSuper"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
@@ -81,13 +68,9 @@ spec
     | thRefl(p) -> "(thRefl"^pSep^printProofAux(p, sn)^")"
     | thSymm(p) -> "(thSymm"^pSep^printProofAux(p, sn)^")"
     | thTrans(p, p2) -> "(thTrans"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
-    | thOpSubst(p, ps) -> "(thOpSubst"^pSep^printProofsAux(p |> ps, sn)^")"
     | thAppSubst(p, p2, p3) -> "(thAppSubst"^pSep^printProofsAux(p |> p2 |> single(p3), sn)^")"
-    | thAbsSubst(p, p2) -> "(thAbsSubst"^pSep^printProofsAux(p |> single p2, sn)^")"
     | thEqSubst(p, p2, p3) -> "(thEqSubst"^pSep^printProofsAux(p |> p2 |> single(p3), sn)^")"
     | thIfSubst(p, p2, p3, p4) -> "(thIfSubst"^pSep^printProofsAux(p |> p2 |> p3 |> single(p4), sn)^")"
-    | thTheSubst(p, p2) -> "(thTheSubst"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
-    | thProjSubst(p, p2) -> "(thProjSubst"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | thSubst(p, p2) -> "(thSubst"^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | thBool(p, v, v2) -> "(thBool"^sep^printVariable(v)^sep^printVariable(v2)^pSep^printProofAux(p, sn)^")"
     | thExt(p, v, v2, v3) -> "(thExt"^sep^printVariable(v)^sep^printVariable(v2)^sep^printVariable(v3)^pSep^printProofAux(p, sn)^")"
@@ -125,7 +108,6 @@ spec
     | cxMT -> 1
     | cxTdec(p,tn, i) -> 1 + countProofAuxInt(p)
     | cxOdec(p, p2, oper) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
-    | cxTdef(p, p2, tn) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
     | cxAx(p, p2, an) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
     | cxLem(p, p2, ln) -> 1 + countProofAuxInt(p) + countProofAuxInt(p2)
     | cxTVdec(p, tv) -> 1 + countProofAuxInt(p)
@@ -139,30 +121,18 @@ spec
     | tyArr(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
     | tyRec(p, ps, flds) -> countProofAuxInt(p) + countProofsAuxInt(ps)
     | tyRestr(p) -> countProofAuxInt(p)
-    % type equivalence:
-    | teDef(p, ps, tn) -> countProofAuxInt(p) + countProofsAuxInt(ps)
-    | teRefl(p) -> countProofAuxInt(p)
-    | teSymm(p) -> countProofAuxInt(p)
-    | teTrans(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
-    | teInst(p, ps) -> countProofAuxInt(p) + countProofsAuxInt(ps)
-    | teArr(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
-    | teRec(p, ps, flds) -> countProofAuxInt(p) + countProofsAuxInt(ps)
-    | teRestr(p, p2, p3) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3)
-    | teRecOrd(p, ns) -> countProofAuxInt(p)
     % subtyping:
     | stRestr(p) -> countProofAuxInt(p)
     | stRefl(p, v) -> countProofAuxInt(p)
     | stArr(p, p2, v, v2) -> countProofAuxInt(p) + countProofAuxInt(p2)
-    | stRec(p, ps, v) -> countProofAuxInt(p) + countProofsAuxInt(ps)
-    | stTE(p, p2, p3) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3)
+    | stRec(p, ps, v, prm) -> countProofAuxInt(p) + countProofsAuxInt(ps)
     % well-typed expressions:
     | exVar(p, v) -> countProofAuxInt(p)
     | exOp(p, ps, oper) -> countProofAuxInt(p) + countProofsAuxInt(ps)
     | exApp(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
-    | exAbs(p) -> countProofAuxInt(p)
+    | exAbs(p,p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
     | exEq(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
-    | exIf(p, p2, p3) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3)
-    | exIf0(p, p2, p3) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3)
+    | exIf(p, p2, p3, p4) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3) + countProofAuxInt(p4)
     | exThe(p) -> countProofAuxInt(p)
     | exProj(p, fld) -> countProofAuxInt(p)
     | exSuper(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
@@ -173,13 +143,9 @@ spec
     | thRefl(p) -> countProofAuxInt(p)
     | thSymm(p) -> countProofAuxInt(p)
     | thTrans(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
-    | thOpSubst(p, ps) -> countProofAuxInt(p) + countProofsAuxInt(ps)
     | thAppSubst(p, p2, p3) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3)
-    | thAbsSubst(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)% + countProofAuxInt(p3)
     | thEqSubst(p, p2, p3) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3)
     | thIfSubst(p, p2, p3, p4) -> countProofAuxInt(p) + countProofAuxInt(p2) + countProofAuxInt(p3) + countProofAuxInt(p4)
-    | thTheSubst(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
-    | thProjSubst(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
     | thSubst(p, p2) -> countProofAuxInt(p) + countProofAuxInt(p2)
     | thBool(p, v, v2) -> countProofAuxInt(p)
     | thExt(p, v, v2, v3) -> countProofAuxInt(p)

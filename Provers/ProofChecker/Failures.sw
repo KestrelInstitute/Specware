@@ -14,14 +14,12 @@ spec
     | fieldNotFound                    Field * Fields * Types
     | typeNotDeclared                  Context * TypeName
     | opNotDeclared                    Context * Operation
-    | typeNotDefined                   Context * TypeName
     | axiomNotDeclared                 Context * AxiomName
     | lemmaNotDeclared                 Context * LemmaName
     | typeVarNotDeclared               Context * TypeVariable
     | varNotDeclared                   Context * Variable
     | typeAlreadyDeclared              Context * TypeName
     | opAlreadyDeclared                Context * Operation
-    | typeAlreadyDefined               Context * TypeName
     | axiomAlreadyDeclared             Context * AxiomName
     | lemmaAlreadyDeclared             Context * LemmaName
     | typeVarAlreadyDeclared           Context * TypeVariable
@@ -34,7 +32,6 @@ spec
     | badSubstitution                  Variable * Expression
     | notWFContext                     Judgement
     | notWFType                        Judgement
-    | notTypeEquiv                     Judgement
     | notSubtype                       Judgement
     | notWTExpr                        Judgement
     | notTheorem                       Judgement
@@ -61,8 +58,6 @@ spec
     | contextNotEndingInVar            Context
     | contextNotEndingInAxiom          Context
     | wrongType                        Type * Type
-    | wrongLeftType                    Type * Type
-    | wrongLeftTypes                   Types * Types
     | wrongLeftSubtype                 Type * Type
     | wrongLeftSubtypes                Types * Types
     | wrongRightSubtype                Type * Type
