@@ -237,15 +237,30 @@
 ;;;  OP-DECLARATION
 ;;; ------------------------------------------------------------------------
 
-(defun make-op-declaration (qualifiable-op-names optional-fixity sort-scheme l r)
-  (let ((names  (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
-	(fixity (if (equal :unspecified optional-fixity) 
-		    unspecified-fixity
-		  optional-fixity))
-	(tvs    (car sort-scheme))
-	(sig    (cdr sort-scheme))
-	(defs   '())
-	(pos    (make-pos l r)))
+(defun make-op-declaration (optional-pre-tvs qualifiable-op-names optional-fixity optional-post-tvs sig l r)
+  (let* ((names  (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
+	 (fixity      (if (equal :unspecified optional-fixity) 
+			  unspecified-fixity
+			optional-fixity))
+	 (tvs         (if (equal :unspecified optional-pre-tvs) 
+			  (if (equal :unspecified optional-post-tvs)
+			      '()
+			    optional-post-tvs)
+			(if (equal :unspecified optional-post-tvs)
+			    optional-pre-tvs
+			  ;; this final case is perverse, but there's no compelling reason
+			  ;; to go to the trouble to make it illegal
+			  (append optional-pre-tvs optional-post-tvs))))
+	 (sort-scheme (StandardSpec::abstractSort-3 #'namedTypeVar tvs sig))
+	 ;;
+	 ;; Since namedTypeVar is the identity function,
+	 ;;  (car sort-scheme) is just be a copy of vars
+	 ;;  (cdr sort-scheme) is a copy of sig with (Base qid) replaced by (TyVar id) where appropriate.
+	 ;; TODO: Move the responsibility for that conversion into the linker.
+	 ;;
+	 (sig         (cdr sort-scheme))
+	 (defs        '())
+	 (pos         (make-pos l r)))
     (SPECCALC::mkOpSpecElem-6 names fixity tvs sig defs pos)))
 
 (defun make-fixity (associativity priority l r)
@@ -260,23 +275,20 @@ If we want the precedence to be optional:
     (cons (cons associativity nil) priority)))
 ||#
 
-(defun make-sort-scheme (optional-sort-variable-binder sort l r)
-  (declare (ignore l r))
-  (let ((vars (if (equal :unspecified optional-sort-variable-binder)
-                  ()
-                optional-sort-variable-binder)))
-    ;; Since namedTypeVar is the identity function,
-    ;;  (car <result>) will just be a copy of vars
-    ;;  (cdr <result>) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
-    ;; TODO: Move the responsibility for that conversion into the linker.
-    (StandardSpec::abstractSort-3 #'namedTypeVar vars sort)))
-
 ;;; ------------------------------------------------------------------------
 ;;;  OP-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-(defun make-op-definition (optional-tvs qualifiable-op-names params optional-sort term l r)
-  (let* ((tvs         (if (equal :unspecified optional-tvs)  ()   optional-tvs))
+(defun make-op-definition (optional-pre-tvs qualifiable-op-names params optional-post-tvs optional-sort term l r)
+  (let* ((tvs         (if (equal :unspecified optional-pre-tvs) 
+			  (if (equal :unspecified optional-post-tvs)
+			      '()
+			    optional-post-tvs)
+			(if (equal :unspecified optional-post-tvs)
+			    optional-pre-tvs
+			  ;; this final case is perverse, but there's no compelling reason
+			  ;; to go to the trouble to make it illegal
+			  (append optional-pre-tvs optional-post-tvs))))
 	 (range-sort  (if (equal :unspecified optional-sort) (freshMetaTypeVar l r) optional-sort))
 	 (names       (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
 	 (fixity      unspecified-fixity)

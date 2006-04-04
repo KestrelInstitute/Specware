@@ -384,8 +384,14 @@
 
 ;;;  TODO: In doc: op-declaration now uses qualified name, not just name
 (define-sw-parser-rule :OP-DECLARATION ()
-  (:tuple "op" (1 :QUALIFIABLE-OP-NAMES) (:optional (2 :FIXITY)) ":" (3 :SORT-SCHEME))
-  (make-op-declaration 1 2 3 ':left-lcb ':right-lcb))
+  (:tuple "op" 
+	  (:optional (1 :NEW-SORT-VARIABLE-BINDER))
+	  (2 :QUALIFIABLE-OP-NAMES) 
+	  (:optional (3 :FIXITY)) 
+	  ":" 
+	  (:optional (4 :SORT-VARIABLE-BINDER)) 
+	  (5 :SORT))
+  (make-op-declaration 1 2 3 4 5 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIXITY ()
   (:tuple (1 :ASSOCIATIVITY) (2 :PRIORITY))
@@ -406,10 +412,6 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :PRIORITY ()
   :NUMBER)				; we want a raw number here, not a :NAT-LITERAL
-
-(define-sw-parser-rule :SORT-SCHEME ()
-  (:tuple (:optional (1 :SORT-VARIABLE-BINDER)) (2 :SORT))
-  (make-sort-scheme 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SORT-VARIABLE-BINDER ()
   (:anyof 
@@ -435,10 +437,10 @@ If we want the precedence to be optional:
           (:optional (1 :SORT-VARIABLE-BINDER))
           (2 :QUALIFIABLE-OP-NAMES)
           (3 :FORMAL-PARAMETERS)
-          (:optional (:tuple ":" (4 :SORT)))
+          (:optional (:tuple ":" (:optional (4 :SORT-VARIABLE-BINDER)) (5 :SORT)))
           :EQUALS
-          (5 :EXPRESSION))
-  (make-op-definition 1 2 3 4 5 ':left-lcb ':right-lcb))
+          (6 :EXPRESSION))
+  (make-op-definition 1 2 3 4 5 6 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETERS ()
   (:repeat* :FORMAL-PARAMETER))
@@ -892,7 +894,6 @@ If we want the precedence to be optional:
   (:tuple "the" "(" (1 :ANNOTATED-VARIABLE) ")" (2 :NON-BRANCH-EXPRESSION))
   (make-the 1 2 ':left-lcb ':right-lcb)
   :documentation "Iota")
-
 
 ;;; ------------------------------------------------------------------------
 ;;;   QUANTIFICATION
