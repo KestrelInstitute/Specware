@@ -834,7 +834,6 @@
 	;; ======================================================================
 	;; 
        extend-symbol-with-new-syllable
-
 	(push char token-chars)
 	(set-last-positions)
 	(local-read-char char char-code
@@ -848,7 +847,8 @@
 	  (#.+word-symbol-continue-code+     (go extend-word-symbol))
 	  (#.+non-word-symbol-start-code+    (go extend-non-word-symbol))
 	  (#.+non-word-symbol-continue-code+ (go extend-non-word-symbol))
-	  (#.+wildcard-code+                 (go extend-symbol-with-new-syllable))
+	  (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
+	  (#.+wildcard-code+                 (go extend-symbol-with-new-syllable)) ; shouldn't happen here, but just in case
 	  ;; 
 	  (otherwise                         (go terminate-symbol-but-preserve-wildcard)))
 
