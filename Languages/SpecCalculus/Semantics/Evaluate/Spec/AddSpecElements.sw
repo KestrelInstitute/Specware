@@ -96,6 +96,9 @@ SpecCalc qualifying spec
 
   %% called by evaluateSpecElem and LiftPattern
  def addOp new_names new_fixity new_dfn old_spec pos =
+   addOrRefineOp new_names new_fixity new_dfn old_spec pos true
+
+ def addOrRefineOp new_names new_fixity new_dfn old_spec pos addOnly? =
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
@@ -139,7 +142,9 @@ SpecCalc qualifying spec
 	let combined_names = removeDuplicates combined_names in % redundant?
 	let (old_tvs, old_srt, old_tm) = unpackFirstOpDef old_info in
 	let (new_tvs, new_srt, new_tm) = unpackFirstOpDef new_info in
-        case (definedTerm? old_dfn, definedTerm? new_dfn) of
+	let old_defined? = definedTerm? old_dfn in
+	let new_defined? = definedTerm? new_dfn in
+        case (old_defined?, new_defined?) of
           | (false, false) ->
             %%  Old: op foo : ...
             %%  New: op foo : ...
@@ -147,42 +152,6 @@ SpecCalc qualifying spec
                               "Operator "^(printAliases new_names)^" has been redeclared"
                               ^ "\n from " ^ (printSort (maybePiSort (old_tvs, old_srt)))
                               ^ "\n   to " ^ (printSort (maybePiSort (new_tvs, new_srt)))))
-          | (false, true) ->
-            %%  Old: op foo 
-            %%  New: def foo 
-            let happy? = (case new_tvs of
-                            | [] ->
-                              %%  Old:  op foo : ...
-                              %%  New:  def foo x = ...
-                              true
-                            | _ -> 
-                              %%  Old:  op foo : ...
-                              %%  New:  def [a,b,c] foo ... = ...
-                              new_tvs = old_tvs)
-            in
-            if happy? then
-	      let combined_srt = 
-	          case (old_srt, new_srt) of
-		    | (Any _,       _) -> new_srt
-		    | (_,       Any _) -> old_srt
-		    | (MetaTyVar _, _) -> new_srt
-		    | (_, MetaTyVar _) -> old_srt
-		    | _ -> old_srt   % TODO:  maybeAndSort ([old_srt, new_srt], sortAnn new_srt)
-	      in
-	      let combined_dfn = maybePiTerm (old_tvs, SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
-              let combined_info = old_info << {names = combined_names, 
-					       dfn   = combined_dfn,
-					       fullyQualified? = false} 
-	      in
-              return (foldl (fn (name as Qualified (q, id), new_ops) ->
-                             insertAQualifierMap (new_ops, q, id, combined_info))
-                            old_spec.ops
-                            combined_names)
-            else
-              raise (SpecError (pos, 
-                                "Operator "^(printAliases new_names)^" has been redefined"
-                                ^"\n with new type variables "^(printTyVars new_tvs)
-                                ^"\n    differing from prior "^(printTyVars old_tvs)))
           | (true, false) ->
 	    %%  Old:  def foo ... = ...
 	    %%  New:  op foo : ...
@@ -190,13 +159,49 @@ SpecCalc qualifying spec
 			      "Operator "^(printAliases new_names)^" has been redeclared"
                               ^ "\n from " ^ (printTerm old_dfn)
                               ^ "\n   to " ^ (printTerm new_dfn)))
-          | (true, true) ->
-            %%  def foo ...
-            %%  def foo ...
-            raise (SpecError (pos, 
-                              "Operator "^(printAliases new_names)^" has been redefined"
-                              ^ "\n from " ^ (printTerm old_dfn)
-                              ^ "\n   to " ^ (printTerm new_dfn))))
+	  | _ ->
+            %%  New: def foo 
+	    (if ~addOnly?             %%  Old: op foo : ... or      (add definition)
+	                              %%  Old: def foo : ... = ...  (replace definition)
+	       or ~old_defined? then  %%  Old: op foo : ...
+	       let happy? = (case new_tvs of
+			       | [] ->
+			       %%  Old:  op foo : ...
+			       %%  New:  def foo x = ...
+			       true
+			       | _ -> 
+			       %%  Old:  op foo : ...
+			       %%  New:  def [a,b,c] foo ... = ...
+			       new_tvs = old_tvs)
+	       in
+	       (if happy? then
+		  let combined_srt = (case (old_srt, new_srt) of
+					 | (Any _,       _) -> new_srt
+					 | (_,       Any _) -> old_srt
+					 | (MetaTyVar _, _) -> new_srt
+					 | (_, MetaTyVar _) -> old_srt
+					 | _ -> old_srt)   % TODO:  maybeAndSort ([old_srt, new_srt], sortAnn new_srt)
+		  in
+		  let combined_dfn = maybePiTerm (old_tvs, SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
+		  let combined_info = old_info << {names = combined_names, 
+						    dfn   = combined_dfn,
+						    fullyQualified? = false} 
+		  in
+		  return (foldl (fn (name as Qualified (q, id), new_ops) ->
+				 insertAQualifierMap (new_ops, q, id, combined_info))
+			  old_spec.ops
+			  combined_names)
+		else
+		  raise (SpecError (pos, 
+				    "Operator "^(printAliases new_names)^" has been redefined"
+				    ^"\n with new type variables "^(printTyVars new_tvs)
+				    ^"\n    differing from prior "^(printTyVars old_tvs))))
+	     else
+	       %%  def foo ...
+	       raise (SpecError (pos, 
+				 "Operator "^(printAliases new_names)^" has been redefined"
+				 ^ "\n from " ^ (printTerm old_dfn)
+				 ^ "\n   to " ^ (printTerm new_dfn)))))
      | _ ->
        %%  We're trying to merge information with two or more previously declared sorts.
        raise (SpecError (pos, 

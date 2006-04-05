@@ -1009,6 +1009,13 @@ If we want the precedence to be optional:
   (speccalc::mkSubst-3 spec-term morph-term (make-pos l r)))
 
 ;;; ========================================================================
+;;;  SC-OP-REFINE
+;;; ========================================================================
+
+(defun make-sc-op-refine (spec-term elts l r)
+  (speccalc::mkOpRefine-3 spec-term elts (make-pos l r)))
+
+;;; ========================================================================
 ;;;  SC-DIAG-MORPH
 ;;; ========================================================================
 

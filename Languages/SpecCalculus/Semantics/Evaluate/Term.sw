@@ -18,6 +18,7 @@ SpecCalc qualifying spec {
  import Translate      
  import Obligations
  import Substitute      
+ import OpRefine
  import Print      
  import Prove
  import translate ProofCheck by {Set._ +-> PCSet._}
@@ -50,6 +51,7 @@ This is a monadic interpreter for the Spec Calculus.
     | Diag        elems    -> SpecCalc.evaluateDiag        elems
     | Colimit     sub_term -> SpecCalc.evaluateColimit     sub_term
     | Subst       args     -> SpecCalc.evaluateSubstitute  args pos
+    | OpRefine    args     -> SpecCalc.evaluateOpRefine    args pos
     | DiagMorph   fields   -> SpecCalc.evaluateDiagMorph   fields
 
     | Qualify  (sub_term, qualifier) -> SpecCalc.evaluateQualify sub_term qualifier

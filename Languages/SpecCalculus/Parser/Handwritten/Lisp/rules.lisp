@@ -157,6 +157,7 @@
 	  :SC-DIAG
 	  :SC-COLIMIT
 	  :SC-SUBSTITUTE
+	  :SC-OP-REFINE
 	  ;; :SC-DIAG-MORPH
 	  ;; :SC-DOM
 	  ;; :SC-COD
@@ -1602,6 +1603,15 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :SC-SUBSTITUTE ()
   (:tuple (1 :SC-TERM) "[" (2 :SC-TERM) "]")
   (make-sc-substitute 1 2 ':left-lcb ':right-lcb))
+
+;;; ========================================================================
+;;;  SC-OP-REFINE
+;;; ========================================================================
+(define-sw-parser-rule :SC-OP-REFINE ()
+  (:tuple "refine" (1 :SC-TERM) "by" "{"
+	  (2 (:repeat+ (:anyof :OP-DEFINITION
+			       :OP-DECLARATION) nil)) "}")
+  (make-sc-op-refine 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH

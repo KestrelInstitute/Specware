@@ -30,6 +30,7 @@ SpecCalc qualifying spec {
   op evaluateQualify          : SCTerm -> Qualifier                                              -> SpecCalc.Env ValueInfo
   op evaluateTranslate        : SCTerm -> Renaming                                   -> Position -> SpecCalc.Env ValueInfo
   op evaluateSubstitute       : SCTerm * SCTerm                                      -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOpRefine         : SCTerm * (List (SpecElem Position))                  -> Position -> SpecCalc.Env ValueInfo
   op evaluateObligations      : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluateExpand           : SCTerm                                               -> Position -> SpecCalc.Env ValueInfo
   op evaluateGenerate         : String * SCTerm * Option String                      -> Position -> SpecCalc.Env ValueInfo
@@ -98,6 +99,10 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.48  2005/09/13 22:31:25  cyrluk
+%% Changes to add a ProofCheck SpecCalc unit, some changes to the proof
+%% generator, and added reporting of Snark timing.
+%%
 %% Revision 1.47  2005/08/18 13:32:51  mcdonald
 %% prep for improved test comparing scterms
 %%

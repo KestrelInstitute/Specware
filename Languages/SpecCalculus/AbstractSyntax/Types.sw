@@ -144,6 +144,11 @@ SpecCalc qualifying spec
 
    | Subst (Term a) * (Term a)
 
+   %% Op refinement. The first term should be spec valued and the second should
+   %% be op spec element valued.
+
+   | OpRefine (Term a) * (List (SpecElem a))
+
    %% Obligations takes a spec or a a morphism and returns a spec including
    %% the proof obligations as conjectures.
 
@@ -374,6 +379,7 @@ SpecCalc qualifying spec
  op mkExport      : fa (a) (List (NameExpr a)) * (Term a)                                  * a -> Term a
  op mkGenerate    : fa (a) String * (Term a) * (Option String)                             * a -> Term a
  op mkSubst       : fa (a) (Term a) * (Term a)                                             * a -> Term a
+ op mkOpRefine    : fa (a) (Term a) * (List (SpecElem a))                                  * a -> Term a
  op mkObligations : fa (a) (Term a)                                                        * a -> Term a
  op mkExpand      : fa (a) (Term a)                                                        * a -> Term a
  op mkReduce      : fa (a) (ATerm a) * (Term a)                                            * a -> Term a
@@ -411,6 +417,7 @@ SpecCalc qualifying spec
  def mkExport      (name_exprs, term,          pos) = (Export      (name_exprs, term),          pos)
  def mkGenerate    (lang, term, opt_file,      pos) = (Generate    (lang, term, opt_file),      pos)
  def mkSubst       (spec_term, sm_term,        pos) = (Subst       (spec_term, sm_term),        pos)
+ def mkOpRefine    (spec_term, elements,       pos) = (OpRefine    (spec_term, elements),       pos)
  def mkObligations (term,                      pos) = (Obligations (term),                      pos)
  def mkExpand      (term,                      pos) = (Expand      (term),                      pos)
  def mkReduce      (term_a, term_b,            pos) = (Reduce      (term_a, term_b),            pos)
