@@ -97,13 +97,13 @@ BitSeq qualifying spec
   op toByte : {n:Nat | n < 2 ** 8} -> Byte
   def toByte n = fromNat (n, 8)
 
-  op toWord16 : {n:Nat | n < 2 ** 16} -> Byte
+  op toWord16 : {n:Nat | n < 2 ** 16} -> Word16
   def toWord16 n = fromNat (n, 16)
 
-  op toWord32 : {n:Nat | n < 2 ** 32} -> Byte
+  op toWord32 : {n:Nat | n < 2 ** 32} -> Word32
   def toWord32 n = fromNat (n, 32)
 
-  op toWord64 : {n:Nat | n < 2 ** 64} -> Byte
+  op toWord64 : {n:Nat | n < 2 ** 64} -> Word64
   def toWord64 n = fromNat (n, 64)
 
 endspec
