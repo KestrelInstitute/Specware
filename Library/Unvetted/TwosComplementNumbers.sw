@@ -102,10 +102,10 @@ TwosComplement qualifying spec
   def fromInteger i = minimizer (length, fn(x:TCNumber) -> toInteger x = i)
 
   % unary minus:
-  op TCNumber_.- : TCNumber -> TCNumber
+  op TCNumber.- : TCNumber -> TCNumber
      % qualifier needed to avoid confusion with binary -;
      % ending "_" to avoid conflicts with user-defined qualifiers
-  def TCNumber_.- x =
+  def TCNumber.- x =
     % first calculate exact result as TC number:
     let y = fromInteger (- (toInteger x)) in
     % then truncate to operand length:
