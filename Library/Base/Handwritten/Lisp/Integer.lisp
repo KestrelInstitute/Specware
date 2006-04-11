@@ -1,4 +1,5 @@
 (defpackage "INTEGER-SPEC")
+(defpackage "INTEGER_")
 (defpackage :IntegerAux)
 (IN-PACKAGE "INTEGER-SPEC")
 
@@ -28,6 +29,10 @@
   `(the ,specware::*integer-impl* ,x))
 
 (defun -- (x) ; TODO: deprecate 
+  (declare (integer x))
+  (the-int (- 0 x)))
+
+(defun Integer_::|!-| (x)
   (declare (integer x))
   (the-int (- 0 x)))
 
