@@ -9,7 +9,7 @@
 (defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
 
-(declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
+(declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu1(c::brevity 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -18,18 +18,20 @@
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
 #+allegro
 (setq excl:*record-source-file-info* nil) ; workaround for annoying bug
-#+cmu
+#+cmu1
 (setq ext:*gc-verbose* nil)
-#+cmu
+#+cmu1
 (setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
-#+sbcl
-(setf (sb-ext:bytes-consed-between-gcs) 50331648)
-#+cmu
+;;;#+sbcl
+;;;(setf (sb-ext:bytes-consed-between-gcs) 50331648)
+#+cmu1
 (setq extensions:*efficiency-note-cost-threshold* 30)
 #+sbcl
 (setq sb-ext:*efficiency-note-cost-threshold* 30)
-#+cmu
+#+cmu1
 (setq c::*compile-print* nil)
+#+sbcl
+(declaim (sb-ext:muffle-conditions sb-ext:compiler-note))
 #+sbcl
 (setq sb-ext::*compile-print* nil)
 #+sbcl
@@ -78,8 +80,8 @@
 #+cmu
 ;(without-package-locks     ;; add in version 19
  (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch")) ; )
-;#+sbcl
-;(compile-and-load-lisp-file (in-specware-dir "/Applications/Handwritten/Lisp/sbcl-patch"))
+#+sbcl
+(compile-and-load-lisp-file (in-specware-dir "/Applications/Handwritten/Lisp/sbcl-patch"))
 
 (defun ignore-warning (condition)
    (declare (ignore condition))
@@ -252,12 +254,13 @@
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
-       #+sbcl    sb-int:*after-save-initializations*)
+       #+sbcl    sb-ext:*init-hooks*)
 
 #+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
-	            (setf (sb-ext:bytes-consed-between-gcs) 50331648))
-       sb-int:*after-save-initializations*)
+	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
+		    )
+       sb-ext:*init-hooks*)
 
 ;;; Clear load environment vars
 ;;; TODO: Why?  
@@ -272,7 +275,7 @@
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
-       #+sbcl    sb-int:*after-save-initializations*)
+       #+sbcl    sb-ext:*init-hooks*)
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
