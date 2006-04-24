@@ -45,27 +45,51 @@ spec
   op  traceEval?: Boolean
   def traceEval? = false
 
+  op  traceable?: MS.Term -> Boolean
+  def traceable? t =
+    case t of
+      %| Var _ -> false
+      | Fun _ -> false
+      | Lambda _ -> false
+      | Record (("1", _)::_,_) -> false
+      | _ -> true
+
   op  preTrace: MS.Term * Nat -> ()
   def preTrace(t,depth) =
-    if traceEval? then
-      let _ = toScreen (loopn (fn (_,val) -> " "^val) ((toString depth)^"< ") depth) in
-      let _ = printTermToTerminal t in
-      let _ = toScreen newline in
-      ()
+    if traceEval? && traceable? t then
+      let _ = toScreen (blanks depth) in
+      case t of
+	| Var _ ->
+	  let _ = printTermToTerminal t in
+	  let _ = toScreen ": " in
+	  ()
+	| _ ->
+	  let _ = toScreen ((toString depth)^"< ") in
+	  let _ = printTermToTerminal t in
+	  let _ = toScreen newline in
+	  ()
     else ()
     
-  op  postTrace: Value * Nat -> ()
-  def postTrace(t,depth) =
-    if traceEval? then
-      let _ = toScreen (loopn (fn (_,val) -> " "^val) ((toString depth)^"> ") depth) in
-      let _ = printValue t in
-      let _ = toScreen newline in
-      ()
+  op  postTrace: MS.Term * Value * Nat -> ()
+  def postTrace(t,val,depth) =
+    if traceEval? && traceable? t then
+      case t of
+	| Var _ ->
+	  let _ = printValue val in
+	  let _ = toScreen newline in
+	  ()
+	| _ ->
+	  let _ = toScreen (blanks depth) in
+	  let _ = toScreen ((toString depth)^"> ") in
+	  let _ = printValue val in
+	  let _ = toScreen newline in
+	  ()
     else ()
 
   op  evalRec: MS.Term * Subst * Spec * Nat -> Value
   def evalRec(t,sb,spc,depth) =
     let _ = preTrace(t,depth) in
+    let depth = if traceable? t then depth else depth -1 in
     let val = 
 	case t of
 	  | Var((v,_),_) ->
@@ -125,7 +149,7 @@ spec
 	  % ? | Bind()
 	  | _ -> Unevaluated t
     in
-    let _ = postTrace(val,depth) in
+    let _ = postTrace(t,val,depth) in
     val
   
   op  evalFun: Fun * MS.Term * Subst * Spec * Nat -> Value
