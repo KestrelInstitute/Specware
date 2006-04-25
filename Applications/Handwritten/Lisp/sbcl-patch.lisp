@@ -7,7 +7,8 @@
 (sb-ext:unlock-package "CL")
 
 
-(defparameter cl::*default-package-use-list* '("CL"))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *default-package-use-list* '("CL")))
 
 (defun %defpackage (name nicknames size shadows shadowing-imports
                     use imports interns exports implement lock doc-string
