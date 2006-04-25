@@ -14,6 +14,7 @@
 ;;;  op fileWritable          : Filename -> Boolean
 ;;;  op readBytesFromFile     : Filename -> List Byte
 ;;;  op writeBytesToFile      : List Byte * Filename -> ()
+;;;  op writeStringToFile     : List Byte * Filename -> ()
 ;;;
 
 
@@ -121,6 +122,13 @@
     (dolist (byte bytes)
       (write-byte byte s))))
 
+(defun writeStringToFile-2 (string filename)
+  (ensure-directories-exist filename)
+  (with-open-file (s filename
+		   :direction :output
+		   :if-exists :supersede)
+    (write-string string s)))
+
 ;;; From UnicodeSig.sw :
 ;;;
 ;;;  sort Encoding = UChars -> Bytes   % UTF-8, UTF-16, JIS, etc.
@@ -200,5 +208,5 @@
 			(t (string ch))))
 		  chars)))
     (declare (type list translated-char-strings))
-    (the cl:simple-base-string 
+    (the cl:simple-string 
       (apply #'concatenate 'string translated-char-strings))))

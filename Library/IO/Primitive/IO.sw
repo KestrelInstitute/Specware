@@ -1,11 +1,12 @@
-\section{Low Level Impure IO operations}
+(* Low Level Impure IO operations
 
 This is a poorly named file in a poorly named directory. The idea,
 however, is to keep the impure environment operations
 separate from the pure (monadic) operations.
 
-\begin{spec}
-IO qualifying spec {
+*)
+
+IO qualifying spec
   import /Library/Base
 
   sort Filename = String
@@ -29,10 +30,8 @@ IO qualifying spec {
   %   implode (map chr (readBytesFromFile filename))
 
   op writeStringToFile : String *  Filename -> ()
-  def writeStringToFile (string, filename) =
-    writeBytesToFile (map ord (explode string),
-		      filename)
-
-}
-\end{spec}
-
+%% Too inefficient
+%  def writeStringToFile (string, filename) =
+%    writeBytesToFile (map ord (explode string),
+%		      filename)
+endspec
