@@ -105,7 +105,8 @@ axioms, etc.
       | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((name,tyVars,term), spc))
       | Claim   _                                -> error "evaluateSpecElem: unsupported claim type"
 
-      | Comment str                              -> return (addComment    (str, spc))
+      | Pragma  (prefix, body, postfix)          -> return (addPragma     ((prefix, body, postfix), spc))
+      | Comment str                              -> return (addComment    (str,                     spc))
 
   def mergeImport spec_term imported_spec old_spec =
     let sorts = old_spec.sorts in

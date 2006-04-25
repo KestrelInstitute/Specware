@@ -253,11 +253,16 @@ SpecCalc qualifying spec
    | Sort    List QualifiedId          * ASort a
    | Op      List QualifiedId * Fixity * ATerm a
    | Claim   (AProperty a)
+   | Pragma  String * String * String
    | Comment String
 
  %% These are used by the parser to create SpecElem's
  %% They can be changed to adapt to new structures for SpecElem's
  %% without altering the parser code in semantics.lisp
+
+ op  mkPragma : [a] String * String * String * a -> SpecElem a
+ def mkPragma (prefix, body, postfix, pos) = 
+   (Pragma (prefix, body, postfix), pos)
 
  op  mkSortSpecElem : [a] SortNames * TyVars * List (ASort a) * a -> SpecElem a
  def [a] mkSortSpecElem (names, tvs, defs, pos) =

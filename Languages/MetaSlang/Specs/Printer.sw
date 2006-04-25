@@ -1347,6 +1347,10 @@ def AnnSpecPrinter.printTerm term =
 	 | Property prop ->
 	   (index+1,
 	    Cons(ppProperty context (index, prop),ppResult))
+	 | Pragma (prefix, body, postfix)->
+	   (index+1,
+	    Cons ((1, string (prefix ^ body ^ postfix)),
+		  ppResult))
 	 | Comment str ->
 	   (index+1,
 	    if exists (fn char -> char = #\n) str then

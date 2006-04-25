@@ -65,6 +65,7 @@ AnnSpec qualifying spec
    | OpDef    QualifiedId
    | Property (AProperty b)
    | Comment  String
+   | Pragma   (String * String * String)
 
  type SpecElement  = ASpecElement  StandardAnnotation
  type SpecElements = ASpecElements StandardAnnotation
