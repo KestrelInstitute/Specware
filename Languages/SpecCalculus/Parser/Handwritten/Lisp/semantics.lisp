@@ -46,6 +46,14 @@
 		(cons :|Boolean| nil)
 		pos)))
 
+(defun make-pragma (x l r)
+  (let ((prefix  (first  x))
+	(body    (second x))
+	(postfix (third  x))
+	(pos     (make-pos l r)))
+    (SpecCalc::mkPragma-4 prefix body postfix pos)))
+  
+
 (defun namedTypeVar (name)
   name)
 
