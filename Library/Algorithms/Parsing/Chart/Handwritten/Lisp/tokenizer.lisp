@@ -142,19 +142,21 @@
     (assign-tokenizer-code  string-table string-escape-char    +string-escape-code+)
     ;;
     ;;
-    (dolist (quad extended-comment-delimiters)
-      (let* ((open-comment-string  (first  quad))
-	     (close-comment-string (second quad))
-	     (recursive?           (third  quad)) 
-	     (eof-ok?              (if (null (cdddr quad)) nil (fourth quad))))
+    (dolist (quint extended-comment-delimiters)
+      (let* ((open-comment-string  (first  quint))
+	     (close-comment-string (second quint))
+	     (recursive?           (third  quint)) 
+	     (eof-ok?              (if (null (cdddr quint))  nil (fourth quint)))
+	     (pragma?              (if (null (cddddr quint)) nil (fifth  quint))))
 	(unless (and (stringp open-comment-string)
 		     (> (length open-comment-string) 0)
 		     (stringp close-comment-string)
 		     (> (length close-comment-string) 0)
 		     (member recursive? '(t nil))
-		     (member eof-ok?    '(t nil)))
+		     (member eof-ok?    '(t nil))
+		     (member pragma?    '(t nil)))
 	  (break "Bad description of extended comment delimiters.  Want (open-str close-str recursive? eof-ok?) : ~S" 
-		 quad))
+		 quint))
 	(setf (svref comment-table (char-code (schar open-comment-string 0)))
 	  +maybe-open-comment-code+)))
     ;;
@@ -325,7 +327,7 @@
 	(string-table              (tokenizer-parameters-string-table              tokenizer-parameters))
 	(comment-table             (tokenizer-parameters-comment-table             tokenizer-parameters))
 	(separator-tokens          (tokenizer-parameters-separator-tokens          tokenizer-parameters))
-	(comment-quads             (tokenizer-parameters-comment-delimiters        tokenizer-parameters))
+	(comment-quints            (tokenizer-parameters-comment-delimiters        tokenizer-parameters))
 	(digits-may-start-symbols? (tokenizer-parameters-digits-may-start-symbols? tokenizer-parameters))
 	(ht-ad-hoc-types           (tokenizer-parameters-ad-hoc-types-ht           tokenizer-parameters))
 	(ad-hoc-table              (tokenizer-parameters-ad-hoc-table              tokenizer-parameters))
@@ -352,7 +354,7 @@
 						  digits-may-start-symbols?
 						  comment-table
 						  separator-tokens 
-						  comment-quads
+						  comment-quints
 						  ad-hoc-table
 						  ad-hoc-strings)
 	      (cond ((eq type :EOF)
@@ -383,7 +385,7 @@
 					 digits-may-start-symbols?
 					 comment-table
 					 separator-tokens 
-					 extended-comment-quads
+					 extended-comment-quints
 					 ad-hoc-table
 					 ad-hoc-strings)
   ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
@@ -402,7 +404,7 @@
 	 (char           )
 	 (char-code      )
 	 (token-chars    nil)
-	 (this-ec-quad   nil)
+	 (this-ec-quint  nil)
 	 (hex-char-1      )
 	 (hex-char-code-1 )
 	 (hex-char-2      )
@@ -437,11 +439,11 @@
 			      ()
 			    `((when (and (eq (svref comment-table ,char-code-var) 
 					     +maybe-open-comment-code+)
-					 (not (null (setq this-ec-quad
-						      (applicable-extended-comment-quad
+					 (not (null (setq this-ec-quint
+						      (applicable-extended-comment-quint
 						       ,char-var
 						       ps-stream 
-						       extended-comment-quads)))))
+						       extended-comment-quints)))))
 				,open-extended-comment-action)))))))
 	       (local-unread-char (char-var)
 		 `(progn
@@ -1101,8 +1103,8 @@
 	(set-first-positions)
 	;;
 	(multiple-value-bind (error? comment-chars last-byte last-line last-column)
-	    (skip-extended-comment char ps-stream this-ec-quad 
-				   extended-comment-quads
+	    (skip-extended-comment char ps-stream this-ec-quint 
+				   extended-comment-quints
 				   comment-table
 				   first-byte
 				   first-line
@@ -1133,10 +1135,10 @@
     ((#\f #\F) 15)
     (otherwise nil)))
 
-(defun applicable-extended-comment-quad (first-char ps-stream extended-comment-quads)
-  (dolist (quad extended-comment-quads)
-    (when (pseudo-stream-has-prefix? first-char ps-stream (first quad))
-      (return quad))))
+(defun applicable-extended-comment-quint (first-char ps-stream extended-comment-quints)
+  (dolist (quint extended-comment-quints)
+    (when (pseudo-stream-has-prefix? first-char ps-stream (first quint))
+      (return quint))))
 
 (defun pseudo-stream-has-prefix? (first-char ps-stream open-comment-string)
   (and (eq (schar open-comment-string 0) first-char)
@@ -1163,7 +1165,7 @@
 
 (defstruct extended-comment-state
   error?
-  all-quads
+  all-quints
   comment-table
   byte
   line
@@ -1172,29 +1174,30 @@
   
 (defvar *extended-comment-state* (make-extended-comment-state))
 
-(defun skip-extended-comment (first-char ps-stream this-quad all-quads
+(defun skip-extended-comment (first-char ps-stream this-quint all-quints
 					 comment-table
 					 first-byte first-line first-column)
   (let ((ec-state *extended-comment-state*)) 
     (setf (extended-comment-state-error?        ec-state) nil)
-    (setf (extended-comment-state-all-quads     ec-state) all-quads)
+    (setf (extended-comment-state-all-quints    ec-state) all-quints)
     (setf (extended-comment-state-comment-table ec-state) comment-table)
     (setf (extended-comment-state-byte          ec-state) first-byte)
     (setf (extended-comment-state-line          ec-state) first-line)
     (setf (extended-comment-state-column        ec-state) first-column)
     (setf (extended-comment-state-chars         ec-state) (list first-char))
-    (aux-skip-extended-comment ps-stream this-quad ec-state)
+    (aux-skip-extended-comment ps-stream this-quint ec-state)
     (values (extended-comment-state-error? ec-state) 
 	    (extended-comment-state-chars  ec-state) 
 	    (extended-comment-state-byte   ec-state)
 	    (extended-comment-state-line   ec-state)
 	    (extended-comment-state-column ec-state))))
 
-(defun aux-skip-extended-comment (ps-stream this-quad ec-state)
-  (let* ((open-comment  (first  this-quad))
-	 (close-comment (second this-quad))
-	 (recursive?    (third  this-quad))
-	 (eof-ok?       (fourth this-quad))
+(defun aux-skip-extended-comment (ps-stream this-quint ec-state)
+  (let* ((open-comment  (first  this-quint))
+	 (close-comment (second this-quint))
+	 (recursive?    (third  this-quint))
+	 (eof-ok?       (fourth this-quint))
+       ;;(pragma?       (fifth  this-quint))
 	 (open-size  (1- (length open-comment)))
 	 (close-size (1- (length close-comment)))
 	 (close-char-0 (schar close-comment 0))
@@ -1232,11 +1235,11 @@
 	    ((and recursive?
 		  (eq (svref comment-table (char-code char)) 
 		      +maybe-open-comment-code+))
-	     (let ((new-quad (applicable-extended-comment-quad 
-				char ps-stream 
-				(extended-comment-state-all-quads ec-state))))
-	       (when (not (null new-quad))
-		 (aux-skip-extended-comment ps-stream new-quad ec-state))))))))
+	     (let ((new-quint (applicable-extended-comment-quint 
+			      char ps-stream 
+			      (extended-comment-state-all-quints ec-state))))
+	       (when (not (null new-quint))
+		 (aux-skip-extended-comment ps-stream new-quint ec-state))))))))
 
 ;;; ========================================================================
 

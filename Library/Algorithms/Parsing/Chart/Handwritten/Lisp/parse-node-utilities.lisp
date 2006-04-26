@@ -35,6 +35,7 @@
 	 (generic-string-rule         (parser-string-rule                 parser))
 	 (generic-number-rule         (parser-number-rule                 parser))
 	 (generic-character-rule      (parser-character-rule              parser))
+	 (generic-pragma-rule         (parser-pragma-rule                 parser))
 	 (keywords-are-keywords-only? (parser-keywords-are-keywords-only? parser))
          #+DEBUG-PARSER
 	 (number-of-tokens-to-process 0)
@@ -199,6 +200,8 @@
 		     (add-partial-node session specific-keyword-rule forward-node 0))
 		   (add-partial-node session generic-symbol-rule forward-node 0)
 		   (add-partial-node session generic-number-rule forward-node 0))
+		  (:PRAGMA
+		   (add-partial-node session generic-pragma-rule forward-node 0))
 		  )))))))))
 
 (defun initialize-location-desired-bvs (session)

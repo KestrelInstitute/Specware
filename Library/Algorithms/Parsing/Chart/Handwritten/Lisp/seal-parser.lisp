@@ -896,6 +896,7 @@
 	(string-rule    (maybe-find-parser-rule parser :STRING))
 	(number-rule    (maybe-find-parser-rule parser :NUMBER))
 	(character-rule (maybe-find-parser-rule parser :CHARACTER))
+	(pragma-rule    (maybe-find-parser-rule parser :PRAGMA))
 	(toplevel-rule  (maybe-find-parser-rule parser :TOPLEVEL)))
     (when (null symbol-rule)
       (warn "Cannot find rule named :SYMBOL"))
@@ -907,11 +908,14 @@
       (warn "Cannot find rule named :CHARACTER"))
     (when (null toplevel-rule)
       (warn "Cannot find rule named :TOPLEVEL"))
+    (when (null pragma-rule)
+      (warn "Cannot find rule named :PRAGMA"))
     (setf (parser-symbol-rule    parser) symbol-rule)
     (setf (parser-string-rule    parser) string-rule)
     (setf (parser-number-rule    parser) number-rule)
     (setf (parser-character-rule parser) character-rule)
     (setf (parser-toplevel-rule  parser) toplevel-rule)
+    (setf (parser-pragma-rule    parser) pragma-rule)
     ))
 
 ;;; ====================

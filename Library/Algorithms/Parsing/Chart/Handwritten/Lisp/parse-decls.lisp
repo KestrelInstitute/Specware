@@ -27,6 +27,7 @@
   string-rule				; rule for string    [provided by user's grammar]
   number-rule				; rule for number    [provided by user's grammar]
   character-rule			; rule for character [provided by user's grammar]
+  pragma-rule			        ; rule for pragma    [provided by user's grammar]
   rules					; list of rules
   ;;
   ht-name-to-rule			; hash table:  name ->  rule

@@ -272,7 +272,8 @@
 				   :STRING
 				   :CHARACTER
 				   :AD-HOC-NUMBER-ONLY 
-				   :AD-HOC-KEYWORD-AND-NUMBER-ONLY)) 
+				   :AD-HOC-KEYWORD-AND-NUMBER-ONLY
+				   :PRAGMA))
 	      token-value)
 	     (t
 	      `(,token-type ,token-value)))))
