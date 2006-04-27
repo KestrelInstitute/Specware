@@ -37,6 +37,7 @@
 				    comment-to-eol-chars
 				    ;;
 				    extended-comment-delimiters
+				    pragma-delimiters
 				    ;;
 				    ad-hoc-keywords
 				    ad-hoc-symbols
@@ -156,39 +157,50 @@
 	  (break "Bad description of extended comment delimiters.  Want (open-str close-str recursive? eof-ok?) : ~S" 
 		 quad))
 	(setf (svref comment-table (char-code (schar open-comment-string 0)))
-	  +maybe-open-comment-code+)))
+	      +maybe-open-comment-code+)))
+    (dolist (pair pragma-delimiters)
+      (let* ((open-pragma-string  (first  pair))
+	     (close-pragma-string (second pair)))
+	(unless (and (stringp open-pragma-string)
+		     (> (length open-pragma-string) 0)
+		     (stringp close-pragma-string)
+		     (> (length close-pragma-string) 0))
+	  (break "Bad description of pragma delimiters.  Want (open-str close-str) : ~S" 
+		 pair))
+	(setf (svref comment-table (char-code (schar open-pragma-string 0)))
+	      +maybe-open-pragma-code+)))
     ;;
     (dolist (char separator-chars)
       (setf (svref separator-tokens (char-code char)) (string char)))
     (dolist (string ad-hoc-keywords)
       (setf (svref ad-hoc-table (char-code (schar string 0))) 
-	+maybe-start-of-ad-hoc-token+))
+	    +maybe-start-of-ad-hoc-token+))
     (dolist (string ad-hoc-symbols)
       (setf (svref ad-hoc-table (char-code (schar string 0))) 
-	+maybe-start-of-ad-hoc-token+))
+	    +maybe-start-of-ad-hoc-token+))
     (dolist (string ad-hoc-numbers)
       (setf (svref ad-hoc-table (char-code (schar string 0))) 
-	+maybe-start-of-ad-hoc-token+))
+	    +maybe-start-of-ad-hoc-token+))
     (let ((ht-ad-hoc-types (make-hash-table
 			    :test (if case-sensitive?
 				      #+allegro 'string= #-allegro 'equal
-				    'string-equal))))
+				      'string-equal))))
       (dolist (keyword-string ad-hoc-keywords)
 	(setf (gethash keyword-string ht-ad-hoc-types) :AD-HOC-KEYWORD-ONLY))
       (dolist (symbol-string ad-hoc-symbols)
 	(let ((old-value (gethash symbol-string ht-ad-hoc-types)))
 	  (setf (gethash symbol-string ht-ad-hoc-types) 
-	    (if (null old-value)
-		:AD-HOC-SYMBOL-ONLY
-                :AD-HOC-KEYWORD-AND-SYMBOL-ONLY))))
+		(if (null old-value)
+		    :AD-HOC-SYMBOL-ONLY
+		  :AD-HOC-KEYWORD-AND-SYMBOL-ONLY))))
       (dolist (number-string ad-hoc-numbers)
 	(let ((old-value (gethash number-string ht-ad-hoc-types)))
 	  (setf (gethash number-string ht-ad-hoc-types) 
-	    (ecase old-value
-	      ((nil)               :AD-HOC-NUMBER-ONLY)
-	      (:KEYWORD            :AD-HOC-KEYWORD-AND-NUMBER-ONLY)
-	      (:SYMBOL             :AD-HOC-SYMBOL-AND-NUMBER-ONLY)
-	      (:KEYWORD-AND-SYMBOL :AD-HOC-KEYWORD-AND-SYMBOL-AND-NUMBER-ONLY)))))
+		(ecase old-value
+		  ((nil)               :AD-HOC-NUMBER-ONLY)
+		  (:KEYWORD            :AD-HOC-KEYWORD-AND-NUMBER-ONLY)
+		  (:SYMBOL             :AD-HOC-SYMBOL-AND-NUMBER-ONLY)
+		  (:KEYWORD-AND-SYMBOL :AD-HOC-KEYWORD-AND-SYMBOL-AND-NUMBER-ONLY)))))
 
       ;;
       (when-debugging
@@ -237,12 +249,12 @@
 			i (code-char i)  (cdr (assoc n alist)))))
 	   (terpri)
 	   (dotimes (i size-of-character-set)
-	     (if (= (svref comment-table i) +maybe-open-comment-code+)
-		 (comment "The character ~D (~S) may start an extended comment"
-			  i (code-char i))))
-	   (terpri)
-	   (dotimes (i (length ad-hoc-table))
-	     (comment "Ad-hoc-table (~3D ~S) = ~S" i (code-char i) (svref ad-hoc-table i)))
+	     (cond ((= (svref comment-table i) +maybe-open-comment-code+)
+		    (comment "The character ~D (~S) may start an extended comment"
+			     i (code-char i))))
+	     (cond ((= (svref comment-table i) +maybe-open-pragma-code+)
+		    (comment "The character ~D (~S) may start a pragma"
+			     i (code-char i)))))
 	   (terpri)
 	   (dolist (x ad-hoc-keywords) (comment "Ad-hoc-keyword : ~S" x))
 	   (dolist (x ad-hoc-symbols)  (comment "Ad-hoc-symbol  : ~S" x))
@@ -270,6 +282,7 @@
 				   :comment-table             comment-table 
 				   :separator-tokens          separator-tokens
 				   :comment-delimiters        extended-comment-delimiters
+				   :pragma-delimiters         pragma-delimiters
 				   :ad-hoc-types-ht           ht-ad-hoc-types
 				   :ad-hoc-table              ad-hoc-table
 				   :ad-hoc-strings            ad-hoc-strings
@@ -326,6 +339,7 @@
 	(comment-table             (tokenizer-parameters-comment-table             tokenizer-parameters))
 	(separator-tokens          (tokenizer-parameters-separator-tokens          tokenizer-parameters))
 	(comment-quads             (tokenizer-parameters-comment-delimiters        tokenizer-parameters))
+	(pragma-delimiters         (tokenizer-parameters-pragma-delimiters         tokenizer-parameters))
 	(digits-may-start-symbols? (tokenizer-parameters-digits-may-start-symbols? tokenizer-parameters))
 	(ht-ad-hoc-types           (tokenizer-parameters-ad-hoc-types-ht           tokenizer-parameters))
 	(ad-hoc-table              (tokenizer-parameters-ad-hoc-table              tokenizer-parameters))
@@ -353,6 +367,7 @@
 						  comment-table
 						  separator-tokens 
 						  comment-quads
+						  pragma-delimiters
 						  ad-hoc-table
 						  ad-hoc-strings)
 	      (cond ((eq type :EOF)
@@ -384,6 +399,7 @@
 					 comment-table
 					 separator-tokens 
 					 extended-comment-quads
+					 pragma-delimiters
 					 ad-hoc-table
 					 ad-hoc-strings)
   ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
@@ -401,336 +417,354 @@
 	 (last-column    )
 	 (char           )
 	 (char-code      )
-	 (token-chars    nil)
-	 (this-ec-quad   nil)
+	 (token-chars      nil)
+	 (this-ec-quad     nil)
+	 (this-pragma-pair nil)
 	 (hex-char-1      )
 	 (hex-char-code-1 )
 	 (hex-char-2      )
 	 (hex-char-code-2 ))
 
     (macrolet ((local-warn (prefix line column byte msg &rest args)
-		 `(warn "At line ~3D:~2D  ~?" 
-			;; ,prefix
-			,line ,column	; ,byte
-			,msg (list ,@args)))
+			   `(warn "At line ~3D:~2D  ~?" 
+				  ;; ,prefix
+				  ,line ,column	; ,byte
+				  ,msg (list ,@args)))
 	       (warn-here (msg &rest args)
-		 `(local-warn "At" current-line current-column current-byte 
-			      ,msg ,@args))
-	       (local-read-char (char-var char-code-var eof-action newline-action open-extended-comment-action)
-		 `(progn              
-		    (setq ,char-var (ps-read-char ps-stream))
-		    (incf current-byte)
-		    (if (eq ,char-var +tokenizer-eof+) 
-			,eof-action
-		      (progn
-			(setq ,char-code-var (char-code ,char-var))
-			(cond ((eq ,char-var #\newline)
-			       ;; we proceed to line+1 : -1, so that the next character read 
-			       ;;  (which will be the leftmost on the line) will be at line+1 : 0
-			       ;; current-byte was incremented above, so we don't need to touch that here
-			       (incf current-line)
-			       (setq current-column -1)
-			       ,newline-action)
-			      (t
-			       (incf current-column)))
-			,@(if (null open-extended-comment-action)
-			      ()
-			    `((when (and (eq (svref comment-table ,char-code-var) 
-					     +maybe-open-comment-code+)
-					 (not (null (setq this-ec-quad
-						      (applicable-extended-comment-quad
-						       ,char-var
-						       ps-stream 
-						       extended-comment-quads)))))
-				,open-extended-comment-action)))))))
+			  `(local-warn "At" current-line current-column current-byte 
+				       ,msg ,@args))
+	       (local-read-char (char-var char-code-var eof-action newline-action open-extended-comment-action open-pragma-action)
+				`(progn              
+				   (setq ,char-var (ps-read-char ps-stream))
+				   (incf current-byte)
+				   (if (eq ,char-var +tokenizer-eof+) 
+				       ,eof-action
+				     (progn
+				       (setq ,char-code-var (char-code ,char-var))
+				       (cond ((eq ,char-var #\newline)
+					      ;; we proceed to line+1 : -1, so that the next character read 
+					      ;;  (which will be the leftmost on the line) will be at line+1 : 0
+					      ;; current-byte was incremented above, so we don't need to touch that here
+					      (incf current-line)
+					      (setq current-column -1)
+					      ,newline-action)
+					     (t
+					      (incf current-column)))
+				       ;; extended-comments and pragmas are similar, 
+				       ;; but pragmas will be recognized in fewer places (following whitespace)
+				       ,@(if (null open-extended-comment-action)
+					     ()
+					   `((when (and (eq (svref comment-table ,char-code-var) 
+							    +maybe-open-comment-code+)
+							(not (null (setq this-ec-quad
+									 (applicable-extended-comment-quad
+									  ,char-var
+									  ps-stream 
+									  extended-comment-quads)))))
+					       ,open-extended-comment-action)))
+				       ,@(if (null open-extended-comment-action)
+					     ()
+					   `((when (and (eq (svref comment-table ,char-code-var) 
+							    +maybe-open-pragma-code+)
+							(not (null (setq this-pragma-pair
+									 (applicable-pragma-delimiter
+									  ,char-var
+									  ps-stream 
+									  pragma-delimiters))))
+							,open-pragma-action))))))))
 	       (local-unread-char (char-var)
-		 `(progn
-		    (ps-unread-char ,char-var ps-stream)
-		    ;; ??  If we do this repeatedly, unreading newlines, can we end up at a column left of -1 ??
-		    ;; If that happens, we could decrement the line, but then what should the column be??
-		    (decf current-byte)
-		    (decf current-column)
-		    ))
+				  `(progn
+				     (ps-unread-char ,char-var ps-stream)
+				     ;; ??  If we do this repeatedly, unreading newlines, can we end up at a column left of -1 ??
+				     ;; If that happens, we could decrement the line, but then what should the column be??
+				     (decf current-byte)
+				     (decf current-column)
+				     ))
 	       (set-first-positions ()
-		 ;; inclusive -- first character of token
-		 `(setq first-byte   current-byte
-			first-line   current-line
-			first-column current-column))
+				    ;; inclusive -- first character of token
+				    `(setq first-byte   current-byte
+					   first-line   current-line
+					   first-column current-column))
 	       (set-last-positions ()
-		 ;; inclusive -- last character of token
-		 `(setq last-byte   current-byte
-			last-line   current-line
-			last-column current-column))
+				   ;; inclusive -- last character of token
+				   `(setq last-byte   current-byte
+					  last-line   current-line
+					  last-column current-column))
 	       (return-values-using-prior-last (type value)
-		 `(return-from extract-token-from-pseudo-stream 
-		    (values ,type ,value
-			    first-byte first-line first-column
-			    last-byte  last-line  last-column)))
+					       `(return-from extract-token-from-pseudo-stream 
+						  (values ,type ,value
+							  first-byte first-line first-column
+							  last-byte  last-line  last-column)))
 	       (return-values (type value)
-		 `(progn
-                    (set-last-positions)
-                    (return-values-using-prior-last ,type ,value)))
+			      `(progn
+				 (set-last-positions)
+				 (return-values-using-prior-last ,type ,value)))
 	       (termination-warning (char-var char-code-var kind-of-token misc-chars kind-of-char)
-		 `(local-warn "After"
-			      last-line (1+ last-column) (1+ last-byte)
-			      "Terminating ~A \"~A~A\" with ~S (hex code ~2,'0X)~A."
-			      ,kind-of-token
-			      ,misc-chars
-			      (coerce (reverse token-chars) 'string)
-			      ,char-var ,char-code-var
-			      ,kind-of-char))
+				    `(local-warn "After"
+						 last-line (1+ last-column) (1+ last-byte)
+						 "Terminating ~A \"~A~A\" with ~S (hex code ~2,'0X)~A."
+						 ,kind-of-token
+						 ,misc-chars
+						 (coerce (reverse token-chars) 'string)
+						 ,char-var ,char-code-var
+						 ,kind-of-char))
 	       (look-for-ad-hoc-tokens (char-var char-code-var)
-		 `(unless (eq (svref ad-hoc-table ,char-code-var) 0)
-		    (dolist (ad-hoc-string ad-hoc-strings)
-		      (debugging-comment "Looking for ad-hoc-string ~S starting with ~S" ad-hoc-string ,char-var)
-		      (when (eq (schar ad-hoc-string 0) ,char-var)
-			(let ((found-ad-hoc-string? 
-			       (dotimes (i (1- (length ad-hoc-string)) t)
-				 (let ((local-char (ps-read-char ps-stream)))
-				   (debugging-comment "Looking for ad-hoc-string ~S, now at ~S" ad-hoc-string local-char)
-				   (when (eq ,char-var +tokenizer-eof+) 
-				     (debugging-comment "Saw EOF")
-				     (return nil)) ; from dotimes
-				   ;; Note: ad-hoc tokens take
-				   ;; precedence over open extended
-				   ;; comments, so we won't look here
-				   ;; to see if a comment is
-				   ;; starting.
-				   (let ((current-string-index (+ i 1)))
-				     (cond ((eq local-char (schar ad-hoc-string current-string-index))
-					    (debugging-comment "  extending match."))
-					   (t
-					    (debugging-comment "  match to ~S failed." ad-hoc-string)
-					    ;; put back the char that doesn't match
-					    (ps-unread-char local-char ps-stream)
-					    ;; put back all but the first char
-					    (dotimes (j i)
-					      (ps-unread-char (schar ad-hoc-string (- current-string-index 1 j))
-							      ps-stream))
-					    (return nil))))))))
-			  (debugging-comment "Found? ~S" found-ad-hoc-string?)
-			  (when found-ad-hoc-string?
-			    ;; If an ad-hoc-token is found, make sure it is not the start of a longer token
-			    (let ((next-char (ps-read-char ps-stream)))
-                              (unless (eq next-char +tokenizer-eof+) 
-				(let* ((this-char-dispatch-code (svref word-symbol-table ,char-code-var))
-				       (next-char-code (char-code next-char))
-				       (next-char-dispatch-code (svref word-symbol-table next-char-code)))
-				  ;; in all cases (except eof, of course) , put back the next char 
-				  (ps-unread-char next-char ps-stream)
-				  ;; then see if ad-hoc string should go back...
-				  (when (or (and (or (eq this-char-dispatch-code #.+word-symbol-start-code+)
-						     (eq this-char-dispatch-code #.+word-symbol-continue-code+))
-						 (or (eq next-char-dispatch-code #.+word-symbol-start-code+)
-						     (eq next-char-dispatch-code #.+word-symbol-continue-code+)
-						     (eq next-char-dispatch-code #.+syllable-separator-code+)))
-					    (and (or (eq this-char-dispatch-code #.+non-word-symbol-start-code+)
-						     (eq this-char-dispatch-code #.+non-word-symbol-continue-code+))
-						 (or (eq next-char-dispatch-code #.+non-word-symbol-start-code+)
-						     (eq next-char-dispatch-code #.+non-word-symbol-continue-code+)
-						     (eq next-char-dispatch-code #.+syllable-separator-code+))))
-				    ;; put back all but the first char of the ad-hoc-string
-				    (let ((n (1- (length ad-hoc-string))))
-				      (dotimes (i n)
-					(ps-unread-char (schar ad-hoc-string (- n i))
-							ps-stream)))
-				    (return nil)))))
-			    (debugging-comment "Found match to ~S." ad-hoc-string)
-			    ;; char-var was seen via local-read-char, so the current position is already 
-			    ;; set  to point at it
-			    (set-first-positions) 
-			    (dotimes (i (1- (length ad-hoc-string)))
-			      (let ((temp-char (schar ad-hoc-string (+ i 1))))
-				(incf current-byte)
-				(cond ((eq temp-char #\newline)
-				       ;; we proceed to line+1 : -1, so that the next character read 
-				       ;;  (which will be the leftmost on the line) will be at line+1 : 0
-				       ;; current-byte was incremented above, so we don't need to touch that here
-				       (incf current-line)
-				       (setq current-column -1))
-				      (t
-				       (incf current-column)))))
-			    (return-values :AD-HOC ad-hoc-string)))))))
+				       `(unless (eq (svref ad-hoc-table ,char-code-var) 0)
+					  (dolist (ad-hoc-string ad-hoc-strings)
+					    (debugging-comment "Looking for ad-hoc-string ~S starting with ~S" ad-hoc-string ,char-var)
+					    (when (eq (schar ad-hoc-string 0) ,char-var)
+					      (let ((found-ad-hoc-string? 
+						     (dotimes (i (1- (length ad-hoc-string)) t)
+						       (let ((local-char (ps-read-char ps-stream)))
+							 (debugging-comment "Looking for ad-hoc-string ~S, now at ~S" ad-hoc-string local-char)
+							 (when (eq ,char-var +tokenizer-eof+) 
+							   (debugging-comment "Saw EOF")
+							   (return nil)) ; from dotimes
+							 ;; Note: ad-hoc tokens take
+							 ;; precedence over open extended
+							 ;; comments, so we won't look here
+							 ;; to see if a comment is
+							 ;; starting.
+							 (let ((current-string-index (+ i 1)))
+							   (cond ((eq local-char (schar ad-hoc-string current-string-index))
+								  (debugging-comment "  extending match."))
+								 (t
+								  (debugging-comment "  match to ~S failed." ad-hoc-string)
+								  ;; put back the char that doesn't match
+								  (ps-unread-char local-char ps-stream)
+								  ;; put back all but the first char
+								  (dotimes (j i)
+								    (ps-unread-char (schar ad-hoc-string (- current-string-index 1 j))
+										    ps-stream))
+								  (return nil))))))))
+						(debugging-comment "Found? ~S" found-ad-hoc-string?)
+						(when found-ad-hoc-string?
+						  ;; If an ad-hoc-token is found, make sure it is not the start of a longer token
+						  (let ((next-char (ps-read-char ps-stream)))
+						    (unless (eq next-char +tokenizer-eof+) 
+						      (let* ((this-char-dispatch-code (svref word-symbol-table ,char-code-var))
+							     (next-char-code (char-code next-char))
+							     (next-char-dispatch-code (svref word-symbol-table next-char-code)))
+							;; in all cases (except eof, of course) , put back the next char 
+							(ps-unread-char next-char ps-stream)
+							;; then see if ad-hoc string should go back...
+							(when (or (and (or (eq this-char-dispatch-code #.+word-symbol-start-code+)
+									   (eq this-char-dispatch-code #.+word-symbol-continue-code+))
+								       (or (eq next-char-dispatch-code #.+word-symbol-start-code+)
+									   (eq next-char-dispatch-code #.+word-symbol-continue-code+)
+									   (eq next-char-dispatch-code #.+syllable-separator-code+)))
+								  (and (or (eq this-char-dispatch-code #.+non-word-symbol-start-code+)
+									   (eq this-char-dispatch-code #.+non-word-symbol-continue-code+))
+								       (or (eq next-char-dispatch-code #.+non-word-symbol-start-code+)
+									   (eq next-char-dispatch-code #.+non-word-symbol-continue-code+)
+									   (eq next-char-dispatch-code #.+syllable-separator-code+))))
+							  ;; put back all but the first char of the ad-hoc-string
+							  (let ((n (1- (length ad-hoc-string))))
+							    (dotimes (i n)
+							      (ps-unread-char (schar ad-hoc-string (- n i))
+									      ps-stream)))
+							  (return nil)))))
+						  (debugging-comment "Found match to ~S." ad-hoc-string)
+						  ;; char-var was seen via local-read-char, so the current position is already 
+						  ;; set  to point at it
+						  (set-first-positions) 
+						  (dotimes (i (1- (length ad-hoc-string)))
+						    (let ((temp-char (schar ad-hoc-string (+ i 1))))
+						      (incf current-byte)
+						      (cond ((eq temp-char #\newline)
+							     ;; we proceed to line+1 : -1, so that the next character read 
+							     ;;  (which will be the leftmost on the line) will be at line+1 : 0
+							     ;; current-byte was incremented above, so we don't need to touch that here
+							     (incf current-line)
+							     (setq current-column -1))
+							    (t
+							     (incf current-column)))))
+						  (return-values :AD-HOC ad-hoc-string)))))))
 	       )
       
       (tagbody
-	(go start-scan-for-new-token) 
-	;; 
-	;; ======================================================================
-	;;                 WHITESPACE 
-	;; ======================================================================
-	;; 
+       (go start-scan-for-new-token) 
+       ;; 
+       ;; ======================================================================
+       ;;                 WHITESPACE 
+       ;; ======================================================================
+       ;; 
 
        unrecognized-char-while-scanning-whitespace
-	(warn-here "Unrecognized ~6S (hex code ~2,'0X) while scanning whitespace -- treated as whitespace"
-		   char char-code)
-	;;
-       start-scan-for-new-token
-       continue-whitespace
-	;; 
-	(local-read-char char char-code
-			 (return-values :EOF nil) 
-			 () 
-			 (go start-extended-comment))
-	(look-for-ad-hoc-tokens char char-code)
-	;; 
-	(case (svref whitespace-table char-code)
-	  ;; majority
-	  (#.+whitespace-code+               (go continue-whitespace))
-	  ;; normal termination
-	  (#.+word-symbol-start-code+        (go start-word-symbol))
-	  (#.+non-word-symbol-start-code+    (go start-non-word-symbol))
-	  (#.+wildcard-code+                 (go start-wildcard))
-	  (#.+number-start-code+             (go start-number))
-	  (#.+string-quote-code+             (go start-string))
-	  (#.+separator-code+                (go start-separator))
-	  (#.+comment-to-eol-code+           (go start-comment-to-eol))
-          (#.+char-literal-start-code+       (go start-char-literal))
- 	  ;; peculiar termination  
-	  (#.+word-symbol-continue-code+     (go weird-middle-of-word-symbol-after-whitespace))
-	  (#.+non-word-symbol-continue-code+ (go weird-middle-of-non-word-symbol-after-whitespace))
-	  (#.+number-continue-code+          (go weird-middle-of-number-after-whitespace))
-	  (otherwise                         (go unrecognized-char-while-scanning-whitespace)))
-	;;   
-	;; ========================================
-	;; 
+       (warn-here "Unrecognized ~6S (hex code ~2,'0X) while scanning whitespace -- treated as whitespace"
+		  char char-code)
+       ;;
+      start-scan-for-new-token
+      continue-whitespace
+       ;; 
+       (local-read-char char char-code
+			(return-values :EOF nil) 
+			() 
+			(go start-extended-comment)
+			(go start-pragma))
+      ignore-erroneous-pragma
+       (look-for-ad-hoc-tokens char char-code)
+       ;; 
+       (case (svref whitespace-table char-code)
+	 ;; majority
+	 (#.+whitespace-code+               (go continue-whitespace))
+	 ;; normal termination
+	 (#.+word-symbol-start-code+        (go start-word-symbol))
+	 (#.+non-word-symbol-start-code+    (go start-non-word-symbol))
+	 (#.+wildcard-code+                 (go start-wildcard))
+	 (#.+number-start-code+             (go start-number))
+	 (#.+string-quote-code+             (go start-string))
+	 (#.+separator-code+                (go start-separator))
+	 (#.+comment-to-eol-code+           (go start-comment-to-eol))
+	 (#.+char-literal-start-code+       (go start-char-literal))
+	 ;; peculiar termination  
+	 (#.+word-symbol-continue-code+     (go weird-middle-of-word-symbol-after-whitespace))
+	 (#.+non-word-symbol-continue-code+ (go weird-middle-of-non-word-symbol-after-whitespace))
+	 (#.+number-continue-code+          (go weird-middle-of-number-after-whitespace))
+	 (otherwise                         (go unrecognized-char-while-scanning-whitespace)))
+       ;;   
+       ;; ========================================
+       ;; 
        weird-middle-of-word-symbol-after-whitespace
-	;; 
-	(set-first-positions)
-	(warn-here "Ignoring illegal start for word symbol: ~S" char)
-	(return-values :ERROR (format nil "~A" char)) 
-	;;
-	;; ========================================
-	;; 
+       ;; 
+       (set-first-positions)
+       (warn-here "Ignoring illegal start for word symbol: ~S" char)
+       (return-values :ERROR (format nil "~A" char)) 
+       ;;
+       ;; ========================================
+       ;; 
        weird-middle-of-non-word-symbol-after-whitespace
-	;; 
-	(set-first-positions)
-	(warn-here "Ignoring illegal start for non-word symbol: ~S" char)
-	(return-values :ERROR (format nil "~A" char))
-	;;
-	;; ========================================
-	;; 
+       ;; 
+       (set-first-positions)
+       (warn-here "Ignoring illegal start for non-word symbol: ~S" char)
+       (return-values :ERROR (format nil "~A" char))
+       ;;
+       ;; ========================================
+       ;; 
        weird-middle-of-number-after-whitespace
-	;; 
-	(set-first-positions)
-	(warn-here "Ignoring illegal start for number: ~S" char)
-	(return-values :ERROR (format nil "~A" char))
-	;;
-	;; ======================================================================
-	;;                 COMMENT TO END OF LINE
-	;; ======================================================================
-	;; 
+       ;; 
+       (set-first-positions)
+       (warn-here "Ignoring illegal start for number: ~S" char)
+       (return-values :ERROR (format nil "~A" char))
+       ;;
+       ;; ======================================================================
+       ;;                 COMMENT TO END OF LINE
+       ;; ======================================================================
+       ;; 
        start-comment-to-eol
-	(set-first-positions)
+       (set-first-positions)
 
        continue-comment-to-eol
-	;;
-	(push char token-chars)
-	(local-read-char char char-code
-			 (return-values :COMMENT-TO-EOL
-					(coerce (nreverse token-chars) 'string))
-			 (return-values :COMMENT-TO-EOL
-					(coerce (nreverse token-chars) 'string))
-			 ())
-	(go continue-comment-to-eol)
-	;;
-	;; ======================================================================
-	;;                 SEPARATOR
-	;; ======================================================================
-	;; 
+       ;;
+       (push char token-chars)
+       (local-read-char char char-code
+			(return-values :COMMENT-TO-EOL
+				       (coerce (nreverse token-chars) 'string))
+			(return-values :COMMENT-TO-EOL
+				       (coerce (nreverse token-chars) 'string))
+			()
+			())
+       (go continue-comment-to-eol)
+       ;;
+       ;; ======================================================================
+       ;;                 SEPARATOR
+       ;; ======================================================================
+       ;; 
        start-separator
-	;;
-	(set-first-positions)
-	;; 
-	(return-values :SYMBOL (svref separator-tokens char-code))
-	;;
-	;; ======================================================================
-	;;                 WILDCARD (single underbar), but also __, ___, etc.
-	;; ======================================================================
-	;; 
+       ;;
+       (set-first-positions)
+       ;; 
+       (return-values :SYMBOL (svref separator-tokens char-code))
+       ;;
+       ;; ======================================================================
+       ;;                 WILDCARD (single underbar), but also __, ___, etc.
+       ;; ======================================================================
+       ;; 
        start-wildcard
-	;;
-	(set-first-positions)
-	;;
+       ;;
+       (set-first-positions)
+       ;;
        extend-wildcard
-	;; 
-	(push char token-chars)
-	(set-last-positions)
-	(local-read-char char char-code
-			 (go terminate-word-symbol-with-eof)
-			 ()
-			 (go terminate-word-symbol-with-extended-comment))
+       ;; 
+       (push char token-chars)
+       (set-last-positions)
+       (local-read-char char char-code
+			(go terminate-word-symbol-with-eof)
+			()
+			(go terminate-word-symbol-with-extended-comment)
+			())
 
-	(case (svref whitespace-table char-code)
-	  (#.+wildcard-code+ (go extend-wildcard)))
+       (case (svref whitespace-table char-code)
+	 (#.+wildcard-code+ (go extend-wildcard)))
 
-	(local-unread-char char)
-	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
+       (local-unread-char char)
+       (return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
 
-	;; ======================================================================
-	;;                 WORD-SYMBOL
-	;; ======================================================================
-	;; 
+       ;; ======================================================================
+       ;;                 WORD-SYMBOL
+       ;; ======================================================================
+       ;; 
 
        start-word-symbol
-	;;
-	(set-first-positions)
-	;;
+       ;;
+       (set-first-positions)
+       ;;
        extend-word-symbol
-	;; 
-	(push char token-chars)
-	(set-last-positions)
-	(local-read-char char char-code
-			 (go terminate-word-symbol-with-eof)
-			 ()
-			 (go terminate-word-symbol-with-extended-comment))
-	;; 
-	;; look for ad hoc symbols that happen to start with word symbol char
+       ;; 
+       (push char token-chars)
+       (set-last-positions)
+       (local-read-char char char-code
+			(go terminate-word-symbol-with-eof)
+			()
+			(go terminate-word-symbol-with-extended-comment)
+			())
+       ;; 
+       ;; look for ad hoc symbols that happen to start with word symbol char
 
-	;;
-	(case (svref word-symbol-table char-code)
-	  ;; majority
-	  (#.+word-symbol-continue-code+     (go extend-word-symbol))
-	  (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
-	  ;; normal termination
-	  (#.+whitespace-code+               (go terminate-word-symbol-with-whitespace))
-	  ;; less likely 
-	  (#.+non-word-symbol-start-code+    (go terminate-word-symbol-with-start-non-word-symbol))
-	  (#.+separator-code+                (go terminate-word-symbol-with-start-separator))
-	  (#.+comment-to-eol-code+           (go terminate-word-symbol-with-start-comment-to-eol))
-	  ;; unlikely 
-	  (#.+word-symbol-start-code+        (go terminate-word-symbol-with-start-word-symbol))
-	  (#.+number-start-code+             (go terminate-word-symbol-with-start-number))
-	  (#.+string-quote-code+             (go terminate-word-symbol-with-start-string))
-          (#.+char-literal-start-code+       (go terminate-word-symbol-with-start-char-literal)) 
-	  ;; weird
-	  (#.+non-word-symbol-continue-code+ (go terminate-word-symbol-with-continue-non-word-symbol))
-	  (#.+number-continue-code+          (go terminate-word-symbol-with-continue-number)) 
-	  (otherwise                         (go unrecognized-char-while-scanning-word-symbol)))
+       ;;
+       (case (svref word-symbol-table char-code)
+	 ;; majority
+	 (#.+word-symbol-continue-code+     (go extend-word-symbol))
+	 (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
+	 ;; normal termination
+	 (#.+whitespace-code+               (go terminate-word-symbol-with-whitespace))
+	 ;; less likely 
+	 (#.+non-word-symbol-start-code+    (go terminate-word-symbol-with-start-non-word-symbol))
+	 (#.+separator-code+                (go terminate-word-symbol-with-start-separator))
+	 (#.+comment-to-eol-code+           (go terminate-word-symbol-with-start-comment-to-eol))
+	 ;; unlikely 
+	 (#.+word-symbol-start-code+        (go terminate-word-symbol-with-start-word-symbol))
+	 (#.+number-start-code+             (go terminate-word-symbol-with-start-number))
+	 (#.+string-quote-code+             (go terminate-word-symbol-with-start-string))
+	 (#.+char-literal-start-code+       (go terminate-word-symbol-with-start-char-literal)) 
+	 ;; weird
+	 (#.+non-word-symbol-continue-code+ (go terminate-word-symbol-with-continue-non-word-symbol))
+	 (#.+number-continue-code+          (go terminate-word-symbol-with-continue-number)) 
+	 (otherwise                         (go unrecognized-char-while-scanning-word-symbol)))
 
        terminate-word-symbol-with-start-non-word-symbol
-        (go terminate-word-symbol)
+       (go terminate-word-symbol)
 
        unrecognized-char-while-scanning-word-symbol
-	(termination-warning char char-code "word symbol" "" ", which is unrecognized")
-	(go terminate-word-symbol)
-	;;
+       (termination-warning char char-code "word symbol" "" ", which is unrecognized")
+       (go terminate-word-symbol)
+       ;;
        terminate-word-symbol-with-continue-number ; weird
-	(termination-warning char char-code "word symbol" "" ", which can continue but not start  a number")
-	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
-	;;
+       (termination-warning char char-code "word symbol" "" ", which can continue but not start  a number")
+       (return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
+       ;;
        terminate-word-symbol-with-continue-non-word-symbol ; weird
-	(termination-warning char char-code "word symbol" "" ", which can continue but not start a non-word symbol")
-	(go terminate-word-symbol)
-	;;
+       (termination-warning char char-code "word symbol" "" ", which can continue but not start a non-word symbol")
+       (go terminate-word-symbol)
+       ;;
        terminate-word-symbol-with-start-word-symbol
-	(termination-warning char char-code "word symbol" "" ", which can start a word symbol but not continue one")
-	(go terminate-word-symbol)
-	;;
+       (termination-warning char char-code "word symbol" "" ", which can start a word symbol but not continue one")
+       (go terminate-word-symbol)
+       ;;
        terminate-word-symbol-with-start-number
-	;;(termination-warning char char-code "word symbol" "" "is a beginning of a number")
-	(go terminate-word-symbol)
-	;;
+       ;;(termination-warning char char-code "word symbol" "" "is a beginning of a number")
+       (go terminate-word-symbol)
+       ;;
 
        terminate-word-symbol-with-start-separator
        terminate-word-symbol-with-start-string
@@ -739,76 +773,77 @@
        terminate-word-symbol-with-whitespace
        terminate-word-symbol-with-extended-comment
        terminate-word-symbol
-	;;
-	;; Last-byte, last-line, last-column all refer to the last character of the symbol we've been scanning.
-	;; Char is the first character past that position.  
-	;; We put char back into the stream, and tell our caller the last-xxx values.
-	;; Those become the initial values in the next call here, and they are 
-	;; incremented when the char we're pushing here is then popped.
-	(local-unread-char char)
-	;;
+       ;;
+       ;; Last-byte, last-line, last-column all refer to the last character of the symbol we've been scanning.
+       ;; Char is the first character past that position.  
+       ;; We put char back into the stream, and tell our caller the last-xxx values.
+       ;; Those become the initial values in the next call here, and they are 
+       ;; incremented when the char we're pushing here is then popped.
+       (local-unread-char char)
+       ;;
        terminate-word-symbol-with-eof
-	;; 
-	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
-	;;
-	;; ======================================================================
-	;; NON-WORD-SYMBOL
-	;; ======================================================================
-	;; 
+       ;; 
+       (return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
+       ;;
+       ;; ======================================================================
+       ;; NON-WORD-SYMBOL
+       ;; ======================================================================
+       ;; 
        start-non-word-symbol
-	;;
-	(set-first-positions)
-	;;
+       ;;
+       (set-first-positions)
+       ;;
        extend-non-word-symbol
-	;; 
-	(push char token-chars)
-	(set-last-positions)
-	(local-read-char char char-code
-			 (go terminate-non-word-symbol-with-eof)
-			 ()
-			 (go terminate-non-word-symbol-with-extended-comment))
-	;; 
-	(case (svref non-word-symbol-table char-code)
-	  ;; majority
-	  (#.+non-word-symbol-continue-code+ (go extend-non-word-symbol))
-	  (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
-	  ;; non-word termination
-	  (#.+whitespace-code+               (go terminate-non-word-symbol-with-whitespace))
-	  ;; less likely 
-	  (#.+word-symbol-start-code+        (go terminate-non-word-symbol-with-start-word-symbol))
-	  (#.+separator-code+                (go terminate-non-word-symbol-with-start-separator))
-	  (#.+comment-to-eol-code+           (go terminate-non-word-symbol-with-start-comment-to-eol))
-	  ;; unlikely 
-	  (#.+non-word-symbol-start-code+    (go terminate-non-word-symbol-with-start-non-word-symbol))
-	  (#.+number-start-code+             (go terminate-non-word-symbol-with-start-number))
-	  (#.+string-quote-code+             (go terminate-non-word-symbol-with-start-string))
-          (#.+char-literal-start-code+       (go terminate-non-word-symbol-with-start-char-literal))
-	  ;; weird
-	  (#.+word-symbol-continue-code+     (go terminate-non-word-symbol-with-continue-word-symbol))
-	  (#.+number-continue-code+          (go terminate-non-word-symbol-with-continue-number)) 
-	  (otherwise                         (go unrecognized-char-while-scanning-non-word-symbol)))
+       ;; 
+       (push char token-chars)
+       (set-last-positions)
+       (local-read-char char char-code
+			(go terminate-non-word-symbol-with-eof)
+			()
+			(go terminate-non-word-symbol-with-extended-comment)
+			())
+       ;; 
+       (case (svref non-word-symbol-table char-code)
+	 ;; majority
+	 (#.+non-word-symbol-continue-code+ (go extend-non-word-symbol))
+	 (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
+	 ;; non-word termination
+	 (#.+whitespace-code+               (go terminate-non-word-symbol-with-whitespace))
+	 ;; less likely 
+	 (#.+word-symbol-start-code+        (go terminate-non-word-symbol-with-start-word-symbol))
+	 (#.+separator-code+                (go terminate-non-word-symbol-with-start-separator))
+	 (#.+comment-to-eol-code+           (go terminate-non-word-symbol-with-start-comment-to-eol))
+	 ;; unlikely 
+	 (#.+non-word-symbol-start-code+    (go terminate-non-word-symbol-with-start-non-word-symbol))
+	 (#.+number-start-code+             (go terminate-non-word-symbol-with-start-number))
+	 (#.+string-quote-code+             (go terminate-non-word-symbol-with-start-string))
+	 (#.+char-literal-start-code+       (go terminate-non-word-symbol-with-start-char-literal))
+	 ;; weird
+	 (#.+word-symbol-continue-code+     (go terminate-non-word-symbol-with-continue-word-symbol))
+	 (#.+number-continue-code+          (go terminate-non-word-symbol-with-continue-number)) 
+	 (otherwise                         (go unrecognized-char-while-scanning-non-word-symbol)))
 
        unrecognized-char-while-scanning-non-word-symbol
-	(termination-warning char char-code "non-word symbol" "" ", which is unrecognized")
-	(go terminate-non-word-symbol)
-	;;
+       (termination-warning char char-code "non-word symbol" "" ", which is unrecognized")
+       (go terminate-non-word-symbol)
+       ;;
        terminate-non-word-symbol-with-continue-number ; weird
-	(termination-warning char char-code "non-word symbol" "" ", which can continue but not start a number")
-	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
-	;;
+       (termination-warning char char-code "non-word symbol" "" ", which can continue but not start a number")
+       (return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
+       ;;
        terminate-non-word-symbol-with-continue-word-symbol 
        ;;   with forms such as "::?", where the question mark is dubious, print a warning
-        (termination-warning char char-code "non-word symbol" "" ", which can continue but not start a word symbol")
-        (go terminate-non-word-symbol)
-	;;
+       (termination-warning char char-code "non-word symbol" "" ", which can continue but not start a word symbol")
+       (go terminate-non-word-symbol)
+       ;;
        terminate-non-word-symbol-with-start-non-word-symbol
-	(termination-warning char char-code "non-word symbol" "" ", which can start a non-word symbol but not continue one")
-	(go terminate-non-word-symbol)
-	;;
+       (termination-warning char char-code "non-word symbol" "" ", which can start a non-word symbol but not continue one")
+       (go terminate-non-word-symbol)
+       ;;
        terminate-non-word-symbol-with-start-number
-	;;(termination-warning char char-code "non-word symbol" "" ", which is beginning of a number.")
-	(go terminate-non-word-symbol)
-	;;
+       ;;(termination-warning char char-code "non-word symbol" "" ", which is beginning of a number.")
+       (go terminate-non-word-symbol)
+       ;;
        terminate-non-word-symbol-with-start-word-symbol
        terminate-non-word-symbol-with-start-separator
        terminate-non-word-symbol-with-start-string
@@ -817,301 +852,351 @@
        terminate-non-word-symbol-with-whitespace
        terminate-non-word-symbol-with-extended-comment
        terminate-non-word-symbol
-	;;
-	;; Last-byte, last-line, last-column all refer to the last character of the symbol we've been scanning.
-	;; Char is the first character past that position.  
-	;; We put char back into the stream, and tell our caller the last-xxx values.
-	;; Those become the initial values in the next call here, and they are 
-	;; incremented when the char we're pushing here is then popped.
-	(local-unread-char char)
-	;;
+       ;;
+       ;; Last-byte, last-line, last-column all refer to the last character of the symbol we've been scanning.
+       ;; Char is the first character past that position.  
+       ;; We put char back into the stream, and tell our caller the last-xxx values.
+       ;; Those become the initial values in the next call here, and they are 
+       ;; incremented when the char we're pushing here is then popped.
+       (local-unread-char char)
+       ;;
        terminate-non-word-symbol-with-eof
-	;; 
-	(return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
+       ;; 
+       (return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
 
-	;; ======================================================================
-	;;                 SYLLABLE
-	;; ======================================================================
-	;; 
+       ;; ======================================================================
+       ;;                 SYLLABLE
+       ;; ======================================================================
+       ;; 
        extend-symbol-with-new-syllable
-	(push char token-chars)
-	(set-last-positions)
-	(local-read-char char char-code
-			 (go terminate-word-symbol-with-eof)
-			 ()
-			 (go terminate-word-symbol-with-extended-comment))
-	;; 
-	(case (svref word-symbol-table char-code)
-	  ;; normal continutation
-	  (#.+word-symbol-start-code+        (go extend-word-symbol))
-	  (#.+word-symbol-continue-code+     (go extend-word-symbol))
-	  (#.+non-word-symbol-start-code+    (go extend-non-word-symbol))
-	  (#.+non-word-symbol-continue-code+ (go extend-non-word-symbol))
-	  (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
-	  (#.+wildcard-code+                 (go extend-symbol-with-new-syllable)) ; shouldn't happen here, but just in case
-	  ;; 
-	  (otherwise                         (go terminate-symbol-but-preserve-wildcard)))
+       (push char token-chars)
+       (set-last-positions)
+       (local-read-char char char-code
+			(go terminate-word-symbol-with-eof)
+			()
+			(go terminate-word-symbol-with-extended-comment)
+			())
+       ;; 
+       (case (svref word-symbol-table char-code)
+	 ;; normal continutation
+	 (#.+word-symbol-start-code+        (go extend-word-symbol))
+	 (#.+word-symbol-continue-code+     (go extend-word-symbol))
+	 (#.+non-word-symbol-start-code+    (go extend-non-word-symbol))
+	 (#.+non-word-symbol-continue-code+ (go extend-non-word-symbol))
+	 (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
+	 (#.+wildcard-code+                 (go extend-symbol-with-new-syllable)) ; shouldn't happen here, but just in case
+	 ;; 
+	 (otherwise                         (go terminate-symbol-but-preserve-wildcard)))
 
        terminate-symbol-but-preserve-wildcard
 
-	(local-unread-char char)
-	(local-unread-char #\_)
- 	(return-values-using-prior-last :SYMBOL (coerce (nreverse (cdr token-chars)) 'string))
+       (local-unread-char char)
+       (local-unread-char #\_)
+       (return-values-using-prior-last :SYMBOL (coerce (nreverse (cdr token-chars)) 'string))
 
 
-	;;
-	;; ======================================================================
-	;;                 CHARACTER
-	;; ======================================================================
-	;; 
-	;; Note: #\abcde => two tokens: (:CHARACTER #\a) (:SYMBOL "bcde")
-	;;
+       ;;
+       ;; ======================================================================
+       ;;                 CHARACTER
+       ;; ======================================================================
+       ;; 
+       ;; Note: #\abcde => two tokens: (:CHARACTER #\a) (:SYMBOL "bcde")
+       ;;
        start-char-literal
-	(set-first-positions)
-	(set-last-positions)
-	(local-read-char 
-	 char char-code
-       	 (termination-warning char char-code "partial character literal" "#" ", which is eof")
-       	 (termination-warning char char-code "partial character literal" "#" "")
-       	 (termination-warning char char-code "partial character literal" "#" ", which starts an extended comment")
-	 )
-	(set-last-positions)
-	(cond ((eq char #\\)
-	       (local-read-char 
-		char char-code
-		(termination-warning char char-code "partial non-word character literal" "#\\" ", which is eof")
-		(termination-warning char char-code "partial non-word character literal" "#\\" "")
-		(termination-warning char char-code "partial non-word character literal" "#\\" ", which starts an extended comment")
-		)
-	       (case char
-		 #-gcl (#\a (return-values :CHARACTER #-mcl #\bel  #+mcl #\bell ))
-		 (#\b (return-values :CHARACTER #\backspace ))
-		 (#\t (return-values :CHARACTER #\tab       ))
-		 (#\n (return-values :CHARACTER #\newline   ))
-		 #-(or mcl gcl) (#\v (return-values :CHARACTER #\vt        ))
-		 (#\f (return-values :CHARACTER #\page      ))
-		 (#\r (return-values :CHARACTER #\return    ))
-		 (#\s (return-values :CHARACTER #\space     ))
-		 (#\\ (return-values :CHARACTER #\\         ))
-		 (#\" (return-values :CHARACTER #\"         ))
-		 (#\x (progn
-			(set-last-positions)
-			(local-read-char 
-			 hex-char-1 hex-char-code-1
-                	 (termination-warning hex-char-1 hex-char-code-1 "partial hex character literal" "#\\x" ", which is eof")
-			 (termination-warning hex-char-1 hex-char-code-1 "partial hex character literal" "#\\x" "")
-			 (termination-warning hex-char-1 hex-char-code-1 "partial hex character literal" "#\\x" ", which starts an extended comment")
-			 )
-			(set-last-positions)
-			(local-read-char 
-			 hex-char-2 hex-char-code-2
-                	 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", which is eof")
-			 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) "")
-			 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", which starts an extended comment")
-			 )
-			(let ((high-nibble (convert-hex-char-to-number hex-char-1))
-			      (low-nibble  (convert-hex-char-to-number hex-char-2)))
-			  (when (or (null high-nibble) (null low-nibble))
-			    (let ((token (format nil "#x\\~A~A" hex-char-1 hex-char-2)))
-			      (warn-here "Unrecognized character literal, chars after \"#\\x\" are ~S ~S, with hex codes ~2,'0X ~2,'0X"
-					 ;; token
-					 hex-char-1
-					 hex-char-2
-					 hex-char-code-1
-					 hex-char-code-2)
-			      (return-values :ERROR token)))
-			  (return-values :CHARACTER (code-char (+ (ash high-nibble 4) low-nibble))))))
-		 (otherwise
-		  (let ((token (format nil "#\\~A" char)))
-		    (warn-here "Unrecognized character literal, char after \"#\\\" is ~S with hex code ~2,'0X" 
-			       ;; token 
-			       char
-			       char-code)
-		    (return-values :ERROR token)))))
-	      (t
-	       (return-values-using-prior-last :CHARACTER char)))
+       (set-first-positions)
+       (set-last-positions)
+       (local-read-char char char-code
+			(termination-warning char char-code "partial character literal" "#" ", which is eof")
+			(termination-warning char char-code "partial character literal" "#" "")
+			(termination-warning char char-code "partial character literal" "#" ", which starts an extended comment")
+			(termination-warning char char-code "partial character literal" "#" ", which starts a pragma")
+			)
+       (set-last-positions)
+       (cond ((eq char #\\)
+	      (local-read-char char char-code
+			       (termination-warning char char-code "partial non-word character literal" "#\\" ", which is eof")
+			       (termination-warning char char-code "partial non-word character literal" "#\\" "")
+			       (termination-warning char char-code "partial non-word character literal" "#\\" ", which starts an extended comment")
+			       (termination-warning char char-code "partial non-word character literal" "#\\" ", which starts a pragma")
+			       )
+	      (case char
+		#-gcl (#\a (return-values :CHARACTER #-mcl #\bel  #+mcl #\bell ))
+		(#\b (return-values :CHARACTER #\backspace ))
+		(#\t (return-values :CHARACTER #\tab       ))
+		(#\n (return-values :CHARACTER #\newline   ))
+		#-(or mcl gcl) (#\v (return-values :CHARACTER #\vt        ))
+		(#\f (return-values :CHARACTER #\page      ))
+		(#\r (return-values :CHARACTER #\return    ))
+		(#\s (return-values :CHARACTER #\space     ))
+		(#\\ (return-values :CHARACTER #\\         ))
+		(#\" (return-values :CHARACTER #\"         ))
+		(#\x (progn
+		       (set-last-positions)
+		       (local-read-char 
+			hex-char-1 hex-char-code-1
+			(termination-warning hex-char-1 hex-char-code-1 "partial hex character literal" "#\\x" ", which is eof")
+			(termination-warning hex-char-1 hex-char-code-1 "partial hex character literal" "#\\x" "")
+			(termination-warning hex-char-1 hex-char-code-1 "partial hex character literal" "#\\x" ", which starts an extended comment")
+			(termination-warning hex-char-1 hex-char-code-1 "partial hex character literal" "#\\x" ", which starts a pragma")
+			)
+		       (set-last-positions)
+		       (local-read-char 
+			hex-char-2 hex-char-code-2
+			(termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", which is eof")
+			(termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) "")
+			(termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", which starts an extended comment")
+			(termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", which starts a pragma")
+			)
+		       (let ((high-nibble (convert-hex-char-to-number hex-char-1))
+			     (low-nibble  (convert-hex-char-to-number hex-char-2)))
+			 (when (or (null high-nibble) (null low-nibble))
+			   (let ((token (format nil "#x\\~A~A" hex-char-1 hex-char-2)))
+			     (warn-here "Unrecognized character literal, chars after \"#\\x\" are ~S ~S, with hex codes ~2,'0X ~2,'0X"
+					;; token
+					hex-char-1
+					hex-char-2
+					hex-char-code-1
+					hex-char-code-2)
+			     (return-values :ERROR token)))
+			 (return-values :CHARACTER (code-char (+ (ash high-nibble 4) low-nibble))))))
+		(otherwise
+		 (let ((token (format nil "#\\~A" char)))
+		   (warn-here "Unrecognized character literal, char after \"#\\\" is ~S with hex code ~2,'0X" 
+			      ;; token 
+			      char
+			      char-code)
+		   (return-values :ERROR token)))))
+	     (t
+	      (return-values-using-prior-last :CHARACTER char)))
 
-	;; ======================================================================
-	;;                 NUMBER
-	;; ======================================================================
-	;; 
+       ;; ======================================================================
+       ;;                 NUMBER
+       ;; ======================================================================
+       ;; 
        start-number
-	;;
-	(set-first-positions)
-	;;
+       ;;
+       (set-first-positions)
+       ;;
        extend-number
-	;; 
-	(push char token-chars)
-	(set-last-positions)
-	(local-read-char char char-code
-			 (go terminate-number-with-eof)
-			 ()
-			 (go terminate-number-with-extended-comment))
-	;; 
-	(case (svref number-table char-code)
-	  ;; majority
-	  (#.+number-continue-code+          (go extend-number))
-	  ;; normal termination
-	  (#.+whitespace-code+               (go terminate-number-with-whitespace))
-	  ;; e.g.  123ABC 
-	  (#.+word-symbol-start-code+        (go terminate-number-with-start-word-symbol))
-	  (#.+word-symbol-continue-code+     (go terminate-number-with-continue-word-symbol))
-	  ;; e.g.  123ABC 
-	  (#.+non-word-symbol-start-code+    (go terminate-number-with-start-non-word-symbol))
-	  (#.+non-word-symbol-continue-code+ (go terminate-number-with-continue-non-word-symbol))
-	  ;; less likely
-	  (#.+separator-code+                (go terminate-number-with-start-separator))
-	  (#.+comment-to-eol-code+           (go terminate-number-with-start-comment-to-eol))
-	  ;; unlikely
-	  (#.+number-start-code+             (go terminate-number-with-start-number))
-	  (#.+string-quote-code+             (go terminate-number-with-start-string))
-          (#.+char-literal-start-code+       (go terminate-number-with-start-char-literal))
-	  ;;
-	  (otherwise                         (go unrecognized-char-while-scanning-number)))
-	;;
+       ;; 
+       (push char token-chars)
+       (set-last-positions)
+       (local-read-char char char-code
+			(go terminate-number-with-eof)
+			()
+			(go terminate-number-with-extended-comment)
+			())
+       ;; 
+       (case (svref number-table char-code)
+	 ;; majority
+	 (#.+number-continue-code+          (go extend-number))
+	 ;; normal termination
+	 (#.+whitespace-code+               (go terminate-number-with-whitespace))
+	 ;; e.g.  123ABC 
+	 (#.+word-symbol-start-code+        (go terminate-number-with-start-word-symbol))
+	 (#.+word-symbol-continue-code+     (go terminate-number-with-continue-word-symbol))
+	 ;; e.g.  123ABC 
+	 (#.+non-word-symbol-start-code+    (go terminate-number-with-start-non-word-symbol))
+	 (#.+non-word-symbol-continue-code+ (go terminate-number-with-continue-non-word-symbol))
+	 ;; less likely
+	 (#.+separator-code+                (go terminate-number-with-start-separator))
+	 (#.+comment-to-eol-code+           (go terminate-number-with-start-comment-to-eol))
+	 ;; unlikely
+	 (#.+number-start-code+             (go terminate-number-with-start-number))
+	 (#.+string-quote-code+             (go terminate-number-with-start-string))
+	 (#.+char-literal-start-code+       (go terminate-number-with-start-char-literal))
+	 ;;
+	 (otherwise                         (go unrecognized-char-while-scanning-number)))
+       ;;
        unrecognized-char-while-scanning-number
-	(termination-warning char char-code "number" "" ", which is unrecognized")
-	(go terminate-number-unexpectedly)
-	;;
+       (termination-warning char char-code "number" "" ", which is unrecognized")
+       (go terminate-number-unexpectedly)
+       ;;
        terminate-number-with-start-word-symbol
-	(termination-warning char char-code "number" "" ", which starts a word symbol")
-	(go terminate-number-unexpectedly)
-	;;
+       (termination-warning char char-code "number" "" ", which starts a word symbol")
+       (go terminate-number-unexpectedly)
+       ;;
        terminate-number-with-continue-word-symbol 
-	;;(termination-warning char char-code "number" "" ", which continues but does not start a word symbol")
-	(go terminate-number-unexpectedly)
-	;;
+       ;;(termination-warning char char-code "number" "" ", which continues but does not start a word symbol")
+       (go terminate-number-unexpectedly)
+       ;;
        terminate-number-with-continue-non-word-symbol 
-	;;(termination-warning char char-code "number" "" ", which continues but does not start a non-word symbol")
-	(go terminate-number-unexpectedly)
-	;;
+       ;;(termination-warning char char-code "number" "" ", which continues but does not start a non-word symbol")
+       (go terminate-number-unexpectedly)
+       ;;
        terminate-number-with-start-number
-	(termination-warning char char-code "number" "" ", which starts a new number")
-	(go terminate-number-unexpectedly)
+       (termination-warning char char-code "number" "" ", which starts a new number")
+       (go terminate-number-unexpectedly)
 
 
        terminate-number-unexpectedly
-       terminate-number-with-start-non-word-symbol ;; e.g. +, -, =, etc.
+       terminate-number-with-start-non-word-symbol;; e.g. +, -, =, etc.
        terminate-number-with-start-separator
        terminate-number-with-start-string
        terminate-number-with-start-char-literal
        terminate-number-with-start-comment-to-eol
        terminate-number-with-whitespace
        terminate-number-with-extended-comment
-	;;
-	;; Last-byte, last-line, last-column all refer to the last character of the number we've been scanning.
-	;; Char is the first character past that position.  
-	;; We put char back into the stream, and tell our caller the last-xxx values.
-	;; Those become the initial values in the next call here, and they are 
-	;; incremented when the char we're pushing here is then popped.
-	(local-unread-char char)
-	;;
+       ;;
+       ;; Last-byte, last-line, last-column all refer to the last character of the number we've been scanning.
+       ;; Char is the first character past that position.  
+       ;; We put char back into the stream, and tell our caller the last-xxx values.
+       ;; Those become the initial values in the next call here, and they are 
+       ;; incremented when the char we're pushing here is then popped.
+       (local-unread-char char)
+       ;;
        terminate-number-with-eof
-	;; 
-	(return-values-using-prior-last :NUMBER (parse-integer (coerce (nreverse token-chars) 'string)))
-	;;
-	;; ======================================================================
-	;;                 STRING
-	;; ======================================================================
-	;; 
+       ;; 
+       (return-values-using-prior-last :NUMBER (parse-integer (coerce (nreverse token-chars) 'string)))
+       ;;
+       ;; ======================================================================
+       ;;                 STRING
+       ;; ======================================================================
+       ;; 
        escape-next-char-in-string
-	;; 
-	(local-read-char 
-	 char char-code
-	 (let ((token (format nil "~A\\" (coerce (nreverse token-chars) 'string))))
-	   (warn-here "EOF immediately after escape character in string ~S" token)
-	   (return-values :ERROR token))
-	 ()
-	 ())
-        (case char
-	  #-gcl (#\a (push #-mcl #\bel  #+mcl #\bell       token-chars)) 
-	  (#\b (push #\backspace token-chars)) 
-	  (#\t (push #\tab       token-chars)) 
-	  (#\n (push #\newline   token-chars)) 
-	  #-(or mcl gcl) (#\v (push #\vt        token-chars)) 
-	  (#\f (push #\page      token-chars)) 
-	  (#\r (push #\return    token-chars)) 
-	  (#\s (push #\space     token-chars)) 
-	  (#\\ (push #\\         token-chars)) 
-	  (#\" (push #\"         token-chars)) 
-	  (#\x (progn
-		 (set-last-positions)
-		 (local-read-char 
-		  hex-char-1 hex-char-code-1
-		  (termination-warning hex-char-1 hex-char-code-1 "partial hex character lliteral" "#\\x" ", which is eof")
-		  (termination-warning hex-char-1 hex-char-code-1 "partial hex character lliteral" "#\\x" "")
-		  (termination-warning hex-char-1 hex-char-code-1 "partial hex character lliteral" "#\\x" ", which starts of an extended comment")
-		  )
-		 (set-last-positions)
-		 (local-read-char 
-		  hex-char-2 hex-char-code-2
-		  (termination-warning hex-char-2 hex-char-code-2 "partial hex character lliteral" (format nil "#\\x~A" hex-char-1) ", which is eof")
-		  (termination-warning hex-char-2 hex-char-code-2 "partial hex character lliteral" (format nil "#\\x~A" hex-char-1) "")
-		  (termination-warning hex-char-2 hex-char-code-2 "partial hex character lliteral" (format nil "#\\x~A" hex-char-1) ", which starts an extended comment")
-		  )
-		 (let ((high-nibble (convert-hex-char-to-number hex-char-1))
-		       (low-nibble  (convert-hex-char-to-number hex-char-2)))
-		   (when (or (null high-nibble) (null low-nibble))
-		     (let ((token (format nil "#\\x~A~A" hex-char-1 hex-char-2)))
-		       (warn-here "Unrecognized character literal, chars after \"#\\x\" are ~S ~S, with hex codes ~2,'0X ~2,'0X"
-				  ;; token
-				  hex-char-1
-				  hex-char-2
-				  hex-char-code-1
-				  hex-char-code-2)
-		       (return-values :ERROR token)))
-		   (push (code-char (+ (ash high-nibble 4) low-nibble)) token-chars))))
-	  (otherwise
-	   (let ((token (format nil "#\\~A" char)))
-	     (warn-here "Unrecognized character literal, char after \"#\\\" is ~S, with hex code ~2,'0X" 
-			;; token
-			char
-			char-code)
-	     (return-values :ERROR token))))
-	(go extend-string)
-	;; 
+       ;; 
+       (local-read-char char char-code
+			(let ((token (format nil "~A\\" (coerce (nreverse token-chars) 'string))))
+			  (warn-here "EOF immediately after escape character in string ~S" token)
+			  (return-values :ERROR token))
+			()
+			()
+			())
+       (case char
+	 #-gcl (#\a (push #-mcl #\bel  #+mcl #\bell       token-chars)) 
+	 (#\b (push #\backspace token-chars)) 
+	 (#\t (push #\tab       token-chars)) 
+	 (#\n (push #\newline   token-chars)) 
+	 #-(or mcl gcl) (#\v (push #\vt        token-chars)) 
+	 (#\f (push #\page      token-chars)) 
+	 (#\r (push #\return    token-chars)) 
+	 (#\s (push #\space     token-chars)) 
+	 (#\\ (push #\\         token-chars)) 
+	 (#\" (push #\"         token-chars)) 
+	 (#\x (progn
+		(set-last-positions)
+		(local-read-char 
+		 hex-char-1 hex-char-code-1
+		 (termination-warning hex-char-1 hex-char-code-1 "partial hex character lliteral" "#\\x" ", which is eof")
+		 (termination-warning hex-char-1 hex-char-code-1 "partial hex character lliteral" "#\\x" "")
+		 (termination-warning hex-char-1 hex-char-code-1 "partial hex character lliteral" "#\\x" ", which starts an extended comment")
+		 (termination-warning hex-char-1 hex-char-code-1 "partial hex character lliteral" "#\\x" ", which starts a pragma")
+		 )
+		(set-last-positions)
+		(local-read-char 
+		 hex-char-2 hex-char-code-2
+		 (termination-warning hex-char-2 hex-char-code-2 "partial hex character lliteral" (format nil "#\\x~A" hex-char-1) ", which is eof")
+		 (termination-warning hex-char-2 hex-char-code-2 "partial hex character lliteral" (format nil "#\\x~A" hex-char-1) "")
+		 (termination-warning hex-char-2 hex-char-code-2 "partial hex character lliteral" (format nil "#\\x~A" hex-char-1) ", which starts an extended comment")
+		 (termination-warning hex-char-2 hex-char-code-2 "partial hex character lliteral" (format nil "#\\x~A" hex-char-1) ", which starts a pragma")
+		 )
+		(let ((high-nibble (convert-hex-char-to-number hex-char-1))
+		      (low-nibble  (convert-hex-char-to-number hex-char-2)))
+		  (when (or (null high-nibble) (null low-nibble))
+		    (let ((token (format nil "#\\x~A~A" hex-char-1 hex-char-2)))
+		      (warn-here "Unrecognized character literal, chars after \"#\\x\" are ~S ~S, with hex codes ~2,'0X ~2,'0X"
+				 ;; token
+				 hex-char-1
+				 hex-char-2
+				 hex-char-code-1
+				 hex-char-code-2)
+		      (return-values :ERROR token)))
+		  (push (code-char (+ (ash high-nibble 4) low-nibble)) token-chars))))
+	 (otherwise
+	  (let ((token (format nil "#\\~A" char)))
+	    (warn-here "Unrecognized character literal, char after \"#\\\" is ~S, with hex code ~2,'0X" 
+		       ;; token
+		       char
+		       char-code)
+	    (return-values :ERROR token))))
+       (go extend-string)
+       ;; 
        start-string
-	;;
-	(set-first-positions)
-	;; 
+       ;;
+       (set-first-positions)
+       ;; 
        extend-string
-	;; 
-	(local-read-char
-	 char char-code
-	 (let ((token (coerce (nreverse token-chars) 'string)))
-	   (warn-here "EOF inside string starting at line ~S, column ~S" first-line first-column)
-	   (return-values :ERROR token))
-	 ()
-	 ())
-	(case (svref string-table char-code)
-	  (#.+string-quote-code+  (go close-string))
-	  (#.+string-escape-code+ (go escape-next-char-in-string))
-	  (otherwise              (push char token-chars) (go extend-string)))
-	;;
+       ;; 
+       (local-read-char char char-code
+			(let ((token (coerce (nreverse token-chars) 'string)))
+			  (warn-here "EOF inside string starting at line ~S, column ~S" first-line first-column)
+			  (return-values :ERROR token))
+			()
+			()
+			())
+       (case (svref string-table char-code)
+	 (#.+string-quote-code+  (go close-string))
+	 (#.+string-escape-code+ (go escape-next-char-in-string))
+	 (otherwise              (push char token-chars) (go extend-string)))
+       ;;
        close-string
-	;; 
-	(return-values :STRING (coerce (nreverse token-chars) 'string))
-	;; 
-	;; ======================================================================
-	;;                 EXTENDED COMMENT
-	;; ======================================================================
-	;;
+       ;; 
+       (return-values :STRING (coerce (nreverse token-chars) 'string))
+       ;; 
+       ;; ======================================================================
+       ;;                 EXTENDED COMMENT
+       ;; ======================================================================
+       ;;
        start-extended-comment
-	;;
-	(set-first-positions)
-	;;
-	(multiple-value-bind (error? comment-chars last-byte last-line last-column)
-	    (skip-extended-comment char ps-stream this-ec-quad 
-				   extended-comment-quads
-				   comment-table
-				   first-byte
-				   first-line
-				   first-column)
-	  (return-values-using-prior-last (if error? :EXTENDED-COMMENT-ERROR :EXTENDED-COMMENT)
-					  (coerce (nreverse comment-chars) 'string)))
-	;;
-	;; ========================================
-	))))
+       ;;
+       (set-first-positions)
+       ;;
+       (multiple-value-bind (error? comment-chars last-byte last-line last-column)
+	   (skip-extended-comment char ps-stream this-ec-quad 
+				  extended-comment-quads 
+				  ;; Note: Pragma bodies are treated as ordinary text,
+				  ;;       not as recursively nested structures.
+				  ;;       This can cause a minor problem in the unusual
+				  ;;       situation where the body of a pragma contains
+				  ;;       an unmatched (open or close) extended comemnt
+				  ;;       delimiter.  In those rare cases, the user will 
+				  ;;       need to manually adjust the body of their pragma
+				  ;;       if they wish to block-comment around it.
+				  comment-table
+				  first-byte
+				  first-line
+				  first-column)
+	 (return-values-using-prior-last (if error? :EXTENDED-COMMENT-ERROR :EXTENDED-COMMENT)
+					 (coerce (nreverse comment-chars) 'string)))
+       ;;
+       ;; ======================================================================
+       ;;                 PRAGMA
+       ;; ======================================================================
+       ;;
+       start-pragma
+       ;;
+       (set-first-positions)
+       ;;
+       (multiple-value-bind (error? pragma-chars last-byte last-line last-column)
+	   ;; scan-pragma calls skip-extended-comment with the recursive? and eof-ok? 
+	   ;; flags set to false
+	   (scan-pragma char ps-stream this-pragma-pair
+			first-byte
+			first-line
+			first-column)
+	 (cond (error?
+		(dolist (char pragma-chars)
+		  (ps-unread-char char ps-stream))
+		(setq current-byte   first-byte 
+		      current-line   first-line   
+		      current-column first-column)
+		(local-read-char char char-code
+				 (return-values :EOF nil) 
+				 () 
+				 ()
+				 ())
+		(go ignore-erroneous-pragma))
+	       (t
+		(let* ((prefix     (first  this-pragma-pair))
+		       (postfix    (second this-pragma-pair))
+		       (start      (length prefix))
+		       (end        (- (length pragma-chars) (length postfix)))
+		       (body-chars (subseq (nreverse pragma-chars) start end))
+		       (body       (coerce body-chars 'string)))
+		  (return-values :PRAGMA (list prefix body postfix))))))
+       ;;
+       ;; ========================================
+       ))))
 
 (defun convert-hex-char-to-number (x)
   (case x
@@ -1137,6 +1222,11 @@
   (dolist (quad extended-comment-quads)
     (when (pseudo-stream-has-prefix? first-char ps-stream (first quad))
       (return quad))))
+
+(defun applicable-pragma-delimiter (first-char ps-stream pragma-delimiters)
+  (dolist (pair pragma-delimiters)
+    (when (pseudo-stream-has-prefix? first-char ps-stream (first pair))
+      (return pair))))
 
 (defun pseudo-stream-has-prefix? (first-char ps-stream open-comment-string)
   (and (eq (schar open-comment-string 0) first-char)
@@ -1190,6 +1280,14 @@
 	    (extended-comment-state-line   ec-state)
 	    (extended-comment-state-column ec-state))))
 
+(defun scan-pragma (first-char ps-stream pair first-byte first-line first-column)
+  ;; scan similarly to an extended comment, 
+  ;; but not recursive, eof is not ok
+  (let ((pragma-quad (append pair '(nil nil))))
+    (skip-extended-comment first-char ps-stream pragma-quad '()
+			   #() ; comment table will be ignored
+			   first-byte first-line first-column)))
+
 (defun aux-skip-extended-comment (ps-stream this-quad ec-state)
   (let* ((open-comment  (first  this-quad))
 	 (close-comment (second this-quad))
@@ -1232,11 +1330,14 @@
 	    ((and recursive?
 		  (eq (svref comment-table (char-code char)) 
 		      +maybe-open-comment-code+))
+	     ;; recur if both outer and inner extended comments are recursive
 	     (let ((new-quad (applicable-extended-comment-quad 
-				char ps-stream 
-				(extended-comment-state-all-quads ec-state))))
+			      char ps-stream 
+			      (extended-comment-state-all-quads ec-state))))
 	       (when (not (null new-quad))
-		 (aux-skip-extended-comment ps-stream new-quad ec-state))))))))
+		 (let ((inner-is-recursive? (third new-quad)))
+		   (when inner-is-recursive?
+		     (aux-skip-extended-comment ps-stream new-quad ec-state))))))))))
 
 ;;; ========================================================================
 

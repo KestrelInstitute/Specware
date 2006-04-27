@@ -28,6 +28,7 @@
 
 (defconstant +maybe-open-comment-code+       -1)
 (defconstant +maybe-start-of-ad-hoc-token+   -2)
+(defconstant +maybe-open-pragma-code+        -3)
 
 (defstruct tokenizer-parameters
   name
@@ -40,6 +41,7 @@
   comment-table
   separator-tokens
   comment-delimiters
+  pragma-delimiters
   ad-hoc-types-ht
   ad-hoc-table
   ad-hoc-strings)

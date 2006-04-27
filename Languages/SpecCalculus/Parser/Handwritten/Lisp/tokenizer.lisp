@@ -46,6 +46,8 @@
 				  ("\\end{spec}"   "\\begin{spec}" nil t)
 				  )
    ;;
+   :pragma-delimiters           '(("proof" "end-proof"))
+   ;;
    :case-sensitive?             t
    ;;
    ;; Underbar #\_ is implicitly given its own code as a syllable separator

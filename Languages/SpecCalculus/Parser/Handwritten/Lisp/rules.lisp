@@ -44,6 +44,7 @@
 (define-sw-parser-rule :STRING    () nil nil :documentation "Primitive")
 (define-sw-parser-rule :NUMBER    () nil nil :documentation "Primitive")
 (define-sw-parser-rule :CHARACTER () nil nil :documentation "Primitive")
+(define-sw-parser-rule :PRAGMA    () nil nil :documentation "Primitive")
 
 ;;; These simplify life...
 
@@ -261,7 +262,8 @@
    (1 :IMPORT-DECLARATION)
    (1 :SORT-DECLARATION)
    (1 :OP-DECLARATION)
-   (1 :DEFINITION))
+   (1 :DEFINITION)
+   (1 :PRAGMA-DECLARATION))
   1)
 
 ;;;  TODO: In doc: Remove reference to spec-definition within a spec
@@ -1341,6 +1343,14 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :PARENTHESIZED-PATTERN ()
   (:tuple "(" (1 :PATTERN) ")")                                  1                                                     :documentation "Parenthesized pattern")
+
+;;; ------------------------------------------------------------------------
+;;;  PRAGMA-DECLARATION
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :PRAGMA-DECLARATION ()
+  (1 :PRAGMA)
+  (make-pragma (quote 1) ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-LET
