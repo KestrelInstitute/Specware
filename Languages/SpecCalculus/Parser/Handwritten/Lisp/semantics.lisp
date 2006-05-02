@@ -54,6 +54,13 @@
     (SpecCalc::mkPragma-4 prefix body postfix pos)))
   
 
+(defun make-sm-pragma (x l r)
+  (let ((prefix  (first  x))
+	(body    (second x))
+	(postfix (third  x))
+	(pos     (make-pos l r)))
+    (cons (vector prefix body postfix) pos)))
+  
 (defun namedTypeVar (name)
   name)
 
@@ -963,9 +970,14 @@ If we want the precedence to be optional:
 ;;;  SC-SPEC-MORPH
 ;;; ========================================================================
 
-(defun make-sc-spec-morph (dom-sc-term cod-sc-term rules l r)
+(defun make-sc-spec-morph (dom-sc-term cod-sc-term rules pragmas l r)
   ;; (let ((rules (if (eq rules :unspecified) nil rules))) ...)
-  (speccalc::mkSpecMorph-4 dom-sc-term cod-sc-term rules (make-pos l r)))
+  (let ((pragmas (if (eq pragmas :unspecified)
+		     '()
+		   pragmas)))
+    (if (fboundp 'speccalc::mkSpecMorph-5)
+	(speccalc::mkSpecMorph-5 dom-sc-term cod-sc-term rules pragmas (make-pos l r))
+      (speccalc::mkSpecMorph-4 dom-sc-term cod-sc-term rules (make-pos l r)))))
 
 ;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
 ;;;  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))

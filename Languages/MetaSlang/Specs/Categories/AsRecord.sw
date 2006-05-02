@@ -35,15 +35,17 @@ SpecCalc qualifying spec {
     cod     : Spec,
     sortMap : MorphismSortMap,
     opMap   : MorphismOpMap,
+    pragmas : SM_Pragmas Position,
     sm_tm   : Option SCTerm
   }
 
-  op makeMorphism : Spec * Spec * MorphismSortMap * MorphismOpMap * Option SCTerm -> Morphism
-  def makeMorphism (dom_spec, cod_spec, sort_map, op_map, sm_tm) =
+  op makeMorphism : Spec * Spec * MorphismSortMap * MorphismOpMap * SM_Pragmas Position * Option SCTerm -> Morphism
+  def makeMorphism (dom_spec, cod_spec, sort_map, op_map, pragmas, sm_tm) =
    {dom     = dom_spec,
     cod     = cod_spec,
     sortMap = sort_map,
     opMap   = op_map,
+    pragmas = pragmas,
     sm_tm   = sm_tm}
 
   % when omit printing the concrete domain and codomain specs.
@@ -73,14 +75,24 @@ SpecCalc qualifying spec {
         ppString "}"
       ]))
 
+  op  ppMorphPragmas : SM_Pragmas Position -> WadlerLindig.Pretty
+  def ppMorphPragmas pragmas =
+    case pragmas of
+      | [] -> ppNil
+      | _ -> ppSep (ppString "") 
+                   (map (fn ((prefix, body, postfix), _) -> 
+			 ppString (prefix ^ body ^ postfix)) 
+		        pragmas)
+
   op ppMorphism : Morphism -> Doc
-  def ppMorphism {dom=_, cod=_, sortMap, opMap, sm_tm =_} = 
+  def ppMorphism {dom=_, cod=_, sortMap, opMap, pragmas, sm_tm =_} = 
     ppGroup (ppConcat [
       ppString "sort map = ",
       ppMorphMap sortMap,
       ppNewline,
       ppString "op map = ",
-      ppMorphMap opMap
+      ppMorphMap opMap,
+      ppMorphPragmas pragmas
     ])
 
   op dom     : Morphism -> Spec
@@ -99,6 +111,7 @@ SpecCalc qualifying spec {
      cod     = mor2.cod,
      sortMap = PolyMap.compose mor1.sortMap mor2.sortMap,
      opMap   = PolyMap.compose mor1.opMap mor2.opMap,
+     pragmas = mor1.pragmas ++ mor2.pragmas,			   
      sm_tm   = mor1.sm_tm
    }
 
@@ -113,13 +126,14 @@ SpecCalc qualifying spec {
   op specCat : () -> Cat.Cat (Spec, Morphism)
   def specCat () = 
     {
-    dom = fn {dom = dom, cod = _,   sortMap = _, opMap = _, sm_tm = _} -> dom,
-    cod = fn {dom = _,   cod = cod, sortMap = _, opMap = _, sm_tm = _} -> cod,
+    dom = fn {dom = dom, cod = _,   sortMap = _, opMap = _, pragmas = _, sm_tm = _} -> dom,
+    cod = fn {dom = _,   cod = cod, sortMap = _, opMap = _, pragmas = _, sm_tm = _} -> cod,
     ident = fn spc -> {
        dom     = spc,
        cod     = spc,
        sortMap = emptyMap,
        opMap   = emptyMap,
+       pragmas = [],		       
        sm_tm   = None
     },
     colimit       = specColimit,

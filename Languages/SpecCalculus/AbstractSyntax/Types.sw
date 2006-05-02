@@ -103,7 +103,7 @@ SpecCalc qualifying spec
    %% The first two elements in the morphism products are terms that evaluate
    %% to the domain and codomain of the morphisms.
 
-   | SpecMorph    (Term a) * (Term a) * (List (SpecMorphRule a))
+   | SpecMorph    (Term a) * (Term a) * (List (SpecMorphRule a)) * SM_Pragmas a
    | SpecInterp   (Term a) * (Term a) * (SpecInterpRules a)
 
    | SpecPrism    (Term a) * List (Term a) * PrismModeTerm a
@@ -224,6 +224,9 @@ SpecCalc qualifying spec
    | Ambiguous QualifiedId                 * QualifiedId 
    | Sort      QualifiedId                 * QualifiedId
    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort)
+
+ type SM_Pragma  a = (String * String * String) * a
+ type SM_Pragmas a = List (SM_Pragma a)
 
  %% A \verb+NameExpr+ denote the name of an op, type or claim. Lists of such
  %% expressions are used in \verb+hide+ and \verb+export+ terms to either
@@ -370,7 +373,7 @@ SpecCalc qualifying spec
  op mkSpec        : fa (a) (List (SpecElem a))                                             * a -> Term a
  op mkDiag        : fa (a) (List (DiagElem a))                                             * a -> Term a
  op mkColimit     : fa (a) (Term a)                                                        * a -> Term a
- op mkSpecMorph   : fa (a) (Term a) * (Term a) * (List (SpecMorphRule a))                  * a -> Term a
+ op mkSpecMorph   : fa (a) (Term a) * (Term a) * (List (SpecMorphRule a)) * (SM_Pragmas a) * a -> Term a
  op mkSpecInterp  : fa (a) (Term a) * (Term a) * (SpecInterpRules a)                       * a -> Term a
  op mkSpecPrism   : fa (a) (Term a) * (List (Term a)) * PrismModeTerm a                    * a -> Term a
  op mkDiagMorph   : fa (a) (Term a) * (Term a) * (List (DiagMorphRule a))                  * a -> Term a
@@ -407,7 +410,7 @@ SpecCalc qualifying spec
  def mkDiag        (elements,                  pos) = (Diag        elements,                    pos)
  def mkColimit     (diag,                      pos) = (Colimit     diag,                        pos)
 
- def mkSpecMorph   (dom_term, cod_term, rules, pos) = (SpecMorph   (dom_term, cod_term, rules), pos)
+ def mkSpecMorph   (dom_term, cod_term, rules, pragmas, pos) = (SpecMorph   (dom_term, cod_term, rules, pragmas), pos)
  def mkSpecInterp  (dom_term, cod_term, rules, pos) = (SpecInterp  (dom_term, cod_term, rules), pos)
  def mkDiagMorph   (dom_term, cod_term, rules, pos) = (DiagMorph   (dom_term, cod_term, rules), pos)
  def mkSpecPrism   (dom_term, sm_terms, pmode, pos) = (SpecPrism   (dom_term, sm_terms, pmode), pos)

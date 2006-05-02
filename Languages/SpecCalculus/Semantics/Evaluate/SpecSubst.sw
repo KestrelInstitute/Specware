@@ -89,13 +89,13 @@ SpecCalc qualifying spec
     %%    S' = M(S - dom(M)) U cod(M)
     let dom_spec           = SpecCalc.dom sm            in     % dom(M)
     let dom_spec_term      = case sm_tm of
-			       | (SpecMorph (dom_spec_tm,_,_),_) -> 
+			       | (SpecMorph (dom_spec_tm,_,_,_),_) -> 
 				  dom_spec_tm
 			       | _ -> 
 				 %% sm_tm could be a UnitId, which isn't very helpful
 				 %% in which case, see if sm cached a term used to construct it
 				 case sm.sm_tm of
-				   | Some (SpecMorph (dom_spec_tm,_,_),_) -> dom_spec_tm
+				   | Some (SpecMorph (dom_spec_tm,_,_,_),_) -> dom_spec_tm
 				   | _ -> 
 				     %% TODO: determine true timestamp and dependencies
 				     let dom_value_info = (Spec dom_spec, oldestTimeStamp, []) in
@@ -104,7 +104,7 @@ SpecCalc qualifying spec
     in
     let cod_spec           = SpecCalc.cod sm            in     % cod(M)
     let cod_spec_term      = case sm_tm of
-			       | (SpecMorph (_,cod_spec_tm,_),_) -> 
+			       | (SpecMorph (_,cod_spec_tm,_,_),_) -> 
                                  %% Given a normal spec morphism term, just extract the codomain spec term.
                                  cod_spec_tm 
 			       | (Quote (Morph sm, ts, uids), pos) ->  
@@ -114,7 +114,7 @@ SpecCalc qualifying spec
 				 %% Given an obscure sm_tm (e.g. a UnitId), see if it contains a term used 
 				 %% to construct it, in which case deconstruct that as above.
 				 case sm.sm_tm of
-				   | Some (SpecMorph (_,cod_spec_tm,_),_) -> 
+				   | Some (SpecMorph (_,cod_spec_tm,_,_),_) -> 
 				     cod_spec_tm
 				   | Some (Quote (Morph sm, ts, uids), pos) ->  
 				     (Quote (Spec sm.cod, ts, uids), pos)

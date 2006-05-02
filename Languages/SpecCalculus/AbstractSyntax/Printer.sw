@@ -165,7 +165,7 @@ SpecCalc qualifying spec
 		  ppTerm morphTerm,
 		  ppString "]"]
 
-      | SpecMorph (dom, cod, elems) ->
+      | SpecMorph (dom, cod, elems, pragmas) ->
 	let 
 	  def ppSpecMorphRule (rule, _(* position *)) = 
 	    case rule of          
@@ -185,6 +185,12 @@ SpecCalc qualifying spec
 		ppConcat [ppQualifier left_qid,
 			  ppString " +-> ",
 			    ppQualifier right_qid]
+	  def ppSpecMorphPragmas pragmas = 
+	    ppIndent (ppSep ppNewline 
+		      (List.map (fn ((prefix, body, postfix), _(* position *)) ->
+				 ppString (prefix ^ body ^ postfix))
+		                pragmas))
+
 	in
           ppConcat [ppString "morphism ",
 		    ppTerm dom,
@@ -194,7 +200,9 @@ SpecCalc qualifying spec
 		    ppString "  {",
 		    ppIndent (ppSep ppNewline (map ppSpecMorphRule elems)),
 		    ppNewline,
-		    ppString "} : "]
+		    ppString "} ",
+		    ppSpecMorphPragmas pragmas
+		    ] 
 
       | Hide (nameExprs, term) ->
         let 

@@ -71,7 +71,7 @@ def extendMorphismWithAnswer(morph, domVars) =
   let _ = if specwareDebug? then map (fn (id) -> System.print("codOp: " ^ id ^ "\n")) codIds else [""] in
   %%let _ = if specwareDebug? then printTermToTerminal(domIds) else () in
   %%let _ = if specwareDebug? then printMapToTerminal(newOpMap) else () in
-    makeMorphism(dom, cod, srtMap, newOpMap, morph.sm_tm)
+    makeMorphism(dom, cod, srtMap, newOpMap, morph.pragmas, morph.sm_tm)
 
 op mkExistential: Spec * MS.Term -> Property * Vars
 

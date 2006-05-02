@@ -14,17 +14,17 @@ For morphisms, evaluate the domain and codomain terms, and check
 coherence conditions of the morphism elements. 
 
 \begin{spec}
-  def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules) = {
+  def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules,pragmas) = {
     unitId <- getCurrentUID;
     print (";;; Elaborating spec-morphism at " ^ (uidToString unitId) ^ "\n");
     (domValue,domTimeStamp,domDepUIDs) <- evaluateTermInfo domTerm;
     (codValue,codTimeStamp,codDepUIDs) <- evaluateTermInfo codTerm;
     coercedDomValue <- return (coerceToSpec domValue);
     coercedCodValue <- return (coerceToSpec codValue);
-    sm_tm <- return ((SpecMorph (domTerm, codTerm, []), Internal "nowhere"));
+    sm_tm <- return ((SpecMorph (domTerm, codTerm, [], pragmas), Internal "nowhere"));
     case (coercedDomValue, coercedCodValue) of
       | (Spec spc1, Spec spc2) -> {
-            morph <- makeSpecMorphism spc1 spc2 morphRules (positionOf domTerm) (Some sm_tm);
+            morph <- makeSpecMorphism spc1 spc2 morphRules pragmas (positionOf domTerm) (Some sm_tm);
 	    dep_uids <- return (listUnion (domDepUIDs,codDepUIDs));
             return (Morph morph,
 		    max(domTimeStamp,codTimeStamp),
@@ -34,11 +34,13 @@ coherence conditions of the morphism elements.
         evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepUIDs)
                                (coercedCodValue,codTimeStamp,codDepUIDs)
                                morphRules 
+			       pragmas
                                (positionOf domTerm)
       | (_, Other _) -> 
         evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepUIDs)
                                (coercedCodValue,codTimeStamp,codDepUIDs)
 			       morphRules
+			       pragmas
 			       (positionOf codTerm)
       | (Spec _, _) -> raise
           (TypeCheck (positionOf domTerm,
@@ -52,12 +54,12 @@ coherence conditions of the morphism elements.
                       "domain and codomain of spec morphism are not specs"))
     }
 
-  op makeSpecMorphism : Spec -> Spec -> List (SpecMorphRule Position) -> Position -> Option SCTerm -> Env Morphism
-  def makeSpecMorphism domSpec codSpec rawMapping position opt_sm_tm = 
+  op makeSpecMorphism : Spec -> Spec -> List (SpecMorphRule Position) -> (SM_Pragmas Position) -> Position -> Option SCTerm -> Env Morphism
+  def makeSpecMorphism domSpec codSpec rawMapping pragmas position opt_sm_tm = 
     {
       morphism_map <- makeResolvedMapping domSpec codSpec rawMapping;
       raise_any_pending_exceptions;
-      sm <- buildSpecMorphism domSpec codSpec morphism_map opt_sm_tm;
+      sm <- buildSpecMorphism domSpec codSpec morphism_map pragmas opt_sm_tm;
       raise_any_pending_exceptions;
       % renamings <- return (convertMorphismMapToRenamings morphism_map);
       verifySignatureMappings domSpec codSpec sm position;
@@ -289,9 +291,10 @@ coherence conditions of the morphism elements.
          Spec 
       -> Spec 
       -> (AQualifierMap QualifiedId) * (AQualifierMap QualifiedId)
+      -> SM_Pragmas Position
       -> Option SCTerm
       -> Env Morphism
-  def buildSpecMorphism domSpec codSpec (opMap,sortMap) opt_sm_tm = {
+  def buildSpecMorphism domSpec codSpec (opMap,sortMap) pragmas opt_sm_tm = {
       newOpMap   <- completeMorphismMap opMap   domSpec.ops   codSpec.ops;
       newSortMap <- completeMorphismMap sortMap domSpec.sorts codSpec.sorts;
       return {
@@ -299,6 +302,7 @@ coherence conditions of the morphism elements.
           cod     = codSpec,
           opMap   = newOpMap,
           sortMap = newSortMap,
+	  pragmas = pragmas,
 	  sm_tm   = opt_sm_tm
         }
     }
@@ -343,7 +347,7 @@ Should we check to see if qid is in cod_map??
 
   op  verifySignatureMappings : Spec -> Spec -> Morphism -> Position -> Env ()
   def verifySignatureMappings dom_spec cod_spec sm pos =
-    let {dom, cod, sortMap, opMap, sm_tm=_} = sm in
+    let {dom, cod, sortMap, opMap, pragmas=_, sm_tm=_} = sm in
     let 
       def verify_sort_def (dom_q, dom_id, dom_info : SortInfo, _) = 
 	let (_,dom_sort) = unpackFirstSortDef dom_info in

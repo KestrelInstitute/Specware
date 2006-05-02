@@ -278,6 +278,7 @@ spec
 					   case evalPartial vertex_to_sm_op_rules vertex of
 					     | Some rules -> convertOpRules rules
 					     | _ -> [],
+					   [], % colimit morphisms have no obligations, hence no pragmas
 					   None))
 			    in
 			      update cc_map vertex sm)

@@ -22,7 +22,7 @@ SpecCalc qualifying spec
     {unitId <- getCurrentUID;
      raise (TypeCheck (pos, "Substitute: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
-  def SpecCalc.evaluateOtherSpecMorph _(* dom *) _(* cod *) _(* rules *) pos = 
+  def SpecCalc.evaluateOtherSpecMorph _(* dom *) _(* cod *) _(* rules *) _(* pragmas *) pos = 
     {unitId <- getCurrentUID;
      raise (TypeCheck (pos, "SpecMorph: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
@@ -81,6 +81,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.24  2005/08/18 13:33:01  mcdonald
+%% prep for improved test comparing scterms
+%%
 %% Revision 1.23  2005/06/11 00:05:36  mcdonald
 %% added evaluateOtherTranslate
 %%

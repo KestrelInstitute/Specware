@@ -15,7 +15,7 @@ SpecCalc qualifying spec {
   op evaluateReturnUID        : Position -> RelativeUID                                          -> SpecCalc.Env (ValueInfo * UnitId)
   op evaluateUID              : Position -> RelativeUID                                          -> SpecCalc.Env ValueInfo
   op evaluateSpec             : List (SpecElem Position)                             -> Position -> SpecCalc.Env ValueInfo
-  op evaluateSpecMorph        : SCTerm * SCTerm * (List (SpecMorphRule Position))                -> SpecCalc.Env ValueInfo
+  op evaluateSpecMorph        : SCTerm * SCTerm * (List (SpecMorphRule Position)) * (SM_Pragmas Position) -> SpecCalc.Env ValueInfo
   op evaluateSpecPrism        : SCTerm * List SCTerm * PrismModeTerm Position        -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateSpecInterp       : SCTerm * SCTerm * (SpecInterpRules Position)         -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateExtendMorph      : SCTerm                                                           -> SpecCalc.Env ValueInfo
@@ -50,6 +50,7 @@ SpecCalc qualifying spec {
        ValueInfo
     -> ValueInfo
     -> List (SpecMorphRule Position)
+    -> SM_Pragmas Position
     -> Position
     -> SpecCalc.Env ValueInfo
 
@@ -99,6 +100,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.49  2006/04/05 22:41:23  gilham
+%% Support refinement of individual spec ops.
+%%
 %% Revision 1.48  2005/09/13 22:31:25  cyrluk
 %% Changes to add a ProofCheck SpecCalc unit, some changes to the proof
 %% generator, and added reporting of Snark timing.

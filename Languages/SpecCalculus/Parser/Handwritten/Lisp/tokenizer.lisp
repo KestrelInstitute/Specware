@@ -1,4 +1,6 @@
-(in-package :PARSER4)
+;;; -*- Mode: LISP; Package: Specware; Base: 10; Syntax: Common-Lisp -*-
+
+(in-package "PARSER4")
 
 (defparameter *specware4-tokenizer-parameters*
   (create-tokenizer-parameters 

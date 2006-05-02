@@ -131,7 +131,7 @@ SpecCalc qualifying spec {
    %% with the map indented starting on the third line.
    let prefix =
        case sm.sm_tm of
-	| Some (SpecMorph (dom_tm, cod_tm, _), _) ->
+	| Some (SpecMorph (dom_tm, cod_tm, _, _), _) ->
 	  (ppGroup 
 	    (ppConcat 
 	      [ppString "morphism ",
@@ -164,14 +164,15 @@ SpecCalc qualifying spec {
       (ppConcat 
         [prefix,
 	 ppNest 1 (ppConcat [ppBreak,
-			     (ppMorphismMap sm)])
+			     ppMorphismMap     sm,
+			     ppMorphismPragmas sm])
 	])
 
 
   %% inspired by ppMorphMap from /Languages/MetaSlang/Specs/Categories/AsRecord.sw,
   %%  but substantially different
   op ppMorphismMap : Morphism -> Doc
-  def ppMorphismMap {dom=_, cod=_, sortMap, opMap, sm_tm=_} =
+  def ppMorphismMap {dom=_, cod=_, sortMap, opMap, pragmas=_, sm_tm=_} =
     let 
       def abbrevMap map =
 	foldMap (fn newMap -> fn d -> fn c ->
@@ -199,6 +200,18 @@ SpecCalc qualifying spec {
 	   | abbrev_map -> [ppString "{",
 			    ppNest 1 (ppSep (ppCons (ppString ",") ppBreak) abbrev_map),
 			    ppString "}"])
+
+
+  op  ppMorphismPragmas : Morphism -> Doc
+  def ppMorphismPragmas sm =
+    case sm.pragmas of
+      | [] -> ppNil
+      | _ -> 
+        ppGroup (ppConcat [ppBreak,
+			   ppSep ppBreak
+			         (map (fn  ((prefix, body, postfix), _) ->
+				       ppString (prefix ^ body ^ postfix))
+				      sm.pragmas)])
 
 
  %% ======================================================================
@@ -319,7 +332,7 @@ SpecCalc qualifying spec {
    let prefix =
        let sm = hd sp.sms in
        case sm.sm_tm of
-	| Some (SpecMorph (dom_tm, cod_tm, _), _) ->
+	| Some (SpecMorph (dom_tm, cod_tm, _, _), _) ->
 	  (ppGroup 
 	    (ppConcat 
 	      [ppString "prism ",
