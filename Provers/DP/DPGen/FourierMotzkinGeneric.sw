@@ -3,6 +3,9 @@ FM qualifying spec
   import IneqSet
   import ../DPCheck/InferenceRulesCheck
 
+  op debugFM: Boolean
+  def debugFM = false
+
   op splitList2: [a] ((a -> Boolean) * List a) -> (List a) * (List a)
   def splitList2 (p, l) =
     %let _ = writeLine("spl2") in
@@ -43,11 +46,11 @@ FM qualifying spec
 		      | None -> true),
 		ineqSet) in
     %let _ = writeLine("Chains for: "^print(var)^ " in ") in
-    %let _ = writeIneqs(ineqSet) in
+    %let _ = writeIneqSet(ineqSet) in
     %let _ = writeLine("is: ") in
-    %let _ = writeIneqs(respc) in
+    %let _ = writeIneqSet(respc) in
     %let _ = writeLine("AND ---") in
-    %let _ = writeIneqs(resnpc) in
+    %let _ = writeIneqSet(resnpc) in
     return res
   
   op processIneq0: Var * IneqSet -> Ineq.M (IneqSet * IneqSet)
@@ -59,7 +62,7 @@ FM qualifying spec
     newIneqSet <- return (nonChains++newIneqs);
     newIneqSet <- return (sortIneqSet(newIneqSet));
     %let _ = writeLine("processIneq0: "^ print(var)^" results in") in
-    %let _ = writeIneqs(newIneqSet) in
+    %let _ = writeIneqSet(newIneqSet) in
     return (possibleChains, newIneqSet)
      }
 
@@ -197,6 +200,20 @@ FM qualifying spec
 	}
     else return None
 
+  op debugWrite: String -> ()
+  def debugWrite content =
+    if debugFM then toScreen content else ()
+
+  op printList: fa (a) (a -> String) -> List a -> String -> String
+  def printList printElem l sep =
+    foldl (fn (elem,s) -> s^(if s = "" then "" else sep)^(printElem elem))
+    ""
+    l
+
+  op printIneqSet: IneqSet -> String
+  def printIneqSet ineqSet =
+    (printList IneqS.print ineqSet "\n")^"\n"
+
   op FMRefuteInt?: IneqSet -> Ineq.M FMIntResult
   % FMRefute? takes a set if inequalities.
   % If the set is unsatisfiable then FMRefute? returns None
@@ -204,12 +221,10 @@ FM qualifying spec
   % of a set of equalities
   def FMRefuteInt?(ineqSet) =
     {
+     _ <- return(debugWrite("FM: input:\n"^printIneqSet(ineqSet)));
      mapSeq (fn i -> putInfo(i, axiomIR(i))) ineqSet;
-    %let _ = writeLine("FM: input:") in
-    %let _ = writeIneqs(ineqSet) in
      ineqSetN <- IneqSet.normalize(ineqSet);
-    %let _ = writeLine("FM: Norm:") in
-    %let _ = writeIneqs(ineqSetN) in
+     _ <- return(debugWrite("FM: Norm:\n"^printIneqSet(ineqSetN)));
      posP <- getProof(ineqSetN);
      case posP of
        | Some p -> return (Proof p)
@@ -217,27 +232,19 @@ FM qualifying spec
       {
        ineqSetS <- return (sortIneqSet(ineqSetN));
        ineqSetI <- integerPreProcess(ineqSetS);
-       %_ <- return(writeLine("FM: INTEGER:"));
-       %_ <- return(writeIneqs(ineqSetN));
+       _ <- return(debugWrite("FM: INTEGER:\n"^printIneqSet(ineqSetI)));
        completeIneqs <- fourierMotzkin(ineqSetI);
-       %_ <- return(writeLine("FM: output:"));
-       %_ <- return(writeIneqs(completeIneqs));
+       _ <- return(debugWrite("FM: output:\n"^printIneqSet(completeIneqs)));
        posP <- getProof(completeIneqs);
        case posP of
 	 | Some p -> return (Proof p)
 	 | None ->
 	 {
 	  counter <- return(generateCounterExample(completeIneqs));
-	  %_ <- return(writeLine("FMCounter:"));
-	  % _ <- return(writeIneqSet(counter));
+	  _ <- return(debugWrite("FM: Counter:\n"^printIneqSet(counter)));
 	  return (Counter counter)
 	}}}
 
-
-  op writeIneqs: List Ineq -> ()
-  def writeIneqs(ineqs) =
-    let _ = map (fn (ineq) -> writeLine(Ineq.print(ineq))) ineqs in
-    ()
 
   op generateCounterExample: IneqSet -> IneqSet
   def generateCounterExample(ineqSet) =
@@ -258,7 +265,7 @@ FM qualifying spec
 		 case optVar of
 		   | Some _ -> ~(Ineq.hdVar(ineq) = hdVar)
 		   | _ -> false), ineqSet) in
-    %let _ = writeIneqs(hdVarIneqs) in
+    %let _ = writeIneqSet(hdVarIneqs) in
     let lb = lowerBound(hdVar, hdVarIneqs) in
     let restIneqs = map (substitute hdVar lb) ineqSet in
     let restResult = generateCounterExampleInt(restIneqs) in
