@@ -153,6 +153,8 @@ SAT qualifying spec
 	let t1 = conjunct1(hyp) in
 	let t2 = conjunct2(hyp) in
 	flattenAndSplitHypsInt([t1, t2]++rest)
+      else if isNot? hyp && isNot?(negArg(hyp)) then
+	flattenAndSplitHypsInt(Cons(negArg(negArg(hyp)), rest))
       else if isNot? hyp && isOr?(negArg(hyp)) then
 	let t1 = disjunct1(negArg(hyp)) in
 	let t2 = disjunct2(negArg(hyp)) in
@@ -187,6 +189,8 @@ SAT qualifying spec
 	flattenAndSplitHypsInt([gtIneq, ltIneq]++rest) *)
       else if isDecidable?(hyp) then
 	map (fn (hyps) -> cons(hyp, hyps)) (flattenAndSplitHypsInt(rest))
-      else flattenAndSplitHypsInt(rest)
+      else
+	%let _ = writeLine("~%*** Warning: Ignoring hypothesis "^print(hyp)) in
+	flattenAndSplitHypsInt(rest)
 
 endspec
