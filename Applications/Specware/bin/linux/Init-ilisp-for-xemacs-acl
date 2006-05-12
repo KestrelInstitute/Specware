@@ -43,14 +43,13 @@ if [ "$DOIT" == "NO" ]; then
 else 
 
   ALLEGRO=""
-  for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl70/alisp /usr/local/acl/acl61/alisp; do
-    if [ -x "$L" ]; then
-      ALLEGRO="$L"; break
-    fi
-  done
+
+  export BIN_DIR="$SPECWARE4/Applications/Specware/bin/linux"
+  . $SPECWARE4/Scripts/unix/Verify_ACL
+  ALLEGRO="$LISP"
 
   if [ -z "$ALLEGRO" ]; then
-    echo "Oops.  Do not have cmucl among the following:"
+    echo "Oops.  Do not have lisp among the following:"
     echo " "
     echo "  /usr/local/acl/acl62/alisp"
     echo "  /usr/local/acl/acl70/alisp"

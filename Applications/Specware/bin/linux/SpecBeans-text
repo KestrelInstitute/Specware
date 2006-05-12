@@ -60,23 +60,8 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
 
 # Try to find lisp executable:
 
-if [ -z "$LISP" ]; then
-   for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
-      if [ -x "$L" ]; then
-         LISP="$L"; break
-      fi
-   done
-fi
-
-if [ -z "$LISP" ]; then
-   echo "Failed to $act, no LISP executable found" 2>&1
-   exit 1
-fi
-
-if [ ! -x "$LISP" ]; then
-   echo "Failed to $act, $LISP is not executable" 2>&1
-   exit 1
-fi
+BIN=$SPECWARE_BIN
+. $SPECWARE4/Scripts/unix/Verify_ACL
 
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4.dxl
 

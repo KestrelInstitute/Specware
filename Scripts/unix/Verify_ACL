@@ -3,6 +3,11 @@
 
 SCRIPTDIR=`/usr/bin/dirname $0`
 
+if [ -z "$BIN_DIR" ]; then
+ echo "Need to set BIN_DIR before calling Verify_ACL"
+ exit 1
+fi
+
 export LISP_MODE="ACL"
 export FASL_EXTENSION="fasl"
 export IMAGE_EXTENSION="dxl"
@@ -12,7 +17,7 @@ echo "  ------------------------------------------------------------------------
 echo "  Verify_ACL:  Ensure that Allegro CL executable exists:"
 echo "  "
 
-for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
+for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl70/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
   if [ -x "$L" ]; then
     export LISP="$L"; break
   fi
@@ -21,6 +26,11 @@ done
 if [ -z "$LISP" ]; then
   echo "  Verify_ACL:  Could not find ACL lisp"
   exit 1
+fi
+
+if [ ! -x "$LISP" ]; then
+   echo " Verify_ACL:  $LISP is not executable"
+   exit 1
 fi
 
 LISP_DIR=`/usr/bin/dirname $LISP`
