@@ -43,7 +43,7 @@ if [ "$DOIT" == "NO" ]; then
 else 
 
   ALLEGRO=""
-  for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp; do
+  for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl70/alisp /usr/local/acl/acl61/alisp; do
     if [ -x "$L" ]; then
       ALLEGRO="$L"; break
     fi
@@ -53,6 +53,7 @@ else
     echo "Oops.  Do not have cmucl among the following:"
     echo " "
     echo "  /usr/local/acl/acl62/alisp"
+    echo "  /usr/local/acl/acl70/alisp"
     echo "  /usr/local/acl/acl61/alisp"
     echo " "
     echo "Hence, cannot run ilisp-compile-inits within xemacs"
