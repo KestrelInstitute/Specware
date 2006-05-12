@@ -51,7 +51,7 @@ Integer qualifying spec
     fa(i:Integer) -(-i) = i
 
   theorem unary_minus_bijective is
-    bijective? -
+    bijective? IntegerAux.-
 
   type NonZeroInteger = {i : Integer | i ~= 0}
 
