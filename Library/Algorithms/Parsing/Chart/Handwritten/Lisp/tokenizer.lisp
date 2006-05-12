@@ -452,6 +452,18 @@
 					      (incf current-column)))
 				       ;; extended-comments and pragmas are similar, 
 				       ;; but pragmas will be recognized in fewer places (following whitespace)
+				       ;; give pragmas precedence, as their openings may be encoded as something 
+				       ;; like //@ when comments are //
+				       ,@(if (null open-pragma-action)
+					     ()
+					   `((when (and (eq (svref comment-table ,char-code-var) 
+							    +maybe-open-pragma-code+)
+							(not (null (setq this-pragma-pair
+									 (applicable-pragma-delimiter
+									  ,char-var
+									  ps-stream 
+									  pragma-delimiters))))
+							,open-pragma-action))))
 				       ,@(if (null open-extended-comment-action)
 					     ()
 					   `((when (and (eq (svref comment-table ,char-code-var) 
@@ -462,16 +474,7 @@
 									  ps-stream 
 									  extended-comment-quads)))))
 					       ,open-extended-comment-action)))
-				       ,@(if (null open-extended-comment-action)
-					     ()
-					   `((when (and (eq (svref comment-table ,char-code-var) 
-							    +maybe-open-pragma-code+)
-							(not (null (setq this-pragma-pair
-									 (applicable-pragma-delimiter
-									  ,char-var
-									  ps-stream 
-									  pragma-delimiters))))
-							,open-pragma-action))))))))
+				       ))))
 	       (local-unread-char (char-var)
 				  `(progn
 				     (ps-unread-char ,char-var ps-stream)
