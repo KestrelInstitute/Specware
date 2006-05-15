@@ -64,7 +64,7 @@ export SWPATH=/
 
 # Try to find lisp executable:
 
-BIN=$SPECWARE_BIN
+BIN_DIR=$SPECWARE_BIN
 . $SPECWARE4/Scripts/unix/Verify_ACL
 
 LISP_EXECUTABLE="$LISP"
