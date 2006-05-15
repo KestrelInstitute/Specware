@@ -65,6 +65,7 @@
 	(comment-table         (make-array size-of-character-set :initial-element 0))
 	(ad-hoc-table          (make-array size-of-character-set :initial-element 0))
 	(separator-tokens      (make-array size-of-character-set :initial-element 0))
+	(cp-descriptors        '())
 	)
     ;; Note: in the following, we consistently assign the problematic codes first, so that legal codes can override them
     ;; in cases where a character has both an illegal and a legal code for some context.
@@ -144,31 +145,56 @@
     ;;
     ;;
     (dolist (quad extended-comment-delimiters)
-      (let* ((open-comment-string  (first  quad))
-	     (close-comment-string (second quad))
-	     (recursive?           (third  quad)) 
-	     (eof-ok?              (if (null (cdddr quad)) nil (fourth quad))))
-	(unless (and (stringp open-comment-string)
-		     (> (length open-comment-string) 0)
-		     (stringp close-comment-string)
-		     (> (length close-comment-string) 0)
+      (let* ((prefix     (first  quad))
+	     (postfix    (second quad))
+	     (recursive? (third  quad)) 
+	     (eof-ok?    (fourth quad))
+	     (pragma?    nil))
+	(unless (and (stringp prefix)
+		     (> (length prefix) 0)
+		     (stringp postfix)
+		     (> (length postfix) 0)
 		     (member recursive? '(t nil))
 		     (member eof-ok?    '(t nil)))
-	  (break "Bad description of extended comment delimiters.  Want (open-str close-str recursive? eof-ok?) : ~S" 
+	  (break "Bad description of extended comment delimiters.  Want (prefix postfix recursive? eof-ok?) : ~S" 
 		 quad))
-	(setf (svref comment-table (char-code (schar open-comment-string 0)))
-	      +maybe-open-comment-code+)))
-    (dolist (pair pragma-delimiters)
-      (let* ((open-pragma-string  (first  pair))
-	     (close-pragma-string (second pair)))
-	(unless (and (stringp open-pragma-string)
-		     (> (length open-pragma-string) 0)
-		     (stringp close-pragma-string)
-		     (> (length close-pragma-string) 0))
-	  (break "Bad description of pragma delimiters.  Want (open-str close-str) : ~S" 
-		 pair))
-	(setf (svref comment-table (char-code (schar open-pragma-string 0)))
-	      +maybe-open-pragma-code+)))
+	(push (make-cp-descriptor :prefix     prefix
+				  :postfix    postfix
+				  :recursive? recursive?
+				  :eof-ok?    eof-ok?
+				  :pragma?    pragma?)
+	      cp-descriptors)
+	(setf (svref comment-table (char-code (schar prefix 0)))
+	      +maybe-open-comment-or-pragma-code+)))
+    (dolist (quad pragma-delimiters)
+      (let* ((prefix     (first  quad))
+	     (postfix    (second quad))
+	     (recursive? (third  quad))
+	     (eof-ok?    (fourth quad))
+	     (pragma?    t))
+	(unless (and (stringp prefix)
+		     (> (length prefix) 0)
+		     (stringp postfix)
+		     (> (length postfix) 0)
+		     (member recursive? '(t nil))
+		     (member eof-ok?    '(t nil)))
+	  (break "Bad description of pragma delimiters.  Want (prefix postfix recursive? eof-ok?) : ~S" 
+		 quad))
+	(push (make-cp-descriptor :prefix     prefix
+				  :postfix    postfix
+				  :recursive? recursive?
+				  :eof-ok?    eof-ok?
+				  :pragma?    pragma?)
+	      cp-descriptors)
+	(setf (svref comment-table (char-code (schar prefix 0)))
+	      +maybe-open-comment-or-pragma-code+)))
+    ;; move longest prefixes to front of list, so that something 
+    ;; such as "//@" would be recognized before "//", etc.
+    (setq cp-descriptors
+	  (sort cp-descriptors
+		#'(lambda (x y)
+		    (> (length (cp-descriptor-prefix x))
+		       (length (cp-descriptor-prefix y))))))
     ;;
     (dolist (char separator-chars)
       (setf (svref separator-tokens (char-code char)) (string char)))
@@ -281,8 +307,7 @@
 				   :digits-may-start-symbols? digits-may-start-symbols?
 				   :comment-table             comment-table 
 				   :separator-tokens          separator-tokens
-				   :comment-delimiters        extended-comment-delimiters
-				   :pragma-delimiters         pragma-delimiters
+				   :cp-descriptors            cp-descriptors
 				   :ad-hoc-types-ht           ht-ad-hoc-types
 				   :ad-hoc-table              ad-hoc-table
 				   :ad-hoc-strings            ad-hoc-strings
@@ -338,8 +363,7 @@
 	(string-table              (tokenizer-parameters-string-table              tokenizer-parameters))
 	(comment-table             (tokenizer-parameters-comment-table             tokenizer-parameters))
 	(separator-tokens          (tokenizer-parameters-separator-tokens          tokenizer-parameters))
-	(comment-quads             (tokenizer-parameters-comment-delimiters        tokenizer-parameters))
-	(pragma-delimiters         (tokenizer-parameters-pragma-delimiters         tokenizer-parameters))
+	(cp-descriptors            (tokenizer-parameters-cp-descriptors            tokenizer-parameters))
 	(digits-may-start-symbols? (tokenizer-parameters-digits-may-start-symbols? tokenizer-parameters))
 	(ht-ad-hoc-types           (tokenizer-parameters-ad-hoc-types-ht           tokenizer-parameters))
 	(ad-hoc-table              (tokenizer-parameters-ad-hoc-table              tokenizer-parameters))
@@ -366,8 +390,7 @@
 						  digits-may-start-symbols?
 						  comment-table
 						  separator-tokens 
-						  comment-quads
-						  pragma-delimiters
+						  cp-descriptors
 						  ad-hoc-table
 						  ad-hoc-strings)
 	      (cond ((eq type :EOF)
@@ -398,8 +421,7 @@
 					 digits-may-start-symbols?
 					 comment-table
 					 separator-tokens 
-					 extended-comment-quads
-					 pragma-delimiters
+					 cp-descriptors
 					 ad-hoc-table
 					 ad-hoc-strings)
   ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
@@ -417,9 +439,8 @@
 	 (last-column    )
 	 (char           )
 	 (char-code      )
-	 (token-chars      nil)
-	 (this-ec-quad     nil)
-	 (this-pragma-pair nil)
+	 (token-chars     nil)
+	 (cp-descriptor   nil)
 	 (hex-char-1      )
 	 (hex-char-code-1 )
 	 (hex-char-2      )
@@ -454,26 +475,18 @@
 				       ;; but pragmas will be recognized in fewer places (following whitespace)
 				       ;; give pragmas precedence, as their openings may be encoded as something 
 				       ;; like //@ when comments are //
-				       ,@(if (null open-pragma-action)
+				       ,@(if (and (null open-extended-comment-action) (null open-pragma-action))
 					     ()
 					   `((when (and (eq (svref comment-table ,char-code-var) 
-							    +maybe-open-pragma-code+)
-							(not (null (setq this-pragma-pair
-									 (applicable-pragma-delimiter
+							    +maybe-open-comment-or-pragma-code+)
+							(not (null (setq cp-descriptor
+									 (applicable-cp-descriptor
 									  ,char-var
 									  ps-stream 
-									  pragma-delimiters))))
-							,open-pragma-action))))
-				       ,@(if (null open-extended-comment-action)
-					     ()
-					   `((when (and (eq (svref comment-table ,char-code-var) 
-							    +maybe-open-comment-code+)
-							(not (null (setq this-ec-quad
-									 (applicable-extended-comment-quad
-									  ,char-var
-									  ps-stream 
-									  extended-comment-quads)))))
-					       ,open-extended-comment-action)))
+									  cp-descriptors)))))
+					       (if (cp-descriptor-pragma? cp-descriptor)
+						   ,open-pragma-action
+						 ,open-extended-comment-action))))
 				       ))))
 	       (local-unread-char (char-var)
 				  `(progn
@@ -1145,8 +1158,7 @@
        (set-first-positions)
        ;;
        (multiple-value-bind (error? comment-chars last-byte last-line last-column)
-	   (skip-extended-comment char ps-stream this-ec-quad 
-				  extended-comment-quads 
+	   (skip-extended-comment char ps-stream cp-descriptor cp-descriptors
 				  ;; Note: Pragma bodies are treated as ordinary text,
 				  ;;       not as recursively nested structures.
 				  ;;       This can cause a minor problem in the unusual
@@ -1173,7 +1185,7 @@
        (multiple-value-bind (error? pragma-chars last-byte last-line last-column)
 	   ;; scan-pragma calls skip-extended-comment with the recursive? and eof-ok? 
 	   ;; flags set to false
-	   (scan-pragma char ps-stream this-pragma-pair
+	   (scan-pragma char ps-stream cp-descriptor
 			first-byte
 			first-line
 			first-column)
@@ -1190,8 +1202,8 @@
 				 ())
 		(go ignore-erroneous-pragma))
 	       (t
-		(let* ((prefix     (first  this-pragma-pair))
-		       (postfix    (second this-pragma-pair))
+		(let* ((prefix     (cp-descriptor-prefix  cp-descriptor))
+		       (postfix    (cp-descriptor-postfix cp-descriptor))
 		       (start      (length prefix))
 		       (end        (- (length pragma-chars) (length postfix)))
 		       (body-chars (subseq (nreverse pragma-chars) start end))
@@ -1221,28 +1233,23 @@
     ((#\f #\F) 15)
     (otherwise nil)))
 
-(defun applicable-extended-comment-quad (first-char ps-stream extended-comment-quads)
-  (dolist (quad extended-comment-quads)
-    (when (pseudo-stream-has-prefix? first-char ps-stream (first quad))
-      (return quad))))
+(defun applicable-cp-descriptor (first-char ps-stream cp-descriptors)
+  (dolist (cp-descriptor cp-descriptors)
+    (when (pseudo-stream-has-prefix? first-char ps-stream (cp-descriptor-prefix cp-descriptor))
+      (return cp-descriptor))))
 
-(defun applicable-pragma-delimiter (first-char ps-stream pragma-delimiters)
-  (dolist (pair pragma-delimiters)
-    (when (pseudo-stream-has-prefix? first-char ps-stream (first pair))
-      (return pair))))
-
-(defun pseudo-stream-has-prefix? (first-char ps-stream open-comment-string)
-  (and (eq (schar open-comment-string 0) first-char)
+(defun pseudo-stream-has-prefix? (first-char ps-stream prefix)
+  (and (eq (schar prefix 0) first-char)
        (let* ((lookahead-chars nil)
 	      (result
-	       (dotimes (i (1- (length open-comment-string)) 
+	       (dotimes (i (1- (length prefix)) 
 			  ;; if all chars match, the result is t
 			  t)
 		 (let ((char (ps-read-char ps-stream)))
 		   (cond ((eq char +tokenizer-eof+)
 			  ;; if eof intervenes, the result is nil
 			  (return nil))
-			 ((eq char (schar open-comment-string (1+ i)))
+			 ((eq char (schar prefix (1+ i)))
 			  (push char lookahead-chars))
 			 (t
 			  ;; if some char is a mismatch, the result is nil
@@ -1256,7 +1263,7 @@
 
 (defstruct extended-comment-state
   error?
-  all-quads
+  cp-descriptors
   comment-table
   byte
   line
@@ -1265,48 +1272,46 @@
   
 (defvar *extended-comment-state* (make-extended-comment-state))
 
-(defun skip-extended-comment (first-char ps-stream this-quad all-quads
+(defun scan-pragma (first-char ps-stream cp-descriptor first-byte first-line first-column)
+  ;; scan similarly to an extended comment, but not recursive
+  (skip-extended-comment first-char ps-stream cp-descriptor '()
+			 #() ; comment table will be ignored
+			 first-byte first-line first-column))
+
+(defun skip-extended-comment (first-char ps-stream cp-descriptor cp-descriptors
 					 comment-table
 					 first-byte first-line first-column)
   (let ((ec-state *extended-comment-state*)) 
-    (setf (extended-comment-state-error?        ec-state) nil)
-    (setf (extended-comment-state-all-quads     ec-state) all-quads)
-    (setf (extended-comment-state-comment-table ec-state) comment-table)
-    (setf (extended-comment-state-byte          ec-state) first-byte)
-    (setf (extended-comment-state-line          ec-state) first-line)
-    (setf (extended-comment-state-column        ec-state) first-column)
-    (setf (extended-comment-state-chars         ec-state) (list first-char))
-    (aux-skip-extended-comment ps-stream this-quad ec-state)
+    (setf (extended-comment-state-error?         ec-state) nil)
+    (setf (extended-comment-state-cp-descriptors ec-state) cp-descriptors)
+    (setf (extended-comment-state-comment-table  ec-state) comment-table)
+    (setf (extended-comment-state-byte           ec-state) first-byte)
+    (setf (extended-comment-state-line           ec-state) first-line)
+    (setf (extended-comment-state-column         ec-state) first-column)
+    (setf (extended-comment-state-chars          ec-state) (list first-char))
+    (aux-skip-extended-comment ps-stream cp-descriptor ec-state)
     (values (extended-comment-state-error? ec-state) 
 	    (extended-comment-state-chars  ec-state) 
 	    (extended-comment-state-byte   ec-state)
 	    (extended-comment-state-line   ec-state)
 	    (extended-comment-state-column ec-state))))
 
-(defun scan-pragma (first-char ps-stream pair first-byte first-line first-column)
-  ;; scan similarly to an extended comment, 
-  ;; but not recursive, eof is not ok
-  (let ((pragma-quad (append pair '(nil nil))))
-    (skip-extended-comment first-char ps-stream pragma-quad '()
-			   #() ; comment table will be ignored
-			   first-byte first-line first-column)))
-
-(defun aux-skip-extended-comment (ps-stream this-quad ec-state)
-  (let* ((open-comment  (first  this-quad))
-	 (close-comment (second this-quad))
-	 (recursive?    (third  this-quad))
-	 (eof-ok?       (fourth this-quad))
-	 (open-size  (1- (length open-comment)))
-	 (close-size (1- (length close-comment)))
-	 (close-char-0 (schar close-comment 0))
+(defun aux-skip-extended-comment (ps-stream cp-descriptor ec-state)
+  (let* ((prefix        (cp-descriptor-prefix     cp-descriptor))
+	 (postfix       (cp-descriptor-postfix    cp-descriptor))
+	 (recursive?    (cp-descriptor-recursive? cp-descriptor))
+	 (eof-ok?       (cp-descriptor-eof-ok?    cp-descriptor))
+	 (open-size     (1- (length prefix)))
+	 (close-size    (1- (length postfix)))
+	 (close-char-0  (schar postfix 0))
 	 (comment-table (extended-comment-state-comment-table ec-state)))
-    ;; skip past open-comment
+    ;; skip past prefix
     (dotimes (i open-size) 
       (push (ps-read-char ps-stream)
 	    (extended-comment-state-chars ec-state)))
     (incf (extended-comment-state-byte   ec-state) open-size)
     (incf (extended-comment-state-column ec-state) open-size)
-    ;; scan for close-comment or recursive open-comment
+    ;; scan for postfix or recursive prefix
     (do ((char (ps-read-char ps-stream) (ps-read-char ps-stream)))
 	((eq char +tokenizer-eof+)
 	 (cond (eof-ok?
@@ -1322,8 +1327,8 @@
 	    (t
 	     (incf (extended-comment-state-column ec-state))))
       (cond ((and (eq char close-char-0)
-		  (pseudo-stream-has-prefix? char ps-stream close-comment))
-	     ;; skip past close-comment
+		  (pseudo-stream-has-prefix? char ps-stream postfix))
+	     ;; skip past postfix
 	     (dotimes (i close-size) 
 	       (push (ps-read-char ps-stream) 
 		     (extended-comment-state-chars ec-state)))
@@ -1332,15 +1337,15 @@
 	     (return-from aux-skip-extended-comment nil))
 	    ((and recursive?
 		  (eq (svref comment-table (char-code char)) 
-		      +maybe-open-comment-code+))
+		      +maybe-open-comment-or-pragma-code+))
 	     ;; recur if both outer and inner extended comments are recursive
-	     (let ((new-quad (applicable-extended-comment-quad 
-			      char ps-stream 
-			      (extended-comment-state-all-quads ec-state))))
-	       (when (not (null new-quad))
-		 (let ((inner-is-recursive? (third new-quad)))
+	     (let ((new-cp-descriptor (applicable-cp-descriptor
+				       char ps-stream 
+				       (extended-comment-state-cp-descriptors ec-state))))
+	       (when (not (null new-cp-descriptor))
+		 (let ((inner-is-recursive? (cp-descriptor-recursive? new-cp-descriptor)))
 		   (when inner-is-recursive?
-		     (aux-skip-extended-comment ps-stream new-quad ec-state))))))))))
+		     (aux-skip-extended-comment ps-stream new-cp-descriptor ec-state))))))))))
 
 ;;; ========================================================================
 

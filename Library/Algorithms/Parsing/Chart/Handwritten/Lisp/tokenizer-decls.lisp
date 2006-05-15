@@ -26,9 +26,8 @@
 (defconstant +syllable-separator-code+       15)  ; underbar in some contexts
 (defconstant +wildcard-code+                 16)  ; underbar in other contexts
 
-(defconstant +maybe-open-comment-code+       -1)
-(defconstant +maybe-start-of-ad-hoc-token+   -2)
-(defconstant +maybe-open-pragma-code+        -3)
+(defconstant +maybe-open-comment-or-pragma-code+ -1)
+(defconstant +maybe-start-of-ad-hoc-token+       -2)
 
 (defstruct tokenizer-parameters
   name
@@ -40,11 +39,17 @@
   digits-may-start-symbols?
   comment-table
   separator-tokens
-  comment-delimiters
-  pragma-delimiters
+  cp-descriptors
   ad-hoc-types-ht
   ad-hoc-table
   ad-hoc-strings)
+
+(defstruct (cp-descriptor (:type vector)) ; comment-or-pragma-descriptor
+  prefix
+  postfix
+  recursive?
+  eof-ok?
+  pragma?)
 
 (defparameter +tokenizer-eof+ (cons nil nil))
 

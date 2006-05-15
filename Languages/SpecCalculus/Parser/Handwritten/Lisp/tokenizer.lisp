@@ -41,14 +41,17 @@
    ;;
    :comment-to-eol-chars        "%"
    ;;
-   :extended-comment-delimiters '(("(*" "*)" t)  ; t means recursive
-				  ("\\section{"    "\\begin{spec}" nil t) ; t means ok to terminate with eof
+   :extended-comment-delimiters '(("(*"            "*)"            t   nil) ; t means recursive
+				  ("\\section{"    "\\begin{spec}" nil t)   ; t means ok to terminate with eof
 				  ("\\subsection{" "\\begin{spec}" nil t)
-				  ("\\document{"  "\\begin{spec}" nil t)
+				  ("\\document{"   "\\begin{spec}" nil t)
 				  ("\\end{spec}"   "\\begin{spec}" nil t)
 				  )
    ;;
-   :pragma-delimiters           '(("proof" "end-proof"))
+   :pragma-delimiters           '(("proof" "end-proof" nil nil)) 
+					; Not recusive, to avoid problems when the word "proof" appears 
+					;  inside an extended comment.
+					; Not ok to terminate with eof -- that's a hack for the latex stuff.
    ;;
    :case-sensitive?             t
    ;;
