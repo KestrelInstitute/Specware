@@ -73,7 +73,6 @@ gc6.6/doc/tree.html
 gc6.6/dyn_load.c
 gc6.6/EMX_MAKEFILE
 gc6.6/finalize.c
-gc6.6/gc.a
 gc6.6/gc_cpp.cc
 gc6.6/gc_cpp.cpp
 gc6.6/gcc_support.c
