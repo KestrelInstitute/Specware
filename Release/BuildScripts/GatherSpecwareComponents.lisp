@@ -422,7 +422,9 @@
 	  (cond ((null x)
 		 (dolist (z y) 
 		   (unless (or (equalp (pathname-type z) "a")
-			       (equalp (pathname-type z) "o"))
+			       (equalp (pathname-type z) "o")
+			       (member "gc6.2" (pathname-directory z) :test 'equalp))
+		     (print (list 1 (pathname-directory z)))
 		     (warn "Ignoring file not mentioned in cgen-distribution-files: ~A" z)))
 		 (return nil))
 		((null y)
@@ -446,14 +448,17 @@
 			  (let ((z (pop y)))
 			    (unless (or (equalp (pathname-type z) "a")
 					(equalp (pathname-type z) "o")
+					(member "gc6.2" (pathname-directory z) :test 'equalp)
 					(member (pathname-name z) 
 						'("cgen-distribution-files"
+						  "cgen-distribution-files-6-2"
 						  "base_lib"
 						  "gctest"
 						  "if_mach"
 						  "if_not_there"
 						  "threadlibs")
 						:test 'equalp))
+			      (print (list 2 (pathname-directory z)))
 			      (warn ";;; Ignoring file not mentioned in cgen-distribution-files: ~A" z))))))))))
       ;; (when *verbose* (format t "~&~%"))
       )
