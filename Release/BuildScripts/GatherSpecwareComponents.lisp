@@ -664,13 +664,29 @@
 	 (source-windows-dir         (ensure-subdirs-exist source-dir "Release" "Windows"))
 	 (source-windows-allegro-dir (ensure-subdirs-exist source-dir "Release" "Windows" "Allegro"))
 	 ;;
-	 (target-dir                 (ensure-subdirs-exist release-dir "Components" "Specware" "Windows")))
+	 (target-dir                 (ensure-subdirs-exist release-dir "Components" "Specware" "Windows"))
+	 (specware-exe-file          (format nil "~A.exe" Specware-name)))
 
     ;; Installation Scripts
 
     ;; Executables/Images
+    (dolist (filename (list (format nil "~A.lic" specware-name)
+			    (format nil "~A.exe" specware-name)
+			    (format nil "~A.dxl" specware-name)
+			    "Specware.cmd"
+			    "SpecwareShell.cmd"
+			    "Find_Specware_App_ACL.cmd"
+			    "Find_XEMACS.cmd"
+			    "Find_SPECWARE4.cmd"
+			    "Update_Path.cmd"
+			    "Update_SWPATH.cmd"
+			    "StartSpecwareShell.lisp"))
+      (let ((filename (format nil "~A~A" target-dir filename)))
+	(when (probe-file filename)
+	  (format t "~&;;; Deleting old version of ~A~%" filename)
+	  (delete-file filename))))
     (generate-new-lisp-application :Allegro 
-				   (format nil "~A.exe" Specware-name)
+				   specware-exe-file
 				   target-dir
 
 				   ;; a list of files to load into the new application
