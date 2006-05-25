@@ -424,7 +424,6 @@
 		   (unless (or (equalp (pathname-type z) "a")
 			       (equalp (pathname-type z) "o")
 			       (member "gc6.2" (pathname-directory z) :test 'equalp))
-		     (print (list 1 (pathname-directory z)))
 		     (warn "Ignoring file not mentioned in cgen-distribution-files: ~A" z)))
 		 (return nil))
 		((null y)
@@ -458,7 +457,6 @@
 						  "if_not_there"
 						  "threadlibs")
 						:test 'equalp))
-			      (print (list 2 (pathname-directory z)))
 			      (warn ";;; Ignoring file not mentioned in cgen-distribution-files: ~A" z))))))))))
       ;; (when *verbose* (format t "~&~%"))
       )
@@ -676,8 +674,8 @@
 
     ;; Executables/Images
     (dolist (filename (list (format nil "~A.lic" specware-name)
-			    (format nil "~A.exe" specware-name)
 			    (format nil "~A.dxl" specware-name)
+			    specware-exe-file
 			    "Specware.cmd"
 			    "SpecwareShell.cmd"
 			    "Find_Specware_App_ACL.cmd"
@@ -695,9 +693,9 @@
 				   target-dir
 
 				   ;; a list of files to load into the new application
-				   (list (merge-pathnames lisp-utilities-dir    "LoadUtilities.lisp")
-					 (merge-pathnames lisp-utilities-dir    "MemoryManagement.lisp")
-					 (merge-pathnames lisp-utilities-dir    "CompactMemory.lisp")
+				   (list (merge-pathnames lisp-utilities-dir      "LoadUtilities.lisp")
+					 (merge-pathnames lisp-utilities-dir      "MemoryManagement.lisp")
+					 (merge-pathnames lisp-utilities-dir      "CompactMemory.lisp")
 					 (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")
 					 (merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
 					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))
