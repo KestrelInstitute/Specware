@@ -26,7 +26,7 @@ fi
 
 # Otherwise, look for an executable candidate
 if [ "$HAVE_LISP" != "true" ]; then
-  for L in "$HERE"/alisp /usr/local/acl/acl70/alisp /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
+  for L in "$HERE"/alisp /usr/local/acl/acl62/alisp /usr/local/acl/acl70/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
     if [ -x "$L" ]; then
       LISP="$L"
     fi

@@ -22,7 +22,7 @@ if "%XEMACS%"=="" (
 if "%ALLEGRO%"=="" (
   echo Error: environment variable ALLEGRO not set.
   echo ALLEGRO must be set to the path of the Allegro Common Lisp tree,
-  echo e.g. c:\progra~1\acl70.
+  echo e.g. c:\progra~1\acl62.
   pause
   exit
 )

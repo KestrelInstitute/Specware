@@ -313,8 +313,8 @@
 
     (let* ((specware-xeli-dir (extend-directory source-dir "xeli"))
 	   (source-xeli-dir   (if (null (generic-directory specware-xeli-dir))
-				  #+Linux     "/usr/local/acl/acl70/xeli/"
-				  #+MSWindows "C:\\Program Files\\acl70\\xeli\\"
+				  #+Linux     "/usr/local/acl/acl62/xeli/"
+				  #+MSWindows "C:\\Program Files\\acl62\\xeli\\"
 				  #-(or Linux MSWindows) (error "Unknown OS for xeli")
 				  specware-xeli-dir)))
       (copy-dist-directory source-xeli-dir

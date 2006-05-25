@@ -22,8 +22,8 @@ if not exist "%DISTRIBUTION%" (
 
 set VERBOSE=t
 
-set "LISP_EXECUTABLE=C:\Program Files\acl70\alisp.exe"
-set "LISP_HEAP_IMAGE=C:\Program Files\acl70\alisp.dxl"
+set "LISP_EXECUTABLE=%Allegro%\alisp.exe"
+set "LISP_HEAP_IMAGE=%Allegro%\alisp.dxl"
 
 cd "%SPECWARE4%\Release\BuildScripts\"
 
