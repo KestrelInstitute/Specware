@@ -493,7 +493,7 @@
     (let* ((saw-old? nil)
 	   (saw-new? nil)
 	   (target-file (make-pathname :name     "Makefile" 
-				       :defaults (extend-directory target-clib-dir "gc6.2")))
+				       :defaults (extend-directory target-clib-dir "gc6.6")))
 	   (temp-file   (make-pathname :name     "temp"
 				       :defaults target-clib-dir)))
       (with-open-file (target target-file)
