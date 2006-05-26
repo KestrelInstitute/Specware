@@ -576,6 +576,18 @@ The command [[proc]] may be abbreviated to [[p]].
 </para>
 
 <para>
+If the $unit-term$ is a proof term, i.e. it begins with [[prove]], then the [[proc]]
+or [[p]] may be omitted, so
+[[
+||    prove $claim-name$ in $unit-term$
+]]
+is the same as
+[[
+||    proc prove $claim-name$ in $unit-term$
+]]
+</para>
+
+<para>
 The values of processed units are kept in the unit cache.
 To clear the unit cache, as mentioned before, use:
 [[
