@@ -115,7 +115,12 @@ redirects all the Snark output to log files. In our example above,
 which executed a proof in the file <"pruf.sw">, &Specware; will
 create a subdirectory called <"Snark"> at the same level as
 <"pruf.sw">.  In that directory a log file called <"pruf.log"> will be
-created that contains all the Snark output.</para>
+created that contains all the Snark output. In this same directory a
+specware file called <"pruf.sw"> will also be generated that includes
+an expanded version of the original spec containing the theorem to be
+proved. The original spec needs to be expanded before being passed to
+Snark because the Snark's logic is different from Specware's, lacking
+polymorphism and higher-order functions. </para>
 
 </section>
 
