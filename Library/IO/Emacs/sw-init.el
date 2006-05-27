@@ -94,11 +94,12 @@
 			))
       (wait-for-prompt 0.1)
       (sw:eval-in-lisp-no-value
-       (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
-      (let ((init-form (or (getenv "SPECWARE_INIT_FORM") "(swshell::specware-shell nil)")))
-	(goto-char (point-max))
-	(simulate-input-expression init-form)
-	(sleep-for .1)))))
+       (format "(cl:namestring (specware::change-directory %S))" sw:common-lisp-directory))
+      (unless (eq lisp-emacs-interface-type 'slime)
+	(let ((init-form (or (getenv "SPECWARE_INIT_FORM") "(swshell::specware-shell nil)")))
+	  (goto-char (point-max))
+	  (simulate-input-expression init-form)
+	  (sleep-for 0.1))))))
 
 (defun binary-directory (specware-dir)
   (concat specware-dir
@@ -110,12 +111,15 @@
 	      (t (symbol-name system-type))))))
 
 (defun wait-for-prompt (&optional timeout)
-  (sit-for 0.1 t)
-  (let ((proc (get-buffer-process *specware-buffer-name*)))
-    (while (not (if (eq lisp-emacs-interface-type 'franz)
-		    (equal fi:allegro-run-status-string "Idle")
-		  (equal comint-status " :ready")))
-      (accept-process-output proc (or timeout 5)))))
+  (unless (eq lisp-emacs-interface-type 'slime)
+    (sit-for 0.1 t)
+    (let ((proc (get-buffer-process *specware-buffer-name*)))
+      (while (not (if (eq lisp-emacs-interface-type 'franz)
+		      (equal fi:allegro-run-status-string "Idle")
+		    (if (eq lisp-emacs-interface-type 'slime)
+			(eq (process-status slime-buffer-connection) 'open)
+		      (equal comint-status " :ready"))))
+	(accept-process-output proc (or timeout 5))))))
 
 (defun set-socket-init-for-specware ()
   (message "set-socket-init-for-specware")
@@ -192,14 +196,15 @@
 		    sw:common-lisp-image-arguments)
     (when sleep (sit-for sleep))))
 
-(defvar *specware-auto-start* t
+(defvar *specware-auto-start* nil
   "If T start Specware when needed if it not already running")
 
 (defun ensure-specware-running ()
   (unless (inferior-lisp-running-p)
-    ;; first wait up to 10 seconds to see if existing lisp is available
+    ;; first wait up to 5 seconds to see if existing lisp is available
     (if (dotimes (i 100)
-	  (message "Checking to see if existing lisp is running in buffer %S -- %S" sw:common-lisp-buffer-name (- 100 i))
+	  (when (< i 50)
+	    (message "Checking to see if existing lisp is running in buffer %S -- %S" sw:common-lisp-buffer-name (- 100 i)))
 	  (sit-for 0.1 t)
 	  (when (inferior-lisp-running-p)
 	    (return t)))
@@ -225,9 +230,16 @@
     (if win (select-window win)
       (sw:switch-to-lisp)))
   (pop-to-buffer *specware-buffer-name*) ; might want to choose explicit frame
+  (when (eq lisp-emacs-interface-type 'slime)
+    (sit-for 0.1)
+    (when (slime-rex-continuations)
+      (sit-for 2)
+      (when (slime-rex-continuations)
+	(sit-for 2))))
   (goto-char (point-max))
   (insert str)
-  (inferior-lisp-newline))
+  (inferior-lisp-newline)
+  (sit-for 0.1))
 
 (defvar *specware-continue-form* nil)
 (defvar *last-specware-continue-form* nil)
@@ -236,12 +248,12 @@
 
 (defun continue-emacs-computation (process event)
   ;; for debugging continue-form-when-ready...
-  (setq *sentinel-data* 
-	;; use format to capture current descriptions
-	(cons (list (current-time-string)
-		    (format "%S" process) 
-		    (list 'event (format "%S" event)))
-	      *sentinel-data*))
+;  (setq *sentinel-data* 
+;	;; use format to capture current descriptions
+;	(cons (list (current-time-string)
+;		    (format "%S" process) 
+;		    (list 'event (format "%S" event)))
+;	      *sentinel-data*))
   (let ((fm *specware-continue-form*))
     (setq *last-specware-continue-form* fm)
     (setq *specware-continue-form* nil)
@@ -251,15 +263,18 @@
   (setq *specware-continue-form* form)
   (let ((sw-proc (get-buffer-process *specware-buffer-name*)))
     ;; for debugging continue-form-when-ready...
-    (setq *sentinel-data* 
-	  ;; use format to capture current descriptions...
-	  (cons (list (current-time-string)
-		      (format "%S" sw-proc)
-		      (list (list 'old-sentinel (format "%S" (process-sentinel sw-proc)))
-			    (list 'new-sentinel 'continue-emacs-computation (format "%S" form))))
-		*sentinel-data*))
-    (set-process-sentinel sw-proc 'continue-emacs-computation))
-  (simulate-input-expression "(specware::exit)"))
+;    (setq *sentinel-data* 
+;	  ;; use format to capture current descriptions...
+;	  (cons (list (current-time-string)
+;		      (format "%S" sw-proc)
+;		      (list (list 'old-sentinel (format "%S" (process-sentinel sw-proc)))
+;			    (list 'new-sentinel 'continue-emacs-computation (format "%S" form))))
+;		*sentinel-data*))
+    (when sw-proc
+      (set-process-sentinel sw-proc 'continue-emacs-computation)))
+  (simulate-input-expression (if (eq lisp-emacs-interface-type 'slime)
+				 "(specware::exit-when-done)"
+			       "(specware::exit)")))
 
 (defun kill-lisp-and-then-emacs (&optional delay)
   (when (null delay) (setq delay 10))
@@ -273,6 +288,7 @@
    (`(kill-emacs t))))
   
 (defun delete-continuation ()
+  (interactive)
   (let ((sw-proc (get-buffer-process *specware-buffer-name*)))
     ;; for debugging continue-form-when-ready...
     (setq *sentinel-data* 
@@ -281,7 +297,14 @@
 		      (format "%S" sw-proc)
 		      (list 'delete-continuation))
 		*sentinel-data*))
-    (set-process-sentinel sw-proc nil)))
+    (setq *specware-continue-form* nil)
+    (when sw-proc
+      (set-process-sentinel sw-proc nil))))
+
+(defun eval-in-lisp-in-order (str)
+  (if nil  ;(eq lisp-emacs-interface-type 'slime)
+      (sw:eval-in-lisp str)
+    (simulate-input-expression str)))
 
 (defun build-specware4-and-then-exit (&optional in-current-dir?)
   (interactive "P")
@@ -313,22 +336,23 @@
       (when (file-exists-p specware4-lisp)
 	(copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
       (copy-file specware4-base-lisp specware4-lisp t))
-    (sw:eval-in-lisp-no-value
-     (format "(load %S)"
+    (eval-in-lisp-in-order
+     (format "(cl:load %S)"
 	     (concat specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
-    (sw:eval-in-lisp-no-value
-     (format "(load %S)"
+    (eval-in-lisp-in-order
+     (format "(cl:load %S)"
 	     (concat specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
-    (sw:eval-in-lisp-no-value
+    (eval-in-lisp-in-order
      (format "(specware::setenv \"SWPATH\" %S)"
 	     (concat (sw::normalize-filename specware4-dir)
 		     (if *windows-system-p* ";" ":")
 		     slash-dir)))
-    (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
-				      (sw::normalize-filename specware4-dir)))
-    (sw:eval-in-lisp-no-value
-     (format "(namestring (specware::change-directory %S))" build-dir))
-    (simulate-input-expression "(cl:time (load \"Specware4.lisp\"))")
+    (eval-in-lisp-in-order
+     (format "(specware::setenv \"SPECWARE4\" %S)"
+	     (sw::normalize-filename specware4-dir)))
+    (eval-in-lisp-in-order
+     (format "(cl:namestring (specware::change-directory %S))" build-dir))
+    (eval-in-lisp-in-order "(cl:time (cl:load \"Specware4.lisp\"))")
     (continue-form-when-ready
      ;; continue-form-when-ready kills the sublisp process, 
      ;; then waits for a status change signal on that process
@@ -341,7 +365,7 @@
   (when base-world-name
     (run-plain-lisp 1)
     ;; Currently
-    (sw:eval-in-lisp-no-value
+    (eval-in-lisp-in-order
      (format (if *windows-system-p*
 		 ;; various configurations that were used in Allegro 6.2 for windows:
 		 ;; "(build-lisp-image %S :c-heap-start  #x7d200000 :oldspace #x100)" ; Paulo's "magic number"
@@ -349,10 +373,12 @@
 		 ;; "(build-lisp-image %S :c-heap-start  #x7e000000 :oldspace #x100)"
 		 "(build-lisp-image %S)"
 	       ;; non-windows:
-	       "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)")
+	       ;; read-from-string is because of slime misfeature
+	       "(cl-user::build-lisp-image %S :lisp-heap-start (cl:read-from-string \"#x48000000\")
+                                              :oldspace #x100)")
 	     base-world-name))
-    (sit-for 4)
-    (simulate-input-expression "(exit)")
+    (sit-for 2)
+    (eval-in-lisp-in-order "(cl-user::exit)")
     (sit-for 2))
   (if (null base-world-name)
       (run-plain-lisp 1)
@@ -360,45 +386,45 @@
       (run-lisp-application)))
   (unless (inferior-lisp-running-p)
     (sit-for 1))
-  (sw:eval-in-lisp-no-value
-   (format "(load %S)"
+  (eval-in-lisp-in-order
+   (format "(cl:load %S)"
 	   (concat specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
-  (sw:eval-in-lisp-no-value (format "(specware::setenv \"SWPATH\" %S)"
+  (eval-in-lisp-in-order (format "(specware::setenv \"SWPATH\" %S)"
 				    (concat (sw::normalize-filename specware4-dir)
 					    (if *windows-system-p* ";" ":")
 					    slash-dir)))
-  (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
+  (eval-in-lisp-in-order (format "(specware::setenv \"SPECWARE4\" %S)"
 				    (sw::normalize-filename specware4-dir)))
-  (sw:eval-in-lisp-no-value
-   (format "(load %S)"
+  (eval-in-lisp-in-order
+   (format "(cl:load %S)"
 	   (concat specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
-  (sw:eval-in-lisp-no-value
-   (format "(load %S)"
+  (eval-in-lisp-in-order
+   (format "(cl:load %S)"
 	   (concat specware4-dir "/Applications/Handwritten/Lisp/memory-management")))
-  (sw:eval-in-lisp-no-value
-   (format "(namestring (specware::change-directory %S))" build-dir))
-  (sw:eval-in-lisp-no-value "(set-gc-parameters-for-build nil)")
-  (simulate-input-expression "(load \"Specware4.lisp\")")
-  (simulate-input-expression "(compact-memory t)")
-  (simulate-input-expression "(set-gc-parameters-for-use nil)")
+  (eval-in-lisp-in-order
+   (format "(cl:namestring (specware::change-directory %S))" build-dir))
+  (eval-in-lisp-in-order "(cl-user::set-gc-parameters-for-build nil)")
+  (eval-in-lisp-in-order "(cl:load \"Specware4.lisp\")")
+  (eval-in-lisp-in-order "(cl-user::compact-memory t)")
+  (eval-in-lisp-in-order "(cl-user::set-gc-parameters-for-use nil)")
   (when (file-exists-p world-name)
     (rename-file world-name (concat bin-dir "/Specware4-saved."
 				    *lisp-image-extension*)
 		 t))
   (sit-for 5)
-  (simulate-input-expression (format (case *specware-lisp*
-				       (cmulisp "(ext:save-lisp %S)")
-				       (allegro "(excl::dumplisp :name %S)")
-				       (openmcl "(ccl:save-application %S)")
-				       (sbcl "(sb-ext:save-lisp-and-die %S)"))
-				     world-name))
-  (simulate-input-expression
-   (format "(let ((filename %S))
-             (cond ((probe-file filename)
-                    (format t \"~2&Wrote new ~A~2%%\" filename)
-    	            (format t \"~&It is safe to exit now..~%%\"))
+  (eval-in-lisp-in-order (format (case *specware-lisp*
+				   (cmulisp "(ext:save-lisp %S)")
+				   (allegro "(excl::dumplisp :name %S)")
+				   (openmcl "(ccl:save-application %S)")
+				   (sbcl "(sb-ext:save-lisp-and-die %S)"))
+				 world-name))
+  (eval-in-lisp-in-order
+   (format "(cl:let ((filename %S))
+             (cl:cond ((cl:probe-file filename)
+                    (cl:format t \"~2&Wrote new ~A~2%%\" filename)
+    	            (cl:format t \"~&It is safe to exit now..~%%\"))
                    (t
-	            (warn \"Failed to write new ~A\" filename))))"
+	            (cl:warn \"Failed to write new ~A\" filename))))"
 	   world-name))
   (when auto-exit?
     (kill-lisp-and-then-emacs))
@@ -425,28 +451,28 @@
 	 (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
 	 (specware4-base-lisp (concat specware4-dir "/Applications/Specware/Specware4-base.lisp")))
     (run-plain-lisp 1)
-    (sw:eval-in-lisp-no-value
-     (format "(load %S)"
+    (eval-in-lisp-in-order
+     (format "(cl:load %S)"
 	     (concat specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
-    (sw:eval-in-lisp-no-value (format "(specware::setenv \"SWPATH\" %S)"
-				      (concat (sw::normalize-filename specware4-dir)
-					      (if *windows-system-p* ";" ":")
-					      slash-dir)))
-    (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
+    (eval-in-lisp-in-order (format "(specware::setenv \"SWPATH\" %S)"
+				   (concat (sw::normalize-filename specware4-dir)
+					   (if *windows-system-p* ";" ":")
+					   slash-dir)))
+    (eval-in-lisp-in-order (format "(specware::setenv \"SPECWARE4\" %S)"
 				      (sw::normalize-filename specware4-dir)))
         
     (when (file-exists-p specware4-lisp)
       (copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
     (when (file-exists-p specware4-base-lisp)
       (copy-file specware4-base-lisp specware4-lisp t))
-    (sw:eval-in-lisp-no-value (format "(namestring (specware::change-directory %S))" dir))
-    (simulate-input-expression "(load \"Specware4.lisp\")")
+    (eval-in-lisp-in-order (format "(cl:namestring (specware::change-directory %S))" dir))
+    (eval-in-lisp-in-order "(cl:load \"Specware4.lisp\")")
     (continue-form-when-ready
      ;; continue-form-when-ready kills the sublisp process, 
      ;; then waits for a status change signal on that process
      ;; before processing the given command
-     (`(build-specware4-continue (, specware4-dir) (, dir) (, bin-dir)
-				 (, slash-dir) (, world-name) (, base-world-name))))))
+     (`(cl-user::build-specware4-continue (, specware4-dir) (, dir) (, bin-dir)
+					  (, slash-dir) (, world-name) (, base-world-name))))))
 
 (defun bootstrap-specware4-and-then-exit (&optional in-current-dir?)
   (interactive "P")
@@ -460,17 +486,17 @@
 	(slash-dir "/"))
     (run-specware4 specware4-dir)
     (sit-for .1)
-    (sw:eval-in-lisp-no-value
-     (format "(namestring (specware::change-directory %S))" specware4-dir))
-    (sw:eval-in-lisp-no-value (format "(specware::setenv \"SWPATH\" %S)"
+    (eval-in-lisp-in-order
+     (format "(cl:namestring (specware::change-directory %S))" specware4-dir))
+    (eval-in-lisp-in-order (format "(specware::setenv \"SWPATH\" %S)"
 				      (concat (sw::normalize-filename specware4-dir)
 					      (if *windows-system-p* ";" ":")
 					      slash-dir)))
-    (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
+    (eval-in-lisp-in-order (format "(specware::setenv \"SPECWARE4\" %S)"
 				      (sw::normalize-filename specware4-dir)))
-    (sw:eval-in-lisp-no-value "#+allegro(sys::set-stack-cushion 10000000)
-                               #-allegro()")
-    (simulate-input-expression "(cl:time (cl-user::boot))")
+    (eval-in-lisp-in-order "(progn #+allegro(sys::set-stack-cushion 10000000)
+                                   #-allegro())")
+    (eval-in-lisp-in-order "(cl:time (cl-user::boot))")
     (sit-for 5)
     (continue-form-when-ready 
      ;; continue-form-when-ready kills the sublisp process, 
@@ -489,14 +515,14 @@
 					   *specware-home-directory*)
 					 "; /bin/rm */sig/*.sig"))
 	     (sit-for 4)		; Necessary? Enough?
-	     (simulate-input-expression "(Bootstrap-Spec::compileBootstrap)")
-	     (simulate-input-expression ":exit")
+	     (eval-in-lisp-in-order "(Bootstrap-Spec::compileBootstrap)")
+	     (eval-in-lisp-in-order ":exit")
 	     (sit-for 5)
 	     (while (inferior-lisp-running-p)
 	       (sit-for 2))
 	     (run-plain-lisp 1)
-	     (simulate-input-expression "(load \"load.lisp\")")
-	     (simulate-input-expression "(Bootstrap-Spec::compileAll)")))))
+	     (eval-in-lisp-in-order "(cl:load \"load.lisp\")")
+	     (eval-in-lisp-in-order "(Bootstrap-Spec::compileAll)")))))
 
 (defun strip-final-slash (dirname)
   (let ((len (length dirname)))

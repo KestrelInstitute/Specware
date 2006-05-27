@@ -10,6 +10,7 @@
       "sw-msp-emacs"
       "sw-utilities"
       "sw-init"
+      "x-symbol-specware"
       "specware-mode"
       "sw-font"
       "make-patch-file"

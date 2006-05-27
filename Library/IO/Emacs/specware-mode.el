@@ -287,6 +287,9 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?\-      "w"     specware-mode-syntax-table)
   (modify-syntax-entry ?\?      "w"     specware-mode-syntax-table))
 
+(defcustom specware-use-x-symbol t
+  "If non-nil use x-symbol package with Specware")
+
 (defun specware-mode ()
   "Major mode for editing Specware code.
 Tab indents for Specware code.
@@ -338,6 +341,8 @@ Mode map
   (setq major-mode 'specware-mode)
   (setq mode-name "Specware")
   (easy-menu-add specware-mode-menu)
+  (if specware-use-x-symbol
+      (x-symbol-mode t))
   (run-hooks 'specware-mode-hook))           ; Run the hook
 
 (defvar specware-mode-abbrev-table nil "*Specware mode abbrev table (default nil)")
@@ -972,7 +977,8 @@ If anyone has a good algorithm for this..."
 
 (defun sw:running-specware-shell-p ()
   (and (inferior-lisp-running-p)
-       (member (sw:eval-in-lisp "(SWShell::in-specware-shell?)") '(t T))))
+       (or (eq lisp-emacs-interface-type 'slime)
+	   (member (sw:eval-in-lisp "(SWShell::in-specware-shell?)") '(t T)))))
 
 (defun lisp-or-specware-command (lisp-comm spec-comm &rest argstrs)
   (simulate-input-expression
@@ -1405,17 +1411,54 @@ If anyone has a good algorithm for this..."
 	   ;; save file if user types "yes":
 	   (not (y-or-n-p "Parens are not balanced.  Save file anyway? ")))))))
 
+(defvar *sw-after-prompt-forms* nil)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; For use by error reporting routines
+;; (go-to-file-position "~/specware/2000/emacs/sw-utilities.el" 7 4)
+
+(defun goto-file-position (file line col)
+  (let ((full-file (expand-file-name file
+				     (save-excursion
+				       (set-buffer sw:common-lisp-buffer-name)
+				       default-directory))))
+    (unless (equal (buffer-file-name) full-file)
+      (find-file-other-window full-file))
+    (goto-line line)
+    (when (> col 0)
+      (forward-chars-counting-x-symbols col))))
+
 ;;; Command for showing error point in specware shell
 (defun show-error-on-new-input (col)
-  (sit-for 0.1 t)                         ; Allow error message to be printed
+  (if (eq lisp-emacs-interface-type 'slime)
+      (push `(show-error-on-new-input-real ,col) *sw-after-prompt-forms*)
+    (progn (sit-for 0.1 t)   ; Allow error message to be printed
+	   (show-error-on-new-input-real col))))
+
+(defun show-error-on-new-input-real (col)
   (goto-char (point-max))
   (previous-input-line)
   (if (eq (current-column) 0)
       (delete-backward-char 1))
-  (comint-bol nil)
+  (if (eq lisp-emacs-interface-type 'slime)
+      (goto-char slime-repl-input-start-mark)
+    (comint-bol nil))
   (forward-sexp 1)
-  (forward-char col)
+  (forward-chars-counting-x-symbols (max 1 col))
   ())
+
+(defun forward-chars-counting-x-symbols (i)
+  (if (or (not x-symbol-mode) (< i 1))
+      (forward-char i)
+    (while (> i 0) 
+      (let ((x-symbol-char (cdr (x-symbol-charsym-after (point)))))
+	(decf i (if (null x-symbol-char)
+		    1
+		  (length (x-symbol-expansion x-symbol-char))))
+	(forward-char 1)))))
+
+(defun x-symbol-expansion (x-symbol-char)
+  (car (x-symbol-default-valid-charsym x-symbol-char)))
 
 ;;; About Specware command implementation
 (defvar specware-logo

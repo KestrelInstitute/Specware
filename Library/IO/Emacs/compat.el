@@ -9,6 +9,9 @@
 (pushnew ".fas"  completion-ignored-extensions)	; clisp
 
 
+(defcustom specware-use-x-symbol t
+  "If non-nil use x-symbol package with Specware")
+
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
@@ -62,6 +65,10 @@
   (defvar *specware-buffer-name* sw:common-lisp-buffer-name)
   (defun previous-input-line ()
     (fi:pop-input))
+  (defun specware-listener-mode-hook ()
+    (when specware-use-x-symbol
+      (x-symbol-mode 1)))
+  (add-hook 'fi:lisp-listener-mode-hook 'specware-listener-mode-hook t)
   (when (and (boundp 'fi:lisp-mode-syntax-table)
 	     fi:lisp-mode-syntax-table)
     (modify-syntax-entry ?. "." fi:lisp-mode-syntax-table)))
@@ -235,6 +242,180 @@
     (and (boundp 'ilisp-mode-map)
 	 ilisp-mode-map
 	 (add-specware-listener-key-bindings ilisp-mode-map))
+;    (when specware-use-x-symbol
+;      (x-symbol-mode 1)
+;      (setq comint-input-sender 'x-symbol-comint-send))
     (push 'specware-listener-mode ilisp-modes))
   (add-hook 'ilisp-mode-hook 'specware-listener-mode-hook t)
 )
+
+
+(when (eq lisp-emacs-interface-type 'slime)
+  (setq slime-*directory*
+	(concat (getenv "SPECWARE4") "/Library/IO/Emacs/slime-2.0/"))
+  (defvar slime-*use-fsf-compliant-keybindings* t) ; Use c-c as command prefix (not c-z)
+  (require 'slime)
+  (setq lisp-program (getenv "LISP_EXECUTABLE"))
+  (setq inferior-lisp-program lisp-program)
+  (setq expand-symlinks-rfs-exists t)
+  (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
+				  (search "build" lisp-program))
+			      'allegro
+			    (if (search "dppccl" lisp-program)
+				'openmcl
+			      (if (search "sbcl" lisp-program)
+				  'sbcl				'sbcl
+				  (if (search "gcl" lisp-program)
+				      'gcl
+				    (if (search "sbcl" lisp-program)
+				      'sbcl
+				      'cmulisp))))))
+  (defvar *lisp-image-extension*
+    (case *specware-lisp*
+      (openmcl "openmcl-image")
+      (cmulisp "cmuimage")
+      (sbcl "sbclimage")
+      (allegro "dxl")
+      (gcl "gclimage")))
+  (defvar *fasl-extension*
+    (case *specware-lisp*
+      (allegro "fasl")
+      (openmcl "dfsl")
+      (cmu     "x86f")
+      (sbcl    "sfsl")
+      (gcl     "o")))
+  (defvar slime-multiprocessing
+    (case *specware-lisp*
+      (allegro   t)
+      (openmcl   t)
+      (cmu       t)
+      (sbcl      nil)
+      (gcl       nil)
+      (otherwise nil)))
+  (defvar specware-listener-p nil)
+  (defun sw:common-lisp (common-lisp-buffer-name
+			 common-lisp-directory
+			 &optional
+			 common-lisp-image-name
+			 common-lisp-image-arguments
+			 common-lisp-host
+			 common-lisp-image-file)
+    (setq sw:common-lisp-buffer-name common-lisp-buffer-name)
+    (setq specware-listener-p t)
+    (let ((specware-listener-p t))
+      (slime-start ;:buffer sw:common-lisp-buffer-name
+		   :program-args
+		   (case *specware-lisp*
+		     ((cmulisp sbcl)
+		      (if common-lisp-image-file
+			  (list common-lisp-image-name
+				(if (eq *specware-lisp* 'cmulisp)
+				    " -core " " --core ")
+				common-lisp-image-file)
+			common-lisp-image-name))
+		     (allegro (concatenate 'list
+					   common-lisp-image-arguments
+					   (if common-lisp-image-file
+					       (list "-I" common-lisp-image-file)
+					     ())
+					   (if *windows-system-p*
+					       ("-ed" "(setf (eol-convention *standard-output*) :unix)")
+					     ())))
+		     (gcl common-lisp-image-file) ; Don't use common-lisp-image-name
+		     (otherwise
+		      (list common-lisp-image-name
+			    common-lisp-image-file)))
+		   ))
+    ;(install-bridge-for-emacsEval)
+    ;(set-default-directory common-lisp-directory)
+    )
+  (defun set-default-directory (dir)
+    (with-current-buffer (get-buffer sw:common-lisp-buffer-name)
+      (setq default-directory dir)
+      (setq lisp-prev-l/c-dir/file (cons default-directory nil))))
+  ;; Handling emacs-eval emacsEval  (could be more robust!)
+  (defun emacs-eval-handler (process output)
+    (when output
+     (eval (car (read-from-string output)))))
+
+  (defun extract-sexp ()
+    "Delete the S-expression containing the S-expression that starts at point
+     and replace it with the S-expression that starts at the point."
+    (interactive)
+    (let ((start (point))
+	  (end nil)
+	  (mine nil))
+      (forward-sexp 1)
+      (setq end (point))
+      (setq mine (buffer-substring start end))
+      (up-list -1)
+      (setq start (point))
+      (forward-sexp 1)
+      (delete-region start (point))
+      (insert mine)
+      (backward-sexp)))
+  
+  (defun previous-input-line ()
+    (slime-repl-previous-input))
+
+  (defun sw:exit-lisp ()
+    (interactive)
+    (lisp-or-specware-command ":quit" "quit"))
+
+  (defvar slime-last-buffer nil)
+
+  (defun sw:switch-to-lisp (&optional eob-p)
+    (interactive "P")
+    (if (equal (buffer-name (current-buffer))
+	       sw:common-lisp-buffer-name)
+	(pop-to-buffer slime-last-buffer nil)
+      (progn (setq slime-last-buffer (current-buffer))
+	     (pop-to-buffer sw:common-lisp-buffer-name nil)))
+    (when eob-p
+      (goto-char (point-max))))
+
+  (defun sw:eval-in-lisp (str &rest args)
+    (ensure-specware-running)
+    (let ((fm (read-from-string (ensure-list (apply 'format str args)))))
+      (if (null fm)
+	  (warn "Can't read form to be evaluated")
+	(slime-eval (car fm)))))
+
+  (defun sw:eval-in-lisp-no-value (str &rest args)
+    (ensure-specware-running)
+    (let ((fm (read-from-string (ensure-list (apply 'format str args)))))
+      (if (null fm)
+	  (warn "Can't read form to be evaluated")
+	(slime-eval-async (car fm))))
+    t)
+
+  (defun sw:eval-in-lisp-dispatch (str &rest args)
+    (ensure-specware-running)
+    (let ((fm (read-from-string (ensure-list (apply 'format str args)))))
+      (if (null fm)
+	  (warn "Can't read form to be evaluated")
+	(slime-eval-async (car fm))))
+    t)
+
+  (define-function 'inferior-lisp-newline 'sw-return)
+
+  (defun sw:find-unbalanced-parenthesis ()
+    (interactive)
+    (check-parens))
+
+  (defvar *specware-buffer-name* "*Specware Shell*")
+  
+  (setq slime-find-buffer-package-function 'slime-lisp-package)
+  (setq slime-enable-evaluate-in-emacs t)
+
+  ;(push 'specware-mode slime-modes)
+
+  (defun inferior-lisp-running-p ()
+    (let ((conn (slime-current-connection)))
+      (and conn
+	   (eq (process-status conn) 'open))))
+
+)
+  ;(add-hook 'slime-repl-mode-hook 'specware-listener-mode-hook t)
+
+

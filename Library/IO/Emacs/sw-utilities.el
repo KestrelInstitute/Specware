@@ -43,20 +43,6 @@
 	  (read-file-name-for-lisp-command type-string raw-file-name))
       expanded-file-name)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; For use by error reporting routines
-;; (go-to-file-position "~/specware/2000/emacs/sw-utilities.el" 7 4)
-
-(defun goto-file-position (file line col)
-  (let ((full-file (expand-file-name file
-				     (save-excursion
-				       (set-buffer sw:common-lisp-buffer-name)
-				       default-directory))))
-    (unless (equal (buffer-file-name) full-file)
-      (find-file-other-window full-file))
-    (goto-line line)
-    (when (> col 0)
-      (forward-char col))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mouse sensitive interfacing.
