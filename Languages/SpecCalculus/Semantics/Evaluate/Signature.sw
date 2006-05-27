@@ -26,7 +26,7 @@ SpecCalc qualifying spec {
   op evaluateDiagMorph        : SCTerm * SCTerm * (List (DiagMorphRule Position))                -> SpecCalc.Env ValueInfo
   op evaluateColimit          : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluateTermInfo         : SCTerm                                                           -> SpecCalc.Env ValueInfo
-  op evaluatePrint            : SCTerm                                                           -> SpecCalc.Env ValueInfo
+  op evaluatePrint            : SCTerm * Boolean                                                 -> SpecCalc.Env ValueInfo
   op evaluateQualify          : SCTerm -> Qualifier                                              -> SpecCalc.Env ValueInfo
   op evaluateTranslate        : SCTerm -> Renaming                                   -> Position -> SpecCalc.Env ValueInfo
   op evaluateSubstitute       : SCTerm * SCTerm                                      -> Position -> SpecCalc.Env ValueInfo
@@ -100,6 +100,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.50  2006/05/02 02:53:57  mcdonald
+%% new pragmas slot for spec morphisms
+%%
 %% Revision 1.49  2006/04/05 22:41:23  gilham
 %% Support refinement of individual spec ops.
 %%

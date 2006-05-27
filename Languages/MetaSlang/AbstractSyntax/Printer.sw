@@ -176,6 +176,67 @@ AnnTermPrinter qualifying spec {
     RP                 = string ")"
    } 
 
+
+  def XSymbolPrinter : ATermPrinter = 
+   {
+    ppOpId             = ppAsciiId,
+    ppPOpId            = ppAsciiId,
+    ppSortId           = ppAsciiId,
+    ppPSortId          = ppAsciiId,
+    ppDefaultQualifier = string,
+    fromString         = string,
+    ppOp               = string,
+    ppSort             = string,
+    ppFormulaDesc      = string,
+    Spec               = string "spec ",
+    EndSpec            = string "endspec",
+    Module             = string "module ",
+    EndModule          = string "end-module",
+    Type               = string "type",
+    Axiom              = string "axiom",
+    Theorem            = string "theorem",
+    Conjecture         = string "conjecture",
+    Is                 = string "is",
+    Import             = string "import ",
+    Op                 = string "op ",
+    Of                 = string "of ",
+    Def                = string "def ",
+    Arrow              = lengthString(3, " \\_rightarrow "),
+    Let                = string "let ",
+    In                 = string "in ",
+    Not                = lengthString(1, "\\_not"),
+    And                = lengthString(1, "\\_and"),
+    Or                 = lengthString(1, "\\_or"),
+    Implies            = lengthString(1, "\\_Rightarrow"),
+    Iff                = lengthString(3, " \\_Leftrightarrow "),
+    Equals             = string "=",
+    NotEquals          = lengthString(1, "\\_noteq"),
+    DefEquals          = string "=" ,
+    LetDeclsAnd        = string " and ",  
+    Fa                 = lengthString(1, "\\_forall"),
+    Ex                 = lengthString(1, "\\_exists"),
+    Ex1                = string "ex1",
+    Where              = string "where",
+    Product            = lengthString(3, " \\_times "),
+    Bar                = string " | ",
+    Underscore         = string "_",
+    Lambda             = lengthString(2, "\\_lambda "),
+    The                = string "the ",
+    If                 = string "if ",
+    Then               = string " then ",
+    Else               = string "else ",
+    Case               = string "case ",
+    Empty              = string "",
+    Comma              = string ", ",
+    LCurly             = string "{",
+    RCurly             = string "}",
+    LBrack             = string "[",
+    RBrack             = string "]",
+    LP                 = string "(",
+    RP                 = string ")"
+   } 
+
+
   def latexString s =
    if Char.isAlphaNum(String.sub(s,0)) then
      string s

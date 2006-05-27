@@ -91,11 +91,15 @@ AnnSpecPrinter qualifying spec
  op ppSpecAll                    : [a] PrContext -> ASpec a -> Pretty
  op ppSpecFlat                   : [a] PrContext -> ASpec a -> Pretty
  op specToPrettyVerbose          : [a] ASpec a -> Pretty
+ op specToPrettyVerboseXSymbol   : [a] ASpec a -> Pretty
  op specToPrettyFlat             : [a] ASpec a -> Pretty
  op specToPretty                 : [a] ASpec a -> Pretty
+ op specToPrettyXSymbol          : [a] ASpec a -> Pretty
  op specToPrettyR                : [a] ASpec a -> Pretty
 %op printSpec                    : [a] ASpec a -> String
+ op printSpecXSymbol             : [a] ASpec a -> String
  op printSpecVerbose             : [a] ASpec a -> String
+ op printSpecVerboseXSymbol      : [a] ASpec a -> String
  op printSpecFlat                : [a] ASpec a -> String
 %op printSpecToTerminal          : [a] ASpec a -> ()
 %op printSpecToFile              : [a] String * ASpec a -> ()
@@ -945,7 +949,10 @@ AnnSpecPrinter qualifying spec
      | []     -> "[]"
      | v1::vs -> "[" ^ v1 ^ (foldl (fn (v, str) -> str ^","^ v) "" vs) ^ "]"
 
-def AnnSpecPrinter.printTerm term = 
+ def useXSymbols? = true
+ def uiPrinter() = if useXSymbols? then XSymbolPrinter else asciiPrinter
+
+ def AnnSpecPrinter.printTerm term = 
    PrettyPrint.toString (format (80, ppTerm (initialize (asciiPrinter, false))
 				            ([], Top) 
 					    term))
@@ -954,7 +961,7 @@ def AnnSpecPrinter.printTerm term =
    ppTerm (initialize (asciiPrinter, false)) ([], Top) term
 
  def printTermToTerminal term =
-   toTerminal (format (80, ppTerm (initialize (asciiPrinter, false)) 
+   toTerminal (format (80, ppTerm (initialize (uiPrinter(), false)) 
 		                  ([], Top) 
 				  term))
  
@@ -964,7 +971,7 @@ def AnnSpecPrinter.printTerm term =
 					     srt))
 
  def printSortToTerminal srt = 
-   toTerminal (format (80, ppSort (initialize (asciiPrinter, false))
+   toTerminal (format (80, ppSort (initialize (uiPrinter(), false))
 		                  ([], Top : ParentSort) 
 				  srt))
  
@@ -1347,7 +1354,7 @@ def AnnSpecPrinter.printTerm term =
 	 | Property prop ->
 	   (index+1,
 	    Cons(ppProperty context (index, prop),ppResult))
-	 | Pragma (prefix, body, postfix)->
+	 | Pragma (prefix, body, postfix, pos)->
 	   (index+1,
 	    Cons ((1, string (prefix ^ body ^ postfix)),
 		  ppResult))
@@ -1504,6 +1511,9 @@ def AnnSpecPrinter.printTerm term =
  def specToPrettyVerbose spc = 
    ppSpecAll (initialize (asciiPrinter, false)) spc
 
+ def specToPrettyVerboseXSymbol spc = 
+   ppSpecAll (initialize (XSymbolPrinter, false)) spc
+
  def specToPrettyFlat spc = 
    ppSpecFlat (initialize (asciiPrinter, false)) spc
    
@@ -1511,14 +1521,24 @@ def AnnSpecPrinter.printTerm term =
    let base_spec = SpecCalc.getBaseSpec () in
    ppSpecHidingImportedStuff (initialize (asciiPrinter, false)) base_spec spc
    
+ def specToPrettyXSymbol spc = 
+   let base_spec = SpecCalc.getBaseSpec () in
+   ppSpecHidingImportedStuff (initialize (XSymbolPrinter, false)) base_spec spc
+   
  def specToPrettyR spc = 
    ppSpecR (initialize (asciiPrinter, false)) spc
    
  def printSpec spc =
    PrettyPrint.toString (format (80, specToPretty spc))
+
+ def printSpecXSymbol spc =
+   PrettyPrint.toString (format (80, specToPrettyXSymbol spc))
    
  def printSpecVerbose spc =
    PrettyPrint.toString (format (80, specToPrettyVerbose spc))
+
+ def printSpecVerboseXSymbol spc =
+   PrettyPrint.toString (format (80, specToPrettyVerboseXSymbol spc))
 
  def printSpecFlat spc =
    PrettyPrint.toString (format (80, specToPrettyFlat spc))

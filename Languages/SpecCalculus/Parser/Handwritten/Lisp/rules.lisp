@@ -560,7 +560,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :SORT-ARROW ()
-  (:tuple (1 :ARROW-SOURCE) "->" (2 :SORT))
+  (:tuple (1 :ARROW-SOURCE) (:anyof "->" "\\_rightarrow") (2 :SORT))
   (make-sort-arrow 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :ARROW-SOURCE ()
@@ -571,7 +571,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :SORT-PRODUCT ()
-  (:tuple (1 (:repeat++ :TIGHT-SORT "*")))
+  (:tuple (1 (:repeat++ :TIGHT-SORT (:anyof "*" "\\_times"))))
   (make-sort-product 1 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
@@ -790,15 +790,20 @@ If we want the precedence to be optional:
    ;; so we don't make "~" a keyword (which would exclude the latter)
    ((:tuple "&")   (make-fun '(:|And|)       ms::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
    ((:tuple "&&")  (make-fun '(:|And|)       ms::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "\\_and")  (make-fun '(:|And|)    ms::binaryBoolSort ':left-lcb ':right-lcb))
    ((:tuple "or")  (make-fun '(:|Or|)        ms::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
    ((:tuple "||")  (make-fun '(:|Or|)        ms::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "\\_or")  (make-fun '(:|Or|)      ms::binaryBoolSort ':left-lcb ':right-lcb))
    ((:tuple "=>")  (make-fun '(:|Implies|)   ms::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "\\_Rightarrow")  (make-fun '(:|Implies|) ms::binaryBoolSort ':left-lcb ':right-lcb))
    ((:tuple "<=>") (make-fun '(:|Iff|)       ms::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "\\_Leftrightarrow") (make-fun '(:|Iff|) ms::binaryBoolSort ':left-lcb ':right-lcb))
    ;;
    ;; "=" is treated specially: see semantics.lisp
    ;; "=" refers to the built-in Equals, but can also appear as a keyword in other rules
    ;; ((:tuple "=")   (make-equality-fun '(:|Equals|)    ':left-lcb ':right-lcb))
    ((:tuple "~=")  (make-equality-fun '(:|NotEquals|) ':left-lcb ':right-lcb))
+   ((:tuple "\\_noteq")  (make-equality-fun '(:|NotEquals|) ':left-lcb ':right-lcb))
    ((:tuple "<<")  (make-fun '(:|RecordMerge|) (freshMetaTypeVar ':left-lcb ':right-lcb)
 			     ':left-lcb ':right-lcb))
    ))
@@ -829,7 +834,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :LAMBDA-FORM ()
-  (:tuple "fn" (1 :MATCH))
+  (:tuple (:anyof "fn" "\\_lambda") (1 :MATCH))
   (make-lambda-form 1 ':left-lcb ':right-lcb)
   :documentation "Lambda abstraction")
 
@@ -914,8 +919,8 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :QUANTIFIER ()
   (:anyof
-   ((:tuple "fa")  forall-op)
-   ((:tuple "ex")  exists-op)
+   ((:tuple (:anyof "fa" "\\_forall"))  forall-op)
+   ((:tuple (:anyof "ex" "\\_exists"))  exists-op)
    ((:tuple "ex1") exists1-op)))
 
 (define-sw-parser-rule :LOCAL-VARIABLE-LIST ()
@@ -1242,12 +1247,12 @@ If we want the precedence to be optional:
    ))
 
 (define-sw-parser-rule :BRANCH ()
-  (:tuple (1 :TOP-PATTERN) "->" (2 :EXPRESSION))
+  (:tuple (1 :TOP-PATTERN) (:anyof "->" "\\_rightarrow") (2 :EXPRESSION))
   (make-branch 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :NON-BRANCH-BRANCH () ; as above, but not ending with "| .. -> .."
   ;; i.e., a branch that doesn't end in a branch
-  (:tuple (1 :TOP-PATTERN) "->" (2 :NON-BRANCH-EXPRESSION))
+  (:tuple (1 :TOP-PATTERN) (:anyof "->" "\\_rightarrow") (2 :NON-BRANCH-EXPRESSION))
   (make-branch 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
@@ -1546,7 +1551,8 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-SPEC-MORPH ()
-  (:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM) "{" (3 :SC-SPEC-MORPH-RULES) "}" (4 (:repeat* :SM-PRAGMA)))
+  (:tuple "morphism" (1 :SC-TERM) (:anyof "->" "\\_rightarrow") (2 :SC-TERM) "{" (3 :SC-SPEC-MORPH-RULES) "}"
+	  (4 (:repeat* :SM-PRAGMA)))
   (make-sc-spec-morph 1 2 3 4 ':left-lcb ':right-lcb)
   )
 
@@ -1596,7 +1602,7 @@ If we want the precedence to be optional:
   (make-sc-diag-node 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-DIAG-EDGE ()
-  (:tuple (1 :NAME) ":" (2 :NAME) "->" (3 :NAME) :MAPS-TO (4 :SC-TERM))
+  (:tuple (1 :NAME) ":" (2 :NAME) (:anyof "->" "\\_rightarrow") (3 :NAME) :MAPS-TO (4 :SC-TERM))
   (make-sc-diag-edge 1 2 3 4 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================

@@ -75,13 +75,13 @@ spec
     if traceEval? && traceable? t then
       case t of
 	| Var _ ->
-	  let _ = printValue val in
+	  let _ = printValue (val,false) in
 	  let _ = toScreen newline in
 	  ()
 	| _ ->
 	  let _ = toScreen (blanks depth) in
 	  let _ = toScreen ((toString depth)^"> ") in
-	  let _ = printValue val in
+	  let _ = printValue (val,false) in
 	  let _ = toScreen newline in
 	  ()
     else ()
@@ -331,6 +331,7 @@ spec
       | Fun(Embedded id,srt,_) ->
 	(case a of
 	  | Constructor(constr_id,_) -> Bool(id=constr_id)
+	  | Constant constr_id -> Bool(id=constr_id)
 	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
 	
       %| Fun(Select id,srt,_) ->
@@ -713,9 +714,13 @@ spec
       | _ -> false
 
 
-  op  printValue: Value -> ()
-  def printValue v =
-    PrettyPrint.toTerminal(format(80,ppValue (initialize(asciiPrinter,false)) v))
+  op  printValue: Value * Boolean -> ()
+  def printValue (v,useXSymbol?) =
+    PrettyPrint.toTerminal(format(80,ppValue (initialize(if useXSymbol?
+							   then XSymbolPrinter
+							   else asciiPrinter,
+							 false))
+				  v))
 
   op  stringValue: Value -> String
   def stringValue v =

@@ -87,7 +87,7 @@ get a unit from a unit id string.
   op evaluateUnitId : String -> Option SpecCalc.Value
   def evaluateUnitId path =
     let
-      % TODO: do we really intend to ignore exceptions here?
+      % TODO: do we really intend to ignore exceptions here? Yes!!
       % old (generates compiler warning about unused var: except):
       % def handler except =
       % case except of
@@ -225,8 +225,8 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
 \end{spec}
 
 \begin{spec}  %%% show command
-  op evaluatePrint_fromLisp : String -> Boolean
-  def evaluatePrint_fromLisp path = 
+  op evaluatePrint_fromLisp : String * Boolean -> Boolean
+  def evaluatePrint_fromLisp (path,use_x_symbol?) = 
     let prog = {
       cleanEnv;
       currentUID <- pathToCanonicalUID ".";
@@ -234,7 +234,7 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
       path_body <- return (removeSWsuffix path);
       unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      evaluatePrint (UnitId unitId, position);
+      evaluatePrint ((UnitId unitId, position),use_x_symbol?);
       return true
     } in
     runSpecCommand (catch prog toplevelHandler) 

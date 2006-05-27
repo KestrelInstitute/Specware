@@ -33,7 +33,7 @@ SpecCalc qualifying spec {
 
  def printSpecExpanded? = false
 
- def SpecCalc.evaluatePrint term = {
+ def SpecCalc.evaluatePrint (term,useXSymbol?) = {
    (value, time_stamp, depUnitIds) <- SpecCalc.evaluateTermInfo term;
    (optBaseUnitId,base_spec)     <- getBase;
    global_context                <- getGlobalContext;   
@@ -46,9 +46,13 @@ SpecCalc qualifying spec {
 				    depUnitIds);
    SpecCalc.print "\n";
    (case value of
-      | Spec    spc -> SpecCalc.print (if printSpecExpanded?
-					 then printSpecExpanded base_spec reverse_context spc
-					 else printSpec base_spec reverse_context spc)
+      | Spec    spc ->
+        SpecCalc.print (if printSpecExpanded?
+			  then printSpecExpanded base_spec reverse_context spc
+			  else
+			    if useXSymbol?
+			      then printSpecXSymbol base_spec reverse_context spc
+			      else printSpec base_spec reverse_context spc)
       | Morph      sm    -> SpecCalc.print (printMorphism base_spec reverse_context sm)
       | Diag       dg    -> SpecCalc.print (printDiagram  base_spec reverse_context dg)
       | Colimit    col   -> SpecCalc.print (printColimit  base_spec reverse_context col)
@@ -82,6 +86,17 @@ SpecCalc qualifying spec {
  				  (initialize(asciiPrinter,false))
 				  base_spec
 				  spc))
+
+  def printSpecXSymbol base_spec _(*reverse_context*) spc =
+    %% this uses /Languages/MetaSlang/Specs/Printer
+    %% which uses /Library/PrettyPrinter/BjornerEspinosa
+    %% TODO: use reverse_context ?
+    PrettyPrint.toString (format(80, 
+ 				ppSpecHidingImportedStuff
+ 				  (initialize(XSymbolPrinter,false))
+				  base_spec
+				  spc))
+
 
  def printSpecExpanded base_spec _(*reverse_context*) spc =
    %% TODO: use reverse_context for imports ?

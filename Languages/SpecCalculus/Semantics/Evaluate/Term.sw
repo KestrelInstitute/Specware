@@ -41,7 +41,7 @@ This is a monadic interpreter for the Spec Calculus.
  def SpecCalc.evaluateTermInfo term =
    let pos = positionOf term in
    case (valueOf term) of
-    | Print       term     -> SpecCalc.evaluatePrint       term
+    | Print       term     -> SpecCalc.evaluatePrint       (term,false)
     | UnitId      unitId   -> SpecCalc.evaluateUID         (positionOf term) unitId
     | Spec        elems    -> SpecCalc.evaluateSpec        elems pos
     | SpecMorph   fields   -> SpecCalc.evaluateSpecMorph   fields

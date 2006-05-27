@@ -485,7 +485,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-unqualified-op-ref (name l r)
-  (cond ((equal name "~")   
+  (cond ((or (equal name "~") (equal name "\\_not"))   
 	 ;; "~" is treated specially:
 	 ;; "~" refers to the built-in Not, but "foo.~" is just an ordinary operator...
 	 (make-fun '(:|Not|)
