@@ -224,7 +224,7 @@ SpecCalc qualifying spec
  op addConjectures : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
  op addTheorems    : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
  op addComment     : [a] String                                 * ASpec a -> ASpec a
- op addPragma      : [a] (String * String * String)             * ASpec a -> ASpec a
+ op addPragma      : [a] (String * String * String * a)         * ASpec a -> ASpec a
 
  %% called by evaluateSpecImport
  def addImport ((specCalcTerm, imported_spec), spc) =
@@ -250,8 +250,8 @@ SpecCalc qualifying spec
    let spc = setElements (spc, spc.elements ++ [Comment str]) in
    spc    % addLocalPropertyName(spc,propertyName new_property)
 
- def addPragma      ((prefix, body, postfix), spc) = 
-   let spc = setElements (spc, spc.elements ++ [Pragma (prefix, body, postfix)]) in
+ def addPragma      (pragma_content, spc) = 
+   let spc = setElements (spc, spc.elements ++ [Pragma pragma_content]) in
    spc    % addLocalPropertyName(spc,propertyName new_property)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
