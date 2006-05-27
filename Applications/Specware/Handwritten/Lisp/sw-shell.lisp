@@ -239,6 +239,20 @@
 (defun specware-shell (exiting-lisp?)
   (aux-specware-shell exiting-lisp? #'process-sw-shell-command))
 
+(defvar *sw-shell-pkg* (find-package :SWShell))
+
+(defvar *commands-in-process* 0)
+
+;;; Used by slime-based interface
+(defun process-raw-command (command argstr)
+  (incf *commands-in-process*)
+  (let ((val (multiple-value-list
+		 (process-sw-shell-command (intern (symbol-name command) *sw-shell-pkg*) argstr))))
+    (decf *commands-in-process*)
+    (if (null val)
+	(swank::repl-suppress-output)
+	(values-list val))))
+
 ;; Specware uses this for sw-shell-command-processor
 ;; Other systems (e.g. prism or accord) may use related functions...
 (defun process-sw-shell-command (command argstr)

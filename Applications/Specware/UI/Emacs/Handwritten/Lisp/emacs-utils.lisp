@@ -3,6 +3,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defpackage "EMACS")
+(defpackage :swank)
 (in-package "EMACS")
 
 #|
@@ -24,12 +25,20 @@ Notes:
 
 (defun eval-in-emacs (string)
   (when *use-emacs-interface?*
-    #+allegro
-    (if (find-package :ilisp)
-	(progn (force-output *terminal-io*) (format *terminal-io* "~a" string) (force-output *terminal-io*))
-      (when lep::*connection*
-	(lep::eval-in-emacs string)))
-    #-allegro (format t "~a" string)))
+    (if (fboundp 'swank::send-to-emacs)
+	(funcall 'swank::send-to-emacs `(:eval-no-wait ,string))
+      #+allegro
+      (if (find-package :ilisp)
+	  (progn (force-output *terminal-io*) (format *terminal-io* "~a" string) (force-output *terminal-io*))
+	(when lep::*connection*
+	  (lep::eval-in-emacs string)))
+      #-allegro (format t "~a" string))))
+
+(defun eval-with-emacs (string)
+  (when *use-emacs-interface?*
+    (if (fboundp 'swank::send-to-emacs)
+	(funcall 'swank::send-to-emacs `(:eval ,string))
+	nil)))
 
 (defun kill-emacs-and-then-lisp ()
   ;; The problem this addresses is that of getting lisp and emacs to agree to

@@ -409,3 +409,19 @@
   #+gcl
   (defmacro define-compiler-macro (name vl &rest body)
     `(si::define-compiler-macro ,name ,vl,@ body)))
+
+
+(defun wait (msg pred &optional (sleep-time 1))
+  sleep-time
+  #+(or allegro cmu) (mp:process-wait msg pred)
+  #-(or allegro cmu)
+  (loop until (funcall pred)
+    do (sleep sleep-time)))
+
+(defpackage :swank)
+(defun exit-when-done ()
+  (wait "Commands in progress"
+		  #'(lambda () (<= (swank::eval-in-emacs '(length (slime-rex-continuations)))
+				   1)))
+  (format t "Exiting ~a~%" (funcall 'swank::eval-in-emacs '(length (slime-rex-continuations))))
+  (swank::eval-in-emacs '(slime-quit-specware)))

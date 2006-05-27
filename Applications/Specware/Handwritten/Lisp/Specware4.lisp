@@ -9,7 +9,7 @@
 (defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
 
-(declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu1(c::brevity 3)))
+(declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -18,17 +18,17 @@
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
 #+allegro
 (setq excl:*record-source-file-info* nil) ; workaround for annoying bug
-#+cmu1
+#+cmu
 (setq ext:*gc-verbose* nil)
-#+cmu1
+#+cmu
 (setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
 ;;;#+sbcl
 ;;;(setf (sb-ext:bytes-consed-between-gcs) 50331648)
-#+cmu1
+#+cmu
 (setq extensions:*efficiency-note-cost-threshold* 30)
 #+sbcl
 (setq sb-ext:*efficiency-note-cost-threshold* 30)
-#+cmu1
+#+cmu
 (setq c::*compile-print* nil)
 #+sbcl
 (declaim (sb-ext:muffle-conditions sb-ext:compiler-note))
@@ -78,8 +78,7 @@
 (defun in-specware-dir (file) (concatenate 'string Specware-dir file))
 
 #+cmu
-;(without-package-locks     ;; add in version 19
- (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch")) ; )
+(compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch"))
 #+sbcl
 (compile-and-load-lisp-file (in-specware-dir "/Applications/Handwritten/Lisp/sbcl-patch"))
 

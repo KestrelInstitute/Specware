@@ -7,6 +7,7 @@
 (defpackage :EMACS)
 (defpackage :TypeChecker)
 (defpackage :SWShell)
+(defpackage :swank)
 ;; Toplevel Lisp aliases for Specware
 
 (defparameter *sw-help-strings*
@@ -106,9 +107,9 @@
 	     (when (and (> len 3)
 			(string= (subseq str (- len 3)) ".sw"))
 	       (setq str (subseq str 0 (- len 3)))))
-	   (setq str (subst-home str))
 	   (setq *temp-file-in-use?* nil)
-	   (unless (unitIdString? str)
+	   (if (unitIdString? str)
+	       (setq str (subst-home str))
 	     ;; spec calc term. Need to put it in a temporary file
 	     (let* ((tmp-dir (format nil "~Asw/" specware::temporaryDirectory))
 		    (tmp-name (format nil "sw_tmp_~D_~D"
@@ -227,9 +228,12 @@
   (setq x (norm-unitid-str x))
   (flet ((show-int (x)
 	   (if x
-	       (Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
+	       (Specware::evaluatePrint_fromLisp-2
+		(setq *last-unit-Id-_loaded* (string x))
+		(use-x-symbol?))
 	     (if *last-unit-Id-_loaded*
-		 (Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
+		 (Specware::evaluatePrint_fromLisp-2 *last-unit-Id-_loaded*
+						     (use-x-symbol?))
 	       (format t "No previous unit evaluated~%")))
 	   (show-error-position emacs::*goto-file-position-stored* 1)
 	   (maybe-restore-swpath)
@@ -249,9 +253,11 @@
   (flet ((show-int (x)
 	   (let ((SpecCalc::printSpecExpanded? t))
 	     (if x
-		 (Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
+		 (Specware::evaluatePrint_fromLisp-2 (setq *last-unit-Id-_loaded* (string x))
+						     (use-x-symbol?))
 	       (if *last-unit-Id-_loaded*
-		   (Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
+		   (Specware::evaluatePrint_fromLisp-2 *last-unit-Id-_loaded*
+						       (use-x-symbol?))
 		 (format t "No previous unit evaluated~%"))))
 	   (show-error-position emacs::*goto-file-position-stored* 1)
 	   (maybe-restore-swpath)
@@ -533,7 +539,8 @@
 	    (if (eq (car value) :|None|)
 		(warn "No value for expression?")
 	      (if *swe-return-value?* (cdr value)
-		(MSInterpreter::printValue (cdr value))))
+		(MSInterpreter::printValue-2 (cdr value)
+					     (use-x-symbol?))))
 	  (let (#+allegro *redefinition-warnings*)
 	    ;; Load resulting lisp code:
 	    (load (make-pathname :type "lisp" :defaults tmp-cl))
@@ -565,6 +572,10 @@
 		      (t
 		       (warn "No value for expression?")))
 		(values)))))))))
+
+(defun use-x-symbol? ()
+  (and (fboundp 'swank::eval-in-emacs)
+       (funcall 'swank::eval-in-emacs 'specware-use-x-symbol)))
 
 ;; Specware::initializeInterpreterBaseAux is funcalled from 
 ;; Specware::initializeInterpreterBase-0 in Preface.lisp, which in turn is called from
@@ -1279,7 +1290,7 @@
 
 (defun sc-val (str)
   (let ((id-str (norm-unitid-str str)))
-  (cddr (specware::evaluateunitid id-str))))
+  (cddr (Specware::evaluateUnitId id-str))))
 
 ;; following is useful when running without XEmacs to provide access to shell
 #+allegro
