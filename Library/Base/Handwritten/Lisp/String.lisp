@@ -30,65 +30,65 @@
   )
 
 (defun |!length| (x)
-  (declare (type cl:simple-base-string x))
+  (declare (type cl:simple-string x))
   (the cl:fixnum 
     (array-dimension x 0)))
 
 (defun concat-2 (x y)
-  (declare (type cl:simple-base-string x y))
-  (the cl:simple-base-string 
+  (declare (type cl:simple-string x y))
+  (the cl:simple-string 
     (concatenate 'string x y)))
 
-;;; Putting (the cl:simple-base-string ,y) gives mcl exponential compiler behavior
+;;; Putting (the cl:simple-string ,y) gives mcl exponential compiler behavior
 (define-compiler-macro concat-2 (x y)
-  `(concatenate 'string ,(if (stringp x) x `(the cl:simple-base-string ,x)) ,y))
+  `(concatenate 'string ,(if (stringp x) x `(the cl:simple-string ,x)) ,y))
 
 (defun concat (xy)
   (declare (cons xy))
-  (the cl:simple-base-string 
+  (the cl:simple-string 
     (concatenate 'string 
-                 (the cl:simple-base-string (car xy)) 
-                 (the cl:simple-base-string (cdr xy)))))
+                 (the cl:simple-string (car xy)) 
+                 (the cl:simple-string (cdr xy)))))
 
 (defun ++-2 (x y)
-  (declare (type cl:simple-base-string x y))
-  (the cl:simple-base-string 
+  (declare (type cl:simple-string x y))
+  (the cl:simple-string 
     (concatenate 'string x y)))
 
-;;; Putting (the cl:simple-base-string ,y) gives mcl exponential compiler behavior
+;;; Putting (the cl:simple-string ,y) gives mcl exponential compiler behavior
 (define-compiler-macro ++-2 (x y)
-  `(concatenate 'string ,(if (stringp x) x `(the cl:simple-base-string ,x))
+  `(concatenate 'string ,(if (stringp x) x `(the cl:simple-string ,x))
 		,y))
 
 (defun |!++| (xy)
   (declare (cons xy))
-  (the cl:simple-base-string 
+  (the cl:simple-string 
     (concatenate 'string 
-                 (the cl:simple-base-string (car xy)) 
-                 (the cl:simple-base-string (cdr xy)))))
+                 (the cl:simple-string (car xy)) 
+                 (the cl:simple-string (cdr xy)))))
 
 (defun ^-2 (x y)
-  (declare (type cl:simple-base-string x y))
-  (the cl:simple-base-string 
+  (declare (type cl:simple-string x y))
+  (the cl:simple-string 
     (concatenate 'string x y)))
 
-;;; Putting (the cl:simple-base-string ,y) gives mcl exponential compiler behavior
+;;; Putting (the cl:simple-string ,y) gives mcl exponential compiler behavior
 (define-compiler-macro ^-2 (x y)
-  `(concatenate 'string ,x ,(if (stringp y) y `(the cl:simple-base-string ,y))))
+  `(concatenate 'string ,x ,(if (stringp y) y `(the cl:simple-string ,y))))
 
 (defun ^ (xy)
   (declare (cons xy))
-  (the cl:simple-base-string 
+  (the cl:simple-string 
     (concatenate 'string 
-                 (the cl:simple-base-string (car xy)) 
-                 (the cl:simple-base-string (cdr xy)))))
+                 (the cl:simple-string (car xy)) 
+                 (the cl:simple-string (cdr xy)))))
 
 (defun |!map| (f)
   (lambda (s)
-    (map 'string f (the cl:simple-base-string s))))
+    (map 'string f (the cl:simple-string s))))
 
 (defun map-1-1 (f s)
-  (map 'string f (the cl:simple-base-string s)))
+  (map 'string f (the cl:simple-string s)))
 
 (defun |!exists| (p)
   (lambda (s)
@@ -105,28 +105,28 @@
   (every p s))
 
 (defun sub-2 (s n)
-  (declare (type cl:simple-base-string s) (type cl:fixnum n))
+  (declare (type cl:simple-string s) (type cl:fixnum n))
   (elt s n))
 
 (defun sub (sn)
   (declare (cons sn))
-  (elt (the cl:simple-base-string (car sn)) (the cl:fixnum (cdr sn))))
+  (elt (the cl:simple-string (car sn)) (the cl:fixnum (cdr sn))))
 
 (defun substring-3 (s start end)
-  (declare (type cl:simple-base-string s) (type cl:fixnum start end))
-  (the cl:simple-base-string (subseq s start end)))
+  (declare (type cl:simple-string s) (type cl:fixnum start end))
+  (the cl:simple-string (subseq s start end)))
 
 (define-compiler-macro substring-3 (s start end)
   `(subseq
-     (the cl:simple-base-string ,s) (the cl:fixnum ,start) (the cl:fixnum ,end)))
+     (the cl:simple-string ,s) (the cl:fixnum ,start) (the cl:fixnum ,end)))
 
 (defun substring (sse)
-  (the cl:simple-base-string (subseq (the cl:simple-base-string (svref sse 0))
+  (the cl:simple-string (subseq (the cl:simple-string (svref sse 0))
                                      (the cl:fixnum (svref sse 1))
                                      (the cl:fixnum (svref sse 2)))))
 
 (defun concatList (x)
-  (the cl:simple-base-string 
+  (the cl:simple-string 
     (apply #'concatenate 'string x)))
 
 (defun translate (f)
@@ -137,7 +137,7 @@
                         (string (funcall f ch)))
                     chars)))
       (declare (type list translated-char-strings))
-      (the cl:simple-base-string 
+      (the cl:simple-string 
         (apply #'concatenate 'string translated-char-strings)))))
 
 (defun translate-1-1 (f str)
@@ -147,68 +147,68 @@
                       (string (funcall f ch)))
                   chars)))
     (declare (type list translated-char-strings))
-    (the cl:simple-base-string 
+    (the cl:simple-string 
       (apply #'concatenate 'string translated-char-strings))))
 
 (defun lt-2 (s1 s2)
-  (declare (type cl:simple-base-string s1 s2))
+  (declare (type cl:simple-string s1 s2))
   (if (string< s1 s2) t nil))
 
 (defun lt (s1s2)
-  (if (string< (the cl:simple-base-string (car s1s2))
-               (the cl:simple-base-string (cdr s1s2)))
+  (if (string< (the cl:simple-string (car s1s2))
+               (the cl:simple-string (cdr s1s2)))
    t nil))
 
 (defun leq-2 (s1 s2)
-  (declare (type cl:simple-base-string s1 s2))
+  (declare (type cl:simple-string s1 s2))
   (if (string<= s1 s2) t nil))
 
 (defun leq (s1s2)
-  (if (string<= (the cl:simple-base-string (car s1s2))
-                (the cl:simple-base-string (cdr s1s2)))
+  (if (string<= (the cl:simple-string (car s1s2))
+                (the cl:simple-string (cdr s1s2)))
    t nil))
 
 (defun <-2 (s1 s2)
-  (declare (type cl:simple-base-string s1 s2))
+  (declare (type cl:simple-string s1 s2))
   (if (string< s1 s2) t nil))
 
 (define-compiler-macro <-2 (x y)
-  `(string< (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+  `(string< (the cl:simple-string ,x) (the cl:simple-string ,y)))
 
 (defun |!<| (s1s2)
-  (if (string< (the cl:simple-base-string (car s1s2))
-               (the cl:simple-base-string (cdr s1s2)))
+  (if (string< (the cl:simple-string (car s1s2))
+               (the cl:simple-string (cdr s1s2)))
    t nil))
 
 (defun <=-2 (s1 s2)
-  (declare (type cl:simple-base-string s1 s2))
+  (declare (type cl:simple-string s1 s2))
   (if (string<= s1 s2) t nil))
 
 (define-compiler-macro <=-2 (x y)
-  `(string<= (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+  `(string<= (the cl:simple-string ,x) (the cl:simple-string ,y)))
 
 (defun |!<=| (s1s2)
-  (if (string<= (the cl:simple-base-string (car s1s2))
-                (the cl:simple-base-string (cdr s1s2)))
+  (if (string<= (the cl:simple-string (car s1s2))
+                (the cl:simple-string (cdr s1s2)))
    t nil))
 
 (define-compiler-macro >-2 (x y)
   `(let ((x ,x) (y ,y))
-     (string< (the cl:simple-base-string y) (the cl:simple-base-string x))))
+     (string< (the cl:simple-string y) (the cl:simple-string x))))
 
 (define-compiler-macro >=-2 (x y)
   `(let ((x ,x) (y ,y))
-     (string<= (the cl:simple-base-string y) (the cl:simple-base-string x))))
+     (string<= (the cl:simple-string y) (the cl:simple-string x))))
 
 (defparameter newline
   (format nil "~c" #\newline))
 
 (defun toScreen (x)
-  (declare (type cl:simple-base-string x))
+  (declare (type cl:simple-string x))
   (common-lisp::format t "~A" x))
 
 (defun writeLine (x)
-  (declare (type cl:simple-base-string x))
+  (declare (type cl:simple-string x))
   (common-lisp::format t "~A" x)
   (common-lisp::format t "~%"))
 
