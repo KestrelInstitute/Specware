@@ -1,5 +1,7 @@
 (in-package "LISP")
 
+(without-package-locks
+
 (defun eval (original-exp)
   "Evaluates its single arg in a null lexical environment, returns the
   result or results."
@@ -105,6 +107,7 @@
 		(eval:internal-eval original-exp))))))
       (t
        exp))))
+)
 
 ;; oops, test code got checked in...
 ;; see cmucl/18e/src/code/fdefinition.lisp for real definition
