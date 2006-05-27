@@ -8,9 +8,9 @@ Test = spec
   op msg_char? : Char -> Boolean
   def msg_char? ch = isUpperCase ch or ch = #*
 
-  sort WordString = (String | all word_char?)
+  type WordString = (String | all word_char?)
 
-  sort MessageString = (String | all msg_char?)
+  type MessageString = (String | all msg_char?)
 
   op word2string : Word -> WordString
   def word2string wrd = implode wrd
@@ -26,7 +26,7 @@ Test = spec
   def string2message mstr =
       map (fn ch -> if ch = #* then None else Some ch) (explode mstr)
 
-  sort MatchString = {word : WordString, position : Nat}
+  type MatchString = {word : WordString, position : Nat}
 
   op match2string : Match -> MatchString
   def match2string mtch =
@@ -37,4 +37,13 @@ Test = spec
       map match2string
           (find_matches(string2message mstr, map string2word wstrs))
 
+endspec
+
+Data = spec
+  import Test
+  def msg = "**V*ALN**EC*E*S"
+  def words = ["CERAMIC","CHESS","DECREE","FOOTMAN",
+	       "INLET","MOLOCH","OCELOT","PROFUSE",
+	       "RESIDE", "REVEAL", "SECRET", "SODIUM",
+	       "SPECIES", "VESTIGE", "WALNUT", "YOGURT"]
 endspec
