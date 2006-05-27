@@ -429,11 +429,11 @@ emacs interface functions.
                                      -> List (String * String) * List UnitId
   def findDefiningUIDforOpInContext (opId, unitId, globalContext, seenUIDs, rec?) =
     case evalPartial globalContext unitId of
-      | None -> ([],seenUIDs)
       | Some(Spec spc,_,depUIDs) ->
         findDefiningUIDforOp (opId, spc, unitId,
 			      filter (fn uid -> ~(member(uid,seenUIDs))) depUIDs,
 			      globalContext, Cons(unitId,seenUIDs), rec?)
+      | _ -> ([],seenUIDs)
 
   op  findUnitIdforUnit: Value * GlobalContext -> Option UnitId
   def findUnitIdforUnit (val, globalContext) =
