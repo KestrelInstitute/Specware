@@ -418,6 +418,7 @@ MetaSlang qualifying spec
  def patAnn pat =
    case pat of
      | AliasPat     (_,_,   a) -> a
+     | VarPat       (_,     a) -> a
      | EmbedPat     (_,_,_, a) -> a
      | RecordPat    (_,     a) -> a
      | WildPat      (_,     a) -> a
