@@ -911,7 +911,7 @@ def eliminateTerm context term =
      | Record([],_) -> true
      | _ -> false
 
-%- -------------------------------------Ø-------------------------------------------
+%- --------------------------------------------------------------------------------
 %- checks whether Record is a Product or a user-level Record
 
  op isShortTuple : fa(A) Nat * List(Id * A) -> Boolean
