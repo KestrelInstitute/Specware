@@ -17,7 +17,7 @@ echo "  ------------------------------------------------------------------------
 echo "  Verify_ACL:  Ensure that Allegro CL executable exists:"
 echo "  "
 
-for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl70/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
+for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl80/alisp /usr/local/acl/acl70/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
   if [ -x "$L" ]; then
     export LISP="$L"; break
   fi
