@@ -674,6 +674,7 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; non-required arguments (e.g. &optional, &rest, &key).
 #+cmu
 (progn
+#|
   #-new-compiler
   (defun REQUIRED-ARGUMENTS (name)
     (let ((function (symbol-function name)))
@@ -694,7 +695,7 @@ Estimated total monitoring overhead: 0.88 seconds
             (values min (or (/= min max) (/= rest 0) (/= key 0))))
           (values 0 t))))
 
-  #| #+new-compiler
+   #+new-compiler
   (defun REQUIRED-ARGUMENTS (name)
     (let* ((function (symbol-function name))
            (stype (system:%primitive get-vector-subtype function)))
@@ -715,7 +716,7 @@ Estimated total monitoring overhead: 0.88 seconds
                 (values (length args) nil)))
           (values 0 t)))))|#
 
-  #+new-compiler
+  ;#+new-compiler
   (defun REQUIRED-ARGUMENTS (name)
     (let ((type (ext:info function type name)))
       (cond ((not (kernel:function-type-p type))
@@ -827,18 +828,18 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; Fdefinition ********************
 ;;; ********************************
 ;;; fdefinition is a CLtL2 addition. 
-#+(and :cmu (not (or new-compiler :new-compiler)))
-(eval-when (compile eval)
-  ;; Need to worry about extensions:encapsulate in CMU CL
-  ;; Note: We should really be defining fdefinition as a function
-  ;; in the "LISP" package and export it. But this will do for now,
-  ;; especially since we only define it while compiling this code.
-  ;; The use of (fboundp 'fdefinition) later in this file works
-  ;; because (fboundp <macro>) returns t.
-  ;; (export 'lisp::fdefinition "LISP")
-  (defmacro FDEFINITION (x)
-    `(lisp::careful-symbol-function ,x))
-  (defsetf fdefinition lisp::set-symbol-function-carefully))
+;#+(and :cmu)
+;(eval-when (compile eval)
+;  ;; Need to worry about extensions:encapsulate in CMU CL
+;  ;; Note: We should really be defining fdefinition as a function
+;  ;; in the "LISP" package and export it. But this will do for now,
+;  ;; especially since we only define it while compiling this code.
+;  ;; The use of (fboundp 'fdefinition) later in this file works
+;  ;; because (fboundp <macro>) returns t.
+;  ;; (export 'lisp::fdefinition "LISP")
+;  (defmacro FDEFINITION (x)
+;    `(lisp::careful-symbol-function ,x))
+;  (defsetf fdefinition lisp::set-symbol-function-carefully))
 
 
 ;;; ****************************************************************
