@@ -152,7 +152,8 @@ If NEWLINE is true then add a newline at the end of the input."
       (let* ((ws (or (position ?\  input) (position ?\n  input)))
 	     (command (if ws (substring input 0 ws) input))
 	     (argstr  (if ws (substring input (1+ ws)) nil)))
-	(if (member command '("quit" "QUIT" "exit" "EXIT" "ok" "OK"))
+	(if (member command '("quit" "QUIT" "exit" "EXIT" "ok" "OK"
+			      ":quit" ":QUIT" ":exit" ":EXIT" ":ok" ":OK"))
 	    ':exit
 	  (if (equal command "")
 	      command
