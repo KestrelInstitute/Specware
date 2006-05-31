@@ -1,12 +1,13 @@
-\section{The Wadler / Lindig pretty printer combinators}
+(* The Wadler / Lindig pretty printer combinators}
 
 This one just does indentation with not attempt to fit to some width. Most
 of the code here is not used but we want it to be a substitute
 for the usual Wadler Lindig version.
 
-\begin{spec}
+*)
+
 WadlerLindig qualifying spec
-  import /Library/Base
+  import /Library/Legacy/Utilities/IO
 
   sort Pretty = Doc
 
@@ -68,7 +69,7 @@ WadlerLindig qualifying spec
       | DocBreak s -> layout rest DocNil indent indent (Cons (spaces indent, Cons ("\n", stream)))
       | DocIndent (newIndent,doc) -> layout doc rest column newIndent stream
       | DocNest (n,innerDoc) ->
-          layout innerDoc (DocIndent (indent, rest)) column (indent + n) (Cons (spaces (indent + n - column), stream))
+          layout innerDoc (DocIndent (indent, rest)) column (column + n) stream
       | DocCons (l,r) -> layout l (ppCons r rest) column indent stream
       | DocNil ->
          if rest = DocNil then
@@ -76,7 +77,7 @@ WadlerLindig qualifying spec
          else
            layout rest DocNil column indent stream
 
-  sort Doc =
+  type Doc =
     | DocNil
     | DocCons (Doc * Doc)
     | DocText String
@@ -127,7 +128,11 @@ WadlerLindig qualifying spec
 
   def ppFormatWidth doc =
     let strings = layout doc DocNil 0 0 [] in
-    concatList (rev strings)
+    % concatList (rev strings)
+    IO.withOutputToString
+       (fn stream ->
+	app (fn s -> IO.format1 (stream, "~A", s))
+	  (rev strings))
 
   op ppAppend : Doc -> Doc -> Doc
   def ppAppend p1 p2 = ppCons p1 p2
@@ -159,4 +164,3 @@ WadlerLindig qualifying spec
 %    let sdoc = ppBest w 0 [0,Flat,DocGroup doc] in
 %    let str = ppLayout sdoc in print_endline str
 end
-\end{spec}
