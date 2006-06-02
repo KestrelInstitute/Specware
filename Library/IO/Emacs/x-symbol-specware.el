@@ -12,6 +12,10 @@
 ;;
 ;;  Based on x-symbol-isabelle.el by Technische Universitaet Muenchen
 
+(pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/") data-directory-list)
+(pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/x-symbol/") data-directory-list)
+(require 'x-symbol)
+
 (defvar x-symbol-specware-name "Specware Symbols")
 (defvar x-symbol-specware-modes '(specware-mode specware-listener-mode))
 (x-symbol-register-language 'specware 'x-symbol-specware x-symbol-specware-modes)
