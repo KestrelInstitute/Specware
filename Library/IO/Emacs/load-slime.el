@@ -11,6 +11,8 @@
 (push (concat *specware-emacs* "slime-2.0/")
       load-path)
 
+(push (concat *specware-emacs* "x-symbol/")
+      load-path)
 
 (defun sw:load-specware-emacs-file (name)
   (let ((el-file   (concatenate 'string *specware-emacs* name ".el"))
@@ -34,8 +36,8 @@
 (sw:load-specware-emacs-file "sw-slime")
 
 (setq auto-mode-alist
-  (list* '("\\.sl$" . specware-mode)
-	 '("\\.spec$" . specware-mode)
+  (list* ;'("\\.sl$" . specware-mode)
+	 ;'("\\.spec$" . specware-mode)
 	 '("\\.sw$" . specware-mode)
 	 auto-mode-alist))
 

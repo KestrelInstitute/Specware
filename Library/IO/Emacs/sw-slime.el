@@ -202,6 +202,38 @@ If NEWLINE is true then add a newline at the end of the input."
   (run-hooks 'specware-listener-mode-hook))
 
 ;;; Redefining slime functions and variables
+(defun* slime-start (&key (program inferior-lisp-program) program-args 
+                          (coding-system slime-net-coding-system)
+                          (init 'slime-init-command)
+                          name
+                          (buffer "*inferior-lisp*"))
+  (if (and (eq *specware-lisp* 'allegro) *windows-system-p*)
+      (slime-allegro-windows program program-args)
+    (let ((args (list :program program :program-args program-args :buffer buffer 
+		      :coding-system coding-system :init init :name name)))
+      (slime-check-coding-system coding-system)
+      (when (or (not (slime-bytecode-stale-p))
+		(slime-urge-bytecode-recompile))
+	(let ((proc (slime-maybe-start-lisp program program-args buffer)))
+	  (slime-inferior-connect proc args)
+	  (pop-to-buffer (process-buffer proc))))))
+  )
+
+(defun slime-allegro-windows (program program-args)
+  (let ((slime-port 4005))
+    (shell-command 
+     (format "%s +B %s -L %s/Library/IO/Emacs/load-slime.lisp&"
+             program
+	     (apply 'concat (loop for arg in program-args append (list " " arg)))
+	     (if (boundp '*specware4-dir)
+		 *specware4-dir
+	       (getenv "SPECWARE4"))
+	     ;slime-port
+	     ))
+    ;(delete-other-windows)
+    (while (not (ignore-errors (slime-connect "localhost" slime-port)))
+      (sleep-for 0.2))))
+
 (defvar specware-listener-p nil)
 
 (defvar old-slime-output-buffer (symbol-function 'slime-output-buffer))
