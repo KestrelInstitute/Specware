@@ -313,8 +313,9 @@
 
     (let* ((specware-xeli-dir (extend-directory source-dir "xeli"))
 	   (source-xeli-dir   (if (null (generic-directory specware-xeli-dir))
-				  #+Linux     "/usr/local/acl/acl62/xeli/"
-				  #+MSWindows "C:\\Program Files\\acl62\\xeli\\"
+				  ;; the 6.2 version of xeli is buggy, so use 7.0 version even with 6.2 lisp
+				  #+Linux     "/usr/local/acl/acl70/xeli/"        ; 6.2 version is buggy
+				  #+MSWindows "C:\\Program Files\\acl70\\xeli\\"  ; 6.2 version is buggy
 				  #-(or Linux MSWindows) "[no idea where xeli lives on non-Linux, non-Windows OS]"
 				  specware-xeli-dir)))
       #-MSWindows 
