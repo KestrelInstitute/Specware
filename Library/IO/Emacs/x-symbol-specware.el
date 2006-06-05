@@ -14,7 +14,7 @@
 
 (pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/") data-directory-list)
 (pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/x-symbol/") data-directory-list)
-(require 'x-symbol "x-symbol/x-symbol")
+(require 'x-symbol)
 
 (defvar x-symbol-specware-name "Specware Symbols")
 (defvar x-symbol-specware-modes '(specware-mode specware-listener-mode))
