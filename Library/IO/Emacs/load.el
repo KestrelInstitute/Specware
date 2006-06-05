@@ -1,5 +1,6 @@
 
 ;; Load everything
+(pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/x-symbol/") load-path)
 
 (defconst *specware* (getenv "SPECWARE4"))
 (defconst *specware-home-directory* (getenv "SPECWARE4"))

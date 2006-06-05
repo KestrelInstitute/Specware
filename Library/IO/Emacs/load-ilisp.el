@@ -1,6 +1,7 @@
 
 ;; Load everything and use ilisp interface to lisp instead of Franz's
 
+(pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/ilisp") load-path)
 (pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/x-symbol/") load-path)
 (pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/") load-path)
 (require 'x-symbol-specware)
