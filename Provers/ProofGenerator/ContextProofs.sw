@@ -56,7 +56,7 @@ spec
     else typeVarDeclaration (first(tvs)) |> typeVarDeclarations(rtail(tvs))
 
   op cxMTProof: Context -> Proof
-  def cxMTProof(cx) =
+  def cxMTProof(_(*cx*)) =
     cxMT
 
   op cxTdecProof: Context * TypeDeclarationContextElement -> Proof

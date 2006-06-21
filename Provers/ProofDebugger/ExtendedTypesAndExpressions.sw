@@ -217,7 +217,7 @@ spec
                                 (\\// (map exprFreeVars eS) -- toSet vS)
     | _                      -> empty
 
-  def branchFreeVars (vS,tS,e1,e2) =
+  def branchFreeVars (vS,_(*ts*),e1,e2) =
     (exprFreeVars e1 \/ exprFreeVars e2) -- toSet vS
 
 endspec

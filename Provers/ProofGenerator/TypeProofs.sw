@@ -20,7 +20,7 @@ spec
     assume (wellTypedExpr(cx, expr, ty))
 
   op tyBoolProof: Proof * Context * Type -> Proof
-  def tyBoolProof(cxPrf, cx, ty) =
+  def tyBoolProof(cxPrf, _(*cx*), _(*ty*)) =
     tyBool(cxPrf)
 
   op tyVarProof: Proof * Context * Type -> Proof

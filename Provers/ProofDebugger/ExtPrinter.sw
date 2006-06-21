@@ -177,7 +177,7 @@ spec
     (printExpression(e))
 
   op printDOTExpression: ExtExpression * ExtType * Field -> String
-  def printDOTExpression(e, t, f) =
+  def printDOTExpression(e, _(*t*), f) =
     printExpression(e) ++ "." ++ printField(f)
 
   op printRECCExpression: Fields * ExtTypes -> String
@@ -192,7 +192,7 @@ spec
     (printType(t)) ++ " := " ++ printExpression(e)) ", " ftes) ++ ">"
 
   op printTUPLEExpression: ExtTypes * ExtExpressions -> String
-  def printTUPLEExpression(ts, es) =
+  def printTUPLEExpression(_(*ts*), es) =
     "<" ++ (printSeq printExpression ", " es) ++ ">"
 
   op printRECUPDATERExpression:
@@ -212,7 +212,7 @@ spec
     "LETSIMP"
 
   op printCONDExpression: ExtType * ExtBindingBranches -> String
-  def printCONDExpression(t, bbs) =
+  def printCONDExpression(_(*t*), bbs) =
     "COND(" ++ (printSeq printBindingBranch ";/n" bbs) ++ ")"
 
   op printBindingBranch:
