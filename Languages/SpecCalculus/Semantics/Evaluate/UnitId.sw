@@ -338,7 +338,7 @@ handled correctly.
   op  loadFile : UnitId -> String -> Env (List String)
   def loadFile unitId fileName = %{
     % print ("Loading: " ^ fileName ^ "\n");
-    case (parseFile fileName) of
+    case (parseSpecwareFile fileName) of
       | None -> raise (ParserError fileName)
       | Some specFile -> 
 	(case (valueOf specFile) of

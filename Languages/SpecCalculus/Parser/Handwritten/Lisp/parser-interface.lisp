@@ -6,9 +6,9 @@
 ;;;  Parser interface
 ;;; ======================================================================
 
-;; parseFile                    => parse-file => <parser>
-;; parseFileMsg                 => parse-file => <parser>
-;; parseString  => parse-string => parse-file => <parser>
+;; parseSpecwareFile                    => parse-file => <parser>
+;; parseSpecwareFileMsg                 => parse-file => <parser>
+;; parseSpecwareString  => parse-string => parse-file => <parser>
 ;;
 ;; parse-file is defined in /Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-top.lisp
 
@@ -16,7 +16,9 @@
 ;;;; (defvar *parser-source* nil) ; used by make-pos in semantics.lisp
 
 ;; Called from $SPECWARE4/Languages/SpecCalculus/Parser/Parse.sw
-(defun parseFile (fileName)
+(defun parseFile (fileName) (parseSpecwareFile fileName)) ; temporary backwards compatibility
+
+(defun parseSpecwareFile (fileName)
   (let* ((*parser-source* (list :file fileName))
 	 (session (parse-file fileName *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
 	 (raw-results (parse-session-results session))
@@ -37,7 +39,7 @@
 		  (raw-form   (first  raw-data)))   ; why is raw-data is a 1-element list ?
 	     (when-debugging
 	      (when (or *verbose?* *show-results?*)
-		(format t "~%---parseFile pre-evaluation result---~%")
+		(format t "~%---parseSpecwareFile pre-evaluation result---~%")
 		(pprint raw-form)
 		(format t "~%---~%")))
 	     (let ((result (eval raw-form)))
@@ -49,7 +51,7 @@
 	   '(:|None|)))))
 
 ;;; obsolete?
-;;; (defun parseFileMsg (fileName) 
+;;; (defun parseSpecwareFileMsg (fileName) 
 ;;;   (let* ((*parser-source* (list :file fileName))
 ;;; 	 (session (parse-file fileName *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
 ;;; 	 (pres (parse-session-results session))
@@ -69,7 +71,7 @@
 ;;; 	   (let ((res1 (third (first pres))))
 ;;; 	     (when-debugging
 ;;; 	      (when (or *verbose?* *show-results?*)
-;;; 		(format t "~%---parseFileMsg result---~%")
+;;; 		(format t "~%---parseSpecwareFileMsg result---~%")
 ;;; 		(pprint res1)
 ;;; 		(format t "~%---~%")))
 ;;; 	     (let ((res2 (mapcar #'eval res1)))
@@ -85,7 +87,9 @@
 
 
 ;; parseString is not called by anything, but is handy for debugging...
-(defun parseString (string) 
+(defun parseString (string) (parseSpecwareString string))
+
+(defun parseSpecwareString (string) 
   (let* ((*parser-source* (list :string string))
 	 (session     (parse-string string *specware4-parser* *specware4-tokenizer*))
 	 (raw-results (parse-session-results session))
@@ -102,7 +106,7 @@
 				   nil)
 				 (if (null raw-results) (list "no result") nil)))))
 
-	  ;; revised per parseFile above
+	  ;; revised per parseSpecwareFile above
 	  ((null (rest raw-results))
 	   (let* ((raw-result (first  raw-results))
 		  ; (start    (first  raw-result))  
@@ -111,7 +115,7 @@
 		  (raw-form   (first  raw-data)))   ; why is raw-data is a 1-element list ?
 	     (when-debugging
 	      (when (or *verbose?* *show-results?*)
-		(format t "~%---parseFile pre-evaluation result---~%")
+		(format t "~%---parseSpecwareFile pre-evaluation result---~%")
 		(pprint raw-form)
 		(format t "~%---~%")))
 	     (let ((result (eval raw-form))) ; may refer to *parser-source*

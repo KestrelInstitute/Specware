@@ -2,4 +2,4 @@
 
 (specware::make-system ".")
 
-(defun foo () (parser4::parseFile "Test.spec"))
+(defun foo () (parser4::parseSpecwareFile "Test.spec"))

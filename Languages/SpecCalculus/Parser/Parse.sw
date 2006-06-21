@@ -7,13 +7,13 @@ SpecCalc qualifying spec {
   import ../AbstractSyntax/Types
   import /Library/Legacy/Utilities/Lisp
 
-  op parseFile : fa(a) String -> Option (SpecTerm a)
+  op parseSpecwareFile : fa(a) String -> Option (SpecTerm a)
 
-  def parseFile file =
+  def parseSpecwareFile file =
     % let file   = Lisp.string (FilePath.toString file) in
     let file   = Lisp.string (file) in
-    let result = Lisp.apply (Lisp.symbol ("PARSER4","PARSEFILE"), [file]) in
-    %  See Handwritten/Lisp/parser-interface.lisp for definition of parseFile
+    let result = Lisp.apply (Lisp.symbol ("PARSER4","PARSESPECWAREFILE"), [file]) in
+    %  See Handwritten/Lisp/parser-interface.lisp for definition of parseSpecwareFile
     Lisp.uncell result
 }
 \end{spec}
