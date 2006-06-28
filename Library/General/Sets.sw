@@ -79,7 +79,7 @@ Set qualifying spec
 
   % set with no elements (lifting of `false' to sets):
   op empty : [a] Set a
-  def empty = fn x -> false
+  def empty = fn _ -> false
 
   op empty? : [a] Set a -> Boolean
   def empty? s = (s = empty)
@@ -91,7 +91,7 @@ Set qualifying spec
 
   % set with all elements (lifting of `true' to sets):
   op full : [a] Set a
-  def full = fn x -> true
+  def full = fn _ -> true
 
   op full? : [a] Set a -> Boolean
   def full? s = (s = full)
@@ -171,7 +171,9 @@ Set qualifying spec
   folding over. *)
 
   op foldable? : [a,b] b * (b * a -> b) * FiniteSet a -> Boolean
-  def [a,b] foldable?(c,f,s) =
+  def [a,b] foldable?(_(*c*),f,s) =
+    %% Definition of foldable? doesn't depend on initial value c, but it's
+    %% convenient to have foldable? apply to entire sequence of args to fold.
     (fa (x:a, y:a, z:b) x in? s && y in? s => f(f(z,x),y) = f(f(z,y),x))
 
   op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b
