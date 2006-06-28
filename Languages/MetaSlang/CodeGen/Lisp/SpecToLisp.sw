@@ -760,7 +760,7 @@ SpecToLisp qualifying spec {
 	    %% used lisp vars (the even positions in the name/value list), so the 
 	    %% lisp compiler will not spuriously warn about them being unused.
 	    %%
-	    let free_vars = freeVars term in
+	    let free_vars = List.map (fn (id,_) -> specId (id, "")) (freeVars term) in
 	    mkLApply(mkLOp "CL:ERROR",
 		     [%% The following lisp format string says to successively 
 		      %% take two things from the argument list and then:
@@ -773,7 +773,7 @@ SpecToLisp qualifying spec {
 		      %% At lisp runtime, that creates a (heterogenous!) list with 
 		      %% the name of each var followed by the value it is bound to.
 		      mkLApply (mkLOp "LIST",
-				foldl (fn ((id, _), args) ->
+				foldl (fn (id, args) ->
 				       args ++ [mkLString id, Var id])
 				      []
 				      free_vars)]))
