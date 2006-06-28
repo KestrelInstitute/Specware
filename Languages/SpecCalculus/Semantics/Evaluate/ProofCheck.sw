@@ -18,14 +18,14 @@ SpecCalc qualifying spec
      valueName <- return (SpecTermToSpecName(term));
 
      result <- (case value of
-		  | Spec spc -> evaluateSpecProofCheck (claimName, spc, valueName, proverName, assertions, possibleOptions, baseOptions) pos
+		  | Spec spc -> evaluateSpecProofCheck (claimName, spc, valueName, proverName, assertions, possibleOptions, baseOptions) 
 		  | Other other -> evaluateOtherProofCheck (claimName, other, valueName, proverName, assertions, possibleOptions, baseOptions) pos
 		  | _ -> raise (Proof (pos, "Argument to proofCheck command is neither coerceable to a spec nor Other.")));
      return (result, timeStamp, depUIDs)
     }
 
-  op evaluateSpecProofCheck: PCClaimName * Spec * Option String * ProverName * Assertions * ProverOptions * ProverBaseOptions -> Position -> SpecCalc.Env Value
-  def evaluateSpecProofCheck(Wellformed, spc, specName, proverName, assertions, possibleOptions, baseOptions) pos =
+  op evaluateSpecProofCheck: PCClaimName * Spec * Option String * ProverName * Assertions * ProverOptions * ProverBaseOptions -> SpecCalc.Env Value
+  def evaluateSpecProofCheck(Wellformed, spc, specName, proverName, assertions, possibleOptions, baseOptions) =
     {
       unitId <- getCurrentUnitId;
       ctxt <- specToContext spc;

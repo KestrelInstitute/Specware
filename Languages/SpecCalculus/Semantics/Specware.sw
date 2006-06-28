@@ -426,7 +426,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
       path_body <- return (removeSWsuffix path);
       unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      spcInfo <- evaluateUID position unitId;
+      %% spcInfo <- evaluateUID position unitId;
       catch {
         (val,_,_) <- evaluateUID position unitId;
         case val of
