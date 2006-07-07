@@ -232,12 +232,6 @@
     (if win (select-window win)
       (sw:switch-to-lisp)))
   (pop-to-buffer *specware-buffer-name*) ; might want to choose explicit frame
-  (when (eq lisp-emacs-interface-type 'slime)
-    (sit-for 0.1)
-    (when (slime-rex-continuations)
-      (sit-for 2)
-      (when (slime-rex-continuations)
-	(sit-for 2))))
   (goto-char (point-max))
   (insert str)
   (inferior-lisp-newline)
@@ -274,9 +268,17 @@
 ;		*sentinel-data*))
     (when sw-proc
       (set-process-sentinel sw-proc 'continue-emacs-computation)))
-  (simulate-input-expression (if (eq lisp-emacs-interface-type 'slime)
-				 "(specware::exit-when-done)"
-			       "(specware::exit)")))
+  (simulate-input-expression (exit-form)))
+
+(defun exit-form ()
+  (if (eq lisp-emacs-interface-type 'slime)
+      "(specware::exit-when-done)"
+    "(specware::exit)"))
+
+;(defun exit-lisp ()
+;  (if (eq lisp-emacs-interface-type 'slime)
+;      (sw:exit-lisp)
+;    (eval-in-lisp-in-order "(cl-user::exit)")))
 
 (defun kill-lisp-and-then-emacs (&optional delay)
   (when (null delay) (setq delay 10))
@@ -304,8 +306,13 @@
       (set-process-sentinel sw-proc nil))))
 
 (defun eval-in-lisp-in-order (str)
-  (if nil  ;(eq lisp-emacs-interface-type 'slime)
-      (sw:eval-in-lisp str)
+  (sit-for 0.1)
+  (if (eq lisp-emacs-interface-type 'slime)
+      (progn (when (slime-rex-continuations)
+	       (sit-for 2)
+	       (when (slime-rex-continuations)
+		 (sit-for 2)))
+	     (simulate-input-expression str))
     (simulate-input-expression str)))
 
 (defun build-specware4-and-then-exit (&optional in-current-dir?)
@@ -379,19 +386,20 @@
 	       "(cl-user::build-lisp-image %S :lisp-heap-start (cl:read-from-string \"#x48000000\")
                                               :oldspace #x100)")
 	     base-world-name))
+    (sit-for 4)
     (dotimes (i 10)
       (sit-for 2)
       (when (file-exists-p base-world-name)
 	(return nil)))
-    (eval-in-lisp-in-order "(cl-user::exit)")
-    (sit-for 2))
+    (sw:exit-lisp)
+    (sit-for 3))
   (if (null base-world-name)
       (run-plain-lisp 1)
     (let ((sw:common-lisp-image-file base-world-name))
-      (sit-for 10) ; just to be on the safe side
+      (sit-for 3)
       (run-lisp-application)))
   (unless (inferior-lisp-running-p)
-    (sit-for 1))
+    (sit-for 3))
   (eval-in-lisp-in-order
    (format "(cl:load %S)"
 	   (concat *specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
@@ -424,8 +432,8 @@
 				   (openmcl "(ccl:save-application %S)")
 				   (sbcl "(sb-ext:save-lisp-and-die %S)"))
 				 world-name))
-  (dotimes (i 10)
-    (sit-for 2)
+  (dotimes (i 20)
+    (sit-for 1)
     (when (file-exists-p world-name)
       (return nil)))
   (eval-in-lisp-in-order
@@ -507,7 +515,7 @@
     (eval-in-lisp-in-order "(progn #+allegro(sys::set-stack-cushion 10000000)
                                    #-allegro())")
     (eval-in-lisp-in-order "(cl:time (cl-user::boot))")
-    (sit-for 5)
+    (sit-for 1)
     (continue-form-when-ready 
      ;; continue-form-when-ready kills the sublisp process, 
      ;; then waits for a status change signal on that process

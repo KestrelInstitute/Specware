@@ -203,20 +203,23 @@ accepted in lieu of prompting."
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
   ;(define-key map "\C-?"     'backward-delete-char-untabify)
+  (define-key map "\C-\M-a"  'sw:beginning-of-unit)
+  (define-key map "\C-\M-e"  'sw:end-of-unit)
+  (define-key map "\C-\M-n"  'sw:next-unit)
   (define-key map "\C-c%"    'extract-sexp)
   (define-key map "\C-c;"    'comment-region)
 
 					          ; Franz binding
-  (define-key map "\C-cs"    'insert-circle-s)    ; Process to debug
-  (define-key map "\C-c`"    'insert-open-quote)
-  (define-key map "\C-c'"    'insert-close-quote)
-  (define-key map "\C-cd"    'insert-degree)      ; Describe symbol
-  (define-key map "\C-cu"    'insert-mu)
-  (define-key map "\C-ct"    'insert-center-dot)  ; trace
-  (define-key map "\C-cx"    'insert-times)
-  (define-key map "\C-cb"    'insert-beta)
-  (define-key map "\C-cn"    'insert-negation)
-  (define-key map "\C-ce"    'insert-emptyset)
+;  (define-key map "\C-cs"    'insert-circle-s)    ; Process to debug
+;  (define-key map "\C-c`"    'insert-open-quote)
+;  (define-key map "\C-c'"    'insert-close-quote)
+;  (define-key map "\C-cd"    'insert-degree)      ; Describe symbol
+;  (define-key map "\C-cu"    'insert-mu)
+;  (define-key map "\C-ct"    'insert-center-dot)  ; trace
+;  (define-key map "\C-cx"    'insert-times)
+;  (define-key map "\C-cb"    'insert-beta)
+;  (define-key map "\C-cn"    'insert-negation)
+;  (define-key map "\C-ce"    'insert-emptyset)
 
   (easy-menu-add specware-mode-menu map) 
   )
@@ -290,6 +293,87 @@ Full documentation will be available after autoloading the function."
 (defcustom specware-use-x-symbol t
   "If non-nil use x-symbol package with Specware")
 
+;;; Hide-show support
+(defcustom specware-use-hide-show t
+  "If non-nil use the hide-show folding package with Specware")
+
+(defvar sw:definition-introducing-words
+  (regexp-opt '("axiom"
+		"conjecture"
+		"def"
+		"op"
+		"theorem"
+		"type")))
+
+(defvar sw:basic-unit-intro-regexp "^\\(\\sw+\\)\\s-*=\\s-*")
+
+(defvar sw:definition-intro-sexp
+  (concat "\\s-*\\(" sw:definition-introducing-words "\\)\\>"))
+
+(defvar sw:definition-ending-sexp
+  (concat "^\\s-*\\(" sw:definition-introducing-words
+	  "\\|end-?spec"
+	  "\\)\\>"))
+
+(defvar sw:def-ending-sexp		; Add "in" for def because of local definitions
+  (concat "^\\s-*\\(" sw:definition-introducing-words
+	  "\\|in"
+	  "\\|end-?spec"
+	  "\\)\\>"))
+
+(when specware-use-hide-show
+  (require 'hideshow)
+  (add-to-list 'hs-special-modes-alist
+	       `(specware-mode ,(concat "\\(\\s(\\|\\s-*proof\\>\\|"
+					sw:definition-intro-sexp
+					"\\|"
+					sw:basic-unit-intro-regexp
+					"\\)")
+                               "\\(\\s)\\|\\<end-proof\\|\\<end-?spec\\)"
+			       nil
+			       sw:forward-exp
+			       nil   ; sw:adjust-begin
+			       )))
+
+(defun sw:forward-exp (n)
+  (interactive "p")
+  (if (looking-at "\\s-*proof\\>")
+      (sw:re-search-forward " end-proof\\>")
+    (if (looking-at sw:basic-unit-intro-regexp)
+	(progn (forward-char 1)
+	       (if (sw:re-search-forward sw:basic-unit-intro-regexp)
+		   (progn (beginning-of-line))
+		 (end-of-buffer))
+	       (forward-comment -100))	; Go backward until non-comment found
+      (if (looking-at "\\<def\\>")
+	  (let ((beg-indentation (1+ (current-column)))	; 1+ just in case user indent by 1
+		(found-end nil))
+	    (while (not found-end)
+	      (end-of-line)
+	      (if (sw:re-search-forward sw:def-ending-sexp)
+		  (progn (forward-sexp -1)
+			 (if (<= (current-column) beg-indentation)
+			     (setq found-end t)))
+		(if (sw:re-search-forward sw:basic-unit-intro-regexp))
+		  (progn (beginning-of-line)
+			 (setq found-end t))
+		(end-of-buffer)))
+	    (forward-comment -100))
+	(if (looking-at sw:definition-intro-sexp) ; other than def
+	    (progn (end-of-line)
+		   (if (or (sw:re-search-forward sw:definition-ending-sexp)
+			   (sw:re-search-forward sw:basic-unit-intro-regexp))
+		       (progn (beginning-of-line))
+		     (end-of-buffer))
+		   (forward-comment -100)) ; Go backward until non-comment found
+	  (forward-sexp n))))))
+
+(defun sw:adjust-begin (n)
+  (point))
+
+;;; hs-block-start-regexp hs-block-start-mdata-select hs-block-end-regexp
+;;; hs-forward-sexp-func hs-adjust-block-beginning
+
 (defun specware-mode ()
   "Major mode for editing Specware code.
 Tab indents for Specware code.
@@ -343,6 +427,8 @@ Mode map
   (easy-menu-add specware-mode-menu)
   (if specware-use-x-symbol
       (x-symbol-mode t))
+  (if specware-use-hide-show
+      (hs-minor-mode t))
   (run-hooks 'specware-mode-hook))           ; Run the hook
 
 (defvar specware-mode-abbrev-table nil "*Specware mode abbrev table (default nil)")
@@ -879,10 +965,21 @@ If anyone has a good algorithm for this..."
 (defun sw:re-search-backward (regexpr)
   (let ((case-fold-search nil) (found t))
     (if (re-search-backward regexpr nil t)
-        (progn
+        (save-match-data
           (condition-case ()
               (while (sw:inside-comment-or-string-p)
                 (re-search-backward regexpr))
+            (error (setq found nil)))
+          found)
+      nil)))
+
+(defun sw:re-search-forward (regexpr)
+  (let ((case-fold-search nil) (found t))
+    (if (re-search-forward regexpr nil t)
+        (progn
+          (condition-case ()
+              (while (sw:inside-comment-or-string-p)
+                (re-search-forward regexpr))
             (error (setq found nil)))
           found)
       nil)))
@@ -1008,6 +1105,15 @@ If anyone has a good algorithm for this..."
       (setq filename (substring filename 2)))
     filename))
 
+(defun sw:containing-specware-unit-id ()
+  (save-excursion
+    (end-of-line)
+    (let* ((file-uid (sw::file-to-specware-unit-id buffer-file-name))
+	   (match (sw:re-search-backward sw:basic-unit-intro-regexp)))
+      (if match
+	  (concat file-uid "#" (match-string 1))
+	file-uid))))
+
 (defun sw::normalize-filename (filename)
   (setq filename (replace-in-string filename "\\\\" "/"))
   (replace-in-string filename "Program Files" "Progra~1")
@@ -1086,8 +1192,7 @@ If anyone has a good algorithm for this..."
 
 (defun sw:process-unit (unitid)
   (interactive (list (read-from-minibuffer "Process Unit: "
-					   (sw::file-to-specware-unit-id
-					    buffer-file-name))))
+					   (sw:containing-specware-unit-id))))
   (lisp-or-specware-command ":sw " "proc " unitid))
 
 (defun sw:generate-lisp (compile-and-load?)
@@ -1128,7 +1233,7 @@ If anyone has a good algorithm for this..."
 
 (defun sw:set-swe-spec ()
   (interactive)
-  (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
+  (let ((filename (sw:containing-specware-unit-id)))
     (lisp-or-specware-command ":swe-spec " "ctext " filename)))
 
 (defun sw:cl-unit (unitid)
@@ -1164,6 +1269,32 @@ If anyone has a good algorithm for this..."
 (defun cd-current-directory ()
   (interactive)
   (lisp-or-specware-command ":cd " "cd " default-directory))
+
+(defun sw:beginning-of-unit ()
+  (interactive "")
+  (unless (sw:re-search-backward sw:basic-unit-intro-regexp)
+    (beginning-of-buffer)
+    (sw:re-search-forward "^\\sw")      ; Find any non-comment word
+  (beginning-of-line))
+    (beginning-of-line))
+
+(defun sw:end-of-unit ()
+  (interactive "")
+  (forward-char 1)
+  (unless (sw:re-search-forward sw:basic-unit-intro-regexp)
+    (end-of-buffer))
+  (beginning-of-line)
+  (forward-char -1)
+  (sw:re-search-backward "\\sw")	; Find any non-comment word
+  (beginning-of-line)
+  (forward-line 1))
+
+(defun sw:next-unit ()
+  (interactive "")
+  (forward-char 1)
+  (unless (sw:re-search-forward sw:basic-unit-intro-regexp)
+    (end-of-buffer))
+  (beginning-of-line))
 
 (defvar *pending-specware-meta-point-results* nil)
 
@@ -1242,6 +1373,9 @@ If anyone has a good algorithm for this..."
       (message "%S more definitions."
 	       (length (cdr *pending-specware-meta-point-results*))))))
 
+;; (defvar *specware-context-str* "cl-user::*specware-global-context*")
+(defvar *specware-context-str* "(MonadicStateInternal::readGlobalVar \"GlobalContext\")")
+
 (defun make-search-form (qualifier sym)
   (if (specware-file-name-p buffer-file-name)
       (format
@@ -1251,9 +1385,6 @@ If anyone has a good algorithm for this..."
     (format
      "(SpecCalc::searchForDefiningUID-2 '(:|Qualified| %S . %S) %s)"
      qualifier sym *specware-context-str*)))
-
-;; (defvar *specware-context-str* "cl-user::*specware-global-context*")
-(defvar *specware-context-str* "(MonadicStateInternal::readGlobalVar \"GlobalContext\")")
 
 (defun specware-file-name-p (str)
   (let ((len (length str)))
@@ -1494,6 +1625,8 @@ If anyone has a good algorithm for this..."
 ;; Derived from about.el functions
 ;; I don't use the about functions because they are different in different 
 ;; versions of xemacs
+(defvar about-left-margin 3)
+
 (defun about-specware-get-buffer (name)
   (cond ((get-buffer name)
 	 (switch-to-buffer name)
@@ -1519,8 +1652,6 @@ If anyone has a good algorithm for this..."
 	 (set-specifier left-margin-width about-left-margin (current-buffer))
 	 (set (make-local-variable 'widget-button-face) 'about-specware-link-face)
 	 nil)))
-
-(defvar about-left-margin 3)
 
 (defun about-specware-center (string-or-glyph)
   (let ((n (- (startup-center-spaces string-or-glyph) about-left-margin)))

@@ -185,7 +185,7 @@
 
   (defun sw:exit-lisp ()
     (interactive)
-    (lisp-or-specware-command ":quit" "quit"))
+    (eval-in-lisp-in-order "(cl-user::exit)"))
 
   (defun sw:switch-to-lisp (&optional eob-p)
     (interactive "P")

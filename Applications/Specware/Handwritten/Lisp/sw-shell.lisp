@@ -271,7 +271,7 @@
 		   (specware::cd argstr))
 		 (values))
       (pwd       (princ (namestring (specware::current-directory))) (values))
-      (dir       (cl-user::ls     (or argstr "")))
+      ((dir ls)       (cl-user::ls     (or argstr "")))
       (dirr      (cl-user::dirr   (or argstr "")))
       (path      (cl-user::swpath argstr))
       ((proc p)  (cl-user::sw     argstr) (values))

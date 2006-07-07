@@ -448,4 +448,15 @@ to end end."
        (assert thread)
        (message "%s" message)))))
 
+(defun slime-maybe-complete-as-filename ()
+  "If point is at a string starting with \", complete it as filename.
+Return nil iff if point is not at filename."
+  (if t  ;(save-excursion (re-search-backward "\"[^ \t\n]+\\=" nil t))
+      (let ((comint-completion-addsuffix '("/" . "\"")))
+        (if slime-when-complete-filename-expand
+            (comint-replace-by-expanded-filename)
+          (comint-dynamic-complete-as-filename))
+        t)
+    nil))
+
 (provide 'sw-slime)
