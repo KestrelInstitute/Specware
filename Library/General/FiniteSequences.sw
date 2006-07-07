@@ -319,7 +319,7 @@ FSeq qualifying spec
 
   % true iff sequence is ordered according to given linear order:
   op sorted? : [a] LinearOrder a -> FSeq a -> Boolean
-  def sorted? ord s = (fa(i:Nat) i < length s => ord (s@i, s@(i+1)))
+  def sorted? ord s = (fa(i:Nat) i < length s - 1 => ord (s@i, s@(i+1)))
 
   % sort sequence according to given linear order
   % ("sort" is currently prohibited for backward compatibility):
