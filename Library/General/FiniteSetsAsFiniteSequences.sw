@@ -146,6 +146,17 @@ FSet qualifying spec
   def * (s1,s2) =
     \\// (map (fn x -> map (fn y -> (x,y)) s2) s1)
 
+  op  power : [a] FSet a -> FSet (FSet a)
+  def power set =
+    choose permutationOf (fn seq ->
+    if empty? seq then single empty
+    else let tailSets = power (quotient permutationOf (rtail seq)) in
+         tailSets \/ map (fn subset -> subset <| (first seq)) tailSets
+    ) set
+
+  op powerf : [a] FSet a -> FSet (FSet a)
+  def powerf = power
+
   op forall? : [a] (a -> Boolean) -> FSet a -> Boolean
   def forall? p s = choose permutationOf (forall? p) s
 

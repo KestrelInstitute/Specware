@@ -77,6 +77,10 @@ Set qualifying spec
   op * infixl 27 : [a,b] Set a * Set b -> Set (a * b)
   def * (s1,s2) = fn (x,y) -> x in? s1 && y in? s2
 
+  % powerset:
+  op power : [a] Set a -> Set (Set a)
+  def power s = fn sub -> sub <= s
+
   % set with no elements (lifting of `false' to sets):
   op empty : [a] Set a
   def empty = fn _ -> false
@@ -181,6 +185,10 @@ Set qualifying spec
     (fa(c,f) fold (c, f, empty) = c) &&
     (fa(c,f,s,x) foldable? (c, f, s <| x) =>
                  fold (c, f, s <| x) = f (fold (c, f, s - x), x))
+
+  % finite powerset:
+  op powerf : [a] Set a -> Set (FiniteSet a)
+  def [a] powerf s = fn (sub : FiniteSet a) -> sub <= s
 
   % infinite cardinality:
   op infinite? : [a] Set a -> Boolean

@@ -61,6 +61,9 @@ FSet qualifying spec
   op * infixl 27 : [a,b] FSet a * FSet b -> FSet (a * b)
   def * (s1,s2) = toFSet (fromFSet s1 * fromFSet s2)
 
+  op power : [a] FSet a -> FSet (FSet a)
+  def power s = toFSet (map toFSet (power (fromFSet s)))
+
   op empty : [a] FSet a
   def empty = toFSet empty
 
@@ -107,6 +110,9 @@ FSet qualifying spec
 
   op fold : [a,b] ((b * (b * a -> b) * FSet a) | foldable?) -> b
   def fold(c,f,s) = fold (c, f, fromFSet s)
+
+  op powerf : [a] FSet a -> FSet (FSet a)
+  def powerf = power  % no difference for finite sets
 
   % we must strengthen the domain to non-empty sets of sets,
   % because in spec `Sets' we have `//\\ empty = full':
