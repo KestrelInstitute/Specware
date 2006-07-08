@@ -13,7 +13,7 @@
 		      (original-chars (coerce (namestring file) 'list))
 		      (suffix original-chars))
 		 (do ((chars original-chars (cdr chars)))
-		     ((not (eq (first chars) (pop old)))
+		     ((or (null chars) (not (eq (first chars) (pop old))))
 		      (format nil "~,V@T~A" 
 			      (1+ (- (length original-chars) (length suffix)))
 			      (coerce suffix 'string)))
