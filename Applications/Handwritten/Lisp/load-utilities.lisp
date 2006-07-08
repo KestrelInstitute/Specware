@@ -66,6 +66,9 @@
 		  components)
 	    (setq this-component-chars nil))
 	(push char this-component-chars)))
+    (unless (null this-component-chars)
+      (push (coerce (reverse this-component-chars) 'string)
+	    components))
     (reverse components)))
 
 (defun split-dir-components (str)
