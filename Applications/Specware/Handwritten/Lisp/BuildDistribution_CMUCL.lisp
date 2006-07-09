@@ -48,7 +48,7 @@
 (defparameter Specware-name                  "Specware4")	; Name of dir and startup files
 (defparameter cl-user::Specware-version      "4.1")
 (defparameter cl-user::Specware-version-name "Specware-4-1")
-(defparameter cl-user::Specware-patch-level  "4")
+(defparameter cl-user::Specware-patch-level  "5")
 (defparameter Major-Version-String           "4-1")		; patch detection, about-specware cmd
 
 (defparameter *Distribution-dir*  (concatenate 'string *specware-dir* "/distribution-cmulisp/"))

@@ -2,7 +2,7 @@
 ;;; Moves a variety of files to the distribution directory.
 
 ;;; Assumes distribution dir is something like:
-;;;   C:/SpecwareReleases/Specware-4-1-4/Windows/Specware4
+;;;   C:/SpecwareReleases/Specware-4-1-5/Windows/Specware4
 ;;;   Also assumes the directory contains only stuff that
 ;;    generate-application has just placed in it.
 

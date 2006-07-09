@@ -16,40 +16,42 @@ rem       The remaining separators are all forward slashes, which the
 rem        bash shell needs and which the Windows shell seems to tolerate.
 rem       Insanity.
 
+set SW_VERSION=Specware-4-1-5
+
 if "%SPECWARE4%"=="" (
 
     echo undefined SPECWARE4
-    if exist C:\Progra~1/Kestrel/Specware-4-1-4 (
-        echo setting SPECWARE4 to C:\Progra~1/Kestrel/Specware-4-1-4
-        set "SPECWARE4=C:\Progra~1/Kestrel/Specware-4-1-4"
-    ) else if exist C:\Docume~1/%USERNAME%/Kestrel/Specware-4-1-4 (
-        echo setting SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/Specware-4-1-4
-        set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/Specware-4-1-4"
+    if exist C:\Progra~1/Kestrel/%SW_VERSION% (
+        echo setting SPECWARE4 to C:\Progra~1/Kestrel/%SW_VERSION%
+        set "SPECWARE4=C:\Progra~1/Kestrel/%SW_VERSION%"
+    ) else if exist C:\Docume~1/%USERNAME%/Kestrel/%SW_VERSION% (
+        echo setting SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/%SW_VERSION%
+        set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/%SW_VERSION%"
     )
 
-) else if "%SPECWARE4%"=="C:\Program Files\Kestrel\Specware-4-1-4" (
+) else if "%SPECWARE4%"=="C:\Program Files\Kestrel\%SW_VERSION%" (
 
     echo Problematic space and backslashes in: "%SPECWARE4%"
-    echo revising SPECWARE4 to: C:\Progra~1/Kestrel/Specware-4-1-4
-    set "SPECWARE4=C:\Progra~1/Kestrel/Specware-4-1-4"
+    echo revising SPECWARE4 to: C:\Progra~1/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\Progra~1/Kestrel/%SW_VERSION%"
 
-) else if "%SPECWARE4%"=="C:\Progra~1\Kestrel\specware-4-1-4" (
+) else if "%SPECWARE4%"=="C:\Progra~1\Kestrel\%SW_VERSION%" (
 
     echo Problematic backslashes in: "%SPECWARE4%"
-    echo revising SPECWARE4 to: C:\Progra~1/Kestrel/Specware-4-1-4
-    set "SPECWARE4=C:\Progra~1/Kestrel/Specware-4-1-4"
+    echo revising SPECWARE4 to: C:\Progra~1/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\Progra~1/Kestrel/%SW_VERSION%"
 
-) else if "%SPECWARE4%"=="C:\Documents and Settings\%USERNAME%\Kestrel\Specware-4-1-4" (
+) else if "%SPECWARE4%"=="C:\Documents and Settings\%USERNAME%\Kestrel\%SW_VERSION%" (
 
     echo Problematic space and backslashes in: "%SPECWARE4%"
-    echo revising SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/Specware-4-1-4
-    set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/Specware-4-1-4"
+    echo revising SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/%SW_VERSION%"
 
-) else if "%SPECWARE4%"=="C:\Docume~1\%USERNAME%\Kestrel\Specware-4-1-4" (
+) else if "%SPECWARE4%"=="C:\Docume~1\%USERNAME%\Kestrel\%SW_VERSION%" (
 
     echo Problematic backslashes in: "%SPECWARE4%"
-    echo revising SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/Specware-4-1-4
-    set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/Specware-4-1-4"
+    echo revising SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/%SW_VERSION%"
 )
 
 rem ==========================================================================

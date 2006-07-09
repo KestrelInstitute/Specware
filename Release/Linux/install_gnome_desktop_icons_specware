@@ -3,15 +3,15 @@
 # InstallShield puts icons in a directory that gnome might not look at,
 # so we copy to another (found by trial and error).
 
-if [ ! -f "$HOME/.gnome-desktop/Specware 4.1.4.desktop" ]; then
-  if [ -f "$HOME/.gnome/apps/Specware 4.1.4.desktop" ]; then
-     cp "$HOME/.gnome/apps/Specware 4.1.4.desktop" "$HOME/.gnome-desktop/Specware 4.1.4.desktop"
+if [ ! -f "$HOME/.gnome-desktop/Specware 4.1.5.desktop" ]; then
+  if [ -f "$HOME/.gnome/apps/Specware 4.1.5.desktop" ]; then
+     cp "$HOME/.gnome/apps/Specware 4.1.5.desktop" "$HOME/.gnome-desktop/Specware 4.1.5.desktop"
   fi
 fi
 
-if [ ! -f "$HOME/.gnome-desktop/Specware 4.1.4 (no emacs).desktop" ]; then
-  if [ -f "$HOME/.gnome/apps/Specware 4.1.4 (no emacs).desktop" ]; then
-     cp "$HOME/.gnome/apps/Specware 4.1.4 (no emacs).desktop" "$HOME/.gnome-desktop/Specware 4.1.4 (no emacs).desktop"
+if [ ! -f "$HOME/.gnome-desktop/Specware 4.1.5 (no emacs).desktop" ]; then
+  if [ -f "$HOME/.gnome/apps/Specware 4.1.5 (no emacs).desktop" ]; then
+     cp "$HOME/.gnome/apps/Specware 4.1.5 (no emacs).desktop" "$HOME/.gnome-desktop/Specware 4.1.5 (no emacs).desktop"
   fi
 fi
 

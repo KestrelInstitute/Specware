@@ -40,7 +40,7 @@
 ;; "defvar" means any pre-existing value is retained
 (defvar cl-user::Specware-version      "4.1")
 (defvar cl-user::Specware-version-name "Specware-4-1")
-(defvar cl-user::Specware-patch-level  "4")
+(defvar cl-user::Specware-patch-level  "5")
 (defvar Major-Version-String           "4-1")		; patch detection, about-specware cmd
 
 (defun print-blank ()
@@ -67,7 +67,8 @@
 
 (defun user::prepare_specware_release (i j k specware-dir distribution-dir &optional (*verbose* t))
   (let ((specware-dir (truename specware-dir))
-	(release-dir  (truename (ensure-subdirs-exist distribution-dir "Releases" "Specware-4-1-4"))))
+	(release-dir  (truename (ensure-subdirs-exist distribution-dir "Releases" 
+						      (format nil "Specware-~D-~D-~D" i j k)))))
     (setq Major-Version-String           (format nil "~D-~D" i j))
     (setq cl-user::Specware-version      (format nil "~D.~D" i j))
     (setq cl-user::Specware-patch-level  (format nil "~D" k))

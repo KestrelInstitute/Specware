@@ -48,7 +48,7 @@
 (defparameter Specware-name                  "Specware4")	; Name of dir and startup files
 (defparameter cl-user::Specware-version      "4.1")
 (defparameter cl-user::Specware-version-name "Specware-4-1")
-(defparameter cl-user::Specware-patch-level  "4")
+(defparameter cl-user::Specware-patch-level  "5")
 (defparameter Major-Version-String           "4-1")		; patch detection, about-specware cmd
 
 (defparameter *Specware-dir*      (fix-dir (sys:getenv "SPECWARE4")))
@@ -158,15 +158,15 @@
 (format t "~&;;;~%")
 
 ;; Set up the directory that will hold the CD contents:
-;;   C:/SpecwareReleases/Specware-4-1-4/CD/
+;;   C:/SpecwareReleases/Specware-4-1-5/CD/
 ;;
 ;; Put in the Autorun.inf file that will automatically invoke
 ;; Windows\setupwin32.exe for the user when the CD is inserted.
 ;;
 ;; Later the results from InstallShield will be put under
-;;   C:/SpecwareReleases/Specware-4-1-4/CD/Windows/Specware4/
-;;   C:/SpecwareReleases/Specware-4-1-4/CD/Linux/Specware4/
-;;   C:/SpecwareReleases/Specware-4-1-4/CD/Mac/Specware4/
+;;   C:/SpecwareReleases/Specware-4-1-5/CD/Windows/Specware4/
+;;   C:/SpecwareReleases/Specware-4-1-5/CD/Linux/Specware4/
+;;   C:/SpecwareReleases/Specware-4-1-5/CD/Mac/Specware4/
 ;;   ...
 
 

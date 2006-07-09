@@ -9,7 +9,7 @@
 ;; Used in printing out the license and about-specware command
 (defparameter cl-user::Specware-version      "4.1")
 (defparameter cl-user::Specware-version-name "Specware-4-1")
-(defparameter cl-user::Specware-patch-level  "4")
+(defparameter cl-user::Specware-patch-level  "5")
 (defparameter Major-Version-String           "4-1") ; Used in patch detection and about-specware command
 
 (push ':SPECWARE-DISTRIBUTION *features*)
