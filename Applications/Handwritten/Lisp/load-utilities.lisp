@@ -416,6 +416,13 @@
   (defmacro define-compiler-macro (name vl &rest body)
     `(si::define-compiler-macro ,name ,vl,@ body)))
 
+(unless (fboundp 'without-package-locks)
+  (defmacro without-package-locks (&rest args)
+    #+cmu19 `(ext:without-package-locks ,@args)
+    #+sbcl `(sb-ext:without-package-locks ,@args)
+    #+allegro `(excl:without-package-locks ,@args)
+    #-(or cmu19 sbcl allegro) `(progn ,@args)))
+
 
 (defun wait (msg pred &optional (sleep-time 1))
   sleep-time
@@ -427,7 +434,7 @@
 (defpackage :swank)
 (defun exit-when-done ()
   (wait "Commands in progress"
-		  #'(lambda () (<= (swank::eval-in-emacs '(length (slime-rex-continuations)))
+		  #'(lambda () (<= (funcall 'swank::eval-in-emacs '(length (slime-rex-continuations)))
 				   1)))
   (format t "Exiting ~a~%" (funcall 'swank::eval-in-emacs '(length (slime-rex-continuations))))
-  (swank::eval-in-emacs '(slime-quit-specware)))
+  (funcall 'swank::eval-in-emacs '(slime-quit-specware)))
