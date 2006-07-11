@@ -165,4 +165,5 @@
          (input  (make-instance 'slime-input-stream
                                 :input-fn input-fn 
                                 :output-stream output)))
+    #+(and allegro mswindows) (setf (cl-user::eol-convention output) :unix)
     (values input output)))
