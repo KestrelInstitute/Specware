@@ -318,8 +318,8 @@
 					   (if common-lisp-image-file
 					       (list "-I" common-lisp-image-file)
 					     ())
-					   (if nil ;*windows-system-p*
-					       ("-ed" "(setf (eol-convention *standard-output*) :unix)")
+					   (if *windows-system-p*
+					       '("-e" "'(setf (eol-convention *standard-output*) :unix)'")
 					     ())))
 		     (gcl common-lisp-image-file) ; Don't use common-lisp-image-name
 		     (otherwise
