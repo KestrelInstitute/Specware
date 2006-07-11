@@ -312,7 +312,7 @@
 				(if (eq *specware-lisp* 'cmulisp)
 				    " -core " " --core ")
 				common-lisp-image-file)
-			common-lisp-image-name))
+			(list common-lisp-image-name)))
 		     (allegro (concatenate 'list
 					   common-lisp-image-arguments
 					   (if common-lisp-image-file

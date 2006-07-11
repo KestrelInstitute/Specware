@@ -322,7 +322,7 @@ Full documentation will be available after autoloading the function."
 	  "\\)\\>"))
 
 (when specware-use-hide-show
-  (require 'hideshow)
+  (sw:load-specware-emacs-file "hideshow")
   (add-to-list 'hs-special-modes-alist
 	       `(specware-mode ,(concat "\\(\\s(\\|\\s-*proof\\>\\|"
 					sw:definition-intro-sexp
