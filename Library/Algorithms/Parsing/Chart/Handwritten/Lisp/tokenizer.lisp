@@ -1208,7 +1208,7 @@
 		       (end        (- (length pragma-chars) (length postfix)))
 		       (body-chars (subseq (nreverse pragma-chars) start end))
 		       (body       (coerce body-chars 'string)))
-		  (return-values :PRAGMA (list prefix body postfix))))))
+		  (return-values-using-prior-last :PRAGMA (list prefix body postfix))))))
        ;;
        ;; ========================================
        ))))
