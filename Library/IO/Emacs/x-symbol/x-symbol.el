@@ -2925,11 +2925,16 @@ sequence starting with the current one.  See `x-symbol-temp-help'."
 	    (setq fonts1 nil)
 	  (setq fonts1 (cdr fonts1))))
       (unless (or result (null raise))
-	(lwarn 'x-symbol 'warning
-	  "Cannot find font in %s"
-	  (mapconcat (lambda (f) (x-symbol-try-font-name-0 f raise))
-		     fonts
-		     ", ")))
+	(unless ;; this test is a hack by jlm to avoid nuisance warnings...
+	    (member fonts '(("-xsymb-xsymb0%s-medium-r-normal--%d-%d0-75-75-p-*-adobe-fontspecific" "-adobe-symbol%s-medium-r-normal-*-*-%d0-*-*-*-*-adobe-fontspecific")
+			    ("-xsymb-xsymb0%s-medium-r-normal--%d-%d0-75-75-p-*-adobe-fontspecific" "-adobe-symbol%s-medium-r-normal-*-*-%d0-*-*-*-*-adobe-fontspecific")
+			    ("-adobe-helvetica%s-medium-r-normal-*-%d-*-*-*-*-*-iso8859-1")
+			    ("-adobe-helvetica%s-medium-r-normal-*-%d-*-*-*-*-*-iso8859-1")))
+	  (lwarn 'x-symbol 'warning
+	    "Cannot find font in %s: %S"
+	    (mapconcat (lambda (f) (x-symbol-try-font-name-0 f raise))
+		       fonts
+		       ", "))))
       result)))
 
 (defun x-symbol-set-cstrings (charsym coding cstring fchar face)
@@ -3180,10 +3185,16 @@ electric.  Default prefixes are provided, though."
 	 new-charsyms)
     (unless faces
       (when fonts
-	(warn (if (and coding force-use)
-		  "X-Symbol characters with registry %S will look strange"
-		"X-Symbol characters with registry %S are not used")
-	      (x-symbol-cset-registry cset))))
+	(unless ;; this test is a hack by jlm to avoid nuisance warnings...
+	    (member (caaar cset) '("iso8859-2" 
+				   "iso8859-3" 
+				   "iso8859-9" 
+				   "iso8859-15" 
+				   "xsymb-xsymb1"))
+	  (warn (if (and coding force-use)
+		    "X-Symbol characters with registry %S will look strange"
+		  "X-Symbol characters with registry %S are not used")
+		(x-symbol-cset-registry cset)))))
     (dolist (entry table)
       (let ((charsym (car entry))
 	    definition)
