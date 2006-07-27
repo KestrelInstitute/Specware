@@ -197,18 +197,18 @@ spec
 
   op printRECUPDATERExpression:
      Fields * ExtTypes * Fields * ExtTypes * Fields * ExtTypes -> String
-  def printRECUPDATERExpression(fs1, ts1, fs2, ts2, fs3, ts3) =
+  def printRECUPDATERExpression _(* fs1, ts1, fs2, ts2, fs3, ts3 *) =
     "RECUPDATER"
 
   op printRECUPDATEExpression:
      Fields * ExtTypes * Fields * ExtTypes * Fields * ExtTypes *
      ExtExpression * ExtExpression -> String
-  def printRECUPDATEExpression(fs1, ts1, fs2, s2, fs3, ts3, e1, e2) =
+  def printRECUPDATEExpression _(* fs1, ts1, fs2, s2, fs3, ts3, e1, e2 *) =
     "RECUPDATE"
 
   op printLETSIMPExpression:
      ExtType * Variable * ExtType * ExtExpression * ExtExpression -> String
-  def printLETSIMPExpression(t1, v, t2, e1, e2) =
+  def printLETSIMPExpression _(* t1, v, t2, e1, e2 *) =
     "LETSIMP"
 
   op printCONDExpression: ExtType * ExtBindingBranches -> String
@@ -225,18 +225,18 @@ spec
 
   op printCASEExpression:
      ExtType * ExtType * ExtExpression * ExtBindingBranches -> String
-  def printCASEExpression(t1, t2, e, bbs) =
+  def printCASEExpression _(* t1, t2, e, bbs *) =
     "CASE"
 
   op printLETExpression:
      ExtType * ExtType * Variables * ExtTypes *
      ExtExpression * ExtExpression * ExtExpression -> String
-  def printLETExpression(t1, t2, vs, ts, e1, e2, e3) =
+  def printLETExpression _(* t1, t2, vs, ts, e1, e2, e3 *) =
     "LET"
                  
   op printLETDEFExpression:
      ExtType * Variables * ExtTypes * ExtExpressions * ExtExpression -> String
-  def printLETDEFExpression(t, vs, ts, e1, e2) =
+  def printLETDEFExpression _(* t, vs, ts, e1, e2 *) =
     "LETDEF"
 
   def printExpression(e) =
