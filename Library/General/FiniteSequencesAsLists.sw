@@ -294,7 +294,7 @@ FSeq qualifying spec
             | first::rest -> if first = x then Some rest
                              else (case removeOne (x, rest) of
                                      | None -> None
-                                     | Some rest1 -> Some (cons (x, rest1)))
+                                     | Some rest1 -> Some (cons (first, rest1)))
     in
     case s1 of
       | [] -> s2 = nil
