@@ -290,7 +290,7 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?\-      "w"     specware-mode-syntax-table)
   (modify-syntax-entry ?\?      "w"     specware-mode-syntax-table))
 
-(defcustom specware-use-x-symbol t
+(defcustom specware-use-x-symbol nil
   "If non-nil use x-symbol package with Specware")
 
 ;;; Hide-show support
@@ -343,16 +343,18 @@ other hooks, such as major mode hooks, can do the job."
 
   (setq hs-minor-mode-map nil)		; Force resetting in case of old version
   (sw:load-specware-emacs-file "hideshow")
+  (setq hs-allow-nesting t)
   (add-to-list 'hs-special-modes-alist
 	       `(specware-mode ,(concat "\\(\\s(\\|\\s-*proof\\>\\|"
 					sw:definition-intro-sexp
 					"\\|"
 					sw:basic-unit-intro-regexp
+					"\\|%{{{"
 					"\\)")
-                               "\\(\\s)\\|\\<end-proof\\|\\<end-?spec\\)"
+                               "\\(\\s)\\|\\<end-proof\\|\\<end-?spec\\|%}}}\\)"
 			       nil
 			       sw:forward-exp
-			       nil   ; sw:adjust-begin
+			       sw:adjust-begin
 			       )))
 
 (defun sw:forward-exp (n)
@@ -386,7 +388,28 @@ other hooks, such as major mode hooks, can do the job."
 		       (progn (beginning-of-line))
 		     (end-of-buffer))
 		   (forward-comment -100)) ; Go backward until non-comment found
-	  (forward-sexp n))))))
+	  (if (looking-at hs-marker-begin-regexp)
+	      (sw:scan-matching-patterns "%{{{" "\\(%{{{\\|%}}}\\)")
+	    (if (looking-at "(\\*")
+		(sw:scan-matching-patterns "(\\*" "\\((\\*\\|\\*)\\)")
+	      (let ((parse-sexp-ignore-comments t))
+		(forward-sexp n)))))))))
+
+(defun sw:scan-matching-patterns (beg beg-end)
+  (let ((beg-marker (re-search-forward beg nil t)))
+    (if (null beg-marker)
+	(warn "No region marker")
+      (sw:scan-to-end-matching-patterns beg beg-end))))
+
+(defun sw:scan-to-end-matching-patterns (beg beg-end)
+  (let ((next-marker (re-search-forward beg-end nil t)))
+    (if (null next-marker)
+	(warn "Unmatched marker")
+      (progn (goto-char (match-beginning 0))
+	     (if (looking-at beg)
+		 (progn (sw:scan-matching-patterns beg beg-end)
+			(sw:scan-to-end-matching-patterns beg beg-end))
+	       (goto-char (match-end 0)))))))
 
 (defun sw:adjust-begin (n)
   (point))
@@ -447,8 +470,10 @@ Mode map
   (easy-menu-add specware-mode-menu)
   (if specware-use-x-symbol
       (x-symbol-mode t))
-  (if specware-use-hide-show
-      (hs-minor-mode t))
+  (when specware-use-hide-show
+    (hs-minor-mode t)
+    (setq hs-marker-begin-regexp "\\s-*%{{{")
+    (setq hs-marker-end-regexp "\\s-*%}}}"))
   (run-hooks 'specware-mode-hook))           ; Run the hook
 
 (defvar specware-mode-abbrev-table nil "*Specware mode abbrev table (default nil)")
@@ -484,7 +509,7 @@ Mode map
   ;; white-space.
   ;; 
   ;;(make-local-variable 'parse-sexp-ignore-comments)
-  ;;(setq parse-sexp-ignore-comments t)
+  (setq parse-sexp-ignore-comments t)
   )
 
 (defun specware-font-lock-fontify-region-function (beg end &optional loudvar)
