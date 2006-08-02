@@ -341,6 +341,12 @@ Use the command `hs-minor-mode' to toggle or set this variable.")
 Differs from mode-specific comment regexps in that
 surrounding whitespace is stripped.")
 
+(defvar hs-marker-begin-regexp nil
+  "Regexp for beginning of marker.")
+
+(defvar hs-marker-end-regexp nil
+  "Regexp for beginning of marker.")
+
 (defvar hs-block-start-regexp nil
   "Regexp for beginning of block.")
 
@@ -620,6 +626,12 @@ as cdr."
           (when (>= (point) q)
             (list (and hidable p) (point))))))))
 
+(defun hs-on-marker-line ()
+  (and hs-marker-begin-regexp
+       (save-excursion
+	 (beginning-of-line)
+	 (looking-at hs-marker-begin-regexp))))
+
 (defun hs-grok-mode-type ()
   "Set up hideshow variables for new buffers.
 If `hs-special-modes-alist' has information associated with the
@@ -662,39 +674,51 @@ Return point, or nil if original point was not in a block."
 	     (not (looking-at "\\<")))
 	(forward-word -1))
     ;; look if current line is block start
-    (if (looking-at hs-block-start-regexp)
-        (point)
-      ;; look backward for the start of a block that contains the end of the line
-      (progn (end-of-line)
-	     (let ((start (point))) 
-	       (while (and (re-search-backward hs-block-start-regexp nil t)
-			   (not (setq done
-				      (< start (save-excursion
-						 (hs-forward-sexp (hs-match-data t) 1)
-						 (point)))))))))
-      (if done
-          (point)
-        (goto-char here)
-        nil))))
+    (if (hs-on-marker-line)
+	(progn (beginning-of-line)
+	       (skip-chars-forward " \t")
+	       (point))
+      (if (looking-at hs-block-start-regexp)
+	  (point)
+	;; look backward for the start of a block that contains the end of the line
+	(progn (end-of-line)
+	       (let ((start (point))) 
+		 (while (and (re-search-backward hs-block-start-regexp nil t)
+			     (not (setq done
+					(< start (save-excursion
+						   (hs-forward-sexp (hs-match-data t) 1)
+						   (point)))))))))
+	(if done
+	    (point)
+	  (goto-char here)
+	  nil)))))
 
 (defun hs-hide-level-recursive (arg minp maxp)
   "Recursively hide blocks ARG levels below point in region (MINP MAXP)."
   (when (hs-find-block-beginning)
-    (setq minp (1+ (point)))
+    (setq minp (hs-next-line))
     (funcall hs-forward-sexp-func 1)
     (setq maxp (1- (point))))
   (unless hs-allow-nesting
     (hs-discard-overlays minp maxp))
   (goto-char minp)
   (while (progn
-           (forward-comment (buffer-size))
+           (unless t ;(hs-on-marker-line)
+	     (forward-comment (buffer-size)))
            (and (< (point) maxp)
                 (re-search-forward hs-block-start-regexp maxp t)))
+    (goto-char (match-beginning hs-block-start-mdata-select))
     (if (> arg 1)
         (hs-hide-level-recursive (1- arg) minp maxp)
-      (goto-char (match-beginning hs-block-start-mdata-select))
+      ;(goto-char (match-beginning hs-block-start-mdata-select))
       (hs-hide-block-at-point t)))
   (goto-char maxp))
+
+(defun hs-next-line ()
+  (save-excursion
+    (forward-line 1)
+    (beginning-of-line)
+    (point)))
 
 (defmacro hs-life-goes-on (&rest body)
   "Evaluate BODY forms iff variable `hs-minor-mode' is non-nil.
@@ -719,7 +743,8 @@ and `case-fold-search' are both t."
 (defun hs-already-hidden-p ()
   "Return non-nil if point is in an already-hidden block, otherwise nil."
   (save-excursion
-    (let ((c-reg (hs-inside-comment-p)))
+    (let ((c-reg (and (not (hs-on-marker-line))
+		      (hs-inside-comment-p))))
       (if (and c-reg (nth 0 c-reg))
           ;; point is inside a comment, and that comment is hidable
           (goto-char (nth 0 c-reg))
@@ -803,7 +828,12 @@ Upon completion, point is repositioned and the normal hook
 `hs-hide-hook' is run.  See documentation for `run-hooks'."
   (interactive "P")
   (hs-life-goes-on
-   (let ((c-reg (hs-inside-comment-p)))
+   (let* ((on-marker-line? (hs-on-marker-line))
+	  (c-reg (and (not on-marker-line?)
+		     (hs-inside-comment-p))))
+     (when on-marker-line?
+       (beginning-of-line)
+       (skip-chars-forward " \t"))
      (cond
       ((and c-reg (or (null (nth 0 c-reg))
                       (<= (count-lines (car c-reg) (nth 1 c-reg)) 1)))
@@ -856,7 +886,8 @@ The hook `hs-hide-hook' is run; see `run-hooks'."
   (hs-life-goes-on
    (save-excursion
      (message "Hiding blocks ...")
-     (hs-hide-level-recursive arg (point-min) (point-max))
+     (hs-find-block-beginning)
+     (hs-hide-level-recursive arg (point) (save-excursion (funcall hs-forward-sexp-func 1)))
      (message "Hiding blocks ... done"))
    (run-hooks 'hs-hide-hook)))
 
@@ -964,6 +995,8 @@ Key bindings:
 ;; make some variables permanently buffer-local
 (dolist (var '(hs-minor-mode
                hs-c-start-regexp
+	       hs-marker-begin-regexp
+	       hs-marker-end-regexp
                hs-block-start-regexp
                hs-block-start-mdata-select
                hs-block-end-regexp
