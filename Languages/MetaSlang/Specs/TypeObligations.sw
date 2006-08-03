@@ -262,6 +262,11 @@ spec
           let tcc = (tcc,gamma) |- body ?? boolSort  in
           let tcc = <= (tcc,gamma,M,boolSort,tau)    in
 	  tcc
+	| The(v as (_,srt),body,_) ->
+	  let gamma = insert (v,gamma) in
+	  let tcc = (tcc,gamma) |- body ?? boolSort  in
+          let tcc = <= (tcc,gamma,M,srt,tau)         in
+	  tcc
         | Let(decls,body,_)    ->
 	  let (tcc,gamma) =
 	       foldl (fn ((pat,t),(tcc,ngamma)) ->
@@ -700,23 +705,23 @@ spec
 	      tcc
 	   else
            addFailure(tcc,
-		    gamma,
-		    printSort tau^
-		    " could not be made subsort of "^
-		    printSort sigma)
+		      gamma,
+		      printSort tau^
+		      " could not be made subsort of "^
+		      printSort sigma)
         | (Boolean(_), Boolean(_)) -> tcc
 	| (Boolean(_), _) ->
            addFailure(tcc,
-		    gamma,
-		    printSort tau^
-		    " could not be made subsort of "^
-		    printSort sigma)
+		      gamma,
+		      printSort tau^
+		      " could not be made subsort of "^
+		      printSort sigma)
 	| (_, Boolean(_)) ->
            addFailure(tcc,
-		    gamma,
-		    printSort tau^
-		    " could not be made subsort of "^
-		    printSort sigma)
+		      gamma,
+		      printSort tau^
+		      " could not be made subsort of "^
+		      printSort sigma)
 
  op  equivalenceConjectures: MS.Term * Spec -> SpecElements
  def equivalenceConjectures (r,spc) =

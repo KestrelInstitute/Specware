@@ -81,8 +81,8 @@ Utilities qualifying spec
 				   or 
 				   isFree(v,M)) 
      | Bind(b,vars,M,_)       -> all (fn w -> ~(v = w)) vars 
-			          & 
-			          isFree(v,M)
+			          && isFree(v,M)
+     | The(w,M,_)              -> ~(v = w) && isFree(v,M)
      | IfThenElse(t1,t2,t3,_) -> isFree(v,t1) or 
 			          isFree(v,t2) or 
 				  isFree(v,t3)
