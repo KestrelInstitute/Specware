@@ -1477,6 +1477,8 @@ AnnSpecPrinter qualifying spec
 	    else
 	      Cons ((0, string (" %% " ^ str)),
 		    ppResult))
+	 | Pragma(str1,str2,str3,_) \_rightarrow
+	   (index+1,[(0, string(str1 ^ str2 ^ str3))])
 
      def aux(elements,afterOp?,result) =
          case elements of
