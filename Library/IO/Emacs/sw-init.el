@@ -97,11 +97,14 @@
       (wait-for-prompt 0.1)
       (sw:eval-in-lisp-no-value
        (format "(cl:namestring (specware::change-directory %S))" sw:common-lisp-directory))
-      (unless (eq lisp-emacs-interface-type 'slime)
-	(let ((init-form (or (getenv "SPECWARE_INIT_FORM") "(swshell::specware-shell nil)")))
-	  (goto-char (point-max))
-	  (simulate-input-expression init-form)
-	  (sleep-for 0.1))))))
+      (let ((init-form (or (getenv "SPECWARE_INIT_FORM")
+			   "(swshell::specware-shell nil)")))
+	(goto-char (point-max))
+	(if (eq lisp-emacs-interface-type 'slime)
+	    (when (getenv "SPECWARE_INIT_FORM")
+	      (sw:eval-in-lisp-no-value init-form))
+	  (simulate-input-expression init-form))
+	(sleep-for 0.1)))))
 
 (defun binary-directory (specware-dir)
   (concat specware-dir
