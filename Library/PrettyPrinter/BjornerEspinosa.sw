@@ -43,17 +43,16 @@ PrettyPrint qualifying spec {
 
   import /Library/Legacy/Utilities/IO
   import /Library/Legacy/DataStructures/StringUtilities
-  % import List
 
   %% ========================================================================
   %%%% Interface
 
-  sort NatStrings = List (Nat * String)
-  sort Text  = List (Nat * NatStrings)
-  sort Pretty = Nat * (Nat * Text -> Text)
-  sort Line  = Nat * Pretty
-  sort Lines = List (Line)
-  sort Prettys = List (Pretty)
+  type NatStrings = List (Nat * String)
+  type Text  = List (Nat * NatStrings)
+  type Pretty = Nat * (Nat * Text -> Text)
+  type Line  = Nat * Pretty
+  type Lines = List (Line)
+  type Prettys = List (Pretty)
 
   %% ========================================================================
 
@@ -92,7 +91,7 @@ PrettyPrint qualifying spec {
   %% Length of last line in text.
 
   def lengthStrings (strings : NatStrings) : Nat =
-    foldr (fn ((l,s), n) -> n + l) 0 strings
+    foldl (fn ((l,s), n) -> n + l) 0 strings
 
   def lengthLast (t : Text) : Nat =
     case t
@@ -327,8 +326,8 @@ PrettyPrint qualifying spec {
 % The structure of these are recorded in a PathStack
 % that is returned by the function call.
 %
-   sort PathTree = String * Nat * Nat * Boolean * List PathTree
-   sort PathStack = List PathTree
+   type PathTree = String * Nat * Nat * Boolean * List PathTree
+   type PathStack = List PathTree
 
    op markPretty : Nat * Pretty -> Pretty
    def markPretty(uniqueId,p) = 
@@ -555,7 +554,7 @@ PrettyPrint qualifying spec {
 
   %%% For compatibility:
 
-  sort Style = | None | All | Linear | Fill 
+  type Style = | None | All | Linear | Fill 
 
   def block (style : Style, newlines : Nat, lines : Lines) : Pretty =
     case style
