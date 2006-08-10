@@ -17,7 +17,7 @@
 	(net.xml-rpc:export-standard-xml-rpc-methods *xml-rpc-server-id*))))
 )
 
-#+openmcl
+#+(or cmu openmcl)
 (progn
   (defpackage :s-xml)
   (defpackage :s-xml-rpc)
