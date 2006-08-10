@@ -9,7 +9,16 @@ for the usual Wadler Lindig version.
 WadlerLindig qualifying spec
   import /Library/Legacy/Utilities/IO
 
-  sort Pretty = Doc
+  type Doc =
+    | DocNil
+    | DocCons (Doc * Doc)
+    | DocText String
+    | DocNest (Integer * Doc)   % Offset relative to current column
+    | DocIndent (Integer * Doc) % Offset absolute (from left)
+    | DocNewline
+    | DocBreak String
+    | DocGroup Doc
+   type Pretty = Doc
 
 %   op layout : Doc -> Doc -> Nat -> Nat -> List String
 %   def layout doc rest column indent =
@@ -40,22 +49,6 @@ WadlerLindig qualifying spec
     else
       ""
 
-%%     let
-%%       def spacesAux n stream =
-%%         if n <= 0 then
-%%           stream
-%%         else
-%%           spacesAux (n - 1) (Cons (" ", stream))
-%%     in
-% concatList (spacesAux n [])
-
-  % op spacesAux : Nat -> List String -> List String
-  % def spacesAux n stream =
-    % if n <= 0 then
-      % stream
-    % else
-      % spacesAux (n - 1) (Cons (" ", stream))
-
   % The following is a tail recursive version of the function "layout" defined above.
   % The functions spaces and aux would normally be defined within the scope of the "layout"
   % function, but doing so generates Lisp code that the ACL compiler fails to detect as
@@ -66,6 +59,7 @@ WadlerLindig qualifying spec
     case doc of
       | DocGroup d -> layout d rest column indent stream
       | DocText s -> layout rest DocNil (column + (length s)) indent (Cons (s, stream))
+      | DocNewline -> layout rest DocNil indent indent (Cons (spaces indent, Cons ("\n", stream)))
       | DocBreak s -> layout rest DocNil indent indent (Cons (spaces indent, Cons ("\n", stream)))
       | DocIndent (newIndent,doc) -> layout doc rest column newIndent stream
       | DocNest (n,innerDoc) ->
@@ -76,16 +70,7 @@ WadlerLindig qualifying spec
            stream
          else
            layout rest DocNil column indent stream
-
-  type Doc =
-    | DocNil
-    | DocCons (Doc * Doc)
-    | DocText String
-    | DocNest (Integer * Doc)   % Offset relative to current column
-    | DocIndent (Integer * Doc) % Offset absolute (from left)
-    | DocBreak String
-    | DocGroup Doc
-  
+ 
   op WadlerLindig.^  infixl 25  : Doc * Doc -> Doc
   def WadlerLindig.^ (x,y) = ppCons x y
 
@@ -147,7 +132,7 @@ WadlerLindig qualifying spec
       | (s::ss) -> ppCons s (ppConcat ss)
 
   op ppNewline : Doc
-  def ppNewline = ppBreak
+  def ppNewline = DocNewline
 
   op ppSep : Doc -> List Doc -> Doc
   def ppSep sep l = 
