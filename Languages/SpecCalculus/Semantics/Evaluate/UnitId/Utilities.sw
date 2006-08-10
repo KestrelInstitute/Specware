@@ -429,25 +429,47 @@ emacs interface functions.
                                      -> List (String * String) * List UnitId
   def findDefiningUIDforOpInContext (opId, unitId, globalContext, seenUIDs, rec?) =
     case evalPartial globalContext unitId of
-      | Some(Spec spc,_,depUIDs) ->
+      | Some(Spec spc,_,depUIDs,_) ->
         findDefiningUIDforOp (opId, spc, unitId,
 			      filter (fn uid -> ~(member(uid,seenUIDs))) depUIDs,
 			      globalContext, Cons(unitId,seenUIDs), rec?)
       | _ -> ([],seenUIDs)
 
-  op  findUnitIdforUnit: Value * GlobalContext -> Option UnitId
-  def findUnitIdforUnit (val, globalContext) =
-    foldMap (fn result -> fn unitId -> fn (vali,_,_) ->
+  op  getTermForUnitId: UnitId * GlobalContext -> Option SCTerm
+  def getTermForUnitId (unitId,globalContext) =
+    case evalPartial globalContext unitId of
+      | Some(_,_,_,term) -> Some term
+      | _ -> None
+
+  op  findUnitIdForUnit: Value * GlobalContext -> Option UnitId
+  def findUnitIdForUnit (val, globalContext) =
+    foldMap (fn result -> fn unitId -> fn (vali,_,_,_) ->
 	     case result of
 	       | Some _ -> result
 	       | None -> if val = vali then Some unitId else None)
+      None globalContext
+
+  op  findUnitIdTermForUnit: Value * GlobalContext -> Option (UnitId * SCTerm)
+  def findUnitIdTermForUnit (val, globalContext) =
+    foldMap (fn result -> fn unitId -> fn (vali,_,_,term) ->
+	     case result of
+	       | Some _ -> result
+	       | None -> if val = vali then Some (unitId,term) else None)
+      None globalContext
+
+  op  findDefiningTermForUnit: Value * GlobalContext -> Option SCTerm
+  def findDefiningTermForUnit (val, globalContext) =
+    foldMap (fn result -> fn unitId -> fn (vali,_,_,term) ->
+	     case result of
+	       | Some _ -> result
+	       | None -> if val = vali then Some (term) else None)
       None globalContext
 
   op  searchForDefiningUIDforOp: QualifiedId * GlobalContext * List UnitId * Boolean
                                 -> List (String * String)
   def searchForDefiningUIDforOp (opId, globalContext, seenUIDs, rec?) =
     %% Currently rec? is always false
-    foldMap (fn result -> fn unitId -> fn (val,_,depUIDs) ->
+    foldMap (fn result -> fn unitId -> fn (val,_,depUIDs,_) ->
 	     case result of
 	       | _::_ -> result		% After finding any stop looking
 	       | []   ->
@@ -519,7 +541,7 @@ emacs interface functions.
                                        -> List (String * String) * List UnitId
   def findDefiningUIDforSortInContext (sortId, unitId, globalContext, seenUIDs, rec?) =
     case evalPartial globalContext unitId of
-      | Some (Spec spc, _, depUIDs) ->
+      | Some (Spec spc, _, depUIDs,_) ->
         findDefiningUIDforSort (sortId, spc, unitId,
 				filter (fn uid -> ~(member(uid,seenUIDs))) depUIDs,
 				globalContext, Cons(unitId, seenUIDs), rec?)
@@ -527,7 +549,7 @@ emacs interface functions.
 
   op  searchForDefiningUIDforSort : QualifiedId * GlobalContext * List UnitId * Boolean -> List (String * String)
   def searchForDefiningUIDforSort (sortId, globalContext, seenUIDs, rec?) =
-    foldMap (fn result -> fn unitId -> fn (val, _, depUIDs) ->
+    foldMap (fn result -> fn unitId -> fn (val, _, depUIDs, _) ->
 	     case result of
 	       | _::_ -> result		% After finding any stop looking
 	       | []   ->

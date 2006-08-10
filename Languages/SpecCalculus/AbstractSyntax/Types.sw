@@ -26,8 +26,8 @@ SpecCalc qualifying spec
 
  type SCTerm = Term Position
 
- op valueOf    : fa (a) a * Position -> a
- op positionOf : fa (a) a * Position -> Position
+ op valueOf    : [a] a * Position -> a
+ op positionOf : [a] a * Position -> Position
 
  def valueOf    (value, _       ) = value
  def positionOf (_,     position) = position
@@ -179,7 +179,6 @@ SpecCalc qualifying spec
    %% The following are declarations that appear in a file or listed
    %% within a \verb+let+. As noted above, at present the identifiers
    %% bound by a let or listed in a file are unstructured.
-
 
  type PrismModeTerm a = 
    | Uniform      PrismSelection
@@ -358,40 +357,40 @@ SpecCalc qualifying spec
     d2m : Term a,
     c2m : Term a}
 
- op  mkSpecInterpRules  : fa (a) (Term a) * (Term a) * (Term a) * a -> SpecInterpRules a
+ op  mkSpecInterpRules  : [a] (Term a) * (Term a) * (Term a) * a -> SpecInterpRules a
  def mkSpecInterpRules (med, d2m, c2m, pos) = ({med = med, d2m = d2m, c2m = c2m}, pos)
 
  %% The following are invoked from the parser:
 
- op mkTerm        : fa (a) (Term a)                                                        * a -> SpecTerm a
- op mkDecls       : fa (a) (List (Decl a))                                                 * a -> SpecTerm a
+ op mkTerm        : [a] (Term a)                                                        * a -> SpecTerm a
+ op mkDecls       : [a] (List (Decl a))                                                 * a -> SpecTerm a
 
- op mkPrint       : fa (a) (Term a)                                                        * a -> Term a
- op mkProve       : fa (a) ClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar   * a -> Term a
- op mkProofCheck  : fa (a) PCClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * a -> Term a
- op mkUnitId      : fa (a) RelativeUID                                                     * a -> Term a
- op mkSpec        : fa (a) (List (SpecElem a))                                             * a -> Term a
- op mkDiag        : fa (a) (List (DiagElem a))                                             * a -> Term a
- op mkColimit     : fa (a) (Term a)                                                        * a -> Term a
- op mkSpecMorph   : fa (a) (Term a) * (Term a) * (List (SpecMorphRule a)) * (SM_Pragmas a) * a -> Term a
- op mkSpecInterp  : fa (a) (Term a) * (Term a) * (SpecInterpRules a)                       * a -> Term a
- op mkSpecPrism   : fa (a) (Term a) * (List (Term a)) * PrismModeTerm a                    * a -> Term a
- op mkDiagMorph   : fa (a) (Term a) * (Term a) * (List (DiagMorphRule a))                  * a -> Term a
- op mkExtendMorph : fa (a) (Term a)                                                        * a -> Term a
- op mkQualify     : fa (a) (Term a) * Name                                                 * a -> Term a
- op mkTranslate   : fa (a) (Term a) * Renaming                                             * a -> Term a
-%op mkRenaming    : fa (a) Renaming                                                        * a -> Term a
- op mkLet         : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
- op mkWhere       : fa (a) (List (Decl a)) * (Term a)                                      * a -> Term a
- op mkHide        : fa (a) (List (NameExpr a)) * (Term a)                                  * a -> Term a
- op mkExport      : fa (a) (List (NameExpr a)) * (Term a)                                  * a -> Term a
- op mkGenerate    : fa (a) String * (Term a) * (Option String)                             * a -> Term a
- op mkSubst       : fa (a) (Term a) * (Term a)                                             * a -> Term a
- op mkOpRefine    : fa (a) (Term a) * (List (SpecElem a))                                  * a -> Term a
- op mkObligations : fa (a) (Term a)                                                        * a -> Term a
- op mkExpand      : fa (a) (Term a)                                                        * a -> Term a
- op mkReduce      : fa (a) (ATerm a) * (Term a)                                            * a -> Term a
- op mkOther       : fa (a) (OtherTerm a)                                                   * a -> Term a
+ op mkPrint       : [a] (Term a)                                                        * a -> Term a
+ op mkProve       : [a] ClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar   * a -> Term a
+ op mkProofCheck  : [a] PCClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * a -> Term a
+ op mkUnitId      : [a] RelativeUID                                                     * a -> Term a
+ op mkSpec        : [a] (List (SpecElem a))                                             * a -> Term a
+ op mkDiag        : [a] (List (DiagElem a))                                             * a -> Term a
+ op mkColimit     : [a] (Term a)                                                        * a -> Term a
+ op mkSpecMorph   : [a] (Term a) * (Term a) * (List (SpecMorphRule a)) * (SM_Pragmas a) * a -> Term a
+ op mkSpecInterp  : [a] (Term a) * (Term a) * (SpecInterpRules a)                       * a -> Term a
+ op mkSpecPrism   : [a] (Term a) * (List (Term a)) * PrismModeTerm a                    * a -> Term a
+ op mkDiagMorph   : [a] (Term a) * (Term a) * (List (DiagMorphRule a))                  * a -> Term a
+ op mkExtendMorph : [a] (Term a)                                                        * a -> Term a
+ op mkQualify     : [a] (Term a) * Name                                                 * a -> Term a
+ op mkTranslate   : [a] (Term a) * Renaming                                             * a -> Term a
+%op mkRenaming    : [a] Renaming                                                        * a -> Term a
+ op mkLet         : [a] (List (Decl a)) * (Term a)                                      * a -> Term a
+ op mkWhere       : [a] (List (Decl a)) * (Term a)                                      * a -> Term a
+ op mkHide        : [a] (List (NameExpr a)) * (Term a)                                  * a -> Term a
+ op mkExport      : [a] (List (NameExpr a)) * (Term a)                                  * a -> Term a
+ op mkGenerate    : [a] String * (Term a) * (Option String)                             * a -> Term a
+ op mkSubst       : [a] (Term a) * (Term a)                                             * a -> Term a
+ op mkOpRefine    : [a] (Term a) * (List (SpecElem a))                                  * a -> Term a
+ op mkObligations : [a] (Term a)                                                        * a -> Term a
+ op mkExpand      : [a] (Term a)                                                        * a -> Term a
+ op mkReduce      : [a] (ATerm a) * (Term a)                                            * a -> Term a
+ op mkOther       : [a] (OtherTerm a)                                                   * a -> Term a
 
  %% SpecTerm's    
 

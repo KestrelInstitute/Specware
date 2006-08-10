@@ -73,7 +73,7 @@ SpecCalc qualifying spec
 	   dom.ops
     in
     let obligation_props = translated_dom_axioms ++ dom_definitions_not_in_cod in
-    let cod_tm = case findUnitIdforUnit(Spec cod,globalContext) of
+    let cod_tm = case findUnitIdForUnit(Spec cod,globalContext) of
 		   | Some unitId -> (UnitId (SpecPath_Relative unitId),pos)
 		   | _ -> 
                      %% TODO: determine real timestamp and dependencies

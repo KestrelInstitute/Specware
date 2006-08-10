@@ -56,7 +56,7 @@ These are called only from evaluateUID.
     let def searchForUID unitId =
           {optValue <- lookupInGlobalContext unitId;
 	   (case optValue of      
-	      | Some (value,timeStamp,_) ->
+	      | Some (value,timeStamp,_,_) ->
                 (case value of
 		   | InProcess -> raise (CircularDefinition unitId)
 		   | _ ->
@@ -67,10 +67,10 @@ These are called only from evaluateUID.
 			   | UnEvaluated term ->
 			     {saveUID <- getCurrentUID;
 			      setCurrentUID unitId;
-			      bindInGlobalContext unitId (InProcess,0,[]);
+			      bindInGlobalContext unitId (InProcess,0,[],term);
 			      (value,rTimeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
 			      setCurrentUID saveUID;
-			      let val = (value,max(timeStamp,rTimeStamp),depUIDs) in
+			      let val = (value,max(timeStamp,rTimeStamp),depUIDs,term) in
 			      {bindInGlobalContext unitId val;
 			       newval <- return (val.1, val.2, [unitId]);
 			       return (Some (newval,unitId))}}
@@ -113,14 +113,14 @@ These are called only from evaluateUID.
 	            {optValue <- lookupInGlobalContext unitId;
 		     % Either return found value or keep looking:
 		     case optValue of
-		     | Some (value,timeStamp,_)
+		     | Some (value,timeStamp,_,_)
 		       -> (case value of
 			     | UnEvaluated term ->
 			       {setCurrentUID unitId;
-				bindInGlobalContext unitId (InProcess,0,[]);
+				bindInGlobalContext unitId (InProcess,0,[],term);
 				(value,rTimeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
 				let timeStamp = max(timeStamp,rTimeStamp) in
-				let val = (value,timeStamp,depUIDs) in
+				let val = (value,timeStamp,depUIDs,term) in
 				{bindInGlobalContext unitId val;
 				 return (Some((value,timeStamp,[unitId]),unitId))}}
 			     | _ -> return (Some((value, timeStamp, [unitId]), unitId)))
@@ -351,9 +351,9 @@ handled correctly.
 		  %%   exception when it cannot find the unitId.
 		  return []
 		| _ -> 
-		  { bindInGlobalContext unitId (InProcess,0,[]);
+		  { bindInGlobalContext unitId (InProcess,0,[],term);
 		    (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
-		    bindInGlobalContext unitId (value, max(timeStamp,fileWriteTime fileName), depUIDs);
+		    bindInGlobalContext unitId (value, max(timeStamp,fileWriteTime fileName), depUIDs, term);
 		    return []
 		   })
 	   | Decls decls -> storeGlobalDecls unitId fileName decls)
@@ -364,7 +364,7 @@ handled correctly.
     let def storeGlobalDecl (name,term) =
 	  let newUID = {path=path,hashSuffix=Some name} in
 	  {setCurrentUID newUID;
-	   bindInGlobalContext newUID (UnEvaluated term,fileWriteTime fileName,[]);
+	   bindInGlobalContext newUID (UnEvaluated term,fileWriteTime fileName,[],term);
 	   return name}
     in {checkForMultipleDefs decls;
 	mapM storeGlobalDecl decls}
@@ -399,7 +399,7 @@ aren't are removed from the environment.
     {optValue <- lookupInGlobalContext unitId;
      case optValue of
        | None -> return futureTimeStamp   % Not in cache
-       | Some (_,timeStamp,depUIDs) ->
+       | Some (_,timeStamp,depUIDs,_) ->
          if member (unitId, depUIDs) then
 	   raise (CircularDefinition unitId)
 	 else      

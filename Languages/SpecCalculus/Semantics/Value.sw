@@ -4,11 +4,12 @@ SpecCalc qualifying spec
   import /Provers/Proof                                  % Proof
   import /Library/IO/Primitive/IO                        % Time
 
-  sort ValueInfo = Value * TimeStamp * UnitId_Dependency
+  type ValueInfo = Value * TimeStamp * UnitId_Dependency
+  type ValueTermInfo = Value * TimeStamp * UnitId_Dependency * SCTerm
 
   %% --------------------------------------------------------------------------------
 
-  sort Value =
+  type Value =
     | Spec        Spec
     | Morph       Morphism
    %| Renaming    Renaming 
@@ -22,7 +23,7 @@ SpecCalc qualifying spec
    %| DiagMorph
     | Other       OtherValue      % Used for extensions to Specware
 
-  sort OtherValue                % Used for extensions to Specware
+  type OtherValue                % Used for extensions to Specware
 
   %% tentative for prism...
   type SpecInterp = {dom : Spec,
@@ -41,7 +42,7 @@ SpecCalc qualifying spec
 
   %% --------------------------------------------------------------------------------
 
-  sort TimeStamp = Time               % In general, can be over 32 bits -- not a fixnum
+  type TimeStamp = Time               % In general, can be over 32 bits -- not a fixnum
 
   op  oldestTimeStamp : TimeStamp     % < than any recent TimeStamp -- perhaps never used
   def oldestTimeStamp = 0               
@@ -51,9 +52,9 @@ SpecCalc qualifying spec
 
   %% --------------------------------------------------------------------------------
 
-  sort UnitId_Dependency = List UnitId
+  type UnitId_Dependency = List UnitId
 
-  sort ValidatedUIDs     = List UnitId
+  type ValidatedUIDs     = List UnitId
 
   %% See validateCache in Evaluate/UnitId.sw -- it chases dependencies recursively,
   %% so we should not need to take unions of dependencies.

@@ -1,29 +1,27 @@
-\section{The Specware Environment}
+(* {The Specware Environment}
 
 The environment is the monadic context for the spec calculus interpreter. 
 The monad handles, state, (very primitive) IO, and exceptions. In principle,
 the datatype should be defined compositionally but this isn't supported as
 yet. In the meantime, the monad and the operations for dealing with it
 are described monolithically ... everything appears below. Ugh!
+*)
 
-\begin{spec}
 SpecCalc qualifying spec
   import ../AbstractSyntax/Types   
   import ../AbstractSyntax/Printer
   import Monad
 
-\end{spec}
-
+(*
 The Monad/Base spec supplies declarations of
-ths sort Monad and the operators monadSeq, monadBind and return. 
+ths type Monad and the operators monadSeq, monadBind and return. 
 
 All terms in the calculus have a value.  A value is a specification, a
 diagram, morphism etc.  We combine them with a coproduct.
+*)
+  type Info
 
-\begin{spec}
-  sort Info
-\end{spec}
-
+(*
 The interpreter maintains state.  The state of the interpreter includes
 two maps assigning a value to a UnitId. We call these \emph{name contexts}
 (but some thought should go into the nomenclature for contexts,
@@ -50,17 +48,16 @@ function file-write-date. UnitId_Dependency are the UIDs that a value
 depends on. ValueInfo is a value plus its UnitId_Dependency and a
 TimeStamp that is latest of the TimeStamps of the files of its
 UnitId_Dependency.
+*)
 
-\begin{spec}
-
-  sort GlobalContext = PolyMap.Map (UnitId, ValueInfo)
-  sort LocalContext  = PolyMap.Map (RelativeUID, ValueInfo)
-  % sort State = GlobalContext * LocalContext * Option UnitId * ValidatedUIDs
+  type GlobalContext = PolyMap.Map (UnitId, ValueTermInfo)
+  type LocalContext  = PolyMap.Map (RelativeUID, ValueTermInfo)
+  % type State = GlobalContext * LocalContext * Option UnitId * ValidatedUIDs
 
   %% ppValueInfo uses Printer, which uses Types,
   %% so this can't easily be defined in Types.sw
-  op ppValueInfo : ValueInfo -> Doc
-  def ppValueInfo (value,timeStamp,depUIDs) =
+  op ppValueInfo : ValueTermInfo -> Doc
+  def ppValueInfo (value,timeStamp,depUIDs,_) =
     ppConcat([ppString "[Value: ",
 	      ppValue value,
 	      ppString "]",
@@ -80,9 +77,9 @@ UnitId_Dependency.
 	     ++
 	     [ppString "]"])
 
-\end{spec}
+(*
 
-\begin{spec}
+*)
   op initGlobalVars : ()
   def initGlobalVars =
     run {
@@ -207,13 +204,13 @@ UnitId_Dependency.
   op getGlobalContect : Env GlobalContext
   def getGlobalContext = readGlobalVar "GlobalContext"
 
-  op bindInGlobalContext : UnitId -> ValueInfo -> Env ()
+  op bindInGlobalContext : UnitId -> ValueTermInfo -> Env ()
   def bindInGlobalContext unitId value = {
       globalContext <- getGlobalContext;
       setGlobalContext (update globalContext unitId value)
     }
 
-  op lookupInGlobalContext : UnitId -> Env (Option ValueInfo)
+  op lookupInGlobalContext : UnitId -> Env (Option ValueTermInfo)
   def lookupInGlobalContext unitId = {
       globalContext <- getGlobalContext;
       return (evalPartial globalContext unitId)
@@ -231,18 +228,18 @@ UnitId_Dependency.
      if ~ lastCommandAborted? then return ()
      else
        { gCtxt <- getGlobalContext;
-	 setGlobalContext (mapPartial (fn x as (val,_,_) ->
+	 setGlobalContext (mapPartial (fn x as (val,_,_,_) ->
 				       case val of
 					 | InProcess -> None
 					 | _ -> Some x)
 		           gCtxt)
        };
      writeGlobalVar("CommandInProgress?",true)}
-\end{spec}
+(*
 
 The local context is where "let" bindings are deposied
 
-\begin{spec}
+*)
   op bindInLocalContext : RelativeUID -> ValueInfo -> Env ()
   def bindInLocalContext relative_uid value = {
       localContext <- readGlobalVar "LocalContext";
@@ -266,13 +263,13 @@ The local context is where "let" bindings are deposied
       str <- showLocalContext;
       print ("local context: " ^ str ^ "\n")
     }
-\end{spec}
+(*
 
 When evaluating new locally scoped bindings, we need to be able to
 retrieve the local context and restore it later. Also, when we evaluate
 a new UnitId, we must abandon the local context in the UnitId.
 
-\begin{spec}
+*)
   op getLocalContext : Env LocalContext
   def getLocalContext = readGlobalVar "LocalContext"
 
@@ -281,12 +278,12 @@ a new UnitId, we must abandon the local context in the UnitId.
 
   op clearLocalContext : Env ()
   def clearLocalContext = setLocalContext emptyMap
-\end{spec}
+(*
 
 The corresponding retrieve and set the current UnitId. They are duplicated
 while there is a transition from names with "UnitId" to "UnitId".
 
-\begin{spec}
+*)
   op getCurrentUID : Env UnitId
   def getCurrentUID = getCurrentUnitId
 
@@ -368,12 +365,12 @@ while there is a transition from names with "UnitId" to "UnitId".
 	    | Some pcs -> Some (cons (pc << {n = 0}, pcs))
 	    | None -> None
 
-\end{spec}
+(*
 
 I'm not sure the following is necessary. It is called at the start of
 the toplevel functions. 
 
-\begin{spec}
+*)
   op resetGlobals : Env ()
   def resetGlobals =
       % writeGlobalVar ("LocalContext", PolyMap.emptyMap);
@@ -381,4 +378,4 @@ the toplevel functions.
       % writeGlobalVar ("PrismChoices", []);
       writeGlobalVar ("ValidatedUnitIds",[])
 endspec
-\end{spec}
+

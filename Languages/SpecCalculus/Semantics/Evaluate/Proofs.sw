@@ -36,7 +36,7 @@ spec
 
  op scTermFromScTerm: Value * SCTerm * GlobalContext * Option UnitId * List UnitId * Boolean -> SCTerm
  def scTermFromScTerm(v, scTerm, globalContext, fileUID, swpath, fromObligations?) =
-   case findUnitIdforUnit(v, globalContext) of
+   case findUnitIdForUnit(v, globalContext) of
      | Some specFullUId ->
      let specUId = relativeUidToUidAndSWPATH(specFullUId, fileUID, swpath) in
      if fromObligations?
@@ -371,6 +371,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.27  2005/08/05 02:04:40  mcdonald
+%% show proof file name
+%%
 %% Revision 1.26  2005/04/01 21:43:24  gilham
 %% Changed evaluateProve to support OtherValues in addition to Specs.
 %% Fixed a problem with invalid file names for proof files.
