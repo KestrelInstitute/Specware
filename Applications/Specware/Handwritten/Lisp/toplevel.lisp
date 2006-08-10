@@ -502,7 +502,7 @@
 	 (input-line-num 2)
 	 parsed-ok?
 	 value)
-    (declare (special SpecCalc::noElaboratingMessageFiles))
+    (declare (special SpecCalc::noElaboratingMessageFiles TypeChecker::complainAboutImplcitPolymorphicOps?))
     ;; clear any old values or function definitions:
     (makunbound  'swe::tmp)
     (fmakunbound 'swe::tmp)
@@ -1137,8 +1137,9 @@
   (sw-help command))
 
 #+(or sbcl cmu)
-(defun cl::commandp (form)
-  (keywordp form))
+(without-package-locks
+ (defun cl::commandp (form)
+   (keywordp form)))
 
 (defun invoke-command-interactive (command)
   (let ((fn (intern (symbol-name command) (find-package "CL-USER")))
@@ -1151,8 +1152,8 @@
     ;; To avoid this problem, scripts should put spaces after :pwd, etc.
     (when ch
       (unread-char ch))
-    (if (or (null ch)          ; interactive, end of command
-	    (eq ch #\Newline)) ; batch, first char after whitespace is newline      
+    (if (or (null ch)			; interactive, end of command
+	    (eq ch #\Newline))		; batch, first char after whitespace is newline      
 	(if (fboundp fn)
 	    (funcall fn)
 	  (progn (warn "Unknown command ~s" command)
@@ -1164,8 +1165,9 @@
 	       (values))))))
 
 #+(or cmu mcl sbcl)
-(defun cl::invoke-command-interactive (command)
-  (invoke-command-interactive command))
+(without-package-locks
+ (defun cl::invoke-command-interactive (command)
+   (invoke-command-interactive command)))
 
 #+mcl
 (let ((ccl::*warn-if-redefine-kernel* nil))

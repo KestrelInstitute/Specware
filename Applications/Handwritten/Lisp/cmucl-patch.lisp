@@ -1,6 +1,6 @@
 (in-package "LISP")
 
-(#+sbcl sb-ext:without-package-locks #-sbcl progn
+(specware::without-package-locks
 
 (defun eval (original-exp)
   "Evaluates its single arg in a null lexical environment, returns the
