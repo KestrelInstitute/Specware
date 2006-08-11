@@ -8,10 +8,6 @@ We postulate the existence of an infinite set of names
 \Nam
 \]
 
-%We assume that $\Nam$ contains a distinguished name $\projnam{i}$ for every
-%positive natural $i\in\NP$, such that $\projnam{i}\neq\projnam{j}$ if $i\neq
-%j$ and such that $\Nam-\setST{\projnam{i}}{i\in\NP}$ is still infinite.
-
 \subsection{Types}
 
 We inductively define the set of types as
@@ -24,11 +20,7 @@ We inductively define the set of types as
  {\setST{\tinstO}{\tnam\in\Nam\AND\typS\in\Seq{\Typ}}}
  {\setST{\tarr{\typ_1}{\typ_2}}{\typ_1,\typ_2\in\Typ}}
  {\setST{\trecFTO}{\fnamS\in\SeqNR{\Nam}\AND\typS\in\Seq{\Typ}}}
-% {\setST{\tsumFTO}{\cnamS\in\SeqNER{\Nam}\AND\typS\in\SeqNE{\Typ}}}
  {\setST{\tsubO}{\typ\in\Typ\AND\tspred\in\Expr}}
-%\setdefVIIIoII
-% {+}
-% {\setST{\tquotO}{\typ\in\Typ\AND\tqpred\in\Expr}}
 \]
 where $\Expr$ is defined later.\footnote{Types depend on expressions, which
 depend on types. Thus, types and expressions are inductively defined together,
@@ -48,7 +40,7 @@ just $\tnam$.
 \item
 An arrow type $\tarrO$ consists of a domain $\typ_1$ and a range $\typ_2$.
 \item
-Record types $\trecO$ consist of typed fields $\fnam_i$. There exists one
+A record type $\trecO$ consists of typed fields $\fnam_i$. There exists one
 record type that has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only
 inhabitant is the empty record. All the fields of a record type must be
 distinct names.
@@ -65,25 +57,13 @@ distinct names.
 %empty record as argument to $\cnam_i$ in expressions and patterns where
 %needed.
 \item
-Restriction types $\tsubO$ are obtained by combining types $\typ$ with
-expressions $\tspred$ (meant to be suitable predicates). Restriction types
+A restriction type $\tsubO$ is obtained by combining a type $\typ$ with an
+expression $\tspred$ (meant to be a predicate on $\typ$). Restriction types
 create the dependency of types on expressions. Restriction types as defined
 above also capture comprehension types as defined in \cite{lm}: as mentioned
 in \cite{lm}, a comprehension type can be turned into a restriction type by
 re-combining the pattern and expression into a lambda expression.
 \end{itemize}
-
-We introduce the abbreviation
-\[
-\begin{abblist}
-\abbitem{\tprodO}
-        {\trec{i}{\projnam{i}}{\typ_i}}
-\end{abblist}
-\]
-where each $\projnam{i}$ is a fixed but unspecified name in $\Nam$ such that
-$\projnam{i}\neq\projnam{j}$ if $i\neq j$. Thus, record types as defined above
-also capture product types as defined in \cite{lm}; the names $\projnam{i}$
-capture the natural literal fields used in \cite{lm}.
 
 \subsection{Expressions}
 
@@ -112,8 +92,8 @@ Explanation:
 A name $\var$ is a variable.
 \item
 An op(eration) instance $\opO$ consists of an op name $\onam$ and zero or more
-types $\typS$ that instantiate the (generally, polymorphic) type of the
-declared op. We may write $\op{\onam}{\seqO}$ as just $\onam$.
+types $\typS$ that instantiate the (generally, polymorphic) type of the op. We
+may write $\op{\onam}{\seqO}$ as just $\onam$.
 \item
 An application $\appO$ consists of a function $\expr_1$ juxtaposed to an
 argument $\expr_2$.

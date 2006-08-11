@@ -1,6 +1,20 @@
 \section{Other \MS\ constructs}
 \label{other}
 
+\subsection{Product types}
+
+We introduce the abbreviation
+\[
+\begin{abblist}
+\abbitem{\tprodO}
+        {\trec{i}{\projnam{i}}{\typ_i}}
+\end{abblist}
+\]
+where each $\projnam{i}$ is a fixed but unspecified name in $\Nam$ such that
+$\projnam{i}\neq\projnam{j}$ if $i\neq j$. This captures product types as defined
+in \cite{lm}; the names $\projnam{i}$ capture the natural literal fields used
+in \cite{lm}.
+
 \subsection{Records and tuples}
 
 A record constructor has the form
