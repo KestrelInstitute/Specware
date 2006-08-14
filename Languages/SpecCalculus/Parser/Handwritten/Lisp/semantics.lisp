@@ -975,9 +975,7 @@ If we want the precedence to be optional:
   (let ((pragmas (if (eq pragmas :unspecified)
 		     '()
 		   pragmas)))
-    (if (fboundp 'speccalc::mkSpecMorph-5)
-	(speccalc::mkSpecMorph-5 dom-sc-term cod-sc-term rules pragmas (make-pos l r))
-      (speccalc::mkSpecMorph-4 dom-sc-term cod-sc-term rules (make-pos l r)))))
+    (speccalc::mkSpecMorph-5 dom-sc-term cod-sc-term rules pragmas (make-pos l r))))
 
 ;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
 ;;;  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
