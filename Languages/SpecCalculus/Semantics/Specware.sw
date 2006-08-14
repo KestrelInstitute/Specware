@@ -517,10 +517,23 @@ than only at toplevel invocations?
 \begin{spec}
   op maybeAddSuffix : String -> String -> String
   def maybeAddSuffix path suffix =
-    if (List.member (#., explode path)) then
-      path
-    else
-      path ^ suffix
+    %% Scan for period from end of string back until
+    %% first slash is encountered.
+    case foldl (fn (char, result) ->
+	        case result of
+                  | Some _ -> result 
+                  | _ ->
+                    case char of
+                      | #.  -> Some true
+                      | #/  -> Some false
+                      | #\\ -> Some false
+                      | _ -> result)
+               None
+               (rev (explode path))
+     of
+      | Some true -> path
+      | _         -> path ^ suffix
+
 \end{spec}
 
 Eventually, this will be a read/eval/print loop for Specware.
