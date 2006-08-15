@@ -1137,7 +1137,7 @@
   (sw-help command))
 
 #+(or sbcl cmu)
-(without-package-locks
+(specware::without-package-locks
  (defun cl::commandp (form)
    (keywordp form)))
 
@@ -1165,7 +1165,7 @@
 	       (values))))))
 
 #+(or cmu mcl sbcl)
-(without-package-locks
+(specware::without-package-locks
  (defun cl::invoke-command-interactive (command)
    (invoke-command-interactive command)))
 

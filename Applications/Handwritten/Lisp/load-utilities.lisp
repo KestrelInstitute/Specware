@@ -411,13 +411,13 @@
     `(let ((cl-user::*redefinition-warnings* nil))
        ,@body)))
 
-(unless (fboundp 'define-compiler-macro)
+(unless (fboundp 'specware::define-compiler-macro)
   #+gcl
-  (defmacro define-compiler-macro (name vl &rest body)
+  (defmacro specware::define-compiler-macro (name vl &rest body)
     `(si::define-compiler-macro ,name ,vl,@ body)))
 
-(unless (fboundp 'without-package-locks)
-  (defmacro without-package-locks (&rest args)
+(unless (fboundp 'specware::without-package-locks)
+  (defmacro specware::without-package-locks (&rest args)
     #+cmu19 `(ext:without-package-locks ,@args)
     #+sbcl `(sb-ext:without-package-locks ,@args)
     #+allegro `(excl:without-package-locks ,@args)
