@@ -221,7 +221,6 @@
 
 ;(handler-bind ((warning #'ignore-warning))
   (map 'list #'(lambda (file)
-		 (list 33 file)
 		 (compile-and-load-lisp-file (in-specware-dir file)))
        SpecwareRuntime
        );)
