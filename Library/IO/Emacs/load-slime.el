@@ -1,5 +1,5 @@
 
-;; Load everything and use ilisp interface to lisp instead of Franz's
+;; Load everything and use slime interface to lisp instead of Franz's
 
 (defvar lisp-emacs-interface-type 'slime)
 
