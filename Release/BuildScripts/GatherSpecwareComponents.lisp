@@ -240,6 +240,7 @@
 	 (component-dir    (ensure-subdirs-exist release-dir "Components" "Emacs_Lib"))
 	 ;;
 	 (generic-dir      (ensure-subdir-exists component-dir "Generic"))
+	 (x-dir            (ensure-subdir-exists component-dir "x-symbol")) ; also generic
 	 (ilisp-dir        (ensure-subdir-exists component-dir "Ilisp"))
 	 (franz-dir        (ensure-subdir-exists component-dir "Franz"))
 	 (openmcl-dir      (ensure-subdir-exists component-dir "OpenMCL"))
@@ -247,6 +248,7 @@
 	 (generic-files    (append '("Preface.el"
 				     "files.el" 
 				     "compile.el"
+				     "hideshow.el"
 				     "specware_logo.xpm")
 				   (with-open-file (s (merge-pathnames source-dir "files.el"))
 				     (let ((form (read s)))
@@ -259,6 +261,7 @@
 						     names))
 					 (error "files.el does seem to contain the form ~A"
 						"(defconst sw:specware-emacs-files '(...))"))))))
+	 (generic-dirs     '("x-symbol")) 
 	 ;;
 	 (ilisp-dirs       '("ilisp"))
 	 (ilisp-files	   '("load-ilisp.el"
@@ -269,6 +272,7 @@
 	 (franz-files	   '("load.el"))
 	 ;;
 	 (openmcl-files    '("load-openmcl.el"))
+	 (openmcl-dirs     '())
 	 ;;
 	 (ignored-dirs     '("CVS"))
 	 (ignored-files    '(".cvsignore"
@@ -278,10 +282,11 @@
 			     "compile-misc-ilisp-files.elc"
 			     "compile-misc-ilisp-files-for-acl.elc"
 			     "load.elc"
-			     "load-openmcl.elc"))
+			     "load-openmcl.elc"
+			     "hideshow.elc"))
 	 ;;
 	 (all-files        (append generic-files ilisp-files franz-files openmcl-files ignored-files))
-	 (all-dirs         (append ilisp-dirs franz-dirs ignored-dirs))
+	 (all-dirs         (append generic-dirs  ilisp-dirs  franz-dirs  openmcl-dirs  ignored-dirs))
 	 )
 
     ;; Warnings about ignored files
@@ -300,6 +305,10 @@
     (dolist (file generic-files)
       (copy-dist-file (merge-pathnames source-dir  file)
 		      (merge-pathnames generic-dir file)))
+
+    ;; X symbols 
+    (copy-dist-directory (extend-directory source-dir "x-symbol")
+			 (extend-directory x-dir      "x-symbol"))
 
     ;; ILISP
 
