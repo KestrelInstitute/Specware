@@ -1,4 +1,5 @@
 @echo off
 
-start-in-xemacs-slime "%*"
+rem  Use slime interface (other options are xeli and ilisp).
+start-in-xemacs-slime %*
 
