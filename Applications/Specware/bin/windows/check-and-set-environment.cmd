@@ -1,9 +1,16 @@
 @echo off
 
-rem  Check that the needed environment variables are set:
-rem  In general, enclose filenames in double-quotes, since enviroment 
-rem  variables could expand to dirctories containing spaces, periods, 
-rem  and other nasty characters.
+rem  =============================================================
+rem  Check that the needed environment variables are set.
+rem
+rem  In general, we need to enclose filenames in double-quotes, 
+rem  since enviroment variables could expand to directories 
+rem  containing spaces, periods, and other nasty characters.
+rem
+rem  However, the exact format is crucial.
+rem  This format leads to disaster:  set FOO="%ABC%/xyz.lisp"  
+rem  This format works as expected:  set "FOO=%ABC%/xyz.lisp"  
+rem  =============================================================
 
 if "%SPECWARE4%"=="" (
   echo  Error: environment variable SPECWARE4 not set.
@@ -31,7 +38,7 @@ if "%ALLEGRO%"=="" (
 
 rem  Set additional environment variables that depend on the previous ones:
 
-if "%SWPATH%"=="" set SWPATH="C:/"
+if "%SWPATH%"=="" set "SWPATH=C:/"
 rem set SWPATH only if unset
 
 set "SPECWARE_BIN=%SPECWARE4%\Applications\Specware\bin\windows"
