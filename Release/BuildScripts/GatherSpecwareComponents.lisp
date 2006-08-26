@@ -248,7 +248,6 @@
 	 (slime-files      '("load-slime.el" 
 			     "load-slime.lisp" 
 			     "sw-slime.el" 
-			     "sw-slime.elc" 
 			     ))
 	 (x-files          '(;; "x-symbol-specware.el" is in files.el
 			     ))
@@ -292,7 +291,9 @@
 			     "load.elc"
 			     "load-ilisp.elc"
 			     "load-slime.elc"
-			     "load-openmcl.elc"))
+			     "load-openmcl.elc"
+			     "sw-slime.elc" 
+			     ))
 	 ;;
 	 (all-files        (append generic-files ilisp-files franz-files openmcl-files ignored-files))
 	 (all-dirs         (append generic-dirs  ilisp-dirs  franz-dirs  openmcl-dirs  ignored-dirs))
