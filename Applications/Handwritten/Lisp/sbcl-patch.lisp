@@ -1,15 +1,16 @@
 (in-package "SB-IMPL")
 
-(sb-ext:unlock-package "SB-IMPL")
-(sb-ext:unlock-package "SB-INT")
-(sb-ext:unlock-package "SB-EXT")
-(sb-ext:unlock-package "SB-C")
-(sb-ext:unlock-package "CL")
+;(sb-ext:unlock-package "SB-IMPL")
+;(sb-ext:unlock-package "SB-INT")
+;(sb-ext:unlock-package "SB-EXT")
+;(sb-ext:unlock-package "SB-C")
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (sb-ext:unlock-package "CL")
   (defparameter *default-package-use-list* '("CL")))
 
+(sb-ext:without-package-locks
 (defun %defpackage (name nicknames size shadows shadowing-imports
                     use imports interns exports implement lock doc-string
                     source-location)
@@ -265,3 +266,4 @@
     (cerror "Go on with * set to NIL."
             "EVAL returned an unbound marker."))
   (values-list /))
+)
