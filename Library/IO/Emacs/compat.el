@@ -289,7 +289,7 @@
       (allegro   t)
       (openmcl   t)
       (cmu       t)
-      (sbcl      nil)
+      (sbcl      t)
       (gcl       nil)
       (otherwise nil)))
   (defvar specware-listener-p nil)
@@ -308,9 +308,9 @@
 		   (case *specware-lisp*
 		     ((cmulisp sbcl)
 		      (if common-lisp-image-file
-			  (list common-lisp-image-name
+			  (list ;common-lisp-image-name
 				(if (eq *specware-lisp* 'cmulisp)
-				    " -core " " --core ")
+				    "-core" "--core")
 				common-lisp-image-file)
 			(list common-lisp-image-name)))
 		     (allegro (concatenate 'list
