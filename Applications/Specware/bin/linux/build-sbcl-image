@@ -101,7 +101,7 @@ if [ Specware4-base.lisp -nt lisp/Specware4.lisp ]; then
     cp -p -f Specware4-base.lisp lisp/Specware4.lisp
 fi
 
-cp -f bin/linux/Specware4.sbcl-image bin/linux/Specware4-save.sbcl-image
+cp -f bin/linux/Specware4.sbclimage bin/linux/Specware4-save.sbclimage
 
 cd Handwritten/Lisp
 
@@ -131,5 +131,5 @@ $LISP <<-XXXX
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
 	(set-gc-parameters-for-use nil)
-	(sb-ext:save-lisp-and-die "$SPECWARE4/Applications/Specware/bin/linux/Specware4.sbcl-image")
+	(sb-ext:save-lisp-and-die "$SPECWARE4/Applications/Specware/bin/linux/Specware4.sbclimage")
 XXXX
