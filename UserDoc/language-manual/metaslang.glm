@@ -1710,19 +1710,37 @@ different, as long as the model respects typing.
 <section id="Type-definitions"><title>Type-definitions</title>
 <para>
 <<
-||`type-definition ::= type `type-name [ `formal-type-parameters ] `equals `type-descriptor
+||`type-definition ::=
+||      `type-abbreviation
+||    | `new-type-definition
+||
+||`type-abbreviation ::= type `type-name [ `formal-type-parameters ] `equals `type-descriptor
+||
+||`new-type-definition ::= type `type-name [ `formal-type-parameters ] `equals `new-type-descriptor
 >>
-Sample `type-definitions:
+Sample `type-abbreviations:
 [[
 ||    type Date = {year : Nat, month : Nat, day : Nat}
 ||    type Array a = List a
 ||    type Map(a, b) = (Array (a * b) | key_uniq?)
 ]]
+Sample `new-type-definitions:
+[[
+||    type Tree a = | Leaf a | Fork (Tree a * Tree a)
+||    type Bush a = | Leaf a | Fork (Tree a * Tree a)
+||    type Z3 =  Nat / (fn (m, n) -> m rem 3 = n rem 3)
+]]
 In each model, the type assigned to the
-`type-name must be the same as the right-hand-side `type-descriptor.
+`type-name of a `type-abbreviation must be the same as the right-hand-side `type-descriptor, while that assigned to the `type-name of a `new-type-definition must be isomorphic to the type of the `new-type-descriptor.
+So, while [[Tree Nat]] and [[Bush Nat]] from the examples are for all
+purposes equivalent, they are not necessarily equal,
+</para>
+
+<para>
 For parameterized types, this extends to all possible
 assignments
 of types to the `local-type-variables, taking the right-hand `type-descriptors
+and `new-type-descriptors
 as interpreted under each of these assignments.
 So, for the example, [[Map(Nat, Char)]] is the same type as
 [[(Array (Nat * Char) | key_uniq?)]], and so on.
@@ -2278,9 +2296,12 @@ future revisions of Metaslang.
 <para>
 <<
 ||`type-descriptor ::=
-||      `type-sum
-||    | `type-arrow
+||      `type-arrow
 ||    | `slack-type-descriptor
+||
+||`new-type-descriptor ::=
+||      `type-sum
+||    | `type-quotient
 ||
 ||`slack-type-descriptor ::=
 ||      `type-product
@@ -2297,7 +2318,6 @@ future revisions of Metaslang.
 ||    | `type-record
 ||    | `type-restriction
 ||    | `type-comprehension
-||    | `type-quotient
 ||    | ( `type-descriptor )
 ||
 >>
@@ -2311,7 +2331,6 @@ need for parenthesizing in order to avoid grammatical ambiguities.)
 <para>
 Sample `type-descriptors:
 [[
-||    | Point XYpos | Line XYpos * XYpos
 ||    List String * Nat -> Option String
 ||    a * Order a * a
 ||    PartialFunction (Key, Value)
@@ -2321,8 +2340,12 @@ Sample `type-descriptors:
 ||    {center : XYpos, radius : Length}
 ||    (Nat | even)
 ||    {k : Key | present (db, k)}
-||    Nat / (fn (m, n) -> m rem 3 = n rem 3)
 ||    (Nat * Nat)
+]]
+Sample `new-type-descriptors:
+[[
+||    | Point XYpos | Line XYpos * XYpos
+||    Nat / (fn (m, n) -> m rem 3 = n rem 3)
 ]]
 The meaning of the `type-descriptor [[Boolean]] is the ``inbuilt'' type
 inhabited by the two logical (truth) values [[true]] and [[false]].
@@ -2333,7 +2356,7 @@ $T$.
 </para>
 <!-- ================================================================= -->
 <para>
-The various other kinds of `type-descriptors not defined here are described
+The various other kinds of `type-descriptors and `new-type-descriptors not defined here are described
 each in their following respective sections, with the exception
 of `local-type-variable, whose
 (lack of) meaning as a `type-descriptor is described below.

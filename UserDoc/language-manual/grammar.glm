@@ -319,7 +319,13 @@ easy reference.
 <formalpara><title>Type-definitions</title>
 <para>
 <<
-||  `type-definition ::= type `type-name [ `formal-type-parameters ] `equals `type-descriptor
+||  `type-definition ::=
+||      `type-abbreviation
+||    | `new-type-definition
+||  
+||  `type-abbreviation ::= type `type-name [ `formal-type-parameters ] `equals `type-descriptor
+||  
+||  `new-type-definition ::= type `type-name [ `formal-type-parameters ] `equals `new-type-descriptor
 >>
 </para>
 </formalpara>
@@ -380,9 +386,12 @@ easy reference.
 <para>
 <<
 ||  `type-descriptor ::=
-||      `type-sum
-||    | `type-arrow
+||      `type-arrow
 ||    | `slack-type-descriptor
+||  
+||  `new-type-descriptor ::=
+||      `type-sum
+||    | `type-quotient
 ||  
 ||  `slack-type-descriptor ::=
 ||      `type-product
@@ -399,7 +408,6 @@ easy reference.
 ||    | `type-record
 ||    | `type-restriction
 ||    | `type-comprehension
-||    | `type-quotient
 ||    | ( `type-descriptor )
 ||  
 >>
