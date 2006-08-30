@@ -35,14 +35,19 @@ easy reference.
 <<
 ||  `symbol ::= `simple-name | `literal | `special-symbol
 ||  
-||  `simple-name ::= `word-symbol | `non-word-symbol
+||  `simple-name ::= `first-syllable { _ `next-syllable }*
 ||  
-||  `word-symbol ::= `word-start-mark { `word-continue-mark }*
+||  `first-syllable ::= `first-word-syllable | `non-word-syllable
+||  
+||  `next-syllable ::= `next-word-syllable | `non-word-syllable
+||  
+||  `first-word-syllable ::= `word-start-mark { `word-continue-mark }*
+||  
+||  `next-word-syllable ::= `word-continue-mark { `word-continue-mark }*
 ||  
 ||  `word-start-mark ::= `letter
 ||  
-||  `word-continue-mark ::=
-||    `letter | `decimal-digit | _ | ?
+||  `word-continue-mark ::= `letter | `decimal-digit | '' | ?
 ||  
 ||  `letter ::=
 ||      A | B | C | D | E | F | G | H | I | J | K | L | M
@@ -52,11 +57,11 @@ easy reference.
 ||  
 ||  `decimal-digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 ||  
-||  `non-word-symbol ::= `non-word-mark { `non-word-mark }*
+||  `non-word-syllable ::= `non-word-mark { `non-word-mark }*
 ||  
 ||  `non-word-mark ::=
 ||      ` | ~ | ! | @ | $ | ^ | & | * | -
-||    | = | + | \ | '| | : | < | > | / | ?
+||    | = | + | \ | '| | : | < | > | / | '' | ?
 ||  
 ||  `special-symbol ::= _ | ( | ) | '[ | '] | '{ | '} | ; | , | .
 >>
@@ -99,7 +104,7 @@ easy reference.
 ||  
 ||  `infile-unit-definition ::= `fragment-identifier = `unit-term
 ||  
-||  `fragment-identifier ::= `word-symbol
+||  `fragment-identifier ::= `simple-name
 >>
 </para>
 </formalpara>
@@ -113,7 +118,12 @@ easy reference.
 ||  
 ||  `relative-path ::= { `path-element / }* `path-element [ # `fragment-identifier ]
 ||  
-||  `path-element ::= `word-symbol
+||  `path-element ::= `path-mark { `path-mark }*
+||  
+||  `path-mark ::=
+||      `letter | `decimal-digit
+||    | ! | $ | & | '' | + | -
+||    | = | @ | ^ | ` | ~ | .
 >>
 </para>
 </formalpara>
@@ -147,7 +157,7 @@ easy reference.
 <<
 ||  `spec-qualification ::=  `qualifier qualifying `spec-term
 ||  
-||  `qualifier ::= `word-symbol
+||  `qualifier ::= `simple-name
 ||  
 ||  `name ::= `simple-name | `qualified-name
 ||  

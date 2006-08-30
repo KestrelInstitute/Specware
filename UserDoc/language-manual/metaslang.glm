@@ -344,44 +344,16 @@ more <quote>marks</quote> (ASCII characters).
 Within a composite (multi-mark) `symbol, as well as within a
 `unit-identifier, no whitespace is
 allowed, but whitespace may be needed between two `symbols if
-together they could be taken for one `symbol; in particular,
-two `simple-names that follow each other should be separated by
-whitespace.
-<!-- OBSOLETE
-More precisely, whitespace is required between two `symbols
-unless at least one of the two is a `special-symbol (see
-below for the various classes of `symbols).
-Additionally, whitespace is required in two other
-situations.
-The first is after the
-`special-symbol [[(]] when immediately followed by a
-`non-word-symbol that starts with a `non-word-mark [[*]].
-Without such whitespace, [[(*]] introduces a `block-comment.
-The second is before or after the `special-symbol [[_]] (the
-presentation of a `wildcard-pattern) when immediately followed
-or preceded by a `simple-name or another [[_]].
-ETELOSBO -->
-More precisely, whitespace is required between two adjacent
-`symbols for each of the following combinations, in which
-<quote>[[abc]]</quote> stands for an arbitrary `word-symbol,
-<quote>[[<*>]]</quote> stands for an arbitrary `non-word-symbol,
-<quote>[[?:!]]</quote> stands for an arbitrary `non-word-symbol
-starting with a [[?]]-mark, and
-<quote>[[123]]</quote> stands for an arbitrary `literal
-(see below for the definitions of the various classes of
-`symbols):
-[[
-||    abc  abc
-||    abc  ?:!
-||    abc  123
-||    <*>  <*>
-||    123  abc
-||    123  123
-||    abc  _
-||      (  *
-]]
-Apart from the last two cases, no whitespace is ever
-needed adjacent to a `special-symbol.
+the fisrt mark of the second `symbol could be taken to be the
+continuation if the first `symbol.
+More precisely, letting $X$, $Y$ and $Z$ stand for arbitrary (possibly
+empty) sequences of `marks, and $m$ for a single mark, then
+whitespace is required between two adjacent
+`symbols, the first being $X$ and the second $mY$, when for some $Z$ the
+sequence $XmZ$ is also a `symbol.
+So, for example, whitespace is required where shown in [[succ 0]] and
+[[op! :Nat->Nat]], since [[succ0]] and [[!:]] are valid `symbols, but
+none is required in the `formula [[n+1]].
 </para>
 <!-- ================================================================= -->
 <para>
@@ -414,14 +386,19 @@ presentations of the same `spec are entirely equivalent:
 <<
 ||`symbol ::= `simple-name | `literal | `special-symbol
 ||
-||`simple-name ::= `word-symbol | `non-word-symbol
+||`simple-name ::= `first-syllable { _ `next-syllable }*
 ||
-||`word-symbol ::= `word-start-mark { `word-continue-mark }*
+||`first-syllable ::= `first-word-syllable | `non-word-syllable
+||
+||`next-syllable ::= `next-word-syllable | `non-word-syllable
+||
+||`first-word-syllable ::= `word-start-mark { `word-continue-mark }*
+||
+||`next-word-syllable ::= `word-continue-mark { `word-continue-mark }*
 ||
 ||`word-start-mark ::= `letter
 ||
-||`word-continue-mark ::=
-||    `letter | `decimal-digit | _ | ?
+||`word-continue-mark ::= `letter | `decimal-digit | '' | ?
 ||
 ||`letter ::=
 ||      A | B | C | D | E | F | G | H | I | J | K | L | M
@@ -431,26 +408,27 @@ presentations of the same `spec are entirely equivalent:
 ||
 ||`decimal-digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 ||
-||`non-word-symbol ::= `non-word-mark { `non-word-mark }*
+||`non-word-syllable ::= `non-word-mark { `non-word-mark }*
 ||
 ||`non-word-mark ::=
 ||      ` | ~ | ! | @ | $ | ^ | & | * | -
-||    | = | + | \ | '| | : | < | > | / | ?
+||    | = | + | \ | '| | : | < | > | / | '' | ?
 ||
 ||`special-symbol ::= _ | ( | ) | '[ | '] | '{ | '} | ; | , | .
 >>
 Sample `simple-names:
 [[
-||    Date                    $$$$          ?!
+||    Date                    $$$$            ?!
 ||    yymmdd2date             <*>           :=:
-||    well_ordered?           ~==           
+||    well_ordered?           ~==           x'
+||    c_<+>                   /_47a
 ]]
-For convenience, here are the 14 printing ASCII marks that,
+For convenience, here are the 13 printing ASCII marks that,
 next to `letters and `decimal-digits,
-can <emphasis>not</emphasis> occur in a `non-word-symbol:
+can <emphasis>not</emphasis> occur as a `non-word-mark:
 [[
-||      #    %    '    "    _    (    )
-||      [    ]    {    }    ;    ,    .
+||      #    %    "    _    ;    ,    .
+||      (    )    [    ]    {    }
 ]]
 Restriction.
 As mentioned before, no whitespace is allowed in `symbols:
@@ -472,7 +450,7 @@ allowed inside any reserved symbol.
 </para>
 <!-- ================================================================= -->
 <para>
-`Non-word-symbols can be used to choose convenient `simple-names
+`Non-word-syllables can be used to choose convenient `simple-names
 for `operators that, conventionally, are written with
 non-alphabetic marks.
 </para>
@@ -481,7 +459,7 @@ non-alphabetic marks.
 Some &Metaslang; users follow the convention of using
 `simple-names that start with a capital letter for
 `unit-identifiers and `type-names and for `constructors,
-while `word-symbols chosen for `ops and `field-names start with a
+while `simple-names chosen for `ops and `field-names start with a
 lower-case `letter.
 Both plain `local-variables and `local-type-variables are often chosen
 to be single lower-case `letters: [[x]], [[y]], [[z]],
@@ -605,7 +583,7 @@ This is explained in more detail in what follows.
 ||
 ||`infile-unit-definition ::= `fragment-identifier = `unit-term
 ||
-||`fragment-identifier ::= `word-symbol
+||`fragment-identifier ::= `simple-name
 >>
 <!--
 ** ||     | `let-term
@@ -679,19 +657,26 @@ and the `unit-definition it contributes to the project is
 ||
 ||`relative-path ::= { `path-element / }* `path-element [ # `fragment-identifier ]
 ||
-||`path-element ::= `word-symbol
+||`path-element ::= `path-mark { `path-mark }*
+||
+||`path-mark ::=
+||      `letter | `decimal-digit
+||    | ! | $ | & | '' | + | -
+||    | = | @ | ^ | ` | ~ | .
 >>
+`Unit-identifiers are used to identify `unit-terms,
+by identifying files in a file store
+that contain `unit-terms or `infile-unit-definitions.
+Which `path-marks can actually be used in forming a 
+`path-element may depend on restrictions of
+the operating system.
+The `path-elements [[..]] and [[.]] have special meanings: "parent
+folder" and "this folder".
+Under than this use, the mark [[.]] should not be used as the first
+or last `path-mark of a `path-element.
 </para>
-<formalpara id="Warning0"><title>Warning</title> <para>
-Recall that whitespace is not allowed within `unit-identifiers.
-Note that `unit-identifiers are processed by the tokenizer like
-everything else. This means that
-marks not allowed in `word-symbols, even if otherwise permitted in
-filenames (such as <"-">), cannot appear in `unit-identifiers.
-For this reason, some care must be taken when naming units.
-</para> </formalpara>
+
 <para>
-`Unit-identifiers are used to identify `unit-terms.
 Typically, only a final part of the full `unit-identifier is
 used.  When &Specware is started with environment variable
 <"SWPATH"> set to a semicolon-separated list of pathnames for
@@ -918,7 +903,7 @@ is the same as that of
 <<
 ||`spec-qualification ::=  `qualifier qualifying `spec-term
 ||
-||`qualifier ::= `word-symbol
+||`qualifier ::= `simple-name
 ||
 ||`name ::= `simple-name | `qualified-name
 ||
@@ -3972,18 +3957,12 @@ this: [[[6'2"]]].
 ** <para>
 **** No longer needed because of transformation to project F E -->
 Disambiguation.
-A `closed-expression of the form
-[[$M$.$N$]],
-in which $M$ is a `word-symbol and
-$N$ is a `simple-name, is interpreted as
-an `op if
-[[$M$.$N$]]
+A `closed-expression of the form [[$M$.$N$]], in which $M$ and
+$N$ are `simple-names, is interpreted as an `op if [[$M$.$N$]]
 occurs as the `op-name of an `op-declaration or `op-definition
 in the `spec in which it occurs or in the set of `simple-names
 imported from another `spec through an `import-declaration.
-Otherwise,
-[[$M$.$N$]]
-is interpreted as a `field-selection.
+Otherwise, [[$M$.$N$]] is interpreted as a `field-selection.
 (The effect of a `field-selection can always be obtained
 with a `projector.)
 </para>
