@@ -1080,7 +1080,7 @@ shorthand for the `spec-translation [[translate $S$ by {_ +-> $Q$._}]].
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section><title>Substitutions</title>
+<section id="Substitutions"><title>Substitutions</title>
 <para>
 <<
 ||`spec-substitution ::= `spec-term '[ `morphism-term ']
@@ -1092,42 +1092,26 @@ Sample `spec-substitution:
 ]]
 </para>
 <para>
-The elaboration of `spec-substitution
-[[$S$[$M$]]]
-yields the `spec
-$T$ obtained as follows.
-Let `spec $R$ be the result of
-elaborating $S$,
-and morphism $N$ that of
-$M$.
-Let `specs $D$ and
-$C$ be the domain and codomain of
-$N$.
-First, remove from $R$ all
-`declarations of $D$, and subject
-the result to the effect of $N$,
-meaning that all `name translations of
-$N$ and all extensions with
-`declarations are performed.
-Then add the `declarations of $C$,
-but without duplications, i.e., as if
-$C$ is imported.
+The elaboration of `spec-substitution [[$S$[$M$]]] yields the
+`spec $T$ obtained as follows.
+Let `spec $R$ be the result of elaborating $S$, and morphism
+$N$ that of $M$.
+Let `specs $D$ and $C$ be the domain and codomain of $N$.
+First, remove from $R$ all `declarations of $D$, and subject
+the result to the effect of $N$, meaning that all `name
+translations of $N$ and all extensions with `declarations are
+performed.
+Then add the `declarations of $C$, but without duplications,
+i.e., as if $C$ is imported.
 The result obtained is $T$.
 </para>
 <para>
 Restriction.
-`Spec $D$ must be
-a ``sub-spec'' of `spec $R$,
-meaning that each `declaration of
-$D$ is also a
-`declaration of $R$.
+`Spec $D$ must be a ``sub-spec'' of `spec $R$, meaning that
+each `declaration of $D$ is also a `declaration of $R$.
 </para>
 <para>
-Informally,
-$T$
-is to $R$ as
-$C$ is to
-$D$.
+Informally, $T$ is to $R$ as $C$ is to $D$.
 </para>
 <para>
 Except when $R$ introduces, next
@@ -2994,6 +2978,7 @@ has three inhabitants.
 ||    | `record-display
 ||    | `sequential-expression
 ||    | `list-display
+||    | `monadic-expression
 ||    | `structor
 ||    | ( `expression )
 ||    | ( `inbuilt-op )
@@ -4155,6 +4140,92 @@ denotes the same list as the `expression [[Cons
 ($E<subscript>1</subscript>$,
 [$E<subscript>2</subscript>$,]]
 ... [[,]] [[$E<subscript>n</subscript>$])]].
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section id="Monadic-expressions"><title>Monadic-expressions</title>
+<para>
+<<
+||`monadic-expression ::= '{ `open-monadic-expression '}
+||
+||`open-monadic-expression ::= `monadic-statement ; `monadic-tail
+||
+||`monadic-statement ::= `expression | `monadic-binding
+||
+||`monadic-binding ::= `pattern <- `expression
+||
+||`monadic-tail ::= `expression | `open-monadic-expression
+>>
+Sample `monadic-expression:
+[[
+||    {x <- a; y <- b; f(x, y)}
+]]
+Restriction.
+`Monadic-expressions can only be used in a context containing the
+following spec, or a refinement thereof, possibly qualified,
+as a sub-spec (see under
+<link linkend="Substitutions"><emphasis>Substitutions</emphasis></link>):
+[[
+||spec
+||  type Monad a
+||
+||  op monadBind : [a,b] (Monad a) * (a -> Monad b) -> Monad b
+||  op monadSeq : [a,b] (Monad a) * (Monad b) -> Monad b
+||  op return : [a] a -> Monad a
+||
+||  axiom left_unit is
+||    [a,b] fa (f : a -> Monad b, x : a)
+||      monadBind (return x, f) = f x
+||
+||  axiom right_unit is
+||    [a] fa (m : Monad a)
+||      monadBind (m, return) = m
+||
+||  axiom associativity is
+||    [a,b,c] fa (m : Monad a, f : a -> Monad b, h : b->Monad c)
+||      monadBind (m, (fn x -> monadBind (f x, h))) =
+||      monadBind (monadBind (m, f), h)
+||
+||  axiom non_binding_sequence is
+||    [a] fa (f : Monad a, g : Monad a)
+||      monadSeq (f, g) = monadBind (f, fn _ -> g)
+||
+||endspec
+]]
+(This spec can be found, qualified with [[Monad]], in the library spec
+<"/Library/Structures/Data/Monad">.)
+A `monadic-expression may further only be used when
+the non-monadic `expression it is equivalent to (see below)
+is itself a valid `expression.
+</para>
+
+<para>
+A `monadic-expression [[{]]$M$[[}]] is equivalent to the
+`open-monadic-expression $M$.
+</para>
+
+<para>
+A `monadic-tail  $E$, where $E$ is an `expression,
+is equivalent to the `expression $E$.
+</para>
+
+<para>
+A `monadic-tail  $M$, where $M$ is an `open-monadic-expression,
+is equivalent to the `open-monadic-expression $M$.
+</para>
+
+<para>
+An `open-monadic-expression $E$[[; ]]$T$, where $E$ is an
+`expression, is equivalent to the `application
+[[monadSeq (]]$E$[[, ]]$T'$[[)]], where $T'$ is an `expression
+that is equivalent to the `monadic-tail $T$.
+</para>
+
+<para>
+An `open-monadic-expression $P$[[ <- ]]$E$[[; ]]$T$
+is equivalent to the `application
+[[monadBind (]]$E$[[, fn ]]$P$[[ -> ]]$T'$[[)]], where $T'$ is
+an `expression that is equivalent to the `monadic-tail $T$.
 </para>
 </section>
 <!-- ***************************************************************** -->

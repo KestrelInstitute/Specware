@@ -544,6 +544,7 @@ easy reference.
 ||    | `record-display
 ||    | `sequential-expression
 ||    | `list-display
+||    | `monadic-expression
 ||    | `structor
 ||    | ( `expression )
 ||    | ( `inbuilt-op )
@@ -785,6 +786,22 @@ easy reference.
 ||  
 ||  `list-display-body ::= [ `expression { , `expression }* ]
 ||  
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Monadic-expressions</title>
+<para>
+<<
+||  `monadic-expression ::= '{ `open-monadic-expression '}
+||  
+||  `open-monadic-expression ::= `monadic-statement ; `monadic-tail
+||  
+||  `monadic-statement ::= `expression | `monadic-binding
+||  
+||  `monadic-binding ::= `pattern <- `expression
+||  
+||  `monadic-tail ::= `expression | `open-monadic-expression
 >>
 </para>
 </formalpara>
