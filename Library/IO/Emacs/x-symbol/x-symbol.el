@@ -2931,7 +2931,7 @@ sequence starting with the current one.  See `x-symbol-temp-help'."
 			    ("-adobe-helvetica%s-medium-r-normal-*-%d-*-*-*-*-*-iso8859-1")
 			    ("-adobe-helvetica%s-medium-r-normal-*-%d-*-*-*-*-*-iso8859-1")))
 	  (lwarn 'x-symbol 'warning
-	    "Cannot find font in %s: %S"
+	    "Cannot find font in %s"
 	    (mapconcat (lambda (f) (x-symbol-try-font-name-0 f raise))
 		       fonts
 		       ", "))))
