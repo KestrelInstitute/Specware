@@ -458,7 +458,22 @@ be the option to run each (test ...) form in a fresh image.
 
 (defun lines-match? (x y)
   ;; x is the pattern: ? matches any char in y, * matches any sequence in y
-  (labels ((matches? (x y)
+  (labels ((compress-whitespace (chars)
+            (let ((result '())
+		  (last-char-was-whitespace? t))
+	      (dolist (char chars)
+		(cond ((member char '(#\Space #\Tab))
+		       (unless last-char-was-whitespace? 
+			 (push #\Space result))
+		       (setq last-char-was-whitespace? t))
+		      (t
+		       (push char result)
+		       (setq last-char-was-whitespace? nil))))
+	      (reverse 
+	       (if last-char-was-whitespace?
+		   (cdr result)
+		 result))))
+	   (matches? (x y)
              (do ((x x (cdr x))
 		  (y y (cdr y)))
 		 ((or (null x) (null y))
@@ -476,7 +491,7 @@ be the option to run each (test ...) form in a fresh image.
 		   (t
 		    (return nil)))))))
     (or (equalp x y)
-	(matches? (coerce x 'list)
-		  (coerce y 'list)))))
+	(matches? (compress-whitespace (coerce x 'list))
+		  (compress-whitespace (coerce y 'list))))))
 
     
