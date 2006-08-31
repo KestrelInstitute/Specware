@@ -8,10 +8,6 @@
 (pushnew ".sfsl" completion-ignored-extensions)	; sbcl
 (pushnew ".fas"  completion-ignored-extensions)	; clisp
 
-
-(defcustom specware-use-x-symbol t
-  "If non-nil use x-symbol package with Specware")
-
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
@@ -103,7 +99,7 @@
       (allegro "fasl")
       (mcl     "dfsl")
       (cmu     "x86f")
-					;(sbcl    sb-fasl:*fasl-file-type*)
+      (sbcl    "sfsl")
       (gcl     "o")))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
