@@ -3216,7 +3216,7 @@ The value of an `if-expression
 <<
 ||`quantification ::= `quantifier ( `local-variable-list ) `expression
 ||
-||`quantifier ::= fa | ex
+||`quantifier ::= fa | ex | ex1
 ||
 ||`local-variable-list ::= `annotable-variable { , `annotable-variable }*
 ||
@@ -3251,31 +3251,37 @@ quantifications</quote>; ex = there exists).
 </para>
 <!-- ================================================================= -->
 <para>
-The value of a [[fa]]-`quantification
-[[fa $V$]]
-$E$, in which
-$V$ is a `local-variable-list and
-$E$ is an `expression,
-is determined as
-follows.
-Let $M$ be the `match
-[[$V$ -> $E$]].
-If $M$ has return value [[true]] for each
-value $x$ in its domain (note that
-rejection cannot happen here), the value of the
-`quantification is [[true]]; otherwise it is [[false]].
+The value of a `quantification [[fa ($V$) $E$]], in which
+$V$ is a `local-variable-list and $E$ is an `expression, is
+determined as follows.
+Let $M$ be the `match [[($V$) -> $E$]].
+If $M$ has return value [[true]] for each value $x$ in its
+domain, the value of the `quantification is [[true]]; otherwise
+it is [[false]].
 </para>
 <!-- ================================================================= -->
 <para>
-The value of an [[ex]]-`quantification
-[[ex $V$]]
-$E$ is the same as that of the
-[[fa]]-`quantification
-[[~(fa $V$ ~($E$))]].
+The value of a `quantification [[ex ($V$)) $E$]] in which
+$V$ is a `local-variable-list and $E$ is an `expression, is
+determined as follows.
+Let $M$ be the `match [[($V$) -> $E$]].
+If $M$ has return value [[true]] for at least one value $x$ in its
+domain, the value of the `quantification is [[true]]; otherwise
+it is [[false]].
 </para>
 <!-- ================================================================= -->
 <para>
-Note that [[fa]] and [[ex]] must be followed by an
+The value of a `quantification [[ex1 ($V$)) $E$]] in which
+$V$ is a `local-variable-list and $E$ is an `expression, is
+determined as follows.
+Let $M$ be the `match [[($V$) -> $E$]].
+If $M$ has return value [[true]] for precisely one value $x$ in its
+domain, the value of the `quantification is [[true]]; otherwise
+it is [[false]].
+</para>
+<!-- ================================================================= -->
+<para>
+Note that a `quantifier must be followed by an
 opening parenthesis[[ ( ]].
 So [[fa x (x = x)]], for example, is ungrammatical.
 </para>

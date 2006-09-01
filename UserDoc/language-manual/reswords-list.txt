@@ -12,6 +12,7 @@ embed
 embed?
 endspec
 ex
+ex1
 fa
 false
 fn
@@ -34,6 +35,7 @@ prove
 qualifying
 quotient
 spec
+the
 then
 theorem
 translate

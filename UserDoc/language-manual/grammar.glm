@@ -595,7 +595,7 @@ easy reference.
 <<
 ||  `quantification ::= `quantifier ( `local-variable-list ) `expression
 ||  
-||  `quantifier ::= fa | ex
+||  `quantifier ::= fa | ex | ex1
 ||  
 ||  `local-variable-list ::= `annotable-variable { , `annotable-variable }*
 ||  
