@@ -517,6 +517,7 @@ easy reference.
 ||    | `let-expression
 ||    | `if-expression
 ||    | `quantification
+||    | `unique-solution
 ||    | `annotated-expression
 ||    | `tight-expression
 ||  
@@ -602,6 +603,14 @@ easy reference.
 ||  `annotable-variable ::= `local-variable [ : `type-descriptor ]
 ||  
 ||  `local-variable ::= `simple-name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Unique-solutions</title>
+<para>
+<<
+||  `unique-solution ::= the ( `local-variable-list ) `expression
 >>
 </para>
 </formalpara>

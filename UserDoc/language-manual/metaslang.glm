@@ -2944,6 +2944,7 @@ has three inhabitants.
 ||    | `let-expression
 ||    | `if-expression
 ||    | `quantification
+||    | `unique-solution
 ||    | `annotated-expression
 ||    | `tight-expression
 ||
@@ -3235,19 +3236,18 @@ be a different `simple-name.
 </para>
 <!-- ================================================================= -->
 <para>
-</para>
-<!-- ================================================================= -->
-<para>
 `Quantifications are non-constructive, even when the domain
 type is finitely enumerable.
 The main uses are in `type-restrictions and `type-comprehensions,
 and `claims.
 The type of a `quantification is [[Boolean]].
-There are two kinds of quantifications:
-[[fa]]-`quantifications (or <quote>universal
-quantifications</quote>; fa = for all), and
-[[ex]]-`quantifications (or <quote>existential
-quantifications</quote>; ex = there exists).
+There are three kinds of quantifiers:
+[[fa]], for <quote>universal
+quantifications</quote> --- fa = for all;
+[[ex]], for <quote>existential
+quantifications</quote> --- ex = there exists; and
+[[ex1]], for <quote>uniquely existential
+quantifications</quote> --- ex1 = there exists one.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -3284,6 +3284,48 @@ it is [[false]].
 Note that a `quantifier must be followed by an
 opening parenthesis[[ ( ]].
 So [[fa x (x = x)]], for example, is ungrammatical.
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section id="Unique-solutions"><title>Unique-solutions</title>
+<para>
+<<
+||`unique-solution ::= the ( `local-variable-list ) `expression
+>>
+Sample `unique-solution:
+[[
+||    the(x : S) f(x) = y
+]]
+Restriction,
+Each `local-variable of the `local-variable-list must
+be a different `simple-name.
+</para>
+<!-- ================================================================= -->
+<para>
+Restriction.
+The type of the `expression must be [[Boolean]].
+</para>
+<!-- ================================================================= -->
+<para>
+Restriction.
+A `unique-solution [[the ($V$) $E$]] may only be used in a context where
+the value of [[ex1 ($V$) $E$]] is [[true]].
+</para>
+<!-- ================================================================= -->
+<para>
+`Unique-solutions are non-constructive, even when the domain
+type is finitely enumerable.
+The type of a `unique-solution is the type of its `local-variable-list.
+</para>
+<!-- ================================================================= -->
+<para>
+The value of a `unique-solution [[the ($V$) $E$]], in which
+$V$ is a `local-variable-list and $E$ is an `expression, is
+determined as follows.
+Let $M$ be the `match [[($V$) -> $E$]].
+The value of the `unique-solution is then the unique value $x$
+in the domain of $M$ such that the `match [[($V$) -> $E$]] has
+return value [[true]] for $x$.
 </para>
 </section>
 <!-- ***************************************************************** -->
