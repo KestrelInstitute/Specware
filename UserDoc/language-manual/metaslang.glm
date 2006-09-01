@@ -571,15 +571,15 @@ This is explained in more detail in what follows.
 ||`unit-definition ::= `unit-identifier = `unit-term
 ||
 ||`unit-term ::=
-||     `spec-term
-||   | `morphism-term
-||   | `diagram-term
-||   | `target-code-term
-||   | `proof-term
+||      `spec-term
+||    | `morphism-term
+||    | `diagram-term
+||    | `target-code-term
+||    | `proof-term
 ||
 ||`specware-file-contents ::=
-||     `unit-term
-||   | `infile-unit-definition { `infile-unit-definition }*
+||      `unit-term
+||    | `infile-unit-definition { `infile-unit-definition }*
 ||
 ||`infile-unit-definition ::= `fragment-identifier = `unit-term
 ||
@@ -716,14 +716,13 @@ yielding a `spec, morphism, diagram, or other entity.
 <para>
 <<
 ||`spec-term ::=
-||     `unit-identifier
-||   | `spec-form
-||   | `spec-qualification
-||   | `spec-translation
-||   | `spec-substitution
-||   | `diagram-colimit
-||   | `obligator
-||
+||      `unit-identifier
+||    | `spec-form
+||    | `spec-qualification
+||    | `spec-translation
+||    | `spec-substitution
+||    | `diagram-colimit
+||    | `obligator
 >>
 <!--
 ||     | `spec-visibility
@@ -965,9 +964,9 @@ results in:
 ||`name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
 ||
 ||`name-map-item ::=
-||     `type-name-map-item
-||   | `op-name-map-item
-||   | `wildcard-map-item
+||      `type-name-map-item
+||    | `op-name-map-item
+||    | `wildcard-map-item
 ||
 ||`type-name-map-item ::= [ type ] `name +-> `name
 ||
@@ -1211,8 +1210,8 @@ See further the &Specware; User Manual.
 <para>
 <<
 ||`morphism-term ::=
-||     `unit-identifier
-||   | `spec-morphism
+||      `unit-identifier
+||    | `spec-morphism
 ||
 ||`spec-morphism ::= morphism `spec-term -> `spec-term `name-map
 >>
@@ -1326,19 +1325,18 @@ the base-libraries always map to themselves.)
 <para>
 <<
 ||`diagram-term ::=
-||     `unit-identifier
-||   | `diagram-form
+||      `unit-identifier
+||    | `diagram-form
 ||
 ||`diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||
 ||`diagram-element ::=
-||     `diagram-node
-||   | `diagram-edge
+||      `diagram-node
+||    | `diagram-edge
 ||
 ||`diagram-node ::= `simple-name +-> `spec-term
 ||
 ||`diagram-edge ::= `simple-name : `simple-name -> `simple-name +-> `morphism-term
-||     
 >>
 Restriction.
 When used as a `diagram-term, the elaboration of a
@@ -1634,7 +1632,6 @@ it can be denoted by [[morphism $A$
 ||`local-type-variable ::= `simple-name
 ||
 ||`local-type-variable-list ::= `local-type-variable { , `local-type-variable }*
-||
 >>
 Restriction.
 Each `local-type-variable of the `formal-type-parameters must
@@ -1775,7 +1772,9 @@ fixpoint of a recursive domain equation.
 <section id="Op-declarations"><title>Op-declarations</title>
 <para>
 <<
-||`op-declaration ::= op `op-name [ `fixity ] : `type-scheme
+||`op-declaration ::=
+||      op [ `type-variable-binder ] `op-name [ `fixity ] : `type
+||    | op `op-name [ `fixity ] : `type-variable-binder `type
 ||
 ||`fixity ::= `associativity `priority
 ||
@@ -1783,53 +1782,51 @@ fixpoint of a recursive domain equation.
 ||
 ||`priority ::= `nat-literal
 ||
-||`type-scheme ::= [ `type-variable-binder ] `type-descriptor
-||
 ||`type-variable-binder ::= `[ `local-type-variable-list `]
-||
 >>
 Sample `op-declarations:
 [[
 ||    op usage : String
 ||
-||    op o infixl 24 : [a,b,c] (b -> c) * (a -> b) -> a -> c
+||    op [a,b,c] o infixl 24 :         (b -> c) * (a -> b) -> a -> c
+||    op         o infixl 24 : [a,b,c] (b -> c) * (a -> b) -> a -> c
 ]]
 </para>
 <!-- ====================== NOT YET ==================================
-<para>
-Restriction.
-Although `ops may be <quote>overloaded</quote>,
-an `op can not be redeclared and/or redefined with overlapping
-<emphasis>source types</emphasis> (see below), whether in the
-same `spec or after having been defined in an imported `spec,
-not even when the meaning of both `definitions is the same.
-For example, [[op abs : Nat -> Nat]] cannot coexist with
-[[op abs : Integer -> Integer]], but either can coexist
-with [[op abs : Char -> Nat]].
-There may be both an `op-declaration and an `op-definition
-for the same `op, provided that the type information supplied
-by the `op-declaration is compatible with the (explicit or
-inferred) type of the `op-definition, and that the
-`op-definition is not given in an imported `spec (but in the
-current `spec, or in a later `spec importing the current
-`spec).
-</para>
-
-<para>
-Restriction.
-When an `infix-operator (see below) is overloaded,
-all `op-declarations for the `op must have the same
-`fixity.
-</para>
+** <para>
+** Restriction.
+** Although `ops may be <quote>overloaded</quote>,
+** an `op can not be redeclared and/or redefined with overlapping
+** <emphasis>source types</emphasis> (see below), whether in the
+** same `spec or after having been defined in an imported `spec,
+** not even when the meaning of both `definitions is the same.
+** For example, [[op abs : Nat -> Nat]] cannot coexist with
+** [[op abs : Integer -> Integer]], but either can coexist
+** with [[op abs : Char -> Nat]].
+** There may be both an `op-declaration and an `op-definition
+** for the same `op, provided that the type information supplied
+** by the `op-declaration is compatible with the (explicit or
+** inferred) type of the `op-definition, and that the
+** `op-definition is not given in an imported `spec (but in the
+** current `spec, or in a later `spec importing the current
+** `spec).
+** </para>
+** 
+** <para>
+** Restriction.
+** When an `infix-operator (see below) is overloaded,
+** all `op-declarations for the `op must have the same
+** `fixity.
+** </para>
      ====================== TEY TON ================================== -->
 <!--
 <para>
-** Restriction.
-** User-defined `ops may not be <quote>overloaded</quote>,
-** or otherwise be redeclared and/or redefined, whether in the
-** same `spec or after having been defined in an imported `spec,
-** not even when the meaning of both `definitions is the same.
-** </para>
+Restriction.
+User-defined `ops may not be <quote>overloaded</quote>,
+or otherwise be redeclared and/or redefined, whether in the
+same `spec or after having been defined in an imported `spec,
+not even when the meaning of both `definitions is the same.
+</para>
 -->
 <!-- ================================================================= -->
 <para>
@@ -1844,7 +1841,8 @@ the `type-variable-binder, and the type of that value is the
 result of the corresponding substitution of types for
 `local-type-variables on the
 polymorphic type of the `op.
-In the example above, the declaration of polymorphic [[o]] can
+In the examples above, the two forms given for the declaration
+of polymorphic [[o]] are entirely equivalent; they can
 be thought of as introducing a family of (fictitious) `ops,
 one for each possible assignment to the
 `local-type-variables [[a]], [[b]] and [[c]]:
@@ -1860,47 +1858,47 @@ Any `op-definition for [[o]] must be likewise accommodating.
 </para>
 <!-- ================================================================= -->
 <!-- ====================== NOT YET ==================================
-<para>
-Given a type $T$, the type
-super($T$) is defined to be
-$T$ if $T$
-is not a subtype.
-For a subtype [[($T$ | $P$)]],
-super([[($T$ | $P$)]]) is the type
-super($T$).
-For example, super([[(Nat | even)]]) is [[Integer]].
-</para>
-
-<para>
-The source types of an `op are the set of types determined
-as follows.
-If the type of the `op is some monomorphic function type
-[[$S$ -> $T$]], the source types are the
-singleton set {super($S$)}.
-If the type of the `op is a polymorphic function type
-corresponding to some `type-scheme
-[[[$V$] $S$ -> $T$]], the source types are the
-set of all types super($S'$)
-for the types
-[[$S'$ -> ]]$T'$ of the indexed family of
-values,
-obtainable by the substitution of types for
-the `local-type-variables in
-$V$.
-For example, for
-[[
-||   op f : [a] a * a -> a
-]]
-the source types are the set
-{[[Integer * Integer]], [[Boolean * Boolean]], [[Char *
-Char]], ...}.
-</para>
-
-<para>
-Finally, if the type of the `op is not a (monomorphic or
-polymorphic) function type, the source types of the `op are
-the singleton set {[[()]]}, containing just the unit type.
-</para>
+** <para>
+** Given a type $T$, the type
+** super($T$) is defined to be
+** $T$ if $T$
+** is not a subtype.
+** For a subtype [[($T$ | $P$)]],
+** super([[($T$ | $P$)]]) is the type
+** super($T$).
+** For example, super([[(Nat | even)]]) is [[Integer]].
+** </para>
+** 
+** <para>
+** The source types of an `op are the set of types determined
+** as follows.
+** If the type of the `op is some monomorphic function type
+** [[$S$ -> $T$]], the source types are the
+** singleton set {super($S$)}.
+** If the type of the `op is a polymorphic function type
+** corresponding to some `type-scheme
+** [[[$V$] $S$ -> $T$]], the source types are the
+** set of all types super($S'$)
+** for the types
+** [[$S'$ -> ]]$T'$ of the indexed family of
+** values,
+** obtainable by the substitution of types for
+** the `local-type-variables in
+** $V$.
+** For example, for
+** [[
+** ||   op f : [a] a * a -> a
+** ]]
+** the source types are the set
+** {[[Integer * Integer]], [[Boolean * Boolean]], [[Char *
+** Char]], ...}.
+** </para>
+** 
+** <para>
+** Finally, if the type of the `op is not a (monomorphic or
+** polymorphic) function type, the source types of the `op are
+** the singleton set {[[()]]}, containing just the unit type.
+** </para>
      ====================== TEY TON ================================== -->
 <!-- ================================================================= -->
 <para>
@@ -1941,7 +1939,9 @@ For the role of the `associativity and `priority, see further at
 <para>
 <<
 ||`op-definition ::=
-||    def [ `type-variable-binder ] `formal-expression [ : `type-descriptor ] `equals
+||      def [ `type-variable-binder ] `formal-expression [ : `type-descriptor ] `equals
+||        `expression
+||    | def `formal-expression [ : [ `type-variable-binder ] `type-descriptor ] `equals
 ||        `expression
 ||
 ||`formal-expression ::= `op-name | `formal-application
@@ -1951,26 +1951,25 @@ For the role of the `associativity and `priority, see further at
 ||`formal-application-head ::= `op-name | `formal-application
 ||
 ||`formal-parameter ::= `closed-pattern
-||
 >>
 <!-- ====================== NOT YET ==================================
-||`formal-application ::= `formal-prefix-application | `formal-infix-application
-||
-||`formal-prefix-application ::= `formal-application-head `formal-parameter
-||
-||`formal-application-head ::= `op-name | `formal-prefix-application
-||
-||`formal-parameter ::= `closed-pattern
-||
-||`formal-infix-application ::= `formal-parameter `op-name `formal-parameter
->>
-</para>
-<para>
-Restriction.
-The `op-name of a `formal-infix-application must be an infix
-operator.
-</para>
-<para>
+** ||`formal-application ::= `formal-prefix-application | `formal-infix-application
+** ||
+** ||`formal-prefix-application ::= `formal-application-head `formal-parameter
+** ||
+** ||`formal-application-head ::= `op-name | `formal-prefix-application
+** ||
+** ||`formal-parameter ::= `closed-pattern
+** ||
+** ||`formal-infix-application ::= `formal-parameter `op-name `formal-parameter
+** >>
+** </para>
+** <para>
+** Restriction.
+** The `op-name of a `formal-infix-application must be an infix
+** operator.
+** </para>
+** <para>
      ====================== TEY TON ================================== -->
 Sample `op-definitions:
 [[
@@ -1978,6 +1977,9 @@ Sample `op-definitions:
 ||
 ||    def [a,b,c] o(f : b -> c, g: a -> b) : a -> c =
 ||      fn (x : a) -> f(g x)
+||
+||    def o : [a,b,c] (b -> c) * (a -> b) -> a -> c =
+||      fn (f, g) -> fn (x) -> f(g x)
 ||
 ||    def o(f, g) x = f(g x)
 ]]
@@ -1989,28 +1991,28 @@ on redeclaring/redefining
 </para>
 <!-- ================================================================= -->
 <!-- ====================== NOT YET ==================================
-<para>
-Disambiguation.
-The grammar for `formal-application is ambiguous for cases
-like
-$M N P$, in which
-$M$ is any `simple-name, and
-$N$ is an `infix-operator.
-The ambiguity is resolved in favor of the reading
-as a `formal-infix-application, and then the
-`formal-infix-application $M N P$
-is equivalent to the `formal-prefix-application
-[[$N$ ($M$, $P$)]].
-For example, for `infix-operator [[o]],
-[[
-||    def f o g = fn x -> f(g x)
-]]
-is equivalent to
-[[
-||    def o (f, g) = fn x -> f(g x)
-]]
-</para>
-     ====================== TEY TON ================================== -->
+** <para>
+** Disambiguation.
+** The grammar for `formal-application is ambiguous for cases
+** like
+** $M N P$, in which
+** $M$ is any `simple-name, and
+** $N$ is an `infix-operator.
+** The ambiguity is resolved in favor of the reading
+** as a `formal-infix-application, and then the
+** `formal-infix-application $M N P$
+** is equivalent to the `formal-prefix-application
+** [[$N$ ($M$, $P$)]].
+** For example, for `infix-operator [[o]],
+** [[
+** ||    def f o g = fn x -> f(g x)
+** ]]
+** is equivalent to
+** [[
+** ||    def o (f, g) = fn x -> f(g x)
+** ]]
+** </para>
+**      ====================== TEY TON ================================== -->
 <para>
 Note that a `formal-expression always contains precisely one
 `op-name, which is the `op <emphasis>being defined</emphasis> by
@@ -2038,18 +2040,6 @@ the `spec is ambiguous and ill formed.
 <para>
 As for `op-definitions, the presence of a `type-variable-binder
 signals that the `op being defined is polymorphic.
-Note that the optional type annotation in an `op-definition
-can not be a polymorphic `type-scheme, unlike for
-`op-declarations.  For example, the following is ungrammatical:
-[[
-||    def o : [a,b,c] (b -> c) * (a -> b) -> a -> c =
-||      fn (f, g) -> fn (x) -> f(g x)
-]]
-The presumably intended effect is achieved by
-[[
-||    def [a,b,c] o : (b -> c) * (a -> b) -> a -> c =
-||      fn (f, g) -> fn (x) -> f(g x)
-]]
 In a model of the `spec, an indexed family of typed values is
 assigned to a polymorphic `op, with one family member for each
 possible assignment of types to the `local-type-variables of
@@ -2088,9 +2078,9 @@ which in turn is equivalent to
 ]]
 By
 <!-- ====================== NOT YET ==================================
-using the transformation from infix to prefix if
-applicable, and
-repeating
+** using the transformation from infix to prefix if
+** applicable, and
+** repeating
      ====================== TEY TON ================================== -->
 this deparameterizing transformation for each
 `formal-parameter, an equivalent unparameterized `op-definition
@@ -2288,7 +2278,6 @@ future revisions of Metaslang.
 ||    | `type-restriction
 ||    | `type-comprehension
 ||    | ( `type-descriptor )
-||
 >>
 (The distinctions <quote>`slack-</quote>,
 <quote>`tight-</quote> and <quote>`closed-</quote> before
@@ -2365,7 +2354,6 @@ Textually, it has a scope just like a plain `local-variable.
 ||`type-summand ::= '| `constructor [ `slack-type-descriptor ]
 ||
 ||`constructor ::= `simple-name
-||
 >>
 Sample `type-sum:
 [[
@@ -2517,7 +2505,6 @@ second of which is a function type:
 ||`type-arrow ::= `arrow-source -> `type-descriptor
 ||
 ||`arrow-source ::= `type-sum | `slack-type-descriptor
-||
 >>
 Sample `type-arrow:
 [[
@@ -2556,7 +2543,6 @@ semantics of &Metaslang;.
 <para>
 <<
 ||`type-product ::= `tight-type-descriptor * `tight-type-descriptor { * `tight-type-descriptor }*
-||
 >>
 Sample `type-product:
 [[
@@ -2606,7 +2592,6 @@ Values of a product type can be constructed with
 ||`actual-type-parameters ::= `closed-type-descriptor | ( `proper-type-list )
 ||
 ||`proper-type-list ::= `type-descriptor , `type-descriptor { , `type-descriptor }*
-||
 >>
 Sample `type-instantiation:
 [[
@@ -2666,7 +2651,6 @@ original assignment.)
 ||`field-typer ::= `field-name : `type-descriptor
 ||
 ||`field-name ::= `simple-name
-||
 >>
 Sample `type-record:
 [[
@@ -2747,7 +2731,6 @@ a product and a record type.
 <para>
 <<
 ||`type-restriction ::= ( `slack-type-descriptor '| `expression )
-||
 >>
 Sample `type-restriction:
 [[
@@ -2844,7 +2827,6 @@ whether all elements of a list of naturals are positive.
 <para>
 <<
 ||`type-comprehension ::= '{ `annotated-pattern '| `expression '}
-||
 >>
 Sample `type-comprehension:
 [[
@@ -3072,7 +3054,6 @@ assigned to it in the environment.
 <para>
 <<
 ||`lambda-form ::= fn `match
-||
 >>
 Sample `lambda-forms:
 [[
@@ -3216,7 +3197,6 @@ changed to:
 <para>
 <<
 ||`if-expression ::= if `expression then `expression else `expression
-||
 >>
 Sample `if-expression:
 [[
@@ -3243,7 +3223,6 @@ The value of an `if-expression
 ||`annotable-variable ::= `local-variable [ : `type-descriptor ]
 ||
 ||`local-variable ::= `simple-name
-||
 >>
 Sample `quantifications:
 [[
@@ -3632,32 +3611,32 @@ be disambiguated in the context.
 </para>
 <!-- ================================================================= -->
 <!-- ====================== NOT YET ==================================
-<para>
-Restriction.
-Overloaded `ops, when used as `expressions, have an ambiguous type.
-They may only be used as such when their type can be
-disambiguated in the context.
-Unlike for `constructors, target-type-descriptor information is not used
-for this disambiguation.
-For example, consider
-[[
-||    op abs : Nat -> Nat
-||    op abs : Char -> Nat
-||
-||    def ok (c : Char) = abs c
-||    def ko x          = abs x
-]]
-In the application [[abs c]]
-(the right-hand side of the `definition for [[ok]])
-[[c]] is known to have type [[Char]] in the context.
-This is enough to determine [[abs]] as identifying here
-[[op abs : Char -> Nat]].
-In the application [[abs x]]
-(the right-hand side of the `definition for [[ko]])
-the context gives no constraint on the type of [[x]],
-and no type-disambiguation for [[abs]] is possible, so its
-use there is incorrect.
-</para>
+** <para>
+** Restriction.
+** Overloaded `ops, when used as `expressions, have an ambiguous type.
+** They may only be used as such when their type can be
+** disambiguated in the context.
+** Unlike for `constructors, target-type-descriptor information is not used
+** for this disambiguation.
+** For example, consider
+** [[
+** ||    op abs : Nat -> Nat
+** ||    op abs : Char -> Nat
+** ||
+** ||    def ok (c : Char) = abs c
+** ||    def ko x          = abs x
+** ]]
+** In the application [[abs c]]
+** (the right-hand side of the `definition for [[ok]])
+** [[c]] is known to have type [[Char]] in the context.
+** This is enough to determine [[abs]] as identifying here
+** [[op abs : Char -> Nat]].
+** In the application [[abs x]]
+** (the right-hand side of the `definition for [[ko]])
+** the context gives no constraint on the type of [[x]],
+** and no type-disambiguation for [[abs]] is possible, so its
+** use there is incorrect.
+** </para>
      ====================== TEY TON ================================== -->
 <!-- ================================================================= -->
 <para>
@@ -3676,7 +3655,6 @@ original assignment.)
 ||    | `nat-literal
 ||    | `char-literal
 ||    | `string-literal
-||
 >>
 Sample `literals:
 [[
@@ -3710,7 +3688,6 @@ negates an integer:
 <para>
 <<
 ||`boolean-literal ::= true | false
-||
 >>
 Sample `boolean-literals:
 [[
@@ -3922,7 +3899,6 @@ this: [[[6'2"]]].
 ||`field-selection ::= `closed-expression . `field-selector
 ||
 ||`field-selector ::= `nat-literal | `field-name
-||
 >>
 <!-- No longer needed because of transformation to project F E ****
 ** Restriction.
@@ -3990,7 +3966,6 @@ is a convenient notation for the equivalent `expression
 ||`tuple-display ::= ( `tuple-display-body )
 ||
 ||`tuple-display-body ::= [ `expression , `expression { , `expression }* ]
-||
 >>
 Sample `tuple-display:
 [[
@@ -4025,7 +4000,6 @@ there is no need to ever annotate it with a `type-descriptor.)
 ||`record-display-body ::= [ `field-filler { , `field-filler }* ]
 ||
 ||`field-filler ::= `field-name `equals `expression
-||
 >>
 Sample `record-display:
 [[
@@ -4099,7 +4073,6 @@ discarded.
 ||`list-display ::= '[ `list-display-body ']
 ||
 ||`list-display-body ::= [ `expression { , `expression }* ]
-||
 >>
 Sample `list-display:
 [[
@@ -4170,7 +4143,7 @@ as a sub-spec (see under
 ||  type Monad a
 ||
 ||  op monadBind : [a,b] (Monad a) * (a -> Monad b) -> Monad b
-||  op monadSeq : [a,b] (Monad a) * (Monad b) -> Monad b
+||  op monadSeq  : [a,b] (Monad a) *      (Monad b) -> Monad b
 ||  op return : [a] a -> Monad a
 ||
 ||  axiom left_unit is

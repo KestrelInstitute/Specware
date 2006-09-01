@@ -92,15 +92,15 @@ easy reference.
 ||  `unit-definition ::= `unit-identifier = `unit-term
 ||  
 ||  `unit-term ::=
-||     `spec-term
-||   | `morphism-term
-||   | `diagram-term
-||   | `target-code-term
-||   | `proof-term
+||      `spec-term
+||    | `morphism-term
+||    | `diagram-term
+||    | `target-code-term
+||    | `proof-term
 ||  
 ||  `specware-file-contents ::=
-||     `unit-term
-||   | `infile-unit-definition { `infile-unit-definition }*
+||      `unit-term
+||    | `infile-unit-definition { `infile-unit-definition }*
 ||  
 ||  `infile-unit-definition ::= `fragment-identifier = `unit-term
 ||  
@@ -132,14 +132,13 @@ easy reference.
 <para>
 <<
 ||  `spec-term ::=
-||     `unit-identifier
-||   | `spec-form
-||   | `spec-qualification
-||   | `spec-translation
-||   | `spec-substitution
-||   | `diagram-colimit
-||   | `obligator
-||  
+||      `unit-identifier
+||    | `spec-form
+||    | `spec-qualification
+||    | `spec-translation
+||    | `spec-substitution
+||    | `diagram-colimit
+||    | `obligator
 >>
 </para>
 </formalpara>
@@ -174,9 +173,9 @@ easy reference.
 ||  `name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
 ||  
 ||  `name-map-item ::=
-||     `type-name-map-item
-||   | `op-name-map-item
-||   | `wildcard-map-item
+||      `type-name-map-item
+||    | `op-name-map-item
+||    | `wildcard-map-item
 ||  
 ||  `type-name-map-item ::= [ type ] `name +-> `name
 ||  
@@ -223,8 +222,8 @@ easy reference.
 <para>
 <<
 ||  `morphism-term ::=
-||     `unit-identifier
-||   | `spec-morphism
+||      `unit-identifier
+||    | `spec-morphism
 ||  
 ||  `spec-morphism ::= morphism `spec-term -> `spec-term `name-map
 >>
@@ -235,19 +234,18 @@ easy reference.
 <para>
 <<
 ||  `diagram-term ::=
-||     `unit-identifier
-||   | `diagram-form
+||      `unit-identifier
+||    | `diagram-form
 ||  
 ||  `diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||  
 ||  `diagram-element ::=
-||     `diagram-node
-||   | `diagram-edge
+||      `diagram-node
+||    | `diagram-edge
 ||  
 ||  `diagram-node ::= `simple-name +-> `spec-term
 ||  
 ||  `diagram-edge ::= `simple-name : `simple-name -> `simple-name +-> `morphism-term
-||     
 >>
 </para>
 </formalpara>
@@ -321,7 +319,6 @@ easy reference.
 ||  `local-type-variable ::= `simple-name
 ||  
 ||  `local-type-variable-list ::= `local-type-variable { , `local-type-variable }*
-||  
 >>
 </para>
 </formalpara>
@@ -343,7 +340,9 @@ easy reference.
 <formalpara><title>Op-declarations</title>
 <para>
 <<
-||  `op-declaration ::= op `op-name [ `fixity ] : `type-scheme
+||  `op-declaration ::=
+||      op [ `type-variable-binder ] `op-name [ `fixity ] : `type
+||    | op `op-name [ `fixity ] : `type-variable-binder `type
 ||  
 ||  `fixity ::= `associativity `priority
 ||  
@@ -351,10 +350,7 @@ easy reference.
 ||  
 ||  `priority ::= `nat-literal
 ||  
-||  `type-scheme ::= [ `type-variable-binder ] `type-descriptor
-||  
 ||  `type-variable-binder ::= `[ `local-type-variable-list `]
-||  
 >>
 </para>
 </formalpara>
@@ -363,7 +359,9 @@ easy reference.
 <para>
 <<
 ||  `op-definition ::=
-||    def [ `type-variable-binder ] `formal-expression [ : `type-descriptor ] `equals
+||      def [ `type-variable-binder ] `formal-expression [ : `type-descriptor ] `equals
+||        `expression
+||    | def `formal-expression [ : [ `type-variable-binder ] `type-descriptor ] `equals
 ||        `expression
 ||  
 ||  `formal-expression ::= `op-name | `formal-application
@@ -373,7 +371,6 @@ easy reference.
 ||  `formal-application-head ::= `op-name | `formal-application
 ||  
 ||  `formal-parameter ::= `closed-pattern
-||  
 >>
 </para>
 </formalpara>
@@ -419,7 +416,6 @@ easy reference.
 ||    | `type-restriction
 ||    | `type-comprehension
 ||    | ( `type-descriptor )
-||  
 >>
 </para>
 </formalpara>
@@ -432,7 +428,6 @@ easy reference.
 ||  `type-summand ::= '| `constructor [ `slack-type-descriptor ]
 ||  
 ||  `constructor ::= `simple-name
-||  
 >>
 </para>
 </formalpara>
@@ -443,7 +438,6 @@ easy reference.
 ||  `type-arrow ::= `arrow-source -> `type-descriptor
 ||  
 ||  `arrow-source ::= `type-sum | `slack-type-descriptor
-||  
 >>
 </para>
 </formalpara>
@@ -452,7 +446,6 @@ easy reference.
 <para>
 <<
 ||  `type-product ::= `tight-type-descriptor * `tight-type-descriptor { * `tight-type-descriptor }*
-||  
 >>
 </para>
 </formalpara>
@@ -465,7 +458,6 @@ easy reference.
 ||  `actual-type-parameters ::= `closed-type-descriptor | ( `proper-type-list )
 ||  
 ||  `proper-type-list ::= `type-descriptor , `type-descriptor { , `type-descriptor }*
-||  
 >>
 </para>
 </formalpara>
@@ -488,7 +480,6 @@ easy reference.
 ||  `field-typer ::= `field-name : `type-descriptor
 ||  
 ||  `field-name ::= `simple-name
-||  
 >>
 </para>
 </formalpara>
@@ -497,7 +488,6 @@ easy reference.
 <para>
 <<
 ||  `type-restriction ::= ( `slack-type-descriptor '| `expression )
-||  
 >>
 </para>
 </formalpara>
@@ -506,7 +496,6 @@ easy reference.
 <para>
 <<
 ||  `type-comprehension ::= '{ `annotated-pattern '| `expression '}
-||  
 >>
 </para>
 </formalpara>
@@ -562,7 +551,6 @@ easy reference.
 <para>
 <<
 ||  `lambda-form ::= fn `match
-||  
 >>
 </para>
 </formalpara>
@@ -598,7 +586,6 @@ easy reference.
 <para>
 <<
 ||  `if-expression ::= if `expression then `expression else `expression
-||  
 >>
 </para>
 </formalpara>
@@ -615,7 +602,6 @@ easy reference.
 ||  `annotable-variable ::= `local-variable [ : `type-descriptor ]
 ||  
 ||  `local-variable ::= `simple-name
-||  
 >>
 </para>
 </formalpara>
@@ -667,7 +653,6 @@ easy reference.
 ||    | `nat-literal
 ||    | `char-literal
 ||    | `string-literal
-||  
 >>
 </para>
 </formalpara>
@@ -676,7 +661,6 @@ easy reference.
 <para>
 <<
 ||  `boolean-literal ::= true | false
-||  
 >>
 </para>
 </formalpara>
@@ -736,7 +720,6 @@ easy reference.
 ||  `field-selection ::= `closed-expression . `field-selector
 ||  
 ||  `field-selector ::= `nat-literal | `field-name
-||  
 >>
 </para>
 </formalpara>
@@ -747,7 +730,6 @@ easy reference.
 ||  `tuple-display ::= ( `tuple-display-body )
 ||  
 ||  `tuple-display-body ::= [ `expression , `expression { , `expression }* ]
-||  
 >>
 </para>
 </formalpara>
@@ -760,7 +742,6 @@ easy reference.
 ||  `record-display-body ::= [ `field-filler { , `field-filler }* ]
 ||  
 ||  `field-filler ::= `field-name `equals `expression
-||  
 >>
 </para>
 </formalpara>
@@ -785,7 +766,6 @@ easy reference.
 ||  `list-display ::= '[ `list-display-body ']
 ||  
 ||  `list-display-body ::= [ `expression { , `expression }* ]
-||  
 >>
 </para>
 </formalpara>
