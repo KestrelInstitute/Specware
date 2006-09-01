@@ -2925,16 +2925,28 @@ sequence starting with the current one.  See `x-symbol-temp-help'."
 	    (setq fonts1 nil)
 	  (setq fonts1 (cdr fonts1))))
       (unless (or result (null raise))
-	(unless ;; this test is a hack by jlm to avoid nuisance warnings...
-	    (member fonts '(("-xsymb-xsymb0%s-medium-r-normal--%d-%d0-75-75-p-*-adobe-fontspecific" "-adobe-symbol%s-medium-r-normal-*-*-%d0-*-*-*-*-adobe-fontspecific")
-			    ("-xsymb-xsymb0%s-medium-r-normal--%d-%d0-75-75-p-*-adobe-fontspecific" "-adobe-symbol%s-medium-r-normal-*-*-%d0-*-*-*-*-adobe-fontspecific")
-			    ("-adobe-helvetica%s-medium-r-normal-*-%d-*-*-*-*-*-iso8859-1")
-			    ("-adobe-helvetica%s-medium-r-normal-*-%d-*-*-*-*-*-iso8859-1")))
-	  (lwarn 'x-symbol 'warning
-	    "Cannot find font in %s"
-	    (mapconcat (lambda (f) (x-symbol-try-font-name-0 f raise))
-		       fonts
-		       ", "))))
+	;; jlm:  The added test for raise-0-font is a hack to suppress noisy warnings
+	;;       about missing fonts that seem not be needed.
+	;;       I have no idea if this is reasonable or not, but haven't seen any
+	;;       real problems when sub/sup are missing.
+	(let ((font-str (mapconcat (lambda (f) (x-symbol-try-font-name-0 f (or raise 0)))
+				   fonts
+				   ", ")))
+	  ;; (message "Could not find font among %S" font-str) (sit-for 1)
+	  (let ((raise-0-font nil))
+	    ;; The meaning of raise seems to be:
+	    ;;   0 -- normal
+	    ;;   1 -- sub
+	    ;;   2 -- sup
+	    ;; If we can't find sub/sup but can find normal font, suppress warning.
+	    (dolist (font fonts)
+	      (when (setq raise-0-font (try-font-name (x-symbol-try-font-name-0 font 0)))
+		(return nil)))
+	    (when (null raise-0-font)
+	      (lwarn 'x-symbol 'warning
+		"Cannot find font among %s, with raise = %s"
+		font-str
+		raise)))))
       result)))
 
 (defun x-symbol-set-cstrings (charsym coding cstring fchar face)
