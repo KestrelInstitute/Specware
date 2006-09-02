@@ -97,6 +97,29 @@
     (setf (package-doc-string package) doc-string)
     package))
 
+#-sb-xc-host
+(defun %defun (name def doc inline-lambda source-location)
+  (declare (ignore source-location))
+  (declare (type function def))
+  (declare (type (or null simple-string) doc))
+  (aver (legal-fun-name-p name)) ; should've been checked by DEFMACRO DEFUN
+  (sb-c:%compiler-defun name inline-lambda nil)
+;;; Heavy-handed way to get rid of spurious warnings
+;  (when (fboundp name)
+;    (/show0 "redefining NAME in %DEFUN")
+;    (style-warn "redefining ~S in DEFUN" name))
+  (setf (fdefinition name) def)
+
+  ;; FIXME: I want to do this here (and fix bug 137), but until the
+  ;; breathtaking CMU CL function name architecture is converted into
+  ;; something sane, (1) doing so doesn't really fix the bug, and
+  ;; (2) doing probably isn't even really safe.
+  #+nil (setf (%fun-name def) name)
+
+  (when doc
+    (setf (fdocumentation name 'function) doc))
+  name)
+
 (defun eval-in-lexenv (original-exp lexenv)
   (declare (optimize (safety 1)))
   ;; (aver (lexenv-simple-p lexenv))
