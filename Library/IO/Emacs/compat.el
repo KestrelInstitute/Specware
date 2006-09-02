@@ -248,7 +248,7 @@
 
 (when (eq lisp-emacs-interface-type 'slime)
   (setq slime-*directory*
-	(concat (getenv "SPECWARE4") "/Library/IO/Emacs/slime-2.0/"))
+	(concat (getenv "SPECWARE4") "/Library/IO/Emacs/slime/"))
   (defvar slime-*use-fsf-compliant-keybindings* t) ; Use c-c as command prefix (not c-z)
   (require 'slime)
   (setq lisp-program (getenv "LISP_EXECUTABLE"))

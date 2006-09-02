@@ -94,6 +94,7 @@
 			sw:common-lisp-host
 			sw:common-lisp-image-file
 			))
+      (sit-for 5)
       (wait-for-prompt 0.1)
       (sw:eval-in-lisp-no-value
        (format "(cl:namestring (specware::change-directory %S))" sw:common-lisp-directory))
@@ -208,8 +209,9 @@
   (unless (inferior-lisp-running-p)
     ;; first wait up to 5 seconds to see if existing lisp is available
     (if (dotimes (i 100)
-	  (when (< i 50)
-	    (message "Checking to see if existing lisp is running in buffer %S -- %S" sw:common-lisp-buffer-name (- 100 i)))
+	  (when (> i 50)
+	    (message "Checking to see if existing lisp is running in buffer %S -- %S"
+		     sw:common-lisp-buffer-name (- 100 i)))
 	  (sit-for 0.1 t)
 	  (when (inferior-lisp-running-p)
 	    (return t)))
@@ -220,7 +222,8 @@
 	    (run-specware4)
 	    ;; similar wait for up to 10 seconds
 	    (if (dotimes (i 100)
-		  (message "Checking to see if new lisp has started in buffer %S -- %S" sw:common-lisp-buffer-name (- 100 i))
+		  (message "Checking to see if new lisp has started in buffer %S -- %S"
+			   sw:common-lisp-buffer-name i (- 100 i))
 		  (sit-for 0.1 t)
 		  (when (inferior-lisp-running-p)
 		    (return t)))
@@ -348,9 +351,10 @@
       (when (file-exists-p specware4-lisp)
 	(copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
       (copy-file specware4-base-lisp specware4-lisp t))
+    (sit-for 3)
     (eval-in-lisp-in-order
      (format "(cl:load %S)"
-	     (concat *specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
+	     (concat *specware4-dir "/Applications/Handwritten/Lisp/load-utilities.lisp")))
     (eval-in-lisp-in-order
      (format "(cl:load %S)"
 	     (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
@@ -401,11 +405,11 @@
     (let ((sw:common-lisp-image-file base-world-name))
       (sit-for 3)
       (run-lisp-application)))
-  (unless (inferior-lisp-running-p)
-    (sit-for 3))
+  (sit-for 3)
   (eval-in-lisp-in-order
    (format "(cl:load %S)"
-	   (concat *specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
+	   (concat *specware4-dir "/Applications/Handwritten/Lisp/load-utilities." *fasl-extension*)))
+  (sit-for 3)
   (eval-in-lisp-in-order (format "(specware::setenv \"SWPATH\" %S)"
 				    (concat (sw::normalize-filename *specware4-dir)
 					    (if *windows-system-p* ";" ":")

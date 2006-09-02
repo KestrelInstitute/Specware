@@ -80,7 +80,9 @@ balanced."
          (slime-repl-grab-old-output end-of-input)
          (slime-repl-recenter-if-needed))
         ((slime-input-complete-p slime-repl-input-start-mark 
-                                 slime-repl-input-end-mark)
+                                 (ecase slime-repl-return-behaviour
+                                   (:send-only-if-after-complete (min (point) slime-repl-input-end-mark))
+                                   (:send-if-complete slime-repl-input-end-mark)))
          (sw-send-input t))
         (t 
          (slime-repl-newline-and-indent)

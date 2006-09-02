@@ -8,7 +8,7 @@
 
 (defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
 
-(push (concat *specware-emacs* "slime-2.0/")
+(push (concat *specware-emacs* "slime/")
       load-path)
 
 (push (concat *specware-emacs* "x-symbol/")
