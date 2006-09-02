@@ -31,7 +31,9 @@
 #+cmu
 (setq c::*compile-print* nil)
 #+sbcl
-(declaim (sb-ext:muffle-conditions sb-ext:compiler-note))
+(declaim (sb-ext:muffle-conditions sb-ext:compiler-note
+				   sb-int:simple-style-warning
+				   sb-int:package-at-variance))
 #+sbcl
 (setq sb-ext::*compile-print* nil)
 #+sbcl
@@ -256,8 +258,11 @@
        #+sbcl    sb-ext:*init-hooks*)
 
 #+sbcl
+(defvar *sbcl-home* (specware::getenv "SBCL_HOME"))
+#+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
+		    (specware::setenv "SBCL_HOME" *sbcl-home*)
 		    )
        sb-ext:*init-hooks*)
 
