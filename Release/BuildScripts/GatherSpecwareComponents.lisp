@@ -244,7 +244,7 @@
 	 (franz-dir        (ensure-subdir-exists component-dir "Franz"))
 	 (openmcl-dir      (ensure-subdir-exists component-dir "OpenMCL"))
 	 ;;
-	 (generic-dirs     '("x-symbol" "slime-2.0")) 
+	 (generic-dirs     '("x-symbol" "slime")) 
 	 (slime-files      '("load-slime.el" 
 			     "load-slime.lisp" 
 			     "sw-slime.el" 
