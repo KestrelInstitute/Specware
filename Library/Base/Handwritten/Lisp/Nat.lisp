@@ -34,3 +34,6 @@
 (defun minus-2 (x y) (- x y))
 
 (defun lteq-2 (x y) (<= x y))
+
+(defun natural? (x) (>= x 0))
+
