@@ -54,6 +54,10 @@ SpecCalc qualifying spec
     {unitId <- getCurrentUID;
      raise (TypeCheck (pos, "ProofGenLocal: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
 
+  def SpecCalc.evaluateOtherProofCheck _ (* claimName, other, valueName, proverName, assertions, possibleOptions, baseOptions*) ) pos =
+    {unitId <- getCurrentUID;
+     raise (TypeCheck (pos, "ProofCheck: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
+
   def SpecCalc.evaluateOtherObligations _ (* value *) pos = 
     {unitId <- getCurrentUID;
      raise (TypeCheck (pos, "Obligations: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))}
@@ -81,6 +85,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.25  2006/05/02 02:53:57  mcdonald
+%% new pragmas slot for spec morphisms
+%%
 %% Revision 1.24  2005/08/18 13:33:01  mcdonald
 %% prep for improved test comparing scterms
 %%
