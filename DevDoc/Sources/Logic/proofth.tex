@@ -36,31 +36,6 @@ contexts as
  {\Rcxodec}
 \]
 
-%\[
-%\rruleV
-% {\cxwfO}
-% {\tdecO\in\cx}
-% {\tdefdots{\tnam}\not\in\cx}
-% {\isty{\snoc{\cx}{\tvdec{\tvarS}}}{\typ}}
-% {\seqlen{\tvarS}=n}
-% {\cxwf{\snoc{\cx}{\tdefO}}}
-% {\Rcxtdef}
-%\]
-
-%\[
-%\rruleV
-% {\cxwfO}
-% {\odecO\in\cx}
-% {\odefdots{\onam}\not\in\cx}
-% {\theo{\snoc{\cx}{\tvdec{\tvarS'}}}
-%       {\exI{\var}{\tsbslash{\typ}{\tvarS}{\tvarS'}}{\eq{\var}{\expr}}}}
-% {\onam\not\in\opsin{\expr}}
-% {\cxwf{\snoc{\cx}{\odef{\tvarS'}
-%                        {\onam}
-%                        {\esbs{\expr}{\var}{\op{\onam}{\tvarS'}}}}}}
-% {\Rcxodef}
-%\]
-
 \[
 \rruleII
  {\cxwfO}
@@ -111,36 +86,6 @@ that we do not require that all the type variables in $\typ$ are among
 $\tvarS$, because there is no need for that restriction. However, since a
 well-formed spec has no type variable declarations, an op declaration in a
 well-formed spec automatically satisfies the restriction.
-%\item
-%A type definition $\tdefO$ can be added to $\cx$ if $\tnam$ is already
-%declared but not already defined in $\cx$. The defining type $\typ$ must be
-%well-formed in $\cx$ extended with the type variables $\tvarS$, which must be
-%distinct and whose number must match the arity of $\tnam$. Similarly to op
-%declarations, we do not require that all type variables in $\typ$ are among
-%$\tvarS$, but such a restriction is automatically satisfied in a well-formed
-%spec. Note that we allow vacuous type definitions such as
-%$\tdef{\tnam}{\seqO}{\tnam}$ or
-%$\seqII{\tdef{\tnam}{\seqO}{\tnam'}}{\tdef{\tnam'}{\seqO}{\tnam}}$, as well as
-%other (mutually) recursive definitions that do not uniquely pin down the
-%defined type such as the usual definition of lists; uniqueness can be enforced
-%by suitable axioms (e.g.\ induction on lists). Unlike \cite{lm}, there is no
-%implicit assumption of (mutually) recursively defined types having least
-%fixpoint semantics because there is no general way to generate implicit axioms
-%expressing least fixpoint semantics in the \MS\ type system.
-%\item
-%An op definition for $\onam$ can be added to $\cx$ if $\onam$ is already
-%declared but not already defined in $\cx$. It is allowed to use different type
-%variables $\tvarS'$ from the type variables $\tvarS$ used in the declaration
-%of $\onam$, as long as they are also distinct and are the same number (i.e.\
-%it is an injective renaming); accordingly, the type $\typ$ of $\onam$ becomes
-%$\tsbslash{\typ}{\tvarS}{\tvarS'}$. Of course, it is possible that
-%$\tvarS'=\tvarS$. The defining expression of $\onam$ must be such that there
-%is a unique solution to the equation obtained by replacing $\onam$ with some
-%variable $\var$ in the defining equation of $\onam$; turning ``replacement of
-%$\onam$ with $\var$'' around, the equation is $\eq{\var}{\expr}$ and the
-%defining expression of $\onam$ is $\esbs{\expr}{\var}{\op{\onam}{\tvarS'}}$.
-%The uniqueness of the solution is expressed as a theorem (defined later) in
-%$\cx$ extended with the type variables $\tvarS'$.
 \item
 A formula $\expr$ can be added to $\cx$ as an axiom if $\expr$ has type
 $\bool$ (defined later). In general, the axiom may be polymorphic in
@@ -212,9 +157,8 @@ well-formed types as
 \]
 
 \[
-\rruleII
- {\istyO{\typ_1}}
- {\istyO{\typ_2}}
+\rruleI
+ {\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}}
  {\istyO{\tarrO}}
  {\Rtarr}
 \]
@@ -227,13 +171,6 @@ well-formed types as
  {\Rtrec}
 \]
 
-%\[
-%\rruleI
-% {\FORALL{i}{\istyO{\typ_i}}}
-% {\istyO{\tsumO}}
-% {\Rtsum}
-%\]
-
 \[
 \rruleII
  {\hastyO{\tspred}{\tarr{\typ}{\bool}}}
@@ -241,22 +178,6 @@ well-formed types as
  {\istyO{\tsubO}}
  {\Rtsub}
 \]
-
-%\[
-%\rruleV
-% {\theoO{\fa{\var}{\typ}{\app{\tqpred}{\tupleII{\var}{\var}}}}}
-% {\theoO{\faS{\seqII{\bnd{\var'}{\typ}}{\bnd{\var''}{\typ}}}
-%             {\impl{\app{\tqpred}{\tupleII{\var'}{\var''}}}
-%                   {\app{\tqpred}{\tupleII{\var''}{\var'}}}}}}
-% {\theoO{\faS{\seqIII{\bnd{\var_1}{\typ}}{\bnd{\var_2}{\typ}}{\bnd{\var_3}{\typ}}}
-%             {\impl{\conj{\app{\tqpred}{\tupleII{\var_1}{\var_2}}}
-%                         {\app{\tqpred}{\tupleII{\var_2}{\var_3}}}}
-%                   {\app{\tqpred}{\tupleII{\var_1}{\var_3}}}}}}
-% {\var'\neq\var''\AND\var_1\neq\var_2\AND\var_2\neq\var_3\AND\var_1\neq\var_3}
-% {\efvar{\tqpred}=\emptyset}
-% {\istyO{\tquotO}}
-% {\Rtquot}
-%\]
 
 Explanation:
 \begin{itemize}
@@ -270,178 +191,39 @@ A type instance $\tinstO$ is well-formed in any well-formed context $\cx$ that
 declares $\tnam$ if the argument types are well-formed in $\cx$ and their
 number matches the arity of $\tnam$.
 \item
-The rules for arrow and record types are straightforward. Note that in
-$\Rtarr$ we do not explicitly require $\cx$ to be well-formed because the fact
-that a type is well-formed in a context implies that the context is
-well-formed (as proved later). However, the condition is explicit in $\Rtrec$
-because a record type can have zero components.
-%The rules for arrow, record, and sum types are straightforward. Note that in
-%$\Rtarr$ and $\Rtsum$ we do not explicitly require $\cx$ to be well-formed
-%because the fact that a type is well-formed in a context implies that the
-%context is well-formed (as proved later). However, the condition is explicit
-%in $\Rtrec$ because a record type can have zero components (unlike a sum type
-%that always has at least one component).
+An arrow type $\tarrO$ is well-formed in a context $\cx$ if its domain type
+$\typ_1$ is well-formed in $\cx$ and its range type $\typ_2$ is well-formed in
+$\cx$ extended with a variable $\var$ of type $\typ_1$. The judgement
+$\istyO{\typ_1}$ is not an explicit premise of the rule because, as proved
+later, it is a consequence of the existing premise
+$\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}$. Allowing $\cx$ to be
+extended with $\vdec{\var}{\typ_1}$ for the well-formedness of $\typ_2$ makes
+sense because if $\typ_1$ is empty then $\tarrO$ contains just the empty
+function (i.e.\ the function with empty domain) and the well-formedness of
+$\typ_2$ is irrelevant.\footnote{The declaration $\vdec{\var}{\typ_1}$ enables
+the derivation of the formula $\ex{\var}{\typ_1}{\true}$, which is not
+otherwise derivable in general, because $\typ_1$ may be empty. Thus, $\typ_2$
+may be well-formed in $\snoc{\cx}{\vdec{\var}{\typ_1}}$ without necessarily
+being well-formed in $\cx$. An example is a type $\typ_2$ that contains an
+expression $\iif{(\ex{\var}{\typ_1}{\true})}{\expr_1}{\expr_2}$ where
+$\expr_2$ is not well-typed in a consistent context because some theorem does
+not hold (e.g.\ that the divisor of a division is not 0); if
+$\ex{\var}{\typ_1}{\true}$ is a theorem, then the context of the else branch
+is inconsistent (see rule \Reif\ later) and therefore $\expr_2$ is well-typed
+in that inconsistent context.} Even though $\typ_2$ cannot contain $\var$
+(because well-formed types have no free variables), if \MS\ were extended with
+dependent arrow types\footnote{Such an extension is indeed planned.} then
+$\typ_2$ would be allowed to contain $\var$ and the form of the rule would
+seem more natural than it does now. If we used a more restrictive rule with
+premises $\istyO{\typ_1}$ and $\istyO{\typ_2}$, then \thmref{thm-exty-wf}
+would not hold (see explanation near that theorem).
+\item
+The rule for record types is straightforward.
 \item
 For restriction types, we require the predicate to have type
 $\tarr{\typ}{\bool}$, which implies that $\typ$ is a well-formed type (as
 proved later). We also require that $\tspred$ has no free variables.
-%\item
-%For quotient types, we require the predicate to be an equivalence relation,
-%i.e.\ that reflexivity, symmetry, and transitivity are theorems, which implies
-%that $\typ$ and $\cx$ are well-formed, that $\tqpred$ has type
-%$\tarr{\tprodII{\typ}{\typ}}{\bool}$, etc.\ (as proved later). The condition
-%that the variables $\var'$, $\var''$, etc.\ are distinct is important: without
-%it, the symmetry and transitivity requirements would effectively disappear
-%(because the corresponding formulas would be trivially provable), thus only
-%requiring the binary relation to be reflexive. We require that $\tqpred$ has
-%no free variables.
 \end{itemize}
-
-%\subsection{Type equivalence}
-
-%We define a ternary relation $\ternrel{\teqY}{\Cx}{\Typ}{\Typ}$ to capture
-%type equivalence as
-
-%\[
-%\rruleIII
-% {\cxwfO}
-% {\tdefO\in\cx}
-% {\FORALL{i}{\istyO{\typ_i}}}
-% {\teqO{\tinstO}{\tsbslash{\typ}{\tvarS}{\typS}}}
-% {\Rtedef}
-%\]
-
-%\[
-%\rruleI
-% {\istyO{\typ}}
-% {\teqO{\typ}{\typ}}
-% {\Rterefl}
-%\]
-
-%%\[
-%%\rruleII
-%% {\teqO{\typ_1}{\typ_2}}
-%% {\teqO{\typ_1}{\typ_3}}
-%% {\teqO{\typ_2}{\typ_3}}
-%% {\Rtesymmtrans}
-%%\]
-
-%\[
-%\rruleI
-% {\teqO{\typ_1}{\typ_2}}
-% {\teqO{\typ_2}{\typ_1}}
-% {\Rtesymm}
-%\]
-
-%\[
-%\rruleII
-% {\teqO{\typ_1}{\typ_2}}
-% {\teqO{\typ_2}{\typ_3}}
-% {\teqO{\typ_1}{\typ_3}}
-% {\Rtetrans}
-%\]
-
-%%\[
-%%\rruleIII
-%% {\istyO{\typ}}
-%% {\teqO{\typ_1}{\typ_2}}
-%% {\istsbsat{\typ}{\typ_1}{\typ_2}{\pos}{\typ'}}
-%% {\teqO{\typ}{\typ'}}
-%% {\Rtesbs}
-%%\]
-
-%\[
-%\rruleII
-% {\istyO{\tinstO}}
-% {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
-% {\teqO{\tinstO}{\tinst{\tnam}{\typS'}}}
-% {\Rteinst}
-%\]
-
-%\[
-%\rruleII
-% {\teqO{\typ_1}{\typ_1'}}
-% {\teqO{\typ_2}{\typ_2'}}
-% {\teqO{\tarr{\typ_1}{\typ_2}}{\tarr{\typ_1'}{\typ_2'}}}
-% {\Rtearr}
-%\]
-
-%\[
-%\rruleII
-% {\cxwfO}
-% {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
-% {\teqO{\trecO}{\trec{i}{\fnam_i}{\typ_i'}}}
-% {\Rterec}
-%\]
-
-%%\[
-%%\rruleI
-%% {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
-%% {\teqO{\tsumO}{\tsum{i}{\cnam_i}{\typ_i'}}}
-%% {\Rtesum}
-%%\]
-
-%\[
-%\rruleIV
-% {\istyO{\tsubO}}
-% {\istyO{\tsub{\typ'}{\tspred'}}}
-% {\teqO{\typ}{\typ'}}
-% {\theoO{\eq{\tspred}{\tspred'}}}
-% {\teqO{\tsubO}{\tsub{\typ'}{\tspred'}}}
-% {\Rterestr}
-%\]
-
-%%\[
-%%\rruleIV
-%% {\istyO{\tquotO}}
-%% {\teqO{\typ}{\typ'}}
-%% {\theoO{\eq{\tqpred}{\tqpred'}}}
-%% {\efvar{\tqpred'}=\emptyset}
-%% {\teqO{\tquotO}{\tquot{\typ'}{\tqpred'}}}
-%% {\Rtequot}
-%%\]
-
-%\[
-%\rruleII
-% {\istyO{\trecO}}
-% {\funcinj{\perm}{\setFT{1}{n}}{\setFT{1}{n}}}
-% {\teqO{\trecO}{\trec{i}{\fnam_{\perm(i)}}{\typ_{\perm(i)}}}}
-% {\Rterecord}
-%\]
-
-%%\[
-%%\rruleII
-%% {\istyO{\tsumO}}
-%% {\funcinj{\perm}{\setFT{1}{n}}{\setFT{1}{n}}}
-%% {\teqO{\tsumO}{\tsum{i}{\cnam_{\perm(i)}}{\typ_{\perm(i)}}}}
-%% {\Rtesumord}
-%%\]
-
-%Explanation:
-%\begin{itemize}
-%\item
-%A type definition introduces type equivalences, one for each instance of the
-%defining equation.
-%\item
-%Type equivalence is indeed an equivalence, i.e.\ reflexive, symmetric, and
-%transitive.
-%\item
-%Type equivalence is a congruence with respect to syntactic (meta-)operations
-%to construct types in the \MS\ type system, namely type instantiations, arrow
-%types, record types, and restriction types. In addition, equal restriction
-%predicates give rise to equivalent restriction types. The premise
-%$\istyO{\tsub{\typ'}{\tspred'}}$ in \Rterestr\ may be redundant, i.e.\
-%derivable from the others, but this fact has not been established yet and so
-%for now we have it as an explicit premise, which is needed to prove
-%\thmref{thm-equiv-types-wf}.
-%\item
-%The order of the components of a record type is unimportant: any permutation
-%of the components yields equivalent types. In the rule, the permutation is
-%captured by a bijective function $\perm$ on the field indices $\setFT{1}{n}$
-%(the rule explicitly says that $\perm$ is injective only, but since domain and
-%codomain are finite and equal, it follows that $\perm$ is also surjective,
-%hence bijective).
-%\end{itemize}
 
 \subsection{Subtyping}
 
@@ -487,41 +269,6 @@ capture subtyping as
  {\Rstrec}
 \]
 
-%\[
-%\rruleIV
-% {\istyO{\tsumO}}
-% {\FORALL{i}{\issubO{\typ_i}{\tspred_i}{\typ_i'}}}
-% {\tspred=\abs{\var}
-%              {\tsum{i}{\cnam_i}{\typ_i'}}
-%              {\disjI{i}
-%                     {\ex{\var'}{\typ_i'}
-%                         {(\conj{\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}
-%                                {\app{\tspred_i}{\var'}})}}}}
-% {\var\neq\var'}
-% {\issubO{\tsumO}{\tspred}{\tsum{i}{\cnam_i}{\typ_i'}}}
-% {\Rstsum}
-%\]
-
-%\[
-%\rruleIII
-% {\issubO{\typ_0}{\tspred_1}{\typ_1}}
-% {\issubO{\typ_1}{\tspred_2}{\typ_2}}
-% {\tspred=\abs{\var}
-%              {\typ_2}
-%              {(\conj{\app{\tspred_2}{\var}}{\app{\tspred_1}{\var}})}}
-% {\issubO{\typ_0}{\tspred}{\typ_2}}
-% {\Rsttrans}
-%\]
-
-%\[
-%\rruleIII
-% {\issubO{\typ_1}{\tspred}{\typ_2}}
-% {\teqO{\typ_1}{\typ_1'}}
-% {\teqO{\typ_2}{\typ_2'}}
-% {\issubO{\typ_1'}{\tspred}{\typ_2'}}
-% {\Rstteq}
-%\]
-
 Explanation:
 \begin{itemize}
 \item
@@ -546,14 +293,6 @@ permutation is captured by a bijective function $\perm$ on the field indices
 $\setFT{1}{n}$ (the rule explicitly says that $\perm$ is injective only, but
 since domain and codomain are finite and equal, it follows that $\perm$ is
 also surjective, hence bijective).
-%Both record and sum types are monotonic in their component types with respect
-%to subtyping. The record subtype predicate holds when all the component
-%subtype predicates hold on the record components. The sum subtype predicate
-%holds when the appropriate component subtype predicate holds on the value of
-%the sum type.
-%\item
-%Rule $\Rstteq$ states the substitutivity of equivalent types in subtype
-%judgements.
 \end{itemize}
 
 We do not need a transitivity rule for subtyping. As defined later, subtyping
@@ -593,9 +332,8 @@ well-typed expressions as
 \]
 
 \[
-\rruleII
+\rruleI
  {\hasty{\snoc{\cx}{\vdecO}}{\expr}{\typ'}}
- {\istyO{\typ'}}
  {\hastyO{\absO}{\tarr{\typ}{\typ'}}}
  {\Reabs}
 \]
@@ -618,15 +356,6 @@ well-typed expressions as
  {\Reif}
 \]
 
-%\[
-%\rruleIII
-% {\hastyO{\expr}{\bool}}
-% {\hastyO{\expr_1}{\typ}}
-% {\hastyO{\expr_2}{\typ}}
-% {\hastyO{\iifO}{\typ}}
-% {\ReifO}
-%\]
-
 \[
 \rruleI
  {\istyO{\typ}}
@@ -640,20 +369,6 @@ well-typed expressions as
  {\hastyO{\pjopO}{\tarr{\trecO}{\typ_j}}}
  {\Reproj}
 \]
-
-%\[
-%\rruleI 
-% {\istyO{\tsumO}}
-% {\hastyO{\embO}{\tarr{\typ_j}{\tsumO}}}
-% {\Reembed}
-%\]
-
-%\[
-%\rruleI
-% {\istyO{\tquotO}}
-% {\hastyO{\quo}{\tarr{\typ}{\tquotO}}}
-% {\Requot}
-%\]
 
 \[
 \rruleII
@@ -698,8 +413,7 @@ the range type of the arrow type.
 An abstraction is well-typed if the body is well-typed in the context extended
 with the declaration of the variable bound by the abstraction. The type of the
 abstraction is the arrow type that has the type of the variable as domain and
-the type of the body as range. The premise $\istyO{\typ'}$ of \Reabs\ is
-needed to prove \thmref{thm-exty-wf}.
+the type of the body as range.
 \item
 An equality is well-typed with type $\bool$ if the left- and right-hand sides
 are both well-typed with a common type $\typ$.
@@ -719,15 +433,6 @@ value to the type itself.
 \item
 A projector for a well-formed record type is well-typed and denotes a function
 from the record type to the corresponding component type.
-%A projection is well-typed if $\expr$ is well-typed with a record type. The
-%type of the projection is the component type of the record type that
-%corresponds to the field name.
-%\item
-%An embedded for a well-formed sum type is well-typed and denotes a function
-%from the type corresponding to the constructor to the sum type.
-%\item
-%A quotienter for a well-formed quotient type is well-typed and denotes a
-%function from the quotiented type to the quotient type.
 \item
 Rules $\Resuper$ and $\Resub$ link the notion of well-typed expressions to the
 notion of subtyping. If an expression $\expr$ has a subtype $\typ$, it also
@@ -758,15 +463,6 @@ as
  {\Rthax}
 \]
 
-%\[
-%\rruleIII
-% {\cxwfO}
-% {\odefO\in\cx}
-% {\FORALL{i}{\istyO{\typ_i}}}
-% {\theoO{\eq{\opO}{\tsbslash{\expr}{\tvarS}{\typS}}}}
-% {\Rthdef}
-%\]
-
 \[
 \rruleI
  {\hastyOany{\expr}}
@@ -789,14 +485,6 @@ as
  {\Rthtrans}
 \]
 
-%\[
-%\rruleII
-% {\hastyOany{\opO}}
-% {\FORALL{i}{\teqO{\typ_i}{\typ_i'}}}
-% {\theoO{\eq{\opO}{\op{\onam}{\typS'}}}}
-% {\Rthopsbs}
-%\]
-
 \[
 \rruleIII
  {\hastyOany{\appO}}
@@ -805,14 +493,6 @@ as
  {\theoO{\eq{\appO}{\app{\expr_1'}{\expr_2'}}}}
  {\Rthappsbs}
 \]
-
-%\[
-%\rruleII
-% {\hastyOany{\absO}}
-% {\teqO{\typ}{\typ'}}
-% {\theoO{\eq{\absO}{\abs{\var}{\typ'}{\expr}}}}
-% {\Rthabssbs}
-%\]
 
 \[
 \rruleIII
@@ -833,50 +513,6 @@ as
  {\Rthifsbs}
 \]
 
-%\[
-%\rruleII
-% {\hastyOany{\descopO}}
-% {\teqO{\typ}{\typ'}}
-% {\theoO{\eq{\descopO}{\descop{\typ'}}}}
-% {\Rthdescsbs}
-%\]
-
-%\[
-%\rruleII
-% {\hastyOany{\projop{\trecO}{\fnam}}}
-% {\teqO{\trecO}{\trec{i}{\fnam_i'}{\typ_i'}}}
-% {\theoO{\eq{\projop{\trecO}{\fnam}}
-%            {\projop{\trec{i}{\fnam_i'}{\typ_i'}}{\fnam}}}}
-% {\Rthprojsbs}
-%\]
-
-%\[
-%\rruleII
-% {\hastyOany{\embed{\tsumO}{\cnam}}}
-% {\teqO{\tsumO}{\tsum{i}{\cnam_i'}{\typ_i'}}}
-% {\theoO{\eq{\embed{\tsumO}{\cnam}}
-%            {\embed{\tsum{i}{\cnam_i'}{\typ_i'}}{\cnam}}}}
-% {\Rthembedsbs}
-%\]
-
-%\[
-%\rruleII
-% {\hastyOany{\quotO}}
-% {\teqO{\tquotO}{\tquot{\typ'}{\tqpred'}}}
-% {\theoO{\eq{\quotO}{\quot{\tquot{\typ'}{\tqpred'}}}}}
-% {\Rthquotsbs}
-%\]
-
-%\[
-%\rruleIV
-% {\theoO{\expr}}
-% {\theoO{\eqO}}
-% {\isesbsat{\expr}{\expr_1}{\expr_2}{\pos}{\expr'}}
-% {\esbsatok{\expr}{\expr_1}{\expr_2}{\pos}}
-% {\theoO{\expr'}}
-% {\Rthsbs}
-%\]
-
 \[
 \rruleII
  {\theoO{\expr}}
@@ -884,15 +520,6 @@ as
  {\theoO{\expr'}}
  {\Rthsbs}
 \]
-
-%\[
-%\rruleIII
-% {\theoO{\expr}}
-% {\teqO{\typ_1}{\typ_2}}
-% {\istsbsat{\expr}{\typ_1}{\typ_2}{\pos}{\expr'}}
-% {\theoO{\expr'}}
-% {\Rthtsbs}
-%\]
 
 \[
 \rruleII
@@ -904,16 +531,6 @@ as
  {\Rthbool}
 \]
 
-%\[
-%\rruleIII
-% {\hastyO{\expr_1}{\typ}}
-% {\hastyO{\expr_2}{\typ}}
-% {\hastyO{\expr}{\tarr{\typ}{\typ'}}}
-% {\theoO{\impl{\eq{\expr_1}{\expr_2}}
-%              {\eq{\app{\expr}{\expr_1}}{\app{\expr}{\expr_2}}}}}
-% {\Rthcongr}
-%\]
-
 \[
 \rruleII
  {\istyO{\tarr{\typ}{\typ'}}}
@@ -924,12 +541,6 @@ as
                     {(\fa{\var''}{\typ}
                          {\eq{\app{\var}{\var''}}
                              {\app{\var'}{\var''}}})})}}}
-% {\hastyO{\expr_1}{\tarr{\typ}{\typ'}}}
-% {\hastyO{\expr_2}{\tarr{\typ}{\typ'}}}
-% {\var\not\in\efvar{\expr_1}\cup\efvar{\expr_2}}
-% {\theoO{\iiff{\eq{\expr_1}{\expr_2}}
-%              {(\fa{\var}{\typ}{\eq{\app{\expr_1}{\var}}
-%                                   {\app{\expr_2}{\var}}})}}}
  {\Rthext}
 \]
 
@@ -954,8 +565,6 @@ as
 \rruleI
  {\hastyO{\app{\descopO}{\expr}}{\typ}}
  {\theoO{\app{\expr}{(\app{\descopO}{\expr})}}}
-% {\hastyO{\descO}{\typ}}
-% {\theoO{\app{(\absO)}{(\descO)}}}
  {\Rthdesc}
 \]
 
@@ -970,56 +579,6 @@ as
  {\Rthrec}
 \]
 
-%\[
-%\rruleII
-% {\istyO{\tsumO}}
-% {\var\neq\var'}
-% {\theoO{\fa{\var}{\tsumO}
-%            {\disjI{i}{\ex{\var'}{\typ_i}
-%                          {\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}}}}}
-% {\Rthembsurj}
-%\]
-
-%\[
-%\rruleIII
-% {\istyO{\tsumO}}
-% {j\neq k}
-% {\var\neq\var'}
-% {\theoO{\faS{\seqII{\bnd{\var}{\typ_j}}{\bnd{\var'}{\typ_k}}}
-%             {\neeq{\app{\emb{\cnam_j}}{\var}}
-%                   {\app{\emb{\cnam_k}}{\var'}}}}}
-% {\Rthembdist}
-%\]
-
-%\[
-%\rruleII
-% {\istyO{\tsumO}}
-% {\var\neq\var'}
-% {\theoO{\faS{\seqII{\bnd{\var}{\typ_j}}{\bnd{\var'}{\typ_j}}}
-%             {\impl{\neeq{\var}{\var'}}
-%                   {\neeq{\app{\embO}{\var}}{\app{\embO}{\var'}}}}}}
-% {\Rthembinj}
-%\]
-
-%\[
-%\rruleII
-% {\istyO{\tquotO}}
-% {\var\neq\var'}
-% {\theoO{\fa{\var}{\tquotO}
-%            {\ex{\var'}{\typ}{\eq{\app{\quo}{\var'}}{\var}}}}}
-% {\Rthquotsurj}
-%\]
-
-%\[
-%\rruleII
-% {\istyO{\tquotO}}
-% {\var\neq\var'}
-% {\theoO{\faS{\seqII{\bnd{\var}{\typ}}{\bnd{\var'}{\typ}}}
-%             {\iiff{\app{\tqpred}{\tupleII{\var}{\var'}}}
-%                   {\eq{\app{\quo}{\var}}{\app{\quo}{\var'}}}}}}
-% {\Rthquoteclass}
-%\]
-
 \[
 \rruleI
  {\issubO{\trecO}{\tspred}{\trec{i}{\fnam_i}{\typ_i'}}}
@@ -1028,15 +587,6 @@ as
                 {\app{\projop{\trec{i}{\fnam_i}{\typ_i'}}{\fnam_j}}{\var}}}}}
  {\Rthprojsub}
 \]
-
-%\[
-%\rruleI
-% {\issubO{\tsumO}{\tspred}{\tsum{i}{\cnam_i}{\typ_i'}}}
-% {\theoO{\fa{\var}{\typ_j}
-%            {\eq{\app{\embedO}{\var}}
-%                {\app{\embed{\tsum{i}{\cnam_i}{\typ_i'}}{\cnam_j}}{\var}}}}}
-% {\Rthembsub}
-%\]
 
 \[
 \rruleII
@@ -1052,9 +602,6 @@ Explanation:
 Axioms in a well-formed context are readily instantiated into theorems, via
 rule $\Rthax$. More precisely, the type variables over which the axiom is
 polymorphic are replaced with well-formed types.
-%\item
-%Similarly, op definitions in a well-formed context are readily instantiated
-%into theorems, via rule $\Rthdef$.
 \item
 Rules \Rthrefl, \Rthsymm, and \Rthtrans\ say that equality is an
 equivalence, i.e.\ reflexive, symmetric, and transitive.
@@ -1064,20 +611,9 @@ equalities in expressions. Note that in rule $\Rthifsbs$ the context is
 extended with an axiom saying that the condition is true or false.
 \item
 Rule \Rthsbs\ says that anything equal to a theorem is itself a theorem.
-%\item
-%Rule $\Rthsbs$ allows the occurrence of an expression $\expr_1$ in a theorem
-%$\expr$ to be replaced with an expression $\expr_2$ provably equal to
-%$\expr_1$. Rules $\Rthsbsif$ is a variant that takes into account the context
-%of the branches.
-%\item
-%Rule $\Rthtsbs$ allows the occurrence of a type $\typ_1$ in a theorem $\expr$
-%to be replaced with an equivalent type $\typ_2$.
 \item
 Rule \Rthbool\ asserts that $\true$ and $\false$ are the only values of type
 $\bool$.
-%\item
-%Rule $\Rthcongr$ asserts that equality is a congruence with respect to any
-%function.
 \item
 Rule \Rthext\ says that a function is characterized by its values over all
 the values of its domain, i.e.\ by extensionality.
@@ -1096,22 +632,9 @@ the description.
 \item
 Rule \Rthrec\ says that a record is characterized by the values of its
 components.
-%\item
-%Rules $\Rthembsurj$, $\Rthembdist$, and $\Rthembinj$ characterize sum types.
-%They say that every value of a sum type is the image of some constructor
-%(i.e.\ the constructors are collectively surjective), that the images of
-%distinct constructors are disjoint, and that each constructor is injective.
-%\item
-%Rules $\Rthquotsurj$ and $\Rthquoteclass$ characterize quotient types. The
-%first rules says that $\quotO$ is a surjective function (i.e.\ every quotient
-%value is obtained by applying it to some value of the quotiented type). The
-%second rule says that $\quotO$ maps each value of the quotiented type to its
-%equivalence class, which is a value of the quotient type.
 \item
 Rule \Rthprojsub\ says that projectors for record subtypes agree with
 projectors for record supertypes.
-%Rules $\Rthprojsub$ and $\Rthembsub$ say that projectors/embedders for
-%record/sum subtypes agree with projectors/embedders for record/sum supertypes.
 \item
 Rule \Rthsub\ says that every value of a subtype satisfies the predicate that
 characterizes the subtype with respect to a supertype.
@@ -1125,7 +648,6 @@ The previous subsections have defined judgements of the forms
 \cxwfO \\
 \spwfO \\
 \istyO{\typ} \\
-%\teqO{\typ_1}{\typ_2} \\
 \issubO{\typ_1}{\tspred}{\typ_2} \\
 \hastyO{\expr}{\typ} \\
 \theoO{\expr}

@@ -40,29 +40,14 @@ just $\tnam$.
 \item
 An arrow type $\tarrO$ consists of a domain $\typ_1$ and a range $\typ_2$.
 \item
-A record type $\trecO$ consists of typed fields $\fnam_i$. There exists one
-record type that has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only
+A record type $\trecO$ consists of typed fields $\fnam_i$. There is one record
+type that has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only
 inhabitant is the empty record. All the fields of a record type must be
 distinct names.
-%\item
-%Record types $\trecO$ (resp.\ sum types $\tsumO$) consist of typed fields
-%$\fnam_i$ (resp.\ constructors $\cnam_i$). There exists one record type that
-%has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only inhabitant is the
-%empty record. A sum type, instead, always has at least one constructor. All
-%the fields (resp.\ constructors) of a record (resp.\ sum) type must be
-%distinct names. The case of no type $\typ_i$ associated to a constructor
-%$\cnam_i$ in a sum type as defined in \cite{lm} is captured by $\typ_i$ being
-%$\trecmt$ in the definition above: given a spec as defined in \cite{lm}, one
-%can imagine to add $\trecmt$ where a constructor has no type, and add the
-%empty record as argument to $\cnam_i$ in expressions and patterns where
-%needed.
 \item
 A restriction type $\tsubO$ is obtained by combining a type $\typ$ with an
 expression $\tspred$ (meant to be a predicate on $\typ$). Restriction types
-create the dependency of types on expressions. Restriction types as defined
-above also capture comprehension types as defined in \cite{lm}: as mentioned
-in \cite{lm}, a comprehension type can be turned into a restriction type by
-re-combining the pattern and expression into a lambda expression.
+create the dependency of types on expressions.
 \end{itemize}
 
 \subsection{Expressions}
@@ -82,8 +67,6 @@ We inductively define the set of expressions as
 \setdefVIIIoII
  {+}
  {\setST{\projopO}{\trecO\in\Typ}}
-% {\setST{\embedO}{\tsumO\in\Typ}}
-% {\setST{\quotO}{\tquotO\in\Typ}}
 \]
 
 Explanation:
@@ -99,11 +82,9 @@ An application $\appO$ consists of a function $\expr_1$ juxtaposed to an
 argument $\expr_2$.
 \item
 A (lambda) abstraction $\absO$ consists of an argument $\var$ with an explicit
-type $\typ$ and a body $\expr$. Even though lambda expressions as defined in
-\cite{lm} may have branches with patterns, that does not increase
-expressivity: one can imagine to use a fresh variable as argument of the
-abstraction and a case expression (introduced later) on the fresh variable
-with the branches as the body.
+type $\typ$ and a body $\expr$.
+
+
 \item
 An equality $\eqO$ consists of a left-hand side $\expr_1$ and a right-hand
 side $\expr_2$.
@@ -119,25 +100,9 @@ that satisfies the predicate.
 A projector $\projopO$ is tagged by a record type and by a field of that
 record type. We may write $\projopO$ as just $\pjopO$ when the record type is
 inferrable or irrelevant.
-%\item
-%An embedder $\embedO$ is tagged by a sum type and by a constructor of that sum
-%type. We may write $\embedO$ as just $\embO$ when the sum type is inferrable
-%or irrelevant.
-%\item
-%A quotienter $\quotO$ is tagged by a quotient type. We may write $\quotO$ as
-%just $\quo$ when the quotient type is inferrable or irrelevant.
-%\item
-%Instead of introducing equalities $\eqO$, we could have introduced an equality
-%operator $\eqopO$ to be applied to expressions $\expr_1$ and $\expr_2$
-%(analogously to the abbreviation $\iiffop$, introduced later). However, the
-%type $\typ$ decorating $\eqopO$ (necessary, otherwise the type of $\eqY$ would
-%be unclear) would make it necessary to introduce inference rules that relate
-%equalities of different types, e.g.\ a rule stating that $\eqtO$ implies
-%$\eqt{\typ'}{\expr_1}{\expr_2}$ if $\typ$ is a subtype of $\typ'$. We prefer
-%to avoid these additional rules and use undecorated, ``applied'' equalities.
 \end{itemize}
 
-We introduce the abbreviations (many of which are expressions defined in
+We introduce the abbreviations (many of which capture expressions defined in
 \cite{lm})
 \[
 \begin{abblist}
@@ -147,8 +112,6 @@ We introduce the abbreviations (many of which are expressions defined in
         {\eq{\abs{\varfx}{\bool}{\varfx}}{\abs{\varfx}{\bool}{\true}}}
 \abbitem{\negaop}
         {\abs{\varfx}{\bool}{(\eq{\varfx}{\false})}}
-%\abbitem{\negaO}
-%        {\iif{\expr}{\false}{\true}}
 \abbitem{\conjO}
         {\iif{\expr_1}{\expr_2}{\false}}
 \abbitem{\disjO}
@@ -159,9 +122,6 @@ We introduce the abbreviations (many of which are expressions defined in
         {\abs{\varfx}{\bool}{\abs{\varfx'}{\bool}{(\eq{\varfx}{\varfx'})}}}
 \abbitem{\iiffO}
         {\app{\app{\iiffop}{\expr_1}}{\expr_2}}
-%\abbiteM{\iiffO}
-%        {\eqO}
-%        {\mbox{$\expr_1$ and $\expr_2$ have type $\bool$}}
 \abbitem{\neeqO}
         {\nega{(\eqO)}}
 \abbitem{\descO}
@@ -171,7 +131,6 @@ We introduce the abbreviations (many of which are expressions defined in
              {(\eq{\varfxpred}{\abs{\varfx}{\typ}{\true}})}}
 \abbitem{\faO}
         {\app{\faopO}{(\absO)}}
-%        {\eq{\absO}{\abs{\var}{\typ}{\true}}}
 \abbitem{\faS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
         {\fa{\var_1}{\typ_1}{\ldots\fa{\var_n}{\typ_n}{\expr}}}
 \abbitem{\fa{\varS}{\typS}{\expr}}
@@ -181,7 +140,6 @@ We introduce the abbreviations (many of which are expressions defined in
              {\nega{(\fa{\varfx}{\typ}{\nega{(\app{\varfxpred}{\varfx})}})}}}
 \abbitem{\exO}
         {\app{\exopO}{(\absO)}}
-%        {\nega{(\fa{\var}{\typ}{\nega{\expr}})}}
 \abbitem{\exS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
         {\ex{\var_1}{\typ_1}{\ldots\ex{\var_n}{\typ_n}{\expr}}}
 \abbitem{\ex{\varS}{\typS}{\expr}}
@@ -195,19 +153,6 @@ We introduce the abbreviations (many of which are expressions defined in
                                     {\eq{\varfx'}{\varfx}})}})})}}
 \abbitem{\exIO}
         {\app{\exIopO}{(\absO)}}
-%        {\ex{\var}
-%            {\typ}
-%            {(\conj{\expr}
-%                   {\fa{\var'}{\typ}
-%                       {\impl{\esbs{\expr}{\var}{\var'}}{\eq{\var}{\var'}}}})}}
-%        {\var'\neq\var\AND
-%         \var'\not\in\efvarO\AND
-%         \var'\not\in\cvarv{\expr}{\var}}
-%\abbitem{\absS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
-%        {\abs{\var_1}{\typ_1}
-%             {\ldots\abs{\var_n}{\typ_n}{\expr}}}
-%\abbitem{\abs{\varS}{\typS}{\expr}}
-%        {\absS{\seqFT{\bnd{\var_1}{\typ_1}}{\bnd{\var_n}{\typ_n}}}{\expr}}
 \abbitem{\projO}
         {\app{\pjop{\fnam}}{\expr}}
 \end{abblist}
@@ -220,10 +165,6 @@ Explanation:
 \item
 The abbreviations $\true$ and $\false$ stand for logical truth and falsehood,
 respectively.
-%It is intended that infinitely many expressions are abbreviated by $\true$ or
-%$\false$, one for each $\var\in\Nam$. Note that $\abs{\var}{\bool}{\var}$ is
-%the simplest expression that is well-typed in every context, including the
-%empty context (contexts and well-typedness are defined later).
 \item
 Negation is defined as equality with $\false$.
 \item
@@ -239,7 +180,7 @@ binder form. Also the description operator can be written in binder form. Note
 that both $\faS{\seqO}{\expr}$ and $\exS{\seqO}{\expr}$ stand for $\expr$.
 \item
 A dotted projection $\projO$ abbreviates an applied projection whose record
-type is implicit; this is why no record type appears in $\projO$.
+type is left implicit.
 \end{itemize}
 
 %With the exception of unique existentials, all the above abbreviations
@@ -260,8 +201,6 @@ of an expression
                               \efvar{\expr_1}\cup\efvar{\expr_2}}
 \eqitem{\efvar{\descopO}}    {\emptyset}
 \eqitem{\efvar{\pjop{\fnam}}}{\emptyset}
-%\eqitem{\efvar{\emb{\cnam}}} {\emptyset}
-%\eqitem{\efvar{\quo}}        {\emptyset}
 \end{eqlist}
 \]
 Note that we do not consider the free variables in expressions contained in
@@ -269,9 +208,6 @@ types contained in expressions (e.g.\ we do not consider the free variables in
 $\tspred$ as part of the free variables of $\op{\onam}{\tsubO}$). The reason
 is that, as defined later, all the expressions contained in well-formed types
 have no free variables.
-%The free variables of the quotient type predicate $\tqpred$ do not contribute
-%to the free variables of $\quotO$ because, as defined later, in well-formed
-%types and well-typed expressions those predicates have no free variables.
 
 \subsection{Contexts}
 
@@ -282,8 +218,6 @@ We define the set of context elements as
  {+}
  {\setST{\tdecO}{\tnam\in\Nam\AND n\in\N}}
  {\setST{\odecO}{\onam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
-% {\setST{\tdefO}{\tnam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
-% {\setST{\odefO}{\tvarS\in\SeqNR{\Nam}\AND\onam\in\Nam\AND\expr\in\Expr}}
  {\setST{\axO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
  {\setST{\lemO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
  {\setST{\tvdecO}{\tvar\in\Nam}}
@@ -300,17 +234,6 @@ we directly use the arity without type variables.
 \item
 An op(eration) declaration $\odecO$ introduces an op name with an associated
 type, polymorphic in the explicit type variables.
-%\item
-%A type definition $\tdefO$ assigns a type to a maximally generic type instance
-%of some type name (i.e.\ an instance with distinct type variables as arguments
-%to the type name). A combined type declaration and definition as defined in
-%\cite{lm} is captured by a type declaration as defined above immediately
-%followed by a type definition as defined above.
-%\item
-%An op definition $\odefO$ assigns an expression to an op name, polymorphic in
-%the explicit type variables. A combined op declaration and definition as
-%defined in \cite{lm} is captured by an op declaration as defined above
-%immediately followed by an op definition as defined above.
 \item
 An axiom $\axO$ introduces an expression (with type $\bool$, as defined
 later), polymorphic in the explicit type variables. We may write
@@ -325,14 +248,6 @@ $\tvdec{\seqFT{\tvar_1}{\tvar_n}}$.
 \item
 A variable declaration $\vdecO$ introduces a variable with a type.
 \end{itemize}
-
-Context elements do not include type abbreviations as defined in \cite{lm}
-because we consider such type abbreviations to be always exhaustively expanded
-in the \MS\ logic. The expansion also works for polymorphic type
-abbreviations, e.g.\ if $\tinst{\tnam}{\tvarS}$ is defined as a type
-abbreviation for $\typ$, then $\tinstO$ expands to
-$\tsbslash{\typ}{\tvarS}{\typS}$. Sum and quotient type definitions as defined
-in \cite{lm} are formalized in \secref{sum-types} and \secref{quot-types}.
 
 We define the set of contexts as
 \[
@@ -401,37 +316,6 @@ We define the set of spec(ification)s as
 In other words, a spec is a context without type variable declarations and
 variable declarations.
 
-%\subsection{Occurring ops}
-
-%The function $\func{\opsinY}{\Typ+\Expr}{\Setf{\Nam}}$ returns the op names
-%occurring in a type or expression
-%\[
-%\begin{eqlist}
-%\eqitem{\opsin{\bool}}  {\emptyset}
-%\eqitem{\opsin{\tvar}}  {\emptyset}
-%\eqitem{\opsin{\tinstO}}{\bigcup_i\opsin{\typ_i}}
-%\eqitem{\opsin{\tarrO}} {\opsin{\typ_1}\cup\opsin{\typ_2}}
-%\eqitem{\opsin{\trecO}} {\bigcup_i\opsin{\typ_i}}
-%\eqitem{\opsin{\tsumO}} {\bigcup_i\opsin{\typ_i}}
-%\eqitem{\opsin{\tsubO}} {\opsin{\typ}\cup\opsin{\tspred}}
-%\eqitem{\opsin{\tquotO}}{\opsin{\typ}\cup\opsin{\tqpred}}
-%\end{eqlist}
-%\]
-%\[
-%\begin{eqlist}
-%\eqitem{\opsin{\var}}    {\emptyset}
-%\eqitem{\opsin{\opO}}    {\setI{\onam}\cup\bigcup_i\opsin{\typ_i}}
-%\eqitem{\opsin{\appO}}   {\opsin{\expr_1}\cup\opsin{\expr_2}}
-%\eqitem{\opsin{\absO}}   {\opsin{\typ}\cup\opsin{\expr}}
-%\eqitem{\opsin{\eqO}}    {\opsin{\expr_1}\cup\opsin{\expr_2}}
-%\eqitem{\opsin{\iifO}}   {\opsin{\expr_0}\cup\opsin{\expr_1}\cup\opsin{\expr_2}}
-%\eqitem{\opsin{\descopO}}{\opsin{\typ}}
-%\eqitem{\opsin{\projopO}}{\opsin{\trecO}}
-%\eqitem{\opsin{\embedO}} {\opsin{\tsumO}}
-%\eqitem{\opsin{\quotO}}  {\opsin{\tquotO}}
-%\end{eqlist}
-%\]
-
 \subsection{Substitutions}
 
 \subsubsection{Type substitutions}
@@ -453,12 +337,8 @@ expression $x$ (written $\tsbsO{x}$)
        {\tarr{\tsbsO{\typ_1}}{\tsbsO{\typ_2}}}
 \eqitem{\tsbsO{(\trecO)}}
        {\trec{i}{\fnam_i}{\tsbsO{\typ_i}}}
-%\eqitem{\tsbsO{(\tsumO)}}
-%       {\tsum{i}{\cnam_i}{\tsbsO{\typ_i}}}
 \eqitem{\tsbsO{(\tsubO)}}
        {\tsub{\tsbsO{\typ}}{\tsbsO{\tspred}}}
-%\eqitem{\tsbsO{(\tquotO)}}
-%       {\tquot{\tsbsO{\typ}}{\tsbsO{\tqpred}}}
 \end{eqlistC}
 \]
 \[
@@ -479,10 +359,6 @@ expression $x$ (written $\tsbsO{x}$)
        {\descop{\tsbsO{\typ}}}
 \eqitem{\tsbsO{\left(\projopO\right)}}
        {\projop{\tsbsO{\left(\trecO\right)}}{\fnam_j}}
-%\eqitem{\tsbsO{\left(\embedO\right)}}
-%       {\embed{\tsbsO{\left(\tsumO\right)}}{\cnam_j}}
-%\eqitem{\tsbsO{\left(\quotO\right)}}
-%       {\quot{\tsbsO{(\tquotO)}}}
 \end{eqlistC}
 \]
 where of course
@@ -491,78 +367,6 @@ $\tvarS\in\SeqNR{\Nam}$ and $\typS\in\Seq{\Typ}$ such that
 $\seqlen{\tvarS}=\seqlen{\typS}$, we may write
 $\tsbs{\typ}{\setST{\tupII{\tvar_i}{\typ_i}}{1\leq i\leq n}}$ as just
 $\tsbslash{\typ}{\tvarS}{\typS}$.
-
-%The position of a type occurrence in a type or expression can be identified by
-%a sequence of natural numbers that describes a path through the tree. We
-%define the set of all possible positions as
-%\[
-%\Pos=\Seq{\N}
-%\]
-
-%The relation
-%$\pentrel{\istsbsatY}{(\Typ+\Expr)}{\Typ}{\Typ}{\Pos}{(\Typ+\Expr)}$ captures
-%that $\tOe'$ is the result of substituting a type $\typI$ with a type $\typI'$
-%at position $\pos$ in a type or expression $\tOe$ (written
-%$\istsbsatO{\tOe}{\pos}{\tOe'}$)
-%\[
-%\begin{lrulelist}
-%\lruleO{\istsbsatO{\typI}{\seqO}{\typI'}}
-%\lruleI{\istsbsatO{\tinstO}{\cons{i}{\pos}}{\tinst{\tnam}{\seqTF{\typ_i'}}}}
-%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
-%\lruleI{\istsbsatO{(\tarrO)}{\cons{1}{\pos}}{(\tarr{\typ_1'}{\typ_2})}}
-%       {\istsbsatO{\typ_1}{\pos}{\typ_1'}}
-%\lruleI{\istsbsatO{(\tarrO)}{\cons{2}{\pos}}{(\tarr{\typ_1}{\typ_2'})}}
-%       {\istsbsatO{\typ_2}{\pos}{\typ_2'}}
-%\lruleI{\istsbsatO{(\trecO)}{\cons{i}{\pos}}{(\trecTF{\fnam_i}{\typ_i'})}}
-%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
-%\lruleI{\istsbsatO{(\tsumO)}{\cons{i}{\pos}}{(\tsumTF{\cnam_i}{\typ_i'})}}
-%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
-%\lruleI{\istsbsatO{(\tsubO)}{\cons{0}{\pos}}{(\tsub{\typ'}{\tspred})}}
-%       {\istsbsatO{\typ}{\pos}{\typ'}}
-%\lruleI{\istsbsatO{(\tsubO)}{\cons{1}{\pos}}{(\tsub{\typ}{\tspred'})}}
-%       {\istsbsatO{\tspred}{\pos}{\tspred'}}
-%\lruleI{\istsbsatO{(\tquotO)}{\cons{0}{\pos}}{(\tquot{\typ'}{\tqpred})}}
-%       {\istsbsatO{\typ}{\pos}{\typ'}}
-%\lruleI{\istsbsatO{(\tquotO)}{\cons{1}{\pos}}{(\tquot{\typ}{\tqpred'})}}
-%       {\istsbsatO{\tqpred}{\pos}{\tqpred'}}
-%\end{lrulelist}
-%\]
-%\[
-%\begin{lrulelist}
-%\lruleI{\istsbsatO{\opO}{\cons{i}{\pos}}{\op{\onam}{\seqTF{\typ_i'}}}}
-%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
-%\lruleI{\istsbsatO{(\appO)}{\cons{1}{\pos}}{(\app{\expr_1'}{\expr_2})}}
-%       {\istsbsatO{\expr_1}{\pos}{\expr_1'}}
-%\lruleI{\istsbsatO{(\appO)}{\cons{2}{\pos}}{(\app{\expr_1}{\expr_2'})}}
-%       {\istsbsatO{\expr_2}{\pos}{\expr_2'}}
-%\lruleI{\istsbsatO{(\absO)}{\cons{0}{\pos}}{(\abs{\var}{\typ'}{\expr})}}
-%       {\istsbsatO{\typ}{\pos}{\typ'}}
-%\lruleI{\istsbsatO{(\absO)}{\cons{1}{\pos}}{(\abs{\var}{\typ}{\expr'})}}
-%       {\istsbsatO{\expr}{\pos}{\expr'}}
-%\lruleI{\istsbsatO{(\eqO)}{\cons{1}{\pos}}{(\eq{\expr_1'}{\expr_2})}}
-%       {\istsbsatO{\expr_1}{\pos}{\expr_1'}}
-%\lruleI{\istsbsatO{(\eqO)}{\cons{2}{\pos}}{(\eq{\expr_1}{\expr_2'})}}
-%       {\istsbsatO{\expr_2}{\pos}{\expr_2'}}
-%\lruleI{\istsbsatO{(\iifO)}{\cons{0}{\pos}}{(\iif{\expr_0'}{\expr_1}{\expr_2})}}
-%       {\istsbsatO{\expr_0}{\pos}{\expr_0'}}
-%\lruleI{\istsbsatO{(\iifO)}{\cons{1}{\pos}}{(\iif{\expr_0}{\expr_1'}{\expr_2})}}
-%       {\istsbsatO{\expr_1}{\pos}{\expr_1'}}
-%\lruleI{\istsbsatO{(\iifO)}{\cons{2}{\pos}}{(\iif{\expr_0}{\expr_1}{\expr_2'})}}
-%       {\istsbsatO{\expr_2}{\pos}{\expr_2'}}
-%\lruleI{\istsbsatO{(\descO)}{\cons{0}{\pos}}{(\desc{\var}{\typ'}{\expr})}}
-%       {\istsbsatO{\typ}{\pos}{\typ'}}
-%\lruleI{\istsbsatO{(\descO)}{\cons{1}{\pos}}{(\desc{\var}{\typ}{\expr'})}}
-%       {\istsbsatO{\expr}{\pos}{\expr'}}
-%\lruleI{\istsbsatO{\projO}{\cons{0}{\pos}}{\proj{\expr'}{\fnam}}}
-%       {\istsbsatO{\expr}{\pos}{\expr'}}
-%\lruleI{\istsbsatO{(\embedO)}
-%                  {\cons{i}{\pos}}
-%                  {(\embed{\tsumTF{\cnam_i}{\typ_i'}}{\cnam_j})}}
-%       {\istsbsatO{\typ_i}{\pos}{\typ_i'}}
-%\lruleI{\istsbsatO{\quotO}{\cons{0}{\pos}}{\quot{\tqpred'}}}
-%       {\istsbsatO{\tqpred}{\pos}{\tqpred'}}
-%\end{lrulelist}
-%\]
 
 \subsubsection{Expression substitutions}
 
@@ -587,10 +391,6 @@ $\esbsO{\expr}$)
        {\descopO}
 \eqitem{\esbsO{(\pjop{\fnam})}}
        {\pjop{\fnam}}
-%\eqitem{\esbsO{(\emb{\cnam})}}
-%       {\emb{\cnam}}
-%\eqitem{\esbsO{\quo}}
-%       {\quo}
 \end{eqlistC}
 \]
 No substitution is performed in the expressions contained in types contained
@@ -659,10 +459,6 @@ $\expr$ at the free occurrences of $\varI$ in $\expr$)
        {\emptyset}
 \eqitem{\cvarvO{\pjop{\fnam}}}
        {\emptyset}
-%\eqitem{\cvarvO{\emb{\cnam}}}
-%       {\emptyset}
-%\eqitem{\cvarvO{\quo}}
-%       {\emptyset}
 \end{eqlist}
 \]
 If we view an expression $\expr$ as a tree, each free occurrence of $\varI$ in

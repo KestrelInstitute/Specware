@@ -1,6 +1,28 @@
 \section{Other \MS\ constructs}
 \label{other}
 
+
+% TO ADD:
+
+%Restriction types as defined above also capture comprehension types as defined
+%in \cite{lm}: as mentioned in \cite{lm}, a comprehension type can be turned
+%into a restriction type by re-combining the pattern and expression into a
+%lambda expression.
+
+%Even though lambda expressions as defined in \cite{lm} may have branches with
+%patterns, that does not increase expressivity: one can imagine to use a fresh
+%variable as argument of the abstraction and a case expression (introduced
+%later) on the fresh variable with the branches as the body.
+
+%Context elements do not include type abbreviations as defined in \cite{lm}
+%because we consider such type abbreviations to be always exhaustively expanded
+%in the \MS\ logic. The expansion also works for polymorphic type
+%abbreviations, e.g.\ if $\tinst{\tnam}{\tvarS}$ is defined as a type
+%abbreviation for $\typ$, then $\tinstO$ expands to
+%$\tsbslash{\typ}{\tvarS}{\typS}$. Sum and quotient type definitions as defined
+%in \cite{lm} are formalized in \secref{sum-types} and \secref{quot-types}.
+
+
 \subsection{Product types}
 
 We introduce the abbreviation
