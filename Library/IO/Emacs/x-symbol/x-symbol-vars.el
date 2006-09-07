@@ -1981,7 +1981,8 @@ REGEXP matches, no prefix is used.  See `x-symbol-image-convert-file'."
 	       (goto-char (point-min))
 	       (if (re-search-forward "ImageMagick" nil t)
 		   (if iformat (warn "x-symbol-image: \"convert\" doesn't list recognized formats, I'll try %S" iformat))
-		 (warn "x-symbol-image: no valid image converter")
+		 (unless (featurep 'sw-interface)
+		   (warn "x-symbol-image: no valid image converter"))
 		 (setq iformat nil))))
 	(kill-buffer (current-buffer))
 	(when iformat

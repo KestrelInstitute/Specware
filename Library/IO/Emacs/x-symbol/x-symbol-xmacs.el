@@ -57,7 +57,8 @@
 	       (or (null x-symbol-default-coding)
 		   (eq x-symbol-default-coding 'iso-8859-1)))
     ;; no idea about XEmacs/NT in a Japanese environment...
-    (warn "X-Symbol: only limited support with XEmacs-21.4+ on Windows")
+    (unless (featurep 'sw-interface)
+      (warn "X-Symbol: only limited support with XEmacs-21.4+ on Windows"))
     (setq x-symbol-default-coding 'iso-8859-1))
   (unless (and (boundp 'x-symbol-latin-force-use)
 	       (eq x-symbol-latin-force-use 'mswindows-user))
