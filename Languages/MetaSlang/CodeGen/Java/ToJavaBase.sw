@@ -1026,14 +1026,14 @@ def findMatchingUserTypeM srt =
  def findMatchingRestritionType(spc,srt) =
    case srt of
      | Arrow (X0, ssrt as Subsort (X1, pred, _), _) -> 
-       if equalSort? (X0, X1) then
+       if equivTypes? spc (X0, X1) then
 	 let srts = sortsAsList spc in
 	 let srtPos = sortAnn ssrt in
 	 let foundSrt = 
 	     find (fn (_, _, info) ->
 		   if definedSortInfo? info then
 		     let srt = firstSortDefInnerSort info in
-		     equalSort? (ssrt, srt)
+		     equivTypes? spc (ssrt, srt)
 		   else
 		     false)
 	          srts 
@@ -1082,7 +1082,7 @@ def insertRestricts(spc,dom,args) =
 	  %let tsrt = inferType(spc,argterm) in
 	  let tsrt = termSort(argterm) in
 	  let b = termAnn(argterm) in
-	  if equalSort??(srt,tsrt) then
+	  if equivTypes?? spc (srt,tsrt) then
 	    let rsrt = Arrow(tsrt,domsrt,b) in
 	    let newarg = Apply(Fun(Restrict,rsrt,b),argterm,b) in
 	    %let _ = writeLine("restrict "^printTerm(argterm)^" to "^printTerm(newarg)) in
@@ -1109,8 +1109,8 @@ def insertRestricts(spc,dom,args) =
 (**
  * special version of sort equality, which identifies the sorts Integer, Nat, and PosNat
  *)
-op equalSort??: Sort * Sort -> Boolean
-def equalSort??(srt0,srt1) =
+op equivTypes?? : Spec -> Sort * Sort -> Boolean
+def equivTypes?? spc (srt0,srt1) =
   let
     def equalizeIntSort(srt) =
       case srt of
@@ -1120,7 +1120,7 @@ def equalSort??(srt0,srt1) =
   in
   let srt0 = equalizeIntSort(srt0) in
   let srt1 = equalizeIntSort(srt1) in
-  equalSort?(srt0,srt1)
+  equivTypes? spc (srt0,srt1)
 
 (**
  * this is used to distinguish "real" product from "record-products"
@@ -1168,8 +1168,9 @@ op addProductSortToEnv: Sort -> JGenEnv ()
 def addProductSortToEnv srt =
   %let _ = writeLine("collecting product sort "^printSort(srt)^"...") in
   {
+   spc <- getEnvSpec;
    productSorts <- getProductSorts;
-   if exists (fn(psrt) -> equalSort?(srt,psrt)) productSorts then
+   if exists (fn(psrt) -> equivTypes? spc (srt,psrt)) productSorts then
      return ()
    else
      addProductSort srt

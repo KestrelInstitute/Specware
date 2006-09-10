@@ -370,7 +370,7 @@ Should we check to see if qid is in cod_map??
 			    raise (MorphError (pos, msg))
 			| dfn :: _ -> 
 			  let cod_sort = sortInnerSort dfn in
-			  if equalSort? (translated_sort, cod_sort) then
+			  if equivTypes? cod_spec (translated_sort, cod_sort) then
 			    return ()
 			  else if equivSort? cod_spec false (translated_sort, cod_sort) then
 			    return ()
@@ -405,7 +405,7 @@ Should we check to see if qid is in cod_map??
 			   raise (MorphError (pos, msg))
 		       else
 			 let cod_sort        = firstOpDefInnerSort cod_info in
-			 if equalSort? (translated_sort, cod_sort) then
+			 if equivTypes? cod_spec (translated_sort, cod_sort) then
 			   return ()
 			 else if equivSort? cod_spec false (translated_sort, cod_sort) then
 			   return ()

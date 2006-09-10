@@ -1,6 +1,7 @@
 SpecCalc qualifying spec {
   import Signature 
   import UnitId/Utilities
+  import /Languages/MetaSlang/Specs/SubtractSpec
 
  % This implements the "print" command, which evaluates its argument and 
  %  returns that value, with the side effect of printing the value.  

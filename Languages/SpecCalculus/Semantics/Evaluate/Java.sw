@@ -2,6 +2,7 @@ SpecCalc qualifying spec
   import UnitId
   import /Languages/MetaSlang/CodeGen/Java/ToJava
   import /Languages/Java/JavaPrint
+  import /Languages/MetaSlang/Specs/SubtractSpec
 
   %% Need to add error detection code
   def SpecCalc.evaluateJavaGen (valueInfo as (Spec spc,_,_), cterm, optpath) =

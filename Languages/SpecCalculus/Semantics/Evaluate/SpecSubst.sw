@@ -5,6 +5,7 @@ SpecCalc qualifying spec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import Translate                                    % for auxTranslateSpec
   import SpecUnion                                    % for specUnion
+  import /Languages/MetaSlang/Specs/SubtractSpec      % for subtractSpec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

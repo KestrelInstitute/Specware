@@ -2,6 +2,7 @@ SpecCalc qualifying
 spec 
  import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic % /AsRecord
  import /Languages/MetaSlang/Specs/StandardSpec
+ import /Languages/MetaSlang/Specs/SubtractSpec
  import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
 
  %% This provides the central merge-union algorithm used to compute colimits 

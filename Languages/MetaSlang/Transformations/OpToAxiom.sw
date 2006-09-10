@@ -1,5 +1,6 @@
 Prover qualifying spec
  import ../Specs/Environment
+ import ../Specs/SubtractSpec
  import CurryUtils
  import ArityNormalize
  import Simplify

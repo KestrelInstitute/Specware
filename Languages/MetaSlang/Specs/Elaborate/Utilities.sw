@@ -8,6 +8,7 @@ spec
  import /Library/Legacy/DataStructures/MergeSort % for combining error messages
  import /Library/Legacy/DataStructures/ListPair  % misc utility
  import /Library/Unvetted/StringUtilities        % search
+ import ../Equivalences
 
  op SpecCalc.equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean % defined in EquivPreds, but importing that would be circular
 
@@ -471,11 +472,12 @@ spec
 
   op unify : LocalEnv * Sort * Sort * List (Sort * Sort) * Boolean -> Unification
  def unify (env, s1, s2, pairs, ignoreSubsorts?) = 
+   let spc  = env.internal in
    let pos1 = sortAnn s1  in
    let pos2 = sortAnn s2  in
    let srt1 = withAnnS (unlinkSort s1, pos1) in % ? DerivedFrom pos1 ?
    let srt2 = withAnnS (unlinkSort s2, pos2) in % ? DerivedFrom pos2 ?
-   if equalSort? (srt1, srt2) then 
+   if equivTypes? spc (srt1, srt2) then 
      Unify pairs 
    else
      case (srt1, srt2) of
@@ -527,8 +529,8 @@ spec
 	  if exists (fn (p1, p2) -> 
 		     %% p = (srt1, srt2) 
 		     %% need predicate that chases metavar links
-		     equalSort? (p1, srt1) &
-		     equalSort? (p2, srt2))
+		     equivTypes? spc (p1, srt1) &
+		     equivTypes? spc (p2, srt2))
 	            pairs 
 	    then
 	      Unify pairs
@@ -537,7 +539,7 @@ spec
 	  else 
 	    let s1x = unfoldSort (env, srt1) in
 	    let s2x = unfoldSort (env, srt2) in
-	    if equalSort? (s1, s1x) & equalSort? (s2x, s2) then
+	    if equivTypes? spc (s1, s1x) & equivTypes? spc (s2x, s2) then
 	      NotUnify  (srt1, srt2)
 	    else 
 	      unify (env, withAnnS (s1x, pos1), 
@@ -556,7 +558,7 @@ spec
 	| (MetaTyVar (mtv, _), _) -> 
 	   let s3 = unfoldSort (env, srt2) in
 	   let s4 = unlinkSort s3 in
-	   if equalSort? (s4, s1) then
+	   if equivTypes? spc (s4, s1) then
 	     Unify pairs
 	   else if occurs (mtv, s4) then
 	     NotUnify (srt1, srt2)
@@ -567,7 +569,7 @@ spec
 	| (s3, MetaTyVar (mtv, _)) -> 
 	  let s4 = unfoldSort (env, s3) in
 	  let s5 = unlinkSort s4 in
-	  if equalSort? (s5, s2) then
+	  if equivTypes? spc (s5, s2) then
 	    Unify pairs
 	  else if occurs (mtv, s5) then
 	    NotUnify (srt1, srt2)
@@ -596,13 +598,13 @@ spec
 	      | (ty, Subsort (ty2, _, _)) -> unify (env, ty, ty2, pairs, ignoreSubsorts?)
 	      | (Base _, _) -> 
 	        let s1x = unfoldSort (env, srt1) in
-		if equalSort? (s1, s1x) then
+		if equivTypes? spc (s1, s1x) then
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s1x, s2, pairs, ignoreSubsorts?)
 	      | (_, Base _) ->
 		let s3 = unfoldSort (env, srt2) in
-		if equalSort? (s2, s3) then
+		if equivTypes? spc (s2, s3) then
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s1, s3, pairs, ignoreSubsorts?)
@@ -616,13 +618,13 @@ spec
 		  NotUnify (srt1, srt2)
 	      | (Base _, _) -> 
 	        let  s3 = unfoldSort (env, srt1) in
-		if equalSort? (s1, s3) then 
+		if equivTypes? spc (s1, s3) then 
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s3, s2, pairs, ignoreSubsorts?)
 	      | (_, Base _) ->
 		let s3 = unfoldSort (env, srt2) in
-		if equalSort? (s2, s3) then
+		if equivTypes? spc (s2, s3) then
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s1, s3, pairs, ignoreSubsorts?)
@@ -718,9 +720,10 @@ spec
  %% Don't do any unification, to avoid coercing undeclared x to bogus type.
   op subsort? : LocalEnv -> MS.Sort -> MS.Sort -> Boolean
  def subsort? env x y =
+   let spc = env.internal in
    let 
      def aux x =
-       equalSort? (x, y) ||
+       equivTypes? spc (x, y) ||
        (let x = unfoldSort (env, x) in
         case x of
 	  | Subsort (x, _, _) -> aux x 
