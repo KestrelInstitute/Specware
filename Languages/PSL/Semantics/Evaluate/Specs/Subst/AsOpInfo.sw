@@ -119,7 +119,7 @@ Subst qualifying spec
         Var        (v2,          _)) -> equalVar?(v1,v2)
 
      | (Fun        (f1, s1,      _),
-        Fun        (f2, s2,      _)) -> equalFun?(f1,f2) % & equalSort?(s1,s2)
+        Fun        (f2, s2,      _)) -> equalFun?(f1,f2) % & equivTypes? spc (s1,s2)
 
      | (Lambda     (xs1,         _),
         Lambda     (xs2,         _)) -> equalList? (xs1, xs2,
@@ -137,7 +137,7 @@ Subst qualifying spec
         Seq        (xs2,         _)) -> equalList? (xs1, xs2, myEqualTerm?)
 
      | (SortedTerm (x1, s1,      _),
-        SortedTerm (x2, s2,      _)) -> myEqualTerm? (x1, x2) % & equalSort? (s1, s2)
+        SortedTerm (x2, s2,      _)) -> myEqualTerm? (x1, x2) % & equivTypes? spc (s1, s2)
      | _ -> false
 endspec
 \end{spec}

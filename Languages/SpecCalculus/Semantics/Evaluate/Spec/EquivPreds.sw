@@ -18,7 +18,7 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  def equivSort? spc ignoreSubsorts? (s1, s2) =
-   (equalSort? (s1, s2))
+   (equivTypes? spc (s1, s2))
    ||
    (let env = initialEnv (spc, "internal") in
     unifySorts env ignoreSubsorts? s1 s2 )
@@ -44,7 +44,7 @@ SpecCalc qualifying spec
      | _ -> false
 
  def equivTerm? spc (t1, t2) =
-   (equalTerm? (t1, t2))
+   (equivTerms? spc (t1, t2))
    ||
    (case (t1, t2) of
 
@@ -150,7 +150,7 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  def equivPattern? spc (p1,p2) =
-   (equalPattern? (p1, p2))
+   (equivPatterns? spc (p1, p2))
    ||
    (case (p1, p2) of
      | (AliasPat    (x1, y1,      _),

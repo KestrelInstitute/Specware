@@ -46,7 +46,7 @@ SpecCalc qualifying spec
 				    (fn el ->
 				     case el of
 				       | Property(_,_,tvs,fm1) ->
-				         tyvars = tvs && equalTerm?(new_fm,fm1)
+				         tyvars = tvs && equivTerms? cod (new_fm,fm1)
 				       | _ -> false)
 				    cod.elements
 			       then newprops

@@ -23,15 +23,15 @@ def translateMatchJava spc =
 	   id,id)
     spc
 
-op  parseCoProductCase: MS.Term -> Option(MS.Term * List (Id * MS.Term) * Option MS.Term * Boolean)
+op  parseCoProductCase: Spec -> MS.Term -> Option(MS.Term * List (Id * MS.Term) * Option MS.Term * Boolean)
 
-def parseCoProductCase term =
+def parseCoProductCase spc term =
   let def makeCases(id,case_tm,then_exp,els_exp,block?) =
         let def parseRest t =
 	      case t of
 		| IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm1,_),
 			     then_exp,els_exp, _)  ->
-		  if equalTerm?(case_tm,case_tm1)
+		  if equivTerms? spc (case_tm,case_tm1)
 		    then let (cases,otherwise_tm) = parseRest els_exp in
 			 (Cons((id,simpSuccess (then_exp,block?)),cases),otherwise_tm)
 		    else ([],Some (simpSuccess (t,block?)))

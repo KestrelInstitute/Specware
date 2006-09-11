@@ -297,7 +297,7 @@ spec
 				     else Some(simpSubstitute(spc,c,sbst)))
 		 cjs,
 		 simpSubstitute(spc,bod,sbst)))
-       | _ -> if exists (fn cj -> equalTerm?(cj,bod)) cjs
+       | _ -> if exists (fn cj -> equivTerms? spc (cj, bod)) cjs
 	         || (case bod of Fun(Bool true,_,_) -> true | _ -> false)
 	       then mkTrue()
 	       else

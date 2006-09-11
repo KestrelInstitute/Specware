@@ -69,7 +69,7 @@ SpecCalc qualifying spec
 	    %% Translation can cause names to become duplicated, so remove duplicates
 	    let new_names = rev (removeDuplicates (map (qualifySortId revised_q) info.names)) in % revised_q was new_q ??
 	    let new_info  = info << {names = new_names} in
-	    return (mergeSortInfo sorts new_info)
+	    return (mergeSortInfo spc sorts new_info)
 	in
 	  foldOverQualifierMap qualify_sortinfo emptyAQualifierMap sorts
 
@@ -80,7 +80,7 @@ SpecCalc qualifying spec
 	    %% Translation can cause names to become duplicated, so remove duplicates
 	    let new_names = rev (removeDuplicates (List.map (qualifyOpId revised_q immune_ids) info.names)) in % revised_q was new_q ??
 	    let new_info  = info << {names = new_names} in
-	    return (mergeOpInfo ops new_info)
+	    return (mergeOpInfo spc ops new_info)
 	in
 	  foldOverQualifierMap qualify_opinfo emptyAQualifierMap ops 
   

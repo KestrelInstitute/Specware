@@ -333,11 +333,11 @@ PatternMatch qualifying spec
        writeLine ("Condition: "^printTerm cond);
        writeLine ("Body: "^printTerm body))
 
-  def sameConstructor(pat1:Pattern,pat2:Pattern) = 
+  def sameConstructor spc (pat1:Pattern,pat2:Pattern) = 
       case (pat1,pat2)
         of (EmbedPat(e1,_,_,_),EmbedPat(e2,_,_,_)) -> e1 = e2
 	 | (RecordPat _,RecordPat _) -> true
-	 | _ -> equalPattern?(pat1,pat2)
+	 | _ -> equivPatterns? spc (pat1,pat2)
       
 
 (*
@@ -461,13 +461,14 @@ PatternMatch qualifying spec
 			[(concat(newPats,pats),cond,body)])]
 	        | ((pat::pats,cond,body),
 		    (destrRule as (query,newVars,lets,pat2,rules2))::rules) -> 
-	          if sameConstructor(pat,pat2)
+                  let spc = context.spc in
+	          if sameConstructor spc (pat,pat2)
                      then 
 		     let decomposition = patDecompose(pat) in
 		     let newPats       = map (fn(p,_)-> p) decomposition in
 		     let rule          = (concat(newPats,pats),cond,body):Rule in
 		     Cons((query,newVars,lets,pat2,Cons(rule,rules2)),rules)
-		  else if exists (fn (_,_,_,pat3,_) -> sameConstructor(pat,pat3))
+		  else if exists (fn (_,_,_,pat3,_) -> sameConstructor spc (pat,pat3))
 		            rules
 			 then cons(destrRule,insert(rule,rules))
 			 else concat(insert(rule,[]),cons(destrRule,rules))

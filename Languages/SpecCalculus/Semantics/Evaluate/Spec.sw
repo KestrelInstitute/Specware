@@ -119,7 +119,7 @@ axioms, etc.
 		  else 
 		    %% TODO: fold over just infos?
 		    foldOverQualifierMap (fn (_, _, info, sorts) ->
-					  return (mergeSortInfo sorts info))
+					  return (mergeSortInfo new_spec sorts info)) % Which should it be: old_spec, imported_spec, or new_spec ?
 		                         sorts 
 				         imported_spec.sorts;
 
@@ -128,7 +128,7 @@ axioms, etc.
 		  else 
 		    %% TODO: fold over just infos?
 		    foldOverQualifierMap (fn (_, _, info, ops) ->
-					  return (mergeOpInfo ops info))
+					  return (mergeOpInfo new_spec ops info)) % Which should it be: old_spec, imported_spec, or new_spec ?
 		                         ops
 					 imported_spec.ops;
 

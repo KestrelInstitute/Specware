@@ -269,12 +269,12 @@ spec
 		| [(_,Unevaluated x),(_,Unevaluated y)] ->
 		  (case (x,y) of
 		     | (Apply (Fun (Not,_,_), lhs, _), rhs) ->
-		       if equalTerm? (lhs,rhs) then
+		       if equivTerms? spc (lhs,rhs) then
 			 Bool true
 		       else
 			 default ()
 		     | (lhs, Apply (Fun (Not,_,_), rhs, _)) ->
-			 if equalTerm? (lhs,rhs) then
+			 if equivTerms? spc (lhs,rhs) then
 			   Bool true
 			 else
 			   default ()
@@ -348,7 +348,7 @@ spec
         (if evalConstant? a1 & evalConstant? a2
 	  then (case (a1,a2) of
 		  | (Unevaluated t1,Unevaluated t2) ->
-		    if equalTerm?(t1, t2)
+		    if equivTerms? spc (t1, t2)
 		      then Some true
 		      else None
 		  | (Unevaluated _, _) -> None
@@ -663,12 +663,12 @@ spec
     %%     | [(_,Unevaluated x),(_,Unevaluated y)] ->
     %%        (case (x,y) of
     %%           | (Apply (Fun (Op (Qualified (_,"~"),fxty),srt,pos1), lhs, pos2), rhs) ->
-    %%               if equalTerm? (lhs,rhs) then
+    %%               if equivTerms? spc (lhs,rhs) then
     %%                 Bool true
     %%               else
     %%                 default ()
     %%           | (lhs, Apply (Fun (Op (Qualified (_,"~"),fxty),srt,pos1), rhs, pos2)) ->
-    %%               if equalTerm? (lhs,rhs) then
+    %%               if equivTerms? spc (lhs,rhs) then
     %%                 Bool true
     %%               else
     %%                 default ()

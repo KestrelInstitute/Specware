@@ -366,7 +366,7 @@ def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
    split <- return(splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars);
    case split of
      | Some(vars1,varh,vars2) ->
-       (case parseCoProductCase body of
+       (case parseCoProductCase spc body of
 	  | Some(case_term as Var(var,_),cases,opt_other,false) ->
 	    if equalVar?(varh, var) then
 	      addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, cases, opt_other, case_term)
@@ -655,7 +655,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
      | Arrow(domsrt,rngsrt,b) ->
       %let _ = writeLine("function op: "^id) in
       let trm = (case (opsrtrng,srtrng) of
-		   | (Subsort(srt0,t0,_),srt1) -> if equalSort?(srt0,srt1)
+		   | (Subsort(srt0,t0,_),srt1) -> if equivTypes? spc (srt0,srt1)
 						    then
 						      (case trm of
 							 | Lambda(match,b) ->
@@ -704,7 +704,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
     | _ ->
       %let _ = writeLine("constant op: "^id) in
       let trm = (case (opsrtrng,srtrng) of
-		   | (Subsort(srt0,t0,_),srt1) -> if equalSort?(srt0,srt1)
+		   | (Subsort(srt0,t0,_),srt1) -> if equivTypes? spc (srt0,srt1)
 						    then
 						      %let _ = writeLine("inserting restrict...") in
 						      let b = termAnn(trm) in

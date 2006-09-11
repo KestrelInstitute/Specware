@@ -621,7 +621,7 @@ SpecCalc qualifying spec
 		 return sorts
 	       else
 		 let new_info = info << {names = new_names} in
-		 return (mergeSortInfo sorts new_info)
+		 return (mergeSortInfo spc sorts new_info)
 	      }
 	in
 	  foldOverQualifierMap translateSortInfo emptyAQualifierMap old_sorts 
@@ -646,7 +646,7 @@ SpecCalc qualifying spec
 				  info.names;
 	       new_names <- return (rev new_names);
 	       let new_info = info << {names = new_names} in
-	       return (mergeOpInfo ops new_info)
+	       return (mergeOpInfo spc ops new_info)
 	      }
 	in
 	  foldOverQualifierMap translateOpInfo emptyAQualifierMap old_ops 

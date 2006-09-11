@@ -42,7 +42,7 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
      | Some result -> return result
      | None -> 
        %let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
-   case parseCoProductCase term of
+   case parseCoProductCase spc term of
      | Some(case_term,cases,opt_other,block?) ->
        translateCaseToExprM(tcx, case_term, cases, opt_other, k, l, block?)
      | None ->
@@ -726,7 +726,10 @@ def termToExpressionRetM(tcx, term, k, l, break?) =
 %  if caseTerm?(term)
 %    then translateCaseRetM(tcx, term, k, l)
 %  else
-  case parseCoProductCase term of
+  {
+   spc <- getEnvSpec;
+
+  case parseCoProductCase spc term of
     | Some(case_term,cases,opt_other,block?) ->
       translateCaseRetM(tcx, case_term, cases, opt_other, k, l, break?, block?)
     | None ->
@@ -798,7 +801,7 @@ def termToExpressionRetM(tcx, term, k, l, break?) =
 	   else
 	     return [Stmt(Return(Some(jE)))];
        return (b++stmts, newK, newL)
-      }
+      }}
 
 % --------------------------------------------------------------------------------
 
@@ -906,18 +909,21 @@ def translateCaseCasesToSwitchesRetM(tcx, coSrt, caseExpr, cases, opt_other, bre
 
 op termToExpressionAsgNVM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 def termToExpressionAsgNVM(srtId, vId, tcx, term, k, l) =
-  case parseCoProductCase term of
-    | Some(case_term,cases,opt_other,block?) ->
-      translateCaseAsgNVM(srtId, vId, tcx, case_term, cases, opt_other, k, l,block?)
-    | None ->
-  case term of
-    | IfThenElse _ -> translateIfThenElseAsgNVM(srtId, vId, tcx, term, k, l)
-    | _ ->
-      {
-       (b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
-       let vInit = mkVarInit(vId, srtId, jE) in
-       return (b++[vInit], newK, newL)
-      }
+  {
+   spc <- getEnvSpec;
+   case parseCoProductCase spc term of
+     | Some(case_term,cases,opt_other,block?) ->
+       translateCaseAsgNVM(srtId, vId, tcx, case_term, cases, opt_other, k, l,block?)
+     | None ->
+   case term of
+     | IfThenElse _ -> translateIfThenElseAsgNVM(srtId, vId, tcx, term, k, l)
+     | _ ->
+       {
+	(b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
+	let vInit = mkVarInit(vId, srtId, jE) in
+	return (b++[vInit], newK, newL)
+       }
+  }
 
 op translateIfThenElseAsgNVM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 def translateIfThenElseAsgNVM(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
@@ -992,18 +998,21 @@ def translateCaseCasesToSwitchesAsgNVM(oldVId, tcx, coSrt, caseExpr, cases, opt_
 
 op termToExpressionAsgVM: Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 def termToExpressionAsgVM(vId, tcx, term, k, l) =
-  case parseCoProductCase term of
-    | Some(case_term,cases,opt_other,block?) ->
-      translateCaseAsgVM(vId, tcx, case_term, cases, opt_other, k, l, block?)
-    | None ->
-  case term of
-    | IfThenElse _ -> translateIfThenElseAsgVM(vId, tcx, term, k, l)
-    | _ ->
-      {
-       (b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
-       let vAssn = mkVarAssn(vId, jE) in
-       return (b++[vAssn], newK, newL)
-      }
+  {
+   spc <- getEnvSpec;
+   case parseCoProductCase spc term of
+     | Some(case_term,cases,opt_other,block?) ->
+       translateCaseAsgVM(vId, tcx, case_term, cases, opt_other, k, l, block?)
+     | None ->
+   case term of
+     | IfThenElse _ -> translateIfThenElseAsgVM(vId, tcx, term, k, l)
+     | _ ->
+       {
+        (b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
+        let vAssn = mkVarAssn(vId, jE) in
+        return (b++[vAssn], newK, newL)
+       }
+  }
 
 op translateIfThenElseAsgVM: Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 def translateIfThenElseAsgVM(vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
@@ -1079,18 +1088,21 @@ def translateCaseCasesToSwitchesAsgVM(oldVId, tcx, coSrt, caseExpr, cases, opt_o
 
 op termToExpressionAsgFM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 def termToExpressionAsgFM(cId, fId, tcx, term, k, l) =
-  case parseCoProductCase term of
-    | Some(case_term,cases,opt_other,block?) ->
-      translateCaseAsgFM(cId, fId, tcx, case_term,cases,opt_other, k, l, block?)
-    | None ->
-  case term of
-    | IfThenElse _ -> translateIfThenElseAsgFM(cId, fId, tcx, term, k, l)
-    | _ ->
-      {
-       (b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
-       let fAssn = mkFldAssn(cId, fId, jE) in
-       return (b++[fAssn], newK, newL)
-      }
+  {
+   spc <- getEnvSpec;
+   case parseCoProductCase spc term of
+     | Some(case_term,cases,opt_other,block?) ->
+       translateCaseAsgFM(cId, fId, tcx, case_term,cases,opt_other, k, l, block?)
+     | None ->
+   case term of
+     | IfThenElse _ -> translateIfThenElseAsgFM(cId, fId, tcx, term, k, l)
+     | _ ->
+       {
+        (b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
+        let fAssn = mkFldAssn(cId, fId, jE) in
+        return (b++[fAssn], newK, newL)
+       }
+  }
 
 op translateIfThenElseAsgFM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
 def translateIfThenElseAsgFM(cId, fId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) =

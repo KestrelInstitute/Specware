@@ -58,7 +58,7 @@ SpecUnion qualifying spec
 			let Qualified (primary_q, primary_id) = primarySortName info in
 			if q = primary_q & id = primary_id then
 			  %% Assertion: We take this branch exactly once per new info.
-			  mergeSortInfo sorts info % may introduce duplicate defs
+			  mergeSortInfo next_spec sorts info % may introduce duplicate defs
 			else
 			  sorts)
                        sorts 
@@ -71,7 +71,7 @@ SpecUnion qualifying spec
 			let Qualified (primary_q, primary_id) = primaryOpName info in
 			if q = primary_q & id = primary_id then
 			  %% Assertion: We take this branch exactly once per new info.
-			  mergeOpInfo ops info % may introduce duplicate defs
+			  mergeOpInfo next_spec ops info % may introduce duplicate defs
 			else
 			  ops)
                        ops 
