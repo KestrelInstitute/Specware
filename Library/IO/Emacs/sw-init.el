@@ -510,13 +510,11 @@
 			  (concat (getenv "SPECWARE4")))))
 	(slash-dir "/"))
     (run-specware4 *specware4-dir)
-    (sit-for .1)
+    (sit-for 0.1)
     (eval-in-lisp-in-order
      (format "(cl:namestring (specware::change-directory %S))" *specware4-dir))
-    (eval-in-lisp-in-order (format "(specware::setenv \"SWPATH\" %S)"
-				      (concat (sw::normalize-filename *specware4-dir)
-					      (if *windows-system-p* ";" ":")
-					      slash-dir)))
+;    (eval-in-lisp-in-order (format "(specware::setenv \"SWPATH\" %S)"
+;				   (concat (sw::normalize-filename *specware4-dir))))
     (eval-in-lisp-in-order (format "(specware::setenv \"SPECWARE4\" %S)"
 				      (sw::normalize-filename *specware4-dir)))
     (eval-in-lisp-in-order "(progn #+allegro(sys::set-stack-cushion 10000000)
