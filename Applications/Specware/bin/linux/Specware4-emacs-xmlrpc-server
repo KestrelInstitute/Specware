@@ -99,7 +99,7 @@ EVAL="${EVAL})"
 SPECWARE_INIT_FORM="$EVAL"
 export SPECWARE_INIT_FORM
 
-xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
+xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
        $* \
        -eval "(run-specware4)" &
 
