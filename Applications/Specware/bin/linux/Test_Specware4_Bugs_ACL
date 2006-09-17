@@ -34,7 +34,7 @@ $xemacs -no-init-file \
 	-geometry 137x50-50-50 \
 	-name "Specware4" \
 	-title "Specware4" \
-	-l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
+	-l "$SPECWARE4"/Library/IO/Emacs/load-slime \
 	-eval "(set-face-background 'default \"lightyellow\")" \
 	-eval "(run-specware4)" \
 	-eval "(sw:eval-in-lisp \"(load (compile-file \\\"$SPECWARE4/Applications/Handwritten/Lisp/test-harness\\\"))\")" \
