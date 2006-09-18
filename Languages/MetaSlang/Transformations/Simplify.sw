@@ -210,7 +210,7 @@ spec
 
  op  simplifyOne: Spec -> MS.Term -> MS.Term
  def simplifyOne spc term =
-     case tryEvalOne term of
+     case tryEvalOne spc term of
        | Some cterm -> cterm
        | _ ->
      case term of

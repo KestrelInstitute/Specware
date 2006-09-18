@@ -60,6 +60,7 @@ MetaSlangRewriter qualifying spec
 
  def applyDemodRewrites(context,subst) (boundVars,term,demod) = 
      let context = setBound(context,boundVars)  in
+     let spc     = context.spc                  in
      let rules = Demod.getRules(demod,term)     in
      (mapFlat 
         (fn rule -> 
@@ -67,7 +68,7 @@ MetaSlangRewriter qualifying spec
 	    fromList
 	      (List.map (fn s -> (rule.rhs,(s,rule,demod))) substs)) 
         rules)
-     @@ (fn () -> standardSimplify(term,subst,demod))
+     @@ (fn () -> standardSimplify spc (term,subst,demod))
 
 
  def evalRule : RewriteRule = 
@@ -80,8 +81,8 @@ MetaSlangRewriter qualifying spec
 	rhs   = mkVar(2,TyVar("''a",noPos))
      } 
 
- def standardSimplify(term,subst,demod) =
-   case tryEvalOne term of
+ def standardSimplify spc (term,subst,demod) =
+   case tryEvalOne spc term of
      | Some eTerm -> unit (eTerm, (subst,evalRule,demod))
      | None -> Nil
 

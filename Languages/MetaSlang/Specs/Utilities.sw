@@ -1085,17 +1085,17 @@ Utilities qualifying spec
 
       | _ -> None
 
- op  attemptEval: MS.Term -> MS.Term
- def attemptEval t = mapSubTerms attemptEvalOne t
+ op  attemptEval: Spec -> MS.Term -> MS.Term
+ def attemptEval spc t = mapSubTerms (attemptEvalOne spc) t
 
- op  attemptEvalOne: MS.Term -> MS.Term
- def attemptEvalOne t =
-   case tryEvalOne t of
+ op  attemptEvalOne: Spec -> MS.Term -> MS.Term
+ def attemptEvalOne spc t =
+   case tryEvalOne spc t of
      | Some t1 -> t1
      | None    -> t
 
- op  tryEvalOne: MS.Term -> Option MS.Term
- def tryEvalOne term =
+ op  tryEvalOne: Spec -> MS.Term -> Option MS.Term
+ def tryEvalOne spc term =
    case term
      of Apply(Fun(Op(Qualified(spName,opName),_),s,_),arg,_) ->
         (if member(spName,evalSpecNames)
@@ -1110,11 +1110,11 @@ Utilities qualifying spec
 	  else None)
       | Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) ->
 	if evalConstant?(N1) & evalConstant?(N2)
-	  then Some(mkBool(equalTerm?(N1,N2)))
+	  then Some(mkBool(equivTerms? spc (N1,N2)))
 	  else None
       | Apply(Fun(NotEquals,_,_),Record([(_,N1),(_,N2)], _),_) ->
 	if evalConstant?(N1) & evalConstant?(N2)
-	  then Some(mkBool(~ (equalTerm?(N1,N2))))
+	  then Some(mkBool(~ (equivTerms? spc (N1,N2))))
 	  else None
       | Apply(Fun(Not,  _,_),arg,                       _) -> 
 	  (case arg of
