@@ -191,16 +191,12 @@ be the option to run each (test ...) form in a fresh image.
   `(test-directories-fn '(,@dirs)))
 
 (defun test-directories-fn (dirs)
-  (unless #-:ALLEGRO-V7.0 nil
-	  #+:ALLEGRO-V7.0 (equal (symbol-name (type-of *standard-output*)) "SLIME-OUTPUT-STREAM")
-	  (finish-output t))
+  #-ALLEGRO-V7.0 (finish-output t)
   (loop for dir in dirs do
     (let* ((dirpath (make-pathname :directory (if (equal dir ".") nil dir)))
 	   (source (merge-pathnames dirpath *test-directory*))
 	   (target (merge-pathnames dirpath *test-temporary-directory*)))
-      (unless #-:ALLEGRO-V7.0 nil
-	      #+:ALLEGRO-V7.0 (equal (symbol-name (type-of *standard-output*)) "SLIME-OUTPUT-STREAM")
-	      (finish-output t))
+      #-ALLEGRO-V7.0 (finish-output t)
       ;;(ensure-directories-exist target)
       (if *quiet-copy?*
 	  (with-output-to-string (*standard-output*)

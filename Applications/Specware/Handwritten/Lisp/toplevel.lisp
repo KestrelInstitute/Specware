@@ -1321,7 +1321,7 @@
 				  (progn
 				    (format t "~&In bash shell:~%")
 				    (specware::setenv "PS1" "") ; no need for prompt given one command
-				    (finish-output)
+				    #-ALLEGRO-V7.0 (finish-output)
 				    (specware::run_cmd-2 "bash" (list "-c" str))))))))
 	    (specware::run_cmd-2 fn args)))
       (handler-bind ((error 
@@ -1337,7 +1337,7 @@
 		  "~&Interactive bash shell:~%Type exit to return to Specware Shell.~2%"))
 	;; (specware::setenv "PS1" "\\s-\\v\\$ ") ; to get something like "bash-2.05b$ "
 	#+cmu (format t "~&Note: The shell prompt may be unsynchronized, appearing *after* input.~2%")
-	(finish-output)
+	#-ALLEGRO-V7.0 (finish-output)
 	(unwind-protect
 	    (specware::run_cmd-2 "bash" (list "-i"))
 	  (format t (if (member :ACCORD cl::*features*)
