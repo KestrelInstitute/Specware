@@ -74,7 +74,10 @@
 	 (slash-dir (sw::normalize-filename "/"))
 	 (world-name (concat bin-dir "/Specware4.dxl")))
     (run-plain-lisp)
-    ;; (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)" (concat (sw::normalize-filename root-dir) (if *windows-system-p* ";" ":") slash-dir)))
+    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)" 
+			     (concat (sw::normalize-filename root-dir) 
+				     (if *windows-system-p* ";" ":") 
+				     slash-dir)))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)"
 			     (sw::normalize-filename root-dir)))
     
@@ -84,8 +87,12 @@
     (run-plain-lisp)
     (unless (inferior-lisp-running-p)
       (sleep-for 1))
-    ;; (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)" (concat (sw::normalize-filename root-dir) (if *windows-system-p* ";" ":") slash-dir)))
-    (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" (sw::normalize-filename root-dir)))
+    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)" 
+			     (concat (sw::normalize-filename root-dir) 
+				     (if *windows-system-p* ";" ":") 
+				     slash-dir)))
+    (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" 
+			     (sw::normalize-filename root-dir)))
     (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" dir))
     (sw:eval-in-lisp "(load \"Specware4.lisp\")")
     (when (file-exists-p world-name)
