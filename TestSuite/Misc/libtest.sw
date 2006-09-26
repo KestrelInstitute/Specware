@@ -266,9 +266,9 @@ spec
 % List [ 59]:  op nth             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
     tester ("(nth ( [3,4,5] , 1 )) = 4", (nth ( [3,4,5] , 1 )) = 4);
     tester ("let A = id ( [3,4,5] , 1 ) in (nth A) = 4", let A = id ( [3,4,5] , 1 ) in (nth A) = 4);
-% List [ 60]:  op nthTail         : fa(a)   {(l,i) : List a * Nat | i < length l} -> List a
-    tester ("(nthTail ( [3,4,5] , 1 )) = [5]", (nthTail ( [3,4,5] , 1 )) = [5]);
-    tester ("let A = id ( [3,4,5] , 1 ) in (nthTail A) = [5]", let A = id ( [3,4,5] , 1 ) in (nthTail A) = [5]);
+% List [ 60]:  op nthTail         : fa(a)   {(l,i) : List a * Nat | i <= length l} -> List a
+    tester ("(nthTail ( [3,4,5] , 2 )) = [5]", (nthTail ( [3,4,5] , 2 )) = [5]);
+    tester ("let A = id ( [3,4,5] , 2 ) in (nthTail A) = [5]", let A = id ( [3,4,5] , 2 ) in (nthTail A) = [5]);
 % List [ 61]:  op member          : fa(a)   a * List a -> Boolean
     tester ("(member ( 4 , [3,5,7] )) = false", (member ( 4 , [3,5,7] )) = false);
     tester ("let A = id ( 4 , [3,5,7] ) in (member A) = false", let A = id ( 4 , [3,5,7] ) in (member A) = false);

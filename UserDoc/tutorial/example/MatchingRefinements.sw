@@ -6,7 +6,6 @@ endspec
 Symbols_Ref = morphism MatchingSpecs#Symbols ->
                        MatchingRefinements#Symbols {}
 
-
 WordMatching0 = spec
 
   import MatchingSpecs#Words
@@ -17,9 +16,7 @@ WordMatching0 = spec
   def word_matches_at?(wrd,msg,pos) =
       if pos + length wrd > length msg
       then false
-      else word_matches_aux?
-            (wrd, if pos = 0 then msg
-                             else nthTail(msg, pos - 1))
+      else word_matches_aux?(wrd, nthTail(msg, pos))
 
   op word_matches_aux? :
      {(wrd,msg) : Word * Message | length wrd <= length msg}

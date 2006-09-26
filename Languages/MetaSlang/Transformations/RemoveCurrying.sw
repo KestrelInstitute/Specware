@@ -140,7 +140,7 @@ RemoveCurrying qualifying spec
 			 mkTuple(map unCurryTermRec args))
 	  else
 	    let newVars = mkNewVars(nthTail(curryArgSorts(spc,fsrt),
-					    length args - 1),
+					    length args),
 				    map (fn (id,_) -> id) (freeVars f),
 				    spc)
 	    in

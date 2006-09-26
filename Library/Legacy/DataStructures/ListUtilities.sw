@@ -220,7 +220,7 @@ ListUtilities qualifying spec {
     else
       let l1Head = sublist(l1, 0, length(l2)) in
       if l1Head = l2 
-	then Some (nthTail(l1, length(l2)-1))
+	then Some (nthTail(l1, length(l2)))
       else None
 
 }

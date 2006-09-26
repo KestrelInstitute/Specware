@@ -25,7 +25,7 @@ List qualifying spec
   op concat          : [a]   List a * List a -> List a
   op ++ infixl 25    : [a]   List a * List a -> List a
   op nth             : [a]   {(l,i) : List a * Nat | i < length l} -> a
-  op nthTail         : [a]   {(l,i) : List a * Nat | i < length l} ->
+  op nthTail         : [a]   {(l,i) : List a * Nat | i <= length l} ->
                                List a
   op last            : [a]   {l: List a | length(l) > 0} -> a
   op butLast         : [a]   {l: List a | length(l) > 0} -> List a
@@ -85,9 +85,9 @@ List qualifying spec
     if i = 0 then hd
              else nth(tl,i-1)
 
-  def nthTail(hd::tl,i) =  % list is non-empty because length > i >= 0
-    if i = 0 then tl
-             else nthTail(tl,i-1)
+  def nthTail(l,i) =
+    if i = 0 then l
+             else nthTail(tl l,i-1)
 
   def last(hd::tl) =
     case tl of

@@ -94,7 +94,7 @@ PrList qualifying spec
      nthTail(tl,0) = tl
 
   axiom nthTail_def is fa (hd, tl, i) (i > 0) =>
-     nthTail(tl,i) = nthTail(tl, i-1)
+     nthTail(Cons(hd,tl),i) = nthTail(tl, i-1)
 
   axiom last_def is fa (hd)
     last(Cons(hd, [])) = hd
