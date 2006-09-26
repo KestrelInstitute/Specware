@@ -16,9 +16,6 @@
 		    specware-interaction-menu)
   (easy-menu-add specware-interaction-buffer-menu m))
 
-(add-specware-listener-key-bindings specware-listener-mode-map)
-
-
 (slime-define-keys specware-listener-mode-map
   ("\C-m" 'sw-return)
  ; ("\C-j" 'slime-repl-newline-and-indent)
@@ -172,7 +169,8 @@ If NEWLINE is true then add a newline at the end of the input."
   (when specware-use-x-symbol
     (x-symbol-mode))
   (setq slime-words-of-encouragement
-	'("Welcome to Specware!")))
+	'("Welcome to Specware!"))
+  (add-specware-listener-key-bindings specware-listener-mode-map))
 
 (add-hook 'specware-listener-mode-hook
 	  'specware-listener-mode-init)
@@ -228,7 +226,7 @@ If NEWLINE is true then add a newline at the end of the input."
              program
 	     (apply 'concat (loop for arg in program-args append (list " " arg)))
 	     (if (boundp '*specware4-dir)
-		 *specware4-dir
+		 (symbol-value '*specware4-dir)
 	       (getenv "SPECWARE4"))
 	     ;slime-port
 	     ))
@@ -361,9 +359,10 @@ to end end."
       (setq header-line-format banner))
     (when animantep
       (pop-to-buffer (current-buffer))
-      (animate-string (format "; SLIME %s" (or (slime-changelog-date) 
-                                               "- ChangeLog file not found"))
-                      0 0))
+      (funcall 'animate-string
+	       (format "; SLIME %s" (or (slime-changelog-date) 
+					"- ChangeLog file not found"))
+	       0 0))
     (slime-repl-insert-prompt (cond (use-header-p `(:suppress-output))
                                     (t `(:values (,(concat "; " banner))))))))
 
