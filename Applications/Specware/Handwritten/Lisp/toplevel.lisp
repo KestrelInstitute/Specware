@@ -640,7 +640,7 @@
 	     do (setq endnumpos i))
 	   (when endnumpos
 	     (let ((rawlinepos (read-from-string str nil nil :start endprefixpos :end (1+ endnumpos))))
-	       (when (fixnump rawlinepos)
+	       (when (integerp rawlinepos)
 		 (setq str (concatenate 'string
 					(subseq str 0 pos)
 					(format nil "~a" (+ rawlinepos *expr-begin-offset*))
