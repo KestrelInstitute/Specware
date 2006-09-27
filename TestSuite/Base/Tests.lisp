@@ -270,8 +270,8 @@
        ("(nth ( [3,4,5] , 1 )) = 4" :swe "(nth ( [3,4,5] , 1 )) = 4" :value '(:|Bool| . T))
        ("let A = id ( [3,4,5] , 1 ) in (nth A) = 4" :swe "let A = id ( [3,4,5] , 1 ) in (nth A) = 4" :value '(:|Bool| . T))
        ;; List [ 60]:  op nthTail         : fa(a)   {(l,i) : List a * Nat | i < length l} -> List a
-       ("(nthTail ( [3,4,5] , 1 )) = [5]" :swe "(nthTail ( [3,4,5] , 1 )) = [5]" :value '(:|Bool| . T))
-       ("let A = id ( [3,4,5] , 1 ) in (nthTail A) = [5]" :swe "let A = id ( [3,4,5] , 1 ) in (nthTail A) = [5]" :value '(:|Bool| . T))
+       ("(nthTail ( [3,4,5] , 2 )) = [5]" :swe "(nthTail ( [3,4,5] , 2 )) = [5]" :value '(:|Bool| . T))
+       ("let A = id ( [3,4,5] , 2 ) in (nthTail A) = [5]" :swe "let A = id ( [3,4,5] , 2 ) in (nthTail A) = [5]" :value '(:|Bool| . T))
        ;; List [ 61]:  op member          : fa(a)   a * List a -> Boolean
        ("(member ( 4 , [3,5,7] )) = false" :swe "(member ( 4 , [3,5,7] )) = false" :value '(:|Bool| . T))
        ("let A = id ( 4 , [3,5,7] ) in (member A) = false" :swe "let A = id ( 4 , [3,5,7] ) in (member A) = false" :value '(:|Bool| . T))
