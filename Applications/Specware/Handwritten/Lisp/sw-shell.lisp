@@ -65,7 +65,8 @@
     ("swdbg"    . "[on] Set System-spec::specwareDebug?. No argument gives current setting.")))
 
 (defun print-shell-prompt () 
-  (princ *prompt* *standard-output*))
+  (princ *prompt* *standard-output*)
+  (finish-output))
 
 (defvar *emacs-eval-form-after-prompt* nil)
 
