@@ -333,7 +333,8 @@
 		 (not (null (sw-directory pathname)))))
 
 (defun sw-directory (pathname &optional recursive?)
-  (directory #-mcl pathname
+  (directory #-(or mcl sbcl) pathname
+	     #+sbcl (merge-pathnames (make-pathname :name :wild :type :wild) pathname)
 	     #+mcl (merge-pathnames (make-pathname :name :wild) pathname)
 	     :allow-other-keys      t             ; permits implementation-specific keys to be ignored by other implementations
 	     :directories           t             ; specific to mcl
