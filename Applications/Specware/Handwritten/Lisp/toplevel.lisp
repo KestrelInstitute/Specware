@@ -573,8 +573,11 @@
 		       (warn "No value for expression?")))
 		(values)))))))))
 
+(defvar specware::*dont-use-x-symbol?* nil)
+
 (defun use-x-symbol? ()
-  (and (fboundp 'swank::eval-in-emacs)
+  (and (not specware::*dont-use-x-symbol?*)
+       (fboundp 'swank::eval-in-emacs)
        (funcall 'swank::eval-in-emacs 'specware-use-x-symbol)))
 
 ;; Specware::initializeInterpreterBaseAux is funcalled from 
