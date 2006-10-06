@@ -42,6 +42,11 @@
 (progn (ccl:egc nil)			; Turn off ephemeral gc as it is inefficient
        (ccl:gc-retain-pages t)		; Don't give up pages after gc as likely to need them soon
        (ccl::set-lisp-heap-gc-threshold (* 16777216 3))) ; Increase free space after a gc
+#+sbcl					; Preload for efficiency and flexibility
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (require 'sb-bsd-sockets)
+  (require 'sb-introspect)
+  (require 'sb-posix))
 #+sbcl
 (setq sb-fasl:*fasl-file-type* "sfsl")	; Default is "fasl" which conflicts with allegro
 #+sbcl
