@@ -1045,6 +1045,21 @@ MetaSlang qualifying spec
      | RestrictedPat(_,t,_) -> existsSubTerm pred? t
      | _ -> false
 
+ op  existsPattern? : [b] (APattern b -> Boolean) -> APattern b -> Boolean
+ def existsPattern? pred? pattern =
+   pred? pattern ||
+   (case pattern of
+     | AliasPat(p1, p2,_) ->
+       existsPattern? pred? p1 || existsPattern? pred? p2
+     | EmbedPat(id, Some pat,_,_) -> existsPattern? pred? pat
+     | RecordPat(fields,_) ->
+       exists (fn (_,p)-> existsPattern? pred? p) fields
+     | RelaxPat     (pat,_,_) -> existsPattern? pred? pat
+     | QuotientPat  (pat,_,_) -> existsPattern? pred? pat
+     | RestrictedPat(pat,_,_) -> existsPattern? pred? pat
+     | SortedPat    (pat,_,_) -> existsPattern? pred? pat
+     | _ -> false)
+
 
  %% folds function over all the subterms in top-down order
  %% Other orders such as evaluation order would be useful
@@ -1183,6 +1198,22 @@ MetaSlang qualifying spec
    case pat of
      | RestrictedPat(_,t,_) -> foldSubTermsEvalOrder f val t
      | _ -> val
+
+ op  foldSubPatterns : [b,r] (APattern b * r -> r) -> r -> APattern b -> r
+ def foldSubPatterns f result pattern =
+   let result = f (pattern,result) in
+   case pattern of
+     | AliasPat(p1, p2,_) ->
+       foldSubPatterns f (foldSubPatterns f result p1) p2
+     | EmbedPat(id, Some pat,_,_) -> foldSubPatterns f result pat
+     | RecordPat(fields,_) ->
+       foldl (fn ((_,p),r)-> foldSubPatterns f r p) result fields
+     | RelaxPat     (pat,_,_) -> foldSubPatterns f result pat
+     | QuotientPat  (pat,_,_) -> foldSubPatterns f result pat
+     | RestrictedPat(pat,_,_) -> foldSubPatterns f result pat
+     | SortedPat    (pat,_,_) -> foldSubPatterns f result pat
+     | _ -> result
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Replacement
