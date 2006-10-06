@@ -57,6 +57,55 @@ Utilities qualifying spec
 %	        Some(trm,vars,cons((v,trm),S)))
 	| AliasPat _ -> None %% Not supported
 	 
+ op  patternToTermPlusConds : Pattern -> (Option MS.Term * List MS.Term)
+ def patternToTermPlusConds(pat) = 
+     case pat
+       of EmbedPat(con,None,srt,a) -> 
+          (Some(Fun(Embed(con,false),srt,a)),[])
+        | EmbedPat(con,Some p,srt,a) -> 
+          (case patternToTermPlusConds p
+             of (None,conds) -> (None,conds)
+	      | (Some trm,conds) -> 
+		let srt1 = patternSort p in
+		(Some (Apply(Fun(Embed(con,true),Arrow(srt1,srt,a),a),trm,a)),conds))
+        | RecordPat(fields,a) -> 
+	  let
+	     def loop(new,old,old_conds) = 
+	         case new
+                   of [] -> (Some(Record(rev old,a)),old_conds)
+	            | (l,p)::new -> 
+	         case patternToTermPlusConds(p)
+	           of (None,conds) -> (None,old_conds++conds)
+	            | (Some trm,conds) -> 
+	              loop(new,Cons((l,trm),old),old_conds++conds)
+          in
+          loop(fields,[],[])
+        | NatPat(i, _) -> (Some(mkNat i),[])
+        | BoolPat(b, _) -> (Some(mkBool b),[])
+        | StringPat(s, _) -> (Some(mkString s),[])
+        | CharPat(c, _) -> (Some(mkChar c),[])
+        | VarPat((v,srt), a) -> (Some(Var((v,srt), a)),[])
+        | WildPat(srt,_) -> (None,[])
+        | RelaxPat(pat,cond,_)     -> (None,[]) %% Not implemented
+        | QuotientPat(pat,cond,_)  ->
+	  (case patternToTermPlusConds pat
+             of (None,conds) -> (None,conds)
+	      | (Some t,conds) -> 
+		(Some(mkQuotient(t,cond,termSort t)),conds))
+        | RestrictedPat(pat,cond,_)  ->
+	  let (p,conds) = patternToTermPlusConds pat in (p,Cons(cond,conds))
+	| AliasPat(p1,p2,_) -> 
+	  (case patternToTermPlusConds(p2) 
+             of (None,conds2) ->
+	        let (ot1,conds1) = patternToTermPlusConds p1 in
+		(ot1,conds1++conds2)
+	      | (Some t2,conds2) -> 
+		(case patternToTermPlusConds p1 of
+		   | (None,conds1) ->
+		     (Some t2,conds1++conds2)
+		   | (Some t1,conds1) ->
+		     (Some t2,[mkEquality(termSort t1,t1,t2)]++conds1++conds2)))
+
 
  op isFree : Var * MS.Term -> Boolean
  def isFree (v,term) = 
@@ -1138,6 +1187,38 @@ Utilities qualifying spec
 	     | _ -> None)
       | _ -> None
 
+ op  disjointMatches: Match -> Boolean
+ def disjointMatches = 
+     fn [] -> true
+      | (pat1,_,_)::matches -> 
+         List.all 
+           (fn(pat2,_,_) -> disjointPatterns(pat1,pat2)) 
+             matches 
+        & disjointMatches matches
+
+ op  disjointPatterns: Pattern * Pattern -> Boolean
+ def disjointPatterns = 
+     (fn (EmbedPat(con1,Some p1,_,_):Pattern,
+	  EmbedPat(con2,Some p2,_,_):Pattern) -> 
+	 if con1 = con2
+	    then disjointPatterns(p1,p2)
+         else true
+       | (EmbedPat(con1,None,_,_),EmbedPat(con2,None,_,_)) -> 
+         ~(con1 = con2)
+       | (EmbedPat _,EmbedPat _) -> true
+       | (RecordPat(fields1, _),RecordPat(fields2, _)) -> 
+	 ListPair.exists 
+	   (fn ((_,p1),(_,p2)) -> disjointPatterns(p1,p2)) (fields1,fields2)
+       | (AliasPat(p1,p2,_),p3) -> 
+	 disjointPatterns(p1,p3) or disjointPatterns(p2,p3)
+       | (p1,AliasPat(p2,p3,_)) -> 
+	 disjointPatterns(p1,p2) or disjointPatterns(p1,p3)
+       | (NatPat(i1, _),NatPat(i2, _)) -> ~(i1 = i2)
+       | (BoolPat(b1, _),BoolPat(b2, _)) -> ~(b1 = b2)
+       | (CharPat(c1, _),CharPat(c2, _)) -> ~(c1 = c2)
+       | (StringPat(s1, _),StringPat(s2, _)) -> ~(s1 = s2)
+       | _ -> false
+      )
 
 endspec
 
