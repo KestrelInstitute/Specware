@@ -16,6 +16,8 @@ spec
  op makeTypeCheckObligationSpec: Spec * (SpecCalc.Term Position) -> Spec
  op checkSpec : Spec -> TypeCheckConditions
 
+ def generateTerminationConditions? = true
+
 % Auxiliary variable environment.
 % Gamma maps local variables to their types, 
 % and also accumulates local context assertions.
@@ -114,7 +116,7 @@ spec
      ()
  
 
- op addCondition : TypeCheckConditions * Gamma * MS.Term -> 
+ op addCondition : TypeCheckConditions * Gamma * MS.Term * String -> 
 		   TypeCheckConditions
  op addFailure :   TypeCheckConditions * Gamma * String -> 
 		   TypeCheckConditions
@@ -157,7 +159,8 @@ spec
      let name = mkQualifiedId(qid, descName) in
      (Cons(mkConjecture(name,[],mkFalse()),tcc),StringSet.add(claimNames,descName))
 
- def makeVerificationCondition((decls,tvs,spc,qid,name as Qualified(qual, id),_,_),term,claimNames) = 
+ op  makeVerificationCondition: Gamma * MS.Term * String * StringSet.Set -> Option(QualifiedId * TyVars * MS.Term)
+ def makeVerificationCondition((decls,tvs,spc,qid,name as Qualified(qual, id),_,_),term,id_tag,claimNames) = 
      let
 	def insert(decl,formula) = 
 	    case decl
@@ -176,10 +179,10 @@ spec
        %% In general simplify doesn't change e -> true because of strictness, but that should not be
        %% issue here
        | Apply(Fun (Implies, _, _), Record([("1",t1),("2",Fun(Bool true,_,_))],_),_) -> None
-       | claim -> Some(mkQualifiedId(qual, StringUtilities.freshName(id,claimNames)),tvs,claim)
+       | claim -> Some(mkQualifiedId(qual, StringUtilities.freshName(id^id_tag,claimNames)),tvs,claim)
 
- def addCondition(tcc as (tccs,claimNames),gamma,term) =
-   case makeVerificationCondition(gamma,term,claimNames) of
+ def addCondition(tcc as (tccs,claimNames),gamma,term,id_tag) =
+   case makeVerificationCondition(gamma,term,id_tag,claimNames) of
      | Some condn -> let Qualified(_, cname) = condn.1 in
                      (Cons(mkConjecture condn,tccs),StringSet.add(claimNames,cname))
      | None       -> tcc
@@ -242,8 +245,10 @@ spec
 	       let tcc  = (tcc,gamma) |- N2 ?? domain(spc,sigma1)  in
 	       let tau2 = range(spc,sigma1) 		    	   in
 	       let tcc  = <= (tcc,gamma,M,tau2,tau) 		   in
-	       let tcc  = checkRecursiveCall(tcc,gamma,M,N1,N2)    in
-	       tcc)
+	       let tcc  = if generateTerminationConditions?
+	                   then checkRecursiveCall(tcc,gamma,M,N1,N2)
+	                   else tcc
+	       in tcc)
         | Record(fields,_) -> 
 	  let spc = getSpec gamma in
  	  let types = product(spc,tau) in
@@ -266,6 +271,7 @@ spec
 	  let gamma = insert (v,gamma) in
 	  let tcc = (tcc,gamma) |- body ?? boolSort  in
           let tcc = <= (tcc,gamma,M,srt,tau)         in
+	  let tcc = addCondition(tcc,gamma,mkBind(Exists1,[v],body),"_the") in
 	  tcc
         | Let(decls,body,_)    ->
 	  let (tcc,gamma) =
@@ -278,6 +284,7 @@ spec
 		      in
 		      let spc = getSpec gamma 				   in
 		      let tcc = (tcc,gamma) |- t ?? sigma1                 in
+		      let tcc = addQuotientCondition(tcc,gamma,pat,body,Some t) in
 		      (tcc,ngamma))
 	          (tcc,gamma)
 		  decls
@@ -375,16 +382,16 @@ spec
    let x  = useNameFrom(gamma,optArg,"D")		 in
    let vs = [mkVar(x,dom)] 	        	         in
    let (_,_,spc,_,Qualified(_, name),_,_) = gamma        in
-   let context:PatternMatch.Context = {counter    = Ref 0,
-				       spc        = spc,
-				       funName    = name,
-				       errorIndex = Ref 0,
-				       term       = None}
+   let context = {counter    = Ref 0,
+		  spc        = spc,
+		  funName    = name,
+		  errorIndex = Ref 0,
+		  term       = None}
    in
    let trm = match(context,vs,rules,mkFalse(),mkFalse()) in
    (case simplifyMatch(trm)
       of Fun(Bool true,_,_) -> tcc
-       | trm -> addCondition(tcc,gamma,mkBind(Forall,[(x,dom)],trm)))
+       | trm -> addCondition(tcc,gamma,mkBind(Forall,[(x,dom)],trm),"_fn_precond"))
 
  op  useNameFrom: Gamma * Option MS.Term * String -> String
  def useNameFrom(gamma,optTm,default) =
@@ -397,19 +404,47 @@ spec
 % 
 % This should also capture that the previous patterns failed.
 %
- op  checkRule: Gamma * Sort * Sort * Option MS.Term-> (Pattern * MS.Term * MS.Term) * TypeCheckConditions
+ op  checkRule: Gamma * Sort * Sort * Option MS.Term -> (Pattern * MS.Term * MS.Term) * TypeCheckConditions
                -> TypeCheckConditions
  def checkRule(gamma,dom,rng,optArg) ((pat,cond,body),tcc) = 
-     let (gamma0,tp) = bindPattern(gamma,pat,dom) 		in
+     let (gamma0,tp) = bindPattern(gamma,pat,dom) 	  in
      let gamma1 = case optArg of
                     | Some arg ->
                       assertCond(mkEquality(inferType(getSpec gamma,arg),arg,tp),gamma0)
                     | _ -> gamma0
      in
-     let tcc = (tcc,gamma1) |- cond ?? boolSort 		in
-     let gamma2 = assertCond(cond,gamma1)			in
-     let tcc = (tcc,gamma2) |- body ?? rng 			in
+     let tcc = (tcc,gamma1) |- cond ?? boolSort 	  in
+     let gamma2 = assertCond(cond,gamma1)		  in
+     let tcc = (tcc,gamma2) |- body ?? rng 		  in
+     let tcc = addQuotientCondition(tcc,gamma,pat,body,optArg) in
      tcc
+
+ op  addQuotientCondition: TypeCheckConditions * Gamma * Pattern * MS.Term * Option MS.Term -> TypeCheckConditions
+ def addQuotientCondition(tcc,gamma,pat,body,optArg) =
+   case optArg of
+     | Some arg ->
+       (case foldSubPatterns (fn (p,r) -> case p of QuotientPat(VarPat pv,_,_) -> Some pv | _ -> r) None pat of
+	 | Some(v as (vn,srt),vpos) ->
+	   %% fa(v1,v2) pat(v1) && pat(v2) => arg(v1) = arg(v2)
+	   let v1n = (vn^"__1",srt) in
+	   let v1 = Var(v1n,vpos) in
+	   let v2n = (vn^"__2",srt) in
+	   let v2 = Var(v2n,vpos) in
+	   let (o_tm,conds) = patternToTermPlusConds pat in
+	   let mainCond = case o_tm of
+	                    | None -> []
+	                    | Some tm -> [mkEquality(termSort arg,arg,tm)]
+	   in
+	   let all_conds = mainCond ++ conds in
+	   let v1Conds = map (fn c -> substitute(c,[(v,v1)])) all_conds in
+	   let v2Conds = map (fn c -> substitute(c,[(v,v2)])) all_conds in
+	   let quotCond = mkBind(Forall,[v1n,v2n],
+				 mkImplies(mkConj(v1Conds ++ v2Conds),
+					   mkEquality(srt,substitute(body,[(v,v1)]),substitute(body,[(v,v2)]))))
+	   in
+	   addCondition(tcc,gamma,quotCond,"_quotient")
+	 | _ -> tcc)
+     | _ -> tcc
 
  op  returnPattern: Gamma * MS.Term * Sort * Sort  -> Gamma * MS.Term
  def returnPattern(gamma,t,tau1,tau2) = 
@@ -421,7 +456,7 @@ spec
 	exists (fn p -> p = (tau,sigma)) pairs
 	then (gamma,M)
      else
-     let pairs  = cons((tau,sigma),pairs) 	in 
+     let pairs  = Cons((tau,sigma),pairs) 	in 
      let tau1   = unfoldBase(gamma,tau)    	in
      let sigma1 = unfoldBase(gamma,sigma)  	in
      if tau1 = sigma1
@@ -645,7 +680,7 @@ spec
        of Subsort(sigma2,pred,_) -> 
 %	  let _ = String.writeLine("Verifying "^printTerm pred) in
 	  let tcc = subtypeRec(pairs,tcc,gamma,M,tau,sigma2) in
-	  let tcc = addCondition(tcc,gamma,mkLetOrApply(pred,M,gamma)) in
+	  let tcc = addCondition(tcc,gamma,mkLetOrApply(pred,M,gamma),"_subsort") in
 	  tcc
 	| _ ->
      case (tau1,sigma1)
@@ -859,10 +894,14 @@ spec
    %% original spec, thus we do an setImports to spc.
    let (new_elements,_) = checkSpec spc in
    removeDuplicateImports		% could be done more efficiently for special case
-     (spc << {elements = Cons(Import(wfoSpecTerm,wfoSpec,wfoSpec.elements),new_elements),
-	      ops      = insertAQualifierMap(spc.ops,"WFO","wfo",
-					     case findTheOp(wfoSpec,Qualified("WFO","wfo"))
-					       of Some x -> x)})
+     (spc << {elements = if generateTerminationConditions?
+	                  then Cons(Import(wfoSpecTerm,wfoSpec,wfoSpec.elements),new_elements)
+			  else new_elements,
+	      ops      = if generateTerminationConditions?
+	                  then insertAQualifierMap(spc.ops,"WFO","wfo",
+						   case findTheOp(wfoSpec,Qualified("WFO","wfo"))
+						     of Some x -> x)
+			  else spc.ops})
 
 % op  boundVars   : Gamma -> List Var
 % op  boundTyVars : Gamma -> TyVars
