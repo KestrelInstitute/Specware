@@ -23,7 +23,9 @@
 	     ";; Directory $TESTDIR/Snark/PosNat/ does not exist, will create."
 	     ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/PosNat/p.log")
+	    (:optional "creating directory: $TESTDIR/Snark/")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
+	    (:optional "creating directory: $TESTDIR/Snark/PosNat/")
 	    (:optional ";; Directory $TESTDIR/Snark/PosNat/ does not exist, will create.")
 	    "    Expanded spec file: $TESTDIR/Snark/PosNat/p.sw"
 	    "    Snark Log file: $TESTDIR/Snark/PosNat/p.log"

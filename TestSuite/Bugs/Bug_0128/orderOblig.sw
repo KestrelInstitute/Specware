@@ -16,4 +16,4 @@ endspec
 O = obligations S
 
 
-P = prove d_Obligation in O
+P = prove d_Obligation_subsort in O

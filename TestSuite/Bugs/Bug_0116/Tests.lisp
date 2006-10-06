@@ -7,7 +7,9 @@
 	       ";;; Elaborating spec at $TESTDIR/RemCurr#S"
 	       ";;; Elaborating proof-term at $TESTDIR/RemCurr#P"
 	       (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/RemCurr/P.log")
+	       (:optional "creating directory: $TESTDIR/Snark/")
 	       (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
+	       (:optional "creating directory: $TESTDIR/Snark/RemCurr/")
 	       (:optional ";; Directory $TESTDIR/Snark/RemCurr/ does not exist, will create.")
 	       "    Expanded spec file: $TESTDIR/Snark/RemCurr/P.sw"
 	       "    Snark Log file: $TESTDIR/Snark/RemCurr/P.log"

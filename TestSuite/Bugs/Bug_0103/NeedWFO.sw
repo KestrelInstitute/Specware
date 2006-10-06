@@ -13,7 +13,7 @@ endspec
 
 O  = print obligations S
 
-P  = prove f_Obligation  in O
+P  = prove f_Obligation_fn_precond  in O
 P0 = prove f_Obligation0 in O
 P1 = prove f_Obligation1 in O
 

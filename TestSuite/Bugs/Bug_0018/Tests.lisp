@@ -9,6 +9,7 @@
 	    ";;; Elaborating spec at $TESTDIR/BBcol#A"
 	    ";;; Generating lisp file $TESTDIR/lisp/BBcol.lisp"
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/lisp/BBcol.lisp")
+	    (:optional "creating directory: $TESTDIR/lisp/")
 	    (:optional ";; Directory $TESTDIR/lisp/ does not exist, will create.")
 	    ""))
 

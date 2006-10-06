@@ -31,4 +31,4 @@ O = PFunctions qualifying spec
 
 endspec
 
-P = prove o_Obligation in obligations O
+P = prove o_Obligation_fn_precond in obligations O

@@ -23,7 +23,9 @@
 	    (:optional ";; ensure-directories-exist: creating")
 	    (:optional ";;   $TESTDIR/Snark/Change/ShouldBeProvable.log")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Change/ShouldBeProvable.log")
+	    (:optional "creating directory: $TESTDIR/Snark/")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
+	    (:optional "creating directory: $TESTDIR/Snark/Change/")
 	    (:optional ";; Directory $TESTDIR/Snark/Change/ does not exist, will create.")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "    Expanded spec file: $TESTDIR/Snark/Change/ShouldBeProvable.sw"

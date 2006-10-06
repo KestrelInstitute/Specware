@@ -8,6 +8,7 @@
 	    ";;; Generating lisp file $TESTDIR/lisp/S.lisp"
 	    (:optional
 	     ";; ensure-directories-exist: creating $TESTDIR/lisp/S.lisp")
+	    (:optional "creating directory: $TESTDIR/lisp/")
 	    (:optional
 	     ";; Directory $TESTDIR/lisp/ does not exist, will create.")
 	    ""))
