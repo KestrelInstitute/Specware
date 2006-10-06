@@ -216,7 +216,7 @@ AnnSpecPrinter qualifying spec
 				  in
                                   prettysFill [pp.fromString "quotient", 
 					       string " ",
-					       ppTerm context ([], Top : ParentTerm) p, 
+					       ppTerm context ([], Top) p, 
 					       string " "]
      | Choose                  -> let p = case srt
 					   of Arrow(_, Quotient(_,p,_),_) -> p
@@ -225,15 +225,15 @@ AnnSpecPrinter qualifying spec
 				  in
                                   prettysFill [pp.fromString "choose",
 					       string " ",
-					       ppTerm context ([], Top : ParentTerm) p, 
+					       ppTerm context ([], Top) p, 
 					       string " "]
      | PQuotient   p           -> prettysFill [pp.fromString ("quotient"),
 					       string " ",
-					       ppTerm context ([], Top : ParentTerm) p, 
+					       ppTerm context ([], Top) p, 
 					       string " "]
      | PChoose     p           -> prettysFill [pp.fromString ("choose"),
 					       string " ",
-					       ppTerm context ([], Top : ParentTerm) p, 
+					       ppTerm context ([], Top) p, 
 					       string " "]
      | Not                     -> pp.Not
      | And                     -> pp.And
@@ -248,22 +248,22 @@ AnnSpecPrinter qualifying spec
      | Relax                   -> let p = case srt of Arrow (Subsort (_, p, _), _, _) -> p | _ -> mkTrueA a in
                                   prettysFill [pp.fromString "relax", 
 					       string "(",
-					       ppTerm context ([], Top : ParentTerm) p, 
+					       ppTerm context ([], Top) p, 
 					       string ")"]
      | Restrict                -> let p = case srt of Arrow (_, Subsort (_, p, _), _) -> p | _ -> mkTrueA a in
 				  prettysFill [pp.fromString "restrict", 
 					       string "(",
-					       ppTerm context ([], Top : ParentTerm) p,
+					       ppTerm context ([], Top) p,
 					       string ")"]
      | PRelax      t           -> %let p = case srt of Arrow (Subsort (_, p, _), _, _) -> p | _ -> mkTrueA a in
 			  	  prettysFill [pp.fromString "relax", 
 					       string "(",
-					       ppTerm context ([], Top : ParentTerm) t,
+					       ppTerm context ([], Top) t,
 					       string ")"]
      | PRestrict   t           -> %let p = case srt of Arrow (_, Subsort (_, p, _), _) -> p | _ -> mkTrueA a in
 			          prettysFill [pp.fromString "restrict", 
 					       string "(",
-					       ppTerm context ([], Top : ParentTerm) t,
+					       ppTerm context ([], Top) t,
 					       string ")"]
      %% Only used internally at present
      | Select      s           -> pp.fromString ("select(" ^ s ^ ")")
@@ -288,7 +288,7 @@ AnnSpecPrinter qualifying spec
 		      [(0, prettysNone [marker,
 					ppPattern context ([0, i] ++ path, true) pat,
 					pp.Arrow]),
-		       (3, ppTerm context ([2, i] ++ path, Top : ParentTerm) trm)])
+		       (3, ppTerm context ([2, i] ++ path, Top) trm)])
 	 | _ -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
@@ -298,7 +298,7 @@ AnnSpecPrinter qualifying spec
 					string " ",
 					ppTerm context ([1, i] ++ path, Top) cond,
 					pp.Arrow]),
-		       (3, ppTerm context ([3, i] ++ path, Top : ParentTerm) trm)])
+		       (3, ppTerm context ([3, i] ++ path, Top) trm)])
    in
      prettysAll (case match of
 		   | [] -> []
@@ -377,7 +377,7 @@ AnnSpecPrinter qualifying spec
 			  pp.fromString p]
 	 | _ -> 
 	   blockFill (0, 
-		      [(0, ppTerm context ([0] ++ path, Top) t1), 
+		      [(0, ppTerm context ([0] ++ path, Nonfix) t1), 
 		       (2, blockNone (0, 
 				      (case t2 of
 					 | Record (row, _) ->
@@ -533,20 +533,19 @@ AnnSpecPrinter qualifying spec
 			 printLambda (context, path, pp.Lambda, match), 
 			 pp.RP]
           | The ((id,srt),body,_) ->
-	      enclose(case parentTerm of
-			| Infix _ -> false % Add parens if inside an infix expr
-			| _ -> true,
-		      blockFill (0, [
-			    (0, prettysNone 
-			     [pp.The,
-                              pp.LP,
-		              pp.fromString id, 
-			      string " : ", 
-			      ppSort context ([2] ++ path, Top) srt,
-                              pp.RP, string " "
-                             ]), 
-			    (1, ppTerm context ([2] ++ path, parentTerm) body)]))
-              
+	    enclose(case parentTerm of
+		      | Top -> true
+		      | _ -> false,
+		    blockFill (0, [
+			  (0, prettysNone 
+			   [pp.The,
+			    pp.LP,
+			    pp.fromString id, 
+			    string " : ", 
+			    ppSort context ([2] ++ path, Top) srt,
+			    pp.RP, string " "
+			   ]), 
+			  (1, ppTerm context ([2] ++ path, Top) body)]))
 
 	  | Bind (binder, bound, body, _) ->
 	    let b = case binder of
@@ -650,7 +649,7 @@ AnnSpecPrinter qualifying spec
 					 ++
 					 (foldl (fn (tm, pps) -> 
 						 pps ++
-						 [ppTerm context (path, Top : ParentTerm) tm,
+						 [ppTerm context (path, Top) tm,
 						  string " "])
 					        []
 						tms)
