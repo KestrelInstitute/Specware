@@ -260,7 +260,8 @@ be the option to run each (test ...) form in a fresh image.
   (let (val error-type (error-messages ())
 	(emacs::*goto-file-position-store?* t)
 	(emacs::*goto-file-position-stored* nil)
-	(cl-user::*running-test-harness?* t))
+	(cl-user::*running-test-harness?* t)
+	(specware::*dont-use-x-symbol?* t))
     (let ((test-output (with-output-to-string (*standard-output*)
 			 (let ((*error-output* *standard-output*)) ; so we also collect warnings and error messages
 			   (multiple-value-setq (val error-type)
