@@ -84,41 +84,41 @@ SpecCalc qualifying spec
 
   op transformSpecForFirstOrderProverInt: AnnSpec.Spec -> AnnSpec.Spec
   def transformSpecForFirstOrderProverInt spc =
-    %let _ = writeLine("orig") in
-    %let _ = writeLine(printSpec spc) in
+     %let _ = writeLine("orig") in
+     %let _ = writeLine(printSpec spc) in
     let spc = unfoldSortAliases spc in
     let spc = removeCurrying spc in
-    %let _ = writeLine("remCur") in
-    %let _ = writeLine(printSpec spc) in
+     %let _ = writeLine("remCur") in
+     %let _ = writeLine(printSpec spc) in
     let spc = removeQuotient spc in
-    %let _ = writeLine("remQ") in
-    %let _ = writeLine(printSpec spc) in
-    %let spc = aux_instantiateHOFns spc in%
-    %let _ = writeLine("instHO") in
-    %let _ = writeLine(printSpec spc) in
-    %let spc = lambdaToInner spc in
+     %let _ = writeLine("remQ") in
+     %let _ = writeLine(printSpec spc) in
+     %let spc = aux_instantiateHOFns spc in%
+     %let _ = writeLine("instHO") in
+     %let _ = writeLine(printSpec spc) in
+     %let spc = lambdaToInner spc in
     let spc = poly2monoForSnark(spc,true) in
-    %let _ = writeLine("remPoly") in
-    %let _ = writeLine(printSpec spc) in
-    %let spc = addEqOpsToSpec spc in
-    %let _ = printSpecWithSortsToTerminal spc in
+     %let _ = writeLine("remPoly") in
+     %let _ = writeLine(printSpec spc) in
+     %let spc = addEqOpsToSpec spc in
+     %let _ = printSpecWithSortsToTerminal spc in
     let spc = lambdaLift spc in
-    %let _ = writeLine("lambdaLift") in
-    %let _ = writeLine(printSpec spc) in
-    %let spc = foldRecordSorts(spc) in
+     %let _ = writeLine("lambdaLift") in
+     %let _ = writeLine(printSpec spc) in
+     %let spc = foldRecordSorts(spc) in
     let (spc,constrOps) = addSortConstructorsToSpecForSnark spc in
     let (spc,constrOps) = addProductSortConstructorsToSpec spc in
     let (spc,constrOps) = addProductAccessorsToSpec spc in
-    %let _ = writeLine("ConsAccAdds") in
-    %let _ = writeLine(printSpec spc) in
-    %let spc = conformOpDecls spc in
-    %let spc = adjustAppl spc in
+     %let _ = writeLine("ConsAccAdds") in
+     %let _ = writeLine(printSpec spc) in
+     %let spc = conformOpDecls spc in
+     %let spc = adjustAppl spc in
     let spc = aux_instantiateHOFns spc true in  % temporary flag to enable test in makeUnfoldMap: tvs ~= []
-    %let spc = simpSpecFMTerm spc in
-    %let _ = writeLine("snd InsHO") in
-    %let _ = writeLine(printSpec spc) in
+     %let spc = simpSpecFMTerm spc in
+     %let _ = writeLine("snd InsHO") in
+     %let _ = writeLine(printSpec spc) in
     let spc = explicateHiddenAxioms(spc) in
-    %let _ = writeLine(printSpec spc) in
+     %let _ = writeLine(printSpec spc) in
     spc
 
   op getBaseProverSpec : Env Spec

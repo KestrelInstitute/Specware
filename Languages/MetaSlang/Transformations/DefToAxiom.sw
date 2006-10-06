@@ -192,26 +192,23 @@ Prover qualifying spec
         %% new: fold over all defs (but presumably just one for now)
         foldl (fn (dfn, props) ->
 	       let (tvs, srt, term) = unpackTerm dfn in
-	       if true then   % localOp? (qid, spc) then  %% Obsolete because of spec element sequentialization(?)
-		 let pos = termAnn term in
-		 let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in
-		 %let unTupledFmlas = foldRecordFmla (spc, srt, initialFmla) in
-		 %let unTupleAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) unTupledFmlas in
-		 let unTupleAxioms = [] in
-		 %let _ = if true && id = "p" then writeLine ("initialFmla: "^printTerm initialFmla) else () in
-		 %let _ = if true && id = "length_Object$1$_$Object$2" then debug ("initialFmla: "^printTerm initialFmla) else () in
-		 let liftedFmlas = removePatternTop(spc, initialFmla) in
-		 %let simplifiedLiftedFmlas = map (fn fmla -> simplify (spc, fmla)) liftedFmlas in
-		 %let _ = if id = "p" then map (fn lf -> writeLine ("LiftedAxioms: " ^ printTerm lf)) liftedFmlas else [] in
-		 let defAxioms = map (fn (fmla:MS.Term) ->
-				      Property(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) liftedFmlas in
-		 %%let ax:Property = (Axiom, id^"_def", [], hd (unLambdaDef (spc, srt, qid, term))) in
-		 %let _ = writeLine (id^": in axiomFromOpDef Def part") in
-		 props ++ defAxioms ++ unTupleAxioms
-	       else 
-		 %let _ = writeLine (id^": in axiomFromOpDef Def part is not local") in
-		 %let _ = debug "not local op" in
-		 props)
+	       let pos = termAnn term in
+	       let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in
+	       %let unTupledFmlas = foldRecordFmla (spc, srt, initialFmla) in
+	       %let unTupleAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) unTupledFmlas in
+	       let unTupleAxioms = [] in
+	       %let _ = if true && id = "p" then writeLine ("initialFmla: "^printTerm initialFmla) else () in
+	       %let _ = if true && id = "length_Object$1$_$Object$2" then debug ("initialFmla: "^printTerm initialFmla) else () in
+	       let liftedFmlas = removePatternTop(spc, initialFmla) in
+	       %let simplifiedLiftedFmlas = map (fn fmla -> simplify (spc, fmla)) liftedFmlas in
+	       %let _ = if id = "p" then map (fn lf -> writeLine ("LiftedAxioms: " ^ printTerm lf)) liftedFmlas else [] in
+	       let defAxioms = map (fn (fmla:MS.Term) ->
+				    Property(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos)))
+	                         liftedFmlas
+	       in
+	       %%let ax:Property = (Axiom, id^"_def", [], hd (unLambdaDef (spc, srt, qid, term))) in
+	       %let _ = writeLine (id^": in axiomFromOpDef Def part") in
+	       props ++ defAxioms ++ unTupleAxioms)
 	      []
 	      defs
 

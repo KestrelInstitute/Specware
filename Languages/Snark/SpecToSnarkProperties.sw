@@ -314,16 +314,26 @@ snark qualifying spec
   op mkSnarkFmla: Context * Spec * String * StringSet.Set * Vars * MS.Term -> LispCell
 
   def mkSnarkFmla(context, sp, dpn, vars, globalVars, fmla) =
-    case fmla
-      of Bind(bndr, bndVars, term, _) ->
+    case containsTheTerm fmla of
+      | Some(the_tm as The(v,bod,pos)) ->
+        %% p(the(x) q x) <=> (ex(x) p x && q x) given uniqueness of the
+        let subst_fmla = mapTerm ((fn st -> if st = the_tm then Var(v,pos) else st),id,id) fmla in
+        let ex_fmla = Bind(Exists,[v],Utilities.mkAnd(subst_fmla,bod),pos) in
+        mkSnarkFmla(context, sp, dpn, vars, globalVars, ex_fmla)
+      | _ ->
+    case fmla of
+      | Bind(bndr, bndVars, term, a) ->
+        if bndr = Exists1
+	  then mkSnarkFmla(context, sp, dpn, vars, globalVars, expandExists1(hd bndVars,term,a))
+	else
 	let snarkBndList = snarkBndVars(sp, bndVars, globalVars) in
 	let newVars = map(fn (var, srt) -> specId(var,""))
 	                 bndVars in
-	let bndVarsPred:MS.Term = (foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List Var))):MS.Term in
+	let bndVarsPred = foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res))
+			    (mkTrue()) bndVars in
 	let newTerm = case bndr of
 	                | Forall -> Utilities.mkSimpImplies(bndVarsPred, term)
-	                | Exists -> Utilities.mkAnd(bndVarsPred, term) 
-	                | Exists1 -> fail ("mkSnarkFmla doesn't handle Exists1 (uniqueness quantifier)")
+	                | Exists -> Utilities.mkAnd(bndVarsPred, term)
 	in
 	let snarkFmla = mkSnarkFmla(context, sp, dpn, StringSet.addList(vars, newVars), globalVars, newTerm) in
 	   Lisp.list [Lisp.symbol("SNARK",bndrString bndr),
@@ -339,6 +349,55 @@ snark qualifying spec
       | Fun ((Bool false), _, _) -> Lisp.symbol("SNARK","FALSE") % sort of Fun was Boolean, but that was a free var in the pattern!
       | Var (v, _) -> snarkVarFmla(v)
       | _ -> mkSnarkTerm(context, sp, dpn, vars, fmla)
+
+  op  containsTheTerm: MS.Term -> Option(MS.Term)
+  def containsTheTerm tm =
+    case tm of
+      | The _ -> Some tm
+      | Bind _ -> None			% Will get caught on recursive call to mkSnarkFmla
+      | Apply(Fun(f, srt, _), arg, _) ->
+        (case f of
+	   | Not -> None
+	   | And -> None
+	   | Or -> None
+	   | Implies -> None
+	   | Iff -> None
+	   | NotEquals -> None
+	   | _ -> containsTheTerm arg)
+      | Apply(f,arg,_) ->
+        (case containsTheTerm f of
+	   | None -> containsTheTerm arg
+	   | r -> r)
+      | IfThenElse(c, t, e, _) ->
+        (case containsTheTerm c of
+	  | None ->
+	    (case containsTheTerm t of
+	      | None -> containsTheTerm e
+	      | r -> r)
+	   | r -> r)
+      | Record(prs,_) ->
+	foldl (fn ((_,tm),result) ->
+	       case result of
+		 | None -> containsTheTerm tm
+		 | r -> r)
+	  None prs
+      | Let(bnds,bod,_) ->
+	foldl (fn ((_,tm),result) ->
+	       case result of
+		 | None -> containsTheTerm tm
+		 | r -> r)
+	  (containsTheTerm bod) bnds
+      | LetRec(_,bod,_) -> containsTheTerm bod
+      | SortedTerm(stm,_,_) -> containsTheTerm stm
+      | _ -> None
+
+  op  expandExists1: Var * MS.Term * Position -> MS.Term
+  def expandExists1(v as (vn,s), bod, pos) =
+    let v1 = (vn ^ "__exists1",s) in
+    let v1_tm = Var(v1,pos) in
+    let v_tm =  Var(v, pos) in
+    let v1_bod = substitute(bod,[(v,v1_tm)]) in
+    Bind(Exists,[v],MS.mkAnd(bod, Bind(Forall,[v1],mkImplies(v1_bod,mkEquality(s,v1_tm,v_tm)),pos)),pos)
 
   op mkSnarkTermAppTop: Context * Spec * String * StringSet.Set * Fun * Sort * MS.Term -> LispCell
   def mkSnarkTermAppTop(context, sp, dpn, vars, f, srt, arg) =

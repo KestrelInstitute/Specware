@@ -29,6 +29,7 @@ Prover qualifying spec
 
   %% compute the predicate constraining srt to its ultimate supersort
   def srtPred(spc, srt, tm) =
+    %let _ = toScreen ((printSort srt) ^ "\n") in
     let def topPredBaseSrt(srt) =
          case srt of
 	   | Base(Qualified("Nat","Nat"),_,_) -> topPredBaseSrt(proverNatSort())

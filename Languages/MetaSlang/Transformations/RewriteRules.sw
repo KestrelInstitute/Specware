@@ -247,37 +247,6 @@ Extract rewrite rules from function definition.
 	        Some(trm,vars,cons((v,trm),S)))
 	| AliasPat _ -> None %% Not supported
 	   
- def disjointMatches = 
-     fn [] -> true
-      | (pat1,_,_)::matches -> 
-         List.all 
-           (fn(pat2,_,_) -> disjointPatterns(pat1,pat2)) 
-             matches 
-        & disjointMatches matches
-
- def disjointPatterns = 
-     (fn (EmbedPat(con1,Some p1,_,_):Pattern,
-	  EmbedPat(con2,Some p2,_,_):Pattern) -> 
-	 if con1 = con2
-	    then disjointPatterns(p1,p2)
-         else true
-       | (EmbedPat(con1,None,_,_),EmbedPat(con2,None,_,_)) -> 
-         ~(con1 = con2)
-       | (EmbedPat _,EmbedPat _) -> true
-       | (RecordPat(fields1, _),RecordPat(fields2, _)) -> 
-	 ListPair.exists 
-	   (fn ((_,p1),(_,p2)) -> disjointPatterns(p1,p2)) (fields1,fields2)
-       | (AliasPat(p1,p2,_),p3) -> 
-	 disjointPatterns(p1,p3) or disjointPatterns(p2,p3)
-       | (p1,AliasPat(p2,p3,_)) -> 
-	 disjointPatterns(p1,p2) or disjointPatterns(p1,p3)
-       | (NatPat(i1, _),NatPat(i2, _)) -> ~(i1 = i2)
-       | (BoolPat(b1, _),BoolPat(b2, _)) -> ~(b1 = b2)
-       | (CharPat(c1, _),CharPat(c2, _)) -> ~(c1 = c2)
-       | (StringPat(s1, _),StringPat(s2, _)) -> ~(s1 = s2)
-       | _ -> false
-      )
-
 \end{spec}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Extract rewrite rules from a specification.

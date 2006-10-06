@@ -283,7 +283,8 @@ spec
 	        case bindEquality cj of
 		 | None -> false
 		 | Some(v,e) ->
-		   (simpleTerm? e)
+		   (simpleTerm? e || (foldl (fn (cji,r) -> r + countVarRefs(cji,v)) (countVarRefs(bod,v)) cjs)
+		                      = 2) % This one and the one we want to replace
 		   & (member(v,vs))
 		   & ~(isFree(v,e)))
            cjs
@@ -399,6 +400,7 @@ spec
     case term of 
       | Record(fields,_) ->
         all (fn (_,t) -> simpleTerm t) fields
+      | Lambda _ \_rightarrow true
       | _ -> simpleTerm term
 
  def simplify spc term = mapSubTerms(simplifyOne spc) term

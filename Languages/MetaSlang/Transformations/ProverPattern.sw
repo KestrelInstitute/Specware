@@ -4,7 +4,7 @@ Prover qualifying spec
   import /Languages/Java/DistinctVariable
   import /Library/Legacy/DataStructures/ListPair
   import /Library/Legacy/DataStructures/SplaySet
-
+  import Simplify
 
   op wildCounter: Ref Nat
   def wildCounter = Ref 0
@@ -65,12 +65,12 @@ Prover qualifying spec
 
   op removePatternTop: Spec * Term -> List Term
   def removePatternTop(spc, term) =
-    %let _ = writeLine("PP: "^printTerm(term)) in
+     %let _ = writeLine("PP: "^printTerm(term)) in
     let pos = termAnn(term) in
     let _ = initWildCounter() in
     let condTerms = removePatternTerm(spc, term) in
-    let res = map (fn(ct) -> condTermToFmlaWithPos(ct, pos)) condTerms in
-    %let _ = map (fn (r) -> writeLine("PPRes: "^printTerm(r))) res in
+    let res = map (fn(ct) -> simplify spc (condTermToFmlaWithPos(ct, pos))) condTerms in
+     %let _ = map (fn (r) -> writeLine("PPRes: "^printTerm(r))) res in
     res
 
   op generalCrossProduct: fa (a, b, c) (List (List a)) * (List(a) -> List (b)) * (a * b -> b) * (b -> c) -> List c
@@ -196,6 +196,7 @@ def removePatternCase(spc, term) =
   let caseTermSrt = inferType(spc, caseTerm) in
   let caseTermCondTerms = removePatternTerm(spc, caseTerm) in
   let cases = caseCases(term) in
+  let casesDisjoint? = disjointMatches cases in
   let def mkPatCond(patTerms, caseTerm) =
         case patTerms of
 	  | [patTerm] -> mkDeComposedEquality(spc, caseTermSrt, patTerm, caseTerm)
@@ -215,7 +216,9 @@ def removePatternCase(spc, term) =
 	  | Nil -> []
 	  | (hdCaseVars, hdCaseCond, hdCaseTerm)::tlCaseCTs ->
 	    let patCond = mkPatCond(patTerms, caseTerm) in
-	    let caseCond = Utilities.mkAnd(negPrevCases, Utilities.mkAnd(hdCaseCond, patCond)) in
+	    let caseCond = if casesDisjoint?
+	                    then Utilities.mkAnd(hdCaseCond, patCond)
+			    else Utilities.mkAnd(negPrevCases, Utilities.mkAnd(hdCaseCond, patCond)) in
 	    let hdCondTerms = recurseDownBodyCondTerms(hdCaseVars++patVars, caseCond, bodyCTs) in
 	    let tlCondTerms = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, bodyCTs, tlCaseCTs, negPrevCases) in
 	    hdCondTerms++tlCondTerms in
@@ -234,7 +237,8 @@ def removePatternCase(spc, term) =
 	    let hdCaseCondTerms = removePatternCaseCase(hdCase, negPrevCases) in
 	    let patTerms = patternToTerms(pat) in
 	    let patCond = mkPatCond(patTerms, caseTerm) in
-	    let negNewCases = Utilities.mkAnd(negPrevCases, mkNot(patCond)) in
+	    let negNewCases = if casesDisjoint? then negPrevCases
+	                       else Utilities.mkAnd(negPrevCases, mkNot(patCond)) in
 	    let tlCaseCondTerms = removePatternCaseCases(tlCases, negNewCases) in
 	    hdCaseCondTerms++tlCaseCondTerms in
   let res = removePatternCaseCases(cases, mkTrue()) in
@@ -338,6 +342,7 @@ def removePatternCase(spc, term) =
       | CharPat(char, b) -> [mkChar(char)]
       | NatPat(nat, b) -> [mkNat(nat)]
       | WildPat(srt, _) -> [mkWildVar(srt)]
+      | QuotientPat(p,_,_)  -> patternToTerms p
       | RestrictedPat(p,_,_) -> patternToTerms p
       | _ -> fail("pattern not supported")
 
@@ -352,7 +357,10 @@ def removePatternCase(spc, term) =
     case optPat of
       | None -> [mkEmbed0(id, srt)]
       | Some(pat) -> let argTerms = patternToTerms(pat) in
-                       map (fn (argTerm) -> mkApply(mkEmbed1(id, srt), argTerm)) argTerms
+                       map (fn (argTerm) ->
+			    let domSort = termSort argTerm in
+			    mkApply(mkEmbed1(id, Arrow(domSort,srt,b)), argTerm))
+		         argTerms
 
   op crossProduct: fa(a, b) List a * List b -> List (a*b)
   def crossProduct(l1, l2) =
