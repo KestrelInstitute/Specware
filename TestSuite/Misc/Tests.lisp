@@ -78,9 +78,9 @@
 	    " op  nonNeg? : Integer -> Boolean"
 	    (:optional " ")
 	    " op  f : {p : (Integer * Integer) | p.1 > -(p.2)} -> Nat"
-	    " conjecture f_Obligation is "
+	    " conjecture f_Obligation_subsort is "
 	    "    fa(y : Integer, x : Integer) x > - y => nonNeg?(x + y)"
-	    " conjecture f_Obligation0 is "
+	    " conjecture f_Obligation_subsort0 is "
 	    "    fa(y : Integer, x : Integer) "
 	    "     x > - y && nonNeg?(x + y) => natural?(x + y)"
 	    " "

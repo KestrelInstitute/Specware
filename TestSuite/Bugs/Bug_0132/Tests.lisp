@@ -28,7 +28,7 @@
 	    "    fa(p : UniquelySatisfiedPredicate(a)) uniquelySatisfies?(The p, p)"
 	    " "
 	    " op  f : Nat -> Nat"
-	    " conjecture f_Obligation is "
+	    " conjecture f_Obligation_subsort is "
 	    "    fa(n : Nat) uniquelySatisfied?((fn m -> m = n))"
 	    " "
 	    " def f n = The((fn m -> m = n))"

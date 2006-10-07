@@ -18,7 +18,9 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Logic/Prove.log")
+	    (:optional " creating directory: $TESTDIR/Snark/")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
+	    (:optional " creating directory: $TESTDIR/Snark/Logic/")
 	    (:optional ";; Directory $TESTDIR/Snark/Logic/ does not exist, will create.")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional
