@@ -24,19 +24,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/..sw")
 	    (:optional "    Snark Log file: $TESTDIR/Snark/..log")
-	    (:alternatives
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.0 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.1 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.2 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.3 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.4 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.5 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.6 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.7 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.8 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 1.9 seconds."
-	     "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in 2.0 seconds."
-	     )
+	    "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in * seconds."
 	    ""))
 
  )

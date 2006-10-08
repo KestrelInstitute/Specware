@@ -11,9 +11,8 @@
 	    ""
 	    "spec  "
 	    " import $TESTDIR/Ob#T"
-	    (:alternatives
-	     " conjecture pp is project b (project a (z)) = 0"
-	     " conjecture pp is (z.a).b = 0")
+	    ;; " conjecture pp is project b (project a (z)) = 0"
+	    " conjecture pp is (z.a).b = 0"
 	    "endspec"
 	    ""
  	    ""))
