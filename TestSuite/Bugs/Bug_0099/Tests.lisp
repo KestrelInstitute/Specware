@@ -31,7 +31,7 @@
 	     ";; ensure-directories-exist: creating $TESTDIR/Snark/MinusOb/MinusProof.log"
 	     ";; Directory $TESTDIR/Snark/ does not exist, will create."
 	     ";; Directory $TESTDIR/Snark/MinusOb/ does not exist, will create.")
-	    "MinusProof: Conjecture minus_def2_Obligation in ONat is Proved! using Snark*."
+	    "MinusProof: Conjecture minus_def2_Obligation_subsort in ONat is Proved! using Snark*."
 	    ""
 	    ""
 	    ""))
