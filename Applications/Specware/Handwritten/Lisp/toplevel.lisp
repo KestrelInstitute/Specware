@@ -90,8 +90,10 @@
     (unless *saved-swpath*
       (setq *saved-swpath* swpath))
     (specware::setenv "SWPATH"
-		      (format nil #-mswindows "~A:~A" #+mswindows "~A;~A"
-			      dir swpath))))
+		      (if swpath
+			  (format nil #-mswindows "~A:~A" #+mswindows "~A;~A"
+				  dir swpath)
+			dir))))
 
 (defun maybe-restore-swpath ()
   (when *saved-swpath*
@@ -492,7 +494,7 @@
 	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
 	 (SpecCalc::noElaboratingMessageFiles (list tmp-cl))
 	 (TypeChecker::complainAboutImplcitPolymorphicOps? nil)
-	 (old-swpath (specware::getEnv "SWPATH"))
+	 (old-swpath (or (specware::getEnv "SWPATH") ""))
 	 (new-swpath (format nil
 			     #-mswindows "~A:~A:~A" #+mswindows "~A;~A;~A"
 			     tmp-dir *current-swe-spec-dir* old-swpath))
@@ -1142,7 +1144,7 @@
 #+(or sbcl cmu)
 (specware::without-package-locks
  (defun cl::commandp (form)
-   (keywordp form)))
+  (keywordp form)))
 
 (defun invoke-command-interactive (command)
   (let ((fn (intern (symbol-name command) (find-package "CL-USER")))
