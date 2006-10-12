@@ -22,8 +22,8 @@
 (setq ext:*gc-verbose* nil)
 #+cmu
 (setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
-;;;#+sbcl
-;;;(setf (sb-ext:bytes-consed-between-gcs) 50331648)
+#+sbcl
+(setf (sb-ext:bytes-consed-between-gcs) 50331648)
 #+cmu
 (setq extensions:*efficiency-note-cost-threshold* 30)
 #+sbcl
@@ -266,7 +266,7 @@
 
 #+sbcl
 (defvar *sbcl-home* (specware::getenv "SBCL_HOME"))
-#-sbcl
+#+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
 		    (specware::setenv "SBCL_HOME" *sbcl-home*)
