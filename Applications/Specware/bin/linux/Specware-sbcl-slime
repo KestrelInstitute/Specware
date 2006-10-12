@@ -1,6 +1,17 @@
 #!/bin/sh
 
-xemacs=`which xemacs`
+defaultxemacs=/Applications/XEmacs.app/Contents/MacOS/XEmacs
+if [ -x $defaultxemacs ]; then
+    xemacs=$defaultxemacs
+fi
+
+if [ -z "$xemacs" ]; then
+    xemacs=`which xemacs`
+    if [ -z "$xemacs" ]; then
+	xemacs="/sw/bin/xemacs"
+    fi
+fi
+
 act='launch Specware'
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
@@ -21,9 +32,9 @@ fi
 
 # Ensure SPECWARE4 is set to full pathname:
 
-case "$SPECWARE" in
+case "$SPECWARE4" in
     /*) : ok;;
-    *)  SPECWARE="`pwd`/$SPECWARE";;
+    *)  SPECWARE4="`pwd`/$SPECWARE4";;
 esac
 
 echo "\$SPECWARE4=$SPECWARE4"
@@ -44,9 +55,9 @@ fi
 
 # Ensure SPECWARE4 is set to full pathname:
 
-case "$SPECWARE" in
+case "$SPECWARE4" in
     /*) : ok;;
-    *)  SPECWARE="`pwd`/$SPECWARE";;
+    *)  SPECWARE4="`pwd`/$SPECWARE4";;
 esac
 
 if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
@@ -57,10 +68,16 @@ fi
 
 SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
 
+# Ensure SWPATH is set
+
+if [ -z "$SWPATH" ]; then
+  SWPATH="/"
+fi
+
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp; do
+   for L in /Applications/sbcl/bin/sbcl /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi

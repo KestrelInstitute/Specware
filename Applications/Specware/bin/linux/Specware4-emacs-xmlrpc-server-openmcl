@@ -143,5 +143,4 @@ SPECWARE_INIT_FORM="$EVAL"
 export SPECWARE_INIT_FORM
 
 $xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-openmcl \
-       -geometry 180x70+180+2 \
        -f run-specware4 &

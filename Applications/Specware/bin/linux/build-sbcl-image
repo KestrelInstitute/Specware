@@ -37,7 +37,7 @@ esac
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /usr/local/bin/sbcl "$HOME"/bin/sbcl; do
+   for L in /Applications/sbcl/bin/sbcl /usr/local/bin/sbcl "$HOME"/bin/sbcl; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
@@ -131,5 +131,6 @@ $LISP <<-XXXX
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
 	(set-gc-parameters-for-use nil)
-	(sb-ext:save-lisp-and-die "$SPECWARE4/Applications/Specware/bin/linux/Specware4.sbclimage")
+	(sb-ext:save-lisp-and-die "$SPECWARE4/Applications/Specware/bin/linux/Specware4.sbclimage"
+	  :purify nil :toplevel #'(lambda() (sb-ext:gc :full t) (swshell::specware-shell t)))
 XXXX
