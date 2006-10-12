@@ -209,17 +209,19 @@ snark qualifying spec
   def mkSnarkName(qual, id) =
     case (qual, id) of
       | ("Nat",     "<=") -> "=<"
-      | ("Integer", "<=") -> "=<"
       | ("Nat",     "~") -> "-"
-      | ("Integer", "~") -> "-"
       | ("Nat", ">=") -> ">="
       | ("Nat", "+") -> "+"
       | ("Nat", "-") -> "-"
       | ("Nat", "*") -> "*"
-      | ("Integer", ">=") -> ">="
       | ("Integer", "+") -> "+"
       | ("Integer", "-") -> "-"
+      | ("Integer", "~") -> "-"
       | ("Integer", "*") -> "*"
+      | ("Integer", "<=") -> "=<"
+      | ("Integer", "<") -> "<"
+      | ("Integer", ">=") -> ">="
+      | ("Integer", ">") -> ">"
       | (_, "hoapply") ->  "HOAPPLY"
       | _ -> if qual = UnQualified
 	       then id
@@ -441,10 +443,18 @@ snark qualifying spec
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
       | Project (id) -> %let _ = if id = "local" then debug("project_local") else () in
 	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
+	  if isNum (sub(id,0))
+	    then
+	      if id = "1" then Lisp.cons(Lisp.symbol("CL","CAR"),Lisp.list snarkArgs)
+	      else 
+	      Lisp.cons(Lisp.symbol("CL","NTH"),
+			Lisp.list [hd snarkArgs, Lisp.nat((stringToNat id) - 1)])
+	  else
 	  let prodSrt = termSort(arg) in
 	  let userProdSrt = findMatchingUserTypeOption(sp, prodSrt) in
 	  (case userProdSrt of
-	     | None -> Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "project_"^id)), Lisp.list snarkArgs)
+	     | None -> Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "project_"^id)),
+				 Lisp.list snarkArgs)
 	     | Some (Base (Qualified(q, prodSrtId),_, _)) ->
        %%IMPORTANT LOOK AT CODEGENTRANSFORMS FOR CONSISTENCY
 	     Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "project_"^prodSrtId^"_"^id)), Lisp.list snarkArgs))
@@ -488,11 +498,15 @@ snark qualifying spec
       | _ -> mkNewSnarkTerm(context, term) %% Unsupported construct
 
   op mkSnarkTermRecord: Context * Spec * String * StringSet.Set * MS.Term -> LispCell
-  def  mkSnarkTermRecord(context, spc, dpn, vars, term as Record (fields)) =
+  def  mkSnarkTermRecord(context, spc, dpn, vars, term as Record (fields,_)) =
     let srt = inferTypeFoldRecords(spc,term) in
     case srt of
-      | Base (qid, _, _) -> mkSnarkTermApp(context, spc, dpn, vars, Op(getRecordConstructorOpName(qid), Nonfix), term)
-      | _ -> mkNewSnarkTerm(context, term)
+      | Base (qid, _, _) -> mkSnarkTermApp(context, spc, dpn, vars,
+					   Op(getRecordConstructorOpName(qid), Nonfix), term)
+      | _ -> Lisp.cons(Lisp.symbol("CL","LIST"),
+		       Lisp.list (map (fn (_,fldval) ->
+				        mkSnarkTerm(context, spc, dpn, vars, fldval))
+				    fields)) 
 
   op mkNewSnarkTerm: Context * MS.Term -> LispCell
 
