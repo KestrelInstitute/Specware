@@ -71,6 +71,7 @@ Prover qualifying spec
     let condTerms = removePatternTerm(spc, term) in
     let res = map (fn(ct) -> simplify spc (condTermToFmlaWithPos(ct, pos))) condTerms in
      %let _ = map (fn (r) -> writeLine("PPRes: "^printTerm(r))) res in
+    let res = filter (fn t -> case t of Fun(Bool true,_,_) -> false | _ -> true) res in
     res
 
   op generalCrossProduct: fa (a, b, c) (List (List a)) * (List(a) -> List (b)) * (a * b -> b) * (b -> c) -> List c
