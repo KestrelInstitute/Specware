@@ -131,6 +131,5 @@ $LISP <<-XXXX
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
 	(set-gc-parameters-for-use nil)
-	(sb-ext:save-lisp-and-die "$SPECWARE4/Applications/Specware/bin/linux/Specware4.sbclimage"
-	  :purify nil :toplevel #'(lambda() (sb-ext:gc :full t) (swshell::specware-shell t)))
+	(sb-ext:save-lisp-and-die "$SPECWARE4/Applications/Specware/bin/linux/Specware4.sbclimage" :purify nil)
 XXXX
