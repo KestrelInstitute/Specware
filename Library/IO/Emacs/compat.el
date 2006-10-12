@@ -318,9 +318,9 @@
 					       '("-e" "'(setf (eol-convention *standard-output*) :unix)'")
 					     ())))
 		     (gcl common-lisp-image-file) ; Don't use common-lisp-image-name
-		     (otherwise
-		      (list common-lisp-image-name
-			    common-lisp-image-file)))
+		     (otherwise (if (null common-lisp-image-file)
+				    ()
+				  (list common-lisp-image-file))))
 		   ))
     ;(install-bridge-for-emacsEval)
     ;(set-default-directory common-lisp-directory)

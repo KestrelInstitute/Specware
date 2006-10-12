@@ -75,4 +75,4 @@
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
-       #+sbcl    sb-int:*after-save-initializations*)
+       #+sbcl    sb-ext:*init-hooks*)

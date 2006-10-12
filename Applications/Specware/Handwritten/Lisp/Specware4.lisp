@@ -9,7 +9,7 @@
 (defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
 
-(declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
+(declaim (optimize (speed 3) (debug 3) (safety 1) #+cmu(c::brevity 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -87,7 +87,7 @@
 #+cmu
 (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch"))
 #+sbcl
-(compile-and-load-lisp-file (in-specware-dir "/Applications/Handwritten/Lisp/sbcl-patch"))
+(compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/sbcl-patch"))
 
 (defun ignore-warning (condition)
    (declare (ignore condition))
@@ -95,15 +95,15 @@
 
 (handler-bind ((warning #'ignore-warning))
   (load (make-pathname
-	 :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
-	 :type     "lisp")))
+         :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
+         :type     "lisp")))
 
-(format t "Loading Snark.")
-(handler-bind ((warning #'ignore-warning))
-  (cl-user::make-or-load-snark-system))
-(format t "~%Finished loading Snark.")
+ (format t "Loading Snark.")
+ (handler-bind ((warning #'ignore-warning))
+   (cl-user::make-or-load-snark-system))
+ (format t "~%Finished loading Snark.")
 
-(declaim (optimize (speed 3) (debug 2) (safety 1)))
+(declaim (optimize (speed 3) (debug 3) (safety 1)))
 
 ;; Snark puts us in another package .. so we go back
 (in-package "SPECWARE")
@@ -262,9 +262,11 @@
        #+mcl     ccl:*lisp-startup-functions*
        #+sbcl    sb-ext:*init-hooks*)
 
+;(Specware::initializeSpecware-0)
+
 #+sbcl
 (defvar *sbcl-home* (specware::getenv "SBCL_HOME"))
-#+sbcl
+#-sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
 		    (specware::setenv "SBCL_HOME" *sbcl-home*)
@@ -281,10 +283,16 @@
 
 ;;; Set temporaryDirectory at startup
 (push  'setTemporaryDirectory 
-       #+allegro cl-user::*restart-actions*
-       #+cmu     ext:*after-save-initializations*
-       #+mcl     ccl:*lisp-startup-functions*
-       #+sbcl    sb-ext:*init-hooks*)
+        #+allegro cl-user::*restart-actions*
+        #+cmu     ext:*after-save-initializations*
+        #+mcl     ccl:*lisp-startup-functions*
+        #+sbcl    sb-ext:*init-hooks*)
+
+; #+sbcl
+; (push #'(lambda () (format t "~2%Starting GC...")
+; 		   (sb-ext:gc :full t)
+; 		   (format t "~%Finishing GC..."))
+;       sb-ext:*init-hooks*)
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")

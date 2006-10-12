@@ -248,12 +248,12 @@
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
-       #+sbcl    sb-int:*after-save-initializations*)
+       #+sbcl    sb-ext:*init-hooks*)
 
 #+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648))
-       sb-int:*after-save-initializations*)
+       sb-ext:*init-hooks*)
 
 ;;; Clear load environment vars
 #+cmu
@@ -265,7 +265,7 @@
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
-       #+sbcl    sb-int:*after-save-initializations*)
+       #+sbcl    sb-ext:*init-hooks*)
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
