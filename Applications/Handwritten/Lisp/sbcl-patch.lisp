@@ -120,6 +120,7 @@
     (setf (fdocumentation name 'function) doc))
   name)
 
+#|
 (defun eval-in-lexenv (original-exp lexenv)
   (declare (optimize (safety 1)))
   ;; (aver (lexenv-simple-p lexenv))
@@ -261,6 +262,7 @@
                   (%eval exp lexenv))))))
         (t
          exp)))))
+|#
 
 (defun interactive-eval (form)
   "Evaluate FORM, returning whatever it returns and adjusting ***, **, *,

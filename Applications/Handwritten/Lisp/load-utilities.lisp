@@ -102,7 +102,10 @@
 	  #+gcl       (si:chdir         directory)
 	  #+cmu       (setf (extensions:default-directory) directory)
 	  #+cmu       (unix:unix-chdir directory)
-	  #+sbcl      (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
+	  #+(and sbcl (not win32))
+	              (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
+          #+(and sbcl win32)
+	              ()		; Place holder
 	  #+clisp     (setf (ext:default-directory) directory)
 					;#+gcl       
 	  ;; in Allegro CL, at least,
@@ -114,7 +117,7 @@
 (defun full-file-name (file-or-dir)
   (namestring (make-pathname :name file-or-dir :defaults cl:*default-pathname-defaults*)))
 
-#+mcl					; doesn't have setenv built=in
+#+(or mcl sbcl)					; doesn't have setenv built=in
 (defvar *environment-shadow* nil)
 
 (defun getenv (varname)
@@ -123,25 +126,26 @@
 		  (ccl::getenv varname))
   #+lispworks (hcl::getenv varname) 	;?
   #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
-  #+sbcl      (sb-ext:posix-getenv  varname)
+  #+sbcl      (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
+		  (sb-ext:posix-getenv  varname))
   #+gcl       (si:getenv varname)
   #+clisp     (ext:getenv varname)
   )
 
 (defun setenv (varname newvalue)
   #+allegro   (setf (si::getenv varname) newvalue)
-  #+mcl       (let ((pr (assoc (intern varname "KEYWORD") *environment-shadow*)))
-		(if pr (setf (cdr pr) newvalue)
-		  (push (cons (intern varname "KEYWORD") newvalue)
-			*environment-shadow*)))
+  #+(or mcl sbcl) (let ((pr (assoc (intern varname "KEYWORD") *environment-shadow*)))
+		    (if pr (setf (cdr pr) newvalue)
+			(push (cons (intern varname "KEYWORD") newvalue)
+			      *environment-shadow*)))
   #+lispworks (setf (hcl::getenv varname) newvalue) 
   #+cmu       (let ((pr (assoc (intern varname "KEYWORD") ext:*environment-list*)))
 		(if pr (setf (cdr pr) newvalue)
 		  (push (cons (intern varname "KEYWORD") newvalue)
 			ext:*environment-list*)))
-  #+sbcl      (progn (sb-unix::int-syscall ("setenv" sb-alien:c-string sb-alien:c-string sb-alien:int)
-					   varname newvalue 1)
-		     (getenv varname))
+;   #+sbcl      (progn (sb-unix::int-syscall ("setenv" sb-alien:c-string sb-alien:c-string sb-alien:int)
+; 					   varname newvalue 1)
+; 		     (getenv varname))
   #+gcl       (si:setenv varname newvalue)
   #+clisp     (setf (ext:getenv varname) newvalue)
   )
@@ -183,7 +187,7 @@
       lisp::*load-object-types* (remove "fasl" lisp::*load-object-types* :test 'string=))
 
 (unless (fboundp 'compile-file-if-needed)
-  ;; Conditional because of an app/usr/lib/sbcl/arent Allegro bug in generate-application
+  ;; Conditional because of an apparent Allegro bug in generate-application
   ;; where excl::compile-file-if-needed compiles even if not needed
   (defun compile-file-if-needed (file)
     #+allegro (excl::compile-file-if-needed file)
@@ -210,8 +214,13 @@
   (declare (ignore ignore))
   (load (make-pathname :defaults file :type "lisp")))
 
+#+mcl
+(defmacro cl-user::without-package-locks (&rest body)
+  `(let ((ccl::*warn-if-redefine-kernel* nil))
+    ,@body))
+
 #+mcl					; Patch openmcl bug
-(let ((ccl::*warn-if-redefine-kernel* nil))
+(cl-user::without-package-locks
 (defun ccl::overwrite-dialog (filename prompt)
   (if ccl::*overwrite-dialog-hook*
     (funcall ccl::*overwrite-dialog-hook* filename prompt)
@@ -270,7 +279,7 @@
 	((null ch) (close str) (sys:os-wait)) (write-char ch)))
   #+cmu  (ext:run-program command-str nil :output t)
   #+mcl  (ccl:run-program command-str nil :output t)
-  #+sbcl (sb-ext:run-program (format nil "command -p ~A" command-str) :output t)
+  #+sbcl (sb-ext:run-program command (list "-p" command-str) :output t :search t)
   #+gcl  (lisp:system command-str)
   #+clisp (ext:run-program command-str )
   #-(or cmu mcl sbcl allegro gcl) (format nil "Not yet implemented"))
@@ -437,5 +446,5 @@
   (wait "Commands in progress"
 		  #'(lambda () (<= (funcall 'swank::eval-in-emacs '(length (slime-rex-continuations)))
 				   1)))
-  (format t "Exiting ~a~%" (funcall 'swank::eval-in-emacs '(length (slime-rex-continuations))))
-  (funcall 'swank::eval-in-emacs '(slime-quit-specware)))
+  ;(format t "Exiting ~a~%" (funcall 'swank::eval-in-emacs '(length (slime-rex-continuations))))
+  (swank::eval-in-emacs '(slime-quit-specware)))
