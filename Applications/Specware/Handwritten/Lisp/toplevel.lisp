@@ -132,7 +132,7 @@
 	       (setq *current-temp-file* tmp-sw)
 	       (setq SpecCalc::aliasPaths
 		 (list (cons (pathname-to-path (parse-namestring tmp-dir))
-			     (pathname-to-path (specware::current-directory)))))
+			     (pathname-to-path (specware::ensure-final-slash (specware::current-directory))))))
 	       (setq SpecCalc::noElaboratingMessageFiles (cons tmp-full-uid nil))
 	       (setq str tmp-uid)))
 	   str)))
