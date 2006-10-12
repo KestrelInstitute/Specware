@@ -222,7 +222,7 @@ Prover qualifying spec
       let subTypeAxioms =
           map (fn (fmla : MS.Term) -> 
 	       Property(Axiom, 
-			mkQualifiedId (q, id^"_def"), 
+			mkQualifiedId (q, id^"_def_subsort"), 
 			[], 
 			withAnnT (fmla, pos))) 
 	      liftedFmlas 
