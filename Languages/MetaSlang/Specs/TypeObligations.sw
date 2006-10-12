@@ -16,6 +16,7 @@ spec
  op makeTypeCheckObligationSpec: Spec * (SpecCalc.Term Position) -> Spec
  op checkSpec : Spec -> TypeCheckConditions
 
+ def simplifyObligations? = true
  def generateTerminationConditions? = true
 
 % Auxiliary variable environment.
@@ -174,7 +175,7 @@ spec
 	       | LetRec decls -> LetRec(decls,formula,noPos)
      in
      let term = foldl insert term decls in
-     case simplify spc term of
+     case if simplifyObligations? then simplify spc term else term of
        | Fun(Bool true,_,_) -> None
        %% In general simplify doesn't change e -> true because of strictness, but that should not be
        %% issue here
