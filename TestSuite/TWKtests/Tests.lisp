@@ -56,6 +56,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Switch/p1.log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
+	    (:optional "creating directory: $TESTDIR/Snark/Switch/")
 	    (:optional ";; Directory $TESTDIR/Snark/Switch/ does not exist, will create.")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/Switch/p1.sw")
@@ -103,6 +104,7 @@
 	    ";;; Elaborating obligator at $TESTDIR/Tuples#O1"
 	    ";;; Elaborating proof-term at $TESTDIR/Tuples#P1"
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Tuples/P1.log")
+	    (:optional "creating directory: $TESTDIR/Snark/Tuples/")
 	    (:optional ";; Directory $TESTDIR/Snark/Tuples/ does not exist, will create.")
 	    "    Expanded spec file: $TESTDIR/Snark/Tuples/P1.sw"
 	    "    Snark Log file: $TESTDIR/Snark/Tuples/P1.log"

@@ -87,13 +87,13 @@
 	    "p6: Conjecture word_matches_at?_Obligation_subsort0 in MatchingObligations#WordMatching0_Oblig is Proved! using simple inequality reasoning*."
 	    ""))
 
- ("Tutorial: MatchingProofs p7" 
-  :sw "/UserDoc/tutorial/example/MatchingProofs#p7"
-  :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p7"
-	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p7.sw"
-	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p7.log"
-	    "p7: Conjecture word_matches_at?_Obligation1 in MatchingObligations#WordMatching0_Oblig is Proved! using Snark in * seconds."
-	    ""))
+; ("Tutorial: MatchingProofs p7" 
+;  :sw "/UserDoc/tutorial/example/MatchingProofs#p7"
+;  :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p7"
+;	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p7.sw"
+;	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p7.log"
+;	    "p7: Conjecture word_matches_at?_Obligation1 in MatchingObligations#WordMatching0_Oblig is Proved! using Snark in * seconds."
+;	    ""))
 
  ("Tutorial: MatchingProofs p8" 
   :sw "/UserDoc/tutorial/example/MatchingProofs#p8"
