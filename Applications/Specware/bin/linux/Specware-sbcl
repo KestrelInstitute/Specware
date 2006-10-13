@@ -104,7 +104,6 @@ export LISP_DIRECTORY
 
 
 $xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
-       -geometry 180x70+180+2 \
        -f run-specware4 &
 #       -name "Specware" \
 #       -title "Specware" \
