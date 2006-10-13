@@ -29,6 +29,8 @@
 ;;       using THE-SYMBOL-IF-DEFINED and THE-FUNCTION-IF-DEFINED macros.
 ;;       In general, the "new" symbol comes before the "old" symbol.
 
+(sb-ext:without-package-locks
+ 
 ;;;% CMU CL does not define defun as a macro
 (defun ilisp-compile (form package filename)
   "Compile FORM in PACKAGE recording FILENAME as the source file."
@@ -267,6 +269,6 @@ returned."
    (let ((real-symbol (ilisp-find-symbol symbol package)))
      (setq breakp (read-from-string breakp))
      (when real-symbol (eval `(trace ,real-symbol :break ,breakp))))))
-
+)
 ;;; end of file -- sbcl.lisp --
 

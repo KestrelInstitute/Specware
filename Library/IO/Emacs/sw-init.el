@@ -94,7 +94,7 @@
 			sw:common-lisp-host
 			sw:common-lisp-image-file
 			))
-      (sit-for 5)
+      ;(sit-for 1)
       (wait-for-prompt 0.1)
       (sw:eval-in-lisp-no-value
        (format "(cl:namestring (specware::change-directory %S))" sw:common-lisp-directory))
