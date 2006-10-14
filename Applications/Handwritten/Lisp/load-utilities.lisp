@@ -25,14 +25,28 @@
 (defun current-directory ()
   ;; we need consistency: all pathnames, or all strings, or all lists
   ;; of strings, ...
-  #+allegro   (excl::current-directory)      ; pathname
-  #+Lispworks (hcl:get-working-directory)    ; ??       (current-pathname)
-  #+mcl       (ensure-final-slash (ccl::current-directory-name))  ; ??
-  #+cmu       (extensions:default-directory) ; pathname
-  #+sbcl      (sb-unix:posix-getcwd)
-  #+gcl       (system-short-str #+unix "pwd" #-unix "cd")
-  #+clisp     (ext:default-directory)
-  )
+  (let ((dir 
+	 #+allegro   (excl::current-directory) ; pathname
+	 #+Lispworks (hcl:get-working-directory) ; ??       (current-pathname)
+	 #+mcl       (ensure-final-slash (ccl::current-directory-name))	; ??
+	 #+cmu       (extensions:default-directory) ; pathname
+	 #+sbcl      (sb-unix:posix-getcwd)
+	 #+gcl       (system-short-str #+unix "pwd" #-unix "cd")
+	 #+clisp     (ext:default-directory)
+	 ))
+    (if (pathnamep dir)
+	(pathname-directory-string dir)
+	dir)))
+
+(defun pathname-directory-string (p)
+  (let* ((dirnames (pathname-directory p))
+	 (main-dir-str (apply #'concatenate 'string
+			      (loop for d in (cdr dirnames)
+				nconcing (list "/" d)))))
+    (if (eq (car dirnames) :absolute)
+	main-dir-str
+      (format nil ".~a" main-dir-str))))
+
 
 #+gcl
 (defun system-str (cmd &optional args)

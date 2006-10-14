@@ -1252,7 +1252,7 @@
 					     (concatenate 'string (car fil) "." (cdr fil)))))
 	   (format t "~%")))))
 
-(defun pathname-directory-string (p)
+(defun pathname-directory-abbrev-string (p)
   (let* ((dirnames (pathname-directory p))
 	 (abbrev-dirnames (speccalc::abbreviatedPath (cdr dirnames)))
 	 (main-dir-str (apply #'concatenate 'string
