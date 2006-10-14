@@ -61,8 +61,13 @@ Notes:
   (emacs::eval-in-emacs "(progn (sit-for 2) (kill-emacs 0))")
   ;; Note: We return here before the call to sit-for completes.
   ;; The parent emacs process should now be on a path to die.
-  ;; We don't really care if it dies before or after the 
-  ;; following command kills lisp:
+  ;; We don't particularly care if it dies before or after the 
+  ;; following command kills lisp, as long as both have time
+  ;; to get into a reasonably stable state.
+  ;; Under slime, the sit-for in emacs seems to be redundant,
+  ;; but the following sleep must be present, and be for at 
+  ;; least about 0.1 seconds.
+  (sleep 2)
   (cl-user::exit-from-lisp 0))
 
 (defvar *select-term-number-in-spec*)
