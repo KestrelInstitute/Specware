@@ -9,7 +9,7 @@
 (defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
 
-(declaim (optimize (speed 3) (debug 3) (safety 1) #+cmu(c::brevity 3)))
+(declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1) #+cmu(c::brevity 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -103,7 +103,7 @@
    (cl-user::make-or-load-snark-system))
  (format t "~%Finished loading Snark.")
 
-(declaim (optimize (speed 3) (debug 3) (safety 1)))
+(declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
 ;; Snark puts us in another package .. so we go back
 (in-package "SPECWARE")
@@ -308,3 +308,5 @@
       (emacs::eval-in-emacs "(delete-continuation)"))
     val)
   )
+
+(declaim (optimize (speed 2) (debug 3) (safety 2)))
