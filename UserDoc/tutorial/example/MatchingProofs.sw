@@ -9,7 +9,7 @@ p5  = prove word_matches_at?_Obligation_subsort   in MatchingObligations#WordMat
 p6  = prove word_matches_at?_Obligation_subsort0  in MatchingObligations#WordMatching0_Oblig
 %p7  = prove word_matches_at?_Obligation_subsort1  in MatchingObligations#WordMatching0_Oblig
 p8  = prove word_matches_aux?_Obligation_subsort  in MatchingObligations#WordMatching0_Oblig
-p9  = prove word_matches_aux?_Obligation in MatchingObligations#WordMatching0_Oblig
+p9  = prove word_matches_aux?_Obligation_termination in MatchingObligations#WordMatching0_Oblig
 p10 = prove word_matches_aux?_Obligation_fn_precond in MatchingObligations#WordMatching0_Oblig
 
 % currently missing from generated obligations:
@@ -17,6 +17,6 @@ p10 = prove word_matches_aux?_Obligation_fn_precond in MatchingObligations#WordM
 
 p12 = prove find_matches_Obligation_fn_precond   in MatchingObligations#FindMatches0_Oblig
 p13 = prove find_matches_aux_Obligation_subsort  in MatchingObligations#FindMatches0_Oblig
-p14 = prove find_matches_aux_Obligation in MatchingObligations#FindMatches0_Oblig
+p14 = prove find_matches_aux_Obligation_termination in MatchingObligations#FindMatches0_Oblig
 
 p15 = prove match_finding in MatchingObligations#FindMatches_Ref0_Oblig
