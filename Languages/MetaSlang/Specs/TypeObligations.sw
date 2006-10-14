@@ -606,7 +606,7 @@ spec
 						  mkVar pred),
 					  form])
    in
-   let sname = StringUtilities.freshName(id,claimNames) in
+   let sname = StringUtilities.freshName(id^"_termination",claimNames) in
    let name = mkQualifiedId(qual, sname) in
    let condn = (name,tvs,form) in
    (Cons(mkConjecture condn,tccs),StringSet.add(claimNames,sname))
