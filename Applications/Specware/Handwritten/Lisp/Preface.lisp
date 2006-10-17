@@ -39,7 +39,8 @@
 	 ;;   status-hook
 	 #+cmu  (ext:run-program    cmd args :input t :output *standard-output* :error :output :wait t )
 	 #+mcl  (ccl:run-program    cmd args :output *standard-output* :error :output :wait t) ; TODO: add :input t ??
-	 #+sbcl (sb-ext:run-program cmd args :output *standard-output* :error :output :wait t) ; TODO: add :input t ??
+	 #+sbcl (sb-ext:run-program cmd args :output *standard-output* :error :output :wait t
+				    :search t) ; TODO: add :input t ??
 	 #+gcl  (lisp:system (format nil "~a ~a" cmd args))              
 	 ))
     (let ((rc (process-exit-code process)))
@@ -91,13 +92,13 @@
     (loop while (and (not error?) (> (length dir) 1) (equal (subseq dir 0 2) ".."))
       do (setq dir (subseq dir (if (and (> (length dir) 2) (eq (elt dir 2) #\/))
 				   3 2)))
-      (let* ((olddirpath (pathname-directory new-dir))
-	     (pathlen (length olddirpath)))
-	(if (< pathlen 2)
-	    (progn (warn "At top of directory tree")
-		   (setq error? t))
-	  (setq new-dir (make-pathname :directory (subseq olddirpath 0 (- pathlen 1))
-				       :defaults new-dir)))))
+         (let* ((olddirpath (pathname-directory new-dir))
+		(pathlen (length olddirpath)))
+	   (if (< pathlen 2)
+	       (progn (warn "At top of directory tree")
+		      (setq error? t))
+	       (setq new-dir (make-pathname :directory (subseq olddirpath 0 (- pathlen 1))
+					    :defaults new-dir)))))
     (unless error?
       (setq new-dir (specware::dir-to-path dir new-dir))
       (when (specware::change-directory new-dir)
