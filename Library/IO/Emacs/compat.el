@@ -251,7 +251,7 @@
 	(concat (getenv "SPECWARE4") "/Library/IO/Emacs/slime/"))
   (defvar slime-*use-fsf-compliant-keybindings* t) ; Use c-c as command prefix (not c-z)
   (require 'slime)
-  (setq lisp-program (getenv "LISP_EXECUTABLE"))
+  (setq lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
   (setq inferior-lisp-program lisp-program)
   (setq expand-symlinks-rfs-exists t)
   (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
