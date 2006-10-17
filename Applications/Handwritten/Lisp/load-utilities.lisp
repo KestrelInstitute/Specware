@@ -25,7 +25,7 @@
 (defun current-directory ()
   ;; we need consistency: all pathnames, or all strings, or all lists
   ;; of strings, ...
-  (let ((dir 
+  (let* ((dir 
 	 #+allegro   (excl::current-directory) ; pathname
 	 #+Lispworks (hcl:get-working-directory) ; ??       (current-pathname)
 	 #+mcl       (ensure-final-slash (ccl::current-directory-name))	; ??
@@ -33,10 +33,11 @@
 	 #+sbcl      (sb-unix:posix-getcwd)
 	 #+gcl       (system-short-str #+unix "pwd" #-unix "cd")
 	 #+clisp     (ext:default-directory)
-	 ))
-    (if (pathnamep dir)
-	(pathname-directory-string dir)
-	dir)))
+	 )
+	(str-dir (if (pathnamep dir)
+		     (pathname-directory-string dir)
+		     dir)))
+    (ensure-final-slash str-dir)))
 
 (defun pathname-directory-string (p)
   (let* ((dirnames (pathname-directory p))
@@ -293,7 +294,7 @@
 	((null ch) (close str) (sys:os-wait)) (write-char ch)))
   #+cmu  (ext:run-program command-str nil :output t)
   #+mcl  (ccl:run-program command-str nil :output t)
-  #+sbcl (sb-ext:run-program command (list "-p" command-str) :output t :search t)
+  #+sbcl (sb-ext:run-program command-str (list "-p" command-str) :output t :search t)
   #+gcl  (lisp:system command-str)
   #+clisp (ext:run-program command-str )
   #-(or cmu mcl sbcl allegro gcl) (format nil "Not yet implemented"))
