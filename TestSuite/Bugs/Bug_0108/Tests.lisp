@@ -15,15 +15,21 @@
 	    "         +->"
 	    "         morphism R -> S"
 	    "          {type A1 +-> B1,"
-	    "           type A2 +-> B2,"
-	    "           type A3 +-> B3,"
+	    (:alternatives
+	     ("           type A2 +-> B2,"
+	      "           type A3 +-> B3,")
+	     ("           type A3 +-> B3,"
+	      "           type A2 +-> B2,"))
 	    "           op f +-> g},"
 	    "         b : x -> z"
 	    "         +->"
 	    "         morphism R -> T"
 	    "          {type A1 +-> C1,"
-	    "           type A2 +-> C2,"
-	    "           type A3 +-> C3,"
+	    (:alternatives
+	     ("           type A2 +-> C2,"
+	      "           type A3 +-> C3,")
+	     ("           type A3 +-> C3,"
+	      "           type A2 +-> C2,"))
 	    "           op f +-> h}}"
 	    (:optional "")
 	    (:optional "")
