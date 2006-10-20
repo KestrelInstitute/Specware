@@ -293,7 +293,8 @@ Use \"locale -ck code_set_name charmap\" and search for the value of
 	   val))
 	((x-symbol-coding-system-from-locale))
 	(t
-	 (warn "X-Symbol: cannot deduce default encoding, I'll assume `iso-8859-1'")
+	 ;; sjw: Remove annoying warning message
+	 ;;(warn "X-Symbol: cannot deduce default encoding, I'll assume `iso-8859-1'")
 	 'iso-8859-1))
   "Default coding used for 8bit characters in buffers.
 Supported values are `iso-8859-1', `iso-8859-2', `iso-8859-3',
