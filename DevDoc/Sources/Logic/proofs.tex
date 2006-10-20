@@ -2267,10 +2267,13 @@ form $\cxwf{\snoc{\cx}{\cxel}}$ can be only derived by a rule in
 \subsection*{Proof of \thmref{thm-cxwf}}
 
 By induction on the proof of $(\jcxdots{\cx})$. All the inference rules whose
-conclusion is a judgement of the form $(\jcxdots{\cx})$ either have $\cxwfO$
-as one of their premises, which immediately proves $\cxwfO$, or have at least
-one premise of the form $(\jcxdots{\cx})$, which proves $\cxwfO$ by induction
-hypothesis.
+conclusion is a judgement of the form $(\jcxdots{\cx})$, except rules $\Rtarr$
+and $\Reabs$, either have $\cxwfO$ as one of their premises, which immediately
+proves $\cxwfO$, or have at least one premise of the form $(\jcxdots{\cx})$,
+which proves $\cxwfO$ by induction hypothesis. Rules $\Rtarr$ and $\Reabs$
+have premises of the form $(\jcxdots{\snoc{\cx}{\cxel}})$: we have
+$\cxwf{\snoc{\cx}{\cxel}}$ by induction hypothesis and thus $\cxwfO$ by
+\thmref{thm-cxprefix}.
 
 
 
@@ -2417,7 +2420,14 @@ $\FORALL{i}{\istyO{\typ_i}}$ as two of its premises.
 \subsection*{Proof of \thmref{thm-tarr-inv}}
 
 The only rule that can derive a judgement of the form $\istyO{\tarrO}$ is
-\Rtarr, which has $\istyO{\typ_1}$ and $\istyO{\typ_2}$ as its premises.
+\Rtarr, which has $\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}$ as its
+premise, which immediately proves the second conjunct. The first conjunct is
+proved as follows:
+\begin{derivation}
+\step{\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}}{\premof{\Rtarr}}
+\step{\cxwf{\snoc{\cx}{\vdec{\var}{\typ_1}}}}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\typ_1}}{\thmref{thm-var-type-wf}, 2}
+\end{derivation}
 
 
 
@@ -2485,12 +2495,13 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
 
 \Case{\Rstsub}
 \begin{derivation}
-\step{\istyO{\tsubO}}{\premof{\Rstsub}}
+\step{\istyO{\tsubO}}{\premofrule}
 \step{\efvar{\tspred}=\emptyset}{\thmref{thm-no-free-vars-in-types}, 1}
 \end{derivation}
 
 \Case{\Rstrefl}
-\StepO{\efvar{\abs{\var}{\typ}{\true}}=\emptyset}{\thmref{thm-efvar-abbrev}}
+\StepO{\efvar{\tspred}=\efvar{\abs{\var}{\typ}{\true}}=\emptyset}
+      {\thmref{thm-efvar-abbrev}}
 %\begin{links}
 %$\efvar{\abs{\var}{\typ}{\true}}
 % \link{=}{$\efvarY$}
@@ -2503,27 +2514,33 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
 
 \Case{\Rstarr}
 \begin{derivation}
-\step{\efvar{\tspred}=\emptyset}{\indhyp}
+\step{\issubO{\typ_1}{\tspred}{\typ_2}}{\premofrule}
+\step{\efvar{\tspred}=\emptyset}{\indhyp, 1}
 \steP
-{\efvar{\abs{\var}
+{\efvar{\tspred'}
+ \linK{=}
+ \efvar{\abs{\var}
             {\tarr{\typ}{\typ_2}}
             {\fa{\var'}{\typ}{\app{\tspred}{(\app{\var}{\var'})}}}}
  \link{=}{\thmref{thm-efvar-abbrev}}
  \efvar{\tspred}-\setII{\var}{\var'}
- \link{=}{1}
+ \link{=}{2}
  \emptyset}
 \end{derivation}
 
 \Case{\Rstrec}
 \begin{derivation}
-\step{\FORALL{i}{\efvar{\tspred_i}=\emptyset}}{\indhyp}
+\step{\FORALL{i}{\issubO{\typ_i}{\tspred_i}{\typ_i'}}}{\premofrule}
+\step{\FORALL{i}{\efvar{\tspred_i}=\emptyset}}{\indhyp, 1}
 \steP
-{\efvar{\abs{\var}
-            {\trec{i}{\fnam_i}{\typ_i'}}
+{\efvar{\tspred}
+ \linK{=}
+ \efvar{\abs{\var}
+            {\trec{i}{\fnam_{\perm(i)}}{\typ'_{\perm(i)}}}
             {\conjI{i}{\app{\tspred_i}{\proj{\var}{\fnam_i}}}}}
  \link{=}{\thmref{thm-efvar-abbrev}}
  \bigcup_i\efvar{\tspred_i}-\setI{\var}
- \link{=}{1}
+ \link{=}{2}
  \emptyset}
 \end{derivation}
 
@@ -2724,67 +2741,17 @@ $\cx'=\snoc{\cx}{\axM{\ldots}}$ and so clearly $\cxvar{\cx'}=\cxvarO$).
 The fourth implication is proved as follows:
 \begin{derivation}
 \step{\cxwf{\cx_1,\lemO,\cx_2}}{\hyp}
-\step{\cxwf{\cx_1,\lemO}}{\thmref{thm-cxprefix}, 1}
-\step{\theo{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}}{\thmref{thm-lem-theo}, 2}
+\step{\theo{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}}{\thmref{thm-lem-theo}, 1}
 \step{\efvar{\expr}\subseteq\cxvar{\cx_1,\tvdec{\tvarS}}=\cxvar{\cx_1}}
-     {second implication of this theorem, 3}
+     {second implication of this theorem, 2}
 \end{derivation}
 
 
 
 \subsection*{Proof of \thmref{thm-free-tvar-in-cx}}
 
-The theorem statement is equivalent to
-\[
-\begin{array}{l@{\ \ \IMPLIES\ \ }l}
-\istyO{\typ} &
- \cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\typ} \\
-%\teqO{\typ_1}{\typ_2} &
-% \cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\typ_1}\cup\ftvar{\typ_2} \\
-\issubO{\typ_1}{\tspred}{\typ_2} &
- \cxtvarO\supseteq
-  \ftvar{\cx}\cup\ftvar{\typ_1}\cup\ftvar{\tspred}\cup\ftvar{\typ_2} \\
-\hastyO{\expr}{\typ} &
- \cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\expr}\cup\ftvar{\typ} \\
-\theoO{\expr} &
- \cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\expr} \\
-\cxwf{\cx_1,\cxel,\cx_2} &
- \cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}
-\end{array}
-\]
-because $A \subseteq B \IFF A \cup B \subseteq B$ for all sets $A$ and $B$.
-
-Before proving the above implications, note that from the last one we can
-prove
-\[
-\cxwfO\ \ \IMPLIES\ \ \cxtvarO\supseteq\ftvar{\cx}
-\hspace{3em}(*)
-\]
-If $\cx=\mtcx$:
-\[
-\cxtvarO=\emptyset\supseteq\emptyset=\ftvar{\cx}
-\]
-If $\cx\neq\mtcx$:
-\begin{derivation}
-\steP{\EXISTS{\cx_0,\cxel}{\cx=\cx_0,\cxel}}
-\steP
-{\cxtvarO
- \link{\supseteq}{1}
- \cxtvar{\cx_0}
- \link{\supseteq}{\hyp}
- \ftvar{\cx_0,\cxel}
- \link{=}{1}
- \ftvar{\cx}}
-\end{derivation}
-This concludes the proof of $(*)$.
-
-We prove the six implications above by induction on the derivation of the
-judgements in the antecedents of the implications\footnote{The reason for
-proving this restatement of the theorem as opposed to the original statement
-is that the restatement can be proved by simple rule induction, while the
-original statement requires induction on the size of the derivation, which is
-currently not explicitly formalized in this document and which involves a more
-laborious mechanical proof in theorem provers like HOL.}:
+By induction on the derivation of the judgements in the antecedents of the
+implications:
 
 \begin{bycase}
 
@@ -2796,16 +2763,14 @@ If $\cx_2\neq\mtcx$:
 \begin{derivation}
 \steP{\EXISTS{\cx_2',\tnam,n}{\cx_2=\cx_2',\tdecO}}
 \step{\cxwf{\cx_1,\cxel,\cx_2'}}{\premof{\Rcxtdec}, 1}
-\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{\indhyp, 2}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cxel}}{\indhyp, 2}
 \end{derivation}
 
 If $\cx_2=\mtcx$:
 \begin{derivation}
 \steP{\EXISTS{\tnam,n}{\cxel=\tdecO}}
 \step{\ftvar{\cxel}=\emptyset}{1}
-\step{\cxwf{\cx_1}}{\premof{\Rcxtdec}}
-\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1}}{\indhyp, 3, $(*)$}
-\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{4, 2}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cxel}}{2}
 \end{derivation}
 
 \Case{\Rcxtvdec}\\
@@ -2819,19 +2784,14 @@ If $\cx_2=\mtcx$:
 \steP{\EXISTS{\onam,\tvarS,\typ}{\cxel=\odecO}}
 \step{\ftvar{\cxel}=\ftvar{\typ}-\tvarS}{1}
 \step{\isty{\snoc{\cx_1}{\tvdec{\tvarS}}}{\typ}}{\premof{\Rcxodec}}
-\step{\cxtvar{\cx_1}\cup\tvarS\supseteq\ftvar{\cx_1}\cup\ftvar{\typ}}
+\step{\cxtvar{\cx_1}\cup\tvarS\supseteq\ftvar{\typ}}
      {\indhyp, 3}
-\step{(\cxtvar{\cx_1}\cup\tvarS)-\tvarS\supseteq
-      (\ftvar{\cx_1}\cup\ftvar{\typ})-\tvarS}
+\step{(\cxtvar{\cx_1}\cup\tvarS)-\tvarS\supseteq\ftvar{\typ}-\tvarS}
      {4}
 \step{\cxwf{\snoc{\cx_1}{\tvdec{\tvarS}}}}{\thmref{thm-cxwf}, 3}
 \step{\tvarS\cap\cxtvar{\cx_1}=\emptyset}{\thmref{thm-cx-uniq-tvar}, 6}
 \step{(\cxtvar{\cx_1}\cup\tvarS)-\tvarS=\cxtvar{\cx_1}}{7}
-\step{\cxwf{\cx_1}}{\premof{\Rcxodec}}
-\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1}}{\indhyp, 9, $(*)$}
-\step{\tvarS\cap\ftvar{\cx_1}=\emptyset}{7, 10}
-\step{\ftvar{\cx_1}-\tvarS=\ftvar{\cx_1}}{11}
-\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{5, 8, 12, 2}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cxel}}{5, 8, 2}
 \end{derivation}
 
 \Case{\Rcxax, \Rcxlem}\\
@@ -2844,71 +2804,38 @@ If $\cx_2=\mtcx$:
 \begin{derivation}
 \steP{\EXISTS{\var,\typ}{\cxel=\vdecO}}
 \step{\isty{\cx_1}{\typ}}{\premof{\Rcxvdec}}
-\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1}\cup\ftvar{\typ}}{\indhyp, 2}
-\step{\cxtvar{\cx_1}\supseteq\ftvar{\cx_1,\cxel}}{3, 1}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\typ}}{\indhyp, 2}
+\step{\cxtvar{\cx_1}\supseteq\ftvar{\cxel}}{3, 1}
 \end{derivation}
 
 \Case{\Rtbool}
-\begin{derivation}
-\step{\cxwfO}{\premof{\Rtbool}}
-\steP
-{\cxtvarO
- \link{\supseteq}{\indhyp, 1, $(*)$}
- \ftvar{\cx}
- \link{=}{$\ftvar{\bool}=\emptyset$}
- \ftvar{\cx}\cup\ftvar{\bool}}
-\end{derivation}
+\StepO{\ftvar{\bool}=\emptyset}{\defof{\ftvarY}}
 
 \Case{\Rtvar}
 \begin{derivation}
-\step{\cxwfO}{\premof{\Rtvar}}
-\step{\cxtvarO\supseteq\ftvar{\cx}}{\indhyp, 1, $(*)$}
 \step{\tvar\in\cxtvarO}{\premof{\Rtvar}}
-\step{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\tvar}}{2, 3}
+\step{\cxtvarO\supseteq\ftvar{\tvar}}{2}
 \end{derivation}
 
 \Case{\Rtinst}
 \begin{derivation}
 \steP{\ftvar{\tinstO}=\bigcup_i\ftvar{\typ_i}}
 \step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Rtinst}}
-\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\typ_i}}}{\indhyp, 2}
-\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\typ_i}}}{3}
-\step{\cxtvarO\supseteq\ftvar{\tinstO}}{1, 4}
-\step{\cxwfO}{\premof{\Rtinst}}
-\step{\cxtvarO\supseteq\ftvar{\cx}}{\indhyp, 6, $(*)$}
-\step{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\tinstO}}{5, 7}
+\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\typ_i}}}{2}
+\step{\cxtvarO\supseteq\ftvar{\tinstO}}{1, 3}
 \end{derivation}
 
-%\Case{\Rtedef}
-%\begin{derivation}
-%\steP{\ftvar{\tinstO}=\bigcup_i\ftvar{\typ_i}}
-%\step{\ftvar{\tsbslash{\typ}{\tvarS}{\typS}}=
-%      (\ftvar{\typ}-\tvarS)\cup
-%      \bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}}
-%     {\thmref{thm-ftvar-of-tsbs}}
-%\step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Rtedef}}
-%\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\typ_i}}}{\indhyp, 3}
-%\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\typ_i}}}{4}
-%\step{\cxtvarO\supseteq\ftvar{\tinstO}}{5, 1}
-%\step{\tdefO\in\cx}{\premof{\Rtedef}}
-%\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\tdefO, \cx_2}}{7}
-%\step{\cxwf{\cx}}{\premof{\Rtedef}}
-%\steP
-%{\cxtvarO
-% \link{\supseteq}{8}
-% \cxtvar{\cx_1}
-% \link{\supseteq}{\indhyp, 9, 8}
-% \ftvar{\cx_1,\tdefO}
-% \linK{\supseteq}
-% \ftvar{\typ}-\tvarS}
-%\steP{\bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}\subseteq
-%      \bigcup_i\ftvar{\typ_i}}
-%\step{\cxtvarO\supseteq\bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}}{5, 11}
-%\step{\cxtvarO\supseteq\ftvar{\cx}}{\indhyp, 9, $(*)$}
-%\step{\cxtvarO\supseteq
-%      \ftvar{\cx}\cup\ftvar{\tinstO}\cup\ftvar{\tsbslash{\typ}{\tvarS}{\typS}}}
-%     {13, 6, 2, 10, 12}
-%\end{derivation}
+\Case{\Rtarr}
+\begin{derivation}
+\steP{\ftvar{\tarrO}=\ftvar{\typ_1}\cup\ftvar{\typ_2}}
+\step{\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}}{\premof{\Rtarr}}
+\step{\cxtvar{\snoc{\cx}{\vdec{\var}{\typ_1}}}\supseteq\ftvar{\typ_2}}
+     {\indhyp, 2}
+\step{\cxtvar{\snoc{\cx}{\vdec{\var}{\typ_1}}}=\cxtvarO}{\defof{\cxtvarY}}
+\step{\cxwf{\snoc{\cx}{\vdec{\var}{\typ_1}}}}{\thmref{thm-cxwf}, 2}
+\step{\cxtvarO\supseteq\ftvar{\typ_1}}{\indhyp, 5}
+\step{\cxtvarO\supseteq\ftvar{\tarrO}}{1, 6, 4, 3}
+\end{derivation}
 
 \Case{\Revar}
 \begin{derivation}
@@ -2920,12 +2847,7 @@ If $\cx_2=\mtcx$:
  \link{\supseteq}{2}
  \cxtvar{\cx_1}
  \link{\supseteq}{\indhyp, 3, 2}
- \ftvar{\cx_1}\cup\ftvar{\typ}
- \linK{\supseteq}
  \ftvar{\typ}}
-\step{\cxwfO}{\premof{\Revar}}
-\step{\cxtvarO\supseteq\ftvar{\cx}}{\indhyp, 5, $(*)$}
-\step{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\typ}}{6, 4}
 \end{derivation}
 
 \Case{\Reop}
@@ -2936,219 +2858,59 @@ If $\cx_2=\mtcx$:
       \bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}}
      {\thmref{thm-ftvar-of-tsbs}}
 \step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Reop}}
-\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\cx}\cup\ftvar{\typ_i}}}{\indhyp, 3}
-\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\typ_i}}}{4}
-\step{\cxtvarO\supseteq\ftvar{\opO}}{5, 1}
+\step{\FORALL{i}{\cxtvarO\supseteq\ftvar{\typ_i}}}{\indhyp, 3}
+\step{\cxtvarO\supseteq\ftvar{\opO}}{4, 1}
 \step{\odecO\in\cx}{\premof{\Reop}}
-\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\odecO, \cx_2}}{7}
+\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\odecO, \cx_2}}{6}
 \step{\cxwf{\cx}}{\premof{\Reop}}
 \steP
 {\cxtvarO
- \link{\supseteq}{8}
+ \link{\supseteq}{7}
  \cxtvar{\cx_1}
- \link{\supseteq}{\indhyp, 9, 8}
- \ftvar{\cx_1,\odecO}
+ \link{\supseteq}{\indhyp, 8, 7}
+ \ftvar{\odecO}
  \linK{\supseteq}
  \ftvar{\typ}-\tvarS}
 \steP{\bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}\subseteq
       \bigcup_i\ftvar{\typ_i}}
-\step{\cxtvarO\supseteq\bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}}{5, 11}
-\step{\cxtvarO\supseteq\ftvar{\cx}}{\indhyp, 9, $(*)$}
-\step{\cxtvarO\supseteq
-      \ftvar{\cx}\cup\ftvar{\opO}\cup\ftvar{\tsbslash{\typ}{\tvarS}{\typS}}}
-     {13, 6, 2, 10, 12}
+\step{\cxtvarO\supseteq\bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}}{4, 10}
+\step{\cxtvarO\supseteq\ftvar{\opO}\cup\ftvar{\tsbslash{\typ}{\tvarS}{\typS}}}
+     {5, 2, 9, 11}
 \end{derivation}
 
 \Case{\Reabs}
 \begin{derivation}
 \step{\hasty{\snoc{\cx}{\vdecO}}{\expr}{\typ'}}{\premof{\Reabs}}
-\step{\cxtvar{\cx,\vdecO}\supseteq
-      \ftvar{\cx,\vdecO}\cup\ftvar{\expr}\cup\ftvar{\typ'}}
-     {\indhyp, 1}
-\step{\cxtvarO\supseteq
-      \ftvar{\cx}\cup\ftvar{\typ}\cup\ftvar{\expr}\cup\ftvar{\typ'}}
-     {2}
+\step{\cxtvar{\cx,\vdecO}\supseteq\ftvar{\expr}\cup\ftvar{\typ'}}{\indhyp, 1}
+\step{\cxtvarO\supseteq\ftvar{\expr}\cup\ftvar{\typ'}}{2}
 \steP{\ftvar{\absO}=\ftvar{\typ}\cup\ftvar{\expr}}
 \steP{\ftvar{\tarr{\typ}{\typ'}}=\ftvar{\typ}\cup\ftvar{\typ'}}
-\step{\cxtvarO\supseteq
-      \ftvar{\cx}\cup\ftvar{\absO}\cup\ftvar{\tarr{\typ}{\typ'}}}
-     {3, 4, 5}
+\step{\cxwf{\snoc{\cx}{\vdecO}}}{\thmref{thm-cxwf}, 1}
+\step{\cxtvarO\supseteq\ftvar{\typ}}{\indhyp, 6}
+\step{\cxtvarO\supseteq\ftvar{\absO}\cup\ftvar{\tarr{\typ}{\typ'}}}{3, 4, 5, 7}
 \end{derivation}
 
 \Case{\Rthax}\\
 Analogous to \Reop.
 
+\Case{\Rthbool}
+\StepO{\ftvar{\fa{\var}{\tarr{\bool}{\bool}}
+                 {(\iiff{\conj{\app{\var}{\true}}{\app{\var}{\false}}}
+                        {(\fa{\var'}{\bool}{\app{\var}{\var'}})})}}
+       =\emptyset}
+      {\thmref{thm-ftvar-abbrev}}
+
 \Case{\restrules}\\
-Analogous to \Rtinst: each free type variable in the judgement $\jcxdots{\cx}$
-is also a free type variable in some premise $\jcxdots{\cx'}$ of the rule such
-that $\cxtvar{\cx'}=\cxtvarO$ (the only rules in which $\cx'\neq\cx$ are
-\Reif, \Rthifsbs, \Rthif). We use \thmref{thm-ftvar-abbrev} for
-% \Rtquot,
-\Rstrefl, \Rstarr, \Rstrec,
-% \Rstsum,
-\Redesc, \Rthbool, \Rthext, \Rthrec,
-%\Rthembsurj, \Rthembdist, \Rthembinj,
-%\Rthquotsurj, \Rthquoteclass,
-and \Rthprojsub.
-%\Rthembsub.
-We use \thmref{thm-rename-same-free-tvars} for \Reabsalpha. We use
+Analogous to \Rtinst: each free type variable in the right-hand side of the
+judgement $\jcxdots{\cx}$ is also a free type variable in the right-hand side
+of some premise $\jcxdots{\cx'}$ of the rule such that
+$\cxtvar{\cx'}=\cxtvarO$ (the only rules in which $\cx'\neq\cx$ are \Reif,
+\Rthifsbs, \Rthif). We use \thmref{thm-ftvar-abbrev} for \Rstrefl, \Rstarr,
+\Rstrec, \Redesc, \Rthext, \Rthrec, and \Rthprojsub. We use
+\thmref{thm-rename-same-free-tvars} for \Reabsalpha. We use
 \thmref{thm-ftvar-of-esbs} for \Rthabs.
 
 \end{bycase}
-
-% THIS IS THE PROOF BY INDUCTION ON THE SIZE (VS. SIMPLE RULE INDUCTION):
-
-%To prove the last implication, it suffices to prove
-%\[
-%\cxwf{\snoc{\cx}{\cxel}}\ \ \IMPLIES\ \ \ftvar{\cxel}\subseteq\cxtvarO
-%\hspace{3em}(*)
-%\]
-%because
-%\[
-%\cxwf{\cx_1,\cxel,\cx_2}\ \ \IMPLIES\ \ \cxwf{\snoc{\cx_1}{\cxel}}
-%\]
-%by \thmref{thm-cxprefix}. We prove the first five implications of the original
-%theorem statement and the implication (*) by induction on the derivation of
-%the judgements in the antecedents of the implications:
-
-%\begin{bycase}
-
-%\Case{\Rcxmt}\\
-%This rule is impossible because $\cx,\cxel\neq\mtcx$.
-
-%\Case{\Rcxtdec, \Rcxtvdec}
-%\StePO{\ftvar{\cxel}=\emptyset\subseteq\cxtvarO}
-
-%\Case{\Rcxodec}
-%\begin{derivation}
-%\step{\isty{\snoc{\cx}{\tvdec{\tvarS}}}{\typ}}{\premof{\Rcxodec}}
-%\step{\ftvar{\typ}\subseteq\cxtvar{\cx}\cup\tvarS}{\indhyp, 1}
-%\step{\cxwf{\snoc{\cx}{\tvdec{\tvarS}}}}{\thmref{thm-cxwf}, 1}
-%\step{\tvarS\cap\cxtvarO=\emptyset}{\thmref{thm-cx-uniq-tvar}, 3}
-%\step{(\cxtvarO\cup\tvarS)-\tvarS=\cxtvarO}{4}
-%\step{\ftvar{\typ}-\tvarS\subseteq\cxtvarO}{2, 5}
-%\step{\ftvar{\odecO}\subseteq\cxtvarO}{\defof{\ftvarY}}
-%\end{derivation}
-
-%\Case{\Rcxtdef, \Rcxax, \Rcxlem}\\
-%Analogous to \Rcxodec.
-
-%\Case{\Rcxvdec}
-%\begin{derivation}
-%\step{\istyO{\typ}}{\premof{\Rcxvdec}}
-%\step{\ftvar{\typ}\subseteq\cxtvarO}{\indhyp, 1}
-%\step{\ftvar{\vdecO}\subseteq\cxtvarO}{\defof{\ftvarY}, 2}
-%\end{derivation}
-
-%\Case{\Rtbool}
-%\StePO{\ftvar{\bool}=\emptyset\subseteq\cxtvarO}
-
-%\Case{\Rtvar}
-%\begin{links}
-%$\ftvar{\tvar}
-% \linK{=}
-% \setI{\tvar}
-% \link{\subseteq}{$\tvar\in\cxtvarO$, \premof{\Rtvar}}
-% \cxtvarO$
-%\end{links}
-
-%\Case{\Rtinst}
-%\begin{derivation}
-%\steP{\ftvar{\tinstO}=\bigcup_i\ftvar{\typ_i}}
-%\step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Rtinst}}
-%\step{\FORALL{i}{\ftvar{\typ_i}\subseteq\cxtvarO}}{\indhyp, 2}
-%\step{\ftvar{\tinstO}\subseteq\cxtvarO}{1, 3}
-%\end{derivation}
-
-%\Case{\Rtedef}
-%\begin{derivation}
-%\steP{\ftvar{\tinstO}=\bigcup_i\ftvar{\typ_i}}
-%\step{\ftvar{\tsbslash{\typ}{\tvarS}{\typS}}=
-%      (\ftvar{\typ}-\tvarS)\cup
-%      \bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}}
-%     {\thmref{thm-ftvar-of-tsbs}}
-%\step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Rtedef}}
-%\step{\FORALL{i}{\ftvar{\typ_i}\subseteq\cxtvarO}}{\indhyp, 3}
-%\step{\ftvar{\tinstO}\subseteq\cxtvarO}{4, 1}
-%\step{\tdefO\in\cx}{\premof{\Rtedef}}
-%\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\tdefO, \cx_2}}{6}
-%\step{\cxwf{\cx}}{\premof{\Rtedef}}
-%\step{\cxwf{\snoc{\cx_1}{\tdefO}}}{\thmref{thm-cxprefix}, 7, 8}
-%\step{\ftvar{\tdefO}\subseteq\cxtvar{\cx_1}}{\indhyp, 9}
-%\step{\ftvar{\typ}-\tvarS\subseteq\cxtvarO}{\defof{\ftvarY}, 7}
-%\steP{\bigcup_{\tvar_i\in\ftvar{\typ}}\ftvar{\typ_i}\subseteq
-%      \bigcup_i\ftvar{\typ_i}}
-%\step{\ftvar{\tinstO}\cup\ftvar{\tsbslash{\typ}{\tvarS}{\typS}}
-%      \subseteq\cxtvarO}
-%     {5, 2, 11, 12, 4}
-%\end{derivation}
-
-%\Case{\Revar}
-%\begin{derivation}
-%\step{\vdecO\in\cx}{\premof{\Revar}}
-%\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\vdecO,\cx_2}}{1}
-%\step{\cxwf{\cx}}{\premof{\Revar}}
-%\step{\cxwf{\snoc{\cx_1}{\vdecO}}}{\thmref{thm-cxprefix}, 3, 2}
-%\step{\ftvar{\typ}\subseteq\cxtvar{\cx_1}}{\indhyp, 4}
-%\step{\ftvar{\typ}\subseteq\cxtvarO}{5, 2}
-%\end{derivation}
-
-%\Case{\Reop}\\
-%Analogous to \Rtedef.
-
-%\Case{\Reabs}
-%\begin{derivation}
-%\step{\hasty{\snoc{\cx}{\vdecO}}{\expr}{\typ'}}{\premof{\Reabs}}
-%\step{\ftvar{\expr}\cup\ftvar{\typ'}\subseteq\cxtvar{\snoc{\cx}{\vdecO}}}
-%     {\indhyp, 1}
-%\steP{\cxtvar{\snoc{\cx}{\vdecO}}=\cxtvarO}
-%\step{\ftvar{\expr}\cup\ftvar{\typ'}\subseteq\cxtvarO}{2, 3}
-%\step{\cxwf{\snoc{\cx}{\vdecO}}}{\thmref{thm-cxwf}, 1}
-%\step{\ftvar{\typ}\subseteq\cxtvarO}{\indhyp, 5}
-%\step{\ftvar{\absO}\cup\ftvar{\tarr{\typ}{\typ'}}\subseteq\cxtvarO}{4, 6}
-%\end{derivation}
-
-%\Case{\Rthax}
-%\begin{derivation}
-%\step{\ftvar{\tsbslash{\expr}{\tvarS}{\typS}}=
-%      (\ftvar{\expr}-\tvarS)\cup
-%      \bigcup_{\tvar_i\in\ftvar{\expr}}\ftvar{\typ_i}}
-%     {\thmref{thm-ftvar-of-tsbs}}
-%\step{\axO\in\cx}{\premof{\Rthax}}
-%\step{\EXISTS{\cx_1,\cx_2}{\cx=\cx_1,\axO,\cx_2}}{2}
-%\step{\cxwfO}{\premof{\Rthax}}
-%\step{\cxwf{\snoc{\cx_1}{\axO}}}{\thmref{thm-cxprefix}, 4, 3}
-%\step{\ftvar{\axO}\subseteq\cxtvar{\cx_1}}{\indhyp, 5}
-%\step{\ftvar{\expr}-\tvarS\subseteq\cxtvar{\cx}}{6, 3}
-%\step{\FORALL{i}{\istyO{\typ_i}}}{\premof{\Rthax}}
-%\step{\FORALL{i}{\ftvar{\typ_i}\subseteq\cxtvarO}}{\indhyp, 8}
-%\step{\ftvar{\tsbslash{\expr}{\tvarS}{\typS}}\subseteq\cxtvarO}{1, 7, 9}
-%\end{derivation}
-
-%\Case{\Rthbool}
-%\StepO{\ftvar{\fa{\var}{\tarr{\bool}{\bool}}
-%                 {(\iiff{\conj{\app{\var}{\true}}{\app{\var}{\false}}}
-%                        {(\fa{\var'}{\bool}{\app{\var}{\var'}})})}}=\emptyset}
-%      {\thmref{thm-ftvar-abbrev}}
-
-%\Case{\restrules}\\
-%Analogous to \Rtinst: each free type variable in the types and expressions in
-%the right part of the judgement $\jcxdots{\cx}$ is also a free type variable
-%in some premise $\jcxdots{\cx'}$ of the rule such that
-%$\cxtvar{\cx'}=\cxtvarO$ (the only rules in which $\cx'\neq\cx$ are
-%\Reif, \Rthifsbs, \Rthif). We use \thmref{thm-ftvar-abbrev} for
-%% \Rtquot,
-%\Rstrefl, \Rstarr, \Rstrec,
-%% \Rstsum,
-%\Redesc, \Rthext, \Rthrec,
-%%\Rthembsurj, \Rthembdist, \Rthembinj,
-%%\Rthquotsurj, \Rthquoteclass,
-%and \Rthprojsub.
-%%\Rthembsub.
-%We use \thmref{thm-rename-same-free-tvars} for \Reabsalpha. We use
-%\thmref{thm-ftvar-of-esbs} for \Rthabs.
-
-%\end{bycase}
 
 
 
@@ -3324,9 +3086,8 @@ and the judgement in the consequent of the implication is derived as follows:
 Let the instance of \Reabs\ used to derive the judgement in the antecedent of
 the implication be
 \[
-\rruleII
+\rruleI
  {\hasty{\snoc{\cxv}{\vdecO}}{\expr}{\typ'}}
- {\isty{\cxv}{\typ'}}
  {\hasty{\cxv}{\absO}{\tarr{\typ}{\typ'}}}
  {0}
 \]
@@ -3334,14 +3095,12 @@ The judgement in the consequent of the implication is derived as follows:
 \begin{derivation}
 \step{\hasty{\snoc{\cxv}{\vdecO}}{\expr}{\typ'}}{0}
 \step{\hasty{\snoc{\cxvI}{\vdecO}}{\esbsren{\expr}}}{\indhyp, 1}
-\step{\isty{\cxv}{\typ'}}{0}
-\step{\isty{\cxvI}{\typ'}}{\indhyp, 3}
 \step{\hasty{\cxvI}{\abs{\var}{\typ}{\esbsren{\expr}}}{\tarr{\typ}{\typ'}}}
-     {\Reabs, 2, 4}
+     {\Reabs, 2}
 \step{\cxwf{\snoc{\cxv}{\vdecO}}}{\thmref{thm-cxwf}, 1}
-\step{\var\neq\varI}{\thmref{thm-cx-uniq-var}, 6}
-\step{\esbsren{(\absO)}=\abs{\var}{\typ}{\esbsren{\expr}}}{7}
-\step{\hasty{\cxvI}{\esbsren{(\absO)}}{\tarr{\typ}{\typ'}}}{5, 8}
+\step{\var\neq\varI}{\thmref{thm-cx-uniq-var}, 4}
+\step{\esbsren{(\absO)}=\abs{\var}{\typ}{\esbsren{\expr}}}{5}
+\step{\hasty{\cxvI}{\esbsren{(\absO)}}{\tarr{\typ}{\typ'}}}{3, 6}
 \end{derivation}
 
 \Case{\Reabsalpha}\\
@@ -3647,25 +3406,12 @@ Analogous to \Rtbool: starting with the instance of the rule used to derive
 the judgement in the antecedent of the implication, we replace $\varI$ with
 $\varI'$ in the premises of the rule instance and then we apply the rule to
 the transformed premises to obtain the conclusion with $\varI$ replaced with
-$\varI'$. We use \thmref{thm-esbs-cx-decl} for \Rtvar, \Rtinst, and \Reop\ and
-we use \thmref{thm-esbs-abbrev} for \Reif, \Rthifsbs, and \Rthif.
+$\varI'$. We use \thmref{thm-esbs-cx-decl} for \Rtvar, \Rtinst, \Revar, and
+\Reop\ and we use \thmref{thm-esbs-abbrev} for \Reif, \Rthifsbs, and \Rthif.
 
 For \Rtsub, we use the fact that $\efvar{\tspred}=\emptyset$ (explicit premise
 of the rule instance) and so $\esbsren{\tspred}=\tspred$ by
 \thmref{thm-esbs-not-free}.
-
-%For \Rtquot, we use the fact that $\efvar{\tqpred}=\emptyset$ (explicit
-%premise of the rule instance) and so by \thmref{thm-efvar-abbrev} the
-%reflexivity, symmetry, and transitivity theorems in the premises of the rules
-%instance have no free variables and therefore the substitution of $\varI$ with
-%$\varI'$ leaves those theorems unchanged by \thmref{thm-esbs-not-free}.
-
-%For \Rterestr, we use the fact that
-%$\efvar{\tspred}=\efvar{\tspred'}=\emptyset$ (by
-%\thmref{thm-no-free-vars-in-types}) and therefore
-%$\esbsren{(\eq{\tspred}{\tspred'})}=(\eq{\tspred}{\tspred'})$ by
-%\thmref{thm-esbs-not-free}.
-%% We use analogous reasoning for \Rtequot.
 
 For \Resub\ we use the fact that $\efvar{\tspred}=\emptyset$ by
 \thmref{thm-no-free-vars-in-types} and so
@@ -3677,14 +3423,10 @@ For \Rthsub\ we use the fact that $\efvar{\tspred}=\emptyset$ by
 $\esbsren{(\app{\tspred}{\expr})}=\app{\tspred}{\esbsren{\expr}}$ by
 \thmref{thm-esbs-not-free}.
 
-For \Rthbool, \Rthext, \Rthrec,
-%\Rthembsurj, \Rthembdist, \Rthembinj,
-%\Rthquotsurj, \Rthquoteclass,
-and \Rthprojsub\
-% and \Rthembsub\
-we use the fact that the theorem $\expr$ that is the conclusion of the rule
-has no free variables (by \thmref{thm-efvar-abbrev}) and so
-$\esbsren{\expr}=\expr$ by \thmref{thm-esbs-not-free}.
+For \Rthbool, \Rthext, \Rthrec, and \Rthprojsub\ we use the fact that the
+theorem $\expr$ that is the conclusion of the rule has no free variables (by
+\thmref{thm-efvar-abbrev}) and so $\esbsren{\expr}=\expr$ by
+\thmref{thm-esbs-not-free}.
 
 \end{bycase}
 
@@ -3708,7 +3450,7 @@ By induction on the derivation of the judgement $\jcxdots{\cx}$\ :
 \step{\isty{\cx'}{\tinstO}}{\Rtinst, 1, 4, 5, 7}
 \end{derivation}
 
-\Case{\restrulesbut{\Reabs}}\\
+\Case{\restrulesbutII{\Rtarr}{\Reabs}}\\
 Analogous to \Rtinst: starting with the rule used to derive the judgement
 $\jcxdots{\cx}$, we replace $\cx$ with $\cx'$ in the premises of the rule and
 then we apply the rule to the transformed premises to obtain the conclusion
@@ -3733,6 +3475,35 @@ which is proved as follows:
 (This fact is used twice in each of \Reif, \Rthifsbs, and \Rthif, the first
 time with $\expr=\expr_0$ and the second time with $\expr=\nega{\expr_0}$.)
 
+\Case{\Rtarr}
+\begin{derivation}
+\step{\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}}{\premof{\Rtarr}}
+\step{\cxwf{\snoc{\cx}{\vdec{\var}{\typ_1}}}}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\typ_1}}{\thmref{thm-var-type-wf}, 2}
+\step{\isty{\cx'}{\typ_1}}{\indhyp, 3}
+\step{\cxwf{\cx'}}{\hyp}
+\step{\cx\subseteq\cx'}{\hyp}
+\end{derivation}
+If $\var\not\in\cxvar{\cx'}$:
+\begin{derivatioN}{6}
+\step{\cxwf{\snoc{\cx'}{\vdec{\var}{\typ_1}}}}{\Rcxvdec, 5, 4}
+\step{\snoc{\cx}{\vdec{\var}{\typ_1}}\subseteq\snoc{\cx'}{\vdec{\var}{\typ_1}}}
+     {6}
+\step{\isty{\snoc{\cx'}{\vdec{\var}{\typ_1}}}{\typ_2}}{\indhyp, 7, 8, 1}
+\step{\isty{\cx'}{\tarrO}}{\Rtarr, 9}
+\end{derivatioN}
+If $\var\in\cxvar{\cx'}$, pick a fresh variable $\var'$:
+\begin{derivatioN}{6}
+\step{\isty{\snoc{\cx}{\vdec{\var'}{\typ_1}}}{\typ_2}}
+     {\thmref{thm-deriv-rename-var}, 1}
+\step{\cxwf{\snoc{\cx'}{\vdec{\var'}{\typ_1}}}}{\Rcxvdec, 5, 4}
+\step{\snoc{\cx}{\vdec{\var'}{\typ_1}}\subseteq
+      \snoc{\cx'}{\vdec{\var'}{\typ_1}}}
+     {6}
+\step{\isty{\snoc{\cx'}{\vdec{\var'}{\typ_1}}}{\typ_2}}{\indhyp, 8, 9, 7}
+\step{\isty{\cx'}{\tarrO}}{\Rtarr, 10}
+\end{derivatioN}
+
 \Case{\Reabs}
 \begin{derivation}
 \step{\hasty{\snoc{\cx}{\vdecO}}{\expr}{\typ'}}{\premof{\Reabs}}
@@ -3741,43 +3512,41 @@ time with $\expr=\expr_0$ and the second time with $\expr=\nega{\expr_0}$.)
 \step{\isty{\cx'}{\typ}}{\indhyp, 3}
 \step{\cxwf{\cx'}}{\hyp}
 \step{\cx\subseteq\cx'}{\hyp}
-\step{\istyO{\typ'}}{\premof{\Reabs}}
-\step{\isty{\cx'}{\typ'}}{\indhyp, 7}
 \end{derivation}
 If $\var\not\in\cxvar{\cx'}$:
-\begin{derivatioN}{8}
+\begin{derivatioN}{6}
 \step{\cxwf{\snoc{\cx'}{\vdecO}}}{\Rcxvdec, 5, 4}
 \step{\snoc{\cx}{\vdecO}\subseteq\snoc{\cx'}{\vdecO}}{6}
-\step{\hasty{\cx',\vdecO}{\expr}{\typ'}}{\indhyp, 1, 9, 10}
-\step{\hasty{\cx'}{\abs{\var}{\typ}{\expr}}{\tarr{\typ}{\typ'}}}{\Reabs, 11, 8}
+\step{\hasty{\cx',\vdecO}{\expr}{\typ'}}{\indhyp, 1, 7, 8}
+\step{\hasty{\cx'}{\abs{\var}{\typ}{\expr}}{\tarr{\typ}{\typ'}}}{\Reabs, 9}
 \end{derivatioN}
 If $\var\in\cxvar{\cx'}$, pick a fresh variable $\var'$:
-\begin{derivatioN}{8}
+\begin{derivatioN}{6}
 \step{\hasty{\cx,\vdec{\var'}{\typ}}{\esbs{\expr}{\var}{\var'}}{\typ'}}
      {\thmref{thm-deriv-rename-var}, 1}
 \step{\cxwf{\snoc{\cx'}{\vdec{\var'}{\typ}}}}{\Rcxvdec, 5, 4}
 \step{\snoc{\cx}{\vdec{\var'}{\typ}}\subseteq\snoc{\cx'}{\vdec{\var'}{\typ}}}{6}
 \step{\hasty{\snoc{\cx'}{\vdec{\var'}{\typ}}}
             {\esbs{\expr}{\var}{\var'}}{\typ'}}
-     {\indhyp, 9, 10, 11}
+     {\indhyp, 7, 8, 9}
 \step{\hasty{\cx'}{\abs{\var'}{\typ}{\esbs{\expr}{\var}{\var'}}}{\typ'}}
-     {\Reabs, 12, 8}
+     {\Reabs, 10}
 \step{\esbsok{\expr}{\var}{\var'}}{\hyp\ \fresh{$\var'$}}
 \step{\var\neq\var'}{\hyp\ \fresh{$\var'$}}
 \step{\var\not\in\efvar{\esbs{\expr}{\var}{\var'}}}
-     {\thmref{thm-var-not-in-esbs-of-var}, 14, 15}
+     {\thmref{thm-var-not-in-esbs-of-var}, 12, 13}
 \step{\var'\not\in\efvar{\expr}}{\hyp\ \fresh{$\var'$}}
 \step{\cvarv{\esbs{\expr}{\var}{\var'}}{\var'}=\cvarv{\expr}{\var}}
-     {\thmref{thm-capt-rename1}, 12, 15}
+     {\thmref{thm-capt-rename1}, 10, 13}
 \step{\var\not\in\cvarv{\expr}{\var}}{\thmref{thm-var-not-capt}}
-\step{\var\not\in\cvarv{\esbs{\expr}{\var}{\var'}}{\var'}}{18, 19}
+\step{\var\not\in\cvarv{\esbs{\expr}{\var}{\var'}}{\var'}}{16, 17}
 \step{\hasty{\cx'}
             {\abs{\var}{\typ}{\esbs{\esbs{\expr}{\var}{\var'}}{\var'}{\var}}}
             {\tarr{\typ}{\typ'}}}
-     {\Reabsalpha, 13, 16, 20}
+     {\Reabsalpha, 11, 14, 18}
 \step{\esbs{\esbs{\expr}{\var}{\var'}}{\var}{\var'}=\expr}
-     {\thmref{thm-esbs-inverse}, 14, 17}
-\step{\hasty{\cx'}{\absO}{\tarr{\typ}{\typ'}}}{21, 22}
+     {\thmref{thm-esbs-inverse}, 12, 15}
+\step{\hasty{\cx'}{\absO}{\tarr{\typ}{\typ'}}}{19, 20}
 \end{derivatioN}
 
 %\Case{\Rthabssbs}\\
@@ -3925,7 +3694,7 @@ If $\tvar=\tvarI_i$:
 If $\tvar\in\cxtvar{\cx_3}$:
 \begin{derivatioN}{3}
 \step{\tvar\not\in\tvarIS}{\thmref{thm-cx-uniq-tvar}, 3}
-\steP{\tvar\in\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+\steP{\tvar\in\cxtvar{\tsbslash{\cx_3}{\tvarIS}{\typIS}}}
 \step{\tsbslash{\tvar}{\tvarIS}{\typIS}=\tvar}{\thmref{thm-tsbs-not-free}, 4}
 \step{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
            {\tsbslash{\tvar}{\tvarIS}{\typIS}}}
@@ -3962,105 +3731,65 @@ If $\tvar\in\cxtvar{\cx_3}$:
 %     {\Rtinst, 1, 3, 5, 6}
 %\end{derivation}
 
-%\Case{\R}
-%\begin{derivation}
-%\end{derivation}
-
-%\Case{\Rtedef}\\
-%Let the instance of \Rtedef\ used to derive the judgement be
-%\[
-%\rruleIII
-% {\cxwf{\cx_1,\tvdec{\tvarIS},\cx_3}}
-% {\tdefO\in\cx_1,\tvdec{\tvarIS},\cx_3}
-% {\FORALL{i}{\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ_i}}}
-% {\teq{\cx_1,\tvdec{\tvarIS},\cx_3}{\tinstO}{\tsbslash{\typ}{\tvarS}{\typS}}}
-% {0}
-%\]
-%The judgement
-%$\teq{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
-%     {\tsbslash{\tinstO}{\tvarIS}{\typIS}}
-%     {\tsbslash{\tsbslash{\typ}{\tvarS}{\typS}}{\tvarIS}{\typIS}}$
-%is derived as follows:
-%\begin{derivation}
-%\step{\cxwf{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}}{\hyp}
-%\step{\FORALL{i}{\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ_i}}}{0}
-%\step{\FORALL{i}{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
-%                      {\tsbslash{\typ_i}{\tvarIS}{\typIS}}}}
-%     {\indhyp, 2}
-%\step{\tdefO\in\cx_1,\tvdec{\tvarIS},\cx_3}{0}
-%\step{\tdefO\in\cx_1,\cx_3}{4}
-%\end{derivation}
-%If $\tdefO\in\cx_1$:
-%\begin{derivatioN}{5}
-%\step{\tdefO\in\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}{5}
-%\step{\teq{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
-%          {\tinst{\tnam}{\tsbslash{\typS}{\tvarIS}{\typIS}}}
-%          {\tsbslash{\typ}{\tvarS}{\tsbslash{\typS}{\tvarIS}{\typIS}}}}
-%     {\Rtedef, 1, 6, 3}
-%\step{\tinst{\tnam}{\tsbslash{\typS}{\tvarIS}{\typIS}}=
-%      \tsbslash{\tinstO}{\tvarIS}{\typIS}}
-%     {\defof{\tsbsY}}
-%\step{\cxwf{\cx_1,\tvdec{\tvarIS},\cx_3}}{0}
-%\step{\tvarIS\cap\cxtvar{\cx_1}=\emptyset}{\thmref{thm-cx-uniq-tvar}, 9}
-%\step{\EXISTS{\cx_1',\cx_1''}{\cx_1=(\cx_1',\tdefO,\cx_1'')}}
-%     {\hyp\ $\tdefO\in\cx_1$}
-%\step{\ftvar{\tdefO}\subseteq\cxtvar{\cx_1'}}
-%     {\thmref{thm-free-tvar-in-cx}, 1, 11}
-%\step{\ftvar{\tdefO}\subseteq\cxtvar{\cx_1}}{12, 11}
-%\step{\ftvar{\tdefO}\cap\tvarIS=\emptyset}{10, 13}
-%\step{(\ftvar{\typ}-\tvarS)\cap\tvarIS=\emptyset}{14}
-%\step{\tsbslash{\tsbslash{\typ}{\tvarS}{\typS}}{\tvarIS}{\typIS}=
-%      \tsbslash{\typ}{\tvarS}{\tsbslash{\typS}{\tvarIS}{\typIS}}}
-%     {\thmref{thm-tsbs-tsbs}, 15}
-%\step{\teq{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
-%          {\tsbslash{\tinstO}{\tvarIS}{\typIS}}
-%          {\tsbslash{\tsbslash{\typ}{\tvarS}{\typS}}{\tvarIS}{\typIS}}}
-%     {7, 8, 16}
-%\end{derivatioN}
-%If $\tdefO\in\cx_3$:
-%\begin{derivatioN}{5}
-%\steP{\EXISTS{\cx_3',\cx_3''}{\cx_3=(\cx_3',\tdefO,\cx_3'')}}
-%\step{\cxwf{\cx_1,\tvdec{\tvarIS},\cx_3}}{0}
-%\step{\isty{\cx_1,\tvdec{\tvarIS},\cx_3',\tvdec{\tvarS}}{\typ}}
-%     {\thmref{thm-tdef-wf}, 7, 6}
-%\step{\cxwf{\cx_1,\tvdec{\tvarIS},\cx_3',\tvdec{\tvarS}}}
-%     {\thmref{thm-cxwf}, 8}
-%\step{\tvarIS\cap\tvarS=\emptyset}{\thmref{thm-cx-uniq-tvar}, 9}
-%\step{\tdef{\tnam}{\tvarS}{\tsbslash{\typ}{\tvarIS}{\typIS}}\in
-%      \tsbslash{\cx_3}{\tvarIS}{\typIS}}
-%     {10, \hyp\ $\tdefO\in\cx_3$}
-%\step{\teq{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
-%          {\tinst{\tnam}{\tsbslash{\typS}{\tvarIS}{\typIS}}}
-%          {\tsbslash{\tsbslash{\typ}{\tvarIS}{\typIS}}
-%                    {\tvarS}
-%                    {\tsbslash{\typS}{\tvarIS}{\typIS}}}}
-%     {\Rtedef, 1, 11, 3}
-%\step{\tinst{\tnam}{\tsbslash{\typS}{\tvarIS}{\typIS}}=
-%      \tsbslash{\tinstO}{\tvarIS}{\typIS}}
-%     {\defof{\tsbsY}}
-%\step{\tsbslashok{\cx_3}{\tvarIS}{\typIS}}{\hyp}
-%\step{\FORALL{i}{\ftvar{\typI_i}\cap\ctvar{\cx_3}{\tvarI_i}=\emptyset}}
-%     {14, \defof{\tsbsokY}}
-%\step{\FORALL{i}{\ftvar{\typI_i}\cap\ctvar{\tdefO}{\tvarI_i}=\emptyset}}
-%     {15, 6}
-%\step{\FORALL{i}{\ftvar{\typI_i}\cap
-%                 \cond{\tvarI_i\in\ftvar{\typ}-\tvarS}{\tvarS}{\emptyset}
-%                 =\emptyset}}
-%     {16}
-%\step{\FORALL{\tvarI_i\in\ftvar{\typ}-\tvarS}
-%             {\ftvar{\typI_i}\cap\tvarS=\emptyset}}
-%     {17}
-%\step{\FORALL{\tvarI_i\in\ftvar{\typ}}{\ftvar{\typI_i}\cap\tvarS=\emptyset}}
-%     {18, 10}
-%\step{\tsbslash{\tsbslash{\typ}{\tvarS}{\typS}}{\tvarIS}{\typIS}=
-%      \tsbslash{\tsbslash{\typ}{\tvarIS}{\typIS}}
-%               {\tvarS}{\tsbslash{\typS}{\tvarIS}{\typIS}}}
-%     {\thmref{thm-tsbs-tsbs2}, 10, 19}
-%\step{\teq{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
-%          {\tsbslash{\tinstO}{\tvarIS}{\typIS}}
-%          {\tsbslash{\tsbslash{\typ}{\tvarS}{\typS}}{\tvarIS}{\typIS}}}
-%     {12, 13, 20}
-%\end{derivatioN}
+\Case{\Rtarr}\\
+Let the instance of \Rtarr\ used to derive the judgement be
+\[
+\rruleI
+ {\isty{\cx_1,\tvdec{\tvarIS},\cx_3,\vdec{\var}{\typ_1}}{\typ_2}}
+ {\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\tarrO}}
+ {0}
+\]
+The judgement
+$\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+      {\tsbslash{(\tarrO)}{\tvarIS}{\typIS}}$ is derived as follows:
+\begin{derivation}
+\step{\isty{\cx_1,\tvdec{\tvarIS},\cx_3,\vdec{\var}{\typ_1}}{\typ_2}}{0}
+\step{\cxwf{\cx_1,\tvdec{\tvarIS},\cx_3,\vdec{\var}{\typ_1}}}
+     {\thmref{thm-cxwf}, 1}
+\step{\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ_1}}{\thmref{thm-var-type-wf}, 2}
+\step{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+           {\tsbslash{\typ_1}{\tvarIS}{\typIS}}}
+     {\indhyp, 3}
+\step{\var\not\in\cxvar{\cx_1,\tvarIS,\cx_3}}{\thmref{thm-cx-uniq-var}, 2}
+\step{\cxwf{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}}{\hyp}
+\end{derivation}
+If $\var\not\in\cxvar{\cx_2}$:
+\begin{derivatioN}{6}
+\step{\var\not\in\cxvar{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}}{5}
+\step{\cxwf{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS},
+            \vdec{\var}{\tsbslash{\typ_1}{\tvarIS}{\typIS}}}}
+     {\Rcxvdec, 6, 4, 7}
+\step{\tsbslashok{\vdec{\var}{\typ_1}}{\tvarIS}{\typIS}}{\defof{\tsbsokY}}
+\step{\tsbslashok{\snoc{\cx_3}{\vdec{\var}{\typ_1}}}{\tvarIS}{\typIS}}
+     {9, \hyp\ $\tsbslashok{\cx_3}{\tvarIS}{\typIS}$}
+\step{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS},
+            \vdec{\var}{\tsbslash{\typ_1}{\tvarIS}{\typIS}}}
+           {\tsbslash{\typ_2}{\tvarIS}{\typIS}}}
+     {\indhyp, 10, 8, 1}
+\step{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+           {\tarr{\tsbslash{\typ_1}{\tvarIS}{\typIS}}
+                 {\tsbslash{\typ_2}{\tvarIS}{\typIS}}}}
+     {\Rtarr, 11}
+\end{derivatioN}
+If $\var\in\cxvar{\cx_2}$, pick a fresh variable $\var'$:
+\begin{derivatioN}{6}
+\step{\isty{\cx_1,\tvarIS,\cx_3,\vdec{\var'}{\typ_1}}{\typ_2}}
+     {\thmref{thm-deriv-rename-var}, 1}
+\step{\cxwf{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS},
+            \vdec{\var'}{\tsbslash{\typ_1}{\tvarIS}{\typIS}}}}
+     {\Rcxvdec, 6, 4}
+\step{\tsbslashok{\vdec{\var'}{\typ_1}}{\tvarIS}{\typIS}}{\defof{\tsbsokY}}
+\step{\tsbslashok{\snoc{\cx_3}{\vdec{\var'}{\typ_1}}}{\tvarIS}{\typIS}}
+     {9, \hyp\ $\tsbslashok{\cx_3}{\tvarIS}{\typIS}$}
+\step{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS},
+            \vdec{\var'}{\tsbslash{\typ_1}{\tvarIS}{\typIS}}}
+           {\tsbslash{\typ_2}{\tvarIS}{\typIS}}}
+     {\indhyp, 10, 8, 7}
+\step{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+           {\tarr{\tsbslash{\typ_1}{\tvarIS}{\typIS}}
+                 {\tsbslash{\typ_2}{\tvarIS}{\typIS}}}}
+     {\Rtarr, 11}
+\end{derivatioN}
 
 \Case{\Revar}\\
 Let the instance of \Revar\ used to derive the judgement be
@@ -4207,9 +3936,8 @@ If $\odecO\in\cx_3$:
 \Case{\Reabs}\\
 Let the instance of \Reabs\ used to defive the judgement be
 \[
-\rruleII
+\rruleI
  {\hasty{\snoc{\cx_1,\tvdec{\tvarIS},\cx_3}{\vdecO}}{\expr}{\typ'}}
- {\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ'}}
  {\hasty{\cx_1,\tvdec{\tvarIS},\cx_3}{\absO}{\tarr{\typ}{\typ'}}}
  {0}
 \]
@@ -4225,25 +3953,22 @@ is derived as follows:
 \step{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
            {\tsbslash{\typ}{\tvarIS}{\typIS}}}
      {\indhyp, 3}
-\step{\var\not\in\cx_1,\cx_3}{\thmref{thm-cx-uniq-var}, 2}
-\step{\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ'}}{0}
-\step{\isty{\cx_1,\cx_2,\tsbslash{\cx_2}{\tvarIS}{\typIS}}{\typ'}}
-     {\indhyp, 6}
+\step{\var\not\in\cxvar{\cx_1,\cx_3}}{\thmref{thm-cx-uniq-var}, 2}
 \end{derivation}
-If $\var\not\in\cx_2$:
-\begin{derivatioN}{7}
+If $\var\not\in\cxvar{\cx_2}$:
+\begin{derivatioN}{5}
 \step{\var\not\in\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}{5}
 \step{\cxwf{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}}{\hyp}
 \step{\cxwf{\snoc{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
                  {\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}}}}
-     {\Rcxvdec, 9, 8, 4}
+     {\Rcxvdec, 7, 6, 4}
 \step{\tsbslashok{\cx_3}{\tvarIS}{\typIS}}{\hyp}
-\step{\tvarIS\cap\cxtvar{\cx_3}=\emptyset}{11}
+\step{\tvarIS\cap\cxtvar{\cx_3}=\emptyset}{9}
 \step{\tvarIS\cap
       \cxtvar{\snoc{\cx_3}{\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}}}
       =\emptyset}
-     {12}
-\step{\FORALL{i}{\ftvar{\typI_i}\cap\ctvar{\cx_3}{\tvarI_i}=\emptyset}}{11}
+     {10}
+\step{\FORALL{i}{\ftvar{\typI_i}\cap\ctvar{\cx_3}{\tvarI_i}=\emptyset}}{9}
 \step{\FORALL{i}{\ctvar{\vdec{\var}
                              {\tsbslash{\typ}{\tvarIS}{\typIS}}}
                        {\tvarI_i}=\emptyset}}
@@ -4254,28 +3979,28 @@ If $\var\not\in\cx_2$:
                                     {\tsbslash{\typ}{\tvarIS}{\typIS}}})}
                        {\tvarI_i}
                  =\emptyset}}
-     {14, 15}
+     {12, 13}
 \step{\tsbslashok{(\snoc{\cx_3}{\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}})}
                  {\tvarIS}{\typIS}}
-     {13, 16}
+     {11, 14}
 \step{\hasty{\snoc{\cx_1,\cx_3,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
                   {\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}}}
             {\tsbslash{\expr}{\tvarIS}{\typIS}}
             {\tsbslash{\typ'}{\tvarIS}{\typIS}}}
-     {\indhyp, 10, 17, 1}
+     {\indhyp, 8, 15, 1}
 \step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
             {\abs{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}
                  {\tsbslash{\expr}{\tvarIS}{\typIS}}}
             {\tarr{\tsbslash{\typ}{\tvarIS}{\typIS}}
                   {\tsbslash{\typ'}{\tvarIS}{\typIS}}}}
-     {\Reabs, 18, 7}
+     {\Reabs, 16}
 \step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
             {\tsbslash{(\absO)}{\tvarIS}{\typIS}}
             {\tsbslash{(\tarr{\typ}{\typ'})}{\tvarIS}{\typIS}}}
-     {19}
+     {17}
 \end{derivatioN}
-If $\var\in\cx_2$, pick a fresh variable $\var'$:
-\begin{derivatioN}{7}
+If $\var\in\cxvar{\cx_2}$, pick a fresh variable $\var'$:
+\begin{derivatioN}{5}
 \step{\hasty{\snoc{\cx_1,\tvdec{\tvarIS},\cx_3}{\vdec{\var'}{\typ}}}
             {\esbs{\expr}{\var}{\var'}}{\typ'}}
      {\thmref{thm-deriv-rename-var}, 1}
@@ -4284,44 +4009,106 @@ If $\var\in\cx_2$, pick a fresh variable $\var'$:
                   {\tsbslash{\esbs{\expr}{\var}{\var'}}{\tvarIS}{\typIS}}}
              {\tarr{\tsbslash{\typ}{\tvarIS}{\typIS}}
                    {\tsbslash{\typ'}{\tvarIS}{\typIS}}}}
-      {analogous derivation as 8--19 above for case $\var\not\in\cx_2$}
+      {analogous derivation as 6--17 above for case $\var\not\in\cxvar{cx_2}$}
 \step{\fresh{\var'}}{\hyp}
-\step{\esbsok{\expr}{\var}{\var'}}{10}
+\step{\esbsok{\expr}{\var}{\var'}}{8}
 \step{\var\not\in\efvar{\esbs{\expr}{\var}{\var'}}}
-     {\thmref{thm-var-not-in-esbs-of-var}, 11, 10}
+     {\thmref{thm-var-not-in-esbs-of-var}, 9, 8}
 \step{\var\not\in\efvar{\tsbslash{\esbs{\expr}{\var}{\var'}}{\tvarIS}{\typIS}}}
-     {\thmref{thm-tsbs-same-free-vars}, 12}
+     {\thmref{thm-tsbs-same-free-vars}, 10}
 \step{\var\not\in\cvarv{\expr}{\var}}{\thmref{thm-var-not-capt}}
 \step{\var\not\in\cvarv{\esbs{\expr}{\var}{\var'}}{\var'}}
-     {\thmref{thm-capt-rename1}, 11, 10, 14}
+     {\thmref{thm-capt-rename1}, 9, 8, 12}
 \step{\var\not\in
       \cvarv{\tsbslash{\esbs{\expr}{\var}{\var'}}{\tvarIS}{\typIS}}{\var'}}
-     {\thmref{thm-tsbs-same-capt-vars}, 15}
+     {\thmref{thm-tsbs-same-capt-vars}, 13}
 \stepL{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
              {\abs{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}
                   {\esbs{\tsbslash{\esbs{\expr}{\var}{\var'}}{\tvarIS}{\typIS}}
                         {\var'}{\var}}}
              {\tsbslash{(\tarr{\typ}{\typ'})}{\tvarIS}{\typIS}}}
-      {\Reabsalpha, 9, 13, 16}
+      {\Reabsalpha, 7, 11, 14}
 \step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
             {\abs{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}
                  {\tsbslash{\esbs{\esbs{\expr}{\var}{\var'}}{\var'}{\var}}
                            {\tvarIS}{\typIS}}}
             {\tsbslash{(\tarr{\typ}{\typ'})}{\tvarIS}{\typIS}}}
-     {\thmref{thm-esbs-tsbs-comm}, 17}
+     {\thmref{thm-esbs-tsbs-comm}, 15}
 \step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
             {\abs{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}
                  {\tsbslash{\expr}{\tvarIS}{\typIS}}}
             {\tsbslash{(\tarr{\typ}{\typ'})}{\tvarIS}{\typIS}}}
-     {\thmref{thm-esbs-inverse}, 18, 11, 10}
+     {\thmref{thm-esbs-inverse}, 16, 9, 8}
 \step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
             {\tsbslash{(\absO)}{\tvarIS}{\typIS}}
             {\tsbslash{(\tarr{\typ}{\typ'})}{\tvarIS}{\typIS}}}
-     {19}
+     {17}
 \end{derivatioN}
+
+\Case{\Reif}\\
+Let the instance of \Reif\ used to derive the judgement be
+\[
+\rruleIV
+ {\hasty{\cx_1,\tvdec{\tvarIS},\cx_3}{\expr_0}{\bool}}
+ {\hasty{\cx_1,\tvdec{\tvarIS},\cx_3,\axM{\expr_0}}{\expr_1}{\typ}}
+ {\hasty{\cx_1,\tvdec{\tvarIS},\cx_3,\axM{\nega{\expr_0}}}{\expr_2}{\typ}}
+ {\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ}}
+ {\hasty{\cx_1,\tvdec{\tvarIS},\cx_3}{\iifO}{\typ}}
+ {0}
+\]
+The judgement
+$\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+       {\tsbslash{(\iifO)}{\tvarIS}{\typIS}}
+       {\tsbslash{\typ}{\tvarIS}{\typIS}}$
+is derived as follows:
+\begin{derivation}
+\step{\hasty{\cx_1,\tvdec{\tvarIS},\cx_3}{\expr_0}{\bool}}{0}
+\step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+            {\tsbslash{\expr_0}{\tvarIS}{\typIS}}{\bool}}
+     {\indhyp, 1}
+\step{\hasty{\cx_1,\tvdec{\tvarIS},\cx_3,\axM{\expr_0}}{\expr_1}{\typ}}{0}
+\step{\cxwf{\cx_1,\tvdec{\tvarIS},\cx_3,\axM{\expr_0}}}{\thmref{thm-cxwf}, 3}
+\step{\hasty{\cx_1,\tvdec{\tvarIS},\cx_3}{\expr_0}{\bool}}
+     {\thmref{thm-ax-wt}, 4}
+\step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+            {\tsbslash{\expr_0}{\tvarIS}{\typIS}}
+            {\bool}}
+     {\indhyp, 5}
+\step{\cxwf{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}}{\hyp}
+\step{\cxwf{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS},
+            \axM{\tsbslash{\expr_0}{\tvarIS}{\typIS}}}}
+     {\Rcxax, 7, 6}
+\step{\tsbslashok{\cx_3}{\tvarIS}{\typIS}}{\hyp}
+\step{\FORALL{\tvarI}{\ctvar{\axM{\expr_0}}{\tvarI}=\emptyset}}{\defof{\ctvarY}}
+\step{\tsbslashok{\axM{\expr_0}}{\tvarIS}{\typIS}}{\defof{\tsbsokY}, 10}
+\step{\tsbslashok{(\snoc{\cx_3}{\axM{\expr_0}})}{\tvarIS}{\typIS}}{9, 11}
+\step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS},
+             \axM{\tsbslash{\expr_0}{\tvarIS}{\typIS}}}
+            {\tsbslash{\expr_1}{\tvarIS}{\typIS}}
+            {\tsbslash{\typ}{\tvarIS}{\typIS}}}
+     {\indhyp, 12, 8, 3}
+\step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS},
+             \axM{\nega{\tsbslash{\expr_0}{\tvarIS}{\typIS}}}}
+            {\tsbslash{\expr_2}{\tvarIS}{\typIS}}
+            {\tsbslash{\typ}{\tvarIS}{\typIS}}}
+     {analogous derivation as 3--13}
+\step{\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ}}{0}
+\step{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+           {\tsbslash{\typ}{\tvarIS}{\typIS}}}
+     {\indhyp, 15}
+\step{\hasty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+            {\iif{\tsbslash{\expr_0}{\tvarIS}{\typIS}}
+                 {\tsbslash{\expr_1}{\tvarIS}{\typIS}}
+                 {\tsbslash{\expr_2}{\tvarIS}{\typIS}}}
+            {\tsbslash{\typ}{\tvarIS}{\typIS}}}
+     {\Reif, 2, 13, 14, 16}
+\end{derivation}
 
 \Case{\Rthax}\\
 Analogous to \Reop.
+
+\Case{\Rthifsbs}\\
+Analogous to \Reif.
 
 \Case{\Rthabs}\\
 Let the instance of \Rthabs\ used to derive the judgement be
@@ -4377,26 +4164,18 @@ is derived as follows:
      {9}
 \end{derivation}
 
+\Case{\Rthif}\\
+Analogous to \Reif.
+
 \Case{\restrules}\\
 Analogous to \Rtbool: starting with the instance of the rule used to derive
 the judgement in the antecedent of the implication, we replace
 $\tvdec{\tvarIS}$ with $\cx_2$ and $\tvarIS$ with $\typIS$ in the premises of
 the rule instance and then we apply the rule to the transformed premises to
 obtain the conclusion with $\tvarIS$ replaced with $\typIS$. We use
-\thmref{thm-tsbs-same-free-vars} for \Rtsub.
-% \Rtquot,
-%and \Rterestr.
-%, and \Rtequot.
-We use \thmref{thm-tsbs-abbrev} for
-% \Rtquot,
-\Rstrefl, \Rstarr, \Rstrec,
-%\Rstsum,
-\Reif, \Redesc, \Rthifsbs, \Rthbool, \Rthext, \Rthif, \Rthrec,
-%\Rthembsurj, \Rthembdist, \Rthembinj,
-%\Rthquotsurj, \Rthquoteclass,
-and \Rthprojsub.
-%and \Rthembsub.
-We use \thmref{thm-tsbs-same-free-vars},
+\thmref{thm-tsbs-same-free-vars} for \Rtsub. We use \thmref{thm-tsbs-abbrev}
+for \Rstrefl, \Rstarr, \Rstrec, \Redesc, \Rthbool, \Rthext, \Rthrec, and
+\Rthprojsub. We use \thmref{thm-tsbs-same-free-vars},
 \thmref{thm-tsbs-same-capt-vars}, and \thmref{thm-esbs-tsbs-comm} for
 \Reabsalpha.
 
@@ -4453,27 +4232,29 @@ We use \thmref{thm-tsbs-same-free-vars},
 
 
 
-\subsection*{Proof of \thmref{thm-eabsbool}}
+\subsection*{Proof of \thmref{thm-tarrI}}
 
 \begin{derivation}
-\step{\hasty{\cx,\vdecO}{\expr}{\bool}}{\hyp}
-\step{\cxwf{\cx,\vdecO}}{\thmref{thm-cxwf}, 1}
-\step{\cxwfO}{\thmref{thm-cxprefix}, 2}
-\step{\istyO{\bool}}{\Rtbool, 3}
-\step{\hastyO{\absO}{\tarr{\typ}{\bool}}}{\Reabs, 1, 4}
+\step{\istyO{\typ_1}}{\hyp}
 \end{derivation}
+Pick a variable $\var\in\Nam-\cxvarO$:
+\begin{derivatioN}{1}
+\step{\cxwf{\snoc{\cx}{\vdec{\var}{\typ_1}}}}{\RcxvdecI, 1}
+\step{\istyO{\typ_2}}{\hyp}
+\step{\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}}{\thmref{thm-mono}, 1, 3}
+\step{\istyO{\tarrO}}{\Rtarr, 4}
+\end{derivatioN}
 
 
 
 \subsection*{Proof of \thmref{thm-eid}}
 
 Pick a variable $\vaR\in\Nam-(\cxvarO\cup\setI{\var})$:
-
 \begin{derivation}
 \step{\istyO{\typ}}{\hyp}
 \step{\cxwf{\cx,\vdec{\vaR}{\typ}}}{\RcxvdecI, 1, \hyp\ $\vaR\not\in\cxvarO$}
 \step{\hasty{\cx,\vdec{\vaR}{\typ}}{\vaR}{\typ}}{\Revar, 2}
-\step{\hastyO{\abs{\vaR}{\typ}{\vaR}}{\tarr{\typ}{\typ}}}{\Reabs, 3, 1}
+\step{\hastyO{\abs{\vaR}{\typ}{\vaR}}{\tarr{\typ}{\typ}}}{\Reabs, 3}
 \step{\hastyO{\abs{\var}{\typ}{\var}}{\tarr{\typ}{\typ}}}
      {\Reabsalpha, 4, \hyp\ $\vaR\neq\var$}
 \end{derivation}
@@ -4482,24 +4263,14 @@ Pick a variable $\vaR\in\Nam-(\cxvarO\cup\setI{\var})$:
 
 \subsection*{Proof of \thmref{thm-eidbool}}
 
-If $\var\not\in\cxvar{\cx}$, the rule is derived as follows:
 \begin{derivation}
 \step{\cxwfO}
      {\hyp}
-\step{\cxwf{\snoc{\cx}{\vdec{\var}{\bool}}}}
-     {\Rcxvdecbool, 1, \hyp}
-\step{\hasty{\snoc{\cx}{\vdec{\var}{\bool}}}{\var}{\bool}}
-     {\Revar, 2}
 \step{\istyO{\bool}}
      {\Rtbool, 1}
 \step{\hastyO{\abs{\var}{\bool}{\var}}{\tarr{\bool}{\bool}}}
-     {\Reabs, 3, 4}
+     {\Reid, 2}
 \end{derivation}
-If instead $\var\in\cxvar{\cx}$, we can use a very analogous derivation to
-derive $\hastyO{\abs{\var'}{\bool}{\var'}}{\tarr{\bool}{\bool}}$, where
-$\var'\neq\var$ is a fresh variable not declared in $\cx$, i.e.\
-$\var'\not\in\cxvar{\cx}$; then we use rule $\Reabsalpha$ to rename $\var'$ to
-$\var$.
 
 
 
@@ -4519,26 +4290,16 @@ $\var$.
 
 \subsection*{Proof of \thmref{thm-econsttrue}}
 
-If $\var\not\in\cxvar{\cx}$, the rule is derived as follows:
+Pick a variable $\vaR\in\Nam-(\cxvarO\cup\setI{\var})$:
 \begin{derivation}
-\step{\istyO{\typ}}
-     {\hyp}
-\step{\cxwfO}
-     {\thmref{thm-cxwf}, 1}
-\step{\cxwf{\snoc{\cx}{\vdec{\var}{\typ}}}}
-     {\Rcxvdec, 2, \hyp, 1}
-\step{\hasty{\snoc{\cx}{\vdec{\var}{\typ}}}{\true}{\bool}}
-     {\Retrue, 3}
-\step{\istyO{\bool}}
-     {\Rtbool, 2}
+\step{\istyO{\typ}}{\hyp}
+\step{\cxwf{\snoc{\cx}{\vdec{\vaR}{\typ}}}}
+     {\RcxvdecI, 1, \hyp\ $\vaR\not\in\cxvarO$}
+\step{\hasty{\snoc{\cx}{\vdec{\vaR}{\typ}}}{\true}{\bool}}{\Retrue, 2}
+\step{\hastyO{\abs{\vaR}{\typ}{\true}}{\tarr{\typ}{\bool}}}{\Reabs, 3}
 \step{\hastyO{\abs{\var}{\typ}{\true}}{\tarr{\typ}{\bool}}}
-     {\Reabs, 4, 5}
+     {\Reabsalpha, 4, \hyp\ $\vaR\neq\var$}
 \end{derivation}
-If instead $\var\in\cxvar{\cx}$, we can use a very analogous derivation to
-derive $\hastyO{\abs{\var'}{\typ}{\true}}{\tarr{\typ}{\bool}}$, where
-$\var'\neq\var$ is a fresh variable not declared in $\cx$, i.e.\
-$\var'\not\in\cxvar{\cx}$; then we use rule $\Reabsalpha$ to rename $\var'$ to
-$\var$.
 
 
 
@@ -4562,31 +4323,27 @@ $\var$.
 
 \subsection*{Proof of \thmref{thm-enot}}
 
-If $\varfx\not\in\cxvarO$, the rule is derived as follows:
+Pick a variable $\varFX\in\Nam-(\cxvarO\cup\setI{\varfx})$:
 \begin{derivation}
 \step{\cxwfO}
      {\hyp}
-\step{\cxwf{\snoc{\cx}{\vdec{\varfx}{\bool}}}}
-     {\Rcxvdecbool, 1, \hyp}
-\step{\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\varfx}{\bool}}
+\step{\cxwf{\snoc{\cx}{\vdec{\varFX}{\bool}}}}
+     {\Rcxvdecbool, 1, \hyp\ $\varFX\not\in\cxvarO$}
+\step{\hasty{\snoc{\cx}{\vdec{\varFX}{\bool}}}{\varFX}{\bool}}
      {\Revar, 2}
-\step{\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}{\false}{\bool}}
+\step{\hasty{\snoc{\cx}{\vdec{\varFX}{\bool}}}{\false}{\bool}}
      {\Refalse, 2}
-\step{\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}
-            {\eq{\varfx}{\false}}
+\step{\hasty{\snoc{\cx}{\vdec{\varFX}{\bool}}}
+            {\eq{\varFX}{\false}}
             {\bool}}
      {\Reeq, 3, 4}
-\step{\istyO{\bool}}
-     {\Rtbool, 1}
+\step{\hastyO{\abs{\varFX}{\bool}{(\eq{\varFX}{\false})}}
+             {\tarr{\bool}{\bool}}}
+     {\Reabs, 5}
 \step{\hastyO{\abs{\varfx}{\bool}{(\eq{\varfx}{\false})}}
              {\tarr{\bool}{\bool}}}
-     {\Reabs, 5, 6}
+     {\Reabsalpha, 6, \hyp\ $\varFX\neq\varfx$}
 \end{derivation}
-If instead $\varfx\in\cxvar{\cx}$, we can use a very analogous derivation to
-derive $\hastyO{\abs{\var}{\bool}{(\eq{\var}{\false})}}{\tarr{\bool}{\bool}}$,
-where $\var\neq\varfx$ is a fresh variable not declared in $\cx$, i.e.\
-$\var\not\in\cxvar{\cx}$; then we use rule $\Reabsalpha$ to rename $\var$ to
-$\varfx$.
 
 
 
@@ -4765,61 +4522,50 @@ We first prove the derived rule
         {\tarr{\bool}{\bool}}}
  {\RtmpI}
 \]
-If $\var'\not\in\cxvarO$, the rule is derived as follows:
+Pick a variable $\vaR'\in\Nam-(\cxvarO\cup\setII{\var}{\var'})$:
 \begin{derivation}
 \step{\cxwf{\snoc{\cx}{\vdec{\var}{\bool}}}}
      {\hyp}
-\step{\cxwf{\snoc{\snoc{\cx}{\vdec{\var}{\bool}}}{\vdec{\var'}{\bool}}}}
-     {\Rcxvdecbool, 1, \hyp}
-\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\bool}}}{\vdec{\var'}{\bool}}}
+\step{\cxwf{\snoc{\snoc{\cx}{\vdec{\var}{\bool}}}{\vdec{\vaR'}{\bool}}}}
+     {\Rcxvdecbool, 1, \hyp\ $\vaR'\not\in\cxvarO\cup\setI{\var}$}
+\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\bool}}}{\vdec{\vaR'}{\bool}}}
             {\var}{\bool}}
      {\Revar, 2}
-\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\bool}}}{\vdec{\var'}{\bool}}}
-            {\var'}{\bool}}
+\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\bool}}}{\vdec{\vaR'}{\bool}}}
+            {\vaR'}{\bool}}
      {\Revar, 2}
-\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\bool}}}{\vdec{\var'}{\bool}}}
-            {\eq{\var}{\var'}}{\bool}}
+\step{\hasty{\snoc{\snoc{\cx}{\vdec{\var}{\bool}}}{\vdec{\vaR'}{\bool}}}
+            {\eq{\var}{\vaR'}}{\bool}}
      {\Reeq, 3, 4}
-\step{\isty{\snoc{\cx}{\vdec{\var}{\bool}}}{\bool}}
-     {\thmref{thm-var-type-wf}, 2}
+\step{\hasty{\snoc{\cx}{\vdec{\var}{\bool}}}
+            {\abs{\vaR'}{\bool}{\eq{\var}{\vaR'}}}
+            {\tarr{\bool}{\bool}}}
+     {\Reabs, 5}
 \step{\hasty{\snoc{\cx}{\vdec{\var}{\bool}}}
             {\abs{\var'}{\bool}{\eq{\var}{\var'}}}
             {\tarr{\bool}{\bool}}}
-     {\Reabs, 5, 6}
+     {\Reabsalpha, 6, \hyp\ $\vaR'\neq\var'$}
 \end{derivation}
-If instead $\var'\in\cxvar{\cx}$, we can use a very analogous derivation to
-derive
-$\hasty{\snoc{\cx}{\vdec{\var}{\bool}}}
-       {\abs{\var''}{\bool}{\eq{\var}{\var''}}}
-       {\tarr{\bool}{\bool}}$,
-where $\var''\neq\var'$ is a fresh variable not declared in $\cx$, i.e.\
-$\var''\not\in\cxvar{\cx}$; then we use rule $\Reabsalpha$ to rename $\var''$
-to $\var'$. This concludes the proof of rule \RtmpI.
+This concludes the proof of rule \RtmpI.
 
-We now prove \Reiff. If $\varfx\not\in\cxvarO$, the rule is derived as
-follows:
+We now prove \Reiff.
+Pick a variable $\varFX\in\Nam-(\cxvarO\cup\setII{\varfx}{\varfx'})$:
 \begin{derivation}
 \step{\cxwfO}
      {\hyp}
-\step{\cxwf{\snoc{\cx}{\vdec{\varfx}{\bool}}}}
-     {\Rcxvdecbool, 1}
-\step{\hasty{\snoc{\cx}{\vdec{\varfx}{\bool}}}
-            {\abs{\varfx'}{\bool}{\eq{\varfx}{\varfx'}}}
+\step{\cxwf{\snoc{\cx}{\vdec{\varFX}{\bool}}}}
+     {\Rcxvdecbool, 1, \hyp\ $\varFX\not\in\cxvarO$}
+\step{\hasty{\snoc{\cx}{\vdec{\varFX}{\bool}}}
+            {\abs{\varfx'}{\bool}{\eq{\varFX}{\varfx'}}}
             {\tarr{\bool}{\bool}}}
-     {\RtmpI, 2, $\varfx\neq\varfx'$}
-\step{\istyO{\bool}}
-     {\thmref{thm-var-type-wf}, 2}
+     {\RtmpI, 2, $\varFX\neq\varfx'$}
+\step{\hastyO{\abs{\varFX}{\bool}{\abs{\varfx'}{\bool}{\eq{\varFX}{\varfx'}}}}
+             {\tarr{\bool}{\tarr{\bool}{\bool}}}}
+     {\Reabs, 3}
 \step{\hastyO{\abs{\varfx}{\bool}{\abs{\varfx'}{\bool}{\eq{\varfx}{\varfx'}}}}
              {\tarr{\bool}{\tarr{\bool}{\bool}}}}
-     {\Reabs, 3, 4}
+     {\Reabsalpha, 4, \hyp\ $\varFX\neq\varfx$}
 \end{derivation}
-If instead $\varfx\in\cxvar{\cx}$, we can use a very analogous derivation to
-derive
-$\hastyO{\abs{\var}{\bool}{\abs{\varfx'}{\bool}{\eq{\var}{\varfx'}}}}
-        {\tarr{\bool}{\tarr{\bool}{\bool}}}$,
-where $\var\neq\varfx$ is a fresh variable not declared in $\cx$, i.e.\
-$\var\not\in\cxvar{\cx}$; then we use rule $\Reabsalpha$ to rename $\var$ to
-$\varfx$.
 
 
 
@@ -4859,41 +4605,38 @@ $\varfx$.
 
 \subsection*{Proof of \thmref{thm-efaop}}
 
-If $\varfxpred\not\in\cxvarO$, the rule is derived as follows:
+Pick a variable $\varFXpred\in\Nam-(\cxvarO\cup\setI{\varfxpred})$:
 \begin{derivation}
 \step{\istyO{\typ}}
      {\hyp}
-\step{\cxwfO}
-     {\thmref{thm-cxwf}, 1}
 \step{\istyO{\bool}}
-     {\Rtbool, 2}
+     {\Rtbool, 1}
 \step{\istyO{\tarr{\typ}{\bool}}}
-     {\Rtarr, 1, 3}
-\step{\cxwf{\snoc{\cx}{\vdec{\varfxpred}{\tarr{\typ}{\bool}}}}}
-     {\Rcxvdec, 2, 4, \hyp}
-\step{\hasty{\snoc{\cx}{\vdec{\varfxpred}{\tarr{\typ}{\bool}}}}
-            {\varfxpred}{\tarr{\typ}{\bool}}}
-     {\Revar, 5}
-\step{\isty{\snoc{\cx}{\vdec{\varfxpred}{\tarr{\typ}{\bool}}}}{\typ}}
-     {\thmref{thm-mono}, 1, 5}
-\step{\hasty{\snoc{\cx}{\vdec{\varfxpred}{\tarr{\typ}{\bool}}}}
+     {\RtarrI, 1, 2}
+\step{\cxwf{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}}
+     {\RcxvdecI, 3, \hyp\ $\varFXpred\not\in\cxvarO$}
+\step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
+            {\varFXpred}{\tarr{\typ}{\bool}}}
+     {\Revar, 4}
+\step{\isty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\typ}}
+     {\thmref{thm-mono}, 1, 4}
+\step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
             {\abs{\varfx}{\typ}{\true}}{\tarr{\typ}{\bool}}}
-     {\Reconsttrue, 7}
-\step{\hasty{\snoc{\cx}{\vdec{\varfxpred}{\tarr{\typ}{\bool}}}}
-            {\eq{\varfxpred}{\abs{\varfx}{\typ}{\true}}}{\bool}}
-     {\Reeq, 6, 8}
+     {\Reconsttrue, 6}
+\step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
+            {\eq{\varFXpred}{\abs{\varfx}{\typ}{\true}}}{\bool}}
+     {\Reeq, 5, 7}
+\step{\hastyO{\abs{\varFXpred}
+                  {\tarr{\typ}{\bool}}
+                  {(\eq{\varFXpred}{\abs{\varfx}{\typ}{\true}})}}
+             {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
+     {\Reabs, 8}
 \step{\hastyO{\abs{\varfxpred}
                   {\tarr{\typ}{\bool}}
                   {(\eq{\varfxpred}{\abs{\varfx}{\typ}{\true}})}}
              {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
-     {\Reabs, 9, 3}
+     {\Reabsalpha, 9, \hyp\ $\varFXpred\neq\varfxpred$}
 \end{derivation}
-If instead $\varfxpred\in\cxvarO$, we can use a very analogous derivation to
-derive
-$\hastyO{\abs{\var}{\tarr{\typ}{\bool}}{(\eq{\var}{\abs{\varfx}{\typ}{\true}})}}
-{\tarr{(\tarr{\typ}{\bool})}{\bool}}$, where $\var\neq\varfxpred$ is a fresh
-variable not declared in $\cx$, i.e.\ $\var\not\in\cxvarO$; then we use rule
-\Reabsalpha\ to rename $\var$ to $\varfxpred$.
 
 
 
@@ -4902,12 +4645,10 @@ variable not declared in $\cx$, i.e.\ $\var\not\in\cxvarO$; then we use rule
 \begin{derivation}
 \step{\hasty{\snoc{\cx}{\vdecO}}{\expr}{\bool}}{\hyp}
 \step{\cxwf{\snoc{\cx}{\vdecO}}}{\thmref{thm-cxwf}, 1}
-\step{\cxwfO}{\thmref{thm-cxprefix}, 2}
-\step{\istyO{\bool}}{\Rtbool, 3}
-\step{\hastyO{\absO}{\tarr{\typ}{\bool}}}{\Reabs, 1, 4}
+\step{\hastyO{\absO}{\tarr{\typ}{\bool}}}{\Reabs, 1}
 \step{\istyO{\typ}}{\thmref{thm-var-type-wf}, 2}
-\step{\hastyO{\faopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}{\Refaop, 6}
-\step{\hastyO{\app{\faopO}{(\absO)}}{\bool}}{\Reapp, 7, 5}
+\step{\hastyO{\faopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}{\Refaop, 4}
+\step{\hastyO{\app{\faopO}{(\absO)}}{\bool}}{\Reapp, 5, 3}
 \end{derivation}
 
 
@@ -4921,8 +4662,9 @@ $\setII{\varFXpred}{\varFX}\cap(\cxvarO\cup\setII{\varfxpred}{\varfx})=
 \step{\istyO{\typ}}{\hyp}
 \step{\cxwfO}{\thmref{thm-cxwf}, 1}
 \step{\istyO{\bool}}{\Rtbool, 2}
-\step{\istyO{\tarr{\typ}{\bool}}}{\Rtarr, 1, 3}
-\step{\cxwf{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}}{\Rcxvdec, 2, 4}
+\step{\istyO{\tarr{\typ}{\bool}}}{\RtarrI, 1, 3}
+\step{\cxwf{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}}
+     {\RcxvdecI, 4, \hyp\ $\varFXpred\not\in\cxvarO$}
 \step{\isty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\typ}}
      {\thmref{thm-mono}, 1, 5}
 \step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
@@ -4930,7 +4672,7 @@ $\setII{\varFXpred}{\varFX}\cap(\cxvarO\cup\setII{\varfxpred}{\varfx})=
      {\Refaop, 6}
 \step{\cxwf{\snoc{\snoc{\cx}
              {\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\vdec{\varFX}{\typ}}}}
-     {\Rcxvdec, 5, 6}
+     {\RcxvdecI, 6, \hyp\ $\varFX\not\in\cxvarO\cup\setI{\varFXpred}$}
 \step{\hasty{\snoc{\snoc{\cx}
               {\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\vdec{\varFX}{\typ}}}
             {\varFXpred}{\tarr{\typ}{\bool}}}
@@ -4947,34 +4689,33 @@ $\setII{\varFXpred}{\varFX}\cap(\cxvarO\cup\setII{\varfxpred}{\varfx})=
               {\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\vdec{\varFX}{\typ}}}
             {\nega{(\app{\varFXpred}{\varFX})}}{\bool}}
      {\Renega, 11}
-\step{\isty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\bool}}
-     {\Rtbool, 5}
+
 \step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
             {\abs{\varFX}{\typ}{\nega{(\app{\varFXpred}{\varFX})}}}
             {\tarr{\typ}{\bool}}}
-     {\Reabs, 12, 13}
+     {\Reabs, 12}
 \step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
             {\abs{\varfx}{\typ}{\nega{(\app{\varFXpred}{\varfx})}}}
             {\tarr{\typ}{\bool}}}
-     {\Reabsalpha, 14}
+     {\Reabsalpha, 13}
 \step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
             {\fa{\varfx}{\typ}{\nega{(\app{\varFXpred}{\varfx})}}}
             {\bool}}
-     {\Reapp, 7, 15}
+     {\Reapp, 7, 14}
 \step{\hasty{\snoc{\cx}{\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}
             {\nega{(\fa{\varfx}{\typ}{\nega{(\app{\varFXpred}{\varfx})}})}}
             {\bool}}
-     {\Renega, 16}
+     {\Renega, 15}
 \step{\hastyO{\abs{\varFXpred}{\tarr{\typ}{\bool}}
                   {\nega{(\fa{\varfx}{\typ}
                              {\nega{(\app{\varFXpred}{\varfx})}})}}}
              {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
-     {\Reabs, 17, 3}
+     {\Reabs, 16}
 \step{\hastyO{\abs{\varfxpred}{\tarr{\typ}{\bool}}
                   {\nega{(\fa{\varfx}{\typ}
                              {\nega{(\app{\varfxpred}{\varfx})}})}}}
              {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
-     {\Reabsalpha, 18}
+     {\Reabsalpha, 17}
 \end{derivation}
 
 
@@ -4995,15 +4736,15 @@ derived as follows:
 \step{\istyO{\typ}}{\hyp}
 \step{\cxwfO}{\thmref{thm-cxwf}, 1}
 \step{\istyO{\bool}}{\Rtbool, 2}
-\step{\istyO{\tarr{\typ}{\bool}}}{\Rtarr, 1, 3}
-\step{\cxwf{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\Rcxvdec, 2, 4}
+\step{\istyO{\tarr{\typ}{\bool}}}{\RtarrI, 1, 3}
+\step{\cxwf{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}}{\RcxvdecI, 4}
 \step{\isty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}{\typ}}
      {\thmref{thm-mono}, 1, 5}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
             {\exopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
      {\Reexop, 6}
 \step{\cxwf{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}}
-     {\Rcxvdec, 5, 6}
+     {\RcxvdecI, 6}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
             {\varFXpred}{\tarr{\typ}{\bool}}}
      {\Revar, 8}
@@ -5018,7 +4759,7 @@ derived as follows:
      {\thmref{thm-mono}, 6, 8}
 \step{\cxwf{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},
                 \vdec{\varFX}{\typ},\vdec{\varFX'}{\typ}}}
-     {\Rcxvdec, 8, 12}
+     {\RcxvdecI, 12}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},
                  \vdec{\varFX}{\typ},\vdec{\varFX'}{\typ}}
             {\varFXpred}{\tarr{\typ}{\bool}}}
@@ -5046,36 +4787,31 @@ derived as follows:
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
             {\faopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
      {\Refaop, 12}
-\step{\isty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
-           {\bool}}
-     {\Rtbool, 8}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
             {\abs{\varFX'}{\typ}
                  {(\impl{\app{\varFXpred}{\varFX'}}{\eq{\varFX'}{\varFX}})}}
             {\tarr{\typ}{\bool}}}
-     {\Reabs, 19, 21}
+     {\Reabs, 19}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
             {\abs{\varfx'}{\typ}
                  {(\impl{\app{\varFXpred}{\varfx'}}{\eq{\varfx'}{\varFX}})}}
             {\tarr{\typ}{\bool}}}
-     {\Reabsalpha, 22}
+     {\Reabsalpha, 21}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
             {\fa{\varfx'}{\typ}
                 {(\impl{\app{\varFXpred}{\varfx'}}{\eq{\varfx'}{\varFX}})}}
             {\bool}}
-     {\Reapp, 20, 23}
+     {\Reapp, 20, 22}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}},\vdec{\varFX}{\typ}}
             {\conj{\app{\varFXpred}{\varFX}}
                   {\fa{\varfx'}{\typ}
                       {(\impl{\app{\varFXpred}{\varfx'}}
                              {\eq{\varfx'}{\varFX}})}}}
             {\bool}}
-     {\ReconjO, 11, 24}
+     {\ReconjO, 11, 23}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
             {\exopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
      {\Reexop, 6}
-\step{\isty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}{\bool}}
-     {\Rtbool, 5}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
             {\abs{\varFX}{\typ}
                  {(\conj{\app{\varFXpred}{\varFX}}
@@ -5083,7 +4819,7 @@ derived as follows:
                             {(\impl{\app{\varFXpred}{\varfx'}}
                                    {\eq{\varfx'}{\varFX}})}})}}
             {\tarr{\typ}{\bool}}}
-     {\Reabs, 25, 27}
+     {\Reabs, 24}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
             {\abs{\varfx}{\typ}
                  {(\conj{\app{\varFXpred}{\varfx}}
@@ -5091,7 +4827,7 @@ derived as follows:
                             {(\impl{\app{\varFXpred}{\varfx'}}
                                    {\eq{\varfx'}{\varfx}})}})}}
             {\tarr{\typ}{\bool}}}
-     {\Reabsalpha, 28}
+     {\Reabsalpha, 26}
 \step{\hasty{\cx,\vdec{\varFXpred}{\tarr{\typ}{\bool}}}
             {\ex{\varfx}{\typ}
                 {(\conj{\app{\varFXpred}{\varfx}}
@@ -5099,7 +4835,7 @@ derived as follows:
                            {(\impl{\app{\varFXpred}{\varfx'}}
                                   {\eq{\varfx'}{\varfx}})}})}}
            {\bool}}
-     {\Reapp, 26, 29}
+     {\Reapp, 25, 27}
 \step{\hastyO{\abs{\varFXpred}{\tarr{\typ}{\bool}}
                   {\ex{\varfx}{\typ}
                       {(\conj{\app{\varFXpred}{\varfx}}
@@ -5107,7 +4843,7 @@ derived as follows:
                                  {(\impl{\app{\varFXpred}{\varfx'}}
                                         {\eq{\varfx'}{\varfx}})}}})}}
              {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
-     {\Reabs, 30, 3}
+     {\Reabs, 28}
 \stepL{\hastyO{\abs{\varfxpred}{\tarr{\typ}{\bool}}
                    {\ex{\varfx}{\typ}
                        {(\conj{\app{\varfxpred}{\varfx}}
@@ -5115,7 +4851,7 @@ derived as follows:
                                   {(\impl{\app{\varfxpred}{\varfx'}}
                                          {\eq{\varfx'}{\varfx}})}}})}}
               {\tarr{(\tarr{\typ}{\bool})}{\bool}}}
-      {\Reabsalpha, 31}
+      {\Reabsalpha, 29}
 \end{derivation}
 
 
@@ -5130,7 +4866,7 @@ Analogous to \thmref{thm-efa}, using \ReexIop\ instead of \Refaop.
 
 \begin{derivation}
 \step{\hasty{\cx,\vdecO}{\expr}{\bool}}{\hyp}
-\step{\hastyO{\absO}{\tarr{\typ}{\bool}}}{\Reabsbool, 1}
+\step{\hastyO{\absO}{\tarr{\typ}{\bool}}}{\Reabs, 1}
 \step{\var'\not\in\efvar{\expr}\cup\cvarv{\expr}{\var}}{\hyp}
 \step{\hastyO{\abs{\var'}{\typ}{\esbs{\expr}{\var}{\var'}}}
              {\tarr{\typ}{\bool}}}
@@ -5302,98 +5038,94 @@ cases for the well-typedness rules are presented in the next subsection.
 \step{\istyO{\typ_2}}{\indhyp, 1}
 \step{\hastyO{\tspred}{\tarr{\typ_2}{\bool}}}{\indhyp, 1}
 \step{\istyO{\typ}}{\premof{\Rstarr}}
-\step{\istyO{\tarr{\typ}{\typ_1}}}{\Rtarr, 5, 2}
-\step{\istyO{\tarr{\typ}{\typ_2}}}{\Rtarr, 5, 3}
-\step{\cxwfO}{\thmref{thm-cxwf}, 5}
+\step{\istyO{\tarr{\typ}{\typ_1}}}{\RtarrI, 5, 2}
+\step{\istyO{\tarr{\typ}{\typ_2}}}{\RtarrI, 5, 3}
 \end{derivation}
 Pick a variable $\varI\in\Nam-(\cxvarO\cup\setII{\var}{\var'})$ (where $\var$
 and $\var'$ are the variables used in the instance of \Rstarr):
-\begin{derivatioN}{8}
+\begin{derivatioN}{7}
 \step{\cxwf{\snoc{\cx}{\vdec{\varI}{\tarr{\typ}{\typ_2}}}}}
-     {\Rcxvdec, 8, 7}
+     {\RcxvdecI, 7}
 \step{\isty{\snoc{\cx}{\vdec{\varI}{\tarr{\typ}{\typ_2}}}}{\typ}}
-     {\thmref{thm-mono}, 9, 5}
+     {\thmref{thm-mono}, 8, 5}
 \end{derivatioN}
 Pick a variable $\varI'\in\Nam-(\cxvarO\cup\setIII{\var}{\var'}{\varI})$:
-\begin{derivatioN}{10}
+\begin{derivatioN}{9}
 \step{\cxwf{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}}
-     {\Rcxvdec, 9, 10}
+     {\RcxvdecI, 9}
 \step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
             {\varI}{\tarr{\typ}{\typ_2}}}
-     {\Revar, 11}
+     {\Revar, 10}
 \step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
             {\varI'}{\typ}}
-     {\Revar, 11}
+     {\Revar, 10}
 \step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
             {\app{\varI}{\varI'}}{\typ_2}}
-     {\Reapp, 12, 13}
+     {\Reapp, 11, 12}
 \step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
             {\tspred}{\tarr{\typ_2}{\bool}}}
-     {\thmref{thm-mono}, 4, 11}
+     {\thmref{thm-mono}, 4, 10}
 \step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}},\vdec{\varI'}{\typ}}
             {\app{\tspred}{(\app{\varI}{\varI'})}}{\bool}}
-     {\Reapp, 15, 14}
-\step{\isty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}{\bool}}
-     {\Rtbool, 9}
+     {\Reapp, 14, 13}
 \step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}
             {\abs{\varI'}{\typ}{\app{\tspred}{(\app{\varI}{\varI'})}}}
             {\tarr{\typ}{\bool}}}
-     {\Reabs, 16, 17}
+     {\Reabs, 15}
 \step{\efvar{\tspred}=\emptyset}{\thmref{thm-subpred-no-free-vars}, 1}
 \step{\var'\not\in\efvar{\app{\tspred}{(\app{\varI}{\varI'})}}}
-     {19, \hyp\ $\varI\neq\var'$, \hyp\ $\varI'\neq\var'$}
+     {17, \hyp\ $\varI\neq\var'$, \hyp\ $\varI'\neq\var'$}
 \steP
 {\cvarv{\app{\tspred}{(\app{\varI}{\varI'})}}{\varI'}
  \linK{=}
  \cvarv{\tspred}{\varI'}\cup\cvarv{\varI}{\varI'}\cup\cvarv{\varI'}{\varI'}
- \link{=}{\thmref{thm-esbs-not-free}, 19, \defof{\cvarvY}}
+ \link{=}{\thmref{thm-esbs-not-free}, 17, \defof{\cvarvY}}
  \emptyset}
 \step{\var'\not\in\cvarv{\app{\tspred}{(\app{\varI}{\varI'})}}{\varI'}}
-     {21}
+     {19}
 \step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}
             {\abs{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}
             {\tarr{\typ}{\bool}}}
-     {\Reabsalpha, 18, 20, 22}
+     {\Reabsalpha, 16, 18, 20}
 \step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}
             {\faopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}
-     {\Refaop, 10}
+     {\Refaop, 9}
 \step{\hasty{\cx,\vdec{\varI}{\tarr{\typ}{\typ_2}}}
             {\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}
             {\bool}}
-     {\Reapp, 24, 23}
-\step{\istyO{\bool}}{\Rtbool, 8}
+     {\Reapp, 22, 21}
 \step{\hastyO{\abs{\varI}
                   {\tarr{\typ}{\typ_2}}
                   {\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}}
              {\tarr{(\tarr{\typ}{\typ_2})}{\bool}}}
-     {\Reabs, 25, 26}
+     {\Reabs, 23}
 \step{\efvar{\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}=
       \setI{\varI}}
-     {\thmref{thm-efvar-abbrev}, 19, \hyp\ $\varI\neq\var'$}
+     {\thmref{thm-efvar-abbrev}, 17, \hyp\ $\varI\neq\var'$}
 \step{\var\not\in\efvar{\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}}
-     {28, \hyp\ $\varI\neq\var$}
+     {25, \hyp\ $\varI\neq\var$}
 \steP
 {\cvarv{\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}{\varI}
- \link{=}{\thmref{thm-cvarv-abbrev}, 28}
+ \link{=}{\thmref{thm-cvarv-abbrev}, 25}
  \setI{\var'}\cup\cvarv{\app{\tspred}{(\app{\varI}{\var'})}}{\varI}
- \link{=}{\thmref{thm-esbs-not-free}, 19, \defof{\cvarvY}}
+ \link{=}{\thmref{thm-esbs-not-free}, 17, \defof{\cvarvY}}
  \setI{\var'}}
 \step{\var\neq\var'}{\premof{\Rstarr}}
 \step{\var\not\in
       \cvarv{\fa{\var'}{\typ}{\app{\tspred}{(\app{\varI}{\var'})}}}{\varI}}
-     {30, 31}
+     {27, 28}
 \step{\hastyO{\abs{\var}
                   {\tarr{\typ}{\typ_2}}
                   {\fa{\var'}{\typ}{\app{\tspred}{(\app{\var}{\var'})}}}}
              {\tarr{(\tarr{\typ}{\typ_2})}{\bool}}}
-     {\Reabsalpha, 27, 29, 32}
+     {\Reabsalpha, 24, 26, 29}
 \step{\istyO{\tarr{\typ}{\typ_1}}\ \AND\
       \istyO{\tarr{\typ}{\typ_2}}\ \AND\\
       \hastyO{\abs{\var}
                   {\tarr{\typ}{\typ_2}}
                   {\fa{\var'}{\typ}{\app{\tspred}{(\app{\var}{\var'})}}}}
              {\tarr{(\tarr{\typ}{\typ_2})}{\bool}}}
-     {6, 7, 33}
+     {6, 7, 30}
 \end{derivatioN}
 
 \Case{\Rstrec}
@@ -5407,7 +5139,7 @@ Pick a variable $\varI'\in\Nam-(\cxvarO\cup\setIII{\var}{\var'}{\varI})$:
 Pick a variable $\varI\in\Nam-(\cxvarO\cup\setI{\var})$ (where $\var$ is the
 variable used in the instance of \Rstrec):
 \begin{derivatioN}{5}
-\step{\cxwf{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}}{\Rcxvdec, 2, 5}
+\step{\cxwf{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}}{\RcxvdecI, 5}
 \step{\isty{\cx,\vdec{\varI}{\trec{i}{\fnam_i}{\typ_i'}}}
            {\trec{i}{\fnam_i}{\typ_i'}}}
      {\thmref{thm-mono}, 5, 6}
@@ -5433,36 +5165,35 @@ variable used in the instance of \Rstrec):
             {\bool}}
      {13\footnote{Recall that $\conjI{i}{\expr_i}=\true$ if $n=0$},
       \ReconjO, 12}
-\step{\istyO{\bool}}{\Rtbool, 2}
 \step{\hastyO{\abs{\varI}{\trec{i}{\fnam_i}{\typ_i'}}
                   {\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}}
              {\tarr{\trec{i}{\fnam_i}{\typ_i'}}{\bool}}}
-     {\Reabs, 14, 15}
+     {\Reabs, 14}
 \step{\FORALL{i}{\efvar{\tspred_i}=\emptyset}}
      {\thmref{thm-subpred-no-free-vars}, 3}
 \step{\efvar{\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}=\setI{\varI}}
-     {\thmref{thm-efvar-abbrev}, 17}
+     {\thmref{thm-efvar-abbrev}, 16}
 \step{\var\not\in\efvar{\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}}
-     {18, \hyp\ $\varI\neq\var$}
+     {17, \hyp\ $\varI\neq\var$}
 \steP
 {\cvarv{\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}{\varI}
  \link{=}{\thmref{thm-cvarv-abbrev}}
  \bigcup_i\cvarv{\tspred_i}{\varI}\cup\cvarv{\varI}{\varI}
- \link{=}{\thmref{thm-esbs-not-free}, 17, \defof{\cvarvY}}
+ \link{=}{\thmref{thm-esbs-not-free}, 16, \defof{\cvarvY}}
  \emptyset}
 \step{\var\not\in
       \cvarv{\conjI{i}{\app{\tspred_i}{\proj{\varI}{\fnam_i}}}}{\varI}}
-     {20}
+     {19}
 \step{\hastyO{\abs{\var}{\trec{i}{\fnam_i}{\typ_i'}}
                   {\conjI{i}{\app{\tspred_i}{\proj{\var}{\fnam_i}}}}}
              {\tarr{\trec{i}{\fnam_i}{\typ_i'}}{\bool}}}
-     {\Reabsalpha, 16, 19, 21}
+     {\Reabsalpha, 15, 18, 20}
 \step{\istyO{\trecO}\ \AND\
       \istyO{\trec{i}{\fnam_i}{\typ_i'}}\ \AND\\
       \hastyO{\abs{\var}{\trec{i}{\fnam_i}{\typ_i'}}
                   {\conjI{i}{\app{\tspred_i}{\proj{\var}{\fnam_i}}}}}
              {\tarr{\trec{i}{\fnam_i}{\typ_i'}}{\bool}}}
-     {1, 5, 22}
+     {1, 5, 21}
 \end{derivatioN}
 
 %\Case{\Rstteq}
@@ -5526,11 +5257,9 @@ the cases for the subtyping rules are presented in the previous subsection.
 
 \Case{\Reabs}
 \begin{derivation}
-\step{\istyO{\typ'}}{\premof{\Reabs}}
 \step{\hasty{\cx,\vdecO}{\expr}{\typ'}}{\premof{\Reabs}}
-\step{\cxwf{\cx,\vdecO}}{\thmref{thm-cxwf}, 2}
-\step{\istyO{\typ}}{\thmref{thm-var-type-wf}, 3}
-\step{\istyO{\tarr{\typ}{\typ'}}}{\Rtarr, 4, 1}
+\step{\isty{\snoc{\cx}{\vdecO}}{\typ'}}{\indhyp, 1}
+\step{\istyO{\tarr{\typ}{\typ'}}}{\Rtarr, 2}
 \end{derivation}
 
 \Case{\Reeq}
@@ -5543,26 +5272,20 @@ the cases for the subtyping rules are presented in the previous subsection.
 \Case{\Reif}
 \StepO{\istyO{\typ}}{\premof{\Reif}}
 
-\Case{\ReifO}
-\begin{derivation}
-\step{\hastyO{\expr_1}{\typ}}{\premof{\ReifO}}
-\step{\istyO{\typ}}{\indhyp, 1}
-\end{derivation}
-
 \Case{\Redesc}
 \begin{derivation}
 \step{\istyO{\typ}}{\premof{\Redesc}}
 \step{\hastyO{\exIopO}{\tarr{(\tarr{\typ}{\bool})}{\bool}}}{\ReexIop, 1}
 \step{\efvar{\exIopO}=\emptyset}{\thmref{thm-efvar-abbrev}}
 \step{\istyO{\tsub{(\tarr{\typ}{\bool})}{\exIopO}}}{\Rtsub, 2, 3}
-\step{\istyO{\tarr{\tsub{(\tarr{\typ}{\bool})}{\exIopO}}{\typ}}}{\Rtarr, 4, 1}
+\step{\istyO{\tarr{\tsub{(\tarr{\typ}{\bool})}{\exIopO}}{\typ}}}{\RtarrI, 4, 1}
 \end{derivation}
 
 \Case{\Reproj}
 \begin{derivation}
 \step{\istyO{\trecO}}{\premof{\Reproj}}
 \step{\istyO{\typ_j}}{\thmref{thm-trec-inv}, 1}
-\step{\istyO{\tarr{\trecO}{\typ_j}}}{\Rtarr, 1, 2}
+\step{\istyO{\tarr{\trecO}{\typ_j}}}{\RtarrI, 1, 2}
 \end{derivation}
 
 \Case{\Resuper}

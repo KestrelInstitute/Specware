@@ -1039,11 +1039,14 @@ well-formed:
 \]
 \end{theorem}
 
-The domain and range types of a well-formed arrow type are well-formed:
+The domain and range types of a well-formed arrow type are well-formed (for
+the range, the context is extended with a variable of the domain type):
 
 \begin{theorem}\label{thm-tarr-inv}
 \[
-\istyO{\tarrO}\ \ \IMPLIES\ \ \istyO{\typ_1}\ \ \AND\ \ \istyO{\typ_2}
+\istyO{\tarrO}\ \ \IMPLIES\ \
+\istyO{\typ_1}\ \ \AND\ \
+(\EXISTS{\var}{\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}})
 \]
 \end{theorem}
 
@@ -1303,19 +1306,22 @@ The following theorems prove derived well-formedness rules for contexts:
 }
 \end{theorem}
 
-The following theorems prove derived well-typedness rules for expressions,
-including the abbreviations defined in \secref{syntax}:
+The following theorem proves a derived well-formedness rule for arrow types:
 
-\begin{theorem}\label{thm-eabsbool}
+\begin{theorem}\label{thm-tarrI}
 {\rm
 \[
-\rruleI
- {\hasty{\cx,\vdecO}{\expr}{\bool}}
- {\hastyO{\absO}{\tarr{\typ}{\bool}}}
- {\Reabsbool}
+\rruleII
+ {\istyO{\typ_1}}
+ {\istyO{\typ_2}}
+ {\istyO{\tarrO}}
+ {\RtarrI}
 \]
 }
 \end{theorem}
+
+The following theorems prove derived well-typedness rules for expressions,
+including the abbreviations defined in \secref{syntax}:
 
 \begin{theorem}\label{thm-eid}
 {\rm
