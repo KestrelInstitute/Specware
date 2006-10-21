@@ -7,6 +7,8 @@ spec
   import /Languages/SpecCalculus/Semantics/Specware
   import /Languages/SpecCalculus/Semantics/Evaluate/NoOther
 
+  import /Provers/ToIsabelle/IsaPrinter
+
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic/AsLists
   import Cat qualifying
     /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
