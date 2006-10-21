@@ -24,9 +24,9 @@
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System"
 	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite"
-	    ";; ensure-directories-exist: creating $TESTDIR/Snark/axioms/theorem_one_gtq.log"
-	    ";; Directory $TESTDIR/Snark/ does not exist, will create."
-	    ";; Directory $TESTDIR/Snark/axioms/ does not exist, will create."
+	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/axioms/theorem_one_gtq.log")
+	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
+	    (:optional ";; Directory $TESTDIR/Snark/axioms/ does not exist, will create.")
 	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase"
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_one_gtq.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_one_gtq.log"
@@ -83,18 +83,20 @@
 	    "theorem_type_choice: Conjecture theorem_type_choice in cardinality_core is Proved! using Snark*."
 	    ""))
 
- ("OWL: not_theorem_someValuesFrom_Thing" 
-  :sw "axioms#not_theorem_someValuesFrom_Thing"
-  :output '(";;; Elaborating spec at $TESTDIR/axioms#property_restriction"
-	    ";;; Elaborating proof-term at $TESTDIR/axioms#not_theorem_someValuesFrom_Thing"
-	    "    Expanded spec file: $TESTDIR/Snark/axioms/not_theorem_someValuesFrom_Thing.sw"
-	    "    Snark Log file: $TESTDIR/Snark/axioms/not_theorem_someValuesFrom_Thing.log"
-	    "not_theorem_someValuesFrom_Thing: Conjecture not_theorem_someValuesFrom_Thing in property_restriction is Proved! using Snark*."
-	    ""))
+; ("OWL: not_theorem_someValuesFrom_Thing" 
+;  :sw "axioms#not_theorem_someValuesFrom_Thing"
+;  :output '(";;; Elaborating spec at $TESTDIR/axioms#property_restriction"
+;	    ";;; Elaborating proof-term at $TESTDIR/axioms#not_theorem_someValuesFrom_Thing"
+;	    "    Expanded spec file: $TESTDIR/Snark/axioms/not_theorem_someValuesFrom_Thing.sw"
+;	    "    Snark Log file: $TESTDIR/Snark/axioms/not_theorem_someValuesFrom_Thing.log"
+;	    "not_theorem_someValuesFrom_Thing: Conjecture not_theorem_someValuesFrom_Thing in property_restriction is Proved! using Snark*."
+;	    ""))
 
  ("OWL: theorem_type_someValuesFrom_Thing" 
   :sw "axioms#theorem_type_someValuesFrom_Thing"
-  :output '(";;; Elaborating proof-term at $TESTDIR/axioms#theorem_type_someValuesFrom_Thing"
+  :output '((:optional ";;; Elaborating spec at $TESTDIR/axioms#property_restriction")
+	    ";;; Elaborating proof-term at $TESTDIR/axioms#theorem_type_someValuesFrom_Thing"
+	    (:optional "Elaborating spec at $TESTDIR/axioms#owl_core")
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_type_someValuesFrom_Thing.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_type_someValuesFrom_Thing.log"
 	    "theorem_type_someValuesFrom_Thing: Conjecture theorem_type_someValuesFrom_Thing in property_restriction is Proved! using Snark*."
@@ -104,6 +106,8 @@
   :sw "axioms#theorem_card_1"
   :output '(";;; Elaborating spec at $TESTDIR/axioms#cardinality"
 	    ";;; Elaborating proof-term at $TESTDIR/axioms#theorem_card_1"
+	    (:optional ";;; Elaborating spec at $TESTDIR/axioms#cardinality_core_restriction")
+	    (:optional "Elaborating spec at $TESTDIR/axioms#owlnat")
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_1.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_1.log"
 	    "theorem_card_1: Conjecture theorem_card_1 in cardinality is Proved! using Snark*."
@@ -355,7 +359,7 @@
   :output '(";;; Elaborating proof-term at $TESTDIR/axioms#theorem_oneOf_vs_addOne"
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_oneOf_vs_addOne.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_oneOf_vs_addOne.log"
-	    "theorem_oneOf_vs_addOne: Conjecture theorem_oneOf_vs_addOne in owl_class_ops_test is Proved! using Snark*."
+	    "theorem_oneOf_vs_addOne: Conjecture theorem_oneOf_vs_addOne in owl_class_ops is Proved! using Snark*."
 	    ""))
 
  ("OWL: theorem_inverseOf_Functional_is_InverseFunctional" 

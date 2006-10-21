@@ -1,9 +1,19 @@
+% This file contains an axiomatic semantics for the OWL (Full)
+% Semantic Web Ontology Language, with test cases that serve to validate
+% the axioms.  All the theorems have been proved. (as of 10/11/2006).
+
+
 % The OWL theory is written in Kestrel's Specware language.  In Specware,
 % theories are called "specs".  Conjectures are translated into the language
 % of SRI's SNARK theorem prover and then are proved by SNARK.  Each
 % conjecture is proved in the subtheory consisting of previous axioms and
 % (proved or unproved) conjectures.
 
+% changes made to use specware/snark interface 1/19/2005
+% the new translation uses predicate symbols rather than snark sorts to 
+% represent specware types.
+
+% Type "prwb nil" before running Specware
 
 
 % The theory is composed of nested subtheories.  The most central
@@ -252,9 +262,25 @@ op addOne : Individual * Class -> Class
 % orderings for controlling paramdolation and the resolution rules.
 % Smaller symbols are preferred.
 
-
+%% use hyperresolution
 def owl_prove_options = "(use-resolution nil) (use-hyperresolution t)
 (use-negative-hyperresolution nil) (use-paramodulation)
+(use-factoring) (use-literal-ordering-with-hyperresolution
+'literal-ordering-p)(use-literal-ordering-with-negative-hyperresolution
+'literal-ordering-p)(use-literal-ordering-with-resolution
+'literal-ordering-a)(use-literal-ordering-with-paramodulation
+'literal-ordering-p) (use-ac-connectives) (run-time-limit
+10)(assert-supported nil) (use-code-for-numbers nil)
+(print-symbol-ordering) (print-final-rows) 
+(declare-ordering-greaterp 'snark::|Holds| 'snark::|Class?|) 
+(declare-ordering-greaterp 'snark::|Type| 'snark::|Holds|) 
+(declare-ordering-greaterp 'snark::|SubClass| 'snark::|Holds|) 
+(declare-ordering-greaterp 'snark::|Type| 'snark::|sameAs|)
+(declare-ordering-greaterp 'snark::|sameAs| 'snark::=)"    
+
+%% use both hyperresolution and negative hyperresolution
+def owl_hyper_prove_options = "(use-resolution nil) (use-hyperresolution t)
+(use-negative-hyperresolution t) (use-paramodulation)
 (use-factoring) (use-literal-ordering-with-hyperresolution
 'literal-ordering-p)(use-literal-ordering-with-negative-hyperresolution
 'literal-ordering-p)(use-literal-ordering-with-resolution
@@ -275,7 +301,7 @@ def owl_number_hyper_options = "(use-resolution nil) (use-hyperresolution nil)
 (use-negative-hyperresolution t) (use-paramodulation)
 (use-factoring) (use-literal-ordering-with-hyperresolution
 'literal-ordering-p)(use-literal-ordering-with-negative-hyperresolution
-'literal-ordering-p)(use-literal-ordering-with-resolution
+'literal-ordering-n)(use-literal-ordering-with-resolution
 'literal-ordering-a)(use-literal-ordering-with-paramodulation
 'literal-ordering-a) (use-ac-connectives) (run-time-limit
 10)(assert-supported nil) (use-code-for-numbers t)
@@ -299,15 +325,15 @@ def owl_number_hyper_options = "(use-resolution nil) (use-hyperresolution nil)
 % support.
 
 
-def owl_number_resolution_options = "(use-resolution t) (use-hyperresolution nil)
-(use-negative-hyperresolution nil) (use-paramodulation)
-(use-factoring) (use-literal-ordering-with-hyperresolution
+def owl_number_resolution_options = "(use-resolution t) 
+(use-hyperresolution nil)(use-negative-hyperresolution nil) 
+(use-paramodulation)(use-factoring) (use-literal-ordering-with-hyperresolution
 'literal-ordering-p)(use-literal-ordering-with-negative-hyperresolution
 'literal-ordering-p)(use-literal-ordering-with-resolution
-'literal-ordering-a)(use-literal-ordering-with-paramodulation
+nil)(use-literal-ordering-with-paramodulation
 'literal-ordering-a) (use-ac-connectives) (run-time-limit
 10)(assert-supported nil) (use-code-for-numbers t)
-(USE-REPLACEMENT-RESOLUTION-WITH-X=X)
+(USE-REPLACEMENT-RESOLUTION-WITH-X=X t)
 (print-symbol-ordering) (print-final-rows) 
 (declare-ordering-greaterp 'snark::|Holds| 'snark::|Class?|) 
 (declare-ordering-greaterp 'snark::|Type| 'snark::|Holds|) 
@@ -329,8 +355,9 @@ def owl_early_prove_options = "(use-resolution t)
 (use-literal-ordering-with-hyperresolution
 'literal-ordering-p)(use-literal-ordering-with-negative-hyperresolution
 'literal-ordering-p)(use-literal-ordering-with-resolution
-'literal-ordering-a)(use-literal-ordering-with-paramodulation
-'literal-ordering-a) (use-ac-connectives) (run-time-limit
+nil)(use-literal-ordering-with-paramodulation
+'literal-ordering-a) (use-ac-connectives) 
+(run-time-limit
 10)(assert-supported t) (use-code-for-numbers t)
 (USE-REPLACEMENT-RESOLUTION-WITH-X=X)
 (print-symbol-ordering) (print-final-rows) (declare-ordering-greaterp
@@ -367,6 +394,8 @@ def owl_resolution_prove_options = "(use-resolution t)
 (declare-ordering-greaterp 'snark::|sameAs| 'snark::=)
 (declare-ordering-greaterp 'snark::|AllDifferent| 'snark::=)
 (declare-ordering-greaterp 'snark::|AllDifferent| 'snark::|Type|)"
+
+
 endspec
 
 owl_core_test = spec
@@ -727,7 +756,7 @@ owlnat = spec
   'literal-ordering-p)(use-literal-ordering-with-resolution
   'literal-ordering-a)(use-literal-ordering-with-paramodulation
   'literal-ordering-p) (use-ac-connectives) (run-time-limit
-  10)(assert-supported t) (use-code-for-numbers nil)
+  20)(assert-supported nil) (use-code-for-numbers t)
   (print-symbol-ordering) (print-final-rows)"
 
 endspec
@@ -797,14 +826,14 @@ import owlnat
 % simplified by snark 3/26/04
    conjecture lemma_not_nothing_card_addone_plus is
      fa(C : Class)
-%      ~(equivalentClass(C, Nothing)) =>
+      ~(equivalentClass(C, Nothing)) =>   %% antecedent can be commented out
       card(addOne(choice(C), remove(choice(C), C))) =
        1 + card(remove(choice(C), C))
 
    conjecture theorem_card_one_remove is
       fa(C : Class)
       ~(equivalentClass(C, Nothing)) =>
-       card(C) = 1 + card(remove(choice(C), C)) 
+       card(C) = 1 + card(remove(choice(C), C))
 
    conjecture theorem_one_gtq_card_remove_is_nothing is
       fa(C : Class)
@@ -933,12 +962,13 @@ endspec
 cardinality_test = spec
 
 import cardinality
-
-  conjecture testcase_cardinality_002 is
-  fa(P : Property, n : Nat, x : Individual)
-   (Type(x, maxCardinality(P, n)) & 
-    Type(x, minCardinality(P, n))) =>
-  Type(x, Cardinality(P, n))
+  
+  conjecture theorem_Cardinality_two_not_three is
+  fa(P : Property, x : Individual, 
+     y1 : Individual, y2 : Individual, y3 : Individual)
+   Type(x, Cardinality(P, 2)) =>
+   (Holds(P, x, y1) & Holds(P, x, y2) & Holds(P, x, y3) => 
+   ~(AllDifferent(cons(y1, cons(y2, cons(y3, nil))))))
 
   conjecture theorem_Cardinality_two_not_same is
   fa(P : Property, x : Individual)
@@ -947,13 +977,11 @@ import cardinality
      (Holds(P, x, y1) & Holds(P, x, y2) &
      ~(sameAs(y1, y2))))
 
-  
-  conjecture theorem_Cardinality_two_not_three is
-  fa(P : Property, x : Individual, 
-     y1 : Individual, y2 : Individual, y3 : Individual)
-   Type(x, Cardinality(P, 2)) =>
-   (Holds(P, x, y1) & Holds(P, x, y2) & Holds(P, x, y3) => 
-   ~(AllDifferent(cons(y1, cons(y2, cons(y3, nil))))))
+  conjecture testcase_cardinality_002 is
+  fa(P : Property, n : Nat, x : Individual)
+   (Type(x, maxCardinality(P, n)) & 
+    Type(x, minCardinality(P, n))) =>
+  Type(x, Cardinality(P, n))
 
   conjecture theorem_Cardinality_not_same_zero is
   fa(P : Property, x : Individual, n : Nat)
@@ -1337,6 +1365,7 @@ false
 
 endspec
 
+
 theorem_one_gtq = prove theorem_one_gtq in owlnat
   options owl_nat_prove_options
 
@@ -1364,16 +1393,17 @@ prove testcase_AllDifferent_Manifest_test in owl_core_test
    options owl_prove_options
 
 theorem_type_choice = prove theorem_type_choice in cardinality_core
-   options owl_early_prove_options 
+   options owl_prove_options 
 
 theorem_subclass_Nothing_allValuesFrom_Nothing = 
 prove theorem_subclass_Nothing_allValuesFrom_Nothing in property_restriction
    options owl_early_prove_options
 
+(*  %% not a theorem, should fail
 not_theorem_someValuesFrom_Thing = prove not_theorem_someValuesFrom_Thing 
    in property_restriction
    options owl_prove_options
-
+*)
 theorem_type_someValuesFrom_Thing = prove theorem_type_someValuesFrom_Thing 
    in property_restriction
    options owl_early_prove_options
@@ -1400,6 +1430,7 @@ theorem_card_one_remove =
 prove theorem_card_one_remove in cardinality
    options  owl_number_resolution_options
 
+
 theorem_one_gtq_card_remove_is_nothing = 
    prove theorem_one_gtq_card_remove_is_nothing in cardinality
    options owl_prove_options
@@ -1425,9 +1456,10 @@ theorem_card_two_not_same =
   in cardinality
   options owl_prove_options
 
+
 theorem_card_two_not_three = prove theorem_card_two_not_three
   in cardinality
-  options owl_prove_options
+  options owl_hyper_prove_options 
 
 theorem_card_of_Nothing_is_zero = 
   prove theorem_card_of_Nothing_is_zero in cardinality
@@ -1440,40 +1472,42 @@ theorem_card_of_Nothing_is_zero =
 theorem_subClass_of_image = prove theorem_subClass_of_image
   in cardinality
 %  using definition_SubClass_if, definition_image
-  options owl_prove_options 
+  options owl_resolution_prove_options
 
 theorem_Cardinality_one = prove theorem_Cardinality_one in cardinality
    options owl_prove_options
 
 theorem_Cardinality_subClass_maxCardinality = 
 prove theorem_Cardinality_subClass_maxCardinality in cardinality
-   options owl_prove_options
+   options owl_resolution_prove_options
 
 theorem_Cardinality_subClass_minCardinality = 
 prove theorem_Cardinality_subClass_minCardinality in cardinality 
-options owl_prove_options
+   options owl_resolution_prove_options
 
 theorem_maxCardinality_one = prove theorem_maxCardinality_one in cardinality
-   options owl_prove_options
+   options owl_nat_prove_options
 
 theorem_minCardinality_one = prove theorem_minCardinality_one in cardinality
-   options owl_prove_options
+   options owl_nat_prove_options
 
 theorem_minCardinality_zero = prove theorem_minCardinality_zero in cardinality
    options owl_early_prove_options
 
 testcase_cardinality_002 = prove testcase_cardinality_002 in cardinality_test
-   options owl_early_prove_options 
+   options owl_nat_prove_options
 
 theorem_Cardinality_two_not_same = prove theorem_Cardinality_two_not_same
    in cardinality_test
-%   using definition_Cardinality, theorem_card_two_not_same, definition_image
+ %%  using definition_Cardinality, theorem_card_two_not_same, definition_image
    options owl_number_hyper_options
+
 
 theorem_Cardinality_two_not_three = prove theorem_Cardinality_two_not_three 
    in cardinality_test
-%%   using definition_Cardinality, theorem_card_two_not_three, definition_image, antecedent_Cardinality_two 
-   options  owl_number_resolution_options
+%   using definition_Cardinality, theorem_card_two_not_three, definition_image
+   options   owl_nat_prove_options
+
 
 theorem_Cardinality_not_same_zero = prove theorem_Cardinality_not_same_zero
    in cardinality_test
@@ -1481,25 +1515,25 @@ theorem_Cardinality_not_same_zero = prove theorem_Cardinality_not_same_zero
 
 theorem_Cardinality_not_same_one = prove theorem_Cardinality_not_same_one
    in cardinality_test
-   options owl_number_resolution_options
+   options owl_number_hyper_options
 
 theorem_minCardinality_not_same_n = prove theorem_minCardinality_not_same_n
    in cardinality_test
-   options owl_number_resolution_options
+   options owl_number_hyper_options
 
 theorem_Cardinality_not_same_n = prove theorem_Cardinality_not_same_n
    in cardinality_test
-   options owl_number_resolution_options
+   options owl_number_hyper_options
 
 theorem_maxCardinality_not_different_n = 
    prove theorem_maxCardinality_not_different_n
    in cardinality_test
-   options owl_prove_options
+   options owl_nat_prove_options
 
 theorem_Cardinality_not_different_n = 
    prove theorem_Cardinality_not_different_n
    in cardinality_test
-   options owl_prove_options
+   options owl_number_hyper_options
 
 theorem_Cardinality_two_Alldifferent =
    prove theorem_Cardinality_two_Alldifferent
@@ -1509,44 +1543,46 @@ theorem_Cardinality_two_Alldifferent =
 
 theorem_intersectionOf_Nothing = 
 prove  theorem_intersectionOf_Nothing in owl_class_ops
-   options owl_early_prove_options
+   options owl_resolution_prove_options %%owl_early_prove_options
 
 theorem_intersectionOf_Thing = 
 prove  theorem_intersectionOf_Thing in owl_class_ops
-   options owl_prove_options
- 
+   options owl_resolution_prove_options
+
 theorem_unionOf_Nothing = prove  theorem_unionOf_Nothing in owl_class_ops
-   options owl_prove_options
+   options owl_resolution_prove_options
 
 theorem_unionOf_Thing = prove  theorem_unionOf_Thing in owl_class_ops
-   options owl_early_prove_options
+   options owl_prove_options
 
 theorem_complementOf_Nothing = 
 prove theorem_complementOf_Nothing in owl_class_ops
    options owl_early_prove_options
- 
+
 theorem_complementOf_Thing = 
 prove theorem_complementOf_Thing in owl_class_ops
-   options owl_prove_options
+   options owl_resolution_prove_options
 
 theorem_complements_are_disjoint = 
 prove theorem_complements_are_disjoint in owl_class_ops
-   options owl_early_prove_options
+   options owl_resolution_prove_options
+
 
 test_complementOf_001 = prove test_complementOf_001 in owl_class_ops_test
-   options owl_prove_options
+   options owl_resolution_prove_options
 
 lemma_oneOf_vs_addOne = 
 prove lemma_oneOf_vs_addOne in owl_class_ops
    options owl_resolution_prove_options 
   
 theorem_oneOf_vs_addOne = prove theorem_oneOf_vs_addOne in owl_class_ops
-   options owl_prove_options
+   options owl_resolution_prove_options
+
 
 theorem_reflexivity_of_equivalentProperty =
 prove theorem_reflexivity_of_equivalentProperty in properties
    options owl_early_prove_options
-  
+
 theorem_inverseOf_is_symmetric = 
 prove theorem_inverseOf_is_symmetric in properties
    options owl_prove_options
@@ -1571,12 +1607,14 @@ example_chianti =
    prove example_chianti in properties
    options owl_prove_options
 
-
+(*
 
 
 % uncomment for consistency check:
 contradictory = prove contradictory in owl
    options
-   "(use-resolution t) (use-hyperresolution) (use-negative-hyperresolution) (use-paramodulation) (use-factoring) (use-literal-ordering-with-hyperresolution 'literal-ordering-p)(use-literal-ordering-with-negative-hyperresolution  'literal-ordering-p)(use-literal-ordering-with-paramodulation 'literal-ordering-p) (use-ac-connectives) (assert-supported t)(run-time-limit 60000) (use-code-for-numbers t) "
- 
+   "(use-resolution t) (use-hyperresolution) (use-negative-hyperresolution) (use-paramodulation) (use-factoring) (use-literal-ordering-with-hyperresolution 'literal-ordering-p)(use-literal-ordering-with-negative-hyperresolution  'literal-ordering-p)(use-literal-ordering-with-paramodulation 'literal-ordering-p) (use-ac-connectives) (assert-supported t)(run-time-limit 7200) (use-code-for-numbers t) "
+
+
+*)
 
