@@ -20,11 +20,12 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/..log")
+	    (:optional "creating directory: $TESTDIR/Snark/")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/..sw")
 	    (:optional "    Snark Log file: $TESTDIR/Snark/..log")
-	    "Conjecture PFunctions.o_Obligation_fn_precond is Proved! using Snark in * seconds."
+	    "Conjecture PFunctions.o_Obligation_exhaustive is Proved! using Snark in * seconds."
 	    ""))
 
  )
