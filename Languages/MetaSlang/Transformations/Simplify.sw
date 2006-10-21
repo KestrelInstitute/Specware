@@ -280,16 +280,14 @@ spec
         simplifyForall spc (vs++new_vs,cjs++new_cjs,new_bod)
       | _ ->
     case find (fn cj ->
-	        case bindEquality cj of
+	        case bindEquality (cj,vs) of
 		 | None -> false
 		 | Some(v,e) ->
-		   (simpleTerm? e || (foldl (fn (cji,r) -> r + countVarRefs(cji,v)) (countVarRefs(bod,v)) cjs)
+		   simpleTerm? e || (foldl (fn (cji,r) -> r + countVarRefs(cji,v)) (countVarRefs(bod,v)) cjs)
 		                      = 2) % This one and the one we want to replace
-		   & (member(v,vs))
-		   & ~(isFree(v,e)))
            cjs
       of Some cj ->
-	 (case  bindEquality cj of
+	 (case  bindEquality (cj,vs) of
 	    | Some (pr as (sv,_)) ->
 	      let sbst = [pr] in
 	      simplifyForall spc
@@ -354,15 +352,15 @@ spec
     let stm = substitute(t,sbst) in
     simplify spc stm
 
-  op  bindEquality: MS.Term -> Option(Var * MS.Term)
-  def bindEquality t =
+  op  bindEquality: MS.Term * List Var -> Option(Var * MS.Term)
+  def bindEquality (t,vs) =
     case t of
       | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) ->
         (case e1 of
-	  | Var(v,_) -> Some(v,e2)
+	  | Var(v,_) | member(v,vs) && ~(isFree(v,e2)) -> Some(v,e2)
 	  | _ ->
 	 case e2 of
-	  | Var(v,_) -> Some(v,e1)
+	  | Var(v,_) | member(v,vs) && ~(isFree(v,e1)) -> Some(v,e1)
 	  | _ -> None)
       | _ -> None
 
