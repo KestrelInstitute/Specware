@@ -209,6 +209,8 @@ accepted in lieu of prompting."
   (define-key map "\C-c%"    'extract-sexp)
   (define-key map "\C-c;"    'comment-region)
 
+  (define-key map "\C-c\C-i" 'sw:convert-spec-to-isa-thy)
+
 					          ; Franz binding
 ;  (define-key map "\C-cs"    'insert-circle-s)    ; Process to debug
 ;  (define-key map "\C-c`"    'insert-open-quote)
@@ -1783,6 +1785,17 @@ uniquely and concretely describes their application.")
 	       default-directory)
      (format "(specware-test::run-test-directories-rec %S)"
 	     default-directory))))
+
+;;; Isabelle Interface
+(defun sw:convert-spec-to-isa-thy ()
+  (interactive)
+  (save-buffer)
+  (let* ((filename (sw:containing-specware-unit-id))
+	 (thy-file (sw:eval-in-lisp (format "(IsaTermPrinter::printUIDtoThyFile-2 %S nil)" filename)))
+	 (revert-without-query (cons ".*.thy" revert-without-query))
+	 (display-warning-suppressed-classes (cons 'warning
+						   display-warning-suppressed-classes)))
+    (find-file-other-window thy-file)))
 
 ;;; & do the user's customisation
 
