@@ -303,9 +303,10 @@ spec
 	       then mkTrue()
 	       else
 		 let simplCJs = foldr (fn (cj,new_cjs) -> simplifyConjunct(cj,spc) ++ new_cjs) [] cjs in
-		 if simplCJs = cjs
+		 let simpVs = filter (fn v -> exists (fn cj -> isFree(v,cj)) ([bod] ++ simplCJs)) vs in
+		 if simplCJs = cjs && simpVs = vs
 		   then mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
-		   else simplifyForall spc (vs,simplCJs,bod)
+		   else simplifyForall spc (simpVs,simplCJs,bod)
 
   op  simplifyConjunct: MS.Term * Spec -> List MS.Term 
   def simplifyConjunct (cj,spc) =

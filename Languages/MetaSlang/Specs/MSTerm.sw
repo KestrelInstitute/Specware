@@ -119,6 +119,18 @@ MS qualifying spec
  def mkTrue  () = mkFun (Bool true,  boolSort)
  def mkFalse () = mkFun (Bool false, boolSort)
 
+ op  trueTerm?: [a] ATerm a -> Boolean
+ def trueTerm? t =
+   case t of
+     | Fun(Bool true,_,_)  -> true
+     | _ -> false
+
+ op  falseTerm?: [a] ATerm a -> Boolean
+ def falseTerm? t =
+   case t of
+     | Fun(Bool false,_,_)  -> true
+     | _ -> false
+
  def mkInt i = if i >= 0
 		 then mkNat(i)
 	       else mkApply (mkOp(mkQualifiedId("Integer", "-"), mkArrow(integerSort, natSort)), mkNat(-i))

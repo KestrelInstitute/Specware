@@ -39,8 +39,8 @@ Prover qualifying spec
     let wildCount = useWildCounter() in
     Var(("Wild__Var_"^natToString(wildCount), srt), noPos)
 
-  sort CondTerm = List(Var) * Term * Term
-  sort CondTerms = List(CondTerm)
+  type CondTerm = List(Var) * Term * Term
+  type CondTerms = List(CondTerm)
 
   op printCondTerm: CondTerm -> String
 
@@ -221,14 +221,18 @@ def removePatternCase(spc, term) =
 	                    then Utilities.mkAnd(hdCaseCond, patCond)
 			    else Utilities.mkAnd(negPrevCases, Utilities.mkAnd(hdCaseCond, patCond)) in
 	    let hdCondTerms = recurseDownBodyCondTerms(hdCaseVars++patVars, caseCond, bodyCTs) in
-	    let tlCondTerms = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, bodyCTs, tlCaseCTs, negPrevCases) in
+	    let tlCondTerms = combinePatTermsBodyCondTermsCaseCondTerms
+	                        (patTerms, patVars, bodyCTs, tlCaseCTs, negPrevCases)
+	    in
 	    hdCondTerms++tlCondTerms in
   let def removePatternCaseCase((pat, _(* cond *), body), negPrevCases) = 
         let bodyCondTerms = removePatternTerm(spc, body) in
 	let patTerms = patternToTerms(pat) in
 	let patVars = foldl(fn(term, res) -> freeVars(term)++res) [] patTerms in
 	%let _ = writeLine("CaseCase: "^printPattern(pat)^", "^printTerm(cond)^", "^printTerm(body)) in
-	let res = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, caseTermCondTerms, bodyCondTerms, negPrevCases) in
+	let res = combinePatTermsBodyCondTermsCaseCondTerms
+	            (patTerms, patVars, caseTermCondTerms, bodyCondTerms, negPrevCases)
+	in
 	%let _ = map (fn (ct) -> writeLine("CaseCaseRes: "^printCondTerm(ct))) res in
 	res in
   let def removePatternCaseCases(cases, negPrevCases) =

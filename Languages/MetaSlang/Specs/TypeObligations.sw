@@ -87,8 +87,12 @@ spec
      | Fun((Bool true,_,_)) -> gamma
      | _ -> (cons(Cond cond,ds),tvs,spc,qid,name,ty,names)
  def insert((x,srt),gamma as (ds,tvs,spc,qid,name,ty,names))  = 
-     let ds = cons(Var(x,srt),ds) in
-     let _ = names := StringMap.insert(!names,x,0) in
+     let ds = Cons(Var(x,srt),ds) in
+     let i = case StringMap.find (!names, x)
+	      of None   -> 0
+	       | Some n -> n
+     in
+     let _ = names := StringMap.insert(!names,x,i) in
      let gamma = (ds,tvs,spc,qid,name,ty,names) in
      let gamma = assertSubtypeCond(mkVar(x,srt),srt,gamma) in
      gamma
@@ -343,12 +347,16 @@ spec
 %%
 %% This checks that pattern matching is exhaustive.
 %%
-        | Lambda(rules,_) ->
-	  let spc = getSpec gamma	       in
-	  let tau2 = inferType(spc,M)  	       in
-	  let tcc  = <= (tcc,gamma,M,tau2,tau) in
+        | Lambda(rules,_) | length rules <= 1 ->
+	  let tau2 = inferType(getSpec gamma,M) in
+	  let tcc  = <= (tcc,gamma,M,tau2,tau)  in
 	  checkLambda(tcc,gamma,rules,tau,None)
 	
+        | Lambda(rules as (pat,_,body)::_,a) ->	% eta-normalize to simple pattern & case
+	  let (v,gamma) = freshVar("eV",patternSort pat,gamma) in
+	  let Var v_t = v in
+	  |-((tcc,gamma),(Lambda([(VarPat v_t,mkTrue(),mkApply(M,v))],a),tau))
+
         | IfThenElse(t1,t2,t3,_) -> 
 	  let tcc1   = (tcc,gamma)   |- t1 ?? boolSort 		in
 	  let gamma1 = assertCond(t1,gamma) 			in
@@ -377,9 +385,9 @@ spec
  def checkLambda(tcc,gamma,rules,tau,optArg) =
    let dom = domain(getSpec gamma,tau) 			 in
    let rng = range(getSpec gamma,tau)  		 	 in
-   let tcc = foldl (checkRule(gamma,dom,rng,optArg)) tcc rules  in
-   let rules = 
-       (List.map (fn(p,c,b) -> ([p],c,mkTrue())) rules)	 in
+   let casesDisjoint? = disjointMatches rules            in
+   let (tcc,_) = foldl (checkRule(dom,rng,optArg,casesDisjoint?)) (tcc,gamma) rules  in
+   let rules = map (fn(p,c,b) -> ([p],c,mkTrue())) rules in
    let x  = useNameFrom(gamma,optArg,"D")		 in
    let vs = [mkVar(x,dom)] 	        	         in
    let (_,_,spc,_,Qualified(_, name),_,_) = gamma        in
@@ -392,7 +400,7 @@ spec
    let trm = match(context,vs,rules,mkFalse(),mkFalse()) in
    (case simplifyMatch(trm)
       of Fun(Bool true,_,_) -> tcc
-       | trm -> addCondition(tcc,gamma,mkBind(Forall,[(x,dom)],trm),"_fn_precond"))
+       | trm -> addCondition(tcc,gamma,mkBind(Forall,[(x,dom)],trm),"_exhaustive"))
 
  op  useNameFrom: Gamma * Option MS.Term * String -> String
  def useNameFrom(gamma,optTm,default) =
@@ -402,25 +410,43 @@ spec
    in
    freshName(gamma,base_name)
 
-% 
-% This should also capture that the previous patterns failed.
-%
- op  checkRule: Gamma * Sort * Sort * Option MS.Term -> (Pattern * MS.Term * MS.Term) * TypeCheckConditions
-               -> TypeCheckConditions
- def checkRule(gamma,dom,rng,optArg) ((pat,cond,body),tcc) = 
+ op  checkRule: Sort * Sort * Option MS.Term * Boolean
+               -> (Pattern * MS.Term * MS.Term) * (TypeCheckConditions * Gamma)
+               -> TypeCheckConditions * Gamma
+ def checkRule(dom,rng,optArg,casesDisjoint?) ((pat,cond,body),(tcc,gamma)) = 
      let (gamma0,tp) = bindPattern(gamma,pat,dom) 	  in
-     let gamma1 = case optArg of
-                    | Some arg ->
-                      assertCond(mkEquality(inferType(getSpec gamma,arg),arg,tp),gamma0)
-                    | _ -> gamma0
+     let (condn,gamma1)
+        = case optArg of
+	    | Some arg ->
+	      let condn = mkEquality(inferType(getSpec gamma,arg),arg,tp) in
+	      let gamma0 = assertCond(condn,gamma0) in
+	      (condn,gamma0)
+	    | _ -> (mkTrue(),gamma0)
      in
      let tcc = (tcc,gamma1) |- cond ?? boolSort 	  in
      let gamma2 = assertCond(cond,gamma1)		  in
      let tcc = (tcc,gamma2) |- body ?? rng 		  in
      let tcc = addQuotientCondition(tcc,gamma,pat,body,optArg) in
-     tcc
+     let nextGamma =
+         if casesDisjoint? || trueTerm? condn
+	   then gamma
+	   else assertCond(negateExistTerm(condn,gamma2,gamma),gamma)
+     in
+     (tcc,nextGamma)
 
- op  addQuotientCondition: TypeCheckConditions * Gamma * Pattern * MS.Term * Option MS.Term -> TypeCheckConditions
+ op  negateExistTerm: MS.Term * Gamma * Gamma -> MS.Term
+ def negateExistTerm(c,(decls_new,_,_,_,_,_,_),(decls_old,_,_,_,_,_,_)) =
+   let vs = mapPartial (fn decl -> case decl of
+			             | Var v | isFree(v,c) ->
+			               Some v
+				     | _ -> None)
+
+              (sublist(decls_new,0,length decls_new - length decls_old))
+   in
+   negateTerm(mkSimpBind(Exists,vs,c))
+
+ op  addQuotientCondition: TypeCheckConditions * Gamma * Pattern * MS.Term * Option MS.Term
+                          -> TypeCheckConditions
  def addQuotientCondition(tcc,gamma,pat,body,optArg) =
    case optArg of
      | Some arg ->
@@ -506,11 +532,9 @@ spec
 	in
 	let trm = mkRecord(terms) in
 	returnPattern(gamma, trm, patternSort pat,tau)
-      | WildPat(sigma,_)	-> 
-	let v = freshName(gamma,"P") in
-	let v = (v,sigma)            in
-	let gamma1 = insert(v,gamma) in
-	(gamma1,mkVar(v))
+      | WildPat(sigma,_)	->
+	let (v,gamma1) = freshVar("P",sigma,gamma)in
+	(gamma1,v)
      | StringPat(s,_) 	->      
        returnPattern(gamma,mkFun(String s,stringSort),stringSort,tau)
      | BoolPat(b,_) 		->      
