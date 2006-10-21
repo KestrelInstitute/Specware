@@ -83,21 +83,23 @@ An op declaration $\odecO$ can be added to $\cx$ if $\onam$ is not already
 declared in $\cx$. The op's type $\typ$ must be well-formed (defined later) in
 $\cx$ extended with the type variables $\tvarS$, which must be distinct. Note
 that we do not require that all the type variables in $\typ$ are among
-$\tvarS$, because there is no need for that restriction. However, since a
-well-formed spec has no type variable declarations, an op declaration in a
-well-formed spec automatically satisfies the restriction.
+$\tvarS$, because there is no need for that restriction.
+%However, since a well-formed spec has no type variable declarations, an op
+%declaration in a well-formed spec automatically satisfies the restriction.
 \item
 A formula $\expr$ can be added to $\cx$ as an axiom if $\expr$ has type
 $\bool$ (defined later). In general, the axiom may be polymorphic in
-(distinct) type variables $\tvarS$. As in other cases, all type variables in
-$\expr$ are automatically in $\tvarS$ in well-formed specs, but that is not
-required in well-formed contexts in general.
+(distinct) type variables $\tvarS$.
+%As in other cases, all type variables in $\expr$ are automatically in $\tvarS$
+%in well-formed specs, but that is not required in well-formed contexts in
+%general.
 \item
 A formula $\expr$ can be added to $\cx$ as a lemma if it is a theorem (defined
 later). In general, the lemma may be polymorphic in (distinct) type variables
-$\tvarS$. As in other cases, all type variables in $\expr$ are automatically
-in $\tvarS$ in well-formed specs, but that is not required in well-formed
-contexts in general.
+$\tvarS$.
+%As in other cases, all type variables in $\expr$ are automatically in $\tvarS$
+%in well-formed specs, but that is not required in well-formed contexts in
+%general.
 \item
 A type variable declaration $\tvdecO$ can be added to $\cx$ if $\tvar$ is not
 already declared in $\cx$.
@@ -106,25 +108,25 @@ A variable declaration $\vdecO$ can be added to $\cx$ if $\var$ is not already
 declared in $\cx$ and $\typ$ is well-formed type in $\cx$.
 \end{itemize}
 
-\subsection{Well-formed specs}
+%\subsection{Well-formed specs}
 
-We define a unary relation $\unarel{\spwfY}{\Spec}$ to capture well-formed
-specs as
+%We define a unary relation $\unarel{\spwfY}{\Spec}$ to capture well-formed
+%specs as
 
-\[
-\rruleI
- {\cxwf{\spec}}
- {\spwfO}
- {\Rspec}
-\]
+%\[
+%\rruleI
+% {\cxwf{\spec}}
+% {\spwfO}
+% {\Rspec}
+%\]
 
-Note that the unary relation $\spwfY$ is defined on set $\Spec$, which, as
-previously defined, consists of all the contexts without type variable and
-variable declarations. Thus, there is no need to include, as part of this
-rule, the condition that $\spec$ does not contain any type variable and
-variable declaration. The rule just says that a spec (which has no type
-variable or variable declarations by definition) is well-formed as a spec if
-it is well-formed as a context.
+%Note that the unary relation $\spwfY$ is defined on set $\Spec$, which, as
+%previously defined, consists of all the contexts without type variable and
+%variable declarations. Thus, there is no need to include, as part of this
+%rule, the condition that $\spec$ does not contain any type variable and
+%variable declaration. The rule just says that a spec (which has no type
+%variable or variable declarations by definition) is well-formed as a spec if
+%it is well-formed as a context.
 
 \subsection{Well-formed types}
 
@@ -646,7 +648,7 @@ The previous subsections have defined judgements of the forms
 \[
 \begin{array}{l}
 \cxwfO \\
-\spwfO \\
+%\spwfO \\
 \istyO{\typ} \\
 \issubO{\typ_1}{\tspred}{\typ_2} \\
 \hastyO{\expr}{\typ} \\
