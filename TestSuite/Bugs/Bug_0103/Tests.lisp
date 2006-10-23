@@ -11,7 +11,7 @@
 	    " import /Library/Base/WFO"
 	    " "
 	    " op  f : [a] {(l, i) : (List(a) * Nat) | i < length l} -> a"
-	    " conjecture f_Obligation_fn_precond is [a] "
+	    " conjecture f_Obligation_exhaustive is [a] "
 	    "    fa(D : {(l, i) : (List(a) * Nat) | i < length l}) embed?(Cons)(D.1)"
             " conjecture f_termination is ..."
 	    " "
