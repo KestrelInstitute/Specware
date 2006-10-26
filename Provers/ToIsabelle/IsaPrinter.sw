@@ -1,5 +1,7 @@
 IsaTermPrinter qualifying spec
 
+ %import /Languages/SpecCalculus/Semantics/Bootstrap
+
  import /Languages/MetaSlang/Specs/AnnSpec
  %import /Languages/MetaSlang/Specs/Utilities
  %import /Library/PrettyPrinter/WadlerLindig
@@ -8,6 +10,7 @@ IsaTermPrinter qualifying spec
  import /Languages/SpecCalculus/AbstractSyntax/Types
  import /Languages/SpecCalculus/Semantics/Value
  import /Languages/MetaSlang/Transformations/RemoveSubsorts
+ import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 
  type Pretty = PrettyPrint.Pretty
 
@@ -82,7 +85,7 @@ IsaTermPrinter qualifying spec
   type GlobalContext
   %op  MonadicStateInternal.readGlobalVar : [a] String \_rightarrow Option a
   op  Specware.evaluateUnitId: String \_rightarrow Option Value
-  op  SpecCalc.findUnitIdforUnit: Value \_times GlobalContext \_rightarrow Option UnitId
+  op  SpecCalc.findUnitIdForUnit: Value \_times GlobalContext \_rightarrow Option UnitId
   %op  SpecCalc.uidToFullPath : UnitId \_rightarrow String
 
   op  uidToIsaName : UnitId -> String
@@ -100,7 +103,7 @@ IsaTermPrinter qualifying spec
 
   op  printUIDtoThyFile: String \_times Boolean \_rightarrow String
   def printUIDtoThyFile (uid_str, recursive?) =
-    case evaluateUnitId uid_str of
+    case Specware.evaluateUnitId uid_str of
       | Some val \_rightarrow
         (case uidNamesForValue val of
 	  | None \_rightarrow "Error: Can't get UID string from value"
@@ -163,19 +166,19 @@ IsaTermPrinter qualifying spec
     case MonadicStateInternal.readGlobalVar "GlobalContext" of
       | None \_rightarrow None
       | Some global_context \_rightarrow
-    case SpecCalc.findUnitIdforUnit(val,global_context) of
+    case findUnitIdForUnit(val,global_context) of
       | None \_rightarrow None
       | Some uid \_rightarrow
         Some (case uid.hashSuffix of
 		| Some loc_nm \_rightarrow (last uid.path,uidToIsaName uid,"_" ^ loc_nm)
 		| _ \_rightarrow           (last uid.path,uidToIsaName uid,""))
 
-  op  SpecCalc.findUnitIdforUnitInCache: Value \_rightarrow Option UnitId
-  def findUnitIdforUnitInCache val =
+  op  SpecCalc.findUnitIdForUnitInCache: Value \_rightarrow Option UnitId
+  def findUnitIdForUnitInCache val =
     case readGlobalVar "GlobalContext" of
       | None \_rightarrow None
       | Some global_context \_rightarrow
-        findUnitIdforUnit(val,global_context)
+        findUnitIdForUnit(val,global_context)
   
   op  printUID : String \_times Boolean \_rightarrow ()
   def printUID (uid, recursive?) =
