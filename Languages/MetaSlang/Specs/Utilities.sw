@@ -1220,6 +1220,130 @@ Utilities qualifying spec
        | _ -> false
       )
 
+ op substSort : fa(a) List (Id * ASort a) * ASort a -> ASort a
+ def substSort (S, srt) =
+  let def find (name, S, a) =  
+       case S 
+         of []            -> TyVar(name,a)
+          | (id, srt) ::S -> if name = id then srt else find (name, S, a) 
+  in 
+  let def substRec srt =  
+       case srt of
+          | Base (id,                   srts, a) ->  
+            Base (id, List.map substRec srts, a) 
+
+	  | Boolean _ -> srt
+
+          | Arrow (         s1,          s2,  a) ->  
+            Arrow (substRec s1, substRec s2,  a) 
+
+          | Product (                                      fields, a) ->  
+            Product (List.map (fn(id,s)-> (id,substRec s)) fields, a) 
+
+          | CoProduct (fields, a) ->  
+            CoProduct (List.map (fn (id, sopt)->
+                                 (id,
+                                  case sopt
+                                    of None   -> None
+                                     | Some s -> Some(substRec s))) 
+                                fields,
+                       a) 
+
+          | Quotient (         srt, term, a) -> % No substitution for quotientsorts
+            Quotient (substRec srt, term, a) 
+
+          | Subsort  (         srt, term, a) -> % No substitution for subsorts
+            Subsort  (substRec srt, term, a) 
+
+          | TyVar (name, a) -> find (name, S, a)
+  in 
+  substRec srt 
+ 
+ op unfoldBase  : Spec * Sort -> Sort 
+ def unfoldBase (sp, srt) =
+   unfoldBaseV (sp, srt, true)
+
+ op unfoldBaseV : Spec * Sort * Boolean -> Sort 
+ def unfoldBaseV (sp:Spec, srt, verbose) = 
+  case srt of
+    | Base (qid, srts, a) ->
+      (case findTheSort (sp, qid) of
+	 | None -> srt
+	 | Some info ->
+	   if definedSortInfo? info then
+	     let (tvs, srt) = unpackFirstSortDef info in
+	     let ssrt = substSort (zip (tvs, srts), srt) in
+	     unfoldBaseV (sp, ssrt, verbose)
+	   else
+	     srt)
+    | _ -> srt
+
+  type TyVarSubst = List(Id * Sort)
+  op  instantiateTyVars: Sort * TyVarSubst -> Sort
+  def instantiateTyVars(s,tyVarSubst) =
+    case s of
+      | TyVar (name, _) ->
+	(case find (fn (nm,_) -> nm = name) tyVarSubst of
+	   | Some(_,ss) -> ss
+	   | _ -> s)
+      | _ -> s
+
+  op  typeMatch: Sort * Sort * Spec -> Option TyVarSubst
+  def typeMatch(s1,s2,spc) =
+   let def match(srt1: Sort,srt2: Sort,pairs: TyVarSubst): Option TyVarSubst =
+        case (srt1,srt2) of
+	  | (TyVar(id1,_), srt2) -> 
+	    (case (find (fn (id,_) -> id = id1) pairs) of
+	      | Some(_,msrt1) -> if equalSort?(msrt1,srt2) then Some pairs else None
+	      | None -> Some(Cons((id1,srt2),pairs)))
+	  | (Arrow(t1,t2,_),Arrow(s1,s2,_)) ->
+	    (case match(t1,s1,pairs) of
+	       | Some pairs -> match(t2,s2,pairs)
+	       | None -> None)
+	  | (Product(r1,_),Product(r2,_)) -> 
+	    typeMatchL(r1,r2,pairs,fn((_,s1),(_,s2),pairs) -> match(s1,s2,pairs)) 
+	  | (CoProduct(r1,_),CoProduct(r2,_)) -> 
+	    typeMatchL(r1,r2,pairs,
+		       fn((id1,s1),(id2,s2),pairs) ->
+		       if id1 = id2 then
+			 (case (s1,s2) of
+			    | (None,None) -> Some pairs 
+			    | ((Some ss1),(Some ss2)) -> match(ss1,ss2,pairs))
+		       else None)
+	  | (Quotient(ty,t1,_),Quotient(ty2,t2,_)) -> 
+	    if equalTerm?(t1,t2)
+	      then match(ty,ty2,pairs)
+	      else None
+	  | (Subsort(ty,t1,_),Subsort(ty2,t2,_)) ->
+	    if equalTerm?(t1,t2)
+	      then match(ty,ty2,pairs)
+	      else None
+	  | (Base(id,ts,pos1),Base(id2,ts2,pos2)) ->
+	    if id = id2
+	      then typeMatchL(ts,ts2,pairs,match)
+	      else
+		let s2x = unfoldBase(spc,srt2) in
+		if equivTypes? spc (srt2,s2x)
+		  then Some pairs
+		else match(srt1,s2x,pairs)
+	  | (_,Base _) ->
+	    let s2x = unfoldBase(spc,srt2) in
+	    if equivTypes? spc (srt2,s2x)
+	     then Some pairs
+	     else match(srt1,s2x,pairs)
+	  | _ -> None
+  in match(s1,s2,[])
+
+  op typeMatchL: [a] List a * List a * TyVarSubst * (a * a * TyVarSubst -> Option TyVarSubst)
+                 -> Option TyVarSubst
+  def typeMatchL(l1,l2,pairs,matchElt) =
+    case (l1,l2)
+     of (e1::l1,e2::l2) ->
+        (case matchElt(e1,e2,pairs) of
+	   | Some pairs -> typeMatchL(l1,l2,pairs,matchElt)
+	   | None -> None)
+      | _ -> Some pairs
+
 endspec
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
