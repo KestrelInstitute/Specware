@@ -22,8 +22,6 @@ spec
  op empty       : ()                     -> SpecEnvironment
  op add         : SpecEnvironment * Spec -> SpecEnvironment 
  op add_rev     : Spec * SpecEnvironment -> SpecEnvironment 
- op unfoldBase  : Spec * Sort -> Sort 
- op unfoldBaseV : Spec * Sort * Boolean -> Sort 
  op inferType   : Spec * MS.Term -> Sort
 
 % %% makeSpecReportError is called only from ui::loadFile
@@ -46,61 +44,6 @@ spec
 %       let spc = addImportedSpecsEnv(spc,makeEnv specs2)
 %       in Ok spc
 
- op substSort : fa(a) List (Id * ASort a) * ASort a -> ASort a
- def substSort (S, srt) =
-  let def find (name, S, a) =  
-       case S 
-         of []            -> TyVar(name,a)
-          | (id, srt) ::S -> if name = id then srt else find (name, S, a) 
-  in 
-  let def substRec srt =  
-       case srt of
-          | Base (id,                   srts, a) ->  
-            Base (id, List.map substRec srts, a) 
-
-	  | Boolean _ -> srt
-
-          | Arrow (         s1,          s2,  a) ->  
-            Arrow (substRec s1, substRec s2,  a) 
-
-          | Product (                                      fields, a) ->  
-            Product (List.map (fn(id,s)-> (id,substRec s)) fields, a) 
-
-          | CoProduct (fields, a) ->  
-            CoProduct (List.map (fn (id, sopt)->
-                                 (id,
-                                  case sopt
-                                    of None   -> None
-                                     | Some s -> Some(substRec s))) 
-                                fields,
-                       a) 
-
-          | Quotient (         srt, term, a) -> % No substitution for quotientsorts
-            Quotient (substRec srt, term, a) 
-
-          | Subsort  (         srt, term, a) -> % No substitution for subsorts
-            Subsort  (substRec srt, term, a) 
-
-          | TyVar (name, a) -> find (name, S, a)
-  in 
-  substRec srt 
- 
- def unfoldBase (sp, srt) =
-   unfoldBaseV (sp, srt, true)
-
- def unfoldBaseV (sp:Spec, srt, verbose) = 
-  case srt of
-    | Base (qid, srts, a) ->
-      (case findTheSort (sp, qid) of
-	 | None -> srt
-	 | Some info ->
-	   if definedSortInfo? info then
-	     let (tvs, srt) = unpackFirstSortDef info in
-	     let ssrt = substSort (zip (tvs, srts), srt) in
-	     unfoldBaseV (sp, ssrt, verbose)
-	   else
-	     srt)
-    | _ -> srt
 
  op unfoldBeforeCoProduct: Spec * Sort -> Sort
  def unfoldBeforeCoProduct(sp, srt) =
