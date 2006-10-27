@@ -43,13 +43,14 @@
 ;; defined in Specware4/Applications/Handwritten/Lisp/load-utilities.lisp
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
-   (namestring #+(or win32 winnt mswindows)
-	       (or (cdr (getenv "TEMP")) (cdr (getenv "TMP"))
-		   #+allegro
-		   (SYSTEM:temporary-directory))
-	       #+(and (not unix) Lispworks) SYSTEM::*TEMP-DIRECTORY*
-	       #+unix "/tmp/"
-	       )))
+   (cl:substitute #\/ #\\
+		  #+(or win32 winnt mswindows)
+		  (or (specware::getenv "TEMP") (specware::getenv "TMP")
+		      #+allegro
+		      (namestring (SYSTEM:temporary-directory)))
+		  #+(and (not unix) Lispworks) (namestring SYSTEM::*TEMP-DIRECTORY*)
+		  #+(and (not win32) unix) "/tmp/"
+		  )))
 
 ;; The same function with the same name, but in a different package is
 ;; defined in Specware4/Applications/Handwritten/Lisp/load-utilities.lisp
