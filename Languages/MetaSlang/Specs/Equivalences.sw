@@ -43,7 +43,7 @@ AnnSpec qualifying spec
    case e1 of
      | Import (s1_tm, s1, _) ->
        (case e2 of
-	  | Import (s2_tm, s2, _) -> sameSCTerm? (s1_tm, s2_tm) 
+	  | Import (s2_tm, s2, _) -> s1 = s2  %% sameSCTerm? (s1_tm, s2_tm) 
 	  | _ -> false)
      | Sort qid1 -> 
        (case e2 of
