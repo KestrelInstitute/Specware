@@ -2,7 +2,7 @@ IsaTermPrinter qualifying spec
 
  %import /Languages/SpecCalculus/Semantics/Bootstrap
 
- import /Languages/MetaSlang/Specs/AnnSpec
+ import /Languages/MetaSlang/Transformations/NormalizeTypes
  %import /Languages/MetaSlang/Specs/Utilities
  %import /Library/PrettyPrinter/WadlerLindig
  import /Library/PrettyPrinter/BjornerEspinosa
@@ -85,7 +85,7 @@ IsaTermPrinter qualifying spec
   type GlobalContext
   %op  MonadicStateInternal.readGlobalVar : [a] String \_rightarrow Option a
   op  Specware.evaluateUnitId: String \_rightarrow Option Value
-  op  SpecCalc.findUnitIdForUnit: Value \_times GlobalContext \_rightarrow Option UnitId
+  %op  SpecCalc.findUnitIdForUnit: Value \_times GlobalContext \_rightarrow Option UnitId
   %op  SpecCalc.uidToFullPath : UnitId \_rightarrow String
 
   op  uidToIsaName : UnitId -> String
@@ -229,6 +229,7 @@ IsaTermPrinter qualifying spec
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
     let c = c << {spec? = Some spc} in
+    let spc = normalizeTypes spc in
     let spc = removeSubSorts spc in
     prLinesCat 0 [[prString "theory ", prString c.thy_name],
 		  [prString "imports ", ppImports c spc.elements],
