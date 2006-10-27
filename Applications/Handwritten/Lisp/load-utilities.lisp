@@ -158,9 +158,6 @@
 		(if pr (setf (cdr pr) newvalue)
 		  (push (cons (intern varname "KEYWORD") newvalue)
 			ext:*environment-list*)))
-;   #+sbcl      (progn (sb-unix::int-syscall ("setenv" sb-alien:c-string sb-alien:c-string sb-alien:int)
-; 					   varname newvalue 1)
-; 		     (getenv varname))
   #+gcl       (si:setenv varname newvalue)
   #+clisp     (setf (ext:getenv varname) newvalue)
   )
@@ -258,25 +255,26 @@
 
 (defparameter temporaryDirectory
   (ensure-final-slash
-   (substitute #\/ #\\
-	       (namestring  #+(or win32 winnt mswindows)
-			    (or (getenv "TEMP") (getenv "TMP")
-				#+allegro
-				(SYSTEM:temporary-directory))
-			    #+(and (not unix) Lispworks) SYSTEM::*TEMP-DIRECTORY*
-			    #+unix "/tmp/"
-			    ))))
+   (cl:substitute #\/ #\\
+	       #+(or win32 winnt mswindows)
+	       (or (getenv "TEMP") (getenv "TMP")
+		   #+allegro
+		   (namestring (SYSTEM:temporary-directory)))
+	       #+(and (not unix) Lispworks) (namestring SYSTEM::*TEMP-DIRECTORY*)
+	       #+(and (not win32) unix) "/tmp/"
+	       )))
 
 ;; The same function with the same name, but in a different package is
 ;; defined in Specware4/Library/Base/Handwritten/Lisp/System.lisp
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
-   (namestring #+(or win32 winnt mswindows)
+   (cl:substitute #\/ #\\
+	       #+(or win32 winnt mswindows)
 	       (or (getenv "TEMP") (getenv "TMP")
 		   #+allegro
-		   (SYSTEM:temporary-directory))
-	       #+(and (not unix) Lispworks) SYSTEM::*TEMP-DIRECTORY*
-	       #+unix "/tmp/"
+		   (namestring (SYSTEM:temporary-directory)))
+	       #+(and (not unix) Lispworks) (namestring SYSTEM::*TEMP-DIRECTORY*)
+	       #+(and (not win32) unix) "/tmp/"
 	       )))
 
 (defun setTemporaryDirectory ()

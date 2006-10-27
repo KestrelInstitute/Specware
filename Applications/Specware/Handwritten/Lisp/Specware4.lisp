@@ -98,10 +98,10 @@
          :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
          :type     "lisp")))
 
- (format t "Loading Snark.")
- (handler-bind ((warning #'ignore-warning))
-   (cl-user::make-or-load-snark-system))
- (format t "~%Finished loading Snark.")
+(format t "Loading Snark.")
+(handler-bind ((warning #'ignore-warning))
+  (cl-user::make-or-load-snark-system))
+(format t "~%Finished loading Snark.")
 
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
