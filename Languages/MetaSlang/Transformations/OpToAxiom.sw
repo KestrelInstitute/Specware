@@ -12,7 +12,7 @@ Prover qualifying spec
 
   def proverNatSort() =
     let baseProverSpec = run getBaseProverSpec in
-    let optSrt = findTheSort(baseProverSpec, mkUnQualifiedId("ProverNat")) in
+    let optSrt = findTheSort(baseProverSpec, Qualified("PrInteger","ProverNat")) in
     let Some info = optSrt in
     firstSortDefInnerSort info 
 
@@ -20,7 +20,7 @@ Prover qualifying spec
   def getBaseProverSpec = 
     {
      (optBaseUnitId,baseSpec) <- getBase;
-     proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";
+     proverBaseUnitId <- pathToRelativeUID "/Library/ProverBase/Top";
      (Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
      return (subtractSpec baseProverSpec baseSpec)
     }

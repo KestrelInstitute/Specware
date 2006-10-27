@@ -1,4 +1,4 @@
-String qualifying spec
+PrString qualifying spec
 
   import ../Base/String
 

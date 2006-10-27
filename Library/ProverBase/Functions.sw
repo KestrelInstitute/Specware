@@ -1,4 +1,4 @@
-Functions qualifying spec
+PrFunctions qualifying spec
 
   axiom id_def is fa (x) id x = x
 

@@ -2,6 +2,8 @@ PrInteger qualifying spec
 
   import ../Base/Integer
 
+  type ProverNat = {i: Integer | i >= 0}
+
   %type Integer.Integer  % qualifier required for internal parsing reasons
 
   % true for non-negative integers:

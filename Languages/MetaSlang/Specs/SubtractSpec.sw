@@ -24,6 +24,8 @@ AnnSpec qualifying spec
 	 sorts    = mapDiffSorts x.sorts y.sorts
 	}
 
+ import /Languages/MetaSlang/Specs/Printer
+
  def subtractSpecProperties (spec1, spec2) =
    let spec2PropNames =
        foldrSpecElements (fn (el, result) ->
@@ -35,13 +37,18 @@ AnnSpec qualifying spec
    in
    let newElements =
        filterSpecElements (fn elt_1 ->
+
 			   case elt_1 of
-			     | Property(_, pn, _, _) -> ~(member (pn, spec2PropNames))
+			     | Property(_, pn, _, _) ->
+			       let remove? = member(pn, spec2PropNames) in
+			       ~remove?
 			     | _ -> ~(existsSpecElement? (fn elt_2 -> sameSpecElement? (spec2, elt_2, spec1, elt_1))
 				                         spec2.elements))
 	                  spec1.elements
    in
-     spec1 << {elements = newElements}
+   let result =   spec1 << {elements = newElements} in
+   result
+
 
  def subtractLocalSpecElements (spec1, spec2) =
    let spec2PropNames =
@@ -58,7 +65,7 @@ AnnSpec qualifying spec
 		 | _ -> ~(member(el, spec2.elements)))
 	      spec1.elements
    in
-     spec1 << {elements = newElements}
+   spec1 << {elements = newElements}
 
 
 end-spec

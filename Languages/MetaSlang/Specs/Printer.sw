@@ -1322,8 +1322,8 @@ AnnSpecPrinter qualifying spec
 				     (2, ppSpecAll context im_sp)])),
 		     ppResult))
 	     | Recursive ->
-	       ppSpecElementsAux context spc
-	         import_directions im_elements result)
+	       %% let _ = toScreen (anyToString im_sp_tm^"\n\n") in
+	       ppSpecElementsAux context spc import_directions im_elements result)
 	       
 	 | Op qid ->
 	   (case findTheOp(spc,qid) of
@@ -1353,10 +1353,6 @@ AnnSpecPrinter qualifying spec
 	 | Property prop ->
 	   (index+1,
 	    Cons(ppProperty context (index, prop),ppResult))
-	 | Pragma (prefix, body, postfix, pos)->
-	   (index+1,
-	    Cons ((1, string (prefix ^ body ^ postfix)),
-		  ppResult))
 	 | Comment str ->
 	   (index+1,
 	    if exists (fn char -> char = #\n) str then
@@ -1368,6 +1364,10 @@ AnnSpecPrinter qualifying spec
 	    else
 	      Cons ((0, string (" %% " ^ str)),
 		    ppResult))
+	 | Pragma (prefix, body, postfix, pos)->
+	   (index+1,
+	    Cons ((1, string (prefix ^ body ^ postfix)),
+		  ppResult))
 
      def aux(elements,afterOp?,result) =
          case elements of
@@ -1434,8 +1434,8 @@ AnnSpecPrinter qualifying spec
 				     (0, ppSpecAll context im_sp)])),
 		     ppResult))
 	     | Recursive ->
-	       ppSpecElementsAux context spc
-	         import_directions im_elements result)
+	       %% let _ = toScreen (anyToString im_sp_tm^"\n\n") in
+	       ppSpecElementsAux context spc import_directions im_elements result)
 	       
 	 | Op qid ->
 	   (case findTheOp(spc,qid) of
@@ -1476,8 +1476,10 @@ AnnSpecPrinter qualifying spec
 	    else
 	      Cons ((0, string (" %% " ^ str)),
 		    ppResult))
-	 | Pragma(str1,str2,str3,_) \_rightarrow
-	   (index+1,[(0, string(str1 ^ str2 ^ str3))])
+	 | Pragma (prefix, body, postfix, pos) \_rightarrow
+	   (index+1,
+	    Cons ((1, string (prefix ^ body ^ postfix)),
+		  ppResult))
 
      def aux(elements,afterOp?,result) =
          case elements of
