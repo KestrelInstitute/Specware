@@ -148,7 +148,7 @@ spec
  def getSpec (_,_,e,_,_,_,_) = e
 
  def unfoldBase((_,_,spc,_,_,_,_),tau) = 
-     SpecEnvironment.unfoldBase(spc,tau)
+     Utilities.unfoldBase(spc,tau)
 
 % def arrow = SpecEnvironment.arrow
 % def domain = SpecEnvironment.domain

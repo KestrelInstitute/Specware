@@ -1059,8 +1059,8 @@ skolemization transforms a proper matching problem into an inproper one.
 		 if id1 = id2 
 		    then unifyL(subst,srt1,srt2,ts1,ts2,equals,unify)
 	         else 
-		 let s1 = SpecEnvironment.unfoldBase(spc,srt1) in
-		 let s2 = SpecEnvironment.unfoldBase(spc,srt2) in
+		 let s1 = Utilities.unfoldBase(spc,srt1) in
+		 let s2 = Utilities.unfoldBase(spc,srt2) in
 		 if srt1 = s1 & s2 = srt2
 		    then  NotUnify (srt1,srt2)
 		 else unify(subst,s1,s2,cons((srt1,srt2),equals))
@@ -1075,12 +1075,12 @@ skolemization transforms a proper matching problem into an inproper one.
 			 then NotUnify (srt1,srt2)
 		     else Unify(insert(v,srt1,subst))
 	       | (srt1 as Base _,srt2) -> 
- 		  let  s1 = SpecEnvironment.unfoldBase(spc,srt1) in
+ 		  let  s1 = Utilities.unfoldBase(spc,srt1) in
 		  if srt1 = s1
 		     then NotUnify (srt1,srt2)
 	 	  else unify(subst,s1,srt2,cons((srt1,srt2),equals))
 	       | (srt1,srt2 as Base _) ->
-		 let s2 = SpecEnvironment.unfoldBase(spc,srt2)  in
+		 let s2 = Utilities.unfoldBase(spc,srt2)  in
 		 if srt2 = s2
 		     then NotUnify (srt1,srt2)
 		 else unify(subst,srt1,s2,cons((srt1,srt2),equals))
@@ -1111,7 +1111,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
          let (pats,Ns) = ListPair.unzip decls in
           Apply (Lambda([(mkTuplePat pats,mkTrue(),M)], a),mkTuple Ns,a)
 %       | IfThenElse (M,N,P) -> 
-%          let srt = SpecEnvironment.inferType(spc,N) in
+%          let srt = Utilities.inferType(spc,N) in
 %          Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),Nonfix),
 %                Arrow(mkProduct [boolSort,srt,srt],srt)),
 %                mkTuple [M,N,P])
