@@ -150,11 +150,14 @@ SpecCalc qualifying spec
 	map (fn el ->
 	     case el of
 	       | Import (tm, spc, import_elts) ->
-	         if sameSCTerm? (tm, dom_spec_term) then
+	         if %% sameSCTerm? (tm, dom_spec_term) ||
+		    spc = dom_spec then
 		   Import (cod_spec_term, cod_spec, [])
 		 else if existsSpecElement? (fn el -> 
 					     case el of
-					       | Import (tm, _, _) -> sameSCTerm? (tm, dom_spec_term)
+					       | Import (tm, spc, _) ->
+					         %% sameSCTerm? (tm, dom_spec_term)  ||
+						  spc = dom_spec 
 					       | _ -> false)
 		                            import_elts 
 			then
