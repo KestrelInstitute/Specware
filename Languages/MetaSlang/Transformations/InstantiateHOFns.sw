@@ -436,15 +436,6 @@ spec
     simplifyTerm(mkLetRec([(localFn,localDef)],
 			  mkApply(mkVar localFn,newArgTerm)))
 
-  type TyVarSubst = List(Id * Sort)
-  def instantiateTyVars(s,tyVarSubst) =
-    case s of
-      | TyVar (name, _) ->
-	(case find (fn (nm,_) -> nm = name) tyVarSubst of
-	   | Some(_,ss) -> ss
-	   | _ -> s)
-      | _ -> s
-
   op  sortMatch: Sort * Sort * Spec -> TyVarSubst
   def sortMatch(s1,s2,spc) =
    let def match(srt1,srt2,pairs) =
