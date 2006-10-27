@@ -51,4 +51,27 @@ String qualifying spec
     in 
       loop 0
 
+  %% Generalized version
+  op  splitStringAt: String * String -> List String
+  def splitStringAt(s,sep) =
+   let len_s = length s in
+   let len_sep = length sep in
+   let def splitFrom(i,last_match_end) =
+        if i + len_sep > len_s
+	  then [substring(s,last_match_end,len_s)]
+	else if testSubseqEqual? (sep, s, 0, i)
+	  then Cons(substring(s,last_match_end,i),
+		    splitFrom(i+len_sep,i+len_sep))	  
+	else 
+	  splitFrom(i + 1,last_match_end)
+   in
+     splitFrom(0,0)
+
+  op  removeWhiteSpace: String -> String
+  def removeWhiteSpace s =
+    implode (filter (fn c -> ~(whiteSpaceChar? c)) (explode s))
+
+  op  whiteSpaceChar?: Char -> Boolean
+  def whiteSpaceChar? c = member(c,[#\s,#\t,#\n])
+
 endspec
