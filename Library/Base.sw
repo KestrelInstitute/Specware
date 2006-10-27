@@ -9,7 +9,7 @@ spec
   import Base/Option     % imported by List         imports Compare
   import Base/Integer    % imported by List, Char   imports Nat, Compare, Functions
   import Base/Nat        % imported by Integer
-  import Base/Compare    % imported by Integer
+  import Base/Compare    % imported by Integer, Option
   import Base/Functions  % imported by Integer
   import Base/System     %                          imports String, List, Option
 
