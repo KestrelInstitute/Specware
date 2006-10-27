@@ -486,8 +486,8 @@ is inserted."
   :group 'slime-repl)
 
 (defface slime-repl-inputed-output-face
-  '((((class color) (background light)) (:foreground "Red"))
-    (((class color) (background dark)) (:foreground "Red"))
+  '((((class color) (background light)) (:foreground "Black"))
+    (((class color) (background dark)) (:foreground "White"))
     (t (:slant italic)))
   "Face for the result of an evaluation in the SLIME REPL."
   :group 'slime-repl)
