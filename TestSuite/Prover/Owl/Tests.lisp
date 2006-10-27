@@ -27,7 +27,7 @@
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/axioms/theorem_one_gtq.log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $TESTDIR/Snark/axioms/ does not exist, will create.")
-	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_one_gtq.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_one_gtq.log"
 	    "theorem_one_gtq: Conjecture theorem_one_gtq in owlnat is Proved! using simple inequality reasoning*."
