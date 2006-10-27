@@ -1,3 +1,5 @@
+(* sjw 10/26/06: I think this is obsolete. See /Library/ProverBase/Top *)
+
 spec
 
   import Integer
