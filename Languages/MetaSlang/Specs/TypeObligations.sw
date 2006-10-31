@@ -13,7 +13,7 @@ spec
  %type SpecElement  = QualifiedId * TyVars * MS.Term 
  type TypeCheckConditions = SpecElements * StringSet.Set
 
- op makeTypeCheckObligationSpec: Spec * (SpecCalc.Term Position) -> Spec
+ op makeTypeCheckObligationSpec: Spec -> Spec
  op checkSpec : Spec -> TypeCheckConditions
 
  def simplifyObligations? = true
@@ -910,7 +910,7 @@ spec
 					       hashSuffix = None}),
 		    noPos)
 
- def makeTypeCheckObligationSpec (spc, _(*spc_tm*)) =
+ def makeTypeCheckObligationSpec (spc) =
    %let spc = lambdaLift(instantiateHOFns(spc)) in
    case getOptSpec (Some "/Library/Base/WFO") of
      | None -> fail "Error in processing /Library/Base/WFO"
