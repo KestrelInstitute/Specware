@@ -1,0 +1,17 @@
+#!/bin/bash --noprofile
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+LISP_MODE=$1
+
+export act='Generate Specware4.lisp using ${LISP_MODE} version of Specware'
+
+HERE=`/usr/bin/dirname $0`
+
+. $HERE/Verify_Specware_Variables
+
+$BOOTSTRAP/Scripts/unix/Generate_Lisp $LISP_MODE
+
+
+
