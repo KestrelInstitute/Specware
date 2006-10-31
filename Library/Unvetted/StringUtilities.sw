@@ -21,7 +21,7 @@ String qualifying spec
     in
     project 1 o flushW o foldr addChar ([], "") o explode
 
-    %% Find position of first occurrence of s1 in s2, or None
+  %% Find position of first occurrence of s1 in s2, or None
   op  search : String * String -> Option Nat
   def search (s1, s2) =
     let sz1 = length s1 in
@@ -51,6 +51,20 @@ String qualifying spec
     in 
       loop 0
 
+  op  searchPred : String * (Char -> Boolean) -> Option Nat
+  def searchPred (s, pred) =
+    let sz = length s in
+    let 
+      def loop i =
+	if i > sz then 
+	  None
+	else if pred (sub(s,i)) then
+	  Some i
+	else 
+	  loop (i + 1)
+    in 
+      loop 0
+
   %% Generalized version
   op  splitStringAt: String * String -> List String
   def splitStringAt(s,sep) =
@@ -70,6 +84,12 @@ String qualifying spec
   op  removeWhiteSpace: String -> String
   def removeWhiteSpace s =
     implode (filter (fn c -> ~(whiteSpaceChar? c)) (explode s))
+
+  op  removeInitialWhiteSpace: String -> String
+  def removeInitialWhiteSpace s =
+    case searchPred(s,fn c -> ~(whiteSpaceChar? c)) of
+      | Some i -> substring(s,i,length s)
+      | None -> s
 
   op  whiteSpaceChar?: Char -> Boolean
   def whiteSpaceChar? c = member(c,[#\s,#\t,#\n])
