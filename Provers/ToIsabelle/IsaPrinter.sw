@@ -11,6 +11,9 @@ IsaTermPrinter qualifying spec
  import /Languages/SpecCalculus/Semantics/Value
  import /Languages/MetaSlang/Transformations/RemoveSubsorts
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
+ import /Languages/MetaSlang/Specs/TypeObligations
+
+ def addObligations? = true
 
  type Pretty = PrettyPrint.Pretty
 
@@ -238,6 +241,10 @@ IsaTermPrinter qualifying spec
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
     let c = c << {spec? = Some spc, trans_table = thyMorphismMaps spc} in
+    let spc = if addObligations?
+               then makeTypeCheckObligationSpec spc
+	       else spc
+    in
     let spc = normalizeTypes spc in
     let spc = removeSubSorts spc in
     prLinesCat 0 [[prString "theory ", prString c.thy_name],
@@ -311,7 +318,7 @@ IsaTermPrinter qualifying spec
         Cons(ppProperty c prop "" (Some prag),
 	     ppSpecElementsAux c spc rst)
       | el :: rst \_rightarrow
-	let pretty1 = ppSpecElement c spc el false in
+	let pretty1 = ppSpecElement c spc el false elems in
 	let prettyr = ppSpecElementsAux c spc rst in
 	if pretty1 = prEmpty
 	  then prettyr
@@ -325,8 +332,8 @@ IsaTermPrinter qualifying spec
 %        Cons(Op qid1, normalizeSpecElements rst)
 %      | x::rst \_rightarrow Cons(x,normalizeSpecElements rst)
 
-  op  ppSpecElement: Context \_rightarrow Spec \_rightarrow SpecElement \_rightarrow Boolean \_rightarrow Pretty
-  def ppSpecElement c spc elem op_with_def? =
+  op  ppSpecElement: Context \_rightarrow Spec \_rightarrow SpecElement \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Pretty
+  def ppSpecElement c spc elem op_with_def? elems =
     case elem of
       | Import (_,im_sp,im_elements) \_rightarrow prEmpty
       | Op qid \_rightarrow
@@ -353,16 +360,36 @@ IsaTermPrinter qualifying spec
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
-      | Property prop \_rightarrow ppProperty c prop "" None
-      | Pragma(beg_str,mid_str,end_str,pos) \_rightarrow
-	prConcat [prString beg_str,
-		  prString mid_str,
-		  prString end_str]
+      | Property prop \_rightarrow
+        let Qualified(_,nm) = propertyName prop in 
+	ppProperty c prop "" (findPragmaNamed(elems,nm))
+%      | Pragma(beg_str,mid_str,end_str,pos) \_rightarrow
+%	prConcat [prString beg_str,
+%		  prString mid_str,
+%		  prString end_str]
 	   
       | Comment str \_rightarrow
 	prConcat [prString "(*",
 		  prString str,
 		  prString "*)"]
+      | _ \_rightarrow prEmpty
+
+ op  findPragmaNamed: SpecElements * String \_rightarrow Option (String * String * String * Position)
+ def findPragmaNamed(elts,nm) =
+   case elts of
+     | [] \_rightarrow None
+     | el::rst \_rightarrow
+       (case el of
+	  | Pragma(p_bod as ("proof",prag_str,"end-proof",_)) \_rightarrow
+	    (case search("\n",prag_str) of
+	       | None \_rightarrow findPragmaNamed(rst,nm)
+	       | Some n \_rightarrow
+	     let line1 = substring(prag_str,0,n) in
+	     case removeEmpty(splitStringAt(line1," ")) of
+	       | "Isa"::thm_nm::r | thm_nm = nm \_rightarrow
+		 Some p_bod
+	       | _ \_rightarrow findPragmaNamed(rst,nm))
+	  | _ \_rightarrow findPragmaNamed(rst,nm))
 
  op  ppIdInfo : List QualifiedId \_rightarrow Pretty
  def ppIdInfo qids = ppQualifiedId(hd qids)
@@ -494,10 +521,10 @@ IsaTermPrinter qualifying spec
 		    ++ (case prf of
 			  | Some(beg_str,mid_str,end_str,pos) \_rightarrow
 			    let len = length mid_str in
-			    if len > 4 \_and substring(mid_str,1,4) = "Isa"
-			      then [[prString(stripTrailingWhiteSpace
-					        (substring(mid_str,7,len)))]]
-			      else []
+			    (case search("\n",mid_str) of
+			       | None \_rightarrow []
+			       | Some n \_rightarrow
+			         [[prString(stripTrailingWhiteSpace(substring(mid_str,n+1,len)))]])
 			  | _ \_rightarrow [])
 		    ++ (case propType of
 			  | Axiom \_rightarrow []
@@ -558,8 +585,11 @@ IsaTermPrinter qualifying spec
 	   prConcat [ppTerm c parentTerm term1,
 		     case term2 of
 		      | Record _ \_rightarrow ppTerm c Top term2
-		      | _ \_rightarrow prConcat [prSpace, enclose?(\_not(isSimpleTerm? term2),
-							 ppTerm c Nonfix term2)]]
+		      | _ \_rightarrow
+		        let encl? = \_not(isSimpleTerm? term2) in
+			prConcat [prSpace, enclose?(\_not(isSimpleTerm? term2),
+						    ppTerm c (if encl? then Top else Nonfix)
+						      term2)]]
 	        
     in
     case term of
@@ -575,7 +605,7 @@ IsaTermPrinter qualifying spec
 	   | (_, (Some pr_op, Nonfix, true)) \_rightarrow
 	     enclose?(parentTerm ~= Top,
 		      prLinearCat 2 [[pr_op,prSpace],
-					   [ppTerm c Nonfix t1,prSpace,ppTerm c Nonfix t2]])
+				     [ppTerm c Nonfix t1,prSpace,ppTerm c Nonfix t2]])
 	   | (Nonfix, (Some pr_op, Infix (a, p), _)) ->
 	     prInfix (Infix (Left, p), Infix (Right, p), true, false, t1, pr_op, t2)
 	   | (Top,    (Some pr_op, Infix (a, p), _)) ->
@@ -908,22 +938,16 @@ IsaTermPrinter qualifying spec
   op  ppFixity : Fixity \_rightarrow Pretty
   def ppFixity fix =
     case fix of
-      | Infix (Left,  n) \_rightarrow prConcat [
-				      prString "infixl ",
-				      prString (Nat.toString n)
-				     ]
-      | Infix (Right, n) \_rightarrow prConcat [
-				      prString "infixr ",
-				      prString (Nat.toString n)
-				     ]
+      | Infix (Left,  n) \_rightarrow prConcat [prString "infixl ",
+				      prString (toString n)]
+      | Infix (Right, n) \_rightarrow prConcat [prString "infixr ",
+				      prString (toString n)]
       | Nonfix           \_rightarrow prEmpty % prString "Nonfix"
       | Unspecified      \_rightarrow prEmpty % prString "Unspecified"
-      | Error fixities   \_rightarrow prConcat [
-				      prString "conflicting fixities: [",
+      | Error fixities   \_rightarrow prConcat [prString "conflicting fixities: [",
 				      prPostSep 0 blockFill (prString ",")
 				        (map ppFixity fixities),
-				      prString "]"
-				     ]
+				      prString "]"]
       | mystery \_rightarrow fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
   op  isSimpleSort? : Sort \_rightarrow Boolean
