@@ -1791,7 +1791,9 @@ uniquely and concretely describes their application.")
   (interactive)
   (save-buffer)
   (let* ((filename (sw:containing-specware-unit-id))
-	 (thy-file (sw:eval-in-lisp (format "(IsaTermPrinter::printUIDtoThyFile-2 %S nil)" filename)))
+	 (thy-file (sw:eval-in-lisp (format "(let ((typeobligations::generateterminationconditions? t))
+                                               (IsaTermPrinter::printUIDtoThyFile-2 %S nil))"
+					    filename)))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
 						   display-warning-suppressed-classes)))
