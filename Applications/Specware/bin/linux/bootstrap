@@ -12,7 +12,7 @@ echo "--------------------------------------------------------------------------
 echo " "
 
 $SCRIPT_DIR/Prepare_Bootstrap_Image_ACL
-$RC=$?
+RC=$?
 if [ $RC -ne 0 ]; then
    echo "Failure preparing bootstrap image, return code = $RC"
    exit $RC
@@ -25,7 +25,7 @@ echo "--------------------------------------------------------------------------
 echo " "
 
 $SCRIPT_DIR/Generate_Specware_Lisp_ACL
-$RC=$?
+RC=$?
 if [ $RC -ne 0 ]; then
    echo "Failure generating Specware4.lisp from Specware4.sw, return code = $RC"
    exit $RC
@@ -38,7 +38,7 @@ echo "--------------------------------------------------------------------------
 echo " "
 
 $SCRIPT_DIR/Compile_Specware_Lisp_ACL
-$RC=$?
+RC=$?
 if [ $RC -ne 0 ]; then
    echo "Failure compiling Specware4.lisp, return code = $RC"
    exit $RC
@@ -51,7 +51,7 @@ echo "--------------------------------------------------------------------------
 echo " "
 
 $SCRIPT_DIR/Build_Specware_Dev_ACL
-$RC=$?
+RC=$?
 if [ $RC -ne 0 ]; then
    echo "Failure building Specware.dxl, return code = $RC"
    exit $RC
