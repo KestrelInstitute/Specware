@@ -17,7 +17,10 @@ spec
  op checkSpec : Spec -> TypeCheckConditions
 
  def simplifyObligations? = true
+ %% These two should be false for Isabelle conversion
  def generateTerminationConditions? = true
+ def generateExhaustivityConditions? = true
+
 
 % Auxiliary variable environment.
 % Gamma maps local variables to their types, 
@@ -400,7 +403,9 @@ spec
    let trm = match(context,vs,rules,mkFalse(),mkFalse()) in
    (case simplifyMatch(trm)
       of Fun(Bool true,_,_) -> tcc
-       | trm -> addCondition(tcc,gamma,mkBind(Forall,[(x,dom)],trm),"_exhaustive"))
+       | trm -> if generateExhaustivityConditions?
+	          then addCondition(tcc,gamma,mkBind(Forall,[(x,dom)],trm),"_exhaustive")
+                 else tcc)
 
  op  useNameFrom: Gamma * Option MS.Term * String -> String
  def useNameFrom(gamma,optTm,default) =
