@@ -302,27 +302,27 @@ IsaTermPrinter qualifying spec
 
   op  ppSpecElements: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Pretty
   def ppSpecElements c spc elems =
-    prLines 0 (ppSpecElementsAux c spc elems)
-
-  op  ppSpecElementsAux: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow List Pretty
-  def ppSpecElementsAux c spc elems =
-    case elems of
-      | [] \_rightarrow []
-      | (Comment c_str) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
-        Cons(ppProperty c prop c_str (Some prag),
-	     ppSpecElementsAux c spc rst)
-      | (Pragma(_,c_str,_,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
-        Cons(ppProperty c prop c_str (Some prag),
-	     ppSpecElementsAux c spc rst)
-      | (Property prop) :: (Pragma prag) :: rst \_rightarrow
-        Cons(ppProperty c prop "" (Some prag),
-	     ppSpecElementsAux c spc rst)
-      | el :: rst \_rightarrow
-	let pretty1 = ppSpecElement c spc el false elems in
-	let prettyr = ppSpecElementsAux c spc rst in
-	if pretty1 = prEmpty
-	  then prettyr
-	  else Cons(pretty1,prettyr)
+    let
+      %op  ppSpecElementsAux: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow List Pretty
+      def aux c spc r_elems =
+	case r_elems of
+	  | [] \_rightarrow []
+	  | (Comment c_str) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
+	    Cons(ppProperty c prop c_str (Some prag),
+		 aux c spc rst)
+	  | (Pragma(_,c_str,_,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
+	    Cons(ppProperty c prop c_str (Some prag),
+		 aux c spc rst)
+	  | (Property prop) :: (Pragma prag) :: rst \_rightarrow
+	    Cons(ppProperty c prop "" (Some prag),
+		 aux c spc rst)
+	  | el :: rst \_rightarrow
+	    let pretty1 = ppSpecElement c spc el false elems in
+	    let prettyr = aux c spc rst in
+	    if pretty1 = prEmpty
+	      then prettyr
+	      else Cons(pretty1,prettyr)
+    in prLines 0 (aux c spc elems)
 
 %  op  normalizeSpecElements: SpecElements \_rightarrow SpecElements
 %  def normalizeSpecElements elts =
@@ -401,23 +401,34 @@ IsaTermPrinter qualifying spec
      | Some _ \_rightarrow prEmpty
      | None \_rightarrow
    let (tvs, ty) = unpackSort dfn in
-   prBreakCat 2
-     (if full? \_and (case ty of Any _ \_rightarrow false | _ \_rightarrow true)
-	then case ty of
-	      | CoProduct _ \_rightarrow
-	        [[prString "datatype ",
-		  ppTyVars tvs,
-		  ppIdInfo aliases],
-		 [prString " = ", ppType c Top ty]]
-	      | _ \_rightarrow
-	        [[prString "types ",
+   if full? \_and (case ty of Any _ \_rightarrow false | _ \_rightarrow true)
+     then case ty of
+	   | CoProduct _ \_rightarrow
+	     prBreakCat 2
+	       [[prString "datatype ",
+		 ppTyVars tvs,
+		 ppIdInfo aliases],
+		[prString " = ", ppType c Top ty]]
+	   | Product (fields,_) | (hd fields).1 ~= "1" \_rightarrow
+	     prLinesCat 2
+	       ([[prString "record ",
 		  ppTyVars tvs,
 		  ppIdInfo aliases,
-		  prString " = "],
-		 [prString "\"", ppType c Top ty, prString "\""]]
-	else [[prString "typedecl ",
-	       ppIdInfo aliases,
-	       ppTyVars tvs]])
+		  prString " = "]] ++
+		(map (fn (fldname,fldty) \_rightarrow
+		      [prString fldname, prString " :: ", ppType c Top fldty])
+		 fields))
+	   | _ \_rightarrow
+	     prBreakCat 2
+	       [[prString "types ",
+		 ppTyVars tvs,
+		 ppIdInfo aliases,
+		 prString " = "],
+		[prString "\"", ppType c Top ty, prString "\""]]
+     else prBreakCat 2
+	    [[prString "typedecl ",
+	      ppIdInfo aliases,
+	      ppTyVars tvs]]
 
  op  ppTyVars : TyVars \_rightarrow Pretty
  def ppTyVars tvs =
@@ -504,7 +515,7 @@ IsaTermPrinter qualifying spec
   op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow Option (String * String * String * Position)
                    \_rightarrow Pretty
   def ppProperty c (propType, name, tyVars, term) comm prf =
-    let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
+    % let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
     prLinearCat 2 ([[ppPropertyType propType,
 		     prSpace,
 		     ppQualifiedId name,
@@ -575,12 +586,12 @@ IsaTermPrinter qualifying spec
 				   ppTerm c Top term2],
 				  [prString " of ",
 				   ppMatch c match]])
-	 | (Fun (Project p, srt1, _), Var ((id, srt2), _)) ->
-	   prConcat [prString id,prString ".",prString p]
-	 | (Fun (Project p, srt1, _), Fun _) ->
-	   prConcat [ppTerm c parentTerm term2,prString ".",prString p]
 	 | (Fun (Project p, srt1, _), _) ->
-	   prConcat [enclose?(true,ppTerm c Top term2), prString ".",prString p]
+	   let pid = projectorFun(p,srt1) in
+	   let encl? = \_not(isSimpleTerm? term2) in
+           prConcat [prString p,
+		     prConcat [prSpace, enclose?(encl?, ppTerm c (if encl? then Top else Nonfix)
+						          term2)]]
 	 | _ \_rightarrow
 	   prConcat [ppTerm c parentTerm term1,
 		     case term2 of
@@ -698,6 +709,13 @@ IsaTermPrinter qualifying spec
       | SortedTerm (tm,ty,_) \_rightarrow
         prBreakCat 0 [[ppTerm c parentTerm tm, prString ": "],[ppType c Top ty]]
       | mystery \_rightarrow fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
+
+  op  projectorFun: String * Sort \_rightarrow String
+  def projectorFun (p,s) =
+    case p of
+      | "1" \_rightarrow "fst"
+      | "2" \_rightarrow "snd"			% !! Only if a pair
+      | _ \_rightarrow p
 
   op  ppBinder : Binder \_rightarrow Pretty
   def ppBinder binder =
