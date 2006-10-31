@@ -1,7 +1,7 @@
 IsaTermPrinter qualifying spec
 
  %import /Languages/SpecCalculus/Semantics/Bootstrap
-
+ import TheoryMorphism
  import /Languages/MetaSlang/Transformations/NormalizeTypes
  %import /Languages/MetaSlang/Specs/Utilities
  %import /Library/PrettyPrinter/WadlerLindig
@@ -17,10 +17,17 @@ IsaTermPrinter qualifying spec
  type Context = {printTypes?: Boolean,
 		 recursive?: Boolean,
 		 thy_name: String,
-		 spec?: Option Spec}
+		 spec?: Option Spec,
+		 trans_table: TransInfo}
+
+ op  specialOpInfo: Context \_rightarrow QualifiedId \_rightarrow Option OpTransInfo
+ def specialOpInfo c qid = apply(c.trans_table.op_map, qid)
+
+ op  specialTypeInfo: Context \_rightarrow QualifiedId \_rightarrow Option TypeTransInfo
+ def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
  op  getSpec: Context \_rightarrow Spec
- def getSpec {printTypes?=_,recursive?=_,thy_name=_,spec?=Some spc} = spc
+ def getSpec {printTypes?=_,recursive?=_,thy_name=_,spec?=Some spc,trans_table=_} = spc
 
 
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
@@ -195,7 +202,8 @@ IsaTermPrinter qualifying spec
     let main_pp_val = ppValue {printTypes? = true,
 			       recursive? = recursive?,
 			       thy_name = thy_nm,
-			       spec? = None}
+			       spec? = None,
+			       trans_table = emptyTranslationTable}
 			value
     in
     format(80, main_pp_val)
@@ -221,14 +229,15 @@ IsaTermPrinter qualifying spec
                    | _ \_rightarrow ""
     in
     toTerminal(format(80, ppSpec {printTypes? = true,
-				 recursive? = false,
-				 thy_name = thy_nm,
-				 spec? = Some spc}
+				  recursive? = false,
+				  thy_name = thy_nm,
+				  spec? = Some spc,
+				  trans_table = thyMorphismMaps spc}
 		            spc))
 
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
-    let c = c << {spec? = Some spc} in
+    let c = c << {spec? = Some spc, trans_table = thyMorphismMaps spc} in
     let spc = normalizeTypes spc in
     let spc = removeSubSorts spc in
     prLinesCat 0 [[prString "theory ", prString c.thy_name],
@@ -241,7 +250,8 @@ IsaTermPrinter qualifying spec
   def elementFilter elt =
     case elt of
       | Import _ \_rightarrow false
-      | Pragma("proof",prag_str,"end-proof",_) | isaPragma? prag_str \_rightarrow
+      | Pragma("proof",prag_str,"end-proof",_) | isaPragma? prag_str
+                                                && isaThyMorphismPragma prag_str = None \_rightarrow
         true
       | Pragma _ \_rightarrow false
       | _ \_rightarrow true
@@ -359,6 +369,10 @@ IsaTermPrinter qualifying spec
    
  op  ppTypeInfo : Context \_rightarrow Boolean \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
  def ppTypeInfo c full? (aliases, dfn) =
+   let mainId = hd aliases in
+   case specialTypeInfo c mainId of
+     | Some _ \_rightarrow prEmpty
+     | None \_rightarrow
    let (tvs, ty) = unpackSort dfn in
    prBreakCat 2
      (if full? \_and (case ty of Any _ \_rightarrow false | _ \_rightarrow true)
@@ -389,6 +403,10 @@ IsaTermPrinter qualifying spec
 
  op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow Aliases \_times Fixity \_times MS.Term \_rightarrow Pretty
  def ppOpInfo c decl? def? (aliases, fixity, dfn) =
+   let mainId = hd aliases in
+   case specialOpInfo c mainId of
+     | Some _ \_rightarrow prEmpty
+     | None \_rightarrow
    let (tvs, ty, term) = unpackTerm dfn in
    if decl?
     then prConcat ([prString "consts ",
@@ -405,12 +423,12 @@ IsaTermPrinter qualifying spec
 			case assoc of
 			  | Left  \_rightarrow prString "infixl \""
 		          | Right \_rightarrow prString "infixr \"",
-			ppMainId (hd aliases),
+			ppMainId (mainId),
 			prString "\" ",
 			prString (toString (prec + precNumFudge)),
 			prString ")"]
 		     | _ \_rightarrow []))
-    else ppDef c (hd aliases) ty term
+    else ppDef c mainId ty term
 
   op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow MS.Term \_rightarrow Pretty
   def ppDef c op_nm ty body =
@@ -550,18 +568,22 @@ IsaTermPrinter qualifying spec
 	      enclose?(encl?,
 		       prLinearCat (if same? then -2 else 2)
 		         [[ppTerm c f1 t1,prSpace],
-			  [ppTerm c Top oper,prSpace,ppTerm c f2 t2]])
+			  [oper,prSpace,ppTerm c f2 t2]])
 	in
-	(case (parentTerm, termFixity trm1) of
-	   | (_, Nonfix) -> prApply (trm1, trm2)
-	   | (Nonfix, Infix (a, p)) ->
-	     prInfix (Infix (Left, p), Infix (Right, p), true, false, t1, trm1, t2)
-	   | (Top, Infix (a, p))  ->
-	     prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, trm1, t2) 
-	   | (Infix (a1, p1), Infix (a2, p2)) ->
+	(case (parentTerm, termFixity c trm1) of
+	   | (_, (None, Nonfix, false)) -> prApply (trm1, trm2)
+	   | (_, (Some pr_op, Nonfix, true)) \_rightarrow
+	     enclose?(parentTerm ~= Top,
+		      prLinearCat 2 [[pr_op,prSpace],
+					   [ppTerm c Nonfix t1,prSpace,ppTerm c Nonfix t2]])
+	   | (Nonfix, (Some pr_op, Infix (a, p), _)) ->
+	     prInfix (Infix (Left, p), Infix (Right, p), true, false, t1, pr_op, t2)
+	   | (Top,    (Some pr_op, Infix (a, p), _)) ->
+	     prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
+	   | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _)) ->
 	     if p1 = p2
-	       then prInfix (Infix (Left, p2), Infix (Right, p2), a1 \_noteq a2, a1=a2, t1, trm1, t2)
-	       else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, trm1, t2))
+	       then prInfix (Infix (Left, p2), Infix (Right, p2), a1 \_noteq a2, a1=a2, t1, pr_op, t2)
+	       else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2))
       | Apply(term1 as Fun (Not, _, _),term2,_) \_rightarrow
 	enclose?(case parentTerm of
 		   | Infix(_,prec) \_rightarrow prec > 18
@@ -626,7 +648,7 @@ IsaTermPrinter qualifying spec
 			     prString "in",
 			     ppTerm c parentTerm term])
       | Var (v,_) \_rightarrow ppVarWithoutSort v
-      | Fun (fun,ty,_) \_rightarrow ppFun fun
+      | Fun (fun,ty,_) \_rightarrow ppFun c fun
       | Lambda ([(pattern,_,term)],_) \_rightarrow
         prBreakCat 2 [[lengthString(2, "\\<lambda> "),
 		       ppPattern c pattern,
@@ -797,8 +819,8 @@ IsaTermPrinter qualifying spec
       | true \_rightarrow prString "True"
       | false \_rightarrow prString "False"
 
-  op  ppFun : Fun \_rightarrow Pretty
-  def ppFun fun =
+  op  ppFun : Context \_rightarrow Fun \_rightarrow Pretty
+  def ppFun c fun =
     case fun of
       | Not       \_rightarrow lengthString(1, "\\<not>")
       | And       \_rightarrow lengthString(1, "\\<and>")
@@ -815,9 +837,9 @@ IsaTermPrinter qualifying spec
       | PRestrict _ \_rightarrow prString "restrict"
       | Relax \_rightarrow prString "relax"
       | PRelax _ \_rightarrow prString "relax"
-      | Op (qid,Nonfix) \_rightarrow ppQualifiedId qid
-      | Op (qid,Unspecified) \_rightarrow ppQualifiedId qid
-      | Op (Qualified(_,opstr),_) \_rightarrow prString(ppIdStr opstr)
+      | Op (qid,Nonfix) \_rightarrow ppOpQualifiedId c qid
+      | Op (qid,Unspecified) \_rightarrow ppOpQualifiedId c qid
+      | Op (Qualified(_,opstr),_) \_rightarrow prString(ppIdStr opstr) % ??? ppOpQualifiedId
       | Project id \_rightarrow
           prConcat [
             prString "project ",
@@ -850,7 +872,7 @@ IsaTermPrinter qualifying spec
       | String str \_rightarrow prString ("''" ^ str ^ "''")
       | Bool b \_rightarrow ppBoolean b
       | OneName (id,fxty) \_rightarrow prString id
-      | TwoNames (id1,id2,fxty) \_rightarrow ppQualifiedId (Qualified (id1,id2))
+      | TwoNames (id1,id2,fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1,id2))
       | mystery \_rightarrow fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
 
   def omittedQualifiers = ["Integer","Nat","Double","List","String","Char"]  % "IntegerAux" "Option" ...?
@@ -862,8 +884,17 @@ IsaTermPrinter qualifying spec
     else
       prString (ppIdStr qualifier ^ "__" ^ ppIdStr id)
 
-  op  ppTypeQualifiedId : QualifiedId \_rightarrow Pretty
-  def ppTypeQualifiedId qid =
+  op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
+  def ppOpQualifiedId c qid =
+    case specialOpInfo c qid of
+      | Some(s,_,_) \_rightarrow prString s
+      | None \_rightarrow ppQualifiedId qid
+
+  op  ppTypeQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
+  def ppTypeQualifiedId c qid =
+    case specialTypeInfo c qid of
+      | Some(s,_) \_rightarrow prString s
+      | None \_rightarrow
     case qid of
       | Qualified("Nat","Nat") \_rightarrow prString "nat"
       | Qualified("List","List") \_rightarrow prString "list"
@@ -978,16 +1009,16 @@ IsaTermPrinter qualifying spec
             ppTerm c Top term,
             prString ")"
           ]
-      | Base (qid,[],_) \_rightarrow ppTypeQualifiedId qid
+      | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
       | Base (qid,[ty],_) \_rightarrow
 	prBreak 0 [ppType c Top ty,
 		   prSpace,
-		   ppTypeQualifiedId qid]
+		   ppTypeQualifiedId c qid]
       | Base (qid,tys,_) \_rightarrow
         prBreak 0 [prString " (",
 		   prPostSep 0 blockFill (prString ",") (map (ppType c Top) tys),
 		   prString ")",
-		   ppTypeQualifiedId qid]
+		   ppTypeQualifiedId c qid]
       | Boolean _ \_rightarrow prString "bool"  
       | TyVar (tyVar,_) \_rightarrow prConcat[prString "'",prString tyVar]
       | MetaTyVar (tyVar,_) \_rightarrow 
@@ -1036,24 +1067,33 @@ IsaTermPrinter qualifying spec
      | Infix _ \_rightarrow true
      | _ \_rightarrow false
 
- op  termFixity: MS.Term \_rightarrow Fixity
- def termFixity term = 
+ op  termFixity: Context \_rightarrow MS.Term \_rightarrow Option Pretty * Fixity * Boolean
+ def termFixity c term = 
    case term of
      | Fun (termOp, srt, _) -> 
        (case termOp of
-	  | Op (_, fixity) -> (case fixity of
-				 | Unspecified -> Nonfix
-				 | _ -> fixity)
-	  | And            -> Infix (Right, 15) 
-	  | Or             -> Infix (Right, 14) 
-	  | Implies        -> Infix (Right, 13) 
-	  | Iff            -> Infix (Left, 20) % Same as Equals
-	  | Not            \_rightarrow Infix (Left, 18) % ?
-	  | Equals         -> Infix (Left, 20) % was 10 ??
-	  | NotEquals      -> Infix (Left, 20)
-	  | RecordMerge    -> Infix (Left, 25)
-	  | _              -> Nonfix)
-     | _ -> Nonfix
+	  | Op (id, fixity) ->
+	    (case specialOpInfo c id of
+	       | Some(isa_id,fix,curried) \_rightarrow
+	         (case fix of
+		   | Some f \_rightarrow (Some(prString isa_id), Infix f, curried)
+		   | None \_rightarrow   (Some(prString isa_id), Nonfix, curried))
+	       | None \_rightarrow
+	     case fixity of
+	       | Unspecified -> (None, Nonfix, false)
+	       | _ ->
+	        let Qualified(_,primeId) = id in
+		(Some(prString primeId), Nonfix, true))
+	  | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 15),true)
+	  | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 14),true)
+	  | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 13), true) 
+	  | Iff            -> (Some(prString "="), Infix (Left, 20), true)
+	  | Not            \_rightarrow (Some(lengthString(1, "\\<not>")), Infix (Left, 18), false) % ?
+	  | Equals         -> (Some(prString "="), Infix (Left, 20), true) % was 10 ??
+	  | NotEquals      -> (Some(lengthString(1, "\\<noteq>")), Infix (Left, 20), true)
+	  | RecordMerge    -> (Some(prString ">>"), Infix (Left, 25), true)
+	  | _              -> (None, Nonfix, false))
+     | _ -> (None, Nonfix, false)
  
  op  enclose?: Boolean \_times Pretty \_rightarrow Pretty
  def enclose?(encl?,pp) =
