@@ -131,4 +131,20 @@ Integer qualifying spec
 
   def pred x = x - 1
 
+  proof Isa Thy_Morphism
+   type Integer.Integer \_rightarrow int
+   Integer.+ \_rightarrow +  Left 25
+   Integer.- \_rightarrow -  Left 25
+   IntegerAux.- \_rightarrow -
+   Integer.* \_rightarrow *  Left 27
+   Integer.div \_rightarrow *  Left 27
+   Integer.rem \_rightarrow *  Left 27
+   Integer.<= \_rightarrow \<le>  Left 20
+   Integer.< \_rightarrow <  Left 20
+   Integer.>= \_rightarrow \<ge>  Left 20
+   Integer.abs \_rightarrow abs
+   Integer.min \_rightarrow min curried
+   Integer.max \_rightarrow max curried
+  end-proof
+
 endspec

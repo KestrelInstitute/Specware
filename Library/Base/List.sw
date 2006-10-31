@@ -236,4 +236,26 @@ List qualifying spec
        | []     -> ()
        | hd::tl -> (f hd; app f tl)
 
+  proof Isa Thy_Morphism list
+    type List.List \_rightarrow list
+    List.nil \_rightarrow []
+    List.cons \_rightarrow # Right 23
+    List.insert \_rightarrow # Right 23
+    List.length \_rightarrow length
+    List.null \_rightarrow null
+    List.hd \_rightarrow  hd  
+    List.tl \_rightarrow  tl
+    List.concat \_rightarrow  @ Left 25
+    List.++ \_rightarrow  @ Left 25
+    List.nth \_rightarrow ! Left 35
+    List.last \_rightarrow  last
+    List.butlast \_rightarrow  butlast
+    List.member \_rightarrow  mem Left 22
+    List.map \_rightarrow map
+    List.mapPartial \_rightarrow  filtermap  
+    List.exists \_rightarrow list_ex  
+    List.all \_rightarrow  list_all  
+    List.filter \_rightarrow  filter  
+  end-proof
+
 endspec

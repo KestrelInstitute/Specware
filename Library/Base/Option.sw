@@ -30,4 +30,9 @@ Option qualifying spec
       | None   -> None
       | Some x -> Some(f x)
 
+  proof Isa Thy_Morphism
+   type Option.Option \_rightarrow option
+   Option.mapOption \_rightarrow option_map
+  end-proof
+
 endspec
