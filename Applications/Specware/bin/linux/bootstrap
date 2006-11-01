@@ -7,7 +7,7 @@ SCRIPT_DIR=`pwd`
 
 echo " "
 echo "--------------------------------------------------------------------------------"
-echo "About to prepare a bootstrapping image based on ACL"
+echo "bootstrap: About to prepare a bootstrapping image based on ACL"
 echo "--------------------------------------------------------------------------------"
 echo " "
 
@@ -20,7 +20,7 @@ fi
 
 echo " "
 echo "--------------------------------------------------------------------------------"
-echo "About to generate Specware4.lisp from Specware4.sw, using ACL Specware image"
+echo "bootstrap: About to generate Specware4.lisp from Specware4.sw, using ACL Specware image"
 echo "--------------------------------------------------------------------------------"
 echo " "
 
@@ -33,7 +33,7 @@ fi
 
 echo " "
 echo "--------------------------------------------------------------------------------"
-echo "About to compile Specware4.lisp and various handwritten lisp files, using ACL"
+echo "bootstrap: About to compile Specware4.lisp and various handwritten lisp files, using ACL"
 echo "--------------------------------------------------------------------------------"
 echo " "
 
@@ -46,7 +46,7 @@ fi
 
 echo " "
 echo "--------------------------------------------------------------------------------"
-echo "About to prepare an ACL development image of Specware"
+echo "bootstrap: About to prepare an ACL development image of Specware"
 echo "--------------------------------------------------------------------------------"
 echo " "
 
