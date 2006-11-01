@@ -512,34 +512,36 @@ IsaTermPrinter qualifying spec
 	 else [(hd,bod)]
       | _ \_rightarrow [(hd,bod)]
 
-  op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow Option (String * String * String * Position)
-                   \_rightarrow Pretty
+  op  ppProperty : Context \_rightarrow Property \_rightarrow String
+                     \_rightarrow Option (String * String * String * Position)
+                     \_rightarrow Pretty
   def ppProperty c (propType, name, tyVars, term) comm prf =
     % let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
-    prLinearCat 2 ([[ppPropertyType propType,
-		     prSpace,
-		     ppQualifiedId name,
-		     let comm = stripSpaces comm in
-		     let len = length comm in
-		     if len > 13 \_and substring(comm,0,14) = "Simplification"
-		       then prString " [simp]"
-		       else prEmpty,
-		     prString ": "],
-		     %ppTyVars tyVars,
-		     [prString "\"",
-		      ppPropertyTerm c term,
-		      prString "\""]]
-		    ++ (case prf of
-			  | Some(beg_str,mid_str,end_str,pos) \_rightarrow
-			    let len = length mid_str in
-			    (case search("\n",mid_str) of
-			       | None \_rightarrow []
-			       | Some n \_rightarrow
-			         [[prString(stripTrailingWhiteSpace(substring(mid_str,n+1,len)))]])
-			  | _ \_rightarrow [])
-		    ++ (case propType of
-			  | Axiom \_rightarrow []
-			  | _ \_rightarrow [[prString "done",prEmpty]]))
+    prLinearCat 2
+      ([[ppPropertyType propType,
+	 prSpace,
+	 ppQualifiedId name,
+	 let comm = stripSpaces comm in
+	 let len = length comm in
+	 if len > 13 \_and substring(comm,0,14) = "Simplification"
+	   then prString " [simp]"
+	   else prEmpty,
+	 prString ": "],
+	 %ppTyVars tyVars,
+	 [prString "\"",
+	  ppPropertyTerm c (explicitUniversals prf) term,
+	  prString "\""]]
+	++ (case prf of
+	      | Some(beg_str,mid_str,end_str,pos) \_rightarrow
+		let len = length mid_str in
+		(case search("\n",mid_str) of
+		   | None \_rightarrow []
+		   | Some n \_rightarrow
+		     [[prString(stripTrailingWhiteSpace(substring(mid_str,n+1,len)))]])
+	      | _ \_rightarrow [])
+	++ (case propType of
+	      | Axiom \_rightarrow []
+	      | _ \_rightarrow [[prString "done",prEmpty]]))
 
   op  stripTrailingWhiteSpace: String \_rightarrow String
   def stripTrailingWhiteSpace s =
@@ -547,6 +549,29 @@ IsaTermPrinter qualifying spec
     if len > 0 \_and member(sub(s,len-1), [#\s,#\n])
       then stripTrailingWhiteSpace(substring(s,0,len-1))
       else s
+
+  op  explicitUniversals: Option (String * String * String * Position) \_rightarrow List String
+  def explicitUniversals prf =
+    case prf of
+      | None \_rightarrow []
+      | Some (_,prag_str,_,_) \_rightarrow
+    let end_pos = case search("\n",prag_str) of
+		    | Some n \_rightarrow n
+		    | None \_rightarrow length prag_str
+    in
+    let end_fa_pos = case search(" fa ",prag_str) of
+		       | Some n \_rightarrow n+4
+		       | None \_rightarrow
+		     case search(" \\_forall",prag_str) of
+		       | Some n \_rightarrow n+9
+		       | None \_rightarrow length prag_str
+    in
+    let end_vars_pos = case search(" .",prag_str) of
+		       | Some n \_rightarrow n
+		       | None \_rightarrow 0
+    in
+    if end_fa_pos >= end_pos || end_vars_pos <= end_fa_pos then []
+      else removeEmpty(splitStringAt(substring(prag_str,end_fa_pos,end_vars_pos)," "))
 
   op  ppPropertyType : PropertyType \_rightarrow Pretty
   def ppPropertyType propType =
@@ -734,9 +759,9 @@ IsaTermPrinter qualifying spec
 	      ppType c Top ty]
 
   %%% Top-level theorems use implicit quantification meta-level \_Rightarrow and lhs \_and
-  op  ppPropertyTerm : Context \_rightarrow MS.Term \_rightarrow Pretty
-  def ppPropertyTerm c term =
-    let (assmpts,concl) = parsePropertyTerm c term in
+  op  ppPropertyTerm : Context \_rightarrow List String \_rightarrow MS.Term \_rightarrow Pretty
+  def ppPropertyTerm c explicit_universals term =
+    let (assmpts,concl) = parsePropertyTerm c explicit_universals term in
     if assmpts = [] then ppTerm c Top concl
       else prBreak 0 [prBreak 0 [lengthString(1, "\\<lbrakk>"),
 				 prPostSep 0 blockFill (prString "; ")
@@ -745,15 +770,18 @@ IsaTermPrinter qualifying spec
 		      lengthString(5, " \\<Longrightarrow> "),
 		      ppTerm c Top concl]
 
-  op  parsePropertyTerm: Context \_rightarrow MS.Term \_rightarrow List MS.Term \_times MS.Term
-  def parsePropertyTerm c term =
+  op  parsePropertyTerm: Context \_rightarrow List String \_rightarrow MS.Term \_rightarrow List MS.Term \_times MS.Term
+  def parsePropertyTerm c explicit_universals term =
     case term of
-      | Bind (Forall,vars,bod,_) \_rightarrow
-        parsePropertyTerm c bod
+      | Bind (Forall,vars,bod,a) \_rightarrow
+        let expl_vars = filter (fn (vn,_) \_rightarrow member(vn,explicit_universals)) vars in
+	if expl_vars = []
+	  then parsePropertyTerm c explicit_universals bod
+	  else ([],Bind (Forall,expl_vars,bod,a))
       | Apply(Fun(Implies,_,_),
 	      Record([("1", lhs), ("2", rhs)], _),_) \_rightarrow
 	let lhj_cjs = getConjuncts lhs in
-	let (rec_cjs,bod) = parsePropertyTerm c rhs in
+	let (rec_cjs,bod) = parsePropertyTerm c explicit_universals rhs in
 	(lhj_cjs ++ rec_cjs,bod)
       | _ \_rightarrow ([],term)
 
