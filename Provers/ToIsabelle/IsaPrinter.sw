@@ -566,7 +566,7 @@ IsaTermPrinter qualifying spec
 		       | Some n \_rightarrow n+9
 		       | None \_rightarrow length prag_str
     in
-    let end_vars_pos = case search(" .",prag_str) of
+    let end_vars_pos = case search(".",prag_str) of
 		       | Some n \_rightarrow n
 		       | None \_rightarrow 0
     in
