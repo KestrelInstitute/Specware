@@ -1,0 +1,6 @@
+#!/bin/bash --noprofile
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+xemacs $* -l $SPECWARE4/Library/IO/Emacs/load-slime.el -f run-specware4 &

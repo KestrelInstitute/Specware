@@ -1,0 +1,6 @@
+#!/bin/bash --noprofile
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+Isabelle -p $SPECWARE4/Scripts/unix/XEmacs_Specware $* 
