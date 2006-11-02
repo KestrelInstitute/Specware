@@ -434,8 +434,11 @@ IsaTermPrinter qualifying spec
  def ppTyVars tvs =
    case tvs of
      | [] \_rightarrow prEmpty
-     | _  \_rightarrow prConcat((addSeparator prSpace (map (\_lambda tv \_rightarrow prConcat[prString "'",prString tv]) tvs))
-		      ++ [prSpace])
+     | [tv] \_rightarrow prConcat [prString tv,prSpace]
+     | _ \_rightarrow prConcat [prString " (",
+		      prPostSep 0 blockFill (prString ",")
+		        (map (\_lambda tv \_rightarrow prConcat[prString "'",prString tv]) tvs),
+		      prString ")"]
 
  def precNumFudge = 40
 
@@ -517,15 +520,21 @@ IsaTermPrinter qualifying spec
                      \_rightarrow Pretty
   def ppProperty c (propType, name, tyVars, term) comm prf =
     % let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
+    let annotation =
+        case findBracketAnnotation(prf) of
+	  | Some str \_rightarrow prConcat [prSpace, prString str]
+	  | _ \_rightarrow
+	    let comm = stripSpaces comm in
+	    let len = length comm in
+	    if len > 13 \_and substring(comm,0,14) = "Simplification"
+	      then prString " [simp]"
+	      else prEmpty
+    in
     prLinearCat 2
       ([[ppPropertyType propType,
 	 prSpace,
 	 ppQualifiedId name,
-	 let comm = stripSpaces comm in
-	 let len = length comm in
-	 if len > 13 \_and substring(comm,0,14) = "Simplification"
-	   then prString " [simp]"
-	   else prEmpty,
+	 annotation,
 	 prString ": "],
 	 %ppTyVars tyVars,
 	 [prString "\"",
@@ -537,18 +546,20 @@ IsaTermPrinter qualifying spec
 		(case search("\n",mid_str) of
 		   | None \_rightarrow []
 		   | Some n \_rightarrow
-		     [[prString(stripTrailingWhiteSpace(substring(mid_str,n+1,len)))]])
+		     [[prString(stripExcessWhiteSpace(substring(mid_str,n+1,len)))]])
 	      | _ \_rightarrow [])
 	++ (case propType of
 	      | Axiom \_rightarrow []
 	      | _ \_rightarrow [[prString "done",prEmpty]]))
 
-  op  stripTrailingWhiteSpace: String \_rightarrow String
-  def stripTrailingWhiteSpace s =
+  op  stripExcessWhiteSpace: String \_rightarrow String
+  def stripExcessWhiteSpace s =
     let len = length s in
     if len > 0 \_and member(sub(s,len-1), [#\s,#\n])
-      then stripTrailingWhiteSpace(substring(s,0,len-1))
-      else s
+      then stripExcessWhiteSpace(substring(s,0,len-1))
+      else if len > 2 && sub(s,0) = #\s && sub(s,1) = #\s
+	    then substring(s,2,len)
+	    else s
 
   op  explicitUniversals: Option (String * String * String * Position) \_rightarrow List String
   def explicitUniversals prf =
@@ -572,6 +583,26 @@ IsaTermPrinter qualifying spec
     in
     if end_fa_pos >= end_pos || end_vars_pos <= end_fa_pos then []
       else removeEmpty(splitStringAt(substring(prag_str,end_fa_pos,end_vars_pos)," "))
+
+  op  findBracketAnnotation: Option (String * String * String * Position) \_rightarrow Option String
+  def findBracketAnnotation prf =
+    case prf of
+      | None \_rightarrow None
+      | Some (_,prag_str,_,_) \_rightarrow
+    let end_pos =  case search("\n",prag_str) of
+		     | Some n \_rightarrow n
+		     | None \_rightarrow length prag_str
+    in
+    let open_pos = case search("[",prag_str) of
+		     | Some n \_rightarrow n
+		     | None \_rightarrow length prag_str
+    in
+    let close_pos = case search("]",prag_str) of
+		     | Some n \_rightarrow n
+		     | None \_rightarrow 0
+    in
+    if close_pos >= end_pos || close_pos <= open_pos then None
+      else Some(substring(prag_str,open_pos,close_pos+1))
 
   op  ppPropertyType : PropertyType \_rightarrow Pretty
   def ppPropertyType propType =
