@@ -235,4 +235,20 @@ String qualifying spec
 
   def Char.show c = Char.toString c
 
+  proof Isa ThyMorphism
+    type String.String \_rightarrow string
+    String.explode \_rightarrow id
+    String.implode \_rightarrow id
+    String.length \_rightarrow length
+    String.concat \_rightarrow @ Left 25
+    String.++ \_rightarrow @ Left 25
+    String.^ \_rightarrow @ Left 25
+    String.map \_rightarrow map
+    String.exists \_rightarrow list_ex
+    String.all \_rightarrow list_all
+    String.sub \_rightarrow ! Left 40
+    String.concatList \_rightarrow concat
+    
+  end-proof
+
 endspec

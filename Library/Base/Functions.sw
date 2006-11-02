@@ -31,4 +31,13 @@ Functions qualifying spec
   axiom inverse_def is [a,b]
     fa (f:Bijection(a,b))  (inverse f) o f = id  &&  f o (inverse f) = id
 
+  proof Isa ThyMorphism Fun
+    Functions.id \_rightarrow id
+    Functions.o \_rightarrow o Left 24
+    Functions.injective? \_rightarrow inj
+    Functions.surjective? \_rightarrow surj
+    Functions.bijective? \_rightarrow bij
+    Functions.inverse \_rightarrow inv
+  end-proof
+
 endspec

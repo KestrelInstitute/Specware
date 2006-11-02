@@ -249,7 +249,9 @@ List qualifying spec
     List.++ \_rightarrow  @ Left 25
     List.nth \_rightarrow ! Left 35
     List.last \_rightarrow  last
-    List.butlast \_rightarrow  butlast
+    List.butLast \_rightarrow  butlast
+    List.rev \_rightarrow rev
+    List.flatten \_rightarrow concat
     List.member \_rightarrow  mem Left 22
     List.map \_rightarrow map
     List.mapPartial \_rightarrow  filtermap  

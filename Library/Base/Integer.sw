@@ -131,7 +131,7 @@ Integer qualifying spec
 
   def pred x = x - 1
 
-  proof Isa Thy_Morphism
+  proof Isa Thy_Morphism Presburger
    type Integer.Integer \_rightarrow int
    Integer.+ \_rightarrow +  Left 25
    Integer.- \_rightarrow -  Left 25
