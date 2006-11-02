@@ -3,4 +3,7 @@
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. 
 
-xemacs $* -l $SPECWARE4/Library/IO/Emacs/load-slime.el -f run-specware4 &
+# Load specware emacs files, do command line options (e.g. load and
+# start Isabelle and then run-specware4
+
+xemacs -l $SPECWARE4/Library/IO/Emacs/load-slime.el $* -f run-specware4&

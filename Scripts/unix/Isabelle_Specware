@@ -3,4 +3,15 @@
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. 
 
-Isabelle -p $SPECWARE4/Scripts/unix/XEmacs_Specware $* 
+SCRIPTDIR=`/usr/bin/dirname $0`
+XEMACS_SPECWARE="$SCRIPTDIR"/XEmacs_Specware
+
+if [ ! -x "${XEMACS_SPECWARE}" ]; then
+  XEMACS_SPECWARE=$SPECWARE4/Scripts/unix/XEmacs_Specware
+  if [ ! -x "${XEMACS_SPECWARE}" ]; then
+    echo "  XEmacs_Specware is not in same directory as Isabelle_Specware"
+    exit 1
+  fi
+fi
+
+Isabelle -p $XEMACS_SPECWARE $* 
