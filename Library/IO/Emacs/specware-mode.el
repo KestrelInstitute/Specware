@@ -1791,14 +1791,28 @@ uniquely and concretely describes their application.")
   (interactive)
   (save-buffer)
   (let* ((filename (sw:containing-specware-unit-id))
-	 (thy-file (sw:eval-in-lisp (format "(let ((TypeObligations::generateTerminationConditions? nil)
-                                                   (TypeObligations::generateExhaustivityConditions? nil))
-                                               (IsaTermPrinter::printUIDtoThyFile-2 %S nil))"
-					    filename)))
+	 (thy-file (sw:eval-in-lisp
+		    (format
+		     "(let ((TypeObligations::generateTerminationConditions? nil)
+                            (TypeObligations::generateExhaustivityConditions? nil))
+                        (IsaTermPrinter::printUIDtoThyFile-2 %S nil))"
+		     filename)))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
-						   display-warning-suppressed-classes)))
+						   display-warning-suppressed-classes))
+	 (buf (find-file-noselect thy-file t)))
+    (kill-buffer buf)		; Because of x-symbol problems if it already exists
     (find-file-other-window thy-file)))
+
+(defun sw:add-specware-to-isabelle-path ()
+  (when (fboundp 'proof-shell-invisible-command)
+    (proof-shell-invisible-command
+     (format "ML  {* ThyLoad.add_path \"%s/Library/Base/Isa/\" *}"
+	     (getenv "SPECWARE4")))))
+
+(sw:add-specware-to-isabelle-path)
+
+;(add-hook 'proof-activate-scripting-hook 'sw:add-specware-to-isabelle-path t)
 
 ;;; & do the user's customisation
 
