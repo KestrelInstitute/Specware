@@ -297,7 +297,7 @@ IsaTermPrinter qualifying spec
 		    else toFile(thy_fil_nm,showValue(Spec spc,c.recursive?))
 		  else ()
 	in prString (case thy_nm of
-		       | "Base" \_rightarrow "List" % Hack
+		       | "Base" \_rightarrow "Base"
 		       | _ \_rightarrow thy_nm ^ hash_ext)
 
   op  ppSpecElements: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Pretty
@@ -1003,12 +1003,13 @@ IsaTermPrinter qualifying spec
       | Some(s,_) \_rightarrow prString s
       | None \_rightarrow
     case qid of
-      | Qualified("Nat","Nat") \_rightarrow prString "nat"
-      | Qualified("List","List") \_rightarrow prString "list"
-      | Qualified("String","String") \_rightarrow prString "string"
-      | Qualified("Char","Char") \_rightarrow prString "char"
-      | Qualified("Boolean","Boolean") \_rightarrow prString "bool"
-      | Qualified("Integer","Integer") \_rightarrow prString "int"
+%% Table-driven now above
+%      | Qualified("Nat","Nat") \_rightarrow prString "nat"
+%      | Qualified("List","List") \_rightarrow prString "list"
+%      | Qualified("String","String") \_rightarrow prString "string"
+%      | Qualified("Char","Char") \_rightarrow prString "char"
+%      | Qualified("Boolean","Boolean") \_rightarrow prString "bool"
+%      | Qualified("Integer","Integer") \_rightarrow prString "int"
       | _ \_rightarrow ppQualifiedId qid
 
 
