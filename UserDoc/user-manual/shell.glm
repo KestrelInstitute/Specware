@@ -21,8 +21,8 @@ circularities in the chain of unit dependencies.</para>
 in the window containing the &SShell;. Progress messages inform
 the user that units were processed without error. Error messages
 provide information on the cause of errors, so that the user can fix
-them by editing the unit definitions. If the &SShell; is running in an
-XEmacs buffer, then, when an error occurs in the definition of some unit,
+them by editing the unit definitions. If the &SShell; is running under
+XEmacs, then, when an error occurs in the definition of some unit,
 &Specware; displays the <".sw"> file
 containing the unit term in a separate XEmacs buffer, with the cursor
 positioned at the point of the erroneous text.</para>
@@ -428,7 +428,7 @@ single-unit file in the current directory.
 A command entered by the user should be typed all on one line.
 The Return/Enter at the end of the line signals to the &SShell;
 that the command must be executed.
-If the &SShell; is running in an XEmacs buffer,
+If the &SShell; is running under XEmacs,
 the TAB key can be used for filename completion.
 </para>
 
@@ -630,7 +630,7 @@ declarations may have been added or re-ordered, and explicit
 qualifications may have been added.
 </para>
 
-If the [$unit-term$] is an obligation term then the show may be
+<para>If the [$unit-term$] is an obligation term then the show may be
 omitted. For example,
 [[
 ||    obligations $unit-term$
@@ -643,7 +643,7 @@ is the same as
 [[
 ||    show obligations $unit-term$
 ]]
-
+</para>
 
 <para>To show imported specs expanded in place, use:
 [[
