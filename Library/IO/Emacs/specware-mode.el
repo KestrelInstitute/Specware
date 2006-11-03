@@ -1807,7 +1807,7 @@ uniquely and concretely describes their application.")
 (defun sw:add-specware-to-isabelle-path ()
   (when (fboundp 'proof-shell-invisible-command)
     (proof-shell-invisible-command
-     (format "ML  {* ThyLoad.add_path \"%s/Library/Base/Isa/\" *}"
+     (format "ML  {* ThyLoad.add_path \"%s/Library/Isa/\" *}"
 	     (getenv "SPECWARE4")))))
 
 (sw:add-specware-to-isabelle-path)
