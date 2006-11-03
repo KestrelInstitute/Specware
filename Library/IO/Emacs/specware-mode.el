@@ -1802,11 +1802,14 @@ uniquely and concretely describes their application.")
 						   display-warning-suppressed-classes))
 	 (buf (find-file-noselect thy-file t)))
     (kill-buffer buf)		; Because of x-symbol problems if it already exists
+    (sw:add-specware-to-isabelle-path)
     (find-file-other-window thy-file)))
 
 (defun sw:add-specware-to-isabelle-path ()
   (when (fboundp 'proof-shell-invisible-command)
-    (proof-shell-invisible-command
+    (proof-shell-ready-prover)
+    ;(proof-cd-sync)
+    (proof-assistant-invisible-command-ifposs   ;proof-shell-invisible-command
      (format "ML  {* ThyLoad.add_path \"%s/Library/Isa/\" *}"
 	     (getenv "SPECWARE4")))))
 
