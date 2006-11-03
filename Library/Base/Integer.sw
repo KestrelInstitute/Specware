@@ -136,6 +136,7 @@ Integer qualifying spec
    Integer.+ \_rightarrow +  Left 25
    Integer.- \_rightarrow -  Left 25
    IntegerAux.- \_rightarrow -
+   Integer.~ \_rightarrow -
    Integer.* \_rightarrow *  Left 27
    Integer.div \_rightarrow *  Left 27
    Integer.rem \_rightarrow *  Left 27
