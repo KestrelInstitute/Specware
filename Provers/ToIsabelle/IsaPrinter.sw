@@ -982,7 +982,7 @@ IsaTermPrinter qualifying spec
       | TwoNames (id1,id2,fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1,id2))
       | mystery \_rightarrow fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
 
-  def omittedQualifiers = ["Double","List","String","Char"]  % "IntegerAux" "Option" ...?
+  def omittedQualifiers = ["Double","String"]  % "IntegerAux" "Option" ...?
 
   op  ppQualifiedId : QualifiedId \_rightarrow Pretty
   def ppQualifiedId (Qualified (qualifier,id)) =
