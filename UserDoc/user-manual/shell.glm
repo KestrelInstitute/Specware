@@ -575,9 +575,9 @@ parses and elaborates all the unit definitions inside the file.</para>
 The command [[proc]] may be abbreviated to [[p]].
 </para>
 
-<para>
-If the $unit-term$ is a proof term, i.e. it begins with [[prove]], then the [[proc]]
-or [[p]] may be omitted, so
+<para> If the $unit-term$ is a proof term,
+i.e. it begins with [[prove]], then the [[proc]] or [[p]] may be
+omitted, so
 [[
 ||    prove $claim-name$ in $unit-term$
 ]]
@@ -586,6 +586,8 @@ is the same as
 ||    proc prove $claim-name$ in $unit-term$
 ]]
 </para>
+
+
 
 <para>
 The values of processed units are kept in the unit cache.
@@ -627,6 +629,21 @@ different in several ways: white space may be different,
 declarations may have been added or re-ordered, and explicit
 qualifications may have been added.
 </para>
+
+If the [$unit-term$] is an obligation term then the show may be
+omitted. For example,
+[[
+||    obligations $unit-term$
+]]
+or its abbreviation
+[[
+||    oblig $unit-term$
+]]
+is the same as
+[[
+||    show obligations $unit-term$
+]]
+
 
 <para>To show imported specs expanded in place, use:
 [[
