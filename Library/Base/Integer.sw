@@ -6,6 +6,7 @@ Integer qualifying spec
 
   % true for non-negative integers:
   op natural? : Integer -> Boolean
+  def natural? i = 0 <= i
 
   (* The following type definition defines the naturals to be a subtype of the
   integers. However, since the naturals have been axiomatized in spec Nat,
@@ -108,9 +109,6 @@ Integer qualifying spec
 
   axiom less_than_equal_def is
     fa (x:Integer, y:Integer) x <= y <=> natural? (y - x)
-
-  theorem natural?_and_less_than_equal is
-    fa(i:Integer) natural? i <=> 0 <= i
 
   axiom less_than_def is
     fa (x:Integer, y:Integer) x < y <=> (x <= y && x ~= y)
