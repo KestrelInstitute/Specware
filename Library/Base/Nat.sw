@@ -56,17 +56,6 @@ Nat qualifying spec
     fa(n1:Nat, n2:Nat) lte(n2,n1) => minus(succ n1,succ n2) = minus(n1,n2)
 
   proof Isa Thy_Morphism
-   type Nat.Nat -> int (int,nat)
-   Nat.zero -> 0
-   Nat.one -> 1
-   Nat.two -> 2
-   Nat.plus -> +  Left 25
-   Nat.lte -> \<le> Left 20
-   Integer.>= -> \<ge>  Left 20
-  end-proof
-
-(*
-  proof Isa Thy_Morphism
    type Nat.Nat -> nat (int,nat)
    Nat.zero -> 0
    Nat.one -> 1
@@ -77,6 +66,5 @@ Nat qualifying spec
    Nat.lte -> \<le> Left 20
    Integer.>= -> \<ge>  Left 20
   end-proof
-*)
 
 endspec
