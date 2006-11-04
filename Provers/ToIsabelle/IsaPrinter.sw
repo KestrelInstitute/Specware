@@ -12,6 +12,8 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Transformations/RemoveSubsorts
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
  import /Languages/MetaSlang/Specs/TypeObligations
+ import /Languages/MetaSlang/Transformations/RemoveSubsorts
+ import /Languages/MetaSlang/Transformations/Coercions
 
  def addObligations? = true
 
@@ -240,13 +242,16 @@ IsaTermPrinter qualifying spec
 
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
-    let c = c << {spec? = Some spc, trans_table = thyMorphismMaps spc} in
+    let trans_table = thyMorphismMaps spc in
+    let c = c << {spec? = Some spc, trans_table = trans_table} in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec spc
 	       else spc
     in
     let spc = normalizeTypes spc in
+    let coercions = makeCoercionTable(trans_table, spc) in   % before removeSubSorts!
     let spc = removeSubSorts spc in
+    let spc = addCoercions coercions spc in
     prLinesCat 0 [[prString "theory ", prString c.thy_name],
 		  [prString "imports ", ppImports c spc.elements],
 		  [prString "begin"],
@@ -270,6 +275,33 @@ IsaTermPrinter qualifying spec
     len > 2 \_and (let pr_type = substring(s,0,3) in
 	       pr_type = "Isa" \_or pr_type = "All")
     \_or (len > 13 \_and substring(s,0,14) = "Simplification")
+
+  op  makeCoercionTable: TransInfo * Spec \_rightarrow TypeCoercionTable
+  def makeCoercionTable(trans_info,spc) =
+    Map.foldi (\_lambda (subty, (super_id,opt_coerc),val) \_rightarrow
+	     case opt_coerc of
+	       | None \_rightarrow val
+	       | Some(toSuper,toSub) \_rightarrow
+	     let Some info = AnnSpec.findTheSort(spc,subty) in
+	     let srtDef = firstSortDefInnerSort info in
+	     let superty = getSuperTypeOp srtDef in
+	     Cons({subtype = subty,
+		   supertype = superty,
+		   coerceToSuper = mkOp(Qualified(toIsaQual,toSuper),
+					mkArrow(mkBase(subty,[]),
+						mkBase(superty,[]))),
+		   coerceToSub   = mkOp(Qualified(toIsaQual,toSub),
+					mkArrow(mkBase(superty,[]),
+						mkBase(subty,[])))},
+		  val))
+      [] trans_info.type_map
+
+  op  getSuperTypeOp: Sort \_rightarrow QualifiedId
+  def getSuperTypeOp ty =
+    case ty of
+      | Subsort(Base(superty,_,_),_,_) \_rightarrow superty
+      | Subsort(sup,_,_) \_rightarrow getSuperTypeOp sup
+      | _ \_rightarrow fail("Not a Subsort")
 
   def baseSpecName = "Datatype"
 
@@ -982,7 +1014,10 @@ IsaTermPrinter qualifying spec
       | TwoNames (id1,id2,fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1,id2))
       | mystery \_rightarrow fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
 
-  def omittedQualifiers = ["Double","String"]  % "IntegerAux" "Option" ...?
+  %% For internal use. Choose unparseable name
+  def toIsaQual = "ToIsa-Internal"
+
+  def omittedQualifiers = ["Double","String",toIsaQual]  % "IntegerAux" "Option" ...?
 
   op  ppQualifiedId : QualifiedId \_rightarrow Pretty
   def ppQualifiedId (Qualified (qualifier,id)) =
