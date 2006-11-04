@@ -2,7 +2,7 @@ NormTypes qualifying spec
 
   import /Languages/MetaSlang/Specs/Utilities
 
-  %% Replaces sorts and quotients by their named sorts
+  %% Replaces sorts expressions by their named sorts
   op  normalizeTypes: Spec \_rightarrow Spec
   def normalizeTypes spc =
     let topLevelSorts =
@@ -14,13 +14,7 @@ NormTypes qualifying spec
 	     if  definedSortInfo? info
 	      then
 		let (tvs,ty) = unpackFirstSortDef info in
-		let quotientOrCoProduct? =
-		    case ty of
-		      | Quotient _ \_rightarrow true
-		      | CoProduct _ \_rightarrow true
-		      | _ \_rightarrow false
-		in
-		if quotientOrCoProduct?
+		if replaceableType? ty
 		  then Cons((Qualified(q, id),tvs,ty),result)
 		  else result
 	      else result
@@ -28,13 +22,7 @@ NormTypes qualifying spec
 	  [] spc.sorts
     in
    let def normType ty =
-         let quotientOrCoProduct? =
-	     case ty of
-	       | Quotient _ \_rightarrow true
-	       | CoProduct _ \_rightarrow true
-	       | _ \_rightarrow false
-	 in
-	 if quotientOrCoProduct?
+	 if replaceableType? ty
 	    \_and \_not (exists (\_lambda (id,vs,top_ty) \_rightarrow ty = top_ty) topLevelSorts)
 	   then
 	     case foldl (\_lambda ((qid,tvs,top_ty),result) \_rightarrow
@@ -61,5 +49,12 @@ NormTypes qualifying spec
    in
      mapSpec (id,normType,id) spc
  
+  op  replaceableType?: [a] ASort a \_rightarrow Boolean
+  def replaceableType? ty =
+    case ty of
+      | Quotient _ \_rightarrow true
+      | CoProduct _ \_rightarrow true
+      | Subsort _ \_rightarrow true
+      | _ \_rightarrow false
 
 endspec
