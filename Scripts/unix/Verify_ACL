@@ -53,9 +53,11 @@ echo "  "
 if [ -f "${BIG_ALISP}" ]; then
 	echo "  Verify_ACL:  Already have ${BIG_ALISP}"
 else
-	echo "  Verify_ACL:  Building ${BIG_ALISP}"
+	NOW=`/bin/date +"%y%m%d-%H%M%S"`
 	# big-alisp.dxl will have a larger lisp heap than the default alisp image.
-	$LISP -batch <<-XXXX
+	echo "  Verify_ACL:  Building ${BIG_ALISP}"
+	echo "               See /tmp/build-big-alisp-$NOW.log for details."
+	$LISP -batch <<-XXXX>> /tmp/build-big-alisp-$NOW.log
 	  (build-lisp-image "${BIG_ALISP}" :lisp-heap-start #x48000000 :oldspace #x100)
 	XXXX
 	RC=$?
