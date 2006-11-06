@@ -1264,7 +1264,7 @@ Utilities qualifying spec
    unfoldBaseV (sp, srt, true)
 
  op unfoldBaseV : Spec * Sort * Boolean -> Sort 
- def unfoldBaseV (sp:Spec, srt, verbose) = 
+ def unfoldBaseV (sp, srt, verbose) = 
   case srt of
     | Base (qid, srts, a) ->
       (case findTheSort (sp, qid) of
@@ -1277,6 +1277,22 @@ Utilities qualifying spec
 	   else
 	     srt)
     | _ -> srt
+
+ op  unfoldBaseOne : Spec * Sort -> Sort 
+ def unfoldBaseOne (sp, srt) = 
+  case srt of
+    | Base (qid, srts, a) ->
+      (case findTheSort (sp, qid) of
+	 | None -> srt
+	 | Some info ->
+	   if definedSortInfo? info then
+	     let (tvs, srt) = unpackFirstSortDef info in
+	     let ssrt = substSort (zip (tvs, srts), srt) in
+	     ssrt
+	   else
+	     srt)
+    | _ -> srt
+
 
   type TyVarSubst = List(Id * Sort)
   op  instantiateTyVars: Sort * TyVarSubst -> Sort
