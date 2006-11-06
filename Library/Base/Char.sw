@@ -61,4 +61,9 @@ Char qualifying spec
 
   def compare(c1,c2) = compare(ord c1, ord c2)
 
+  proof Isa Thy_Morphism
+    type Char.Char \_rightarrow char
+    
+  end-proof
+
 endspec

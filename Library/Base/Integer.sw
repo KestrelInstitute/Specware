@@ -131,6 +131,7 @@ Integer qualifying spec
 
   proof Isa Thy_Morphism Presburger
    type Integer.Integer \_rightarrow int
+   type Nat.Nat -> nat (int,nat)
    Integer.+ \_rightarrow +  Left 25
    Integer.- \_rightarrow -  Left 25
    IntegerAux.- \_rightarrow -

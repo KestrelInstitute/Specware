@@ -56,7 +56,7 @@ Nat qualifying spec
     fa(n1:Nat, n2:Nat) lte(n2,n1) => minus(succ n1,succ n2) = minus(n1,n2)
 
   proof Isa Thy_Morphism
-   type Nat.Nat -> nat (int,nat)
+   type Nat.Nat -> nat
    Nat.zero -> 0
    Nat.one -> 1
    Nat.two -> 2
