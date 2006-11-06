@@ -1444,7 +1444,10 @@ The rules for selecting the arguments are rather complicated:
     (message "Connecting to Swank on port %S.." port)
     ;; sjw: Convert port to string to get around an xemacs bugs in certain versions
     ;; E.g. intel mac 21.4 (patch 15)
-    (let* ((process (slime-net-connect host (format "%S" port) coding-system))
+    (let* ((process (slime-net-connect host
+                                       (if *windows-system-p*
+                                           port (format "%S" port))
+                                       coding-system))
            (slime-dispatching-connection process))
       (slime-setup-connection process))))
 
