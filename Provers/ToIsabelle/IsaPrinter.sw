@@ -36,7 +36,8 @@ IsaTermPrinter qualifying spec
 
 
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
- type ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subsort 
+ type ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct
+                   | Quotient | Subsort | Apply
 
  type SpecTerm = SpecCalc.SpecTerm StandardAnnotation
  type Term = SpecCalc.Term StandardAnnotation
@@ -282,8 +283,7 @@ IsaTermPrinter qualifying spec
 	     case opt_coerc of
 	       | None \_rightarrow val
 	       | Some(toSuper,toSub) \_rightarrow
-	     let Some info = AnnSpec.findTheSort(spc,subty) in
-	     let srtDef = firstSortDefInnerSort info in
+	     let srtDef = sortDef(subty,spc) in
 	     let superty = getSuperTypeOp srtDef in
 	     Cons({subtype = subty,
 		   supertype = superty,
@@ -441,7 +441,7 @@ IsaTermPrinter qualifying spec
 		 ppTyVars tvs,
 		 ppIdInfo aliases],
 		[prString " = ", ppType c Top ty]]
-	   | Product (fields,_) | (hd fields).1 ~= "1" \_rightarrow
+	   | Product (fields,_) | length fields > 0 && (hd fields).1 ~= "1" \_rightarrow
 	     prLinesCat 2
 	       ([[prString "record ",
 		  ppTyVars tvs,
@@ -529,23 +529,34 @@ IsaTermPrinter qualifying spec
 
   op  defToCases: MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times MS.Term)
   def defToCases hd bod =
-    case bod of
-      | Lambda ([(VarPat v,_,term)],a) \_rightarrow
-        defToCases (Apply(hd,Var v,a)) term
-%      | Lambda ([(pattern,_,term)],a) \_rightarrow
-%        (case patternToTerm pattern of
-%	   | Some pat_tm \_rightarrow defToCases (Apply(hd,pat_tm,a)) term
-%	   | _ \_rightarrow [(hd,bod)])
-      | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
-        if exists (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
-	 then foldl (\_lambda ((pati,_,bodi),result) \_rightarrow
-		     case patternToTerm pati of
-		       | Some pati_tm \_rightarrow
-		         result ++ [(substitute(hd,[(v,pati_tm)]), bodi)]
-		       | _ \_rightarrow result ++ [(hd,bodi)])
-		[] pats
-	 else [(hd,bod)]
-      | _ \_rightarrow [(hd,bod)]
+    let
+      def aux(hd,bod) =
+	case bod of
+	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) \_rightarrow
+	    aux (Apply(hd,mkVar v,a), term)
+    %      | Lambda ([(pattern,_,term)],a) \_rightarrow
+    %        (case patternToTerm pattern of
+    %	   | Some pat_tm \_rightarrow aux (Apply(hd,pat_tm,a)) term
+    %	   | _ \_rightarrow [(hd,bod)])
+	  | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
+	    if exists (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
+	     then foldl (\_lambda ((pati,_,bodi),result) \_rightarrow
+			 case patternToTerm pati of
+			   | Some pati_tm \_rightarrow
+			     result ++ [(substitute(hd,[(v,pati_tm)]), bodi)]
+			   | _ \_rightarrow result ++ [(hd,bodi)])
+		    [] pats
+	     else [(hd,bod)]
+	  | _ \_rightarrow [(hd,bod)]
+      def fix_vars(hd,bod) =
+	let fvs = freeVars hd ++ freeVars bod in
+	let rename_fvs = filter (fn (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
+	if rename_fvs = [] then (hd,bod)
+	  else let sb = map (fn (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
+	       (substitute(hd,sb), substitute(bod,sb))
+    in
+    let cases = aux(hd,bod) in
+    map fix_vars cases
 
   op  ppProperty : Context \_rightarrow Property \_rightarrow String
                      \_rightarrow Option (String * String * String * Position)
@@ -562,7 +573,17 @@ IsaTermPrinter qualifying spec
 	      then prString " [simp]"
 	      else prEmpty
     in
-    prLinearCat 2
+    let prf_pp =
+        (case prf of
+	      | Some(beg_str,mid_str,end_str,pos) \_rightarrow
+		let len = length mid_str in
+		(case search("\n",mid_str) of
+		   | None \_rightarrow []
+		   | Some n \_rightarrow
+		     [[prString(stripExcessWhiteSpace(substring(mid_str,n+1,len)))]])
+	      | _ \_rightarrow [])
+    in
+    prLinesCat 2
       ([[ppPropertyType propType,
 	 prSpace,
 	 ppQualifiedId name,
@@ -572,17 +593,12 @@ IsaTermPrinter qualifying spec
 	 [prString "\"",
 	  ppPropertyTerm c (explicitUniversals prf) term,
 	  prString "\""]]
-	++ (case prf of
-	      | Some(beg_str,mid_str,end_str,pos) \_rightarrow
-		let len = length mid_str in
-		(case search("\n",mid_str) of
-		   | None \_rightarrow []
-		   | Some n \_rightarrow
-		     [[prString(stripExcessWhiteSpace(substring(mid_str,n+1,len)))]])
-	      | _ \_rightarrow [])
+	++ prf_pp
 	++ (case propType of
 	      | Axiom \_rightarrow []
-	      | _ \_rightarrow [[prString "done",prEmpty]]))
+	      | _ \_rightarrow (if prf_pp = []
+			then [[prSpace],[prString "done",prEmpty]]
+			else [[prString "done",prEmpty]])))
 
   op  stripExcessWhiteSpace: String \_rightarrow String
   def stripExcessWhiteSpace s =
@@ -661,13 +677,16 @@ IsaTermPrinter qualifying spec
       | None \_rightarrow
     let def prApply(term1, term2) =
        case (term1, term2) of
-	 | (Fun(Embed _, _, _), Record (("1",_)::_,_)) \_rightarrow			% Treat as curried
-	    prBreak 2 [ppTerm c Nonfix term1,
-		       prSpace,
-		       prPostSep 2 blockFill prSpace
-			   (map (\_lambda tm \_rightarrow enclose?(\_not(isSimpleTerm? tm),
-						   ppTerm c Nonfix tm))
-			      (MS.termToList term2))]
+	 | (Fun(Embed(constr_id,_), ty, _), Record (("1",_)::_,_))
+	     | let spc = getSpec c in
+	       multiArgConstructor?(constr_id,range(spc,ty),spc) \_rightarrow
+	   %% Treat as curried
+	   prBreak 2 [ppTerm c Nonfix term1,
+		      prSpace,
+		      prPostSep 2 blockFill prSpace
+			  (map (\_lambda tm \_rightarrow enclose?(\_not(isSimpleTerm? tm),
+						  ppTerm c Nonfix tm))
+			     (MS.termToList term2))]
          | (Lambda (match as (_ :: _ :: _), _),_) \_rightarrow
 	   enclose?(parentTerm \_noteq Top,
 		    prBreakCat 0 [[prString "case ",
@@ -833,11 +852,21 @@ IsaTermPrinter qualifying spec
 		      lengthString(5, " \\<Longrightarrow> "),
 		      ppTerm c Top concl]
 
+  def notImplicitVarNames = ["hd","tl","comp"]   % \_dots Don't know how to get all of them
+
   op  parsePropertyTerm: Context \_rightarrow List String \_rightarrow MS.Term \_rightarrow List MS.Term \_times MS.Term
   def parsePropertyTerm c explicit_universals term =
     case term of
       | Bind (Forall,vars,bod,a) \_rightarrow
         let expl_vars = filter (fn (vn,_) \_rightarrow member(vn,explicit_universals)) vars in
+	let renameImplicits = filter (fn (vn,_) \_rightarrow \_not(member(vn,explicit_universals))
+				                  \_and member(vn,notImplicitVarNames))
+	                        vars
+	in
+	let bod = if renameImplicits = [] then bod
+	           else substitute(bod,map (fn (v as (s,ty)) \_rightarrow (v, mkVar(s^"__v",ty)))
+					 renameImplicits)
+	in
 	if expl_vars = []
 	  then parsePropertyTerm c explicit_universals bod
 	  else ([],Bind (Forall,expl_vars,bod,a))
@@ -871,7 +900,8 @@ IsaTermPrinter qualifying spec
 		     | None \_rightarrow prEmpty
 		     | Some pat \_rightarrow
 		   case pat of
-		     | RecordPat(("1",_)::_,_) \_rightarrow
+		     %% Print constructors with tuple args curried, unless polymorphic
+		     | RecordPat(("1",_)::_,_) | multiArgConstructor?(constr,ty,getSpec c) \_rightarrow
 		       prBreak 2 [prSpace,
 				  prPostSep 2 blockFill prSpace
 				    (map (\_lambda p \_rightarrow enclose?(\_not(isSimplePattern? p),
@@ -951,6 +981,25 @@ IsaTermPrinter qualifying spec
       | SortedPat (pat,ty,_) \_rightarrow ppPattern c pat
       | mystery \_rightarrow fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
 
+  op  multiArgConstructor?: Id * Sort * Spec \_rightarrow Boolean
+  def multiArgConstructor?(constrId,ty,spc) =
+    case ty of
+      | Base(qid,_,_) \_rightarrow
+	(let base_ty = sortDef(qid,spc) in
+	 case coproductOpt(spc,base_ty) of
+	   | None \_rightarrow false
+	   | Some fields \_rightarrow
+	     exists (fn (id,opt_arg_ty) \_rightarrow
+		     case opt_arg_ty of
+		       | None \_rightarrow false
+		       | Some arg_ty \_rightarrow id = constrId \_and product?(arg_ty))
+	       fields)
+      | _ \_rightarrow false
+
+  op  sortDef: QualifiedId * Spec \_rightarrow Sort
+  def sortDef(qid,spc) =
+    let Some info = AnnSpec.findTheSort(spc,qid) in
+    firstSortDefInnerSort info
 
   op  ppBoolean : Boolean \_rightarrow Pretty
   def ppBoolean b =
@@ -1088,18 +1137,20 @@ IsaTermPrinter qualifying spec
 		   | Product -> true
 		   | ArrowLeft -> true
 		   | Subsort -> true
+		   | Apply \_rightarrow true
 		   | _ -> false,
 		 prBreak 0[ppType c ArrowLeft ty1,
 			   lengthString(4, " \\<Rightarrow> "),
 			   ppType c ArrowRight ty2])
       | Product (fields,_) \_rightarrow
           (case fields of
-              [] \_rightarrow prString "()"
+            | [] \_rightarrow prString "unit"
             | ("1",_)::_ \_rightarrow
               let def ppField (_,y) = ppType c Product y in
               enclose?(case parent of
 			 | Product -> true
 			 | Subsort -> true
+			 | Apply \_rightarrow true
 			 | _ -> false,
 		       prSep 2 blockFill (lengthString(3, " \\<times> "))
 			 (map ppField fields))
@@ -1148,7 +1199,7 @@ IsaTermPrinter qualifying spec
           ]
       | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
       | Base (qid,[ty],_) \_rightarrow
-	prBreak 0 [ppType c Top ty,
+	prBreak 0 [ppType c Apply ty,
 		   prSpace,
 		   ppTypeQualifiedId c qid]
       | Base (qid,tys,_) \_rightarrow
