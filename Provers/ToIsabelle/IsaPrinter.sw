@@ -119,12 +119,12 @@ IsaTermPrinter qualifying spec
     case Specware.evaluateUnitId uid_str of
       | Some val \_rightarrow
         (case uidNamesForValue val of
-	  | None \_rightarrow "Error: Can't get UID string from value"
-	  | Some (thy_nm,uidstr) \_rightarrow
-	    let fil_nm = uidstr ^ ".thy" in
-	    let _ = ensureDirectoriesExist fil_nm in
-	    let _ = toFile(fil_nm,showValue(val,recursive?)) in
-	    fil_nm)
+	   | None \_rightarrow "Error: Can't get UID string from value"
+	   | Some (thy_nm,uidstr) \_rightarrow
+	     let fil_nm = uidstr ^ ".thy" in
+	     let _ = ensureDirectoriesExist fil_nm in
+	     let _ = toFile(fil_nm,showValue(val,recursive?)) in
+	     fil_nm)
       | _ \_rightarrow "Error: Unknown UID " ^ uid_str
 
   op  deleteThyFilesForUID: String \_rightarrow ()
@@ -491,16 +491,16 @@ IsaTermPrinter qualifying spec
 		     | _ \_rightarrow ppType c Top ty),
 		   prString "\""]
 		++ (case fixity of
-		     | Infix(assoc,prec) \_rightarrow
-		       [prString "\t(",
-			case assoc of
-			  | Left  \_rightarrow prString "infixl \""
-		          | Right \_rightarrow prString "infixr \"",
-			ppMainId (mainId),
-			prString "\" ",
-			prString (toString (prec + precNumFudge)),
-			prString ")"]
-		     | _ \_rightarrow []))
+		      | Infix(assoc,prec) \_rightarrow
+			[prString "\t(",
+			 case assoc of
+			   | Left  \_rightarrow prString "infixl \""
+			   | Right \_rightarrow prString "infixr \"",
+			 ppMainId (mainId),
+			 prString "\" ",
+			 prString (toString (prec + precNumFudge)),
+			 prString ")"]
+		      | _ \_rightarrow []))
     else ppDef c mainId ty term
 
   op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow MS.Term \_rightarrow Pretty
@@ -575,13 +575,13 @@ IsaTermPrinter qualifying spec
     in
     let prf_pp =
         (case prf of
-	      | Some(beg_str,mid_str,end_str,pos) \_rightarrow
-		let len = length mid_str in
-		(case search("\n",mid_str) of
-		   | None \_rightarrow []
-		   | Some n \_rightarrow
-		     [[prString(stripExcessWhiteSpace(substring(mid_str,n+1,len)))]])
-	      | _ \_rightarrow [])
+	   | Some(beg_str,mid_str,end_str,pos) \_rightarrow
+	     let len = length mid_str in
+	     (case search("\n",mid_str) of
+		| None \_rightarrow []
+		| Some n \_rightarrow
+		  [[prString(stripExcessWhiteSpace(substring(mid_str,n+1,len)))]])
+	   | _ \_rightarrow [])
     in
     prLinesCat 2
       ([[ppPropertyType propType,
@@ -742,21 +742,21 @@ IsaTermPrinter qualifying spec
       | ApplyN (t1 :: t2 :: ts, a) -> prApply (ApplyN ([t1, t2], a), ApplyN (ts, a))
       | Record (fields,_) \_rightarrow      
 	(case fields of
-	  | [] \_rightarrow prString "()"
-	  | ("1",_) :: _ \_rightarrow
-	      let def ppField (_,y) = ppTerm c Top y in
-	      prConcat [prString "(",
-			prPostSep 0 blockFill (prString ",") (map ppField fields),
-			prString ")"]
-	  | _ \_rightarrow
-	      let def ppField (x,y) =
-		prConcat [prString x,
-			  prString "=",
-			  ppTerm c Top y]
-	      in
-	      prConcat [prString "{",
-			prPostSep 0 blockLinear (prString ",") (map ppField fields),
-			prString "}"])
+	   | [] \_rightarrow prString "()"
+	   | ("1",_) :: _ \_rightarrow
+	     let def ppField (_,y) = ppTerm c Top y in
+	     prConcat [prString "(",
+		       prPostSep 0 blockFill (prString ",") (map ppField fields),
+		       prString ")"]
+	   | _ \_rightarrow
+	     let def ppField (x,y) =
+	     prConcat [prString x,
+		       prString "=",
+		       ppTerm c Top y]
+	     in
+	       prConcat [prString "{",
+			 prPostSep 0 blockLinear (prString ",") (map ppField fields),
+			 prString "}"])
       | The (var,term,_) \_rightarrow
 	prBreak 0 [prString "(THE ",
 		   ppVarWithoutSort var,
@@ -1143,60 +1143,56 @@ IsaTermPrinter qualifying spec
 			   lengthString(4, " \\<Rightarrow> "),
 			   ppType c ArrowRight ty2])
       | Product (fields,_) \_rightarrow
-          (case fields of
-            | [] \_rightarrow prString "unit"
-            | ("1",_)::_ \_rightarrow
-              let def ppField (_,y) = ppType c Product y in
-              enclose?(case parent of
-			 | Product -> true
-			 | Subsort -> true
-			 | Apply \_rightarrow true
-			 | _ -> false,
-		       prSep 2 blockFill (lengthString(3, " \\<times> "))
-			 (map ppField fields))
-            | _ \_rightarrow
-                let def ppField (x,y) =
-                      prLinearCat 2 [[prString x,
-				      prString " : "],
-				     [ppType c Top y]]
-		in
-                prBreak 2 [prString "{",
-			     prPostSep 0 blockLinear(prString ",") (map ppField fields),
-			     prString "}"])
+        (case fields of
+	   | [] \_rightarrow prString "unit"
+	   | ("1",_)::_ \_rightarrow
+	     let def ppField (_,y) = ppType c Product y in
+	     enclose?(case parent of
+			| Product -> true
+			| Subsort -> true
+			| Apply \_rightarrow true
+			| _ -> false,
+		      prSep 2 blockFill (lengthString(3, " \\<times> "))
+			(map ppField fields))
+	   | _ \_rightarrow
+	     let def ppField (x,y) =
+	     prLinearCat 2 [[prString x,
+			     prString " : "],
+			    [ppType c Top y]]
+	     in
+	       prBreak 2 [prString "{",
+			  prPostSep 0 blockLinear(prString ",") (map ppField fields),
+			  prString "}"])
       | CoProduct (taggedSorts,_) \_rightarrow 
-	let def ppTaggedSort (id,optTy) =
-	  case optTy of
-	    | None \_rightarrow prString id
-	    | Some ty \_rightarrow
-	      prConcat [prString (id ^ " "),
-			case ty of
-			  | Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
-			    prConcat(addSeparator prSpace
-				      (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct c_ty) fields))
-			  | _ \_rightarrow ppType c CoProduct ty]
+        let def ppTaggedSort (id,optTy) =
+	case optTy of
+	  | None \_rightarrow prString id
+	  | Some ty \_rightarrow
+	    prConcat [prString (id ^ " "),
+		      case ty of
+			| Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
+			  prConcat(addSeparator prSpace
+				     (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct c_ty) fields))
+			| _ \_rightarrow ppType c CoProduct ty]
 	in
-	 enclose?(case parent of
-		    | Product -> true
-		    | CoProduct -> true
-		    | Subsort -> true
-		    | _ -> false,
-		  prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
+	  enclose?(case parent of
+		     | Product -> true
+		     | CoProduct -> true
+		     | Subsort -> true
+		     | _ -> false,
+		   prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
       | Quotient (ty,term,_) \_rightarrow
-          prBreak 0 [
-            prString "(",
-            ppType c Top ty,
-            prString " \\ ",
-            ppTerm c Top term,
-            prString ")"
-          ]
+          prBreak 0 [prString "(",
+		     ppType c Top ty,
+		     prString " \\ ",
+		     ppTerm c Top term,
+		     prString ")"]
       | Subsort (ty,term,_) \_rightarrow
-          prBreak 0 [
-            prString "(",
-            ppType c Top ty,
-            prString " | ",
-            ppTerm c Top term,
-            prString ")"
-          ]
+          prBreak 0 [prString "(",
+		     ppType c Top ty,
+		     prString " | ",
+		     ppTerm c Top term,
+		     prString ")"]
       | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
       | Base (qid,[ty],_) \_rightarrow
 	prBreak 0 [ppType c Apply ty,
@@ -1210,8 +1206,8 @@ IsaTermPrinter qualifying spec
       | Boolean _ \_rightarrow prString "bool"  
       | TyVar (tyVar,_) \_rightarrow prConcat[prString "'",prString tyVar]
       | MetaTyVar (tyVar,_) \_rightarrow 
-         let ({link, uniqueId, name}) = ! tyVar in
-             prString (name ^ (Nat.toString uniqueId))
+	let ({link, uniqueId, name}) = ! tyVar in
+	prString (name ^ (Nat.toString uniqueId))
 
       | mystery \_rightarrow fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
 
@@ -1264,14 +1260,14 @@ IsaTermPrinter qualifying spec
 	    (case specialOpInfo c id of
 	       | Some(isa_id,fix,curried) \_rightarrow
 	         (case fix of
-		   | Some f \_rightarrow (Some(prString isa_id), Infix f, curried)
-		   | None \_rightarrow   (Some(prString isa_id), Nonfix, curried))
+		    | Some f \_rightarrow (Some(prString isa_id), Infix f, curried)
+		    | None \_rightarrow   (Some(prString isa_id), Nonfix, curried))
 	       | None \_rightarrow
-	     case fixity of
-	       | Unspecified -> (None, Nonfix, false)
-	       | _ ->
-	        let Qualified(_,primeId) = id in
-		(Some(prString primeId), Nonfix, true))
+		 case fixity of
+		   | Unspecified -> (None, Nonfix, false)
+		   | _ ->
+		     let Qualified(_,primeId) = id in
+		     (Some(prString primeId), Nonfix, true))
 	  | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 15),true)
 	  | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 14),true)
 	  | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 13), true) 
