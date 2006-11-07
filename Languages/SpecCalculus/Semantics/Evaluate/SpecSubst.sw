@@ -162,7 +162,7 @@ SpecCalc qualifying spec
 		                            import_elts 
 			then
 			  Import ((Subst (tm, sm_tm), noPos),
-				  cod_spec, 
+				  spc, 
 				  revise_elements import_elts)
 		 else
 		   el % Import (tm, spc, [])
@@ -178,22 +178,23 @@ SpecCalc qualifying spec
 
   op  replaceImportStub: SpecElements * SpecElement -> SpecElements
   def replaceImportStub (elements, new_import) =
-    let Import (new_import_tm, _, _) = new_import in
+    let Import (new_import_tm, new_import_spc, _) = new_import in
     let 
       def revise_elements elements =
 	map (fn el ->
 	     case el of
 	       | Import (tm, spc, imported_elements) ->
-	         if imported_elements = [] && sameSCTerm? (tm, new_import_tm) then
+	         if imported_elements = [] && spc = new_import_spc then
 		   new_import
 		 else if existsSpecElement? (fn imported_element -> 
 					     case imported_element of
-					       | Import (import_tm, _, _) ->
-					         sameSCTerm? (import_tm, new_import_tm)
+					       | Import (import_tm, spc, imported_elements) ->
+					         imported_elements = [] && spc = new_import_spc
 					       | _ -> false)
 		                            imported_elements 
-			then
-		   Import (tm, spc, revise_elements imported_elements)
+		 then
+		   let new_elts = revise_elements imported_elements in
+		   Import (tm, spc << {elements = new_elts}, new_elts)
 		 else
 		   el
 	       | _ ->
