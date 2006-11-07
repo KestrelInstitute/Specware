@@ -114,17 +114,19 @@ spec
  op arrow : Spec * Sort -> Sort * Sort
 
  def arrow (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt) of
-    | Arrow (dom, rng, _) -> (dom, rng)
-    | mystery -> System.fail ("Could not extract arrow sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
+   case stripSubsorts (sp, srt) of
+     | Arrow (dom, rng, _) -> (dom, rng)
+     | mystery -> System.fail ("Could not extract arrow sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
      
  def product (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt) of
-    | Product (fields, _) -> fields
-    | mystery -> System.fail ("Could not extract product sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
-
+   let srt = unfoldBase(sp,srt) in
+   case stripSubsorts (sp, srt) of
+     | Product (fields, _) -> fields
+     | mystery -> System.fail ("Could not extract product sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
+      
  op  productSorts: Spec * Sort -> List Sort
  def productSorts (sp, srt) =
+   let srt = unfoldBase(sp,srt) in
    case stripSubsorts (sp, srt)
     of Product (fields, _) ->
        if tupleFields? fields
