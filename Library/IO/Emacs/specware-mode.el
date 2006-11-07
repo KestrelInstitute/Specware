@@ -125,16 +125,16 @@ accepted in lieu of prompting."
   (message "%s" (concat "Electric semi mode is " 
                    (if sw:electric-semi-mode "on" "off"))))
 
-(defun insert-circle-s () (interactive) (insert "§"))
-(defun insert-open-quote () (interactive) (insert "«"))
-(defun insert-close-quote () (interactive) (insert "»"))
-(defun insert-degree () (interactive) (insert "°"))
-(defun insert-center-dot () (interactive) (insert "·"))
-(defun insert-mu () (interactive) (insert "µ"))
-(defun insert-times () (interactive) (insert "×"))
-(defun insert-beta () (interactive) (insert "ß"))
-(defun insert-negation () (interactive) (insert "¬"))
-(defun insert-emptyset () (interactive) (insert "Ø"))
+;(defun insert-circle-s () (interactive) (insert "§"))
+;(defun insert-open-quote () (interactive) (insert "«"))
+;(defun insert-close-quote () (interactive) (insert "»"))
+;(defun insert-degree () (interactive) (insert "°"))
+;(defun insert-center-dot () (interactive) (insert "·"))
+;(defun insert-mu () (interactive) (insert "µ"))
+;(defun insert-times () (interactive) (insert "×"))
+;(defun insert-beta () (interactive) (insert "ß"))
+;(defun insert-negation () (interactive) (insert "¬"))
+;(defun insert-emptyset () (interactive) (insert "Ø"))
 
 (require 'easymenu) 
 
@@ -281,7 +281,8 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?{       "(}"    specware-mode-syntax-table)
   (modify-syntax-entry ?}       "){"    specware-mode-syntax-table)
   (modify-syntax-entry ?\*      ". 67"  specware-mode-syntax-table)
-  (modify-syntax-entry ?\"      "\""    specware-mode-syntax-table)
+  (modify-syntax-entry ?\"      "\"    " specware-mode-syntax-table)
+  (modify-syntax-entry ?\\      "\\   " specware-mode-syntax-table)
   (modify-syntax-entry ?        " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\t      " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\%      "<   "     specware-mode-syntax-table)
@@ -823,24 +824,41 @@ If anyone has a good algorithm for this..."
                     (current-column)
                   0)))))
          (t
-          (let ((indent (sw:get-indent)))
+          (let ((follows-comma (sw:previous-line-ends-in-comma))
+		(indent (sw:get-indent)))
             (cond
              ((looking-at "|")
               ;; Lets see if it is the follower of a function definition
               (if (sw:find-matching-starter
-                   "\\bfun\\b\\|\\bfn\\b\\|\\band\\b\\|\\bhandle\\b")
+                   "\\bcase\\b\\|\\bfn\\b\\|\\band\\b\\|\\bhandle\\b")
                   (cond
-                   ((looking-at "fun\\b") (- (current-column) sw:pipe-indent))
+                   ((looking-at "case\\b") (- (current-column) sw:pipe-indent))
                    ((looking-at "fn\\b") (1+ (current-column)))
                    ((looking-at "and\\b") (1+ (1+ (current-column))))
                    ((looking-at "handle\\b") (+ (current-column) 5)))
                 (+ indent sw:pipe-indent)))
              (t
               (if sw:paren-lookback    ; Look for open parenthesis ?
-                  (max 
-		   (if (looking-at "[])}]") (1- indent) indent)
-		   (sw:get-paren-indent))
+                  (if follows-comma
+		      (sw:get-paren-indent)
+		    (max 
+		     indent		; (if (looking-at "[])}]") (1- indent) indent)
+		     (sw:get-paren-indent)))
                 indent))))))))))
+
+(defun sw:previous-line-ends-in-comma ()
+  (save-excursion
+    (sw:end-of-previous-line)
+    (forward-comment -100)
+    (while (re-search-backward comment-start (save-excursion (beginning-of-line)
+							     (point))
+			       t)
+      (skip-chars-backward "\t\n "))
+    (member (preceding-char) '(?, ?;))))
+
+(defun sw:end-of-previous-line ()
+  (beginning-of-line)
+  (skip-chars-backward "\t\n "))
 
 (defun sw:get-indent ()
   (save-excursion
@@ -852,23 +870,41 @@ If anyone has a good algorithm for this..."
        ((save-excursion (sw:backward-sexp) (looking-at "end\\b"))
         (- (current-indentation) sw:indent-level))
        (t
+	;; Go backward by grouped expressions until you are at the beginning of a line
         (while (/= (current-column) (current-indentation))
-          (sw:backward-sexp))
+          (let ((ipos (point)))
+	    (sw:backward-sexp)
+	    (when (and (not (sw:same-line-p ipos (point)))
+		       (not (sw:same-line-p ipos (save-excursion (forward-sexp)
+								 (point)))))
+	      (goto-char ipos)
+	      (beginning-of-line)
+	      (skip-chars-forward "\t "))))
         (skip-chars-forward "\t |")
         (let ((indent (current-column)))
-          (skip-chars-forward "\t (")
+          ;; ?? (skip-chars-forward "\t (")
           (cond
            ;; Started val/fun/structure...
            ((looking-at sw:indent-starters-reg)
             (+ (current-column) sw:indent-level))
            ;; Indent after "->" pattern, but only if its not an fn _ ->
            ;; (890726)
-           ((looking-at ".*->")
+           ((and nil (looking-at ".*->")) ; duplication?
             (if (looking-at ".*\\bfn\\b.*->")
                 indent
               (+ indent sw:indent-level)))
            ;; else keep the same indentation as previous line
            (t indent))))))))
+
+(defun sw:same-line-p (pos1 pos2)
+  "Return t if buffer positions POS1 and POS2 are on the same line."
+  (save-excursion (goto-char (min pos1 pos2))
+                  (<= (max pos1 pos2) (sw:line-end-position 1))))
+
+(defun sw:line-end-position (&optional n)
+  (save-excursion
+    (end-of-line n)
+    (point)))
 
 (defun sw:get-paren-indent ()
   (save-excursion
@@ -889,13 +925,16 @@ If anyone has a good algorithm for this..."
                    ((looking-at "{") (setq levelcurl (1+ levelcurl)))
                    ((looking-at "}") (setq levelcurl (1- levelcurl)))))
             (throw 'loop 0)))		; Exit with value 0
-	(if (save-excursion
-	      (goto-char origpoint)
-	      (looking-at "[])}]"))
-	    (current-column)
+	(if (and (save-excursion
+		   (goto-char origpoint)
+		   (looking-at "[])}]")))
+	    (1+ (current-column))
 	  (if (save-excursion
 		(forward-char 1)
-		(looking-at sw:indent-starters-reg))
+		(and t ;(looking-at sw:indent-starters-reg)
+		     (not (looking-at "\n"))
+		     (progn (goto-char origpoint)
+			    (not (sw:previous-line-ends-in-comma)))))
 	      (1+ (+ (current-column) sw:indent-level))
 	    (1+ (current-column))))))))
 
@@ -925,11 +964,14 @@ If anyone has a good algorithm for this..."
             (condition-case ()
                 (while t
                   (search-forward "\"")
-                  (setq numb (1+ numb)))
+                  (unless (and (not (eq (current-column) 1))
+			       (save-excursion (forward-char -2)
+					       (looking-at "\\\\")))
+		    (setq numb (1+ numb))))
               (error (if (and (not (zerop numb))
                               (not (zerop (% numb 2))))
                          t nil)))))))))
-
+ 
 (defun sw:skip-block ()
   (let ((case-fold-search nil))
     (sw:backward-sexp)
