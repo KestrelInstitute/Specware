@@ -57,7 +57,7 @@ spec
 	    let fn_ty = inferType(spc,t1) in
 	    Apply (mapTerm(t1,fn_ty), mapTerm(t2,domain (spc,fn_ty)), a)
 	  | Record (row, a) ->
-	    let srts = productSorts (spc,ty) in
+	    let srts = map (fn (_,x) -> x) (product (spc,ty)) in
 	    Record(map (fn ((idi,tmi),tyi) \_rightarrow (idi, mapTerm(tmi,tyi))) (zip(row,srts)), a)
 	  | Bind (bnd, vars, trm, a) ->
 	    Bind (bnd, vars, mapTerm(trm,ty), a)
