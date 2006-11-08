@@ -25,6 +25,8 @@ IsaTermPrinter qualifying spec
 		 spec?: Option Spec,
 		 trans_table: TransInfo}
 
+ type Pragma = String * String * String * Position
+
  op  specialOpInfo: Context \_rightarrow QualifiedId \_rightarrow Option OpTransInfo
  def specialOpInfo c qid = apply(c.trans_table.op_map, qid)
 
@@ -243,6 +245,7 @@ IsaTermPrinter qualifying spec
 
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
+    % let _ = toScreen("1:\n"^printSpec spc^"\n") in
     let trans_table = thyMorphismMaps spc in
     let c = c << {spec? = Some spc, trans_table = trans_table} in
     let spc = if addObligations?
@@ -345,11 +348,17 @@ IsaTermPrinter qualifying spec
 	  | (Pragma(_,c_str,_,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
 	    Cons(ppProperty c prop c_str (Some prag),
 		 aux c spc rst)
-	  | (Property prop) :: (Pragma prag) :: rst \_rightarrow
-	    Cons(ppProperty c prop "" (Some prag),
-		 aux c spc rst)
+%	  | (Property prop) :: (Pragma prag) :: rst \_rightarrow
+%	    Cons(ppProperty c prop "" (Some prag),
+%		 aux c spc rst)
+	  | el :: (rst as (Pragma prag) :: _) \_rightarrow
+	    let pretty1 = ppSpecElement c spc el false (Some prag) elems in
+	    let prettyr = aux c spc rst in
+	    if pretty1 = prEmpty
+	      then prettyr
+	      else Cons(pretty1,prettyr)
 	  | el :: rst \_rightarrow
-	    let pretty1 = ppSpecElement c spc el false elems in
+	    let pretty1 = ppSpecElement c spc el false None elems in
 	    let prettyr = aux c spc rst in
 	    if pretty1 = prEmpty
 	      then prettyr
@@ -364,37 +373,46 @@ IsaTermPrinter qualifying spec
 %        Cons(Op qid1, normalizeSpecElements rst)
 %      | x::rst \_rightarrow Cons(x,normalizeSpecElements rst)
 
-  op  ppSpecElement: Context \_rightarrow Spec \_rightarrow SpecElement \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Pretty
-  def ppSpecElement c spc elem op_with_def? elems =
+  op  ppSpecElement: Context \_rightarrow Spec \_rightarrow SpecElement \_rightarrow Boolean \_rightarrow Option Pragma
+                    \_rightarrow SpecElements \_rightarrow Pretty
+  def ppSpecElement c spc elem op_with_def? opt_prag elems =
     case elem of
       | Import (_,im_sp,im_elements) \_rightarrow prEmpty
       | Op qid \_rightarrow
 	(case AnnSpec.findTheOp(spc,qid) of
-	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow ppOpInfo c true op_with_def? (names,fixity,dfn)
+	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow
+	     ppOpInfo c true op_with_def? opt_prag (names,fixity,dfn)
 	   | _ \_rightarrow 
-	     let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
+	     let _  = toScreen("\nInternal error: Missing op: "
+				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
       | OpDef qid \_rightarrow
 	(case AnnSpec.findTheOp(spc,qid) of
-	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow ppOpInfo c false true (names,fixity,dfn)
+	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow
+	     ppOpInfo c false true opt_prag (names,fixity,dfn)
 	   | _ \_rightarrow 
-	     let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
+	     let _  = toScreen("\nInternal error: Missing op: "
+				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
       | Sort qid \_rightarrow
 	(case AnnSpec.findTheSort(spc,qid) of
 	   | Some {names,dfn} \_rightarrow ppTypeInfo c false (names,dfn)
 	   | _ \_rightarrow 
-	     let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
+	     let _  = toScreen("\nInternal error: Missing type: "
+				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
       | SortDef qid \_rightarrow
 	(case AnnSpec.findTheSort(spc,qid) of
 	   | Some {names,dfn} \_rightarrow ppTypeInfo c true (names,dfn)
 	   | _ \_rightarrow 
-	     let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
+	     let _  = toScreen("\nInternal error: Missing type: "
+				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
       | Property prop \_rightarrow
         let Qualified(_,nm) = propertyName prop in 
-	ppProperty c prop "" (findPragmaNamed(elems,nm))
+	ppProperty c prop "" (case findPragmaNamed(elems,nm) of
+			        | None \_rightarrow opt_prag
+				| prag \_rightarrow prag)
 %      | Pragma(beg_str,mid_str,end_str,pos) \_rightarrow
 %	prConcat [prString beg_str,
 %		  prString mid_str,
@@ -406,7 +424,7 @@ IsaTermPrinter qualifying spec
 		  prString "*)"]
       | _ \_rightarrow prEmpty
 
- op  findPragmaNamed: SpecElements * String \_rightarrow Option (String * String * String * Position)
+ op  findPragmaNamed: SpecElements * String \_rightarrow Option Pragma
  def findPragmaNamed(elts,nm) =
    case elts of
      | [] \_rightarrow None
@@ -474,8 +492,9 @@ IsaTermPrinter qualifying spec
 
  def precNumFudge = 40
 
- op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow Aliases \_times Fixity \_times MS.Term \_rightarrow Pretty
- def ppOpInfo c decl? def? (aliases, fixity, dfn) =
+ op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow Option Pragma \_rightarrow Aliases \_times Fixity \_times MS.Term
+                 \_rightarrow Pretty
+ def ppOpInfo c decl? def? opt_prag (aliases, fixity, dfn) =
    let mainId = hd aliases in
    case specialOpInfo c mainId of
      | Some _ \_rightarrow prEmpty
@@ -501,14 +520,18 @@ IsaTermPrinter qualifying spec
 			 prString (toString (prec + precNumFudge)),
 			 prString ")"]
 		      | _ \_rightarrow []))
-    else ppDef c mainId ty term
+    else ppDef c mainId ty opt_prag term
 
-  op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow MS.Term \_rightarrow Pretty
-  def ppDef c op_nm ty body =
+  op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow Option Pragma \_rightarrow MS.Term \_rightarrow Pretty
+  def ppDef c op_nm ty opt_prag body =
     case defToCases (mkOp(op_nm,ty)) body of
       | [(lhs,rhs)] \_rightarrow
         %% This is the non-recursive case
-        prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def: "],
+        prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
+		       case findBracketAnnotation opt_prag of
+			 | Some anot \_rightarrow prConcat[prSpace,prString anot]
+			 | None \_rightarrow prEmpty,
+		       prString ": "],
 		      [prBreakCat 2 [[prString "\"",
 				      ppTerm c Top lhs],
 				     [lengthString(3," \\<equiv> "),
@@ -558,9 +581,7 @@ IsaTermPrinter qualifying spec
     let cases = aux(hd,bod) in
     map fix_vars cases
 
-  op  ppProperty : Context \_rightarrow Property \_rightarrow String
-                     \_rightarrow Option (String * String * String * Position)
-                     \_rightarrow Pretty
+  op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow Option Pragma \_rightarrow Pretty
   def ppProperty c (propType, name, tyVars, term) comm prf =
     % let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
     let annotation =
@@ -597,8 +618,10 @@ IsaTermPrinter qualifying spec
 	++ (case propType of
 	      | Axiom \_rightarrow []
 	      | _ \_rightarrow (if prf_pp = []
-			then [[prSpace],[prString "done",prEmpty]]
+			then [[prString defaultProof], [prString "done",prEmpty]]
 			else [[prString "done",prEmpty]])))
+
+  def defaultProof = "apply(auto)"
 
   op  stripExcessWhiteSpace: String \_rightarrow String
   def stripExcessWhiteSpace s =
@@ -609,7 +632,7 @@ IsaTermPrinter qualifying spec
 	    then substring(s,2,len)
 	    else s
 
-  op  explicitUniversals: Option (String * String * String * Position) \_rightarrow List String
+  op  explicitUniversals: Option Pragma \_rightarrow List String
   def explicitUniversals prf =
     case prf of
       | None \_rightarrow []
@@ -632,7 +655,7 @@ IsaTermPrinter qualifying spec
     if end_fa_pos >= end_pos || end_vars_pos <= end_fa_pos then []
       else removeEmpty(splitStringAt(substring(prag_str,end_fa_pos,end_vars_pos)," "))
 
-  op  findBracketAnnotation: Option (String * String * String * Position) \_rightarrow Option String
+  op  findBracketAnnotation: Option Pragma \_rightarrow Option String
   def findBracketAnnotation prf =
     case prf of
       | None \_rightarrow None
@@ -740,7 +763,7 @@ IsaTermPrinter qualifying spec
       | Apply (term1,term2,_) \_rightarrow prApply (term1,term2)
       | ApplyN ([t1, t2], _) \_rightarrow prApply (t1, t2)
       | ApplyN (t1 :: t2 :: ts, a) -> prApply (ApplyN ([t1, t2], a), ApplyN (ts, a))
-      | Record (fields,_) \_rightarrow      
+      | Record (fields,_) \_rightarrow
 	(case fields of
 	   | [] \_rightarrow prString "()"
 	   | ("1",_) :: _ \_rightarrow
@@ -750,13 +773,13 @@ IsaTermPrinter qualifying spec
 		       prString ")"]
 	   | _ \_rightarrow
 	     let def ppField (x,y) =
-	     prConcat [prString x,
-		       prString "=",
-		       ppTerm c Top y]
+	           prConcat [prString x,
+			     prString " = ",
+			     ppTerm c Top y]
 	     in
-	       prConcat [prString "{",
+	       prConcat [prString "\\<lparr>",
 			 prPostSep 0 blockLinear (prString ",") (map ppField fields),
-			 prString "}"])
+			 prString "\\<rparr>"])
       | The (var,term,_) \_rightarrow
 	prBreak 0 [prString "(THE ",
 		   ppVarWithoutSort var,
@@ -845,8 +868,8 @@ IsaTermPrinter qualifying spec
   def ppPropertyTerm c explicit_universals term =
     let (assmpts,concl) = parsePropertyTerm c explicit_universals term in
     if assmpts = [] then ppTerm c Top concl
-      else prBreak 0 [prBreak 0 [lengthString(1, "\\<lbrakk>"),
-				 prPostSep 0 blockFill (prString "; ")
+      else prBreak 0 [prConcat [lengthString(1, "\\<lbrakk>"),
+				 prPostSep 0 blockLinear (prString "; ")
 				   (map (ppTerm c Top) assmpts),
 				 lengthString(2, "\\<rbrakk>")],
 		      lengthString(5, " \\<Longrightarrow> "),
@@ -1033,8 +1056,7 @@ IsaTermPrinter qualifying spec
             prString "project ",
             prString id
           ]
-      | RecordMerge \_rightarrow
-	  prString "<<"
+      | RecordMerge \_rightarrow prString "<<"
       | Embed (id,b) \_rightarrow
           % prConcat [
             % prString "(embed ",
@@ -1043,16 +1065,8 @@ IsaTermPrinter qualifying spec
             % ppBoolean b,
             % prString ")"
           % ]
-      | Embedded id \_rightarrow
-          prConcat [
-            prString "embedded ",
-            prString id
-          ]
-      | Select id \_rightarrow
-          prConcat [
-            prString "select ",
-            prString id
-          ]
+      | Embedded id \_rightarrow prConcat [prString "embedded ", prString id]
+      | Select id \_rightarrow prConcat [prString "select ", prString id]
       | Nat n \_rightarrow prString (Nat.toString n)
       | Char chr \_rightarrow prConcat [prString "CHR ''",
 			      prString (Char.toString chr),
