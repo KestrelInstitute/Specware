@@ -89,6 +89,10 @@ List qualifying spec
     if i = 0 then l
              else nthTail(tl l,i-1)
 
+  axiom length_nthTail is		% Really a theorem
+    fa(l,n: Nat) n <= length l \_Rightarrow length(nthTail(l,n)) = length l - n
+  proof Isa [simp] end-proof
+
   def last(hd::tl) =
     case tl of
       | [] -> hd
