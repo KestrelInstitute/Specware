@@ -45,7 +45,11 @@
 					(format nil "/tmp/test-specware4-~D-~D-~D-~D-~D-~D"
 						yy mm dd hh mm ss))))
   (let ((subdir (format nil "Bugs/Bug_~4,'0D" bug-number)))
-    (test-specware4-subdir subdir log-file-name)))
+    (if (probe-file (format nil "~~/Specware4/TestSuite/~A/" subdir))
+	(test-specware4-subdir subdir log-file-name)
+      (with-open-file (s log-file-name :direction :output)
+	(format s "No test number ~D~%" bug-number)))))
+
 
 
 
