@@ -77,6 +77,10 @@ FSeq qualifying spec
   op theElement : [a] SingletonFSeq a -> a
   def theElement s = the(x) s = single x
 
+  % useful to define subtypes of sequences of given length:
+  op ofLength? : [a] Nat -> FSeq a -> Boolean
+  def ofLength? n s = (length s = n)
+
   % concatenate:
   op ++ infixl 25 : [a] FSeq a * FSeq a -> FSeq a
   def ++ (s1,s2) = the(s)

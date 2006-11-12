@@ -67,6 +67,10 @@ FSeq qualifying spec
   op theElement : [a] SingletonFSeq a -> a
   def theElement s = hd s
 
+  % copied from spec `FiniteSequences':
+  op ofLength? : [a] Nat -> FSeq a -> Boolean
+  def ofLength? n s = (length s = n)
+
 %  op ++ infixl 25 : [a] FSeq a * FSeq a -> FSeq a
 %  def ++ = List.++
 
