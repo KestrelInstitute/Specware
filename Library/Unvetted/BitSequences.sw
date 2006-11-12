@@ -18,6 +18,12 @@ AC
 
 Added conversions from natural numbers to bit sequences.
 
+2006:11:11
+AC
+
+Changed definition of subtypes to use predicate ofLength?, newly introduced in
+the library spec for finite sequences.
+
 
 ISSUE:
 There should probably be additional conversions among nibbles, bytes, and
@@ -53,11 +59,11 @@ BitSeq qualifying spec
   % nibbles, bytes, and words (since the size of words is not very standard,
   % we introduce different types with explicit sizes in their names):
 
-  type Nibble = {bs : FSeq Bit | length bs = 4}
-  type Byte   = {bs : FSeq Bit | length bs = 8}
-  type Word16 = {bs : FSeq Bit | length bs = 16}
-  type Word32 = {bs : FSeq Bit | length bs = 32}
-  type Word64 = {bs : FSeq Bit | length bs = 64}
+  type Nibble = (FSeq Bit | ofLength? 4)
+  type Byte   = (FSeq Bit | ofLength? 8)
+  type Word16 = (FSeq Bit | ofLength? 16)
+  type Word32 = (FSeq Bit | ofLength? 32)
+  type Word64 = (FSeq Bit | ofLength? 64)
 
   op byteToNibbles : Byte -> Nibble * Nibble
   def byteToNibbles = inverse (fn(nib1,nib2) -> nib1 ++ nib2)
