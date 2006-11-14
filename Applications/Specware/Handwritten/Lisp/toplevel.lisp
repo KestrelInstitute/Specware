@@ -580,7 +580,7 @@
 (defun use-x-symbol? ()
   (and (not specware::*dont-use-x-symbol?*)
        (fboundp 'swank::eval-in-emacs)
-       (funcall 'swank::eval-in-emacs 'sw:use-x-symbol)))
+       (funcall 'swank::eval-in-emacs '(sw-use-x-symbol?))))
 
 ;; Specware::initializeInterpreterBaseAux is funcalled from 
 ;; Specware::initializeInterpreterBase-0 in Preface.lisp, which in turn is called from
