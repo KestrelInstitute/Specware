@@ -62,7 +62,7 @@
   (defun previous-input-line ()
     (fi:pop-input))
   (defun specware-listener-mode-hook ()
-    (when specware-use-x-symbol
+    (when sw:use-x-symbol
       (x-symbol-mode 1)))
   (add-hook 'fi:lisp-listener-mode-hook 'specware-listener-mode-hook t)
   (when (and (boundp 'fi:lisp-mode-syntax-table)
@@ -238,7 +238,7 @@
     (and (boundp 'ilisp-mode-map)
 	 ilisp-mode-map
 	 (add-specware-listener-key-bindings ilisp-mode-map))
-;    (when specware-use-x-symbol
+;    (when sw:use-x-symbol
 ;      (x-symbol-mode 1)
 ;      (setq comint-input-sender 'x-symbol-comint-send))
     (push 'specware-listener-mode ilisp-modes))

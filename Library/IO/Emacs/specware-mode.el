@@ -10,14 +10,14 @@
 ;;; (setq auto-mode-alist
 ;;;       (cons '("\\.sl$" . specware-mode) auto-mode-alist))
 
-;; Here's an example of setting things up in the specware-mode-hook:
+;; Here's an example of setting things up in the sw:specware-mode-hook:
 
-;; (setq specware-mode-hook
+;; (setq sw:specware-mode-hook
 ;;       '(lambda() "Specware mode hacks"
 ;;          (setq sw:indent-level 2         ; conserve on horiz. space
 ;;                indent-tabs-mode nil)))    ; whatever
 
-;; specware-mode-hook is run whenever a new specware-mode buffer is created.
+;; sw:specware-mode-hook is run whenever a new specware-mode buffer is created.
 ;; There is an specware-load-hook too, which is only run when this file is
 ;; loaded. One use for this hook is to select your preferred
 ;; highlighting scheme, like this:
@@ -36,13 +36,32 @@
 (provide 'specware-mode)
 
 ;;; VARIABLES CONTROLLING THE MODE
+(defgroup specware nil
+  "Specware mode control."
+  :prefix "sw:"
+  :group 'applications)
 
-(defvar sw:indent-level 2
-  "*Indentation of blocks in Specware.")
+(defcustom sw:use-x-symbol nil
+  "If non-nil use x-symbol package with Specware"
+  :type 'boolean
+  :group 'specware)
 
-(defvar sw:pipe-indent -2
-  "*Extra (usually negative) indentation for lines beginning with |.")
+(defcustom sw:use-hide-show t
+  "If non-nil use the hide-show folding package with Specware"
+  :type 'boolean
+  :group 'specware)
 
+(defcustom sw:indent-level 2
+  "*Indentation of blocks in Specware."
+  :type 'integer
+  :group 'specware)
+
+(defcustom sw:pipe-indent -2
+  "*Extra (usually negative) indentation for lines beginning with |."
+  :type 'integer
+  :group 'specware)
+
+;;; This doesn't really behave as stated
 (defvar sw:case-indent t
   "*How to indent case-of expressions.
     If t:   case expr                     If nil:   case expr of
@@ -52,12 +71,14 @@
 The first seems to be the standard in SL/NJ, but the second
 seems nicer...")
 
-(defvar sw:nested-if-indent t
+(defcustom sw:nested-if-indent t
   "*Determine how nested if-then-else will be formatted:
     If t: if exp1 then exp2               If nil:   if exp1 then exp2
           else if exp3 then exp4                    else if exp3 then exp4
           else if exp5 then exp6                         else if exp5 then exp6
-               else exp7                                      else exp7")
+               else exp7                                      else exp7"
+  :type 'boolean
+  :group 'specware)
 
 (defvar sw:type-of-indent t
   "*How to indent `let' `struct' etc.
@@ -79,12 +100,16 @@ for open parenthesis. High value means slow indentation algorithm. A
 value of 1000 (being the equivalent of 20-30 lines) should suffice
 most uses. (A value of nil, means do not look at all)")
 
-(defvar specware-mode-hook nil
+(defcustom sw:specware-mode-hook nil
   "*This hook is run when specware-mode is loaded, or a new specware-mode buffer created.
-This is a good place to put your preferred key bindings.")
+This is a good place to put your preferred key bindings."
+  :type 'hook
+  :group 'specware)
 
-(defvar specware-load-hook nil
-  "*This hook is only run when specware-mode is loaded.")
+(defcustom sw:specware-load-hook nil
+  "*This hook is only run when specware-mode is loaded."
+  :type 'hook
+  :group 'specware)
 
 ;;; CODE FOR SPECWARE-MODE 
 
@@ -136,6 +161,20 @@ accepted in lieu of prompting."
 ;(defun insert-negation () (interactive) (insert "¬"))
 ;(defun insert-emptyset () (interactive) (insert "Ø"))
 
+(defun sw:x-symbol-toggle ()
+  (customize-set-variable 'sw:use-x-symbol (not sw:use-x-symbol))
+  (unless (eq sw:use-x-symbol x-symbol-mode)
+    (x-symbol-mode)))
+
+(defun sw:hide-show-toggle ()
+  (customize-set-variable 'sw:use-hide-show (not sw:use-hide-show))
+  (unless (eq sw:use-hide-show hs-minor-mode)
+    (hs-minor-mode)))
+
+(defun sw:save-options ()
+  (interactive)
+  (customize-save-customized))
+
 (require 'easymenu) 
 
 (defconst specware-menu 
@@ -157,10 +196,18 @@ accepted in lieu of prompting."
        (comment-region (region-beginning) (region-end) '(4))
        (mark)]
       ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark)]
+      ["Find Unbalanced Parenthesis" (sw:find-unbalanced-parenthesis) t]
       ["Run Specware" run-specware4 (not (inferior-lisp-running-p))]
       "-----"
+      ("Options"
+       ["X-Symbol" (sw:x-symbol-toggle)
+	:style toggle
+	:selected sw:use-x-symbol]
+       ["Hide-Show" (sw:hide-show-toggle)
+	:style toggle
+	:selected sw:use-hide-show]
+       ["Save Options" (sw:save-options)])
       ["About Specware" about-specware t])) 
-
 
 (defconst specware-interaction-menu 
     '("Specware"
@@ -172,6 +219,11 @@ accepted in lieu of prompting."
       ["Run Specware" run-specware4 (not (inferior-lisp-running-p))]
       ["Exit Specware" sw:exit-lisp (inferior-lisp-running-p)]
       "-----"
+      ("Options"
+       ["X-Symbol" (sw:x-symbol-toggle)
+	:style toggle
+	:selected (and (boundp 'x-symbol-mode) x-symbol-mode)]
+       ["Save Options" (sw:save-options)])
       ["About Specware" about-specware t]))
 
 ;;; BINDINGS: should be common to the source and process modes...
@@ -293,13 +345,8 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?\-      "w"     specware-mode-syntax-table)
   (modify-syntax-entry ?\?      "w"     specware-mode-syntax-table))
 
-(defcustom specware-use-x-symbol nil
-  "If non-nil use x-symbol package with Specware")
 
 ;;; Hide-show support
-(defcustom specware-use-hide-show t
-  "If non-nil use the hide-show folding package with Specware")
-
 (defvar sw:definition-introducing-words
   (regexp-opt '("axiom"
 		"conjecture"
@@ -324,7 +371,7 @@ Full documentation will be available after autoloading the function."
 	  "\\|end-?spec"
 	  "\\)\\>"))
 
-(when specware-use-hide-show
+(when sw:use-hide-show
   (defun add-to-list (list-var element &optional append)
     "Add to the value of LIST-VAR the element ELEMENT if it isn't there yet.
 The test for presence of ELEMENT is done with `equal'.
@@ -430,7 +477,7 @@ Delete converts tabs to spaces as it moves back.
 For information on running an inferior Specware process, see the documentation
 for inferior-specware-mode (set this up with \\[sl]).
 
-Customization: Entry to this mode runs the hooks on specware-mode-hook.
+Customization: Entry to this mode runs the hooks on sw:specware-mode-hook.
 
 Variables controlling the indentation
 =====================================
@@ -471,13 +518,13 @@ Mode map
   (setq major-mode 'specware-mode)
   (setq mode-name "Specware")
   (easy-menu-add specware-mode-menu)
-  (if specware-use-x-symbol
+  (if sw:use-x-symbol
       (x-symbol-mode t))
-  (when specware-use-hide-show
+  (when sw:use-hide-show
     (hs-minor-mode t)
     (setq hs-marker-begin-regexp "\\s-*%{{{")
     (setq hs-marker-end-regexp "\\s-*%}}}"))
-  (run-hooks 'specware-mode-hook))           ; Run the hook
+  (run-hooks 'sw:specware-mode-hook))           ; Run the hook
 
 (defvar specware-mode-abbrev-table nil "*Specware mode abbrev table (default nil)")
 
@@ -1611,7 +1658,12 @@ If anyone has a good algorithm for this..."
   (when (boundp 'fi::prompt-pattern)
     (setq fi::prompt-pattern comint-prompt-regexp)))
 
-(defvar sw:check-unbalanced-parentheses-when-saving t)
+(defvar sw:check-unbalanced-parentheses-when-saving t
+  "Check whether parens are balanced before saving a specware file."
+  ;:type 'boolean
+  ;:group 'specware
+  )
+
 (defun sw:check-unbalanced-parentheses-when-saving ()
   (if (and sw:check-unbalanced-parentheses-when-saving
 	   (memq major-mode '(fi:common-lisp-mode fi:emacs-lisp-mode
@@ -1861,8 +1913,8 @@ uniquely and concretely describes their application.")
 
 ;;; & do the user's customisation
 
-(add-hook 'specware-load-hook 'specware-mode-version t)
+(add-hook 'sw:specware-load-hook 'specware-mode-version t)
 
-(run-hooks 'specware-load-hook)
+(run-hooks 'sw:specware-load-hook)
 
 ;;; specware-mode.el has just finished.

@@ -25,7 +25,7 @@
 ;;;  "Font Lock mode face used to highlight reserved words."
 ;;;  :group 'font-lock-faces)
 
-(add-hook 'specware-mode-hook 'turn-on-font-lock)
+(add-hook 'sw:specware-mode-hook 'turn-on-font-lock)
 
 (defconst symbol-sep "[^-_?a-z0-9A-Z]")
 

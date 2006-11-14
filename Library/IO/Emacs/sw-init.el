@@ -18,7 +18,6 @@
 	   (bin-dir (binary-directory *specware4-dir))
 	   (world-name (or (getenv "LISP_HEAP_IMAGE")
 			   (concat bin-dir "/Specware4." *lisp-image-extension*))))
-
       (setq sw:common-lisp-host "localhost")
       (setq-default sw::lisp-host sw:common-lisp-host)
       ;;
@@ -82,6 +81,8 @@
 	;; (which runs as a separate proccess communicating with Specware).
 
 	(if *windows-system-p* '("+cm") nil)) 
+
+      (sw:add-specware-to-isabelle-path)
 
       (when (getenv "SOCKET_INIT_FILE")
 	(set-socket-init-for-specware))
@@ -212,10 +213,10 @@
 	  (when (> i 50)
 	    (message "Checking to see if existing lisp is running in buffer %S -- %S"
 		     sw:common-lisp-buffer-name (- 100 i)))
-	  (sit-for 0.1 t)
+	  (sit-for 0.2 t)
 	  (when (inferior-lisp-running-p)
 	    (return t)))
-	(message "Pre-existing Specware is running..")
+	()   ;; (message "Specware is running..")
       ;; timed out -- see if we should and can start lisp
       (if *specware-auto-start*
 	  (progn     
@@ -439,8 +440,9 @@
 				   (openmcl "(ccl:save-application %S)")
 				   (sbcl "(sb-ext:save-lisp-and-die %S)"))
 				 world-name))
-  (dotimes (i 20)
-    (sit-for 1)
+  (sit-for 2)
+  (dotimes (i 10)
+    (sit-for 2)
     (when (file-exists-p world-name)
       (return nil)))
   (eval-in-lisp-in-order
