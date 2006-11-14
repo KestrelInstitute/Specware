@@ -270,7 +270,7 @@ def owl_prove_options = "(use-resolution nil) (use-hyperresolution t)
 'literal-ordering-p)(use-literal-ordering-with-resolution
 'literal-ordering-a)(use-literal-ordering-with-paramodulation
 'literal-ordering-p) (use-ac-connectives) (run-time-limit
-10)(assert-supported nil) (use-code-for-numbers nil)
+20)(assert-supported nil) (use-code-for-numbers nil)
 (print-symbol-ordering) (print-final-rows) 
 (declare-ordering-greaterp 'snark::|Holds| 'snark::|Class?|) 
 (declare-ordering-greaterp 'snark::|Type| 'snark::|Holds|) 
@@ -286,7 +286,7 @@ def owl_hyper_prove_options = "(use-resolution nil) (use-hyperresolution t)
 'literal-ordering-p)(use-literal-ordering-with-resolution
 'literal-ordering-a)(use-literal-ordering-with-paramodulation
 'literal-ordering-p) (use-ac-connectives) (run-time-limit
-10)(assert-supported nil) (use-code-for-numbers nil)
+20)(assert-supported nil) (use-code-for-numbers nil)
 (print-symbol-ordering) (print-final-rows) 
 (declare-ordering-greaterp 'snark::|Holds| 'snark::|Class?|) 
 (declare-ordering-greaterp 'snark::|Type| 'snark::|Holds|) 
@@ -304,7 +304,7 @@ def owl_number_hyper_options = "(use-resolution nil) (use-hyperresolution nil)
 'literal-ordering-n)(use-literal-ordering-with-resolution
 'literal-ordering-a)(use-literal-ordering-with-paramodulation
 'literal-ordering-a) (use-ac-connectives) (run-time-limit
-10)(assert-supported nil) (use-code-for-numbers t)
+20)(assert-supported nil) (use-code-for-numbers t)
 (USE-REPLACEMENT-RESOLUTION-WITH-X=X)
 (print-symbol-ordering) (print-final-rows) 
 (declare-ordering-greaterp 'snark::|Holds| 'snark::|Class?|) 
@@ -332,7 +332,7 @@ def owl_number_resolution_options = "(use-resolution t)
 'literal-ordering-p)(use-literal-ordering-with-resolution
 nil)(use-literal-ordering-with-paramodulation
 'literal-ordering-a) (use-ac-connectives) (run-time-limit
-10)(assert-supported nil) (use-code-for-numbers t)
+20)(assert-supported nil) (use-code-for-numbers t)
 (USE-REPLACEMENT-RESOLUTION-WITH-X=X t)
 (print-symbol-ordering) (print-final-rows) 
 (declare-ordering-greaterp 'snark::|Holds| 'snark::|Class?|) 
@@ -358,7 +358,7 @@ def owl_early_prove_options = "(use-resolution t)
 nil)(use-literal-ordering-with-paramodulation
 'literal-ordering-a) (use-ac-connectives) 
 (run-time-limit
-10)(assert-supported t) (use-code-for-numbers t)
+20)(assert-supported t) (use-code-for-numbers t)
 (USE-REPLACEMENT-RESOLUTION-WITH-X=X)
 (print-symbol-ordering) (print-final-rows) (declare-ordering-greaterp
 'snark::|Holds| 'snark::|Class?|) (declare-ordering-greaterp
@@ -383,7 +383,7 @@ def owl_resolution_prove_options = "(use-resolution t)
 'literal-ordering-p)(use-literal-ordering-with-resolution
 'literal-ordering-a)(use-literal-ordering-with-paramodulation
 'literal-ordering-a) (use-ac-connectives) (run-time-limit
-10)(assert-supported nil) (use-code-for-numbers t)
+20 )(assert-supported nil) (use-code-for-numbers t)
 (USE-REPLACEMENT-RESOLUTION-WITH-X=X)
 (print-symbol-ordering) (print-final-rows) 
 (declare-ordering-greaterp 'snark::|Holds| 'snark::|Class?|) 
