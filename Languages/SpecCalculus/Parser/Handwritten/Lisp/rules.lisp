@@ -85,6 +85,7 @@
   (:anyof
    ((:tuple "=")           "=")		; so we can use = (and "is" ?) as an op-name
    ((:tuple "*")           "*")		; so we can use * as an op-name
+   ((:tuple "\\_times")    "\\_times")	; so we can use \_times as an op-name
    ((:tuple "/")           "/")		; so we can use / as an op-name
    ((:tuple "translate")   "translate")	; so we can use translate as a op-name
    ((:tuple "colimit")     "colimit")	; so we can use colimit as a op-name
@@ -806,6 +807,8 @@ If we want the precedence to be optional:
    ((:tuple "\\_noteq")  (make-equality-fun '(:|NotEquals|) ':left-lcb ':right-lcb))
    ((:tuple "<<")  (make-fun '(:|RecordMerge|) (freshMetaTypeVar ':left-lcb ':right-lcb)
 			     ':left-lcb ':right-lcb))
+   ((:tuple "\\_guillemotleft")  (make-fun '(:|RecordMerge|) (freshMetaTypeVar ':left-lcb ':right-lcb)
+					   ':left-lcb ':right-lcb))
    ))
 
 ;;; ------------------------------------------------------------------------
@@ -1215,16 +1218,21 @@ If we want the precedence to be optional:
   (make-monad-term-expression 1 2 ':left-lcb ':right-lcb)
   :documentation "Monadic sequence")
 
+(define-sw-parser-rule :LEFT-ARROW ()
+  (:anyof "<-" "\\_leftarrow"))
+
 (define-sw-parser-rule :MONAD-BINDING-EXPRESSION ()
-  (:tuple "{" (1 :PATTERN) "<-" (2 :EXPRESSION) ";" (3 :MONAD-STMT-LIST) "}")
+  (:tuple "{" (1 :PATTERN) :LEFT-ARROW (2 :EXPRESSION) ";" (3 :MONAD-STMT-LIST) "}")
   (make-monad-binding-expression 1 2 3 ':left-lcb ':right-lcb)
   :documentation "Monadic binding")
 
 (define-sw-parser-rule :MONAD-STMT-LIST ()
   (:anyof
-   ((:tuple (1 :EXPRESSION))                                             1)
-   ((:tuple (1 :EXPRESSION) ";" (2 :MONAD-STMT-LIST))                    (make-monad-term-expression    1 2   ':left-lcb ':right-lcb))
-   ((:tuple (1 :PATTERN) "<-" (2 :EXPRESSION) ";" (3 :MONAD-STMT-LIST))  (make-monad-binding-expression 1 2 3 ':left-lcb ':right-lcb))
+   ((:tuple (1 :EXPRESSION)) 1)
+   ((:tuple (1 :EXPRESSION) ";" (2 :MONAD-STMT-LIST))
+    (make-monad-term-expression    1 2   ':left-lcb ':right-lcb))
+   ((:tuple (1 :PATTERN) :LEFT-ARROW (2 :EXPRESSION) ";" (3 :MONAD-STMT-LIST))
+    (make-monad-binding-expression 1 2 3 ':left-lcb ':right-lcb))
    ))
 
 ;;; ========================================================================
@@ -1544,7 +1552,7 @@ If we want the precedence to be optional:
    ))
 
 (define-sw-parser-rule :MAPS-TO ()
-  (:tuple "+->"))
+  (:tuple (:anyof "+->" "\\_mapsto")))
 
 ;;; ========================================================================
 ;;;  SC-SPEC-MORPH
