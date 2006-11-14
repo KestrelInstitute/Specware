@@ -18,7 +18,7 @@
             (let ((first-form (with-open-file (s \"lisp/S.lisp\") (read s))))
               (print (list (equalp (car first-form) 'require)
                            (equalp (cadr first-form) \"SpecwareRuntime\")))
-              (load \"lisp/S.lisp\") 
+              (load (compile-file \"lisp/S.lisp\"))
               (print (sw-user::foo-2 \"abc\" \"def\"))))"
   :output '((:optional "")
 	    (:optional "")
