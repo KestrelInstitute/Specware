@@ -294,6 +294,12 @@
 ; 		   (format t "~%Finishing GC..."))
 ;       sb-ext:*init-hooks*)
 
+(defvar *using-slime-interface?* t)
+(when *using-slime-interface?*
+  ;; Preload slime lisp support
+  (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
+    (load loader :verbose t)))
+
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
