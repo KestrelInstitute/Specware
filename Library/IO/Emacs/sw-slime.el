@@ -53,6 +53,18 @@
 ;  ("\C-c\C-z" 'slime-nop)
 )
 
+;;; Based on slime-init-command -- Allow for pre-loaded swank
+(defun slime-cond-init-command (port-filename coding-system)
+  "Return a string to initialize Lisp."
+  (let ((loader (if (file-name-absolute-p slime-backend)
+                    slime-backend
+                  (concat slime-path slime-backend)))
+        (encoding (slime-coding-system-cl-name coding-system)))
+    (format "%S\n%S\n\n"
+            `(unless (and (find-package "SWANK") (fboundp (intern "START-SERVER" "SWANK")))
+	       (load ,loader :verbose t))
+            `(swank:start-server ,port-filename :external-format ,encoding))))
+
 ;;; based on slime-repl-return
 (defun sw-return (&optional end-of-input)
   "Evaluate the current input string, or insert a newline.  
@@ -111,7 +123,7 @@ If NEWLINE is true then add a newline at the end of the input."
                      slime-repl-input-end-mark)) 
 
   (let* ((input (slime-repl-current-input))
-	 (input (if specware-use-x-symbol
+	 (input (if sw:use-x-symbol
 		    (x-symbol-encode-string input (current-buffer))
 		  input))
 	 (input (sw-input-to-command input)))
@@ -166,7 +178,7 @@ If NEWLINE is true then add a newline at the end of the input."
       s)))
 
 (defun specware-listener-mode-init ()
-  (when specware-use-x-symbol
+  (when sw:use-x-symbol
     (x-symbol-mode))
   (setq slime-words-of-encouragement
 	'("Welcome to Specware!"))
@@ -204,7 +216,7 @@ If NEWLINE is true then add a newline at the end of the input."
 ;;; Redefining slime functions and variables
 (defun* slime-start (&key (program inferior-lisp-program) program-args 
                           (coding-system slime-net-coding-system)
-                          (init 'slime-init-command)
+                          (init 'slime-cond-init-command)
                           name
                           (buffer "*inferior-lisp*"))
   (if (and (eq *specware-lisp* 'allegro) *windows-system-p*)
