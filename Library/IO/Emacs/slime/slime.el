@@ -1525,8 +1525,9 @@ Warning: don't use this in XEmacs, it seems to crash it!"
   (interactive)
   (let ((sourcefile (concat (file-name-sans-extension (locate-library "slime"))
                             ".el"))
-        (byte-compile-warning-types (remove 'cl-functions 
-                                            byte-compile-warning-types)))
+        ;;(byte-compile-warning-types (remove 'cl-functions 
+        ;;                                    byte-compile-warning-types))
+        )
     (byte-compile-file sourcefile t)))
 
 (defun slime-urge-bytecode-recompile ()
