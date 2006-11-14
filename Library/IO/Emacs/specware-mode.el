@@ -46,6 +46,9 @@
   :type 'boolean
   :group 'specware)
 
+(defun sw-use-x-symbol? ()
+  sw:use-x-symbol)
+
 (defcustom sw:use-hide-show t
   "If non-nil use the hide-show folding package with Specware"
   :type 'boolean
