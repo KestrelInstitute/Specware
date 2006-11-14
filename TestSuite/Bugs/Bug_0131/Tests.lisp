@@ -7,6 +7,11 @@
   :output '(";;; Elaborating obligator at $TESTDIR/Option#P"
 	    ";;; Elaborating spec at $TESTDIR/Option#O"
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Provers/ProofChecker/Libs")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/General/FiniteStructures")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/General/FiniteSequences")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Provers/ProofChecker/StateAndExceptionMonads")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO"
 	    (:optional ";;; Elaborating proof-term at $TESTDIR/.")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char")
@@ -26,6 +31,5 @@
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/..sw")
 	    (:optional "    Snark Log file: $TESTDIR/Snark/..log")
 	    "Conjecture PFunctions.o_Obligation_exhaustive is Proved! using Snark in * seconds."
-	    ""))
-
+	    "")))
  )
