@@ -22,7 +22,17 @@
       (byte-compile-file el-file))
     (load elc-file)))
 
+(custom-set-variables '(slime-repl-enable-presentations nil))
+
 (require 'slime)
+(let* ((libfile (locate-library "slime")))
+  ;; Is it byte-compiled?
+  (when (or (not (eq (elt (locate-library "slime")
+			  (- (length (locate-library "slime")) 1))
+		     ?c))
+	    (slime-bytecode-stale-p))
+  (slime-recompile-bytecode)
+  (load-library "slime")))
 (slime-setup)
 
 
