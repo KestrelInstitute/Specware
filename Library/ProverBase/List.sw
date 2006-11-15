@@ -96,11 +96,11 @@ PrList qualifying spec
   axiom nthTail_def is fa (hd, tl, i) (i > 0) =>
      nthTail(Cons(hd,tl),i) = nthTail(tl, i-1)
 
-  axiom last_def is fa (hd)
+  axiom last_def1 is fa (hd)
     last(Cons(hd, [])) = hd
 
-  axiom last_def is fa (hd, tl)
-    last(Cons(hd, tl)) = last(tl)
+  axiom last_def2 is fa (hd, tl)
+    tl ~= [] => last(Cons(hd, tl)) = last(tl)
 
   axiom butLast_def is fa (hd)
     butLast(Cons(hd, [])) = []
