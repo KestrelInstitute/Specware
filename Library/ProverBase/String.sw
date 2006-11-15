@@ -81,13 +81,13 @@ PrString qualifying spec
   axiom greate_than_def is
     fa (x: String, y: String) > (x,y) = (y < x)
 
-  axiom compare_def is
+  axiom compare_def1 is
     fa (s1: String, s2: String) s1 < s2 => compare(s1,s2) = Less
 
-  axiom compare_def is
+  axiom compare_def2 is
     fa (s1: String, s2: String) s2 < s1 => compare(s1,s2) = Greater
 
-  axiom compare_def is
+  axiom compare_def3 is
     fa (s1: String, s2: String) s1 = s2 => compare(s1,s2) = Equal
 
   % ops with different qualifiers:
@@ -183,19 +183,19 @@ PrString qualifying spec
 
   axiom show is fa (b: Boolean) Boolean.show b = Boolean.toString b
 
-  axiom compare_show_def is
+  axiom compare_show_def1 is
     fa (cmp) cmp = Greater => Compare.show cmp = "Greater"
 
-  axiom compare_show_def is
+  axiom compare_show_def2 is
     fa (cmp) cmp = Equal => Compare.show cmp = "Equal"
 
   axiom compare_show_def is
     fa (cmp) cmp = Less => Compare.show cmp = "Less"
 
-  axiom option_show_def is
+  axiom option_show_def1 is
     fa (opt, shw) opt = None => Option.show shw opt = "None"
 
-  axiom option_show_def is
+  axiom option_show_def2 is
     fa (opt, shw, x) opt = Some x => Option.show shw opt = "(Some " ^ (shw x) ^ ")"
 
   axiom intConvertible_def is

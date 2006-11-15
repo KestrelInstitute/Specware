@@ -4,10 +4,10 @@ PrNat qualifying spec
 
   % usual Peano axiomatization:
 
-  axiom zero_not_succ is
+  axiom zero_not_succ1 is
     ~(ex (n : Nat) Nat.zero = succ n)
 
-  axiom zero_not_succ is
+  axiom zero_not_succ2 is
     fa (n : Nat) ~(Nat.zero = succ n)
 
   axiom succ_injective is

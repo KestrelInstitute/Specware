@@ -84,16 +84,16 @@ PrList qualifying spec
 
 %  def @ (s1,s2) = concat(s1,s2)
 
-  axiom nth_def is  fa(hd, tl)
+  axiom nth_def1 is  fa(hd, tl)
      nth(Cons(hd,tl),0) = hd
 
-  axiom nth_def is  fa(hd, tl, i) (i > 0) =>
+  axiom nth_def2 is  fa(hd, tl, i) (i > 0) =>
      nth(Cons(hd,tl),i) = nth(tl, i-1)
 
-  axiom nthTail_def is fa (hd, tl)
+  axiom nthTail_def1 is fa (hd, tl)
      nthTail(tl,0) = tl
 
-  axiom nthTail_def is fa (hd, tl, i) (i > 0) =>
+  axiom nthTail_def2 is fa (hd, tl, i) (i > 0) =>
      nthTail(Cons(hd,tl),i) = nthTail(tl, i-1)
 
   axiom last_def1 is fa (hd)
@@ -102,28 +102,28 @@ PrList qualifying spec
   axiom last_def2 is fa (hd, tl)
     tl ~= [] => last(Cons(hd, tl)) = last(tl)
 
-  axiom butLast_def is fa (hd)
+  axiom butLast_def1 is fa (hd)
     butLast(Cons(hd, [])) = []
 
-  axiom butLast_def is fa (hd, tl)
+  axiom butLast_def2 is fa (hd, tl)
     butLast(Cons(hd, tl)) = Cons(hd, butLast(tl))
 
-  axiom member_def is fa (x)
+  axiom member_def1 is fa (x)
     ~(member(x, []))
 
-  axiom member_def is fa (hd, tl)
+  axiom member_def1 is fa (hd, tl)
      member(hd, Cons(hd, tl))
 
-  axiom member_def is fa (x, hd, tl)
+  axiom member_def2 is fa (x, hd, tl)
      (x~= hd => (member(x, Cons(hd, tl)) <=> member(x, tl)))
 
-  axiom diff_def is fa (l2)
+  axiom diff_def1 is fa (l2)
      diff([], l2) = []
 
-  axiom diff_def is fa (hd, tl, l2)
+  axiom diff_def2 is fa (hd, tl, l2)
      member(hd, l2) => diff (Cons(hd, tl), l2) = diff(tl, l2)
 
-  axiom diff_def is fa (hd, tl, l2)
+  axiom diff_def3 is fa (hd, tl, l2)
      ~(member(hd, l2)) => diff (Cons(hd, tl), l2) = Cons(hd, diff(tl, l2))
 
 (* TODO
@@ -135,10 +135,10 @@ PrList qualifying spec
        | hd::tl -> rev2(tl,Cons(hd,r))
 *)
 
-  axiom flatten_def is fa (l)
+  axiom flatten_def1 is fa (l)
     flatten([]) = []
 
-  axiom flatten_def is fa (hd, tl)
+  axiom flatten_def2 is fa (hd, tl)
     flatten(Cons(hd, tl)) = concat(hd, flatten(tl))
 
 (* TODO

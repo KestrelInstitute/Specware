@@ -97,33 +97,33 @@ PrInteger qualifying spec
   axiom greater_than_def is
     fa (x:Integer, y:Integer) > (x,y) = (y <  x)
 
-  axiom abs_def is
+  axiom abs_def1 is
     fa (x: Integer) x >= 0 => abs(x) = x
 
-  axiom abs_def is
+  axiom abs_def2 is
     fa (x: Integer) ~(x >= 0) => abs(x) = -x
 
-  axiom min_def is
+  axiom min_def1 is
     fa (x:Integer, y:Integer) x < y => min(x,y) = x
 
-  axiom min_def is
+  axiom min_def2 is
     fa (x:Integer, y:Integer) ~(x < y) => min(x,y) = y
 
-  axiom max_def is
+  axiom max_def1 is
     fa (x:Integer, y:Integer) x < y => max(x,y) = y
 
-  axiom max_def is
+  axiom max_def2 is
     fa (x:Integer, y:Integer) ~(x < y) => max(x,y) = x
 
-  axiom compare_def is
+  axiom compare_def1 is
     fa (x:Integer, y:Integer)
      x < y => compare(x, y) = Less
 
-  axiom compare_def is
+  axiom compare_def2 is
     fa (x:Integer, y:Integer)
        x > y => compare(x,y) = Greater
 
-  axiom compare_def is
+  axiom compare_def3 is
     fa (x:Integer, y:Integer)
        x = y => compare(x,y) = Equal
 
