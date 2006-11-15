@@ -60,7 +60,7 @@
                     slime-backend
                   (concat slime-path slime-backend)))
         (encoding (slime-coding-system-cl-name coding-system)))
-    (format "%S\n%S\n\n"
+    (format "%S\n%S\n%S\n\n"
             `(unless (and (find-package "SWANK") (fboundp (intern "START-SERVER" "SWANK")))
 	       (load ,loader :verbose t))
 	    `(setq specware::*using-slime-interface?* t)
