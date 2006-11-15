@@ -63,6 +63,7 @@
     (format "%S\n%S\n\n"
             `(unless (and (find-package "SWANK") (fboundp (intern "START-SERVER" "SWANK")))
 	       (load ,loader :verbose t))
+	    `(setq specware::*using-slime-interface?* t)
             `(swank:start-server ,port-filename :external-format ,encoding))))
 
 ;;; based on slime-repl-return

@@ -25,7 +25,8 @@ Notes:
 
 (defun eval-in-emacs (string)
   (when *use-emacs-interface?*
-    (if (fboundp 'swank::send-to-emacs)
+    (if (and (fboundp 'swank::send-to-emacs)
+	     specware::*using-slime-interface?*)
 	(funcall 'swank::send-to-emacs `(:eval-no-wait ,string))
       #+allegro
       (if (find-package :ilisp)

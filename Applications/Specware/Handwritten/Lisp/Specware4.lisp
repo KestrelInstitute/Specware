@@ -299,6 +299,7 @@
   ;; Preload slime lisp support
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
     (load loader :verbose t)))
+(setq *using-slime-interface?* nil)	; Gets set to t when initialized
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
