@@ -644,6 +644,9 @@ def p2mPattern (spc, modifyConstructors?, pat, minfo) =
     | VarPat ((id, srt), b) ->
       let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
       (VarPat ((id, srt), b), minfo)
+    | WildPat (srt, b) ->
+      let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
+      (WildPat (srt, b), minfo)
     | RecordPat (fields, b) ->
       let (fields, minfo) = 
           foldl (fn ((id, pat), (fields, minfo)) ->
