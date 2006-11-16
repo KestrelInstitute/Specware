@@ -10,10 +10,10 @@
    :size-of-character-set       128
    ;;
    :word-symbol-start-chars     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-   :word-symbol-continue-chars  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz?0123456789'"
+   :word-symbol-continue-chars  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'?"
    ;;
-   :non-word-symbol-start-chars    "!@$^&*~+-=|<>/:\\`?'"  ; note: we need to repeat \ here, since lisp removes one
-   :non-word-symbol-continue-chars "!@$^&*~+-=|<>/:\\`?'"  ; note: we need to repeat \ here, since lisp removes one
+   :non-word-symbol-start-chars    "`~!@$^&*-=+\\|:<>/'?"
+   :non-word-symbol-continue-chars "`~!@$^&*-=+\\|:<>/'?"  ; note: we need to repeat \ here, since lisp removes one
    ;;
    :number-start-chars          "0123456789"
    :number-continue-chars       "0123456789"
@@ -29,14 +29,8 @@
 				  ;; #\'                   ; apostrophe
 				  )
 
-   ;; Fri Apr  9 01:46:42 PDT 2004
-   ;; We are in the process of replacing "sort" with "type" as a keyword.
-   ;; "type" is now a keyword synonym for "sort", but is also a symbol
-   ;; Fri Apr 23 17:00:23 PDT 2004
-   ;; "type" is now just a keyword synonym for "sort", and is no longer a symbol
-
-   :ad-hoc-keywords             '("end-spec" ".." "reduce" "expand") ; "using" "options" ; "_" 
-   :ad-hoc-symbols              '("reduce" "expand")                 ; "using" "options" ; "__" 
+   :ad-hoc-keywords             '("end-spec" ".." "reduce" "expand") 
+   :ad-hoc-symbols              '("reduce" "expand")                 
    :ad-hoc-numbers              '()
    ;;
    :comment-to-eol-chars        "%"
@@ -49,9 +43,9 @@
 				  )
    ;;
    :pragma-delimiters           '(("proof" "end-proof" nil nil)) 
-					; Not recusive, to avoid problems when the word "proof" appears 
-					;  inside an extended comment.
-					; Not ok to terminate with eof -- that's a hack for the latex stuff.
+					; First nil:  Not recusive, to avoid problems when the word "proof" appears 
+					;             inside an extended comment.
+					; Second nil: Not ok to terminate with eof -- that's a hack for the latex stuff.
    ;;
    :case-sensitive?             t
    ;;
