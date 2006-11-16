@@ -899,6 +899,7 @@
 	 (#.+word-symbol-continue-code+     (go extend-word-symbol))
 	 (#.+non-word-symbol-start-code+    (go extend-non-word-symbol))
 	 (#.+non-word-symbol-continue-code+ (go extend-non-word-symbol))
+	 ;; TODO: We wish to disallow multiple consecutive underbars, but for the moment C code generation and Snark use "__" in names
 	 (#.+syllable-separator-code+       (go extend-symbol-with-new-syllable))
 	 (#.+wildcard-code+                 (go extend-symbol-with-new-syllable)) ; shouldn't happen here, but just in case
 	 ;; 
