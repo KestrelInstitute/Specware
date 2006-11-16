@@ -29,8 +29,13 @@
 				  ;; #\'                   ; apostrophe
 				  )
 
-   :ad-hoc-keywords             '("end-spec" ".." "reduce" "expand") 
-   :ad-hoc-symbols              '("reduce" "expand")                 
+   ;; Note: If a keyword in the grammar is declared to be an ad-hoc-symbol,
+   ;;       it must also be declared to be an ad-hoc-keyword
+
+   :ad-hoc-keywords             '("end-spec" ".." 
+				  "reduce" "expand"  "colimit" "diagram" "with" "translate" "*" "/"  "\\_times" "print" "Snark"   "answerVar"   "Checker")
+   :ad-hoc-symbols              '("reduce" "expand"  "colimit" "diagram" "with" "translate" "*" "/"  "\\_times" "print" "Snark"   "answerVar"   "Checker")
+   ;;
    :ad-hoc-numbers              '()
    ;;
    :comment-to-eol-chars        "%"
@@ -55,5 +60,3 @@
 
 (defun extract-specware4-tokens-from-file (file)
   (extract-tokens-from-file file *specware4-tokenizer-parameters*))
-
-

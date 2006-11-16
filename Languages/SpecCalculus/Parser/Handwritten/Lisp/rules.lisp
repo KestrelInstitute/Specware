@@ -83,18 +83,21 @@
 ;;;        but use :NON-KEYWORD-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :NAME ()
   (:anyof
-   ((:tuple "=")           "=")		; so we can use = (and "is" ?) as an op-name
-   ((:tuple "*")           "*")		; so we can use * as an op-name
-   ((:tuple "\\_times")    "\\_times")	; so we can use \_times as an op-name
-   ((:tuple "/")           "/")		; so we can use / as an op-name
-   ((:tuple "translate")   "translate")	; so we can use translate as a op-name
-   ((:tuple "colimit")     "colimit")	; so we can use colimit as a op-name
-   ((:tuple "diagram")     "diagram")	; so we can use diagram as a op-name
-   ((:tuple "print")       "print")	; so we can use print as a op-name
-   ((:tuple "with")        "with")	; so we can use with as a op-name
-   ((:tuple "Snark")       "Snark")	; so we can use Snark as a unit-identifier
-   ((:tuple "answerVar")   "answerVar")	; so we can use answerVar a unit-identifier
-   ((:tuple "Checker")     "Checker")	; so we can use Checker a unit-identifier
+   ((:tuple "=")           "=")		; so we can use "=" in expressions, e.g "A = B"
+   ((:tuple "is")          "is")	; so we can use "is" in expressions, e.g. "A is B"
+
+  ;((:tuple "*")           "*")		; so we can use * as an op-name
+  ;((:tuple "\\_times")    "\\_times")	; so we can use \_times as an op-name
+  ;((:tuple "/")           "/")		; so we can use / as an op-name
+
+  ;((:tuple "translate")   "translate")	; so we can use translate as a op-name
+  ;((:tuple "colimit")     "colimit")	; so we can use colimit as a op-name
+  ;((:tuple "diagram")     "diagram")	; so we can use diagram as a op-name
+  ;((:tuple "print")       "print")	; so we can use print as a op-name
+  ;((:tuple "with")        "with")	; so we can use with as a op-name
+  ;((:tuple "Snark")       "Snark")	; so we can use Snark as a unit-identifier
+  ;((:tuple "answerVar")   "answerVar")	; so we can use answerVar a unit-identifier
+  ; ((:tuple "Checker")     "Checker")	; so we can use Checker a unit-identifier
    ((:tuple (1 :NON-KEYWORD-NAME)) 1)
    ))
 
