@@ -8,6 +8,33 @@
 (pushnew ".sfsl" completion-ignored-extensions)	; sbcl
 (pushnew ".fas"  completion-ignored-extensions)	; clisp
 
+(setq lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
+(setq expand-symlinks-rfs-exists t)
+(defvar *specware-lisp* (if (or (search "alisp" lisp-program)
+				(search "build" lisp-program))
+			    'allegro
+			  (if (search "dppccl" lisp-program)
+			      'openmcl
+			    (if (search "sbcl" lisp-program)
+				'sbcl
+				(if (search "gcl" lisp-program)
+				    'gcl
+				  'cmulisp)))))
+(defvar *lisp-image-extension*
+  (case *specware-lisp*
+    (openmcl "openmcl-image")
+    (cmulisp "cmuimage")
+    (sbcl "sbclimage")
+    (allegro "dxl")
+    (gcl "gclimage")))
+(defvar *fasl-extension*
+  (case *specware-lisp*
+    (allegro "fasl")
+    (mcl     "dfsl")
+    (cmu     "x86f")
+    (sbcl    "sfsl")
+    (gcl     "o")))
+
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
@@ -75,32 +102,6 @@
   (defvar ilisp-*use-fsf-compliant-keybindings* t) ; Use c-c as command prefix (not c-z)
   (unless (fboundp 'run-ilisp)
     (load "ilisp/ilisp"))
-  (setq lisp-program (getenv "LISP_EXECUTABLE"))
-  (setq expand-symlinks-rfs-exists t)
-  (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
-				  (search "build" lisp-program))
-			      'allegro
-			    (if (search "dppccl" lisp-program)
-				'openmcl
-			      (if (search "sbcl" lisp-program)
-				  'sbcl				'sbcl
-				  (if (search "gcl" lisp-program)
-				      'gcl
-				    'cmulisp)))))
-  (defvar *lisp-image-extension*
-    (case *specware-lisp*
-      (openmcl "openmcl-image")
-      (cmulisp "cmuimage")
-      (sbcl "sbclimage")
-      (allegro "dxl")
-      (gcl "gclimage")))
-  (defvar *fasl-extension*
-    (case *specware-lisp*
-      (allegro "fasl")
-      (mcl     "dfsl")
-      (cmu     "x86f")
-      (sbcl    "sfsl")
-      (gcl     "o")))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
 			 &optional
@@ -251,35 +252,8 @@
 	(concat (getenv "SPECWARE4") "/Library/IO/Emacs/slime/"))
   (defvar slime-*use-fsf-compliant-keybindings* t) ; Use c-c as command prefix (not c-z)
   (require 'slime)
-  (setq lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
   (setq inferior-lisp-program lisp-program)
   (setq expand-symlinks-rfs-exists t)
-  (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
-				  (search "build" lisp-program))
-			      'allegro
-			    (if (search "dppccl" lisp-program)
-				'openmcl
-			      (if (search "sbcl" lisp-program)
-				  'sbcl				'sbcl
-				  (if (search "gcl" lisp-program)
-				      'gcl
-				    (if (search "sbcl" lisp-program)
-				      'sbcl
-				      'cmulisp))))))
-  (defvar *lisp-image-extension*
-    (case *specware-lisp*
-      (openmcl "openmcl-image")
-      (cmulisp "cmuimage")
-      (sbcl "sbclimage")
-      (allegro "dxl")
-      (gcl "gclimage")))
-  (defvar *fasl-extension*
-    (case *specware-lisp*
-      (allegro "fasl")
-      (openmcl "dfsl")
-      (cmu     "x86f")
-      (sbcl    "sfsl")
-      (gcl     "o")))
   (defvar slime-multiprocessing
     (case *specware-lisp*
       (allegro   t)
