@@ -379,7 +379,7 @@
 				 (, auto-exit?))))))
 
 (defun build-specware4-continue (*specware4-dir build-dir bin-dir slash-dir world-name base-world-name auto-exit?)
-  (when base-world-name
+  (when (and base-world-name (not (file-exists-p base-world-name)))
     (run-plain-lisp 1)
     ;; Currently
     (eval-in-lisp-in-order
