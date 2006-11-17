@@ -521,6 +521,7 @@ Mode map
   (setq major-mode 'specware-mode)
   (setq mode-name "Specware")
   (easy-menu-add specware-mode-menu)
+  (setq indent-tabs-mode nil)		; Don't use tabs when doing automatic indentation
   (if sw:use-x-symbol
       (x-symbol-mode t))
   (when sw:use-hide-show
