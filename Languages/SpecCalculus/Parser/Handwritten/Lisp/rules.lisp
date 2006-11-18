@@ -31,7 +31,7 @@
 ;;;  NOTE: :LOCAL-VARIABLE      as :CLOSED-EXPRESSION would introduce ambiguities, so we parse as :ATOMIC-EXPRESSION and post-process
 ;;;
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :NON-KEYWORD-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 ;;;
 ;;;  NOTE: "{}" is parsed directly as :UNIT-PRODUCT-SORT,
 ;;;        but in the documentation, it's viewed as 0 entries in :SORT-RECORD
