@@ -29,12 +29,22 @@
 				  ;; #\'                   ; apostrophe
 				  )
 
-   ;; Note: If a keyword in the grammar is declared to be an ad-hoc-symbol,
-   ;;       it must also be declared to be an ad-hoc-keyword
+   :ad-hoc-keywords             '(;; By default, these two strings would be multiple tokens,
+				  ;; so we specially treat them as a single token:
+				  "end-spec" ".." 
 
-   :ad-hoc-keywords             '("end-spec" ".." 
-				  "reduce" "expand"  "colimit" "diagram" "with" "translate" "*" "/"  "\\_times" "print" "Snark"   "answerVar"   "Checker")
-   :ad-hoc-symbols              '("reduce" "expand"  "colimit" "diagram" "with" "translate" "*" "/"  "\\_times" "print" "Snark"   "answerVar"   "Checker")
+				  ;; These are here merely to maintain their status
+				  ;; as keywords given their inclusion in :ad-hoc-symbols.
+
+				  "reduce" "expand"  "hide" "export" "extendMorph" 
+				  "colimit" "diagram" "with" "translate" "print" 
+				  "is" "/" "*" "\\_times" 
+				  "Snark" "answerVar" "Checker")
+
+   :ad-hoc-symbols              '("reduce" "expand"  "hide" "export" "extendMorph" 
+				  "colimit" "diagram" "with" "translate" "print" 
+				  "is" "/" "*" "\\_times"
+				  "Snark" "answerVar" "Checker")
    ;;
    :ad-hoc-numbers              '()
    ;;

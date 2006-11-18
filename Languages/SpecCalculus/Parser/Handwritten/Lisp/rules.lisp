@@ -48,7 +48,7 @@
 
 ;;; These simplify life...
 
-;;; The rationale for :NON-KEYWORD-NAME --
+;;; The rationale for :SYMBOL-NAME --
 ;;;
 ;;; If we were to use :SYMBOL everywhere in a rule, e.g.
 ;;;
@@ -60,10 +60,10 @@
 ;;;  (foo x y z)
 ;;; where the names x y z would be viewed as lisp variables.
 ;;;
-;;; But if we use :NON-KEYWORD-NAME instead, e.g.:
+;;; But if we use :SYMBOL-NAME instead, e.g.:
 ;;;
 ;;; (define-sw-parser-rule :FOO ()
-;;;   (:tuple "foo" (1 :NON-KEYWORD-NAME) (2 :NON-KEYWORD-NAME) (3 :NON-KEYWORD-NAME))
+;;;   (:tuple "foo" (1 :SYMBOL-NAME) (2 :SYMBOL-NAME) (3 :SYMBOL-NAME))
 ;;;   (foo 1 2 3)
 ;;;
 ;;; then after substitutions we'd get lisp forms such as
@@ -72,33 +72,25 @@
 ;;;
 ;;; There might be simpler schemes, but this works well enough...
 
-(define-sw-parser-rule :NON-KEYWORD-NAME ()
+(define-sw-parser-rule :SYMBOL-NAME ()
   (1 :SYMBOL)
   (common-lisp::symbol-name (quote 1)))
 
 (define-sw-parser-rule :EQUALS ()
   (:anyof "=" "is"))
 
-;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :NON-KEYWORD-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;  NOTE: We use normally use :NAME whereever the documentation says :NAME,
+;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;        This is done so that "=" can appear in expressions, but cannot 
+;;;        be used as a local var or a sort name.
+;;;        See ad-hoc-symbols and ad-hoc-keywords in tokenizer.lisp for a
+;;;        list of keywords that are also available as a :SYMBOL_NAME 
+;;;        (e.g. "colimit", "translate", etc.)
+
 (define-sw-parser-rule :NAME ()
   (:anyof
-   ((:tuple "=")           "=")		; so we can use "=" in expressions, e.g "A = B"
-   ((:tuple "is")          "is")	; so we can use "is" in expressions, e.g. "A is B"
-
-  ;((:tuple "*")           "*")		; so we can use * as an op-name
-  ;((:tuple "\\_times")    "\\_times")	; so we can use \_times as an op-name
-  ;((:tuple "/")           "/")		; so we can use / as an op-name
-
-  ;((:tuple "translate")   "translate")	; so we can use translate as a op-name
-  ;((:tuple "colimit")     "colimit")	; so we can use colimit as a op-name
-  ;((:tuple "diagram")     "diagram")	; so we can use diagram as a op-name
-  ;((:tuple "print")       "print")	; so we can use print as a op-name
-  ;((:tuple "with")        "with")	; so we can use with as a op-name
-  ;((:tuple "Snark")       "Snark")	; so we can use Snark as a unit-identifier
-  ;((:tuple "answerVar")   "answerVar")	; so we can use answerVar a unit-identifier
-  ; ((:tuple "Checker")     "Checker")	; so we can use Checker a unit-identifier
-   ((:tuple (1 :NON-KEYWORD-NAME)) 1)
+   ((:tuple "=")  "=")	; so we can use "="  in expressions, e.g "A = B"
+   ((:tuple (1 :SYMBOL-NAME)) 1)
    ))
 
 ;;; ========================================================================
@@ -154,8 +146,6 @@
 	  :SC-LET
 	  :SC-WHERE
 	  :SC-QUALIFY
-	  :SC-HIDE
-	  :SC-EXPORT
 	  :SC-TRANSLATE
 	  :SC-SPEC-MORPH
 	  ;; :SC-SHAPE
@@ -173,7 +163,12 @@
 	  :SC-PROVE
 	  :SC-EXPAND
 	  :SC-REDUCE
-	  :SC-EXTEND))
+
+	  ;; ???
+	  :SC-EXTEND
+	  :SC-HIDE
+	  :SC-EXPORT
+	  ))
 
 ;;; ========================================================================
 ;;;  SC-PARENTHESIZED-TERM
@@ -306,9 +301,9 @@
   1)
 
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :NON-KEYWORD-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :SORT-NAME ()
-  :NON-KEYWORD-NAME)
+  :SYMBOL-NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;  QUALIFIABLE-OP-NAME 
@@ -373,7 +368,7 @@
   1)					; e.g. ("x" "y" "z") => (list "x" "y" "z")
 
 (define-sw-parser-rule :LOCAL-SORT-VARIABLE ()
-  (1 :NON-KEYWORD-NAME)			; don't allow "="
+  (1 :SYMBOL-NAME)			; don't allow "="
   1)
 
 ;;; ------------------------------------------------------------------------
@@ -938,9 +933,9 @@ If we want the precedence to be optional:
   (make-annotated-variable 1 2 ':left-lcb ':right-lcb))
 
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :NON-KEYWORD-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :LOCAL-VARIABLE ()
-  :NON-KEYWORD-NAME)
+  :SYMBOL-NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;   ANNOTATED-EXPRESSION
@@ -1394,40 +1389,6 @@ If we want the precedence to be optional:
   (:tuple (1 :QUALIFIER) "qualifying" (2 :SC-TERM))
   (make-sc-qualify 1 2 ':left-lcb ':right-lcb))
 
-;;; ========================================================================
-;;;  SC-HIDE
-;;;  SC-EXPORT
-;;; ========================================================================
-
-(define-sw-parser-rule :SC-HIDE ()
-  (:tuple "hide" "{" (1 :SC-DECL-REFS) "}" "in" (2 :SC-TERM))
-  (make-sc-hide 1 2 ':left-lcb ':right-lcb))
-
-(define-sw-parser-rule :SC-EXPORT ()
-  (:tuple "export" "{" (1 :SC-DECL-REFS) "}" "from" (2 :SC-TERM))
-  (make-sc-export 1 2 ':left-lcb ':right-lcb))
-
-;; Right now we simply list the names to hide or export. Later
-;; we might provide some sort of expressions or patterns
-;; that match sets of identifiers.
-;; (define-sw-parser-rule :SC-NAME-EXPR ()
-;;   (:tuple "{" (1 (:optional :QUALIFIABLE-AMBIGUOUS-NAME-LIST)) "}")
-;; (list . 1))
-
-(define-sw-parser-rule :SC-DECL-REFS ()
-  (:repeat* :SC-DECL-REF ","))
-
-(define-sw-parser-rule :SC-DECL-REF ()
-  (:anyof 
-   ((:tuple :KW-TYPE        (1 :SC-SORT-REF))          (make-sc-sort-ref      1 ':left-lcb ':right-lcb))
-   ((:tuple "op"            (1 :SC-OP-REF))            (make-sc-op-ref        1 ':left-lcb ':right-lcb))
-   ((:tuple (1 :CLAIM-KIND) (2 :SC-CLAIM-REF))         (make-sc-claim-ref     1 2 ':left-lcb ':right-lcb))
-   ;; Without an explicit "sort" or "op" keyword, if ref is annotated, its an op ref:
-   ((:tuple                 (1 :SC-ANNOTATED-OP-REF))  (make-sc-op-ref        1 ':left-lcb ':right-lcb))
-   ;; Otherwise, it's probably ambiguous (semantic routine will notice that "=" must be an op):
-   ((:tuple                 (1 :SC-AMBIGUOUS-REF))     (make-sc-ambiguous-ref 1 ':left-lcb ':right-lcb))
-   ))
-
 ;;; ------------------------------------------------------------------------
 ;;;  SORT REF
 ;;; ------------------------------------------------------------------------
@@ -1505,7 +1466,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :UNQUALIFIED-AMBIGUOUS-NAME ()
   (:anyof
-   ;; maybe :NAME should be :NON-KEYWORD-NAME
+   ;; maybe :NAME should be :SYMBOL-NAME
    ;; that would automatically rule out "=", "*", "/", "translate", etc.
    ((:tuple (1 :NAME)) (MetaSlang::mkUnQualifiedId 1))
    ((:tuple "_")       (MetaSlang::mkUnQualifiedId "_"))
@@ -1513,7 +1474,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :QUALIFIED-AMBIGUOUS-NAME ()
   (:anyof
-   ;; maybe :NAME should be :NON-KEYWORD-NAME
+   ;; maybe :NAME should be :SYMBOL-NAME
    ;; that would automatically rule out "=", "*", "/", "translate", etc.
    ((:tuple (1 :QUALIFIER) "." (2 :NAME)) (MetaSlang::mkQualifiedId-2 1 2))
    ((:tuple (1 :QUALIFIER) "." "_")       (MetaSlang::mkQualifiedId-2 1 "_"))
@@ -1686,38 +1647,36 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-PROVE ()
   (:tuple "prove" (1 :PROVER-CLAIM) "in" (2 :SC-TERM)
-	  (:optional (:tuple "with"    (3 :PROVER-NAME)))
-	  (:optional (:tuple "using"   (4 :PROVER-ASSERTIONS)))
-	  (:optional (:tuple "options" (5 :PROVER-OPTIONS)))
+	  (:optional (:tuple "with"       (3 :PROVER-NAME)))
+	  (:optional (:tuple "using"      (4 :PROVER-ASSERTIONS)))
+	  (:optional (:tuple "options"    (5 :PROVER-OPTIONS)))
 	  (:optional (:tuple "answerVar"  (7 :ANSWER-VARIABLE))))
   (make-sc-prover 1 2 3 4 5 7 ':left-lcb ':right-lcb))
 
-(define-sw-parser-rule :PROVER-NAME ()
-  (:anyof "Snark" "PVS" "FourierM" "Checker"))
-
 (define-sw-parser-rule :PROVER-CLAIM ()
-  (:anyof 
-   "WELLFORMED"
-   :QUALIFIABLE-CLAIM-NAME))
+  ;; WELLFORMED is a :QUALIFIABLE-CLAIM-NAME that will be handled specially by semantics...
+  :QUALIFIABLE-CLAIM-NAME)
+
+(define-sw-parser-rule :PROVER-NAME ()
+  ;; semantics will check for legal name among "Snark" "PVS" "FourierM" "Checker"
+  :STRING)
 
 (define-sw-parser-rule :PROVER-ASSERTIONS ()
-  (:anyof 
-   "ALL"
-   (:repeat+ :QUALIFIABLE-CLAIM-NAME ",")))
+  ;; "ALL" is a :QUALIFIABLE-CLAIM-NAME that will be handled specially by semantics
+  (:repeat+ :QUALIFIABLE-CLAIM-NAME ","))
 
 (define-sw-parser-rule :PROVER-OPTIONS ()
   (:anyof
-   (:tuple (1 :STRING)) 
-   (:tuple (1 :QUALIFIABLE-OP-NAME)))
-  ;; returns (:|OptionString| <sexpressions>) or (:|Error| msg string) or (:|OptionName| op)
-  (make-sc-prover-options 1))
+   ((:tuple (1 :STRING))               (make-sc-prover-options-from-string 1)) ; returns (:|OptionString| <sexpressions>) or (:|Error| msg string)
+   ((:tuple (1 :QUALIFIABLE-OP-NAME))  (cons :|OptionName| 1))
+   ))
 
-(define-sw-parser-rule :PROVER-BASE-OPTIONS ()
-  (:anyof "NONE" "BASE")
-   )
+;;(define-sw-parser-rule :PROVER-BASE-OPTIONS ()
+;;  (:anyof "NONE" "BASE")
+;;   )
 
 (define-sw-parser-rule :ANSWER-VARIABLE ()
-   (:tuple (1 :ANNOTATED-VARIABLE))
+  (:tuple (1 :ANNOTATED-VARIABLE))
   (make-sc-answerVar 1))
 
 
@@ -1744,4 +1703,38 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :SC-EXTEND ()
   (:tuple "extendMorph" (1 :SC-TERM))
   (make-sc-extend 1 ':left-lcb ':right-lcb))
+
+;;; ========================================================================
+;;;  SC-HIDE
+;;;  SC-EXPORT
+;;; ========================================================================
+
+(define-sw-parser-rule :SC-HIDE ()
+  (:tuple "hide" "{" (1 :SC-DECL-REFS) "}" "in" (2 :SC-TERM))
+  (make-sc-hide 1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :SC-EXPORT ()
+  (:tuple "export" "{" (1 :SC-DECL-REFS) "}" "from" (2 :SC-TERM))
+  (make-sc-export 1 2 ':left-lcb ':right-lcb))
+
+;; Right now we simply list the names to hide or export. Later
+;; we might provide some sort of expressions or patterns
+;; that match sets of identifiers.
+;; (define-sw-parser-rule :SC-NAME-EXPR ()
+;;   (:tuple "{" (1 (:optional :QUALIFIABLE-AMBIGUOUS-NAME-LIST)) "}")
+;; (list . 1))
+
+(define-sw-parser-rule :SC-DECL-REFS ()
+  (:repeat* :SC-DECL-REF ","))
+
+(define-sw-parser-rule :SC-DECL-REF ()
+  (:anyof 
+   ((:tuple :KW-TYPE        (1 :SC-SORT-REF))          (make-sc-sort-ref      1 ':left-lcb ':right-lcb))
+   ((:tuple "op"            (1 :SC-OP-REF))            (make-sc-op-ref        1 ':left-lcb ':right-lcb))
+   ((:tuple (1 :CLAIM-KIND) (2 :SC-CLAIM-REF))         (make-sc-claim-ref     1 2 ':left-lcb ':right-lcb))
+   ;; Without an explicit "sort" or "op" keyword, if ref is annotated, its an op ref:
+   ((:tuple                 (1 :SC-ANNOTATED-OP-REF))  (make-sc-op-ref        1 ':left-lcb ':right-lcb))
+   ;; Otherwise, it's probably ambiguous (semantic routine will notice that "=" must be an op):
+   ((:tuple                 (1 :SC-AMBIGUOUS-REF))     (make-sc-ambiguous-ref 1 ':left-lcb ':right-lcb))
+   ))
 

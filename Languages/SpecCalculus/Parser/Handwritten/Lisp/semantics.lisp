@@ -1077,27 +1077,30 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-prover (claim-name spec-term prover-name assertions options answerVar l r)
-  (let ((prover-name (if (eq prover-name :unspecified) "Both" prover-name))
-	(assertions  (if (eq assertions  :unspecified) (cons :|All| nil) (cons :|Explicit| assertions)))
-	(options     (if (eq options     :unspecified) (cons :|OptionString| nil) options))
-	(baseOptions (cons :|ProverBase| nil))
-	(answerVar   (if (eq answerVar   :unspecified) (cons :|None| nil) answerVar)))
-    (if (equal claim-name "WELLFORMED")
-	(let ((claim-name (cons :|WellFormed| nil)))
-	  (speccalc::mkProofCheck-7  claim-name spec-term prover-name assertions options baseOptions (make-pos l r)))
-      (if (equal prover-name "Checker")
-	  (let ((claim-name (cons :|Claim| claim-name)))
-	    (speccalc::mkProofCheck-7  claim-name spec-term prover-name assertions options baseOptions (make-pos l r)))
-	(speccalc::mkProve-8 claim-name spec-term prover-name assertions options baseOptions answerVar (make-pos l r))))))
+  ;; The various names here are case sensitive.  Is this desirable?
+  (let ((prover-name (if (eq prover-name :unspecified) 
+			 "Both" ; what does this mean?
+		       (unless (member prover-name '("Snark" "PVS" "FourierM" "Checker")) 
+			 (warn "Unrecognized prover: ~A, not Snark, PVS, FourierM, or Checker" prover-name)
+			 prover-name)))
+	(assertions  (if (eq assertions :unspecified)  '(:|All|)	   (cons :|Explicit| assertions))) 
+	(options     (if (eq options    :unspecified)  '(:|OptionString|)  options))
+	(baseOptions '(:|ProverBase|))
+	(answerVar   (if (eq answerVar  :unspecified)  '(:|None|)          answerVar))
+	(here        (make-pos l r)))
+    ;; "WELLFORMED" or "Checker" => ProofCheck ..
+    ;; otherwise                 => Prove      ...
+    (cond ((equal claim-name  (MetaSlang::mkUnQualifiedId "WELLFORMED"))
+	   (let ((claim '(:|WellFormed|)))	     (speccalc::mkProofCheck-7  claim      spec-term prover-name assertions options baseOptions           here)))
+	  ((equal prover-name "Checker")  
+	   (let ((claim (list :|Claim| claim-name))) (speccalc::mkProofCheck-7  claim      spec-term prover-name assertions options baseOptions           here)))
+	  (t                                         (speccalc::mkProve-8       claim-name spec-term prover-name assertions options baseOptions answerVar here)))))
 
-(defun make-sc-prover-options (name_or_string)
-  (cond ((stringp name_or_string) 
-	 (read_list_of_s_expressions_from_string name_or_string))
-	(t (cons :|OptionName| name_or_string))))
+(defun make-sc-prover-options-from-string (s)
+  (read_list_of_s_expressions_from_string s))
 
 (defun make-sc-answerVar (annotated-variable)
   (cons :|Some| annotated-variable))
-
 
 ;; ========================================================================
 ;;;  SC-OBLIGATIONS
