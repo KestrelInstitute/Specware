@@ -73,8 +73,26 @@
 ;;; There might be simpler schemes, but this works well enough...
 
 (define-sw-parser-rule :SYMBOL-NAME ()
-  (1 :SYMBOL)
-  (common-lisp::symbol-name (quote 1)))
+  (:anyof
+   ((:tuple "reduce")       "reduce")
+   ((:tuple "expand")       "expand")
+   ((:tuple "hide")         "hide")
+   ((:tuple "export")       "export")
+   ((:tuple "extendMorph")  "extendMorph")
+   ((:tuple "colimit")      "colimit")
+   ((:tuple "diagram")      "diagram")
+   ((:tuple "translate")    "translate")
+   ((:tuple "print")        "print")
+   ((:tuple "is")           "is")
+   ((:tuple "/")            "/")
+   ((:tuple "*")            "*")
+   ((:tuple "\\_times")     "\\_times")
+   ((:tuple "with")         "with")
+   ((:tuple "using")        "using")
+   ((:tuple "options")      "options")
+   ((:tuple "answerVar")    "answerVar")
+   ((1 :SYMBOL)             (common-lisp::symbol-name (quote 1)))
+   ))
 
 (define-sw-parser-rule :EQUALS ()
   (:anyof "=" "is"))

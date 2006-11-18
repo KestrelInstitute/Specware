@@ -29,22 +29,8 @@
 				  ;; #\'                   ; apostrophe
 				  )
 
-   :ad-hoc-keywords             '(;; By default, these two strings would be multiple tokens,
-				  ;; so we specially treat them as a single token:
-				  "end-spec" ".." 
-
-				  ;; These are here merely to maintain their status
-				  ;; as keywords given their inclusion in :ad-hoc-symbols.
-
-				  "reduce" "expand"  "hide" "export" "extendMorph" 
-				  "colimit" "diagram" "with" "translate" "print" 
-				  "is" "/" "*" "\\_times" 
-				  "Snark" "answerVar" "Checker")
-
-   :ad-hoc-symbols              '("reduce" "expand"  "hide" "export" "extendMorph" 
-				  "colimit" "diagram" "with" "translate" "print" 
-				  "is" "/" "*" "\\_times"
-				  "Snark" "answerVar" "Checker")
+   :ad-hoc-keywords             '("end-spec" "..") ; to avoid getting multiple tokens
+   :ad-hoc-symbols              '()
    ;;
    :ad-hoc-numbers              '()
    ;;
