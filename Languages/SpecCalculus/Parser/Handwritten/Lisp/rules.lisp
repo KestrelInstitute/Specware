@@ -91,7 +91,7 @@
    ((:tuple "using")        "using")
    ((:tuple "options")      "options")
    ((:tuple "answerVar")    "answerVar")
-   ((1 :SYMBOL)             (common-lisp::symbol-name (quote 1)))
+   ((:tuple (1 :SYMBOL))    (common-lisp::symbol-name (quote 1)))
    ))
 
 (define-sw-parser-rule :EQUALS ()
@@ -107,7 +107,7 @@
 
 (define-sw-parser-rule :NAME ()
   (:anyof
-   ((:tuple "=")  "=")	; so we can use "="  in expressions, e.g "A = B"
+   ((:tuple "=")              "=")	; so we can use "="  in expressions, e.g "A = B"
    ((:tuple (1 :SYMBOL-NAME)) 1)
    ))
 
@@ -315,8 +315,7 @@
   (MetaSlang::mkQualifiedId-2 1 2))
 
 (define-sw-parser-rule :QUALIFIER ()
-  (1 :NAME)
-  1)
+  :NAME)
 
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
 ;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
@@ -339,8 +338,7 @@
   (MetaSlang::mkQualifiedId-2 1 2))
 
 (define-sw-parser-rule :OP-NAME ()
-  (1 :NAME)
-  1)
+  :NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;  QUALIFIABLE-CLAIM-NAME 
@@ -350,7 +348,7 @@
   (:anyof :UNQUALIFIED-CLAIM-NAME :QUALIFIED-CLAIM-NAME))
 
 (define-sw-parser-rule :UNQUALIFIED-CLAIM-NAME ()
-  (1 :CLAIM-NAME)
+  (:tuple (1 :CLAIM-NAME))
   (MetaSlang::mkUnQualifiedId 1))
 
 (define-sw-parser-rule :QUALIFIED-CLAIM-NAME ()
@@ -358,8 +356,7 @@
   (MetaSlang::mkQualifiedId-2 1 2))
 
 (define-sw-parser-rule :CLAIM-NAME ()
-  (1 :NAME)
-  1)
+  :NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;  SORT-DECLARATION
@@ -386,8 +383,7 @@
   1)					; e.g. ("x" "y" "z") => (list "x" "y" "z")
 
 (define-sw-parser-rule :LOCAL-SORT-VARIABLE ()
-  (1 :SYMBOL-NAME)			; don't allow "="
-  1)
+  :SYMBOL-NAME)			; don't allow "="
 
 ;;; ------------------------------------------------------------------------
 ;;;  SORT-DEFINITION
