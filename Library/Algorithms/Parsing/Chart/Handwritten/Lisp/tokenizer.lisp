@@ -605,20 +605,19 @@
        ;;                 WHITESPACE 
        ;; ======================================================================
        ;; 
-
        unrecognized-char-while-scanning-whitespace
        (warn-here "Unrecognized ~6S (hex code ~2,'0X) while scanning whitespace -- treated as whitespace"
 		  char char-code)
        ;;
-      start-scan-for-new-token
-      continue-whitespace
+       continue-whitespace
+       start-scan-for-new-token
        ;; 
        (local-read-char char char-code
 			(return-values :EOF nil) 
 			() 
 			(go start-extended-comment)
 			(go start-pragma))
-      ignore-erroneous-pragma
+       ignore-erroneous-pragma
        (look-for-ad-hoc-tokens char char-code)
        ;; 
        (case (svref whitespace-table char-code)
@@ -700,7 +699,7 @@
        ;;
        (set-first-positions)
        ;;
-       extend-wildcard
+       ;; extend-wildcard
        ;; 
        (push char token-chars)
        (set-last-positions)
@@ -710,8 +709,12 @@
 			(go terminate-word-symbol-with-extended-comment)
 			())
 
+	 
        (case (svref whitespace-table char-code)
-	 (#.+wildcard-code+ (go extend-wildcard)))
+	 (#.+wildcard-code+ 
+	  ;; (go extend-wildcard) ; disabled per Lambert's request
+	  (warn-here "Wildcards are a single underbar -- double underbar is not recognized.")
+	  (return-values :ERROR "__")))
 
        (local-unread-char char)
        (return-values-using-prior-last :SYMBOL (coerce (nreverse token-chars) 'string))
@@ -906,12 +909,22 @@
 	 (otherwise                         (go terminate-symbol-but-preserve-wildcard)))
 
        terminate-symbol-but-preserve-wildcard
-
+       ;;
+       ;; We want patterns such as "_+_" or "_::_"  to tokenize as 
+       ;;  ("_"  "+" "_") or ("_" "::" "_"), respectively.
+       ;;
+       ;; Assume the first underbar is already handled.
+       ;;
+       ;; Put the terminating char (which could be almost anything) and the underbar back 
+       ;; for for future processing, so the next pass will see the underbar followed by 
+       ;; the terminating char.
+       ;;
        (local-unread-char char)
        (local-unread-char #\_)
-       (return-values-using-prior-last :SYMBOL (coerce (nreverse (cdr token-chars)) 'string))
-
-
+       ;;
+       ;; cdr in following removes trailing underbar from middle token being returned.
+       ;;
+       (return-values :SYMBOL (coerce (nreverse (cdr token-chars)) 'string)) 
        ;;
        ;; ======================================================================
        ;;                 CHARACTER
@@ -993,6 +1006,84 @@
        start-number
        ;;
        (set-first-positions)
+       (when (eq char #\0)
+	 ;; special cases for hex, octal, binary
+	 (set-last-positions)
+	 (local-read-char char char-code
+			  (go terminate-number-with-eof)
+			  ()
+			  (go terminate-number-with-extended-comment)
+			  ())
+	 (case char 
+	   ((#\X #\x) 
+	    (local-read-char char char-code
+			     (go terminate-hex-with-eof)
+			     ()
+			     (go terminate-hex-with-extended-comment)
+			     ())
+	    ;; at this point, have seen #\0 #\x char
+	    (loop while (member char '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9
+				       #\a #\b #\c #\d #\e #\f
+				       #\A #\B #\C #\D #\E #\F)
+				:test 'eq)
+	      do 
+	      (push char token-chars)
+	      (set-last-positions)
+	      (local-read-char char char-code
+			       (go terminate-hex-with-eof)
+			       ()
+			       (go terminate-hex-with-extended-comment)
+			       ()))
+	    ;; at this point, have seen #\0 #\X token-chars non-hex-char, 
+	    ;; where all token-chars are hex
+	    (if (null token-chars)
+		(go terminate-hex-prematurely)
+		(go terminate-hex-cleanly)))
+	   ((#\O #\o) 
+	    (local-read-char char char-code
+			     (go terminate-octal-with-eof)
+			     ()
+			     (go terminate-octal-with-extended-comment)
+			     ())
+	    ;; at this point, have seen #\0 #\O char
+	    (loop while (member char '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8) :test 'eq) do
+	      (push char token-chars)
+	      (set-last-positions)
+	      (local-read-char char char-code
+			       (go terminate-octal-with-eof)
+			       ()
+			       (go terminate-octal-with-extended-comment)
+			       ()))
+	    ;; at this point, have seen #\0 #\O token-chars non-octal-char, 
+	    ;; where all token-chars are octal
+	    (if (null token-chars)
+		(go terminate-octal-prematurely)
+		(go terminate-octal-cleanly)))
+	   ((#\B #\b) 
+	    (local-read-char char char-code
+			     (go terminate-binary-with-eof)
+			     ()
+			     (go terminate-binary-with-extended-comment)
+			     ())
+	    ;; at this point, have seen #\0 #\B char
+	    (loop while (or (eq char '#\0) (eq char #\1)) do
+	      (push char token-chars)
+	      (set-last-positions)
+	      (local-read-char char char-code
+			       (go terminate-binary-with-eof)
+			       ()
+			       (go terminate-binary-with-extended-comment)
+			       ()))
+	    ;; at this point, have seen #\0 #\B token-chars non-octal-char, 
+	    ;; where all token-chars are octal
+	    (if (null token-chars)
+		(go terminate-binary-prematurely)
+		(go terminate-binary-cleanly)))
+	   (t
+	    ;; else fall through to ordinary number
+	    ;; at this point, have seen #\0 char, where char is not among "XxOoBb"
+	    (push #\0 token-chars)
+	    (go extend-number-after-initial-zero))))
        ;;
        extend-number
        ;; 
@@ -1004,6 +1095,7 @@
 			(go terminate-number-with-extended-comment)
 			())
        ;; 
+       extend-number-after-initial-zero
        (case (svref number-table char-code)
 	 ;; majority
 	 (#.+number-continue-code+          (go extend-number))
@@ -1065,6 +1157,36 @@
        terminate-number-with-eof
        ;; 
        (return-values-using-prior-last :NUMBER (parse-integer (coerce (nreverse token-chars) 'string)))
+       ;; 
+       ;; 
+       terminate-hex-prematurely
+       (termination-warning char char-code "hex number" "" ", but there are no hex digits")
+       terminate-hex-with-extended-comment
+       (termination-warning char char-code "hex number" "" ", which is not a hex char or expected whitespace or punctuation")
+       terminate-hex-cleanly
+       (local-unread-char char)
+       terminate-hex-with-eof
+       (return-values-using-prior-last :NUMBER (parse-integer (coerce (nreverse token-chars) 'string) :radix 16))
+       ;; 
+       ;; 
+       terminate-octal-prematurely
+       (termination-warning char char-code "octal number" "" ", but there are no octal digits")
+       terminate-octal-with-extended-comment
+       (termination-warning char char-code "octal number" "" ", which is not an octal char or expected whitespace or punctuation")
+       terminate-octal-cleanly
+       (local-unread-char char)
+       terminate-octal-with-eof
+       (return-values-using-prior-last :NUMBER (parse-integer (coerce (nreverse token-chars) 'string) :radix 8))
+       ;; 
+       ;; 
+       terminate-binary-prematurely
+       (termination-warning char char-code "binary number" "" ", but there are no binary digits")
+       terminate-binary-with-extended-comment
+       (termination-warning char char-code "binary number" "" ", which is not a binary char or expected whitespace or punctuation")
+       terminate-binary-cleanly
+       (local-unread-char char)
+       terminate-binary-with-eof
+       (return-values-using-prior-last :NUMBER (parse-integer (coerce (nreverse token-chars) 'string) :radix 2))
        ;;
        ;; ======================================================================
        ;;                 STRING
