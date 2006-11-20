@@ -492,7 +492,7 @@ snark qualifying spec
 		      mkSnarkTerm(context, sp, dpn, vars, e)]
       | Fun (Op(Qualified(qual,id),_),_, _) -> Lisp.symbol("SNARK",mkSnarkName(qual, id))
       | Fun ((Nat nat), Nat, _) -> Lisp.nat(nat)
-      | Fun (Embed(id, _),_,__) -> Lisp.symbol("SNARK",mkSnarkName(UnQualified,"embed_"^id))
+      | Fun (Embed(id, _),_, _) -> Lisp.symbol("SNARK",mkSnarkName(UnQualified,"embed_"^id))
       | Var (v,_) -> snarkVarTerm(v)
       | Record (fields, _) -> mkSnarkTermRecord(context, sp, dpn, vars, term)
       | _ -> mkNewSnarkTerm(context, term) %% Unsupported construct

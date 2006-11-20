@@ -73,10 +73,10 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 			raise(UnsupportedTermFormat((printTermWithSorts term)^" [2]"),termAnn term)
 			 ))
 	   }
-	 | Fun (Nat (n),_,__) -> return(mts, mkJavaNumber(n), k, l)
-	 | Fun (Bool (b),_,_) -> return(mts, mkJavaBool(b), k, l)
-	 | Fun (String(s),_,_) -> return(mts, mkJavaString(s), k, l)
-	 | Fun (Char(c),_,_) -> return(mts, mkJavaChar(c), k, l)
+	 | Fun (Nat    n, _, _) -> return(mts, mkJavaNumber n, k, l)
+	 | Fun (Bool   b, _, _) -> return(mts, mkJavaBool   b, k, l)
+	 | Fun (String s, _, _) -> return(mts, mkJavaString s, k, l)
+	 | Fun (Char   c, _, _) -> return(mts, mkJavaChar   c, k, l)
 	 | Fun (Embed (c, _), srt, _) -> 
 		if flatType? srt then
 		  {
