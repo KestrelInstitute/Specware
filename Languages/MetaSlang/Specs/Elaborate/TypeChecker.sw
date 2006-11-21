@@ -672,33 +672,6 @@ TypeChecker qualifying spec
 	 elaborateCheckSortForTerm (env, trm, srt, type_char);
 	 Fun (Char ch, srt, pos))
 	
-      | Fun (PRelax pred, srt, pos) -> % Has sort Subsort(a, pred) -> a
-	let a = freshMetaTyVar ("PRelax", pos) in
-	let ty1 = Arrow (a, type_bool, pos) in
-	let pred = single_pass_elaborate_term (env, pred, ty1) in
-	let ty2 = Arrow (Subsort (a, pred, pos), a, pos) in
-	(elaborateSortForTerm (env, trm, ty2, term_sort);
-	 elaborateSortForTerm (env, trm, srt, ty2);
-	 Fun (PRelax pred, srt, pos))
-
-	%% FINISH THIS
-	%% 
-	%%          let _ = elaborateSortForTerm (env, trm, srt, term_sort) in
-	%%          (Fun (PRelax, srt), pos)
-
-      | Fun (PRestrict pred, srt, pos) -> % Has sort a -> Subsort(a, pred)
-	let a = freshMetaTyVar ("PRestrict", pos) in
-	let ty1 = Arrow (a, type_bool, pos) in
-	let pred = single_pass_elaborate_term (env, pred, ty1) in
-	let ty2 = Arrow (a, Subsort (a, pred, pos), pos) in
-	(elaborateSortForTerm (env, trm, ty2, term_sort);
-	 elaborateSortForTerm (env, trm, srt, ty2);
-	 Fun (PRestrict pred, srt, pos))
-
-	%% FINISH THIS
-	%%
-	%        | Fun (Spec _ (* spc *), _ (* srt *), _) -> trm
-	
       | Var ((id, srt), pos) -> 
 	let srt = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
 	Var ((id, srt), pos)

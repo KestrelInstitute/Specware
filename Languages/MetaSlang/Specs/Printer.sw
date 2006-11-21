@@ -255,16 +255,6 @@ AnnSpecPrinter qualifying spec
 					       string "(",
 					       ppTerm context ([], Top) p,
 					       string ")"]
-     | PRelax      t           -> %let p = case srt of Arrow (Subsort (_, p, _), _, _) -> p | _ -> mkTrueA a in
-			  	  prettysFill [pp.fromString "relax", 
-					       string "(",
-					       ppTerm context ([], Top) t,
-					       string ")"]
-     | PRestrict   t           -> %let p = case srt of Arrow (_, Subsort (_, p, _), _) -> p | _ -> mkTrueA a in
-			          prettysFill [pp.fromString "restrict", 
-					       string "(",
-					       ppTerm context ([], Top) t,
-					       string ")"]
      %% Only used internally at present
      | Select      s           -> pp.fromString ("select(" ^ s ^ ")")
 

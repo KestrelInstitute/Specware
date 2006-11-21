@@ -266,8 +266,6 @@ MetaSlang qualifying spec
 
      | (PQuotient t1, PQuotient t2) -> equalTerm? (t1, t2)
      | (PChoose   t1, PChoose   t2) -> equalTerm? (t1, t2)
-     | (PRestrict t1, PRestrict t2) -> equalTerm? (t1, t2)
-     | (PRelax    t1, PRelax    t2) -> equalTerm? (t1, t2)
 
      | (Op        x1, Op        x2) -> x1 = x2
      | (Project   x1, Project   x2) -> x1 = x2
@@ -391,8 +389,6 @@ MetaSlang qualifying spec
 
      | (PQuotient t1,         PQuotient t2)         -> equalTermStruct? (t1, t2)
      | (PChoose   t1,         PChoose   t2)         -> equalTermStruct? (t1, t2)
-     | (PRestrict t1,         PRestrict t2)         -> equalTermStruct? (t1, t2)
-     | (PRelax    t1,         PRelax    t2)         -> equalTermStruct? (t1, t2)
 
      | (Op        x1,         Op        x2)         -> x1 = x2
      | (Project   x1,         Project   x2)         -> x1 = x2

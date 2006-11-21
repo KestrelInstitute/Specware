@@ -1045,9 +1045,7 @@ IsaTermPrinter qualifying spec
       | Choose \_rightarrow prString "choose"
       | PChoose _ \_rightarrow prString "choose"
       | Restrict \_rightarrow prString "restrict"
-      | PRestrict _ \_rightarrow prString "restrict"
       | Relax \_rightarrow prString "relax"
-      | PRelax _ \_rightarrow prString "relax"
       | Op (qid,Nonfix) \_rightarrow ppOpQualifiedId c qid
       | Op (qid,Unspecified) \_rightarrow ppOpQualifiedId c qid
       | Op (Qualified(_,opstr),_) \_rightarrow prString(ppIdStr opstr) % ??? ppOpQualifiedId

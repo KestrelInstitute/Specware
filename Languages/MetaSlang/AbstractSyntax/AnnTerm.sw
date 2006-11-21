@@ -205,8 +205,6 @@ MetaSlang qualifying spec
 
   | PQuotient      ATerm b
   | PChoose        ATerm b
-  | PRestrict      ATerm b
-  | PRelax         ATerm b
 
   | Op             QualifiedId * Fixity
   | Project        Id

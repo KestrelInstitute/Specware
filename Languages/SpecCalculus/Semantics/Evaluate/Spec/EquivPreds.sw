@@ -114,8 +114,6 @@ SpecCalc qualifying spec
   case (f1, f2) of
      | (PQuotient t1,       PQuotient t2)       -> equivTerm? spc (t1, t2)
      | (PChoose   t1,       PChoose   t2)       -> equivTerm? spc (t1, t2)
-     | (PRestrict t1,       PRestrict t2)       -> equivTerm? spc (t1, t2)
-     | (PRelax    t1,       PRelax    t2)       -> equivTerm? spc (t1, t2)
 
      | (Not,                Not         )       -> true
      | (And,                And         )       -> true

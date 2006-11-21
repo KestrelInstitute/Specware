@@ -27,8 +27,6 @@ PosSpecToSpec qualifying spec
            case f
 	     of PQuotient equiv  -> Quotient 
 	      | PChoose equiv    -> Choose
-	      | PRestrict pred   -> Restrict
-	      | PRelax pred      -> Relax
 	      | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
 	      | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
 	      | _ -> f
@@ -95,8 +93,6 @@ PosSpecToSpec qualifying spec
            case f
 	     of PQuotient equiv  -> Quotient 
 	      | PChoose equiv    -> Choose
-	      | PRestrict pred   -> Restrict
-	      | PRelax pred      -> Relax
 	      | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
 	      | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
 	      | _ -> f
