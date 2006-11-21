@@ -447,7 +447,7 @@ to end end."
        (slime-open-stream-to-lisp port))
       ((:eval-no-wait form-string)
        (slime-check-eval-in-emacs-enabled)
-       (message form-string)
+       ;(message form-string)
        (eval (read form-string))
        ;(apply (intern fun) args) : sjw: was this a bug?
        )
