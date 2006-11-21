@@ -497,17 +497,76 @@ If we want the precedence to be optional:
   1)
 
 ;;; ========================================================================
-;;;   SORT
+;;;   SORT DECLARATION
 ;;;   http://www.specware.org/manual/html/sorts.html
 ;;; ========================================================================
 
 (define-sw-parser-rule :SORT-DEF-RHS () ; as in rhs of  T x = | A x | B x
   (:anyof
-   (1 :SORT-SUM                :documentation "Co-product sort")
-   (1 :SORT-QUOTIENT           :documentation "Sort quotient")
-   (1 :SORT                    :documentation "Function sort")
+   ;; these are sort abbreviations, not 
+   (1 :TYPE-ABBREVIATION  :documentation "Type abbreviation") 
+   (1 :RAW-SUBTYPE        :documentation "Subtype")         ; Allow unparenthesized subtype at top level: "Foo | q?"
+   (1 :SORT               :documentation "Function sort")   ; All other sorts, including "(Foo | q?)"
    )
   1)
+
+;;; ========================================================================
+;;;   TYPE ABBREVIATION
+;;;   A type abbreviation is not a true type -- it is syntax for declaring 
+;;;   constructors, etc.
+;;; ========================================================================
+
+(define-sw-parser-rule :TYPE-ABBREVIATION () 
+  ;; these are type abbreviations, not true types
+  (:anyof
+   (1 :SUM-TYPE          :documentation "Co-product sort") ; "(| Foo Nat | Bar String)"
+   (1 :RAW-SUM-TYPE      :documentation "Co-product sort") ; "| Foo Nat | Bar String"
+   (1 :QUOTIENT-TYPE     :documentation "Sort quotient")   ; "(Foo / q?)"
+   (1 :RAW-QUOTIENT-TYPE :documentation "Sort quotient")   ; "Foo / q?"
+   )
+  1)
+
+;;; ------------------------------------------------------------------------
+;;;   SUM-TYPE  (Not a true type!)
+;;; ------------------------------------------------------------------------
+;;;   NOTE: SUM-TYPE is only an alternative for :TYPE-ABBREVIATION,
+;;;         and cannot be used elsewhere.
+
+(define-sw-parser-rule :SUM-TYPE ()
+  (:tuple "(" (1 :RAW-SUM-TYPE) ")")
+  1)
+
+(define-sw-parser-rule :RAW-SUM-TYPE ()
+  (:tuple (1 (:repeat+ :TYPE-SUMMAND nil)))
+  (make-sort-sum 1 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TYPE-SUMMAND ()
+  (:tuple "|" (1 :CONSTRUCTOR) (:optional (2 :SLACK-SORT)))
+  (make-sort-summand 1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :CONSTRUCTOR ()
+  :NAME)
+
+;;; ------------------------------------------------------------------------
+;;;   QUOTIENT-TYPE  (Not a true type!)
+;;; ------------------------------------------------------------------------
+;;;   NOTE: QUOTIENT-TYPE is only an alternative for :TYPE-ABBREVIATION,
+;;;         and cannot be used elsewhere.
+
+(define-sw-parser-rule :QUOTIENT-TYPE ()
+  (:tuple "(" (1 :RAW-QUOTIENT-TYPE) ")")
+  1)
+
+(define-sw-parser-rule :RAW-QUOTIENT-TYPE ()
+  ;; TODO: [still relevant given above?] 
+  ;;       In doc: sort-quotient relation is expression, but that's ambiguous -- need tight-expression 
+  (:tuple (1 :CLOSED-SORT) "/" (2 :TIGHT-EXPRESSION)) ; CLOSED-EXPRESSION?
+  (make-sort-quotient 1 2 ':left-lcb ':right-lcb) :documentation "Quotient")
+
+;;; ========================================================================
+;;;   SORT
+;;;   http://www.specware.org/manual/html/sorts.html
+;;; ========================================================================
 
 (define-sw-parser-rule :SORT () ; anywhere
   (:anyof
@@ -541,34 +600,6 @@ If we want the precedence to be optional:
   1)
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-SUM
-;;; ------------------------------------------------------------------------
-
-(define-sw-parser-rule :SORT-SUM ()
-  ;; NOTE: Sort sums are now treated as abbreviations in the rhs of sort defs,
-  ;;       and cannot be used elsewhere.
-  (:tuple (1 (:repeat+ :SORT-SUMMAND nil)))
-  (make-sort-sum 1 ':left-lcb ':right-lcb))
-
-(define-sw-parser-rule :SORT-SUMMAND ()
-  (:tuple "|" (1 :CONSTRUCTOR) (:optional (2 :SLACK-SORT)))
-  (make-sort-summand 1 2 ':left-lcb ':right-lcb))
-
-(define-sw-parser-rule :CONSTRUCTOR ()
-  :NAME)
-
-;;; ------------------------------------------------------------------------
-;;;   SORT-QUOTIENT
-;;; ------------------------------------------------------------------------
-
-(define-sw-parser-rule :SORT-QUOTIENT ()
-  ;; NOTE: Sort quotients are now treated as abbreviations in the rhs of sort defs,
-  ;;       and cannot be used elsewhere.
-  ;; TODO: [still relevant given above?] In doc: sort-quotient relation is expression, but that's ambiguous -- need tight-expression 
-  (:tuple (1 :CLOSED-SORT) "/" (2 :TIGHT-EXPRESSION)) ; CLOSED-EXPRESSION?
-  (make-sort-quotient 1 2 ':left-lcb ':right-lcb) :documentation "Quotient")
-
-;;; ------------------------------------------------------------------------
 ;;;   SORT-ARROW
 ;;; ------------------------------------------------------------------------
 
@@ -577,7 +608,7 @@ If we want the precedence to be optional:
   (make-sort-arrow 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :ARROW-SOURCE ()
-  (:anyof :SORT-SUM :SLACK-SORT))
+  :SLACK-SORT)
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-PRODUCT
@@ -669,7 +700,12 @@ If we want the precedence to be optional:
   ;; could be parsed as a one-element field sort with x of type (Integer | f x).
   ;; But with parens required here, that would need to be {x : (Integer | f x)}
   ;; to get that effect.
-  (:tuple "(" (1 :SLACK-SORT) "|" (2 :EXPRESSION) ")")
+  (:tuple "(" (1 :RAW-SUBTYPE) ")")
+  1)
+
+(define-sw-parser-rule :RAW-SUBTYPE ()
+  ;; This can also be used as a :SORT-DEF-RHS
+  (:tuple (1 :SLACK-SORT) "|" (2 :EXPRESSION))
   (make-sort-restriction 1 2 ':left-lcb ':right-lcb) :documentation "Subsort")
 
 ;;; ------------------------------------------------------------------------
