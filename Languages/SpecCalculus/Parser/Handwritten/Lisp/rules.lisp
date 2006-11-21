@@ -777,7 +777,6 @@ If we want the precedence to be optional:
    (1 :BUILT-IN-OPERATOR      :documentation "&&, ||, =>, <=>, =, ~=, <<")
    (1 :UNQUALIFIED-OP-REF     :documentation "Op reference or Variable reference")
    (1 :SELECTABLE-EXPRESSION  :documentation "Closed expression -- unambiguous termination, not starting with [")
-   (1 :RESTRICTION            :documentation "restrict p e -or- (restrict p) e") ; new, per task 22
    )
   1)
 
@@ -1172,11 +1171,6 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :STRUCTOR ()
   (:anyof
    :PROJECTOR
-   :RELAXATOR
-   ;;  removed :RESTRICTOR, per task 22: 
-   ;;  restrict p must no longer be a function but part of a construct, 
-   ;;  i.e. it must be always followed by an expression, i.e. restrict p e
-   ;; :RESTRICTOR 
    :QUOTIENTER
    :CHOOSER
    :EMBEDDER
@@ -1188,22 +1182,6 @@ If we want the precedence to be optional:
   (:anyof
    ((:tuple "project" (1 :NAT))        (make-nat-selector        1 ':left-lcb ':right-lcb) :documentation "Projection")
    ((:tuple "project" (1 :FIELD-NAME)) (make-field-name-selector 1 ':left-lcb ':right-lcb) :documentation "Projection")))
-
-(define-sw-parser-rule :RELAXATOR ()
-  (:tuple "relax"    (1 :CLOSED-EXPRESSION))
-  (make-relaxator 1 ':left-lcb ':right-lcb)
-  :documentation "Relaxation")
-
-;;  New :RESTRICTION production, per task 22: 
-;;  restrict p must no longer be a function but part of a construct, 
-;;  i.e. it must be always followed by an expression, i.e. restrict p e
-(define-sw-parser-rule :RESTRICTION ()
-  (:anyof 
-   (:tuple     "restrict" (1 :CLOSED-EXPRESSION)     (2 :CLOSED-EXPRESSION))
-   (:tuple "(" "restrict" (1 :CLOSED-EXPRESSION) ")" (2 :CLOSED-EXPRESSION))
-   )
-  (make-application (make-restrictor 1 ':left-lcb ':right-lcb) (list 2) ':left-lcb ':right-lcb)
-  :documentation "Restriction")
 
 (define-sw-parser-rule :QUOTIENTER ()
   (:tuple "quotient" (1 :CLOSED-EXPRESSION))
@@ -1313,7 +1291,6 @@ If we want the precedence to be optional:
    :CONS-PATTERN
    :EMBED-PATTERN
    :QUOTIENT-PATTERN
-   :RELAX-PATTERN
    :CLOSED-PATTERN))
 
 (define-sw-parser-rule :CLOSED-PATTERN ()
@@ -1342,9 +1319,6 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :QUOTIENT-PATTERN ()
   (:tuple "quotient" (1 :CLOSED-EXPRESSION) (2 :TIGHT-PATTERN))  (make-quotient-pattern   1 2   ':left-lcb ':right-lcb) :documentation "Quotient pattern")
-
-(define-sw-parser-rule :RELAX-PATTERN ()
-  (:tuple "relax"    (1 :CLOSED-EXPRESSION) (2 :TIGHT-PATTERN))  (make-relax-pattern      1 2   ':left-lcb ':right-lcb) :documentation "Relax pattern")
 
 (define-sw-parser-rule :RESTRICTED-PATTERN ()
   (:tuple (1 :TIGHT-PATTERN) "|" (2 :EXPRESSION))                (make-restricted-pattern 1 2   ':left-lcb ':right-lcb) :documentation "Restricted pattern")

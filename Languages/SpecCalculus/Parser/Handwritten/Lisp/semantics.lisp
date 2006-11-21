@@ -699,8 +699,6 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-projector      (field-selector    l r) (make-fun (cons :|Project|   field-selector)         (freshMetaTypeVar l r) l r))
-(defun make-relaxator      (closed-expression l r) (make-fun (cons :|PRelax|    closed-expression)      (freshMetaTypeVar l r) l r))
-(defun make-restrictor     (closed-expression l r) (make-fun (cons :|PRestrict| closed-expression)      (freshMetaTypeVar l r) l r))
 (defun make-quotienter     (closed-expression l r) (make-fun (cons :|PQuotient| closed-expression)      (freshMetaTypeVar l r) l r))
 (defun make-chooser        (closed-expression l r) (make-fun (cons :|PChoose|   closed-expression)      (freshMetaTypeVar l r) l r))
 (defun make-embedder       (constructor       l r) (make-fun (cons :|Embed|     (cons constructor nil)) (freshMetaTypeVar l r) l r))
@@ -840,7 +838,6 @@ If we want the precedence to be optional:
 (defun make-aliased-pattern          (pat1 pat2        l r) (cons :|AliasPat|      (vector pat1 pat2                                          (make-pos l r))))
 (defun make-embed-pattern            (id pattern       l r) (cons :|EmbedPat|      (vector id (cons :|Some| pattern) (freshMetaTypeVar l r)   (make-pos l r))))
 (defun make-quotient-pattern         (term pattern     l r) (cons :|QuotientPat|   (vector pattern term                                       (make-pos l r))))
-(defun make-relax-pattern            (term pattern     l r) (cons :|RelaxPat|      (vector pattern term                                       (make-pos l r))))
 (defun make-restricted-pattern       (pattern term     l r) (cons :|RestrictedPat| (vector pattern term                                       (make-pos l r))))
 (defun make-variable-pattern         (id               l r) (cons :|VarPat|        (cons   (cons id (freshMetaTypeVar l r))                   (make-pos l r))))
 (defun make-wildcard-pattern         (                 l r) (cons :|WildPat|       (cons   (freshMetaTypeVar l r)                             (make-pos l r))))
