@@ -235,7 +235,7 @@ spec
         (if member(spName,evalQualifiers)
 	  then (case a
 		  of RecordVal(fields) ->
-		     (if (all (fn (_,tm) -> evalConstant?(tm)) fields) % or spName = "Boolean"
+		     (if (all (fn (_,tm) -> valConstant?(tm)) fields) % or spName = "Boolean"
 		       then attemptEvaln(spName,opName,fields,ft)
 		       else Unevaluated(mkApply(ft,valueToTerm a)))
 		    | _ -> (if evalConstant? a
@@ -506,9 +506,16 @@ spec
   %% Evaluation of constant terms
   %% we need to include "Boolean" for "compare", "toString", "show", "pp", etc.
   def evalQualifiers = ["Nat","Integer","Integer_","IntegerAux","String","Char","System","Boolean"]  % "Integer_" is deprecated -- remove at some point
+  op  evalConstant?: Value -> Boolean
   def evalConstant?(v) =
     case v
       of Unevaluated t -> embed? Fun t
+       | _ -> true
+
+  op  valConstant?: Value -> Boolean
+  def valConstant? v =
+    case v
+      of Unevaluated _ -> false
        | _ -> true
 
   op  intVal: Value -> Integer
