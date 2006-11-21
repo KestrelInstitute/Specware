@@ -965,8 +965,6 @@ If we want the precedence to be optional:
   (:tuple (1 :LOCAL-VARIABLE) (:optional (:tuple ":" (2 :SORT))))
   (make-annotated-variable 1 2 ':left-lcb ':right-lcb))
 
-;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :LOCAL-VARIABLE ()
   :NAME)
 
