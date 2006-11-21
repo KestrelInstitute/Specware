@@ -31,7 +31,7 @@
 ;;;  NOTE: :LOCAL-VARIABLE      as :CLOSED-EXPRESSION would introduce ambiguities, so we parse as :ATOMIC-EXPRESSION and post-process
 ;;;
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;        but use :NAME-OR-EQUAL for op refs.
 ;;;
 ;;;  NOTE: "{}" is parsed directly as :UNIT-PRODUCT-SORT,
 ;;;        but in the documentation, it's viewed as 0 entries in :SORT-RECORD
@@ -48,7 +48,7 @@
 
 ;;; These simplify life...
 
-;;; The rationale for :SYMBOL-NAME --
+;;; The rationale for :NAME --
 ;;;
 ;;; If we were to use :SYMBOL everywhere in a rule, e.g.
 ;;;
@@ -60,10 +60,10 @@
 ;;;  (foo x y z)
 ;;; where the names x y z would be viewed as lisp variables.
 ;;;
-;;; But if we use :SYMBOL-NAME instead, e.g.:
+;;; But if we use :NAME instead, e.g.:
 ;;;
 ;;; (define-sw-parser-rule :FOO ()
-;;;   (:tuple "foo" (1 :SYMBOL-NAME) (2 :SYMBOL-NAME) (3 :SYMBOL-NAME))
+;;;   (:tuple "foo" (1 :NAME) (2 :NAME) (3 :NAME))
 ;;;   (foo 1 2 3)
 ;;;
 ;;; then after substitutions we'd get lisp forms such as
@@ -72,7 +72,7 @@
 ;;;
 ;;; There might be simpler schemes, but this works well enough...
 
-(define-sw-parser-rule :SYMBOL-NAME ()
+(define-sw-parser-rule :NAME ()
   (:anyof
    ((:tuple "reduce")       "reduce")
    ((:tuple "expand")       "expand")
@@ -96,20 +96,6 @@
 
 (define-sw-parser-rule :EQUALS ()
   (:anyof "=" "is"))
-
-;;;  NOTE: We use normally use :NAME whereever the documentation says :NAME,
-;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
-;;;        This is done so that "=" can appear in expressions, but cannot 
-;;;        be used as a local var or a sort name.
-;;;        See ad-hoc-symbols and ad-hoc-keywords in tokenizer.lisp for a
-;;;        list of keywords that are also available as a :SYMBOL_NAME 
-;;;        (e.g. "colimit", "translate", etc.)
-
-(define-sw-parser-rule :NAME ()
-  (:anyof
-   ((:tuple "=")              "=")	; so we can use "="  in expressions, e.g "A = B"
-   ((:tuple (1 :SYMBOL-NAME)) 1)
-   ))
 
 ;;; ========================================================================
 ;;; The first rules are those for the spec calculus. Such rules are all
@@ -317,10 +303,8 @@
 (define-sw-parser-rule :QUALIFIER ()
   :NAME)
 
-;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :SORT-NAME ()
-  :SYMBOL-NAME)
+  :NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;  QUALIFIABLE-OP-NAME 
@@ -383,7 +367,7 @@
   1)					; e.g. ("x" "y" "z") => (list "x" "y" "z")
 
 (define-sw-parser-rule :LOCAL-SORT-VARIABLE ()
-  :SYMBOL-NAME)			; don't allow "="
+  :NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;  SORT-DEFINITION
@@ -645,12 +629,8 @@ If we want the precedence to be optional:
   ;; "S"  "A.S"  "{S, A.X, Y}" etc.
   ;; "{S}" is same as "S"
   (:anyof 
-   ((:tuple (1 :QUALIFIABLE-SORT-NAME))
-    (list 1))
-   ((:tuple "{"
-	    (2 (:REPEAT+ :QUALIFIABLE-SORT-NAME ","))
-	    "}")
-    2)))
+   ((:tuple (1 :QUALIFIABLE-SORT-NAME))                          (list 1))
+   ((:tuple "{" (2 (:REPEAT+ :QUALIFIABLE-SORT-NAME ",")) "}")   2)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-REF
@@ -867,8 +847,11 @@ If we want the precedence to be optional:
 ;;;       since dot is not legal after a TIGHT-EXPRESSION,
 ;;;       but the competing TWO-NAME-EXPRESSION may succeed.
 (define-sw-parser-rule :UNQUALIFIED-OP-REF ()
-  (:tuple (1 :NAME))
-  (make-unqualified-op-ref 1 ':left-lcb ':right-lcb))
+  (:anyof
+   ;; so we can use "="  in expressions, e.g "A = B"
+   ((:tuple "=")        (make-equality-fun       '(:|Equals|) ':left-lcb ':right-lcb))
+   ((:tuple (1 :NAME))  (make-unqualified-op-ref 1            ':left-lcb ':right-lcb))
+   ))
 
 ;;; ------------------------------------------------------------------------
 ;;;   NAME-DOT-NAME
@@ -985,7 +968,7 @@ If we want the precedence to be optional:
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
 ;;;        but use :SYMBOL-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :LOCAL-VARIABLE ()
-  :SYMBOL-NAME)
+  :NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;   ANNOTATED-EXPRESSION
@@ -1516,16 +1499,12 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :UNQUALIFIED-AMBIGUOUS-NAME ()
   (:anyof
-   ;; maybe :NAME should be :SYMBOL-NAME
-   ;; that would automatically rule out "=", "*", "/", "translate", etc.
    ((:tuple (1 :NAME)) (MetaSlang::mkUnQualifiedId 1))
    ((:tuple "_")       (MetaSlang::mkUnQualifiedId "_"))
    ))
 
 (define-sw-parser-rule :QUALIFIED-AMBIGUOUS-NAME ()
   (:anyof
-   ;; maybe :NAME should be :SYMBOL-NAME
-   ;; that would automatically rule out "=", "*", "/", "translate", etc.
    ((:tuple (1 :QUALIFIER) "." (2 :NAME)) (MetaSlang::mkQualifiedId-2 1 2))
    ((:tuple (1 :QUALIFIER) "." "_")       (MetaSlang::mkQualifiedId-2 1 "_"))
    ))
