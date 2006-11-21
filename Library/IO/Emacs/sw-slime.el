@@ -245,7 +245,8 @@ If NEWLINE is true then add a newline at the end of the input."
 	     ))
     ;(delete-other-windows)
     (while (not (ignore-errors (slime-connect "localhost" slime-port)))
-      (sleep-for 0.2))))
+      (sleep-for 0.2))
+    (slime-eval-async '(setq specware::*using-slime-interface?* t))))
 
 (defvar specware-listener-p nil)
 
