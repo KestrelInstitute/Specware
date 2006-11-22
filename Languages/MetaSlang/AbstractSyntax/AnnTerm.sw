@@ -183,7 +183,6 @@ MetaSlang qualifying spec
   | NatPat        Nat                                 * b
   | StringPat     String                              * b
   | CharPat       Char                                * b
-  | RelaxPat      APattern b * ATerm b                * b
   | QuotientPat   APattern b * ATerm b                * b
   | RestrictedPat APattern b * ATerm b                * b
   | SortedPat     APattern b * ASort b                * b  % Before elaborateSpec
@@ -357,7 +356,6 @@ MetaSlang qualifying spec
      | NatPat       (_,     a) -> a
      | StringPat    (_,     a) -> a
      | CharPat      (_,     a) -> a
-     | RelaxPat     (_,_,   a) -> a
      | QuotientPat  (_,_,   a) -> a
      | RestrictedPat(_,_,   a) -> a
      | SortedPat    (_,_,   a) -> a
@@ -374,7 +372,6 @@ MetaSlang qualifying spec
      | NatPat        (n,       a) -> if b = a then pat else NatPat       (n,       b)
      | StringPat     (s,       a) -> if b = a then pat else StringPat    (s,       b)
      | CharPat       (c,       a) -> if b = a then pat else CharPat      (c,       b)
-     | RelaxPat      (p,t,     a) -> if b = a then pat else RelaxPat     (p,t,     b)
      | QuotientPat   (p,t,     a) -> if b = a then pat else QuotientPat  (p,t,     b)
      | RestrictedPat (p,t,     a) -> if b = a then pat else RestrictedPat(p,t,     b)
      | SortedPat     (p,s,     a) -> if b = a then pat else SortedPat    (p,s,     b)
@@ -507,7 +504,6 @@ MetaSlang qualifying spec
      | NatPat       (n,       a) -> mkABase  (Qualified ("Nat",     "Nat"),     [], a)
      | StringPat    (_,       a) -> mkABase  (Qualified ("String",  "String"),  [], a)
      | CharPat      (_,       a) -> mkABase  (Qualified ("Char",    "Char"),    [], a)
-     | RelaxPat     (p, pred, a) -> Subsort  (patternSort p, pred,                  a)
      | QuotientPat  (p, t,    a) -> Quotient (patternSort p, t,                     a)
      | RestrictedPat(p, t,    a) ->
        %% Subsort  (patternSort p,Lambda([(p,mkTrueA a,t)],a),a)
@@ -825,14 +821,6 @@ MetaSlang qualifying spec
 	   else
 	     WildPat (newSrt, a)
 		     
-	 | RelaxPat (pat, trm, a) ->
-	   let newPat = mapRec pat in
-	   let newTrm = mapTerm tsp trm in
-	   if newPat = pat && newTrm = trm then
-	     pattern
-	   else
-	     RelaxPat (newPat, newTrm, a)
-		       
 	 | QuotientPat (pat, trm, a) ->
 	   let newPat = mapRec pat in
 	   let newTrm = mapTerm tsp trm in
@@ -1052,7 +1040,6 @@ MetaSlang qualifying spec
      | EmbedPat(id, Some pat,_,_) -> existsPattern? pred? pat
      | RecordPat(fields,_) ->
        exists (fn (_,p)-> existsPattern? pred? p) fields
-     | RelaxPat     (pat,_,_) -> existsPattern? pred? pat
      | QuotientPat  (pat,_,_) -> existsPattern? pred? pat
      | RestrictedPat(pat,_,_) -> existsPattern? pred? pat
      | SortedPat    (pat,_,_) -> existsPattern? pred? pat
@@ -1206,7 +1193,6 @@ MetaSlang qualifying spec
      | EmbedPat(id, Some pat,_,_) -> foldSubPatterns f result pat
      | RecordPat(fields,_) ->
        foldl (fn ((_,p),r)-> foldSubPatterns f r p) result fields
-     | RelaxPat     (pat,_,_) -> foldSubPatterns f result pat
      | QuotientPat  (pat,_,_) -> foldSubPatterns f result pat
      | RestrictedPat(pat,_,_) -> foldSubPatterns f result pat
      | SortedPat    (pat,_,_) -> foldSubPatterns f result pat
@@ -1379,9 +1365,6 @@ MetaSlang qualifying spec
 	 | WildPat      (                srt, a) ->
 	   WildPat      (replaceSort tsp srt, a)
 
-	 | RelaxPat     (           pat,                 trm, a) ->
-	   RelaxPat     (replaceRec pat, replaceTerm tsp trm, a)
-	   
 	 | QuotientPat  (           pat,                 trm, a) ->
 	   QuotientPat  (replaceRec pat, replaceTerm tsp trm, a)
 
@@ -1525,7 +1508,6 @@ MetaSlang qualifying spec
 	 | EmbedPat     (id, None, srt,     _) -> appSort tsp srt
 	 | RecordPat    (fields,            _) -> app (fn (id, p) -> appRec p) fields
 	 | WildPat      (srt,               _) -> appSort tsp srt
-	 | RelaxPat     (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
 	 | QuotientPat  (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
 	 | RestrictedPat(pat, trm,          _) -> (appRec pat; appTerm tsp trm)
         %| SortedPat ??

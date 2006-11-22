@@ -262,7 +262,6 @@ AnnSpecPrinter qualifying spec
  def [a] singletonPattern (pat : APattern a) = 
    case pat of
      | AliasPat      _ -> false
-     | RelaxPat      _ -> false
      | QuotientPat   _ -> false
      | RestrictedPat _ -> false
      | _               -> true
@@ -879,15 +878,6 @@ AnnSpecPrinter qualifying spec
 			   [(0, ppPattern context ([0]++ path, false) pat1), 
 			    (0, string  " as "), 
 			    (0, ppPattern context ([1]++ path, false) pat2)]))
-     | RelaxPat (pat, trm, _) -> 
-       let _(* srt *) = patternSort (pat) in
-       enclose (enclosed, 
-		blockFill (0, 
-			  [(0, string "relax ("), 
-			   (0, ppTerm context ([1]++ path, Top) trm), 
-			   (0, pp.RP), 
-			   (0, ppPattern context ([0]++ path, false) pat)
-			  ]))
      | QuotientPat (pat, term, _) -> 
        enclose (enclosed, 
 		blockFill (0, 

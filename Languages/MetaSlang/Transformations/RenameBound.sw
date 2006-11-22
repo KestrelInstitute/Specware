@@ -198,9 +198,6 @@ spec
 	 let idPats = ListPair.zip (ids, pats) in
 	 RecordPat (idPats, a)
 
-       | RelaxPat (p,t, a) ->
-	 RelaxPat (renamePattern c p, renameClosedTerm c t, a)
-
        | QuotientPat (p, t, a) ->
 	 QuotientPat (renamePattern c p, renameClosedTerm c t, a)
 

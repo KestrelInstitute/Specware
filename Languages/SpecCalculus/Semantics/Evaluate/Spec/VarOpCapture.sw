@@ -587,17 +587,6 @@ SpecCalc qualifying spec
 	srt_changed?,
 	srt_op_names)
 
-     | RelaxPat (pat, tm, a) ->
-       let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec pat in
-       let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec    tm  in
-       let changed? = pat_changed? || tm_changed? in
-       (if changed? then
-	  RelaxPat (new_pat, new_tm, a)
-	else
-	  pattern,
-	changed?,
-	listUnion (pat_op_names, tm_op_names))
-		       
      | QuotientPat (pat, tm, a) ->
        let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec pat in
        let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec tm  in

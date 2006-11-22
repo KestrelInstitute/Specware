@@ -1313,7 +1313,6 @@ level, it will be renamed the second time.
           removePatternVars p2 newUsedNames
      | QuotientPat(pat,trm,a) -> removePatternVars pat usedNames
      | RestrictedPat(pat,trm,a) -> removePatternVars pat usedNames
-     | RelaxPat(pat,trm,a) -> removePatternVars pat usedNames
      | _ -> usedNames
 endspec
 \end{spec}

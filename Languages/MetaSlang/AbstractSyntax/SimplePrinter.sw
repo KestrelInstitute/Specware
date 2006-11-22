@@ -321,14 +321,6 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | BoolPat (b,_) -> ppBoolean b
       | CharPat (chr,_) -> ppString (Char.toString chr)
       | NatPat (int,_) -> ppString (Nat.toString int)      
-      | RelaxPat (pat,term,_) ->   
-          ppGrConcat [
-            ppString "(relax ",
-            ppAPattern pat,
-            ppString " ",
-            ppATerm term,
-            ppString ")"
-          ]
       | QuotientPat (pat,term,_) -> 
           ppGrConcat [
             ppString "(quotient ",

@@ -241,7 +241,6 @@ spec
 %   | BoolPat     _                 -> booleanSort
 %   | CharPat     _                 -> SpecEnvironment.charSort
 %   | NatPat      _                 -> integerSort
-%   | RelaxPat    (pat, _,       _) -> SpecEnvironment.patternSort pat
 %   | QuotientPat (pat, _,       _) -> SpecEnvironment.patternSort pat
 
 

@@ -116,7 +116,6 @@ efficiently, but cmulisp may do better with local functions.
      | EmbedPat     (_, Some pat, _, _) -> patternVars pat
      | EmbedPat     (_, None, _,     _) -> []
      | AliasPat     (pat1, pat2,     _) -> concat (patternVars pat1, patternVars pat2)
-     | RelaxPat     (pat, _,         _) -> patternVars pat
      | QuotientPat  (pat, _,         _) -> patternVars pat
      | RestrictedPat(pat, _,         _) -> patternVars pat
      | SortedPat    (pat, _,         _) -> patternVars pat

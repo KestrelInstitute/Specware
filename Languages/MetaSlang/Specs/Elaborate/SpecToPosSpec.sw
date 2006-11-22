@@ -120,9 +120,6 @@ def convertOpInfoToPOpInfo info = info
    | AliasPat    (p1, p2,     _) -> AliasPat    (convertPatternToPPattern p1, 
                                                  convertPatternToPPattern p2, 
                                                  pos)
-   | RelaxPat    (p,  t,      _) -> RelaxPat    (convertPatternToPPattern p,  
-                                                 convertTermToPTerm t,        
-                                                 pos)
    | QuotientPat (p,  t,      _) -> QuotientPat (convertPatternToPPattern p,  
                                                  convertTermToPTerm t,        
                                                  pos)

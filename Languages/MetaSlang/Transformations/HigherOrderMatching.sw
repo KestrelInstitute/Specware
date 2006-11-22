@@ -825,8 +825,6 @@ N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau
 % Possibly generalize the matching to include matching on (t1,t2), assuming t1 can
 % contain meta variables.
 % 
-	  | (RelaxPat(p1,t1,_),RelaxPat(p2,t2,_)) -> 
-	    if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
 	  | (QuotientPat(p1,t1,_),QuotientPat(p2,t2,_)) -> 
 	    if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
 	  | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) -> 
@@ -930,7 +928,6 @@ skolemization transforms a proper matching problem into an inproper one.
 %	   flatten (map (fn (_,p) -> patternVars p) fields)
 %	 | EmbedPat(_,None,_,_) -> []
 %	 | EmbedPat(_,Some p,_,_) -> patternVars p
-%	 | RelaxPat(p,t,_) -> patternVars p
 %	 | QuotientPat(p,t,_) -> patternVars p
 %	 | AliasPat(p1,p2,_) -> patternVars p1 ++ patternVars p2 
 %	 | _ -> []

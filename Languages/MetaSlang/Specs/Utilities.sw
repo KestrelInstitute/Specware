@@ -46,7 +46,6 @@ Utilities qualifying spec
         | CharPat(c, _) -> Some(mkChar c)
         | VarPat((v,srt), a) -> Some(Var((v,srt), a))
         | WildPat(srt,_) -> None
-        | RelaxPat(pat,cond,_)     -> None %% Not implemented
         | QuotientPat(pat,cond,_)  -> None %% Not implemented
         | RestrictedPat(pat,cond,_)  ->
 	  patternToTerm pat		% cond ??
@@ -86,7 +85,6 @@ Utilities qualifying spec
         | CharPat(c, _) -> (Some(mkChar c),[])
         | VarPat((v,srt), a) -> (Some(Var((v,srt), a)),[])
         | WildPat(srt,_) -> (None,[])
-        | RelaxPat(pat,cond,_)     -> (None,[]) %% Not implemented
         | QuotientPat(pat,cond,_)  ->
 	  (case patternToTermPlusConds pat
              of (None,conds) -> (None,conds)
@@ -143,7 +141,6 @@ Utilities qualifying spec
      | EmbedPat(_,Some p,_,_) -> isPatBound(v,p)
      | VarPat(w,_)            -> v = w
      | RecordPat(fields,_)    -> exists (fn (_,p) -> isPatBound(v,p)) fields
-     | RelaxPat(p,_,_)        -> isPatBound(v,p)
      | QuotientPat(p,_,_)     -> isPatBound(v,p)
      | RestrictedPat(p,_,_)   -> isPatBound(v,p)
      | _ -> false
@@ -266,9 +263,6 @@ Utilities qualifying spec
       | QuotientPat(pat,trm,a) -> 
 	let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
 	(QuotientPat(pat,trm,a),sub,freeNames)
-      | RelaxPat(pat,trm,a) -> 	
-	let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
-	(RelaxPat(pat,trm,a),sub,freeNames)
       | RestrictedPat(pat,trm,a) -> 
 	let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
 	(RestrictedPat(pat,trm,a),sub,freeNames)
@@ -361,7 +355,6 @@ Utilities qualifying spec
       | BoolPat _              -> []
       | CharPat _              -> []
       | NatPat  _              -> []
-      | RelaxPat(p,_,_)        -> patVars p
       | QuotientPat(p,_,_)     -> patVars p
       | RestrictedPat(p,_,_)   -> patVars p
 
@@ -585,9 +578,6 @@ Utilities qualifying spec
       | QuotientPat(pat,trm,a) -> 
 	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
 	(QuotientPat(pat,trm,a),sub,freeNames)
-      | RelaxPat(pat,trm,a) -> 	
-	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
-	(RelaxPat(pat,trm,a),sub,freeNames)
       | RestrictedPat(pat,trm,a) -> 
 	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in 
 	(RestrictedPat(pat,substitute2(trm,sub,freeNames),a),sub,freeNames)
@@ -764,10 +754,6 @@ Utilities qualifying spec
       | WildPat(srt,a) -> 
 	WildPat(letRecToLetTermSort(srt),
 		a)
-      | RelaxPat(p,t,a) -> 
-	RelaxPat(letRecToLetTermPattern(p),
-		 letRecToLetTermTerm(t),
-		 a)
       | QuotientPat(p,t,a) -> 
 	QuotientPat(letRecToLetTermPattern(p),
 		    letRecToLetTermTerm(t),
@@ -824,7 +810,6 @@ Utilities qualifying spec
 	       | EmbedPat(_,None,_,_) -> vs
 	       | EmbedPat(_,Some p,_,_) -> loopP(p,vs)
 	       | QuotientPat(p,_,_) -> loopP(p,vs)
-	       | RelaxPat(p,_,_) -> loopP(p,vs)
 	       | AliasPat(p1,p2,_) -> loopP(p1,loopP(p2,vs))
 	       | RestrictedPat(p,_,_) -> loopP(p,vs)
 	       | _ -> vs
@@ -1562,10 +1547,6 @@ endspec
 %%%      | WildPat(srt,a) -> 
 %%%	WildPat(modifyNamesSort(mSrt,mOp,srt),
 %%%		a)
-%%%      | RelaxPat(p,t,a) -> 
-%%%	RelaxPat(modifyNamesPattern(mSrt,mOp,p),
-%%%		 modifyNamesTerm(mSrt,mOp,t),
-%%%		 a)
 %%%      | QuotientPat(p,t,a) -> 
 %%%	QuotientPat(modifyNamesPattern(mSrt,mOp,p),
 %%%		    modifyNamesTerm(mSrt,mOp,t),

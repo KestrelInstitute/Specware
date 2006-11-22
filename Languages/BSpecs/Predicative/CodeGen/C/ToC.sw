@@ -997,7 +997,6 @@ from an auxiliary update of the form $x = x_0$.
                                                  ql
                                                  List.++ getUsedOperatorsPattern(p)
                                                  ) [] plist
-                | RelaxPat(p,t) -> List.concat(getUsedOperatorsPattern(p),getUsedOperatorsTerm(t))
                 | QuotientPat(p,t) -> List.concat(getUsedOperatorsPattern(p),getUsedOperatorsTerm(t))
                 | _ -> []
 

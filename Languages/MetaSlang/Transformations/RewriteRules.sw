@@ -237,7 +237,6 @@ Extract rewrite rules from function definition.
 	  let num = ! context.counter in
           let w = HigherOrderMatching.freshVar(context,srt)     in
           Some(w,List.cons((num,srt),vars),S)
-        | RelaxPat(pat,cond,_)     -> None %% Not implemented
         | QuotientPat(pat,cond,_)  -> None %% Not implemented
         | RestrictedPat(pat,cond,_)  -> None %% Not implemented
 	| AliasPat(VarPat(v, _),p,_) -> 

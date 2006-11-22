@@ -183,9 +183,6 @@ SpecCalc qualifying spec
      | (NatPat      (x1,          _),
         NatPat      (x2,          _)) -> x1 = x2
 
-     | (RelaxPat    (x1, t1,      _),
-        RelaxPat    (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
-
      | (QuotientPat (x1, t1,      _),
         QuotientPat (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
 

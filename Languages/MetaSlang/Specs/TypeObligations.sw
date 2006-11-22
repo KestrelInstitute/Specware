@@ -548,10 +548,6 @@ spec
        returnPattern(gamma,mkFun(Char ch,charSort),charSort,tau)
      | NatPat(i,_) 		->      
        returnPattern(gamma,mkFun(Nat i,natSort),natSort,tau)
-     | RelaxPat(p,pred,_) 	-> 
-       let tau1 = mkSubsort(tau,pred) in
-       let (gamma,trm) = bindPattern(gamma,p,tau1) in
-       (gamma,mkApply(mkFun(Relax,mkArrow(tau1,tau)),trm))
      | QuotientPat(p,pred,_) 	-> 
        let Quotient(tau1,_,_) = unfoldBase(gamma,tau) in
        let (gamma,trm) = bindPattern(gamma,p,tau1)

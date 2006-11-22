@@ -212,23 +212,6 @@ PatternMatch qualifying spec
 	[(p1::p2::patterns,cond,e)]
 	default
 
-    Subsort rule:
-
-	v::vars
-	[(RelaxPat(pat:t|pred-> t)::patterns,cond,e)]
-	default
-
-	return
-
-	if pred(v)
-	   then restrict(v)::vars
-		[(pat::patterns,cond,e)]
-	 	break()
-	else break()
-	failWith
-	default
-	
-
    Quotient rule:
 
 	(v:t/pred)::vars
@@ -320,7 +303,6 @@ PatternMatch qualifying spec
          | ((BoolPat _)::_,_,_)    -> Con
          | ((NatPat _)::_,_,_)     -> Con
          | ((CharPat _)::_,_,_)    -> Con
-         | ((RelaxPat (pat,pred,_))::_,_,_) -> Relax (pat,pred)
          | ((QuotientPat(pat,pred,_))::_,_,_) -> Quotient(pat,pred) 
          | ((RestrictedPat(pat,bool_expr,_))::_,_,_) -> Restricted(pat,bool_expr)
       
@@ -550,10 +532,6 @@ PatternMatch qualifying spec
   def matchSubsort(context,pred,t::terms,rules,default,break) =
       let _(* srt *) = inferType(context.spc,t) in
       let t1     = mkRestrict(context.spc,{pred = pred,term = t}) in
-      let rules  = map (fn((RelaxPat(p,_,_))::pats,cond,e) ->
-			      (cons(p,pats),cond,e))
-                     rules
-      in
       failWith context 
 	(Utilities.mkIfThenElse(mkApply(pred,t),
 				match(context,cons(t1,terms),rules,break,break),
@@ -642,8 +620,6 @@ def eliminatePattern context pat =
        | BoolPat(b,a)   -> BoolPat(b,a)
        | CharPat(ch,a)  -> CharPat(ch,a)
        | NatPat(n,a)    -> NatPat(n,a)
-       | RelaxPat(p,t,a) ->
-	 RelaxPat(eliminatePattern context p,eliminateTerm context t,a)
        | QuotientPat (p,t,a) ->
 	 QuotientPat(eliminatePattern context p,eliminateTerm context t,a)
        | RestrictedPat (p,t,a) ->
@@ -1105,8 +1081,6 @@ def convertPattern(spc,pat as (p,_):Pattern):pattern =
       of VarPat var -> Var var
        | AliasPat(p1,p2) -> Alias(convertPattern(spc,p1),
 				  convertPattern(spc,p2))
-       | RelaxPat(p) -> Con(RELAX(relaxTerm(patternSort(p))),
-			    [convertPattern(spc,p)],patternSort(pat)) 
        | QuotientPat(p,t) -> 
 	 Con(QUOTIENT(t),[convertPattern(spc,p)],patternSort(pat))
        | EmbedPat(con,Some arg,srt) ->

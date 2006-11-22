@@ -953,14 +953,6 @@ IsaTermPrinter qualifying spec
       | BoolPat (b,_) \_rightarrow ppBoolean b
       | CharPat (chr,_) \_rightarrow prString (Char.toString chr)
       | NatPat (int,_) \_rightarrow prString (Nat.toString int)      
-      | RelaxPat (pat,term,_) \_rightarrow   
-          prBreak 0 [
-            prString "(relax ",
-            ppPattern c pat,
-            prSpace,
-            ppTerm c Top term,
-            prString ")"
-          ]
       | QuotientPat (pat,term,_) \_rightarrow 
           prBreak 0 [
             prString "(quotient ",

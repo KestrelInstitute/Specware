@@ -61,7 +61,6 @@ spec {
        | AliasPat (p1, p2, a) -> foldPattern tsp_folds (foldPattern tsp_folds acc p1) p2
        | EmbedPat (id, Some pat, srt, a) -> foldSort tsp_folds (foldPattern tsp_folds acc pat) srt
        | EmbedPat (id, None, srt, a) -> foldSort tsp_folds acc srt
-       | RelaxPat (pat, trm, a) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat
        | QuotientPat (pat, trm, a) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat
        | RestrictedPat (pat, trm, a) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat
        | VarPat ((v, srt), a) -> foldSort tsp_folds acc srt

@@ -234,9 +234,6 @@ MetaSlang qualifying spec
      | (CharPat      (x1,          _),
         CharPat      (x2,          _)) -> x1 = x2
 
-     | (RelaxPat     (x1, t1,      _),
-        RelaxPat     (x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
-
      | (QuotientPat  (x1, t1,      _),
         QuotientPat  (x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
 
@@ -446,9 +443,6 @@ MetaSlang qualifying spec
 
      | (CharPat      (x1,          _),
         CharPat      (x2,          _)) -> x1 = x2
-
-     | (RelaxPat     (x1, t1,      _),
-        RelaxPat     (x2, t2,      _)) -> equalPatternStruct? (x1, x2) && equalTermStruct? (t1, t2)
 
      | (QuotientPat  (x1, t1,      _),
         QuotientPat  (x2, t2,      _)) -> equalPatternStruct? (x1, x2) && equalTermStruct? (t1, t2)

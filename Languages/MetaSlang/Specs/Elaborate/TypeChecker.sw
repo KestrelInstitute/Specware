@@ -1549,12 +1549,6 @@ TypeChecker qualifying spec
 	in
 	  (RecordPat (rev r, pos), env, seenVars)
 
-      | RelaxPat (pat, term, pos) -> 
-	let term = single_pass_elaborate_term (env, term, Arrow (sort1, type_bool, pos)) in
-	let sort2 = (Subsort (sort1, term, pos)) in
-	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort2, seenVars) in
-	(RelaxPat (pat, term, pos), env, seenVars)
-
       | QuotientPat (pat, term, pos) ->
 	let v = freshMetaTyVar ("QuotientPat", pos) in
 	let sort2 = (Quotient (v, term, pos)) in

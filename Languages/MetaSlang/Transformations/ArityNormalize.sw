@@ -469,7 +469,6 @@ ArityNormalize qualifying spec {
         | AliasPat(p1,p2) -> 
           insertPattern(p1,insertPattern(p2,result))
         | EmbedPat(_,Some p,_) -> insertPattern(p,result)
-        | RelaxPat(p,t) -> insertPattern(p,result)
         | QuotientPat(p,t) -> insertPattern(p,result)
         | _ -> result
 
