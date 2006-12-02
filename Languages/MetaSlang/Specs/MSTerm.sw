@@ -139,10 +139,10 @@ MS qualifying spec
  def mkBool bool = mkFun (Bool bool, boolSort)
  def mkString str = mkFun (String str, stringSort)
 
- def mkRelax (srt, pred) = mkFun (Relax, mkArrow (mkSubsort (srt, pred), srt))
- def mkRestrict (srt, pred) = mkFun (Restrict, mkArrow (srt, mkSubsort (srt, pred)))
- def mkChoose (srt, equiv) = mkFun (Choose, mkArrow (mkQuotientSort (srt, equiv), srt))
- def mkQuotient(a,equiv,srt) = mkApply(mkFun (Quotient,mkArrow(srt, mkQuotientSort(srt, equiv))),a)
+ def mkRelax    (srt, pred)   = mkFun (Relax, mkArrow (mkSubsort (srt, pred), srt))
+ def mkRestrict (srt, pred)   = mkFun (Restrict, mkArrow (srt, mkSubsort (srt, pred)))
+% def mkChoose   (srt, equiv)  = let q = mkQuotientSort (srt, equiv) in mkFun (Choose q, mkArrow (q, srt))
+% def mkQuotient (a,equiv,srt) = let q = mkQuotientSort (srt, equiv) in mkApply(mkFun (Quotient q, mkArrow(srt,q)),a)
 
  def mkEmbed0 (id, srt) = mkFun (Embed (id, false), srt) % no arg
  def mkEmbed1 (id, srt) = mkFun (Embed (id, true), srt) % arg
@@ -242,12 +242,11 @@ MS qualifying spec
     
  % This definition of choose is not correct according to David's
  % requirements.
- def mkChoice (term, equiv, srt) =
-   mkApply (mkChoose(srt, equiv), term)
+% def mkChoice (term, equiv, srt) =   mkApply (mkChoose(srt, equiv), term)
 
- def mkChooseFun (equiv, srt1, srt2, f) = % used by matchSubSort
-   let chSrt = mkArrow(mkArrow(srt1,srt2), mkArrow (mkQuotientSort (srt1,equiv), srt2)) in
-   let ch = mkFun(Choose,chSrt) in
+ def mkChooseFun (q as Base(qid,_,_), srt1, srt2, f) = % used by matchSubSort
+   let chSrt = mkArrow(mkArrow(srt1,srt2), mkArrow (q, srt2)) in
+   let ch = mkFun(Choose qid, chSrt) in
    mkApply (ch, f)
 
  def mkProjection (id, term) = 

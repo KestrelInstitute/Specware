@@ -85,11 +85,10 @@ Utilities qualifying spec
         | CharPat(c, _) -> (Some(mkChar c),[])
         | VarPat((v,srt), a) -> (Some(Var((v,srt), a)),[])
         | WildPat(srt,_) -> (None,[])
-        | QuotientPat(pat,cond,_)  ->
-	  (case patternToTermPlusConds pat
-             of (None,conds) -> (None,conds)
-	      | (Some t,conds) -> 
-		(Some(mkQuotient(t,cond,termSort t)),conds))
+        | QuotientPat(pat,cond,_)  -> (None, []) %% TODO: Not implemented -- should it be?
+	  % (case patternToTermPlusConds pat
+          %   of (None,conds) -> (None,conds)
+	  %    | (Some t,conds) -> (Some(mkQuotient(t,cond,termSort t)),conds))
         | RestrictedPat(pat,cond,_)  ->
 	  let (p,conds) = patternToTermPlusConds pat in (p,Cons(cond,conds))
 	| AliasPat(p1,p2,_) -> 
@@ -754,10 +753,8 @@ Utilities qualifying spec
       | WildPat(srt,a) -> 
 	WildPat(letRecToLetTermSort(srt),
 		a)
-      | QuotientPat(p,t,a) -> 
-	QuotientPat(letRecToLetTermPattern(p),
-		    letRecToLetTermTerm(t),
-		    a)
+      | QuotientPat (p,                        qid, a) -> 
+	QuotientPat (letRecToLetTermPattern p, qid, a)
       | RestrictedPat(p,t,a) -> 
 	RestrictedPat(letRecToLetTermPattern(p),
 		      letRecToLetTermTerm(t),

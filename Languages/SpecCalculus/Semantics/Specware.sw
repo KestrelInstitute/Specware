@@ -157,7 +157,7 @@ Specware qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%% Prover
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+(*
   op evaluateProofCheck_fromLisp : String * Option String -> Boolean
   def evaluateProofCheck_fromLisp (path,targetFile) = 
     let target =
@@ -196,7 +196,7 @@ Specware qualifying spec
       return true
     } in
     runSpecCommand (catch prog toplevelHandler)
-
+*)
   op evaluateProofGen_fromLisp : String * Option String * Boolean -> Boolean
   def evaluateProofGen_fromLisp (path,targetFile, fromObligations?) = 
     let target =

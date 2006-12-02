@@ -316,12 +316,12 @@ spec
 	  | RecordVal[(_,RecordVal r1),(_,RecordVal r2)] ->
 	    RecordVal(mergeFields(r1,r2))
 	  | _ -> default()) 
-      | Fun(Quotient,srt,_) ->
+      | Fun(Quotient _,srt,_) ->
 	(case stripSubsorts(spc,range(spc,srt)) of
 	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,sb,spc,depth+1),a)
 	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
       %% Handled at n
-      | Fun(Choose,srt,_) -> ChooseClosure(a,srt)
+      | Fun(Choose _,srt,_) -> ChooseClosure(a,srt)
       | Fun(Restrict,_,_) -> a		% Should optionally check restriction predicate
       | Fun(Relax,_,_) -> a
       | Fun(Project id,_,_) ->
@@ -826,10 +826,11 @@ spec
       %% Punt on the sorts for now; could add sort fields to Constructor and Constant
       | Constructor (id,arg) -> mkApply(mkEmbed1(id,unknownSort), valueToTerm arg)
       | Constant    id -> mkEmbed0(id,unknownSort)
-      | QuotientVal (f,arg)  ->
-        let argtm = valueToTerm arg in
-	mkQuotient(valueToTerm f,argtm,termSort argtm)
-      | ChooseClosure(a,srt) -> mkApply(mkFun(Choose,srt),valueToTerm a)
+% TODO: restore these
+%      | QuotientVal (f,arg)  ->
+%        let argtm = valueToTerm arg in
+%	mkQuotient(valueToTerm f,argtm,termSort argtm)
+%      | ChooseClosure(a,srt) -> mkApply(mkFun(Choose,srt),valueToTerm a)
       | Closure(f,sb)   -> mkLetOrsubst(Lambda(f,noPos),sb,emptySubst)
       | RecClosure(f,_,_) -> Lambda(f,noPos)
       | Unevaluated t  -> t

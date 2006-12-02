@@ -29,7 +29,7 @@ RemoveQuoitent qualifying spec
   op  remQuotientTerm1: MS.Term * Spec -> MS.Term
   def remQuotientTerm1(term, spc) =
     case term of
-      | Apply (Fun (Choose, cSrt, _), Record([(_,f), (_, a)], _), b) -> 
+      | Apply (Fun (Choose _, cSrt, _), Record([(_,f), (_, a)], _), b) -> 
         let srt = inferType(spc, term) in
 	let res = SortedTerm(simplifiedApply(f, a, spc), srt, b) in
 	%let _ = writeLine("remQ: "^ printTerm(term)^" -> " ^ printTerm(res)) in

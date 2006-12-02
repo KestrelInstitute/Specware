@@ -484,26 +484,40 @@ SpecToLisp qualifying spec {
 	  | Some _ -> mkLBool false
 	  | None   -> mkLApply (mkLOp "list", [mkLIntern id]))
 
-     | (Quotient, srt, _) -> 
-       let dom = range (sp, srt) in
-       let Quotient (_, equiv, _) = stripSubsorts (sp, dom) in
-       let equiv = mkLTerm (sp, dpn, vars, equiv) in
-       (case optArgs of
-	  | None      -> mkLApply (mkLOp "slang-built-in::quotient", 
-				  [equiv])
-	  | Some term -> mkLApply (mkLOp "slang-built-in::quotient-1-1", 
-				  [equiv, mkLTerm (sp, dpn, vars, term)]))
-     | (Choose, srt, _) ->  
-       %% let srt1 = range (sp, srt) in
-       %% let dom = domain (sp, srt1) in
-       %% Don't need the equivalence relation when doing a choose
-       %% let Quotient (_, equiv, _) = stripSubsorts (sp, dom) in
-       %% let equiv = mkLTerm (sp, dpn, vars, equiv) in
-       (case optArgs of
-	  | None      -> mkLApply (mkLOp "slang-built-in::choose", 
-				  [])
-	  | Some term -> mkLApply (mkLOp "slang-built-in::choose-1", 
-				  [mkLTerm (sp, dpn, vars, term)]))
+     | (Quotient qid, srt, pos) -> 
+       % let _ = toScreen("\nQuotient qid     = " ^  anyToString qid     ^ "\n") in
+       % let _ = toScreen("\nQuotient srt     = " ^  anyToString srt     ^ "\n") in
+       % let _ = toScreen("\nQuotient vars    = " ^  anyToString vars    ^ "\n") in
+       % let _ = toScreen("\nQuotient termOp  = " ^  anyToString termOp  ^ "\n") in
+       % let _ = toScreen("\nQuotient optArgs = " ^  anyToString optArgs ^ "\n") in
+       (case findAllSorts (sp, qid) of
+          | [info] ->
+            % let _ = toScreen("\nQuotient info    = " ^  anyToString info  ^ "\n") in
+            (case unpackFirstSortDef info of
+                | (tvs, Quotient (_, equiv, _)) ->
+                  let equiv = mkLTerm (sp, dpn, vars, equiv) in
+                  % let _ = toScreen("\nQuotient tvs     = " ^  anyToString tvs   ^ "\n") in
+                  % let _ = toScreen("\nQuotient equiv   = " ^  anyToString equiv ^ "\n") in
+                  (case optArgs of
+                     | None      -> mkLApply (mkLOp "slang-built-in::quotient", 
+                                              [equiv])
+                     | Some term -> mkLApply (mkLOp "slang-built-in::quotient-1-1", 
+                                              [equiv, mkLTerm (sp, dpn, vars, term)]))
+                | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ toString qid ^ " to name a quotient type, saw: " ^ anyToString x))
+          | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ toString qid ^ " to name one quotient type, but saw: " ^ anyToString x))
+     | (Choose qid, srt, _) ->  
+       (case findAllSorts (sp, qid) of
+          | [info] ->
+            (case unpackFirstSortDef info of
+                | (tvs, Quotient _) ->
+                  %% Don't need the equivalence relation when doing a choose
+                  (case optArgs of
+                     | None      -> mkLApply (mkLOp "slang-built-in::choose", 
+                                              [])
+                     | Some term -> mkLApply (mkLOp "slang-built-in::choose-1", 
+                                              [mkLTerm (sp, dpn, vars, term)]))
+                | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ toString qid ^ " to name a quotient type, saw: " ^ anyToString x))
+          | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ toString qid ^ " to name one quotient type, but saw: " ^ anyToString x))
      (*
       *  Restrict and relax are implemented as identities
       *)
@@ -593,7 +607,7 @@ SpecToLisp qualifying spec {
 	   else 
 	     None
 
-	 | Fun (Choose, _, _) ->
+	 | Fun (Choose _, _, _) ->
 	   if i = 2 then
 	     case args of
 	       | [f, val] ->

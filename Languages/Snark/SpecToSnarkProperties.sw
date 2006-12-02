@@ -245,7 +245,7 @@ snark qualifying spec
 	                       then mkSnarkFmla(context,sp,dpn,vars,[],arg)
 			     else mkSnarkTerm(context,sp,dpn,vars,arg) in
 		 Lisp.cons(Lisp.symbol("SNARK","embed?"), Lisp.list[Lisp.symbol("SNARK",id),snarkArg])
-       | Choose -> 
+       | Choose _ -> 
 	      (case args of
 		| [f, a] -> let tm = simplifiedApply(f, a, sp) in
 			    mkSnarkFmla(context, sp, dpn, vars, [], tm)
@@ -462,12 +462,12 @@ snark qualifying spec
 	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "embed_"^id)), Lisp.list snarkArgs)
       | Restrict -> let [tm] = args in mkSnarkTerm(context, sp, dpn, vars, tm)
-      | Choose -> 
+      | Choose _ -> 
 	      (case args of
 		| [f, a] -> let tm = simplifiedApply(f, a, sp) in
 			    mkSnarkTerm(context, sp, dpn, vars, tm)
 	        | _ -> mkSnarkTerm(context, sp, dpn, vars, arg))
-      | Quotient -> mkSnarkTerm(context, sp, dpn, vars, arg)
+      | Quotient _ -> mkSnarkTerm(context, sp, dpn, vars, arg)
 
   op mkSnarkHOTermApp: Context * Spec * String * StringSet.Set * MS.Term * MS.Term -> LispCell
 

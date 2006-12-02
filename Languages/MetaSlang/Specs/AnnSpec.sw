@@ -30,17 +30,6 @@ AnnSpec qualifying spec
 		 qualified? : Boolean
 		}
 
- type SortNames      = List SortName
- type OpNames        = List OpName
- type PropertyNames  = List PropertyName
-
- type SortName       = QualifiedId
- type OpName         = QualifiedId
- type PropertyName   = QualifiedId
-
- type Aliases        = QualifiedIds
- type QualifiedIds   = List QualifiedId
-
  type ASortMap  b = AQualifierMap (ASortInfo b) % i.e., Qualifier -> Id -> info
  type AOpMap    b = AQualifierMap (AOpInfo   b) % i.e., Qualifier -> Id -> info
 

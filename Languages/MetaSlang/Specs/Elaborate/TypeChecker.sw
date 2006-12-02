@@ -623,34 +623,85 @@ TypeChecker qualifying spec
 	    | _ -> pass2Error (env, srt, "Function type expected ", pos));
 	 Fun (Embedded id, srt, pos))
 
-      | Fun (PChoose equiv, srt, pos) ->
-	(* Has sort {f: a -> b | fa(m,n) equiv(m,n) => f m = f n} -> a \ equiv -> b *)
-	let a = freshMetaTyVar ("PChoose_a", pos) in
-	let b = freshMetaTyVar ("PChoose_b", pos) in
-	let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
-	let equiv = single_pass_elaborate_term (env, equiv, ty1) in
-	let ty2 = Arrow (Quotient (a, equiv, pos), b, pos) in
-	let ty3 = Arrow (a, b, pos) in
-	let fv = ("F",ty3) in
-	let mv = ("M",a) in
-	let nv = ("N",a) in
-	let lhs = mkAppl(equiv,[mkVar mv,mkVar nv]) in
-	let rhs = mkEquality(a,mkApply(mkVar fv,mkVar mv),mkApply(mkVar fv,mkVar nv)) in
-	let body = mkBind(Forall,[mv,nv],mkImplies(lhs,rhs)) in
-	let tys = Subsort(ty3,mkLambda(mkVarPat fv,body),pos) in
-	let ty4 = Arrow (tys, ty2, pos) in
-	(elaborateSortForTerm (env, trm, ty4, term_sort);
-	 elaborateSortForTerm (env, trm, srt, ty4);
-	 Fun (PChoose equiv, ty4, pos))
+      | Fun (PChoose qid, srt, pos) -> 
+	%% Has type:  {f: base_type -> result_type | fa(m,n) equiv(m,n) => f m = f n} -> quot_type -> result_type
+        %%   quot_type -- quotient type referenced by qid
+        %%   equiv     -- equivalence relation in definition of quot_type
+        (case findTheSort (env.internal, qid) of
+           | Some info ->
+             (case unpackFirstSortDef info of
+                | (tvs, Quotient (base_body, equiv, _)) ->
+                  %% In general, base_body and equiv will have free references to tvs
+                  let base_type             = Pi (tvs, base_body, noPos)                      in
+                  let (new_mtvs, base_type) = metafySort base_type                            in
+                  let base_body             = sortInnerSort base_type                         in
+                  let new_type_args         = map (fn mtv -> MetaTyVar (mtv, noPos)) new_mtvs in
+                  let quot_type             = Base (qid, new_type_args, noPos)                in
+                  let result_type           = freshMetaTyVar ("PChoose_result", pos)          in
+                  let high_arrow            = Arrow (quot_type, result_type, pos)             in
+                  %% --
+                  let low_arrow             = Arrow (base_type, result_type, pos)             in
+                  let fvar = ("f",low_arrow) in
+                  let mvar = ("m",base_type) in
+                  let nvar = ("n",base_type) in
+                  let lhs  = mkAppl (equiv, [mkVar mvar, mkVar nvar]) in % free refs to tvs
+                  let rhs  = mkEquality (result_type, 
+                                         mkApply (mkVar fvar, mkVar mvar),
+                                         mkApply (mkVar fvar, mkVar nvar)) 
+                  in
+                  let body = mkBind (Forall,[mvar, nvar], mkImplies (lhs, rhs)) in  % free refs to tvs
+                  let restricted_low_arrow  = Subsort (low_arrow, mkLambda (mkVarPat fvar, body), pos) in  % free refs to tvs
+                  %% --
+                  let lifting_arrow         = Arrow (restricted_low_arrow, high_arrow, pos)            in  % free refs to tvs
+                  (elaborateSortForTerm (env, trm, lifting_arrow, term_sort);
+                   elaborateSortForTerm (env, trm, srt,           lifting_arrow);
+                   %% now srt = term_sort = lifting_arrow
+                   Fun (PChoose qid, srt, pos))
 
-      | Fun (PQuotient equiv, srt, pos) ->  % Has sort a -> Quotient(a, equiv)
-	let a = freshMetaTyVar ("PQuotient", pos) in
-	let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
-	let equiv = single_pass_elaborate_term (env, equiv, ty1) in 
-	let ty2 = Arrow (a, Quotient (a, equiv, pos), pos) in
-	(elaborateSortForTerm (env, trm, ty2, term_sort);
-	 elaborateSortForTerm (env, trm, srt, ty2);
-	 Fun (PQuotient equiv, srt, pos))  
+                | _ ->
+                  let ss = toString qid in
+                  (error (env, 
+                          "In choose[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
+                          pos);
+                   Fun (PChoose qid, srt, pos)))
+           | _ ->
+             let ss = toString qid in
+             (error (env, 
+                     "In choose[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
+                     pos);
+              Fun (PChoose qid, srt, pos)))
+              
+
+      | Fun (PQuotient qid, srt, pos) ->  
+        %% Has type:   base_type -> Quotient(base_type, equiv)
+        %%   quot_type -- quotient type referenced by qid
+        %%   equiv     -- equivalence relation in definition of quot_type
+        (case findTheSort (env.internal, qid) of
+           | Some info ->
+             (case unpackFirstSortDef info of
+                | (tvs, Quotient (base_body, equiv, _)) ->
+                  %% In general, base_body and equiv will have free references to the tvs
+                  let base_type             = Pi (tvs, base_body, noPos)                      in
+                  let (new_mtvs, base_type) = metafySort base_type                            in
+                  let new_type_args         = map (fn mtv -> MetaTyVar (mtv, noPos)) new_mtvs in
+                  let quot_type             = Base (qid, new_type_args, noPos)                in              
+                  let lifting_arrow         = Arrow (base_type, quot_type, pos)               in
+                  (elaborateSortForTerm (env, trm, lifting_arrow, term_sort);
+                   elaborateSortForTerm (env, trm, srt,           lifting_arrow);
+                   %% now srt = term_sort = lifting_arrow
+                   Fun (PQuotient qid, srt, pos))
+                | _ ->
+                  let ss = toString qid in
+                  (error (env, 
+                          "In quotient[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
+                          pos);
+                   Fun (PQuotient qid, srt, pos)))
+           | _ ->
+             let ss = toString qid in
+             (error (env, 
+                     "In quotient[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
+                     pos);
+              Fun (PQuotient qid, srt, pos)))
 
       | Fun (Bool b, srt, pos) -> 
 	(elaborateSortForTerm (env, trm, type_bool, term_sort) ; 
@@ -1547,18 +1598,16 @@ TypeChecker qualifying spec
 		   (cons ((id, p), row), env, seenVars))
 	      ([], env, seenVars) r
 	in
-	  (RecordPat (rev r, pos), env, seenVars)
+          (RecordPat (rev r, pos), env, seenVars)
 
-      | QuotientPat (pat, term, pos) ->
+      | QuotientPat (pat, qid, pos) ->
 	let v = freshMetaTyVar ("QuotientPat", pos) in
-	let sort2 = (Quotient (v, term, pos)) in
-	let _ = elaborateSort (env, sort2, sort1) in
-	let term = single_pass_elaborate_term (env, term, 
-					       Arrow (Product ([("1", v), ("2", v)], pos), 
-						      type_bool, pos)) 
-	in
-	let (pat, env, seenVars) = elaboratePatternRec (env, pat, v, seenVars) in
-	(QuotientPat (pat, term, pos), env, seenVars)
+        let (pat, env, seenVars) = elaboratePatternRec (env, pat, v, seenVars) in
+        let _ = case elaborateSort (env, Base (qid, [], pos), sort1) of
+                  | Quotient _ -> ()
+                  | _ -> error (env, "In quotient pattern, " ^ toString qid ^ " doesn't refer to a quotient type", pos)
+        in
+          (QuotientPat (pat, qid, pos), env, seenVars)
 
       | RestrictedPat (pat, term, pos) ->
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort1, seenVars) in

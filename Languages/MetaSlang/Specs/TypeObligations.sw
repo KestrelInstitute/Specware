@@ -333,8 +333,8 @@ spec
 	     | Iff        -> tcc 
 	     | Equals     -> tcc 
 	     | NotEquals  -> tcc 
-	     | Quotient   -> tcc
-	     | Choose     -> tcc 
+	     | Quotient   qid -> tcc  % TODO: anything? (or is this subsumed by treatment of s in Fun(f,s,_)?
+	     | Choose     qid -> tcc  % TODO: anything? (or is this subsumed by treatment of s in Fun(f,s,_)?
 	     | Restrict   -> tcc 
 	     | Relax      -> tcc 
 	     | Op(id,fx)  -> tcc 
@@ -548,11 +548,11 @@ spec
        returnPattern(gamma,mkFun(Char ch,charSort),charSort,tau)
      | NatPat(i,_) 		->      
        returnPattern(gamma,mkFun(Nat i,natSort),natSort,tau)
-     | QuotientPat(p,pred,_) 	-> 
+     | QuotientPat(p,qid,_) 	-> 
        let Quotient(tau1,_,_) = unfoldBase(gamma,tau) in
        let (gamma,trm) = bindPattern(gamma,p,tau1)
        in
-       (gamma,mkApply(mkFun(Quotient,mkArrow(tau1,tau)),trm))
+       (gamma,mkApply(mkFun(Quotient qid,mkArrow(tau1,tau)),trm))
      | RestrictedPat(p,pred,_) 	-> 
        let (gamma,trm) = bindPattern(gamma,p,tau) in
        let gamma = assertCond(pred,gamma) in

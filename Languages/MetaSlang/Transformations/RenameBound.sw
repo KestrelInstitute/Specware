@@ -198,8 +198,8 @@ spec
 	 let idPats = ListPair.zip (ids, pats) in
 	 RecordPat (idPats, a)
 
-       | QuotientPat (p, t, a) ->
-	 QuotientPat (renamePattern c p, renameClosedTerm c t, a)
+       | QuotientPat (p,                 qid, a) ->
+	 QuotientPat (renamePattern c p, qid, a)
 
        | RestrictedPat (p, t, a) ->
 	 RestrictedPat (renamePattern c p, renameTerm c t, a)

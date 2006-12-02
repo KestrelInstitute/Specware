@@ -193,8 +193,8 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
        termToExpressionM(tcx,argsTerm,k,l)
        %translateRestrictToExprM  (tcx, srt, argsTerm, k, l)
      | Fun (Relax,         srt, _) -> translateRelaxToExprM     (tcx,      argsTerm, k, l)
-     | Fun (Quotient,      srt, _) -> translateQuotientToExprM  (tcx, srt, argsTerm, k, l)
-     | Fun (Choose,        srt, _) -> translateChooseToExprM    (tcx,      argsTerm, k, l)
+     | Fun (Quotient qid,  srt, _) -> translateQuotientToExprM  (tcx, srt, argsTerm, k, l)
+     | Fun (Choose   qid,  srt, _) -> translateChooseToExprM    (tcx,      argsTerm, k, l)
      | Fun (Not,           srt, _) -> translateNotToExprM       (tcx,      argsTerm, k, l)
      | Fun (And,           srt, _) -> translateAndToExprM       (tcx,      argsTerm, k, l)
      | Fun (Or,            srt, _) -> translateOrToExprM        (tcx,      argsTerm, k, l)
@@ -665,23 +665,27 @@ op relaxChooseTerm: Spec * Term -> Term
 def relaxChooseTerm(spc,t) =
   case t of
     | Apply(Fun(Restrict,_,_),_,_) -> t
-    | Apply(Fun(Choose,_,_),_,_) -> t
+    | Apply(Fun(Choose _,_,_),_,_) -> t
     | _ -> 
-    %let srt0 = inferTypeFoldRecords(spc,t) in
-    let srt0 = termSort(t) in
-    let srt = unfoldBase(spc,srt0) in
-    %let _ = writeLine("relaxChooseTerm: termSort("^printTerm(t)^") = "^printSort(srt)) in
-    case srt of
-      | Subsort(ssrt,_,b) ->
-      %let _ = writeLine("relaxChooseTerm: subsort "^printSort(srt)^" found") in
-      let rsrt = Arrow(srt0,ssrt,b) in
-      let t = Apply(Fun(Relax,rsrt,b),t,b) in
-      relaxChooseTerm(spc,t)
-      | Quotient(ssrt,_,b) ->
-      let rsrt = Arrow(srt0,ssrt,b) in
-      let t = Apply(Fun(Choose,rsrt,b),t,b) in
-      relaxChooseTerm(spc,t)
-      | _ -> t
+      %let srt0 = inferTypeFoldRecords(spc,t) in
+      let srt0 = termSort(t) in
+      let srt = unfoldBase(spc,srt0) in
+      %let _ = writeLine("relaxChooseTerm: termSort("^printTerm(t)^") = "^printSort(srt)) in
+      case srt of
+        | Subsort(ssrt,_,b) ->
+          %let _ = writeLine("relaxChooseTerm: subsort "^printSort(srt)^" found") in
+          let rsrt = Arrow(srt0,ssrt,b) in
+          let t = Apply(Fun(Relax,rsrt,b),t,b) in
+          relaxChooseTerm(spc,t)
+        | Quotient(ssrt,_,b) ->
+          (case srt0 of
+             | Base (qid, _, _) ->
+               let rsrt = Arrow(srt0,ssrt,b) in
+               let t = Apply(Fun(Choose qid,rsrt,b),t,b) in
+               relaxChooseTerm(spc,t)
+             | _ ->
+               fail ("Internal confusion in relaxChooseTerm: expected " ^ printSort srt0 ^ " to be the name of a quotient sort"))
+        | _ -> t
 
 
 op translateTermsToExpressionsM: TCx * List Term * Nat * Nat -> JGenEnv (Block * List Java.Expr * Nat * Nat)

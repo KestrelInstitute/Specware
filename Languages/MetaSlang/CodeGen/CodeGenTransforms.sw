@@ -656,10 +656,9 @@ def p2mPattern (spc, modifyConstructors?, pat, minfo) =
 		fields
       in
       (RecordPat (fields, b), minfo)
-    | QuotientPat (pat, t, b) ->
+    | QuotientPat (pat, qid, b) ->
       let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
-      let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
-      (QuotientPat (pat, t, b), minfo)
+      (QuotientPat (pat, qid, b), minfo)
     | RestrictedPat (pat, t, b) ->
       let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
       let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
@@ -1078,7 +1077,7 @@ def addMissingFromPattern (bspc, spc, ignore, pat, minfo) =
     | EmbedPat     (_, None,   s, _) -> ams (s, minfo)
     | RecordPat    (fields,       _) -> foldl (fn ((_, p), minfo) -> amp (p, minfo)) minfo fields
     | WildPat      (s,            _) -> ams (s, minfo)
-    | QuotientPat  (p, t,         _) -> amp (p, amt (t, minfo))
+    | QuotientPat  (p, qid,       _) -> let q = Base (qid, [], noPos) in amp (p, ams (q, minfo))
     | RestrictedPat(p, t,         _) -> amp (p, amt (t, minfo))
     | SortedPat    (p, s,         _) -> amp (p, ams (s, minfo))
     | _ -> minfo

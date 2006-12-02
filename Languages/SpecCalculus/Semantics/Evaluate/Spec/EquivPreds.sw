@@ -112,8 +112,8 @@ SpecCalc qualifying spec
 
  def equivFun? spc (f1, f2) =
   case (f1, f2) of
-     | (PQuotient t1,       PQuotient t2)       -> equivTerm? spc (t1, t2)
-     | (PChoose   t1,       PChoose   t2)       -> equivTerm? spc (t1, t2)
+     | (PQuotient qid1,     PQuotient qid2)     -> qid1 = qid2
+     | (PChoose   qid1,     PChoose   qid2)     -> qid1 = qid2
 
      | (Not,                Not         )       -> true
      | (And,                And         )       -> true
@@ -123,8 +123,8 @@ SpecCalc qualifying spec
      | (Equals,             Equals      )       -> true
      | (NotEquals,          NotEquals   )       -> true
 
-     | (Quotient,           Quotient    )       -> true
-     | (Choose,             Choose      )       -> true
+     | (Quotient qid1,      Quotient  qid2)     -> qid1 = qid2
+     | (Choose   qid1,      Choose    qid2)     -> qid1 = qid2
      | (Restrict,           Restrict    )       -> true
      | (Relax,              Relax       )       -> true
 
@@ -183,13 +183,13 @@ SpecCalc qualifying spec
      | (NatPat      (x1,          _),
         NatPat      (x2,          _)) -> x1 = x2
 
-     | (QuotientPat (x1, t1,      _),
-        QuotientPat (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
+     | (QuotientPat (x1, qid1,    _),
+        QuotientPat (x2, qid2,    _)) -> equivPattern? spc (x1, x2) && qid1 = qid2
 
-     | (RestrictedPat (x1, t1,      _),
-        RestrictedPat (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
+     | (RestrictedPat (x1, t1,    _),
+        RestrictedPat (x2, t2,    _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
 
-      | (SortedPat   (x1, t1,      _),
+     | (SortedPat   (x1, t1,      _),
         SortedPat   (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivSort? spc false (t1, t2)
 
      | _ -> false)

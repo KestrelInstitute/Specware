@@ -191,7 +191,7 @@ AnnSpecPrinter qualifying spec
      | _ -> Nonfix
  
 
- def mkAEquals (srt,pos) = Fun (Equals, srt, pos)
+%def mkAEquals (srt,pos) = Fun (Equals, srt, pos)
 
  def [a] printOp (context, 
 		  pp     : ATermPrinter, 
@@ -209,32 +209,10 @@ AnnSpecPrinter qualifying spec
      | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
      | Embedded    s           -> pp.fromString ("embed?("^s^")")
-     | Quotient                -> let p = case srt
-					   of Arrow(_, Quotient(_,p,_),_) -> p
-					    %% Need spec to get correct value
-                                            | _ -> mkAEquals (srt,a)
-				  in
-                                  prettysFill [pp.fromString "quotient", 
-					       string " ",
-					       ppTerm context ([], Top) p, 
-					       string " "]
-     | Choose                  -> let p = case srt
-					   of Arrow(_, Quotient(_,p,_),_) -> p
-					    %% Need spec to get correct value
-					    | _ -> mkAEquals (srt,a)
-				  in
-                                  prettysFill [pp.fromString "choose",
-					       string " ",
-					       ppTerm context ([], Top) p, 
-					       string " "]
-     | PQuotient   p           -> prettysFill [pp.fromString ("quotient"),
-					       string " ",
-					       ppTerm context ([], Top) p, 
-					       string " "]
-     | PChoose     p           -> prettysFill [pp.fromString ("choose"),
-					       string " ",
-					       ppTerm context ([], Top) p, 
-					       string " "]
+     | Quotient    qid         -> pp.fromString ("quotient[" ^ toString qid ^ "] ")
+     | Choose      qid         -> pp.fromString ("choose["   ^ toString qid ^ "] ")
+     | PQuotient   qid         -> pp.fromString ("quotient[" ^ toString qid ^ "] ")
+     | PChoose     qid         -> pp.fromString ("choose["   ^ toString qid ^ "] ")
      | Not                     -> pp.Not
      | And                     -> pp.And
      | Or                      -> pp.Or
@@ -878,12 +856,10 @@ AnnSpecPrinter qualifying spec
 			   [(0, ppPattern context ([0]++ path, false) pat1), 
 			    (0, string  " as "), 
 			    (0, ppPattern context ([1]++ path, false) pat2)]))
-     | QuotientPat (pat, term, _) -> 
+     | QuotientPat (pat, qid, _) -> 
        enclose (enclosed, 
 		blockFill (0, 
-			   [(0, string "quotient "), 
-			    (0, ppTerm    context ([1]++ path, Top)   term), 
-			    (0, string " "),
+			   [(0, string ("quotient[" ^ toString qid ^ "]")),
 			    (0, ppPattern context ([0]++ path, false) pat)]))
 
      | RestrictedPat (pat, term, _) ->

@@ -321,14 +321,10 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | BoolPat (b,_) -> ppBoolean b
       | CharPat (chr,_) -> ppString (Char.toString chr)
       | NatPat (int,_) -> ppString (Nat.toString int)      
-      | QuotientPat (pat,term,_) -> 
-          ppGrConcat [
-            ppString "(quotient ",
-            ppAPattern pat,
-            ppString " ",
-            ppATerm term,
-            ppString ")"
-          ]
+      | QuotientPat (pat,qid,_) -> 
+          ppGrConcat [ppString ("(quotient[" ^ toString qid ^ "] "),
+                      ppAPattern pat,
+                      ppString ")"]
       | RestrictedPat (pat,term,_) -> 
 %        (case pat of
 %	   | RecordPat (fields,_) ->
@@ -374,20 +370,20 @@ infix with brackets. And similarly when we see an \verb+Equals+.
   op ppAFun : fa (a) AFun a -> Pretty
   def ppAFun fun =
     case fun of
-      | Not       -> ppString "~"
-      | And       -> ppString "&&"
-      | Or        -> ppString "||"
-      | Implies   -> ppString "=>"
-      | Iff       -> ppString "<=>"
-      | Equals    -> ppString "="
-      | NotEquals -> ppString "~="
-      | Quotient -> ppString "quotient"
-      | PQuotient _ -> ppString "quotient"
-      | Choose -> ppString "choose"
-      | PChoose _ -> ppString "choose"
-      | Restrict -> ppString "restrict"
-      | Relax -> ppString "relax"
-      | Op (qid,Nonfix) -> ppQualifiedId qid
+      | Not           -> ppString "~"
+      | And           -> ppString "&&"
+      | Or            -> ppString "||"
+      | Implies       -> ppString "=>"
+      | Iff           -> ppString "<=>"
+      | Equals        -> ppString "="
+      | NotEquals     -> ppString "~="
+      | Quotient  qid -> ppGrConcat [ppString "quotient[", ppQualifiedId qid, ppString "]"]
+      | PQuotient _   -> ppString "quotient[??]" 
+      | Choose    qid -> ppGrConcat [ppString "choose[",   ppQualifiedId qid, ppString "]"]
+      | PChoose   _   -> ppString "choose"
+      | Restrict      -> ppString "restrict"
+      | Relax         -> ppString "relax"
+      | Op (qid,Nonfix)      -> ppQualifiedId qid
       | Op (qid,Unspecified) -> ppQualifiedId qid
       | Op (qid,fix) -> 
           ppGrConcat [

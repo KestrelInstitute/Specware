@@ -43,13 +43,14 @@ spec
       | Fun(Relax,srt,_) ->
 	let rexp = mkFldAcc(mkVarJavaExpr("arg1"),"relax") in
 	standAloneFromSortM (mkReturnStmt(rexp),srt,k,l)
-      | Fun(Choose,srt,_) ->
+      | Fun(Choose _, srt, _) ->
 	let rexp = mkFldAcc(mkVarJavaExpr("arg1"),"choose") in
 	standAloneFromSortM(mkReturnStmt(rexp),srt,k,l)
-      | Fun(Quotient,srt,_) ->
-	let rng = srtRange(srt) in
+      | Fun(Quotient qid, srt, _) ->
+	% let rng = srtRange(srt) in % TODO: verify this isn't needed
 	{
-	 rngid <- tt_idM rng;
+	 % rngid <- tt_idM rng; % TODO: verify this isn't needed
+         rngid <- tt_idM (Base (qid, [], noPos)); % TODO: verify this is correct 
 	 rexp <- return(mkNewClasInst(rngid,mkNArgsExpr([0],None)));
 	 res <- standAloneFromSortM(mkReturnStmt(rexp),srt,k,l);
 	 return res

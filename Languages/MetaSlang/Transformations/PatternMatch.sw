@@ -289,7 +289,8 @@ PatternMatch qualifying spec
 
   type RuleType = 
      | Var | Con | Alias  Pattern * Pattern
-     | Relax  Pattern * MS.Term | Quotient  Pattern * MS.Term
+     | Relax  Pattern * MS.Term 
+     | Quotient  Pattern * SortName
      | Restricted Pattern * MS.Term 
 
   def ruleType (q:Rule) : RuleType = 
@@ -303,7 +304,7 @@ PatternMatch qualifying spec
          | ((BoolPat _)::_,_,_)    -> Con
          | ((NatPat _)::_,_,_)     -> Con
          | ((CharPat _)::_,_,_)    -> Con
-         | ((QuotientPat(pat,pred,_))::_,_,_) -> Quotient(pat,pred) 
+         | ((QuotientPat(pat,qid,_))::_,_,_) -> Quotient(pat,qid)
          | ((RestrictedPat(pat,bool_expr,_))::_,_,_) -> Restricted(pat,bool_expr)
       
 
@@ -496,7 +497,7 @@ PatternMatch qualifying spec
 	   %% This should be unnecessary because top-level Restricteds have been removed
 	   %% in eliminateTerm
 	   matchRestricted(context,bool_exp,vars,rules,default,break)
-         | Quotient _ -> matchQuotient(context,vars,rules,default,break)
+         | Quotient _ -> matchQuotient(context,vars,rules,default,break) 
       
   def matchVar(context,terms,rules,default,break) = 
       let t = hd terms in
@@ -547,19 +548,24 @@ PatternMatch qualifying spec
        match(context,Cons(t,terms),rules,default,break) 
 
   def matchQuotient(context:Context,t::terms,rules,default,break) = 
-      let Quotient(srt,pred,_)  = unfoldBase(context.spc, inferType(context.spc,t))  in
-%%
-%%    Given current implementation of choose, we compile
-%%     t1 = choose(fn x -> x) t 
-%%
-      let v = ("v",srt)                                   in
-      let f = mkLambda(VarPat(v,noPos),Var(v,noPos))                    in
-      let t1 = mkApply(mkChooseFun(pred,srt,srt,f),t)	  in
-      let rules  = map (fn((Cons((QuotientPat(p,pred,_)):Pattern,pats),cond,e):Rule) ->
-			      (Cons(p,pats),cond,e)) rules in
-      failWith context
-      (match(context,cons(t1,terms),rules,break,break))
-      default 	
+    let q = inferType(context.spc,t) in
+    case unfoldBase(context.spc, q) of
+      | Quotient(srt,pred,_) -> 
+        %%
+        %%    Given current implementation of choose, we compile
+        %%     t1 = choose[q] t 
+        %%
+        let v = ("v",srt)                                   in
+        let f = mkLambda(VarPat(v,noPos),Var(v,noPos))                    in
+        let t1 = mkApply(mkChooseFun(q,srt,srt,f),t)	  in
+        let rules  = map (fn((Cons((QuotientPat(p,pred,_)):Pattern,pats),cond,e):Rule) ->
+                            (Cons(p,pats),cond,e)) rules 
+        in
+          failWith context
+          (match(context,cons(t1,terms),rules,break,break))
+          default 	
+      | _ -> fail ("Internal confusion in matchQuotient: expected " ^ printSort q ^ " to name a quotient type")
+
 
  %% fn (x as pat) -> bod  -->  fn x -> let pat = x in bod
  %% Without this other normalizations such as arity normalization break
@@ -620,8 +626,8 @@ def eliminatePattern context pat =
        | BoolPat(b,a)   -> BoolPat(b,a)
        | CharPat(ch,a)  -> CharPat(ch,a)
        | NatPat(n,a)    -> NatPat(n,a)
-       | QuotientPat (p,t,a) ->
-	 QuotientPat(eliminatePattern context p,eliminateTerm context t,a)
+       | QuotientPat  (p,                          qid, a) ->
+	 QuotientPat  (eliminatePattern context p, qid, a)
        | RestrictedPat (p,t,a) ->
 	 RestrictedPat(eliminatePattern context p,eliminateTerm context t,a)
 

@@ -66,6 +66,9 @@ MetaSlang qualifying spec
    else
      q ^ "." ^ id
 
+  op QualifiedId.toString : QualifiedId -> String
+ def QualifiedId.toString = printQualifiedId
+
  %% This is useful for most normal messages, where you want to be terse:
   op printQualifiedId : QualifiedId -> String
  def printQualifiedId (Qualified (q, id)) =
@@ -110,6 +113,19 @@ MetaSlang qualifying spec
 	      ""
 	      rest)
        ^ "}"
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ type SortNames      = List SortName
+ type OpNames        = List OpName
+ type PropertyNames  = List PropertyName
+
+ type SortName       = QualifiedId
+ type OpName         = QualifiedId
+ type PropertyName   = QualifiedId
+
+ type Aliases        = QualifiedIds
+ type QualifiedIds   = List QualifiedId
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Type Variables
@@ -183,7 +199,7 @@ MetaSlang qualifying spec
   | NatPat        Nat                                 * b
   | StringPat     String                              * b
   | CharPat       Char                                * b
-  | QuotientPat   APattern b * ATerm b                * b
+  | QuotientPat   APattern b * SortName               * b
   | RestrictedPat APattern b * ATerm b                * b
   | SortedPat     APattern b * ASort b                * b  % Before elaborateSpec
 
@@ -197,13 +213,13 @@ MetaSlang qualifying spec
   | Equals
   | NotEquals
 
-  | Quotient
-  | Choose
+  | Quotient       SortName
+  | Choose         SortName
   | Restrict
   | Relax
 
-  | PQuotient      ATerm b
-  | PChoose        ATerm b
+  | PQuotient      SortName
+  | PChoose        SortName
 
   | Op             QualifiedId * Fixity
   | Project        Id
@@ -504,7 +520,7 @@ MetaSlang qualifying spec
      | NatPat       (n,       a) -> mkABase  (Qualified ("Nat",     "Nat"),     [], a)
      | StringPat    (_,       a) -> mkABase  (Qualified ("String",  "String"),  [], a)
      | CharPat      (_,       a) -> mkABase  (Qualified ("Char",    "Char"),    [], a)
-     | QuotientPat  (p, t,    a) -> Quotient (patternSort p, t,                     a)
+     | QuotientPat  (p, qid,  a) -> fail ("patternSort: Don't know how to lift name " ^ toString qid ^ " to a quotient sort")  % TODO
      | RestrictedPat(p, t,    a) ->
        %% Subsort  (patternSort p,Lambda([(p,mkTrueA a,t)],a),a)
        %% Subsort is correct but would require generalization in Lambda case of termSort
@@ -821,13 +837,12 @@ MetaSlang qualifying spec
 	   else
 	     WildPat (newSrt, a)
 		     
-	 | QuotientPat (pat, trm, a) ->
+	 | QuotientPat (pat, qid, a) ->
 	   let newPat = mapRec pat in
-	   let newTrm = mapTerm tsp trm in
-	   if newPat = pat && newTrm = trm then
+	   if newPat = pat then
 	     pattern
 	   else
-	     QuotientPat (newPat, newTrm, a)
+	     QuotientPat (newPat, qid, a)
 			 
 	 | RestrictedPat (pat, trm, a) ->
 	   let newPat = mapRec pat in
@@ -1365,8 +1380,8 @@ MetaSlang qualifying spec
 	 | WildPat      (                srt, a) ->
 	   WildPat      (replaceSort tsp srt, a)
 
-	 | QuotientPat  (           pat,                 trm, a) ->
-	   QuotientPat  (replaceRec pat, replaceTerm tsp trm, a)
+	 | QuotientPat  (           pat, qid, a) -> 
+	   QuotientPat  (replaceRec pat, qid, a)
 
 	 | RestrictedPat(           pat,                 trm, a) ->
 	   RestrictedPat(replaceRec pat, replaceTerm tsp trm, a)
@@ -1508,8 +1523,8 @@ MetaSlang qualifying spec
 	 | EmbedPat     (id, None, srt,     _) -> appSort tsp srt
 	 | RecordPat    (fields,            _) -> app (fn (id, p) -> appRec p) fields
 	 | WildPat      (srt,               _) -> appSort tsp srt
-	 | QuotientPat  (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
-	 | RestrictedPat(pat, trm,          _) -> (appRec pat; appTerm tsp trm)
+	 | QuotientPat  (pat, _,            _) -> appRec pat
+	 | RestrictedPat(pat, trm,          _) -> appRec pat
         %| SortedPat ??
         %| BoolPat   ??
         %| NatPat    ??

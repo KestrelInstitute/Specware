@@ -953,14 +953,10 @@ IsaTermPrinter qualifying spec
       | BoolPat (b,_) \_rightarrow ppBoolean b
       | CharPat (chr,_) \_rightarrow prString (Char.toString chr)
       | NatPat (int,_) \_rightarrow prString (Nat.toString int)      
-      | QuotientPat (pat,term,_) \_rightarrow 
-          prBreak 0 [
-            prString "(quotient ",
-            ppPattern c pat,
-            prSpace,
-            ppTerm c Top term,
-            prString ")"
-          ]
+      | QuotientPat (pat,qid,_) \_rightarrow 
+        prBreak 0 [prString ("(quotient[" ^ toString qid ^ "]"),
+                   ppPattern c pat,
+                   prString ")"]
       | RestrictedPat (pat,term,_) \_rightarrow 
 %        (case pat of
 %	   | RecordPat (fields,_) \_rightarrow
@@ -1032,10 +1028,10 @@ IsaTermPrinter qualifying spec
       | Iff       \_rightarrow prString "="
       | Equals    \_rightarrow prString "="
       | NotEquals \_rightarrow lengthString(1, "\\<noteq>")
-      | Quotient \_rightarrow prString "quotient"
+      | Quotient  _ \_rightarrow prString "quotient"
       | PQuotient _ \_rightarrow prString "quotient"
-      | Choose \_rightarrow prString "choose"
-      | PChoose _ \_rightarrow prString "choose"
+      | Choose    - \_rightarrow prString "choose"
+      | PChoose   _ \_rightarrow prString "choose"
       | Restrict \_rightarrow prString "restrict"
       | Relax \_rightarrow prString "relax"
       | Op (qid,Nonfix) \_rightarrow ppOpQualifiedId c qid

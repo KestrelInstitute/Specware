@@ -24,12 +24,12 @@ PosSpecToSpec qualifying spec
 		   | Some ssrt -> convertPSort ssrt)
 	     | _ -> srt
      def convertPFun (f) = 
-           case f
-	     of PQuotient equiv  -> Quotient 
-	      | PChoose equiv    -> Choose
-	      | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
-	      | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
-	      | _ -> f
+           case f of
+	     | PQuotient qid -> Quotient qid
+             | PChoose   qid -> Choose   qid
+             | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
+             | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
+             | _ -> f
    in
 %% mapSpec is correct but unnecessarily maps non-locals
 %   mapSpec (convertPTerm, convertPSort, fn x -> x)
@@ -90,12 +90,12 @@ PosSpecToSpec qualifying spec
 		   | Some ssrt -> convertPSort ssrt)
 	     | _ -> srt
      def convertPFun (f) = 
-           case f
-	     of PQuotient equiv  -> Quotient 
-	      | PChoose equiv    -> Choose
-	      | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
-	      | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
-	      | _ -> f
+           case f of
+	     | PQuotient qid -> Quotient qid
+             | PChoose   qid -> Choose   qid
+             | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
+             | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
+             | _ -> f
    in
    let tsp = (convertPTerm, convertPSort, fn x -> x) in
    mapTerm tsp tm
