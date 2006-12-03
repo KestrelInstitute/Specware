@@ -214,8 +214,8 @@ PatternMatch qualifying spec
 
    Quotient rule:
 
-	(v:t/pred)::vars
-	[(QuotientPat(pat: t,pred)::patterns,cond,e)]
+	(v:Q)::vars
+	[(QuotientPat(pat: t, Q)::patterns,cond,e)]
 	default
 
 	return
@@ -235,7 +235,7 @@ PatternMatch qualifying spec
 
 
 	case e::es 
-	  of (quotient(q?) pattern,...) -> term
+	  of (quotient(Q) pattern,...) -> term
 	   | .. -> term2
 
         translate to:
