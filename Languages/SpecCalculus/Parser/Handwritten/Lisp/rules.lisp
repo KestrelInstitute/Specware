@@ -1187,12 +1187,12 @@ If we want the precedence to be optional:
   (:anyof :QUOTIENTER-OLD :QUOTIENTER-NEW))
 
 (define-sw-parser-rule :QUOTIENTER-OLD ()
-  (1 :QUALIFIABLE-SORT-NAME)
+  (:tuple "quotient" (1 :QUALIFIABLE-SORT-NAME))
   (make-quotienter 1  ':left-lcb ':right-lcb)
   :documentation "Quotient")
 
 (define-sw-parser-rule :QUOTIENTER-NEW ()
-  (:tuple "[" (1 :QUALIFIABLE-SORT-NAME) "]")
+  (:tuple "quotient" "[" (1 :QUALIFIABLE-SORT-NAME) "]")
   (make-quotienter 1  ':left-lcb ':right-lcb)
   :documentation "Quotient")
 
