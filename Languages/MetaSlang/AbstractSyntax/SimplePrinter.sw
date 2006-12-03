@@ -378,9 +378,9 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Equals        -> ppString "="
       | NotEquals     -> ppString "~="
       | Quotient  qid -> ppGrConcat [ppString "quotient[", ppQualifiedId qid, ppString "]"]
-      | PQuotient _   -> ppString "quotient[??]" 
+      | PQuotient qid -> ppGrConcat [ppString "quotient[", ppQualifiedId qid, ppString "]"]
       | Choose    qid -> ppGrConcat [ppString "choose[",   ppQualifiedId qid, ppString "]"]
-      | PChoose   _   -> ppString "choose"
+      | PChoose   qid -> ppGrConcat [ppString "choose[",   ppQualifiedId qid, ppString "]"]
       | Restrict      -> ppString "restrict"
       | Relax         -> ppString "relax"
       | Op (qid,Nonfix)      -> ppQualifiedId qid
