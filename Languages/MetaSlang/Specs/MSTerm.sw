@@ -141,8 +141,8 @@ MS qualifying spec
 
  def mkRelax    (srt, pred)   = mkFun (Relax, mkArrow (mkSubsort (srt, pred), srt))
  def mkRestrict (srt, pred)   = mkFun (Restrict, mkArrow (srt, mkSubsort (srt, pred)))
-% def mkChoose   (srt, equiv)  = let q = mkQuotientSort (srt, equiv) in mkFun (Choose q, mkArrow (q, srt))
-% def mkQuotient (a,equiv,srt) = let q = mkQuotientSort (srt, equiv) in mkApply(mkFun (Quotient q, mkArrow(srt,q)),a)
+% def mkChoose   (srt, equiv) = let q = mkQuotientSort (srt, equiv) in mkFun (Choose q, mkArrow (q, srt))
+ def mkQuotient (a,qid,srt)   = mkApply(mkFun (Quotient qid, mkArrow(srt,Base(qid,[],noPos))), a)
 
  def mkEmbed0 (id, srt) = mkFun (Embed (id, false), srt) % no arg
  def mkEmbed1 (id, srt) = mkFun (Embed (id, true), srt) % arg
