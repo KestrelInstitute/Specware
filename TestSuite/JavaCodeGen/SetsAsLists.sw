@@ -19,16 +19,13 @@ spec
   sort SetAsList = ListNR / permutation
 
   op empty_set : SetAsList
-  def empty_set = quotient(permutation)(nilI)
+  def empty_set = quotient[SetAsList] nilI
 
   op union : SetAsList * SetAsList -> SetAsList
   def union(s1,s2) = % quotient(union_aux(choose(s1),choose(s2)))
-                     choose
-                       permutation
-                       (fn l1 -> choose
-                                   permutation
-                                   (fn l2 -> quotient
-                                               permutation
+                     choose[SetAsList]
+                       (fn l1 -> choose[SetAsList]
+                                   (fn l2 -> quotient[SetAsList]
                                                  (union_aux(l1,l2)))
                                    s2)
                        s1
@@ -43,10 +40,8 @@ spec
   op insert : Integer * SetAsList -> SetAsList
   def insert(i,s) = % if member(i,choose(s)) then s
                     % else quotient(consI(i,choose(s)))
-                    choose
-                      permutation
-                      (fn l -> quotient
-                                 permutation
+                    choose[SetAsList]
+                      (fn l -> quotient[SetAsList]
                                  (if member(i,l) then l
                                   else consI(i,l)))
                       s

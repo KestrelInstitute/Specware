@@ -25,11 +25,11 @@ spec
 
   op f : Q -> Nat
   def f x =
-    let quotient eq_mod10 y = x in y+1
+    let quotient[Q] y = x in y+1
 
   op g : Q -> Nat
   def g x =
-    choose eq_mod10 (fn y -> y+1) x
+    choose[Q] (fn y -> y+1) x
 
 endspec
 

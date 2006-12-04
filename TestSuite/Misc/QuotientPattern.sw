@@ -6,8 +6,7 @@ spec
                           fa(x,y,z) f(x,f(y,z)) = f(y,f(x,z))} ->
                          Bag a ->
                          b
-
-   def bag_fold c f (quotient Bag l) = (foldl f c l)
+   def bag_fold c f (quotient[Bag] l) = (foldl f c l)
 endspec
 (*
   
