@@ -47,7 +47,7 @@ RationalNumber qualifying spec
   type Rational = Ratio / equiv?
 
   op rational : Integer * PosNat -> Rational
-  def rational = quotient equiv?
+  def rational = quotient[Rational]
 
   % embedding of integers:
 
@@ -71,12 +71,12 @@ RationalNumber qualifying spec
   op RationalAux.- : Rational -> Rational
      % qualifier needed to avoid confusion with binary -;
      % ending "_" to minimize conflicts with user-defined qualifiers
-  def RationalAux.- r = choose equiv? (fn(num,den) -> rational (-num, den)) r
+  def RationalAux.- r = choose[Rational] (fn(num,den) -> rational (-num, den)) r
 
   op + infixl 25 : Rational * Rational -> Rational
   def + (r1,r2) =
-    choose equiv? (fn(num1,den1) ->
-    choose equiv? (fn(num2,den2) ->
+    choose[Rational] (fn(num1,den1) ->
+    choose[Rational] (fn(num2,den2) ->
       rational (num1 * den2 + num2 * den1, den1 * den2)
     ) r2
     ) r1
@@ -86,8 +86,8 @@ RationalNumber qualifying spec
 
   op * infixl 27 : Rational * Rational -> Rational
   def * (r1,r2) =
-    choose equiv? (fn(num1,den1) ->
-    choose equiv? (fn(num2,den2) ->
+    choose[Rational] (fn(num1,den1) ->
+    choose[Rational] (fn(num2,den2) ->
       rational (num1 * num2, den1 * den2)
     ) r2
     ) r1
@@ -96,7 +96,7 @@ RationalNumber qualifying spec
 
   op inv : NonZeroRational -> NonZeroRational
   def inv r =
-    choose equiv? (fn(num,den) -> if num > 0 then rational (den,num)
+    choose[Rational] (fn(num,den) -> if num > 0 then rational (den,num)
                              else (* num < 0 *)   rational (-den, -num)) r
 
   op / infixl 26 : Rational * NonZeroRational -> Rational
@@ -106,8 +106,8 @@ RationalNumber qualifying spec
 
   op < infixl 20 : Rational * Rational -> Boolean
   def < (r1,r2) =
-    choose equiv? (fn(num1,den1) ->
-    choose equiv? (fn(num2,den2) ->
+    choose[Rational] (fn(num1,den1) ->
+    choose[Rational] (fn(num2,den2) ->
       num1 * den2 < num2 * den1
     ) r2
     ) r1
