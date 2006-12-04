@@ -50,7 +50,7 @@ AnnSpec qualifying spec
    | Import   ((SpecCalc.Term Position) * Spec * SpecElements)
    | Sort     QualifiedId
    | SortDef  QualifiedId
-   | Op       QualifiedId
+   | Op       QualifiedId * Boolean  % if boolean is true, def was supplied as part of decl
    | OpDef    QualifiedId
    | Property (AProperty b)
    | Comment  String
@@ -733,15 +733,15 @@ AnnSpec qualifying spec
  def someOpAliasIsLocal? (aliases, spc) =
    exists (fn el ->
 	   case el of
-	     | Op    qid -> member (qid, aliases)
-	     | OpDef qid -> member (qid, aliases)
+	     | Op    (qid,_) -> member (qid, aliases)
+	     | OpDef qid     -> member (qid, aliases)
 	     | _ -> false)
           spc.elements
 
  def getQIdIfOp el =
    case el of
-     | Op qid    -> Some qid
-     | OpDef qid -> Some qid
+     | Op    (qid,_) -> Some qid
+     | OpDef qid     -> Some qid
      | _ -> None
 
  def localSort? (qid, spc) = 
@@ -755,8 +755,8 @@ AnnSpec qualifying spec
  def localOp? (qid, spc) = 
    exists (fn el ->
 	   case el of
-	     | Op    qid1 -> qid = qid1
-	     | OpDef qid1 -> qid = qid1
+	     | Op    (qid1,_) -> qid = qid1
+	     | OpDef qid1     -> qid = qid1
 	     | _ -> false)
           spc.elements
 
@@ -779,8 +779,8 @@ AnnSpec qualifying spec
  def localOps spc =
    removeDuplicates (mapPartial (fn el ->
 				 case el of
-				   | Op    qid -> Some qid
-				   | OpDef qid -> Some qid
+				   | Op    (qid,_) -> Some qid
+				   | OpDef qid     -> Some qid
 				   | _ -> None)
 		                spc.elements)
 

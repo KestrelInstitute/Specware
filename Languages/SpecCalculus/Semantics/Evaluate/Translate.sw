@@ -715,10 +715,10 @@ SpecCalc qualifying spec
   op  translateSpecElement : Translators -> Option Renaming -> SpecElement -> SpecElement
   def translateSpecElement translators opt_renaming el =
     case el of
-      | Sort    qid -> Sort    (translateQualifiedId translators.sorts qid) 
-      | SortDef qid -> SortDef (translateQualifiedId translators.sorts qid)
-      | Op      qid -> Op      (translateQualifiedId   translators.ops   qid)
-      | OpDef   qid -> OpDef   (translateQualifiedId   translators.ops   qid) 
+      | Sort    qid         -> Sort    (translateQualifiedId translators.sorts qid) 
+      | SortDef qid         -> SortDef (translateQualifiedId translators.sorts qid)
+      | Op      (qid, def?) -> Op      (translateQualifiedId translators.ops   qid, def?)
+      | OpDef   qid         -> OpDef   (translateQualifiedId translators.ops   qid) 
       | Property (pt, nm, tvs, term) ->
         Property (pt, (translateQualifiedId translators.props nm), tvs, term)
       | Import (sp_tm, spc, els) ->  

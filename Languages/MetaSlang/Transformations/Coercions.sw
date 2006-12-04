@@ -85,6 +85,12 @@ spec
     in
     spc << {ops = foldl (fn (el,ops) \_rightarrow
 			 case el of
+			   | Op (qid as Qualified(q,id), true) \_rightarrow % true means decl includes def
+			     (case AnnSpec.findTheOp(spc,qid) of
+			       | Some info \_rightarrow
+				 insertAQualifierMap (ops, q, id,
+						      info << {dfn = mapTermTop info})
+			       | None \_rightarrow ops)
 			   | OpDef (qid as Qualified(q,id)) \_rightarrow
 			     (case AnnSpec.findTheOp(spc,qid) of
 			       | Some info \_rightarrow

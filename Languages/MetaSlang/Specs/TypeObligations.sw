@@ -832,8 +832,8 @@ spec
    %let localOps = spc.importInfo.localOps in
    let names = foldl (fn (el,m) ->
 		      case el of
-			| Op qid    -> insertQID(qid, m)
-			| OpDef qid -> insertQID(qid, m)
+			| Op    (qid,def?) -> insertQID(qid, m)
+			| OpDef qid        -> insertQID(qid, m)
 			| _ -> m)
                      empty 
 		     spc.elements
@@ -844,6 +844,33 @@ spec
        foldl (fn (el,tcc) ->
 	      let (tccs,claimNames) =
 		  case el of
+                   | Op (qid as Qualified(q, id), true) -> % true means decl includes def
+		     (case findTheOp(spc,qid) of
+			| Some opinfo ->
+			  foldr (fn (dfn, tcc) ->
+				 let (tvs, tau, term) = unpackTerm dfn in
+				 let usedNames = addLocalVars (term, StringSet.empty) in
+				 %let term = etaExpand (spc, usedNames, tau, term) in
+				 let term = renameTerm (emptyContext ()) term in 
+				 let taus = case tau of
+					      | And (srts, _) -> srts
+					      | _ -> [tau]
+				 in
+				   foldr (fn (tau, tcc) ->
+					  (tcc, 
+					   gamma0 
+					   tvs
+					   %% Was unfoldStripSort but that cause infinite recursion.
+					   %% Is stripSubsorts sufficient (or necessary)?
+					   (Some (stripSubsorts(spc, tau)))
+					   (Some (qid, (curriedParams term).1))
+					   (Qualified (q, id ^ "_Obligation")))
+					   |- 
+					   term ?? tau)
+				     tcc
+				     taus)
+			    tcc 
+			    (opInfoDefs opinfo))
 		   | OpDef (qid as Qualified(q, id)) ->
 		     (case findTheOp(spc,qid) of
 			| Some opinfo ->

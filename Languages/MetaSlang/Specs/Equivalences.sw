@@ -69,9 +69,9 @@ AnnSpec qualifying spec
 		| (_, Any _) -> true
 		| (srt1, srt2) -> equalSort? (srt1, srt2)))
 	  | _ -> false)
-     | Op qid1 ->
+     | Op (qid1,_) ->
        (case e2 of
-	  | Op qid2 -> 
+	  | Op (qid2,_) -> 
 	    let Some info1 = findTheOp (s1, qid1) in
 	    let Some info2 = findTheOp (s2, qid2) in
 	    (info1.names = info2.names

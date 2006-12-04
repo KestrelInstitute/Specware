@@ -28,12 +28,17 @@ Prover qualifying spec
 	        (case AnnSpec.findTheSort(spc,qid) of
 		   | Some sortinfo ->
 		     Cons(el,axiomFromSortDefTop(spc,qid,sortinfo) ++ r_elts))
-	      | Op qid ->
+	      | Op (qid,def?) ->
 	        (case AnnSpec.findTheOp(spc,qid) of
-		   | Some opinfo -> Cons(el,axiomFromOpSrtTop(spc,qid,opinfo) ++ r_elts))
+		   | Some opinfo -> Cons (el,
+                                          axiomFromOpSrtTop(spc,qid,opinfo) 
+                                            ++ (if def? then axiomFromOpDefTop(spc,qid,opinfo) else [])
+                                            ++ r_elts))
 	      | OpDef qid ->
 	        (case AnnSpec.findTheOp(spc,qid) of
-		   | Some opinfo -> Cons(el,axiomFromOpDefTop(spc,qid,opinfo) ++ r_elts))
+		   | Some opinfo -> Cons(el,
+                                         axiomFromOpDefTop(spc,qid,opinfo) 
+                                           ++ r_elts))
 	      | _ -> Cons(el,r_elts) )
 	    result
 	    elts

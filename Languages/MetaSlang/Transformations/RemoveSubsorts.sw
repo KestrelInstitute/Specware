@@ -6,7 +6,7 @@ SpecNorm qualifying spec
     let spc = spc << {elements
 		       = foldr (fn (el,r) \_rightarrow
 				case el of
-				 | Op(qid as Qualified(q,id)) \_rightarrow
+				 | Op(qid as (Qualified(q,id)), def?) \_rightarrow
 				   let Some info = AnnSpec.findTheOp(spc,qid) in
 				   let srt = firstOpDefInnerSort info in
 				   %let _ = toScreen (printSort srt) in

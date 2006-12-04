@@ -34,7 +34,7 @@ SpecCalc qualifying spec
 			(sorts, ops)
 		      | _ ->
 			(if member (qid, sorts) then sorts else sorts ++ [qid], ops))
-		 | Op      qid -> 
+		 | Op      (qid,def?) -> 
 		   (case findAllOps (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: Op      but no info for " ^ printQualifiedId qid) in

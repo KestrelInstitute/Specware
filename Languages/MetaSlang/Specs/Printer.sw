@@ -1281,10 +1281,13 @@ AnnSpecPrinter qualifying spec
 	       %% let _ = toScreen (anyToString im_sp_tm^"\n\n") in
 	       ppSpecElementsAux context spc import_directions im_elements result)
 	       
-	 | Op qid ->
+	 | Op (qid,def?) ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo ->
-	        ppOpDeclOp context (~afterOp?) (opinfo,result)
+                if def? then
+                  ppOpDeclOpDef context (opinfo,result) % TODO: discriminate decl-with-def from decl-then-def
+                else
+                  ppOpDeclOp context (~afterOp?) (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
@@ -1328,12 +1331,15 @@ AnnSpecPrinter qualifying spec
      def aux(elements,afterOp?,result) =
          case elements of
 	   | [] -> result
-	   | (Op qid1) :: (OpDef qid2) :: r_els ->
+	   | (Op (qid1,def?)) :: (OpDef qid2) :: r_els ->
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
-		if qid1 = qid2
-		  then ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
-		else ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
+		if qid1 = qid2 then
+                  ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
+		else if def? then
+                  ppOpDeclOpDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
+                else
+                  ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid1 ^ "\n") in
 		(0, []))
@@ -1393,10 +1399,13 @@ AnnSpecPrinter qualifying spec
 	       %% let _ = toScreen (anyToString im_sp_tm^"\n\n") in
 	       ppSpecElementsAux context spc import_directions im_elements result)
 	       
-	 | Op qid ->
+	 | Op (qid,def?) ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo ->
-	        ppOpDeclOp context (~afterOp?) (opinfo,result)
+                if def? then
+                  ppOpDeclOpDef context (opinfo,result) % TODO: discriminate decl-with-def from decl-then-def
+                else
+                  ppOpDeclOp context (~afterOp?) (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
@@ -1440,12 +1449,15 @@ AnnSpecPrinter qualifying spec
      def aux(elements,afterOp?,result) =
          case elements of
 	   | [] -> result
-	   | (Op qid1) :: (OpDef qid2) :: r_els ->
+	   | (Op (qid1,def?)) :: (OpDef qid2) :: r_els ->
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
-		if qid1 = qid2
-		  then ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
-		else ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
+		if qid1 = qid2 then
+                  ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
+		else if def? then
+                  ppOpDeclOpDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
+                else
+                  ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid1 ^ "\n") in
 		(0, []))

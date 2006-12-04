@@ -1488,7 +1488,8 @@ SpecToLisp qualifying spec {
    let spc = setElements(spc,mapPartialSpecElements 
 			       (fn el ->
 				case el of
-			         | OpDef _ -> Some el
+			         | Op    (_, true) -> Some el
+			         | OpDef _         -> Some el
 			         | _ -> None)
 			       spc.elements)
    in 

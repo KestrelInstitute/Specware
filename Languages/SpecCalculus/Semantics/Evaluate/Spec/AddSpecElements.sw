@@ -208,10 +208,10 @@ SpecCalc qualifying spec
                          "Op "^(printAliases new_names)^" refers to multiple prior ops"));
 
     sp <- return (setOps (old_spec, new_ops));
-    return (appendElement (sp, if definedTerm? new_dfn
-			         then OpDef primaryName
-				 else Op primaryName))
-   }
+    return (appendElement (sp, case old_infos of
+                                 | [] -> Op    (primaryName, definedTerm? new_dfn)
+                                 | _  -> OpDef primaryName))
+    }
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

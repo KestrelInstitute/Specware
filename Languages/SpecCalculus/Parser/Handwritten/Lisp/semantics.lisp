@@ -250,33 +250,57 @@
 
 ;;; ------------------------------------------------------------------------
 ;;;  OP-DECLARATION
+;;;  OP-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-(defun make-op-declaration (optional-pre-tvs qualifiable-op-names optional-fixity optional-post-tvs sig l r)
+(defun make-op-elem (qualifiable-op-names 
+		     optional-fixity 
+		     optional-pre-tvs 
+		     optional-post-tvs 
+		     optional-type 
+		     optional-params 
+		     optional-def 
+		     l r)
   (let* ((names  (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
-	 (fixity      (if (equal :unspecified optional-fixity) 
-			  unspecified-fixity
-			optional-fixity))
-	 (tvs         (if (equal :unspecified optional-pre-tvs) 
-			  (if (equal :unspecified optional-post-tvs)
-			      '()
-			    optional-post-tvs)
-			(if (equal :unspecified optional-post-tvs)
-			    optional-pre-tvs
-			  ;; this final case is perverse, but there's no compelling reason
-			  ;; to go to the trouble to make it illegal
-			  (append optional-pre-tvs optional-post-tvs))))
-	 (sort-scheme (StandardSpec::abstractSort-3 #'namedTypeVar tvs sig))
-	 ;;
-	 ;; Since namedTypeVar is the identity function,
-	 ;;  (car sort-scheme) is just be a copy of vars
-	 ;;  (cdr sort-scheme) is a copy of sig with (Base qid) replaced by (TyVar id) where appropriate.
-	 ;; TODO: Move the responsibility for that conversion into the linker.
-	 ;;
-	 (sig         (cdr sort-scheme))
-	 (defs        '())
-	 (pos         (make-pos l r)))
-    (SPECCALC::mkOpSpecElem-6 names fixity tvs sig defs pos)))
+	 (fixity (if (equal  optional-fixity :unspecified) 
+		     unspecified-fixity
+		     optional-fixity))
+	 (tvs    (if (equal optional-pre-tvs :unspecified) 
+		     (if (equal optional-post-tvs :unspecified)
+			 '()
+			 optional-post-tvs)
+		     (if (equal optional-post-tvs :unspecified)
+			 optional-pre-tvs
+			 ;; this final case is perverse, but there's no compelling reason
+			 ;; to go to the trouble to make it illegal
+			 (append optional-pre-tvs optional-post-tvs))))
+	 (typ    (if (equal  optional-type :unspecified) 
+		     (freshMetaTypeVar l r)
+		     (cdr (StandardSpec::abstractSort-3 #'namedTypeVar tvs optional-type))))
+	 (defs   (if (equal optional-def :unspecified)
+		     '()
+		     (let* ((typed-term  (make-sorted-term optional-def typ l r))
+			    (typed-term  (if (equal optional-params :unspecified)
+					     typed-term 
+					     (bind-parameters optional-params typed-term l r)))
+			    (tvs-and-typed-term 
+			     (StandardSpec::abstractTerm-3 #'namedTypeVar tvs typed-term))
+			    ;; Since namedTypeVar is the identity function,
+			    ;;  (car tvs-and-typed-term) will just be a copy of tvs
+			    ;;  (cdr tvs-and-typed-term) will be a copy of typed-term,
+			    ;;   with (Base qid) replaced by (TyVar id) where appropriate.
+			    (typed-term  (cdr tvs-and-typed-term)))
+		       (list typed-term))))
+	 (pos    (make-pos l r)))
+    (SPECCALC::mkOpSpecElem-6 names fixity tvs typ defs pos)))
+
+(defun bind-parameters (params term l r)
+  (if (null params)
+      term
+    (cons :|Lambda|
+          (cons (list (vector (car params) (MS::mkTrue-0)
+                              (bind-parameters (cdr params) term l r)))
+                (make-pos l r)))))
 
 (defun make-fixity (associativity priority l r)
   (declare (ignore l r))
@@ -289,44 +313,6 @@ If we want the precedence to be optional:
   (let ((priority (if (equal :unspecified optional-priority) 1 optional-priority)))
     (cons (cons associativity nil) priority)))
 ||#
-
-;;; ------------------------------------------------------------------------
-;;;  OP-DEFINITION
-;;; ------------------------------------------------------------------------
-
-(defun make-op-definition (optional-pre-tvs qualifiable-op-names params optional-post-tvs optional-sort term l r)
-  (let* ((tvs         (if (equal :unspecified optional-pre-tvs) 
-			  (if (equal :unspecified optional-post-tvs)
-			      '()
-			    optional-post-tvs)
-			(if (equal :unspecified optional-post-tvs)
-			    optional-pre-tvs
-			  ;; this final case is perverse, but there's no compelling reason
-			  ;; to go to the trouble to make it illegal
-			  (append optional-pre-tvs optional-post-tvs))))
-	 (range-sort  (if (equal :unspecified optional-sort) (freshMetaTypeVar l r) optional-sort))
-	 (names       (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
-	 (fixity      unspecified-fixity)
-	 (st          (make-sorted-term term range-sort l r))
-	 (st          (bind-parameters params st l r))
-	 (tvs-st      (StandardSpec::abstractTerm-3 #'namedTypeVar tvs st))
-	 ;; Since namedTypeVar is the identity function,
-	 ;;  (car tvs-st) will just be a copy of tvs
-	 ;;  (cdr tvs-st) will be a copy of st with (Base qid) replaced by (TyVar id) where appropriate.
-         (tvs         (car tvs-st))
-	 (st          (cdr tvs-st))
-	 (defs        (list st))
-	 (pos         (make-pos l r))
-	 (ignored-sig (freshMetaTypeVar l r)))
-    (SPECCALC::mkOpSpecElem-6 names fixity tvs ignored-sig defs pos)))
-
-(defun bind-parameters (params term l r)
-  (if (null params)
-      term
-    (cons :|Lambda|
-          (cons (list (vector (car params) (MS::mkTrue-0)
-                              (bind-parameters (cdr params) term l r)))
-                (make-pos l r)))))
 
 ;;; ------------------------------------------------------------------------
 ;;;  CLAIM-DEFINITION

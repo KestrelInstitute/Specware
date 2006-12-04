@@ -378,10 +378,10 @@ IsaTermPrinter qualifying spec
   def ppSpecElement c spc elem op_with_def? opt_prag elems =
     case elem of
       | Import (_,im_sp,im_elements) \_rightarrow prEmpty
-      | Op qid \_rightarrow
+      | Op (qid,def?) \_rightarrow
 	(case AnnSpec.findTheOp(spc,qid) of
 	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow
-	     ppOpInfo c true op_with_def? opt_prag (names,fixity,dfn)
+	     ppOpInfo c true op_with_def? opt_prag (names,fixity,dfn)  % TODO: change  op_with_def?  to  def? -- no one looks at it??
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in

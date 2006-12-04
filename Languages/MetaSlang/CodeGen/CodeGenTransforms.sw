@@ -351,7 +351,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		               then [el] else []
 		   in
 		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
-		 | Op qid ->
+		 | Op (qid,def?) ->
 		   (case findTheOp (spc, qid) of
 		     | Some opinfo ->
 		       let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
@@ -821,9 +821,11 @@ def incorporateMinfo(elts,el_s,
 	       Cons(SortDef qid,newSorts r_sorts)
       def newOps(new_ops) =
         if new_ops = old_ops then []
-	  else let srtinfo :: r_ops = new_ops in
-	       let qid = primaryOpName srtinfo in
-	       Cons(OpDef qid,Cons(Op qid,newOps r_ops))
+	  else let opinfo :: r_ops = new_ops in
+	       let qid = primaryOpName opinfo in
+               Cons(OpDef qid, 
+                    Cons(Op (qid,false), % false means don't print def as part of decl
+                         newOps r_ops))
   in
     (el_s ++ newOps new_ops ++ newSorts new_sorts ++ elts,
      new_minfo,ops,srts)
@@ -972,7 +974,7 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
 			    let qid = primaryOpName info in
 			    let Qualified (q, id) = qid in
 			    (insertAQualifierMap (map, q, id, info),
-			     [Op qid,OpDef qid] ++ elts))
+			     [Op (qid,true)] ++ elts))
 		       (initSpec.ops,elts)
 		       minfo.ops
     in
@@ -1283,7 +1285,7 @@ def addProductSortConstructorsFromSort (spc, qid, info) =
 	 in
 	 let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 	 let opnames = [opqid] in
-	 (addElementAfter (setOps (spc, newops), OpDef opqid, SortDef qid), opnames))
+	 (addElementAfter (setOps (spc, newops), OpDef opqid, SortDef qid), opnames)) % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
       | _ -> (spc, [])
 
  (**
@@ -1334,7 +1336,7 @@ def addProductAccessorsFromSort (spc, qid, info) =
 		     in
 		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 		     let opnames = cons (opqid, opnames) in
-		     (addElementAfter (setOps (spc, newops), OpDef opqid, SortDef qid), opnames))
+		     (addElementAfter (setOps (spc, newops), OpDef opqid, SortDef qid), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
 	            (spc, [])
 		    fields)
       | _ -> (spc, [])

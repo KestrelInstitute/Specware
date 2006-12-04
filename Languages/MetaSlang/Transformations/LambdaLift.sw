@@ -878,6 +878,9 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let (newElts,newOps) = liftElts(s_elts,([],r_ops)) in
 	     (Cons(Import(s_tm,i_sp,newElts),r_elts),
 	      newOps)
+	   | Op (Qualified(q,id), true) -> % true means decl includes def
+	     (case findAQualifierMap(r_ops,q,id) of
+	       | Some info -> doOp(q,id,info,r_elts,r_ops))
 	   | OpDef(Qualified(q,id)) ->
 	     (case findAQualifierMap(r_ops,q,id) of
 	       | Some info -> doOp(q,id,info,r_elts,r_ops))

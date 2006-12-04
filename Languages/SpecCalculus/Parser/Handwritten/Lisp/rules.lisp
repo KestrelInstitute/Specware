@@ -385,13 +385,25 @@
 ;;;  TODO: In doc: op-declaration now uses qualified name, not just name
 (define-sw-parser-rule :OP-DECLARATION ()
   (:tuple "op" 
-	  (:optional (1 :NEW-SORT-VARIABLE-BINDER))
-	  (2 :QUALIFIABLE-OP-NAMES) 
-	  (:optional (3 :FIXITY)) 
+	  (:optional (3 :NEW-SORT-VARIABLE-BINDER))
+	  (1 :QUALIFIABLE-OP-NAMES) 
+	  (:optional (2 :FIXITY)) 
 	  ":" 
 	  (:optional (4 :SORT-VARIABLE-BINDER)) 
-	  (5 :SORT))
-  (make-op-declaration 1 2 3 4 5 ':left-lcb ':right-lcb))
+	  (5 :SORT)
+	  (:optional 
+	   (:tuple "=" (7 :EXPRESSION))))
+  ;; args to make-op-elem are: 
+  ;;  1 qualifiable-op-names 
+  ;;  2 optional-fixity 
+  ;;  3 optional-pre-tvs 
+  ;;  4 optional-post-tvs 
+  ;;  5 optional-type 
+  ;;  6 optional-params 
+  ;;  7 optional-def 
+  ;;  8 l 
+  ;;  9 r
+  (make-op-elem 1 2 3 4 5 :unspecified 7 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIXITY ()
   (:tuple (1 :ASSOCIATIVITY) (2 :PRIORITY))
@@ -434,13 +446,23 @@ If we want the precedence to be optional:
 ;;;  TODO: In code: compare op-definition with doc
 (define-sw-parser-rule :OP-DEFINITION ()
   (:tuple "def"
-          (:optional (1 :SORT-VARIABLE-BINDER))
-          (2 :QUALIFIABLE-OP-NAMES)
-          (3 :FORMAL-PARAMETERS)
+          (:optional (3 :SORT-VARIABLE-BINDER))
+          (1 :QUALIFIABLE-OP-NAMES)
+          (6 :FORMAL-PARAMETERS)
           (:optional (:tuple ":" (:optional (4 :SORT-VARIABLE-BINDER)) (5 :SORT)))
           :EQUALS
-          (6 :EXPRESSION))
-  (make-op-definition 1 2 3 4 5 6 ':left-lcb ':right-lcb))
+          (7 :EXPRESSION))
+  ;; args to make-op-elem are: 
+  ;;  1 qualifiable-op-names 
+  ;;  2 optional-fixity 
+  ;;  3 optional-pre-tvs 
+  ;;  4 optional-post-tvs 
+  ;;  5 optional-type 
+  ;;  6 optional-params 
+  ;;  7 optional-def 
+  ;;  8 l 
+  ;;  9 r
+  (make-op-elem 1 :unspecified 3 4 5 6 7 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETERS ()
   (:repeat* :FORMAL-PARAMETER))

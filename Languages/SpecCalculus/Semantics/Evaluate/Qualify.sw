@@ -123,11 +123,11 @@ SpecCalc qualifying spec
 	  Import ((Qualify (sp_tm, new_q), noPos),
 		  sp,
 		  qualifySpecElements new_q immune_ids els)
-      | Op      qid -> Op      (qualifyOpId   new_q immune_ids qid)
-      | OpDef   qid -> OpDef   (qualifyOpId   new_q immune_ids qid)
-      | Sort    qid -> Sort    (qualifySortId new_q qid)
-      | SortDef qid -> SortDef (qualifySortId new_q qid)
-      | Property(pt, qid, tvs, fmla) ->
+      | Op      (qid,def?) -> Op      (qualifyOpId   new_q immune_ids qid, def?)
+      | OpDef   qid        -> OpDef   (qualifyOpId   new_q immune_ids qid)
+      | Sort    qid        -> Sort    (qualifySortId new_q qid)
+      | SortDef qid        -> SortDef (qualifySortId new_q qid)
+      | Property (pt, qid, tvs, fmla) ->
 	%% Translation can cause names to become duplicated, but won't remove duplicates
 	let new_name = qualifyPropertyId new_q qid in
 	let newProp = (pt, new_name, tvs, fmla) in
