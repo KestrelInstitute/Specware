@@ -5,7 +5,7 @@
  ("Bug 0105 A: The new-style type quantifications in claim definitions are ambiguous"
   :show   "QuantifiedAxiom#A"
   :output '(";;; Elaborating spec at $TESTDIR/QuantifiedAxiom#A"
-	    ""
+	    (:optional " ")
 	    "spec"
 	    (:optional " ")
 	    " op  f infixl 22 : [a] List(a) * a -> Integer"
