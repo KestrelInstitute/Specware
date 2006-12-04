@@ -1603,11 +1603,26 @@ TypeChecker qualifying spec
       | QuotientPat (pat, qid, pos) ->
 	let v = freshMetaTyVar ("QuotientPat", pos) in
         let (pat, env, seenVars) = elaboratePatternRec (env, pat, v, seenVars) in
-        let _ = case elaborateSort (env, Base (qid, [], pos), sort1) of
-                  | Quotient _ -> ()
-                  | _ -> error (env, "In quotient pattern, " ^ toString qid ^ " doesn't refer to a quotient type", pos)
-        in
-          (QuotientPat (pat, qid, pos), env, seenVars)
+        (case findTheSort (env.internal, qid) of
+           | Some info ->
+             (case unpackFirstSortDef info of
+                | (tvs, Quotient (base_body, equiv, _)) ->
+                  %% In general, base_body and equiv will have free references to the tvs
+                  %% TODO: More checking needed here?
+                  (QuotientPat (pat, qid, pos), env, seenVars)
+                | _ ->
+                  let ss = toString qid in
+                  (error (env, 
+                          "In pattern quotient[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
+                          pos);
+                   (QuotientPat (pat, qid, pos), env, seenVars)))
+
+           | _ ->
+             let ss = toString qid in
+             (error (env, 
+                     "In pattern quotient[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
+                     pos);
+              (QuotientPat (pat, qid, pos), env, seenVars)))
 
       | RestrictedPat (pat, term, pos) ->
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort1, seenVars) in

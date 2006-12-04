@@ -520,7 +520,11 @@ MetaSlang qualifying spec
      | NatPat       (n,       a) -> mkABase  (Qualified ("Nat",     "Nat"),     [], a)
      | StringPat    (_,       a) -> mkABase  (Qualified ("String",  "String"),  [], a)
      | CharPat      (_,       a) -> mkABase  (Qualified ("Char",    "Char"),    [], a)
-     | QuotientPat  (p, qid,  a) -> fail ("patternSort: Don't know how to lift name " ^ toString qid ^ " to a quotient sort")  % TODO
+     | QuotientPat  (p, qid,  a) -> mkABase  (qid,                              [], a)
+       %% WARNING:
+       %% The result for QuotientPat is missing potential tyvars (it simply uses []),
+       %% so users of that result must be prepared to handle that discrepency between 
+       %% this result and the actual type referenced.
      | RestrictedPat(p, t,    a) ->
        %% Subsort  (patternSort p,Lambda([(p,mkTrueA a,t)],a),a)
        %% Subsort is correct but would require generalization in Lambda case of termSort
