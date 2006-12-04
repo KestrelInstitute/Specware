@@ -954,7 +954,7 @@ IsaTermPrinter qualifying spec
       | CharPat (chr,_) \_rightarrow prString (Char.toString chr)
       | NatPat (int,_) \_rightarrow prString (Nat.toString int)      
       | QuotientPat (pat,qid,_) \_rightarrow 
-        prBreak 0 [prString ("(quotient[" ^ toString qid ^ "]"),
+        prBreak 0 [prString ("(quotient[" ^ toString qid ^ "] "),
                    ppPattern c pat,
                    prString ")"]
       | RestrictedPat (pat,term,_) \_rightarrow 

@@ -377,10 +377,10 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Iff           -> ppString "<=>"
       | Equals        -> ppString "="
       | NotEquals     -> ppString "~="
-      | Quotient  qid -> ppGrConcat [ppString "quotient[", ppQualifiedId qid, ppString "]"]
-      | PQuotient qid -> ppGrConcat [ppString "quotient[", ppQualifiedId qid, ppString "]"]
-      | Choose    qid -> ppGrConcat [ppString "choose[",   ppQualifiedId qid, ppString "]"]
-      | PChoose   qid -> ppGrConcat [ppString "choose[",   ppQualifiedId qid, ppString "]"]
+      | Quotient  qid -> ppGrConcat [ppString "quotient[", ppQualifiedId qid, ppString "] "]
+      | PQuotient qid -> ppGrConcat [ppString "quotient[", ppQualifiedId qid, ppString "] "]
+      | Choose    qid -> ppGrConcat [ppString "choose[",   ppQualifiedId qid, ppString "] "]
+      | PChoose   qid -> ppGrConcat [ppString "choose[",   ppQualifiedId qid, ppString "] "]
       | Restrict      -> ppString "restrict"
       | Relax         -> ppString "relax"
       | Op (qid,Nonfix)      -> ppQualifiedId qid

@@ -859,7 +859,7 @@ AnnSpecPrinter qualifying spec
      | QuotientPat (pat, qid, _) -> 
        enclose (enclosed, 
 		blockFill (0, 
-			   [(0, string ("quotient[" ^ toString qid ^ "]")),
+			   [(0, string ("quotient[" ^ toString qid ^ "] ")),
 			    (0, ppPattern context ([0]++ path, false) pat)]))
 
      | RestrictedPat (pat, term, _) ->
