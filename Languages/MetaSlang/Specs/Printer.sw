@@ -996,22 +996,30 @@ AnnSpecPrinter qualifying spec
 			(0, string " "), 
 			(3, ppTerm context ([index, propertyIndex], Top) term)]))
 
- op  ppOpDeclOp: [a] PrContext -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
- def ppOpDeclOp context blankLine? info_res =
-   ppOpDecl context true false blankLine? info_res
+ op  ppOpDecl: [a] PrContext -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
+ def ppOpDecl context blankLine? info_res =
+   let _ = toScreen("\n -- decl : " ^ anyToString info_res.1.names ^ " \n") in
+   ppOpDeclAux context (true, false, false) blankLine? info_res
 
- op  ppOpDeclDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
- def ppOpDeclDef context info_res =
-   ppOpDecl context false true true info_res
+ op  ppOpDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
+ def ppOpDef context info_res =
+   let _ = toScreen("\n -- def : " ^ anyToString info_res.1.names ^ " \n") in
+   ppOpDeclAux context (false, true, false) true info_res
 
- op  ppOpDeclOpDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
- def ppOpDeclOpDef context info_res =
-   ppOpDecl context true true true info_res
+ op  ppOpDeclThenDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
+ def ppOpDeclThenDef context info_res =
+   let _ = toScreen("\n -- decl then def: " ^ anyToString info_res.1.names ^ " \n") in
+   ppOpDeclAux context (true, true, false) true info_res
+
+ op  ppOpDeclWithDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
+ def ppOpDeclWithDef context info_res =
+   let _ = toScreen("\n -- decl WITH def: " ^ anyToString info_res.1.names ^ " \n") in
+   ppOpDeclAux context (true, false, true) true info_res
 
 
- op  ppOpDecl: [a] PrContext -> Boolean -> Boolean -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
+ op  ppOpDeclAux: [a] PrContext -> Boolean * Boolean * Boolean -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
  %% If printDef? is false print "op ..." else print "def ..."
- def ppOpDecl context printOp? printDef? blankLine? (info, (index, lines)) =
+ def ppOpDeclAux context (printOp?, printDef?, printOpWithDef?) blankLine? (info, (index, lines)) =
    let pp : ATermPrinter = context.pp in
    let 
      def ppOpName (qid as Qualified (q, id)) =
@@ -1040,21 +1048,63 @@ AnnSpecPrinter qualifying spec
 		    string "")
    in
    let 
+     def ppDeclWithArgs (tvs, srt, tm) =
+       case (tm, srt) of
+         | (Lambda ([(pat,cond,body)],_), Arrow (dom,rng, apos)) ->
+           [(0, string " ("), 
+            (0, ppPattern context ([index, opIndex], true) (SortedPat (pat, dom, apos))),
+            (0, string ")")]
+           ++
+           ppDeclWithArgs (tvs, rng, body)
+         | _ ->
+           [(0, case info.fixity of
+                  | Nonfix         -> string ""
+                  | Unspecified    -> string ""
+                  | Infix (Left, i)  -> string (" infixl "^Nat.toString i)
+                  | Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
+            (0, string " :"), 
+            (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
+                               (0, string " "), 
+                               (3, ppSort context ([index, opIndex], Top) srt)])),
+            (0, string " ")]
+           ++
+           ppDefAux ([index, defIndex], tm)
+
      def ppDecl tm =
-       let (tvs, srt, _) = unpackTerm tm in
-       (1, blockFill (0, [(0, pp.Op), 
-			  (0, string " "), 
-			  (0, ppOpNames ()), 
-			  (0, case info.fixity of
-				| Nonfix         -> string ""
-				| Unspecified    -> string ""
-				| Infix (Left, i)  -> string (" infixl "^Nat.toString i)
-				| Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
-			  (0, string " :"), 
-			  (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
-					     (0, string " "), 
-					     (3, ppSort context ([index, opIndex], Top) srt)]))
-			  ]))
+       let (tvs, srt, tm) = unpackTerm tm in
+       (1, blockFill (0, 
+                      [(0, pp.Op), 
+                       (0, string " "), 
+                       (0, ppOpNames ())]
+                      ++
+                      (if printOpWithDef? then
+                         case (tm, srt) of
+                           | (Lambda _, Arrow _) ->
+                             ppDeclWithArgs (tvs, srt, tm)
+                           | _ ->
+                             [(0, case info.fixity of
+                                    | Nonfix         -> string ""
+                                    | Unspecified    -> string ""
+                                    | Infix (Left, i)  -> string (" infixl "^Nat.toString i)
+                                    | Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
+                              (0, string " :"), 
+                              (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
+                                                 (0, string " "), 
+                                                 (3, ppSort context ([index, opIndex], Top) srt)])),
+                              (0, string " ")]
+                             ++
+                             ppDefAux ([index, defIndex], tm)
+                       else
+                         [(0, case info.fixity of
+                                | Nonfix         -> string ""
+                                | Unspecified    -> string ""
+                                | Infix (Left, i)  -> string (" infixl "^Nat.toString i)
+                                | Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
+                          (0, string " :"), 
+                          (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
+                                             (0, string " "), 
+                                             (3, ppSort context ([index, opIndex], Top) srt)]))
+                          ])))
        
      def ppDefAux (path, term) = 
        case term of
@@ -1090,7 +1140,7 @@ AnnSpecPrinter qualifying spec
 					  (0, ppOpName (primaryOpName info)),
 					  (0, string " ")]
 				     ))]
-		      ++ prettys))
+                      ++ prettys))
    in
    let (decls, defs) = opInfoDeclsAndDefs info in
    let warnings = 
@@ -1114,8 +1164,8 @@ AnnSpecPrinter qualifying spec
 	 | ([], dfn :: _) -> [dfn]
 	 | _ -> decls
    in
-   let ppDecls = if printOp? then map ppDecl decls else [] in
-   let ppDefs  = if printDef? then map ppDef  defs else [] in
+   let ppDecls = if printOp?  then map ppDecl decls else [] in
+   let ppDefs  = if printDef? then map ppDef  defs  else [] in
    (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
 
  op  ppSortDeclSort: [a] PrContext -> (ASortInfo a * IndexLines) -> IndexLines
@@ -1285,15 +1335,15 @@ AnnSpecPrinter qualifying spec
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo ->
                 if def? then
-                  ppOpDeclOpDef context (opinfo,result) % TODO: discriminate decl-with-def from decl-then-def
+                  ppOpDeclWithDef context (opinfo,result) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  ppOpDeclOp context (~afterOp?) (opinfo,result)
+                  ppOpDecl context (~afterOp?) (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
 	 | OpDef qid ->
 	   (case findTheOp(spc,qid) of
-	      | Some opinfo -> ppOpDeclDef context (opinfo,result)
+	      | Some opinfo -> ppOpDef context (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
@@ -1335,11 +1385,11 @@ AnnSpecPrinter qualifying spec
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
-                  ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
+                  ppOpDeclThenDef context (opinfo,aux(r_els, false, result))
 		else if def? then
-                  ppOpDeclOpDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
+                  ppOpDeclWithDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
+                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid1 ^ "\n") in
 		(0, []))
@@ -1403,15 +1453,15 @@ AnnSpecPrinter qualifying spec
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo ->
                 if def? then
-                  ppOpDeclOpDef context (opinfo,result) % TODO: discriminate decl-with-def from decl-then-def
+                  ppOpDeclThenDef context (opinfo,result) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  ppOpDeclOp context (~afterOp?) (opinfo,result)
+                  ppOpDecl context (~afterOp?) (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
 	 | OpDef qid ->
 	   (case findTheOp(spc,qid) of
-	      | Some opinfo -> ppOpDeclDef context (opinfo,result)
+	      | Some opinfo -> ppOpDef context (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
@@ -1453,11 +1503,11 @@ AnnSpecPrinter qualifying spec
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
-                  ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
+                  ppOpDeclThenDef context (opinfo,aux(r_els, false, result))
 		else if def? then
-                  ppOpDeclOpDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
+                  ppOpDeclWithDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
+                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid1 ^ "\n") in
 		(0, []))

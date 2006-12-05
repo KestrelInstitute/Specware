@@ -101,11 +101,12 @@ AnnSpec qualifying spec
  op  definedTerm? : [b] ATerm b -> Boolean
  def definedTerm? tm =
    case tm of
-     | Any _                 -> false
-     | SortedTerm (tm, _, _) -> definedTerm? tm
-     | Pi         (_, tm, _) -> definedTerm? tm
-     | And        (tms,   _) -> exists definedTerm? tms
-     | _                     -> true
+     | Any        _                  -> false               % op foo : Nat
+     | Lambda     ([(_,_,body)],  _) -> definedTerm? body   % e.g., "op foo (n : Nat) : Nat" will see internal "fn n -> any" as undefined
+     | SortedTerm (tm, _,         _) -> definedTerm? tm
+     | Pi         (_, tm,         _) -> definedTerm? tm
+     | And        (tms,           _) -> exists definedTerm? tms
+     | _                             -> true
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  components of sortInfo

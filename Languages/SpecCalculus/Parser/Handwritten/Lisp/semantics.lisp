@@ -277,21 +277,22 @@
 	 (typ    (if (equal  optional-type :unspecified) 
 		     (freshMetaTypeVar l r)
 		     (cdr (StandardSpec::abstractSort-3 #'namedTypeVar tvs optional-type))))
-	 (defs   (if (equal optional-def :unspecified)
-		     '()
-		     (let* ((typed-term  (make-sorted-term optional-def typ l r))
-			    (typed-term  (if (equal optional-params :unspecified)
-					     typed-term 
-					     (bind-parameters optional-params typed-term l r)))
-			    (tvs-and-typed-term 
-			     (StandardSpec::abstractTerm-3 #'namedTypeVar tvs typed-term))
-			    ;; Since namedTypeVar is the identity function,
-			    ;;  (car tvs-and-typed-term) will just be a copy of tvs
-			    ;;  (cdr tvs-and-typed-term) will be a copy of typed-term,
-			    ;;   with (Base qid) replaced by (TyVar id) where appropriate.
-			    (typed-term  (cdr tvs-and-typed-term)))
-		       (list typed-term))))
-	 (pos    (make-pos l r)))
+	 (pos    (make-pos l r))
+	 ;; ---------------------------------------------------------------
+	 (dfn                (if (equal optional-def :unspecified)
+				 (cons :|Any| pos)
+				 optional-def))
+	 (typed-term         (make-sorted-term dfn typ l r))
+	 (typed-term         (if (equal optional-params :unspecified)
+				  typed-term 
+				  (bind-parameters optional-params typed-term l r)))
+	 (tvs-and-typed-term (StandardSpec::abstractTerm-3 #'namedTypeVar tvs typed-term))
+	 ;; Since namedTypeVar is the identity function,
+	 ;;  (car tvs-and-typed-term) will just be a copy of tvs
+	 ;;  (cdr tvs-and-typed-term) will be a copy of typed-term,
+	 ;;   with (Base qid) replaced by (TyVar id) where appropriate.
+	 (typed-term         (cdr tvs-and-typed-term))
+	 (defs               (list typed-term)))
     (SPECCALC::mkOpSpecElem-6 names fixity tvs typ defs pos)))
 
 (defun bind-parameters (params term l r)

@@ -387,6 +387,7 @@
   (:tuple "op" 
 	  (:optional (3 :NEW-SORT-VARIABLE-BINDER))
 	  (1 :QUALIFIABLE-OP-NAMES) 
+          (:optional (6 :FORMAL-PARAMETERS))
 	  (:optional (2 :FIXITY)) 
 	  ":" 
 	  (:optional (4 :SORT-VARIABLE-BINDER)) 
@@ -403,7 +404,7 @@
   ;;  7 optional-def 
   ;;  8 l 
   ;;  9 r
-  (make-op-elem 1 2 3 4 5 :unspecified 7 ':left-lcb ':right-lcb))
+  (make-op-elem 1 2 3 4 5 6 7 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIXITY ()
   (:tuple (1 :ASSOCIATIVITY) (2 :PRIORITY))
