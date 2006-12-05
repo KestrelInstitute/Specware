@@ -998,22 +998,18 @@ AnnSpecPrinter qualifying spec
 
  op  ppOpDecl: [a] PrContext -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
  def ppOpDecl context blankLine? info_res =
-   let _ = toScreen("\n -- decl : " ^ anyToString info_res.1.names ^ " \n") in
    ppOpDeclAux context (true, false, false) blankLine? info_res
 
  op  ppOpDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
  def ppOpDef context info_res =
-   let _ = toScreen("\n -- def : " ^ anyToString info_res.1.names ^ " \n") in
    ppOpDeclAux context (false, true, false) true info_res
 
  op  ppOpDeclThenDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
  def ppOpDeclThenDef context info_res =
-   let _ = toScreen("\n -- decl then def: " ^ anyToString info_res.1.names ^ " \n") in
    ppOpDeclAux context (true, true, false) true info_res
 
  op  ppOpDeclWithDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
  def ppOpDeclWithDef context info_res =
-   let _ = toScreen("\n -- decl WITH def: " ^ anyToString info_res.1.names ^ " \n") in
    ppOpDeclAux context (true, false, true) true info_res
 
 
