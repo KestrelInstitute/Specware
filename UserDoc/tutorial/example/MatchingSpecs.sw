@@ -35,6 +35,13 @@ WordMatching = spec
       pos + length wrd <= length msg &&
       (fa(i:Nat) i < length wrd =>
          symb_matches?(nth(wrd,i), nth(msg,pos+i)))
+  proof Isa word_matches_at?_Obligation_subsort
+  apply(auto)
+  end-proof
+
+  proof Isa word_matches_at?_Obligation_subsort0
+  apply(auto)
+  end-proof
 
 endspec
 
