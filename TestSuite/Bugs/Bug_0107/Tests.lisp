@@ -5,23 +5,19 @@
  ("Bug 0107 : Bogus Nil prints as []"
   :show   "BogusNil"
   :output '(";;; Elaborating spec at $TESTDIR/BogusNil"
-	    ""
-	    "spec  "
+	    (:optional "")
+	    "spec"
 	    " type NotList(a) =  | Cons a * NotList(a) | Nil"
-	    " "
-	    " op  bogus_nil : NotList(Nat)"
-	    " def bogus_nil = Nil"
-	    " "
-	    " op  bogus_cons : NotList(Nat)"
-	    " def bogus_cons = Cons(4, Cons(5, Cons(6, bogus_nil)))"
-	    " "
-	    " op  true_nil : List(Nat)"
-	    " def true_nil = []"
-	    " "
-	    " op  true_cons : List(Nat)"
-	    " def true_cons = [1, 2, 3]"
+	    (:optional "")
+	    " op  bogus_nil : NotList(Nat) = Nil"
+	    (:optional "")
+	    " op  bogus_cons : NotList(Nat) = Cons(4, Cons(5, Cons(6, bogus_nil)))"
+	    (:optional "")
+	    " op  true_nil : List(Nat) = []"
+	    (:optional "")
+	    " op  true_cons : List(Nat) = [1, 2, 3]"
 	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+	    (:optional "")))
 
  )

@@ -10,8 +10,7 @@
 	    (:optional " ")
 	    " op  f infixl 22 : [a] List(a) * a -> Integer"
 	    (:optional " ")
-	    " op i : Nat"
-	    " def i = 123"
+	    " op i : Nat = 123"
 	    (:optional " ")
 	    " axiom A is [i] f 3 = 0"
 	    "endspec"
@@ -37,8 +36,7 @@
 	    (:optional " ")
 	    " op  f infixl 22 : [a] a -> Integer"
 	    (:optional " ")
-	    " op i : Nat"
-	    " def i = 123"
+	    " op  i : Nat = 123"
 	    (:optional " ")
 	    " axiom A is [i] f(3) = 0"
 	    "endspec"

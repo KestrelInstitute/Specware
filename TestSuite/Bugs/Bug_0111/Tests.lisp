@@ -13,18 +13,16 @@
 	    (:optional "")
 	    " op  ww : Nat -> Nat"
 	    (:optional "")
-	    " op  ff : Nat -> Integer"
-	    " def ff xx0 = xx0 + xx"
+	    " op  ff (xx0 : Nat) : Integer = xx0 + xx"
+	    (:optional "")
 	    " axiom foo is fa(xx0 : Nat) xx0 = xx0 + xx"
 	    (:optional "")
-	    " op  g : Nat -> Integer"
-	    " def g n = let xx0 = n in "
-	    "           xx0 + xx"
+	    " op  g (n : Nat) : Integer = let xx0 = n in "
+	    "                             xx0 + xx"
 	    (:optional "")
-	    " op  h : Integer -> Integer"
-	    " def h n = let def ww0 n = n"
-	    "           in "
-	    "           ww0 n + ww n"
+	    " op  h (n : Integer) : Integer  = let def ww0 n = n"
+	    "                                  in"
+	    "                                  ww0 n + ww n"
 	    (:optional "")
 	    "endspec"
 	    (:optional "")
@@ -41,19 +39,16 @@
 	    (:optional "")
 	    " op  bb : Nat -> Nat"
 	    (:optional "")
-	    " op  ff : Nat -> Integer"
-	    " def ff xx0 = xx0 + aa"
+	    " op  ff (xx0 : Nat) : Integer = xx0 + aa"
 	    (:optional "")
 	    " axiom foo is fa(xx0 : Nat) xx0 = xx0 + aa"
 	    (:optional "")
-	    " op  g : Nat -> Integer"
-	    " def g n = let xx0 = n in "
-	    "           xx0 + aa"
+	    " op  g (n : Nat) : Integer = let xx0 = n in "
+	    "                             xx0 + aa"
 	    (:optional "")
-	    " op  h : Integer -> Integer"
-	    " def h n = let def ww0 n = n"
-	    "           in "
-	    "           ww0 n + bb n"
+	    " op  h (n : Integer) : Integer = let def ww0 n = n"
+	    "                                 in"
+	    "                                 ww0 n + bb n"
 	    (:optional "")
 	    "endspec"
 	    (:optional "")
