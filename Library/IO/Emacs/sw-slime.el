@@ -356,12 +356,13 @@ to end end."
 
 
 (defun slime-repl-update-banner ()
-  (let* ((banner (format "%s  Port: %s  Pid: %s
-; Specware %s"
+  (let* ((banner (format "Specware %s on %s %s"
+			 (sw:eval-in-lisp "(if (boundp 'Specware-version) Specware-version \"\")")
                          (slime-lisp-implementation-type)
-                         (slime-connection-port (slime-connection))
-                         (slime-pid)
-			 (sw:eval-in-lisp "(if (boundp 'Specware-version) Specware-version \"\")")))
+			 (slime-lisp-implementation-version)
+                         ;(slime-connection-port (slime-connection))
+                         ;(slime-pid)
+			 ))
          ;; Emacs21 has the fancy persistent header-line.
          (use-header-p (and slime-header-line-p
                             (boundp 'header-line-format)))
