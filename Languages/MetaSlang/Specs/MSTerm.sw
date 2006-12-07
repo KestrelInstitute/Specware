@@ -279,27 +279,41 @@ MS qualifying spec
 
  %% Patterns ...
 
- op mkVarPat    : Var           -> Pattern
- op mkNatPat    : Nat           -> Pattern
- op mkCharPat   : Char          -> Pattern
- op mkBoolPat   : Boolean       -> Pattern
- op mkStringPat : String        -> Pattern
- op mkRecordPat : List(Id * Pattern) -> Pattern
- op mkTuplePat  : List Pattern  -> Pattern
- op mkWildPat   : Sort          -> Pattern
+ op mkAliasPat      : Pattern * Pattern          -> Pattern
+ op mkVarPat        : Var                        -> Pattern
+ op mkEmbedPat      : Id * Option Pattern * Sort -> Pattern
+ op mkRecordPat     : List(Id * Pattern)         -> Pattern
+ op mkTuplePat      : List Pattern               -> Pattern
+ op mkWildPat       : Sort                       -> Pattern
+ op mkBoolPat       : Boolean                    -> Pattern
+ op mkNatPat        : Nat                        -> Pattern
+ op mkStringPat     : String                     -> Pattern
+ op mkCharPat       : Char                       -> Pattern
+ op mkQuotientPat   : Pattern * SortName         -> Pattern
+ op mkRestrictedPat : Pattern * Term             -> Pattern
+ op mkSortedPat     : Pattern * Sort             -> Pattern
+
  op patternToList: fa(a) APattern a -> List(APattern a)
 
- def mkNatPat    n    = NatPat    (n,              noPos)
- def mkBoolPat   b    = BoolPat   (b,              noPos)
- def mkCharPat   c    = CharPat   (c,              noPos)
- def mkStringPat s    = StringPat (s,              noPos)
- def mkVarPat    v    = VarPat    (v,              noPos)
- def mkWildPat   s    = WildPat   (s,              noPos)
- def mkRecordPat pats = RecordPat (pats, noPos)
- def mkTuplePat  pats =
-   case pats of
-     | [p] -> p
-     | _ -> RecordPat (tagTuple(pats), noPos)
+ def mkAliasPat      (p1, p2)     = AliasPat      (p1, p2,        noPos)
+ def mkVarPat        v            = VarPat        (v,             noPos)
+ def mkEmbedPat      (id, pat, s) = EmbedPat      (id, pat, s,    noPos) 
+
+ def mkRecordPat     pats         = RecordPat     (pats,          noPos)
+ def mkTuplePat      pats     = case pats of
+                                  | [p] -> p
+                                  | _ -> 
+                                    RecordPat     (tagTuple pats, noPos)
+
+ def mkWildPat       s            = WildPat       (s,             noPos)
+ def mkBoolPat       b            = BoolPat       (b,             noPos)
+ def mkNatPat        n            = NatPat        (n,             noPos)
+ def mkStringPat     s            = StringPat     (s,             noPos)
+ def mkCharPat       c            = CharPat       (c,             noPos)
+ def mkQuotientPat   (p, qid)     = QuotientPat   (p, qid,        noPos)
+ def mkRestrictedPat (p, tm)      = RestrictedPat (p, tm,         noPos)
+ def mkSortedPat     (p, typ)     = SortedPat     (p, typ,        noPos)
+
  def patternToList t =
     case t of
       | RecordPat (fields,_) ->
