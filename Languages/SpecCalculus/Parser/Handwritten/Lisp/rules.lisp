@@ -469,7 +469,19 @@ If we want the precedence to be optional:
   (:repeat* :FORMAL-PARAMETER))
 
 (define-sw-parser-rule :FORMAL-PARAMETER ()
-  :CLOSED-PATTERN)
+  (:anyof :CLOSED-PATTERN :RESTRICTED-FORMAL-PATTERN))
+
+(define-sw-parser-rule :RESTRICTED-FORMAL-PATTERN ()
+  (:tuple "(" (1 :FORMAL-PATTERN) "|" (2 :EXPRESSION) ")")  
+  (make-restricted-formal-pattern 1 2   ':left-lcb ':right-lcb) 
+  :documentation "Restricted pattern")
+
+(define-sw-parser-rule :FORMAL-PATTERN ()
+  (:anyof
+   ((:tuple (1 :PATTERN))                 1                                             :documentation "Single formal parameter")
+   ((:tuple (1 (:repeat++ :PATTERN ","))) (make-tuple-pattern 1 ':left-lcb ':right-lcb) :documentation "Multiple formal parameters")
+   ))
+  
 
 ;;; ------------------------------------------------------------------------
 ;;;  CLAIM-DEFINITION

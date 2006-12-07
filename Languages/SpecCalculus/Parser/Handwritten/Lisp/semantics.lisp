@@ -285,7 +285,7 @@
 	 (typed-term         (make-sorted-term dfn typ l r))
 	 (typed-term         (if (equal optional-params :unspecified)
 				  typed-term 
-				  (bind-parameters optional-params typed-term l r)))
+				  (bind-op-parameters optional-params typed-term l r)))
 	 (tvs-and-typed-term (StandardSpec::abstractTerm-3 #'namedTypeVar tvs typed-term))
 	 ;; Since namedTypeVar is the identity function,
 	 ;;  (car tvs-and-typed-term) will just be a copy of tvs
@@ -295,13 +295,18 @@
 	 (defs               (list typed-term)))
     (SPECCALC::mkOpSpecElem-6 names fixity tvs typ defs pos)))
 
-(defun bind-parameters (params term l r)
+(defun bind-op-parameters (params term l r)
   (if (null params)
       term
-    (cons :|Lambda|
-          (cons (list (vector (car params) (MS::mkTrue-0)
-                              (bind-parameters (cdr params) term l r)))
-                (make-pos l r)))))
+      (ms::mkLambda-2 
+       (car params)
+       (bind-op-parameters (cdr params) term l r))))
+
+(defun make-restricted-formal-pattern (pat pred l r)
+  (ms::mkSortedPat-2
+   pat 
+   (ms::mkSubsort-2 (freshMetaTypeVar l r)
+		    (ms::mkLambda-2 pat pred))))
 
 (defun make-fixity (associativity priority l r)
   (declare (ignore l r))
