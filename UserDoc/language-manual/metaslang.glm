@@ -446,7 +446,8 @@ However, the following <emphasis>reserved symbols</emphasis> have a
 special meaning and must not be used for `simple-names:
 &reswords;
 They each count as a single `symbol, and no whitespace is
-allowed inside any reserved symbol.
+allowed inside any reserved symbol. The symbols beginning with [[\_]]
+are for use with X-Symbol as described in the following section.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -472,6 +473,22 @@ These are just conventions that users are free to follow or
 ignore, but in particular some convention distinguishing 
 `constructors from `ops and `local-variables is
 recommended.
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section id="X-Symbol"><title>X-Symbol</title>
+<para>
+X-Symbol is an &xemacs package that allows ascii strings to encode non-ascii
+symbols. Specware files contain the ascii strings but when displayed
+in an XEmacs in with X-Symbol mode, the special symbol is shown. For example, the
+&Specware symbol [[\_forall]] is displayed as &forall; and [[\_or]] is
+displayed as &or;. Many of the mathematical symbols have x-symbol
+aliases, for example, [[fa]] and [[\_forall]] (displayed &forall; by
+X-Symbol) are alternatives for universal quantification, and
+[[\_rightarrow]] (displayed &rarr or <emphasis>&rarr;</emphasis> or &#8594; by X-Symbol) may be used
+anywhere where [[->]] is allowed. The user may use non-reserved
+X-Symbol tokens as symbol names. The available X-Symbols are listed
+under the X-Symbol menu in &xemacs when X-Symbol mode is on.
 </para>
 </section>
 <!-- ***************************************************************** -->

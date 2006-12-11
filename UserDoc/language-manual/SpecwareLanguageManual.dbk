@@ -10,6 +10,25 @@
 
      DO NOT EDIT THE HTM VERSION DIRECTLY!
 -->
+<!ENTITY % ISOtech.module "INCLUDE">
+<![ %ISOtech.module; [
+<!ENTITY % ISOtech PUBLIC
+"ISO 8879:1986//ENTITIES General Technical//EN">
+<!--end of ISOtech.module-->]]>
+<![ %ISOtech.module; [
+%ISOtech;
+]]>
+
+<!ENTITY % ISOnum.module "INCLUDE">
+<![ %ISOnum.module; [
+<!ENTITY % ISOnum PUBLIC
+"ISO 8879:1986//ENTITIES Numeric and Special Graphic//EN">
+<!--end of ISOnum.module-->]]>
+<![ %ISOnum.module; [
+%ISOnum;
+]]>
+
+
 
  <!ENTITY bookinfo SYSTEM "bookinfo.dbk">
  <!ENTITY disclaimer SYSTEM "disclaimer.dbk">
