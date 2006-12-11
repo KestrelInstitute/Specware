@@ -202,15 +202,12 @@ system.</para>
 <para>The content of the <".sw"> files can be edited with any desired
 text editor. A possibility is to use the XEmacs in which the &SShell;
 is running when &Specware; is fired up using <"Specware4 XEmacs">.
-The XEmacs-&Specware; combo can be thought of as a (rather limited)
+The XEmacs-&Specware; combo can be thought of as a limited
 Integrated Development Environment (IDE).</para>
 
 <para>Note that unit definitions can be managed without running
 &Specware; at all. As described in the next chapter, &Specware; is
-used to process unit definitions. Future versions of &Specware; will
-provide true IDE functionality: unit definitions will be also managed
-within &Specware;, and the mapping to the file system could be even
-made transparent to the user.</para>
+used to process unit definitions.</para>
 
 </section>  <!-- units definitions are managed outside of specware -->
 
