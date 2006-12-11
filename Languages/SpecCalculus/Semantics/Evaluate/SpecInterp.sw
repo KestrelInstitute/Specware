@@ -6,7 +6,6 @@ SpecCalc qualifying spec {
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import UnitId/Utilities                                % for uidToString, if used...
   import Spec/AccessSpec
-  import Spec/EquivPreds
 
   def SpecCalc.evaluateSpecInterp (domTerm, codTerm, ({med, d2m, c2m}, pos1)) pos2 = 
    {

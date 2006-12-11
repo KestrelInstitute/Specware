@@ -8,7 +8,6 @@ spec
  import /Languages/MetaSlang/Transformations/InstantiateHOFns
  import /Languages/MetaSlang/Transformations/RenameBound
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
- import /Languages/SpecCalculus/Semantics/Evaluate/Spec/EquivPreds
 
  %type SpecElement  = QualifiedId * TyVars * MS.Term 
  type TypeCheckConditions = SpecElements * StringSet.Set
@@ -578,7 +577,7 @@ spec
 		     %let vs = map (fn (VarPat(v,_)) -> v) vs in
 		     (if vs = []
 			then tcc
-			else if equivSort? spc true (oty,ty)
+			else if similarSort? spc (oty,ty) % TODO: A and A|p are similar -- is this desired here?
 			then add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) ->
 								      let tm::_ = patternToTerms(pat) in tm) vs),
 					       mkTuple args)
@@ -597,7 +596,7 @@ spec
 	    (let vs = (getParams p) in
 	     if vs = []
 	       then tcc
-	     else if equivSort? spc true (oty,ty)
+	     else if similarSort? spc (oty,ty) % TODO: A and A|p are similar -- is this desired here?
 	     then add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),
 				    n2)
 	     else addErrorCondition(tcc,gamma,"IllegalRecursion"))

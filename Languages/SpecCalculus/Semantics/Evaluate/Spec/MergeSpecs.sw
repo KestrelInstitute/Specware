@@ -1,7 +1,6 @@
 SpecCalc qualifying spec 
 
  import ../../Environment
- import EquivPreds
  import /Languages/MetaSlang/Specs/Equivalences
 
  op  mergeSortInfo : Spec -> SortMap -> SortInfo -> SortMap

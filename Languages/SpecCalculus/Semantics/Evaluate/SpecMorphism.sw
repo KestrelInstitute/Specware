@@ -2,12 +2,13 @@
 
 \begin{spec}
 SpecCalc qualifying spec {
+  import /Library/Legacy/DataStructures/ListUtilities    % for listUnion
+  import /Languages/MetaSlang/Specs/Equivalences         % equivTerm? etc.
   import Signature 
   import Spec/CoerceToSpec
-  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import UnitId/Utilities                                % for uidToString, if used...
   import Spec/AccessSpec
-  import Spec/EquivPreds
+
 \end{spec}
 
 For morphisms, evaluate the domain and codomain terms, and check
@@ -370,9 +371,7 @@ Should we check to see if qid is in cod_map??
 			    raise (MorphError (pos, msg))
 			| dfn :: _ -> 
 			  let cod_sort = sortInnerSort dfn in
-			  if equivTypes? cod_spec (translated_sort, cod_sort) then
-			    return ()
-			  else if equivSort? cod_spec false (translated_sort, cod_sort) then
+                          if equivSort? cod_spec (translated_sort, cod_sort) then
 			    return ()
 			  else 
 			    let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
@@ -405,9 +404,7 @@ Should we check to see if qid is in cod_map??
 			   raise (MorphError (pos, msg))
 		       else
 			 let cod_sort        = firstOpDefInnerSort cod_info in
-			 if equivTypes? cod_spec (translated_sort, cod_sort) then
-			   return ()
-			 else if equivSort? cod_spec false (translated_sort, cod_sort) then
+			 if equivSort? cod_spec (translated_sort, cod_sort) then
 			   return ()
 			 else
 			   let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 

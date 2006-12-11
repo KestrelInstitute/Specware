@@ -1,6 +1,7 @@
 SpecCalc qualifying spec 
 
- import EquivPreds
+ import ../../Environment
+ import /Languages/MetaSlang/Specs/Elaborate/Utilities % unifySorts
 
  %% compressDefs is called from many places
 
@@ -47,7 +48,7 @@ SpecCalc qualifying spec
 		      % given {A,B,C} = List Nat
 		      %   and {A,B,C} = Nats       
 		      % keep just one version
-		      (exists (fn new_def -> equivSort? spc false (old_def, new_def)) new_defs)) 
+		      (exists (fn new_def -> equivSort? spc (old_def, new_def)) new_defs)) 
 		    then
 		      new_defs
 		  else
@@ -88,7 +89,7 @@ SpecCalc qualifying spec
 		  let old_sort = termSort old_decl in
 		  if exists (fn new_decl -> 
 			     let new_sort = termSort new_decl in
-			     equivSort? spc false (old_sort, new_sort))
+			     equivSort? spc (old_sort, new_sort))
 		            new_decls 
 		    then
 		      new_decls
@@ -168,7 +169,7 @@ SpecCalc qualifying spec
 			      | ([x], [y]) -> 
 			        let xsort = termSort x in
 				let ysort = termSort y in
-			        if equivSort? spc false (xsort, ysort) then
+			        if equivSort? spc (xsort, ysort) then
 				  ambiguous_ops
 				else
 				  ListUtilities.insert (info, ambiguous_ops)

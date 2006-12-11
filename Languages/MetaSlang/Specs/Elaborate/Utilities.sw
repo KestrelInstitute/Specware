@@ -10,8 +10,6 @@ spec
  import /Library/Unvetted/StringUtilities        % search
  import ../Equivalences
 
- op SpecCalc.equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean % defined in EquivPreds, but importing that would be circular
-
  sort Environment = StringMap Spec
  sort LocalEnv = 
       {importMap  : Environment,
@@ -409,6 +407,21 @@ spec
 	  | Unify pairs -> unifyL (env, srt1, srt2, l1, l2, pairs, ignoreSubsorts?, unify)
 	  | notUnify    -> notUnify)
      | _ -> NotUnify (srt1, srt2)
+
+ def AnnSpec.equivSort? spc (s1, s2) =
+   (equivTypes? spc (s1, s2))
+   ||
+   (let env = initialEnv (spc, "internal") in
+    %% treat A and A|p as non-equivalent
+    unifySorts env false s1 s2 )
+
+ def AnnSpec.similarSort? spc (s1, s2) =
+   (equivTypes? spc (s1, s2))
+   ||
+   (let env = initialEnv (spc, "internal") in
+    %% treat A and A|p as similar
+    unifySorts env true s1 s2 )
+
 
   op unifySorts : LocalEnv -> Boolean -> Sort -> Sort -> Boolean
  def unifySorts env ignoreSubsorts? s1 s2 =
