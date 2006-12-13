@@ -31,7 +31,7 @@ def parseCoProductCase spc term =
 	      case t of
 		| IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm1,_),
 			     then_exp,els_exp, _)  ->
-		  if equivTerms? spc (case_tm,case_tm1)
+		  if equivTerm? spc (case_tm,case_tm1)
 		    then let (cases,otherwise_tm) = parseRest els_exp in
 			 (Cons((id,simpSuccess (then_exp,block?)),cases),otherwise_tm)
 		    else ([],Some (simpSuccess (t,block?)))

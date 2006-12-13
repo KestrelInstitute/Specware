@@ -4,6 +4,13 @@ AnnSpec qualifying spec
  import /Languages/MetaSlang/AbstractSyntax/Equalities
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%% Naming convention:  To avoid confusion when both Foo and Foos exist
+ %%%                      (e.g. when type Foos = List Foo), we use
+ %%%                      "equalFoo"  or "equivFoo" to compare two Foo's, and
+ %%%                      "equalFoos" or "equivFoo" to compare two Foos'es.
+ %%%                     This converts less fluently into English, but is 
+ %%%                      ultimately less confusing.
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op  equalSortInfo?: [a] ASortInfo a * ASortInfo a -> Boolean
  def equalSortInfo? (info1, info2) =
@@ -24,19 +31,6 @@ AnnSpec qualifying spec
    propType1 = propType2 && equalTerm? (fm1, fm2) && equalTyVars? (tvs1, tvs2)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- op equivTerms?    : Spec -> MS.Term    * MS.Term    -> Boolean
- op equivTypes?    : Spec -> MS.Sort    * MS.Sort    -> Boolean
- op equivPatterns? : Spec -> MS.Pattern * MS.Pattern -> Boolean
-
- def equivTerms? spc (t1, t2) =
-   equalTerm? (t1,t2)
-
- def equivTypes? spc (t1, t2) =
-   equalSort? (t1,t2)
-
- def equivPatterns? spc (t1, t2) =
-   equalPattern? (t1,t2)
 
  op  sameSpecElement?: [a] ASpec a * ASpecElement a * ASpec a * ASpecElement a -> Boolean
  def sameSpecElement? (s1, e1, s2, e2) =
@@ -107,22 +101,10 @@ AnnSpec qualifying spec
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%      Equivalences, expanding definitions
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% These are patterned after equalTerm? etc. in AnnTerm.sw
-
- op similarSort?  : Spec -> MS.Sort    * MS.Sort    -> Boolean  % A and A|p are similar
- op equivSort?    : Spec -> MS.Sort    * MS.Sort    -> Boolean  % A and A|p are not equivalent
- op equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean
- op equivFun?     : Spec -> MS.Fun     * MS.Fun     -> Boolean
- op equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
- op equivVar?     : Spec -> MS.Var     * MS.Var     -> Boolean
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%      Term Equivalences, expanding definitions
+ %%%      Utilities for comparing structures
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op equivList? : [b] Spec -> List b * List b * (Spec -> b * b -> Boolean) -> Boolean
+ op  equivList? : [b] Spec -> List b * List b * (Spec -> b * b -> Boolean) -> Boolean
  def equivList? spc (x, y, eqFn) =
   (length x) = (length y) &&
   (case (x, y) of
@@ -138,8 +120,28 @@ AnnSpec qualifying spec
      | (Some x1, Some y1) -> eqFn spc (x1, y1)
      | _ -> false
 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%      Equivalences wrt alpha-conversion and type expansion
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean
+ op equivFun?     : Spec -> MS.Fun     * MS.Fun     -> Boolean
+ op equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
+ op equivVar?     : Spec -> MS.Var     * MS.Var     -> Boolean
+
+ op similarSort?  : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are similar
+ op equivSort?    : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are not equivalent
+
+ op equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean
+ def equivType? spc (t1, t2) =
+   equalSort? (t1,t2)
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%      Terms
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
  def equivTerm? spc (t1, t2) =
-   (equivTerms? spc (t1, t2))
+   (equalTerm? (t1, t2))
    ||
    (case (t1, t2) of
 
@@ -243,7 +245,7 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  def equivPattern? spc (p1,p2) =
-   (equivPatterns? spc (p1, p2))
+   (equalPattern? (p1, p2))
    ||
    (case (p1, p2) of
      | (AliasPat    (x1, y1,      _),
@@ -259,9 +261,9 @@ AnnSpec qualifying spec
 
      | (RecordPat   (xs1,         _),
         RecordPat   (xs2,         _)) -> equivList? spc  (xs1, xs2, 
-							  fn spc -> fn ((label1,x1), (label2,x2)) -> 
-							  label1 = label2 && 
-							  equivPattern? spc (x1, x2))
+ 	 	 	 	 	 	 	  fn spc -> fn ((label1,x1), (label2,x2)) -> 
+ 	 	 	 	 	 	 	  label1 = label2 && 
+ 	 	 	 	 	 	 	  equivPattern? spc (x1, x2))
 
      | (WildPat     (s1,          _),
         WildPat     (s2,          _)) -> equivSort? spc (s1,s2)

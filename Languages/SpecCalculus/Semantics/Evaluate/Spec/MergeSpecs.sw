@@ -18,7 +18,7 @@ SpecCalc qualifying spec
 	   let (new_decls, new_defs) = sortInfoDeclsAndDefs new_info in
 	   let combined_decls =
                foldl (fn (new_decl, combined_decls) ->
-		      if exists (fn old_decl -> equivTypes? spc (new_decl, old_decl)) combined_decls then
+		      if exists (fn old_decl -> equivType? spc (new_decl, old_decl)) combined_decls then
 			combined_decls
 		      else
 			cons (new_decl, combined_decls))
@@ -27,7 +27,7 @@ SpecCalc qualifying spec
 	   in
 	   let combined_defs =
                foldl (fn (new_def, combined_defs) ->
-		      if exists (fn old_def -> equivTypes? spc (new_def, old_def)) combined_defs then
+		      if exists (fn old_def -> equivType? spc (new_def, old_def)) combined_defs then
 			combined_defs
 		      else
 			cons (new_def, combined_defs))
@@ -69,7 +69,7 @@ SpecCalc qualifying spec
 	     let (new_decls, new_defs) = opInfoDeclsAndDefs new_info in
 	     let combined_decls =
 	         foldl (fn (new_decl, combined_decls) ->
-			if exists (fn old_decl -> equivTerms? spc (new_decl, old_decl)) combined_decls then
+			if exists (fn old_decl -> equivTerm? spc (new_decl, old_decl)) combined_decls then
 			  combined_decls
 			else
 			  cons (new_decl, combined_decls))
@@ -78,7 +78,7 @@ SpecCalc qualifying spec
 	     in
 	     let combined_defs =
 	         foldl (fn (new_def, combined_defs) ->
-			if exists (fn old_def -> equivTerms? spc (new_def, old_def)) combined_defs then
+			if exists (fn old_def -> equivTerm? spc (new_def, old_def)) combined_defs then
 			  combined_defs
 			else
 			  cons (new_def, combined_defs))

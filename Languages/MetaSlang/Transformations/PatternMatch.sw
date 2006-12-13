@@ -320,7 +320,7 @@ PatternMatch qualifying spec
       case (pat1,pat2)
         of (EmbedPat(e1,_,_,_),EmbedPat(e2,_,_,_)) -> e1 = e2
 	 | (RecordPat _,RecordPat _) -> true
-	 | _ -> equivPatterns? spc (pat1,pat2)
+	 | _ -> equivPattern? spc (pat1,pat2)
       
 
 (*

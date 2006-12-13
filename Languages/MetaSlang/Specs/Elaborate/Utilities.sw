@@ -409,14 +409,14 @@ spec
      | _ -> NotUnify (srt1, srt2)
 
  def AnnSpec.equivSort? spc (s1, s2) =
-   (equivTypes? spc (s1, s2))
+   (equivType? spc (s1, s2))
    ||
    (let env = initialEnv (spc, "internal") in
     %% treat A and A|p as non-equivalent
     unifySorts env false s1 s2 )
 
  def AnnSpec.similarSort? spc (s1, s2) =
-   (equivTypes? spc (s1, s2))
+   (equivType? spc (s1, s2))
    ||
    (let env = initialEnv (spc, "internal") in
     %% treat A and A|p as similar
@@ -490,7 +490,7 @@ spec
    let pos2 = sortAnn s2  in
    let srt1 = withAnnS (unlinkSort s1, pos1) in % ? DerivedFrom pos1 ?
    let srt2 = withAnnS (unlinkSort s2, pos2) in % ? DerivedFrom pos2 ?
-   if equivTypes? spc (srt1, srt2) then 
+   if equivType? spc (srt1, srt2) then 
      Unify pairs 
    else
      case (srt1, srt2) of
@@ -542,8 +542,8 @@ spec
 	  if exists (fn (p1, p2) -> 
 		     %% p = (srt1, srt2) 
 		     %% need predicate that chases metavar links
-		     equivTypes? spc (p1, srt1) &
-		     equivTypes? spc (p2, srt2))
+		     equivType? spc (p1, srt1) &
+		     equivType? spc (p2, srt2))
 	            pairs 
 	    then
 	      Unify pairs
@@ -552,7 +552,7 @@ spec
 	  else 
 	    let s1x = unfoldSort (env, srt1) in
 	    let s2x = unfoldSort (env, srt2) in
-	    if equivTypes? spc (s1, s1x) & equivTypes? spc (s2x, s2) then
+	    if equivType? spc (s1, s1x) & equivType? spc (s2x, s2) then
 	      NotUnify  (srt1, srt2)
 	    else 
 	      unify (env, withAnnS (s1x, pos1), 
@@ -571,7 +571,7 @@ spec
 	| (MetaTyVar (mtv, _), _) -> 
 	   let s3 = unfoldSort (env, srt2) in
 	   let s4 = unlinkSort s3 in
-	   if equivTypes? spc (s4, s1) then
+	   if equivType? spc (s4, s1) then
 	     Unify pairs
 	   else if occurs (mtv, s4) then
 	     NotUnify (srt1, srt2)
@@ -582,7 +582,7 @@ spec
 	| (s3, MetaTyVar (mtv, _)) -> 
 	  let s4 = unfoldSort (env, s3) in
 	  let s5 = unlinkSort s4 in
-	  if equivTypes? spc (s5, s2) then
+	  if equivType? spc (s5, s2) then
 	    Unify pairs
 	  else if occurs (mtv, s5) then
 	    NotUnify (srt1, srt2)
@@ -611,13 +611,13 @@ spec
 	      | (ty, Subsort (ty2, _, _)) -> unify (env, ty, ty2, pairs, ignoreSubsorts?)
 	      | (Base _, _) -> 
 	        let s1x = unfoldSort (env, srt1) in
-		if equivTypes? spc (s1, s1x) then
+		if equivType? spc (s1, s1x) then
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s1x, s2, pairs, ignoreSubsorts?)
 	      | (_, Base _) ->
 		let s3 = unfoldSort (env, srt2) in
-		if equivTypes? spc (s2, s3) then
+		if equivType? spc (s2, s3) then
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s1, s3, pairs, ignoreSubsorts?)
@@ -631,13 +631,13 @@ spec
 		  NotUnify (srt1, srt2)
 	      | (Base _, _) -> 
 	        let  s3 = unfoldSort (env, srt1) in
-		if equivTypes? spc (s1, s3) then 
+		if equivType? spc (s1, s3) then 
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s3, s2, pairs, ignoreSubsorts?)
 	      | (_, Base _) ->
 		let s3 = unfoldSort (env, srt2) in
-		if equivTypes? spc (s2, s3) then
+		if equivType? spc (s2, s3) then
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s1, s3, pairs, ignoreSubsorts?)
@@ -736,7 +736,7 @@ spec
    let spc = env.internal in
    let 
      def aux x =
-       equivTypes? spc (x, y) ||
+       equivType? spc (x, y) ||
        (let x = unfoldSort (env, x) in
         case x of
 	  | Subsort (x, _, _) -> aux x 

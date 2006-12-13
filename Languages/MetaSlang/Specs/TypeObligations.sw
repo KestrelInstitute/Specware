@@ -483,7 +483,7 @@ spec
 
  def returnPatternRec(pairs,gamma,M,tau,sigma) =
      let spc = gamma.3 in
-     if equivTypes? spc (tau,sigma) or 
+     if equivType? spc (tau,sigma) or 
 	exists (fn p -> p = (tau,sigma)) pairs
 	then (gamma,M)
      else
@@ -680,7 +680,7 @@ spec
 
  def subtypeRec(pairs,tcc,gamma,M,tau,sigma) =
      let spc = gamma.3 in
-     if equivTypes? spc (tau,sigma) or 
+     if equivType? spc (tau,sigma) or 
 	exists (fn p -> p = (tau,sigma)) pairs
 	then tcc
      else
@@ -906,7 +906,7 @@ spec
 						fn s ->
 						case s of
 						  | Quotient(_,r,_) ->
-						    if List.exists (fn rx -> equivTerms? spc (r,rx))
+						    if List.exists (fn rx -> equivTerm? spc (r,rx))
 							 (!quotientRelations) then ()
 						    else 
 						    let _ = (quotientRelations := Cons(r,!quotientRelations)) in 

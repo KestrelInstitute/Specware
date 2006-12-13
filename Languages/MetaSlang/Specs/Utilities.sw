@@ -1141,11 +1141,11 @@ Utilities qualifying spec
 	  else None)
       | Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) ->
 	if evalConstant?(N1) & evalConstant?(N2)
-	  then Some(mkBool(equivTerms? spc (N1,N2)))
+	  then Some(mkBool(equivTerm? spc (N1,N2)))
 	  else None
       | Apply(Fun(NotEquals,_,_),Record([(_,N1),(_,N2)], _),_) ->
 	if evalConstant?(N1) & evalConstant?(N2)
-	  then Some(mkBool(~ (equivTerms? spc (N1,N2))))
+	  then Some(mkBool(~ (equivTerm? spc (N1,N2))))
 	  else None
       | Apply(Fun(Not,  _,_),arg,                       _) -> 
 	  (case arg of
@@ -1309,24 +1309,26 @@ Utilities qualifying spec
 			    | ((Some ss1),(Some ss2)) -> match(ss1,ss2,pairs))
 		       else None)
 	  | (Quotient(ty,t1,_),Quotient(ty2,t2,_)) -> 
-	    if equalTerm?(t1,t2)
-	      then match(ty,ty2,pairs)
-	      else None
+	    if equalTerm?(t1,t2) then % not equivTerm?
+              match(ty,ty2,pairs)
+            else 
+              None
 	  | (Subsort(ty,t1,_),Subsort(ty2,t2,_)) ->
-	    if equalTerm?(t1,t2)
-	      then match(ty,ty2,pairs)
-	      else None
+	    if equalTerm?(t1,t2) then % not equivTerm?
+              match(ty,ty2,pairs)
+            else 
+              None
 	  | (Base(id,ts,pos1),Base(id2,ts2,pos2)) ->
 	    if id = id2
 	      then typeMatchL(ts,ts2,pairs,match)
 	      else
 		let s2x = unfoldBase(spc,srt2) in
-		if equivTypes? spc (srt2,s2x)
+		if equivType? spc (srt2,s2x)
 		  then Some pairs
 		else match(srt1,s2x,pairs)
 	  | (_,Base _) ->
 	    let s2x = unfoldBase(spc,srt2) in
-	    if equivTypes? spc (srt2,s2x)
+	    if equivType? spc (srt2,s2x)
 	     then Some pairs
 	     else match(srt1,s2x,pairs)
 	  | _ -> None

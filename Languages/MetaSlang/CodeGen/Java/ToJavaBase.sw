@@ -1026,14 +1026,14 @@ def findMatchingUserTypeM srt =
  def findMatchingRestritionType(spc,srt) =
    case srt of
      | Arrow (X0, ssrt as Subsort (X1, pred, _), _) -> 
-       if equivTypes? spc (X0, X1) then
+       if equivType? spc (X0, X1) then
 	 let srts = sortsAsList spc in
 	 let srtPos = sortAnn ssrt in
 	 let foundSrt = 
 	     find (fn (_, _, info) ->
 		   if definedSortInfo? info then
 		     let srt = firstSortDefInnerSort info in
-		     equivTypes? spc (ssrt, srt)
+		     equivType? spc (ssrt, srt)
 		   else
 		     false)
 	          srts 
@@ -1090,7 +1090,7 @@ def insertRestricts(spc,dom,args) =
 	  let b = termAnn(argterm) in
           let srt  = castNatToInteger srt  in
           let tsrt = castNatToInteger tsrt in
-	  if equivTypes? spc (srt,tsrt) then
+	  if equivType? spc (srt,tsrt) then
 	    let rsrt = Arrow(tsrt,domsrt,b) in
 	    let newarg = Apply(Fun(Restrict,rsrt,b),argterm,b) in
 	    %let _ = writeLine("restrict "^printTerm(argterm)^" to "^printTerm(newarg)) in
@@ -1161,7 +1161,7 @@ def addProductSortToEnv srt =
   {
    spc <- getEnvSpec;
    productSorts <- getProductSorts;
-   if exists (fn(psrt) -> equivTypes? spc (srt,psrt)) productSorts then
+   if exists (fn(psrt) -> equivType? spc (srt,psrt)) productSorts then
      return ()
    else
      addProductSort srt
