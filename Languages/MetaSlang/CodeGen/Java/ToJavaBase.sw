@@ -1074,6 +1074,12 @@ def findMatchingUserTypeM srt =
 op insertRestricts: Spec * List Sort * List MS.Term -> List MS.Term
 def insertRestricts(spc,dom,args) =
   let
+    def castNatToInteger srt =
+      case srt of
+        | Base(Qualified("Nat","Nat"),   [],b) -> Base(Qualified("Integer","Integer"),[],b)
+        | Base(Qualified("Nat","PosNat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+        | _ -> srt
+
     def insertRestrict(domsrt,argterm) =
       %let _ = writeLine("insertRestrict: domsrt="^printSort(domsrt)^", argterm="^printTermWithSorts(argterm)) in
       let domsrt = unfoldBase(spc,domsrt) in
@@ -1082,7 +1088,9 @@ def insertRestricts(spc,dom,args) =
 	  %let tsrt = inferType(spc,argterm) in
 	  let tsrt = termSort(argterm) in
 	  let b = termAnn(argterm) in
-	  if equivTypes?? spc (srt,tsrt) then
+          let srt  = castNatToInteger srt  in
+          let tsrt = castNatToInteger tsrt in
+	  if equivTypes? spc (srt,tsrt) then
 	    let rsrt = Arrow(tsrt,domsrt,b) in
 	    let newarg = Apply(Fun(Restrict,rsrt,b),argterm,b) in
 	    %let _ = writeLine("restrict "^printTerm(argterm)^" to "^printTerm(newarg)) in
@@ -1090,8 +1098,7 @@ def insertRestricts(spc,dom,args) =
 	  else
 	    argterm
 	| _ -> argterm
-  in
-  let
+
     def insertRestrictsRec(dom,args) =
       case (dom,args) of
 	| ([],[]) -> Some ([])
@@ -1105,22 +1112,6 @@ def insertRestricts(spc,dom,args) =
   case insertRestrictsRec(dom,args) of
     | Some newargs -> newargs
     | None -> args
-
-(**
- * special version of sort equality, which identifies the sorts Integer, Nat, and PosNat
- *)
-op equivTypes?? : Spec -> Sort * Sort -> Boolean
-def equivTypes?? spc (srt0,srt1) =
-  let
-    def equalizeIntSort(srt) =
-      case srt of
-	| Base(Qualified("Nat","Nat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
-	| Base(Qualified("Nat","PosNat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
-	| _ -> srt
-  in
-  let srt0 = equalizeIntSort(srt0) in
-  let srt1 = equalizeIntSort(srt1) in
-  equivTypes? spc (srt0,srt1)
 
 (**
  * this is used to distinguish "real" product from "record-products"
