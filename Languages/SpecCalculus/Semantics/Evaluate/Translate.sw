@@ -8,12 +8,15 @@
 
 SpecCalc qualifying spec
 
+  import /Languages/MetaSlang/Specs/CompressSpec
+
   import Signature 
-  import Spec/CompressSpec
+  import UnitId/Utilities                                % for uidToString, if used...
+
   import Spec/AccessSpec
   import Spec/MergeSpecs
   import Spec/VarOpCapture
-  import UnitId/Utilities                                % for uidToString, if used...
+  import Spec/ComplainIfAmbiguous
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

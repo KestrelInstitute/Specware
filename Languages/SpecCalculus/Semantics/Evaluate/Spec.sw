@@ -2,14 +2,19 @@
 
 \begin{spec}
 SpecCalc qualifying spec
+
+  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
+
+  import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
+  import /Languages/MetaSlang/Specs/CompressSpec
+  import /Languages/MetaSlang/Transformations/DefToAxiom
+
   import Signature 
   import UnitId/Utilities
-  import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
-  import /Languages/MetaSlang/Transformations/DefToAxiom
-  import Spec/MergeSpecs
-  import Spec/CompressSpec
+
   import Spec/AddSpecElements
-  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
+  import Spec/MergeSpecs
+  import Spec/ComplainIfAmbiguous
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec

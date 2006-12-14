@@ -4,12 +4,14 @@ returns a spec including the proof obligations as conjectures.
 *)
 
 SpecCalc qualifying spec 
-  import Signature
+
   import /Languages/MetaSlang/Specs/TypeObligations
-  % import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities % breaks PSL by indirectly loading SpecCalculus version of Value.sw
-  import UnitId/Utilities  % should work for both Specware and PSL
+  import /Languages/MetaSlang/Specs/CompressSpec
   import /Languages/MetaSlang/Transformations/DefToAxiom
-  import Spec/CompressSpec
+
+  import Signature
+  import UnitId/Utilities  
+  import Spec/ComplainIfAmbiguous
 
   def SpecCalc.evaluateObligations term = {
      unitId <- getCurrentUID;

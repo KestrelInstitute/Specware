@@ -1,9 +1,11 @@
 SpecCalc qualifying spec 
 
+  import /Languages/MetaSlang/Specs/CompressSpec
+
   import Signature 
   import Spec/MergeSpecs
   import Spec/VarOpCapture
-  import Spec/CompressSpec
+  import Spec/ComplainIfAmbiguous
 
   %% To qualify a spec means to change all unqualified names to qualified
   %% names. This can raise exceptions since qualifying a name may identify

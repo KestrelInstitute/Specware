@@ -3,11 +3,15 @@
 SpecUnion qualifying spec 
 
  import ../Environment  % foldM    
- import /Languages/MetaSlang/Specs/StandardSpec
+
  import /Library/Legacy/DataStructures/ListUtilities
+
+ import /Languages/MetaSlang/Specs/StandardSpec
+ import /Languages/MetaSlang/Specs/CompressSpec
+
  import Spec/MergeSpecs
  import Spec/VarOpCapture
- import Spec/CompressSpec
+ import Spec/ComplainIfAmbiguous
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
