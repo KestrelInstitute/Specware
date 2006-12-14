@@ -564,7 +564,8 @@ command or has a non-nil symbol property `x-symbol-input'."
 
 (x-symbol-define-user-options 'x-symbol-token-input '(t))
 
-(defcustom x-symbol-electric-input t
+;;; sjw: Change default so naive user isn't confused
+(defcustom x-symbol-electric-input nil
   "*If non-nil, enable input method ELECTRIC.
 With this features, some contexts of input method CONTEXTS are
 automatically replaced with the corresponding character, i.e., you do
