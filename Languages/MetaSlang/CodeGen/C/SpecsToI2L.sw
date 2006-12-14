@@ -1133,7 +1133,7 @@ SpecsToI2L qualifying spec {
 		let (tvs, srt0) = unpackFirstSortDef info in
 		%let usrt = unfoldBase(spc,srt) in
 		%let usrt0 = unfoldBase(spc,srt0) in
-		if equivType? spc (srt, srt0) then
+		if deprecated_equivType? spc (srt, srt0) then
 		  let b = sortAnn srt0 in
 		  let qid = Qualified (q, id) in
 		  let tvs = map (fn tv -> TyVar (tv, b)) tvs in

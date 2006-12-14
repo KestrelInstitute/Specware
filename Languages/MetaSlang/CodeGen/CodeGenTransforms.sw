@@ -176,7 +176,7 @@ def findMatchingUserTypeOption (spc, srtdef) =
       let foundSrt = find (fn (q, id, info) ->
 			   case sortInfoDefs info of
 			     | [srt] -> 
-			       equivType? spc (srtdef, sortInnerSort srt)
+			       deprecated_equivType? spc (srtdef, sortInnerSort srt)
 			     |_ -> false)
                           srts 
       in

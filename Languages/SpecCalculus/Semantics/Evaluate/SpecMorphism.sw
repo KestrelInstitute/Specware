@@ -371,7 +371,7 @@ Should we check to see if qid is in cod_map??
 			    raise (MorphError (pos, msg))
 			| dfn :: _ -> 
 			  let cod_sort = sortInnerSort dfn in
-                          if equivSort? cod_spec (translated_sort, cod_sort) then
+                          if equivType? cod_spec (translated_sort, cod_sort) then
 			    return ()
 			  else 
 			    let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
@@ -404,7 +404,7 @@ Should we check to see if qid is in cod_map??
 			   raise (MorphError (pos, msg))
 		       else
 			 let cod_sort        = firstOpDefInnerSort cod_info in
-			 if equivSort? cod_spec (translated_sort, cod_sort) then
+			 if equivType? cod_spec (translated_sort, cod_sort) then
 			   return ()
 			 else
 			   let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 

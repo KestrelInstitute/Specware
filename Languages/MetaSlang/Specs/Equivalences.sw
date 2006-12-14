@@ -129,11 +129,11 @@ AnnSpec qualifying spec
  op equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
  op equivVar?     : Spec -> MS.Var     * MS.Var     -> Boolean
 
- op similarSort?  : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are similar
- op equivSort?    : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are not equivalent
+ op similarType?  : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are similar
+ op equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are not equivalent
 
- op equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean
- def equivType? spc (t1, t2) =
+ op deprecated_equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean
+ def deprecated_equivType? spc (t1, t2) =
    equalType? (t1,t2)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -181,7 +181,7 @@ AnnSpec qualifying spec
         Var        (v2,          _)) -> equivVar? spc (v1, v2)
 
      | (Fun        (f1, s1,      _),
-        Fun        (f2, s2,      _)) -> equivFun? spc (f1,f2) && equivSort? spc (s1,s2)
+        Fun        (f2, s2,      _)) -> equivFun? spc (f1,f2) && equivType? spc (s1,s2)
 
      | (Lambda     (xs1,         _),
         Lambda     (xs2,         _)) -> equivList? spc  (xs1, xs2,
@@ -199,7 +199,7 @@ AnnSpec qualifying spec
         Seq        (xs2,         _)) -> equivList? spc (xs1, xs2, equivTerm?)
 
      | (SortedTerm (x1, s1,      _),
-        SortedTerm (x2, s2,      _)) -> equivTerm? spc (x1, x2) && equivSort? spc (s1, s2)
+        SortedTerm (x2, s2,      _)) -> equivTerm? spc (x1, x2) && equivType? spc (s1, s2)
 
      %% TODO: Could check modulo alpha conversion for Pi terms...
      | (Pi (_,x1,_),  _          ) -> equivTerm? spc (x1, t2) 
@@ -256,7 +256,7 @@ AnnSpec qualifying spec
 
      | (EmbedPat    (i1, op1, s1, _),
         EmbedPat    (i2, op2, s2, _)) -> i1 = i2 && 
-                                         equivSort? spc (s1, s2) && 
+                                         equivType? spc (s1, s2) && 
                                          equivOpt?  spc (op1, op2, equivPattern?)
 
      | (RecordPat   (xs1,         _),
@@ -266,7 +266,7 @@ AnnSpec qualifying spec
  	 	 	 	 	 	 	  equivPattern? spc (x1, x2))
 
      | (WildPat     (s1,          _),
-        WildPat     (s2,          _)) -> equivSort? spc (s1,s2)
+        WildPat     (s2,          _)) -> equivType? spc (s1,s2)
 
      | (StringPat   (x1,          _),
         StringPat   (x2,          _)) -> x1 = x2
@@ -287,7 +287,7 @@ AnnSpec qualifying spec
         RestrictedPat (x2, t2,    _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
 
      | (SortedPat   (x1, t1,      _),
-        SortedPat   (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivSort? spc (t1, t2)
+        SortedPat   (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivType? spc (t1, t2)
 
      | _ -> false)
 
@@ -300,6 +300,6 @@ AnnSpec qualifying spec
    (id1 = id2)
    &&
    %% May want to make the ignoreSubsort? be a parameter rather than false
-   (equivSort? spc (s1, s2))
+   (equivType? spc (s1, s2))
 
 end-spec

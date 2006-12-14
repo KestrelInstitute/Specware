@@ -1,7 +1,7 @@
 SpecCalc qualifying spec 
 
  import ../../Environment                        % monad
- import /Languages/MetaSlang/Specs/Equivalences  % equivSort?
+ import /Languages/MetaSlang/Specs/Equivalences  % equivType?
 
  op  complainIfAmbiguous : Spec -> Position -> Env Spec
  def complainIfAmbiguous spc pos =
@@ -39,7 +39,7 @@ SpecCalc qualifying spec
 			      | ([x], [y]) -> 
 			        let xsort = termSort x in
 				let ysort = termSort y in
-			        if equivSort? spc (xsort, ysort) then
+			        if equivType? spc (xsort, ysort) then
 				  ambiguous_ops
 				else
 				  ListUtilities.insert (info, ambiguous_ops)

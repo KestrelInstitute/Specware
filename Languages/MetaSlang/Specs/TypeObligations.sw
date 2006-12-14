@@ -483,7 +483,7 @@ spec
 
  def returnPatternRec(pairs,gamma,M,tau,sigma) =
      let spc = gamma.3 in
-     if equivType? spc (tau,sigma) or 
+     if deprecated_equivType? spc (tau,sigma) or 
 	exists (fn p -> p = (tau,sigma)) pairs
 	then (gamma,M)
      else
@@ -577,7 +577,7 @@ spec
 		     %let vs = map (fn (VarPat(v,_)) -> v) vs in
 		     (if vs = []
 			then tcc
-			else if similarSort? spc (oty,ty) % TODO: A and A|p are similar -- is this desired here?
+			else if similarType? spc (oty,ty) % TODO: A and A|p are similar -- is this desired here?
 			then add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) ->
 								      let tm::_ = patternToTerms(pat) in tm) vs),
 					       mkTuple args)
@@ -596,7 +596,7 @@ spec
 	    (let vs = (getParams p) in
 	     if vs = []
 	       then tcc
-	     else if similarSort? spc (oty,ty) % TODO: A and A|p are similar -- is this desired here?
+	     else if similarType? spc (oty,ty) % TODO: A and A|p are similar -- is this desired here?
 	     then add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),
 				    n2)
 	     else addErrorCondition(tcc,gamma,"IllegalRecursion"))
@@ -680,7 +680,7 @@ spec
 
  def subtypeRec(pairs,tcc,gamma,M,tau,sigma) =
      let spc = gamma.3 in
-     if equivType? spc (tau,sigma) or 
+     if deprecated_equivType? spc (tau,sigma) or 
 	exists (fn p -> p = (tau,sigma)) pairs
 	then tcc
      else
