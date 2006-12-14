@@ -25,9 +25,9 @@ Notes:
 
 (defun eval-in-emacs (string)
   (when *use-emacs-interface?*
-    (if (and (fboundp 'swank::send-to-emacs)
+    (if (and (fboundp 'swank::eval-string-in-emacs)
 	     specware::*using-slime-interface?*)
-	(funcall 'swank::send-to-emacs `(:eval-no-wait ,string))
+	(funcall 'swank::eval-string-in-emacs string t)
       #+allegro
       (if (find-package :ilisp)
 	  (progn (force-output *terminal-io*) (format *terminal-io* "~a" string) (force-output *terminal-io*))
@@ -37,8 +37,8 @@ Notes:
 
 (defun eval-with-emacs (string)
   (when *use-emacs-interface?*
-    (if (fboundp 'swank::send-to-emacs)
-	(funcall 'swank::send-to-emacs `(:eval ,string))
+    (if (fboundp 'swank::eval-string-in-emacs)
+	(funcall 'swank::eval-string-in-emacs string nil)
 	nil)))
 
 (defun kill-emacs-and-then-lisp ()

@@ -1197,6 +1197,22 @@ converted to lower case."
              ((:ok value) value)
              ((:abort) (abort)))))))
 
+(defun eval-string-in-emacs (form-str &optional nowait)
+  "Eval FORM in Emacs."
+  (cond (nowait 
+         (send-to-emacs `(:eval-no-wait ,form-str)))
+        (t
+         (force-output)
+         (let* ((tag (incf *read-input-catch-tag*))
+                (value (catch (intern-catch-tag tag)
+                         (send-to-emacs 
+                          `(:eval ,(current-thread) ,tag 
+                            ,form-str))
+                         (loop (read-from-emacs)))))
+           (destructure-case value
+             ((:ok value) value)
+             ((:abort) (abort)))))))
+
 (defslimefun connection-info ()
   "Return a key-value list of the form: 
 \(&key PID STYLE LISP-IMPLEMENTATION MACHINE FEATURES PACKAGE)
