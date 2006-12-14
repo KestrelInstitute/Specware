@@ -211,6 +211,7 @@ If NEWLINE is true then add a newline at the end of the input."
   (slime-setup-command-hooks)
   (when slime-use-autodoc-mode 
     (slime-autodoc-mode 1))
+  (setq default-directory (concat *specware* "/"))
   (run-hooks 'slime-repl-mode-hook)
   (run-hooks 'specware-listener-mode-hook))
 
@@ -378,6 +379,7 @@ to end end."
 	       (format "; SLIME %s" (or (slime-changelog-date) 
 					"- ChangeLog file not found"))
 	       0 0))
+    (setq default-directory (concat *specware* "/"))
     (slime-repl-insert-prompt (cond (use-header-p `(:suppress-output))
                                     (t `(:values (,(concat "; " banner))))))))
 
