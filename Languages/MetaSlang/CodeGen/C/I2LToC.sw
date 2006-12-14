@@ -13,19 +13,7 @@ I2LToC qualifying spec {
 
   import /Library/Legacy/DataStructures/ListPair
 
-  sort CVarDecl = C.VarDecl
-  sort CVarDecls = C.VarDecls
-  sort CVarDecl1 = C.VarDecl1
-  sort CVarDecls1 = C.VarDecls1
-  sort CExp = C.Exp
-  sort CExps = C.Exps
-  sort CType = C.Type
-  sort CTypes = C.Types
-  sort CBlock = C.Block
-  sort CStmt = C.Stmt
-  sort CStmts = C.Stmts
-
-  sort CgContext = {
+  type CgContext = {
 		    xcspc : CSpec,                 % for incrementatl code generation, this field holds the existing cspec that is extended
 		    useRefTypes : Boolean,
 		    currentFunName: Option(String),
@@ -160,7 +148,7 @@ I2LToC qualifying spec {
 		| Some initstr -> addVarDefn(cspc,(vname,ctype,Var(initstr,Void))) % ok,ok, ... 
 	     )
 
-  op voidToInt: VarDecl -> VarDecl
+  op voidToInt: CVarDecl -> CVarDecl
   def voidToInt(vname,ctype) =
     if ctype = Void then (vname,Int) else (vname,ctype)
 
@@ -168,7 +156,7 @@ I2LToC qualifying spec {
    * for each non-constant variable definition X an function get_X() and a
    * boolean variable _X_initialized is generated 
    *)
-  op c4NonConstVarDef: CgContext * Id * CType * CSpec * Block * CExp -> CSpec
+  op c4NonConstVarDef: CgContext * Id * CType * CSpec * CBlock * CExp -> CSpec
   def c4NonConstVarDef(ctxt,vname,ctype,cspc,block as (decls,stmts),cexpr) =
     let initfname = "get_"^vname in
     let valuevname = vname^"_value" in
@@ -271,7 +259,7 @@ I2LToC qualifying spec {
   % n-ary vars. The inputs are the name of the var, the argument types and the return type.
   % outputs the updates cspec and a var decl for the array. The var decl is not inserted in the cspec
   % because it may also be used as a field of a record and has to be added there
-  op addMapForMapDecl: CgContext * CSpec * String * I2L.Types * I2L.Type -> CSpec * VarDecl
+  op addMapForMapDecl: CgContext * CSpec * String * I2L.Types * I2L.Type -> CSpec * CVarDecl
   def addMapForMapDecl(ctxt,cspc,fid,paramtypes,returntype) =
     let id = getMapName fid in
     let (cspc,paramctypes) = c4Types(ctxt,cspc,paramtypes) in
@@ -852,7 +840,7 @@ I2LToC qualifying spec {
     in
     let
       def strequal(ce1,ce2) =
-	let strcmp = ("strcmp",[Ptr(Char),Ptr(Char)],Int:C.Type) in
+	let strcmp = ("strcmp",[Ptr(Char),Ptr(Char)],Int:CType) in
 	let strcmpcall = Apply(Fn strcmp,[ce1,ce2]) in
 	Binary(Eq,strcmpcall,Const(Int(true,0)))
     in
@@ -1053,7 +1041,7 @@ I2LToC qualifying spec {
 
   % returns the statement for assigning the value for the selector string used in AssignUnion
   % expressions.
-  op getSelAssignStmt: CgContext * String * String * CType -> C.Stmt
+  op getSelAssignStmt: CgContext * String * String * CType -> CStmt
   def getSelAssignStmt(ctxt,selstr,varname,vartype) =
     let selstrncpy = Fn("SetConstructor",[Ptr(Char),Ptr(Char)],Void) in
     let variable = Var(varname,vartype) in
@@ -1119,19 +1107,19 @@ I2LToC qualifying spec {
     in
     subst(vlist,expr,0)
 
-  op substVarListByFieldRefsInDecl: CgContext * List(Option String) * CExp * VarDecl1 -> VarDecl1
+  op substVarListByFieldRefsInDecl: CgContext * List(Option String) * CExp * CVarDecl1 -> CVarDecl1
   def substVarListByFieldRefsInDecl(ctxt,vlist,structexpr,(vname,vtype,optexpr)) =
     case optexpr of
       | Some e -> (vname,vtype,Some (substVarListByFieldRefs(ctxt,vlist,structexpr,e)))
       | None -> (vname,vtype,None)
 
-  op substVarListByFieldRefsInDecls: CgContext * List(Option String) * CExp * VarDecls1 -> VarDecls1
+  op substVarListByFieldRefsInDecls: CgContext * List(Option String) * CExp * CVarDecls1 -> CVarDecls1
   def substVarListByFieldRefsInDecls(ctxt,vlist,structexpr,decls) =
     List.map (fn(decl) -> substVarListByFieldRefsInDecl(ctxt,vlist,structexpr,decl)) decls
 
   % --------------------------------------------------------------------------------
 
-  op mergeBlockIntoExpr: CSpec * Block * CExp -> CSpec * Block * CExp
+  op mergeBlockIntoExpr: CSpec * CBlock * CExp -> CSpec * CBlock * CExp
   def mergeBlockIntoExpr(cspc,block as (decls,stmts),cexpr) =
     case stmts of
       | [] -> (cspc,block,cexpr)
@@ -1146,7 +1134,7 @@ I2LToC qualifying spec {
 
   % --------------------------------------------------------------------------------
 
-  op commaExprToStmts: CgContext * CExp -> Stmts * CExp
+  op commaExprToStmts: CgContext * CExp -> CStmts * CExp
   def commaExprToStmts(_(* ctxt *),exp) =
     let
       def commaExprToStmts0(stmts,exp) =
@@ -1261,7 +1249,7 @@ I2LToC qualifying spec {
     else
       p
 
-  op getPredefinedFnDecl: String -> FnDecl
+  op getPredefinedFnDecl: String -> CFnDecl
   def getPredefinedFnDecl(fname) =
     case fname of
       | "swc_malloc" -> ("swc_malloc",[Int:CType],Ptr(Void))

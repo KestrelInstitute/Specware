@@ -10,12 +10,12 @@ CPrint qualifying spec {
   def ppBaseType (s : String, p : Pretty) : Pretty =
     prettysNone [string s, p]
 
-  op ppPlainType    : Type  -> Pretty
-  op ppPlainTypes   : Types -> Pretty
-  op ppExp          : Exp   -> Pretty
-  op ppExpInOneLine : Exp   -> Pretty % needed for #defines
+  op ppPlainType    : CType  -> Pretty
+  op ppPlainTypes   : CTypes -> Pretty
+  op ppExp          : CExp   -> Pretty
+  op ppExpInOneLine : CExp   -> Pretty % needed for #defines
 
-  def ppType (t : Type, p : Pretty) : Pretty =
+  def ppType (t : CType, p : Pretty) : Pretty =
     case t
       of Void          -> ppBaseType ("void"          , p)
        | Char          -> ppBaseType ("char"          , p)
@@ -43,7 +43,7 @@ CPrint qualifying spec {
                                    ppPlainTypes ts])
        | mystery -> System.fail ("Unexpected type to print "^anyToString mystery)
 
-  def ppConst (v : Val) : Pretty =
+  def ppConst (v : CVal) : Pretty =
     case v
       of Char   c           -> strings ["'", Char.toString c, "'"]
        | Int    (b, n)      -> strings [if b then "" else "-", Nat.toString n]
@@ -64,13 +64,13 @@ CPrint qualifying spec {
     in
     String.implode(ppQuoteCharList(String.explode(s)))
 
-  def unaryPrefix? (u : UnaryOp) : Boolean =
+  def unaryPrefix? (u : CUnaryOp) : Boolean =
     case u
       of PostInc -> false
        | PostDec -> false
        | _       -> true
 
-  def ppUnary (u : UnaryOp) : Pretty =
+  def ppUnary (u : CUnaryOp) : Pretty =
     string
     (case u
        of Contents -> "*"
@@ -85,7 +85,7 @@ CPrint qualifying spec {
 	| _ -> System.fail "Unexpected unary"
      )
 
-  def binaryToString(b:BinaryOp) : String = 
+  def binaryToString(b:CBinaryOp) : String = 
      case b
        of Set           -> " = "
         | Add           -> " + "
@@ -118,15 +118,15 @@ CPrint qualifying spec {
         | Ge            -> " >= "
 	| _ -> System.fail "Unexpected binary"
 
-  def ppBinary (b : BinaryOp) : Pretty =
+  def ppBinary (b : CBinaryOp) : Pretty =
       string(binaryToString b)
 
-  op ppExps            : Exps -> Pretty
-  op ppExpsInOneLine   : Exps -> Pretty
+  op ppExps            : CExps -> Pretty
+  op ppExpsInOneLine   : CExps -> Pretty
   % op ppPlainType       : Type -> Pretty
 
   (*
-  op ppAssigns :  List[VarDecl * Exp] -> Pretty
+  op ppAssigns :  List[CVarDecl * CExp] -> Pretty
 
   def ppAssigns(assigns) = 
       prettysFill(List.map (fn((id,_),e)->
@@ -142,8 +142,8 @@ CPrint qualifying spec {
   def ppExp(e) = ppExp_internal (e,false)
   def ppExpInOneLine(e) = ppExp_internal (e,true)
 
-  op ppExp_internal : Exp * Boolean -> Pretty
-  def ppExp_internal (e : Exp, inOneLine: Boolean) : Pretty =
+  op ppExp_internal : CExp * Boolean -> Pretty
+  def ppExp_internal (e : CExp, inOneLine: Boolean) : Pretty =
     let prettysFill   = if inOneLine then prettysNone else prettysFill in
     let prettysLinear = if inOneLine then prettysNone else prettysLinear in
     case e
@@ -175,17 +175,17 @@ CPrint qualifying spec {
 
   %% Print non-atomic expressions in parens.
 
-  def ppExpRec (e : Exp, inOneLine : Boolean) : Pretty =
+  def ppExpRec (e : CExp, inOneLine : Boolean) : Pretty =
       case e
 	of Const _ -> ppExp_internal(e,inOneLine)
 	 | Var _ -> ppExp_internal(e,inOneLine)
 	 | Fn _ -> ppExp_internal(e,inOneLine)
 	 | _ -> parens (ppExp_internal(e,inOneLine))
 
-  op ppBlock   : Block -> Pretty
-  op ppInBlock : Stmt -> Pretty
+  op ppBlock   : CBlock -> Pretty
+  op ppInBlock : CStmt -> Pretty
 
-  def ppStmt (s : Stmt) : Pretty =
+  def ppStmt (s : CStmt) : Pretty =
     case s
       of Exp e          -> prettysNone [ppExp e, string ";"]
        | Block b        -> ppBlock b
@@ -216,7 +216,7 @@ CPrint qualifying spec {
        | Case v         -> prettysNone [string "case ", ppConst v, string ":"]
        | _ -> System.fail "Unexpected statement" 
 
-  def ppStmts (ss : Stmts) : Pretty =
+  def ppStmts (ss : CStmts) : Pretty =
     prettysAll (List.map ppStmt ss)
 
   def ppInclude (s : String) : Pretty =
@@ -232,37 +232,37 @@ CPrint qualifying spec {
   def ppDefine (s : String) : Pretty =
     strings ["#define ", s]
 
-  def ppArg (s : String, t : Type) : Pretty =
+  def ppArg (s : String, t : CType) : Pretty =
     ppType (t, strings [" ", (cId s)])
 
-  def ppArgs (vds : VarDecls) : Pretty =
+  def ppArgs (vds : CVarDecls) : Pretty =
     prettysLinearDelim
       ("(", ", ", ")")
       (List.map ppArg vds)
 
-  def ppPlainType (t : Type) : Pretty =
+  def ppPlainType (t : CType) : Pretty =
     ppType (t, emptyPretty ())
 
-  def ppPlainTypes (ts : Types) : Pretty =
+  def ppPlainTypes (ts : CTypes) : Pretty =
     prettysLinearDelim
       ("(", ", ", ")")
       (List.map ppPlainType ts)
   
-  def ppVarDecl (s : String, t : Type) : Pretty =
+  def ppVarDecl (s : String, t : CType) : Pretty =
     prettysNone [ppArg (s, t), string ";"]
 
-  def ppVarDecl1 (s : String, t : Type, e : Option(Exp)) : Pretty =
+  def ppVarDecl1 (s : String, t : CType, e : Option CExp) : Pretty =
     case e of
       | None -> prettysNone [ppArg (s, t), string ";"]
       | Some e -> prettysNone [ppArg(s,t), string " = ", ppExp(e), string ";"]
 
-  def ppVarDecls (vds : VarDecls) : Pretty =
+  def ppVarDecls (vds : CVarDecls) : Pretty =
     prettysAll (List.map ppVarDecl vds)
 
-  def ppVarDecls1 (vds : VarDecls1) : Pretty =
+  def ppVarDecls1 (vds : CVarDecls1) : Pretty =
     prettysAll (List.map ppVarDecl1 vds)
 
-  def ppTypeDefn (s : String, t : Type) : Pretty =
+  def ppTypeDefn (s : String, t : CType) : Pretty =
     let pp =  prettysNone [string "typedef ", ppVarDecl (s, t)] in
     case t
       of  Base "Any" ->
@@ -279,21 +279,21 @@ CPrint qualifying spec {
       | TypeDefn X -> ppTypeDefn X
 
 
-  def ppStructDefn (s : String, vds : VarDecls) : Pretty =
+  def ppStructDefn (s : String, vds : CVarDecls) : Pretty =
     blockAll
     (0, [(0, strings ["struct ", (cId s), " {"]),
          (2, ppVarDecls vds),
          (0, string "};"),
          (0, emptyPretty ())])
 
-  def ppUnionDefn (s : String, vds : VarDecls) : Pretty =
+  def ppUnionDefn (s : String, vds : CVarDecls) : Pretty =
     blockAll
     (0, [(0, strings ["union ", (cId s), " {"]),
          (2, ppVarDecls vds),
          (0, string "};"),
          (0, emptyPretty ())])
 
-  def ppVar (asHeader:Boolean) (s : String, t : Type) : Pretty =
+  def ppVar (asHeader:Boolean) (s : String, t : CType) : Pretty =
 %    if generateCodeForMotes then
 %      if asHeader then
 %	prettysNone ([ppVarDecl (s, t),string ""])
@@ -303,7 +303,7 @@ CPrint qualifying spec {
       prettysNone ((if asHeader then [string "extern "] else []) 
 		   ++ [ppVarDecl (s, t)])
 
-  def ppFn (s : String, ts : Types, t : Type) : Pretty =
+  def ppFn (s : String, ts : CTypes, t : CType) : Pretty =
     (% String.writeLine ("Pretty printing "^s);
      % List.app (fn(t) -> String.writeLine(anyToString t)) ts;
      % String.writeLine(anyToString t);
@@ -315,45 +315,45 @@ CPrint qualifying spec {
        string ";"]
      )
 
-  def ppExps (es : Exps) : Pretty =
+  def ppExps (es : CExps) : Pretty =
     prettysLinearDelim
       ("(", ", ", ")")
       (List.map ppExp es)
 
-  def ppExpsInOneline (es : Exps) : Pretty =
+  def ppExpsInOneline (es : CExps) : Pretty =
     prettysNoneDelim
       ("(", ", ", ")")
       (List.map (fn(e) -> ppExp_internal(e,true)) es)
 
-  def ppExpsCurly (es : Exps) : Pretty =
+  def ppExpsCurly (es : CExps) : Pretty =
     prettysLinearDelim
       ("{", ", ", "}")
       (List.map ppExp es)
 
-  def ppExpsCurlyInOneline (es : Exps) : Pretty =
+  def ppExpsCurlyInOneline (es : CExps) : Pretty =
     prettysNoneDelim
       ("{", ", ", "}")
       (List.map (fn(e) -> ppExp_internal(e,true)) es)
 
-  def ppVarDefn (asHeader:Boolean) (s : String, t : Type, e : Exp) : Pretty =
+  def ppVarDefn (asHeader:Boolean) (s : String, t : CType, e : CExp) : Pretty =
     if asHeader then ppVar asHeader (s,t) else
 	blockFill
 	(0, [(0, prettysNone [ppType (t, strings [" ", (cId s)]), string " = "]),
 	     (2, prettysNone [ppExp e, string ";"]),
 	     (0, PrettyPrint.newline ())])
 
-  def ppVarDefnAsDefine (s : String, (* t *)_: Type, e : Exp) : Pretty =
+  def ppVarDefnAsDefine (s : String, (* t *)_: CType, e : CExp) : Pretty =
 	blockNone
 	(0, [(0, prettysNone [string "#define ", string (cId s), string " "]),
 	     (2, prettysNone [ppExpInOneLine e]),
 	     (0, PrettyPrint.newline ())])
 
-  def ppPlainBlock (vds : VarDecls1, ss : Stmts) : Pretty =
+  def ppPlainBlock (vds : CVarDecls1, ss : CStmts) : Pretty =
     if   (null vds)
     then (ppStmts ss)
     else prettysAll [ppVarDecls1 vds, (*emptyPretty (),*) ppStmts ss]
 
-  def ppInBlock (s : Stmt) : Pretty =
+  def ppInBlock (s : CStmt) : Pretty =
     case s
       of Block (vds, ss) -> ppPlainBlock (vds, ss)
        | _               -> ppStmt s
@@ -362,7 +362,7 @@ CPrint qualifying spec {
   %% The printer is set up to always call ppInBlock instead of ppBlock,
   %% but it's here for completeness.
 
-  def ppBlock (vds : VarDecls1, ss : Stmts) : Pretty =
+  def ppBlock (vds : CVarDecls1, ss : CStmts) : Pretty =
       
     blockAll
     (0, [(0, string "{"),
@@ -370,7 +370,7 @@ CPrint qualifying spec {
          (0, string "}"),
          (0, emptyPretty ())])
 
-  def ppFnDefn (asHeader:Boolean) (s : String, vds : VarDecls, t : Type, b : Stmt) : Pretty =
+  def ppFnDefn (asHeader:Boolean) (s : String, vds : CVarDecls, t : CType, b : CStmt) : Pretty =
     if asHeader then
       blockAll
       (0, [(0, prettysNone
@@ -386,7 +386,7 @@ CPrint qualifying spec {
 	   (0, string "}"),
 	   (0, emptyPretty ())])
 
-  def ppAxiom (e : Exp) : Pretty =
+  def ppAxiom (e : CExp) : Pretty =
     prettysAll [ppExp e, emptyPretty (), emptyPretty ()]
 
   def section (title : String, ps : Prettys) : Prettys =
@@ -469,7 +469,7 @@ CPrint qualifying spec {
 	       )
 
 %- --------------------------------------------------------------------------------
-  def ppDeclsWithoutDefns(decls:FnDecls) : Pretty =
+  def ppDeclsWithoutDefns(decls:CFnDecls) : Pretty =
     case decls
       of [] -> emptyPretty()
        | _ ->
@@ -482,7 +482,7 @@ CPrint qualifying spec {
 		   )
 %- --------------------------------------------------------------------------------
 
-  def ppFnDefnAppendFile(fndefn:C.FnDefn, filename) =
+  def ppFnDefnAppendFile(fndefn:CFnDefn, filename) =
     let fnPretty = ppFnDefn false fndefn in
     PrettyPrint.appendFile(filename,PrettyPrint.format(80,fnPretty))
 
@@ -512,7 +512,7 @@ CPrint qualifying spec {
             of None   -> findTypeDefns (names, defns)
              | Some d -> List.cons (d, findTypeDefns (names, defns)))
 
-  op expand : String * TypeDefns -> List String
+  op expand : String * CTypeDefns -> List String
 
   def expand (name, defns) =
     case findTypeDefn (name, defns)
@@ -544,7 +544,7 @@ CPrint qualifying spec {
   def namesInTypes ts =
     List.flatten (List.map namesInType ts)
 
-  op  findTypeDefn : String * TypeDefns -> Option TypeDefn
+  op  findTypeDefn : String * CTypeDefns -> Option CTypeDefn
 
   def findTypeDefn (x, defns) =
     List.find (fn (y, _) -> x = y) defns

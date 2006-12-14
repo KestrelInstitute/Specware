@@ -86,7 +86,7 @@ spec
   (**
    * transforms a MetaSlang term to a C expression
    *)
-  op termToCExp: CSpec -> AnnSpec.Spec -> MS.Term -> (CSpec * Block * CExp)
+  op termToCExp: CSpec -> AnnSpec.Spec -> MS.Term -> (CSpec * CBlock * CExp)
 
   (**
    * returns the string representation of the qualified id
@@ -198,7 +198,7 @@ spec
     let block = ([],[]) in
     termToCExpB cspc spc block term
 
-  op termToCExpB: CSpec -> AnnSpec.Spec -> Block -> MS.Term -> (CSpec * Block * CExp)
+  op termToCExpB: CSpec -> AnnSpec.Spec -> CBlock -> MS.Term -> (CSpec * CBlock * CExp)
   def termToCExpB cspc spc block term =  
     let ctxt1 = SpecsToI2L.defaultCgContext in
     let ctxt2 = I2LToC.defaultCgContext in

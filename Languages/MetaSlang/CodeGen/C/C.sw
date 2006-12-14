@@ -1,39 +1,39 @@
 
 C qualifying spec {
 
-  sort CSpec =
+  type CSpec =
     {
      name                  : String,
      includes              : Strings,
      defines	           : Strings,
-     constDefns            : VarDefns,      % constant expressions defined by #define's
-     vars                  : VarDecls,
-     fns                   : FnDecls,
-     axioms                : Exps,
-     structUnionTypeDefns  : StructUnionTypeDefns,
-     varDefns              : VarDefns,      % constant expressions computable at compile-time
-     fnDefns               : FnDefns
+     constDefns            : CVarDefns,      % constant expressions defined by #define's
+     vars                  : CVarDecls,
+     fns                   : CFnDecls,
+     axioms                : CExps,
+     structUnionTypeDefns  : CStructUnionTypeDefns,
+     varDefns              : CVarDefns,      % constant expressions computable at compile-time
+     fnDefns               : CFnDefns
     }
 
-  sort StructUnionTypeDefn = | Struct   StructDefn
-                             | Union    UnionDefn
-                             | TypeDefn TypeDefn
+  type CStructUnionTypeDefn = | Struct   CStructDefn
+                              | Union    CUnionDefn
+                              | TypeDefn CTypeDefn
 
-  sort StructUnionTypeDefns = List StructUnionTypeDefn
+  type CStructUnionTypeDefns = List CStructUnionTypeDefn
 
-  sort VarDecl    = String * Type
-  sort VarDecl1   = String * Type * Option(Exp)
-  sort FnDecl     = String * Types * Type
-  sort TypeDefn   = String * Type
-  sort StructDefn = String * VarDecls
-  sort UnionDefn  = String * VarDecls
-  sort VarDefn    = String * Type * Exp
-  sort FnDefn     = String * VarDecls * Type * Stmt
+  type CVarDecl    = String * CType
+  type CVarDecl1   = String * CType * Option(CExp)
+  type CFnDecl     = String * CTypes * CType
+  type CTypeDefn   = String * CType
+  type CStructDefn = String * CVarDecls
+  type CUnionDefn  = String * CVarDecls
+  type CVarDefn    = String * CType * CExp
+  type CFnDefn     = String * CVarDecls * CType * CStmt
 
 
-  sort Block      = VarDecls1 * Stmts
+  type CBlock      = CVarDecls1 * CStmts
 
-  sort Type =
+  type CType =
     | Void
     | Char
     | Short
@@ -49,52 +49,52 @@ C qualifying spec {
     | Base     String
     | Struct   String
     | Union    String
-    | Ptr      Type
-    | Array    Type
-    | ArrayWithSize  (String (*name of constant*) * Type)
-    | Fn       Types * Type
+    | Ptr      CType
+    | Array    CType
+    | ArrayWithSize  (String (*name of constant*) * CType)
+    | Fn       CTypes * CType
     | ConstField
 
-  sort Stmt =
-    | Exp     Exp
-    | Block   Block
-    | If      Exp * Stmt * Stmt
-    | Return  Exp
+  type CStmt =
+    | Exp     CExp
+    | Block   CBlock
+    | If      CExp * CStmt * CStmt
+    | Return  CExp
     | ReturnVoid
     | Break
-    | While   Exp * Stmt
+    | While   CExp * CStmt
     | Label   String
     | Goto    String
-    | IfThen  Exp * Stmt
-    | Switch  Exp * Stmts
-    | Case    Val
+    | IfThen  CExp * CStmt
+    | Switch  CExp * CStmts
+    | Case    CVal
     | Nop
 
 
-  sort Exp =
-    | Const       Val
-    | Fn          FnDecl
-    | Var         VarDecl
-    | Apply       Exp * Exps
-    | Unary       UnaryOp * Exp
-    | Binary      BinaryOp * Exp * Exp
-    | Cast        Type * Exp
-    | StructRef   Exp * String
-    | UnionRef    Exp * String
-    | ArrayRef    Exp * Exp
-    | IfExp       Exp * Exp * Exp 
-    | Comma       Exp * Exp
-    | SizeOfType  Type
-    | SizeOfExp   Exp
-    | Field       Exps
+  type CExp =
+    | Const       CVal
+    | Fn          CFnDecl
+    | Var         CVarDecl
+    | Apply       CExp * CExps
+    | Unary       CUnaryOp * CExp
+    | Binary      CBinaryOp * CExp * CExp
+    | Cast        CType * CExp
+    | StructRef   CExp * String
+    | UnionRef    CExp * String
+    | ArrayRef    CExp * CExp
+    | IfExp       CExp * CExp * CExp 
+    | Comma       CExp * CExp
+    | SizeOfType  CType
+    | SizeOfExp   CExp
+    | Field       CExps
 
-  sort Val =
+  type CVal =
     | Char        Char
     | Int         Boolean * Nat
     | Float       String
     | String      String
 
-  sort UnaryOp =
+  type CUnaryOp =
     | Contents
     | Address
     | Negate
@@ -103,7 +103,7 @@ C qualifying spec {
     | PreInc | PreDec
     | PostInc | PostDec
 
-  sort BinaryOp =
+  type CBinaryOp =
     | Set
     | Add | Sub | Mul | Div | Mod
     | BitAnd | BitOr | BitXor
@@ -115,18 +115,18 @@ C qualifying spec {
     | Eq  | NotEq
     | Lt | Gt | Le | Ge
 
-  sort Strings     = List (String)
-  sort VarDecls    = List (VarDecl)
-  sort VarDecls1   = List (VarDecl1)
-  sort FnDecls     = List (FnDecl)
-  sort TypeDefns   = List (TypeDefn)
-  sort StructDefns = List (StructDefn)
-  sort UnionDefns  = List (UnionDefn)
-  sort FnDefns     = List (FnDefn)
-  sort VarDefns    = List (VarDefn)
-  sort Types       = List (Type)
-  sort Exps        = List (Exp)
-  sort Stmts       = List (Stmt)
+  type Strings      = List String
+  type CVarDecls    = List CVarDecl
+  type CVarDecls1   = List CVarDecl1
+  type CFnDecls     = List CFnDecl
+  type CTypeDefns   = List CTypeDefn
+  type CStructDefns = List CStructDefn
+  type CUnionDefns  = List CUnionDefn
+  type CFnDefns     = List CFnDefn
+  type CVarDefns    = List CVarDefn
+  type CTypes       = List CType
+  type CExps        = List CExp
+  type CStmts       = List CStmt
 
 }
 
