@@ -106,7 +106,7 @@ PrList qualifying spec
     butLast(Cons(hd, [])) = []
 
   axiom butLast_def2 is fa (hd, tl)
-    butLast(Cons(hd, tl)) = Cons(hd, butLast(tl))
+    tl ~= [] => butLast(Cons(hd, tl)) = Cons(hd, butLast(tl))
 
   axiom member_def1 is fa (x)
     ~(member(x, []))
@@ -115,7 +115,7 @@ PrList qualifying spec
      member(hd, Cons(hd, tl))
 
   axiom member_def2 is fa (x, hd, tl)
-     (x~= hd => (member(x, Cons(hd, tl)) <=> member(x, tl)))
+     (x ~= hd => (member(x, Cons(hd, tl)) <=> member(x, tl)))
 
   axiom diff_def1 is fa (l2)
      diff([], l2) = []
