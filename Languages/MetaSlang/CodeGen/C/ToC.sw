@@ -1,3 +1,5 @@
+%%% This is used only by Forges
+
 \section{C Code Generator}
 
 \begin{spec}
