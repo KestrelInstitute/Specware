@@ -19,31 +19,31 @@ sort Result a =
   | Ok a
   | Exception JGenException
 
-type SpecialFunType = StringMap.Map Java.Expr * MS.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
+type SpecialFunType = StringMap.Map JavaExpr * MS.Term * Nat * Nat -> JGenEnv (Option (JavaBlock * JavaExpr * Nat * Nat))
 
 type State = {
-	      envSpec : Spec,
-	      packageName : Option Name,
-	      imports : List Name,
-	      clsDecls : List ClsDecl,
-	      interfDecls : List InterfDecl,
-	      arrowclasses : List Java.ClsDecl,
-	      productSorts : List Sort,
-	      typeAliases : List(String * String), % a list of type aliases for recording type definitions of the form "type t1 = t2" where t2 is either a base type or boolean
+	      envSpec            : Spec,
+	      packageName        : Option JavaName,
+	      imports            : List JavaName,
+	      clsDecls           : List ClsDecl,
+	      interfDecls        : List InterfDecl,
+	      arrowclasses       : List Java.ClsDecl,
+	      productSorts       : List Sort,
+	      typeAliases        : List(String * String), % a list of type aliases for recording type definitions of the form "type t1 = t2" where t2 is either a base type or boolean
 	      primitiveClassName : String,
-	      ignoreSubsorts : Boolean,
-	      verbose : Boolean,
-	      sep : String, % the string used for Java class name generation, default "_"
-	      transformSpecFun : Spec -> Spec,              % Accord
-	      localVarToJExpr : String -> Option Java.Expr, % Accord: return some java expression if the string is a local parameter
-	      definedOps : List QualifiedId,                % Accord: list of ops defined across many specs
-	      specialFun: SpecialFunType,
-              createFieldFun : MS.Term -> Boolean,
-	      ignoreTypeDefFun : String -> Boolean, % returns true, if the code generation should ignore the type definition for 
+	      ignoreSubsorts     : Boolean,
+	      verbose            : Boolean,
+	      sep                : String, % the string used for Java class name generation, default "_"
+	      transformSpecFun   : Spec -> Spec,              % Accord
+	      localVarToJExpr    : String -> Option JavaExpr, % Accord: return some java expression if the string is a local parameter
+	      definedOps         : List QualifiedId,                % Accord: list of ops defined across many specs
+	      specialFun         : SpecialFunType,
+              createFieldFun     : MS.Term -> Boolean,
+	      ignoreTypeDefFun   : String -> Boolean, % returns true, if the code generation should ignore the type definition for 
 		                                    % the given string, used to prevent code generation for the type definition
 		                                    % generated for the accord classes
-              isClassNameFun : String -> Boolean, % returns true if the given ident is a currently visible classname
-	      cresCounter : Nat
+              isClassNameFun     : String -> Boolean, % returns true if the given ident is a currently visible classname
+	      cresCounter        : Nat
 	     }
 
 %% same as NamedSpec in Accord/Sources/Semantics
@@ -53,34 +53,34 @@ type AccordNamedSpec = {term : SpecCalc.Term Position,
 
 op initialState : State
 def initialState = {
-		    envSpec = emptySpec,
-		    packageName = None,
-		    imports = [],
-		    clsDecls = [],
-		    interfDecls = [],
-		    arrowclasses = [],
-		    productSorts = [],
-		    typeAliases = [],
+		    envSpec            = emptySpec,
+		    packageName        = None,
+		    imports            = [],
+		    clsDecls           = [],
+		    interfDecls        = [],
+		    arrowclasses       = [],
+		    productSorts       = [],
+		    typeAliases        = [],
 		    primitiveClassName = "Primitive",
-		    ignoreSubsorts = false,
-		    verbose = true,
-		    sep = "_",
-		    transformSpecFun = (fn spc -> spc),
-		    localVarToJExpr = (fn _ -> None),
-		    definedOps      = [],
-		    specialFun = (fn _ -> return None),
-		    createFieldFun = (fn tm -> 
-				      %% Suppress field declarations for undefined functions
-				      let (tvs, typ, tm) = unpackTerm tm in
-				      case tm of
-					| Any _ -> 
-				          (case typ of
-					     | Arrow _ -> false
-					     | _ -> true)
-					| _ -> true),
-		    ignoreTypeDefFun = fn _ -> false,
-		    isClassNameFun = fn _ -> false,
-		    cresCounter = 0
+		    ignoreSubsorts     = false,
+		    verbose            = true,
+		    sep                = "_",
+		    transformSpecFun   = (fn spc -> spc),
+		    localVarToJExpr    = (fn _ -> None),
+		    definedOps         = [],
+		    specialFun         = (fn _ -> return None),
+		    createFieldFun     = (fn tm -> 
+                                            %% Suppress field declarations for undefined functions
+                                            let (tvs, typ, tm) = unpackTerm tm in
+                                            case tm of
+                                              | Any _ -> 
+                                                (case typ of
+                                                   | Arrow _ -> false
+                                                   | _ -> true)
+                                              | _ -> true),
+                    ignoreTypeDefFun   = fn _ -> false,
+		    isClassNameFun     = fn _ -> false,
+		    cresCounter        = 0
 		   }
 
 
@@ -97,27 +97,27 @@ def put s = fn _ -> (Ok (), s)
 
 %% --------------------------------------------------------------------------------
 
-op setPackageName: Option Name -> JGenEnv ()
+op setPackageName: Option JavaName -> JGenEnv ()
 def setPackageName optname =
   fn state ->
   (Ok (), state << { packageName = optname })
 
-op getPackageName: JGenEnv (Option Name)
+op getPackageName: JGenEnv (Option JavaName)
 def getPackageName =
   fn state ->
   (Ok state.packageName, state)
 
-op setImports: List Name -> JGenEnv ()
+op setImports: List JavaName -> JGenEnv ()
 def setImports imports =
   fn state ->
   (Ok (), state << { imports = imports })
 
-op addImports: List Name -> JGenEnv ()
+op addImports: List JavaName -> JGenEnv ()
 def addImports imports =
   fn state ->
   (Ok (), state << { imports = state.imports ++ imports })
 
-op getImports: JGenEnv (List Name)
+op getImports: JGenEnv (List JavaName)
 def getImports =
   fn state ->
   (Ok state.imports, state)
@@ -354,12 +354,12 @@ def setTransformSpecFun tfun =
   fn state ->
   (Ok (), state << { transformSpecFun = tfun })
 
-op getLocalVarToJExprFun: JGenEnv (String -> Option Java.Expr)
+op getLocalVarToJExprFun: JGenEnv (String -> Option JavaExpr)
 def getLocalVarToJExprFun =
   fn state ->
   (Ok state.localVarToJExpr, state)
 
-op setLocalVarToJExprFun: (String -> Option Java.Expr) -> JGenEnv ()
+op setLocalVarToJExprFun: (String -> Option JavaExpr) -> JGenEnv ()
 def setLocalVarToJExprFun tfun =
   fn state ->
   (Ok (), state << { localVarToJExpr = tfun })

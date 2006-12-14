@@ -15,8 +15,8 @@ spec
   (**
    * translates a lambda term into a java expression, called from translateToExpression in ToJavaStatements
    *)
-%  op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-  %op translateLambdaToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+%  op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (JavaBlock * JavaExpr * Nat * Nat) * Collected
+  %op translateLambdaToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
   def translateLambdaToExprM(tcx,term (*as Lambda((pat,cond,body)::_,_)*),k,l) =
     case term of
       | Fun(Op(qid as Qualified(_,id),_),srt,_) -> translateStandAloneOpToExprM(tcx,(qid,srt),k,l)
@@ -63,7 +63,7 @@ spec
    (**
     * this is called, when a lambda term is found in the input; it implements v3:p48:r4
     *)
-   op translateLambdaTermM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+   op translateLambdaTermM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
    def translateLambdaTermM(tcx,term as Lambda((pat,cond,body)::_,_),k,l) =
      {
       spc <- getEnvSpec;
@@ -101,7 +101,7 @@ spec
    (**
     * this is active when a "stand-alone" operator appears as term, i.e. an operator symbol without any arguments
     *)
-   op translateStandAloneOpToExprM: TCx * (QualifiedId * Sort) * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat *Nat)
+   op translateStandAloneOpToExprM: TCx * (QualifiedId * Sort) * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat *Nat)
    def translateStandAloneOpToExprM(tcx,(qid,srt),k,l) =
 %     let _ = case srt of
 %	       | Arrow(_,_,_) -> true
@@ -184,7 +184,7 @@ spec
 
        }
 
-op standaloneM: Java.Stmt * (List String * String) * (List String * String) * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+op standaloneM: JavaStmt * (List String * String) * (List String * String) * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def standaloneM(s,applySig as (apdom,apran),arrowTypeSig as (atdom,atran),k,l) =
   let argNameBase = "arg" in
   let (parNames,_) = foldl (fn(argType,(argnames,nmb)) -> 
@@ -194,7 +194,7 @@ def standaloneM(s,applySig as (apdom,apran),arrowTypeSig as (atdom,atran),k,l) =
   in
   standaloneWithParNamesM(s,applySig,arrowTypeSig,parNames,k,l)
 
-op standaloneWithParNamesM: Java.Stmt * (List String * String) * (List String * String) * List String * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+op standaloneWithParNamesM: JavaStmt * (List String * String) * (List String * String) * List String * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def standaloneWithParNamesM(s,applySig as (apdom,apran),arrowTypeSig as (atdom,atran),parNames,k,l) =
   let meth = mkMethDeclWithParNames("apply",apdom,apran,parNames,s) in
   {
@@ -204,7 +204,7 @@ def standaloneWithParNamesM(s,applySig as (apdom,apran),arrowTypeSig as (atdom,a
    return (mts,exp,k,l)
   }
 
-op standAloneFromSortM: Java.Stmt * Sort * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+op standAloneFromSortM: JavaStmt * Sort * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def standAloneFromSortM(s,srt,k,l) =
   let dom = srtDom(srt) in
   let rng = srtRange(srt) in
@@ -225,7 +225,7 @@ def mapSortColM(srtf,srtl) =
 %	 (concat(srtl,[sid]),concatCollected(col,col1))) 
 %  ([],nothingCollected) srtl
 
-op standAloneFromSortWithParNamesM: Java.Stmt * Sort * List Id * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+op standAloneFromSortWithParNamesM: JavaStmt * Sort * List Id * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def standAloneFromSortWithParNamesM(s,srt,parNames,k,l) =
   let dom = srtDom(srt) in
   let rng = srtRange(srt) in
@@ -254,7 +254,7 @@ def mkNArgs trans (l,omit) =
   in
     mkNArgs0(l,1)
 
-op mkNArgsExpr: fa(T) List T * Option Nat -> List Java.Expr
+op mkNArgsExpr: fa(T) List T * Option Nat -> List JavaExpr
 def mkNArgsExpr(l,omit) = (mkNArgs mkVarJavaExpr)(l,omit)
 
 

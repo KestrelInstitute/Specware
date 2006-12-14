@@ -42,7 +42,7 @@ def mkSubSortConstrDecl(id, superSortId, superSort, predId) =
    return ([], id, formParams, [], subSortConstrBody)
   }
 
-op mkSubSortConstBody: Id * Sort * Id -> JGenEnv Block
+op mkSubSortConstBody: Id * Sort * Id -> JGenEnv JavaBlock
 def mkSubSortConstBody(superSrtId,superSrt,pred) =
   let thisName = (["this"], "relax") in
   let argName = ([], "relax") in

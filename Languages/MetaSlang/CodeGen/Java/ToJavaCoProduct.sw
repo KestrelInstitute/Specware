@@ -5,7 +5,7 @@ import ToJavaBase
 import ToJavaStatements
 import Monad
 
-op mkEqualityBodyForSum: List Field -> JGenEnv Java.Expr
+op mkEqualityBodyForSum: List Field -> JGenEnv JavaExpr
 def mkEqualityBodyForSum(fields) =
   case fields of
     | [] -> return(CondExp (Un (Prim (Bool true)), None))
@@ -66,7 +66,7 @@ def sumToConsMethodDecl(id, c, args) =
    return(([Static,Public], Some (tt(id)), c, formalParams, []), Some (constBody))
   }
 
-op mkSumConstructBody: Id * Nat -> Block
+op mkSumConstructBody: Id * Nat -> JavaBlock
 def mkSumConstructBody(id, n) =
   let def mkArgs(k) = if k = n then [CondExp(Un(Prim(Name ([], mkArgProj(natToString(k))))), None)]
                                else cons(CondExp(Un(Prim(Name ([], mkArgProj(natToString(k))))), None),
@@ -78,14 +78,14 @@ op mkSumConstrDecl: Id * Id * Id * List (Id * Sort) -> JGenEnv ConstrDecl
 def mkSumConstrDecl(id, mainSumClassId, tagId, fields) =
   let tagfield = FldAcc(ViaPrim(This None,"tag")) in
   let constrConstant = mkFldAccViaClass(mainSumClassId,tagId) in
-  let assignTagExpr = Ass(tagfield,Assgn,constrConstant):Java.Expr in
+  let assignTagExpr = Ass(tagfield,Assgn,constrConstant):JavaExpr in
   {
    formParams <- fieldsToFormalParams fields;
    let sumConstrBody = mkSumConstBody(length(formParams)) in
    return([], id, formParams, [], [Stmt(Expr(assignTagExpr))] ++ sumConstrBody)
   }
 
-op mkSumConstBody: Nat -> Block
+op mkSumConstBody: Nat -> JavaBlock
 def mkSumConstBody(n) =
   if n = 0 then []
   else
@@ -107,7 +107,7 @@ def sumToClsDecl(id, c, args) =
    return([], (summandId, Some ([], id), []), setConstrs(setMethods(setFlds(Java.emptyClsBody, fldDecls), [eqMethDecl]), [constrDecl]))
   }
 
-op mkSumEqMethBody: Id * Id * Id * List Field -> JGenEnv Block
+op mkSumEqMethBody: Id * Id * Id * List Field -> JGenEnv JavaBlock
 def mkSumEqMethBody(clsId, consId, summandId, flds) =
   {
    eqExpr <- mkEqualityBodyForSum flds;

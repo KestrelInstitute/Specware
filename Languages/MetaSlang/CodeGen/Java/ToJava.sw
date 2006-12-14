@@ -22,7 +22,7 @@ type Type = JGen.Type
 
 % --------------------------------------------------------------------------------
 
-%op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (Block * Java.Expr)
+%op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (JavaBlock * JavaExpr)
 def JGen.metaSlangTermToJavaExpr term =
   {
    cres_counter <- getCresCounter;
@@ -31,7 +31,7 @@ def JGen.metaSlangTermToJavaExpr term =
    return (block,expr)
   }
 
-%op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (Block * List Java.Expr)
+%op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (JavaBlock * List JavaExpr)
 def JGen.metaSlangTermsToJavaExprs terms =
   {
    cres_counter <- getCresCounter;
@@ -297,12 +297,12 @@ def addPrimMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
    addStaticMethodToClsDeclsM(opId,srt,dom,dompreds,rng,trm,primitiveClassName)
   }
 
-op mkAsrtStmt: Id * List FormPar -> Block
+op mkAsrtStmt: Id * List FormPar -> JavaBlock
 def mkAsrtStmt(asrtOpId,fpars) =
   let expr = mkMethodInvFromFormPars(asrtOpId,fpars) in
   [Stmt(Expr(mkMethInvName(([],"assert"),[expr])))]
 
-op mkAssertFromDomM: List Sort -> JGenEnv Block
+op mkAssertFromDomM: List Sort -> JGenEnv JavaBlock
 def mkAssertFromDomM dom =
   case dom of
     | [Subsort(_, subPred, _)] ->
@@ -316,7 +316,7 @@ def mkAssertFromDomM dom =
       }
     | _ -> return []
 
-op mkPrimArgsMethodBodyM: JGen.Term -> JGenEnv Block
+op mkPrimArgsMethodBodyM: JGen.Term -> JGenEnv JavaBlock
 def mkPrimArgsMethodBodyM body =
   {
    (b,_,_) <- termToExpressionRetM(empty,body,1,1,false);
@@ -493,7 +493,7 @@ def mkDefaultMethodForCaseM(opId,_(* dom *),_(* dompreds *),rng,vars,opt_other) 
        }
   }
 
-op mkNonCaseMethodBodyM: Id * JGen.Term -> JGenEnv Block
+op mkNonCaseMethodBodyM: Id * JGen.Term -> JGenEnv JavaBlock
 def mkNonCaseMethodBodyM(vId, body) =
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
   let tcx = StringMap.insert(empty, vId, thisExpr) in

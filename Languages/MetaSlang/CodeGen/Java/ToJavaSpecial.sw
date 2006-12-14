@@ -10,7 +10,7 @@ spec
   import ToJavaStatements
   import Monad
 
-  op  specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
+  op  specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (JavaBlock * JavaExpr * Nat * Nat))
   def specialTermToExpressionM(tcx,term,k,l) =
     %let _ = writeLine("specialTermToExpression: term="^printTerm(term)) in
     let
@@ -454,7 +454,7 @@ spec
     id = "String"  || % v3:p1 says NO  -- TODO: resolve this
     id = "Char"       % v3:p1 
 
-  op getPostSubstFun: JGenEnv (Java.Expr -> Java.Expr)
+  op getPostSubstFun: JGenEnv (JavaExpr -> JavaExpr)
   def getPostSubstFun =
     return (fn e ->
 	    case e of

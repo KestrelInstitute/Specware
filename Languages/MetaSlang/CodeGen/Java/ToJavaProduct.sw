@@ -20,7 +20,7 @@ def mkProdConstrDecl(id,fields) =
    return([], id, formParams, [], prodConstrBody)
   }
 
-op mkProdConstBody: List Id -> Block
+op mkProdConstBody: List Id -> JavaBlock
 def mkProdConstBody(fieldProjs) =
   case fieldProjs of
     | [] -> []
@@ -55,7 +55,7 @@ def productToClsDecls(id, srtDef as Product (fields, _)) =
    addClsDecl clsDecl
   }
 
-op mkEqualityBodyForProduct: List Field -> JGenEnv Java.Expr
+op mkEqualityBodyForProduct: List Field -> JGenEnv JavaExpr
 def mkEqualityBodyForProduct(fields) =
   case fields of
     | [] -> return(CondExp (Un (Prim (Bool true)), None))

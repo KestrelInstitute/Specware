@@ -15,7 +15,7 @@ spec
 
   type JSpec = Java.CompUnit
   type JavaSpec = JSpec
-  type TCx = StringMap.Map Java.Expr
+  type TCx = StringMap.Map JavaExpr
 
 
 %  type JcgInfo = {
@@ -52,12 +52,12 @@ spec
    * assumes that the sort and envspec in the monad are
    * already transformed using the above transform-op
    *)
-  op metaSlangTypeToJavaType: Sort -> JGenEnv Java.Type
+  op metaSlangTypeToJavaType: Sort -> JGenEnv JavaType
 
 
-  op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (Block * Java.Expr)
+  op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (JavaBlock * JavaExpr)
 
-  op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (Block * List Java.Expr)
+  op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (JavaBlock * List JavaExpr)
 
   (**
    * reads the optional option spec, which contains user-supplied
@@ -74,11 +74,12 @@ spec
 
   % utils for constructing Java elements ------------------------
 
-  op mkBinExp: Id * List Java.Expr -> Java.Expr
-  op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
-  op mkVarJavaExpr: Id -> Java.Expr
-  op mkNewClasInst: Id * List Java.Expr -> Java.Expr
-  op changeTimeVars: BlockStmt -> BlockStmt
+  op mkBinExp       : Id       * List JavaExpr -> JavaExpr
+  op mkMethInvName  : JavaName * List JavaExpr -> JavaExpr
+  op mkVarJavaExpr  : Id                       -> JavaExpr
+  op mkNewClasInst  : Id       * List JavaExpr -> JavaExpr
+
+  op changeTimeVars : JavaBlockStmt            -> JavaBlockStmt
 
 
 end-spec

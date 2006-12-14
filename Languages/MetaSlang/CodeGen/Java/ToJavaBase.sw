@@ -14,14 +14,14 @@ import ../../Transformations/HigherOrderMatching
 import IJavaCodeGen
 import Monad
 
-sort ToExprSort = Block * Java.Expr * Nat * Nat
+sort ToExprSort = JavaBlock * JavaExpr * Nat * Nat
 
 % --------------------------------------------------------------------------------
 
-%op metaSlangTypeToJavaType: Sort -> JGenEnv Java.Type
+%op metaSlangTypeToJavaType: Sort -> JGenEnv JavaType
 def metaSlangTypeToJavaType = tt_v3M
 
-op baseSrtToJavaTypeM: Sort -> JGenEnv Java.Type
+op baseSrtToJavaTypeM: Sort -> JGenEnv JavaType
 def baseSrtToJavaTypeM(srt) =
   if boolSort?(srt)
     then return(tt("Boolean"))
@@ -86,12 +86,12 @@ def setConstrs(clsBody, constrDecls) =
     clss        = clsBody.clss,
     interfs     = clsBody.interfs }
 
-op setMethodBody: MethDecl * Block -> MethDecl
+op setMethodBody: MethDecl * JavaBlock -> MethDecl
 def setMethodBody(m, b) =
   let (methHeader, _) = m in
   (methHeader, Some (b))
 
-op appendMethodBody: MethDecl * Block -> MethDecl
+op appendMethodBody: MethDecl * JavaBlock -> MethDecl
 def appendMethodBody(m as (methHdr,methBody),b) =
   case methBody of
     | Some b0 -> (methHdr,Some(b0++b))
@@ -160,17 +160,17 @@ op mkAssertOp: Id -> Id
 def mkAssertOp(opId) =
   "asrt_"^opId
  
-op mkTagEqExpr: Id * Id -> Java.Expr
+op mkTagEqExpr: Id * Id -> JavaExpr
 def mkTagEqExpr(clsId, consId) =
   let e1 = CondExp (Un (Prim (Name (["eqarg"],"tag"))), None) in
   let e2 = CondExp (Un (Prim (Name ([clsId], mkTagCId(consId)))), None) in
     mkJavaEq(e1, e2, "Integer")
 
-op mkThrowError: () -> Java.Stmt
+op mkThrowError: () -> JavaStmt
 def mkThrowError() =
   Throw (CondExp (Un (Prim (NewClsInst(ForCls(([],"Error"), [], None)))), None))
 
-op mkThrowException: String -> Java.Stmt
+op mkThrowException: String -> JavaStmt
 def mkThrowException(msg) =
   let msgstr = CondExp(Un(Prim(String msg)),None)in
   Throw (CondExp (Un (Prim (NewClsInst(ForCls(([],"IllegalArgumentException"), [msgstr], None)))), None))
@@ -179,7 +179,7 @@ def mkThrowFunEq() = mkThrowException("illegal function equality")
 def mkThrowMalf() = mkThrowException("malformed sum value") 
 def mkThrowUnexp() = mkThrowException("unexpected sum value") 
 
-op mkDefaultCase: () -> List (List SwitchLab * List BlockStmt)
+op mkDefaultCase: () -> List (List SwitchLab * List JavaBlockStmt)
 def mkDefaultCase() =
   let swlabel = [Default] in
   let stmt = mkThrowMalf() in
@@ -226,7 +226,7 @@ def isFinalVar?(id) =
   else
       false
 
-op mkFinalVarDeclM: Id * Sort * Java.Expr -> JGenEnv BlockStmt
+op mkFinalVarDeclM: Id * Sort * JavaExpr -> JGenEnv JavaBlockStmt
 def mkFinalVarDeclM(varid,srt,exp) =
   {
    typ <- tt_v3M srt;
@@ -235,7 +235,7 @@ def mkFinalVarDeclM(varid,srt,exp) =
    return (changeTimeVars(LocVarDecl(isfinal,typ,vdecl,[])))
   }
 
-op isIdentityAssignment?: Java.BlockStmt -> Boolean
+op isIdentityAssignment?: JavaBlockStmt -> Boolean
 def isIdentityAssignment?(stmt) =
   case stmt of
     | LocVarDecl(_,_,((lhsid,0),Some(Expr rhsexpr)),_) ->
@@ -247,12 +247,12 @@ def isIdentityAssignment?(stmt) =
 	 | _ -> false)
     | _ -> false
 
-op mts: Block
+op mts: JavaBlock
 def mts = []
 
 def tt = tt_v2
 
-op tt_v2: Id -> Java.Type
+op tt_v2: Id -> JavaType
 def tt_v2(id) =
   case id of
     | "Boolean" -> (Basic (JBool), 0) % see tt_v3
@@ -284,7 +284,7 @@ def isVoid?(spc,srt) =
 (**
  * the new implementation of tt uses type information in order to generate the arrow type (v3)
  *)
-op tt_v3M: Sort -> JGenEnv Java.Type
+op tt_v3M: Sort -> JGenEnv JavaType
 def tt_v3M srt =
   {
    spc <- getEnvSpec;
@@ -336,7 +336,7 @@ def tt_idM srt =
   }
 
 
-op JVoid: Java.Type
+op JVoid: JavaType
 def JVoid = (Basic Void,0)
 
 %op sortId: Sort -> String 
@@ -357,7 +357,7 @@ def srtIdM srt =
    return s
   }
 
-op srtId_internalM: Sort * Boolean -> JGenEnv (List Java.Type * String)
+op srtId_internalM: Sort * Boolean -> JGenEnv (List JavaType * String)
 def srtId_internalM(srt,addIds?) =
   case srt of
     | Base (Qualified (q, id), tvs, _) -> 
@@ -424,7 +424,7 @@ def srtId_internalM(srt,addIds?) =
            %(issueUnsupportedError(sortAnn(srt),"sort format not supported: "^printSort(srt));
 	   % ([tt_v2 "ERRORSORT"],"ERRORSORT",nothingCollected))
 
-op getJavaTypeId: Java.Type -> Id
+op getJavaTypeId: JavaType -> Id
 def getJavaTypeId(jt) =
   case jt of
     | (bon,0) -> (case bon of
@@ -458,19 +458,19 @@ def mkArrowSrtId(domidlist,ranid) =
   let srt = Arrow(dom,ran,p) in
   srtIdM srt
 
-op mkJavaObjectType: Id -> Java.Type
+op mkJavaObjectType: Id -> JavaType
 def mkJavaObjectType(id) =
   (Name ([],id),0)
 
-op mkJavaNumber: Integer -> Java.Expr
+op mkJavaNumber: Integer -> JavaExpr
 def mkJavaNumber(i) =
   CondExp (Un (Prim (IntL (i))), None)
 
-op mkJavaBool: Boolean -> Java.Expr
+op mkJavaBool: Boolean -> JavaExpr
 def mkJavaBool(b) =
   CondExp (Un (Prim (Bool (b))), None)
 
-op mkJavaString: String -> Java.Expr
+op mkJavaString: String -> JavaExpr
 def mkJavaString(s) =
   let chars = explode s in
   let s = foldl (fn
@@ -481,23 +481,23 @@ def mkJavaString(s) =
   in
   CondExp (Un (Prim (String (s))), None)
 
-op mkJavaChar: Char -> Java.Expr
+op mkJavaChar: Char -> JavaExpr
 def mkJavaChar(c) =
   CondExp (Un (Prim (Char (c))), None)
 
-op mkJavaCastExpr: Java.Type * Java.Expr -> Java.Expr
+op mkJavaCastExpr: JavaType * JavaExpr -> JavaExpr
 def mkJavaCastExpr(jtype,jexpr) =
   let cast = CondExp(Un(Cast(jtype,Prim(Paren(jexpr)))),None) in
   cast
   %CondExp (Un (Prim (Paren cast)), None)
 
-op mkVarJavaExpr: Id -> Java.Expr
+op mkVarJavaExpr: Id -> JavaExpr
 def mkVarJavaExpr(id) = CondExp (Un (Prim (Name ([], id))), None)
 
-op mkQualJavaExpr: Id * Id -> Java.Expr
+op mkQualJavaExpr: Id * Id -> JavaExpr
 def mkQualJavaExpr(id1, id2) = CondExp (Un (Prim (Name ([id1], id2))), None)
 
-op mkThisExpr:() -> Java.Expr
+op mkThisExpr:() -> JavaExpr
 def mkThisExpr() =
   CondExp(Un(Prim(This None)),None)
 
@@ -550,46 +550,46 @@ def javaBaseOp?(id) =
     | "~" -> true
     | _ -> false
 
-op mkBinExp: Id * List Java.Expr -> Java.Expr
+op mkBinExp: Id * List JavaExpr -> JavaExpr
 def mkBinExp(opId, javaArgs) =
   let [ja1, ja2] = javaArgs in
   CondExp (Bin (mkBaseJavaBinOp(opId), Un (Prim (Paren (ja1))), Un (Prim (Paren (ja2)))), None)
 
-op Id.mkUnExp: Id * List Java.Expr -> Java.Expr
+op Id.mkUnExp: Id * List JavaExpr -> JavaExpr
 def Id.mkUnExp(opId, javaArgs) =
   let [ja] = javaArgs in
   CondExp (Un (Un (mkBaseJavaUnOp(opId), Prim (Paren (ja)))), None)
 
-op UnOp.mkUnExp: UnOp * List Java.Expr -> Java.Expr
+op UnOp.mkUnExp: UnOp * List JavaExpr -> JavaExpr
 def UnOp.mkUnExp(unop, javaArgs) =
   let [ja] = javaArgs in
   CondExp (Un (Un (unop, Prim (Paren (ja)))), None)
 
-op mkJavaNot: Java.Expr -> Java.Expr
+op mkJavaNot: JavaExpr -> JavaExpr
 def mkJavaNot e1 =
   CondExp (Un (Un (LogNot, Prim (Paren (e1)))), None)
 
-op mkJavaAnd: Java.Expr * Java.Expr -> Java.Expr
+op mkJavaAnd: JavaExpr * JavaExpr -> JavaExpr
 def mkJavaAnd(e1, e2) =
   CondExp (Bin (CdAnd, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
 
-op mkJavaOr: Java.Expr * Java.Expr -> Java.Expr
+op mkJavaOr: JavaExpr * JavaExpr -> JavaExpr
 def mkJavaOr (e1, e2) =
   CondExp (Bin (CdOr, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
 
-op mkJavaImplies : Java.Expr * Java.Expr -> Java.Expr
+op mkJavaImplies : JavaExpr * JavaExpr -> JavaExpr
 def mkJavaImplies(e1,e2) =
   let binExp = Un(Prim(Paren(e1))) in
   let condExp = (Un(Prim(Bool true)),None) in
   CondExp(binExp,Some(e2,condExp))
 
-op mkJavaIff     : Java.Expr * Java.Expr -> Java.Expr
+op mkJavaIff     : JavaExpr * JavaExpr -> JavaExpr
 def mkJavaIff(e1,e2) =
   let binExp = Un(Prim(Paren(e1))) in
   let condExp = (Un(Un(LogNot,Prim(Paren(e2)))),None) in
   CondExp(binExp,Some(e2,condExp))
 
-op mkJavaEq: Java.Expr * Java.Expr * Id -> Java.Expr
+op mkJavaEq: JavaExpr * JavaExpr * Id -> JavaExpr
 def mkJavaEq(e1, e2, t1) =
   if (t1 = "Boolean" or t1 = "Integer" or t1 = "Nat" or t1 = "Char")
     then CondExp (Bin (Eq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
@@ -597,7 +597,7 @@ def mkJavaEq(e1, e2, t1) =
     CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)
 %    CondExp (Un (Prim (MethInv (ViaName (([t1], "equals"), [e2])))), None)
 
-op mkJavaNotEq: Java.Expr * Java.Expr * Id -> Java.Expr
+op mkJavaNotEq: JavaExpr * JavaExpr * Id -> JavaExpr
 def mkJavaNotEq(e1, e2, t1) =
   if (t1 = "Boolean" or t1 = "Integer" or t1 = "Nat" or t1 = "Char")
     then CondExp (Bin (NotEq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
@@ -605,32 +605,32 @@ def mkJavaNotEq(e1, e2, t1) =
     CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)
 %    CondExp (Un (Prim (MethInv (ViaName (([t1], "equals"), [e2])))), None)
   
-op mkFldAcc: Java.Expr * Id -> Java.Expr
+op mkFldAcc: JavaExpr * Id -> JavaExpr
 def mkFldAcc(e, id) = 
   CondExp (Un (Prim (FldAcc (ViaPrim (Paren (e), id)))), None)
 
-op mkFldAccViaClass: Id * Id -> Java.Expr
+op mkFldAccViaClass: Id * Id -> JavaExpr
 def mkFldAccViaClass(cls, id) = 
   CondExp (Un (Prim (FldAcc (ViaCls (([], cls), id)))), None)
 
-op mkFldAssn: Id * Id * Java.Expr -> BlockStmt
+op mkFldAssn: Id * Id * JavaExpr -> JavaBlockStmt
 def mkFldAssn(cId, vId, jT1) =
   let fldAcc = mkFldAccViaClass(cId, vId) in
   Stmt (Expr (Ass (FldAcc (ViaCls (([], cId), vId)), Assgn, jT1)))
 
-op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
+op mkMethInvName: JavaName * List JavaExpr -> JavaExpr
 def mkMethInvName(name, javaArgs) =
   CondExp (Un (Prim (MethInv (ViaName (name, javaArgs)))), None)
 
-op mkMethInv: Id * Id * List Java.Expr -> Java.Expr
+op mkMethInv: Id * Id * List JavaExpr -> JavaExpr
 def mkMethInv(srtId, opId, javaArgs) =
   CondExp (Un (Prim (MethInv (ViaPrim (Name ([], srtId), opId, javaArgs)))), None)
 
-op mkMethExprInv: Java.Expr * Id * List Java.Expr -> Java.Expr
+op mkMethExprInv: JavaExpr * Id * List JavaExpr -> JavaExpr
 def mkMethExprInv(topJArg, opId, javaArgs) =
   CondExp (Un (Prim (MethInv (ViaPrim (Paren (topJArg), opId, javaArgs)))), None)
 
-op mkFieldAccess: Java.Expr * Id -> Java.Expr
+op mkFieldAccess: JavaExpr * Id -> JavaExpr
 def mkFieldAccess(objexpr,fid) =
   let fldAcc = ViaPrim(Paren(objexpr),fid) in
   CondExp (Un (Prim(mkFldAccPr fldAcc)), None)
@@ -638,14 +638,14 @@ def mkFieldAccess(objexpr,fid) =
 (**
  * takes the ids from the formal pars and constructs a method invocation to the given opId
  *)
-op mkMethodInvFromFormPars: Id * List FormPar -> Java.Expr
+op mkMethodInvFromFormPars: Id * List FormPar -> JavaExpr
 def mkMethodInvFromFormPars(opId,fpars) =
   let parIds = map (fn(_,_,(id,_)) -> id) fpars in
   let vars = mkVars parIds in
   let opname = ([],opId) in
   mkMethInvName(opname,vars)
 
-op mkVars: List Id -> List Java.Expr
+op mkVars: List Id -> List JavaExpr
 def mkVars(ids) =
   map mkVarJavaExpr ids
 
@@ -730,7 +730,7 @@ def getRestrictionTerm(spc,srt) =
 (**
   * returns the Java type for the given id, checks for basic names like "int" "boolean" etc.
   *)
-op getJavaTypeFromTypeId: Id -> Java.Type
+op getJavaTypeFromTypeId: Id -> JavaType
 def getJavaTypeFromTypeId(id) =
   if id = "int" then (Basic JInt,0)
   else
@@ -757,7 +757,7 @@ def getJavaTypeFromTypeId(id) =
  * @param argNameBase the basename of the arguments; actual arguments are created by appending 1,2,3, etc to this name
  * @param the statement representing the body of the method; usually a return statement
  *)
-op mkMethDeclWithParNames: Id * List Id * Id * List Id * Java.Stmt -> MethDecl
+op mkMethDeclWithParNames: Id * List Id * Id * List Id * JavaStmt -> MethDecl
 def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt) =
   let body = [Stmt bodyStmt] in
 %  let (pars,_) = foldl (fn(argType,(types,nmb)) -> 
@@ -775,7 +775,7 @@ def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt
   let header = (mods,retType,methodName,pars:FormPars,throws) in
   (header,Some body)
 
-op mkMethDecl: Id * List Id * Id * Id * Java.Stmt -> MethDecl
+op mkMethDecl: Id * List Id * Id * Id * JavaStmt -> MethDecl
 def mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,bodyStmt) =
   let (parNames,_) = foldl (fn(argType,(argnames,nmb)) -> 
 		    let argname = argNameBase^Integer.toString(nmb) in
@@ -788,19 +788,19 @@ def mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,bodyStmt) =
   * creates a method decl with just one return statement as body,
   * see mkMethDecl for the other parameters
   *)
-op mkMethDeclJustReturn: Id * List Id * Id * Id * Java.Expr -> MethDecl
+op mkMethDeclJustReturn: Id * List Id * Id * Id * JavaExpr -> MethDecl
 def mkMethDeclJustReturn(methodName,argTypeNames,retTypeName,argNameBase,retExpr) =
   let retStmt = mkReturnStmt(retExpr) in
   mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,retStmt)
 
-op mkNewClasInst: String * List Java.Expr -> Java.Expr
+op mkNewClasInst: String * List JavaExpr -> JavaExpr
 def mkNewClasInst(id, javaArgs) =
   CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, None)))), None)
 
 (**
  * creates a "new" expression for an anonymous class with the given "local" class body
  *)
-def mkNewAnonymousClasInst(id:String, javaArgs:List Java.Expr,clsBody:ClsBody) : Java.Expr =
+def mkNewAnonymousClasInst(id:String, javaArgs:List JavaExpr,clsBody:ClsBody) : JavaExpr =
   CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None)
 
 (**
@@ -813,7 +813,7 @@ def mkNewAnonymousClasInstOneMethod(id,javaArgs,methDecl)  =
   let exp = CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None) in
   let cldecl = mkArrowClassDecl(id,methDecl) in
   %let _ = writeLine("generated class decl: "^id) in
-  (exp:Java.Expr,cldecl:Java.ClsDecl)
+  (exp:JavaExpr,cldecl:Java.ClsDecl)
 
 
 (**
@@ -836,27 +836,27 @@ def mkArrowClassDecl(id,methDecl) =
   cldecl
 
 
-op mkVarDecl: Id * Id -> BlockStmt
+op mkVarDecl: Id * Id -> JavaBlockStmt
 def mkVarDecl(v, srtId) =
   changeTimeVars(LocVarDecl (false, tt(srtId), ((v, 0), None), []))
   
-op mkNameAssn: Java.Name * Java.Name -> BlockStmt
+op mkNameAssn: JavaName * JavaName -> JavaBlockStmt
 def mkNameAssn(n1, n2) =
   Stmt (Expr (Ass (Name n1, Assgn, CondExp (Un (Prim (Name n2)) , None))))
 
-op mkVarAssn: Id * Java.Expr -> BlockStmt
+op mkVarAssn: Id * JavaExpr -> JavaBlockStmt
 def mkVarAssn(v, jT1) =
   Stmt (Expr (Ass (Name ([], v), Assgn, jT1)))
 
-op mkVarInit: Id * Id * Java.Expr -> BlockStmt
+op mkVarInit: Id * Id * JavaExpr -> JavaBlockStmt
 def mkVarInit(vId, srtId, jInit) =
   changeTimeVars(LocVarDecl (false, tt(srtId), ((vId, 0), Some ( Expr (jInit))), []))
 
-op mkIfStmt: Java.Expr * Block * Block -> BlockStmt
+op mkIfStmt: JavaExpr * JavaBlock * JavaBlock -> JavaBlockStmt
 def mkIfStmt(jT0, b1, b2) =
   Stmt (If (jT0, Block (b1), if b2 = [] then None else Some (Block (b2))))
 
-op mkReturnStmt: Java.Expr -> Stmt
+op mkReturnStmt: JavaExpr -> JavaStmt
 def mkReturnStmt(expr) =
   Return(Some expr)
 
@@ -945,10 +945,10 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
   in
     (pkg,imp,cidecls)
 
-op flattenBlock: Block -> Block
+op flattenBlock: JavaBlock -> JavaBlock
 def flattenBlock b = flatten (map flattenBlockStmt b)
 
-op flattenBlockStmt: BlockStmt -> Block
+op flattenBlockStmt: JavaBlockStmt -> JavaBlock
 def flattenBlockStmt bstmt =
   case bstmt of
     | Stmt(Block b) -> flattenBlock b
@@ -958,22 +958,22 @@ def flattenBlockStmt bstmt =
  * remove any return expr statements from the method's body; this is needed, in case a method
  * named "main" is translated into the form expected by Java "public static void main(String[] args)"
  *)
-op Body.validateMainMethodBody: Option Block -> Option Block
+op Body.validateMainMethodBody: Option JavaBlock -> Option JavaBlock
 def Body.validateMainMethodBody optblock =
   case optblock of
     | Some block -> Some(validateMainMethodBody block)
     | None -> None
 
-op Block.validateMainMethodBody: Block -> Block
+op Block.validateMainMethodBody: JavaBlock -> JavaBlock
 def Block.validateMainMethodBody b = flattenBlock(map validateMainMethodBody b)
 
-op BlockStmt.validateMainMethodBody: BlockStmt -> BlockStmt
+op BlockStmt.validateMainMethodBody: JavaBlockStmt -> JavaBlockStmt
 def BlockStmt.validateMainMethodBody bstmt =
   case bstmt of
     | Stmt stmt -> Stmt(validateMainMethodBody stmt)
     | _ -> bstmt
 
-op Stmt.validateMainMethodBody: Stmt -> Stmt
+op Stmt.validateMainMethodBody: JavaStmt -> JavaStmt
 def Stmt.validateMainMethodBody stmt =
   case stmt of
     | Block b -> Block(validateMainMethodBody b)
@@ -1171,7 +1171,7 @@ op packageNameToPath: String -> String
 def packageNameToPath(s) =
   map (fn | #. -> #/ |c -> c) s
 
-op packageNameToJavaName: String -> Java.Name
+op packageNameToJavaName: String -> JavaName
 def packageNameToJavaName(s) =
   let l = rev(splitStringAtChar #. s) in
   case l of
@@ -1242,7 +1242,7 @@ def baseDir : Id = "."
 
 % hack: change vars with "time" or "Time" and defined as "int" to be "long"
 
-%op changeTimeVars: BlockStmt -> BlockStmt
+%op changeTimeVars: JavaBlockStmt -> JavaBlockStmt
 def changeTimeVars bstmt =
   case bstmt of
     | LocVarDecl(isFinal,(Basic JInt,0),((id,n),optvarinit),[]) ->

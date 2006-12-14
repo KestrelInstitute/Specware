@@ -76,12 +76,12 @@ Java qualifying spec
 
 %%%% package name 
 
-  def ppPackageName (nm : Name) : Pretty =
+  def ppPackageName (nm : JavaName) : Pretty =
       prettysNone [toPretty "package ", ppName nm, toPretty ";"]
 
 %%%% import declarations
 
-  def ppImports (ims : List Name) : Pretty =
+  def ppImports (ims : List JavaName) : Pretty =
       prettysAll 
         (List.map
            (fn nm ->
@@ -225,7 +225,7 @@ Java qualifying spec
 
 %%%% Static initialization
 
-  def ppStaticInits (bk : Block) : Pretty =
+  def ppStaticInits (bk : JavaBlock) : Pretty =
       case bk of 
         [] -> 
          toPretty "static { }"
@@ -236,7 +236,7 @@ Java qualifying spec
 %%%% field declaration
 
   def ppFldDecl (ms : List Mod, 
-		 t  : Type, 
+		 t  : JavaType, 
 		 vd : VarDecl, 
 		 _ (* vds *) : List VarDecl)
     : Pretty =
@@ -293,7 +293,7 @@ Java qualifying spec
 
 %%%% method declaration
 
-  def ppMethDecl (mh : MethHeader, obk : Option Block) : Pretty =
+  def ppMethDecl (mh : MethHeader, obk : Option JavaBlock) : Pretty =
       case obk of
         None -> 
           prettysNone [ppMethHeader mh, toPretty ";"]
@@ -309,7 +309,7 @@ Java qualifying spec
 
 %%%% method header
 
-  def ppMethHeader (ms : List Mod, rt : Option Type, id : Ident,
+  def ppMethHeader (ms : List Mod, rt : Option JavaType, id : Ident,
                     fps : List FormPar, thrs : Throws) : Pretty =
       prettysNone [ppMods ms,
                    case rt of 
@@ -335,7 +335,7 @@ Java qualifying spec
 
 %%%% single formal parameter
 
-  def ppFormPar (b : Boolean, t : Type, vdi : VarDeclId) 
+  def ppFormPar (b : Boolean, t : JavaType, vdi : VarDeclId) 
                                                  : Pretty =
       prettysNone
         [toPretty (if b = true then "final " else ""),
@@ -345,14 +345,14 @@ Java qualifying spec
 
 %%%% throws-statement
 
-  def ppThrows (ns : List Name) : Pretty =
+  def ppThrows (ns : List JavaName) : Pretty =
       prettysNone 
         (addPrettys (List.map ppName ns, toPretty ", "))
 
 %%%% constructor declaration
 
   def ppConstrDecl (ms : List Mod, id : Ident, fps : List FormPar, 
-                thrs : Throws, bk : Block) : Pretty =
+                thrs : Throws, bk : JavaBlock) : Pretty =
       let hd =  
           prettysNone 
             [ppMods ms,
@@ -375,7 +375,7 @@ Java qualifying spec
 
 %%%% block
 
-  def ppBlock (bss : List BlockStmt) : Pretty =
+  def ppBlock (bss : List JavaBlockStmt) : Pretty =
       prettysAll (List.map ppBlockStmt bss)
 
 %  def ppBlock (bss : List BlockStmt) : Pretty =
@@ -387,7 +387,7 @@ Java qualifying spec
 
 %%%% block statment
 
-  def ppBlockStmt (bs : BlockStmt) : Pretty =
+  def ppBlockStmt (bs : JavaBlockStmt) : Pretty =
       case bs of
         LocVarDecl lvd
                -> prettysNone [ppLocVarDecl lvd,
@@ -398,7 +398,7 @@ Java qualifying spec
 
 %%%% local vriable declaration
 
- def ppLocVarDecl (b : Boolean, t : Type, vd : VarDecl,
+ def ppLocVarDecl (b : Boolean, t : JavaType, vd : VarDecl,
                                  vds : List VarDecl) : Pretty =
      prettysNone 
        [toPretty (if b then "final " else ""),
@@ -410,10 +410,10 @@ Java qualifying spec
 
 %%%% statement 
 
-  def ppStmt(st:Stmt) = ppStmt_internal(st,false)
-  def ppStmtOmitBrackets(st:Stmt) = ppStmt_internal(st,true)
+  def ppStmt(st:JavaStmt) = ppStmt_internal(st,false)
+  def ppStmtOmitBrackets(st:JavaStmt) = ppStmt_internal(st,true)
 
-  def ppStmt_internal (st : Stmt, omitBrackets? : Boolean) : Pretty = 
+  def ppStmt_internal (st : JavaStmt, omitBrackets? : Boolean) : Pretty = 
       case st of 
         Block bk ->
           (case bk of 
@@ -602,7 +602,7 @@ Java qualifying spec
 %%%% switch label-statement pair
 
   def ppSwitchLabStmtPa (slabs : List SwitchLab, 
-                         bksts : List BlockStmt) : Pretty = 
+                         bksts : List JavaBlockStmt) : Pretty = 
       prettysAll [
 		  prettysNone (List.map  ppSwitchLab slabs),
 		  prettysNone[toPretty "  ",prettysAll (List.map ppBlockStmt bksts)]]
@@ -619,24 +619,24 @@ Java qualifying spec
 
 %%%% optional expressions 
 
-  def ppOptExpr (ope : Option Expr) : Pretty = 
+  def ppOptExpr (ope : Option JavaExpr) : Pretty = 
       case ope of
         None   -> emptyPretty ()
       | Some e -> ppExpr e
 
 %%%% expression 
 
-  def ppExpr (e : Expr) = ppExpr_internal(e,false)
-  def ppExprOmitBrackets(e : Expr) = ppExpr_internal(e,true)
+  def ppExpr (e : JavaExpr) = ppExpr_internal(e,false)
+  def ppExprOmitBrackets(e : JavaExpr) = ppExpr_internal(e,true)
 
-  def ppExpr_internal (e : Expr, omitBrackets? : Boolean) : Pretty = 
+  def ppExpr_internal (e : JavaExpr, omitBrackets? : Boolean) : Pretty = 
       case e of 
         Ass ass     -> ppAss ass
      |  CondExp(be,opt) -> ppCondExp(be,opt,omitBrackets?)
 
 %%%% assignment
 
-  def ppAss (l : LHS, o : AssOp, e : Expr) : Pretty =
+  def ppAss (l : JavaLHS, o : AssOp, e : JavaExpr) : Pretty =
       prettysNone [ppLHS l, 
                    toPretty " ", 
                    ppAssOp o, 
@@ -650,7 +650,7 @@ Java qualifying spec
 
 %%%% left hand side of assignment
 
-  def ppLHS (l : LHS) : Pretty =
+  def ppLHS (l : JavaLHS) : Pretty =
       case l of 
         Name nm   -> ppName nm
       | FldAcc fac -> ppFldAcc fac
@@ -691,7 +691,7 @@ Java qualifying spec
 
 %%%% conditional expression
 
-  def ppCondExp (be : BinExp, rest : Option (Expr * CondExp), omitBrackets? : Boolean)
+  def ppCondExp (be : BinExp, rest : Option (JavaExpr * CondExp), omitBrackets? : Boolean)
                                                      : Pretty =
     let (openbr,closebr) = case rest of None -> ("","") | Some _ -> ("(",")") in
       prettysNone
@@ -866,7 +866,7 @@ Java qualifying spec
 %%%% method invocation
 
   def ppMethInv (mi : MethInv) : Pretty =
-      let def ppArgs (es : List Expr) : Pretty =
+      let def ppArgs (es : List JavaExpr) : Pretty =
               prettysNone
                 (List.flatten
                    [[toPretty "("],

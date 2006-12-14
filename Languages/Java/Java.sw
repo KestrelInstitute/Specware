@@ -7,9 +7,9 @@ spec
 
 sort JavaFile = (*filename*) String * CompUnit
 
-sort CompUnit = Option Name * List Name * List ClsOrInterfDecl
-%% Name is for package
-%% List Name for imports
+sort CompUnit = Option JavaName * List JavaName * List ClsOrInterfDecl
+%% JavaName is for package
+%% List JavaName for imports
 
 sort ClsOrInterfDecl = 
   | ClsDecl     ClsDecl
@@ -29,13 +29,13 @@ sort ClsHeader = Ident * SuperCls * SuperInterf
 
 sort InterfHeader = Ident * SuperInterf
 
-sort SuperCls = Option Name
+sort SuperCls = Option JavaName
 
-sort SuperInterf = List Name
+sort SuperInterf = List JavaName
 
 sort ClsBody = 
   { handwritten : List String,
-    staticInits : List Block,
+    staticInits : List JavaBlock,
     flds        : List FldDecl,
     constrs     : List ConstrDecl, 
     meths       : List MethDecl,
@@ -50,12 +50,12 @@ sort InterfBody =
     clss      : List ClsDecl,
     interfs   : List InterfDecl }
 
-sort FldDecl = List Mod * Type * VarDecl * List VarDecl
+sort FldDecl = List Mod * JavaType * VarDecl * List VarDecl
 
 sort ConstrDecl = 
-     List Mod * Ident * FormPars * Throws * Block
+     List Mod * Ident * FormPars * Throws * JavaBlock
 
-sort MethDecl = MethHeader * Option Block
+sort MethDecl = MethHeader * Option JavaBlock
 
 sort VarDecl = VarDeclId * Option VarInit
 
@@ -63,66 +63,66 @@ sort VarDeclId = Ident * Integer
 %% Integer is for # of dimensions, 0 indicating it is not an array
 
 sort VarInit = 
-  | Expr     Expr
+  | Expr     JavaExpr
   | ArrInit  ArrInit
 
 sort ArrInit = List (Option VarInit)
 %% NONE indicates occurrence of a comma
 
-sort MethHeader = List Mod * RetType * Ident * FormPars * Throws
+sort MethHeader = List Mod * JavaRetType * Ident * FormPars * Throws
 
-sort FormPar = Boolean * Type * VarDeclId
+sort FormPar = Boolean * JavaType * VarDeclId
 %% Boolean value "true" indicates that "final" is present
 sort FormPars = List FormPar
 
-sort Throws = List Name
+sort Throws = List JavaName
 
-sort Block = List BlockStmt
+sort JavaBlock = List JavaBlockStmt
 
-sort BlockStmt = 
-  | LocVarDecl  Boolean * Type * VarDecl * List VarDecl
+sort JavaBlockStmt = 
+  | LocVarDecl  Boolean * JavaType * VarDecl * List VarDecl
     %% Boolean indicates if "final" is present
   | ClsDecl     List Mod * ClsHeader * ClsBody
-  | Stmt        Stmt
+  | Stmt        JavaStmt
 
-sort Stmt = 
-  | Block         Block
-  | Labeled       Ident * Stmt
-  | If            Expr * Stmt * Option Stmt
-  | For           Option ForInit * Option Expr * 
-                  Option ForUpdate * Stmt
-  | While         Expr * Stmt
-  | Do            Stmt * Expr
-  | Try           Block * List (FormPar * Block) * Option Block
-    %% FormPar * Block is for catch-clause, Option Block for finally-clause.
+sort JavaStmt = 
+  | Block         JavaBlock
+  | Labeled       Ident * JavaStmt
+  | If            JavaExpr * JavaStmt * Option JavaStmt
+  | For           Option ForInit * Option JavaExpr * 
+                  Option ForUpdate * JavaStmt
+  | While         JavaExpr * JavaStmt
+  | Do            JavaStmt * JavaExpr
+  | Try           JavaBlock * List (FormPar * JavaBlock) * Option JavaBlock
+    %% FormPar * JavaBlock is for catch-clause, Option JavaBlock for finally-clause.
     %% At least one catch or the finally is present.
-  | Switch        Expr * SwitchBlock
-  | Synchronized  Expr * Block
-  | Return        Option Expr
-  | Throw         Expr
+  | Switch        JavaExpr * SwitchBlock
+  | Synchronized  JavaExpr * JavaBlock
+  | Return        Option JavaExpr
+  | Throw         JavaExpr
   | Break         Option Ident
   | Continue      Option Ident
-  | Expr          Expr
+  | Expr          JavaExpr
   | Empty
 
 sort ForInit =
-  | LocVarDecl  Boolean * Type * VarDecl * List VarDecl           
-  | StmtExprs    Expr * List Expr 
+  | LocVarDecl  Boolean * JavaType * VarDecl * List VarDecl           
+  | StmtExprs    JavaExpr * List JavaExpr 
 
-sort ForUpdate = Expr * List Expr 
+sort ForUpdate = JavaExpr * List JavaExpr 
 
-sort SwitchBlock = List (List SwitchLab * List BlockStmt)
+sort SwitchBlock = List (List SwitchLab * List JavaBlockStmt)
 
 sort SwitchLab = 
-  | JCase     Expr
+  | JCase     JavaExpr
   | Default
 
-sort Expr = 
+sort JavaExpr = 
   | CondExp CondExp
-  | Ass     LHS * AssOp * Expr
+  | Ass     JavaLHS * AssOp * JavaExpr
 
-sort LHS =
-  | Name          Name
+sort JavaLHS =
+  | Name          JavaName
     %% field access
   | FldAcc        FldAcc
     %% 2 array access
@@ -151,11 +151,11 @@ def assOpToString (o : AssOp) : String =
          | BitInclOr  -> "|="
 
 
-sort CondExp = BinExp * Option (Expr * CondExp)
+sort CondExp = BinExp * Option (JavaExpr * CondExp)
 
 sort BinExp =  
   | Bin    BinOp * BinExp * BinExp
-  | InstOf BinExp * Type
+  | InstOf BinExp * JavaType
   | Un     UnExp
   
 sort BinOp = 
@@ -188,10 +188,10 @@ def binOpToString (o : BinOp) : String =
 
 sort UnExp = 
   | Un      UnOp * UnExp
-  | Cast    Type * UnExp
+  | Cast    JavaType * UnExp
   | PostUn  UnExp * PostUnOp
   | Prim    Prim
-%  | Name    Name
+%  | Name    JavaName
 
 sort UnOp = 
   | Plus | Minus
@@ -216,7 +216,7 @@ def postUnOpToString (o : PostUnOp) : String =
          | PostDec -> "--"
 
 sort Prim =
-  | Name             Name
+  | Name             JavaName
     %% 6 literals follow
   | IntL             Integer
   | Float            Integer * Integer
@@ -226,11 +226,11 @@ sort Prim =
   | String           String
   | Null 
     %% Class instance
-  | ClsInst          Option Type
-    %% this or (Class)Name.this
-  | This             Option Name
+  | ClsInst          Option JavaType
+    %% this or (Class)JavaName.this
+  | This             Option JavaName
     %%
-  | Paren            Expr
+  | Paren            JavaExpr
     %% new class inst creation
   | NewClsInst       NewClsInst
     %% new class inst creation
@@ -242,16 +242,16 @@ sort Prim =
     %% 2 array accesses
   | ArrAcc           ArrAcc
 
-def mkNamePr (nm : Name) : Prim = Name nm
+def mkNamePr (nm : JavaName) : Prim = Name nm
 def mkIntLPr (i : Integer) : Prim = IntL i
 def mkFloatPr (i : Integer, j : Integer)  : Prim = Float (i,j)
 def mkBoolPr (b : Boolean) : Prim = Bool b
 def mkCharPr (c : Char) : Prim = Char c
 def mkStringPr (s : String) : Prim = String s
 def mkNullPr () : Prim = Null
-def mkClsInstPr (oty :  Option Type) : Prim = ClsInst oty
-def mkThisPr (onm : Option Name) : Prim = This onm
-def mkParenPr (e : Expr) : Prim = Paren e
+def mkClsInstPr (oty :  Option JavaType) : Prim = ClsInst oty
+def mkThisPr (onm : Option JavaName) : Prim = This onm
+def mkParenPr (e : JavaExpr) : Prim = Paren e
 def mkNewClsInstPr (nci : NewClsInst) : Prim = NewClsInst nci
 def mkNewArrPr (na : NewArr) : Prim = NewArr na
 def mkFldAccPr (fac : FldAcc) : Prim = FldAcc fac
@@ -260,68 +260,68 @@ def mkArrAccPr (aac : ArrAcc) : Prim = ArrAcc aac
 
 
 sort NewClsInst =
-  | ForCls        Name * List Expr * Option ClsBody
-  | ForInnCls     Prim * Ident * List Expr * Option ClsBody
+  | ForCls        JavaName * List JavaExpr * Option ClsBody
+  | ForInnCls     Prim * Ident * List JavaExpr * Option ClsBody
 
-def mkForClsNCI (nm : Name, args : List Expr, cbd : Option ClsBody)
+def mkForClsNCI (nm : JavaName, args : List JavaExpr, cbd : Option ClsBody)
                                                 : NewClsInst =
     ForCls (nm, args, cbd)
-def mkForInnClsNCI (pm : Prim, id : Ident, args : List Expr,
+def mkForInnClsNCI (pm : Prim, id : Ident, args : List JavaExpr,
                             cbd : Option ClsBody): NewClsInst =
     ForInnCls (pm, id, args, cbd) 
  
 sort NewArr =
-    %% List Expr is for the lenths of the first n dimensions. 
+    %% List JavaExpr is for the lenths of the first n dimensions. 
     %% Integer is for the extra # of "[]"
-  | Arr           Name * List Expr * Integer
-  | ArrWInit      Name * Integer * ArrInit
+  | Arr           JavaName * List JavaExpr * Integer
+  | ArrWInit      JavaName * Integer * ArrInit
 
 sort FldAcc =
   | ViaPrim       Prim * Ident
   | ViaSuper      Ident
-  | ViaCls        Name * Ident
+  | ViaCls        JavaName * Ident
 
 def mkViaPrimFA (pm : Prim, id : Ident) : FldAcc =
     ViaPrim (pm,id)
 def mkViaSuperFA (id : Ident) : FldAcc =
     ViaSuper id
-def mkViaClsFA (nm : Name, id : Ident) : FldAcc =
+def mkViaClsFA (nm : JavaName, id : Ident) : FldAcc =
     ViaCls (nm,id)
 
 sort MethInv =
-  | ViaName       Name * List Expr
-  | ViaPrim      Prim * Ident * List Expr
-  | ViaSuper     Ident  * List Expr
-  | ViaClsSuper  Name * Ident * List Expr
+  | ViaName       JavaName * List JavaExpr
+  | ViaPrim      Prim * Ident * List JavaExpr
+  | ViaSuper     Ident  * List JavaExpr
+  | ViaClsSuper  JavaName * Ident * List JavaExpr
 
-def mkViaNameMI (nm : Name, args : List Expr) : MethInv =
+def mkViaNameMI (nm : JavaName, args : List JavaExpr) : MethInv =
     ViaName (nm,args)
-def mkViaPrimMI (pm : Prim, id : Ident, args : List Expr) 
+def mkViaPrimMI (pm : Prim, id : Ident, args : List JavaExpr) 
                                                 : MethInv =
     ViaPrim (pm,id,args)
-def mkViaSuperMI (id : Ident, args : List Expr) : MethInv =
+def mkViaSuperMI (id : Ident, args : List JavaExpr) : MethInv =
     ViaSuper (id,args)
-def mkViaClsSuperMI (nm : Name, id : Ident, args : List Expr)
+def mkViaClsSuperMI (nm : JavaName, id : Ident, args : List JavaExpr)
                                                 : MethInv =
     ViaClsSuper (nm,id,args)
 
 sort ArrAcc = 
-  | ViaName        Name * Expr
-  | ViaNoNewArray  Prim * Expr
+  | ViaName        JavaName * JavaExpr
+  | ViaNoNewArray  Prim * JavaExpr
 
 
-sort Type = BasicOrName * Integer
+sort JavaType = BasicOrName * Integer
 %% Integer is for dimension, 0 means that it is not an array.
 
-sort BasicOrName = | Basic Basic | Name Name 
+sort BasicOrName = | Basic Basic | Name JavaName 
 
 sort Basic = 
   | JBool | Byte | Short | Char | JInt | Long | JFloat | Double | Void
 
-sort RetType = Option Type
+sort JavaRetType = Option JavaType
 
 
-sort Name = List Ident * Ident
+sort JavaName = List Ident * Ident
 %% Package, method, type, expression names are all qualified identifiers.
 
 sort Ident = String
@@ -352,7 +352,7 @@ def mapJName ii (optpkg,ifnames,cis) =
 	   | InterfDecl ifd -> InterfDecl(mapNameInterfDecl ii ifd)
        ) cis)
 
-op mapNameName: (Ident -> Ident) -> Name -> Name
+op mapNameName: (Ident -> Ident) -> JavaName -> JavaName
 def mapNameName ii (clsids,id) =
   (map ii clsids,ii id)
 
@@ -436,7 +436,7 @@ def mapNameFormPar ii (isfinal,ptype,vdeclid) =
   let ptype = mapNameType ii ptype in
   (isfinal,ptype,vdeclid)
 
-op mapNameExpr: (Ident -> Ident) -> Expr -> Expr
+op mapNameExpr: (Ident -> Ident) -> JavaExpr -> JavaExpr
 def mapNameExpr ii expr =
   case expr of
     | CondExp ce -> CondExp(mapNameCondExp ii ce)
@@ -446,7 +446,7 @@ op mapNameCondExp: (Ident -> Ident) -> CondExp -> CondExp
 def mapNameCondExp ii (binexp,opte) =
   (mapNameBinExp ii binexp,mapOption (fn(e,ce) -> (mapNameExpr ii e,mapNameCondExp ii ce)) opte)
 
-op mapNameLHS: (Ident -> Ident) -> LHS -> LHS
+op mapNameLHS: (Ident -> Ident) -> JavaLHS -> JavaLHS
 def mapNameLHS ii lhs =
   case lhs of
     | Name n -> Name(mapNameName ii n)
@@ -466,7 +466,7 @@ def mapNameArrAcc ii arracc =
     | ViaName(n,e) -> ViaName(mapNameName ii n,mapNameExpr ii e)
     | ViaNoNewArray(p,e) -> ViaNoNewArray(mapNamePrim ii p,mapNameExpr ii e)
 
-op mapNameType: (Ident -> Ident) -> Type -> Type
+op mapNameType: (Ident -> Ident) -> JavaType -> JavaType
 def mapNameType ii (bname,ind) =
   (mapNameBasicOrName ii bname,ind)
 
@@ -476,7 +476,7 @@ def mapNameBasicOrName ii bname =
     | Basic _ -> bname
     | Name n -> Name(mapNameName ii n)
 
-op mapNameBlock: (Ident -> Ident) -> Block -> Block
+op mapNameBlock: (Ident -> Ident) -> JavaBlock -> JavaBlock
 def mapNameBlock ii block =
   map (fn LocVarDecl (isfinal,t,vdecl,vdecls) ->
           LocVarDecl(isfinal,mapNameType ii t,mapNameVarDecl ii vdecl,map (mapNameVarDecl ii) vdecls)
@@ -484,7 +484,7 @@ def mapNameBlock ii block =
 	| Stmt stmt -> Stmt(mapNameStmt ii stmt)
 	 ) block
 
-op mapNameStmt: (Ident -> Ident) -> Stmt -> Stmt
+op mapNameStmt: (Ident -> Ident) -> JavaStmt -> JavaStmt
 def mapNameStmt ii stmt =
   case stmt of
     | Block block -> Block(mapNameBlock ii block)
@@ -636,10 +636,10 @@ def javaKeyword?(id) =
 
 % --------------------------------------------------------------------------------
 
-% auxiliary type to extract the actual expression from a Java Expr, i.e. any
+% auxiliary type to extract the actual expression from a JavaExpr, i.e. any
 % "wrapping" constructor is stripped from the expression.
 
-type ActualExpr = | Expr Expr
+type ActualExpr = | Expr JavaExpr
                   | CondExp CondExp
                   | BinExp BinExp
                   | UnExp UnExp
@@ -647,7 +647,7 @@ type ActualExpr = | Expr Expr
 
 % returns the actual expr, i.e. "wrapper" constructors are removed
 % in order to get the real contents of the expression
-op Expr.getActualExpr: Expr -> ActualExpr
+op Expr.getActualExpr: JavaExpr -> ActualExpr
 def Expr.getActualExpr e =
   case e of
     | CondExp ce -> getActualExpr ce
@@ -679,8 +679,8 @@ def Prim.getActualExpr p =
 
 % ----------------------------------------
 
-% wrap the ActualExpr so that it becomes a Java Expr
-op ActualExpr.wrap: ActualExpr -> Expr
+% wrap the ActualExpr so that it becomes a JavaExpr
+op ActualExpr.wrap: ActualExpr -> JavaExpr
 def ActualExpr.wrap ae =
   case ae of
     | Expr e -> e
@@ -691,19 +691,19 @@ def ActualExpr.wrap ae =
 
 % --------------------------------------------------------------------------------
 
-op getMapExprFun: (Expr * Expr) -> Expr -> Expr
+op getMapExprFun: (JavaExpr * JavaExpr) -> JavaExpr -> JavaExpr
 def getMapExprFun(oldExpr,newExpr) e0 =
   let actualOldExpr = getActualExpr oldExpr in
   let actualE0 = getActualExpr e0 in
   if actualE0 = actualOldExpr then newExpr
   else e0
 
-op Expr.mapOneExpr: (Expr * Expr) -> Expr -> Expr
+op Expr.mapOneExpr: (JavaExpr * JavaExpr) -> JavaExpr -> JavaExpr
 def Expr.mapOneExpr (oldExpr,newExpr) =
   let mex = getMapExprFun(oldExpr,newExpr) in
   mapExpr mex
 
-op Block.mapOneExpr: (Expr * Expr) -> Block -> Block
+op Block.mapOneExpr: (JavaExpr * JavaExpr) -> JavaBlock -> JavaBlock
 def Block.mapOneExpr(oldExpr,newExpr) =
   let mex = getMapExprFun(oldExpr,newExpr) in
   mapExpr mex
@@ -711,7 +711,7 @@ def Block.mapOneExpr(oldExpr,newExpr) =
 
 % --------------------------------------------------------------------------------
 
-op Expr.mapExpr: (Expr -> Expr) -> Expr -> Expr
+op Expr.mapExpr: (JavaExpr -> JavaExpr) -> JavaExpr -> JavaExpr
 def Expr.mapExpr mex e =
   let e1 =
     case e of
@@ -720,21 +720,21 @@ def Expr.mapExpr mex e =
   in
   if e1 = e then mex e else e1
 
-op CondExp.mapExpr: (Expr -> Expr) -> CondExp -> CondExp
+op CondExp.mapExpr: (JavaExpr -> JavaExpr) -> CondExp -> CondExp
 def CondExp.mapExpr mex ce =
   case ce of
     | (be,None) -> (mapExpr mex be,None)
     | (be,Some(e,ce)) -> (mapExpr mex be,Some(mapExpr mex e,mapExpr mex ce))
 
 
-op BinExp.mapExpr: (Expr -> Expr) -> BinExp -> BinExp
+op BinExp.mapExpr: (JavaExpr -> JavaExpr) -> BinExp -> BinExp
 def BinExp.mapExpr mex be =
   case be of
     | Bin(bop,be1,be2) -> Bin(bop,mapExpr mex be1,mapExpr mex be2)
     | InstOf(be,ty) -> InstOf(mapExpr mex be,ty)
     | Un ue -> Un(mapExpr mex ue)
 
-op UnExp.mapExpr: (Expr -> Expr) -> UnExp -> UnExp
+op UnExp.mapExpr: (JavaExpr -> JavaExpr) -> UnExp -> UnExp
 def UnExp.mapExpr mex ue =
   case ue of
     | Un(uop,ue) -> Un(uop,mapExpr mex ue)
@@ -742,7 +742,7 @@ def UnExp.mapExpr mex ue =
     | PostUn(ue,puop) -> PostUn(mapExpr mex ue,puop)
     | Prim p -> Prim(mapExpr mex p)
 
-op Prim.mapExpr: (Expr -> Expr) -> Prim -> Prim
+op Prim.mapExpr: (JavaExpr -> JavaExpr) -> Prim -> Prim
 def Prim.mapExpr mex p =
   case p of
     | Paren e -> Paren(mapExpr mex e)
@@ -755,7 +755,7 @@ def Prim.mapExpr mex p =
 
 
 
-op NewClsInst.mapExpr: (Expr -> Expr) -> NewClsInst -> NewClsInst
+op NewClsInst.mapExpr: (JavaExpr -> JavaExpr) -> NewClsInst -> NewClsInst
 def NewClsInst.mapExpr mex nci =
   case nci of
     | ForCls(n,es,optcb) ->
@@ -768,29 +768,29 @@ def NewClsInst.mapExpr mex nci =
       let optcb = mapOption (mapExpr mex) optcb in
       ForInnCls(p,id,es,optcb)
 
-op NewArr.mapExpr: (Expr -> Expr) -> NewArr -> NewArr
+op NewArr.mapExpr: (JavaExpr -> JavaExpr) -> NewArr -> NewArr
 def NewArr.mapExpr mex na =
   case na of
     | Arr(name,es,n) -> Arr(name,map (mapExpr mex) es,n)
     | ArrWInit(name,n,ai) -> ArrWInit(name,n,mapExpr mex ai)
 
-op ArrInit.mapExpr: (Expr -> Expr) -> ArrInit -> ArrInit
+op ArrInit.mapExpr: (JavaExpr -> JavaExpr) -> ArrInit -> ArrInit
 def ArrInit.mapExpr mex ai =
   map (mapOption (mapExpr mex)) ai
 
-op VarInit.mapExpr: (Expr -> Expr) -> VarInit -> VarInit
+op VarInit.mapExpr: (JavaExpr -> JavaExpr) -> VarInit -> VarInit
 def VarInit.mapExpr mex vi =
   case vi of
     | Expr e -> Expr(mapExpr mex e)
     | ArrInit ai -> ArrInit(mapExpr mex ai)
 
-op FldAcc.mapExpr: (Expr -> Expr) -> FldAcc -> FldAcc
+op FldAcc.mapExpr: (JavaExpr -> JavaExpr) -> FldAcc -> FldAcc
 def FldAcc.mapExpr mex facc =
   case facc of
     | ViaPrim(p,id) -> ViaPrim(mapExpr mex p,id)
     | _ -> facc
 
-op MethInv.mapExpr: (Expr -> Expr) -> MethInv -> MethInv
+op MethInv.mapExpr: (JavaExpr -> JavaExpr) -> MethInv -> MethInv
 def MethInv.mapExpr mex mi =
   case mi of
     | ViaName(name,es) -> ViaName(name,map (mapExpr mex) es)
@@ -798,27 +798,27 @@ def MethInv.mapExpr mex mi =
     | ViaSuper(id,es) -> ViaSuper(id,map (mapExpr mex) es)
     | ViaClsSuper(name,id,es) -> ViaClsSuper(name,id,map (mapExpr mex) es)
 
-op ArrAcc.mapExpr: (Expr -> Expr) -> ArrAcc -> ArrAcc
+op ArrAcc.mapExpr: (JavaExpr -> JavaExpr) -> ArrAcc -> ArrAcc
 def ArrAcc.mapExpr mex aacc =
   case aacc of
     | ViaName(name,e) -> ViaName(name,mapExpr mex e)
     | ViaNoNewArray(p,e) -> ViaNoNewArray(mapExpr mex p,mapExpr mex e)
 
-op Block.mapExpr: (Expr -> Expr) -> Block -> Block
+op Block.mapExpr: (JavaExpr -> JavaExpr) -> JavaBlock -> JavaBlock
 def Block.mapExpr mex = map (mapExpr mex)
 
-op BlockStmt.mapExpr: (Expr -> Expr) -> BlockStmt -> BlockStmt
+op BlockStmt.mapExpr: (JavaExpr -> JavaExpr) -> JavaBlockStmt -> JavaBlockStmt
 def BlockStmt.mapExpr mex bstmt =
   case bstmt of
     | LocVarDecl(isfinal,ty,vdecl,vdecls) -> LocVarDecl(isfinal,ty,mapExpr mex vdecl,map (mapExpr mex) vdecls)
     | ClsDecl(mods,ch,cb) -> ClsDecl(mods,ch,mapExpr mex cb)
     | Stmt s -> Stmt(mapExpr mex s)
 
-op VarDecl.mapExpr: (Expr -> Expr) -> VarDecl -> VarDecl
+op VarDecl.mapExpr: (JavaExpr -> JavaExpr) -> VarDecl -> VarDecl
 def VarDecl.mapExpr mex (vdid,optvi) =
   (vdid,mapOption (mapExpr mex) optvi)
 
-op Stmt.mapExpr: (Expr -> Expr) -> Stmt -> Stmt
+op Stmt.mapExpr: (JavaExpr -> JavaExpr) -> JavaStmt -> JavaStmt
 def Stmt.mapExpr mex s =
   case s of
     | Block b -> Block(mapExpr mex b)
@@ -844,18 +844,18 @@ def Stmt.mapExpr mex s =
     | _ -> s
 
 
-op ForInit.mapExpr: (Expr -> Expr) -> ForInit -> ForInit
+op ForInit.mapExpr: (JavaExpr -> JavaExpr) -> ForInit -> ForInit
 def ForInit.mapExpr mex fi =
   case fi of
     | LocVarDecl(isfinal,ty,vdecl,vdecls) -> LocVarDecl(isfinal,ty,mapExpr mex vdecl,map (mapExpr mex) vdecls)
     | StmtExprs(e,es) -> StmtExprs(mapExpr mex e,map (mapExpr mex) es)
 
-op ForUpdate.mapExpr: (Expr -> Expr) -> ForUpdate -> ForUpdate
+op ForUpdate.mapExpr: (JavaExpr -> JavaExpr) -> ForUpdate -> ForUpdate
 def ForUpdate.mapExpr mex (e,es) =
   (mapExpr mex e,map (mapExpr mex) es)
 
 %%% TODO !!!
-op ClsBody.mapExpr: (Expr -> Expr) -> ClsBody -> ClsBody
+op ClsBody.mapExpr: (JavaExpr -> JavaExpr) -> ClsBody -> ClsBody
 def ClsBody.mapExpr _(*mex*) cb = cb
 
 

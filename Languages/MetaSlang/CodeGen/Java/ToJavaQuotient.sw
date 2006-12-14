@@ -32,7 +32,7 @@ op mkQuotientTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl ->
 def mkQuotientTypeClsDecl(id, fieldDecls, methodDecls, constrDecls) =
   ([], (id, None, []), setConstrs(setMethods(setFlds(Java.emptyClsBody, fieldDecls), methodDecls), constrDecls))
 
-op mkQuotEqBody: Id * Sort * Id -> JGenEnv Block
+op mkQuotEqBody: Id * Sort * Id -> JGenEnv JavaBlock
 def mkQuotEqBody(superSrtId, superSort, quotPredId) =
   {
    spc <- getEnvSpec;
@@ -59,7 +59,7 @@ def mkQuotConstrDecl(id, superSortId, _(* quotPred *)) =
   let quotConstrBody = mkQuotConstBody() in
   ([], id, formParams, [], quotConstrBody)
 
-op mkQuotConstBody: () -> Block
+op mkQuotConstBody: () -> JavaBlock
 def mkQuotConstBody() =
   let thisName = (["this"], "choose") in
   let argName = ([], "choose") in
