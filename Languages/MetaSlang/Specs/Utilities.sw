@@ -1292,7 +1292,7 @@ Utilities qualifying spec
         case (srt1,srt2) of
 	  | (TyVar(id1,_), srt2) -> 
 	    (case (find (fn (id,_) -> id = id1) pairs) of
-	      | Some(_,msrt1) -> if equalSort?(msrt1,srt2) then Some pairs else None
+	      | Some(_,msrt1) -> if equalType?(msrt1,srt2) then Some pairs else None  % TODO: should equalType? be equivType? ??
 	      | None -> Some(Cons((id1,srt2),pairs)))
 	  | (Arrow(t1,t2,_),Arrow(s1,s2,_)) ->
 	    (case match(t1,s1,pairs) of

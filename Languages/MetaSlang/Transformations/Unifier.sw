@@ -108,7 +108,7 @@ spec
 				    else None))
 
      | (Fun(f1, s1,_), Fun(f2, s2,_)) ->
-       if equalFun?(f1,f2) & equalSort?(s1,s2)
+       if equalFun?(f1,f2) & equalType?(s1,s2)
 	 then Some sb
 	 else None
 
@@ -132,7 +132,7 @@ spec
      | (Seq(xs1,_), Seq(xs2,_)) -> unifyList (xs1, xs2, sb, vs, unifyRec)
 
      | (SortedTerm (x1, s1,_), SortedTerm (x2, s2,_)) ->
-       if equalSort? (s1, s2)
+       if equalType? (s1, s2)
 	 then unifyRec(x1, x2, sb, vs)
 	 else None
 

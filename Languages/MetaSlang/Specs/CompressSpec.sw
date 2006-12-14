@@ -40,8 +40,8 @@ AnnSpec qualifying spec
            foldl (fn (old_def, new_defs) ->
 		  if (% given {A,B,C} = B
 		      % drop that definition
-		      % note: equalSort?, not equivSort?, because we don't want to drop true defs
-		      (exists (fn new_def -> equalSort? (old_def, new_def)) xxx_defs) 
+		      % note: equalType?, not equivSort?, because we don't want to drop true defs
+		      (exists (fn new_def -> equalType? (old_def, new_def)) xxx_defs) 
 		      ||
 		      % asuming Nats = List Nat,
 		      % given {A,B,C} = List Nat
@@ -57,7 +57,7 @@ AnnSpec qualifying spec
 		 old_defs
        in
        let new_names = removeDuplicates info.names in
-       let new_dfn   = maybeAndSort (old_decls ++ new_defs, pos) in % TODO: write and use version of maybeAndSort that uses equivSort?, not equalSort?
+       let new_dfn   = maybeAndSort (old_decls ++ new_defs, pos) in % TODO: write and use version of maybeAndSort that uses equivSort?, not equalType?
        Some (info << {names = new_names,
 		      dfn   = new_dfn})
         

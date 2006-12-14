@@ -14,7 +14,7 @@ MetaSlang qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op equalTerm?          : [a,b] ATerm    a * ATerm    b -> Boolean
- op equalSort?          : [a,b] ASort    a * ASort    b -> Boolean
+ op equalType?          : [a,b] ASort    a * ASort    b -> Boolean
  op equalPattern?       : [a,b] APattern a * APattern b -> Boolean
  op equalFun?           : [a,b] AFun     a * AFun     b -> Boolean
  op equalVar?           : [a,b] AVar     a * AVar     b -> Boolean
@@ -85,7 +85,7 @@ MetaSlang qualifying spec
         Var        (v2,          _)) -> equalVar? (v1, v2)
 
      | (Fun        (f1, s1,      _),
-        Fun        (f2, s2,      _)) -> equalFun? (f1, f2) && equalSort? (s1, s2)
+        Fun        (f2, s2,      _)) -> equalFun? (f1, f2) && equalType? (s1, s2)
 
      | (Lambda     (xs1,         _),
         Lambda     (xs2,         _)) -> equalList? (xs1, xs2,
@@ -103,7 +103,7 @@ MetaSlang qualifying spec
         Seq        (xs2,         _)) -> equalList? (xs1, xs2, equalTerm?)
 
      | (SortedTerm (x1, s1,      _),
-        SortedTerm (x2, s2,      _)) -> equalTerm? (x1, x2) && equalSort? (s1, s2)
+        SortedTerm (x2, s2,      _)) -> equalTerm? (x1, x2) && equalType? (s1, s2)
 
      | (Pi         (tvs1, tm1,   _), 
         Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence
@@ -117,32 +117,32 @@ MetaSlang qualifying spec
 
      | _ -> false
 
- def equalSort? (s1, s2) =
+ def equalType? (s1, s2) =
    case (s1,s2) of
 
      | (Arrow     (x1, y1,  _),
-        Arrow     (x2, y2,  _)) -> equalSort? (x1, x2) && equalSort? (y1, y2)
+        Arrow     (x2, y2,  _)) -> equalType? (x1, x2) && equalType? (y1, y2)
 
      | (Product   (xs1,     _),
         Product   (xs2,     _)) -> equalList? (xs1, xs2,
                                                fn ((l1, x1), (l2, x2)) ->
 					       l1 = l2 &&
-					       equalSort? (x1, x2))
+					       equalType? (x1, x2))
 
      | (CoProduct (xs1,     _),
         CoProduct (xs2,     _)) -> equalList? (xs1, xs2,
                                                fn ((l1, x1), (l2, x2)) ->
 					       l1 = l2 &&
-					       equalOpt? (x1, x2, equalSort?))
+					       equalOpt? (x1, x2, equalType?))
 
      | (Quotient  (x1, t1,  _),
-        Quotient  (x2, t2,  _)) -> equalSort? (x1, x2) && equalTerm? (t1, t2)
+        Quotient  (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
 
      | (Subsort   (x1, t1,  _),
-        Subsort   (x2, t2,  _)) -> equalSort? (x1, x2) && equalTerm? (t1, t2)
+        Subsort   (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
 
      | (Base      (q1, xs1, _),
-        Base      (q2, xs2, _)) -> q1 = q2 && equalList? (xs1, xs2, equalSort?)
+        Base      (q2, xs2, _)) -> q1 = q2 && equalList? (xs1, xs2, equalType?)
 
      | (Boolean _, Boolean _)   -> true
 
@@ -157,34 +157,34 @@ MetaSlang qualifying spec
        (case (link1,link2) of
 	  %% This case handles the situation where an
 	  %%  unlinked MetaTyVar is compared against itself.
-          | (Some ls1, Some ls2) -> equalSort? (ls1, ls2)
+          | (Some ls1, Some ls2) -> equalType? (ls1, ls2)
 	  %% The following two cases handle situations where
 	  %%  MetaTyVar X is linked to unlinked MetaTyVar Y
 	  %%  and we are comparing X with Y (or Y with X).
-	  | (Some ls1, _)        -> equalSort? (ls1, s2)
-	  | (_,        Some ls2) -> equalSort? (s1,  ls2)
+	  | (Some ls1, _)        -> equalType? (ls1, s2)
+	  | (_,        Some ls2) -> equalType? (s1,  ls2)
 	  | _ -> false)
 
      | (MetaTyVar (mtv1, _), _) ->
        let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
        (case link1 of
-	  | Some ls1 -> equalSort? (ls1, s2)
+	  | Some ls1 -> equalType? (ls1, s2)
 	  | _ -> false)
 
      | (_, MetaTyVar (mtv2, _)) ->
        let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
        (case link2 of
-	  | Some ls2 -> equalSort? (s1, ls2)
+	  | Some ls2 -> equalType? (s1, ls2)
 	  | _ -> false)
 
      | (Pi         (tvs1, s1,    _), 
         Pi         (tvs2, s2,    _)) -> tvs1 = tvs2 && 
-					equalSort? (s1, s2) % TODO: handle alpha equivalence
+					equalType? (s1, s2) % TODO: handle alpha equivalence
 
      | (And        (srts1,       _),  
         And        (srts2,       _)) -> %% TODO: Handle reordering?
 					foldl (fn (s1, s2, eq?) ->  
-					       eq? && equalSort? (s1, s2))
+					       eq? && equalType? (s1, s2))
 					      true
 					      (srts1, srts2)
 
@@ -199,8 +199,8 @@ MetaSlang qualifying spec
      %% then complains if any sorts and ops from the dom spec of the morphism have
      %% failed to find a match in the spec that morphism is being applied to.
 
-     | (And (srts1, _),  _) -> foldl (fn (s1, eq?) -> eq? || equalSort? (s1, s2)) false srts1
-     | (_,  And (srts2, _)) -> foldl (fn (s2, eq?) -> eq? || equalSort? (s1, s2)) false srts2
+     | (And (srts1, _),  _) -> foldl (fn (s1, eq?) -> eq? || equalType? (s1, s2)) false srts1
+     | (_,  And (srts2, _)) -> foldl (fn (s2, eq?) -> eq? || equalType? (s1, s2)) false srts2
 
      | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
@@ -217,7 +217,7 @@ MetaSlang qualifying spec
 
      | (EmbedPat    (i1, op1, s1, _),
         EmbedPat    (i2, op2, s2, _)) -> i1 = i2 &&
-                                         equalSort? (s1,  s2) &&
+                                         equalType? (s1,  s2) &&
                                          equalOpt?  (op1, op2, equalPattern?)
 
      | (RecordPat   (xs1,         _),
@@ -227,7 +227,7 @@ MetaSlang qualifying spec
                                                         equalPattern? (x1, x2))
 
      | (WildPat      (s1,          _),
-        WildPat      (s2,          _)) -> equalSort? (s1, s2)
+        WildPat      (s2,          _)) -> equalType? (s1, s2)
 
      | (BoolPat      (x1,          _),
         BoolPat      (x2,          _)) -> x1 = x2
@@ -248,7 +248,7 @@ MetaSlang qualifying spec
         RestrictedPat(x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
 
      | (SortedPat    (x1, t1,      _),
-        SortedPat    (x2, t2,      _)) -> equalPattern? (x1, x2) && equalSort? (t1, t2)
+        SortedPat    (x2, t2,      _)) -> equalPattern? (x1, x2) && equalType? (t1, t2)
 
      | _ -> false
 
@@ -288,7 +288,7 @@ MetaSlang qualifying spec
      | _ -> false
 
  def equalVar? ((id1,s1), (id2,s2)) = 
-   id1 = id2 && equalSort? (s1, s2)
+   id1 = id2 && equalType? (s1, s2)
 
   op equalTyVar?: TyVar * TyVar -> Boolean
  def equalTyVar? (tyVar1, tyVar2) = 
@@ -437,7 +437,7 @@ MetaSlang qualifying spec
 						     equalPatternStruct? (x1, x2))
 
      | (WildPat      (s1,          _),
-        WildPat      (s2,          _)) -> equalSort? (s1, s2)
+        WildPat      (s2,          _)) -> equalType? (s1, s2)
 
      | (BoolPat      (x1,          _),
         BoolPat      (x2,          _)) -> x1 = x2
@@ -477,12 +477,12 @@ MetaSlang qualifying spec
 		       case sortInnerSort srt of
 			 | Any _ -> pending_srts
 			 | _ ->
-			   if exists (fn pending_srt -> equalSort? (srt, pending_srt)) pending_srts then
+			   if exists (fn pending_srt -> equalType? (srt, pending_srt)) pending_srts then
 			     pending_srts
 			   else
 			     pending_srts ++ [srt])
 		| _ ->
-		  if exists (fn pending_srt -> equalSort? (srt, pending_srt)) pending_srts then
+		  if exists (fn pending_srt -> equalType? (srt, pending_srt)) pending_srts then
 		    pending_srts
 		  else
 		    pending_srts ++ [srt])
@@ -502,12 +502,12 @@ MetaSlang qualifying spec
 		| [pending_tm] ->
 		  (case (termInnerTerm tm, termInnerTerm pending_tm) of
 		     | (Any _, _)    -> 
-		       if equalSort? (termSort tm, termSort pending_tm) then
+		       if equalType? (termSort tm, termSort pending_tm) then
 			 [pending_tm]
 		       else
 			 [pending_tm, tm]
 		     | (_,    Any _) -> 
-		       if equalSort? (termSort tm, termSort pending_tm) then
+		       if equalType? (termSort tm, termSort pending_tm) then
 			 [tm]
 		       else
 			 [pending_tm, tm]

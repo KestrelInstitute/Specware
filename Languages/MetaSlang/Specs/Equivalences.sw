@@ -16,7 +16,7 @@ AnnSpec qualifying spec
  def equalSortInfo? (info1, info2) =
    info1.names = info2.names
    %% Could take into account substitution of tvs
-   && equalSort? (info1.dfn, info2.dfn)
+   && equalType? (info1.dfn, info2.dfn)
 
  op  equalOpInfo?: [a] AOpInfo a * AOpInfo a -> Boolean
  def equalOpInfo? (info1, info2) =
@@ -49,7 +49,7 @@ AnnSpec qualifying spec
 	     (case (info1.dfn, info2.dfn) of
 		| (Any _, _) -> true
 		| (_, Any _) -> true
-		| (srt1, srt2) -> equalSort? (srt1, srt2)))
+		| (srt1, srt2) -> equalType? (srt1, srt2)))
 	  | _ -> false)
      | SortDef qid1 -> 
        (case e2 of
@@ -61,7 +61,7 @@ AnnSpec qualifying spec
 	     (case (info1.dfn, info2.dfn) of
 		| (Any _, _) -> true
 		| (_, Any _) -> true
-		| (srt1, srt2) -> equalSort? (srt1, srt2)))
+		| (srt1, srt2) -> equalType? (srt1, srt2)))
 	  | _ -> false)
      | Op (qid1,_) ->
        (case e2 of
@@ -70,7 +70,7 @@ AnnSpec qualifying spec
 	    let Some info2 = findTheOp (s2, qid2) in
 	    (info1.names = info2.names
 	     && info1.fixity = info2.fixity
-	     && equalSort? (termSort info1.dfn, termSort info2.dfn)
+	     && equalType? (termSort info1.dfn, termSort info2.dfn)
 	     && (case (info1.dfn, info2.dfn) of
 		   | (Any _,                    _) -> true
 		   | (_,                    Any _) -> true
@@ -85,7 +85,7 @@ AnnSpec qualifying spec
 	    let Some info2 = findTheOp (s2, qid2) in
 	    (info1.names = info2.names
 	     && info1.fixity = info2.fixity
-	     && equalSort? (termSort info1.dfn, termSort info2.dfn)
+	     && equalType? (termSort info1.dfn, termSort info2.dfn)
 	     && (case (info1.dfn, info2.dfn) of
 		   | (Any _,                    _) -> true
 		   | (_,                    Any _) -> true
@@ -134,7 +134,7 @@ AnnSpec qualifying spec
 
  op equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean
  def equivType? spc (t1, t2) =
-   equalSort? (t1,t2)
+   equalType? (t1,t2)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Terms
