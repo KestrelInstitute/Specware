@@ -1323,12 +1323,12 @@ Utilities qualifying spec
 	      then typeMatchL(ts,ts2,pairs,match)
 	      else
 		let s2x = unfoldBase(spc,srt2) in
-		if deprecated_equivType? spc (srt2,s2x)
+		if equalType? (srt2,s2x) %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
 		  then Some pairs
 		else match(srt1,s2x,pairs)
 	  | (_,Base _) ->
 	    let s2x = unfoldBase(spc,srt2) in
-	    if deprecated_equivType? spc (srt2,s2x)
+	    if equalType? (srt2,s2x)     %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
 	     then Some pairs
 	     else match(srt1,s2x,pairs)
 	  | _ -> None
