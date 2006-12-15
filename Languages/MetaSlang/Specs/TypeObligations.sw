@@ -483,7 +483,7 @@ spec
 
  def returnPatternRec(pairs,gamma,M,tau,sigma) =
      let spc = gamma.3 in
-     if deprecated_equivType? spc (tau,sigma) or 
+     if equivType? spc (tau,sigma) or 
 	exists (fn p -> p = (tau,sigma)) pairs
 	then (gamma,M)
      else
@@ -680,7 +680,7 @@ spec
 
  def subtypeRec(pairs,tcc,gamma,M,tau,sigma) =
      let spc = gamma.3 in
-     if deprecated_equivType? spc (tau,sigma) or 
+     if equivType? spc (tau,sigma) or 
 	exists (fn p -> p = (tau,sigma)) pairs
 	then tcc
      else
