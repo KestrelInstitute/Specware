@@ -30,7 +30,7 @@ The names of some of these operators clash with Cats and Graphs.
 \begin{spec}
 spec {
   import Sketch qualifying /Library/Structures/Data/Categories/Sketches/Monomorphic
-  import Cat qualifying /Library/Structures/Data/Categories/Polymorphic
+  import /Library/Structures/Data/Categories/Polymorphic
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
 
   sort Functor (O,A)

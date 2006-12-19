@@ -23,7 +23,7 @@ differs from the identity.
 SpecCalc qualifying spec {
  import /Languages/MetaSlang/Specs/AnnSpec
  import /Languages/MetaSlang/Specs/SimplePrinter
- import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
+ import /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
  import /Languages/SpecCalculus/AbstractSyntax/Types
 
  sort QualifiedIdMap  = PolyMap.Map (QualifiedId, QualifiedId)
