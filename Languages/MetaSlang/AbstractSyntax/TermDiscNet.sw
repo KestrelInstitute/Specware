@@ -8,7 +8,7 @@ support for term discrimination nets in STeP.
 TermDiscNet qualifying
 spec
   import /Library/Legacy/DataStructures/IntSetSplay
-  import SpecCalc qualifying /Library/Legacy/DataStructures/SplayMap
+  import /Library/Legacy/DataStructures/SplayMap
 
   sort disc_net = DNode
 
