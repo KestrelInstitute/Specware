@@ -736,7 +736,7 @@ spec
    let spc = env.internal in
    let 
      def aux x =
-       equivType? spc (x, y) ||
+       equalType? (x, y) ||
        (let x = unfoldSort (env, x) in
         case x of
 	  | Subsort (x, _, _) -> aux x 
