@@ -18,8 +18,6 @@ import Monad
 
 type ArrowType = List Sort * Sort
 
-type Type = JGen.Type
-
 % --------------------------------------------------------------------------------
 
 %op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (JavaBlock * JavaExpr)
@@ -621,7 +619,7 @@ op modifyClsDeclsFromOp: Id * Id * OpInfo -> JGenEnv ()
 def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
   
   {
-   %% print("\nmodifyClsDeclsFromOp: [" ^ id ^ "]\n");
+   % print("\nmodifyClsDeclsFromOp: [" ^ id ^ "]\n");
    spc <- getEnvSpec;
    %clsDecls <- getClsDecls;
    let (_, opsrt, trm) = unpackFirstOpDef op_info in
@@ -650,97 +648,114 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
    %let _ = toScreen("\n OpSort Range = [" ^ printSort opsrtrng ^ "]\n") in
    %let _ = writeLine("op "^id^": opsort="^printSort(opsrtrng)^", termsort="^printSort(srtrng)) in
    %let _ = writeLine("op "^id^": "^printSort(srt)) in
-   let trm = mapTerm (Functions.id,(fn Subsort(srt,_,_) -> srt | Quotient(srt,_,_) -> srt | srt -> srt),Functions.id) trm in
-   case srt of
-     | Arrow(domsrt,rngsrt,b) ->
-      %let _ = writeLine("function op: "^id) in
-      let trm = (case (opsrtrng,srtrng) of
-		   | (Subsort(srt0,t0,_),srt1) -> if equivType? spc (srt0,srt1)
-						    then
-						      (case trm of
-							 | Lambda(match,b) ->
-							   let match = map
-							      (fn(p,cond,trm) ->
-							       %let _ = writeLine("inserting restrict...") in
-							       let b = termAnn(trm) in
-							       let rsrt = Arrow(srtrng,opsrtrng,b):Sort in
-							       let trm = Apply(Fun(Restrict,rsrt,b),trm,b) in
-							       (p,cond,trm)) match
-							   in
-							   Lambda(match,b)
-							  | _ -> trm)
-						    else trm
-		   | _ -> trm)
-      in
-      let domSrts = srtDomKeepSubsorts(srt) in
-      let domSrts = map (fn(srt) -> unfoldBase(spc,srt)) domSrts in
-      let trm = case trm of
-                  | Lambda((p,cond,body)::match,b) ->
-                    let vars:List(Option JGen.Term) =
-		               case p of
-		                 | VarPat((id,srt),b) -> [Some(Var((id,srt),b))]
-		                 | RecordPat(fields,b) -> foldl (fn((_,p),varterms) ->
-								 case p of
-								   | VarPat((id,srt),b) -> concat(varterms,[Some(Var((id,srt),b))])
-								   | _ -> concat(varterms,[None])) [] fields
-		                 | _ -> [None]
-		    in
-		    let zip = zip(vars,domSrts) in
-		    let body =
-		          foldr (fn((optvt,srt),body) ->
-				 case (optvt,srt) of
-				   | (Some(Var((id,vsrt),b)),Subsort(ssrt,_,_)) -> 
-				      %let relaxterm = Var((id,ssrt),b) in
-				      %let body = Let ([(VarPat((id,vsrt),b),relaxterm)],body,b) in
-				      body
-				   | _ -> body
-			       ) body zip
-		    in
-		    Lambda(cons((p,cond,body),match),b)
-		  | _ -> trm
-      in
-      let srt = Arrow(domsrt,srtRange(opsrt),b) in
-      addMethodFromOpToClsDeclsM(id, srt, dompreds, trm)
-    | _ ->
-      %let _ = writeLine("constant op: "^id) in
-      let trm = (case (opsrtrng,srtrng) of
-		   | (Subsort(srt0,t0,_),srt1) -> if equivType? spc (srt0,srt1)
-						    then
-						      %let _ = writeLine("inserting restrict...") in
-						      let b = termAnn(trm) in
-						      let rsrt = Arrow(srtrng,opsrtrng,b) in
-						      Apply(Fun(Restrict,rsrt,b),trm,b)
-						    else trm
-		   | _ -> trm)
-      in
-	let srt = opsrt in
-	if notAUserType?(spc,srt)
-	  then
-	    {
-	     primitiveClassName <- getPrimitiveClassName;
-	     (vars, body) <- return(srtTermDelta(srt, trm));
-	     optjexpr <-
-	        if isAnyTerm? trm then return None else
-	        (case trm of
-		   | Any _ -> return None
-		   | _ -> {
-			   (_, jE, _, _) <- termToExpressionM(empty, body, 1, 1);
-			   return (Some (Expr jE))
-			  });
-	     jtype <- baseSrtToJavaTypeM srt;
-	     let fldDecl = ([Static], jtype, ((id, 0), optjexpr), []) in
-	     addFldDeclToClsDeclsM(primitiveClassName, fldDecl)
-	    }
-	else
-	  {
-	   Base (Qualified (_, srtId), _, _) <- return srt;
-	   (vars, body) <- return(srtTermDelta(srt, trm));
-	   (_, jE, _, _) <- termToExpressionM(empty, body, 1, 1);
-	   let optjexpr = if isAnyTerm? trm then None else Some(Expr jE) in
-	   let fldDecl = ([Static], tt(srtId),((id, 0),optjexpr),[]) in
-	   addFldDeclToClsDeclsM(srtId, fldDecl)
-	  }
+   let trm = mapTerm (Functions.id,
+                      (fn srt ->
+                         case srt of
+                           | Subsort (srt,_,_) -> srt 
+                           | Quotient(srt,_,_) -> srt 
+                           | srt               -> srt),
+                      Functions.id) 
+                     trm
+   in
+     case srt of
+       | Arrow(domsrt,rngsrt,b) ->
+         %let _ = writeLine("function op: "^id) in
+         let trm = (case (opsrtrng,srtrng) of
+                      | (Subsort(srt0,t0,_),srt1) | equivType? spc (srt0,srt1) ->
+                         (case trm of
+                            | Lambda(match,b) ->
+                              let match = map (fn (p,cond,trm) ->
+                                                 %let _ = writeLine("inserting restrict...") in
+                                                 let b = termAnn(trm) in
+                                                 let rsrt = Arrow(srtrng,opsrtrng,b):Sort in
+                                                 let trm = Apply(Fun(Restrict,rsrt,b),trm,b) in
+                                                 (p,cond,trm))
+                                              match
+                              in
+                                Lambda(match,b)
+                            | _ -> trm)
+                      | _ -> trm)
+         in
+         let domSrts = srtDomKeepSubsorts(srt) in
+         let domSrts = map (fn(srt) -> unfoldBase(spc,srt)) domSrts in
+         let trm = case trm of
+                     | Lambda((p,cond,body)::match,b) ->
+                       let vars:List(Option JGen.Term) =
+                           case p of
+                             | VarPat((id,srt),b) -> 
+                               [Some(Var((id,srt),b))]
+                             | RecordPat(fields,b) -> 
+                               foldl (fn((_,p),varterms) ->
+                                        case p of
+                                          | VarPat((id,srt),b) -> concat(varterms,[Some(Var((id,srt),b))])
+                                          | _ -> concat(varterms,[None])) 
+                                     []
+                                     fields
+                             | _ -> 
+                               [None]
+                       in
+                       let zip = zip(vars,domSrts) in
+                       let body =
+                           foldr (fn((optvt,srt),body) ->
+                                    case (optvt,srt) of
+                                      | (Some(Var((id,vsrt),b)),Subsort(ssrt,_,_)) -> 
+                                        %let relaxterm = Var((id,ssrt),b) in
+                                        %let body = Let ([(VarPat((id,vsrt),b),relaxterm)],body,b) in
+                                        body
+                                      | _ -> body)
+                                 body 
+                                 zip
+                       in
+                         Lambda (cons((p,cond,body),match), b)
+                     | _ -> trm
+         in
+           let srt = Arrow(domsrt,srtRange(opsrt),b) in
+           addMethodFromOpToClsDeclsM(id, srt, dompreds, trm)
+       | _ ->
+         %let _ = writeLine("constant op: "^id) in
+         let trm = (if isAnyTerm? trm then 
+                      trm 
+                    else
+                      case (opsrtrng,srtrng) of
+                        | (Subsort (srt0,t0,_), srt1) | equivType? spc (srt0,srt1) ->
+                          % let _ = writeLine("inserting restrict\n" ^ anyToString srt0 ^ "\n" ^ anyToString srt1 ^ "\n") in
+                          let b = termAnn(trm) in
+                          let rsrt = Arrow(srtrng,opsrtrng,b) in
+                          Apply(Fun(Restrict,rsrt,b),trm,b)
+                        | _ -> trm)
+         in
+         let srt = opsrt in
+         if notAUserType? (spc, srt) then
+           {
+            primitiveClassName <- getPrimitiveClassName;
+            (vars, body) <- return(srtTermDelta(srt, trm));
+            optjexpr <- (if isAnyTerm? trm then 
+                           return None
+                         else
+                           {
+                            (_, jE, _, _) <- termToExpressionM(empty, body, 1, 1);
+                            return (Some (Expr jE))
+                            });
+            jtype <- baseSrtToJavaTypeM srt;
+            let fldDecl = ([Static], jtype, ((id, 0), optjexpr), []) in
+            addFldDeclToClsDeclsM(primitiveClassName, fldDecl)
+            }
+         else
+           {
+            Base (Qualified (_, srtId), _, _) <- return srt;
+            (vars, body) <- return(srtTermDelta(srt, trm));
+            optjexpr <- (if isAnyTerm? trm then 
+                           return None
+                         else
+                           {
+                            (_, jE, _, _) <- termToExpressionM(empty, body, 1, 1);
+                            return (Some (Expr jE))
+                            });
+            let fldDecl = ([Static], tt(srtId),((id, 0),optjexpr),[]) in
+            addFldDeclToClsDeclsM(srtId, fldDecl)
+            }
    }
+
 % --------------------------------------------------------------------------------
 
 op insertClsDeclsForCollectedProductSorts : JGenEnv ()
