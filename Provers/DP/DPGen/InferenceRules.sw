@@ -2,7 +2,7 @@ IR qualifying spec
 
   import ../IneqSig
 
-  type Proof
+  type IR.Proof
 
   op p1: Proof -> Proof
   op p2: Proof -> Proof
