@@ -15,9 +15,6 @@ SpecCalc qualifying spec
   import Subst
   import Claim/Legacy    % shameful
 
-  sort TimeStamp
-  sort UnitId_Dependency
-
   % This is defined /Languages/SpecCalculus/Semantics/Monad but that imports a whole bunch of
   % other stuff. Later the above gets imported but requalified and if we import it
   % here we break the build
