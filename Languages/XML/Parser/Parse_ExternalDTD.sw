@@ -312,9 +312,6 @@ XML qualifying spec
   %%   [65]  Ignore              ::=  Char* - (Char* ('<![' | ']]>') Char*)
   %% -------------------------------------------------------------------------------------------------
 
-  sort IgnoreSectContents = {prefix   : Ignore,
-			     contents : List (IgnoreSectContents * Ignore)}
-
   def parse_IgnoreSectContents (start : UChars) : Required IgnoreSectContents =
     let
         def parse_ignore (tail, rev_ignore) =
