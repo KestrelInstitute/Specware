@@ -22,9 +22,9 @@ SpecCalc qualifying spec
  %% refine that type.  Using two levels ensures that for all objects in the 
  %% abstract syntax tree, the position information is always the second component.
 
- type ValueInfo  % Defined in ../Semantics/Value
+ type SpecCalc.ValueInfo  % Defined in ../Semantics/Value
 
- type SCTerm = Term Position
+ type SCTerm = SpecCalc.Term Position
 
  op valueOf    : [a] a * Position -> a
  op positionOf : [a] a * Position -> Position
@@ -39,7 +39,7 @@ SpecCalc qualifying spec
 
  type SpecTerm  a = (SpecTermBody a) * a
  type SpecTermBody a =
-   | Term  (Term a)
+   | Term  (SpecCalc.Term a)
    | Decls (List (Decl a))
 
  %% The support for UnitId's is somewhat simplistic but hopefully sufficient
@@ -87,15 +87,15 @@ SpecCalc qualifying spec
 
  %% The following is the type given to us by the parser.
 
- type Term a = (TermBody a) * a
+ type SpecCalc.Term a = (TermBody a) * a
  type TermBody a = 
-   | Print   (Term a)
-   | Prove   ClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar
-   | ProofCheck   PCClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions
-   | UnitId  RelativeUID
-   | Spec    List (SpecElem a)
-   | Diag    List (DiagElem a)
-   | Colimit (Term a)
+   | Print        (SpecCalc.Term a)
+   | Prove        ClaimName   * SpecCalc.Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar
+   | ProofCheck   PCClaimName * SpecCalc.Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions
+   | UnitId       RelativeUID
+   | Spec         List (SpecElem a)
+   | Diag         List (DiagElem a)
+   | Colimit      (SpecCalc.Term a)
 
    %% The calculus supports two types of morphisms: morphisms between specs and
    %% morphisms between diagrams.  Right now spec morphism are distinguished
@@ -103,31 +103,31 @@ SpecCalc qualifying spec
    %% The first two elements in the morphism products are terms that evaluate
    %% to the domain and codomain of the morphisms.
 
-   | SpecMorph    (Term a) * (Term a) * (List (SpecMorphRule a)) * SM_Pragmas a
-   | SpecInterp   (Term a) * (Term a) * (SpecInterpRules a)
+   | SpecMorph    (SpecCalc.Term a) * (SpecCalc.Term a) * (List (SpecMorphRule a)) * SM_Pragmas a
+   | SpecInterp   (SpecCalc.Term a) * (SpecCalc.Term a) * (SpecInterpRules a)
 
-   | SpecPrism    (Term a) * List (Term a) * PrismModeTerm a
+   | SpecPrism    (SpecCalc.Term a) * List (SpecCalc.Term a) * PrismModeTerm a
      %% The first  arg denotes a shared domain spec.
      %% The second arg denotes a list of morphisms, all with the same domain spec.
      %% The third  arg gives the rules for choosing among the morphism.
 
-   | DiagMorph    (Term a) * (Term a) * (List (DiagMorphRule a))
-   | ExtendMorph  (Term a)
-   | Qualify      (Term a) * Name
-   | Translate    (Term a) * Renaming
+   | DiagMorph    (SpecCalc.Term a) * (SpecCalc.Term a) * (List (DiagMorphRule a))
+   | ExtendMorph  (SpecCalc.Term a)
+   | Qualify      (SpecCalc.Term a) * Name
+   | Translate    (SpecCalc.Term a) * Renaming
 %  | Renaming     Renaming
 
    %% The intention is that \verb+let+ \emph{decls} \verb+in+ \emph{term}
    %% is the same as \emph{term} \verb+where+ \emph{decls}. The \verb+where+
    %% construct is experimental.
 
-   | Let   (List (Decl a)) * (Term a)
-   | Where (List (Decl a)) * (Term a)
+   | Let          (List (Decl a)) * (SpecCalc.Term a)
+   | Where        (List (Decl a)) * (SpecCalc.Term a)
 
    %% The next two control the visibilty of names outside a spec.
 
-   | Hide   (List (NameExpr a)) * (Term a)
-   | Export (List (NameExpr a)) * (Term a)
+   | Hide         (List (NameExpr a)) * (SpecCalc.Term a)
+   | Export       (List (NameExpr a)) * (SpecCalc.Term a)
 
    %% This is an initial attempt at code generation. The first string is the
    %% name of the target language. Perhaps it should be a constructor.
@@ -136,55 +136,57 @@ SpecCalc qualifying spec
    %% compiler (but with a .lisp suffix) .. but the term may not have a UnitId.
    %% The third argument is an optional file name to store the result.
 
-   | Generate (String * (Term a) * Option String)
+   | Generate     (String * (SpecCalc.Term a) * Option String)
 
    %% Subsitution. The first term should be spec valued and the second should
    %% be morphism valued. Remains to be seen what will happen if/when we
    %% have diagrams.
 
-   | Subst (Term a) * (Term a)
+   | Subst        (SpecCalc.Term a) * (SpecCalc.Term a)
 
    %% Op refinement. The first term should be spec valued and the second should
    %% be op spec element valued.
 
-   | OpRefine (Term a) * (List (SpecElem a))
+   | OpRefine     (SpecCalc.Term a) * (List (SpecElem a))
 
    %% Obligations takes a spec or a a morphism and returns a spec including
    %% the proof obligations as conjectures.
 
-   | Obligations (Term a)
+   | Obligations  (SpecCalc.Term a)
 
    %% Expand takes a spec and returns a transformed spec that has lambdas
    %% lifted nad HO functions instantiated and defintions expanded into
    %% axioms.  It is essentially the input to the Snark prover interface.
 
-   | Expand (Term a)
+   | Expand       (SpecCalc.Term a)
 
    %% Reduce will rewrite the given term in the context of the given spec
    %% using the definitions and axioms of the spec as rules.
 
-   | Reduce (ATerm a * Term a)
+   | Reduce       (ATerm a * SpecCalc.Term a)
 
    %% Quote is used to capture an internally created value and turn it
    %% into a Term when needed.
 
-   | Quote ValueInfo
+   | Quote        ValueInfo
 
    %% The following is a hook for creating applications that are 
    %% extensions to Specware.  If more than one new term is needed,
    %% you can make OtherTerm a coproduct of the desired terms.
 
-   | Other (OtherTerm a)
+   | Other        (OtherTerm a)
 
-   %% The following are declarations that appear in a file or listed
-   %% within a \verb+let+. As noted above, at present the identifiers
-   %% bound by a let or listed in a file are unstructured.
+
+
+ %% The following are declarations that appear in a file or listed
+ %% within a \verb+let+. As noted above, at present the identifiers
+ %% bound by a let or listed in a file are unstructured.
 
  type PrismModeTerm a = 
    | Uniform      PrismSelection
-   | PerInstance  List (Term a)     % sms or interps
+   | PerInstance  List (SpecCalc.Term a)     % sms or interps
 
- op  mkPrismPerInstance : [a] List (Term a) -> PrismModeTerm a
+ op  mkPrismPerInstance : [a] List (SpecCalc.Term a) -> PrismModeTerm a
  def mkPrismPerInstance interps = PerInstance interps
 
  op  mkPrismUniform : [a] PrismSelection -> PrismModeTerm a
@@ -200,7 +202,7 @@ SpecCalc qualifying spec
 
  type PrismSelection = | Nth Nat | Random | Generative
 
- type Decl a = Name * (Term a)
+ type Decl a = Name * (SpecCalc.Term a)
 
  %% A \verb+Renaming+ denotes some mappings of names, e.g. for sorts, ops,
  %% and possibly other entities.
@@ -251,7 +253,7 @@ SpecCalc qualifying spec
  type SpecElem a = (SpecElemBody a) * a
 
  type SpecElemBody a =
-   | Import  List (Term a)
+   | Import  List (SpecCalc.Term a)
    | Sort    List QualifiedId          * ASort a
    | Op      List QualifiedId * Fixity * ATerm a
    | Claim   (AProperty a)
@@ -301,8 +303,8 @@ SpecCalc qualifying spec
 
  type DiagElem a = (DiagElemBody a) * a
  type DiagElemBody a =
-   | Node NodeId * (Term a)
-   | Edge EdgeId * NodeId * NodeId * (Term a)
+   | Node NodeId * (SpecCalc.Term a)
+   | Edge EdgeId * NodeId * NodeId * (SpecCalc.Term a)
  type NodeId = Name
  type EdgeId = Name
 
@@ -331,7 +333,7 @@ SpecCalc qualifying spec
  type DiagMorphRule  a = (DiagMorphRuleBody a) * a
  type DiagMorphRuleBody a =
    | ShapeMap    Name * Name
-   | NatTranComp Name * (Term a) 
+   | NatTranComp Name * (SpecCalc.Term a) 
 
  type Assertions = 
    | All
@@ -339,58 +341,66 @@ SpecCalc qualifying spec
 
  type ProverOptions = 
    | OptionString (List LispCell)
-   | OptionName QualifiedId
-   | Error   (String * String)  % error msg, problematic string
+   | OptionName   QualifiedId
+   | Error        (String * String)  % error msg, problematic string
 
  type ProverBaseOptions = | ProverBase | Base | AllBase | NoBase
   
  type AnswerVar = Option Var
 
- type  SpecInterpRules  a = (SpecInterpRulesBody a) * a
+ type  SpecInterpRules     a = (SpecInterpRulesBody a) * a
  type  SpecInterpRulesBody a = 
    %% This is the form used by Specware 2 -- a cospan, where the codomain-to-mediator.
    %% morphism is presumably a definitional extension.
    %% Alternatively, this could be expressed as symbol to term mappings,
    %% or as a quotient of morphisms (where an interpretation is viewed as a morphism
    %% from a quotient of isomorphic specs to a quotient of isomorphic specs).
-   {med : Term a,
-    d2m : Term a,
-    c2m : Term a}
+   {med : SpecCalc.Term a,
+    d2m : SpecCalc.Term a,
+    c2m : SpecCalc.Term a}
 
- op  mkSpecInterpRules  : [a] (Term a) * (Term a) * (Term a) * a -> SpecInterpRules a
- def mkSpecInterpRules (med, d2m, c2m, pos) = ({med = med, d2m = d2m, c2m = c2m}, pos)
+ op  mkSpecInterpRules  : [a] (SpecCalc.Term a) * (SpecCalc.Term a) * (SpecCalc.Term a) * a -> SpecInterpRules a
+ def mkSpecInterpRules (med, d2m, c2m, pos) = 
+   ({med = med, 
+     d2m = d2m, 
+     c2m = c2m}, 
+    pos)
 
  %% The following are invoked from the parser:
 
- op mkTerm        : [a] (Term a)                                                        * a -> SpecTerm a
- op mkDecls       : [a] (List (Decl a))                                                 * a -> SpecTerm a
+ op mkTerm        : [a] (SpecCalc.Term a)                            * a -> SpecTerm a
+ op mkDecls       : [a] (List (Decl a))                              * a -> SpecTerm a
 
- op mkPrint       : [a] (Term a)                                                        * a -> Term a
- op mkProve       : [a] ClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar   * a -> Term a
- op mkProofCheck  : [a] PCClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * a -> Term a
- op mkUnitId      : [a] RelativeUID                                                     * a -> Term a
- op mkSpec        : [a] (List (SpecElem a))                                             * a -> Term a
- op mkDiag        : [a] (List (DiagElem a))                                             * a -> Term a
- op mkColimit     : [a] (Term a)                                                        * a -> Term a
- op mkSpecMorph   : [a] (Term a) * (Term a) * (List (SpecMorphRule a)) * (SM_Pragmas a) * a -> Term a
- op mkSpecInterp  : [a] (Term a) * (Term a) * (SpecInterpRules a)                       * a -> Term a
- op mkSpecPrism   : [a] (Term a) * (List (Term a)) * PrismModeTerm a                    * a -> Term a
- op mkDiagMorph   : [a] (Term a) * (Term a) * (List (DiagMorphRule a))                  * a -> Term a
- op mkExtendMorph : [a] (Term a)                                                        * a -> Term a
- op mkQualify     : [a] (Term a) * Name                                                 * a -> Term a
- op mkTranslate   : [a] (Term a) * Renaming                                             * a -> Term a
-%op mkRenaming    : [a] Renaming                                                        * a -> Term a
- op mkLet         : [a] (List (Decl a)) * (Term a)                                      * a -> Term a
- op mkWhere       : [a] (List (Decl a)) * (Term a)                                      * a -> Term a
- op mkHide        : [a] (List (NameExpr a)) * (Term a)                                  * a -> Term a
- op mkExport      : [a] (List (NameExpr a)) * (Term a)                                  * a -> Term a
- op mkGenerate    : [a] String * (Term a) * (Option String)                             * a -> Term a
- op mkSubst       : [a] (Term a) * (Term a)                                             * a -> Term a
- op mkOpRefine    : [a] (Term a) * (List (SpecElem a))                                  * a -> Term a
- op mkObligations : [a] (Term a)                                                        * a -> Term a
- op mkExpand      : [a] (Term a)                                                        * a -> Term a
- op mkReduce      : [a] (ATerm a) * (Term a)                                            * a -> Term a
- op mkOther       : [a] (OtherTerm a)                                                   * a -> Term a
+ op mkPrint       : [a] (SpecCalc.Term a)                            * a -> SpecCalc.Term a
+
+ op mkProve       : [a] ClaimName   * SpecCalc.Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar * a -> SpecCalc.Term a
+ op mkProofCheck  : [a] PCClaimName * SpecCalc.Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions             * a -> SpecCalc.Term a
+
+ op mkUnitId      : [a] RelativeUID                                  * a -> SpecCalc.Term a
+ op mkSpec        : [a] (List (SpecElem a))                          * a -> SpecCalc.Term a
+ op mkDiag        : [a] (List (DiagElem a))                          * a -> SpecCalc.Term a
+ op mkColimit     : [a] (SpecCalc.Term a)                            * a -> SpecCalc.Term a
+
+ op mkSpecMorph   : [a] (SpecCalc.Term a) * (SpecCalc.Term a)        * (List (SpecMorphRule a)) * (SM_Pragmas a) * a -> SpecCalc.Term a
+ op mkSpecInterp  : [a] (SpecCalc.Term a) * (SpecCalc.Term a)        * (SpecInterpRules a)                       * a -> SpecCalc.Term a
+ op mkSpecPrism   : [a] (SpecCalc.Term a) * (List (SpecCalc.Term a)) * PrismModeTerm a                           * a -> SpecCalc.Term a
+ op mkDiagMorph   : [a] (SpecCalc.Term a) * (SpecCalc.Term a)        * (List (DiagMorphRule a))                  * a -> SpecCalc.Term a
+
+ op mkExtendMorph : [a] (SpecCalc.Term a)                            * a -> SpecCalc.Term a
+ op mkQualify     : [a] (SpecCalc.Term a) * Name                     * a -> SpecCalc.Term a
+ op mkTranslate   : [a] (SpecCalc.Term a) * Renaming                 * a -> SpecCalc.Term a
+%op mkRenaming    : [a] Renaming                                     * a -> SpecCalc.Term a
+ op mkLet         : [a] (List (Decl a))     * (SpecCalc.Term a)      * a -> SpecCalc.Term a
+ op mkWhere       : [a] (List (Decl a))     * (SpecCalc.Term a)      * a -> SpecCalc.Term a
+ op mkHide        : [a] (List (NameExpr a)) * (SpecCalc.Term a)      * a -> SpecCalc.Term a
+ op mkExport      : [a] (List (NameExpr a)) * (SpecCalc.Term a)      * a -> SpecCalc.Term a
+ op mkGenerate    : [a] String * (SpecCalc.Term a) * (Option String) * a -> SpecCalc.Term a
+ op mkSubst       : [a] (SpecCalc.Term a)   * (SpecCalc.Term a)      * a -> SpecCalc.Term a
+ op mkOpRefine    : [a] (SpecCalc.Term a)   * (List (SpecElem a))    * a -> SpecCalc.Term a
+ op mkObligations : [a] (SpecCalc.Term a)                            * a -> SpecCalc.Term a
+ op mkExpand      : [a] (SpecCalc.Term a)                            * a -> SpecCalc.Term a
+ op mkReduce      : [a] (ATerm a)           * (SpecCalc.Term a)      * a -> SpecCalc.Term a
+ op mkOther       : [a] (OtherTerm a)                                * a -> SpecCalc.Term a
 
  %% SpecTerm's    
 
@@ -400,19 +410,24 @@ SpecCalc qualifying spec
  %% Term's
 
  def mkPrint       (term,                      pos) = (Print       term,                        pos)
- def mkProve       (claim_name, term, prover_name, assertions, prover_options, includeBase?, answer_var, pos) 
-                                                     = (Prove       (claim_name, term, prover_name, assertions, prover_options, includeBase?, answer_var), pos) 
- def mkProofCheck  (claim_name, term, prover_name, assertions, prover_options, includeBase?, pos) 
-                                                     = (ProofCheck  (claim_name, term, prover_name, assertions, prover_options, includeBase?), pos) 
+
+ def mkProve       (claim_name, term, prover_name, assertions, prover_options, includeBase?, answer_var, pos) =
+   (Prove       (claim_name, term, prover_name, assertions, prover_options, includeBase?, answer_var), 
+    pos)
+
+ def mkProofCheck  (claim_name, term, prover_name, assertions, prover_options, includeBase?, pos) =
+   (ProofCheck  (claim_name, term, prover_name, assertions, prover_options, includeBase?), 
+    pos) 
+
  def mkUnitId      (uid,                       pos) = (UnitId      uid,                         pos)
  def mkSpec        (elements,                  pos) = (Spec        elements,                    pos)
  def mkDiag        (elements,                  pos) = (Diag        elements,                    pos)
  def mkColimit     (diag,                      pos) = (Colimit     diag,                        pos)
 
  def mkSpecMorph   (dom_term, cod_term, rules, pragmas, pos) = (SpecMorph   (dom_term, cod_term, rules, pragmas), pos)
- def mkSpecInterp  (dom_term, cod_term, rules, pos) = (SpecInterp  (dom_term, cod_term, rules), pos)
- def mkDiagMorph   (dom_term, cod_term, rules, pos) = (DiagMorph   (dom_term, cod_term, rules), pos)
- def mkSpecPrism   (dom_term, sm_terms, pmode, pos) = (SpecPrism   (dom_term, sm_terms, pmode), pos)
+ def mkSpecInterp  (dom_term, cod_term, rules,          pos) = (SpecInterp  (dom_term, cod_term, rules),          pos)
+ def mkDiagMorph   (dom_term, cod_term, rules,          pos) = (DiagMorph   (dom_term, cod_term, rules),          pos)
+ def mkSpecPrism   (dom_term, sm_terms, pmode,          pos) = (SpecPrism   (dom_term, sm_terms, pmode),          pos)
 
  def mkExtendMorph (term,                      pos) = (ExtendMorph term,                        pos)
  def mkQualify     (term, name,                pos) = (Qualify     (term, name),                pos)

@@ -4,8 +4,8 @@ SpecCalc qualifying spec
   import /Provers/Proof                                  % Proof
   import /Library/IO/Primitive/IO                        % Time
 
-  type ValueInfo = Value * TimeStamp * UnitId_Dependency
-  type ValueTermInfo = Value * TimeStamp * UnitId_Dependency * SCTerm
+  type SpecCalc.ValueInfo     = Value * TimeStamp * UnitId_Dependency
+  type SpecCalc.ValueTermInfo = Value * TimeStamp * UnitId_Dependency * SCTerm
 
   %% --------------------------------------------------------------------------------
 

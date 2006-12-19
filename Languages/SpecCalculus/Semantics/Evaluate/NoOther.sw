@@ -68,11 +68,11 @@ SpecCalc qualifying spec
 
   %%  -------------
 
-  type OtherRenamingRule = ()  % Term
+  type SpecCalc.OtherRenamingRule = ()  % Term
 
   def ppOtherRenamingRule (_ : OtherRenamingRule) = ppString "<some OtherRenamingRule>"
 
-  type OtherTranslators = ()   % Value -- see Translate.sw
+  type SpecCalc.OtherTranslators  = ()   % Value -- see Translate.sw
 
   def ppOtherTranslators (_ : OtherTranslators) = ([] : List Doc)
 
@@ -85,6 +85,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.27  2006/09/06 02:17:57  mcdonald
+%% *** empty log message ***
+%%
 %% Revision 1.26  2006/09/06 01:49:25  mcdonald
 %% add def for evaluateOtherProofCheck
 %%

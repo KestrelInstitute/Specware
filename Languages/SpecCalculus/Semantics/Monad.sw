@@ -42,7 +42,7 @@ Now we define the type for an state / exception monad.
 
 \begin{spec}
   sort SpecCalc.Env a = State -> (Result a) * State
-  sort State = {exceptions : List Exception} % for deferred processing
+  sort SpecCalc.State = {exceptions : List Exception} % for deferred processing
     op initialState : State
    def initialState = {exceptions = []}
 \end{spec}
