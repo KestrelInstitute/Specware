@@ -131,7 +131,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 			     | _ -> false
 			    ))
       in
-      let _ = writeLine(";; translateApplyToExpr: "^q^"."^id^", isField? = " ^ toString isField?) in
+      %let _ = writeLine(";; translateApplyToExpr: "^q^"."^id^", isField? = " ^ toString isField?) in
       let rng = inferTypeFoldRecords(spc,term) in
       let args = applyArgsToTerms argsTerm in
       % use the sort of the operator for the domain, if possible; this
