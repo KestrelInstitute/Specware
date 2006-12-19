@@ -1,7 +1,7 @@
 IRI = spec
   import InferenceRules
 
-  type Proof = InferenceRule
+  type IR.Proof = InferenceRule
   
   type InferenceRule =
     | normIR Proof * Ineq
