@@ -305,11 +305,28 @@ in most Word Processing Programs), mouse [[Options]], [[Editing]],
 <title>X-Symbol Mode</title>
 
 <para> 
-X-Symbol is an Emacs package that allows the appearance of non-ascii
-symbols, such as mathematical operators and greek characters in
-file buffers. 
-</para>
-</section>
+X-Symbol is an Emacs package that allows the appearance of
+non-ascii symbols, such as mathematical operators and greek characters
+in file buffers. The non-ascii symbols have ascii representations that
+are stored in files, but converted to the non-ascii characters when
+the files are read into an emacs buffer with X-Symbol mode turned
+on. For example, the &Specware symbol [[\_forall]] is displayed as
+&forall; and [[\_or]] is displayed as &or;. All the ascii
+	 representations begin with "[[\_]]". X-Symbol mode can be
+	 turned on and off by Toggling [[X-Symbol]] under [[Options]] in the
+	 [[Specware]] menu. When it is on, there is an [[X-Symbol]] menu that
+	 provides several mechanisms for entering X-Symbols. For
+	 example, the characters may be chosen directly from the menu from
+	 different categories, such as &or; under
+	 the [[Operators]] sub-menu and &forall; under the
+	 [[Symbol]] sub-menu. This sub-menu also shows
+	 keyboard commands for the symbol. E.g., the keyboard shortcut
+	 for &or; is [[c-= \/1]]. Alternatively, you can use the
+	 command [[c-,]] after [[\/]]. Repeated [[c-,]] commands will
+	 get you related X-Symbols. You can see all the available
+	 X-Symbols by selecting [[GRID of Characters]]
+	 under [[Other Commands]] in the [[X-Symbol]] menu.
+</para> </section>
 
 <section>
 <title>Hide/Show Commands</title>
