@@ -58,7 +58,7 @@ AnnSpecPrinter qualifying spec
  %% ========================================================================
 
  op printTyVars                  : TyVars            -> String 
- op printSort                    : [a] ASort       a -> String 
+%op printSort                    : [a] ASort       a -> String 
  op printPattern                 : [a] APattern    a -> String
  op printSortScheme              : [a] ASortScheme a -> String 
  op printTermScheme              : [a] ATermScheme a -> String 
@@ -920,7 +920,7 @@ AnnSpecPrinter qualifying spec
 		                  ([], Top) 
 				  term))
  
- def printSort srt = 
+ def AnnSpecPrinter.printSort srt = 
     PrettyPrint.toString (format (80, ppSort (initialize (asciiPrinter, false))
 				             ([], Top : ParentSort) 
 					     srt))
