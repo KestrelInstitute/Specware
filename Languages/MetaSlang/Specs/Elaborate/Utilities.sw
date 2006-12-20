@@ -102,13 +102,13 @@ spec
 
  def initialEnv (spc, file) = 
    let errs : List (String * Position) = [] in
-   let {sorts, ops, elements, qualified?} = spc in
+   let {sorts, ops, elements, qualifier} = spc in
    let MetaTyVar (tv,_)  = freshMetaTyVar ("initialEnv", Internal "ignored") in
    let spc = {%importInfo = importInfo,
 	      sorts      = sorts,
 	      ops        = ops,
 	      elements   = elements,
-	      qualified? = qualified?
+	      qualifier  = qualifier
 	     } : Spec
    in
    let env = {importMap  = StringMap.empty, % importMap,
@@ -490,9 +490,12 @@ spec
    let pos2 = sortAnn s2  in
    let srt1 = withAnnS (unlinkSort s1, pos1) in % ? DerivedFrom pos1 ?
    let srt2 = withAnnS (unlinkSort s2, pos2) in % ? DerivedFrom pos2 ?
-   if deprecated_equivType? spc (srt1, srt2) then 
+   %% for now at least, equivTypes? uses unify, so avoid infinite recursion
+   if equalType? (srt1, srt2) then 
      Unify pairs 
    else
+     %% For now at least, use equalType?, as opposed to equivType?
+     %% TODO: Might want to rethink that.
      case (srt1, srt2) of
 
        | (And (srts1, _), _) ->
@@ -542,8 +545,8 @@ spec
 	  if exists (fn (p1, p2) -> 
 		     %% p = (srt1, srt2) 
 		     %% need predicate that chases metavar links
-		     deprecated_equivType? spc (p1, srt1) &
-		     deprecated_equivType? spc (p2, srt2))
+		     equalType? (p1, srt1) &
+		     equalType? (p2, srt2))
 	            pairs 
 	    then
 	      Unify pairs
@@ -552,7 +555,7 @@ spec
 	  else 
 	    let s1x = unfoldSort (env, srt1) in
 	    let s2x = unfoldSort (env, srt2) in
-	    if deprecated_equivType? spc (s1, s1x) & deprecated_equivType? spc (s2x, s2) then
+	    if equalType? (s1, s1x) & equalType? (s2x, s2) then
 	      NotUnify  (srt1, srt2)
 	    else 
 	      unify (env, withAnnS (s1x, pos1), 
@@ -571,7 +574,7 @@ spec
 	| (MetaTyVar (mtv, _), _) -> 
 	   let s3 = unfoldSort (env, srt2) in
 	   let s4 = unlinkSort s3 in
-	   if deprecated_equivType? spc (s4, s1) then
+	   if equalType? (s4, s1) then
 	     Unify pairs
 	   else if occurs (mtv, s4) then
 	     NotUnify (srt1, srt2)
@@ -582,7 +585,7 @@ spec
 	| (s3, MetaTyVar (mtv, _)) -> 
 	  let s4 = unfoldSort (env, s3) in
 	  let s5 = unlinkSort s4 in
-	  if deprecated_equivType? spc (s5, s2) then
+	  if equalType? (s5, s2) then
 	    Unify pairs
 	  else if occurs (mtv, s5) then
 	    NotUnify (srt1, srt2)
@@ -611,13 +614,13 @@ spec
 	      | (ty, Subsort (ty2, _, _)) -> unify (env, ty, ty2, pairs, ignoreSubsorts?)
 	      | (Base _, _) -> 
 	        let s1x = unfoldSort (env, srt1) in
-		if deprecated_equivType? spc (s1, s1x) then
+		if equalType? (s1, s1x) then
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s1x, s2, pairs, ignoreSubsorts?)
 	      | (_, Base _) ->
 		let s3 = unfoldSort (env, srt2) in
-		if deprecated_equivType? spc (s2, s3) then
+		if equalType? (s2, s3) then
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s1, s3, pairs, ignoreSubsorts?)
@@ -631,13 +634,13 @@ spec
 		  NotUnify (srt1, srt2)
 	      | (Base _, _) -> 
 	        let  s3 = unfoldSort (env, srt1) in
-		if deprecated_equivType? spc (s1, s3) then 
+		if equalType? (s1, s3) then 
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s3, s2, pairs, ignoreSubsorts?)
 	      | (_, Base _) ->
 		let s3 = unfoldSort (env, srt2) in
-		if deprecated_equivType? spc (s2, s3) then
+		if equalType? (s2, s3) then
 		  NotUnify (srt1, srt2)
 		else 
 		  unify (env, s1, s3, pairs, ignoreSubsorts?)
