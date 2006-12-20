@@ -50,31 +50,43 @@ SpecCalc qualifying spec
 
       def check_for_type_collisions () =
         foldOverQualifierMap (fn (q, id, old_info, _) -> 
-                              return (if q = UnQualified then
-                                        case findAQualifierMap (spc.sorts, new_q, id) of
-                                          | Some new_info ->
-                                            let _ = toScreen ("\nAt " ^ 
-                                                              (case pos of
-                                                                | Internal msg -> msg
-                                                                | String (string, left, right) ->
-                                                                  let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
-                                                                  printPos left ^ "-" ^ printPos right ^ " in \n;;;          [" ^ string ^ "]"
-                                                                | File (filename, left, right) ->
-                                                                  let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
-                                                                  printPos left ^ "-" ^ printPos right ^ " in \n;;;          " ^ filename
-                                                                  ^ "\n"))
-                                            in
-                                            if new_info = old_info then
-                                              %% collapsing {id, new_q.id} into {new_q.id} is ok 
-                                              toScreen("\nQualify " ^ new_q ^ " is collapsing " ^ anyToString old_info.names ^ "\n")
-                                            else
-                                              %% collapsing one info named id with another named new_q.id is bad
-                                              toScreen("\nQualify " ^ new_q ^ " colliding " ^ anyToString old_info.names ^ " into " ^ anyToString new_info.names ^ "\n")
-                                          | _ -> ()
-                                      else
-                                        ()))
+                              if q = UnQualified then
+                                case findAQualifierMap (spc.sorts, new_q, id) of
+                                  | Some new_info ->
+                                    if new_info = old_info then
+                                      %% collapsing {id, new_q.id} into {new_q.id} is ok 
+                                      return ()
+                                    else
+                                      %% collapsing one info named id with another named new_q.id is bad
+                                      raise_later (QualifyError (pos, 
+                                                                 new_q ^ " would collide type " ^ 
+                                                                   printAliases old_info.names ^ " into " ^ 
+                                                                   printAliases new_info.names))
+                                  | _ -> return ()
+                              else
+                                return ())
                              ()
                              spc.sorts
+        
+      def check_for_op_collisions () =
+        foldOverQualifierMap (fn (q, id, old_info, _) -> 
+                              if q = UnQualified then
+                                case findAQualifierMap (spc.ops, new_q, id) of
+                                  | Some new_info ->
+                                    if new_info = old_info then
+                                      %% collapsing {id, new_q.id} into {new_q.id} is ok 
+                                      return ()
+                                    else
+                                      %% collapsing one info named id with another named new_q.id is bad
+                                      raise_later (QualifyError (pos, 
+                                                                 new_q ^ " would collide op " ^ 
+                                                                   printAliases old_info.names ^ " into " ^ 
+                                                                   printAliases new_info.names))
+                                  | _ -> return ()
+                              else
+                                return ())
+                             ()
+                             spc.ops
         
       def qualify_sort sort_term =
         case sort_term of
@@ -115,40 +127,43 @@ SpecCalc qualifying spec
 	  foldOverQualifierMap qualify_opinfo emptyAQualifierMap ops 
   
     in
-    if spc.qualified? then 
-      %% annoying that this is reached twice -- 
-      %%  once while processing imports, then again for normal processing
-      let _ = toScreen("\n;;; Warning: Qualifying previously qualified spec at " ^
-                 (case pos of
-                    | Internal msg -> msg
-                    | String (string, left, right) ->
-                      let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
-                      printPos left ^ "-" ^ printPos right ^ " in \n;;;          [" ^ string ^ "]"
-                    | File (filename, left, right) ->
-                      let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
-                      printPos left ^ "-" ^ printPos right ^ " in \n;;;          " ^ filename)
-                 ^ "\n\n")
-      in
-        return spc
-    else
-      let {sorts, ops, elements, qualified?} = 
-          mapSpecUnqualified (qualify_term, qualify_sort, qualify_pattern) spc
-      in 
-        {
-         check_for_type_collisions ();
-         newSorts    <- qualify_sorts sorts;
-         newOps      <- qualify_ops   ops;
-         newElements <- return (qualifySpecElements new_q immune_ids elements);
-         new_spec    <- return {sorts      = newSorts,
-                                ops        = newOps,
-                                elements   = newElements,
-                                qualified? = true};
-         new_spec    <- return (removeVarOpCaptures new_spec);
-         new_spec    <- return (compressDefs        new_spec);
-         new_spec    <- complainIfAmbiguous new_spec pos;
-         raise_any_pending_exceptions;
-         return new_spec
-         }
+      case spc.qualifier of
+        | Some prior_q ->
+          %% annoying that this is reached twice -- 
+          %%  once while processing imports, then again for normal processing
+          let _ = toScreen("\n;;; Warning: Attempt to qualify spec previously qualified by " ^ prior_q ^ " with " ^ new_q ^ 
+                             " is ignored at " ^
+                             (case pos of
+                                | Internal msg -> msg
+                                | String (string, left, right) ->
+                                  let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+                                  printPos left ^ "-" ^ printPos right ^ " in \n;;;          [" ^ string ^ "]"
+                                | File (filename, left, right) ->
+                                  let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+                                  printPos left ^ "-" ^ printPos right ^ " in \n;;;          " ^ filename)
+                             ^ "\n")
+          in
+            return spc
+        | _ ->
+          let {sorts, ops, elements, qualifier} = 
+              mapSpecUnqualified (qualify_term, qualify_sort, qualify_pattern) spc
+          in 
+            {
+             check_for_type_collisions ();
+             check_for_op_collisions   ();
+             newSorts    <- qualify_sorts sorts;
+             newOps      <- qualify_ops   ops;
+             newElements <- return (qualifySpecElements new_q immune_ids elements);
+             new_spec    <- return {sorts     = newSorts,
+                                    ops       = newOps,
+                                    elements  = newElements,
+                                    qualifier = Some new_q};
+             new_spec    <- return (removeVarOpCaptures new_spec);
+             new_spec    <- return (compressDefs        new_spec);
+             new_spec    <- complainIfAmbiguous new_spec pos;
+             raise_any_pending_exceptions;
+             return new_spec
+             }
       
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
