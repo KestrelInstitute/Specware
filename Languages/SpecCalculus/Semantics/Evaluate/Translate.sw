@@ -664,10 +664,10 @@ SpecCalc qualifying spec
      new_sorts    <- translateSortInfos s.sorts;
      new_ops      <- translateOpInfos   s.ops;
      new_elements <- return (translateSpecElements translators opt_renaming s.elements);
-     new_spec     <- return {sorts      = new_sorts,
-			     ops        = new_ops,
-			     elements   = new_elements,
-			     qualified? = false};	% conservative
+     new_spec     <- return {sorts     = new_sorts,
+			     ops       = new_ops,
+			     elements  = new_elements,
+			     qualifier = None};	
 
      %% Next we worry about traditional captures in which a (global) op Y,
      %% used under a binding of var X, is renamed to X.   Internally, this 

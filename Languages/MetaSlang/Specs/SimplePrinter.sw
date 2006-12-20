@@ -16,7 +16,7 @@ SpecCalc qualifying spec
  %% called via ppObj attribute in specCat
  %% (see /Languages/MetaSlang/Specs/Categories/AsRecord.sw)
   op ppASpec : Spec -> Pretty
- def ppASpec (spc as {sorts,ops,elements,qualified?}) = 
+ def ppASpec (spc as {sorts,ops,elements,qualifier}) = 
    let 
      def lookupSort(Qualified(q,id)) =
        case findAQualifierMap(sorts,q,id) of
@@ -52,7 +52,7 @@ SpecCalc qualifying spec
 
  %% not called by Specware per se (see PSL)
   op ppASpecLocal : Spec -> Pretty
- def ppASpecLocal (spc as {sorts,ops,elements,qualified?}) = 
+ def ppASpecLocal (spc as {sorts,ops,elements,qualifier}) = 
    let 
      def lookupSort(Qualified(q,id)) =
        case findAQualifierMap(sorts,q,id) of

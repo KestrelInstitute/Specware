@@ -24,10 +24,10 @@ AnnSpec qualifying spec
  type ASpecs b = List (ASpec b)
 
  type ASpec b = {
-		 sorts      : ASortMap      b,
-		 ops        : AOpMap        b,
-		 elements   : ASpecElements b,
-		 qualified? : Boolean
+		 sorts     : ASortMap      b,
+		 ops       : AOpMap        b,
+		 elements  : ASpecElements b,
+		 qualifier : Option Qualifier
 		}
 
  type ASortMap  b = AQualifierMap (ASortInfo b) % i.e., Qualifier -> Id -> info
@@ -209,12 +209,12 @@ AnnSpec qualifying spec
 
  %%% Qualification flag
  op qualifiedSpec?  : [a] ASpec a -> Boolean
- op markQualified   : [a] ASpec a -> ASpec a
- op markUnQualified : [a] ASpec a -> ASpec a
+ op markQualified   : [a] ASpec a -> Qualifier -> ASpec a
+ op markUnQualified : [a] ASpec a              -> ASpec a
 
- def qualifiedSpec?  spc = spc.qualified?
- def markQualified   spc = spc << {qualified? = true}
- def markUnQualified spc = spc << {qualified? = false}
+ def qualifiedSpec?  spc = case spc.qualifier of Some _ -> true | _ -> false
+ def markQualified   spc q = spc << {qualifier = Some q}
+ def markUnQualified spc   = spc << {qualifier = None}
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  components of primary op def
@@ -697,18 +697,18 @@ AnnSpec qualifying spec
 
  def emptySpec =
    {
-    sorts          = emptyASortMap,
-    ops            = emptyAOpMap,
-    elements       = emptyAElements,
-    qualified?     = true
+    sorts     = emptyASortMap,
+    ops       = emptyAOpMap,
+    elements  = emptyAElements,
+    qualifier = None
    }
 
  def initialSpecInCat =
    {
-    sorts          = emptyASortMap,
-    ops            = emptyAOpMap,
-    elements       = emptyAElements,
-    qualified?     = true
+    sorts     = emptyASortMap,
+    ops       = emptyAOpMap,
+    elements  = emptyAElements,
+    qualifier = None
    }
 
  def setSorts    (spc, new_sorts)    = spc << {sorts    = new_sorts}

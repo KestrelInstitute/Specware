@@ -34,10 +34,10 @@ SpecUnion qualifying spec
 
  op  auxSpecUnion : List Spec -> Spec
  def auxSpecUnion specs =
-   let new_spec = {sorts      = sortsUnion specs,
-		   ops        = opsUnion   specs,
-		   elements   = eltsUnion  specs,
-		   qualified? = false}
+   let new_spec = {sorts     = sortsUnion specs,
+		   ops       = opsUnion   specs,
+		   elements  = eltsUnion  specs,
+		   qualifier = None}
    in
    let new_spec = removeDuplicateImports new_spec in
    let new_spec = removeVarOpCaptures    new_spec in

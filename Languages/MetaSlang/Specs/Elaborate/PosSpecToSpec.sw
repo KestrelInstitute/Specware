@@ -35,22 +35,22 @@ PosSpecToSpec qualifying spec
 %   mapSpec (convertPTerm, convertPSort, fn x -> x)
 %     spc
  
-  let {sorts, ops, elements, qualified?} = spc in
+  let {sorts, ops, elements, qualifier} = spc in
 %  let {imports = _, localOps, localSorts, localProperties} = importInfo in
   let tsp = (convertPTerm, convertPSort, fn x -> x) in
-  { %importInfo       = importInfo,
-
-    ops        = if ~(hasLocalOp? spc) then ops
-		   else
-		   mapOpInfosUnqualified (fn info ->
+  spc << { ops = if ~(hasLocalOp? spc) then 
+                   ops
+		 else
+                   mapOpInfosUnqualified (fn info ->
 					  if someOpAliasIsLocal? (info.names, spc) then
 					    info << {dfn = mapTerm tsp info.dfn}
 					  else 
 					    info)
 			      ops,
 
-    sorts      = if ~(hasLocalSort? spc) then sorts
-		   else
+          sorts = if ~(hasLocalSort? spc) then 
+                   sorts
+                  else
 		   mapSortInfos (fn info ->
 				 if someSortAliasIsLocal? (info.names, spc) then
 				   info << {dfn = mapSort tsp info.dfn}
@@ -58,16 +58,14 @@ PosSpecToSpec qualifying spec
 				   info)
 				sorts,
 
-    elements   =  map (fn el ->
-		       case el of
-			 | Property (pt, qid, tvs, term) -> 
-			   Property(pt, qid, tvs, 
-				    mapTerm tsp term)
-			 | _ -> el)
-		       elements,
-
-    qualified? = qualified?
-   }
+          elements =  map (fn el ->
+                             case el of
+                               | Property (pt, qid, tvs, term) -> 
+                                 Property(pt, qid, tvs, 
+                                          mapTerm tsp term)
+                               | _ -> el)
+                           elements
+         }
 
 
  op  convertPosTermToTerm : MS.Term -> MS.Term

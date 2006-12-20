@@ -76,11 +76,10 @@ TypeChecker qualifying spec
     %%   AstEnvironment.init adds default imports, etc.
     %%
     let initial_env  = initialEnv (given_spec, filename) in
-    let {%importInfo = importInfo as {imports = _, localOps, localSorts, localProperties},
-	 sorts      = given_sorts, 
-	 ops        = given_ops, 
-	 elements   = given_elts,
-	 qualified? = qualified?} 
+    let {sorts     = given_sorts, 
+	 ops       = given_ops, 
+	 elements  = given_elts,
+	 qualifier = qualifier} 
         = given_spec
     in
     let 
@@ -206,13 +205,12 @@ TypeChecker qualifying spec
     let second_pass_env = secondPass env_with_elaborated_sorts in
 
     let final_sorts = elaborate_local_sorts (elaborated_sorts, second_pass_env) in
-    let final_ops   = reelaborate_local_ops   (elaborated_ops,   second_pass_env) in
-    let final_elts = elaborate_local_props (elaborated_elts, second_pass_env) in
-    let final_spec = {%importInfo = importInfo,   
-		      sorts      = final_sorts, 
-		      ops        = final_ops, 
-		      elements   = final_elts,
-		      qualified? = qualified?}
+    let final_ops   = reelaborate_local_ops (elaborated_ops,   second_pass_env) in
+    let final_elts  = elaborate_local_props (elaborated_elts,  second_pass_env) in
+    let final_spec  = {sorts     = final_sorts, 
+                       ops       = final_ops, 
+                       elements  = final_elts,
+                       qualifier = qualifier}
     in
     %% We no longer check that all metaTyVars have been resolved,
     %% because we don't need to know the type for _
@@ -392,7 +390,7 @@ TypeChecker qualifying spec
   % ========================================================================
 
   % op resolveMetaTyVar: MS.Sort -> MS.Sort % see SortToTerm
-  def resolveMetaTyVar (srt : MS.Sort) : MS.Sort =
+  def TypeChecker.resolveMetaTyVar (srt : MS.Sort) : MS.Sort =
     case srt of
       | MetaTyVar(tv,_) -> 
         let {name=_,uniqueId=_,link} = ! tv in

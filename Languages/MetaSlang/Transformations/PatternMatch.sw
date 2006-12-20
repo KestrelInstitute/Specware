@@ -934,25 +934,25 @@ def eliminateTerm context term =
 	errorIndex = Ref 0,   % used to distinguish error messages
 	term       = None} 
    in
-     {%importInfo    = spc.importInfo,
-      sorts      = mapSortInfos (fn info ->
-				 let Qualified (_,id) = primarySortName info in
-				 let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
-				 let new_defs =
-				     map (fn dfn ->
-					  let (tvs, srt) = unpackSort dfn in
-					  let new_sort = eliminateSort (mkContext id) srt in
-					  maybePiSort (tvs, new_sort))
-					 old_defs
-				 in
-				 let new_dfn = maybeAndSort (old_decls ++ new_defs, sortAnn info.dfn) in
-				 info << {dfn = new_dfn}) 
-				spc.sorts,
-      ops        = mapOpInfos (fn info ->
-			       let Qualified (_,id) = primaryOpName info in
-			       let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-			       let new_defs = 
-				   map (fn dfn ->
+     spc << {
+             sorts = mapSortInfos (fn info ->
+                                   let Qualified (_,id) = primarySortName info in
+                                   let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
+                                   let new_defs =
+				       map (fn dfn ->
+                                            let (tvs, srt) = unpackSort dfn in
+                                            let new_sort = eliminateSort (mkContext id) srt in
+                                            maybePiSort (tvs, new_sort))
+                                           old_defs
+                                   in
+                                     let new_dfn = maybeAndSort (old_decls ++ new_defs, sortAnn info.dfn) in
+                                     info << {dfn = new_dfn}) 
+                                  spc.sorts,
+             ops = mapOpInfos (fn info ->
+                               let Qualified (_,id) = primaryOpName info in
+                               let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+                               let new_defs = 
+                                   map (fn dfn ->
 					let (tvs, srt, term) = unpackTerm dfn in
 					let new_srt = eliminateSort (mkContext id) srt in
 					let new_tm  = eliminateTerm (mkContext id) term in
@@ -960,17 +960,16 @@ def eliminateTerm context term =
 					maybePiTerm (tvs, SortedTerm (new_tm, new_srt, termAnn term)))
 				       old_defs
 			       in
-			       let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
-			       info << {dfn = new_dfn})
+                                 let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
+                                 info << {dfn = new_dfn})
 			      spc.ops,
-      elements   = map (fn el ->
-			 case el of
-			   | Property (pt, pname as Qualified(_, id), tyvars, term) -> 
-    		  	     Property (pt, pname, tyvars, eliminateTerm (mkContext id) term)
-			   | _ -> el) 
-                     spc.elements,
-      qualified? = spc.qualified?
-     }
+             elements = map (fn el ->
+                               case el of
+                                 | Property (pt, pname as Qualified(_, id), tyvars, term) -> 
+                                   Property (pt, pname, tyvars, eliminateTerm (mkContext id) term)
+                                 | _ -> el) 
+                            spc.elements
+             }
 
 endspec
 
