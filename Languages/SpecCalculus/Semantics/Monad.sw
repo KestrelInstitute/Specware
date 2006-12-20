@@ -20,7 +20,7 @@ SpecCalc qualifying spec
 
   %% To avoid name clashes, define undefinedGlobalVariable after importing 
   %% translated Monad stuff, as opposed to defining it in Exception.
-  def undefinedGlobalVariable (name : String) : Exception =
+  def SpecCalc.undefinedGlobalVariable (name : String) : Exception =
     UndefinedGlobalVar name
 
 \end{spec}
@@ -122,14 +122,30 @@ Raise an exception. Should this be called throw?
        (Ok (),
 	{exceptions = cons (exception, state.exceptions)})
 
-   op raise_any_pending_exceptions : Env ()
+  op  warn_later : Position * String -> Env ()
+  def warn_later (pos, msg) =
+    fn state ->
+    (Ok (),
+     {exceptions = cons (Warning (pos, msg), state.exceptions)})
+
+  op  raise_any_pending_exceptions : Env ()
   def raise_any_pending_exceptions =
     fn state ->
-      case state.exceptions of
-	| [] ->  (Ok (), state)
-	| exceptions ->
-	  (Exception (CollectedExceptions exceptions),
-	   initialState)
+      let exceptions = rev (foldl (fn (e, exceptions) ->
+                                     case e of
+                                       | Warning (pos, msg) ->
+                                         let _ = toScreen ("\n; WARNING at " ^ anyToString pos ^ " " ^ anyToString msg ^ "\n") in
+                                         exceptions
+                                       | _ ->
+                                         [e] ++ exceptions)
+                                  []
+                                  state.exceptions)
+      in
+        case exceptions of
+          | [] ->  (Ok (), state << {exceptions = []})
+          | _ ->
+            (Exception (CollectedExceptions exceptions),
+             initialState)
 
 \end{spec}
 

@@ -59,6 +59,7 @@ SpecCalc qualifying spec
     | DiagError           Position * String
     | SpecError           Position * String
     | MorphError          Position * String
+    | QualifyError        Position * String
     | TranslationError    String * Position
     | ColimitError        Position * String
     | SubstError          Position * String
@@ -66,9 +67,10 @@ SpecCalc qualifying spec
     | Proof               Position * String
     | UndefinedGlobalVar  String
     | CollectedExceptions List Monad.Exception
+    | Warning             Position * String
 
-  op uidToString : UnitId -> String
-  op relativeUID_ToString : RelativeUID -> String
+  op uidToString          : UnitId      -> String  % defined in Evaluate/UnitId/Utilities.sw
+  op relativeUID_ToString : RelativeUID -> String  % defined in Evaluate/UnitId/Utilities.sw
 
   op decodeException : Exception -> (Option (Position * Boolean)) * String 
   def decodeException except =
@@ -76,20 +78,21 @@ SpecCalc qualifying spec
       | Fail str                       -> (None,              "Fail: " ^ str)
       | FileNotFound        (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
       | UIDNotFound         (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
-      | TypeCheck           (pos, msg) -> (Some (pos, false), "Type error: " ^ msg)
+      | TypeCheck           (pos, msg) -> (Some (pos, false), "Type error: "              ^ msg)
       | TypeCheckErrors     pairs      -> (None,              printTypeErrors pairs)
-      | Unsupported         (pos, msg) -> (Some (pos, false), "Unsupported operation: " ^ msg)
-      | SyntaxError         msg        -> (None,              "Syntax error: " ^ msg)
-      | ParserError         fileName   -> (None,              "Syntax error in file " ^ fileName)
-      | DiagError           (pos, msg) -> (Some (pos, false), "Diagram error: " ^ msg)
-      | SpecError           (pos, msg) -> (Some (pos, false), "Error in specification: " ^ msg)
-      | MorphError          (pos, msg) -> (Some (pos, false), "Error in morphism: " ^ msg)
-      | TranslationError    (msg, pos) -> (Some (pos, false), "Error in translation: " ^ msg)
-      | ColimitError        (pos, msg) -> (Some (pos, false), "\nError in colimit: " ^ msg)
+      | Unsupported         (pos, msg) -> (Some (pos, false), "Unsupported operation: "   ^ msg)
+      | SyntaxError         msg        -> (None,              "Syntax error: "            ^ msg)
+      | ParserError         fileName   -> (None,              "Syntax error in file "     ^ fileName)
+      | DiagError           (pos, msg) -> (Some (pos, false), "Diagram error: "           ^ msg)
+      | SpecError           (pos, msg) -> (Some (pos, false), "Error in specification: "  ^ msg)
+      | MorphError          (pos, msg) -> (Some (pos, false), "Error in morphism: "       ^ msg)
+      | QualifyError        (pos, msg) -> (Some (pos, false), "Error in qualify: "        ^ msg)
+      | TranslationError    (msg, pos) -> (Some (pos, false), "Error in translation: "    ^ msg)
+      | ColimitError        (pos, msg) -> (Some (pos, false), "\nError in colimit: "      ^ msg)
       | SubstError          (pos, msg) -> (Some (pos, false), "\nError in substitution: " ^ msg)
-      | CircularDefinition  uid        -> (None,              "Circular definition: " ^ showUID uid)
-      | Proof               (pos, msg) -> (Some (pos, false), "Proof error: " ^ msg)
-      | UndefinedGlobalVar  name       -> (None,              "Undefined global var: " ^ name)
+      | CircularDefinition  uid        -> (None,              "Circular definition: "     ^ showUID uid)
+      | Proof               (pos, msg) -> (Some (pos, false), "Proof error: "             ^ msg)
+      | UndefinedGlobalVar  name       -> (None,              "Undefined global var: "    ^ name)
       | CollectedExceptions exceptions -> (None,              printExceptions exceptions)
       | mystery                        -> (None,              "Unknown exception: " ^ (anyToString mystery))
 
@@ -161,7 +164,6 @@ SpecCalc qualifying spec
 	   ""
 	 else 
 	   "...  (" ^ Nat.toString(length exceptions - numberOfExceptionsToPrint) ^ " additional exceptions)")
-
 
 
   op  firstN: fa(a) List a * Nat -> List a
