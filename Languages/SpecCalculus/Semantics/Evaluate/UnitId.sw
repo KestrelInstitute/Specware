@@ -25,7 +25,7 @@ If we get to the end of the list then we have failed.
 evaluateReturnUID is the same as evaluateUID except it also returns
 the canonical UnitId found.
 *)
-  def evaluateReturnUID position unitId = {
+  def SpecCalc.evaluateReturnUID position unitId = {
     % let dscr = showRelativeUID unitId in 
     % print ("evaluateUID: " ^ dscr ^ "\n");
     optValue <- lookupInLocalContext unitId;

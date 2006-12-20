@@ -20,14 +20,11 @@ SpecCalc qualifying spec
        | _  -> raise (TypeCheck (positionOf spec_tm, "op refinement attempted on a non-spec"))
      }
 
-  op evaluateSpecOpElems : ASpec Position -> List (SpecElem Position)
-                           -> SpecCalc.Env (ASpec Position)
+  op  evaluateSpecOpElems : ASpec Position -> List (SpecElem Position) -> SpecCalc.Env (ASpec Position)
   def evaluateSpecOpElems src_spec op_elts = 
-      foldM evaluateSpecOpElem src_spec op_elts
+    foldM evaluateSpecOpElem src_spec op_elts
 
-  op evaluateSpecElem : ASpec Position
-                          -> SpecElem Position
-                          -> SpecCalc.Env (ASpec Position)
+  op  evaluateSpecOpElem : ASpec Position -> SpecElem Position -> SpecCalc.Env (ASpec Position)
   def evaluateSpecOpElem spc (elem, pos) =
     case elem of
       | Op(names, fxty, dfn) -> addOrRefineOp names fxty dfn spc pos false

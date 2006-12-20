@@ -38,8 +38,8 @@ SpecCalc qualifying spec
  %%  SimplePrinter.sw to print import terms.
  %% They use /Languages/MetaSlang/Specs/SpecCalc.sw as a hack to refer to this,
  %%  which they otherwise would not have access to.
-  op showTerm : [a] SpecCalc.Term a -> String
- def showTerm term = ppFormat (ppTerm term)
+ %% op showTerm : [a] SpecCalc.Term a -> String
+ def SpecCalc.showTerm term = ppFormat (ppTerm term)
 
   op showUID : UnitId -> String
  def showUID unitId = ppFormat (ppUID unitId)

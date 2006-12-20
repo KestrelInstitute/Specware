@@ -10,8 +10,8 @@ spec
   import ToJavaStatements
   import Monad
 
-  op  specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (JavaBlock * JavaExpr * Nat * Nat))
-  def specialTermToExpressionM(tcx,term,k,l) =
+ %op  JGen.specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (JavaBlock * JavaExpr * Nat * Nat))
+  def JGen.specialTermToExpressionM(tcx,term,k,l) =
     %let _ = writeLine("specialTermToExpression: term="^printTerm(term)) in
     let
       def infixOp(binOp,t1,t2) =
@@ -454,8 +454,8 @@ spec
     id = "String"  || % v3:p1 says NO  -- TODO: resolve this
     id = "Char"       % v3:p1 
 
-  op getPostSubstFun: JGenEnv (JavaExpr -> JavaExpr)
-  def getPostSubstFun =
+ %op  JGen.getPostSubstFun: JGenEnv (JavaExpr -> JavaExpr)
+  def JGen.getPostSubstFun =
     return (fn e ->
 	    case e of
 	      | CondExp (Un (Prim (MethInv (ViaPrim (Name([],"Primitive"), mname, [e1, e2])))), None) ->

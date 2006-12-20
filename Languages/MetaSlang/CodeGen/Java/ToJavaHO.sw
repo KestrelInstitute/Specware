@@ -15,9 +15,9 @@ spec
   (**
    * translates a lambda term into a java expression, called from translateToExpression in ToJavaStatements
    *)
-%  op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (JavaBlock * JavaExpr * Nat * Nat) * Collected
-  %op translateLambdaToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
-  def translateLambdaToExprM(tcx,term (*as Lambda((pat,cond,body)::_,_)*),k,l) =
+  %op JGen.translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (JavaBlock * JavaExpr * Nat * Nat) * Collected
+  %op JGen.translateLambdaToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+  def JGen.translateLambdaToExprM(tcx,term (*as Lambda((pat,cond,body)::_,_)*),k,l) =
     case term of
       | Fun(Op(qid as Qualified(_,id),_),srt,_) -> translateStandAloneOpToExprM(tcx,(qid,srt),k,l)
       | Fun(Embed(c,_),srt,_) ->

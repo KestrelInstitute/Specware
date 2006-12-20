@@ -67,7 +67,7 @@ spec
  %%  be modified to better reflect that reality.
  %% ================================================================================
 
- def specColimit dg =  % TODO: would be nice to have Position, but Cat structure precludes that
+ def SpecCalc.specColimit dg =  % TODO: would be nice to have Position, but Cat structure precludes that
 
   let base_spec = getBaseImportSpec () in  % TODO: base spec should be an arg to specColimit, or part of monad
 

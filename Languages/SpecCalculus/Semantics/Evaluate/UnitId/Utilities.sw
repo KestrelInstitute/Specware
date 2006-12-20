@@ -190,8 +190,8 @@ This is like the above but accommodates the suffix as well.
       | uid :: uids ->
         "[" ^ (uidToString uid) ^ (foldl (fn (uid, s) -> s ^ ", " ^ uidToString uid) "" uids) ^ "]"
 
-  op  uidToString : UnitId -> String
-  def uidToString {path,hashSuffix} =
+ %op  SpecCalc.uidToString : UnitId -> String % already declared in /Languages/SpecCalculus/Semantics/Exception.sw
+  def SpecCalc.uidToString {path,hashSuffix} =
    let path = abbreviatedPath path in
    let device? = deviceString? (hd path) in
    let tildaPath? = (hd path = "~") in
@@ -214,8 +214,8 @@ This is like the above but accommodates the suffix as well.
 	 fileName ^"#"^ suffix
 
 
-  op  relativeUID_ToString : RelativeUID -> String
-  def relativeUID_ToString rel_uid =
+ %op  SpecCalc.relativeUID_ToString : RelativeUID -> String % already declared in /Languages/SpecCalculus/Semantics/Exception.sw
+  def SpecCalc.relativeUID_ToString rel_uid =
    case rel_uid of
      | UnitId_Relative {path, hashSuffix} -> 
        (let filename = case path of

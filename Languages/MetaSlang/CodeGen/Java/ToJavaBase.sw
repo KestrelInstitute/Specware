@@ -18,8 +18,8 @@ sort ToExprSort = JavaBlock * JavaExpr * Nat * Nat
 
 % --------------------------------------------------------------------------------
 
-%op metaSlangTypeToJavaType: Sort -> JGenEnv JavaType
-def metaSlangTypeToJavaType = tt_v3M
+%op JGen.metaSlangTypeToJavaType: Sort -> JGenEnv JavaType
+def JGen.metaSlangTypeToJavaType = tt_v3M
 
 op baseSrtToJavaTypeM: Sort -> JGenEnv JavaType
 def baseSrtToJavaTypeM(srt) =
@@ -491,8 +491,8 @@ def mkJavaCastExpr(jtype,jexpr) =
   cast
   %CondExp (Un (Prim (Paren cast)), None)
 
-op mkVarJavaExpr: Id -> JavaExpr
-def mkVarJavaExpr(id) = CondExp (Un (Prim (Name ([], id))), None)
+%op JGen.mkVarJavaExpr: Id -> JavaExpr
+def JGen.mkVarJavaExpr(id) = CondExp (Un (Prim (Name ([], id))), None)
 
 op mkQualJavaExpr: Id * Id -> JavaExpr
 def mkQualJavaExpr(id1, id2) = CondExp (Un (Prim (Name ([id1], id2))), None)
@@ -550,8 +550,8 @@ def javaBaseOp?(id) =
     | "~" -> true
     | _ -> false
 
-op mkBinExp: Id * List JavaExpr -> JavaExpr
-def mkBinExp(opId, javaArgs) =
+%op JGen.mkBinExp: Id * List JavaExpr -> JavaExpr
+def JGen.mkBinExp(opId, javaArgs) =
   let [ja1, ja2] = javaArgs in
   CondExp (Bin (mkBaseJavaBinOp(opId), Un (Prim (Paren (ja1))), Un (Prim (Paren (ja2)))), None)
 
@@ -618,8 +618,8 @@ def mkFldAssn(cId, vId, jT1) =
   let fldAcc = mkFldAccViaClass(cId, vId) in
   Stmt (Expr (Ass (FldAcc (ViaCls (([], cId), vId)), Assgn, jT1)))
 
-op mkMethInvName: JavaName * List JavaExpr -> JavaExpr
-def mkMethInvName(name, javaArgs) =
+%op JGen.mkMethInvName: JavaName * List JavaExpr -> JavaExpr
+def JGen.mkMethInvName(name, javaArgs) =
   CondExp (Un (Prim (MethInv (ViaName (name, javaArgs)))), None)
 
 op mkMethInv: Id * Id * List JavaExpr -> JavaExpr
@@ -793,8 +793,8 @@ def mkMethDeclJustReturn(methodName,argTypeNames,retTypeName,argNameBase,retExpr
   let retStmt = mkReturnStmt(retExpr) in
   mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,retStmt)
 
-op mkNewClasInst: String * List JavaExpr -> JavaExpr
-def mkNewClasInst(id, javaArgs) =
+%op JGen.mkNewClasInst: String * List JavaExpr -> JavaExpr
+def JGen.mkNewClasInst(id, javaArgs) =
   CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, None)))), None)
 
 (**
@@ -1242,8 +1242,8 @@ def baseDir : Id = "."
 
 % hack: change vars with "time" or "Time" and defined as "int" to be "long"
 
-%op changeTimeVars: JavaBlockStmt -> JavaBlockStmt
-def changeTimeVars bstmt =
+%op JGen.changeTimeVars: JavaBlockStmt -> JavaBlockStmt
+def JGen.changeTimeVars bstmt =
   case bstmt of
     | LocVarDecl(isFinal,(Basic JInt,0),((id,n),optvarinit),[]) ->
       let l = length id in

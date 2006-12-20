@@ -810,8 +810,8 @@ def clearCollectedProductSortsM =
 (**
  * processes the code generation options
  *)
-%op processOptions : JSpec * Option Spec * String -> List JavaFile
-def processOptions(jspc as (_,_,cidecls), optspec, filename) =
+%op JGen.processOptions : JSpec * Option Spec * String -> List JavaFile
+def JGen.processOptions(jspc as (_,_,cidecls), optspec, filename) =
   let (pkgname,bdir,pubops,imports,cleandir) = 
      let defaultvals = (packageName,baseDir,publicOps,[],false) in
      case optspec of
@@ -874,7 +874,7 @@ def processOptions(jspc as (_,_,cidecls), optspec, filename) =
     in
     res
 
-def printJavaFile(jfile as (filename,jspc)) =
+def JGen.printJavaFile(jfile as (filename,jspc)) =
     let p = ppCompUnit jspc in
     let t = format (80, p) in
     let _ = ensureDirectoriesExist filename in
@@ -907,8 +907,8 @@ def builtinSortOp(qid) =
 def printOriginalSpec? = false
 def printTransformedSpec? = false
 
-%op transformSpecForJavaCodeGen: Spec -> Spec -> Spec
-def transformSpecForJavaCodeGen basespc spc =
+%op JGen.transformSpecForJavaCodeGen: Spec -> Spec -> Spec
+def JGen.transformSpecForJavaCodeGen basespc spc =
   %let _ = writeLine("transformSpecForJavaCodeGen...") in
   let _ = if printOriginalSpec? then printSpecFlatToTerminal spc else () in
   let spc = unfoldSortAliases spc in
@@ -934,15 +934,15 @@ def transformSpecForJavaCodeGen basespc spc =
   % let _ = toScreen("\n================================\n") in
   spc
 
-%op generateJavaCodeFromTransformedSpec: Spec -> JSpec
+%op JGen.generateJavaCodeFromTransformedSpec: Spec -> JSpec
 def JGen.generateJavaCodeFromTransformedSpec spc =
   let (res,_) = generateJavaCodeFromTransformedSpecM spc JGen.initialState in
   case res of
     | Ok jspc -> jspc
     | Exception e -> efail e
 
-op generateJavaCodeFromTransformedSpecM: Spec -> JGenEnv JSpec
-def generateJavaCodeFromTransformedSpecM spc =
+%op JGen.generateJavaCodeFromTransformedSpecM: Spec -> JGenEnv JSpec
+def JGen.generateJavaCodeFromTransformedSpecM spc =
   {
    %println("\n--------------- SPEC PASSED TO JGEN");
    %println(printSpecVerbose spc);
