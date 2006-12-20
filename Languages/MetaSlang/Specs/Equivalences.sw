@@ -132,12 +132,6 @@ AnnSpec qualifying spec
  op similarType?  : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are similar
  op equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are not equivalent
 
- %% Calls to deprecated_equivType? should become calls to equalType? or equivType?
- %% The trick is knowing which is appropriate where...
- op  deprecated_equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean
- def deprecated_equivType? spc (t1, t2) =
-   equalType? (t1,t2)
-
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
