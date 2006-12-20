@@ -70,11 +70,11 @@ SpecCalc qualifying spec
 
   type SpecCalc.OtherRenamingRule = ()  % Term
 
-  def ppOtherRenamingRule (_ : OtherRenamingRule) = ppString "<some OtherRenamingRule>"
+  def SpecCalc.ppOtherRenamingRule (_ : OtherRenamingRule) = ppString "<some OtherRenamingRule>"
 
   type SpecCalc.OtherTranslators  = ()   % Value -- see Translate.sw
 
-  def ppOtherTranslators (_ : OtherTranslators) = ([] : List Doc)
+  def SpecCalc.ppOtherTranslators (_ : OtherTranslators) = ([] : List Doc)
 
   %%  -------------
 
@@ -85,6 +85,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.28  2006/12/19 00:29:14  mcdonald
+%% added required qualifiers
+%%
 %% Revision 1.27  2006/09/06 02:17:57  mcdonald
 %% *** empty log message ***
 %%

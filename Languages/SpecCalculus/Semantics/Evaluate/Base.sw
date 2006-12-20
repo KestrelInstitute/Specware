@@ -14,8 +14,8 @@ SpecCalc qualifying spec
 	  %% TODO: "=" is a very crude test, so there are other cases to worry about 
 	  | _ -> x.1 = y.1
 
-  op setBaseToPath : String -> Env ()
-  def setBaseToPath path = {
+  %op SpecCalc.setBaseToPath : String -> Env ()
+  def SpecCalc.setBaseToPath path = {
       relative_uid <- pathToRelativeUID path;
       setBaseToRelativeUID relative_uid
     }
@@ -45,8 +45,8 @@ SpecCalc qualifying spec
         catch (prog ()) handler
     }
 
-   op reloadBase : Env ()
-   def reloadBase = {
+   %op SpecCalc.reloadBase : Env ()
+   def SpecCalc.reloadBase = {
       (optUnitId,spc) <- getBase;
       case optUnitId of
         | None -> return ()

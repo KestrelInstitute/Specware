@@ -15,7 +15,7 @@ XML qualifying spec
   %                      text  : UString}
 
   %% TEMPORARY!
-  def get_uchars_from_uri (uri : ExternalID) : Env UChars =
+  def XML.get_uchars_from_uri (uri : ExternalID) : Env UChars =
     case uri.system of
       | Some sys_lit ->
         (let filename = string sys_lit.text in

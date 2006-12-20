@@ -300,8 +300,8 @@ Specware qualifying spec
 
   %% getOptSpec returns Some spc if the given string evaluates to a spec
 
-  %op getOptSpec : Option String -> Option Spec
-  def getOptSpec optpath =
+  %op Specware.getOptSpec : Option String -> Option Spec
+  def Specware.getOptSpec optpath =
     case optpath of
       | None -> None
       | Some path ->
@@ -377,8 +377,8 @@ Specware qualifying spec
   %% functions have unit type (within the monad). It seems to make
   %% sense that no toplevel functions return anything.
 
-  % op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean % See Signature.sw
-  def toplevelHandler except =
+  %op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean % See Signature.sw
+  def Specware.toplevelHandler except =
     {
      cleanupGlobalContext;		% Remove InProcess entries
      message <- return (printException except);
@@ -390,8 +390,8 @@ Specware qualifying spec
      return false
     }
 
-  % op toplevelHandlerOption : [a] Exception -> SpecCalc.Env (Option a)% See Signature.sw
-  def [a] toplevelHandlerOption (except) : SpecCalc.Env (Option a) =
+  %op Specware.toplevelHandlerOption : [a] Exception -> SpecCalc.Env (Option a)% See Signature.sw
+  def [a] Specware.toplevelHandlerOption (except) : SpecCalc.Env (Option a) =
     {
      cleanupGlobalContext;		% Remove InProcess entries
      message <- return (printException except);

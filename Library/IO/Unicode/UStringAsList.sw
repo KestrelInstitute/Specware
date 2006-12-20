@@ -9,7 +9,7 @@ Unicode qualifying spec
   def Unicode.all?  = List.all
   def Unicode.in?   = List.member
 
-  def ustring (s : String) : UString =
+  def Unicode.ustring (s : String) : UString =
     map uchar (explode s)
 
   def Unicode.string (ustr : UString) : String =
@@ -31,7 +31,7 @@ Unicode qualifying spec
 
   % def Unicode.all? pred ustring = foldl (fn (uchar, result) -> result & (pred uchar)) true ustring
 
-  def substring? (s1 : UString, s2 : UString) : Boolean =
+  def Unicode.substring? (s1 : UString, s2 : UString) : Boolean =
     case (s1, s2) of
       | ([], _) -> true
       | (_, []) -> false
