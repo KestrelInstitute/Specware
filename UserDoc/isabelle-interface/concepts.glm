@@ -1,0 +1,22 @@
+<chapter id="concepts">
+<title>Concepts</title>
+
+<para>
+This is the initial experimental release of a &Specware; interface
+     that allows the use of &IsabelleHOL; to discharge proof
+     obligations that arise in developing &Specware;
+     specifications. The interface is essentially just an emacs
+     command that converts a &Specware; spec to an &Isabelle; theory,
+     along with extensions in the &Specware syntax to allow &Isabelle;
+     proof scripts to be embedded in &Specware; specs, and to allow
+     the user to specify translation of &Specware; ops and types to
+     existing &Isabelle; constants and types. The translation
+     translates &Specware; declarations, definitions, axioms and
+     theorems to the corresponding &Isabelle; versions. The logics are
+     similar that it is usually straightforward to compare the source
+     and target of the translations. In addition, &Specware; has
+     implicit type obligations, particularly sub-type obligations, that are 
+     explicated in the &Isabelle; target.
+</para>
+
+</chapter>

@@ -1,0 +1,61 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" [
+
+<!ENTITY % ISOtech.module "INCLUDE">
+<![ %ISOtech.module; [
+<!ENTITY % ISOtech PUBLIC
+"ISO 8879:1986//ENTITIES General Technical//EN">
+<!--end of ISOtech.module-->]]>
+<![ %ISOtech.module; [
+%ISOtech;
+]]>
+
+<!ENTITY % ISOnum.module "INCLUDE">
+<![ %ISOnum.module; [
+<!ENTITY % ISOnum PUBLIC
+"ISO 8879:1986//ENTITIES Numeric and Special Graphic//EN">
+<!--end of ISOnum.module-->]]>
+<![ %ISOnum.module; [
+%ISOnum;
+]]>
+
+
+ <!ENTITY concepts SYSTEM "concepts.dbk">
+ <!ENTITY usage SYSTEM "usage.dbk">
+
+ <!ENTITY Specware "<productname>Specware</productname>">
+ <!ENTITY Isabelle "<productname>Isabelle</productname>">
+ <!ENTITY IsabelleHOL "<productname>Isabelle/HOL</productname>">
+ <!ENTITY V "4.1">
+ <!ENTITY SpecwareV "&Specware; &V;">
+ <!ENTITY SShell "&Specware; Shell">
+ <!ENTITY Metaslang "Metaslang">
+ <!ENTITY lt "&#60;">
+ <!ENTITY gt "&#62;">
+ <!ENTITY amp "&#38;">
+ <!ENTITY emdash "--">
+ <!ENTITY swpath "<computeroutput>SWPATH</computeroutput>">
+]>
+
+<book><title>Specware to Isabelle User Manual</title>
+
+<bookinfo>
+  <copyright>
+     <year>2006-2007</year>
+     <holder>Kestrel Development Corporation</holder>
+  </copyright>
+  <copyright>
+     <year>2006-2007</year>
+     <holder>Kestrel Technology LLC</holder>
+  </copyright>
+
+  <abstract>
+     <para>All rights reserved</para>
+     <para>The name <trademark class="registered">Specware</trademark>
+     is a registered trademark of Kestrel Development Corporation</para>
+  </abstract>
+</bookinfo>
+
+&concepts;
+&usage;
+
+</book>

@@ -1,0 +1,39 @@
+<chapter id="usage">
+<title>Useage</title>
+
+<section>
+<title>Starting Up</title>
+
+<para>
+&Specware; and &Isabelle; can both be started up normally, each
+	   running under their own XEmacs job, but it convenient to
+	   run them under the same XEmacs. To do this run
+	   [[SpecwareIsabelle]].
+</para>
+
+<para>
+Currently Isabelle does not run under Windows so this script is not
+	  available there. However, the translator can run from
+	  &Specware; even if &Isabelle; is not running.
+</para>
+
+
+</section>
+
+<section>
+<title>Using The Translator</title>
+
+<para>
+The translator is called using the emacs command [[c-c c-i]]. The
+    translation is written to a file in the [[Isa]] sub-directory of
+    the current directory and the file is visited in a buffer. The
+    user may then process the Isabelle theory providing proof steps as
+    necessary. These proofs may then be copied back to the &Specware;
+    spec so that the next time it is translated, the translation will
+    include the proofs. 
+</para>
+
+</section>
+
+
+</chapter>
