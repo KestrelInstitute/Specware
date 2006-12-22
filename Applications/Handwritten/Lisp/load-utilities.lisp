@@ -335,18 +335,20 @@
     (read-line istream)))
 
 (defun concatenate-files (files target)
-  (with-open-file (ostream target :direction :output :if-does-not-exist :create)
+  (ensure-directories-exist target)
+  (with-open-file (ostream target :element-type 'unsigned-byte :direction :output
+			   :if-does-not-exist :create :if-exists :overwrite)
     (loop for file in files
-      do (with-open-file (istream file :direction :input)
+      do (with-open-file (istream file :element-type 'unsigned-byte :direction :input)
 	   (loop
-	     (let ((char (read-char istream nil :eof)))
+	     (let ((char (read-byte istream nil :eof)))
 	       (cond
 		((eq :eof char)
 		 (return))
 		((eq #\Page char)
 		 )
 		(t
-		 (princ char ostream)))))))))
+		 (write-byte char ostream)))))))))
 
 (defun directory? (pathname)
   #+Allegro (excl::file-directory-p pathname)
@@ -410,17 +412,19 @@
   #-allegro
   (let* ((dirpath (if (stringp dir) (parse-namestring dir) dir))
 	 (dirstr (if (stringp dir) dir (namestring dirpath))))
-  (if contents?
-      #+mcl (ccl:run-program "rm" (list "-R" dirstr))
-      #-mcl
-      (loop for dir-item in (sw-directory dirpath)
-	do (if (directory? dir-item)
-	       (specware::delete-directory dir-item contents?)
-	     (delete-file dir-item)))
-    #+cmu (unix:unix-rmdir dirstr)
-    #+gcl (lisp:system (format nil "rmdir ~a" dirstr))
-    #+mcl (ccl:run-program "rmdir" (list dirstr))
-    #-(or cmu gcl mcl) nil)))				; No general way
+    (if contents?
+	#+mcl (ccl:run-program "rm" (list "-R" dirstr))
+	#+sbcl (sb-ext:run-program "/bin/rm" (list "-R" dirstr))
+	#-(or mcl sbcl)
+	(loop for dir-item in (sw-directory dirpath)
+	      do (if (directory? dir-item)
+		     (specware::delete-directory dir-item contents?)
+		     (delete-file dir-item)))
+	#+cmu (unix:unix-rmdir dirstr)
+	#+gcl (lisp:system (format nil "rmdir ~a" dirstr))
+	#+mcl (ccl:run-program "rmdir" (list dirstr))
+	#+sbcl (sb-ext:run-program "/bin/rmdir" (list dirstr))
+	#-(or cmu gcl mcl sbcl) nil)))	; No general way
 
 (defun parent-directory (pathname)
   (let ((dir (pathname-directory pathname)))
