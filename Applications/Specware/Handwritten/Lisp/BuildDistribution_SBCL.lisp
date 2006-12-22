@@ -53,7 +53,7 @@
 (defparameter cl-user::Specware-patch-level  "0")
 (defparameter Major-Version-String           "4-2")		; patch detection, about-specware cmd
 
-(defparameter *Distribution-dir*  (concatenate 'string *specware-dir* "/distribution-cmulisp/"))
+(defparameter *Distribution-dir*  (concatenate 'string *specware-dir* "distribution-sbcl/"))
 
 (defun in-distribution-dir (file) (concatenate 'string *Distribution-dir* file))
 
