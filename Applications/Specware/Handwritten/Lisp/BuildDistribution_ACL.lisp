@@ -4,6 +4,8 @@
 
 (defpackage :Specware)
 
+(defvar *including-isabelle-interface?* t)
+
 (format t "~%;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 (format t "~&About to build distribution dir for Specware under Allegro on Windows.~%")
 (format t "~&[This implements Step Windows-D in How_to_Create_a_Specware_CD.txt]~%")
@@ -46,10 +48,10 @@
 ;; They are in BuildPreamble.lisp where they are needed.
 
 (defparameter Specware-name                  "Specware4")	; Name of dir and startup files
-(defparameter cl-user::Specware-version      "4.1")
-(defparameter cl-user::Specware-version-name "Specware-4-1")
-(defparameter cl-user::Specware-patch-level  "5")
-(defparameter Major-Version-String           "4-1")		; patch detection, about-specware cmd
+(defparameter cl-user::Specware-version      "4.2")
+(defparameter cl-user::Specware-version-name "Specware-4-2")
+(defparameter cl-user::Specware-patch-level  "0")
+(defparameter Major-Version-String           "4-2")		; patch detection, about-specware cmd
 
 (defparameter *Specware-dir*      (fix-dir (sys:getenv "SPECWARE4")))
 (defparameter *Allegro-dir*       (fix-dir (sys:getenv "ALLEGRO")))
@@ -141,6 +143,9 @@
 
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/CopyFilesForDistribution.lisp"))
 
+(when *including-isabelle-interface?*
+  (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/CopyIsaFilesForDistribution.lisp")))
+
 ;;; ============ EMACS SUPPORT ============
 
 (format t "~&;;;~%")
@@ -158,15 +163,15 @@
 (format t "~&;;;~%")
 
 ;; Set up the directory that will hold the CD contents:
-;;   C:/SpecwareReleases/Specware-4-1-5/CD/
+;;   C:/SpecwareReleases/Specware-4-2-0/CD/
 ;;
 ;; Put in the Autorun.inf file that will automatically invoke
 ;; Windows\setupwin32.exe for the user when the CD is inserted.
 ;;
 ;; Later the results from InstallShield will be put under
-;;   C:/SpecwareReleases/Specware-4-1-5/CD/Windows/Specware4/
-;;   C:/SpecwareReleases/Specware-4-1-5/CD/Linux/Specware4/
-;;   C:/SpecwareReleases/Specware-4-1-5/CD/Mac/Specware4/
+;;   C:/SpecwareReleases/Specware-4-2-0/CD/Windows/Specware4/
+;;   C:/SpecwareReleases/Specware-4-2-0/CD/Linux/Specware4/
+;;   C:/SpecwareReleases/Specware-4-2-0/CD/Mac/Specware4/
 ;;   ...
 
 
