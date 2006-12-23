@@ -13,10 +13,26 @@ This is the initial experimental release of a &Specware; interface
      existing &Isabelle; constants and types. The translation
      translates &Specware; declarations, definitions, axioms and
      theorems to the corresponding &Isabelle; versions. The logics are
-     similar that it is usually straightforward to compare the source
+     similar so it is usually straightforward to compare the source
      and target of the translations. In addition, &Specware; has
      implicit type obligations, particularly sub-type obligations, that are 
      explicated in the &Isabelle; target.
 </para>
+
+<para>
+We assume the user is familiar with &IsabelleHOL;. See the tutorial at
+<ulink url="http://isabelle.in.tum.de/documentation.html">http://isabelle.in.tum.de/documentation.html</ulink>.
+An example Specware spec with Isabelle proofs is given in 
+<"Examples/IsabelleInterface/BoolEx.sw">. This spec corresponds to the
+Isabelle theory in section 2.2.4 of the &IsabelleHOL; tutorial.
+</para>
+
+<para>
+To see examples of how to specify translation of &Specware; types and
+   ops to existing &Isabelle; types and constants, see the bottom of
+   the Specware Base library specs such as <"Library/Base/Integer.sw"> or
+   <"Library/Base/List.sw">.
+</para>
+
 
 </chapter>

@@ -35,5 +35,154 @@ The translator is called using the emacs command [[c-c c-i]]. The
 
 </section>
 
+<section>
+<title>Proof Scripts in Specs</title>
+
+<para>
+An embedded &Isabelle; proof script in a &Specware; spec consists of an
+   introductory line beginning with [[proof Isa]], the actual
+   &Isabelle; on subsequent lines terminated by the string
+   [[end-proof]]. For example, the simple proof script [[apply(auto)]]
+   can be embedded as follows:
+[[
+||  proof Isa
+||    apply(auto)
+||  end-proof
+]]
+</para>
+
+<para>
+
+The proof script should occur immediately after the theorem that it
+    applies to. If the script applies to a proof obligation that is
+    not explicit in the spec, then the name of the obligation should
+    appear after [[proof Isa]], on the same line. Such named scripts
+    may occur anywhere except immediately after a theorem.
+</para>
+
+<para>
+If the user does not supply a proof script for a theorem then the
+   translator will supply the script [[apply(auto)]] which may be all
+   that is required to prove simple theorems.
+</para>
+
+<para>
+Annotations for theorems may be included on the [[proof Isa]]
+	    line. For example,
+
+[[
+||  theorem Simplify_valif_normif is
+||    fa(b,env,t,e) valif (normif b t e) env = valif (IF(b, t, e)) env
+||    proof Isa [simp]
+||      apply(induct_tac b)
+||      apply(auto)
+||    end-proof
+]]
+
+translates to
+
+[[
+||  theorem Simplify_valif_normif [simp]: 
+||    "valif (normif b t e) env = valif (IF b t e) env"
+||      apply(induct_tac b)
+||      apply(auto)
+||    done
+]]
+</para>
+
+<para>
+In this example we see that universal quantification in &Specware;
+   becomes, by default, implicit quantification  in &Isabelle;. This is normally
+   what the user wants, but not always. The user may specify the
+   variables that should be explicitly quantified by adding a clause
+   like [[fa t e.]] to the [[proof Isa]] line. For example,
+
+[[
+||  theorem Simplify_valif_normif is
+||    fa(b,env,t,e) valif (normif b t e) env = valif (IF(b, t, e)) env
+||    proof Isa [simp] fa t e.
+||      apply(induct_tac b)
+||      apply(auto)
+||    end-proof
+]]
+
+translates to
+
+[[
+||  theorem Simplify_valif_normif [simp]: 
+||    "\<quote>\\</quote><forall>t e. valif (normif b t e) env = valif (IF b t e) env"
+||      apply(induct_tac b)
+||      apply(auto)
+||    done
+]]
+</para>
+
+<para>
+The [[\<quote>\\</quote><forall>]] will be displayed as a universal quantification
+    symbol using X-Symbol mode in &Isabelle;. Note that instead of
+    [[fa]] in the [[proof Isa]] line the user may use the X-Symbol for
+    universal quantification.
+</para>
+
+</section>
+
+<section>
+<title>Translation Tables</title>
+
+<para>
+A translation table for &Specware; types and ops is introduced by a
+  line beginning [[proof Isa Thy_Morphism]] followed optionally by an
+  &Isabelle; theory  (which will be imported into the translated
+  spec), and terminated by the string [[end-proof]]. Each line gives
+  the translation of a type or op. For example, for the &Specware;
+  Integer theory we have:
+
+[[
+||  proof Isa Thy_Morphism Presburger
+||    type Integer.Integer -> int
+||    type Nat.Nat -> nat (int,nat)
+||    Integer.+ -> +  Left 25
+||    Integer.- -> -  Left 25
+||    IntegerAux.- -> -
+||    Integer.~ -> -
+||    Integer.* -> *  Left 27
+||    Integer.div -> *  Left 27
+||    Integer.rem -> *  Left 27
+||    Integer.<= -> \<quote>\\</quote><le>  Left 20
+||    Integer.< -> <  Left 20
+||    Integer.>= -> \<quote>\\</quote><ge>  Left 20
+||    Integer.> -> >  Left 20
+||    Integer.abs -> abs
+||    Integer.min -> min curried
+||    Integer.max -> max curried
+||   end-proof
+]]
+</para>
+
+<para>
+A type translation begins with the word [[type]] followed by the
+  fully-qualified &Specware; name, [[->]] and the &Isabelle;
+  name. If the &Specware; type is a sub-type, you can specify coercion
+  functions to and from the super-type in parentheses separated by
+  commas. Note that by default, sub-types are represented by their
+  super-type, so you would only specify a translation if you wanted
+  them to be different, in which case coercion functions are
+  necessary.
+</para>
+
+<para>
+An op translation begins with the fully-qualified &Specware; name,
+   followed by [[->]] and the &Isabelle; constant name. If the
+   Isabelle constant is an infix operator, then it should be followed
+   by [[Left]] or [[Right]] depending on whether it is left or right
+   associative and a precedence number. Note that the precedence number is
+   relative to &Specware;'s precedence ranking, not &Isabelle;'s. Also
+   if the &Specware; op is an uncurried binary op and the
+   corresponding &Isabelle; constant is a curried binary op, then
+ put [[curried]] after the &Isabelle; name.
+</para>
+
+</section>
+
 
 </chapter>
