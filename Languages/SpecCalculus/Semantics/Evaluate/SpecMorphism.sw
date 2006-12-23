@@ -385,7 +385,7 @@ Should we check to see if qid is in cod_map??
 		   raise (MorphError (pos, "Peculiar: No rule could be found for sort " ^ printQualifiedId dom_qid))
 
       def verify_op_type (dom_q, dom_id, dom_info : OpInfo, _) = 
-	let (_,dom_sort,dom_dfn) = unpackFirstOpDef dom_info in
+	let (dom_tvs, dom_sort,dom_dfn) = unpackFirstOpDef dom_info in
 	case dom_sort of
 	  | Any _ -> return ()
 	  | _ ->
@@ -403,7 +403,7 @@ Should we check to see if qid is in cod_map??
 			 in
 			   raise (MorphError (pos, msg))
 		       else
-			 let cod_sort        = firstOpDefInnerSort cod_info in
+			 let cod_sort = firstOpDefInnerSort cod_info in
 			 if equivType? cod_spec (translated_sort, cod_sort) then
 			   return ()
 			 else
@@ -415,7 +415,7 @@ Should we check to see if qid is in cod_map??
 			     raise (MorphError (pos, msg))
 		   | _ -> raise (MorphError (pos, "Peculiar: No op named " ^ printQualifiedId cod_qid ^ " could be found in the codomain spec.")))
 	      | _ -> raise (MorphError (pos, "Peculiar: No rule could be found for op " ^ printQualifiedId dom_qid))
-			 
+
     in
       {
        foldOverQualifierMap verify_sort_def () dom_spec.sorts;
@@ -431,15 +431,15 @@ Should we check to see if qid is in cod_map??
 	    | _ -> QId
 	def translateSort (srt) =
 	  case srt of
-	    | Base (QId, srts, a) -> 
-	      (case findName sortMap QId of
+	    | Base (dom_qid, srts, a) -> 
+	      (case findName sortMap dom_qid  of
 		 | Qualified("Boolean", "Boolean") -> Boolean a
 		 | cod_qid -> Base (cod_qid, srts, a))
 	    | _ -> srt
 	def translateTerm (trm) =
 	  case trm of
-	    | Fun (Op (QId, fixity), srt, a) -> 
-	      let cod_qid as Qualified (q, id) = findName opMap QId in
+	    | Fun (Op (dom_qid, fixity), srt, a) -> 
+	      let cod_qid as Qualified (q, id) = findName opMap dom_qid in
 	      let fun =
 	          (case q of
 		     | "Boolean" ->
@@ -460,7 +460,7 @@ Should we check to see if qid is in cod_map??
 			  | _ -> Op (cod_qid, fixity))
 		     | _ -> Op (cod_qid, fixity))
 	      in
-		Fun (fun, srt, a)
+                Fun (fun, srt, a)
 	    | _ -> trm
     in 
     mapSort (translateTerm, translateSort, id) srt
