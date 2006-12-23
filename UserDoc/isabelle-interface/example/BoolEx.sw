@@ -55,10 +55,9 @@ def norm ie =
     | VIF x    \_rightarrow (VIF x)
     | IF(b, t, e) \_rightarrow normif b (norm t) (norm e)
 
-proof Simplification end-proof
-theorem Simplify_valif_normif is  %[simp]:
+theorem Simplify_valif_normif is
   \_forall(b,env,t,e) valif (normif b t e) env = valif (IF(b, t, e)) env
-  proof Isa \_forallt e.
+  proof Isa [simp] \_forall t e.
     apply(induct_tac b)
     apply(auto)
   end-proof
@@ -82,10 +81,9 @@ def normal ie =
 			 | IF(x, y, z) \_rightarrow false))
 
 
-proof Simplification end-proof
-theorem Simplify_normal_normif is  % [simp]
+theorem Simplify_normal_normif is 
   \_forall (b, t, e) normal(normif b t e) = (normal t \_and normal e)
-  proof Isa \_forallt e.
+  proof Isa [simp] \_forall t e.
     apply(induct_tac b)
     apply(auto)
   end-proof
