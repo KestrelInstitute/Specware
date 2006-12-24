@@ -190,19 +190,21 @@ AnnSpec qualifying spec
  %%%  Each use should be reviewed.
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ op  firstSortDef          : [b] ASortInfo b -> ASort b
  op  unpackFirstSortDef    : [b] ASortInfo b -> TyVars * ASort b
  op  firstSortDefTyVars    : [b] ASortInfo b -> TyVars
  op  firstSortDefInnerSort : [b] ASortInfo b -> ASort b
 
- def unpackFirstSortDef info =
+ def firstSortDef info =
    let (decls, defs)  = sortInfoDeclsAndDefs info in
    let first_def :: _ = defs ++ decls in
-   unpackSort first_def
+   first_def
+
+ def unpackFirstSortDef info =
+   unpackSort (firstSortDef info)
 
  def firstSortDefTyVars info =
-   let (decls, defs)  = sortInfoDeclsAndDefs info in
-   let first_def :: _ = defs ++ decls in
-   sortTyVars first_def
+   sortTyVars (firstSortDef info)
 
  def firstSortDefInnerSort info =
    sortInnerSort (hd (sortInfoDefs info)) % fail if no decl but no def
@@ -224,20 +226,22 @@ AnnSpec qualifying spec
  %%%  Each use should be reviewed.
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ op  firstOpDef          : [b] AOpInfo b -> ATerm b
  op  unpackFirstOpDef    : [b] AOpInfo b -> TyVars * ASort b * ATerm b
  op  firstOpDefTyVars    : [b] AOpInfo b -> TyVars
  op  firstOpDefInnerSort : [b] AOpInfo b -> ASort b
  op  firstOpDefInnerTerm : [b] AOpInfo b -> ATerm b
 
- def unpackFirstOpDef info =
+ def firstOpDef info =
    let (decls, defs)  = opInfoDeclsAndDefs info in
    let first_def :: _ = defs ++ decls in
-   unpackTerm first_def
+   first_def
+
+ def unpackFirstOpDef info =
+   unpackTerm (firstOpDef info)
 
  def firstOpDefTyVars info =
-   let (decls, defs)  = opInfoDeclsAndDefs info in
-   let first_def :: _ = defs ++ decls in
-   termTyVars first_def
+   termTyVars (firstOpDef info)
 
  def firstOpDefInnerSort info =
    let (decls, defs)  = opInfoDeclsAndDefs info in
