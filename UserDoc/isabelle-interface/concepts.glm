@@ -34,5 +34,17 @@ To see examples of how to specify translation of &Specware; types and
    <"Library/Base/List.sw">.
 </para>
 
+<para> This initial translator has a number of limitations. It should
+translate all &Specware; specs but not all translated definitions and
+constructs will be accepted by &IsabelleHOL;. In particular, only
+recursive definitions that are primitive will be accepted, i.e., those
+that involve pattern-matching on coproduct constructors. Similarly,
+only case expressions that involve a single level of pattern-matching
+on constructors are accepted. An exception, is that some nesting is
+allowed in top-level case expressions that are converted into
+definition cases.  Mutual recursion and local recursive functions are
+also not currently accepted.
+</para>
+
 
 </chapter>
