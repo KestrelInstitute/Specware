@@ -350,7 +350,15 @@ AnnSpec qualifying spec
          []
          
        | (MetaTyVar (mtv1, _), MetaTyVar (mtv2, _)) -> 
-         [MetaTyVars (mtv1, mtv2)]
+         (if (!mtv1).uniqueId = (!mtv2).uniqueId then
+            []
+          else
+            case ((!mtv1).link, (!mtv2).link) of
+              | (Some t1, Some t2) -> diffType equivs (t1, t2)
+              | (Some t1, _)       -> diffType equivs (t1, t2)
+              | (_,       Some t2) -> diffType equivs (t1, t2)
+              | _ ->
+                [MetaTyVars (mtv1, mtv2)])
 
        | (Pi (tvs1, t1, _), Pi (tvs2, t2, _)) | length tvs1 = length tvs2 ->
          let local_equivs = equateTyVars (tvs1, tvs2) in
