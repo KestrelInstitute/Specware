@@ -2,6 +2,20 @@ AnnSpec qualifying spec
 
  import AnnSpec
  import /Languages/MetaSlang/AbstractSyntax/Equalities
+ import /Languages/MetaSlang/AbstractSyntax/DiffTerm
+ import ExpandType
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%      Equivalences wrt alpha-conversion and type expansion
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean
+%op equivFun?     : Spec -> MS.Fun     * MS.Fun     -> Boolean
+ op equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
+ op equivVar?     : Spec -> MS.Var     * MS.Var     -> Boolean
+
+ op similarType?  : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are similar
+ op equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are not equivalent
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% Naming convention:  To avoid confusion when both Foo and Foos exist
@@ -11,94 +25,6 @@ AnnSpec qualifying spec
  %%%                     This converts less fluently into English, but is 
  %%%                      ultimately less confusing.
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- op  equalSortInfo?: [a] ASortInfo a * ASortInfo a -> Boolean
- def equalSortInfo? (info1, info2) =
-   info1.names = info2.names
-   %% Could take into account substitution of tvs
-   && equalType? (info1.dfn, info2.dfn)
-
- op  equalOpInfo?: [a] AOpInfo a * AOpInfo a -> Boolean
- def equalOpInfo? (info1, info2) =
-   info1.names = info2.names
-   && info1.fixity = info2.fixity
-   && equalTerm? (info1.dfn, info2.dfn)
-
- op  equalProperty?: [a] AProperty a * AProperty a -> Boolean
- def equalProperty? ((propType1, propName1, tvs1, fm1),
-		     (propType2, propName2, tvs2, fm2))
-   =
-   propType1 = propType2 && equalTerm? (fm1, fm2) && equalTyVars? (tvs1, tvs2)
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- op  sameSpecElement?: [a] ASpec a * ASpecElement a * ASpec a * ASpecElement a -> Boolean
- def sameSpecElement? (s1, e1, s2, e2) =
-   case e1 of
-     | Import (s1_tm, s1, _) ->
-       (case e2 of
-	  | Import (s2_tm, s2, _) -> s1 = s2  %% sameSCTerm? (s1_tm, s2_tm) 
-	  | _ -> false)
-     | Sort qid1 -> 
-       (case e2 of
-	  | Sort qid2 -> 
-	    let Some info1 = findTheSort (s1, qid1) in
-	    let Some info2 = findTheSort (s2, qid2) in
-	    (info1.names = info2.names
-	     &&
-	     (case (info1.dfn, info2.dfn) of
-		| (Any _, _) -> true
-		| (_, Any _) -> true
-		| (srt1, srt2) -> equalType? (srt1, srt2)))
-	  | _ -> false)
-     | SortDef qid1 -> 
-       (case e2 of
-	  | SortDef qid2 -> 
-	    let Some info1 = findTheSort (s1, qid1) in
-	    let Some info2 = findTheSort (s2, qid2) in
-	    (info1.names = info2.names
-	     &&
-	     (case (info1.dfn, info2.dfn) of
-		| (Any _, _) -> true
-		| (_, Any _) -> true
-		| (srt1, srt2) -> equalType? (srt1, srt2)))
-	  | _ -> false)
-     | Op (qid1,_) ->
-       (case e2 of
-	  | Op (qid2,_) -> 
-	    let Some info1 = findTheOp (s1, qid1) in
-	    let Some info2 = findTheOp (s2, qid2) in
-	    (info1.names = info2.names
-	     && info1.fixity = info2.fixity
-	     && equalType? (termSort info1.dfn, termSort info2.dfn)
-	     && (case (info1.dfn, info2.dfn) of
-		   | (Any _,                    _) -> true
-		   | (_,                    Any _) -> true
-		   | (SortedTerm (Any _, _, _), _) -> true
-		   | (_, SortedTerm (Any _, _, _)) -> true
-		   | (tm1, tm2) ->  equalTerm? (tm1, tm2)))
-	  | _ -> false)
-     | OpDef qid1 -> 
-       (case e2 of
-	  | OpDef qid2 -> 
-	    let Some info1 = findTheOp (s1, qid1) in
-	    let Some info2 = findTheOp (s2, qid2) in
-	    (info1.names = info2.names
-	     && info1.fixity = info2.fixity
-	     && equalType? (termSort info1.dfn, termSort info2.dfn)
-	     && (case (info1.dfn, info2.dfn) of
-		   | (Any _,                    _) -> true
-		   | (_,                    Any _) -> true
-		   | (SortedTerm (Any _, _, _), _) -> true
-		   | (_, SortedTerm (Any _, _, _)) -> true
-		   | (tm1, tm2) -> equalTerm? (tm1, tm2)))
-	  | _ -> false)
-     | Property p1 ->
-       (case e2 of
-	  | Property p2 -> propertyName p1 = propertyName p2
-	  | _ -> false)
-     | _ -> e1 = e2
-
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Utilities for comparing structures
@@ -121,89 +47,132 @@ AnnSpec qualifying spec
      | _ -> false
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%      Equivalences wrt alpha-conversion and type expansion
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- op equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean
- op equivFun?     : Spec -> MS.Fun     * MS.Fun     -> Boolean
- op equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
- op equivVar?     : Spec -> MS.Var     * MS.Var     -> Boolean
-
- op similarType?  : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are similar
- op equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are not equivalent
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ def Utilities.unifyTerm? spc (t1, t2) = equivTerm? spc (t1, t2) % hack to avoid circularity
+
  def equivTerm? spc (t1, t2) =
+   let new? = new_equivTerm? spc (t1, t2) in
+   let _ = 
+       let old? = old_equivTerm? spc (t1, t2) in
+       if old? = new? then
+         ()
+       else
+         let env = initialEnv (spc, "internal") in
+         let all_diffs = diffTerm [] (t1, t2) in
+         let filtered_diffs = foldl (fn (diff, diffs) ->
+                                       case diff of
+                                         | Types (x,y) ->	
+                                           if new_equivType? spc (x, y) then
+                                             diffs
+                                           else
+                                             [diff] ++ diffs
+                                         | _ -> 
+                                           [diff] ++ diffs)
+                                    []
+                                    all_diffs
+         in
+         let _ = toScreen("\n----------\n") in
+         let _ = toScreen("Old = " ^ toString old? ^ ", new = " ^ toString new? ^ "\n") in
+         let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[c]" all_diffs) in
+         let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[d]" filtered_diffs) in
+         let _ = toScreen("\n") in
+         let _ = toScreen("S1 = " ^ anyToString t1 ^ "\n") in
+         let _ = toScreen("S2 = " ^ anyToString t2 ^ "\n") in
+         let _ = toScreen("\n----------\n") in
+         ()
+   in
+     new?
+
+ op  new_equivTerm? : Spec -> (MS.Term * MS.Term) -> Boolean
+ def new_equivTerm? spc (x, y) =
+   (equalTerm? (x, y))
+   ||
+   (let env = initialEnv (spc, "internal") in
+    let all_diffs = diffTerm [] (x, y) in
+    let filtered_diffs = foldl (fn (diff, diffs) ->
+                                  case diff of
+                                    | Types (x,y) ->	
+                                      if new_equivType? spc (x, y) then
+                                        diffs
+                                      else
+                                        [diff] ++ diffs
+                                    | _ -> 
+                                      [diff] ++ diffs)
+                               []
+                               all_diffs
+    in
+      null filtered_diffs)
+
+ def old_equivTerm? spc (t1, t2) =
    (equalTerm? (t1, t2))
    ||
    (case (t1, t2) of
 
      | (Apply      (x1, y1,      _), 
-        Apply      (x2, y2,      _)) -> equivTerm? spc (x1, x2) && equivTerm? spc (y1, y2)
+        Apply      (x2, y2,      _)) -> old_equivTerm? spc (x1, x2) && old_equivTerm? spc (y1, y2)
 
      | (ApplyN     (xs1,         _),   
-        ApplyN     (xs2,         _)) -> equivList? spc (xs1, xs2, equivTerm?)
+        ApplyN     (xs2,         _)) -> equivList? spc (xs1, xs2, old_equivTerm?)
 
      | (Record     (xs1,         _), 
         Record     (xs2,         _)) -> equivList? spc  (xs1, xs2, 
 							 fn spc -> fn ((label1,x1),(label2,x2)) -> 
 							 label1 = label2 && 
-							 equivTerm? spc (x1, x2))
+							 old_equivTerm? spc (x1, x2))
 
      | (Bind       (b1, vs1, x1, _),
         Bind       (b2, vs2, x2, _)) -> b1 = b2 && 
                                         %% TODO: Could check modulo alpha conversion...
                                         equivList? spc (vs1, vs2, equivVar?) &&
-                                        equivTerm? spc (x1,  x2)
+                                        old_equivTerm? spc (x1,  x2)
 
      | (Let        (pts1, b1,    _),
-        Let        (pts2, b2,    _)) -> equivTerm? spc (b1, b2) &&
+        Let        (pts2, b2,    _)) -> old_equivTerm? spc (b1, b2) &&
                                         equivList? spc (pts1, pts2,
 							fn spc -> fn ((p1,t1),(p2,t2)) -> 
-							equivPattern? spc (p1, p2) && 
-							equivTerm?    spc (t1, t2))
+							old_equivPattern? spc (p1, p2) && 
+							old_equivTerm?    spc (t1, t2))
 
      | (LetRec     (vts1, b1,    _),
-        LetRec     (vts2, b2,    _)) -> equivTerm? spc  (b1, b2) &&
+        LetRec     (vts2, b2,    _)) -> old_equivTerm? spc  (b1, b2) &&
                                         equivList? spc  (vts1, vts2,
 							 fn spc -> fn ((v1,t1),(v2,t2)) -> 
 							 equivVar?  spc (v1, v2) && 
-							 equivTerm? spc (t1, t2))
+							 old_equivTerm? spc (t1, t2))
 
      | (Var        (v1,          _),
         Var        (v2,          _)) -> equivVar? spc (v1, v2)
 
      | (Fun        (f1, s1,      _),
-        Fun        (f2, s2,      _)) -> equivFun? spc (f1,f2) && equivType? spc (s1,s2)
+        Fun        (f2, s2,      _)) -> old_equivFun? spc (f1,f2) && equivType? spc (s1,s2)
 
      | (Lambda     (xs1,         _),
         Lambda     (xs2,         _)) -> equivList? spc  (xs1, xs2,
 							 fn spc -> fn ((p1,c1,b1),(p2,c2,b2)) ->
-							 equivPattern? spc (p1, p2) && 
-							 equivTerm?    spc (c1, c2) && 
-							 equivTerm?    spc (b1, b2))
+							 old_equivPattern? spc (p1, p2) && 
+							 old_equivTerm?    spc (c1, c2) && 
+							 old_equivTerm?    spc (b1, b2))
 
      | (IfThenElse (c1, x1, y1,  _),
-        IfThenElse (c2, x2, y2,  _)) -> equivTerm? spc (c1, c2) && 
-                                        equivTerm? spc (x1, x2) && 
-                                        equivTerm? spc (y1, y2)
+        IfThenElse (c2, x2, y2,  _)) -> old_equivTerm? spc (c1, c2) && 
+                                        old_equivTerm? spc (x1, x2) && 
+                                        old_equivTerm? spc (y1, y2)
 
      | (Seq        (xs1,         _),
-        Seq        (xs2,         _)) -> equivList? spc (xs1, xs2, equivTerm?)
+        Seq        (xs2,         _)) -> equivList? spc (xs1, xs2, old_equivTerm?)
 
      | (SortedTerm (x1, s1,      _),
-        SortedTerm (x2, s2,      _)) -> equivTerm? spc (x1, x2) && equivType? spc (s1, s2)
+        SortedTerm (x2, s2,      _)) -> old_equivTerm? spc (x1, x2) && equivType? spc (s1, s2)
 
      %% TODO: Could check modulo alpha conversion for Pi terms...
-     | (Pi (_,x1,_),  _          ) -> equivTerm? spc (x1, t2) 
-     | (_,            Pi (_,x2,_)) -> equivTerm? spc (t1, x2) 
+     | (Pi (_,x1,_),  _          ) -> old_equivTerm? spc (x1, t2) 
+     | (_,            Pi (_,x2,_)) -> old_equivTerm? spc (t1, x2) 
 
      | _ -> false)
 
- def equivFun? spc (f1, f2) =
+ def old_equivFun? spc (f1, f2) =
   case (f1, f2) of
      | (PQuotient qid1,     PQuotient qid2)     -> qid1 = qid2
      | (PChoose   qid1,     PChoose   qid2)     -> qid1 = qid2
@@ -237,15 +206,118 @@ AnnSpec qualifying spec
      | _ -> false
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%      Type Equivalences
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ def equivType? spc (s1, s2) =
+   let new? = new_equivType? spc (s1, s2) in
+   let _ = 
+       let old? = old_equivType? spc (s1, s2) in
+       if old? = new? then
+         ()
+       else
+         let env = initialEnv (spc, "internal") in
+         let all_diffs      = diffType [] (s1, s2) in
+         let filtered_diffs = foldl (fn (diff, diffs) ->
+                                       case diff of
+                                         | Types (x,y) ->	
+                                           let x2 = expandType (env, x) in
+                                           let y2 = expandType (env, y) in
+                                           %% treat A and A|p as non-equivalent
+                                           if new_equivType? spc (x2, y2) then
+                                             diffs
+                                           else
+                                             [diff] ++ diffs
+                                         | _ -> 
+                                           [diff] ++ diffs)
+                                    []
+                                    all_diffs
+         in
+         let _ = toScreen("\n----------\n") in
+         let _ = toScreen("Old = " ^ toString old? ^ ", new = " ^ toString new? ^ "\n") in
+         let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[a]" all_diffs) in
+         let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[b]" filtered_diffs) in
+         let _ = toScreen("\n") in
+         let _ = toScreen("S1 = " ^ anyToString s1 ^ "\n") in
+         let _ = toScreen("S2 = " ^ anyToString s2 ^ "\n") in
+         let _ = toScreen("\n----------\n") in
+         ()
+   in
+     new?
+
+
+ op  new_equivType? : Spec -> (MS.Sort * MS.Sort) -> Boolean
+ def new_equivType? spc (x, y) =
+   let 
+     def aux x y prior_diffs =
+       (equalType? (x, y))
+       ||
+       (let env = initialEnv (spc, "internal") in
+        let all_diffs = diffType [] (x, y) in
+        let filtered_diffs = foldl (fn (diff, diffs) ->
+                                    %% Coproducts are the only reasonable way to get 
+                                    %% recursively defined sorts, so we shouldn't need
+                                    %% an occurence check to avoid infinite expansions,
+                                    %% but someone might present us with pathological
+                                    %% types such as T = T * T, or T = T | p.
+                                    %% So we start with an occurrence check...
+                                    case diff of
+                                      | Types (x,y) ->	
+                                        if exists (fn old_diff ->
+                                                     case old_diff of
+                                                       | Types (old_x, old_y) ->
+                                                         equalType? (x, old_x) && equalType? (y, old_y)
+                                                       | _ -> false)
+                                                  prior_diffs
+                                          then
+                                            let _ = toScreen("\nOccurence check for " ^ anyToString (x, y) ^ "\n") in
+                                            let _ = toScreen("\namong " ^ anyToString prior_diffs ^ "\n") in
+                                            [diff] ++ diffs
+                                        else
+                                          let x2 = expandType (env, x) in
+                                          let y2 = expandType (env, y) in
+                                          %% treat A and A|p as non-equivalent
+                                          if equalType? (x, x2) && equalType? (y, y2) then
+                                            [diff] ++ diffs
+                                          else if aux x2 y2 all_diffs then
+                                            diffs
+                                          else
+                                            [diff] ++ diffs
+                                      | _ -> 
+                                        [diff] ++ diffs)
+                                   []
+                                   all_diffs
+        in
+          null filtered_diffs)
+   in
+     aux x y []
+
+ def old_equivType? spc (s1, s2) =
+   (equalType? (s1, s2))
+   ||
+   (let env = initialEnv (spc, "internal") in
+    %% treat A and A|p as non-equivalent
+    unifySorts env false s1 s2 )
+
+ %% used by checkRecursiveCall in TypeObligations.sw
+ def similarType? spc (s1, s2) =
+   (equalType? (s1, s2))
+   ||
+   (let env = initialEnv (spc, "internal") in
+    %% treat A and A|p as similar
+    unifySorts env true s1 s2 )
+
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Pattern Equivalences, expanding definitions
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- def equivPattern? spc (p1,p2) =
+ def old_equivPattern? spc (p1,p2) =
    (equalPattern? (p1, p2))
    ||
    (case (p1, p2) of
      | (AliasPat    (x1, y1,      _),
-        AliasPat    (x2, y2,      _)) -> equivPattern? spc (x1,x2) && equivPattern? spc (y1,y2)
+        AliasPat    (x2, y2,      _)) -> old_equivPattern? spc (x1,x2) && old_equivPattern? spc (y1,y2)
 
      | (VarPat      (v1,          _),
         VarPat      (v2,          _)) -> equivVar? spc (v1, v2)
@@ -253,13 +325,13 @@ AnnSpec qualifying spec
      | (EmbedPat    (i1, op1, s1, _),
         EmbedPat    (i2, op2, s2, _)) -> i1 = i2 && 
                                          equivType? spc (s1, s2) && 
-                                         equivOpt?  spc (op1, op2, equivPattern?)
+                                         equivOpt?  spc (op1, op2, old_equivPattern?)
 
      | (RecordPat   (xs1,         _),
         RecordPat   (xs2,         _)) -> equivList? spc  (xs1, xs2, 
  	 	 	 	 	 	 	  fn spc -> fn ((label1,x1), (label2,x2)) -> 
  	 	 	 	 	 	 	  label1 = label2 && 
- 	 	 	 	 	 	 	  equivPattern? spc (x1, x2))
+ 	 	 	 	 	 	 	  old_equivPattern? spc (x1, x2))
 
      | (WildPat     (s1,          _),
         WildPat     (s2,          _)) -> equivType? spc (s1,s2)
@@ -277,13 +349,13 @@ AnnSpec qualifying spec
         NatPat      (x2,          _)) -> x1 = x2
 
      | (QuotientPat (x1, qid1,    _),
-        QuotientPat (x2, qid2,    _)) -> equivPattern? spc (x1, x2) && qid1 = qid2
+        QuotientPat (x2, qid2,    _)) -> old_equivPattern? spc (x1, x2) && qid1 = qid2
 
      | (RestrictedPat (x1, t1,    _),
-        RestrictedPat (x2, t2,    _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
+        RestrictedPat (x2, t2,    _)) -> old_equivPattern? spc (x1, x2) && old_equivTerm? spc (t1, t2)
 
      | (SortedPat   (x1, t1,      _),
-        SortedPat   (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivType? spc (t1, t2)
+        SortedPat   (x2, t2,      _)) -> old_equivPattern? spc (x1, x2) && equivType? spc (t1, t2)
 
      | _ -> false)
 
