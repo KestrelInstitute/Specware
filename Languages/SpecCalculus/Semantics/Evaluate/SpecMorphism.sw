@@ -351,8 +351,8 @@ Should we check to see if qid is in cod_map??
     let {dom, cod, sortMap, opMap, pragmas=_, sm_tm=_} = sm in
     let 
       def verify_sort_def (dom_q, dom_id, dom_info : SortInfo, _) = 
-	let (_,dom_sort) = unpackFirstSortDef dom_info in
-	case dom_sort of
+	let dom_sort = firstSortDef dom_info in
+	case sortInnerSort dom_sort of
 	  | Any _ -> return ()
 	  | _ ->
 	    let dom_qid         = Qualified (dom_q, dom_id) in
@@ -369,8 +369,8 @@ Should we check to see if qid is in cod_map??
 				    "\nbut translates to " ^ (printQualifiedId cod_qid) ^ ", which does not."
 			  in
 			    raise (MorphError (pos, msg))
-			| dfn :: _ -> 
-			  let cod_sort = sortInnerSort dfn in
+			| cod_sort :: _ -> 
+			  % let cod_sort = sortInnerSort dfn in
                           if equivType? cod_spec (translated_sort, cod_sort) then
 			    return ()
 			  else 
@@ -390,6 +390,7 @@ Should we check to see if qid is in cod_map??
 	  | Any _ -> return ()
 	  | _ ->
 	    let dom_qid         = Qualified (dom_q, dom_id) in
+            let dom_sort        = maybePiSort (dom_tvs, dom_sort) in
 	    let translated_sort = translateSortViaSM (dom_sort, sortMap, opMap) in
 	    case evalPartial opMap dom_qid of
 	      | Some cod_qid ->
@@ -403,7 +404,8 @@ Should we check to see if qid is in cod_map??
 			 in
 			   raise (MorphError (pos, msg))
 		       else
-			 let cod_sort = firstOpDefInnerSort cod_info in
+                         let (cod_tvs, cod_srt, cod_dfn) = unpackFirstOpDef cod_info in
+			 let cod_sort = maybePiSort (cod_tvs, cod_srt) in
 			 if equivType? cod_spec (translated_sort, cod_sort) then
 			   return ()
 			 else
