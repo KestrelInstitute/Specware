@@ -66,7 +66,7 @@ TypeChecker qualifying spec
   %% The main type-checking function is elaboratePosSpec.
 
   def elaboratePosSpec (given_spec, filename) = 
-    let _ = initializeMetaTyVar ("tc", 0) in
+    let _ = initializeMetaTyVarCounter () in
 
     %% ======================================================================
     %%                           PASS ZERO  [ 0 => 1 ]
@@ -207,10 +207,9 @@ TypeChecker qualifying spec
     let final_sorts = elaborate_local_sorts (elaborated_sorts, second_pass_env) in
     let final_ops   = reelaborate_local_ops (elaborated_ops,   second_pass_env) in
     let final_elts  = elaborate_local_props (elaborated_elts,  second_pass_env) in
-    let final_spec  = {sorts     = final_sorts, 
-                       ops       = final_ops, 
-                       elements  = final_elts,
-                       qualifier = qualifier}
+    let final_spec  = given_spec << {sorts      = final_sorts, 
+                                     ops        = final_ops, 
+                                     elements   = final_elts}
     in
     %% We no longer check that all metaTyVars have been resolved,
     %% because we don't need to know the type for _
@@ -389,7 +388,7 @@ TypeChecker qualifying spec
   %% ---- called inside CheckSort 
   % ========================================================================
 
-  % op resolveMetaTyVar: MS.Sort -> MS.Sort % see SortToTerm
+  %op TypeChecker.resolveMetaTyVar: MS.Sort -> MS.Sort % see SortToTerm
   def TypeChecker.resolveMetaTyVar (srt : MS.Sort) : MS.Sort =
     case srt of
       | MetaTyVar(tv,_) -> 
@@ -526,7 +525,7 @@ TypeChecker qualifying spec
 		     | Fun (OneName  idf,  _, pos) -> Fun (OneName  (fixateOneName  (idf,  fixity)), srt, pos)
 		     | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), srt, pos)
 		     | _ -> System.fail "Variable or constant expected"))
-	   | [] -> 
+	   | [] ->
 	     resolveNameFromSort (env, trm, id, srt, pos))
 
       | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
