@@ -1,14 +1,12 @@
 % Synchronized with version 1.8 of  SW4/Languages/MetaSlang/TypeChecker/TypeCheckUtilities.sl 
 
-Utilities qualifying
-spec
- import /Library/Base
- import SpecToPosSpec   % for PosSpec's, plus convertSort[Info]ToPSort[Info]
- import ../Printer        % for error messages
- import /Library/Legacy/DataStructures/MergeSort % for combining error messages
- import /Library/Legacy/DataStructures/ListPair  % misc utility
- import /Library/Unvetted/StringUtilities        % search
- import ../Equivalences
+Utilities qualifying spec
+ import SpecToPosSpec                                   % for PosSpec's, plus convertSort[Info]ToPSort[Info]
+ import ../Printer                                      % error messages
+ import /Library/Legacy/DataStructures/MergeSort        % combining error messages
+ import /Library/Legacy/DataStructures/ListPair         % misc utility
+ import /Library/Unvetted/StringUtilities               % search
+ import /Languages/MetaSlang/AbstractSyntax/Equalities  % equalType?
 
  sort Environment = StringMap Spec
  sort LocalEnv = 
@@ -31,21 +29,17 @@ spec
 
  op error          : LocalEnv * String * Position -> ()
 
+ op unifyTerm?     : Spec -> (MS.Term * MS.Term) -> Boolean % hack to avoid circularity
+
  (* Auxiliary functions: *)
 
  % Generate a fresh type variable at a given position.
  op freshMetaTyVar : String * Position -> MS.Sort
 
- def metaTyVarPrefix  = (Ref "init") : Ref String
  def metaTyVarCounter = (Ref 0) : Ref Nat
 
-% def freshMetaTyVar pos = 
-%   let new_counter = 1 + (! metaTyVarCounter) in
-%   (metaTyVarCounter := new_counter;
-%    MetaTyVar (Ref {link = None,
-%		    name     = ! metaTyVarPrefix, 
-%		    uniqueId = new_counter},
-%	       pos))
+ def initializeMetaTyVarCounter () =
+   metaTyVarCounter := 0
 
  def freshMetaTyVar (name, pos) = 
    let new_counter = 1 + (! metaTyVarCounter) in
@@ -54,10 +48,6 @@ spec
 		    name     = name,
 		    uniqueId = new_counter},
 	       pos))
-
- def initializeMetaTyVar (prefix, counter) = 
-   let _ = metaTyVarPrefix := prefix in
-   metaTyVarCounter := counter
 
   op unlinkSort : MS.Sort -> MS.Sort
  def unlinkSort srt = 
@@ -408,21 +398,6 @@ spec
 	  | notUnify    -> notUnify)
      | _ -> NotUnify (srt1, srt2)
 
- def AnnSpec.equivType? spc (s1, s2) =
-   (equalType? (s1, s2))
-   ||
-   (let env = initialEnv (spc, "internal") in
-    %% treat A and A|p as non-equivalent
-    unifySorts env false s1 s2 )
-
- def AnnSpec.similarType? spc (s1, s2) =
-   (equalType? (s1, s2))
-   ||
-   (let env = initialEnv (spc, "internal") in
-    %% treat A and A|p as similar
-    unifySorts env true s1 s2 )
-
-
   op unifySorts : LocalEnv -> Boolean -> Sort -> Sort -> Boolean
  def unifySorts env ignoreSubsorts? s1 s2 =
    %% ignoreSubsorts? really should be called ignoreSubsortPreds? 
@@ -490,12 +465,9 @@ spec
    let pos2 = sortAnn s2  in
    let srt1 = withAnnS (unlinkSort s1, pos1) in % ? DerivedFrom pos1 ?
    let srt2 = withAnnS (unlinkSort s2, pos2) in % ? DerivedFrom pos2 ?
-   %% for now at least, equivTypes? uses unify, so avoid infinite recursion
    if equalType? (srt1, srt2) then 
      Unify pairs 
    else
-     %% For now at least, use equalType?, as opposed to equivType?
-     %% TODO: Might want to rethink that.
      case (srt1, srt2) of
 
        | (And (srts1, _), _) ->
@@ -628,7 +600,7 @@ spec
 	  else 
 	    case (srt1, srt2) of
 	      | (Subsort (s1, p1, _), Subsort (s2, p2, _)) ->
-		if equivTerm? env.internal (p1, p2) then
+		if unifyTerm? env.internal (p1, p2) then 
 		  unify (env, s1, s2, pairs, ignoreSubsorts?)
 		else
 		  NotUnify (srt1, srt2)
