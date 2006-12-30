@@ -10,12 +10,13 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean
-%op equivFun?     : Spec -> MS.Fun     * MS.Fun     -> Boolean
  op equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
  op equivVar?     : Spec -> MS.Var     * MS.Var     -> Boolean
 
  op similarType?  : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are similar
  op equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are not equivalent
+
+ def Utilities.unifyTerm? spc (t1, t2) = equivTerm? spc (t1, t2) % hack to avoid circularity
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% Naming convention:  To avoid confusion when both Foo and Foos exist
@@ -50,8 +51,6 @@ AnnSpec qualifying spec
  %%%      Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- def Utilities.unifyTerm? spc (t1, t2) = equivTerm? spc (t1, t2) % hack to avoid circularity
-
  def equivTerm? spc (t1, t2) =
    let new? = new_equivTerm? spc (t1, t2) in
    let _ = 
@@ -85,7 +84,7 @@ AnnSpec qualifying spec
    in
      new?
 
- op  new_equivTerm? : Spec -> (MS.Term * MS.Term) -> Boolean
+ op  new_equivTerm? : Spec -> MS.Term * MS.Term -> Boolean
  def new_equivTerm? spc (x, y) =
    (equalTerm? (x, y))
    ||
@@ -105,6 +104,7 @@ AnnSpec qualifying spec
     in
       null filtered_diffs)
 
+ op  old_equivTerm? : Spec -> MS.Term * MS.Term -> Boolean
  def old_equivTerm? spc (t1, t2) =
    (equalTerm? (t1, t2))
    ||
@@ -172,6 +172,7 @@ AnnSpec qualifying spec
 
      | _ -> false)
 
+ op  old_equivFun? : Spec -> MS.Fun * MS.Fun -> Boolean
  def old_equivFun? spc (f1, f2) =
   case (f1, f2) of
      | (PQuotient qid1,     PQuotient qid2)     -> qid1 = qid2
@@ -246,7 +247,7 @@ AnnSpec qualifying spec
      new?
 
 
- op  new_equivType? : Spec -> (MS.Sort * MS.Sort) -> Boolean
+ op  new_equivType? : Spec -> MS.Sort * MS.Sort -> Boolean
  def new_equivType? spc (x, y) =
    let 
      def aux x y prior_diffs =
@@ -292,6 +293,7 @@ AnnSpec qualifying spec
    in
      aux x y []
 
+ op  old_equivType? : Spec -> MS.Sort * MS.Sort -> Boolean
  def old_equivType? spc (s1, s2) =
    (equalType? (s1, s2))
    ||
@@ -312,6 +314,39 @@ AnnSpec qualifying spec
  %%%      Pattern Equivalences, expanding definitions
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ def equivPattern? spc (p1,p2) =
+   let old? = old_equivPattern? spc (p1,p2) in
+   let new? = new_equivPattern? spc (p1, p2) in
+   let _ = (if new? = old? then
+             ()
+            else
+             toScreen("\nequivPattern?, old? = " ^ toString old? ^ " new? = " ^ toString new? ^ "\n"))
+   in	
+     old?
+
+ op  new_equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
+ def new_equivPattern? spc (p1,p2) =
+   case diffPattern [] (p1, p2) of
+     | Some (equivs, diffs) -> 
+       %% for now at least, any discrepency in patterns 
+       %% only if they bind the same vars
+       (all (fn diff -> 
+             case diff of 
+               | Types      (t1, t2) -> equivType? spc (t1, t2)
+               | Terms      (t1, t2) -> equivTerm? spc (t1, t2)
+               | MetaTyVars _ -> false) % TODO: ??
+	    diffs)
+       &&
+       %% for now at least, patterns are considered equivalent
+       %% only if they bind the same vars
+       (all (fn equiv ->
+	     case equiv of
+               | TypeVars (v1, v2) -> v1 = v2  
+               | TermVars (v1, v2) -> equivVar? spc (v1, v2))
+            equivs)
+     | _ -> false	
+
+ op  old_equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
  def old_equivPattern? spc (p1,p2) =
    (equalPattern? (p1, p2))
    ||
