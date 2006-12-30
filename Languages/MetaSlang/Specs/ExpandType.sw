@@ -116,27 +116,30 @@ Utilities qualifying spec
 					 | _  -> true)
 	                              defs
 	       in
-	       let base_defs = filter (fn typ ->
-				       let (tvs, typ) = unpackSort typ in
-				       case typ of
-					 | Base _ -> true
-					 | _      -> false)
-	                              true_defs
-	       in
-		 case base_defs of
-		   | [] ->
-		     let dfn = maybeAndSort (true_defs, sortAnn info.dfn) in
-		     instantiate_type_scheme (env, pos, type_args, dfn)
-		   | _ ->
-		     %% A base type can be defined in terms of other base types
-   		     %% So we unfold recursively here.
-		     let dfn = maybeAndSort (base_defs, sortAnn info.dfn) in
-		     expandTypeRec (env,
-				    instantiate_type_scheme (env, pos, type_args, dfn),
-				    %% Watch for self-references, even via aliases: 
-				    foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
-				          qids
-					  info.names))
+               if null true_defs then
+                 unlinked_type
+               else
+                 let base_defs = filter (fn typ ->
+                                           let (tvs, typ) = unpackSort typ in
+                                           case typ of
+                                             | Base _ -> true
+                                             | _      -> false)
+                                        true_defs
+                 in
+                   case base_defs of
+                     | [] ->
+                       let dfn = maybeAndSort (true_defs, sortAnn info.dfn) in
+                       instantiate_type_scheme (env, pos, type_args, dfn)
+                     | _ ->
+                       %% A base type can be defined in terms of other base types
+                       %% So we unfold recursively here.
+                       let dfn = maybeAndSort (base_defs, sortAnn info.dfn) in
+                       expandTypeRec (env,
+                                      instantiate_type_scheme (env, pos, type_args, dfn),
+                                      %% Watch for self-references, even via aliases: 
+                                      foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
+                                            qids
+                                            info.names))
           | [] -> 
 	    (expansion_error (env, "Could not find type "^ printQualifiedId qid, pos);
 	     unlinked_type))

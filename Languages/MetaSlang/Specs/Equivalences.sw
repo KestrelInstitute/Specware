@@ -77,12 +77,16 @@ AnnSpec qualifying spec
          let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[c]" all_diffs) in
          let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[d]" filtered_diffs) in
          let _ = toScreen("\n") in
-         let _ = toScreen("S1 = " ^ anyToString t1 ^ "\n") in
-         let _ = toScreen("S2 = " ^ anyToString t2 ^ "\n") in
+         let _ = toScreen("X = " ^ anyToString t1 ^ "\n") in
+         let _ = toScreen("Y = " ^ anyToString t2 ^ "\n") in
          let _ = toScreen("\n----------\n") in
+         let _ = myBreak 33 in
          ()
    in
      new?
+
+ op  myBreak : Nat -> Nat
+ def myBreak n = n
 
  op  new_equivTerm? : Spec -> MS.Term * MS.Term -> Boolean
  def new_equivTerm? spc (x, y) =
@@ -97,6 +101,13 @@ AnnSpec qualifying spec
                                         diffs
                                       else
                                         [diff] ++ diffs
+	                            | Terms (Fun (Op (qid_x, fixity_x), type_x, _),
+                                             Fun (Op (qid_y, fixity_y), type_y, _)) 
+                                      ->
+	                              if (fixity_x = fixity_y && findTheOp (spc, qid_x) = findTheOp (spc, qid_y)) then
+                                        diffs
+	                              else
+	                                [diff] ++ diffs
                                     | _ -> 
                                       [diff] ++ diffs)
                                []
@@ -210,20 +221,24 @@ AnnSpec qualifying spec
  %%%      Type Equivalences
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- def equivType? spc (s1, s2) =
-   let new? = new_equivType? spc (s1, s2) in
+ def equivType? spc (x, y) =
+   let new? = new_equivType? spc (x, y) in
    let _ = 
-       let old? = old_equivType? spc (s1, s2) in
+       let old? = old_equivType? spc (x, y) in
        if old? = new? then
          ()
        else
          let env = initialEnv (spc, "internal") in
-         let all_diffs      = diffType [] (s1, s2) in
+         let all_diffs      = diffType [] (x, y) in
          let filtered_diffs = foldl (fn (diff, diffs) ->
                                        case diff of
                                          | Types (x,y) ->	
+                                           let _ = toScreen("x  = " ^ anyToString x  ^ "\n") in
+                                           let _ = toScreen("y  = " ^ anyToString y  ^ "\n") in
                                            let x2 = expandType (env, x) in
                                            let y2 = expandType (env, y) in
+                                           let _ = toScreen("x2 = " ^ anyToString x2 ^ "\n") in
+                                           let _ = toScreen("y2 = " ^ anyToString y2 ^ "\n") in
                                            %% treat A and A|p as non-equivalent
                                            if new_equivType? spc (x2, y2) then
                                              diffs
@@ -239,9 +254,10 @@ AnnSpec qualifying spec
          let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[a]" all_diffs) in
          let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[b]" filtered_diffs) in
          let _ = toScreen("\n") in
-         let _ = toScreen("S1 = " ^ anyToString s1 ^ "\n") in
-         let _ = toScreen("S2 = " ^ anyToString s2 ^ "\n") in
+         let _ = toScreen("S1 = " ^ anyToString x ^ "\n") in
+         let _ = toScreen("S2 = " ^ anyToString y ^ "\n") in
          let _ = toScreen("\n----------\n") in
+         let _ = myBreak 44 in
          ()
    in
      new?
@@ -254,42 +270,39 @@ AnnSpec qualifying spec
        (equalType? (x, y))
        ||
        (let env = initialEnv (spc, "internal") in
-        let all_diffs = diffType [] (x, y) in
-        let filtered_diffs = foldl (fn (diff, diffs) ->
-                                    %% Coproducts are the only reasonable way to get 
-                                    %% recursively defined sorts, so we shouldn't need
-                                    %% an occurence check to avoid infinite expansions,
-                                    %% but someone might present us with pathological
-                                    %% types such as T = T * T, or T = T | p.
-                                    %% So we start with an occurrence check...
-                                    case diff of
-                                      | Types (x,y) ->	
-                                        if exists (fn old_diff ->
-                                                     case old_diff of
-                                                       | Types (old_x, old_y) ->
-                                                         equalType? (x, old_x) && equalType? (y, old_y)
-                                                       | _ -> false)
-                                                  prior_diffs
-                                          then
-                                            let _ = toScreen("\nOccurence check for " ^ anyToString (x, y) ^ "\n") in
-                                            let _ = toScreen("\namong " ^ anyToString prior_diffs ^ "\n") in
-                                            [diff] ++ diffs
-                                        else
-                                          let x2 = expandType (env, x) in
-                                          let y2 = expandType (env, y) in
-                                          %% treat A and A|p as non-equivalent
-                                          if equalType? (x, x2) && equalType? (y, y2) then
-                                            [diff] ++ diffs
-                                          else if aux x2 y2 all_diffs then
-                                            diffs
-                                          else
-                                            [diff] ++ diffs
-                                      | _ -> 
-                                        [diff] ++ diffs)
-                                   []
-                                   all_diffs
-        in
-          null filtered_diffs)
+        let diffs = diffType [] (x, y) in
+        all (fn diff ->
+             %% Coproducts are the only reasonable way to get 
+             %% recursively defined sorts, so we shouldn't need
+             %% an occurence check to avoid infinite expansions,
+             %% but someone might present us with pathological
+             %% types such as T = T * T, or T = T | p.
+             %% So we start with an occurrence check...
+             case diff of
+               | Types (x,y) ->	
+                 if exists (fn old_diff ->
+                              case old_diff of
+                                | Types (old_x, old_y) ->
+                                  equalType? (x, old_x) && equalType? (y, old_y)
+                                | _ -> false)
+                           prior_diffs
+                   then
+                     let _ = toScreen("\nOccurence check for " ^ anyToString (x, y) ^ "\n") in
+                     let _ = toScreen("\namong " ^ anyToString prior_diffs ^ "\n") in
+                     false
+                 else if equalType? (x, y) then 
+                   true
+                 else
+                   let x2 = expandType (env, x) in
+                   let y2 = expandType (env, y) in
+                   %% treat A and A|p as non-equivalent
+                   if equalType? (x, x2) && equalType? (y, y2) then 
+                     false
+                   else 
+                     new_equivType? spc (x2, y2) ||
+                     aux x2 y2 (prior_diffs ++ diffs)
+               | _ -> false)
+             diffs)
    in
      aux x y []
 

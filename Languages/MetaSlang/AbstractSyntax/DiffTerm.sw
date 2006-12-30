@@ -30,15 +30,6 @@ AnnSpec qualifying spec
    in
      aux (x, y)
 
- op  equateVars : List MS.Var * List MS.Var -> Equivs 
- def equateVars (vs1, vs2) =
-   case (vs1, vs2) of
-     | ([], []) -> []
-     | (v1 :: tail1, v2:: tail2) ->
-       [TermVars (v1,v2)]
-       ++ 
-       equateVars (tail1, tail2)
-
  op  matchingVars? : Equivs -> MS.Var * MS.Var -> Boolean
  def matchingVars? equivs (v1, v2) =
    case equivs of
@@ -78,9 +69,10 @@ AnnSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op diffTerm    : Equivs -> MS.Term * MS.Term -> Diffs
- op diffType    : Equivs -> MS.Sort * MS.Sort -> Diffs
- op diffPattern : Equivs -> MS.Pattern * MS.Pattern -> Option (Equivs * Diffs)
+ op diffTerm    : Equivs -> MS.Term     * MS.Term     -> Diffs
+ op diffType    : Equivs -> MS.Sort     * MS.Sort     -> Diffs
+ op diffPattern : Equivs -> MS.Pattern  * MS.Pattern  -> Option (Equivs * Diffs)
+ op diffVars    : Equivs -> List MS.Var * List MS.Var -> Equivs * Diffs
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Terms
@@ -123,13 +115,15 @@ AnnSpec qualifying spec
                 [Terms (t1, relabel_vars_in_term outer_equivs t2)])
 
        | (Bind (b1, vs1, x1, _), Bind (b2, vs2, x2, _)) | b1 = b2 && length vs1 = length vs2 ->
-         let local_equivs = equateVars (vs1, vs2) in
-         let equivs = local_equivs ++ outer_equivs in 
-         let diffs = diffTerm equivs (x1, x2) in
-         if local_var_mismatch? local_equivs diffs then
-           [Terms (t1, relabel_vars_in_term equivs t2)]
-         else
-           diffs
+         let (local_equivs, local_diffs) = diffVars outer_equivs (vs1, vs2) in
+         let equivs      = local_equivs ++ outer_equivs in 
+         let inner_diffs = diffTerm outer_equivs (x1, x2) in
+         let inner_diffs = (if local_var_mismatch? local_equivs inner_diffs then
+                              [Terms (t1, relabel_vars_in_term equivs t2)] 
+                            else
+                              inner_diffs)
+         in
+          local_diffs ++ inner_diffs
 
        | (Let (pts1, b1, _),  Let (pts2, b2, _)) -> 
          (let 
@@ -137,13 +131,14 @@ AnnSpec qualifying spec
               case (pts1, pts2) of
                 | ([],[]) -> Some ([],[])
                 | ((pat1, term1) :: tail1, (pat2, term2) :: tail2) ->
-                  (case aux (tail1, tail2) of
-                     | Some (tail_equivs, tail_diffs) ->
-                       (case diffPattern outer_equivs (pat1, pat2) of
-                          | Some (head_equivs, head_diffs) ->
-                            let d1 = diffTerm outer_equivs (term1, term2) in
+                  (case diffPattern outer_equivs (pat1, pat2) of
+                     | Some (head_equivs, pat_diffs) ->
+                       let term_diffs = diffTerm outer_equivs (term1, term2) in
+                       let head_diffs = pat_diffs ++ term_diffs in
+                       (case aux (tail1, tail2) of
+                          | Some (tail_equivs, tail_diffs) ->
                             Some (head_equivs ++ tail_equivs,
-                                  d1 ++ head_diffs ++ tail_diffs)
+                                  head_diffs  ++ tail_diffs)
                           | _ -> None)
                      | _ -> None)
                 | _ -> None
@@ -159,35 +154,40 @@ AnnSpec qualifying spec
               | _ -> 
                 [Terms (t1, relabel_vars_in_term outer_equivs t2)])
 
+
        | (LetRec (vts1, body1, _), LetRec (vts2, body2, _)) | length vts1 = length vts2 ->
-         (let
-            def equate_vars (vts1, vts2) =
+         (let 
+            def diff_vars (vts1, vts2) : (Equivs * Diffs) =
               case (vts1, vts2) of
-                | ([], []) -> []
+                | ([], []) -> ([], [])
                 | ((v1,_) :: tail1, (v2,_) :: tail2) ->
-                  [TermVars (v1,v2)] ++ equate_vars (tail1, tail2)
+                  let head_equivs = [TermVars (v1,v2)] in
+                  let head_diffs  = diffType outer_equivs (v1.2, v2.2) in
+                  let (tail_equivs, tail_diffs) = diff_vars (tail1, tail2) in
+                  (head_equivs ++ tail_equivs,
+                   head_diffs  ++ tail_diffs)
+
+            def diff_args (vts1, vts2) =
+             case (vts1, vts2) of
+               | ([],[]) -> Some []
+               | ((_, term1) :: tail1, (_, term2) :: tail2) ->
+                 (case diff_args (tail1, tail2) of
+                    | Some tail_diffs ->
+                      Some (diffTerm outer_equivs (term1, term2) ++ tail_diffs)
+                    | _ -> None)
           in
-          let local_equivs = equate_vars (vts1, vts2) in
+          let (local_equivs, local_diffs) = diff_vars (vts1, vts2) in
           let equivs = local_equivs ++ outer_equivs in
-          let
-            def arg_diffs (vts1, vts2) =
-              case (vts1, vts2) of
-                | ([],[]) -> Some []
-                | ((_, term1) :: tail1, (_, term2) :: tail2) ->
-                  (case arg_diffs (tail1, tail2) of
-                     | Some tail_diffs ->
-                       Some (diffTerm equivs (term1, term2) ++ tail_diffs)
-                     | _ -> None)
-          in
-            case arg_diffs (vts1, vts2) of
-              | Some pat_diffs ->
-                let body_diffs = diffTerm equivs (body1, body2) in
-                if local_var_mismatch? local_equivs body_diffs then
-                  [Terms (t1, relabel_vars_in_term equivs t2)]
-                else
-                  pat_diffs ++ body_diffs
-              | _ -> 
-                [Terms (t1, relabel_vars_in_term outer_equivs t2)])
+          local_diffs ++
+          (case diff_args (vts1, vts2) of
+            | Some pat_diffs ->
+              let body_diffs = diffTerm equivs (body1, body2) in
+              if local_var_mismatch? local_equivs body_diffs then
+                [Terms (t1, relabel_vars_in_term equivs t2)]
+              else
+                pat_diffs ++ body_diffs
+            | _ -> 
+              [Terms (t1, relabel_vars_in_term outer_equivs t2)]))
 
        | (Var (v1, _), Var (v2, _)) | matchingVars? outer_equivs (v1,v2) ->
          %% if match fails, we'll end up with vars in the diff list and later processing will complain
@@ -236,7 +236,7 @@ AnnSpec qualifying spec
 
        | (Pi (tvs1,x1,_), Pi (tvs2,x2,_)) | length tvs1 = length tvs2 ->
          let equivs = equateTyVars (tvs1, tvs2) ++ outer_equivs in
-         diffTerm equivs (x1, t2)
+         diffTerm equivs (x1, x2)
 
        | _ -> 
          %% when all else fails, pair up the original terms
@@ -360,6 +360,16 @@ AnnSpec qualifying spec
               | _ ->
                 [MetaTyVars (mtv1, mtv2)])
 
+       | (MetaTyVar (mtv1, _), _) ->
+         (case (!mtv1).link of
+            | Some t1 -> diffType equivs (t1, t2)
+            | _ -> [Types (t1, relabel_vars_in_type equivs t2)])
+
+       | (_, MetaTyVar (mtv2, _)) ->
+         (case (!mtv2).link of
+            | Some t2 -> diffType equivs (t1, t2)
+            | _ -> [Types (t1, relabel_vars_in_type equivs t2)])
+
        | (Pi (tvs1, t1, _), Pi (tvs2, t2, _)) | length tvs1 = length tvs2 ->
          let local_equivs = equateTyVars (tvs1, tvs2) in
          let equivs = local_equivs ++ equivs in
@@ -379,6 +389,7 @@ AnnSpec qualifying spec
                   aux (tail1, tail2)
           in
             aux (types2, types2))
+
 
        | _ -> 
          [Types (t1, relabel_vars_in_type equivs t2)]
@@ -515,5 +526,15 @@ AnnSpec qualifying spec
             | _ -> None)
 
        | _ -> None
+
+ def diffVars outer_equivs (vs1, vs2) =
+   case (vs1, vs2) of
+     | ([], []) -> ([], [])
+     | (v1 :: tail1, v2 :: tail2) ->
+       let head_equivs = [TermVars (v1,v2)] in
+       let head_diffs  = diffType outer_equivs (v1.2, v2.2) in
+       let (tail_equivs, tail_diffs) = diffVars outer_equivs (tail1, tail2) in
+       (head_equivs ++ tail_equivs,
+        head_diffs  ++ tail_diffs)
 
 end-spec
