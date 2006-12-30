@@ -1,6 +1,7 @@
 AnnSpec qualifying spec 
 
  import Elaborate/Utilities % unifySorts
+ import Equivalences        % equivType?, equivTerm?
 
  %% compressDefs is called from many places
 
