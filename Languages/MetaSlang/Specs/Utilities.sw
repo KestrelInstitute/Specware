@@ -5,6 +5,7 @@ Utilities qualifying spec
  import /Library/Legacy/DataStructures/ListUtilities
  import /Library/Legacy/DataStructures/StringUtilities 
  import Elaborate/Utilities
+ import Equivalences
 
  sort Vars = List Var
 
