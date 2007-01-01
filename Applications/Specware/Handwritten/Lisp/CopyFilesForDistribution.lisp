@@ -99,6 +99,22 @@
 ;(specware::copy-file (in-specware-dir     "UserDoc/ReleaseNotes.txt")
 ;		      (in-distribution-dir "Documentation/ReleaseNotes.txt"))
 
+
+;;; ============ Start-up Scripts & Binary ============
+
+#+(and sbcl darwin)
+(progn
+  (format t "~&;;;~%")
+  (format t "~&;;; Getting Specware Start-up Scripts % Binary ...~%")
+
+  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Specware")
+		       (in-distribution-dir "Specware.terminal"))
+  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Specware.sh")
+		       (in-distribution-dir "Specware.sh"))
+  (specware::copy-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclimage")
+		       (in-distribution-dir "Specware4.sbclimage"))
+  )
+
 ;;; ============ RUNTIME C LIBRARY ============
 
 (format t "~&;;;~%")

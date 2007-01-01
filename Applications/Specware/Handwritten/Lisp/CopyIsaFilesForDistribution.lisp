@@ -34,3 +34,15 @@
 
 (specware::copy-file      (in-specware-dir     "UserDoc/isabelle-interface/SpecwareIsabelleInterface.pdf")
 		          (in-distribution-dir "Documentation/SpecwareIsabelleInterface.pdf"))
+
+;;; ============ Start-up Scripts ============
+#+darwin
+(progn
+  (format t "~&;;;~%")
+  (format t "~&;;; Getting Isabelle Specware Start-up Scripts ...~%")
+
+  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Isabelle_Specware")
+		       (in-distribution-dir "Isabelle_Specware.terminal"))
+  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/XEmacs_Specware")
+		       (in-distribution-dir "XEmacs_Specware"))
+  )
