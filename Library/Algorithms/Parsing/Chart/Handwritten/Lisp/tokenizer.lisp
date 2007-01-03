@@ -1122,7 +1122,7 @@
        (go terminate-number-unexpectedly)
        ;;
        terminate-number-with-start-word-symbol
-       (termination-warning char char-code "number" "" ", which starts a word symbol")
+       ;; (termination-warning char char-code "number" "" ", which starts a word symbol") ; sigh -- this would be triggered by "import Foo#A3B", so suppress it
        (go terminate-number-unexpectedly)
        ;;
        terminate-number-with-continue-word-symbol 
