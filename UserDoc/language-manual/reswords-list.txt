@@ -3,10 +3,8 @@ axiom
 by
 case
 choose
-colimit
 conjecture
 def
-diagram
 else
 embed
 embed?
@@ -29,7 +27,6 @@ morphism
 obligations
 of
 op
-options
 project
 prove
 qualifying
@@ -38,12 +35,9 @@ spec
 the
 then
 theorem
-translate
 true
 type
-using
 where
-with
 
 :
 ::
