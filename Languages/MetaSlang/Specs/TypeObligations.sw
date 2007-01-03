@@ -690,9 +690,8 @@ spec
 %      	        printSort sigma)
 %     in
      let pairs  = cons((tau,sigma),pairs) 	in 
-     let env    = initialEnv (gamma.3, "internal") in
-     let tau1   = expandType(env,tau)    	in
-     let sigma1 = expandType(env,sigma)  	in
+     let tau1   = unfoldBase(gamma,tau)    	in
+     let sigma1 = unfoldBase(gamma,sigma)  	in
      if tau1 = sigma1
 	then tcc
      else
@@ -711,7 +710,7 @@ spec
 	| _ ->
      case (tau1,sigma1)
        of (Arrow(tau1,tau2,_),Arrow(sigma1,sigma2,_)) ->
-	  let sigma1 = expandType (env, sigma1) in
+	  let sigma1 = unfoldBase(gamma,sigma1) in
           let (xVarTm,gamma1) = freshVars("X",sigma1,gamma) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVarTm,sigma1,tau1) in
           let tcc    = case M of
