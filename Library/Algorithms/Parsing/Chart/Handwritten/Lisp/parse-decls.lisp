@@ -61,7 +61,7 @@
 	    "may also be symbols or numbers")))
   
 (defvar *current-parser* nil) ; used by define-sw-parser-rule 
-#+DEBUG-PARSER (defvar *current-parser-session* nil) 
+(defvar *current-parser-session* nil) 
 
 (defun new-parser (&optional (name (intern (gensym "PARSER-") "KEYWORD"))
 			     &key 

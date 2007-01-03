@@ -15,8 +15,8 @@
   ;; gc now while there is not much live data to collect, 
   ;; since a gc in the midst of the parse may need to move a lot of temp stuff 
   ;; -- we would like newspace to be fairly large -- check this?? --
+  (setq *current-parser-session* nil)
   (when-debugging
-   (setq *current-parser-session* nil)
    (reset-parser-debug-vars))
   ;; call garbageCollect if it looks plausible
   (let ((gc (find-symbol "GARBAGECOLLECT" "SYSTEM-SPEC")))
@@ -36,8 +36,8 @@
 		   :report-ambiguities?  report-ambiguities?
 		   :error-reported?      nil
 		   )))
+    (setq *current-parser-session* session)
     (when-debugging 
-     (setq *current-parser-session* session)
      (reset-parser-debug-vars))
     ;;
     (multiple-value-bind (locations number-of-raw-tokens comment-eof-error?) 
