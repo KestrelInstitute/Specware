@@ -131,35 +131,46 @@
 ;;;  SC-UNIT-ID
 ;;; ========================================================================
 
-(defun make-sc-absolute-unit-id (sc-unit-id-path optional-hash-char optional-hash-name l r)
+(defun make-sc-absolute-unit-id (sc-unit-id-path optional-fragment-id l r)
   (let ((uid
 	 (cons :|SpecPath_Relative|
 	       (cons
-		(cond ((eq optional-hash-char :unspecified)
+		(cond ((eq optional-fragment-id :unspecified)
 		       (cons :|None| nil))
-		      ((eq optional-hash-name :unspecified)
-		       (cons :|Some| (format nil "~C" optional-hash-char)))
-		      ((eq optional-hash-char #\Space)
-		       (cons :|Some| optional-hash-name))
 		      (t
-		       (cons :|Some| (format nil "~C~A" optional-hash-char optional-hash-name))))
+		       (cons :|Some| optional-fragment-id)))
 		sc-unit-id-path))))
     (speccalc::mkUnitId-2 uid (make-pos l r))))
 
-(defun make-sc-relative-unit-id (sc-unit-id-path optional-hash-char optional-hash-name l r)
+(defun make-sc-relative-unit-id (sc-unit-id-path optional-fragment-id l r)
   (let ((uid 
 	 (cons :|UnitId_Relative|
 	       (cons
-		(cond ((eq optional-hash-char :unspecified)
+		(cond ((eq optional-fragment-id :unspecified)
 		       (cons :|None| nil))
-		      ((eq optional-hash-name :unspecified)
-		       (cons :|Some| (format nil "~C" optional-hash-char)))
-		      ((eq optional-hash-char #\Space)
-		       (cons :|Some| optional-hash-name))
 		      (t
-		       (cons :|Some| (format nil "~C~A" optional-hash-char optional-hash-name))))
+		       (cons :|Some| optional-fragment-id)))
 		sc-unit-id-path))))
     (speccalc::mkUnitId-2 uid (make-pos l r))))
+
+(defun make-fragment-id (char optional-number optional-symbol l r)
+  (declare (ignore l r))
+  (let ((fragment-id 
+	 (format nil "~A~A~A"
+		 (if (member char '(#\space #\tab))
+		     "" 
+		   (format nil "~C" char))
+		 (if (eq optional-number :unspecified)
+		     "" 
+		   (format nil "~D" optional-number))
+		 (if (equal optional-symbol :unspecified)
+		     "" 
+		   optional-symbol))))
+    (cond ((digit-char-p char)
+	   (warn "Fragment identifiers must be simple names, hence must not begin with digits: ~A" fragment-id))
+	  ((equal fragment-id "")
+	   (warn "Fragment identifier is missing.")))
+    fragment-id))
 
 ;;;(defun make-sc-specpath-unit-id (sc-unit-id-path l r)
 ;;;  (cons (cons :|UnitId| (cons :|SpecPath| sc-unit-id-path))
@@ -265,19 +276,20 @@
 	 (fixity (if (equal  optional-fixity :unspecified) 
 		     unspecified-fixity
 		     optional-fixity))
-	 (tvs    (if (equal optional-pre-tvs :unspecified) 
-		     (if (equal optional-post-tvs :unspecified)
-			 '()
-			 optional-post-tvs)
-		     (if (equal optional-post-tvs :unspecified)
-			 optional-pre-tvs
-			 ;; this final case is perverse, but there's no compelling reason
-			 ;; to go to the trouble to make it illegal
-			 (append optional-pre-tvs optional-post-tvs))))
+	 (pos    (make-pos l r))
+	 (tvs    (cond ((equal optional-pre-tvs :unspecified) 
+			(if (equal optional-post-tvs :unspecified)
+			    '()
+			  optional-post-tvs))
+		       ((equal optional-post-tvs :unspecified)
+			optional-pre-tvs)
+		       (t
+			(warn "For op ~A, illegal to provide both pre- and post- type-variable-binder.  Ignoring both binders."
+			      (MetaSlang::printAliases names))
+			())))
 	 (typ    (if (equal  optional-type :unspecified) 
 		     (freshMetaTypeVar l r)
 		     (cdr (StandardSpec::abstractSort-3 #'namedTypeVar tvs optional-type))))
-	 (pos    (make-pos l r))
 	 ;; ---------------------------------------------------------------
 	 (dfn                (if (equal optional-def :unspecified)
 				 (cons :|Any| pos)
