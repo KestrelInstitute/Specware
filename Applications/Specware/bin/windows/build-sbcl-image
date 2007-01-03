@@ -37,7 +37,7 @@ esac
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in "/cygdrive/c/Program Files/Steel Bank Common Lisp/0.9.17/sbcl.exe" /usr/local/bin/sbcl "$HOME"/bin/sbcl; do
+   for L in "/cygdrive/c/Program Files/Steel Bank Common Lisp/1.0/sbcl.exe" /usr/local/bin/sbcl "$HOME"/bin/sbcl; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
@@ -49,7 +49,7 @@ if [ -z "$LISP" ]; then
    exit 1
 fi
 
-INITIMAGE="c:/Program Files/Steel Bank Common Lisp/0.9.17/sbcl.core"
+INITIMAGE="c:/Program Files/Steel Bank Common Lisp/1.0/sbcl.core"
 
 if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
    echo "Failed to $act: could not find directory
