@@ -330,6 +330,14 @@ $Q$ applied to pairs of members of the
 $Q$-equivalence classes.)
 </para>
 </section>
+<!-- A hack to pad to end of page -->
+<para>
+[[
+||
+||
+||
+]]
+</para>
 </section>
 <!-- ***************************************************************** -->
 <section id="LexicalConventions"><title>Lexical conventions</title>
