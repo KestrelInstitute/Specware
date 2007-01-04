@@ -700,7 +700,6 @@ folder" and "this folder".
 Under than this use, the mark [[.]] should not be used as the first
 or last `path-mark of a `path-element.
 </para>
-
 <para>
 Typically, only a final part of the full `unit-identifier is
 used.  When &Specware is started with environment variable
@@ -800,7 +799,6 @@ a ```qualifier'' followed by a dot.  Examples of
 Examples of `qualified-names are 
 [[Calendar.Date]], [[Calendar.today]] and [[Monoid.<*>]].
 </para>
-
 <para>
 `Qualifiers can be used to disambiguate.  For example, there
 may be reason to use two different `ops called [[union]] in
@@ -820,7 +818,6 @@ should receive the same `qualifier.
 It is up to the author of the `specs to determine what
 belongs together.
 </para>
-
 <para>
 `Type-names and `ops are <emphasis>introduced</emphasis> in a
 `declaration or `definition, and may then be
@@ -833,7 +830,6 @@ If that `name is a `simple-name, the full `name is a `simple-name.
 If the `name as introduced is a `qualified-name, then so is the full
 `name.
 </para>
-
 <para>
 For employs the rules are slightly different.  First, if the
 `name employed
@@ -852,10 +848,8 @@ the same as the `simple-name employed, then that `name is the full `name.
 Otherwise, type information may be employed to disambiguate
 (``resolve overloading'').
 </para>
-
 <para>
 Here is an illustration of the various possibilities:
-
 [[
 ||  spec
 ||    type Apple
@@ -866,7 +860,6 @@ Here is an illustration of the various possibilities:
 ||    type Fruit.Basket = Apple * Pear * Date
 ||  endspec
 ]]
-
 In the definition of type [[Fruit.Basket]] we have three
 unqualified employs of `type-names, viz. [[Apple]], [[Pear]] and
 [[Date]].
@@ -883,7 +876,6 @@ To correct the error, the employ of [[Date]] should be
 changed into either [[Fruit.Date]] or [[Calendar.Date]],
 depending on the intention.
 </para>
-
 <para>
 It is possible to give a qualification in one go to all
 `simple-names introduced in a `spec.
@@ -900,7 +892,6 @@ are also accordingly qualified, so that they now refer to
 the qualified introduction.
 
 For example, the value of
-
 [[
 ||  Company qualifying spec
 ||    type Apple
@@ -909,9 +900,7 @@ For example, the value of
 ||    type Fruit.Basket = Apple * Pear
 ||  endspec
 ]]
-
 is the same as that of
-
 [[
 ||  spec
 ||    type Company.Apple
@@ -921,7 +910,6 @@ is the same as that of
 ||  endspec
 ]]
 </para>
-
 <!--====================================================================-->
 <para>
 <<
@@ -933,21 +921,23 @@ is the same as that of
 ||
 ||`qualified-name ::= `qualifier . `simple-name
 >>
-Restriction.
-`Qualifiers cannot be reserved symbols, with the exception of
-[[Boolean]], which is allowed as a `qualifier.
+Restriction.  
+<link linkend="metaslang-qualifier">`qualifying</link> is a special kind of translation.  
+As such, it is not allowed to rename a <link linkend="metaslang-type">`type</link> 
+to have the same name as a previously existing (and different) <link linkend="metaslang-type">`type</link>, 
+or to rename an <link linkend="metaslang-op">`op</link> 
+to have the same name as a previously existing (and different) <link linkend="metaslang-op">`op</link>.
+</link>
 </para>
 <para>
+Sample `names:
+[[
+||    Key                $$
+||    Calendar.Date      Monoid.<*>
+]]
 Sample `spec-qualification:
 [[
 ||    Weight qualifying /Units#Weights
-]]
-Sample `names:
-[[
-||    Key
-||    $$
-||    Calendar.Date
-||    Monoid.<*>
 ]]
 Let $R$ be the result of
 elaborating `spec-term $S$.
@@ -977,6 +967,29 @@ results in:
 ||    op Buffer.size : Nat
 ||    axiom Buffer.LargeSize is Buffer.size >= 1024
 ||  endspec
+]]
+Because of the restriction on collisions, the following is illegal, as [[f]]
+in the original spec would be renamed to collide with the pre-existing (and distinct!) [[X.f]].
+[[
+||  X qualifying spec
+||    op  X.f : Nat
+||    def f = 3
+||  endspec
+]]
+However, it is legal to qualify one alias for a 
+<link linkend="metaslang-type">`type</link> or
+<link linkend="metaslang-op">`op</link> 
+in such a way as to collapse it onto another alias for the same 
+<link linkend="metaslang-type">`type</link> or
+<link linkend="metaslang-op">`op</link>, as in the following
+[[
+||  X qualifying spec
+||    op  {f, X.f} : Nat
+||  endspec
+]]
+which results in
+[[
+||  spec  op X.f : Nat endspec
 ]]
 </para>
 </section>
@@ -1285,7 +1298,6 @@ engendered by the morphism.
 They are the formal expression of the requirement that the step from
 $S'$ to $T'$ is a proper refinement.
 </para>
-
 <para>
 For example, in
 [[
@@ -1312,14 +1324,12 @@ axiom [[ff]] does not follow from (the axiom implied by) the `op-definition
 for [[f]] in `spec [[T]], since [[f(2)]] = [[f(3)]] = 4.
 Therefore, [[M]] is not a proper morphism here either.
 </para>
-
 <para>
 Sample `spec-morphism:
 [[
 ||  morphism A -> B {Counter +-> Register, tally +-> incr}
 ]]
 </para>
-
 <para>
 The elaboration of `spec-morphism [[morphism $S$ -> $T$ {$M$}]]
 results in the morphism whose domain and codomain are the result of
@@ -1525,10 +1535,8 @@ after which only declarations or definitions of types, `ops
 and `claims are left)
 is inserted in place in the receiving `spec.
 </para>
-
 <para>
 For example, the result of
-
 [[
 ||  spec
 ||    import spec
@@ -1539,9 +1547,7 @@ For example, the result of
 ||    def b = toString
 ||  endspec
 ]]
-
 is this ``expanded'' `spec:
-
 [[
 ||  spec
 ||    type A.Z
@@ -1551,13 +1557,11 @@ is this ``expanded'' `spec:
 ||  endspec
 ]]
 </para>
-
 <para>
 For this to be well formed, the imported `specs must be well formed
 by themselves; in addition, the result of expanding them in
 place must result in a well-formed `spec.
 </para>
-
 <para>
 There are a few restrictions, which are meant to catch
 unintentional naming mistakes.
@@ -1567,13 +1571,11 @@ with the same (full) `name, the introductions must be
 identical declarations or definitions, or one may be a
 declaration and the other a ``compatible'' definition.
 For example, given
-
 [[
 ||  S1 = spec op e : Integer end
 ||  S2 = spec op e : Char end
 ||  S3 = spec def e = 0 end
 ]]
-
 the `specs [[S1]] and [[S3]] can be imported together, but
 all other combinations of two or more co-imported `specs
 result in an ill-formed `spec.
@@ -1592,14 +1594,12 @@ in an imported `spec.
 The latter is again a special case of the general requirement that
 import expansion must result in a well-formed `spec.
 </para>
-
 <para>
 What is specifically excluded by the above, is giving a
 definition of a type or `op in some `spec, import it, and then
 redefining or declaring that type or `op with the same full
 `name in the receiving `spec.
 </para>
-
 <!--====================================================================-->
 <para>
 <<
@@ -1726,7 +1726,6 @@ In each model, the type assigned to the
 So, while [[Tree Nat]] and [[Bush Nat]] from the examples are for all
 purposes equivalent, they are not necessarily equal,
 </para>
-
 <para>
 For parameterized types, this extends to all possible
 assignments
@@ -4244,29 +4243,24 @@ A `monadic-expression may further only be used when
 the non-monadic `expression it is equivalent to (see below)
 is itself a valid `expression.
 </para>
-
 <para>
 A `monadic-expression [[{]]$M$[[}]] is equivalent to the
 `open-monadic-expression $M$.
 </para>
-
 <para>
 A `monadic-tail  $E$, where $E$ is an `expression,
 is equivalent to the `expression $E$.
 </para>
-
 <para>
 A `monadic-tail  $M$, where $M$ is an `open-monadic-expression,
 is equivalent to the `open-monadic-expression $M$.
 </para>
-
 <para>
 An `open-monadic-expression $E$[[; ]]$T$, where $E$ is an
 `expression, is equivalent to the `application
 [[monadSeq (]]$E$[[, ]]$T'$[[)]], where $T'$ is an `expression
 that is equivalent to the `monadic-tail $T$.
 </para>
-
 <para>
 An `open-monadic-expression $P$[[ <- ]]$E$[[; ]]$T$
 is equivalent to the `application
