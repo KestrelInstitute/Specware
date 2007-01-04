@@ -1650,7 +1650,9 @@ it can be denoted by [[morphism $A$
 <section id="Type-declarations"><title>Type-declarations</title>
 <para>
 <<
-||`type-declaration ::= type `type-name [ `formal-type-parameters ]
+||`type-declaration ::= type `type-aliases [ `formal-type-parameters ]
+||
+||`type-aliases ::= `type-name | '{ `type-name ', `type-name { ', `type-name }* '} 
 ||
 ||`formal-type-parameters ::= `local-type-variable | ( `local-type-variable-list )
 ||
@@ -1669,6 +1671,7 @@ Sample `type-declarations:
 ||    type Date
 ||    type Array a
 ||    type Map(a, b)
+||    type {Unit,Singleton} (a)
 ]]
 </para>
 <!-- ================================================================= -->
@@ -1696,6 +1699,13 @@ one type must be assigned to [[Array Nat]], one to
 These assigned types could all be the same type, or perhaps all
 different, as long as the model respects typing.
 </para>
+<para>
+The ability to have aliases ia provided primarily to support the
+colimit operation, in which case multiple differently named types may
+be glued together, with no obvious rule for giving one name precedence 
+over any other.  They may also be used to define ASCII and 
+<link linkend="X-Symbol">X-Symbol</link> synonyms, etc.
+</para>
 </section>
 <!-- ***************************************************************** -->
 <section id="Type-definitions"><title>Type-definitions</title>
@@ -1705,9 +1715,11 @@ different, as long as the model respects typing.
 ||      `type-abbreviation
 ||    | `new-type-definition
 ||
-||`type-abbreviation ::= type `type-name [ `formal-type-parameters ] `equals `type-descriptor
+||`type-abbreviation   ::= type `type-aliases [ `formal-type-parameters ] `equals 
+||                          `type-descriptor
 ||
-||`new-type-definition ::= type `type-name [ `formal-type-parameters ] `equals `new-type-descriptor
+||`new-type-definition ::= type `type-aliases [ `formal-type-parameters ] `equals 
+||                           `new-type-descriptor
 >>
 Sample `type-abbreviations:
 [[
@@ -1717,14 +1729,16 @@ Sample `type-abbreviations:
 ]]
 Sample `new-type-definitions:
 [[
-||    type Tree a = | Leaf a | Fork (Tree a * Tree a)
-||    type Bush a = | Leaf a | Fork (Tree a * Tree a)
+||    type Tree         a = | Leaf a | Fork (Tree a * Tree a)
+||    type {Bush,Shrub} a = | Leaf a | Fork (Tree a * Tree a)
 ||    type Z3 =  Nat / (fn (m, n) -> m rem 3 = n rem 3)
 ]]
 In each model, the type assigned to the
-`type-name of a `type-abbreviation must be the same as the right-hand-side `type-descriptor, while that assigned to the `type-name of a `new-type-definition must be isomorphic to the type of the `new-type-descriptor.
-So, while [[Tree Nat]] and [[Bush Nat]] from the examples are for all
-purposes equivalent, they are not necessarily equal,
+`type-name of a `type-abbreviation must be the same as the right-hand-side `type-descriptor, 
+while that assigned to the `type-name of a `new-type-definition must be isomorphic to the type 
+of the `new-type-descriptor.
+Thus while [[Tree Nat]] and [[Bush Nat]] from the examples are equivalent, they are not 
+necessarily equal, but [[Bush Nat]] and [[Shrub Nat]] are truly synonymous.
 </para>
 <para>
 For parameterized types, this extends to all possible
@@ -1797,23 +1811,45 @@ fixpoint of a recursive domain equation.
 <para>
 <<
 ||`op-declaration ::=
-||      op [ `type-variable-binder ] `op-name [ `fixity ] : `type
-||    | op `op-name [ `fixity ] : `type-variable-binder `type
+||
+||      op [ `type-variable-binder ] `formal-decl-expression [ `fixity ] : `type 
+||       [ `equals `expression ]
+||
+||    | op `formal-decl-expression [ `fixity ] : `type-variable-binder `type 
+||       [ `equals `expression ]
+||
+||`type-variable-binder ::= `[ `local-type-variable-list `]
+||
+||`formal-decl-expression ::= `op-aliases | `formal-decl-application
+||
+||`formal-decl-application ::= `formal-decl-application-head `formal-parameter
+||
+||`formal-decl-application-head ::= `op-aliases | `formal-decl-application
+||
+||`op-aliases ::= `op-name | '{ `op-name ', `op-name { ', `op-name }* '} 
+||
+||`formal-parameter ::= `closed-pattern
 ||
 ||`fixity ::= `associativity `priority
 ||
 ||`associativity ::= infixl | infixr
 ||
 ||`priority ::= `nat-literal
-||
-||`type-variable-binder ::= `[ `local-type-variable-list `]
 >>
+Note that the `formal-decl-application of an `op-declaration always uses prefix notation, even for `infix-operators.
+</para>
+<para>
 Sample `op-declarations:
 [[
 ||    op usage : String
 ||
 ||    op [a,b,c] o infixl 24 :         (b -> c) * (a -> b) -> a -> c
 ||    op         o infixl 24 : [a,b,c] (b -> c) * (a -> b) -> a -> c
+||
+||    op f (s : String) ((i, j) : Nat * Nat) (c : Char) : String = 
+||      substring (s, i, j) ^ toString c
+||
+||    op {Moon,Luna} : Satellite
 ]]
 </para>
 <!-- ====================== NOT YET ==================================
@@ -1963,29 +1999,27 @@ For the role of the `associativity and `priority, see further at
 <para>
 <<
 ||`op-definition ::=
-||      def [ `type-variable-binder ] `formal-expression [ : `type-descriptor ] `equals
+||      def [ `type-variable-binder ] `formal-def-expression [ : `type-descriptor ] `equals
 ||        `expression
-||    | def `formal-expression [ : [ `type-variable-binder ] `type-descriptor ] `equals
+||    | def `formal-def-expression [ : [ `type-variable-binder ] `type-descriptor ] `equals
 ||        `expression
 ||
-||`formal-expression ::= `op-name | `formal-application
+||`formal-def-expression ::= `op-name | `formal-def-application
 ||
-||`formal-application ::= `formal-application-head `formal-parameter
+||`formal-def-application ::= `formal-def-application-head `formal-parameter
 ||
-||`formal-application-head ::= `op-name | `formal-application
-||
-||`formal-parameter ::= `closed-pattern
+||`formal-def-application-head ::= `op-name | `formal-def-application
 >>
 <!-- ====================== NOT YET ==================================
-** ||`formal-application ::= `formal-prefix-application | `formal-infix-application
+** ||`formal-def-application ::= `formal-def-prefix-application | `formal-def-infix-application
 ** ||
-** ||`formal-prefix-application ::= `formal-application-head `formal-parameter
+** ||`formal-def-prefix-application ::= `formal-def-application-head `formal-parameter
 ** ||
-** ||`formal-application-head ::= `op-name | `formal-prefix-application
+** ||`formal-def-application-head ::= `op-name | `formal-def-prefix-application
 ** ||
 ** ||`formal-parameter ::= `closed-pattern
 ** ||
-** ||`formal-infix-application ::= `formal-parameter `op-name `formal-parameter
+** ||`formal-def-infix-application ::= `formal-parameter `op-name `formal-parameter
 ** >>
 ** </para>
 ** <para>
@@ -2008,10 +2042,8 @@ Sample `op-definitions:
 ||    def o(f, g) x = f(g x)
 ]]
 Restriction.
-See the restriction under <link
-linkend="Op-declarations"><emphasis>Op-declarations</emphasis></link>
-on redeclaring/redefining
-`ops.
+See the restriction under <link linkend="Op-declarations"><emphasis>Op-declarations</emphasis></link>
+on redeclaring/redefining `ops.
 </para>
 <!-- ================================================================= -->
 <!-- ====================== NOT YET ==================================
@@ -2038,27 +2070,37 @@ on redeclaring/redefining
 ** </para>
 **      ====================== TEY TON ================================== -->
 <para>
-Note that a `formal-expression always contains precisely one
+Note that a `formal-def-expression always contains precisely one
 `op-name, which is the `op <emphasis>being defined</emphasis> by
 the `op-definition.
-Note further that the `formal-application of an `op-definition
-always uses prefix notation, also for `infix-operators.
+Note further that the `formal-def-application of an `op-definition
+always uses prefix notation, even for `infix-operators.
 </para>
 <!-- ================================================================= -->
 <para>
-An `op can be defined without having been declared.
-In that case the `op-definition
+In Specware 4.2, an `op still may be defined without having been declared,
+but <emphasis>this is now a deprecated feature</emphasis>.
+
+When an `op is defined without having been declared, the `op-definition
 generates an implicit `op-declaration for the `op, provided a
 monomorphic type for the `op can be unambiguously determined
 from the `op-definition together with the uses of the
 `op in `applications and other contexts.
-In general, typing information on `ops may be omitted, but sufficient
+In general, typing information in an `op-definition may be omitted, but sufficient
 information must be supplied when used, so that all
 `expressions can be assigned a type in the context in which
-they occur while uniquely associating the `ops with
-`op-declarations or `op-definitions.
+they occur while uniquely associating the `op with
+an `op-declaration or `op-definition.
 If two different associations both give type-correct `specs,
 the `spec is ambiguous and ill formed.
+</para>
+<para>
+This feature may not persist in future releases, so users are advised 
+to provide an `op-declaration somewhere before each `op-definition, either in 
+the same `spec or (more typically) in an imported `spec.
+
+Alternatively, the newly expanded syntax for an <link linkend="Op-declarations"><emphasis>op-declaration</emphasis></link>
+makes it simple to both declare and define an op within one `declaration.
 </para>
 <!-- ================================================================= -->
 <para>
