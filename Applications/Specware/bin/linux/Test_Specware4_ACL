@@ -42,7 +42,7 @@ $xemacs -no-init-file \
 	-eval "(setq fi:lisp-evalserver-number-reads 100000)" \
 	-eval "(sw:eval-in-lisp \"(load \\\"$SPECWARE4/Applications/Specware/Tests/test-specware4\\\")\")" \
 	-eval "(sw:eval-in-lisp \"(test-specware4 \\\"$LOG_FILE\\\")\")" \
-	-eval "(kill-emacs 0)" 
+        -eval "(unwind-protect (sw:eval-in-lisp \"(exit 0)\") (kill-emacs 0))"
 
 /bin/date
 echo "-------------"
