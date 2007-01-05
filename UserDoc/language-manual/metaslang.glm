@@ -262,8 +262,8 @@ types for all typed constructs, such as `expressions and
 If no complete and unambiguous type-assignment can be made,
 the `spec is not accepted by the &Specware; system.
 Type-ambiguous `expressions can be disambiguated by using a
-type annotation, as described under <link
-linkend="Annotated-expressions"><emphasis>Annotated-expressions</emphasis></link>.
+type annotation, as described under 
+<link linkend="Annotated-expressions"><emphasis>Annotated-expressions</emphasis></link>.
 In the example, the `definition of [[whatAmI]] can be disambiguated in either
 of the following ways:
 [[
@@ -329,7 +329,6 @@ the equality test on the quotient type is just the predicate
 $Q$ applied to pairs of members of the
 $Q$-equivalence classes.)
 </para>
-</section>
 <!-- A hack to pad to end of page -->
 <para>
 [[
@@ -338,6 +337,7 @@ $Q$-equivalence classes.)
 ||
 ]]
 </para>
+</section>
 </section>
 <!-- ***************************************************************** -->
 <section id="LexicalConventions"><title>Lexical conventions</title>
@@ -361,7 +361,7 @@ whitespace is required between two adjacent
 sequence $XmZ$ is also a `symbol.
 So, for example, whitespace is required where shown in [[succ 0]] and
 [[op! :Nat->Nat]], since [[succ0]] and [[!:]] are valid `symbols, but
-none is required in the `formula [[n+1]].
+none is required in the `expression [[n+1]].
 </para>
 <!-- ================================================================= -->
 <para>
@@ -460,8 +460,7 @@ are for use with X-Symbol as described in the following section.
 <!-- ================================================================= -->
 <para>
 `Non-word-syllables can be used to choose convenient `simple-names
-for `operators that, conventionally, are written with
-non-alphabetic marks.
+for `ops that, conventionally, are written with non-alphabetic marks.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -809,7 +808,7 @@ Unlike in earlier versions of Specware, there is no rigid
 relationship between `qualifiers and the `unit-identifiers
 identifying `specs.
 The author of a collection of `specs may use the `qualifier
-deemed most appropriate for any `type- or `op-name.
+deemed most appropriate for any `type-name or `op-name.
 For example, there could be a single `spec dubbed
 [[SetsAndBags]] that introduces two new `ops, one called
 [[Set.union]] and one called [[Bag.union]].
@@ -819,10 +818,10 @@ It is up to the author of the `specs to determine what
 belongs together.
 </para>
 <para>
-`Type-names and `ops are <emphasis>introduced</emphasis> in a
+`Type-names and `op-names are <emphasis>introduced</emphasis> in a
 `declaration or `definition, and may then be
 <emphasis>employed</emphasis> elsewhere in the same `spec.
-Thus, all occurrences of a `type- or `op-name can be divided
+Thus, all occurrences of a `type-name or `op-name can be divided
 into ``introductions'' and ``employs''.
 The `name as introduced in an introduction is the 
 <emphasis>full</emphasis> `name of the type or `op.
@@ -922,12 +921,11 @@ is the same as that of
 ||`qualified-name ::= `qualifier . `simple-name
 >>
 Restriction.  
-<link linkend="metaslang-qualifier">`qualifying</link> is a special kind of translation.  
-As such, it is not allowed to rename a <link linkend="metaslang-type">`type</link> 
-to have the same name as a previously existing (and different) <link linkend="metaslang-type">`type</link>, 
-or to rename an <link linkend="metaslang-op">`op</link> 
-to have the same name as a previously existing (and different) <link linkend="metaslang-op">`op</link>.
-</link>
+A `spec-qualification is a special kind of translation.  
+As such, it is not allowed to rename a <link linkend="metaslang-type-descriptor">type</link> 
+to have the same name as a previously existing (and different) <link linkend="metaslang-type-descriptor">type</link>, 
+or to rename an <link linkend="metaslang-op">op</link> 
+to have the same name as a previously existing (and different) <link linkend="metaslang-op">op</link>.
 </para>
 <para>
 Sample `names:
@@ -939,17 +937,11 @@ Sample `spec-qualification:
 [[
 ||    Weight qualifying /Units#Weights
 ]]
-Let $R$ be the result of
-elaborating `spec-term $S$.
-Then the elaboration of `qualification [[$Q$
-qualifying $S$]], where
-$Q$ is a `qualifier, is
-$R$ with each unqualified
-`type-name, `op-name or `claim-name $N$ introduced there 
-replaced by the `qualified-name
-[[$Q$.$N$]].
-The same replacement applies to all employs of
-$N$ identifying that introduced `simple-name.
+Let $R$ be the result of elaborating `spec-term $S$.
+Then the elaboration of [[$Q$ qualifying $S$]], where $Q$ is a `qualifier, is
+$R$ with each unqualified `type-name, `op-name or `claim-name $N$ introduced there 
+replaced by the `qualified-name [[$Q$.$N$]].
+The same replacement applies to all employs of $N$ identifying that introduced `simple-name.
 As always, the result of the replacement is required to be a well-formed
 `spec.
 </para>
@@ -976,12 +968,9 @@ in the original spec would be renamed to collide with the pre-existing (and dist
 ||    def f = 3
 ||  endspec
 ]]
-However, it is legal to qualify one alias for a 
-<link linkend="metaslang-type">`type</link> or
-<link linkend="metaslang-op">`op</link> 
-in such a way as to collapse it onto another alias for the same 
-<link linkend="metaslang-type">`type</link> or
-<link linkend="metaslang-op">`op</link>, as in the following
+However, it is legal to qualify one alias for a <link linkend="metaslang-type-descriptor">type</link> or
+<link linkend="metaslang-op">op</link> in such a way as to collapse it onto another alias for the same 
+<link linkend="metaslang-type-descriptor">type</link> or <link linkend="metaslang-op">op</link>, as in the following
 [[
 ||  X qualifying spec
 ||    op  {f, X.f} : Nat
@@ -1031,7 +1020,7 @@ For example, the following is not a lawful `spec-translation:
 Restriction.
 A `spec-translation may not map two different `type-names or two different
 `op-names to the same `simple-name.  Note that this implies that
-`type- and `op-names cannot be translated to `simple-names defined in
+`type-names and `op-names cannot be translated to `simple-names defined in
 the base libraries.
 </para>
 <para>
@@ -1152,8 +1141,8 @@ Informally, $T$ is to $R$ as $C$ is to $D$.
 </para>
 <para>
 Except when $R$ introduces, next
-to the `type- and `op-names it has in common with
-$D$, new `type- or `op-names
+to the `type-names and `op-names it has in common with
+$D$, new `type-names or `op-names
 that also occur in $C$,
 the result `spec $T$
 is a categorical colimit of this pushout diagram:
@@ -1237,7 +1226,7 @@ or a `morphism-term.
 The result of elaborating an `obligator is a `spec
 containing the proof obligations engendered by the `spec or morphism
 resulting from elaborating its `unit-term.
-These proof obligations are expressed as `conjectures;
+These proof obligations are expressed as conjectures;
 they can be discharged by proving them, using `proof-terms.
 See further the &Specware; User Manual.
 </para>
@@ -1256,8 +1245,8 @@ See further the &Specware; User Manual.
 A morphism is a formal mapping between two expanded `spec-forms that
 describes exactly how one is translated or extended into the other.
 It consists of the two `specs, referred to as ``domain'' and
-``codomain'', and a mapping of all `type- and `op-names introduced in
-the domain `spec to `type- and `op-names of the codomain `spec.
+``codomain'', and a mapping of all `type-names and `op-names introduced in
+the domain `spec to `type-names and `op-names of the codomain `spec.
 To be well-formed, a morphism must obey conditions that express that it
 is a proper refinement of the domain into the codomain ` spec.
 </para>
@@ -1283,7 +1272,7 @@ $N<subscript>i</subscript>$.
 The same rules apply as for `spec-translation [[translate $S$
 by {]]...[[}]], and the result $S'$ must be well formed, with the
 exception that the restriction on `spec-translations requiring
-different `type- or `op-names to be mapped to different `simple-names
+different `type-names or `op-names to be mapped to different `simple-names
 does not apply here.
 Let $T'$ be the result of elaborating $T$.
 Then, first, each `type-name or `op-name introduced in
@@ -1336,7 +1325,7 @@ results in the morphism whose domain and codomain are the result of
 elaborating $S$ and $T$, respectively, and whose mapping is given
 by the list of `name-map-items in $M$, using type annotations and
 indicators [[type]] and [[op]] as described for `spec-translations,
-and extended to all domain `type- and `op-names not yet covered
+and extended to all domain `type-names and `op-names not yet covered
 by having these map to themselves.  (In particular, `simple-names from
 the base-libraries always map to themselves.)
 </para>
@@ -1379,9 +1368,9 @@ When used as a `diagram-term, the elaboration of a
 </para>
 <para>
 Restriction.
-In a `diagram, the first `simple-name of each `diagram-node and
+In a `diagram-term, the first `simple-name of each `diagram-node and
 `diagram-edge must be unique (i.e., not be used more than
-once in that `diagram).  Further, for each `diagram-edge
+once in that `diagram-term).  Further, for each `diagram-edge
 [[$E$ :
 $ND$ ->
 $NC$ +->
@@ -1389,13 +1378,13 @@ $M$]], there must be `diagram-nodes
 [[$ND$ +->
 $D$]] and
 [[$NC$ +->
-$C$]] of the `diagram such that,
+$C$]] of the `diagram-term such that,
 after elaboration, [[$M$]] is a
 morphism from [[$D$]] to
 [[$C$]].
 </para>
 <para>
-Sample `diagram:
+Sample `diagram-term:
 [[
 ||    diagram {
 ||       A          +-> /Coll/Lattice,
@@ -1641,7 +1630,7 @@ So $A$ is then refined by
 $B$, and the morphism from
 $A$ to $B$ is
 known as the <quote>import morphism</quote>.
-As it does not involve translation of `type- or `op-names,
+As it does not involve translation of `type-names or `op-names,
 it can be denoted by [[morphism $A$
 -> $B$ {}]].
 </para>
@@ -1715,7 +1704,7 @@ over any other.  They may also be used to define ASCII and
 ||      `type-abbreviation
 ||    | `new-type-definition
 ||
-||`type-abbreviation  ::= type `type-aliases [ `formal-type-parameters ] `equals 
+||`type-abbreviation ::= type `type-aliases [ `formal-type-parameters ] `equals 
 ||                       `type-descriptor
 ||
 ||`new-type-definition ::= type `type-aliases [ `formal-type-parameters ] `equals 
@@ -1741,19 +1730,16 @@ Thus while [[Tree Nat]] and [[Bush Nat]] from the examples are equivalent, they 
 necessarily equal, but [[Bush Nat]] and [[Shrub Nat]] are truly synonymous.
 </para>
 <para>
-For parameterized types, this extends to all possible
-assignments
+For parameterized types, this extends to all possible assignments
 of types to the `local-type-variables, taking the right-hand `type-descriptors
-and `new-type-descriptors
-as interpreted under each of these assignments.
+and `new-type-descriptors as interpreted under each of these assignments.
 So, for the example, [[Map(Nat, Char)]] is the same type as
 [[(Array (Nat * Char) | key_uniq?)]], and so on.
 </para>
 <!-- ================================================================= -->
 <para>
-With <emphasis>recursive</emphasis> `type-definitions, there
-are additional requirements.
-For example, consider
+With <emphasis>recursive</emphasis> `type-definitions, there are additional requirements.
+Consider
 [[
 ||    type Stack a =
 ||      | Empty
@@ -1812,10 +1798,10 @@ fixpoint of a recursive domain equation.
 <<
 ||`op-declaration ::=
 ||
-||      op [ `type-variable-binder ] `formal-decl-expression [ `fixity ] : `type 
+||      op [ `type-variable-binder ] `formal-decl-expression [ `fixity ] : `type-descriptor
 ||       [ `equals `expression ]
 ||
-||    | op `formal-decl-expression [ `fixity ] : `type-variable-binder `type 
+||    | op `formal-decl-expression [ `fixity ] : `type-variable-binder `type-descriptor
 ||       [ `equals `expression ]
 ||
 ||`type-variable-binder ::= '[ `local-type-variable-list ']
@@ -1828,7 +1814,7 @@ fixpoint of a recursive domain equation.
 ||
 ||`op-aliases ::= `op-name | '{ `op-name ', `op-name { ', `op-name }* '} 
 ||
-||`formal-parameter ::= `closed-pattern
+||`formal-parameter ::= `closed-pattern | '( `pattern '| `expression ')
 ||
 ||`fixity ::= `associativity `priority
 ||
@@ -1836,7 +1822,7 @@ fixpoint of a recursive domain equation.
 ||
 ||`priority ::= `nat-literal
 >>
-Note that the `formal-decl-application of an `op-declaration always uses prefix notation, even for `infix-operators.
+Note that the `formal-decl-expression of an `op-declaration always uses prefix notation, even for `infix-operators.
 </para>
 <para>
 Sample `op-declarations:
@@ -1846,11 +1832,25 @@ Sample `op-declarations:
 ||    op [a,b,c] o infixl 24 :         (b -> c) * (a -> b) -> a -> c
 ||    op         o infixl 24 : [a,b,c] (b -> c) * (a -> b) -> a -> c
 ||
-||    op f (s : String) ((i, j) : Nat * Nat) (c : Char) : String = 
+||    op f (s : String) ((i, j) : Nat * Nat | i < j) (c : Char) : String = 
 ||      substring (s, i, j) ^ toString c
 ||
 ||    op {Moon,Luna} : Satellite
 ]]
+</para>
+<para>
+The example definition of f above is equivalent to the following
+[[
+||    op  f : String -> {(m, n) : Nat * Nat | m < n} -> Char -> String 
+||    def f s (i, j) c = substring (s, i, j) ^ toString c
+]]
+</para>
+<para>
+Restriction.  
+The restricting `expression following a vertical bar in a formal-parameter may 
+refer to local variables only from the associated `pattern.  
+It may not refer to variables introduced by preceeding `formal-parameters,
+since to do so would effectively create dependent types, which are not yet supported.
 </para>
 <!-- ====================== NOT YET ==================================
 ** <para>
@@ -2012,7 +2012,7 @@ For the role of the `associativity and `priority, see further at
 ||    | def `formal-def-expression [ : [ `type-variable-binder ] `type-descriptor ] `equals
 ||        `expression
 ||
-||`formal-def-expression ::= `op-name | `formal-def-application
+||`formal-def-expression ::= `op-name | `formal-def-expression
 ||
 ||`formal-def-application ::= `formal-def-application-head `formal-parameter
 ||
@@ -2081,7 +2081,7 @@ on redeclaring/redefining `ops.
 Note that a `formal-def-expression always contains precisely one
 `op-name, which is the `op <emphasis>being defined</emphasis> by
 the `op-definition.
-Note further that the `formal-def-application of an `op-definition
+Note further that the `formal-def-expression of an `op-definition
 always uses prefix notation, even for `infix-operators.
 </para>
 <!-- ================================================================= -->
@@ -2126,12 +2126,12 @@ Thus, we can reduce the meaning of a polymorphic
 </para>
 <!-- ================================================================= -->
 <para>
-An `op-definition with `formal-prefix-application
+An `op-definition with `formal-def-application
 [[
 ||    def $H$ $P$ = $E$
 ]]
 in which
-$H$ is a `formal-application-head,
+$H$ is a `formal-def-application-head,
 $P$ is a `formal-parameter and
 $E$ an `expression,
 is equivalent to the `op-definition
@@ -2353,6 +2353,30 @@ future revisions of Metaslang.
 ||    | `type-comprehension
 ||    | ( `type-descriptor )
 >>
+</para>
+<para>
+Note that in Specware 4.2, `new-type-descriptors now may appear only as 
+the right-hand-side of a `type-definition.   In other words, sum and 
+quotient types no longer may appear anonymously.  For example, they may 
+not be used in an `annotated-pattern or an `annotated-expression.  
+Thus the following spec is illegal:
+[[
+||  spec
+||    op q : T * T -> Boolean
+||    type Q = T / q
+||    def foo (x : T / q) = x
+||  endspec
+]]
+but could be expressed legally as follows:
+[[
+||  spec
+||    op q : T * T -> Boolean
+||    type Q = T / q
+||    def foo (x : Q) = x
+||  endspec
+]]
+</para>
+<para>
 (The distinctions <quote>`slack-</quote>,
 <quote>`tight-</quote> and <quote>`closed-</quote> before
 <quote>`type-descriptor</quote> have no semantic significance.
@@ -2435,6 +2459,11 @@ Sample `type-sum:
 ]]
 Restriction.
 The `constructors of a `type-sum must all be different `simple-names.
+</para>
+
+<para>
+Also, note that since a `type-sum is a `new-type-descriptor, it may
+appear only on the right hand side of a `new-type-definition.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -2938,70 +2967,35 @@ Sample `type-quotient:
 ||     Nat / (fn (m, n) -> m rem 3 = n rem 3)
 ]]
 Restriction.
-In a `type-quotient
-[[$T$ / $Q$]], the `expression
-$Q$ must be a (binary) predicate on
-the type [[$T$ * $T$]] that is an equivalence relation,
-as explained below.
+In a `type-quotient [[$T$ / $q$]], the `expression $q$ must be a (binary) predicate on
+the type [[$T$ * $T$]] that is an equivalence relation, as explained below.
+</para>
+
+<para>
+Also, note that since a `type-quotient is a `new-type-descriptor, it may
+appear only on the right hand side of a `new-type-definition.
 </para>
 <!-- ================================================================= -->
 <para>
 Equivalence relation.
-Call two values $x$ and
-$y$ of type
-$T$
-<quote>$Q$-related</quote>
-if
-($x$, $y$)
-satisfies $Q$.
-Then $Q$ is an
-<emphasis>equivalence relation</emphasis>
-if, for all values $x$,
-$y$ and
-$z$ of type
-$T$,
-$x$ is
-$Q$-related
-to itself,
-$y$ is
-$Q$-related to
-$x$ whenever
-$x$ is
-$Q$-related to
-$y$, and
-$x$ is
-$Q$-related to
-$z$ whenever
-$x$ is
-$Q$-related to
-$y$ and
-$y$ is
-$Q$-related to
-$z$.
-The equivalence relation $Q$
-then partitions the inhabitants of
-$T$ into
-<emphasis>equivalence classes</emphasis>, being the maximal
-subsets of
-$T$ containing
-mutually $Q$-related members.
-These equivalence classes will be called
-<quote>$Q$-equivalence classes</quote>.
+Call two values $x$ and $y$ of type $T$ <quote>$q$-related</quote> if ($x$, $y$) satisfies $q$.
+Then $q$ is an <emphasis>equivalence relation</emphasis> if, for all values $x$, $y$ and $z$ of type $T$,
+$x$ is $q$-related to itself,
+$y$ is $q$-related to $x$ whenever $x$ is $q$-related to $y$, and
+$x$ is $q$-related to $z$ whenever $x$ is $q$-related to $y$ and $y$ is $q$-related to $z$.
+The equivalence relation $q$ then partitions the inhabitants of $T$ into
+<emphasis>equivalence classes</emphasis>, being the maximal subsets of $T$ containing
+mutually $q$-related members.
+These equivalence classes will be called <quote>$q$-equivalence classes</quote>.
 </para>
 <!-- ================================================================= -->
 <para>
-The inhabitants of the <emphasis>quotient
-type</emphasis>
-[[$T$ / $Q$]]
-are precisely the $Q$-equivalence classes
-into which the inhabitants of
-$T$ are partitioned by
-$Q$.
-For the example above, there are three equivalence
-classes of natural numbers leaving the same remainder on
-division by 3: the sets {0, 3, 6, ...},
-{1, 4, 7, ...} and {2, 5, 8, ...}, and so the quotient type
-has three inhabitants.
+The inhabitants of the <emphasis>quotient type</emphasis> [[$T$ / $q$]]
+are precisely the $q$-equivalence classes into which the inhabitants of
+$T$ are partitioned by $q$.
+For the example above, there are three equivalence classes of natural numbers 
+leaving the same remainder on division by 3: the sets {0, 3, 6, ...},
+{1, 4, 7, ...} and {2, 5, 8, ...}, and so the quotient type has three inhabitants.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -3526,7 +3520,7 @@ the following interpretations hold:
 ]]
 Note that no type information is used in the disambiguation.
 If [[(1 @ 2) $$ 3]] is type-correct but [[1 @ (2 $$ 3)]] is
-not, the formula [[1 @ 2 $$ 3]] is type-incorrect, since its
+not, the expression [[1 @ 2 $$ 3]] is type-incorrect, since its
 interpretation is.
 </para>
 <para>
@@ -3830,11 +3824,28 @@ So [[embed true]] is ungrammatical.
 <para>
 <<
 ||`nat-literal ::= `decimal-digit { `decimal-digit }*
+||          | 0 X `hexadecimal-digit { `hexadecimal-digit }*
+||          | 0 x `hexadecimal-digit { `hexadecimal-digit }*
+||          | 0 O `octal-digit       { `octal-digit  }*
+||          | 0 o `octal-digit       { `octal-digit  }*
+||          | 0 B `binary-digit      { `binary-digit }*
+||          | 0 b `binary-digit      { `binary-digit }*
+||
+||`hexadecimal-digit ::= `decimal-digit
+||                | a | b | c | d | e | f
+||                | A | B | C | D | E | F
+||
+||`octal-digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+||
+||`binary-digit ::= 0 | 1
 >>
 Sample `nat-literals:
 [[
 ||    3260
 ||    007
+||    0Xbadbeefcafe
+||    0O777
+||    0b111001111
 ]]
 The `type-descriptor [[Nat]] is, by definition, the subtype of
 [[Integer]] restricted to the nonnegative integers 0, 1, 2,
@@ -3844,6 +3855,22 @@ it is a decimal representation; for example, the
 `nat-literal [[3260]] denotes the natural number 3260.
 Leading `decimal-digits [[0]] have no significance:
 both [[007]] and [[7]] denote the number 7.
+</para>
+<para>
+Note that hexadecimal, octal, and binary literals are converted
+to an internal representation that does not retain their base. 
+So, for example, given
+[[
+|| foo = spec 
+||   def N = 0xFF
+|| endspec
+]]
+[[show foo]] will print as
+[[
+|| spec 
+||   def N = 255
+|| endspec
+]]
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -3865,11 +3892,6 @@ both [[007]] and [[7]] denote the number 7.
 ||    | \\ | \"
 ||    | \a | \b | \t | \n | \v | \f | \r | \s
 ||    | \x `hexadecimal-digit `hexadecimal-digit
-||
-||`hexadecimal-digit ::=
-||      `decimal-digit
-||    | a | b | c | d | e | f
-||    | A | B | C | D | E | F
 >>
 </para>
 <!--====================================================================-->
@@ -4845,6 +4867,7 @@ Here is a way of achieving the same result using a `guard:
 ||      `aliased-pattern
 ||    | `cons-pattern
 ||    | `embed-pattern
+!!    | `quotient-pattern
 ||    | `closed-pattern
 ||
 ||`closed-pattern ::=
@@ -4869,6 +4892,8 @@ avoid grammatical ambiguities.)
 ||
 ||`embed-pattern ::= `constructor [ `closed-pattern ]
 ||
+!!`quotient-pattern ::= quotient '[ `type-name ']		
+||	
 ||`variable-pattern ::= `local-variable
 ||
 ||`wildcard-pattern ::= _
@@ -5142,30 +5167,15 @@ At Semantics: transformational semantics.
 
 Relationship choose & quotient?
 
-Relax not needed.
-
 **********************************************************************
 
 Wishes for further syntax changes:
 
-<< `formal-application-head +::= ( `formal-application ) >>
-
-Allow [[op]] for [[def]].
+`formal-def-application-head +::= ( `formal-application ) 
 
 Allow [[def type]] and [[def op]].
 
 (Maybe) Allow [[type op]] for infix parameterized types.
-
-Allow
-[[
-||    def o : [a,b,c] (b -> c) * (a -> b) -> a -> c =
-||      fn (f, g) -> fn (x) -> f(g x)
-]]
-or
-[[
-||    op [a,b,c] o : (b -> c) * (a -> b) -> a -> c
-]]
-or both
 
 ********************************************************************** -->
 </chapter>
