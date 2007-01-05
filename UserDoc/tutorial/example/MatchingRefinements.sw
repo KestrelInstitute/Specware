@@ -80,3 +80,4 @@ FindMatches = FindMatches0[WordMatching_Ref]
 
 FindMatches_Ref = morphism MatchingSpecs#FindMatches ->
                            MatchingRefinements#FindMatches {}
+
