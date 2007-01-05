@@ -1,57 +1,34 @@
 %%  MatchingProofs.sw
-%do not use prover base;
-%call 
-%  prwb nil 
-%in specware shell
 
- p1  = prove symb_matches?_Obligation_exhaustive      
-in MatchingObligations#SymbolMatching_Oblig     
+ %%  do not use prover base;
+ %%  call 
+ %%    prwb nil 
+ %%  in specware shell
+ %%  or call (cl-user::swprb nil) in Tests.lisp
 
-%% One of the word_matches_at?_Obligation is no longer generated because it is trivially true
-p2 = prove word_matches_at?_Obligation_subsort  
-in MatchingObligations#WordMatching_Oblig
+ %% obligations from MatchingSpecs.sw :
 
-p3 = prove word_matches_at?_Obligation_subsort0 
-in MatchingObligations#WordMatching_Oblig
+ p1A =  prove symb_matches?_Obligation_exhaustive       in MatchingObligations#SymbolMatching_Oblig
 
-p5  = prove word_matches_at?_Obligation_subsort   
-in MatchingObligations#WordMatching0_Oblig
-options use_support
+ p2A =  prove word_matches_at?_Obligation_subsort       in MatchingObligations#WordMatching_Oblig
+ p2B =  prove word_matches_at?_Obligation_subsort0      in MatchingObligations#WordMatching_Oblig
 
-p6  = prove word_matches_at?_Obligation_subsort0  
-in MatchingObligations#WordMatching0_Oblig
-options use_support_list
- 
-%p7  = prove word_matches_at?_Obligation_subsort1  in MatchingObligations#WordMatching0_Oblig
+ %% obligations from MatchingRefinements.sw :
 
-p8  = prove word_matches_aux?_Obligation_subsort  
-in MatchingObligations#WordMatching0_Oblig
-options use_support_list
+ p3A =  prove word_matches_at?_Obligation_subsort       in MatchingObligations#WordMatching0_Oblig        options use_support
+ p3B =  prove word_matches_at?_Obligation_subsort0      in MatchingObligations#WordMatching0_Oblig        options use_support_list
+ p3C =  prove word_matches_aux?_Obligation_subsort      in MatchingObligations#WordMatching0_Oblig        options use_support_list
+ p3D =  prove word_matches_aux?_Obligation_termination  in MatchingObligations#WordMatching0_Oblig      % options "(run-time-limit 20)" % fails
+ p3E =  prove word_matches_aux?_Obligation_exhaustive   in MatchingObligations#WordMatching0_Oblig     
 
-(*  %% termination proof---not attempted
-p9  = prove word_matches_aux?_Obligation_termination 
-in MatchingObligations#WordMatching0_Oblig
-*)
+ p4A =  prove word_matches_at?_def                      in MatchingObligations#WordMatching_Ref0_Oblig  % options "(run-time-limit 20)" % fails
 
-p10 = prove word_matches_aux?_Obligation_exhaustive 
-in MatchingObligations#WordMatching0_Oblig
+ p5A =  prove find_matches_Obligation_exhaustive        in MatchingObligations#FindMatches0_Oblig
+ p5B =  prove find_matches_aux_Obligation_subsort       in MatchingObligations#FindMatches0_Oblig
+ p5C =  prove find_matches_aux_Obligation_termination   in MatchingObligations#FindMatches0_Oblig       % options "(run-time-limit 20)" % fails
 
- %% One of the word_matches_at?_Obligation is no longer generated because it is trivially true
+ p6A =  prove match_finding_lr1                         in MatchingObligations#FindMatches_Ref0_Oblig   % options "(run-time-limit 20)" % fails
+ p6B =  prove match_finding_lr2                         in MatchingObligations#FindMatches_Ref0_Oblig   % options "(run-time-limit 20)" % fails
+ p6C =  prove match_finding_lr3                         in MatchingObligations#FindMatches_Ref0_Oblig   % options "(run-time-limit 20)" % fails
+ p6D =  prove match_finding_rl                          in MatchingObligations#FindMatches_Ref0_Oblig   % options "(run-time-limit 20)" % fails
 
-% currently missing from generated obligations:
-%p11 = prove ...                                      in MatchingObligations#WordMatching_Ref0_Oblig  % options "(run-time-limit 30)"
-
-p12 = prove find_matches_Obligation_exhaustive   
-in MatchingObligations#FindMatches0_Oblig
-
-p13 = prove find_matches_aux_Obligation_subsort  
-in MatchingObligations#FindMatches0_Oblig
-
-(* %% termination proof---not attempted
-p14 = prove find_matches_aux_Obligation_termination in MatchingObligations#FindMatches0_Oblig
-*)
-
-(* %% translation to snark introduces undefined function symbol.
-
-p15 = prove match_finding in MatchingObligations#FindMatches_Ref0_Oblig
-*)

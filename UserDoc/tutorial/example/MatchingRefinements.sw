@@ -1,5 +1,37 @@
 Symbols = spec
   type Symbol = (Char | isUpperCase)
+
+  def use_support_list = 
+    "(use-resolution t)
+    (use-paramodulation t)
+    (use-hyperresolution nil)
+    (use-negative-hyperresolution nil)
+    (assert-supported nil)
+    (use-term-ordering :rpo)
+    (use-default-ordering nil)
+    (use-literal-ordering-with-resolution 'literal-ordering-a)
+    (use-literal-ordering-with-paramodulation 'literal-ordering-a)
+    (use-literal-ordering-with-hyperresolution 'literal-ordering-p)
+    (use-literal-ordering-with-negative-hyperresolution 'literal-ordering-n)
+    (declare-predicate-symbol '>= 2 :sort '(boolean number number)
+    :alias 'gte)
+    (declare-function '+ :any 
+     :commutative t :associative t)
+    (declare-function '- 2 :alias 'minusBinary)
+    (declare-ordering-greaterp 'minusBinary '+ '|Nat.one| '1 '|Nat.zero| '0)   ;;  
+    (declare-ordering-greaterp 'snark::< 'snark::=<)
+    (declare-ordering-greaterp 'snark::> 'snark::=<)
+    (declare-ordering-greaterp 'snark::gte  'snark::=<)
+    (declare-ordering-greaterp 'snark::|List.length_Symbol| '+)
+    (declare-ordering-greaterp 'snark::|List.length_Symbol| '1)
+    (declare-ordering-greaterp 'snark::|List.length_Option_Symbol| '+)
+    (declare-ordering-greaterp 'snark::|List.length_Option_Symbol| '1)
+    (declare-ordering-greaterp 'snark::|embed_Cons| 'snark::|List.length|)
+    (declare-ordering-greaterp 'snark::|embed_Cons| '+)
+    (declare-ordering-greaterp 'snark::|embed_Cons| '1)
+    (declare-ordering-greaterp 'snark::|List.cons| 'snark::|embed_Cons|)
+    (run-time-limit 10)
+"
 endspec
 
 

@@ -1,7 +1,6 @@
 Symbols = spec
   type Symbol
 
-
   def use_support_list = 
     "(use-resolution t)
     (use-paramodulation t)
@@ -30,8 +29,9 @@ Symbols = spec
     (declare-ordering-greaterp 'snark::|embed_Cons| 'snark::|List.length|)
     (declare-ordering-greaterp 'snark::|embed_Cons| '+)
     (declare-ordering-greaterp 'snark::|embed_Cons| '1)
-    (declare-ordering-greaterp 'snark::|List.cons| 'snark::|embed_Cons|)"
-
+    (declare-ordering-greaterp 'snark::|List.cons| 'snark::|embed_Cons|)
+    (run-time-limit 10)
+"
 endspec
 
 

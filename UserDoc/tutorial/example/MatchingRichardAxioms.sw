@@ -122,7 +122,7 @@ MatchingRichardIntegerAxiomsSpec = spec
     (declare-ordering-greaterp 'snark::gte  'snark::=<)
     (declare-ordering-greaterp 'snark::|Nat.lte|  'snark::=<)
     (assert-rewrite '(= snark::|Nat.zero| 0) :name 'nat_zero_is_0_rewrite)
-    (run-time-limit 10)
+    (run-time-limit 60)
 "
 
 
