@@ -1223,27 +1223,11 @@ If we want the precedence to be optional:
    ((:tuple "project" (1 :FIELD-NAME)) (make-field-name-selector 1 ':left-lcb ':right-lcb) :documentation "Projection")))
 
 (define-sw-parser-rule :QUOTIENTER ()
-  (:anyof :QUOTIENTER-OLD :QUOTIENTER-NEW))
-
-(define-sw-parser-rule :QUOTIENTER-OLD ()
-  (:tuple "quotient" (1 :QUALIFIABLE-SORT-NAME))
-  (make-quotienter 1  ':left-lcb ':right-lcb)
-  :documentation "Quotient")
-
-(define-sw-parser-rule :QUOTIENTER-NEW ()
   (:tuple "quotient" "[" (1 :QUALIFIABLE-SORT-NAME) "]")
   (make-quotienter 1  ':left-lcb ':right-lcb)
   :documentation "Quotient")
 
 (define-sw-parser-rule :CHOOSER ()
-  (:anyof :CHOOSER-OLD :CHOOSER-NEW))
-
-(define-sw-parser-rule :CHOOSER-OLD ()
-  (:tuple "choose"   (1 :QUALIFIABLE-SORT-NAME))
-  (make-chooser 1  ':left-lcb ':right-lcb)
-  :documentation "Choice")
-
-(define-sw-parser-rule :CHOOSER-NEW ()
   (:tuple "choose" "[" (1 :QUALIFIABLE-SORT-NAME) "]")
   (make-chooser 1  ':left-lcb ':right-lcb)
   :documentation "Choice")
@@ -1373,12 +1357,6 @@ If we want the precedence to be optional:
   (:tuple (1 :CONSTRUCTOR) (2 :CLOSED-PATTERN))                  (make-embed-pattern      1 2   ':left-lcb ':right-lcb) :documentation "Embed pattern")
 
 (define-sw-parser-rule :QUOTIENT-PATTERN ()
-  (:anyof :QUOTIENT-PATTERN-OLD :QUOTIENT-PATTERN-NEW))
-
-(define-sw-parser-rule :QUOTIENT-PATTERN-OLD ()
-  (:tuple "quotient" (1 :QUALIFIABLE-SORT-NAME) (2 :TIGHT-PATTERN))  (make-quotient-pattern   1 2   ':left-lcb ':right-lcb) :documentation "Quotient pattern")
-
-(define-sw-parser-rule :QUOTIENT-PATTERN-NEW ()
   (:tuple "quotient" "[" (1 :QUALIFIABLE-SORT-NAME) "]" (2 :TIGHT-PATTERN))  (make-quotient-pattern   1 2   ':left-lcb ':right-lcb) :documentation "Quotient pattern")
 
 (define-sw-parser-rule :RESTRICTED-PATTERN ()
