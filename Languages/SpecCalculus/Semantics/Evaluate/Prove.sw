@@ -219,30 +219,56 @@ SpecCalc qualifying spec
      then pid = cid
    else cq = pq & cid = pid
 
- op proveInSpec: Option String * ClaimName * Spec * Option String * Spec * Spec * String * 
-                 Assertions * List LispCell * Boolean * AnswerVar * String * Position -> SpecCalc.Env Boolean
+ op  proveInSpec: Option String * ClaimName * Spec * Option String * Spec * Spec * String * 
+                  Assertions * List LispCell * Boolean * AnswerVar * String * Position -> SpecCalc.Env Boolean
  def proveInSpec (proofName, claimName, spc, specName, baseSpc, rewriteSpc, proverName,
-		  assertions, proverOptions, includeBase, answerVariable, proverLogFileName, pos) = {
-   result <-
-   let baseHypothesis = allProperties baseSpc in
-   let rewriteHypothesis = allProperties rewriteSpc in
+		  assertions, proverOptions, includeBase, answerVariable, proverLogFileName, pos) = 
    let _ = debug("pinspec") in
-   let findClaimInSpec = firstUpTo (fn (_, propertyName, _, _) -> claimNameMatch(claimName, propertyName))
-                                   (allProperties spc) in
-   case findClaimInSpec of
-     | None -> raise (Proof (pos, "Claim name is not in spec."))
-     | Some (claim, validHypothesis) ->
-       let actualHypothesis = actualHypothesis(validHypothesis, assertions, pos) in
-       let missingHypothesis = missingHypothesis(actualHypothesis, assertions) in
-	 case missingHypothesis of 
-	   | [] -> return (proveWithHypothesis(proofName, claim, actualHypothesis, spc, specName,
-					       baseHypothesis, baseSpc, rewriteHypothesis, rewriteSpc,
-					       proverName, proverOptions, includeBase, answerVariable,
-					       proverLogFileName))
-	   | _ -> raise (Proof (pos, "assertions: "^printMissingHypothesis(missingHypothesis)^" not in spec.\n
-				Asserions in spec: "^printMissingHypothesis(map (fn((_,pn,_,_)) -> pn)
-									      actualHypothesis)));
-   return result}
+   let props             = allProperties spc        in
+   let baseHypothesis    = allProperties baseSpc    in
+   let rewriteHypothesis = allProperties rewriteSpc in
+   let props_upto_conjecture = firstUpTo (fn (pType, pName, _, _) -> 
+                                            member (pType, [Conjecture,Theorem]) && 
+                                            claimNameMatch (claimName, pName))
+                                         props
+   in
+     case props_upto_conjecture of
+       | None -> 
+         %% could not find conjecture foo
+         if exists (fn (pType, pName, _, _) -> 
+                      pType = Axiom && claimNameMatch (claimName, pName)) 
+                   props 
+           then
+             %% but could find axiom foo
+             let _ = toScreen ("\n;;; For " 
+                                 ^ (case proofName of 
+                                      | Some s -> "proof " ^ s
+                                      | _ -> "an anonymous proof")
+                                 ^ ", the purported conjecture " ^ printQualifiedId claimName 
+                                 ^ " is already an axiom in "
+                                 ^ (case specName of 
+                                      | Some s -> "spec " ^ s
+                                      | _ -> "an anonymous spec")
+                                 ^ "\n")
+             in
+               return true
+         else
+           raise (Proof (pos, "Claim " ^ printQualifiedId claimName ^ " is not in spec."))
+       | Some (claim, validHypothesis) ->
+         let actualHypothesis  = actualHypothesis  (validHypothesis,  assertions, pos) in
+         let missingHypothesis = missingHypothesis (actualHypothesis, assertions)      in
+         case missingHypothesis of 
+           | [] -> 
+             return (proveWithHypothesis (proofName, claim, actualHypothesis, spc, specName,
+                                          baseHypothesis, baseSpc, rewriteHypothesis, rewriteSpc,
+                                          proverName, proverOptions, includeBase, answerVariable,
+                                          proverLogFileName))
+           | _ -> 
+             raise (Proof (pos, "assertions: "
+                             ^ printMissingHypothesis missingHypothesis
+                             ^ " not in spec.\nAsserions in spec: "
+                             ^ printMissingHypothesis (map (fn((_,pn,_,_)) -> pn) actualHypothesis)))
+
 
  op actualHypothesis: List Property * Assertions * Position -> List Property
 
