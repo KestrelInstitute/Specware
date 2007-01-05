@@ -4475,30 +4475,23 @@ $v<subscript>i</subscript>$.
 <section id="Quotienters"><title>Quotienters</title>
 <para>
 <<
-||`quotienter ::= quotient `closed-expression
+||`quotienter ::= quotient '[ `type-name ']
 >>
 Sample `quotienter:
 [[
-||     quotient (fn (m, n) -> m rem 3 = n rem 3)
+||     quotient[Q]
 ]]
 Restriction.
-The `closed-expression of a `quotienter must have some type
-[[$T$ * $T$ -> Boolean]];
-in addition, it must be an equivalence relation, as explained
-under <link
-linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>.
+In a `quotienter [[quotient[$Q$]]], $Q$ must be defined as a 
+<link linkend="Type-quotients"><emphasis>quotient type</emphasis></link>.
 </para>
 <!--====================================================================-->
 <para>
-The type of `quotienter [[quotient $Q$]],
-where $Q$ has type
-[[$T$ * $T$ -> Boolean]], is the function type
-[[$T$ -> $T$ / $Q$]], that is, it goes from some
-type to one of its quotient types.
-The value of the `quotienter is the function that maps each
-inhabitant of type $T$ to the
-$Q$-equivalence class inhabiting [[$T$ /]] 
-$Q$ of which it is a member.
+The type of `quotienter [[quotient[$Q$]]], where [[$Q$ = $T$ / $q$]],
+is the function type 
+[[$T$ -> $Q$]], that is, it goes from the base type to the quotient type.
+The value of the `quotienter is the function that maps each inhabitant of 
+type $T$ to the $q$-equivalence class inhabiting $Q$ of which it is a member.
 </para>
 <!--====================================================================-->
 <para>
@@ -4511,7 +4504,7 @@ For example, given
 ]]
 we have the typing
 [[
-||    quotient congMod3 : Nat -> Z3
+||    quotient[Z3] : Nat -> Z3
 ]]
 and the function maps, for example, the number 5 to the
 equivalence class {2, 5, 8, ...}, which is one of the three
@@ -4522,106 +4515,72 @@ inhabitants of [[Z3]].
 <section id="Choosers"><title>Choosers</title>
 <para>
 <<
-||`chooser ::= choose `closed-expression
+||`chooser ::= choose '[ `type-name ']
 >>
 Sample `chooser:
 [[
-||    choose congMod3
+||    choose[Q]
 ]]
 Restriction.
-In a `chooser [[choose $Q$]],
-`expression $Q$ must have some type
-[[$T$ * $T$ -> Boolean]], and must be an equivalence relation (see under
-<link linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>).
+In a `chooser [[choose[$Q$]]], $Q$ must be defined as a 
+<link linkend="Type-quotients"><emphasis>quotient type</emphasis></link>.
 </para>
 <!--====================================================================-->
 <para>
-The type of a `chooser [[choose $Q$]],
-where $Q$ has type
-[[$S$ * $S$ -> Boolean]], is a function type of the form
-$R$ [[->]]
-[[($S$ /
-$Q$ ->
-$T$)]], where
-$R$ is the subtype of
-[[$S$ -> $T$]]
-consisting of the $Q$-constant
+The type of `chooser [[choose[$Q$]]], where [[$Q$ = $T$ / $q$]],
+is a function type of the form $F$ [[->]] [[($Q$ -> $R$)]], 
+where $F$ is the subtype of [[$T$ -> $R$]] consisting of the $q$-constant
 (explained below) functions.
-Expressed more formally, $R$ is the type
-[[{f :]] [[$S$ ->
-$T$]] [[| fa((x,y) :]]
-$S$ [[*]]
-[[$S$)]]
-[[$Q$(x,y) => f x = f y}]],
+Expressed more formally, $F$ is the type
+[[{f :]] [[$T$ -> $R$]] [[| fa((x,y) :]] $T$ [[*]] [[$T$)]] [[$q$(x,y) => f x = f y}]],
 where the `simple-names [[f]], [[x]] and [[y]] must be replaced by
 ``fresh'' `simple-names not clashing with `simple-names already in use in
-$S$,
-$T$ or
-$Q$.
+$T$, $R$ or $q$.
 </para>
 <!--====================================================================-->
 <para>
-The value of the `chooser is the
-function mapping each $Q$-constant
-(explained below) function $f$ inhabiting type
-[[$S$ -> $T$]] to the function that maps 
-each inhabitant $C$ of
-[[$S$ / $Q$]] to $f$
-$x$, where
-$x$ is any member of
-$C$.
+The value of the `chooser is the function mapping each $q$-constant
+(explained below) function $f$ inhabiting type [[$T$ -> $R$]] to the function 
+of type [[$Q$ -> $R$]] that maps each inhabitant $C$ of $Q$ to $f$ $x$, 
+where $x$ is any member of $C$.
 Expressed symbolically, using a pseudo-function [[any]] that
 arbitrarily picks any member from a nonempty set, this is
 the function
 [[
-||    fn f -> fn C -> f (any C)
+||    fn f  ->  fn C -> f (any C)
 ]]
-The requirement of $Q$-constancy
+The requirement of $q$-constancy on $f$
 is precisely what is needed to make this function insensitive
 to the choice made by [[any]].
 </para>
 <!--====================================================================-->
 <para>
-Function $f$ is
-$Q$-constant if,
-for each $Q$-equivalence class
-$C$ inhabiting
-[[$S$ / $Q$]],
-$f$ $x$
-equals $f$
-$y$ for any two values
-$x$ and
-$y$ that are members of
-$C$,
-or $f$ is undefined on all members of
-$C$.
-(Since the result of $f$ is
-constant across each equivalence class, it does not matter
+Function $f$ is $q$-constant if, for each $q$-equivalence class $C$ inhabiting $Q$,
+$f$ $x$ equals $f$ $y$ for any two values $x$ and $y$ that are members of $C$,
+or $f$ is undefined on all members of $C$.
+(Since the result of $f$ is constant across each equivalence class, it does not matter
 which of its elements is selected by [[any]].)
 For example -- continuing the example of the previous section --
 function [[fn n -> n*n rem 3]] is [[congMod3]]-constant;
 for the equivalence class {2, 5, 8, ...}, for example, it
 maps each member to the same value 1.
-So [[choose congMod3 (fn n -> n*n rem 3)]] maps the inhabitant
-{2, 5, 8, ...} of type [[Z3]] to the natural number 1.
+So [[choose[Z3] (fn n -> n*n rem 3)]] maps the inhabitant {2, 5, 8, ...} 
+of type [[Z3]] to the natural number 1.
 </para>
 <!--====================================================================-->
 <para>
-The most discriminating
-$Q$-constant function is
-[[quotient $Q$]], and
-[[choose $Q$ quotient $Q$]] is the identity function on the
-quotient type for $Q$.
+The most discriminating $q$-constant functions, where $q$ has type [[$T$ * $T$ -> Boolean]],
+are `quotienters of the form [[quotient[$Q$]]], where [[$Q$ = $T$ / q]].
+Since all such $Q$ are isomorphic to one another (but not necessarily equal),
+all these `quotienters are isomorphic to one another.
 </para>
 <!--====================================================================-->
 <para>
-The meaning of [[choose $Q$ (fn x -> $E$) $A$]]
-is the same as that of the `let-expression
-[[let quotient $Q$ x = $A$ in $E$]].
-Indeed, often a `quotient-pattern offers a more convenient 
-way of expressing the intention of a `chooser.
-Note, however, the remarks on the proof obligations for
-`quotient-patterns.
+The meaning of [[choose[$Q$] (fn x -> $E$) $A$]] is the same as that of the 
+`let-expression [[let quotient[$Q$] x = $A$ in $E$]].
+Indeed, often a `quotient-pattern offers a more convenient way of expressing 
+the intention of a `chooser.
+Note, however, the remarks on the proof obligations for `quotient-patterns.
 </para>
 </section>
 <!-- ***************************************************************** -->
