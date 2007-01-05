@@ -1715,11 +1715,11 @@ over any other.  They may also be used to define ASCII and
 ||      `type-abbreviation
 ||    | `new-type-definition
 ||
-||`type-abbreviation   ::= type `type-aliases [ `formal-type-parameters ] `equals 
-||                          `type-descriptor
+||`type-abbreviation  ::= type `type-aliases [ `formal-type-parameters ] `equals 
+||                       `type-descriptor
 ||
 ||`new-type-definition ::= type `type-aliases [ `formal-type-parameters ] `equals 
-||                           `new-type-descriptor
+||                       `new-type-descriptor
 >>
 Sample `type-abbreviations:
 [[
@@ -1818,7 +1818,7 @@ fixpoint of a recursive domain equation.
 ||    | op `formal-decl-expression [ `fixity ] : `type-variable-binder `type 
 ||       [ `equals `expression ]
 ||
-||`type-variable-binder ::= `[ `local-type-variable-list `]
+||`type-variable-binder ::= '[ `local-type-variable-list ']
 ||
 ||`formal-decl-expression ::= `op-aliases | `formal-decl-application
 ||
@@ -1879,15 +1879,23 @@ Sample `op-declarations:
 ** `fixity.
 ** </para>
      ====================== TEY TON ================================== -->
-<!--
 <para>
-Restriction.
+Restriction.  
 User-defined `ops may not be <quote>overloaded</quote>,
 or otherwise be redeclared and/or redefined, whether in the
 same `spec or after having been defined in an imported `spec,
 not even when the meaning of both `definitions is the same.
+
+However, one can get the effect of overloading by declaring distinct
+`ops with different qualifiers for the same unqualified name, e.g. 
+[[
+||   op Table.length  : Table  -> Nat
+||   op Vector.length : Vector -> Nat
+]]
+Here, subsequent references of the form [[length]] may be resolved 
+to refer to [[Table.length]] or [[Vector.length]] as appropriate, 
+provided exactly one is type-consistent in the context of the reference.
 </para>
--->
 <!-- ================================================================= -->
 <para>
 An `op-declaration introduces an `op with an associated type.
@@ -4568,12 +4576,14 @@ So [[choose[Z3] (fn n -> n*n rem 3)]] maps the inhabitant {2, 5, 8, ...}
 of type [[Z3]] to the natural number 1.
 </para>
 <!--====================================================================-->
-<para>
-The most discriminating $q$-constant functions, where $q$ has type [[$T$ * $T$ -> Boolean]],
-are `quotienters of the form [[quotient[$Q$]]], where [[$Q$ = $T$ / q]].
-Since all such $Q$ are isomorphic to one another (but not necessarily equal),
-all these `quotienters are isomorphic to one another.
-</para>
+<!-- ====================== MORE CONFUSING THAN HELPFUL (jlm/sjw) ==================================
+** <para>
+** The most discriminating $q$-constant functions, where $q$ has type [[$T$ * $T$ -> Boolean]],
+** are `quotienters of the form [[quotient[$Q$]]], where [[$Q$ = $T$ / q]].
+** Since all such $Q$ are isomorphic to one another (but not necessarily equal),
+** all these `quotienters are isomorphic to one another.
+** </para>
+     ====================== (wjs/mlj) LUFPLEH NAHT GNISUFNOC EROM ================================== -->
 <!--====================================================================-->
 <para>
 The meaning of [[choose[$Q$] (fn x -> $E$) $A$]] is the same as that of the 
