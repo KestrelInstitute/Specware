@@ -49,4 +49,7 @@ primrec
         else 
           case List__splitList p tl_v
            of None \<Rightarrow> None | Some (l1,x,l2) \<Rightarrow> Some(Cons hd_v l1,x,l2))"
+axioms List__length_nthTail [simp]: 
+  "\<lbrakk>int n \<ge> 0; int n \<le> int (length l)\<rbrakk> \<Longrightarrow> 
+   length (List__nthTail(l,n)) = nat (int (length l) - int n)"
 end
