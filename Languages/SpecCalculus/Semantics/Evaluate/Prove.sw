@@ -495,7 +495,36 @@ SpecCalc qualifying spec
     Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)]),
+
     Lisp.list([Lisp.symbol("SNARK","USE-PARAMODULATION"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-DEFAULT-ORDERING"), Lisp.bool(false)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-LITERAL-ORDERING-WITH-RESOLUTION"),
+               Lisp.quote(Lisp.symbol("SNARK","LITERAL-ORDERING-A"))]),
+    Lisp.list([Lisp.symbol("SNARK","USE-LITERAL-ORDERING-WITH-PARAMODULATION"),
+               Lisp.quote(Lisp.symbol("SNARK","LITERAL-ORDERING-A"))]),
+    Lisp.list([Lisp.symbol("SNARK","USE-LITERAL-ORDERING-WITH-HYPERRESOLUTION"),
+               Lisp.quote(Lisp.symbol("SNARK","LITERAL-ORDERING-P"))]),
+    Lisp.list([Lisp.symbol("SNARK","USE-LITERAL-ORDERING-WITH-NEGATIVE-HYPERRESOLUTION"),
+               Lisp.quote(Lisp.symbol("SNARK","LITERAL-ORDERING-N"))]),
+    Lisp.list([Lisp.symbol("SNARK","DECLARE-FUNCTION"),
+               Lisp.quote(Lisp.symbol("SNARK","+")),
+               Lisp.symbol("KEYWORD","ANY"),
+               Lisp.symbol("KEYWORD","COMMUTATIVE"),
+               Lisp.bool(true),
+               Lisp.symbol("KEYWORD","ASSOCIATIVE"),
+               Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","DECLARE-FUNCTION"),
+               Lisp.quote(Lisp.symbol("SNARK","-")),
+               Lisp.nat(2),
+               Lisp.symbol("KEYWORD","ALIAS"),
+               Lisp.quote(Lisp.symbol("SNARK","MINUSBINARY"))]),
+    Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
+               Lisp.quote(Lisp.symbol("SNARK","<")),
+               Lisp.quote(Lisp.symbol("SNARK","=<"))]),
+    Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
+               Lisp.quote(Lisp.symbol("SNARK",">")),
+               Lisp.quote(Lisp.symbol("SNARK","=>"))]),
+
     Lisp.list([Lisp.symbol("SNARK","USE-CONDITIONAL-ANSWER-CREATION"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-WELL-SORTING"), Lisp.bool(false)])]
    Lisp.++ (Lisp.list snarkSortDecl)
@@ -504,9 +533,34 @@ SpecCalc qualifying spec
    Lisp.++ (Lisp.list [setOfSupportOn])
    Lisp.++ (Lisp.list snarkBaseHypothesis)
    Lisp.++ (Lisp.list snarkRewriteHypothesis)
-   Lisp.++ (Lisp.list [setOfSupportOff])
+%% ??   Lisp.++ (Lisp.list [setOfSupportOff])
    Lisp.++ (Lisp.list proverOptions)
    Lisp.++ (Lisp.list baseAxioms)
+   Lisp.++ (Lisp.list [%Lisp.list([Lisp.symbol("SNARK","DECLARE-PREDICATE-SYMBOL"),
+                                     %           Lisp.quote(Lisp.symbol("SNARK",">="))]),
+                                     Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
+                                                Lisp.quote(Lisp.symbol("SNARK","MINUSBINARY")),
+                                                Lisp.quote(Lisp.symbol("SNARK","+")),
+                                                Lisp.quote(Lisp.symbol("SNARK","Nat.one")),
+                                                Lisp.quote(Lisp.nat(1)),
+                                                Lisp.quote(Lisp.symbol("SNARK","Nat.zero")),
+                                                Lisp.quote(Lisp.nat(0))]),
+                       %                       Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
+                                                          %                                  Lisp.quote(Lisp.symbol("SNARK","GTE")),
+                                                          %                                  Lisp.quote(Lisp.symbol("SNARK","=<"))]),
+Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
+           Lisp.quote(Lisp.symbol("SNARK","embed_Cons")),
+           Lisp.quote(Lisp.symbol("SNARK","List.length"))]),
+Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
+           Lisp.quote(Lisp.symbol("SNARK","embed_Cons")),
+           Lisp.quote(Lisp.symbol("SNARK","+"))]),
+Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
+           Lisp.quote(Lisp.symbol("SNARK","embed_Cons")),
+           Lisp.quote(Lisp.nat(1))]),
+Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
+           Lisp.quote(Lisp.symbol("SNARK","List.cons")),
+           Lisp.quote(Lisp.symbol("SNARK","embed_Cons"))])])
+
    Lisp.++ (Lisp.list snarkHypothesis)
    Lisp.++ (Lisp.list [snarkConjecture])
 
