@@ -507,7 +507,7 @@ If we want the precedence to be optional:
   (format nil "~D" 1))
 
 (define-sw-parser-rule :CLAIM ()
-  (:tuple (:optional (1 :SORT-QUANTIFICATION)) (2 :EXPRESSION-NOT-STARTING-WITH-BRACKET))
+  (:tuple (:optional (1 :SORT-QUANTIFICATION)) (2 :EXPRESSION-NSWB)) ; "NSWB" means "Not starting with bracket"
   (cons 1 2))
 
 (define-sw-parser-rule :SORT-QUANTIFICATION ()
@@ -762,7 +762,7 @@ If we want the precedence to be optional:
    )
   1)
 
-(define-sw-parser-rule :EXPRESSION-NOT-STARTING-WITH-BRACKET ()
+(define-sw-parser-rule :EXPRESSION-NSWB ()
   (:anyof
    (1 :LAMBDA-FORM          :documentation "Function definition")
    (1 :CASE-EXPRESSION      :documentation "Case")
@@ -771,7 +771,7 @@ If we want the precedence to be optional:
    (1 :IF-EXPRESSION        :documentation "If-then-else")
    (1 :QUANTIFICATION       :documentation "Quantification (fa/ex/ex1)")
    (1 :ANNOTATED-EXPRESSION :documentation "Annotated (i.e. typed) expression")
-   (1 :TIGHT-EXPRESSION-NOT-STARTING-WITH-BRACKET :documentation "Tight expression -- suitable for annotation -- not starting with '['")
+   (1 :TIGHT-EXPRESSION-NSWB :documentation "Tight expression -- suitable for annotation -- not starting with '['")
    )
   1)
 
@@ -793,10 +793,10 @@ If we want the precedence to be optional:
    )
   1)
 
-(define-sw-parser-rule :TIGHT-EXPRESSION-NOT-STARTING-WITH-BRACKET ()
+(define-sw-parser-rule :TIGHT-EXPRESSION-NSWB ()
   (:anyof
-   (1 :APPLICATION-NOT-STARTING-WITH-BRACKET          :documentation "Application not starting with bracket")
-   (1 :CLOSED-EXPRESSION-NOT-STARTING-WITH-BRACKET    :documentation "Closed expression -- unambiguous termination -- not starting with '['")
+   (1 :APPLICATION-NSWB          :documentation "Application not starting with bracket")
+   (1 :CLOSED-EXPRESSION-NSWB    :documentation "Closed expression -- unambiguous termination -- not starting with '['")
    )
   1)
 
@@ -806,12 +806,12 @@ If we want the precedence to be optional:
 ;;;  "X . SELECTOR" will be parsed as TWO-NAME-EXPRESSION and be disambiguated in post-processing
 (define-sw-parser-rule :CLOSED-EXPRESSION ()
   (:anyof
-   (1 :CLOSED-EXPRESSION-NOT-STARTING-WITH-BRACKET)
+   (1 :CLOSED-EXPRESSION-NSWB)
    (1 :LIST-DISPLAY           :documentation "List") ; starts with left bracket
    )
   1)
 
-(define-sw-parser-rule :CLOSED-EXPRESSION-NOT-STARTING-WITH-BRACKET ()
+(define-sw-parser-rule :CLOSED-EXPRESSION-NSWB ()
   (:anyof
    (1 :BUILT-IN-OPERATOR      :documentation "&&, ||, =>, <=>, =, ~=, <<")
    (1 :UNQUALIFIED-OP-REF     :documentation "Op reference or Variable reference")
@@ -1064,8 +1064,8 @@ If we want the precedence to be optional:
   (make-application 1 2 ':left-lcb ':right-lcb) ; see notes above
   :documentation "Application")
 
-(define-sw-parser-rule :APPLICATION-NOT-STARTING-WITH-BRACKET  ()
-  (:tuple (1 :CLOSED-EXPRESSION-NOT-STARTING-WITH-BRACKET) (2 :CLOSED-EXPRESSIONS)) ;  (:optional (:tuple ":" (3 :SORT)))
+(define-sw-parser-rule :APPLICATION-NSWB  ()
+  (:tuple (1 :CLOSED-EXPRESSION-NSWB) (2 :CLOSED-EXPRESSIONS)) ;  (:optional (:tuple ":" (3 :SORT)))
   (make-application 1 2 ':left-lcb ':right-lcb) ; see notes above
   :documentation "Application")
 
