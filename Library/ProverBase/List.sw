@@ -93,6 +93,9 @@ PrList qualifying spec
   axiom nthTail_def1 is fa (hd, tl)
      nthTail(tl,0) = tl
 
+  axiom length_nthTail_B is		% Really a theorem
+    fa(l,i: Nat) i <= length l => length(nthTail(l,i)) = length l - i
+
   axiom nthTail_def2 is fa (hd, tl, i) (i > 0) =>
      nthTail(Cons(hd,tl),i) = nthTail(tl, i-1)
 
