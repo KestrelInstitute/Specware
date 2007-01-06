@@ -19,29 +19,6 @@ PrInteger qualifying spec
 
   %type Nat.Nat = (Integer | natural?)
 
-  % unary minus:
-  %op IntegerAux.- : Integer -> Integer
-     % qualifier needed to avoid confusion with Integer.-, the binary minus
-
-  % for backward compatibility:
-  %op Integer.~ : Integer -> Integer
-     % qualifier required to avoid parsing confusion with boolean negation ~
-  axiom backward_compatible_unary_minus_def is
-    fa (i: Integer) Integer.~ i = - i
-
-  axiom natural?_def is
-    fa (i: Integer) natural?(i) <=> i >= 0
-
-  % negative integers are obtained by negating positive ones:
-  axiom negative_integers is
-    fa(i:Integer) ~(natural? i) => (ex(n:PosNat) i = -n)
-
-  axiom negative is
-    fa(n:PosNat) ~(natural? (- n))
-
-  % negating distinct positive integers yield distinct negative ones:
-  axiom unary_minus_injective_on_positives is
-    fa(n1:PosNat, n2:PosNat) n1 ~= n2 => -n1 ~= -n2
 
   % negating zero is a no-op
   axiom minus_zero is
@@ -50,98 +27,86 @@ PrInteger qualifying spec
   theorem unary_minus_involution is
     fa(i:Integer) -(-i) = i
 
-  axiom addition_def1 is
-    fa(i:Integer) i+0 = i && 0+i = i
-%  axiom addition_def2 is
-%    fa(n1:PosNat, n2:PosNat)
-%           n1  +   n2  = plus(n1,n2)
-%      && (-n1) + (-n2) = -(plus(n1,n2))
-%      &&   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
-%                                        else minus(n1,n2))
-%      && (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
-%                                        else -(minus(n1,n2)))
+%%% RW's theory
+  axiom plus_zero is
+   fa(x:Integer)
+    x + 0 = x
 
-  axiom subtraction_def is
-    fa (x:Integer, y:Integer) (x - y) = x + (- y)
+  conjecture number_minus_zero_thm is
+   fa(x:Integer)
+    x - 0 = x
 
-  axiom multiplication_def is
-    fa (x:Integer, y:Integer) 0 * y = 0
-                       && (x+1) * y = x * y + y
-                       && (x-1) * y = x * y - y
-    % since every integer is reachable from 0 by adding or subtracting 1
-    % zero or more times, this axiom completely defines multiplication
+  conjecture number_minus_number_zero_thm is
+   fa(x:Integer)
+    x - x = 0
 
-%  axiom division_def is
-%    fa (x:Integer, y:NonZeroInteger, z:Integer)
-%       % truncate result of exact division towards 0:
-%       x div y = z <=> abs z = abs x div abs y  % abs of result
-%                     && (x * y >= 0 => z >= 0)  % sign of
-%                     && (x * y <= 0 => z <= 0)  % result
+%  axiom plus_monotonic is
+%    fa(x:Integer, y:Nat)
+%     x <= x + y
+   
 
-  axiom remainder_def is
-    fa (x:Integer, y:NonZeroInteger)
-       x rem y = x - y * (x div y)
+  axiom minus_migration is
+    fa(x:Integer, y:Integer, z:Integer)
+     x - z + y = x + y - z
+     
+  axiom gt_implies_lte is
+   fa(x:Integer, y:Integer)
+    y > x  <=> x + 1 <= y
 
-  axiom less_than_equal_def is
-    fa (x:Integer, y:Integer) x <= y <=> natural? (y - x)
+  axiom lt_implies_lte is
+   fa(x:Integer, y:Integer)
+    x < y  <=> x + 1 <= y
 
-  theorem natural?_and_less_than_equal is
-    fa(i:Integer) natural? i <=> 0 <= i
+  axiom not_lte_implies_lte_plus_1 is
+   fa(x:Integer, y:Integer)
+   ~(y <= x) => x + 1 <= y
 
-%  axiom less_than_def is
-%    fa (x:Integer, y:Integer) x < y <=> (x <= y && x ~= y)
+  axiom gte_implies_lte is 
+   fa(x:Integer, y:Integer)
+    y >= x  <=> x <= y
 
-  axiom greater_than_equal_def is
-    fa (x:Integer, y:Integer) (>= (x,y)) = (y <= x)
+  axiom not_gt_is_lte is 
+   fa(x:Integer, y:Integer)
+    ~(x > y) => x <= y
 
-  axiom greater_than_def is
-    fa (x:Integer, y:Integer) > (x,y) = (y <  x)
+  axiom diff_gte_zero_is_lte is
+   fa(x:Integer, y:Integer)
+    y - x >= 0  => x <= y
 
-  axiom abs_def1 is
-    fa (x: Integer) x >= 0 => abs(x) = x
+  
 
-  axiom abs_def2 is
-    fa (x: Integer) ~(x >= 0) => abs(x) = -x
+  axiom reduction is
+   fa(x:Integer,a:Integer, b:Integer)
+       x + a <= x + b
+    => a <= b
 
-  axiom min_def1 is
-    fa (x:Integer, y:Integer) x < y => min(x,y) = x
+  conjecture reduction_left_zero is
+   fa(x:Integer, b:Integer)
+       x <= x + b
+    => 0 <= b
 
-  axiom min_def2 is
-    fa (x:Integer, y:Integer) ~(x < y) => min(x,y) = y
+  conjecture reduction_right_zero is
+   fa(x:Integer,a:Integer)
+       x + a <= x
+    => a <= 0
 
-  axiom max_def1 is
-    fa (x:Integer, y:Integer) x < y => max(x,y) = y
+  conjecture integer_minus_zero is
+    fa(x:Integer) x - 0 = x
 
-  axiom max_def2 is
-    fa (x:Integer, y:Integer) ~(x < y) => max(x,y) = x
+  conjecture minus_elimination is
+   fa(x:Integer, y:Integer, z:Integer)
+       (x - z <= y) =>  x <= y + z
 
-  axiom compare_def1 is
-    fa (x:Integer, y:Integer)
-     x < y => compare(x, y) = Less
+  axiom chaining is
+   fa(x:Integer,a:Integer, b:Integer, c:Integer, d:Integer)
+          a <= b + x
+        & c + x <= d 
+     => a + c <= d + b
 
-  axiom compare_def2 is
-    fa (x:Integer, y:Integer)
-       x > y => compare(x,y) = Greater
-
-  axiom compare_def3 is
-    fa (x:Integer, y:Integer)
-       x = y => compare(x,y) = Equal
-
-  axiom pred_def is
-     fa (x: Integer) pred x = x - 1
-
-  axiom less_less_equal is
-     fa(x: Integer,y: Integer) x < y  <=> x+1 <= y
-
-%  axiom plus_gt_zero is fa(x,y,z,w) x + y <= z && 0 <= y => x <= z
-
-%  axiom plus_minus is fa(x,y,z) x+y = z <=>  x = z-y
-
-  axiom plus_greater_equal is
-     fa (x: Integer, y: Integer, z: Integer) x >= z && y >= z => x + y >= z + z
-
-  axiom plus_greater_chain is
-     fa (x: Integer, y: Integer, z: Integer) x + y >= 0 && (- y) + z >= 0 => x + z >= 0
-
+  conjecture chaining_left_zero is
+   fa(x:Integer,a:Integer, c:Integer, d:Integer)
+     a <= x &&
+     c + x <= d =>
+     a + c <= d
 
 endspec
