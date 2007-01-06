@@ -34,7 +34,7 @@
     (":swll" . "Generate Lisp code for local definition of unit, and compile and load")
     (":swpath" . "Query (no arg) or set SWPATH")
     ;; following is useful when running without XEmacs to provide access to shell
-    (":bash" . "With no args, run the bash shell.\nFor bash fn arg1 .. argn, run fn on args in bash shell [no spaces allowed in any arg]")
+;;    (":bash" . "With no args, run the bash shell.\nFor bash fn arg1 .. argn, run fn on args in bash shell [no spaces allowed in any arg]")
     ))
 
 (defun sw-help (&optional command)
@@ -1301,10 +1301,10 @@
   (cddr (Specware::evaluateUnitId id-str))))
 
 ;; following is useful when running without XEmacs to provide access to shell
-#+allegro
-(top-level:alias ("bash" :string) (&optional (str "")) 
-  (bash str))
+;; #+allegro
+;; (top-level:alias ("bash" :string) (&optional (str "")) (bash str))
 
+;;; NEEDS WORK...
 (defun bash (&optional (str ""))
   (block return-from-bash
     (if (and (stringp str) (> (length str) 0))
