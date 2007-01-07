@@ -7,10 +7,10 @@
 ;;;The next three variable initializations need to be changed when going to a new minor version
 
 ;; Used in printing out the license and about-specware command
-(defparameter cl-user::Specware-version      "4.1")
-(defparameter cl-user::Specware-version-name "Specware-4-1")
-(defparameter cl-user::Specware-patch-level  "5")
-(defparameter Major-Version-String           "4-1") ; Used in patch detection and about-specware command
+(defparameter cl-user::Specware-version      "4.2")
+(defparameter cl-user::Specware-version-name "Specware-4-2")
+(defparameter cl-user::Specware-patch-level  "0")
+(defparameter Major-Version-String           "4-2") ; Used in patch detection and about-specware command
 
 (push ':SPECWARE-DISTRIBUTION *features*)
 
@@ -33,7 +33,7 @@
 #-(or COMPILER NEW-COMPILER) ; cmucl has NEW-COMPILER (sigh)
 (defun compile-file-if-needed (file) file)
 
-;;;Patch .fasl files will be named in the form "patch-4-1-x.fasl" and
+;;;Patch .fasl files will be named in the form "patch-4-2-x.fasl" and
 ;;;will probably be copied into a Patches folder in the installation
 ;;;directory.  Old patch files will not be removed or overwritten.
 

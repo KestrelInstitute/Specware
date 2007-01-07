@@ -8,7 +8,7 @@
 (defun in-specware-dir (file) (concatenate 'string Specware4-dir "/" file))
 
 ;; Used in patch detection and about-specware command
-(defvar Major-Version-String "4-1")
+(defvar Major-Version-String "4-2")
 
 ;; dist-dir-name is the sub-directory to receive this particular distribution.
 ;; In particular, this is where generate-application puts all its stuff.

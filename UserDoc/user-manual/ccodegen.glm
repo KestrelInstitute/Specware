@@ -168,7 +168,7 @@ would then be as follows:
 ||   include $$(SPECWARE4)/Library/Clib/Makerules
 ]]
 where environment variable <"SPECWARE4"> is set to the installation
-directory of &Specware;, e.g., <"C:/progra~1/Specware4.1">.
+directory of &Specware;, e.g., <"C:/progra~1/Specware4.2">.
 This Makerules file sets the <"CPPFLAGS"> and <"CFLAGS"> make variables
 to include the
 paths and library necessary for successfully compiling the generated

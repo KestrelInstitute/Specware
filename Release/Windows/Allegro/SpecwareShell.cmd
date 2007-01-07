@@ -9,7 +9,7 @@ rem so the call to CheckSpecwareVars will succeed.
 rem The proper alternative is probably to parse %CMDCMDLINE%,
 rem but that is dreadful to contemplate.
 
-if exist Specware-4-1-5 ( cd Specware-4-1-5 )
+if exist Specware-4-2 ( cd Specware-4-2 )
 
 
 call Find_SPECWARE4

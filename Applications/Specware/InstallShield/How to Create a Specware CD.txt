@@ -35,17 +35,17 @@ knows more.
 
 STEP FOUR: Copy distribution directory to location where InstallShield is expecting it
 -	Copy the Specware4 directory under C:\Specware4\distribution\, and paste it in 
-	      C:\SpecwareReleases\Specware4-1-x\Specware\distribution-Allegro\Windows.
+	      C:\SpecwareReleases\Specware4-2\Specware\distribution-Allegro\Windows.
 -	(TODO: fix the lisp function to do this automatically in BuildRuntime) 
 	Copy and rename empty-patch-template.fasl from C:\Specware4\Release\Windows\Patches\ 
-to C:\SpecwareReleases\Specware4-1-x\Specware\distribution-Allegro\Windows\Specware4\Patches
+to C:\SpecwareReleases\Specware4-2\Specware\distribution-Allegro\Windows\Specware4\Patches
 
 
 STEP FIVE: Create the InstallShield package
 -	Open InstallShield (Start -> Programs -> InstallShield -> Developer)
 -       Click on "Open a project..." in the left side panel.
 -	Select "Specware-Template.ism", and click Open.
--	Go to File -> Save As and save this project under C:\InstallShield Setups as Specware-4-1-x.
+-	Go to File -> Save As and save this project under C:\InstallShield Setups as Specware-4-2.
 -       Change the Product Name to be this version of Specware.
 -	Change the Version.
 -	Click on "Application Data/Files and Folders" in the left side panel.
@@ -53,31 +53,31 @@ STEP FIVE: Create the InstallShield package
 folder.
 -	Right-click on "Specware", and select "Dynamic File Linking".
 -	Click the "New" button to create a new dynamic link.
--	Enter the path to your new Specware4-1-x distribution folder 
-C:\SpecwareReleases\Specware4-1-x\Specware\Specware4.  Check "Include subfolders". Click OK.  This should now
+-	Enter the path to your new Specware4-2 distribution folder 
+C:\SpecwareReleases\Specware4-2\Specware\Specware4.  Check "Include subfolders". Click OK.  This should now
 include every file under this directory in the file list.
 -	Create 2 shortcuts, one on the desktop and one in the Start menu.
 -	Include the license.txt file in the Support Files.
 -	Press F7 to build the release package.
 -	Go to Tools -> Open Release Folder.  Copy everything in the window that pops up.  Paste 
-everything in C:\SpecwareReleases\Specware4-1-x\Specware\Windows\CD\
--	Edit C:\SpecwareReleases\Specware4-1-x\Specware\Windows\CD\Autorun.inf to point to Windows/setup.exe instead, and move
-that file up one level to C:\SpecwareReleases\Specware4-1-x\Specware\Windows\CD so that Windows will find it when the CD is 
+everything in C:\SpecwareReleases\Specware4-2\Specware\Windows\CD\
+-	Edit C:\SpecwareReleases\Specware4-2\Specware\Windows\CD\Autorun.inf to point to Windows/setup.exe instead, and move
+that file up one level to C:\SpecwareReleases\Specware4-2\Specware\Windows\CD so that Windows will find it when the CD is 
 inserted into the user's machine.- Go to "General Information/Summary Information Stream/Package Code and click the "Generate GUID" button.
 -	Change the "General Information/Product Properties/Product Name" to be this version of Specware.
 -	Change the "General Information/Product Properties/Version".
 -	Click on "Organization/Components" in the left side panel.  Expand the component and click on "Files."
 -	Right click in the empty right-hand window and select "Dynamic File Linking".
 -	Click the "New Link" button to create a new dynamic link.
--	Enter the path to your new Specware4-1-x distribution folder 
-C:\SpecwareReleases\Specware4-1-x\Specware\distribution-Allegro\Windows.  Click OK.  This should now
+-	Enter the path to your new Specware4-2 distribution folder 
+C:\SpecwareReleases\Specware4-2\Specware\distribution-Allegro\Windows.  Click OK.  This should now
 include every file under this directory in the file list.
 -	Click on "System Configuration/Shortcuts" in the left side panel.
 -	To add a shortcut, right-click "Desktop" and select "New shortcut to preexisting file".  Type "Specware4.cmd" as the file
 name. Add a second shortcut to the same file under "Taskbar/Start Menu/Programs Menu".  Rename both shortcut names as "Specware 4.1".
 -       Press F7 to build the release package.
 -	Go to Tools -> Open Release Folder.  Copy everything in the window that pops up.  Paste 
-everything in C:\SpecwareReleases\Specware4-1-x\Specware\Windows\CD\
+everything in C:\SpecwareReleases\Specware4-2\Specware\Windows\CD\
 
 
 STEP SIX: CREATE LABEL
@@ -91,10 +91,10 @@ STEP SEVEN: Burn the CD
 -	Insert a blank CD into the PlexWriter drive on Core-Win.
 -	Open Nero (Start -> Programs -> Ahead Nero -> Nero - Burning Rom)
 -	Click Next, Next, Next, Next, Finish through the first wizard that pops up.
--	In the right side window labeled File Browser, move to C:\SpecwareReleases\Specware4-1-x\Specware\Windows\CD
+-	In the right side window labeled File Browser, move to C:\SpecwareReleases\Specware4-2\Specware\Windows\CD
 -	Copy everything in this directory, and paste it into the left side window labeled ISO1.
 -	Copy the XEmacs installation folder (I put it on the Desktop for now) to the top level of the CD.
--	Rename the CD from NEW to Specware4-1-x by right-clicking the NEW label in the leftmost panel and selecting Rename.
+-	Rename the CD from NEW to Specware4-2 by right-clicking the NEW label in the leftmost panel and selecting Rename.
 -	Go to File -> Write CD, and then click Burn in the window that pops up.
 -	Wait.  Click Done when the burning process is completed.  Nero can be closed without saving anything.
 
@@ -114,7 +114,7 @@ STEP NINE: Uninstall previous Specware4.1 (if necessary), Test, and ship to Tim
 -	Install Specware 4.1.x, and run the examples & tests.
 
 
-STEP TEN: Tag the sources in CVS with the release version (rel-4-1-x)
+STEP TEN: Tag the sources in CVS with the release version (rel-4-2)
 -	See http://intranet/specware/intranet/cvs-cheatsheet.html 
 
 
