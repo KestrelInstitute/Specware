@@ -1,0 +1,39 @@
+#!/bin/bash --noprofile
+# set -v
+
+SCRIPTDIR=`/usr/bin/dirname $0`
+
+export LISP_MODE="SBCL"
+export FASL_EXTENSION="sfsl"
+export IMAGE_EXTENSION="sbclimage"
+export EXECUTABLE_EXTENSION="sbclimage"
+
+echo "  ------------------------------------------------------------------------"
+echo "  Verify_SBCL:  Ensure that SBCL executable exists:"
+echo " "
+
+for L in /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp; do
+  if [ -x "$L" ]; then
+    export LISP="$L"; break
+  fi
+done
+
+if [ -z "$LISP" ]; then
+  echo "  Verify_SBCL:  Could not find SBCL lisp"
+  exit 1
+fi
+
+export LISP_VERSION="SBCL"
+export BATCH_LISP="$LISP -batch"
+# -dynamic-space-size should be at least about 530 for Accord
+export BATCH_SPECWARE="$LISP --core $SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} -batch -dynamic-space-size 1000"
+
+echo "  Verify_SBCL:  LISP_MODE            = [$LISP_MODE]"
+echo "  Verify_SBCL:  LISP                 = [$LISP]"
+echo "  Verify_SBCL:  LISP_VERSION         = [$LISP_VERSION]"
+echo "  Verify_SBCL:  FASL_EXTENSION       = [$FASL_EXTENSION]"
+echo "  Verify_SBCL:  IMAGE_EXTENSION      = [$IMAGE_EXTENSION]"
+echo "  Verify_SBCL:  EXECUTABLE_EXTENSION = [$EXECUTABLE_EXTENSION]"
+echo "  Verify_SBCL:  BATCH_LISP           = [$BATCH_LISP]"
+echo "  Verify_SBCL:  BATCH_SPECWARE       = [$BATCH_SPECWARE]"
+echo "  "

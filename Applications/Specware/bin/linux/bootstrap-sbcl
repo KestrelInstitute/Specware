@@ -1,0 +1,352 @@
+#!/bin/bash --noprofile
+
+
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P $SCRIPT_DIR
+SCRIPT_DIR=`pwd`
+
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "About to generate Specware4.lisp from Specware4.sw, using ACL Specware image"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Generate_Specware_Lisp_ACL
+$RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure generating Specware4.lisp from Specware4.sw, return code = $RC"
+   exit $RC
+fi
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "About to compile Specware4.lisp and various handwritten lisp files, using ACL"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Compile_Specware_Lisp_ACL
+$RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure compiling Specware4.lisp, return code = $RC"
+   exit $RC
+fi
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "About to prepare an ACL development image of Specware"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Build_Specware_Dev_ACL
+$RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure building Specware.dxl, return code = $RC"
+   exit $RC
+fi
+
+exit 0
+
+# obsolete older script follows....
+
+
+# $HOME/Specware4/Library/Base/older
+
+# This script bootstraps Specware4.
+# That is,
+#  - it saves the old generated Specware4.lisp and Specware4.dxl (ie world)
+#  - it starts Specware4 
+#      - it first tries to run a lisp session with an existing dxl image
+#      - if that fails it tries to load Specware from previously generated lisp
+#  - applies Specware to itself (sw "/Applications/Specware/Specware4")
+#     to generate a new Specware4.lisp,
+#  - starts a fresh lisp session
+#  - loads the new Specware (under Handwritten/Lisp, (load "Specware4.lisp"))
+#    (this compiles everything)
+#  - starts a fresh lisp session again
+#  - loads the new Specware (under Handwritten/Lisp, (load "Specware4.lisp"))
+#  - dumps a world into the bin directory
+
+# Perhaps there should be a different script for bootstrapping from lisp
+# (bootstrap-from-lisp?).
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. The 'set -v' turns on echoing of
+# lines read. This will be removed later.
+
+act='bootstrap'
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+# set -v
+
+# Test whether SPECWARE4 has been set
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+case "$SPECWARE4" in
+    /*) : ok;;
+    *)  SPECWARE="`pwd`/$SPECWARE4";;
+esac
+
+if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
+   echo "Failed to $act: could not find directory $SPECWARE4/Applications/Specware" 2>&1
+   exit 1
+fi
+
+echo cd "$SPECWARE4"/Applications/Specware
+cd "$SPECWARE4"/Applications/Specware
+
+# Try to find lisp executable:
+
+export BIN_DIR="$SPECWARE4/Applications/Specware/bin/linux"
+. $SPECWARE4/Scripts/unix/Verify_ACL
+
+echo " "
+if [ -f lisp/Specware4.lisp ]; then
+  echo "Saving previous specware lisp file ..."
+  echo "cp -p -f lisp/Specware4.lisp lisp/Specware4-save.lisp"
+  cp -p -f lisp/Specware4.lisp lisp/Specware4-save.lisp
+else
+  echo "Note: No previous specware lisp file."
+fi
+echo " "
+if [ -f bin/linux/Specware4.dxl ]; then
+  echo "Saving previous specware image ..."
+  echo "cp -p -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl"
+  cp -p -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
+else
+  echo "Note: No previous specware image."
+fi
+echo " "
+
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).
+
+# Is there a way to inhibit all the warnings (eg unused variable)
+# when Lisp loads?
+
+export SWPATH=/:.
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+
+echo "\$SWPATH=$SWPATH"
+
+# All the toplevel routines that activate Specware return a boolean value.
+# They return true if the call to Specware succeeded without activating
+# Specware's toplevel handler. They return false (lisp nil) when the
+# handler is invoked. If, when bootrapping, the toplevel handler is
+# called, then we abort the bootstrap.
+
+if [ -f lisp ]; then
+   echo "Failed to $act, $SPECWARE4/Applications/Specware/lisp is not a directory" 2>&1
+   exit 1
+fi
+
+
+if [   -f bin/linux/Specware4.dxl \
+     -a \(   \( ! -f Specware4-base.lisp \) \
+         -o bin/linux/Specware4.dxl -nt Specware4-base.lisp \) ]; then
+	echo "Bootstrapping from existing Specware image: bin/linux/Specware4.dxl"
+        echo " "
+	bin/linux/Specware4-text -batch <<-XXXX
+                :swpath
+		(progn
+		 (format t "~%--------------------------------------------------------------------------------~%")
+		 (load "$EXIT_ON_ERRORS")    
+		 (load "$MEMORY_MANAGEMENT") 
+		 (enlarge-stack)
+		 (format t "~%--------------------------------------------------------------------------------~%")
+		 (exiting-on-errors 
+		   (if (swl "/Applications/Specware/Specware4")
+                     ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+		     (exit 0)
+		     (exit 11))))
+	XXXX
+        RC=$?
+else
+        if [   -f lisp/Specware4.lisp \
+	     -a \(    \( ! -f Specware4-base.lisp \) \
+                 -o lisp/Specware4.lisp -nt Specware4-base.lisp \) ]; then
+		if [ -f bin/linux/Specware4.dxl ]; then
+  		    echo "Cvs saved lisp, Specware4-base.lisp, is newer than bin/linux/Specware4.dxl."
+		fi
+		echo "Bootstrapping from previously generated lisp: lisp/Specware4.lisp"
+                echo " "
+		cd Handwritten/Lisp
+		$LISP -batch <<-XXXX
+			(progn
+			 (format t "~%--------------------------------------------------------------------------------~%")
+			 (load "$EXIT_ON_ERRORS")
+		         (load "$MEMORY_MANAGEMENT") 
+			 (enlarge-stack)
+			 (format t "~%--------------------------------------------------------------------------------~%")
+			 (exiting-on-errors 
+			   (load "Specware4.lisp"))
+			 ;; We have two separate exiting-on-errors forms because we must
+			 ;; finish evaluating the load of Specware4.lisp to create the 
+			 ;; Specware package before the reader sees a reference to it.
+			 (format t "~%--------------------------------------------------------------------------------~%")
+			 )
+			(exiting-on-errors 
+			  (Specware::initializeSpecware-0) 
+			  (if (swl "/Applications/Specware/Specware4")
+                            ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+			    (exit 0)
+			    (exit 22)))
+		XXXX
+                RC=$?
+	else
+                if [ -f Specware4-base.lisp ]; then
+			if [ -f bin/linux/Specware4.dxl ]; then
+			    echo "Cvs saved lisp, Specware4-base.lisp, is newer than bin/linux/Specware4.dxl."
+			fi
+			if [ -f lisp/Specware4.lisp ]; then
+			    echo "Cvs saved lisp, Specware4-base.lisp, is newer than both lisp/Specware4.lisp."
+			fi
+                        echo "Bootstrapping from cvs saved lisp: Specware4-base.lisp"
+			if [ ! -d lisp ]; then
+			    echo "mkdir lisp"
+			    mkdir lisp
+			fi
+
+			echo "cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
+			cp -p -f Specware4-base.lisp lisp/Specware4.lisp
+			echo " "
+			cd Handwritten/Lisp
+			$LISP -batch <<-XXXX
+			   (progn
+			    (format t "~%--------------------------------------------------------------------------------~%")
+			    (load "$EXIT_ON_ERRORS")
+		            (load "$MEMORY_MANAGEMENT") 
+			    (enlarge-stack)
+			    (format t "~%--------------------------------------------------------------------------------~%")
+			    (exiting-on-errors 
+			      (load "Specware4.lisp"))
+			    ;; We have two separate exiting-on-errors forms because we must
+			    ;; finish evaluating the load of Specware4.lisp to create the 
+			    ;; Specware package before the reader sees a reference to it.
+			    (format t "~%--------------------------------------------------------------------------------~%")
+			    (values))
+			   (exiting-on-errors 
+			     (Specware::initializeSpecware-0) 
+			     (if (swl "/Applications/Specware/Specware4")
+                               ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+			       (exit 0)
+			       (exit 33)))
+			XXXX
+			RC=$?
+		else
+		    # You should never end up here.
+		    # If you do then cvs checkout/update did not correctly
+		    # provide you with a Specware4-base.lisp.
+		    echo " "
+		    echo "Bootstrap failed"
+		    echo "Could not find bin/linux/Specware4.dxl or lisp/Specware4.lisp or Specware4-base.lisp"
+		    echo "under $SPECWARE4/Applications/Specware"
+		    exit 1
+		fi
+	fi
+fi
+
+# If the bootstrap failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "Bootstrap failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+echo " "
+echo cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
+cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
+
+# We load the new Specware4.lisp twice, each in a fresh lisp session. The
+# first time compiles everything.  As we have just generated a new
+# lisp file for Specware, we are certain something needs to be compiled.
+# We could do the load and compile up above in the lisp that generated it,
+# but that seems weird to me ...
+
+echo " "
+echo "Loading Specware ... (to compile)"
+echo " "
+$LISP -batch <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  (load "Specware4.lisp"))
+XXXX
+RC=$?
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "First load failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+# The second time is just to do the dumplisp. If we do it in one
+# go, the generated dxl file is almost 4 times larger.
+#
+# I once added a (gc) between the load and the dumplisp, and the dxl
+# file became 10k bigger. Go figure.
+
+# People who want to avoid lots of line breaks can set *DEFAULT-RIGHT-MARGIN* 
+# in their lisp init.
+
+export BIG_ALISP="${SPECWARE4}/Applications/Specware/bin/linux/big-alisp.dxl"
+NOW=`/bin/date +"%y%m%d-%H%M%S"`
+# big-alisp.dxl will have a larger lisp heap than the default alisp image.
+# Rebuild it each time.  A bit redundant, but ensures compatibility with 6.1/6.2/etc.
+echo "Building big-alisp, see /tmp/build-big-alisp-$NOW.log for details."
+$LISP -batch <<-XXXX>> /tmp/build-big-alisp-$NOW.log
+	(build-lisp-image "$BIG_ALISP" :lisp-heap-start #x48000000 :oldspace #x100)
+XXXX
+
+echo " "
+echo "Loading Specware ... (for dumplisp)"
+echo " "
+$LISP -I ${BIG_ALISP} -batch <<-XXXX
+	(progn
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (load "$EXIT_ON_ERRORS")
+	 (load "$MEMORY_MANAGEMENT") 
+	 (compact-memory nil 0 32000000)   ; not verbose
+	 (set-gc-parameters-for-build nil) ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (exiting-on-errors 
+	   (load "Specware4.lisp"))
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (compact-memory nil -1 0)         ; not verbose
+	 (set-gc-parameters-for-use nil)   ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (values))
+        (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
+XXXX
+RC=$?
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "Second load failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+cd "$SPECWARE4"/Applications/Specware/lisp
+if cmp -s Specware4.lisp Specware4-save.lisp; then
+  echo " "
+  echo "The bootstrap reached a fixed point"
+else if cmp -s Specware4.lisp ../Specware4-base.lisp; then
+  echo " "
+  echo "The bootstrap reached a fixed point"
+fi
+fi
