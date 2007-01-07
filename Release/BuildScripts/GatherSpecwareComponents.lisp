@@ -38,7 +38,7 @@
 (defparameter Specware-name            "Specware4")	; Name of dir and startup files
 
 ;; "defvar" means any pre-existing value is retained
-(defvar cl-user::Specware-version      "4.2")
+(defvar cl-user::Specware-version      "4.2.0")
 (defvar cl-user::Specware-version-name "Specware-4-2")
 (defvar cl-user::Specware-patch-level  "0")
 (defvar Major-Version-String           "4-2")		; patch detection, about-specware cmd

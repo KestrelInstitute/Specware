@@ -48,7 +48,7 @@
 ;; They are in BuildPreamble.lisp where they are needed.
 
 (defparameter Specware-name                  "Specware4")	; Name of dir and startup files
-(defparameter cl-user::Specware-version      "4.2")
+(defparameter cl-user::Specware-version      "4.2.0")
 (defparameter cl-user::Specware-version-name "Specware-4-2")
 (defparameter cl-user::Specware-patch-level  "0")
 (defparameter Major-Version-String           "4-2")		; patch detection, about-specware cmd

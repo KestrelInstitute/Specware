@@ -53,7 +53,7 @@
 (setq sb-debug:*debug-beginner-help-p* nil)
 
 ;; Used in printing out the license and about-specware command
-(defvar cl-user::Specware-version "4.2")
+(defvar cl-user::Specware-version "4.2.0")
 (defvar cl-user::Specware-version-name "Specware-4-2")
 (defvar cl-user::Specware-patch-level "0")
 
