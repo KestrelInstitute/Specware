@@ -1,0 +1,12 @@
+#!/bin/sh
+
+SW_MAJOR=4
+SW_MINOR=2
+SW_PATCH=0
+
+ehco "=============="
+echo "SW_MAJOR = $SW_MAJOR"
+echo "SW_MINOR = $SW_MINOR"
+echo "SW_PATCH = $SW_PATCH"
+ehco "=============="
+
