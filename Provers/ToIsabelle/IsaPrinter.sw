@@ -494,7 +494,7 @@ IsaTermPrinter qualifying spec
 
  op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow Option Pragma \_rightarrow Aliases \_times Fixity \_times MS.Term
                  \_rightarrow Pretty
- def ppOpInfo c decl? def? opt_prag (aliases, fixity, dfn) =
+ def ppOpInfo c decl? _(*def?*) opt_prag (aliases, fixity, dfn) =
    let mainId = hd aliases in
    case specialOpInfo c mainId of
      | Some _ \_rightarrow prEmpty
@@ -841,7 +841,7 @@ IsaTermPrinter qualifying spec
       | mystery \_rightarrow fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
   op  projectorFun: String * Sort \_rightarrow String
-  def projectorFun (p,s) =
+  def projectorFun (p,_) =
     case p of
       | "1" \_rightarrow "fst"
       | "2" \_rightarrow "snd"			% !! Only if a pair

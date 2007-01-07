@@ -4,7 +4,7 @@ SpecCalc qualifying spec
  import /Languages/MetaSlang/Specs/Equivalences
 
  op  mergeSortInfo : Spec -> SortMap -> SortInfo -> SortMap
- def mergeSortInfo spc sorts info =
+ def mergeSortInfo _(*spc*) sorts info =
    let 
      def aux (Qualified (q, id), new_info) =
        case findAQualifierMap (sorts, q, id) of

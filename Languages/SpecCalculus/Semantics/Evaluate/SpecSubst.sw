@@ -143,7 +143,7 @@ SpecCalc qualifying spec
   %% Version of subtractSpec that leaves stubs of replaced imports so that targets can be replaced at
   %% The same place as originals. 
   op  subtractSpecLeavingStubs: Spec * SCTerm * Spec * SCTerm * Spec * SCTerm -> Spec
-  def subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term) = 
+  def subtractSpecLeavingStubs (spc, sm_tm, dom_spec, _(*dom_spec_term*), cod_spec, cod_spec_term) = 
     %let import_dom_spec = Import (dom_spec_term, dom_spec, []) in    
     let 
       def revise_elements elements =
