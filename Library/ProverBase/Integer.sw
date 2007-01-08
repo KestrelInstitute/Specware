@@ -27,6 +27,13 @@ PrInteger qualifying spec
   theorem unary_minus_involution is
     fa(i:Integer) -(-i) = i
 
+  theorem commutative_plus is
+    fa(x,y) x+y = y+x
+
+  theorem associative_plus is
+    fa(x,y,z) (x+y)+z = x+(y+z)
+
+
 %%% RW's theory
   axiom plus_zero is
    fa(x:Integer)
