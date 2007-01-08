@@ -26,6 +26,10 @@
 	    ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#Symbols"
 	    ""))
 
+ ("Tutorial: prwb" 
+  :swprb T
+  :output '((:optional "T") ""))
+
  ("Tutorial: MatchingProofs p1A"
   :sw "/UserDoc/tutorial/example/MatchingProofs#p1A"
   :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#SymbolMatching_Oblig"
