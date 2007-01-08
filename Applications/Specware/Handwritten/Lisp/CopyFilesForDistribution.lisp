@@ -110,7 +110,7 @@
   (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Specware")
 		       (in-distribution-dir "Specware.terminal"))
   (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Specware.sh")
-		       (in-distribution-dir "Specware.sh"))
+		       (in-distribution-dir "SpecwareShell.sh"))
   (specware::copy-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclimage")
 		       (in-distribution-dir "Specware4.sbclimage"))
   )
