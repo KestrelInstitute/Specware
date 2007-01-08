@@ -486,6 +486,7 @@ SpecCalc qualifying spec
 			 snarkHypothesis, snarkConjecture) =
    let setOfSupportOn = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]) in
    let setOfSupportOff = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(true)]) in
+   let includeBase? = snarkBaseHypothesis ~= [] in
    
    Lisp.list
    [Lisp.list([Lisp.symbol("SNARK","INITIALIZE")]),
@@ -499,7 +500,7 @@ SpecCalc qualifying spec
 %    Lisp.list([Lisp.symbol("SNARK","USE-NEGATIVE-HYPERRESOLUTION"), Lisp.bool(true)]),
 
     Lisp.list([Lisp.symbol("SNARK","USE-PARAMODULATION"), Lisp.bool(true)]),
-    Lisp.list([Lisp.symbol("SNARK","USE-DEFAULT-ORDERING"), Lisp.bool(false)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-DEFAULT-ORDERING"), Lisp.bool(~includeBase?)]),
     Lisp.list([Lisp.symbol("SNARK","USE-LITERAL-ORDERING-WITH-RESOLUTION"),
                Lisp.quote(Lisp.symbol("SNARK","LITERAL-ORDERING-A"))]),
     Lisp.list([Lisp.symbol("SNARK","USE-LITERAL-ORDERING-WITH-PARAMODULATION"),
