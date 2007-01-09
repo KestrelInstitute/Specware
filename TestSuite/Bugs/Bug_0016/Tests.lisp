@@ -14,6 +14,7 @@
 	     "$SPECWARE/:./"
 	     "$SPECWARE/:/"
 	     "$SPECWARE/"
+	     "/:./:$SPECWARE/"
 	     )))
 
  )

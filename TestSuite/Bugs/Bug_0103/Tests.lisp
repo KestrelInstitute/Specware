@@ -34,6 +34,8 @@
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $TESTDIR/Snark/NeedWFO/ does not exist, will create.")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
+	    (:optional "creating directory: $TESTDIR/Snark/")
+	    (:optional "creating directory: $TESTDIR/Snark/NeedWFO/")
 	    "    Expanded spec file: $TESTDIR/Snark/NeedWFO/P.sw"
 	    "    Snark Log file: $TESTDIR/Snark/NeedWFO/P.log"
 	    "P: Conjecture f_Obligation_exhaustive in O is *"

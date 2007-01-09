@@ -21,8 +21,9 @@
 ")
 
  ("Bug 0047 : Case insensitivity of Lisp considered harmful"
-  :lisp "(print (list SW-USER::high_low SW-USER::high_low))"
-  :output "
-(123 456)")
-
+  :lisp "(let () (declare (special SW-USER::high_low  SW-USER::low_high)) (print (list SW-USER::high_low SW-USER::low_high)))"
+  :output '((:optional "")
+	    "(123 456)"
+	    (:optional "")))
+	    
  )

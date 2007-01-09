@@ -36,6 +36,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/..log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
+	    (:optional "creating directory: $TESTDIR/Snark/")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/..sw")
 	    (:optional "    Snark Log file: $TESTDIR/Snark/..log")
 	    "Conjecture PFunctions.o_Obligation_exhaustive is Proved! *"

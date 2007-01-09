@@ -6,6 +6,8 @@
   :show   "MinusOb#MinusProof" 
   :output '(";;; Elaborating obligator at $TESTDIR/MinusOb#ONat"
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
+	    (:optional "creating directory: $TESTDIR/Snark/")
+	    (:optional "creating directory: $TESTDIR/Snark/MinusOb/")
 	    ";;; Elaborating proof-term at $TESTDIR/MinusOb#MinusProof"
 	    (:optional
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
@@ -23,6 +25,8 @@
 	     ";; ensure-directories-exist: creating $TESTDIR/Snark/MinusOb/MinusProof.log"
 	     ";; Directory $TESTDIR/Snark/ does not exist, will create."
 	     ";; Directory $TESTDIR/Snark/MinusOb/ does not exist, will create.")
+	    (:optional "creating directory: $TESTDIR/Snark/")
+	    (:optional "creating directory: $TESTDIR/Snark/MinusOb/")
 	    (:optional
 	     ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "    Expanded spec file: $TESTDIR/Snark/MinusOb/MinusProof.sw"

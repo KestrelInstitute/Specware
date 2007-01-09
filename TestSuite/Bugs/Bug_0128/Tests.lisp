@@ -14,6 +14,8 @@
 		  (";; Directory $TESTDIR/Snark/orderOblig/ does not exist, will create.")
 		  (";; Directory $TESTDIR/Snark/orderOblig/ does not exist, will"
 		   ";;   create."))
+		 (:optional "creating directory: $TESTDIR/Snark/")
+		 (:optional "creating directory: $TESTDIR/Snark/orderOblig/")
 		 "    Expanded spec file: $TESTDIR/Snark/orderOblig/P.sw"
 		 "    Snark Log file: $TESTDIR/Snark/orderOblig/P.log"
 		 "P: Conjecture d_Obligation_subsort in O is NOT proved using Snark*."
