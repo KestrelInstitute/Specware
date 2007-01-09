@@ -21,7 +21,7 @@ IsaTermPrinter qualifying spec
 
  type Context = {printTypes?: Boolean,
 		 recursive?: Boolean,
-		 thy_name: String,
+                 thy_name: String,
 		 spec?: Option Spec,
 		 trans_table: TransInfo}
 
@@ -108,7 +108,7 @@ IsaTermPrinter qualifying spec
    let device? = deviceString? (hd path) in
    let main_name = last path in
    let path_dir = butLast path in 
-   let mainPath = concatList (foldr (fn (elem,result) -> cons("/",cons(elem,result)))
+   let mainPath = concatList (foldr (\_lambda (elem,result) -> cons("/",cons(elem,result)))
 			        ["/Isa/",main_name]
 				(if device? then tl path_dir else path_dir))
    in if device?
@@ -145,7 +145,7 @@ IsaTermPrinter qualifying spec
 	let _ = ensureFileDeleted fil_nm in
 	case val of
 	  | Spec spc \_rightarrow
-	    app (fn elem \_rightarrow case elem of
+	    app (\_lambda elem \_rightarrow case elem of
 		              | Import(_,im_sp,_) \_rightarrow
 		                deleteThyFilesForVal (Spec im_sp)
 			      | _ \_rightarrow ())
@@ -465,7 +465,7 @@ IsaTermPrinter qualifying spec
 		  ppTyVars tvs,
 		  ppIdInfo aliases,
 		  prString " = "]] ++
-		(map (fn (fldname,fldty) \_rightarrow
+		(map (\_lambda (fldname,fldty) \_rightarrow
 		      [prString fldname, prString " :: ", ppType c Top fldty])
 		 fields))
 	   | _ \_rightarrow
@@ -524,39 +524,73 @@ IsaTermPrinter qualifying spec
 
   op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow Option Pragma \_rightarrow MS.Term \_rightarrow Pretty
   def ppDef c op_nm ty opt_prag body =
+    let recursive? = existsSubTerm (fn t \_rightarrow case t of Fun(Op(nm,_),_,_) \_rightarrow op_nm = nm
+                                               | _ \_rightarrow false)
+                       body
+    in
     case defToCases (mkOp(op_nm,ty)) body of
-      | [(lhs,rhs)] \_rightarrow
-        %% This is the non-recursive case
-        prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
-		       case findBracketAnnotation opt_prag of
-			 | Some anot \_rightarrow prConcat[prSpace,prString anot]
-			 | None \_rightarrow prEmpty,
-		       prString ": "],
-		      [prBreakCat 2 [[prString "\"",
-				      ppTerm c Top lhs],
-				     [lengthString(3," \\<equiv> "),
-				      ppTerm c (Infix(Left,20)) rhs,
-				      prString "\""]]]]
-      | cases \_rightarrow
+      | ([(lhs,rhs)], tuple?) \_rightarrow
+        if recursive? \_or tuple?
+          then
+            prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
+                           prString "\"",
+                           case findMeasureAnnotation opt_prag of
+                             | Some anot \_rightarrow prConcat[prString anot]
+                             | None \_rightarrow prConcat [prString (if recursive?
+                                                             then "measure size"
+                                                           else "{}")],
+                           prString "\""],
+                          [prBreakCat 2 [[prString "\"",
+                                          ppTerm c Top lhs],
+                                         [prString " = ",
+                                          ppTerm c (Infix(Left,20)) rhs,
+                                          prString "\""]]]]
+          else
+            prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
+                           case findBracketAnnotation opt_prag of
+                             | Some anot \_rightarrow prConcat[prSpace,prString anot]
+                             | None \_rightarrow prEmpty,
+                           prString ": "],
+                          [prBreakCat 2 [[prString "\"",
+                                          ppTerm c Top lhs],
+                                         [lengthString(3," \\<equiv> "),
+                                          ppTerm c (Infix(Left,20)) rhs,
+                                          prString "\""]]]]
+      | (cases,false) \_rightarrow
         prBreak 2 [prString "primrec ",
 		   prLinesCat 0 (map (\_lambda(lhs,rhs) \_rightarrow
 				       [prString "\"",
 					ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
 					prString "\""])
 					cases)]
+      | (cases,true) \_rightarrow
+        prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
+                       prString "\"",
+                       case findMeasureAnnotation opt_prag of
+                         | Some anot \_rightarrow prConcat[prString anot]
+                         | None \_rightarrow prConcat [prString (if recursive?
+                                                         then "measure size"
+                                                         else "{}")],
+                       prString "\""],
+                      [prLinesCat 0 (map (\_lambda(lhs,rhs) \_rightarrow
+                                           [prString "\"",
+                                            ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
+                                            prString "\""])
+					cases)]]
 
   %op  Utilities.patternToTerm : Pattern \_rightarrow Option MS.Term
   %op  Utilities.substitute    : MS.Term * List (Var * MS.Term) \_rightarrow MS.Term
   %op  Utilities.freeVars      : MS.Term \_rightarrow List Var
 
 
-  op  defToCases: MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times MS.Term)
+
+  op  defToCases: MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times MS.Term) \_times Boolean
   def defToCases hd bod =
     let
-      def aux(hd,bod) =
+      def aux(hd,bod: MS.Term,tuple?) =
 	case bod of
-	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) \_rightarrow
-	    aux (Apply(hd,mkVar v,a), term)
+	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) | \_not tuple? \_rightarrow
+	    aux(Apply(hd,mkVar v,a), term,tuple?)
     %      | Lambda ([(pattern,_,term)],a) \_rightarrow
     %        (case patternToTerm pattern of
     %	   | Some pat_tm \_rightarrow aux (Apply(hd,pat_tm,a)) term
@@ -573,13 +607,19 @@ IsaTermPrinter qualifying spec
 	  | _ \_rightarrow [(hd,bod)]
       def fix_vars(hd,bod) =
 	let fvs = freeVars hd ++ freeVars bod in
-	let rename_fvs = filter (fn (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
+	let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
 	if rename_fvs = [] then (hd,bod)
-	  else let sb = map (fn (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
+	  else let sb = map (\_lambda (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
 	       (substitute(hd,sb), substitute(bod,sb))
     in
-    let cases = aux(hd,bod) in
-    map fix_vars cases
+    let (cases, tuple?) =
+          case bod of
+            | Lambda ([(recd as (RecordPat (prs as (("1",_)::_),_)), _, tm)],a)
+                | all (\_lambda (_,p) \_rightarrow case p of VarPat _ \_rightarrow true | _ \_rightarrow false) prs \_rightarrow
+              let Some arg = patternToTerm recd in
+              (aux(Apply(hd, arg, a), tm, true), true)
+	    | _ -> (aux(hd, bod, false), false) in
+    (map fix_vars cases, tuple?)
 
   op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow Option Pragma \_rightarrow Pretty
   def ppProperty c (propType, name, tyVars, term) comm prf =
@@ -675,6 +715,25 @@ IsaTermPrinter qualifying spec
     if close_pos >= end_pos || close_pos <= open_pos then None
       else Some(substring(prag_str,open_pos,close_pos+1))
 
+  op  findMeasureAnnotation: Option Pragma \_rightarrow Option String
+  def findMeasureAnnotation prf =
+    case prf of
+      | None \_rightarrow None
+      | Some (_,prag_str,_,_) \_rightarrow
+    let end_pos = case search("\n",prag_str) of
+		    | Some n \_rightarrow n
+		    | None \_rightarrow length prag_str
+    in
+    let (open_pos,r_prag_str)
+       = case search("\"",prag_str) of
+           | Some n \_rightarrow (n, substring(prag_str,n+1,length prag_str))
+           | None \_rightarrow (length prag_str, prag_str)
+    in
+    if open_pos >= end_pos then None
+     else case search("\"",r_prag_str) of
+            | Some n \_rightarrow Some(substring(r_prag_str,0,n))
+            | None \_rightarrow None
+
   op  ppPropertyType : PropertyType \_rightarrow Pretty
   def ppPropertyType propType =
     case propType of
@@ -741,7 +800,9 @@ IsaTermPrinter qualifying spec
 		         [[ppTerm c f1 t1,prSpace],
 			  [oper,prSpace,ppTerm c f2 t2]])
 	in
-	(case (parentTerm, termFixity c trm1) of
+        let fx = termFixity c trm1 in
+        %let _ = toScreen(anyToString trm1 ^ "\n" ^ anyToString fx ^ "\n") in
+	(case (parentTerm, fx) of
 	   | (_, (None, Nonfix, false)) -> prApply (trm1, trm2)
 	   | (_, (Some pr_op, Nonfix, true)) \_rightarrow
 	     enclose?(parentTerm ~= Top,
@@ -881,13 +942,13 @@ IsaTermPrinter qualifying spec
   def parsePropertyTerm c explicit_universals term =
     case term of
       | Bind (Forall,vars,bod,a) \_rightarrow
-        let expl_vars = filter (fn (vn,_) \_rightarrow member(vn,explicit_universals)) vars in
-	let renameImplicits = filter (fn (vn,_) \_rightarrow \_not(member(vn,explicit_universals))
+        let expl_vars = filter (\_lambda (vn,_) \_rightarrow member(vn,explicit_universals)) vars in
+	let renameImplicits = filter (\_lambda (vn,_) \_rightarrow \_not(member(vn,explicit_universals))
 				                  \_and member(vn,notImplicitVarNames))
 	                        vars
 	in
 	let bod = if renameImplicits = [] then bod
-	           else substitute(bod,map (fn (v as (s,ty)) \_rightarrow (v, mkVar(s^"__v",ty)))
+	           else substitute(bod,map (\_lambda (v as (s,ty)) \_rightarrow (v, mkVar(s^"__v",ty)))
 					 renameImplicits)
 	in
 	if expl_vars = []
@@ -1000,7 +1061,7 @@ IsaTermPrinter qualifying spec
 	 case coproductOpt(spc,base_ty) of
 	   | None \_rightarrow false
 	   | Some fields \_rightarrow
-	     exists (fn (id,opt_arg_ty) \_rightarrow
+	     exists (\_lambda (id,opt_arg_ty) \_rightarrow
 		     case opt_arg_ty of
 		       | None \_rightarrow false
 		       | Some arg_ty \_rightarrow id = constrId \_and product?(arg_ty))
@@ -1038,10 +1099,8 @@ IsaTermPrinter qualifying spec
       | Op (qid,Unspecified) \_rightarrow ppOpQualifiedId c qid
       | Op (Qualified(_,opstr),_) \_rightarrow prString(ppIdStr opstr) % ??? ppOpQualifiedId
       | Project id \_rightarrow
-          prConcat [
-            prString "project ",
-            prString id
-          ]
+        prConcat [prString "project ",
+                  prString id]
       | RecordMerge \_rightarrow prString "<<"
       | Embed (id,b) \_rightarrow
           % prConcat [
@@ -1264,7 +1323,8 @@ IsaTermPrinter qualifying spec
 		    | None \_rightarrow   (Some(prString isa_id), Nonfix, curried))
 	       | None \_rightarrow
 		 case fixity of
-		   | Unspecified -> (None, Nonfix, false)
+		   | Unspecified \_rightarrow (None, Nonfix, false)
+                   | Nonfix \_rightarrow (None, Nonfix, false)
 		   | _ ->
 		     let Qualified(_,primeId) = id in
 		     (Some(prString primeId), Nonfix, true))
