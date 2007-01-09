@@ -37,10 +37,8 @@
     (format t "~&;;; Making new    ~A~%" dir)
     (specware::make-directory dir)))
 
-(defparameter *Specware-dir*  (format nil "~A/" (specware::getenv "SPECWARE4")))
-(defun in-specware-dir     (file) (concatenate 'string *Specware-dir* file))
-
-(load (in-specware-dir "Applications/Handwritten/Lisp/load-utilities"))
+(load (format nil "~A/Applications/Handwritten/Lisp/load-utilities"
+	      *specware-dir*))
 
 ;;; ============ PARAMETERS ============
 
