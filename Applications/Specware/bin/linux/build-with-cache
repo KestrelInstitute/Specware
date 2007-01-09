@@ -9,5 +9,5 @@ echo "THIS SCRIPT IS DEPRECRATED, AND WILL DISAPPEAR AT SOME POINT"
 sleep 4
 echo " "
 
-$SPECWARE4/Applications/Specware/bin/linux/Build_Specware_Dev_ACL_With_Cache
+$SPECWARE4/Applications/Specware/bin/linux/Build_Specware_Dev_With_Cache SBCL
 
