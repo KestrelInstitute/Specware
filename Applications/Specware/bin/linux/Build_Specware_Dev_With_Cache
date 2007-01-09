@@ -1,0 +1,114 @@
+#!/bin/bash --noprofile
+
+# This script builds Specware4.$IMAGE_EXTENSION, with all specware files pre-processed
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+# Misc notes: 
+# Under ACL, If we build and load in one image, the generated .dxl file is almost 4 times larger.
+# Adding a gc between the load and the dumplisp, adds 10K to the dxl file.
+# People who want to avoid lots of line breaks can set *DEFAULT-RIGHT-MARGIN* in their lisp init.
+
+# --------------------------------------------------------------------------------
+# First ensure that various shell variables have reasonable values
+# --------------------------------------------------------------------------------
+
+if [ "$#" == "1" ]; then
+  LISP_MODE=$1
+  echo " "
+  act="Build Specware DEVELOPMENT image using $LISP_MODE"
+  echo "  $act"
+  echo " "
+else
+  echo "Prepare_Bootstrap_Image requires one arg -- the name of the lisp: ACL, MCL, SBCL, CMUCL, etc."
+  exit 1
+fi
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P "$SCRIPT_DIR"
+SCRIPT_DIR=`pwd`
+
+. "$SCRIPT_DIR"/Verify_Specware_Variables
+. "$SPECWARE4"/Scripts/unix/Verify_$LISP_MODE
+
+export SWPATH=/:.
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
+echo "\$SWPATH=$SWPATH"
+
+# --------------------------------------------------------------------------------
+
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).
+
+# Is there a way to inhibit all the warnings (eg unused variable)
+# when Lisp loads?
+
+# All the toplevel routines that activate Specware return a boolean value.
+# They return true if the call to Specware succeeded without activating
+# Specware's toplevel handler. They return false (lisp nil) when the
+# handler is invoked. If, when bootrapping, the toplevel handler is
+# called, then we abort the bootstrap.
+
+echo " "
+echo cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
+cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
+
+echo " "
+echo "Loading Specware ... (for cached dumplisp)"
+echo " "
+
+$BATCH_SPECWARE <<-XXXX
+	(progn
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (load "$EXIT_ON_ERRORS")    ; already loaded
+	 (load "$MEMORY_MANAGEMENT") ; already loaded
+	 (load "$SAVE_IMAGE")        ; already loaded
+	 (compact-memory nil 0 32000000)   ; not verbose
+	 (set-gc-parameters-for-build nil) ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (exiting-on-errors 
+	   (unless (sw "/Applications/Specware/Specware4")
+	     ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+	     (exit-from-lisp 1)))
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (compact-memory nil -1 0)         ; not verbose
+	 (set-gc-parameters-for-use nil)   ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (format t "~%Dumping image with cached results of (sw \"/Applications/Specware/Specware4\")...~%")
+	 (values))
+	(save-this-lisp-image "$BIN_DIR/Specware4-with-cache.$IMAGE_EXTENSION")
+XXXX
+RC=$?
+
+ls -sltr "$SPECWARE4"/Applications/Specware/bin/linux/*.$IMAGE_EXTENSION
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "Build with cache failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+cd "$SPECWARE4"/Applications/Specware/bin/linux/
+
+echo " "
+if [ -f Specware4-with-cache.$IMAGE_EXTENSION ]; then
+  echo "Saving previous specware image ..."
+  echo "mv -f $BIN_DIR/Specware4.$IMAGE_EXTENSION $BIN_DIR/Specware4-save.$IMAGE_EXTENSION"
+  mv -f $BIN_DIR/Specware4.$IMAGE_EXTENSION $BIN_DIR/Specware4-save.$IMAGE_EXTENSION
+  echo "Installing cached specware image ..."
+  echo "mv -f $BIN_DIR/Specware4-with-cache.$IMAGE_EXTENSION $BIN_DIR/Specware4.$IMAGE_EXTENSION"
+  mv -f $BIN_DIR/Specware4-with-cache.$IMAGE_EXTENSION $BIN_DIR/Specware4.$IMAGE_EXTENSION
+else
+  echo "Failed to generate new cached specware image (but return code was 0 ??): "
+  echo "  $SPECWARE4/Applications/Specware/bin/linux/Specware4-with-cache.$IMAGE_EXTENSION"
+fi
+echo " "
+

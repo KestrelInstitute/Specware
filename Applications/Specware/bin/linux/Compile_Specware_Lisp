@@ -1,0 +1,187 @@
+#!/bin/bash --noprofile
+
+# This script compiles Specware4.lisp to produce Specware4.$FASL_EXTENSION
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+# --------------------------------------------------------------------------------
+# First ensure that various shell variables have reasonable values
+# --------------------------------------------------------------------------------
+
+act='Compile Specware4.Lisp'
+
+if [ "$#" == "1" ]; then
+  LISP_MODE=$1
+  echo " "
+  echo "  $act"
+  echo " "
+else
+  echo "Compile_Specware_Lisp requires one arg -- the name of the lisp: ACL, MCL, SBCL, CMUCL, etc."
+  exit 1
+fi
+
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P $SCRIPT_DIR
+SCRIPT_DIR=`pwd`
+
+. $SCRIPT_DIR/Verify_Specware_Variables
+. $SPECWARE4/Scripts/unix/Verify_$LISP_MODE
+
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+
+# --------------------------------------------------------------------------------
+# Make sure Specware4.lisp is up-to-date
+# --------------------------------------------------------------------------------
+
+cd "$GEN_DIR"
+if [ -f Specware4.lisp ]; then
+    # We could be much smarter and check write dates of all the .sw files used to produce
+    # Specware4.lisp, but that would be a lot of work and maintenance...
+    echo " "
+else
+    echo " "
+    echo "--------------------------------------------------------------------------------"
+    echo "Specware4.lisp does not exist, so first regenerate it."
+    echo "--------------------------------------------------------------------------------"
+    echo " "
+    "$SCRIPT_DIR"/Generate_Specware_Lisp $LISP_MODE
+    RC=$?
+    if [ $RC -ne 0 ]; then
+       echo " "
+       echo "--------------------------------------------------------------------------------"
+       echo "Regeneration of Specware4.lisp failed, exiting with code $RC"
+       echo "--------------------------------------------------------------------------------"
+       echo " "
+       exit $RC
+    fi
+    echo " "
+    echo "--------------------------------------------------------------------------------"
+    echo "Done regenerating Specware4.lisps, back to compiling..."
+    echo "--------------------------------------------------------------------------------"
+    echo " "
+fi
+
+# --------------------------------------------------------------------------------
+# Compile Specware4.lisp and various handwritten lisp files
+# --------------------------------------------------------------------------------
+
+echo " "
+echo cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
+cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
+
+echo " "
+echo "About to compile Specware4.lisp produced from Specware4.sw"
+echo " "
+$BATCH_LISP <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  ;; Note:
+	  ;;   The file being loaded here is
+	  ;;    $SPECWARE4/Applications/Specware/Handwritten/Lisp/Specware4.lisp,
+	  ;;   which is essentially a handwritten script used to compile and load
+	  ;;   the (presumably recently) generated file named
+	  ;;    $SPECWARE4/Applications/Specware/lisp/Specware4.lisp
+	  ;;   Do not be confused by the similarity of their names.
+	  ;;   (sigh)
+	  (load "Specware4.lisp"))
+XXXX
+RC=$?
+
+
+# --------------------------------------------------------------------------------
+# Report result
+# --------------------------------------------------------------------------------
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+   echo ""
+   echo "Compilation of Specware4 lisp files failed with code $RC, exiting ..."
+   exit $RC
+fi
+
+cd $SPECWARE4
+
+ls -sltra ./Provers/DP/Handwritten/Lisp/*.lisp \
+          ./Provers/DP/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Provers/Snark/Handwritten/Lisp/*.lisp \
+          ./Provers/Snark/Handwritten/Lisp/*.$FASL_EXTENSION
+echo " "
+
+ls -sltra ./Languages/SpecCalculus/Parser/Handwritten/Lisp/*.lisp \
+          ./Languages/SpecCalculus/Parser/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/Algorithms/Parsing/Chart/Handwritten/Lisp/*.lisp \
+          ./Library/Algorithms/Parsing/Chart/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Languages/XML/Handwritten/Lisp/*.lisp \
+          ./Languages/XML/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/IO/XmlRpc/s-xml/*.lisp \
+          ./Library/IO/XmlRpc/s-xml/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/IO/XmlRpc/s-xml-rpc/*.lisp \
+          ./Library/IO/XmlRpc/s-xml-rpc/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/Legacy/DataStructures/Handwritten/Lisp/*.lisp \
+          ./Library/Legacy/DataStructures/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/Legacy/Utilities/Handwritten/Lisp/*.lisp \
+          ./Library/Legacy/Utilities/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/Structures/Data/Maps/Handwritten/Lisp/*.lisp \
+          ./Library/Structures/Data/Maps/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/Structures/Data/Monad/Handwritten/Lisp/*.lisp \
+          ./Library/Structures/Data/Monad/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/Structures/Data/Sets/Handwritten/Lisp/*.lisp \
+          ./Library/Structures/Data/Sets/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/Unvetted/Handwritten/Lisp/*.lisp \
+          ./Library/Unvetted/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/*.lisp \
+          ./Library/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/Base/Handwritten/Lisp/*.lisp \
+          ./Library/Base/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/IO/Emacs/ilisp/*.lisp \
+          ./Library/IO/Emacs/ilisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Library/IO/Primitive/Handwritten/Lisp/*.lisp \
+          ./Library/IO/Primitive/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Applications/Specware/UI/Emacs/Handwritten/Lisp/*.lisp \
+          ./Applications/Specware/UI/Emacs/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Applications/Specware/Handwritten/Lisp/*.lisp \
+          ./Applications/Specware/Handwritten/Lisp/*.$FASL_EXTENSION 
+echo " "
+
+ls -sltra ./Applications/Specware/lisp/*.lisp \
+          ./Applications/Specware/lisp/*.$FASL_EXTENSION 
+echo " "
+

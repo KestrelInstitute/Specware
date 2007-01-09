@@ -1,0 +1,66 @@
+#!/bin/bash --noprofile
+
+if [ "$#" == "1" ]; then
+  LISP_MODE=$1
+else
+  echo "Bootstrap_Specware requires one arg -- the name of the lisp: ACL, MCL, SBCL, CMUCL, etc."
+  exit 1
+fi
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P $SCRIPT_DIR
+SCRIPT_DIR=`pwd`
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "bootstrap: About to prepare a bootstrapping image based on $LISP_MODE"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Prepare_Bootstrap_Image $LISP_MODE
+RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure preparing bootstrap image, return code = $RC"
+   exit $RC
+fi
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "bootstrap: About to generate Specware4.lisp from Specware4.sw, using $LISP_MODE Specware image"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Generate_Specware_Lisp $LISP_MODE
+RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure generating Specware4.lisp from Specware4.sw, return code = $RC"
+   exit $RC
+fi
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "bootstrap: About to compile Specware4.lisp and various handwritten lisp files, using $LISP_MODE"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Compile_Specware_Lisp $LISP_MODE
+RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure compiling Specware4.lisp, return code = $RC"
+   exit $RC
+fi
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "bootstrap: About to prepare development image of Specware in $LISP_MODE"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Build_Specware_Dev $LISP_MODE
+RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure building Specware.$IMAGE_EXTENSION, return code = $RC"
+   exit $RC
+fi
+
+exit 0
+

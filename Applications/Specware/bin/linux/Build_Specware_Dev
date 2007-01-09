@@ -1,0 +1,148 @@
+#!/bin/bash --noprofile
+
+# This script builds Specware4.$IMAGE_EXTENSION
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+# Misc notes: 
+# Under ACL, If we build and load in one image, the generated .dxl file is almost 4 times larger.
+# Adding a gc between the load and the dumplisp, adds 10K to the dxl file.
+# People who want to avoid lots of line breaks can set *DEFAULT-RIGHT-MARGIN* in their lisp init.
+
+# --------------------------------------------------------------------------------
+# First ensure that various shell variables have reasonable values
+# --------------------------------------------------------------------------------
+
+if [ "$#" == "1" ]; then
+  LISP_MODE=$1
+  echo " "
+  act="Build Specware DEVELOPMENT image using $LISP_MODE"
+  echo "  $act"
+  echo " "
+else
+  echo "Prepare_Bootstrap_Image requires one arg -- the name of the lisp: ACL, MCL, SBCL, CMUCL, etc."
+  exit 1
+fi
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P "$SCRIPT_DIR"
+SCRIPT_DIR=`pwd`
+
+. "$SCRIPT_DIR"/Verify_Specware_Variables
+. "$SPECWARE4"/Scripts/unix/Verify_$LISP_MODE
+
+export SWPATH=/:.
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
+echo "\$SWPATH=$SWPATH"
+
+# --------------------------------------------------------------------------------
+# Make sure Specware4.$FASL_EXTENSION is up-to-date
+# --------------------------------------------------------------------------------
+
+cd "$GEN_DIR"
+if [ -f Specware4.$FASL_EXTENSION -a -f Specware4.lisp -a Specware4.$FASL_EXTENSION -nt Specware4.lisp ]; then
+    echo " "
+else
+    echo " "
+    echo "--------------------------------------------------------------------------------"
+    echo "Specware4.$FASL_EXTENSION is not newer than Specware4.lisp, so first attempt to recompile."
+    echo "--------------------------------------------------------------------------------"
+    echo " "
+    "$SCRIPT_DIR"/Compile_Specware_Lisp $LISP_MODE
+    RC=$?
+    if [ $RC -ne 0 ]; then
+       echo " "
+       echo "--------------------------------------------------------------------------------"
+       echo "Recompilation failed, exiting with code $RC"
+       echo "--------------------------------------------------------------------------------"
+       echo " "
+       exit $RC
+    fi
+    echo " "
+    echo "--------------------------------------------------------------------------------"
+    echo "Done recompiling, back to building..."
+    echo "--------------------------------------------------------------------------------"
+    echo " "
+fi
+
+# --------------------------------------------------------------------------------
+# Save old image, if any
+# --------------------------------------------------------------------------------
+
+echo cd "$BIN_DIR"
+cd "$BIN_DIR"
+
+echo " "
+if [ -f Specware4.$IMAGE_EXTENSION ]; then
+  echo "Saving previous specware image ..."
+  echo "cp -p -f Specware4.$IMAGE_EXTENSION Specware4-save.$IMAGE_EXTENSION"
+  cp -p -f Specware4.$IMAGE_EXTENSION Specware4-save.$IMAGE_EXTENSION
+else
+  echo "Note: No previous specware image."
+fi
+echo " "
+
+# --------------------------------------------------------------------------------
+# Then load Specware fasl files into $BIG_LISP, and save as Specware4.$IMAGE_EXTENSION
+# --------------------------------------------------------------------------------
+
+echo " "
+echo "Creating Specware4.$IMAGE_EXTENSION from Specware4.$FASL_EXTENSION and misc support files."
+echo " "
+
+cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
+
+$BATCH_LISP <<-XXXX
+	(progn
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (load "$EXIT_ON_ERRORS")
+	 (load "$MEMORY_MANAGEMENT") 
+	 (load "$SAVE_IMAGE") 
+	 (compact-memory nil 0 32000000)   ; not verbose
+	 (set-gc-parameters-for-build nil) ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (exiting-on-errors 
+	   ;; Note:
+	   ;;   The file being loaded here is
+	   ;;    $SPECWARE4/Applications/Specware/Handwritten/Lisp/Specware4.lisp,
+	   ;;   which is essentially a handwritten script used to load
+	   ;;   the (presumably recently) generated file named
+	   ;;    $SPECWARE4/Applications/Specware/lisp/Specware4.$FASL_EXTENSION
+	   ;;    along with some other files (handwritten library file, etc.).
+	   ;;   Do not be confused by the similarity of their names.
+	   ;;   (sigh)
+	   (load "Specware4.lisp"))
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (compact-memory nil -1 0)         ; not verbose
+	 (set-gc-parameters-for-use nil)   ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (values))
+	(save-this-lisp-image "$BIN_DIR/Specware4.$IMAGE_EXTENSION")
+XXXX
+RC=$?
+
+echo " "
+
+# --------------------------------------------------------------------------------
+# Report results
+# --------------------------------------------------------------------------------
+
+echo cd "$BIN_DIR"
+cd "$BIN_DIR"
+
+echo " "
+ls -sltr *.$IMAGE_EXTENSION
+echo " "
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+   echo ""
+   echo "Second load failed with code $RC, exiting ..."
+   exit $RC
+fi
+

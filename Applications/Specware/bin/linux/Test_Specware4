@@ -1,0 +1,59 @@
+#!/bin/sh
+
+LISP_MODE=${LISP_MODE:-SBCL}
+
+xemacs=`which xemacs`
+export act='test Specware4 using $LISP_MODE'
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+
+# bash convention for . means the file is processed inline (as if copied here)
+
+. $SPECWARE4/Scripts/unix/Verify_Specware4
+. $SPECWARE4/Scripts/unix/Verify_Lisp $LISP_MODE
+
+cd $SPECWARE4
+
+export LISP_EXECUTABLE="$LISP"
+export LISP_HEAP_IMAGE="${BIN_DIR}/${APP_NAME}.${IMAGE_EXTENSION}"
+export LISP_DIRECTORY="$SPECWARE4"
+
+xemacs=`which xemacs`
+
+LOG_FILE=/tmp/test-specware4-`/bin/date +"%y%m%d-%H%M%S"`
+
+/bin/date
+echo "Waiting for $LOG_FILE ..."
+
+# default value of fi:lisp-evalserver-number-reads is 200
+# This means that after 200 calls to eval-in-emacs from lisp,
+# no futher -eval commands provided here would execute.
+# We print a mini-buffer progress msg for each test,
+# so make the value very much larger -- 100000.
+
+$xemacs -no-init-file \
+	-geometry 137x50-50-50 \
+	-name "Specware4" \
+	-title "Specware4" \
+	-l "$SPECWARE4"/Library/IO/Emacs/load-slime \
+	-eval "(set-face-background 'default \"lightyellow\")" \
+	-eval "(run-specware4)" \
+        -eval "(sit-for 2)" \
+	-eval "(sw:eval-in-lisp \"(load (compile-file \\\"$SPECWARE4/Applications/Handwritten/Lisp/test-harness\\\"))\")" \
+	-eval "(setq fi:lisp-evalserver-number-reads 100000)" \
+	-eval "(sw:eval-in-lisp \"(load \\\"$SPECWARE4/Applications/Specware/Tests/test-specware4\\\")\")" \
+	-eval "(sw:eval-in-lisp \"(test-specware4 \\\"$LOG_FILE\\\")\")" \
+        -eval "(unwind-protect (sw:eval-in-lisp \"(exit-from-lisp 0)\") (kill-emacs 0))"
+
+/bin/date
+echo "-------------"
+echo "All test results:"
+
+cat $LOG_FILE
+echo "========================================================================"
+echo "New Status for Specware:"
+echo "Test failures:"
+egrep -i ";;; Test failed" $LOG_FILE
+echo "-------------"
+
+
