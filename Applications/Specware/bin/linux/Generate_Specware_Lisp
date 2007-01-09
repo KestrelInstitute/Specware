@@ -1,17 +1,111 @@
 #!/bin/bash --noprofile
 
+# This script processes Specware4.sw to produce Specware4.lisp
+
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. 
 
 LISP_MODE=$1
 
-export act='Generate Specware4.lisp using ${LISP_MODE} version of Specware'
+# --------------------------------------------------------------------------------
+# First ensure that various shell variables have reasonable values
+# --------------------------------------------------------------------------------
 
-HERE=`/usr/bin/dirname $0`
+act='Generate Specware4.Lisp from Specware4.sw'
 
-. $HERE/Verify_Specware_Variables
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
-$BOOTSTRAP/Scripts/unix/Generate_Lisp $LISP_MODE
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P $SCRIPT_DIR
+SCRIPT_DIR=`pwd`
+
+. $SCRIPT_DIR/Verify_Specware_Variables
+. $SPECWARE4/Scripts/unix/Verify_$LISP_MODE
+
+BOOTSTRAP_IMAGE="$BIN_DIR"/Bootstrap.$IMAGE_EXTENSION
+SPECWARE4_IMAGE="$BIN_DIR"/Specware4.$IMAGE_EXTENSION
+SPECWARE_LISP="$SPECWARE4"/Applications/Specware/lisp/Specware4.lisp
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+
+# --------------------------------------------------------------------------------
+# Make sure Bootrap.$IMAGE_EXTENSION exists 
+# --------------------------------------------------------------------------------
+
+if [ ! -f "$BOOTSTRAP_IMAGE" ]; then
+  echo "Could not find $BOOTSTRAP_IMAGE,"
+  echo " so creating it..."
+  "$SCRIPT_DIR"/Prepare_Bootstrap_Image $LISP_MODE
+fi
+
+if [ ! -f "$BOOTSTRAP_IMAGE" ]; then
+  echo "Could not find or create $BOOTSTRAP_IMAGE"
+  exit 1
+fi
+
+# --------------------------------------------------------------------------------
+# Save the old Specware4.lisp 
+# --------------------------------------------------------------------------------
+
+cd "$SPECWARE4"/Applications/Specware/lisp
+echo " "
+if [ -f "Specware4.lisp" ]; then
+  echo "Saving previous specware lisp file ..."
+  echo "cp -p -f Specware4.lisp Specware4-save.lisp"
+  cp -p -f Specware4.lisp Specware4-save.lisp
+else
+  echo "Note: No previous specware lisp file."
+fi
+echo " "
+
+# --------------------------------------------------------------------------------
+# Use bootstrap image to process Specware4.sw
+# --------------------------------------------------------------------------------
+
+export SWPATH=/:.
+echo "\$SWPATH=$SWPATH"
+
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).
+
+# Is there a way to inhibit all the warnings (eg unused variable)
+# when Lisp loads?
+
+cd "$SPECWARE4"/Applications/Specware
+
+$BATCH_BOOTSTRAP <<-XXXX
+	:swpath
+	 (load "$EXIT_ON_ERRORS")
+	 (exiting-on-errors 
+	   (if (swl "/Applications/Specware/Specware4")
+	     ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+	     (exit-from-lisp 0)
+	     (exit-from-lisp 1)))
+	XXXX
+RC=$?
+
+# --------------------------------------------------------------------------------
+# Check result
+# --------------------------------------------------------------------------------
+
+# If the bootstrap failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "Generate_Specware_Lisp_ACL failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+cd "$GEN_DIR"
+if cmp -s Specware4.lisp Specware4-save.lisp; then
+  echo " "
+  echo "The bootstrap reached a fixed point"
+else if cmp -s Specware4.lisp ../Specware4-base.lisp; then
+  echo " "
+  echo "The bootstrap reached a fixed point"
+fi
+fi
+
 
 
 

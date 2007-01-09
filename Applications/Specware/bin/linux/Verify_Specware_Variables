@@ -5,12 +5,12 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 # set -v
 
 echo "  ------------------------------------------------------------------------"
-echo "  Verify_Specware_Variables:  Ensure that SPECWARE4X shell variable is set:"
+echo "  Verify_Specware_Variables:  Ensure that SPECWARE4 shell variable is set:"
 echo "  "
 
 SCRIPT_DIR=`/usr/bin/dirname $0`
 
-if [ -z "$SPECWARE4X" ]; then
+if [ -z "$SPECWARE4" ]; then
   echo "  Verify_Specware_Variables:  SCRIPT_DIR = [$SCRIPT_DIR]"
   cd -P $SCRIPT_DIR
   SCRIPT_DIR=`pwd`
@@ -18,28 +18,28 @@ if [ -z "$SPECWARE4X" ]; then
   PARENT_DIR=`dirname $SCRIPT_DIR`
   PARENT_DIR=`dirname $PARENT_DIR`
   PARENT_DIR=`dirname $PARENT_DIR`
-  SPECWARE4X=`dirname $PARENT_DIR`
+  SPECWARE4=`dirname $PARENT_DIR`
 fi
 
 echo "  Verify_Specware_Variables:  SCRIPT_DIR = [$SCRIPT_DIR]"
 
-# Test whether SPECWARE4X is a directory
-if [ ! -d "$SPECWARE4X" ]; then
-   echo "Failed to $act, $SPECWARE4X is not a directory" 2>&1
+# Test whether SPECWARE4 is a directory
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
    exit 1
 fi
 
-# Ensure SPECWARE4X is set to full pathname:
-case "$SPECWARE4X" in
+# Ensure SPECWARE4 is set to full pathname:
+case "$SPECWARE4" in
     /*) : ok;;
-    *)  SPECWARE="`pwd`/$SPECWARE4X";;
+    *)  SPECWARE="`pwd`/$SPECWARE4";;
 esac
 
-export SPECWARE4X
-export BIN_DIR="$SPECWARE4X/Applications/Specware/bin/linux"
-export GEN_DIR="$SPECWARE4X/Applications/Specware/lisp"
+export SPECWARE4
+export BIN_DIR="$SPECWARE4/Applications/Specware/bin/linux"
+export GEN_DIR="$SPECWARE4/Applications/Specware/lisp"
 
-echo "  Verify_Specware_Variables:  SPECWARE4X = [$SPECWARE4X]"
+echo "  Verify_Specware_Variables:  SPECWARE4  = [$SPECWARE4]"
 echo "  Verify_Specware_Variables:  BIN_DIR    = [$BIN_DIR]"
 echo "  Verify_Specware_Variables:  GEN_DIR    = [$GEN_DIR]"
 echo "  "
@@ -54,8 +54,8 @@ if [ ! -d $GEN_DIR ]; then
    mkdir $GEN_DIR
 fi
 
-echo cd "$SPECWARE4X"/Applications/Specware
-cd "$SPECWARE4X"/Applications/Specware
+echo cd "$SPECWARE4"/Applications/Specware
+cd "$SPECWARE4"/Applications/Specware
 echo " "
 
 # Happy...

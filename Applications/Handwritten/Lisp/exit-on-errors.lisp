@@ -10,11 +10,6 @@
 		  )
      ,@body))
 
-(defun bail-out (exception)
-  (format t "~2%Exception : ~A~%" exception)
-  (let ((return-code (return-code-for-exception exception)))
-    (exit-from-lisp return-code)))
-
 (defun return-code-for-exception (exception)
   ;; Unix return codes are encoded in a byte (i.e. mod 256),
   ;; so for clarity avoid values outside [0 .. 255]
@@ -42,9 +37,15 @@
 ;; Note: shell scripts may use this directly to terminate sessions:
 (defun exit-from-lisp (return-code)
   (format t "~%Lisp session exiting with code ~D~%" return-code)
-  #+Allegro                  (excl::exit      return-code)
-  #+CMU                      (unix::unix-exit return-code)
-  #+OpenMCL                  (quit            return-code)
-  #-(or Allegro CMU OpenMCL) (quit            return-code)
+  #+Allegro                  (excl::exit        return-code)
+  #+CMU                      (unix::unix-exit   return-code)
+  #+SBCL                     (sb-unix:unix-exit return-code)
+  #+OpenMCL                  (quit              return-code)
+  #-(or Allegro CMU OpenMCL) (quit              return-code)
   )
+
+(defun bail-out (exception)
+  (format t "~2%Exception : ~A~%" exception)
+  (let ((return-code (return-code-for-exception exception)))
+    (exit-from-lisp return-code)))
 

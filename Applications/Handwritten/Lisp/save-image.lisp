@@ -1,6 +1,38 @@
 (in-package "CL-USER")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                 Utility (also in load-utilities.lisp)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun copy-file (source target)
+  #+allegro(sys:copy-file source target)
+  #+cmu(ext:run-program "cp" (list (namestring source)
+				   (namestring target)))
+  #+mcl(ccl:copy-file source target :if-exists :supersede)
+  #+sbcl(sb-ext:run-program "/bin/cp" (list (namestring source)
+					    (namestring target)))
+  #-(or allegro cmu sbcl mcl)
+  ;;  ??? why assume characters ??? why special case for #\Page ???
+  ;;  (with-open-file (istream source :direction :input)
+  ;;    (with-open-file (ostream target :direction :output :if-does-not-exist :create)
+  ;;      (loop
+  ;;	(let ((char (read-char istream nil :eof)))
+  ;;	  (cond
+  ;;	   ((eq :eof char)
+  ;;	    (return))
+  ;;	   ((eq #\Page char)
+  ;;	    )
+  ;;	   (t
+  ;;	    (princ char ostream)))))))
+  ;; This just copies the file verbatim, as you'd expect...
+  (with-open-file (old a :direction :input :element-type 'unsigned-byte)
+    (with-open-file (new b :direction :output :element-type 'unsigned-byte)
+      (let ((eof (cons nil nil)))
+	(do ((byte (read-byte old nil eof) (read-byte old nil eof)))
+	    ((eq byte eof))
+	  (write-byte byte new))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 ALLEGRO
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -50,11 +82,10 @@
 #+CMU
 (defun save-this-lisp-image (name)
   ;; Save this image.
-  (setq ext:*gc-verbose* nil)
-  (setq ext:*bytes-consed-between-gcs* 20000000)
+  (set-gc-parameters-for-use nil)
   ;; See http://cvs2.cons.org/ftp-area/cmucl/doc/cmu-user/extensions.html#toc43
   ;; The :purify option compacts current data and makes GC skip it in resulting image.
-  (extensions::save-lisp name :purify t))
+  (ext::save-lisp name :purify t))
 
 #+CMU
 (defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)
@@ -85,8 +116,8 @@
       (dolist (file files-to-load) 
 	(format t "(load ~S)~%" file)
 	(format s "(load ~S)~%" file))
-      (format t "(extensions::save-lisp ~S :purify t)~%" app-file)
-      (format s "(extensions::save-lisp ~S :purify t)~%" app-file)
+      (format t "(ext::save-lisp ~S :purify t)~%" app-file)
+      (format s "(ext::save-lisp ~S :purify t)~%" app-file)
       (format s "~%")
       (format t "========================================================~%"))
     (let ((process nil))
@@ -103,18 +134,76 @@
 		   (format t "~&Invoke as:")
 		   (format t "~& cmucl -core ~A~%~%" app-file))
 		  (t
-		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
+		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" rc app-file)))
 	    (process-close process)))))))
 
-#-mcl
-(defun copy-file (a b)
-  (with-open-file (old a :direction :input :element-type 'unsigned-byte)
-    (with-open-file (new b :direction :output :element-type 'unsigned-byte)
-      (let ((eof (cons nil nil)))
-	(do ((byte (read-byte old nil eof) (read-byte old nil eof)))
-	    ((eq byte eof))
-	  (write-byte byte new))))))
-		  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                 SBCL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+SBCL
+(defun save-this-lisp-image (name)
+  ;; Save this image.
+  (set-gc-parameters-for-use nil)
+  (sb-ext::save-lisp-and-die name)) ;  :purify nil
+
+#+SBCL
+(defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)
+  ;; Build a fresh image with desired properties.
+  ;; (This should be a completely new image, not simply a clone of this image!)
+  ;; See http://cvs2.cons.org/ftp-area/sbclcl/doc/sbcl-user/extensions.html#toc43
+  ;; The :purify option compacts current data and makes GC skip it in resulting image.
+  (let ((app-file 
+	 (namestring 
+	  (let ((n (position #\. name)))
+	    (if (null n)
+		(make-pathname :directory dir :name name)
+	      ;; if there are two dots, who knows what to do??
+	      (make-pathname :directory dir 
+			     :name (subseq name 0 n)  
+			     :type (subseq name (+ n 1) nil)))))))
+    (ensure-directories-exist app-file)
+    (dolist (file files-to-copy) (copy-file file (make-pathname :directory dir :defaults file)))
+    (with-open-file (s "/tmp/cmds" :direction :output :if-exists :supersede)
+      (format t "~%Commands to be used in lower process ~A to create~%  ~A~%" base-lisp app-file)
+      (format t "========================================================~%")
+      (format t "(setq sb-ext:*gc-verbose* nil)~%")
+      (format s "(setq sb-ext:*gc-verbose* nil)~%")
+      (format t "(setq sb-ext:*bytes-consed-between-gcs* 20000000)~%")
+      (format s "(setq sb-ext:*bytes-consed-between-gcs* 20000000)~%")
+      (dolist (file files-to-load) 
+	(format t "(load ~S)~%" file)
+	(format s "(load ~S)~%" file))
+      (format t "(sb-ext::save-lisp-and-die ~S :purify t)~%" app-file)
+      (format s "(sb-ext::save-lisp-and-die ~S :purify t)~%" app-file)
+      (format s "~%")
+      (format t "========================================================~%"))
+    (let ((process nil))
+      (format t "~&~%Output from the lower process being created:~%")
+      (format t "~&========================================================~%")
+      (unwind-protect 
+	  (setq process (sb-ext:run-program base-lisp '() :wait t :input "/tmp/cmds" :output t :error :output))
+	(if (null process)
+	    (error "Problem creating lower process: ~A" base-lisp)
+	  (let ((rc (process-exit-code process)))
+	    (format t "~&========================================================~%")
+	    (cond ((= rc 0)
+		   (format t "~&~%Success saving ~A~%" app-file)
+		   (format t "~&Invoke as:")
+		   (format t "~& sbclcl -core ~A~%~%" app-file))
+		  (t
+		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" rc app-file)))
+	    (process-close process)))))))
+
+;;; See load-utilities.lisp
+;;; #-mcl
+;;; (defun copy-file (a b)
+;;;   (with-open-file (old a :direction :input :element-type 'unsigned-byte)
+;;;     (with-open-file (new b :direction :output :element-type 'unsigned-byte)
+;;;       (let ((eof (cons nil nil)))
+;;; 	(do ((byte (read-byte old nil eof) (read-byte old nil eof)))
+;;; 	    ((eq byte eof))
+;;; 	  (write-byte byte new))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 OpenMCL
@@ -157,9 +246,9 @@
 	    (cond ((= rc 0)
 		   (format t "~&~%Success saving ~A~%" app-file)
 		   (format t "~&Invoke as:")
-		   (format t "~& cmucl -core ~A~%~%" app-file))
+		   (format t "~& OpenMCL -core ~A~%~%" app-file))
 		  (t
-		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" app-file)))
+		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" rc app-file)))
 	    ;(process-close process) ;; fn doesn't exist
 	    ))))))
   
@@ -167,11 +256,11 @@
 ;;;                 Unknown
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-#-(or Allegro CMU MCL)
+#-(or Allegro CMU MCL SBCL)
 (defun save-this-lisp-image (name)
   (error "Unknown version of lisp -- can't save image named ~A" name))
 
-#-(or Allegro CMU MCL)
+#-(or Allegro CMU MCL SBCL)
 (defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)
   (declare (ignore dir files-to-load files-to-copy))
   (error "Unknown version of lisp: ~A -- can't save application named ~A" 

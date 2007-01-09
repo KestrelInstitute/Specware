@@ -305,17 +305,25 @@
   #+sbcl(sb-ext:run-program "/bin/cp" (list (namestring source)
 					    (namestring target)))
   #-(or allegro cmu sbcl mcl)
-  (with-open-file (istream source :direction :input)
-    (with-open-file (ostream target :direction :output :if-does-not-exist :create)
-      (loop
-	(let ((char (read-char istream nil :eof)))
-	  (cond
-	   ((eq :eof char)
-	    (return))
-	   ((eq #\Page char)
-	    )
-	   (t
-	    (princ char ostream))))))))
+  ;;  ??? why assume characters ??? why special case for #\Page ???
+  ;;  (with-open-file (istream source :direction :input)
+  ;;    (with-open-file (ostream target :direction :output :if-does-not-exist :create)
+  ;;      (loop
+  ;;	(let ((char (read-char istream nil :eof)))
+  ;;	  (cond
+  ;;	   ((eq :eof char)
+  ;;	    (return))
+  ;;	   ((eq #\Page char)
+  ;;	    )
+  ;;	   (t
+  ;;	    (princ char ostream)))))))
+  ;; This just copies the file verbatim, as you'd expect...
+  (with-open-file (old a :direction :input :element-type 'unsigned-byte)
+    (with-open-file (new b :direction :output :element-type 'unsigned-byte)
+      (let ((eof (cons nil nil)))
+	(do ((byte (read-byte old nil eof) (read-byte old nil eof)))
+	    ((eq byte eof))
+	  (write-byte byte new))))))
 
 (defun file-to-string (file)
   (with-open-file (istream file :direction :input)
