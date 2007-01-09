@@ -35,30 +35,37 @@ fi
 
 LISP_DIR=`/usr/bin/dirname $LISP`
 export LISP_VERSION=`/bin/basename ${LISP_DIR}`
-export BIG_ALISP="${BIN_DIR}/big-alisp-${LISP_VERSION}.${IMAGE_EXTENSION}"
-export BATCH_LISP="$LISP -I ${BIG_ALISP} -batch"
+export BIG_LISP="${BIN_DIR}/big-alisp-${LISP_VERSION}.${IMAGE_EXTENSION}"
+export BATCH_LISP="$LISP -I ${BIG_LISP} -batch"
 export BATCH_SPECWARE=${BATCH_SPECWARE:-"$LISP -I $SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} -batch"}
+export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP -I $SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION} -batch"}
 
+echo " "
 echo "  Verify_ACL:  LISP_MODE            = [$LISP_MODE]"
 echo "  Verify_ACL:  LISP                 = [$LISP]"
+echo "  Verify_ACL:  BIG_LISP             = [$BIG_LISP]"
 echo "  Verify_ACL:  LISP_VERSION         = [$LISP_VERSION]"
 echo "  Verify_ACL:  FASL_EXTENSION       = [$FASL_EXTENSION]"
 echo "  Verify_ACL:  IMAGE_EXTENSION      = [$IMAGE_EXTENSION]"
 echo "  Verify_ACL:  EXECUTABLE_EXTENSION = [$EXECUTABLE_EXTENSION]"
 echo "  Verify_ACL:  BATCH_LISP           = [$BATCH_LISP]"
 echo "  Verify_ACL:  BATCH_SPECWARE       = [$BATCH_SPECWARE]"
-echo "  Verify_ACL:  BIG_ALISP            = [$BIG_ALISP]"
+echo "  Verify_ACL:  BATCH_BOOTSTRAP      = [$BATCH_BOOTSTRAP]"
+
+# use Specware4-save.$IMAGE_EXTENSION so that dump of Specware4.$IMAGE_EXTENSION won't crash running image
+"$LISP" -I "$SPECWARE4"/Applications/Specware/bin/linux/Specware4-save.$IMAGE_EXTENSION -batch <<-XXXX
+
 echo "  "
 
-if [ -f "${BIG_ALISP}" ]; then
-	echo "  Verify_ACL:  Already have ${BIG_ALISP}"
+if [ -f "${BIG_LISP}" ]; then
+	echo "  Verify_ACL:  Already have ${BIG_LISP}"
 else
 	NOW=`/bin/date +"%y%m%d-%H%M%S"`
 	# big-alisp.dxl will have a larger lisp heap than the default alisp image.
-	echo "  Verify_ACL:  Building ${BIG_ALISP}"
+	echo "  Verify_ACL:  Building ${BIG_LISP}"
 	echo "               See /tmp/build-big-alisp-$NOW.log for details."
 	$LISP -batch <<-XXXX>> /tmp/build-big-alisp-$NOW.log
-	  (build-lisp-image "${BIG_ALISP}" :lisp-heap-start #x48000000 :oldspace #x100)
+	  (build-lisp-image "${BIG_LISP}" :lisp-heap-start #x48000000 :oldspace #x100)
 	XXXX
 	RC=$?
 	if [ $RC -ne 0 ]; then        
@@ -67,6 +74,8 @@ else
 	  exit 1
         fi
 fi
-echo " "
+
+
+
 
 
