@@ -443,7 +443,8 @@
 
 (unless (fboundp 'cl-user::without-redefinition-warnings)
   (defmacro cl-user::without-redefinition-warnings (&body body)
-    `(let ((cl-user::*redefinition-warnings* nil))
+    `(let (#+Allegro (cl-user::*redefinition-warnings* nil))
+       #+Allegro (declare (special cl-user::*redefinition-warnings*))
        ,@body)))
 
 (unless (fboundp 'specware::define-compiler-macro)
