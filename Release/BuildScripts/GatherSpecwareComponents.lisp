@@ -1,6 +1,15 @@
 ; for simplicity, use the same package that utilities.lisp uses
-(defpackage "DISTRIBUTION")
+(defpackage "DISTRIBUTION" (:use "COMMON-LISP"))
 (in-package "DISTRIBUTION")
+
+(defvar *VERBOSE* nil)
+
+(defvar *fasl-type*
+  #+CMU     "x86f"
+  #+SBCL    "sfsl"
+  #+Allegro "fasl" 
+  #+OpenMCL "???"
+  #-(or CMU SBCL Allegro OpenMCL) "unknown-fasl")
 
 #+Allegro 
 (eval-when (compile eval load)
@@ -38,9 +47,9 @@
 (defparameter Specware-name            "Specware4")	; Name of dir and startup files
 
 ;; "defvar" means any pre-existing value is retained
-(defvar cl-user::Specware-version      "4.2.0")
-(defvar cl-user::Specware-version-name "Specware-4-2")
-(defvar cl-user::Specware-patch-level  "0")
+(defvar common-lisp-user::Specware-version      "4.2.0")
+(defvar common-lisp-user::Specware-version-name "Specware-4-2")
+(defvar common-lisp-user::Specware-patch-level  "0")
 (defvar Major-Version-String           "4-2")		; patch detection, about-specware cmd
 
 (defun print-blank ()
@@ -65,16 +74,16 @@
 ;;; Toplevel
 ;;; ================================================================================
 
-(defun user::prepare_specware_release (i j k specware-dir distribution-dir &optional (*verbose* t))
+(defun common-lisp-user::prepare_specware_release (i j k specware-dir distribution-dir &optional (*verbose* t))
   (let ((specware-dir (truename specware-dir))
 	(release-dir  (truename (ensure-subdirs-exist distribution-dir "Releases" 
 						      (format nil "Specware-~D-~D-~D" i j k)))))
     (setq Major-Version-String           (format nil "~D-~D" i j))
-    (setq cl-user::Specware-version      (format nil "~D.~D" i j))
-    (setq cl-user::Specware-patch-level  (format nil "~D" k))
-    (setq cl-user::Specware-version-name (format nil "Specware-~A" major-version-string))
+    (setq common-lisp-user::Specware-version      (format nil "~D.~D" i j))
+    (setq common-lisp-user::Specware-patch-level  (format nil "~D" k))
+    (setq common-lisp-user::Specware-version-name (format nil "Specware-~A" major-version-string))
 
-    (format t "~&;;; Preparing release of ~A~%" cl-user::Specware-version-name)
+    (format t "~&;;; Preparing release of ~A~%" common-lisp-user::Specware-version-name)
 
     ;; Oops: As written, this is overkill (literally!).
     ;; In addition to deleting old versions of the files we're about to create,
@@ -110,7 +119,7 @@
   (print-minor "Specware_Lib" "generic")
   (let* ((source-dir       (ensure-subdir-exists specware-dir "Library"))
 	 ;;
-	 (component-dir    (ensure-subdirs-exist release-dir "Components" "Specware_Lib" "Generic")))
+	 (component-dir    (ensure-subdirs-exist release-dir "Specware_Lib" "Generic")))
 
     ;; First the standard Specware libaries...
 
@@ -173,7 +182,7 @@
 (defun prepare_Specware_Lib_Linux   (specware-dir release-dir)
   (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Linux")
-  (let* ((lib-dir          (ensure-subdirs-exist release-dir "Components" "Specware_Lib"))
+  (let* ((lib-dir          (ensure-subdirs-exist release-dir "Specware_Lib"))
 	 (generic-dir      (ensure-subdirs-exist lib-dir "Generic" "Base" "Handwritten" "Lisp"))
 	 (linux-dir        (ensure-subdirs-exist lib-dir "Linux"   "Base" "Handwritten" "Lisp")))
     (dolist (file (sorted-directory generic-dir))
@@ -196,7 +205,7 @@
 (defun prepare_Specware_Lib_Windows (specware-dir release-dir)
   (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Windows")
-  (let* ((lib-dir          (ensure-subdirs-exist release-dir "Components" "Specware_Lib"))
+  (let* ((lib-dir          (ensure-subdirs-exist release-dir "Specware_Lib"))
 	 (generic-dir      (ensure-subdirs-exist lib-dir "Generic" "Base" "Handwritten" "Lisp"))
 	 (windows-dir      (ensure-subdirs-exist lib-dir "Windows" "Base" "Handwritten" "Lisp")))
     (dolist (file (sorted-directory generic-dir))
@@ -236,8 +245,9 @@
   ;;   ilisp   is used otherwise
   ;; At user-installation time, we will merge the appropriate files under Library/IO/Emacs/
   (let* ((source-dir       (extend-directory specware-dir "Library" "IO" "Emacs"))
+	 (slime-dir        (extend-directory source-dir "slime"))
 	 ;;
-	 (component-dir    (ensure-subdirs-exist release-dir "Components" "Emacs_Lib"))
+	 (component-dir    (ensure-subdirs-exist release-dir "Emacs_Lib"))
 	 ;;
 	 (generic-dir      (ensure-subdir-exists component-dir "Generic"))
 	 (ilisp-dir        (ensure-subdir-exists component-dir "Ilisp"))
@@ -261,7 +271,7 @@
 				   x-files
 				   (with-open-file (s (merge-pathnames source-dir "files.el"))
 				     (let ((form (read s)))
-				       (if (and (eq (first  form) 'user::defconst)
+				       (if (and (eq (first  form) 'common-lisp-user::defconst)
 						(eq (second form) 'sw::specware-emacs-files))
 					   (let ((names (eval (third form))))
 					     (mapcan #'(lambda (name)
@@ -298,6 +308,11 @@
 	 (all-files        (append generic-files ilisp-files franz-files openmcl-files ignored-files))
 	 (all-dirs         (append generic-dirs  ilisp-dirs  franz-dirs  openmcl-dirs  ignored-dirs))
 	 )
+
+    #+sbcl (let ((sb-fasl:*fasl-file-type* "sfsl")) ; default is "fasl", which conflicts with Allegro
+	     (defpackage "SB-BSD-SOCKETS" (:use "COMMON-LISP"))
+	     (load         (merge-pathnames slime-dir "swank-backend.lisp"))
+	     (compile-file (merge-pathnames slime-dir "swank-sbcl.lisp")))
 
     ;; Warnings about ignored files
 
@@ -431,7 +446,7 @@
 				    (unless (equal line "")
 				      (push line filenames)))))))
 	 ;;
-	 (target-clib-dir   (ensure-subdirs-exist release-dir "Components" "C_Lib" "Generic"))
+	 (target-clib-dir   (ensure-subdirs-exist release-dir "C_Lib" "Generic"))
 	 (target-clib-path  (pathname-directory target-clib-dir)))
     
     ;; --------------------
@@ -454,7 +469,7 @@
 		 (return nil))
 		((null y)
 		 (dolist (z x) 
-		   (warn "File mentioned in cgen-distribution-files is missing: ~A" z))
+		   (warn "[A]File mentioned in cgen-distribution-files is missing: ~A" z))
 		 (return nil))
 		(t
 		 (let* ((gen-dist-file (make-pathname :directory (append (pathname-directory source-clib-dir) 
@@ -468,7 +483,7 @@
 			  (pop x)
 			  (pop y))
 			 ((string-lessp xn yn)
-			  (warn "File mentioned in cgen-distribution-files is missing: ~A" (pop x)))
+			  (warn "[B]File mentioned in cgen-distribution-files is missing: ~A" (pop x)))
 			 (t
 			  (let ((z (pop y)))
 			    (unless (or (equalp (pathname-type z) "a")
@@ -577,7 +592,7 @@
   (print-minor "Specware" "generic")
   (let* ((source-dir  (ensure-subdirs-exist specware-dir))
 	 (generic-dir (ensure-subdirs-exist source-dir  "Release" "Generic"))
-	 (target-dir  (ensure-subdirs-exist release-dir "Components" "Specware" "Generic")))
+	 (target-dir  (ensure-subdirs-exist release-dir "Specware" "Generic")))
 
     ;; License file (InstallShield looks for this)
     (copy-dist-file (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults generic-dir)
@@ -645,22 +660,28 @@
 	 (source-linux-dir        (ensure-subdirs-exist source-dir "Release" "Linux"))
 	 (source-linux-cmucl-dir  (ensure-subdirs-exist source-dir "Release" "Linux" "CMUCL"))
 	 ;;
-	 (target-dir              (ensure-subdirs-exist release-dir "Components" "Specware" "Linux")))
+	 (target-dir              (ensure-subdirs-exist release-dir "Specware" "Linux"))
+	 ;; a list of files to load into the new application
+	 (files-to-load           (list (merge-pathnames lisp-utilities-dir      "LoadUtilities.lisp")
+					(merge-pathnames lisp-utilities-dir      "MemoryManagement.lisp")
+					(merge-pathnames lisp-utilities-dir      "CompactMemory.lisp")
+					(merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")  
+					(merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
+					(merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))))
 
     ;; Installation Scripts
 
-    ;; Executables/Images
-    (generate-new-lisp-application "/usr/share/cmulisp/bin/lisp" 
-				   (format nil "~A.cmuimage" Specware-name)
-				   target-dir
+    ;; #+sbcl (dolist (file files-to-load) (compile-file file))
 
-				   ;; a list of files to load into the new application
-				   (list (merge-pathnames lisp-utilities-dir      "LoadUtilities.lisp")
-					 (merge-pathnames lisp-utilities-dir      "MemoryManagement.lisp")
-					 (merge-pathnames lisp-utilities-dir      "CompactMemory.lisp")
-					 (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")  
-					 (merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
-					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))
+    
+    ;; Executables/Images
+    (generate-new-lisp-application #+CMUCL "/usr/share/cmulisp/bin/lisp" 
+				   #+CMUCL (format nil "~A.cmuimage" Specware-name)
+				   #+SBCL  "/usr/local/bin/sbcl"
+				   #+SBCL  (format nil "~A.sbclimage" Specware-name)
+
+				   target-dir
+				   files-to-load
 
 				   ;; a list of files to copy to the distribution directory
 				   (list (merge-pathnames source-linux-cmucl-dir "Specware")
@@ -693,7 +714,7 @@
 	 (source-windows-dir         (ensure-subdirs-exist source-dir "Release" "Windows"))
 	 (source-windows-allegro-dir (ensure-subdirs-exist source-dir "Release" "Windows" "Allegro"))
 	 ;;
-	 (target-dir                 (ensure-subdirs-exist release-dir "Components" "Specware" "Windows"))
+	 (target-dir                 (ensure-subdirs-exist release-dir "Specware" "Windows"))
 	 (specware-exe-file          (format nil "~A.exe" Specware-name)))
 
     ;; Installation Scripts
@@ -779,7 +800,8 @@
 	(target-patch-dir (extend-directory target-dir "Patches")))
     (format t "~&~%;;;   Preparing ~A patches for ~A...~%"
 	    #+CMU       "cmucl"
-	    #+Allegro   "Allegro fasl" 
+	    #+SBCL      "SBCL fasl"
+	    #+Allegro   "Allegro fasl (sfsl)" 
 	    #+OpenMCL   "openmcl"
 	    ;;
 	    #+Linux     "Linux"
@@ -794,11 +816,8 @@
 
       (copy-dist-file source-patch-lisp target-patch-lisp)
 
-      (let* ((fasl-type #+CMU     "x86f"
-			#+Allegro "fasl" 
-			#+OpenMCL "???")
-	     (target-patch-fasl (make-pathname :name     "empty-patch-template" 
-					       :type     fasl-type 
+      (let* ((target-patch-fasl (make-pathname :name     "empty-patch-template" 
+					       :type     *fasl-type*
 					       :defaults target-patch-dir)))
 	(cond ((probe-file target-patch-fasl)
 	       (when *verbose*
@@ -809,6 +828,7 @@
 	       (when *verbose*
 		 (format t "~&;;;   Compiling empty patch file using ~A~%" 
 			 #+CMU       "CMUCL under Linux"
+			 #+SBCL      "SBCL under Linux"
 			 #+MSWindows "Allegro under Windows"
 			 #+Mac       "OpenMCL under Mac OS X")
 		 (force-output t))

@@ -7,9 +7,9 @@
 ;;;The next three variable initializations need to be changed when going to a new minor version
 
 ;; Used in printing out the license and about-specware command
-(defparameter cl-user::Specware-version      "4.2.0")
-(defparameter cl-user::Specware-version-name "Specware-4-2")
-(defparameter cl-user::Specware-patch-level  "0")
+(defparameter common-lisp-user::Specware-version      "4.2.0")
+(defparameter common-lisp-user::Specware-version-name "Specware-4-2")
+(defparameter common-lisp-user::Specware-patch-level  "0")
 (defparameter Major-Version-String           "4-2") ; Used in patch detection and about-specware command
 
 (push ':SPECWARE-DISTRIBUTION *features*) ; used by parser
@@ -43,17 +43,25 @@
 ;;;will probably be copied into a Patches folder in the installation
 ;;;directory.  Old patch files will not be removed or overwritten.
 
+(defparameter *Specware-dir*  (format nil "~A/" (specware::getenv "SPECWARE4")))
+
+(defun in-specware-dir (file) 
+  (concatenate 'string *Specware-dir* file))
+
 (defun patch-directory ()
   (declare (special *specware-dir*))
   (if (equal *specware-dir* nil)
       (warn "patch-directory: SPECWARE4 environment variable not set")
     (in-specware-dir "Patches/")))
 
-(defvar *fasl-type* 
-  #+Allegro "fasl"
+#+SBCL (setq sb-fasl:*fasl-file-type* "sfsl") ; default is "fasl", which conflicts with Allegro
+
+(defvar *fasl-type*
   #+CMU     "x86f"
-  #-(or Allegro CMU) "unknown"
-  )
+  #+SBCL    sb-fasl:*fasl-file-type*
+  #+Allegro "fasl" 
+  #+OpenMCL "???"
+  #-(or CMU SBCL Allegro OpenMCL) "unknown-fasl")
 
 (defun patch-number (path)
   (or (ignore-errors
@@ -81,11 +89,11 @@
 	      (setq highest-patch-number patch-num)
 	      (setq highest-patch-file file))))
     (when (> highest-patch-number 0)
-      (setq cl-user::Specware-patch-level highest-patch-number)
+      (setq common-lisp-user::Specware-patch-level highest-patch-number)
       (ignore-errors (load highest-patch-file)))))
 
 (push 'load-specware-patch-if-present
-       #+allegro cl-user::*restart-actions*
+       #+allegro common-lisp-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
        #+sbcl    sb-ext:*init-hooks*)

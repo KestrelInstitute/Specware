@@ -140,7 +140,8 @@
     )
   )
 
-(map 'list #'(lambda (file) (compile-and-load-lisp-file (in-specware-dir file)))
+(map 'list #'(lambda (file) 
+	       (compile-and-load-lisp-file (in-specware-dir file)))
      HandwrittenFiles
      )
 
@@ -278,6 +279,7 @@
 (defun cl-user::boot ()
   (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
     (unless val
-      (emacs::eval-in-emacs "(delete-continuation)"))
+      (funcall (find-symbol "EVAL-IN-EMACS" "EMACS")
+	       "(delete-continuation)"))
     val)
   )
