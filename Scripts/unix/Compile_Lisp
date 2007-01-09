@@ -59,6 +59,7 @@ $BATCH_LISP <<-XXXX
 	#+Allegro (format t "Allegro version%") 
 	#+CMU     (format t "CMU version%") 
 	#+MCL     (format t "OpenMCL version%")
+	#+SBCL    (format t "SBCL version%")
 	(format t "compiling...~%")
 	(load "$EXIT_ON_ERRORS") 
 	(load "$MEMORY_MANAGEMENT") 
