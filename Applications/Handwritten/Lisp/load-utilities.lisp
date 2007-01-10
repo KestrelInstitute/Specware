@@ -408,21 +408,19 @@
 	 (target-dirpath (if (stringp target)
 			     (parse-namestring (ensure-final-slash target))
 			   target)))
-    (if (progn #+(or mcl sbcl) recursive? #-(or mcl sbcl) nil)
-	(progn
-	  #+mcl (ccl:run-program     "cp"      (list "-R" 
-						     (namestring source-dirpath)
-						     (namestring target-dirpath)))
-	  #+sbcl (sb-ext:run-program "/bin/cp" (list "-R" 
-						     (namestring source-dirpath)
-						     (namestring target-dirpath)))
-	  #-(or mcl sbcl) nil)
-      (progn (unless (probe-file target-dirpath)
-	       (make-directory target-dirpath))
-	     (loop for dir-item in (sw-directory source-dirpath)
-	       do (if (and recursive? (directory? dir-item))
-		      (copy-directory dir-item (extend-directory target-dirpath dir-item) t)
-		    (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))))
+    #+mcl 
+    (when recursive? 
+      (return 
+	(ccl:run-program "cp"(list "-R" 
+				   (namestring source-dirpath)
+				   (namestring target-dirpath)))))
+    ;; For mcl, only if not recursive.  For all others, always.
+    (unless (probe-file target-dirpath)
+      (make-directory target-dirpath))
+    (loop for dir-item in (sw-directory source-dirpath)
+	  do (if (and recursive? (directory? dir-item))
+		 (copy-directory dir-item (extend-directory target-dirpath dir-item) t)
+		 (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))
 
 (defun specware::delete-directory (dir &optional (contents? t))
   #+allegro
