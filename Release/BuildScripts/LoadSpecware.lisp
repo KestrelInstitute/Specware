@@ -14,34 +14,32 @@
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
 
-#+allegro
-(setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
-#+allegro
-(setq excl:*record-source-file-info* nil) ; workaround for annoying bug
-#+cmu
-(setq ext:*gc-verbose* nil)
-#+cmu
-(setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
-#+sbcl
-(setf (sb-ext:bytes-consed-between-gcs) 50331648)
-#+cmu
-(setq extensions:*efficiency-note-cost-threshold* 30)
-#+sbcl
-(setq sb-ext:*efficiency-note-cost-threshold* 30)
-#+cmu
-(setq c::*compile-print* nil)
-#+sbcl
-(setq sb-ext::*compile-print* nil)
-#+sbcl
-(declaim (optimize (sb-ext:inhibit-warnings 3)))
-#+mcl
-(progn (ccl:egc nil)			; Turn off ephemeral gc as it is inefficient
-       (ccl:gc-retain-pages t)		; Don't give up pages after gc as likely to need them soon
-       (ccl::set-lisp-heap-gc-threshold (* 16777216 3))) ; Increase free space after a gc
-#+sbcl
-(setq sb-fasl:*fasl-file-type* "sfsl")	; Default is "fasl" which conflicts with allegro
-#+sbcl
-(setq sb-debug:*debug-beginner-help-p* nil)
+#+allegro (progn
+	    (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
+	    (setq excl:*record-source-file-info* nil)                   ; workaround for annoying bug
+	    )
+
+#+cmu     (progn
+	    (setq ext:*gc-verbose* nil)
+	    (setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
+	    (setq extensions:*efficiency-note-cost-threshold* 30)
+	    (setq c::*compile-print* nil)
+	    )
+
+#+sbcl    (progn
+	    (setf (sb-ext:bytes-consed-between-gcs) 50331648)
+	    (setq sb-ext:*efficiency-note-cost-threshold* 30)
+	    (setq sb-ext::*compile-print* nil)
+	    (declaim (optimize (sb-ext:inhibit-warnings 3)))
+	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
+	    (setq sb-debug:*debug-beginner-help-p* nil)
+	    )
+
+#+mcl     (progn
+	    (ccl:egc nil)		                                ; Turn off ephemeral gc as it is inefficient
+	    (ccl:gc-retain-pages t)	                                ; Don't give up pages after gc as likely to need them soon
+	    (ccl::set-lisp-heap-gc-threshold (* 16777216 3))            ; Increase free space after a gc
+	    )
 
 ;; Used in printing out the license and about-specware command
 (defvar cl-user::Specware-version "4.2.0")
