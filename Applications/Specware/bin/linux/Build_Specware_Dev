@@ -128,6 +128,15 @@ RC=$?
 
 echo " "
 
+# generate .elc files for xemacs interface
+if [ $RC -eq 0 ]; then
+  $xemacs -no-init-file \
+	-l "$SPECWARE4"/Library/IO/Emacs/load-slime \
+	-eval "(sw:load-specware-emacs-file \"hideshow.el\")" \
+	-eval "(sw:load-specware-emacs-file \"specware-mode.el\")" \
+        -eval "(kill-emacs 0)"
+fi
+
 # --------------------------------------------------------------------------------
 # Report results
 # --------------------------------------------------------------------------------
