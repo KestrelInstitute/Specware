@@ -37,6 +37,12 @@ String qualifying spec
     in 
       loop 0
 
+  op  replaceString: String * String * String -> String
+  def replaceString(s,pat,rep) =
+    case search(pat,s) of
+      | None -> s
+      | Some i -> substring(s,0,i) ^ rep ^ replaceString(substring(s,i + length pat,length s),pat,rep)
+
   op  testSubseqEqual? : String * String * Nat * Nat -> Boolean
   def testSubseqEqual? (s1, s2, i1, i2) =
     let sz1 = length s1 in
