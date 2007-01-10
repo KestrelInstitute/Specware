@@ -50,42 +50,6 @@
 		   fileName)
 	   '(:|None|)))))
 
-;;; obsolete?
-;;; (defun parseSpecwareFileMsg (fileName) 
-;;;   (let* ((*parser-source* (list :file fileName))
-;;; 	 (session (parse-file fileName *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
-;;; 	 (pres (parse-session-results session))
-;;; 	 (error? (or (parse-session-error-reported? session) (parse-session-gaps session) (null pres))))
-;;;     (cond (error? 
-;;; 	   (cons :|Error| 
-;;; 		 (let ((msg (format nil "Syntax error [~{~A~^, ~}] in ~S ~%" 
-;;; 				    (append (if (parse-session-error-reported? session) (list "explicit error(s)") nil)
-;;; 					    (if (parse-session-gaps session) 
-;;; 						(let ((n (length (parse-session-gaps session)))) 
-;;; 						  (list (format nil "~D gap~P" n n)))
-;;; 					      nil)
-;;; 					    (if (null pres) (list "no result") nil))
-;;; 				    fileName)))
-;;; 		   msg)))
-;;; 	  ((null (rest pres))
-;;; 	   (let ((res1 (third (first pres))))
-;;; 	     (when-debugging
-;;; 	      (when (or *verbose?* *show-results?*)
-;;; 		(format t "~%---parseSpecwareFileMsg result---~%")
-;;; 		(pprint res1)
-;;; 		(format t "~%---~%")))
-;;; 	     (let ((res2 (mapcar #'eval res1)))
-;;; 	       ;; (when (null res2)
-;;;  	       ;;   (format t "~%---~%")
-;;; 	       ;;   (format t "~&;;; Note: ~A was legal, but vacuous.~%" fileName))
-;;; 	       (cons :|Ok| (first res2))))) ; ?? was cadr ??
-;;; 	  (t
-;;; 	   (format t "~&Syntax error: There are ~D top-level terms in ~A.~%"
-;;; 		   (length pres)
-;;; 		   fileName)
-;;; 	   '(:|None|)))))
-
-
 ;; parseString is not called by anything, but is handy for debugging...
 (defun parseString (string) (parseSpecwareString string))
 
