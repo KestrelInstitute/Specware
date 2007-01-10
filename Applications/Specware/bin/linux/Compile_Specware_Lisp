@@ -77,8 +77,9 @@ echo " "
 echo "About to compile Specware4.lisp produced from Specware4.sw"
 echo " "
 $BATCH_LISP <<-XXXX
-	(load "$EXIT_ON_ERRORS")
-	(exiting-on-errors 
+	(progn
+	 (load "$EXIT_ON_ERRORS")
+	 (exiting-on-errors 
 	  ;; Note:
 	  ;;   The file being loaded here is
 	  ;;    $SPECWARE4/Applications/Specware/Handwritten/Lisp/Specware4.lisp,
@@ -87,7 +88,7 @@ $BATCH_LISP <<-XXXX
 	  ;;    $SPECWARE4/Applications/Specware/lisp/Specware4.lisp
 	  ;;   Do not be confused by the similarity of their names.
 	  ;;   (sigh)
-	  (load "Specware4.lisp"))
+	  (load "Specware4.lisp")))
 XXXX
 RC=$?
 

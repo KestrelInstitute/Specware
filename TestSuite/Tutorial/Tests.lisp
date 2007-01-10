@@ -159,10 +159,10 @@
   :sw "/UserDoc/tutorial/example/MatchingProofs#p6"
   :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#FindMatches_Ref0_Oblig"
 	    ";;; Elaborating spec-morphism at $SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches_Ref0"
-	    ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p6A"
-	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p6A.sw"
-	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p6A.log"
-	    "p6A: Conjecture match_finding_lr1 in MatchingObligations#FindMatches_Ref0_Oblig is Proved! *"
+	    ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p6"
+	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p6.sw"
+	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p6.log"
+	    "p6: Conjecture match_finding_lr1 in MatchingObligations#FindMatches_Ref0_Oblig is Proved! *"
 	    ""))
  
  ("Tutorial: swl find-matches" 

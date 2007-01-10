@@ -148,7 +148,7 @@ $BIG_LISP -batch <<-XXXX
 	 (format t "~%--------------------------------------------------------------------------------~%")
 	 (format t "~%Building $BOOTSTRAP_IMAGE~%")
 	 (save-this-lisp-image "$BOOTSTRAP_IMAGE"))
-	XXXX
+XXXX
 RC=$?
       
 if [ $RC -ne 0 ]; then

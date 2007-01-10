@@ -75,14 +75,14 @@ echo "\$SWPATH=$SWPATH"
 cd "$SPECWARE4"/Applications/Specware
 
 $BATCH_BOOTSTRAP <<-XXXX
-	:swpath
+	(progn
 	 (load "$EXIT_ON_ERRORS")
 	 (exiting-on-errors 
 	   (if (swl "/Applications/Specware/Specware4")
 	     ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
 	     (exit-from-lisp 0)
-	     (exit-from-lisp 1)))
-	XXXX
+	     (exit-from-lisp 1))))
+XXXX
 RC=$?
 
 # --------------------------------------------------------------------------------
