@@ -17,7 +17,7 @@ echo "DISTRIBUTION = $DISTRIBUTION"
 export LISP_MODE=${LISP_MODE:-SBCL}
  . $SPECWARE4/Scripts/unix/Verify_$LISP_MODE
 
-echo "LISP_MODE    = $LISP_MDOE"
+echo "LISP_MODE    = $LISP_MODE"
 
 if [ -z "$SPECWARE4" ]; then
   echo "SPECWARE4 not defined"
