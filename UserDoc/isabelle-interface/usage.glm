@@ -124,6 +124,15 @@ The [[\<quote>\\</quote><forall>]] will be displayed as a universal quantificati
     universal quantification.
 </para>
 
+<para>
+Recursive functions that are translated to [[recdefs]] can have a measure
+function specified on the [[proof Isa]] line, by including it between double-quotes.
+For example:
+
+[[proof Isa "measure (\<quote>\\</quote><lambda>(wrd,sym). length wrd)" end-proof]]
+</para> 
+
+
 </section>
 
 <section>

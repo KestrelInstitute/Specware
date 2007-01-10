@@ -25,20 +25,32 @@ We assume the user is familiar with &IsabelleHOL;. See the tutorial at
 An example Specware spec with Isabelle proofs is given in 
 <"Examples/IsabelleInterface/BoolEx.sw">. This spec corresponds to the
 Isabelle theory in section 2.2.4 of the &IsabelleHOL; tutorial.
+As another example, all of the proof obligations of the specs in
+<"Examples/Matching/MatchingSpecs.sw"> can be translated and proved by
+&Isabelle; without any user annotation.
 </para>
 
 <para>
 To see examples of how to specify translation of &Specware; types and
    ops to existing &Isabelle; types and constants, see the bottom of
-   the Specware Base library specs such as <"Library/Base/Integer.sw"> or
+   the &Specware; Base library specs such as <"Library/Base/Integer.sw"> or
    <"Library/Base/List.sw">.
+</para>
+
+<para> A &Specware; definition may translate into one of three
+different kinds of Isabelle definitions: [[defs]], [[recdefs]] and
+[[primrecs]] (primitive recursions). Simple recursion on coproduct
+constructors translates to [[primrec]], but if the function
+has multiple arguments, only if the function is curried. Other
+recursion translates to [[recdef]] which, in general, requires a
+user-supplied measure function to prove termination. Non-recursive
+functions are translated to [[defs]], except in some cases they are
+translated to [[recdefs]] which allow more pattern matching.
 </para>
 
 <para> This initial translator has a number of limitations. It should
 translate all &Specware; specs but not all translated definitions and
-constructs will be accepted by &IsabelleHOL;. In particular, only
-recursive definitions that are primitive will be accepted, i.e., those
-that involve pattern-matching on coproduct constructors. Similarly,
+constructs will be accepted by &IsabelleHOL;. In particular,
 only case expressions that involve a single level of pattern-matching
 on constructors are accepted. An exception, is that some nesting is
 allowed in top-level case expressions that are converted into
