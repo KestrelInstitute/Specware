@@ -38,14 +38,14 @@ echo "  ========================================================================
 echo "  Save Backups: "
 
 echo " "
-if [ -f ${GEN_DIR}/${APP_NAME}*.lisp ]; then
+if [ -f "${GEN_DIR}/${APP_NAME}*.lisp" ]; then
   ls -sltr ${GEN_DIR}/${APP_NAME}*.lisp 
 else
   echo "  No previous generated lisp to backup."
 fi
 echo " "
 
-if [ -f ${GEN_DIR}/${APP_NAME}.lisp ]; then
+if [ -f "${GEN_DIR}/${APP_NAME}.lisp" ]; then
   echo "  Generate_Lisp:  Saving previous ${APP_NAME}.lisp file ..."
   echo "  Generate_Lisp:  cp -p -f ${GEN_DIR}/${APP_NAME}.lisp ${GEN_DIR}/${APP_NAME}-save.lisp"
   cp -p -f ${GEN_DIR}/${APP_NAME}.lisp ${GEN_DIR}/${APP_NAME}-save.lisp

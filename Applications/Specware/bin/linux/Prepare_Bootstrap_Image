@@ -132,7 +132,7 @@ echo " "
 # change them to spaces, the end of the "here-document" is not recognized
 # (the XXXX).
    
-"$BIG_LISP" -batch <<-XXXX
+$BIG_LISP -batch <<-XXXX
 	(progn
 	 (format t "~%--------------------------------------------------------------------------------~%")
 	 (load "$MEMORY_MANAGEMENT") 
@@ -153,7 +153,7 @@ RC=$?
       
 if [ $RC -ne 0 ]; then
    echo " "
-   echo "Prepare_Bootstrap_Image_ACL failed with code $RC, exiting ..."
+   echo "Prepare_Bootstrap_Image failed with code $RC, exiting ..."
    echo " "
    exit $RC
 fi
