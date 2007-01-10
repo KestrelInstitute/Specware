@@ -370,7 +370,7 @@
 	(ad-hoc-strings            (tokenizer-parameters-ad-hoc-strings            tokenizer-parameters)))
     (let ((tokens nil))
       ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
-      (with-open-file (stream file) 
+      (with-open-file (stream file :element-type 'unsigned-byte)  ; TODO: this will change when we support unicode
 	(let ((ps-stream (make-pseudo-stream :unread-chars nil :stream stream))
 	      ;; The upper-left corner of the file is considered 1:0:1 (line 1, column 0, byte 1)
 	      ;; so the character one to the left of that is 1:-1:0 (line 1, column -1, byte 0).

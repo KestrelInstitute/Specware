@@ -61,8 +61,12 @@
   (let ((s-var (gensym)))
     `(let ((,s-var ,s))
        (or (pop (pseudo-stream-unread-chars ,s-var))
-	   (read-char (pseudo-stream-stream ,s-var)
-		      nil +tokenizer-eof+)))))
+	   (loop
+	     (let ((byte (read-byte (pseudo-stream-stream ,s-var) nil +tokenizer-eof+)))
+	       (cond ((eq byte +tokenizer-eof+)  (return +tokenizer-eof+))
+		     ((< byte #x7F)              (return (code-char byte)))
+		     (t 
+		      (warn "Ignoring non-ASCII character: \~2,0X" byte)))))))))
 
 (defmacro ps-unread-char (char s)
   `(push ,char (pseudo-stream-unread-chars ,s)))
