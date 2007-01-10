@@ -530,7 +530,7 @@ IsaTermPrinter qualifying spec
     in
     case defToCases (mkOp(op_nm,ty)) body of
       | ([(lhs,rhs)], tuple?) \_rightarrow
-        if recursive? \_or tuple?
+        if recursive? \_or tuple?   % \_and ~(simpleHead? lhs))
           then
             prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
                            prString "\"",
@@ -590,7 +590,7 @@ IsaTermPrinter qualifying spec
       def aux(hd,bod: MS.Term,tuple?) =
 	case bod of
 	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) | \_not tuple? \_rightarrow
-	    aux(Apply(hd,mkVar v,a), term,tuple?)
+	    aux(Apply(hd,mkVar v,a), term, tuple?)
     %      | Lambda ([(pattern,_,term)],a) \_rightarrow
     %        (case patternToTerm pattern of
     %	   | Some pat_tm \_rightarrow aux (Apply(hd,pat_tm,a)) term
@@ -600,11 +600,17 @@ IsaTermPrinter qualifying spec
 	     then foldl (\_lambda ((pati,_,bodi),result) \_rightarrow
 			 case patternToTerm pati of
 			   | Some pati_tm \_rightarrow
-			     result ++ [(substitute(hd,[(v,pati_tm)]), bodi)]
-			   | _ \_rightarrow result ++ [(hd,bodi)])
+			     result ++ (aux_case(substitute(hd,[(v,pati_tm)]), bodi, tuple?))
+			   | _ \_rightarrow result ++ (aux_case(hd,bodi,tuple?)))
 		    [] pats
 	     else [(hd,bod)]
+          | Let([(pat,Var(v,_))],bod,a) | tuple? \_and member(v, freeVars hd) \_rightarrow
+            (case  patternToTerm pat of
+               | Some pat_tm \_rightarrow aux((substitute(hd,[(v,pat_tm)]), bod, tuple?))
+               | None \_rightarrow [(hd,bod)])
 	  | _ \_rightarrow [(hd,bod)]
+      def aux_case(hd,bod: MS.Term,tuple?) =
+        if tuple? then aux(hd,bod,tuple?) else [(hd,bod)]
       def fix_vars(hd,bod) =
 	let fvs = freeVars hd ++ freeVars bod in
 	let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
@@ -615,7 +621,7 @@ IsaTermPrinter qualifying spec
     let (cases, tuple?) =
           case bod of
             | Lambda ([(recd as (RecordPat (prs as (("1",_)::_),_)), _, tm)],a)
-                | all (\_lambda (_,p) \_rightarrow case p of VarPat _ \_rightarrow true | _ \_rightarrow false) prs \_rightarrow
+                | varOrTuplePattern? recd \_rightarrow
               let Some arg = patternToTerm recd in
               (aux(Apply(hd, arg, a), tm, true), true)
 	    | _ -> (aux(hd, bod, false), false) in
@@ -731,7 +737,8 @@ IsaTermPrinter qualifying spec
     in
     if open_pos >= end_pos then None
      else case search("\"",r_prag_str) of
-            | Some n \_rightarrow Some(substring(r_prag_str,0,n))
+            | Some n \_rightarrow Some(replaceString(substring(r_prag_str,0,n),
+                                           "\\_lambda","\\<lambda>"))
             | None \_rightarrow None
 
   op  ppPropertyType : PropertyType \_rightarrow Pretty
@@ -1374,6 +1381,28 @@ IsaTermPrinter qualifying spec
      | CharPat _ \_rightarrow true
      | NatPat _ \_rightarrow true
      | _ \_rightarrow false
+
+  op  varOrTuplePattern?: Pattern \_rightarrow Boolean
+  def varOrTuplePattern? p =
+    case p of
+      | VarPat _ \_rightarrow true
+      | RecordPat(prs as (("1",_)::_),_) \_rightarrow
+        all (\_lambda (_,p) \_rightarrow varOrTuplePattern? p) prs
+      | _ \_rightarrow false
+
+  op  simpleHead?: MS.Term \_rightarrow Boolean
+  def simpleHead? t =
+    case t of
+      | Apply(_,arg,_) \_rightarrow varOrTupleTerm? arg
+      | _ -> false
+
+  op  varOrTupleTerm?: MS.Term \_rightarrow Boolean
+  def varOrTupleTerm? p =
+    case p of
+      | Var _ \_rightarrow true
+      | Record(prs as (("1",_)::_),_) \_rightarrow
+        all (\_lambda (_,p) \_rightarrow varOrTupleTerm? p) prs
+      | _ \_rightarrow false
 
   op  stripSpaces: String \_rightarrow String
   def stripSpaces s =
