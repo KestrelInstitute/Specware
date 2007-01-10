@@ -105,7 +105,7 @@
 (defvar *tdirp*)
 
 (defun change-directory (directory)
-  ;; (lisp::format t "Changing to: ~A~%" directory)
+  ;; (format t "Changing to: ~A~%" directory)
   (let ((dirpath (dir-to-path directory)))
     (setq directory (namestring dirpath))
     (if #-clisp (probe-file (remove-final-slash directory)) ; remove necessary in some cl's
