@@ -8,7 +8,10 @@
 
 (test-directories ".")
 
-(test 
+(test
+  ("TWK: prwb" 
+  :swprb T
+  :output '((:optional "T") ""))
 
  ("twk message 1/8/03" 
   :sw "t0103_1"
