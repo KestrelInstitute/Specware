@@ -26,9 +26,9 @@
   ;; we need consistency: all pathnames, or all strings, or all lists
   ;; of strings, ...
   (let* ((dir 
-	 #+allegro   (excl::current-directory) ; pathname
-	 #+Lispworks (hcl:get-working-directory) ; ??       (current-pathname)
-	 #+mcl       (ensure-final-slash (ccl::current-directory-name))	; ??
+	 #+allegro   (excl::current-directory)     ; pathname
+	 #+Lispworks (hcl:get-working-directory)   ; ??       (current-pathname)
+	 #+mcl       (ccl::current-directory-name) ; ??
 	 #+cmu       (extensions:default-directory) ; pathname
 	 #+sbcl      (sb-unix:posix-getcwd)
 	 #+gcl       (system-short-str #+unix "pwd" #-unix "cd")
@@ -47,7 +47,6 @@
     (if (eq (car dirnames) :absolute)
 	main-dir-str
       (format nil ".~a" main-dir-str))))
-
 
 #+gcl
 (defun system-str (cmd &optional args)
@@ -104,6 +103,12 @@
 (defvar *tdir*)
 (defvar *tdirp*)
 
+(defun remove-final-slash (dirname)
+  (let ((last-index (- (length dirname) 1)))
+    (if (member (elt dirname last-index) '(#\/ #\\))
+	(subseq dirname 0 last-index)
+      dirname)))
+
 (defun change-directory (directory)
   ;; (format t "Changing to: ~A~%" directory)
   (let ((dirpath (dir-to-path directory)))
@@ -158,6 +163,9 @@
 		(if pr (setf (cdr pr) newvalue)
 		  (push (cons (intern varname "KEYWORD") newvalue)
 			ext:*environment-list*)))
+  #+sbcl      (progn (sb-unix::int-syscall ("setenv" sb-alien:c-string sb-alien:c-string sb-alien:int)
+					   varname newvalue 1)
+		     (getenv varname))
   #+gcl       (si:setenv varname newvalue)
   #+clisp     (setf (ext:getenv varname) newvalue)
   )
@@ -219,14 +227,13 @@
      ;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
      (compile-file-if-needed filep)
      ;; scripts depend upon the following returning true iff successful
-     (load (make-pathname :defaults filep :type *fasl-type*)))
-   )
+     (load (make-pathname :defaults filep :type *fasl-type*))))
 
 (defun load-lisp-file (file &rest ignore)
   (declare (ignore ignore))
   (load (make-pathname :defaults file :type "lisp")))
 
-#+mcl
+#+mcl					; Patch openmcl bug
 (defmacro cl-user::without-package-locks (&rest body)
   `(let ((ccl::*warn-if-redefine-kernel* nil))
     ,@body))
@@ -247,15 +254,9 @@
       dirname
     (concatenate 'string dirname "/")))
 
-(defun remove-final-slash (dirname)
-  (let ((last-index (- (length dirname) 1)))
-    (if (member (elt dirname last-index) '(#\/ #\\))
-	(subseq dirname 0 last-index)
-      dirname)))
-
 (defparameter temporaryDirectory
   (ensure-final-slash
-   (cl:substitute #\/ #\\
+   (substitute #\/ #\\
 	       #+(or win32 winnt mswindows)
 	       (or (getenv "TEMP") (getenv "TMP")
 		   #+allegro
@@ -268,7 +269,7 @@
 ;; defined in Specware4/Library/Base/Handwritten/Lisp/System.lisp
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
-   (cl:substitute #\/ #\\
+   (substitute #\/ #\\
 	       #+(or win32 winnt mswindows)
 	       (or (getenv "TEMP") (getenv "TMP")
 		   #+allegro
@@ -298,81 +299,87 @@
   #-(or cmu mcl sbcl allegro gcl) (format nil "Not yet implemented"))
 
 (defun copy-file (source target)
-  #+allegro(sys:copy-file source target)
-  #+cmu(ext:run-program "cp" (list (namestring source)
-				   (namestring target)))
-  #+mcl(ccl:copy-file source target :if-exists :supersede)
-  #+sbcl(sb-ext:run-program "/bin/cp" (list (namestring source)
-					    (namestring target)))
-  #-(or allegro cmu sbcl mcl)
-  ;;  ??? why assume characters ??? why special case for #\Page ???
-  ;;  (with-open-file (istream source :direction :input)
-  ;;    (with-open-file (ostream target :direction :output :if-does-not-exist :create)
-  ;;      (loop
-  ;;	(let ((char (read-char istream nil :eof)))
-  ;;	  (cond
-  ;;	   ((eq :eof char)
-  ;;	    (return))
-  ;;	   ((eq #\Page char)
-  ;;	    )
-  ;;	   (t
-  ;;	    (princ char ostream)))))))
   ;; This just copies the file verbatim, as you'd expect...
-  (with-open-file (old a :direction :input :element-type 'unsigned-byte)
-    (with-open-file (new b :direction :output :element-type 'unsigned-byte)
-      (let ((eof (cons nil nil)))
-	(do ((byte (read-byte old nil eof) (read-byte old nil eof)))
-	    ((eq byte eof))
-	  (write-byte byte new))))))
+  ;; similar to concatenate-files below, but with special cases
+  #+allegro (sys:copy-file source target :preserve-time t)
+  #+mcl     (ccl:copy-file source target :if-exists :supersede)
+  #+cmu     (ext:run-program    "cp"      (list (namestring source) (namestring target)))
+  #+sbcl    (sb-ext:run-program "/bin/cp" (list (namestring source) (namestring target)))
+  #-(or allegro cmu sbcl mcl)
+  ;; use unsigned-byte to avoid problems reading x-symbol chars
+  ;; For example, read-char might complain for chars with codes above #xC0
+  (with-open-file (istream source 
+			   :direction    :input 
+			   :element-type 'unsigned-byte)
+    (with-open-file (ostream target 
+			     :direction         :output 
+			     :element-type      'unsigned-byte 
+			     :if-does-not-exist :create)
+      (loop
+	(let ((byte (read-byte istream nil :eof)))
+	  (cond ((eq :eof byte) 
+		 (return))
+		(t 
+		 (write-byte byte ostream))))))))
+
+(defun concatenate-files (sources target)
+  ;; similar to generic-copy-file above -- rarely used
+  (ensure-directories-exist target)
+  (with-open-file (ostream target 
+			   :direction         :output 
+			   :element-type      'unsigned-byte
+			   :if-does-not-exist :create
+			   :if-exists         :supersede)
+    (loop for source in sources do
+      (with-open-file (istream source 
+			       :direction    :input 
+			       :element-type 'unsigned-byte)
+	(loop
+	  (let ((byte (read-byte istream nil :eof)))
+	    (cond
+	     ((eq :eof byte)
+	      (return))
+	     (t
+	      (write-byte byte ostream)))))))))
 
 (defun file-to-string (file)
-  (with-open-file (istream file :direction :input)
+  ;; Note: ead-char might complain for chars with codes above #xC0
+  ;; So use unsigned-byte to avoid problems reading x-symbol chars.
+  ;; Alternatively, add error handler for smooth continuation.
+  (with-open-file (istream file 
+			   :direction    :input 
+			   :element-type 'unsigned-byte)
     (with-output-to-string (ostream)
       (loop
-	(let ((char (read-char istream nil :eof)))
+	(let ((byte (read-byte istream nil :eof)))
+	  ;; read as a byte and do sanity check before trying to put it into a stream
+	  ;; some lisps will get upset at non-ascii characters...
 	  (cond
-	   ((eq :eof char)
-	    (return))
-	   ((eq #\Page char)
-	    )
-	   (t
-	    (princ char ostream))))))))
+	   ((eq byte :eof)  (return))
+	   ((> byte #x8F)   ) ; ignore non-ascii (chars above 127)
+	   ((= byte 12)     ) ; ignore #\Page    TODO: why this particular control char??
+	   (t 
+	    (write-char (code-char byte) ostream))))))))
 
 (defun first-line-of-file (file)
   (with-open-file (istream file :direction :input)
     (read-line istream)))
 
-(defun concatenate-files (files target)
-  (ensure-directories-exist target)
-  (with-open-file (ostream target :element-type 'unsigned-byte :direction :output
-			   :if-does-not-exist :create :if-exists :overwrite)
-    (loop for file in files
-      do (with-open-file (istream file :element-type 'unsigned-byte :direction :input)
-	   (loop
-	     (let ((char (read-byte istream nil :eof)))
-	       (cond
-		((eq :eof char)
-		 (return))
-		((eq #\Page char)
-		 )
-		(t
-		 (write-byte char ostream)))))))))
+(defun sw-directory (pathname &optional recursive?)
+  (directory #-(or mcl sbcl) pathname
+	     #+(or mcl sbcl) 
+	     (merge-pathnames (make-pathname :name :wild :type :wild) pathname)
+	     :allow-other-keys      t             ; permits implementation-specific keys to be ignored by other implementations
+	     :directories           t             ; specific to mcl
+	     :all                   recursive?    ; specific to mcl
+	     :directories-are-files nil           ; specific to allegro -- we never want this option, but it defaults to T (!)
+	     ))
 
 (defun directory? (pathname)
   #+Allegro (excl::file-directory-p pathname)
   #-Allegro (and (null (pathname-name pathname))
 		 (null (pathname-type pathname))
 		 (not (null (sw-directory pathname)))))
-
-(defun sw-directory (pathname &optional recursive?)
-  (directory #-(or mcl sbcl) pathname
-	     #+sbcl (merge-pathnames (make-pathname :name :wild :type :wild) pathname)
-	     #+mcl (merge-pathnames (make-pathname :name :wild) pathname)
-	     :allow-other-keys      t             ; permits implementation-specific keys to be ignored by other implementations
-	     :directories           t             ; specific to mcl
-	     :all                   recursive?    ; specific to mcl
-	     :directories-are-files nil           ; specific to allegro -- we never want this option, but it defaults to T (!)
-	     ))
 
 (defun extend-directory (dir ext-dir)
   (make-pathname :directory
@@ -401,10 +408,15 @@
 	 (target-dirpath (if (stringp target)
 			     (parse-namestring (ensure-final-slash target))
 			   target)))
-    (if #+mcl recursive? 
-	#+mcl (ccl:run-program "cp" (list "-R" (namestring source-dirpath)
-					  (namestring target-dirpath)))
-	#-mcl nil #-mcl nil
+    (if (progn #+(or mcl sbcl) recursive? #-(or mcl sbcl) nil)
+	(progn
+	  #+mcl (ccl:run-program     "cp"      (list "-R" 
+						     (namestring source-dirpath)
+						     (namestring target-dirpath)))
+	  #+sbcl (sb-ext:run-program "/bin/cp" (list "-R" 
+						     (namestring source-dirpath)
+						     (namestring target-dirpath)))
+	  #-(or mcl sbcl) nil)
       (progn (unless (probe-file target-dirpath)
 	       (make-directory target-dirpath))
 	     (loop for dir-item in (sw-directory source-dirpath)
@@ -421,18 +433,21 @@
   (let* ((dirpath (if (stringp dir) (parse-namestring dir) dir))
 	 (dirstr (if (stringp dir) dir (namestring dirpath))))
     (if contents?
-	#+mcl (ccl:run-program "rm" (list "-R" dirstr))
-	#+sbcl (sb-ext:run-program "/bin/rm" (list "-R" dirstr))
-	#-(or mcl sbcl)
-	(loop for dir-item in (sw-directory dirpath)
-	      do (if (directory? dir-item)
-		     (specware::delete-directory dir-item contents?)
-		     (delete-file dir-item)))
-	#+cmu (unix:unix-rmdir dirstr)
-	#+gcl (lisp:system (format nil "rmdir ~a" dirstr))
-	#+mcl (ccl:run-program "rmdir" (list dirstr))
+	(progn
+	  #+mcl  (ccl:run-program    "rm"      (list "-R" dirstr))
+	  #+sbcl (sb-ext:run-program "/bin/rm" (list "-R" dirstr))
+	  #-(or mcl sbcl)
+	  (loop for dir-item in (sw-directory dirpath)
+	    do (if (directory? dir-item)
+		   (specware::delete-directory dir-item contents?)
+		 (delete-file dir-item))))
+      (progn
+	#+mcl  (ccl:run-program    "rmdir"      (list dirstr))
 	#+sbcl (sb-ext:run-program "/bin/rmdir" (list dirstr))
-	#-(or cmu gcl mcl sbcl) nil)))	; No general way
+	#+cmu  (unix:unix-rmdir dirstr)
+	#+gcl  (lisp:system (format nil "rmdir ~a" dirstr))
+	#-(or cmu gcl mcl sbcl) nil	; No general way
+	))))
 
 (defun parent-directory (pathname)
   (let ((dir (pathname-directory pathname)))
@@ -467,10 +482,17 @@
   (loop until (funcall pred)
     do (sleep sleep-time)))
 
-(defpackage :swank)
+;; (defpackage :swank)
+
 (defun exit-when-done ()
-  (wait "Commands in progress"
-		  #'(lambda () (<= (funcall 'swank::eval-in-emacs '(length (slime-rex-continuations)))
-				   1)))
-  ;(format t "Exiting ~a~%" (funcall 'swank::eval-in-emacs '(length (slime-rex-continuations))))
-  (swank::eval-in-emacs '(slime-quit-specware)))
+  ;; use find-symbol hack to avoid sbcl complaints about eval-in-emacs
+  ;; not being defined at compile-time
+  ;; (also avoids need to have swank package available yet)
+  (let ((e-in-e (find-symbol "EVAL-IN-EMACS" "SWANK")))
+    (wait "Commands in progress"
+	  #'(lambda () (<= (funcall e-in-e
+				    '(length (slime-rex-continuations)))
+			   1)))
+    (format t "Exiting ~a~%" (funcall e-in-e '(length (slime-rex-continuations))))
+    (funcall e-in-e '(slime-quit-specware))))
+

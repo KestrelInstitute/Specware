@@ -5,32 +5,27 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun copy-file (source target)
-  #+allegro(sys:copy-file source target)
-  #+cmu(ext:run-program "cp" (list (namestring source)
-				   (namestring target)))
-  #+mcl(ccl:copy-file source target :if-exists :supersede)
-  #+sbcl(sb-ext:run-program "/bin/cp" (list (namestring source)
-					    (namestring target)))
-  #-(or allegro cmu sbcl mcl)
-  ;;  ??? why assume characters ??? why special case for #\Page ???
-  ;;  (with-open-file (istream source :direction :input)
-  ;;    (with-open-file (ostream target :direction :output :if-does-not-exist :create)
-  ;;      (loop
-  ;;	(let ((char (read-char istream nil :eof)))
-  ;;	  (cond
-  ;;	   ((eq :eof char)
-  ;;	    (return))
-  ;;	   ((eq #\Page char)
-  ;;	    )
-  ;;	   (t
-  ;;	    (princ char ostream)))))))
   ;; This just copies the file verbatim, as you'd expect...
-  (with-open-file (old a :direction :input :element-type 'unsigned-byte)
-    (with-open-file (new b :direction :output :element-type 'unsigned-byte)
-      (let ((eof (cons nil nil)))
-	(do ((byte (read-byte old nil eof) (read-byte old nil eof)))
-	    ((eq byte eof))
-	  (write-byte byte new))))))
+  #+allegro (sys:copy-file source target :preserve-time t)
+  #+mcl     (ccl:copy-file source target :if-exists :supersede)
+  #+cmu     (ext:run-program    "cp"      (list (namestring source) (namestring target)))
+  #+sbcl    (sb-ext:run-program "/bin/cp" (list (namestring source) (namestring target)))
+  #-(or allegro cmu sbcl mcl)
+  ;; use unsigned-byte to avoid problems reading x-symbol chars
+  ;; For example, read-char might complain for chars with codes above #xC0
+  (with-open-file (istream source 
+			   :direction    :input 
+			   :element-type 'unsigned-byte)
+    (with-open-file (ostream target 
+			     :direction         :output 
+			     :element-type      'unsigned-byte 
+			     :if-does-not-exist :create)
+      (loop
+	(let ((byte (read-byte istream nil :eof)))
+	  (cond ((eq :eof byte) 
+		 (return))
+		(t 
+		 (write-byte byte ostream))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 ALLEGRO
