@@ -111,9 +111,9 @@
 ;	    "    Expanded spec file: $TESTDIR/Snark/axioms/not_theorem_someValuesFrom_Thing.sw"
 ;	    "    Snark Log file: $TESTDIR/Snark/axioms/not_theorem_someValuesFrom_Thing.log"
 ;	    "not_theorem_someValuesFrom_Thing: Conjecture not_theorem_someValuesFrom_Thing in property_restriction is Proved! using Snark*."
-	    (:optional "")
-	    (:optional "")
-	    ))
+;	    (:optional "")
+;	    (:optional "")
+;	    ))
 
  ("OWL: theorem_type_someValuesFrom_Thing" 
   :sw "axioms#theorem_type_someValuesFrom_Thing"
