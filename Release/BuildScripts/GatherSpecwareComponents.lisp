@@ -2,6 +2,10 @@
 (defpackage "DISTRIBUTION" (:use "COMMON-LISP"))
 (in-package "DISTRIBUTION")
 
+; #+CMUCL #+SBCL are not quite the right tests.
+; We could be running any lisp here to make any distribution, 
+;; but probably would use the same lisp here as that for the distribution.
+
 (defvar *VERBOSE* nil)
 
 (defvar *fasl-type*
@@ -134,6 +138,9 @@
 
     (copy-dist-directory (extend-directory source-dir    "ProverBase")
 			 (extend-directory component-dir "ProverBase"))
+
+    (copy-dist-directory (extend-directory source-dir    "Isa")
+			 (extend-directory component-dir "Isa"))
 
     ;; When the user's Specware application starts, they need to load some 
     ;; handcoded definitions for a few primitive ops declared but not defined
@@ -610,18 +617,21 @@
 	  (target-doc-dir (ensure-subdirs-exist target-dir "Documentation")))
       ;; (format t "~&;;;~%")
       (format t "~&;;;   Getting Documentation ...~%")
-      (copy-dist-file (make-pathname :name "SpecwareLanguageManual"  :type "pdf" :defaults (extend-directory source-doc-dir "language-manual")) 
-		      (make-pathname :name "SpecwareLanguageManual"  :type "pdf" :defaults target-doc-dir))
-      (copy-dist-file (make-pathname :name "SpecwareTutorial"        :type "pdf" :defaults (extend-directory source-doc-dir "tutorial"))
-		      (make-pathname :name "SpecwareTutorial"        :type "pdf" :defaults target-doc-dir))
-      (copy-dist-file (make-pathname :name "SpecwareUserManual"      :type "pdf" :defaults (extend-directory source-doc-dir "user-manual"))
-		      (make-pathname :name "SpecwareUserManual"      :type "pdf" :defaults target-doc-dir))
-      (copy-dist-file (make-pathname :name "QuickReference"          :type "pdf" :defaults (extend-directory source-doc-dir "cheat-sheet"))
-		      (make-pathname :name "Specware-QuickReference" :type "pdf" :defaults target-doc-dir))
-      (let ((notes-file (make-pathname :name "ReleaseNotes"        :type "txt" :defaults source-doc-dir)))
+      (copy-dist-file  (make-pathname :name "SpecwareLanguageManual"    :type "pdf" :defaults (extend-directory source-doc-dir "language-manual")) 
+		       (make-pathname :name "SpecwareLanguageManual"    :type "pdf" :defaults target-doc-dir))
+      (copy-dist-file  (make-pathname :name "SpecwareTutorial"          :type "pdf" :defaults (extend-directory source-doc-dir "tutorial"))
+		       (make-pathname :name "SpecwareTutorial"          :type "pdf" :defaults target-doc-dir))
+      (copy-dist-file  (make-pathname :name "SpecwareUserManual"        :type "pdf" :defaults (extend-directory source-doc-dir "user-manual"))
+		       (make-pathname :name "SpecwareUserManual"        :type "pdf" :defaults target-doc-dir))
+      (copy-dist-file  (make-pathname :name "QuickReference"            :type "pdf" :defaults (extend-directory source-doc-dir "cheat-sheet"))
+		       (make-pathname :name "Specware-QuickReference"   :type "pdf" :defaults target-doc-dir))
+      (copy-dist-file  (make-pathname :name "SpecwareIsabelleInterface" :type "pdf" :defaults (extend-directory source-doc-dir "isabelle-interface"))
+		       (make-pathname :name "SpecwareIsabelleInterface" :type "pdf" :defaults target-doc-dir))
+
+      (let ((notes-file (make-pathname :name "ReleaseNotes" :type "txt" :defaults source-doc-dir)))
 	(when (probe-file notes-file)
 	  (copy-dist-file notes-file
-			  (make-pathname :name "ReleaseNotes"        :type "txt" :defaults target-doc-dir))))
+			  (make-pathname :name "ReleaseNotes" :type "txt" :defaults target-doc-dir))))
       )
 
     ;; Examples
@@ -633,6 +643,9 @@
 			   (extend-directory examples-dir "Matching"))
       
       (copy-dist-directory (extend-directory source-dir "UserDoc" "examples")
+			   (extend-directory target-dir "Examples"))
+
+      (copy-dist-directory (extend-directory source-dir "UserDoc" "isabelle-interface" "example")
 			   (extend-directory target-dir "Examples"))
 
       ;; (let ((snark-dir (extend-directory examples-dir "Matching" "Snark"))
@@ -658,51 +671,75 @@
 	 (source-buildscripts-dir (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
 	 (source-generic-dir      (ensure-subdirs-exist source-dir "Release" "Generic"))
 	 (source-linux-dir        (ensure-subdirs-exist source-dir "Release" "Linux"))
+	 #+CMUCL
 	 (source-linux-cmucl-dir  (ensure-subdirs-exist source-dir "Release" "Linux" "CMUCL"))
+	 #+SBCL
+	 (source-linux-sbcl-dir   (ensure-subdirs-exist source-dir "Release" "Linux" "SBCL"))
 	 ;;
 	 (target-dir              (ensure-subdirs-exist release-dir "Specware" "Linux"))
+
 	 ;; a list of files to load into the new application
 	 (files-to-load           (list (merge-pathnames lisp-utilities-dir      "LoadUtilities.lisp")
 					(merge-pathnames lisp-utilities-dir      "MemoryManagement.lisp")
 					(merge-pathnames lisp-utilities-dir      "CompactMemory.lisp")
 					(merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")  
 					(merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
-					(merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))))
+					(merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp")))
+
+	 ;; a list of files put on the distribution directory
+	 (files-to-copy           (append
+				    #+CMUCL
+				    (list (merge-pathnames source-linux-cmucl-dir "Specware")
+					  (merge-pathnames source-linux-cmucl-dir "SpecwareShell")
+					  (merge-pathnames source-linux-cmucl-dir "Find_CMUCL")
+					  (merge-pathnames source-linux-cmucl-dir "Find_Specware_App_CMUCL")
+					  (merge-pathnames source-linux-cmucl-dir "Isabelle_Specware")
+					  (merge-pathnames source-linux-cmucl-dir "XEmacs_Specware")
+					  )
+				    #+SBCL 
+				    (list (merge-pathnames source-linux-sbcl-dir "Specware")
+					  (merge-pathnames source-linux-sbcl-dir "SpecwareShell")
+					  (merge-pathnames source-linux-sbcl-dir "Find_SBCL")
+					  (merge-pathnames source-linux-sbcl-dir "Find_Specware_App_SBCL")
+					  (merge-pathnames source-linux-sbcl-dir "Isabelle_Specware")
+					  (merge-pathnames source-linux-sbcl-dir "XEmacs_Specware")
+					  )
+				    (list
+				     (merge-pathnames source-linux-dir      "install_gnome_desktop_icons_specware")
+				     (merge-pathnames source-linux-dir      "Find_XEMACS")
+				     (merge-pathnames source-linux-dir      "Find_SPECWARE4")
+				     (merge-pathnames source-linux-dir      "Update_Path")
+				     (merge-pathnames source-linux-dir      "Update_SWPATH")
+				     (merge-pathnames source-generic-dir    "StartSpecwareShell.lisp")
+				     ))))
 
     ;; Installation Scripts
-
-    ;; #+sbcl (dolist (file files-to-load) (compile-file file))
-
     
     ;; Executables/Images
     (generate-new-lisp-application #+CMUCL "/usr/share/cmulisp/bin/lisp" 
 				   #+CMUCL (format nil "~A.cmuimage" Specware-name)
+
 				   #+SBCL  "/usr/local/bin/sbcl"
 				   #+SBCL  (format nil "~A.sbclimage" Specware-name)
 
 				   target-dir
 				   files-to-load
-
-				   ;; a list of files to copy to the distribution directory
-				   (list (merge-pathnames source-linux-cmucl-dir "Specware")
-					 (merge-pathnames source-linux-cmucl-dir "SpecwareShell")
-					 (merge-pathnames source-linux-cmucl-dir "Find_CMUCL")
-					 (merge-pathnames source-linux-cmucl-dir "Find_Specware_App_CMUCL")
-					 (merge-pathnames source-linux-dir       "install_gnome_desktop_icons_specware")
-					 (merge-pathnames source-linux-dir       "Find_XEMACS")
-					 (merge-pathnames source-linux-dir       "Find_SPECWARE4")
-					 (merge-pathnames source-linux-dir       "Update_Path")
-					 (merge-pathnames source-linux-dir       "Update_SWPATH")
-					 (merge-pathnames source-generic-dir     "StartSpecwareShell.lisp"))
+				   files-to-copy
 				   t)
+
     ;; Patches
     (prepare_patch_dir source-dir target-dir)
     ))
 
 #+Mac
 (defun prepare_Specware_Mac (specware-dir release-dir lisp-utilities-dir)
+  ;; work in progress...
   (declare (ignore specware-dir release-dir lisp-utilities-dir))
   (print-minor "Specware" "Mac")
+  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Isabelle_Specware")
+		       (in-distribution-dir "Isabelle_Specware.terminal"))
+  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/XEmacs_Specware")
+		       (in-distribution-dir "XEmacs_Specware"))
   )
 
 #+MSWindows
@@ -757,16 +794,18 @@
 					 (merge-pathnames source-windows-dir         "Update_SWPATH.cmd")
 					 (merge-pathnames source-generic-dir         "StartSpecwareShell.lisp"))
 				   t)
-    ;; CVS is perversely hardwired to refuse accept *.exe files.
+
+    ;; CVS is perversely hardwired to refuse to accept *.exe files.
     ;; They are presumed to be binary files and hence outside it's purview.
-    ;; The documented means for overriding the default behavior 
-    ;; (putting ! in the .cvsignore file).
+    ;; The documented means for overriding the default behavior, putting 
+    ;; a ! in the .cvsignore file, doesnt't work.
     ;; I tried to enter the .exe files under aliases, and later rename them 
     ;; back to .exe for the CD.  But no matter what alias is used, CVS will 
     ;; accept the first version and then refuse to update after that.
     ;; So we prepare a zip file to put the related dxl,exe,lic files together
     ;; in a form that can evade CVS's deadly radar.
     ;; (Was I really, really bad in some previous incarnation??)
+
     (let* ((zip-file (make-pathname :name     Specware-name 
 				    :type     "zip"
 				    :defaults target-dir))
@@ -793,7 +832,7 @@
 ;;; ================================================================================
 
 ;;;  TODO: copy highest-numbered patch from "$SPECWARE4"/Release/Linux/CMU/Patches
-;;; /bin/cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.x86f          "$SPECWARE4"/distribution-cmulisp/Patches
+;;; /bin/cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.x86f  "$SPECWARE4"/distribution-cmulisp/Patches
 
 (defun prepare_patch_dir (source-dir target-dir)
   (let ((source-patch-dir (extend-directory source-dir "Release" "Windows" "Patches"))
