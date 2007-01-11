@@ -1,0 +1,9 @@
+#!/bin/bash --noprofile
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+SCRIPTDIR=`/usr/bin/dirname $0`
+XEMACS_SPECWARE="$SCRIPTDIR"/XEmacs_Specware
+
+Isabelle -p $XEMACS_SPECWARE $* 

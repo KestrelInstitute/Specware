@@ -1,0 +1,29 @@
+#!/bin/sh
+
+act='launch Specware in SBCL, no XEmacs'
+
+########################################################################
+
+OLD_PATH=$PATH
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+
+# Use the directory of this file as the default value of SPECWARE4
+# Note: $0 may refer to Specware or SpecwareShell script invoking this...
+
+INVOKED_HERE=`dirname $0`
+cd $INVOKED_HERE
+HERE=`pwd`
+PATH=$OLD_PATH
+
+########################################################################
+
+. $HERE/Find_SPECWARE4
+. $HERE/Find_SBCL
+. $HERE/Update_Path
+. $HERE/Update_SWPATH
+. $HERE/Find_Specware_App_SBCL
+
+
+########################################################################
+
+"$LISP" -core "$LISP_HEAP_IMAGE" -eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (exit))"

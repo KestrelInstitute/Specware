@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# Try to find lisp executable for CMU CL
+# avoid using exit unless there's an error, as this is invoked via . from superior shell
+# Note: $0 may refer to a Specware or SpecwareShell script invoking this...
+
+INVOKED_HERE=`dirname $0`
+cd "$INVOKED_HERE"
+HERE="`pwd`"
+
+prior_LISP="$Prior_LISP"
+
+#########################################################################
+
+# Use pre-existing value for LISP if it is executable and has an expected name
+HAVE_LISP=false
+if [ -n "$LISP" ]; then
+  OLD_LISP=$LISP
+  BASENAME=`basename "$LISP"`
+  if [ "$BASENAME" == "lisp" ]; then
+    if [ -x "$LISP" ]; then
+      HAVE_LISP=true
+    fi
+  fi
+fi
+
+# Otherwise, look for an executable candidate
+if [ "$HAVE_LISP" != "true" ]; then
+  for L in "$HERE"/lisp "$HOME"/sbcl/bin/lisp /usr/local/sbcl/bin/lisp /usr/lib/sbcl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/sbcl /bin/lisp ; do
+    if [ -x "$L" ]; then
+      LISP="$L"
+    fi
+  done
+fi
+
+if [ -z "$LISP" ]; then
+   echo "Failed to $act, no LISP executable found" 2>&1
+   exit 1
+fi
+
+if [ ! -x "$LISP" ]; then
+   echo "Failed to $act, $LISP is not executable" 2>&1
+   exit 1
+fi
+
+export LISP
+
+#########################################################################
+
+echo ""
+echo "prior LISP: $Prior_LISP"
+echo "final LISP: $LISP"
+echo ""
