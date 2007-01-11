@@ -7,7 +7,10 @@
 
  ("OWL: prwb" 
   :swprb NIL
-  :output '((:optional "NIL") ""))
+  :output '((:optional "NIL") 
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_one_gtq" 
   :sw "axioms#theorem_one_gtq"
@@ -24,14 +27,20 @@
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System"
 	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite"
+
+
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/axioms/theorem_one_gtq.log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $TESTDIR/Snark/axioms/ does not exist, will create.")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
+	    (:optional "creating directory: $TESTDIR/Snark/")
+	    (:optional "creating directory: $TESTDIR/Snark/axioms/")
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_one_gtq.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_one_gtq.log"
 	    "theorem_one_gtq: Conjecture theorem_one_gtq in owlnat is Proved! using simple inequality reasoning*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_reflexivity_of_equivalentClass" 
   :sw "axioms#theorem_reflexivity_of_equivalentClass"
@@ -40,7 +49,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_reflexivity_of_equivalentClass.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_reflexivity_of_equivalentClass.log"
 	    "theorem_reflexivity_of_equivalentClass: Conjecture theorem_reflexivity_of_equivalentClass in owl_core is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_not_AllDifferent_cons_xx" 
   :sw "axioms#theorem_not_AllDifferent_cons_xx"
@@ -48,7 +59,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_not_AllDifferent_cons_xx.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_not_AllDifferent_cons_xx.log"
 	    "theorem_not_AllDifferent_cons_xx: Conjecture theorem_not_AllDifferent_cons_xx in owl_core is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_type_identity" 
   :sw "axioms#theorem_type_identity"
@@ -56,7 +69,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_type_identity.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_type_identity.log"
 	    "theorem_type_identity: Conjecture theorem_type_identity in owl_core is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_reflexivity_of_sameAs" 
   :sw "axioms#theorem_reflexivity_of_sameAs"
@@ -64,7 +79,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_reflexivity_of_sameAs.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_reflexivity_of_sameAs.log"
 	    "theorem_reflexivity_of_sameAs: Conjecture theorem_reflexivity_of_sameAs in owl_core is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_singleton" 
   :sw "axioms#theorem_singleton"
@@ -72,7 +89,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_singleton.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_singleton.log"
 	    "theorem_singleton: Conjecture theorem_singleton in owl_core is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_type_choice" 
   :sw "axioms#theorem_type_choice"
@@ -81,7 +100,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_type_choice.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_type_choice.log"
 	    "theorem_type_choice: Conjecture theorem_type_choice in cardinality_core is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
 ; ("OWL: not_theorem_someValuesFrom_Thing" 
 ;  :sw "axioms#not_theorem_someValuesFrom_Thing"
@@ -90,7 +111,9 @@
 ;	    "    Expanded spec file: $TESTDIR/Snark/axioms/not_theorem_someValuesFrom_Thing.sw"
 ;	    "    Snark Log file: $TESTDIR/Snark/axioms/not_theorem_someValuesFrom_Thing.log"
 ;	    "not_theorem_someValuesFrom_Thing: Conjecture not_theorem_someValuesFrom_Thing in property_restriction is Proved! using Snark*."
-;	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_type_someValuesFrom_Thing" 
   :sw "axioms#theorem_type_someValuesFrom_Thing"
@@ -100,7 +123,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_type_someValuesFrom_Thing.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_type_someValuesFrom_Thing.log"
 	    "theorem_type_someValuesFrom_Thing: Conjecture theorem_type_someValuesFrom_Thing in property_restriction is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_card_1" 
   :sw "axioms#theorem_card_1"
@@ -111,7 +136,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_1.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_1.log"
 	    "theorem_card_1: Conjecture theorem_card_1 in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_card_one_not_Nothing" 
   :sw "axioms#theorem_card_one_not_Nothing"
@@ -119,7 +146,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_one_not_Nothing.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_one_not_Nothing.log"
 	    "theorem_card_one_not_Nothing: Conjecture theorem_card_one_not_Nothing in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ;;      ("theorem_card_one_choice" :sw "axioms#theorem_card_one_choice"
  ;;       :output ";;; Elaborating proof-term at $TESTDIR/axioms#theorem_card_one_choice
@@ -141,7 +170,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_one_gtq_card_remove_is_nothing.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_one_gtq_card_remove_is_nothing.log"
 	    "theorem_one_gtq_card_remove_is_nothing: Conjecture theorem_one_gtq_card_remove_is_nothing in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_cardone" 
   :sw "axioms#theorem_cardone"
@@ -149,7 +180,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_cardone.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_cardone.log"
 	    "theorem_cardone: Conjecture theorem_cardone in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_card_gtq_choice" 
   :sw "axioms#theorem_card_gtq_choice"
@@ -157,7 +190,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_gtq_choice.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_gtq_choice.log"
 	    "theorem_card_gtq_choice: Conjecture theorem_card_gtq_choice in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_card_two_not_nothing" 
   :sw "axioms#theorem_card_two_not_nothing"
@@ -165,7 +200,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_two_not_nothing.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_two_not_nothing.log"
 	    "theorem_card_two_not_nothing: Conjecture theorem_card_two_not_nothing in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_card_two_remove_has_card_one" 
   :sw "axioms#theorem_card_two_remove_has_card_one"
@@ -173,7 +210,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_two_remove_has_card_one.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_two_remove_has_card_one.log"
 	    "theorem_card_two_remove_has_card_one: Conjecture theorem_card_two_remove_has_card_one in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_card_two_not_same" 
   :sw "axioms#theorem_card_two_not_same"
@@ -181,7 +220,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_two_not_same.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_two_not_same.log"
 	    "theorem_card_two_not_same: Conjecture theorem_card_two_not_same in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_card_two_not_three" 
   :sw "axioms#theorem_card_two_not_three"
@@ -189,7 +230,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_two_not_three.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_two_not_three.log"
 	    "theorem_card_two_not_three: Conjecture theorem_card_two_not_three in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_card_of_Nothing_is_zero" 
   :sw "axioms#theorem_card_of_Nothing_is_zero"
@@ -197,7 +240,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_of_Nothing_is_zero.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_of_Nothing_is_zero.log"
 	    "theorem_card_of_Nothing_is_zero: Conjecture theorem_card_of_Nothing_is_zero in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_card_of_Thing_not_zero" 
   :sw "axioms#theorem_card_of_Thing_not_zero"
@@ -205,7 +250,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_card_of_Thing_not_zero.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_card_of_Thing_not_zero.log"
 	    "theorem_card_of_Thing_not_zero: Conjecture theorem_card_of_Thing_not_zero in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_subClass_of_image" 
   :sw "axioms#theorem_subClass_of_image"
@@ -213,7 +260,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_subClass_of_image.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_subClass_of_image.log"
 	    "theorem_subClass_of_image: Conjecture theorem_subClass_of_image in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_Cardinality_one" 
   :sw "axioms#theorem_Cardinality_one"
@@ -221,7 +270,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_Cardinality_one.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_Cardinality_one.log"
 	    "theorem_Cardinality_one: Conjecture theorem_Cardinality_one in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_maxCardinality_one" 
   :sw "axioms#theorem_maxCardinality_one"
@@ -229,7 +280,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_maxCardinality_one.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_maxCardinality_one.log"
 	    "theorem_maxCardinality_one: Conjecture theorem_maxCardinality_one in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_minCardinality_one" 
   :sw "axioms#theorem_minCardinality_one"
@@ -237,7 +290,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_minCardinality_one.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_minCardinality_one.log"
 	    "theorem_minCardinality_one: Conjecture theorem_minCardinality_one in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_minCardinality_zero" 
   :sw "axioms#theorem_minCardinality_zero"
@@ -245,7 +300,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_minCardinality_zero.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_minCardinality_zero.log"
 	    "theorem_minCardinality_zero: Conjecture theorem_minCardinality_zero in cardinality is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: testcase_cardinality_002" 
   :sw "axioms#testcase_cardinality_002"
@@ -254,7 +311,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/testcase_cardinality_002.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/testcase_cardinality_002.log"
 	    "testcase_cardinality_002: Conjecture testcase_cardinality_002 in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_Cardinality_two_not_same" 
   :sw "axioms#theorem_Cardinality_two_not_same"
@@ -262,7 +321,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_Cardinality_two_not_same.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_Cardinality_two_not_same.log"
 	    "theorem_Cardinality_two_not_same: Conjecture theorem_Cardinality_two_not_same in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_Cardinality_two_not_three" 
   :sw "axioms#theorem_Cardinality_two_not_three"
@@ -270,7 +331,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_Cardinality_two_not_three.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_Cardinality_two_not_three.log"
 	    "theorem_Cardinality_two_not_three: Conjecture theorem_Cardinality_two_not_three in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_Cardinality_not_same_zero" 
   :sw "axioms#theorem_Cardinality_not_same_zero"
@@ -278,7 +341,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_Cardinality_not_same_zero.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_Cardinality_not_same_zero.log"
 	    "theorem_Cardinality_not_same_zero: Conjecture theorem_Cardinality_not_same_zero in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_Cardinality_not_same_one" 
   :sw "axioms#theorem_Cardinality_not_same_one"
@@ -286,7 +351,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_Cardinality_not_same_one.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_Cardinality_not_same_one.log"
 	    "theorem_Cardinality_not_same_one: Conjecture theorem_Cardinality_not_same_one in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_minCardinality_not_same_n" 
   :sw "axioms#theorem_minCardinality_not_same_n"
@@ -294,7 +361,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_minCardinality_not_same_n.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_minCardinality_not_same_n.log"
 	    "theorem_minCardinality_not_same_n: Conjecture theorem_minCardinality_not_same_n in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_Cardinality_not_same_n" 
   :sw "axioms#theorem_Cardinality_not_same_n"
@@ -302,7 +371,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_Cardinality_not_same_n.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_Cardinality_not_same_n.log"
 	    "theorem_Cardinality_not_same_n: Conjecture theorem_Cardinality_not_same_n in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_maxCardinality_not_different_n" 
   :sw "axioms#theorem_maxCardinality_not_different_n"
@@ -310,7 +381,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_maxCardinality_not_different_n.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_maxCardinality_not_different_n.log"
 	    "theorem_maxCardinality_not_different_n: Conjecture theorem_maxCardinality_not_different_n in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_Cardinality_not_different_n" 
   :sw "axioms#theorem_Cardinality_not_different_n"
@@ -318,7 +391,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_Cardinality_not_different_n.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_Cardinality_not_different_n.log"
 	    "theorem_Cardinality_not_different_n: Conjecture theorem_Cardinality_not_different_n in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_Cardinality_two_Alldifferent" 
   :sw "axioms#theorem_Cardinality_two_Alldifferent"
@@ -326,7 +401,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_Cardinality_two_Alldifferent.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_Cardinality_two_Alldifferent.log"
 	    "theorem_Cardinality_two_Alldifferent: Conjecture theorem_Cardinality_two_Alldifferent in cardinality_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_unionOf_Nothing" 
   :sw "axioms#theorem_unionOf_Nothing"
@@ -335,7 +412,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_unionOf_Nothing.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_unionOf_Nothing.log"
 	    "theorem_unionOf_Nothing: Conjecture theorem_unionOf_Nothing in owl_class_ops is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_unionOf_Thing" 
   :sw "axioms#theorem_unionOf_Thing"
@@ -343,7 +422,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_unionOf_Thing.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_unionOf_Thing.log"
 	    "theorem_unionOf_Thing: Conjecture theorem_unionOf_Thing in owl_class_ops is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: test_complementOf_001" 
   :sw "axioms#test_complementOf_001"
@@ -352,7 +433,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/test_complementOf_001.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/test_complementOf_001.log"
 	    "test_complementOf_001: Conjecture test_complementOf_001 in owl_class_ops_test is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_oneOf_vs_addOne" 
   :sw "axioms#theorem_oneOf_vs_addOne"
@@ -360,7 +443,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_oneOf_vs_addOne.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_oneOf_vs_addOne.log"
 	    "theorem_oneOf_vs_addOne: Conjecture theorem_oneOf_vs_addOne in owl_class_ops is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_inverseOf_Functional_is_InverseFunctional" 
   :sw "axioms#theorem_inverseOf_Functional_is_InverseFunctional"
@@ -369,7 +454,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_inverseOf_Functional_is_InverseFunctional.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_inverseOf_Functional_is_InverseFunctional.log"
 	    "theorem_inverseOf_Functional_is_InverseFunctional: Conjecture theorem_inverseOf_Functional_is_InverseFunctional in properties is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: theorem_domain_and_range_of_symmetric_are_the_same" 
   :sw "axioms#theorem_domain_and_range_of_symmetric_are_the_same"
@@ -377,7 +464,9 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/theorem_domain_and_range_of_symmetric_are_the_same.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/theorem_domain_and_range_of_symmetric_are_the_same.log"
 	    "theorem_domain_and_range_of_symmetric_are_the_same: Conjecture theorem_domain_and_range_of_symmetric_are_the_same in properties is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  ("OWL: example_chianti" 
   :sw "axioms#example_chianti"
@@ -385,7 +474,10 @@
 	    "    Expanded spec file: $TESTDIR/Snark/axioms/example_chianti.sw"
 	    "    Snark Log file: $TESTDIR/Snark/axioms/example_chianti.log"
 	    "example_chianti: Conjecture example_chianti in properties is Proved! using Snark*."
-	    ""))
+	    (:optional "")
+	    (:optional "")
+	    ))
+
  ;;      ("contradictory" :sw "axioms#contradictory"
  ;;       :output ";;; Elaborating proof-term at $TESTDIR/axioms#contradictory"
  ;;    Expanded spec file: $TESTDIR/Snark/axioms/contradictory.sw

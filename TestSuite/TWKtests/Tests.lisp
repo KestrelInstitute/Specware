@@ -11,7 +11,9 @@
 (test
   ("TWK: prwb" 
   :swprb T
-  :output '((:optional "T") ""))
+  :output '((:optional "T") 
+	    (:optional ""))
+  )
 
  ("twk message 1/8/03" 
   :sw "t0103_1"
@@ -22,21 +24,25 @@
 	    "40.33-40.38	: Could not match type constraint"
 	    "              legal? of type move -> Boolean"
 	    "          with expected type Boolean"
-	    ""))
+	    (:optional ""))
+  )
+
 
  ("twk message 1/8/03 fix 1"
   :sw "t0103_2"
   :output '(";;; Elaborating spec at $TESTDIR/t0103_2#player"
 	    ";;; Elaborating spec at $TESTDIR/t0103_2#position"
 	    ";;; Elaborating spec at $TESTDIR/t0103_2#move"
-	    ""))
+	    (:optional ""))
+  )
 
  ("twk message 1/8/03 fix 2"
   :sw "t0103_3"
   :output '(";;; Elaborating spec at $TESTDIR/t0103_3#player"
 	    ";;; Elaborating spec at $TESTDIR/t0103_3#position"
 	    ";;; Elaborating spec at $TESTDIR/t0103_3#move"
-	    ""))
+	    (:optional ""))
+  )
 
  ("twk_message 6/2/04"
   :sw "Switch"
@@ -59,14 +65,17 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Switch/p1.log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
+	    (:optional "creating directory: $TESTDIR/Snark/")
 	    (:optional "creating directory: $TESTDIR/Snark/Switch/")
+	    (:optional "    Expanded spec file: $TESTDIR/Snark/Switch/p1.sw")
 	    (:optional ";; Directory $TESTDIR/Snark/Switch/ does not exist, will create.")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/Switch/p1.sw")
 	    "    Snark Log file: $TESTDIR/Snark/Switch/p1.log"
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "p1: Conjecture doubleswitchidentity in aspec is Proved! using Snark*."
-	    ""))
+	    (:optional ""))
+  )
 
  ("twk_message 6/18/04"
   :sw "ThreeValue"
@@ -81,10 +90,12 @@
 	    (:optional ";; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will create.")
 	    (:optional ";; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will")
 	    (:optional ";;   create.")
+	    (:optional "creating directory: $TESTDIR/Snark/ThreeValue/")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/ThreeValue/ThreeP.sw")
 	    "    Snark Log file: $TESTDIR/Snark/ThreeValue/ThreeP.log"
 	    "ThreeP: Theorem threedifferent in ThreeValuesDef is Proved! using Snark*."
-	    ""))
+	    (:optional ""))
+  )
 
  ("twk_message 8/2/04"
   :sw "MathFact"
@@ -96,10 +107,12 @@
 	    (:optional ";; ensure-directories-exist: creating")
 	    (:optional ";;   $TESTDIR/Snark/MathFact/sum_spec_p1.log")
 	    (:optional ";; Directory $TESTDIR/Snark/MathFact/ does not exist, will create.")
+	    (:optional "creating directory: $TESTDIR/Snark/MathFact/")
 	    "    Expanded spec file: $TESTDIR/Snark/MathFact/sum_spec_p1.sw"
 	    "    Snark Log file: $TESTDIR/Snark/MathFact/sum_spec_p1.log"
 	    "sum_spec_p1: Conjecture sum_zero in sum_spec_obs is Proved! using Snark*."
-	    ""))
+	    (:optional ""))
+  )
       
  ("twk_message 8/13/04"
   :sw "Tuples"
@@ -116,16 +129,20 @@
 	    "    Expanded spec file: $TESTDIR/Snark/Tuples/P2.sw"
 	    "    Snark Log file: $TESTDIR/Snark/Tuples/P2.log"
 	    "P2: Conjecture twoMakesMakeAMatch2 in O1 is Proved! using simple inequality reasoning*."
-	    ""))
+	    (:optional ""))
+  )
 
  ("twk_message 9/8/05 a"
   :sw "Embed"
   :output '(";;; Elaborating spec at $TESTDIR/Embed"
-	    ""))
+	    (:optional ""))
+  )
+
  ("twk_message 9/8/05 b"
   :swe "embed? XX (XX 5)"
   :swe-spec "Embed"
   :value '(:|Bool| . T))
+
  ("twk_message 9/8/05 c"
   :swe "embed? XX (YY 5)"
   :swe-spec "Embed"

@@ -5,15 +5,7 @@
        :output '(";;; Elaborating obligator at $TESTDIR/orderOblig#O"
 		 ";;; Elaborating spec at $TESTDIR/orderOblig#S"
 		 ";;; Elaborating proof-term at $TESTDIR/orderOblig#P"
-		 (:alternatives
-		  (";; ensure-directories-exist: creating $TESTDIR/Snark/orderOblig/P.log")
-		  (";; ensure-directories-exist: creating"
-		   ";;   $TESTDIR/Snark/orderOblig/P.log"))
 		 (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
-		 (:alternatives
-		  (";; Directory $TESTDIR/Snark/orderOblig/ does not exist, will create.")
-		  (";; Directory $TESTDIR/Snark/orderOblig/ does not exist, will"
-		   ";;   create."))
 		 (:optional "creating directory: $TESTDIR/Snark/")
 		 (:optional "creating directory: $TESTDIR/Snark/orderOblig/")
 		 "    Expanded spec file: $TESTDIR/Snark/orderOblig/P.sw"

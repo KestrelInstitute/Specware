@@ -7,8 +7,9 @@
   :swe       "f = f"
   :value     '(:|Bool| . t)
   :output    '(";;; Elaborating spec at $TESTDIR/TwoConstants"
-	       ""
-	       ""))
+	       (:optional "")
+	       (:optional "")
+	       ))
 
  ("Bug 0122 : Two constants might be equal: (f  =  g) is unknown"
   :swe-spec  "TwoConstants"
@@ -42,8 +43,9 @@
   :value-predicate #'(lambda (x y) 
 		       (and (equal (car x) :|Unevaluated|)
 			    (METASLANG::equalTerm?-2 (cdr x) y)))
-  :output '(""
-	    ""))
+  :output '((:optional "")
+	    (:optional "")
+	    ))
 
  ("Bug 0122 : Two constants might be equal: (f  = 33) is unknown"
   :swe-spec  "TwoConstants"
@@ -77,8 +79,9 @@
   :value-predicate #'(lambda (x y) 
 		       (and (equal (car x) :|Unevaluated|)
 			    (METASLANG::equalTerm?-2 (cdr x) y)))
-  :output '(""
-	    ""))
+  :output '((:optional "")
+	    (:optional "")
+	    ))
 
 
  ("Bug 0122 : Two constants might be equal: (33 =  g) is unknown"
@@ -113,14 +116,16 @@
   :value-predicate #'(lambda (x y) 
 		       (and (equal (car x) :|Unevaluated|)
 			    (METASLANG::equalTerm?-2 (cdr x) y)))
-  :output '(""
-	    ""))
+  :output '((:optional "")
+	    (:optional "")
+	    ))
 
  ("Bug 0122 : Two constants might be equal: (33 = 44) is false"
   :swe-spec  "TwoConstants"
   :swe       "(33 = 44) = false"
   :value     '(:|Bool| . t)
-  :output    '(""
-	       ""))
+  :output '((:optional "")
+	    (:optional "")
+	    ))
 
  )
