@@ -26,7 +26,9 @@ Notes:
 (defun eval-in-emacs (string)
   (when *use-emacs-interface?*
     (if (and (fboundp 'swank::eval-string-in-emacs)
-	     specware::*using-slime-interface?*)
+	     (find-package "SPECWARE")
+	     (let ((x (find-symbol "*USING-SLIME-INTERFACE?*" "SPECWARE")))
+	       (and x (symbol-value x))))
 	(funcall 'swank::eval-string-in-emacs string t)
       #+allegro
       (if (find-package :ilisp)
