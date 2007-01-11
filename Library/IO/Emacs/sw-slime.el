@@ -60,10 +60,11 @@
                     slime-backend
                   (concat slime-path slime-backend)))
         (encoding (slime-coding-system-cl-name coding-system)))
-    (format "%S\n%S\n%S\n\n"
+    (format "%S\n%S\n%S\n%S\n\n"
             `(unless (and (find-package "SWANK") (fboundp (intern "START-SERVER" "SWANK")))
 	       (load ,loader :verbose t))
-	    `(setq specware::*using-slime-interface?* t)
+	    `(unless (find-package "SPECWARE") (defpackage "SPECWARE" (:use "CL")))
+	    `(set (find-symbol "*USING-SLIME-INTERFACE?*" "SPECWARE") t)
             `(swank:start-server ,port-filename :external-format ,encoding))))
 
 ;;; based on slime-repl-return
