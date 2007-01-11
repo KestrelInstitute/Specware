@@ -41,8 +41,8 @@
   (format t "~&;;;~%")
   (format t "~&;;; Getting Isabelle Specware Start-up Scripts ...~%")
 
-  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Isabelle_Specware")
+  (specware::copy-file (in-specware-dir "Release/Mac/sbcl/Isabelle_Specware")
 		       (in-distribution-dir "Isabelle_Specware.terminal"))
-  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/XEmacs_Specware")
+  (specware::copy-file (in-specware-dir "Release/Mac/sbcl/XEmacs_Specware")
 		       (in-distribution-dir "XEmacs_Specware"))
   )

@@ -1,6 +1,7 @@
 ;; This file builds a distribution directory for Linux/Mac OS X/SBCL Runtime Specware.
 
 (defpackage :Specware)
+(in-package :cl-user)
 
 (defvar *including-isabelle-interface?* t)
 
@@ -38,7 +39,7 @@
     (specware::make-directory dir)))
 
 (load (format nil "~A/Applications/Handwritten/Lisp/load-utilities"
-	      *specware-dir*))
+	      Specware::*specware-dir*))
 
 ;;; ============ PARAMETERS ============
 
@@ -51,11 +52,13 @@
 (defparameter cl-user::Specware-patch-level  "0")
 (defparameter Major-Version-String           "4-2")		; patch detection, about-specware cmd
 
-(defparameter *Distribution-dir*  (concatenate 'string *specware-dir* "distribution-sbcl/Specware/"))
+(defparameter *Distribution-dir*  (concatenate 'string Specware::*specware-dir* "distribution-sbcl/Specware/"))
 
 (ensure-directories-exist *Distribution-dir*)
 
-(defun in-distribution-dir (file) (concatenate 'string *Distribution-dir* file))
+(defun in-distribution-dir (file) (concatenate 'string Specware::*Distribution-dir* file))
+(defun in-specware-dir (file) (concatenate 'string Specware::*specware-dir* file))
+
 
 ;;; =========== BUILD DISTRIBUTION DIRECTORY ============== 
 
@@ -71,7 +74,7 @@
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/show-dirs.lisp"))
 
 (format t "~&;;; Current status of distribution directory:~%;;;~%")
-(show-dirs *distribution-dir* 3 ";;; ")
+(show-dirs Specware::*distribution-dir* 3 ";;; ")
 
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 (format t "~&;;;~%")
