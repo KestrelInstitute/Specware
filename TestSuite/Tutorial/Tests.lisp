@@ -57,7 +57,9 @@
 	    ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite"
 	    (:optional ";; ensure-directories-exist: creating $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1A.log")
 	    (:optional ";; Directory $SPECWARE/UserDoc/tutorial/example/Snark/ does not exist, will create.")
+	    (:optional "creating directory: $SPECWARE/UserDoc/tutorial/example/Snark/")
 	    (:optional ";; Directory $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/ does not exist, will create.")
+	    (:optional "creating directory: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/")
  	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1A.sw"
 	    "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1A.log"
