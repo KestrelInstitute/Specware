@@ -272,9 +272,9 @@ be the option to run each (test ...) form in a fresh image.
 				    ((not (null swl    )) (cl-user::swl           (normalize-input swl      )))
 				    ((not (null show   )) (cl-user::show          (normalize-input show     )))
 				    ((not (null showx  )) (cl-user::showx         (normalize-input showx    )))
-				    ((not (null lisp   )) (eval (read-from-string (normalize-input lisp     ))))
+				    ((not (null lisp   )) (eval (read-from-string (normalize-input lisp    ))))
 				    ((not (null path   )) (cl-user::swpath        (normalize-input path     )))
-				    ((not (null swprb? )) (cl-user::swprb         swprb                     ))
+				    ((not (null swprb? )) (cl-user::swprb         swprb                      ))
 				    )))))))
       (setq test-output (normalize-output test-output))
       (when emacs::*goto-file-position-stored*
@@ -408,14 +408,16 @@ be the option to run each (test ...) form in a fresh image.
 	   (extend-match (wanted saw)
 	     (cond ((null wanted)
 		    (values wanted saw))
+		   ((optional? (car wanted))
+		    (if (null saw)
+			(extend-match (cdr wanted) saw)
+		      (let ((optional-lines (cdr (car wanted))))
+			(if (lines-match? (car optional-lines) (car saw))
+			    (extend-match (append (cdr optional-lines) (cdr wanted)) 
+					  (cdr saw))
+			  (extend-match (cdr wanted) saw)))))
 		   ((null saw)
 		    (values wanted saw))
-		   ((optional? (car wanted))
-		    (let ((optional-lines (cdr (car wanted))))
-		      (if (lines-match? (car optional-lines) (car saw))
-			  (extend-match (append (cdr optional-lines) (cdr wanted)) 
-					(cdr saw))
-			(extend-match (cdr wanted) saw))))
 		   ((alternatives? (car wanted))
 		    (dolist (alternative (cdr (car wanted))
 			      ;; all the alternatives fail
@@ -438,24 +440,23 @@ be the option to run each (test ...) form in a fresh image.
     (multiple-value-bind (w-tail s-tail)
 	(extend-match (convert-to-lines wanted)
 		      (convert-to-lines saw))
-      (if (null s-tail)
-	  nil
-	(let ((rev-w-tail (reverse w-tail))
-	      (rev-s-tail (reverse s-tail)))
-	  (multiple-value-bind (w-middle s-middle)
-	      (extend-match rev-w-tail rev-s-tail)
-	    (let* ((incomplete-match? 
-		    (or (not (null w-middle))
-			(not (null s-middle))))
-		   (partial-match-at-start? (and incomplete-match?
-						 (not (eq s-tail saw))))
-		   (partial-match-at-end?   (and incomplete-match?
-						 (not (eq s-middle rev-s-tail)))))
+      (let ((rev-w-tail (reverse w-tail))
+	    (rev-s-tail (reverse s-tail)))
+	(multiple-value-bind (w-middle s-middle)
+	    (extend-match rev-w-tail rev-s-tail)
+	  (let* ((incomplete-match? 
+		  (or (not (null w-middle))
+		      (not (null s-middle))))
+		 (partial-match-at-start? (and incomplete-match?
+					       (not (eq s-tail saw))))
+		 (partial-match-at-end?   (and incomplete-match?
+					       (not (eq s-middle rev-s-tail)))))
+	    (if (and (null w-middle) (null s-middle))
+		nil
 	      (list partial-match-at-start? 
 		    (reverse w-middle) 
 		    (reverse s-middle)
 		    partial-match-at-end?))))))))
-
 
 (defun lines-match? (x y)
   ;; x is the pattern: ? matches any char in y, * matches any sequence in y
