@@ -213,11 +213,23 @@
     #+allegro (excl::compile-file-if-needed file)
     #+Lispworks (hcl:compile-file-if-needed file)
     #+(or cmu mcl sbcl gcl clisp)
-    (when (> (file-write-date file)
+    (unless (> 
+	     ;; Make sure the fasl file is strictly newer to avoid the following 
+	     ;; race condition that can occur in automated scripts, etc.
+	     ;;
+	     ;;  old  X.lisp   [write time = N]
+	     ;;  old  X.fasl   [write time = N+1]
+	     ;;  new  X.lisp   [write time = N+1]
+	     ;; 
+	     ;; If we were to use >= as the test here, we would decide the 
+	     ;; old X.fasl was current for thw new X.lisp
+	     ;;
 	     (let ((fasl-file (probe-file (make-pathname :defaults file
 							 :type *fasl-type*))))
-	       (if fasl-file (or (file-write-date fasl-file) 0)
-		 0))) 
+	       (if fasl-file 
+		   (or (file-write-date fasl-file) 0)
+		 0))
+	     (file-write-date file))
       (compile-file file))))
 
 (defun compile-and-load-lisp-file (file)
