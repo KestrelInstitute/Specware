@@ -220,7 +220,7 @@ will be inserted at the end of the buffer."
 		       (progn
 			 (set-buffer dest)
 			 (if to 
-			     (bridge-insert process input)
+			     (bridge-insert input)
 			     (goto-char (point-max))
 			     (insert input)))
 		    (set-buffer buffer)))
@@ -420,7 +420,7 @@ encountered before the bridge-end-regexp, the bridge will be cancelled."
 	    (error "%s does not have a process" 
 		   (buffer-name (current-buffer)))))
       (run-hooks 'bridge-hook)
-      (message "Process bridge is installed")))
+      (message "Slime: Process bridge is installed")))
 	      
 ;;;
 (defun reset-bridge ()
