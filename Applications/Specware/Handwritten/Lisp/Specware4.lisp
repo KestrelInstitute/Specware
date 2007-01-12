@@ -298,6 +298,21 @@
 (defvar *using-slime-interface?* t)
 (when *using-slime-interface?*
   ;; Preload slime lisp support
+
+  ;; per instructions in swank-loader.lisp
+  (cl:defpackage :swank-loader
+		 (:use :cl)
+		 (:export :load-swank 
+			  :*source-directory*
+			  :*fasl-directory*))
+  )
+;; Repeat the when test so the defparameter below can 
+;; be read after the defpackage above has been evaluted.
+(when *using-slime-interface?*
+  (defparameter SWANK-LOADER::*FASL-DIRECTORY*
+    (format nil "~a/Library/IO/Emacs/slime/" 
+	    (specware::getenv "SPECWARE4")))
+
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
     (load loader :verbose t)))
 (setq *using-slime-interface?* nil)	; Gets set to t when initialized
