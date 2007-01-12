@@ -61,9 +61,11 @@
                   (concat slime-path slime-backend)))
         (encoding (slime-coding-system-cl-name coding-system)))
     (format "%S\n%S\n%S\n%S\n\n"
-            `(unless (and (find-package "SWANK") (fboundp (intern "START-SERVER" "SWANK")))
+            `(unless (and (find-package "SWANK") 
+			  (fboundp (intern "START-SERVER" "SWANK")))
 	       (load ,loader :verbose t))
-	    `(unless (find-package "SPECWARE") (defpackage "SPECWARE" (:use "CL")))
+	    `(unless (find-package "SPECWARE") 
+	       (defpackage "SPECWARE" (:use "CL")))
 	    `(set (find-symbol "*USING-SLIME-INTERFACE?*" "SPECWARE") t)
             `(swank:start-server ,port-filename :external-format ,encoding))))
 
