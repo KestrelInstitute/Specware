@@ -393,7 +393,7 @@ encountered before the bridge-end-regexp, the bridge will be cancelled."
 	    (error "%s does not have a process" 
 		   (buffer-name (current-buffer)))))
       (run-hooks 'bridge-hook)
-      (message "Process bridge is installed")))
+      (message "Ilisp: Process bridge is installed")))
 	      
 ;;;
 (defun reset-bridge ()
