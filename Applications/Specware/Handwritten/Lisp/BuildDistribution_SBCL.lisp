@@ -56,7 +56,7 @@
 
 (ensure-directories-exist *Distribution-dir*)
 
-(defun in-distribution-dir (file) (concatenate 'string Specware::*Distribution-dir* file))
+(defun in-distribution-dir (file) (concatenate 'string *Distribution-dir* file))
 (defun in-specware-dir (file) (concatenate 'string Specware::specware-dir file))
 
 
@@ -74,7 +74,7 @@
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/show-dirs.lisp"))
 
 (format t "~&;;; Current status of distribution directory:~%;;;~%")
-(show-dirs Specware::*distribution-dir* 3 ";;; ")
+(show-dirs *distribution-dir* 3 ";;; ")
 
 (format t "~&;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 (format t "~&;;;~%")
