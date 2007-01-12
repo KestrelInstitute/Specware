@@ -39,7 +39,7 @@
     (specware::make-directory dir)))
 
 (load (format nil "~A/Applications/Handwritten/Lisp/load-utilities"
-	      Specware::*specware-dir*))
+	      Specware::specware-dir))
 
 ;;; ============ PARAMETERS ============
 
@@ -52,12 +52,12 @@
 (defparameter cl-user::Specware-patch-level  "0")
 (defparameter Major-Version-String           "4-2")		; patch detection, about-specware cmd
 
-(defparameter *Distribution-dir*  (concatenate 'string Specware::*specware-dir* "distribution-sbcl/Specware/"))
+(defparameter *Distribution-dir*  (concatenate 'string Specware::specware-dir "distribution-sbcl/Specware/"))
 
 (ensure-directories-exist *Distribution-dir*)
 
 (defun in-distribution-dir (file) (concatenate 'string Specware::*Distribution-dir* file))
-(defun in-specware-dir (file) (concatenate 'string Specware::*specware-dir* file))
+(defun in-specware-dir (file) (concatenate 'string Specware::specware-dir file))
 
 
 ;;; =========== BUILD DISTRIBUTION DIRECTORY ============== 
