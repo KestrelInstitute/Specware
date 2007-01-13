@@ -316,10 +316,12 @@
 	 (all-dirs         (append generic-dirs  ilisp-dirs  franz-dirs  openmcl-dirs  ignored-dirs))
 	 )
 
-    #+sbcl (let ((sb-fasl:*fasl-file-type* "sfsl")) ; default is "fasl", which conflicts with Allegro
-	     (defpackage "SB-BSD-SOCKETS" (:use "COMMON-LISP"))
-	     (load         (merge-pathnames slime-dir "swank-backend.lisp"))
-	     (compile-file (merge-pathnames slime-dir "swank-sbcl.lisp")))
+    (let (#+sbcl (sb-fasl:*fasl-file-type* "sfsl")) ; default is "fasl", which conflicts with Allegro
+      (defpackage "SB-BSD-SOCKETS" (:use "COMMON-LISP"))
+      (load (merge-pathnames slime-dir "swank-backend.lisp"))
+      #+allegro (compile-file (merge-pathnames slime-dir "swank-allegro.lisp"))
+      #+sbcl    (compile-file (merge-pathnames slime-dir "swank-sbcl.lisp"))
+      )
 
     ;; Warnings about ignored files
 
