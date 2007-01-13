@@ -2,18 +2,38 @@
 (defpackage "DISTRIBUTION" (:use "COMMON-LISP"))
 (in-package "DISTRIBUTION")
 
-; #+CMUCL #+SBCL are not quite the right tests.
-; We could be running any lisp here to make any distribution, 
-;; but probably would use the same lisp here as that for the distribution.
-
 (defvar *VERBOSE* nil)
+
+;;  --------------------------------------------------------------------------------
+;;; Since we compile files as part of this process, we assume we are running this
+;;; code under the same lisp and OS as that for the distribution being built.
+;;;
+;;; In particular, we have
+;;;   one of:   Linux, Mac, MSWindows 
+;;;   one of:   SBCL, Allegro, CMU, OpenMCL
+;;;
+;;; Current candidates being used are:
+;;;   Linux     SBCL      [was Linux Allegro, then Linux CMU]
+;;;   MSWIndows Allegro   [soon MSWindows SBCL]
+;;;   Mac       SBCL      
+;;; --------------------------------------------------------------------------------
+
+(let ((selected-os   (list #+Linux 'Linux #+Mac 'Mac #+MSWindows 'MSWindows))
+      (selected-lisp (list #+CMU 'CMU #+SBCL 'SBCL #+Allegro 'Allegro #+OpenMCL 'OpenMCL)))
+  (unless (= (length selected-os) 1)
+    (error "Need exactly one OS selected, but have: ~S" selected-os))
+  (unless (= (length selected-lisp) 1)
+    (error "Need exactly one Lisp selected, but have: ~S" selected-lisp))
+  (format t "~&;;; =================================================~%"
+  (format t "~&;;; Gathering components for ~A under ~A~2%"
+	  (car selected-lisp)
+	  (car selected-os))))
 
 (defvar *fasl-type*
   #+CMU     "x86f"
   #+SBCL    "sfsl"
   #+Allegro "fasl" 
-  #+OpenMCL "???"
-  #-(or CMU SBCL Allegro OpenMCL) "unknown-fasl")
+  #+OpenMCL "???")
 
 #+Allegro 
 (eval-when (compile eval load)
@@ -51,9 +71,9 @@
 (defparameter Specware-name            "Specware4")	; Name of dir and startup files
 
 ;; "defvar" means any pre-existing value is retained
-(defvar common-lisp-user::Specware-version      "4.2.0")
-(defvar common-lisp-user::Specware-version-name "Specware-4-2")
-(defvar common-lisp-user::Specware-patch-level  "0")
+(defvar cl-user::Specware-version      "4.2.0")
+(defvar cl-user::Specware-version-name "Specware-4-2")
+(defvar cl-user::Specware-patch-level  "0")
 (defvar Major-Version-String           "4-2")		; patch detection, about-specware cmd
 
 (defun print-blank ()
@@ -78,16 +98,16 @@
 ;;; Toplevel
 ;;; ================================================================================
 
-(defun common-lisp-user::prepare_specware_release (i j k specware-dir distribution-dir &optional (*verbose* t))
+(defun cl-user::prepare_specware_release (i j k specware-dir distribution-dir &optional (*verbose* t))
   (let ((specware-dir (truename specware-dir))
 	(release-dir  (truename (ensure-subdirs-exist distribution-dir "Releases" 
 						      (format nil "Specware-~D-~D-~D" i j k)))))
     (setq Major-Version-String           (format nil "~D-~D" i j))
-    (setq common-lisp-user::Specware-version      (format nil "~D.~D" i j))
-    (setq common-lisp-user::Specware-patch-level  (format nil "~D" k))
-    (setq common-lisp-user::Specware-version-name (format nil "Specware-~A" major-version-string))
+    (setq cl-user::Specware-version      (format nil "~D.~D" i j))
+    (setq cl-user::Specware-patch-level  (format nil "~D" k))
+    (setq cl-user::Specware-version-name (format nil "Specware-~A" major-version-string))
 
-    (format t "~&;;; Preparing release of ~A~%" common-lisp-user::Specware-version-name)
+    (format t "~&;;; Preparing release of ~A~%" cl-user::Specware-version-name)
 
     ;; Oops: As written, this is overkill (literally!).
     ;; In addition to deleting old versions of the files we're about to create,
@@ -197,7 +217,7 @@
 	     (name          (pathname-name pn))
 	     (type          (pathname-type pn))
 	     (name_and_type (format nil "~A.~A" name type)))
-	(when (equal type "x86f")
+	(when (equal type *fasl-type*)
 	  (rename-file (merge-pathnames generic-dir name_and_type)
 		       (merge-pathnames linux-dir   name_and_type)))))
     ))
@@ -220,7 +240,7 @@
 	     (name          (pathname-name pn))
 	     (type          (pathname-type pn))
 	     (name_and_type (format nil "~A.~A" name type)))
-	(when (equal type "fasl")
+	(when (equal type *fasl-type*)
 	  (let* ((source-file (merge-pathnames generic-dir name_and_type))
 		 (target-file (merge-pathnames windows-dir name_and_type)))
 	    (cond ((equivalent-files? source-file target-file)
@@ -246,26 +266,25 @@
 
 (defun prepare_XEmacs_Lib_Generic (specware-dir release-dir)
   (print-minor "XEmacs_Lib" "generic")
+  ;;
   ;; We use various Emacs/Lisp interfaces:
-  ;;   xeli    is used for Allegro under Windows
-  ;;   opencml is used on the Mac
-  ;;   ilisp   is used otherwise
+  ;;   slime/swank is used for SBCL on Linux and Mac (and will be for Windows)
+  ;;   xeli        is used for Allegro under Windows
+  ;;   ilisp       was used for awhile
+  ;;
   ;; At user-installation time, we will merge the appropriate files under Library/IO/Emacs/
+  ;;
   (let* ((source-dir       (extend-directory specware-dir "Library" "IO" "Emacs"))
-	 (slime-dir        (extend-directory source-dir "slime"))
 	 ;;
 	 (component-dir    (ensure-subdirs-exist release-dir "Emacs_Lib"))
 	 ;;
 	 (generic-dir      (ensure-subdir-exists component-dir "Generic"))
-	 (ilisp-dir        (ensure-subdir-exists component-dir "Ilisp"))
-	 (franz-dir        (ensure-subdir-exists component-dir "Franz"))
+	 (slime-dir        (ensure-subdir-exists component-dir "slime"))
+	 (ilisp-dir        (ensure-subdir-exists component-dir "ilisp"))
+	 (xeli-dir         (ensure-subdir-exists component-dir "xeli"))
 	 (openmcl-dir      (ensure-subdir-exists component-dir "OpenMCL"))
 	 ;;
-	 (generic-dirs     '("x-symbol" "slime")) 
-	 (slime-files      '("load-slime.el" 
-			     "load-slime.lisp" 
-			     "sw-slime.el" 
-			     ))
+	 (generic-dirs     '("x-symbol"))
 	 (x-files          '(;; "x-symbol-specware.el" is in files.el
 			     ))
 	 (generic-files    (append '("Preface.el"
@@ -274,11 +293,10 @@
 				     "hideshow.el"
 				     "hideshow.elc"
 				     "specware_logo.xpm")
-				   slime-files
 				   x-files
 				   (with-open-file (s (merge-pathnames source-dir "files.el"))
 				     (let ((form (read s)))
-				       (if (and (eq (first  form) 'common-lisp-user::defconst)
+				       (if (and (eq (first  form) 'cl-user::defconst)
 						(eq (second form) 'sw::specware-emacs-files))
 					   (let ((names (eval (third form))))
 					     (mapcan #'(lambda (name)
@@ -293,8 +311,14 @@
 			     "compile-misc-ilisp-files.el"
 			     "compile-misc-ilisp-files-for-acl.el"))
 	 ;;
-	 (franz-dirs       '("xeli"))
-	 (franz-files	   '("load.el"))
+	 (slime-dirs       '("slime"))
+	 (slime-files      '("load-slime.el" 
+			     "load-slime.lisp" 
+			     "sw-slime.el" 
+			     ))
+	 ;;
+	 (xeli-dirs        '("xeli"))
+	 (xeli-files	   '("load.el"))
 	 ;;
 	 (openmcl-dirs     '())
 	 (openmcl-files    '("load-openmcl.el"))
@@ -312,16 +336,10 @@
 			     "sw-slime.elc" 
 			     ))
 	 ;;
-	 (all-files        (append generic-files ilisp-files franz-files openmcl-files ignored-files))
-	 (all-dirs         (append generic-dirs  ilisp-dirs  franz-dirs  openmcl-dirs  ignored-dirs))
+	 (all-files        (append generic-files slime-files ilisp-files xeli-files openmcl-files ignored-files))
+	 (all-dirs         (append generic-dirs  slime-dirs  ilisp-dirs  xeli-dirs  openmcl-dirs  ignored-dirs))
 	 )
 
-    (let (#+sbcl (sb-fasl:*fasl-file-type* "sfsl")) ; default is "fasl", which conflicts with Allegro
-      (defpackage "SB-BSD-SOCKETS" (:use "COMMON-LISP"))
-      (load (merge-pathnames slime-dir "swank-backend.lisp"))
-      #+allegro (compile-file (merge-pathnames slime-dir "swank-allegro.lisp"))
-      #+sbcl    (compile-file (merge-pathnames slime-dir "swank-sbcl.lisp"))
-      )
 
     ;; Warnings about ignored files
 
@@ -329,63 +347,106 @@
       (let ((name (pathname-name file)))
 	(if (null name)
 	    (unless (member (first (last (pathname-directory file))) all-dirs :test 'equal)
-	      (warn "Ignoring directory ~A" file))
+	      (format t "~&;;; Ignoring directory ~A" file))
 	  (let ((name-and-type (namestring (make-pathname :name name :type (pathname-type file)))))
 	    (unless (member name-and-type all-files :test 'equal)
-	      (warn "Ignoring file ~A" file))))))
+	      (format t "~&;;; Ignoring file ~A" file))))))
       
     ;; Generic
+    (progn 
 
-    (dolist (dir generic-dirs)
-      (copy-dist-directory (extend-directory source-dir  dir)
-			   (extend-directory generic-dir dir)))
+      (dolist (dir generic-dirs)
+	(copy-dist-directory (extend-directory source-dir  dir)
+			     (extend-directory generic-dir dir)))
 
-    (dolist (file generic-files)
-      (copy-dist-file (merge-pathnames source-dir  file)
-		      (merge-pathnames generic-dir file)))
+      (dolist (file generic-files)
+	(copy-dist-file (merge-pathnames source-dir  file)
+			(merge-pathnames generic-dir file)))
+      )
 
-    ;; ILISP
 
-    (dolist (dir ilisp-dirs)
-      (copy-dist-directory (extend-directory source-dir dir)
-			   (extend-directory ilisp-dir  dir)))
+    ;; Slime/Swank 
+    (progn
 
-    (dolist (file ilisp-files)
-      (copy-dist-file (merge-pathnames source-dir file)
-		      (merge-pathnames ilisp-dir  file)))
+      ;; let ((slime-source-dir (extend-directory source-dir "slime")))
+      ;;; ;;; TODO: Is all this compiling necessary now?  Shouldn't it be done already?
+      ;;; ;;; TODO: Why do we load swank-backend.lisp ?
+      ;;; (defpackage "SB-BSD-SOCKETS" (:use "COMMON-LISP"))
+      ;;; (load (merge-pathnames slime-source-dir "swank-backend.lisp"))
+      ;;; 
+      ;;; #+allegro (compile-file (merge-pathnames slime-source-dir "swank-allegro.lisp"))
+      ;;; #+sbcl    (let ((sb-fasl:*fasl-file-type* *fasl-type*)) 
+      ;;;             ;; The default for sbcl is "fasl", but that conflicts with Allegro, 
+      ;;;             ;; so use "sfsl" instead (see binding of *fasl-type* at top of file).
+      ;;;             (compile-file (merge-pathnames slime-source-dir "swank-sbcl.lisp")))
+      ;;;             #+cmu     (compile-file (merge-pathnames slime-source-dir "swank-cmucl.lisp"))
+      ;;;             #+openmcl (compile-file (merge-pathnames slime-source-dir "swank-openmcl.lisp"))
+      
+      
+      (dolist (dir slime-dirs)
+	(copy-dist-directory (extend-directory source-dir dir)
+			     (extend-directory slime-dir  dir)))
+      
+      (dolist (file slime-files)
+	(copy-dist-file (merge-pathnames source-dir file)
+			(merge-pathnames slime-dir  file)))
 
-    ;; FRANZ
+      (dolist (file (list (pathname "swank-backend.lisp")
+			  (make-pathname :name "swank-backend" :type *fasl-type*)))
+	(copy-dist-file (merge-pathnames (extend-directory source-dir "slime") file)
+			(merge-pathnames slime-dir                             file)))
 
-    (let* ((specware-xeli-dir (extend-directory source-dir "xeli"))
-	   (source-xeli-dir   (if (null (generic-directory specware-xeli-dir))
-				  ;; the 6.2 version of xeli is buggy, so use 7.0 version even with 6.2 lisp
-				  #+Linux     "/usr/local/acl/acl70/xeli/"        ; 6.2 version is buggy
-				  #+MSWindows "C:\\Program Files\\acl70\\xeli\\"  ; 6.2 version is buggy
-				  #-(or Linux MSWindows) "[no idea where xeli lives on non-Linux, non-Windows OS]"
-				  specware-xeli-dir)))
-      #-MSWindows 
-      (format t "~&;;; Ignoring non-Windows sources for xeli at ~A~%" source-xeli-dir)
-      #+MSWindows 
-      (copy-dist-directory source-xeli-dir
-			   (extend-directory franz-dir  "xeli")
-			   t
-			   #'(lambda (p) (member (pathname-type p)
-						 '("elbak" "elcbak")
-						 :test 'equalp))))
+      )
+
+
+    ;; Ilisp
+    (progn
+
+      (dolist (dir ilisp-dirs)
+	(copy-dist-directory (extend-directory source-dir dir)
+			     (extend-directory ilisp-dir  dir)))
+
+      (dolist (file ilisp-files)
+	(copy-dist-file (merge-pathnames source-dir file)
+			(merge-pathnames ilisp-dir  file)))
+      )
+
+    ;; xeli
+    (progn
+
+      (let* ((specware-xeli-dir (extend-directory source-dir "xeli"))
+	     (source-xeli-dir   (if (null (generic-directory specware-xeli-dir))
+				    ;; the 6.2 version of xeli is buggy, so use 7.0 version even with 6.2 lisp
+				    #+Linux     "/usr/local/acl/acl70/xeli/" ; 6.2 version is buggy
+				    #+MSWindows "C:\\Program Files\\acl70\\xeli\\" ; 6.2 version is buggy
+				    #-(or Linux MSWindows) "[no idea where xeli lives on non-Linux, non-Windows OS]"
+				    specware-xeli-dir)))
+	#-MSWindows 
+	(format t "~&;;; Ignoring non-Windows sources for xeli at ~A~%" source-xeli-dir)
+	#+MSWindows 
+	(copy-dist-directory source-xeli-dir
+			     (extend-directory xeli-dir  "xeli")
+			     t
+			     #'(lambda (p) (member (pathname-type p)
+						   '("elbak" "elcbak")
+						   :test 'equalp))))
     
-    (dolist (file franz-files)
-      (copy-dist-file (merge-pathnames source-dir file)
-		      (merge-pathnames franz-dir  file)))
+      (dolist (file xeli-files)
+	(copy-dist-file (merge-pathnames source-dir file)
+			(merge-pathnames xeli-dir   file)))
+      )
+
 
     ;; OpenMCL
-
-    (dolist (dir openmcl-dirs)
-      (copy-dist-directory (extend-directory source-dir  dir)
-			   (extend-directory openmcl-dir dir)))
-
-    (dolist (file openmcl-files)
-      (copy-dist-file (merge-pathnames source-dir  file)
-		      (merge-pathnames openmcl-dir file)))
+    (progn
+      (dolist (dir openmcl-dirs)
+	(copy-dist-directory (extend-directory source-dir  dir)
+			     (extend-directory openmcl-dir dir)))
+      
+      (dolist (file openmcl-files)
+	(copy-dist-file (merge-pathnames source-dir  file)
+			(merge-pathnames openmcl-dir file)))
+      )
 
     ))
 
@@ -681,12 +742,12 @@
 	 (target-dir              (ensure-subdirs-exist release-dir "Specware" "Linux"))
 
 	 ;; a list of files to load into the new application
-	 (files-to-load           (list (merge-pathnames lisp-utilities-dir      "LoadUtilities.lisp")
-					(merge-pathnames lisp-utilities-dir      "MemoryManagement.lisp")
-					(merge-pathnames lisp-utilities-dir      "CompactMemory.lisp")
-					(merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")  
-					(merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
-					(merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp")))
+	 (files-to-load           (list (merge-pathnames lisp-utilities-dir      "LoadUtilities")
+					(merge-pathnames lisp-utilities-dir      "MemoryManagement")
+					(merge-pathnames lisp-utilities-dir      "CompactMemory")
+					(merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble")
+					(merge-pathnames source-buildscripts-dir "LoadSpecware")
+					(merge-pathnames source-buildscripts-dir "SpecwareLicense")))
 
 	 ;; a list of files put on the distribution directory
 	 (files-to-copy           (append
@@ -715,6 +776,8 @@
 				     (merge-pathnames source-generic-dir    "StartSpecwareShell.lisp")
 				     ))))
 
+    (dolist (file files-to-load) (specware::compile-file-if-needed file))
+
     ;; Installation Scripts
     
     ;; Executables/Images
@@ -725,7 +788,7 @@
 				   #+SBCL  (format nil "~A.sbclimage" Specware-name)
 
 				   target-dir
-				   files-to-load
+				   (mapcar #'(lambda (f) (make-pathname :defaults f :type *fasl-type*)) files-to-load)
 				   files-to-copy
 				   t)
 
@@ -834,21 +897,27 @@
 ;;; ================================================================================
 
 ;;;  TODO: copy highest-numbered patch from "$SPECWARE4"/Release/Linux/CMU/Patches
-;;; /bin/cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.x86f  "$SPECWARE4"/distribution-cmulisp/Patches
+;;; /bin/cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.*fasl-type* "$SPECWARE4"/distribution-cmulisp/Patches
 
 (defun prepare_patch_dir (source-dir target-dir)
   (let ((source-patch-dir (extend-directory source-dir "Release" "Windows" "Patches"))
-	(target-patch-dir (extend-directory target-dir "Patches")))
-    (format t "~&~%;;;   Preparing ~A patches for ~A...~%"
-	    #+CMU       "cmucl"
-	    #+SBCL      "SBCL fasl"
-	    #+Allegro   "Allegro fasl (sfsl)" 
-	    #+OpenMCL   "openmcl"
-	    ;;
-	    #+Linux     "Linux"
-	    #+MSWindows "Windows" 
-	    #+Mac       "Mac OSX"
-	    )
+	(target-patch-dir (extend-directory target-dir "Patches"))
+	(lisp
+	 #+CMU       "CMUCL"
+	 #+SBCL      "SBCL"
+	 #+Allegro   "Allegro"
+	 #+OpenMCL   "OpenMCL")
+	(fasl 
+	 #+CMU       "x86f"
+	 #+SBCL      "sfsl"
+	 #+Allegro   "fasl" 
+	 #+OpenMCL   "????")
+	(os 
+	 #+Linux     "Linux"
+	 #+MSWindows "Windows" 
+	 #+Mac       "Mac OSX"))
+
+    (format t "~&~%;;;   Preparing ~A patches for ~A under ~A...~%" fasl lisp os)
     (when *verbose*
       (format t "~&;;;   Ensuring patch directory exists: ~A~%" target-patch-dir))
     (ensure-directories-exist target-patch-dir)
@@ -862,16 +931,13 @@
 					       :defaults target-patch-dir)))
 	(cond ((probe-file target-patch-fasl)
 	       (when *verbose*
-		 (format t "~&;;;   Fasl for empty patch file already present: ~A~%"
+		 (format t "~&;;;   Fasl for empty patch file already present for ~A under ~A: ~A~%"
+			 lisp os
 			 (file-namestring target-patch-fasl))
 		 (force-output t)))
 	      (t
 	       (when *verbose*
-		 (format t "~&;;;   Compiling empty patch file using ~A~%" 
-			 #+CMU       "CMUCL under Linux"
-			 #+SBCL      "SBCL under Linux"
-			 #+MSWindows "Allegro under Windows"
-			 #+Mac       "OpenMCL under Mac OS X")
+		 (format t "~&;;;   Compiling empty ~A patch file using ~A under ~A~%" fasl lisp os)
 		 (force-output t))
 	       (compile-file target-patch-lisp :verbose *verbose*)))))))
 	       

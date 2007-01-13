@@ -1,6 +1,6 @@
 (in-package "COMMON-LISP-USER")
 
-(defparameter *GC-VERBOSE* nil)
+#+CMU (defparameter ext:*GC-VERBOSE* nil)
 
 #+SBCL (setq sb-fasl:*fasl-file-type* "sfsl") ; default is "fasl", which conflicts with Allegro
 
@@ -24,8 +24,8 @@
 	       (if (< (file-write-date lisp-file) (or (file-write-date fasl-file) 0))
 		   (progn (format t "~&Loading ~A~%" fasl-file)
 			  (load fasl-file))
-		   (progn (format t "~&Loading ~A~%" lisp-file)
-			  (load (compile-file lisp-file)))))))
+		 (progn (format t "~&Loading ~A~%" lisp-file)
+			(load (compile-file lisp-file)))))))
       (my-load lisp-utilities-dir "dist-utils")
       (my-load lisp-utilities-dir "dir-utils")
       (my-load lisp-utilities-dir "MemoryManagement")
@@ -37,9 +37,9 @@
   (flet ((my-getenv (var)
 	   #+MSWindows (sys::getenv var)
 	   #+CMU       (cdr (assoc (intern var "KEYWORD") EXTENSIONS::*ENVIRONMENT-LIST*))
-           #+SBCL      (POSIX-GETENV var)
-	   #-(or MSWindows CMU SBCL) (system::getenv var)))
-    (let ((specware-dir     (concatenate 'string (my-getenv "SPECWARE4")    "/"))	   
+           #+SBCL      (posix-getenv var)
+	   #-(or MSWindows CMU SBCL) (sys::getenv var)))
+    (let ((specware-dir     (concatenate 'string (my-getenv "SPECWARE4")    "/"))
 	  (distribution-dir (concatenate 'string (my-getenv "DISTRIBUTION") "/")))
       (load-builder specware-dir distribution-dir)
       (let ((foo (find-symbol "PREPARE_SPECWARE_RELEASE" "COMMON-LISP-USER"))) ; hide symbol from SBCL, so it doesn't complain it's undefined at compile-time
