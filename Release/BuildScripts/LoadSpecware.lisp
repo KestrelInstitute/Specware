@@ -17,6 +17,10 @@
 #+allegro (progn
 	    (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
 	    (setq excl:*record-source-file-info* nil)                   ; workaround for annoying bug
+	    (require :scm)                                              ; make sure SCM is loaded
+	    (cl-user::eol-convention *standard-output*)                 ; make sure efmacs.fasl is loaded
+					; "efmacs" seems to stand for something like "external format macros"
+					; its used by xml, mime, etc.
 	    )
 
 #+cmu     (progn
