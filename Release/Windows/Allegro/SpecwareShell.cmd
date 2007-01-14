@@ -18,5 +18,5 @@ call Update_Path
 call Update_SWPATH
 call Find_Specware_App_ACL
 
-start "ignore" "%LISP_EXECUTABLE%" +t "Specware Shell" +s "%SPECWARE4%\Applications\Specware\Handwritten\Lisp\StartShell.lisp" -I "%LISP_HEAP_IMAGE%" -e "(setq emacs::*use-emacs-interface?* nil)"
+start "ignore" "%LISP_EXECUTABLE%" +t "Specware Shell" +s "%SPECWARE4%\StartSpecwareShell.lisp" -I "%LISP_HEAP_IMAGE%" -e "(setq emacs::*use-emacs-interface?* nil)"
 
