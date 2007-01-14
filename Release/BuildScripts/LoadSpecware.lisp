@@ -21,6 +21,7 @@
 	    (cl-user::eol-convention *standard-output*)                 ; make sure efmacs.fasl is loaded
 					; "efmacs" seems to stand for something like "external format macros"
 					; its used by xml, mime, etc.
+	    (require :inspect)
 	    )
 
 #+cmu     (progn
