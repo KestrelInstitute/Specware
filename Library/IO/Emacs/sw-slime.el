@@ -238,16 +238,17 @@ If NEWLINE is true then add a newline at the end of the input."
 
 (defun slime-allegro-windows (program program-args)
   (let ((slime-port 4005))
-    (shell-command 
-     (format "%s +B %s -L %s/Library/IO/Emacs/load-slime.lisp&"
-             program
-	     (apply 'concat (loop for arg in program-args append (list " " arg)))
-	     (if (boundp '*specware4-dir)
-		 (symbol-value '*specware4-dir)
-	       (getenv "SPECWARE4"))
-	     ;slime-port
-	     ))
-    ;(delete-other-windows)
+    (let ((cmd
+	   (format "%s +B %s -L %s/Library/IO/Emacs/load-slime.lisp&"
+		   program
+		   (apply 'concat (loop for arg in program-args append (list " " arg)))
+		   (if (boundp '*specware4-dir)
+		       (symbol-value '*specware4-dir)
+		     (getenv "SPECWARE4"))
+		   ;;slime-port
+		   )))
+      (shell-command (sw::normalize-filename cmd)))
+    ;;(delete-other-windows)
     (while (not (ignore-errors (slime-connect "localhost" slime-port)))
       (sleep-for 0.2))
     (slime-eval-async '(setq specware::*using-slime-interface?* t))))
