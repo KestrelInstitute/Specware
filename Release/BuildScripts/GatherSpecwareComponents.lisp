@@ -817,7 +817,32 @@
 	 (source-windows-allegro-dir (ensure-subdirs-exist source-dir "Release" "Windows" "Allegro"))
 	 ;;
 	 (target-dir                 (ensure-subdirs-exist release-dir "Specware" "Windows"))
-	 (specware-exe-file          (format nil "~A.exe" Specware-name)))
+	 (specware-exe-file          (format nil "~A.exe" Specware-name))
+
+	 ;; a list of files to load into the new application
+	 (files-to-load              (list (merge-pathnames lisp-utilities-dir       "LoadUtilities")
+					   (merge-pathnames lisp-utilities-dir       "MemoryManagement")
+					   (merge-pathnames lisp-utilities-dir       "CompactMemory")
+					   (merge-pathnames source-buildscripts-dir  "BuildSpecwarePreamble")
+					   (merge-pathnames source-buildscripts-dir  "LoadSpecware")
+					   (merge-pathnames source-buildscripts-dir  "SpecwareLicense")))
+
+	 ;; a list of files to copy to the distribution directory
+	 (files-to-copy              (list (merge-pathnames source-windows-allegro-dir "Specware.cmd")
+					   (merge-pathnames source-windows-allegro-dir "SpecwareShell.cmd")
+					   (merge-pathnames source-windows-allegro-dir "Find_Specware_App_ACL.cmd")
+					   (merge-pathnames source-windows-allegro-dir "start-in-xemacs-xeli.cmd")
+					   (merge-pathnames source-windows-allegro-dir "start-in-xemacs-ilisp.cmd")
+					   (merge-pathnames source-windows-allegro-dir "start-in-xemacs-slime.cmd")
+
+					   (merge-pathnames source-windows-dir         "Find_XEMACS.cmd")
+					   (merge-pathnames source-windows-dir         "Find_SPECWARE4.cmd")
+					   (merge-pathnames source-windows-dir         "Update_Path.cmd")
+					   (merge-pathnames source-windows-dir         "Update_SWPATH.cmd")
+					   (merge-pathnames source-generic-dir         "StartSpecwareShell.lisp")))
+	 )
+
+    (dolist (file files-to-load) (specware::compile-file-if-needed file))
 
     ;; Installation Scripts
 
@@ -828,6 +853,9 @@
 			    "Specware.cmd"
 			    "SpecwareShell.cmd"
 			    "Find_Specware_App_ACL.cmd"
+			    "start-in-xemacs-xeli.cmd"
+			    "start-in-xemacs-ilisp.cmd"
+			    "start-in-xemacs-slime.cmd"
 			    "Find_XEMACS.cmd"
 			    "Find_SPECWARE4.cmd"
 			    "Update_Path.cmd"
@@ -841,23 +869,8 @@
 				   specware-exe-file
 				   target-dir
 
-				   ;; a list of files to load into the new application
-				   (list (merge-pathnames lisp-utilities-dir      "LoadUtilities.lisp")
-					 (merge-pathnames lisp-utilities-dir      "MemoryManagement.lisp")
-					 (merge-pathnames lisp-utilities-dir      "CompactMemory.lisp")
-					 (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble.lisp")
-					 (merge-pathnames source-buildscripts-dir "LoadSpecware.lisp")
-					 (merge-pathnames source-buildscripts-dir "SpecwareLicense.lisp"))
-
-				   ;; a list of files to copy to the distribution directory
-				   (list (merge-pathnames source-windows-allegro-dir "Specware.cmd")
-					 (merge-pathnames source-windows-allegro-dir "SpecwareShell.cmd")
-					 (merge-pathnames source-windows-allegro-dir "Find_Specware_App_ACL.cmd")
-					 (merge-pathnames source-windows-dir         "Find_XEMACS.cmd")
-					 (merge-pathnames source-windows-dir         "Find_SPECWARE4.cmd")
-					 (merge-pathnames source-windows-dir         "Update_Path.cmd")
-					 (merge-pathnames source-windows-dir         "Update_SWPATH.cmd")
-					 (merge-pathnames source-generic-dir         "StartSpecwareShell.lisp"))
+				   files-to-load
+				   files-to-copy
 				   t)
 
     ;; CVS is perversely hardwired to refuse to accept *.exe files.
