@@ -31,7 +31,7 @@ Notes:
 	       (and x (symbol-value x))))
 	(funcall 'swank::eval-string-in-emacs string t)
       #+allegro
-      (if (find-package :ilisp)
+      (if (cl-user::under-ilisp?)
 	  (progn (force-output *terminal-io*) (format *terminal-io* "~a" string) (force-output *terminal-io*))
 	(when lep::*connection*
 	  (lep::eval-in-emacs string)))
@@ -39,7 +39,7 @@ Notes:
 
 (defun eval-with-emacs (string)
   (when *use-emacs-interface?*
-    (if (fboundp 'swank::eval-string-in-emacs)
+    (if (and (fboundp 'swank::eval-string-in-emacs) (not (cl-user::under-ilisp?)))
 	(funcall 'swank::eval-string-in-emacs string nil)
 	nil)))
 
