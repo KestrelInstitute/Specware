@@ -1256,7 +1256,7 @@ If anyone has a good algorithm for this..."
 
 (defun sw::normalize-filename (filename)
   (setq filename (replace-in-string filename "\\\\" "/"))
-  (replace-in-string filename "Program Files" "Progra~1")
+  (setq filename (replace-in-string filename "Program Files" "Progra~1"))
   (when (and (> (length filename) 2)
 	     (equal (position ?: filename) 1)
 	     (not (equal (elt filename 0) (upcase (elt filename 0)))))
