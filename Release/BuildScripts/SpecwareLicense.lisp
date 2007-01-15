@@ -27,7 +27,7 @@ of derivative works therefrom without the express signed permission
 of Kestrel Institute,  Kestrel Development Corporation and Kestrel
 Technology, LLC is prohibited.
 
-Copyright (c) 1988-2006 by Kestrel Institute, Kestrel Development
+Copyright (c) 1988-2007 by Kestrel Institute, Kestrel Development
 Corporation and Kestrel Technology, LLC. All rights reserved.
 
 Use of a copyright notice is precautionary only and does not imply
@@ -44,7 +44,8 @@ Kestrel Technology, LLC
 2nd Floor                  
 Palo Alto, CA, 94304      
 
-Phone/FAX: (650) 320-8888
-Email: info@kt-llc.com" Specware-version)))
+Phone: (650) 493-6871
+FAX:   (650) 424-1807
+Email: info@kestrel.edu" Specware-version)))
 
 ;; The phone/FAX number is that for KT.
