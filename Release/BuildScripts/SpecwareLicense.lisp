@@ -48,4 +48,5 @@ Phone: (650) 493-6871
 FAX:   (650) 424-1807
 Email: info@kestrel.edu" Specware-version)))
 
-;; The phone/FAX number is that for KT.
+#+cmu
+(push *restart-init-function* ext:*after-save-initializations*)
