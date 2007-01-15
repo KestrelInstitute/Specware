@@ -869,7 +869,7 @@
 				   specware-exe-file
 				   target-dir
 
-				   files-to-load
+				   (mapcar #'(lambda (f) (make-pathname :defaults f :type *fasl-type*)) files-to-load)
 				   files-to-copy
 				   t)
 
