@@ -24,10 +24,10 @@
     (error "Need exactly one OS selected, but have: ~S" selected-os))
   (unless (= (length selected-lisp) 1)
     (error "Need exactly one Lisp selected, but have: ~S" selected-lisp))
-  (format t "~&;;; =================================================~%"
+  (format t "~&;;; =================================================~%")
   (format t "~&;;; Gathering components for ~A under ~A~2%"
 	  (car selected-lisp)
-	  (car selected-os))))
+	  (car selected-os)))
 
 (defvar *fasl-type*
   #+CMU     "x86f"
