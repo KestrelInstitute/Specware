@@ -11,8 +11,8 @@
 (setq lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
 (setq expand-symlinks-rfs-exists t)
 (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
-				(search "build" lisp-program)
-				(search "Specware4.exe" lisp-program))
+				(search "exe" lisp-program) ; for now
+				(search "build" lisp-program))
 			    'allegro
 			  (if (search "dppccl" lisp-program)
 			      'openmcl
