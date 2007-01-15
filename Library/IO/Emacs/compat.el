@@ -11,8 +11,10 @@
 (setq lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
 (setq expand-symlinks-rfs-exists t)
 (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
-				(search "exe" lisp-program) ; for now
-				(search "build" lisp-program))
+				(search "build" lisp-program) ; ??
+				;; for now, we use allegro on windows...
+			        (featurep 'mswindows)
+			        (featurep 'windows-nt))
 			    'allegro
 			  (if (search "dppccl" lisp-program)
 			      'openmcl
