@@ -26,4 +26,4 @@ PATH=$OLD_PATH
 
 ########################################################################
 
-"$LISP" -core "$LISP_HEAP_IMAGE" -eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (exit))"
+"$LISP" --core "$LISP_HEAP_IMAGE" --eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (SB-UNIX:UNIX-EXIT 0))"
