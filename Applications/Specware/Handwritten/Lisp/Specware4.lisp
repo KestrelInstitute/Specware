@@ -68,9 +68,8 @@
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-2")
 
-(defparameter Specware4 (specware::getenv "SPECWARE4"))
-
 ;; The following defines functions such as:
+;;;   specware::getenv
 ;;    compile-and-load-lisp-file
 ;;    load-lisp-file
 ;;    make-system
@@ -80,6 +79,8 @@
 (let ((utils (make-pathname :defaults "../../../Handwritten/Lisp/load-utilities" :type "lisp")))
   (load utils)
   (compile-and-load-lisp-file utils))
+
+(defparameter Specware4 (specware::getenv "SPECWARE4"))
 
 (defparameter *Specware-dir*
     (let ((dir (substitute #\/ #\\ Specware4)))

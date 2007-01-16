@@ -68,22 +68,34 @@
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-2")
 
-(defparameter Specware4 (substitute #\/ #\\ (specware::getenv "SPECWARE4")))
-
-(if (null Specware::Specware4)
-    (warn "SPECWARE4 environment var not set")
-  (format t "~&SPECWARE4 = ~S~%" Specware::Specware4))
-
 ;; The following defines functions such as:
+;;;   specware::getenv
 ;;    compile-and-load-lisp-file
 ;;    load-lisp-file
 ;;    make-system
 ;;    change-directory
 ;;    current-directory
 
-(let ((utils (format nil "~A/Lisp_Utilities/LoadUtilities.lisp" (specware::getenv "DISTRIBUTION"))))
-  (load utils)
-  (compile-and-load-lisp-file utils))
+(flet ((my-getenv (varname)
+	 #+allegro   (si::getenv varname)
+	 #+mcl       (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
+			 (ccl::getenv varname))
+	 #+lispworks (hcl::getenv varname) ;?
+	 #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+	 #+sbcl      (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
+			 (sb-ext:posix-getenv  varname))
+	 #+gcl       (si:getenv varname)
+	 #+clisp     (ext:getenv varname)
+	 ))
+  (let ((utils (format nil "~A/Lisp_Utilities/LoadUtilities.lisp" (my-getenv "DISTRIBUTION"))))
+    (load utils)
+    (compile-and-load-lisp-file utils)))
+
+(defparameter Specware4 (substitute #\/ #\\ (specware::getenv "SPECWARE4")))
+
+(if (null Specware::Specware4)
+    (warn "SPECWARE4 environment var not set")
+  (format t "~&SPECWARE4 = ~S~%" Specware::Specware4))
 
 (defparameter *Specware-dir*
     (let ((dir (substitute #\/ #\\ Specware4)))
