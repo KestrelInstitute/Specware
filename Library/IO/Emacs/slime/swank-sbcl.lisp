@@ -15,9 +15,9 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (let ((sb-fasl:*fasl-file-type* "fasl"))
-    (require 'sb-bsd-sockets)
-    (require 'sb-introspect)
-    (require 'sb-posix)))
+    (require :sb-bsd-sockets)
+    (require :sb-introspect)
+    (require :sb-posix)))
 
 (declaim (optimize (debug 2)))
 
