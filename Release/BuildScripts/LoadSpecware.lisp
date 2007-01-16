@@ -45,6 +45,7 @@
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 
 	    ;; Preload for efficiency and flexibility
+	    #+Windows
 	    (eval-when (:compile-toplevel :load-toplevel :execute)
 	      (require 'sb-bsd-sockets)
 	      (require 'sb-introspect)
@@ -67,7 +68,11 @@
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-2")
 
-(defparameter Specware4 (specware::getenv "SPECWARE4"))
+(defparameter Specware4 (substitute #\/ #\\ (specware::getenv "SPECWARE4")))
+
+(if (null Specware::Specware4)
+    (warn "SPECWARE4 environment var not set")
+  (format t "~&SPECWARE4 = ~S~%" Specware::Specware4))
 
 ;; The following defines functions such as:
 ;;    compile-and-load-lisp-file
@@ -298,9 +303,9 @@
 ;; Repeat the when test so the defparameter below can 
 ;; be read after the defpackage above has been evaluted.
 (when *using-slime-interface?*
-  (defparameter SWANK-LOADER::*FASL-DIRECTORY*
-    (format nil "~a/Library/IO/Emacs/slime/" 
-	    (specware::getenv "SPECWARE4")))
+  `(defparameter ,(intern "*FASL-DIRECTORY*" "SWANK-LOADER")
+     (format nil "~a/Library/IO/Emacs/slime/" 
+	     (specware::getenv "SPECWARE4")))
 
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
     (load loader :verbose t)))
@@ -317,7 +322,7 @@
 (defun cl-user::boot ()
   (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
     (unless val
-      (funcall (find-symbol "EVAL-IN-EMACS" "EMACS")
+      (funcall (intern "EVAL-IN-EMACS" "EMACS")
 	       "(delete-continuation)"))
     val)
   )
