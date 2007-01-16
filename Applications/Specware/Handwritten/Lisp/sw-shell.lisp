@@ -247,6 +247,7 @@
 (defvar *commands-in-process* 0)
 
 ;;; Used by slime-based interface
+;;; From slime.el:  (defvar sw:*shell-command-function* "SWShell::process-raw-command")
 (defun process-raw-command (command argstr)
   ;; Note: swank will barf on command lines such as 
   ;; '(33 33 33) 
@@ -254,8 +255,6 @@
   ;;  '(33   "33 33)"
   ;; But we can at least deal gracefully with whatever does reach here.
   (incf *commands-in-process*)
-  (print (list 'aa command 'bb))
-  (force-output)
   (let ((val (multiple-value-list
 	      (process-sw-shell-command (if (symbolp command)
 					    (intern (symbol-name command) *sw-shell-pkg*) 
