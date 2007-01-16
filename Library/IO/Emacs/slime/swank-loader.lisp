@@ -102,8 +102,9 @@ operating system, and hardware architecture."
       (format nil "~(~@{~a~^-~}~)" lisp version os arch))))
 
 (defun file-newer-p (new-file old-file)
-  "Returns true if NEW-FILE is newer than OLD-FILE."
-  (> (file-write-date new-file) (file-write-date old-file)))
+  "Returns true if NEW-FILE is newer than OLD-FILE, or if NEW-FILE exists but OLD-FILE doesn't."
+  (> (or (file-write-date new-file) 0)
+     (or (file-write-date old-file) 0)))
 
 ;; Currently just use the modification time of the ChangeLog.  We
 ;; could also try to use one of those CVS keywords.
