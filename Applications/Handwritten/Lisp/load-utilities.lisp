@@ -488,11 +488,15 @@
 
 
 (defun wait (msg pred &optional (sleep-time 1))
-  sleep-time
+
+  #+(or allegro cmu) (declare (ignore sleep-time))
   #+(or allegro cmu) (mp:process-wait msg pred)
-  #-(or allegro cmu)
-  (loop until (funcall pred)
-    do (sleep sleep-time)))
+
+  #-(or allegro cmu) (declare (ignore msg))
+  #-(or allegro cmu) (loop until (funcall pred)
+		       do (sleep sleep-time))
+
+  )
 
 ;; (defpackage :swank)
 
