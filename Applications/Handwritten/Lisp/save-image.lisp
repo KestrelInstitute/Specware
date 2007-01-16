@@ -146,7 +146,7 @@
 (defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)
   ;; Build a fresh image with desired properties.
   ;; (This should be a completely new image, not simply a clone of this image!)
-  ;; See http://cvs2.cons.org/ftp-area/sbclcl/doc/sbcl-user/extensions.html#toc43
+  ;; See http://cvs2.cons.org/ftp-area/sbcl/doc/sbcl-user/extensions.html#toc43
   ;; The :purify option compacts current data and makes GC skip it in resulting image.
   (let ((app-file 
 	 (namestring 
@@ -185,7 +185,7 @@
 	    (cond ((= rc 0)
 		   (format t "~&~%Success saving ~A~%" app-file)
 		   (format t "~&Invoke as:")
-		   (format t "~& sbclcl -core ~A~%~%" app-file))
+		   (format t "~& sbcl -core ~A~%~%" app-file))
 		  (t
 		   (format t "~&Problem: Return code = ~D when saving ~A~%~%" rc app-file)))
 	    (process-close process)))))))
