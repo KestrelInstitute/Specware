@@ -210,6 +210,8 @@
   ;; Conditional because of an apparent Allegro bug in generate-application
   ;; where excl::compile-file-if-needed compiles even if not needed
   (defun compile-file-if-needed (file)
+    (when (null (pathname-type file))
+      (setq file (make-pathname :defaults file :type "lisp")))
     #+allegro (excl::compile-file-if-needed file)
     #+Lispworks (hcl:compile-file-if-needed file)
     #+(or cmu mcl sbcl gcl clisp)
