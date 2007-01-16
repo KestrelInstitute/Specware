@@ -1,7 +1,7 @@
 ;;; This file is used to load the files for a specware image.
 ;;;
-;;; (Do not confuse it with the file ../../lisp/Specware4.lisp
-;;;  that is generated from .sw sources.)
+;;; It is a clone of <Specware4>/Applications/Specware/Handwritten/Lisp/Specware4.lisp
+;;; (not to be confused with <Specware4>/Applications/Specware/lisp/Specware4.lisp generated from sources).
 ;;;
 ;;; Among other things, this file is referenced by generate-application in
 ;;; BuildDistribution_ACL.lisp
@@ -9,7 +9,7 @@
 (defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
 
-(declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
+(declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1) #+cmu(c::brevity 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -36,9 +36,20 @@
 #+sbcl    (progn
 	    (setf (sb-ext:bytes-consed-between-gcs) 50331648)
 	    (setq sb-ext:*efficiency-note-cost-threshold* 30)
+	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
+					       sb-int:simple-style-warning
+					       sb-int:package-at-variance))
 	    (setq sb-ext::*compile-print* nil)
 	    (declaim (optimize (sb-ext:inhibit-warnings 3)))
 	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
+	    (setq sb-debug:*debug-beginner-help-p* nil)
+
+	    ;; Preload for efficiency and flexibility
+	    (eval-when (:compile-toplevel :load-toplevel :execute)
+	      (require 'sb-bsd-sockets)
+	      (require 'sb-introspect)
+	      (require 'sb-posix))
+
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 	    )
 
@@ -64,7 +75,7 @@
 ;;    make-system
 ;;    change-directory
 ;;    current-directory
-;;
+
 (let ((utils (format nil "~A/Lisp_Utilities/LoadUtilities.lisp" (specware::getenv "DISTRIBUTION"))))
   (load utils)
   (compile-and-load-lisp-file utils))
@@ -78,10 +89,9 @@
 (defun in-specware-dir (file) (concatenate 'string *Specware-dir* file))
 
 #+cmu
-;(without-package-locks     ;; add in version 19
- (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch")) ; )
-;#+sbcl
-;(compile-and-load-lisp-file (in-specware-dir "/Applications/Handwritten/Lisp/sbcl-patch"))
+(compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch"))
+#+sbcl
+(compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/sbcl-patch"))
 
 (defun ignore-warning (condition)
    (declare (ignore condition))
@@ -89,15 +99,16 @@
 
 (handler-bind ((warning #'ignore-warning))
   (load (make-pathname
-	 :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
-	 :type     "lisp")))
+         :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
+         :type     "lisp")))
 
 (format t "Loading Snark.")
 (handler-bind ((warning #'ignore-warning))
   (cl-user::make-or-load-snark-system))
 (format t "~%Finished loading Snark.")
+(finish-output t)
 
-(declaim (optimize (speed 3) (debug 2) (safety 1)))
+(declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
 ;; Snark puts us in another package .. so we go back
 (in-package "SPECWARE")
@@ -145,8 +156,7 @@
     )
   )
 
-(map 'list #'(lambda (file) 
-	       (compile-and-load-lisp-file (in-specware-dir file)))
+(map 'list #'(lambda (file) (compile-and-load-lisp-file (in-specware-dir file)))
      HandwrittenFiles
      )
 
@@ -249,29 +259,52 @@
 #+allegro
 (push 'start-java-connection? excl:*restart-actions*)
 
-;;; Load base in correct location
+;;; Load base in correct location at startup
 (push  'Specware::initializeSpecware-0 
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
        #+sbcl    sb-ext:*init-hooks*)
 
+;(Specware::initializeSpecware-0)
+
+#+sbcl
+(defvar *sbcl-home* (specware::getenv "SBCL_HOME"))
 #+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
-	            (setf (sb-ext:bytes-consed-between-gcs) 50331648))
+	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
+		    (specware::setenv "SBCL_HOME" *sbcl-home*)
+		    )
        sb-ext:*init-hooks*)
 
-;;; Clear load environment vars
-#+cmu
-(progn (setq ext:*environment-list* ())
-       (setq lisp::lisp-environment-list ()))
-
 ;;; Set temporaryDirectory at startup
-(push  'setTemporaryDirectory 
-       #+allegro cl-user::*restart-actions*
-       #+cmu     ext:*after-save-initializations*
-       #+mcl     ccl:*lisp-startup-functions*
-       #+sbcl    sb-ext:*init-hooks*)
+(push 'setTemporaryDirectory 
+      #+allegro cl-user::*restart-actions*
+      #+cmu     ext:*after-save-initializations*
+      #+mcl     ccl:*lisp-startup-functions*
+      #+sbcl    sb-ext:*init-hooks*)
+
+(defvar *using-slime-interface?* t)
+(when *using-slime-interface?*
+  ;; Preload slime lisp support
+
+  ;; per instructions in swank-loader.lisp
+  (cl:defpackage :swank-loader
+		 (:use :cl)
+		 (:export :load-swank 
+			  :*source-directory*
+			  :*fasl-directory*))
+  )
+;; Repeat the when test so the defparameter below can 
+;; be read after the defpackage above has been evaluted.
+(when *using-slime-interface?*
+  (defparameter SWANK-LOADER::*FASL-DIRECTORY*
+    (format nil "~a/Library/IO/Emacs/slime/" 
+	    (specware::getenv "SPECWARE4")))
+
+  (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
+    (load loader :verbose t)))
+(setq *using-slime-interface?* nil)	; Gets set to t when initialized
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
@@ -288,3 +321,5 @@
 	       "(delete-continuation)"))
     val)
   )
+
+(declaim (optimize (speed 2) (debug 3) (safety 2)))
