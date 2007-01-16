@@ -44,6 +44,7 @@
 	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 
+	    #+windows
 	    ;; Preload for efficiency and flexibility
 	    (eval-when (:compile-toplevel :load-toplevel :execute)
 	      (require 'sb-bsd-sockets)
@@ -317,7 +318,7 @@
 (defun cl-user::boot ()
   (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
     (unless val
-      (funcall (find-symbol "EVAL-IN-EMACS" "EMACS")
+      (funcall (intern "EVAL-IN-EMACS" "EMACS")
 	       "(delete-continuation)"))
     val)
   )
