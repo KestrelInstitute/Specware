@@ -45,11 +45,11 @@
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 
 	    ;; Preload for efficiency and flexibility
-	    #+Windows
 	    (eval-when (:compile-toplevel :load-toplevel :execute)
-	      (require 'sb-bsd-sockets)
-	      (require 'sb-introspect)
-	      (require 'sb-posix))
+	      (let ((sb-fasl:*fasl-file-type* "fasl"))
+		(require :sb-bsd-sockets)
+		(require :sb-introspect)
+		(require :sb-posix)))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 	    )
@@ -318,9 +318,9 @@
   `(defparameter ,(intern "*FASL-DIRECTORY*" "SWANK-LOADER")
      (format nil "~a/Library/IO/Emacs/slime/" 
 	     (specware::getenv "SPECWARE4")))
-
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
-    (load loader :verbose t)))
+    (load loader :verbose t))
+  )
 (setq *using-slime-interface?* nil)	; Gets set to t when initialized
 
 (format t "~2%To bootstrap, run (boot)~%")

@@ -80,7 +80,11 @@
   (load utils)
   (compile-and-load-lisp-file utils))
 
-(defparameter Specware4 (specware::getenv "SPECWARE4"))
+(defparameter Specware4 (substitute #\/ #\\ (specware::getenv "SPECWARE4")))
+
+(if (null Specware::Specware4)
+    (warn "SPECWARE4 environment var not set")
+  (format t "~&SPECWARE4 = ~S~%" Specware::Specware4))
 
 (defparameter *Specware-dir*
     (let ((dir (substitute #\/ #\\ Specware4)))
@@ -300,12 +304,12 @@
 ;; Repeat the when test so the defparameter below can 
 ;; be read after the defpackage above has been evaluted.
 (when *using-slime-interface?*
-  (defparameter SWANK-LOADER::*FASL-DIRECTORY*
-    (format nil "~a/Library/IO/Emacs/slime/" 
-	    (specware::getenv "SPECWARE4")))
-
+  `(defparameter ,(intern "*FASL-DIRECTORY*" "SWANK-LOADER")
+     (format nil "~a/Library/IO/Emacs/slime/" 
+	     (specware::getenv "SPECWARE4")))
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
-    (load loader :verbose t)))
+    (load loader :verbose t))
+  )
 (setq *using-slime-interface?* nil)	; Gets set to t when initialized
 
 (format t "~2%To bootstrap, run (boot)~%")
