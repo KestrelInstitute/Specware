@@ -9,7 +9,7 @@
 
 DIR_OF_INVOKED_SCRIPT=`dirname "$0"`
 PARENT=`dirname "$DIR_OF_INVOKED_SCRIPT"`
-cd "$PARENT/Specware-4-2"
+cd "$PARENT/Specware-4-2-0"
 NEW_SPECWARE4="`pwd`"
 
 Prior_SPECWARE4="$SPECWARE4"
