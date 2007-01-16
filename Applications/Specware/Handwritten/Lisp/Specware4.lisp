@@ -3,8 +3,8 @@
 ;;; (Do not confuse it with the file ../../lisp/Specware4.lisp
 ;;;  that is generated from .sw sources.)
 ;;;
-;;; Among other things, this file is referenced by generate-application in
-;;; BuildDistribution_ACL.lisp
+;;; <Specware4>/Release/BuildScripts/LoadSpecware.lisp is a clone of this file
+;;; that is used for distribution builds.
 
 (defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
@@ -14,45 +14,50 @@
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
 
-#+allegro
-(setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
-#+allegro
-(setq excl:*record-source-file-info* nil) ; workaround for annoying bug
-#+allegro (require :scm)
-#+allegro (cl-user::eol-convention *standard-output*)
-#+cmu
-(setq ext:*gc-verbose* nil)
-#+cmu
-(setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
-#+sbcl
-(setf (sb-ext:bytes-consed-between-gcs) 50331648)
-#+cmu
-(setq extensions:*efficiency-note-cost-threshold* 30)
-#+sbcl
-(setq sb-ext:*efficiency-note-cost-threshold* 30)
-#+cmu
-(setq c::*compile-print* nil)
-#+sbcl
-(declaim (sb-ext:muffle-conditions sb-ext:compiler-note
-				   sb-int:simple-style-warning
-				   sb-int:package-at-variance))
-#+sbcl
-(setq sb-ext::*compile-print* nil)
-#+sbcl
-(declaim (optimize (sb-ext:inhibit-warnings 3)))
-#+mcl
-(progn (ccl:egc nil)			; Turn off ephemeral gc as it is inefficient
-       (ccl:gc-retain-pages t)		; Don't give up pages after gc as likely to need them soon
-       (ccl::set-lisp-heap-gc-threshold (* 16777216 3))) ; Increase free space after a gc
-#+sbcl					; Preload for efficiency and flexibility
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (require 'sb-bsd-sockets)
-  (require 'sb-introspect)
-  (require 'sb-posix))
-#+sbcl
-(setq sb-fasl:*fasl-file-type* "sfsl")	; Default is "fasl" which conflicts with allegro
-#+sbcl
-(setq sb-debug:*debug-beginner-help-p* nil)
+#+allegro (progn
+	    (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
+	    (setq excl:*record-source-file-info* nil)                   ; workaround for annoying bug
+	    ;; make sure various modules are loaded for swank:
+	    (require :scm)                                              ; ???
+	    ;; "efmacs" seems to stand for something like "external format macros"
+	    ;; its used by xml, mime, etc.
+	    (cl-user::eol-convention *standard-output*)                 ; loads efmacs.fasl
+	    (require :inspect)
+	    (require :streama)
+	    )
+
+#+cmu     (progn
+	    (setq ext:*gc-verbose* nil)
+	    (setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
+	    (setq extensions:*efficiency-note-cost-threshold* 30)
+	    (setq c::*compile-print* nil)
+	    )
+
+#+sbcl    (progn
+	    (setf (sb-ext:bytes-consed-between-gcs) 50331648)
+	    (setq sb-ext:*efficiency-note-cost-threshold* 30)
+	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
+					       sb-int:simple-style-warning
+					       sb-int:package-at-variance))
+	    (setq sb-ext::*compile-print* nil)
+	    (declaim (optimize (sb-ext:inhibit-warnings 3)))
+	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
+	    (setq sb-debug:*debug-beginner-help-p* nil)
+
+	    ;; Preload for efficiency and flexibility
+	    (eval-when (:compile-toplevel :load-toplevel :execute)
+	      (require 'sb-bsd-sockets)
+	      (require 'sb-introspect)
+	      (require 'sb-posix))
+
+	    (setq sb-debug:*debug-beginner-help-p* nil)
+	    )
+
+#+mcl     (progn
+	    (ccl:egc nil)		                                ; Turn off ephemeral gc as it is inefficient
+	    (ccl:gc-retain-pages t)	                                ; Don't give up pages after gc as likely to need them soon
+	    (ccl::set-lisp-heap-gc-threshold (* 16777216 3))            ; Increase free space after a gc
+	    )
 
 ;; Used in printing out the license and about-specware command
 (defvar cl-user::Specware-version "4.2.0")
@@ -62,29 +67,26 @@
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-2")
 
+(defparameter Specware4 (specware::getenv "SPECWARE4"))
+
 ;; The following defines functions such as:
 ;;    compile-and-load-lisp-file
 ;;    load-lisp-file
 ;;    make-system
 ;;    change-directory
 ;;    current-directory
-(load (make-pathname
-       :defaults "../../../Handwritten/Lisp/load-utilities"
-       :type     "lisp"))
 
-(compile-and-load-lisp-file (make-pathname
-			     :defaults "../../../Handwritten/Lisp/load-utilities"
-			     :type     "lisp"))
+(let ((utils (make-pathname :defaults "../../../Handwritten/Lisp/load-utilities" :type "lisp")))
+  (load utils)
+  (compile-and-load-lisp-file utils))
 
-(defparameter Specware4 (specware::getenv "SPECWARE4"))
-
-(defparameter Specware-dir 
+(defparameter *Specware-dir*
     (let ((dir (substitute #\/ #\\ Specware4)))
       (if (eq (schar dir (1- (length dir))) #\/)
 	  dir
 	(concatenate 'string dir "/"))))
 
-(defun in-specware-dir (file) (concatenate 'string Specware-dir file))
+(defun in-specware-dir (file) (concatenate 'string *Specware-dir* file))
 
 #+cmu
 (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch"))
@@ -235,7 +237,6 @@
 
 ;(handler-bind ((warning #'ignore-warning))
   (map 'list #'(lambda (file)
-		 (list 33 file)
 		 (compile-and-load-lisp-file (in-specware-dir file)))
        SpecwareRuntime
        );)
@@ -276,26 +277,12 @@
 		    )
        sb-ext:*init-hooks*)
 
-;;; Clear load environment vars
-;;; TODO: Why?  
-;;;       The built image presumably will create a new environemnt lisp when it starts,
-;;;       so it's not clear what this accomplishes.
-;;; #+cmu
-;;; (progn (setq ext:*environment-list* ())
-;;;        (setq lisp::lisp-environment-list ()))
-
 ;;; Set temporaryDirectory at startup
-(push  'setTemporaryDirectory 
-        #+allegro cl-user::*restart-actions*
-        #+cmu     ext:*after-save-initializations*
-        #+mcl     ccl:*lisp-startup-functions*
-        #+sbcl    sb-ext:*init-hooks*)
-
-; #+sbcl
-; (push #'(lambda () (format t "~2%Starting GC...")
-; 		   (sb-ext:gc :full t)
-; 		   (format t "~%Finishing GC..."))
-;       sb-ext:*init-hooks*)
+(push 'setTemporaryDirectory 
+      #+allegro cl-user::*restart-actions*
+      #+cmu     ext:*after-save-initializations*
+      #+mcl     ccl:*lisp-startup-functions*
+      #+sbcl    sb-ext:*init-hooks*)
 
 (defvar *using-slime-interface?* t)
 (when *using-slime-interface?*
@@ -330,7 +317,8 @@
 (defun cl-user::boot ()
   (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
     (unless val
-      (emacs::eval-in-emacs "(delete-continuation)"))
+      (funcall (find-symbol "EVAL-IN-EMACS" "EMACS")
+	       "(delete-continuation)"))
     val)
   )
 
