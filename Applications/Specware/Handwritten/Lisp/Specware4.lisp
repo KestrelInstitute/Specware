@@ -44,12 +44,12 @@
 	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 
-	    #+windows
 	    ;; Preload for efficiency and flexibility
 	    (eval-when (:compile-toplevel :load-toplevel :execute)
-	      (require 'sb-bsd-sockets)
-	      (require 'sb-introspect)
-	      (require 'sb-posix))
+	      (let ((sb-fasl:*fasl-file-type* "fasl"))
+		(require :sb-bsd-sockets)
+		(require :sb-introspect)
+		(require :sb-posix)))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 	    )
