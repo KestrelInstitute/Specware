@@ -14,8 +14,10 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Specs/TypeObligations
  import /Languages/MetaSlang/Transformations/RemoveSubsorts
  import /Languages/MetaSlang/Transformations/Coercions
+ import /Languages/MetaSlang/Transformations/LambdaLift
 
  def addObligations? = true
+ def lambdaLift?     = false
 
  type Pretty = PrettyPrint.Pretty
 
@@ -248,6 +250,10 @@ IsaTermPrinter qualifying spec
     % let _ = toScreen("1:\n"^printSpec spc^"\n") in
     let trans_table = thyMorphismMaps spc in
     let c = c << {spec? = Some spc, trans_table = trans_table} in
+    let spc = if lambdaLift?
+               then lambdaLift spc
+	       else spc
+    in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec spc
 	       else spc
