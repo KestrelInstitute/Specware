@@ -38,9 +38,10 @@
 ;;;directory.  Old patch files will not be removed or overwritten.
 
 (defun patch-directory ()
-  (if (equal specware-dir nil)
+  (setq *specware-dir* (specware::getenv "SPECWARE4"))
+  (if (equal *specware-dir* nil)
       (warn "patch-directory: SPECWARE4 environment variable not set")
-    (in-specware-dir "Patches/")))
+    (in-specware-dir "/Patches/")))
 
 (defun patch-number (path)
   (or (ignore-errors
