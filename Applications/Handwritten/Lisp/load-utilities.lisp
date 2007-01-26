@@ -26,7 +26,7 @@
   ;; we need consistency: all pathnames, or all strings, or all lists
   ;; of strings, ...
   (let* ((dir 
-	 #+allegro   (excl::current-directory)     ; pathname
+	 #+allegro   (substitute #\/ #\\ (namestring (excl::current-directory)))
 	 #+Lispworks (hcl:get-working-directory)   ; ??       (current-pathname)
 	 #+mcl       (ccl::current-directory-name) ; ??
 	 #+cmu       (extensions:default-directory) ; pathname
