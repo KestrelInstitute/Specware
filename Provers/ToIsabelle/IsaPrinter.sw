@@ -17,7 +17,7 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Transformations/LambdaLift
 
  def addObligations? = true
- def lambdaLift?     = false
+ def lambdaLift?     = true
 
  type Pretty = PrettyPrint.Pretty
 
