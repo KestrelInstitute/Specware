@@ -51,10 +51,6 @@ echo "  Verify_ACL:  EXECUTABLE_EXTENSION = [$EXECUTABLE_EXTENSION]"
 echo "  Verify_ACL:  BATCH_LISP           = [$BATCH_LISP]"
 echo "  Verify_ACL:  BATCH_SPECWARE       = [$BATCH_SPECWARE]"
 echo "  Verify_ACL:  BATCH_BOOTSTRAP      = [$BATCH_BOOTSTRAP]"
-
-# use Specware4-save.$IMAGE_EXTENSION so that dump of Specware4.$IMAGE_EXTENSION won't crash running image
-"$LISP" -I "$SPECWARE4"/Applications/Specware/bin/linux/Specware4-save.$IMAGE_EXTENSION -batch <<-XXXX
-
 echo "  "
 
 if [ -f "${BIG_LISP}" ]; then
