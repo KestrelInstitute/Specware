@@ -4,31 +4,26 @@ Option qualifying spec
 
   type Option a = | None | Some a
 
-  op some : [a] a -> Option a
-  def some x = Some x
+  op some : [a] a -> Option a = embed Some
 
-  op none : [a] Option a
-  def none = None
+  op none : [a] Option a = embed None
 
-  op some? : [a] Option a -> Boolean
-  def some? x = (x ~= none)
+  op [a] some? (x: Option a) : Boolean = (x ~= none)
 
-  op none? : [a] Option a -> Boolean
-  def none? x = (x = none)
+  op [a] none? (x: Option a) : Boolean = (x = none)
 
-  op compare : [a] (a * a -> Comparison) -> Option a * Option a -> Comparison
-  def compare comp (o1,o2) =
+  op [a] compare
+     (comp: a * a -> Comparison) (o1: Option a, o2: Option a) : Comparison =
     case (o1,o2) of
        | (Some x,Some y) -> comp (x,y)
        | (None,  Some _) -> Less
        | (Some _,None)   -> Greater
-       | _               -> Equal
+       | (None,  None)   -> Equal
 
-  op mapOption : [a,b] (a -> b) -> Option a -> Option b
-  def mapOption f opt =
+  op [a,b] mapOption (f: a -> b) (opt: Option a) : Option b =
     case opt of
-      | None   -> None
-      | Some x -> Some(f x)
+    | None   -> None
+    | Some x -> Some (f x)
 
   proof Isa Thy_Morphism
    type Option.Option \_rightarrow option

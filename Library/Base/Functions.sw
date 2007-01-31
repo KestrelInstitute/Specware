@@ -1,10 +1,8 @@
 Functions qualifying spec
 
-  op id : [a] a -> a
-  def id x = x
+  op id : [a] a -> a = fn x -> x
 
-  op o infixl 24 : [a,b,c] (b -> c) * (a -> b) -> (a -> c)
-  def o (f,g) x = f (g x)
+  op [a,b,c] o (f: b -> c, g: a -> b) infixl 24 : a -> c = fn x -> f (g x)
 
   op injective?  : [a,b] (a -> b) -> Boolean
   axiom injective?_def  is [a,b]
