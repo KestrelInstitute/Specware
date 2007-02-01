@@ -37,7 +37,7 @@ SpecCalc qualifying spec
 		      }
  
   op morphismObligations: Morphism * GlobalContext * Position -> Spec
-  def morphismObligations ({dom, cod, sortMap, opMap, pragmas=_, sm_tm=_},globalContext,pos) =
+  def morphismObligations ({dom, cod, sortMap, opMap, pragmas, sm_tm=_},globalContext,pos) =
     % let tcc = MetaSlangTypeCheck.checkSpec(domain2) in
     let translated_dom_axioms =
         foldrSpecElements (fn (el,newprops) ->
@@ -82,7 +82,8 @@ SpecCalc qualifying spec
                      let cod_value_info = (Spec cod, oldestTimeStamp, []) in
 		     (Quote cod_value_info,pos)
     in
-    let ob_spc = cod << {elements =  [Import(cod_tm,cod,cod.elements)] ++ obligation_props} in
+    let ob_spc = cod << {elements =  [Import(cod_tm,cod,cod.elements)] ++ obligation_props
+                                     ++ map (fn ((p1,p2,p3),pos) -> Pragma(p1,p2,p3,pos)) pragmas} in
     ob_spc
 
   op  defToConjecture: Spec * Qualifier * Id * MS.Term -> SpecElements
