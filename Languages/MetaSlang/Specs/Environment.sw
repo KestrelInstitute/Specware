@@ -166,7 +166,7 @@ spec
  %-   res
 
  def arrowOpt (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt)
+  case stripSubsorts (sp, unfoldBase (sp,srt))
     of Arrow (dom, rng, _) -> Some (dom, rng)
      | _ -> None
 
@@ -185,12 +185,12 @@ spec
     | Some (_, rng) -> Some rng
 
  def productOpt (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt)
+  case stripSubsorts (sp, unfoldBase (sp,srt))
     of Product (fields, _) -> Some fields
      | _ -> None
 
  def coproductOpt (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt)
+  case stripSubsorts (sp, unfoldBase (sp,srt))
     of CoProduct (fields, _) -> Some fields
      | _ -> None
 
@@ -451,4 +451,30 @@ spec
      | _ -> System.fail "Product sort expected for mkProjectTerm"    
 
 
+ op productLength(sp: Spec, srt:Sort): Nat = 
+   case productOpt(sp,srt)
+     of Some fields -> length fields
+      | None -> 1
+
+ op sortArity : Spec * Sort            -> Option(Sort * Nat)
+ def sortArity(sp,srt) =
+     case arrowOpt(sp,srt)
+       of Some(dom,rng) -> 
+          let len = productLength(sp,dom) in 
+          if ~(len = 1)
+             then Some (dom,len)
+          else None
+        | _ -> None
+
+ def polymorphicDomainOp? (spc, idf) =
+   case findTheOp (spc, idf) of
+     | Some info -> 
+       let srt = firstOpDefInnerSort info in
+       polymorphicDomain? (spc, srt)
+     | None -> false
+
+ def polymorphicDomain? (sp, srt) =
+   case arrowOpt (sp, srt) of
+     | Some (TyVar _, _) -> true
+     | _                -> false
 endspec
