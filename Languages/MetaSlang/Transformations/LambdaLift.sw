@@ -906,7 +906,7 @@ def toAny     = Term `TranslationBasic.toAny`
  def addNewOpAux (info, elts, ops) =
    let name as Qualified (q, id) = primaryOpName info in
    let new_ops = insertAQualifierMap (ops, q, id, info) in
-   (Cons(OpDef name,elts), new_ops)
+   (Cons(Op (name,true),elts), new_ops)
 
 endspec
 
