@@ -143,6 +143,9 @@ be the option to run each (test ...) form in a fresh image.
 	 (*test-directory* (directory-namestring path))
 	 (*test-temporary-directory* (get-temporary-directory))
 	 (*test-temporary-directory-name* (replace-string (directory-namestring *test-temporary-directory*) "\\" "/"))
+	 (*test-temporary-directory-name*
+	  #+darwin (format nil "/private~a" *test-temporary-directory-name*)
+	  #-darwin *test-temporary-directory-name*)
 	 (old-directory (specware::current-directory)))
     (unless *quiet-about-dirs?* 
       (format t "~%;;;; Running test suite in directory ~a~%" *test-directory*))
