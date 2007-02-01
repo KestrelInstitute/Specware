@@ -8,6 +8,7 @@ spec
  import /Languages/MetaSlang/Transformations/InstantiateHOFns
  import /Languages/MetaSlang/Transformations/RenameBound
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
+ import /Languages/SpecCalculus/Semantics/Evaluate/Spec/MergeSpecs
 
  %type SpecElement  = QualifiedId * TyVars * MS.Term 
  type TypeCheckConditions = SpecElements * StringSet.Set
@@ -950,9 +951,10 @@ spec
 	                  then Cons(Import(wfoSpecTerm,wfoSpec,wfoSpec.elements),new_elements)
 			  else new_elements,
 	      ops      = if generateTerminationConditions?
-	                  then insertAQualifierMap(spc.ops,"WFO","wfo",
-						   case findTheOp(wfoSpec,Qualified("WFO","wfo"))
-						     of Some x -> x)
+	                  then
+                            foldriAQualifierMap (fn (_, _, info, ops) ->
+                                                 mergeOpInfo spc ops info)
+                              spc.ops wfoSpec.ops
 			  else spc.ops})
 
 % op  boundVars   : Gamma -> List Var
