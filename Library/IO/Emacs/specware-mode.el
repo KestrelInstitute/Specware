@@ -1333,6 +1333,7 @@ If anyone has a good algorithm for this..."
 (defun sw:process-unit (unitid)
   (interactive (list (read-from-minibuffer "Process Unit: "
 					   (sw:containing-specware-unit-id))))
+  (save-buffer)
   (lisp-or-specware-command ":sw " "proc " unitid))
 
 (defun sw:generate-lisp (compile-and-load?)
