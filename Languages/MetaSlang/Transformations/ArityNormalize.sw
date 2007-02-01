@@ -80,7 +80,6 @@ ArityNormalize qualifying spec {
  op normalizeArity : Spec * Gamma * UsedNames * MS.Term -> MS.Term
  
  op termArity : Spec * Gamma * MS.Term    -> Option(Sort * Nat)
- op sortArity : Spec * Sort            -> Option(Sort * Nat)
 % op opArity   : Spec * String * String -> Option(Sort * Nat)
 
 
@@ -102,33 +101,6 @@ ArityNormalize qualifying spec {
                 ([],names) xs
      in
      (nameList,names)
-
- def sortArity(sp,srt) =
-     let 
-        def productLength(srt:Sort) = 
-            case productOpt(sp,srt)
-              of Some fields -> length fields
-               | None -> 1
-     in
-     case arrowOpt(sp,srt)
-       of Some(dom,rng) -> 
-          let len = productLength(dom) in 
-          if ~(len = 1)
-             then Some (dom,len)
-          else None
-        | _ -> None
-
- def polymorphicDomainOp? (spc, idf) =
-   case findTheOp (spc, idf) of
-     | Some info -> 
-       let srt = firstOpDefInnerSort info in
-       polymorphicDomain? (spc, srt)
-     | None -> false
-
- def polymorphicDomain? (sp, srt) =
-   case arrowOpt (sp, srt) of
-     | Some (TyVar _, _) -> true
-     | _                -> false
 
 (*
  Arities are associated with term identifiers according to 
