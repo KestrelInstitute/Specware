@@ -94,11 +94,6 @@ Prover qualifying spec
   def mkDefEquality (srt, qid, trm) =
     mkEquality (srt, mkOp (qid, srt), trm)
 
-  def productLength (sp:Spec, srt:Sort) = 
-    case productOpt (sp, srt)
-      of Some fields -> length fields
-       | None -> 1
-
   def functionSort? (sp, srt) = 
       case unfoldBase (sp, srt)
         of Arrow _ -> true
