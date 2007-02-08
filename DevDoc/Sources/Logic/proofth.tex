@@ -248,9 +248,8 @@ capture subtyping as
 \]
 
 \[
-\rruleIV
- {\istyO{\typ}}
- {\issubO{\typ_1}{\tspred}{\typ_2}}
+\rruleIII
+ {\issub{\snoc{\cx}{\vdecO}}{\typ_1}{\tspred}{\typ_2}}
  {\var\neq\var'}
  {\tspred'=\abs{\var}
                {\tarr{\typ}{\typ_2}}
@@ -285,7 +284,10 @@ Arrow types are monotonic in their range types with respect to subtyping. The
 associated predicate holds when all the values of the function satisfy the
 predicate associated to the range subtype. Note that the domain must be the
 same; while domain contravariance is used in some type systems with subtypes,
-it would violate extensionality (see explanation in \cite{pvs-seman}).
+it would violate extensionality (see explanation in \cite{pvs-seman}). The
+extension of $\cx$ with $\vdecO$ mirrors rule \Rtarr: if $\typ$ is empty, then
+both $\tarr{\typ}{\typ_1}$ and $\tarr{\typ}{\typ_2}$ contain just the empty
+function and the former is trivially a subtype of the latter.
 \item
 Record types are monotonic in their component types with respect to
 subtyping. The record subtype predicate holds when all the component subtype
