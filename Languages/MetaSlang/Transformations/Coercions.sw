@@ -8,7 +8,8 @@ spec
   type TypeCoercionInfo = {subtype: QualifiedId,
 			   supertype: QualifiedId,
 			   coerceToSuper: MS.Term,
-			   coerceToSub: MS.Term}
+			   coerceToSub: MS.Term,
+                           overloadedOps: List String}
   type TypeCoercionTable = List TypeCoercionInfo
 
   op  addCoercions: TypeCoercionTable \_rightarrow Spec \_rightarrow Spec
@@ -33,13 +34,14 @@ spec
 	      | _ \_rightarrow false
 	in
 	let n_tm = mapSubTerms(tm,if delayCoercion? then ty else rm_ty) in
+        let n_tm = liftCoercion(n_tm,rm_ty) in
 	if delayCoercion? \_or overloadedTerm? n_tm then n_tm
 	else
 	case find (fn tb \_rightarrow subsortOf?(rm_ty,tb.subtype,spc)) coercions of
 	  | Some tb \_rightarrow
 	    if subsortOf?(ty,tb.supertype,spc)
 	      \_and \_not(subsortOf?(ty,tb.subtype,spc))
-	      then mkApply(tb.coerceToSuper,n_tm)
+	      then coerceToSuper(n_tm,tb)
 	      else n_tm
 	  | None \_rightarrow
 	case find (fn tb \_rightarrow subsortOf?(rm_ty,tb.supertype,spc)
@@ -47,7 +49,7 @@ spec
 	       coercions of
 	  | Some tb \_rightarrow
 	    if subsortOf?(ty,tb.subtype,spc)
-	      then mkApply(tb.coerceToSub,n_tm)
+	      then coerceToSub(n_tm,tb)
 	      else n_tm
 	  | None \_rightarrow n_tm
 
@@ -64,15 +66,16 @@ spec
 	  | The (var, trm, a) ->
 	    The (var, mapTerm(trm,boolSort), a)
 	  | Let (decls, bdy, a) ->
-	    Let (map (fn (pat,trm) \_rightarrow (pat,mapTerm(trm,ty)))   % Assumes no coercions in pattern
+	    %Let (map (fn (pat,trm) \_rightarrow (pat,mapTerm(trm,ty)))   % Assumes no coercions in pattern
+	    Let (map (fn (pat,trm) \_rightarrow (pat,mapTerm(trm,patternSort pat)))   % Assumes no coercions in pattern
 		   decls,
 		 mapTerm(bdy,ty), a)
 	  | LetRec (decls, bdy, a) ->
-	    LetRec (map (fn ((id,srt), trm) \_rightarrow ((id,srt), mapTerm(trm,srt)))decls,
+	    LetRec (map (fn ((id,srt), trm) \_rightarrow ((id,srt), mapTerm(trm,srt))) decls,
 		    mapTerm(bdy,ty), a)
 	  | Lambda (match, a) ->
 	    Lambda (map (fn (pat,condn,trm) \_rightarrow
-			 (pat, mapTerm(condn,boolSort),mapTerm(trm,range (spc,ty))))
+			 (pat, mapTerm(condn,boolSort),mapTerm(trm, range(spc,ty))))
 			 match,
 		    a)
 	  | IfThenElse (t1, t2, t3, a) ->
@@ -82,6 +85,55 @@ spec
 	  | SortedTerm (trm, srt, a) ->
 	    SortedTerm (mapTerm(trm,srt), srt, a)
 	  | _ \_rightarrow tm
+      def liftCoercion (tm,ty) =
+        case tm of
+          | Apply(f as Fun(Op(Qualified(_,idn),_),_,_),x,a) \_rightarrow
+            (case checkCoercions x of
+               | Some(tb,coerce_fn) | member(idn,tb.overloadedOps) \_rightarrow
+                 let new_x = removeCoercions(x,coerce_fn) in
+                 let new_tm = Apply(f,new_x,a) in
+                 (if subsortOf?(ty,tb.supertype,spc)
+                   then Apply(coerce_fn,new_tm,a)
+                   else new_tm) 
+               | _ \_rightarrow tm)
+          | _ \_rightarrow tm
+      def checkCoercions tm =
+        (case tm of
+           | Record(row, _) \_rightarrow
+             foldl (\_lambda ((_,x),result) \_rightarrow
+                    case checkCoercions1 x of
+                      | (false,_) -> (false,None)
+                      | new_result ->
+                    case result of
+                      | (false,_) -> result
+                      | (true,Some _) -> result
+                      | (true,None) -> new_result)
+               (true, None) row 
+           | _ \_rightarrow checkCoercions1 tm).2
+      def checkCoercions1 tm =
+        case tm of
+          | Apply(f,_,_) \_rightarrow
+            (case find (fn tb \_rightarrow f = tb.coerceToSuper \_or f = tb.coerceToSub) coercions of
+               | Some tb \_rightarrow (true, Some(tb,f))
+               | None \_rightarrow (false,None))
+          | _ \_rightarrow (overloadedTerm? tm,None)
+      def removeCoercions(tm,f) =
+        case tm of
+          | Record(row, a) ->
+            Record(map (\_lambda(id,x) -> (id,removeCoercion(x,f))) row, a)
+          | _ -> removeCoercion(tm,f)
+      def removeCoercion(tm,f) =
+        case tm of
+          | Apply(f1,x,_) | f = f1 \_rightarrow x
+          | _ -> tm
+      def coerceToSuper(tm,tb) =
+        case tm of
+          | Apply(f,x,_) | f = tb.coerceToSub \_rightarrow x
+          | _ \_rightarrow mkApply(tb.coerceToSuper,tm)
+      def coerceToSub(tm,tb) =
+        case tm of
+          | Apply(f,x,_) | f = tb.coerceToSuper \_rightarrow x
+          | _ \_rightarrow mkApply(tb.coerceToSub,tm)
     in
     spc << {ops = foldl (fn (el,ops) \_rightarrow
 			 case el of
