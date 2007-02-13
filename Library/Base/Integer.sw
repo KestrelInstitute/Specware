@@ -131,14 +131,14 @@ Integer qualifying spec
 
   proof Isa Thy_Morphism Presburger
    type Integer.Integer \_rightarrow int
-   type Nat.Nat -> nat (int,nat)
+   type Nat.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
    Integer.+ \_rightarrow +  Left 25
    Integer.- \_rightarrow -  Left 25
    IntegerAux.- \_rightarrow -
    Integer.~ \_rightarrow -
    Integer.* \_rightarrow *  Left 27
-   Integer.div \_rightarrow *  Left 27
-   Integer.rem \_rightarrow *  Left 27
+   Integer.div \_rightarrow div  Left 26
+   Integer.rem \_rightarrow mod  Left 26
    Integer.<= \_rightarrow \<le>  Left 20
    Integer.< \_rightarrow <  Left 20
    Integer.>= \_rightarrow \<ge>  Left 20
