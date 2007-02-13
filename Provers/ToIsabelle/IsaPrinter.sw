@@ -12,7 +12,7 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Transformations/RemoveSubsorts
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
  import /Languages/MetaSlang/Specs/TypeObligations
- import /Languages/MetaSlang/Transformations/RemoveSubsorts
+ import /Languages/MetaSlang/Specs/Environment
  import /Languages/MetaSlang/Transformations/Coercions
  import /Languages/MetaSlang/Transformations/LambdaLift
 
@@ -219,6 +219,7 @@ IsaTermPrinter qualifying spec
     format(80, main_pp_val)
 
 
+  op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position -> Spec
   %% --------------------------------------------------------------------------------
 
   op  ppValue : Context \_rightarrow Value \_rightarrow Pretty
@@ -226,6 +227,10 @@ IsaTermPrinter qualifying spec
   def ppValue c value =
     case value of
       | Spec spc \_rightarrow ppSpec c spc
+      | Morph morph \_rightarrow
+        let Some glob_ctxt = MonadicStateInternal.readGlobalVar "GlobalContext" in
+        let oblig_spec = morphismObligations(morph,glob_ctxt,noPos) in
+        ppSpec c oblig_spec
       | _ \_rightarrow prString "<Not a spec>"
  
   %% --------------------------------------------------------------------------------
@@ -288,21 +293,22 @@ IsaTermPrinter qualifying spec
 
   op  makeCoercionTable: TransInfo * Spec \_rightarrow TypeCoercionTable
   def makeCoercionTable(trans_info,spc) =
-    Map.foldi (\_lambda (subty, (super_id,opt_coerc),val) \_rightarrow
-	     case opt_coerc of
-	       | None \_rightarrow val
-	       | Some(toSuper,toSub) \_rightarrow
-	     let srtDef = sortDef(subty,spc) in
-	     let superty = getSuperTypeOp srtDef in
-	     Cons({subtype = subty,
-		   supertype = superty,
-		   coerceToSuper = mkOp(Qualified(toIsaQual,toSuper),
-					mkArrow(mkBase(subty,[]),
-						mkBase(superty,[]))),
-		   coerceToSub   = mkOp(Qualified(toIsaQual,toSub),
-					mkArrow(mkBase(superty,[]),
-						mkBase(subty,[])))},
-		  val))
+    Map.foldi (\_lambda (subty, (super_id,opt_coerc,overloadedOps),val) \_rightarrow
+               case opt_coerc of
+                 | None \_rightarrow val
+                 | Some(toSuper,toSub) \_rightarrow
+	       let srtDef = sortDef(subty,spc) in
+               let superty = getSuperTypeOp srtDef in
+               Cons({subtype = subty,
+                     supertype = superty,
+                     coerceToSuper = mkOp(Qualified(toIsaQual,toSuper),
+                                          mkArrow(mkBase(subty,[]),
+                                                  mkBase(superty,[]))),
+                     coerceToSub   = mkOp(Qualified(toIsaQual,toSub),
+                                          mkArrow(mkBase(superty,[]),
+                                                  mkBase(subty,[]))),
+                     overloadedOps = overloadedOps},
+                    val))
       [] trans_info.type_map
 
   op  getSuperTypeOp: Sort \_rightarrow QualifiedId
@@ -358,13 +364,13 @@ IsaTermPrinter qualifying spec
 %	    Cons(ppProperty c prop "" (Some prag),
 %		 aux c spc rst)
 	  | el :: (rst as (Pragma prag) :: _) \_rightarrow
-	    let pretty1 = ppSpecElement c spc el false (Some prag) elems in
+	    let pretty1 = ppSpecElement c spc el (Some prag) elems in
 	    let prettyr = aux c spc rst in
 	    if pretty1 = prEmpty
 	      then prettyr
 	      else Cons(pretty1,prettyr)
 	  | el :: rst \_rightarrow
-	    let pretty1 = ppSpecElement c spc el false None elems in
+	    let pretty1 = ppSpecElement c spc el None elems in
 	    let prettyr = aux c spc rst in
 	    if pretty1 = prEmpty
 	      then prettyr
@@ -379,23 +385,31 @@ IsaTermPrinter qualifying spec
 %        Cons(Op qid1, normalizeSpecElements rst)
 %      | x::rst \_rightarrow Cons(x,normalizeSpecElements rst)
 
-  op  ppSpecElement: Context \_rightarrow Spec \_rightarrow SpecElement \_rightarrow Boolean \_rightarrow Option Pragma
+  op  ppSpecElement: Context \_rightarrow Spec \_rightarrow SpecElement \_rightarrow Option Pragma
                     \_rightarrow SpecElements \_rightarrow Pretty
-  def ppSpecElement c spc elem op_with_def? opt_prag elems =
+  def ppSpecElement c spc elem opt_prag elems =
     case elem of
       | Import (_,im_sp,im_elements) \_rightarrow prEmpty
-      | Op (qid,def?) \_rightarrow
+      | Op (qid as Qualified(_,nm),def?) \_rightarrow
 	(case AnnSpec.findTheOp(spc,qid) of
 	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow
-	     ppOpInfo c true op_with_def? opt_prag (names,fixity,dfn)  % TODO: change  op_with_def?  to  def? -- no one looks at it??
+	     ppOpInfo c true def?
+               (case findPragmaNamed(elems,nm) of
+                  | None \_rightarrow opt_prag
+                  | prag \_rightarrow prag)
+               (names,fixity,dfn)  % TODO: change  op_with_def?  to  def? -- no one looks at it??
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
-      | OpDef qid \_rightarrow
+      | OpDef(qid as Qualified(_,nm)) \_rightarrow
 	(case AnnSpec.findTheOp(spc,qid) of
 	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow
-	     ppOpInfo c false true opt_prag (names,fixity,dfn)
+	     ppOpInfo c false true
+               (case findPragmaNamed(elems,nm) of
+                  | None \_rightarrow opt_prag
+                  | prag \_rightarrow prag)
+               (names,fixity,dfn)
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
@@ -432,20 +446,27 @@ IsaTermPrinter qualifying spec
 
  op  findPragmaNamed: SpecElements * String \_rightarrow Option Pragma
  def findPragmaNamed(elts,nm) =
-   case elts of
+   case findPragmaNamed1(elts,nm) of
+     | Some p \_rightarrow Some p
+     | None \_rightarrow                          % Allow Isabelle name
+       findPragmaNamed1(elts,ppIdStr nm)
+
+ op  findPragmaNamed1: SpecElements * String \_rightarrow Option Pragma
+ def findPragmaNamed1(elts,nm) =
+    case elts of
      | [] \_rightarrow None
      | el::rst \_rightarrow
        (case el of
 	  | Pragma(p_bod as ("proof",prag_str,"end-proof",_)) \_rightarrow
-	    (case search("\n",prag_str) of
-	       | None \_rightarrow findPragmaNamed(rst,nm)
-	       | Some n \_rightarrow
-	     let line1 = substring(prag_str,0,n) in
+	    (let line1 = case search("\n",prag_str) of
+                           | None \_rightarrow prag_str
+                           | Some n \_rightarrow substring(prag_str,0,n)
+             in
 	     case removeEmpty(splitStringAt(line1," ")) of
 	       | "Isa"::thm_nm::r | thm_nm = nm \_rightarrow
 		 Some p_bod
-	       | _ \_rightarrow findPragmaNamed(rst,nm))
-	  | _ \_rightarrow findPragmaNamed(rst,nm))
+	       | _ \_rightarrow findPragmaNamed1(rst,nm))
+	  | _ \_rightarrow findPragmaNamed1(rst,nm))
 
  op  ppIdInfo : List QualifiedId \_rightarrow Pretty
  def ppIdInfo qids = ppQualifiedId(hd qids)
@@ -490,7 +511,7 @@ IsaTermPrinter qualifying spec
  def ppTyVars tvs =
    case tvs of
      | [] \_rightarrow prEmpty
-     | [tv] \_rightarrow prConcat [prString tv,prSpace]
+     | [tv] \_rightarrow prConcat [prString "'",prString tv,prSpace]
      | _ \_rightarrow prConcat [prString " (",
 		      prPostSep 0 blockFill (prString ",")
 		        (map (\_lambda tv \_rightarrow prConcat[prString "'",prString tv]) tvs),
@@ -500,33 +521,37 @@ IsaTermPrinter qualifying spec
 
  op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow Option Pragma \_rightarrow Aliases \_times Fixity \_times MS.Term
                  \_rightarrow Pretty
- def ppOpInfo c decl? _(*def?*) opt_prag (aliases, fixity, dfn) =
+ def ppOpInfo c decl? def? opt_prag (aliases, fixity, dfn) =
    let mainId = hd aliases in
    case specialOpInfo c mainId of
      | Some _ \_rightarrow prEmpty
      | None \_rightarrow
    let (tvs, ty, term) = unpackTerm dfn in
-   if decl?
-    then prConcat ([prString "consts ",
-		   %ppTyVars tvs,
-		   ppIdInfo aliases,
-		   prString " :: \"",
-		   (case fixity of
-		     | Infix(assoc,prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Isa
-		     | _ \_rightarrow ppType c Top ty),
-		   prString "\""]
-		++ (case fixity of
-		      | Infix(assoc,prec) \_rightarrow
-			[prString "\t(",
-			 case assoc of
-			   | Left  \_rightarrow prString "infixl \""
-			   | Right \_rightarrow prString "infixr \"",
-			 ppMainId (mainId),
-			 prString "\" ",
-			 prString (toString (prec + precNumFudge)),
-			 prString ")"]
-		      | _ \_rightarrow []))
-    else ppDef c mainId ty opt_prag term
+   let decl_list = 
+         if decl?
+           then [[prString "consts ",
+                 %ppTyVars tvs,
+                 ppIdInfo aliases,
+                 prString " :: \"",
+                 (case fixity of
+                   | Infix(assoc,prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Isa
+                   | _ \_rightarrow ppType c Top ty),
+                 prString "\""]
+              ++ (case fixity of
+                    | Infix(assoc,prec) \_rightarrow
+                      [prString "\t(",
+                       case assoc of
+                         | Left  \_rightarrow prString "infixl \""
+                         | Right \_rightarrow prString "infixr \"",
+                       ppMainId (mainId),
+                       prString "\" ",
+                       prString (toString (prec + precNumFudge)),
+                       prString ")"]
+                    | _ \_rightarrow [])]
+            else []
+   in
+   let def_list = if def? then [[ppDef c mainId ty opt_prag term]] else []
+   in prLinesCat 0 (decl_list ++ def_list)
 
   op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow Option Pragma \_rightarrow MS.Term \_rightarrow Pretty
   def ppDef c op_nm ty opt_prag body =
@@ -789,11 +814,14 @@ IsaTermPrinter qualifying spec
 				  [prString " of ",
 				   ppMatch c match]])
 	 | (Fun (Project p, srt1, _), _) ->
-	   let pid = projectorFun(p,srt1) in
+	   let pid = projectorFun(p,srt1,getSpec c) in
 	   let encl? = \_not(isSimpleTerm? term2) in
-           prConcat [prString p,
+           prConcat [prString pid,
 		     prConcat [prSpace, enclose?(encl?, ppTerm c (if encl? then Top else Nonfix)
 						          term2)]]
+         | (Fun (Op (Qualified("Integer","natural?"),_), _,a),_) \_rightarrow  % natural? e --> 0 <= e
+           ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
+                                       [mkNat 0, term2]))
 	 | _ \_rightarrow
 	   prConcat [ppTerm c parentTerm term1,
 		     case term2 of
@@ -914,11 +942,22 @@ IsaTermPrinter qualifying spec
         prBreakCat 0 [[ppTerm c parentTerm tm, prString ": "],[ppType c Top ty]]
       | mystery \_rightarrow fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
-  op  projectorFun: String * Sort \_rightarrow String
-  def projectorFun (p,_) =
+  op  projectorFun: String * Sort * Spec \_rightarrow String
+  def projectorFun (p,s,spc) =
+    let arity = case sortArity(spc,s) of
+                  | None \_rightarrow 1
+                  | Some(_,i) \_rightarrow i
+    in
     case p of
       | "1" \_rightarrow "fst"
-      | "2" \_rightarrow "snd"			% !! Only if a pair
+      | "2" \_rightarrow (if arity = 2 then "snd" else "second")
+      | "3" \_rightarrow (if arity = 3 then "thirdl" else "third")
+      | "4" \_rightarrow (if arity = 4 then "fourthl" else "fourth")
+      | "5" \_rightarrow (if arity = 5 then "fifthl" else "fifth")
+      | "6" \_rightarrow (if arity = 6 then "sixthl" else "sixth")
+      | "7" \_rightarrow (if arity = 7 then "seventhl" else "seventh")
+      | "8" \_rightarrow (if arity = 8 then "eigthl" else "eigth")
+      | "9" \_rightarrow (if arity = 9 then "ninethl" else "nineth")
       | _ \_rightarrow p
 
   op  ppBinder : Binder \_rightarrow Pretty
@@ -1156,7 +1195,7 @@ IsaTermPrinter qualifying spec
   op  ppTypeQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
   def ppTypeQualifiedId c qid =
     case specialTypeInfo c qid of
-      | Some(s,_) \_rightarrow prString s
+      | Some(s,_,_) \_rightarrow prString s
       | None \_rightarrow
     case qid of
 %% Table-driven now above

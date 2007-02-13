@@ -6,7 +6,7 @@ IsaTermPrinter qualifying spec
  import /Library/Structures/Data/Maps/SimpleAsAlist
 
  type OpTransInfo = String * Option(Associativity * Nat) * Boolean
- type TypeTransInfo = String * Option(String * String)
+ type TypeTransInfo = String * Option(String * String) * List String
 
  type OpMap   = Map.Map (QualifiedId, OpTransInfo)
  type TypeMap = Map.Map (QualifiedId, TypeTransInfo)
@@ -73,19 +73,20 @@ IsaTermPrinter qualifying spec
        def processRhsType rhs =
 	 let rhs = removeWhiteSpace rhs in
 	 case search("(",rhs) of
-	   | None \_rightarrow (rhs, None)
+	   | None \_rightarrow (rhs, None, [])
 	   | Some lpos \_rightarrow
 	 case search(",",rhs) of
 	   | None \_rightarrow let _ = warn("Comma expected after left paren") in
-	             (rhs, None)
+	             (rhs, None, [])
 	   | Some commapos \_rightarrow
 	 case search(")",rhs) of
 	   | None \_rightarrow let _ = warn("Missing right parenthesis.") in
-	             (rhs, None)
+	             (rhs, None, [])
 	   | Some rpos \_rightarrow
 	     (substring(rhs,0,lpos),
 	      Some(substring(rhs,lpos+1,commapos),
-		   substring(rhs,commapos+1,rpos)))
+		   substring(rhs,commapos+1,rpos)),
+              parseOverloadedOps(rhs))
        def processRhsOp rhs =
 	 case removeEmpty(splitStringAt(rhs," ")) of
 	   | [] \_rightarrow (" ", None, false)
@@ -98,12 +99,23 @@ IsaTermPrinter qualifying spec
        def processLine(lhs,rhs,result) =
 	 let (type?,qid) = processLhs lhs in
 	 if type?
-	   then let (isaSym,coercions) = processRhsType rhs in
-	        result << {type_map = update(result.type_map,qid,(isaSym,coercions))}
+	   then let (isaSym,coercions,overloadedOps) = processRhsType rhs in
+	        result << {type_map = update(result.type_map,qid,(isaSym,coercions,overloadedOps))}
 	   else let (isaSym,fixity,curried) = processRhsOp rhs in
 	        result << {op_map = update(result.op_map,qid,(isaSym,fixity,curried))}
    in	     
    foldl parseLine result lines
+
+  op parseOverloadedOps(str: String): List String =
+    case search("[",str) of
+      | None \_rightarrow []
+      | Some lpos \_rightarrow
+    case search("]",str) of
+      | None \_rightarrow let _ = warn("Missing right bracket.") in  [] 
+      | Some rpos \_rightarrow
+    if rpos < lpos then []
+    else
+    splitStringAt(removeWhiteSpace(substring(str,lpos+1,rpos)), ",")
    
   op  removeEmpty: List String \_rightarrow List String
   def removeEmpty l =
