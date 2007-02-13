@@ -23,9 +23,10 @@ endspec
 SymbolMatching = spec
   import Symbols
 %  import MatchingRichardAxioms#MatchingRichardIntegerAxiomsSpec
-  op symb_matches? : Symbol * Option Symbol -> Boolean
-  def symb_matches?(s,os) = case os of Some s1 -> s = s1
-                                     | None    -> true
+  op symb_matches?(s: Symbol, os: Option Symbol): Boolean
+    = case os of
+        | Some s1 -> s = s1
+        | None    -> true
 endspec
 
 
@@ -35,8 +36,7 @@ WordMatching = spec
   import Messages
   import SymbolMatching
 
-  op word_matches_at? : Word * Message * Nat -> Boolean
-  def word_matches_at?(wrd,msg,pos) =
+  op word_matches_at?(wrd: Word, msg: Message, pos: Nat): Boolean =
       pos + length wrd <= length msg &&
       (fa(i:Nat) i < length wrd =>
          symb_matches?(nth(wrd,i), nth(msg,pos+i)))
