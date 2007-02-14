@@ -379,9 +379,24 @@ spec
         if all (fn(_,VarPat _) -> true |_ -> false) pats 
 	  then (if all (fn(_,Var _) -> true |_ -> false) acts
 		  then Some(substitute(body,makeSubstFromRecord(pats,acts)))
-		  else Some(List.foldr (fn (((_,v),(_,val)),body) ->
-					 simplifyOne spc (mkLet([(v,val)],body)))
-			      body (zip(pats,acts))))
+		  else
+                  %% Sequentializing binds: rename to avoid variable capture
+                  let (binds,sbst,_)
+                     = foldr (fn (((_,vp as VarPat(v,a)),(_,val)),(binds,sbst,fvs)) ->
+                              let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
+                              if member(v.1,fvs)
+                                then let nv = (v.1 ^ "__" ^ (toString (length binds)),v.2) in
+                                     (Cons((VarPat(nv,a),val),binds),
+                                      Cons((v,Var(nv,a)),sbst),
+                                      new_fvs)
+                                else (Cons((vp,val),binds),sbst,new_fvs)
+                                  )
+                         ([],[],[]) (zip(pats,acts))
+                  in
+                  let body = substitute(body,sbst) in
+                  Some(foldr (fn ((v,val),body) ->
+                                simplifyOne spc (mkLet([(v,val)],body)))
+                         body binds))
 	  else None
       | _ -> None
 
