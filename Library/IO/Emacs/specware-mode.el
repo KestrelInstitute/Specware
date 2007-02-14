@@ -1886,16 +1886,17 @@ uniquely and concretely describes their application.")
 	     default-directory))))
 
 ;;; Isabelle Interface
-(defun sw:convert-spec-to-isa-thy ()
-  (interactive)
+(defun sw:convert-spec-to-isa-thy (recursive?)
+  (interactive "P")
   (save-buffer)
   (let* ((filename (sw:containing-specware-unit-id))
 	 (thy-file (sw:eval-in-lisp
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? nil))
-                        (IsaTermPrinter::printUIDtoThyFile-2 %S nil))"
-		     filename)))
+                        (IsaTermPrinter::printUIDtoThyFile-2 %S %S))"
+		     filename
+		     (if recursive? "t" "nil"))))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
 						   display-warning-suppressed-classes))
