@@ -18,6 +18,7 @@ IsaTermPrinter qualifying spec
 
  def addObligations? = true
  def lambdaLift?     = true
+ op simplify?: Boolean = false
 
  type Pretty = PrettyPrint.Pretty
 
@@ -259,6 +260,10 @@ IsaTermPrinter qualifying spec
                then lambdaLift spc
 	       else spc
     in
+    let spc = if simplify?
+                then simplifySpec spc
+                else spc
+    in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec spc
 	       else spc
@@ -375,7 +380,8 @@ IsaTermPrinter qualifying spec
 	    if pretty1 = prEmpty
 	      then prettyr
 	      else Cons(pretty1,prettyr)
-    in prLines 0 (aux c spc elems)
+    in
+    prLines 0 (aux c spc elems)
 
 %  op  normalizeSpecElements: SpecElements \_rightarrow SpecElements
 %  def normalizeSpecElements elts =
@@ -543,23 +549,26 @@ IsaTermPrinter qualifying spec
                        case assoc of
                          | Left  \_rightarrow prString "infixl \""
                          | Right \_rightarrow prString "infixr \"",
-                       ppMainId (mainId),
+                       ppInfixId (mainId),
                        prString "\" ",
                        prString (toString (prec + precNumFudge)),
                        prString ")"]
                     | _ \_rightarrow [])]
             else []
    in
-   let def_list = if def? then [[ppDef c mainId ty opt_prag term]] else []
+   let infix? = case fixity of Infix _ -> true | _ \_rightarrow false in
+   let def_list = if def? then [[ppDef c mainId ty opt_prag term fixity]] else []
    in prLinesCat 0 (decl_list ++ def_list)
 
-  op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow Option Pragma \_rightarrow MS.Term \_rightarrow Pretty
-  def ppDef c op_nm ty opt_prag body =
+  op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow Option Pragma \_rightarrow MS.Term \_rightarrow Fixity \_rightarrow Pretty
+  def ppDef c op_nm ty opt_prag body fixity =
     let recursive? = existsSubTerm (fn t \_rightarrow case t of Fun(Op(nm,_),_,_) \_rightarrow op_nm = nm
                                                | _ \_rightarrow false)
                        body
     in
-    case defToCases (mkOp(op_nm,ty)) body of
+    let op_tm = mkFun (Op (op_nm, fixity), ty) in
+    let infix? = case fixity of Infix _ -> true | _ -> false in
+    case defToCases (op_tm) body infix? of
       | ([(lhs,rhs)], tuple?) \_rightarrow
         if recursive? \_or tuple?   % \_and ~(simpleHead? lhs))
           then
@@ -615,8 +624,8 @@ IsaTermPrinter qualifying spec
 
 
 
-  op  defToCases: MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times MS.Term) \_times Boolean
-  def defToCases hd bod =
+  op  defToCases: MS.Term \_rightarrow MS.Term \_rightarrow Boolean \_rightarrow List(MS.Term \_times MS.Term) \_times Boolean
+  def defToCases hd bod infix? =
     let
       def aux(hd,bod: MS.Term,tuple?) =
 	case bod of
@@ -654,7 +663,7 @@ IsaTermPrinter qualifying spec
             | Lambda ([(recd as (RecordPat (prs as (("1",_)::_),_)), _, tm)],a)
                 | varOrTuplePattern? recd \_rightarrow
               let Some arg = patternToTerm recd in
-              (aux(Apply(hd, arg, a), tm, true), true)
+              (aux(Apply(hd, arg, a), tm, true), \_not infix?)
 	    | _ -> (aux(hd, bod, false), false) in
     (map fix_vars cases, tuple?)
 
@@ -1377,9 +1386,7 @@ IsaTermPrinter qualifying spec
 		 case fixity of
 		   | Unspecified \_rightarrow (None, Nonfix, false)
                    | Nonfix \_rightarrow (None, Nonfix, false)
-		   | _ ->
-		     let Qualified(_,primeId) = id in
-		     (Some(prString primeId), Nonfix, true))
+		   | _ -> (Some(ppInfixId id), fixity, true))
 	  | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 15),true)
 	  | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 14),true)
 	  | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 13), true) 
@@ -1398,13 +1405,37 @@ IsaTermPrinter qualifying spec
 
  def prSpace = prString " "
 
- op  ppMainId: QualifiedId \_rightarrow Pretty
- def ppMainId(Qualified(_,main_id)) = prString (ppIdStr main_id)
+ op  ppInfixId: QualifiedId \_rightarrow Pretty
+ def ppInfixId(Qualified(_,main_id)) = prString (infixId main_id)
+
+ op infixId(id: String): String =
+   let idarray = explode(id) in
+   let id = foldr (\_lambda(#?,id) -> "q"^id
+		   | (c,id) -> toString(c)^id) "" idarray
+   in id
 
  op  ppIdStr: String -> String
  def ppIdStr id =
    let idarray = explode(id) in
    let id = foldr (\_lambda(#?,id) -> "_p"^id
+                   | (#=,id) -> "_eq"^id
+                   | (#<,id) -> "_lt"^id
+                   | (#>,id) -> "_gt"^id
+                   | (#~,id) -> "_tld"^id
+                   | (#/,id) -> "_fsl"^id
+                   | (#\\,id) -> "_bsl"^id
+                   | (#-,id) -> "_dsh"^id
+                   | (#*,id) -> "_ast"^id
+                   | (#+,id) -> "_pls"^id
+                   | (#|,id) -> "_bar"^id
+                   | (#!,id) -> "_excl"^id
+                   | (#@,id) -> "_at"^id
+                   | (##,id) -> "_hsh"^id
+                   | (#$,id) -> "_dolr"^id
+                   | (#^,id) -> "_crt"^id
+                   | (#&,id) -> "_amp"^id
+                   | (#',id) -> "_cqt"^id
+                   | (#`,id) -> "_oqt"^id
 		   | (c,id) -> toString(c)^id) "" idarray
    in id
 
