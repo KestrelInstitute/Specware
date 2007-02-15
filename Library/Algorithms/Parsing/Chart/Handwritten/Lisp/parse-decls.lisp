@@ -300,7 +300,8 @@
 	  ((eq new-rule old-rule)
 	   nil)
 	  (t
-	   (warn "Redefining rule ~A from ~S to ~S" name old-rule new-rule)
+	   (unless (equal new-rule old-rule)
+	     (warn "Redefining rule ~A from ~S to ~S" name old-rule new-rule))
 	   (setf (gethash name (parser-ht-name-to-rule parser)) new-rule)))))
 
 ;;; ========================================
