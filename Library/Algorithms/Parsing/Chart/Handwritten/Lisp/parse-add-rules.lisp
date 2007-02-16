@@ -23,47 +23,54 @@
 
 ;;; ============================================================================
 
-(defun add-parser-main-rule (parser name parent-names pattern semantics precedence documentation)
+(defun add-parser-main-rule (parser rule-name parent-names pattern semantics precedence documentation)
   (debugging-comment "--------------------------------------------------------------------------------")
-  (debugging-comment "Adding rule ~S" name)
-  (let ((rule-name
-	 (cond ((null pattern)
-		(let ((newrule (make-parser-atomic-rule :name name)))
-		  (install-parser-rule parser newrule)
-		  name))
-	       ((and (consp pattern) (or (numberp (first pattern))
-					 (eq (first pattern) :optional)))
-		(build-parser-rule parser name `(:TUPLE ,pattern)))
-	       (t
-		(build-parser-rule parser name pattern)))))
-    (when (null rule-name)
-      (warn "Ignoring rule ~S, because pattern begins with :optional: ~S"
-	    name 
-	    pattern)
-      (return-from add-parser-main-rule nil))
-    (let ((rule (maybe-find-parser-rule parser rule-name)))
-      (unless (null rule)
-	(setf (parser-rule-main-rule? rule) t)
-	(add-parser-rule-semantics     rule semantics)
-	(add-parser-rule-precedence    rule precedence)
-	(add-parser-rule-documentation rule documentation)
-	))
-    (dolist (parent-name parent-names)
-      (extend-anyof-rule parser parent-name rule-name))
-    rule-name))
+  (debugging-comment "Adding rule ~S" rule-name)
+  (if (null pattern)
+      (let ((new-rule (make-parser-atomic-rule :name rule-name)))
+	(setf (parser-rule-main-rule? new-rule) t)
+	(add-parser-rule-semantics     new-rule semantics)
+	(add-parser-rule-precedence    new-rule precedence)
+	(add-parser-rule-documentation new-rule documentation)
+	(install-parser-rule parser new-rule))
+      (let* ((pattern 
+	      (if (and (consp pattern) 
+		       (or (numberp (first pattern))
+			   (eq (first pattern) :optional)))
+		  `(:TUPLE ,pattern)
+		  pattern))
+	     (optional-pattern?
+	      (not (build-parser-rule parser rule-name pattern 
+				      (list semantics precedence documentation)))))
+	(when optional-pattern?
+	  (warn "Ignoring rule ~S, because pattern begins with :optional: ~S"
+		rule-name 
+		pattern)
+	  (return-from add-parser-main-rule nil))))
+  (dolist (parent-name parent-names)
+    (extend-anyof-rule parser parent-name rule-name))
+  rule-name)
 
 ;;; ============================================================================
 
-(defun build-parser-rule (parser name pattern)
-  (let ((newrule (build-parser-rule-aux parser name pattern)))
-    (cond ((symbolp newrule)
-	   newrule)
+(defun build-parser-rule (parser name pattern &optional s-p-d o-s)
+  (let ((new-rule (build-parser-rule-aux parser name pattern s-p-d o-s)))
+    (cond ((symbolp new-rule)
+	   new-rule)
 	  (t
-	   (install-parser-rule parser newrule)
-	   (parser-rule-name newrule)))))
+	   (when s-p-d
+	     (setf (parser-rule-main-rule? new-rule) t)
+	     (add-parser-rule-semantics         new-rule (elt s-p-d 0))
+	     (add-parser-rule-precedence        new-rule (elt s-p-d 1))
+	     (add-parser-rule-documentation     new-rule (elt s-p-d 2)))
+	   (when o-s
+	     (setf (parser-rule-optional?         new-rule) (elt o-s 0))
+	     (setf (parser-rule-default-semantics new-rule) (elt o-s 1)))
+	   (install-parser-rule parser new-rule)
+	   (parser-rule-name new-rule)))))
 
-(defun build-parser-rule-aux (parser name pattern)
-  (debugging-comment "Build rule ~30S  from  ~A" name (format nil "~S" pattern))
+(defun build-parser-rule-aux (parser name pattern s-p-d o-s)
+  (debugging-comment "Build rule ~30S  from  ~A with ~S ~S" name (format nil "~S" pattern) s-p-d o-s)
   (etypecase pattern ; cannot use (ecase (type-of pattern) ...) since 'STRING won't match '(SIMPLE-ARRAY CHARACTER (3)) ,etc.
     (string (build-parser-keyword-rule parser pattern)) ; ignore name
     (symbol (build-parser-id-rule name pattern))
@@ -79,16 +86,18 @@
 						 `(:anyof 
 						   ((:tuple (1 (:optional (:REPEAT ,@(rest pattern))))) 
 						    (if (eq '1 :unspecified) '() (list . 1)))
-						   )))
+						   )
+						 s-p-d
+						 (list t '())))
 			     (rule (gethash rulename (parser-ht-name-to-rule parser))))
 			(debugging-comment "Rule ~S is now optional: ~S." rulename rule)
-			(setf (parser-rule-optional? rule) t)
-			(setf (parser-rule-default-semantics rule) '())
 			rulename))
            (:REPEAT+  (build-parser-rule parser name 
 					 `(:anyof
 					   ((:tuple (1 (:REPEAT ,@(rest pattern))))
-					    (list . 1)))))
+					    (list . 1)))
+					 s-p-d
+					 o-s))
 	   (:REPEAT++ (build-parser-rule parser name 
 					 (let ((elt (second pattern))
 					       (sep (third  pattern)))
@@ -98,17 +107,19 @@
 						  (list 1 . 2)))
 					     `(:anyof
 					       ((:tuple (1 ,elt) ,sep (2 (:REPEAT ,@(rest pattern))))
-						(list 1 . 2)))))))
+						(list 1 . 2)))))
+					 s-p-d
+					 o-s))
 	   )
-       (let* ((new-rule (build-parser-rule-aux parser name (first pattern)))
-	      (semantics     (second pattern))
-	      (keyword-args  (rest (rest pattern)))
-	      (precedence    (getf keyword-args :PRECEDENCE    +default-precedence+))
-	      (documentation (getf keyword-args :DOCUMENTATION nil)))
-	 (add-parser-rule-semantics     new-rule semantics)
-	 (add-parser-rule-precedence    new-rule precedence)
-	 (add-parser-rule-documentation new-rule documentation)
-	 new-rule)))))
+	 (let* ((new-rule (build-parser-rule-aux parser name (first pattern) s-p-d o-s))
+		(semantics     (second pattern))
+		(keyword-args  (rest (rest pattern)))
+		(precedence    (getf keyword-args :PRECEDENCE    +default-precedence+))
+		(documentation (getf keyword-args :DOCUMENTATION nil)))
+	   (add-parser-rule-semantics     new-rule semantics)
+	   (add-parser-rule-precedence    new-rule precedence)
+	   (add-parser-rule-documentation new-rule documentation)
+	   new-rule)))))
 
 ;;; ====================
 
