@@ -803,14 +803,20 @@ SpecToLisp qualifying spec {
        char = #\s || char = #\n || char = #\t
 
      def compress (chars, have_whitespace?) =
-       case chars of
-	 | [] -> []
-	 | char :: chars ->
-	   if whitespace? char then
-	     let tail = compress (chars, true) in
-	     if have_whitespace? then tail else [#\s] ++ tail
-	   else
-	     [char] ++ (compress (chars, false))
+       %% avoid deep recursions...
+       let (chars, _) = 
+           foldl (fn (char, (chars, have_whitespace?)) ->
+                    if whitespace? char then
+                      if have_whitespace? then
+                        (chars, have_whitespace?)
+                      else
+                        ([#\s] ++ chars, true)
+                    else
+                      ([char] ++ chars, false))
+                 ([], true)
+                 chars
+       in
+         rev chars
    in
      implode (compress (explode s, true))
 
