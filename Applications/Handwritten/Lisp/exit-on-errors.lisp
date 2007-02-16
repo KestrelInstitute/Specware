@@ -37,11 +37,11 @@
 ;; Note: shell scripts may use this directly to terminate sessions:
 (defun exit-from-lisp (return-code)
   (format t "~%Lisp session exiting with code ~D~%" return-code)
-  #+Allegro                  (excl::exit        return-code)
-  #+CMU                      (unix::unix-exit   return-code)
-  #+SBCL                     (sb-unix:unix-exit return-code)
-  #+OpenMCL                  (quit              return-code)
-  #-(or Allegro CMU OpenMCL) (quit              return-code)
+  #+Allegro                       (excl::exit        return-code)
+  #+CMU                           (unix::unix-exit   return-code)
+  #+SBCL                          (sb-unix:unix-exit return-code)
+  #+OpenMCL                       (quit              return-code)
+  #-(or Allegro CMU SBCL OpenMCL) (quit              return-code)
   )
 
 (defun bail-out (exception)
