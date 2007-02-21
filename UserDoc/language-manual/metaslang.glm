@@ -2576,7 +2576,7 @@ to type [[Peano]].
 Then [[Zero]] and [[Succ n]] are guaranteed to be
 different, and each value of type [[Peano]] is either
 [[Zero : Peano]], or expressible in the form
-[[Succ (n : Peano)]] for a suitable expression [[n]].
+[[Succ (n : Peano)]] for a suitable `expression [[n]].
 The `expressions [[Zero : Peano]] and [[Zero : Unique]]
 denote different, entirely unrelated, values.
 (Note that [[Unique]] is <emphasis>not</emphasis> a subtype of
@@ -3520,7 +3520,7 @@ the following interpretations hold:
 ]]
 Note that no type information is used in the disambiguation.
 If [[(1 @ 2) $$ 3]] is type-correct but [[1 @ (2 $$ 3)]] is
-not, the expression [[1 @ 2 $$ 3]] is type-incorrect, since its
+not, the `expression [[1 @ 2 $$ 3]] is type-incorrect, since its
 interpretation is.
 </para>
 <para>
@@ -3818,22 +3818,29 @@ the values of [[true]] and [[false]].
 Note that [[true]] and [[false]] are not `constructors.
 So [[embed true]] is ungrammatical.
 </para>
+<para>
+[[
+||
+]]
+</para>
 </section>
 <!-- ***************************************************************** -->
 <section id="Nat-literals"><title>Nat-literals</title>
 <para>
 <<
-||`nat-literal ::= `decimal-digit { `decimal-digit }*
-||          | 0 X `hexadecimal-digit { `hexadecimal-digit }*
-||          | 0 x `hexadecimal-digit { `hexadecimal-digit }*
-||          | 0 O `octal-digit       { `octal-digit  }*
-||          | 0 o `octal-digit       { `octal-digit  }*
-||          | 0 B `binary-digit      { `binary-digit }*
-||          | 0 b `binary-digit      { `binary-digit }*
+||`nat-literal ::=
+||          `decimal-digit     { `decimal-digit }*
+||    | 0 X `hexadecimal-digit { `hexadecimal-digit }*
+||    | 0 x `hexadecimal-digit { `hexadecimal-digit }*
+||    | 0 O `octal-digit       { `octal-digit  }*
+||    | 0 o `octal-digit       { `octal-digit  }*
+||    | 0 B `binary-digit      { `binary-digit }*
+||    | 0 b `binary-digit      { `binary-digit }*
 ||
-||`hexadecimal-digit ::= `decimal-digit
-||                | a | b | c | d | e | f
-||                | A | B | C | D | E | F
+||`hexadecimal-digit ::=
+||      `decimal-digit
+||    | a | b | c | d | e | f
+||    | A | B | C | D | E | F
 ||
 ||`octal-digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
 ||
@@ -3850,10 +3857,19 @@ Sample `nat-literals:
 The `type-descriptor [[Nat]] is, by definition, the subtype of
 [[Integer]] restricted to the nonnegative integers 0, 1, 2,
 ... , which we identify with the natural numbers.
-The value of a `nat-literal is the natural number of which
-it is a decimal representation; for example, the
-`nat-literal [[3260]] denotes the natural number 3260.
-Leading `decimal-digits [[0]] have no significance:
+The value of a `nat-literal composed entirely of
+`decimal-digits is the natural number of which it is a decimal
+representation; for example, the `nat-literal [[3260]] denotes
+the natural number 3260.
+If the `nat-literal starts with [[0X]] or [[0x]], its value is the
+natural number of which the following sequence of `hexadecimal-digits is a
+hexadecimal representation.
+For example, [[0x17B]] denotes the value 1&times;16&sup2;+7&times;16+11
+= 379.
+Likewise, [[0O]] or [[0o]] (a digit [[0]] followed by an uppercase
+letter [[O]] or a lower case letter [[o]]) introduces an octal
+representation, and [[0B]] or [[0b]] a binary representation.
+Leading digits [[0]] have no significance:
 both [[007]] and [[7]] denote the number 7.
 </para>
 <para>
@@ -3861,15 +3877,15 @@ Note that hexadecimal, octal, and binary literals are converted
 to an internal representation that does not retain their base. 
 So, for example, given
 [[
-|| foo = spec 
-||   def N = 0xFF
-|| endspec
+||    foo = spec 
+||      def N = 0xFF
+||    endspec
 ]]
 [[show foo]] will print as
 [[
-|| spec 
-||   def N = 255
-|| endspec
+||    spec 
+||      def N = 255
+||    endspec
 ]]
 </para>
 </section>

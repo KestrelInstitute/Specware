@@ -8,86 +8,130 @@ They are brought together here, without additional text, for
 easy reference.
 </para>
 <!-- ***************************************************************** -->
+<formalpara><title>The Grammar Description Formalism</title>
+<para>
 <<
-||`op ::= `op-name
-||
-||`spec ::= `spec-form
-||
-||`symbol ::= `simple-name | `literal | `special-symbol
-||
-||`simple-name ::= `first-syllable { _ `next-syllable }*
-||
-||`first-syllable ::= `first-word-syllable | `non-word-syllable
-||
-||`next-syllable ::= `next-word-syllable | `non-word-syllable
-||
-||`first-word-syllable ::= `word-start-mark { `word-continue-mark }*
-||
-||`next-word-syllable ::= `word-continue-mark { `word-continue-mark }*
-||
-||`word-start-mark ::= `letter
-||
-||`word-continue-mark ::= `letter | `decimal-digit | '' | ?
-||
-||`letter ::=
+||    `wiffle ::= `waffle [ `waffle-tail ] | `piffle { + `piffle }*
+>>
+<<
+||    `piffle ::= 1 | M { `piffle }*
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Models</title>
+<para>
+<<
+||  `op ::= `op-name
+>>
+<<
+||  `spec ::= `spec-form
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Symbols and Names</title>
+<para>
+<<
+||  `symbol ::= `simple-name | `literal | `special-symbol
+||  
+||  `simple-name ::= `first-syllable { _ `next-syllable }*
+||  
+||  `first-syllable ::= `first-word-syllable | `non-word-syllable
+||  
+||  `next-syllable ::= `next-word-syllable | `non-word-syllable
+||  
+||  `first-word-syllable ::= `word-start-mark { `word-continue-mark }*
+||  
+||  `next-word-syllable ::= `word-continue-mark { `word-continue-mark }*
+||  
+||  `word-start-mark ::= `letter
+||  
+||  `word-continue-mark ::= `letter | `decimal-digit | '' | ?
+||  
+||  `letter ::=
 ||      A | B | C | D | E | F | G | H | I | J | K | L | M
 ||    | N | O | P | Q | R | S | T | U | V | W | X | Y | Z
 ||    | a | b | c | d | e | f | g | h | i | j | k | l | m
 ||    | n | o | p | q | r | s | t | u | v | w | x | y | z
-||
-||`decimal-digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-||
-||`non-word-syllable ::= `non-word-mark { `non-word-mark }*
-||
-||`non-word-mark ::=
+||  
+||  `decimal-digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+||  
+||  `non-word-syllable ::= `non-word-mark { `non-word-mark }*
+||  
+||  `non-word-mark ::=
 ||      ` | ~ | ! | @ | $ | ^ | & | * | -
 ||    | = | + | \ | '| | : | < | > | / | '' | ?
-||
-||`special-symbol ::= _ | ( | ) | '[ | '] | '{ | '} | ; | , | .
-||
-||`comment ::= `line-end-comment | `block-comment
-||
-||`line-end-comment ::= % `line-end-comment-body
-||
-||`line-end-comment-body ::=
+||  
+||  `special-symbol ::= _ | ( | ) | '[ | '] | '{ | '} | ; | , | .
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Comments</title>
+<para>
+<<
+||  `comment ::= `line-end-comment | `block-comment
+||  
+||  `line-end-comment ::= % `line-end-comment-body
+||  
+||  `line-end-comment-body ::=
 ||    `any-text-up-to-end-of-line
-||
-||`block-comment ::= (* `block-comment-body *)
-||
-||`block-comment-body ::=
+||  
+||  `block-comment ::= (* `block-comment-body *)
+||  
+||  `block-comment-body ::=
 ||    `any-text-including-newlines-and-nested-block-comments
-||
-||`unit-definition ::= `unit-identifier = `unit-term
-||
-||`unit-term ::=
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Units</title>
+<para>
+<<
+||  `unit-definition ::= `unit-identifier = `unit-term
+||  
+||  `unit-term ::=
 ||      `spec-term
 ||    | `morphism-term
 ||    | `diagram-term
 ||    | `target-code-term
 ||    | `proof-term
-||
-||`specware-file-contents ::=
+||  
+||  `specware-file-contents ::=
 ||      `unit-term
 ||    | `infile-unit-definition { `infile-unit-definition }*
-||
-||`infile-unit-definition ::= `fragment-identifier = `unit-term
-||
-||`fragment-identifier ::= `simple-name
-
-||`unit-identifier ::= `swpath-based-path | `relative-path
-||
-||`swpath-based-path ::= / `relative-path
-||
-||`relative-path ::= { `path-element / }* `path-element [ # `fragment-identifier ]
-||
-||`path-element ::= `path-mark { `path-mark }*
-||
-||`path-mark ::=
+||  
+||  `infile-unit-definition ::= `fragment-identifier = `unit-term
+||  
+||  `fragment-identifier ::= `simple-name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Unit Identifiers</title>
+<para>
+<<
+||  `unit-identifier ::= `swpath-based-path | `relative-path
+||  
+||  `swpath-based-path ::= / `relative-path
+||  
+||  `relative-path ::= { `path-element / }* `path-element [ # `fragment-identifier ]
+||  
+||  `path-element ::= `path-mark { `path-mark }*
+||  
+||  `path-mark ::=
 ||      `letter | `decimal-digit
 ||    | ! | $ | & | '' | + | -
 ||    | = | @ | ^ | ` | ~ | .
-||
-||`spec-term ::=
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Specs</title>
+<para>
+<<
+||  `spec-term ::=
 ||      `unit-identifier
 ||    | `spec-form
 ||    | `spec-qualification
@@ -95,183 +139,292 @@ easy reference.
 ||    | `spec-substitution
 ||    | `diagram-colimit
 ||    | `obligator
-||
-||`spec-form ::= spec { `declaration }* endspec
-||
-||`spec-qualification ::=  `qualifier qualifying `spec-term
-||
-||`qualifier ::= `simple-name
-||
-||`name ::= `simple-name | `qualified-name
-||
-||`qualified-name ::= `qualifier . `simple-name
-||
-||`spec-translation ::= translate `spec-term by `name-map
-||
-||`name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
-||
-||`name-map-item ::=
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Spec Forms</title>
+<para>
+<<
+||  `spec-form ::= spec { `declaration }* endspec
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Qualifications</title>
+<para>
+<<
+||  `spec-qualification ::=  `qualifier qualifying `spec-term
+||  
+||  `qualifier ::= `simple-name
+||  
+||  `name ::= `simple-name | `qualified-name
+||  
+||  `qualified-name ::= `qualifier . `simple-name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Translations</title>
+<para>
+<<
+||  `spec-translation ::= translate `spec-term by `name-map
+||  
+||  `name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
+||  
+||  `name-map-item ::=
 ||      `type-name-map-item
 ||    | `op-name-map-item
 ||    | `wildcard-map-item
-||
-||`type-name-map-item ::= [ type ] `name +-> `name
-||
-||`op-name-map-item ::= [ op ] `annotable-name +-> `annotable-name
-||
-||`annotable-name ::= `name [ : `type-descriptor ]
-||
-||`wildcard-map-item ::= `wildcard +-> `wildcard
-||
-||`wildcard ::= `simple-wildcard | `qualified-wildcard
-||
-||`simple-wildcard ::= _
-||
-||`qualified-wildcard ::= `qualifier . `simple-wildcard
-||
-||`spec-substitution ::= `spec-term '[ `morphism-term ']
-||
-||`diagram-colimit ::= colimit `diagram-term
-||
-||`obligator ::= obligations `unit-term
-||
-||`morphism-term ::=
+||  
+||  `type-name-map-item ::= [ type ] `name +-> `name
+||  
+||  `op-name-map-item ::= [ op ] `annotable-name +-> `annotable-name
+||  
+||  `annotable-name ::= `name [ : `type-descriptor ]
+||  
+||  `wildcard-map-item ::= `wildcard +-> `wildcard
+||  
+||  `wildcard ::= `simple-wildcard | `qualified-wildcard
+||  
+||  `simple-wildcard ::= _
+||  
+||  `qualified-wildcard ::= `qualifier . `simple-wildcard
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Substitutions</title>
+<para>
+<<
+||  `spec-substitution ::= `spec-term '[ `morphism-term ']
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Diagram Colimits</title>
+<para>
+<<
+||  `diagram-colimit ::= colimit `diagram-term
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Obligators</title>
+<para>
+<<
+||  `obligator ::= obligations `unit-term
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Morphisms</title>
+<para>
+<<
+||  `morphism-term ::=
 ||      `unit-identifier
 ||    | `spec-morphism
-||
-||`spec-morphism ::= morphism `spec-term -> `spec-term `name-map
-||
-||`diagram-term ::=
+||  
+||  `spec-morphism ::= morphism `spec-term -> `spec-term `name-map
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Diagrams</title>
+<para>
+<<
+||  `diagram-term ::=
 ||      `unit-identifier
 ||    | `diagram-form
-||
-||`diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
-||
-||`diagram-element ::=
+||  
+||  `diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
+||  
+||  `diagram-element ::=
 ||      `diagram-node
 ||    | `diagram-edge
-||
-||`diagram-node ::= `simple-name +-> `spec-term
-||
-||`diagram-edge ::= `simple-name : `simple-name -> `simple-name +-> `morphism-term
-||
-||`target-code-term ::=
+||  
+||  `diagram-node ::= `simple-name +-> `spec-term
+||  
+||  `diagram-edge ::= `simple-name : `simple-name -> `simple-name +-> `morphism-term
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Target Code Terms</title>
+<para>
+<<
+||  `target-code-term ::=
 ||      generate `target-language-name `spec-term [ `generate-option ]
-||
-||`generate-option ::=
+||  
+||  `generate-option ::=
 ||      in `string-literal | with `unit-identifier
-||
-||`target-language-name ::= c | java | lisp
-||
-||`proof-term ::=
+||  
+||  `target-language-name ::= c | java | lisp
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Proof Terms</title>
+<para>
+<<
+||  `proof-term ::=
 ||      prove `claim-name in `spec-term
 ||                      [ with `prover-name ]
 ||                      [ using `claim-list ]
 ||                      [ options `prover-options ]
-||
-||`prover-name ::= snark
-||
-||`claim-list ::= `claim-name { , `claim-name }*
-||
-||`prover-options ::= `string-literal
-||
-||`declaration ::=
+||  
+||  `prover-name ::= snark
+||  
+||  `claim-list ::= `claim-name { , `claim-name }*
+||  
+||  `prover-options ::= `string-literal
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Declarations</title>
+<para>
+<<
+||  `declaration ::=
 ||      `import-declaration
 ||    | `type-declaration
 ||    | `op-declaration
 ||    | `definition
-||
-||`definition ::=
+||  
+||  `definition ::=
 ||      `type-definition
 ||    | `op-definition
 ||    | `claim-definition
-||
-||`equals ::= is | =
-||
-||`import-declaration ::= import `spec-term
-||
-||`type-declaration ::= type `type-aliases [ `formal-type-parameters ]
-||
-||`type-aliases ::= `type-name | '{ `type-name ', `type-name { ', `type-name }* '} 
-||
-||`formal-type-parameters ::= `local-type-variable | ( `local-type-variable-list )
-||
-||`local-type-variable ::= `simple-name
-||
-||`local-type-variable-list ::= `local-type-variable { , `local-type-variable }*
-||
-||`type-definition ::=
+||  
+||  `equals ::= is | =
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Import-declarations</title>
+<para>
+<<
+||  `import-declaration ::= import `spec-term
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-declarations</title>
+<para>
+<<
+||  `type-declaration ::= type `type-aliases [ `formal-type-parameters ]
+||  
+||  `type-aliases ::= `type-name | '{ `type-name ', `type-name { ', `type-name }* '} 
+||  
+||  `formal-type-parameters ::= `local-type-variable | ( `local-type-variable-list )
+||  
+||  `local-type-variable ::= `simple-name
+||  
+||  `local-type-variable-list ::= `local-type-variable { , `local-type-variable }*
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-definitions</title>
+<para>
+<<
+||  `type-definition ::=
 ||      `type-abbreviation
 ||    | `new-type-definition
-||
-||`type-abbreviation ::= type `type-aliases [ `formal-type-parameters ] `equals 
+||  
+||  `type-abbreviation ::= type `type-aliases [ `formal-type-parameters ] `equals 
 ||                       `type-descriptor
-||
-||`new-type-definition ::= type `type-aliases [ `formal-type-parameters ] `equals 
+||  
+||  `new-type-definition ::= type `type-aliases [ `formal-type-parameters ] `equals 
 ||                       `new-type-descriptor
-||`op-declaration ::=
-||
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Op-declarations</title>
+<para>
+<<
+||  `op-declaration ::=
+||  
 ||      op [ `type-variable-binder ] `formal-decl-expression [ `fixity ] : `type-descriptor
 ||       [ `equals `expression ]
-||
+||  
 ||    | op `formal-decl-expression [ `fixity ] : `type-variable-binder `type-descriptor
 ||       [ `equals `expression ]
-||
-||`type-variable-binder ::= '[ `local-type-variable-list ']
-||
-||`formal-decl-expression ::= `op-aliases | `formal-decl-application
-||
-||`formal-decl-application ::= `formal-decl-application-head `formal-parameter
-||
-||`formal-decl-application-head ::= `op-aliases | `formal-decl-application
-||
-||`op-aliases ::= `op-name | '{ `op-name ', `op-name { ', `op-name }* '} 
-||
-||`formal-parameter ::= `closed-pattern | '( `pattern '| `expression ')
-||
-||`fixity ::= `associativity `priority
-||
-||`associativity ::= infixl | infixr
-||
-||`priority ::= `nat-literal
-||
-||`op-definition ::=
+||  
+||  `type-variable-binder ::= '[ `local-type-variable-list ']
+||  
+||  `formal-decl-expression ::= `op-aliases | `formal-decl-application
+||  
+||  `formal-decl-application ::= `formal-decl-application-head `formal-parameter
+||  
+||  `formal-decl-application-head ::= `op-aliases | `formal-decl-application
+||  
+||  `op-aliases ::= `op-name | '{ `op-name ', `op-name { ', `op-name }* '} 
+||  
+||  `formal-parameter ::= `closed-pattern | '( `pattern '| `expression ')
+||  
+||  `fixity ::= `associativity `priority
+||  
+||  `associativity ::= infixl | infixr
+||  
+||  `priority ::= `nat-literal
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Op-definitions</title>
+<para>
+<<
+||  `op-definition ::=
 ||      def [ `type-variable-binder ] `formal-def-expression [ : `type-descriptor ] `equals
 ||        `expression
 ||    | def `formal-def-expression [ : [ `type-variable-binder ] `type-descriptor ] `equals
 ||        `expression
-||
-||`formal-def-expression ::= `op-name | `formal-def-expression
-||
-||`formal-def-application ::= `formal-def-application-head `formal-parameter
-||
-||`formal-def-application-head ::= `op-name | `formal-def-application
-||
-||`claim-definition ::= `claim-kind `claim-name is `claim
-||
-||`claim-kind ::= axiom | theorem | conjecture
-||
-||`claim-name ::= `name
-||
-||`claim ::= [ `type-variable-binder ] `expression
-||
-||`type-descriptor ::=
+||  
+||  `formal-def-expression ::= `op-name | `formal-def-expression
+||  
+||  `formal-def-application ::= `formal-def-application-head `formal-parameter
+||  
+||  `formal-def-application-head ::= `op-name | `formal-def-application
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Claim-definitions</title>
+<para>
+<<
+||  `claim-definition ::= `claim-kind `claim-name is `claim
+||  
+||  `claim-kind ::= axiom | theorem | conjecture
+||  
+||  `claim-name ::= `name
+||  
+||  `claim ::= [ `type-variable-binder ] `expression
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-descriptors</title>
+<para>
+<<
+||  `type-descriptor ::=
 ||      `type-arrow
 ||    | `slack-type-descriptor
-||
-||`new-type-descriptor ::=
+||  
+||  `new-type-descriptor ::=
 ||      `type-sum
 ||    | `type-quotient
-||
-||`slack-type-descriptor ::=
+||  
+||  `slack-type-descriptor ::=
 ||      `type-product
 ||    | `tight-type-descriptor
-||
-||`tight-type-descriptor ::=
+||  
+||  `tight-type-descriptor ::=
 ||      `type-instantiation
 ||    | `closed-type-descriptor
-||
-||`closed-type-descriptor ::=
+||  
+||  `closed-type-descriptor ::=
 ||      `type-name
 ||    | Boolean
 ||    | `local-type-variable
@@ -279,42 +432,102 @@ easy reference.
 ||    | `type-restriction
 ||    | `type-comprehension
 ||    | ( `type-descriptor )
-||
-||`type-sum ::= `type-summand { `type-summand }*
-||
-||`type-summand ::= '| `constructor [ `slack-type-descriptor ]
-||
-||`constructor ::= `simple-name
-||
-||`type-arrow ::= `arrow-source -> `type-descriptor
-||
-||`arrow-source ::= `type-sum | `slack-type-descriptor
-||
-||`type-product ::= `tight-type-descriptor * `tight-type-descriptor { * `tight-type-descriptor }*
-||`type-instantiation ::= `type-name `actual-type-parameters
-||
-||
-||`actual-type-parameters ::= `closed-type-descriptor | ( `proper-type-list )
-||
-||`proper-type-list ::= `type-descriptor , `type-descriptor { , `type-descriptor }*
-||
-||`type-name ::= `name
-||
-||`type-record ::= '{ [ `field-typer-list ] '} | ( )
-||
-||`field-typer-list ::= `field-typer { , `field-typer }*
-||
-||`field-typer ::= `field-name : `type-descriptor
-||
-||`field-name ::= `simple-name
-||
-||`type-restriction ::= ( `slack-type-descriptor '| `expression )
-||
-||`type-comprehension ::= '{ `annotated-pattern '| `expression '}
-||
-||`type-quotient ::= `closed-type-descriptor / `closed-expression
-||
-||`expression ::=
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-sums</title>
+<para>
+<<
+||  `type-sum ::= `type-summand { `type-summand }*
+||  
+||  `type-summand ::= '| `constructor [ `slack-type-descriptor ]
+||  
+||  `constructor ::= `simple-name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-arrows</title>
+<para>
+<<
+||  `type-arrow ::= `arrow-source -> `type-descriptor
+||  
+||  `arrow-source ::= `type-sum | `slack-type-descriptor
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-products</title>
+<para>
+<<
+||  `type-product ::= `tight-type-descriptor * `tight-type-descriptor { * `tight-type-descriptor }*
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-instantiations</title>
+<para>
+<<
+||  `type-instantiation ::= `type-name `actual-type-parameters
+||  
+||  `actual-type-parameters ::= `closed-type-descriptor | ( `proper-type-list )
+||  
+||  `proper-type-list ::= `type-descriptor , `type-descriptor { , `type-descriptor }*
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-names</title>
+<para>
+<<
+||  `type-name ::= `name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-records</title>
+<para>
+<<
+||  `type-record ::= '{ [ `field-typer-list ] '} | ( )
+||  
+||  `field-typer-list ::= `field-typer { , `field-typer }*
+||  
+||  `field-typer ::= `field-name : `type-descriptor
+||  
+||  `field-name ::= `simple-name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-restrictions</title>
+<para>
+<<
+||  `type-restriction ::= ( `slack-type-descriptor '| `expression )
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-comprehensions</title>
+<para>
+<<
+||  `type-comprehension ::= '{ `annotated-pattern '| `expression '}
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Type-quotients</title>
+<para>
+<<
+||  `type-quotient ::= `closed-type-descriptor / `closed-expression
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Expressions</title>
+<para>
+<<
+||  `expression ::=
 ||      `lambda-form
 ||    | `case-expression
 ||    | `let-expression
@@ -323,12 +536,12 @@ easy reference.
 ||    | `unique-solution
 ||    | `annotated-expression
 ||    | `tight-expression
-||
-||`tight-expression ::=
+||  
+||  `tight-expression ::=
 ||      `application
 ||    | `closed-expression
-||
-||`closed-expression ::=
+||  
+||  `closed-expression ::=
 ||      `op-name
 ||    | `local-variable
 ||    | `literal
@@ -341,183 +554,329 @@ easy reference.
 ||    | `structor
 ||    | ( `expression )
 ||    | ( `inbuilt-op )
-||
-||`inbuilt-op ::= `inbuilt-prefix-op | `inbuilt-infix-op
-||
-||`inbuilt-prefix-op ::=  ~
-||
-||`inbuilt-infix-op ::=  <=>  |  =>  |  '|'|  |  &&  |  =  |  ~=  |  <<
-||
-||`lambda-form ::= fn `match
-||
-||`case-expression ::= case `expression of `match
-||
-||`let-expression ::= let `let-bindings in `expression
-||
-||`let-bindings ::= `recless-let-binding | `rec-let-binding-sequence
-||
-||`recless-let-binding ::= `pattern `equals `expression
-||
-||`rec-let-binding-sequence ::= `rec-let-binding { `rec-let-binding }*
-||
-||`rec-let-binding ::=
+||  
+||  `inbuilt-op ::= `inbuilt-prefix-op | `inbuilt-infix-op
+||  
+||  `inbuilt-prefix-op ::=  ~
+||  
+||  `inbuilt-infix-op ::=  <=>  |  =>  |  '|'|  |  &&  |  =  |  ~=  |  <<
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Lambda-forms</title>
+<para>
+<<
+||  `lambda-form ::= fn `match
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Case-expressions</title>
+<para>
+<<
+||  `case-expression ::= case `expression of `match
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Let-expressions</title>
+<para>
+<<
+||  `let-expression ::= let `let-bindings in `expression
+||  
+||  `let-bindings ::= `recless-let-binding | `rec-let-binding-sequence
+||  
+||  `recless-let-binding ::= `pattern `equals `expression
+||  
+||  `rec-let-binding-sequence ::= `rec-let-binding { `rec-let-binding }*
+||  
+||  `rec-let-binding ::=
 ||    def `simple-name `formal-parameter-sequence [ : `type-descriptor ] `equals `expression
-||
-||`formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
-||
-||`if-expression ::= if `expression then `expression else `expression
-||
-||`quantification ::= `quantifier ( `local-variable-list ) `expression
-||
-||`quantifier ::= fa | ex | ex1
-||
-||`local-variable-list ::= `annotable-variable { , `annotable-variable }*
-||
-||`annotable-variable ::= `local-variable [ : `type-descriptor ]
-||
-||`local-variable ::= `simple-name
-||
-||`unique-solution ::= the ( `local-variable-list ) `expression
-||
-||`annotated-expression ::= `tight-expression : `type-descriptor
-||
-||`application ::= `prefix-application | `infix-application
-||
-||`prefix-application ::= `application-head `actual-parameter
-||
-||`application-head ::=
+||  
+||  `formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>If-expressions</title>
+<para>
+<<
+||  `if-expression ::= if `expression then `expression else `expression
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Quantifications</title>
+<para>
+<<
+||  `quantification ::= `quantifier ( `local-variable-list ) `expression
+||  
+||  `quantifier ::= fa | ex | ex1
+||  
+||  `local-variable-list ::= `annotable-variable { , `annotable-variable }*
+||  
+||  `annotable-variable ::= `local-variable [ : `type-descriptor ]
+||  
+||  `local-variable ::= `simple-name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Unique-solutions</title>
+<para>
+<<
+||  `unique-solution ::= the ( `local-variable-list ) `expression
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Annotated-expressions</title>
+<para>
+<<
+||  `annotated-expression ::= `tight-expression : `type-descriptor
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Applications</title>
+<para>
+<<
+||  `application ::= `prefix-application | `infix-application
+||  
+||  `prefix-application ::= `application-head `actual-parameter
+||  
+||  `application-head ::=
 ||      `closed-expression
 ||    | `inbuilt-prefix-op
 ||    | `prefix-application
-||
-||`actual-parameter ::= `closed-expression
-||
-||`infix-application ::= `operand `infix-operator `operand
-||
-||`operand ::= `tight-expression
-||
-||`infix-operator ::= `op-name | `inbuilt-infix-op
-||
-||`op-name ::= `name
-||
-||`literal ::=
+||  
+||  `actual-parameter ::= `closed-expression
+||  
+||  `infix-application ::= `operand `infix-operator `operand
+||  
+||  `operand ::= `tight-expression
+||  
+||  `infix-operator ::= `op-name | `inbuilt-infix-op
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Op-names</title>
+<para>
+<<
+||  `op-name ::= `name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Literals</title>
+<para>
+<<
+||  `literal ::=
 ||      `boolean-literal
 ||    | `nat-literal
 ||    | `char-literal
 ||    | `string-literal
-||
-||`boolean-literal ::= true | false
-||
-||`nat-literal ::= `decimal-digit { `decimal-digit }*
-||          | 0 X `hexadecimal-digit { `hexadecimal-digit }*
-||          | 0 x `hexadecimal-digit { `hexadecimal-digit }*
-||          | 0 O `octal-digit       { `octal-digit  }*
-||          | 0 o `octal-digit       { `octal-digit  }*
-||          | 0 B `binary-digit      { `binary-digit }*
-||          | 0 b `binary-digit      { `binary-digit }*
-||
-||`hexadecimal-digit ::= `decimal-digit
-||                | a | b | c | d | e | f
-||                | A | B | C | D | E | F
-||
-||`octal-digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
-||
-||`binary-digit ::= 0 | 1
-||
-||`char-literal ::= #`char-literal-glyph
-||
-||`char-literal-glyph ::= `char-glyph | "
-||
-||`char-glyph ::=
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Boolean-literals</title>
+<para>
+<<
+||  `boolean-literal ::= true | false
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Nat-literals</title>
+<para>
+<<
+||  `nat-literal ::=
+||          `decimal-digit     { `decimal-digit }*
+||    | 0 X `hexadecimal-digit { `hexadecimal-digit }*
+||    | 0 x `hexadecimal-digit { `hexadecimal-digit }*
+||    | 0 O `octal-digit       { `octal-digit  }*
+||    | 0 o `octal-digit       { `octal-digit  }*
+||    | 0 B `binary-digit      { `binary-digit }*
+||    | 0 b `binary-digit      { `binary-digit }*
+||  
+||  `hexadecimal-digit ::=
+||      `decimal-digit
+||    | a | b | c | d | e | f
+||    | A | B | C | D | E | F
+||  
+||  `octal-digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+||  
+||  `binary-digit ::= 0 | 1
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Char-literals</title>
+<para>
+<<
+||  `char-literal ::= #`char-literal-glyph
+||  
+||  `char-literal-glyph ::= `char-glyph | "
+||  
+||  `char-glyph ::=
 ||      `letter
 ||    | `decimal-digit
 ||    | `other-char-glyph
-||
-||`other-char-glyph ::=
+||  
+||  `other-char-glyph ::=
 ||      ! | : | @ | # | $ | % | ^ | & | * | ( | ) | _ | - | + | =
 ||    | '| | ~ | ` | . | , | < | > | ? | / | ; | '' | '[ | '] | '{ | '}
 ||    | \\ | \"
 ||    | \a | \b | \t | \n | \v | \f | \r | \s
 ||    | \x `hexadecimal-digit `hexadecimal-digit
-||`string-literal ::= " `string-body "
-||
-||`string-body ::= { `string-literal-glyph }*
-||
-||`string-literal-glyph ::= `char-glyph | `significant-whitespace
-||
-||`significant-whitespace ::= `space | `tab | `newline
-||
-||`field-selection ::= `closed-expression . `field-selector
-||
-||`field-selector ::= `nat-literal | `field-name
-||
-||`tuple-display ::= ( `tuple-display-body )
-||
-||`tuple-display-body ::= [ `expression , `expression { , `expression }* ]
-||
-||`record-display ::= '{ `record-display-body '}
-||
-||`record-display-body ::= [ `field-filler { , `field-filler }* ]
-||
-||`field-filler ::= `field-name `equals `expression
-||
-||`sequential-expression ::= ( `open-sequential-expression )
-||
-||`open-sequential-expression ::= `void-expression ; `sequential-tail
-||
-||`void-expression ::= `expression
-||
-||`sequential-tail ::= `expression | `open-sequential-expression
-||
-||`list-display ::= '[ `list-display-body ']
-||
-||`list-display-body ::= [ `expression { , `expression }* ]
-||
-||`monadic-expression ::= '{ `open-monadic-expression '}
-||
-||`open-monadic-expression ::= `monadic-statement ; `monadic-tail
-||
-||`monadic-statement ::= `expression | `monadic-binding
-||
-||`monadic-binding ::= `pattern <- `expression
-||
-||`monadic-tail ::= `expression | `open-monadic-expression
-||
-||`structor ::=
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>String-literals</title>
+<para>
+<<
+||  `string-literal ::= " `string-body "
+||  
+||  `string-body ::= { `string-literal-glyph }*
+||  
+||  `string-literal-glyph ::= `char-glyph | `significant-whitespace
+||  
+||  `significant-whitespace ::= `space | `tab | `newline
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Field-selections</title>
+<para>
+<<
+||  `field-selection ::= `closed-expression . `field-selector
+||  
+||  `field-selector ::= `nat-literal | `field-name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Tuple-displays</title>
+<para>
+<<
+||  `tuple-display ::= ( `tuple-display-body )
+||  
+||  `tuple-display-body ::= [ `expression , `expression { , `expression }* ]
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Record-displays</title>
+<para>
+<<
+||  `record-display ::= '{ `record-display-body '}
+||  
+||  `record-display-body ::= [ `field-filler { , `field-filler }* ]
+||  
+||  `field-filler ::= `field-name `equals `expression
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Sequential-expressions</title>
+<para>
+<<
+||  `sequential-expression ::= ( `open-sequential-expression )
+||  
+||  `open-sequential-expression ::= `void-expression ; `sequential-tail
+||  
+||  `void-expression ::= `expression
+||  
+||  `sequential-tail ::= `expression | `open-sequential-expression
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>List-displays</title>
+<para>
+<<
+||  `list-display ::= '[ `list-display-body ']
+||  
+||  `list-display-body ::= [ `expression { , `expression }* ]
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Monadic-expressions</title>
+<para>
+<<
+||  `monadic-expression ::= '{ `open-monadic-expression '}
+||  
+||  `open-monadic-expression ::= `monadic-statement ; `monadic-tail
+||  
+||  `monadic-statement ::= `expression | `monadic-binding
+||  
+||  `monadic-binding ::= `pattern <- `expression
+||  
+||  `monadic-tail ::= `expression | `open-monadic-expression
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Structors</title>
+<para>
+<<
+||  `structor ::=
 ||      `projector
 ||    | `quotienter
 ||    | `chooser
 ||    | `embedder
 ||    | `embedding-test
-||
-||`projector ::= project `field-selector
-||
-||`quotienter ::= quotient '[ `type-name ']
-||
-||`chooser ::= choose '[ `type-name ']
-||
-||`embedder ::= [ embed ] `constructor
-||
-||`embedding-test ::= embed? `constructor
-||
-||`match ::= [ '| ] `branch { '| `branch }*
-||
-||`branch ::= `pattern [ `guard ] -> `expression
-||
-||`guard ::= '| `expression
-||
-||`pattern ::=
+>>
+<<
+||  `projector ::= project `field-selector
+>>
+<<
+||  `quotienter ::= quotient '[ `type-name ']
+>>
+<<
+||  `chooser ::= choose '[ `type-name ']
+>>
+<<
+||  `embedder ::= [ embed ] `constructor
+>>
+<<
+||  `embedding-test ::= embed? `constructor
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Matches</title>
+<para>
+<<
+||  `match ::= [ '| ] `branch { '| `branch }*
+||  
+||  `branch ::= `pattern [ `guard ] -> `expression
+||  
+||  `guard ::= '| `expression
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Patterns</title>
+<para>
+<<
+||  `pattern ::=
 ||      `annotated-pattern
 ||    | `tight-pattern
-||
-||`tight-pattern ::=
+||  
+||  `tight-pattern ::=
 ||      `aliased-pattern
 ||    | `cons-pattern
 ||    | `embed-pattern
 !!    | `quotient-pattern
 ||    | `closed-pattern
-||
-||`closed-pattern ::=
+||  
+||  `closed-pattern ::=
 ||      `variable-pattern
 ||    | `wildcard-pattern
 ||    | `literal-pattern
@@ -525,35 +884,40 @@ easy reference.
 ||    | `tuple-pattern
 ||    | `record-pattern
 ||    | ( `pattern )
-||
-||`annotated-pattern ::= `pattern : `type-descriptor
-||
-||`aliased-pattern ::= `variable-pattern as `tight-pattern
-||
-||`cons-pattern ::= `closed-pattern :: `tight-pattern
-||
-||`embed-pattern ::= `constructor [ `closed-pattern ]
-||
-!!`quotient-pattern ::= quotient '[ `type-name ']		
-||	
-||`variable-pattern ::= `local-variable
-||
-||`wildcard-pattern ::= _
-||
-||`literal-pattern ::= `literal
-||
-||`list-pattern ::= '[ `list-pattern-body ']
-||
-||`list-pattern-body ::= [ `pattern { , `pattern }* ]
-||
-||`tuple-pattern ::= ( `tuple-pattern-body )
-||
-||`tuple-pattern-body ::= [ `pattern , `pattern { , `pattern }* ]
-||
-||`record-pattern ::= '{ `record-pattern-body '}
-||
-||`record-pattern-body ::= [ `field-patterner { , `field-patterner }* ]
-||
-||`field-patterner ::= `field-name [ `equals `pattern ]
 >>
+<<
+||  
+||  `annotated-pattern ::= `pattern : `type-descriptor
+||  
+||  `aliased-pattern ::= `variable-pattern as `tight-pattern
+||  
+||  `cons-pattern ::= `closed-pattern :: `tight-pattern
+||  
+||  `embed-pattern ::= `constructor [ `closed-pattern ]
+||  
+!!`quotient-pattern ::= quotient '[ `type-name ']		
+||  	
+||  `variable-pattern ::= `local-variable
+||  
+||  `wildcard-pattern ::= _
+||  
+||  `literal-pattern ::= `literal
+||  
+||  `list-pattern ::= '[ `list-pattern-body ']
+||  
+||  `list-pattern-body ::= [ `pattern { , `pattern }* ]
+||  
+||  `tuple-pattern ::= ( `tuple-pattern-body )
+||  
+||  `tuple-pattern-body ::= [ `pattern , `pattern { , `pattern }* ]
+||  
+||  `record-pattern ::= '{ `record-pattern-body '}
+||  
+||  `record-pattern-body ::= [ `field-patterner { , `field-patterner }* ]
+||  
+||  `field-patterner ::= `field-name [ `equals `pattern ]
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
 </appendix>
