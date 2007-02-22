@@ -274,12 +274,36 @@
 
 ;(Specware::initializeSpecware-0)
 
+;;================================================================================
+;; Problems with REQUIRE under SBCL:
+;;
+;; SB-IMPL::MODULE-PROVIDE-CONTRIB used SBCL_HOME to resolve REQUIRE's, and
+;; expects it to be something like "/usr/local/lib/sbcl", with a subdir per
+;; module, e.g. "sb-bsd-sockets".
+;;
+;; But at startup, sbcl sets SBCL_HOME to the directory of the executed image.
+;; If you are running sbcl directly, this will probably be something like
+;; "/usr/local/lib/sbcl", and requires will work.
+;;
+;; But if you are running a saved image, it will refer to some random directory
+;; where that image was saved, and all requires will fail. 
+;;
+;; So we cache *sbcl-home* here to a reasonable value and restore SBCL_HOME to
+;; that after sbcl has begun running again. 
+
+;; Unfortunately, this introduces a new problem: it assumes the build-time sbcl 
+;; dir is the same as the run-time sbcl dir, but there is no guarantee of that.  
+;; In fact, if the run-time sbcl dir differs from the build-time sbcl dir, 
+;; and the executed sbcl image is not on either such directory, it is not clear 
+;; if there is any way at all to find the sbcl modules!  Bletch.
+;;================================================================================
+
 #+sbcl
-(defvar *sbcl-home* (specware::getenv "SBCL_HOME"))
+(defvar *sbcl-home* (specware::getenv "SBCL_HOME")) ; see note above
 #+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
-		    (specware::setenv "SBCL_HOME" *sbcl-home*)
+		    (specware::setenv "SBCL_HOME" *sbcl-home*) ; see note above
 		    )
        sb-ext:*init-hooks*)
 
