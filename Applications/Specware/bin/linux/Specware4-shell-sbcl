@@ -1,0 +1,66 @@
+#!/bin/sh
+
+act='launch Specware'
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+# Test whether SPECWARE4 has been set
+
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+
+case "$SPECWARE4" in
+    /*) : ok;;
+    *)  SPECWARE4="`pwd`/$SPECWARE4";;
+esac
+
+#echo "\$SPECWARE4=$SPECWARE4"
+
+# Test whether SPECWARE4 has been set
+
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+
+case "$SPECWARE4" in
+    /*) : ok;;
+    *)  SPECWARE4="`pwd`/$SPECWARE4";;
+esac
+
+if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
+   echo "Failed to $act: could not find directory
+   $SPECWARE4/Applications/Specware" 2>&1
+   exit 1
+fi
+
+SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
+
+# Try to find lisp executable:
+
+export BIN_DIR=$SPECWARE_BIN
+. $SPECWARE4/Scripts/unix/Verify_SBCL
+
+LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4."$IMAGE_EXTENSION"
+
+"$LISP" --core "$LISP_HEAP_IMAGE" --eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (SB-UNIX:UNIX-EXIT 0))"
