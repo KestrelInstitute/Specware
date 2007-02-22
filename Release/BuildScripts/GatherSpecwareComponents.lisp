@@ -2,6 +2,10 @@
 (defpackage "DISTRIBUTION" (:use "COMMON-LISP"))
 (in-package "DISTRIBUTION")
 
+#+SBCL (cl:defpackage :swank-loader
+		      (:use :cl)
+		      (:export :load-swank :*source-directory* :*fasl-directory*))
+
 (defvar *VERBOSE* nil)
 
 ;;  --------------------------------------------------------------------------------
@@ -367,20 +371,24 @@
 
     ;; Slime/Swank 
     (let ((slime-source-dir (extend-directory source-dir "slime")))
+
+      ;; Loading swank-loader.lisp will compile all the swank files.
       ;; We need to compile here since the slime loader puts fasls by default under the
       ;; users home directory, not in a location derived from the source directory.
-      (defpackage "SB-BSD-SOCKETS" (:use "COMMON-LISP"))
-      ;; loading swank-backend will compile all the swantk lisp files...
-      (load (merge-pathnames slime-source-dir "swank-backend.lisp"))
-      
-      #+allegro (compile-file (merge-pathnames slime-source-dir "swank-allegro.lisp"))
-      #+sbcl    (let ((sb-fasl:*fasl-file-type* *fasl-type*)) 
-		  ;; The default for sbcl is "fasl", but that conflicts with Allegro, 
-                  ;; so use "sfsl" instead (see binding of *fasl-type* at top of file).
-                  (compile-file (merge-pathnames slime-source-dir "swank-sbcl.lisp")))
-      #+cmu     (compile-file (merge-pathnames slime-source-dir "swank-cmucl.lisp"))
-      #+openmcl (compile-file (merge-pathnames slime-source-dir "swank-openmcl.lisp"))
-      
+
+      (load (merge-pathnames slime-source-dir "swank-loader.lisp"))
+
+      ;; (defpackage "SB-BSD-SOCKETS" (:use "COMMON-LISP"))
+      ;; ;; loading swank-backend will compile all the swank lisp files...
+      ;; (load (merge-pathnames slime-source-dir "swank-backend.lisp"))
+      ;; 
+      ;; #+allegro (compile-file (merge-pathnames slime-source-dir "swank-allegro.lisp"))
+      ;; #+sbcl    (let ((sb-fasl:*fasl-file-type* *fasl-type*)) 
+      ;; ;; The default for sbcl is "fasl", but that conflicts with Allegro, 
+      ;; ;; so use "sfsl" instead (see binding of *fasl-type* at top of file).
+      ;; (compile-file (merge-pathnames slime-source-dir "swank-sbcl.lisp")))
+      ;; #+cmu     (compile-file (merge-pathnames slime-source-dir "swank-cmucl.lisp"))
+      ;; #+openmcl (compile-file (merge-pathnames slime-source-dir "swank-openmcl.lisp"))
       
       (dolist (dir slime-dirs)
 	(copy-dist-directory (extend-directory source-dir dir)
@@ -396,7 +404,6 @@
 			(merge-pathnames slime-dir                        source-file))
 	(copy-dist-file (merge-pathnames swank-loader::*fasl-directory*   fasl-file)
 			(merge-pathnames slime-dir                        fasl-file)))
-      
       )
 
     ;; Ilisp
