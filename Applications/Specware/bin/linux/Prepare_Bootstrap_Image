@@ -132,7 +132,7 @@ echo " "
 # change them to spaces, the end of the "here-document" is not recognized
 # (the XXXX).
    
-$BIG_LISP -batch <<-XXXX
+$BATCH_LISP <<-XXXX
 	(progn
 	 (format t "~%--------------------------------------------------------------------------------~%")
 	 (load "$MEMORY_MANAGEMENT") 
