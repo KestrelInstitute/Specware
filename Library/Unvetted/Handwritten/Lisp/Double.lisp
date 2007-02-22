@@ -1,6 +1,11 @@
-(defpackage "DOUBLE")
+(defpackage :Specware)
+(defpackage :Double)
 (defpackage :Double_)
-(defpackage "COMPLEX")
+(defpackage :Complex)
+(defpackage :String-Spec)
+(defpackage :Integer-Spec)
+
+
 (IN-PACKAGE "DOUBLE")
 
 
@@ -22,11 +27,18 @@
 
 
 ;;; mechanism for allowing the user to declare global restrictions on doubles:
-(eval-when (compile load)
-  (defvar specware::*double-impl* 'double-float))
+
+;; There is no need to be so complicated unless we expect to declare 
+;; *double-impl* to something other than 'double-float before loading this file.
+;;
+;;(eval-when (compile load)
+;;  (defvar specware::*double-impl* 'double-float))
+;;
+;;(defmacro the-double (x)
+;;  `(the ,specware::*double-impl* ,x))
 
 (defmacro the-double (x)
-  `(the ,specware::*double-impl* ,x))
+  `(the double-float ,x))
 
 (defun -- (x) ; TODO: deprecate 
   (declare (double-float x))
@@ -73,16 +85,21 @@
   (declare (cons xy))
   (the-double (* (the-double (car xy)) (the-double (cdr xy)))))
 
-(defun div-2 (x y)
-  (declare (double-float x y))
-  (the-double (cl::truncate x y)))
-
-(define-compiler-macro div-2 (x y)
-  `(the-double (cl:truncate (the-double ,x) (the-double ,y))))
-
-(defun div (xy)
-  (declare (cons xy))
-  (the-double (cl:truncate (the-double (car xy)) (the-double (cdr xy)))))
+;; CL::TRUNCATE returns an integer, making the following definitions 
+;; for div-2 and div type-incorrect.
+;; Since Double.sw doesn't mention div or rem, there is no guide
+;; to know how to correct these.  (Do we expect integer or double float?)
+;;
+;; (defun div-2 (x y)
+;;   (declare (double-float x y))
+;;   (the-double (cl::truncate x y)))
+;;
+;; (define-compiler-macro div-2 (x y)
+;;   `(the-double (cl:truncate (the-double ,x) (the-double ,y))))
+;; 
+;; (defun div (xy)
+;;   (declare (cons xy))
+;;  (the-double (cl:truncate (the-double (car xy)) (the-double (cdr xy)))))
 
 (defun rem-2 (x y)
   (declare (double-float x y))
@@ -132,59 +149,52 @@
 (define-compiler-macro |!abs| (x)
   `(abs (the-double ,x)))
 
-(defun STRING-SPEC::toDouble (str)
+(defun String-Spec::toDouble (str)
   (let ((*read-default-float-format* 'double-float))
-     (multiple-value-bind (dbl len) (read-from-string str) (the-double dbl)))
-)
+    (let ((dbl (read-from-string str)))
+      (the-double dbl))))
 
-(defun INTEGER-SPEC::toDouble (x)
+(defun Integer-Spec::toDouble (x)
   (declare (integer x))
-  (the-double (coerce x 'double-float))
-)
+  (the-double (coerce x 'double-float)))
 
-(defun toString (x) (format nil "~s" x))
+(defun toString (x) 
+  (format nil "~s" x))
 
 (defun |!floor| (x)
   (declare (double-float x))
-  (multiple-value-bind (quot rem) (cl::floor x) (INTEGER-SPEC::the-int quot))
-)
+  (let ((quot (cl::floor x) ))
+    (Integer-Spec::the-int quot)))
 
 (defun |!ceiling| (x)
   (declare (double-float x))
-  (multiple-value-bind (quot rem) (cl::ceiling x) (INTEGER-SPEC::the-int quot))
-)
+  (let ((quot (cl::ceiling x)))
+    (Integer-Spec::the-int quot)))
 
 (defun |!sin| (x)
   (declare (double-float x))
-  (the-double (sin x))
-)
+  (the-double (sin x)))
 
 (defun |!cos| (x)
   (declare (double-float x))
-  (the-double (cos x))
-)
+  (the-double (cos x)))
 
 (defun |!tan| (x)
   (declare (double-float x))
-  (the-double (tan x))
-)
+  (the-double (tan x)))
 
 (defun |!asin| (x)
   (declare (double-float x))
-  (the-double (asin x))
-)
+  (the-double (asin x)))
 
 (defun |!acos| (x)
   (declare (double-float x))
-  (the-double (acos x))
-)
+  (the-double (acos x)))
 
 (defun |!atan| (x)
   (declare (double-float x))
-  (the-double (atan x))
-)
+  (the-double (atan x)))
 
 (defun |!sqrt| (x)
   (declare (double-float x))
-  (COMPLEX::the-complex (sqrt x))
-)
+  (the (complex double-float) (sqrt x)))
