@@ -2267,13 +2267,13 @@ form $\cxwf{\snoc{\cx}{\cxel}}$ can be only derived by a rule in
 \subsection*{Proof of \thmref{thm-cxwf}}
 
 By induction on the proof of $(\jcxdots{\cx})$. All the inference rules whose
-conclusion is a judgement of the form $(\jcxdots{\cx})$, except rules $\Rtarr$
-and $\Reabs$, either have $\cxwfO$ as one of their premises, which immediately
-proves $\cxwfO$, or have at least one premise of the form $(\jcxdots{\cx})$,
-which proves $\cxwfO$ by induction hypothesis. Rules $\Rtarr$ and $\Reabs$
-have premises of the form $(\jcxdots{\snoc{\cx}{\cxel}})$: we have
-$\cxwf{\snoc{\cx}{\cxel}}$ by induction hypothesis and thus $\cxwfO$ by
-\thmref{thm-cxprefix}.
+conclusion is a judgement of the form $(\jcxdots{\cx})$, except rules
+$\Rtarr$, $\Rstarr$, and $\Reabs$, either have $\cxwfO$ as one of their
+premises, which immediately proves $\cxwfO$, or have at least one premise of
+the form $(\jcxdots{\cx})$, which proves $\cxwfO$ by induction
+hypothesis. Rules $\Rtarr$, $\Rstarr$, and $\Reabs$ have premises of the form
+$(\jcxdots{\snoc{\cx}{\cxel}})$: we have $\cxwf{\snoc{\cx}{\cxel}}$ by
+induction hypothesis and thus $\cxwfO$ by \thmref{thm-cxprefix}.
 
 
 
