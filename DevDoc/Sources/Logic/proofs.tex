@@ -2505,19 +2505,10 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
 \Case{\Rstrefl}
 \StepO{\efvar{\tspred}=\efvar{\abs{\var}{\typ}{\true}}=\emptyset}
       {\thmref{thm-efvar-abbrev}}
-%\begin{links}
-%$\efvar{\abs{\var}{\typ}{\true}}
-% \link{=}{$\efvarY$}
-% \efvar{\true}-\setI{\var}
-% \link{=}{\thmref{thm-efvar-abbrev}}
-% \emptyset-\setI{\var}
-% \linK{=}
-% \emptyset$
-%\end{links}
 
 \Case{\Rstarr}
 \begin{derivation}
-\step{\issubO{\typ_1}{\tspred}{\typ_2}}{\premofrule}
+\step{\issub{\snoc{\cx}{\vdecO}}{\typ_1}{\tspred}{\typ_2}}{\premofrule}
 \step{\efvar{\tspred}=\emptyset}{\indhyp, 1}
 \steP
 {\efvar{\tspred'}
@@ -2546,25 +2537,6 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
  \link{=}{2}
  \emptyset}
 \end{derivation}
-
-%\Case{\Rstsum}
-%\begin{derivation}
-%\step{\FORALL{i}{\efvar{\tspred_i}=\emptyset}}{\indhyp}
-%\steP
-%{\efvar{\abs{\var}
-%            {\tsum{i}{\cnam_i}{\typ_i'}}
-%            {\disjI{i}
-%                   {\ex{\var'}{\typ_i'}
-%                       {(\conj{\eq{\var}{\app{\emb{\cnam_i}}{\var'}}}
-%                              {\app{\tspred_i}{\var'}})}}}}
-% \link{=}{\thmref{thm-efvar-abbrev}}
-% \bigcup_i\efvar{\tspred_i}-\setII{\var}{\var'}
-% \link{=}{1}
-% \emptyset}
-%\end{derivation}
-
-%\Case{\Rstteq}
-%\StepO{\efvar{\tspred}=\emptyset}{\indhyp}
 
 \end{bycase}
 
@@ -2628,14 +2600,22 @@ $\efvar{\expr}=\emptyset$
 \end{derivation}
 
 \Case{\Reapp}
-\begin{links}
-$\efvar{\appO}
- \linK{=}
- \efvar{\expr_1}\cup\efvar{\expr_2}
- \link{\subseteq}{\indhyp}
- \cxvarO$
-\end{links}
-
+\begin{derivation}
+\step{\hastyO{\expr_1}{\tarrO}}{\premof{\Reapp}}
+\step{\hastyO{\expr_2}{\typ_1}}{\premof{\Reapp}}
+\step{\efvar{\expr_1}\subseteq\cxvarO}{\indhyp, 1}
+\step{\efvar{\expr_2}\subseteq\cxvarO}{\indhyp, 2}
+\step{\efvar{\appO}=\efvar{\expr_1}\cup\efvar{\expr_2}\subseteq\cxvarO}
+     {3, 4}
+\end{derivation}
+%\begin{links}
+%$\efvar{\appO}
+% \linK{=}
+% \efvar{\expr_1}\cup\efvar{\expr_2}
+% \link{\subseteq}{\indhyp}
+% \cxvarO$
+%\end{links}
+b
 \Case{\Reeq, \Reif, \Resuper, \Resub}\\
 Analogous to \Reapp.
 
@@ -2749,7 +2729,7 @@ The fourth implication is proved as follows:
      {second implication of this theorem, 2}
 \end{derivation}
 
-
+%%%%% HERE %%%%%
 
 \subsection*{Proof of \thmref{thm-free-tvar-in-cx}}
 
