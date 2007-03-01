@@ -397,6 +397,7 @@ process() {
 
 	while (!atEOT) {
 trace3("P%d%c\n", bufp,thischar());
+		try(space);
 		try(program);
 		try(outProgram);
 		try(syntax);
@@ -418,6 +419,16 @@ trace3("P%d%c\n", bufp,thischar());
 		try(outQuote);
 		other();
 	}
+}
+
+bool space() {
+	if (!inProgram || inDisplay) fail;
+trace("\nspace:: ");
+	if (seechar(' ') || seechar('\n')) {
+		outtext("</computeroutput> <computeroutput>");
+		succeed;
+	}
+	fail;
 }
 
 bool program() {
@@ -687,11 +698,15 @@ bool replaceable() {
 trace("\nreplaceable:: ");
 
 	if (seechar('$')) {
+		if (inProgram && !inDisplay)
+			outtext("</computeroutput>");
 		outtext("<replaceable>");
 
 		while ((c= getchar()) != '$' && c != '\n')
 			outchar(c);
 		outtext("</replaceable>");
+		if (inProgram && !inDisplay)
+			outtext("<computeroutput>");
 		if (c == '\n') outchar(c);
 		succeed;
 	}
