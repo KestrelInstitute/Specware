@@ -4,7 +4,12 @@ SCRIPT_DIR=`/usr/bin/dirname $0`
 cd -P $SCRIPT_DIR
 SCRIPT_DIR=`pwd`
 
-$SCRIPT_DIR/Bootstrap_Specware SBCL
+if [ "$1" == "" ]; then
+  $SCRIPT_DIR/Bootstrap_Specware SBCL
+else
+  $SCRIPT_DIR/Bootstrap_Specware $1
+fi
+
 RC=$?
 if [ $RC -ne 0 ]; then
    echo "Failure preparing bootstrap image, return code = $RC"
