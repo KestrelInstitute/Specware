@@ -250,10 +250,10 @@ capture subtyping as
 \[
 \rruleIII
  {\issub{\snoc{\cx}{\vdecO}}{\typ_1}{\tspred}{\typ_2}}
- {\var\neq\var'}
- {\tspred'=\abs{\var}
+ {\var'\neq\var''}
+ {\tspred'=\abs{\var'}
                {\tarr{\typ}{\typ_2}}
-               {\fa{\var'}{\typ}{\app{\tspred}{(\app{\var}{\var'})}}}}
+               {\fa{\var''}{\typ}{\app{\tspred}{(\app{\var'}{\var''})}}}}
  {\issubO{\tarr{\typ}{\typ_1}}{\tspred'}{\tarr{\typ}{\typ_2}}}
  {\Rstarr}
 \]

@@ -2820,6 +2820,33 @@ If $\cx_2=\mtcx$:
 \step{\cxtvarO\supseteq\ftvar{\tarrO}}{1, 6, 4, 3}
 \end{derivation}
 
+\Case{\Rstarr}
+\begin{derivation}
+\step{\issub{\snoc{\cx}{\vdecO}}{\typ_1}{\tspred}{\typ_2}}{\premof{\Rstarr}}
+\step{\ftvar{\typ_1}\cup\ftvar{\tspred}\cup\ftvar{\typ_2}\subseteq
+      \cxtvar{\snoc{\cx}{\vdecO}}}
+     {\indhyp, 1}
+\step{\ftvar{\typ_1}\cup\ftvar{\tspred}\cup\ftvar{\typ_2}\subseteq\cxtvarO}
+     {2, $\cxtvar{\vdecO}=\emptyset$}
+\step{\cxwf{\snoc{\cx}{\vdecO}}}{\thmref{thm-cxwf}, 1}
+\step{\ftvar{\vdecO}\subseteq\cxtvarO}{\indhyp, 4}
+\step{\ftvar{\typ}\subseteq\cxtvarO}{\defof{\ftvarY}, 5}
+\end{derivation}
+Let $\tspred'=\abs{\var'}
+                  {\tarr{\typ}{\typ_2}}
+                  {\fa{\var''}{\typ}{\app{\tspred}{(\app{\var'}{\var''})}}}$:
+\begin{derivatioN}{6}
+\step{\ftvar{\tspred'}\subseteq\cxtvarO}
+     {3, 6, \thmref{thm-ftvar-abbrev}}
+\step{\ftvar{\tarr{\typ}{\typ_1}}\subseteq\cxtvarO}{3, 6}
+\step{\ftvar{\tarr{\typ}{\typ_2}}\subseteq\cxtvarO}{3, 6}
+\step{\ftvar{\tarr{\typ}{\typ_1}}\cup
+      \ftvar{\tspred'}\cup
+      \ftvar{\tarr{\typ}{\typ_2}}\subseteq
+      \cxtvarO}
+     {7, 8, 9}
+\end{derivatioN}
+
 \Case{\Revar}
 \begin{derivation}
 \step{\vdecO\in\cx}{\premof{\Revar}}
@@ -2888,8 +2915,8 @@ Analogous to \Rtinst: each free type variable in the right-hand side of the
 judgement $\jcxdots{\cx}$ is also a free type variable in the right-hand side
 of some premise $\jcxdots{\cx'}$ of the rule such that
 $\cxtvar{\cx'}=\cxtvarO$ (the only rules in which $\cx'\neq\cx$ are \Reif,
-\Rthifsbs, \Rthif). We use \thmref{thm-ftvar-abbrev} for \Rstrefl, \Rstarr,
-\Rstrec, \Redesc, \Rthext, \Rthrec, and \Rthprojsub. We use
+\Rthifsbs, \Rthif). We use \thmref{thm-ftvar-abbrev} for \Rstrefl, \Rstrec,
+\Redesc, \Rthext, \Rthrec, and \Rthprojsub. We use
 \thmref{thm-rename-same-free-tvars} for \Reabsalpha. We use
 \thmref{thm-ftvar-of-esbs} for \Rthabs.
 
