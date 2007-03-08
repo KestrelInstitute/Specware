@@ -357,6 +357,7 @@ Utilities qualifying spec
       | NatPat  _              -> []
       | QuotientPat(p,_,_)     -> patVars p
       | RestrictedPat(p,_,_)   -> patVars p
+      | SortedPat(p,_,_)       -> patVars p
 
  op  getParams: Pattern -> List Pattern
  def getParams(pat:Pattern) = 
