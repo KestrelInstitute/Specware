@@ -97,8 +97,8 @@ free type variables of a type, expression, or context (element)
 \eqitem{\ftvar{\cx_1,\cx_2}}{\ftvar{\cx_1}\cup\ftvar{\cx_2}}
 \end{eqlist}
 \]
-Note that the type variables that occur in a type or expression are always
-free; the only bound type variables are the $\tvarS$ in context elements.
+Note that the type variables that occur in a type or expression are always free;
+the only bound type variables are the $\tvarS$ in context elements.
 
 We extend type substitution to context elements, contexts, and type
 substitutions themselves
@@ -134,8 +134,8 @@ substitutions themselves
 The function $\func{\ctvarY}{(\Cxel+\Cx)\times\Nam}{\Setf{\Nam}}$ returns the
 type variables that would be captured if a type variable $\tvarI$ were
 substituted with those type variables in a context (element), i.e.\ all the
-variables bound in the (context) element at the free occurrences of $\tvarI$
-in the context (element)
+variables bound in the (context) element at the free occurrences of $\tvarI$ in
+the context (element)
 \[
 \begin{eqlist}
 \eqitem{\ctvarO{\tdecO}}
@@ -163,8 +163,7 @@ in the context (element)
 
 The relation $\binrel{\tsbsokY}{\Cx}{(\Funcp{\Nam}{\Typ})}$ captures the
 condition that the substitution $\tsbsO{\cx}$ causes no free type variables in
-$\cx$ to be captured and does not substitute any type variable declared in
-$\cx$
+$\cx$ to be captured and does not substitute any type variable declared in $\cx$
 \[
 \tsbsok{\cx}{\tsbsmap}
  \IFF
@@ -181,9 +180,9 @@ $\tsbslashok{\cx}{\tvarS}{\typS}$.
 
 \subsection{Syntactic properties}
 
-Expression substitution only takes place at the free occurrences of the
-variable that is substituted. Thus, if the variable is not free in the
-expression, substitution causes no change and no variable capture:
+Expression substitution only takes place at the free occurrences of the variable
+that is substituted. Thus, if the variable is not free in the expression,
+substitution causes no change and no variable capture:
 
 \begin{theorem}\label{thm-esbs-not-free}
 \[
@@ -203,8 +202,8 @@ variable, the variable itself is not captured at those occurrences:
 \]
 \end{theorem}
 
-It is always possible to substitute a variable with itself and the
-substitution causes no change:
+It is always possible to substitute a variable with itself and the substitution
+causes no change:
 
 \begin{theorem}\label{thm-esbs-id}
 \[
@@ -243,16 +242,16 @@ either:
 \end{theorem}
 
 In the last theorem, the condition $\varI\neq\var$ is used in the proof and is
-in fact necessary, because in general
-$\esbsokO{\absO}\NIMPLIES\esbsokO{\expr}$, as shown by the counter-example
-$\varI=\var$, $\expr=\abs{\varII}{\typ}{\var}$, and $\exprI=\varII$.
+in fact necessary, because in general $\esbsokO{\absO}\NIMPLIES\esbsokO{\expr}$,
+as shown by the counter-example $\varI=\var$, $\expr=\abs{\varII}{\typ}{\var}$,
+and $\exprI=\varII$.
 
 If we substitute $\varI$ with $\exprI$ in $\expr$, we remove $\varI$ from the
 free variables of $\expr$ and add the free variables of $\exprI$. This is
 actually true only if $\varI$ is free in $\expr$ (otherwise the substitution
-causes no change) and no variable is captured (otherwise the captured
-variables of $\exprI$ would not contribute to the free variables of the result
-of substitution):
+causes no change) and no variable is captured (otherwise the captured variables
+of $\exprI$ would not contribute to the free variables of the result of
+substitution):
 
 \begin{theorem}\label{thm-efvar-of-esbs}
 \[
@@ -262,10 +261,9 @@ of substitution):
 \]
 \end{theorem}
 
-If we substitute $\varI$ with an expression $\exprI$ that does not have
-$\varI$ among its free variables, the resulting expression does not have
-$\varI$ among its free variables (provided that the substitution captured no
-variables):
+If we substitute $\varI$ with an expression $\exprI$ that does not have $\varI$
+among its free variables, the resulting expression does not have $\varI$ among
+its free variables (provided that the substitution captured no variables):
 
 \begin{theorem}\label{thm-var-not-in-esbs-of-var}
 \[
@@ -286,8 +284,8 @@ Two expression substitutions commute if their variables do not ``interact'':
 \]
 \end{theorem}
 
-If we substitute first $\varI$ with $\exprI$ and then $\varI$ with $\exprI'$,
-we obtain the same result as directly substituting $\varI$ with
+If we substitute first $\varI$ with $\exprI$ and then $\varI$ with $\exprI'$, we
+obtain the same result as directly substituting $\varI$ with
 $\esbs{\exprI}{\varI}{\exprI'}$:
 
 \begin{theorem}\label{thm-esbs-esbs-of-same-var}
@@ -305,11 +303,11 @@ Variable renaming is idempotent:
 \]
 \end{theorem}
 
-Substituting $\varII$ with $\exprI$ (such that no capture takes place) and
-then renaming $\varI$ to $\varI'$ is equivalent to substituting $\varII$ with
-the renaming applied to $\exprI$ (which renames the free occurrences of
-$\varI$ in $\exprI$) and then applying the renaming to the result (which
-renames the free occurrences of $\varI$ in the original expression $\expr$):
+Substituting $\varII$ with $\exprI$ (such that no capture takes place) and then
+renaming $\varI$ to $\varI'$ is equivalent to substituting $\varII$ with the
+renaming applied to $\exprI$ (which renames the free occurrences of $\varI$ in
+$\exprI$) and then applying the renaming to the result (which renames the free
+occurrences of $\varI$ in the original expression $\expr$):
 
 \begin{theorem}\label{thm-esbs-then-rename}
 \[
@@ -319,8 +317,8 @@ renames the free occurrences of $\varI$ in the original expression $\expr$):
 \]
 \end{theorem}
 
-In an expression $\expr$, renaming $\varI$ to $\varI'$ and then back $\varI'$
-to $\varI$ leaves $\expr$ unchanged, provided that $\varI'$ is not captured
+In an expression $\expr$, renaming $\varI$ to $\varI'$ and then back $\varI'$ to
+$\varI$ leaves $\expr$ unchanged, provided that $\varI'$ is not captured
 (otherwise the captured occurrences would not be renamed back to $\varI$) and
 does not already occur free in $\expr$ (otherwise we do not obtain $\expr$ at
 the end, because all free occurrences of $\varI'$ disappear when we rename
@@ -334,11 +332,11 @@ $\varI'$ to $\varI$):
 \]
 \end{theorem}
 
-If we rename a variable $\varI$ to $\varI'$ in an expression then the
-variables captured at the free occurrences of $\varI$ in the original
-expression coincide with those captured at the free occurrences of $\varI'$ in
-the transformed expression (provided that $\varI'$ is not captured in the
-renaming and that $\varI'$ was not already free in the original expression):
+If we rename a variable $\varI$ to $\varI'$ in an expression then the variables
+captured at the free occurrences of $\varI$ in the original expression coincide
+with those captured at the free occurrences of $\varI'$ in the transformed
+expression (provided that $\varI'$ is not captured in the renaming and that
+$\varI'$ was not already free in the original expression):
 
 \begin{theorem}\label{thm-capt-rename1}
 \[
@@ -351,16 +349,15 @@ renaming and that $\varI'$ was not already free in the original expression):
 The following theorem says how captured variables change under expression
 substitution, assuming that the substituted variable is free in the expression
 (otherwise no change takes place) and that no variable is captured. The
-relationship should be quite intuitive when thinking of expressions as trees
-and captured variables as the lambda-bound variables encountered along the
-paths in the trees. The substitution replaces each free occurrence of $\varI$
-in $\expr$ with $\exprI$. Thus, if $\varII$ is free in $\exprI$ we have to add
-the variables in the paths to free occurrences of $\varII$ in $\exprI$ to
-those in the paths to free occurrences of $\varI$ in $\expr$. If $\varII$ is
-not free in $\exprI$, there are no such paths. In addition, if
-$\varII\neq\varI$, we add the variables in the paths to the free occurrences
-of $\varII$ in $\expr$; if instead $\varII=\varI$, only the free occurrences
-of $\varII$ in $\exprI$ count.
+relationship should be quite intuitive when thinking of expressions as trees and
+captured variables as the lambda-bound variables encountered along the paths in
+the trees. The substitution replaces each free occurrence of $\varI$ in $\expr$
+with $\exprI$. Thus, if $\varII$ is free in $\exprI$ we have to add the
+variables in the paths to free occurrences of $\varII$ in $\exprI$ to those in
+the paths to free occurrences of $\varI$ in $\expr$. If $\varII$ is not free in
+$\exprI$, there are no such paths. In addition, if $\varII\neq\varI$, we add the
+variables in the paths to the free occurrences of $\varII$ in $\expr$; if
+instead $\varII=\varI$, only the free occurrences of $\varII$ in $\exprI$ count.
 
 \begin{theorem}\label{thm-cvar-of-esbs}
 {\rm
@@ -383,11 +380,11 @@ of $\varII$ in $\exprI$ count.
 }
 \end{theorem}
 
-If we rename a variable $\varI$ to $\varI'$ in an expression then the
-variables captured at the free occurrences of a third variable $\varII$ in the
-original expression coincide with those captured at the free occurrences of
-$\varII$ in the transformed expression (provided that $\varI'$ is not captured
-in the renaming):
+If we rename a variable $\varI$ to $\varI'$ in an expression then the variables
+captured at the free occurrences of a third variable $\varII$ in the original
+expression coincide with those captured at the free occurrences of $\varII$ in
+the transformed expression (provided that $\varI'$ is not captured in the
+renaming):
 
 \begin{theorem}\label{thm-capt-rename2}
 \[
@@ -446,9 +443,9 @@ Variable renaming does not change free type variables:
 \]
 \end{theorem}
 
-Applying a type substitution $\tsbsmap$ to the result of a variable
-substitution $\esbsO{\expr}$ is like applying $\tsbsmap$ to $\expr$ and
-$\exprI$ and then performing the variable substitution:
+Applying a type substitution $\tsbsmap$ to the result of a variable substitution
+$\esbsO{\expr}$ is like applying $\tsbsmap$ to $\expr$ and $\exprI$ and then
+performing the variable substitution:
 
 \begin{theorem}\label{thm-tsbs-of-esbs}
 \[
@@ -508,8 +505,8 @@ variables from the domain of the substitution):
 \]
 \end{theorem}
 
-If none of the type variables substituted by a type substitution appears in
-the type, expression, or context (element) to which the type substitution is
+If none of the type variables substituted by a type substitution appears in the
+type, expression, or context (element) to which the type substitution is
 applied, then the type, expression, or context (element) is unchanged:
 
 \begin{theorem}\label{thm-tsbs-not-free}
@@ -523,8 +520,8 @@ applied, then the type, expression, or context (element) is unchanged:
 \end{theorem}
 
 If we apply a type substitution $\tsbsmap$ to a type or expression $\tOe$, the
-free type variables that are substituted are replaced by the free type
-variables of the types that replace those type variables:
+free type variables that are substituted are replaced by the free type variables
+of the types that replace those type variables:
 
 \begin{theorem}\label{thm-ftvar-of-tsbs}
 \[
@@ -539,9 +536,9 @@ variables of the types that replace those type variables:
 \end{theorem}
 
 Applying two type substitutions $\tsbsmap$ and $\tsbsmap'$ one after the other
-to a type or expression is like applying $\tsbs{\tsbsmap}{\tsbsmap'}$,
-provided that $\tsbsmap'$ does not substitute type variables that are free in
-the type or expression but are not in the domain of $\tsbsmap$:
+to a type or expression is like applying $\tsbs{\tsbsmap}{\tsbsmap'}$, provided
+that $\tsbsmap'$ does not substitute type variables that are free in the type or
+expression but are not in the domain of $\tsbsmap$:
 
 \begin{theorem}\label{thm-tsbs-tsbs}
 \[
@@ -955,9 +952,9 @@ types, ops, and (type) variables:
 \]
 \end{theorem}
 
-The type of an op declared in a well-formed context is well-formed in the
-prefix of the context that precedes the op, extended with the type variables
-over which the op is polymorphic:
+The type of an op declared in a well-formed context is well-formed in the prefix
+of the context that precedes the op, extended with the type variables over which
+the op is polymorphic:
 
 \begin{theorem}\label{thm-op-type-wf}
 \[
@@ -986,8 +983,8 @@ over which the op is polymorphic:
 %%\end{array}
 %\end{theorem}
 
-An axiom declared in a well-formed context is well-typed (with type $\bool$)
-in the prefix of the context that precedes the axiom, extended with the type
+An axiom declared in a well-formed context is well-typed (with type $\bool$) in
+the prefix of the context that precedes the axiom, extended with the type
 variables over which the axiom is polymorphic:
 
 \begin{theorem}\label{thm-ax-wt}
@@ -998,8 +995,8 @@ variables over which the axiom is polymorphic:
 \end{theorem}
 
 A lemma declared in a well-formed context is a theorem in the prefix of the
-context that precedes the lemma, extended with the type variables over which
-the lemma is polymorphic:
+context that precedes the lemma, extended with the type variables over which the
+lemma is polymorphic:
 
 \begin{theorem}\label{thm-lem-theo}
 \[
@@ -1025,9 +1022,8 @@ A well-formed type variable is declared in the context:
 \]
 \end{theorem}
 
-The type name of a well-formed type instance is declared in the context, with
-an arity that matches the type arguments, and each type argument is
-well-formed:
+The type name of a well-formed type instance is declared in the context, with an
+arity that matches the type arguments, and each type argument is well-formed:
 
 \begin{theorem}\label{thm-tinst-inv}
 \[
@@ -1039,8 +1035,8 @@ well-formed:
 \]
 \end{theorem}
 
-The domain and range types of a well-formed arrow type are well-formed (for
-the range, the context is extended with a variable of the domain type):
+The domain and range types of a well-formed arrow type are well-formed (for the
+range, the context is extended with a variable of the domain type):
 
 \begin{theorem}\label{thm-tarr-inv}
 \[
@@ -1093,8 +1089,8 @@ type and the second expression (argument) has the domain type:
 \]
 \end{theorem}
 
-A well-typed abstraction has an arrow type whose domain is the type of its
-bound variable:
+A well-typed abstraction has an arrow type whose domain is the type of its bound
+variable:
 
 \begin{theorem}\label{thm-abs-arrty}
 \[
@@ -1104,8 +1100,8 @@ bound variable:
 \]
 \end{theorem}
 
-The subtype predicates that appear in (provable) subtype judgements have no
-free variables:
+The subtype predicates that appear in (provable) subtype judgements have no free
+variables:
 
 \begin{theorem}\label{thm-subpred-no-free-vars}
 \[
@@ -1141,9 +1137,9 @@ context are declared before the axiom or lemma:
 %\end{theorem}
 
 All the free type variables in the types and expressions to the right of a
-provable judgement $\jcxdots{\cx}$ are declared in $\cx$, and all the free
-type variables in a context element of a well-formed context are declared
-before the context element:
+provable judgement $\jcxdots{\cx}$ are declared in $\cx$, and all the free type
+variables in a context element of a well-formed context are declared before the
+context element:
 
 \begin{theorem}\label{thm-free-tvar-in-cx}
 \[
@@ -1164,14 +1160,13 @@ before the context element:
 \]
 \end{theorem}
 
-The derivation of a judgement does not depend on the choice of the names for
-the variables in the derivation. So, if we replace a variable declared in the
-context of the judgement with a fresh one\footnote{The adjective ``fresh''
-means that the variable does not occur anywhere in the (judgements that
-comprise the) derivation that is under discussion. This notion could be made
-more formal, but it should be sufficiently clear as stated.} and perform the
-substitution in the rest of the judgement accordingly, the judgement is still
-provable:
+The derivation of a judgement does not depend on the choice of the names for the
+variables in the derivation. So, if we replace a variable declared in the
+context of the judgement with a fresh one\footnote{The adjective ``fresh'' means
+that the variable does not occur anywhere in (the judgements that comprise) the
+derivation that is under discussion. This notion could be made more formal, but
+it should be sufficiently clear as stated.} and perform the substitution in the
+rest of the judgement accordingly, the judgement is still provable:
 
 \begin{theorem}\label{thm-deriv-rename-var}
 \[
@@ -1640,9 +1635,9 @@ including the abbreviations defined in \secref{syntax}:
 %}
 %\end{theorem}
 
-If a type is a subtype of another one, both types are well-formed; in
-addition, the predicate that defines the subtype is well-typed and is indeed a
-predicate over the supertype:
+If a type is a subtype of another one, both types are well-formed; in addition,
+the predicate that defines the subtype is well-typed and is indeed a predicate
+over the supertype:
 
 \begin{theorem}\label{thm-subtyping-wf}
 \[

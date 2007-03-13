@@ -3047,6 +3047,23 @@ The judgement in the consequent of the implication is derived as follows:
 \step{\isty{\cxvI}{\bool}}{\Rtbool, 2}
 \end{derivation}
 
+\Case{\Rstarr}\\
+Let the instance of \Rstarr\ used to derive the judgement in the antecedent of
+the implication be
+\[
+\rruleIII
+ {\issub{\snoc{\cxv}{\vdecO}}{\typ_1}{\tspred}{\typ_2}}
+ {\var'\neq\var''}
+ {\tspred'=\abs{\var'}
+               {\tarr{\typ}{\typ_2}}
+               {\fa{\var''}{\typ}{\app{\tspred}{(\app{\var'}{\var''})}}}}
+ {\issub{\cxvI}{\tarr{\typ}{\typ_1}}{\tspred'}{\tarr{\typ}{\typ_2}}}
+ {0}
+\]
+
+...
+
+
 \Case{\Revar}\\
 If the judgement in the antecedent of the implication is
 $\hastyany{\cxv}{\varI}$, the instance of \Revar\ used to derive the judgement
