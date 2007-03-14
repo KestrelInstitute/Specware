@@ -3047,22 +3047,24 @@ The judgement in the consequent of the implication is derived as follows:
 \step{\isty{\cxvI}{\bool}}{\Rtbool, 2}
 \end{derivation}
 
-\Case{\Rstarr}\\
-Let the instance of \Rstarr\ used to derive the judgement in the antecedent of
-the implication be
-\[
-\rruleIII
- {\issub{\snoc{\cxv}{\vdecO}}{\typ_1}{\tspred}{\typ_2}}
- {\var'\neq\var''}
- {\tspred'=\abs{\var'}
-               {\tarr{\typ}{\typ_2}}
-               {\fa{\var''}{\typ}{\app{\tspred}{(\app{\var'}{\var''})}}}}
- {\issub{\cxvI}{\tarr{\typ}{\typ_1}}{\tspred'}{\tarr{\typ}{\typ_2}}}
- {0}
-\]
-
-...
-
+%\Case{\Rstarr}\\
+%Let the instance of \Rstarr\ used to derive the judgement in the antecedent of
+%the implication be
+%\[
+%\rruleIII
+% {\issub{\snoc{\cxv}{\vdecO}}{\typ_1}{\tspred}{\typ_2}}
+% {\var'\neq\var''}
+% {\tspred'=\abs{\var'}
+%               {\tarr{\typ}{\typ_2}}
+%               {\fa{\var''}{\typ}{\app{\tspred}{(\app{\var'}{\var''})}}}}
+% {\issub{\cxv}{\tarr{\typ}{\typ_1}}{\tspred'}{\tarr{\typ}{\typ_2}}}
+% {0}
+%\]
+%The judgement in the consequent of the implication is derived as follows:
+%\begin{derivation}
+%\step{\issub{\snoc{\cxv}{\vdecO}}{\typ_1}{\tspred}{\typ_2}}{0}
+%...
+%\end{derivation}
 
 \Case{\Revar}\\
 If the judgement in the antecedent of the implication is
@@ -3477,7 +3479,7 @@ By induction on the derivation of the judgement $\jcxdots{\cx}$\ :
 \step{\isty{\cx'}{\tinstO}}{\Rtinst, 1, 4, 5, 7}
 \end{derivation}
 
-\Case{\restrulesbutII{\Rtarr}{\Reabs}}\\
+\Case{\restrulesbutIII{\Rtarr}{\Rstarr}{\Reabs}}\\
 Analogous to \Rtinst: starting with the rule used to derive the judgement
 $\jcxdots{\cx}$, we replace $\cx$ with $\cx'$ in the premises of the rule and
 then we apply the rule to the transformed premises to obtain the conclusion
@@ -3530,6 +3532,11 @@ If $\var\in\cxvar{\cx'}$, pick a fresh variable $\var'$:
 \step{\isty{\snoc{\cx'}{\vdec{\var'}{\typ_1}}}{\typ_2}}{\indhyp, 8, 9, 7}
 \step{\isty{\cx'}{\tarrO}}{\Rtarr, 10}
 \end{derivatioN}
+
+\Case{\Rstarr}
+\begin{derivation}
+\step{...}{...}
+\end{derivation}
 
 \Case{\Reabs}
 \begin{derivation}

@@ -57,6 +57,7 @@
 \newcommand{\restrules}{all other rules}
 \newcommand{\restrulesbut}[1]{all other rules except {#1}}
 \newcommand{\restrulesbutII}[2]{all other rules except {#1} and {#2}}
+\newcommand{\restrulesbutIII}[3]{all other rules except {#1}, {#2}, and {#3}}
 \newcommand{\restkinds}{all other kinds}
 \newcommand{\abb}{abbreviation}
 %\newcommand{\restcases}{all other cases}
@@ -178,16 +179,16 @@
 \newcommand{\true}{\mathsf{true}}
 \newcommand{\false}{\mathsf{false}}
 
-\newcommand{\negaop}{\neg}
-\newcommand{\nega}[1]{\neg\;#1}
+\newcommand{\negaop}{\lnot}
+\newcommand{\nega}[1]{\lnot\;#1}
 \newcommand{\negaO}{\nega{\expr}}
 
-\newcommand{\conjY}{\wedge}
+\newcommand{\conjY}{\land}
 \newcommand{\conj}[2]{#1\conjY#2}
 \newcommand{\conjO}{\conj{\expr_1}{\expr_2}}
 \newcommand{\conjI}[2]{\bigwedge_{#1}#2}
 
-\newcommand{\disjY}{\vee}
+\newcommand{\disjY}{\lor}
 \newcommand{\disj}[2]{#1\disjY#2}
 \newcommand{\disjO}{\disj{\expr_1}{\expr_2}}
 \newcommand{\disjI}[2]{\bigvee_{#1}#2}
