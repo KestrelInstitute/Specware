@@ -465,67 +465,49 @@ MetaSlang qualifying spec
  def equalVarStruct? ((id1,_), (id2,_)) = id1 = id2
 
  def MetaSlang.maybeAndSort (srts, pos) =
-   let compressed_sorts =
+   let non_dup_sorts =
        foldl (fn (srt, pending_srts) ->
-	      case pending_srts of
-		| [] -> [srt]
-		| [pending_srt] ->
-		  (case (sortInnerSort srt, sortInnerSort pending_srt) of
-		     | (Any _ , _)     -> [pending_srt]
-		     | (_,      Any _) -> [srt]
-		     | _ ->
-		       case sortInnerSort srt of
-			 | Any _ -> pending_srts
-			 | _ ->
-			   if exists (fn pending_srt -> equalType? (srt, pending_srt)) pending_srts then
-			     pending_srts
-			   else
-			     pending_srts ++ [srt])
-		| _ ->
-		  if exists (fn pending_srt -> equalType? (srt, pending_srt)) pending_srts then
-		    pending_srts
-		  else
-		    pending_srts ++ [srt])
+                if exists (fn pending_srt -> equalType? (srt, pending_srt)) pending_srts then
+                  pending_srts
+                else
+                  pending_srts ++ [srt])
              []
 	     srts
    in
-   case compressed_sorts of
-     | []    -> Any pos
-     | [srt] -> srt
-     | _     -> And (srts, pos)
+     let compressed_sorts = filter (fn srt -> case srt of | Any _ -> false | _ -> true) non_dup_sorts in
+     case compressed_sorts of
+       | [] -> 
+         (case non_dup_sorts of
+            | []  -> Any pos
+            | [s] -> s
+            | _   -> And (non_dup_sorts, pos))
+       | [srt] -> srt
+       | _     -> And (srts, pos)
 
  def MetaSlang.maybeAndTerm (tms, pos) =
-   let compressed_terms =
+   let non_dup_terms =
        foldl (fn (tm, pending_tms) ->
-	      case pending_tms of
-		| [] -> [tm]
-		| [pending_tm] ->
-		  (case (termInnerTerm tm, termInnerTerm pending_tm) of
-		     | (Any _, _)    -> 
-		       if equalType? (termSort tm, termSort pending_tm) then
-			 [pending_tm]
-		       else
-			 [pending_tm, tm]
-		     | (_,    Any _) -> 
-		       if equalType? (termSort tm, termSort pending_tm) then
-			 [tm]
-		       else
-			 [pending_tm, tm]
-		     | _ ->
-		       if exists (fn pending_tm -> equalTerm? (tm, pending_tm)) pending_tms then
-			 pending_tms
-		       else
-			 pending_tms ++ [tm])
-		| _ ->
-		  if exists (fn pending_tm -> equalTerm? (tm, pending_tm)) pending_tms then
-		    pending_tms
-		  else
-		    pending_tms ++ [tm])
+              if exists (fn pending_tm -> equalTerm? (tm, pending_tm)) pending_tms then
+                pending_tms
+              else
+                case termInnerTerm tm of
+                  | Any _ ->
+                    if exists (fn pending_tm -> equalType? (termSort tm, termSort pending_tm)) pending_tms then
+                      pending_tms
+                    else
+                      pending_tms ++ [tm]
+                  | _ ->
+                    pending_tms ++ [tm])
              []
 	     tms
    in
+     let compressed_terms = filter (fn tm -> case termInnerTerm tm of | Any _ -> false | _ -> true) non_dup_terms in
      case compressed_terms of
-       | []   -> Any pos
+       | [] -> 
+         (case non_dup_terms of
+            | []   -> Any pos
+            | [tm] -> tm
+            | _    -> And (non_dup_terms, pos))
        | [tm] -> tm
        | _    -> And (tms, pos)
 
