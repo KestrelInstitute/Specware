@@ -56,10 +56,10 @@ EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
 MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 
 $BATCH_LISP <<-XXXX
-	#+Allegro (format t "Allegro version%") 
-	#+CMU     (format t "CMU version%") 
-	#+MCL     (format t "OpenMCL version%")
-	#+SBCL    (format t "SBCL version%")
+	#+Allegro (format t "Allegro version~%") 
+	#+CMU     (format t "CMU version~%") 
+	#+MCL     (format t "OpenMCL version~%")
+	#+SBCL    (format t "SBCL version~%")
 	(format t "compiling...~%")
 	(load "$EXIT_ON_ERRORS") 
 	(load "$MEMORY_MANAGEMENT") 
