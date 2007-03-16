@@ -66,7 +66,7 @@
 	       (load ,loader :verbose t))
 	    `(unless (find-package "SPECWARE") 
 	       (defpackage "SPECWARE" (:use "CL")))
-	    `(set (find-symbol "*USING-SLIME-INTERFACE?*" "SPECWARE") t)
+	    `(set (intern "*USING-SLIME-INTERFACE?*" "SPECWARE") t)
             `(swank:start-server ,port-filename :external-format ,encoding))))
 
 ;;; based on slime-repl-return
