@@ -3,7 +3,7 @@ EditFn qualifying
 spec
   import ../Specs/Environment, /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 
-  op findCaseDispatchesOnType(qual: String, id: String, uidStr: String, optGlobalContext: Option GlobalContext)
+  op findCaseDispatchesOnType(qual1: String, id1: String, uidStr: String, optGlobalContext: Option GlobalContext)
        : List (String * (Nat * Nat)) =
     case optGlobalContext of
       | None -> []
@@ -11,15 +11,27 @@ spec
     let unitId = pathStringToCanonicalUID(uidStr,false) in
     case evalPartial globalContext unitId of
       | Some(Spec spc,_,_,_) ->
-        let target_sort = mkBase(Qualified(qual,id),[]) in
+        let target_type = mkBase(Qualified(qual1,id1),[]) in
+        let def matchType? ty =
+              (equivType? spc (target_type, ty))
+               \_or (case ty of
+                   | Base(qid2 as Qualified(qual2,id2),_,_) \_rightarrow
+                     (id1 = id2 \_and (qual1 = qual2 \_or qual1 = UnQualified))
+                     \_or (case AnnSpec.findTheSort(spc,qid2) of
+                         | Some {names,dfn} \_rightarrow matchType? dfn
+                         | None \_rightarrow false)
+                   | Pi(_,s_ty,_)      \_rightarrow matchType? s_ty
+                   | Subsort(s_ty,_,_) \_rightarrow matchType? s_ty
+                   | _ \_rightarrow false)
+        in
         foldriAQualifierMap
           (fn (q, id, info, result) \_rightarrow
            foldSubTerms
              (fn (t,result) \_rightarrow
               case t of
                 | Apply(Lambda _,case_tm, File(file_nm,(line,col,byte),_))
-                    | equivType? spc (target_sort, termSortEnv(spc,case_tm))
-                      \_rightarrow
+                    | matchType?(termSortEnv(spc,case_tm))
+                  \_rightarrow
                   %let _ = toScreen(anyToString(termSortEnv(spc,case_tm))^"\n") in
                   Cons((file_nm,(line,col)), result)
                 | _ \_rightarrow result)
