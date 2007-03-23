@@ -4,6 +4,7 @@ Derived from r1.5 SW4/Languages/SpecCalculus/Semantics/UnitId.sl
 
 SpecCalc qualifying spec
   import ../../Environment
+  import /Library/Unvetted/StringUtilities
 (*
 Given a string (assumed to be a filesystem path), this parses
 the string and attempts to form a canonical unitId for that object.
@@ -27,16 +28,20 @@ in the places they are used at present, no such paths are expected.
   op  pathStringToCanonicalUID : String * Boolean -> UnitId
   def pathStringToCanonicalUID (str,global?) =
     %% Windows SWPATHs can have \'s                       
+    let str :: opt_hash = splitStringAt(str,"#") in
     let str = map (fn #\\ -> #/ | c -> c) str in
     let absoluteString =
       case (explode str) of
         | #/ :: _ -> str
         | c :: #: :: r -> (Char.toString(toUpperCase c)) ^ ":" ^ (implode r)
-        | _ -> (getCurrentDirectory ()) ++ "/" ++ str
+        | _ -> (getCurrentDirectory ()) ^ "/" ^ str
     in
-    let relPath = splitStringAtChar #/ absoluteString in
+    let relPath = splitStringAt(absoluteString,"/") in
+    let relPath = filter (fn s -> s ~= "") relPath in
     {path = if global? then addDevice? relPath else relPath,
-     hashSuffix = None}
+     hashSuffix = case opt_hash of
+                    | [hash_nm] -> Some hash_nm
+                    | _ -> None}
 
 (*
 This is like the above except that in this case the path is relative.
@@ -161,10 +166,10 @@ hash suffix is ignored.
   op  abbreviatedPath: List String -> List String
   def abbreviatedPath path =
     let home = case getEnv "HOME" of
-                | Some str -> splitStringAtChar #/ str
+                | Some str -> splitStringAt(str,"/")
                 | None ->
                case getEnv "HOMEPATH" of
-                | Some str -> splitStringAtChar #/ str
+                | Some str -> splitStringAt(str,"/")
                 | None -> []
     in
     if home = [] then path
@@ -271,6 +276,7 @@ yields \verb+["a", "b", "c"].
 
 The next function will go away.
 *)
+(*
   op  splitStringAtChar : Char -> String -> List String
   def splitStringAtChar char str =
     let def parseCharList chars =
@@ -284,6 +290,7 @@ The next function will go away.
              Cons ((implode taken), parseCharList left)
     in
       parseCharList (explode str)
+*)
 
   op  splitAtChar : Char -> List Char -> List (List Char)
   def splitAtChar char charList =
