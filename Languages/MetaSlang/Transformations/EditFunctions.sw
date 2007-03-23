@@ -70,4 +70,35 @@ spec
           [] spc.ops
       | _ -> []
 
+  op findImportingSpecs(uidStr: String, optGlobalContext: Option GlobalContext): List (String * (Nat * Nat)) =
+    case optGlobalContext of
+      | None -> []
+      | Some globalContext ->
+    let unitId1 = pathStringToCanonicalUID(uidStr,false) in
+    let _ = toScreen(anyToString unitId1 ^ "\n") in
+    foldMap (fn result -> fn unitId -> fn (val,_,depUIDs,_) ->
+             %let _ = toScreen(anyToString depUIDs ^ "\n") in
+	     if member(unitId1,depUIDs)
+               then case val of
+                      | Spec spc \_rightarrow
+                        (let result1 = foldl (fn (el,result) \_rightarrow
+                                               case result of
+                                                 | Some _ \_rightarrow result
+                                                 | None \_rightarrow
+                                               case el of
+                                                 | Import((_,pos),_,_) \_rightarrow
+                                                   Some pos
+                                                 | _ \_rightarrow result)
+                                        None spc.elements
+                        in
+                         let _ = toScreen(anyToString(result1)^"\n\n") in
+                        case result1 of
+                          | Some( File(file_nm,(line,col,byte),_)) \_rightarrow
+                            Cons((file_nm,(line,0)), result)
+                          | _ \_rightarrow result)
+                      | _ \_rightarrow result
+               else result)
+        []
+        globalContext
+
 endspec
