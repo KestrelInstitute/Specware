@@ -125,7 +125,7 @@ spec
     let spc = poly2mono(spc,false) in
     let spc = addEqOpsToSpec spc in
     %let _ = printSpecWithSortsToTerminal spc in
-    let spc = lambdaLift spc in
+    let spc = lambdaLift (spc,true) in
     let (spc,constrOps) = addSortConstructorsToSpec spc in
     let spc = conformOpDecls spc in
     let spc = adjustAppl spc in
