@@ -272,6 +272,10 @@ accepted in lieu of prompting."
   (define-key map "\C-c%"    'extract-sexp)
   (define-key map "\C-c;"    'comment-region)
 
+  (define-key map "\C-cfi"   'sw:find-importing-specs)
+  (define-key map "\C-cfc"   'sw:find-case-dispatch-on-type)
+  (define-key map "\C-cfr"   'sw:find-op-references)
+
   (define-key map "\C-c\C-i" 'sw:convert-spec-to-isa-thy)
 
 					          ; Franz binding
