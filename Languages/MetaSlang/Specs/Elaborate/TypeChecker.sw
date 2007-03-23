@@ -732,7 +732,7 @@ TypeChecker qualifying spec
 
           def elaborateDecl env ((id, srt), bdy) = 
 	    let terms = findVarOrOps (env, id, pos) in
-	    let srt = termSort (hd terms) in
+	    let srt = checkSort(env, srt) in
 	    let bdy = single_pass_elaborate_term (env, bdy, srt) in
 	    ((id, srt), bdy)
 	in
@@ -751,7 +751,7 @@ TypeChecker qualifying spec
 	       attatched to alpha.
 	       *)
 	    let (pat, bdy) = 
-	        case pat:MS.Pattern of
+	        case pat of
 		  | SortedPat (pat, srt, pos) -> 
 		    (pat, (SortedTerm (bdy, srt, pos)):MS.Term)
 		  | _ -> (pat, bdy)
