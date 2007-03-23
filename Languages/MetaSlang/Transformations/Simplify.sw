@@ -163,6 +163,13 @@ spec
  def tupleInstantiate spc (term) = 
      let
 	def elimTuple(zId,srt,fields,body) =
+          let (zId,body) =
+              if member(zId,boundVarNamesIn body)
+                then
+                  let new_zid = zId^"__sb" in  % Avoid variable capture!
+                  (new_zid, substitute(body,[((zId,srt),mkVar(new_zid,srt))]))
+                else (zId,body)
+          in
 	  let
 	      def mkField(id,srt) = 
 		  let name = zId^"_field"^id in
@@ -417,12 +424,15 @@ spec
       | Lambda _ \_rightarrow true
       | _ -> simpleTerm term
 
- def simplify spc term = mapSubTerms(simplifyOne spc) term
-
+ def simplify spc term =
+   mapSubTerms(simplifyOne spc) term
 
  op  simplifySpec: Spec -> Spec
  def simplifySpec(spc) = 
-     mapSpec (simplify spc,fn s -> s,fn p -> p) spc
+   % let _ = toScreen("Before:\n" ^ printSpec spc ^ "\n\n") in
+   let simp_spc = mapSpec (simplify spc,fn s -> s,fn p -> p) spc in
+   % let _ = toScreen("After:\n" ^ printSpec simp_spc ^ "\n\n") in
+   simp_spc
     
 endspec
 
