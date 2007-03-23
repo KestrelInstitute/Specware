@@ -1,8 +1,18 @@
 SpecNorm qualifying spec
   import /Languages/MetaSlang/Transformations/DefToAxiom
+  import Coercions
   
-  op  removeSubSorts: Spec \_rightarrow Spec
-  def removeSubSorts spc =
+  op  removeSubSorts: Spec \_rightarrow TypeCoercionTable \_rightarrow Spec
+  def removeSubSorts spc coercions =
+    %% Remove subsort definition for directly-implemented subsorts
+    let spc = spc << {sorts = mapSortInfos
+                                (fn info \_rightarrow
+                                 let qid = primarySortName info in
+                                 if exists (\_lambda tb \_rightarrow tb.subtype = qid) coercions
+                                   then info << {dfn = And([],noPos)}
+                                   else info)
+                                spc.sorts}
+    in                           
     let spc = spc << {elements
 		       = foldr (fn (el,r) \_rightarrow
 				case el of
@@ -32,8 +42,8 @@ SpecNorm qualifying spec
 		   case t of
 		    | Bind(bndr,bndVars,bod,a) \_rightarrow
 		      let bndVarsPred = foldl (fn ((vn,srt), res) ->
-					       Utilities.mkAnd(srtPred(spc, srt, mkVar (vn,srt)),
-							       res))
+                                               Utilities.mkAnd(srtPred(spc, srt, mkVar (vn,srt)),
+                                                               res))
 					  (mkTrue()) bndVars
 		      in
 		      %let _ = toScreen (printTerm bndVarsPred) in
