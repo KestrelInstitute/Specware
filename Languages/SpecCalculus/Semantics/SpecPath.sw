@@ -42,7 +42,7 @@ variable, then it will appear twice is the list of UnitId's we generate.
     let strings =
       case getEnv "SWPATH" of
         | Some str ->
-          let paths = splitStringAtChar specPathSeparator str in
+          let paths = splitStringAt(str, specPathSeparator) in
           paths
             ++ (if specware4Dirs = [] or List.member(hd specware4Dirs,paths)
                  then [] else specware4Dirs)
@@ -50,11 +50,9 @@ variable, then it will appear twice is the list of UnitId's we generate.
     in
       mapM topPathToCanonicalUID strings
 
- op specPathSeparator: Char
- def specPathSeparator = (if msWindowsSystem? then #; else #:)
+ op specPathSeparator: String = (if msWindowsSystem? then ";" else ":")
 
- op checkSpecPathsExistence?: Boolean
- def checkSpecPathsExistence? = true
+ op checkSpecPathsExistence?: Boolean = true
 
  op checkSpecPathsExistence: String -> Boolean
  def checkSpecPathsExistence str =
@@ -62,7 +60,7 @@ variable, then it will appear twice is the list of UnitId's we generate.
      then all (fn dir -> if fileExists? dir
 	                  then true
 			  else (warn("Directory does not exist: " ^ dir); false))
-            (splitStringAtChar specPathSeparator str)
+            (splitStringAt(str, specPathSeparator))
      else true
 
 endspec

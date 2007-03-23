@@ -1173,7 +1173,7 @@ def packageNameToPath(s) =
 
 op packageNameToJavaName: String -> JavaName
 def packageNameToJavaName(s) =
-  let l = rev(splitStringAtChar #. s) in
+  let l = rev(splitStringAt(s, ".")) in
   case l of
     | [] -> ([],"")
     | l::path -> (rev(path),l)
