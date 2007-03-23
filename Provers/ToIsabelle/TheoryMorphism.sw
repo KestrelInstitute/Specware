@@ -4,8 +4,9 @@ IsaTermPrinter qualifying spec
  import /Languages/SpecCalculus/Semantics/Value
  import /Library/Unvetted/StringUtilities
  import /Library/Structures/Data/Maps/SimpleAsAlist
-
- type OpTransInfo = String * Option(Associativity * Nat) * Boolean
+                 (* op       infix info                    curried   reversed *)
+ type OpTransInfo = String * Option(Associativity * Nat) * Boolean * Boolean
+                   (* type     coercion fns              Overloaded ops *)
  type TypeTransInfo = String * Option(String * String) * List String
 
  type OpMap   = Map.Map (QualifiedId, OpTransInfo)
@@ -29,6 +30,8 @@ IsaTermPrinter qualifying spec
          (case isaThyMorphismPragma prag_str of
 	    | None \_rightarrow result
 	    | Some (trans_string, import_strings) \_rightarrow
+              %% Only use import_strings from top-level specs as others will be imported
+              let import_strings = if member(el,spc.elements) then import_strings else [] in
 	      let result = result << {thy_imports = removeDuplicates(import_strings ++ result.thy_imports)} in
 	      parseMorphMap(trans_string,result))
        | _ \_rightarrow result)
@@ -89,20 +92,23 @@ IsaTermPrinter qualifying spec
               parseOverloadedOps(rhs))
        def processRhsOp rhs =
 	 case removeEmpty(splitStringAt(rhs," ")) of
-	   | [] \_rightarrow (" ", None, false)
-	   | [isaSym] \_rightarrow (isaSym, None, false)
+	   | [] \_rightarrow (" ", None, false, false)
+	   | [isaSym] \_rightarrow (isaSym, None, false, false)
 	   | isaSym :: r \_rightarrow
 	     (case r of
-	       | "curried"::_ \_rightarrow (isaSym, None, true)
-	       | ["Left",ns] \_rightarrow (isaSym, Some(Left,stringToNat ns), true)
-	       | ["Right",ns] \_rightarrow (isaSym, Some(Right,stringToNat ns), true))
+	       | "curried"::rst \_rightarrow (isaSym, None, true, member("reversed",rst))
+	       | "reversed"::rst \_rightarrow (isaSym, None, member("curried",rst), true)
+	       | "Left"::ns::rst \_rightarrow (isaSym, Some(Left,stringToNat ns),
+                                    true, member("reversed",rst))
+	       | "Right"::ns::rst \_rightarrow (isaSym, Some(Right,stringToNat ns),
+                                      true, member("reversed",rst)))
        def processLine(lhs,rhs,result) =
 	 let (type?,qid) = processLhs lhs in
 	 if type?
 	   then let (isaSym,coercions,overloadedOps) = processRhsType rhs in
 	        result << {type_map = update(result.type_map,qid,(isaSym,coercions,overloadedOps))}
-	   else let (isaSym,fixity,curried) = processRhsOp rhs in
-	        result << {op_map = update(result.op_map,qid,(isaSym,fixity,curried))}
+	   else let (isaSym,fixity,curried,reversed) = processRhsOp rhs in
+	        result << {op_map = update(result.op_map,qid,(isaSym,fixity,curried,reversed))}
    in	     
    foldl parseLine result lines
 
