@@ -393,6 +393,20 @@ Utilities qualifying spec
    let _ = appSort(fn _ -> (),vr,fn _ -> ()) srt in
    ! vars
 
+ op boundVars(t: MS.Term): List Var =
+   case t of
+     | Let(decls, _, _) -> flatten (map (fn (pat, _) -> patternVars pat) decls)
+     | LetRec (decls, _, _) ->  map (fn (v, _) -> v) decls
+     | Lambda (match, _) -> flatten (map (fn (pat,_,_) -> patternVars pat) match)
+     | Bind (_, bound, _, _) -> bound
+     | _ -> []
+
+ op boundVarsIn(t: MS.Term): List Var =
+   removeDuplicateVars(foldSubTerms (fn (t,r) -> boundVars t ++ r) [] t)
+
+ op boundVarNamesIn(t: MS.Term): List Id =
+   map (fn (vn,_) -> vn) (boundVarsIn t)
+
  % This implementation of substitution 
  % completely ignores free variables in sorts.
  %
@@ -811,6 +825,7 @@ Utilities qualifying spec
 	       | QuotientPat(p,_,_) -> loopP(p,vs)
 	       | AliasPat(p1,p2,_) -> loopP(p1,loopP(p2,vs))
 	       | RestrictedPat(p,_,_) -> loopP(p,vs)
+               | SortedPat(p,_,_) -> loopP(p,vs)
 	       | _ -> vs
      in
      loopP(p,[])
