@@ -159,7 +159,7 @@ SpecCalc qualifying spec
 					         %% sameSCTerm? (tm, dom_spec_term)  ||
 						  spc = dom_spec 
 					       | _ -> false)
-		                            import_elts 
+		                            spc.elements 
 			then
 			  Import ((Subst (tm, sm_tm), noPos),
 				  spc, 
