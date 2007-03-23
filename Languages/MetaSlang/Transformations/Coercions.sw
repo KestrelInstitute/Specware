@@ -183,4 +183,9 @@ spec
       | Fun(Nat _,_,_) \_rightarrow true
       | _ \_rightarrow false
 
+  op directlyImplementedSubsort?(ty: Sort, coercions: TypeCoercionTable): Boolean =
+    case ty of
+      | Base(qid,_,_) \_rightarrow exists (\_lambda tb \_rightarrow tb.subtype = qid) coercions
+      | _ -> false
+
 endspec
