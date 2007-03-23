@@ -135,28 +135,17 @@ spec
  def ??(x) = x
 
 
- op |- infixl 7 :    
-      (TypeCheckConditions * Gamma) * 
-       (MS.Term * Sort) -> TypeCheckConditions
+ op |- infixl 7 : (TypeCheckConditions * Gamma) * (MS.Term * Sort) -> TypeCheckConditions
 
- op <= : TypeCheckConditions * Gamma * MS.Term * Sort * Sort -> 
-	 TypeCheckConditions
+ op <= : TypeCheckConditions * Gamma * MS.Term * Sort * Sort -> TypeCheckConditions
 
- op getSpec        : Gamma -> Spec
-% op inferType  : Spec * MS.Term -> Sort
-% op domain     : Spec * Sort -> Sort
-% op range      : Spec * Sort -> Sort
+ op getSpec    : Gamma -> Spec
  op unfoldBase : Gamma * Sort -> Sort
 
  def getSpec (_,_,e,_,_,_,_) = e
 
  def unfoldBase((_,_,spc,_,_,_,_),tau) = 
      Utilities.unfoldBase(spc,tau)
-
-% def arrow = SpecEnvironment.arrow
-% def domain = SpecEnvironment.domain
-% def range = SpecEnvironment.range
-% def inferType = SpecEnvironment.inferType
 
  op  mkConjecture: QualifiedId * TyVars * MS.Term -> SpecElement
  def mkConjecture(qid,tvs,fm) =
@@ -841,94 +830,92 @@ spec
    let gamma0 = fn tvs -> fn tau -> fn qid -> fn nm -> ([], tvs, spc, qid, nm, tau, Ref names) in
    let tcc = ([],empty) in
    let (tccs,claimNames) =
-       foldl (fn (el,tcc) ->
+       foldl (fn (el,tcc as (tccs,claimNames)) ->
 	      let (tccs,claimNames) =
-		  case el of
-                   | Op (qid as Qualified(q, id), true) -> % true means decl includes def
-		     (case findTheOp(spc,qid) of
-			| Some opinfo ->
-			  foldr (fn (dfn, tcc) ->
-				 let (tvs, tau, term) = unpackTerm dfn in
-				 let usedNames = addLocalVars (term, StringSet.empty) in
-				 %let term = etaExpand (spc, usedNames, tau, term) in
-				 let term = renameTerm (emptyContext ()) term in 
-				 let taus = case tau of
-					      | And (srts, _) -> srts
-					      | _ -> [tau]
-				 in
-				   foldr (fn (tau, tcc) ->
-					  (tcc, 
-					   gamma0 
-					   tvs
-					   %% Was unfoldStripSort but that cause infinite recursion.
-					   %% Is stripSubsorts sufficient (or necessary)?
-					   (Some (stripSubsorts(spc, tau)))
-					   (Some (qid, (curriedParams term).1))
-					   (Qualified (q, id ^ "_Obligation")))
-					   |- 
-					   term ?? tau)
-				     tcc
-				     taus)
-			    tcc 
-			    (opInfoDefs opinfo))
-		   | OpDef (qid as Qualified(q, id)) ->
-		     (case findTheOp(spc,qid) of
-			| Some opinfo ->
-			  foldr (fn (dfn, tcc) ->
-				 let (tvs, tau, term) = unpackTerm dfn in
-				 let usedNames = addLocalVars (term, StringSet.empty) in
-				 %let term = etaExpand (spc, usedNames, tau, term) in
-				 let term = renameTerm (emptyContext ()) term in 
-				 let taus = case tau of
-					      | And (srts, _) -> srts
-					      | _ -> [tau]
-				 in
-				   foldr (fn (tau, tcc) ->
-					  (tcc, 
-					   gamma0 
-					   tvs
-					   %% Was unfoldStripSort but that cause infinite recursion.
-					   %% Is stripSubsorts sufficient (or necessary)?
-					   (Some (stripSubsorts(spc, tau)))
-					   (Some (qid, (curriedParams term).1))
-					   (Qualified (q, id ^ "_Obligation")))
-					   |- 
-					   term ?? tau)
-				     tcc
-				     taus)
-			    tcc 
-			    (opInfoDefs opinfo))
-		   | SortDef qid ->
-		     (case findTheSort(spc,qid) of
-			| Some sortinfo ->
-			  let quotientRelations: Ref(List MS.Term) = Ref [] in
-			  let _ = List.app (fn srt ->
-				       appSort (fn _ -> (), 
-						fn s ->
-						case s of
-						  | Quotient(_,r,_) ->
-						    if List.exists (fn rx -> equivTerm? spc (r,rx))
-							 (!quotientRelations) then ()
-						    else 
-						    let _ = (quotientRelations := Cons(r,!quotientRelations)) in 
-						    ()
-						  | _ -> (),
-						fn _ -> ())
-					 srt)
-				    (sortInfoDefs sortinfo)
-			  in
-			  foldr (fn (r,(tccs,names)) -> (equivalenceConjectures(r,spc) ++ tccs,names))
-			    tcc 
-			    (!quotientRelations))
-		   | Property(_,pname as Qualified (q, id),tvs,fm) ->
-		     let fm = renameTerm (emptyContext()) fm in
-		     (tcc, gamma0 tvs None None (mkQualifiedId (q, (id^"_Obligation"))))
-		     |-
-		     fm ?? boolSort
-		   | _ -> tcc
+                case el of
+                 | Op (qid as Qualified(q, id), true) -> % true means decl includes def
+                   (case findTheOp(spc,qid) of
+                      | Some opinfo ->
+                        let (new_tccs,claimNames) = 
+                            foldr (fn (dfn, tcc) ->
+                                   let (tvs, tau, term) = unpackTerm dfn in
+                                   let usedNames = addLocalVars (term, StringSet.empty) in
+                                   %let term = etaExpand (spc, usedNames, tau, term) in
+                                   let term = renameTerm (emptyContext ()) term in 
+                                   let taus = case tau of
+                                                | And (srts, _) -> srts
+                                                | _ -> [tau]
+                                   in
+                                     foldr (fn (tau, tcc) ->
+                                            (tcc, gamma0 tvs
+                                                  %% Was unfoldStripSort but that cause infinite recursion.
+                                                  %% Is stripSubsorts sufficient (or necessary)?
+                                                    (Some (stripSubsorts(spc, tau)))
+                                                    (Some (qid, (curriedParams term).1))
+                                                    (Qualified (q, id ^ "_Obligation")))
+                                            |- term ?? tau)
+                                       tcc taus)
+                              ([],claimNames) 
+                              (opInfoDefs opinfo)
+                         in
+                         if new_tccs = [] then tcc
+                           else       % Split Op into decl and def
+                             ([OpDef(qid)] ++ new_tccs ++ [Op(qid,false)] ++ tcc.1, claimNames))
+                 | OpDef (qid as Qualified(q, id)) ->
+                   (case findTheOp(spc,qid) of
+                      | Some opinfo ->
+                        foldr (fn (dfn, tcc) ->
+                               let (tvs, tau, term) = unpackTerm dfn in
+                               let usedNames = addLocalVars (term, StringSet.empty) in
+                               %let term = etaExpand (spc, usedNames, tau, term) in
+                               let term = renameTerm (emptyContext ()) term in 
+                               let taus = case tau of
+                                            | And (srts, _) -> srts
+                                            | _ -> [tau]
+                               in
+                                 foldr (fn (tau, tcc) ->
+                                        (tcc, gamma0 tvs
+                                              %% Was unfoldStripSort but that cause infinite recursion.
+                                              %% Is stripSubsorts sufficient (or necessary)?
+                                                (Some (stripSubsorts(spc, tau)))
+                                                (Some (qid, (curriedParams term).1))
+                                                (Qualified (q, id ^ "_Obligation")))
+                                        |- term ?? tau)
+                                   tcc taus)
+                          tcc 
+                          (opInfoDefs opinfo))
+                 | SortDef qid ->
+                   (case findTheSort(spc,qid) of
+                      | Some sortinfo ->
+                        let quotientRelations: Ref(List MS.Term) = Ref [] in
+                        let _ = app (fn srt ->
+                                     appSort (fn _ -> (), 
+                                              fn s ->
+                                              case s of
+                                                | Quotient(_,r,_) ->
+                                                  if List.exists (fn rx -> equivTerm? spc (r,rx))
+                                                       (!quotientRelations) then ()
+                                                  else 
+                                                  let _ = (quotientRelations := Cons(r,!quotientRelations)) in 
+                                                  ()
+                                                | _ -> (),
+                                              fn _ -> ())
+                                       srt)
+                                  (sortInfoDefs sortinfo)
+                        in
+                        foldr (fn (r,(tccs,names)) -> (equivalenceConjectures(r,spc) ++ tccs,names))
+                          tcc 
+                          (!quotientRelations))
+                 | Property(_,pname as Qualified (q, id),tvs,fm) ->
+                   let fm = renameTerm (emptyContext()) fm in
+                   (tcc, gamma0 tvs None None (mkQualifiedId (q, (id^"_Obligation"))))
+                   |- fm ?? boolSort
+                 | _ -> tcc
 	      in
-	      let tcc = (Cons(el,tccs),claimNames) in
-	      tcc)
+              case (el,tccs) of
+                | (Op(qid1,true),(OpDef(qid2)):: _) | qid1 = qid2 ->   % Split Op(qid,true)
+                  (tccs, claimNames)
+                | _ -> (Cons(el,tccs), claimNames))
          tcc spc.elements
      in			       
        (rev tccs,claimNames)
@@ -939,7 +926,7 @@ spec
 		    noPos)
 
  def makeTypeCheckObligationSpec (spc) =
-   %let spc = lambdaLift(instantiateHOFns(spc)) in
+   %let spc = lambdaLift(instantiateHOFns(spc),false) in
    case getOptSpec (Some "/Library/Base/WFO") of
      | None -> fail "Error in processing /Library/Base/WFO"
      | Some wfoSpec ->
