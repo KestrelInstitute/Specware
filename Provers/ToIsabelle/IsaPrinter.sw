@@ -16,9 +16,9 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Transformations/Coercions
  import /Languages/MetaSlang/Transformations/LambdaLift
 
- def addObligations? = true
- def lambdaLift?     = true
- op simplify?: Boolean = false
+ op addObligations?: Boolean = true
+ op lambdaLift?: Boolean     = true
+ op simplify?: Boolean       = true
 
  type Pretty = PrettyPrint.Pretty
 
@@ -237,7 +237,7 @@ IsaTermPrinter qualifying spec
   %% --------------------------------------------------------------------------------
   %% Specs
   %% --------------------------------------------------------------------------------
-  
+(*  
   op  printSpec: Spec \_rightarrow ()
   def printSpec spc =
     let thy_nm = case uidStringPairForValue (Spec spc) of
@@ -250,14 +250,15 @@ IsaTermPrinter qualifying spec
 				  spec? = Some spc,
 				  trans_table = thyMorphismMaps spc}
 		            spc))
+*)
 
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
-    % let _ = toScreen("1:\n"^printSpec spc^"\n") in
+    % let _ = toScreen("0:\n"^printSpec spc^"\n") in
     let trans_table = thyMorphismMaps spc in
     let c = c << {spec? = Some spc, trans_table = trans_table} in
     let spc = if lambdaLift?
-               then lambdaLift spc
+               then lambdaLift(spc,false)
 	       else spc
     in
     let spc = if simplify?
@@ -270,7 +271,7 @@ IsaTermPrinter qualifying spec
     in
     let spc = normalizeTypes spc in
     let coercions = makeCoercionTable(trans_table, spc) in   % before removeSubSorts!
-    let spc = removeSubSorts spc in
+    let spc = removeSubSorts spc coercions in
     let spc = addCoercions coercions spc in
     prLinesCat 0 [[prString "theory ", prString c.thy_name],
 		  [prString "imports ", ppImports c spc.elements],
@@ -327,14 +328,27 @@ IsaTermPrinter qualifying spec
 
   op  ppImports: Context \_rightarrow SpecElements \_rightarrow Pretty
   def ppImports c elems =
-    case mapPartial (\_lambda el \_rightarrow
+    let imports_from_thy_morphism = thyMorphismImports c in
+    let explicit_imports =
+        mapPartial (\_lambda el \_rightarrow
 		     case el of
 		       | Import(_,im_sp,_) \_rightarrow Some (ppImport c im_sp)
 		       | _ \_rightarrow None)
-           elems of
+           elems
+    in case explicit_imports ++ imports_from_thy_morphism of
       | [] \_rightarrow prString baseSpecName
       | imports \_rightarrow prConcat(addSeparator (prString " ") imports)
- 
+
+  op thyMorphismImports (c:Context): List Pretty =
+    map prString c.trans_table.thy_imports
+
+  op firstTypeDef (elems:SpecElements): Option QualifiedId =
+    case elems of
+      | [] \_rightarrow None
+      | (Sort type_id) :: _ \_rightarrow Some type_id
+      | (SortDef type_id) :: _ \_rightarrow Some type_id
+      | _ :: r \_rightarrow firstTypeDef r
+
   op  ppImport: Context \_rightarrow Spec \_rightarrow Pretty
   def ppImport c spc =
     case uidStringPairForValue (Spec spc) of
@@ -549,7 +563,7 @@ IsaTermPrinter qualifying spec
                        case assoc of
                          | Left  \_rightarrow prString "infixl \""
                          | Right \_rightarrow prString "infixr \"",
-                       ppInfixId (mainId),
+                       ppInfixDefId (mainId),
                        prString "\" ",
                        prString (toString (prec + precNumFudge)),
                        prString ")"]
@@ -843,7 +857,7 @@ IsaTermPrinter qualifying spec
 	        
     in
     case term of
-      | Apply (trm1, trm2 as Record ([(_, t1), (_, t2)], _), _) ->
+      | Apply (trm1, Record ([(id1, t1), (id2, t2)], a), _) ->
 	let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
 	      enclose?(encl?,
 		       prLinearCat (if same? then -2 else 2)
@@ -852,17 +866,19 @@ IsaTermPrinter qualifying spec
 	in
         let fx = termFixity c trm1 in
         %let _ = toScreen(anyToString trm1 ^ "\n" ^ anyToString fx ^ "\n") in
+        let (t1,t2) = if fx.4 then (t2,t1) else (t1,t2) in   % Reverse args
 	(case (parentTerm, fx) of
-	   | (_, (None, Nonfix, false)) -> prApply (trm1, trm2)
-	   | (_, (Some pr_op, Nonfix, true)) \_rightarrow
+	   | (_, (None, Nonfix, false, _)) ->
+             prApply (trm1, Record([(id1, t1), (id2, t2)], a))
+	   | (_, (Some pr_op, Nonfix, true, _)) \_rightarrow
 	     enclose?(parentTerm ~= Top,
 		      prLinearCat 2 [[pr_op,prSpace],
 				     [ppTerm c Nonfix t1,prSpace,ppTerm c Nonfix t2]])
-	   | (Nonfix, (Some pr_op, Infix (a, p), _)) ->
+	   | (Nonfix, (Some pr_op, Infix (a, p), _, _)) ->
 	     prInfix (Infix (Left, p), Infix (Right, p), true, false, t1, pr_op, t2)
-	   | (Top,    (Some pr_op, Infix (a, p), _)) ->
+	   | (Top,    (Some pr_op, Infix (a, p), _, _)) ->
 	     prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
-	   | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _)) ->
+	   | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) ->
 	     if p1 = p2
 	       then prInfix (Infix (Left, p2), Infix (Right, p2), a1 \_noteq a2, a1=a2, t1, pr_op, t2)
 	       else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2))
@@ -907,7 +923,7 @@ IsaTermPrinter qualifying spec
 			       [ppTerm c Top term]])
       | Let (decls,term,_) \_rightarrow
 	let def ppDecl (pattern,term) =
-	      prBreakCat 2 [[ppPattern c pattern,
+	      prBreakCat 2 [[ppPattern c pattern (Some ""),
 			     prSpace],
 			    [prString "= ",
 			     ppTerm c Top term]]
@@ -933,7 +949,7 @@ IsaTermPrinter qualifying spec
       | Fun (fun,ty,_) \_rightarrow ppFun c fun
       | Lambda ([(pattern,_,term)],_) \_rightarrow
         prBreakCat 2 [[lengthString(2, "\\<lambda> "),
-		       ppPattern c pattern,
+		       ppPattern c pattern (Some ""),
 		       prString ". "],
 		      [ppTerm c Top term]]
       | Lambda (match,_) \_rightarrow ppMatch c match
@@ -1025,19 +1041,19 @@ IsaTermPrinter qualifying spec
   op  ppMatch : Context \_rightarrow Match \_rightarrow Pretty
   def ppMatch c cases =
     let def ppCase (pattern,_,term) =
-          prBreakCat 0 [[ppPattern c pattern,
+          prBreakCat 0 [[ppPattern c pattern (Some ""),
 			 lengthString(3, " \\<Rightarrow> ")],
 			[ppTerm c Top term]]
     in
       (prSep (-3) blockLinear (prString " | ") (map ppCase cases))
 
-  op  ppPattern : Context \_rightarrow Pattern \_rightarrow Pretty
-  def ppPattern c pattern = 
+  op  ppPattern : Context \_rightarrow Pattern \_rightarrow Option String \_rightarrow Pretty
+  def ppPattern c pattern wildstr = 
     case pattern of
       | AliasPat (pat1,pat2,_) \_rightarrow 
-        prBreak 0 [ppPattern c pat1,
+        prBreak 0 [ppPattern c pat1 wildstr,
 		   prString " as ",
-		   ppPattern c pat2]
+		   ppPattern c pat2 wildstr]
       | VarPat (v,_) \_rightarrow ppVarWithoutSort v
       | EmbedPat (constr,pat,ty,_) \_rightarrow
         prBreak 0 [prString constr,
@@ -1050,14 +1066,14 @@ IsaTermPrinter qualifying spec
 		       prBreak 2 [prSpace,
 				  prPostSep 2 blockFill prSpace
 				    (map (\_lambda p \_rightarrow enclose?(\_not(isSimplePattern? p),
-							 ppPattern c p))
+							 ppPattern c p wildstr))
 				     (patternToList pat))]
-		     | _ \_rightarrow prConcat [prSpace, ppPattern c pat]]
+		     | _ \_rightarrow prConcat [prSpace, ppPattern c pat wildstr]]
       | RecordPat (fields,_) \_rightarrow
 	(case fields of
 	  | [] \_rightarrow prString "()"
 	  | ("1",_)::_ \_rightarrow
-	    let def ppField (_,pat) = ppPattern c pat in
+	    let def ppField (idstr,pat) = ppPattern c pat (extendWild wildstr idstr) in
 	    prConcat [prString "(",
 		      prPostSep 0 blockFill (prString ",") (map ppField fields),
 		      prString ")"]
@@ -1065,19 +1081,22 @@ IsaTermPrinter qualifying spec
 	    let def ppField (x,pat) =
 		  prConcat [prString x,
 			    prString "=",
-			    ppPattern c pat]
+			    ppPattern c pat (extendWild wildstr x)]
 	    in
 	    prConcat [prString "{",
 		      prPostSep 0 blockLinear (prString ",") (map ppField fields),
 		      prString "}"])
-      | WildPat (ty,_) \_rightarrow prString "_"
+      | WildPat (ty,_) \_rightarrow
+        (case wildstr of
+           | Some str -> prString("ignore"^str)
+           | None -> prString "_")
       | StringPat (str,_) \_rightarrow prString ("''" ^ str ^ "''")
       | BoolPat (b,_) \_rightarrow ppBoolean b
       | CharPat (chr,_) \_rightarrow prString (Char.toString chr)
       | NatPat (int,_) \_rightarrow prString (Nat.toString int)      
       | QuotientPat (pat,qid,_) \_rightarrow 
         prBreak 0 [prString ("(quotient[" ^ toString qid ^ "] "),
-                   ppPattern c pat,
+                   ppPattern c pat wildstr,
                    prString ")"]
       | RestrictedPat (pat,term,_) \_rightarrow 
 %        (case pat of
@@ -1085,7 +1104,7 @@ IsaTermPrinter qualifying spec
 %	     (case fields of
 %	       | [] \_rightarrow prBreak 0 [prString "() | ",ppTerm c term]
 %	       | ("1",_)::_ \_rightarrow
-%		   let def ppField (_,pat) = ppPattern c pat in
+%		   let def ppField (_,pat) = ppPattern c pat wildstr in
 %		   prConcat [
 %		     prString "(",
 %		     prSep (prString ",") (map ppField fields),
@@ -1108,10 +1127,10 @@ IsaTermPrinter qualifying spec
 %		     prString "}"
 %		   ])
 %	       | _ \_rightarrow
-	    prBreak 0 [ppPattern c pat,
-			prString " | ",
-			ppTerm c Top term] %)
-      | SortedPat (pat,ty,_) \_rightarrow ppPattern c pat
+	    prBreak 0 [ppPattern c pat wildstr,
+                       prString " | ",
+                       ppTerm c Top term] %)
+      | SortedPat (pat,ty,_) \_rightarrow ppPattern c pat wildstr
       | mystery \_rightarrow fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
 
   op  multiArgConstructor?: Id * Sort * Spec \_rightarrow Boolean
@@ -1128,6 +1147,11 @@ IsaTermPrinter qualifying spec
 		       | Some arg_ty \_rightarrow id = constrId \_and product?(arg_ty))
 	       fields)
       | _ \_rightarrow false
+
+  op  extendWild (wildstr: Option String) (str: String): Option String =
+     case wildstr of
+       | Some s -> Some (s^str)
+       | None -> None
 
   op  sortDef: QualifiedId * Spec \_rightarrow Sort
   def sortDef(qid,spc) =
@@ -1198,7 +1222,7 @@ IsaTermPrinter qualifying spec
   op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
   def ppOpQualifiedId c qid =
     case specialOpInfo c qid of
-      | Some(s,_,_) \_rightarrow prString s
+      | Some(s,_,_,_) \_rightarrow prString s
       | None \_rightarrow ppQualifiedId qid
 
   op  ppTypeQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
@@ -1371,32 +1395,32 @@ IsaTermPrinter qualifying spec
      | Infix _ \_rightarrow true
      | _ \_rightarrow false
 
- op  termFixity: Context \_rightarrow MS.Term \_rightarrow Option Pretty * Fixity * Boolean
+ op  termFixity: Context \_rightarrow MS.Term \_rightarrow Option Pretty * Fixity * Boolean * Boolean
  def termFixity c term = 
    case term of
      | Fun (termOp, srt, _) -> 
        (case termOp of
 	  | Op (id, fixity) ->
 	    (case specialOpInfo c id of
-	       | Some(isa_id,fix,curried) \_rightarrow
+	       | Some(isa_id,fix,curried,reversed) \_rightarrow
 	         (case fix of
-		    | Some f \_rightarrow (Some(prString isa_id), Infix f, curried)
-		    | None \_rightarrow   (Some(prString isa_id), Nonfix, curried))
+		    | Some f \_rightarrow (Some(prString isa_id), Infix f, curried, reversed)
+		    | None \_rightarrow   (Some(prString isa_id), Nonfix, curried, reversed))
 	       | None \_rightarrow
 		 case fixity of
-		   | Unspecified \_rightarrow (None, Nonfix, false)
-                   | Nonfix \_rightarrow (None, Nonfix, false)
-		   | _ -> (Some(ppInfixId id), fixity, true))
-	  | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 15),true)
-	  | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 14),true)
-	  | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 13), true) 
-	  | Iff            -> (Some(prString "="), Infix (Left, 20), true)
-	  | Not            \_rightarrow (Some(lengthString(1, "\\<not>")), Infix (Left, 18), false) % ?
-	  | Equals         -> (Some(prString "="), Infix (Left, 20), true) % was 10 ??
-	  | NotEquals      -> (Some(lengthString(1, "\\<noteq>")), Infix (Left, 20), true)
-	  | RecordMerge    -> (Some(prString ">>"), Infix (Left, 25), true)
-	  | _              -> (None, Nonfix, false))
-     | _ -> (None, Nonfix, false)
+		   | Unspecified \_rightarrow (None, Nonfix, false, false)
+                   | Nonfix \_rightarrow (None, Nonfix, false, false)
+		   | _ -> (Some(ppInfixId id), fixity, true, false))
+	  | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 15),true, false)
+	  | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 14),true, false)
+	  | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 13), true, false) 
+	  | Iff            -> (Some(prString "="), Infix (Left, 20), true, false)
+	  | Not            \_rightarrow (Some(lengthString(1, "\\<not>")), Infix (Left, 18), false, false) % ?
+	  | Equals         -> (Some(prString "="), Infix (Left, 20), true, false) % was 10 ??
+	  | NotEquals      -> (Some(lengthString(1, "\\<noteq>")), Infix (Left, 20), true, false)
+	  | RecordMerge    -> (Some(prString ">>"), Infix (Left, 25), true, false)
+	  | _              -> (None, Nonfix, false, false))
+     | _ -> (None, Nonfix, false, false)
  
  op  enclose?: Boolean \_times Pretty \_rightarrow Pretty
  def enclose?(encl?,pp) =
@@ -1410,7 +1434,20 @@ IsaTermPrinter qualifying spec
 
  op infixId(id: String): String =
    let idarray = explode(id) in
-   let id = foldr (\_lambda(#?,id) -> "q"^id
+   let id = foldr (\_lambda(#\\,id) -> "\\\\"^id   % backslashes must be escaped
+		   | (c,id) -> toString(c)^id) "" idarray
+   in id
+
+ op  ppInfixDefId: QualifiedId \_rightarrow Pretty
+ def ppInfixDefId(Qualified(_,main_id)) = prString (infixDefId main_id)
+
+ op infixDefId(id: String): String =
+   let idarray = explode(id) in
+   let id = foldr (\_lambda(#\\,id) -> "\\\\"^id   % backslashes must be escaped
+                   | (#/,id) -> "'/"^id
+                   | (#(,id) -> "'("^id
+                   | (#),id) -> "')"^id
+                   | (#_,id) -> "'_"^id
 		   | (c,id) -> toString(c)^id) "" idarray
    in id
 
