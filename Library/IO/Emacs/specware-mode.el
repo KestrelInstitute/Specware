@@ -190,9 +190,14 @@ accepted in lieu of prompting."
       ["Evaluate Region" sw:evaluate-region (mark)]
       ["ctext Spec" sw:set-swe-spec t]
       ["cd to this directory" cd-current-directory t] 
+      "-----"
       ["Find Definition" sw:meta-point t]
-      ["Find Next Definition" sw:continue-meta-point
-       *pending-specware-meta-point-results*]
+      ["Find Importing Spec" sw:find-importing-specs t]
+      ["Find Case dispatch on type" sw:find-case-dispatch-on-type t]
+      ["Find Op references" sw:find-op-references t]
+      ["Go to next match" sw:continue-specware-search *pending-specware-search-results*]
+      ["Ignore current matches" sw:ignore-matches *pending-specware-search-results*]
+      "-----"
       ["Switch to Specware Shell" sw:switch-to-lisp t]
       ["Comment Out Region" (comment-region (region-beginning) (region-end)) (mark)]
       ["Uncomment Region"
@@ -215,8 +220,11 @@ accepted in lieu of prompting."
 (defconst specware-interaction-menu 
     '("Specware"
       ["Find Definition" sw:meta-point t]
-      ["Find Next Definition" sw:continue-meta-point
-       *pending-specware-meta-point-results*]
+      ["Find Case dispatch on type" sw:find-case-dispatch-on-type t]
+      ["Find Op reference" sw:find-op-references t]
+      ["Go to next match" sw:continue-specware-search *pending-specware-search-results*]
+      ["Ignore current matches" sw:ignore-matches *pending-specware-search-results*]
+      "-----"
       ["Switch to Previous File" sw:switch-to-lisp t]
       ["Search for Previous Input" fi:re-search-backward-input t]
       ["Run Specware" run-specware4 (not (inferior-lisp-running-p))]
@@ -245,7 +253,7 @@ accepted in lieu of prompting."
   (define-key map "\t"       'sw:indent-line) ; ...except this one
 
   (define-key map "\M-."     'sw:meta-point)
-  (define-key map "\M-,"     'sw:continue-meta-point)
+  (define-key map "\M-,"     'sw:continue-specware-search)
   (define-key map "\C-cp"    'sw:process-current-file)
   (define-key map "\C-c\C-p" 'sw:process-unit)
   (define-key map "\C-c\g"   'sw:generate-lisp)
@@ -1232,23 +1240,24 @@ If anyone has a good algorithm for this..."
 (defun sw:process-current-file ()
   (interactive)
   (save-buffer)
-  (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
+  (let ((filename (sw::file-to-specware-unit-id buffer-file-name t)))
     (lisp-or-specware-command ":sw " "proc " filename)))
 
-(defun sw::file-to-specware-unit-id (filename)
+(defun sw::file-to-specware-unit-id (filename relativise)
   (let ((len (length filename)))
     (when (equal ".sw" (substring filename (- len 3)))
       (setq filename (substring filename 0 (- len 3))))
     (setq filename (sw::normalize-filename filename))
-    (setq filename (name-relative-to-swpath filename))
+    (when relativise
+      (setq filename (name-relative-to-swpath filename)))
     (when (eq (elt filename 1) ?:)
       (setq filename (substring filename 2)))
     filename))
 
-(defun sw:containing-specware-unit-id ()
+(defun sw:containing-specware-unit-id (relativise)
   (save-excursion
     (end-of-line)
-    (let* ((file-uid (sw::file-to-specware-unit-id buffer-file-name))
+    (let* ((file-uid (sw::file-to-specware-unit-id buffer-file-name relativise))
 	   (match (sw:re-search-backward sw:basic-unit-intro-regexp)))
       (if match
 	  (concat file-uid "#" (match-string 1))
@@ -1332,7 +1341,7 @@ If anyone has a good algorithm for this..."
 
 (defun sw:process-unit (unitid)
   (interactive (list (read-from-minibuffer "Process Unit: "
-					   (sw:containing-specware-unit-id))))
+					   (sw:containing-specware-unit-id t))))
   (save-buffer)
   (lisp-or-specware-command ":sw " "proc " unitid))
 
@@ -1340,7 +1349,7 @@ If anyone has a good algorithm for this..."
   (interactive "P")
   (save-buffer)
   (let* ((buf-name buffer-file-name)
-	 (filename (sw::file-to-specware-unit-id buf-name))
+	 (filename (sw::file-to-specware-unit-id buf-name t))
 	 (dir default-directory))
     (lisp-or-specware-command ":swl " "gen-lisp " filename)
     (when compile-and-load?
@@ -1352,12 +1361,12 @@ If anyone has a good algorithm for this..."
 (defun sw:gcl-current-file ()
   (interactive)
   (save-buffer)
-  (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
+  (let ((filename (sw::file-to-specware-unit-id buffer-file-name t)))
     (lisp-or-specware-command ":swll " "lgen-lisp " filename)))
 
 (defun sw:evaluate-region (beg end)
   (interactive "r")
-  (let ((filename (sw::file-to-specware-unit-id buffer-file-name))
+  (let ((filename (sw::file-to-specware-unit-id buffer-file-name t))
 	(text (buffer-substring beg end)))
     (when (or (buffer-modified-p)
 	      (let ((result 
@@ -1374,13 +1383,13 @@ If anyone has a good algorithm for this..."
 
 (defun sw:set-swe-spec ()
   (interactive)
-  (let ((filename (sw:containing-specware-unit-id)))
+  (let ((filename (sw:containing-specware-unit-id t)))
     (lisp-or-specware-command ":swe-spec " "ctext " filename)))
 
 (defun sw:cl-unit (unitid)
   (interactive (list (read-from-minibuffer "Compile and Load Unit: "
 					   (sw::file-to-specware-unit-id
-					    buffer-file-name))))
+					    buffer-file-name t))))
   (save-buffer)
   (let ((temp-file-name (concat (temp-directory) "-cl-current-file")))
     (if (member (sw:eval-in-lisp
@@ -1395,7 +1404,7 @@ If anyone has a good algorithm for this..."
 
 (defun sw:dired-process-current-file ()
   (interactive)
-  (let ((filename (sw::file-to-specware-unit-id (dired-get-filename))))
+  (let ((filename (sw::file-to-specware-unit-id (dired-get-filename) t)))
     (lisp-or-specware-command ":sw " "proc " filename)))
 
 (defun sw:apropos-symbol ()
@@ -1437,16 +1446,29 @@ If anyone has a good algorithm for this..."
     (end-of-buffer))
   (beginning-of-line))
 
-(defvar *pending-specware-meta-point-results* nil)
+(defvar *pending-specware-search-results* nil)
 
-(defun sw:continue-meta-point ()
-  "Continue last \"\\[sw:meta-point]\" command."
+;;; supersedes sw:continue-meta-point
+(defun sw:continue-specware-search ()
+  "Continue last Specware find command."
   (interactive)
-  (if (null *pending-specware-meta-point-results*)
-      (error "No more Definitions")
-    (goto-specware-meta-point-definition
-     (car *pending-specware-meta-point-results*)
-     (cdr *pending-specware-meta-point-results*))))
+  (if (null *pending-specware-search-results*)
+      (error "No more results")
+    (let ((next-results (pop *pending-specware-search-results*)))
+      (if (eq (car next-results) 'meta-point)
+	(goto-specware-meta-point-definition
+	 (cadr next-results)
+	 (cddr next-results))
+      (goto-specware-search-result
+	 (cadr next-results)
+	 (cddr next-results))))))
+
+(defun sw:ignore-matches (all)
+  (interactive "P")
+  (if all
+      (setq *pending-specware-search-results* nil)
+    (pop *pending-specware-search-results*))
+  (report-next-match-task-status))
 
 ;;;; Meta-point facility (adapted from refine-meta-point fi:lisp-find-definition)
 (defun sw:meta-point (name)
@@ -1468,10 +1490,9 @@ If anyone has a good algorithm for this..."
   (let* ((def-info (car results))
 	 (file (cdr def-info))
 	 (sort? (member (car def-info) '("Type" "Sort"))))
-    (setq *pending-specware-meta-point-results*
-      (if (null (cdr results))
-	  nil
-	(cons sym (cdr results))))
+    (unless (null (cdr results))
+      (push (cons 'meta-point (cons sym (cdr results)))
+	    *pending-specware-search-results*))
     (setq file (concatenate 'string (strip-hash-suffix file) ".sw"))
     (push-mark (point))
     (let ((buf
@@ -1510,9 +1531,17 @@ If anyone has a good algorithm for this..."
 	  (error "Can't find definition of %s in %s" qsym file)))
     (beginning-of-line)
     (recenter 4)
-    (when (not (null (cdr *pending-specware-meta-point-results*)))
-      (message "%S more definitions."
-	       (length (cdr *pending-specware-meta-point-results*))))))
+    (report-next-match-task-status)))
+
+(defun report-next-match-task-status ()
+  (if (null *pending-specware-search-results*)
+      (message "No more matches")
+    (let ((search-info (car *pending-specware-search-results*)))
+      (message "%s more %s for %s"
+	       (length (cddr search-info))
+	       (if (eq (car search-info) 'meta-point)
+		   "definitions" "matches")
+	       (cadr search-info)))))
 
 ;; (defvar *specware-context-str* "cl-user::*specware-global-context*")
 (defvar *specware-context-str* "(MonadicStateInternal::readGlobalVar \"GlobalContext\")")
@@ -1650,6 +1679,106 @@ If anyone has a good algorithm for this..."
 	(if (and up-p (null symbol))
 	    (sw::get-symbol-at-point)))))
 
+;;;; Commands for finding Specware expressions
+(defun sw:find-case-dispatch-on-type (name)
+  "Find case statements splitting on type name"
+  (interactive (list (car (sw::get-default-symbol "Type name" t t))))
+  (let* ((pr (find-qualifier-info name))
+	 (qualifier (car pr))
+	 (sym (cadr pr)))
+    (message "Requesting info from Lisp...")
+    (let ((sym (if (and (> (length sym) 3) (equal (substring sym 0 2) "|!"))
+		   (substring sym 2 -1)
+		 sym)))
+      (let ((results (sw:eval-in-lisp (make-find-case-search-form qualifier sym))))
+	(message nil)
+	(if (member results '(nil NIL Error:))
+	    (error "Can't find any case tests on %s." name)
+	  (goto-specware-search-result sym (sw:sort-search-results results)))))))
+
+(defun sw:find-op-references (name)
+  "Find references to op"
+  (interactive (list (car (sw::get-default-symbol "Op name" t t))))
+  (let* ((pr (find-qualifier-info name))
+	 (qualifier (car pr))
+	 (sym (cadr pr)))
+    (message "Requesting info from Lisp...")
+    (let ((sym (if (and (> (length sym) 3) (equal (substring sym 0 2) "|!"))
+		   (substring sym 2 -1)
+		 sym)))
+      (let ((results (sw:eval-in-lisp (make-op-references-search-form qualifier sym))))
+	(message nil)
+	(if (member results '(nil NIL Error:))
+	    (error "Can't find any references to %s." name)
+	  (goto-specware-search-result sym (sw:sort-search-results results)))))))
+
+(defun sw:sort-search-results (results)
+  (sort results
+	#'(lambda (x y)
+	    (if (equal (car x) (car y))
+		(if (equal (cadr x) (cadr y))
+		    (< (cddr x)(cddr y))
+		  (< (cadr x)(cadr y)))
+	      (string< (car x) (car y))))))
+
+(defun goto-specware-search-result (sym results)
+  (let* ((def-info (car results))
+	 (file (car def-info))
+	 (line (cadr def-info))
+	 (col (cddr def-info)))
+    (unless (null (cdr results))
+      (push (cons 'specware-search (cons sym (cdr results)))
+	    *pending-specware-search-results*))
+    (push-mark (point))
+    (let ((buf
+	   (or (get-file-buffer file)
+	       (if (not (file-exists-p file)) ; Check if file exists.
+		   (error "File %s does not exist" file)
+		 (if (not (file-readable-p file)) ; Check if file readable.
+		     (error "File %s is not readable" file)
+		   ;; Can't fail now.
+		   (find-file-noselect file))))))
+      (if (member major-mode '(fi:inferior-common-lisp-mode
+			       fi:lisp-listener-mode
+			       ilisp-mode))
+	  (other-window 1))
+      (switch-to-buffer buf))
+    (goto-line line)
+    (beginning-of-line)
+    (forward-char col)
+    (recenter 4)
+    (report-next-match-task-status)))
+
+(defvar *top-level-unit*
+  (concat (getenv "SPECWARE4") "/Applications/Specware/Specware4"))
+
+(defun make-find-case-search-form (qualifier sym)
+  (format "(EditFn::findCaseDispatchesOnType-4 %S %S %S %s)"
+	  qualifier sym
+	  (if (specware-file-name-p buffer-file-name)
+	      (sw:containing-specware-unit-id nil)
+	    *top-level-unit*)
+	  *specware-context-str*))
+
+(defun make-op-references-search-form (qualifier sym)
+  (format "(EditFn::findOpReferences-4 %S %S %S %s)"
+	  qualifier sym
+	  (if (specware-file-name-p buffer-file-name)
+	      (sw:containing-specware-unit-id nil)
+	    *top-level-unit*)
+	  *specware-context-str*))
+
+
+(defun sw:find-importing-specs ()
+  (interactive)
+  (let* ((spec-name (sw:containing-specware-unit-id nil))
+	 (results (sw:eval-in-lisp (format "(EditFn::findImportingSpecs-2 %S %s)"
+					  spec-name
+					  *specware-context-str*))))
+	(message nil)
+	(if (member results '(nil NIL Error:))
+	    (error "Can't find any imports of %s." spec-name)
+	  (goto-specware-search-result spec-name (sw:sort-search-results results)))))
 
 ;;;; Prompt regexp for specware shell
 (defvar *lisp-prompt-regexp*)		; make buffer local?
@@ -1889,11 +2018,12 @@ uniquely and concretely describes their application.")
 (defun sw:convert-spec-to-isa-thy (recursive?)
   (interactive "P")
   (save-buffer)
-  (let* ((filename (sw:containing-specware-unit-id))
+  (let* ((filename (sw:containing-specware-unit-id nil))
 	 (thy-file (sw:eval-in-lisp
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
-                            (TypeObligations::generateExhaustivityConditions? nil))
+                            (TypeObligations::generateExhaustivityConditions? nil)
+                            (Prover::treatNatSpecially? nil))
                         (IsaTermPrinter::printUIDtoThyFile-2 %S %S))"
 		     filename
 		     (if recursive? "t" "nil"))))
