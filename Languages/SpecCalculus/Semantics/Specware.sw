@@ -12,6 +12,7 @@ Specware qualifying spec
   import ../../MetaSlang/Transformations/Interpreter % for MSInterpreter.eval
   import ../AbstractSyntax/Printer % for showUI
   import /Languages/XML/XML        % for XML I/O
+  import /Languages/MetaSlang/Transformations/EditFunctions     % Functions called from XEmacs
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%% Java
