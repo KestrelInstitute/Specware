@@ -25,6 +25,8 @@ Prover qualifying spec
      return (subtractSpec baseProverSpec baseSpec)
     }
 
+  op treatNatSpecially?: Boolean = true
+
   op srtPred: Spec * Sort * MS.Term -> MS.Term
 
   %% compute the predicate constraining srt to its ultimate supersort
@@ -32,7 +34,7 @@ Prover qualifying spec
     %let _ = toScreen ((printSort srt) ^ "\n") in
     let def topPredBaseSrt(srt) =
          case srt of
-	   | Base(Qualified("Nat","Nat"),_,_) -> topPredBaseSrt(proverNatSort())
+	   | Base(Qualified("Nat","Nat"),_,_) | treatNatSpecially? -> topPredBaseSrt(proverNatSort())
 	   | Base (qid, _, _) -> (Some qid, mkTrue())
 	   | Boolean _        -> (None,     mkTrue())
 	   | Subsort (supSrt, predFn, _) ->
