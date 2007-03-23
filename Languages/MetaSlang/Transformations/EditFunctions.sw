@@ -54,21 +54,49 @@ spec
       | None -> []
       | Some globalContext ->
     let unitId = pathStringToCanonicalUID(uidStr,false) in
-    case evalPartial globalContext unitId of
-      | Some(Spec spc,_,_,_) ->
-        foldriAQualifierMap
-          (fn (_, _, info, result) \_rightarrow
-           foldSubTerms
-             (fn (t,result) \_rightarrow
-              case t of
-                | Fun(Op(Qualified(qual2,id2),_),_, File(file_nm,(line,col,byte),_))
-                    | id1 = id2 \_and (qual1 = qual2 \_or qual1 = UnQualified) \_rightarrow
-                  %let _ = toScreen(anyToString(termSortEnv(spc,case_tm))^"\n") in
-                  Cons((file_nm,(line,col)), result)
-                | _ \_rightarrow result)
-             result info.dfn)
-          [] spc.ops
-      | _ -> []
+    let topUnitIds = findTopLevelImporters(unitId,globalContext) in
+    foldl (\_lambda (unitId,result) \_rightarrow
+           case evalPartial globalContext unitId of
+             | Some(Spec spc,_,_,_) ->
+               foldriAQualifierMap
+                 (fn (_, _, info, result) \_rightarrow
+                  foldSubTerms
+                    (fn (t,result) \_rightarrow
+                     case t of
+                       | Fun(Op(Qualified(qual2,id2),_),_, File(file_nm,(line,col,byte),_))
+                           | id1 = id2 \_and (qual1 = qual2 \_or qual1 = UnQualified) \_rightarrow
+                         %let _ = toScreen(anyToString(termSortEnv(spc,case_tm))^"\n") in
+                         let loc = (file_nm,(line,col)) in
+                         if member(loc,result) then result
+                           else Cons(loc, result)
+                       | _ \_rightarrow result)
+                    result info.dfn)
+                 result spc.ops
+             | _ -> [])
+       [] topUnitIds
+
+  op findTopLevelImporters(unitId1: UnitId, globalContext: GlobalContext): List UnitId =
+    let def searchUp(current,seen,top) =
+          if current = [] then top
+          else
+          let (next,top) =
+              foldl (\_lambda (u1,(next,top)) \_rightarrow
+                     let importers =
+                         foldMap (fn importers -> fn u_par -> fn (val,_,depUIDs,_) \_rightarrow
+                                  if member(u1,depUIDs) \_and (case val of Spec _ \_rightarrow true | _ \_rightarrow false)
+                                    then Cons(u_par,importers)
+                                    else importers)
+                           [] globalContext
+                     in
+                     if importers = []
+                       then (next,Cons(u1,top))
+                       else
+                       let new_importers = filter (\_lambda u \_rightarrow \_not(member(u,seen))) importers in
+                       (new_importers++next,top))
+                ([],top) current
+          in searchUp(next,next++seen,top)
+    in
+    searchUp([unitId1],[unitId1],[])
 
   op findImportingSpecs(uidStr: String, optGlobalContext: Option GlobalContext): List (String * (Nat * Nat)) =
     case optGlobalContext of
