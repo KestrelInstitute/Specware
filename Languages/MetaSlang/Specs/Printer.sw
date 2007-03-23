@@ -290,6 +290,8 @@ AnnSpecPrinter qualifying spec
    else 
      pretty
 
+ op printLocalDefSorts?: Boolean = false
+
  def [a] ppTerm1 context (path, parentTerm) (term: ATerm a) : Pretty =
    let pp : ATermPrinter = context.pp in
    let % Function application is printed taking special cases into account
@@ -436,14 +438,18 @@ AnnSpecPrinter qualifying spec
 				 (0, ppTerm context ([length decls] ++ path, parentTerm) body)]))
 	  | LetRec (decls, body, _) -> 
             let
-              def ppD (path, ((id, _), trm)) =
+              def ppD (path, ((id, srt), trm)) =
                 (case trm of
 		   | Lambda ([(pat, Fun (Bool true, _, _), body)], _) -> 
 		     blockLinear (0, 
 				  [(0, prettysNone [pp.Def, 
 						    pp.fromString id, 
 						    string " ", 
-						    ppPattern context ([1, 0] ++ path, false) pat, 
+						    ppPattern context ([1, 0] ++ path, false)
+                                                      (case srt of
+                                                         | Arrow(dom,rng, apos) | printLocalDefSorts? ->
+                                                           SortedPat(pat, dom, apos)
+                                                         | _ -> pat), 
 						    string " ", 
 						    pp.Equals, 
 						    string " "]), 
