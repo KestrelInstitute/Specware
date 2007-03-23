@@ -111,7 +111,7 @@ SpecCalc qualifying spec
      %let _ = writeLine(printSpec spc) in
      %let spc = addEqOpsToSpec spc in
      %let _ = printSpecWithSortsToTerminal spc in
-    let spc = lambdaLift spc in
+    let spc = lambdaLift (spc,true) in
      %let _ = writeLine("lambdaLift") in
      %let _ = writeLine(printSpec spc) in
      %let spc = foldRecordSorts(spc) in
