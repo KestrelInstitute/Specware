@@ -292,3 +292,11 @@
             "EVAL returned an unbound marker."))
   (values-list /))
 )
+
+#+win32
+(let ((proto-db '(("ip" . 0) ("icmp" . 1) ("tcp" . 6) ("udp" . 17))))
+  (defun sb-bsd-sockets:get-protocol-by-name (proto)
+    (declare (string proto))
+    (cdr (assoc (string-downcase proto) proto-db :test #'equal))))
+
+
