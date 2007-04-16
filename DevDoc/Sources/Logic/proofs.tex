@@ -3535,8 +3535,40 @@ If $\var\in\cxvar{\cx'}$, pick a fresh variable $\var'$:
 
 \Case{\Rstarr}
 \begin{derivation}
-\step{...}{...}
+\step{\issub{\snoc{\cx}{\vdec{\var}{\typ}}}{\typ_1}{\tspred}{\typ_2}}
+     {\premof{\Rstarr}}
+\step{\cxwf{\snoc{\cx}{\vdec{\var}{\typ}}}}{\thmref{thm-cxwf}, 1}
+\step{\istyO{\typ}}{\thmref{thm-var-type-wf}, 2}
+\step{\isty{\cx'}{\typ}}{\indhyp, 3}
+\step{\cxwf{\cx'}}{\hyp}
+\step{\cx\subseteq\cx'}{\hyp}
+\step{\var'\neq\var''}{\premof{\Rstarr}}
+\step{\tspred'=\abs{\var'}
+                   {\tarr{\typ}{\typ_2}}
+                   {\fa{\var''}{\typ}{\app{\tspred}{(\app{\var'}{\var''})}}}}
+     {\premof{\Rstarr}}
 \end{derivation}
+If $\var\not\in\cxvar{\cx'}$:
+\begin{derivatioN}{8}
+\step{\cxwf{\snoc{\cx'}{\vdec{\var}{\typ}}}}{\Rcxvdec, 5, 4}
+\step{\snoc{\cx}{\vdec{\var}{\typ}}\subseteq\snoc{\cx'}{\vdec{\var}{\typ}}}
+     {6}
+\step{\issub{\snoc{\cx'}{\vdec{\var}{\typ}}}{\typ_1}{\tspred}{\typ_2}}
+     {\indhyp, 9, 10, 1}
+\step{\issub{\cx'}{\tarr{\typ}{\typ_1}}{\tspred'}{\tarr{\typ}{\typ_2}}}
+     {\Rstarr, 11, 7, 8}
+\end{derivatioN}
+If $\var\in\cxvar{\cx'}$, pick a fresh variable $\varI$:
+\begin{derivatioN}{8}
+\step{\issub{\snoc{\cx}{\vdec{\varI}{\typ}}}{\typ_1}{\tspred}{\typ_2}}
+     {\thmref{thm-deriv-rename-var}, 1}
+\step{\cxwf{\snoc{\cx'}{\vdec{\varI}{\typ}}}}{\Rcxvdec, 5, 4}
+\step{\snoc{\cx}{\vdec{\varI}{\typ}}\subseteq\snoc{\cx'}{\vdec{\varI}{\typ}}}{6}
+\step{\issub{\snoc{\cx'}{\vdec{\varI}{\typ}}}{\typ_1}{\tspred}{\typ_2}}
+     {\indhyp, 10, 11, 9}
+\step{\issub{\cx'}{\tarr{\typ}{\typ_1}}{\tspred'}{\tarr{\typ}{\typ_2}}}
+     {\Rstarr, 12, 7, 8}
+\end{derivatioN}
 
 \Case{\Reabs}
 \begin{derivation}
