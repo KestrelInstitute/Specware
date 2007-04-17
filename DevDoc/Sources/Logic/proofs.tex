@@ -3857,6 +3857,103 @@ If $\var\in\cxvar{\cx_2}$, pick a fresh variable $\var'$:
      {\Rtarr, 11}
 \end{derivatioN}
 
+\Case{\Rstarr}\\
+Let the instance of \Rstarr\ used to derive the judgement be
+\[
+\rruleIII
+ {\issub{\cx_1,\tvdec{\tvarIS},\cx_3,\vdecO}{\typ_1}{\tspred}{\typ_2}}
+ {\var'\neq\var''}
+ {\tspred'=\abs{\var'}
+               {\tarr{\typ}{\typ_2}}
+               {\fa{\var''}{\typ}{\app{\tspred}{(\app{\var'}{\var''})}}}}
+ {\issub{\cx_1,\tvdec{\tvarIS},\cx_3}
+        {\tarr{\typ}{\typ_1}}{\tspred'}{\tarr{\typ}{\typ_2}}}
+ {0}
+\]
+The judgement
+$\issub{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+       {\tarr{\typ}{\typ_1}}{\tspred'}{\tarr{\typ}{\typ_2}}$
+is derived as follows:
+\begin{derivation}
+\step{\issub{\cx_1,\tvdec{\tvarIS},\cx_3,\vdecO}{\typ_1}{\tspred}{\typ_2}}{0}
+\step{\cxwf{\cx_1,\tvdec{\tvarIS},\cx_3,\vdecO}}{\thmref{thm-cxwf}, 1}
+\step{\isty{\cx_1,\tvdec{\tvarIS},\cx_3}{\typ}}{\thmref{thm-var-type-wf}}
+\step{\isty{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+           {\tsbslash{\typ}{\tvarIS}{\typIS}}}
+     {\indhyp, 3}
+\step{\var\not\in\cxvar{\cx_1,\cx_3}}{\thmref{thm-cx-uniq-var}, 2}
+\end{derivation}
+If $\var\not\in\cxvar{\cx_2}$:
+\begin{derivatioN}{5}
+\step{\var\not\in\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}{5}
+\step{\cxwf{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}}{\hyp}
+\step{\cxwf{\snoc{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+                 {\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}}}}
+     {\Rcxvdec, 7, 6, 4}
+\step{\tsbslashok{\cx_3}{\tvarIS}{\typIS}}{\hyp}
+\step{\tvarIS\cap\cxtvar{\cx_3}=\emptyset}{9}
+\step{\tvarIS\cap
+      \cxtvar{\snoc{\cx_3}{\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}}}
+      =\emptyset}
+     {10}
+\step{\FORALL{i}{\ftvar{\typI_i}\cap\ctvar{\cx_3}{\tvarI_i}=\emptyset}}{9}
+\step{\FORALL{i}{\ctvar{\vdec{\var}
+                             {\tsbslash{\typ}{\tvarIS}{\typIS}}}
+                       {\tvarI_i}=\emptyset}}
+     {\defof{\ctvarY}}
+\step{\FORALL{i}{\ftvar{\typI_i}\cap
+                 \ctvar{(\snoc{\cx_3}
+                              {\vdec{\var}
+                                    {\tsbslash{\typ}{\tvarIS}{\typIS}}})}
+                       {\tvarI_i}
+                 =\emptyset}}
+     {12, 13}
+\step{\tsbslashok{(\snoc{\cx_3}{\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}})}
+                 {\tvarIS}{\typIS}}
+     {11, 14}
+\step{\issub{\snoc{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+                  {\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}}}
+            {\tsbslash{\typ_1}{\tvarIS}{\typIS}}
+            {\tsbslash{\tspred}{\tvarIS}{\typIS}}
+            {\tsbslash{\typ_2}{\tvarIS}{\typIS}}}
+     {\indhyp, 8, 15, 1}
+\step{\var'\neq\var''}{0}
+\step{\tspred'=\abs{\var'}
+                   {\tarr{\typ}{\typ_2}}
+                   {\fa{\var''}{\typ}{\app{\tspred}{(\app{\var'}{\var''})}}}}{0}
+\step{\tsbslash{\tspred'}{\tvarIS}{\typIS}=
+      \abs{\var'}
+          {\tarr{\tsbslash{\typ}{\tvarIS}{\typIS}}
+                {\tsbslash{\typ_2}{\tvarIS}{\typIS}}}
+          {\fa{\var''}{\tsbslash{\typ}{\tvarIS}{\typIS}}
+              {\app{\tsbslash{\tspred}{\tvarIS}{\typIS}}
+                   {(\app{\var'}{\var''})}}}}
+     {18, \thmref{thm-tsbs-abbrev}}
+\step{\issub{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+            {\tarr{\tsbslash{\typ}{\tvarIS}{\typIS}}
+                  {\tsbslash{\typ_1}{\tvarIS}{\typIS}}}
+            {\tsbslash{\tspred'}{\tvarIS}{\typIS}}
+            {\tarr{\tsbslash{\typ}{\tvarIS}{\typIS}}
+                  {\tsbslash{\typ_2}{\tvarIS}{\typIS}}}}
+     {\Rstarr, 16, 17, 19}
+\step{\issub{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+            {\tsbslash{(\tarr{\typ}{\typ_1})}{\tvarIS}{\typIS}}
+            {\tsbslash{\tspred'}{\tvarIS}{\typIS}}
+            {\tsbslash{(\tarr{\typ}{\typ_2})}{\tvarIS}{\typIS}}}
+     {20}
+\end{derivatioN}
+If $\var\in\cxvar{\cx_2}$, pick a fresh variable $\varI$:
+\begin{derivatioN}{5}
+\step{\issub{\snoc{\cx_1,\tvdec{\tvarIS},\cx_3}{\vdec{\varI}{\typ}}}
+            {\typ_1}{\tspred}{\typ_2}}
+     {\thmref{thm-deriv-rename-var}, 1}
+\stepL{\issub{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+             {\tsbslash{(\tarr{\typ}{\typ_1})}{\tvarIS}{\typIS}}
+             {\tsbslash{\tspred'}{\tvarIS}{\typIS}}
+             {\tsbslash{(\tarr{\typ}{\typ_2})}{\tvarIS}{\typIS}}}
+      {analogous derivation as 6--21 above for case $\var\not\in\cxvar{cx_2}$}
+\end{derivatioN}
+
 \Case{\Revar}\\
 Let the instance of \Revar\ used to derive the judgement be
 \[
@@ -4049,7 +4146,7 @@ If $\var\not\in\cxvar{\cx_2}$:
 \step{\tsbslashok{(\snoc{\cx_3}{\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}})}
                  {\tvarIS}{\typIS}}
      {11, 14}
-\step{\hasty{\snoc{\cx_1,\cx_3,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
+\step{\hasty{\snoc{\cx_1,\cx_2,\tsbslash{\cx_3}{\tvarIS}{\typIS}}
                   {\vdec{\var}{\tsbslash{\typ}{\tvarIS}{\typIS}}}}
             {\tsbslash{\expr}{\tvarIS}{\typIS}}
             {\tsbslash{\typ'}{\tvarIS}{\typIS}}}
@@ -4234,16 +4331,15 @@ is derived as follows:
 Analogous to \Reif.
 
 \Case{\restrules}\\
-Analogous to \Rtbool: starting with the instance of the rule used to derive
-the judgement in the antecedent of the implication, we replace
-$\tvdec{\tvarIS}$ with $\cx_2$ and $\tvarIS$ with $\typIS$ in the premises of
-the rule instance and then we apply the rule to the transformed premises to
-obtain the conclusion with $\tvarIS$ replaced with $\typIS$. We use
-\thmref{thm-tsbs-same-free-vars} for \Rtsub. We use \thmref{thm-tsbs-abbrev}
-for \Rstrefl, \Rstarr, \Rstrec, \Redesc, \Rthbool, \Rthext, \Rthrec, and
-\Rthprojsub. We use \thmref{thm-tsbs-same-free-vars},
-\thmref{thm-tsbs-same-capt-vars}, and \thmref{thm-esbs-tsbs-comm} for
-\Reabsalpha.
+Analogous to \Rtbool: starting with the instance of the rule used to derive the
+judgement in the antecedent of the implication, we replace $\tvdec{\tvarIS}$
+with $\cx_2$ and $\tvarIS$ with $\typIS$ in the premises of the rule instance
+and then we apply the rule to the transformed premises to obtain the conclusion
+with $\tvarIS$ replaced with $\typIS$. We use \thmref{thm-tsbs-same-free-vars}
+for \Rtsub. We use \thmref{thm-tsbs-abbrev} for \Rstrefl, \Rstrec, \Redesc,
+\Rthbool, \Rthext, \Rthrec, and \Rthprojsub.  We use
+\thmref{thm-tsbs-same-free-vars}, \thmref{thm-tsbs-same-capt-vars}, and
+\thmref{thm-esbs-tsbs-comm} for \Reabsalpha.
 
 \end{bycase}
 
