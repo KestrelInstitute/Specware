@@ -26,7 +26,10 @@ IsaTermPrinter qualifying spec
 		 recursive?: Boolean,
                  thy_name: String,
 		 spec?: Option Spec,
-		 trans_table: TransInfo}
+                 currentUID: Option UnitId,
+		 trans_table: TransInfo,
+                 coercions: TypeCoercionTable,
+                 overloadedConstructors: List String}
 
  type Pragma = String * String * String * Position
 
@@ -37,7 +40,13 @@ IsaTermPrinter qualifying spec
  def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
  op  getSpec: Context \_rightarrow Spec
- def getSpec {printTypes?=_,recursive?=_,thy_name=_,spec?=Some spc,trans_table=_} = spc
+ def getSpec {printTypes?=_,recursive?=_,thy_name=_,spec? = Some spc,
+              currentUID=_,trans_table=_,coercions=_,overloadedConstructors=_} = spc
+
+ op  getCurrentUID: Context \_rightarrow UnitId
+ def getCurrentUID {printTypes?=_,recursive?=_,thy_name=_,spec?=_,currentUID = Some uid,
+                    trans_table=_,coercions=_,overloadedConstructors=_} =
+   uid
 
 
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
@@ -105,6 +114,9 @@ IsaTermPrinter qualifying spec
   op  Specware.evaluateUnitId: String \_rightarrow Option Value
   %op  SpecCalc.findUnitIdForUnit: Value \_times GlobalContext \_rightarrow Option UnitId
   %op  SpecCalc.uidToFullPath : UnitId \_rightarrow String
+  op  Specware.cleanEnv : SpecCalc.Env ()
+  op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
+
 
   op  uidToIsaName : UnitId -> String
   def uidToIsaName {path,hashSuffix=_} =
@@ -125,10 +137,10 @@ IsaTermPrinter qualifying spec
       | Some val \_rightarrow
         (case uidNamesForValue val of
 	   | None \_rightarrow "Error: Can't get UID string from value"
-	   | Some (thy_nm,uidstr) \_rightarrow
+	   | Some (thy_nm,uidstr,uid) \_rightarrow
 	     let fil_nm = uidstr ^ ".thy" in
 	     let _ = ensureDirectoriesExist fil_nm in
-	     let _ = toFile(fil_nm,showValue(val,recursive?)) in
+	     let _ = toFile(fil_nm, showValue(val,recursive?,Some uid,Some thy_nm)) in
 	     fil_nm)
       | _ \_rightarrow "Error: Unknown UID " ^ uid_str
 
@@ -143,13 +155,13 @@ IsaTermPrinter qualifying spec
   def deleteThyFilesForVal val =
     case uidNamesForValue val of
       | None \_rightarrow ()
-      | Some (_,uidstr) \_rightarrow
+      | Some (_,uidstr,uid) \_rightarrow
         let fil_nm = uidstr ^ "Isa/.thy" in
 	let _ = ensureFileDeleted fil_nm in
 	case val of
 	  | Spec spc \_rightarrow
 	    app (\_lambda elem \_rightarrow case elem of
-		              | Import(_,im_sp,_) \_rightarrow
+		              | Import(sc_tm,im_sp,_) \_rightarrow
 		                deleteThyFilesForVal (Spec im_sp)
 			      | _ \_rightarrow ())
 	      spc.elements
@@ -165,31 +177,120 @@ IsaTermPrinter qualifying spec
   def ensureValuePrinted c val =
     case uidStringPairForValue val of
       | None \_rightarrow "Unknown"
-      | Some (thy_nm,fil_nm, hash_ext) \_rightarrow
-        let thy_fil_nm = fil_nm ^ hash_ext ^ ".thy" in
-	let sw_fil_nm = fil_nm ^ ".sw" in
-	let _ = if fileOlder?(sw_fil_nm,thy_fil_nm)
-		  then ()
-		else toFile(thy_fil_nm,showValue(val,c.recursive?))
-	in thy_nm
+      | Some ((thy_nm, fil_nm, hash_ext),uid) \_rightarrow
+        printValueIfNeeded(c, val, thy_nm, fil_nm, hash_ext, uid)
 
-  op  uidNamesForValue: Value \_rightarrow Option (String * String)
+  op printValueIfNeeded
+       (c: Context, val: Value, thy_nm: String, fil_nm: String, hash_ext: String, uid: UnitId): String =
+    let thy_fil_nm = fil_nm ^ hash_ext ^ ".thy" in
+    let sw_fil_nm = fil_nm ^ ".sw" in
+    let _ = if fileOlder?(sw_fil_nm,thy_fil_nm)
+              then ()
+            else toFile(thy_fil_nm,
+                        showValue(val, c.recursive?, Some uid, Some (thy_nm ^ hash_ext)))
+    in thy_nm
+
+  op  uidNamesForValue: Value \_rightarrow Option (String * String * UnitId)
   def uidNamesForValue val =
     case uidStringPairForValue val of
       | None \_rightarrow None
-      | Some(thynm,filnm,hash) \_rightarrow Some(thynm,filnm ^ hash)
+      | Some((thynm,filnm,hash),uid) \_rightarrow Some(thynm ^ hash,filnm ^ hash,uid)
 
-  op  uidStringPairForValue: Value \_rightarrow Option (String \_times String \_times String)
+  op  uidStringPairForValue: Value \_rightarrow Option ((String \_times String \_times String) \_times UnitId)
   def uidStringPairForValue val =
     case MonadicStateInternal.readGlobalVar "GlobalContext" of
       | None \_rightarrow None
       | Some global_context \_rightarrow
     case findUnitIdForUnit(val,global_context) of
       | None \_rightarrow None
-      | Some uid \_rightarrow
-        Some (case uid.hashSuffix of
-		| Some loc_nm \_rightarrow (last uid.path,uidToIsaName uid,"_" ^ loc_nm)
-		| _ \_rightarrow           (last uid.path,uidToIsaName uid,""))
+      | Some uid \_rightarrow Some (unitIdToIsaString uid, uid)
+
+  op unitIdToIsaString(uid: UnitId): (String \_times String \_times String) =
+    case uid.hashSuffix of
+      | Some loc_nm \_rightarrow (last uid.path,uidToIsaName uid,"_" ^ loc_nm)
+      | _ \_rightarrow           (last uid.path,uidToIsaName uid,"")
+
+  op uidStringPairForValueOrTerm
+       (c: Context, val: Value, sc_tm: Term)
+       : Option((String \_times String \_times String) \_times Value \_times UnitId) =
+    case uidStringPairForValue val of
+      | None \_rightarrow
+        (case uidStringPairForTerm(c,sc_tm) of
+           | None \_rightarrow None
+           | Some((thynm,sw_file,thy_file),uid) \_rightarrow
+         case evaluateTermWrtUnitId(sc_tm, getCurrentUID c) of
+           | None \_rightarrow None
+           | Some real_val ->
+             Some((thynm, sw_file, thy_file ^ ".thy"),
+                  val, uid))
+      | Some((thynm,filnm,hash),uid) \_rightarrow
+        Some((thynm ^ hash,
+              filnm  ^ ".sw",
+              filnm ^ hash ^ ".thy"),
+             val, uid)
+
+  op uidStringPairForTerm(c: Context, sc_tm: Term): Option((String \_times String \_times String) \_times UnitId) =
+    case sc_tm of
+      | (Subst(spc_tm, morph_tm), pos) \_rightarrow
+        (case uidStringPairForTerm(c,spc_tm) of
+           | None \_rightarrow None
+           | Some((thynm,sw_file,thy_file),uid) \_rightarrow
+             let sb_id = "_sb_" ^ scTermShortName morph_tm in
+             Some((thynm^sb_id, sw_file, thy_file^sb_id),
+                  uid))
+
+      | (UnitId relId, pos) \_rightarrow
+        (case evaluateRelUIDWrtUnitId(relId,pos,getCurrentUID c) of
+          | None \_rightarrow None
+          | Some(val,uid) \_rightarrow
+            let (thynm,filnm,hash) = unitIdToIsaString uid in
+            Some((thynm ^ hash,
+                  filnm  ^ ".sw",
+                  filnm ^ hash),
+                 uid))
+      | _ \_rightarrow None
+
+  op scTermShortName(sc_tm: Term): String =
+    case sc_tm of
+      | (UnitId relId, _) \_rightarrow relativeIdShortName relId
+      | _ \_rightarrow "tm"
+
+  op relativeIdShortName(relId: RelativeUID): String =
+    case relId of
+      | UnitId_Relative uid \_rightarrow unitIdShortName uid
+      | SpecPath_Relative uid \_rightarrow unitIdShortName uid
+    
+  op unitIdShortName(uid: UnitId): String =
+    case uid of
+      | {path,hashSuffix = Some nm} \_rightarrow nm
+      | {path,hashSuffix} \_rightarrow last path
+
+  op  evaluateRelUIDWrtUnitId(rel_uid: RelativeUID, pos: Position, currentUID: UnitId): Option (Value * UnitId) = 
+    let
+      %% Ignore exceptions
+      def handler _ (* except *) =
+        return None
+    in
+    let prog = {cleanEnv;
+		setCurrentUID currentUID;
+		((val,_,_),uid)  <- evaluateReturnUID pos rel_uid;
+		return (Some(val,uid))} 
+    in
+      runSpecCommand (catch prog handler)
+
+
+  op  evaluateTermWrtUnitId(sc_tm: Term, currentUID: UnitId): Option Value = 
+    let
+      %% Ignore exceptions
+      def handler _ (* except *) =
+        return None
+    in
+    let prog = {cleanEnv;
+		setCurrentUID currentUID;
+		val  <- evaluateTerm sc_tm;
+		return (Some val)} 
+    in
+      runSpecCommand (catch prog handler)
 
   op  SpecCalc.findUnitIdForUnitInCache: Value \_rightarrow Option UnitId
   def findUnitIdForUnitInCache val =
@@ -201,20 +302,27 @@ IsaTermPrinter qualifying spec
   op  printUID : String \_times Boolean \_rightarrow ()
   def printUID (uid, recursive?) =
     case evaluateUnitId uid of
-      | Some val \_rightarrow toTerminal(showValue (val,recursive?))
+      | Some val \_rightarrow toTerminal(showValue (val,recursive?,findUnitIdForUnitInCache val,None))
       | _ \_rightarrow toScreen "<Unknown UID>"
 
-  op  showValue : Value \_times Boolean \_rightarrow Text
-  def showValue (value,recursive?) =
-    let thy_nm = case uidStringPairForValue value of
-                   | Some (thy_nm,_,hash_nm) \_rightarrow thy_nm ^ hash_nm
-                   | _ \_rightarrow ""
+  op  showValue : Value \_times Boolean \_times Option UnitId \_times Option String \_rightarrow Text
+  def showValue (value,recursive?,uid,opt_nm) =
+    let (thy_nm,val_uid) = case uidStringPairForValue value of
+                             | Some ((thy_nm,_,hash_nm),uid) \_rightarrow (thy_nm ^ hash_nm,Some uid)
+                             | _ \_rightarrow ("",None)
     in
     let main_pp_val = ppValue {printTypes? = true,
 			       recursive? = recursive?,
-			       thy_name = thy_nm,
+			       thy_name = case opt_nm of
+                                            | Some nm \_rightarrow nm
+                                            | None \_rightarrow thy_nm,
 			       spec? = None,
-			       trans_table = emptyTranslationTable}
+                               currentUID = case uid of
+                                              | None \_rightarrow val_uid
+                                              | _ \_rightarrow uid,
+			       trans_table = emptyTranslationTable,
+                               coercions = [],
+                               overloadedConstructors = []}
 			value
     in
     format(80, main_pp_val)
@@ -256,7 +364,9 @@ IsaTermPrinter qualifying spec
   def ppSpec c spc =
     % let _ = toScreen("0:\n"^printSpec spc^"\n") in
     let trans_table = thyMorphismMaps spc in
-    let c = c << {spec? = Some spc, trans_table = trans_table} in
+    let c = c << {spec? = Some spc,
+                  trans_table = trans_table}
+    in
     let spc = if lambdaLift?
                then lambdaLift(spc,false)
 	       else spc
@@ -271,6 +381,9 @@ IsaTermPrinter qualifying spec
     in
     let spc = normalizeTypes spc in
     let coercions = makeCoercionTable(trans_table, spc) in   % before removeSubSorts!
+    let c = c << {coercions = coercions,
+                  overloadedConstructors = overloadedConstructors spc}
+    in
     let spc = removeSubSorts spc coercions in
     let spc = addCoercions coercions spc in
     prLinesCat 0 [[prString "theory ", prString c.thy_name],
@@ -324,7 +437,7 @@ IsaTermPrinter qualifying spec
       | Subsort(sup,_,_) \_rightarrow getSuperTypeOp sup
       | _ \_rightarrow fail("Not a Subsort")
 
-  def baseSpecName = "Datatype"
+  def baseSpecName = "Empty"
 
   op  ppImports: Context \_rightarrow SpecElements \_rightarrow Pretty
   def ppImports c elems =
@@ -332,7 +445,7 @@ IsaTermPrinter qualifying spec
     let explicit_imports =
         mapPartial (\_lambda el \_rightarrow
 		     case el of
-		       | Import(_,im_sp,_) \_rightarrow Some (ppImport c im_sp)
+		       | Import(imp_sc_tm,im_sp,_) \_rightarrow Some (ppImport c imp_sc_tm im_sp)
 		       | _ \_rightarrow None)
            elems
     in case explicit_imports ++ imports_from_thy_morphism of
@@ -349,22 +462,21 @@ IsaTermPrinter qualifying spec
       | (SortDef type_id) :: _ \_rightarrow Some type_id
       | _ :: r \_rightarrow firstTypeDef r
 
-  op  ppImport: Context \_rightarrow Spec \_rightarrow Pretty
-  def ppImport c spc =
-    case uidStringPairForValue (Spec spc) of
-      | None \_rightarrow prString "UnknownSpec"
-      | Some (thy_nm, fil_nm, hash_ext) \_rightarrow
+  op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow Pretty
+  def ppImport c sc_tm spc =
+    case uidStringPairForValueOrTerm(c,Spec spc, sc_tm) of
+      | None \_rightarrow prString "<UnknownSpec>"
+      | Some ((thy_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
         let _ = if c.recursive?
 	          then
-		    let thy_fil_nm = fil_nm ^ hash_ext ^ ".thy" in
-		    let sw_fil_nm = fil_nm ^ ".sw" in
 		    if fileOlder?(sw_fil_nm,thy_fil_nm)
 		      then ()
-		    else toFile(thy_fil_nm,showValue(Spec spc,c.recursive?))
+		    else toFile(thy_fil_nm,
+                                showValue(val, c.recursive?, Some uid, Some thy_nm))
 		  else ()
 	in prString (case thy_nm of
 		       | "Base" \_rightarrow "Base"
-		       | _ \_rightarrow thy_nm ^ hash_ext)
+		       | _ \_rightarrow thy_nm)
 
   op  ppSpecElements: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Pretty
   def ppSpecElements c spc elems =
@@ -449,9 +561,12 @@ IsaTermPrinter qualifying spec
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
       | Property prop \_rightarrow
-        let Qualified(_,nm) = propertyName prop in 
+        let Qualified(q,nm) = propertyName prop in 
 	ppProperty c prop "" (case findPragmaNamed(elems,nm) of
-			        | None \_rightarrow opt_prag
+			        | None \_rightarrow
+                                  (case findPragmaNamed(elems,q^"__"^nm) of
+                                     | None \_rightarrow opt_prag
+                                     | prag \_rightarrow prag)
 				| prag \_rightarrow prag)
 %      | Pragma(beg_str,mid_str,end_str,pos) \_rightarrow
 %	prConcat [prString beg_str,
@@ -467,7 +582,8 @@ IsaTermPrinter qualifying spec
  op  findPragmaNamed: SpecElements * String \_rightarrow Option Pragma
  def findPragmaNamed(elts,nm) =
    case findPragmaNamed1(elts,nm) of
-     | Some p \_rightarrow Some p
+     | Some p \_rightarrow 
+       Some p
      | None \_rightarrow                          % Allow Isabelle name
        findPragmaNamed1(elts,ppIdStr nm)
 
@@ -584,6 +700,7 @@ IsaTermPrinter qualifying spec
     let infix? = case fixity of Infix _ -> true | _ -> false in
     case defToCases (op_tm) body infix? of
       | ([(lhs,rhs)], tuple?) \_rightarrow
+        let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
         if recursive? \_or tuple?   % \_and ~(simpleHead? lhs))
           then
             prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
@@ -613,6 +730,7 @@ IsaTermPrinter qualifying spec
       | (cases,false) \_rightarrow
         prBreak 2 [prString "primrec ",
 		   prLinesCat 0 (map (\_lambda(lhs,rhs) \_rightarrow
+                                      let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
 				       [prString "\"",
 					ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
 					prString "\""])
@@ -627,6 +745,7 @@ IsaTermPrinter qualifying spec
                                                          else "{}")],
                        prString "\""],
                       [prLinesCat 0 (map (\_lambda(lhs,rhs) \_rightarrow
+                                          let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
                                            [prString "\"",
                                             ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
                                             prString "\""])
@@ -681,6 +800,126 @@ IsaTermPrinter qualifying spec
 	    | _ -> (aux(hd, bod, false), false) in
     (map fix_vars cases, tuple?)
 
+  op addExplicitTyping?: Boolean = true
+
+  op addExplicitTyping2(c: Context, lhs: MS.Term, rhs: MS.Term): MS.Term * MS.Term =
+    if addExplicitTyping? then
+      let fvs = freeVars lhs ++ freeVars rhs in
+      %let _ = toScreen("d fvs: "^anyToString (map (fn (x,_) -> x) fvs)^"\n") in
+      let vs = filterConstrainedVars(c,lhs,fvs) in
+      %let _ = toScreen("d inter vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n") in
+      let vs = filterConstrainedVars(c,rhs,vs) in
+      %let _ = toScreen("d remaining vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n\n") in
+      let (lhs,vs) = addExplicitTypingForVars(lhs,vs) in
+      let (rhs,vs) = addExplicitTypingForVars(rhs,vs) in
+      (lhs,rhs)
+    else (lhs,rhs)
+
+  op addExplicitTyping(t: MS.Term): MS.Term =
+    if addExplicitTyping? then
+      (addExplicitTypingForVars(t, freeVars t)).1
+    else t
+
+  op addExplicitTyping_n1(c: Context, lhs: List MS.Term, rhs: MS.Term): List MS.Term * MS.Term =
+    if addExplicitTyping? then
+      let fvs = removeDuplicates(foldl (\_lambda (t,vs) \_rightarrow
+                                        freeVars t ++ vs)
+                                   (freeVars rhs) lhs)
+      in
+      %let _ = toScreen("fvs: "^anyToString (map (fn (x,_) -> x) fvs)^"\n") in
+      let vs = foldl (\_lambda (t,vs) \_rightarrow filterConstrainedVars(c,t,fvs)) fvs lhs in
+      %let _ = toScreen("inter vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n") in
+      let vs = filterConstrainedVars(c,rhs,vs) in
+      %let _ = toScreen("remaining vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n\n") in
+
+      let (lhs,vs) = foldl (\_lambda (st,(lhs,vs)) \_rightarrow
+                             let (st,vs) = addExplicitTypingForVars(st,vs) in
+                             (lhs ++ [st], vs))
+                        ([],vs) lhs
+      in
+      let (rhs,vs) = addExplicitTypingForVars(rhs,vs) in
+      (lhs,rhs)
+    else (lhs,rhs)
+
+  op filterConstrainedVars(c: Context, t: MS.Term, vs: List Var): List Var =
+    let def removeArgs(vs,args) =
+          let v_args = mapPartial (\_lambda t \_rightarrow
+                                     case t of
+                                       | Var (v,_) | List.member(v,vs) \_rightarrow
+                                         Some v
+                                       | _ \_rightarrow None)
+                          args
+          in diff(vs,v_args)
+        def filterKnown(vs,id,f,args) =
+          if id = "natural?"
+             \_or exists (\_lambda ci \_rightarrow member(id,ci.overloadedOps))
+                 c.coercions
+           then vs
+          else
+          if (termFixity f = Nonfix \_and \_not (overloadedIsabelleOp? c f))
+             \_or length(wildFindUnQualified((getSpec c).ops, id)) = 1
+            then removeArgs(vs,args)
+            else vs
+ %         case wildFindUnQualified((getSpec c).ops, id) of
+%              | [opinfo] \_rightarrow
+%                (case unpackFirstOpDef opinfo of
+%                   | (tvs, _, _) \_rightarrow     % Could polymorphic operator sometimes be a problem??
+%                     removeArgs(vs,args)
+%                   | _ \_rightarrow vs)
+%              | _ \_rightarrow vs
+    in
+    foldSubTerms
+      (\_lambda (st,vs) \_rightarrow
+       case st of
+         | Apply(f as Fun(Op(Qualified(q,id),_),_,_),arg,_) \_rightarrow
+           filterKnown(vs, id, f, termList arg)
+         | Apply(Fun(Embed(id,_),_,_),arg,_) \_rightarrow
+           if member(id,c.overloadedConstructors)
+             then vs
+             else removeArgs(vs,termList arg)
+         | _ \_rightarrow
+       case CurryUtils.getCurryArgs st of
+         | Some(f as Fun(Op(Qualified(q,id),_),_,_),args) \_rightarrow
+           filterKnown(vs, id, f, args)
+         | _ \_rightarrow vs)
+      vs t
+
+  %% Adds explicit typing for first reference of variable
+  op addExplicitTypingForVars(t: MS.Term, vs: List Var): MS.Term * List Var =
+    case t of
+      | Var(v1 as (_,ty),pos) | member(v1,vs) \_rightarrow
+        (SortedTerm(t,ty,pos), List.filter (\_lambda v2 \_rightarrow \_not (v1 = v2)) vs)
+      | Apply(t1,t2,a) \_rightarrow
+        let (t1,vs) = addExplicitTypingForVars(t1,vs) in
+        let (t2,vs) = addExplicitTypingForVars(t2,vs) in
+        (Apply(t1,t2,a),vs)
+      | Record(prs,a) \_rightarrow
+        let (prs,vs) = foldl (\_lambda ((id,st),(prs,vs)) \_rightarrow
+                             let (st,vs) = addExplicitTypingForVars(st,vs) in
+                             (Cons((id,st),prs), vs))
+                        ([],vs) prs
+        in
+        (Record(rev prs,a),vs)
+      | Bind(bdr,lvs,st,a) \_rightarrow
+        let (st,vs) = addExplicitTypingForVars(st,vs) in
+        (Bind(bdr,lvs,st,a),vs)
+      | The(v,st,a) \_rightarrow
+        let (st,vs) = addExplicitTypingForVars(st,vs) in
+        (The(v,st,a),vs)
+      | Let(bds,st,a) \_rightarrow                % Should really look in bds
+        let (st,vs) = addExplicitTypingForVars(st,vs) in
+        (Let(bds,st,a),vs)
+      | LetRec(bds,st,a) \_rightarrow
+        let (st,vs) = addExplicitTypingForVars(st,vs) in
+        (LetRec(bds,st,a),vs)
+      | IfThenElse(t1,t2,t3,a) \_rightarrow
+        let (t1,vs) = addExplicitTypingForVars(t1,vs) in
+        let (t2,vs) = addExplicitTypingForVars(t2,vs) in
+        let (t3,vs) = addExplicitTypingForVars(t3,vs) in
+        (IfThenElse(t1,t2,t3,a),vs)
+       %% Probably should put other cases
+      | _ \_rightarrow (t,vs)
+
   op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow Option Pragma \_rightarrow Pretty
   def ppProperty c (propType, name, tyVars, term) comm prf =
     % let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
@@ -694,15 +933,17 @@ IsaTermPrinter qualifying spec
 	      then prString " [simp]"
 	      else prEmpty
     in
-    let prf_pp =
+    let (prf_pp,includes_prf_terminator?) =
         (case prf of
 	   | Some(beg_str,mid_str,end_str,pos) \_rightarrow
 	     let len = length mid_str in
 	     (case search("\n",mid_str) of
-		| None \_rightarrow []
+		| None \_rightarrow ([], false)
 		| Some n \_rightarrow
-		  [[prString(stripExcessWhiteSpace(substring(mid_str,n+1,len)))]])
-	   | _ \_rightarrow [])
+                  let prf_str = stripExcessWhiteSpace(substring(mid_str,n+1,len)) in
+		  ([[prString(prf_str)]],
+                   proofEndsWithTerminator? prf_str))
+	   | _ \_rightarrow ([], false))
     in
     prLinesCat 2
       ([[ppPropertyType propType,
@@ -719,9 +960,16 @@ IsaTermPrinter qualifying spec
 	      | Axiom \_rightarrow []
 	      | _ \_rightarrow (if prf_pp = []
 			then [[prString defaultProof], [prString "done",prEmpty]]
-			else [[prString "done",prEmpty]])))
+			else (if includes_prf_terminator?
+                                then []
+                                else [[prString "done",prEmpty]]))))
 
   def defaultProof = "apply(auto)"
+
+  op proofEndsWithTerminator?(prf: String): Boolean =
+    let len = length prf in
+    len >= 4 \_and testSubseqEqual?("done",prf,0,len-4)
+   \_or len >= 5  \_and testSubseqEqual?("sorry",prf,0,len-5)
 
   op  stripExcessWhiteSpace: String \_rightarrow String
   def stripExcessWhiteSpace s =
@@ -909,7 +1157,7 @@ IsaTermPrinter qualifying spec
 			 prString "\\<rparr>"])
       | The (var,term,_) \_rightarrow
 	prBreak 0 [prString "(THE ",
-		   ppVarWithoutSort var,
+		   ppVarWithSort c var,
 		   prString ". ",
 		   ppTerm c Top term,
 		   prString ")"]
@@ -918,7 +1166,7 @@ IsaTermPrinter qualifying spec
 		   | Infix(_,prec) \_rightarrow true  % prec > 18
                    | _ \_rightarrow false,
 		 prBreakCat 2 [[ppBinder binder,
-				prConcat(addSeparator prSpace (map ppVarWithoutSort vars)),
+				prConcat(addSeparator prSpace (map (ppVarWithSort c) vars)),
 				prString ". "],
 			       [ppTerm c Top term]])
       | Let (decls,term,_) \_rightarrow
@@ -964,7 +1212,7 @@ IsaTermPrinter qualifying spec
       | Seq (terms,_) \_rightarrow
 	prPostSep 0 blockLinear (prString "; ") (map (ppTerm c Top) terms)
       | SortedTerm (tm,ty,_) \_rightarrow
-        prBreakCat 0 [[ppTerm c parentTerm tm, prString ": "],[ppType c Top ty]]
+        enclose?(true,prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"],[ppType c Top ty]])
       | mystery \_rightarrow fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
   op  projectorFun: String * Sort * Spec \_rightarrow String
@@ -995,6 +1243,13 @@ IsaTermPrinter qualifying spec
   op  ppVarWithoutSort : Var \_rightarrow Pretty
   def ppVarWithoutSort (id, _(* ty *)) = prString id
 
+  op printQuantifiersWithType?: Boolean = true
+
+  op ppVarWithSort (c: Context) ((id,ty): Var): Pretty =
+    if printQuantifiersWithType? then
+      enclose?(true, prConcat [prString id, prString "::", ppType c Top ty])
+    else prString id
+
   op  ppVar : Context \_rightarrow Var \_rightarrow Pretty
   def ppVar c (id,ty) =
     prConcat [prString id,
@@ -1005,6 +1260,7 @@ IsaTermPrinter qualifying spec
   op  ppPropertyTerm : Context \_rightarrow List String \_rightarrow MS.Term \_rightarrow Pretty
   def ppPropertyTerm c explicit_universals term =
     let (assmpts,concl) = parsePropertyTerm c explicit_universals term in
+    let (assmpts,concl) = addExplicitTyping_n1(c,assmpts,concl) in
     if assmpts = [] then ppTerm c Top concl
       else prBreak 0 [prConcat [lengthString(1, "\\<lbrakk>"),
 				 prPostSep 0 blockLinear (prString "; ")
@@ -1224,6 +1480,17 @@ IsaTermPrinter qualifying spec
     case specialOpInfo c qid of
       | Some(s,_,_,_) \_rightarrow prString s
       | None \_rightarrow ppQualifiedId qid
+
+  %% May only need ops tyhat can be unary
+  op overloadedIsabelleOps: List String = ["+","-","^","abs","min","max"]
+
+  op overloadedIsabelleOp? (c: Context) (f: MS.Term) : Boolean =
+    case f of
+      | Fun(Op(qid,_),_,_) \_rightarrow
+        (case specialOpInfo c qid of
+           | Some(s,_,_,_) \_rightarrow member(s,overloadedIsabelleOps)
+           | None \_rightarrow false)
+      | _ \_rightarrow false
 
   op  ppTypeQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
   def ppTypeQualifiedId c qid =
@@ -1454,31 +1721,35 @@ IsaTermPrinter qualifying spec
  op  ppIdStr: String -> String
  def ppIdStr id =
    let idarray = explode(id) in
-   let id = foldr (\_lambda(#?,id) -> "_p"^id
-                   | (#=,id) -> "_eq"^id
-                   | (#<,id) -> "_lt"^id
-                   | (#>,id) -> "_gt"^id
-                   | (#~,id) -> "_tld"^id
-                   | (#/,id) -> "_fsl"^id
-                   | (#\\,id) -> "_bsl"^id
-                   | (#-,id) -> "_dsh"^id
-                   | (#*,id) -> "_ast"^id
-                   | (#+,id) -> "_pls"^id
-                   | (#|,id) -> "_bar"^id
-                   | (#!,id) -> "_excl"^id
-                   | (#@,id) -> "_at"^id
-                   | (##,id) -> "_hsh"^id
-                   | (#$,id) -> "_dolr"^id
-                   | (#^,id) -> "_crt"^id
-                   | (#&,id) -> "_amp"^id
-                   | (#',id) -> "_cqt"^id
-                   | (#`,id) -> "_oqt"^id
-		   | (c,id) -> toString(c)^id) "" idarray
+   let def att(id, s) =
+         (if id = "" then "e" else id) ^ s
+   in
+   let id = foldl (\_lambda(#?,id) -> att(id, "_p")
+                   | (#=,id) -> att(id, "_eq")
+                   | (#<,id) -> att(id, "_lt")
+                   | (#>,id) -> att(id, "_gt")
+                   | (#~,id) -> att(id, "_tld")
+                   | (#/,id) -> att(id, "_fsl")
+                   | (#\\,id) -> att(id, "_bsl")
+                   | (#-,id) -> att(id, "_dsh")
+                   | (#*,id) -> att(id, "_ast")
+                   | (#+,id) -> att(id, "_pls")
+                   | (#|,id) -> att(id, "_bar")
+                   | (#!,id) -> att(id, "_excl")
+                   | (#@,id) -> att(id, "_at")
+                   | (##,id) -> att(id, "_hsh")
+                   | (#$,id) -> att(id, "_dolr")
+                   | (#^,id) -> att(id, "_crt")
+                   | (#&,id) -> att(id, "_amp")
+                   | (#',id) -> att(id, "_cqt")
+                   | (#`,id) -> att(id, "_oqt")
+		   | (c,id) -> id ^ toString(c)) "" idarray
    in id
 
  op  isSimpleTerm? : MS.Term \_rightarrow Boolean
  def isSimpleTerm? trm =
    case trm of
+     | SortedTerm(t,_,_) \_rightarrow isSimpleTerm? t
      | Var _ \_rightarrow true
      | Fun _ \_rightarrow true
      | _ \_rightarrow false
@@ -1528,4 +1799,17 @@ IsaTermPrinter qualifying spec
 	  | _ \_rightarrow s)
       | _ \_rightarrow s
 
+  op overloadedConstructors(spc: Spec): List String =
+    (foldSortInfos
+       (\_lambda (info, result as (found,overloaded)) \_rightarrow
+          case sortInnerSort(info.dfn) of
+            | CoProduct(prs,_) \_rightarrow
+              foldl (\_lambda ((id,_), (found,overloaded)) \_rightarrow
+                       if member(id,found)
+                         then (         found, Cons(id,overloaded))
+                       else (Cons(id,found),          overloaded))
+                result prs
+            | _ \_rightarrow result)
+      ([],[])
+      spc.sorts).2
 endspec
