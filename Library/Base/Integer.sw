@@ -75,6 +75,23 @@ Integer qualifying spec
   op gcd           : Integer * Integer -> PosNat
   op lcm           : Integer * Integer -> Nat
 
+  def >= (x,y) = y <= x
+
+  def > (x,y) = y <  x
+
+  def abs x = if x >= 0 then x else - x
+  proof Isa [simp] end-proof
+
+  def min(x,y) = if x < y then x else y
+
+  def max(x,y) = if x > y then x else y
+
+  def compare(x,y)  = if x < y then Less
+                 else if x > y then Greater
+                 else (* x = y *)   Equal
+
+  def pred x = x - 1
+
   axiom addition_def1 is
     fa(i:Integer) i+0 = i && 0+i = i
   axiom addition_def2 is
@@ -113,22 +130,6 @@ Integer qualifying spec
   axiom less_than_def is
     fa (x:Integer, y:Integer) x < y <=> (x <= y && x ~= y)
 
-  def >= (x,y) = y <= x
-
-  def > (x,y) = y <  x
-
-  def abs x = if x >= 0 then x else - x
-
-  def min(x,y) = if x < y then x else y
-
-  def max(x,y) = if x > y then x else y
-
-  def compare(x,y)  = if x < y then Less
-                 else if x > y then Greater
-                 else (* x = y *)   Equal
-
-  def pred x = x - 1
-
   proof Isa Thy_Morphism Presburger
    type Integer.Integer \_rightarrow int
    type Nat.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
@@ -143,7 +144,6 @@ Integer qualifying spec
    Integer.< \_rightarrow <  Left 20
    Integer.>= \_rightarrow \<ge>  Left 20
    Integer.> \_rightarrow >  Left 20
-   Integer.abs \_rightarrow abs
    Integer.min \_rightarrow min curried
    Integer.max \_rightarrow max curried
   end-proof

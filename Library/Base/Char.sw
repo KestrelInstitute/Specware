@@ -14,6 +14,7 @@ Char qualifying spec
 
   axiom ord_is_isomorphism is
     bijective? ord
+   proof Isa [simp] end-proof
 
   % other ops on characters:
 
@@ -33,31 +34,40 @@ Char qualifying spec
 
   axiom isUpperCase_def is
     fa (c:Char) isUpperCase c <=> (ord #A <= ord c && ord c <= ord #Z)
+   proof Isa [simp] end-proof
+
 
   axiom isLowerCase_def is
     fa (c:Char) isLowerCase c <=> (ord #a <= ord c && ord c <= ord #z)
+   proof Isa [simp] end-proof
 
   axiom isAlpha_def is
     fa (c:Char) isAlpha c <=> isUpperCase c || isLowerCase c
+   proof Isa [simp] end-proof
 
   axiom isNum_def is
     fa (c:Char) isNum c <=> (ord #0 <= ord c && ord c <= ord #9)
+   proof Isa [simp] end-proof
 
   axiom isAlphaNum_def is
     fa (c:Char) isAlphaNum c <=> isAlpha c || isNum c
+   proof Isa [simp] end-proof
 
   axiom isAscii_def is
     fa (c:Char) isAscii c <=> ord c < 128
+   proof Isa [simp] end-proof
 
   axiom toUpperCase_def is
     fa (c:Char) toUpperCase c = (if isLowerCase c
                                    then chr(ord c - ord #a + ord #A)
                                    else c)
+   proof Isa [simp] end-proof
 
   axiom toLowerCase_def is
     fa (c:Char) toLowerCase c  = (if isUpperCase c
                                     then chr(ord c - ord #A + ord #a)
                                     else c)
+   proof Isa [simp] end-proof
 
   def compare(c1,c2) = compare(ord c1, ord c2)
 

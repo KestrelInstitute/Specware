@@ -88,6 +88,11 @@ List qualifying spec
   def nthTail(l,i) =
     if i = 0 then l
              else nthTail(tl l,i-1)
+  proof Isa "measure (\_lambda(l,i). i)" end-proof
+  proof Isa nthTail_Obligation_subsort1
+  apply(auto)
+  apply(arith)
+  end-proof
 
   axiom length_nthTail is		% Really a theorem
     fa(l,n: Nat) n <= length l \_Rightarrow length(nthTail(l,n)) = length l - n
@@ -116,6 +121,9 @@ List qualifying spec
           if i = 0 then Nil
           else Cons (hd l, collectFirstElems(tl l,i-1)) in
     collectFirstElems(removeFirstElems(l,i),j-i)
+  proof Isa end-proof
+  proof Isa sublist__removeFirstElems "measure (\_lambda(l,i). i)" end-proof
+  proof Isa sublist__collectFirstElems "measure (\_lambda(l,i). i)" end-proof
 
   def map f l =
     case l of
@@ -159,6 +167,7 @@ List qualifying spec
        | []     -> []
        | hd::tl -> if member(hd,l2) then diff(tl,l2) 
                                     else Cons(hd,diff(tl,l2))
+  proof Isa "measure (\_lambda(l1,l2). length l1)" end-proof
 
   def rev l = rev2(l,[])
 
@@ -166,6 +175,7 @@ List qualifying spec
     case l of
        | []     -> r
        | hd::tl -> rev2(tl,Cons(hd,r))
+  proof Isa "measure (\_lambda(l,r). length l)" end-proof
 
   def flatten l =
     case l of
@@ -182,6 +192,8 @@ List qualifying spec
             if i = 0 then l
             else tabulateAux(i-1,Cons(f(i-1),l)) in
     tabulateAux(n,[])
+  proof Isa end-proof
+  proof Isa tabulate__tabulateAux "measure (\_lambda(i,l,f). i)" end-proof
 
   def firstUpTo p l =
     case l of
@@ -240,7 +252,7 @@ List qualifying spec
        | []     -> ()
        | hd::tl -> (f hd; app f tl)
 
-  proof Isa Thy_Morphism list
+  proof Isa Thy_Morphism List
     type List.List \_rightarrow list
     List.nil \_rightarrow []
     List.cons \_rightarrow # Right 23
