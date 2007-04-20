@@ -68,7 +68,7 @@ Integer qualifying spec
 
   % minimizers of function in set:
   op minimizers : [a] (a -> Integer) -> Set a -> Set a
-  def minimizers f s = fn x -> minimizes? x f s
+  def minimizers f s = (fn x -> minimizes? x f s)
 
   % value uniquely minimizes integer-valued function in set:
   op uniquelyMinimizes? : [a] a -> (a -> Integer) -> Set a -> Boolean
@@ -90,7 +90,7 @@ Integer qualifying spec
 
   % maximizers of function in set:
   op maximizers : [a] (a -> Integer) -> Set a -> Set a
-  def maximizers f s = fn x -> maximizes? x f s
+  def maximizers f s = (fn x -> maximizes? x f s)
 
   % value uniquely maximizes integer-valued function in set:
   op uniquelyMaximizes? : [a] a -> (a -> Integer) -> Set a -> Boolean
