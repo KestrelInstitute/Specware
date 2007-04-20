@@ -2020,7 +2020,9 @@ uniquely and concretely describes their application.")
 	     default-directory))))
 
 ;;; Isabelle Interface
-(defun sw:convert-spec-to-isa-thy (recursive?)
+(defun sw:convert-spec-to-isa-thy (non-recursive?)
+  "Converts Spec to Isabelle/HOL theory.
+With an argument, it doesn't convert imports."
   (interactive "P")
   (save-buffer)
   (let* ((filename (sw:containing-specware-unit-id nil))
@@ -2029,9 +2031,9 @@ uniquely and concretely describes their application.")
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? nil)
                             (Prover::treatNatSpecially? nil))
-                        (IsaTermPrinter::printUIDtoThyFile-2 %S %S))"
+                        (IsaTermPrinter::printUIDtoThyFile-2 %S %s))"
 		     filename
-		     (if recursive? "t" "nil"))))
+		     (if non-recursive? "nil" "t"))))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
 						   display-warning-suppressed-classes))
