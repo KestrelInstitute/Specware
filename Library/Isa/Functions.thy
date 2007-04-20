@@ -1,11 +1,12 @@
 theory Functions
-imports Datatype
+imports Fun
 begin
 axioms Functions__injective_p_def: 
-  "inj f = (\<forall>x y. f x = f y \<longrightarrow> x = y)"
+  "inj f = (\<forall>(x::'a) (y::'a). f x = f y \<longrightarrow> x = y)"
 axioms Functions__surjective_p_def: 
-  "surj f = (\<forall>y. \<exists>x. f x = y)"
-axioms Functions__bijective_p_def: "bij f = (inj f \<and> surj f)"
+  "surj f = (\<forall>(y::'b). \<exists>(x::'a). f x = y)"
+axioms Functions__bijective_p_def: 
+  "bij f = (inj f \<and> surj f)"
 types  ('a,'b)Functions__Injection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Functions__Surjection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Functions__Bijection = "'a \<Rightarrow> 'b"

@@ -1,5 +1,5 @@
 theory Base
-imports Empty String Compare System Hilbert_Choice
+imports Empty String Compare System
 begin
 consts 
   second  :: "'a * 'b * 'c \<Rightarrow> 'b"
