@@ -34,7 +34,7 @@ spec
 	      | _ \_rightarrow false
 	in
 	let n_tm = mapSubTerms(tm,if delayCoercion? then ty else rm_ty) in
-        let n_tm = liftCoercion(n_tm,rm_ty) in
+        let n_tm = liftCoercion(n_tm,rm_ty,ty) in
 	if delayCoercion? \_or overloadedTerm? n_tm then n_tm
 	else
 	case find (fn tb \_rightarrow subsortOf?(rm_ty,tb.subtype,spc)) coercions of
@@ -85,11 +85,20 @@ spec
 	  | SortedTerm (trm, srt, a) ->
 	    SortedTerm (mapTerm(trm,srt), srt, a)
 	  | _ \_rightarrow tm
-      def liftCoercion (tm,ty) =
+      def liftCoercion (tm,ty,target_ty) =
+        %let _ = toScreen("lc "^ printTerm tm ^": "^ printSort ty ^" ->"^ printSort target_ty ^"\n ") in
         case tm of
-          | Apply(f as Fun(Op(Qualified(_,idn),_),_,_),x,a) \_rightarrow
+          | Apply(f as Fun(Op(Qualified(qual,idn),_),_,_),x,a) \_rightarrow
             (case checkCoercions x of
-               | Some(tb,coerce_fn) | member(idn,tb.overloadedOps) \_rightarrow
+               | Some(tb,coerce_fn)
+                   | member(idn,tb.overloadedOps)
+                     \_or %% Special case for minus (probably not worth generalizing)
+                       %% minus on nats is equal to minus on integers if we know result is a nat
+                     (qual = "Integer" \_and idn = "-" %\_and coerce_fn = int
+                        \_and (case target_ty of
+                             | Base(Qualified("Nat","Nat"),[],_) \_rightarrow true
+                             | _ \_rightarrow false))
+                 \_rightarrow
                  let new_x = removeCoercions(x,coerce_fn) in
                  let new_tm = Apply(f,new_x,a) in
                  (if subsortOf?(ty,tb.supertype,spc)
