@@ -1,17 +1,39 @@
 \section{Introduction}
 
-This document formally defines the logic of the \MS\ language
-\cite{lm}, drawing ideas from \cite{andrews}, \cite{pvs-seman}, and
-\cite[Part II]{hol}.
+The \MS\ language \cite{lm} describes the construction and the manipulation of
+spec(ification)s and related entities (e.g.\ morphisms). A spec is a logical
+theory: it introduces symbols and asserts properties of those symbols; further
+properties are derived via logical inference.
+
+This document formalizes the logic of the \MS\ language, i.e.\ which judgements
+can be asserted and how judgements are inferred from other judgements. This
+document does not describe the full semantics of the \MS\ language, but only its
+underlying logic. The full \MS\ semantics is formalized in \cite{semantics}:
+that document is based on the formalization of the logic in this document. The
+\MS\ logic is defined on a relatively small ``core'' subset of \MS; more complex
+\MS\ constructs are defined in terms of the core construct \cite{semantics}.
+
+The \MS\ logic consists of standard higher-order logic \cite{andrews} plus
+record types, polymorphic types, predicate subtypes, and an if-then-else. Record
+types are straightfoward. Polymorphic types are as in the HOL system \cite{hol}
+and are not particularly difficult. Predicates subtypes are as in the PVS system
+\cite{pvs-seman}: they make well-typedness undecidable because in order to
+establish whether an expression of a supertype has also a subtype it is
+necessary to prove that the predicate that defines the subtype is true for the
+expression, in the context where the expression occurs. Thus, inference rules to
+derive theorems and inference rules to derive well-typedness judgements are
+mutually recursive, together with the rules to derive other kinds of judgements.
+Unlike an ordinary ternary function, the contexts to establish the
+well-typedness of the second and third argument of an if-then-else are extended
+with the truth and falsehood of the first argument; this is why if-then-else is
+a primitive construct in the \MS\ logic.
 
 The rest of this section introduces the mathematical notation used in this
 document. \secref{syntax} defines the core (abstract) syntax of the \MS\ logic
 while \secref{proofth} defines its proof theory. \secref{props} states
 properties of the syntax and proof theory. \secref{models} defines a
-set-theoretic semantics of the \MS\ logic. \secref{other} shows how various
-\MS\ constructs are captured in terms of the core constructs. Finally,
-\secref{proofs} collects all the (meta) proofs of the (meta) theorems stated
-in the other sections.
+set-theoretic semantics of the \MS\ logic. Finally, \secref{proofs} collects all
+the (meta) proofs of the (meta) theorems stated in the other sections.
 
 \subsection{Notation}
 
@@ -19,8 +41,7 @@ We define the \MS\ logic in the usual semi-formal notation consisting of naive
 set theory and natural language. However, it is possible to define the \MS\
 logic in axiomatic set theory or any other sufficiently expressive formal
 language.\footnote{For example, Peter Homeier has formalized the \MS\ logic in
-the logic of the HOL theorem prover (see Acknowledgments section for
-details).}
+the logic of the HOL theorem prover (see Acknowledgments section for details).}
 
 The (meta) logical notations $=$, $\forall$, $\exists$, $\neg$, $\wedge$,
 $\vee$, $\Rightarrow$, $\Leftrightarrow$, and $\ \not\!\!\!\!\ldots$ (e.g.\
@@ -43,34 +64,32 @@ If $A$ and $B$ are sets, $A+B$ is their disjoint union, i.e.\
 $\setST{\tupII{0}{a}}{a\in A}\cup\setST{\tupII{1}{b}}{b\in B}$. The ``tags'' 0
 and 1 are always left implicit. This generalizes to $n>2$ sets.
 
-If $A$ and $B$ are sets: $\Funcp{A}{B}$ is the set of all partial functions
-from $A$ to $B$, i.e.\ $\setST{f\subseteq A\times
-B}{\FORALL{\tupII{a}{b_1},\tupII{a}{b_2}\in f}{b_1=b_2}}$; $\Func{A}{B}$ is
-the set of all total functions from $A$ to $B$, i.e.\
-$\setST{f\in\Funcp{A}{B}}{\FORALL{a\in A}{\EXISTS{b\in B}{\tupII{a}{b}\in
-f}}}$;
+If $A$ and $B$ are sets: $\Funcp{A}{B}$ is the set of all partial functions from
+$A$ to $B$, i.e.\ $\setST{f\subseteq A\times
+B}{\FORALL{\tupII{a}{b_1},\tupII{a}{b_2}\in f}{b_1=b_2}}$; $\Func{A}{B}$ is the
+set of all total functions from $A$ to $B$, i.e.\
+$\setST{f\in\Funcp{A}{B}}{\FORALL{a\in A}{\EXISTS{b\in B}{\tupII{a}{b}\in f}}}$;
 %$\Funcf{A}{B}$ is the set of all finite functions from $A$ to $B$, i.e.\
 %$\setST{f\in\Funcp{A}{B}}{f\mbox{ is a finite set}}$;
 and $\Funcinj{A}{B}$ is the set of all total injective functions from $A$ to
 $B$, i.e.\ $\setST{f\in\Func{A}{B}}{\FORALL{\tupII{a_1}{b},\tupII{a_2}{b}\in
-f}{a_1=a_2}}$.
-We write $\funcp{f}{A}{B}$, $\func{f}{A}{B}$,
+f}{a_1=a_2}}$.  We write $\funcp{f}{A}{B}$, $\func{f}{A}{B}$,
 %$\funcf{f}{A}{B}$,
 and $\funcinj{f}{A}{B}$ for $f\in\Funcp{A}{B}$, $f\in\Func{A}{B}$,
 %$f\in\Funcf{A}{B}$,
 and $f\in\Funcinj{A}{B}$, respectively.
 
 If $f$ is a function from $A$ to $B$: $\dom{f}$ is the domain of $f$, i.e.\
-$\setST{a\in A}{\EXISTS{b\in B}{\tupII{a}{b}\in f}}$; $\rng{f}$ is the range
-of $f$, i.e.\ $\setST{b\in B}{\EXISTS{a\in A}{\tupII{a}{b}\in f}}$.
+$\setST{a\in A}{\EXISTS{b\in B}{\tupII{a}{b}\in f}}$; $\rng{f}$ is the range of
+$f$, i.e.\ $\setST{b\in B}{\EXISTS{a\in A}{\tupII{a}{b}\in f}}$.
 
 If $f$ is a function and $a\in\dom{f}$, $f(a)$ denotes the unique value such
 that $\tupII{a}{f(a)}\in f$.
 
-If $f$ is a function and $A$ is a set: $\funrestr{f}{A}$ denotes the
-restriction of $f$ to $A$, i.e.\ $\setST{\tupII{a}{f(a)}}{a\in\dom{f}\cap A}$
-(we may have $A\subseteq\dom{f}$ or not); $\funrestrc{f}{A}$ denotes the
-restriction of $f$ to $\dom{f}-A$, i.e.\ $\funrestr{f}{\dom{f}-A}$.
+If $f$ is a function and $A$ is a set: $\funrestr{f}{A}$ denotes the restriction
+of $f$ to $A$, i.e.\ $\setST{\tupII{a}{f(a)}}{a\in\dom{f}\cap A}$ (we may have
+$A\subseteq\dom{f}$ or not); $\funrestrc{f}{A}$ denotes the restriction of $f$
+to $\dom{f}-A$, i.e.\ $\funrestr{f}{\dom{f}-A}$.
 
 If $A$ is a set, $\Setf{A}$ is the set of all finite subsets of $A$, i.e.\
 $\setST{S\subseteq A}{S\mbox{ finite}}$.
@@ -80,12 +99,11 @@ $A$, i.e.\ $\setST{\seqFT{x_1}{x_n}}{x_1\in A\AND\ldots\AND x_n\in A}$;
 $\SeqNE{A}$, $\SeqNR{A}$, and $\SeqNER{A}$ are the subsets of $\Seq{A}$ of
 non-empty sequences, sequences without repeated elements, and non-empty
 sequences without repeated elements, respectively.\footnote{Strictly speaking,
-our notation $\seqFT{x_1}{x_n}$ for sequences may lead to ambiguities, e.g.\
-if $s_1$ and $s_2$ are sequences, is $s_1,s_2$ the sequence of length 2 whose
+our notation $\seqFT{x_1}{x_n}$ for sequences may lead to ambiguities, e.g.\ if
+$s_1$ and $s_2$ are sequences, is $s_1,s_2$ the sequence of length 2 whose
 elements are $s_1$ and $s_2$, or is it the concatenation of $s_1$ and $s_2$?
-However, in this document, the intended meaning should be always clear from
-the symbols used and from mathematical context.} The empty sequence is written
+However, in this document, the intended meaning should be always clear from the
+symbols used and from mathematical context.} The empty sequence is written
 $\seqO$. A sequence $\seqFT{x_1}{x_n}$ is often written $\seq{x}$, leaving $n$
-implicit. The length of a sequence $s$ is written $\seqlen{s}$.  When a
-sequence is written where a set is expected, it stands for the set of its
-elements.
+implicit. The length of a sequence $s$ is written $\seqlen{s}$.  When a sequence
+is written where a set is expected, it stands for the set of its elements.

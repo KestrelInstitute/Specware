@@ -1762,7 +1762,7 @@ $\tsbs{(\odecO)}{\emptyset}
  \odecO$
 \end{links}
 
-\Case{$\axO$, $\lemO$}\\
+\Case{$\axO$}\\
 Analogous to $\odecO$.
 
 \Case{\restkinds}\\
@@ -1885,7 +1885,7 @@ $\tsbsO{(\odecO)}
 $
 \end{links}
 
-\Case{$\axO$, $\lemO$}\\
+\Case{$\axO$}\\
 Analogous to $\odecO$.
 
 \Case{\restkinds}\\
@@ -2386,19 +2386,6 @@ Analogous to \thmref{thm-op-type-wf}, using \Rcxax\ instead of \Rcxodec.
 
 
 
-\subsection*{Proof of \thmref{thm-lem-theo}}
-
-Analogous to \thmref{thm-op-type-wf}, using \Rcxlem\ instead of \Rcxodec.
-
-%\begin{derivation}
-%\step{\cxwf{\cx_1,\lemO,\cx_2}}{\hyp}
-%\step{\cxwf{\snoc{\cx_1}{\lemO}}}{\thmref{thm-cxprefix}, 1}
-%\step{\theo{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}}
-%     {\premof{\Rcxlem}, only rule that can derive 2}
-%\end{derivation}
-
-
-
 \subsection*{Proof of \thmref{thm-var-type-wf}}
 
 Analogous to \thmref{thm-op-type-wf}, using \Rcxvdec\ instead of \Rcxodec.
@@ -2563,15 +2550,15 @@ By induction on the derivation of $\issubO{\typ_1}{\tspred}{\typ_2}$:
 %theorem statement and the two implications (*) by induction on the derivation
 %of the judgements in the antecedents of the implications:
 
-We prove the first three implications by induction on the derivation of the
-judgements in the antecedents of the implications:
+By induction on the derivation of the judgements in the antecedents of the
+implications:
 
 \begin{bycase}
 
 \Case{\Rcxmt}\\
 This rule is impossible because $\cx_1,\axO,\cx_2\neq\mtcx$.
 
-\Case{\Rcxtdec, \Rcxodec, \Rcxlem, \Rcxtvdec, \Rcxvdec}
+\Case{\Rcxtdec, \Rcxodec, \Rcxtvdec, \Rcxvdec}
 \begin{derivation}
 \steP{\cx_2\neq\mtcx}
 \step{\EXISTS{\cx_2',\cxel}{\cx_2=\cx_2',\cxel}}{1}
@@ -2721,15 +2708,7 @@ $\cx'=\snoc{\cx}{\axM{\ldots}}$ and so clearly $\cxvar{\cx'}=\cxvarO$).
 
 \end{bycase}
 
-The fourth implication is proved as follows:
-\begin{derivation}
-\step{\cxwf{\cx_1,\lemO,\cx_2}}{\hyp}
-\step{\theo{\snoc{\cx_1}{\tvdec{\tvarS}}}{\expr}}{\thmref{thm-lem-theo}, 1}
-\step{\efvar{\expr}\subseteq\cxvar{\cx_1,\tvdec{\tvarS}}=\cxvar{\cx_1}}
-     {second implication of this theorem, 2}
-\end{derivation}
 
-%%%%% HERE %%%%%
 
 \subsection*{Proof of \thmref{thm-free-tvar-in-cx}}
 
@@ -2777,7 +2756,7 @@ If $\cx_2=\mtcx$:
 \step{\cxtvar{\cx_1}\supseteq\ftvar{\cxel}}{5, 8, 2}
 \end{derivation}
 
-\Case{\Rcxax, \Rcxlem}\\
+\Case{\Rcxax}\\
 Analogous to \Rcxodec.
 
 \Case{\Rcxvdec}\\
@@ -2967,7 +2946,7 @@ and the judgement $\cxwf{\snoc{\cxvI}{\tdecO}}$ is derived as follows:
 %instance (0) of \Rcxtdec\ and then applying rule \Rcxtdec\ to the transformed
 %premises to obtain the conclusion with $\varI$ replaced with $\varI'$.
 
-\Case{\Rcxodec, \Rcxax, \Rcxlem, \Rcxtvdec}\\
+\Case{\Rcxodec, \Rcxax, \Rcxtvdec}\\
 Analogous to \Rcxtdec: starting with the instance of the rule used to derive
 the judgement in the antecedent of the implication, we replace $\varI$ with
 $\varI'$ in the premises of the rule instance and then we apply the rule to
@@ -5563,25 +5542,6 @@ the cases for the subtyping rules are presented in the previous subsection.
 \step{\theoO{\eq{\esbs{\expr}{\var}{\expr'}}{\true}}}{\Rthtrans, 25, 23}
 \step{\theoO{\esbs{\expr}{\var}{\expr'}}}{\Rtheqtrue, 26}
 \end{derivation}
-
-
-
-\subsection*{Proof of \thmref{thm-rec-tup}}
-
-By straightforward calculation. Recall that a tuple $\tuple{\exprS}$ is
-implicitly decorated by types $\typS$.
-
-
-
-\subsection*{Proof of \thmref{thm-recup}}
-
-By straightforward calculation, using \thmref{thm-esbs-not-free} where needed.
-
-
-
-%\subsection*{Proof of \thmref{thm-embtest}}
-
-%By straightforward calculation, using \thmref{thm-esbs-not-free} where needed.
 
 
 

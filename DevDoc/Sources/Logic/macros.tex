@@ -94,7 +94,8 @@
 \newcommand{\trecO}{\trec{i}{\fnam_i}{\typ_i}}
 \newcommand{\trecII}[2]{#1\times#2}
 \newcommand{\trecIII}[3]{#1\times#2\times#3}
-%\newcommand{\trecFIT}[6]{#1\;#2\times\cdots\times#3\;#4\times\cdots\times#5\;#6}
+%\newcommand{\trecFIT}[6]
+%           {#1\;#2\times\cdots\times#3\;#4\times\cdots\times#5\;#6}
 %\newcommand{\trecTF}[2]{\cdots\times#1\;#2\times\cdots}
 \newcommand{\fnam}{f}
 \newcommand{\fnamS}{\seq{f}}
@@ -163,11 +164,6 @@
 \newcommand{\proj}[2]{#1.#2}
 \newcommand{\projO}{\proj{\expr}{\fnam}}
 
-\newcommand{\embed}[2]{\mathsf{emb}_{#1}\;{#2}}
-\newcommand{\embedO}{\embed{\tsumO}{\cnam_j}}
-\newcommand{\emb}[1]{\mathsf{emb}\;{#1}}
-\newcommand{\embO}{\emb{\cnam_j}}
-
 \newcommand{\varfx}{\gamma}
 \newcommand{\varfxI}[1]{\varfx_{#1}}
 \newcommand{\varfxpred}{\psi}
@@ -221,118 +217,6 @@
 \newcommand{\exIO}{\exI{\var}{\typ}{\expr}}
 \newcommand{\exIS}[2]{\exists!\,#1.\;#2}
 
-\newcommand{\recop}[1]{\mathsf{rec}_{#1}}
-\newcommand{\recopO}{\recop{\trecO}}
-\newcommand{\rcop}{\mathsf{rec}}
-
-\newcommand{\fldasg}[2]{#1\!\gets\!#2}
-\newcommand{\fldasgFT}[4]{#1\!\gets\!#2\;\ldots\;#3\!\gets\!#4}
-\newcommand{\rectFT}[6]
- {\langle#1\!\stackrel{#2}{\gets}\!#3\;\ldots\;
-         #4\!\stackrel{#5}{\gets}\!#6\rangle}
-\newcommand{\rectFTO}
- {\rectFT{\fnam_1}{\typ_1}{\expr_1}{\fnam_n}{\typ_n}{\expr_n}}
-\newcommand{\rectIII}[9]
- {\langle#1\!\stackrel{#2}{\gets}\!#3\;
-         #4\!\stackrel{#5}{\gets}\!#6\;
-         #7\!\stackrel{#8}{\gets}\!#9\rangle}
-\newcommand{\rect}[4]{\langle#2\!\stackrel{#3}{\gets}\!#4\rangle_{#1}}
-\newcommand{\rectO}{\rect{i}{\fnam_i}{\typ_i}{\expr_i}}
-\newcommand{\recFT}[4]{\langle#1\!\gets\!#2\;\ldots\;#3\!\gets\!#4\rangle}
-\newcommand{\recFTO}{\recFT{\fnam_1}{\expr_1}{\fnam_n}{\expr_n}}
-\newcommand{\recIII}[6]
- {\langle#1\!\gets\!#2\;#3\!\gets\!#4\;#5\!\gets\!#6\rangle}
-\newcommand{\rec}[3]{\langle#2\!\gets\!#3\rangle_{#1}}
-\newcommand{\recO}{\rec{i}{\fnam_i}{\expr_i}}
-%\newcommand{\recFIT}[6]{\{#1\!\gets\!#2\ldots#3\!\gets\!#4\ldots#5\!\gets\!#6\}}
-%\newcommand{\recTF}[2]{\{\ldots#1\!\gets\!#2\ldots\}}
-
-\newcommand{\tuple}[1]{\langle#1\rangle}
-\newcommand{\tupleO}{\tuple{\exprS}}
-\newcommand{\tupleII}[2]{\tuple{#1,#2}}
-
-\newcommand{\recupY}{\ll}
-\newcommand{\recupop}[3]{\ll_{#1,#2,#3}}
-\newcommand{\recupopO}
- {\recupop{\trecO}{\trec{i}{\fnam_i'}{\typ_i'}}{\trec{i}{\fnam_i''}{\typ_i''}}}
-\newcommand{\recup}[2]{#1\!\ll\!#2}
-\newcommand{\recupO}{\recup{\expr_1}{\expr_2}}
-
-\newcommand{\slet}[5]{\mathsf{let}_{#1}\;\bnd{#2}{#3}\!\gets\!#4\;\mathsf{in}\;#5}
-\newcommand{\sletO}{\slet{\typ'}{\var}{\typ}{\expr}{\expr'}}
-\newcommand{\sletL}[5]
- {\!\!\!\begin{array}[b]{l}\mathsf{let}_{#1}\;
-  \bnd{#2}{#3}\!\gets\!#4\;\mathsf{in}\\
-  \;#5\end{array}}
-
-\newcommand{\bcondbrFT}[6]{\seqFT{\bnd{#1}{#2}}{\bnd{#3}{#4}}.\;#5\!\to\!#6}
-%\newcommand{\bcondbrmt}[2]{\seqO.\;#1\!\to\!#2}
-%\newcommand{\bcondbrnv}[2]{#1\!\to\!#2}
-\newcommand{\bcondbr}[4]{\bnd{#1}{#2}.\;#3\!\to\!#4}
-\newcommand{\bcondFT}[3]{\mathsf{cond}_{#1}\;\langle#2\;\ldots\;#3\rangle}
-\newcommand{\bcondFTL}[3]
- {\mathsf{cond}_{#1}\;\langle\!\!\!
-  \begin{array}[t]{l}#2\\\ldots\\#3\rangle\end{array}}
-\newcommand{\bcond}[3]{\mathsf{cond}_{#1}\;\langle#3\rangle_{#2}}
-\newcommand{\bcondI}[2]{\mathsf{cond}_{#1}\;\langle#2\rangle}
-\newcommand{\bcondII}[3]{\mathsf{cond}_{#1}\;\langle#2\;#3\rangle}
-\newcommand{\bcondtall}[3]{\mathsf{cond}_{#1}\;\left\langle#3\right\rangle_{#2}}
-\newcommand{\bcondO}
- {\bcond{\typ}{i}{\bcondbr{\varS_i}{\typS_i}{\bexpr_i}{\expr_i}}}
-
-\newcommand{\bexpr}{b}
-
-\newcommand{\casedots}{\mathsf{case}\ldots}
-\newcommand{\casebrFT}[6]{\seqFT{\bnd{#1}{#2}}{\bnd{#3}{#4}}.\;#5\!\to\!#6}
-\newcommand{\casebr}[4]{\bnd{#1}{#2}.\;#3\!\to\!#4}
-\newcommand{\caseFT}[5]{\mathsf{case}_{#1,#2}\;#3\;\langle#4\;\ldots\;#5\rangle}
-\newcommand{\caseFTL}[5]
- {\mathsf{case}_{#1,#2}\;#3\;
-  \langle\!\!\!\begin{array}[t]{l}#4\\\ldots\\#5\rangle\end{array}}
-\newcommand{\case}[5]{\mathsf{case}_{#1,#2}\;#3\;\langle#5\rangle_{#4}}
-\newcommand{\caseO}
- {\case{\typ}{\typ'}{\expr}{i}{\casebr{\varS_i}{\typS_i}{\pexpr_i}{\expr_i}}}
-\newcommand{\caseI}[4]{\mathsf{case}_{#1,#2}\;#3\;\langle#4\rangle}
-\newcommand{\caseIIL}[5]
- {\mathsf{case}_{#1,#2}\;#3\;
-  \langle\!\!\!\begin{array}[t]{l}#4\\#5\rangle\end{array}}
-\newcommand{\casetall}[5]
- {\mathsf{case}_{#1,#2}\;#3\;\left\langle#5\right\rangle_{#4}}
-%\newcommand{\caseFIT}[7]
-% {\mathsf{case}\;#1\;\{#2\!\to\!#3\ldots#4\!\to\!#5\ldots#6\!\to\!#7\}}
-%\newcommand{\caseTF}[3]{\mathsf{case}\;#1\;\{\ldots#2\!\to\!#3\ldots\}}
-
-\newcommand{\pexpr}{p}
-
-\newcommand{\lett}[7] % avoid conflict with \let
- {\mathsf{let}_{#1,#2}\;\bnd{#3}{#4}.\;#5\!\gets\!#6\;\mathsf{in}\;#7}
-\newcommand{\lettO}{\lett{\typ}{\typ'}{\varS}{\typS}{\pexpr}{\expr}{\expr'}}
-
-\newcommand{\letrecFT}[8]
- {\mathsf{let}_{#1}\;\langle\bnd{#2}{#3}\!\gets\!#4\ldots
-                            \bnd{#5}{#6}\!\gets\!#7\rangle\;\mathsf{in}\;#8}
-\newcommand{\letrecFTO}
- {\letrecFT{\typ}{\var_1}{\typ_1}{\expr_1}{\var_n}{\typ_n}{\expr_n}{\expr}}
-\newcommand{\letrec}[6]
- {\mathsf{let}_{#1}\;\langle\bnd{#3}{#4}\!\gets\!#5\rangle_{#2}\;\mathsf{in}\;#6}
-\newcommand{\letrecO}{\letrec{\typ}{i}{\var_i}{\typ_i}{\expr_i}{\expr}}
-%\newcommand{\letrecTF}[4]
-% {\mathsf{letr}\;\langle\ldots\bnd{#1}{#2}\!\gets\!#3\ldots\rangle\;#4}
-
-\newcommand{\choos}[2]{\mathsf{ch}_{#1,#2}} % avoid conflict with \choose
-\newcommand{\choosO}{\choos{\tquotO}{\typ'}}
-
-\newcommand{\embedtest}[2]{\mathsf{emb?}_{#1}\ #2}
-\newcommand{\embedtestO}{\embedtest{\tsumO}{\cnam_j}}
-\newcommand{\embtest}[1]{\mathsf{emb?}\;#1}
-\newcommand{\embtestO}{\embtest{\cnam_j}}
-
-\newcommand{\asY}{\mathsf{as}}
-\newcommand{\palias}[3]{#1\!:\!#2\;\mathsf{as}\;#3}
-\newcommand{\paliasO}{\palias{\var}{\typ}{\pexpr}}
-\newcommand{\paliasg}[2]{#1\;\mathsf{as}\;#2}
-\newcommand{\paliasgO}{\paliasg{\pexpr}{\pexpr'}}
-
 \newcommand{\efvarY}{\mathcal{FV}}%{\mathcal{F}\!\mathcal{V}}
 \newcommand{\efvar}[1]{\efvarY(#1)}
 \newcommand{\efvarO}{\efvar{\expr}}
@@ -347,62 +231,8 @@
 \newcommand{\tdefO}{\tdef{\tnam}{\tvarS}{\typ}}
 \newcommand{\tdefdots}[1]{\mathsf{def}\ #1\ldots}
 
-\newcommand{\cnam}{c}
-\newcommand{\cnamS}{\seq{c}}
-\newcommand{\recog}{g}
-\newcommand{\recogS}{\seq{g}}
-\newcommand{\optyp}{\typ^\circ}
-\newcommand{\optypS}{\seq{\optyp}}
-\newcommand{\notyp}{\mathsf{noty}}
-%\newcommand{\tsumFT}[4]{#1\;#2+\cdots+#3\;#4}
-%\newcommand{\tsumFTO}{\tsumFT{\cnam_1}{\typ_1}{\cnam_n}{\typ_n}}
-%\newcommand{\tsum}[3]{\sum_{#1}#2\;#3}
-%\newcommand{\tsumO}{\tsum{i}{\cnam_i}{\typ_i}}
-%%\newcommand{\tsumTF}[2]{\cdots+#1\;#2+\cdots}
-\newcommand{\tsumFT}[6]{#1\;#2\!:\!#3+\cdots+#4\;#5\!:\!#6}
-\newcommand{\tsumFTO}
- {\tsumFT{\cnam_1}{\optyp_1}{\recog_1}{\cnam_n}{\optyp_n}{\recog_n}}
-\newcommand{\tsum}[4]{\sum_{#1}#2\;#3\!:\!#4}
-\newcommand{\tsumO}{\tsum{i}{\cnam_i}{\optyp_i}{\recog_i}}
-
-\newcommand{\tdefsum}[3]{\mathsf{def}\ #1[#2]=#3}
-
-\newcommand{\equival}[1]{\mathsf{equiv}_{#1}}
-
-\newcommand{\absconjIII}[5]
- {\begin{array}[t]{r@{\;}l}
-  \lambda\bnd{#1}{#2}. & #3 \\ \conjY & #4 \\ \conjY & #5
-  \end{array}}
-
-\newcommand{\tquot}[4]{#1/#2\!:\!#3\!:\!#4}
-\newcommand{\tquotO}{\tquot{\typ}{\tqpred}{\quot}{\choo}}
-\newcommand{\tqpred}{\mathit{eq}}
-\newcommand{\quot}{\mathit{quo}}
-\newcommand{\choo}{\mathit{ch}}
-
-\newcommand{\tdefquot}[3]{\mathsf{def}\ #1[#2]=#3}
-
 \newcommand{\odec}[3]{\mathsf{op}\ #1\!:\!\{#2\}\;#3}
 \newcommand{\odecO}{\odec{\onam}{\tvarS}{\typ}}
-
-%\newcommand{\odef}[3]{\mathsf{def}\ \{#1\}\ #2=#3}
-%\newcommand{\odefO}{\odef{\tvarS}{\onam}{\expr}}
-%\newcommand{\odefdots}[1]{\mathsf{def}\ldots#1\ldots}
-\newcommand{\odef}[5]{\mathsf{def}\ \{#4\}\ (#1\!:\!\{#2\}\;#3)=#5}
-\newcommand{\odefO}{\odef{\onam}{\tvarS}{\typ}{\tvarS'}{\expr}}
-
-\newcommand{\opwty}[3]{#1\!:\!\{#2\}\;#3}
-\newcommand{\odefFT}[4]{\mathsf{op}\ #1,\ldots,#2=#3,\ldots,#4}
-\newcommand{\odefFTO}{\odefFT{\opwty{\onam_1}{\tvarS_1}{\typ_1}}
-                             {\opwty{\onam_n}{\tvarS_n}{\typ_n}}
-                             {\expr_1}
-                             {\expr_n}}
-\newcommand{\odefI}[4]{\mathsf{op}\ #1\!:\!\{#2\}\;#3=#4}
-
-\newcommand{\oconFT}[3]{\mathsf{op}\ #1,\ldots,#2::#3}
-\newcommand{\oconFTO}{\oconFT{\opwty{\onam_1}{\tvarS_1}{\typ_1}}
-                             {\opwty{\onam_n}{\tvarS_n}{\typ_n}}
-                             {\expr}}
 
 \newcommand{\ax}[2]{\mathsf{ax}\ \{#1\}\ #2}
 \newcommand{\axO}{\ax{\tvarS}{\expr}}
@@ -450,9 +280,6 @@
 \newcommand{\cxvar}[1]{\cxvarY(#1)}
 \newcommand{\cxvarO}{\cxvar{\cx}}
 
-%\newcommand{\Spec}{\mathit{Sp}}
-%\newcommand{\spec}{\mathit{sp}}
-
 \newcommand{\opsinY}{\mathcal{ON}}%{\mathcal{O}\!\mathcal{N}}
 \newcommand{\opsin}[1]{\opsinY(#1)}
 
@@ -485,30 +312,10 @@
 \newcommand{\esbsokY}{\mathit{OKsbs}}
 \newcommand{\esbsok}[3]{\esbsokY(#1,#2,#3)}
 \newcommand{\esbsokO}[1]{\esbsok{#1}{\varI}{\exprI}}
-%\newcommand{\Pos}{\mathit{Pos}}
-%\newcommand{\pos}{\omega}
-
-%\newcommand{\isesbsatY}{\isesbsat{\_}{\_}{\_}{\_}{\_}}
-%\newcommand{\isesbsat}[5]{#1[#2/#3@#4]\leadsto#5}
-%\newcommand{\isesbsatO}[3]{\istsbsat{#1}{\exprI}{\exprI'}{#2}{#3}}
-
-%\newcommand{\posineY}{\mathit{posIn}}
-%\newcommand{\posine}[2]{\posineY(#1,#2)}
-%\newcommand{\posineO}{\posine{\pos}{\expr}}
-
-%\newcommand{\esbsatokY}{\mathit{OKsbs}}
-%\newcommand{\esbsatok}[4]{\esbsatokY(#1,#2,#3,#4)}
-
-%\newcommand{\psbsY}{\psbs{\_}{\_}{\_}}
-%\newcommand{\psbs}[3]{#1[#2/#3]}
-%\newcommand{\psbsO}[1]{\psbs{#1}{\varI}{\varI'}}
 
 \newcommand{\cvarvY}{\mathcal{CV}}%{\mathcal{C}\!\mathcal{V}}
 \newcommand{\cvarv}[2]{\cvarvY(#1,#2)}
 \newcommand{\cvarvO}[1]{\cvarv{#1}{\varI}}
-
-%\newcommand{\cvarpY}{\mathcal{C}\!\mathcal{V}}
-%\newcommand{\cvarp}[2]{\cvarpY(#1,#2)}
 
 \newcommand{\ctvarY}{\mathcal{CTV}}
 \newcommand{\ctvar}[2]{\ctvarY(#1,#2)}
@@ -530,68 +337,36 @@
 \newcommand{\cxwf}[1]{\vdash#1:\textsc{context}}
 \newcommand{\cxwfO}{\cxwf{\cx}}
 
-\newcommand{\Rcxmt}{\textsc{cxMT}}
-\newcommand{\Rcxtdec}{\textsc{cxTdec}}
-\newcommand{\Rcxodec}{\textsc{cxOdec}}
-\newcommand{\Rcxtdef}{\textsc{cxTdef}}
-%\newcommand{\Rcxodef}{\textsc{cxOdef}}
-\newcommand{\Rcxax}{\textsc{cxAx}}
-\newcommand{\Rcxlem}{\textsc{cxLem}}
+\newcommand{\Rcxmt}   {\textsc{cxMT}}
+\newcommand{\Rcxtdec} {\textsc{cxTdec}}
+\newcommand{\Rcxodec} {\textsc{cxOdec}}
+\newcommand{\Rcxax}   {\textsc{cxAx}}
 \newcommand{\Rcxtvdec}{\textsc{cxTVdec}}
-\newcommand{\Rcxvdec}{\textsc{cxVdec}}
-
-%\newcommand{\spwfY}{\spwf{\_}}
-%\newcommand{\spwf}[1]{\vdash#1:\textsc{spec}}
-%\newcommand{\spwfO}{\spwf{\spec}}
-
-%\newcommand{\Rspec}{\textsc{spec}}
+\newcommand{\Rcxvdec} {\textsc{cxVdec}}
 
 \newcommand{\istyY}{\isty{\_}{\_}}
 \newcommand{\isty}[2]{#1\vdash#2:\textsc{type}}
 \newcommand{\istyO}[1]{\isty{\cx}{#1}}
 
 \newcommand{\Rtbool}{\textsc{tyBool}}
-\newcommand{\Rtvar}{\textsc{tyVar}}
+\newcommand{\Rtvar} {\textsc{tyVar}}
 \newcommand{\Rtinst}{\textsc{tyInst}}
-\newcommand{\Rtarr}{\textsc{tyArr}}
-\newcommand{\Rtrec}{\textsc{tyRec}}
-\newcommand{\Rtsum}{\textsc{tySum}}
-\newcommand{\Rtsub}{\textsc{tyRestr}}
-\newcommand{\Rtquot}{\textsc{tyQuot}}
+\newcommand{\Rtarr} {\textsc{tyArr}}
+\newcommand{\Rtrec} {\textsc{tyRec}}
+\newcommand{\Rtsub} {\textsc{tyRestr}}
 
 \newcommand{\teqY}{\teq{\_}{\_}{\_}}
 \newcommand{\teq}[3]{#1\vdash#2\approx#3}
 \newcommand{\teqO}[2]{\teq{\cx}{#1}{#2}}
 
-\newcommand{\Rtedef}{\textsc{teDef}}
-\newcommand{\Rterefl}{\textsc{teRefl}}
-%\newcommand{\Rtesymmtrans}{\textsc{teSymmTrans}}
-\newcommand{\Rtesymm}{\textsc{teSymm}}
-\newcommand{\Rtetrans}{\textsc{teTrans}}
-\newcommand{\Rteinst}{\textsc{teInst}}
-\newcommand{\Rtearr}{\textsc{teArr}}
-\newcommand{\Rterec}{\textsc{teRec}}
-\newcommand{\Rtesum}{\textsc{teSum}}
-\newcommand{\Rterestr}{\textsc{teRestr}}
-\newcommand{\Rtequot}{\textsc{teQuot}}
-\newcommand{\Rterecord}{\textsc{teRecOrd}}
-\newcommand{\Rtesumord}{\textsc{teSumOrd}}
-
-%\newcommand{\Rtesubpred}{\textsc{teRestrPred}}
-%\newcommand{\Rtequotpred}{\textsc{teQuotPred}}
-%\newcommand{\Rtesbs}{\textsc{teSubst}}
-
 \newcommand{\issubY}{\issub{\_}{\_}{\_}{\_}}
 \newcommand{\issub}[4]{#1\vdash#2\prec_{#3}#4}
 \newcommand{\issubO}[3]{\issub{\cx}{#1}{#2}{#3}}
 
-\newcommand{\Rstsub}{\textsc{stRestr}}
+\newcommand{\Rstsub} {\textsc{stRestr}}
 \newcommand{\Rstrefl}{\textsc{stRefl}}
-%\newcommand{\Rsttrans}{\textsc{stTrans}}
-\newcommand{\Rstarr}{\textsc{stArr}}
-\newcommand{\Rstrec}{\textsc{stRec}}
-\newcommand{\Rstsum}{\textsc{stSum}}
-\newcommand{\Rstteq}{\textsc{stTE}}
+\newcommand{\Rstarr} {\textsc{stArr}}
+\newcommand{\Rstrec} {\textsc{stRec}}
 
 \newcommand{\perm}{P}
 
@@ -607,55 +382,32 @@
 \newcommand{\Reabs}{\textsc{exAbs}}
 \newcommand{\Reeq}{\textsc{exEq}}
 \newcommand{\Reif}{\textsc{exIf}}
-\newcommand{\ReifO}{\textsc{exIf0}}
 \newcommand{\Redesc}{\textsc{exThe}}
 \newcommand{\Reproj}{\textsc{exProj}}
-\newcommand{\Reembed}{\textsc{exEmbed}}
-\newcommand{\Requot}{\textsc{exQuot}}
 \newcommand{\Resuper}{\textsc{exSuper}}
 \newcommand{\Resub}{\textsc{exSub}}
 \newcommand{\Reabsalpha}{\textsc{exAbsAlpha}}
-\newcommand{\Redescalpha}{\textsc{exTheAlpha}}
-
-\newcommand{\cxneg}{\cx^-}
-\newcommand{\cxpos}{\cx^+}
 
 \newcommand{\theoY}{\theo{\_}{\_}}
 \newcommand{\theo}[2]{#1\vdash#2}
 \newcommand{\theoO}[1]{\theo{\cx}{#1}}
 
-\newcommand{\Rthax}{\textsc{thAx}}
-%\newcommand{\Rthdef}{\textsc{thDef}}
-\newcommand{\Rthbool}{\textsc{thBool}}
-\newcommand{\Rthcongr}{\textsc{thCongr}}
-\newcommand{\Rthext}{\textsc{thExt}}
-\newcommand{\Rthabs}{\textsc{thAbs}}
-\newcommand{\Rthsbs}{\textsc{thSubst}}
-%\newcommand{\Rthsbsif}{\textsc{thSubstIf}}
-%\newcommand{\Rthtsbs}{\textsc{thTySubst}}
-\newcommand{\Rthif}{\textsc{thIf}}
-\newcommand{\Rthdesc}{\textsc{thThe}}
-\newcommand{\Rthrec}{\textsc{thRec}}
-\newcommand{\Rthembsurj}{\textsc{thEmbSurj}}
-\newcommand{\Rthembdist}{\textsc{thEmbDist}}
-\newcommand{\Rthembinj}{\textsc{thEmbInj}}
-\newcommand{\Rthquotsurj}{\textsc{thQuotSurj}}
-\newcommand{\Rthquoteclass}{\textsc{thQuotEqCls}}
-\newcommand{\Rthsub}{\textsc{thSub}}
-\newcommand{\Rthrefl}{\textsc{thRefl}}
-\newcommand{\Rthsymm}{\textsc{thSymm}}
-\newcommand{\Rthtrans}{\textsc{thTrans}}
-\newcommand{\Rthopsbs}{\textsc{thOpSubst}}
-\newcommand{\Rthappsbs}{\textsc{thAppSubst}}
-\newcommand{\Rthabssbs}{\textsc{thAbsSubst}}
-\newcommand{\Rtheqsbs}{\textsc{thEqSubst}}
-\newcommand{\Rthifsbs}{\textsc{thIfSubst}}
-\newcommand{\Rthdescsbs}{\textsc{thTheSubst}}
-\newcommand{\Rthprojsbs}{\textsc{thProjSubst}}
-\newcommand{\Rthembedsbs}{\textsc{thEmbedSubst}}
-\newcommand{\Rthquotsbs}{\textsc{thQuotSubst}}
+\newcommand{\Rthax}     {\textsc{thAx}}
+\newcommand{\Rthrefl}   {\textsc{thRefl}}
+\newcommand{\Rthsymm}   {\textsc{thSymm}}
+\newcommand{\Rthtrans}  {\textsc{thTrans}}
+\newcommand{\Rthappsbs} {\textsc{thAppSubst}}
+\newcommand{\Rtheqsbs}  {\textsc{thEqSubst}}
+\newcommand{\Rthifsbs}  {\textsc{thIfSubst}}
+\newcommand{\Rthsbs}    {\textsc{thSubst}}
+\newcommand{\Rthbool}   {\textsc{thBool}}
+\newcommand{\Rthext}    {\textsc{thExt}}
+\newcommand{\Rthabs}    {\textsc{thAbs}}
+\newcommand{\Rthif}     {\textsc{thIf}}
+\newcommand{\Rthdesc}   {\textsc{thThe}}
+\newcommand{\Rthrec}    {\textsc{thRec}}
 \newcommand{\Rthprojsub}{\textsc{thProjSub}}
-\newcommand{\Rthembsub}{\textsc{thEmbSub}}
+\newcommand{\Rthsub}    {\textsc{thSub}}
 
 \newcommand{\jcxdots}[1]{#1\vdash\ldots}
 

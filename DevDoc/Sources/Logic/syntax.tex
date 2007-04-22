@@ -34,16 +34,15 @@ There is a type $\bool$ for boolean (i.e.\ truth) values.
 \item
 A name $\tvar$ is a type variable.
 \item
-A type instance $\tinstO$ is obtained by combining a type name $\tnam$ with
-zero or more argument types $\typS$. We may write $\tinst{\tnam}{\seqO}$ as
-just $\tnam$.
+A type instance $\tinstO$ is obtained by combining a type name $\tnam$ with zero
+or more argument types $\typS$. We may write $\tinst{\tnam}{\seqO}$ as just
+$\tnam$.
 \item
 An arrow type $\tarrO$ consists of a domain $\typ_1$ and a range $\typ_2$.
 \item
 A record type $\trecO$ consists of typed fields $\fnam_i$. There is one record
-type that has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only
-inhabitant is the empty record. All the fields of a record type must be
-distinct names.
+type that has no fields (i.e.\ $n=0$), denoted $\trecmt$, whose only inhabitant
+is the empty record. All the fields of a record type are distinct names.
 \item
 A restriction type $\tsubO$ is obtained by combining a type $\typ$ with an
 expression $\tspred$ (meant to be a predicate on $\typ$). Restriction types
@@ -83,27 +82,24 @@ argument $\expr_2$.
 \item
 A (lambda) abstraction $\absO$ consists of an argument $\var$ with an explicit
 type $\typ$ and a body $\expr$.
-
-
 \item
-An equality $\eqO$ consists of a left-hand side $\expr_1$ and a right-hand
-side $\expr_2$.
+An equality $\eqO$ consists of a left-hand side $\expr_1$ and a right-hand side
+$\expr_2$.
 \item
 A conditional $\iifO$ consists of a condition $\expr_0$, a ``then'' branch
 $\expr_1$, and an ``else'' branch $\expr_2$.
 \item
 The description operator $\descopO$ is tagged by a type. It operates on
-predicates over $\typ$ (i.e.\ over values of type $\tarr{\typ}{\bool}$) that
-are satisfied by a unique value of $\typ$, and its result is \emph{the} value
-that satisfies the predicate.
+predicates over $\typ$ (i.e.\ over values of type $\tarr{\typ}{\bool}$) that are
+satisfied by a unique value of $\typ$, and its result is \emph{the} value that
+satisfies the predicate.
 \item
-A projector $\projopO$ is tagged by a record type and by a field of that
-record type. We may write $\projopO$ as just $\pjopO$ when the record type is
+A projector $\projopO$ is tagged by a record type and by a field of that record
+type. We may write $\projopO$ as just $\pjopO$ when the record type is
 inferrable or irrelevant.
 \end{itemize}
 
-We introduce the abbreviations (many of which capture expressions defined in
-\cite{lm})
+We introduce the abbreviations
 \[
 \begin{abblist}
 \abbitem{\true}
@@ -179,17 +175,12 @@ Stand-alone quantifiers are higher-order functions, but they can be written in
 binder form. Also the description operator can be written in binder form. Note
 that both $\faS{\seqO}{\expr}$ and $\exS{\seqO}{\expr}$ stand for $\expr$.
 \item
-A dotted projection $\projO$ abbreviates an applied projection whose record
-type is left implicit.
+A dotted projection $\projO$ abbreviates an applied projection whose record type
+is left implicit.
 \end{itemize}
 
-%With the exception of unique existentials, all the above abbreviations
-%correspond to expressions defined in \cite{lm}. As shown later, all the other
-%constructs defined in \cite{lm}, including patterns, are captured as
-%abbreviations of the expressions introduced above.
-
-The function $\func{\efvarY}{\Expr}{\Setf{\Nam}}$ returns the free variables
-of an expression
+The function $\func{\efvarY}{\Expr}{\Setf{\Nam}}$ returns the free variables of
+an expression
 \[
 \begin{eqlist}
 \eqitem{\efvar{\var}}        {\setI{\var}}
@@ -205,21 +196,20 @@ of an expression
 \]
 Note that we do not consider the free variables in expressions contained in
 types contained in expressions (e.g.\ we do not consider the free variables in
-$\tspred$ as part of the free variables of $\op{\onam}{\tsubO}$). The reason
-is that, as defined later, all the expressions contained in well-formed types
-have no free variables.
+$\tspred$ as part of the free variables of $\op{\onam}{\tsubO}$). The reason is
+that, as will be apparent later, all the expressions contained in well-formed
+types have no free variables.
 
 \subsection{Contexts}
 
 We define the set of context elements as
 \[
-\setdefVI
+\setdefV
  {\Cxel}
  {+}
  {\setST{\tdecO}{\tnam\in\Nam\AND n\in\N}}
  {\setST{\odecO}{\onam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
  {\setST{\axO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
- {\setST{\lemO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
  {\setST{\tvdecO}{\tvar\in\Nam}}
  {\setST{\vdecO}{\var\in\Nam\AND\typ\in\Typ}}
 \]
@@ -228,19 +218,13 @@ Explanation:
 \begin{itemize}
 \item
 A type declaration $\tdecO$ introduces a type name with an associated arity.
-The type variables of a type declaration as defined in \cite{lm} only serve to
-determine an arity and are otherwise irrelevant; thus, in the above definition
-we directly use the arity without type variables.
 \item
 An op(eration) declaration $\odecO$ introduces an op name with an associated
 type, polymorphic in the explicit type variables.
 \item
-An axiom $\axO$ introduces an expression (with type $\bool$, as defined
-later), polymorphic in the explicit type variables. We may write
-$\ax{\seqO}{\expr}$ as just $\axM{\expr}$.
-\item
-A lemma $\lemO$ captures a theorem or conjecture as defined in \cite{lm}. We
-may write $\lem{\seqO}{\expr}$ as just $\lemM{\expr}$.
+An axiom $\axO$ introduces an expression (with type $\bool$, as defined later),
+polymorphic in the explicit type variables. We may write $\ax{\seqO}{\expr}$ as
+just $\axM{\expr}$.
 \item
 A type variable declaration $\tvdecO$ introduces a type variable. We may write
 $\seqFT{\tvdec{\tvar_1}}{\tvdec{\tvar_n}}$ as just
@@ -255,8 +239,8 @@ We define the set of contexts as
 \]
 In other words, a context is a finite sequence of context elements.
 
-The function $\func{\cxtnamY}{\Cx}{\Setf{\Nam}}$ returns the type names
-declared in a context
+The function $\func{\cxtnamY}{\Cx}{\Setf{\Nam}}$ returns the type names declared
+in a context
 \[
 \begin{eqlist}
 \eqitem{\cxtnam{\mtcx}}
@@ -307,21 +291,11 @@ in a context
 \end{eqlist}
 \]
 
-%\subsection{Specs}
-
-%We define the set of spec(ification)s as
-%\[
-%\Spec = \setST{\cx\in\Cx}{\cxtvar{\cx}=\cxvar{\cx}=\emptyset}
-%\]
-%In other words, a spec is a context without type variable declarations and
-%variable declarations.
-
 \subsection{Substitutions}
 
 \subsubsection{Type substitutions}
 
-The function
-$\func{\tsbsY}{(\Typ+\Expr)\times(\Funcp{\Nam}{\Typ})}{\Typ+\Expr}$
+The function $\func{\tsbsY}{(\Typ+\Expr)\times(\Funcp{\Nam}{\Typ})}{\Typ+\Expr}$
 substitutes each type variable $\tvar\in\dom{\tsbsmap}$, where
 $\funcp{\tsbsmap}{\Nam}{\Typ}$, with the type $\tsbsmap(\tvar)$ in a type or
 expression $x$ (written $\tsbsO{x}$)
@@ -393,47 +367,9 @@ $\esbsO{\expr}$)
        {\pjop{\fnam}}
 \end{eqlistC}
 \]
-No substitution is performed in the expressions contained in types contained
-in expressions because, as already mentioned, such inner expressions have no
-free variables in well-formed types.
-
-%Given variables $\varS\in\SeqNR{\Nam}$ and expressions $\exprIS\in\Seq{\Expr}$
-%with $\seqlen{\varS}=\seqlen{\exprIS}$, we define the substitution of $\varS$
-%with $\exprIS$ in expressions as
-%\[
-%\begin{eqlistC}
-%\eqitem{\esbsO{\opO}}
-%       {\opO}
-%\eqitem{\esbsO{\var}}
-%       {\cond{\var=\var_i}{\exprI_i}{\var}}
-%\eqitem{\esbsO{(\appO)}}
-%       {\app{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
-%\eqitem{\esbsO{(\absO)}}
-%       {\abs{\var}{\typ}{\esbsO{\expr}}}
-%\eqitem{\esbsO{(\eqO)}}
-%       {\eq{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
-%\eqitem{\esbsO{(\iifO)}}
-%       {\iif{\esbsO{\expr_0}}{\esbsO{\expr_1}}{\esbsO{\expr_2}}}
-%\eqitem{\esbsO{\recO}}
-%       {\rec{i}{\fnam_i}{\esbsO{\expr_i}}}
-%\eqitem{\esbsO{(\projO)}}
-%       {\proj{\esbsO{\expr}}{\fnam}}
-%\eqitem{\esbsO{\left(\embedO\right)}}
-%       {\embedO}
-%\eqitem{\esbsO{\relxO}}
-%       {\relx{\esbsO{\tspred}}}
-%\eqitem{\esbsO{(\restrO)}}
-%       {\restr{\esbsO{\tspred}}{\esbsO{\expr}}}
-%\eqitem{\esbsO{\quotO}}
-%       {\quot{\esbsO{\tqpred}}}
-%\eqitem{\esbsO{(\choosO)}}
-%       {\choos{\esbsO{\tqpred}}{\esbsO{\expr}}}
-%\eqitem{\esbsO{(\caseO)}}
-%       {\case{\esbsO{\expr}}{i}{\pat_i}{\esbsO{\expr_i}}}
-%\eqitem{\esbsO{(\letrecO)}}
-%       {\letrec{\var}{\typ}{\esbsO{\expr}}{\esbsO{\expr'}}}
-%\end{eqlistC}
-%\]
+No substitution is performed in the expressions contained in types contained in
+expressions because, as already mentioned, such inner expressions have no free
+variables in well-formed types.
 
 The function $\func{\cvarvY}{\Expr\times\Nam}{\Setf{\Nam}}$ returns the
 variables that would be captured if a variable $\varI$ were substituted with
@@ -462,167 +398,14 @@ $\expr$ at the free occurrences of $\varI$ in $\expr$)
 \end{eqlist}
 \]
 If we view an expression $\expr$ as a tree, each free occurrence of $\varI$ in
-$\expr$ is reachable via a path in the tree that starts from the root. That
-path contains zero or more lambda binders, each with its own variable. Then
-$\cvarvO{\expr}$ is the set of all lambda-bound variables along all paths of
-all free occurrences of $\varI$ in $\expr$.
+$\expr$ is reachable via a path in the tree that starts from the root. That path
+contains zero or more lambda binders, each with its own variable. Then
+$\cvarvO{\expr}$ is the set of all lambda-bound variables along all paths of all
+free occurrences of $\varI$ in $\expr$.
 
 The relation $\ternrel{\esbsokY}{\Expr}{\Nam}{\Expr}$ captures the condition
-that the substitution $\esbsO{\expr}$ causes no free variables in $\exprI$ to
-be captured
+that the substitution $\esbsO{\expr}$ causes no free variables in $\exprI$ to be
+captured
 \[
 \esbsok{\expr}{\varI}{\exprI}\IFF\efvar{\exprI}\cap\cvarvO{\expr}=\emptyset
 \]
-
-%Similarly to type occurrences in types and expressions, the position of an
-%expression occurrence in an expression can be identified by a sequence of
-%natural numbers that describes a path through the tree, i.e.\ an element of
-%$\Pos$ (defined earlier).
-
-%The relation $\pentrel{\isesbsatY}{\Expr}{\Expr}{\Expr}{\Pos}{\Expr}$ captures
-%that $\expr'$ is the result of substituting an expression $\exprI$ with an
-%expression $\exprI'$ at position $\pos$ in an expression $\expr$ (written
-%$\isesbsatO{\expr}{\pos}{\expr'}$)
-%\[
-%\begin{lrulelist}
-%\lruleO{\isesbsatO{\exprI}{\seqO}{\exprI'}}
-%\lruleI{\isesbsatO{(\appO)}{\cons{1}{\pos}}{(\app{\expr_1'}{\expr_2})}}
-%       {\isesbsatO{\expr_1}{\pos}{\expr_1'}}
-%\lruleI{\isesbsatO{(\appO)}{\cons{2}{\pos}}{(\app{\expr_1}{\expr_2'})}}
-%       {\isesbsatO{\expr_2}{\pos}{\expr_2'}}
-%\lruleI{\isesbsatO{(\absO)}{\cons{0}{\pos}}{(\abs{\var}{\typ}{\expr'})}}
-%       {\isesbsatO{\expr}{\pos}{\expr'}}
-%\lruleI{\isesbsatO{(\eqO)}{\cons{1}{\pos}}{(\eq{\expr_1'}{\expr_2})}}
-%       {\isesbsatO{\expr_1}{\pos}{\expr_1'}}
-%\lruleI{\isesbsatO{(\eqO)}{\cons{2}{\pos}}{(\eq{\expr_1}{\expr_2'})}}
-%       {\isesbsatO{\expr_2}{\pos}{\expr_2'}}
-%\lruleI{\isesbsatO{(\iifO)}{\cons{0}{\pos}}{(\iif{\expr_0'}{\expr_1}{\expr_2})}}
-%       {\isesbsatO{\expr_0}{\pos}{\expr_0'}}
-%\lruleI{\isesbsatO{(\iifO)}{\cons{1}{\pos}}{(\iif{\expr_0}{\expr_1'}{\expr_2})}}
-%       {\isesbsatO{\expr_1}{\pos}{\expr_1'}}
-%\lruleI{\isesbsatO{(\iifO)}{\cons{2}{\pos}}{(\iif{\expr_0}{\expr_1}{\expr_2'})}}
-%       {\isesbsatO{\expr_2}{\pos}{\expr_2'}}
-%\lruleI{\isesbsatO{(\descO)}{\cons{0}{\pos}}{(\desc{\var}{\typ}{\expr'})}}
-%       {\isesbsatO{\expr}{\pos}{\expr'}}
-%\lruleI{\isesbsatO{\projO}{\cons{0}{\pos}}{\proj{\expr'}{\fnam}}}
-%       {\isesbsatO{\expr}{\pos}{\expr'}}
-%\end{lrulelist}
-%\]
-
-%%\[
-%%\begin{eqlist}
-%%\eqitem{\osbsO{\exprI}{\seqO}}
-%%       {\exprI'}
-%%\eqitem{\osbsO{(\appO)}{\cons{1}{\pos}}}
-%%       {\app{\osbsO{\expr_1}{\pos}}{\expr_2}}
-%%\eqitem{\osbsO{(\appO)}{\cons{2}{\pos}}}
-%%       {\app{\expr_1}{\osbsO{\expr_2}{\pos}}}
-%%\eqitem{\osbsO{(\absO)}{\cons{0}{\pos}}}
-%%       {\abs{\var}{\typ}{\osbsO{\expr}{\pos}}}
-%%\eqitem{\osbsO{(\eqO)}{\cons{1}{\pos}}}
-%%       {\eq{\osbsO{\expr_1}{\pos}}{\expr_2}}
-%%\eqitem{\osbsO{(\eqO)}{\cons{2}{\pos}}}
-%%       {\eq{\expr_1}{\osbsO{\expr_2}{\pos}}}
-%%\eqitem{\osbsO{(\iifO)}{\cons{0}{\pos}}}
-%%       {\iif{\osbsO{\expr_0}{\pos}}{\expr_1}{\expr_2}}
-%%\eqitem{\osbsO{(\iifO)}{\cons{1}{\pos}}}
-%%       {\iif{\expr_0}{\osbsO{\expr_1}{\pos}}{\expr_2}}
-%%\eqitem{\osbsO{(\iifO)}{\cons{2}{\pos}}}
-%%       {\iif{\expr_0}{\expr_1}{\osbsO{\expr_2}{\pos}}}
-%%\eqitem{\osbsO{\recO}{\cons{i}{\pos}}}
-%%       {\recFIT{\fnam_1}{\expr_1}
-%%               {\fnam_i}{\osbsO{\expr_i}{\pos}}
-%%               {\fnam_n}{\expr_n}}
-%%\eqitem{\osbsO{(\projO)}{\cons{0}{\pos}}}
-%%       {\proj{\osbsO{\expr}{\pos}}{\fnam}}
-%%\eqitem{\osbsO{(\restrO)}{\cons{0}{\pos}}}
-%%       {\restr{\tspred}{\osbsO{\expr}{\pos}}}
-%%\eqitem{\osbsO{(\choosO)}{\cons{0}{\pos}}}
-%%       {\choos{\tqpred}{\osbsO{\expr}{\pos}}}
-%%\eqitem{\osbsO{(\caseO)}{\cons{0}{\pos}}}
-%%       {\case{\osbsO{\expr}{\pos}}{i}{\pat_i}{\expr_i}}
-%%\eqitem{\osbsO{(\caseO)}{\cons{i}{\pos}}}
-%%       {\caseFIT{\expr}{\pat_1}{\expr_1}
-%%                       {\pat_i}{\osbsO{\expr_i}{\pos}}
-%%                       {\pat_n}{\expr_n}}
-%%\eqitem{\osbsO{(\letrecO)}{\cons{0}{\pos}}}
-%%       {\letrec{\var}{\typ}{\osbsO{\expr}{\pos}}{\expr'}}
-%%\eqitem{\osbsO{(\letrecO)}{\cons{1}{\pos}}}
-%%       {\letrec{\var}{\typ}{\expr}{\osbsO{\expr'}{\pos}}}
-%%\end{eqlist}
-%%\]
-
-%The relation $\binrel{\posineY}{\Pos}{\Expr}$ captures legal positions in
-%expressions
-%\[
-%\posineO\IFF\EXISTS{\expr',\exprI,\exprI'}{\isesbsatO{\expr}{\pos}{\expr'}}
-%\]
-
-%%The function
-%%$\func{\expratY}
-%%      {\setST{\tupII{\expr}{\pos}\in\Expr\times\Pos}{\posine{\pos}{\expr}}}
-%%      {\Expr}$
-%%returns the subexpression at a given position in a superexpression
-%%\[
-%%\isesbsatO{\expr}{\pos}{\expr'}\IMPLIES\exprat{\expr}{\pos}=\exprI
-%%\]
-
-%%The function
-%%$\func{\esbsatY}
-%%      {\setST{\tupIV{\expr}{\exprI}{\exprI'}{\pos}
-%%              \in\Expr\times\Expr\times\Expr\times\Pos}
-%%             {\EXISTS{\expr'}{\isesbsatO{\expr}{\pos}{\expr'}}}}
-%%      {\Expr}$
-%%substitutes an expression $\exprI$ with an expression $\exprI'$ at position
-%%$\pos$ in an expression $\expr$ (written $\esbsatO{\expr}{\pos}$)
-%%\[
-%%\isesbsatO{\expr}{\pos}{\expr'}\IMPLIES\esbsatO{\expr}{\pos}=\expr'
-%%\]
-
-%The function
-%$\func{\cvarpY}
-%      {\setST{\tupII{\expr}{\pos}\in\Expr\times\Pos}{\posineO}}{\Setf{\Nam}}$
-%returns the variables that would be captured if they were substituted in an
-%expression $\expr$ at position $\pos$ (i.e.\ all the variables bound in $\expr$
-%at position $\pos$)
-%\[
-%\begin{eqlist}
-%\eqitem{\cvarp{\expr}{\seqO}}
-%       {\emptyset}
-%\eqitem{\cvarp{\appO}{(\cons{1}{\pos})}}
-%       {\cvarp{\expr_1}{\pos}}
-%\eqitem{\cvarp{\appO}{(\cons{2}{\pos})}}
-%       {\cvarp{\expr_2}{\pos}}
-%\eqitem{\cvarp{\absO}{(\cons{0}{\pos})}}
-%       {\setI{\var}\cup\cvarp{\expr}{\pos}}
-%\eqitem{\cvarp{\eqO}{(\cons{1}{\pos})}}
-%       {\cvarp{\expr_1}{\pos}}
-%\eqitem{\cvarp{\eqO}{(\cons{2}{\pos})}}
-%       {\cvarp{\expr_2}{\pos}}
-%\eqitem{\cvarp{\iifO}{(\cons{0}{\pos})}}
-%       {\cvarp{\expr_0}{\pos}}
-%\eqitem{\cvarp{\iifO}{(\cons{1}{\pos})}}
-%       {\cvarp{\expr_1}{\pos}}
-%\eqitem{\cvarp{\iifO}{(\cons{2}{\pos})}}
-%       {\cvarp{\expr_2}{\pos}}
-%\eqitem{\cvarp{\descO}{(\cons{0}{\pos})}}
-%       {\setI{\var}\cup\cvarp{\expr}{\pos}}
-%\eqitem{\cvarp{\projO}{(\cons{0}{\pos})}}
-%       {\cvarp{\expr}{\pos}}
-%\end{eqlist}
-%\]
-
-%The relation $\quatrel{\esbsatokY}{\Expr}{\Expr}{\Expr}{\Pos}$ captures the
-%condition that the substitution $\isesbsatO{\expr}{\pos}{\expr'}$ is defined
-%(for some $\expr'$), affects no free variables in $\exprI$ that are bound in
-%$\expr$, and causes no free variables in $\exprI'$ to be captured
-%\[
-%\esbsatok{\expr}{\exprI}{\exprI'}{\pos}
-%\IFF
-%\EXISTS{\expr'}
-%       {\isesbsatO{\expr}{\pos}{\expr'}
-%        \AND
-%        \efvar{\exprI}\cap\cvarp{\expr}{\pos}=\emptyset
-%        \AND
-%        \efvar{\exprI'}\cap\cvarp{\expr}{\pos}=\emptyset}
-%\]

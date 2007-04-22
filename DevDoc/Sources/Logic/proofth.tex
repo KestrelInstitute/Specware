@@ -47,14 +47,6 @@ contexts as
 \[
 \rruleII
  {\cxwfO}
- {\theo{\snoc{\cx}{\tvdec{\tvarS}}}{\expr}}
- {\cxwf{\snoc{\cx}{\lemO}}}
- {\Rcxlem}
-\]
-
-\[
-\rruleII
- {\cxwfO}
  {\tvar\not\in\cxtvar{\cx}}
  {\cxwf{\snoc{\cx}{\tvdecO}}}
  {\Rcxtvdec}
@@ -72,8 +64,8 @@ contexts as
 Eplanation:
 \begin{itemize}
 \item
-The empty context $\mtcx$ is well-formed. All other rules add context elements
-to well-formed contexts. Thus, a well-formed context is constructed
+The empty context $\mtcx$ is well-formed. All the other rules add context
+elements to well-formed contexts. Thus, a well-formed context is constructed
 incrementally starting with the empty one and adding elements.
 \item
 A type declaration $\tdecO$ can be added to $\cx$ if $\tnam$ is not already
@@ -82,24 +74,12 @@ declared in $\cx$.
 An op declaration $\odecO$ can be added to $\cx$ if $\onam$ is not already
 declared in $\cx$. The op's type $\typ$ must be well-formed (defined later) in
 $\cx$ extended with the type variables $\tvarS$, which must be distinct. Note
-that we do not require that all the type variables in $\typ$ are among
-$\tvarS$, because there is no need for that restriction.
-%However, since a well-formed spec has no type variable declarations, an op
-%declaration in a well-formed spec automatically satisfies the restriction.
+that we do not require that all the type variables in $\typ$ are among $\tvarS$,
+because there is no need for that restriction.
 \item
-A formula $\expr$ can be added to $\cx$ as an axiom if $\expr$ has type
-$\bool$ (defined later). In general, the axiom may be polymorphic in
-(distinct) type variables $\tvarS$.
-%As in other cases, all type variables in $\expr$ are automatically in $\tvarS$
-%in well-formed specs, but that is not required in well-formed contexts in
-%general.
-\item
-A formula $\expr$ can be added to $\cx$ as a lemma if it is a theorem (defined
-later). In general, the lemma may be polymorphic in (distinct) type variables
-$\tvarS$.
-%As in other cases, all type variables in $\expr$ are automatically in $\tvarS$
-%in well-formed specs, but that is not required in well-formed contexts in
-%general.
+A formula $\expr$ can be added to $\cx$ as an axiom if $\expr$ has type $\bool$
+(defined later). In general, the axiom may be polymorphic in (distinct) type
+variables $\tvarS$.
 \item
 A type variable declaration $\tvdecO$ can be added to $\cx$ if $\tvar$ is not
 already declared in $\cx$.
@@ -108,30 +88,10 @@ A variable declaration $\vdecO$ can be added to $\cx$ if $\var$ is not already
 declared in $\cx$ and $\typ$ is well-formed type in $\cx$.
 \end{itemize}
 
-%\subsection{Well-formed specs}
-
-%We define a unary relation $\unarel{\spwfY}{\Spec}$ to capture well-formed
-%specs as
-
-%\[
-%\rruleI
-% {\cxwf{\spec}}
-% {\spwfO}
-% {\Rspec}
-%\]
-
-%Note that the unary relation $\spwfY$ is defined on set $\Spec$, which, as
-%previously defined, consists of all the contexts without type variable and
-%variable declarations. Thus, there is no need to include, as part of this
-%rule, the condition that $\spec$ does not contain any type variable and
-%variable declaration. The rule just says that a spec (which has no type
-%variable or variable declarations by definition) is well-formed as a spec if
-%it is well-formed as a context.
-
 \subsection{Well-formed types}
 
-We define a binary relation $\binrel{\istyY}{\Cx}{\Typ}$ to capture
-well-formed types as
+We define a binary relation $\binrel{\istyY}{\Cx}{\Typ}$ to capture well-formed
+types as
 
 \[
 \rruleI
@@ -190,41 +150,40 @@ A type variable is a well-formed type in any well-formed context that declares
 it.
 \item
 A type instance $\tinstO$ is well-formed in any well-formed context $\cx$ that
-declares $\tnam$ if the argument types are well-formed in $\cx$ and their
-number matches the arity of $\tnam$.
+declares $\tnam$ if the argument types are well-formed in $\cx$ and their number
+matches the arity of $\tnam$.
 \item
 An arrow type $\tarrO$ is well-formed in a context $\cx$ if its domain type
 $\typ_1$ is well-formed in $\cx$ and its range type $\typ_2$ is well-formed in
 $\cx$ extended with a variable $\var$ of type $\typ_1$. The judgement
 $\istyO{\typ_1}$ is not an explicit premise of the rule because, as proved
 later, it is a consequence of the existing premise
-$\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}$. Allowing $\cx$ to be
-extended with $\vdec{\var}{\typ_1}$ for the well-formedness of $\typ_2$ makes
-sense because if $\typ_1$ is empty then $\tarrO$ contains just the empty
-function (i.e.\ the function with empty domain) and the well-formedness of
-$\typ_2$ is irrelevant.\footnote{The declaration $\vdec{\var}{\typ_1}$ enables
-the derivation of the formula $\ex{\var}{\typ_1}{\true}$, which is not
-otherwise derivable in general, because $\typ_1$ may be empty. Thus, $\typ_2$
-may be well-formed in $\snoc{\cx}{\vdec{\var}{\typ_1}}$ without necessarily
-being well-formed in $\cx$. An example is a type $\typ_2$ that contains an
-expression $\iif{(\ex{\var}{\typ_1}{\true})}{\expr_1}{\expr_2}$ where
-$\expr_2$ is not well-typed in a consistent context because some theorem does
-not hold (e.g.\ that the divisor of a division is not 0); if
-$\ex{\var}{\typ_1}{\true}$ is a theorem, then the context of the else branch
-is inconsistent (see rule \Reif\ later) and therefore $\expr_2$ is well-typed
-in that inconsistent context.} Even though $\typ_2$ cannot contain $\var$
-(because well-formed types have no free variables), if \MS\ were extended with
-dependent arrow types\footnote{Such an extension is indeed planned.} then
-$\typ_2$ would be allowed to contain $\var$ and the form of the rule would
-seem more natural than it does now. If we used a more restrictive rule with
-premises $\istyO{\typ_1}$ and $\istyO{\typ_2}$, then \thmref{thm-exty-wf}
-would not hold (see explanation near that theorem).
+$\isty{\snoc{\cx}{\vdec{\var}{\typ_1}}}{\typ_2}$. Allowing $\cx$ to be extended
+with $\vdec{\var}{\typ_1}$ for the well-formedness of $\typ_2$ makes sense
+because if $\typ_1$ is empty then $\tarrO$ contains just the empty function
+(i.e.\ the function with empty domain) and the well-formedness of $\typ_2$ is
+irrelevant.\footnote{The declaration $\vdec{\var}{\typ_1}$ enables the
+derivation of the formula $\ex{\var}{\typ_1}{\true}$, which is not otherwise
+derivable in general, because $\typ_1$ may be empty. Thus, $\typ_2$ may be
+well-formed in $\snoc{\cx}{\vdec{\var}{\typ_1}}$ without necessarily being
+well-formed in $\cx$. An example is a type $\typ_2$ that contains an expression
+$\iif{(\ex{\var}{\typ_1}{\true})}{\expr_1}{\expr_2}$ where $\expr_2$ is not
+well-typed in a consistent context because some theorem does not hold (e.g.\
+that the divisor of a division is not 0); if $\ex{\var}{\typ_1}{\true}$ is a
+theorem, then the context of the else branch is inconsistent (see rule \Reif\
+later) and therefore $\expr_2$ is well-typed in that inconsistent context.} Even
+though $\typ_2$ cannot contain $\var$ (because well-formed types have no free
+variables), if \MS\ were extended with dependent arrow types\footnote{Such an
+extension is indeed planned.} then $\typ_2$ would be allowed to contain $\var$
+and the form of the rule would seem more natural than it does now. If we used a
+more restrictive rule with premises $\istyO{\typ_1}$ and $\istyO{\typ_2}$, then
+\thmref{thm-exty-wf} would not hold (see explanation near that theorem).
 \item
 The rule for record types is straightforward.
 \item
 For restriction types, we require the predicate to have type
-$\tarr{\typ}{\bool}$, which implies that $\typ$ is a well-formed type (as
-proved later). We also require that $\tspred$ has no free variables.
+$\tarr{\typ}{\bool}$, which implies that $\typ$ is a well-formed type (as proved
+later). We also require that $\tspred$ has no free variables.
 \end{itemize}
 
 \subsection{Subtyping}
@@ -277,14 +236,14 @@ Unsurprisingly, a restriction type $\tsubO$ is a subtype of $\typ$, with
 $\tspred$ being the predicate over the supertype $\typ$ that identifies the
 values that are also in the subtype $\tsubO$.
 \item
-Subtyping is reflexive, i.e.\ a (well-formed) type $\typ$ is a subtype of
-itself and the associated subtype predicate is always true.
+Subtyping is reflexive, i.e.\ a (well-formed) type $\typ$ is a subtype of itself
+and the associated subtype predicate is always true.
 \item
 Arrow types are monotonic in their range types with respect to subtyping. The
 associated predicate holds when all the values of the function satisfy the
 predicate associated to the range subtype. Note that the domain must be the
-same; while domain contravariance is used in some type systems with subtypes,
-it would violate extensionality (see explanation in \cite{pvs-seman}). The
+same; while domain contravariance is used in some type systems with subtypes, it
+would violate extensionality (see explanation in \cite{pvs-seman}). The
 extension of $\cx$ with $\vdecO$ mirrors rule \Rtarr: if $\typ$ is empty, then
 both $\tarr{\typ}{\typ_1}$ and $\tarr{\typ}{\typ_2}$ contain just the empty
 function and the former is trivially a subtype of the latter.
@@ -292,11 +251,11 @@ function and the former is trivially a subtype of the latter.
 Record types are monotonic in their component types with respect to
 subtyping. The record subtype predicate holds when all the component subtype
 predicates hold on the record components. The components can be re-ordered,
-i.e.\ the order of record components is irrelevant. In the rule, the
-permutation is captured by a bijective function $\perm$ on the field indices
-$\setFT{1}{n}$ (the rule explicitly says that $\perm$ is injective only, but
-since domain and codomain are finite and equal, it follows that $\perm$ is
-also surjective, hence bijective).
+i.e.\ the order of record components is irrelevant. In the rule, the permutation
+is captured by a bijective function $\perm$ on the field indices $\setFT{1}{n}$
+(the rule explicitly says that $\perm$ is injective only, but since domain and
+codomain are finite and equal, it follows that $\perm$ is also surjective, hence
+bijective).
 \end{itemize}
 
 We do not need a transitivity rule for subtyping. As defined later, subtyping
@@ -410,9 +369,9 @@ well-formed types $\typS$ whose number matches the number of type variables
 $\tvarS$. The result is a well-formed expression whose type is obtained by
 substituting $\tvarS$ with $\typS$ in the declared type $\typ$ of $\onam$.
 \item
-An application is well-typed if the function has an arrow type and the
-argument has the domain type of the arrow type. The type of the application is
-the range type of the arrow type.
+An application is well-typed if the function has an arrow type and the argument
+has the domain type of the arrow type. The type of the application is the range
+type of the arrow type.
 \item
 An abstraction is well-typed if the body is well-typed in the context extended
 with the declaration of the variable bound by the abstraction. The type of the
@@ -422,41 +381,37 @@ the type of the body as range.
 An equality is well-typed with type $\bool$ if the left- and right-hand sides
 are both well-typed with a common type $\typ$.
 \item
-In the rule $\Reif$ for conditionals, the two branches must be well-typed,
-with a common type, in the context where the condition holds and does not
-hold, respectively. The additional assumption about the condition holding or
-not is realized by adding an axiom to the context. This rule makes
-conditionals non-strict. The premise $\istyO{\typ}$ in \Reif\ may be
-redundant, i.e.\ derivable from the others, but this fact has not been
+In the rule $\Reif$ for conditionals, the two branches must be well-typed, with
+a common type, in the context where the condition holds and does not hold,
+respectively. The additional assumption about the condition holding or not is
+realized by adding an axiom to the context. The premise $\istyO{\typ}$ in \Reif\
+may be redundant, i.e.\ derivable from the others, but this fact has not been
 established yet and so for now we have it as an explicit premise, which is
 needed to prove \thmref{thm-exty-wf}.
 \item
 The description operator for a well-formed type is well-typed and denotes a
-function from the predicates over the type that are satisfied by a unique
-value to the type itself.
+function from the predicates over the type that are satisfied by a unique value
+to the type itself.
 \item
 A projector for a well-formed record type is well-typed and denotes a function
 from the record type to the corresponding component type.
 \item
 Rules $\Resuper$ and $\Resub$ link the notion of well-typed expressions to the
-notion of subtyping. If an expression $\expr$ has a subtype $\typ$, it also
-has any supertype $\typ'$. If an expression $\expr$ has a supertype $\typ'$,
-it also has any subtype $\typ$ such that the associated predicate holds on
-$\expr$.
+notion of subtyping. If an expression $\expr$ has a subtype $\typ$, it also has
+any supertype $\typ'$. If an expression $\expr$ has a supertype $\typ'$, it also
+has any subtype $\typ$ such that the associated predicate holds on $\expr$.
 \item
-The last rule amounts to treating expressions up to alpha equivalence,
-allowing to rename bound variables maintaining well-typedness. Without this
-rule, the \MS\ logic would be non-monotonic, because extending a context with
-variable declarations may invalidate conclusions about the well-typedness of
-expressions that bind those variables (e.g.\ if $\hastyO{\absO}{\typ'}$ were
-provable then $\hasty{\snoc{\cx}{\vdecO}}{\absO}{\typ'}$ would not be
-provable). This rule also allows variable hiding as described in \cite{lm}.
+The last rule amounts to treating expressions up to alpha equivalence, allowing
+to rename bound variables maintaining well-typedness. Without this rule, the
+\MS\ logic would be non-monotonic, because extending a context with variable
+declarations may invalidate conclusions about the well-typedness of expressions
+that bind those variables (e.g.\ if $\hastyO{\absO}{\typ'}$ were provable then
+$\hasty{\snoc{\cx}{\vdecO}}{\absO}{\typ'}$ would not be provable).
 \end{itemize}
 
 \subsection{Theorems}
 
-We define a binary relation $\binrel{\theoY}{\Cx}{\Expr}$ to capture theorems
-as
+We define a binary relation $\binrel{\theoY}{\Cx}{\Expr}$ to capture theorems as
 
 \[
 \rruleIII
@@ -603,24 +558,24 @@ as
 Explanation:
 \begin{itemize}
 \item
-Axioms in a well-formed context are readily instantiated into theorems, via
-rule $\Rthax$. More precisely, the type variables over which the axiom is
-polymorphic are replaced with well-formed types.
+Axioms in a well-formed context are readily instantiated into theorems, via rule
+$\Rthax$. More precisely, the type variables over which the axiom is polymorphic
+are replaced with well-formed types.
 \item
-Rules \Rthrefl, \Rthsymm, and \Rthtrans\ say that equality is an
-equivalence, i.e.\ reflexive, symmetric, and transitive.
+Rules \Rthrefl, \Rthsymm, and \Rthtrans\ say that equality is an equivalence,
+i.e.\ reflexive, symmetric, and transitive.
 \item
 Rules \Rthappsbs, \Rtheqsbs, and \Rthifsbs\ state the substitutivity of
-equalities in expressions. Note that in rule $\Rthifsbs$ the context is
-extended with an axiom saying that the condition is true or false.
+equalities in expressions. Note that in rule $\Rthifsbs$ the context is extended
+with an axiom saying that the condition is true or false.
 \item
 Rule \Rthsbs\ says that anything equal to a theorem is itself a theorem.
 \item
 Rule \Rthbool\ asserts that $\true$ and $\false$ are the only values of type
 $\bool$.
 \item
-Rule \Rthext\ says that a function is characterized by its values over all
-the values of its domain, i.e.\ by extensionality.
+Rule \Rthext\ says that a function is characterized by its values over all the
+values of its domain, i.e.\ by extensionality.
 \item
 Rule \Rthabs\ defines the semantics of lambda abstraction: the bound variable
 $\var$ is replaced with the argument $\expr'$ in the body $\expr$. The premise
@@ -631,14 +586,14 @@ expression if both branches do, in the contexts extended with the assumption
 that the condition is true and false, respectively. Note the premise that
 requires the conditional to be well-typed.
 \item
-Rule \Rthdesc\ says that a description satisfies the predicate associated to
-the description.
+Rule \Rthdesc\ says that a description satisfies the predicate associated to the
+description.
 \item
 Rule \Rthrec\ says that a record is characterized by the values of its
 components.
 \item
-Rule \Rthprojsub\ says that projectors for record subtypes agree with
-projectors for record supertypes.
+Rule \Rthprojsub\ says that projectors for record subtypes agree with projectors
+for record supertypes.
 \item
 Rule \Rthsub\ says that every value of a subtype satisfies the predicate that
 characterizes the subtype with respect to a supertype.
@@ -650,7 +605,6 @@ The previous subsections have defined judgements of the forms
 \[
 \begin{array}{l}
 \cxwfO \\
-%\spwfO \\
 \istyO{\typ} \\
 \issubO{\typ_1}{\tspred}{\typ_2} \\
 \hastyO{\expr}{\typ} \\
@@ -667,9 +621,9 @@ preceding judgements using some rule.
 
 \noindent
 [[[TO DO: Make sure that the rules for theorems are ``sufficient'', i.e.\ all
-truths ``of interest'' are indeed theorems derivable from the rules. Even
-though higher-order logic is notoriously incomplete, in practice theorem
-provers like PVS and HOL are sufficient to prove desired properties of
-formalized concepts without running into theoretical limitations. Perhaps the
-requirement boils down to prove completeness with respect to so-called
-``general models'' (cf.\ \cite{andrews}).]]]
+truths ``of interest'' are indeed theorems derivable from the rules. Even though
+higher-order logic is notoriously incomplete, in practice theorem provers like
+PVS and HOL are sufficient to prove desired properties of formalized concepts
+without running into theoretical limitations. Perhaps the requirement boils down
+to prove completeness with respect to so-called ``general models'' (cf.\
+\cite{andrews}).]]]
