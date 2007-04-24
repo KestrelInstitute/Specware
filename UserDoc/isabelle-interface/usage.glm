@@ -56,10 +56,16 @@ command [[done]] is inserted.
 <para>
 
 The proof script should occur immediately after the theorem that it
-    applies to. If the script applies to a proof obligation that is
-    not explicit in the spec, then the name of the obligation should
-    appear after [[proof Isa]], on the same line. Such named scripts
-    may occur anywhere except immediately after a theorem.
+applies to. If the script applies to a proof obligation that is not
+explicit in the spec, then the name of the obligation should appear
+after [[proof Isa]], on the same line. Such named scripts may not
+occur immediately after a theorem or definition. Because of this
+restriction, it is sometime necessary to insert and empty proof
+annotation after a theorem or definition, as follows:
+
+[[
+||  proof Isa end-proof
+]]
 </para>
 
 <para>
@@ -183,16 +189,18 @@ A type translation begins with the word [[type]] followed by the
 </para>
 
 <para>
+
 An op translation begins with the fully-qualified &Specware; name,
-   followed by [[->]] and the &Isabelle; constant name. If the
-   Isabelle constant is an infix operator, then it should be followed
-   by [[Left]] or [[Right]] depending on whether it is left or right
-   associative and a precedence number. Note that the precedence number is
-   relative to &Specware;'s precedence ranking, not &Isabelle;'s. Also
-   if the &Specware; op is an uncurried binary op and the
-   corresponding &Isabelle; constant is a curried binary op, then
-   put [[curried]] after the &Isabelle; name. Also, a binary op can be
-mapped with the arguments reversed by appending [[reversed]] to the line.
+followed by [[->]] and the &Isabelle; constant name. If the Isabelle
+constant is an infix operator, then it should be followed by [[Left]]
+or [[Right]] depending on whether it is left or right associative and
+a precedence number. Note that the precedence number is relative to
+&Specware;'s precedence ranking, not &Isabelle;'s. Also, an uncurried
+&Specware; op can be mapped to a curried &Isabelle; constant by putting
+[[curried]] after the &Isabelle; name, amd a binary op can be
+mapped with the arguments reversed by appending [[reversed]] to the
+line.
+
 </para>
 
 </section>
