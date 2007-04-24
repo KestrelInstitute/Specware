@@ -1269,7 +1269,7 @@ IsaTermPrinter qualifying spec
 		      lengthString(5, " \\<Longrightarrow> "),
 		      ppTerm c Top concl]
 
-  def notImplicitVarNames = ["hd","tl","comp"]   % \_dots Don't know how to get all of them
+  def notImplicitVarNames = ["hd","tl","comp","fold","map"]   % \_dots Don't know how to get all of them
 
   op  parsePropertyTerm: Context \_rightarrow List String \_rightarrow MS.Term \_rightarrow List MS.Term \_times MS.Term
   def parsePropertyTerm c explicit_universals term =
