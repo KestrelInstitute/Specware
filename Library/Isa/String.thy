@@ -62,9 +62,10 @@ axioms lt_def:
   "s1 < s2 = (compare(s1,s2) = Less)"
 axioms leq_def: 
   "(s1::string) <= (s2::string) = (s1 < s2 \<or> s1 = s2)"
+(*
 axioms newline_def: 
   "newline = ''
-''"
+''" *)
 theorem toScreen_def: 
   "toScreen s = ()"
   apply(auto)
