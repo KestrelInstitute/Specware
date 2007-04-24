@@ -576,7 +576,7 @@
 		       (warn "No value for expression?")))
 		(values)))))))))
 
-(defvar specware::*dont-use-x-symbol?* nil)
+(defvar specware::*dont-use-x-symbol?* t)
 
 (defun use-x-symbol? ()
   (and (not specware::*dont-use-x-symbol?*)
