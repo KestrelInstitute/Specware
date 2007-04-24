@@ -197,7 +197,7 @@ or [[Right]] depending on whether it is left or right associative and
 a precedence number. Note that the precedence number is relative to
 &Specware;'s precedence ranking, not &Isabelle;'s. Also, an uncurried
 &Specware; op can be mapped to a curried &Isabelle; constant by putting
-[[curried]] after the &Isabelle; name, amd a binary op can be
+[[curried]] after the &Isabelle; name, and a binary op can be
 mapped with the arguments reversed by appending [[reversed]] to the
 line.
 
