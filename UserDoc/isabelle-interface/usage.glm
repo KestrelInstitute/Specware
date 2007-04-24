@@ -41,7 +41,7 @@ The translator is called using the emacs command [[c-c c-i]]. The
 <para>
 An embedded &Isabelle; proof script in a &Specware; spec consists of an
    introductory line beginning with [[proof Isa]], the actual
-   &Isabelle; on subsequent lines terminated by the string
+   &Isabelle; script on subsequent lines terminated by the string
    [[end-proof]]. For example, the simple proof script [[apply(auto)]]
    can be embedded as follows:
 [[
@@ -49,6 +49,8 @@ An embedded &Isabelle; proof script in a &Specware; spec consists of an
 ||    apply(auto)
 ||  end-proof
 ]]
+If the last command before end-proof is not [[done]] or [[sorry]], the
+command [[done]] is inserted.
 </para>
 
 <para>
@@ -149,7 +151,7 @@ A translation table for &Specware; types and ops is introduced by a
 [[
 ||  proof Isa Thy_Morphism Presburger
 ||    type Integer.Integer -> int
-||    type Nat.Nat -> nat (int,nat)
+||    type Nat.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
 ||    Integer.+ -> +  Left 25
 ||    Integer.- -> -  Left 25
 ||    IntegerAux.- -> -
@@ -161,7 +163,6 @@ A translation table for &Specware; types and ops is introduced by a
 ||    Integer.< -> <  Left 20
 ||    Integer.>= -> \<quote>\\</quote><ge>  Left 20
 ||    Integer.> -> >  Left 20
-||    Integer.abs -> abs
 ||    Integer.min -> min curried
 ||    Integer.max -> max curried
 ||   end-proof
@@ -176,7 +177,9 @@ A type translation begins with the word [[type]] followed by the
   commas. Note that by default, sub-types are represented by their
   super-type, so you would only specify a translation if you wanted
   them to be different, in which case coercion functions are
-  necessary.
+  necessary. Following the coercions functions can appear a list of
+  overloaded functions within square brackets. These are used to
+  minimize coercions back and forth between the two types.
 </para>
 
 <para>
@@ -188,7 +191,8 @@ An op translation begins with the fully-qualified &Specware; name,
    relative to &Specware;'s precedence ranking, not &Isabelle;'s. Also
    if the &Specware; op is an uncurried binary op and the
    corresponding &Isabelle; constant is a curried binary op, then
- put [[curried]] after the &Isabelle; name.
+   put [[curried]] after the &Isabelle; name. Also, a binary op can be
+mapped with the arguments reversed by appending [[reversed]] to the line.
 </para>
 
 </section>

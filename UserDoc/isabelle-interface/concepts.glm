@@ -54,8 +54,9 @@ constructs will be accepted by &IsabelleHOL;. In particular,
 only case expressions that involve a single level of pattern-matching
 on constructors are accepted. An exception, is that some nesting is
 allowed in top-level case expressions that are converted into
-definition cases.  Mutual recursion and local recursive functions are
-also not currently accepted.
+definition cases.  Local recursive functions in &Specware are
+lambda-lifted to top-level functions in &IsabelleHOL.
+Mutual recursion is not currently supported.
 </para>
 
 
