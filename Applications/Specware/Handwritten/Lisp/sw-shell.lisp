@@ -23,6 +23,9 @@
     ("showx"     . "[unit-term] Like `show' but shows all types and ops including imports.")
     ("obligations" . "[unit term] Abbreviation for show obligations ...")
     ("oblig"     . "[unit term] Abbreviation for show obligations ...")
+    ("gen-obligations" . "[unit term] Generate Isabelle/HOL obligation theory for unit.")
+    ("gen-obligs" . "[unit term] Generate Isabelle/HOL obligation theory for unit.")
+
     ("prove"     . "[proof arguments] Abbreviation for proc prove ...")
     ("punits"    . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
@@ -298,6 +301,19 @@
 	   (gen-java  (cl-user::swj    argstr) (values))
 	   ((obligations oblig) (cl-user::show   (concatenate 'string "obligations " (cl-user::norm-unitid-str argstr)))
 	    (values))
+	   ((gen-obligations gen-oblig gen-obligs)
+	    (let ((TypeObligations::generateTerminationConditions? nil)
+		  (TypeObligations::generateExhaustivityConditions? nil)
+		  (Prover::treatNatSpecially? nil)
+		  (uid (if (not (null argstr))
+			   argstr
+			   (if (not (null cl-user::*last-unit-Id-_loaded*))
+			       cl-user::*last-unit-Id-_loaded*
+			       (progn (format t "No previous unit processed~%")
+				      nil)))))
+	      (unless (null uid)
+		(setq cl-user::*last-unit-Id-_loaded* uid)
+		(IsaTermPrinter::printUIDtoThyFile-2 uid t))))
 	   (prove     (cl-user::sw (concatenate 'string "prove " argstr)) (values))
 	   (proofcheck (cl-user::swpc argstr))
 	   (pc        (cl-user::swpc argstr))

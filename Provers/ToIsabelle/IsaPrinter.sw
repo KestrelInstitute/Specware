@@ -156,7 +156,10 @@ IsaTermPrinter qualifying spec
     case uidNamesForValue val of
       | None \_rightarrow ()
       | Some (_,uidstr,uid) \_rightarrow
-        let fil_nm = uidstr ^ "Isa/.thy" in
+        if val = Spec(getBaseSpec())
+          then ()
+        else
+        let fil_nm = uidstr ^ ".thy" in
 	let _ = ensureFileDeleted fil_nm in
 	case val of
 	  | Spec spc \_rightarrow
@@ -165,7 +168,7 @@ IsaTermPrinter qualifying spec
 		                deleteThyFilesForVal (Spec im_sp)
 			      | _ \_rightarrow ())
 	      spc.elements
-	  | _ \_rightarrow ()
+          | Morph morph \_rightarrow deleteThyFilesForVal (Spec morph.dom)
 
   op  ensureFileDeleted: String \_rightarrow ()
   def ensureFileDeleted fil_nm =
@@ -464,7 +467,7 @@ IsaTermPrinter qualifying spec
 
   op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow Pretty
   def ppImport c sc_tm spc =
-    case uidStringPairForValueOrTerm(c,Spec spc, sc_tm) of
+    case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
       | None \_rightarrow prString "<UnknownSpec>"
       | Some ((thy_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
         let _ = if c.recursive?
