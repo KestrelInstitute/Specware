@@ -37,12 +37,14 @@ theorem List__nthTail_Obligation_subsort0:
   "\<lbrakk>i \<le> length (l::'a list); \<not> (i = 0)\<rbrakk> \<Longrightarrow> 0 \<le> int i - 1"
   apply(auto)
   done
+(* Different result on Mac from Linuzx
 theorem List__nthTail_Obligation_subsort1: 
   "\<lbrakk>i \<le> length l; \<not> (i = 0)\<rbrakk> \<Longrightarrow> 
    int i - 1 \<le> int (length (tl l))"
   apply(auto)
   apply(arith)
   done
+*)
 recdef List__nthTail "measure (\<lambda>(l,i). i)"
   "List__nthTail(l,i)
      = (if i = 0 then l else List__nthTail(tl l,i - 1))"
