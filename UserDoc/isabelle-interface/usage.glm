@@ -24,13 +24,19 @@ Currently Isabelle does not run under Windows so this script is not
 <title>Using The Translator</title>
 
 <para>
-The translator is called using the emacs command [[c-c c-i]]. The
+The translator is called using the emacs command [[Generate Isabelle Obligation Theory]]
+from the &Specware; menu (with keyboard shortcuts [[c-c c-i]] or [[c-c TAB]]). The
     translation is written to a file in the [[Isa]] sub-directory of
     the current directory and the file is visited in a buffer. The
-    user may then process the Isabelle theory providing proof steps as
+    user may then process the &Isabelle; theory providing proof steps as
     necessary. These proofs may then be copied back to the &Specware;
     spec so that the next time it is translated, the translation will
     include the proofs. 
+</para>
+
+<para>
+The translator may also be called using the &Specware; Shell command
+[[gen-obligations]] (or the abbreviation [[gen-obligs]]) applied to a unit id.
 </para>
 
 </section>
