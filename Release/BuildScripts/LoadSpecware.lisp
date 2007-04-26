@@ -61,9 +61,9 @@
 	    )
 
 ;; Used in printing out the license and about-specware command
-(defvar cl-user::Specware-version "4.2.0")
+(defvar cl-user::Specware-version "4.2.1")
 (defvar cl-user::Specware-version-name "Specware-4-2")
-(defvar cl-user::Specware-patch-level "0")
+(defvar cl-user::Specware-patch-level "1")
 
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-2")
