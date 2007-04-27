@@ -1,6 +1,6 @@
 #!/bin/sh
 
-defaultxemacs=/Applications/XEmacs.app/Contents/MacOS/XEmacs
+#defaultxemacs=/Applications/XEmacs.app/Contents/MacOS/XEmacs
 if [ -x $defaultxemacs ]; then
     xemacs=$defaultxemacs
 fi

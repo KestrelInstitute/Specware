@@ -20,6 +20,7 @@
 (specware::copy-directory (in-specware-dir     "Library/Base/")
 			  (in-distribution-dir "Library/Base/"))
 (delete-dir-if-present    (in-distribution-dir "Library/Base/CVS/"))
+(delete-dir-if-present    (in-distribution-dir "Library/Base/Isa/"))
 (delete-dir-if-present    (in-distribution-dir "Library/Base/Handwritten/CVS/"))
 (delete-dir-if-present    (in-distribution-dir "Library/Base/Handwritten/Lisp/CVS/"))
 (delete-file-if-present   (in-distribution-dir "Library/Base/Handwritten/Lisp/.cvsignore"))
@@ -37,7 +38,17 @@
 (specware::copy-directory (in-specware-dir     "Library/IO/Emacs/")
 			  (in-distribution-dir "Library/IO/Emacs/"))
 (delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/ilisp/CVS/"))
+(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/ilisp/"))
+
+(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/pcf/CVS/"))
+(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/genfonts/CVS/"))
+(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/origfonts/CVS/"))
+(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/fonts/CVS/"))
+(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/bigfonts/CVS/"))
+(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/CVS/"))
+
+(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/slime/CVS/"))
+(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/slime/doc/CVS/"))
 
 (specware::concatenate-files
    (loop for fil in '("Base/Handwritten/Lisp/Integer"
@@ -65,6 +76,8 @@
 			  (in-distribution-dir "Examples/Matching/"))
 (delete-dir-if-present    (in-distribution-dir "Examples/Matching/CVS"))
 (delete-dir-if-present    (in-distribution-dir "Examples/Matching/Snark"))
+(delete-dir-if-present    (in-distribution-dir "Examples/Matching/Isa"))
+(delete-dir-if-present    (in-distribution-dir "Examples/Matching/asw"))
 (delete-dir-if-present    (in-distribution-dir "Examples/Matching/lisp"))
 (delete-file-if-present   (in-distribution-dir "Examples/Matching/.cvsignore"))
 
