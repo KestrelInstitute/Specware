@@ -63,4 +63,4 @@ BIN_DIR=$SPECWARE_BIN
 
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4."$IMAGE_EXTENSION"
 
-"$LISP" --core "$LISP_HEAP_IMAGE" --eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (SB-UNIX:UNIX-EXIT 0))"
+"$LISP_HEAP_IMAGE" --eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (SB-UNIX:UNIX-EXIT 0))"

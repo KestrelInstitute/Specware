@@ -3,8 +3,11 @@
 
 (defvar *specware4-dir)
 
+(defvar sw:image-is-executable (eq *specware-lisp* 'sbcl))
+
 ;; This is called to start Specware. It is invoked by a command-line
 ;; argument to Xemacs. This spawns a Lisp process.
+
 (defun run-specware4 (&optional in-current-dir?)
   (interactive "P")
   (if (inferior-lisp-running-p)
@@ -88,14 +91,20 @@
 	(set-socket-init-for-specware))
       (let ((log-warning-minimum-level 'error))
 	;; Don't show spurious warning message
-	(sw:common-lisp sw:common-lisp-buffer-name
-			sw:common-lisp-directory
-			sw:common-lisp-image-name
-			sw:common-lisp-image-arguments
-			sw:common-lisp-host
-			sw:common-lisp-image-file
-			))
-      ;(sit-for 1)
+	(if sw:image-is-executable
+	    (sw:common-lisp sw:common-lisp-buffer-name
+			    sw:common-lisp-directory
+			    sw:common-lisp-image-file
+			    sw:common-lisp-image-arguments
+			    sw:common-lisp-host
+			    nil)
+	  (sw:common-lisp sw:common-lisp-buffer-name
+			  sw:common-lisp-directory
+			  sw:common-lisp-image-name
+			  sw:common-lisp-image-arguments
+			  sw:common-lisp-host
+			  sw:common-lisp-image-file)))
+					;(sit-for 1)
       (wait-for-prompt 0.1)
       (sw:eval-in-lisp-no-value
        (format "(cl:namestring (specware::change-directory %S))" sw:common-lisp-directory))
@@ -438,23 +447,29 @@
 				   (cmulisp "(ext:save-lisp %S)")
 				   (allegro "(excl::dumplisp :name %S)")
 				   (openmcl "(ccl:save-application %S)")
-				   (sbcl "(sb-ext:save-lisp-and-die %S)"))
+				   (sbcl "
+ (progn (dolist (thread (sb-thread:list-all-threads))
+    (unless (eq thread sb-thread:*current-thread*)
+      (sb-thread:terminate-thread thread)))
+    (sleep 0.1)
+    (sb-ext:save-lisp-and-die %S))"))
 				 world-name))
   (sit-for 2)
   (dotimes (i 10)
     (sit-for 2)
     (when (file-exists-p world-name)
       (return nil)))
-  (eval-in-lisp-in-order
-   (format "(cl:let ((filename %S))
+  (unless (eq *specware-lisp* 'sbcl)
+    (eval-in-lisp-in-order
+     (format "(cl:let ((filename %S))
              (cl:cond ((cl:probe-file filename)
                     (cl:format t \"~2&Wrote new ~A~2%%\" filename)
     	            (cl:format t \"~&It is safe to exit now..~%%\"))
                    (t
 	            (cl:warn \"Failed to write new ~A\" filename))))"
-	   world-name))
-  (when auto-exit?
-    (kill-lisp-and-then-emacs))
+	     world-name))
+    (when auto-exit?
+      (kill-lisp-and-then-emacs)))
   )
 
 (defun build-specware4-from-base (in-current-dir?)

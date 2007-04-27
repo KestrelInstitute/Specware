@@ -140,7 +140,7 @@
 (defun save-this-lisp-image (name)
   ;; Save this image.
   (set-gc-parameters-for-use nil)
-  (sb-ext::save-lisp-and-die name)) ;  :purify nil
+  (sb-ext::save-lisp-and-die name :executable t)) ;  :purify nil
 
 #+SBCL
 (defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)

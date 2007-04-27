@@ -22,7 +22,7 @@
 				'sbcl
 				(if (search "gcl" lisp-program)
 				    'gcl
-				  'cmulisp)))))
+				  'sbcl)))))
 (defvar *lisp-image-extension*
   (case *specware-lisp*
     (openmcl "openmcl-image")
@@ -277,6 +277,7 @@
     (setq specware-listener-p t)
     (let ((specware-listener-p t))
       (slime-start ;:buffer sw:common-lisp-buffer-name
+                   :program common-lisp-image-name
 		   :program-args
 		   (case *specware-lisp*
 		     ((cmulisp sbcl)
@@ -285,7 +286,7 @@
 				(if (eq *specware-lisp* 'cmulisp)
 				    "-core" "--core")
 				common-lisp-image-file)
-			(list common-lisp-image-name)))
+			(list)))
 		     (allegro (concatenate 'list
 					   common-lisp-image-arguments
 					   (if common-lisp-image-file
