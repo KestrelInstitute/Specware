@@ -26,6 +26,7 @@
 	    "        true)) nats))"
 	    ""
 	    " found in $TESTDIR/subst_spec.sw"
-	    "22.13-22.16"))
+	    "*.13-*.16"
+	    ))
 
  )
