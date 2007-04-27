@@ -501,14 +501,9 @@ MetaSlang qualifying spec
              []
 	     tms
    in
-     let compressed_terms = filter (fn tm -> case termInnerTerm tm of | Any _ -> false | _ -> true) non_dup_terms in
-     case compressed_terms of
-       | [] -> 
-         (case non_dup_terms of
-            | []   -> Any pos
-            | [tm] -> tm
-            | _    -> And (non_dup_terms, pos))
+     case non_dup_terms of
+       | []   -> Any pos
        | [tm] -> tm
-       | _    -> And (tms, pos)
+       | _    -> And (non_dup_terms, pos)
 
 end-spec
