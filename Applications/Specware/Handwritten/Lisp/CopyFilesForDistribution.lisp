@@ -120,9 +120,9 @@
   (format t "~&;;;~%")
   (format t "~&;;; Getting Specware Start-up Scripts % Binary ...~%")
 
-  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Specware")
+  (specware::copy-file (in-specware-dir "Release/Mac/sbcl/Specware")
 		       (in-distribution-dir "Specware.terminal"))
-  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Specware.sh")
+  (specware::copy-file (in-specware-dir "Release/Mac/sbcl/Specware.sh")
 		       (in-distribution-dir "SpecwareShell.sh"))
   (specware::copy-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclexe")
 		       (in-distribution-dir "Specware4.sbclexe"))
