@@ -1,3 +1,6 @@
+(defpackage "TYPEOBLIGATIONS")
+(defpackage "PROVER")
+(defpackage "ISATERMPRINTER")
 (defpackage :SWShell)
 (in-package :SWShell)
 
