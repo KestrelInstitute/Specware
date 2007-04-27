@@ -61,4 +61,4 @@ fi
 
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4."$IMAGE_EXTENSION"
 
-"$LISP" --core "$LISP_HEAP_IMAGE" --eval "(progn (format t \"~%Welcome to Specware ~a~2%\" specware-version) (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (exit))"
+"$LISP_HEAP_IMAGE" --eval "(progn (format t \"~%Welcome to Specware ~a~2%\" specware-version) (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (exit))"
