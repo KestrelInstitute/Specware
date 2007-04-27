@@ -20,7 +20,7 @@
 
  ("CompileFib"
   :swll "fib"
-  :output '(";;; Generating lisp file /tmp/lgen_lisp_tmp.lisp"
+  :output '(";;; Generating lisp file /tmp*/lgen_lisp_tmp.lisp"
 	    ""))
 
  ("RunFib" 
@@ -62,7 +62,7 @@
  ("Quotient Pattern"
   :swll "QuotientPattern"
   :output '(";;; Elaborating spec at $TESTDIR/QuotientPattern"
-	    ";;; Generating lisp file /tmp/lgen_lisp_tmp.lisp"
+	    ";;; Generating lisp file /tmp*/lgen_lisp_tmp.lisp"
 	    ""))
 
 ;;; Restrict is obsolete
@@ -93,7 +93,7 @@
  ("libtest" 
   :swll "libtest"
   :output '(";;; Elaborating spec at $TESTDIR/libtest"
-	    ";;; Generating lisp file /tmp/lgen_lisp_tmp.lisp"
+	    ";;; Generating lisp file /tmp*/lgen_lisp_tmp.lisp"
 	    ""))
 
  ("Prettyprint Parens"
@@ -124,7 +124,7 @@
 
  ("Simplify Restrict Pattern A"
   :swll "SubstRestrictedPat#A"
-  :output ";;; Generating lisp file /tmp/lgen_lisp_tmp.lisp
+  :output ";;; Generating lisp file /tmp*/lgen_lisp_tmp.lisp
 ")
 
  ("el Pattern A"
@@ -138,7 +138,7 @@
 
  ("Simplify Restrict Pattern B"
   :swll "SubstRestrictedPat#B"
-  :output ";;; Generating lisp file /tmp/lgen_lisp_tmp.lisp
+  :output ";;; Generating lisp file /tmp*/lgen_lisp_tmp.lisp
 ")
 
  ("el Pattern B"

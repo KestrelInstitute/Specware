@@ -214,7 +214,7 @@
  ("Tutorial: swll MatchingTest#Test" 
   :swll "/UserDoc/tutorial/example/MatchingTest#Test"
   :output '(";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingTest#Test"
-	    ";;; Generating lisp file /tmp/lgen_lisp_tmp.lisp"
+	    ";;; Generating lisp file /tmp*/lgen_lisp_tmp.lisp"
 	    (:optional "")
 	    (:optional "")
 	    ))
