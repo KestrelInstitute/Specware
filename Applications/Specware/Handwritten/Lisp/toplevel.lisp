@@ -85,6 +85,9 @@
 (defun sw-temp-file? (fil)
   (equal fil *current-temp-file*))
 
+(defun user-name ()
+  (or (specware::getEnv "USER") (specware::getEnv "USERNAME")))
+
 (defun add-to-swpath (dir)
   (let ((swpath (specware::getEnv "SWPATH")))
     (unless *saved-swpath*
@@ -352,6 +355,8 @@
   ;; scripts depend upon this returning true iff successful
   (let ((lisp-file-name (subst-home (or y (concatenate 'string
 					    specware::temporaryDirectory
+					    (user-name)
+					    "-swe/"
 					    "lgen_lisp_tmp"))))
 	(x (norm-unitid-str x)))
     (flet ((swll1 (x lisp-file-name)
@@ -485,7 +490,7 @@
 ;;;    (probe-file (make-pathname :directory full-dir-list))))
 
 (defun swe (x)
-  (let* ((tmp-dir (format nil "~Aswe/" Specware::temporaryDirectory))
+  (let* ((tmp-dir (format nil "~A~A-swe/" Specware::temporaryDirectory (user-name)))
 	 (tmp-name (format nil "swe_tmp_~D_~D"
 			   (incf *tmp-counter*) 
 			   (ymd-hms)))
