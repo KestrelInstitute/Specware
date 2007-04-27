@@ -792,7 +792,7 @@
 				   #+CMUCL (format nil "~A.cmuimage" Specware-name)
 
 				   #+SBCL  "/usr/local/bin/sbcl"
-				   #+SBCL  (format nil "~A.sbclimage" Specware-name)
+				   #+SBCL  (format nil "~A.sbclexe" Specware-name)
 
 				   target-dir
 				   (mapcar #'(lambda (f) (make-pathname :defaults f :type *fasl-type*)) files-to-load)

@@ -54,7 +54,7 @@ if [ ! -x "$LISP" ]; then
 fi
 
 if [ -z "$IMAGE_EXTENSION" ]; then
-   IMAGE_EXTENSION="sbclimage"
+   IMAGE_EXTENSION="sbclexe"
 fi
 
 #echo "\$IMAGE_EXTENSION=$IMAGE_EXTENSION"

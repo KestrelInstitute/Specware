@@ -124,8 +124,8 @@
 		       (in-distribution-dir "Specware.terminal"))
   (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Specware.sh")
 		       (in-distribution-dir "SpecwareShell.sh"))
-  (specware::copy-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclimage")
-		       (in-distribution-dir "Specware4.sbclimage"))
+  (specware::copy-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclexe")
+		       (in-distribution-dir "Specware4.sbclexe"))
   )
 
 ;;; ============ RUNTIME C LIBRARY ============

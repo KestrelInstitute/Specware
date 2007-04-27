@@ -5,8 +5,8 @@ SCRIPTDIR=`/usr/bin/dirname $0`
 
 export LISP_MODE="SBCL"
 export FASL_EXTENSION="sfsl"
-export IMAGE_EXTENSION="sbclimage"
-export EXECUTABLE_EXTENSION="sbclimage"
+export IMAGE_EXTENSION="sbclexe"
+export EXECUTABLE_EXTENSION="sbclexe"
 
 echo "  ------------------------------------------------------------------------"
 echo "  Verify_SBCL:  Ensure that SBCL executable exists:"
