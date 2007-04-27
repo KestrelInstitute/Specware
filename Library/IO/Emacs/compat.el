@@ -27,7 +27,7 @@
   (case *specware-lisp*
     (openmcl "openmcl-image")
     (cmulisp "cmuimage")
-    (sbcl "sbclimage")
+    (sbcl "sbclexe")
     (allegro "dxl")
     (gcl "gclimage")))
 (defvar *fasl-extension*
