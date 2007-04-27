@@ -1,6 +1,3 @@
-%% This is a moderately complicated test of spec substitution
-%% The subsitution M applies to an A that is hidden inside the import of A2.
-%% Also, A and B (the domain and codomain of M) both import misc specs, as does C and A2.
 
 A = spec
      type A
