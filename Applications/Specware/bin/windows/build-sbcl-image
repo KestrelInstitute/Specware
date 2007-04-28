@@ -128,5 +128,5 @@ echo " "
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
 	(set-gc-parameters-for-use nil)
-	(sb-ext:save-lisp-and-die "$SPECWARE4/Applications/Specware/bin/windows/Specware4.sbclimage" :purify nil)
+	(sb-ext:save-lisp-and-die "$SPECWARE4/Applications/Specware/bin/windows/Specware4.sbclexe" :purify nil)
 XXXX
