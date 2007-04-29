@@ -5,12 +5,14 @@ cd -P $SCRIPT_DIR
 SCRIPT_DIR=`pwd`
 
 if [ "$1" == "" ]; then
-  $SCRIPT_DIR/Bootstrap_Specware SBCL
+  export LISP_MODE=SBCL
 else
-  $SCRIPT_DIR/Bootstrap_Specware $1
+  export LISP_MODE=$1
 fi
 
+$SCRIPT_DIR/Bootstrap_Specware $LISP_MODE
 RC=$?
+
 if [ $RC -ne 0 ]; then
    echo "Failure preparing bootstrap image, return code = $RC"
    exit $RC
