@@ -1,4 +1,4 @@
-(defpackage "SPECWARE-TEST")
+(defpackage "SPECWARE-TEST" (:use :cl))
 (in-package "SPECWARE-TEST")
 
 (defparameter *global-test-counter* 0)
@@ -214,6 +214,10 @@ be the option to run each (test ...) form in a fresh image.
   (if *use-separate-process?*
       ()
     (apply 'test-1 args)))
+
+(defvar cl-user::*swe-return-value?*)
+(defvar cl-user::*current-swe-spec*)
+(defvar cl-user::*current-swe-spec-dir*)
 
 (defun swe-test (swe-str swe-spec)
   (let* ((cl-user::*swe-return-value?* t)
