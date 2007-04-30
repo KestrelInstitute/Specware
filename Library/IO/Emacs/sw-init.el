@@ -89,12 +89,14 @@
 
       (when (getenv "SOCKET_INIT_FILE")
 	(set-socket-init-for-specware))
+      (message "%s %s" sw:image-is-executable *specware-lisp*)
+      (sleep-for 4)
       (let ((log-warning-minimum-level 'error))
 	;; Don't show spurious warning message
 	(if sw:image-is-executable
 	    (sw:common-lisp sw:common-lisp-buffer-name
 			    sw:common-lisp-directory
-			    sw:common-lisp-image-file
+			    sw:common-lisp-image-name
 			    sw:common-lisp-image-arguments
 			    sw:common-lisp-host
 			    nil)

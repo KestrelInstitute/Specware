@@ -23,13 +23,22 @@
 				(if (search "gcl" lisp-program)
 				    'gcl
 				  'sbcl)))))
+(defvar *lisp-executable-extension*
+  (case *specware-lisp*
+    (openmcl "mclexe")
+    (cmulisp "cmuexe")
+    (sbcl    "sbclexe")
+    (allegro "aclexe")
+    (gcl     "gclexe")))
+
 (defvar *lisp-image-extension*
   (case *specware-lisp*
     (openmcl "openmcl-image")
     (cmulisp "cmuimage")
-    (sbcl "sbclexe")
+    (sbcl    "sbclimage")
     (allegro "dxl")
-    (gcl "gclimage")))
+    (gcl     "gclimage")))
+
 (defvar *fasl-extension*
   (case *specware-lisp*
     (allegro "fasl")
