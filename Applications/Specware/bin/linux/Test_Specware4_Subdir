@@ -15,7 +15,11 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
 cd $SPECWARE4
 
 export LISP_EXECUTABLE="$LISP"
-export LISP_HEAP_IMAGE="${BIN_DIR}/${APP_NAME}.${IMAGE_EXTENSION}"
+if [ "$LISP_MODE" == "SBCL" ]; then
+  export LISP_EXECUTABLE="${BIN_DIR}/${APP_NAME}.${EXECUTABLE_EXTENSION}"
+else
+  export LISP_HEAP_IMAGE="${BIN_DIR}/${APP_NAME}.${IMAGE_EXTENSION}"
+fi
 export LISP_DIRECTORY="$SPECWARE4"
 
 xemacs=`which xemacs`
@@ -39,6 +43,7 @@ $xemacs -no-init-file \
 	-l "$SPECWARE4"/Library/IO/Emacs/load-slime \
 	-eval "(set-face-background 'default \"lightyellow\")" \
 	-eval "(run-specware4)" \
+        -eval "(sit-for 2)" \
 	-eval "(sw:eval-in-lisp \"(load (compile-file \\\"$SPECWARE4/Applications/Handwritten/Lisp/test-harness\\\"))\")" \
 	-eval "(sw:eval-in-lisp \"(setq specware-test::*quiet-about-dirs?* t)\")" \
 	-eval "(setq fi:lisp-evalserver-number-reads 100000)" \
@@ -51,6 +56,9 @@ echo "-------------"
 echo "Test results:"
 
 cat $LOG_FILE
+echo "-------------"
+echo "Test failures:"
+egrep -i ";;; Test failed" $LOG_FILE
 echo "-------------"
 
 

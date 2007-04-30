@@ -95,11 +95,9 @@ if [ ! -x "$LISP" ]; then
 fi
 
 LISP_DIR=`dirname "$LISP"`
-LISP_EXECUTABLE="$LISP"
-LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4.sbclexe
+LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4.sbclexe
 LISP_DIRECTORY="$SPECWARE4"/
 export LISP_EXECUTABLE
-export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 
 

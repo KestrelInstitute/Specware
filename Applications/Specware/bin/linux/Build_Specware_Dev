@@ -1,6 +1,6 @@
 #!/bin/bash --noprofile
 
-# This script builds Specware4.$IMAGE_EXTENSION
+# This script builds Specware4.$EXECUTABLE_EXTENSION
 
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. 
@@ -78,21 +78,21 @@ echo cd "$BIN_DIR"
 cd "$BIN_DIR"
 
 echo " "
-if [ -f Specware4.$IMAGE_EXTENSION ]; then
-  echo "Saving previous specware image ..."
-  echo "cp -p -f Specware4.$IMAGE_EXTENSION Specware4-save.$IMAGE_EXTENSION"
-  cp -p -f Specware4.$IMAGE_EXTENSION Specware4-save.$IMAGE_EXTENSION
+if [ -f Specware4.$EXECUTABLE_EXTENSION ]; then
+  echo "Saving previous specware executable ..."
+  echo "cp -p -f Specware4.$EXECUTABLE_EXTENSION Specware4-save.$EXECUTABLE_EXTENSION"
+  cp -p -f Specware4.$EXECUTABLE_EXTENSION Specware4-save.$EXECUTABLE_EXTENSION
 else
-  echo "Note: No previous specware image."
+  echo "Note: No previous specware executable."
 fi
 echo " "
 
 # --------------------------------------------------------------------------------
-# Then load Specware fasl files into $BIG_LISP, and save as Specware4.$IMAGE_EXTENSION
+# Then load Specware fasl files into $BIG_LISP, and save as Specware4.$EXECUTABLE_EXTENSION
 # --------------------------------------------------------------------------------
 
 echo " "
-echo "Creating Specware4.$IMAGE_EXTENSION from Specware4.$FASL_EXTENSION and misc support files."
+echo "Creating Specware4.$EXECUTABLE_EXTENSION from Specware4.$FASL_EXTENSION and misc support files."
 echo " "
 
 cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
@@ -122,7 +122,7 @@ $BATCH_LISP <<-XXXX
 	 (set-gc-parameters-for-use nil)   ; not verbose
 	 (format t "~%--------------------------------------------------------------------------------~%")
 	 (values))
-	(save-this-lisp-image "$BIN_DIR/Specware4.$IMAGE_EXTENSION")
+	(save-this-lisp-image "$BIN_DIR/Specware4.$EXECUTABLE_EXTENSION" :executable? t)
 XXXX
 RC=$?
 
@@ -145,7 +145,7 @@ echo cd "$BIN_DIR"
 cd "$BIN_DIR"
 
 echo " "
-ls -sltr *.$IMAGE_EXTENSION
+ls -sltr *.$EXECUTABLE_EXTENSION *.$IMAGE_EXTENSION 
 echo " "
 
 # If the load failed (non-zero exit status) then we abort.

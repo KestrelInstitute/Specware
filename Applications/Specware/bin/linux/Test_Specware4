@@ -15,7 +15,11 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
 cd $SPECWARE4
 
 export LISP_EXECUTABLE="$LISP"
-export LISP_HEAP_IMAGE="${BIN_DIR}/${APP_NAME}.${IMAGE_EXTENSION}"
+if [ "$LISP_MODE" == "SBCL" ]; then
+  export LISP_EXECUTABLE="${BIN_DIR}/${APP_NAME}.${EXECUTABLE_EXTENSION}"
+else
+  export LISP_HEAP_IMAGE="${BIN_DIR}/${APP_NAME}.${IMAGE_EXTENSION}"
+fi
 export LISP_DIRECTORY="$SPECWARE4"
 
 xemacs=`which xemacs`
