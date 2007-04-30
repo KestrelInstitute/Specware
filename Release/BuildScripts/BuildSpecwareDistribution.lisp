@@ -33,7 +33,7 @@
       (my-load lisp-utilities-dir "LoadUtilities")
       (my-load specware-buildscripts-dir "GatherSpecwareComponents"))))
 
-(defun build-specware-release (i j k verbose?)
+(defun build-specware-release (verbose?)
   (flet ((my-getenv (var)
 	   #+MSWindows (sys::getenv var)
 	   #+CMU       (cdr (assoc (intern var "KEYWORD") EXTENSIONS::*ENVIRONMENT-LIST*))
@@ -42,6 +42,8 @@
     (let ((specware-dir     (concatenate 'string (my-getenv "SPECWARE4")    "/"))
 	  (distribution-dir (concatenate 'string (my-getenv "DISTRIBUTION") "/")))
       (load-builder specware-dir distribution-dir)
-      (let ((foo (find-symbol "PREPARE_SPECWARE_RELEASE" "COMMON-LISP-USER"))) ; hide symbol from SBCL, so it doesn't complain it's undefined at compile-time
-	(funcall foo i j k specware-dir distribution-dir verbose?)))))
+      (let ((foo 
+	     ;; hide symbol from SBCL, so it doesn't complain it's undefined at compile-time
+	     (find-symbol "PREPARE_SPECWARE_RELEASE" "COMMON-LISP-USER"))) 
+	(funcall foo specware-dir distribution-dir verbose?)))))
 

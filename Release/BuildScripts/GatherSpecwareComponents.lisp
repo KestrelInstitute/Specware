@@ -71,14 +71,20 @@
 ;;; Parameters
 ;;; ================================================================================
 
-;; "defparameter" means new value is always used
-(defparameter Specware-name            "Specware4")	; Name of dir and startup files
-
-;; "defvar" means any pre-existing value is retained
-(defvar cl-user::Specware-version      "4.2.1")
-(defvar cl-user::Specware-version-name "Specware-4-2")
-(defvar cl-user::Specware-patch-level  "1")
-(defvar Major-Version-String           "4-2")		; patch detection, about-specware cmd
+;;; Get version information from canonical source...
+(let ((specware4 (specware::getenv "SPECWARE4")))
+  (if (equal specware4 nil)
+      (error "in GatherSpecwareComponents.lisp:  SPECWARE4 environment variable not set")
+    (let ((specware-dir
+	   (let ((dir (substitute #\/ #\\ specware4)))
+	     (if (eq (schar dir (1- (length dir))) #\/)
+		 dir
+	       (concatenate 'string dir "/")))))
+      (let ((version-file (format nil "~AApplications/Specware/Handwritten/Lisp/SpecwareVersion.lisp"
+				  specware-dir)))
+	(if (probe-file version-file)
+	    (load version-file)
+	  (error "in GatherSpecwareComponents.lisp:  Cannot find ~A" version-file))))))
 
 (defun print-blank ()
   (format t "~&~%"))
@@ -102,16 +108,14 @@
 ;;; Toplevel
 ;;; ================================================================================
 
-(defun cl-user::prepare_specware_release (i j k specware-dir distribution-dir &optional (*verbose* t))
-  (let ((specware-dir (truename specware-dir))
-	(release-dir  (truename (ensure-subdirs-exist distribution-dir "Releases" 
-						      (format nil "Specware-~D-~D-~D" i j k)))))
-    (setq Major-Version-String           (format nil "~D-~D" i j))
-    (setq cl-user::Specware-version      (format nil "~D.~D" i j))
-    (setq cl-user::Specware-patch-level  (format nil "~D" k))
-    (setq cl-user::Specware-version-name (format nil "Specware-~A" major-version-string))
+(defun cl-user::prepare_specware_release (specware-dir distribution-dir &optional (*verbose* t))
+  (declare (special cl-user::*Specware-Version-Name*))
+  (let ((specware-dir     (truename specware-dir))
+	(distribution-dir (truename distribution-dir))
+	(release-dir      (truename (ensure-subdirs-exist distribution-dir "Releases" 
+							  cl-user::*Specware-Version-Name*))))
 
-    (format t "~&;;; Preparing release of ~A~%" cl-user::Specware-version-name)
+    (format t "~&;;; Preparing release of ~A~%" cl-user::*Specware-Version-Name*)
 
     ;; Oops: As written, this is overkill (literally!).
     ;; In addition to deleting old versions of the files we're about to create,
@@ -400,6 +404,8 @@
 
       (let ((source-file (make-pathname :name "swank-backend" :type "lisp"))
 	    (fasl-file   (make-pathname :name "swank-backend" :type *fasl-type*)))
+	(declare (special swank-loader::*fasl-directory* 
+			  swank-loader::*source-directory*))
 	(copy-dist-file (merge-pathnames swank-loader::*source-directory* source-file)
 			(merge-pathnames slime-dir                        source-file))
 	(copy-dist-file (merge-pathnames swank-loader::*fasl-directory*   fasl-file)
@@ -736,6 +742,7 @@
 
 #+Linux
 (defun prepare_Specware_Linux (specware-dir release-dir lisp-utilities-dir)
+  (declare (special cl-user::*Specware-Name*))
   (print-minor "Specware" "Linux")
   (let* ((source-dir              (ensure-subdirs-exist specware-dir))
 	 (source-buildscripts-dir (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
@@ -789,15 +796,16 @@
     
     ;; Executables/Images
     (generate-new-lisp-application #+CMUCL "/usr/share/cmulisp/bin/lisp" 
-				   #+CMUCL (format nil "~A.cmuimage" Specware-name)
+				   #+CMUCL (format nil "~A.cmuimage" cl-user::*Specware-Name*)
 
 				   #+SBCL  "/usr/local/bin/sbcl"
-				   #+SBCL  (format nil "~A.sbclexe" Specware-name)
+				   #+SBCL  (format nil "~A.sbclexe" cl-user::*Specware-Name*)
 
 				   target-dir
 				   (mapcar #'(lambda (f) (make-pathname :defaults f :type *fasl-type*)) files-to-load)
 				   files-to-copy
-				   t)
+				   t
+				   :executable? t)
 
     ;; Patches
     (prepare_patch_dir source-dir target-dir)
@@ -816,6 +824,7 @@
 
 #+MSWindows
 (defun prepare_Specware_Windows (specware-dir release-dir lisp-utilities-dir)
+  (declare (special cl-user::*Specware-Name*))
   (print-minor "Specware" "Windows")
   (let* ((source-dir                 (ensure-subdirs-exist specware-dir))
 	 (source-buildscripts-dir    (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
@@ -824,7 +833,7 @@
 	 (source-windows-allegro-dir (ensure-subdirs-exist source-dir "Release" "Windows" "Allegro"))
 	 ;;
 	 (target-dir                 (ensure-subdirs-exist release-dir "Specware" "Windows"))
-	 (specware-exe-file          (format nil "~A.exe" Specware-name))
+	 (specware-exe-file          (format nil "~A.exe" cl-user::*Specware-Name*))
 
 	 ;; a list of files to load into the new application
 	 (files-to-load              (list (merge-pathnames lisp-utilities-dir       "LoadUtilities")
@@ -854,8 +863,8 @@
     ;; Installation Scripts
 
     ;; Executables/Images
-    (dolist (filename (list (format nil "~A.lic" specware-name)
-			    (format nil "~A.dxl" specware-name)
+    (dolist (filename (list (format nil "~A.lic" cl-user::*Specware-Name*)
+			    (format nil "~A.dxl" cl-user::*Specware-Name*)
 			    specware-exe-file
 			    "Specware.cmd"
 			    "SpecwareShell.cmd"
@@ -891,13 +900,13 @@
     ;; in a form that can evade CVS's deadly radar.
     ;; (Was I really, really bad in some previous incarnation??)
 
-    (let* ((zip-file (make-pathname :name     Specware-name 
+    (let* ((zip-file (make-pathname :name     cl-user::*Specware-Name*
 				    :type     "zip"
 				    :defaults target-dir))
 	   (zip-cmd (format nil "zip -j -9 ~A ~{ ~A ~}"
 			    zip-file
 			    (mapcar #'(lambda (type)
-					(namestring (make-pathname :name     Specware-name 
+					(namestring (make-pathname :name     cl-user::*Specware-Name*
 								   :type     type
 								   :defaults target-dir)))
 				    '("lic" "exe" "dxl")))))

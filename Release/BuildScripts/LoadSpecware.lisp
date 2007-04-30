@@ -60,14 +60,6 @@
 	    (ccl::set-lisp-heap-gc-threshold (* 16777216 3))            ; Increase free space after a gc
 	    )
 
-;; Used in printing out the license and about-specware command
-(defvar cl-user::Specware-version "4.2.1")
-(defvar cl-user::Specware-version-name "Specware-4-2")
-(defvar cl-user::Specware-patch-level "1")
-
-;; Used in patch detection and about-specware command
-(defvar Major-Version-String "4-2")
-
 ;; The following defines functions such as:
 ;;;   specware::getenv
 ;;    compile-and-load-lisp-file
@@ -104,6 +96,12 @@
 	(concatenate 'string dir "/"))))
 
 (defun in-specware-dir (file) (concatenate 'string *Specware-dir* file))
+
+;;; Get version information from canonical source...
+(let ((version-file (in-specware-dir "Applications/Specware/Handwritten/Lisp/SpecwareVersion.lisp")))
+  (if (probe-file version-file)
+      (load version-file)
+    (error "in LoadSpecware.lisp:  Cannot find ~A" version-file)))
 
 #+cmu
 (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch"))

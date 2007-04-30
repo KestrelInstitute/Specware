@@ -9,7 +9,7 @@
 ;;; license statement that follows is displayed last on the screen *after*
 ;;; loading the patches and immediately before prompting the user.
 
-#+cmu (defvar *restart-init-function*)
+#+(or cmu sbcl) (defvar *restart-init-function*)
 
 (setf *restart-init-function*
    #'(lambda ()
@@ -46,7 +46,7 @@ Palo Alto, CA, 94304
 
 Phone: (650) 493-6871
 FAX:   (650) 424-1807
-Email: info@kestrel.edu" Specware-version)))
+Email: info@kestrel.edu" cl-user::*Specware-Version*)))
 
 #+cmu
 (push *restart-init-function* ext:*after-save-initializations*)

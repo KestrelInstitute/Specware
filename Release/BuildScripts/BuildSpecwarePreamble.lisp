@@ -1,16 +1,23 @@
-(defpackage "SPECWARE")
+(defpackage "SPECWARE" (:use "CL"))
 (in-package "SPECWARE")
 
 ;;; This file is loaded before Specware4.lisp when generating
 ;;; a Specware distribution
 
-;;;The next three variable initializations need to be changed when going to a new minor version
-
-;; Used in printing out the license and about-specware command
-(defparameter common-lisp-user::Specware-version      "4.2.1")
-(defparameter common-lisp-user::Specware-version-name "Specware-4-2")
-(defparameter common-lisp-user::Specware-patch-level  "1")
-(defparameter Major-Version-String           "4-2") ; Used in patch detection and about-specware command
+;;; Get version information from canonical source...
+(let ((specware4 (specware::getenv "SPECWARE4")))
+  (if (equal specware4 nil)
+      (error "in BuildSpecwarePreamble.lisp:  SPECWARE4 environment variable not set")
+    (let ((specware-dir
+	   (let ((dir (substitute #\/ #\\ specware4)))
+	     (if (eq (schar dir (1- (length dir))) #\/)
+		 dir
+	       (concatenate 'string dir "/")))))
+      (let ((version-file (format nil "~AApplications/Specware/Handwritten/Lisp/SpecwareVersion.lisp"
+				  specware-dir)))
+	(if (probe-file version-file)
+	    (load version-file)
+	  (error "in BuildSpecwarePreamble.lisp:  Cannot find ~A" version-file))))))
 
 (push ':SPECWARE-DISTRIBUTION *features*) ; used by parser
 
@@ -89,7 +96,7 @@
 	      (setq highest-patch-number patch-num)
 	      (setq highest-patch-file file))))
     (when (> highest-patch-number 0)
-      (setq common-lisp-user::Specware-patch-level highest-patch-number)
+      (setq *Specware-Patch-Level* highest-patch-number)
       (ignore-errors (load highest-patch-file)))))
 
 (push 'load-specware-patch-if-present

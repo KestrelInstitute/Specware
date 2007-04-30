@@ -27,7 +27,7 @@ set "LISP_HEAP_IMAGE=%Allegro%\alisp.dxl"
 
 cd "%SPECWARE4%\Release\BuildScripts\"
 
-start "ignore" %FLAGS% "%LISP_EXECUTABLE%"  +t "Build Specware Distribution" -L "BuildSpecwareDistribution.lisp" -e '(progn (user::build-specware-release 4 2 0 %VERBOSE%) (sleep 9) (exit 0))' -I "%LISP_HEAP_IMAGE%" 
+start "ignore" %FLAGS% "%LISP_EXECUTABLE%"  +t "Build Specware Distribution" -L "BuildSpecwareDistribution.lisp" -e '(progn (user::build-specware-release %VERBOSE%) (sleep 9) (exit 0))' -I "%LISP_HEAP_IMAGE%" 
 
 
 

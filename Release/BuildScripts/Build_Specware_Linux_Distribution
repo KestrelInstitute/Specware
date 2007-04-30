@@ -56,7 +56,7 @@ cd "$HERE"
 
 $BATCH_LISP <<EOF
 	(load "BuildSpecwareDistribution.lisp")
-	(build-specware-release 4 2 1 $VERBOSE)
+	(build-specware-release $VERBOSE)
 	#+ACL(exit)
 	#-ACL(quit)
 EOF

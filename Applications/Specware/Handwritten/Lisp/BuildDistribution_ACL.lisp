@@ -44,21 +44,20 @@
 
 ;;; ============ PARAMETERS ============
 
-;; Specware-name and Specware-Version might not be needed here.
-;; They are in BuildPreamble.lisp where they are needed.
-
-(defparameter Specware-name                  "Specware4")	; Name of dir and startup files
-(defparameter cl-user::Specware-version      "4.2.1")
-(defparameter cl-user::Specware-version-name "Specware-4-2")
-(defparameter cl-user::Specware-patch-level  "1")
-(defparameter Major-Version-String           "4-2")		; patch detection, about-specware cmd
-
 (defparameter *Specware-dir*      (fix-dir (sys:getenv "SPECWARE4")))
+
+;;; Get version information from canonical source...
+(let ((version-file (format nil "~AApplications/Specware/Handwritten/Lisp/SpecwareVersion.lisp"
+			    *Specware-dir*)))
+  (if (probe-file version-file)
+      (load version-file)
+    (error "in BuildDistribution_ACL.lisp:  Cannot find ~A" version-file)))
+
 (defparameter *Allegro-dir*       (fix-dir (sys:getenv "ALLEGRO")))
 
 (defparameter *Release-dir*       (format nil "C:/SpecwareReleases/~A-~A/"
-					  specware-version-name	 
-					  specware-patch-level))
+					  *Specware-Version-Name*
+					  *Specware-Patch-Level*))
 (defparameter *CD-dir*            (concatenate 'string *release-dir* "CD/"))
 (defparameter *Windows-dir*       (concatenate 'string *release-dir* "Windows/"))
 (defparameter *Distribution-dir*  (concatenate 'string *windows-dir* "Specware4/"))
@@ -109,7 +108,7 @@
 
 (excl:generate-application
  ;; this is the name of the application
- Specware-name
+ *Specware-Name*
 
  ;; this is the directory where the application is to go
  ;; (plus accompanying files) 
@@ -163,15 +162,15 @@
 (format t "~&;;;~%")
 
 ;; Set up the directory that will hold the CD contents:
-;;   C:/SpecwareReleases/Specware-4-2-0/CD/
+;;   C:/SpecwareReleases/Specware-i-j-k/CD/
 ;;
 ;; Put in the Autorun.inf file that will automatically invoke
 ;; Windows\setupwin32.exe for the user when the CD is inserted.
 ;;
 ;; Later the results from InstallShield will be put under
-;;   C:/SpecwareReleases/Specware-4-2-0/CD/Windows/Specware4/
-;;   C:/SpecwareReleases/Specware-4-2-0/CD/Linux/Specware4/
-;;   C:/SpecwareReleases/Specware-4-2-0/CD/Mac/Specware4/
+;;   C:/SpecwareReleases/Specware-i-j-k/CD/Windows/Specware4/
+;;   C:/SpecwareReleases/Specware-i-j-k/CD/Linux/Specware4/
+;;   C:/SpecwareReleases/Specware-i-j-k/CD/Mac/Specware4/
 ;;   ...
 
 

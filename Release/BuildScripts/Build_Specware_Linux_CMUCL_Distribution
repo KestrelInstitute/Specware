@@ -36,7 +36,7 @@ fi
 
 /usr/share/cmulisp/bin/lisp <<EOF
 	(load "BuildSpecwareDistribution.lisp")
-        (build-specware-release 4 2 0 $VERBOSE)
+        (build-specware-release $VERBOSE)
 	(quit)
 EOF
 

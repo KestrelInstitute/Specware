@@ -45,6 +45,6 @@ Kestrel Technology, LLC
 Palo Alto, CA, 94304      
 
 Phone/FAX: (650) 320-8888
-Email: info@kt-llc.com" Specware-version)))
+Email: info@kt-llc.com" *Specware-Version*)))
 
 ;; The phone/FAX number is that for KT.

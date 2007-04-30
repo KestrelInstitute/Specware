@@ -33,14 +33,6 @@
 #+sbcl
 (setq sb-debug:*debug-beginner-help-p* nil)
 
-;; Used in printing out the license and about-specware command
-(defvar cl-user::Specware-version "4.2.1")
-(defvar cl-user::Specware-version-name "Specware-4-2")
-(defvar cl-user::Specware-patch-level "1")
-
-;; Used in patch detection and about-specware command
-(defvar Major-Version-String "4-2")
-
 ;; The following defines functions such as:
 ;;    compile-and-load-lisp-file
 ;;    load-lisp-file
@@ -52,6 +44,13 @@
        :type     "lisp"))
 
 (defvar Specware4 (specware::getenv "SPECWARE4"))
+
+;;; Get version information from canonical source...
+(let ((version-file (format nil "~A/Applications/Specware/Handwritten/Lisp/SpecwareVersion.lisp"
+			    Specware4)))
+  (if (probe-file version-file)
+      (load version-file)
+    (error "in PSL.lisp:  Cannot find ~A" version-file)))
 
 #+cmu
 (compile-and-load-lisp-file (concatenate 'string

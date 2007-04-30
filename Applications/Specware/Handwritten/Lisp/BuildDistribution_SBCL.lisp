@@ -43,14 +43,12 @@
 
 ;;; ============ PARAMETERS ============
 
-;; Specware-name and Specware-Version might not be needed here.
-;; They are in BuildPreamble.lisp where they are needed.
-
-(defparameter Specware-name                  "Specware4")	; Name of dir and startup files
-(defparameter cl-user::Specware-version      "4.2.1")
-(defparameter cl-user::Specware-version-name "Specware-4-2")
-(defparameter cl-user::Specware-patch-level  "1")
-(defparameter Major-Version-String           "4-2")		; patch detection, about-specware cmd
+;;; Get version information from canonical source...
+(let ((version-file (format nil "~AApplications/Specware/Handwritten/Lisp/SpecwareVersion.lisp"
+			    specware::*Specware-dir*)))
+  (if (probe-file version-file)
+      (load version-file)
+    (error "in BuildDistribution_SBCL.lisp:  Cannot find ~A" version-file)))
 
 (defparameter *Distribution-dir*  (concatenate 'string Specware::*specware-dir* "distribution-sbcl/Specware/"))
 
