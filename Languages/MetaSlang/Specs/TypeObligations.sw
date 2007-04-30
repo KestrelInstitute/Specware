@@ -272,16 +272,18 @@ spec
 	  tcc
         | Let(decls,body,_)    ->
 	  let (tcc,gamma) =
-	       foldl (fn ((pat,t),(tcc,ngamma)) ->
+	       foldl (fn ((pat,trm),(tcc,ngamma)) ->
 		      let sigma1 = patternSort pat                         in
 		      let (ngamma,tp) = bindPattern(ngamma,pat,sigma1)     in
 		      %% This is alternative to insertLet below
-		      let ngamma = assertCond(mkEquality(inferType(getSpec gamma,t),t,tp),
+		      let ngamma = assertCond(mkEquality(inferType(getSpec gamma,trm),
+                                                         trm,
+                                                         tp),
 					      ngamma)
 		      in
 		      let spc = getSpec gamma 				   in
-		      let tcc = (tcc,gamma) |- t ?? sigma1                 in
-		      let tcc = addQuotientCondition(tcc,gamma,pat,body,Some t) in
+		      let tcc = (tcc,gamma) |- trm ?? sigma1               in
+		      let tcc = addQuotientCondition(tcc,gamma,pat,body,Some trm) in
 		      (tcc,ngamma))
 	          (tcc,gamma)
 		  decls
@@ -444,12 +446,22 @@ spec
  def addQuotientCondition(tcc,gamma,pat,body,optArg) =
    case optArg of
      | Some arg ->
-       (case foldSubPatterns (fn (p,r) -> case p of QuotientPat(VarPat pv,_,_) -> Some pv | _ -> r) None pat of
-	 | Some(v as (vn,srt),vpos) ->
+       (case foldSubPatterns (fn (p,result) -> 
+                                case p of 
+                                  | QuotientPat (VarPat pv, super_type_name, _) -> 
+                                    %% If the spec has type-checked, there must be an info for the super_type.
+                                    let Some info = findTheSort (gamma.3, super_type_name) in
+                                    let Quotient (base_type, _, _) = info.dfn in
+                                    Some (pv, base_type)
+                                  | _ -> result)
+                             None 
+                             pat 
+        of
+	 | Some ((v as (vn,_),vpos), base_type) ->
 	   %% fa(v1,v2) pat(v1) && pat(v2) => arg(v1) = arg(v2)
-	   let v1n = (vn^"__1",srt) in
+	   let v1n = (vn^"__1",base_type) in % was type of v, but should be base type of Q
 	   let v1 = Var(v1n,vpos) in
-	   let v2n = (vn^"__2",srt) in
+	   let v2n = (vn^"__2",base_type) in % was type of v, but should be base type of Q
 	   let v2 = Var(v2n,vpos) in
 	   let (o_tm,conds) = patternToTermPlusConds pat in
 	   let mainCond = case o_tm of
@@ -459,10 +471,13 @@ spec
 	   let all_conds = mainCond ++ conds in
 	   let v1Conds = map (fn c -> substitute(c,[(v,v1)])) all_conds in
 	   let v2Conds = map (fn c -> substitute(c,[(v,v2)])) all_conds in
+                      let body_type = termSort body in
 	   let quotCond = mkBind(Forall,[v1n,v2n],
 				 mkImplies(mkConj(v1Conds ++ v2Conds),
-					   mkEquality(srt,substitute(body,[(v,v1)]),substitute(body,[(v,v2)]))))
-	   in
+                                           mkEquality(body_type, % was type of v, but should be type of body
+                                                      substitute(body,[(v,v1)]),
+                                                      substitute(body,[(v,v2)]))))
+           in
 	   addCondition(tcc,gamma,quotCond,"_quotient")
 	 | _ -> tcc)
      | _ -> tcc
