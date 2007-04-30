@@ -31,6 +31,14 @@ spec
   def g x =
     choose[Q] (fn y -> y+1) x
 
+  op f2 : Q -> List Nat
+  def f2 x =
+    let quotient[Q] y = x in [y+1]
+
+  op g2 : Q -> List Nat
+  def g2 x =
+    choose[Q] (fn y -> [y+1]) x
+
 endspec
 
 O = obligations S
