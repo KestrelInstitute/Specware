@@ -13,6 +13,9 @@
 
 (push (concat *specware-emacs* "x-symbol/")
       load-path)
+;(push "/usr/local/ProofGeneral/x-symbol/lisp/"
+;      load-path)
+;(setq x-symbol-data-directory "/usr/local/ProofGeneral/x-symbol/etc/")
 
 (defun sw:load-specware-emacs-file (name)
   (let ((el-file   (concatenate 'string *specware-emacs* name ".el"))
