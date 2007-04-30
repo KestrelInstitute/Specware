@@ -71,12 +71,13 @@
   #-(or CMU SBCL Allegro OpenMCL) "unknown-fasl")
 
 (defun patch-number (path)
+  (declare (special cl-user::*Specware-Major-Version-String*))
   (or (ignore-errors
        (let* ((file-name (pathname-name path))
-	      (major-version-len (length Major-Version-String)))
+	      (major-version-len (length cl-user::*Specware-Major-Version-String*)))
 	 (if (and (string-equal (pathname-type path) specware::*fasl-type*)
 		  (string-equal file-name "patch-" :end1 6)
-		  (string-equal file-name Major-Version-String
+		  (string-equal file-name cl-user::*Specware-Major-Version-String*
 				:start1 6 :end1 (+ major-version-len 6))
 		  (eq (elt file-name (+ major-version-len 6)) #\-))
 	     (let ((num? (read-from-string (subseq file-name (+ major-version-len 7)))))
@@ -85,6 +86,7 @@
       0))
 
 (defun load-specware-patch-if-present ()
+  (declare (special cl-user::*Specware-Patch-Level*))
   (let* ((patch-dir (patch-directory))
 	 (files (cl:directory patch-dir))
 	 (highest-patch-number 0)
@@ -96,7 +98,7 @@
 	      (setq highest-patch-number patch-num)
 	      (setq highest-patch-file file))))
     (when (> highest-patch-number 0)
-      (setq *Specware-Patch-Level* highest-patch-number)
+      (setq cl-user::*Specware-Patch-Level* highest-patch-number)
       (ignore-errors (load highest-patch-file)))))
 
 (push 'load-specware-patch-if-present
