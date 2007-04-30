@@ -364,7 +364,7 @@ to end end."
 
 (defun slime-repl-update-banner ()
   (let* ((banner (format "Specware %s on %s %s"
-			 (sw:eval-in-lisp "(if (boundp 'Specware-version) Specware-version \"\")")
+			 (sw:eval-in-lisp "(if (boundp '*Specware-version*) *Specware-version* \"\")")
                          (slime-lisp-implementation-type)
 			 (slime-lisp-implementation-version)
                          ;(slime-connection-port (slime-connection))
