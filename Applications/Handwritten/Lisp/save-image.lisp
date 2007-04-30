@@ -32,7 +32,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #+Allegro 
-(defun save-this-lisp-image (name)
+(defun save-this-lisp-image (name &key executable?)
+  (when executable?
+    (warn "Ignoring executable? option in Allegro version of save-this-lisp-image"))
   ;; Save this image.
   (compact-memory t -1 0)
   (set-gc-parameters-for-use nil)
@@ -75,7 +77,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #+CMU
-(defun save-this-lisp-image (name)
+(defun save-this-lisp-image (name &key executable?)
+  (when executable?
+    (warn "Ignoring executable? option in Allegro version of save-this-lisp-image"))
   ;; Save this image.
   (set-gc-parameters-for-use nil)
   ;; See http://cvs2.cons.org/ftp-area/cmucl/doc/cmu-user/extensions.html#toc43
@@ -137,13 +141,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #+SBCL
-(defun save-this-lisp-image (name)
+(defun save-this-lisp-image (name &key executable?)
   ;; Save this image.
   (set-gc-parameters-for-use nil)
-  (sb-ext::save-lisp-and-die name :executable t)) ;  :purify nil
+  (sb-ext::save-lisp-and-die name :executable executable?)) ;  :purify nil
 
 #+SBCL
-(defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy)
+(defun generate-new-lisp-application (base-lisp name dir files-to-load files-to-copy &key executable?)
   ;; Build a fresh image with desired properties.
   ;; (This should be a completely new image, not simply a clone of this image!)
   ;; See http://cvs2.cons.org/ftp-area/sbcl/doc/sbcl-user/extensions.html#toc43
@@ -169,8 +173,8 @@
       (dolist (file files-to-load) 
 	(format t "(load ~S)~%" file)
 	(format s "(load ~S)~%" file))
-      (format t "(sb-ext::save-lisp-and-die ~S :purify nil :executable t)~%" app-file)
-      (format s "(sb-ext::save-lisp-and-die ~S :purify nil :executable t)~%" app-file)
+      (format t "(sb-ext::save-lisp-and-die ~S :purify nil :executable ~S)~%" app-file executable?)
+      (format s "(sb-ext::save-lisp-and-die ~S :purify nil :executable ~S)~%" app-file executable?)
       (format s "~%")
       (format t "========================================================~%"))
     (let ((process nil))
@@ -205,7 +209,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #+MCL
-(defun save-this-lisp-image (name)
+(defun save-this-lisp-image (name &key executable?)
+  (when executable?
+    (warn "Ignoring executable? option in Allegro version of save-this-lisp-image"))
   (format t "Saving ~a~%" name)
   (set-gc-parameters-for-use nil)
   ;(unless (probe-file name) (create-file  name))  ; temporary bug workaround (??)
@@ -252,7 +258,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #-(or Allegro CMU MCL SBCL)
-(defun save-this-lisp-image (name)
+(defun save-this-lisp-image (name &key executable?)
   (error "Unknown version of lisp -- can't save image named ~A" name))
 
 #-(or Allegro CMU MCL SBCL)
