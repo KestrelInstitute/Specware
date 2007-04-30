@@ -5,7 +5,7 @@ SCRIPTDIR=`/usr/bin/dirname $0`
 
 export LISP_MODE="SBCL"
 export FASL_EXTENSION="sfsl"
-export IMAGE_EXTENSION="sbclexe"
+export IMAGE_EXTENSION="sbclimage"
 export EXECUTABLE_EXTENSION="sbclexe"
 
 echo "  ------------------------------------------------------------------------"
@@ -33,7 +33,7 @@ export BATCH_LISP="$BIG_LISP"
 #================================================================================  
 # runtime options:
 #
-#  -core corefilename
+#  --core corefilename
 #      Run the specified Lisp core file instead of the default. 
 #      Note that if the Lisp core file is a user-created core file, 
 #      it may run a nonstandard toplevel which does not recognize the standard toplevel options.
@@ -55,8 +55,8 @@ export BATCH_LISP="$BIG_LISP"
 # 512 is default
 # 1000 is too large
 
-export BATCH_SPECWARE=${BATCH_SPECWARE:-"$SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} --dynamic-space-size 880 --end-runtime-options"}
-export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION} --dynamic-space-size 880 --end-runtime-options"}
+export BATCH_SPECWARE=${BATCH_SPECWARE:-"$SPECWARE4/Applications/Specware/bin/linux/Specware4.${EXECUTABLE_EXTENSION} --dynamic-space-size 880 --end-runtime-options"}
+export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP --core $SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION} --dynamic-space-size 880 --end-runtime-options"}
 
 echo " "
 echo "  Verify_SBCL:  LISP_MODE            = [$LISP_MODE]"
