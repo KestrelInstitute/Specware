@@ -2,9 +2,9 @@
 (defpackage "DISTRIBUTION" (:use "COMMON-LISP"))
 (in-package "DISTRIBUTION")
 
-#+SBCL (cl:defpackage :swank-loader
-		      (:use :cl)
-		      (:export :load-swank :*source-directory* :*fasl-directory*))
+(cl:defpackage :swank-loader
+	       (:use :cl)
+	       (:export :load-swank :*source-directory* :*fasl-directory*))
 
 (defvar *VERBOSE* nil)
 
