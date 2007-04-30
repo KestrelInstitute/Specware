@@ -1977,7 +1977,7 @@ If anyone has a good algorithm for this..."
 		   :tag-glyph specware-logo)
     (widget-insert "\n\n")
     (when (inferior-lisp-running-p)
-      (let* ((specware-version (sw:eval-in-lisp "cl-user::Specware-version"))
+      (let* ((specware-version (sw:eval-in-lisp "cl-user::*specware-version*"))
 	     (specware-patch-number (sw:eval-in-lisp
 				     "cl-user::Specware-patch-level"))
 	     (specware-version (format "Version %s.%s"
