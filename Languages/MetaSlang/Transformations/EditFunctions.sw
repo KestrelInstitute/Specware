@@ -104,7 +104,7 @@ spec
       | None -> []
       | Some globalContext ->
     let unitId1 = pathStringToCanonicalUID(uidStr,false) in
-    let _ = toScreen(anyToString unitId1 ^ "\n") in
+    % let _ = toScreen(anyToString unitId1 ^ "\n") in
     foldMap (fn result -> fn unitId -> fn (val,_,depUIDs,_) ->
              %let _ = toScreen(anyToString depUIDs ^ "\n") in
 	     if member(unitId1,depUIDs)
@@ -120,7 +120,7 @@ spec
                                                  | _ \_rightarrow result)
                                         None spc.elements
                         in
-                         let _ = toScreen(anyToString(result1)^"\n\n") in
+                        % let _ = toScreen(anyToString(result1)^"\n\n") in
                         case result1 of
                           | Some( File(file_nm,(line,col,byte),_)) \_rightarrow
                             Cons((file_nm,(line,0)), result)
