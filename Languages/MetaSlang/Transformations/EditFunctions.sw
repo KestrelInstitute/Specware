@@ -16,21 +16,23 @@ spec
              | Some(Spec spc,_,_,_) ->
                foldriAQualifierMap
                  (fn (_, _, info, result) \_rightarrow
-                  foldSubTerms
-                    (fn (t,result) \_rightarrow
-                     if pred(t,spc)
-                       then
-                         case termAnn t of 
-                           | File(file_nm,(line,col,byte),_) \_rightarrow
-                             let loc = (file_nm,(line,col)) in
-                             if member(loc,result) then result
-                               else Cons(loc, result)
-                           | _ \_rightarrow result
-                       else result
-                       | _ \_rightarrow result)
-                    result info.dfn)
+                  foldl (fn (dfn,result) \_rightarrow
+                         foldSubTerms
+                           (fn (t,result) \_rightarrow
+                            if pred(t,spc)
+                              then
+                                case termAnn t of 
+                                  | File(file_nm,(line,col,byte),_) \_rightarrow
+                                    let loc = (file_nm,(line,col)) in
+                                    if member(loc,result) then result
+                                      else Cons(loc, result)
+                                  | _ \_rightarrow result
+                              else result
+                              | _ \_rightarrow result)
+                           result dfn)
+                     result (opInfoDefs info))
                  result spc.ops
-             | _ -> [])
+             | _ \_rightarrow [])
        [] topUnitIds
 
   op findCaseDispatchesOnType(qual1: String, id1: String, uidStr: String, optGlobalContext: Option GlobalContext)
