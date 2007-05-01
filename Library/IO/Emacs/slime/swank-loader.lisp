@@ -27,7 +27,7 @@
 
 (cl:in-package :swank-loader)
 
-(defvar *source-directory* 
+(defparameter *source-directory* 
   (make-pathname :name nil :type nil 
                  :defaults (or *load-pathname* *default-pathname-defaults*))
   "The directory where to look for the source.")
@@ -185,7 +185,7 @@ recompiled."
                            :defaults source-directory))
           `("swank-backend" ,@*sysdep-files* "swank")))
 
-(defvar *fasl-directory* (default-fasl-directory)
+(defparameter *fasl-directory* (default-fasl-directory)
   "The directory where fasl files should be placed.")
 
 (defun load-swank (&key 
