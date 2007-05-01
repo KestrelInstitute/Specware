@@ -241,12 +241,10 @@ If NEWLINE is true then add a newline at the end of the input."
 (defun slime-allegro-windows (program program-args)
   (let ((slime-port 4005))
     (let ((cmd
-	   (format "%s +B %s -L %s/Library/IO/Emacs/load-slime.lisp&"
+	   (format "%s +B %s -e '(unless (and (find-package \"SWANK\") (fboundp (intern \"START-SERVER\" \"SWANK\"))) (load \"%s/Library/IO/Emacs/load-slime.lisp\"))'&"
 		   program
 		   (apply 'concat (loop for arg in program-args append (list " " arg)))
-		   (if (boundp '*specware4-dir)
-		       (symbol-value '*specware4-dir)
-		     (getenv "SPECWARE4"))
+		   (getenv "SPECWARE4")
 		   ;;slime-port
 		   )))
       (shell-command (sw::normalize-filename cmd)))
