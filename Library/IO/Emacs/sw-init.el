@@ -20,7 +20,10 @@
 			     (concat (getenv "SPECWARE4")))))
 	   (bin-dir (binary-directory *specware4-dir))
 	   (world-name (or (getenv "LISP_HEAP_IMAGE")
-			   (concat bin-dir "/Specware4." *lisp-image-extension*))))
+			   (concat bin-dir "/Specware4."
+				   (if sw:image-is-executable
+				       *lisp-executable-extension*
+				     *lisp-image-extension*)))))
       (setq sw:common-lisp-host "localhost")
       (setq-default sw::lisp-host sw:common-lisp-host)
       ;;
