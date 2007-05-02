@@ -1884,8 +1884,8 @@ If anyone has a good algorithm for this..."
   (browse-url
    (if (inferior-lisp-running-p)
        (format "http://specware.org/release-notes-%s-%s.html"
-	       (sw:eval-in-lisp "specware::Major-Version-String")
-	       (sw:eval-in-lisp "cl-user::Specware-patch-level"))
+	       (sw:eval-in-lisp "cl-user::*Specware-Major-Version-String*")
+	       (sw:eval-in-lisp "cl-user::*Specware-Patch-Level*"))
      "http://specware.org/news.html")))
 
 (defface about-specware-link-face
@@ -1977,11 +1977,13 @@ If anyone has a good algorithm for this..."
 		   :tag-glyph specware-logo)
     (widget-insert "\n\n")
     (when (inferior-lisp-running-p)
-      (let* ((specware-version (sw:eval-in-lisp "cl-user::*specware-version*"))
+      (let* ((specware-major-version (sw:eval-in-lisp "cl-user::*Specware-Major-Version*"))
+	     (specware-minor-version (sw:eval-in-lisp "cl-user::*Specware-Minor-Version*"))
 	     (specware-patch-number (sw:eval-in-lisp
-				     "cl-user::Specware-patch-level"))
-	     (specware-version (format "Version %s.%s"
-				       specware-version
+				     "cl-user::*Specware-Patch-Level*"))
+	     (specware-version (format "Version %s.%s.%s"
+				       specware-major-version
+				       specware-minor-version
 				       specware-patch-number)))
 	(widget-insert (about-specware-center specware-version))
 	(widget-create 'link :help-echo "Specware Version Release Notes"
