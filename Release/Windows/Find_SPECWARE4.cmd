@@ -16,7 +16,7 @@ rem       The remaining separators are all forward slashes, which the
 rem        bash shell needs and which the Windows shell seems to tolerate.
 rem       Insanity.
 
-set SW_VERSION=Specware-4-2
+set SW_VERSION=Specware-4-2-1
 
 if "%SPECWARE4%"=="" (
 
