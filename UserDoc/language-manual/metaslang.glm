@@ -351,8 +351,8 @@ more ``marks'' (ASCII characters).
 Within a composite (multi-mark) `symbol, as well as within a
 `unit-identifier, no whitespace is
 allowed, but whitespace may be needed between two `symbols if
-the fisrt mark of the second `symbol could be taken to be the
-continuation if the first `symbol.
+the first mark of the second `symbol could be taken to be the
+continuation of the first `symbol.
 More precisely, letting $X$, $Y$ and $Z$ stand for arbitrary (possibly
 empty) sequences of `marks, and $m$ for a single mark, then
 whitespace is required between two adjacent
