@@ -175,7 +175,8 @@ spec
        | Fun(Bool true,_,_) -> None
        %% In general simplify doesn't change e -> true because of strictness, but that should not be
        %% issue here
-       | Apply(Fun (Implies, _, _), Record([("1",t1),("2",Fun(Bool true,_,_))],_),_) -> None
+       | Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) | trueTerm? t2 || t1 = t2 ->
+         None
        | claim -> Some(mkQualifiedId(qual, StringUtilities.freshName(id^id_tag,claimNames)),tvs,claim)
 
  def addCondition(tcc as (tccs,claimNames),gamma,term,id_tag) =

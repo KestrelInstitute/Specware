@@ -275,7 +275,9 @@ spec
 	   | Some fld -> fld
 	   | None -> term)
        | Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) ->
-	 mkSimpImplies(t1,t2)
+         if  (trueTerm? t2 || t1 = t2) && sideEffectFree t1
+           then mkTrue()
+           else mkSimpImplies(t1,t2)
        | _ -> case simplifyCase spc term of
 	       | Some tm -> tm
 	       | None -> tupleInstantiate spc term
@@ -425,7 +427,10 @@ spec
       | _ -> simpleTerm term
 
  def simplify spc term =
-   mapSubTerms(simplifyOne spc) term
+   % let _ = toScreen("Before:\n" ^ printTerm term ^ "\n") in
+   let simp_term = mapSubTerms(simplifyOne spc) term in
+   % let _ = toScreen("Simp:\n" ^ printTerm simp_term ^ "\n\n") in
+   simp_term
 
  op  simplifySpec: Spec -> Spec
  def simplifySpec(spc) = 
