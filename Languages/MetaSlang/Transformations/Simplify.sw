@@ -74,13 +74,13 @@ spec
 	| _ -> false 
 
  op  countVarRefs: MS.Term * Var -> Nat
- def countVarRefs(term,id) =
+ def countVarRefs(term,v) =
    let occ = Ref 0 : Ref Nat in
    let
      def occurs(term) = 
        case term
-	 of Var (id2,_) -> 
-	   (occ := (! occ) + (if id = id2 then 1 else 0); term)
+	 of Var (v2,_) -> 
+	   (occ := (! occ) + (if equalVar?(v, v2) then 1 else 0); term)
 	  | _ -> term
    in
      let _ = mapSubTerms occurs term in
@@ -89,15 +89,15 @@ spec
  op  removeUnnecessaryVariable: Spec -> MS.Term -> MS.Term
  def removeUnnecessaryVariable spc term =
      case term
-       of Let([(VarPat (id,_),e)],body,_) ->
+       of Let([(VarPat (v,_),e)],body,_) ->
 	  let noSideEffects = sideEffectFree(e) in
-	  (case countVarRefs(body,id)
+	  (case countVarRefs(body,v)
 	     of 0 -> if noSideEffects then body else term
 	      | 1 -> if noSideEffects
 	                 or noInterveningSideEffectsBefore?
-			      (body,fn (Var (id2,_)) -> id = id2
+			      (body,fn (Var (v2,_)) -> v = v2
 			             | _ -> false)
-	               then simplifyOne spc (substitute(body,[(id,e)]))
+	               then simplifyOne spc (substitute(body,[(v,e)]))
 		       else term
 	      | _ -> term)
 	| _ -> term
@@ -275,7 +275,7 @@ spec
 	   | Some fld -> fld
 	   | None -> term)
        | Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) ->
-         if  (trueTerm? t2 || t1 = t2) && sideEffectFree t1
+         if  (trueTerm? t2 || equalTerm?(t1, t2)) && sideEffectFree t1
            then mkTrue()
            else mkSimpImplies(t1,t2)
        | _ -> case simplifyCase spc term of
@@ -300,10 +300,10 @@ spec
 	    | Some (pr as (sv,_)) ->
 	      let sbst = [pr] in
 	      simplifyForall spc
-	        (filter (fn v -> ~(v = sv)) vs,
-		 mapPartial (fn c -> if cj = c then None
+	        (filter (fn v -> ~(equalVar?(v, sv))) vs,
+		 mapPartial (fn c -> if c = cj then None
 				     else Some(simpSubstitute(spc,c,sbst)))
-		 cjs,
+		   cjs,
 		 simpSubstitute(spc,bod,sbst)))
        | _ -> if exists (fn cj -> equivTerm? spc (cj, bod)) cjs
 	         || (case bod of Fun(Bool true,_,_) -> true | _ -> false)
@@ -361,15 +361,18 @@ spec
     let stm = substitute(t,sbst) in
     simplify spc stm
 
+  op inVars?(v: Var, vs: List Var): Boolean =
+    exists (fn v1 -> equalVar?(v,v1)) vs
+
   op  bindEquality: MS.Term * List Var -> Option(Var * MS.Term)
   def bindEquality (t,vs) =
     case t of
       | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) ->
         (case e1 of
-	  | Var(v,_) | member(v,vs) && ~(isFree(v,e2)) -> Some(v,e2)
+	  | Var(v,_) | inVars?(v,vs) && ~(isFree(v,e2)) -> Some(v,e2)
 	  | _ ->
 	 case e2 of
-	  | Var(v,_) | member(v,vs) && ~(isFree(v,e1)) -> Some(v,e1)
+	  | Var(v,_) | inVars?(v,vs) && ~(isFree(v,e1)) -> Some(v,e1)
 	  | _ -> None)
       | _ -> None
 

@@ -118,12 +118,12 @@ import MatchingObligations#WordMatching0_Oblig
 %    (print-rows-when-processed t)
 %    (declare-function '+ :any 
 %     :commutative t :associative t)
-%    (declare-function-symbol 'snark::|embed_Cons_Symbol| 2
+%    (declare-function-symbol 'snark::|embed__Cons_Symbol| 2
 %     :sort '(snark::|List_Symbol|
 %	     (1 snark::|Symbol|)
 %	     (2 snark::|List_Symbol|))
 %    )
-%    (declare-function-symbol 'snark::|embed_Cons_Option_Symbol| 2
+%    (declare-function-symbol 'snark::|embed__Cons_Option_Symbol| 2
 %     :sort '(snark::|List_Option_Symbol|
 %	     (1 snark::|Symbol|)
 %	     (2 snark::|List_Option_Symbol|))
@@ -132,10 +132,10 @@ import MatchingObligations#WordMatching0_Oblig
 %    (declare-ordering-greaterp 'snark::< 'snark::=<)
 %    (declare-ordering-greaterp 'snark::> 'snark::=<)
 %    (declare-ordering-greaterp 'snark:: gte  'snark::=<)
-%    (declare-ordering-greaterp 'snark::|embed_Cons_Symbol| '+)
-%    (declare-ordering-greaterp 'snark::|embed_Cons_Symbol| '1)
-%    (declare-ordering-greaterp 'snark::|embed_Cons_Option_Symbol| '+)
-%    (declare-ordering-greaterp ''snark::|embed_Cons_Option_Symbol| '1)
+%    (declare-ordering-greaterp 'snark::|embed__Cons_Symbol| '+)
+%    (declare-ordering-greaterp 'snark::|embed__Cons_Symbol| '1)
+%    (declare-ordering-greaterp 'snark::|embed__Cons_Option_Symbol| '+)
+%    (declare-ordering-greaterp ''snark::|embed__Cons_Option_Symbol| '1)
 %    "
 
   def use_support = 
@@ -162,10 +162,10 @@ import MatchingObligations#WordMatching0_Oblig
     (declare-ordering-greaterp 'snark::|List.length_Symbol| '1)
     (declare-ordering-greaterp 'snark::|List.length_Option_Symbol| '+)
     (declare-ordering-greaterp 'snark::|List.length_Option_Symbol| '1)
-    (declare-ordering-greaterp 'snark::|embed_Cons| 'snark::|List.length|)
-    (declare-ordering-greaterp 'snark::|embed_Cons| '+)
-    (declare-ordering-greaterp 'snark::|embed_Cons| '1)
-    (declare-ordering-greaterp 'snark::|List.cons| 'snark::|embed_Cons|)"
+    (declare-ordering-greaterp 'snark::|embed__Cons| 'snark::|List.length|)
+    (declare-ordering-greaterp 'snark::|embed__Cons| '+)
+    (declare-ordering-greaterp 'snark::|embed__Cons| '1)
+    (declare-ordering-greaterp 'snark::|List.cons| 'snark::|embed__Cons|)"
 
 
 
@@ -288,7 +288,7 @@ p15 = prove match_finding in MatchingObligations#FindMatches_Ref0_Oblig
 %    (declare-ordering-greaterp 'snark::|List.length_Symbol| '1)
 %    (declare-ordering-greaterp 'snark::|List.length_Option_Symbol| '+)
 %    (declare-ordering-greaterp 'snark::|List.length_Option_Symbol| '1)
-%    (declare-ordering-greaterp 'snark::|embed_Cons| 'snark::|List.length|)
-%    (declare-ordering-greaterp 'snark::|embed_Cons| '+)
-%    (declare-ordering-greaterp 'snark::|embed_Cons| '1)
-%    (declare-ordering-greaterp 'snark::|List.cons| 'snark::|embed_Cons|)"
+%    (declare-ordering-greaterp 'snark::|embed__Cons| 'snark::|List.length|)
+%    (declare-ordering-greaterp 'snark::|embed__Cons| '+)
+%    (declare-ordering-greaterp 'snark::|embed__Cons| '1)
+%    (declare-ordering-greaterp 'snark::|List.cons| 'snark::|embed__Cons|)"
