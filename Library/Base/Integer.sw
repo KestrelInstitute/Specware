@@ -91,6 +91,7 @@ Integer qualifying spec
                  else (* x = y *)   Equal
 
   def pred x = x - 1
+  proof Isa [simp] end-proof
 
   axiom addition_def1 is
     fa(i:Integer) i+0 = i && 0+i = i
