@@ -8,7 +8,7 @@ axioms Nat__succ_injective:
 axioms Nat__induction: 
   "\<lbrakk>(p::nat \<Rightarrow> bool) 0; \<forall>(n::nat). p n \<longrightarrow> p (Suc n)\<rbrakk> \<Longrightarrow> p (n::nat)"
 consts Nat__posNat_p :: "nat \<Rightarrow> bool"
-defs Nat__posNat_p_def: "Nat__posNat_p n \<equiv> n \<noteq> 0"
+defs Nat__posNat_p_def [simp]: "Nat__posNat_p n \<equiv> n \<noteq> 0"
 types Nat__PosNat = "nat"
 axioms Nat__plus_def1: 
   "n + 0 = n"
