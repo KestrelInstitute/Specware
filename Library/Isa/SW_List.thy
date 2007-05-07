@@ -46,11 +46,8 @@ theorem List__nthTail_Obligation_subsort1:
   done
 *)
 recdef List__nthTail "measure (\<lambda>(l,i). i)"
-(*  "List__nthTail(l,i)
-     = (if i = 0 then l else List__nthTail(tl l,i - 1))" *)
   "List__nthTail(l,0) = l"
   "List__nthTail(l,Suc i) = List__nthTail(tl l,i)"
-
 theorem List__length_nthTail_Obligation_subsort: 
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 0 \<le> int (length l) - int n"
   apply(auto)
@@ -71,22 +68,18 @@ theorem List__sublist__removeFirstElems_Obligation_subsort0:
   apply(auto)
   done
 recdef List__sublist__removeFirstElems "measure (\<lambda>(l,i). i)"
-  "List__sublist__removeFirstElems(l,i)
-     = (if i = 0 then 
-          l
-        else 
-          List__sublist__removeFirstElems(tl l,i - 1))"
+  "List__sublist__removeFirstElems(l,0) = l"
+  "List__sublist__removeFirstElems(l,Suc i) 
+     = List__sublist__removeFirstElems(tl l,i)"
 consts List__sublist__collectFirstElems :: "'a list \<times> nat \<Rightarrow> 'a list"
 theorem List__sublist__collectFirstElems_Obligation_subsort0: 
   "\<lbrakk>\<not> (null (l::'a list)); \<not> (null l); \<not> (i = 0)\<rbrakk> \<Longrightarrow> 0 \<le> int i - 1"
   apply(auto)
   done
 recdef List__sublist__collectFirstElems "measure (\<lambda>(l,i). i)"
-  "List__sublist__collectFirstElems(l,i)
-     = (if i = 0 then 
-          []
-        else 
-          Cons (hd l) (List__sublist__collectFirstElems(tl l,i - 1)))"
+  "List__sublist__collectFirstElems(l,0) = []"
+  "List__sublist__collectFirstElems(l,Suc i) 
+     = Cons (hd l) (List__sublist__collectFirstElems(tl l,i))"
 theorem List__sublist_Obligation_subsort0: 
   "\<lbrakk>i \<le> j; j \<le> length l\<rbrakk> \<Longrightarrow> 0 \<le> int j - int i"
   apply(auto)
@@ -128,11 +121,9 @@ theorem List__tabulate__tabulateAux_Obligation_subsort0:
   apply(auto)
   done
 recdef List__tabulate__tabulateAux "measure (\<lambda>(i,l,f). i)"
-  "List__tabulate__tabulateAux(i,l,f)
-     = (if i = 0 then 
-          l
-        else 
-          List__tabulate__tabulateAux(i - 1,Cons (f (i - 1)) l,f))"
+  "List__tabulate__tabulateAux(0,l,f) = l"
+  "List__tabulate__tabulateAux(Suc i,l,f) 
+     = List__tabulate__tabulateAux(i,Cons (f i) l,f)"
 recdef List__tabulate "{}"
   "List__tabulate(n,f) = List__tabulate__tabulateAux(n,[],f)"
 primrec 

@@ -701,7 +701,7 @@ IsaTermPrinter qualifying spec
     in
     let op_tm = mkFun (Op (op_nm, fixity), ty) in
     let infix? = case fixity of Infix _ -> true | _ -> false in
-    case defToCases (op_tm) body infix? of
+    case defToCases c op_tm body infix? of
       | ([(lhs,rhs)], tuple?) \_rightarrow
         let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
         if recursive? \_or tuple?   % \_and ~(simpleHead? lhs))
@@ -760,10 +760,10 @@ IsaTermPrinter qualifying spec
 
 
 
-  op  defToCases: MS.Term \_rightarrow MS.Term \_rightarrow Boolean \_rightarrow List(MS.Term \_times MS.Term) \_times Boolean
-  def defToCases hd bod infix? =
+  op  defToCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow Boolean \_rightarrow List(MS.Term \_times MS.Term) \_times Boolean
+  def defToCases c hd bod infix? =
     let
-      def aux(hd,bod: MS.Term,tuple?) =
+      def aux(hd, bod, tuple?) =
 	case bod of
 	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) | \_not tuple? \_rightarrow
 	    aux(Apply(hd,mkVar v,a), term, tuple?)
@@ -784,6 +784,21 @@ IsaTermPrinter qualifying spec
             (case  patternToTerm pat of
                | Some pat_tm \_rightarrow aux((substitute(hd,[(v,pat_tm)]), bod, tuple?))
                | None \_rightarrow [(hd,bod)])
+          | IfThenElse(Apply(Fun(Equals, _,_),
+                             Record([("1", vr as Var(v as (vn,s),_)),
+                                     ("2",zro as Fun(Nat 0,_,_))],_),
+                             _),
+                       then_cl, else_cl, _)
+              | natSort? s \_and inVars?(v, freeVars hd) \_rightarrow
+            aux(substitute(hd, [(v,zro)]), substitute(then_cl, [(v,zro)]), tuple?)
+             ++ aux(substitute(hd, [(v,mkApply(mkOp(Qualified("Nat","succ"),
+                                                    mkArrow(natSort, natSort)),
+                                               vr))]),
+                    simpSubstitute(getSpec c, else_cl, [(v,mkApply(mkOp(Qualified("Integer","+"),
+                                                                        mkArrow(mkProduct [natSort, natSort],
+                                                                                natSort)),
+                                                                   mkTuple[vr,mkNat 1]))]),
+                    tuple?)
 	  | _ \_rightarrow [(hd,bod)]
       def aux_case(hd,bod: MS.Term,tuple?) =
         if tuple? then aux(hd,bod,tuple?) else [(hd,bod)]

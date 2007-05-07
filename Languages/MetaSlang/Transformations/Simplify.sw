@@ -278,6 +278,14 @@ spec
          if  (trueTerm? t2 || equalTerm?(t1, t2)) && sideEffectFree t1
            then mkTrue()
            else mkSimpImplies(t1,t2)
+       %% x + n - n \_longrightarrow x  (Could generalize, but useful for IsaPrinter)
+       | Apply(Fun(Op(Qualified("Integer","-"),_),_,_),
+               Record([("1",Apply(Fun(Op(Qualified("Integer","+"),_),_,_),
+                                  Record([("1",t1),
+                                          ("2",Fun(Nat n1,_,_))],_),_)),
+                       ("2",Fun(Nat n2,_,_))],_), _)
+           | n1 = n2 ->
+         t1
        | _ -> case simplifyCase spc term of
 	       | Some tm -> tm
 	       | None -> tupleInstantiate spc term
@@ -359,7 +367,10 @@ spec
   op  simpSubstitute: Spec * MS.Term *  List (Var * MS.Term) -> MS.Term
   def simpSubstitute(spc,t,sbst) =
     let stm = substitute(t,sbst) in
-    simplify spc stm
+    % let _ = toScreen("After subst:\n" ^ printTerm stm ^ "\n") in
+    let result = simplify spc stm in
+    % let _ = toScreen("Simp:\n" ^ printTerm result ^ "\n\n") in
+    result
 
   op inVars?(v: Var, vs: List Var): Boolean =
     exists (fn v1 -> equalVar?(v,v1)) vs
