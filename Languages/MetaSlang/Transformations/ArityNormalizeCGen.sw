@@ -169,7 +169,7 @@ ArityNormalizeCGen qualifying spec {
 		  let srts = newtypevars(srts,0) in
 		  let srt = Base(qid,srts,noPos) in
 		  %let _ = writeLine("unfolding "^MetaSlangPrint.printSort(srt)^"...") in
-		  let usrt = SpecEnvironment.unfoldBase(sp,srt) in
+		  let usrt = Utilities.unfoldBase(sp,srt) in
 		  if usrt = srt then None
 		  else findCoProduct(usrt)
 	       %| Boolean is the same as default case
@@ -238,7 +238,7 @@ ArityNormalizeCGen qualifying spec {
      % let def makeFreshBoundVariable(id,usedNames) = freshName("v"^id,usedNames) in % unused
      let
 	def unfoldArgument(dom:Sort,t2) = 
-            case SpecEnvironment.unfoldBase(sp,dom)
+            case Utilities.unfoldBase(sp,dom)
 	      of Subsort(s,t,_) -> 
 %
 % First relax the argument, then restrict the result.
@@ -269,8 +269,8 @@ ArityNormalizeCGen qualifying spec {
 		 (mkRecord fields,[decl])
 	       | _ -> 
 		(toScreen "Unexpected non-record argument to function ";
-		 toScreen (MetaSlangPrint.printTerm t2^" :  " );
-		 writeLine (MetaSlangPrint.printSort dom);
+		 toScreen (printTerm t2^" :  " );
+		 writeLine (printSort dom);
 		(t2,[])) 
 		  %% This should not happen (?) 
 		  %% because we only apply it to terms expecting
