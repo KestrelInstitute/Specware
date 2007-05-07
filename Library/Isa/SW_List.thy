@@ -46,8 +46,11 @@ theorem List__nthTail_Obligation_subsort1:
   done
 *)
 recdef List__nthTail "measure (\<lambda>(l,i). i)"
-  "List__nthTail(l,i)
-     = (if i = 0 then l else List__nthTail(tl l,i - 1))"
+(*  "List__nthTail(l,i)
+     = (if i = 0 then l else List__nthTail(tl l,i - 1))" *)
+  "List__nthTail(l,0) = l"
+  "List__nthTail(l,Suc i) = List__nthTail(tl l,i)"
+
 theorem List__length_nthTail_Obligation_subsort: 
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 0 \<le> int (length l) - int n"
   apply(auto)
