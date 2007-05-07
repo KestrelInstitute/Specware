@@ -19,7 +19,7 @@ WordMatching0 = spec
                 if symb_matches?(wsym,msym)
                   then word_matches_aux?(wrd1,msg1)
                   else false
-  proof Isa "measure (\_lambda (wrd,msg). size wrd)" end-proof
+  proof Isa "measure (\_lambda(wrd,msg). length wrd)" end-proof
 
   op word_matches_at?(wrd: Word, msg: Message, pos: Nat): Boolean =
     if pos + length wrd > length msg
@@ -52,6 +52,8 @@ FindMatches0 = spec
       else if word_matches_at?(wrd,msg,pos)
              then Some pos
              else find_matches_aux(msg, wrd, pos + 1)
+  proof Isa "measure (\_lambda(msg,wrd,pos). length msg - pos)" end-proof
+
 
   op find_matches(msg: Message, wrds: List Word): List Match =
     foldl (fn(wrd,mtchs) ->
