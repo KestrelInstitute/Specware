@@ -208,10 +208,10 @@ We define the set of context elements as
  {\Cxel}
  {+}
  {\setST{\tdecO}{\tnam\in\Nam\AND n\in\N}}
- {\setST{\odecO}{\onam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
- {\setST{\axO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
  {\setST{\tvdecO}{\tvar\in\Nam}}
+ {\setST{\odecO}{\onam\in\Nam\AND\tvarS\in\SeqNR{\Nam}\AND\typ\in\Typ}}
  {\setST{\vdecO}{\var\in\Nam\AND\typ\in\Typ}}
+ {\setST{\axO}{\tvarS\in\SeqNR{\Nam}\AND\expr\in\Expr}}
 \]
 
 Explanation:
@@ -219,18 +219,18 @@ Explanation:
 \item
 A type declaration $\tdecO$ introduces a type name with an associated arity.
 \item
-An op(eration) declaration $\odecO$ introduces an op name with an associated
-type, polymorphic in the explicit type variables.
-\item
-An axiom $\axO$ introduces an expression (with type $\bool$, as defined later),
-polymorphic in the explicit type variables. We may write $\ax{\seqO}{\expr}$ as
-just $\axM{\expr}$.
-\item
 A type variable declaration $\tvdecO$ introduces a type variable. We may write
 $\seqFT{\tvdec{\tvar_1}}{\tvdec{\tvar_n}}$ as just
 $\tvdec{\seqFT{\tvar_1}{\tvar_n}}$.
 \item
+An op(eration) declaration $\odecO$ introduces an op name with an associated
+type, polymorphic in the explicit type variables.
+\item
 A variable declaration $\vdecO$ introduces a variable with a type.
+\item
+An axiom $\axO$ introduces an expression (with type $\bool$, as defined later),
+polymorphic in the explicit type variables. We may write $\ax{\seqO}{\expr}$ as
+just $\axM{\expr}$.
 \end{itemize}
 
 We define the set of contexts as
@@ -252,19 +252,6 @@ in a context
 \end{eqlist}
 \]
 
-The function $\func{\cxonamY}{\Cx}{\Setf{\Nam}}$ returns the op names declared
-in a context
-\[
-\begin{eqlist}
-\eqitem{\cxonam{\mtcx}}
-       {\emptyset}
-\eqitem{\cxonam{\cons{\cxel}{\cx}}}
-       {\cond{\cxel=\odecO}
-             {\cxonam{\cx}\cup\setI{\onam}}
-             {\cxonam{\cx}}}
-\end{eqlist}
-\]
-
 The function $\func{\cxtvarY}{\Cx}{\Setf{\Nam}}$ returns the type variables
 declared in a context
 \[
@@ -275,6 +262,19 @@ declared in a context
        {\cond{\cxel=\tvdecO}
              {\cxtvar{\cx}\cup\setI{\tvar}}
              {\cxtvar{\cx}}}
+\end{eqlist}
+\]
+
+The function $\func{\cxonamY}{\Cx}{\Setf{\Nam}}$ returns the op names declared
+in a context
+\[
+\begin{eqlist}
+\eqitem{\cxonam{\mtcx}}
+       {\emptyset}
+\eqitem{\cxonam{\cons{\cxel}{\cx}}}
+       {\cond{\cxel=\odecO}
+             {\cxonam{\cx}\cup\setI{\onam}}
+             {\cxonam{\cx}}}
 \end{eqlist}
 \]
 

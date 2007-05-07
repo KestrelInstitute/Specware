@@ -1023,19 +1023,15 @@ expected.
 
 \subsection{Proof-theoretical properties}
 
-Any prefix of a well-formed context is itself well-formed:
-
-\begin{theorem}\label{thm-cxprefix}
-\[
-\cxwf{\seqII{\cx_1}{\cx_2}}\ \ \IMPLIES\ \ \cxwf{\cx_1}
-\]
-\end{theorem}
-
-If we derive a judgement with some context, that context is well-formed:
+Any prefix of a well-formed context is itself well-formed and if we derive a
+judgement with some context, (any prefix of) that context is well-formed:
 
 \begin{theorem}\label{thm-cxwf}
 \[
-\jcxdots{\cx}\ \ \IMPLIES\ \ \cxwf{\cx}
+\begin{array}{l@{\ \ \IMPLIES\ \ }l}
+\cxwf{\seqII{\cx_1}{\cx_2}}    & \cxwf{\cx_1} \\
+\jcxdots{\seqII{\cx_1}{\cx_2}} & \cxwf{\cx_1}
+\end{array}
 \]
 \end{theorem}
 
@@ -1189,13 +1185,23 @@ All the free variables in a well-typed expression or a theorem are declared in
 the context, and all the free variables in an axiom of a well-formed context are
 declared before the axiom:
 
-\begin{theorem}\label{thm-free-var-in-cx}
+\begin{theorem}\label{thm-free-var-expr-in-cx}
 \[
-\begin{array}{l@{\ \ \IMPLIES\ \ }l}
-\hastyO{\expr}{\typ}     & \efvar{\expr}\subseteq\cxvarO       \\
-\theoO{\expr}            & \efvar{\expr}\subseteq\cxvarO       \\
-\cxwf{\cx_1,\axO, \cx_2} & \efvar{\expr}\subseteq\cxvar{\cx_1}
-\end{array}
+\hastyO{\expr}{\typ}\ \ \IMPLIES\ \ \efvar{\expr}\subseteq\cxvarO
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-free-var-ax-in-cx}
+\[
+\cxwf{\snocons{\cx_1}{\axO}{\cx_2}}
+\ \ \IMPLIES\ \ 
+\efvar{\expr}\subseteq\cxvar{\cx_1}
+\]
+\end{theorem}
+
+\begin{theorem}\label{thm-free-var-thm-in-cx}
+\[
+\theoO{\expr}\ \ \IMPLIES\ \ \efvar{\expr}\subseteq\cxvarO
 \]
 \end{theorem}
 
@@ -1310,24 +1316,12 @@ The following theorems prove derived well-formedness rules for contexts:
 \begin{theorem}\label{thm-cxvdecI}
 {\rm
 \[
-\rruleII
- {\istyO{\typ}}
- {\var\not\in\cxvarO}
- {\cxwf{\snoc{\cx}{\vdecO}}}
- {\RcxvdecI}
-\]
-}
-\end{theorem}
-
-\begin{theorem}\label{thm-cxvdecII}
-{\rm
-\[
 \rruleIII
  {\istyO{\typ}}
  {\cxwf{\cx,\cx'}}
  {\var\not\in\cxvar{\cx,\cx'}}
  {\cxwf{\cx,\cx',\vdecO}}
- {\RcxvdecII}
+ {\RcxvdecI}
 \]
 }
 \end{theorem}

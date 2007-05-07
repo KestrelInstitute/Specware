@@ -28,23 +28,6 @@ contexts as
 \]
 
 \[
-\rruleIII
- {\cxwfO}
- {\onam\not\in\cxonam{\cx}}
- {\isty{\snoc{\cx}{\tvdec{\tvarS}}}{\typ}}
- {\cxwf{\snoc{\cx}{\odecO}}}
- {\Rcxodec}
-\]
-
-\[
-\rruleII
- {\cxwfO}
- {\hasty{\snoc{\cx}{\tvdec{\tvarS}}}{\expr}{\bool}}
- {\cxwf{\snoc{\cx}{\axO}}}
- {\Rcxax}
-\]
-
-\[
 \rruleII
  {\cxwfO}
  {\tvar\not\in\cxtvar{\cx}}
@@ -53,39 +36,56 @@ contexts as
 \]
 
 \[
-\rruleIII
- {\cxwfO}
- {\var\not\in\cxvar{\cx}}
+\rruleII
+% {\cxwfO}
+ {\isty{\snoc{\cx}{\tvdec{\tvarS}}}{\typ}}
+ {\onam\not\in\cxonam{\cx}}
+ {\cxwf{\snoc{\cx}{\odecO}}}
+ {\Rcxodec}
+\]
+
+\[
+\rruleII
+% {\cxwfO}
  {\isty{\cx}{\typ}}
+ {\var\not\in\cxvar{\cx}}
  {\cxwf{\snoc{\cx}{\vdecO}}}
  {\Rcxvdec}
+\]
+
+\[
+\rruleI
+% {\cxwfO}
+ {\hasty{\snoc{\cx}{\tvdec{\tvarS}}}{\expr}{\bool}}
+ {\cxwf{\snoc{\cx}{\axO}}}
+ {\Rcxax}
 \]
 
 Eplanation:
 \begin{itemize}
 \item
 The empty context $\mtcx$ is well-formed. All the other rules add context
-elements to well-formed contexts. Thus, a well-formed context is constructed
-incrementally starting with the empty one and adding elements.
+elements to well-formed contexts (not all rules include $\cxwfO$ as an explicit
+premise, but $\cxwfO$ is derivable from their explicit premises, as proved by
+\thmref{thm-cxwf}). Thus, a well-formed context is constructed incrementally
+starting with the empty one and adding elements.
 \item
 A type declaration $\tdecO$ can be added to $\cx$ if $\tnam$ is not already
 declared in $\cx$.
 \item
-An op declaration $\odecO$ can be added to $\cx$ if $\onam$ is not already
-declared in $\cx$. The op's type $\typ$ must be well-formed (defined later) in
-$\cx$ extended with the type variables $\tvarS$, which must be distinct. Note
-that we do not require that all the type variables in $\typ$ are among $\tvarS$,
-because there is no need for that restriction.
-\item
-A formula $\expr$ can be added to $\cx$ as an axiom if $\expr$ has type $\bool$
-(defined later). In general, the axiom may be polymorphic in (distinct) type
-variables $\tvarS$.
-\item
 A type variable declaration $\tvdecO$ can be added to $\cx$ if $\tvar$ is not
 already declared in $\cx$.
 \item
+An op declaration $\odecO$ can be added to $\cx$ if $\onam$ is not already
+declared in $\cx$. The op's type $\typ$ must be well-formed (defined later) in
+$\cx$ extended with the type variables $\tvarS$, which must be distinct.
+\item
 A variable declaration $\vdecO$ can be added to $\cx$ if $\var$ is not already
-declared in $\cx$ and $\typ$ is well-formed type in $\cx$.
+declared in $\cx$ and $\typ$ is well-formed in $\cx$.
+\item
+A formula $\expr$ can be added to $\cx$ as an axiom if $\expr$ has type $\bool$
+(defined later). In general, the axiom may be polymorphic over type variables
+$\tvarS$.
 \end{itemize}
 
 \subsection{Well-formed types}
