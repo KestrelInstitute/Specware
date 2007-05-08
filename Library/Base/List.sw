@@ -89,14 +89,19 @@ List qualifying spec
     if i = 0 then l
              else nthTail(tl l,i-1)
   proof Isa "measure (\_lambda(l,i). i)" end-proof
+  proof Isa nthTail_Obligation_subsort
+  apply (auto simp add: null_empty)
+  end-proof
   proof Isa nthTail_Obligation_subsort1
   apply(auto)
-  apply(arith)
   end-proof
 
-  axiom length_nthTail is		% Really a theorem
+  theorem length_nthTail is
     fa(l,n: Nat) n <= length l \_Rightarrow length(nthTail(l,n)) = length l - n
-  proof Isa [simp] end-proof
+  proof Isa [simp]
+    apply(induct_tac l n rule: List__nthTail.induct)
+    apply(auto)
+  end-proof
 
   def last(hd::tl) =
     case tl of
@@ -113,17 +118,43 @@ List qualifying spec
        | []     -> false
        | hd::tl -> if x = hd then true else member(x,tl)
 
-  def sublist(l,i,j) =
-    let def removeFirstElems(l,i) =
-          if i = 0 then l
-          else removeFirstElems(tl l,i-1) in
-    let def collectFirstElems(l,i) =
+  op [a] removeFirstElems(l: List a,i: Nat | i <= length l): List a =
+    if i = 0 then l
+      else removeFirstElems(tl l,i-1)
+  proof Isa "measure (\_lambda(l,i). i)" end-proof
+  proof Isa removeFirstElems_Obligation_subsort
+    apply(auto simp add: null_empty)
+  end-proof
+
+  theorem length_removeFirstElems is
+     fa(l,i: Nat) i <= length l \_Rightarrow length(removeFirstElems(l,i)) = length l - i
+  proof Isa [simp]
+    apply(induct_tac l i rule: List__removeFirstElems.induct)
+    apply(auto)
+  end-proof
+
+  def [a] sublist(l: List a,i,j) =
+    let def collectFirstElems(l: List a,i: Nat | i <= length l) =
           if i = 0 then Nil
           else Cons (hd l, collectFirstElems(tl l,i-1)) in
     collectFirstElems(removeFirstElems(l,i),j-i)
   proof Isa end-proof
-  proof Isa sublist__removeFirstElems "measure (\_lambda(l,i). i)" end-proof
+
+  proof Isa sublist__collectFirstElems_Obligation_subsort
+    apply(auto simp add: null_empty)
+  end-proof
+  proof Isa sublist__collectFirstElems_Obligation_subsort0
+    apply(auto simp add: null_empty)
+  end-proof
   proof Isa sublist__collectFirstElems "measure (\_lambda(l,i). i)" end-proof
+
+  theorem sublist_whole is
+    [a] fa (l: List a) sublist(l,0,length l) = l
+  proof Isa [simp]
+    apply(induct_tac l)
+    apply(auto)
+  end-proof
+
 
   def map f l =
     case l of
@@ -221,7 +252,7 @@ List qualifying spec
                                                  else None
                | ([],_)                       -> Some supl
                | _                            -> None in
-    let def locationOfNonEmpty (subl : List a, supl : List a, pos : Nat)
+    let def locationOfNonEmpty (subl : List a, supl : List a, pos : Nat | subl ~= [])
             : Option(Nat * List a) =
             % assuming subl is non-empty, searches first position of subl
             % within supl and if found returns what remains of supl after subl
@@ -237,6 +268,9 @@ List qualifying spec
     case subl of
        | [] -> Some(0,supl)
        | _  -> locationOfNonEmpty(subl,supl,0)
+
+  proof Isa end-proof
+  proof Isa locationOf__locationOfNonEmpty "measure (\_lambda(subl,supl,pos). length supl)" end-proof
 
   def compare comp (l1,l2) = 
     case (l1,l2) of
