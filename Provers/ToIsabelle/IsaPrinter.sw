@@ -782,7 +782,8 @@ IsaTermPrinter qualifying spec
 	     else [(hd,bod)]
           | Let([(pat,Var(v,_))],bod,a) | tuple? \_and member(v, freeVars hd) \_rightarrow
             (case  patternToTerm pat of
-               | Some pat_tm \_rightarrow aux((substitute(hd,[(v,pat_tm)]), bod, tuple?))
+               | Some pat_tm \_rightarrow aux(substitute(hd, [(v,pat_tm)]),
+                                    substitute(bod,[(v,pat_tm)]), tuple?)
                | None \_rightarrow [(hd,bod)])
           | IfThenElse(Apply(Fun(Equals, _,_),
                              Record([("1", vr as Var(v as (vn,s),_)),
@@ -794,10 +795,10 @@ IsaTermPrinter qualifying spec
              ++ aux(substitute(hd, [(v,mkApply(mkOp(Qualified("Nat","succ"),
                                                     mkArrow(natSort, natSort)),
                                                vr))]),
-                    simpSubstitute(getSpec c, else_cl, [(v,mkApply(mkOp(Qualified("Integer","+"),
-                                                                        mkArrow(mkProduct [natSort, natSort],
-                                                                                natSort)),
-                                                                   mkTuple[vr,mkNat 1]))]),
+                    simpSubstitute(getSpec c, else_cl,
+                                   [(v,mkApply(mkOp(Qualified("Integer","+"),
+                                                    mkArrow(mkProduct [natSort, natSort], natSort)),
+                                               mkTuple[vr,mkNat 1]))]),
                     tuple?)
 	  | _ \_rightarrow [(hd,bod)]
       def aux_case(hd,bod: MS.Term,tuple?) =
