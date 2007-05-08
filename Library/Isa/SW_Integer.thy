@@ -41,7 +41,7 @@ defs Integer__abs_def [simp]:
 recdef Integer__compare "{}"
   "Integer__compare(x,y)
      = (if x < y then Less else if x > y then Greater else Equal)"
-defs Integer__pred_def: "Integer__pred x \<equiv> int x - 1"
+defs Integer__pred_def [simp]: "Integer__pred x \<equiv> int x - 1"
 axioms Integer__addition_def1: 
   "(i::int) + 0 = i \<and> 0 + i = i"
 theorem Integer__addition_def2_Obligation_subsort: 
