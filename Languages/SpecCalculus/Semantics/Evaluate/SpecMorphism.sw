@@ -336,13 +336,24 @@ Should we check to see if qid is in cod_map??
            case findAQualifierMap (cod_map, q, id) of
              | Some _ -> return (update new_map (Qualified (q,id)) (Qualified (q,id))) % identity
              | _ -> 
-	       case wildFindUnQualified (cod_map, id) of
-		 | [] -> 
-		   let msg = "No mapping for " ^ q ^ "." ^ id in
+               case foldriAQualifierMap (fn (cod_q,cod_id,_,r) -> 
+                                           if cod_id = id then 
+                                             r ++ [mkQualifiedId(cod_q,cod_id)]
+                                           else
+                                             r)
+                                        [] 
+                                        cod_map 
+                 of
+                 | [] ->
+                   let msg = "No mapping for " ^ q ^ "." ^ id in
 		   raise (MorphError (noPos, msg))
-		 | targets ->
-		   let msg = "No unique mapping for " ^ q ^ "." ^ id ^ " -- found " ^ toString (length targets) ^ " candidates" in
-		   raise (MorphError (noPos, msg))
+                 | [qid] ->
+                   %% fix bug 127 by accepting unique candidates
+                   return (update new_map (Qualified (q,id)) qid)
+                 | qids ->
+                   let msg = "No unique mapping for " ^ id ^ " -- found " ^ toString (length qids) ^ " candidates: " ^ printAliases qids in
+                   raise (MorphError (noPos, msg))
+
     in
       foldOverQualifierMap compl emptyMap dom_map
 
