@@ -2,7 +2,7 @@
 
 (test 
 
-  ("Bug 0124 : Choose prints incorrectly"
+  ("Bug 0126 : Type comparison of polymorphic ops in translation fails to compare modulo alpha conversion"
    :show  "Alpha#MOR"
    :output '(
 	     (:optional ";;; Elaborating spec-morphism at $TESTDIR/Alpha#MOR")
