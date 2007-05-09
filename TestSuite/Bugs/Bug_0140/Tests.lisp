@@ -2,7 +2,7 @@
 
 (test 
 
- ("Bug 0140 : Obligation of morphism into debugger"
+ ("Bug 0140 : Polymorphic mystery term"
   :sw "STO#O"
   ;;  :show "STO#O"
   :output '(";;; Elaborating obligator at $TESTDIR/STO#O"

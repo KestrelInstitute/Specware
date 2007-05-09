@@ -1,6 +1,6 @@
 (test-directories ".")
 
-(test ("Bug 145. Failure to disambiguate in op declaration without definition"
+(test ("Bug 145. Unambiguous < in subtype becomes ambiguous by commenting out def"
        :sw "ambigLt"
        :output ";;; Elaborating spec at $TESTDIR/ambigLt
 "))
