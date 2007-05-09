@@ -620,7 +620,15 @@ spec
 	   | Some sortinfo -> primarySortName sortinfo
 	   | _ -> qid
        def addIfNew(el,newElts) =
-	 if member(el,newElts) then newElts
+	 if exists (fn e ->
+                      case (e, el) of
+                        | (Op  (qid1,d1,_), Op  (qid2,d2,_)) -> qid1 = qid2 && d1 = d2
+                        | (OpDef  (qid1,_), OpDef  (qid2,_)) -> qid1 = qid2
+                        | (Sort   (qid1,_), Sort   (qid2,_)) -> qid1 = qid2
+                        | (SortDef(qid1,_), SortDef(qid2,_)) -> qid1 = qid2
+                        | _ -> false)
+              newElts
+           then newElts
 	   else Cons(el,newElts)
        
    in
