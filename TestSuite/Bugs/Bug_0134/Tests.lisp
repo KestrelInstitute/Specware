@@ -2,7 +2,7 @@
 
 (test 
 
- ("Bug 0134 : Unbound variable in proof Obligation"
+ ("Bug 0134 : Unparseable proof obligation generated"
   :show "fold#O"
   :output '(";;; Elaborating obligator at $TESTDIR/fold#O"
 	    ";;; Elaborating spec at $TESTDIR/fold#S"

@@ -2,7 +2,7 @@
 
 (test 
 
- ("Bug 0132 : Obligation for the"
+ ("Bug 0132 : No proof obligation generated for 'the'"
   :show "theOblig#O"
   :output '(";;; Elaborating obligator at $TESTDIR/theOblig#O"
 	    ";;; Elaborating spec at $TESTDIR/theOblig#S"

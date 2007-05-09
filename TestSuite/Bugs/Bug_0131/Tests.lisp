@@ -2,7 +2,7 @@
 
 (test 
 
- ("Bug 0131 : Prover goes into debugger"
+ ("Bug 0131 : Attempting to prove simple Option obligation breaks into Lisp"
   :sw "Option#P"
   :output '(
 	    ";;; Elaborating obligator at $TESTDIR/Option#P"
