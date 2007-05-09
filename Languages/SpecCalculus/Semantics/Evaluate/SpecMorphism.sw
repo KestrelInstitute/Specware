@@ -296,8 +296,8 @@ coherence conditions of the morphism elements.
       -> Option SCTerm
       -> Env Morphism
   def buildSpecMorphism domSpec codSpec (opMap,sortMap) pragmas opt_sm_tm = {
-      newOpMap   <- completeMorphismMap opMap   domSpec.ops   codSpec.ops;
-      newSortMap <- completeMorphismMap sortMap domSpec.sorts codSpec.sorts;
+      newOpMap   <- completeMorphismMap "op"   opMap   domSpec.ops   codSpec.ops;
+      newSortMap <- completeMorphismMap "type" sortMap domSpec.sorts codSpec.sorts;
       return {
           dom     = domSpec,
           cod     = codSpec,
@@ -322,12 +322,13 @@ Should we check to see if qid is in cod_map??
 
 \begin{spec}
   op completeMorphismMap:
-    fa(a,b) AQualifierMap QualifiedId
+    fa(a,b) String 
+         -> AQualifierMap QualifiedId
          -> AQualifierMap a
          -> AQualifierMap b
          -> Env (PolyMap.Map (QualifiedId, QualifiedId))
 
-  def completeMorphismMap trans_map dom_map cod_map =
+  def completeMorphismMap kind trans_map dom_map cod_map =
     let def compl (q, id, _ (* val *), new_map) =
       case findAQualifierMap (trans_map, q, id) of
         | Some qid -> return (update new_map (Qualified (q,id)) qid) % explicit
@@ -345,13 +346,13 @@ Should we check to see if qid is in cod_map??
                                         cod_map 
                  of
                  | [] ->
-                   let msg = "No mapping for " ^ q ^ "." ^ id in
+                   let msg = "No mapping for " ^ kind ^ " " ^ q ^ "." ^ id in
 		   raise (MorphError (noPos, msg))
                  | [qid] ->
                    %% fix bug 127 by accepting unique candidates
                    return (update new_map (Qualified (q,id)) qid)
                  | qids ->
-                   let msg = "No unique mapping for " ^ id ^ " -- found " ^ toString (length qids) ^ " candidates: " ^ printAliases qids in
+                   let msg = "No unique mapping for " ^ kind ^ " " ^ id ^ " -- found " ^ toString (length qids) ^ " candidates: " ^ printAliases qids in
                    raise (MorphError (noPos, msg))
 
     in
