@@ -23,6 +23,7 @@
 	     " "
 	     " op  posNat? : Nat -> Boolean"
 	     " def posNat? n = n ~= zero"
+	     " proof Isa [simp] end-proof"
 	     " type PosNat = {n : Nat | posNat? n}"
 	     " "
 	     " op  one : Nat"

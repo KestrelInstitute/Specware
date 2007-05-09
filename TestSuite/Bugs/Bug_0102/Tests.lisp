@@ -71,6 +71,7 @@
 	    "   if x < y then Less else if x > y then Greater else Equal"
 	    " "
 	    " def pred x = x - 1"
+	    " proof Isa [simp] end-proof"
 	    " axiom Integer.addition_def1 is fa(i : Integer) i + 0 = i && 0 + i = i"
 	    " conjecture Integer.addition_def2_Obligation_subsort is "
 	    "    fa(n1 : PosNat, n2 : PosNat) "
