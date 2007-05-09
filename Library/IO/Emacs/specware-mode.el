@@ -221,6 +221,7 @@ accepted in lieu of prompting."
 (defconst specware-interaction-menu 
     '("Specware"
       ["Find Definition" sw:meta-point t]
+      ["Find Terms of Type" sw:find-terms-of-type t]
       ["Find Case dispatch on type" sw:find-case-dispatch-on-type t]
       ["Find Op reference" sw:find-op-references t]
       ["Go to next match" sw:continue-specware-search *pending-specware-search-results*]
@@ -275,6 +276,7 @@ accepted in lieu of prompting."
 
   (define-key map "\C-cfi"   'sw:find-importing-specs)
   (define-key map "\C-cfc"   'sw:find-case-dispatch-on-type)
+  (define-key map "\C-cft"   'sw:find-terms-of-type)
   (define-key map "\C-cfr"   'sw:find-op-references)
   (define-key map "\C-cf"  'sw:ignore-matches)
 
@@ -1686,6 +1688,22 @@ If anyone has a good algorithm for this..."
 	    (sw::get-symbol-at-point)))))
 
 ;;;; Commands for finding Specware expressions
+(defun sw:find-terms-of-type (name)
+  "Find case statements splitting on type name"
+  (interactive (list (car (sw::get-default-symbol "Type name" t t))))
+  (let* ((pr (find-qualifier-info name))
+	 (qualifier (car pr))
+	 (sym (cadr pr)))
+    (message "Requesting info from Lisp...")
+    (let ((sym (if (and (> (length sym) 3) (equal (substring sym 0 2) "|!"))
+		   (substring sym 2 -1)
+		 sym)))
+      (let ((results (sw:eval-in-lisp (make-find-terms-of-type-form qualifier sym))))
+	(message nil)
+	(if (member results '(nil NIL Error:))
+	    (error "Can't find any case tests on %s." name)
+	  (goto-specware-search-result sym (sw:sort-search-results results)))))))
+
 (defun sw:find-case-dispatch-on-type (name)
   "Find case statements splitting on type name"
   (interactive (list (car (sw::get-default-symbol "Type name" t t))))
@@ -1751,12 +1769,20 @@ If anyone has a good algorithm for this..."
       (switch-to-buffer buf))
     (goto-line line)
     (beginning-of-line)
-    (forward-char col)
+    (forward-chars-counting-x-symbols col)
     (recenter 4)
     (report-next-match-task-status)))
 
 (defvar *top-level-unit*
   (concat (getenv "SPECWARE4") "/Applications/Specware/Specware4"))
+
+(defun make-find-terms-of-type-form (qualifier sym)
+  (format "(EditFn::findExpressionsOfType-4 %S %S %S %s)"
+	  qualifier sym
+	  (if (specware-file-name-p buffer-file-name)
+	      (sw:containing-specware-unit-id nil)
+	    *top-level-unit*)
+	  *specware-context-str*))
 
 (defun make-find-case-search-form (qualifier sym)
   (format "(EditFn::findCaseDispatchesOnType-4 %S %S %S %s)"
