@@ -133,7 +133,7 @@ UnitId_Dependency.
       (optBaseUnitId,baseSpec) <- getBase;
       case optBaseUnitId of
        | None -> raise (Fail "No Base Spec")
-       | Some uid -> return (baseSpec << {elements = [Import((UnitId uid,noPos),baseSpec,baseSpec.elements)]})
+       | Some uid -> return (baseSpec << {elements = [Import((UnitId uid,noPos),baseSpec,baseSpec.elements,noPos)]})
       } in
     run prog 
 
@@ -142,7 +142,7 @@ UnitId_Dependency.
     spc << {elements = case optUnitId of
 			 | None -> []
 			 | Some unitid ->
-	                   [Import((UnitId unitid,noPos), spc, spc.elements)]}
+	                   [Import((UnitId unitid,noPos), spc, spc.elements, noPos)]}
 
   op clearBaseNames : Env ()
   def clearBaseNames =  writeGlobalVar ("BaseNames", [])

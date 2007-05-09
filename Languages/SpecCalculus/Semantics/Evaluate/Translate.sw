@@ -718,13 +718,13 @@ SpecCalc qualifying spec
   op  translateSpecElement : Translators -> Option Renaming -> SpecElement -> SpecElement
   def translateSpecElement translators opt_renaming el =
     case el of
-      | Sort    qid         -> Sort    (translateQualifiedId translators.sorts qid) 
-      | SortDef qid         -> SortDef (translateQualifiedId translators.sorts qid)
-      | Op      (qid, def?) -> Op      (translateQualifiedId translators.ops   qid, def?)
-      | OpDef   qid         -> OpDef   (translateQualifiedId translators.ops   qid) 
-      | Property (pt, nm, tvs, term) ->
-        Property (pt, (translateQualifiedId translators.props nm), tvs, term)
-      | Import (sp_tm, spc, els) ->  
+      | Sort    (qid, a)       -> Sort    (translateQualifiedId translators.sorts qid, a) 
+      | SortDef (qid, a)       -> SortDef (translateQualifiedId translators.sorts qid, a)
+      | Op      (qid, def?, a) -> Op      (translateQualifiedId translators.ops   qid, def?, a)
+      | OpDef   (qid, a)       -> OpDef   (translateQualifiedId translators.ops   qid, a)
+      | Property (pt, nm, tvs, term, a) ->
+        Property (pt, (translateQualifiedId translators.props nm), tvs, term, a)
+      | Import (sp_tm, spc, els, a) ->  
 	%% The Import expression we have just dispatched on was constructed 
 	%% by mapSpecElements.  In particular, els was constructed by 
 	%% applying this fn to each of the original imported elements. 
@@ -755,7 +755,7 @@ SpecCalc qualifying spec
 		       (Translate (sp_tm, renaming), pos))
               | _ -> sp_tm
 	in
-	  Import (new_tm, spc, els)
+	  Import (new_tm, spc, els, a)
       | _ -> el
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

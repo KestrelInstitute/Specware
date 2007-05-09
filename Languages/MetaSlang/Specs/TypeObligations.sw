@@ -149,7 +149,7 @@ spec
 
  op  mkConjecture: QualifiedId * TyVars * MS.Term -> SpecElement
  def mkConjecture(qid,tvs,fm) =
-   Property(Conjecture,qid,tvs,fm)
+   Property(Conjecture,qid,tvs,fm,noPos)
 
  def addFailure((tcc,claimNames),(_,_,_,_,name as Qualified(qid, id),_,_),description) = 
      let descName = id^" :"^description in
@@ -837,8 +837,8 @@ spec
    %let localOps = spc.importInfo.localOps in
    let names = foldl (fn (el,m) ->
 		      case el of
-			| Op    (qid,def?) -> insertQID(qid, m)
-			| OpDef qid        -> insertQID(qid, m)
+			| Op    (qid,def?,_) -> insertQID(qid, m)
+			| OpDef (qid,_)      -> insertQID(qid, m)
 			| _ -> m)
                      empty 
 		     spc.elements
@@ -849,7 +849,7 @@ spec
        foldl (fn (el,tcc as (tccs,claimNames)) ->
 	      let (tccs,claimNames) =
                 case el of
-                 | Op (qid as Qualified(q, id), true) -> % true means decl includes def
+                 | Op (qid as Qualified(q, id), true, pos) -> % true means decl includes def
                    (case findTheOp(spc,qid) of
                       | Some opinfo ->
                         let (new_tccs,claimNames) = 
@@ -876,8 +876,8 @@ spec
                          in
                          if new_tccs = [] then tcc
                            else       % Split Op into decl and def
-                             ([OpDef(qid)] ++ new_tccs ++ [Op(qid,false)] ++ tcc.1, claimNames))
-                 | OpDef (qid as Qualified(q, id)) ->
+                             ([OpDef(qid,pos)] ++ new_tccs ++ [Op(qid,false,pos)] ++ tcc.1, claimNames))
+                 | OpDef (qid as Qualified(q, id), _) ->
                    (case findTheOp(spc,qid) of
                       | Some opinfo ->
                         foldr (fn (dfn, tcc) ->
@@ -900,7 +900,7 @@ spec
                                    tcc taus)
                           tcc 
                           (opInfoDefs opinfo))
-                 | SortDef qid ->
+                 | SortDef (qid, _) ->
                    (case findTheSort(spc,qid) of
                       | Some sortinfo ->
                         let quotientRelations: Ref(List MS.Term) = Ref [] in
@@ -922,14 +922,14 @@ spec
                         foldr (fn (r,(tccs,names)) -> (equivalenceConjectures(r,spc) ++ tccs,names))
                           tcc 
                           (!quotientRelations))
-                 | Property(_,pname as Qualified (q, id),tvs,fm) ->
+                 | Property(_,pname as Qualified (q, id),tvs,fm, _) ->
                    let fm = renameTerm (emptyContext()) fm in
                    (tcc, gamma0 tvs None None (mkQualifiedId (q, (id^"_Obligation"))))
                    |- fm ?? boolSort
                  | _ -> tcc
 	      in
               case (el,tccs) of
-                | (Op(qid1,true),(OpDef(qid2)):: _) | qid1 = qid2 ->   % Split Op(qid,true)
+                | (Op(qid1,true, _),(OpDef(qid2, _)):: _) | qid1 = qid2 ->   % Split Op(qid,true)
                   (tccs, claimNames)
                 | _ -> (Cons(el,tccs), claimNames))
          tcc spc.elements
@@ -951,7 +951,7 @@ spec
    let (new_elements,_) = checkSpec spc in
    removeDuplicateImports		% could be done more efficiently for special case
      (spc << {elements = if generateTerminationConditions?
-	                  then Cons(Import(wfoSpecTerm,wfoSpec,wfoSpec.elements),new_elements)
+	                  then Cons(Import(wfoSpecTerm,wfoSpec,wfoSpec.elements,noPos),new_elements)
 			  else new_elements,
 	      ops      = if generateTerminationConditions?
 	                  then

@@ -974,7 +974,7 @@ AnnSpecPrinter qualifying spec
  def defIndex      = 2
  def propertyIndex = 3
 
- def ppProperty context (index, (pt, name as Qualified (q, id), tyVars, term)) = 
+ def ppProperty context (index, (pt, name as Qualified (q, id), tyVars, term, _)) = 
    let pp : ATermPrinter = context.pp in
    let button1 = (if markSubterm? context then
 		    PrettyPrint.buttonPretty (~(IntegerSet.member (context.indicesToDisable, index)), 
@@ -1312,7 +1312,7 @@ AnnSpecPrinter qualifying spec
    let
      def ppSpecElement(el,afterOp?,result as (index,ppResult)) =
        case el of
-	 | Import (im_sp_tm,im_sp,im_elements) ->
+	 | Import (im_sp_tm,im_sp,im_elements,_) ->
 	   (case import_directions of
 	     | NotSpec ign_specs ->
 	       if member(im_sp,ign_specs) then result
@@ -1333,7 +1333,7 @@ AnnSpecPrinter qualifying spec
 	       %% let _ = toScreen (anyToString im_sp_tm^"\n\n") in
 	       ppSpecElementsAux context spc import_directions im_elements result)
 	       
-	 | Op (qid,def?) ->
+	 | Op (qid,def?,_) ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo ->
                 if def? then
@@ -1343,19 +1343,19 @@ AnnSpecPrinter qualifying spec
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
-	 | OpDef qid ->
+	 | OpDef (qid,_) ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo -> ppOpDef context (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
-	 | Sort qid ->
+	 | Sort (qid,_) ->
 	   (case findTheSort(spc,qid) of
 	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
-	 | SortDef qid ->
+	 | SortDef (qid,_) ->
 	   (case findTheSort(spc,qid) of
 	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result)
 	      | _ -> 
@@ -1364,7 +1364,7 @@ AnnSpecPrinter qualifying spec
 	 | Property prop ->
 	   (index+1,
 	    Cons(ppProperty context (index, prop),ppResult))
-	 | Comment str ->
+	 | Comment (str,_) ->
 	   (index+1,
 	    if exists (fn char -> char = #\n) str then
 	      [(0, string " (* "),
@@ -1383,7 +1383,7 @@ AnnSpecPrinter qualifying spec
      def aux(elements,afterOp?,result) =
          case elements of
 	   | [] -> result
-	   | (Op (qid1,def?)) :: (OpDef qid2) :: r_els ->
+	   | (Op (qid1,def?,a)) :: (OpDef (qid2,_)) :: r_els ->
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
@@ -1391,7 +1391,7 @@ AnnSpecPrinter qualifying spec
 		else if def? then
                   ppOpDeclWithDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
+                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef (qid2,a),r_els), true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid1 ^ "\n") in
 		(0, []))
@@ -1427,7 +1427,7 @@ AnnSpecPrinter qualifying spec
    let
      def ppSpecElement(el,afterOp?,result as (index,ppResult)) =
        case el of
-	 | Import (im_sp_tm,im_sp,im_elements) ->
+	 | Import (im_sp_tm,im_sp,im_elements,_) ->
 	   (case import_directions of
 	     | NotSpec ign_specs ->
 	       if member(im_sp,ign_specs) then result
@@ -1451,7 +1451,7 @@ AnnSpecPrinter qualifying spec
 	       %% let _ = toScreen (anyToString im_sp_tm^"\n\n") in
 	       ppSpecElementsAux context spc import_directions im_elements result)
 	       
-	 | Op (qid,def?) ->
+	 | Op (qid,def?,_) ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo ->
                 if def? then
@@ -1461,19 +1461,19 @@ AnnSpecPrinter qualifying spec
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
-	 | OpDef qid ->
+	 | OpDef (qid,_) ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo -> ppOpDef context (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
-	 | Sort qid ->
+	 | Sort (qid,_) ->
 	   (case findTheSort(spc,qid) of
 	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
-	 | SortDef qid ->
+	 | SortDef (qid,_) ->
 	   (case findTheSort(spc,qid) of
 	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result)
 	      | _ -> 
@@ -1482,7 +1482,7 @@ AnnSpecPrinter qualifying spec
 	 | Property prop ->
 	   (index+1,
 	    Cons(ppProperty context (index, prop),ppResult))
-	 | Comment str ->
+	 | Comment (str,_) ->
 	   (index+1,
 	    if exists (fn char -> char = #\n) str then
 	      [(0, string " (* "),
@@ -1501,7 +1501,7 @@ AnnSpecPrinter qualifying spec
      def aux(elements,afterOp?,result) =
          case elements of
 	   | [] -> result
-	   | (Op (qid1,def?)) :: (OpDef qid2) :: r_els ->
+	   | (Op (qid1,def?,a)) :: (OpDef (qid2,_)) :: r_els ->
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
@@ -1509,7 +1509,7 @@ AnnSpecPrinter qualifying spec
 		else if def? then
                   ppOpDeclWithDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result))
+                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef (qid2,a),r_els), true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid1 ^ "\n") in
 		(0, []))
@@ -1652,7 +1652,7 @@ AnnSpecPrinter qualifying spec
    let (counter, properties) = 
        foldl (fn (el, result as (counter, list)) ->
 	      case el of
-		| Property(pt, qid, tvs, _) ->
+		| Property(pt, qid, tvs, _, _) ->
 	          (counter + 1, 
 		   cons (string ("  \\pdfoutline goto num "^ Nat.toString counter^
 				 "  {"^ printQualifiedId qid ^ "}"), 

@@ -55,7 +55,7 @@ Prover qualifying spec
    let bndVars = freeVars(term) in
    let fmla = mkBind(Forall, bndVars, term) in
    %let _ = writeLine("fmla is: "^printTerm(fmla)) in
-   (Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla)
+   (Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla, noPos)
 
  op  mkProjectAxioms: Spec * QualifiedId * Sort * Fields -> SpecElements
  def mkProjectAxioms(spc, name, srt, fields) =
@@ -70,7 +70,7 @@ Prover qualifying spec
    let eql = mkEquality(fSrt, lhs, rhs) in
    let bndVars = freeVars(eql) in
    let fmla = mkBind(Forall, bndVars, eql) in
-   Property(Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla)
+   Property(Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla, noPos)
 
  op  mkRecordTerm: Spec * QualifiedId * Sort * String -> MS.Term
  def  mkRecordTerm(spc, srtName, srt as Product (fields, b), prefix) =
@@ -126,7 +126,7 @@ Prover qualifying spec
    let rhs = varTerm in
    let eql = mkEquality(srt, lhs, rhs) in
    let fmla = mkBind(Forall, [(varId, srt)], eql) in
-   (Axiom, mkQualifiedId(srtQ, srtId^"_def"), [], fmla)
+   (Axiom, mkQualifiedId(srtQ, srtId^"_def"), [], fmla, b)
     
   
  op  axiomFromCoProductDefTop: Spec * QualifiedId * Sort -> SpecElements
@@ -144,8 +144,8 @@ Prover qualifying spec
    let predDisjuncts = mkPredFmlasForFields(srt, newVar, fields) in
    let predTm = mkSimpOrs(predDisjuncts) in
    let predFmla = mkBind(Forall, [newVar], predTm) in
-   [Property(Axiom, mkQualifiedId(qname, id^"_def"), [], eqFmla),
-    Property(Axiom, mkQualifiedId(qname, id^"_def"), [], predFmla)]
+   [Property(Axiom, mkQualifiedId(qname, id^"_def"), [], eqFmla, noPos),
+    Property(Axiom, mkQualifiedId(qname, id^"_def"), [], predFmla, noPos)]
 
  op  mkEqFmlasForFields: Sort * Var * List (Id * Option Sort) -> List MS.Term
  def mkEqFmlasForFields(srt, var, fields) =
@@ -195,7 +195,7 @@ Prover qualifying spec
    let fmla = withAnnT(mkBind(Forall, vars, disEql), sortAnn(srt)) in
    let Qualified (qual, id) = name in
    % (Axiom, mkQualifiedId(qual, id^"_"^id1^"_notEq_"^id2), [], fmla)
-   (Axiom, mkQualifiedId(qual, id^"_def"), [], fmla)
+   (Axiom, mkQualifiedId(qual, id^"_def"), [], fmla, noPos)
 
  op  mkConstructorTerm: Sort * Id * Option Sort -> MS.Term
  def mkConstructorTerm(srt, id, optSrt) =

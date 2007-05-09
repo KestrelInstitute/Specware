@@ -40,7 +40,7 @@ def extendMorphism(morph, base_spc) =
   let opMap = morph.opMap in
   let axiomFmlas = mapFoldrSpecElements (fn (el,result) ->
 					 case el of
-					   | Property(Axiom,_,_,fmla) ->
+					   | Property(Axiom,_,_,fmla,_) ->
 					     Cons(fmla,result)
 					   | _ -> result)
 		     [] dom.elements
@@ -95,7 +95,7 @@ def mkExistential (spc, term) =
   let newTerm = mapTerm (fn(trm) -> substVarForOp(trm), fn(s) -> s, fn(p) -> p) term in
   let existTerm = Bind (Exists, newVars, newTerm, noPos) in
   let _ = if specwareDebug? then printTermToTerminal(existTerm) else () in
-    ((Conjecture, mkUnQualifiedId("morphismExistential"), [], existTerm), newVars)
+    ((Conjecture, mkUnQualifiedId("morphismExistential"), [], existTerm, noPos), newVars)
 
 op termOpsInSpec?: MS.Term * Spec -> Boolean
 
@@ -322,7 +322,7 @@ def substOpMap (opMap, term) =
 
  def proveForAns(ansVars, claim, spc, base_hypothesis, prover_options, snarkLogFileName) =
    %% (removed base_spc as distinct arg)
-   let (_ (* claim_type *),claim_name,_,_) = claim in
+   let (_ (* claim_type *),claim_name,_,_,_) = claim in
    %% let def claimType(ct) = 
    %%       case ct of
    %%	     | Conjecture -> "Conjecture" 

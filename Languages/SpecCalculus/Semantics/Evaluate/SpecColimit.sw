@@ -626,10 +626,10 @@ spec
    in
    let newElts = foldl (fn (el,newElts) ->
 			case el of
-			  | Op      (qid,def?) -> addIfNew (Op      (canonOp   qid, def?), newElts)
-			  | OpDef   qid        -> addIfNew (OpDef   (canonOp   qid),       newElts)
-			  | Sort    qid        -> addIfNew (Sort    (canonSort qid),       newElts)
-			  | SortDef qid        -> addIfNew (SortDef (canonSort qid),       newElts)
+			  | Op      (qid,def?,a) -> addIfNew (Op      (canonOp   qid, def?,a), newElts)
+			  | OpDef   (qid,a)      -> addIfNew (OpDef   (canonOp   qid,a),       newElts)
+			  | Sort    (qid,a)      -> addIfNew (Sort    (canonSort qid,a),       newElts)
+			  | SortDef (qid,a)      -> addIfNew (SortDef (canonSort qid,a),       newElts)
 			  | _ -> Cons(el,newElts))
 		   [] spc.elements
    in

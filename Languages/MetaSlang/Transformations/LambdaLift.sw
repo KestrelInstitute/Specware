@@ -852,14 +852,14 @@ def toAny     = Term `TranslationBasic.toAny`
 	 | {name = id, ident, pattern, domain, freeVars, body, closure}::m_opers -> 
 	   let info = abstractName (mkEnv (q, id), id, freeVars, pattern, domain, body) in
 	   % TODO: Real names
-	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops, true) in
+	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops, true, noPos) in
 	   insertOpers (m_opers, q, r_elts, r_ops)
 
-     def doOp (q, id, info, r_elts, r_ops, decl?) = 
+     def doOp (q, id, info, r_elts, r_ops, decl?, a) = 
        %let _ = String.writeLine ("lambdaLift \""^id^"\"...") in
        if ~ (definedOpInfo? info)
 	 then addNewOpAux (info << {names = [Qualified (q, id)]},
-			   r_elts, r_ops, decl?)
+			   r_elts, r_ops, decl?, a)
        else
 	 let (tvs, srt, term) = unpackFirstOpDef info in
 	 case term of 
@@ -872,7 +872,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let new_dfn = maybePiTerm (tvs, SortedTerm (term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
 							 dfn   = new_dfn},
-						r_elts, r_ops, decl?)
+						r_elts, r_ops, decl?, a)
 	     in
 	       insertOpers (rev opers, q, r_elts, r_ops)
 
@@ -884,17 +884,17 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let new_dfn = maybePiTerm (tvs, SortedTerm (term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
 							 dfn   = new_dfn},
-						r_elts, r_ops, decl?)
+						r_elts, r_ops, decl?, a)
 	     in
 	       insertOpers (rev opers, q, r_elts, r_ops)
 
-     def doProp ((pt, pn as Qualified (qname, name), tvs, fmla),r_elts,r_ops) =
+     def doProp ((pt, pn as Qualified (qname, name), tvs, fmla, pos), r_elts, r_ops) =
        let env = mkEnv (qname, name) in
        let pos = termAnn(fmla) in
        let fmla = withAnnT(termInnerTerm fmla, pos) in
        let term = makeVarTerm fmla in
        let (opers, term) = lambdaLiftTerm (env, term) in
-       let newProp = (pt, pn, tvs, term) in
+       let newProp = (pt, pn, tvs, term, noPos) in
        let r_elts = Cons(Property newProp,r_elts) in
        insertOpers (rev opers, qname, r_elts, r_ops)
 
@@ -902,16 +902,16 @@ def toAny     = Term `TranslationBasic.toAny`
        foldr
          (fn (el,(r_elts,r_ops)) ->
 	  case el of
-	   | Import (s_tm,i_sp,s_elts) | imports? ->
+	   | Import (s_tm,i_sp,s_elts,a) | imports? ->
 	     let (newElts,newOps) = liftElts(s_elts,([],r_ops)) in
-	     (Cons(Import(s_tm,i_sp,newElts),r_elts),
+	     (Cons(Import(s_tm,i_sp,newElts,a),r_elts),
 	      newOps)
-	   | Op (Qualified(q,id), true) -> % true means decl includes def
+	   | Op (Qualified(q,id), true, a) -> % true means decl includes def
 	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,true))
-	   | OpDef(Qualified(q,id)) ->
+	       | Some info -> doOp(q,id,info,r_elts,r_ops,true,a))
+	   | OpDef(Qualified(q,id),a) ->
 	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,false))
+	       | Some info -> doOp(q,id,info,r_elts,r_ops,false,a))
 	   | Property p -> doProp(p,r_elts,r_ops)
 	   | _ -> (Cons(el,r_elts),r_ops))
 	 result
@@ -933,11 +933,11 @@ def toAny     = Term `TranslationBasic.toAny`
 %   in
 %     addNewOpAux (info, spc)
 
- op  addNewOpAux : [a] AOpInfo a * ASpecElements a * AOpMap a * Boolean -> ASpecElements a * AOpMap a
- def addNewOpAux (info, elts, ops, decl?) =
+ op  addNewOpAux : [a] AOpInfo a * ASpecElements a * AOpMap a * Boolean * a -> ASpecElements a * AOpMap a
+ def addNewOpAux (info, elts, ops, decl?, a) =
    let name as Qualified (q, id) = primaryOpName info in
    let new_ops = insertAQualifierMap (ops, q, id, info) in
-   (Cons(if decl? then Op (name,true) else OpDef name,elts), new_ops)
+   (Cons(if decl? then Op (name,true, a) else OpDef (name, a),elts), new_ops)
 
 endspec
 

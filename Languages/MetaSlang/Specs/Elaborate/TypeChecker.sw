@@ -148,9 +148,9 @@ TypeChecker qualifying spec
       def elaborate_local_props (elts, env) =
 	map (fn el ->
 	     case el of
-	       | Property (prop_type, name, tvs, fm) ->
+	       | Property (prop_type, name, tvs, fm, a) ->
 	         let elaborated_fm = single_pass_elaborate_term_top (env, fm, type_bool) in
-	         Property(prop_type, name, tvs, elaborated_fm)
+	         Property(prop_type, name, tvs, elaborated_fm, a)
 	       | _ -> el)
 	    elts
 

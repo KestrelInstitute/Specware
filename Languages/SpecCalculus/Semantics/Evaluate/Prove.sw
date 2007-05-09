@@ -227,7 +227,7 @@ SpecCalc qualifying spec
    let props             = allProperties spc        in
    let baseHypothesis    = allProperties baseSpc    in
    let rewriteHypothesis = allProperties rewriteSpc in
-   let props_upto_conjecture = firstUpTo (fn (pType, pName, _, _) -> 
+   let props_upto_conjecture = firstUpTo (fn (pType, pName, _, _, _) -> 
                                             member (pType, [Conjecture,Theorem]) && 
                                             claimNameMatch (claimName, pName))
                                          props
@@ -235,7 +235,7 @@ SpecCalc qualifying spec
      case props_upto_conjecture of
        | None -> 
          %% could not find conjecture foo
-         if exists (fn (pType, pName, _, _) -> 
+         if exists (fn (pType, pName, _, _, _) -> 
                       pType = Axiom && claimNameMatch (claimName, pName)) 
                    props 
            then
@@ -267,7 +267,7 @@ SpecCalc qualifying spec
              raise (Proof (pos, "assertions: "
                              ^ printMissingHypothesis missingHypothesis
                              ^ " not in spec.\nAsserions in spec: "
-                             ^ printMissingHypothesis (map (fn((_,pn,_,_)) -> pn) actualHypothesis)))
+                             ^ printMissingHypothesis (map (fn((_,pn,_,_,_)) -> pn) actualHypothesis)))
 
 
  op actualHypothesis: List Property * Assertions * Position -> List Property
@@ -276,7 +276,7 @@ SpecCalc qualifying spec
      case assertions of
       | All -> validHypothesis
       | Explicit possibilities -> 
-	let hypothesis = filter (fn (_, propertyName, _, _) ->
+	let hypothesis = filter (fn (_, propertyName, _, _, _) ->
 				  member(propertyName, (possibilities)))
 			   validHypothesis
 	in
@@ -289,7 +289,7 @@ SpecCalc qualifying spec
       | All -> []
       | Explicit possibilities -> 
          let missingHypothesis = filter (fn (claimName:ClaimName) ->
-					  ~(exists(fn (_, propName:ClaimName,_,_) ->
+					  ~(exists(fn (_, propName:ClaimName,_,_,_) ->
 						    claimNameMatch(claimName, propName))
 					      actualHypothesis))
 				   possibilities
@@ -412,7 +412,7 @@ SpecCalc qualifying spec
 			      proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
    let _ = debug("preovWithHyp") in
    let _ = if ~(proverName = "Snark") then writeLine(proverName ^ " is not supported; using Snark instead.") else () in
-   let (claimType,claimName,_,_) = claim in
+   let (claimType,claimName,_,_,_) = claim in
    let def getClaimType(ct) = 
          case ct of
 	   | Conjecture -> "Conjecture" 
@@ -457,7 +457,7 @@ SpecCalc qualifying spec
 
  def proveWithHypothesisFM(proofName, claim, spc, specName, proverName, preProof?) =
    let _ = debug("preovWithHyp") in
-   let (claimType,claimName,_,_) = claim in
+   let (claimType,claimName,_,_,_) = claim in
    let def getClaimType(ct) = 
          case ct of
 	   | Conjecture -> "Conjecture" 

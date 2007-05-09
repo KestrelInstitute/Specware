@@ -581,7 +581,7 @@ emacs interface functions.
 	   then [path]
 	   else foldl (fn (el,result) ->
 		       case el of
-			 | Import(i_stm,i_spc,_) ->
+			 | Import(i_stm,i_spc,_,_) ->
 			   findPaths(i_spc,Cons(i_stm.1,path)) ++ result
 			 | _ -> result)
 	          [] sp.elements

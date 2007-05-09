@@ -60,9 +60,9 @@ PosSpecToSpec qualifying spec
 
           elements =  map (fn el ->
                              case el of
-                               | Property (pt, qid, tvs, term) -> 
+                               | Property (pt, qid, tvs, term, a) -> 
                                  Property(pt, qid, tvs, 
-                                          mapTerm tsp term)
+                                          mapTerm tsp term, a)
                                | _ -> el)
                            elements
          }

@@ -13,7 +13,7 @@ spec
 	  id^"_proof"
 	else qual^"_"^id^"_proof" in
    let assertions = All in
-   let (_, propName, _, _) = prop in
+   let (_, propName, _, _,_) = prop in
    let scTerm = scTermFromScTerm(Spec spc, scTerm, globalContext, fileUID, swpath, fromObligations?) in
    let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, ProverBase, None) in
    let proofName = printProofName(propName) in
@@ -27,7 +27,7 @@ spec
 	  id^"_proof"
 	else qual^"_"^id^"_proof" in
    let assertions = All in
-   let (_, propName, _, _) = prop in
+   let (_, propName, _, _,_) = prop in
    let scTerm = scTermFromScTerm(Morph morph, scTerm, globalContext, fileUID, swpath, fromObligations?) in
    let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, ProverBase, None) in
    let proofName = printProofName(propName) in
@@ -110,7 +110,7 @@ spec
    let importProofDecls =
    foldr (fn (el, res) ->
 	  case el of
-	    | Import(importSCTerm, importSpc,_) ->
+	    | Import(importSCTerm, importSpc,_,_) ->
 	      let importProofs =
 	          if baseUnitIdSCTerm?(importSCTerm)
 		    then []
@@ -143,7 +143,7 @@ spec
    let importProofDecls =
    foldr (fn (el, res) ->
 	  case el of
-	    | Import(importSCTerm, importSpc,_) ->
+	    | Import(importSCTerm, importSpc,_,_) ->
 	      let importProofs =
 	          if baseUnitIdSCTerm?(importSCTerm)
 		    then []
@@ -171,7 +171,7 @@ spec
  def generateLocalProofsInSpec (spc, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, previousPropNames, globalContext, swpath, fileUID) =
    let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
    let props = allProperties usedSpc in
-   let localProps = filter (fn (prop) -> let (propType, propName, _, _) = prop in 
+   let localProps = filter (fn (prop) -> let (propType, propName, _, _, _) = prop in 
 			                  ~(member(propName, previousPropNames))
 			                  & ~(propType = Axiom)) props in
    map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name,
@@ -182,7 +182,7 @@ spec
  def generateLocalProofsInMorph (morph, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, previousPropNames, globalContext, swpath, fileUID) =
    let usedSpc = morphismObligations(morph, globalContext, noPos) in 
    let props = allProperties usedSpc in
-   let localProps = filter (fn (prop) -> let (propType, propName, _, _) = prop in 
+   let localProps = filter (fn (prop) -> let (propType, propName, _, _, _) = prop in 
 			                  ~(member(propName, previousPropNames))
 			                  & ~(propType = Axiom)) props in
    map (fn (prop) -> generateProofMorphism(morph, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
@@ -195,7 +195,7 @@ spec
    let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
    let props = localProperties usedSpc in
    %let _ = map (fn (pn) -> writeLine(printQualifiedId(pn))) (usedSpc.importInfo).localProperties in
-   let localProps = filter (fn (propType, propName, _, _) -> ~(propType = Axiom)) props in
+   let localProps = filter (fn (propType, propName, _, _, _) -> ~(propType = Axiom)) props in
    map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
 
  op generateProofsInMorphLocal: Morphism * SCTerm * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> List SCDecl
@@ -203,7 +203,7 @@ spec
    let usedSpc = morphismObligations(morph, globalContext, noPos) in 
    let props = localProperties usedSpc in
    %let _ = map (fn (pn) -> writeLine(printQualifiedId(pn))) (usedSpc.importInfo).localProperties in
-   let localProps = filter (fn (propType, propName, _, _) -> ~(propType = Axiom)) props in
+   let localProps = filter (fn (propType, propName, _, _, _) -> ~(propType = Axiom)) props in
    map (fn (prop) -> generateProofMorphism(morph, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
 
 % op ppProof: SCDecl -> WadlerLindig.Pretty
@@ -233,7 +233,7 @@ spec
  op toProofFileEnv: Spec * SCTerm * Boolean * Boolean * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String -> ()
  def toProofFileEnv (spc, spcTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) =
    %let _ = writeLine("Writing Proof file "^file) in
-   let basePropNames = map (fn (_, pn, _, _) -> pn) (allProperties baseSpc) in
+   let basePropNames = map (fn (_, pn, _, _, _) -> pn) (allProperties baseSpc) in
    let proofDecls =
      if local?
        then generateProofsInSpecLocal(spc, spcTerm, multipleFiles, fromObligations?, "Snark", OptionString ([string ("")]), globalContext, swpath, fileUID)
@@ -243,7 +243,7 @@ spec
  op toProofFileMorphEnv: Morphism * SCTerm * Boolean * Boolean * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String -> ()
  def toProofFileMorphEnv (morph, morphTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) =
    %let _ = writeLine("Writing Proof file "^file) in
-   let basePropNames = map (fn (_, pn, _, _) -> pn) (allProperties baseSpc) in
+   let basePropNames = map (fn (_, pn, _, _, _) -> pn) (allProperties baseSpc) in
    let proofDecls =
      if local?
        then generateProofsInMorphLocal(morph, morphTerm, multipleFiles, fromObligations?, "Snark", OptionString ([string ("")]), globalContext, swpath, fileUID)
@@ -371,6 +371,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.28  2006/08/10 01:20:04  westfold
+%% Cache terms for computing UnitIds as well as values.
+%%
 %% Revision 1.27  2005/08/05 02:04:40  mcdonald
 %% show proof file name
 %%

@@ -47,14 +47,14 @@ AnnSpec qualifying spec
 
  type ASpecElements b  = List (ASpecElement b)
  type ASpecElement b =
-   | Import   ((SpecCalc.Term Position) * Spec * SpecElements)
-   | Sort     QualifiedId
-   | SortDef  QualifiedId
-   | Op       QualifiedId * Boolean  % if boolean is true, def was supplied as part of decl
-   | OpDef    QualifiedId
+   | Import   (SpecCalc.Term Position) * Spec * SpecElements * b
+   | Sort     QualifiedId * b
+   | SortDef  QualifiedId * b
+   | Op       QualifiedId * Boolean * b  % if boolean is true, def was supplied as part of decl
+   | OpDef    QualifiedId * b
    | Property (AProperty b)
-   | Comment  String
-   | Pragma   (String * String * String * b)
+   | Comment  String * b
+   | Pragma   String * String * String * b
 
  type SpecElement  = ASpecElement  StandardAnnotation
  type SpecElements = ASpecElements StandardAnnotation
@@ -66,7 +66,7 @@ AnnSpec qualifying spec
      | _ -> false
 
 
- type AProperty    a = PropertyType * PropertyName * TyVars * ATerm a
+ type AProperty    a = PropertyType * PropertyName * TyVars * ATerm a * a
  type PropertyType   = | Axiom | Theorem | Conjecture
  type AProperties  a = List (AProperty a)
  type Property       = AProperty   StandardAnnotation
@@ -443,8 +443,10 @@ AnnSpec qualifying spec
  def mapSpecProperties tsp elements =
    map (fn el ->
 	case el of
-	  | Property (pt, nm, tvs, term) -> Property (pt, nm, tvs, mapTerm tsp term)
-	  | Import   (s_tm, i_sp, elts)  -> Import   (s_tm, i_sp, mapSpecProperties tsp elts)
+	  | Property (pt, nm, tvs, term, a) ->
+            Property (pt, nm, tvs, mapTerm tsp term, a)
+	  | Import   (s_tm, i_sp, elts, a)  ->
+            Import   (s_tm, i_sp, mapSpecProperties tsp elts, a)
 	  | _ -> el)
        elements
 
@@ -452,7 +454,7 @@ AnnSpec qualifying spec
  def mapSpecElements f elements =
    map (fn el ->
 	case el of
-	  | Import (s_tm, i_sp, elts) -> f (Import (s_tm, i_sp, mapSpecElements f elts))
+	  | Import (s_tm, i_sp, elts, a) -> f (Import (s_tm, i_sp, mapSpecElements f elts, a))
 	  | _ -> f el)
      elements
 
@@ -461,8 +463,8 @@ AnnSpec qualifying spec
    mapPartial
      (fn el ->
       case f el of
-	| Some (Import (s_tm, i_sp, elts)) ->
-	  Some (Import (s_tm, i_sp, mapPartialSpecElements f elts))
+	| Some (Import (s_tm, i_sp, elts, a)) ->
+	  Some (Import (s_tm, i_sp, mapPartialSpecElements f elts, a))
 	| new_el -> new_el)
      elements
 
@@ -474,8 +476,8 @@ AnnSpec qualifying spec
 	None
       else
 	Some(case el of
-	       | Import (s_tm, i_sp, elts) ->
-	         Import (s_tm, i_sp, filterSpecElements p elts)
+	       | Import (s_tm, i_sp, elts, a) ->
+	         Import (s_tm, i_sp, filterSpecElements p elts, a)
 	       | _ ->  el))
      elements
 
@@ -484,7 +486,7 @@ AnnSpec qualifying spec
  def foldlSpecElements f ini els =
    foldl (fn (el, result) ->
 	  case el of
-	    | Import (s_tm, i_sp, elts) ->
+	    | Import (s_tm, i_sp, elts, _) ->
 	      let result1 = foldlSpecElements f (f (el, result)) elts in
 	      f (el, result1)
 	    | _ -> f (el, result))
@@ -495,7 +497,7 @@ AnnSpec qualifying spec
  def foldrSpecElements f ini els =
    foldr (fn (el, result) ->
 	  case el of
-	    | Import (s_tm, i_sp, elts) ->
+	    | Import (s_tm, i_sp, elts, _) ->
 	      let result1 = foldrSpecElements f result elts in
 	      f (el, result1)
 	    | _ -> f (el, result))
@@ -506,7 +508,7 @@ AnnSpec qualifying spec
  def mapFoldrSpecElements f ini els =
    foldr (fn (el, result) ->
 	  case el of
-	    | Import (s_tm, i_sp, elts) ->
+	    | Import (s_tm, i_sp, elts, _) ->
 	      let result1 = mapFoldrSpecElements f result elts in
 	      f (el, result1)
 	    | _ -> f (el, result))
@@ -529,7 +531,7 @@ AnnSpec qualifying spec
 	   | [] -> ([], imports)
 	   | el::r_els ->
 	     (case el of
-	       | Import (s_tm, i_sp, s_els) ->
+	       | Import (s_tm, i_sp, s_els, a) ->
 		 (case find (fn (s, _) -> i_sp = s) imports of
 		    | Some (_, prior_s_els) ->
 		      %% Even though i_sp is a duplicate, tricky_els might be non-empty.
@@ -545,7 +547,7 @@ AnnSpec qualifying spec
 		    | _ ->
 		      let (reduced_s_els, imports) = mapEls (s_els, imports) in
 		      let (reduced_els,   imports) = mapEls (r_els, Cons((i_sp, s_els), imports)) in
-		      (Cons (Import (s_tm, i_sp, reduced_s_els),
+		      (Cons (Import (s_tm, i_sp, reduced_s_els, a),
 			     reduced_els),
 		       imports))
 	       | _ ->
@@ -582,8 +584,8 @@ AnnSpec qualifying spec
  def appSpecElements tsp elements =
    app (fn  el ->
 	case el of
-	  | Property(_, _, _, term) -> appTerm tsp term
-	  | Import (_, _, elts) -> appSpecElements tsp elts
+	  | Property(_, _, _, term, a) -> appTerm tsp term
+	  | Import (_, _, elts, a) -> appSpecElements tsp elts
 	  | _ -> ())
        elements
 
@@ -730,53 +732,53 @@ AnnSpec qualifying spec
  def someSortAliasIsLocal? (aliases, spc) =
    exists (fn el ->
 	   case el of
-	     | Sort qid    -> member (qid, aliases)
-	     | SortDef qid -> member (qid, aliases)
+	     | Sort (qid,_)    -> member (qid, aliases)
+	     | SortDef (qid,_) -> member (qid, aliases)
 	     | _ -> false)
           spc.elements
 
  def someOpAliasIsLocal? (aliases, spc) =
    exists (fn el ->
 	   case el of
-	     | Op    (qid,_) -> member (qid, aliases)
-	     | OpDef qid     -> member (qid, aliases)
+	     | Op    (qid,_,_) -> member (qid, aliases)
+	     | OpDef (qid,_)   -> member (qid, aliases)
 	     | _ -> false)
           spc.elements
 
  def getQIdIfOp el =
    case el of
-     | Op    (qid,_) -> Some qid
-     | OpDef qid     -> Some qid
+     | Op    (qid,_,_) -> Some qid
+     | OpDef (qid,_)   -> Some qid
      | _ -> None
 
  def localSort? (qid, spc) = 
    exists (fn el ->
 	   case el of
-	     | Sort    qid1 -> qid = qid1
-	     | SortDef qid1 -> qid = qid1
+	     | Sort    (qid1,_) -> qid = qid1
+	     | SortDef (qid1,_) -> qid = qid1
 	     | _ -> false)
           spc.elements
 
  def localOp? (qid, spc) = 
    exists (fn el ->
 	   case el of
-	     | Op    (qid1,_) -> qid = qid1
-	     | OpDef qid1     -> qid = qid1
+	     | Op    (qid1,_,_) -> qid = qid1
+	     | OpDef (qid1,_)   -> qid = qid1
 	     | _ -> false)
           spc.elements
 
  def localProperty? (qid, spc) = 
    exists (fn el ->
 	   case el of
-	     | Property (_, qid1, _, _) -> qid = qid1
+	     | Property (_, qid1, _, _, _) -> qid = qid1
 	     | _ -> false)
           spc.elements
 
  def localSorts spc =
    removeDuplicates (mapPartial (fn el ->
 				 case el of
-				   | Sort    qid -> Some qid
-				   | SortDef qid -> Some qid
+				   | Sort    (qid,_) -> Some qid
+				   | SortDef (qid,_) -> Some qid
 				   | _ -> None)
 		                spc.elements)
 
@@ -784,8 +786,8 @@ AnnSpec qualifying spec
  def localOps spc =
    removeDuplicates (mapPartial (fn el ->
 				 case el of
-				   | Op    (qid,_) -> Some qid
-				   | OpDef qid     -> Some qid
+				   | Op    (qid,_,_) -> Some qid
+				   | OpDef (qid,_)   -> Some qid
 				   | _ -> None)
 		                spc.elements)
 

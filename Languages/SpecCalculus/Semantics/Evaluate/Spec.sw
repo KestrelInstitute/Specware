@@ -96,7 +96,7 @@ axioms, etc.
 	       {
 		(value,_,_) <- evaluateTermInfo term;
 		(case coerceToSpec value of
-		   | Spec impSpec -> mergeImport term impSpec spc 
+		   | Spec impSpec -> mergeImport term impSpec spc position
 		   %% Already checked
 		   | _ -> raise (Fail ("Shouldn't happen!")))
 		  })
@@ -105,19 +105,19 @@ axioms, etc.
       | Sort    (names,       dfn)               -> addSort names      dfn spc position
       | Op      (names, fxty, dfn)               -> addOp   names fxty dfn spc position
 
-      | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((name,tyVars,term), spc)) 
-      | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((name,tyVars,term), spc))
-      | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((name,tyVars,term), spc))
+      | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((name,tyVars,term,position), spc)) 
+      | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((name,tyVars,term,position), spc))
+      | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((name,tyVars,term,position), spc))
       | Claim   _                                -> error "evaluateSpecElem: unsupported claim type"
 
       | Pragma  (prefix, body, postfix)          -> return (addPragma     ((prefix, body, postfix, position), spc))
-      | Comment str                              -> return (addComment    (str,                     spc))
+      | Comment str                              -> return (addComment    (str, position, spc))
 
-  def mergeImport spec_term imported_spec old_spec =
+  def mergeImport spec_term imported_spec old_spec position =
     let sorts = old_spec.sorts in
     let ops   = old_spec.ops   in
     {
-     new_spec  <- return (addImport ((spec_term, imported_spec), old_spec));
+     new_spec  <- return (addImport ((spec_term, imported_spec), old_spec, position));
 
      new_sorts <- if sorts = emptySpec.sorts then 
                     return imported_spec.sorts

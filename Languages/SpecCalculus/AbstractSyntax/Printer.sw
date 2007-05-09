@@ -329,13 +329,13 @@ SpecCalc qualifying spec
  def ppSpecElems elems = ppSep ppNewline (map ppSpecElem elems)
 
   op ppSpecElem : [a] SpecElem a -> Doc
- def ppSpecElem (elem, _) = 
+ def ppSpecElem (elem, a) = 
    case elem of
      | Import  term                   -> ppConcat [ppString "import ",
 						   ppSep (ppString ", ") (map ppTerm term)]
      | Sort    (aliases, dfn)         -> myppASortInfo (aliases, dfn)
      | Op      (aliases, fixity, dfn) -> myppAOpInfo   (aliases, fixity, dfn)
-     | Claim   property               -> ppAProperty   property
+     | Claim   (pr, nm, tvs, b)       -> ppAProperty   (pr,nm,tvs,b,a)
      | Comment str                    -> if exists (fn char -> char = #\n) str then
                                            ppConcat [ppString " (* ",
 						     ppString str,

@@ -28,7 +28,7 @@ SpecCalc qualifying spec
    let new_ops   = mapOpInfos   (fn info -> info << {dfn = deconflictTerm info.dfn}) spc.ops   in
    let new_elts  = map (fn el ->
 			case el of
-			  | Property(ptype, name, tvs, fm) -> Property(ptype, name, tvs, deconflictTerm fm)
+			  | Property(ptype, name, tvs, fm, a) -> Property(ptype, name, tvs, deconflictTerm fm, a)
 			  | _ -> el)
                      spc.elements
    in

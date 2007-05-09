@@ -256,7 +256,7 @@ SpecCalc qualifying spec
    | Import  List (SpecCalc.Term a)
    | Sort    List QualifiedId          * ASort a
    | Op      List QualifiedId * Fixity * ATerm a
-   | Claim   (AProperty a)
+   | Claim   (PropertyType * PropertyName * TyVars * ATerm a)
    | Pragma  String * String * String
    | Comment String
 

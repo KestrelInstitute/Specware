@@ -965,8 +965,8 @@ def eliminateTerm context term =
 			      spc.ops,
              elements = map (fn el ->
                                case el of
-                                 | Property (pt, pname as Qualified(_, id), tyvars, term) -> 
-                                   Property (pt, pname, tyvars, eliminateTerm (mkContext id) term)
+                                 | Property (pt, pname as Qualified(_, id), tyvars, term, a) -> 
+                                   Property (pt, pname, tyvars, eliminateTerm (mkContext id) term, a)
                                  | _ -> el) 
                             spc.elements
              }

@@ -380,7 +380,7 @@ is rewritten to
 	  equality context (S,N)
 	| _ -> None
  
- def axiomRules context (pt:PropertyType,desc,tyVars,formula) = 
+ def axiomRules context (pt:PropertyType,desc,tyVars,formula,a) = 
      case pt
        of Conjecture -> []
  	| _ -> 
@@ -390,12 +390,12 @@ is rewritten to
              (visitConjunct (str ^ " (l)") M)
                ++ (visitConjunct (str ^ " (r)") N)
          | _ -> 
-             (case axiomRule context (pt,desc,tyVars,formula) of
+             (case axiomRule context (pt,desc,tyVars,formula,a) of
                    None -> []
                  | Some rule -> [rule]) in
      visitConjunct "" formula
 
- def axiomRule context (pt:PropertyType,desc,tyVars,formula) = 
+ def axiomRule context (pt:PropertyType,desc,tyVars,formula,a) = 
      case pt
        of Conjecture -> None
 	| _ -> 
@@ -488,14 +488,14 @@ is rewritten to
 		  let c = HigherOrderMatching.dereferenceAll subst0 c in
 		  (case axiomRule context
 		         (Axiom:PropertyType,
-			  mkUnQualifiedId("Context-condition: "^printTerm c),tvs,c)
+			  mkUnQualifiedId("Context-condition: "^printTerm c),tvs,c,noPos)
 		     of Some rule -> List.cons(rule,rules)
 		      | None ->
 		   let rules
 		        = case axiomRule context
 				(Axiom:PropertyType,
 				 mkUnQualifiedId("Context-condition: " ^printTerm c),
-				 tvs, mkEquality(boolSort,c,mkTrue()))
+				 tvs, mkEquality(boolSort,c,mkTrue()),noPos)
 			    of Some rule -> List.cons(rule,rules)
 			     | None -> rules
 		   in 
@@ -505,7 +505,7 @@ is rewritten to
 			  (Axiom:PropertyType,
 			   mkUnQualifiedId("Context-condition: " ^printTerm nc
 			   ^" = false"),
-			   tvs, mkEquality(boolSort,nc,mkFalse()))
+			   tvs, mkEquality(boolSort,nc,mkFalse()),noPos)
 			  of 
 			   | Some rule -> List.cons(rule,rules)
 			   | None -> rules)

@@ -21,20 +21,20 @@ Prover qualifying spec
 	  foldr
 	    (fn (el,r_elts) ->
 	     case el of
-	      | Import (s_tm,i_sp,s_elts) ->
+	      | Import (s_tm,i_sp,s_elts,a) ->
 		let newElts = expandElts(s_elts,[]) in
-		Cons(Import(s_tm,i_sp,newElts),r_elts)
-	      | SortDef qid ->
+		Cons(Import(s_tm,i_sp,newElts,a),r_elts)
+	      | SortDef (qid, _) ->
 	        (case AnnSpec.findTheSort(spc,qid) of
 		   | Some sortinfo ->
 		     Cons(el,axiomFromSortDefTop(spc,qid,sortinfo) ++ r_elts))
-	      | Op (qid,def?) ->
+	      | Op (qid,def?,_) ->
 	        (case AnnSpec.findTheOp(spc,qid) of
 		   | Some opinfo -> Cons (el,
                                           axiomFromOpSrtTop(spc,qid,opinfo) 
                                             ++ (if def? then axiomFromOpDefTop(spc,qid,opinfo) else [])
                                             ++ r_elts))
-	      | OpDef qid ->
+	      | OpDef (qid, _) ->
 	        (case AnnSpec.findTheOp(spc,qid) of
 		   | Some opinfo -> Cons(el,
                                          axiomFromOpDefTop(spc,qid,opinfo) 

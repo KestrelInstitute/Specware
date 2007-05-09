@@ -16,7 +16,7 @@ SpecNorm qualifying spec
     let spc = spc << {elements
 		       = foldr (fn (el,r) \_rightarrow
 				case el of
-				 | Op(qid as (Qualified(q,id)), def?) \_rightarrow
+				 | Op(qid as (Qualified(q,id)), def?, a) \_rightarrow
 				   let Some info = AnnSpec.findTheOp(spc,qid) in
 				   let srt = firstOpDefInnerSort info in
 				   %let _ = toScreen (printSort srt) in
@@ -31,7 +31,7 @@ SpecNorm qualifying spec
 							   mkQualifiedId
 							     (q, id^"_subtype_constr"), 
 							   [], 
-							   s_fm)
+							   s_fm, a)
 					in
 					Cons(el,Cons(axm,r)))
 				 | _ \_rightarrow Cons(el,r))

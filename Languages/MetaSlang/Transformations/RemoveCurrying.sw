@@ -82,8 +82,8 @@ RemoveCurrying qualifying spec
 							       dfn   = new_dfn})
 		   in
 		   let new_qid = Qualified (q, new_id) in
-		   (Cons (Op (new_qid, false), % false means def is not printed as part of decl
-                          Cons (OpDef new_qid,
+		   (Cons (Op (new_qid, false, pos), % false means def is not printed as part of decl
+                          Cons (OpDef (new_qid,noPos),
                                 r_elts)),
                     new_ops)
 		 | None -> (Cons(old_el,r_elts),r_ops))
@@ -92,15 +92,15 @@ RemoveCurrying qualifying spec
           foldr
 	    (fn (el,(r_elts,r_ops)) ->
 	     case el of
-	      | Import (s_tm,i_sp,s_elts) ->
+	      | Import (s_tm,i_sp,s_elts,a) ->
 		let (newElts,newOps) = addUnCurried(s_elts,([],r_ops)) in
-		(Cons(Import(s_tm,i_sp,newElts),r_elts),
+		(Cons(Import(s_tm,i_sp,newElts,a),r_elts),
 		 newOps)
-	      | Op (Qualified(q,id), true) ->  % true means decl includes def
+	      | Op (Qualified(q,id), true,a) ->  % true means decl includes def
 		(case findAQualifierMap(r_ops,q,id) of
 		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
 		   | _ -> fail(q ^ "." ^ id ^ " is not in spec " ^ printSpec spc))
-	      | OpDef(Qualified(q,id)) ->
+	      | OpDef(Qualified(q,id),a) ->
 		(case findAQualifierMap(r_ops,q,id) of
 		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
 		   | _ -> fail(q ^ "." ^ id ^ " is not in spec " ^ printSpec spc))

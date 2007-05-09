@@ -2,8 +2,8 @@ SpecCalc qualifying spec
  import ../../Environment
  import AccessSpec
 
- op addSort        : [a] List QualifiedId            -> ASort a -> ASpec a -> Position -> SpecCalc.Env (ASpec a)
- op addOp          : [a] List QualifiedId -> Fixity  -> ATerm a -> ASpec a -> Position -> SpecCalc.Env (ASpec a)
+ op addSort        :  List QualifiedId            -> Sort -> Spec -> Position -> SpecCalc.Env (Spec)
+ op addOp          :  List QualifiedId -> Fixity  -> MS.Term -> Spec -> Position -> SpecCalc.Env (Spec)
 
   %% called by evaluateSpecElem 
  def addSort new_names new_dfn old_spec pos =
@@ -90,8 +90,8 @@ SpecCalc qualifying spec
                          "Sort "^(printAliases new_names)^" refers to multiple prior sorts"));
      sp <- return (setSorts (old_spec, new_sorts));
      return (appendElement (sp, if definedSort? new_dfn
-			          then SortDef primaryName
-				  else Sort primaryName))
+			          then SortDef (primaryName, pos)
+				  else Sort (primaryName, pos)))
     }
 
   %% called by evaluateSpecElem and LiftPattern
@@ -209,26 +209,26 @@ SpecCalc qualifying spec
 
     sp <- return (setOps (old_spec, new_ops));
     return (appendElement (sp, case old_infos of
-                                 | [] -> Op    (primaryName, definedTerm? new_dfn)
-                                 | _  -> OpDef primaryName))
+                                 | [] -> Op    (primaryName, definedTerm? new_dfn, pos)
+                                 | _  -> OpDef (primaryName, pos)))
     }
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op addImport      : [a] (SpecCalc.Term Position * Spec)        * ASpec a -> ASpec a
+ op addImport      : [a] (SpecCalc.Term Position * Spec)    * ASpec a * a -> ASpec a
  op addProperty    : [a] (AProperty a)                          * ASpec a -> ASpec a
- op addAxiom       : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addConjecture  : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addTheorem     : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addTheoremLast : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addConjectures : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
- op addTheorems    : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
- op addComment     : [a] String                                 * ASpec a -> ASpec a
+ op addAxiom       : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
+ op addConjecture  : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
+ op addTheorem     : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
+ op addTheoremLast : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
+ op addConjectures : [a] List (PropertyName * TyVars * ATerm a * a) * ASpec a -> ASpec a
+ op addTheorems    : [a] List (PropertyName * TyVars * ATerm a * a) * ASpec a -> ASpec a
+ op addComment     : [a] String * a                             * ASpec a -> ASpec a
  op addPragma      : [a] (String * String * String * a)         * ASpec a -> ASpec a
 
  %% called by evaluateSpecImport
- def addImport ((specCalcTerm, imported_spec), spc) =
-   appendElement (spc, Import (specCalcTerm, imported_spec, imported_spec.elements))
+ def addImport ((specCalcTerm, imported_spec), spc, a) =
+   appendElement (spc, Import (specCalcTerm, imported_spec, imported_spec.elements, a))
 
  %% called by evaluateSpecElem 
 
@@ -236,18 +236,21 @@ SpecCalc qualifying spec
    let spc = setElements (spc, spc.elements ++ [Property new_property]) in
    spc    % addLocalPropertyName(spc,propertyName new_property)
 
- def addAxiom       ((name, tvs, formula), spc) = addProperty ((Axiom      : PropertyType, name, tvs, formula), spc) 
- def addConjecture  ((name, tvs, formula), spc) = addProperty ((Conjecture : PropertyType, name, tvs, formula), spc) 
- def addTheorem     ((name, tvs, formula), spc) = addProperty ((Theorem    : PropertyType, name, tvs, formula), spc) 
+ def addAxiom       ((name, tvs, formula, a), spc) =
+   addProperty ((Axiom      : PropertyType, name, tvs, formula, a), spc) 
+ def addConjecture  ((name, tvs, formula, a), spc) =
+   addProperty ((Conjecture : PropertyType, name, tvs, formula, a), spc) 
+ def addTheorem     ((name, tvs, formula, a), spc) =
+   addProperty ((Theorem    : PropertyType, name, tvs, formula, a), spc) 
 
- def addTheoremLast ((name, tvs, formula), spc) =  
-   setElements (spc, spc.elements ++ [Property(Theorem, name, tvs, formula)])
+ def addTheoremLast ((name, tvs, formula, a), spc) =  
+   setElements (spc, spc.elements ++ [Property(Theorem, name, tvs, formula, a)])
 
  def addConjectures (conjectures, spc) = foldl addConjecture spc conjectures
  def addTheorems    (theorems,    spc) = foldl addTheorem    spc theorems
 
- def addComment     (str, spc) = 
-   let spc = setElements (spc, spc.elements ++ [Comment str]) in
+ def addComment     (str, a, spc) = 
+   let spc = setElements (spc, spc.elements ++ [Comment (str,a)]) in
    spc    % addLocalPropertyName(spc,propertyName new_property)
 
  def addPragma      (pragma_content, spc) = 

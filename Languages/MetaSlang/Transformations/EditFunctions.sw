@@ -66,6 +66,29 @@ spec
     []
 *)
 
+    op findExpressionsOfType(qual1: String, id1: String, uidStr: String, optGlobalContext: Option GlobalContext)
+       : List (String * (Nat * Nat)) =
+    let target_type = mkBase(Qualified(qual1,id1),[]) in
+    let def matchType? (ty,spc) =
+          (equivType? spc (target_type, ty))
+           \_or (case ty of
+               | Base(qid2 as Qualified(qual2,id2),_,_) \_rightarrow
+                 (id1 = id2 \_and (qual1 = qual2 \_or qual1 = UnQualified))
+                 \_or (case AnnSpec.findTheSort(spc,qid2) of
+                     | Some {names,dfn} \_rightarrow matchType?(dfn,spc)
+                     | None \_rightarrow false)
+               | Pi(_,s_ty,_)      \_rightarrow matchType?(s_ty,spc)
+               | Subsort(s_ty,_,_) \_rightarrow matchType?(s_ty,spc)
+               | _ \_rightarrow false)
+        def match_term_type? (t,spc) =
+          case t of
+            | Let _ -> false
+            | IfThenElse _ -> false
+            | _ -> matchType?(termSortEnv(spc,t),spc)
+    in
+    findMatchesFromTopSpecs(match_term_type?, uidStr, optGlobalContext)
+
+
   op findOpReferences(qual1: String, id1: String, uidStr: String, optGlobalContext: Option GlobalContext)
        : List (String * (Nat * Nat)) =
     let def match_op_ref(t,spc) =
@@ -115,7 +138,7 @@ spec
                                                  | Some _ \_rightarrow result
                                                  | None \_rightarrow
                                                case el of
-                                                 | Import((_,pos),_,_) \_rightarrow
+                                                 | Import((_,pos),_,_,_) \_rightarrow
                                                    Some pos
                                                  | _ \_rightarrow result)
                                         None spc.elements

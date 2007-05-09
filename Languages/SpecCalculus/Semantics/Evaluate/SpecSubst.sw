@@ -20,35 +20,35 @@ SpecCalc qualifying spec
       def collect_clashing_sorts_and_ops (elts, sorts, ops) =
 	foldl (fn (el, (sorts, ops)) ->
 	       case el of
-		 | Sort    qid -> 
+		 | Sort    (qid,_) -> 
 		   (case findAllSorts (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: Sort    but no info for " ^ printQualifiedId qid) in
 			(sorts, ops)
 		      | _ ->
 			(if member (qid, sorts) then sorts else sorts ++ [qid], ops))
-		 | SortDef qid -> 
+		 | SortDef (qid,_) -> 
 		   (case findAllSorts (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: SortDef but no info for " ^ printQualifiedId qid) in
 			(sorts, ops)
 		      | _ ->
 			(if member (qid, sorts) then sorts else sorts ++ [qid], ops))
-		 | Op      (qid,def?) -> 
+		 | Op      (qid,def?,_) -> 
 		   (case findAllOps (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: Op      but no info for " ^ printQualifiedId qid) in
 			(sorts, ops)
 		      | _ ->
 			(sorts, if member (qid, ops) then ops else ops ++ [qid]))
-		 | OpDef   qid -> 
+		 | OpDef   (qid,_) -> 
 		   (case findAllOps (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: OpDef   but no info for " ^ printQualifiedId qid) in
 			(sorts, ops)
 		      | _ -> 
 			(sorts, if member (qid, ops) then ops else ops ++ [qid]))
-		 | Import (_, _, elts) ->  collect_clashing_sorts_and_ops (elts, sorts, ops)
+		 | Import (_, _, elts,_) ->  collect_clashing_sorts_and_ops (elts, sorts, ops)
 		 | _ -> (sorts, ops))
 	      (sorts, ops)
 	      elts
@@ -59,7 +59,7 @@ SpecCalc qualifying spec
     let props_msg = 
         foldl (fn (el,str) ->
 	       case el of
-		 | Property(_, prop_name, _, _) ->
+		 | Property(_, prop_name, _, _, _) ->
 		   if str = "" then 
 		     printQualifiedId prop_name
 		   else 
@@ -132,7 +132,7 @@ SpecCalc qualifying spec
      new_spec <- specUnion [translated_residue, cod_spec << {elements = []}] pos;     % M(S - dom(M)) U cod(M)
      new_spec <- return (new_spec << {elements = 
 				      replaceImportStub (new_spec.elements,
-							 Import(cod_spec_term, cod_spec, cod_spec.elements))});
+							 Import(cod_spec_term, cod_spec, cod_spec.elements, noPos))});
      new_spec <- return (removeDuplicateImports new_spec);
      new_spec <- return (removeVarOpCaptures    new_spec);
      new_spec <- return (compressDefs           new_spec);
@@ -142,66 +142,71 @@ SpecCalc qualifying spec
 
   %% Version of subtractSpec that leaves stubs of replaced imports so that targets can be replaced at
   %% The same place as originals. 
+  %% The top? parameter in these two functions is to ensure the substitution is done on
+  %% the immediate imports so that the correct Subst terms can be constructed, but below that
+  %% it is prpbably not necessary and would involve exponential work without caching
   op  subtractSpecLeavingStubs: Spec * SCTerm * Spec * SCTerm * Spec * SCTerm -> Spec
   def subtractSpecLeavingStubs (spc, sm_tm, dom_spec, _(*dom_spec_term*), cod_spec, cod_spec_term) = 
     %let import_dom_spec = Import (dom_spec_term, dom_spec, []) in    
     let 
-      def revise_elements elements =
+      def revise_elements elements top? =
 	map (fn el ->
 	     case el of
-	       | Import (tm, spc, import_elts) ->
+	       | Import (tm, spc, import_elts, pos) ->
 	         if %% sameSCTerm? (tm, dom_spec_term) ||
 		    spc = dom_spec then
-		   Import (cod_spec_term, cod_spec, [])
+		   Import (cod_spec_term, cod_spec, [], pos)
 		 else if existsSpecElement? (fn el -> 
 					     case el of
-					       | Import (tm, spc, _) ->
+					       | Import (tm, spc, _, _) ->
 					         %% sameSCTerm? (tm, dom_spec_term)  ||
 						  spc = dom_spec 
 					       | _ -> false)
-		                            spc.elements 
+		                            (if top? then spc.elements else import_elts)
 			then
 			  Import ((Subst (tm, sm_tm), noPos),
-				  spc, 
-				  revise_elements import_elts)
-		 else
-		   el % Import (tm, spc, [])
-	       | _ -> 
-		 el)
+				  if top?
+                                    then spc << {elements = revise_elements spc.elements false}
+                                    else spc, 
+				  revise_elements import_elts top?, pos)
+		 else el     % Import (tm, spc, [])
+	       | _ -> el)
 	    elements
     in
     spc << {
 	    sorts    = mapDiffSorts          spc.sorts     dom_spec.sorts,
 	    ops      = mapDiffOps            spc.ops       dom_spec.ops,
-	    elements = revise_elements       spc.elements
+	    elements = revise_elements       spc.elements  true
 	   }
 
   op  replaceImportStub: SpecElements * SpecElement -> SpecElements
   def replaceImportStub (elements, new_import) =
-    let Import (new_import_tm, new_import_spc, _) = new_import in
+    let Import (new_import_tm, new_import_spc, _, _) = new_import in
     let 
-      def revise_elements elements =
+      def revise_elements elements top? =
 	map (fn el ->
 	     case el of
-	       | Import (tm, spc, imported_elements) ->
-	         if imported_elements = [] && spc = new_import_spc then
+	       | Import (tm, spc, import_elts , pos) ->
+	         if import_elts = [] && spc = new_import_spc then
 		   new_import
 		 else if existsSpecElement? (fn imported_element -> 
 					     case imported_element of
-					       | Import (import_tm, spc, imported_elements) ->
-					         imported_elements = [] && spc = new_import_spc
+					       | Import (import_tm, spc, import_elts, _) ->
+					         import_elts = [] && spc = new_import_spc
 					       | _ -> false)
-		                            imported_elements 
+		                            (if top? then spc.elements else import_elts) 
 		 then
-		   let new_elts = revise_elements imported_elements in
-		   Import (tm, spc << {elements = new_elts}, new_elts)
-		 else
-		   el
-	       | _ ->
-		 el)
+		   let new_elts = revise_elements import_elts top? in
+		   Import (tm,
+                           spc << {elements = if top?
+                                                then revise_elements spc.elements false
+                                                else new_elts},
+                           new_elts, pos)
+		 else el
+	       | _ -> el)
 	    elements
     in
-      revise_elements elements
+      revise_elements elements true
 
   op  convertIdMap: QualifiedIdMap -> AQualifierMap (QualifiedId * Aliases)
   def convertIdMap m =

@@ -354,7 +354,7 @@ MSToFM qualifying spec
     interpFun args
 
   op toFMProperty: Context * Spec * Property -> FMTerm * Context
-  def toFMProperty(context, spc, prop as (ptype, name, tyvars, fmla)) =
+  def toFMProperty(context, spc, prop as (ptype, name, tyvars, fmla, _)) =
     let (fmTerm, newContext) = toFMTermTop(context, spc, fmla) in
     %let _ = writeLine("fmTransIn:") in
     %let _ = writeLine(printTerm(fmla)) in

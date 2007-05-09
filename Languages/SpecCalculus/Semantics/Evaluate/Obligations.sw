@@ -42,12 +42,12 @@ SpecCalc qualifying spec
     let translated_dom_axioms =
         foldrSpecElements (fn (el,newprops) ->
 			   case el of
-			     | Property(Axiom, name, tyvars, fm) ->
+			     | Property(Axiom, name, tyvars, fm, _) ->
 			       let new_fm = translateTerm (fm, sortMap, opMap) in
 			       if existsSpecElement?
 				    (fn el ->
 				     case el of
-				       | Property(_,_,tvs,fm1) ->
+				       | Property(_,_,tvs,fm1,_) ->
 				         tyvars = tvs && equivTerm? cod (new_fm,fm1)
 				       | _ -> false)
 				    cod.elements
@@ -82,7 +82,7 @@ SpecCalc qualifying spec
                      let cod_value_info = (Spec cod, oldestTimeStamp, []) in
 		     (Quote cod_value_info,pos)
     in
-    let ob_spc = cod << {elements =  [Import(cod_tm,cod,cod.elements)] ++ obligation_props
+    let ob_spc = cod << {elements =  [Import(cod_tm,cod,cod.elements,noPos)] ++ obligation_props
                                      ++ map (fn ((p1,p2,p3),pos) -> Pragma(p1,p2,p3,pos)) pragmas} in
     ob_spc
 

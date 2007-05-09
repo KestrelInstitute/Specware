@@ -198,7 +198,7 @@ Prover qualifying spec
 	       let simplifiedLiftedFmlas = map (fn fmla -> simplify spc fmla) liftedFmlas in
 	       %let _ = if id = "p" then map (fn lf -> writeLine ("LiftedAxioms: " ^ printTerm lf)) liftedFmlas else [] in
 	       let defAxioms = map (fn (fmla:MS.Term) ->
-				    Property(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos)))
+				    Property(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos), pos))
 	                         simplifiedLiftedFmlas
 	       in
 	       %%let ax:Property = (Axiom, id^"_def", [], hd (unLambdaDef (spc, srt, qid, term))) in
@@ -219,7 +219,7 @@ Prover qualifying spec
 	       Property(Axiom, 
 			mkQualifiedId (q, id^"_def_subsort"), 
 			[], 
-			withAnnT (fmla, pos))) 
+			withAnnT (fmla, pos), pos)) 
 	      liftedFmlas 
       in
 	%(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (subTypeFmla, pos)) in
@@ -283,10 +283,10 @@ Prover qualifying spec
 
   op axiomFromPropTop: Spec * Property -> SpecElements
   def axiomFromPropTop(spc, prop) =
-    let (pt, pn, tv, fmla) = prop in
+    let (pt, pn, tv, fmla,pos) = prop in
     let pos = termAnn(fmla) in
     let newFmlas = removePatternTop(spc, fmla) in
-    let newProps = map (fn f -> Property(pt, pn, tv, f)) newFmlas in
+    let newProps = map (fn f -> Property(pt, pn, tv, f, pos)) newFmlas in
     newProps
 
 endspec

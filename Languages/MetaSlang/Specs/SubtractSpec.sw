@@ -13,7 +13,7 @@ AnnSpec qualifying spec
  def subtractSpec x y =
    let elements = filterSpecElements (fn elt_x ->
 					(case elt_x of
-					   | Import (_, i_sp, _) -> ~(i_sp = y)
+					   | Import (_, i_sp, _, _) -> ~(i_sp = y)
 					   | _ -> true)
 					&&
 					~(existsSpecElement? (fn elt_y -> sameSpecElement? (y, elt_y, x, elt_x))
@@ -30,7 +30,7 @@ AnnSpec qualifying spec
    let spec2PropNames =
        foldrSpecElements (fn (el, result) ->
 			  case el of
-			    | Property (_, pn, _, _) -> Cons (pn, result)
+			    | Property (_, pn, _, _, _) -> Cons (pn, result)
 			    | _ -> result)
 	                 []
 			 spec2.elements
@@ -39,7 +39,7 @@ AnnSpec qualifying spec
        filterSpecElements (fn elt_1 ->
 
 			   case elt_1 of
-			     | Property(_, pn, _, _) ->
+			     | Property(_, pn, _, _, _) ->
 			       let remove? = member(pn, spec2PropNames) in
 			       ~remove?
 			     | _ -> ~(existsSpecElement? (fn elt_2 -> sameSpecElement? (spec2, elt_2, spec1, elt_1))
@@ -54,14 +54,14 @@ AnnSpec qualifying spec
    let spec2PropNames =
        mapPartial (fn el ->
 		   case el of
-		     | Property(_, pn, _, _) -> Some pn
+		     | Property(_, pn, _, _, _) -> Some pn
 		     | _ -> None)
                   spec2.elements
    in
    let newElements =
        filter (fn el ->
 	       case el of
-		 | Property(_, pn, _, _) -> ~(member (pn, spec2PropNames))
+		 | Property(_, pn, _, _, _) -> ~(member (pn, spec2PropNames))
 		 | _ -> ~(member(el, spec2.elements)))
 	      spec1.elements
    in
@@ -73,13 +73,13 @@ AnnSpec qualifying spec
  op  sameSpecElement?: Spec * SpecElement * Spec * SpecElement -> Boolean
  def sameSpecElement? (s1, e1, s2, e2) =
    case e1 of
-     | Import (s1_tm, s1, _) ->
+     | Import (s1_tm, s1, _, _) ->
        (case e2 of
-	  | Import (s2_tm, s2, _) -> s1 = s2  %% sameSCTerm? (s1_tm, s2_tm) 
+	  | Import (s2_tm, s2, _, _) -> s1 = s2  %% sameSCTerm? (s1_tm, s2_tm) 
 	  | _ -> false)
-     | Sort qid1 -> 
+     | Sort (qid1, _) -> 
        (case e2 of
-	  | Sort qid2 -> 
+	  | Sort (qid2, _) -> 
 	    let Some info1 = findTheSort (s1, qid1) in
 	    let Some info2 = findTheSort (s2, qid2) in
 	    (info1.names = info2.names
@@ -89,9 +89,9 @@ AnnSpec qualifying spec
 		| (_, Any _) -> true
 		| (srt1, srt2) -> equivType? s2 (srt1, srt2)))
 	  | _ -> false)
-     | SortDef qid1 -> 
+     | SortDef (qid1, _) -> 
        (case e2 of
-	  | SortDef qid2 -> 
+	  | SortDef (qid2, _) -> 
 	    let Some info1 = findTheSort (s1, qid1) in
 	    let Some info2 = findTheSort (s2, qid2) in
 	    (info1.names = info2.names
@@ -101,9 +101,9 @@ AnnSpec qualifying spec
 		| (_, Any _) -> true
 		| (srt1, srt2) -> equivType? s2 (srt1, srt2)))
 	  | _ -> false)
-     | Op (qid1,_) ->
+     | Op (qid1,_, _) ->
        (case e2 of
-	  | Op (qid2,_) -> 
+	  | Op (qid2,_, _) -> 
 	    let Some info1 = findTheOp (s1, qid1) in
 	    let Some info2 = findTheOp (s2, qid2) in
 	    (info1.names = info2.names
@@ -117,9 +117,9 @@ AnnSpec qualifying spec
 		   | (_, SortedTerm (Any _, _, _)) -> true
 		   | (tm1, tm2) ->  equivTerm? s2 (tm1, tm2)))
 	  | _ -> false)
-     | OpDef qid1 -> 
+     | OpDef (qid1, _) -> 
        (case e2 of
-	  | OpDef qid2 -> 
+	  | OpDef (qid2, _) -> 
 	    let Some info1 = findTheOp (s1, qid1) in
 	    let Some info2 = findTheOp (s2, qid2) in
 	    (info1.names = info2.names

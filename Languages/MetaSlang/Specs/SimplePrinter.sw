@@ -34,13 +34,13 @@ SpecCalc qualifying spec
      def ppElements elts =
        foldr (fn (el,result) ->
 	      case el of
-		| Property prop          -> Cons (ppAProperty prop, result)
-		| Op       (qId,def?)    -> Cons (ppAOp qId,        result) % Currently does def as well  % TODO: discriminate decl-with-def from decl then def
-		| OpDef    qId           -> result                          % Cons(ppAOpDef   qId,result)
-		| Sort     qId           -> Cons (ppASort qId,      result)
-		| SortDef  qId           -> result                          % Cons(ppASortDef qId,result)
-		| Comment  str           -> Cons (ppComment str,    result)
-		| Import   (_,_,impElts) -> (ppElements impElts) ++ result)
+		| Property prop            -> Cons (ppAProperty prop, result)
+		| Op       (qId,def?,_)    -> Cons (ppAOp qId,        result) % Currently does def as well  % TODO: discriminate decl-with-def from decl then def
+		| OpDef    (qId,_)         -> result                          % Cons(ppAOpDef   qId,result)
+		| Sort     (qId,_)         -> Cons (ppASort qId,      result)
+		| SortDef  (qId,_)         -> result                          % Cons(ppASortDef qId,result)
+		| Comment  (str,_)         -> Cons (ppComment str,    result)
+		| Import   (_,_,impElts,_) -> (ppElements impElts) ++ result)
 	 [] elts
   in
      
@@ -70,13 +70,13 @@ SpecCalc qualifying spec
      def ppElements elts =
        foldr (fn (el,result) ->
 	      case el of
-		| Property prop               -> Cons (ppAProperty prop, result)
-		| Op       (qId,def?)         -> Cons (ppAOp       qId,  result) % Currently does def as well
-		| OpDef    qId                -> result                          % Cons(ppAOpDef qId,result)
-		| Sort     qId                -> Cons (ppASort     qId,  result)
-		| SortDef  qId                -> result                          % Cons(ppASortDef qId,result)
-		| Comment  str                -> Cons (ppComment   str,  result)
-		| Import   (specCalcTerm,_,_) -> Cons (ppString("import " ^ (showTerm specCalcTerm)), result))
+		| Property prop                 -> Cons (ppAProperty prop, result)
+		| Op       (qId,def?,_)         -> Cons (ppAOp       qId,  result) % Currently does def as well
+		| OpDef    (qId,_)              -> result                          % Cons(ppAOpDef qId,result)
+		| Sort     (qId,_)              -> Cons (ppASort     qId,  result)
+		| SortDef  (qId,_)              -> result                          % Cons(ppASortDef qId,result)
+		| Comment  (str,_)              -> Cons (ppComment   str,  result)
+		| Import   (specCalcTerm,_,_,_) -> Cons (ppString("import " ^ (showTerm specCalcTerm)), result))
 	 [] elts
   in
      
@@ -218,7 +218,7 @@ SpecCalc qualifying spec
 
  %% other than from here, called from /Languages/SpecCalculus/AbstractSyntax/Printer.sw
   op ppAProperty : fa (a) AProperty a -> Pretty
- def ppAProperty (propType, name, tvs, term) =
+ def ppAProperty (propType, name, tvs, term, _) =
    ppConcat [
      ppPropertyType propType,
      ppString " ",

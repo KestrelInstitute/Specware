@@ -125,8 +125,8 @@ def unfoldSortAliases spc =
       let spc = setSorts (spc, sortmap) in
       let spc = setElements(spc, filterSpecElements (fn el ->
 						     case el of
-						       | Sort qidi -> ~(qid0 =qidi)
-						       | SortDef qidi -> ~(qid0 =qidi)
+						       | Sort (qidi,_) -> ~(qid0 =qidi)
+						       | SortDef (qidi,_) -> ~(qid0 =qidi)
 						       | _ -> true)
 			           spc.elements)
       in
@@ -337,21 +337,21 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
   let def modElts(elts,minfo,ops,srts) =
         List.foldl (fn (el,(r_elts,minfo,ops,srts)) ->
 	       case el of
-		 | Sort qid ->
+		 | Sort (qid,_) ->
 		   let Some sortinfo = findTheSort(spc,qid) in
 		   let (srts,new_minfo) = processSortinfo(qid,sortinfo,srts,minfo) in
 		   let el_s = if keepPolyMorphic? || firstSortDefTyVars sortinfo = []
 		               then [el] else []
 		   in
 		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
-		 | SortDef qid ->
+		 | SortDef (qid,_) ->
 		   let Some sortinfo = findTheSort(spc,qid) in
 		   let (srts,new_minfo) = processSortinfo(qid,sortinfo,srts,minfo) in
 		   let el_s = if keepPolyMorphic? || firstSortDefTyVars sortinfo = []
 		               then [el] else []
 		   in
 		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
-		 | Op (qid,def?) ->
+		 | Op (qid,def?,_) ->
 		   (case findTheOp (spc, qid) of
 		     | Some opinfo ->
 		       let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
@@ -364,20 +364,20 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		       fail ("Cannot find " ^ printQualifiedId qid ^ 
 			     "but could find " ^ (foldl (fn (info,s) -> s ++ " " ++ printAliases info.names) "" infos) ^
 			     "\nin spec\n" ^ printSpec spc))
-		 | OpDef qid ->
+		 | OpDef (qid,_) ->
 		   let Some opinfo = findTheOp(spc,qid) in
 		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
 		   let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = []
 		               then [el] else []
 		   in
 		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
-		 | Property(ptype, pname, tv, t) ->
+		 | Property(ptype, pname, tv, t, pos) ->
 		   let (t, new_minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
-		   let nprop = Property(ptype, pname, tv, t) in
+		   let nprop = Property(ptype, pname, tv, t, pos) in
 		   incorporateMinfo(r_elts,[nprop],new_minfo,minfo,ops,srts)
-		 | Import(s_tm,i_sp,elts) ->
+		 | Import(s_tm,i_sp,elts,pos) ->
 		   let (i_elts,minfo,ops,srts) = modElts(elts,minfo,ops,srts) in
-		   (Cons(Import(s_tm,i_sp,rev i_elts),r_elts),minfo,ops,srts)
+		   (Cons(Import(s_tm,i_sp,rev i_elts,pos),r_elts),minfo,ops,srts)
 		 | _ -> (Cons(el,r_elts), minfo,ops,srts))
           ([],minfo,ops,srts) elts
   in
@@ -818,13 +818,13 @@ def incorporateMinfo(elts,el_s,
         if new_sorts = old_sorts then []
 	  else let srtinfo :: r_sorts = new_sorts in
 	       let qid = primarySortName srtinfo in
-	       Cons(SortDef qid,newSorts r_sorts)
+	       Cons(SortDef (qid,noPos),newSorts r_sorts)
       def newOps(new_ops) =
         if new_ops = old_ops then []
 	  else let opinfo :: r_ops = new_ops in
 	       let qid = primaryOpName opinfo in
-               Cons(OpDef qid, 
-                    Cons(Op (qid,false), % false means don't print def as part of decl
+               Cons(OpDef (qid,noPos), 
+                    Cons(Op (qid,false,noPos), % false means don't print def as part of decl
                          newOps r_ops))
   in
     (el_s ++ newOps new_ops ++ newSorts new_sorts ++ elts,
@@ -966,7 +966,7 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
 			     let qid = primarySortName info in
 			     let Qualified (q, id) = qid in
 			     (insertAQualifierMap (map, q, id, info),
-			      [SortDef qid] ++ elts))
+			      [SortDef (qid,noPos)] ++ elts))
                        (initSpec.sorts,initSpec.elements)
 		       minfo.sorts
     in
@@ -974,7 +974,7 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
 			    let qid = primaryOpName info in
 			    let Qualified (q, id) = qid in
 			    (insertAQualifierMap (map, q, id, info),
-			     [Op (qid,true)] ++ elts))
+			     [Op (qid,true,noPos)] ++ elts))
 		       (initSpec.ops,elts)
 		       minfo.ops
     in
@@ -1285,7 +1285,7 @@ def addProductSortConstructorsFromSort (spc, qid, info) =
 	 in
 	 let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 	 let opnames = [opqid] in
-	 (addElementAfter (setOps (spc, newops), OpDef opqid, SortDef qid), opnames)) % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
+	 (addElementAfter (setOps (spc, newops), OpDef (opqid,noPos), SortDef (qid,noPos)), opnames)) % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
       | _ -> (spc, [])
 
  (**
@@ -1336,7 +1336,7 @@ def addProductAccessorsFromSort (spc, qid, info) =
 		     in
 		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 		     let opnames = cons (opqid, opnames) in
-		     (addElementAfter (setOps (spc, newops), OpDef opqid, SortDef qid), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
+		     (addElementAfter (setOps (spc, newops), OpDef (opqid,noPos), SortDef (qid,noPos)), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
 	            (spc, [])
 		    fields)
       | _ -> (spc, [])

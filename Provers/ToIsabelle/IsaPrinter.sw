@@ -164,7 +164,7 @@ IsaTermPrinter qualifying spec
 	case val of
 	  | Spec spc \_rightarrow
 	    app (\_lambda elem \_rightarrow case elem of
-		              | Import(sc_tm,im_sp,_) \_rightarrow
+		              | Import(sc_tm,im_sp,_,_) \_rightarrow
 		                deleteThyFilesForVal (Spec im_sp)
 			      | _ \_rightarrow ())
 	      spc.elements
@@ -448,7 +448,7 @@ IsaTermPrinter qualifying spec
     let explicit_imports =
         mapPartial (\_lambda el \_rightarrow
 		     case el of
-		       | Import(imp_sc_tm,im_sp,_) \_rightarrow Some (ppImport c imp_sc_tm im_sp)
+		       | Import(imp_sc_tm,im_sp,_,_) \_rightarrow Some (ppImport c imp_sc_tm im_sp)
 		       | _ \_rightarrow None)
            elems
     in case explicit_imports ++ imports_from_thy_morphism of
@@ -461,8 +461,8 @@ IsaTermPrinter qualifying spec
   op firstTypeDef (elems:SpecElements): Option QualifiedId =
     case elems of
       | [] \_rightarrow None
-      | (Sort type_id) :: _ \_rightarrow Some type_id
-      | (SortDef type_id) :: _ \_rightarrow Some type_id
+      | (Sort (type_id,_)) :: _ \_rightarrow Some type_id
+      | (SortDef (type_id,_)) :: _ \_rightarrow Some type_id
       | _ :: r \_rightarrow firstTypeDef r
 
   op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow Pretty
@@ -488,7 +488,7 @@ IsaTermPrinter qualifying spec
       def aux c spc r_elems =
 	case r_elems of
 	  | [] \_rightarrow []
-	  | (Comment c_str) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
+	  | (Comment (c_str,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
 	    Cons(ppProperty c prop c_str (Some prag),
 		 aux c spc rst)
 	  | (Pragma(_,c_str,_,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
@@ -524,8 +524,8 @@ IsaTermPrinter qualifying spec
                     \_rightarrow SpecElements \_rightarrow Pretty
   def ppSpecElement c spc elem opt_prag elems =
     case elem of
-      | Import (_,im_sp,im_elements) \_rightarrow prEmpty
-      | Op (qid as Qualified(_,nm),def?) \_rightarrow
+      | Import (_,im_sp,im_elements,_) \_rightarrow prEmpty
+      | Op (qid as Qualified(_,nm),def?,_) \_rightarrow
 	(case AnnSpec.findTheOp(spc,qid) of
 	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow
 	     ppOpInfo c true def?
@@ -537,7 +537,7 @@ IsaTermPrinter qualifying spec
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
-      | OpDef(qid as Qualified(_,nm)) \_rightarrow
+      | OpDef(qid as Qualified(_,nm),_) \_rightarrow
 	(case AnnSpec.findTheOp(spc,qid) of
 	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow
 	     ppOpInfo c false true
@@ -549,14 +549,14 @@ IsaTermPrinter qualifying spec
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
-      | Sort qid \_rightarrow
+      | Sort (qid,_) \_rightarrow
 	(case AnnSpec.findTheSort(spc,qid) of
 	   | Some {names,dfn} \_rightarrow ppTypeInfo c false (names,dfn)
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing type: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
-      | SortDef qid \_rightarrow
+      | SortDef (qid,_) \_rightarrow
 	(case AnnSpec.findTheSort(spc,qid) of
 	   | Some {names,dfn} \_rightarrow ppTypeInfo c true (names,dfn)
 	   | _ \_rightarrow 
@@ -576,7 +576,7 @@ IsaTermPrinter qualifying spec
 %		  prString mid_str,
 %		  prString end_str]
 	   
-      | Comment str \_rightarrow
+      | Comment (str,_) \_rightarrow
 	prConcat [prString "(*",
 		  prString str,
 		  prString "*)"]
@@ -940,7 +940,7 @@ IsaTermPrinter qualifying spec
       | _ \_rightarrow (t,vs)
 
   op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow Option Pragma \_rightarrow Pretty
-  def ppProperty c (propType, name, tyVars, term) comm prf =
+  def ppProperty c (propType, name, tyVars, term, _) comm prf =
     % let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
     let annotation =
         case findBracketAnnotation(prf) of

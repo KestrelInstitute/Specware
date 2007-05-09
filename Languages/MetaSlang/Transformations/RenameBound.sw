@@ -89,8 +89,8 @@ spec
       s << {ops      = new_ops,
             elements = new_elements}
 
-  def renameFormula c (pt,name, tyvars, term) =
-    (pt,name, tyvars, renameTerm c term)
+  def renameFormula c (pt,name, tyvars, term, a) =
+    (pt,name, tyvars, renameTerm c term, a)
 
   def renameOp c info =
     let (old_decls, old_defs) = opInfoDeclsAndDefs info in
