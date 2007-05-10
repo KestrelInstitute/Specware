@@ -413,6 +413,18 @@ IsaTermPrinter qualifying spec
 	       pr_type = "Isa" \_or pr_type = "All")
     \_or (len > 13 \_and substring(s,0,14) = "Simplification")
 
+  op namedPragma?(p: Pragma): Boolean =
+    let (_,s,_,_) = p in
+    let line1 = case search("\n",s) of
+                  | None \_rightarrow s
+                  | Some n \_rightarrow substring(s,0,n)
+    in
+    case removeEmpty(splitStringAt(line1," ")) of
+     | "Isa"::name?::r ->
+       ~(name? = "fa"
+           \_or member(sub(name?,0), [#[,#\\,#"]))
+     | _ \_rightarrow false
+
   op  makeCoercionTable: TransInfo * Spec \_rightarrow TypeCoercionTable
   def makeCoercionTable(trans_info,spc) =
     Map.foldi (\_lambda (subty, (super_id,opt_coerc,overloadedOps),val) \_rightarrow
@@ -491,13 +503,13 @@ IsaTermPrinter qualifying spec
 	  | (Comment (c_str,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
 	    Cons(ppProperty c prop c_str (Some prag),
 		 aux c spc rst)
-	  | (Pragma(_,c_str,_,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
-	    Cons(ppProperty c prop c_str (Some prag),
-		 aux c spc rst)
+%	  | (Pragma(_,c_str,_,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
+%	    Cons(ppProperty c prop c_str (Some prag),
+%		 aux c spc rst)
 %	  | (Property prop) :: (Pragma prag) :: rst \_rightarrow
 %	    Cons(ppProperty c prop "" (Some prag),
 %		 aux c spc rst)
-	  | el :: (rst as (Pragma prag) :: _) \_rightarrow
+	  | el :: (rst as (Pragma prag) :: _) | ~(namedPragma? prag) \_rightarrow
 	    let pretty1 = ppSpecElement c spc el (Some prag) elems in
 	    let prettyr = aux c spc rst in
 	    if pretty1 = prEmpty
