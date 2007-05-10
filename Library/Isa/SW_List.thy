@@ -66,17 +66,8 @@ theorem List__butLast_Obligation_subsort:
   apply(auto)
   done
 consts List__removeFirstElems :: "'a list \<times> nat \<Rightarrow> 'a list"
-theorem List__removeFirstElems_Obligation_subsort: 
-  "\<lbrakk>(i::nat) \<le> length l; \<not> (i = 0)\<rbrakk> \<Longrightarrow> \<not> (null l)"
-    apply(auto simp add: null_empty)
-  done
 theorem List__removeFirstElems_Obligation_subsort0: 
   "\<lbrakk>i \<le> length (l::'a list); \<not> (i = 0)\<rbrakk> \<Longrightarrow> 0 \<le> int i - 1"
-  apply(auto)
-  done
-theorem List__removeFirstElems_Obligation_subsort1: 
-  "\<lbrakk>i \<le> length l; \<not> (i = 0)\<rbrakk> \<Longrightarrow> 
-   int i - 1 \<le> int (length (tl l))"
   apply(auto)
   done
 recdef List__removeFirstElems "measure (\<lambda>(l,i). i)"
@@ -93,21 +84,8 @@ theorem List__length_removeFirstElems [simp]:
     apply(auto)
   done
 consts List__sublist__collectFirstElems :: "'a list \<times> nat \<Rightarrow> 'a list"
-theorem List__sublist__collectFirstElems_Obligation_subsort: 
-  "\<lbrakk>(i::nat) \<le> length l; \<not> (i = 0)\<rbrakk> \<Longrightarrow> \<not> (null l)"
-    apply(auto simp add: null_empty)
-  done
-theorem List__sublist__collectFirstElems_Obligation_subsort0: 
-  "\<lbrakk>(i::nat) \<le> length l; \<not> (i = 0)\<rbrakk> \<Longrightarrow> \<not> (null l)"
-    apply(auto simp add: null_empty)
-  done
 theorem List__sublist__collectFirstElems_Obligation_subsort1: 
   "\<lbrakk>i \<le> length (l::'a list); \<not> (i = 0)\<rbrakk> \<Longrightarrow> 0 \<le> int i - 1"
-  apply(auto)
-  done
-theorem List__sublist__collectFirstElems_Obligation_subsort2: 
-  "\<lbrakk>i \<le> length l; \<not> (i = 0)\<rbrakk> \<Longrightarrow> 
-   int i - 1 \<le> int (length (tl l))"
   apply(auto)
   done
 recdef List__sublist__collectFirstElems "measure (\<lambda>(l,i). i)"
@@ -120,11 +98,6 @@ theorem List__sublist_Obligation_subsort:
   done
 theorem List__sublist_Obligation_subsort0: 
   "\<lbrakk>i \<le> j; j \<le> length l\<rbrakk> \<Longrightarrow> 0 \<le> int j - int i"
-  apply(auto)
-  done
-theorem List__sublist_Obligation_subsort1: 
-  "\<lbrakk>i \<le> j; j \<le> length l\<rbrakk> \<Longrightarrow> 
-   int j - int i \<le> int (length (List__removeFirstElems(l,i)))"
   apply(auto)
   done
 recdef List__sublist "{}"
