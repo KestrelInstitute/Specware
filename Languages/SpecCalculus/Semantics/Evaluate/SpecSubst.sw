@@ -186,7 +186,7 @@ SpecCalc qualifying spec
       def revise_elements elements top? =
 	map (fn el ->
 	     case el of
-	       | Import (tm, spc, import_elts , pos) ->
+	       | Import (tm, spc, import_elts, pos) ->
 	         if import_elts = [] && spc = new_import_spc then
 		   new_import
 		 else if existsSpecElement? (fn imported_element -> 
