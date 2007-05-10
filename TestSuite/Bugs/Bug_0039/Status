@@ -1,0 +1,21 @@
+(39
+  :name     "Circular definition error after failing to evaluate a unit."
+ :owner      "SW"
+ :reporter   "LE"
+ :reported   "07.23/03"
+ :status     :closed   
+ :severity   :low
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

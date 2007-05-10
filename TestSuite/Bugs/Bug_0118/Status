@@ -1,0 +1,17 @@
+(118
+ :name       "Equivalence of Pi sorts not detected"     
+ :owner      "JM"
+ :reporter   "JM"
+ :reported   "10/02/04"
+ :status     :closed   
+ :severity   :medium
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

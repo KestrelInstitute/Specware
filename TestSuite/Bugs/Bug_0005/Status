@@ -1,0 +1,45 @@
+(5
+ :name     "Problem with UnitId when they resolve to a path containing links."
+ :reporter "JM"
+ :reported "11/01/02"
+ :owner    "JM"
+ :status   :closed
+ :severity :medium
+ :impact   :low
+ :closed   "??"
+ :fixed-in "??"
+)
+
+
+--description--
+
+There is a problem with UnitId when they resolve to a path containing links.
+So when I did David's install,
+
+  :sw /Library/Base
+
+resolved to paths relative to
+
+  /usr/home/kestrel/cyrluk ...
+
+whereas
+
+  :sw Library/Base
+
+resolved to paths relative to
+
+  /fs/1/home/kestrel/cyrluk
+
+(ie with links removed)
+
+The hope was that the lisp primitive (truename path) would solve it.
+But it doesn't resolve the link. The other option was to start a
+shell and do a pwd .. but bash gives back the path with the link whereas
+tcsh gives back a path without the link. Needs thought.
+
+Happily the following demonstrates that current-directory seems to work:
+
+CL-USER(1): (current-directory)
+#p"/fs/1/home/kestrel/cyrluk/"
+
+--solution--

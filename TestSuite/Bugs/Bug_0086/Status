@@ -1,0 +1,17 @@
+(86
+ :name       "Treatment of certain subtypes and polymorphic types is unsound"
+ :reporter   "AC"
+ :reported   "05/07/04"
+ :owner      "SW"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

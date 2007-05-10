@@ -1,0 +1,18 @@
+(107
+ :name       "Bogus Nil printed as []"
+ :reporter   "JM"
+ :reported   "09/08/04"
+ :owner      "JM"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

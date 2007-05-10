@@ -1,0 +1,17 @@
+(139
+ :name       "Snark prover interface crashes into Lisp"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "10/26/04"
+ :status     :closed   
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

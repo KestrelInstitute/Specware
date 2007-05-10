@@ -1,0 +1,17 @@
+(19
+ :name       "Ambiguous results from colimit operation"
+ :reporter   "Mitch Kokar"
+ :reported   "12/02/02"
+ :owner      "JM"
+ :status     :closed   
+ :severity   :high
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

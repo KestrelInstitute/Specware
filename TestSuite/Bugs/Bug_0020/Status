@@ -1,0 +1,41 @@
+(20
+ :name       "The 'Specware broke my Office programs' thing"
+ :owner      "WP"
+ :reporter   "Purnendu Sinha"
+ :reported   "11/30/02"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed     "12/04/02"
+ :fixed-in   "4.0"
+)
+
+--description--
+
+When installing Specware, the following error was encountered and the 
+installation exited without finishing: 
+"1607:Unable to install InstallShield Scripting Runtime" 
+Then, whenever an MS Office application was opened, a dialog asking 
+for the Office installation CD would appear.
+	
+--solution--
+
+The setup.exe was configured to try and update the Windows Installer 
+version to 2.0 (which comes with XP and Service Pack 3 for other 
+Windows versions).  The Office programs were probably installed with 
+an earlier (1.2) version of Windows Installer and did not like that 
+another application tried to update Windows Installer (Office Service 
+Packs also do an update on Windows Installer, as do other poor 
+unsuspecting third-party Windows applications).
+
+The setup.exe was configured to not try and update the Windows 
+Installer, and an administrator login was used so the the 1607 error 
+above did not occur.
+
+--commentary--
+
+
+
+
+
+

@@ -1,0 +1,41 @@
+(24
+ :name       "':swl'-ing a processed spec causes a stack overflow error"
+ :owner      "SW"
+ :reporter   "TWK"
+ :reported   "01/10/03"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+	When I attempted to generate lisp for my  
+compiled spec, I got the following: 
+;;; Processing spec players in  
+    C:/Program Files/Specware4.0/Examples/pearlgame/players.sw 
+;;; Processing spec twoPlayers in  
+    C:/Program Files/Specware4.0/Examples/pearlgame/players.sw 
+;;; Processing spec twoPlayersImpl in  
+    C:/Program Files/Specware4.0/Examples/pearlgame/players.sw 
+CL-USER(5): :swl players#twoPlayers  <<<<<<<<********************* 
+Error: Stack overflow (signal 1000) 
+  [condition type: SYNCHRONOUS-OPERATING-SYSTEM-SIGNAL] 
+Restart actions (select using :continue): 
+ 0: continue computation 
+ 1: Abort entirely from this process. 
+[1c] CL-USER(6):  
+I have attached the spec file below. 
+Thanks, Tim
+	
+	"../bugs/players.sw" players.sw
+	
+--solution--
+
+--commentary--
+
+
+
+

@@ -1,0 +1,27 @@
+(7
+ :name     "Order of units in multiple-unit file matters."
+ :reporter "LE"
+ :reported "11/01/02"
+ :owner    "SW"
+ :status   :closed
+ :severity :medium
+ :impact   :medium
+ :closed   "??"
+ :fixed-in "??"
+)
+
+--description--
+
+For files that define multiple units, there should be (e.g.) a topological
+sort of the list. The order of appearance within a file should be irrelevant.
+Same holds true for let and where bound names. 
+
+See also Bug #57
+
+--solution--
+
+--commentary--
+
+
+
+

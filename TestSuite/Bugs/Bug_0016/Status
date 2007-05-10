@@ -1,0 +1,32 @@
+(16
+ :name       "An incorrect SWPATH produces no error or warning"
+ :reporter   "LM"
+ :reported   "11/19/02"
+ :owner      "SW"
+ :status     :closed   
+ :severity   :medium
+ :impact     :medium
+ :closed     "11/21/02"
+ :fixed-in   "4.0"
+)
+
+--description--
+
+An incorrect SWPATH produces no error or warning: 
+
+CL-USER(10552): :swpath "C:/WINNT/Profile/lambert/Desktop" 
+C:/WINNT/Profile/lambert/Desktop 
+CL-USER(10553): :sw /MyUnit 
+Unknown unit /MyUnit 
+  referenced from "1.0-1.5" in [/MyUnit] 
+It should have been "Profiles".  There is no folder C:\WINNT\Profile.
+	
+
+--solution--
+
+--commentary--
+
+:swpath calls SpecCalc.checkSpecPathsExistence 
+SpecCalc.checkSpecPathsExistence should probably be called 
+once at start-up on the value of (getEnv "SWPATH"), although there 
+is some question about unmounted files systems.

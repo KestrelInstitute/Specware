@@ -1,0 +1,21 @@
+(1
+ :name       "Nonexhaustive match failure in bindPattern"
+ :owner      "JM"
+ :reporter   "LM"
+ :reported   "08/20/03"
+ :status     :closed
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

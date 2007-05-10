@@ -1,0 +1,21 @@
+(68
+ :name       "Even numbers can be refined to odd numbers"
+ :reporter   "AC/LM"
+ :reported   "09/24/03"
+ :owner      "JM"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

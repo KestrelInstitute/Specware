@@ -1,0 +1,24 @@
+(9
+ :name       "Change reference to URI to UnitId in the source"
+ :reporter   "LE"
+ :reported   "11/01/02"
+ :owner      "LE"
+ :status     :closed
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+Must changes should have been done.
+LE should doublecheck.
+
+Posted by LM 7/5, 1:35 am
+
+

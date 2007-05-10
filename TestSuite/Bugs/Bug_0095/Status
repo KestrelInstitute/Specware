@@ -1,0 +1,17 @@
+(95
+ :name      "swpath appears empty but it is not"
+ :owner     "SW"
+ :reporter  "AC"
+ :reported  "06/29/04" 
+ :status    :closed   
+ :severity  :low
+ :impact    :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

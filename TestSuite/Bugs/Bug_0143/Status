@@ -1,0 +1,20 @@
+(143
+ :name       "Lack of parentheses alters meaning of generated proof obligations"
+ :owner      "SW"
+ :reporter   "LM"
+ :reported   "11/10/04"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+

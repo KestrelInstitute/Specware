@@ -1,0 +1,19 @@
+(121
+ :name       "Showing base library Compare yields error"
+ :reporter   "AC"
+ :reported   "10/05/04"
+ :owner      "JM"
+ :status     :closed   
+ :severity   :medium
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+

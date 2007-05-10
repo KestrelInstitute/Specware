@@ -1,0 +1,17 @@
+(80
+ :name       "Specware crashes when processing empty tuple/record {}"
+ :reporter   "AC"
+ :reported   "02/13/04"
+ :owner      "??"
+ :status     :closed   
+ :severity   :crash
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

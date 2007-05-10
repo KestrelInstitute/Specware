@@ -1,0 +1,21 @@
+(41
+ :name       "Incorrect handwritten lisp for = on quotient type"
+ :owner      "JM"
+ :reporter   "LM"
+ :reported   "07/30/03"
+ :status     :closed   
+ :severity   :crash
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

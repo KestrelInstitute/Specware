@@ -1,0 +1,21 @@
+(119
+ :name       "punits with no arguments writes to a wrong file"
+ :owner      "DC"
+ :reporter   "DC"
+ :reported   "10/04/04"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

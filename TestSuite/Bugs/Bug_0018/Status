@@ -1,0 +1,31 @@
+(18
+ :name       "Cannot generate code from colimit"
+ :reporter   "WP/LM"
+ :reported   "11/19/02"
+ :owner      "SW/LE"
+ :status     :closed   
+ :severity   :high
+ :impact     :medium
+ :closed     "11/19/02"
+ :fixed-in   "4.0"
+)
+
+--description--
+
+CL-USER(37): :sw /BBcol#G 
+;;; Processing spec A in /WINNT/Profiles/lambert/Desktop/TrySpecware/BBcol.sw 
+Type error: attempting to generate code from an object that is not a specification 
+  found at 3.18-3.42 in /WINNT/Profiles/lambert/Desktop/TrySpecware/BB 
+Also evidenced by calling :sw on compile.sw in the bitstring library, 
+which has a generate lisp call in it. Same error was given. (WLP)
+	
+	
+	"../bugs/BBcol.sw" BBcol.sw
+	
+--solution--
+
+by SW and LE in Specware4/Languages/SpecCalculus/Semantics/Evaluate/Term.sw, Generate.sw
+
+--commentary--
+
+

@@ -1,0 +1,17 @@
+(130
+ :name       "Processing obligations causes crash with error message about arrow type"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "10/11/04"
+ :status     :closed   
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

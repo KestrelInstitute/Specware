@@ -1,0 +1,25 @@
+(8
+ :name     "Hide or turn off console window when running under Windows"
+ :reporter   "SW"
+ :reported   "11/01/02"
+ :owner      "SW"
+ :status     :closed   
+ :severity   :medium
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+See the for example +c and +cx options in the Franz documentation
+
+http://www.franz.com/support/documentation/6.1/doc/startup.htm#command-line-args-
+
+--solution--
+
+--commentary--
+
+
+
+

@@ -1,0 +1,21 @@
+(38
+ :name       "Problem with 'project' in parser or typechecker"
+ :owner      "SW"
+ :reporter   "AG/LE"
+ :reported   "07/18/03"
+ :status     :closed   
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+MA: same problem with even simpler input file (attached)
+
+

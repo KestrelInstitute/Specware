@@ -1,0 +1,17 @@
+(122
+ :name       "Two constants might be equal"
+ :owner      "SW"
+ :reporter   "JM"
+ :reported   "10/06/04"
+ :status     :closed   
+ :severity   :medium
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

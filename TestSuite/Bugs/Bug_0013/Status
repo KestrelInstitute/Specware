@@ -1,0 +1,32 @@
+(13
+ :name       "Specware commands do not work"
+ :reporter   "DC"
+ :reported   "11/14/02"
+ :owner      "SW"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed     "11/14/02"
+ :fixed-in   "4.0"
+)
+
+--description--
+
+CL-USER(1): :cd ../Tests 
+/usr/home/kestrel/weilyn/specware/Tests/ 
+CL-USER(2): :sw ABC 
+Unknown top-level command: "sw" 
+Type `:help' for the list of commands. 
+CL-USER(2): :swpath 
+Unknown top-level command: "swpath"
+
+--solution--
+
+Flag to tell windows to hide the console, breaks linux startup
+	
+Conditionalize code on whether running windows in sw-init.el
+
+--commentary--
+
+
+

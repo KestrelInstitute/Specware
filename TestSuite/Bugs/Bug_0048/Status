@@ -1,0 +1,21 @@
+(48
+ :name     "(\"0\" lt \"1\") = true evaluates to NIL"
+ :owner      "LM"
+ :reporter   "LM"
+ :reported   "08/12/03"
+ :status     :closed   
+ :severity   :high
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

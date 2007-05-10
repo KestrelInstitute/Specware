@@ -1,0 +1,41 @@
+(12
+ :name       "False error when processing spec in tutorial"
+ :owner      "JM"
+ :reporter   "DC"
+ :reported   "11/13/02"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed     "11/13/02"
+ :fixed-in   "4.0"
+)
+
+--description--
+
+	The tutorial does not work anymore. 
+CL-USER(1): :sw /UserDoc/tutorial/example/MatchingRefinements 
+;;; Processing spec Symbols in ~/specware/Specware4/UserDoc/tutorial/example/MatchingRefinements.sw 
+;;; Processing spec Symbols in ~/specware/Specware4/UserDoc/tutorial/example/MatchingSpecs.sw 
+;;; Processing spec Words in ~/specware/Specware4/UserDoc/tutorial/example/MatchingSpecs.sw 
+;;; Processing spec Messages in ~/specware/Specware4/UserDoc/tutorial/example/MatchingSpecs.sw 
+;;; Processing spec SymbolMatching in ~/specware/Specware4/UserDoc/tutorial/example/MatchingSpecs.sw 
+;;; Processing spec WordMatching in ~/specware/Specware4/UserDoc/tutorial/example/MatchingSpecs.sw 
+;;; Processing spec Matches in ~/specware/Specware4/UserDoc/tutorial/example/MatchingSpecs.sw 
+;;; Processing spec FindMatches in ~/specware/Specware4/UserDoc/tutorial/example/MatchingSpecs.sw 
+;;; Processing spec WordMatching0 in ~/specware/Specware4/UserDoc/tutorial/example/MatchingRefinements.sw 
+Type error: domain of spec morphism is not a spec 
+  found at 44.28-44.53 in ~/specware/Specware4/UserDoc/tutorial/example/MatchingRefinements.sw 
+CL-USER(2):
+
+--solution--
+
+missing coerceToSpec in evaluateSpecMorph 
+It was receiving a colimit and expecting a spec.
+
+added calls to coerceToSpec in evaluateSpecMorph in Languages/SpecCalculus/Semantics/Evaluate/SpecMorphism.sw
+
+--commentary--
+
+	
+
+

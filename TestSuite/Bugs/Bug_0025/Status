@@ -1,0 +1,36 @@
+(25
+  :name     "Problem with code generation / libraries failing to include all the defun's needed in .lisp"
+ :owner     "SW"
+ :reporter  "JM"
+ :reported  "02/28/03"
+ :status    :closed   
+ :severity  :high
+ :impact    :medium
+ :closed   
+ :fixed-in  "4.0.3/4.1"
+
+)
+
+--description--
+
+There's a strange problem with code generation / libraries that fails to include all the defun's 
+that are needed in <generated-app>.lisp 
+E.g., it fails to load String-Spec::LT which is used by some other String-Spec function. 
+I thought the problem was just some kind of failure to keep looking once a base function 
+was seen, but there are other gaps that don't fit that pattern.  
+
+You can look at ~mcdonald/JFlaws/Generated/JFlaws.lisp 
+to see the problem.   Try compiling it without libraries, etc. and you'll see 
+warnings about the missing library functions.
+
+--solution--
+
+--commentary--
+
+For now, I'm including a copy of the base library handcoded lisp with JFlaws, to finesse 
+the problem, but we should make a 4.0.3 release to fix this for others.
+	Posted by JLM
+	2/28, 6:33 am
+
+
+

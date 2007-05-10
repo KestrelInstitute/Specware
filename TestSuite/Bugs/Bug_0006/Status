@@ -1,0 +1,39 @@
+(6
+ :name     "Pretty printing of diagrams should yield something that looks like the starting syntax."
+ :reporter "LE"
+ :reported "11/01/02"
+ :owner    "JM"
+ :status   :closed
+ :severity :medium
+ :impact   :low
+ :closed   "11/18/02"
+ :fixed-in "4.0"
+)
+
+--description--
+
+--solution--
+
+"Print xxx" will evaulate the term xxx, then print the result before returning it.
+
+If xxx refers to UnitId's, the name of each UnitId is printed
+(as opposed to its contents).
+
+printSpec prints the import decls plus the local sorts/ops plus the properties
+
+printColimit prints the spec at the apex, but first subtracts the base
+spec and then without regard to whether sorts/ops are local or not.
+
+We might want to rethink this command, perhaps giving it some parameters.
+
+--commentary--
+
+(Diagrams print close to original syntax now.)
+
+Posted by JLM 9/22, 3:51 am
+
+I re-opened this since there wasn't an explanation of why it was closed.
+Current behavior of show is to print the apex spec, and I don't know of a
+command that will display the original syntax for a diagram/colimit, etc.
+
+Posted by JLM 9/22, 3:51 am

@@ -1,0 +1,18 @@
+(84
+ :name       "The full error msg for ambiguous sorts/ops could be enormously long, so printing it to the screen is a bad idea."
+ :owner      "JM"
+ :reporter   "JM"
+ :reported   "03/18/04"
+ :status     :closed   
+ :severity   :medium
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

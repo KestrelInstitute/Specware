@@ -1,0 +1,21 @@
+(36
+ :name     "The wrong lisp code is generated for accessing fields of subsets of two-arg products."
+ :owner      "SW"
+ :reporter   "JM"
+ :reported   "06/20/03"
+ :status     :closed   
+ :severity   :crash
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

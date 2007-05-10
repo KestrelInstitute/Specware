@@ -1,0 +1,21 @@
+(67
+  :name     "Signature constraints in spec morphism are not checked"
+ :owner     "JM"
+ :reporter  "AC/LM"
+ :reported  "09/24/03"
+ :status    :closed   
+ :severity  :high
+ :impact    :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

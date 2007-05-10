@@ -1,0 +1,18 @@
+(120
+ :name       "When invoking an specware emacs command when Specware is in the debugger, the sw-shell version of the command is used, but shouldn't."
+ :owner      "SW"
+ :reporter   "DC"
+ :reported   "10/04/04"
+ :status     :closed   
+ :severity   :crash
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

@@ -1,0 +1,43 @@
+(21
+ :name       "Redefined ops processed without giving error message"
+ :owner      "JM"
+ :reporter   "JM"
+ :reported   "12/13/02"
+ :status     :closed   
+ :severity   :medium
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+	From Mitch Kokar - 
+In the spec E, I defined an op f: a -> b.  However, the sorts a and b 
+are ambiguous in this spec.  I should have gotten some kind of error 
+message, but I did not.
+	
+	
+	"../bugs/E.sw" E.sw
+	"../bugs/D.sw" D.sw
+	"../bugs/C.sw" C.sw
+	"../bugs/B.sw" B.sw
+	"../bugs/A_1.sw" A.sw
+
+
+--solution--
+
+--commentary--
+
+The following spec is erroneously processed without complaints: 
+
+spec 
+ op f : Boolean 
+ def f = true 
+ op f : String 
+endspec
+	
+	
+
+
+

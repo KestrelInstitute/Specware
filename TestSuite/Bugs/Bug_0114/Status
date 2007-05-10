@@ -1,0 +1,17 @@
+(114
+ :name       "Equivalent op decls should be coalesced"
+ :owner      "JM"
+ :reporter   "JM"
+ :reported   "09/22/04"
+ :status     :closed   
+ :severity   :medium
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

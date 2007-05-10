@@ -1,0 +1,19 @@
+(2
+ :name       "Loading lisp for id succ gives message: Attempt to take the car of 2003/8/15 which is not listp"
+ :reporter   "LM"
+ :reported   "08/15/03"
+ :owner      "SW"
+ :status     :closed
+ :severity   :crash
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+

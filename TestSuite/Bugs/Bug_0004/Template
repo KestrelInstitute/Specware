@@ -1,0 +1,14 @@
+(NN
+ :name     
+ :reporter 
+ :reported 
+ :owner    
+ :status   
+ :severity 
+ :impact   
+ :closed   
+ :fixed-in 
+ :solution 
+ :files    
+ :dscr     
+)

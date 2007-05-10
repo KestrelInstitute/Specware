@@ -1,0 +1,17 @@
+(89
+ :name       "Command dirr in Specware shell doesn't have intended behavior"
+ :reporter   "AC"
+ :reported   "06/04/04"
+ :owner      "SW/JM"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in  
+)
+
+--description--
+
+--solution--
+
+--commentary--

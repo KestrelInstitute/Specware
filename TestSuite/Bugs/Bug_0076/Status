@@ -1,0 +1,21 @@
+(76
+  :name     "Substitution loses a def along the way"
+ :reporter   "LM"
+ :reported   "11/04/03"
+ :owner      "JM/LE"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

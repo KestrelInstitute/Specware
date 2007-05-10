@@ -1,0 +1,28 @@
+(11
+ :name       "Consider abbreviating printed path names"
+ :owner      "SW"
+ :reporter   "SW"
+ :reported   "11/01/02"
+ :status     :closed   
+ :severity   :medium
+ :impact     :medium
+ :closed     "11/05/02"
+ :fixed-in   "4.0"
+)
+
+--description--
+
+--solution--
+
+Fixed in SpecCalc.uriToPath
+
+--commentary--
+
+Consider abbreviating printed path names by replacing a prefix that 
+includes the users home directory with '~'. 
+
+Should '~' be parsed as well? 
+
+
+
+

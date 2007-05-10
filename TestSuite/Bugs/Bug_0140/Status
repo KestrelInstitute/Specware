@@ -1,0 +1,20 @@
+(140
+ :name       "Polymorphic mystery term"
+ :owner      "SW"
+ :reporter   "LM"
+ :reported   "11/09/04"
+ :status     :closed   
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+

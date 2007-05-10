@@ -1,0 +1,21 @@
+(32
+ :name       "Running :sw on a file three times results in an infinite loop."
+ :owner      "SW"
+ :reporter   "DC"
+ :reported   "05/20/03" 
+ :status     :closed   
+ :severity   :crash
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

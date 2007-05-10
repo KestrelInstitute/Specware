@@ -1,0 +1,18 @@
+(135
+ :name       "Extra useless variables make obligations very hard to understand"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "10/12/04"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

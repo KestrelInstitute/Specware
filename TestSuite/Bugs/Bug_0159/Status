@@ -1,0 +1,19 @@
+(159
+ :owner      "JM/SW"
+ :name       "Substitution fails on imports of imports: wreaks havoc on Accord"
+ :reporter   "JM"
+ :reported   "05/23/05"
+ :status     :closed   
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+

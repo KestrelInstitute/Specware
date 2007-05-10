@@ -1,0 +1,21 @@
+(148
+ :name      "UnitId parsing error when # name includes a number"
+ :owner     "JM"
+ :reporter 
+ :reported 
+ :status    :closed
+ :severity  :medium
+ :impact    :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

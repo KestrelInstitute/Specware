@@ -1,0 +1,43 @@
+(15
+ :name       "Substitute and Translate fail to update the localSorts and localOps"
+ :reporter   "JM"
+ :reported   "11/19/02"
+ :owner      "JM"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed     "11/20/02"
+ :fixed-in   "4.0"
+)
+
+--description--
+
+	
+Substitute and Translate fail to update the localSorts and localOps, 
+so later commands such as Print can be confused into thinking there 
+are no local sorts or ops in the result. 
+
+%% One should see the following in the display of BB: 
+%%  import <something that refers to B> 
+%%  sort Interval = {start: Nat, stop: Nat} 
+%%  op isEmptyInterval? : Interval -> Boolean 
+%%  def isEmptyInterval? {start = x, stop = y} = (x = y) 
+%% and one should NOT see reset or tick, as they are in B
+	
+	
+	"../bugs/subsExample.sw" subsExample.sw
+
+--solution--
+
+--commentary--
+
+
+There were many problems with substitute. 
+E.g. it was importing the dom of the morphism, not the codomain. 
+Also, the spec printer was very confused about local sorts and ops.
+	
+For now, this may print the import as "import cod(M)" which won't parse. 
+That's a problem we can resolve separately, either to find B and print 
+"import B" or to make "cod M" legal syntax. [Hmm--it could just import  
+M and let coerceToSpec do its thing.]
+	

@@ -1,0 +1,19 @@
+(141
+ :name       "obligations results in a crash."
+ :owner      "SW"
+ :reporter   "DC"
+ :reported   "11/09/04"
+ :status     :closed   
+ :severity   :crash
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+Same file as for bug139

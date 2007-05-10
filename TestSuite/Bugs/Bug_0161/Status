@@ -1,0 +1,21 @@
+(161
+ :owner      "JM"
+ :name       "C generation failed for constructors with args of complex types"
+ :reporter   "JM"
+ :reported   "06/21/05"
+ :status     :closed
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

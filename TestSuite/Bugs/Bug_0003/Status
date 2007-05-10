@@ -1,0 +1,37 @@
+(3
+ :name     "Some inconsistencies with :sw command and # notation"
+ :reporter "WLP"
+ :reported "10/30/02"
+ :owner    "LE"
+ :status   :closed
+ :severity :medium
+ :impact   :low
+ :closed   "11/15/02"
+ :fixed-in "4.0"
+ :affected ("Languages/SpecCalculus/Semantics/Environment.sw"
+	    "Languages/SpecCalculus/Semantics/Specware.sw"
+	    "Languages/SpecCalculus/Semantics/Evaluate/URI.sw"
+	    "Languages/SpecCalculus/Semantics/Evaluate/URI/Utilities.sw")
+)
+
+--description--
+
+Should it be ok to issue the command ':sw ABC' and have all the specs in
+ABC.sw be processed (as opposed to calling ':sw ABC#A', ':sw ABC#B' and 
+':sw ABC#C', etc.)?
+
+Right now, Specware's giving mixed messages because ':sw ABC' does seem
+to process all 3 specs fine, but then gives an error as well.
+
+[7c] CL-USER(57): :sw ABC
+;;; Processing spec A in /usr/home/kestrel/weilyn/specware/Tests/ABC.sw
+;;; Processing spec B in /usr/home/kestrel/weilyn/specware/Tests/ABC.sw
+;;; Processing spec C in /usr/home/kestrel/weilyn/specware/Tests/ABC.sw
+Unknown unit error: ABC referenced from
+1.0-1.2 in [ABC]
+[7c] CL-USER(58):
+
+--solution--
+
+Added a new exception FileNotFound ... 
+and then a handler used only at the top-level

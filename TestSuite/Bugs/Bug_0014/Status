@@ -1,0 +1,22 @@
+(14
+ :name       "SpecMorphism is not monadic"
+ :reporter   "LE"
+ :reported   "11/18/02"
+ :owner      "JM"
+ :status     :closed   
+ :severity   :medium
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+SpecMorphism is not monadic .. hence it jumps into the lisp debugger 
+when the user enters an invalid morphism. Need to change fail to raise.
+	
+
+--solution--
+
+--commentary--
+

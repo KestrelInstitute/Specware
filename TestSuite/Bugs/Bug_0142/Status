@@ -1,0 +1,18 @@
+(142
+ :name      "Unparseable proof obligation generated: bad projector"
+ :owner     "SW"
+ :reporter  "LM"
+ :reported  "11/10/04"
+ :status    :closed   
+ :severity  :high
+ :impact    :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

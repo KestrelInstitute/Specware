@@ -1,0 +1,35 @@
+(23
+  :name     "Colimits and spec unions of multiply-named sorts/ops can get confused."
+ :owner      "JM"
+ :reporter   "JM"
+ :reported   "01/08/03"
+ :status     :closed   
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+If multiple specs are combined (e.g. via imports or colimit) and 
+they refer to sorts or ops with overlapping sets of names (e.g. 
+{A,B,C} and {A}), the resulting spec may erroneously duplicate 
+the problematic sort/op, e.g.: 
+  sort {A,B,C} 
+  sort {C,B,A} 
+This may cause confusion among alternative references to the problematic 
+sort/op, e.g. it might cause complaints that the following are duplicate 
+declarations: 
+  op f : A 
+  op f : C 
+I don't have a small test case yet, but processing all of flaws will 
+trigger it in the final colimit.
+	
+--solution--
+
+--commentary--
+
+
+
+

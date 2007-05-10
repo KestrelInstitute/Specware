@@ -1,0 +1,18 @@
+(132
+ :name       "No proof obligation generated for 'the'"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "10/11/04"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

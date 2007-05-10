@@ -1,0 +1,21 @@
+(126
+ :name      "Type comparison of polymorphic ops in translation fails to compare modulo alpha conversion"
+ :reporter  
+ :reported 
+ :owner     "JM"
+ :status    :closed
+ :severity 
+ :impact   
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

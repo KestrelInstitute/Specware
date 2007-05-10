@@ -1,0 +1,21 @@
+(57
+ :name      "In elaborating unit in multiple-unit file, all other units get elaborated (possibly again) as well, even if not relevant"
+ :owner     "SW"
+ :reporter  "DC"
+ :reported  "09/04/03"
+ :status    :closed   
+ :severity  :low
+ :impact    :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

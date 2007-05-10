@@ -1,0 +1,31 @@
+(17
+ :name       "Incorrect colimit computed"
+ :owner      "JM"
+ :reporter   "LM"
+ :reported   "11/19/02"
+ :status     :closed   
+ :severity   :high
+ :impact     :medium
+ :closed     "11/21/02"
+ :fixed-in   "4.0"
+)
+
+--description--
+
+Incorrect colimit computed (or shown?): 
+ 
+CL-USER(8): :show /AAcol#C 
+;;; Processing spec A in /WINNT/Profiles/lambert/Desktop/TrySpecware/AAcol.sw 
+spec   
+ op fubaz : Nat 
+ def fubaz = 12345 
+endspec
+	
+	"../bugs/AAcol.sw" AAcol.sw
+
+--solution--
+
+--commentary--
+
+
+

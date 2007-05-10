@@ -1,0 +1,21 @@
+(27
+ :name       "Specware does not build on Windows"
+ :owner      "SW"
+ :reporter   "MB/DC/WP"
+ :reported   "03/24/03"
+ :status     :closed   
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

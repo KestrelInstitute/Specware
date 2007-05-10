@@ -1,0 +1,21 @@
+(44
+ :name      "Imported axiom cannot be used in proof"
+ :owner     "DC"
+ :reporter  "LM"
+ :reported  "08/06/03"
+ :status    :closed   
+ :severity  :high
+ :impact    :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+
