@@ -64,14 +64,7 @@ command [[done]] is inserted.
 The proof script should occur immediately after the theorem that it
 applies to. If the script applies to a proof obligation that is not
 explicit in the spec, then the name of the obligation should appear
-after [[proof Isa]], on the same line. Such named scripts may not
-occur immediately after a theorem or definition. Because of this
-restriction, it is sometime necessary to insert and empty proof
-annotation after a theorem or definition, as follows:
-
-[[
-||  proof Isa end-proof
-]]
+after [[proof Isa]], on the same line.
 </para>
 
 <para>
