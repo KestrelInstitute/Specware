@@ -161,7 +161,6 @@ String qualifying spec
                                           (x div 10,
                                            digitToString(x rem 10) ^ res) in
                   toStringAux(x,""))
-  proof Isa end-proof
   proof Isa nat_toString_def__toStringAux "measure (\_lambda (x,res). x)" end-proof
 
   axiom char_toString_def is
@@ -202,7 +201,6 @@ String qualifying spec
                    | hd::tl -> stringToNatAux
                                 (tl, res * 10 + charToDigit hd) in
         stringToNatAux(explode s, 0))
-  proof Isa end-proof
   proof Isa stringToNat_def__stringToNatAux "measure (\_lambda(chars,res). length chars)" end-proof
 
   def Boolean.show b = Boolean.toString b

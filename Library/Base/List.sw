@@ -138,7 +138,6 @@ List qualifying spec
           if i = 0 then Nil
           else Cons (hd l, collectFirstElems(tl l,i-1)) in
     collectFirstElems(removeFirstElems(l,i),j-i)
-  proof Isa end-proof
 
   proof Isa sublist__collectFirstElems_Obligation_subsort
     apply(auto simp add: null_empty)
@@ -223,7 +222,6 @@ List qualifying spec
             if i = 0 then l
             else tabulateAux(i-1,Cons(f(i-1),l)) in
     tabulateAux(n,[])
-  proof Isa end-proof
   proof Isa tabulate__tabulateAux "measure (\_lambda(i,l,f). i)" end-proof
 
   def firstUpTo p l =
@@ -269,7 +267,6 @@ List qualifying spec
        | [] -> Some(0,supl)
        | _  -> locationOfNonEmpty(subl,supl,0)
 
-  proof Isa end-proof
   proof Isa locationOf__locationOfNonEmpty "measure (\_lambda(subl,supl,pos). length supl)" end-proof
 
   def compare comp (l1,l2) = 
