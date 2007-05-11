@@ -1,12 +1,12 @@
 (63
- :name     
+ :name       "Incorrect op-declaration op signToNat (s : Sign) : Nat in Language Manual, Section 'Sort-correctness'"
+ :owner      "LM"
  :reporter 
  :reported 
- :owner    
  :status   
  :severity 
  :impact   
- :closed   
+ :closed     "09/07/03"
  :fixed-in 
 )
 
@@ -16,6 +16,6 @@
 
 --commentary--
 
-
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_47.html
 
 

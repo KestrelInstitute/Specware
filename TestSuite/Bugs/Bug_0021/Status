@@ -1,18 +1,18 @@
 (21
- :name       "Redefined ops processed without giving error message"
- :owner      "JM"
- :reporter   "JM"
- :reported   "12/13/02"
- :status     :closed   
- :severity   :medium
- :impact     :low
- :closed   
- :fixed-in 
+ :name        "Ambiguous results from colimit operation"
+ :owner       "JM"
+ :reporter    "Mitch Kokar"
+ :reported    "12/13/02"
+ :status      :closed   
+ :severity    :medium
+ :impact      :low
+ :closed      "12/13/02"
+ :fixed-in    "??"
+ :archived-as 32
 )
 
 --description--
 
-	From Mitch Kokar - 
 In the spec E, I defined an op f: a -> b.  However, the sorts a and b 
 are ambiguous in this spec.  I should have gotten some kind of error 
 message, but I did not.
@@ -37,7 +37,7 @@ spec
  op f : String 
 endspec
 	
-	
+
 
 
 

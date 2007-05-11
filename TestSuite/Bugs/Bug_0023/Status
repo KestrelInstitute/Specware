@@ -1,13 +1,14 @@
 (23
-  :name     "Colimits and spec unions of multiply-named sorts/ops can get confused."
+ :name       "Colimits and spec unions of multiply-named sorts/ops can get confused."
  :owner      "JM"
  :reporter   "JM"
  :reported   "01/08/03"
  :status     :closed   
  :severity   :crash
  :impact     :high
- :closed   
- :fixed-in 
+ :closed     "??"
+ :fixed-in   "??"
+ :archived-as 35
 )
 
 --description--

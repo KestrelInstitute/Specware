@@ -1,11 +1,11 @@
 (52
- :name     
- :reporter 
- :reported 
- :owner    
- :status   
- :severity 
- :impact   
+ :name       "sublist is missing from Appendix B of the language manual"
+ :owner      "TWK"
+ :reporter   "LM"
+ :reported   "09/17/03"
+ :status     :closed
+ :severity   :low
+ :impact     :low
  :closed   
  :fixed-in 
 )

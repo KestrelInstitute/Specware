@@ -1,12 +1,12 @@
 (60
- :name     
+ :name     "embed-pattern is missing from Quick Reference"
+ :owner    "LM"
  :reporter 
  :reported 
- :owner    
  :status   
  :severity 
  :impact   
- :closed   
+ :closed   "09/06/03"
  :fixed-in 
 )
 
@@ -16,6 +16,4 @@
 
 --commentary--
 
-
-
-
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_43.html

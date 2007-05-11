@@ -8,10 +8,7 @@
  :impact   :low
  :closed   "11/15/02"
  :fixed-in "4.0"
- :affected ("Languages/SpecCalculus/Semantics/Environment.sw"
-	    "Languages/SpecCalculus/Semantics/Specware.sw"
-	    "Languages/SpecCalculus/Semantics/Evaluate/URI.sw"
-	    "Languages/SpecCalculus/Semantics/Evaluate/URI/Utilities.sw")
+ :archived-as 15
 )
 
 --description--
@@ -35,3 +32,9 @@ Unknown unit error: ABC referenced from
 
 Added a new exception FileNotFound ... 
 and then a handler used only at the top-level
+
+Fixed in
+Languages/SpecCalculus/Semantics/Environment.sw
+Languages/SpecCalculus/Semantics/Specware.sw
+Languages/SpecCalculus/Semantics/Evaluate/URI.sw
+Languages/SpecCalculus/Semantics/Evaluate/URI/Utilities.sw

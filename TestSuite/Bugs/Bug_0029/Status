@@ -1,21 +1,32 @@
 (29
- :name     
- :reporter 
- :reported 
+ :name       "Processing this file does not produce any errors, but probably should."
  :owner    
+ :reporter 
+ :reported   
  :status     
  :severity 
  :impact   
- :closed   
- :fixed-in 
+ :closed     "11/12/02"
+ :fixed-in   "4.0"
 )
 
 --description--
 
+Processing this file does not produce any errors, but probably should because
+  1. there are 2 unnamed specs;
+  2. there are unnamed specs and named specs in the same file;
+  3. spec B imports spec A, which is not explicitly named.
+
 --solution--
+
+parser4::parseFile in parser-interface.lisp was processing just the first form, which could be
+a single term or a sequence of decls, and was ignoring any remaining terms/decls.
+
+This also explains why no error was reported for the second and third specs.
+
+Fixed in version 1.4 of parser-interface.lisp
 
 --commentary--
 
 
-
-
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_01.html

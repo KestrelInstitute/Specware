@@ -1,13 +1,13 @@
 (45
  :name     "Unambiguous op erroneously declared ambiguous"
- :owner    
- :reporter 
- :reported 
- :status   
- :severity 
- :impact   
- :closed   
- :fixed-in 
+ :owner    "JM"
+ :reporter "LM"
+ :reported "06/08/03"
+ :status   :open
+ :severity :low
+ :impact   :medium
+ :closed   "??"
+ :fixed-in "??"
 )
 
 --description--

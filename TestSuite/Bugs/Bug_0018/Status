@@ -8,6 +8,7 @@
  :impact     :medium
  :closed     "11/19/02"
  :fixed-in   "4.0"
+ :archived-as 30
 )
 
 --description--
@@ -28,4 +29,4 @@ by SW and LE in Specware4/Languages/SpecCalculus/Semantics/Evaluate/Term.sw, Gen
 
 --commentary--
 
-
+AKA: :sw on a file with "generate lisp" doesn't work

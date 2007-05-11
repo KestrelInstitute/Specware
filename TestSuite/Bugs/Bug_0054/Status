@@ -1,21 +1,35 @@
 (54
- :name     
+ :name       "Processing a non-existent spec in existent file does not produce any errors"
  :reporter 
  :reported 
  :owner    
  :status   
  :severity 
  :impact   
- :closed   
- :fixed-in 
+ :closed     "11/13/02"
+ :fixed-in   "4.0"
 )
 
 --description--
 
+[7c] CL-USER(53): :sw A#iamabogusspec
+;;;      3 resulting toplevel forms
+;;; Processing spec iamabogusspec in /usr/home/kestrel/weilyn/specware/Tests/A.sw
+[7c] CL-USER(54):
+
+--diagnosis--
+
+Given a uri referring to file foo.sw (e.g. foo or foo#Bogus), if the 
+file contained a single term (as opposed to a sequence of decls), the
+uri would be assigned to the resulting spec, even if the uri was of
+the form foo#Bogus
+
 --solution--
+
+loadFile in Evaluate/URI.sw now ignores lone terms from a file if the uri has a suffix.
 
 --commentary--
 
-
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_02.html
 
 

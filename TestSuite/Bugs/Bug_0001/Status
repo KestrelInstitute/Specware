@@ -8,6 +8,7 @@
  :impact     :high
  :closed   
  :fixed-in 
+ :archived-as 13
 )
 
 --description--

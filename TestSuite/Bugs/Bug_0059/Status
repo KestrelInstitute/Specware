@@ -1,8 +1,8 @@
 (59
- :name     
+ :name     "Use of non-word-marks ` or \ in an op-name results in syntactically incorrect Lisp code, causing :swll to crash"
+ :owner    "JM"
  :reporter 
  :reported 
- :owner    
  :status   
  :severity 
  :impact   
@@ -14,8 +14,9 @@
 
 --solution--
 
+` and \ are special Lisp characters and must be escaped
+
 --commentary--
 
 
-
-
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_42.html

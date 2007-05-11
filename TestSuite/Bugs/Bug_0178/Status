@@ -1,0 +1,21 @@
+(178
+ :name      "Unambiguous op becomes "ambiguous" if def is commented out"
+ :reporter 
+ :reported 
+ :owner    
+ :status   
+ :severity 
+ :impact   
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_137.html
+

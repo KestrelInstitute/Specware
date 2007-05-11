@@ -1,8 +1,8 @@
 (53
-  :name     "Strange result is shown for result of spec-substitution"
+ :name     "Strange result is shown for result of spec-substitution"
+ :owner     "JM"
  :reporter  "LM"
  :reported  "08/20/03"
- :owner     "JM"
  :status    :closed   
  :severity  :low
  :impact    :low

@@ -1,13 +1,14 @@
 (19
- :name       "Ambiguous results from colimit operation"
- :reporter   "Mitch Kokar"
- :reported   "12/02/02"
+ :name       "Adding a new keyword to :ad-hoc-keywords and :ad-hoc-symbols in tokenizer.lisp doesn't make it valid when parsed"
  :owner      "JM"
- :status     :closed   
- :severity   :high
- :impact     :medium
+ :reporter   "LE"
+ :reported   "12/02/02"
+ :status     :open
+ :severity   :low
+ :impact     :low
  :closed   
  :fixed-in 
+ :archived-as 34
 )
 
 --description--
@@ -15,3 +16,15 @@
 --solution--
 
 --commentary--
+
+The addition of a string like "with" to :ad-hoc-keywords and :ad-hoc-symbols 
+in tokenizer.lisp fails to do the trick of making the keyword a valid name 
+when parsing. 
+
+In particular, I had to remove "with" from the tokenizer and add "with" to 
+the :NAME production in rules.lisp to allow "with" to be parsed as an op. 
+
+So at present, the user does not experience the bug .. but the solution 
+should be made more uniform.
+
+Affects Languages/SpecCalculus/Parser/Handwritten/Lisp/{rules.lisp,tokenizer.lisp}.

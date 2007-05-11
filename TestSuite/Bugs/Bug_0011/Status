@@ -8,6 +8,7 @@
  :impact     :medium
  :closed     "11/05/02"
  :fixed-in   "4.0"
+ :archived-as 23
 )
 
 --description--

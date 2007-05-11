@@ -1,8 +1,8 @@
 (56
- :name     
+ :name     "Processing obligations gives message 'Ill formed terms'"
+ :owner    "JM"
  :reporter 
  :reported 
- :owner    
  :status   
  :severity 
  :impact   
@@ -14,8 +14,16 @@
 
 --solution--
 
+Problem was diffuse:
+
+slang-built-in::slang-term-equals-2 didn't recognize hash-tables,
+findUnitIdForUnit uses built in equality (aka "=") to compare some values, which may be specs, 
+and some of the maps used in specs are from SimpleAsSTHarray, which are implemented in 
+hand-coded lisp as hash-tables.
+
+slang-term-equals-2 now does a pair of sub-map tests if the args are hashtables
+
 --commentary--
 
 
-
-
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_39.html

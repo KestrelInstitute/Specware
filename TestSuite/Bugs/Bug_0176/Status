@@ -1,5 +1,5 @@
 (176
- :name     
+ :name      "Typed patterns are not handled systematically"
  :reporter 
  :reported 
  :owner    

@@ -1,21 +1,23 @@
 (58
- :name     
- :reporter 
+ :name      "Nonexhaustive match failure in ppTerm while compiling incorrect let-rec-binding."
+ :owner     "JM"
+ :reporter  
  :reported 
- :owner    
  :status   
  :severity 
  :impact   
- :closed   
+ :closed    "08/28/03"
  :fixed-in 
 )
 
 --description--
 
+The lec-ret-binding is not produced by the syntax but gives no parse error.
+
 --solution--
+
+rules.lisp had (:repeat* :FORMAL-PARAMETER ""); the * should be a +
 
 --commentary--
 
-
-
-
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_40.html

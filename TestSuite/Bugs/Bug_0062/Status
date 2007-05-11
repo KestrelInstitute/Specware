@@ -1,12 +1,12 @@
 (62
- :name     
+ :name        "Wrong type for substring in Language Manual, Library Appendix: result sort is given as Char"
+ :owner       "LM"
  :reporter 
  :reported 
- :owner    
  :status   
  :severity 
  :impact   
- :closed   
+ :closed      "08/26/03"
  :fixed-in 
 )
 
@@ -18,4 +18,4 @@
 
 
 
-
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_46.html

@@ -1,12 +1,12 @@
 (65
- :name     
+ :name       "select is treated by the parser as a reserved word"
  :reporter 
  :reported 
  :owner    
  :status   
  :severity 
  :impact   
- :closed   
+ :closed     "09/07/03"
  :fixed-in 
 )
 
@@ -18,4 +18,4 @@
 
 
 
-
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_48.html

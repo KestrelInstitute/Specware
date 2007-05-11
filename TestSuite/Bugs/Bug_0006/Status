@@ -1,13 +1,14 @@
 (6
  :name     "Pretty printing of diagrams should yield something that looks like the starting syntax."
+ :owner    "JM"
  :reporter "LE"
  :reported "11/01/02"
- :owner    "JM"
  :status   :closed
  :severity :medium
  :impact   :low
  :closed   "11/18/02"
  :fixed-in "4.0"
+ :archived-as 18
 )
 
 --description--
