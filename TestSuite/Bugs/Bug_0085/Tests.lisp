@@ -8,7 +8,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    (:optional "")
 	    "spec  "
-	    " import /Library/Base/WFO"
+	    (:optional " import /Library/Base/WFO")
 	    " "
 	    " op  eq_mod10 : Nat * Nat -> Boolean"
 	    " def eq_mod10 (n1, n2) = n1 rem 10 = n2 rem 10"

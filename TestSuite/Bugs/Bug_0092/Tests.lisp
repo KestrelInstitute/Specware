@@ -8,7 +8,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    ""
 	    "spec  "
-	    " import /Library/Base/WFO"
+	    (:optional " import /Library/Base/WFO")
 	    "endspec"
 	    ""
 	    ""))

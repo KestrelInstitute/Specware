@@ -9,7 +9,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    ""
 	    "spec  "
-	    " import /Library/Base/WFO"
+	    (:optional " import /Library/Base/WFO")
 	    " "
 	    " op  f : [a] List(a) -> Nat"
 	    " conjecture f_Obligation_subsort is [a] "

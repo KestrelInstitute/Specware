@@ -9,7 +9,7 @@
 	     (:optional "creating directory: $TESTDIR/Snark/MinusOb/")
 	     (:optional "")
 	     "spec  "
-	     " import /Library/Base/WFO"
+	     (:optional " import /Library/Base/WFO")
 	     " type Nat"
 	     " "
 	     " op  zero : Nat"

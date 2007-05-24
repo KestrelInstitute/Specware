@@ -42,7 +42,7 @@
   :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#SymbolMatching_Oblig"
 	    (:optional ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#SymbolMatching")
 	    (:optional ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Symbols")
-	    ";;; Elaborating spec at $SPECWARE/Library/Base/WFO"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p1A"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char"

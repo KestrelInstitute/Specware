@@ -8,7 +8,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    (:optional "")
 	    "spec  "
-	    " import /Library/Base/WFO"
+	    (:optional " import /Library/Base/WFO")
 	    " import Nat"
 	    " import Compare"
 	    " import Functions"

@@ -8,7 +8,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    (:optional "")
 	    "spec  "
-	    " import /Library/Base/WFO"
+	    (:optional " import /Library/Base/WFO")
 	    " "
 	    " op  f : [a] {(l, i) : (List(a) * Nat) | i < length l} -> a"
 	    " conjecture f_Obligation_exhaustive is [a] "

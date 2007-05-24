@@ -9,7 +9,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    ""
 	    "spec  "
-	    " import /Library/Base/WFO"
+	    (:optional " import /Library/Base/WFO")
 	    " type Predicate(a) = a -> Boolean"
 	    " "
 	    " op  uniquelySatisfies? : [a] a * Predicate(a) -> Boolean"
