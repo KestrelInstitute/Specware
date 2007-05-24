@@ -29,6 +29,8 @@ Functions qualifying spec
   axiom inverse_def is [a,b]
     fa (f:Bijection(a,b))  (inverse f) o f = id  &&  f o (inverse f) = id
 
+  op  wfo: [a] (a * a -> Boolean) -> Boolean
+
   proof Isa ThyMorphism Fun
     Functions.id \_rightarrow id
     Functions.o \_rightarrow o Left 24

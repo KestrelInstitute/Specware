@@ -631,7 +631,7 @@ spec
    in
    let form = foldl insert rhs decls in
    let form = simplify spc form in
-   let form = mkBind(Exists,[pred],mkConj[mkApply(mkOp(Qualified("WFO","wfo"),
+   let form = mkBind(Exists,[pred],mkConj[mkApply(mkOp(Qualified("Functions","wfo"),
 						       mkArrow(predSort,boolSort)),
 						  mkVar pred),
 					  form])
@@ -936,29 +936,21 @@ spec
      in			       
        (rev tccs,claimNames)
 
- op  wfoSpecTerm: SpecCalc.Term Position
- def wfoSpecTerm = (UnitId (SpecPath_Relative {path       = ["Library","Base","WFO"], 
-					       hashSuffix = None}),
-		    noPos)
+% op  wfoSpecTerm: SpecCalc.Term Position
+% def wfoSpecTerm = (UnitId (SpecPath_Relative {path       = ["Library","Base","WFO"], 
+%					       hashSuffix = None}),
+%		    noPos)
 
  def makeTypeCheckObligationSpec (spc) =
    %let spc = lambdaLift(instantiateHOFns(spc),false) in
-   case getOptSpec (Some "/Library/Base/WFO") of
-     | None -> fail "Error in processing /Library/Base/WFO"
-     | Some wfoSpec ->
+%   case getOptSpec (Some "/Library/Base/WFO") of
+%     | None -> fail "Error in processing /Library/Base/WFO"
+%     | Some wfoSpec ->
    %% if you only do an addImport to the emptyspec you miss all the substance of the
    %% original spec, thus we do an setImports to spc.
    let (new_elements,_) = checkSpec spc in
    removeDuplicateImports		% could be done more efficiently for special case
-     (spc << {elements = if generateTerminationConditions?
-	                  then Cons(Import(wfoSpecTerm,wfoSpec,wfoSpec.elements,noPos),new_elements)
-			  else new_elements,
-	      ops      = if generateTerminationConditions?
-	                  then
-                            foldriAQualifierMap (fn (_, _, info, ops) ->
-                                                 mergeOpInfo spc ops info)
-                              spc.ops wfoSpec.ops
-			  else spc.ops})
+     (spc << {elements = new_elements})
 
 % op  boundVars   : Gamma -> List Var
 % op  boundTyVars : Gamma -> TyVars

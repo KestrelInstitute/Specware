@@ -112,7 +112,7 @@ spec
 	  case el of
 	    | Import(importSCTerm, importSpc,_,_) ->
 	      let importProofs =
-	          if baseUnitIdSCTerm?(importSCTerm)
+	          if importSpc = getBaseSpec() %baseUnitIdSCTerm?(importSCTerm)
 		    then []
 		  else generateProofsInSpec(importSpc, importSCTerm, fromObligations?, baseSpc,
 					    multipleFiles, prover_name, prover_options, basePropNames,
@@ -145,7 +145,7 @@ spec
 	  case el of
 	    | Import(importSCTerm, importSpc,_,_) ->
 	      let importProofs =
-	          if baseUnitIdSCTerm?(importSCTerm)
+	          if importSpc = getBaseSpec() % baseUnitIdSCTerm?(importSCTerm)
 		    then []
 		  else generateProofsInSpec(importSpc, importSCTerm, fromObligations?, baseSpc,
 					    multipleFiles, prover_name, prover_options, basePropNames,
@@ -371,6 +371,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.29  2007/05/09 20:47:08  westfold
+%% Add position information to ASpecElements
+%%
 %% Revision 1.28  2006/08/10 01:20:04  westfold
 %% Cache terms for computing UnitIds as well as values.
 %%

@@ -20,6 +20,8 @@ PrInteger qualifying spec
   %type Nat.Nat = (Integer | natural?)
 
 
+  axiom succ_def is fa(n) succ n = n + 1
+
   % negating zero is a no-op
   axiom minus_zero is
     -0 = 0

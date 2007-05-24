@@ -143,7 +143,7 @@ def getStringAttributesFromSpec spc =
 			 "Nat",
 			 "Option",
 			 "String",
-			 "WFO",        % TODO: basic ??
+		%	 "WFO",        % TODO: basic ??
 			 "System"      % TODO: basic ??
 			]
 
