@@ -1123,6 +1123,12 @@ IsaTermPrinter qualifying spec
 		     prConcat [prSpace, enclose?(encl?, ppTerm c (if encl? then Top else Nonfix)
 						          term2)]]
          | (Fun (Op (Qualified("Integer","natural?"),_), _,a),_) \_rightarrow  % natural? e --> 0 <= e
+           let term2 = case term2 of
+                         | Apply(Fun(Op(Qualified(q,"int"),_),_,_),x,_) | q = toIsaQual \_rightarrow
+                           %% In this case it is known true, but leave it in for now for transparency
+                           x
+                         | _ \_rightarrow term2
+           in
            ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
                                        [mkNat 0, term2]))
 	 | _ \_rightarrow
