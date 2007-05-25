@@ -207,6 +207,7 @@ MSToFM qualifying spec
 	 | ("Integer", "*") -> true
 	 | ("Nat",     "+") -> true
 	 | ("Integer", "+") -> true
+	 | ("Nat",  "succ") -> true
 	 | ("Integer", "natural?") -> true
 	 | _ -> false)
        | Not     -> true
@@ -237,6 +238,7 @@ MSToFM qualifying spec
 	 | ("Integer", "-") -> (fn ([a1, a2]) -> fmMinus(a1, a2))
 	 | ("Nat",     "+") -> (fn ([a1, a2]) -> fmPlus(a1, a2))
 	 | ("Integer", "+") -> (fn ([a1, a2]) -> fmPlus(a1, a2))
+	 | ("Nat",  "succ") -> (fn ([a1])     -> fmPlus(a1, Poly onePoly))
 	 | ("Nat",     "*") -> (fn ([a1, a2]) -> fmTimes(a1, a2))
 	 | ("Integer", "*") -> (fn ([a1, a2]) -> fmTimes(a1, a2))
 	 | ("Integer", "natural?") -> (fn ([a]) -> fmNatural(a)))
