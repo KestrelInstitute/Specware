@@ -105,19 +105,18 @@ spec
                    then Apply(coerce_fn,new_tm,a)
                    else new_tm) 
                | _ \_rightarrow tm)
+          | Apply(f as Fun(overloaded_op,_,_),x,a) | overloaded_op = Equals \_or overloaded_op = NotEquals \_rightarrow
+            (case checkCoercions x of
+               | Some(tb,coerce_fn) ->
+                 let new_x = removeCoercions(x,coerce_fn) in
+                 Apply(f,new_x,a)
+               | _ \_rightarrow tm)
           | _ \_rightarrow tm
       def checkCoercions tm =
         (case tm of
            | Record(row, _) \_rightarrow
-             foldl (\_lambda ((_,x),result) \_rightarrow
-                    case checkCoercions1 x of
-                      | (false,_) -> (false,None)
-                      | new_result ->
-                    case result of
-                      | (false,_) -> result
-                      | (true,Some _) -> result
-                      | (true,None) -> new_result)
-               (true, None) row 
+             foldl (\_lambda ((_,x),result) \_rightarrow checkCoercions2(result,x))
+               (true, None) row
            | _ \_rightarrow checkCoercions1 tm).2
       def checkCoercions1 tm =
         case tm of
@@ -125,7 +124,16 @@ spec
             (case find (fn tb \_rightarrow f = tb.coerceToSuper \_or f = tb.coerceToSub) coercions of
                | Some tb \_rightarrow (true, Some(tb,f))
                | None \_rightarrow (false,None))
+          | IfThenElse(_,x,y,_) \_rightarrow checkCoercions2(checkCoercions1 x,y)
           | _ \_rightarrow (overloadedTerm? tm,None)
+      def checkCoercions2(result,tm) =
+        case checkCoercions1 tm of
+          | (false,_) -> (false,None)
+          | new_result ->
+         case result of
+           | (false,_) -> (false,None)
+           | (true,Some _) -> result
+           | (true,None) -> new_result
       def removeCoercions(tm,f) =
         case tm of
           | Record(row, a) ->
