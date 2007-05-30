@@ -12,17 +12,11 @@ endspec
 Messages = spec
   import Symbols
   type Message = List (Option Symbol)
-
- axiom length_nthTail is
-  fa(msg:Message,pos:Nat)
-   pos <= length(msg)
-   => length(nthTail(msg,pos)) = length(msg) - pos
 endspec
 
 
 SymbolMatching = spec
   import Symbols
-%  import MatchingRichardAxioms#MatchingRichardIntegerAxiomsSpec
   op symb_matches?(s: Symbol, os: Option Symbol): Boolean
     = case os of
         | Some s1 -> s = s1
