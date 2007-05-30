@@ -35,7 +35,19 @@ if "%SPECWARE4%"=="" (
     echo revising SPECWARE4 to: C:\Progra~1/Kestrel/%SW_VERSION%
     set "SPECWARE4=C:\Progra~1/Kestrel/%SW_VERSION%"
 
+) else if "%SPECWARE4%"=="c:\Program Files\Kestrel\%SW_VERSION%" (
+
+    echo Problematic space and backslashes in: "%SPECWARE4%"
+    echo revising SPECWARE4 to: C:\Progra~1/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\Progra~1/Kestrel/%SW_VERSION%"
+
 ) else if "%SPECWARE4%"=="C:\Progra~1\Kestrel\%SW_VERSION%" (
+
+    echo Problematic backslashes in: "%SPECWARE4%"
+    echo revising SPECWARE4 to: C:\Progra~1/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\Progra~1/Kestrel/%SW_VERSION%"
+
+) else if "%SPECWARE4%"=="c:\Progra~1\Kestrel\%SW_VERSION%" (
 
     echo Problematic backslashes in: "%SPECWARE4%"
     echo revising SPECWARE4 to: C:\Progra~1/Kestrel/%SW_VERSION%
@@ -47,7 +59,19 @@ if "%SPECWARE4%"=="" (
     echo revising SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/%SW_VERSION%
     set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/%SW_VERSION%"
 
+) else if "%SPECWARE4%"=="c:\Documents and Settings\%USERNAME%\Kestrel\%SW_VERSION%" (
+
+    echo Problematic space and backslashes in: "%SPECWARE4%"
+    echo revising SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/%SW_VERSION%"
+
 ) else if "%SPECWARE4%"=="C:\Docume~1\%USERNAME%\Kestrel\%SW_VERSION%" (
+
+    echo Problematic backslashes in: "%SPECWARE4%"
+    echo revising SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/%SW_VERSION%"
+
+) else if "%SPECWARE4%"=="c:\Docume~1\%USERNAME%\Kestrel\%SW_VERSION%" (
 
     echo Problematic backslashes in: "%SPECWARE4%"
     echo revising SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/%SW_VERSION%
