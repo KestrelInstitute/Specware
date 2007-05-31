@@ -1,3 +1,3 @@
 @echo off
 
-call start-in-xemacs-xeli build-specware4
+call start-in-xemacs build-specware4
