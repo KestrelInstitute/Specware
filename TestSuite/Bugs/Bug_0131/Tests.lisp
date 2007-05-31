@@ -22,7 +22,7 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Provers/ProofChecker/IntegerExt")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Provers/ProofChecker/StateAndExceptionMonads")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
-	    (:optional ";;; Elaborating proof-term at $TESTDIR/.")
+	    (:optional ";;; Elaborating proof-term at $TESTDIR/Option#P")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare")
@@ -37,9 +37,10 @@
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/..log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional "creating directory: $TESTDIR/Snark/")
-	    (:optional "    Expanded spec file: $TESTDIR/Snark/..sw")
-	    (:optional "    Snark Log file: $TESTDIR/Snark/..log")
-	    "Conjecture PFunctions.o_Obligation_exhaustive is Proved! *"
+	    (:optional "creating directory: $TESTDIR/Snark/Option/")
+	    (:optional "    Expanded spec file: $TESTDIR/Snark/Option/P.sw")
+	    (:optional "    Snark Log file: $TESTDIR/Snark/Option/P.log")
+            "P: Conjecture PFunctions.o_Obligation_exhaustive is Proved! *"
 	    (:optional "")
 	    (:optional "")
 	    ))
