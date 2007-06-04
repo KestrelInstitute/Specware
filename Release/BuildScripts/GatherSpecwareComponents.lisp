@@ -718,6 +718,10 @@
       (copy-dist-directory (extend-directory source-dir   "UserDoc" "tutorial" "example")
 			   (extend-directory examples-dir "Matching"))
       
+      (let ((matching (extend-directory examples-dir "Matching")))
+	(delete-file (make-pathname :name "MatchingRichard"         :type "sw":defaults matching))
+	(delete-file (make-pathname :name "MatchingRichardTheorems" :type "sw":defaults matching)))
+
       (copy-dist-directory (extend-directory source-dir "UserDoc" "examples")
 			   (extend-directory target-dir "Examples"))
 
