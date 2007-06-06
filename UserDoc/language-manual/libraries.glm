@@ -598,12 +598,6 @@ with the &Specware; distribution, for details (e.g. axioms).
         <entry colname="desc">&nbsp; lexicographic less-than</entry>
        </row>
        <row>
-        <entry colname="name">&nbsp; [[++]]</entry>
-        <entry colname="fxty">&nbsp; [[L 25]]</entry>
-        <entry colname="type">&nbsp; [[String * String -> String]]</entry>
-        <entry colname="desc">&nbsp; string concatenation</entry>
-       </row>
-       <row>
         <entry colname="name">&nbsp; [[^]]</entry>
         <entry colname="fxty">&nbsp; [[L 25]]</entry>
         <entry colname="type">&nbsp; [[String * String -> String]]</entry>

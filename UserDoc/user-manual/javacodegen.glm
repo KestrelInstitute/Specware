@@ -163,7 +163,6 @@ values are used for all option parameters.
 [[
 ||String.concat(t1,t2),
 ||t1 ++ t2,
-||t1 ^ t2
 ]]
      </entry>
      <entry colname="java">[[t1 + t2]]</entry>
