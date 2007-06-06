@@ -36,7 +36,7 @@
  <!ENTITY swpath "<computeroutput>SWPATH</computeroutput>">
 ]>
 
-<book><title>Specware to Isabelle Translator Manual</title>
+<book><title>Specware to Isabelle Interface Manual</title>
 
 <bookinfo>
   <copyright>
