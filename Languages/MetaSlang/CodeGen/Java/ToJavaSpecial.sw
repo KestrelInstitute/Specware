@@ -288,6 +288,7 @@ spec
       | Apply(Fun(Op(Qualified("Char",fun as "isUpperCase"),_),_,_),t,_) -> charFun(fun,t)
       | Apply(Fun(Op(Qualified("Char",fun as "toLowerCase"),_),_,_),t,_) -> charFun(fun,t)
       | Apply(Fun(Op(Qualified("Char",fun as "toUpperCase"),_),_,_),t,_) -> charFun(fun,t)
+      | Apply(Fun(Op(Qualified("Char",fun as "toString"),_),_,_),t,_) -> charFun(fun,t)
 
       %% special cases for the BitString class (hack)
       | Apply(Fun(Op(Qualified(_,"complement"),_),_, _), t1,b) -> bitStringOp1(BitNot,t1,k,l)

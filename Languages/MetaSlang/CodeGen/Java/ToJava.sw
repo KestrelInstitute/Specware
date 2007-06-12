@@ -885,21 +885,22 @@ def JGen.printJavaFile(jfile as (filename,jspc)) =
 op builtinSortOp: QualifiedId -> Boolean
 def builtinSortOp(qid) =
   let Qualified(q,i) = qid in
-  (q="Nat" & (i="Nat" or i="PosNat" or i="toString" or i="natToString" or i="show" or i="stringToNat"))
-  or
-  (q="Integer" & (i="Integer" or i="NonZeroInteger" or i="+" or i="-" or i="*" or i="div" or i="rem" or i="<=" or
-		  i=">" or i=">=" or i="toString" or i="intToString" or i="show" or i="stringToInt"))
-  or
+  (q="Nat" & (i="Nat" || i="PosNat" || i="toString" || i="natToString" || i="show" || i="stringToNat"))
+  ||
+  (q="Integer" & (i="Integer" || i="NonZeroInteger" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" ||
+		  i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"))
+  ||
   (q="Integer_" && i="-") % unary minus -- deprecated due to new tokenizer rule
-  or
+  ||
   (q="IntegerAux" && i="-") % unary minus - "IntegerAux" is replacement for "Integer_"
-  or
-  (q="Boolean" & (i="Boolean" or i="true" or i="false" or i="~" or i="&" or i="or" or
-		  i="=>" or i="<=>" or i="~="))
-  or
-  (q="Char" & (i="Char" or i="chr" or i="isUpperCase" or i="isLowerCase" or i="isAlpha" or
-	       i="isNum" or i="isAlphaNum" or i="isAscii" or i="toUpperCase" or i="toLowerCase"))
-  or
+  ||
+  (q="Boolean" & (i="Boolean" || i="true" || i="false" || i="~" || i="&" || i="or" ||
+		  i="=>" || i="<=>" || i="~="))
+  ||
+  (q="Char" & (i="Char" || i="chr" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
+	       i="isNum" || i="isAlphaNum" || i="isAscii" || i="toUpperCase" ||
+               i="toLowerCase" || i="toString"))
+  ||
   (q="String" & (i="String" or i="writeLine" or i="toScreen" or i="concat" or i="++" or
 		 i="^" or i="newline" or i="length" or i="substring"))
 
