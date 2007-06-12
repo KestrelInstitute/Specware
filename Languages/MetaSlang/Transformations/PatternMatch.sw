@@ -791,6 +791,9 @@ def eliminateTerm context term =
 	in
 	let t = abstract(vars,t,bdySrt) in
 	mkApply(t,trm)
+      %% case e of p -> body --> let p = e in body
+      | Apply(Lambda([(p,Fun(Bool true,_,_),body)],_),e,pos) ->
+        eliminateTerm context (Let([(p,e)],body,pos))
       | Apply (t1,t2,a) -> 
 	Apply(eliminateTerm context t1,eliminateTerm context t2,a)
       | Record(fields,a) ->
