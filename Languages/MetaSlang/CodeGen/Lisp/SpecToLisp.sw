@@ -1458,6 +1458,7 @@ SpecToLisp qualifying spec {
    let spc = (if instantiateHOFns? then	instantiateHOFns spc else spc) in
    let spc = (if lambdaLift?       then lambdaLift(spc,true) else spc) in
    let spc = translateMatch spc in
+   %let _ = toScreen(printSpec spc) in
    let spc = translateRecordMergeInSpec spc in
    let spc = arityNormalize             spc in
    let lisp_spec = lisp spc in
