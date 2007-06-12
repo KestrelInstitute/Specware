@@ -232,6 +232,9 @@ spec
        %% case y of _ -> z  -->  z if y side-effect free
        | Apply(Lambda([(WildPat(_,_),_,body)],_),tm,_) ->
 	 if sideEffectFree tm then body else term
+%       %% case e of p -> body --> let p = e in body
+%       | Apply(Lambda([(p,Fun(Bool true,_,_),body)],_),e,pos) ->
+%         simplifyOne spc (Let([(p,e)],body,pos))
        | Let([(VarPat(v,_),letTerm as (Apply(Fun(Restrict,_,_),(Var _),_)))],
 	     body,_) ->
 	 substitute(body,[(v,letTerm)]) 
