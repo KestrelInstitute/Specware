@@ -245,6 +245,14 @@ FSeq qualifying spec
   op shiftRight : [a] {(s,x,n) : FSeq a * a * Nat | n < length s} -> FSeq a
   def shiftRight(s,x,n) = removeSuffix (extendLeft (s, x, length s + n), n)
 
+  % rotate sequence leftward by `n' positions:
+  op rotateLeft : [a] {(s,n) : FSeq a * Nat | n < length s} -> FSeq a
+  def rotateLeft(s,n) = removePrefix (s, n) ++ prefix (s, n)
+
+  % rotate sequence rightward by `n' positions:
+  op rotateRight : [a] {(s,n) : FSeq a * Nat | n < length s} -> FSeq a
+  def rotateRight(s,n) = suffix (s, n) ++ removeSuffix (s, n)
+
   op reverse : [a] FSeq a -> FSeq a
   def reverse s = seq (fn(i:Nat) ->
     if i < length s then Some (s @ (length s - i - 1)) else None)
