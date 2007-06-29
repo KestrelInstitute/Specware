@@ -36,7 +36,7 @@ SpecCalc qualifying spec
           reducedTerm <-
             let
               def reduceTerm count trm =
-                let lazy = rewriteRecursive (ctxt,[],rules,trm) in
+                let lazy = rewriteRecursive (ctxt,[],rules,trm,100) in
                 case lazy of
                   | Nil -> trm
                   | Cons ([], _) -> trm
