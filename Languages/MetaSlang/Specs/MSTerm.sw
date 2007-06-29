@@ -119,6 +119,9 @@ MS qualifying spec
  def mkTrue  () = mkFun (Bool true,  boolSort)
  def mkFalse () = mkFun (Bool false, boolSort)
 
+ op trueTerm : Term = mkTrue()
+ op falseTerm: Term = mkFalse()
+
  op  trueTerm?: [a] ATerm a -> Boolean
  def trueTerm? t =
    case t of
