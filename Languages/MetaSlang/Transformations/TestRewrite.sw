@@ -9,9 +9,9 @@ spec
 
 % should skolemize type variables
    
-  op specTermsToRewrite: fa(a) a -> Spec -> List Term
+  op specTermsToRewrite: fa(a) a -> Spec -> List MS.Term
   def specTermsToRewrite (* context *)_  (spc:Spec) =
-      List.map (fn (_,_,_,t) -> t) spc.properties
+      List.map (fn (_,_,_,t,_) -> t) (localProperties spc)
 
   op testSpec: Spec -> ()
   def testSpec(spc) = 
