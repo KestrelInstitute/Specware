@@ -1,18 +1,15 @@
-\section{Higher-Order matching for MetaSlang}
+(* Higher-Order matching for MetaSlang
 
-\subsection{API}
+API
 
-\begin{description}
-\item[match(lhs,rhs,flexTerms,context)] \ \ 
-\begin{itemize}
- \item[lhs, rhs] 	are the two terms to be matched
- \item[flexTerms] 	are terms denoting flexible variables.
- \item[context]	contains rewrite laws, theorems, and tracing information.
-\end{itemize}
-\item[matchPairs]
+match(lhs,rhs,flexTerms,context)
+ [lhs, rhs] 	are the two terms to be matched
+ [flexTerms] 	are terms denoting flexible variables.
+ [context]	contains rewrite laws, theorems, and tracing information.
+ [matchPairs]
  The main recursive matching loop.
-\end{description}
-\begin{spec}
+*)
+
 HigherOrderMatching qualifying
 spec
  import ../Specs/Environment
@@ -22,12 +19,9 @@ spec
 
  op matchPairs : Context * Subst * Stack -> List Subst
 
-\end{spec}
-
-\subsection{Sort declarations}
-
-\begin{spec} 
  type Term = MS.Term
+ type VarSubst = List (Var * MS.Term)
+
  type Context = 
       { 
         spc         : Spec,
@@ -143,12 +137,11 @@ The stack is accessed and modified using the operations
  op  hasFlexHead? : MS.Term -> Option Nat
  def hasFlexHead?(term) = isFlexVar?(hd(headForm term))
 
-\end{spec}
-
+(*
 \subsection{Term normalization}
 A main utility in normalizing terms and applying the current 
 substitution is the {\tt dereference} utility, which
-uses the current substitution and $\beta$-reduction to 
+uses the current substitution and beta-reduction to 
 normalize a term with respect to the current substitution.
 
 This computes weak head normal form with respect
@@ -157,15 +150,13 @@ applications and applying the head beta redexes
 that appear.
 
 The weak head normal form of a term is of the form
-\[
-      (c\; M_2\;\ldots\; M_k)
-\]
-where standardly $c$ is a constant, a bound variable.
-In our case we allow $c$ to be anything but an abstraction of
+      (c M_2 \_dots M_k)
+where standardly c is a constant, a bound variable.
+In our case we allow c to be anything but an abstraction of
 irrefutable patterns, where it is obvious how to perform 
-$\beta$ contraction.
+beta contraction.
+*)
 
-\begin{spec}
  op dereferenceR : Subst -> MS.Term -> MS.Term
  op dereference : Subst -> MS.Term -> MS.Term
 
@@ -199,7 +190,7 @@ $\beta$ contraction.
       %			MetaSlangPrint.printTerm term1);
       term1)
 
- op  patternMatchRules : Match * MS.Term -> Option (List (Var * MS.Term) * MS.Term)
+ op  patternMatchRules : Match * MS.Term -> Option (VarSubst * MS.Term)
  def patternMatchRules(rules,N) = 
      case rules 
        of [] -> None
@@ -210,9 +201,9 @@ $\beta$ contraction.
 	      | DontKnow -> None)
 	| _ :: rules -> None
 
- type MatchResult = | Match (List (Var * MS.Term)) | NoMatch | DontKnow
+ type MatchResult = | Match VarSubst | NoMatch | DontKnow
 
- op  patternMatch : Pattern * MS.Term * List (Var * MS.Term) -> MatchResult 
+ op  patternMatch : Pattern * MS.Term * VarSubst -> MatchResult 
 
  def patternMatch(pat:Pattern,N,S) = 
      case pat
@@ -220,7 +211,7 @@ $\beta$ contraction.
 	| WildPat _ -> Match S
 	| RecordPat(fields, _) -> 
 	  let fields2 = map (fn (l,p) -> (l,patternSort p,p)) fields in
-	  let srt:Sort = Product(map (fn (l,s,_) -> (l,s)) fields2,noPos) in
+	  let srt = Product(map (fn (l,s,_) -> (l,s)) fields2,noPos) in
 	  let 
 	      def loop(fields,S) : MatchResult = 
 	          case fields
@@ -270,31 +261,36 @@ $\beta$ contraction.
 %% Wasteful, but simple beta-normalizer.
 %%
 
- def dereferenceAll subst term = 
-     let (sortSubst,termSubst) = subst in
-     let
-	def deref (term) = 
-	    case isFlexVar?(term)
-	      of Some n -> 
-		 (case NatMap.find(termSubst,n)
-		    of Some term -> 
-		       derefAll term %Memoization by using refs?
-		     | None -> term)
-	       | None -> 
-	  (case term
-	     of Apply (M as Lambda(rules,_),N,_) -> 
-		(case patternMatchRules(rules,N)
-		   of None -> Apply(M,N,noPos)
-		    | Some (sub,M) -> derefAll (substitute(M,sub)))
-	      | Apply(M as Fun(Project l,_,_),Record(fields, _),_) -> 
-	        (case find (fn (l2,_) -> l = l2) fields
-		   of Some(_,trm) -> trm
-		    | None -> System.fail ("Label "^l^" not found"))
-	      | _ -> term)
-	def derefAll term = dereferenceAll subst term
-		
-    in
-    mapTerm(deref,fn s -> dereferenceSort(subst,s),fn p -> p) term
+ def dereferenceAll subst term =
+%   let freeNames = NatMap.foldri (fn (_,trm,vs) ->
+%                                    StringSet.union (StringSet.fromList
+%                                                       (map (fn (n,_) -> n) (freeVars trm)),
+%                                                     vs))
+%                     StringSet.empty subst.2
+%   in
+%   let term = substitute2(term,[],freeNames) in % Purely for renaming to avoid name clashes
+   let (sortSubst,termSubst) = subst in
+   let def deref (term) = 
+           case isFlexVar?(term)
+             of Some n -> 
+                (case NatMap.find(termSubst,n)
+                   of Some term -> 
+                      derefAll term %Memoization by using refs?
+                    | None -> term)
+              | None -> 
+                (case term
+                   of Apply (M as Lambda(rules,_),N,_) -> 
+                     (case patternMatchRules(rules,N)
+                        of None -> Apply(M,N,noPos)
+                         | Some (sub,M) -> derefAll (substitute(M,sub)))
+                 | Apply(M as Fun(Project l,_,_),Record(fields, _),_) -> 
+                   (case find (fn (l2,_) -> l = l2) fields
+                      of Some(_,trm) -> trm
+                       | None -> System.fail ("Label "^l^" not found"))
+                 | _ -> term)
+       def derefAll term = dereferenceAll subst term
+   in
+   mapTerm(deref,fn s -> dereferenceSort(subst,s),fn p -> p) term
 		 		  
 
 
@@ -364,7 +360,7 @@ X_1\; M_1\ldots M_n = N_1,\ldots
 
 {\bf Var} & 
 \inferenceRule{X \mapsto N}
-{X = N} \ \ \ \mbox{$N$ is closed} \\[2em]
+{X = N} \ \ \ \mbox{N is closed} \\[2em]
 
 {\bf Imitate} & 
 \inferenceRule{X \mapsto \lambda x_1 \ . \ldots .\lambda x_k \ . \ N}
@@ -394,10 +390,10 @@ right-hand side.
 The conditions for projection should also be completed.
 
 Note: projections should in general be represented as 
-$\lambda (x_1,\ldots,x_i,\ldots,x_n) \ . \ x_i$ with a suitable match on a 
+\lambda (x_1,\ldots,x_i,\ldots,x_n) \ . \ x_i with a suitable match on a 
 record type.
 
-Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
+Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 
 \begin{spec}
 
@@ -553,7 +549,7 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
 %  n to fn x1 -> ... fn xn -> N1 (X1 x1 ... xn) ... (Xk x1 .. xn)
 % where n is |terms| and k+1 = |Ns|.
 
-	     let pats = map (fn v -> VarPat(v,noPos):Pattern) vars in
+	     let pats = map (fn v -> VarPat(v,noPos)) vars in
 	     let varTerms = map (fn v -> Var(v,noPos)) vars in	
 	     let (sound,N1,pairs) = 
 		 case Ns
@@ -625,7 +621,7 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
 % 3. Imitation.
 	    (if closedTermV(N,context.boundVars)
 		then 
-		let pats   = map (fn srt -> WildPat(srt,noPos):Pattern) termTypes in 
+		let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
 		let trm    = foldr bindPattern N pats 			  in
 		let subst  = updateSubst(subst,n,trm) in
 		matchPairs(context,subst,stack) 
@@ -685,7 +681,7 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
         | Seq([M],_) -> inferType(spc,subst,M)
         | Seq(M::Ms,a) -> inferType(spc,subst,Seq(Ms,a))
 	| Any a -> Any a
-        | _ -> System.fail "non-exhaustive match"
+        | _ -> System.fail "inferType: non-exhaustive match"
 
 
 \end{spec}
@@ -707,11 +703,11 @@ then we generate the terms
 \[
    \lambda x_1 \ . \ \lambda x_2 \ . \ \ldots \ \lambda x_k \ . \ \pi(x_i)
 \]
-where $\pi(x_i)$ is a projection on $x_i$ and has type $\tau$.
+where \pi(x_i) is a projection on x_i and has type \tau.
 The projection is computed using the following recursive unification procedure:
 \[
 \begin{array}{llll}
-N : \sigma  \simeq  \tau &  \{ N \} & \mbox{if $\sigma\sqcap\tau \neq \bot$} \\
+N : \sigma  \simeq  \tau &  \{ N \} & \mbox{if \sigma\sqcap\tau \neq \bot} \\
 N : \sigma_1 \times \sigma_2  \simeq  \tau & N.1: \sigma_1 \simeq \tau \ \ \cup \ \ 
 					     N.2: \sigma_2 \simeq \tau \\
 N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau 
@@ -769,7 +765,7 @@ N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau
       else []
 
 \end{spec}
-  $\lambda$-binders are matched by matching every pair of pattern against eachother.
+  \lambda-binders are matched by matching every pair of pattern against eachother.
   The pair of patterns that are compared must match precisely the same instances, thus,
   for example embed patterns must be equal.
   The variables that are bound by the patterns are substituted into the conditions and
@@ -793,72 +789,75 @@ N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau
   aligning the same pattern matches.
 \begin{spec}
 
-   def matchPattern(context,pat1:Pattern,pat2:Pattern,pairs,S1,S2):
-       Option (List (Var * MS.Term) * List (Var * MS.Term)) = 
-       case (pat1,pat2)
-         of (VarPat((x,srt1), _),VarPat((y,srt2), _)) ->
-	    let z  = freshBoundVar(context,srt1) in
-	    let S1 = cons(((x,srt1),Var(z,noPos)),S1) in
-	    let S2 = cons(((y,srt2),Var(z,noPos)),S2) in
-	    matchPatterns(context,pairs,S1,S2)
-	  | (EmbedPat(c1,None,srt1,_),EmbedPat(c2,None,srt2,_)) -> 
-            if c1 = c2
-		then matchPatterns(context,pairs,S1,S2)
-	    else None
-	  | (EmbedPat(c1,Some pat1,srt1,_),EmbedPat(c2,Some pat2,srt2,_)) -> 
-	    if c1 = c2
-		then matchPattern(context,pat1,pat2,pairs,S1,S2)
-	    else None
-	  | (RecordPat(fields1, _),RecordPat(fields2, _)) -> 
-	    let pairs1 = ListPair.map (fn ((_,p1),(_,p2))-> (p1,p2)) (fields1,fields2) in
-	    matchPatterns(context,pairs1 ++ pairs,S1,S2)
-	  | (WildPat(srt1, _),WildPat(srt2, _)) -> Some(S1,S2)
-	  | (StringPat(s1, _),StringPat(s2, _)) -> 
-	    if s1 = s2 then matchPatterns(context,pairs,S1,S2) else None
-	  | (BoolPat(b1, _),BoolPat(b2, _)) -> 
-	    if b1 = b2 then matchPatterns(context,pairs,S1,S2) else None
-	  | (CharPat(c1, _),CharPat(c2, _)) -> 
-	    if c1 = c2 then matchPatterns(context,pairs,S1,S2) else None
-	  | (NatPat(i1, _),NatPat(i2, _)) -> 
-	    if i1 = i2 then matchPatterns(context,pairs,S1,S2) else None
+   op matchPattern(context: Context, pat1: Pattern, pat2: Pattern, pairs: List(Pattern * Pattern),
+                   S1: VarSubst, S2: VarSubst)
+      : Option (VarSubst * VarSubst) = 
+      case (pat1,pat2)
+        of (VarPat((x,srt1), _),VarPat((y,srt2), _)) ->
+           let z  = freshBoundVar(context,srt1) in
+           let S1 = cons(((x,srt1),Var(z,noPos)),S1) in
+           let S2 = cons(((y,srt2),Var(z,noPos)),S2) in
+           matchPatterns(context,pairs,S1,S2)
+         | (EmbedPat(c1,None,srt1,_),EmbedPat(c2,None,srt2,_)) -> 
+           if c1 = c2
+               then matchPatterns(context,pairs,S1,S2)
+           else None
+         | (EmbedPat(c1,Some pat1,srt1,_),EmbedPat(c2,Some pat2,srt2,_)) -> 
+           if c1 = c2
+               then matchPattern(context,pat1,pat2,pairs,S1,S2)
+           else None
+         | (RecordPat(fields1, _),RecordPat(fields2, _)) -> 
+           let pairs1 = ListPair.map (fn ((_,p1),(_,p2))-> (p1,p2)) (fields1,fields2) in
+           matchPatterns(context,pairs1 ++ pairs,S1,S2)
+         | (WildPat(srt1, _),WildPat(srt2, _)) -> Some(S1,S2)
+         | (StringPat(s1, _),StringPat(s2, _)) -> 
+           if s1 = s2 then matchPatterns(context,pairs,S1,S2) else None
+         | (BoolPat(b1, _),BoolPat(b2, _)) -> 
+           if b1 = b2 then matchPatterns(context,pairs,S1,S2) else None
+         | (CharPat(c1, _),CharPat(c2, _)) -> 
+           if c1 = c2 then matchPatterns(context,pairs,S1,S2) else None
+         | (NatPat(i1, _),NatPat(i2, _)) -> 
+           if i1 = i2 then matchPatterns(context,pairs,S1,S2) else None
 %
 % Possibly generalize the matching to include matching on (t1,t2), assuming t1 can
 % contain meta variables.
 % 
-	  | (QuotientPat(p1,t1,_),QuotientPat(p2,t2,_)) -> 
-	    if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
-	  | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) -> 
-	    if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
-	  | _ -> 
-	     case matchIrefutablePattern(context,pat1,S1)
-	       of None -> None
-		| Some S1 -> 
-	     case matchIrefutablePattern(context,pat2,S2)
-	       of Some S2 -> matchPatterns(context,pairs,S1,S2)
-		| None -> None
+         | (QuotientPat(p1,t1,_),QuotientPat(p2,t2,_)) -> 
+           if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
+         | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) -> 
+           if equalTerm?(t1,t2) then matchPatterns(context,pairs,S1,S2) else None
+         | _ -> 
+            case matchIrefutablePattern(context,pat1,S1)
+              of None -> None
+               | Some S1 -> 
+            case matchIrefutablePattern(context,pat2,S2)
+              of Some S2 -> matchPatterns(context,pairs,S1,S2)
+               | None -> None
 
-  def matchPatterns(context,pairs,S1,S2) = 
-      case pairs
-        of (p1,p2)::pairs -> matchPattern(context,p1,p2,pairs,S1,S2)
-	 | [] -> Some (S1,S2)	   
-  def matchIrefutablePattern(context,pat:Pattern,S): Option (List (Var * MS.Term)) = 
-      case pat
-        of WildPat _ -> Some S
-	 | VarPat((x,s),a) -> 
-	   let z = freshBoundVar(context,s) in 
-	   Some(cons(((x,s),Var(z,a)),S))
-	 | RecordPat(fields, _) -> 
-	   let
-	       def loop(fields,S): Option (List (Var * MS.Term)) = 
-		   case fields
-		     of (l,p)::fields -> 
-			(case matchIrefutablePattern(context,p,S)
-			   of Some S -> loop(fields,S)
-			    | None -> None)
-		      | [] -> Some S
-	   in
-		loop(fields,S)
-	 | _ -> None
+  op matchPatterns(context: Context, pairs: List(Pattern * Pattern), S1: VarSubst, S2: VarSubst)
+     : Option (VarSubst * VarSubst) = 
+     case pairs
+       of (p1,p2)::pairs -> matchPattern(context,p1,p2,pairs,S1,S2)
+        | [] -> Some (S1,S2)	   
+  op matchIrefutablePattern(context: Context, pat: Pattern, S: VarSubst)
+     : Option VarSubst = 
+     case pat
+       of WildPat _ -> Some S
+        | VarPat((x,s),a) -> 
+          let z = freshBoundVar(context,s) in 
+          Some(cons(((x,s),Var(z,a)),S))
+        | RecordPat(fields, _) -> 
+          let
+              def loop(fields,S): Option VarSubst = 
+                  case fields
+                    of (l,p)::fields -> 
+                       (case matchIrefutablePattern(context,p,S)
+                          of Some S -> loop(fields,S)
+                           | None -> None)
+                     | [] -> Some S
+          in
+               loop(fields,S)
+        | _ -> None
 
 
 \end{spec}
@@ -1005,7 +1004,7 @@ skolemization transforms a proper matching problem into an inproper one.
 	 | Quotient(s,_,_) -> occursRec(subst,v,s)
 
   def dereferenceSort(subst:Subst,srt) = 
-      case srt:Sort
+      case srt
         of TyVar(v, _) -> 
 	   (case StringMap.find(subst.1,v)
               of Some srt -> dereferenceSort(subst,srt)	
@@ -1034,8 +1033,9 @@ skolemization transforms a proper matching problem into an inproper one.
 			then unify(subst,s1,s2,equals)
 		      else NotUnify(srt1,srt2))
 	def unify(subst,srt1:Sort,srt2:Sort,equals) : Unification = 
-	    case (dereferenceSort(subst,srt1):Sort,dereferenceSort(subst,srt2):Sort)
-	      of (CoProduct(r1,_),CoProduct(r2,_)) -> 
+	    case (dereferenceSort(subst,srt1),dereferenceSort(subst,srt2))
+	      of (Boolean _, Boolean_) -> Unify subst
+               | (CoProduct(r1,_),CoProduct(r2,_)) -> 
 		 unifyCP(subst,srt1,srt2,r1,r2,equals)
 	       | (Product(r1,_),Product(r2,_)) -> 
 		 unifyP(subst,srt1,srt2,r1,r2,equals)
@@ -1044,7 +1044,7 @@ skolemization transforms a proper matching problem into an inproper one.
 		    of Unify (subst) -> unify(subst,t2,s2,equals)
 		     | notUnify -> notUnify)
 	       | (Quotient(ty1,trm1,_),Quotient(ty2,trm2,_)) -> 
-		 if trm1 = trm2
+		 if equalTerm?(trm1, trm2)
 		    then unify(subst,ty1,ty2,equals)
 		 else NotUnify (srt1,srt2)
 	       | (Subsort(ty,_,_),ty2) -> unify(subst,ty,ty2,equals)
@@ -1153,12 +1153,6 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
       mapTerm(doDeNormalizeTerm,fn s -> s,fn p -> p)
 
 
-\end{spec}
-
-\subsection{Create a fresh context}
-
-\begin{spec}
-
  op makeContext : Spec -> Context
 
  def makeContext spc = 
@@ -1178,11 +1172,6 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
       traceIndent = traceIndent,
       boundVars = bv,counter = counter}
 
-\end{spec}
-
-
-
-\begin{spec}
 
   op printSubst: fa(a) StringMap(ASort a) * NatMap.Map(ATerm a) -> ()
   def printSubst(sortSubst,termSubst) = 
@@ -1197,17 +1186,16 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
 	     writeLine(Nat.toString i^" |-> "^ printTerm trm^" "))
 	termSubst;
 	writeLine "")
-\end{spec}
-\subsection{Freeze and thaw type variables in term}
+
+(* Freeze and thaw type variables in term
 In order to ensure that type variables in a term to be rewritten are not
 participating in unification we introduce freeze and thaw operations.
-
-\begin{spec} 
+*)
 
  def freezeTerm(spc,term:MS.Term) = 
      let term = normalizeTerm spc term in
      let
-	doFreeze = fn (s as TyVar _:Sort) -> Base(mkUnQualifiedId("TypeVar!"),[s],noPos):Sort
+	doFreeze = fn (s as TyVar _) -> Base(mkUnQualifiedId("TypeVar!"),[s],noPos)
 		  | s -> s
      in
      mapTerm(fn tm -> tm,doFreeze,fn p -> p) term
@@ -1215,11 +1203,10 @@ participating in unification we introduce freeze and thaw operations.
  def thawTerm(term:MS.Term) =
      let term = deNormalizeTerm term in
      let
-	doThaw = fn(Base(Qualified (UnQualified,"TypeVar!"),[s],_):Sort) -> s
+	doThaw = fn(Base(Qualified (UnQualified,"TypeVar!"),[s],_)) -> s
 		  | s -> s
      in
      mapTerm(fn tm -> tm,doThaw,fn p -> p) term
 
 endspec
 
-\end{spec}
