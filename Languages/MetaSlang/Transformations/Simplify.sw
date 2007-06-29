@@ -289,6 +289,11 @@ spec
                        ("2",Fun(Nat n2,_,_))],_), _)
            | n1 = n2 ->
          t1
+       | IfThenElse(t1,t2,t3,a) ->
+         (case t1 of
+            | Fun(Bool true, _,_) -> t2
+            | Fun(Bool false,_,_) -> t1
+            | _ -> term)
        | _ -> case simplifyCase spc term of
 	       | Some tm -> tm
 	       | None -> tupleInstantiate spc term
