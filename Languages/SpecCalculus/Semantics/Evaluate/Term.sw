@@ -24,6 +24,7 @@ SpecCalc qualifying spec {
  import translate ProofCheck by {Set._ +-> PCSet._}
  import Expand			
  import Reduce
+ import Transform
 
  %% Experimental file:
  import Make   % we don't yet have SpecCalc term to dispatch to this,
