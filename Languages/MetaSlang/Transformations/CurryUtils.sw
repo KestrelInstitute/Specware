@@ -44,6 +44,7 @@ CurryUtils qualifying spec
     let def aux(t,vs) =
           case t of
 	    | Lambda([(p,_,body)],_) ->
+              let p = deRestrict p in
 	      if (case p of
 		    | VarPat _ -> true
 		    | RecordPat _ -> true
