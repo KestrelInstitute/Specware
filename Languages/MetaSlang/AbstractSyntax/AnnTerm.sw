@@ -451,7 +451,18 @@ MetaSlang qualifying spec
    let (tvs, tm) = 
        case t of
 	 | Pi (tvs, tm, _) -> (tvs, tm)
-	 | And _ -> fail ("unpackTerm: Trying to unpack an And of terms.")
+         | And ([tm], _) -> ([], tm)
+	 | And (tms, _) ->
+           (let real_tms = filter (fn tm ->
+                                     case tm of
+                                       | Any _ -> false
+                                       | SortedTerm (Any _, _, _) -> false
+                                       | _ -> true)
+                             tms
+            in
+              case real_tms of
+                | [tm] -> ([], tm)
+                | _ -> fail ("unpackTerm: Trying to unpack an And of terms."))
 	 | _ -> ([], t)
    in
    case tm of
@@ -482,7 +493,12 @@ MetaSlang qualifying spec
      | Var        ((_,srt), _)              -> srt
      | Fun        (_,srt,   _)              -> srt
      | The        ((_,srt),_,_)             -> srt
-     | Lambda     (Cons((pat,_,body),_), a) -> Arrow(patternSort pat, termSort body, a)
+     | Lambda     ([(pat,_,body)], a)    -> Arrow(patternSort pat, termSort body, a)
+     | Lambda     (Cons((pat,_,body),_), a) ->
+       let dom = case pat of
+                   | RestrictedPat(p, t, a) -> patternSort p
+                   | _ -> patternSort pat
+       in Arrow(dom, termSort body, a)
      | Lambda     ([],                   _) -> System.fail "termSort: Ill formed lambda abstraction"
      | IfThenElse (_,t2,t3, _)              -> termSort t2
      | Seq        (_,       a)              -> Product([],a)
@@ -526,9 +542,7 @@ MetaSlang qualifying spec
        %% so users of that result must be prepared to handle that discrepency between 
        %% this result and the actual type referenced.
      | RestrictedPat(p, t,    a) ->
-       %% Subsort  (patternSort p,Lambda([(p,mkTrueA a,t)],a),a)
-       %% Subsort is correct but would require generalization in Lambda case of termSort
-       patternSort p
+       Subsort(patternSort p,Lambda([(p,mkTrueA a,t)],a),a)
      | SortedPat    (_, srt,  _) -> srt
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
