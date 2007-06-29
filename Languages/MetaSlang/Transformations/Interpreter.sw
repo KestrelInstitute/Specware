@@ -3,10 +3,10 @@
 
 MSInterpreter qualifying
 spec
-  import /Languages/MetaSlang/Specs/Environment
+  import ../Specs/Environment
   import ../Specs/Utilities
 
-  sort Value =
+  type Value =
     | Int         Integer
     | Char        Char
     | String      String
@@ -20,7 +20,7 @@ spec
     | RecClosure  Match * Subst * List Id
     | Unevaluated MS.Term
 
-  sort Subst = List (Id * Value)
+  type Subst = List (Id * Value)
 
   op  unevaluated?: Value -> Boolean
   def unevaluated? x = embed? Unevaluated x
@@ -41,6 +41,20 @@ spec
 %%% --------------------
   op  eval: MS.Term * Spec -> Value
   def eval(t,spc) = evalRec(t,emptySubst,spc,0)
+
+  op evalFullyReducibleSubTerms(t: MS.Term,spc: Spec): MS.Term =
+    mapSubTerms (fn st ->
+                 if ~(constantTerm? st)
+                   then
+                     let v = eval(st,spc) in
+                     if fullyReduced? v
+                       then valueToTerm v
+                       else st
+                   else st)
+      t
+
+  op partialEval(t: MS.Term,spc: Spec): MS.Term =
+    valueToTerm(eval(t,spc))
 
   op  traceEval?: Boolean
   def traceEval? = false
@@ -383,7 +397,7 @@ spec
 	    | _ -> letrecIds = [] & dynSb = storedSb
     
  %% Adapted from HigherOrderMatching 
- sort MatchResult = | Match Subst | NoMatch | DontKnow
+ type MatchResult = | Match Subst | NoMatch | DontKnow
 
  op  patternMatchRules : Match * Value * Subst * Spec * Nat -> Option Value
  def patternMatchRules(rules,N,sb,spc,depth) = 
@@ -834,6 +848,15 @@ spec
       | Closure(f,sb)   -> mkLetOrsubst(Lambda(f,noPos),sb,emptySubst)
       | RecClosure(f,_,_) -> Lambda(f,noPos)
       | Unevaluated t  -> t
+
+  op fullyReduced?(v: Value): Boolean =
+    case v of
+      | Unevaluated_  -> false
+      | Closure _ -> false
+      | RecClosure _ -> false
+      | RecordVal rm -> all (fn (_,x) -> fullyReduced? x) rm
+      | Constructor(_,arg) -> fullyReduced? arg
+      | _ -> true
 
   op  unknownSort: Sort
   def unknownSort = mkTyVar "Unknown"
