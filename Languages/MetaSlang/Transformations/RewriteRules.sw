@@ -238,7 +238,7 @@ Extract rewrite rules from function definition.
           let w = HigherOrderMatching.freshVar(context,srt)     in
           Some(w,List.cons((num,srt),vars),S)
         | QuotientPat(pat,cond,_)  -> None %% Not implemented
-        | RestrictedPat(pat,cond,_)  -> None %% Not implemented
+        | RestrictedPat(pat,cond,_)  -> patternToTerm(context,pat,vars,S) %% Not implemented
 	| AliasPat(VarPat(v, _),p,_) -> 
 	  (case patternToTerm(context,p,vars,S) 
              of None -> None
@@ -419,17 +419,17 @@ is rewritten to
  op printRule: RewriteRule -> ()
  def printRule({name,tyVars,freeVars,condition,lhs,rhs}:RewriteRule) = 
      (
-       String.writeLine ("Rewrite rule ------- "^name^" -------");
-       List.app (fn tv -> String.toScreen(tv^" ")) tyVars;
-       if List.null tyVars then () else String.writeLine "";
-       List.app (fn (n,srt) -> String.toScreen(Nat.toString n^" : "^
-				printSort srt^" ")) freeVars;
+       writeLine ("Rewrite rule ------- "^name^" -------");
+       app (fn tv -> toScreen(tv^" ")) tyVars;
+       if null tyVars then () else writeLine "";
+       app (fn (n,srt) -> toScreen(toString n^" : " ^ printSort srt^" "))
+         freeVars;
        if List.null freeVars then () else String.writeLine "";
        (case condition 
-          of Some c -> (String.writeLine(printTerm c)) 
+          of Some c -> (writeLine(printTerm c)) 
            | None -> ());
-       String.writeLine ("Rewrite : "^printTermWithSorts lhs^ " ---> "^
-       			  printTermWithSorts rhs)  
+       writeLine ("Rewrite : "^printTerm lhs^ " ---> "^
+                    printTerm rhs)  
      )	
 
 
