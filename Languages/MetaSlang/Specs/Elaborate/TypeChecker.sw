@@ -466,6 +466,9 @@ TypeChecker qualifying spec
    in
      maybePiTerm (new_tvs, SortedTerm (elaborated_tm, srt, pos))
 
+ %%% Bound to false in swe in toplevel.lisp because not a problem with the interpreter
+ op complainAboutImplicitPolymorphicOps?: Boolean = true
+
  def collectUsedTyVars (srt, info, dfn, env) =
    let tv_cell = Ref [] : Ref TyVars in
    let 
@@ -487,10 +490,12 @@ TypeChecker qualifying spec
 	   (let {name = _, uniqueId, link} = ! mtv in
 	    case link of
 	      | Some s -> scan s
-	      | None -> 
+	      | None ->
+                if complainAboutImplicitPolymorphicOps? then
 	        error (env, 
 		       "Incomplete type for op " ^ (printQualifiedId (primaryOpName info)) ^ ":\n" ^(printSort srt), 
-		       termAnn dfn))
+		       termAnn dfn)
+                else ())
 	 | And (srts, _) -> app scan srts
 	 | Any _ -> ()
 
@@ -1672,3 +1677,4 @@ TypeChecker qualifying spec
       aux (tvs, StringSet.empty)
 
 endspec
+ 
