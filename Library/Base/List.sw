@@ -79,21 +79,31 @@ List qualifying spec
        | []     -> l2
        | hd::tl -> Cons(hd,concat(tl,l2))
 
-  def ++ (s1,s2) = concat(s1,s2)
+  def ++ (l1,l2) = 
+    case l1 of
+       | []     -> l2
+       | hd::tl -> Cons(hd,tl ++ l2)
+
 
   def nth(hd::tl,i) =  % list is non-empty because length > i >= 0
     if i = 0 then hd
              else nth(tl,i-1)
+
+  theorem null_length is [a] fa(l) null l = (length l = 0)
+  proof Isa
+    apply(case_tac l)
+    apply(auto)
+  end-proof
 
   def nthTail(l,i) =
     if i = 0 then l
              else nthTail(tl l,i-1)
   proof Isa "measure (\_lambda(l,i). i)" end-proof
   proof Isa nthTail_Obligation_subsort
-  apply (auto simp add: null_empty)
+  apply (auto simp add: List__null_length)
   end-proof
   proof Isa nthTail_Obligation_subsort1
-  apply(auto)
+  apply(auto, arith)
   end-proof
 
   theorem length_nthTail is
@@ -123,7 +133,10 @@ List qualifying spec
       else removeFirstElems(tl l,i-1)
   proof Isa "measure (\_lambda(l,i). i)" end-proof
   proof Isa removeFirstElems_Obligation_subsort
-    apply(auto simp add: null_empty)
+    apply(auto simp add: List__null_length)
+  end-proof
+  proof Isa removeFirstElems_Obligation_subsort1
+  apply(auto, arith)
   end-proof
 
   theorem length_removeFirstElems is
@@ -140,10 +153,13 @@ List qualifying spec
     collectFirstElems(removeFirstElems(l,i),j-i)
 
   proof Isa sublist__collectFirstElems_Obligation_subsort
-    apply(auto simp add: null_empty)
+    apply(auto simp add: List__null_length)
   end-proof
   proof Isa sublist__collectFirstElems_Obligation_subsort0
-    apply(auto simp add: null_empty)
+    apply(auto simp add: List__null_length)
+  end-proof
+  proof Isa sublist__collectFirstElems_Obligation_subsort2
+  apply(auto, arith)
   end-proof
   proof Isa sublist__collectFirstElems "measure (\_lambda(l,i). i)" end-proof
 
@@ -152,6 +168,9 @@ List qualifying spec
   proof Isa [simp]
     apply(induct_tac l)
     apply(auto)
+  end-proof
+  proof Isa List__sublist_Obligation_subsort1
+  apply(auto, arith)
   end-proof
 
 
