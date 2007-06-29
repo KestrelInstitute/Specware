@@ -499,7 +499,7 @@
 	 (*current-temp-file* tmp-sw)
 	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
 	 (SpecCalc::noElaboratingMessageFiles (list tmp-cl))
-	 (TypeChecker::complainAboutImplcitPolymorphicOps? nil)
+	 (TypeChecker::complainAboutImplicitPolymorphicOps? nil)
 	 (old-swpath (or (specware::getEnv "SWPATH") ""))
 	 (new-swpath (format nil
 			     #-mswindows "~A:~A:~A" #+mswindows "~A;~A;~A"
@@ -1301,6 +1301,7 @@
   #-(OR UNIX MSWINDOWS) (format t "~&Neither the UNIX nor MSWINDOWS feature is present, so I don't know what to do!~%")
   )
 
+;; Function for getting Value from UID string, for use in testing
 (defun sc-val (str)
   (let ((id-str (norm-unitid-str str)))
   (cddr (Specware::evaluateUnitId id-str))))
