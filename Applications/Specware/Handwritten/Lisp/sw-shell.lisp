@@ -252,6 +252,8 @@
 
 (defvar *commands-in-process* 0)
 
+(defvar *current-command-processor* 'process-sw-shell-command)
+
 ;;; Used by slime-based interface
 ;;; From slime.el:  (defvar sw:*shell-command-function* "SWShell::process-raw-command")
 (defun process-raw-command (command argstr)
@@ -262,9 +264,10 @@
   ;; But we can at least deal gracefully with whatever does reach here.
   (incf *commands-in-process*)
   (let ((val (multiple-value-list
-	      (process-sw-shell-command (if (symbolp command)
-					    (intern (symbol-name command) *sw-shell-pkg*) 
-					  command)
+	      (funcall *current-command-processor*
+		       (if (symbolp command)
+			   (intern (symbol-name command) *sw-shell-pkg*) 
+			   command)
 					argstr))))
     (decf *commands-in-process*)
     (if (null val)
@@ -277,7 +280,17 @@
   (cond ((and (consp command) (null argstr))
 	 (lisp-value (multiple-value-list (eval command))))
 	((symbolp command)
-	 (case command
+	 (case command 
+	   (transform (let* ((spec-uid (cl-user::norm-unitid-str argstr))
+			     (val (cdr (Specware::evaluateUnitId (or spec-uid cl-user::*last-unit-Id-_loaded*)))))
+			(if (or (null val) (not (eq (car val) ':|Spec|)))
+			    (format t "Not a spec!")
+			    (let ((spc (cdr val)))
+			      (when spec-uid (setq cl-user::*last-unit-Id-_loaded* spec-uid))
+			      (initialize-transform-session spc)
+			      (setq *current-command-processor* 'process-transform-shell-command)
+			      (format t "Entering Transformation Construction Shell")))
+			(values)))
 	   (help      (let ((cl-user::*sw-help-strings*
 			     (append *sw-shell-help-strings*
 				     (if *developer?*
