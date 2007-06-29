@@ -123,8 +123,4 @@ IsaTermPrinter qualifying spec
     else
     splitStringAt(removeWhiteSpace(substring(str,lpos+1,rpos)), ",")
    
-  op  removeEmpty: List String \_rightarrow List String
-  def removeEmpty l =
-    filter (fn s \_rightarrow s ~= "") l
-
 endspec
