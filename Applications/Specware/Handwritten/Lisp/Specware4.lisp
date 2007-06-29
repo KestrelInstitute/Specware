@@ -223,6 +223,7 @@
 
     ;; Specware Shell
     "Applications/Specware/Handwritten/Lisp/sw-shell"
+    "Applications/Specware/Handwritten/Lisp/transform-shell"
 
     ;; Test harness
     "Applications/Handwritten/Lisp/test-harness"
