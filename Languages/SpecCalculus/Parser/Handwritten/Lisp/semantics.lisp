@@ -315,10 +315,12 @@
        (bind-op-parameters (cdr params) term l r))))
 
 (defun make-restricted-formal-pattern (pat pred l r)
-  (ms::mkSortedPat-2
-   pat 
-   (ms::mkSubsort-2 (freshMetaTypeVar l r)
-		    (ms::mkLambda-2 pat pred))))
+  (make-restricted-pattern pat pred l r)
+;  (ms::mkSortedPat-2
+;   pat 
+;   (ms::mkSubsort-2 (freshMetaTypeVar l r)
+;		    (ms::mkLambda-2 pat pred)))
+  )
 
 (defun make-fixity (associativity priority l r)
   (declare (ignore l r))
