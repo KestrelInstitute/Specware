@@ -263,7 +263,7 @@ accepted in lieu of prompting."
   (define-key map "\C-c\C-e" 'sw:evaluate-region)
   (define-key map "\C-c\C-s" 'sw:set-swe-spec)
   (define-key map "\C-c\C-u" 'sw:cl-unit)
-  (define-key map "\C-ca"    'sw:apropos-symbol)
+  (define-key map "\C-c\C-a"    'sw:apropos-symbol)
   (define-key map "\C-c!"    'cd-current-directory)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
