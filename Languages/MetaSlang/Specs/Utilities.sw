@@ -465,7 +465,7 @@ Utilities qualifying spec
    in 
    substitute2(M,sub,freeNames)
  
- def substitute2(M,sub,freeNames) = 
+ op substitute2(M: MS.Term, sub: List (Var * MS.Term), freeNames: StringSet.Set): MS.Term = 
    % let _ = String.writeLine "Map is " in
    % let _ = List.app (fn ((v,_),tm) -> 
    %		       String.writeLine (v^" |-> "^MetaSlangPrint.printTerm tm)) sub in	
@@ -617,6 +617,11 @@ Utilities qualifying spec
                 		 cons((mkVarPat v,arg),assignments)
 		 | _ -> cons((mkVarPat v,arg),assignments)))
 	    [] (fields,fields2) 
+
+
+ op renameBoundVars(term: MS.Term, vs: List Var): MS.Term =
+   let freeNames = StringSet.fromList(map(fn (n,_) -> n) vs) in
+   substitute2(term,[],freeNames)
 
  %- --------------------------------------------------------------------------
 
@@ -849,6 +854,11 @@ Utilities qualifying spec
      | Fun(Bool false,_,_) -> mkAnd(t1,t2)
      | _ ->
    IfThenElse(t1,t2,t3,noPos)
+
+ op [a] deRestrict(p: APattern a): APattern a =
+   case p of
+     | RestrictedPat(p,_,_) -> p
+     | _ -> p
 
  %% Utilities.mkOr, etc:
 
@@ -1184,6 +1194,10 @@ Utilities qualifying spec
 	  (case (N1, N2) of
 	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 <=> b2), boolSort, noPos))
 	     | _ -> None)
+      | IfThenElse(p,q,r,_) ->
+        if trueTerm? p then Some q
+          else if falseTerm? p then Some r
+          else None
       | _ -> None
 
  op  disjointMatches: Match -> Boolean
