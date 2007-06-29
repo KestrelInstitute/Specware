@@ -43,16 +43,16 @@
 
 (set-pprint-dispatch '(cons splay_set_symbol) #'print_splay_set)
 
-(set-pprint-dispatch '(cons T (and cons (satisfies
-					  (lambda (x) (or (splay_set_symbol? (car x))
-							  (splay_map_symbol? (car x)))))))
+(defun splay_set_or_map? (x)
+  (or (splay_set_symbol? (car x))
+      (splay_map_symbol? (car x))))
+
+(set-pprint-dispatch '(cons T (and cons (satisfies splay_set_or_map?)))
 		     #'print_dotted_pair)
 
 (defun print_dotted_triple (strm l)
   (format strm "~@:<~W ~W ~_. ~W~:>" (car l) (cadr l)(cddr l)))
 
 (set-pprint-dispatch '(cons T (cons T (and cons
-				       (satisfies
-					(lambda (x) (or (splay_set_symbol? (car x))
-							(splay_map_symbol? (car x))))))))
+				       (satisfies splay_set_or_map?))))
 		     #'print_dotted_triple)

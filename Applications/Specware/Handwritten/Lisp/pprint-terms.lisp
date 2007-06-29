@@ -7,7 +7,8 @@
 ;(setq *print-pprint-dispatch* (copy-pprint-dispatch nil))
 
 (defun print_term (strm term)
-  (let ((*standard-output* strm))
+  (let ((*standard-output* strm)
+	(AnnSpecPrinter::useXSymbols? nil))
     (AnnSpecPrinter::printTermToTerminal term)))
 
 (defvar *print-constructors?* t)
@@ -43,8 +44,10 @@
 
 (defun print_dotted_pair (strm l)
   (format strm "~@:<~W ~_. ~W~:>" (car l) (cdr l)))
-  
-(set-pprint-dispatch '(cons T (and cons (satisfies
-					  (lambda (x) (or (term_symbol? (car x))
-							  (sort_symbol? (car x)))))))
+
+(defun sort_or_term? (x)
+  (or (term_symbol? (car x))
+      (sort_symbol? (car x))))
+
+(set-pprint-dispatch '(cons T (and cons (satisfies sort_or_term?)))
 		     #'print_dotted_pair)
