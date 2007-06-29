@@ -87,6 +87,10 @@ String qualifying spec
    in
      splitFrom(0,0)
 
+  op  removeEmpty: List String -> List String
+  def removeEmpty l =
+    filter (fn s -> s ~= "") l
+
   op  removeWhiteSpace: String -> String
   def removeWhiteSpace s =
     implode (filter (fn c -> ~(whiteSpaceChar? c)) (explode s))
