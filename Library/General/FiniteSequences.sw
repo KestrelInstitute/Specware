@@ -204,6 +204,13 @@ FSeq qualifying spec
   op map2 : [a,b,c] (a * b -> c) -> ((FSeq a * FSeq b) | equiLong) -> FSeq c
   def map2 f (s1,s2) = map f (zip (s1, s2))
 
+  % apply ternary function to all triples from three sequences:
+  op map3 : [a,b,c,d] (a * b * c -> d) ->
+                      {(sa,sb,sc) : FSeq a * FSeq b * FSeq c |
+                       sa equiLong sb && sb equiLong sc} ->
+                      FSeq d
+  def map3 f (sa,sb,sc) = map f (zip3 (sa, sb, sc))
+
   op filter : [a] (a -> Boolean) -> FSeq a -> FSeq a
   def filter = the(filter)
     (fa(p)     filter p empty = empty) &&
