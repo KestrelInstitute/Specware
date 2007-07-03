@@ -1,3 +1,4 @@
+(defpackage :Script)
 (defpackage :SWShell)
 (in-package :SWShell)
 
