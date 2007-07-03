@@ -392,8 +392,8 @@ PatternMatch qualifying spec
 	 | CharPat(ch,_)  ->    equalToConstant(charSort,mkChar(ch))
 	 | BoolPat(b,_)   ->    equalToConstant(boolSort,mkBool(b))
 	 | StringPat(s,_) ->    equalToConstant(stringSort,mkString s)
-	 | RecordPat _ -> (fn _ -> mkTrue())
-	 | _ -> (fn _ -> mkTrue())
+	 | RecordPat _ -> (fn _ -> trueTerm)
+	 | _ -> (fn _ -> trueTerm)
               
 
   def coproductFields(spc,srt) = 
@@ -473,7 +473,7 @@ PatternMatch qualifying spec
           case vs of [(_,v)] -> mkVarPat v
 	     | _ -> RecordPat(map (fn(l,v)-> (l,mkVarPat v)) vs,noPos)
       in
-      Lambda([(pat,mkTrue(),t)],noPos)
+      Lambda([(pat,trueTerm,t)],noPos)
 
   def match(context,vars,rules,default,break) = 
       case vars
@@ -572,7 +572,7 @@ PatternMatch qualifying spec
  def normalizeSimpleAlias(rules:Match): Match =
      case rules
        of [(AliasPat(VarPat(v,a1),p2,a2),cond,body)] ->
-	  [(VarPat(v,a1),mkTrue(),Apply(Lambda([(p2,cond,body)],a2),Var(v,a1),a2))]
+	  [(VarPat(v,a1),trueTerm,Apply(Lambda([(p2,cond,body)],a2),Var(v,a1),a2))]
 	| _ -> rules
 
  def splitPattern(arity,pat:Pattern):List Pattern =
@@ -710,6 +710,10 @@ def checkUnreachableCase(context,term,rules) =
 			    ^  printTerm term)
       else ()
 
+%%% The last case of a Lambda case has the obligation of always matching, so if it
+%%% is has | (such-that) clause, there is the obligation that it is true
+op alwaysCheckRestrictedPatInLambda?: Boolean = false
+
 def eliminateTerm context term = 
     case term
       of Lambda(rules,_) ->
@@ -719,17 +723,23 @@ def eliminateTerm context term =
 				       eliminateTerm context c,
 				       eliminateTerm context b)) rules 
 	 in
-	 if  simpleAbstraction(rules) 
-	     then Lambda(rules,noPos)
+	 if simpleAbstraction(rules) 
+           then Lambda(rules,noPos)
 	 else 
 
 	 %%%	 let _ = writeLine "Elimination from lambda " in
 	 let _ = checkUnreachableCase(context,term,rules) in
          %%% Move RestrictedPat conditions to condition
-	 let rules = map (fn (RestrictedPat(pat,rcond,_),cond,bdy) ->
+         %%% Not singleton because obligation should ensure this is always true
+         %%% unless alwaysCheckRestrictedPatInLambda?
+	 let rules =
+             case rules of
+               | [(RestrictedPat(pat,rcond,_),cond,bdy)] | ~alwaysCheckRestrictedPatInLambda? ->
+                 [(pat,cond,bdy)]
+               | _ -> map (fn (RestrictedPat(pat,rcond,_),cond,bdy) ->
 			     (pat,mkSimpConj[rcond,cond],bdy)
 			     | rule -> rule)
-	               rules
+	                rules
 	 in			      
 	 let (pat,cond,bdy) = hd rules in
 	 let bdySort = inferType(context.spc,bdy) in
@@ -785,7 +795,7 @@ def eliminateTerm context term =
 %%%	let _ = writeLine "Let pattern elimination: match" in
 	let t = match(context,
 		      map mkVar vs,
-		      [(pats,mkTrue(),mkSuccess(bdySrt,body))] :Rules,
+		      [(pats,trueTerm,mkSuccess(bdySrt,body))] :Rules,
 		      makeFail(context,bdySrt,term),
 		      mkBreak(bdySrt)) 
 	in
@@ -995,7 +1005,7 @@ endspec
 	     all (fn(_,(VarPat v3,_))-> ~(v1 = v3) | _ -> false) fields
 	  then 
 	  let letTerm:MS.Term = mkRecord(map (fn(id,(VarPat v,p))-> (id,(Var v,p))) fields) in
-	  (Lambda [(pat,mkTrue(),Match.mkLet([(mkVarPat v1,letTerm)],body))],pos0)
+	  (Lambda [(pat,trueTerm,Match.mkLet([(mkVarPat v1,letTerm)],body))],pos0)
 	  else term
 	| _ -> term
 
@@ -1081,7 +1091,7 @@ def coProductLength(spc,srt) =
 def relaxTerm(srt:Sort) = 
     case srt
       of (Arrow((Subsort(_,trm),_),_),_) -> trm
-       | _ -> mkTrue() (* Should not happen *)
+       | _ -> trueTerm (* Should not happen *)
     
 
 def convertPattern(spc,pat as (p,_):Pattern):pattern = 
@@ -1439,7 +1449,7 @@ def mkDecl(v1,access:access,v2) =
 def checkExhaustive(dag as Ref {tree,refs}:decision):Term = 
     (case tree
       of Failure -> mkFalse()
-       | Success _ -> mkTrue()
+       | Success _ -> trueTerm
        | IfEq(test,l,r) -> 
 	 let l = checkExhaustive(l) in 
 	 let r = checkExhaustive(r) in
