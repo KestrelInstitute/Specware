@@ -103,7 +103,7 @@ BitSeq qualifying spec
   % add bit sequences of same length as unsigned numbers (in modular
   % arithmetic):
 
-  op + ((bs1,bs2) : (FSeq Bit * FSeq Bit | equiLong)) infixl 25 : FSeq Bit =
+  op plus ((bs1,bs2) : (FSeq Bit * FSeq Bit | equiLong)) : FSeq Bit =
     let n = length bs1 (* = length bs2 *) in
     fromNat ((toNat bs1 + toNat bs2) rem 2 ** n, n)
 
