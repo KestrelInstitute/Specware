@@ -2,6 +2,8 @@ Script qualifying
 spec
   import Simplify, Rewriter, Interpreter
 
+  op Isomorphism.makeIsoMorphism: Spec * QualifiedId * QualifiedId \_rightarrow Spec
+
   op [a] dummy: a
 
   type Context = RewriteRules.Context
@@ -23,6 +25,7 @@ spec
     | Apply (List RuleSpec)
     | SimpStandard
     | PartialEval
+    | IsoMorphism(QualifiedId \_times QualifiedId)
 
  op mkAt(qid: QualifiedId, steps: List Script): Script = At([Def qid], mkSteps steps)
  op mkSteps(steps: List Script): Script = if length steps = 1 then hd steps else Steps steps
@@ -125,7 +128,7 @@ spec
   op makeRules (context: Context, spc: Spec, rules: List RuleSpec): List RewriteRule =
     foldr (\_lambda (rl,rules) \_rightarrow makeRule(context, spc, rl) ++ rules) [] rules
 
-  op maxRewrites: Nat = 10
+  op maxRewrites: Nat = 15
 
   op interpretTerm(spc: Spec, script: Script, term: MS.Term): MS.Term =
     case script of
@@ -173,6 +176,8 @@ spec
                    let newdfn = maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)) in
                    setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
           spc locs
+      | IsoMorphism(iso,inv_iso) \_rightarrow
+        makeIsoMorphism(spc, iso, inv_iso)
 
   op interpret(spc: Spec, script: Script): Spec =
     interpretSpec(spc, script)
