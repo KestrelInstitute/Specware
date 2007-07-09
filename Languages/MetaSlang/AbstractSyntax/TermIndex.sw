@@ -90,7 +90,8 @@ spec
       | _ -> 0
 
  def subterms = 
-     fn [Record(fields,_)] -> List.map (fn (_,M) -> M) fields
+     fn [Record(fields,_)] | length fields > 1 && (hd fields).1 = "1" ->
+              map (fn (_,M) -> M) fields
       | Ms -> Ms 
 
  def indexTerm (index,term,id) = 
