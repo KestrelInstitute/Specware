@@ -172,7 +172,8 @@ SpecToLisp qualifying spec {
  def specId (id, pkg) = 
    % TODO:  Optimize this to avoid needless consing for normal cases?
    let id = translate (fn #|  -> "\\|" 
-                        | #`  -> "\\`" 
+                        | #`  -> "\\`"
+                        | #'  -> "\\'"
 			| #\\ -> "\\\\" 
 			| ch  -> Char.toString ch)
                       id
@@ -180,7 +181,7 @@ SpecToLisp qualifying spec {
    let ID = if generateCaseSensitiveLisp? then 
               id
 	    else 
-	      String.map Char.toUpperCase id 
+	      String.map toUpperCase id 
    in
      if isLispString ID || sub (id, 0) = #! then
        "|!" ^ id ^ "|"
