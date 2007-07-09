@@ -160,7 +160,8 @@ spec
 % form let u = project(1) z, v = project(2) z in ..
 %
  op  tupleInstantiate: Spec -> MS.Term -> MS.Term
- def tupleInstantiate spc (term) = 
+ def tupleInstantiate spc (term) =
+     let term = removeUnnecessaryVariable spc term in
      let
 	def elimTuple(zId,srt,fields,body) =
           let (zId,body) =
@@ -213,7 +214,7 @@ spec
 		Apply(Fun(Op(Qualified("TranslationBuiltIn","mkTuple"),_),_,_),
 		      Record(fields,_),_))],body,_) -> 
 	  elimTuple(zId,srt,fields,body)
-	| _ -> removeUnnecessaryVariable spc (term)
+	| _ -> term
 
  op  simplifyOne: Spec -> MS.Term -> MS.Term
  def simplifyOne spc term =
@@ -403,7 +404,7 @@ spec
   def simplifyExists1(vs,cjs) =
     mkSimpBind(Exists1,vs,mkSimpConj cjs)    
 
-  def simplifyCase spc term =
+  op simplifyCase (spc: Spec) (term: MS.Term): Option MS.Term =
     case term of
       %% case (a,b,c) of (x,y,z) -> g(x,y,z) -> g(a,b,c)
       | Apply(Lambda([(RecordPat(pats,_),_,body)],_),Record(acts,_),_) ->
@@ -429,6 +430,10 @@ spec
                                 simplifyOne spc (mkLet([(v,val)],body)))
                          body binds))
 	  else None
+      %% case v of (x,y) -> ... --> let x = v.1 and y = v.2 in ...
+      | Apply(Lambda([(RecordPat(pats,_),_,body)],_),v as Var(vr,_),_) ->
+        Some (simplifyOne spc
+                (mkLet(map (fn (id,p) -> (p,mkProjection(id,v,spc))) pats, body)))
       | _ -> None
 
   op  makeSubstFromRecord: List(Id * Pattern) * List(Id * MS.Term) -> List(Var * MS.Term)
@@ -448,10 +453,12 @@ spec
       | Lambda _ \_rightarrow true
       | _ -> simpleTerm term
 
+ op traceSimplify?: Boolean = false
+
  def simplify spc term =
-   % let _ = toScreen("Before:\n" ^ printTerm term ^ "\n") in
+   let _ = if traceSimplify? then toScreen("Before:\n" ^ printTerm term ^ "\n") else () in
    let simp_term = mapSubTerms(simplifyOne spc) term in
-   % let _ = toScreen("Simp:\n" ^ printTerm simp_term ^ "\n\n") in
+   let _ = if traceSimplify? then toScreen("Simp:\n" ^ printTerm simp_term ^ "\n\n") else () in
    simp_term
 
  op  simplifySpec: Spec -> Spec
