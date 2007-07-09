@@ -294,7 +294,7 @@ beta contraction.
 		 		  
 
 
- def bindPattern (pat,trm):MS.Term = Lambda([(pat,mkTrue(),trm)],noPos)
+ def bindPattern (pat,trm):MS.Term = Lambda([(pat,trueTerm,trm)],noPos)
 
 % Get list of applications, assumes that the term is already dereferenced.
  op  headForm : MS.Term -> List MS.Term
@@ -1002,6 +1002,9 @@ skolemization transforms a proper matching problem into an inproper one.
 	       | None -> v = w) 
 	 | Subsort(s,_,_) -> occursRec(subst,v,s)
 	 | Quotient(s,_,_) -> occursRec(subst,v,s)
+         | Boolean _ -> false
+%         | _ -> let _ = writeLine("occursRec missing case: "^printSort srt) in
+%                false
 
   def dereferenceSort(subst:Subst,srt) = 
       case srt
@@ -1103,10 +1106,10 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
   op doNormalizeTerm : Spec -> MS.Term -> MS.Term
   def doNormalizeTerm spc term = 
     case term of
-      | Let ([(pat,N)],M,a) -> Apply (Lambda([(pat,mkTrue(),M)],a),N,a)
+      | Let ([(pat,N)],M,a) -> Apply (Lambda([(pat,trueTerm,M)],a),N,a)
       | Let (decls,M,a) -> 
          let (pats,Ns) = ListPair.unzip decls in
-          Apply (Lambda([(mkTuplePat pats,mkTrue(),M)], a),mkTuple Ns,a)
+          Apply (Lambda([(mkTuplePat pats,trueTerm,M)], a),mkTuple Ns,a)
 %       | IfThenElse (M,N,P) -> 
 %          let srt = Utilities.inferType(spc,N) in
 %          Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),Nonfix),
