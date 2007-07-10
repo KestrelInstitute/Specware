@@ -403,6 +403,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
      matchPairs(context,emptySubstitution,insert(M,N,emptyStack))
 
  def matchPairs (context,subst,stack) = 
+   %let _ = writeLine("Stack:\n"^ anyToString stack) in
    case next stack
      of None -> [subst]
       | Some(stack,M,N) -> 
@@ -470,6 +471,17 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	matchBase(context,f1,srt1,f2,srt2,stack,subst)
       | (Var((n1,srt1), _),Var((n2,srt2), _)) ->  
 	matchBase(context,n1,srt1,n2,srt2,stack,subst)
+      %% Special case of Let for now
+      | (Let([(VarPat((v1,srt1), _), e1)], b1, _), Let([(VarPat((v2,srt2), _), e2)], b2, _)) ->
+        (case unifySorts(context,subst,srt1,srt2) of
+           | None -> []
+           | Some subst ->
+             let x = freshBoundVar(context,srt1) in
+             let S1 = [((v1,srt1), Var(x,noPos))] in
+             let S2 = [((v2,srt2), Var(x,noPos))] in
+             let b1 = substitute(b1,S1) in
+             let b2 = substitute(b2,S2) in
+             matchPairs (context,subst,insert(b1,b2,insert(e1,e2,stack))))
       | (Bind(qf1,vars1,M,_),Bind(qf2,vars2,N,_)) -> 
 	if ~(qf1 = qf2) or ~(length vars1 = length vars2)
 	   then []
@@ -566,13 +578,17 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 			      let srt = foldr mkArrow srt termTypes in
 			      let v = freshVar(context,srt) in
 			      ((l,
-			       foldl (fn (t1,t2)-> Apply(t2,t1,noPos)) v varTerms),
+                                foldl (fn (t1,t2)-> Apply(t2,t1,noPos)) v varTerms),
 			       (foldl(fn (t1,t2)-> Apply(t2,t1,noPos)) v terms,
 			       trm))
 			   ) fields
 		      in
 		      let (fields,pairs) = ListPair.unzip ls in
 		      (true,Record(fields,noPos),pairs)
+
+                 %   | [IfThenElse(p,q,r,_)] ->
+                      
+
 %
 % When matching against an application X M1 .. Mn = N1 ... Nk
 % create the instantiation  X |-> fn x1 .. xn -> N1 (X2 x1..xn) ... (Xk x1..xn) 
