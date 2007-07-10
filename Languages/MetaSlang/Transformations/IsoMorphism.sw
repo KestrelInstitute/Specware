@@ -22,57 +22,130 @@ spec
                        Unspecified,
                        mkArrow(mkArrow(dom_ty,rng_ty),
                                mkArrow(mkBase(Qualified("List","List"), [dom_ty]),
-                                       mkBase(Qualified("List","List"),
-                                              [rng_ty])))),
+                                       mkBase(Qualified("List","List"), [rng_ty])))),
                     fn_arg),
             list_arg)
 
-  op createPrimeDef(spc: Spec, orig_op_ref: MS.Term, old_dfn: MS.Term,
-                    def_ty: Sort, src_ty: Sort, trg_ty: Sort,
+  op makeIsoTheorems(spc: Spec, iso_ref: MS.Term, inv_iso_ref: MS.Term,
+                     src_ty: Sort, trg_ty: Sort)
+     : Spec * List QualifiedId =
+    %% Thm fa(x) iso(inv_iso x) = x
+    let x_pr_var = ("x'",trg_ty) in
+    let inv_thm1 = mkBind(Forall,[x_pr_var],
+                          mkEquality(trg_ty,
+                                     mkApply(iso_ref,mkApply(inv_iso_ref, mkVar x_pr_var)),
+                                     mkVar x_pr_var))
+    in
+    let iso__inv_iso_qid = Qualified("generated","iso__inv_iso") in
+    let spc = addTheorem((iso__inv_iso_qid, [], inv_thm1, noPos), spc) in
+
+    %% Thm fa(x) inv_iso(iso x) = x
+    let x_var = ("x",src_ty) in
+    let inv_thm1 = mkBind(Forall,[x_var],
+                          mkEquality(trg_ty,
+                                     mkApply(inv_iso_ref,mkApply(iso_ref, mkVar x_var)),
+                                     mkVar x_var))
+    in
+    let inv_iso__iso_qid = Qualified("generated","inv_iso__iso") in
+    let spc = addTheorem((inv_iso__iso_qid, [], inv_thm1, noPos), spc) in
+
+    %% Thm fa(x) map iso (map inv_iso x) = x
+    let x_pr_var = ("x'", mkBase(Qualified("List","List"), [trg_ty])) in
+    let inv_thm1 = mkBind(Forall,[x_pr_var],
+                          mkEquality(mkBase(Qualified("List","List"), [trg_ty]),
+                                     mkMapApply(iso_ref, mkMapApply(inv_iso_ref, mkVar x_pr_var,
+                                                                    trg_ty, src_ty),
+                                                src_ty, trg_ty),
+                                     mkVar x_pr_var))
+    in
+    let map__iso__inv_iso_qid = Qualified("generated","map__iso__inv_iso") in
+    let spc = addTheorem((iso__inv_iso_qid, [], inv_thm1, noPos), spc) in
+
+    %% Thm fa(x) map inv_iso(map iso x) = x
+    let x_var = ("x", mkBase(Qualified("List","List"), [src_ty])) in
+    let inv_thm1 = mkBind(Forall,[x_var],
+                          mkEquality(mkBase(Qualified("List","List"), [src_ty]),
+                                     mkMapApply(inv_iso_ref, mkMapApply(iso_ref, mkVar x_var,
+                                                                        src_ty, trg_ty),
+                                                trg_ty, src_ty),
+                                     mkVar x_var))
+    in
+    let map__inv_iso__iso_qid = Qualified("generated","map__inv_iso__iso") in
+    let spc = addTheorem((inv_iso__iso_qid, [], inv_thm1, noPos), spc) in
+
+    (spc, [iso__inv_iso_qid, inv_iso__iso_qid, map__iso__inv_iso_qid, map__inv_iso__iso_qid])
+
+
+(*
+    % inverse iso = inv_inv_iso
+    let inv_thm = mkEquality(mkArrow(trg_ty,src_ty),
+                             mkApply(mkInfixOp(Qualified("Functions", "inverse"), Unspecified,
+                                               mkArrow(mkArrow(src_ty,trg_ty),
+                                                       mkArrow(trg_ty,src_ty))),
+                                     iso_ref),
+                             inv_iso_ref)
+    in
+    let inv_thm_qid1 = Qualified("generated", "inverse_iso") in
+    let spc = addTheorem((inv_thm_qid1, [], inv_thm, noPos), spc) in
+
+    % inverse inv_inv_iso  = iso
+    let inv_thm = mkEquality(mkArrow(src_ty,trg_ty),
+                             mkApply(mkInfixOp(Qualified("Functions", "inverse"), Unspecified,
+                                               mkArrow(mkArrow(trg_ty,src_ty),
+                                                       mkArrow(src_ty,trg_ty))),
+                                     inv_iso_ref),
+                             iso_ref)
+    in
+    let inv_thm_qid2 = Qualified("generated", "inverse_rev_iso") in
+    let spc = addTheorem((inv_thm_qid2, [], inv_thm, noPos), spc) in
+
+*)
+
+
+  op createPrimeDef(spc: Spec, old_dfn: MS.Term, src_ty: Sort, trg_ty: Sort,
                     iso_ref: MS.Term, inv_iso_ref: MS.Term)
      : MS.Term =
     let
-      def makePrimedPat p =
+      def makePrimedPat (p: Pattern, sb: List(Var * MS.Term)): Pattern * List(Var * MS.Term) =
         case p of
-          | VarPat((vn,v_ty),a) \_rightarrow
+          | VarPat(v as (vn,v_ty),a) \_rightarrow
             if equalType?(v_ty,src_ty)
-              then VarPat((vn^"'",trg_ty),a)
+              then let v_pr = (vn^"'",trg_ty) in
+                   (VarPat(v_pr,a),
+                    Cons((v, mkApply(inv_iso_ref,Var(v_pr,a))), sb))
               else
                (case v_ty of
                  | Base(Qualified("List","List"),[el_ty],a1) | equalType?(el_ty, src_ty) \_rightarrow
-                   VarPat((vn^"'",Base(Qualified("List","List"),[trg_ty],a1)),a)
-                 | _ \_rightarrow p)
+                   let v_pr = (vn^"'",Base(Qualified("List","List"),[trg_ty],a1)) in
+                   (VarPat(v_pr,a),
+                    Cons((v, mkMapApply(inv_iso_ref, Var(v_pr,a), trg_ty, src_ty)), sb))
+                 | _ \_rightarrow (p, sb))
           | RecordPat(idprs,a) \_rightarrow
-            RecordPat(map (fn (id,p) \_rightarrow (id,makePrimedPat p)) idprs, a)
-          | RestrictedPat(p1,pred,a) \_rightarrow RestrictedPat(makePrimedPat p1,pred,a)
-          | _ \_rightarrow p
-      def paramsToPrimedArgs p =
-        case p of
-          | VarPat((vn,v_ty),a) \_rightarrow
-            if equalType?(v_ty,src_ty)
-              then mkApply(inv_iso_ref,Var((vn^"'",trg_ty),a))
-              else
-                (case v_ty of
-                 | Base(Qualified("List","List"),[el_ty],a1) | equalType?(el_ty, src_ty) \_rightarrow
-                   mkMapApply(inv_iso_ref, Var((vn^"'",trg_ty),a), trg_ty, src_ty)
-                 | _ \_rightarrow Var((vn,v_ty),a))
-          | RecordPat(idprs,a) \_rightarrow
-            Record(map (fn (id,p) \_rightarrow (id,paramsToPrimedArgs p)) idprs, a)
-          | RestrictedPat(p1,_,_) \_rightarrow paramsToPrimedArgs p1
-          | _ \_rightarrow (warn("createPrimeFnBody: parameter case not handled"^printPattern p);
-                  falseTerm)
-      def makePrimeBody (old_def_tm,new_bod) =
+            let (idprs_pr,sb) =
+                foldr (fn ((id,p),(idprs_pr,sb)) \_rightarrow
+                         let (p_pr,sb) = makePrimedPat(p,sb) in
+                         (Cons((id,p_pr), idprs_pr), sb))
+                  ([],sb) idprs
+            in
+            (RecordPat(idprs_pr, a), sb)
+          | RestrictedPat(p1,pred,a) \_rightarrow
+            let (p1_pr, sb) = makePrimedPat(p1, sb) in
+            (RestrictedPat(p1_pr, substitute(pred,sb) ,a),
+             sb)
+          | _ \_rightarrow (p, sb)
+      def makePrimeBody (old_def_tm, sb) =
         case old_def_tm of
          | Lambda(binds,a) \_rightarrow
-           let new_binds = map (fn (p,condn,body) \_rightarrow
-                                  (makePrimedPat p,condn,
-                                   makePrimeBody(body,mkApply(new_bod,paramsToPrimedArgs p))))
+           let new_binds = map (fn (p, condn, body) \_rightarrow
+                                  let (p_pr, sb) = makePrimedPat(p, sb) in
+                                  (p_pr, condn, makePrimeBody(body, sb)))
                              binds
            in
            Lambda(new_binds,a)
          | _ \_rightarrow
+           let new_bod = substitute(old_def_tm, sb) in
+           let result_ty = inferType(spc, new_bod) in
            %% !! Generalize to handle tuple containing src_ty as a component
-           let result_ty = termSort new_bod in
            if equalType?(result_ty, src_ty)
              then mkApply(iso_ref, new_bod)
              else
@@ -80,13 +153,37 @@ spec
                  | Base(Qualified("List","List"),[el_ty],a) | equalType?(el_ty, src_ty) \_rightarrow
                    %% map iso_ref new_bod
                    mkMapApply(iso_ref, new_bod, src_ty, trg_ty)
+                 | Base(Qualified("Option","Option"),[el_ty],a) | equalType?(el_ty, src_ty) \_rightarrow
+                   mkApply(mkApply(mkInfixOp(Qualified("Option","mapOption"),
+                                             Unspecified,
+                                             mkArrow(mkArrow(src_ty,trg_ty),
+                                                     mkArrow(mkBase(Qualified("Option","Option"), [src_ty]),
+                                                             mkBase(Qualified("Option","Option"), [trg_ty])))),
+                                   iso_ref),
+                           new_bod)
                  | _ \_rightarrow new_bod
     in
-   makePrimeBody(old_dfn, orig_op_ref)    
+    makePrimeBody(old_dfn, [])    
+
+  %% fn x \_rightarrow fn (x,y) \_rightarrow \_dots  \_longrightarrow  fn x \_rightarrow fn (x,y) \_rightarrow f (x) (y,z)
+  op makeTrivialDef(spc: Spec, dfn: MS.Term, qid_pr_ref: MS.Term): MS.Term =
+    let def constructDef(tm, new_bod) =
+          case tm of
+            | Lambda(binds,a) \_rightarrow
+              let new_binds = map (fn (p,condn,body) \_rightarrow
+                                     let Some args = patternToTerm p in
+                                     (p,condn,
+                                      constructDef(body, mkApply(new_bod, args))))
+                             binds
+           in
+           Lambda(new_binds,a)
+         | _ \_rightarrow new_bod 
+    in
+    constructDef(dfn, qid_pr_ref)
 
   op makePrimedOps(spc: Spec, src_ty: Sort, trg_ty: Sort,
                    iso_ref: MS.Term, inv_iso_ref: MS.Term, ign_qids: List QualifiedId)
-     : List (QualifiedId * OpInfo) =
+     : List (OpInfo * OpInfo) =
     foldriAQualifierMap
       (fn (q, nm, info, result) ->
        let qid = Qualified(q,nm) in
@@ -94,28 +191,25 @@ spec
        case dfn  of
          | Any _ \_rightarrow result
          | _ \_rightarrow
-       let def ty_to_ty' ty =
+       let def ty_to_ty_pr ty =
              if equalType?(ty,src_ty)
                then trg_ty
                else ty
        in
-       let op_ty' = mapSort (id,ty_to_ty',id) op_ty in
+       let op_ty_pr = mapSort (id,ty_to_ty_pr,id) op_ty in
        if member(qid,ign_qids)
-         \_or equalType?(op_ty',op_ty)
+         \_or equalType?(op_ty_pr,op_ty)
          then result
         else
           let qid_ref = mkInfixOp(qid,info.fixity,op_ty) in
-          let qid' = Qualified(q,nm^"'") in
-          let dfn' = createPrimeDef(spc, qid_ref, dfn, op_ty, src_ty, trg_ty,
-                                    iso_ref, inv_iso_ref)
-          in
-          let qid'_ref = mkInfixOp(qid',info.fixity,op_ty') in
-  %        let new_def = createPrimeDef(spc, qid'_ref, dfn', op_ty, trg_ty, src_ty,
-%                                       inv_iso_ref, iso_ref)
-%          in
-          Cons((qid,
-                info \_guillemotleft {names = [qid'],
-                        dfn = maybePiTerm(tvs, SortedTerm(dfn', op_ty', noPos))}),
+          let qid_pr = Qualified(q,nm^"'") in
+          let dfn_pr = createPrimeDef(spc, dfn, src_ty, trg_ty, iso_ref, inv_iso_ref) in
+          let qid_pr_ref = mkInfixOp(qid_pr,info.fixity,op_ty_pr) in
+          let id_def_pr = makeTrivialDef(spc, dfn_pr, qid_pr_ref) in
+          let new_dfn = createPrimeDef(spc, id_def_pr, trg_ty, src_ty, inv_iso_ref, iso_ref) in
+          Cons((info \_guillemotleft {dfn = maybePiTerm(tvs, SortedTerm(new_dfn, op_ty, noPos))},
+                info \_guillemotleft {names = [qid_pr],
+                        dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))}),
                result))
       []
       spc.ops
@@ -157,59 +251,53 @@ spec
     let iso_ref = mkInfixOp(iso_qid, iso_opinfo.fixity, iso_ty) in
     let inv_iso_ref = mkInfixOp(inv_iso_qid, inv_iso_opinfo.fixity, inv_iso_ty) in
 
-    %% Thm fa(x) iso(inv_iso x) = x
-    let x'_var = ("x'",trg_ty) in
-    let inv_thm = mkBind(Forall,[x'_var],
-                         mkEquality(trg_ty,
-                                    mkApply(iso_ref,mkApply(inv_iso_ref, mkVar x'_var)),
-                                    mkVar x'_var))
-    in
-    let iso_inv_iso_qid = Qualified("generated","iso_inv_iso") in
-    let spc = addTheorem((iso_inv_iso_qid, tvs,inv_thm, noPos), spc) in
+    let (spc, iso_thm_qids) = makeIsoTheorems(spc, iso_ref, inv_iso_ref, src_ty, trg_ty) in
 
-    let primed_defs = makePrimedOps(spc, src_ty, trg_ty, iso_ref, inv_iso_ref,
-                                    [iso_qid,inv_iso_qid]) in
-    let spc = foldl (fn ((_,opinfo),spc) \_rightarrow
-                     let qid = hd opinfo.names in
-                     let spc =  appendElement(spc,Op(qid,true,noPos)) in
-                     setOpInfo(spc,qid,opinfo))
-                spc primed_defs
-    in    
-    let x'_var = ("x'",trg_ty) in
-    let inv_thm = mkBind(Forall,[x'_var],
-                         mkApply(iso_ref,mkApply(inv_iso_ref, mkVar x'_var)))
+    let new_defs = makePrimedOps(spc, src_ty, trg_ty, iso_ref, inv_iso_ref,
+                                 [iso_qid,inv_iso_qid])
     in
-    let folds = map (fn (_,opinfo) \_rightarrow Fold(hd opinfo.names)) primed_defs in
+    let spc = foldl (fn ((opinfo,opinfo_pr),spc) \_rightarrow
+                     let qid  = hd opinfo.names in
+                     let qid_pr = hd opinfo_pr.names in
+                     let spc =  appendElement(spc,Op(qid_pr,true,noPos)) in
+                     let spc = setOpInfo(spc,qid,opinfo) in
+                     let spc = setOpInfo(spc,qid_pr,opinfo_pr) in
+                     spc)
+                spc new_defs
+    in    
+    let unfolds = map (fn (opinfo,_) \_rightarrow Unfold(hd opinfo.names)) new_defs in
+    let iso_rewrites = map (fn qid \_rightarrow LeftToRight qid) iso_thm_qids in
     let main_script = Simplify([Unfold(mkUnQualifiedId "inv_iso"),
-                                LeftToRight(iso_inv_iso_qid),
                                 %LeftToRight(mkUnQualifiedId "f_if_then_else"),
                                 %% Should be in specs
                                 LeftToRight(mkUnQualifiedId "iso_set_fold"),
+                                LeftToRight(mkUnQualifiedId "iterate_inv_iso"),
                                 LeftToRight(mkUnQualifiedId "map_empty"),
-                                LeftToRight(mkUnQualifiedId "map_doubleton")]
-                                 ++ folds)
+                                LeftToRight(mkUnQualifiedId "map_doubleton"),
+                                Unfold(mkQualifiedId("Option","mapOption"))]
+                                 ++ iso_rewrites
+                                 ++ unfolds)
     in
-    let simp_primed_defs
-       = map (fn (orig_qid, opinfo) \_rightarrow
-                let _ = printDef(spc,orig_qid) in
-                let qid = hd opinfo.names in
-                let _ = printDef(spc,qid) in
-                let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
-                let unfold_dfn = interpretTerm(spc, Apply[Unfold orig_qid],
-                                               dfn)
-                in
-                let simp_dfn = interpretTerm(spc, main_script, unfold_dfn) in
-                let new_dfn = maybePiTerm(tvs, SortedTerm (simp_dfn, ty, noPos)) in
-                let _ = writeLine(printQualifiedId qid^":") in
-                let _ = writeLine(printTerm new_dfn^"\n") in
-                opinfo \_guillemotleft {dfn = new_dfn})
-            primed_defs
+    let simp_ops
+       = mapOpInfos
+           (fn (opinfo) \_rightarrow
+              if exists (fn (hidden_opinfo,_) \_rightarrow opinfo = hidden_opinfo) new_defs
+                then opinfo
+              else
+              let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
+              let simp_dfn = interpretTerm(spc, main_script, dfn) in
+              if equalTerm?(dfn,simp_dfn)
+                then opinfo
+              else
+              let qid = hd opinfo.names in
+              let _ = printDef(spc,qid) in
+              let new_dfn = maybePiTerm(tvs, SortedTerm (simp_dfn, ty, noPos)) in
+              let _ = writeLine(printQualifiedId qid^":") in
+              let _ = writeLine(printTerm new_dfn^"\n") in
+              opinfo \_guillemotleft {dfn = new_dfn})
+           spc.ops
     in
-    let spc = foldl (fn (opinfo,spc) \_rightarrow
-                     let qid = hd opinfo.names in
-                     setOpInfo(spc,qid,opinfo))
-                spc simp_primed_defs
-    in
+    let spc = spc \_guillemotleft {ops = simp_ops} in
     spc
     
 
