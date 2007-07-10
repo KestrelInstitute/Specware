@@ -126,7 +126,7 @@ MetaSlangRewriter qualifying spec
 		   {name      = desc,   condition = condition,
 		    lhs       = p,      rhs       = falseTerm,
 		    tyVars    = [],     freeVars  = freeVars})]
-     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | evalConstant? e2 ->
+     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | constantTerm? e2 ->
        [freshRule(context,
                   {name      = desc,   condition = condition,
                    lhs       = e1,     rhs       = e2,
@@ -467,10 +467,12 @@ MetaSlangRewriter qualifying spec
 
  def rewriteRecursivePre(context,boundVars,rules,term,maxDepth) = 
    let	
-      def rewritesToTrue(rules,term,subst,history): Option Subst = 
+      def rewritesToTrue(rules,term,subst,history): Option Subst =
+          let term = dereferenceAll subst term in
 	  case rewriteRec(rules,subst,term,history,false)
 	    of Nil -> if trueTerm? term then Some subst else None
-	     | Cons((_,t,subst)::history,b) -> 
+	     | Cons((rl,t,c_subst)::history,b) ->
+               %% Substitutions, history and conditional rewrites need work
 	       if trueTerm? t then Some subst else None
 	     | Cons([],_) -> None
 
