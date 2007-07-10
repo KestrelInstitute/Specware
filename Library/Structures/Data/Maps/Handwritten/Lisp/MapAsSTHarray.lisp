@@ -5,6 +5,14 @@
 ;;; Modified from Marcel's HArrayAsStringMap.lisp
 ;;; Further modified for near single-threaded use.
 ;;; Only keep forward links to allow for garbage collection of unused nodes and undolist
+;;; Whenever changes are undone, make a copy, so that leaf versions can live together
+;;; Each node is a vector containing the harray, whether the harray is current, and the undo
+;;; list. I can't remember why an undo list of nil doesn't mean the harray is current.
+;;; An undo element is a pair of the domain value and its previous range value.
+;;; Because of the copy-on-undo strategy, there is never any need to switch the element to a redo.
+;;; A lookup on a non-current version does not cause an update.Instead, the undo list is treated as
+;;; an alist map shadowing the harray.
+
 
 (defpackage :MapSTHashtable)
 (in-package :MapSTHashtable)
