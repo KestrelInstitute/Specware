@@ -1167,7 +1167,7 @@ Utilities qualifying spec
 			    else None))
 	  else None)
       | Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) ->
-	if evalConstant?(N1) & evalConstant?(N2)
+	if constantTerm?(N1) & constantTerm?(N2)
 	  then Some(mkBool(equivTerm? spc (N1,N2)))
 	  else None
       | Apply(Fun(NotEquals,_,_),Record([(_,N1),(_,N2)], _),_) ->
