@@ -128,7 +128,7 @@ spec
   op makeRules (context: Context, spc: Spec, rules: List RuleSpec): List RewriteRule =
     foldr (\_lambda (rl,rules) \_rightarrow makeRule(context, spc, rl) ++ rules) [] rules
 
-  op maxRewrites: Nat = 15
+  op maxRewrites: Nat = 25
 
   op interpretTerm(spc: Spec, script: Script, term: MS.Term): MS.Term =
     case script of
