@@ -175,8 +175,8 @@ MetaSlangRewriter qualifying spec
 
  def negate term =
    case term of
-     | Apply (Not, p,                        _) -> p
-     | Apply (Or,  Record([(_,M),(_,N)], _), _) -> Utilities.mkAnd(negate M,negate N)
+     | Apply (Fun(Not,_,_), p,                        _) -> p
+     | Apply (Fun(Or,_,_),  Record([(_,M),(_,N)], _), _) -> Utilities.mkAnd(negate M,negate N)
      | _ -> mkNot term
 
  (* Unnecessary as equality can be done as a built-in rule
