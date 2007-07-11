@@ -1037,6 +1037,24 @@ If we want the precedence to be optional:
   (speccalc::mkOpRefine-3 spec-term elts (make-pos l r)))
 
 ;;; ========================================================================
+;;;  SC-OP-TRANSFORM
+;;; ========================================================================
+(defun make-sc-transform (spec-term transforms l r)
+  (speccalc::mkTransform-3 spec-term transforms (make-pos l r)))
+
+(defun make-transform-name (name l r)
+  (speccalc::mkTransformName-2 name (make-pos l r)))
+
+(defun make-transform-qual (q name l r)
+  (speccalc::mkTransformQual-3 q name (make-pos l r)))
+
+(defun make-transform-item (oper transform l r)
+  (speccalc::mkTransformItem-3 oper transform (make-pos l r)))
+
+(defun make-transform-apply (trans1 transforms l r)
+  (speccalc::mkTransformApply-3 trans1 transforms (make-pos l r)))
+
+;;; ========================================================================
 ;;;  SC-DIAG-MORPH
 ;;; ========================================================================
 

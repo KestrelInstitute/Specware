@@ -267,7 +267,8 @@ spec
     in    
     let unfolds = map (fn (opinfo,_) \_rightarrow Unfold(hd opinfo.names)) new_defs in
     let iso_rewrites = map (fn qid \_rightarrow LeftToRight qid) iso_thm_qids in
-    let main_script = Simplify([Unfold(mkUnQualifiedId "inv_iso"),
+    let main_script = Steps [SimpStandard,
+                             Simplify([Unfold(mkUnQualifiedId "inv_iso"),
                                 %LeftToRight(mkUnQualifiedId "f_if_then_else"),
                                 %% Should be in specs
                                 LeftToRight(mkUnQualifiedId "iso_set_fold"),
@@ -277,7 +278,7 @@ spec
                                 LeftToRight(mkUnQualifiedId "case_map"),
                                 Unfold(mkQualifiedId("Option","mapOption"))]
                                  ++ iso_rewrites
-                                 ++ unfolds)
+                                 ++ unfolds)]
     in
     let simp_ops
        = mapOpInfos
@@ -294,7 +295,7 @@ spec
               let _ = printDef(spc,qid) in
               let new_dfn = maybePiTerm(tvs, SortedTerm (simp_dfn, ty, noPos)) in
               let _ = writeLine(printQualifiedId qid^":") in
-              let _ = writeLine(printTerm new_dfn^"\n") in
+              let _ = writeLine(printTerm simp_dfn^"\n") in
               opinfo \_guillemotleft {dfn = new_dfn})
            spc.ops
     in

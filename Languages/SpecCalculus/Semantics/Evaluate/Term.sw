@@ -53,6 +53,7 @@ This is a monadic interpreter for the Spec Calculus.
     | Colimit     sub_term -> SpecCalc.evaluateColimit     sub_term
     | Subst       args     -> SpecCalc.evaluateSubstitute  args pos
     | OpRefine    args     -> SpecCalc.evaluateOpRefine    args pos
+    | Transform   args     -> SpecCalc.evaluateTransform   args pos
     | DiagMorph   fields   -> SpecCalc.evaluateDiagMorph   fields
 
     | Qualify  (sub_term, qualifier) -> SpecCalc.evaluateQualify sub_term qualifier

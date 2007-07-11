@@ -25,7 +25,7 @@ spec
     | Apply (List RuleSpec)
     | SimpStandard
     | PartialEval
-    | IsoMorphism(QualifiedId \_times QualifiedId)
+    | IsoMorphism(QualifiedId \_times QualifiedId \_times List RuleSpec)
 
  op mkAt(qid: QualifiedId, steps: List Script): Script = At([Def qid], mkSteps steps)
  op mkSteps(steps: List Script): Script = if length steps = 1 then hd steps else Steps steps
@@ -176,7 +176,7 @@ spec
                    let newdfn = maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)) in
                    setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
           spc locs
-      | IsoMorphism(iso,inv_iso) \_rightarrow
+      | IsoMorphism(iso,inv_iso,_) \_rightarrow
         makeIsoMorphism(spc, iso, inv_iso)
 
   op interpret(spc: Spec, script: Script): Spec =

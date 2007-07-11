@@ -79,6 +79,12 @@ SpecCalc qualifying spec
  type PCClaimName  = | WellFormed | Claim QualifiedId
  type ClaimName  = QualifiedId
 
+  type TransformExpr =
+    | Name String * Position
+    | Qual String * String * Position
+    | Item String * TransformExpr * Position       % e.g. unfold map
+    | Apply TransformExpr * List TransformExpr * Position
+
  %% In a basic Specware image, OtherTerm is unspecified, but in an extension
  %% such as PSL or Planware, it might be refined to an application-specific 
  %% term, or a coproduct of such terms.
@@ -148,6 +154,10 @@ SpecCalc qualifying spec
    %% be op spec element valued.
 
    | OpRefine     (SpecCalc.Term a) * (List (SpecElem a))
+
+   %% Spec transformation. Takes a spec and a transformation script.
+
+   | Transform    (SpecCalc.Term a) * (List TransformExpr)
 
    %% Obligations takes a spec or a a morphism and returns a spec including
    %% the proof obligations as conjectures.
@@ -397,6 +407,7 @@ SpecCalc qualifying spec
  op mkGenerate    : [a] String * (SpecCalc.Term a) * (Option String) * a -> SpecCalc.Term a
  op mkSubst       : [a] (SpecCalc.Term a)   * (SpecCalc.Term a)      * a -> SpecCalc.Term a
  op mkOpRefine    : [a] (SpecCalc.Term a)   * (List (SpecElem a))    * a -> SpecCalc.Term a
+ op mkTransform   : [a] (SpecCalc.Term a)   * (List TransformExpr)   * a -> SpecCalc.Term a
  op mkObligations : [a] (SpecCalc.Term a)                            * a -> SpecCalc.Term a
  op mkExpand      : [a] (SpecCalc.Term a)                            * a -> SpecCalc.Term a
  op mkReduce      : [a] (ATerm a)           * (SpecCalc.Term a)      * a -> SpecCalc.Term a
@@ -440,10 +451,17 @@ SpecCalc qualifying spec
  def mkGenerate    (lang, term, opt_file,      pos) = (Generate    (lang, term, opt_file),      pos)
  def mkSubst       (spec_term, sm_term,        pos) = (Subst       (spec_term, sm_term),        pos)
  def mkOpRefine    (spec_term, elements,       pos) = (OpRefine    (spec_term, elements),       pos)
+ def mkTransform   (spec_term, transforms,     pos) = (Transform   (spec_term, transforms),     pos)
  def mkObligations (term,                      pos) = (Obligations (term),                      pos)
  def mkExpand      (term,                      pos) = (Expand      (term),                      pos)
  def mkReduce      (term_a, term_b,            pos) = (Reduce      (term_a, term_b),            pos)
  def mkOther       (other,                     pos) = (Other       other,                       pos)
+
+ def mkTransformName(name: String, pos: Position)                  : TransformExpr = Name(name, pos)
+ def mkTransformQual(q: String, name: String, pos: Position)       : TransformExpr = Qual(q, name, pos)
+ def mkTransformItem(mod: String, te: TransformExpr, pos: Position): TransformExpr = Item(mod, te, pos)
+ def mkTransformApply(head: TransformExpr, args: List TransformExpr, pos: Position): TransformExpr
+   = Apply(head, args, pos)
 
  op  hasHashSuffix?: RelativeUID -> Boolean
  def hasHashSuffix? unitId =

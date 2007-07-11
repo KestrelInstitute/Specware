@@ -157,6 +157,7 @@
 	  :SC-COLIMIT
 	  :SC-SUBSTITUTE
 	  :SC-OP-REFINE
+	  :SC-OP-TRANSFORM
 	  ;; :SC-DIAG-MORPH
 	  ;; :SC-DOM
 	  ;; :SC-COD
@@ -1640,6 +1641,23 @@ If we want the precedence to be optional:
 	  (2 (:repeat+ (:anyof :OP-DEFINITION
 			       :OP-DECLARATION) nil)) "}")
   (make-sc-op-refine 1 2 ':left-lcb ':right-lcb))
+
+;;; ========================================================================
+;;;  SC-OP-TRANSFORM
+;;; ========================================================================
+(define-sw-parser-rule :SC-OP-TRANSFORM ()
+  (:tuple "transform" (1 :SC-TERM) "by" "{"
+	  (2 (:repeat+ :TRANSFORM-EXPR ",")) "}")
+  (make-sc-transform 1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-EXPR ()
+  (:anyof
+   ((:tuple (1 :NAME))               (make-transform-name 1   ':left-lcb ':right-lcb))
+   ((:tuple (1 :NAME) "." (2 :NAME)) (make-transform-qual 1 2 ':left-lcb ':right-lcb))
+   ((:tuple (1 :NAME) (2 :TRANSFORM-EXPR)) (make-transform-item 1 2 ':left-lcb ':right-lcb))
+   ((:tuple (1 :TRANSFORM-EXPR)
+	    "(" (2 (:repeat+ :TRANSFORM-EXPR ",")) ")")
+    (make-transform-apply 1 2 ':left-lcb ':right-lcb))))
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH

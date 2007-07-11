@@ -31,6 +31,7 @@ SpecCalc qualifying spec {
   op evaluateTranslate        : SCTerm -> Renaming                                   -> Position -> SpecCalc.Env ValueInfo
   op evaluateSubstitute       : SCTerm * SCTerm                                      -> Position -> SpecCalc.Env ValueInfo
   op evaluateOpRefine         : SCTerm * (List (SpecElem Position))                  -> Position -> SpecCalc.Env ValueInfo
+  op evaluateTransform        : SCTerm * (List TransformExpr)                        -> Position -> SpecCalc.Env ValueInfo
   op evaluateObligations      : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluateExpand           : SCTerm                                               -> Position -> SpecCalc.Env ValueInfo
   op evaluateGenerate         : String * SCTerm * Option String                      -> Position -> SpecCalc.Env ValueInfo
@@ -100,6 +101,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.51  2006/05/27 00:21:55  westfold
+%% Add support for x-symbol
+%%
 %% Revision 1.50  2006/05/02 02:53:57  mcdonald
 %% new pragmas slot for spec morphisms
 %%
