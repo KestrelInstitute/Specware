@@ -176,7 +176,7 @@ spec
                    let newdfn = maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)) in
                    setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
           spc locs
-      | IsoMorphism(iso,inv_iso,_) \_rightarrow
+      | IsoMorphism(iso, inv_iso, _) \_rightarrow
         makeIsoMorphism(spc, iso, inv_iso)
 
   op interpret(spc: Spec, script: Script): Spec =
