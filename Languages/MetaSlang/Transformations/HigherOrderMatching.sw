@@ -186,8 +186,7 @@ beta contraction.
 
  def dereference S term = 
      let term1 = dereferenceR S term in
-     (%writeLine (MetaSlangPrint.printTerm term ^" |-> "^
-      %			MetaSlangPrint.printTerm term1);
+     (%writeLine (printTerm term ^" |-> \n"^ printTerm term1);
       term1)
 
  op  patternMatchRules : Match * MS.Term -> Option (VarSubst * MS.Term)
@@ -404,12 +403,13 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 
  def matchPairs (context,subst,stack) = 
    %let _ = writeLine("Stack:\n"^ anyToString stack) in
+  let result =
    case next stack
      of None -> [subst]
       | Some(stack,M,N) -> 
 %     let _ = writeLine 
-%	(MetaSlangPrint.printTerm (dereference subst M) ^ " = = "^
-%	 MetaSlangPrint.printTerm N) 
+%	(printTerm (dereference subst M) ^ " = = "^
+%	 printTerm N) 
 %     in
 %     let _ = printSubst subst in
    case (dereference subst M,N)
@@ -448,7 +448,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	    | Some subst -> 
 	let x = freshBoundVar(context,srt) in
 	matchPairs (context,subst,
-		      insert(Apply(M,Var(x,noPos),noPos),Apply(N,Var(x,noPos),noPos),stack)))
+                    insert(Apply(M,Var(x,noPos),noPos),Apply(N,Var(x,noPos),noPos),stack)))
       | (M,Lambda([(VarPat((_,srt), _),Fun(Bool true,_,_),_)], _)) -> 
 	(case unifySorts(context,subst,
 			 inferType(context.spc,subst,M),
@@ -457,8 +457,8 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	    | Some subst -> 
 	let x = freshBoundVar(context,srt) in
 	matchPairs(context,subst,
-		      insert(bindPattern(VarPat(x,noPos),Apply(M,Var(x,noPos),noPos)),
-			     N,stack)))
+                   insert(bindPattern(VarPat(x,noPos),Apply(M,Var(x,noPos),noPos)),
+                          N,stack)))
 %%
 %% Sigma-Sigma
 %%
@@ -563,6 +563,14 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 
 	     let pats = map (fn v -> VarPat(v,noPos)) vars in
 	     let varTerms = map (fn v -> Var(v,noPos)) vars in	
+             let def makeMatchForSubTerm (trm, bound_vs) =
+                   let srt = inferType(context.spc,subst,trm) in
+                   let srt = foldr mkArrow srt (termTypes ++ map(fn(_,ty) -> ty) bound_vs) in
+                   let v = freshVar(context,srt) in
+                   (foldl (fn (t1,t2)-> Apply(t2,t1,noPos)) v (varTerms ++ map mkVar bound_vs),
+                    (foldl (fn (t1,t2)-> Apply(t2,t1,noPos)) v (terms ++ map mkVar bound_vs), trm))
+
+             in
 	     let (sound,N1,pairs) = 
 		 case Ns
 %
@@ -572,24 +580,36 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 %
 		   of [Record(fields, _)] -> 
 		      let ls = 
-			  map 
-			      (fn (l,trm) -> 
-			      let srt = inferType(context.spc,subst,trm) in
-			      let srt = foldr mkArrow srt termTypes in
-			      let v = freshVar(context,srt) in
-			      ((l,
-                                foldl (fn (t1,t2)-> Apply(t2,t1,noPos)) v varTerms),
-			       (foldl(fn (t1,t2)-> Apply(t2,t1,noPos)) v terms,
-			       trm))
-			   ) fields
+			  map (fn (l,trm) -> 
+                                  let (s_tm,pr) = makeMatchForSubTerm (trm,[]) in
+                                  ((l, s_tm), pr)
+                                  ) fields
 		      in
 		      let (fields,pairs) = ListPair.unzip ls in
-		      (true,Record(fields,noPos),pairs)
+		      (true, Record(fields,noPos), pairs)
 
-                 %   | [IfThenElse(p,q,r,_)] ->
-                      
+                    | [IfThenElse(p,q,r,a)] ->
+                      let (p1,p_pr) = makeMatchForSubTerm (p,[]) in
+                      let (q1,q_pr) = makeMatchForSubTerm (q,[]) in
+                      let (r1,r_pr) = makeMatchForSubTerm (r,[]) in
+                      (true, IfThenElse(p1,q1,r1,a), [p_pr,q_pr,r_pr])
+                    | [Bind(qf,vs,bod,a)] ->
+                      let (bod1,bod_pr) = makeMatchForSubTerm(bod,vs) in
+                      (true, Bind(qf,vs,bod1,a), [bod_pr])
+ %                   %% case expression
+                    | [Lambda(matches,a), case_arg] ->
+                      let (matches1, pairs) =
+                          foldr (fn ((p,c,t), (matches1, pairs)) ->
+                                 let pvs = patternVars p in
+                                 let (c1,c_pr) = makeMatchForSubTerm (c,pvs) in
+                                 let (t1,t_pr) = makeMatchForSubTerm (t,pvs) in
+                                 (Cons((p,c1,t1), matches1),
+                                  [c_pr,t_pr] ++ pairs))
+                            ([],[]) matches
+                      in
+                      let (case_arg1,case_arg_pr) = makeMatchForSubTerm (case_arg,[]) in
+                      (true, mkApply(Lambda(matches1,a),case_arg1), Cons(case_arg_pr, pairs))
 
-%
 % When matching against an application X M1 .. Mn = N1 ... Nk
 % create the instantiation  X |-> fn x1 .. xn -> N1 (X2 x1..xn) ... (Xk x1..xn) 
 % and also the matching pairs X2 M1 ... Mn = N2 ...  Xk M1 ... Mn = Nk
@@ -600,17 +620,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 		    | N::Ns ->
 		      if closedTermV(N,context.boundVars)
 		      then 
-		      let ls = 
-			  map 
-			      (fn trm -> 
-			       let srt = inferType(context.spc,subst,trm) in
-			       let srt = foldr mkArrow srt termTypes in
-			       let v = freshVar(context,srt) in
-			      (foldl (fn (t1,t2)-> Apply(t2,t1,noPos)) v varTerms,
-			       (foldl (fn (t1,t2)-> Apply(t2,t1,noPos)) v terms,
-			       trm))
-			   ) Ns
-		      in
+		      let ls = map (fn n -> makeMatchForSubTerm(n,[])) Ns in
 		      let (Ns,pairs) = ListPair.unzip ls in
 		      (true,foldl (fn (t1,t2) -> Apply(t2,t1,noPos)) N Ns,pairs)
 		      else
@@ -649,6 +659,16 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	case insertPairs(Ms,headForm N,stack)
 	  of Some stack -> matchPairs(context,subst,stack)
 	   | None -> []
+     in
+%     let _ = if result = []
+%               then (writeLine("MatchPairs failed!");
+%                     case next stack
+%                       of None -> ()
+%                        | Some(stack,M,N) ->
+%                          writeLine (printTerm (dereference subst M) ^ " = = "^ printTerm N) )
+%             else (writeLine("MatchPairs: "^toString(length result)^" results.");
+%                   printSubst(hd result)) in
+     result
 
   op  insertPairs : List MS.Term * List MS.Term * Stack -> Option Stack
 
