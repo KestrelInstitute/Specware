@@ -102,7 +102,7 @@ spec
 *)
 
 
-  op createPrimeDef(spc: Spec, old_dfn: MS.Term, src_ty: Sort, trg_ty: Sort,
+  op createPrimeDef(spc: Spec, old_dfn: MS.Term, op_ty: Sort, src_ty: Sort, trg_ty: Sort,
                     iso_ref: MS.Term, inv_iso_ref: MS.Term)
      : MS.Term =
     let
@@ -133,27 +133,30 @@ spec
             (RestrictedPat(p1_pr, substitute(pred,sb) ,a),
              sb)
           | _ \_rightarrow (p, sb)
-      def makePrimeBody (old_def_tm, sb) =
+      def makePrimeBody (old_def_tm, sb, result_ty) =
         case old_def_tm of
          | Lambda(binds,a) \_rightarrow
            let new_binds = map (fn (p, condn, body) \_rightarrow
                                   let (p_pr, sb) = makePrimedPat(p, sb) in
-                                  (p_pr, condn, makePrimeBody(body, sb)))
+                                  let body_ty = case arrowOpt(spc,result_ty) of
+                                                  | Some(_,r) -> r
+                                                  | None -> fail("Illegal type")
+                                  in
+                                  (p_pr, condn, makePrimeBody(body, sb, body_ty)))
                              binds
            in
            Lambda(new_binds,a)
          | _ \_rightarrow
            let new_bod = substitute(old_def_tm, sb) in
-           let result_ty = inferType(spc, new_bod) in
            %% !! Generalize to handle tuple containing src_ty as a component
-           if equalType?(result_ty, src_ty)
+           if equivType? spc (result_ty, src_ty)
              then mkApply(iso_ref, new_bod)
              else
                case result_ty of
-                 | Base(Qualified("List","List"),[el_ty],a) | equalType?(el_ty, src_ty) \_rightarrow
+                 | Base(Qualified("List","List"),[el_ty],a) | equivType? spc (el_ty, src_ty) \_rightarrow
                    %% map iso_ref new_bod
                    mkMapApply(iso_ref, new_bod, src_ty, trg_ty)
-                 | Base(Qualified("Option","Option"),[el_ty],a) | equalType?(el_ty, src_ty) \_rightarrow
+                 | Base(Qualified("Option","Option"),[el_ty],a) | equivType? spc (el_ty, src_ty) \_rightarrow
                    mkApply(mkApply(mkInfixOp(Qualified("Option","mapOption"),
                                              Unspecified,
                                              mkArrow(mkArrow(src_ty,trg_ty),
@@ -163,7 +166,7 @@ spec
                            new_bod)
                  | _ \_rightarrow new_bod
     in
-    makePrimeBody(old_dfn, [])    
+    makePrimeBody(old_dfn, [], op_ty)    
 
   %% fn x \_rightarrow fn (x,y) \_rightarrow \_dots  \_longrightarrow  fn x \_rightarrow fn (x,y) \_rightarrow f (x) (y,z)
   op makeTrivialDef(spc: Spec, dfn: MS.Term, qid_pr_ref: MS.Term): MS.Term =
@@ -192,21 +195,22 @@ spec
          | Any _ \_rightarrow result
          | _ \_rightarrow
        let def ty_to_ty_pr ty =
-             if equalType?(ty,src_ty)
+             if equivType? spc (ty,src_ty)
                then trg_ty
                else ty
        in
        let op_ty_pr = mapSort (id,ty_to_ty_pr,id) op_ty in
        if member(qid,ign_qids)
-         \_or equalType?(op_ty_pr,op_ty)
+         \_or equivType? spc (op_ty_pr,op_ty)
          then result
         else
           let qid_ref = mkInfixOp(qid,info.fixity,op_ty) in
           let qid_pr = Qualified(q,nm^"'") in
-          let dfn_pr = createPrimeDef(spc, dfn, src_ty, trg_ty, iso_ref, inv_iso_ref) in
+          let dfn_pr = createPrimeDef(spc, dfn, op_ty, src_ty, trg_ty, iso_ref, inv_iso_ref) in
+ let _ = if nm = "mkInitialState"then writeLine(nm^": \n"^printTerm dfn_pr)else () in
           let qid_pr_ref = mkInfixOp(qid_pr,info.fixity,op_ty_pr) in
           let id_def_pr = makeTrivialDef(spc, dfn_pr, qid_pr_ref) in
-          let new_dfn = createPrimeDef(spc, id_def_pr, trg_ty, src_ty, inv_iso_ref, iso_ref) in
+          let new_dfn = createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, inv_iso_ref, iso_ref) in
           Cons((info \_guillemotleft {dfn = maybePiTerm(tvs, SortedTerm(new_dfn, op_ty, noPos))},
                 info \_guillemotleft {names = [qid_pr],
                         dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))}),
@@ -243,8 +247,8 @@ spec
                  spc)
       | Some(inv_src_ty,inv_trg_ty) \_rightarrow
     if ~(length tvs = length inv_tvs
-           && equalType?(src_ty,inv_trg_ty)
-           && equalType?(trg_ty,inv_src_ty))
+           && equivType? spc (src_ty,inv_trg_ty)
+           && equivType? spc (trg_ty,inv_src_ty))
       then (warn(anyToString iso_qid^" and "^anyToString inv_iso_qid^" types not inverse!");
                  spc)
     else
