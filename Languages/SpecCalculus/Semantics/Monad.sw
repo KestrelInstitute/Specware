@@ -228,6 +228,16 @@ Library/Structures/Data/Monad now exists but not used.
             y <- f a x;
             foldM f y xs
           }
+
+  op foldrM : fa (a,b) (a -> b -> Env a) -> a -> List b -> Env a
+  def foldrM f a l =
+    case l of
+      | [] -> return a
+      | x::xs -> {
+            r_a <- foldrM f a xs;
+            f r_a x
+          }
+
 \end{spec}
 
 Analogously, this is the monadic version of \verb+map+. Both of these
