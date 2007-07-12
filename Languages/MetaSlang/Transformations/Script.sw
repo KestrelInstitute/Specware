@@ -1,6 +1,6 @@
 Script qualifying
 spec
-  import Simplify, Rewriter, Interpreter
+  import Simplify, Rewriter, Interpreter, /Library/PrettyPrinter/WadlerLindig
 
   op Isomorphism.makeIsoMorphism: Spec * QualifiedId * QualifiedId \_rightarrow Spec
 
@@ -26,6 +26,51 @@ spec
     | SimpStandard
     | PartialEval
     | IsoMorphism(QualifiedId \_times QualifiedId \_times List RuleSpec)
+
+ op ppSpace: WadlerLindig.Pretty = ppString " "
+
+ op ppQid(Qualified(q,nm): QualifiedId): WadlerLindig.Pretty =
+   if q = UnQualified then ppString nm
+     else ppConcat[ppString q, ppString nm]
+
+ op ppLoc(loc: Location): WadlerLindig.Pretty =
+   case loc of
+     | Def qid -> ppQid qid
+
+ op ppRuleSpec(rl: RuleSpec): WadlerLindig.Pretty =
+   case rl of
+     | Unfold qid -> ppConcat [ppString "unfold ", ppQid qid]
+     | Fold   qid -> ppConcat   [ppString "fold ", ppQid qid]
+     | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
+     | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
+     | AllDefs -> ppString "alldefs"
+
+ op ppScript(scr: Script): WadlerLindig.Pretty =
+    case scr of
+      | Steps steps \_rightarrow
+        ppSep (ppConcat[ppString ",", ppNewline]) (map ppScript steps)
+      | At(locs, scr) \_rightarrow
+        ppIndent(ppConcat [ppString "at ", ppSep (ppString ",") (map ppLoc locs), ppString",",
+                           ppNewline,
+                           ppScript scr])
+      | Simplify rules ->
+        if rules = [] then ppString "simplify"
+          else
+            ppConcat [ppString "simplify (", ppSep (ppString ", ") (map ppRuleSpec rules), ppString ")"]
+      | Apply [rl] -> ppRuleSpec rl
+      | Apply rules ->
+        ppConcat [ppString "apply (", ppSep (ppString ", ") (map ppRuleSpec rules), ppString ")"]
+      | SimpStandard -> ppString "SimpStandard"
+      | PartialEval -> ppString "Eval"
+      | IsoMorphism(iso, inv_iso, _) \_rightarrow
+        ppConcat[ppString "isomorphism (", ppQid iso, ppQid inv_iso, ppString ")"]
+
+ op scriptToString(scr: Script): String =
+   let pp = ppNest 3 (ppConcat [ppString "   ", ppScript scr]) in
+   ppFormat(pp)
+
+ op printScript(scr: Script): () =
+   writeLine(scriptToString scr)
 
  op mkAt(qid: QualifiedId, steps: List Script): Script = At([Def qid], mkSteps steps)
  op mkSteps(steps: List Script): Script = if length steps = 1 then hd steps else Steps steps
@@ -54,9 +99,6 @@ spec
      | "righttoleft" \_rightarrow mkRightToLeft
      | "right-to-left" \_rightarrow mkRightToLeft
      | "alldefs" \_rightarrow mkAllDefs
-
- op printScript(scr: Script): () =
-   toScreen(anyToString scr)
 
  %% From /Languages/SpecCalculus/Semantics/Evaluate/Prove.sw
  op claimNameMatch: QualifiedId \_times QualifiedId -> Boolean
@@ -180,55 +222,9 @@ spec
         makeIsoMorphism(spc, iso, inv_iso)
 
   op interpret(spc: Spec, script: Script): Spec =
-    interpretSpec(spc, script)
-  
-
-(*
-    let rules = mergeDemodRules [rewriteRules ruleModeSpec, rewriteRules modeSpec] in
-    % let rules = rewriteRules ruleModeSpec in
-    let
-      def doTerm count trm =
-        let lazy = rewriteRecursivePre ((context ruleModeSpec) withSpec (specOf ruleModeSpec),[],rules,trm) in
-        case lazy of
-          | Nil -> trm
-          | Cons([],tl) -> trm
-          | Cons((rule,trm,subst)::_,tl) ->
-              if (count > 0) then 
-                doTerm (count - 1) trm
-              else
-                trm
-
-      def doOp info =
-        let ref = Op.refOf info in
-        if member? (variables modeSpec, ref) then
-          case opInfoDefs info of
-            | [] -> info  % fail "empty term schemes"
-            | [dfn] ->
-	      let (tvs, srt, tm) = unpackTerm dfn in
-              let tm = doTerm 20 tm in
-	      info << {dfn = maybePiTerm (tvs, SortedTerm (tm, srt, termAnn dfn))}
-            | _ -> fail "multiple term schemes"
-        else
-          info
-
-      def doClaim claim =
-        let ref = refOf claim in
-        if member? (invariants modeSpec, ref) then
-          case claim of
-            | (Axiom,name,typeVars,term) -> (Axiom,name,typeVars,doTerm 20 term) 
-            | claim -> claim
-        else
-          claim in
-    let spc = specOf modeSpec in
-    let newSpec:Spec.Spec = {
-        sorts = spc.sorts,
-        ops = mapAQualifierMap doOp spc.ops,
-        properties = map doClaim spc.properties,
-        importInfo = spc.importInfo
-      } in
-    return (modeSpec withSpec newSpec)
-
-*)
-
+    % let _ = printScript script in
+    let result = interpretSpec(spc, script) in
+    % let _ = writeLine(printSpec result) in
+    result
 
 endspec
