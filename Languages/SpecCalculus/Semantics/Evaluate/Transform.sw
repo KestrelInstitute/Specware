@@ -54,8 +54,11 @@ spec
       | Apply(Name("apply",_), rls,_) ->
         {srls <- mapM makeRuleRef rls;
          return(Apply srls)}
+      | Name("simplify",_) -> return (Simplify [])
+      | Name("Simplify",_) -> return (Simplify [])
+      | Name("simpStandard",_) -> return SimpStandard
       | Name("SimpStandard",_) -> return SimpStandard
-      | Name("Eval",_) -> return PartialEval
+      | Name("eval",_) -> return PartialEval
       | Item("lr",thm,_) -> {qid <- makeQID thm;
                              return (Apply([LeftToRight qid]))}
       | Item("rl",thm,_) -> {qid <- makeQID thm;
