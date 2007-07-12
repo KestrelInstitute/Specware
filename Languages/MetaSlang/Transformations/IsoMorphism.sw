@@ -276,6 +276,7 @@ spec
                                 LeftToRight(mkUnQualifiedId "map_empty"),
                                 LeftToRight(mkUnQualifiedId "map_doubleton"),
                                 LeftToRight(mkUnQualifiedId "case_map"),
+                                LeftToRight(mkUnQualifiedId "unfold_let_inv_iso"),
                                 Unfold(mkQualifiedId("Option","mapOption"))]
                                  ++ iso_rewrites
                                  ++ unfolds)]
