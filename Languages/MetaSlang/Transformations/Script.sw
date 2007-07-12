@@ -66,7 +66,7 @@ spec
         ppConcat[ppString "isomorphism (", ppQid iso, ppQid inv_iso, ppString ")"]
 
  op scriptToString(scr: Script): String =
-   let pp = ppNest 3 (ppConcat [ppString "   ", ppScript scr]) in
+   let pp = ppNest 3 (ppConcat [ppString "  {", ppScript scr, ppString "}"]) in
    ppFormat(pp)
 
  op printScript(scr: Script): () =
