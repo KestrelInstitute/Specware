@@ -131,7 +131,7 @@ MetaSlangRewriter qualifying spec
                   {name      = desc,   condition = condition,
                    lhs       = e1,     rhs       = e2,
                    tyVars    = [],     freeVars  = freeVars})]
-     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | simpleRwTerm? e1 ->
+     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | simpleRwTerm? e1 && ~(varTerm? e2)->
        [freshRule(context,
                   {name      = desc,   condition = condition,
                    lhs       = e2,     rhs       = e1,
