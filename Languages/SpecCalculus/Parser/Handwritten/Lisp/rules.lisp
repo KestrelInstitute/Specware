@@ -1656,7 +1656,7 @@ If we want the precedence to be optional:
    ((:tuple (1 :NAME) "." (2 :NAME)) (make-transform-qual 1 2 ':left-lcb ':right-lcb))
    ((:tuple (1 :NAME) (2 :TRANSFORM-EXPR)) (make-transform-item 1 2 ':left-lcb ':right-lcb))
    ((:tuple (1 :TRANSFORM-EXPR)
-	    "(" (2 (:repeat+ :TRANSFORM-EXPR ",")) ")")
+	    "(" (2 (:repeat* :TRANSFORM-EXPR ",")) ")")
     (make-transform-apply 1 2 ':left-lcb ':right-lcb))))
 
 ;;; ========================================================================
