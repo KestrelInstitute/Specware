@@ -977,6 +977,13 @@ Utilities qualifying spec
 	(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
       | _ -> ([],[t])
 
+  op  varTerm?: [a] ATerm a -> Boolean
+  def varTerm? t =
+    case t of
+      | Var _ -> true
+      | _     -> false
+
+
   op  constantTerm?: [a] ATerm a -> Boolean
   def constantTerm? t =
     case t of
