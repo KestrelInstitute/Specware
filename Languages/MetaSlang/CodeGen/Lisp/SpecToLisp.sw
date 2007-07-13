@@ -141,6 +141,7 @@ SpecToLisp qualifying spec {
    case pattern of
      | VarPat    ((id, _), _) -> [id] 
      | RecordPat (fields,  _) -> List.map (fn (_, p) -> patternName p) fields
+     %| RestrictedPat(p,_,_) -> patternNames p
      | _ -> 
        System.fail ("SpecToLisp.patternNames " ^ printPattern pattern)
 
@@ -1201,7 +1202,6 @@ SpecToLisp qualifying spec {
 					      mkLLet (vars, vals, bod))
 				             term 
 					     let_binds)))) 
-	 : (Option LispTerm)
        else
 	 case term of
 	   | Lambda (formals, _, body) ->
@@ -1459,9 +1459,9 @@ SpecToLisp qualifying spec {
    let spc = (if instantiateHOFns? then	instantiateHOFns spc else spc) in
    let spc = (if lambdaLift?       then lambdaLift(spc,true) else spc) in
    let spc = translateMatch spc in
-   %let _ = toScreen(printSpec spc) in
    let spc = translateRecordMergeInSpec spc in
    let spc = arityNormalize             spc in
+   %let _ = toScreen(printSpec spc) in
    let lisp_spec = lisp spc in
    lisp_spec 
 
