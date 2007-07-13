@@ -67,6 +67,7 @@ ArityNormalize qualifying spec {
         case match
           of [] -> 0
            | Cons((RecordPat(pats,_),_,_),match) -> mA(match,length(pats))
+           | Cons((RestrictedPat(RecordPat(pats,_),_,_),_,_),match) -> mA(match,length(pats))
            | _ -> 1
         
  
@@ -255,13 +256,16 @@ ArityNormalize qualifying spec {
            trm)))
 
  def simplePattern pattern = 
-      case pattern:Pattern
+      case pattern
 	of VarPat _ -> true
+         | RestrictedPat(p,_,_) -> simplePattern p
 	 | _ -> false
  
  def simpleAbstraction(rules:Match) = 
      case rules
        of [(RecordPat(fields,_),cond,_)] -> 
+	  isTrue cond & all (fn(_,p)-> simplePattern p) fields
+        | [(RestrictedPat(RecordPat(fields,_),_,_),cond,_)] -> 
 	  isTrue cond & all (fn(_,p)-> simplePattern p) fields
         | [(pat,cond,_)] -> simplePattern pat & isTrue cond
 	| _ -> false
