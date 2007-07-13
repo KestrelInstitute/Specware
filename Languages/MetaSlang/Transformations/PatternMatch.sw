@@ -724,7 +724,8 @@ def eliminateTerm context term =
 				       eliminateTerm context b)) rules 
 	 in
 	 if simpleAbstraction(rules) 
-           then Lambda(rules,noPos)
+           then let rules = map (fn (p,c,a) -> (deRestrict p,c,a)) rules in
+                Lambda(rules,noPos)
 	 else 
 
 	 %%%	 let _ = writeLine "Elimination from lambda " in
