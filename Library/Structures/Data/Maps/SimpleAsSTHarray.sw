@@ -33,10 +33,7 @@ spec
   def numItems = MapSTHashtable.STH_numItems
 
   def apply = MapSTHashtable.STH_apply
-  def eval (m, x) =
-    case MapSTHashtable.STH_apply(m,x) of
-      | Some v -> v
-      | None -> fail "inside eval"   % shame shame
+  def eval  = MapSTHashtable.STH_eval
   def update(x,y,z) = MapSTHashtable.STH_update(x,y,z)
   def remove = MapSTHashtable.STH_remove
   def inDomain? (m, x) =

@@ -1,35 +1,37 @@
 ;;;-------------------------------------------------------------------------
-;;;               Copyright (C) 2002 by Kestrel Technology
+;;;               Copyright (C) 2007 by Kestrel Technology
 ;;;                          All Rights Reserved
 ;;;-------------------------------------------------------------------------
-;;; Modified from Marcel's HArrayAsStringMap.lisp
-;;; Further modified for near single-threaded use.
-;;; Only keep forward links to allow for garbage collection of unused nodes and undolist
-;;; Whenever changes are undone, make a copy, so that leaf versions can live together
-;;; Each node is a vector containing the harray, whether the harray is current, and the undo
-;;; list. I can't remember why an undo list of nil doesn't mean the harray is current.
-;;; An undo element is a pair of the domain value and its previous range value.
-;;; Because of the copy-on-undo strategy, there is never any need to switch the element to a redo.
-;;; A lookup on a non-current version does not cause an update.Instead, the undo list is treated as
-;;; an alist map shadowing the harray.
+;;; Modified from MapAsSTHarray.lisp which is modified from Marcel's HArrayAsStringMap.lisp
+;;; Modified for backtracking usage, where only one version is used at any time,
+;;; but once a version is backtracked from, it is is likely never to be referenced again.
+;;; Only keep forward links to allow for garbage collection of unused nodes.
+;;; Rather than have a list of undos, keep the undo/information in the node with a pointer
+;;; to the next node. When you undo, the pointers are reversed.
 
-
-(defpackage :MapSTHashtable)
-(in-package :MapSTHashtable)
+(defpackage :MapBTHashtable)
+(in-package :MapBTHashtable)
 
 (eval-when (compile)
   (proclaim '(optimize (space 1) (speed 3)(debug 3))))
 
 
-(defun make-map-as-undo-harray (harray undo-list)
-  (vector harray t undo-list))
+(defun make-map-as-undo-harray (harray next)
+  (vector harray next nil nil
+))
 
 (defmacro map-as-undo-harray--harray (x) `(svref ,x 0))
-(defmacro map-as-undo-harray--undo-list (x) `(svref ,x 2))
-(defmacro map-as-undo-harray-current? (x) `(svref ,x 1))
+(defmacro map-as-undo-harray--next (x) `(svref ,x 1))
+(defmacro map-as-undo-harray-current? (x) `(null (svref ,x 1)))
+(defmacro map-as-undo-harray--dom-elt (x) `(svref ,x 2))
+(defmacro map-as-undo-harray--saved-val (x) `(svref ,x 3))
 
-(defun make-undo-pair (domain-value old-range-value)
-  (cons domain-value old-range-value))
+(defmacro map-as-undo-harray--set-next (m next)
+   `(setf (svref ,m 1) ,next))
+
+(defun set-undo-info (v domain-value old-range-value)
+  (setf (svref v 2) domain-value)
+  (setf (svref v 3) old-range-value))
 
 (defparameter *map-as-undo-harray--initial-harray-size* 100)
 (defparameter *map-as-undo-harray--rehash-size* 2.0)
@@ -38,12 +40,6 @@
   (make-hash-table :test 'equal
 		   :size *map-as-undo-harray--initial-harray-size*
 		   :rehash-size *map-as-undo-harray--rehash-size*))
-
-(defmacro map-as-undo-harray--set-undo-list (m undo-list)
-   `(setf (svref ,m 2) ,undo-list))
-
-(defmacro map-as-undo-harray--mark-non-current (m)
-   `(setf (svref ,m 1) nil))
 
 (defun make-hash-table-same-size (table)
   (make-hash-table :test 'equal
@@ -71,31 +67,37 @@
 (defun mkSome (val)
   (cons ':|Some| val))
 
-(defvar *break-on-non-single-threaded-updates?* nil)
-;;; (setq MapSTHashtable::*break-on-non-single-threaded-updates?* t)
-
 (defun map-as-undo-harray-assure-current (m)
   (if (map-as-undo-harray-current? m)
       m
-    (let ((undo-list (nreverse (map-as-undo-harray--undo-list m)))
-	  (table (map-as-undo-harray--harray m)))
-      ;(incf *map-as-undo-harray-undo-count* (length undo-list))
-      ;(incf *map-as-undo-harray-copy-count*)
-      (when *break-on-non-single-threaded-updates?*
-	(break "Non-single-threaded update!"))
-      (let ((new-table (copy-hash-table table)))
-	(loop for (dom . ran) in undo-list
-	   do (if (eq ran *undefined*)
-		  (remhash dom new-table)
-		(setf (gethash dom new-table) ran)))
-	;; Two nreverses leave things unchanged
-	(nreverse undo-list)
-	(make-map-as-undo-harray new-table nil)))))
+      (let* ((table (map-as-undo-harray--harray m))
+	     ;; Follow links to curr reversing as you go
+	     (live (do ((curr m next)
+			(next (prog1 (map-as-undo-harray--next m)
+				(map-as-undo-harray--set-next m nil))
+			      (prog1 (map-as-undo-harray--next next)
+				(map-as-undo-harray--set-next next curr))))
+		       ((null next) curr)
+		     ())))   ; empty body because action in prog1
+	;; Follow links back to m undoing as we go and storing redo info
+	(do ((curr live next)
+	     (next (map-as-undo-harray--next live)
+		   (map-as-undo-harray--next next)))
+	    ((null next) ())
+	  (let ((dom-elt (map-as-undo-harray--dom-elt next)))
+	    ;(format t "Current: ~a~%~a -> ~a~%" curr dom-elt (gethash dom-elt table))
+	    (set-undo-info curr dom-elt (gethash dom-elt table *undefined*))
+	    (let ((old-val (map-as-undo-harray--saved-val next)))
+	      (if (eq old-val *undefined*)
+		  (remhash dom-elt table)
+		  (setf (gethash dom-elt table) old-val)))))
+	m)))
+	     
 
-(defparameter STH_empty_map (make-map-as-undo-harray (make-hash-table :test 'equal :size 0) nil))
+(defparameter BTH_empty_map (make-map-as-undo-harray (make-hash-table :test 'equal :size 0) nil))
 
 (defun map-as-undo-harray--update (m x y)
-  (if (eq m STH_empty_map)
+  (if (eq m BTH_empty_map)
       (if (eq y *undefined*)
 	  m
 	(let ((new-table (map-as-undo-harray--initial-harray)))
@@ -103,8 +105,7 @@
 	  (make-map-as-undo-harray new-table nil)))
     (let ((m (map-as-undo-harray-assure-current m)))
       ;(incf *map-as-undo-harray-set-count*)
-      (let* ((last-undo-list (map-as-undo-harray--undo-list m))
-	     (table (map-as-undo-harray--harray m))
+      (let* ((table (map-as-undo-harray--harray m))
 	     (old-val (gethash x table *undefined*)))
 	(if (eq y old-val)
 	    m				; Optimize special case
@@ -112,13 +113,10 @@
 	    (if (eq y *undefined*)
 		(progn (remhash x table))
 	      (progn (setf (gethash x table) y)))
-	    (let ((new-undo-list (cons (make-undo-pair x old-val)
-				       nil)))
-	      (map-as-undo-harray--set-undo-list m new-undo-list)
-	      (map-as-undo-harray--mark-non-current m)
-	      (unless (null last-undo-list)
-		(setf (cdr last-undo-list) new-undo-list))
-	      (make-map-as-undo-harray table new-undo-list))))))))
+	    (set-undo-info m x old-val)
+	    (let ((new-m (make-map-as-undo-harray table nil)))
+	      (map-as-undo-harray--set-next m new-m)
+	      new-m)))))))
 
 (defun map-as-undo-harray--map-through-pairs (fn m)
   (let ((m (map-as-undo-harray-assure-current m)))
@@ -127,63 +125,43 @@
 
 ;;; The Hash Table interface functions
 
-(defun STH_numItems (m)
+(defun BTH_numItems (m)
   (let ((m (map-as-undo-harray-assure-current m)))
     (hash-table-count (map-as-undo-harray--harray m))))
 
-(defun STH_apply-2 (m x)
+(defun BTH_apply-2 (m x)
   ;(incf *map-as-undo-harray-ref-count*)
-  (let ((val
-	 (if (map-as-undo-harray-current? m)
-	     (gethash x (map-as-undo-harray--harray m) *undefined*)
-	   (let ((alist (map-as-undo-harray--undo-list m)))
-	     ;;(incf *map-as-undo-harray-alist-ref-count*)
-	     ;;(incf *map-as-undo-harray-alist-elt-ref-count* (length alist))
-	     (loop for l on alist
-		 until (not (consp l))
-		 when (equal (caar l) x)
-		 return (cdar l)
-		 finally (return (gethash x (map-as-undo-harray--harray m)
-					  *undefined*)))))))
+  (map-as-undo-harray-assure-current m)
+  (let ((val (gethash x (map-as-undo-harray--harray m) *undefined*)))
     (if (eq val *undefined*) *undefined*
       (mkSome val))))
 
-(defun STH_apply (pr)
-  (STH_apply-2 (car pr) (cdr pr)))
+(defun BTH_apply (pr)
+  (BTH_apply-2 (car pr) (cdr pr)))
 
-(defun STH_eval-2 (m x)
+(defun BTH_eval-2 (m x)
   ;(incf *map-as-undo-harray-ref-count*)
-  (let ((val
-	 (if (map-as-undo-harray-current? m)
-	     (gethash x (map-as-undo-harray--harray m) *undefined*)
-	   (let ((alist (map-as-undo-harray--undo-list m)))
-	     ;;(incf *map-as-undo-harray-alist-ref-count*)
-	     ;;(incf *map-as-undo-harray-alist-elt-ref-count* (length alist))
-	     (loop for l on alist
-		 until (not (consp l))
-		 when (equal (caar l) x)
-		 return (cdar l)
-		 finally (return (gethash x (map-as-undo-harray--harray m)
-					  *undefined*)))))))
+  (map-as-undo-harray-assure-current m)
+  (let ((val (gethash x (map-as-undo-harray--harray m) *undefined*)))
     (if (eq val *undefined*)
-	(error "STH_eval: out-of-domain reference: ~a" x)
+	(error "BTH_eval: out-of-domain reference: ~a" x)
       val)))
 
-(defun STH_eval (pr)
-  (STH_eval-2 (car pr) (cdr pr)))
+(defun BTH_eval (pr)
+  (BTH_eval-2 (car pr) (cdr pr)))
 
 
 ;;; Some y is stored in array, as it is usually accessed more often than set
-(defun STH_update-3 (m x y)
+(defun BTH_update-3 (m x y)
   (map-as-undo-harray--update m x y))
 
-(defun STH_remove-2 (m x)
+(defun BTH_remove-2 (m x)
   (map-as-undo-harray--update m x *undefined*))
 
-(defun STH_remove (pr)
+(defun BTH_remove (pr)
   (map-as-undo-harray--update (car pr) (cdr pr) *undefined*))
 
-(defun STH_mapi-2 (f m)
+(defun BTH_mapi-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -193,7 +171,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun STH_map-2 (f m)
+(defun BTH_map-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -203,7 +181,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun STH_mapiPartial-2 (f m)
+(defun BTH_mapiPartial-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -216,7 +194,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun STH_mapPartial-2 (f m)
+(defun BTH_mapPartial-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -229,7 +207,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun STH_app-2 (f m)
+(defun BTH_app-2 (f m)
   (declare (dynamic-extent f))
   (let ((m (map-as-undo-harray-assure-current m)))
     (maphash #'(lambda (key val)
@@ -238,7 +216,7 @@
 	     (map-as-undo-harray--harray m)))
   nil)
 
-(defun STH_appi-2 (f m)
+(defun BTH_appi-2 (f m)
   (declare (dynamic-extent f))
   (let ((m (map-as-undo-harray-assure-current m)))
     (maphash #'(lambda (key val)
@@ -265,7 +243,7 @@
        (setf (get 'map-2 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
        (setf (get 'mapi-2 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil)))
 
-(defun STH_foldi-3 (fn result m)
+(defun BTH_foldi-3 (fn result m)
   (map-as-undo-harray--map-through-pairs
      #'(lambda (key val)
 	 (let ((args (foldi-vector key val result)))
@@ -274,7 +252,7 @@
      m)
   result)
 
-(defun STH_imageToList (m) 
+(defun BTH_imageToList (m) 
   (let ((m (map-as-undo-harray-assure-current m)))
     (let ((items nil))
       (maphash #'(lambda (key val) 
@@ -283,7 +261,7 @@
 	       (map-as-undo-harray--harray m))
       items)))
 
-(defun STH_mapToList (m) 
+(defun BTH_mapToList (m) 
   (let ((m (map-as-undo-harray-assure-current m)))
     (let ((items nil))
       (maphash #'(lambda (key val) 
@@ -291,7 +269,7 @@
 	       (map-as-undo-harray--harray m))
     items)))
 
-(defun STH_domainToList (m) 
+(defun BTH_domainToList (m) 
   (let ((m (map-as-undo-harray-assure-current m)))
     (let ((items nil))
       (maphash #'(lambda (key val) 
