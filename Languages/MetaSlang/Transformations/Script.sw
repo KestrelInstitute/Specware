@@ -204,7 +204,7 @@ spec
   op interpretSpec(spc: Spec, script: Script): Spec =
     case script of
       | Steps steps \_rightarrow
-        foldl (\_lambda (stp,sp) \_rightarrow
+        foldl (\_lambda (stp,spc) \_rightarrow
                interpretSpec(spc,stp))
           spc steps
       | At(locs, scr) \_rightarrow
