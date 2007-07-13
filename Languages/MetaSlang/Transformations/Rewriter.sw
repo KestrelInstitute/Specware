@@ -169,8 +169,11 @@ MetaSlangRewriter qualifying spec
                let condn = simplify context.spc (mkApply(pred, mkVar v)) in
                addDemodRules(assertRules(context,condn,"Subtype"),rules))
             | _ -> rules)
-     | RestrictedPat(_,condn,_) ->
-       addDemodRules(assertRules(context,condn,"Restriction"),rules)
+     | RecordPat(fields, _ ) ->
+       foldl (fn ((_,sp), rules) -> addPatternRestriction(context, sp, rules)) rules fields
+     | RestrictedPat(sp,condn,_) ->
+       addPatternRestriction(context, sp,
+                             addDemodRules(assertRules(context,condn,"Restriction"),rules))
      | _ -> rules
 
  def negate term =
@@ -235,6 +238,16 @@ MetaSlangRewriter qualifying spec
  op rewriteSubTerm : [a] {strategy:Strategy,rewriter:Rewriter a,context:Context}
                            * List Var * MS.Term * Demod RewriteRule
                            -> LazyList (MS.Term * a)
+
+ op [a] rewritePattern (solvers: {strategy:Strategy,rewriter:Rewriter a,context:Context},
+                        boundVars: List Var, pat: Pattern, rules: Demod RewriteRule)
+          : LazyList(Pattern * a) =
+   case pat of
+     | RestrictedPat(p,t,b) ->
+       LazyList.map 
+         (fn (t,a) -> (RestrictedPat(p,t,b),a)) 
+         (rewriteTerm(solvers,boundVars ++ patternVars p,t,rules))
+     | _ -> Nil
 
  def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
      case strategy
@@ -315,18 +328,22 @@ MetaSlangRewriter qualifying spec
                    (rewriteTerm(solvers,boundVars,M,rules)))
 	 | Record(fields,b) -> 
 	   mapEach 
-  	    (fn (first,(label,M),rest) -> 
+   	    (fn (first,(label,M),rest) -> 
 		rewriteTerm(solvers,boundVars,M,rules) >>= 
 		(fn (M,a) -> unit(Record(first ++ [(label,M)] ++ rest,b),a)))
 	    fields
          | Lambda(lrules,b) ->
-	   mapEach 
-	     (fn (first,(pat,cond,M),rest) -> 
-		rewriteTerm(solvers,(boundVars ++ patternVars pat),M,
-                            addPatternRestriction(context,pat,rules))
-                >>=
-		(fn (M,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
-	     lrules
+           mapEach(fn (first,(pat,cond,M),rest) -> 
+                     rewritePattern(solvers,boundVars,pat,rules)
+                     >>= (fn (pat,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
+             lrules
+	   @@ (fn () ->
+               mapEach 
+                 (fn (first,(pat,cond,M),rest) -> 
+                    rewriteTerm(solvers,(boundVars ++ patternVars pat),M,
+                                addPatternRestriction(context,pat,rules))
+                    >>= (fn (M,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
+                 lrules)
          | Let(binds,M,b) ->
            mapEach (fn (first,(pat,N),rest) ->
                       rewriteTerm(solvers,boundVars,N,rules) >>=
