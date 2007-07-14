@@ -273,6 +273,12 @@ Utilities qualifying spec
    let vars = freeVarsRec(M) in
    removeDuplicateVars vars
 
+  op inVars?(v: Var, vs: List Var): Boolean =
+    exists (fn v1 -> equalVar?(v,v1)) vs
+
+  op hasRefTo?(t: MS.Term, vs: List Var): Boolean =
+    exists (fn v -> inVars?(v, vs)) (freeVars t)
+
  op removeDuplicateVars: List Var -> List Var
  def removeDuplicateVars vars = 
    case vars of
@@ -288,8 +294,8 @@ Utilities qualifying spec
  def deleteVar (var_to_remove, vars) = 
    List.filter (fn v -> ~(equalVar? (v, var_to_remove))) vars
 
- def insertVars (vars_to_add,    original_vars) = List.foldl insertVar original_vars vars_to_add
- def deleteVars (vars_to_remove, original_vars) = List.foldl deleteVar original_vars vars_to_remove
+ def insertVars (vars_to_add,    original_vars) = foldl insertVar original_vars vars_to_add
+ def deleteVars (vars_to_remove, original_vars) = foldl deleteVar original_vars vars_to_remove
 
  def freeVarsRec (M : MS.Term) =   
    case M of
@@ -415,12 +421,12 @@ Utilities qualifying spec
  % are handled.
 
  def substituteType(srt,S) = 
-   let freeNames = List.foldr (fn ((v,trm),vs) -> 
-			       StringSet.union (StringSet.fromList
+   let freeNames = foldr (fn ((v,trm),vs) -> 
+                            StringSet.union (StringSet.fromList
 						(List.map (fn (n,_) -> n)
 						          (freeVars trm)),
 						vs))
-                              StringSet.empty S
+                     StringSet.empty S
    in 
    substituteType2(srt,S,freeNames) 
 
@@ -456,12 +462,12 @@ Utilities qualifying spec
 
  def substitute(M,sub) = 
    if null sub then M else 
-   let freeNames = List.foldr (fn ((v,trm),vs) -> 
-			       StringSet.union (StringSet.fromList
-						(List.map (fn (n,_) -> n)
-						          (freeVars trm)),
-					       vs)) 
-                              StringSet.empty sub
+   let freeNames = foldr (fn ((v,trm),vs) -> 
+                            StringSet.union (StringSet.fromList
+                                               (List.map (fn (n,_) -> n)
+                                                  (freeVars trm)),
+                                             vs)) 
+                     StringSet.empty sub
    in 
    substitute2(M,sub,freeNames)
  
@@ -824,7 +830,7 @@ Utilities qualifying spec
 	    case p
 	      of VarPat(v,_) -> cons(v,vs)
 	       | RecordPat(fields,_) -> 
-		 List.foldr (fn ((_,p),vs) -> loopP(p,vs)) vs fields
+		 foldr (fn ((_,p),vs) -> loopP(p,vs)) vs fields
 	       | EmbedPat(_,None,_,_) -> vs
 	       | EmbedPat(_,Some p,_,_) -> loopP(p,vs)
 	       | QuotientPat(p,_,_) -> loopP(p,vs)
@@ -854,11 +860,6 @@ Utilities qualifying spec
      | Fun(Bool false,_,_) -> mkAnd(t1,t2)
      | _ ->
    IfThenElse(t1,t2,t3,noPos)
-
- op [a] deRestrict(p: APattern a): APattern a =
-   case p of
-     | RestrictedPat(p,_,_) -> p
-     | _ -> p
 
  %% Utilities.mkOr, etc:
 
@@ -1381,6 +1382,34 @@ Utilities qualifying spec
 	   | Some pairs -> typeMatchL(l1,l2,pairs,matchElt)
 	   | None -> None)
       | _ -> Some pairs
+
+  op termSize (t: MS.Term): Nat =
+    foldSubTerms (fn (_,i) -> i + 1) 0 t
+
+  op [a] maximal (f: a -> Nat) (l: List a): Option a =
+    let def loop (l,m,best) =
+          case l of
+            | [] -> Some best
+            | x::r ->
+              let new = f x in
+              if new > m
+                then loop(r,new,x)
+                else loop(r,m,best)
+    in
+    case l of
+      | [] -> None
+      | x::r -> loop(r,f x,x)
+
+  op newName (name: String, names: List String): String = 
+    let
+      def loop i =
+        let n = name ^ (toString i) in
+        if exists (fn m -> n = m) names then
+          loop (i + 1)
+        else 
+          n
+    in
+      loop 1
 
 endspec
 
