@@ -17,8 +17,8 @@
   (proclaim '(optimize (space 1) (speed 3)(debug 3))))
 
 
-(defun make-map-as-undo-vector (vector next)
-  (vector vector next nil nil))
+(defun make-map-as-undo-vector (vec next)
+  (vector vec next nil nil))
 
 (defmacro map-as-undo-vector--vector (x) `(svref ,x 0))
 (defmacro map-as-undo-vector--next (x) `(svref ,x 1))
@@ -58,9 +58,9 @@
   (let ((new-vec (make-array (min *map-as-undo-vector--max-vector-size*
 				  (floor (* large-i *map-as-undo-vector-resize-factor*)))
 			     :initial-element *undefined*)))
-    (loop for i from 0 to (- (length vec))
+    (loop for i from 0 to (- (length vec) 1)
 	  do (setf (svref new-vec i) (svref vec i)))
-    (make-map-as-undo-vector new-vec)))
+    (make-map-as-undo-vector new-vec nil)))
     
 
 (defparameter *map-as-undo-vector-undo-count* 0)
@@ -116,6 +116,18 @@
 		     (map-as-undo-vector--set-next m new-m)
 		     new-m))))))))
 
+(defun print-map (m)
+  (map-as-undo-vector-assure-current m)
+  (let ((vec (map-as-undo-vector--vector m))
+	(line-items 0))
+    (loop for x from 0 to (- (length vec) 1)
+	  do (let ((val (svref vec x)))
+	       (when (defined? val)
+		 (when (> (incf line-items) 10)
+		   (terpri)
+		   (setq line-items 0))
+		 (format t "~3D:~4D " x val))))))
+
 ;;; The Vector interface functions
 
 (defparameter BTV_empty_map (make-map-as-undo-vector (map-as-undo-vector--initial-vector) nil))
@@ -139,16 +151,20 @@
 (defun BTV_apply (pr)
   (BTV_apply-2 (car pr) (cdr pr)))
 
+(defun eval-error (m x)
+  (print-map m)
+  (error "BTV_eval: out-of-domain reference: ~a" x))
+
 (defun BTV_eval-2 (m x)
   (declare (fixnum x))
   ;(incf *map-as-undo-vector-ref-count*)
   (map-as-undo-vector-assure-current m)
   (let ((vec (map-as-undo-vector--vector m)))
     (if (>= x (length vec))
-	(error "BTV_eval: out-of-domain reference: ~a" x)
+	(eval-error m x)
 	(let ((val (svref vec x)))
 	  (if (eq val *undefined*)
-	      (error "BTV_eval: out-of-domain reference: ~a" x)
+	      (eval-error m x)
 	      val)))))
 
 (defun BTV_eval (pr)
