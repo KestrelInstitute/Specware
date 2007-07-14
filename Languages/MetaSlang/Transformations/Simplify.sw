@@ -381,9 +381,6 @@ spec
     % let _ = toScreen("Simp:\n" ^ printTerm result ^ "\n\n") in
     result
 
-  op inVars?(v: Var, vs: List Var): Boolean =
-    exists (fn v1 -> equalVar?(v,v1)) vs
-
   op  bindEquality: MS.Term * List Var -> Option(Var * MS.Term)
   def bindEquality (t,vs) =
     case t of
