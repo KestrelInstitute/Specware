@@ -9,6 +9,11 @@
 				   ("lr" . "[thm] Applies theorem as a rewrite in left-to-right direction")
 				   ("rl" . "[thm] Applies theorem as a rewrite in right-to-left direction")
 				   ("simp-standard" . "Applies standard simplifier")
+				   ("ss" . "Applies standard simplifier")
+				   ("partial-eval" . "Evaluate closed sub-expressions")
+				   ("pe" . "Evaluate closed sub-expressions")
+				   ("abstract-cse" . "Abstract Common Sub-Expressions")
+				   ("cse" . "Abstract Common Sub-Expressions")
 				   ("pc"   . "Print current expression")
 				   ("undo" . "[n] Undo n levels (1 with no argument)")
 				   ("done" . "Print script and return to normal shell")
@@ -24,7 +29,8 @@
   (setq *transform-spec* spc)
   (setq *transform-term* nil)
   (setq *transform-commands* nil)
-  (setq *undo-stack* nil))
+  (setq *undo-stack* nil)
+  (setq *prompt* "** "))
 
 (defun push-state ()
   (push (list *transform-term* *transform-commands*) *undo-stack*))
@@ -117,6 +123,7 @@
       (format t "No transformations")
       (Script::printScript (Script::mkSteps *transform-commands*)))
   (setq *current-command-processor* 'process-sw-shell-command)
+  (setq *prompt* "* ")
   (values))
 
 (defun process-transform-shell-command (command argstr)
@@ -136,6 +143,7 @@
 	   ((left-to-right lr) (apply-command argstr 'Script::mkLeftToRight))
 	   ((right-to-left rl) (apply-command argstr 'Script::mkRightToLeft))
 	   ((simp-standard ss) (interpret-command (Script::mkSimpStandard-0)))
+	   ((abstract-cse cse acse) (interpret-command (Script::mkAbstractCommonExpressions-0)))
 	   ((partial-eval pe)  (interpret-command (Script::mkPartialEval-0)))
 
 	   (pc                 (print-current-term))
