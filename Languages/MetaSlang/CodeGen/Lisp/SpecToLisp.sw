@@ -872,19 +872,6 @@ SpecToLisp qualifying spec {
 
 	 | _ -> countOccurrence2 (x, count, terms)
       
-
- def newName (name, names) : String = 
-   let
-     def loop i =
-       let n = name ^ (Nat.toString i) in
-       if exists (fn m -> n = m) names then
-	 loop (i + 1)
-       else 
-	 n
-   in
-     loop 1
-      
-
  def getNames (term : LispTerm) =
    case term of
      | Apply   (t1, terms)         -> foldr (fn (t, names) -> getNames t ++ names) (getNames t1) terms
