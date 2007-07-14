@@ -273,17 +273,19 @@ spec
     let iso_rewrites = map (fn qid \_rightarrow LeftToRight qid) iso_thm_qids in
     let main_script = Steps [SimpStandard,
                              Simplify([Unfold(mkUnQualifiedId "inv_iso"),
-                                %LeftToRight(mkUnQualifiedId "f_if_then_else"),
-                                %% Should be in specs
-                                LeftToRight(mkUnQualifiedId "iso_set_fold"),
-                                LeftToRight(mkUnQualifiedId "iterate_inv_iso"),
-                                LeftToRight(mkUnQualifiedId "map_empty"),
-                                LeftToRight(mkUnQualifiedId "map_doubleton"),
-                                LeftToRight(mkUnQualifiedId "case_map"),
-                                LeftToRight(mkUnQualifiedId "unfold_let_inv_iso"),
-                                Unfold(mkQualifiedId("Option","mapOption"))]
-                                 ++ iso_rewrites
-                                 ++ unfolds)]
+                                       %LeftToRight(mkUnQualifiedId "f_if_then_else"),
+                                       %% Should be in specs
+                                       LeftToRight(mkUnQualifiedId "iso_set_fold"),
+                                       LeftToRight(mkUnQualifiedId "iterate_inv_iso"),
+                                       LeftToRight(mkUnQualifiedId "map_empty"),
+                                       LeftToRight(mkUnQualifiedId "map_doubleton"),
+                                       LeftToRight(mkUnQualifiedId "case_map"),
+                                       LeftToRight(mkUnQualifiedId "unfold_let_inv_iso"),
+                                       Unfold(mkQualifiedId("Option","mapOption"))]
+                                        ++ iso_rewrites
+                                        ++ unfolds)%,
+                            % AbstractCommonExpressions
+                             ]
     in
     let simp_ops
        = mapOpInfos

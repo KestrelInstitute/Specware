@@ -1,6 +1,7 @@
 Script qualifying
 spec
-  import Simplify, Rewriter, Interpreter, /Library/PrettyPrinter/WadlerLindig
+  import Simplify, Rewriter, Interpreter, CommonSubExpressions
+  import /Library/PrettyPrinter/WadlerLindig
 
   op Isomorphism.makeIsoMorphism: Spec * QualifiedId * QualifiedId \_rightarrow Spec
 
@@ -25,6 +26,7 @@ spec
     | Apply (List RuleSpec)
     | SimpStandard
     | PartialEval
+    | AbstractCommonExpressions
     | IsoMorphism(QualifiedId \_times QualifiedId \_times List RuleSpec)
 
  op ppSpace: WadlerLindig.Pretty = ppString " "
@@ -62,6 +64,7 @@ spec
         ppConcat [ppString "apply (", ppSep (ppString ", ") (map ppRuleSpec rules), ppString ")"]
       | SimpStandard -> ppString "SimpStandard"
       | PartialEval -> ppString "Eval"
+      | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
       | IsoMorphism(iso, inv_iso, _) \_rightarrow
         ppConcat[ppString "isomorphism (", ppQid iso, ppQid inv_iso, ppString ")"]
 
@@ -78,6 +81,7 @@ spec
  op mkApply(rules: List RuleSpec): Script = Apply rules
  op mkSimpStandard(): Script = SimpStandard
  op mkPartialEval (): Script = PartialEval
+ op mkAbstractCommonExpressions (): Script = AbstractCommonExpressions
 
  %% For convenience calling from lisp
  op mkFold(qid: QualifiedId): RuleSpec = Fold qid
@@ -170,7 +174,7 @@ spec
   op makeRules (context: Context, spc: Spec, rules: List RuleSpec): List RewriteRule =
     foldr (\_lambda (rl,rules) \_rightarrow makeRule(context, spc, rl) ++ rules) [] rules
 
-  op maxRewrites: Nat = 25
+  op maxRewrites: Nat = 40
 
   op interpretTerm(spc: Spec, script: Script, term: MS.Term): MS.Term =
     case script of
@@ -181,6 +185,8 @@ spec
       | SimpStandard \_rightarrow simplify spc term
       | PartialEval \_rightarrow
         evalFullyReducibleSubTerms (term, spc)
+      | AbstractCommonExpressions \_rightarrow
+        abstractCommonSubExpressions (term)
       | Simplify(rules) \_rightarrow
         let context = makeContext spc in
         let rules = makeRules (context, spc, rules) in
