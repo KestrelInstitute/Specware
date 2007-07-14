@@ -479,6 +479,7 @@ MetaSlang qualifying spec
    case term of
      | Apply      (t1,t2,   _) -> (case termSort t1 of
 				     | Arrow(dom,rng,_) -> rng
+                                     | Subsort(Arrow(dom,rng,_),_,_) -> rng
 				     | _ -> System.fail ("Cannot extract sort of application "
 							 ^ printTerm term))
      | ApplyN     ([t1,t2], _) -> (case termSort t1 of
@@ -544,6 +545,11 @@ MetaSlang qualifying spec
      | RestrictedPat(p, t,    a) ->
        Subsort(patternSort p,Lambda([(p,mkTrueA a,t)],a),a)
      | SortedPat    (_, srt,  _) -> srt
+
+ op [a] deRestrict(p: APattern a): APattern a =
+   case p of
+     | RestrictedPat(p,_,_) -> p
+     | _ -> p
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Mappings
