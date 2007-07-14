@@ -59,6 +59,9 @@ spec
       | Name("simpStandard",_) -> return SimpStandard
       | Name("SimpStandard",_) -> return SimpStandard
       | Name("eval",_) -> return PartialEval
+      | Name("partial-eval",_) -> return PartialEval
+      | Name("AbstractCommonExprs",_) -> return AbstractCommonExpressions
+      | Name("AbstractCommonSubExprs",_) -> return AbstractCommonExpressions
       | Item("lr",thm,_) -> {qid <- makeQID thm;
                              return (Apply([LeftToRight qid]))}
       | Item("rl",thm,_) -> {qid <- makeQID thm;
