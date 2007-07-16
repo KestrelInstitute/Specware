@@ -1,3 +1,5 @@
+(* $Id$ *)
+
 (*
 2007:07:05
 AC
@@ -9,7 +11,7 @@ Other modes should be added (e.g. CFB, OFB).
 *)
 
 
-BlockCipher qualifying spec
+spec
 
   (* A block cipher is an encryption/decryption method that operates on blocks
   of fixed size. An example of block cipher is DES. A block cipher can be

@@ -1,3 +1,5 @@
+(* $Id$ *)
+
 (*
 2007:07:05
 AC
@@ -15,27 +17,30 @@ TDES qualifying spec
   instead of DES. Refer to the explanatory comments in that spec, which apply,
   mutatis mutandis, to this spec. *)
 
-  import TripleDESCryptographyBasics, BlockCipherModes
+  import TripleDESCryptographyBasics,
+         TDESModes qualifying BlockCipherModes
 
-  def BlockCipher.blockSize = 64  % block size in 3DES
+  def TDESModes.blockSize = 64  % block size in 3DES
 
-  % 3DES in ECB mode:
+  % 3DES in ECB mode
+  % (the TDESModes qualifier is unnecessary, but we use for enhanced clarity):
 
   op encryptECB (key:TDES.Key) : BlockAlignedData -> BlockAlignedData =
-    BlockCipher.encryptECB (encryptBlock key)
+    TDESModes.encryptECB (encryptBlock key)
 
   op decryptECB (key:TDES.Key) : BlockAlignedData -> BlockAlignedData =
-    BlockCipher.decryptECB (decryptBlock key)
+    TDESModes.decryptECB (decryptBlock key)
 
-  % 3DES in CBC mode:
+  % 3DES in CBC mode
+  % (the TDESModes qualifier is unnecessary, but we use for enhanced clarity):
 
   op encryptCBC (key:TDES.Key) : InitVector -> BlockAlignedData ->
                                  BlockAlignedData * InitVector =
-    BlockCipher.encryptCBC (encryptBlock key)
+    TDESModes.encryptCBC (encryptBlock key)
 
   op decryptCBC (key:TDES.Key) : InitVector -> BlockAlignedData ->
                                  BlockAlignedData * InitVector =
-    BlockCipher.decryptCBC (decryptBlock key)
+    TDESModes.decryptCBC (decryptBlock key)
 
   (* 3DES CBC mode as defined above is sometimes called "outer CBC", as
   opposed to "inner CBC". Outer CBC performs the chaining at the outer level

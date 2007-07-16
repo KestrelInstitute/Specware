@@ -1,3 +1,5 @@
+(* $Id$ *)
+
 (*
 2007:07:05
 AC
@@ -37,28 +39,29 @@ DES qualifying spec
   and then we would use spec substitution as a matter of style, given the
   general dangers of "just adding a def" to a spec. *)
 
-  import DESCryptographyBasics, BlockCipherModes
+  import DESCryptographyBasics,
+         DESModes qualifying BlockCipherModes
 
-  def BlockCipher.blockSize = 64  % block size in DES
+  def DESModes.blockSize = 64  % block size in DES
 
   % DES in ECB mode
-  % (the BlockCipher is not necessary, but we use for enhanced clarity):
+  % (the DESModes qualifier is unnecessary, but we use for enhanced clarity):
 
   op encryptECB (key:Key) : BlockAlignedData -> BlockAlignedData =
-    BlockCipher.encryptECB (encryptBlock key)
+    DESModes.encryptECB (encryptBlock key)
 
   op decryptECB (key:Key) : BlockAlignedData -> BlockAlignedData =
-    BlockCipher.decryptECB (decryptBlock key)
+    DESModes.decryptECB (decryptBlock key)
 
   % DES in CBC mode
-  % (the BlockCipher is not necessary, but we use for enhanced clarity):
+  % (the DESModes is unnecessary, but we use for enhanced clarity):
 
   op encryptCBC (key:Key) : InitVector -> BlockAlignedData ->
                             BlockAlignedData * InitVector =
-    BlockCipher.encryptCBC (encryptBlock key)
+    DESModes.encryptCBC (encryptBlock key)
 
   op decryptCBC (key:Key) : InitVector -> BlockAlignedData ->
                             BlockAlignedData * InitVector =
-    BlockCipher.decryptCBC (decryptBlock key)
+    DESModes.decryptCBC (decryptBlock key)
 
 endspec
