@@ -1110,9 +1110,9 @@ with the &Specware; distribution, for details (e.g. axioms).
   <variablelist>
    <varlistentry>
     <term><command>Types</command></term>
-    <listitem><para>[[type Injective(a,b)  = ((a -> b) | injective?)]]</para>
-              <para>[[type Surjective(a,b) = ((a -> b) | surjective?)]]</para>
-              <para>[[type Bijective(a,b)  = ((a -> b) | bijective?)]]</para></listitem>
+    <listitem><para>[[type Injection(a,b)  = ((a -> b) | injective?)]]</para>
+              <para>[[type Surjection(a,b) = ((a -> b) | surjective?)]]</para>
+              <para>[[type Bijection(a,b)  = ((a -> b) | bijective?)]]</para></listitem>
    </varlistentry>
    <varlistentry>
     <term><command>Ops</command></term>
