@@ -95,7 +95,8 @@
 (unless mspe-keymap
   (setq mspe-keymap (make-keymap))
   ;; unnecessary (set-keymap-parent map (current-global-map))
-  (set-keymap-name mspe-keymap 'mspe-keymap)
+  (when (featurep 'xemacs)
+    (set-keymap-name mspe-keymap 'mspe-keymap))
   (define-key mspe-keymap '(button3) 'extent-copy-as-kill)
   (define-key mspe-keymap '(control button1) 'extent-insert-lisp-ref))
 

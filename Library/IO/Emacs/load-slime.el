@@ -3,10 +3,13 @@
 
 (defvar lisp-emacs-interface-type 'slime)
 
-(defconst *specware* (getenv "SPECWARE4"))
-(defconst *specware-home-directory* (getenv "SPECWARE4"))
+(defconst *specware* "/Users/westfold/Test/Specware4") ; !!
+(defconst *specware-home-directory* *specware*)
 
 (defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
+
+(defvar *windows-system-p* (memq system-type '(ms-dos windows-nt windows-95
+					       ms-windows)))
 
 (push (concat *specware-emacs* "slime/")
       load-path)
@@ -55,7 +58,7 @@
 	 auto-mode-alist))
 
 
-(defvar *load-mode-motion+* t)
+(defvar *load-mode-motion+* (featurep 'xemacs))
 
 (when *load-mode-motion+*
   (defvar mode-motion+-religion 'highlight)

@@ -2,7 +2,7 @@
 
 (require 'font-lock)
 
-(when font-lock-use-colors
+(when (and (featurep 'xemacs) font-lock-use-colors)
   (font-lock-use-default-colors))
 
 ;;;(make-face 'font-lock-fixed-width-comment-face)
@@ -10,9 +10,10 @@
 ;;;    (copy-face 'bold 'font-lock-fixed-width-comment-face))
 
 ;;(set-face-underline-p 'font-lock-string-face nil)
-(setq font-lock-face-list
-  (cons 'font-lock-reserved-word-face
-	font-lock-face-list))
+(when (featurep 'xemacs)
+  (setq font-lock-face-list
+	(cons 'font-lock-reserved-word-face
+	      font-lock-face-list)))
 (defface font-lock-reserved-word-face
   '((((class color) (background light))
      (:bold t

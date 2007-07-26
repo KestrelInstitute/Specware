@@ -187,7 +187,7 @@ accepted in lieu of prompting."
       ["Generate Lisp" sw:generate-lisp t]
       ["Generate & Load Lisp" (sw:generate-lisp t) t]
       ["Generate Local Lisp"  sw:gcl-current-file t]
-      ["Evaluate Region" sw:evaluate-region (mark)]
+      ["Evaluate Region" sw:evaluate-region (mark t)]
       ["ctext Spec" sw:set-swe-spec t]
       ["cd to this directory" cd-current-directory t] 
       ["Generate Isabelle Obligation Theory" sw:convert-spec-to-isa-thy t]
@@ -200,11 +200,11 @@ accepted in lieu of prompting."
       ["Ignore current matches" sw:ignore-matches *pending-specware-search-results*]
       "-----"
       ["Switch to Specware Shell" sw:switch-to-lisp t]
-      ["Comment Out Region" (comment-region (region-beginning) (region-end)) (mark)]
+      ["Comment Out Region" (comment-region (region-beginning) (region-end)) (mark t)]
       ["Uncomment Region"
        (comment-region (region-beginning) (region-end) '(4))
-       (mark)]
-      ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark)]
+       (mark t)]
+      ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark t)]
       ["Find Unbalanced Parenthesis" (sw:find-unbalanced-parenthesis) t]
       ["Run Specware" run-specware4 (not (inferior-lisp-running-p))]
       "-----"
@@ -434,7 +434,7 @@ other hooks, such as major mode hooks, can do the job."
 	(progn (forward-char 1)
 	       (if (sw:re-search-forward sw:basic-unit-intro-regexp)
 		   (progn (beginning-of-line))
-		 (end-of-buffer))
+		 (goto-char (point-max)))
 	       (forward-comment -100))	; Go backward until non-comment found
       (if (looking-at "\\<def\\>")
 	  (let ((beg-indentation (1+ (current-column)))	; 1+ just in case user indent by 1
@@ -445,17 +445,17 @@ other hooks, such as major mode hooks, can do the job."
 		  (progn (forward-sexp -1)
 			 (if (<= (current-column) beg-indentation)
 			     (setq found-end t)))
-		(if (sw:re-search-forward sw:basic-unit-intro-regexp))
-		  (progn (beginning-of-line)
-			 (setq found-end t))
-		(end-of-buffer)))
+		(if (sw:re-search-forward sw:basic-unit-intro-regexp)
+		    (progn (beginning-of-line)
+			   (setq found-end t))
+		  (goto-char (point-max)))))
 	    (forward-comment -100))
 	(if (looking-at sw:definition-intro-sexp) ; other than def
 	    (progn (end-of-line)
 		   (if (or (sw:re-search-forward sw:definition-ending-sexp)
 			   (sw:re-search-forward sw:basic-unit-intro-regexp))
 		       (progn (beginning-of-line))
-		     (end-of-buffer))
+		     (goto-char (point-max)))
 		   (forward-comment -100)) ; Go backward until non-comment found
 	  (if (looking-at hs-marker-begin-regexp)
 	      (sw:scan-matching-patterns "%{{{" "\\(%{{{\\|%}}}\\)")
@@ -573,6 +573,7 @@ Mode map
   (make-local-variable 'font-lock-fontify-region-function)
   (setq font-lock-fontify-region-function
         'specware-font-lock-fontify-region-function)
+  (setq font-lock-defaults '(specware-font-lock-keywords))
   ;;
   ;; Adding these will fool the matching of parens. I really don't
   ;; know why. It would be nice to have comments treated as
@@ -1271,6 +1272,10 @@ If anyone has a good algorithm for this..."
 	  (concat file-uid "#" (match-string 1))
 	file-uid))))
 
+(when (and (not (featurep 'xemacs)) (not (fboundp 'replace-in-string)))
+  (defun replace-in-string (str regexp rep)
+    (replace-regexp-in-string regexp rep str)))
+
 (defun sw::normalize-filename (filename)
   (setq filename (replace-in-string filename "\\\\" "/"))
   (setq filename (replace-in-string filename "Program Files" "Progra~1"))
@@ -1431,7 +1436,7 @@ If anyone has a good algorithm for this..."
 (defun sw:beginning-of-unit ()
   (interactive "")
   (unless (sw:re-search-backward sw:basic-unit-intro-regexp)
-    (beginning-of-buffer)
+    (goto-char (point-min))
     (sw:re-search-forward "^\\sw")      ; Find any non-comment word
   (beginning-of-line))
     (beginning-of-line))
@@ -1440,7 +1445,7 @@ If anyone has a good algorithm for this..."
   (interactive "")
   (forward-char 1)
   (unless (sw:re-search-forward sw:basic-unit-intro-regexp)
-    (end-of-buffer))
+    (goto-char (point-max)))
   (beginning-of-line)
   (forward-char -1)
   (sw:re-search-backward "\\sw")	; Find any non-comment word
@@ -1451,7 +1456,7 @@ If anyone has a good algorithm for this..."
   (interactive "")
   (forward-char 1)
   (unless (sw:re-search-forward sw:basic-unit-intro-regexp)
-    (end-of-buffer))
+    (goto-char (point-max)))
   (beginning-of-line))
 
 (defvar *pending-specware-search-results* nil)
@@ -1613,7 +1618,7 @@ If anyone has a good algorithm for this..."
 	(progn (forward-sexp)
 	       (let ((end-pos (point)))
 		 (forward-sexp -1)
-		 (buffer-string (point) end-pos)))
+		 (buffer-substring-no-properties (point) end-pos)))
        "")))
 
 (defun sw::get-default-symbol (prompt &optional up-p ignore-keywords)
@@ -1900,8 +1905,11 @@ If anyone has a good algorithm for this..."
 
 ;;; About Specware command implementation
 (defvar specware-logo
-  (make-glyph `[xpm :file ,(concat *specware*
-				   "/Library/IO/Emacs/specware_logo.xpm")]))
+  (if (featurep 'xemacs)
+      (make-glyph `[xpm :file ,(concat *specware*
+				       "/Library/IO/Emacs/specware_logo.xpm")])
+    `(image :type xpm :file ,(concat *specware*
+				     "/Library/IO/Emacs/specware_logo.xpm"))))
 
 (defun goto-specware-web-page (&rest ign)
   (browse-url "http://specware.org/"))
@@ -1927,7 +1935,8 @@ If anyone has a good algorithm for this..."
     (((class grayscale) (background dark))
      (:foreground "LightGray" :bold t :italic t :underline t))
     (t (:underline t)))
-  "Face used for links in the Specware About page.")
+  "Face used for links in the Specware About page."
+  :group 'specware)
 
 ;; Derived from about.el functions
 ;; I don't use the about functions because they are different in different 

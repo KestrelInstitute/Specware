@@ -1,6 +1,3 @@
-(defvar *windows-system-p* (memq system-type '(ms-dos windows-nt windows-95
-					       ms-windows)))
-
 (defvar *specware4-dir)
 
 (defvar sw:image-is-executable (eq *specware-lisp* 'sbcl))
@@ -13,11 +10,11 @@
   (if (inferior-lisp-running-p)
       (sw:switch-to-lisp t)
     (let* ((*specware4-dir (sw::normalize-filename
-			   (if in-current-dir?
-			       (strip-final-slash (if (stringp in-current-dir?)
-						      in-current-dir?
-						    default-directory))
-			     (concat (getenv "SPECWARE4")))))
+			    (if in-current-dir?
+				(strip-final-slash (if (stringp in-current-dir?)
+						       in-current-dir?
+						     default-directory))
+			      (concat (getenv "SPECWARE4")))))
 	   (bin-dir (binary-directory *specware4-dir))
 	   (world-name (or (getenv "LISP_HEAP_IMAGE")
 			   (concat bin-dir "/Specware4."

@@ -8,7 +8,7 @@
 (pushnew ".sfsl" completion-ignored-extensions)	; sbcl
 (pushnew ".fas"  completion-ignored-extensions)	; clisp
 
-(setq lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
+(defvar lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
 (setq expand-symlinks-rfs-exists t)
 (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
 				(search "build" lisp-program) ; ??
@@ -73,7 +73,7 @@
   (setq *lisp-prompt-regexp* *allegro-prompt-regexp*)
   (defvar *specware-lisp* 'allegro)
   (defvar *lisp-image-extension* "dxl")
-  (define-function 'sw:exit-lisp 'fi:exit-lisp)
+  (fset 'sw:exit-lisp 'fi:exit-lisp)
   (defun sw:switch-to-lisp (&optional eob-p)
     (interactive "P")
     (unless fi::toggle-to-lisp-last-lisp-buffer
@@ -81,8 +81,8 @@
     (fi:toggle-to-lisp)
     (when eob-p
       (goto-char (point-max))))
-  ;(define-function 'sw:switch-to-lisp 'fi:toggle-to-lisp)
-  (define-function 'extract-sexp 'fi:extract-list)
+  ;(fset 'sw:switch-to-lisp 'fi:toggle-to-lisp)
+  (fset 'extract-sexp 'fi:extract-list)
   (defun sw:eval-in-lisp (str &rest args)
     (ensure-specware-running)
     (apply 'fi:eval-in-lisp str args))
@@ -94,9 +94,9 @@
     (ensure-specware-running)
     (apply 'fi:eval-in-lisp-asynchronous str args)
     t)
-  (define-function 'inferior-lisp-newline 'fi:inferior-lisp-newline)
-  (define-function 'inferior-lisp-running-p 'fi::lep-open-connection-p)
-  (define-function 'sw:find-unbalanced-parenthesis 'fi:find-unbalanced-parenthesis)
+  (fset 'inferior-lisp-newline 'fi:inferior-lisp-newline)
+  (fset 'inferior-lisp-running-p 'fi::lep-open-connection-p)
+  (fset 'sw:find-unbalanced-parenthesis 'fi:find-unbalanced-parenthesis)
   (defvar *specware-buffer-name* sw:common-lisp-buffer-name)
   (defun previous-input-line ()
     (fi:pop-input))
@@ -220,7 +220,7 @@
     (ilisp-send (ensure-list (apply 'format str args)) nil nil t)
     t)
 
-  (define-function 'inferior-lisp-newline 'return-ilisp)
+  (fset 'inferior-lisp-newline 'return-ilisp)
 
   (defun sw:find-unbalanced-parenthesis ()
     (interactive)
@@ -380,7 +380,7 @@
 	(slime-eval-async (car fm))))
     t)
 
-  (define-function 'inferior-lisp-newline 'sw-return)
+  (fset 'inferior-lisp-newline 'sw-return)
 
   (defun sw:find-unbalanced-parenthesis ()
     (interactive)

@@ -169,8 +169,7 @@ If NEWLINE is true then add a newline at the end of the input."
       (let* ((ws (or (position ?\  input) (position ?\n  input)))
 	     (command (if ws (substring input 0 ws) input))
 	     (argstr  (if ws (substring input (1+ ws)) nil)))
-	(if (member command '("quit" "QUIT" "exit" "EXIT" "ok" "OK"
-			      ":quit" ":QUIT" ":exit" ":EXIT" ":ok" ":OK"))
+	(if (member command '("quit" "QUIT" "exit" "EXIT" ":quit" ":QUIT" ":exit" ":EXIT"))
 	    ':exit
 	  (if (equal command "")
 	      command
@@ -284,6 +283,7 @@ If NEWLINE is true then add a newline at the end of the input."
 (defvar old-slime-repl-insert-prompt (symbol-function 'slime-repl-insert-prompt))
 
 (defvar *sw-after-prompt-forms* nil)
+(defvar *sw-slime-prompt* "* ")
 
 (defun slime-repl-insert-prompt (result &optional time)
   "Goto to point max, insert RESULT and the prompt.
@@ -297,7 +297,7 @@ to end end."
 	(unless (bolp) (insert "\n"))
 	(slime-repl-insert-result result)
 	(let ((prompt-start (point))
-	      (prompt (format "* ")))
+	      (prompt (format *sw-slime-prompt*)))
 	  (slime-propertize-region
 	      '(face slime-repl-prompt-face read-only t intangible t
 		     slime-repl-prompt t

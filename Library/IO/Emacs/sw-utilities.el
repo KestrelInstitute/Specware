@@ -9,7 +9,7 @@
 ;;; (defvar default-directory-name (concatenate 'string *specware* "/"))
 
 (require 'dired)			; For (default-directory)
-(defvar default-directory-name (default-directory)) ; moved to top of file to avoid warning msg
+(defvar default-directory-name default-directory) ; moved to top of file to avoid warning msg
 
 ;; (verify-emacs-version)
 
@@ -429,7 +429,7 @@
   (set-buffer-menubar *specware-ui-foci-menubar*)
   ;; make default file names reasonable
   ;; (setq default-directory-name (concatenate 'string *specware* "/"))
-  (setq default-directory-name (default-directory))
+  (setq default-directory-name default-directory)
 ;;  (make-local-variable 'save-buffers-skip)
 ;;  (setq save-buffers-skip t)
   (setq mspe-keymap specware-ui-foci-mspe-keymap)
