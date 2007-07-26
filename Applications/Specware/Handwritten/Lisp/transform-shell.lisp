@@ -30,7 +30,8 @@
   (setq *transform-term* nil)
   (setq *transform-commands* nil)
   (setq *undo-stack* nil)
-  (setq *prompt* "** "))
+  (setq *prompt* "** ")
+  (emacs::eval-in-emacs "(setq *sw-slime-prompt* \"** \")"))
 
 (defun push-state ()
   (push (list *transform-term* *transform-commands*) *undo-stack*))
@@ -124,6 +125,7 @@
       (Script::printScript (Script::mkSteps *transform-commands*)))
   (setq *current-command-processor* 'process-sw-shell-command)
   (setq *prompt* "* ")
+  (emacs::eval-in-emacs "(setq *sw-slime-prompt* \"* \")")
   (values))
 
 (defun process-transform-shell-command (command argstr)

@@ -33,6 +33,7 @@
     ("punits"    . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
     ("lpunits"   . "[unit-identifier [filename]] Like `punits' but only for local conjectures.")
+    ("transform" . "[unit-identifier] Enter transform shell for spec.")
     ("ctext"     . "[spec-term] Sets the current context for eval commands.
                   With no arguments displays context.")
     ("eval"      . "[expression] Evaluates expression with respect to current context.")
@@ -95,7 +96,7 @@
 (defvar *sw-shell-print-length* 16)
 
 (defun aux-specware-shell (exiting-lisp?
-			   sw-shell-command-processor 
+			   *current-command-processor* 
 			   &optional 
 			   (banner        "Specware Shell~%")
 			   (abort-message "Return to Specware Shell top level.")
@@ -145,7 +146,7 @@
 						((not (eq form magic-eof-cookie))
 						 (let ((results
 							(multiple-value-list 
-							 (sw-shell-command sw-shell-command-processor
+							 (sw-shell-command *current-command-processor*
 									   form))))
 						   (dolist (result results)
 						     (fresh-line)
@@ -274,7 +275,7 @@
 	(swank::repl-suppress-output)
 	(values-list val))))
 
-;; Specware uses this for sw-shell-command-processor
+;; Specware uses this for *current-command-processor*
 ;; Other systems (e.g. prism or accord) may use related functions...
 (defun process-sw-shell-command (command argstr)
   (cond ((and (consp command) (null argstr))
