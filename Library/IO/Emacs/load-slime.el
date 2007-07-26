@@ -3,7 +3,7 @@
 
 (defvar lisp-emacs-interface-type 'slime)
 
-(defconst *specware* "/Users/westfold/Test/Specware4") ; !!
+(defconst *specware* (getenv "SPECWARE4"))
 (defconst *specware-home-directory* *specware*)
 
 (defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
@@ -19,6 +19,11 @@
 ;(push "/usr/local/ProofGeneral/x-symbol/lisp/"
 ;      load-path)
 ;(setq x-symbol-data-directory "/usr/local/ProofGeneral/x-symbol/etc/")
+
+;; for compatibility with xemacs and gnu emacs
+(unless (featurep 'xemacs)
+  (require 'byte-opt)
+  (remprop 'featurep 'byte-optimizer))
 
 (defun sw:load-specware-emacs-file (name)
   (let ((el-file   (concatenate 'string *specware-emacs* name ".el"))
