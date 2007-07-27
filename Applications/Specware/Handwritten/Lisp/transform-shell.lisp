@@ -93,7 +93,7 @@
   (finish-previous-multi-command)
   (let ((new-term (find-op-def qid)))
     (if (null new-term)
-	(format t "No definition!")
+	()
 	(progn
 	  (push-state)
 	  (setq *transform-term* new-term)
