@@ -1,4 +1,4 @@
-\section{Conditional rewrite rules}
+(* Conditional rewrite rules
 
 Convert an axiom of the form
 \[
@@ -11,23 +11,22 @@ Positive occurrences of universal quantifiers are turned into
 ($\lambda$) bound variables. Since bound variables cannot occur 
 freely in solutions to meta-variables, this scheme ensures correct
 skolemization.
-
-\begin{spec}
+*)
 
 RewriteRules qualifying spec 
  import HigherOrderMatching
 
- sort Context = HigherOrderMatching.Context
+ type Context = HigherOrderMatching.Context
 
- sort Decl  = 
+ type Decl  = 
    | Var Var 
    | Cond MS.Term 
    | LetRec List (Var * MS.Term) 
    | Let List (Pattern * MS.Term)
 
- sort Gamma = List Decl * TyVars * Spec * String * StringSet.Set
+ type Gamma = List Decl * TyVars * Spec * String * StringSet.Set
 
- sort RewriteRule = 
+ type RewriteRule = 
    { 
 	name      : String,
 	lhs       : MS.Term,
@@ -41,14 +40,14 @@ RewriteRules qualifying spec
 %% Replace this by discrimination tree based rewrite rule application.
 %%
 
- sort RewriteRules = 
+ type RewriteRules = 
       {unconditional : List RewriteRule,
        conditional   : List RewriteRule} 
 
  op specRules : Context -> Spec -> RewriteRules
  op axiomRule : Context -> Property -> Option RewriteRule
  op axiomRules: Context -> Property -> List RewriteRule
- op defRule :   Context * String * String * OpInfo -> List RewriteRule
+ op defRule :   Context * String * String * OpInfo * Boolean -> List RewriteRule
  op etaExpand:  Context -> RewriteRule -> RewriteRule
 
  op rulesFromGamma : Context -> Gamma -> RewriteRules
@@ -127,14 +126,11 @@ RewriteRules qualifying spec
      }
 
 
-\end{spec}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Extract rewrite rules from function definition.
+%%% Extract rewrite rules from function definition.
 
-\begin{spec}
-
- def defRule (context, q, id, info : OpInfo) = 
+ def defRule (context, q, id, info : OpInfo, includeLambdaRules?: Boolean) = 
    if definedOpInfo? info then
      let (tvs, srt, term) = unpackFirstOpDef info in
      let rule:RewriteRule = 
@@ -145,7 +141,7 @@ Extract rewrite rules from function definition.
 	  freeVars  = [],	
 	  tyVars    = tvs}
      in
-       deleteLambdaFromRule context ([rule],[])
+       deleteLambdaFromRule context ([rule],if includeLambdaRules? then [rule] else [])
    else
      []
 
@@ -164,10 +160,10 @@ Extract rewrite rules from function definition.
            of Lambda(matches, _) ->
 	      if disjointMatches matches
 		 then
-		 deleteMatches(context,matches,rule,rules,old) 
-	      else [] 
+		 deleteMatches(context,matches,rule,rules, Cons(freshRule(context,rule),old)) 
+	      else old 
 	    | _ -> deleteLambdaFromRule context 
-			(rules,List.cons(freshRule(context,rule),old)))
+			(rules, Cons(freshRule(context,rule),old)))
 
  def deleteMatches(context,matches,rule,rules,old) = 
      case matches
@@ -246,17 +242,15 @@ Extract rewrite rules from function definition.
 	        Some(trm,vars,cons((v,trm),S)))
 	| AliasPat _ -> None %% Not supported
 	   
-\end{spec}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Extract rewrite rules from a specification.
-\begin{spec}
+%%% Extract rewrite rules from a specification.
 
  def specRules context spc = 
      let spc      = normalizeSpec spc            in
      let axmRules = flatten (List.map (axiomRules context) (allProperties spc)) in
      let opRules  = foldriAQualifierMap
                       (fn (q,id,opinfo,val) ->
-		        (defRule (context,q,id,opinfo)) ++ val)
+		        (defRule (context,q,id,opinfo,false)) ++ val)
 		      [] spc.ops
      in
      let rules = axmRules ++ opRules in
@@ -265,9 +259,8 @@ Extract rewrite rules from a specification.
      rules
 
 
-
-\end{spec}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+(*
 Eta-expand rewrite rules, such that a matching equality:
 \[
 	(M x) = N\ \ \ \ \ \ \ x \not\in FV(M)
@@ -276,13 +269,11 @@ is rewritten to
 \[
 	M = \lambda x \ . \ N\enspace .
 \]
-\begin{spec}
+*)
 
   def etaExpand (* context *)_ rule = rule
 
-\end{spec}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{spec}
 
  def prioritizeRules(rules) = 
      let
@@ -362,7 +353,7 @@ is rewritten to
 	| _ -> (freeVars,n,S,term)
 
 % Disambiguate between HigerOrderMatchingMetaSlang and MetaSlang
- def mkVar = HigherOrderMatching.mkVar     
+  def mkVar = HigherOrderMatching.mkVar     
 
   op equality : Context -> List (Var * MS.Term) * MS.Term -> Option (MS.Term * MS.Term)
 
@@ -468,10 +459,6 @@ is rewritten to
       mapTerm(doTerm,fn s -> s,doPat) term
 
 
-\end{spec}
-
-\begin{spec}
-
 %%
 %% Ignores name capture:
 %%
@@ -515,10 +502,6 @@ is rewritten to
      let rules = List.foldr loop [] ds in
      let rules = prioritizeRules(rules)  in
      rules
-  
-\end{spec}
-
-\begin{spec}
 
  def mergeRules = 
      fn [] -> {unconditional = [],conditional = []}
@@ -532,4 +515,4 @@ is rewritten to
 	mergeRules(List.cons(rules1,rules))
 
 end-spec
-\end{spec}
+

@@ -105,7 +105,7 @@ spec
      | "alldefs" \_rightarrow mkAllDefs
 
  %% From /Languages/SpecCalculus/Semantics/Evaluate/Prove.sw
- op claimNameMatch: QualifiedId \_times QualifiedId -> Boolean
+ op  claimNameMatch: QualifiedId \_times QualifiedId -> Boolean
  def claimNameMatch(cn, pn) =
    let Qualified(cq, cid) = cn in
    let Qualified(pq, pid) = pn in
@@ -117,7 +117,7 @@ spec
     case rule of
       | Unfold(qid as Qualified(q,nm)) \_rightarrow
         flatten (map (fn info ->
-                        flatten (map (fn (Qualified(q,nm)) \_rightarrow defRule(context, q, nm, info))
+                        flatten (map (fn (Qualified(q,nm)) \_rightarrow defRule(context, q, nm, info, true))
                                    info.names))
                    (findAllOps(spc,qid)))
       | Fold(qid) \_rightarrow
@@ -135,7 +135,7 @@ spec
       | AllDefs \_rightarrow
         foldriAQualifierMap
           (\_lambda (q,id,opinfo,val) ->
-             (defRule (context,q,id,opinfo)) ++ val)
+             (defRule (context,q,id,opinfo,false)) ++ val)
           [] spc.ops
         
   op rewriteDebug?: Boolean = false
@@ -201,11 +201,12 @@ spec
     spc << {ops = insertAQualifierMap(spc.ops,q,id,opinfo)}
 
   op getOpDef(spc: Spec, qid: QualifiedId): Option MS.Term =
-    case findTheOp(spc,qid) of
-      | None \_rightarrow None
-      | Some opinfo \_rightarrow
+    case findAllOps(spc,qid) of
+      | [] \_rightarrow (writeLine("No op with that name."); None)
+      | [opinfo] \_rightarrow
         let (tvs, srt, tm) = unpackTerm opinfo.dfn in
         Some tm
+      | _ -> (writeLine("Ambiguous op name."); None)
 
   op interpretSpec(spc: Spec, script: Script): Spec =
     case script of
@@ -215,14 +216,16 @@ spec
           spc steps
       | At(locs, scr) \_rightarrow
         foldl (fn (Def qid, spc) \_rightarrow
-               case findTheOp(spc,qid) of
-                 | None \_rightarrow (warn("Can't find op "^anyToString qid);
+               case findAllOps(spc,qid) of
+                 | [] \_rightarrow (warn("Can't find op "^anyToString qid);
                             spc)
-                 | Some opinfo \_rightarrow
+                 | [opinfo] \_rightarrow
                    let (tvs, srt, tm) = unpackTerm opinfo.dfn in
                    let newtm = interpretTerm(spc, scr, tm) in
                    let newdfn = maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)) in
-                   setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
+                   setOpInfo(spc,qid,opinfo << {dfn = newdfn})
+                 | opinfos -> (warn("Ambiguous op "^anyToString qid);
+                               spc))
           spc locs
       | IsoMorphism(iso, inv_iso, _) \_rightarrow
         makeIsoMorphism(spc, iso, inv_iso)
