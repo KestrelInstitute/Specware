@@ -95,6 +95,8 @@
 (defvar *sw-shell-print-level* 8)
 (defvar *sw-shell-print-length* 16)
 
+(defvar *current-command-processor* 'process-sw-shell-command)
+
 (defun aux-specware-shell (exiting-lisp?
 			   *current-command-processor* 
 			   &optional 
@@ -252,8 +254,6 @@
 (defvar *sw-shell-pkg* (find-package :SWShell))
 
 (defvar *commands-in-process* 0)
-
-(defvar *current-command-processor* 'process-sw-shell-command)
 
 ;;; Used by slime-based interface
 ;;; From slime.el:  (defvar sw:*shell-command-function* "SWShell::process-raw-command")
