@@ -94,6 +94,7 @@
 
 (defvar *sw-shell-print-level* 8)
 (defvar *sw-shell-print-length* 16)
+(defvar *current-command-processor* 'process-sw-shell-command)
 
 (defvar *current-command-processor* 'process-sw-shell-command)
 
