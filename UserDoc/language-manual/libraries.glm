@@ -255,7 +255,7 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[abs]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[Integer -> Integer]]</entry>
+        <entry colname="type">&nbsp; [[Integer -> Nat]]</entry>
         <entry colname="desc">&nbsp; absolute value</entry>
        </row>
        <row>
