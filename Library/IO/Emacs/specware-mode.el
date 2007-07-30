@@ -639,7 +639,7 @@ Depending on the context insert the name of function, a \"->\" etc."
       (cond
        ;; It was a function, insert the function name
        ((looking-at "fun\\b")
-        (setq tmp (concat " " (buffer-substring
+        (setq tmp (concat " " (buffer-substring-no-properties
                                (progn (forward-char 3)
                                       (skip-chars-forward "\t\n ") (point))
                                (progn (forward-word 1) (point))) " "))
@@ -659,7 +659,7 @@ Depending on the context insert the name of function, a \"->\" etc."
           (if isfun
               (progn
                 (setq tmp
-                      (concat " " (buffer-substring
+                      (concat " " (buffer-substring-no-properties
                                    (progn (forward-char 3)
                                           (skip-chars-forward "\t\n ") (point))
                                    (progn (forward-word 1) (point))) " "))
@@ -1380,7 +1380,7 @@ If anyone has a good algorithm for this..."
 (defun sw:evaluate-region (beg end)
   (interactive "r")
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name t))
-	(text (buffer-substring beg end)))
+	(text (buffer-substring-no-properties beg end)))
     (when (or (buffer-modified-p)
 	      (let ((result 
 		     (sw:eval-in-lisp "(Specware::unitIDCurrentInCache? %S)"
@@ -1642,7 +1642,7 @@ If anyone has a good algorithm for this..."
 	       (forward-char 1))
 	     (while (eq (char-after (- (point) 2)) ?-)
 			   (forward-char -2))
-	     (buffer-substring
+	     (buffer-substring-no-properties
 	      (point)
 	      (progn (forward-sexp -1)
 		     (while (looking-at "\\s'")
@@ -1678,7 +1678,7 @@ If anyone has a good algorithm for this..."
 		   (forward-char 1))
 		 (if (re-search-backward "\\sw\\|\\s_\\|\\." nil t)
 		     (progn (forward-char 1)
-			    (buffer-substring
+			    (buffer-substring-no-properties
 			     (point)
 			     (progn (forward-sexp -1)
 				    (while (looking-at "\\s'")
