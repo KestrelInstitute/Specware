@@ -5,6 +5,10 @@
 AC
 A spec for ECC.
 
+2007:07:31
+AC
+Added MQV with cofactor multiplication.
+
 ISSUE:
 This spec should be suitably factored, extended, and generalized (see comments
 below).
@@ -59,7 +63,7 @@ ECCP qualifying spec
     the(y) mulF (p, x, y) = 1
 
   op divF (p:Field, x:Nat, y:PosNat | x < p && y < p) : Nat =  % division
-    mulF (p, x, invF (p, x))
+    mulF (p, x, invF (p, y))
 
   op powF (p:Field, x:Nat, e:Integer | x < p && (e < 0 => x ~= 0)) : Nat =
     % raise to power (negative exponent requires non-zero base)
@@ -247,7 +251,7 @@ ECCP qualifying spec
     let F(x,_) = V in
     let c = x rem r in
     let u_1 = invF(r,u) in
-    let d = mulF (r, u_1, addF (r, f, mulF (r, s, c))) in
+    let d = mulF (r, u_1, addF (r, toField r f, mulF (r, s, c))) in
     (c, d)
 
   (* The following op returns all possible signatures of a message f with a
@@ -289,7 +293,7 @@ ECCP qualifying spec
     1 <= c && c < r &&
     1 <= d && d < r &&
     (let h = invF(r,d) in
-     let h1 = mulF (r, f, h) in
+     let h1 = mulF (r, toField r f, h) in
      let h2 = mulF (r, c, h) in
      let P = addP (E, mulP (E, h1, G), mulP (E, h2, W)) in
      case P of
@@ -305,5 +309,99 @@ ECCP qualifying spec
       (s,W) keyPairFor? dp &&
       sig in? dsaSignatures (dp, s, f) =>
       dsaVerify? (dp, W, f, sig)
+
+  (* For now we only formalize the MQV with cofactor multiplication version of
+  elliptic curve key secret value derivation [IEEE 7.2.4]. MQV without cofactor
+  multiplication [IEEE 7.2.3], as well as Diffie-Hellman with and without
+  cofactor multiplication [IEEE 7.2.1, 7.2.2], will be formalized in the
+  future. Also, in formalizing MQV with cofactor multiplication, for now we do
+  not cover compatibility with MQV without cofactor multiplication. *)
+
+  (* The following op computes a secret natural number from the party's own
+  first private key s, the party's own second key pair (u,V), the other party's
+  first public key W', and the other party's second public key V'. The keys must
+  be all valid w.r.t. to the domain parameters, which must be such that the
+  cofactor and the order of the generator are coprime. The op returns an
+  optional value to cover the case that the computed point P is O, which
+  according to [IEEE 7.2.4] should output "invalid public key".
+
+  [IEEE 7.2.4] defines h = ceil ((log_2 r) / 2), where ceil is the ceiling
+  function. In the following definition, instead, we (effectively) define h =
+  ceil (ceil (log_2 r) / 2). It is not hard to prove that the two definitions
+  are equivalent. (Indeed, NIST Special Publication 800-56A defines h as we do
+  in this spec.) *)
+
+  op mqvcSecret (dp:DomainParamsCoprimeKR,
+                 s:PrivateKey, u:PrivateKey, V:PublicKey,
+                 W':PublicKey, V':PublicKey |
+                 s privateKeyFor? dp &&
+                 (u,V) keyPairFor? dp &&
+                 W' publicKeyFor? dp &&
+                 V' publicKeyFor? dp) : Option Nat =
+    let F(x,_) = V in
+    let F(x',_) = V' in
+    let (E,r,_) = dp in
+    let k = cofactor dp in
+    let log2r = minIn (fn log2r:Integer -> log2r > 0 && 2**log2r >= r) in
+    let h = if even? log2r then log2r div 2 else (log2r + 1) div 2 in
+    let i = x in
+    let t = i rem 2**h + 2**h in
+    let i' = x' in
+    let t' = i' rem 2**h + 2**h in
+    let e = addF (r, mulF (r, t, s), u) in
+    let P = mulP (E, k, mulP (E, e, addP (E, V', mulP (E, t', W')))) in
+    case P of
+    | O -> None
+    | F(x,_) -> Some x
+
+  (* Given two key pairs for each party A and B, with shared public keys, the
+  two parties share the computed secret. *)
+
+  conjecture secret_is_shared is
+    fa (dp:DomainParamsCoprimeKR,
+        s :PrivateKey, W :PublicKey,  % party A's first  key pair
+        u :PrivateKey, V :PublicKey,  % party A's second key pair
+        s':PrivateKey, W':PublicKey,  % party B's first  key pair
+        u':PrivateKey, V':PublicKey)  % party B's second key pair
+      (s, W)  keyPairFor? dp &&
+      (u, V)  keyPairFor? dp &&
+      (s',W') keyPairFor? dp &&
+      (u',V') keyPairFor? dp =>
+      mqvcSecret (dp, s, u, V, W', V')   % computed by party A
+      =
+      mqvcSecret (dp, s', u', V', W, V)  % computed by party B
+
+  (* Sometimes the party's own second key pair is the same as the party's own
+  first key pair. This is the case, for example, in the One-Pass MQV key
+  agreement scheme specified in NIST Special Publication 800-56A. The following
+  op captures this special case. *)
+
+  op mqvcSecretSameKeys (dp:DomainParamsCoprimeKR,
+                         s:PrivateKey, W':PublicKey, V':PublicKey |
+                         s privateKeyFor? dp &&
+                         W' publicKeyFor? dp &&
+                         V' publicKeyFor? dp) : Option Nat =
+    let W = publicKeyOf (dp, s) in
+    mqvcSecret (dp, s, s, W, W', V')
+
+  (* When the party's own second key pair differs from the party's own first
+  keys, the second key pair is typically generated on the fly as part of the key
+  agreement scheme. The public key of the second pair is typically sent to the
+  other party. This happens, for example, in the Full MQV key agreement scheme
+  specified in NIST Special Publication 800-56A. So, the operation performed by
+  the party yields not only a secret (a natural number) but also a key pair.
+  The following op returns the set of all possible results of that operation,
+  where a result consists of (1) a secret and (2) a key pair. The set is finite
+  because everything (the field, the curve, etc.) is finite. *)
+
+  op mqvcSecretsAndKeys (dp:DomainParamsCoprimeKR,
+                         s:PrivateKey, W':PublicKey, V':PublicKey |
+                         s privateKeyFor? dp &&
+                         W' publicKeyFor? dp &&
+                         V' publicKeyFor? dp)
+                        : FSet (Nat * PrivateKey * PublicKey) =
+    toFSet (fn (secret,u,V): Nat * PrivateKey * PublicKey ->
+        (u,V) keyPairFor? dp &&
+        mqvcSecret (dp, s, u, V, W', V') = Some secret)
 
 endspec
