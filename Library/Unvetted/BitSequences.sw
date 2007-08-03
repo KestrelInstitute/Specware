@@ -26,6 +26,11 @@ the library spec for finite sequences.
 AC
 Added sum of bit sequences as unsigned numbers in modular arithmetic.
 
+2007:08:02
+AC
+Added ops to convert natural number to minimally long (non-empty) bit or byte
+sequence.
+
 ISSUE:
 There should probably be additional conversions among nibbles, bytes, and
 words.
@@ -101,6 +106,18 @@ BitSeq qualifying spec
   op toWord32 (n:Nat | n < 2 ** 32) : Word32 = fromNat (n, 32)
 
   op toWord64 (n:Nat | n < 2 ** 64) : Word64 = fromNat (n, 64)
+
+  % minimally long (non-empty) bit/byte sequence that represents n (big endian):
+
+  op toMinBits (n:Nat) : FSeq Bit =
+    let minLength:Nat = minIn (fn minLength:Integer ->
+        minLength > 0 && n < 2**minLength) in
+    fromNat (n, minLength)
+
+  op toMinBytes (n:Nat) : FSeq Byte =
+    let minLength:Nat = minIn (fn minLength:Integer ->
+        minLength > 0 && n < 256**minLength) in
+    bitsToBytes (fromNat (n, 8*minLength))
 
   % add bit sequences of same length as unsigned numbers (in modular
   % arithmetic):
