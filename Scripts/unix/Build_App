@@ -77,6 +77,12 @@ EXIT_ON_ERRORS=$SPECWARE4/Applications/Handwritten/Lisp/exit-on-errors
 MEMORY_MANAGEMENT=$SPECWARE4/Applications/Handwritten/Lisp/memory-management
 SAVE_IMAGE=$SPECWARE4/Applications/Handwritten/Lisp/save-image
 
+if [ "$LISP_MODE" == "SBCL" ]; then
+  MAKE_EXECUTABLE=":executable? t"
+else
+  MAKE_EXECUTABLE=""
+fi
+
 cd ${APP_DIR}
 $BATCH_LISP <<-XXXX
 	#+Allegro (format t "Allegro version~%") 
@@ -92,7 +98,7 @@ $BATCH_LISP <<-XXXX
 	  (exiting-on-errors 
 	    (load master-file))
 	  (generate-new-lisp-application "$LISP" "${APP_NAME}.${EXECUTABLE_EXTENSION}"
-	     "${APP_DIR}/distribution-${LISP_MODE}" (list master-file) nil))
+	     "${APP_DIR}/distribution-${LISP_MODE}" (list master-file) nil $MAKE_EXECUTABLE))
         (exit-from-lisp 0)
 XXXX
 RC=$?
