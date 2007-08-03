@@ -70,7 +70,7 @@
 	 :type     "lisp")))
 
 (handler-bind ((warning #'ignore-warning))
-  (cl-user::make-snark-system t))
+  (funcall 'cl-user::make-snark-system t))
 
 (declaim (optimize (speed 3) (debug 2) (safety 1)))
 
