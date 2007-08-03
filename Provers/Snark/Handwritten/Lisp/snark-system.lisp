@@ -173,13 +173,6 @@
 				  0)
 		  0)))))))
 
-(defun make-or-load-snark-system ()
-  (cond
-   ((need-to-recompile-snark-system)
-    (make-snark-system t)
-    (make-snark-system t))
-   (t (make-snark-system nil))))
-
 (defun make-snark-system (&optional (*compile-me* *compile-me*))
   (pushnew :snark *features*)
   #+cmu (setf extensions::*gc-verbose* nil)
@@ -207,6 +200,13 @@
 ;;  (setf *package* (find-package :snark-user))
   (setf *print-pretty* nil)
   (funcall (intern (symbol-name :initialize) :snark)))
+
+(defun make-or-load-snark-system ()
+  (cond
+   ((need-to-recompile-snark-system)
+    (make-snark-system t)
+    (make-snark-system t))
+   (t (make-snark-system nil))))
 
 #+ignore
 (defun fix-snark-files ()
