@@ -7,6 +7,9 @@
 
 (defconst *specware-emacs* (concatenate 'string *specware* "/Library/IO/Emacs/"))
 
+(defvar *windows-system-p* (memq system-type '(ms-dos windows-nt windows-95
+					       ms-windows)))
+
 ;; This sets the emacs to lisp interface to be the one supplied by franz
 ;; The alternative supported is ilisp which is enabled by setting this
 ;; variable to 'ilisp
