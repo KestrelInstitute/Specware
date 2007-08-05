@@ -95,14 +95,11 @@ if [ ! -x "$LISP" ]; then
 fi
 
 LISP_DIR=`dirname "$LISP"`
-LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4.sbclexe
-LISP_DIRECTORY="$SPECWARE4"/
-export LISP_EXECUTABLE
-export LISP_DIRECTORY
-
+export LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4.sbclexe
+export LISP_DIRECTORY="$SPECWARE4"/
 
 $xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
-       -f run-specware4 &
+        -f run-specware4 &
 #       -name "Specware" \
 #       -title "Specware" \
 #       -geometry =150x60+20+20 \

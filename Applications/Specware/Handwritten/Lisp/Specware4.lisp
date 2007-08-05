@@ -93,10 +93,8 @@
 	
 (defun in-specware-dir (file) (concatenate 'string *Specware-dir* file))
 
-#+cmu
-(compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch"))
-#+sbcl
-(compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/sbcl-patch"))
+#+cmu  (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch"))
+#+sbcl (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/sbcl-patch"))
 
 (defun ignore-warning (condition)
    (declare (ignore condition))
@@ -300,14 +298,15 @@
 ;; if there is any way at all to find the sbcl modules!  Bletch.
 ;;================================================================================
 
-#+sbcl
-(defvar *sbcl-home* (specware::getenv "SBCL_HOME")) ; see note above
-#+sbcl
-(push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
+#+sbcl (progn
+	 (defvar *sbcl-home* (specware::getenv "SBCL_HOME")) ; see note above
+	 (push  #'(lambda () 
+		    (setq sb-debug:*debug-beginner-help-p* nil)
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
 		    (specware::setenv "SBCL_HOME" *sbcl-home*) ; see note above
 		    )
-       sb-ext:*init-hooks*)
+		sb-ext:*init-hooks*)
+	 )
 
 ;;; Set temporaryDirectory at startup
 (push 'setTemporaryDirectory 
