@@ -1,5 +1,10 @@
+(defpackage :Emacs)
 (defpackage :AnnSpecPrinter)
+(defpackage :String-Spec)
+(defpackage :MetaSlang)
 (defpackage :Script)
+(defpackage :MetaSlangRewriter)
+(defpackage :Specware)
 (defpackage :SWShell)
 (in-package :SWShell)
 
