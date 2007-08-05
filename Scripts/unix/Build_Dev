@@ -38,7 +38,11 @@ HERE=`/usr/bin/dirname $0`
 . $HERE/Verify_Lisp ${LISP_MODE}
 
 # name of executable file to be created:
-IMAGE="Dev${APP_NAME}.$IMAGE_EXTENSION"
+if [ "$LISP_MODE" == "SBCL" ]; then
+  IMAGE="Dev${APP_NAME}.$EXECUTABLE_EXTENSION"
+else
+  IMAGE="Dev${APP_NAME}.$IMAGE_EXTENSION"
+fi
 
 ls -sltr ${GEN_DIR}/${APP_NAME}.* 2>&1
 if [ -f ${GEN_DIR}/${APP_NAME}.$FASL_EXTENSION ]; then
@@ -77,6 +81,7 @@ $BATCH_LISP <<-XXXX
 	 #+Allegro (format t "~&Allegro version~%") 
 	 #+CMU     (format t "~&CMU version~%") 
          #+MCL     (format t "~&OpenMCL version~%") 
+         #+SBCL    (format t "~&SBCL version~%") 
 	 (load "$EXIT_ON_ERRORS") 
 	 (load "$MEMORY_MANAGEMENT") 
 	 (load "$SAVE_IMAGE") 
@@ -89,7 +94,7 @@ $BATCH_LISP <<-XXXX
          (format t "~%--------------------------------------------------------------------------------~%")
          (format t "~&Writing ~A~%" "${BIN_DIR}/$IMAGE")
 	 (values))
-        (save-this-lisp-image "${BIN_DIR}/$IMAGE")
+        (save-this-lisp-image "${BIN_DIR}/$IMAGE" #+SBCL :executable? #+SBCL t)
 	(progn 
 	 (format t "~%--------------------------------------------------------------------------------~%")
          (exit-from-lisp 0))
