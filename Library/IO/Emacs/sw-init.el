@@ -106,7 +106,6 @@
 			  sw:common-lisp-image-arguments
 			  sw:common-lisp-host
 			  sw:common-lisp-image-file)))
-					;(sit-for 1)
       (wait-for-prompt 0.1)
       (sw:eval-in-lisp-no-value
        (format "(cl:namestring (specware::change-directory %S))" sw:common-lisp-directory))
@@ -173,12 +172,19 @@
     (if *windows-system-p* '("+cm") nil)) ; see note above
 
   (let ((log-warning-minimum-level 'error))
-    (sw:common-lisp sw:common-lisp-buffer-name
-		    sw:common-lisp-directory
-		    sw:common-lisp-image-name
-		    sw:common-lisp-image-arguments
-		    sw:common-lisp-host
-		    sw:common-lisp-image-file)))
+    (if sw:image-is-executable
+	(sw:common-lisp sw:common-lisp-buffer-name
+			sw:common-lisp-directory
+			sw:common-lisp-image-file
+			sw:common-lisp-image-arguments
+			sw:common-lisp-host
+			nil)
+      (sw:common-lisp sw:common-lisp-buffer-name
+		      sw:common-lisp-directory
+		      sw:common-lisp-image-name
+		      sw:common-lisp-image-arguments
+		      sw:common-lisp-host
+		      sw:common-lisp-image-file))))
 
 
 (defun run-plain-lisp (&optional sleep)
@@ -628,12 +634,19 @@
 
     (let ((log-warning-minimum-level 'error))
       ;; Don't show spurious warning message
-      (sw:common-lisp sw:common-lisp-buffer-name
-		      sw:common-lisp-directory
-		      sw:common-lisp-image-name
-		      sw:common-lisp-image-arguments
-		      sw:common-lisp-host
-		      sw:common-lisp-image-file
-		      ))
+      (if sw:image-is-executable
+	  (sw:common-lisp sw:common-lisp-buffer-name
+			  sw:common-lisp-directory
+			  sw:common-lisp-image-file
+			  sw:common-lisp-image-arguments
+			  sw:common-lisp-host
+			  nil)
+	(sw:common-lisp sw:common-lisp-buffer-name
+			sw:common-lisp-directory
+			sw:common-lisp-image-name
+			sw:common-lisp-image-arguments
+			sw:common-lisp-host
+			sw:common-lisp-image-file
+			)))
     (goto-char (point-max))
     ))
