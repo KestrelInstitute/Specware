@@ -3,7 +3,7 @@
 (in-package "PARSER4") 
 
 (defun load-parser (file &key 
-			 (name (intern (gensym "PARSER-") "KEYWORD"))
+			 (name (intern (format nil "PARSER-~D" (incf *gensym-counter*)) "KEYWORD"))
 			 (case-sensitive? nil)
 			 (rule-package    (find-package "KEYWORD"))
 			 (symbol-package  common-lisp::*package*))
