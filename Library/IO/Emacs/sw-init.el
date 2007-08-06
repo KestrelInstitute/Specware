@@ -14,7 +14,8 @@
 				(strip-final-slash (if (stringp in-current-dir?)
 						       in-current-dir?
 						     default-directory))
-			      (concat (getenv "SPECWARE4")))))
+			      (concat (or (getenv "LISP_DIRECTORY") 
+					  (getenv "SPECWARE4"))))))
 	   (bin-dir (binary-directory *specware4-dir))
 	   (world-name (or (getenv "LISP_HEAP_IMAGE")
 			   (concat bin-dir "/Specware4."
@@ -113,7 +114,7 @@
 			   "(swshell::specware-shell nil)")))
 	(goto-char (point-max))
 	(if (eq lisp-emacs-interface-type 'slime)
-	    (when (getenv "SPECWARE_INIT_FORM")
+	    (unless (member init-form '(nil ""))
 	      (sw:eval-in-lisp-no-value init-form))
 	  (simulate-input-expression init-form))
 	(sleep-for 0.1)))))
@@ -533,7 +534,8 @@
   (let ((*specware4-dir (sw::normalize-filename
 			(if in-current-dir? (strip-final-slash default-directory)
 			  (concat (getenv "SPECWARE4")))))
-	(slash-dir "/"))
+	;; (slash-dir "/")
+	)
     (run-specware4 *specware4-dir)
     (sit-for 0.1)
     (eval-in-lisp-in-order
