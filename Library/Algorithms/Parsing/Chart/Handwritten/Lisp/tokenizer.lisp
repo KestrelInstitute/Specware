@@ -1475,7 +1475,7 @@
 (defun install-tokens (session tokens comments)
   ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
   (when (null +token-rule+) (break "???"))
-  (let ((locations (make-array (1+ (length tokens))))
+  (let ((locations (make-array (1+ (length tokens)) :initial-element nil))
 	(pre-index 0)
 	(pre-location (make-parser-location
 		       :index      0
