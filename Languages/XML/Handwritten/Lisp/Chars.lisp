@@ -10,7 +10,7 @@
       (setf (svref v (+ first i)) t))))
 
 (defun mark-ranges (entries)
-  (let ((new-vector (make-array (expt 2 16))))
+  (let ((new-vector (make-array (expt 2 16) :initial-element nil)))
     (dolist (entry entries)
       (etypecase entry
 	(cons    (mark-range new-vector (first entry) (second entry)))
