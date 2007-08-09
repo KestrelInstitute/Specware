@@ -300,6 +300,11 @@ MetaSlang qualifying spec
      | None      -> None
      | Some(_,t) -> Some t
 
+ op [a] getTermField(l:  List (Id * ASort a), id: Id): Option(ASort a) =
+   case find (fn (id1,_) -> id = id1) l of
+     | None      -> None
+     | Some(_,s) -> Some s
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Annotations
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1083,6 +1088,21 @@ MetaSlang qualifying spec
      | RestrictedPat(pat,_,_) -> existsPattern? pred? pat
      | SortedPat    (pat,_,_) -> existsPattern? pred? pat
      | _ -> false)
+
+ op [a] existsInType? (pred?: ASort a -> Boolean) (ty: ASort a): Boolean =
+   pred? ty ||
+   (case ty of
+      | Arrow(x,y,_) -> existsInType? pred? x || existsInType? pred? y
+      | Product(prs,_) -> exists (fn (_,f_ty) -> existsInType? pred? f_ty) prs
+      | CoProduct(prs,_)  -> exists (fn (_,o_f_ty) ->
+                                       case o_f_ty of
+                                         | Some f_ty -> existsInType? pred? f_ty
+                                         | None -> false)
+                               prs
+      | Quotient(x,_,_) -> existsInType? pred? x
+      | Subsort(x,_,_) -> existsInType? pred? x
+      | And(tys,_) -> exists (existsInType? pred?) tys
+      | _ -> false)
 
 
  %% folds function over all the subterms in top-down order
