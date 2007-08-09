@@ -243,7 +243,11 @@ AnnSpecPrinter qualifying spec
      | QuotientPat   _ -> false
      | RestrictedPat _ -> false
      | _               -> true
-
+ 
+ op [a] stripQual (tm: ATerm a): ATerm a =
+   case tm of
+     | Fun(Op(Qualified(_,opName),fx),s,a) -> Fun(Op(mkUnQualifiedId(opName),fx),s,a)
+     | _ -> tm
 
  def printLambda (context, path, marker, match) = 
    let pp : ATermPrinter = context.pp in
@@ -552,8 +556,9 @@ AnnSpecPrinter qualifying spec
 	      def prInfix (f1, f2, l, t1, oper, t2, r) =
 		prettysFill [prettysNone [l, 
 					  ppTerm context ([0, 1]++ path, f1) t1, 
-					  string " "], 
-			     prettysNone [ppTerm context ([0]++ path, Top) oper, 
+					  string " "],
+                             %% Don't want qualifiers on infix ops
+			     prettysNone [ppTerm context ([0]++ path, Top) (stripQual oper), 
 					  string " ", 
 					  ppTerm context ([1, 1]++ path, f2) t2, 
 					  r]]
