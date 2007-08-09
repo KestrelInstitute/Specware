@@ -15,7 +15,11 @@ StandardSpec qualifying spec
  % type Sorts        = ASorts          StandardAnnotation
  % type Ops          = AOps            StandardAnnotation
 
- type MetaSortScheme= AMetaSortScheme StandardAnnotation
+ op addTypeDef(spc: Spec, qid as Qualified(q,id): QualifiedId, dfn: Sort): Spec =
+   spc << {sorts = insertAQualifierMap(spc.sorts, q, id, {names = [qid], dfn = dfn}),
+           elements = spc.elements ++ [SortDef(qid,noPos)]}
+
+ type MetaSortScheme = AMetaSortScheme StandardAnnotation
 
  op emptySortMap  : SortMap    
  op emptyOpMap    : OpMap      
