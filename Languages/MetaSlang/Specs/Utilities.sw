@@ -1205,6 +1205,7 @@ Utilities qualifying spec
       | IfThenElse(p,q,r,_) ->
         if trueTerm? p then Some q
           else if falseTerm? p then Some r
+          else if equivTerm? spc (q,r) then Some q
           else None
       | _ -> None
 
