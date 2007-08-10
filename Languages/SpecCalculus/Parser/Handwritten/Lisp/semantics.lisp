@@ -1045,6 +1045,9 @@ If we want the precedence to be optional:
 (defun make-transform-name (name l r)
   (speccalc::mkTransformName-2 name (make-pos l r)))
 
+(defun make-transform-number (num l r)
+  (speccalc::mkTransformNumber-2 num (make-pos l r)))
+
 (defun make-transform-qual (q name l r)
   (speccalc::mkTransformQual-3 q name (make-pos l r)))
 
@@ -1053,6 +1056,12 @@ If we want the precedence to be optional:
 
 (defun make-transform-apply (trans1 transforms l r)
   (speccalc::mkTransformApply-3 trans1 transforms (make-pos l r)))
+
+(defun make-transform-apply-options (trans1 options l r)
+  (speccalc::mkTransformApplyOptions-3 trans1 options (make-pos l r)))
+
+(defun make-transform-tuple (transforms l r)
+  (speccalc::mkTransformTuple-2 transforms (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH

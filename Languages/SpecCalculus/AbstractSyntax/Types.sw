@@ -81,8 +81,11 @@ SpecCalc qualifying spec
 
   type TransformExpr =
     | Name String * Position
+    | Number Nat * Position
     | Qual String * String * Position
     | Item String * TransformExpr * Position       % e.g. unfold map
+    | Tuple List TransformExpr * Position
+    | ApplyOptions TransformExpr * List TransformExpr * Position
     | Apply TransformExpr * List TransformExpr * Position
 
  %% In a basic Specware image, OtherTerm is unspecified, but in an extension
@@ -458,10 +461,14 @@ SpecCalc qualifying spec
  def mkOther       (other,                     pos) = (Other       other,                       pos)
 
  def mkTransformName(name: String, pos: Position)                  : TransformExpr = Name(name, pos)
+ def mkTransformNumber(n: Nat, pos: Position)                      : TransformExpr = Number(n, pos)
  def mkTransformQual(q: String, name: String, pos: Position)       : TransformExpr = Qual(q, name, pos)
  def mkTransformItem(mod: String, te: TransformExpr, pos: Position): TransformExpr = Item(mod, te, pos)
  def mkTransformApply(head: TransformExpr, args: List TransformExpr, pos: Position): TransformExpr
    = Apply(head, args, pos)
+ def mkTransformApplyOptions(head: TransformExpr, args: List TransformExpr, pos: Position): TransformExpr
+   = ApplyOptions(head, args, pos)
+ def mkTransformTuple(itms: List TransformExpr, pos: Position): TransformExpr = Tuple(itms, pos)
 
  op  hasHashSuffix?: RelativeUID -> Boolean
  def hasHashSuffix? unitId =
