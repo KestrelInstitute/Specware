@@ -337,6 +337,9 @@ Utilities qualifying spec
      | SortedTerm (tm, _, _) -> freeVarsRec tm
 
      | Pi (_, tm, _) -> freeVarsRec tm
+     
+     | And(tms, _) -> foldl (fn (tm, vars) -> insertVars (freeVarsRec tm, vars)) [] tms
+     | Any _ -> []
 
  op  freeVarsList : [a] List(a * MS.Term) -> Vars
  def freeVarsList tms = 
@@ -1205,7 +1208,7 @@ Utilities qualifying spec
       | IfThenElse(p,q,r,_) ->
         if trueTerm? p then Some q
           else if falseTerm? p then Some r
-          else if equivTerm? spc (q,r) then Some q
+          %else if equivTerm? spc (q,r) then Some q
           else None
       | _ -> None
 
