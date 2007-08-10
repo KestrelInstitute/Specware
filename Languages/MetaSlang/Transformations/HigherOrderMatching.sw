@@ -126,7 +126,7 @@ The stack is accessed and modified using the operations
  def freshBoundVar (context:Context,srt) = 
      let num = ! context.counter in
      (context.counter := num + 1;
-      ("x%"^Nat.toString num,srt))
+      ("x%"^toString num,srt))
 
  op isFlexVar? : MS.Term -> Option Nat
  def isFlexVar?(term) = 
@@ -407,11 +407,11 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
    case next stack
      of None -> [subst]
       | Some(stack,M,N) -> 
-%     let _ = writeLine 
-%	(printTerm (dereference subst M) ^ " = = "^
-%	 printTerm N) 
-%     in
-%     let _ = printSubst subst in
+%       let _ = writeLine 
+%  	(printTerm (dereference subst M) ^ " = = "^
+%  	 printTerm N) 
+%       in
+%      let _ = printSubst subst in
    case (dereference subst M,N)
      of 
 %%
@@ -429,7 +429,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
       | (Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),Arrow(_,s,_),_),
 		Fun(Nat n,_,_),_),
 	 N) ->
-	if closedTermV(N,context.boundVars) & ~(occursProper n N)
+	if closedTermV(N,context.boundVars) && ~(occursProper n N)
 	   then 
 	   let srt2 = inferType(context.spc,subst,N) in
 	   (case unifySorts(context,subst,s,srt2)
@@ -483,7 +483,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
              let b2 = substitute(b2,S2) in
              matchPairs (context,subst,insert(b1,b2,insert(e1,e2,stack))))
       | (Bind(qf1,vars1,M,_),Bind(qf2,vars2,N,_)) -> 
-	if ~(qf1 = qf2) or ~(length vars1 = length vars2)
+	if ~(qf1 = qf2) || ~(length vars1 = length vars2)
 	   then []
 	else
 	let (S1,S2,subst,flag) = 
@@ -520,10 +520,10 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                matchPairs (context,subst,insert(M,N,stack))
             | None -> [])
       | (M,_) -> 
-%	  let _ = writeLine "matchPair" in
-%	  let _ = writeLine(MetaSlangPrint.printTerm M) in
-%	  let _ = writeLine(MetaSlangPrint.printTerm N) in
-%	  let _ = printSubst subst in
+% 	  let _ = writeLine "matchPair" in
+% 	  let _ = writeLine(printTerm M) in
+% 	  let _ = writeLine(printTerm N) in
+% 	  let _ = printSubst subst in
 	let srt1 = inferType(context.spc,subst,M) in
 	let srt2 = inferType(context.spc,subst,N) in
 	case unifySorts(context,subst,srt1,srt2)
@@ -536,8 +536,10 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 %
 	   | Ms as 
 	     ((Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_), Arrow(_,s,_),_),
-		      Fun(Nat n,_,_),_))::terms) -> 
-	     if occursProper n N 
+		      Fun(Nat n,_,_),_))::terms) ->
+	     if occursProper n N || (exists (fn v -> ~(inVars?(v,context.boundVars))
+                                                     && ~(exists (fn t -> inVars?(v,freeVars t)) Ms))
+                                       (freeVars N))
 		 then [] 
 	     else
 	     let Ns = headForm N in
@@ -641,17 +643,19 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 		      let subst = updateSubst(subst,n,proj) in
 		      %% Repeat with the updated substitution, gets rid
 		      %% of the flexible head.
-		      matchPairs(context,subst,insert(M,N,stack)))
+		      let result = matchPairs(context,subst,insert(M,N,stack)) in
+                      result)
 		 projs)) 
-	    ++ 
+%	    ++ 
 % 3. Imitation.
-	    (if closedTermV(N,context.boundVars)
-		then 
-		let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
-		let trm    = foldr bindPattern N pats 			  in
-		let subst  = updateSubst(subst,n,trm) in
-		matchPairs(context,subst,stack) 
-	    else [])))
+% 	    (if closedTermV(N,context.boundVars)
+% 		then 
+% 		let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
+% 		let trm    = foldr bindPattern N pats 			  in
+% 		let subst  = updateSubst(subst,n,trm) in
+% 		matchPairs(context,subst,stack) 
+% 	    else [])
+            ))
 	   | Ms -> 
 %%
 %% Rigid head
@@ -660,14 +664,22 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	  of Some stack -> matchPairs(context,subst,stack)
 	   | None -> []
      in
-%     let _ = if result = []
-%               then (writeLine("MatchPairs failed!");
-%                     case next stack
-%                       of None -> ()
-%                        | Some(stack,M,N) ->
-%                          writeLine (printTerm (dereference subst M) ^ " = = "^ printTerm N) )
-%             else (writeLine("MatchPairs: "^toString(length result)^" results.");
-%                   printSubst(hd result)) in
+     let _ = if result = []
+               then (%writeLine("MatchPairs failed!")%;
+                %      case next stack
+%                        of None -> ()
+%                         | Some(stack,M,N) ->
+%                           writeLine (printTerm (dereference subst M) ^ " = = "^ printTerm N)
+                          )
+             else (% writeLine("MatchPairs: "^toString(length result)^" results.");
+%                    if length result = 4 then
+%                      ((case next stack of
+%                         | Some(stack,M,N) -> 
+%                           writeLine 
+%                           (printTerm (dereference subst M) ^ " =-= "^ printTerm N)) ;
+%                       app printSubst result)
+%                    else ()
+                   ) in
      result
 
   op  insertPairs : List MS.Term * List MS.Term * Stack -> Option Stack
@@ -698,9 +710,9 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	     of Some rng -> rng
 	      | None -> 
 		(% System.print N; printSpecWithSortsToTerminal spc;
-         System.fail 
-		("Could not extract type for "^
-		 printTermWithSorts N)))
+                 System.fail 
+                   ("Could not extract type for "^
+                      printTermWithSorts N)))
         | Bind _ -> boolSort
         | Record(fields,a) -> 
 	  Product(map (fn (id,t)-> (id,inferType(spc,subst,t))) fields,a)
@@ -728,26 +740,26 @@ possibly by using pre-cooking.
 
 Projections are correctly computed based on the sort structure of the flexible variable.
 Thus, if 
-\[
-   X : \sigma_1 \rightarrow \sigma_2 \rightarrow \cdots \rightarrow \sigma_k \rightarrow \tau
-\]
+
+   X : \sigma_1 --> \sigma_2 --> \cdots --> \sigma_k --> \tau
+
 and we process the equality
-\[
-   (X\; M_1\; \ldots\; M_k) \ = \ N,
-\]
+
+   (X M_1 ... M_k)  =  N,
+
 then we generate the terms
-\[
-   \lambda x_1 \ . \ \lambda x_2 \ . \ \ldots \ \lambda x_k \ . \ \pi(x_i)
-\]
+
+   \lambda x_1  .  \lambda x_2  .  ...  \lambda x_k  .  \pi(x_i)
+
 where \pi(x_i) is a projection on x_i and has type \tau.
 The projection is computed using the following recursive unification procedure:
-\[
+
 \begin{array}{llll}
 N : \sigma  \simeq  \tau &  \{ N \} & \mbox{if \sigma\sqcap\tau \neq \bot} \\
-N : \sigma_1 \times \sigma_2  \simeq  \tau & N.1: \sigma_1 \simeq \tau \ \ \cup \ \ 
+N : \sigma_1 \times \sigma_2  \simeq  \tau & N.1: \sigma_1 \simeq \tau   \cup   
 					     N.2: \sigma_2 \simeq \tau \\
-N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau 
-			& (N\;(F\; x_1\;\ldots\; x_n)):\sigma_2 \simeq \tau 
+N : \sigma_1 --> \sigma_2 \simeq  \tau 
+			& (N\;(F\; x_1\;...\; x_n)):\sigma_2 \simeq \tau 
 \end{array}
 \]
 
@@ -757,7 +769,7 @@ N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau
 				-> List (Subst * MS.Term)
 
   def projectTerm (fields,label,srt,N):MS.Term = 
-      Apply(Fun(Project label,Arrow(Product(fields,noPos),srt,noPos),noPos),N,noPos)
+      mkApply(mkFun(Project label,mkArrow(Product(fields,noPos),srt)),N)
 
   def projections (context,subst,(* terms *)_,vars,srt) =
       let
@@ -774,14 +786,15 @@ N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau
 		  | Arrow(srt1,srt2,_) -> 
 		    let srt1 = foldr mkArrow srt1 (map (fn (_,s) -> s) vars) in
 		    let X = freshVar(context,srt1) in
-		    let trm = foldl (fn (v,t2) -> Apply(t2,Var(v,noPos),noPos)) X vars in
-		    projectSort(srt2,Apply(N,trm,noPos)) 
+		    let trm = foldl (fn (v,t2) -> mkApply(t2,mkVar(v))) X vars in
+		    projectSort(srt2,mkApply(N,trm)) 
 		  | _ -> [])
       in
-      let terms = map (fn (x,s) -> projectSort(s,Var((x,s),noPos))) vars in
+      let terms = map (fn (x,s) -> projectSort(s,mkVar(x,s))) vars in
       let terms = flatten terms in
       let terms = map (fn (subst,M) -> 
-		(subst,foldr (fn(v,M) -> bindPattern(VarPat(v,noPos),M)) M vars)) terms 
+                         (subst,foldr (fn(v,M) -> bindPattern(mkVarPat(v),M)) M vars))
+                    terms 
       in
       terms
 
@@ -920,21 +933,21 @@ skolemization transforms a proper matching problem into an inproper one.
 	 | Apply(M,N,_) -> 
 	   (case isFlexVar?(term)
 	      of Some m -> n = m
-	       | None -> occurs n M or occurs n N)
+	       | None -> occurs n M || occurs n N)
 	 | Record(fields, _) -> 
 	   exists (occursP n) fields
 	 | Lambda(rules, _) -> 
 	   exists (fn (_,cond,body) -> 
-			occurs n cond or occurs n body) rules
+			occurs n cond || occurs n body) rules
 	 | Seq(Ms, _) -> exists (occurs n) Ms
 	 | IfThenElse(M1,M2,M3,_) -> 
-	   occurs n M1 or occurs n M2 or occurs n M3
+	   occurs n M1 || occurs n M2 || occurs n M3
 	 | The (var,M,_) -> occurs n M
 	 | Bind(_,vars,M,_) -> occurs n M
 	 | Let(decls,M,_) -> 
-	   occurs n M or exists (occursP n) decls
+	   occurs n M || exists (occursP n) decls
 	 | LetRec(decls,M,_) ->
-	   occurs n M or exists (occursP n) decls
+	   occurs n M || exists (occursP n) decls
 \end{spec}
 
 \subsection{Closed terms}
@@ -971,24 +984,24 @@ skolemization transforms a proper matching problem into an inproper one.
       case term
         of Var(v, _) -> exists (fn w -> v = w) bound	        
 	 | Fun _ -> true
-	 | Apply(M,N,_) -> closedTermV(M,bound) & closedTermV(N,bound)
+	 | Apply(M,N,_) -> closedTermV(M,bound) && closedTermV(N,bound)
 	 | Record(fields, _) -> 
 	   all (fn (_,M) -> closedTermV(M,bound)) fields
 	 | Lambda(rules, _) -> 
 	   all (fn (pat,cond,body) -> 
 			let bound = patternVars(pat) ++ bound in
-			(closedTermV(cond,bound) & 
+			(closedTermV(cond,bound) && 
 			 closedTermV(body,bound))) rules
 	 | Seq(Ms, _) -> all (fn M -> closedTermV(M,bound)) Ms
 	 | IfThenElse(M1,M2,M3,_) -> 
-	   closedTermV(M1,bound) & 
-	   closedTermV(M2,bound) & 
+	   closedTermV(M1,bound) && 
+	   closedTermV(M2,bound) && 
 	   closedTermV(M3,bound)
 	 | Bind(_,vars,M,_) -> closedTermV(M,vars ++ bound)
 	 | The (var,M,_) -> closedTermV (M,Cons(var, bound))
 	 | Let(decls,M,_) -> 
 	   all (fn (_,M) -> closedTermV(M,bound)) decls 
-	   & 
+	   && 
 	   (let bound = foldr 
 		(fn ((pat,_),bound) -> patternVars pat ++ bound) 
 		bound decls 
@@ -996,7 +1009,7 @@ skolemization transforms a proper matching problem into an inproper one.
 	   closedTermV(M,bound) )
 	 | LetRec(decls,M,_) ->
 	   let bound = (map (fn (v,_) -> v) decls) ++ bound in
-	   closedTermV(M,bound) & 
+	   closedTermV(M,bound) && 
 	   (all (fn (_,M) -> closedTermV(M,bound)) decls) 
 \end{spec}	 
 
@@ -1028,7 +1041,7 @@ skolemization transforms a proper matching problem into an inproper one.
   def occursRec (subst,v,srt) = 
       case srt 
         of Base(_,srts,_) -> exists (fn s -> occursRec(subst,v,s)) srts
- 	 | Arrow(s1,s2,_) -> occursRec(subst,v,s1) or occursRec(subst,v,s2)
+ 	 | Arrow(s1,s2,_) -> occursRec(subst,v,s1) || occursRec(subst,v,s2)
 	 | Product(fields, _) -> exists (fn (_,s) -> occursRec(subst,v,s)) fields
 	 | CoProduct(fields, _) -> 
 	   exists (fn(_,None)-> false | (_,Some s)-> occursRec(subst,v,s)) fields
@@ -1097,7 +1110,7 @@ skolemization transforms a proper matching problem into an inproper one.
 	         else 
 		 let s1 = Utilities.unfoldBase(spc,srt1) in
 		 let s2 = Utilities.unfoldBase(spc,srt2) in
-		 if srt1 = s1 & s2 = srt2
+		 if srt1 = s1 && s2 = srt2
 		    then  NotUnify (srt1,srt2)
 		 else unify(subst,s1,s2,cons((srt1,srt2),equals))
 	       | (TyVar(v, _),TyVar(w, _)) -> 

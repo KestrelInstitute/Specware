@@ -3,8 +3,6 @@ spec
   import Simplify, Rewriter, Interpreter, CommonSubExpressions
   import /Library/PrettyPrinter/WadlerLindig
 
-  op Isomorphism.makeIsoMorphism: Spec * QualifiedId * QualifiedId \_rightarrow Spec
-
   op [a] dummy: a
 
   type Context = RewriteRules.Context
@@ -27,7 +25,9 @@ spec
     | SimpStandard
     | PartialEval
     | AbstractCommonExpressions
-    | IsoMorphism(QualifiedId \_times QualifiedId \_times List RuleSpec)
+    | IsoMorphism(List(QualifiedId \_times QualifiedId) \_times List RuleSpec)
+
+ op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * List RuleSpec \_rightarrow Spec
 
  op ppSpace: WadlerLindig.Pretty = ppString " "
 
@@ -65,8 +65,17 @@ spec
       | SimpStandard -> ppString "SimpStandard"
       | PartialEval -> ppString "Eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
-      | IsoMorphism(iso, inv_iso, _) \_rightarrow
-        ppConcat[ppString "isomorphism (", ppQid iso, ppQid inv_iso, ppString ")"]
+      | IsoMorphism(iso_qid_prs, rls) \_rightarrow
+        ppConcat[ppString "isomorphism (",
+                 ppSep(ppString ", ") (map (fn (iso,osi) ->
+                                              ppConcat[ppString "(",
+                                                       ppQid iso,
+                                                       ppQid osi,
+                                                       ppString ")"])
+                                         iso_qid_prs),
+                 ppString "), (",
+                 ppSep(ppString ", ") (map ppRuleSpec rls),
+                  ppString ")"]
 
  op scriptToString(scr: Script): String =
    let pp = ppNest 3 (ppConcat [ppString "  {", ppScript scr, ppString "}"]) in
@@ -227,8 +236,8 @@ spec
                  | opinfos -> (warn("Ambiguous op "^anyToString qid);
                                spc))
           spc locs
-      | IsoMorphism(iso, inv_iso, _) \_rightarrow
-        makeIsoMorphism(spc, iso, inv_iso)
+      | IsoMorphism(iso_osi_prs, rls) \_rightarrow
+        makeIsoMorphism(spc, iso_osi_prs, rls)
 
   op interpret(spc: Spec, script: Script): Spec =
     % let _ = printScript script in

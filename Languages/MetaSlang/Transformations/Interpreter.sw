@@ -14,8 +14,8 @@ spec
     | RecordVal   Subst
     | Constructor Id * Value
     | Constant    Id
-    | QuotientVal Value * Value		% closure * element
-    | ChooseClosure Value * MS.Sort
+    | QuotientVal Value * Value	* QualifiedId	% closure * element * sort id
+    | ChooseClosure Value * MS.Sort * QualifiedId
     | Closure     Match * Subst
     | RecClosure  Match * Subst * List Id
     | Unevaluated MS.Term
@@ -227,9 +227,9 @@ spec
         (case patternMatchRules(match,a,extendLetRecSubst(sb,csb,ids),spc,depth) of
 	  | Some v -> maybeMkLetOrSubst(v,csb,sb)
 	  | None -> Unevaluated(mkSimpApply(valueToTerm f,valueToTerm a)))
-      | ChooseClosure(cl,_) ->
+      | ChooseClosure(cl,_,_) ->
 	(case a of
-	  | QuotientVal(_,v) -> evalApply(cl,v,sb,spc,depth)
+	  | QuotientVal(_,v,_) -> evalApply(cl,v,sb,spc,depth)
 	  | _ -> Unevaluated(mkApply(valueToTerm f,valueToTerm a)))
       | Unevaluated ft -> evalApplySpecial(ft,a,sb,spc,depth)
       | _ -> Unevaluated (mkApply(valueToTerm f,valueToTerm a))
@@ -330,12 +330,12 @@ spec
 	  | RecordVal[(_,RecordVal r1),(_,RecordVal r2)] ->
 	    RecordVal(mergeFields(r1,r2))
 	  | _ -> default()) 
-      | Fun(Quotient _,srt,_) ->
+      | Fun(Quotient srt_id,srt,_) ->
 	(case stripSubsorts(spc,range(spc,srt)) of
-	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,sb,spc,depth+1),a)
+	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,sb,spc,depth+1),a,srt_id)
 	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
       %% Handled at n
-      | Fun(Choose _,srt,_) -> ChooseClosure(a,srt)
+      | Fun(Choose srt_id,srt,_) -> ChooseClosure(a,srt,srt_id)
       | Fun(Restrict,_,_) -> a		% Should optionally check restriction predicate
       | Fun(Relax,_,_) -> a
       | Fun(Project id,_,_) ->
@@ -354,7 +354,7 @@ spec
   op  checkEquality: Value * Subst * Spec * Nat -> Option Boolean
   def checkEquality(a,sb,spc,depth) =
     case a of
-      | RecordVal [("1",QuotientVal(equivfn,a1)),("2",QuotientVal(_,a2))] ->
+      | RecordVal [("1",QuotientVal(equivfn,a1,_)),("2",QuotientVal(_,a2,_))] ->
         (case evalApply(equivfn,RecordVal[("1",a1),("2",a2)],sb,spc,depth) of
 	   | Bool b -> Some b
 	   | _ -> None)
@@ -447,7 +447,7 @@ spec
 	     | _ -> NoMatch)
         | QuotientPat(pat,_,_) ->
 	  (case N of
-	     | QuotientVal(_,v) -> patternMatch(pat,v,S,spc,depth)
+	     | QuotientVal(_,v,_) -> patternMatch(pat,v,S,spc,depth)
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
         | RestrictedPat(pat,pred,_) ->
@@ -781,16 +781,11 @@ spec
 	   | None -> prettysFill[string "Cons",string " ",ppValue context arg])
       | Constructor (id,arg) -> prettysFill [string id,string " ",ppValue context arg]
       | Constant          id -> string id
-      | QuotientVal (f,arg)  -> prettysFill [string "quotient",string " ",
-					     case f of
-					       | Closure _ -> string "<Closure>"
-					       | _ -> ppValue context f,string " ",
-					     ppValue context arg]
-      | ChooseClosure(cl,_)  ->
-	prettysFill [string "choose",string " <Closure> ",
-		     case cl of
-		       | Closure _ -> string "<Closure>"
-		       | _ -> ppValue context cl]
+      | QuotientVal (f,arg,srt_id)  -> prettysFill [string "quotient[",
+                                                    string (printQualifiedId srt_id), string "] ",
+                                                    ppValue context arg]
+      | ChooseClosure(cl,_,srt_id)  ->
+	prettysFill [string "choose[",string (printQualifiedId srt_id), string "] "]
       | Closure(_,sb)  -> prettysNone[string "<Closure {",
 				      prettysFill(addSeparator (string ", ")
 					(map (fn (id,x) ->
@@ -841,10 +836,10 @@ spec
       | Constructor (id,arg) -> mkApply(mkEmbed1(id,unknownSort), valueToTerm arg)
       | Constant    id -> mkEmbed0(id,unknownSort)
 % TODO: restore these
-%      | QuotientVal (f,arg)  ->
-%        let argtm = valueToTerm arg in
-%	mkQuotient(valueToTerm f,argtm,termSort argtm)
-%      | ChooseClosure(a,srt) -> mkApply(mkFun(Choose,srt),valueToTerm a)
+      | QuotientVal (f,arg,srt_qid)  ->
+        let argtm = valueToTerm arg in
+	mkQuotient(argtm,srt_qid,termSort argtm)
+      | ChooseClosure(a,srt,srt_id) -> mkApply(mkFun(Choose srt_id,srt),valueToTerm a)
       | Closure(f,sb)   -> mkLetOrsubst(Lambda(f,noPos),sb,emptySubst)
       | RecClosure(f,_,_) -> Lambda(f,noPos)
       | Unevaluated t  -> t
@@ -856,6 +851,8 @@ spec
       | RecClosure _ -> false
       | RecordVal rm -> all (fn (_,x) -> fullyReduced? x) rm
       | Constructor(_,arg) -> fullyReduced? arg
+      | QuotientVal (f,arg,srt_qid) -> fullyReduced? arg
+      | ChooseClosure (arg,srt,srt_id) -> fullyReduced? arg
       | _ -> true
 
   op  unknownSort: Sort

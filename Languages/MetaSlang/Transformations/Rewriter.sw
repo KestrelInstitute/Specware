@@ -1,11 +1,11 @@
-
 (* Rewrite rule control *)
 
 MetaSlangRewriter qualifying spec 
  import /Library/Legacy/DataStructures/LazyList
- import DeModRewriteRules, Simplify
+ import DeModRewriteRules, Simplify, Interpreter
  
  type Context = HigherOrderMatching.Context
+ type Subst = HigherOrderMatching.Subst
 
  type TermPredicate = MS.Term * MS.Term -> Boolean
 
@@ -56,6 +56,7 @@ MetaSlangRewriter qualifying spec
  op applyDemodRewrites(context: Context, subst: Subst)
                       (boundVars: List Var, term: MS.Term, demod: Demod RewriteRule)
                       : LazyList(MS.Term * (Subst * RewriteRule * Demod RewriteRule))  = 
+   % let _ = writeLine("Rewriting:\n"^printTerm term) in
    let context = setBound(context,boundVars)  in
    let spc     = context.spc                  in
    let rules = Demod.getRules(demod,term)     in
@@ -85,21 +86,37 @@ MetaSlangRewriter qualifying spec
 	rhs   = mkVar(2,TyVar("''a",noPos))
      } 
 
+ op pushFunctionsIn?: Boolean = true
+ op evalGroundTerms?: Boolean = true
+
  def standardSimplify spc (term,subst,demod) =
    case tryEvalOne spc term of
      | Some eTerm ->
        % let _ = writeLine("EvalOne:\n"^printTerm term^"\nTo:\n"^printTerm eTerm) in
        unit (eTerm, (subst,evalRule,demod))
      | None ->
+   let (simp?, term) = if evalGroundTerms? &&  ~(constantTerm? term) && freeVarsRec term = []
+                         then
+                           let v = eval(term,spc) in
+                           if fullyReduced? v
+                             then (true, valueToTerm v)
+                           else (false, term)
+                       else (false, term)
+   in
+   if simp? then unit(term, (subst,evalRule,demod))
+   else
+   if ~pushFunctionsIn? then Nil
+   else
    case term of
      | Apply(f, IfThenElse(b,x,y,a2),a1) ->
        unit (IfThenElse(b,Apply(f,x,a1),Apply(f,y,a1),a2), (subst,evalRule,demod))
      | Apply(f, Let(bds,lt,a2),a1) -> 
        unit (Let(bds,Apply(f,lt,a1),a2), (subst,evalRule,demod))
-     | Apply(f, Apply(Lambda(binds,a3),case_tm,a2),a1) ->
-       unit (Apply(Lambda(map (fn (p,c,bod) -> (p,c,Apply(f,bod,a1))) binds, a3),
-                   case_tm,a2),
-             (subst,evalRule,demod))
+%% Moved to rewriteTerm
+%      | Apply(f, Apply(Lambda(binds,a3),case_tm,a2),a1) ->
+%        unit (Apply(Lambda(map (fn (p,c,bod) -> (p,c,Apply(f,bod,a1))) binds, a3),
+%                    case_tm,a2),
+%              (subst,evalRule,demod))
      | _ -> Nil
 
  op simpleRwTerm?(t: MS.Term): Boolean =
@@ -148,8 +165,7 @@ MetaSlangRewriter qualifying spec
                     {name      = desc,   condition = condition,
                      lhs       = fml,    rhs       = trueTerm,
                      tyVars    = [],     freeVars  = freeVars})]
-   
-
+ 
  op addPatternRestriction(context: Context, pat: Pattern, rules: Demod RewriteRule): Demod RewriteRule =
    case pat of
      | VarPat(v as (_,ty), _) ->
@@ -181,6 +197,47 @@ MetaSlangRewriter qualifying spec
      | Apply (Fun(Not,_,_), p,                        _) -> p
      | Apply (Fun(Or,_,_),  Record([(_,M),(_,N)], _), _) -> Utilities.mkAnd(negate M,negate N)
      | _ -> mkNot term
+
+ op useUnfoldLetStrategy?: Boolean = true
+
+ op substFromBinds(binds: List(Pattern * MS.Term)): VarSubst =
+   mapPartial (fn (p, be) ->
+                 case p of
+                   | VarPat(v,_) -> Some (v,be)
+                   | _ -> None)
+     binds
+ 
+ op unFoldSimpleLet(binds: List(Pattern * MS.Term), M: MS.Term)
+    : MS.Term =
+    let v_subst = substFromBinds binds in
+    if binds = [] || ~useUnfoldLetStrategy?
+      then M
+      else substitute(M,v_subst)
+
+ op reverseSubst (v_subst: VarSubst) (t: MS.Term): MS.Term =
+   case v_subst of
+     | [] -> t
+     | (v,vt)::_ | equalTerm?(vt,t) -> mkVar v
+     | _ :: r -> reverseSubst r t
+
+ op reFoldLetVars(binds: List(Pattern * MS.Term), M: MS.Term, b: Position)
+    : MS.Term =
+   let v_subst = substFromBinds binds in
+   if binds = [] || ~useUnfoldLetStrategy?
+      then Let(binds,M,b)
+      else
+        %% Variable capture unlikely because of substitute in unFoldSimpleLet
+        let M1 = mapTerm (reverseSubst v_subst, id, id) M in
+        if equalTerm?(M, M1)
+          then M
+        else
+          let fvs = freeVars M1 in
+          Let(filter (fn (p,_) ->
+                        case p of
+                          | VarPat(v,_) -> inVars?(v,fvs)
+                          | _ -> true)
+                binds,
+              M1, b)
 
  (* Unnecessary as equality can be done as a built-in rule
      See spec builtInRewrites
@@ -231,16 +288,15 @@ MetaSlangRewriter qualifying spec
  type Rewriter a = List Var * MS.Term * Demod RewriteRule -> LazyList (MS.Term * a) 
  %type Matcher  a = List Var * Term * Term -> LazyList a
  type Strategy   = | Innermost | Outermost
+ type RewriteInfo a = {strategy: Strategy, rewriter: Rewriter a, context: Context}
 
- op rewriteTerm    : [a] {strategy:Strategy,rewriter:Rewriter a,context:Context}
-                           * List Var * MS.Term * Demod RewriteRule
+ op rewriteTerm    : [a] RewriteInfo a * List Var * MS.Term * Demod RewriteRule
                            -> LazyList (MS.Term * a)
- op rewriteSubTerm : [a] {strategy:Strategy,rewriter:Rewriter a,context:Context}
-                           * List Var * MS.Term * Demod RewriteRule
+ op rewriteSubTerm : [a] RewriteInfo a * List Var * MS.Term * Demod RewriteRule
                            -> LazyList (MS.Term * a)
 
- op [a] rewritePattern (solvers: {strategy:Strategy,rewriter:Rewriter a,context:Context},
-                        boundVars: List Var, pat: Pattern, rules: Demod RewriteRule)
+ op [a] rewritePattern (solvers: RewriteInfo a, boundVars: List Var,
+                        pat: Pattern, rules: Demod RewriteRule)
           : LazyList(Pattern * a) =
    case pat of
      | RestrictedPat(p,t,b) ->
@@ -320,6 +376,24 @@ MetaSlangRewriter qualifying spec
 	   LazyList.map 
 		(fn (M,a) -> (Apply(Fun(NotEquals,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
 		(rewriteTerm(solvers,boundVars,M,rules))) 
+         | Apply(f, c_tm as (Apply(Lambda(binds,b3), case_tm, b2)), b1)
+              | pushFunctionsIn?
+                  && (case f of
+                        | Fun _ -> true
+                        | Var _ -> true
+                        | Apply _ -> true
+                        | Lambda _ -> true
+                        | _ -> false)
+                ->
+           let new_c_tm = Apply(Lambda(map (fn (p,c,bod) ->
+                                                    (p,c,Apply(f,bod,b1)))
+                                               binds, b3),
+                                      case_tm,b2)
+           in
+             rewriteTerm(solvers,boundVars,new_c_tm,rules)
+             @@ (fn () ->
+                   LazyList.map (fn (f,a) -> (Apply(f,c_tm,b2),a)) 
+                     (rewriteTerm(solvers,boundVars,f,rules)))
 	 | Apply(M,N,b) -> 
 	   LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
              (rewriteTerm(solvers,boundVars,N,rules))
@@ -351,8 +425,10 @@ MetaSlangRewriter qualifying spec
              binds
            @@ (fn () ->
                  let let_vars = flatten (map (fn (pat, _) -> patternVars pat) binds) in
-                 LazyList.map (fn (M,a) -> (Let(binds,M,b),a)) 
-                   (rewriteTerm(solvers,boundVars ++ let_vars,M,rules)))
+                 let (p_M) = unFoldSimpleLet(binds,M) in
+                 LazyList.map (fn (r_M,a) ->
+                                 (reFoldLetVars(binds,r_M,b),a)) 
+                   (rewriteTerm(solvers,boundVars ++ let_vars,p_M,rules)))
          | LetRec(binds,M,b) ->
            let letrec_vars = map(fn (v, _) -> v) binds in
            let boundVars = boundVars ++ letrec_vars in
@@ -390,13 +466,11 @@ MetaSlangRewriter qualifying spec
          | SortedTerm(M,s,b) ->
            LazyList.map (fn (M,a) -> (SortedTerm(M,s,b),a))
 		(rewriteTerm(solvers,boundVars,M,rules))
-          | Pi(tvs,M,b) ->
+         | Pi(tvs,M,b) ->
            LazyList.map (fn (M,a) -> (Pi(tvs,M,b),a))
 		(rewriteTerm(solvers,boundVars,M,rules))
        %  | And(tms,b) ->
-           
-	 | _ -> Nil)
-
+ 	 | _ -> Nil)
 
 (* Trace utilities *)
 
@@ -477,7 +551,7 @@ MetaSlangRewriter qualifying spec
 %% Apply conditional rewrite rules using outer-most strategy.
 %%
 
- def rewriteRecursive(context,boundVars,rules,term, maxDepth) = 
+ def rewriteRecursive(context,boundVars,rules,term,maxDepth) = 
      let rules = {unconditional = addDemodRules(rules.unconditional,Demod.empty),
 		  conditional   = addDemodRules(rules.conditional,Demod.empty)}
      in rewriteRecursivePre(context,boundVars,rules,term,maxDepth)
@@ -524,8 +598,7 @@ MetaSlangRewriter qualifying spec
 	let traceDepth = ! context.traceDepth + 1 in
         if traceDepth > maxDepth then unit history
         else
-	let 
-	    def rewrite(strategy,rules) =
+	let def rewrite(strategy,rules) =
 		rewriteTerm 
 		  ({strategy = strategy,
 		    rewriter = applyDemodRewrites(context,subst),
