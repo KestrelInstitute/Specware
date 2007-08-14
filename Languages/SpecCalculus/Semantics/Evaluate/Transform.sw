@@ -49,6 +49,31 @@ spec
                                   return (Unfold qid)}
       | _ -> raise (TypeCheck (posOf trans, "Unrecognized rule reference"))
 
+ op getSearchString(se: TransformExpr): SpecCalc.Env String =
+   case se of
+     | Str(target_str, _)  -> return target_str
+     | Name(target_str, _) -> return target_str
+     | _ -> raise (TypeCheck (posOf se, "Illegal search string"))
+
+ op makeMove(mv_tm: TransformExpr): SpecCalc.Env Movement =
+    case mv_tm of
+      | Name(prim_mv,pos) ->
+        (case prim_mv of
+           | "f" -> return First
+           | "l" -> return Last
+           | "n" -> return Next
+           | "p" -> return Prev
+           | "w" -> return Widen
+           | "a" -> return All
+           | _ -> raise (TypeCheck (pos, "Unrecognized move command: "^prim_mv)))
+      | Item(search_type, se, pos) ->
+        {target_str <- getSearchString se;
+         case search_type of
+           | "s" -> return(Search target_str)
+           | "r" -> return(ReverseSearch target_str)
+           | _ -> raise (TypeCheck (pos, "Unrecognized move command: "^search_type))}
+      | _ -> raise (TypeCheck (posOf mv_tm, "Unrecognized move command."))
+
   op makeScript1(trans: TransformExpr): SpecCalc.Env Script =
     case trans of
       | Apply(Name("simplify",_), rls,_) ->
@@ -73,8 +98,10 @@ spec
                                 return (Apply([Fold qid]))}
       | Item("unfold",opid,_) -> {qid <- makeQID opid;
                                   return (Apply([Unfold qid]))}
+      | Apply(Name("move",_), rmoves, _) -> {moves <- mapM makeMove rmoves;
+                                             return (Move moves)}
       | _ -> raise (TypeCheck (posOf trans, "Unrecognized transform"))
-
+        
   op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
     case iso_tm of
       | Tuple ([iso,osi], _) ->
