@@ -82,6 +82,7 @@ SpecCalc qualifying spec
   type TransformExpr =
     | Name String * Position
     | Number Nat * Position
+    | Str String * Position
     | Qual String * String * Position
     | Item String * TransformExpr * Position       % e.g. unfold map
     | Tuple List TransformExpr * Position
@@ -462,6 +463,7 @@ SpecCalc qualifying spec
 
  def mkTransformName(name: String, pos: Position)                  : TransformExpr = Name(name, pos)
  def mkTransformNumber(n: Nat, pos: Position)                      : TransformExpr = Number(n, pos)
+ def mkTransformString(s: String, pos: Position)                   : TransformExpr = Str(s, pos)
  def mkTransformQual(q: String, name: String, pos: Position)       : TransformExpr = Qual(q, name, pos)
  def mkTransformItem(mod: String, te: TransformExpr, pos: Position): TransformExpr = Item(mod, te, pos)
  def mkTransformApply(head: TransformExpr, args: List TransformExpr, pos: Position): TransformExpr
