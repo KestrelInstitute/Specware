@@ -9,6 +9,8 @@
 (in-package :SWShell)
 
 (defvar *transform-help-strings* '(("at" . "[op] Focuses on definition of op")
+				   ("move" . "[f l n p w a s r] Focus on neighboring expressions (first last next previous widen all search reverse-search)")
+				   ("m" . "Abbreviation for move")
 				   ("simplify" . "[rules] Applies rewriting simplifier with supplied rules.")
 				   ("fold" . "[op] folds first occurrence of definition of op")
 				   ("unfold" . "[op] unfolds first occurrence of op")
@@ -33,7 +35,7 @@
 
 
 (defvar *transform-spec*)
-(defvar *transform-term*)
+(defvar *transform-term*)		; Actually a pair of current term and its parent
 (defvar *transform-commands*)
 (defvar *undo-stack*)
 
@@ -58,8 +60,16 @@
 (defun print-current-term ()
   (if (null *transform-term*)
       (princ "No term chosen")
-      (princ (AnnSpecPrinter::printTerm *transform-term*)))
+      (princ (AnnSpecPrinter::printTerm (car *transform-term*))))
   (values))
+
+(defun add-command (command later-commands)
+  (if (and (not (null later-commands))
+	   (eq (caar later-commands) ':|Move|)
+	   (eq (car command) ':|Move|))
+      (cons (cons ':|Move| (append (cdr command) (cdar later-commands)))
+	    (cdr later-commands))
+      (cons command later-commands)))
 
 (defun previous-multi-command (acts)
   (when (null *transform-commands*)
@@ -67,13 +77,14 @@
   (let ((prev (pop *transform-commands*)))
     (if (functionp prev)
 	(funcall prev acts)
-	(previous-multi-command (cons prev acts)))))
+	(previous-multi-command (add-command prev acts)))))
 
 (defun finish-previous-multi-command ()
   (when (and (not (null *transform-commands*))
 	     (loop for x in *transform-commands* thereis (functionp x)))
     (let ((prev-result (previous-multi-command nil)))
       (when prev-result
+	(setq *transform-spec* (Script::interpretSpec-2 *transform-spec* prev-result))
 	(push prev-result *transform-commands*)))))
 
 (defun parse-qid (qid-str)
@@ -88,8 +99,10 @@
 (defun interpret-command (command)
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
-      (let ((new-term (Script::interpretTerm-3 *transform-spec* command *transform-term*)))
-	(if (MetaSlang::equalTerm?-2 *transform-term* new-term)
+      (let ((new-term (Script::interpretTerm-4 *transform-spec* command
+					       (car *transform-term*)
+					       (cdr *transform-term*))))
+	(if (MetaSlang::equalTerm?-2 (car *transform-term*) (car new-term))
 	    (format t "No effect!")
 	    (progn 
 	      (push-state)
@@ -110,13 +123,31 @@
 	()
 	(progn
 	  (push-state)
-	  (setq *transform-term* new-term)
+	  (setq *transform-term* (cons new-term new-term))
 	  (push #'(lambda (future-steps)
 		    (if (null future-steps)
 			nil
 			(Script::mkAt-2 qid future-steps)))
 		*transform-commands*)
 	  (print-current-term)))
+    (values)))
+
+(defparameter *move-alist* '(("f" :|First|) ("l" :|Last|) ("n" :|Next|) ("p" :|Prev|)
+			     ("w" :|Widen|) ("a" :|All|) ("t" :|All|)
+			     ("s" . :|Search|) ("r" . :|ReverseSearch|)))
+
+(defun move-command (moves)
+  (let ((move-comms (loop for move on moves
+			  for pr = (assoc (car move) *move-alist* :test 'equal)
+			 if (null pr)
+			 do (return (progn (warn "Illegal move command: ~a" (car move)) nil))
+			 else collect (if (listp (cdr pr))
+					  (cdr pr)
+					  (if (null (cdr move))
+					      (return (progn (warn "Missing search arg: ~a" (car move)) nil))
+					      (cons (cdr pr) (progn (pop move) (car move))))))))
+    (when move-comms
+      (interpret-command (Script::mkMove move-comms)))
     (values)))
 
 (defun apply-command (qid constr-fn)
@@ -152,6 +183,9 @@
 			(cl-user::sw-help argstr) ; refers to *transform-help-strings*
 			))
 	   (at                 (at-command (parse-qid argstr)))
+	   ((move m)           (move-command (string-spec::split argstr)))
+	   ((f l n p w a s r)  (move-command (cons (string-downcase (string command))
+						   (string-spec::split argstr))))
 	   ((simplify simp s)  (simplify-command argstr)    )
 	   ;((apply a)       (cl-user::ls     (or argstr "")))
 	   ((fold f)           (apply-command argstr 'Script::mkFold))
@@ -200,63 +234,7 @@
 			       (setq *transform-spec* spc)
 			       (format t "Restarting Transformation Shell.")))))
 		      (values))
-	   ;; Possibly useful commands from the standard shell
-	   (show      (cl-user::show   argstr) (values))
-	   (showx     (cl-user::showx  argstr) (values))
-	   (lgen-lisp (cl-user::swll   argstr) (values))
-	   ((eval e)  (let ((cl-user::*swe-use-interpreter?* t)
-			    (argstr (or argstr *last-eval-expr*))
-			    (cl-user::*expr-begin-offset* (if (eq command 'e) -12 -9)))
-			(if (null argstr)
-			    (warn "No previous eval command.")
-			    (progn (setq *last-eval-expr* argstr)
-				   (cl-user::swe argstr)
-				   (values)))))
-	   ((eval-lisp el) 
-	    (let ((cl-user::*swe-use-interpreter?* nil)
-		  (argstr (or argstr *last-eval-expr*))
-		  (cl-user::*expr-begin-offset* (if (eq command 'el) -11 -4)))
-	      (if (null argstr)
-		  (warn "No previous eval command.")
-		  (progn (setq *last-eval-expr* argstr)
-			 (cl-user::swe argstr)
-			 (values)))))
-	   ;; Non-user commands
-	   (set-base          (cl-user::set-base argstr))
-	   (show-base-unit-id (cl-user::show-base-unit-id))
-
-	   ((lisp l)  (with-break-possibility (lisp-value (multiple-value-list (eval (read-from-string argstr))))))
-	   (cl        (with-break-possibility (cl-user::cl argstr)))
-	   (ld        (with-break-possibility (cl-user::ld argstr)))
-	   (cf        (cl-user::cf argstr))
-	   (tr        (cl-user::tr argstr))
-	   (untr      (cl-user::untr))
-	   (f-b       (when (fboundp 'cl-user::f-b)
-			(funcall 'cl-user::f-b argstr)))
-	   (f-unb     (when (fboundp 'cl-user::f-unb)
-			(funcall 'cl-user::f-unb (or argstr ""))))
-	   (pa        (cl-user::pa argstr))
-	   (dev       (princ (if argstr
-				 (setq *developer?* (not (member argstr '("nil" "NIL" "off") :test 'string=)))
-				 *developer?*))
-		      (values))
-	   (wiz       (if argstr (cl-user::wiz   argstr) (cl-user::wiz)))
-	   (swdbg     (if argstr (cl-user::swdbg argstr) (cl-user::swdbg)))
-	   (com       (let ((cl:*package* (find-package "CL-USER")))
-			(multiple-value-bind (command pos)
-			    (read-from-string argstr)
-			  (if (fboundp command)
-			      (let ((com-argstr (subseq argstr pos)))
-				(if (string= com-argstr "")
-				    (funcall command)
-				    (funcall command com-argstr)))
-			      (format t "Unknown command: ~a." command)))))
-;;      (bash      (cl-user::bash argstr))
-	   ;;
-	   (t 
-	    (format t "Unknown command `~a'. Type `help' to see available commands."
-		    (string-downcase command))
-	    (values))))
+	   (t (process-sw-shell-command command argstr))))
 	((and (constantp command) (null argstr))
 	 (values command))
 	(t
