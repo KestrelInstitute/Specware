@@ -60,18 +60,6 @@ spec
  import ../Specs/Utilities
  sort Term = MS.Term
 
- op  sideEffectFree: MS.Term -> Boolean
- def sideEffectFree(term) = 
-     case term
-       of Var _ -> true
-	| Record(fields,_) -> List.all (fn(_,t)-> sideEffectFree t) fields
-	| Apply(Fun(f,_,_),t,_) -> knownSideEffectFreeFn? f & sideEffectFree t
-	| Fun _ -> true
-	| IfThenElse(t1,t2,t3,_) -> 
-		(sideEffectFree t1) 
-	      & (sideEffectFree t2) 
-	      & (sideEffectFree t3)
-	| _ -> false 
 
  op  countVarRefs: MS.Term * Var -> Nat
  def countVarRefs(term,v) =
@@ -126,34 +114,6 @@ spec
 	  (true,false)
 	  tm
     in result.1
-
-  op  knownSideEffectFreeQIds: List(Qualifier * Id)
-  def knownSideEffectFreeQIds =
-    [("Integer", "~"),  % TODO: deprecate
-     ("Integer_","-"),   % deprecated
-     ("IntegerAux","-"), % "IntegerAux" replaces "Integer_" for unary minus
-     ("Integer","+"),
-     ("Integer","<"),
-     ("Integer",">"),
-     ("Integer","<="),
-     ("Integer",">="),
-     ("Integer","-"),
-     ("Integer","div"),
-     ("Integer","rem"),
-     ("Integer","abs"),
-     ("Integer","min"),
-     ("Integer","max"),
-     ("Integer","compare"),
-     ("List","length")]
-
-  op  knownSideEffectFreeFn?: Fun -> Boolean
-  def knownSideEffectFreeFn? f =
-    case f of
-      | Op(Qualified(qid),_) ->
-        member(qid,knownSideEffectFreeQIds)
-      % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
-      | _ -> true
-      
 
 % We implement a version of tuple instantiation that works on terms after pattern 
 % matching compilation such that all references to let (u,v) = z in .. are of the

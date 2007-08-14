@@ -2,18 +2,6 @@ CSE qualifying
 spec
   import /Languages/MetaSlang/Specs/Utilities
 
-  op termMember?(t1: MS.Term, tms: List MS.Term): Boolean =
-    exists (fn t2 -> equalTerm?(t1,t2)) tms
-
-  op termsDiff(tms1: List MS.Term, tms2: List MS.Term): List MS.Term =
-    filter(fn t1 -> ~(termMember?(t1, tms2))) tms1
-
-  op termsUnion(tms1: List MS.Term, tms2: List MS.Term): List MS.Term =
-    termsDiff(tms1,tms2) ++ tms2
-
-  op termsIntersect(tms1: List MS.Term, tms2: List MS.Term): List MS.Term =
-    filter(fn t1 -> termMember?(t1, tms2)) tms1
-
   op newCSEs(tms1: List MS.Term, tms2: List MS.Term, cse1: List MS.Term, cse2: List MS.Term)
     : List MS.Term * List MS.Term =
     let cse12 = termsIntersect(tms1, tms2) in
