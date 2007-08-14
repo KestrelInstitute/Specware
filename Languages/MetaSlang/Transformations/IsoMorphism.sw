@@ -582,7 +582,7 @@ spec
                 then opinfo
               else
               let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
-              let simp_dfn = interpretTerm(spc, main_script, dfn) in
+              let (simp_dfn,_) = interpretTerm(spc, main_script, dfn, dfn) in
               if equalTerm?(dfn,simp_dfn)
                 then opinfo
               else
