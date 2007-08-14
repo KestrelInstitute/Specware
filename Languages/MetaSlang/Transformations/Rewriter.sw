@@ -67,10 +67,12 @@ MetaSlangRewriter qualifying spec
             (mapPartial (fn s ->
                            let rhs = renameBoundVars(rule.rhs,boundVars) in
                            %% Temporary fix to avoid identity transformations early
-                           %% The dereferenceAll will be done later as well, so we should probably save it
-                           if equalTerm?(term, dereferenceAll s rhs)
+                           %% The dereferenceAll will be done later as well,
+                           %% This is also necessary for foldSubPatterns
+                           let result = dereferenceAll s rhs in
+                           if equalTerm?(term, result)
                              then None
-                             else Some(rhs,(s,rule,demod)))
+                             else Some(result,(s,rule,demod)))
                substs)) 
       rules)
    @@ (fn () -> standardSimplify spc (term,subst,demod))
@@ -425,9 +427,8 @@ MetaSlangRewriter qualifying spec
              binds
            @@ (fn () ->
                  let let_vars = flatten (map (fn (pat, _) -> patternVars pat) binds) in
-                 let (p_M) = unFoldSimpleLet(binds,M) in
-                 LazyList.map (fn (r_M,a) ->
-                                 (reFoldLetVars(binds,r_M,b),a)) 
+                 let p_M = unFoldSimpleLet(binds,M) in
+                 LazyList.map (fn (r_M,a) -> (reFoldLetVars(binds,r_M,b),a))
                    (rewriteTerm(solvers,boundVars ++ let_vars,p_M,rules)))
          | LetRec(binds,M,b) ->
            let letrec_vars = map(fn (v, _) -> v) binds in
