@@ -1002,6 +1002,20 @@ Utilities qualifying spec
       | Lambda _ -> true
       | _ -> false
 
+  %% List Term set operations
+  op [a] termIn?(t1: ATerm a, tms: List (ATerm a)): Boolean =
+    exists (fn t2 -> equalTerm?(t1,t2)) tms
+
+  op [a] termsDiff(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
+    filter(fn t1 -> ~(termIn?(t1, tms2))) tms1
+
+  op [a] termsUnion(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
+    termsDiff(tms1,tms2) ++ tms2
+
+  op [a] termsIntersect(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
+    filter(fn t1 -> termIn?(t1, tms2)) tms1
+
+
  %% Evaluation of constant terms
  def evalSpecNames = ["Nat","Integer","String"] 
  def evalConstant?(term) =
@@ -1046,6 +1060,46 @@ Utilities qualifying spec
    case arg
      of Fun(_,s,_) -> s
       | _ -> defaultS
+
+  op  knownSideEffectFreeQIds: List(Qualifier * Id)
+  def knownSideEffectFreeQIds =
+    [("Integer", "~"),  % TODO: deprecate
+     ("Integer_","-"),   % deprecated
+     ("IntegerAux","-"), % "IntegerAux" replaces "Integer_" for unary minus
+     ("Integer","+"),
+     ("Integer","<"),
+     ("Integer",">"),
+     ("Integer","<="),
+     ("Integer",">="),
+     ("Integer","-"),
+     ("Integer","div"),
+     ("Integer","rem"),
+     ("Integer","abs"),
+     ("Integer","min"),
+     ("Integer","max"),
+     ("Integer","compare"),
+     ("List","length")]
+
+  op  knownSideEffectFreeFn?: Fun -> Boolean
+  def knownSideEffectFreeFn? f =
+    case f of
+      | Op(Qualified(qid),_) ->
+        member(qid,knownSideEffectFreeQIds)
+      % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
+      | _ -> true
+      
+ op  sideEffectFree: MS.Term -> Boolean
+ def sideEffectFree(term) = 
+     case term
+       of Var _ -> true
+	| Record(fields,_) -> List.all (fn(_,t)-> sideEffectFree t) fields
+	| Apply(Fun(f,_,_),t,_) -> knownSideEffectFreeFn? f & sideEffectFree t
+	| Fun _ -> true
+	| IfThenElse(t1,t2,t3,_) -> 
+		(sideEffectFree t1) 
+	      & (sideEffectFree t2) 
+	      & (sideEffectFree t3)
+	| _ -> false 
 
  op  evalBinary: [a] (a * a -> Fun) * (List(Id * MS.Term) -> List a)
                       * List(Id * MS.Term) * Sort
@@ -1208,7 +1262,7 @@ Utilities qualifying spec
       | IfThenElse(p,q,r,_) ->
         if trueTerm? p then Some q
           else if falseTerm? p then Some r
-          %else if equivTerm? spc (q,r) then Some q
+          else if equivTerm? spc (q,r) & sideEffectFree p then Some q
           else None
       | _ -> None
 
