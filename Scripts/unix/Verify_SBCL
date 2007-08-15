@@ -18,9 +18,14 @@ for L in /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp; do
   fi
 done
 
+
 if [ -z "$LISP" ]; then
   echo "  Verify_SBCL:  Could not find SBCL lisp"
-  exit 1
+  if [ "[$1]" != "[DONT-FAIL]" ]; then
+    echo "[$1] != [DONT-FAIL]"
+    sleep 10
+    exit 1
+  fi
 fi
 
 export BIG_LISP="$LISP --dynamic-space-size 880 --end-runtime-options"
@@ -70,3 +75,4 @@ echo "  Verify_SBCL:  BATCH_LISP           = [$BATCH_LISP]"
 echo "  Verify_SBCL:  BATCH_SPECWARE       = [$BATCH_SPECWARE]"
 echo "  Verify_SBCL:  BATCH_BOOTSTRAP      = [$BATCH_BOOTSTRAP]"
 echo "  "
+

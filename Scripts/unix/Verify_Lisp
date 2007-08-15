@@ -6,7 +6,8 @@ LISP_MODE=$1
 
 if [ -f $SPECWARE4/Scripts/unix/Verify_${LISP_MODE} ]; then
   # bash convention for . means the file is processed inline (as if copied here)
-  . $SPECWARE4/Scripts/unix/Verify_${LISP_MODE}
+echo $SPECWARE4/Scripts/unix/Verify_${LISP_MODE} $2
+  . $SPECWARE4/Scripts/unix/Verify_${LISP_MODE} $2
 else
   echo "  Verify_Lisp: Unrecognized lisp mode.  LISP_MODE = [$LISP_MODE]"
   exit 1
