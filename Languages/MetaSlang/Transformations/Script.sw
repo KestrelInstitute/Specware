@@ -81,7 +81,7 @@ spec
       | Apply rules ->
         ppConcat [ppString "apply (", ppSep (ppString ", ") (map ppRuleSpec rules), ppString ")"]
       | SimpStandard -> ppString "SimpStandard"
-      | PartialEval -> ppString "Eval"
+      | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
       | IsoMorphism(iso_qid_prs, rls) \_rightarrow
         ppConcat[ppString "isomorphism (",
