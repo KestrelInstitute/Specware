@@ -361,32 +361,39 @@ spec
   def simplifyExists1(vs,cjs) =
     mkSimpBind(Exists1,vs,mkSimpConj cjs)    
 
+  op simplifyRecordBind(spc: Spec, pats: List (Id * Pattern), acts: List (Id * MS.Term), body: MS.Term)
+     : Option MS.Term =
+    if all (fn(_,VarPat _) -> true |_ -> false) pats 
+      then (if all (fn(_,Var _) -> true |_ -> false) acts
+              then Some(substitute(body,makeSubstFromRecord(pats,acts)))
+              else
+              %% Sequentializing binds: rename to avoid variable capture
+              let (binds,sbst,_)
+                 = foldr (fn (((_,vp as VarPat(v,a)),(_,val)),(binds,sbst,fvs)) ->
+                          let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
+                          if member(v.1,fvs)
+                            then let nv = (v.1 ^ "__" ^ (toString (length binds)),v.2) in
+                                 (Cons((VarPat(nv,a),val),binds),
+                                  Cons((v,Var(nv,a)),sbst),
+                                  new_fvs)
+                            else (Cons((vp,val),binds),sbst,new_fvs)
+                              )
+                     ([],[],[]) (zip(pats,acts))
+              in
+              let body = substitute(body,sbst) in
+              Some(foldr (fn ((v,val),body) ->
+                            simplifyOne spc (mkLet([(v,val)],body)))
+                     body binds))
+      else None
+
   op simplifyCase (spc: Spec) (term: MS.Term): Option MS.Term =
     case term of
-      %% case (a,b,c) of (x,y,z) -> g(x,y,z) -> g(a,b,c)
+      %% case (a,b,c) of (x,y,z) -> g(x,y,z) --> g(a,b,c)
       | Apply(Lambda([(RecordPat(pats,_),_,body)],_),Record(acts,_),_) ->
-        if all (fn(_,VarPat _) -> true |_ -> false) pats 
-	  then (if all (fn(_,Var _) -> true |_ -> false) acts
-		  then Some(substitute(body,makeSubstFromRecord(pats,acts)))
-		  else
-                  %% Sequentializing binds: rename to avoid variable capture
-                  let (binds,sbst,_)
-                     = foldr (fn (((_,vp as VarPat(v,a)),(_,val)),(binds,sbst,fvs)) ->
-                              let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
-                              if member(v.1,fvs)
-                                then let nv = (v.1 ^ "__" ^ (toString (length binds)),v.2) in
-                                     (Cons((VarPat(nv,a),val),binds),
-                                      Cons((v,Var(nv,a)),sbst),
-                                      new_fvs)
-                                else (Cons((vp,val),binds),sbst,new_fvs)
-                                  )
-                         ([],[],[]) (zip(pats,acts))
-                  in
-                  let body = substitute(body,sbst) in
-                  Some(foldr (fn ((v,val),body) ->
-                                simplifyOne spc (mkLet([(v,val)],body)))
-                         body binds))
-	  else None
+        simplifyRecordBind(spc, pats, acts, body)
+      %% let (x,y,z) = (a,b,c) in g(x,y,z) --> g(a,b,c)
+      | Let ([(RecordPat(pats,_), Record(acts,_))], body, _) ->
+        simplifyRecordBind(spc, pats, acts, body)
       %% case v of (x,y) -> ... --> let x = v.1 and y = v.2 in ...
       | Apply(Lambda([(RecordPat(pats,_),_,body)],_),v as Var(vr,_),_) ->
         Some (simplifyOne spc
