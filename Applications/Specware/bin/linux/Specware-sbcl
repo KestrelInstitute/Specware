@@ -74,32 +74,11 @@ if [ -z "$SWPATH" ]; then
   SWPATH="/"
 fi
 
-# Try to find lisp executable:
-
-if [ -z "$LISP" ]; then
-   for L in /Applications/sbcl/bin/sbcl /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp; do
-      if [ -x "$L" ]; then
-         LISP="$L"; break
-      fi
-   done
-fi
-
-if [ -z "$LISP" ]; then
-   echo "Failed to $act, no LISP executable found" 2>&1
-   exit 1
-fi
-
-if [ ! -x "$LISP" ]; then
-   echo "Failed to $act, $LISP is not executable" 2>&1
-   exit 1
-fi
-
-LISP_DIR=`dirname "$LISP"`
 export LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4.sbclexe
 export LISP_DIRECTORY="$SPECWARE4"/
 
-$xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
+$xemacs -geometry =150x60+20+20 \
+	-title "Specware" \
+	-name "Specware" \
+	-l "$SPECWARE4"/Library/IO/Emacs/load-slime \
         -f run-specware4 &
-#       -name "Specware" \
-#       -title "Specware" \
-#       -geometry =150x60+20+20 \
