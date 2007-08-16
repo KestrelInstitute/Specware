@@ -57,13 +57,15 @@ spec
       | IfThenElse(x,y,z,a) ->
         let (x1, cesx, tmsx, names) = recAbstractCSE(x, names, false) in
         %% Don't want expressions only appearing in y or z lifted
-        let (y1, _, tmsy, names) = recAbstractCSE(y, names, true) in
-        let (z1, _, tmsz, names) = recAbstractCSE(z, names, true) in
-        let yz_ces = termsIntersect(tmsx, tmsy) in
-        let (xy_ces, _) = newCSEs(tmsx,tmsy,cesx,yz_ces) in
-        let (xyz_ces,_) = newCSEs(tmsx,tmsz,xy_ces,[]) in
+        let (y1, csey, tmsy, names) = recAbstractCSE(y, names, true) in
+        let (z1, csez, tmsz, names) = recAbstractCSE(z, names, true) in
+        let ces = termsUnion(termsIntersect(tmsx,tmsy),
+                             termsUnion(termsIntersect(tmsx, tmsz),
+                                        termsIntersect(tmsy, tmsz)))
+        in
+        let tms = termsDiff(tmsx, ces) in
         let new_t = IfThenElse(x1,y1,z1,a) in
-        maybeAbstract(new_t, xyz_ces, names, bindable?, Cons(new_t, tmsx))
+        maybeAbstract(new_t, ces, names, bindable?, Cons(new_t, tms))
         
       | Let(binds,body,a) ->
         let (new_binds,names,b_ces,b_single_tms)
