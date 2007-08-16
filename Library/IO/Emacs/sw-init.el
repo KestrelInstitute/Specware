@@ -523,7 +523,8 @@
      ;; then waits for a status change signal on that process
      ;; before processing the given command
      (`(build-specware4-continue (, *specware4-dir) (, dir) (, bin-dir)
-				 (, slash-dir) (, world-name) (, base-world-name))))))
+				 (, slash-dir) (, world-name) (, base-world-name)
+				 nil)))))
 
 (defun bootstrap-specware4-and-then-exit (&optional in-current-dir?)
   (interactive "P")
