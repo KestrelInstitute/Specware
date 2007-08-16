@@ -522,8 +522,8 @@
      ;; continue-form-when-ready kills the sublisp process, 
      ;; then waits for a status change signal on that process
      ;; before processing the given command
-     (`(cl-user::build-specware4-continue (, *specware4-dir) (, dir) (, bin-dir)
-					  (, slash-dir) (, world-name) (, base-world-name))))))
+     (`(build-specware4-continue (, *specware4-dir) (, dir) (, bin-dir)
+				 (, slash-dir) (, world-name) (, base-world-name))))))
 
 (defun bootstrap-specware4-and-then-exit (&optional in-current-dir?)
   (interactive "P")
