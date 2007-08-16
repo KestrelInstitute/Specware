@@ -365,6 +365,8 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?\?      "w"     specware-mode-syntax-table))
 
 
+(require 'regexp-opt)
+
 ;;; Hide-show support
 (defvar sw:definition-introducing-words
   (regexp-opt '("axiom"
