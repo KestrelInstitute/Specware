@@ -396,6 +396,29 @@ MetaSlangRewriter qualifying spec
              @@ (fn () ->
                    LazyList.map (fn (f,a) -> (Apply(f,c_tm,b2),a)) 
                      (rewriteTerm(solvers,boundVars,f,rules)))
+         %% Separate case so we can use the context of the pattern matching
+         | Apply(M as Lambda(lrules,b1),N,b2) ->
+           LazyList.map (fn (N,a) -> (Apply(M,N,b2),a)) 
+             (rewriteTerm(solvers,boundVars,N,rules))
+           @@ (fn () ->
+                 mapEach(fn (first,(pat,cond,M),rest) -> 
+                     rewritePattern(solvers,boundVars,pat,rules)
+                     >>= (fn (pat,a) -> unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b2), a)))
+                   lrules
+	   @@ (fn () ->
+               mapEach 
+                 (fn (first,(pat,cond,M),rest) ->
+                    let rules = addPatternRestriction(context,pat,rules) in
+                    let rules =
+                        case patternToTerm pat of
+                          | None -> rules
+                          | Some pat_tm ->
+                            let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
+                            addDemodRules(assertRules(context, equal_term, "case"), rules)
+                    in
+                    rewriteTerm(solvers,(boundVars ++ patternVars pat),M,rules)
+                    >>= (fn (M,a) -> unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b2), a)))
+                 lrules))
 	 | Apply(M,N,b) -> 
 	   LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
              (rewriteTerm(solvers,boundVars,N,rules))
