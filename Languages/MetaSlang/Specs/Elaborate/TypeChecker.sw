@@ -835,8 +835,8 @@ TypeChecker qualifying spec
       | The ((id,srt), term, pos) ->
 	let srt = checkSort(env, srt) in
         let env = addVariable (env,id,srt) in
-	let term = single_pass_elaborate_term (env, term, type_bool) in
 	let _ = elaborateSort (env, srt, term_sort) in
+	let term = single_pass_elaborate_term (env, term, type_bool) in
 	The ((id,srt), term, pos)
 
       | Bind (bind, vars, term, pos) ->
