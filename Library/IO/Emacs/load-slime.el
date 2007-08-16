@@ -35,7 +35,20 @@
 
 (custom-set-variables '(slime-repl-enable-presentations nil))
 
+;;; prep for loading slime.el...
+(eval-and-compile
+  (require 'cl)
+  (unless (fboundp 'define-minor-mode)
+    (require 'easy-mmode)
+    (unless (fboundp 'define-minor-mode)
+      ;; Do this only if easy-mmode hasn't already done it...
+      (defalias 'define-minor-mode 'easy-mmode-define-minor-mode)
+      )))
+(require 'advice)  ; for defadvice
+(require 'edmacro) ; for read-kbd-macro (i.e., backqoute)
+
 (require 'slime)
+
 (let* ((libfile (locate-library "slime")))
   ;; Is it byte-compiled?
   (when (or (not (eq (elt (locate-library "slime")
