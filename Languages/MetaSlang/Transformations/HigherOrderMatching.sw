@@ -620,7 +620,8 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 % N should be a closed term for this step to be legal/sound.
 %
 		    | N::Ns ->
-		      if closedTermV(N,context.boundVars)
+                      %% Added Ns ~= [] because otherwise redundant with Imitation
+		      if Ns ~= [] && closedTermV(N,context.boundVars)
 		      then 
 		      let ls = map (fn n -> makeMatchForSubTerm(n,[])) Ns in
 		      let (Ns,pairs) = ListPair.unzip ls in
@@ -637,7 +638,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	    ++
 % 2. Projection.
 	   (let projs  = projections (context,subst,terms,vars,srt2) 		in
-	   ((flatten
+	   (flatten
 	      (map 
 		 (fn (subst,proj) -> 
 		      let subst = updateSubst(subst,n,proj) in
@@ -645,17 +646,17 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 		      %% of the flexible head.
 		      let result = matchPairs(context,subst,insert(M,N,stack)) in
                       result)
-		 projs)) 
-%	    ++ 
+		 projs))
+	    ++ 
 % 3. Imitation.
-% 	    (if closedTermV(N,context.boundVars)
-% 		then 
-% 		let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
-% 		let trm    = foldr bindPattern N pats 			  in
-% 		let subst  = updateSubst(subst,n,trm) in
-% 		matchPairs(context,subst,stack) 
-% 	    else [])
-            ))
+	    (if closedTermV(N,context.boundVars)
+ 		then 
+ 		let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
+ 		let trm    = foldr bindPattern N pats 			  in
+ 		let subst  = updateSubst(subst,n,trm) in
+ 		matchPairs(context,subst,stack) 
+ 	    else [])
+            )
 	   | Ms -> 
 %%
 %% Rigid head
