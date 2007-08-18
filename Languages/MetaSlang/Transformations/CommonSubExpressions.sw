@@ -1,6 +1,6 @@
 CSE qualifying
 spec
-  import /Languages/MetaSlang/Specs/Utilities
+  import /Languages/MetaSlang/Specs/Utilities, CurryUtils
 
   op newCSEs(tms1: List MS.Term, tms2: List MS.Term, cse1: List MS.Term, cse2: List MS.Term)
     : List MS.Term * List MS.Term =
@@ -12,9 +12,15 @@ spec
   op hasRefsTo?(t: MS.Term, vs: List Var): Boolean =
     exists (fn v -> inVars?(v, vs)) (freeVars t)
 
+  op removeLocal(tms: List MS.Term, vs: List Var): List MS.Term =
+    filter (fn t -> ~(hasRefsTo?(t,vs))) tms
+
   op maybeAbstract(t: MS.Term, cse: List MS.Term, names: List String,
                    bindable?: Boolean, single_tms: List MS.Term)
     : MS.Term * List MS.Term * List MS.Term * List String =
+    let bvs = boundVars t in
+    let cse = removeLocal(cse,bvs) in
+    let single_tms = removeLocal(single_tms,bvs) in
     case cse of
       | _::_ | bindable? ->
         let Some big_cse = maximal termSize cse in
@@ -24,11 +30,38 @@ spec
         let vr = mkVar v in
         let new_bod = mapTerm (fn st -> if equalTerm?(big_cse,st) then vr else st, id,id) t in
         let new_t = mkLet([(mkVarPat v, big_cse)], new_bod) in
+        let new_t = mapTerm (fn st ->
+                               case st of
+                                 | Let([(VarPat(v,_),wVar as (Var(w,_)))],body,pos) ->
+                                   substitute(body,[(v,wVar)])
+                                 | _ -> st,
+                              id,id)
+                      new_t
+        in                              
         recAbstractCSE(new_t, Cons(nm, names), true)        
       | _ -> (t, cse, single_tms, names)
 
+  op mkCurriedApply(f: MS.Term, terms: List MS.Term): MS.Term =
+    foldl (fn (t,r) -> mkApply(r,t)) f terms
+
   op recAbstractCSE(t: MS.Term, names: List String, bindable?: Boolean)
     : MS.Term * List MS.Term * List MS.Term * List String =
+    case getCurryArgs t of
+      | Some(f,c_args) ->
+        %% Don't wan't to abstract partial applications
+        let (new_c_args,names,ces,single_tms) =
+            foldr (fn (st,(new_c_args,names,ces,single_tms)) ->
+                      let (st1, ces1, tms1, names) = recAbstractCSE(st, names, false) in
+                      let (new_ces, single_tms) = newCSEs(tms1, single_tms, ces1, ces) in
+                      (Cons(st1, new_c_args),
+                       names, new_ces, single_tms))
+               ([],names,[],[])
+               c_args
+        in
+        let new_t = mkCurriedApply(f, new_c_args) in
+        maybeAbstract(new_t, ces, names, bindable?, Cons(new_t, single_tms))
+
+      | None ->
     case t of
       | Apply(x,y,a) ->
         %% Careful about abstracting fns
@@ -105,7 +138,10 @@ spec
                matches
         in
         let new_t = Lambda(new_binds,a) in
-        maybeAbstract(new_t, b_ces, names, bindable?, Cons(new_t, b_single_tms))
+        maybeAbstract(new_t, b_ces, names, bindable?,
+                      %% When do you want to abstract lambdas?
+                      %% Cons(new_t, b_single_tms)
+                      b_single_tms)
       
       %% To add!
       %% | Bind(b,vs,bod) ->
