@@ -934,6 +934,11 @@ Utilities qualifying spec
      | Lambda([(VarPat(x,_),_,Var(y,_))],_) -> x = y
      | _ -> false
 
+ op [a] caseExpr?(t: ATerm a): Boolean =
+   case t of
+     | Apply(Lambda _, _, _) -> true
+     | _ -> false
+
  
  op  getConjuncts: [a] ATerm a -> List (ATerm a)
  def getConjuncts t =
@@ -1263,6 +1268,8 @@ Utilities qualifying spec
         if trueTerm? p then Some q
           else if falseTerm? p then Some r
           else if equivTerm? spc (q,r) & sideEffectFree p then Some q
+          else if trueTerm? q && falseTerm? r then Some p
+          else if falseTerm? q && trueTerm? r then Some (negateTerm p)
           else None
       | _ -> None
 
