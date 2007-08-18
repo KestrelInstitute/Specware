@@ -159,9 +159,9 @@ Set qualifying spec
 
   % number of elements:
   op size : [a] FiniteSet a -> Nat
-  def size = the(size)
+  def [a] size = the(size)
     (size empty = 0) &&
-    (fa(s,x) size (s <| x) = 1 + size (s - x))
+    (fa(s: FiniteSet a, x: a) size (s <| x) = 1 + size (s - x))
 
   op hasSize infixl 20 : [a] Set a * Nat -> Boolean
   def hasSize (s,n) = finite? s && size s = n
@@ -182,9 +182,10 @@ Set qualifying spec
 
   op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b
   def [a,b] fold = the(fold)
-    (fa(c,f) fold (c, f, empty) = c) &&
-    (fa(c,f,s,x) foldable? (c, f, s <| x) =>
-                 fold (c, f, s <| x) = f (fold (c, f, s - x), x))
+    (fa(c: b, f: b * a -> b) fold (c, f, empty) = c) &&
+    (fa(c: b, f: b * a -> b, s: FiniteSet a, x: a)
+       foldable? (c, f, s <| x) =>
+         fold (c, f, s <| x) = f (fold (c, f, s - x), x))
 
   % finite powerset:
   op powerf : [a] Set a -> Set (FiniteSet a)
