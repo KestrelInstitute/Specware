@@ -551,6 +551,7 @@ spec
     let unfolds = map (fn (opinfo,_) -> Unfold(hd opinfo.names)) new_defs in
     let iso_rewrites = map (fn qid -> LeftToRight qid) iso_thm_qids in
     let osi_unfolds = map (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) -> Unfold osi_qid) iso_info in
+    let iso_unfolds = map (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) -> Unfold iso_qid) iso_info in
     let complex_iso_fn_unfolds = map (fn (_,qid) -> Unfold qid) iso_fn_info in
     let main_script = Steps [%SimpStandard,
                              Simplify([
@@ -571,7 +572,7 @@ spec
                                         ++ complex_iso_fn_unfolds
                                         ++ unfolds
                                         ++ extra_rules),
-                             Simplify osi_unfolds
+                             Simplify (osi_unfolds ++ iso_unfolds)
                             % AbstractCommonExpressions
                              ]
     in
