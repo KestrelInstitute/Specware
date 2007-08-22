@@ -1237,13 +1237,23 @@ Utilities qualifying spec
 			    else None))
 	  else None)
       | Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) ->
-	if constantTerm?(N1) & constantTerm?(N2)
-	  then Some(mkBool(equivTerm? spc (N1,N2)))
-	  else None
+          %% CAREFUL: if N1 and N2 are equivalent, we can simplify to true,
+          %%          but otherwise we cannot act, since they might be ops later equated to each other
+	if constantTerm?(N1) & constantTerm?(N2) then
+          (if equivTerm? spc (N1,N2) then
+             Some(mkBool true)
+           else
+             None)
+        else None
       | Apply(Fun(NotEquals,_,_),Record([(_,N1),(_,N2)], _),_) ->
-	if evalConstant?(N1) & evalConstant?(N2)
-	  then Some(mkBool(~ (equivTerm? spc (N1,N2))))
-	  else None
+	if evalConstant?(N1) & evalConstant?(N2) then
+          %% CAREFUL: if N1 and N2 are equivalent, we can simplify to false,
+          %%          but otherwise we cannot act, since they might be ops later equated to each other
+          (if equivTerm? spc (N1,N2) then
+             Some(mkBool(false))
+           else
+             None)
+        else None
       | Apply(Fun(Not,  _,_),arg,                       _) -> 
 	  (case arg of
 	     | Fun (Bool b,_,aa) -> Some(Fun (Bool (~ b), boolSort, noPos))
