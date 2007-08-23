@@ -1239,7 +1239,7 @@ Utilities qualifying spec
       | Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) ->
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to true,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
-	if constantTerm?(N1) then
+	if constantTerm?(N1) && constantTerm?(N2) then
           (let eq? = equalTerm?(N1,N2) in
              if eq? || ~(existsSubTerm (fn t -> case t of
                                                   | Fun(Op _,_,_) -> true
