@@ -52,6 +52,7 @@ def parseCoProductCase spc term =
 	  else tm
   in
   case term of
+
     | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "block"), _), _, _),
 	     Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"), _), _, _),
 		    Record([("1",IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm,_),
@@ -59,9 +60,18 @@ def parseCoProductCase spc term =
 			    ("2",default)],_) , _), _)
       ->
       makeCases(id,case_tm,then_exp,simpSuccess(default,true),true)
+
     | IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm,_),
 		 then_exp, els_exp, _) ->
       makeCases(id,case_tm,then_exp,els_exp,false)      
+
+    %% A definition using IfThenElse such as this:
+    %%   def null(l) = case l of [] -> true | _ -> false
+    %% now may be optimized to a defintion using Embedded, such as this:
+    %%   def null(l) = embed? Nil l
+    | Apply(Fun(Embedded id,srt,_),case_tm,_) ->
+      Some(case_tm, [(id,mkTrue())], Some(mkFalse()), false)
+
     | _ -> None
 
 %op  coProductCase?: Term * Boolean -> Boolean
