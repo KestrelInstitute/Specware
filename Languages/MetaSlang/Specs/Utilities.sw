@@ -1001,6 +1001,12 @@ Utilities qualifying spec
       | Record(fields,_) -> exists (fn (_,stm) -> constantTerm? stm) fields
       | _        -> false
 
+  op [a] containsOpRef?(term: ATerm a): Boolean =
+    existsSubTerm (fn t -> case t of
+                             | Fun(Op _,_,_) -> true
+                             | _ -> false)
+      term
+
   op  lambda?: [a] ATerm a -> Boolean
   def lambda? t =
     case t of
@@ -1241,23 +1247,16 @@ Utilities qualifying spec
           %%          but otherwise we cannot act, since they might be ops later equated to each other
 	if constantTerm?(N1) && constantTerm?(N2) then
           (let eq? = equalTerm?(N1,N2) in
-             if eq? || ~(existsSubTerm (fn t -> case t of
-                                                  | Fun(Op _,_,_) -> true
-                                                  | _ -> false)
-                           N1)
+             if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
                then Some(mkBool eq?)
-           else
-             None)
+             else None)
         else None
       | Apply(Fun(NotEquals,_,_),Record([(_,N1),(_,N2)], _),_) ->
 	if evalConstant?(N1) & evalConstant?(N2) then
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to false,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
           (let eq? = equalTerm?(N1,N2) in
-             if eq? || ~(existsSubTerm (fn t -> case t of
-                                                  | Fun(Op _,_,_) -> true
-                                                  | _ -> false)
-                           N1)
+             if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
                then Some(mkBool(~eq?))
            else
              None)
