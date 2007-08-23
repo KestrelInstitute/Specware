@@ -1253,8 +1253,12 @@ Utilities qualifying spec
 	if evalConstant?(N1) & evalConstant?(N2) then
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to false,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
-          (if equivTerm? spc (N1,N2) then
-             Some(mkBool(false))
+          (let eq? = equalTerm?(N1,N2) in
+             if eq? || ~(existsSubTerm (fn t -> case t of
+                                                  | Fun(Op _,_,_) -> true
+                                                  | _ -> false)
+                           N1)
+               then Some(mkBool(~eq?))
            else
              None)
         else None
