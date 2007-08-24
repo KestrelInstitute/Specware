@@ -41,10 +41,10 @@ $xemacs -no-init-file \
 	-title "Specware4" \
 	-l "$SPECWARE4"/Library/IO/Emacs/load-slime \
 	-eval "(set-face-background 'default \"lightyellow\")" \
+        -eval "(sit-for 1)" \
 	-eval "(run-specware4)" \
-        -eval "(sit-for 2)" \
-	-eval "(sw:eval-in-lisp \"(load (compile-file \\\"$SPECWARE4/Applications/Handwritten/Lisp/test-harness\\\"))\")" \
 	-eval "(setq fi:lisp-evalserver-number-reads 100000)" \
+	-eval "(sw:eval-in-lisp \"(load (compile-file \\\"$SPECWARE4/Applications/Handwritten/Lisp/test-harness\\\"))\")" \
 	-eval "(sw:eval-in-lisp \"(load \\\"$SPECWARE4/Applications/Specware/Tests/test-specware4\\\")\")" \
 	-eval "(sw:eval-in-lisp \"(test-specware4 \\\"$LOG_FILE\\\")\")" \
         -eval "(unwind-protect (sw:eval-in-lisp \"(exit-from-lisp 0)\") (kill-emacs 0))"
