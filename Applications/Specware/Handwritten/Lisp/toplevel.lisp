@@ -850,7 +850,7 @@
 	    )
 	  (funcall 'swc-internal (string unitid) (string cbase))
 	  (when *make-verbose* (format t ";; generating makefile ~S~%" make-file))
-	  (with-open-file (mf make-file :direction :output :if-exists :new-version)
+	  (with-open-file (mf make-file :direction :output :if-exists :supersede)
 	    (progn
 	      (format mf "# ----------------------------------------------~%")
 	      (format mf "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT~%")
