@@ -15,6 +15,7 @@ Isomorphism qualifying
 spec
   import Script
   import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
+  import /Languages/MetaSlang/Specs/AnalyzeRecursion
 
   op makeNewPrimedQid(Qualified(q,id): QualifiedId, exists?: QualifiedId -> Boolean): QualifiedId =
     let primed_qid = Qualified(q,id^"'") in
@@ -255,7 +256,31 @@ spec
                  mkCompose(isoTypeFn (spc, iso_info, iso_fn_info) ran,
                            mkCompose(mkVar fnarg, osiTypeFn (spc, iso_info, iso_fn_info) dom, spc),
                            spc))
-      %% Need to add rest of the cases
+      | Product (row, a) ->
+        let xv = ("x",ty) in
+        mkLambda(mkVarPat xv, mkRecord(map (fn (id,i_ty) ->
+                                              (id, isoTerm (spc, iso_info, iso_fn_info) i_ty
+                                                     (mkProjection(id,mkVar xv))))
+                                         row))
+      | CoProduct (row, a) ->
+        let xv = ("x",ty) in
+        mkLambda(mkVarPat xv,
+                 mkApply(Lambda(map (fn (id,o_i_ty) ->
+                                       case o_i_ty of
+                                         | None -> (mkEmbedPat(id,None,ty), trueTerm, mkEmbed0(id,ty))
+                                         | Some i_ty ->
+                                           let yv = ("y",i_ty) in
+                                           (mkEmbedPat(id,Some(mkVarPat yv),ty), trueTerm,
+                                            mkApply(mkEmbed1(id,mkArrow(i_ty,ty)),
+                                                    isoTerm (spc, iso_info, iso_fn_info) i_ty (mkVar yv))))
+                                  row,
+                                noPos),
+                         mkVar xv))
+
+ %      | Quotient (super_sort, trm, a) ->  %% Shouldn't happen as quotients should be at top level
+      | Subsort (sub_sort, trm, a) ->
+        let xv = ("x",ty) in
+        mkLambda(mkVarPat xv, isoTerm (spc, iso_info, iso_fn_info) sub_sort (mkVar xv))
       | _ -> identityFn ty
 
   op osiTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
@@ -365,11 +390,31 @@ spec
     mapSort (id, isoType1, id) ty
 
   op addIsoDefForIso(spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (iso_ref: MS.Term): Spec =
-    spc
+    case iso_ref of
+      | Fun(Op(qid,fixity),ty,_) ->
+        (case findTheOp(spc, qid) of
+           | Some opinfo ->
+             let (tvs, srt as Arrow(dom,ran,_), _) = unpackTerm opinfo.dfn in
+             let uf_dom = unfoldBaseOne(spc, dom) in
+             let newtm =
+                 case uf_dom of
+                   | Quotient (super_sort, trm, a) ->
+                     let xv = ("x",ty) in
+                     let yv = ("y",super_sort) in
+                     let Base(qid',_,_) = ran in
+                     mkLambda(mkVarPat xv,
+                              mkApply(mkChooseFun(dom, ty, ran,
+                                                  mkLambda(mkVarPat yv,
+                                                           mkQuotient(isoTerm (spc, iso_info, iso_fn_info)
+                                                                        super_sort (mkVar yv),
+                                                                      qid',super_sort))),
+                                      mkVar xv))
+                   | _ -> isoTypeFn (spc, iso_info, iso_fn_info) uf_dom
+             in
+             let newdfn = maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)) in
+             setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
+      | _ -> spc
 
-  op addOsiDefForIso(spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (osi_ref: MS.Term): Spec =
-    spc
- 
   op newPrimedTypes(init_spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
      : IsoInfoList * Spec =
     foldSortInfos
@@ -384,16 +429,24 @@ spec
          if equalType?(ty,ty') then result
          else
          let qid' = makePrimedTypeQid(qid, spc) in
-         let qid_ref = mkBase(qid,map mkTyVar tvs) in
+         let spc  = addTypeDef(spc, qid', maybePiSort(tvs, ty')) in
+         let qid_ref  = mkBase(qid, map mkTyVar tvs) in
          let qid'_ref = mkBase(qid',map mkTyVar tvs) in
-         let iso_qid = makePrimedTypeQid(Qualified(q,"iso"^id), spc) in
-         let osi_qid = makePrimedTypeQid(Qualified(q,"osi"^id), spc) in
-         let iso_fn = mkInfixOp(iso_qid, Unspecified, mkArrow(qid_ref, qid'_ref)) in
-         let osi_fn = mkInfixOp(osi_qid, Unspecified, mkArrow(qid'_ref, qid_ref)) in
+
+         let iso_qid = Qualified(q,"iso"^id) in
+         let iso_ty  = mkArrow(qid_ref, qid'_ref) in
+         let iso_fn  = mkInfixOp(iso_qid, Unspecified, iso_ty) in
+         let spc = addOpDef(spc, iso_qid, Unspecified, maybePiTerm(tvs, SortedTerm(Any noPos, iso_ty, noPos))) in
+
+         let osi_qid = Qualified(q,"osi"^id) in
+         let osi_ty  = mkArrow(qid'_ref, qid_ref) in
+         let osi_fn  = mkInfixOp(osi_qid, Unspecified, osi_ty) in
+         let spc = addOpDef(spc, osi_qid, Unspecified, maybePiTerm(tvs, SortedTerm(Any noPos, osi_ty, noPos))) in
+
          (Cons(((iso_fn, tvs, qid_ref, qid'_ref),
                 (osi_fn, tvs, qid'_ref, qid_ref)),
                new_iso_info),
-          addTypeDef(spc, qid', maybePiSort(tvs, ty'))))
+          spc))
        ([], init_spc)
        init_spc.sorts
 
@@ -498,6 +551,9 @@ spec
       []
       spc.ops
 
+  op traceIsomorphismGenerator?: Boolean = false
+  op simplifyIsomorphism?: Boolean = true
+
   def Isomorphism.makeIsoMorphism(spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                   extra_rules: List RuleSpec)
       : Spec =
@@ -528,7 +584,7 @@ spec
     %% Add definitions for newly introduced iso fns
     let spc = foldl (fn (((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)), spc) ->
                        let spc = addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref in
-                       let spc = addOsiDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref in
+                       let spc = addIsoDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref in
                        spc)
                 spc
                 prime_type_iso_info
@@ -548,33 +604,43 @@ spec
                      spc)
                 spc new_defs
     in    
+    let recursive_ops = recursiveOps spc in
     let unfolds = map (fn (opinfo,_) -> Unfold(hd opinfo.names)) new_defs in
     let iso_rewrites = map (fn qid -> LeftToRight qid) iso_thm_qids in
-    let osi_unfolds = map (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) -> Unfold osi_qid) iso_info in
-    let iso_unfolds = map (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) -> Unfold iso_qid) iso_info in
+    let osi_unfolds = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
+                                    if member(osi_qid, recursive_ops) then None
+                                      else Some(Unfold osi_qid))
+                        iso_info
+    in
+    let iso_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
+                                    if member(iso_qid, recursive_ops) then None
+                                      else Some(Unfold iso_qid))
+                        iso_info
+    in
     let complex_iso_fn_unfolds = map (fn (_,qid) -> Unfold qid) iso_fn_info in
-    let main_script = Steps [%SimpStandard,
+    let main_script = Steps([%SimpStandard,
                              Simplify([
                                        %LeftToRight(mkUnQualifiedId "f_if_then_else"),
                                        %% Should be in specs
                                        %% LeftToRight(mkUnQualifiedId "inverse_apply"),
                                        Unfold(mkQualifiedId("Functions","o")),
-                                       LeftToRight(mkUnQualifiedId "map_map_inv"),
+                                    %   LeftToRight(mkUnQualifiedId "map_map_inv"),
                                        %% LeftToRight(mkUnQualifiedId "iso_set_fold"),
                                        %% LeftToRight(mkUnQualifiedId "iterate_inv_iso"),
-                                       LeftToRight(mkUnQualifiedId "map_empty"),
-                                       LeftToRight(mkUnQualifiedId "map_doubleton"),
-                                       LeftToRight(mkUnQualifiedId "case_map"),
+                                    %   LeftToRight(mkUnQualifiedId "map_empty"),
+                                    %   LeftToRight(mkUnQualifiedId "map_doubleton"),
+                                    %   LeftToRight(mkUnQualifiedId "case_map"),
                                        %LeftToRight(mkUnQualifiedId "unfold_let_osi"),
                                        Unfold(mkQualifiedId("Option","mapOption"))]
                                         ++ iso_rewrites
                                         %++ osi_unfolds
                                         ++ complex_iso_fn_unfolds
                                         ++ unfolds
-                                        ++ extra_rules),
-                             Simplify (osi_unfolds ++ iso_unfolds)
+                                        ++ extra_rules)]
+                            ++
+                            [ Simplify(osi_unfolds ++ iso_unfolds)
                             % AbstractCommonExpressions
-                             ]
+                             ])
     in
     let simp_ops
        = mapOpInfos
@@ -583,15 +649,21 @@ spec
                 then opinfo
               else
               let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
-              let (simp_dfn,_) = interpretTerm(spc, main_script, dfn, dfn) in
+              let (simp_dfn,_) =
+                  if simplifyIsomorphism?
+                    then interpretTerm(spc, main_script, dfn, dfn)
+                    else (dfn,dfn)
+              in
               if equalTerm?(dfn,simp_dfn)
                 then opinfo
               else
               let qid = hd opinfo.names in
-              let _ = printDef(spc,qid) in
+              let _ = if traceIsomorphismGenerator? then printDef(spc,qid) else () in
               let new_dfn = maybePiTerm(tvs, SortedTerm (simp_dfn, ty, noPos)) in
-              let _ = writeLine(printQualifiedId qid^":") in
-              let _ = writeLine(printTerm simp_dfn^"\n") in
+              let _ = if traceIsomorphismGenerator? then (writeLine(printQualifiedId qid^":");
+                                                          writeLine(printTerm simp_dfn^"\n"))
+                        else ()
+              in
               opinfo \_guillemotleft {dfn = new_dfn})
            spc.ops
     in
