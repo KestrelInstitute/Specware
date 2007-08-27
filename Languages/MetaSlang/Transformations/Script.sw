@@ -142,22 +142,30 @@ spec
      then pid = cid
    else cq = pq & cid = pid
 
+  op warnIfNone(qid: QualifiedId, kind: String, rls: List RewriteRule): List RewriteRule =
+    if rls = []
+      then (warn(kind ^ printQualifiedId qid ^ " not found!");
+            [])
+      else rls
+
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
       | Unfold(qid as Qualified(q,nm)) \_rightarrow
-        flatten (map (fn info ->
-                        flatten (map (fn (Qualified(q,nm)) \_rightarrow defRule(context, q, nm, info, true))
-                                   info.names))
-                   (findAllOps(spc,qid)))
+        warnIfNone(qid, "Op ",
+                   flatten (map (fn info ->
+                                   flatten (map (fn (Qualified(q,nm)) \_rightarrow defRule(context, q, nm, info, true))
+                                              info.names))
+                              (findAllOps(spc,qid))))
       | Fold(qid) \_rightarrow
         map (\_lambda rl \_rightarrow rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
           (makeRule(context, spc, Unfold(qid)))
       | LeftToRight(qid) \_rightarrow
-        foldr (\_lambda (p,r) \_rightarrow
-               if claimNameMatch(qid,p.2)
-                 then (axiomRules context p) ++ r
-                 else r)
-          [] (allProperties spc)
+        warnIfNone(qid, "Rule-shaped theorem ",
+                   foldr (\_lambda (p,r) \_rightarrow
+                            if claimNameMatch(qid,p.2)
+                              then (axiomRules context p) ++ r
+                            else r)
+                     [] (allProperties spc))
       | RightToLeft(qid) \_rightarrow
         map (\_lambda rl \_rightarrow rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
           (makeRule(context, spc, LeftToRight(qid)))
@@ -178,9 +186,7 @@ spec
      in
      %let rules = map (etaExpand context) rules in   % Not sure if necessary
      %let rules = prioritizeRules rules in
-     let rules = {unconditional=rules,
-                  conditional=[]}
-     in
+     let rules = splitConditionalRules rules in
      let def doTerm (count, trm) =
            %let _ = writeLine("doTerm "^toString count) in
            let lazy = rewriteRecursive (context,freeVars trm,rules,trm,maxDepth) in
@@ -384,11 +390,11 @@ spec
 
   op getOpDef(spc: Spec, qid: QualifiedId): Option MS.Term =
     case findAllOps(spc,qid) of
-      | [] \_rightarrow (writeLine("No op with that name."); None)
+      | [] \_rightarrow (warn("No defined op with that name."); None)
       | [opinfo] \_rightarrow
         let (tvs, srt, tm) = unpackTerm opinfo.dfn in
         Some tm
-      | _ -> (writeLine("Ambiguous op name."); None)
+      | _ -> (warn("Ambiguous op name."); None)
 
   op interpretSpec(spc: Spec, script: Script): Spec =
     case script of
