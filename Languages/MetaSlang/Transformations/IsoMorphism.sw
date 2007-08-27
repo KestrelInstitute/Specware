@@ -242,7 +242,7 @@ spec
            | Some qid' ->
              (case params of
                 | [p_ty] ->
-                  let p_ty' = isoType (spc, iso_info, iso_fn_info) p_ty in
+                  let p_ty' = isoType (spc, iso_info, iso_fn_info) false p_ty in
                   let arg_iso_fn = isoTypeFn (spc, iso_info, iso_fn_info) p_ty in
                   mkHOIsoFn(qid, qid', arg_iso_fn, p_ty, p_ty')
                 | _ -> fail("Multi-parameter types not yet handled: "^printQualifiedId qid))
@@ -285,12 +285,12 @@ spec
 
   op osiTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
                (ty: Sort): MS.Term =
-    isoTypeFn (spc, invertIsoInfo iso_info, iso_fn_info) (isoType (spc, iso_info, iso_fn_info) ty)
+    isoTypeFn (spc, invertIsoInfo iso_info, iso_fn_info) (isoType (spc, iso_info, iso_fn_info) false ty)
 
   op osiTerm (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
              (ty: Sort)
              (tm: MS.Term): MS.Term =
-    isoTerm (spc, invertIsoInfo iso_info, iso_fn_info) (isoType (spc, iso_info, iso_fn_info) ty) tm
+    isoTerm (spc, invertIsoInfo iso_info, iso_fn_info) (isoType (spc, iso_info, iso_fn_info) false ty) tm
 
   op isoTerm (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
              (ty: Sort)
@@ -300,7 +300,7 @@ spec
           : Pattern * MS.Term * List(Var * MS.Term) =
         case p of
           | VarPat(v as (vn,v_ty),a) ->
-            let v_ty' = isoType (spc, iso_info, iso_fn_info) v_ty in
+            let v_ty' = isoType (spc, iso_info, iso_fn_info) false v_ty in
             if equalType?(v_ty,v_ty')
               then (p, body, sb)
               else let v' = (vn^"'",v_ty') in
@@ -342,52 +342,59 @@ spec
                  Lambda([(p_pr, condn, new_body)],a))
           | _ ->
             let new_bod = substitute(old_def_tm, sb) in
-            let result_ty' = isoType (spc, iso_info, iso_fn_info) result_ty in
+            let result_ty' = isoType (spc, iso_info, iso_fn_info) false result_ty in
             if equalType?(result_ty, result_ty')
               then new_bod
             else simplifiedApply(isoTypeFn (spc, iso_info, iso_fn_info) result_ty, new_bod, spc)
     in
     makePrimeBody(tm, [], ty)    
 
-  op isoTypeRec (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
+  op isoType (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (recursive?: Boolean)
                 (ty: Sort): Sort =
     let def isoType1 ty =
           case ty of
-            | Base(qid,params,a) ->
-              (case lookupIsoInfo(qid, iso_info) of
+            | Base(qid, params, a) ->
+              (let iso_params =  map isoType1 params in
+               case lookupIsoInfo(qid, iso_info) of
                  | Some((_,_,_,Base(osi_qid,_,_)), _) -> Base(osi_qid,params,a)
                  | _ ->
-               if dependsOnIsoInfo?(qid,iso_info,spc,[])
+               if recursive? && dependsOnIsoInfo?(qid,iso_info,spc,[])
                  then Base(makePrimedTypeQid(qid, spc), params, a)
                  else ty)
-            | Quotient(s,tm,a) ->
-              let tm_ty = mkArrow(mkProduct[s,s], boolSort) in 
-              Quotient(s, isoTerm (spc, iso_info, iso_fn_info) tm_ty tm, a)
-            | Subsort (s,tm,a) ->
-              let tm_ty = mkArrow(s, boolSort) in 
-              Subsort (s, isoTerm (spc, iso_info, iso_fn_info) tm_ty tm, a)
+            | Arrow(s1, s2, a) -> Arrow(isoType1 s1, isoType1 s2, a) 
+            | Product(row, a) ->
+              Product(map (fn (id, ty1) -> (id, isoType1 ty1)) row, a)
+            | CoProduct(row, a) ->
+              CoProduct(map (fn (id, opt_ty1) -> (id, mapOption isoType1 opt_ty1)) row, a)
+            | Quotient(s, tm, a) ->
+              (let s1 = isoType1 s in
+               if equalType?(s,s1) then ty
+                 else
+                 let tm' = case tm of
+                             | Fun(Op(qid,fx), tm_ty, b) | recursive? -> % Shouldn't happen otherwise
+                               Fun(Op(makePrimedOpQid(qid,spc), fx), isoType1 tm_ty ,b)
+                             | _ ->
+                               let tm_ty = inferType(spc,tm) in 
+                               isoTerm (spc, iso_info, iso_fn_info) tm_ty tm
+                 in
+                 Quotient(s1, tm', a))
+            | Subsort (s, tm, a) ->
+              (let s1 = isoType1 s in
+               if equalType?(s,s1) then ty
+                 else
+                 let tm' = case tm of
+                             | Fun(Op(qid,fx), tm_ty, b) | recursive? -> % Shouldn't happen otherwise
+                               Fun(Op(makePrimedOpQid(qid,spc), fx), isoType1 tm_ty ,b)
+                             | _ ->
+                               let tm_ty = inferType(spc,tm) in 
+                               isoTerm (spc, iso_info, iso_fn_info) tm_ty tm
+                 in
+                 Subsort (s1, tm', a))
+            | Pi(tvs, ty1, a) -> Pi (tvs, isoType1 ty1, a)
+            | And(tys, a) -> And(map isoType1 tys, a)
             | _ -> ty
     in
-    mapSort (id, isoType1, id) ty
-
-  op isoType (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-             (ty: Sort): Sort =
-    let def isoType1 ty =
-          case ty of
-            | Base(qid,params,a) ->
-              (let iso_params =  map (isoType (spc, iso_info, iso_fn_info)) params in
-               case lookupIsoInfo(qid, iso_info) of
-                 | Some((_,_,_,Base(osi_qid,_,_)), _) -> Base(osi_qid, iso_params, a)
-                 | _ -> Base(qid, iso_params, a))
-            | Quotient(s,tm,a) ->
-              let tm_ty = mkArrow(mkProduct[s,s], boolSort) in 
-              Quotient(s, isoTerm (spc, iso_info, iso_fn_info) tm_ty tm, a)
-            | Subsort (s,tm,a) ->
-              let tm_ty = mkArrow(s, boolSort) in 
-              Subsort (s, isoTerm (spc, iso_info, iso_fn_info) tm_ty tm, a)
-            | _ -> ty
-    in
-    mapSort (id, isoType1, id) ty
+    isoType1 ty
 
   op addIsoDefForIso(spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (iso_ref: MS.Term): Spec =
     case iso_ref of
@@ -425,7 +432,7 @@ spec
          else
          let (tvs,ty) = unpackFirstSortDef info in
          %% Use init_spec because priming algorithm assumes primed types haven't been added yet
-         let ty' = isoTypeRec(init_spc, iso_info, iso_fn_info) ty in
+         let ty' = isoType (init_spc, iso_info, iso_fn_info) true ty in
          if equalType?(ty,ty') then result
          else
          let qid' = makePrimedTypeQid(qid, spc) in
@@ -532,7 +539,7 @@ spec
        case dfn  of
          | Any _ -> result
          | _ ->
-       let op_ty_pr = isoType (spc, iso_info, iso_fn_info) op_ty in
+       let op_ty_pr = isoType (spc, iso_info, iso_fn_info) false op_ty in
        if member(qid,ign_qids)
          \_or equivType? spc (op_ty_pr,op_ty)
          then result
