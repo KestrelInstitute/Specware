@@ -395,6 +395,12 @@
 				    (funcall command)
 				    (funcall command com-argstr)))
 			      (format t "Unknown command: ~a." command)))))
+	   ((trace-rewrites trr) (setq MetaSlangRewriter::traceRewriting 2)
+	                         (format t "Rewrite tracing turned on.")
+	                         (values))
+	   ((untrace-rewrites untrr) (setq MetaSlangRewriter::traceRewriting 0)
+	                             (format t "Rewrite tracing turned off.")
+	                             (values))
 ;;      (bash      (cl-user::bash argstr))
 	   ;;
 	   (t 
