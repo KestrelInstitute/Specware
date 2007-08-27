@@ -52,6 +52,7 @@ MetaSlangRewriter qualifying spec
                  substs)) 
        rules
 
+ op useStandardSimplify?: Boolean = true
 
  op applyDemodRewrites(context: Context, subst: Subst, standardSimplify?: Boolean)
                       (boundVars: List Var, term: MS.Term, demod: Demod RewriteRule)
@@ -76,7 +77,7 @@ MetaSlangRewriter qualifying spec
                              else Some(result,(s,rule,demod)))
                substs)) 
       rules)
-   @@ (fn () -> if standardSimplify?
+   @@ (fn () -> if standardSimplify? && useStandardSimplify?
                   then standardSimplify spc (term,subst,demod)
                   else Nil)
 
@@ -113,13 +114,17 @@ MetaSlangRewriter qualifying spec
    case term of
      | Record((id1,Apply(Fun(Project id2,_,_), tm, _)) :: r_flds, _)
          | id1 = id2
-             && equivType? spc (inferType(spc, tm), inferType(spc, term))
-             && all (fn (i1,t1) ->
+             &&
+             (let tm_ty = inferType(spc, tm) in
+              let term_ty = inferType(spc, term) in
+                (equivType? spc (tm_ty, term_ty)
+                   || equivType? spc (stripSubsorts (spc, tm_ty), term_ty))
+              && all (fn (i1,t1) ->
                        case t1 of
                          | Apply(Fun(Project i2,_,_), t, _) ->
                            i1 = i2 && equalTerm?(t, tm)
                          | _ -> false)
-                  r_flds
+                  r_flds)
          -> unit (tm, (subst,evalRule,demod))
      | _ -> Nil
 %   if ~pushFunctionsIn? then Nil
@@ -192,7 +197,8 @@ MetaSlangRewriter qualifying spec
                      lhs       = fml,    rhs       = trueTerm,
                      tyVars    = [],     freeVars  = freeVars})]
  
- op addPatternRestriction(context: Context, pat: Pattern, rules: Demod RewriteRule): Demod RewriteRule =
+ op addPatternRestriction(context: Context, pat: Pattern, rules: Demod RewriteRule)
+    : Demod RewriteRule =
    case pat of
      | VarPat(v as (_,ty), _) ->
        (let ty = unfoldBase(context.spc,ty) in
@@ -208,20 +214,25 @@ MetaSlangRewriter qualifying spec
                                 | None -> p)
                            | _ -> p
                in
-               let condn = simplify context.spc (mkApply(pred, mkVar v)) in
+               let condn = simplifiedApply(pred, mkVar v, context.spc) in
                addDemodRules(assertRules(context,condn,"Subtype"),rules))
             | _ -> rules)
      | RecordPat(fields, _ ) ->
-       foldl (fn ((_,sp), rules) -> addPatternRestriction(context, sp, rules)) rules fields
-     | RestrictedPat(sp,condn,_) ->
-       addPatternRestriction(context, sp,
+       foldl (fn ((_,p), rules) -> addPatternRestriction(context, p, rules)) rules fields
+     | RestrictedPat(p,condn,_) ->
+       addPatternRestriction(context, p,
                              addDemodRules(assertRules(context,condn,"Restriction"),rules))
+     | EmbedPat(_, Some p, _, _) -> addPatternRestriction(context, p, rules)
+     | AliasPat(_, p, _)    -> addPatternRestriction(context, p, rules)
+     | QuotientPat(p, _, _) -> addPatternRestriction(context, p, rules)
+     | SortedPat(p, _, _)   -> addPatternRestriction(context, p, rules)
      | _ -> rules
 
  def negate term =
    case term of
      | Apply (Fun(Not,_,_), p,                        _) -> p
-     | Apply (Fun(Or,_,_),  Record([(_,M),(_,N)], _), _) -> Utilities.mkAnd(negate M,negate N)
+     | Apply (Fun(Or,_,_),  Record([(_,M),(_,N)], _), _) ->
+       Utilities.mkAnd(negate M,negate N)
      | _ -> mkNot term
 
  op useUnfoldLetStrategy?: Boolean = true
@@ -492,20 +503,21 @@ MetaSlangRewriter qualifying spec
 	   @@ (fn () ->
                mapEach 
                  (fn (first,(pat,cond,M),rest) -> 
-                    rewriteTerm(solvers,(boundVars ++ patternVars pat),M,
-                                addPatternRestriction(context,pat,rules))
+                    let patvars = patternVars pat in
+                    let rules = addPatternRestriction(context,pat,rules) in
+                    rewriteTerm(solvers, boundVars ++ patternVars pat, M, rules)
                     >>= (fn (M,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
                  lrules)
          | Let(binds,M,b) ->
-           mapEach (fn (first,(pat,N),rest) ->
-                      rewriteTerm(solvers,boundVars,N,rules) >>=
-                      (fn (N,a) -> unit(Let(first ++ [(pat,N)] ++ rest,M,b),a)))
-             binds
-           @@ (fn () ->
+            mapEach (fn (first,(pat,N),rest) ->
+                       rewriteTerm(solvers,boundVars,N,rules) >>=
+                       (fn (N,a) -> unit(Let(first ++ [(pat,N)] ++ rest,M,b),a)))
+              binds
+            @@ (fn () ->
                  let let_vars = flatten (map (fn (pat, _) -> patternVars pat) binds) in
                  let p_M = unFoldSimpleLet(binds,M) in
                  LazyList.map (fn (r_M,a) -> (reFoldLetVars(binds,r_M,b),a))
-                   (rewriteTerm(solvers,boundVars ++ let_vars,p_M,rules)))
+                   (rewriteTerm(solvers,boundVars ++ let_vars,p_M,rules)) )
          | LetRec(binds,M,b) ->
            let letrec_vars = map(fn (v, _) -> v) binds in
            let boundVars = boundVars ++ letrec_vars in
