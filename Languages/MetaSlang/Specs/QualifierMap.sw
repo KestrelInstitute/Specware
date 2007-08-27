@@ -1,35 +1,35 @@
 spec
- sort MetaSlang.Id        = String
- sort MetaSlang.Ids       = List Id
- sort MetaSlang.Qualifier = Id
- sort AQualifierMap b
- %sort SpecCalc.Monad a
- sort SpecCalc.Env a
+ type MetaSlang.Id        = String
+ type MetaSlang.Ids       = List Id
+ type MetaSlang.Qualifier = Id
+ type AQualifierMap b
+ %type SpecCalc.Monad a
+ type SpecCalc.Env a
  %% From /Languages/SpecCalculus/Semantics/Environment
- %sort Env a = State -> (Result a) * State
+ %type Env a = State -> (Result a) * State
 
- op foldriAQualifierMap      : fa(a,b) (Qualifier * Id * a * b -> b) -> b -> (AQualifierMap a) -> b
- op emptyAQualifierMap       : fa(a) AQualifierMap a
- op findAQualifierMap        : fa(a) AQualifierMap a * Qualifier * Id -> Option a 
+ op foldriAQualifierMap      : [a,b] (Qualifier * Id * a * b -> b) -> b -> (AQualifierMap a) -> b
+ op emptyAQualifierMap       : [a] AQualifierMap a
+ op findAQualifierMap        : [a] AQualifierMap a * Qualifier * Id -> Option a 
 
- op removeAQualifierMap      : fa(a) AQualifierMap a * Qualifier * Id     -> AQualifierMap a
- op insertAQualifierMap      : fa(a) AQualifierMap a * Qualifier * Id * a -> AQualifierMap a 
+ op removeAQualifierMap      : [a] AQualifierMap a * Qualifier * Id     -> AQualifierMap a
+ op insertAQualifierMap      : [a] AQualifierMap a * Qualifier * Id * a -> AQualifierMap a 
 
- op mapAQualifierMap         : fa(a,b)                  (a -> b)        -> AQualifierMap a -> AQualifierMap b
- op mapiAQualifierMap        : fa(a,b) (Qualifier * Id * a -> b)        -> AQualifierMap a -> AQualifierMap b
- op mapiPartialAQualifierMap : fa(a,b) (Qualifier * Id * a -> Option b) -> AQualifierMap a -> AQualifierMap b
+ op mapAQualifierMap         : [a,b]                  (a -> b)        -> AQualifierMap a -> AQualifierMap b
+ op mapiAQualifierMap        : [a,b] (Qualifier * Id * a -> b)        -> AQualifierMap a -> AQualifierMap b
+ op mapiPartialAQualifierMap : [a,b] (Qualifier * Id * a -> Option b) -> AQualifierMap a -> AQualifierMap b
 
- op appAQualifierMap         : fa(a)                  (a -> ()) -> AQualifierMap a -> ()
- op appiAQualifierMap        : fa(a) (Qualifier * Id * a -> ()) -> AQualifierMap a -> ()
+ op appAQualifierMap         : [a]                  (a -> ()) -> AQualifierMap a -> ()
+ op appiAQualifierMap        : [a] (Qualifier * Id * a -> ()) -> AQualifierMap a -> ()
 
- op qualifiers               : fa(a) AQualifierMap a -> List Qualifier
- op qualifierIds             : fa(a) AQualifierMap a -> List Id
+ op qualifiers               : [a] AQualifierMap a -> List Qualifier
+ op qualifierIds             : [a] AQualifierMap a -> List Id
 
- op equalAQualifierMap?      : fa(a) AQualifierMap a * AQualifierMap a -> Boolean
- op subsetAQualifierMap?     : fa(a) AQualifierMap a * AQualifierMap a -> Boolean
+ op equalAQualifierMap?      : [a] AQualifierMap a * AQualifierMap a -> Boolean
+ op subsetAQualifierMap?     : [a] AQualifierMap a * AQualifierMap a -> Boolean
 
  op foldOverQualifierMap :
-    fa(a,b) (Qualifier * Id * a * b -> SpecCalc.Env b)
+    [a,b] (Qualifier * Id * a * b -> SpecCalc.Env b)
          -> b
          -> (AQualifierMap a)
          -> SpecCalc.Env b
