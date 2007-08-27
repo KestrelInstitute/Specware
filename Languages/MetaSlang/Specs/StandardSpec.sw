@@ -19,6 +19,11 @@ StandardSpec qualifying spec
    spc << {sorts = insertAQualifierMap(spc.sorts, q, id, {names = [qid], dfn = dfn}),
            elements = spc.elements ++ [SortDef(qid,noPos)]}
 
+ op addOpDef(spc: Spec, qid as Qualified(q,id): QualifiedId, fixity: Fixity, dfn: MS.Term): Spec =
+   spc << {ops = insertAQualifierMap(spc.ops, q, id, 
+                                     {names = [qid], dfn = dfn, fixity = fixity, fullyQualified? = false}),
+           elements = spc.elements ++ [Op(qid,true,noPos)]}
+
  type MetaSortScheme = AMetaSortScheme StandardAnnotation
 
  op emptySortMap  : SortMap    
