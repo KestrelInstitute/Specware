@@ -105,7 +105,11 @@ MetaSlangRewriter qualifying spec
                          then
                            let v = eval(term,spc) in
                            if fullyReduced? v
-                             then (true, valueToTerm v)
+                             then
+                               let new_term = valueToTerm v in
+                               if equalTerm?(new_term, term)
+                                 then (false, term)
+                                 else (true, new_term)
                            else (false, term)
                        else (false, term)
    in
