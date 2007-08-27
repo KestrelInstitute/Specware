@@ -53,6 +53,9 @@ RewriteRules qualifying spec
  op rulesFromGamma : Context -> Gamma -> RewriteRules
  op mergeRules : List RewriteRules -> RewriteRules
  
+ op splitConditionalRules(rls: List RewriteRule): RewriteRules =
+   {unconditional = filter (fn rl -> none? rl.condition) rls,
+    conditional   = filter (fn rl -> some? rl.condition) rls}
 
 %%
 %% freshRule generates fresh variable names in a rule for
@@ -372,9 +375,9 @@ is rewritten to
 	| _ -> None
  
  def axiomRules context (pt:PropertyType,desc,tyVars,formula,a) = 
-     case pt
-       of Conjecture -> []
- 	| _ -> 
+%      case pt
+%        of Conjecture -> []
+%  	| _ -> 
      let def visitConjunct str formula =
        case formula of
 	 | Apply(Fun(And,_,_), Record([(_,M),(_,N)], _),_) -> 
@@ -387,16 +390,16 @@ is rewritten to
      visitConjunct "" formula
 
  def axiomRule context (pt:PropertyType,desc,tyVars,formula,a) = 
-     case pt
-       of Conjecture -> None
-	| _ -> 
+%      case pt
+%        of Conjecture -> None
+% 	| _ -> 
      let freeVars = [] in
-     let (freeVars,n,S,formula) = bound(Forall:Binder,0,formula,freeVars,[]) in
+     let (freeVars,n,S,formula) = bound(Forall,0,formula,freeVars,[]) in
      let (condition,fml) = 
 	  case formula of 
             | Apply(Fun(Implies,_,_), Record([(_,M),(_,N)], _),_) -> 
-		(Some (substitute(M,S)): Option MS.Term,N)
-	    | _ -> (None,formula)
+		(Some (substitute(M,S)), N)
+	    | _ -> (None, formula)
      in
      case equality context (S,fml)
        of Some(N1,N2) -> 
