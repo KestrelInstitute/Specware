@@ -359,8 +359,8 @@ spec
                  | Some((_,_,_,Base(osi_qid,_,_)), _) -> Base(osi_qid,params,a)
                  | _ ->
                if recursive? && dependsOnIsoInfo?(qid,iso_info,spc,[])
-                 then Base(makePrimedTypeQid(qid, spc), params, a)
-                 else ty)
+                 then Base(makePrimedTypeQid(qid, spc), iso_params, a)
+                 else Base(qid, iso_params, a))
             | Arrow(s1, s2, a) -> Arrow(isoType1 s1, isoType1 s2, a) 
             | Product(row, a) ->
               Product(map (fn (id, ty1) -> (id, isoType1 ty1)) row, a)
@@ -631,6 +631,7 @@ spec
                                        %% Should be in specs
                                        %% LeftToRight(mkUnQualifiedId "inverse_apply"),
                                        Unfold(mkQualifiedId("Functions","o")),
+                                       Unfold(mkQualifiedId("Functions","id")),
                                     %   LeftToRight(mkUnQualifiedId "map_map_inv"),
                                        %% LeftToRight(mkUnQualifiedId "iso_set_fold"),
                                        %% LeftToRight(mkUnQualifiedId "iterate_inv_iso"),
