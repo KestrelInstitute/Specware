@@ -912,7 +912,7 @@ Utilities qualifying spec
        case t2 of
         % We can't optimize (x => true) to true, as one might expect from logic.
         % The semantics for => dictates that we need to eval t1 (e.g., for side-effects) before looking at t2.  
-        %| Fun(Bool true,_,_)  -> mkTrue() 
+         | Fun(Bool true,_,_) | sideEffectFree t1 -> mkTrue() 
 	 | Fun(Bool false,_,_) -> mkNot t1
 	 | _ -> mkImplies (t1,t2)
 
@@ -1054,6 +1054,11 @@ Utilities qualifying spec
  def stringVal = fn (Fun(String s,_,_)) -> s
  op  stringVals: List(Id * MS.Term) -> List String
  def stringVals = map (fn (_,t) -> stringVal t)
+
+ op  booleanVal?(t: MS.Term): Boolean =
+   case t of
+     | Fun(Bool _,_,_) -> true
+     | _ -> false
 
  op  booleanVal: MS.Term -> Boolean
  def booleanVal = fn (Fun(Bool s,_,_)) -> s
@@ -1262,25 +1267,19 @@ Utilities qualifying spec
              None)
         else None
       | Apply(Fun(Not,  _,_),arg,                       _) -> 
-	  (case arg of
-	     | Fun (Bool b,_,aa) -> Some(Fun (Bool (~ b), boolSort, noPos))
-	     | _ -> None)
-      | Apply(Fun(And,  _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
-	  (case (N1, N2) of
-	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 & b2), boolSort, noPos))
-	     | _ -> None)
+	(case arg of
+           | Fun (Bool b,_,aa) -> Some(mkBool (~ b))
+           | Apply(Fun(NotEquals,ty,a1),args,a2) ->
+             Some(Apply(Fun(Equals,ty,a1),args,a2))
+           | _ -> None)
+      | Apply(Fun(And,  _,_),Record(fields as [(_,N1),(_,N2)], _),_) ->
+        if booleanVal? N1 || booleanVal? N2 then Some (mkAnd(N1,N2)) else None
       | Apply(Fun(Or,   _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
-	  (case (N1, N2) of
-	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 or b2), boolSort, noPos))
-	     | _ -> None)
-      | Apply(Fun(Implies, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
-	  (case (N1, N2) of
-	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 => b2), boolSort, noPos))
-	     | _ -> None)
+        if booleanVal? N1 || booleanVal? N2 then Some (mkOr(N1,N2)) else None
+      | Apply(Fun(Implies, _,_),Record(fields as [(_,N1),(_,N2)], _),_) ->
+        if booleanVal? N1 || (booleanVal? N2 && sideEffectFree N1) then Some (mkSimpImplies(N1,N2)) else None
       | Apply(Fun(Iff, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
-	  (case (N1, N2) of
-	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 <=> b2), boolSort, noPos))
-	     | _ -> None)
+	if booleanVal? N1 || booleanVal? N2 then Some (mkSimpIff(N1,N2)) else None
       | IfThenElse(p,q,r,_) ->
         if trueTerm? p then Some q
           else if falseTerm? p then Some r
