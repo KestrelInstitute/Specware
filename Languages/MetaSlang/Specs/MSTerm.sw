@@ -278,6 +278,8 @@ MS qualifying spec
  def negateTerm tm =
    case tm of
      | Apply(Fun(Not,_,_),negTm,_) -> negTm
+     | Apply(Fun(NotEquals,ty,a1),args,a2) ->
+       Apply(Fun(Equals,ty,a1),args,a2)
      | _ -> mkNot tm
 
  %% Patterns ...
