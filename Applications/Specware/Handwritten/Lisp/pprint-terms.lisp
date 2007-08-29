@@ -9,6 +9,7 @@
 (defun print_term (strm term)
   (let ((*standard-output* strm)
 	(AnnSpecPrinter::useXSymbols? nil))
+    (declare (special AnnSpecPrinter::useXSymbols?))
     (AnnSpecPrinter::printTermToTerminal term)))
 
 (defvar *print-constructors?* t)
