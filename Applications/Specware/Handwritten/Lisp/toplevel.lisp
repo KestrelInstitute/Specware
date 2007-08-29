@@ -208,8 +208,19 @@
   (values))
 #+allegro(top-level:alias ("list" :case-sensitive) () (list-loaded-units))
 
+;;; The following is incomplete, but only used for internal utilities
+(defun unit-to-file-name (unitid)
+  (let ((hash-pos (position '#\# unitid)))
+    (when hash-pos
+      (setq unitid (subseq unitid 0 hash-pos)))
+    (concatenate 'string unitid ".sw")))
+
+(defvar *force-reprocess-of-unit* nil)
+
 (defun sw (&optional x)
   (setq x (norm-unitid-str x))
+  (when *force-reprocess-of-unit*
+    (run-cmd "touch" (list (unit-to-file-name x))))
   (flet ((sw-int (x)
 	   (let ((val (if x
 			  (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* x))

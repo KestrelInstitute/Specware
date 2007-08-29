@@ -309,6 +309,7 @@
 	   (dirr      (cl-user::dirr   (or argstr "")))
 	   (path      (cl-user::swpath argstr))
 	   ((proc p)  (cl-user::sw     argstr) (values))
+	   ((reproc rp)  (let ((cl-user::*force-reprocess-of-unit* t)) (cl-user::sw     argstr)) (values))
 	   (show      (cl-user::show   argstr) (values))
 	   (showx     (cl-user::showx  argstr) (values))
 	   (cinit     (cl-user::sw-init))
