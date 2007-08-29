@@ -92,6 +92,9 @@ MetaSlangRewriter qualifying spec
 	rhs   = mkVar(2,TyVar("''a",noPos))
      } 
 
+ op ssRule(s: String): RewriteRule =
+   evalRule << {name = s}
+
  op pushFunctionsIn?: Boolean = true
  op evalGroundTerms?: Boolean = true
 
@@ -99,7 +102,7 @@ MetaSlangRewriter qualifying spec
    case tryEvalOne spc term of
      | Some eTerm ->
        % let _ = writeLine("EvalOne:\n"^printTerm term^"\nTo:\n"^printTerm eTerm) in
-       unit (eTerm, (subst,evalRule,demod))
+       unit (eTerm, (subst,ssRule "Eval1",demod))
      | None ->
    let (simp?, term) = if evalGroundTerms? &&  ~(constantTerm? term) && freeVarsRec term = []
                          then
@@ -116,6 +119,12 @@ MetaSlangRewriter qualifying spec
    if simp? then unit(term, (subst,evalRule,demod))
    else
    case term of
+     %% case foo x of ... | foo y -> f y | ... --> f x
+     | Apply(Lambda(rules, _), N, a) ->
+       (case patternMatchRules(rules,N)
+          of None -> Nil
+           | Some (sub,M) -> unit (substitute(M,sub), (subst,ssRule "reduceCase",demod)))
+     %% {id1 = x.id1, ..., idn = x.idn} --> x
      | Record((id1,Apply(Fun(Project id2,_,_), tm, _)) :: r_flds, _)
          | id1 = id2
              &&
@@ -129,7 +138,9 @@ MetaSlangRewriter qualifying spec
                            i1 = i2 && equalTerm?(t, tm)
                          | _ -> false)
                   r_flds)
-         -> unit (tm, (subst,evalRule,demod))
+         -> unit (tm, (subst,ssRule "RecordId",demod))
+     | Apply(Fun(Embedded id1,_,_), Apply(Fun(Embed(id2,_),_,_),_,_),_) ->
+       unit (mkBool(id1 = id2), (subst,ssRule "reduceEmbed",demod))
      | _ -> Nil
 %   if ~pushFunctionsIn? then Nil
 %    else
@@ -225,7 +236,7 @@ MetaSlangRewriter qualifying spec
        foldl (fn ((_,p), rules) -> addPatternRestriction(context, p, rules)) rules fields
      | RestrictedPat(p,condn,_) ->
        addPatternRestriction(context, p,
-                             addDemodRules(assertRules(context,condn,"Restriction"),rules))
+                             addDemodRules(assertRules(context,condn,"Restriction"), rules))
      | EmbedPat(_, Some p, _, _) -> addPatternRestriction(context, p, rules)
      | AliasPat(_, p, _)    -> addPatternRestriction(context, p, rules)
      | QuotientPat(p, _, _) -> addPatternRestriction(context, p, rules)
@@ -251,7 +262,7 @@ MetaSlangRewriter qualifying spec
  op unFoldSimpleLet(binds: List(Pattern * MS.Term), M: MS.Term)
     : MS.Term =
     let v_subst = substFromBinds binds in
-    if binds = [] || ~useUnfoldLetStrategy?
+    if binds = [] || v_subst = [] || ~useUnfoldLetStrategy?
       then M
       else substitute(M,v_subst)
 
@@ -261,10 +272,14 @@ MetaSlangRewriter qualifying spec
      | (v,vt)::_ | equalTerm?(vt,t) -> mkVar v
      | _ :: r -> reverseSubst r t
 
+ op invertSubst (tm: MS.Term, sbst: VarSubst): MS.Term =
+   if sbst = [] then tm
+     else mapTerm (reverseSubst sbst, id, id) tm
+
  op reFoldLetVars(binds: List(Pattern * MS.Term), M: MS.Term, b: Position)
     : MS.Term =
    let v_subst = substFromBinds binds in
-   if binds = [] || ~useUnfoldLetStrategy?
+   if binds = [] || v_subst = [] || ~useUnfoldLetStrategy?
       then Let(binds,M,b)
       else
         %% Variable capture unlikely because of substitute in unFoldSimpleLet
@@ -477,15 +492,22 @@ MetaSlangRewriter qualifying spec
                     mapEach 
                       (fn (first,(pat,cond,M),rest) ->
                          let rules = addPatternRestriction(context,pat,rules) in
-                         let rules =
+                         let (M, rules, sbst) =
                              case patternToTerm pat of
-                               | None -> rules
+                               | None -> (M, rules, [])
                                | Some pat_tm ->
+                             case N of
+                               | Var(nv,_) ->
+                                 let sbst = [(nv, pat_tm)] in
+                                 (substitute (M, sbst), rules, sbst)
+                               | _ ->
                                  let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
-                                 addDemodRules(assertRules(context, equal_term, "case"), rules)
+                                 (M, addDemodRules(assertRules(context, equal_term, "case"), rules), [])
                          in
-                         rewriteTerm(solvers,(boundVars ++ patternVars pat),M,rules)
-                         >>= (fn (M,a) -> unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
+                         rewriteTerm(solvers,(boundVars ++ patternVars pat), M, rules)
+                         >>= (fn (M,a) ->
+                                let M = invertSubst(M,sbst) in
+                                unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
                       lrules))
               | _ ->
             LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
