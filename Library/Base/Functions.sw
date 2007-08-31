@@ -39,9 +39,11 @@ Functions qualifying spec
     fa(f:Bijection(a,b)) f o inverse f = id
                       && inverse f o f = id
 
-  % stuff for mapping to Isabelle:
+  % not clear why this is here:
 
   op  wfo: [a] (a * a -> Boolean) -> Boolean
+
+  % mapping to Isabelle:
 
   proof Isa ThyMorphism Fun
     Functions.id \_rightarrow id
