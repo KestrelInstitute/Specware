@@ -1,23 +1,23 @@
 Functions qualifying spec
 
+  % identity:
+
   op id : [a] a -> a = fn x -> x
 
-  op [a,b,c] o (f: b -> c, g: a -> b) infixl 24 : a -> c = fn x -> f (g x)
+  % composition:
 
-  op injective?  : [a,b] (a -> b) -> Boolean
-  axiom injective?_def  is [a,b]
-    fa (f : a -> b) injective?  f <=> (fa (x:a,y:a) f x = f y => x = y)
-%  def injective?  f = (fa(x1,x2) f x1 = f x2 => x1 = x2)
+  op [a,b,c] o (f: b -> c, g: a -> b) infixl 24 : a -> c = fn x:a -> f (g x)
 
-  op surjective? : [a,b] (a -> b) -> Boolean
-  axiom surjective?_def is [a,b]
-    fa (f : a -> b) surjective? f <=> (fa (y:b) (ex (x:a) f x = y))
-%  def surjective? f = (fa(y) (ex(x) f x = y))
+  % injectivity, surjectivity, bijectivity:
 
-  op bijective?  : [a,b] (a -> b) -> Boolean
-  axiom bijective?_def  is [a,b]
-    fa (f : a -> b) bijective?  f <=> injective? f && surjective? f
-%  def bijective?  f = injective? f && surjective? f
+  op [a,b] injective? (f: a -> b) : Boolean =
+    fa (x1:a,x2:a) f x1 = f x2 => x1 = x2
+
+  op [a,b] surjective? (f: a -> b) : Boolean =
+    fa (y:b) (ex (x:a) f x = y)
+
+  op [a,b] bijective? (f: a -> b) : Boolean =
+    injective? f && surjective? f
 
   type Injection (a,b) = ((a -> b) | injective?)
 
@@ -25,9 +25,16 @@ Functions qualifying spec
 
   type Bijection (a,b) = ((a -> b) | bijective?)
 
-  op inverse : [a,b] Bijection(a,b) -> Bijection(b,a)
-  axiom inverse_def is [a,b]
-    fa (f:Bijection(a,b))  (inverse f) o f = id  &&  f o (inverse f) = id
+  % inversion:
+
+  op [a,b] inverse (f: Bijection(a,b)) : Bijection(b,a) =
+    fn y:b -> the(x:a) f x = y
+
+  theorem inverse is [a,b]
+    fa(f:Bijection(a,b)) f o inverse f = id
+                      && inverse f o f = id
+
+  % stuff for mapping to Isabelle:
 
   op  wfo: [a] (a * a -> Boolean) -> Boolean
 
