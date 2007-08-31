@@ -1,12 +1,17 @@
 Functions qualifying spec
 
-  % identity:
+  % identity and composition:
 
   op id : [a] a -> a = fn x -> x
 
-  % composition:
+  op [a,b,c] o (g: b -> c, f: a -> b) infixl 24 : a -> c = fn x:a -> g (f x)
 
-  op [a,b,c] o (f: b -> c, g: a -> b) infixl 24 : a -> c = fn x:a -> f (g x)
+  theorem identity is [a,b]
+    fa (f: a -> b) id o f = f
+                && f o id = f
+
+  theorem associativity is [a,b,c,d]
+    fa (h: c -> d, g: b -> c, f: a -> b) (h o g) o f = h o (g o f)
 
   % injectivity, surjectivity, bijectivity:
 
