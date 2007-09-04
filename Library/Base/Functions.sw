@@ -13,6 +13,10 @@ Functions qualifying spec
   theorem associativity is [a,b,c,d]
     fa (h: c -> d, g: b -> c, f: a -> b) (h o g) o f = h o (g o f)
 
+  % forward (a.k.a. diagrammatic) composition:
+
+  op [a,b,c] :> (f: a -> b, g: b -> c) infixl 24 : a -> c = g o f
+
   % injectivity, surjectivity, bijectivity:
 
   op [a,b] injective? (f: a -> b) : Boolean =
