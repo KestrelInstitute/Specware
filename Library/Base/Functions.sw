@@ -11,7 +11,7 @@ Functions qualifying spec
                 && f o id = f
 
   theorem associativity is [a,b,c,d]
-    fa (h: c -> d, g: b -> c, f: a -> b) (h o g) o f = h o (g o f)
+    fa (f: a -> b, g: b -> c, h: c -> d) (h o g) o f = h o (g o f)
 
   % forward (a.k.a. diagrammatic) composition:
 

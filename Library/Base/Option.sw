@@ -30,8 +30,7 @@ Option qualifying spec
 
   % lift function to also map extra element:
 
-  op [a,b] mapOption (f: a -> b) (opt: Option a) : Option b =
-    case opt of
+  op [a,b] mapOption (f: a -> b) : Option a -> Option b = fn
     | None   -> None
     | Some x -> Some (f x)
 
