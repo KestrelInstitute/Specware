@@ -11,10 +11,10 @@ read it.
 </para>
 
 <para>No guarantees should be expected concerning the correct operation
-of the `&XShell;. Assurance, as can be provided by the ``correct by
+of the &XShell;. Assurance, as can be provided by the ``correct by
 construction paradigm'', depends on properly discharging the proof
 obligations engendered by specs and refinements, which is independent of
-the operation of the `&XShell;.
+the operation of the &XShell;.
 </para>
 </section>
 
