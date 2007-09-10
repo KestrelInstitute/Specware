@@ -8,6 +8,9 @@
 	    "<some kind of error message>"
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/lisp/NonConstructive.lisp")
 	    (:optional ";; Directory $TESTDIR/lisp/ does not exist, will create.")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::inverse-1-1")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::surjective?")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::injective?")
 	    ""))
 
  )

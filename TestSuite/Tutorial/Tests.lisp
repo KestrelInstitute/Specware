@@ -204,6 +204,9 @@
  ("Tutorial: swl find-matches" 
   :swl "/UserDoc/tutorial/example/MatchingRefinements#FindMatches $TESTDIR/find-matches"
   :output '(";;; Generating lisp file $TESTDIR/find-matches.lisp"
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::inverse-1-1")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::surjective?")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::injective?")
 	    "")
   :files '("$TESTDIR/find-matches.lisp"))
 

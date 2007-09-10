@@ -12,7 +12,13 @@
 	    (:optional ";;   $TESTDIR/lisp/WasCausingSegFault.lisp")
 	    (:optional "creating directory: $TESTDIR/lisp/")
 	    (:optional ";; Directory $TESTDIR/lisp/ does not exist, will create.")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::inverse-1-1")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::surjective?")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::injective?")
 	    ";;; Generating lisp file $TESTDIR/lisp/WasCausingSegFault.lisp"
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::inverse-1-1")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::surjective?")
+	    (:optional "WARNING: Non-constructive def for FUNCTIONS::injective?")
 	    ""))
 
  )
