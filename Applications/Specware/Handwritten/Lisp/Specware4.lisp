@@ -222,8 +222,8 @@
     "Applications/Specware/Handwritten/Lisp/debug"
 
     ;; Specware Shell
-    "Applications/Specware/Handwritten/Lisp/sw-shell"
-    "Applications/Specware/Handwritten/Lisp/transform-shell"
+    "Applications/Specware/Handwritten/Lisp/transform-shell" ; creates    MetaSlangRewriter package
+    "Applications/Specware/Handwritten/Lisp/sw-shell"        ; references MetaSlangRewriter package
 
     ;; Test harness
     "Applications/Handwritten/Lisp/test-harness"
