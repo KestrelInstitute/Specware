@@ -5,7 +5,7 @@ Prior_XEMACS="$XEMACS"
 #########################################################################
 
 OLD_PATH=$PATH
-PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin:${PATH}
 
 XEMACS=`which xemacs`
 

@@ -2,7 +2,7 @@
 
 act='launch Specware'
 
-PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
 
 # Use the directory of this file as the value of SPECWARE4
 SPECWARE4=`dirname $0`

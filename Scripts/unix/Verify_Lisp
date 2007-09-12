@@ -1,6 +1,6 @@
 #!/bin/bash --noprofile
 
-PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin:${PATH}
 
 LISP_MODE=$1
 

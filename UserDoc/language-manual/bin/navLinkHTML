@@ -1,5 +1,5 @@
 #!/bin/sh
-PATH=/bin:/usr/bin:/usr/local/bin
+PATH=/bin:/usr/bin:/usr/local/bin:${PATH}
 self=`basename $0`
 
 case $# in

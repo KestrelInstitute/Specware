@@ -5,7 +5,7 @@ act='launch Specware in Allegro CL, no XEmacs'
 ########################################################################
 
 OLD_PATH=$PATH
-PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin:${PATH}
 
 # Use the directory of this file as the default value of SPECWARE4
 # Note: $0 may refer to Specware or SpecwareShell script invoking this...

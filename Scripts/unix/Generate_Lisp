@@ -6,8 +6,7 @@
 # 'set -v' turns on echoing of lines read.
 # set -v
 
-
-PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin:${PATH}
 
 if [ -z "$APP_NAME" ]; then
   echo "  Generate_Lisp:  APP_NAME not specified."

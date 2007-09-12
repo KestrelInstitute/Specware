@@ -4,7 +4,7 @@
 
 act='run the tests'
 
-PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
 
 # Test whether SPECWARE4 has been set
 if [ -z "$SPECWARE4" ]; then

@@ -5,7 +5,7 @@ LISP_MODE=${LISP_MODE:-SBCL}
 xemacs=`which xemacs`
 export act='test Specware4 using $LISP_MODE'
 
-PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin:${PATH}
 
 # bash convention for . means the file is processed inline (as if copied here)
 

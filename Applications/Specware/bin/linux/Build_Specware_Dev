@@ -25,7 +25,7 @@ else
   exit 1
 fi
 
-PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
 
 SCRIPT_DIR=`/usr/bin/dirname $0`
 cd -P "$SCRIPT_DIR"
