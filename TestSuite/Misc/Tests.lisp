@@ -124,7 +124,7 @@
 
  ("Simplify Restrict Pattern A"
   :swll "SubstRestrictedPat#A"
-  :output '(" ;;; Elaborating spec at $TESTDIR/SubstRestrictedPat#A"
+  :output '((:optional ";;; Elaborating spec at $TESTDIR/SubstRestrictedPat#A")
 	    ";;; Generating lisp file /tmp*/lgen_lisp_tmp.lisp"
 	    (:optional "")))
 
@@ -139,7 +139,7 @@
 
  ("Simplify Restrict Pattern B"
   :swll "SubstRestrictedPat#B"
-  :output '(" ;;; Elaborating spec at $TESTDIR/SubstRestrictedPat#B"
+  :output '((:optional ";;; Elaborating spec at $TESTDIR/SubstRestrictedPat#B")
 	    ";;; Generating lisp file /tmp*/lgen_lisp_tmp.lisp"
 	    (:optional "")))
 
