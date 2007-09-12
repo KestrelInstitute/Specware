@@ -140,10 +140,12 @@
 			   ;; Two vectors (corresponding to tuple types)
 			   ;; are equal if all their elements are equal.
 			   (vectorp t2)
-			   (let ((dim (array-dimension t1 0)))
-			     (do ((i 0 (+ i 1))
-				  (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
-				 ((or (= i dim) (not v-equal)) v-equal)))))))
+			   (let ((dim1 (array-dimension t1 0))
+                                 (dim2 (array-dimension t2 0)))
+                             (and (eql dim1 dim2)
+    		                  (do ((i 0 (+ i 1))
+                                       (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
+			            ((or (= i dim1) (not v-equal)) v-equal))))))))
 	(hash-table
 	 ;; This can happen, for example, when comparing specs, which use maps from
 	 ;; /Library/Structures/Data/Maps/SimpleAsSTHarray.sw that are implemented
