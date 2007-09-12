@@ -59,6 +59,7 @@ be the option to run each (test ...) form in a fresh image.
 (defvar *test-directory*)
 (defvar *test-temporary-directory*)
 (defvar *test-temporary-directory-name*)
+#+darwin (defvar *test-temporary-directory-name-non-private*)
 (defvar *test-driver-file-name* "Tests.lisp")
 
 (defvar *test-temporary-directory-name* "SpecwareTest")
@@ -143,6 +144,7 @@ be the option to run each (test ...) form in a fresh image.
 	 (*test-directory* (directory-namestring path))
 	 (*test-temporary-directory* (get-temporary-directory))
 	 (*test-temporary-directory-name* (replace-string (directory-namestring *test-temporary-directory*) "\\" "/"))
+	 #+darwin (*test-temporary-directory-name-non-private* *test-temporary-directory-name*)
 	 (*test-temporary-directory-name*
 	  #+darwin (format nil "/private~a" *test-temporary-directory-name*)
 	  #-darwin *test-temporary-directory-name*)
@@ -323,6 +325,7 @@ be the option to run each (test ...) form in a fresh image.
 (defun normalize-output (str)
   (if (stringp str)
       (let ((str (replace-string str *test-temporary-directory-name* "$TESTDIR/")))
+	#+darwin (setq str (replace-string str *test-temporary-directory-name-non-private* "$TESTDIR/"))
 	(setq str (replace-string str "~/" (concatenate 'string (specware::getenv "HOME") "/")))
 	(unless (equal Specware::temporaryDirectory "/tmp/")
 	  (setq str (replace-string str Specware::temporaryDirectory "/tmp/")))
