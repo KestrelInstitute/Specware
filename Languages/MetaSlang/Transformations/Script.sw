@@ -190,7 +190,7 @@ spec
       (map (fn ty -> let Some(sty,p) = subtypeComps (context.spc, ty) in
               let v = ("x",ty) in
               let fml = mkBind(Forall, [v], simplifiedApply(p, mkVar v, context.spc)) in
-              assertRules(context, fml, "Subtype"))
+              assertRules(context, fml, "Subtype", false))
         subtypes)
 
   op rewriteDebug?: Boolean = false
