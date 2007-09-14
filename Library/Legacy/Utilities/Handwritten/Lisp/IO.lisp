@@ -6,7 +6,10 @@
     (funcall p s)))
 
 (defun withOpenFileForWrite-2 (name p)
-  (with-open-file (s name :direction :output :if-exists #-sbcl :new-version #+sbcl :supersede)
+  (ensure-directories-exist name)
+  (with-open-file (s name :direction :output
+		     :if-does-not-exist :create
+		     :if-exists #-sbcl :new-version #+sbcl :supersede)
     (funcall p s)))
 
 (defun withOpenFileForAppend-2 (name p)
