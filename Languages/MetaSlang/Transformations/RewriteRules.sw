@@ -44,15 +44,6 @@ RewriteRules qualifying spec
       {unconditional : List RewriteRule,
        conditional   : List RewriteRule} 
 
- op specRules : Context -> Spec -> RewriteRules
- op axiomRule : Context -> Property -> Option RewriteRule
- op axiomRules: Context -> Property -> List RewriteRule
- op defRule :   Context * String * String * OpInfo * Boolean -> List RewriteRule
- op etaExpand:  Context -> RewriteRule -> RewriteRule
-
- op rulesFromGamma : Context -> Gamma -> RewriteRules
- op mergeRules : List RewriteRules -> RewriteRules
- 
  op splitConditionalRules(rls: List RewriteRule): RewriteRules =
    {unconditional = filter (fn rl -> none? rl.condition) rls,
     conditional   = filter (fn rl -> some? rl.condition) rls}
@@ -123,7 +114,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
 %%% Extract rewrite rules from function definition.
 
- def defRule (context, q, id, info : OpInfo, includeLambdaRules?: Boolean) = 
+ op defRule (context: Context, q: String, id: String, info : OpInfo, includeLambdaRules?: Boolean): List RewriteRule = 
    if definedOpInfo? info then
      let (tvs, srt, term) = unpackFirstOpDef info in
      let rule = 
@@ -211,7 +202,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	         case patternToTerm(context,p,vars,S)
 	           of None -> None
 	            | Some(trm,vars,S) -> 
-	              loop(new,List.cons((l,trm),old),vars,S)
+	              loop(new,Cons((l,trm),old),vars,S)
           in
           loop(fields,[],vars,S)
         | NatPat(i, _) -> Some(mkNat i,vars,S)
@@ -221,11 +212,11 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
         | VarPat((v,srt), _) -> 
 	  let num = ! context.counter in
           let w = HigherOrderMatching.freshVar(context,srt)     in
-          Some(w,List.cons((num,srt),vars),List.cons(((v,srt),w),S))
+          Some(w,Cons((num,srt),vars),Cons(((v,srt),w),S))
         | WildPat(srt,_) -> 
 	  let num = ! context.counter in
           let w = HigherOrderMatching.freshVar(context,srt)     in
-          Some(w,List.cons((num,srt),vars),S)
+          Some(w,Cons((num,srt),vars),S)
         | QuotientPat(pat,cond,_)  -> None %% Not implemented
         | RestrictedPat(pat,cond,_)  -> patternToTerm(context,pat,vars,S) %% Not implemented
 	| AliasPat(VarPat(v, _),p,_) -> 
@@ -238,16 +229,16 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Extract rewrite rules from a specification.
 
- def specRules context spc = 
+ op specRules (context: Context) (spc: Spec): RewriteRules = 
      let spc      = normalizeSpec spc            in
-     let axmRules = flatten (List.map (axiomRules context) (allProperties spc)) in
+     let axmRules = flatten (map (axiomRules context) (allProperties spc)) in
      let opRules  = foldriAQualifierMap
                       (fn (q,id,opinfo,val) ->
 		        (defRule (context,q,id,opinfo,false)) ++ val)
 		      [] spc.ops
      in
      let rules = axmRules ++ opRules in
-     let rules = List.map (etaExpand context) rules in
+     let rules = map (etaExpand context) rules in
      let rules = prioritizeRules(rules)  in
      rules
 
@@ -264,6 +255,7 @@ is rewritten to
 \]
 *)
 
+  op  etaExpand:  Context -> RewriteRule -> RewriteRule
   def etaExpand (* context *)_ rule = rule
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -278,8 +270,8 @@ is rewritten to
 	      of None -> loop(rules,uncond,cond)
 	       | Some rule -> 
 	    case rule.condition
-	      of None -> loop(rules,List.cons(rule,uncond),cond)
-	       | Some _ -> loop(rules,uncond,List.cons(rule,cond))
+	      of None -> loop(rules,Cons(rule,uncond),cond)
+	       | Some _ -> loop(rules,uncond,Cons(rule,cond))
      in
      loop(rules,[],[])
 
@@ -295,7 +287,7 @@ is rewritten to
 	 | None -> 
       case term
         of Apply(M,N,_) -> isFlexibleTerm(M)
-	 | Record(fields, _) -> List.all (fn (_,M) -> isFlexibleTerm M) fields
+	 | Record(fields, _) -> all (fn (_,M) -> isFlexibleTerm M) fields
 	 | _ -> false
 
   def deleteFlexTail(term:MS.Term) = 
@@ -357,51 +349,100 @@ is rewritten to
            equality context (S,N)
          | _ -> None
  
- def axiomRules context (pt:PropertyType,desc,tyVars,formula,a) = 
+op simpleRwTerm?(t: MS.Term): Boolean =
+   case t of
+     | Var _ -> true
+     | Fun _ -> true
+     | Apply(Fun(Project _,_,_),a1,_) -> simpleRwTerm? a1
+     | _ -> false
+
+ op assertRules (context: Context, term: MS.Term, desc: String, lr?: Boolean): List RewriteRule =
+   %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
+   assertRulesRec(context, term, desc, lr?, [], [], None)
+
+ op assertRulesRec (context: Context, term: MS.Term, desc: String, lr?: Boolean, freeVars: List (Nat * Sort), 
+                    subst: VarSubst, condition: Option MS.Term)
+    : List RewriteRule =
+   let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
+   let freeVars = fvs ++ freeVars in
+   let subst = S ++ subst in
+   let (condn,fml) = 
+	case formula of
+	  | Apply(Fun(Implies, _,_), Record([(_,M),(_,N)], _),_) -> 
+            (Some (substitute(M,subst)),N)
+	  | _ -> (None,formula)
+   in
+   let condition = case condition of
+                     | None -> condn
+                     | Some c1 ->
+                   case condn of
+                     | None -> condition
+                     | Some c2 -> Some(Utilities.mkAnd (c1,c2))
+   in
+   case fml of
+     | Apply(Fun(Not, _,_), p,_) ->
+       if falseTerm? p then []
+	else
+        [freshRule(context,
+		   {name      = desc,   condition = condition,
+		    lhs       = substitute(p,subst),      rhs       = falseTerm,
+		    tyVars    = [],     freeVars  = freeVars})]
+     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | lr? || constantTerm? e2 ->
+       [freshRule(context,
+                  {name      = desc,   condition = condition,
+                   lhs       = substitute(e1,subst),     rhs       = substitute(e2,subst),
+                   tyVars    = [],     freeVars  = freeVars})]
+     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | simpleRwTerm? e1 && ~(varTerm? e2)->
+       [freshRule(context,
+                  {name      = desc,   condition = condition,
+                   lhs       = substitute(e2,subst),     rhs       = substitute(e1,subst),
+                   tyVars    = [],     freeVars  = freeVars})]
+     | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
+       assertRulesRec(context,e1,desc^"-1",lr?,freeVars,subst,condition)
+         ++ assertRulesRec(context,e2,desc^"-2",lr?,freeVars,subst,condition)
+     | Let([(VarPat(v,_),val)],body,pos) ->
+       assertRulesRec(context,substitute(body,[(v,val)]),desc,lr?,freeVars,subst,condition)
+     | _ ->
+       if trueTerm? fml then []
+       else
+         [freshRule(context,
+                    {name      = desc,   condition = condition,
+                     lhs       = substitute(fml,subst),    rhs       = trueTerm,
+                     tyVars    = [],     freeVars  = freeVars})]
+
+ op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property): List RewriteRule = 
 %      case pt
 %        of Conjecture -> []
-%  	| _ -> 
-     let def visitConjunct str formula =
-       case formula of
-	 | Apply(Fun(And,_,_), Record([(_,M),(_,N)], _),_) -> 
-             (visitConjunct (str ^ " (l)") M)
-               ++ (visitConjunct (str ^ " (r)") N)
-         | _ -> 
-             (case axiomRule context (pt,desc,tyVars,formula,a) of
-                   None -> []
-                 | Some rule -> [rule]) in
-     visitConjunct "" formula
+%  	| _ ->
+   assertRules(context, formula, printQualifiedId desc, true)
 
- def axiomRule context (pt:PropertyType,desc,tyVars,formula,a) = 
-%      case pt
-%        of Conjecture -> None
-% 	| _ -> 
-     let freeVars = [] in
-     let (freeVars,n,S,formula) = bound(Forall,0,formula,freeVars,[]) in
-     let (condition,fml) = 
-	  case formula of 
-            | Apply(Fun(Implies,_,_), Record([(_,M),(_,N)], _),_) -> 
-		(Some (substitute(M,S)), N)
-	    | _ -> (None, formula)
-     in
-     case equality context (S,fml)
-       of Some(N1,N2) -> 
-          Some (freshRule(context,
-		 {name      = printQualifiedId(desc),   condition = condition,
-		  lhs       = N1,     rhs       = N2,
-  	          tyVars    = tyVars, freeVars  = freeVars}))
-	| None -> None
+%  op axiomRule (context: Context) ((pt,desc,tyVars,formula,a): Property): Option RewriteRule = 
+% %      case pt
+% %        of Conjecture -> None
+% % 	| _ -> 
+%      let freeVars = [] in
+%      let (freeVars,n,S,formula) = bound(Forall,0,formula,freeVars,[]) in
+%      let (condition,fml) = 
+% 	  case formula of 
+%             | Apply(Fun(Implies,_,_), Record([(_,M),(_,N)], _),_) -> 
+% 		(Some (substitute(M,S)), N)
+% 	    | _ -> (None, formula)
+%      in
+%      case equality context (S,fml)
+%        of Some(N1,N2) -> 
+%           Some (freshRule(context,
+% 		 {name      = printQualifiedId(desc),   condition = condition,
+% 		  lhs       = N1,     rhs       = N2,
+%   	          tyVars    = tyVars, freeVars  = freeVars}))
+% 	| None -> None
 
-
- op printRule: RewriteRule -> ()
- def printRule({name,tyVars,freeVars,condition,lhs,rhs}:RewriteRule) = 
-     (
-       writeLine ("Rewrite rule ------- "^name^" -------");
+ op printRule({name,tyVars,freeVars,condition,lhs,rhs}:RewriteRule): () = 
+     ( writeLine ("Rewrite rule ------- "^name^" -------");
        app (fn tv -> toScreen(tv^" ")) tyVars;
        if null tyVars then () else writeLine "";
        app (fn (n,srt) -> toScreen(toString n^" : " ^ printSort srt^" "))
          freeVars;
-       if List.null freeVars then () else String.writeLine "";
+       if null freeVars then () else String.writeLine "";
        (case condition 
           of Some c -> (writeLine(printTerm c)) 
            | None -> ());
@@ -409,12 +450,11 @@ is rewritten to
                     printTerm rhs)  
      )	
 
-
   def renameBound(term) = 
       let free = freeVars term in
-      let free = List.map (fn (s,_) -> s) free in
+      let free = map (fn (s,_) -> s) free in
       let env0 = StringMap.empty in     
-      let env1 = (List.foldr (fn (s,m) -> StringMap.insert(m,s,s)) env0 free) in
+      let env1 = foldr (fn (s,m) -> StringMap.insert(m,s,s)) env0 free in
       let env  = Ref env1 : Ref (StringMap String) in
       let vrs  = Ref (StringSet.fromList(StringMap.listDomain env1)) in
       let 
@@ -434,7 +474,7 @@ is rewritten to
 	  def doTerm(term:MS.Term):MS.Term = 
 	      case term of
 		 | Var(v,a) -> Var(doVar v,a)
-		 | Bind(qf,vars,body,a) -> Bind(qf,List.map doVar vars,body,a)
+		 | Bind(qf,vars,body,a) -> Bind(qf,map doVar vars,body,a)
 		 | The (var,body,a) -> The (doVar var,body,a)
 		 | term -> term
 	   def doPat(pat:Pattern):Pattern = 
@@ -451,7 +491,8 @@ is rewritten to
 %% axiom p  add rule p -> true
 %% axiom ~p add rule p -> false
 
- def rulesFromGamma context gamma = 
+ %%% sjw: This doesn't seem to be used
+ def rulesFromGamma (context: Context) (gamma: Gamma): RewriteRules = 
      let (ds,tvs,env,name,names) = gamma in
      let subst0 = HigherOrderMatching.emptySubstitution in
      let
@@ -459,46 +500,42 @@ is rewritten to
 	     case d
 	       of Cond c -> 
 		  let c = HigherOrderMatching.dereferenceAll subst0 c in
-		  (case axiomRule context
-		         (Axiom:PropertyType,
+		  (case axiomRules context
+		         (Axiom,
 			  mkUnQualifiedId("Context-condition: "^printTerm c),tvs,c,noPos)
-		     of Some rule -> List.cons(rule,rules)
-		      | None ->
+		     of new_rules as (_::_) -> new_rules ++ rules
+		      | [] ->
 		   let rules
-		        = case axiomRule context
+		        = (axiomRules context
 				(Axiom:PropertyType,
 				 mkUnQualifiedId("Context-condition: " ^printTerm c),
-				 tvs, mkEquality(boolSort,c,mkTrue()),noPos)
-			    of Some rule -> List.cons(rule,rules)
-			     | None -> rules
+				 tvs, mkEquality(boolSort,c,trueTerm),noPos))
+			    ++ rules
 		   in 
 		   case c of
 		     | Apply(Fun(Not,_,_), nc,_) -> 
-		       (case axiomRule context
-			  (Axiom:PropertyType,
+		       (axiomRules context
+			  (Axiom,
 			   mkUnQualifiedId("Context-condition: " ^printTerm nc
 			   ^" = false"),
-			   tvs, mkEquality(boolSort,nc,mkFalse()),noPos)
-			  of 
-			   | Some rule -> List.cons(rule,rules)
-			   | None -> rules)
+			   tvs, mkEquality(boolSort,nc,falseTerm),noPos))
+			++ rules
 		     | _ -> rules)
 		| _ -> rules
      in
-     let rules = List.foldr loop [] ds in
+     let rules = foldr loop [] ds in
      let rules = prioritizeRules(rules)  in
      rules
 
- def mergeRules = 
+  op  mergeRules : List RewriteRules -> RewriteRules
+  def mergeRules = 
      fn [] -> {unconditional = [],conditional = []}
       | [rules] -> rules
       | rules1::rules2::rules -> 
-        let rules1 = {unconditional = rules1.unconditional ++ 
-						rules2.unconditional,
-		        conditional = rules1.conditional ++ 
-					      rules2.conditional}
+        let rules1 = {unconditional = rules1.unconditional ++ rules2.unconditional,
+		        conditional = rules1.conditional ++ rules2.conditional}
 	in
-	mergeRules(List.cons(rules1,rules))
+	mergeRules(Cons(rules1,rules))
 
 end-spec
 
