@@ -29,7 +29,7 @@ MetaSlangRewriter qualifying spec
  op applyRewrites : 
     Context * List RewriteRule * Subst 
        -> List Var * MS.Term 
-	   -> LazyList (MS.Term * (Subst * RewriteRule * List RewriteRule))
+	   -> LazyList (MS.Term * (Subst * RewriteRule * List Var * List RewriteRule))
 
  op applyRewrite(context: Context, rule: RewriteRule, subst: Subst, term: MS.Term): List Subst = 
    let lhs = rule.lhs in
@@ -48,7 +48,7 @@ MetaSlangRewriter qualifying spec
             let rules = rest ++ first ++ [rule1] in
             fromList
 	      (map (fn s -> (dereferenceAll s (renameBoundVars(rule.rhs,boundVars)),
-                             (s,rule,rules)))
+                             (s,rule,boundVars,rules)))
                  substs)) 
        rules
 
@@ -56,7 +56,7 @@ MetaSlangRewriter qualifying spec
 
  op applyDemodRewrites(context: Context, subst: Subst, standardSimplify?: Boolean)
                       (boundVars: List Var, term: MS.Term, demod: Demod RewriteRule)
-                      : LazyList(MS.Term * (Subst * RewriteRule * Demod RewriteRule))  = 
+                      : LazyList(MS.Term * (Subst * RewriteRule * List Var * Demod RewriteRule))  = 
    % let _ = writeLine("Rewriting:\n"^printTerm term) in
    let context = setBound(context,boundVars)  in
    let spc     = context.spc                  in
@@ -74,7 +74,7 @@ MetaSlangRewriter qualifying spec
                            let result = renameBound result in
                            if equalTerm?(term, result)
                              then None
-                             else Some(result,(s,rule,demod)))
+                             else Some(result,(s,rule,boundVars,demod)))
                substs)) 
       rules)
    @@ (fn () -> if standardSimplify? && useStandardSimplify?
@@ -98,11 +98,12 @@ MetaSlangRewriter qualifying spec
  op pushFunctionsIn?: Boolean = true
  op evalGroundTerms?: Boolean = true
 
- def standardSimplify spc (term,subst,demod) =
+ op standardSimplify (spc: Spec) (term: MS.Term, subst: Subst, demod: Demod RewriteRule)
+    :  LazyList(MS.Term * (Subst * RewriteRule * List Var * Demod RewriteRule)) =
    case tryEvalOne spc term of
      | Some eTerm ->
        % let _ = writeLine("EvalOne:\n"^printTerm term^"\nTo:\n"^printTerm eTerm) in
-       unit (eTerm, (subst,ssRule "Eval1",demod))
+       unit (eTerm, (subst,ssRule "Eval1",[],demod))
      | None ->
    let (simp?, term) = if evalGroundTerms? &&  ~(constantTerm? term) && freeVarsRec term = []
                          then
@@ -116,14 +117,14 @@ MetaSlangRewriter qualifying spec
                            else (false, term)
                        else (false, term)
    in
-   if simp? then unit(term, (subst,evalRule,demod))
+   if simp? then unit(term, (subst,evalRule,[],demod))
    else
    case term of
      %% case foo x of ... | foo y -> f y | ... --> f x
      | Apply(Lambda(rules, _), N, a) ->
        (case patternMatchRules(rules,N)
           of None -> Nil
-           | Some (sub,M) -> unit (substitute(M,sub), (subst,ssRule "reduceCase",demod)))
+           | Some (sub,M) -> unit (substitute(M,sub), (subst,ssRule "reduceCase",[],demod)))
      %% {id1 = x.id1, ..., idn = x.idn} --> x
      | Record((id1,Apply(Fun(Project id2,_,_), tm, _)) :: r_flds, _)
          | id1 = id2
@@ -138,9 +139,9 @@ MetaSlangRewriter qualifying spec
                            i1 = i2 && equalTerm?(t, tm)
                          | _ -> false)
                   r_flds)
-         -> unit (tm, (subst,ssRule "RecordId",demod))
+         -> unit (tm, (subst,ssRule "RecordId",[],demod))
      | Apply(Fun(Embedded id1,_,_), Apply(Fun(Embed(id2,_),_,_),_,_),_) ->
-       unit (mkBool(id1 = id2), (subst,ssRule "reduceEmbed",demod))
+       unit (mkBool(id1 = id2), (subst,ssRule "reduceEmbed",[],demod))
      | _ -> Nil
 %   if ~pushFunctionsIn? then Nil
 %    else
@@ -172,14 +173,27 @@ MetaSlangRewriter qualifying spec
      | Apply(Fun(Project _,_,_),a1,_) -> simpleRwTerm? a1
      | _ -> false
 
- op assertRules: Context * MS.Term * String -> List RewriteRule
- def assertRules (context,term,desc) =
-   let (freeVars,n,S,formula) = bound(Forall,0,term,[],[]) in
-   let (condition,fml) = 
+ op assertRules (context: Context, term: MS.Term, desc: String): List RewriteRule =
+   assertRulesRec(context, term, desc, [], [], None)
+
+ op assertRulesRec (context: Context, term: MS.Term, desc: String, freeVars: List (Nat * Sort),
+                    subst: VarSubst, condition: Option MS.Term)
+    : List RewriteRule =
+   let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
+   let freeVars = fvs ++ freeVars in
+   let subst = S ++ subst in
+   let (condn,fml) = 
 	case formula of
 	  | Apply(Fun(Implies, _,_), Record([(_,M),(_,N)], _),_) -> 
-	     (Some (substitute(M,S)),N)
+            (Some (substitute(M,subst)),N)
 	  | _ -> (None,formula)
+   in
+   let condition = case condition of
+                     | None -> condn
+                     | Some c1 ->
+                   case condn of
+                     | None -> condition
+                     | Some c2 -> Some(Utilities.mkAnd (c1,c2))
    in
    case fml of
      | Apply(Fun(Not, _,_), p,_) ->
@@ -187,29 +201,29 @@ MetaSlangRewriter qualifying spec
 	else
         [freshRule(context,
 		   {name      = desc,   condition = condition,
-		    lhs       = p,      rhs       = falseTerm,
+		    lhs       = substitute(p,subst),      rhs       = falseTerm,
 		    tyVars    = [],     freeVars  = freeVars})]
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | constantTerm? e2 ->
        [freshRule(context,
                   {name      = desc,   condition = condition,
-                   lhs       = e1,     rhs       = e2,
+                   lhs       = substitute(e1,subst),     rhs       = substitute(e2,subst),
                    tyVars    = [],     freeVars  = freeVars})]
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | simpleRwTerm? e1 && ~(varTerm? e2)->
        [freshRule(context,
                   {name      = desc,   condition = condition,
-                   lhs       = e2,     rhs       = e1,
+                   lhs       = substitute(e2,subst),     rhs       = substitute(e1,subst),
                    tyVars    = [],     freeVars  = freeVars})]
      | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
-       assertRules(context,e1,desc^"-1")
-         ++ assertRules(context,e2,desc^"-2")
+       assertRulesRec(context,e1,desc^"-1",freeVars,subst,condition)
+         ++ assertRulesRec(context,e2,desc^"-2",freeVars,subst,condition)
      | Let([(VarPat(v,_),val)],body,pos) ->
-       assertRules(context,substitute(body,[(v,val)]),desc)
+       assertRulesRec(context,substitute(body,[(v,val)]),desc,freeVars,subst,condition)
      | _ ->
        if trueTerm? fml then []
        else
          [freshRule(context,
                     {name      = desc,   condition = condition,
-                     lhs       = fml,    rhs       = trueTerm,
+                     lhs       = substitute(fml,subst),    rhs       = trueTerm,
                      tyVars    = [],     freeVars  = freeVars})]
  
  op addPatternRestriction(context: Context, pat: Pattern, rules: Demod RewriteRule)
@@ -218,6 +232,7 @@ MetaSlangRewriter qualifying spec
      | VarPat(v as (_,ty), _) ->
        (let ty = unfoldBase(context.spc,ty) in
           case ty of
+            %% Redundant with subsort rules introduced in Script.sw
             | Subsort(_,p,_) ->
               (let pred = case p of
                            | Fun(Op(qid, _),_,_) ->
@@ -269,7 +284,7 @@ MetaSlangRewriter qualifying spec
  op reverseSubst (v_subst: VarSubst) (t: MS.Term): MS.Term =
    case v_subst of
      | [] -> t
-     | (v,vt)::_ | equalTerm?(vt,t) -> mkVar v
+     | (v,vt)::_ | equalTerm?(vt,t) && ~((embed? Fun) vt)-> mkVar v
      | _ :: r -> reverseSubst r t
 
  op invertSubst (tm: MS.Term, sbst: VarSubst): MS.Term =
@@ -673,22 +688,22 @@ MetaSlangRewriter qualifying spec
 
  def rewriteRecursivePre(context,boundVars,rules,term,maxDepth) = 
    let	
-      def rewritesToTrue(rules,term,subst,history): Option Subst =
+      def rewritesToTrue(rules,term,boundVars,subst,history): Option Subst =
           let term = dereferenceAll subst term in
-	  case rewriteRec(rules,subst,term,history,false)
+	  case rewriteRec(rules,subst,term,boundVars,history,false)
 	    of Nil -> if trueTerm? term then Some subst else None
 	     | Cons((rl,t,c_subst)::history,b) ->
                %% Substitutions, history and conditional rewrites need work
 	       if trueTerm? t then Some subst else None
 	     | Cons([],_) -> None
 
-      def solveCondition(rules,rule,subst,history,solveCond) : Option Subst = 
+      def solveCondition(rules,rule,subst,boundVars,history,solveCond) : Option Subst = 
 	case rule.condition of
 	   | None -> 
 	     (traceRule(context,rule);
 	      Some subst)
 	   | Some cond ->
-	if solveCond & completeMatch(rule.lhs,subst) then 
+	if solveCond && completeMatch(rule.lhs,subst) then 
 	    let traceIndent = ! context.traceIndent in
 	    let res = if traceRewriting > 0 then
                         (context.traceIndent := traceIndent + 3;
@@ -696,9 +711,9 @@ MetaSlangRewriter qualifying spec
                          writeLine (toString(! context.traceDepth)^" : "^rule.name);
                          %%              printSubst subst;
                          context.traceDepth := 0;
-                         rewritesToTrue(rules,cond,subst,history))
+                         rewritesToTrue(rules,cond,boundVars,subst,history))
                       else 
-                        rewritesToTrue(rules,cond,subst,history)
+                        rewritesToTrue(rules,cond,boundVars,subst,history)
             in
 	    if traceRewriting > 0 then
 	      (context.traceIndent := traceIndent;
@@ -708,7 +723,7 @@ MetaSlangRewriter qualifying spec
 	       res
 	else None
 
-      def rewriteRec({unconditional,conditional},subst,term,history,solveCond) =
+      def rewriteRec({unconditional,conditional},subst,term,boundVars,history,solveCond) =
 	let _ = traceTerm(context,term,subst)     in
 	let traceDepth = ! context.traceDepth + 1 in
         if traceDepth > maxDepth then unit history
@@ -725,36 +740,36 @@ MetaSlangRewriter qualifying spec
 	else
 	% let rews = (rewrite(Innermost,unconditional) >>= 
 	let rews = (rewrite(Outermost,unconditional) >>= 
-		    (fn (term,(subst,rule,rules)) ->  
-			unit (term,(subst,rule,
+		    (fn (term,(subst,rule,boundVars,rules)) ->  
+			unit (term,(subst,rule,boundVars,
 				    {unconditional = unconditional,
-				     conditional = conditional}))) 
+				     conditional   = conditional}))) 
 		    @@
 		    (fn () -> 
 		     rewrite(Outermost,conditional) >>= 
-		     (fn (term,(subst,rule,rules)) ->  
-			unit (term,(subst,rule,
-				    {conditional = conditional,
+		     (fn (term,(subst,rule,boundVars,rules)) ->  
+			unit (term,(subst,rule,boundVars,
+				    {conditional   = conditional,
 				     unconditional = unconditional})))))
 	in
 	case rews
 	  of Nil -> unit history
 	   | _ -> 
 	rews >>=
-	(fn (term,(subst,rule,rules)) -> 
+	(fn (term,(subst,rule,boundVars,rules)) -> 
 	    (context.traceDepth := traceDepth;
-	     case solveCondition(rules,rule,subst,history,solveCond)
+	     case solveCondition(rules,rule,subst,boundVars,history,solveCond)
 	       of Some subst -> 
 		 (context.traceDepth := traceDepth;
 		  let term = dereferenceAll subst term in
 		  let term = renameBound term in
-		  (rewriteRec(rules,emptySubstitution,term,
-			      cons((rule,term,subst),history),
+		  (rewriteRec(rules,emptySubstitution,term,boundVars,
+			      Cons((rule,term,subst),history),
 			      solveCond)))
 	       | None -> unit history))
    in
       let term = dereferenceAll emptySubstitution term in
-      rewriteRec(rules,emptySubstitution,term,[],true)
+      rewriteRec(rules,emptySubstitution,term,boundVars,[],true)
 
  op rewriteOnce : 
     Context * List Var * RewriteRules * MS.Term -> List MS.Term
@@ -780,7 +795,7 @@ MetaSlangRewriter qualifying spec
 		  boundVars,term,unconditional)
      in
      let rews = LazyList.toList rews in
-     List.map (fn (newTerm,(subst,rule,rules)) -> 
+     List.map (fn (newTerm,(subst,rule,boundVars,rules)) -> 
 		  dereferenceAll subst newTerm) rews
 
 	  
