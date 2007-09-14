@@ -111,6 +111,22 @@ spec
     of Subsort (srt, _, _) -> stripSubsorts (sp, srt)
      | srt -> srt
 
+ op subtype?(sp: Spec, srt: Sort): Boolean =
+   case srt of
+     | Subsort _ -> true
+     | _ ->
+       let exp_srt =  unfoldBase (sp, srt) in
+       if srt = exp_srt then false
+         else subtype?(sp, exp_srt)
+
+ op subtypeComps(sp: Spec, ty: Sort): Option(Sort * MS.Term) =
+   case ty of
+     | Subsort(sty,p,_) -> Some(sty,p)
+     | _ ->
+       let exp_ty =  unfoldBase (sp, ty) in
+       if ty = exp_ty then None
+         else subtypeComps(sp, exp_ty)
+
  op arrow : Spec * Sort -> Sort * Sort
 
  def arrow (sp : Spec, srt : Sort) = 
