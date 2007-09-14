@@ -119,6 +119,7 @@
   (ensure-directories-exist filename)
   (with-open-file (s filename :element-type 'unsigned-byte
 		   :direction :output
+		   :if-does-not-exist :create
 		   :if-exists :supersede)
     (dolist (byte bytes)
       (write-byte byte s))))
@@ -127,6 +128,7 @@
   (ensure-directories-exist filename)
   (with-open-file (s filename
 		   :direction :output
+		   :if-does-not-exist :create
 		   :if-exists :supersede)
     (write-string string s)))
 
