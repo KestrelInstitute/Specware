@@ -1026,6 +1026,8 @@ Utilities qualifying spec
   op [a] termsIntersect(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
     filter(fn t1 -> termIn?(t1, tms2)) tms1
 
+  op [a] typeIn?(t1: ASort a, tms: List (ASort a)): Boolean =
+    exists (fn t2 -> equalType?(t1,t2)) tms
 
  %% Evaluation of constant terms
  def evalSpecNames = ["Nat","Integer","String"] 
