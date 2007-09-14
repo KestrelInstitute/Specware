@@ -524,6 +524,9 @@ spec
   def evalConstant?(v) =
     case v
       of Unevaluated t -> embed? Fun t
+       | RecClosure _ -> false
+       | Closure _ -> false
+       | ChooseClosure _ -> false
        | _ -> true
 
   op  valConstant?: Value -> Boolean
