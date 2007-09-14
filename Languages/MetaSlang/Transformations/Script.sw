@@ -93,7 +93,7 @@ spec
                                          iso_qid_prs),
                  ppString "), (",
                  ppSep(ppString ", ") (map ppRuleSpec rls),
-                  ppString ")"]
+                 ppString ")"]
 
  op scriptToString(scr: Script): String =
    let pp = ppNest 3 (ppConcat [ppString "  {", ppScript scr, ppString "}"]) in
@@ -174,7 +174,25 @@ spec
           (\_lambda (q,id,opinfo,val) ->
              (defRule (context,q,id,opinfo,false)) ++ val)
           [] spc.ops
-        
+
+  op addSubtypeRules?: Boolean = true
+  op subtypeRules(term: MS.Term, context: Context): List RewriteRule =
+    if ~addSubtypeRules? then []
+    else
+    let subtypes = foldSubTerms (fn (t,subtypes) ->
+                                 let ty = inferType(context.spc, t) in
+                                 if subtype? (context.spc, ty) && ~(typeIn?(ty,subtypes))
+                                   then Cons(ty,subtypes)
+                                   else subtypes)
+                      [] term
+    in
+    flatten
+      (map (fn ty -> let Some(sty,p) = subtypeComps (context.spc, ty) in
+              let v = ("x",ty) in
+              let fml = mkBind(Forall, [v], simplifiedApply(p, mkVar v, context.spc)) in
+              assertRules(context, fml, "Subtype"))
+        subtypes)
+
   op rewriteDebug?: Boolean = false
 
   op rewriteDepth: Nat = 5
@@ -186,6 +204,7 @@ spec
      in
      %let rules = map (etaExpand context) rules in   % Not sure if necessary
      %let rules = prioritizeRules rules in
+     let rules = subtypeRules(term, context) ++ rules in
      let rules = splitConditionalRules rules in
      let def doTerm (count, trm) =
            %let _ = writeLine("doTerm "^toString count) in
@@ -416,7 +435,7 @@ spec
                                spc))
           spc locs
       | IsoMorphism(iso_osi_prs, rls) \_rightarrow
-        makeIsoMorphism(spc, iso_osi_prs, rls)
+        time(makeIsoMorphism(spc, iso_osi_prs, rls))
 
   op interpret(spc: Spec, script: Script): Spec =
     % let _ = printScript script in
