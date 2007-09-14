@@ -63,25 +63,18 @@ RewriteRules qualifying spec
 %% freshRule is only relevant when matching against non-ground terms.
 %%
 
- op freshRule : Context * RewriteRule -> RewriteRule
- 
-%%
-%% def freshRule(context,(desc,tyVars,bound,premises,lhs,rhs)) = 
-%%     
- def freshRuleElements(context,tyVars,freeVars) = 
+op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat * Sort))
+   : (MS.Term -> MS.Term) * (Sort -> Sort) * NatMap.Map(Nat * Sort) * StringMap.Map TyVar = 
 % tyVMap = {| name -> a | name in tyVars ... |}
-
-     let tyVMap = List.foldr 
-	 (fn (name,tyVMap) -> 
-	     let num = ! context.counter in
-	     let a = "'a%"^Nat.toString num in
-	     (context.counter := num + 1;
-	      StringMap.insert(tyVMap,name,a)))
-	    StringMap.empty
-		tyVars
+     let tyVMap = foldr (fn (name,tyVMap) -> 
+                           let num = ! context.counter in
+                           let a = "'a%"^Nat.toString num in
+                           (context.counter := num + 1;
+                            StringMap.insert(tyVMap,name,a)))
+	            StringMap.empty tyVars
      in
      let
-	 def doSort(srt:Sort):Sort = 
+	 def doSort(srt: Sort): Sort = 
 	     case srt
 	       of TyVar(v,a) -> 
 		  (case StringMap.find(tyVMap,v)
@@ -92,35 +85,32 @@ RewriteRules qualifying spec
 	 def freshSort srt = 
 	     mapSort((fn M -> M),doSort,fn p -> p) srt
      in
-
 % varMap = {| num -> (num1,srt) | (num,srt) in freeVars & num1 = ... |}
      let varMap = 
-	 List.foldr
-	 (fn ((num,srt),varMap) -> 
-	  let num1 = ! context.counter in
-          (context.counter := num1 + 1;
-	  NatMap.insert(varMap,num,(num1,freshSort srt))))
-	 NatMap.empty 
-	 freeVars	
+	 foldr (fn ((num,srt), varMap) -> 
+                  let num1 = ! context.counter in
+                  (context.counter := num1 + 1;
+                   NatMap.insert(varMap,num,(num1,freshSort srt))))
+	   NatMap.empty freeVars	
      in
      let
-	 def doTerm(term:MS.Term):MS.Term = 
+	 def doTerm(term: MS.Term): MS.Term = 
 	     case isFlexVar?(term)
 	       of Some n -> 
 		  (case NatMap.find(varMap,n)
 		     of Some x -> mkVar x
-		      | None -> System.fail (Nat.toString n^" not found"))
+		      | None -> System.fail (toString n^" not found"))
 		| None -> term
 	 def freshTerm trm = 
-	     mapTerm(doTerm,doSort,fn p -> p) trm
+	     mapTerm(doTerm, doSort, id) trm
      in
-	(freshTerm,freshSort,varMap,tyVMap)
+	(freshTerm, freshSort, varMap, tyVMap)
 
- def freshRule(context,{name,lhs,rhs,condition,freeVars,tyVars}) = 
+ def freshRule(context: Context, {name,lhs,rhs,condition,freeVars,tyVars}: RewriteRule)
+     : RewriteRule = 
      let (freshTerm,freshSort,varMap,tyVMap) = 
 	 freshRuleElements(context,tyVars,freeVars) in
-     {
-	name = name,
+     {  name = name,
 	lhs  = freshTerm lhs,
 	rhs  = freshTerm rhs,
 	condition = (case condition of None -> None | Some c -> Some(freshTerm c)),
@@ -136,7 +126,7 @@ RewriteRules qualifying spec
  def defRule (context, q, id, info : OpInfo, includeLambdaRules?: Boolean) = 
    if definedOpInfo? info then
      let (tvs, srt, term) = unpackFirstOpDef info in
-     let rule:RewriteRule = 
+     let rule = 
          {name      = id,
 	  lhs       = Fun (Op (Qualified (q, id), info.fixity), srt, noPos),
 	  rhs       = term,
@@ -158,7 +148,7 @@ RewriteRules qualifying spec
 
  def deleteLambdaFromRule context = 
      fn ([],old) -> old
-      | ((rule:RewriteRule)::rules,old) -> 
+      | (rule::rules,old) -> 
         (case rule.rhs
            of Lambda(matches, _) ->
 	      if disjointMatches matches
@@ -177,7 +167,7 @@ RewriteRules qualifying spec
         | Some (patternTerm,vars,S) -> 
           let cond = substitute(cond,S) in
           let body = substitute(body,S) in
-          let rule1 : RewriteRule = 
+          let rule1 = 
               { name = rule.name,
                 lhs  = Apply(rule.lhs,patternTerm,noPos),
                 rhs  = body,
@@ -283,7 +273,7 @@ is rewritten to
 	def loop(rules,uncond,cond) = 
 	    case rules
 	      of [] -> {unconditional = uncond,conditional = cond}
-	       | (rule:RewriteRule)::rules -> 
+	       | rule::rules -> 
 	    case redirectRule rule 
 	      of None -> loop(rules,uncond,cond)
 	       | Some rule -> 
@@ -330,30 +320,27 @@ is rewritten to
 		    freeVars = freeVars,condition = condition}
       else Some rule
 
-
-
- op bound : Binder * Nat * MS.Term * List (Nat * Sort) * List (Var * MS.Term) -> 
-		List (Nat * Sort) * Nat * List (Var * MS.Term) * MS.Term
-
  %% If term is a qf binder then Introduce a number for each Var and return
  %% a list of the numbers paired with the sort
  %% A substitution mapping old Var to new flex var with that number
  %% The body of the binder (handles nested binders of the same type)
- def bound(qf,n,term:MS.Term,freeVars,S) = 
-     case term
-       of Bind(binder,vars,body,_) -> 
-	  if qf = binder
-	     then 
-	     let (freeVars,S,n) = List.foldr 
-		 (fn ((x,srt),(freeVars,S,n)) -> 
-		     let y = mkVar(n,srt) in
-		     (List.cons((n,srt),freeVars),
-		      List.cons(((x,srt),y),S),n + 1))
-		 (freeVars,S,n) vars
-	     in
-	     bound(qf,n,body,freeVars,S)
-	  else (freeVars,n,S,term)
-	| _ -> (freeVars,n,S,term)
+ op bound(qf: Binder, n: Nat, term: MS.Term, freeVars: List(Nat * Sort),
+          S: List(Var * MS.Term)) 
+    : List (Nat * Sort) * Nat * List (Var * MS.Term) * MS.Term =
+   case term
+     of Bind(binder,vars,body,_) -> 
+        if qf = binder
+           then 
+           let (freeVars,S,n) =
+               foldr (fn ((x,srt),(freeVars,S,n)) -> 
+                        let y = mkVar(n,srt) in
+                        (Cons((n,srt),freeVars),
+                         Cons(((x,srt),y),S),n + 1))
+                 (freeVars,S,n) vars
+           in
+           bound(qf,n,body,freeVars,S)
+        else (freeVars,n,S,term)
+      | _ -> (freeVars,n,S,term)
 
 % Disambiguate between HigerOrderMatchingMetaSlang and MetaSlang
   def mkVar = HigherOrderMatching.mkVar     
@@ -365,14 +352,10 @@ is rewritten to
         of Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) -> 
   	   Some (substitute(N1,S),substitute(N2,S))
 	 | Bind(Forall,vars,N,_) -> 
-	   let S1 = 
-	       List.map 
-		(fn (v,s) -> ((v,s),Var((freshBoundVar(context,s)),noPos):MS.Term))
-		  vars 
-	  in
-	  let N = substitute(N,S1) in
-	  equality context (S,N)
-	| _ -> None
+	   let S1 = map (fn (v,s) -> ((v,s),mkVar(freshBoundVar(context,s)))) vars in
+           let N = substitute(N,S1) in
+           equality context (S,N)
+         | _ -> None
  
  def axiomRules context (pt:PropertyType,desc,tyVars,formula,a) = 
 %      case pt
