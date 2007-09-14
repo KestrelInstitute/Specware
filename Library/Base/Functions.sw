@@ -43,7 +43,15 @@ Functions qualifying spec
     fa(f:Bijection(a,b)) f o inverse f = id
                       && inverse f o f = id
 
-  % not clear why this is here:
+  theorem f_inverse_apply is [a,b]
+    fa(f:Bijection(a,b), x: b) f(inverse f (x)) = x
+  theorem inverse_f_apply is [a,b]
+    fa(f:Bijection(a,b), x: a) inverse f(f (x)) = x
+
+  theorem eta is [a,b]
+    fa(f: a -> b) (fn x -> f x) = f
+
+  % Used by obligation generator
 
   op  wfo: [a] (a * a -> Boolean) -> Boolean
 
