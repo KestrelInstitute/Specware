@@ -166,67 +166,7 @@ MetaSlangRewriter qualifying spec
      | Lambda _ -> true
      | _ -> false
 
- op simpleRwTerm?(t: MS.Term): Boolean =
-   case t of
-     | Var _ -> true
-     | Fun _ -> true
-     | Apply(Fun(Project _,_,_),a1,_) -> simpleRwTerm? a1
-     | _ -> false
-
- op assertRules (context: Context, term: MS.Term, desc: String): List RewriteRule =
-   assertRulesRec(context, term, desc, [], [], None)
-
- op assertRulesRec (context: Context, term: MS.Term, desc: String, freeVars: List (Nat * Sort),
-                    subst: VarSubst, condition: Option MS.Term)
-    : List RewriteRule =
-   let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
-   let freeVars = fvs ++ freeVars in
-   let subst = S ++ subst in
-   let (condn,fml) = 
-	case formula of
-	  | Apply(Fun(Implies, _,_), Record([(_,M),(_,N)], _),_) -> 
-            (Some (substitute(M,subst)),N)
-	  | _ -> (None,formula)
-   in
-   let condition = case condition of
-                     | None -> condn
-                     | Some c1 ->
-                   case condn of
-                     | None -> condition
-                     | Some c2 -> Some(Utilities.mkAnd (c1,c2))
-   in
-   case fml of
-     | Apply(Fun(Not, _,_), p,_) ->
-       if falseTerm? p then []
-	else
-        [freshRule(context,
-		   {name      = desc,   condition = condition,
-		    lhs       = substitute(p,subst),      rhs       = falseTerm,
-		    tyVars    = [],     freeVars  = freeVars})]
-     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | constantTerm? e2 ->
-       [freshRule(context,
-                  {name      = desc,   condition = condition,
-                   lhs       = substitute(e1,subst),     rhs       = substitute(e2,subst),
-                   tyVars    = [],     freeVars  = freeVars})]
-     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | simpleRwTerm? e1 && ~(varTerm? e2)->
-       [freshRule(context,
-                  {name      = desc,   condition = condition,
-                   lhs       = substitute(e2,subst),     rhs       = substitute(e1,subst),
-                   tyVars    = [],     freeVars  = freeVars})]
-     | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
-       assertRulesRec(context,e1,desc^"-1",freeVars,subst,condition)
-         ++ assertRulesRec(context,e2,desc^"-2",freeVars,subst,condition)
-     | Let([(VarPat(v,_),val)],body,pos) ->
-       assertRulesRec(context,substitute(body,[(v,val)]),desc,freeVars,subst,condition)
-     | _ ->
-       if trueTerm? fml then []
-       else
-         [freshRule(context,
-                    {name      = desc,   condition = condition,
-                     lhs       = substitute(fml,subst),    rhs       = trueTerm,
-                     tyVars    = [],     freeVars  = freeVars})]
- 
- op addPatternRestriction(context: Context, pat: Pattern, rules: Demod RewriteRule)
+  op addPatternRestriction(context: Context, pat: Pattern, rules: Demod RewriteRule)
     : Demod RewriteRule =
    case pat of
      | VarPat(v as (_,ty), _) ->
@@ -245,13 +185,13 @@ MetaSlangRewriter qualifying spec
                            | _ -> p
                in
                let condn = simplifiedApply(pred, mkVar v, context.spc) in
-               addDemodRules(assertRules(context,condn,"Subtype"),rules))
+               addDemodRules(assertRules(context, condn, "Subtype", false),rules))
             | _ -> rules)
      | RecordPat(fields, _ ) ->
        foldl (fn ((_,p), rules) -> addPatternRestriction(context, p, rules)) rules fields
      | RestrictedPat(p,condn,_) ->
        addPatternRestriction(context, p,
-                             addDemodRules(assertRules(context,condn,"Restriction"), rules))
+                             addDemodRules(assertRules(context,condn,"Restriction",false), rules))
      | EmbedPat(_, Some p, _, _) -> addPatternRestriction(context, p, rules)
      | AliasPat(_, p, _)    -> addPatternRestriction(context, p, rules)
      | QuotientPat(p, _, _) -> addPatternRestriction(context, p, rules)
@@ -517,7 +457,7 @@ MetaSlangRewriter qualifying spec
                                  (substitute (M, sbst), rules, sbst)
                                | _ ->
                                  let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
-                                 (M, addDemodRules(assertRules(context, equal_term, "case"), rules), [])
+                                 (M, addDemodRules(assertRules(context, equal_term, "case", false), rules), [])
                          in
                          rewriteTerm(solvers,(boundVars ++ patternVars pat), M, rules)
                          >>= (fn (M,a) ->
@@ -587,12 +527,12 @@ MetaSlangRewriter qualifying spec
 	   LazyList.map 
 		(fn (N,a) -> (IfThenElse(M,N,P,b),a)) 
 		(rewriteTerm(solvers,boundVars,N,
-			     addDemodRules(assertRules(context,M,"if then"),rules)))) @@
+			     addDemodRules(assertRules(context,M,"if then",false),rules)))) @@
 	   (fn () -> 
 	   LazyList.map 
 		(fn (P,a) -> (IfThenElse(M,N,P,b),a)) 
 		(rewriteTerm(solvers,boundVars,P,
-			     addDemodRules(assertRules(context,negate M,"if else"),rules))))
+			     addDemodRules(assertRules(context,negate M,"if else",false),rules))))
          | SortedTerm(M,s,b) ->
            LazyList.map (fn (M,a) -> (SortedTerm(M,s,b),a))
 		(rewriteTerm(solvers,boundVars,M,rules))
