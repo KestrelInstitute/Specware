@@ -615,7 +615,9 @@ spec
     let unfolds = map (fn (opinfo,_) -> Unfold(hd opinfo.names)) new_defs in
     let iso_rewrites = map (fn qid -> LeftToRight qid) iso_thm_qids in
     let osi_unfolds = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
-                                    if member(osi_qid, recursive_ops) then None
+                                    if member(osi_qid, recursive_ops)
+                                      || ~(definedOp?(spc, osi_qid))
+                                      then None
                                       else Some(Unfold osi_qid))
                         iso_info
     in
@@ -646,7 +648,7 @@ spec
                                         ++ unfolds
                                         ++ extra_rules)]
                             ++
-                            [ Simplify(osi_unfolds ++ iso_unfolds)
+                            [ Simplify(iso_rewrites ++ osi_unfolds ++ iso_unfolds ++ extra_rules)
                             % AbstractCommonExpressions
                              ])
     in
@@ -659,6 +661,9 @@ spec
               let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
               let (simp_dfn,_) =
                   if simplifyIsomorphism?
+                    && existsSubTerm (fn t -> let ty = inferType(spc,t) in
+                                              ~(equalType?(ty, isoType (spc, iso_info, iso_fn_info) false ty)))
+                         dfn
                     then interpretTerm(spc, main_script, dfn, dfn)
                     else (dfn,dfn)
               in
