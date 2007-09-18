@@ -636,7 +636,7 @@ IsaTermPrinter qualifying spec
 	       [[prString "datatype ",
 		 ppTyVars tvs,
 		 ppIdInfo aliases],
-		[prString " = ", ppType c Top ty]]
+		[prString " = ", ppType c Top false ty]]
 	   | Product (fields,_) | length fields > 0 && (hd fields).1 ~= "1" \_rightarrow
 	     prLinesCat 2
 	       ([[prString "record ",
@@ -644,7 +644,7 @@ IsaTermPrinter qualifying spec
 		  ppIdInfo aliases,
 		  prString " = "]] ++
 		(map (\_lambda (fldname,fldty) \_rightarrow
-		      [prString fldname, prString " :: ", ppType c Top fldty])
+		      [prString fldname, prString " :: ", ppType c Top false fldty])
 		 fields))
 	   | _ \_rightarrow
 	     prBreakCat 2
@@ -652,7 +652,7 @@ IsaTermPrinter qualifying spec
 		 ppTyVars tvs,
 		 ppIdInfo aliases,
 		 prString " = "],
-		[prString "\"", ppType c Top ty, prString "\""]]
+		[prString "\"", ppType c Top true ty, prString "\""]]
      else prBreakCat 2
 	    [[prString "typedecl ",
 	      ppIdInfo aliases,
@@ -686,7 +686,7 @@ IsaTermPrinter qualifying spec
                  prString " :: \"",
                  (case fixity of
                    | Infix(assoc,prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Isa
-                   | _ \_rightarrow ppType c Top ty),
+                   | _ \_rightarrow ppType c Top true ty),
                  prString "\""]
               ++ (case fixity of
                     | Infix(assoc,prec) \_rightarrow
@@ -770,7 +770,43 @@ IsaTermPrinter qualifying spec
   %op  Utilities.substitute    : MS.Term * List (Var * MS.Term) \_rightarrow MS.Term
   %op  Utilities.freeVars      : MS.Term \_rightarrow List Var
 
-
+ op patToTerm(pat: Pattern, ext: String): Option MS.Term = 
+     case pat
+       of EmbedPat(con,None,srt,a) -> 
+          Some(Fun(Embed(con,false),srt,a))
+        | EmbedPat(con,Some p,srt,a) -> 
+          (case patToTerm(p, ext)
+             of None -> None
+	      | Some (trm) -> 
+		let srt1 = patternSort p in
+		Some (Apply(Fun(Embed(con,true),Arrow(srt1,srt,a),a),trm,a)))
+        | RecordPat(fields,a) -> 
+	  let
+	     def loop(new,old,i) = 
+	         case new
+                   of [] -> Some(Record(rev old,a))
+	            | (l,p)::new -> 
+	         case patToTerm(p, ext^(toString i))
+	           of None -> None
+	            | Some(trm) -> 
+	              loop(new, Cons((l,trm),old), i+1)
+          in
+          loop(fields,[], 0)
+        | NatPat(i, _) -> Some(mkNat i)
+        | BoolPat(b, _) -> Some(mkBool b)
+        | StringPat(s, _) -> Some(mkString s)
+        | CharPat(c, _) -> Some(mkChar c)
+        | VarPat((v,srt), a) -> Some(Var((v,srt), a))
+        | WildPat(srt,a) ->
+          let v = if ext = "" then "zzz" else "zzz_"^ext in
+          Some(Var((v,srt), a))
+        | QuotientPat(pat,cond,_)  -> None %% Not implemented
+        | RestrictedPat(pat,cond,_)  ->
+	  patToTerm(pat,ext)		% cond ??
+	| AliasPat(p1,p2,_) -> 
+	  (case patToTerm(p2, ext) 
+             of None -> patToTerm(p1, ext)
+	      | Some(trm) -> Some trm)
 
   op  defToCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow Boolean \_rightarrow List(MS.Term \_times MS.Term) \_times Boolean
   def defToCases c hd bod infix? =
@@ -780,20 +816,20 @@ IsaTermPrinter qualifying spec
 	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) | \_not tuple? \_rightarrow
 	    aux(Apply(hd,mkVar v,a), term, tuple?)
     %      | Lambda ([(pattern,_,term)],a) \_rightarrow
-    %        (case patternToTerm pattern of
+    %        (case patToTerm pattern of
     %	   | Some pat_tm \_rightarrow aux (Apply(hd,pat_tm,a)) term
     %	   | _ \_rightarrow [(hd,bod)])
 	  | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
 	    if exists (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
 	     then foldl (\_lambda ((pati,_,bodi),result) \_rightarrow
-			 case patternToTerm pati of
+			 case patToTerm(pati,"") of
 			   | Some pati_tm \_rightarrow
 			     result ++ (aux_case(substitute(hd,[(v,pati_tm)]), bodi, tuple?))
 			   | _ \_rightarrow result ++ (aux_case(hd,bodi,tuple?)))
 		    [] pats
 	     else [(hd,bod)]
           | Let([(pat,Var(v,_))],bod,a) | tuple? \_and member(v, freeVars hd) \_rightarrow
-            (case  patternToTerm pat of
+            (case  patToTerm(pat,"") of
                | Some pat_tm \_rightarrow aux(substitute(hd, [(v,pat_tm)]),
                                     substitute(bod,[(v,pat_tm)]), tuple?)
                | None \_rightarrow [(hd,bod)])
@@ -822,11 +858,15 @@ IsaTermPrinter qualifying spec
 	  else let sb = map (\_lambda (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
 	       (substitute(hd,sb), substitute(bod,sb))
     in
+    case bod of
+      | Lambda ([(RestrictedPat(rpat,_,_),condn,tm)], a) \_rightarrow
+        defToCases c hd (Lambda ([(rpat, condn, tm)], a)) infix?
+      | _ \_rightarrow
     let (cases, tuple?) =
           case bod of
             | Lambda ([(recd as (RecordPat (prs as (("1",_)::_),_)), _, tm)],a)
                 | varOrTuplePattern? recd \_rightarrow
-              let Some arg = patternToTerm recd in
+              let Some arg = patToTerm(recd,"") in
               (aux(Apply(hd, arg, a), tm, true), \_not infix?)
 	    | _ -> (aux(hd, bod, false), false) in
     (map fix_vars cases, tuple?)
@@ -1250,7 +1290,7 @@ IsaTermPrinter qualifying spec
       | Seq (terms,_) \_rightarrow
 	prPostSep 0 blockLinear (prString "; ") (map (ppTerm c Top) terms)
       | SortedTerm (tm,ty,_) \_rightarrow
-        enclose?(true,prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"],[ppType c Top ty]])
+        enclose?(true,prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"],[ppType c Top true ty]])
       | mystery \_rightarrow fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
   op  projectorFun: String * Sort * Spec \_rightarrow String
@@ -1285,14 +1325,14 @@ IsaTermPrinter qualifying spec
 
   op ppVarWithSort (c: Context) ((id,ty): Var): Pretty =
     if printQuantifiersWithType? then
-      enclose?(true, prConcat [prString id, prString "::", ppType c Top ty])
+      enclose?(true, prConcat [prString id, prString "::", ppType c Top true ty])
     else prString id
 
   op  ppVar : Context \_rightarrow Var \_rightarrow Pretty
   def ppVar c (id,ty) =
     prConcat [prString id,
 	      prString ":",
-	      ppType c Top ty]
+	      ppType c Top true ty]
 
   %%% Top-level theorems use implicit quantification meta-level \_Rightarrow and lhs \_and
   op  ppPropertyTerm : Context \_rightarrow List String \_rightarrow MS.Term \_rightarrow Pretty
@@ -1574,28 +1614,64 @@ IsaTermPrinter qualifying spec
       | Some(dom, rng) \_rightarrow
         (case productSorts(getSpec c,dom) of
 	  | [arg1_ty,arg2_ty] \_rightarrow
-	    ppType c Top (mkArrow(arg1_ty, mkArrow(arg2_ty,rng)))
-	  | _ \_rightarrow ppType c Top ty)
-      | _ \_rightarrow ppType c Top ty
+	    ppType c Top true (mkArrow(arg1_ty, mkArrow(arg2_ty,rng)))
+	  | _ \_rightarrow ppType c Top true ty)
+      | _ \_rightarrow ppType c Top true ty
 
-  op  ppType : Context \_rightarrow ParentSort \_rightarrow Sort \_rightarrow Pretty
-  def ppType c parent ty =
+  op  ppType : Context \_rightarrow ParentSort \_rightarrow Boolean \_rightarrow Sort \_rightarrow Pretty
+  def ppType c parent in_quotes? ty =
     case ty of
-      | Arrow (ty1,ty2,_) \_rightarrow
+      | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
+      | CoProduct (taggedSorts,_) \_rightarrow 
+        let def ppTaggedSort (id,optTy) =
+	case optTy of
+	  | None \_rightarrow prString id
+	  | Some ty \_rightarrow
+	    prConcat [prString (id ^ " "),
+		      case ty of
+			| Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
+			  prConcat(addSeparator prSpace
+				     (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct in_quotes? c_ty) fields))
+			| _ \_rightarrow ppType c CoProduct in_quotes? ty]
+	in
+	  enclose?(case parent of
+		     | Product -> true
+		     | CoProduct -> true
+		     | Subsort -> true
+		     | _ -> false,
+		   prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
+       | Boolean _ \_rightarrow prString "bool"  
+      | TyVar (tyVar,_) \_rightarrow prConcat[prString "'",prString tyVar]
+      | MetaTyVar (tyVar,_) \_rightarrow 
+	let ({link, uniqueId, name}) = ! tyVar in
+	prString (name ^ (Nat.toString uniqueId))
+
+      | _ | ~in_quotes? \_rightarrow
+        prConcat [prString "\"", ppType c Top true ty, prString "\""]
+
+      | Base (qid,[ty],_) \_rightarrow
+	prBreak 0 [ppType c Apply in_quotes? ty,
+		   prSpace,
+		   ppTypeQualifiedId c qid]
+      | Base (qid,tys,_) \_rightarrow
+        prBreak 0 [prString " (",
+		   prPostSep 0 blockFill (prString ",") (map (ppType c Top in_quotes?) tys),
+		   prString ")",
+		   ppTypeQualifiedId c qid]      | Arrow (ty1,ty2,_) \_rightarrow
         enclose?(case parent of
 		   | Product -> true
 		   | ArrowLeft -> true
 		   | Subsort -> true
 		   | Apply \_rightarrow true
 		   | _ -> false,
-		 prBreak 0[ppType c ArrowLeft ty1,
+		 prBreak 0[ppType c ArrowLeft in_quotes? ty1,
 			   lengthString(4, " \\<Rightarrow> "),
-			   ppType c ArrowRight ty2])
+			   ppType c ArrowRight in_quotes? ty2])
       | Product (fields,_) \_rightarrow
         (case fields of
 	   | [] \_rightarrow prString "unit"
 	   | ("1",_)::_ \_rightarrow
-	     let def ppField (_,y) = ppType c Product y in
+	     let def ppField (_,y) = ppType c Product in_quotes? y in
 	     enclose?(case parent of
 			| Product -> true
 			| Subsort -> true
@@ -1607,56 +1683,23 @@ IsaTermPrinter qualifying spec
 	     let def ppField (x,y) =
 	     prLinearCat 2 [[prString x,
 			     prString " : "],
-			    [ppType c Top y]]
+			    [ppType c Top in_quotes? y]]
 	     in
 	       prBreak 2 [prString "{",
 			  prPostSep 0 blockLinear(prString ",") (map ppField fields),
 			  prString "}"])
-      | CoProduct (taggedSorts,_) \_rightarrow 
-        let def ppTaggedSort (id,optTy) =
-	case optTy of
-	  | None \_rightarrow prString id
-	  | Some ty \_rightarrow
-	    prConcat [prString (id ^ " "),
-		      case ty of
-			| Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
-			  prConcat(addSeparator prSpace
-				     (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct c_ty) fields))
-			| _ \_rightarrow ppType c CoProduct ty]
-	in
-	  enclose?(case parent of
-		     | Product -> true
-		     | CoProduct -> true
-		     | Subsort -> true
-		     | _ -> false,
-		   prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
       | Quotient (ty,term,_) \_rightarrow
           prBreak 0 [prString "(",
-		     ppType c Top ty,
+		     ppType c Top in_quotes? ty,
 		     prString " \\ ",
 		     ppTerm c Top term,
 		     prString ")"]
       | Subsort (ty,term,_) \_rightarrow
           prBreak 0 [prString "(",
-		     ppType c Top ty,
+		     ppType c Top in_quotes? ty,
 		     prString " | ",
 		     ppTerm c Top term,
 		     prString ")"]
-      | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
-      | Base (qid,[ty],_) \_rightarrow
-	prBreak 0 [ppType c Apply ty,
-		   prSpace,
-		   ppTypeQualifiedId c qid]
-      | Base (qid,tys,_) \_rightarrow
-        prBreak 0 [prString " (",
-		   prPostSep 0 blockFill (prString ",") (map (ppType c Top) tys),
-		   prString ")",
-		   ppTypeQualifiedId c qid]
-      | Boolean _ \_rightarrow prString "bool"  
-      | TyVar (tyVar,_) \_rightarrow prConcat[prString "'",prString tyVar]
-      | MetaTyVar (tyVar,_) \_rightarrow 
-	let ({link, uniqueId, name}) = ! tyVar in
-	prString (name ^ (Nat.toString uniqueId))
 
       | mystery \_rightarrow fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
 
@@ -1810,6 +1853,7 @@ IsaTermPrinter qualifying spec
       | VarPat _ \_rightarrow true
       | RecordPat(prs as (("1",_)::_),_) \_rightarrow
         all (\_lambda (_,p) \_rightarrow varOrTuplePattern? p) prs
+      | RestrictedPat(pat,cond,_) \_rightarrow varOrTuplePattern? pat
       | _ \_rightarrow false
 
   op  simpleHead?: MS.Term \_rightarrow Boolean
