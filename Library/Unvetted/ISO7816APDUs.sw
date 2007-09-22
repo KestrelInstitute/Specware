@@ -3,16 +3,21 @@
 (*
 2007:07:05
 AC
-A spec of APDUs, a concept used in smart cards.
+A spec of ISO7816 APDUs, a concept used in smart cards.
 
 2007:08:08
 AC
 Added extended-length APDUs.
 
+2007:09:21
+AC
+Renamed spec and qualifier with reference to the context (ISO7816, smart cards)
+of APDUs.
+
 *)
 
 
-APDU qualifying spec
+ISO7816APDU qualifying spec
 
   import BitSequences
 

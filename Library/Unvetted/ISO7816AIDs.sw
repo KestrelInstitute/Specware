@@ -1,12 +1,19 @@
+(* $Id$ *)
+
 (*
 2007:07:05
 AC
-A spec of AIDs, a concept used in smart cards.
+A spec of ISO7816 AIDs, a concept used in smart cards.
+
+2007:09:21
+AC
+Renamed spec and qualifier with reference to the context (ISO7816, smart cards)
+of AIDs.
 
 *)
 
 
-AID qualifying spec
+ISO7816AID qualifying spec
 
   import BitSequences
 
