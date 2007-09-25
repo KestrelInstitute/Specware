@@ -51,7 +51,7 @@ Functions qualifying spec
   theorem eta is [a,b]
     fa(f: a -> b) (fn x -> f x) = f
 
-  % Used by obligation generator
+  % used by obligation generator:
 
   op  wfo: [a] (a * a -> Boolean) -> Boolean
 
