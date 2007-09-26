@@ -3,20 +3,18 @@
 (IN-PACKAGE "STRING-SPEC")
 
 
-;;; For each curried binary op in the spec String whose Lisp code is
-;;; hand-written, there are two Lisp functions. One takes the first argument
-;;; and returns a closure that takes the second argument, the other takes the
-;;; two arguments in non-curried form. These double variants match Specware's
-;;; Lisp code generator, which generates various variants for curried ops:
-;;; each variant takes some of the curried arguments and returns a closure
-;;; that takes the remaining arguments. For a curried binary op, the naming
-;;; convention is that the variant that takes the first argument and return a
-;;; closure has the name directly derived from the op, while the variant that
-;;; takes the two arguments has that name with a "-1-1" suffix.
+;;; For each curried binary op, there are two Lisp functions. One takes the
+;;; first argument and returns a closure that takes the second argument, the
+;;; other takes the two arguments in non-curried form. These double variants
+;;; match Specware's Lisp code generator, which generates various variants for
+;;; curried ops: each variant takes some of the curried arguments and returns a
+;;; closure that takes the remaining arguments. For a curried binary op, the
+;;; naming convention is that the variant that takes the first argument and
+;;; return a closure has the name directly derived from the op, while the
+;;; variant that takes the two arguments has that name with a "-1-1" suffix.
 
-;;; For each (non-curried) binary op in the spec String whose Lisp code is
-;;; hand-written, there are also two Lisp functions. See the comments in
-;;; Integer.lisp for an explanation.
+;;; For each (non-curried) binary op, there are also two Lisp functions. See the
+;;; comments in Integer.lisp for an explanation.
 
 
 (defun explode (s) 
