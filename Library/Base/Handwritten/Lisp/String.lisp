@@ -153,6 +153,9 @@
       '(:|Less|)
       (if (string< s2 s1) '(:|Greater|) '(:|Equal|))))
 
+(defun STRING-SPEC::compare (s1s2)
+  (STRING-SPEC::compare-2 (car s1s2) (cdr s1s2)))
+
 (defun lt-2 (s1 s2)
   (declare (type cl:simple-string s1 s2))
   (if (string< s1 s2) t nil))
