@@ -3,77 +3,61 @@ Char qualifying spec
   import Nat
 
   (* We consider the 8-bit characters occupying decimal positions 0 to 255 in
-  the ISO-8859-1 code table (the first 128 characters of that code table are
-  the ASCII characters). Thus, we define type Char by isomorphism with natural
+  the ISO-8859-1 code table (the first 128 characters of that code table are the
+  ASCII characters). Thus, we define type Char by isomorphism with natural
   numbers less than 256. *)
 
   type Char.Char  % qualifier required for internal parsing reasons
 
-  % maps character to its position in the code table:
-  op ord : Char -> {n : Nat | n < 256}
+  % chr n is the character at position n in table:
+  op chr : Bijection ({n:Nat | n < 256}, Char)
 
-  axiom ord_is_isomorphism is
-    bijective? ord
-   proof Isa [simp] end-proof
+  (* Metaslang's character literals are simply syntactic shortcuts for
+  expressions chr n, where n is a natural literal less than 256. For example, #A
+  stands for chr 65. *)
 
-  % other ops on characters:
+  % position of character in table:
+  op ord : Bijection (Char, {n:Nat | n < 256}) = inverse chr
+  proof Isa [simp] end-proof
 
-  op chr         : {n : Nat | n < 256} -> Char
-  op isUpperCase : Char -> Boolean
-  op isLowerCase : Char -> Boolean
-  op isAlpha     : Char -> Boolean
-  op isNum       : Char -> Boolean
-  op isAlphaNum  : Char -> Boolean
-  op isAscii     : Char -> Boolean
-  op toUpperCase : Char -> Char
-  op toLowerCase : Char -> Char
-  op compare     : Char * Char -> Comparison
+  % predicates for various kinds of characters:
 
-  axiom chr_def is
-    chr = inverse ord
+  op isUpperCase (c:Char) : Boolean = (ord #A <= ord c && ord c <= ord #Z)
+  proof Isa [simp] end-proof
 
-  axiom isUpperCase_def is
-    fa (c:Char) isUpperCase c <=> (ord #A <= ord c && ord c <= ord #Z)
-   proof Isa [simp] end-proof
+  op isLowerCase (c:Char) : Boolean = (ord #a <= ord c && ord c <= ord #z)
+  proof Isa [simp] end-proof
 
+  op isAlpha     (c:Char) : Boolean = isUpperCase c || isLowerCase c
+  proof Isa [simp] end-proof
 
-  axiom isLowerCase_def is
-    fa (c:Char) isLowerCase c <=> (ord #a <= ord c && ord c <= ord #z)
-   proof Isa [simp] end-proof
+  op isNum       (c:Char) : Boolean = (ord #0 <= ord c && ord c <= ord #9)
+  proof Isa [simp] end-proof
 
-  axiom isAlpha_def is
-    fa (c:Char) isAlpha c <=> isUpperCase c || isLowerCase c
-   proof Isa [simp] end-proof
+  op isAlphaNum  (c:Char) : Boolean = isAlpha c || isNum c
+  proof Isa [simp] end-proof
 
-  axiom isNum_def is
-    fa (c:Char) isNum c <=> (ord #0 <= ord c && ord c <= ord #9)
-   proof Isa [simp] end-proof
+  op isAscii     (c:Char) : Boolean = (ord c < 128)
+  proof Isa [simp] end-proof
 
-  axiom isAlphaNum_def is
-    fa (c:Char) isAlphaNum c <=> isAlpha c || isNum c
-   proof Isa [simp] end-proof
+  % case conversions:
 
-  axiom isAscii_def is
-    fa (c:Char) isAscii c <=> ord c < 128
-   proof Isa [simp] end-proof
+  op toUpperCase (c:Char) : Char =
+    if isLowerCase c then chr(ord c - ord #a + ord #A) else c
+  proof Isa [simp] end-proof
 
-  axiom toUpperCase_def is
-    fa (c:Char) toUpperCase c = (if isLowerCase c
-                                   then chr(ord c - ord #a + ord #A)
-                                   else c)
-   proof Isa [simp] end-proof
+  op toLowerCase (c:Char) : Char =
+    if isUpperCase c then chr(ord c - ord #A + ord #a) else c
+  proof Isa [simp] end-proof
 
-  axiom toLowerCase_def is
-    fa (c:Char) toLowerCase c  = (if isUpperCase c
-                                    then chr(ord c - ord #A + ord #a)
-                                    else c)
-   proof Isa [simp] end-proof
+  % comparison:
 
-  def compare(c1,c2) = compare(ord c1, ord c2)
+  op compare (c1:Char, c2:Char) : Comparison = compare (ord c1, ord c2)
+
+  % mapping to Isabelle:
 
   proof Isa Thy_Morphism
     type Char.Char \_rightarrow char
-    
   end-proof
 
 endspec
