@@ -148,6 +148,11 @@
     (the cl:simple-string 
       (apply #'concatenate 'string translated-char-strings))))
 
+(defun STRING-SPEC::compare-2 (s1 s2)
+  (if (string< s1 s2)
+      '(:|Less|)
+      (if (string< s2 s1) '(:|Greater|) '(:|Equal|))))
+
 (defun lt-2 (s1 s2)
   (declare (type cl:simple-string s1 s2))
   (if (string< s1 s2) t nil))
