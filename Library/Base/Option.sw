@@ -9,11 +9,9 @@ Option qualifying spec
   % ops synonym of embedders and embedding tests:
 
   op some : [a] a -> Option a = embed Some
-
-  op none : [a] Option a = embed None
+  op none : [a]      Option a = embed None
 
   op [a] some? (x: Option a) : Boolean = (x ~= none)
-
   op [a] none? (x: Option a) : Boolean = (x = none)
 
   (* Given a comparison function over type a, type Option a can be linearly
