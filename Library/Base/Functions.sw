@@ -1,5 +1,9 @@
 Functions qualifying spec
 
+  (* Functions are built-in in Metaslang (A -> B is the type of all functions
+  from type A to type B). This spec introduce some operations on functions and
+  some subtypes of functions. *)
+
   % identity and composition:
 
   op id : [a] a -> a = fn x -> x
