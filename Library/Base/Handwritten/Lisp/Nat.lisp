@@ -19,10 +19,6 @@
 ;;; arithmetic.
 
 
-(defconstant zero 0)
-
-(defun succ (x) (+ 1 x))
-
 (defun plus (xy) (+ (car xy) (cdr xy)))
 
 (defun minus (xy) (- (car xy) (cdr xy)))

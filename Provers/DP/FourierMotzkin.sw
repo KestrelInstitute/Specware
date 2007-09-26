@@ -4,6 +4,12 @@ FM qualifying spec
   import Rational
 %  import /Library/Legacy/Utilities/Lisp
 
+  (* The following two ops have been moved into this spec (where they are used,
+  below) from the base spec Integer. The two ops had no definition or axiom
+  associated to them, so their logical significance is unclear. *)
+  op Integer.gcd : Integer * Integer -> PosNat
+  op Integer.lcm : Integer * Integer -> Nat
+
   sort CompPred =
     | Gt
     | Lt

@@ -1,152 +1,166 @@
 Integer qualifying spec
 
-  import Nat, Compare, Functions
+  import Compare, Functions
 
-  type Integer.Integer  % qualifier required for internal parsing reasons
+  (* We introduce integers via a Peano-like axiomatization. Intuitively, Peano's
+  axioms for the natural numbers state that natural numbers form a chain that
+  starts with 0 and proceeds via the successor function, that the chain never
+  crosses itself (either at 0 or at any other natural number), and that there
+  are no natural numbers outside the chain. Integers form a chain that has 0 as
+  its "middle" point and that proceeds forward and backward via the successor
+  and predecessor functions. Thus, it suffices to introduce a constant for 0,
+  and a bijective successor function. Bijectivity implies that there is an
+  inverse, which is the predecessor function. Bijectivity also implies that the
+  bidirectionally infinite chain of integers never crosses itself. To complete
+  the axiomatization, we need an induction-style axiom stating that there are no
+  integers ouside the chain. The induction principle is the following: prove P
+  for 0 and prove that P is preserved by both successor and predecessor (this
+  ensures that we "reach" every integer). *)
 
-  % true for non-negative integers:
-  op natural? : Integer -> Boolean
-  def natural? i = 0 <= i
+  type Integer
 
-  (* The following type definition defines the naturals to be a subtype of the
-  integers. However, since the naturals have been axiomatized in spec Nat,
-  this definition really constrains the integers to be a supertype of the
-  naturals. In addition, it allows us to take advantage of the automatic
-  insertions of relax and restrict to map between naturals and integers. Note
-  that the qualifier Nat in Nat.Nat is needed because otherwise the following
-  type definition would introduce a new unqualified type Nat. *)
+  op zero : Integer
 
-  type Nat.Nat = (Integer | natural?)
+  op succ : Bijection (Integer, Integer)
 
-  % unary minus:
-  op IntegerAux.- : Integer -> Integer
-     % qualifier needed to avoid confusion with Integer.-, the binary minus.
+  axiom induction is
+    fa (p : Integer -> Boolean)
+      p zero &&
+      (fa(i) p i => p (succ i) && p (inverse succ i)) =>
+      (fa(i) p i)
 
-  % for backward compatibility:
-  op Integer.~ : Integer -> Integer
-     % qualifier required to avoid parsing confusion with boolean negation ~
-  axiom backward_compatible_unary_minus_def is
-    fa (i: Integer) Integer.~(i) = -(i)
+  % we name the predecessor function, which is the inverse of succ:
 
-  % negative integers are obtained by negating positive ones:
-  axiom negative_integers is
-    fa(i:Integer) ~(natural? i) => (ex(n:PosNat) i = -n)
+  op pred : Bijection (Integer, Integer) = inverse succ
 
-  % negating a positive integer yields a negative integer:
-  axiom negative is
-    fa(n:PosNat) ~(natural? (- n))
+  % number 1:
 
-  % negating distinct positive integers yield distinct negative ones:
-  axiom unary_minus_injective_on_positives is
-    fa(n1:PosNat, n2:PosNat) n1 ~= n2 => -n1 ~= -n2
+  op one : Integer = succ zero
 
-  % negating a negative integer yields the positive one we started from:
-  axiom minus_negative is
-    fa(n:PosNat) -(-n) = n
+  (* We now define three predicates that partition the integers into 0, positive
+  integers, and negative integers. We define positive integers inductively: 1 is
+  positive, and if i is positive then succ i is positive.  This is expressed by
+  the higher-order predicate satisfiesInductiveDef?, which is locally defined in
+  the definition of op positive? below. The definition is inductive in the sense
+  that positive? must be the smallest predicate that satisfies that definition.
+  This is expressed by saying that for every other predicate p? that satisfies
+  the inductive definition, positive? is smaller than p?, i.e. all integers in
+  positive? are also in p?. *)
 
-  % negating zero is a no-op
-  axiom minus_zero is
-    -0 = 0
+  op zero? (i:Integer) : Boolean = (i = zero)
 
-  theorem unary_minus_involution is
-    fa(i:Integer) -(-i) = i
+  op positive? : Integer -> Boolean = the(positive?)
+    let def satisfiesInductiveDef? (p? : Integer -> Boolean) : Boolean =
+        p? one &&
+        (fa(i) p? i => p? (succ i)) in
+    satisfiesInductiveDef? positive? &&
+    (fa(p?) satisfiesInductiveDef? p? =>
+            (fa(i) positive? i => p? i))
 
-  theorem unary_minus_bijective is
-    bijective? IntegerAux.-
+  op negative? (i:Integer) : Boolean = ~ (positive? i) && ~ (zero? i)
 
-  type NonZeroInteger = {i : Integer | i ~= 0}
+  (* The following ops are inductively defined on the integers. They distinguish
+  among 0, positive, and negative integers. *)
 
-  % other ops on integers:
+  % unary minus (qualifier avoids confusion with binary minus):
 
-  op +   infixl 25 : Integer * Integer -> Integer
-  op -   infixl 25 : Integer * Integer -> Integer
-  op *   infixl 27 : Integer * Integer -> Integer
-  op div infixl 26 : Integer * NonZeroInteger -> Integer
-  op rem infixl 26 : Integer * NonZeroInteger -> Integer
-  op <=  infixl 20 : Integer * Integer -> Boolean
-  op <   infixl 20 : Integer * Integer -> Boolean
-  op >=  infixl 20 : Integer * Integer -> Boolean
-  op >   infixl 20 : Integer * Integer -> Boolean
-  op abs           : Integer -> Nat
-  op min           : Integer * Integer -> Integer
-  op max           : Integer * Integer -> Integer
-  op compare       : Integer * Integer -> Comparison
-  op pred          : Nat -> Integer
-  op gcd           : Integer * Integer -> PosNat
-  op lcm           : Integer * Integer -> Nat
+  op IntegerAux.- : Bijection (Integer, Integer) = the(minus)
+                          minus zero = zero &&
+    (fa(i) positive? i => minus i    = pred (minus (pred i))) &&
+    (fa(i) negative? i => minus i    = succ (minus (succ i)))
 
-  def >= (x,y) = y <= x
+  % legacy synonym (qualifier avoids confusion with boolean negation):
 
-  def > (x,y) = y <  x
+  op Integer.~ : Bijection (Integer, Integer) = -
 
-  def abs x = if x >= 0 then x else - x
-  proof Isa [simp] end-proof
+  % addition:
 
-  def min(x,y) = if x < y then x else y
+  op + infixl 25 : Integer * Integer -> Integer = the(plus)
+    (fa(j)                  plus (zero, j) = j) &&
+    (fa(i,j) positive? i => plus (i,    j) = succ (plus (pred i, j))) &&
+    (fa(i,j) negative? i => plus (i,    j) = pred (plus (succ i, j)))
 
-  def max(x,y) = if x > y then x else y
+  % subtraction:
 
-  def compare(x,y)  = if x < y then Less
-                 else if x > y then Greater
-                 else (* x = y *)   Equal
+  op - (i:Integer, j:Integer) infixl 25 : Integer = i + (- j)
 
-  def pred x = x - 1
-  proof Isa [simp] end-proof
+  % multiplication:
 
-  axiom addition_def1 is
-    fa(i:Integer) i+0 = i && 0+i = i
-  axiom addition_def2 is
-    fa(n1:PosNat, n2:PosNat)
-           n1  +   n2  = plus(n1,n2)
-      && (-n1) + (-n2) = -(plus(n1,n2))
-      &&   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
-                                        else minus(n1,n2))
-      && (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
-                                        else -(minus(n1,n2)))
+  op * infixl 27 : Integer * Integer -> Integer = the(times)
+    (fa(j)                  times (zero, j) = zero) &&
+    (fa(i,j) positive? i => times (i,    j) = times (pred i, j) + j) &&
+    (fa(i,j) negative? i => times (i,    j) = times (succ i, j) - j)
 
-  axiom subtraction_def is
-    fa (x:Integer, y:Integer) (x - y) = x + (- y)
+  % relational operators:
 
-  axiom multiplication_def is
-    fa (x:Integer, y:Integer) 0 * y = 0
-                       && (x+1) * y = x * y + y
-                       && (x-1) * y = x * y - y
-    % since every integer is reachable from 0 by adding or subtracting 1
-    % zero or more times, this axiom completely defines multiplication
+  op < (i:Integer, j:Integer) infixl 20 : Boolean = negative? (i - j)
 
-  axiom division_def is
-    fa (x:Integer, y:NonZeroInteger, z:Integer)
-       % truncate result of exact division towards 0:
-       x div y = z <=> abs z = abs x div abs y  % abs of result
-                     && (x * y >= 0 => z >= 0)  % sign of
-                     && (x * y <= 0 => z <= 0)  % result
+  op > (i:Integer, j:Integer) infixl 20 : Boolean = j < i
 
-  axiom remainder_def is
-    fa (x:Integer, y:NonZeroInteger)
-       x rem y = x - y * (x div y)
+  op <= (i:Integer, j:Integer) infixl 20 : Boolean = i < j || i = j
 
-  axiom less_than_equal_def is
-    fa (x:Integer, y:Integer) x <= y <=> natural? (y - x)
+  op >= (i:Integer, j:Integer) infixl 20 : Boolean = i > j || i = j
 
-  axiom less_than_def is
-    fa (x:Integer, y:Integer) x < y <=> (x <= y && x ~= y)
+  % absolute value:
+
+  op abs (i:Integer) : {j:Integer | j >= zero} = if i >= zero then i else (- i)
+
+  % subtype for non-zero integers (useful to define division):
+
+  type NonZeroInteger = {i:Integer | i ~= zero}
+
+  (* We define integer division to truncate towards 0 (the other possibility
+  is towards minus-infinity). This means that: the absolute value of the
+  quotient q is the (unique) Q such that I = J * Q + r, where I = abs i, J =
+  abs j, and 0 <= r < J; and the sign of q coincides with the sign of i * j
+  (i.e. positive if i and j are both positive or negative, negative if i is
+  positive/negative and j is negative/positive, and 0 if i is 0). *)
+
+  op div (i:Integer, j:NonZeroInteger) infixl 26 : Integer = the(q)
+    (ex(r) abs i = abs j * abs q + r && zero <= r && r < abs j) &&
+    (i * j >= zero => q >= zero) &&
+    (i * j <= zero => q <= zero)
+
+  % better synonym:
+
+  op / infixl 26 : Integer * NonZeroInteger -> Integer = div
+
+  % we define remainder in such a way that i = j * (i div j) + (i rem j):
+
+  op rem (i:Integer, j:NonZeroInteger) infixl 26 : Integer = i - j * (i / j)
+
+  % min and max:
+
+  op min (i:Integer, j:Integer) : Integer = if i < j then i else j
+
+  op max (i:Integer, j:Integer) : Integer = if i > j then i else j
+
+  % comparison:
+
+  op compare (i:Integer, j:Integer) : Comparison = if i < j then Less
+                                              else if i > j then Greater
+                                              else (* i = j *)   Equal
+
+  % mapping to Isabelle:
 
   proof Isa Thy_Morphism Presburger
-   type Integer.Integer \_rightarrow int
-   type Nat.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
-   Integer.+ \_rightarrow +  Left 25
-   Integer.- \_rightarrow -  Left 25
-   IntegerAux.- \_rightarrow -
-   Integer.~ \_rightarrow -
-   Integer.* \_rightarrow *  Left 27
-   Integer.div \_rightarrow div  Left 26
-   Integer.rem \_rightarrow mod  Left 26
-   Integer.<= \_rightarrow \<le>  Left 20
-   Integer.< \_rightarrow <  Left 20
-   Integer.>= \_rightarrow \<ge>  Left 20
-   Integer.> \_rightarrow >  Left 20
-   Integer.min \_rightarrow min curried
-   Integer.max \_rightarrow max curried
+   type Integer.Integer -> int
+   Integer.zero         -> 0
+   Integer.succ         -> Suc
+   Integer.one          -> 1
+   IntegerAux.-         -> -
+   Integer.~            -> -
+   Integer.+            -> +     Left 25
+   Integer.-            -> -     Left 25
+   Integer.*            -> *     Left 27
+   Integer.<=           -> \<le> Left 20
+   Integer.<            -> <     Left 20
+   Integer.>=           -> \<ge> Left 20
+   Integer.>            -> >     Left 20
+   Integer.div          -> div   Left 26
+   Integer.rem          -> mod   Left 26
+   Integer.min          -> min curried
+   Integer.max          -> max curried
   end-proof
 
 endspec

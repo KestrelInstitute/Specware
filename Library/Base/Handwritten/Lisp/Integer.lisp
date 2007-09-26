@@ -28,6 +28,14 @@
 (defmacro the-int (x)
   `(the ,specware::*integer-impl* ,x))
 
+(defconstant zero 0)
+
+(defun succ (x) (+ x 1))
+
+(defun pred (x) (- x 1))
+
+(defun positive? (x) (> x 0))
+
 (defun -- (x) ; TODO: deprecate 
   (declare (integer x))
   (the-int (- 0 x)))

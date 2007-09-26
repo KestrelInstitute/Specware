@@ -1,6 +1,6 @@
 List qualifying spec
 
-  import Option, Integer
+  import Option, Nat
 
   % types:
 

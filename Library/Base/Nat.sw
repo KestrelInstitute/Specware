@@ -1,71 +1,37 @@
 Nat qualifying spec
 
-  % usual Peano axiomatization:
+  import Integer
 
-  type Nat.Nat  % qualifier required for internal parsing reasons
+  % we define natural numbers as a subtype of the integers:
 
-  op zero : Nat
+  op natural? (i:Integer) : Boolean = i >= zero
 
-  op succ : Nat -> Nat
+  type Nat = (Integer | natural?)
 
-  axiom zero_not_succ is
-    ~(ex(n:Nat) zero = succ n)
+  % positive (i.e. non-zero) natural numbers:
 
-  axiom succ_injective is
-    fa (n1:Nat, n2:Nat) succ n1 = succ n2 => n1 = n2
+  op posNat? (n:Nat) : Boolean = n > zero
 
-  axiom induction is
-    fa (p : Nat -> Boolean)
-      p zero &&
-      (fa(n:Nat) p n => p (succ n)) =>
-      (fa(n:Nat) p n)
+  type PosNat = (Nat | posNat?)
 
-  % positive natural numbers:
+  % the following should be probably removed because useless:
 
-  op posNat? : Nat -> Boolean
-  def posNat? n = (n ~= zero)
-  proof Isa [simp] end-proof
+  op two : Nat = succ one
 
-  type PosNat = {n : Nat | posNat? n}
+  op plus : Nat * Nat -> Nat = +
 
-  % other ops:
+  op lte : Nat * Nat -> Boolean = <
 
-  op one : Nat
-  def one = succ zero
+  op minus (n:Nat, m:Nat | n >= m) : Nat = n - m
 
-  op two : Nat
-  def two = succ(succ zero)
-
-  op plus : Nat * Nat -> Nat
-  axiom plus_def1 is
-    fa(n:Nat) plus(n,zero) = n
-  axiom plus_def2 is
-    fa(n:Nat, n0:Nat) plus(n,succ n0) = succ(plus(n,n0))
-
-  op lte : Nat * Nat -> Boolean
-  axiom lte_def1 is
-    fa(n:Nat) lte(zero,n)
-  axiom lte_def2 is
-    fa(n:Nat) ~(lte(succ n, zero))
-  axiom lte_def3 is
-    fa(n1:Nat, n2:Nat) lte(succ n1,succ n2) <=> lte(n1,n2)
-
-  op minus : {(n1,n2) : Nat * Nat | lte(n2,n1)} -> Nat
-  axiom minus_def1 is
-    fa(n:Nat) minus(n,zero) = n
-  axiom minus_def2 is
-    fa(n1:Nat, n2:Nat) lte(n2,n1) => minus(succ n1,succ n2) = minus(n1,n2)
+  % mapping to Isabelle:
 
   proof Isa Thy_Morphism
-   type Nat.Nat -> nat
-   Nat.zero -> 0
-   Nat.one -> 1
-   Nat.two -> 2
-   Nat.succ -> Suc
-   Nat.plus -> +  Left 25
-   Nat.minus -> - Left 25
-   Nat.lte -> \<le> Left 20
-   Integer.>= -> \<ge>  Left 20
+   type Nat.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
+   Nat.two      -> 2
+   Nat.plus     -> +     Left 25
+   Nat.lte      -> \<le> Left 20
+   Nat.minus    -> -     Left 25
   end-proof
 
 endspec

@@ -1,6 +1,6 @@
 Char qualifying spec
 
-  import Integer
+  import Nat
 
   (* We consider the 8-bit characters occupying decimal positions 0 to 255 in
   the ISO-8859-1 code table (the first 128 characters of that code table are
