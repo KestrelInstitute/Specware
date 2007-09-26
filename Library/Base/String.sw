@@ -28,6 +28,7 @@ String qualifying spec
                      String
   op concatList    : List String -> String
   op translate     : (Char -> String) -> String -> String
+  op compare       : String * String -> Comparison
   op lt  infixl 20 : String * String -> Boolean	    % deprecated
   op leq infixl 20 : String * String -> Boolean     % deprecated
   op <=  infixl 20 : String * String -> Boolean
@@ -37,7 +38,6 @@ String qualifying spec
   op newline       : String
   op toScreen      : String -> ()  % deprecated
   op writeLine     : String -> ()  % deprecated
-  op compare       : String * String -> Comparison
 
   axiom implode_def is
     implode = inverse explode
@@ -87,11 +87,19 @@ String qualifying spec
     fa (subst : Char -> String, s : String)
        translate subst s = concatList(map subst (explode s))
 
+  axiom compare_def is
+    fa (s1 : String, s2 : String)
+       compare(s1,s2) = List.compare Char.compare (explode s1, explode s2)
+
   axiom lt_def is
     fa (s1 : String, s2 : String) s1 < s2 <=> compare(s1,s2) = Less
 
   axiom leq_def is
     fa (s1 : String, s2 : String)  s1 <= s2  <=>  s1 < s2  || s1 = s2
+
+  def >= (x,y) = y <= x
+
+  def > (x,y) = y <  x
 
   axiom newline_def is
     newline = "\n"
@@ -101,14 +109,6 @@ String qualifying spec
 
   theorem writeLine_def is
     fa (s : String) writeLine s = ()
-
-  def >= (x,y) = y <= x
-
-  def > (x,y) = y <  x
-
-  def compare(s1,s2) = if s1 < s2 then Less
-                  else if s2 < s1 then Greater
-                  else (* s1 = s2 *)    Equal
 
   % ops with different qualifiers:
 
