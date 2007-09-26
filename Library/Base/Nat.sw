@@ -34,4 +34,9 @@ Nat qualifying spec
    Nat.minus    -> -     Left 25
   end-proof
 
+  (* Metaslang's natural literals are simply syntactic shortcuts for expressions
+  involving zero and succ. For example, 0 stands for zero, 3 stands for succ
+  (succ (succ zero)), and 0xA stands for succ (succ (succ (succ (succ (succ
+  (succ (succ (succ (succ zero))))))))). *)
+
 endspec
