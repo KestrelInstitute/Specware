@@ -11,6 +11,9 @@
 ;;;
 ;;;
 ;;; $Log$
+;;; Revision 1.2  2003/03/04 07:08:56  westfold
+;;; Changes for openmcl compatibility
+;;;
 ;;; Revision 1.1  2003/02/14 21:28:40  weilyn
 ;;; Initial version
 ;;;
@@ -36,7 +39,7 @@
 (in-package :cl-user)
 
 (setq *specware-home* (or (sys::getenv "SPECWARE4") "c:/Progra~1/Specware4"))
-(setf (sys::getenv "SWPATH") (format nil "~A/" (sys::getenv "SPECWARE4")))
+(setf (sys::getenv "SWPATH") (format nil "/" ))
 
 (defun concat-specware (path)
   (concatenate 'string  *specware-home* path))
