@@ -5,6 +5,7 @@ MSInterpreter qualifying
 spec
   import ../Specs/Environment
   import ../Specs/Utilities
+  import ../CodeGen/Lisp/Suppress
 
   type Value =
     | Int         Integer
@@ -172,7 +173,8 @@ spec
       | Op (qid, _) ->
         (case findTheOp (spc, qid) of
 	   | Some info ->
-	     (if definedOpInfo? info then
+             %% Being suppressed is used here as a proxy for "has a non-constructive definition"
+	     (if (~ (avoidExpanding? qid)) && definedOpInfo? info then
 		let tm = firstOpDefInnerTerm info in
 		evalRec (tm, sb, spc, depth+1)
 	      else
