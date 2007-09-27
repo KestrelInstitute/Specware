@@ -87,9 +87,7 @@ String qualifying spec
     fa (subst : Char -> String, s : String)
        translate subst s = concatList(map subst (explode s))
 
-  axiom compare_def is
-    fa (s1 : String, s2 : String)
-       compare(s1,s2) = List.compare Char.compare (explode s1, explode s2)
+  def compare(s1,s2) = List.compare Char.compare (explode s1, explode s2)
 
   axiom lt_def is
     fa (s1 : String, s2 : String) s1 < s2 <=> compare(s1,s2) = Less

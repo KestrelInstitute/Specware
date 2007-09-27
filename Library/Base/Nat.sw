@@ -24,10 +24,13 @@ Nat qualifying spec
 
   op minus (n:Nat, m:Nat | n >= m) : Nat = n - m
 
+  op succ(n: Nat): Nat = Integer.succ n
+
   % mapping to Isabelle:
 
   proof Isa Thy_Morphism
    type Nat.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
+   Nat.succ     -> Suc
    Nat.two      -> 2
    Nat.plus     -> +     Left 25
    Nat.lte      -> \<le> Left 20

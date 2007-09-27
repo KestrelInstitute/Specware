@@ -146,7 +146,6 @@ Integer qualifying spec
   proof Isa Thy_Morphism Presburger
    type Integer.Integer -> int
    Integer.zero         -> 0
-   Integer.succ         -> Suc
    Integer.one          -> 1
    IntegerAux.-         -> -
    Integer.~            -> -
