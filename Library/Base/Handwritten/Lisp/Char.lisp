@@ -2,9 +2,9 @@
 (DEFPACKAGE "CHAR-SPEC")
 (IN-PACKAGE "CHAR-SPEC")
 
-(defvar SpecToLisp::SuppressGeneratedDefs nil) ;; note: defvar does not redefine if var already has a value
+(defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
 
-(setq SpecToLisp::SuppressGeneratedDefs
+(setq SpecToLisp::SuppressGeneratedDefuns
       (append '("CHAR-SPEC::ord" 
 		"CHAR-SPEC::chr" 
 		"CHAR-SPEC::isUpperCase"
@@ -15,7 +15,7 @@
 		"CHAR-SPEC::isAscii"
 		"CHAR-SPEC::toUpperCase"
 		"CHAR-SPEC::toLowerCase")
-	      SpecToLisp::SuppressGeneratedDefs))
+	      SpecToLisp::SuppressGeneratedDefuns))
 
 ;;; While in Metaslang characters are exactly those occupying decimal
 ;;; positions 0 to 255 in the ISO-8859-1 code table, the Common Lisp
