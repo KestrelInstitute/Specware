@@ -5,8 +5,8 @@
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
 
 (setq SpecToLisp::SuppressGeneratedDefuns
-      (append '("CHAR-SPEC::ord" 
-		"CHAR-SPEC::chr" 
+      (append '("CHAR-SPEC::chr" 
+		"CHAR-SPEC::ord" 
 		"CHAR-SPEC::isUpperCase"
 		"CHAR-SPEC::isLowerCase"
 		"CHAR-SPEC::isAlpha"
@@ -17,6 +17,7 @@
 		"CHAR-SPEC::toLowerCase")
 	      SpecToLisp::SuppressGeneratedDefuns))
 
+
 ;;; While in Metaslang characters are exactly those occupying decimal
 ;;; positions 0 to 255 in the ISO-8859-1 code table, the Common Lisp
 ;;; standard does not commit to that. So, Specware-generated code and the
@@ -25,11 +26,11 @@
 ;;; include, the Metaslang characters.
 
 
-(defun ord (ch)
-  (char-code ch))
-
 (defun chr (n)
   (code-char n))
+
+(defun ord (ch)
+  (char-code ch))
 
 ;;; lower-case-p, upper-case-p etc. only guaranteed for Standard ASCII (First 96 characters)
 (defun isUpperCase (char)
