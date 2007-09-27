@@ -6,8 +6,11 @@
 ;;; <Specware4>/Release/BuildScripts/LoadSpecware.lisp is a clone of this file
 ;;; that is used for distribution builds.
 
+(defpackage "SPECTOLISP")
 (defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
+
+(defvar SpecToLisp::SuppressGeneratedDefs nil) ;; note: defvar does not redefine if var already has a value
 
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1) #+cmu(c::brevity 3)))
 
