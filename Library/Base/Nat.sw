@@ -18,9 +18,9 @@ Nat qualifying spec
 
   op two : Nat = succ one
 
-  op plus : Nat * Nat -> Nat = +
+  op plus (n:Nat, m:Nat) : Nat = n + m
 
-  op lte : Nat * Nat -> Boolean = <
+  op lte (n:Nat, m:Nat) : Boolean = n < m
 
   op minus (n:Nat, m:Nat | n >= m) : Nat = n - m
 
