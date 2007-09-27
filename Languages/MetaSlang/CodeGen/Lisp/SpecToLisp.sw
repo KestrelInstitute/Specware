@@ -8,6 +8,7 @@ SpecToLisp qualifying spec {
  import ../../Transformations/RecordMerge
  import Lisp
  import ../../Specs/StandardSpec
+ import Suppress
 
  sort Strings = List String
 
@@ -211,7 +212,7 @@ SpecToLisp qualifying spec {
        else 
 	 id
       
- op  printPackageId : QualifiedId * String -> String
+ %op printPackageId : QualifiedId * String -> String % see Suppress.sw
  def printPackageId (id, defPkgNm) = 
    case id of
      | Qualified ("System", "time") -> "TIME"
