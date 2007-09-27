@@ -365,7 +365,7 @@ def mkLIf(t1,t2,t3) = If(t1,t2,t3)
 def mkLLet(vars,terms,term) = 
     if null vars then term else Let(vars,terms,term)
 def mkLLetRec(vars,terms,term) = Letrec(vars,terms,term)
-def mkLSeq(terms) = Seq(terms)
+op mkLSeq(terms: List LispTerm): LispTerm = Seq(terms)
 
 def mkLQuote id = mkLOp ("'" ^ id) 
 

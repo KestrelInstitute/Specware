@@ -943,6 +943,10 @@ SpecsToI2L qualifying spec {
         -> let e1 = t2e t1 in
 	   let e2 = (Int 1, Primitive "Nat") in
 	   Some(Builtin(IntPlus(e1, e2)))
+      | (Fun(Op(Qualified("Integer","succ"),_),_,_),[t1])
+        -> let e1 = t2e t1 in
+	   let e2 = (Int 1, Primitive "Integer") in
+	   Some(Builtin(IntPlus(e1, e2)))
       | (Fun(Op(Qualified("Nat","+"),_),_,_),[t1,t2])
         -> let (e1,e2) = (t2e t1,t2e t2) in
 	   Some(Builtin(IntPlus(e1,e2)))

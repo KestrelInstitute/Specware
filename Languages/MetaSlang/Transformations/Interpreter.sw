@@ -179,11 +179,11 @@ spec
 		evalRec (tm, sb, spc, depth+1)
 	      else
 		case qid of 
-		  | Qualified ("Nat", "zero") -> Int 0
+		  | Qualified ("Integer", "zero") -> Int 0
 		  | _ -> Unevaluated t)
 	   | _ -> 
 	     case qid of 
-	       | Qualified ("Nat", "zero") -> Int 0
+	       | Qualified ("Integer", "zero") -> Int 0
 	       | _ -> Unevaluated t)
       | Nat    n -> Int    n
       | Char   c -> Char   c
@@ -513,7 +513,7 @@ spec
       mkLetWithSubst(substitute(t,substSb),letSb)
 
   %% First list should contain second list as a tail
-  op  ldiff: fa(a) List a * List a -> List a
+  op  ldiff: [a] List a * List a -> List a
   def ldiff(l1,l2) =
     if l1 = l2 or l1 = [] then []
       else Cons(hd l1,ldiff(tl l1,l2))
@@ -572,7 +572,7 @@ spec
        | ("show", Int i)      -> String (toString i)
        | ("show", Bool b)     -> String (toString b)
        | ("show", Char c)     -> String (toString c)
-       | ("succ",Int i)       -> Int (succ i)
+       | ("succ",Int i)       -> Int (Integer.succ i)
 
 %% Defined in InterpreterBase
 %       | ("stringToInt",String s)  ->
@@ -864,7 +864,7 @@ spec
   def unknownSort = mkTyVar "Unknown"
 
   %% Generally useful utility
-  op  loopn: fa(a) (Nat * a -> a) -> a -> Nat -> a
+  op  loopn: [a] (Nat * a -> a) -> a -> Nat -> a
   def loopn f init n =
     let def loop(i,result) =
           if i = n then result else loop(i+1,f(i,result))

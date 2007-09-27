@@ -1,6 +1,6 @@
 % Synchronized with version 1.3 of SW4/Languages/MetaSlang/ToLisp/SpecToLisp.sl
 
-SpecToLisp qualifying spec { 
+SpecToLisp qualifying spec
  import ../../Transformations/PatternMatch
  import ../../Transformations/InstantiateHOFns
  import ../../Transformations/LambdaLift
@@ -9,8 +9,6 @@ SpecToLisp qualifying spec {
  import Lisp
  import ../../Specs/StandardSpec
  import Suppress
-
- sort Strings = List String
 
  op lisp : Spec -> LispSpec
 
@@ -213,7 +211,7 @@ SpecToLisp qualifying spec {
 	 id
       
  %op printPackageId : QualifiedId * String -> String % see Suppress.sw
- def printPackageId (id, defPkgNm) = 
+ def SpecToLisp.printPackageId (id, defPkgNm) = 
    case id of
      | Qualified ("System", "time") -> "TIME"
      | Qualified (pack, id) ->
@@ -1516,5 +1514,4 @@ In the meantime the following does the job.
 %      properties = spc.properties
 %    } : Spec in
 %      toLispFile (renamedSpec, file, [])
-}
-
+endspec

@@ -675,7 +675,7 @@ Translate qualifying spec
   op primNat : Nat -> Expression
   def primNat n =
     if n = 0 then
-      OPI (qidToOperation (Qualified ("Nat","zero")) (embed prefix),empty)
+      OPI (qidToOperation (Qualified ("Integer","zero")) (embed prefix),empty)
     else
       (OPI (qidToOperation (Qualified ("Nat","succ")) (embed prefix),empty)) @ (primNat (n - 1))
 
