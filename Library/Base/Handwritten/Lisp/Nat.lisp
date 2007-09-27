@@ -1,5 +1,14 @@
+(DEFPACKAGE "SPECTOLISP")
 (defpackage "NAT-SPEC")
 (IN-PACKAGE "NAT-SPEC")
+
+
+(defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
+
+(setq SpecToLisp::SuppressGeneratedDefuns
+  (append '("NAT-SPEC::plus"
+	    "NAT-SPEC::minus")
+	   SpecToLisp::SuppressGeneratedDefuns))
 
 
 ;;; For each binary op, there are two Lisp functions. One takes two arguments,
@@ -22,13 +31,6 @@
 
 (defun minus (xy) (- (car xy) (cdr xy)))
 
-(defun lteq (xy) (<= (car xy) (cdr xy)))
-
 (defun plus-2 (x y) (+ x y))
 
 (defun minus-2 (x y) (- x y))
-
-(defun lteq-2 (x y) (<= x y))
-
-(defun natural? (x) (>= x 0))
-

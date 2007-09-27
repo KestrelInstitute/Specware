@@ -1,7 +1,23 @@
+(DEFPACKAGE "SPECTOLISP")
 (defpackage "INTEGER-SPEC")
 (defpackage "INTEGER_")
 (defpackage :IntegerAux)
 (IN-PACKAGE "INTEGER-SPEC")
+
+(defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
+
+(setq SpecToLisp::SuppressGeneratedDefuns
+  (append '("INTEGER-SPEC::pred"
+	    "INTEGER-SPEC::positive?"
+	    "IntegerAux::|!-|"
+	    "INTEGER-SPEC::|!+|"
+	    "INTEGER-SPEC::|!-|"
+	    "INTEGER-SPEC::|!*|"
+	    "INTEGER-SPEC::|!<|"
+	    "INTEGER-SPEC::|!<=|"
+	    "INTEGER-SPEC::div"
+	    "INTEGER-SPEC::|!rem|")
+	   SpecToLisp::SuppressGeneratedDefuns))
 
 
 ;;; For each binary op, there are two Lisp functions. One takes two arguments,
@@ -142,6 +158,11 @@
 
 (define-compiler-macro |!abs| (x)
   `(abs (the-int ,x)))
+
+;;; even though ops gcd and lcm have been removed from spec Integer, they
+;;; are still present in spec Specware4/Provers/DP/FourierMotzkin and so
+;;; the following defun's are necessary for that code to run, because the
+;;; ops are only declared (not defined) in that spec
 
 (defun gcd-2 (x y)
   (declare (integer x y))
