@@ -11,6 +11,7 @@ ListADT qualifying spec {
   import /Library/Legacy/DataStructures/TopSort
   import /Library/Legacy/DataStructures/MergeSort
   import /Library/PrettyPrinter/BjornerEspinosa
+  import Suppress
 
   type LispSpec =
     { 
@@ -242,9 +243,6 @@ ListADT qualifying spec {
          prettysLinearDelim
            ("(progn ", " ", ")")
            (List.map ppTerm ts)
-
-  
-  op SpecToLisp.SuppressGeneratedDefuns : List String % initialized by $SPECWARE4/Applications/Specware/Handwritten/Lisp/Specware4.lisp, updated by Char.lisp, etc.
 
   def ppOpDefn(s : String,term:LispTerm) : PrettyPrint.Pretty = 
     if member (s, SpecToLisp.SuppressGeneratedDefuns) then
