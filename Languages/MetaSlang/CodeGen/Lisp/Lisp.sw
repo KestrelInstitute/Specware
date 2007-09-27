@@ -243,7 +243,15 @@ ListADT qualifying spec {
            ("(progn ", " ", ")")
            (List.map ppTerm ts)
 
+  
+  op SpecToLisp.SuppressGeneratedDefuns : List String % initialized by $SPECWARE4/Applications/Specware/Handwritten/Lisp/Specware4.lisp, updated by Char.lisp, etc.
+
   def ppOpDefn(s : String,term:LispTerm) : PrettyPrint.Pretty = 
+    if member (s, SpecToLisp.SuppressGeneratedDefuns) then
+      let comment = ";;; Suppressing generated def for " ^ s in
+      let _ = toScreen(comment ^ "\n") in
+      blockFill (0, [(0, string comment), (0, PrettyPrint.newline ())])
+    else
       case term
 	of Lambda (args, decls, body) -> 
 	    blockFill
