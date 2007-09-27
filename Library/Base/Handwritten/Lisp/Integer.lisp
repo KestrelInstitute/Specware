@@ -20,6 +20,19 @@
 	   SpecToLisp::SuppressGeneratedDefuns))
 
 
+(defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
+
+(setq SpecToLisp::SuppressGeneratedDefuns
+      (append '("INTEGER-SPEC::pred"
+		"INTEGER-SPEC::positive?"
+		"INTEGER-SPEC::|!+|"
+		"INTEGER-SPEC::|!-|"
+		"INTEGER-SPEC::|!*|"
+		"INTEGER-SPEC::div"
+		"INTEGER_::|!-|"
+		"INTEGERAUX::|!-|")
+	      SpecToLisp::SuppressGeneratedDefuns))
+
 ;;; For each binary op, there are two Lisp functions. One takes two arguments,
 ;;; the other takes one argument that is a pair. In MetaSlang, there is no such
 ;;; distinction: all ops are really unary, from a domain sort D to a codomain
