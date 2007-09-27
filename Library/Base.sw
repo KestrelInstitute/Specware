@@ -3,14 +3,14 @@
 spec
 
   import Base/Empty      % So that spec can avoid importing Base spec
-  import Base/String     % imported by System       imports Char, List       
-  import Base/Char       % imported by String       imports Integer          
-  import Base/List       % imported by String       imports Integer, Option
-  import Base/Option     % imported by List         imports Compare
-  import Base/Integer    % imported by List, Char   imports Nat, Compare, Functions
-  import Base/Nat        % imported by Integer
-  import Base/Compare    % imported by Integer, Option
-  import Base/Functions  % imported by Integer
-  import Base/System     %                          imports String, List, Option
+  import Base/String
+  import Base/Char
+  import Base/List
+  import Base/Option
+  import Base/Integer
+  import Base/Nat
+  import Base/Compare
+  import Base/Functions
+  import Base/System
 
 endspec
