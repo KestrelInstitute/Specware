@@ -52,6 +52,8 @@ Functions qualifying spec
   theorem inverse_f_apply is [a,b]
     fa(f:Bijection(a,b), x: a) inverse f(f (x)) = x
 
+  % eta conversion:
+
   theorem eta is [a,b]
     fa(f: a -> b) (fn x -> f x) = f
 
