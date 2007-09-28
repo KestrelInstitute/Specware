@@ -28,7 +28,7 @@ NormTypes qualifying spec
 	     case foldl (\_lambda ((qid,tvs,top_ty),result) \_rightarrow
 			 case result of
 			   | None \_rightarrow
-			     ( case typeMatch(top_ty,ty,spc) of
+			     ( case typeMatch(top_ty,ty,spc,false) of
 				| Some tyvar_sbst \_rightarrow
 				  if ty = top_ty then None else
 %				  let _ = toScreen("top_ty:\n"^(anyToString top_ty)^"\nty:\n"^(anyToString ty)
