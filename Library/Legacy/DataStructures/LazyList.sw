@@ -1,23 +1,24 @@
-\section{Lazy Lists}
+(* Lazy Lists 
 
 We use the Lazy list abstraction to organize a branching search.
+*)
 
-\begin{spec}
 LazyList qualifying
 spec
 
- sort LazyList a = | Nil | Cons a * (() -> LazyList a)
+ type LazyList a = | Nil | Cons a * (() -> LazyList a)
 
- op toList        : fa(a)   LazyList a -> List a
- op fromList      : fa(a)   List a -> LazyList a
- op unit          : fa(a)   a -> LazyList a
- op >>= infixl 25 : fa(a,b) LazyList a * (a -> LazyList b) -> LazyList b
- op @@  infixl 25 : fa(a)   LazyList a * (() -> LazyList a) -> LazyList a
- op mapFlat       : fa(a,b) (a -> LazyList b) -> List a -> LazyList b
- op mapEach       : fa(a,b) (List a * a * List a -> LazyList b) -> List a -> LazyList b
- op map           : fa(a,b) (a -> b) -> LazyList a -> LazyList b
- op emptyList     : fa(a)   LazyList a
- op app	          : fa(a)   (a -> ()) -> LazyList a -> ()
+ op toList        : [a]   LazyList a -> List a
+ op fromList      : [a]   List a -> LazyList a
+ op unit          : [a]   a -> LazyList a
+ op >>= infixl 25 : [a,b] LazyList a * (a -> LazyList b) -> LazyList b
+ op @@  infixl 25 : [a]   LazyList a * (() -> LazyList a) -> LazyList a
+ op mapFlat       : [a,b] (a -> LazyList b) -> List a -> LazyList b
+ op mapEach       : [a,b] (List a * a * List a -> LazyList b) -> List a -> LazyList b
+ op map           : [a,b] (a -> b) -> LazyList a -> LazyList b
+ op emptyList     : [a]   LazyList a
+ op find          : [a] (a -> Boolean) -> LazyList a -> Option a
+ op app	          : [a]   (a -> ()) -> LazyList a -> ()
 
  def emptyList = Nil
 
@@ -57,7 +58,13 @@ spec
      in
          loop(ls,[])
 
+ def find p l =
+   case l of
+     | Nil -> None
+     | Cons(a,_) | p a -> Some a
+     | Cons(_,f) -> find p (f())
+
  def app f = fn Nil -> () | Cons(a,la) -> (f a; app f (la ()))
 
 endspec
-\end{spec}
+
