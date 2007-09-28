@@ -63,10 +63,12 @@
     (setq *transform-spec* (third last-state))
     (push (fourth last-state) *redos*)))
 
-(defun print-current-term ()
+(defun print-current-term (with-types?)
   (if (null *transform-term*)
       (princ "No term chosen")
-      (princ (AnnSpecPrinter::printTerm (car *transform-term*))))
+      (princ (if with-types?
+		 (AnnSpecPrinter::printTermWithSorts (car *transform-term*))
+		 (AnnSpecPrinter::printTerm (car *transform-term*)))))
   (values))
 
 (defun undo-command (argstr quiet?)
@@ -87,7 +89,7 @@
 		       (incf num -1))
 		    (format t "Illegal undo argument"))))))
   (unless (null *transform-term*)
-    (print-current-term))
+    (print-current-term nil))
   (values))
 
 (defun command-string (command)
@@ -168,7 +170,7 @@
 	      (push-state `(interpret-command ,command))
 	      (setq *transform-term* new-term)
 	      (push command *transform-commands*)
-	      (print-current-term)))
+	      (print-current-term nil)))
 	))
   (values))
 
@@ -189,7 +191,7 @@
 			nil
 			(Script::mkAt-2 qid future-steps)))
 		*transform-commands*)
-	  (print-current-term)))
+	  (print-current-term nil)))
     (values)))
 
 (defparameter *move-alist* '(("f" :|First|) ("l" :|Last|) ("n" :|Next|) ("p" :|Prev|)
@@ -257,7 +259,8 @@
 	   ((abstract-cse cse acse) (interpret-command (Script::mkAbstractCommonExpressions-0)))
 	   ((partial-eval pe)  (interpret-command (Script::mkPartialEval-0)))
 
-	   (pc                 (print-current-term))
+	   (pc                 (print-current-term nil))
+	   (pcv                (print-current-term t))
 	   ((undo back)        (undo-command (and argstr (String-Spec::removeWhitesPace argstr)) nil))
 	   (redo               (redo-command (and argstr (String-Spec::removeWhitesPace argstr))))
 	   ((trace-rewrites trr) (setq MetaSlangRewriter::traceRewriting 2)
