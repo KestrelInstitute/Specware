@@ -204,7 +204,7 @@ spec
      in
      %let rules = map (etaExpand context) rules in   % Not sure if necessary
      %let rules = prioritizeRules rules in
-     let rules = subtypeRules(term, context) ++ rules in
+     let rules = rules ++ subtypeRules(term, context) in
      let rules = splitConditionalRules rules in
      let def doTerm (count, trm) =
            %let _ = writeLine("doTerm "^toString count) in
