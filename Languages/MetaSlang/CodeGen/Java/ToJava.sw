@@ -890,9 +890,7 @@ def builtinSortOp(qid) =
   (q="Integer" & (i="Integer" || i="NonZeroInteger" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" ||
 		  i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"))
   ||
-  (q="Integer_" && i="-") % unary minus -- deprecated due to new tokenizer rule
-  ||
-  (q="IntegerAux" && i="-") % unary minus - "IntegerAux" is replacement for "Integer_"
+  (q="IntegerAux" && i="-") % unary minus
   ||
   (q="Boolean" & (i="Boolean" || i="true" || i="false" || i="~" || i="&" || i="or" ||
 		  i="=>" || i="<=>" || i="~="))

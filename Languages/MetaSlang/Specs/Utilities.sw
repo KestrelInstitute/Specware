@@ -1082,8 +1082,7 @@ Utilities qualifying spec
   op  knownSideEffectFreeQIds: List(Qualifier * Id)
   def knownSideEffectFreeQIds =
     [("Integer", "~"),  % TODO: deprecate
-     ("Integer_","-"),   % deprecated
-     ("IntegerAux","-"), % "IntegerAux" replaces "Integer_" for unary minus
+     ("IntegerAux","-"),
      ("Integer","+"),
      ("Integer","<"),
      ("Integer",">"),

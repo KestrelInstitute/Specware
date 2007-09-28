@@ -96,13 +96,12 @@ AnnTermPrinter qualifying spec {
    string (if qualifier = UnQualified  or
               %% TODO:  What if there is an unqualified Nat as well as Nat.Nat ?
               %%        Perhaps that should be disallowed. (It is now).
-              qualifier = "Nat"       or 
-              qualifier = "String"    or
-              qualifier = "Integer"   or
-	      qualifier = "Integer_"   or % deprecated, will soon be impossible
-	      qualifier = "IntegerAux" or % replacement for "Integer_"
-              qualifier = "General"   or
-              qualifier = "Char"      or
+              qualifier = "Nat"        or 
+              qualifier = "String"     or
+              qualifier = "Integer"    or
+	      qualifier = "IntegerAux" or 
+              qualifier = "General"    or
+              qualifier = "Char"       or
               qualifier = "List" 
              then 
                id

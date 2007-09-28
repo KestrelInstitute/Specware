@@ -137,7 +137,6 @@ def getStringAttributesFromSpec spc =
 			 "Compare",
 			 "Functions",  % TODO: add Relations ?
 			 "Integer", 
-			 "Integer_",   % special hack for unary minus -- deprecated
 			 "IntegerAux", % special hack for unary minus
 			 "List",
 			 "Nat",

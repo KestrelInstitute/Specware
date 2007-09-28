@@ -521,7 +521,7 @@ spec
 
   %% Evaluation of constant terms
   %% we need to include "Boolean" for "compare", "toString", "show", "pp", etc.
-  def evalQualifiers = ["Nat","Integer","Integer_","IntegerAux","String","Char","System","Boolean"]  % "Integer_" is deprecated -- remove at some point
+  def evalQualifiers = ["Nat","Integer","IntegerAux","String","Char","System","Boolean"]
   op  evalConstant?: Value -> Boolean
   def evalConstant?(v) =
     case v
