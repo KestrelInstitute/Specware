@@ -1,43 +1,38 @@
-\section{Demodulation}
-\begin{spec}
+(* Demodulation *)
+
 Demod qualifying
 spec
   import /Library/Legacy/DataStructures/NatMapSplay
   import TermIndex 
 
-    sort Demod a = 
-	 {index : TermIndex.index,
-	  idMap : NatMap.Map a }
+   type Demod a = 
+        {index : TermIndex.index,
+         idMap : NatMap.Map a }
 
-    op empty     : fa(a) Demod a
-    op isEmpty   : fa(a) Demod a -> Boolean
+   op empty     : [a] Demod a
+   op isEmpty   : [a] Demod a -> Boolean
 
-    op numRules  : fa(a) Demod a -> Nat
-    op listRules : fa(a) Demod a -> List a
-    op addRule   : fa(a) MS.Term * a * Demod a -> Demod a
-    op addRules  : fa(a) List (MS.Term * a) * Demod a -> Demod a
-    op getRules  : fa(a) Demod a * MS.Term -> List a
-    op mergeRules  : fa(a) Demod a * Demod a -> Demod a
+   op numRules  : [a] Demod a -> Nat
+   op listRules : [a] Demod a -> List a
+   op addRule   : [a] MS.Term * a * Demod a -> Demod a
+   op addRules  : [a] List (MS.Term * a) * Demod a -> Demod a
+   op getRules  : [a] Demod a * MS.Term -> List a
+   op mergeRules  : [a] Demod a * Demod a -> Demod a
 
-\end{spec}
-  Demodulation structure for maintaining rewrite rules and 
-  applying them.
+(*  Demodulation structure for maintaining rewrite rules and 
+    applying them. *)
 
-\begin{spec}
+   def empty = {index = TermIndex.empty,
+                idMap = NatMap.empty}
 
+   def isEmpty({idMap,index=_}) = 0 = NatMap.numItems idMap
 
-    def empty = 
-	 {index = TermIndex.empty,
-	  idMap = NatMap.empty}
+   def listRules({index=_,idMap}) = NatMap.listItems idMap
 
-    def isEmpty({idMap,index=_}) = 0 = NatMap.numItems idMap
-
-    def listRules({index=_,idMap}) = NatMap.listItems idMap
-
-    def addRule (term,rule,{index,idMap}) = 
-	let newId = (NatMap.numItems idMap) + 1 in
-	{idMap = NatMap.insert(idMap,newId,rule),
-         index = TermIndex.indexTerm (index,term,newId)}
+   def addRule (term,rule,{index,idMap}) = 
+       let newId = (NatMap.numItems idMap) + 1 in
+       {idMap = NatMap.insert(idMap,newId,rule),
+        index = TermIndex.indexTerm (index,term,newId)}
 
    def addRules(rules,demod) = 
        foldl 
@@ -55,7 +50,7 @@ spec
        then mergeRules1(rls2,rls1)
        else mergeRules1(rls1,rls2)
 
-   op  mergeRules1  : fa(a) Demod a * Demod a -> Demod a
+   op  mergeRules1  : [a] Demod a * Demod a -> Demod a
    def mergeRules1({index = index1,idMap = idMap1},{index = index2,idMap = idMap2}) =
      let size2 = NatMap.numItems idMap2 in
      % ids are 0 to n-1 so to convert i -> i + size2 to get 
@@ -71,11 +66,6 @@ spec
         TermDiscNet.empty m)
 
 endspec (* spec Demod *)
-
-\end{spec}
-
-
-
 
 
 
