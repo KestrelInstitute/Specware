@@ -661,7 +661,7 @@ def mkAsrtTestAppl(spc,(trm,optt)) =
       %let _ = writeLine(id^" has restriction term "^printTerm(t)) in
       let b = termAnn(t) in
       let t = Apply(t,trm,b) in
-      let t = dereferenceAll (empty,empty) t in
+      let t = dereferenceAll (empty,empty,[]) t in
       Some t
     | None ->
       %let _ = writeLine(id^" has no restriction term") in
