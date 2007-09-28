@@ -44,20 +44,22 @@ spec
       []
       spc.ops
 
-  op mkHOIsoFn(ty_qid: QualifiedId, fn_qid: QualifiedId, fn_arg: MS.Term, dom_ty: Sort, rng_ty: Sort): MS.Term =
-    mkApply(mkInfixOp (fn_qid, Unspecified,
-                       mkArrow(mkArrow(dom_ty,rng_ty),
-                               mkArrow(mkBase(ty_qid, [dom_ty]),
-                                       mkBase(ty_qid, [rng_ty])))),
+  op mkHOIsoFn(ty_qid: QualifiedId, fn_qid: QualifiedId, fn_arg: MS.Term, dom_ty: Sort, rng_ty: Sort,
+               spc: Spec): MS.Term =
+    mkApply(mkOpFromDef (fn_qid,
+                         mkArrow(mkArrow(dom_ty,rng_ty),
+                                 mkArrow(mkBase(ty_qid, [dom_ty]),
+                                         mkBase(ty_qid, [rng_ty]))),
+                         spc),
             fn_arg)
 
-  op mkMapApply(fn_arg: MS.Term, list_arg: MS.Term, dom_ty: Sort, rng_ty): MS.Term =
-    mkApply(mkApply(mkInfixOp
+  op mkMapApply(fn_arg: MS.Term, list_arg: MS.Term, dom_ty: Sort, rng_ty: Sort, spc: Spec): MS.Term =
+    mkApply(mkApply(mkOpFromDef
                       (Qualified("List","map"),
-                       Unspecified,
                        mkArrow(mkArrow(dom_ty,rng_ty),
                                mkArrow(mkBase(Qualified("List","List"), [dom_ty]),
-                                       mkBase(Qualified("List","List"), [rng_ty])))),
+                                       mkBase(Qualified("List","List"), [rng_ty]))),
+                       spc),
                     fn_arg),
             list_arg)
 
@@ -66,9 +68,10 @@ spec
      : Spec * List QualifiedId =
     %% Thm inverse iso = osi
     let inv_thm1 = mkEquality(mkArrow(trg_ty,src_ty),
-                              mkApply(mkInfixOp(Qualified("Functions","inverse"), Unspecified,
-                                                mkArrow(mkArrow(src_ty,trg_ty),
-                                                        mkArrow(trg_ty,src_ty))),
+                              mkApply(mkOpFromDef(Qualified("Functions","inverse"),
+                                                  mkArrow(mkArrow(src_ty,trg_ty),
+                                                          mkArrow(trg_ty,src_ty)),
+                                                  spc),
                                       iso_ref),
                               osi_ref)
     in
@@ -76,9 +79,10 @@ spec
     let spc = addTheorem((inverse_iso_is_osi_qid, tvs, inv_thm1, noPos), spc) in
 
     let inv_thm2 = mkEquality(mkArrow(src_ty,trg_ty),
-                              mkApply(mkInfixOp(Qualified("Functions","inverse"), Unspecified,
-                                                mkArrow(mkArrow(trg_ty,src_ty),
-                                                        mkArrow(src_ty,trg_ty))),
+                              mkApply(mkOpFromDef(Qualified("Functions","inverse"),
+                                                  mkArrow(mkArrow(trg_ty,src_ty),
+                                                          mkArrow(src_ty,trg_ty)),
+                                                  spc),
                                       osi_ref),
                               iso_ref)
     in
@@ -244,7 +248,7 @@ spec
                 | [p_ty] ->
                   let p_ty' = isoType (spc, iso_info, iso_fn_info) false p_ty in
                   let arg_iso_fn = isoTypeFn (spc, iso_info, iso_fn_info) p_ty in
-                  mkHOIsoFn(qid, qid', arg_iso_fn, p_ty, p_ty')
+                  mkHOIsoFn(qid, qid', arg_iso_fn, p_ty, p_ty', spc)
                 | _ -> fail("Multi-parameter types not yet handled: "^printQualifiedId qid))
            | None ->
              case lookupIsoInfo(qid, iso_info) of
@@ -473,7 +477,7 @@ spec
                  | Base(Qualified("List","List"),[el_ty],a1) | equalType?(el_ty, src_ty) ->
                    let v_pr = (vn^"'",Base(Qualified("List","List"),[trg_ty],a1)) in
                    (VarPat(v_pr,a),
-                    Cons((v, mkMapApply(osi_ref, Var(v_pr,a), trg_ty, src_ty)), sb))
+                    Cons((v, mkMapApply(osi_ref, Var(v_pr,a), trg_ty, src_ty, spc)), sb))
                  | _ -> (p, sb))
           | RecordPat(idprs,a) ->
             let (idprs_pr,sb) =
@@ -510,13 +514,15 @@ spec
                case result_ty of
                  | Base(Qualified("List","List"),[el_ty],a) | equivType? spc (el_ty, src_ty) ->
                    %% map iso_ref new_bod
-                   mkMapApply(iso_ref, new_bod, src_ty, trg_ty)
+                   mkMapApply(iso_ref, new_bod, src_ty, trg_ty, spc)
                  | Base(Qualified("Option","Option"),[el_ty],a) | equivType? spc (el_ty, src_ty) ->
-                   mkApply(mkApply(mkInfixOp(Qualified("Option","mapOption"),
-                                             Unspecified,
-                                             mkArrow(mkArrow(src_ty,trg_ty),
-                                                     mkArrow(mkBase(Qualified("Option","Option"), [src_ty]),
-                                                             mkBase(Qualified("Option","Option"), [trg_ty])))),
+                   mkApply(mkApply(mkInfixOp
+                                     (Qualified("Option","mapOption"),
+                                      Unspecified,
+                                      mkArrow(mkBase(Qualified("Functions","Bijection"), [src_ty,trg_ty]),
+                                              mkBase(Qualified("Functions","Bijection"),
+                                                     [mkBase(Qualified("Option","Option"), [src_ty]),
+                                                      mkBase(Qualified("Option","Option"), [trg_ty])]))),
                                    iso_ref),
                            new_bod)
                  | _ -> new_bod
@@ -544,7 +550,7 @@ spec
          \_or equivType? spc (op_ty_pr,op_ty)
          then result
         else
-          let qid_ref = mkInfixOp(qid,info.fixity,op_ty) in
+          let qid_ref = mkOpFromDef(qid,op_ty,spc) in
           let qid_pr = makePrimedOpQid(qid, spc) in
           let dfn_pr = isoTerm (spc, iso_info, iso_fn_info) op_ty dfn in
           let qid_pr_ref = mkInfixOp(qid_pr,info.fixity,op_ty_pr) in
