@@ -3,11 +3,11 @@ mathfacts = spec
   axiom timeszero is 
     fa(i) i * zero = zero
   axiom zerodivposnat is 
-    fa(i) zero div (succ i) = zero 
+    fa(i) zero div (Nat.succ i) = zero 
   axiom twodef is 
-    (one = succ zero) & (two = succ one)
+    (one = Nat.succ zero) & (two = Nat.succ one)
   axiom natcons is 
-    fa(i:Nat) i = zero or (ex(k:Nat) i = succ k)
+    fa(i:Nat) i = zero or (ex(k:Nat) i = Nat.succ k)
 endspec
 
 sum_spec = spec
