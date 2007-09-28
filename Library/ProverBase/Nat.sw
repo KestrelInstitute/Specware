@@ -5,18 +5,18 @@ PrNat qualifying spec
   % usual Peano axiomatization:
 
   axiom zero_not_succ1 is
-    ~(ex (n : Nat) Nat.zero = succ n)
+    ~(ex (n : Nat) zero = Nat.succ n)
 
   axiom zero_not_succ2 is
-    fa (n : Nat) ~(Nat.zero = succ n)
+    fa (n : Nat) ~(zero = Nat.succ n)
 
   axiom succ_injective is
-    fa (n1:Nat, n2:Nat) succ n1 = succ n2 => n1 = n2
+    fa (n1:Nat, n2:Nat) Nat.succ n1 = Nat.succ n2 => n1 = n2
 
   axiom induction is
     fa (p : Nat -> Boolean)
       p zero &&
-      (fa (n:Nat) p n => p (succ n)) =>
+      (fa (n:Nat) p n => p (Nat.succ n)) =>
       (fa (n:Nat) p n)
 
   axiom posNat?_def is
@@ -31,19 +31,19 @@ PrNat qualifying spec
   axiom plus_def1 is
     fa(n:Nat) plus(n,0) = n
   axiom plus_def2 is
-    fa(n:Nat, n0:Nat) plus(n,succ n0) = succ(plus(n,n0))
+    fa(n:Nat, n0:Nat) plus(n,Nat.succ n0) = Nat.succ(plus(n,n0))
 
   axiom lte_def1 is
     fa(n:Nat) lte(0,n)
   axiom lte_def2 is
-    fa(n:Nat) ~(lte(succ n, 0))
+    fa(n:Nat) ~(lte(Nat.succ n, 0))
   axiom lte_def3 is
-    fa(n1:Nat, n2:Nat) lte(succ n1,succ n2) <=> lte(n1,n2)
+    fa(n1:Nat, n2:Nat) lte(Nat.succ n1,Nat.succ n2) <=> lte(n1,n2)
 
   axiom minus_def1 is
     fa(n:Nat) minus(n,0) = n
   axiom minus_def2 is
-    fa(n1:Nat, n2:Nat) lte(n2,n1) => minus(succ n1,succ n2) = minus(n1,n2)
+    fa(n1:Nat, n2:Nat) lte(n2,n1) => minus(Nat.succ n1,Nat.succ n2) = minus(n1,n2)
 
 %  theorem minus_def is
 %    fa(n1: Nat, n2: Nat, n3: Nat) lte(n2, n1) && minus(n1, n2) = n3 => n1 = plus(n2, n3)
