@@ -463,7 +463,8 @@ spec
        (case find (fn (id2, _) -> id = id2) fields of
 	 | Some (_,sub_sort) -> 
 	   mkApply (mkProject (id, super_sort, sub_sort),term)
-	 | _ -> System.fail "Projection index not found in product")
+	 | _ -> System.fail ("Projection index "^id^" not found in product with fields "
+                             ^(foldl (fn ((id2, _),res) -> res^id2^" ") "" fields)))
      | _ -> System.fail "Product sort expected for mkProjectTerm"    
 
 
