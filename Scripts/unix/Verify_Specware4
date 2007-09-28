@@ -25,7 +25,7 @@ export APP_DIR="$SPECWARE4/Applications/Specware"
 export GEN_DIR="$APP_DIR/lisp"
 export BIN_DIR="$APP_DIR/bin/linux"
 # export SOURCES_DIR="$APP_DIR/Sources"
-export SWPATH="${SPECWARE4}:."
+export SWPATH="${SPECWARE4}:.:/"
 export MAIN_COMPILE_FILE="$APP_DIR/bin/linux/compile-and-load-specware4.lisp"
 export MAIN_BUILD_FILE="$APP_DIR/bin/linux//load-specware4.lisp"
 
