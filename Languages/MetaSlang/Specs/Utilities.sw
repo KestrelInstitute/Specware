@@ -1408,9 +1408,12 @@ Utilities qualifying spec
 	   | _ -> s)
       | _ -> s
 
-  op  typeMatch: Sort * Sort * Spec -> Option TyVarSubst
-  def typeMatch(s1,s2,spc) =
-   let def match(srt1: Sort,srt2: Sort,pairs: TyVarSubst): Option TyVarSubst =
+  op instantiateTyVarsInType(ty: Sort, subst: TyVarSubst): Sort =
+    mapSort (id, fn ty -> instantiateTyVars(ty,subst), id) ty
+
+  op  typeMatch: Sort * Sort * Spec * Boolean -> Option TyVarSubst
+  def typeMatch(s1,s2,spc,ign_subtypes?) =
+   let def match(srt1: Sort, srt2: Sort, pairs: TyVarSubst): Option TyVarSubst =
         case (srt1,srt2) of
 	  | (TyVar(id1,_), srt2) -> 
 	    (case (find (fn (id,_) -> id = id1) pairs) of
@@ -1435,11 +1438,12 @@ Utilities qualifying spec
               match(ty,ty2,pairs)
             else 
               None
-	  | (Subsort(ty,t1,_),Subsort(ty2,t2,_)) ->
-	    if equalTerm?(t1,t2) then % not equivTerm?
-              match(ty,ty2,pairs)
-            else 
-              None
+	  | (Subsort(ty,t1,_),Subsort(ty2,t2,_)) | equalTerm?(t1,t2) ->  % not equivTerm?
+            match(ty,ty2,pairs)
+          | (Subsort(ty,_,_), ty2) | ign_subtypes? ->
+            match(ty,ty2,pairs)
+          | (ty1, Subsort(ty,_,_)) | ign_subtypes? ->
+            match(ty1,ty,pairs)
 	  | (Base(id,ts,pos1),Base(id2,ts2,pos2)) ->
 	    if id = id2
 	      then typeMatchL(ts,ts2,pairs,match)
@@ -1451,8 +1455,13 @@ Utilities qualifying spec
 	  | (_,Base _) ->
 	    let s2x = unfoldBase(spc,srt2) in
 	    if equalType? (srt2,s2x)     %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
-	     then Some pairs
+	     then None
 	     else match(srt1,s2x,pairs)
+	  | (Base _,_) ->
+	    let s1x = unfoldBase(spc,srt1) in
+	    if equalType? (srt1,s1x)     %% equivType? spc (srt1,s1x)  would also be reasonable -- see NormalizeTypes.sw for usage
+	     then None
+	     else match(s1x,srt2,pairs)
 	  | _ -> None
   in match(s1,s2,[])
 
@@ -1465,6 +1474,17 @@ Utilities qualifying spec
 	   | Some pairs -> typeMatchL(l1,l2,pairs,matchElt)
 	   | None -> None)
       | _ -> Some pairs
+
+  op mkOpFromDef(qid: QualifiedId, ty: Sort, spc: Spec): MS.Term =
+    case findTheOp(spc, qid) of
+      | Some opinfo ->
+        (let (tvs,ty1,_) = unpackFirstOpDef opinfo in
+         case typeMatch(ty1,ty,spc,true) of
+           | Some subst ->
+             let inst_ty = instantiateTyVarsInType(ty1, subst) in
+             mkInfixOp(qid, opinfo.fixity, inst_ty)
+           | None ->  mkOp(qid, ty)) 
+      | _ -> mkOp(qid, ty)
 
   op termSize (t: MS.Term): Nat =
     foldSubTerms (fn (_,i) -> i + 1) 0 t
