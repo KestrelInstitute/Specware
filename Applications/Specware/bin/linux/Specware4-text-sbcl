@@ -58,9 +58,9 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
 
 # Try to find lisp executable:
 
-BIN_DIR=$SPECWARE_BIN
+export BIN_DIR=$SPECWARE_BIN
 . $SPECWARE4/Scripts/unix/Verify_SBCL
 
-LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4."$IMAGE_EXTENSION"
+LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4."$EXECUTABLE_EXTENSION"
 
-"$LISP_HEAP_IMAGE" --eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (SB-UNIX:UNIX-EXIT 0))"
+"$LISP_EXECUTABLE" --eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (SB-UNIX:UNIX-EXIT 0))"
