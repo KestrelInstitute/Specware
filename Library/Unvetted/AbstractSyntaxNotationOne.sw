@@ -5,6 +5,12 @@
 AC
 A spec for Abstract Syntax Notation One (ASN.1).
 
+2007:10:01
+AC
+Added some encodings for DER and defined some BER encodings to coincide with
+DER, with the precisation that they are only one of the possibilities allowed
+by BER.
+
 ISSUE:
 This spec is very preliminary, it only contains very few concepts of ASN.1.
 *)
@@ -70,6 +76,10 @@ ASN1 qualifying spec
     % byte that consists of the class bits, the form bit, and 11111:
       (classBits ++ formBit |> repeat 1 5) |> tagBytes
 
+  % encoding of tag according to Distinguished Encoding Rules (DER):
+
+  op tagDER : TagClass * TagForm * Nat -> FSeq Byte = tagBER
+
   % encoding of a short definite length in BER (length must not exceed 127):
 
   op shortDefiniteLengthBER (l:Nat | l <= 127) : FSeq Byte =
@@ -97,9 +107,16 @@ ASN1 qualifying spec
     let firstByte:Byte = 1 |> fromNat (length lenBytes, 7) in
     firstByte |> lenBytes
 
-  % encoding of an integer in BER:
+  % DER always encodes definite length (never indefinite length) in the minimum
+  % number of bytes (so the length cannot exceed 256^126-1, see above):
 
-  op integerBER (i:Integer |
+  op lengthDER (l:Nat | l <= 256**126 - 1) : FSeq Byte =
+    if l <= 127 then shortDefiniteLengthBER l
+                else  longDefiniteLengthBER l
+
+  % encoding of an integer in DER:
+
+  op integerDER (i:Integer |
                  (* The integer is encoded in TLV (tag-length-value) format,
                  where V encodes the integer itself, T tags it, and L encodes
                  the length of V. As defined below, V is simply the two's
@@ -116,37 +133,64 @@ ASN1 qualifying spec
     % since we want to use a whole number of bytes, we need to align the two's
     % complement number, by sign-extending it to make its length a multiple of
     % 8 (if it is already a multiple of 8, no sign extension takes place):
-    let alignedLengthOfTC = ((length tc - 1) div 8) + 1 in
+    let alignedLengthOfTC = (((length tc - 1) div 8) + 1) * 8 in
     let alignedTC = signExtend (tc, alignedLengthOfTC) in
     % group bits of (byte-aligned) two's complement number into bytes:
     let valueBytes: FSeq Byte = the(valueBytes)
         flatten valueBytes = alignedTC in
     % (T) tag for integers:
-    tagBER (universal, primitive, 2) ++
-    % (L) we use a short definite length if possible, otherwise a long one:
-    (if length valueBytes <= 127 then
-       shortDefiniteLengthBER (length valueBytes)
-     else
-       longDefiniteLengthBER  (length valueBytes)) ++
+    tagDER (universal, primitive, 2) ++
+    % (L) length:
+    lengthDER (length valueBytes) ++
     % (V) actual integer:
     valueBytes
 
-  % encoding of a sequence in BER (we assume that each element of the argument
-  % sequence if the BER encoding of some value of the sequence):
+  % encoding of an octet string in DER:
 
-  op sequenceBER (elements: FSeq (FSeq Byte) |
+  op octetStringDER (octs: FSeq Byte | length octs <= 256**126 - 1)
+                    : FSeq Byte =
+    % (T) tag for octet strings:
+    tagDER (universal, primitive, 4) ++
+    % (L) length:
+    lengthDER (length octs) ++
+    % (V) the octects themselves
+    octs
+
+  % encoding of a sequence in DER (we assume that each element of the argument
+  % sequence is the DER encoding of some value of the sequence):
+
+  op sequenceDER (elements: FSeq (FSeq Byte) |
                   % we can only encode short and long definite lengths:
                   length (flatten elements) <= 256**126-1) : FSeq Byte =
     % reduce all elements into one byte sequence:
     let flatElements = flatten elements in
     % (T) tag for sequences:
     tagBER (universal, constructed, 16) ++
-    % (L) we use a short definite length if possible, otherwise a long one:
-    (if length flatElements <= 127 then
-       shortDefiniteLengthBER (length flatElements)
-     else
-       longDefiniteLengthBER  (length flatElements)) ++
+    % (L) length:
+    lengthDER (length flatElements) ++
     % (V) elements:
     flatElements
+
+  (* BER encoding includes DER encoding, plus others. For now, we define the
+  following BER encodings to coincide with the DER encodings. Eventually we will
+  generalize this spec to cover all the other possibilities. *)
+
+  % encoding of an integer in BER:
+
+  op integerBER : {i:Integer | let maxLength = 8 * (256**126-1) in
+                               -2**(maxLength-1) <= i && i < 2**(maxLength-1)}
+                  -> FSeq Byte = integerDER
+
+  % encoding of an octet string in BER:
+
+  op octetStringBER : {octs: FSeq Byte | length octs <= 256**126 - 1}
+                      -> FSeq Byte = octetStringDER
+
+  % encoding of a sequence in BER (we assume that each element of the argument
+  % sequence is the BER encoding of some value of the sequence):
+
+  op sequenceBER : {elements: FSeq (FSeq Byte) |
+                    length (flatten elements) <= 256**126 - 1} -> FSeq Byte =
+    sequenceDER
 
 endspec
