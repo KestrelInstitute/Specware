@@ -231,7 +231,7 @@ List qualifying spec
 
   % concatenate all the lists in the list, in order:
 
-  op [a] flatten (l: List(List a)) : List a =
+  op [a] flatten (l: List (List a)) : List a =
     case l of
        | []     -> []
        | hd::tl -> concat(hd,flatten tl)
