@@ -50,7 +50,7 @@ Char qualifying spec
     if isUpperCase c then chr(ord c - ord #A + ord #a) else c
   proof Isa [simp] end-proof
 
-  % comparison:
+  % characters can be linearly ordered according to positions in table:
 
   op compare (c1:Char, c2:Char) : Comparison = compare (ord c1, ord c2)
 
