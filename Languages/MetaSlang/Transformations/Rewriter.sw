@@ -135,11 +135,6 @@ MetaSlangRewriter qualifying spec
        (case patternMatchRules(rules,N)
           of None -> Nil
            | Some (sub,M) -> unit (substitute(M,sub), (subst,ssRule "reduceCase",boundVars,demod)))
-     %% {id1 = v1, ..., idn = vn}.idi = vi
-     | Apply(Fun(Project i,_,_),Record(m,_),_) ->
-       (case getField(m,i) of
-          | Some fld -> unit (fld, (subst,ssRule "RecordProject",boundVars,demod))
-          | None -> Nil)
      %% {id1 = x.id1, ..., idn = x.idn} --> x
      | Record((id1,Apply(Fun(Project id2,_,_), tm, _)) :: r_flds, _)
          | id1 = id2
@@ -617,6 +612,8 @@ MetaSlangRewriter qualifying spec
      in
      loop term
 
+ op backwardChainMaxDepth: Nat = 10
+
  type History = List (RewriteRule * MS.Term * SubstC)
 
  op historyRepetition: History -> Boolean
@@ -644,10 +641,10 @@ MetaSlangRewriter qualifying spec
 
  def rewriteRecursivePre(context,boundVars,rules0,term,maxDepth) = 
    let	
-      def rewritesToTrue(rules,term,boundVars,subst,history): Option SubstC =
+      def rewritesToTrue(rules,term,boundVars,subst,history,backChain): Option SubstC =
           if trueTerm? term then Some subst
           else
-	  let results = rewriteRec(rules,subst,term,boundVars,history,false) in
+	  let results = rewriteRec(rules,subst,term,boundVars,history,backChain+1) in
           case LazyList.find (fn (rl,t,c_subst)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
                                | [] -> false)
                  results
@@ -656,7 +653,7 @@ MetaSlangRewriter qualifying spec
                %% Substitutions, history and conditional rewrites need work
 	       if trueTerm? t then Some c_subst else None
 
-      def solveCondition(rules,rule,(sortSubst,termSubst,typeConds),boundVars,history,solveCond)
+      def solveCondition(rules,rule,(sortSubst,termSubst,typeConds),boundVars,history,backChain)
           : Option SubstC = 
         let subst = (sortSubst,termSubst,[])
         in
@@ -669,7 +666,7 @@ MetaSlangRewriter qualifying spec
 	     (traceRule(context,rule);
 	      Some subst)
         else
-	if solveCond && completeMatch(rule.lhs,subst) then 
+	if backChain < backwardChainMaxDepth && completeMatch(rule.lhs,subst) then 
             let cond = foldl Utilities.mkAnd trueTerm conds in
             let cond = dereferenceAll subst cond in
 	    let traceIndent = ! context.traceIndent in
@@ -679,9 +676,9 @@ MetaSlangRewriter qualifying spec
                          writeLine (toString(! context.traceDepth)^" : "^rule.name);
                          %%              printSubst subst;
                          context.traceDepth := 0;
-                         rewritesToTrue(rules,cond,boundVars,emptySubstitution,history))
+                         rewritesToTrue(rules,cond,boundVars,emptySubstitution,history,backChain))
                       else 
-                        rewritesToTrue(rules,cond,boundVars,emptySubstitution,history)
+                        rewritesToTrue(rules,cond,boundVars,emptySubstitution,history,backChain)
             in
 	    if traceRewriting > 0 then
 	      (context.traceIndent := traceIndent;
@@ -691,7 +688,7 @@ MetaSlangRewriter qualifying spec
 	       res
 	else None
 
-      def rewriteRec(rules0,subst,term,boundVars,history,solveCond) =
+      def rewriteRec(rules0,subst,term,boundVars,history,backChain) =
 	let _ = traceTerm(context,term,subst)     in
 	let traceDepth = ! context.traceDepth + 1 in
         if traceDepth > maxDepth then unit history
@@ -727,7 +724,7 @@ MetaSlangRewriter qualifying spec
 	rews >>=
 	(fn (term,(subst,rule,boundVars,rules1)) -> 
 	    (context.traceDepth := traceDepth;
-	     case solveCondition(rules1,rule,subst,boundVars,history,solveCond)
+	     case solveCondition(rules1,rule,subst,boundVars,history,backChain+1)
 	       of Some subst -> 
 		 (context.traceDepth := traceDepth;
 		  let term = dereferenceAll subst term in
@@ -735,7 +732,7 @@ MetaSlangRewriter qualifying spec
 		  let rec_results
                      = rewriteRec(rules0,emptySubstitution,term,boundVars,
                                   Cons((rule,term,subst),history),
-                                  solveCond)
+                                  backChain)
                    in
                    if rec_results = Nil
                      then if history = [] then Nil
@@ -745,7 +742,7 @@ MetaSlangRewriter qualifying spec
                      ))
    in
       let term = dereferenceAll emptySubstitution term in
-      rewriteRec(rules0,emptySubstitution,term,boundVars,[],true)
+      rewriteRec(rules0,emptySubstitution,term,boundVars,[],0)
 
  op rewriteOnce : 
     Context * List Var * RewriteRules * MS.Term -> List MS.Term

@@ -1288,6 +1288,12 @@ Utilities qualifying spec
           else if trueTerm? q && falseTerm? r then Some p
           else if falseTerm? q && trueTerm? r then Some (negateTerm p)
           else None
+        %% {id1 = v1, ..., idn = vn}.idi = vi
+      | Apply(Fun(Project i,_,_),Record(m,_),_) ->
+        (case getField(m,i) of
+           | Some fld -> Some fld
+           | None -> None)
+      | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, natSort))
       | _ -> None
 
  op  disjointMatches: Match -> Boolean
