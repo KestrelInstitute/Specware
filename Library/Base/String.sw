@@ -2,238 +2,207 @@ String qualifying spec
 
   import Char, List
 
-  (* A string is a finite sequence of characters (of type Char). Thus, we
-  define type String by isomorphism with lists of characters. *)
+  (* A string is a finite sequence of characters (of type Char). Thus, we define
+  type String by isomorphism with lists of characters. *)
 
   type String.String  % qualifier required for internal parsing reasons
 
-  % maps string to list of component characters:
-  op explode : String -> List Char
+  % string that consists of argument list of characters:
+  op implode : Bijection (List Char, String)
 
-  axiom explode_is_isomorphism is
-    bijective? explode
+  (* Metaslang's string literals are simply syntactic shortcuts for expressions
+  implode l, where l is a list of characters. For example, "Spec" stands for
+  implode [#S,#p,#e,#c]. *)
 
-  % other ops on strings:
+  % list of constituent characters of strings:
+  op explode : String -> List Char = inverse implode
 
-  op implode       : List Char -> String
-  op length        : String -> Nat
-  op concat        : String * String -> String
-  op ++ infixl 25  : String * String -> String
-  op ^  infixl 25  : String * String -> String
-  op map           : (Char -> Char) -> String -> String
-  op exists        : (Char -> Boolean) -> String -> Boolean
-  op all           : (Char -> Boolean) -> String -> Boolean
-  op sub           : {(s,n) : String * Nat | n < length s} -> Char
-  op substring     : {(s,i,j) : String * Nat * Nat | i <= j && j <= length s} ->
-                     String
-  op concatList    : List String -> String
-  op translate     : (Char -> String) -> String -> String
-  op compare       : String * String -> Comparison
-  op lt  infixl 20 : String * String -> Boolean	    % deprecated
-  op leq infixl 20 : String * String -> Boolean     % deprecated
-  op <=  infixl 20 : String * String -> Boolean
-  op <   infixl 20 : String * String -> Boolean
-  op >=  infixl 20 : String * String -> Boolean
-  op >   infixl 20 : String * String -> Boolean
-  op newline       : String
-  op toScreen      : String -> ()  % deprecated
-  op writeLine     : String -> ()  % deprecated
+  % number of constituent characters:
 
-  axiom implode_def is
-    implode = inverse explode
+  op length (s:String) : Nat = List.length (explode s)
 
-  axiom length_def is
-    fa (s : String) length s = List.length(explode s)
+  % concatenation:
 
-  axiom concat_def is
-    fa (s1 : String, s2 : String)
-       concat(s1,s2) = implode(List.concat(explode s1,explode s2))
+  op concat (s1:String, s2:String) : String =
+    implode (List.concat (explode s1, explode s2))
 
-  axiom concat2_def is
-    fa (s1 : String, s2 : String) (s1 ++ s2) = concat(s1,s2)
+  op ++ infixl 25 : String * String -> String = concat
 
-  axiom concat3_def is
-    fa (s1 : String, s2 : String) (s1 ^ s2) = concat(s1,s2)
+  op ^  infixl 25 : String * String -> String = concat
 
-  axiom map_def is
-    fa (f : Char -> Char, s : String)
-       map f s = implode(List.map f (explode s))
+  % apply function to characters element-wise:
 
-  axiom exists_def is
-    fa (p : Char -> Boolean, s : String)
-       exists p s = List.exists p (explode s)
+  op map (f: Char -> Char) (s: String) : String =
+    implode (List.map f (explode s))
 
-  axiom all_def is
-    fa (p : Char -> Boolean, s : String)
-       all p s = List.all p (explode s)
+  % true iff some/each character satisfies p:
 
-  axiom sub_def is
-    fa (s : String, n : Nat) n < length s =>
-       sub(s,n) = nth(explode s,n)
+  op exists (p: Char -> Boolean) (s: String) : Boolean =
+    List.exists p (explode s)
 
-  axiom substring_def is
-    fa (s : String, i : Nat, j : Nat)
-      i <= j && j <= length s 
-      =>
-      substring(s,i,j) = implode(sublist(explode s,i,j))
+  op all    (p: Char -> Boolean) (s: String) : Boolean =
+    List.all    p (explode s)
 
-  axiom concatList_def is
-    fa (ss : List String)
-       concatList ss = (case ss of
-                           | []     -> ""
-                           | s::ss1 -> s ^ (concatList ss1))
+  % n-th character of string (counting from 0, left-to-right):
 
-  axiom translate_def is
-    fa (subst : Char -> String, s : String)
-       translate subst s = concatList(map subst (explode s))
+  op sub (s:String, n:Nat | n < length s) : Char = nth (explode s, n)
 
-  def compare(s1,s2) = List.compare Char.compare (explode s1, explode s2)
+  % substring from the i-th character (inclusive) to the j-th character
+  % (exclusive):
 
-  axiom lt_def is
-    fa (s1 : String, s2 : String) s1 < s2 <=> compare(s1,s2) = Less
+  op substring (s:String, i:Nat, j:Nat | i <= j && j <= length s) : String =
+    implode (sublist (explode s, i, j))
 
-  axiom leq_def is
-    fa (s1 : String, s2 : String)  s1 <= s2  <=>  s1 < s2  || s1 = s2
+  % concatenate all the strings in the list, in order:
 
-  def >= (x,y) = y <= x
+  op concatList (ss: List String) : String =
+    case ss of
+      | []     -> ""
+      | s::ss1 -> s ^ (concatList ss1)
 
-  def > (x,y) = y <  x
+  % replace each character with a string and concatenate:
 
-  axiom newline_def is
-    newline = "\n"
+  op translate (subst: Char -> String) (s: String) : String =
+    concatList (map subst (explode s))
 
-  theorem toScreen_def is
-    fa (s : String) toScreen s = ()
+  % strings can be linearly ordered and compared element-wise and regarding
+  % the empty string smaller than any non-empty string:
 
-  theorem writeLine_def is
-    fa (s : String) writeLine s = ()
+  op compare (s1:String, s2:String) : Comparison =
+    List.compare Char.compare (explode s1, explode s2)
 
-  % ops with different qualifiers:
+  % linear ordering relations:
 
-  op Boolean.toString : Boolean -> String  % deprecated
-  op Integer.toString : Integer -> String  % deprecated
-  op Nat.toString     : Nat -> String      % deprecated
-  op Char.toString    : Char -> String     % deprecated
+  op <  (s1:String, s2:String) infixl 20 : Boolean = (compare(s1,s2) = Less)
 
-  op Integer.intToString : Integer -> String
-  op Integer.stringToInt : (String | Integer.intConvertible) -> Integer
+  op <= (s1:String, s2:String) infixl 20 : Boolean = (s1 < s2 || s1 = s2)
 
-  op Nat.natToString  : Nat -> String
-  op Nat.stringToNat  : (String | Nat.natConvertible) -> Nat
+  op >  (s1:String, s2:String) infixl 20 : Boolean = (s2 <  s1)
 
-  op Boolean.show           : Boolean -> String
-  op Compare.show           : Comparison -> String
-  op Option.show            : [a] (a -> String) -> Option a -> String
-  op Integer.intConvertible : String -> Boolean
-  op Integer.show           : Integer -> String
-  op Nat.natConvertible     : String -> Boolean
-  op Nat.show               : Nat -> String
-  op List.show              : String -> List String -> String
-  op Char.show              : Char -> String
+  op >= (s1:String, s2:String) infixl 20 : Boolean = (s2 <= s1)
 
-  axiom boolean_toString_def is
-    fa (x : Boolean) Boolean.toString x = (if x then "true" else "false")
+  op lt  infixl 20 : String * String -> Boolean = (<)   % deprecated
 
-  axiom int_toString_def is
-    fa (x : Integer) Integer.toString x =
-                     (if x >= 0 then Nat.toString x
-                                else "-" ^ Nat.toString(- x))
+  op leq infixl 20 : String * String -> Boolean = (<=)  % deprecated
 
-  axiom nat_toString_def is
-    fa (x : Nat) Nat.toString x =
-                 (let def digitToString (d : {d : Nat | d < 10}) : String =
-                          case d of
-                             | 0 -> "0"
-                             | 1 -> "1"
-                             | 2 -> "2"
-                             | 3 -> "3"
-                             | 4 -> "4"
-                             | 5 -> "5"
-                             | 6 -> "6"
-                             | 7 -> "7"
-                             | 8 -> "8"
-                             | 9 -> "9" in
-                  let def toStringAux (x : Nat, res : String) : String =
-                          if x < 10 then (digitToString x) ^ res
-                                    else toStringAux
-                                          (x div 10,
-                                           digitToString(x rem 10) ^ res) in
-                  toStringAux(x,""))
-  proof Isa nat_toString_def__toStringAux "measure (\_lambda (x,res). x)" end-proof
+  % string consisting of just newline character:
 
-  axiom char_toString_def is
-    fa (c : Char) Char.toString c = implode [c]
+  op newline : String = "\n"
 
-  axiom intToString_def is
-    intToString = Integer.toString
+  % deprecated:
 
-  axiom stringToInt_def is
-    fa (s : String) intConvertible s =>
-       stringToInt s = (let firstchar::_ = explode s in
-                        if firstchar = #-
-                        then -(stringToNat(substring(s,1,length s)))
-                        else stringToNat s)
+  op toScreen  (s:String) : () = ()
+  op writeLine (s:String) : () = ()
 
-  axiom natToString_def is
-    natToString = Nat.toString
+  % convert booleans to strings:
 
-  axiom stringToNat_def is
-    fa (s : String) natConvertible s =>
-       stringToNat s =
-       (let def charToDigit (c : (Char | isNum)) : Nat =
-                case c of
-                   | #0 -> 0
-                   | #1 -> 1
-                   | #2 -> 2
-                   | #3 -> 3
-                   | #4 -> 4
-                   | #5 -> 5
-                   | #6 -> 6
-                   | #7 -> 7
-                   | #8 -> 8
-                   | #9 -> 9 in
-        let def stringToNatAux (chars : {chars : List Char | all isNum chars},
-                                res : Nat) : Nat =
-                case chars of
-                   | []     -> res
-                   | hd::tl -> stringToNatAux
-                                (tl, res * 10 + charToDigit hd) in
-        stringToNatAux(explode s, 0))
-  proof Isa stringToNat_def__stringToNatAux "measure (\_lambda(chars,res). length chars)" end-proof
+  op Boolean.show (x:Boolean) : String = if x then "true" else "false"
 
-  def Boolean.show b = Boolean.toString b
+  op Boolean.toString : Boolean -> String = Boolean.show  % deprecated
 
-  def Compare.show cmp =
-    case cmp of
-       | Greater -> "Greater"
-       | Equal   -> "Equal"
-       | Less    -> "Less"
+  % convert naturals to strings:
 
-  def Option.show shw opt =
-    case opt of
-       | None   -> "None"
-       | Some x -> "(Some " ^ (shw x) ^ ")"
+  op Nat.natToString (x:Nat) : String =
+    let def digitToString (d:Nat | d < 10) : String =
+        case d of
+        | 0 -> "0"
+        | 1 -> "1"
+        | 2 -> "2"
+        | 3 -> "3"
+        | 4 -> "4"
+        | 5 -> "5"
+        | 6 -> "6"
+        | 7 -> "7"
+        | 8 -> "8"
+        | 9 -> "9" in
+    let def natToStringAux (x:Nat, res:String) : String =
+        if x < 10 then (digitToString x) ^ res
+        else natToStringAux (x div 10, digitToString (x rem 10) ^ res) in
+    natToStringAux (x, "")
+  proof Isa
+    nat_natToString_def__natToStringAux "measure (\_lambda (x,res). x)"
+  end-proof
 
-  def Integer.intConvertible s =
+  op Nat.show     : Nat -> String = Nat.natToString
+  op Nat.toString : Nat -> String = Nat.natToString  % deprecated
+
+  % convert naturals to strings (if convertible):
+
+  op Nat.natConvertible (s:String) : Boolean =
     let cs = explode s in
-      (exists isNum cs) &&
-      ((all isNum cs) || (hd cs = #- && all isNum (tl cs)))
+    (exists isNum cs) && (all isNum cs)
 
-  def Integer.show i = Integer.toString i
+  op Nat.stringToNat (s:String | Nat.natConvertible s) : Nat =
+    let def charToDigit (c:Char | isNum c) : Nat =
+        case c of
+        | #0 -> 0
+        | #1 -> 1
+        | #2 -> 2
+        | #3 -> 3
+        | #4 -> 4
+        | #5 -> 5
+        | #6 -> 6
+        | #7 -> 7
+        | #8 -> 8
+        | #9 -> 9 in
+    let def stringToNatAux (chars: List Char, res:Nat | all isNum chars) : Nat =
+        case chars of
+           | []     -> res
+           | hd::tl -> stringToNatAux (tl, res * 10 + charToDigit hd) in
+    stringToNatAux (explode s, 0)
+  proof Isa stringToNat_def__stringToNatAux
+    "measure (\_lambda(chars,res). length chars)"
+  end-proof
 
-  def Nat.natConvertible s =
+  % convert integers to strings:
+
+  op Integer.intToString (x:Integer) : String =
+    if x >= 0 then       Nat.natToString   x
+              else "-" ^ Nat.natToString (-x)
+
+  op Integer.show     : Integer -> String = Integer.intToString
+  op Integer.toString : Integer -> String = Integer.intToString  % deprecated
+
+  % convert strings to integers (if convertible):
+
+  op Integer.intConvertible (s:String) : Boolean =
     let cs = explode s in
-      (exists isNum cs) && (all isNum cs)
+    (exists isNum cs) &&
+    ((all isNum cs) || (hd cs = #- && all isNum (tl cs)))
 
-  def Nat.show n = Nat.toString n
+  op Integer.stringToInt (s:String | Integer.intConvertible s) : Integer =
+    let firstchar::_ = explode s in
+    if firstchar = #- then - (stringToNat (substring (s,1,length s)))
+                      else    stringToNat s
 
-  def List.show sep l =
+  % convert characters to strings:
+
+  op Char.show (c:Char) : String = implode [c]
+
+  op Char.toString : Char -> String = Char.show  % deprecated
+
+  % convert comparisons to strings:
+
+  op Compare.show : Comparison -> String = fn
+    | Greater -> "Greater"
+    | Equal   -> "Equal"
+    | Less    -> "Less"
+
+  % given conversion from type a to String, convert Option a to String:
+
+  op [a] Option.show (shw: a -> String) : Option a -> String = fn
+    | None   -> "None"
+    | Some x -> "(Some " ^ (shw x) ^ ")"
+
+  % convert list of strings to string, using given separator:
+
+  op List.show (sep:String) (l: List String) : String =
     case l of
        | []     -> ""
        | hd::[] -> hd
        | hd::tl -> hd ^ sep ^ (List.show sep tl)
 
-  def Char.show c = Char.toString c
+  % mapping to Isabelle:
 
   proof Isa ThyMorphism
     type String.String \_rightarrow string
@@ -248,7 +217,6 @@ String qualifying spec
     String.all \_rightarrow list_all
     String.sub \_rightarrow ! Left 40
     String.concatList \_rightarrow concat
-    
   end-proof
 
 endspec

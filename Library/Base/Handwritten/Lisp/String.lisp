@@ -1,6 +1,42 @@
+(DEFPACKAGE "SPECTOLISP")
 (defpackage "SYSTEM-SPEC")
 (defpackage "STRING-SPEC")
 (IN-PACKAGE "STRING-SPEC")
+
+(defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
+
+(setq SpecToLisp::SuppressGeneratedDefuns
+      (append '("STRING-SPEC::implode"
+		"STRING-SPEC::explode"
+		"STRING-SPEC::|!length|"
+		"STRING-SPEC::concat"
+		"STRING-SPEC::++"
+		"STRING-SPEC::^"
+		"STRING-SPEC::|!map|"
+		"STRING-SPEC::|!exists|"
+		"STRING-SPEC::all"
+		"STRING-SPEC::sub"
+		"STRING-SPEC::substring"
+		"STRING-SPEC::concatList"
+		"STRING-SPEC::translate"
+		"STRING-SPEC::compare"
+		"STRING-SPEC::|!<|"
+		"STRING-SPEC::|!<=|"
+		"STRING-SPEC::lt"
+		"STRING-SPEC::lteq"
+		"STRING-SPEC::neqline"
+		"STRING-SPEC::toScreen"
+		"STRING-SPEC::writeLine"
+		"BOOLEAN-SPEC::show"
+		"INTEGER-SPEC::toString"
+		"INTEGER-SPEC::intToString"
+		"INTEGER-SPEC::stringToInt"
+		"NAT-SPEC::toString"
+		"NAT-SPEC::natToString"
+		"NAT-SPEC::stringToNat"
+		"CHAR-SPEC::show"
+		"CHAR-SPEC::toString")
+	      SpecToLisp::SuppressGeneratedDefuns))
 
 
 ;;; For each curried binary op, there are two Lisp functions. One takes the
@@ -17,15 +53,11 @@
 ;;; comments in Integer.lisp for an explanation.
 
 
-(defun explode (s) 
-  ;; (reduce #'cons s :from-end t :initial-value nil)) ; ugh... uses generic sequence functions to treat string as list, then rebuilds list
-  (coerce s 'list) ; let lisp do something smart
-  )
-
 (defun implode (s) 
-  ;; (apply #'concatenate (cons 'string (mapcar #'string s))) ; brain damage -- hugely inefficient
-  (coerce s 'string) ; let lisp do something smart
-  )
+  (coerce s 'string))
+
+(defun explode (s) 
+  (coerce s 'list))
 
 (defun |!length| (x)
   (declare (type cl:simple-string x))
@@ -224,7 +256,7 @@
 (IN-PACKAGE :BOOLEAN-SPEC)
 
 
-(defun toString (x)
+(defun show (x)
   (if x "true" "false"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -303,4 +335,7 @@
 
 
 (defun toString (x)
+  (string x))
+
+(defun show (x)
   (string x))

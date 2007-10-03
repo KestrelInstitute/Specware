@@ -1,6 +1,12 @@
 %%% This adds definitions to some ops in the Base that have handwritten lisp definitions
 spec
   import Base
+
+  (* The following def's have been commented out because they are now present in
+  the base library spec String. Once we make sure that everything works fine,
+  the following commented-out def's should be removed altogether. *)
+
+(*
   def String.all p s = List.all p (explode s)
   def String.map f s = implode(List.map f (explode s))
   def String.exists p s = List.exists p (explode s)
@@ -35,4 +41,6 @@ spec
 		  | hd::tl -> stringToNatAux (tl, res * 10 + charToDigit hd)
 	  in
 	    stringToNatAux(explode s, 0))
+*)
+
 endspec
