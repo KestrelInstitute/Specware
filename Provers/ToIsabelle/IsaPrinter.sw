@@ -808,8 +808,33 @@ IsaTermPrinter qualifying spec
              of None -> patToTerm(p1, ext)
 	      | Some(trm) -> Some trm)
 
+  op sameHead?(tm1: MS.Term, tm2: MS.Term): Boolean =
+    equalTerm?(tm1, tm2)
+      || (case (tm1, tm2) of
+            | (Apply(x1,_,_), Apply(x2,_,_)) -> sameHead?(x1,x2)
+            | _ -> false)
+
+  op nonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
+    case tm1 of
+      | Apply(Fun(Embed _, _, _), arg, _) ->
+        ~(termIn?(tm2, MS.termToList arg))
+      | _ -> false
+
+  op hasNonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
+    case (tm1, tm2) of
+      | (Apply(x1,y1,_), Apply(x2,y2,_)) ->
+        nonPrimitiveArg?(y1,y2) || hasNonPrimitiveArg?(x1,x2)
+      | _ -> false
+  
+  op nonPrimitiveCall? (hd: MS.Term) (tm: MS.Term): Boolean =
+    sameHead?(hd,tm) && hasNonPrimitiveArg?(hd,tm)
+
+  %% Only concerned with curried calls
+  op recursiveCallsNotPrimitive?(hd: MS.Term, bod: MS.Term): Boolean =
+    existsSubTerm (nonPrimitiveCall? hd) bod
+
   op  defToCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow Boolean \_rightarrow List(MS.Term \_times MS.Term) \_times Boolean
-  def defToCases c hd bod infix? =
+  def defToCases c op_tm bod infix? =
     let
       def aux(hd, bod, tuple?) =
 	case bod of
@@ -821,36 +846,42 @@ IsaTermPrinter qualifying spec
     %	   | _ \_rightarrow [(hd,bod)])
 	  | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
 	    if exists (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
-	     then foldl (\_lambda ((pati,_,bodi),result) \_rightarrow
+	     then foldl (\_lambda ((pati,_,bodi), (cases,not_prim)) \_rightarrow
 			 case patToTerm(pati,"") of
 			   | Some pati_tm \_rightarrow
-			     result ++ (aux_case(substitute(hd,[(v,pati_tm)]), bodi, tuple?))
-			   | _ \_rightarrow result ++ (aux_case(hd,bodi,tuple?)))
-		    [] pats
-	     else [(hd,bod)]
+                             let (new_cases,n_p) = aux_case(substitute(hd,[(v,pati_tm)]), bodi, tuple?) in
+			     (cases ++ new_cases, not_prim || n_p)
+			   | _ \_rightarrow
+                             let (new_cases,n_p) = aux_case(hd,bodi,tuple?) in
+                             (cases ++ new_cases, not_prim || n_p))
+		    ([],tuple?) pats
+	     else ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod))
           | Let([(pat,Var(v,_))],bod,a) | tuple? \_and member(v, freeVars hd) \_rightarrow
-            (case  patToTerm(pat,"") of
+            (case patToTerm(pat,"") of
                | Some pat_tm \_rightarrow aux(substitute(hd, [(v,pat_tm)]),
                                     substitute(bod,[(v,pat_tm)]), tuple?)
-               | None \_rightarrow [(hd,bod)])
+               | None \_rightarrow ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod)))
           | IfThenElse(Apply(Fun(Equals, _,_),
                              Record([("1", vr as Var(v as (vn,s),_)),
                                      ("2",zro as Fun(Nat 0,_,_))],_),
                              _),
                        then_cl, else_cl, _)
               | natSort? s \_and inVars?(v, freeVars hd) \_rightarrow
-            aux(substitute(hd, [(v,zro)]), substitute(then_cl, [(v,zro)]), tuple?)
-             ++ aux(substitute(hd, [(v,mkApply(mkOp(Qualified("Nat","succ"),
-                                                    mkArrow(natSort, natSort)),
-                                               vr))]),
-                    simpSubstitute(getSpec c, else_cl,
-                                   [(v,mkApply(mkOp(Qualified("Integer","+"),
-                                                    mkArrow(mkProduct [natSort, natSort], natSort)),
-                                               mkTuple[vr,mkNat 1]))]),
-                    tuple?)
-	  | _ \_rightarrow [(hd,bod)]
+            let (cases1,n_p1) = aux(substitute(hd, [(v,zro)]), substitute(then_cl, [(v,zro)]), tuple?) in
+            let (cases2,n_p2) = aux(substitute(hd, [(v,mkApply(mkOp(Qualified("Nat","succ"),
+                                                                    mkArrow(natSort, natSort)),
+                                                               vr))]),
+                                    simpSubstitute(getSpec c, else_cl,
+                                                   [(v,mkApply(mkOp(Qualified("Integer","+"),
+                                                                    mkArrow(mkProduct [natSort, natSort],
+                                                                            natSort)),
+                                                               mkTuple[vr,mkNat 1]))]),
+                                    tuple?)
+            in
+            (cases1 ++ cases2, n_p1 || n_p2)
+	  | _ \_rightarrow ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod))
       def aux_case(hd,bod: MS.Term,tuple?) =
-        if tuple? then aux(hd,bod,tuple?) else [(hd,bod)]
+        if tuple? then aux(hd,bod,tuple?) else ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod))
       def fix_vars(hd,bod) =
 	let fvs = freeVars hd ++ freeVars bod in
 	let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
@@ -860,15 +891,16 @@ IsaTermPrinter qualifying spec
     in
     case bod of
       | Lambda ([(RestrictedPat(rpat,_,_),condn,tm)], a) \_rightarrow
-        defToCases c hd (Lambda ([(rpat, condn, tm)], a)) infix?
+        defToCases c op_tm (Lambda ([(rpat, condn, tm)], a)) infix?
       | _ \_rightarrow
     let (cases, tuple?) =
           case bod of
             | Lambda ([(recd as (RecordPat (prs as (("1",_)::_),_)), _, tm)],a)
                 | varOrTuplePattern? recd \_rightarrow
               let Some arg = patToTerm(recd,"") in
-              (aux(Apply(hd, arg, a), tm, true), \_not infix?)
-	    | _ -> (aux(hd, bod, false), false) in
+              let (cases,n_p) = aux(Apply(op_tm, arg, a), tm, true) in
+              (cases, n_p || \_not infix?)
+	    | _ -> aux(op_tm, bod, false) in
     (map fix_vars cases, tuple?)
 
   op addExplicitTyping?: Boolean = true
@@ -1256,8 +1288,9 @@ IsaTermPrinter qualifying spec
 	in
 	enclose?(infix? parentTerm,
 		 prLinearCat 0 [[prString "let ",
-				 prLinear 0 (map ppDecl decls)],
-				[prString "in"],
+				 prLinear 0 (map ppDecl decls),
+                                 prSpace],
+				[prString "in "],
 				[ppTerm c parentTerm term]])
       | LetRec (decls,term,_) \_rightarrow
 	let def ppDecl (v,term) =
@@ -1268,8 +1301,8 @@ IsaTermPrinter qualifying spec
 	in
 	enclose?(infix? parentTerm,
 		 prLinear 0 [prString "let",
-			     prLinear 0 (map ppDecl decls),
-			     prString "in",
+			     prConcat[prLinear 0 (map ppDecl decls),prSpace],
+			     prString "in ",
 			     ppTerm c parentTerm term])
       | Var (v,_) \_rightarrow ppVarWithoutSort v
       | Fun (fun,ty,_) \_rightarrow ppFun c fun
