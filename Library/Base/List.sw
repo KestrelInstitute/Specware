@@ -337,8 +337,10 @@ List qualifying spec
        | []     -> ()
        | hd::tl -> (f hd; app f tl)
 
-  % mapping to Isabelle:
+   op [a,b] isoList: Bijection(a,b) -> Bijection(List a, List b) =
+    fn iso_elem -> map iso_elem
 
+  % mapping to Isabelle:
   proof Isa Thy_Morphism List
     type List.List \_rightarrow list
     List.nil \_rightarrow []
