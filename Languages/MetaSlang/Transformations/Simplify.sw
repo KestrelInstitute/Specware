@@ -269,8 +269,9 @@ spec
 	        case bindEquality (cj,vs) of
 		 | None -> false
 		 | Some(v,e) ->
-		   simpleTerm? e || (foldl (fn (cji,r) -> r + countVarRefs(cji,v)) (countVarRefs(bod,v)) cjs)
-		                      = 2) % This one and the one we want to replace
+		   simpleOrConstrTerm? e
+                     || (foldl (fn (cji,r) -> r + countVarRefs(cji,v)) (countVarRefs(bod,v)) cjs)
+                       = 2) % This one and the one we want to replace
            cjs
       of Some cj ->
 	 (case  bindEquality (cj,vs) of
@@ -416,6 +417,13 @@ spec
         all (fn (_,t) -> simpleTerm t) fields
       | Lambda _ \_rightarrow true
       | _ -> simpleTerm term
+
+ op simpleOrConstrTerm?(term: MS.Term): Boolean =
+   simpleTerm? term
+     || (case term of
+           | Apply(Fun(Embed _,_,_), arg, _) ->
+             all simpleOrConstrTerm? (termToList arg)
+           | _ -> false)
 
  op traceSimplify?: Boolean = false
 
