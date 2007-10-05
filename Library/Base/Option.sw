@@ -1,6 +1,6 @@
 Option qualifying spec
 
-  import Compare
+  import Compare, Functions
 
   % add an extra element to a type:
 
@@ -31,6 +31,9 @@ Option qualifying spec
   op [a,b] mapOption (f: a -> b) : Option a -> Option b = fn
     | None   -> None
     | Some x -> Some (f x)
+
+  op [a,b] isoOption: Bijection(a,b) -> Bijection(Option a, Option b) =
+    fn iso_elem -> mapOption iso_elem
 
   % mapping to Isabelle:
 
