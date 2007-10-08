@@ -116,7 +116,7 @@
 	(null      (null    t2))
 	(string    (string= t1 t2))
 	(symbol    (eq      t1 t2))
-	(number    (eq      t1 t2)) ; catches complex numbers, etc.
+	(number    (=       t1 t2)) ; catches complex numbers, etc.
 	(character (eq      t1 t2))
 	(cons      (and (consp t2) 
 			;;   Cons cells are equal if their elements are equal too.
