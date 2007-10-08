@@ -16,7 +16,11 @@
 	    "INTEGER-SPEC::|!<|"
 	    "INTEGER-SPEC::|!<=|"
 	    "INTEGER-SPEC::div"
-	    "INTEGER-SPEC::|!rem|")
+	    "INTEGER-SPEC::|!rem|"
+	    "INTEGER-SPEC::divides"
+	    "INTEGER-SPEC::multipleOf"
+	    "INTEGER-SPEC::|!gcd|"
+	    "INTEGER-SPEC::|!lcm|")
 	   SpecToLisp::SuppressGeneratedDefuns))
 
 
@@ -171,3 +175,42 @@
 
 (define-compiler-macro |!abs| (x)
   `(abs (the-int ,x)))
+
+(defun divides-2 (x y)
+  (declare (integer x y))
+  (the boolean (or (and (eql x 0) (eql y 0))
+                   (and (not (eql x 0)) (eql (rem y x) 0)))))
+
+(defun divides (xy)
+  (declare (cons xy))
+  (divides-2 (car xy) (cdr xy)))
+
+(defun multipleOf-2 (x y)
+  (declare (integer x y))
+  (the boolean (divides y x)))
+
+(defun multipleOf (xy)
+  (declare (cons xy))
+  (multipleOf-2 (car xy) (cdr xy)))
+
+(defun gcd-2 (x y)
+  (declare (integer x y))
+  (the-int (gcd x y)))
+
+(define-compiler-macro gcd-2 (x y)
+  `(the-int (gcd (the-int ,x) (the-int ,y))))
+
+(defun |!gcd| (xy)
+  (declare (cons xy))
+  (the-int (gcd (the-int (car xy)) (the-int (cdr xy)))))
+
+(defun lcm-2 (x y)
+  (declare (integer x y))
+  (the-int (lcm x y)))
+
+(define-compiler-macro lcm-2 (x y)
+  `(the-int (lcm (the-int ,x) (the-int ,y))))
+
+(defun |!lcm| (xy)
+  (declare (cons xy))
+  (the-int (lcm (the-int (car xy)) (the-int (cdr xy)))))

@@ -141,6 +141,86 @@ Integer qualifying spec
                                               else if i > j then Greater
                                               else (* i = j *)   Equal
 
+  (* The following predicate captures the notion that x evenly divides y without
+  leaving a remainder (sometimes denoted "x|y"; note that "|" is disallowed as a
+  Metaslang name), or equivalently that x is a factor of y, i.e. that y can be
+  expressed as x * z for some integer z. *)
+
+  op divides (x:Integer, y:Integer) infixl 20 : Boolean =
+    ex(z:Integer) x * z = y
+
+  (* If x is not 0, the notion is equivalent to saying that the remainder of the
+  division of y by x is 0. *)
+
+  theorem non_zero_divides_iff_zero_remainder is
+    fa (x:NonZeroInteger, y:Integer) x divides y <=> y rem x = zero
+
+  (* Obviously, any integer divides 0. *)
+
+  theorem any_divides_zero is
+    fa(x:Integer) x divides zero
+
+  (* Only 0 is divided by 0, because multiplying . *)
+
+  theorem only_zero_is_divided_by_zero is
+    fa(x:Integer) zero divides x => x = zero
+
+  (* Since the division and remainder operations are not defined for non-zero
+  divisors (see ops div and rem above), it may seem odd that our definition
+  allows 0 to "divide" anything at all. The reason why, according to our
+  definition, 0 can be a "divisor" is that we have not used the division
+  operation to define the notion, but instead we have used multiplication. The
+  use of multiplication is consistent with the general definition of "divisors"
+  in rings (integers form a ring), which is exactly defined in terms of the
+  multiplicative operation of the ring, as above. The definition in terms of
+  multiplication enables an elegant definition of greatest common divisor
+  (g.c.d.) and least common multiple (l.c.m.), below. *)
+
+  (* The notion of being a multiple is the converse of the "divides" relation: x
+  is a multiple of y iff x = z * y for some integer z. *)
+
+  op multipleOf (x:Integer, y:Integer) infixl 20 : Boolean = y divides x
+
+  (* It is well known that the "divides" ordering relation induces a complete
+  lattice structure on the natural numbers, with 1 bottom, 0 top, g.c.d. as
+  meet, and l.c.m. as join. So we define ops gcd and lcm as meet and join. Note
+  that we restrict the result to be a natural number. *)
+
+  op gcd (x:Integer, y:Integer) : {z:Integer | z >= zero} =
+    the(z:Integer)
+    % z is non-negative and divides both x and y:
+       z >= zero && z divides x && z divides y &&
+    % and is divided by any integer that also divides x and y:
+       (fa(w:Integer) w divides x && w divides y => w divides z)
+
+  op lcm (x:Integer, y:Integer) : {z:Integer | z >= zero} =
+    the(z:Integer)
+    % z is non-negative and is a multiple of both x and y:
+       z >= zero && z multipleOf x && z multipleOf y &&
+    % and any integer that is a multiple of x and y is also a multiple of z:
+       (fa(w:Integer) w multipleOf x && w multipleOf y => z multipleOf w)
+
+  (* If x and y are not both 0, their g.c.d. is positive and is the largest
+  integer (according to the usual ordering on the integers) that divides both x
+  and y. If x = y = 0, their g.c.d. is 0. *)
+
+  theorem gcd_of_not_both_zero is
+    fa(x:Integer,y:Integer) x ~= zero || y ~= zero =>
+      gcd(x,y) > zero &&
+      gcd(x,y) divides x && gcd(x,y) divides y &&
+      (fa(w:Integer) w divides x && w divides y => gcd(x,y) >= w)
+
+  theorem gcd_of_zero_zero_is_zero is
+    gcd (zero, zero) = zero
+
+  (* The l.c.m. of x and y is the smallest multiple, in absolute value, among
+  all the multiples of x and y. The absolute value restriction is important,
+  because otherwise the l.c.m. would always be negative (or 0, if x = y = 0). *)
+
+  theorem lcm_smallest_abs_multiple is
+    fa (x:Integer, y:Integer, w:Integer)
+      w multipleOf x && w multipleOf y => lcm(x,y) <= abs w
+
   % mapping to Isabelle:
 
   proof Isa Thy_Morphism Presburger

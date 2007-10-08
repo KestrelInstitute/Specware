@@ -61,14 +61,4 @@ Rational qualifying spec
                  else if x > y then Greater
                  else (* x = y *)   Equal
 
-  (* The following two ops have been moved into this spec from the base spec
-  Integer. The two ops had no definition or axiom associated to them, and
-  furthermore gcd(0,0) is not well defined in general; so they do not belong to
-  a "good" library spec. They are nonetheless used in some specs in this
-  directory, and so we put them here for now. There is handwritten Lisp code for
-  them in ./Handwritten/Lisp/Rational.lisp, moved from
-  Specware4Library/Base/Handwritten/Lisp. *)
-  op Integer.gcd : Integer * Integer -> PosNat
-  op Integer.lcm : Integer * Integer -> Nat
-
 endspec
