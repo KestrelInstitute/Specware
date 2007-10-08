@@ -1,3 +1,5 @@
+(* $Id$ *)
+
 (*
 2005:03:18
 AC
@@ -17,6 +19,12 @@ divisor; Euler's totient function.
 AC
 Added integer square root. Added op to return ordered list of primes less than
 given limit.
+
+2007:10:07
+AC
+Removed divisibility and multiples because they are now in the base spec for
+integers.
+
 *)
 
 
@@ -26,12 +34,6 @@ given limit.
 Nat qualifying spec
 
   import IntegerExt
-
-  % divisibility and multiples:
-
-  op divides (d:PosNat, n:Nat) infixl 20 : Boolean = (n rem d = 0)
-
-  op multipleOf (n:Nat, d:PosNat) infixl 20 : Boolean = d divides n
 
   % primality:
 
