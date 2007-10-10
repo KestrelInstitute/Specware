@@ -6,7 +6,9 @@
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
 
 (setq SpecToLisp::SuppressGeneratedDefuns
-  (append '("NAT-SPEC::plus"
+  (append '("NAT-SPEC::plus-2"
+	    "NAT-SPEC::plus"
+	    "NAT-SPEC::minus-2"
 	    "NAT-SPEC::minus")
 	   SpecToLisp::SuppressGeneratedDefuns))
 
