@@ -190,7 +190,7 @@ Prover qualifying spec
 	       let pos = termAnn term in
 	       let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in
 	       %let unTupledFmlas = foldRecordFmla (spc, srt, initialFmla) in
-	       %let unTupleAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) unTupledFmlas in
+	       %let unTupleAxioms = map (fn fmla -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) unTupledFmlas in
 	       let unTupleAxioms = [] in
 	       %let _ = if true && id = "p" then writeLine ("initialFmla: "^printTerm initialFmla) else () in
 	       %let _ = if true && id = "length_Object$1$_$Object$2" then debug ("initialFmla: "^printTerm initialFmla) else () in

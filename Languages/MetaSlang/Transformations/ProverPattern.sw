@@ -65,12 +65,12 @@ Prover qualifying spec
 
   op removePatternTop: Spec * Term -> List Term
   def removePatternTop(spc, term) =
-     %let _ = writeLine("PP: "^printTerm(term)) in
+  %   let _ = writeLine("PP: "^printTerm(term)) in
     let pos = termAnn(term) in
     let _ = initWildCounter() in
     let condTerms = removePatternTerm(spc, term) in
     let res = map (fn(ct) -> simplify spc (condTermToFmlaWithPos(ct, pos))) condTerms in
-     %let _ = map (fn (r) -> writeLine("PPRes: "^printTerm(r))) res in
+  %   let _ = map (fn (r) -> writeLine("PPRes: "^printTerm(r))) res in
     let res = filter (fn t -> case t of Fun(Bool true,_,_) -> false | _ -> true) res in
     res
 
