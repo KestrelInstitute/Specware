@@ -15,7 +15,7 @@ spec
  %% importing TypecChecker is overkill
  %import Elaborate/TypeChecker
 
- sort SpecEnvironment = StringMap Spec
+ type SpecEnvironment = StringMap Spec
  % sort Env             = SpecName * SpecEnvironment
 
  op makeEnv     : List Spec              -> SpecEnvironment
