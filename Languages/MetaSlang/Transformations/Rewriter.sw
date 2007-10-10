@@ -729,14 +729,12 @@ MetaSlangRewriter qualifying spec
 		 (context.traceDepth := traceDepth;
 		  let term = dereferenceAll subst term in
 		  let term = renameBound term in
+                  let history = Cons((rule,term,subst),history) in
 		  let rec_results
-                     = rewriteRec(rules0,emptySubstitution,term,boundVars,
-                                  Cons((rule,term,subst),history),
-                                  backChain)
+                     = rewriteRec(rules0,emptySubstitution,term,boundVars, history, backChain)
                    in
                    if rec_results = Nil
-                     then if history = [] then Nil
-                            else unit history
+                     then unit history
                      else rec_results)
 	       | None -> Nil
                      ))
