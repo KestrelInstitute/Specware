@@ -222,6 +222,8 @@ snark qualifying spec
       | ("Integer", "<") -> "<"
       | ("Integer", ">=") -> ">="
       | ("Integer", ">") -> ">"
+      | ("Integer", "zero") -> "0"
+      | ("Integer", "one") -> "1"
       | (_, "hoapply") ->  "HOAPPLY"
       | _ -> if qual = UnQualified
 	       then id
