@@ -360,7 +360,8 @@ spec
             | Base(qid, params, a) ->
               (let iso_params =  map isoType1 params in
                case lookupIsoInfo(qid, iso_info) of
-                 | Some((_,_,_,Base(osi_qid,_,_)), _) -> Base(osi_qid,params,a)
+                 | Some((_,_,_,r_ty as Base(osi_qid,_,_)), _) ->
+                   if params = [] then r_ty else Base(osi_qid,params,a)
                  | _ ->
                if recursive? && dependsOnIsoInfo?(qid,iso_info,spc,[])
                  then Base(makePrimedTypeQid(qid, spc), iso_params, a)
