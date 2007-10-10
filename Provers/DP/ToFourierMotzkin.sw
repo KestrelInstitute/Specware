@@ -210,6 +210,7 @@ MSToFM qualifying spec
 	 | ("Nat",  "succ") -> true
 	 | ("Integer","succ") -> true
 	 | ("Integer", "natural?") -> true
+	 | ("Nat", "natural?") -> true
 	 | _ -> false)
        | Not     -> true
        | And     -> true
@@ -243,7 +244,8 @@ MSToFM qualifying spec
 	 | ("Integer","succ") -> (fn ([a1])     -> fmPlus(a1, Poly onePoly))
 	 | ("Nat",     "*") -> (fn ([a1, a2]) -> fmTimes(a1, a2))
 	 | ("Integer", "*") -> (fn ([a1, a2]) -> fmTimes(a1, a2))
-	 | ("Integer", "natural?") -> (fn ([a]) -> fmNatural(a)))
+	 | ("Integer", "natural?") -> (fn ([a]) -> fmNatural(a))
+	 | ("Nat", "natural?") -> (fn ([a]) -> fmNatural(a)))
        | Not     -> (fn ([a]) -> fmNot(a))
        | And     -> (fn ([a1, a2]) -> fmConjunct(a1, a2))
        | Or      -> (fn ([a1, a2]) -> fmDisjunct(a1, a2))
@@ -360,11 +362,11 @@ MSToFM qualifying spec
   op toFMProperty: Context * Spec * Property -> FMTerm * Context
   def toFMProperty(context, spc, prop as (ptype, name, tyvars, fmla, _)) =
     let (fmTerm, newContext) = toFMTermTop(context, spc, fmla) in
-    %let _ = writeLine("fmTransIn:") in
-    %let _ = writeLine(printTerm(fmla)) in
-    %let _ = writeLine("fmTransOut:") in
-    %let _ = writeLine(printFMTerm(fmTerm)) in
-    %let _ = debug("toFMProp") in
+%     let _ = writeLine("fmTransIn:") in
+%     let _ = writeLine(printTerm(fmla)) in
+%     let _ = writeLine("fmTransOut:") in
+%     let _ = writeLine(printFMTerm(fmTerm)) in
+%     let _ = debug("toFMProp") in
     (fmTerm, newContext)
 
   op toFMProperties: Context * Spec * List Property -> List FMTerm * Context
