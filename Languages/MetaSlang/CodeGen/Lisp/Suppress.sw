@@ -20,9 +20,7 @@ spec
   %% If there are problems using SuppressGeneratedDefuns to determine expansion avoidance,
   %% we may need to introduce a second list of names, specifically for expansion avoidance,
 
-  op MSInterpreter.avoidExpanding? (qid : QualifiedId) : Boolean =
-    let Qualified(q,id) = qid in
-    let lisp_name = printPackageId (qid, id) in
-    member (lisp_name, SpecToLisp.SuppressGeneratedDefuns)
+ %%% sjw: The reason for not expanding in the interpreter is that the interpreter has a built-in
+ %%% definition, so this belongs in Interpreter.sw and should be more explicit
 
 end-spec
