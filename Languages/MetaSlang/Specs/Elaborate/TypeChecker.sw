@@ -902,10 +902,10 @@ TypeChecker qualifying spec
 	if env.firstPass? then
 	  ApplyN ([t1, t2], pos)
 	else if f1 = Equals then
-	  let t1 = adjustEqualitySort (env, s1, t1, t2) in
+	  %let t1 = adjustEqualitySort (env, s1, t1, t2) in
 	  ApplyN ([t1, t2], pos)
 	else if f1 = NotEquals then
-	  let t1 = adjustEqualitySort (env, s1, t1, t2) in
+	  %let t1 = adjustEqualitySort (env, s1, t1, t2) in
 	  ApplyN ([t1, t2], pos)
 	else if sortCognizantOperator? f1 then
 	  addSortAsLastTerm (env, 
@@ -1410,42 +1410,7 @@ TypeChecker qualifying spec
 				 (false, None)))
       | _::tail -> consistentInfixMS.Terms (tail, optional_priority)
        
-  def adjustEqualitySort (env, srt, t1, eq_args) =
-    case (eq_args, unlinkSort srt) of
-      | (_,  % consider "let A = (true, false) in =(A)"
-	 Arrow (Product ([("1", _), ("2", _)], _), _, _)) -> 
-        t1
-
-     %| (Record ([("1", e1), ("2", e2)], _), 
-     %  Arrow (Product ([("1", elSrt1), ("2", _)], _), _, _)) -> 
-     % t1
-     %% This code is correct except that termSort doesn't take account of defined sorts and gives an error
-     %       let
-     %         def subsort? (srt1_, srt2_) = 
-     %           srt1_ = srt2_
-     %           or (case srt1_
-     %                of Subsort ((s1_, _), _) -> subsort? (s1_, srt2_)
-     %                 | _ -> false)
-     %         def commonAnc (s1_, s2_) =
-     %           if subsort? (s1_, s2_) then s2_ else
-     %           if subsort? (s2_, s1_) then s1_ else
-     %           case s1_
-     %             of Subsort ((ss1_, _), _) -> commonAnc (ss1_, s2_)
-     %              | _ -> s2_                        % Shouldn't happen
-     %             
-     % in
-     %       let (s1_, s2_) = (unfold (env, termSort e1), unfold (env, termSort e2)) in
-     %       let expElSrt_ = unfold (env, elSrt1) in
-     %       let elSrt = if subsort? (s1_, expElSrt_) && subsort? (s2_, expElSrt_)
-     %                    then elSrt1 else (commonAnc (s1_, s2_), pos) in
-     %       (Fun (Equals, (Arrow ((Product [("1", elSrt), ("2", elSrt)], pos), type_bool), pos)), pos)
-
-      | _ -> (error (env, 
-		     "Illegal Equality on " ^ printTerm eq_args, 
-		     sortAnn srt);
-	      t1)
-
-  def undeclaredName (env, trm, id, srt, pos) =
+   def undeclaredName (env, trm, id, srt, pos) =
     if env.firstPass? then %&& undeterminedSort? s 
       trm
     else
