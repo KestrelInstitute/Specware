@@ -174,9 +174,11 @@ spec
         (case findTheOp (spc, qid) of
 	   | Some info ->
              %% Being suppressed is used here as a proxy for "has a non-constructive definition"
-	     (if (~ (avoidExpanding? qid)) && definedOpInfo? info then
+	     (if definedOpInfo? info && ~(avoidExpanding? qid) then
 		let tm = firstOpDefInnerTerm info in
-		evalRec (tm, sb, spc, depth+1)
+                if existsSubTerm (embed? The) tm
+                  then Unevaluated t
+                else evalRec (tm, sb, spc, depth+1)
 	      else
 		case qid of 
 		  | Qualified ("Integer", "zero") -> Int 0
@@ -531,6 +533,20 @@ spec
        | ChooseClosure _ -> false
        | _ -> true
 
+  %% Only have to include those that have a definition you don't want to use (and doesn't include "the")
+  op builtInQids: List QualifiedId =
+    [Qualified("String","explode"),
+     Qualified("Integer","pred"),
+     Qualified("Char","ord"),
+     Qualified("Char","isUpperCase"),
+     Qualified("Char","isLowerCase"),
+     Qualified("Char","isAlphaNum"),
+     Qualified("Char","isAlpha"),
+     Qualified("Char","isAscii")
+     ]
+  op avoidExpanding? (qid : QualifiedId) : Boolean =
+    member(qid, builtInQids)
+
   op  valConstant?: Value -> Boolean
   def valConstant? v =
     case v
@@ -565,6 +581,7 @@ spec
        | ("-", Int i)         -> Int (- i) 
        | ("~", Int i)         -> Int (- i) % TODO: deprecate
        | ("~", Bool b)        -> Bool (~b)
+       | ("positive?", Int i) -> Bool (i >= 0)
        | ("pred", Int i)      -> Int (pred i)
        | ("toString", Int i)  -> String (toString i)
        | ("toString", Bool b) -> String (toString b)
@@ -630,6 +647,8 @@ spec
        | "+"   -> Int(+(intVals fields))
        | "*"   -> Int( *(intVals fields))    % Space before * is needed so parser doesn't see a comment!
        | "-"   -> Int(-(intVals fields))
+       | "gcd"   -> Int(gcd(intVals fields))
+       | "lcm"   -> Int(lcm(intVals fields))
        | "<"   -> if spName = "String"
                     then Bool(<(stringVals fields))
 		    else Bool(<(intVals fields))
