@@ -801,7 +801,8 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 \begin{spec}
 
   op matchBase : fa(a) Context * a * Sort * a * Sort * Stack * SubstC * MS.Term-> List SubstC
-  def matchBase (context,x,srt1,y,srt2,stack,subst,N) = 
+  def matchBase (context,x,srt1,y,srt2,stack,subst,N) =
+    % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printSort srt1^"\n"^printSort srt2) in
       if x = y
 	 then 
 	    (case unifySorts(context,subst,srt1,srt2,Some N)
@@ -1146,11 +1147,11 @@ skolemization transforms a proper matching problem into an inproper one.
       in
       case unifyL(subst,srt1,srt2,[srt1],[srt2],[],optTerm,unify)
 	of NotUnify (s1,s2) -> 
-	   (% writeLine (printSort s1^" ! = "^printSort s2);
-% 	    printSubst subst;
+	   ( % writeLine (printSort s1^" ! = "^printSort s2);
+%  	    printSubst subst;
 	    None)
 	 | Unify subst ->
-           (% writeLine (printSort srt1^" = = "^printSort srt2);
+           (%  writeLine (printSort srt1^" = = "^printSort srt2);
 % 	    printSubst subst; 
 	    Some subst)
 
