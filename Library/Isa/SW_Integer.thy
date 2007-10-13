@@ -1,108 +1,92 @@
 theory SW_Integer
-imports SW_Nat Compare Functions Presburger
+imports Compare Functions Presburger
 begin
-consts Integer__natural_p :: "int \<Rightarrow> bool"
-axioms Integer__backward_compatible_unary_minus_def: 
-  "- i = - i"
-axioms Integer__negative_integers: 
-  "\<lbrakk>\<not> (0 \<le> (i::int))\<rbrakk> \<Longrightarrow> 
-   \<exists>(n::Nat__PosNat). Nat__posNat_p n \<and> i = - (int n)"
-axioms Integer__negative: 
-  "\<lbrakk>Nat__posNat_p n\<rbrakk> \<Longrightarrow> \<not> (0 \<le> - (int n))"
-axioms Integer__unary_minus_injective_on_positives: 
-  "\<lbrakk>Nat__posNat_p n2; Nat__posNat_p n1; n1 \<noteq> n2\<rbrakk> \<Longrightarrow> 
-   - (int n1) \<noteq> - (int n2)"
-axioms Integer__minus_negative: 
-  "\<lbrakk>Nat__posNat_p n\<rbrakk> \<Longrightarrow> - (- (int n)) = int n"
-axioms Integer__minus_zero: 
-  "- 0 = 0"
-theorem Integer__unary_minus_involution: 
-  "- (- (i::int)) = i"
-  apply(auto)
-  done
+consts Integer__succ :: " (int,int)Functions__Bijection"
+axioms Integer__succ_subtype_constr: 
+  "bij Integer__succ"
+axioms Integer__induction: 
+  "\<lbrakk>(p::int \<Rightarrow> bool) 0; 
+    \<forall>(i::int). p i \<longrightarrow> p (Integer__succ i) \<and> p (inv Integer__succ i)\<rbrakk> \<Longrightarrow> p i"
+consts Integer__pred :: " (int,int)Functions__Bijection"
+defs Integer__pred_def: "Integer__pred \<equiv> inv Integer__succ"
+axioms Integer__pred_subtype_constr: 
+  "bij Integer__pred"
+consts Integer__zero_p :: "int \<Rightarrow> bool"
+defs Integer__zero_p_def: "Integer__zero_p i \<equiv> i = 0"
+consts Integer__positive_p__satisfiesInductiveDef_p :: "(int \<Rightarrow> bool) \<Rightarrow> bool"
+defs Integer__positive_p__satisfiesInductiveDef_p_def: 
+  "Integer__positive_p__satisfiesInductiveDef_p p_p
+     \<equiv> (p_p 1 \<and> (\<forall>(i::int). p_p i \<longrightarrow> p_p (Integer__succ i)))"
+consts Integer__positive_p :: "int \<Rightarrow> bool"
+defs Integer__positive_p_def: 
+  "Integer__positive_p
+     \<equiv> (THE (positive_p::int \<Rightarrow> bool). 
+       Integer__positive_p__satisfiesInductiveDef_p positive_p 
+         \<and> (\<forall>(p_p::int \<Rightarrow> bool) (i::int). 
+              Integer__positive_p__satisfiesInductiveDef_p p_p 
+                \<and> positive_p i 
+                \<longrightarrow> p_p i))"
+consts Integer__negative_p :: "int \<Rightarrow> bool"
+defs Integer__negative_p_def: 
+  "Integer__negative_p i
+     \<equiv> (\<not> (Integer__positive_p i) \<and> \<not> (Integer__zero_p i))"
+consts Integer__abs :: "int \<Rightarrow> int"
+axioms Integer__abs_subtype_constr: 
+  "Integer__abs dom_abs \<ge> 0"
+defs Integer__abs_def: 
+  "Integer__abs i \<equiv> (if i \<ge> 0 then i else - i)"
 types Integer__NonZeroInteger = "int"
-consts Integer__abs :: "int \<Rightarrow> nat"
+consts Integer__e_fsl :: "int \<Rightarrow> Integer__NonZeroInteger \<Rightarrow> int"	(infixl "'/" 66)
+defs Integer__e_fsl_def: "Integer__e_fsl \<equiv> (\<lambda> x. \<lambda> y. x div y)"
 consts Integer__compare :: "int \<times> int \<Rightarrow> Compare__Comparison"
-consts Integer__pred :: "nat \<Rightarrow> int"
-consts Integer__gcd :: "int \<times> int \<Rightarrow> Nat__PosNat"
-axioms Integer__gcd_subtype_constr: 
-  "Nat__posNat_p (Integer__gcd dom_gcd)"
-consts Integer__lcm :: "int \<times> int \<Rightarrow> nat"
-theorem Integer__abs_Obligation_subsort: 
-  "\<lbrakk>(x::int) \<ge> 0\<rbrakk> \<Longrightarrow> 0 \<le> x"
-  apply(auto)
-  done
-theorem Integer__abs_Obligation_subsort0: 
-  "\<lbrakk>\<not> ((x::int) \<ge> 0)\<rbrakk> \<Longrightarrow> 0 \<le> - x"
-  apply(auto)
-  done
-defs Integer__abs_def [simp]: 
-  "Integer__abs x \<equiv> (if x \<ge> 0 then nat x else nat (- x))"
 recdef Integer__compare "{}"
-  "Integer__compare(x,y)
-     = (if x < y then Less else if x > y then Greater else Equal)"
-defs Integer__pred_def [simp]: "Integer__pred x \<equiv> int x - 1"
-axioms Integer__addition_def1: 
-  "(i::int) + 0 = i \<and> 0 + i = i"
-theorem Integer__addition_def2_Obligation_subsort: 
-  "\<lbrakk>Nat__posNat_p n2; 
-    Nat__posNat_p n1; 
-    int (n1 + n2) = int (n1 + n2); 
-    - (int n1) + - (int n2) = - (int (n1 + n2)); 
-    \<not> (n1 \<le> n2)\<rbrakk> \<Longrightarrow> n2 \<le> n1"
-  apply(auto)
+  "Integer__compare(i,j)
+     = (if i < j then Less else if i > j then Greater else Equal)"
+consts Integer__divides :: "int \<Rightarrow> int \<Rightarrow> bool"	(infixl "divides" 60)
+defs Integer__divides_def: 
+  "x divides y \<equiv> (\<exists>(z::int). x * z = y)"
+theorem Integer__non_zero_divides_iff_zero_remainder: 
+  "\<lbrakk>x \<noteq> 0\<rbrakk> \<Longrightarrow> x divides y = (y mod x = 0)"
+  sorry
+theorem Integer__any_divides_zero: 
+  "x divides 0"
+  apply(simp add: Integer__divides_def)
   done
-theorem Integer__addition_def2_Obligation_subsort0: 
-  "\<lbrakk>Nat__posNat_p n2; 
-    Nat__posNat_p n1; 
-    int (n1 + n2) = int (n1 + n2); 
-    - (int n1) + - (int n2) = - (int (n1 + n2)); 
-    int n1 + - (int n2) 
-      = (if n1 \<le> n2 then - (int (n2 - n1)) else int (n1 - n2)); 
-    \<not> (n1 \<le> n2)\<rbrakk> \<Longrightarrow> n2 \<le> n1"
-  apply(auto)
+theorem Integer__only_zero_is_divided_by_zero: 
+  "\<lbrakk>0 divides x\<rbrakk> \<Longrightarrow> x = 0"
+  apply(simp add: Integer__divides_def)
   done
-axioms Integer__addition_def2: 
-  "\<lbrakk>Nat__posNat_p n2; Nat__posNat_p n1\<rbrakk> \<Longrightarrow> 
-   int (n1 + n2) = int (n1 + n2) 
-     \<and> - (int n1) + - (int n2) = - (int (n1 + n2)) 
-     \<and> int n1 + - (int n2) 
-         = (if n1 \<le> n2 then 
-              - (int (n2 - n1))
-            else 
-              int (n1 - n2)) 
-     \<and> - (int n1) + int n2 
-         = (if n1 \<le> n2 then 
-              int (n2 - n1)
-            else 
-              - (int (n1 - n2)))"
-axioms Integer__subtraction_def: 
-  "(x::int) - (y::int) = x + - y"
-axioms Integer__multiplication_def: 
-  "0 * (y::int) = 0 
-     \<and> ((x::int) + 1) * y = x * y + y 
-     \<and> (x - 1) * y = x * y - y"
-theorem Integer__division_def_Obligation_subsort: 
-  "\<lbrakk>(y::Integer__NonZeroInteger) \<noteq> 0; 0 \<le> int (Integer__abs y)\<rbrakk> \<Longrightarrow> 
-   int (Integer__abs y) \<noteq> 0"
+consts Integer__multipleOf :: "int \<Rightarrow> int \<Rightarrow> bool"	(infixl "multipleOf" 60)
+defs Integer__multipleOf_def: "x multipleOf y \<equiv> y divides x"
+
+consts Integer__lcm :: "int \<times> int \<Rightarrow> int"
+axioms Integer__lcm_subtype_constr: 
+  "Integer__lcm dom_lcm \<ge> 0"
+
+recdef Integer__lcm "{}"
+  "Integer__lcm(x,y)
+     = (THE (z::int). 
+       z \<ge> 0 
+         \<and> z multipleOf x 
+         \<and> z multipleOf y 
+         \<and> (\<forall>(w::int). 
+              w multipleOf x \<and> w multipleOf y 
+                \<longrightarrow> z multipleOf w))"
+theorem Integer__gcd_of_not_both_zero: 
+  "\<lbrakk>x \<noteq> 0 \<or> y \<noteq> 0\<rbrakk> \<Longrightarrow> 
+   zgcd(x,y) > 0 
+     \<and> zgcd(x,y) divides x 
+     \<and> zgcd(x,y) divides y 
+     \<and> (\<forall>(w::int). 
+          w divides x \<and> w divides y 
+            \<longrightarrow> zgcd(x,y) \<ge> w)"
   apply(auto)
-  done
-theorem Integer__division_def_Obligation_subsort0: 
-  "\<lbrakk>(y::Integer__NonZeroInteger) \<noteq> 0\<rbrakk> \<Longrightarrow> 
-   0 \<le> int (Integer__abs (x::int) div Integer__abs y)"
-  apply(auto)
-  done
-axioms Integer__division_def: 
-  "\<lbrakk>(y::Integer__NonZeroInteger) \<noteq> 0\<rbrakk> \<Longrightarrow> 
-   (x::int) div y = (z::int) 
-     = (Integer__abs z = Integer__abs x div Integer__abs y 
-          \<and> (x * y \<ge> 0 \<longrightarrow> z \<ge> 0) 
-          \<and> (x * y \<le> 0 \<longrightarrow> z \<le> 0))"
-axioms Integer__remainder_def: 
-  "\<lbrakk>(y::Integer__NonZeroInteger) \<noteq> 0\<rbrakk> \<Longrightarrow> 
-   (x::int) mod y = x - y * (x div y)"
-axioms Integer__less_than_equal_def: 
-  "(x::int) \<le> (y::int) = (0 \<le> y - x)"
-axioms Integer__less_than_def: 
-  "(x::int) < (y::int) = (x \<le> y \<and> x \<noteq> y)"
+  sorry
+theorem zgcd_of_zero_zero_is_zero: 
+  "zgcd(0,0) = 0"
+  sorry
+theorem Integer__lcm_smallest_abs_multiple: 
+  "\<lbrakk>w multipleOf x; w multipleOf y\<rbrakk> \<Longrightarrow> 
+   Integer__lcm(x,y) \<le> Integer__abs w"
+  sorry
 end
