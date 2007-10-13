@@ -15,6 +15,7 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Specs/Environment
  import /Languages/MetaSlang/Transformations/Coercions
  import /Languages/MetaSlang/Transformations/LambdaLift
+ import /Languages/MetaSlang/Transformations/ArityNormalize
 
  op addObligations?: Boolean = true
  op lambdaLift?: Boolean     = true
@@ -856,6 +857,40 @@ IsaTermPrinter qualifying spec
                              (cases ++ new_cases, not_prim || n_p))
 		    ([],tuple?) pats
 	     else ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod))
+          | Apply (Lambda (pats,_), arg as Record(var_tms,_), _)
+              | tuple? && tupleFields? var_tms
+                && all (fn (_,t) \_rightarrow embed? Var t) var_tms
+                && (case hd of
+                      | Apply(_,param,_) \_rightarrow equalTerm?(param,arg)
+                      | _ -> false)
+            \_rightarrow
+            let def matchPat (p,c,bod) =
+                  case p of
+                    | RecordPat(rpats,_) \_rightarrow
+                      let sbst = mapPartial (fn ((_,v_tm as Var(v,_)),(_,p)) \_rightarrow
+                                               case p of
+                                                 | WildPat _ \_rightarrow Some(v,v_tm)  % id
+                                                 | _ \_rightarrow
+                                               case patternToTerm p of
+                                                 | Some p_tm \_rightarrow Some(v,p_tm)
+                                                 | None \_rightarrow None)
+                                  (zip (var_tms, rpats))
+                      in
+                      if length sbst ~= length rpats then None
+                      else
+                      let pat_tms = map (fn (_,p_tm) -> p_tm) sbst in
+                      let Apply(hd_hd,_,a) = hd in
+                      Some(Apply(hd_hd,mkTuple pat_tms,a), substitute(bod,sbst))
+                    | VarPat(v,_) \_rightarrow Some(hd,substitute(bod,[(v,arg)]))
+                    | WildPat _ \_rightarrow Some(hd,bod)
+                    | AliasPat(VarPat(v,_),p2,_) \_rightarrow matchPat(p2,c,substitute(bod,[(v,arg)]))
+                    | RestrictedPat(rp,_,_) \_rightarrow matchPat(rp,c,bod)
+                    | _ -> None
+            in
+            let cases = mapPartial matchPat pats in
+            if length cases = length pats
+              then (cases, true)
+              else ([(hd,bod)], true)
           | Let([(pat,Var(v,_))],bod,a) | tuple? \_and member(v, freeVars hd) \_rightarrow
             (case patToTerm(pat,"") of
                | Some pat_tm \_rightarrow aux(substitute(hd, [(v,pat_tm)]),
@@ -899,7 +934,7 @@ IsaTermPrinter qualifying spec
                 | varOrTuplePattern? recd \_rightarrow
               let Some arg = patToTerm(recd,"") in
               let (cases,n_p) = aux(Apply(op_tm, arg, a), tm, true) in
-              (cases, n_p || \_not infix?)
+              (cases, n_p && \_not infix?)
 	    | _ -> aux(op_tm, bod, false) in
     (map fix_vars cases, tuple?)
 
@@ -1194,7 +1229,7 @@ IsaTermPrinter qualifying spec
            prConcat [prString pid,
 		     prConcat [prSpace, enclose?(encl?, ppTerm c (if encl? then Top else Nonfix)
 						          term2)]]
-         | (Fun (Op (Qualified("Integer","natural?"),_), _,a),_) \_rightarrow  % natural? e --> 0 <= e
+         | (Fun (Op (Qualified("Nat","natural?"),_), _,a),_) \_rightarrow  % natural? e --> 0 <= e
            let term2 = case term2 of
                          | Apply(Fun(Op(Qualified(q,"int"),_),_,_),x,_) | q = toIsaQual \_rightarrow
                            %% In this case it is known true, but leave it in for now for transparency
@@ -1303,14 +1338,15 @@ IsaTermPrinter qualifying spec
 		 prLinear 0 [prString "let",
 			     prConcat[prLinear 0 (map ppDecl decls),prSpace],
 			     prString "in ",
-			     ppTerm c parentTerm term])
+			     ppTerm c (if infix? parentTerm then Top else parentTerm) term])
       | Var (v,_) \_rightarrow ppVarWithoutSort v
-      | Fun (fun,ty,_) \_rightarrow ppFun c fun
+      | Fun (fun,ty,_) \_rightarrow ppFun c parentTerm fun ty
       | Lambda ([(pattern,_,term)],_) \_rightarrow
-        prBreakCat 2 [[lengthString(2, "\\<lambda> "),
-		       ppPattern c pattern (Some ""),
-		       prString ". "],
-		      [ppTerm c Top term]]
+        enclose?(parentTerm \_noteq Top,
+                 prBreakCat 2 [[lengthString(2, "\\<lambda> "),
+                                ppPattern c pattern (Some ""),
+                                prString ". "],
+                               [ppTerm c Top term]])
       | Lambda (match,_) \_rightarrow ppMatch c match
       | IfThenElse (pred,term1,term2,_) \_rightarrow 
 	enclose?(infix? parentTerm,
@@ -1352,18 +1388,18 @@ IsaTermPrinter qualifying spec
       | Exists1 \_rightarrow lengthString(2, "\\<exists>!")
 
   op  ppVarWithoutSort : Var \_rightarrow Pretty
-  def ppVarWithoutSort (id, _(* ty *)) = prString id
+  def ppVarWithoutSort (id, _(* ty *)) = prString (ppIdStr id)
 
   op printQuantifiersWithType?: Boolean = true
 
   op ppVarWithSort (c: Context) ((id,ty): Var): Pretty =
     if printQuantifiersWithType? then
-      enclose?(true, prConcat [prString id, prString "::", ppType c Top true ty])
-    else prString id
+      enclose?(true, prConcat [prString (ppIdStr id), prString "::", ppType c Top true ty])
+    else prString (ppIdStr id)
 
   op  ppVar : Context \_rightarrow Var \_rightarrow Pretty
   def ppVar c (id,ty) =
-    prConcat [prString id,
+    prConcat [prString (ppIdStr id),
 	      prString ":",
 	      ppType c Top true ty]
 
@@ -1531,8 +1567,8 @@ IsaTermPrinter qualifying spec
       | true \_rightarrow prString "True"
       | false \_rightarrow prString "False"
 
-  op  ppFun : Context \_rightarrow Fun \_rightarrow Pretty
-  def ppFun c fun =
+  op  ppFun : Context \_rightarrow ParentTerm \_rightarrow Fun \_rightarrow Sort \_rightarrow Pretty
+  def ppFun c parentTerm fun ty =
     case fun of
       | Not       \_rightarrow lengthString(1, "\\<not>")
       | And       \_rightarrow lengthString(1, "\\<and>")
@@ -1549,7 +1585,19 @@ IsaTermPrinter qualifying spec
       | Relax \_rightarrow prString "relax"
       | Op (qid,Nonfix) \_rightarrow ppOpQualifiedId c qid
       | Op (qid,Unspecified) \_rightarrow ppOpQualifiedId c qid
-      | Op (Qualified(_,opstr),_) \_rightarrow prString(ppIdStr opstr) % ??? ppOpQualifiedId
+      | Op (qid as Qualified(_,opstr),_) \_rightarrow
+        (case specialOpInfo c qid of
+           | Some(isa_id,infix?,_,_) \_rightarrow
+             if some? infix?
+               then
+                 enclose?(parentTerm ~= Top,
+                          prConcat [lengthString(12, "\\<lambda> x. \\<lambda> y. x "),
+                                    prString isa_id,
+                                    prString " y"])
+%                 let eta_tm = etaExpand(getSpec c,empty,ty,mkFun(fun,ty)) in
+%                 ppTerm c parentTerm eta_tm
+               else prString isa_id
+          | None \_rightarrow ppOpQualifiedId c qid)
       | Project id \_rightarrow
         prConcat [prString "project ",
                   prString id]
