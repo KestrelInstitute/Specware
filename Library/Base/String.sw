@@ -119,8 +119,7 @@ String qualifying spec
         if x < 10 then (digitToString x) ^ res
         else natToStringAux (x div 10, digitToString (x rem 10) ^ res) in
     natToStringAux (x, "")
-  proof Isa
-    nat_natToString_def__natToStringAux "measure (\_lambda (x,res). x)"
+  proof Isa natToString__natToStringAux "measure (\_lambda (x,res). x)"
   end-proof
 
   op Nat.show     : Nat -> String = Nat.natToString
@@ -150,8 +149,7 @@ String qualifying spec
            | []     -> res
            | hd::tl -> stringToNatAux (tl, res * 10 + charToDigit hd) in
     stringToNatAux (explode s, 0)
-  proof Isa stringToNat_def__stringToNatAux
-    "measure (\_lambda(chars,res). length chars)"
+  proof Isa stringToNat__stringToNatAux "measure (\_lambda(chars,res). length chars)"
   end-proof
 
   % convert integers to strings:
@@ -217,6 +215,8 @@ String qualifying spec
     String.all \_rightarrow list_all
     String.sub \_rightarrow ! Left 40
     String.concatList \_rightarrow concat
+    String.lt  \_rightarrow <  Left 20
+    String.leq \_rightarrow <= Left 20
   end-proof
 
 endspec

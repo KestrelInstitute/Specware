@@ -154,16 +154,25 @@ Integer qualifying spec
 
   theorem non_zero_divides_iff_zero_remainder is
     fa (x:NonZeroInteger, y:Integer) x divides y <=> y rem x = zero
+  proof Isa
+    sorry
+  end-proof
 
   (* Obviously, any integer divides 0. *)
 
   theorem any_divides_zero is
     fa(x:Integer) x divides zero
+  proof Isa
+    apply(simp add: Integer__divides_def)
+  end-proof
 
   (* Only 0 is divided by 0, because multiplying . *)
 
   theorem only_zero_is_divided_by_zero is
     fa(x:Integer) zero divides x => x = zero
+  proof Isa
+      apply(simp add: Integer__divides_def)
+  end-proof
 
   (* Since the division and remainder operations are not defined for non-zero
   divisors (see ops div and rem above), it may seem odd that our definition
@@ -209,9 +218,15 @@ Integer qualifying spec
       gcd(x,y) > zero &&
       gcd(x,y) divides x && gcd(x,y) divides y &&
       (fa(w:Integer) w divides x && w divides y => gcd(x,y) >= w)
+  proof Isa
+    sorry
+  end-proof
 
   theorem gcd_of_zero_zero_is_zero is
     gcd (zero, zero) = zero
+  proof Isa
+    sorry
+  end-proof
 
   (* The l.c.m. of x and y is the smallest multiple, in absolute value, among
   all the multiples of x and y. The absolute value restriction is important,
@@ -220,6 +235,9 @@ Integer qualifying spec
   theorem lcm_smallest_abs_multiple is
     fa (x:Integer, y:Integer, w:Integer)
       w multipleOf x && w multipleOf y => lcm(x,y) <= abs w
+  proof Isa
+    sorry
+  end-proof
 
   % mapping to Isabelle:
 

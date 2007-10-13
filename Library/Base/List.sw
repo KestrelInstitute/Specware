@@ -158,7 +158,7 @@ List qualifying spec
     apply(induct_tac l)
     apply(auto)
   end-proof
-  proof Isa List__sublist_Obligation_subsort1
+  proof Isa sublist_Obligation_subsort1
   apply(auto, arith)
   end-proof
 
@@ -309,10 +309,11 @@ List qualifying spec
                  else locationOfNonEmpty(subl,suptl,pos+1) in
     case subl of
        | [] -> Some(0,supl)
-       | _  -> locationOfNonEmpty(subl,supl,0)
+       | subl  -> locationOfNonEmpty(subl,supl,0)
 
-  proof Isa locationOf__locationOfNonEmpty
-    "measure (\_lambda(subl,supl,pos). length supl)"
+  proof Isa locationOf__checkPrefix "measure (\_lambda(subl,supl). length supl)"
+  end-proof
+  proof Isa locationOf__locationOfNonEmpty "measure (\_lambda(subl,supl,pos). length supl)"
   end-proof
 
   (* Given a comparison function over type a, type List a can be linearly

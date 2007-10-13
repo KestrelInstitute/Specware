@@ -16,6 +16,9 @@ Functions qualifying spec
 
   theorem associativity is [a,b,c,d]
     fa (f: a -> b, g: b -> c, h: c -> d) (h o g) o f = h o (g o f)
+  proof Isa
+    apply(simp add: o_assoc)
+  end-proof
 
   % forward (a.k.a. diagrammatic) composition:
 
@@ -46,11 +49,21 @@ Functions qualifying spec
   theorem inverse is [a,b]
     fa(f:Bijection(a,b)) f o inverse f = id
                       && inverse f o f = id
+  proof Isa
+    apply(simp add: bij_def surj_iff inj_iff)
+  end-proof
 
   theorem f_inverse_apply is [a,b]
     fa(f:Bijection(a,b), x: b) f(inverse f (x)) = x
+  proof Isa
+    apply(simp add: bij_def surj_f_inv_f)
+  end-proof
+
   theorem inverse_f_apply is [a,b]
     fa(f:Bijection(a,b), x: a) inverse f(f (x)) = x
+  proof Isa
+    apply(simp add: bij_def inv_f_f)
+  end-proof
 
   % eta conversion:
 
@@ -63,9 +76,10 @@ Functions qualifying spec
 
   % mapping to Isabelle:
 
-  proof Isa ThyMorphism Fun
+  proof Isa ThyMorphism Hilbert_Choice
     Functions.id \_rightarrow id
     Functions.o \_rightarrow o Left 24
+    Functions.:> -> o Left 24 reversed
     Functions.injective? \_rightarrow inj
     Functions.surjective? \_rightarrow surj
     Functions.bijective? \_rightarrow bij
