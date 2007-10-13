@@ -1293,7 +1293,7 @@ Utilities qualifying spec
         (case getField(m,i) of
            | Some fld -> Some fld
            | None -> None)
-      | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, natSort))
+      | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, integerSort))
       | _ -> None
 
  op  disjointMatches: Match -> Boolean
