@@ -330,6 +330,10 @@ List qualifying spec
        | ([],      _::_    ) -> Less
        | (_::_,    []      ) -> Greater
 
+  % lift isomorphism to lists, element-wise:
+
+  op [a,b] isoList: Bijection(a,b) -> Bijection(List a, List b) =
+    fn iso_elem -> map iso_elem
 
   % deprecated:
 
@@ -337,9 +341,6 @@ List qualifying spec
     case l of
        | []     -> ()
        | hd::tl -> (f hd; app f tl)
-
-   op [a,b] isoList: Bijection(a,b) -> Bijection(List a, List b) =
-    fn iso_elem -> map iso_elem
 
   % mapping to Isabelle:
   proof Isa Thy_Morphism List
