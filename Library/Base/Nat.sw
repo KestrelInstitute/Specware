@@ -14,15 +14,7 @@ Nat qualifying spec
 
   type PosNat = (Nat | posNat?)
 
-  % the following should be probably removed because useless:
-
-  op two : Nat = succ one
-
-  op plus (n:Nat, m:Nat) : Nat = n + m
-
-  op lte (n:Nat, m:Nat) : Boolean = n < m
-
-  op minus (n:Nat, m:Nat | n >= m) : Nat = n - m
+  % successor restricted to natural numbers:
 
   op succ(n: Nat): Nat = Integer.succ n
 
@@ -31,10 +23,6 @@ Nat qualifying spec
   proof Isa Thy_Morphism
    type Nat.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
    Nat.succ     -> Suc
-   Nat.two      -> 2
-   Nat.plus     -> +     Left 25
-   Nat.lte      -> \<le> Left 20
-   Nat.minus    -> -     Left 25
   end-proof
 
   (* Metaslang's natural literals are simply syntactic shortcuts for expressions
