@@ -11,6 +11,7 @@
 	    (:alternatives 
 	     "/:$SPECWARE/"
 	     "$SPECWARE:.:$SPECWARE/"
+	     "$SPECWARE/:./:/"
 	     "$SPECWARE/:./"
 	     "$SPECWARE/:/"
 	     "$SPECWARE/"
