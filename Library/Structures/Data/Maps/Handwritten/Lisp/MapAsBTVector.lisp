@@ -70,6 +70,7 @@
 (defparameter *map-as-undo-vector-alist-elt-ref-count* 0)
 (defparameter *map-as-undo-vector-set-count* 0)
 
+(defparameter BTV_empty_map (make-map-as-undo-vector (map-as-undo-vector--initial-vector) nil))
 
 (defun map-as-undo-vector-assure-current (m)
   (if (map-as-undo-vector-current? m)
@@ -98,6 +99,8 @@
 
 (defun map-as-undo-vector--update (m x y)
   (declare (fixnum x))
+  (when (eq m BTV_empty_map)
+    (setq m (make-map-as-undo-vector (map-as-undo-vector--initial-vector) nil)))
   (let ((m (map-as-undo-vector-assure-current m)))
     ;;(incf *map-as-undo-vector-set-count*)
     (let ((vec (map-as-undo-vector--vector m)))
@@ -129,8 +132,6 @@
 		 (format t "~3D:~4D " x val))))))
 
 ;;; The Vector interface functions
-
-(defparameter BTV_empty_map (make-map-as-undo-vector (map-as-undo-vector--initial-vector) nil))
 
 (defun BTV_numItems (m)
   (let ((m (map-as-undo-vector-assure-current m)))
