@@ -21,6 +21,17 @@ WordMatching0 = spec
                   else false
   proof Isa "measure (\_lambda(wrd,msg). length wrd)" end-proof
 
+  theorem word_matches_aux?_spec is
+    fa(wrd: Word, msg: Message)
+      length wrd <= length msg
+        => word_matches_aux?(wrd, msg)
+          = (fa(i:Nat) i < length wrd =>
+              symb_matches?(nth(wrd,i), nth(msg,i)))
+  proof Isa fa wrd msg.
+  apply(induct_tac wrd msg rule: word_matches_aux_p.induct)
+  apply(auto)  
+  end-proof
+
   op word_matches_at?(wrd: Word, msg: Message, pos: Nat): Boolean =
     if pos + length wrd > length msg
       then false

@@ -150,7 +150,7 @@
   '(
     ; "Library/Base/Handwritten/Lisp/Boolean.lisp"
     "Library/Base/Handwritten/Lisp/Integer.lisp"
-    "Library/Base/Handwritten/Lisp/Nat.lisp"
+;    "Library/Base/Handwritten/Lisp/Nat.lisp"
     "Library/Base/Handwritten/Lisp/Char.lisp"
     "Library/Base/Handwritten/Lisp/System.lisp"
     "Library/Base/Handwritten/Lisp/String.lisp"

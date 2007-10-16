@@ -29,13 +29,40 @@ Test = spec
       map match2string
           (find_matches(string2message mstr, map string2word wstrs))
 
+ def implode l = foldl (fn (c,s) -> s ^ toString c) "" l
+ def explode s =
+   if s = "" then []
+     else Cons(sub(s,0),explode(substring(s,1,length s)))
+
 endspec
 
 Data = spec
   import Test
-  def msg = "**V*ALN**EC*E*S"
-  def words = ["CERAMIC","CHESS","DECREE","FOOTMAN",
-	       "INLET","MOLOCH","OCELOT","PROFUSE",
-	       "RESIDE", "REVEAL", "SECRET", "SODIUM",
-	       "SPECIES", "VESTIGE", "WALNUT", "YOGURT"]
+  op msg: MessageString = "**V*ALN**EC*E*S"
+  op words: List WordString =
+    ["CERAMIC","CHESS","DECREE","FOOTMAN",
+     "INLET","MOLOCH","OCELOT","PROFUSE",
+     "RESIDE", "REVEAL", "SECRET", "SODIUM",
+     "SPECIES", "VESTIGE", "WALNUT", "YOGURT"]
+
+  def main(): () =
+    let results = test_find_matches(msg,words) in
+    app (fn {position,word} ->
+           writeLine("Word "^word^" matches at "^ toString position))
+      results
+    
 endspec
+
+JavaInfo = spec
+  def package = "Match"
+  def moduleClassName = "MatchMod"
+  def public = ["main"]
+endspec
+
+(* To generate, compile and run Java version
+* gen-java MatchingTest#Data MatchingTest#JavaInfo
+
+In bash shell
+: javac -source 1.4 Match/*.java
+: java Match/Primitive
+*)
