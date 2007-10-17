@@ -26,26 +26,26 @@ PrNat qualifying spec
 
   axiom one_def is one = 1
 
-  axiom two_def is two = 2
+% axiom two_def is two = 2
 
   axiom plus_def1 is
-    fa(n:Nat) plus(n,0) = n
+    fa(n:Nat) n + 0 = n
   axiom plus_def2 is
-    fa(n:Nat, n0:Nat) plus(n,Nat.succ n0) = Nat.succ(plus(n,n0))
+    fa(n:Nat, n0:Nat) n + Nat.succ n0 = Nat.succ(n + n0)
 
   axiom lte_def1 is
-    fa(n:Nat) lte(0,n)
+    fa(n:Nat) 0 <= n
   axiom lte_def2 is
-    fa(n:Nat) ~(lte(Nat.succ n, 0))
+    fa(n:Nat) ~(Nat.succ n <= 0)
   axiom lte_def3 is
-    fa(n1:Nat, n2:Nat) lte(Nat.succ n1,Nat.succ n2) <=> lte(n1,n2)
+    fa(n1:Nat, n2:Nat) Nat.succ n1 <= Nat.succ n2 <=> n1 <= n2
 
   axiom minus_def1 is
-    fa(n:Nat) minus(n,0) = n
+    fa(n:Nat) n - 0 = n
   axiom minus_def2 is
-    fa(n1:Nat, n2:Nat) lte(n2,n1) => minus(Nat.succ n1,Nat.succ n2) = minus(n1,n2)
+    fa(n1:Nat, n2:Nat) n2 <= n1 => Nat.succ n1 - Nat.succ n2 = n1 - n2
 
 %  theorem minus_def is
-%    fa(n1: Nat, n2: Nat, n3: Nat) lte(n2, n1) && minus(n1, n2) = n3 => n1 = plus(n2, n3)
+%    fa(n1: Nat, n2: Nat, n3: Nat) n2 <= n1 && n1 - n2 = n3 => n1 = n2 + n3
 
 endspec
