@@ -96,7 +96,7 @@ AnnSpec qualifying spec
     let filtered_diffs = foldl (fn (diff, diffs) ->
                                   case diff of
                                     | Types (x,y) ->	
-                                      if equivType? spc (x, y) then
+                                      if similarType? spc (x, y) then % allow A to match A|p, e.g. 0:Nat to match 0:Integer
                                         diffs
                                       else
                                         [diff] ++ diffs

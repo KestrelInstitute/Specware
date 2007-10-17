@@ -1252,7 +1252,7 @@ Utilities qualifying spec
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to true,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
 	if constantTerm?(N1) && constantTerm?(N2) then
-          (let eq? = equalTerm?(N1,N2) in
+          (let eq? = equivTerm? spc (N1,N2) in % equalTerm? would reject 0:Nat = 0:Integer
              if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
                then Some(mkBool eq?)
              else None)
@@ -1261,7 +1261,7 @@ Utilities qualifying spec
 	if evalConstant?(N1) & evalConstant?(N2) then
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to false,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
-          (let eq? = equalTerm?(N1,N2) in
+          (let eq? = equivTerm? spc (N1,N2) in  % equalTerm? would reject 0:Nat = 0:Integer
              if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
                then Some(mkBool(~eq?))
            else
