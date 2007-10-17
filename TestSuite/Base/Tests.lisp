@@ -366,8 +366,8 @@
        ("(zero) = 0" :swe "(zero) = 0" :value '(:|Bool| . T))
        ;; Nat [ 87]:  op one     : Nat
        ("(one) = 1" :swe "(one) = 1" :value '(:|Bool| . T))
-       ;; Nat [ 88]:  op two     : Nat
-       ("(two) = 2" :swe "(two) = 2" :value '(:|Bool| . T))
+       ;; ;; Nat [ 88]:  op two     : Nat
+       ;; ("(two) = 2" :swe "(two) = 2" :value '(:|Bool| . T))
        ;; Nat [ 89]:  op posNat? : Nat -> Boolean
        ("(posNat? ( 0 )) = false" :swe "(posNat? ( 0 )) = false" :value '(:|Bool| . T))
        ("(posNat? ( 1 )) = true" :swe "(posNat? ( 1 )) = true" :value '(:|Bool| . T))

@@ -363,8 +363,8 @@ spec
     tester ("(zero) = 0", (zero) = 0);
 % Nat [ 87]:  op one     : Nat
     tester ("(one) = 1", (one) = 1);
-% Nat [ 88]:  op two     : Nat
-    tester ("(two) = 2", (two) = 2);
+%% % Nat [ 88]:  op two     : Nat
+%% %    tester ("(two) = 2", (two) = 2);
 % Nat [ 89]:  op posNat? : Nat -> Boolean
     tester ("(posNat? ( 0 )) = false", (posNat? ( 0 )) = false);
     tester ("(posNat? ( 1 )) = true", (posNat? ( 1 )) = true);
