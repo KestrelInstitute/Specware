@@ -1,43 +1,63 @@
+(defvar lisp-emacs-interface-type)
+(defvar *windows-system-p*)
+
+(defvar *specware-lisp*) ; allegro, cmulisp, openmcl, sbcl, etc.
+(defvar *specware-buffer-name*)
 (defvar *specware4-dir)
+(defvar *specware-home-directory*)
 
-(defvar sw:image-is-executable (eq *specware-lisp* 'sbcl))
+(defvar *lisp-image-extension*)
+(defvar *lisp-executable-extension*)
+(defvar *fasl-extension*)
 
-;; This is called to start Specware. It is invoked by a command-line
-;; argument to Xemacs. This spawns a Lisp process.
+(defvar sw:common-lisp-directory)
+(defvar sw:common-lisp-image-name)
+(defvar sw:common-lisp-image-file)
+(defvar sw:common-lisp-image-arguments)
+(defvar sw:common-lisp-host)
+(defvar sw:common-lisp-buffer-name)
+(defvar sw::lisp-host)
+
+
+;; This is called to start Specware. 
+;; It is invoked by a command-line argument to Xemacs, and spawns a Lisp process.
 
 (defun run-specware4 (&optional in-current-dir?)
   (interactive "P")
   (if (inferior-lisp-running-p)
       (sw:switch-to-lisp t)
-    (let* ((*specware4-dir (sw::normalize-filename
-			    (if in-current-dir?
-				(strip-final-slash (if (stringp in-current-dir?)
-						       in-current-dir?
-						     default-directory))
-			      (concat (or (getenv "LISP_DIRECTORY") 
-					  (getenv "SPECWARE4"))))))
-	   (bin-dir (binary-directory *specware4-dir))
-	   (world-name (or (getenv "LISP_HEAP_IMAGE")
-			   (concat bin-dir "/Specware4."
-				   (if sw:image-is-executable
-				       *lisp-executable-extension*
-				     *lisp-image-extension*)))))
-      (setq sw:common-lisp-host "localhost")
-      (setq-default sw::lisp-host sw:common-lisp-host)
-      ;;
+    (let* ((*specware4-dir (strip-final-slash
+			    (sw::normalize-filename ; may rename "Program Files" to "Progra~1" etc.
+			     (expand-file-name 
+			      (if in-current-dir?
+				  (if (stringp in-current-dir?)
+				      in-current-dir?
+				    default-directory)
+				(concat (or (getenv "LISP_DIRECTORY") 
+					    (getenv "SPECWARE4"))))))))
+	   (bin-dir               (binary-directory *specware4-dir))
+	   (default-sw-executable (sw::normalize-filename (expand-file-name (concat bin-dir "/Specware4." *lisp-executable-extension*))))
+	   (default-sw-image      (sw::normalize-filename (expand-file-name (concat bin-dir "/Specware4." *lisp-image-extension*)))))
+
+      ;; sw:common-lisp-buffer-name is defined in compat.el
+
       ;; sw:common-lisp-directory is the directory in which the lisp subprocess will
       ;; be executed. It is defined in eli/fi-subproc.el with a default value nil
       ;; This seems to work fine under Unix/Linux but under Windows there is 
       ;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
-      ;;
+
       (setq sw:common-lisp-directory (concat *specware4-dir "/"))
+
+      ;; Specware can be started in two ways. 
       ;;
-      ;; Specware can be started in two ways. The familiar way is to start the
-      ;; Lisp environment augmented with a Specware image. The term "image" comes
-      ;; from the Franz manual. At Kestrel, an image is called a "world". The other
-      ;; way is to create a new executable application using the ACL primitive
-      ;; generate-application. By executable we mean a .exe in the Windows world.
-      ;; The latter requires the Enterprise Edition of ACL. It has the advantage that
+      ;; One way is to start a generic Lisp augmented with a Specware image. 
+      ;; The term "image" comes from Franz Allegro. 
+      ;; (At Kestrel, an image is called a "world".)
+      ;;
+      ;; The other way is to create a new standalone executable application.
+      ;;
+      ;; ACL uses the primitive generate-application to create standalone applications.
+      ;; This requires the Enterprise Edition of ACL, but has the advantage that
       ;; we can ship Specware to users who do not already have ACL installed.
       ;;
       ;; Below we set a parameter sw:common-lisp-image-name. Just to confuse things
@@ -47,13 +67,25 @@
       ;; If the executable is produced by generate-application, then typically,
       ;; there will not be an ACL image file.
       ;;
-      (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
-      ;;
-      ;; A "HEAP_IMAGE" is what Franz calls an image and what Kestrel calls a world.
-      ;; The suffix on such files is .dxl.
-      ;;
-      ;(setq sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE"))
-      (setq sw:common-lisp-image-file world-name)
+      ;; The suffix for image names is .exe, .sbclexe, etc.
+
+      (setq sw:common-lisp-image-name 
+	    ;; executable: either generic lisp or standalone specware
+	    (sw::normalize-filename 
+	     (expand-file-name 
+	      (or (getenv "LISP_EXECUTABLE")
+		  default-sw-executable))))
+
+      ;; A heap image is loaded into a (presumably generic) lisp.
+      ;; (Franz calls this an image.)
+      ;; The suffix on such files is .dxl or .sbclimage, etc.
+
+      (setq sw:common-lisp-image-file 
+	    (if (equal sw:common-lisp-image-name default-sw-executable)
+		nil
+	      (sw::normalize-filename (expand-file-name 
+				       (or (getenv "LISP_HEAP_IMAGE")
+					   default-sw-image)))))
 
       (setq sw:common-lisp-image-arguments
 
@@ -84,7 +116,10 @@
         ;; to leave Specware zombies behind if the user just exists from XEmacs 
 	;; (which runs as a separate proccess communicating with Specware).
 
-	(if *windows-system-p* '("+cm") nil)) 
+	(if *windows-system-p* '("+cm") nil))
+
+      (setq sw:common-lisp-host "localhost")
+      (setq-default sw::lisp-host sw:common-lisp-host)
 
       (sw:add-specware-to-isabelle-path)
 
@@ -94,19 +129,12 @@
       (sleep-for 4)
       (let ((log-warning-minimum-level 'error))
 	;; Don't show spurious warning message
-	(if sw:image-is-executable
-	    (sw:common-lisp sw:common-lisp-buffer-name
-			    sw:common-lisp-directory
-			    sw:common-lisp-image-file
-			    sw:common-lisp-image-arguments
-			    sw:common-lisp-host
-			    nil)
-	  (sw:common-lisp sw:common-lisp-buffer-name
-			  sw:common-lisp-directory
-			  sw:common-lisp-image-name
-			  sw:common-lisp-image-arguments
-			  sw:common-lisp-host
-			  sw:common-lisp-image-file)))
+	(sw:common-lisp sw:common-lisp-buffer-name
+			sw:common-lisp-directory
+			sw:common-lisp-image-name
+			sw:common-lisp-image-arguments
+			sw:common-lisp-host
+			sw:common-lisp-image-file))
       (wait-for-prompt 0.1)
       (sw:eval-in-lisp-no-value
        (format "(cl:namestring (specware::change-directory %S))" sw:common-lisp-directory))
@@ -144,49 +172,36 @@
   (setq sw:common-lisp-image-arguments
     (list "-L" (getenv "SOCKET_INIT_FILE"))))
 
-;; The following is almost the same as the above. The difference is that
-;; in the following we execute a Specware application (rather than run Lisp
-;; with a Specware world);
-
-(defun run-lisp-application ()
+(defun run-lisp-application (lisp-executable image-file)
   (interactive)
   (setq sw:common-lisp-host "localhost")
   (setq-default sw::lisp-host sw:common-lisp-host)
-;;
-;; sw:common-lisp-directory is the directory in which the lisp subprocess will
-;; be executed. It is defined in eli/fi-subproc.el with a default value nil
-;; This seems to work fine under Unix/Linux but under Windows there is 
-;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
-;;
+
+  ;; sw:common-lisp-directory is the directory in which the lisp subprocess will
+  ;; be executed. It is defined in eli/fi-subproc.el with a default value nil
+  ;; This seems to work fine under Unix/Linux but under Windows there is 
+  ;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
+
   (setq sw:common-lisp-directory (getenv "LISP_DIRECTORY"))
 
-;; Below we set a parameter sw:common-lisp-image-name. This is the name 
-;; used by eli/fi-subproc.el for the Lisp executable. This is the application
-;; we want to run.  The image file (in the ACL sense) or world, is bound 
-;; to common-lisp-image-file. If the executable is produced by
-;; generate-application, then typically, there will not be an ACL image file.
+  ;; Below we set a parameter sw:common-lisp-image-name. This is the name 
+  ;; used by eli/fi-subproc.el for the Lisp executable. This is the application
+  ;; we want to run.  The image file (in the ACL sense) or world, is bound 
+  ;; to common-lisp-image-file. If the executable is produced by
+  ;; generate-application, then typically, there will not be an image file.
 
-  (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
-  (setq sw:common-lisp-image-file (or (and (boundp 'sw:common-lisp-image-file) sw:common-lisp-image-file)
-				      (getenv "LISP_HEAP_IMAGE")))
+  (setq sw:common-lisp-image-name lisp-executable) ;; (getenv "LISP_EXECUTABLE"))
+  (setq sw:common-lisp-image-file image-file)      ;; (getenv "LISP_HEAP_IMAGE")
   (setq sw:common-lisp-image-arguments
     (if *windows-system-p* '("+cm") nil)) ; see note above
 
   (let ((log-warning-minimum-level 'error))
-    (if sw:image-is-executable
-	(sw:common-lisp sw:common-lisp-buffer-name
-			sw:common-lisp-directory
-			sw:common-lisp-image-file
-			sw:common-lisp-image-arguments
-			sw:common-lisp-host
-			nil)
-      (sw:common-lisp sw:common-lisp-buffer-name
-		      sw:common-lisp-directory
-		      sw:common-lisp-image-name
-		      sw:common-lisp-image-arguments
-		      sw:common-lisp-host
-		      sw:common-lisp-image-file))))
-
+    (sw:common-lisp sw:common-lisp-buffer-name
+		    sw:common-lisp-directory
+		    sw:common-lisp-image-name
+		    sw:common-lisp-image-arguments
+		    sw:common-lisp-host
+		    sw:common-lisp-image-file)))
 
 (defun run-plain-lisp (&optional sleep)
   (interactive)
@@ -195,24 +210,24 @@
     (sw:exit-lisp)
     (sit-for 2))
   (setq sw:common-lisp-host "localhost")
-;;
-;; sw:common-lisp-directory is the directory in which the lisp subprocess will
-;; be executed. It is defined in eli/fi-subproc.el with a default value nil
-;; This seems to work fine under Unix/Linux but under Windows there is 
-;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
-;;
+
+  ;; sw:common-lisp-directory is the directory in which the lisp subprocess will
+  ;; be executed. It is defined in eli/fi-subproc.el with a default value nil
+  ;; This seems to work fine under Unix/Linux but under Windows there is 
+  ;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
+
   (setq sw:common-lisp-directory (getenv "LISP_DIRECTORY"))
 
-;; Below we set a parameter sw:common-lisp-image-name. This is the name 
-;; used by eli/fi-subproc.el for the Lisp executable. This is the application
-;; we want to run.  The image file (in the ACL sense) or world, is bound 
-;; to common-lisp-image-file. If the executable is produced by
-;; generate-application, then typically, there will not be an ACL image file.
+  ;; Below we set a parameter sw:common-lisp-image-name. This is the name 
+  ;; used by eli/fi-subproc.el for the Lisp executable. This is the application
+  ;; we want to run.  The image file (in the ACL sense) or world, is bound 
+  ;; to common-lisp-image-file. If the executable is produced by
+  ;; generate-application, then typically, there will not be an ACL image file.
 
   (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
   (setq sw:common-lisp-image-file nil)
   (setq sw:common-lisp-image-arguments
-    (if *windows-system-p* '("+cm") nil)) ; see note above
+	(if *windows-system-p* '("+cm") nil)) ; see note above
 
   (let ((log-warning-minimum-level 'error))
     (sw:common-lisp sw:common-lisp-buffer-name
@@ -419,11 +434,13 @@
 	(return nil)))
     (sw:exit-lisp)
     (sit-for 3))
-  (if (null base-world-name)
-      (run-plain-lisp 1)
-    (let ((sw:common-lisp-image-file base-world-name))
-      (sit-for 3)
-      (run-lisp-application)))
+  (cond ((null base-world-name)
+	 (run-plain-lisp 1))
+	(t
+	 (sit-for 3)
+	 (run-lisp-application 
+	  (sw::normalize-filename (expand-file-name (getenv "LISP_EXECUTABLE")))
+	  (sw::normalize-filename (expand-file-name base-world-name)))))
   (sit-for 3)
   (eval-in-lisp-in-order
    (format "(cl:load %S)"
@@ -435,21 +452,19 @@
 					    slash-dir)))
   (eval-in-lisp-in-order (format "(specware::setenv \"SPECWARE4\" %S)"
 				    (sw::normalize-filename *specware4-dir)))
-  (eval-in-lisp-in-order
-   (format "(cl:load %S)"
-	   (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
-  (eval-in-lisp-in-order
-   (format "(cl:load %S)"
-	   (concat *specware4-dir "/Applications/Handwritten/Lisp/memory-management")))
-  (eval-in-lisp-in-order
-   (format "(cl:namestring (specware::change-directory %S))" build-dir))
+  (eval-in-lisp-in-order (format "(cl:load %S)"
+				 (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
+  (eval-in-lisp-in-order (format "(cl:load %S)"
+				 (concat *specware4-dir "/Applications/Handwritten/Lisp/memory-management")))
+  (eval-in-lisp-in-order (format "(cl:namestring (specware::change-directory %S))" 
+				 build-dir))
   (eval-in-lisp-in-order "(cl-user::set-gc-parameters-for-build nil)")
   (eval-in-lisp-in-order "(cl:load \"Specware4.lisp\")")
   (eval-in-lisp-in-order "(cl-user::compact-memory t)")
   (eval-in-lisp-in-order "(cl-user::set-gc-parameters-for-use nil)")
   (when (file-exists-p world-name)
-    (rename-file world-name (concat bin-dir "/Specware4-saved."
-				    *lisp-image-extension*)
+    (rename-file world-name 
+		 (concat bin-dir "/Specware4-saved." *lisp-image-extension*)
 		 t))
   (sit-for 5)
   (eval-in-lisp-in-order (format (case *specware-lisp*
@@ -534,9 +549,7 @@
   (interactive "P")
   (let ((*specware4-dir (sw::normalize-filename
 			(if in-current-dir? (strip-final-slash default-directory)
-			  (concat (getenv "SPECWARE4")))))
-	;; (slash-dir "/")
-	)
+			  (concat (getenv "SPECWARE4"))))))
     (run-specware4 *specware4-dir)
     (sit-for 0.1)
     (eval-in-lisp-in-order
@@ -582,6 +595,7 @@
       dirname)))
 
 (defun run-PSL (&optional in-current-dir?)
+  ;;  ... SEMI-OBSOLETE -- NEEDS REVIEW IF USED ...
   (interactive "P")
   (let* ((*specware4-dir (sw::normalize-filename
 			 (if in-current-dir?
@@ -637,19 +651,11 @@
 
     (let ((log-warning-minimum-level 'error))
       ;; Don't show spurious warning message
-      (if sw:image-is-executable
-	  (sw:common-lisp sw:common-lisp-buffer-name
-			  sw:common-lisp-directory
-			  sw:common-lisp-image-file
-			  sw:common-lisp-image-arguments
-			  sw:common-lisp-host
-			  nil)
-	(sw:common-lisp sw:common-lisp-buffer-name
-			sw:common-lisp-directory
-			sw:common-lisp-image-name
-			sw:common-lisp-image-arguments
-			sw:common-lisp-host
-			sw:common-lisp-image-file
-			)))
+      (sw:common-lisp sw:common-lisp-buffer-name
+		      sw:common-lisp-directory
+		      sw:common-lisp-image-name
+		      sw:common-lisp-image-arguments
+		      sw:common-lisp-host
+		      sw:common-lisp-image-file))
     (goto-char (point-max))
     ))
