@@ -172,8 +172,12 @@
   (setq sw:common-lisp-image-arguments
     (list "-L" (getenv "SOCKET_INIT_FILE"))))
 
-(defun run-lisp-application (lisp-executable image-file)
-  (interactive)
+(defun run-lisp-application (&optional lisp-executable image-file)
+  (interactive "sExecutable Lisp Program: 
+sLisp Heap Image File: ")
+  (when (equal lisp-executable "") (setq lisp-executable nil))
+  (when (equal image-file      "") (setq image-file      nil))
+
   (setq sw:common-lisp-host "localhost")
   (setq-default sw::lisp-host sw:common-lisp-host)
 
@@ -190,8 +194,29 @@
   ;; to common-lisp-image-file. If the executable is produced by
   ;; generate-application, then typically, there will not be an image file.
 
-  (setq sw:common-lisp-image-name lisp-executable) ;; (getenv "LISP_EXECUTABLE"))
-  (setq sw:common-lisp-image-file image-file)      ;; (getenv "LISP_HEAP_IMAGE")
+  (setq sw:common-lisp-image-name 
+	(or lisp-executable
+	    (and (boundp 'sw:common-lisp-image-name) sw:common-lisp-image-name)
+	    (getenv "LISP_EXECUTABLE")))
+
+  (setq sw:common-lisp-image-file
+	(or image-file
+	    (and (boundp 'sw:common-lisp-image-file) sw:common-lisp-image-file)
+	    (getenv "LISP_HEAP_IMAGE")))
+
+  (message "[%s][%s]" sw:common-lisp-image-name sw:common-lisp-image-file)
+  (sit-for 4)
+
+  (setq sw:common-lisp-image-name 
+	(if (equal sw:common-lisp-image-name "NONE")
+	    nil
+	  (sw::normalize-filename (expand-file-name sw:common-lisp-image-name))))
+	 
+  (setq sw:common-lisp-image-file
+	(if (equal sw:common-lisp-image-file "NONE")
+	    nil
+	  (sw::normalize-filename (expand-file-name sw:common-lisp-image-file))))
+
   (setq sw:common-lisp-image-arguments
     (if *windows-system-p* '("+cm") nil)) ; see note above
 
@@ -438,9 +463,7 @@
 	 (run-plain-lisp 1))
 	(t
 	 (sit-for 3)
-	 (run-lisp-application 
-	  (sw::normalize-filename (expand-file-name (getenv "LISP_EXECUTABLE")))
-	  (sw::normalize-filename (expand-file-name base-world-name)))))
+	 (run-lisp-application (getenv "LISP_EXECUTABLE") base-world-name)))
   (sit-for 3)
   (eval-in-lisp-in-order
    (format "(cl:load %S)"
