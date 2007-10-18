@@ -8,8 +8,8 @@ HERE=`pwd`
 
 #########################################################################
 
-LISP_EXECUTABLE=$LISP
-LISP_HEAP_IMAGE="$SPECWARE4/Specware4.sbclexe"
+LISP_EXECUTABLE="$SPECWARE4/Specware4.sbclexe"
+LISP_HEAP_IMAGE=NONE
 LISP_DIRECTORY="$SPECWARE4/"   # The directory the lisp image will connect to
 
 export LISP_EXECUTABLE

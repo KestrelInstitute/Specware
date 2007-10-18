@@ -61,6 +61,7 @@ fi
 
 SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
 
-LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4.sbclexe
+LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4.sbclexe
+LISP_HEAP_IMAGE=NONE
 
-"$LISP_HEAP_IMAGE" --eval "(progn (format t \"~%Welcome to Specware ~a~2%\" *specware-version*) (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (exit))"
+"$LISP_EXECUTABLE" --eval "(progn (format t \"~%Welcome to Specware ~a~2%\" *specware-version*) (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (exit))"
