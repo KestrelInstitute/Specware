@@ -204,9 +204,6 @@ sLisp Heap Image File: ")
 	    (and (boundp 'sw:common-lisp-image-file) sw:common-lisp-image-file)
 	    (getenv "LISP_HEAP_IMAGE")))
 
-  (message "[%s][%s]" sw:common-lisp-image-name sw:common-lisp-image-file)
-  (sit-for 4)
-
   (setq sw:common-lisp-image-name 
 	(if (equal sw:common-lisp-image-name "NONE")
 	    nil
