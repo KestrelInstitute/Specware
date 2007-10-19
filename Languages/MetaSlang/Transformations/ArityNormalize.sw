@@ -130,7 +130,7 @@ ArityNormalize qualifying spec {
 %        | Fun(Op (Local id,_),_,_) -> opArity(sp,specName,id)
 %        | Fun(Op (Qualified(specName,id),_),_,_) -> 
 %          opArity(sp,specName,id)
-        | Fun(Embed(id,true),srt,_) -> sortArity(sp,srt)
+        | Fun(Embed(id,true),srt,_) -> None  % sortArity(sp,srt)
         | Fun _ -> None
         | Let _ -> None
         | LetRec _ -> None
