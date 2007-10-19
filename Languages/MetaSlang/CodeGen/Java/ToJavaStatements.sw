@@ -68,6 +68,9 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 		      | Arrow(dom,rng,_) -> translateLambdaToExprM(tcx,term,k,l)
 		      | _ -> 
 		        let _ = print term in
+                        %% TODO: arrive here for types such as
+                        %% fa (x1:Integer, x2:Integer) ...
+                        %% fa (y:Integer) ex(x:Integer) ...
 			raise(UnsupportedTermFormat((printTermWithSorts term)^" [2]"),termAnn term)
 			 ))
 	   }
@@ -101,6 +104,9 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 %	   if caseTerm?(term) then
 %	     translateCaseToExprM(tcx, term, k, l)
 %	   else
+             %% TODO: arrive here for types such as
+             %% fa (x1:Integer, x2:Integer) ...
+             %% fa (y:Integer) ex(x:Integer) ...
 	       %unsupportedInTerm(term,k,l,"term not supported by Java code generator(2): "^(printTerm term))
 	     let _ = print term in
 	     raise(UnsupportedTermFormat((printTerm term)^" [1] in \"termToExpression_internalM\" "),termAnn term)
