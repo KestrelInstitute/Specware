@@ -678,7 +678,8 @@ MetaSlangRewriter qualifying spec
                          context.traceDepth := 0;
                          rewritesToTrue(rules,cond,boundVars,emptySubstitution,history,backChain))
                       else 
-                        rewritesToTrue(rules,cond,boundVars,emptySubstitution,history,backChain)
+                        (context.traceDepth := 0;
+                         rewritesToTrue(rules,cond,boundVars,emptySubstitution,history,backChain))
             in
 	    if traceRewriting > 0 then
 	      (context.traceIndent := traceIndent;
