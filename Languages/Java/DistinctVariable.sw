@@ -103,6 +103,12 @@ def distinctVar(term, ids) =
     | Seq(terms,b) -> foldl (fn(term,(Seq(terms,b),ids0)) ->
 			     let (t,ids) = distinctVar(term,ids0) in
 			     (Seq(concat(terms,[t]),b),ids)) (Seq([],b),ids) terms
+
+    | Bind _ -> distinctVarBind(term, ids)
+    | The  _ -> distinctVarThe (term, ids)
+    | Pi   _ -> distinctVarPi  (term, ids)
+    | And  _ -> distinctVarAnd (term, ids)
+
     | _ -> fail ("unsupported term format (in distinctVar)"^printTerm(term))
 
 op distinctVars: List Term * List Id -> List Term * List Id
@@ -201,6 +207,18 @@ def distinctVarLetNoNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
   let res = (mkLet([(mkVarPat(variable), letTerm)], newLetBody)) in
   (withAnnT(res,termAnn(letTerm)),finalIds)
 
+
+def distinctVarBind (term as Bind(binder, vars, body, _), ids) =
+  fail ("unsupported term format (in distinctVar)"^printTerm(term))
+
+def distinctVarThe (term as The(var, body, _), ids) =
+  fail ("unsupported term format (in distinctVar)"^printTerm(term))
+
+def distinctVarPi (term as Pi(tyvars, body, _), ids) =
+  fail ("unsupported term format (in distinctVar)"^printTerm(term))
+
+def distinctVarAnd (term as And(terms, _), ids) =
+  fail ("unsupported term format (in distinctVar)"^printTerm(term))
 
 op findNewId: Id * List Id -> Id
 
