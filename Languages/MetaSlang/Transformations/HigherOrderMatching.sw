@@ -300,9 +300,18 @@ beta contraction.
        of Apply(M,N,_) -> headForm M ++ [N]
         | _ -> [term]
      
- def insertFields = 
-     ListPair.foldr 
-	(fn((_,x),(_,y),stack) -> insert(x,y,stack))	
+ op insertFields (stack: Stack) (fields1: List(Id * MS.Term), fields2: List(Id * MS.Term)): Stack = 
+   %% Try to put the easy cases that don't generate multiple possibilities first
+   let (pairs, hard_pairs) =
+     ListPair.foldr
+	(fn((_,x),(_,y), (pairs, hard_pairs)) ->
+           if some?(hasFlexHead? x)
+             then (pairs, Cons((x,y), hard_pairs))
+             else (Cons((x,y), pairs), hard_pairs))
+        ([],[]) (fields1, fields2)
+   in
+     foldl (fn ((x,y), stack) -> insert(x,y,stack))	
+        stack (pairs ++ hard_pairs)
 
 \end{spec}
 
@@ -396,16 +405,16 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,emptyStack))
 
- def matchPairs (context,subst,stack) = 
-  %let _ = writeLine("Stack:\n"^ anyToString stack) in
+ def matchPairs (context,subst,stack0) = 
+  %let _ = writeLine("Stack:\n"^ anyToString stack0) in
   let result =
-   case next stack
+   case next stack0
      of None -> [subst]
       | Some(stack,M,N) -> 
- %       let _ = writeLine 
-%   	(printTerm (dereference subst M) ^ " = = "^
-%   	 printTerm N) 
-%        in
+%         let _ = writeLine 
+%    	(printTerm (dereference subst M) ^ " = = "^
+%    	 printTerm N) 
+%         in
 %       let _ = printSubst subst in
    case (dereference subst M,N)
      of 
@@ -464,8 +473,10 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 %%
 %% Constants
 %%
-      | (Fun(f1,srt1,_),Fun(f2,srt2,_)) ->  
-	matchBase(context,f1,srt1,f2,srt2,stack,subst,N)
+      | (Fun(f1,srt1,_),Fun(f2,srt2,_)) ->
+        if f1 = Equals && f2 = Equals || f1 = NotEquals && f2 = NotEquals
+          then matchPairs(context, subst, stack)
+        else matchBase(context,f1,srt1,f2,srt2,stack,subst,N)
       | (Var((n1,srt1), _),Var((n2,srt2), _)) ->  
 	matchBase(context,n1,srt1,n2,srt2,stack,subst,N)
       %% Special case of Let for now
@@ -507,15 +518,15 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
       | (IfThenElse(M1,M2,M3,_),IfThenElse(N1,N2,N3,_)) -> 
 	matchPairs(context,subst,insert(M1,N1,insert(M2,N2,insert(M3,N3,stack))))
       | (The ((id1,srt1),M,_),The ((id2,srt2),N,_)) -> 
-          (case unifySorts(context,subst,srt1,srt2,Some(mkVar(id2,srt2))) of
-            | Some subst -> 
-               let x = freshBoundVar(context,srt1) in
-               let S1 = [((id1,srt1),Var(x,noPos))] in
-               let S2 = [((id2,srt2),Var(x,noPos))] in
-               let M = substitute(M,S1) in
-               let N = substitute(N,S2) in
-               matchPairs (context,subst,insert(M,N,stack))
-            | None -> [])
+        (case unifySorts(context,subst,srt1,srt2,Some(mkVar(id2,srt2))) of
+           | Some subst -> 
+             let x = freshBoundVar(context,srt1) in
+             let S1 = [((id1,srt1),Var(x,noPos))] in
+             let S2 = [((id2,srt2),Var(x,noPos))] in
+             let M = substitute(M,S1) in
+             let N = substitute(N,S2) in
+             matchPairs (context,subst,insert(M,N,stack))
+           | None -> [])
       | (M,_) -> 
 % 	  let _ = writeLine "matchPair" in
 % 	  let _ = writeLine(printTerm M) in
@@ -551,6 +562,17 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	     if ~(substs = []) then substs
 	     else
 	     let termTypes = map (fn M -> inferType(context.spc,subst,M)) terms in
+
+             %% Special case of imitation where other cases are equivalent
+             if closedTermV(N,context.boundVars)
+                  && ~(exists (fn t -> some?(isFlexVar? t)) terms)
+                  && noReferencesTo?(N,terms)
+ 		then 
+ 		let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
+ 		let trm    = foldr bindPattern N pats 			  in
+ 		let subst  = updateSubst(subst,n,trm) in
+ 		matchPairs(context,subst,stack) 
+  	     else 
 	     let vars  = map (fn srt -> freshBoundVar(context,srt)) termTypes in
 
 % 1. Recursive matching
@@ -662,22 +684,22 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	  of Some stack -> matchPairs(context,subst,stack)
 	   | None -> []
      in
-%      let _ = if result = []
-%                then (writeLine("MatchPairs failed!");
-%                       case next stack
-%                         of None -> ()
-%                          | Some(stack,M,N) ->
-%                            writeLine (printTerm (dereference subst M) ^ " = = "^ printTerm N)
-%                           )
-%              else ( writeLine("MatchPairs: "^toString(length result)^" results.");
-%                     if length result = 4 then
-%                       ((case next stack of
-%                          | Some(stack,M,N) -> 
-%                            writeLine 
-%                            (printTerm (dereference subst M) ^ " =-= "^ printTerm N)) ;
-%                        app printSubst result)
-%                     else ()
-%                    ) in
+%        let _ = if result = []
+%                  then (writeLine("MatchPairs failed!");
+%                         case next stack0
+%                           of None -> ()
+%                            | Some(stack,M,N) ->
+%                              writeLine (printTerm (dereference subst M) ^ " =~= "^ printTerm N)
+%                             )
+%                else ( writeLine("MatchPairs: "^toString(length result)^" results.");
+%                       if length result = 1 then
+%                         ((case next stack0 of
+%                            | Some(stack,M,N) -> 
+%                              writeLine (printTerm (dereference subst M) ^ " = = "^ printTerm N)
+%                            | None -> ()) ;
+%                          app printSubst result)
+%                       else ()
+%                      ) in
      result
 
   op  insertPairs : List MS.Term * List MS.Term * Stack -> Option Stack
@@ -1009,6 +1031,9 @@ skolemization transforms a proper matching problem into an inproper one.
 	   closedTermV(M,bound) && 
 	   (all (fn (_,M) -> closedTermV(M,bound)) decls) 
 
+ op noReferencesTo?(tm: MS.Term, tms: List MS.Term): Boolean =
+   ~(existsSubTerm (fn t -> termIn?(t,tms)) tm)
+
 (* Sort unification}
  Unification of sorts is similar to the one in AstTypes.
  It uses a list of already processed sort pairs to avoid cycling through
@@ -1138,6 +1163,9 @@ skolemization transforms a proper matching problem into an inproper one.
                     | Some tm ->
                       case unify(subst,ty1,ty2,equals,optTerm) of
                         | Unify subst ->
+                          let p1 = dereferenceAll subst p1 in
+%                           let _ = writeLine("Pred: "^printTermWithSorts p1) in
+%                           let _ = printSubst subst in
                           let condn = simplifiedApply(p1,tm,context.spc) in
                           if falseTerm? condn then NotUnify(srt1,srt2)
                            else Unify(addCondition(condn, subst))
