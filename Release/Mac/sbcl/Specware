@@ -87,6 +87,11 @@ if [ ! -x "$LISP" ]; then
    exit 1
 fi
 
+if [ -z "$SPECWARE_INIT_FORM" ]; then
+   SPECWARE_INIT_FORM=NIL
+   export SPECWARE_INIT_FORM
+fi
+
 LISP_DIR=`dirname "$LISP"`
 LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4.sbclexe
 LISP_HEAP_IMAGE=NONE
@@ -94,7 +99,6 @@ LISP_DIRECTORY="$SPECWARE4"/
 export LISP_EXECUTABLE
 export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
-
 
 $xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
        -f run-specware4 &
