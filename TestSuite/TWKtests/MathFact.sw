@@ -4,6 +4,7 @@ mathfacts = spec
     fa(i) i * zero = zero
   axiom zerodivposnat is 
     fa(i) zero div (Nat.succ i) = zero 
+  op two: Nat
   axiom twodef is 
     (one = Nat.succ zero) & (two = Nat.succ one)
   axiom natcons is 
