@@ -6,4 +6,27 @@
 # Load specware emacs files, do command line options (e.g. load and
 # start Isabelle and then run-specware4
 
+# Ensure SWPATH is set
+
+if [ -z "$SWPATH" ]; then
+  SWPATH="/"
+  export SWPATH
+fi
+
+
+if [ -z "$SPECWARE_INIT_FORM" ]; then
+   SPECWARE_INIT_FORM=NIL
+   export SPECWARE_INIT_FORM
+fi
+
+LISP_DIR=`dirname "$LISP"`
+LISP_EXECUTABLE="$SPECWARE4"/Specware4.sbclexe
+LISP_HEAP_IMAGE=NONE
+LISP_DIRECTORY="$SPECWARE4"/
+export LISP_EXECUTABLE
+export LISP_HEAP_IMAGE
+export LISP_DIRECTORY
+
+echo SPECWARE4=$SPECWARE4
+
 xemacs -l $SPECWARE4/Library/IO/Emacs/load-slime.el $* -f run-specware4&

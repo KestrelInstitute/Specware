@@ -82,6 +82,11 @@ if [ ! -x "$LISP" ]; then
    exit 1
 fi
 
+if [ -z "$SPECWARE_INIT_FORM" ]; then
+   SPECWARE_INIT_FORM=NIL
+   export SPECWARE_INIT_FORM
+fi
+
 LISP_DIR=`dirname "$LISP"`
 LISP_EXECUTABLE="$LISP"
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4.dxl
