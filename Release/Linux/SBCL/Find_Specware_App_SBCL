@@ -16,6 +16,11 @@ export LISP_EXECUTABLE
 export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 
+if [ -z "$SPECWARE_INIT_FORM" ]; then
+   SPECWARE_INIT_FORM=NIL
+   export SPECWARE_INIT_FORM
+fi
+
 #########################################################################
 
 echo ""
