@@ -32,8 +32,6 @@ defs e_gt_def: "(s1::string) > (s2::string) \<equiv> s2 < s1"
 consts e_gt_eq :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl ">=" 60)
 defs e_gt_eq_def: "(s1::string) >= (s2::string) \<equiv> s2 <= s1"
 consts newline :: "string"
-defs newline_def: "newline \<equiv> ''
-''"
 consts toScreen :: "string \<Rightarrow> unit"
 defs toScreen_def: "toScreen s \<equiv> ()"
 consts writeLine :: "string \<Rightarrow> unit"
