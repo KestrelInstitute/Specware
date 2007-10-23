@@ -83,9 +83,11 @@
       (setq sw:common-lisp-image-file 
 	    (if (equal sw:common-lisp-image-name default-sw-executable)
 		nil
-	      (sw::normalize-filename (expand-file-name 
-				       (or (getenv "LISP_HEAP_IMAGE")
-					   default-sw-image)))))
+	      (if (equal (getenv "LISP_HEAP_IMAGE") "NONE")
+		  nil
+		(sw::normalize-filename (expand-file-name 
+					 (or (getenv "LISP_HEAP_IMAGE")
+					     default-sw-image))))))
 
       (setq sw:common-lisp-image-arguments
 
@@ -142,7 +144,7 @@
 			   "(swshell::specware-shell nil)")))
 	(goto-char (point-max))
 	(if (eq lisp-emacs-interface-type 'slime)
-	    (unless (member init-form '(nil ""))
+	    (unless (member init-form '(nil "" "NIL"))
 	      (sw:eval-in-lisp-no-value init-form))
 	  (simulate-input-expression init-form))
 	(sleep-for 0.1)))))
@@ -287,7 +289,7 @@ sLisp Heap Image File: ")
 	      (error "Could not start Specware.")))
 	(error "Specware not running. Do M-x run-specware4")))))
 
-;; (simulate-input-expression "t")
+;; (simulate-input-expression "path")
 (defun simulate-input-expression (str)
   (ensure-specware-running)
   (let ((win (get-buffer-window *specware-buffer-name*)))
