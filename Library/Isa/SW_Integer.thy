@@ -45,9 +45,6 @@ recdef Integer__compare "{}"
 consts Integer__divides :: "int \<Rightarrow> int \<Rightarrow> bool"	(infixl "divides" 60)
 defs Integer__divides_def: 
   "x divides y \<equiv> (\<exists>(z::int). x * z = y)"
-theorem Integer__non_zero_divides_iff_zero_remainder: 
-  "\<lbrakk>x \<noteq> 0\<rbrakk> \<Longrightarrow> x divides y = (y mod x = 0)"
-  sorry
 theorem Integer__any_divides_zero: 
   "x divides 0"
   apply(simp add: Integer__divides_def)
@@ -72,21 +69,4 @@ recdef Integer__lcm "{}"
          \<and> (\<forall>(w::int). 
               w multipleOf x \<and> w multipleOf y 
                 \<longrightarrow> z multipleOf w))"
-theorem Integer__gcd_of_not_both_zero: 
-  "\<lbrakk>x \<noteq> 0 \<or> y \<noteq> 0\<rbrakk> \<Longrightarrow> 
-   zgcd(x,y) > 0 
-     \<and> zgcd(x,y) divides x 
-     \<and> zgcd(x,y) divides y 
-     \<and> (\<forall>(w::int). 
-          w divides x \<and> w divides y 
-            \<longrightarrow> zgcd(x,y) \<ge> w)"
-  apply(auto)
-  sorry
-theorem zgcd_of_zero_zero_is_zero: 
-  "zgcd(0,0) = 0"
-  sorry
-theorem Integer__lcm_smallest_abs_multiple: 
-  "\<lbrakk>w multipleOf x; w multipleOf y\<rbrakk> \<Longrightarrow> 
-   Integer__lcm(x,y) \<le> Integer__abs w"
-  sorry
 end
