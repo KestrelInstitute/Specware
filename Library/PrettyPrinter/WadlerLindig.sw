@@ -1,1 +1,3 @@
-NaiveWadlerLindig
+spec
+  import NaiveWadlerLindig
+endspec
