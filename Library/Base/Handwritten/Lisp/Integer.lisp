@@ -198,7 +198,7 @@
 
 (defun multipleOf-2 (x y)
   (declare (integer x y))
-  (the boolean (divides y x)))
+  (the boolean (divides-2 y x)))
 
 (defun multipleOf (xy)
   (declare (cons xy))
