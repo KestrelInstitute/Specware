@@ -6,10 +6,10 @@
 (defparameter *Specware-Name*                 "Specware4")	; Name of dir and startup files
 (defparameter *Specware-Major-Version*        4)
 (defparameter *Specware-Minor-Version*        2)
-(defparameter *Specware-Patch-Level*          3)
+(defparameter *Specware-Patch-Level*          4)
 
-(defparameter *Specware-Version*              "4.2.3")
-(defparameter *Specware-Version-Name*         "Specware-4-2-3")
+(defparameter *Specware-Version*              "4.2.4")
+(defparameter *Specware-Version-Name*         "Specware-4-2-4")
 (defparameter *Specware-Major-Version-String*  "4-2")           ; Used in patch detection and about-specware command
 
 (format t "~&========================================================~%")

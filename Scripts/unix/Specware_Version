@@ -2,7 +2,7 @@
 
 SW_MAJOR=4
 SW_MINOR=2
-SW_PATCH=3
+SW_PATCH=4
 
 ehco "=============="
 echo "SW_MAJOR = $SW_MAJOR"

@@ -21,7 +21,7 @@
 
 (defparameter *Specware-Major-Version*     4)
 (defparameter *Specware-Minor-Version*     2)
-(defparameter *Specware-Patch-Level*       0)
+(defparameter *Specware-Patch-Level*       4)
 
 (defparameter *Specware-Version-Dotted*    (format nil "~D.~D.~D" *Specware-Major-Version* *Specware-Minor-Version* *Specware-Patch-Level*))
 (defparameter *Specware-Version-Dashed*    (format nil "~D-~D-~D" *Specware-Major-Version* *Specware-Minor-Version* *Specware-Patch-Level*))
