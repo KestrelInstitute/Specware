@@ -666,13 +666,13 @@ spec
                 then opinfo
               else
               let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
-              let (simp_dfn,_) =
+              let ((simp_dfn,_),_) =
                   if simplifyIsomorphism?
                     && existsSubTerm (fn t -> let ty = inferType(spc,t) in
                                               ~(equalType?(ty, isoType (spc, iso_info, iso_fn_info) false ty)))
                          dfn
-                    then interpretTerm(spc, main_script, dfn, dfn)
-                    else (dfn,dfn)
+                    then interpretTerm(spc, main_script, dfn, dfn, false)
+                    else ((dfn,dfn), false)
               in
               if equalTerm?(dfn,simp_dfn)
                 then opinfo
