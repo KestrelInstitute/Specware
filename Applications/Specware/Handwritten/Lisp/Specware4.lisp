@@ -52,7 +52,8 @@
 	      (let ((sb-fasl:*fasl-file-type* "fasl"))
 		(require :sb-bsd-sockets)
 		(require :sb-introspect)
-		(require :sb-posix)))
+		(require :sb-posix)
+		(require :sb-sprof)))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 	    )
