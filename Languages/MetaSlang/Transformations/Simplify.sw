@@ -58,8 +58,6 @@ Simplify qualifying
 spec
  import ../Specs/Environment
  import ../Specs/Utilities
- sort Term = MS.Term
-
 
  op  countVarRefs: MS.Term * Var -> Nat
  def countVarRefs(term,v) =
@@ -120,61 +118,70 @@ spec
 % form let u = project(1) z, v = project(2) z in ..
 %
  op  tupleInstantiate: Spec -> MS.Term -> MS.Term
- def tupleInstantiate spc (term) =
-     let term = removeUnnecessaryVariable spc term in
-     let
-	def elimTuple(zId,srt,fields,body) =
-          let (zId,body) =
-              if member(zId,boundVarNamesIn body)
-                then
-                  let new_zid = zId^"__sb" in  % Avoid variable capture!
-                  (new_zid, substitute(body,[((zId,srt),mkVar(new_zid,srt))]))
-                else (zId,body)
-          in
-	  let
-	      def mkField(id,srt) = 
-		  let name = zId^"_field"^id in
-	 	  let v = (name,srt) in
-		  (v,mkVar v)
-	  in
-	  let varFields = 
-	      case productOpt(spc,srt)
-		of Some fields -> map mkField fields 
-		 | _ -> fail ("Product sort expected for let bound variable. Found "^printSort srt)
-	  in
-	  let allFields = ListPair.zip(fields,varFields) in
-	  let
-	     def findField(id,fields) = 
-		 case fields
-		   of [] -> System.fail ("Field identifier "^id^" was not found")
-		    | ((id2,_),(v,vTerm))::fields -> 
-		      if id = id2 then vTerm else findField(id,fields)
-	  in
-	  let
-	     def substField(term) = 
-		 case term
-		   of Apply(Fun(Project id,_,_),Var((zzId,_),_),_) -> 
-		      if zId = zzId
-			 then findField(id,allFields)
-		      else term
-		    | _ -> term
-	  in
-	  let varDecls = List.map (fn((id,t),(v,vTerm))-> (mkVarPat v,t)) allFields in
-	  let zDecl    = (mkVarPat(zId,srt),
-			  mkRecord(List.map (fn((id,_),(_,vTerm))-> (id,vTerm)) allFields)) 
-	  in
-	  let newBody = mapSubTerms substField body in
-	  let newTerm = removeUnnecessaryVariable spc (mkLet([zDecl],newBody))  in
-	  mkLet(varDecls,newTerm)
-     in
-     case term
-       of Let([((VarPat((zId,srt),_)),Record(fields,_))],body,_) -> 
-	  elimTuple(zId,srt,fields,body)
-	| Let([(VarPat((zId,srt),_),
-		Apply(Fun(Op(Qualified("TranslationBuiltIn","mkTuple"),_),_,_),
-		      Record(fields,_),_))],body,_) -> 
-	  elimTuple(zId,srt,fields,body)
-	| _ -> term
+ op tupleInstantiate (spc: Spec) (term:  MS.Term): MS.Term =
+   let term = removeUnnecessaryVariable spc term in
+   let
+      def elimTuple(zId,srt,fields,body) =
+        let (zId,body) =
+            if member(zId,boundVarNamesIn body)
+              then
+                let new_zid = zId^"__sb" in  % Avoid variable capture!
+                (new_zid, substitute(body,[((zId,srt), mkVar(new_zid,srt))]))
+              else (zId,body)
+        in
+        let
+            def mkField(id,srt) = 
+                let name = zId^"_field_"^id in
+                let v = (name,srt) in
+                (v,mkVar v)
+        in
+        let varFields = 
+            case productOpt(spc,srt)
+              of Some fields -> map mkField fields 
+               | _ -> fail ("Product sort expected for let bound variable. Found "^printSort srt)
+        in
+        let allFields = ListPair.zip(fields,varFields) in
+        let
+           def findField(id,fields) = 
+               case fields
+                 of [] -> System.fail ("Field identifier "^id^" was not found")
+                  | ((id2,_),(v,vTerm))::fields -> 
+                    if id = id2 then vTerm else findField(id,fields)
+        in
+        let
+           def substField(term) = 
+               case term
+                 of Apply(Fun(Project id,_,_), Var((zzId,_),_),_) -> 
+                    if zId = zzId
+                       then findField(id,allFields)
+                    else term
+                  | _ -> term
+        in
+        let varDecls = List.map (fn((id,t),(v,vTerm))-> (mkVarPat v,t)) allFields in
+        let zDecl    = (mkVarPat(zId,srt),
+                        mkRecord(List.map (fn((id,_),(_,vTerm))-> (id,vTerm)) allFields)) 
+        in
+        let newBody = mapSubTerms substField body in
+        let newTerm = mkLet([zDecl],newBody) in
+        let newTerm = removeUnnecessaryVariable spc newTerm  in
+        %let _ = writeLine("newTerm2:\n"^printTerm newTerm) in
+        mkLet(varDecls,newTerm)
+   in
+   case term
+     of Let([((VarPat((zId,srt),_)),Record(fields,_))],body,_)
+          | existsSubTerm (fn t -> case t of
+                                     | Apply(Fun(Project id,_,_), Var((zzId,_),_),_) -> 
+                                       zId = zzId
+                                     | _ -> false)
+              body
+        -> 
+        %let _ = writeLine(printTerm term) in
+        elimTuple(zId,srt,fields,body)
+      | Let([(VarPat((zId,srt),_),
+              Apply(Fun(Op(Qualified("TranslationBuiltIn","mkTuple"),_),_,_),
+                    Record(fields,_),_))],body,_) -> 
+        elimTuple(zId,srt,fields,body)
+      | _ -> term
 
  op  simplifyOne: Spec -> MS.Term -> MS.Term
  def simplifyOne spc term =
