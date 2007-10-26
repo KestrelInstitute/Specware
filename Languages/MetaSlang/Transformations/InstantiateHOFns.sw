@@ -7,7 +7,10 @@ spec
 
   op  instantiateHOFns: Spec -> Spec
   def instantiateHOFns spc =
-    aux_instantiateHOFns spc false
+    %let _ = writeLine("Before HO Instantiation:\n"^printSpec spc) in
+    let result = aux_instantiateHOFns spc false in
+    %let _ = writeLine("After HO Instantiation:\n"^printSpec result) in
+    result
 
   %% snark interface can call this directly to set flag to true
   op  aux_instantiateHOFns: Spec -> Boolean -> Spec
@@ -96,9 +99,9 @@ spec
 	     in
 	     let HOArgs = map (fn s -> hoSort?(spc,s)) argSorts in
 	     if numCurryArgs > 1 then
-	       analyzeCurriedDefn    (Qualified(q,id), def1, numCurryArgs, HOArgs, srt)
+	       analyzeCurriedDefn(Qualified(q,id), def1, numCurryArgs, HOArgs, srt)
 	     else 
-	       analyzeUnCurriedDefn (Qualified(q,id), def1, HOArgs, srt)
+	       analyzeUnCurriedDefn(Qualified(q,id), def1, HOArgs, srt)
 	   else 
 	     None)
       spc.ops
