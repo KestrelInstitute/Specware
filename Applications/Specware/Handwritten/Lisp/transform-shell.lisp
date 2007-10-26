@@ -146,7 +146,7 @@
 	     (loop for x in *transform-commands* thereis (functionp x)))
     (let ((prev-result (previous-multi-command nil)))
       (when prev-result
-	(setq *transform-spec* (Script::interpretSpec-2 *transform-spec* prev-result))
+	(setq *transform-spec* (car (Script::interpretSpec-3 *transform-spec* prev-result nil)))
 	(push prev-result *transform-commands*)))))
 
 (defun parse-qid (qid-str)
@@ -161,9 +161,10 @@
 (defun interpret-command (command)
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
-      (let ((new-term (Script::interpretTerm-4 *transform-spec* command
-					       (car *transform-term*)
-					       (cdr *transform-term*))))
+      (let ((new-term (car (Script::interpretTerm-5 *transform-spec* command
+						    (car *transform-term*)
+						    (cdr *transform-term*)
+						    nil))))
 	(if (MetaSlang::equalTerm?-2 (car *transform-term*) (car new-term))
 	    (format t "No effect!")
 	    (progn 
