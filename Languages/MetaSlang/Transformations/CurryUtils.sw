@@ -48,6 +48,7 @@ CurryUtils qualifying spec
 	      if (case p of
 		    | VarPat _ -> true
 		    | RecordPat _ -> true
+                    | QuotientPat _ -> true
 		    | _ -> false)
 		then aux(body,vs ++ [p])
 		else (vs,t)
