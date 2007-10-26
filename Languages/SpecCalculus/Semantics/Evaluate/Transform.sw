@@ -100,7 +100,14 @@ spec
                                   return (Apply([Unfold qid]))}
       | Apply(Name("move",_), rmoves, _) -> {moves <- mapM makeMove rmoves;
                                              return (Move moves)}
-      | _ -> raise (TypeCheck (posOf trans, "Unrecognized transform"))
+      | Item("trace", Name(on_or_off,_), pos) ->
+        {on? <- case on_or_off of
+                  | "on"  -> return true
+                  | "off" -> return false
+                  | _ -> raise(TypeCheck (pos, "Trace on or off?"));
+         return(Trace on?)}
+      | Name("print",_) -> return Print
+      | _ -> raise (TypeCheck (posOf trans, "Unrecognized transform"^anyToString trans))
         
   op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
     case iso_tm of
@@ -142,6 +149,16 @@ spec
                   return (Cons(At(map Def qids, Steps sub_result),
                                top_result),
                           [])}
+               | Item("trace", Str(on_or_off,_), pos) ->
+                 {on? <- case on_or_off of
+                           | "on" -> return true
+                           | "off" -> return false
+                           | _ -> raise(TypeCheck (pos, "Trace on or off?"));
+                  return(if sub_result = []
+                          then (Cons(Trace on?, top_result), sub_result)
+                          else (top_result, Cons(Trace on?, sub_result)))}
+               | Str("print",_) ->
+                 return (top_result, Cons(Print, sub_result))
                | _ ->
                  {sstep <- makeScript1 te;
                   return (top_result, Cons(sstep, sub_result))})

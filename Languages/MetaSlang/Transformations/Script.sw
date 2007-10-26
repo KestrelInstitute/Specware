@@ -30,6 +30,8 @@ spec
     | PartialEval
     | AbstractCommonExpressions
     | IsoMorphism(List(QualifiedId \_times QualifiedId) \_times List RuleSpec)
+    | Trace Boolean
+    | Print
 
  op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * List RuleSpec \_rightarrow Spec
 
@@ -94,6 +96,9 @@ spec
                  ppString "), (",
                  ppSep(ppString ", ") (map ppRuleSpec rls),
                  ppString ")"]
+      | Trace on_or_off ->
+        ppConcat [ppString "trace ", ppString (if on_or_off then "on" else "off")]
+      | Print -> ppString "print"
 
  op scriptToString(scr: Script): String =
    let pp = ppNest 3 (ppConcat [ppString "  {", ppScript scr, ppString "}"]) in
@@ -379,29 +384,46 @@ spec
   op maxRewrites: Nat = 100
 
   %% term is the current focus and should  be a sub-term of the top-level term top_term
-  op interpretTerm(spc: Spec, script: Script, term: MS.Term, top_term: MS.Term): MS.Term * MS.Term =
+  op interpretTerm(spc: Spec, script: Script, term: MS.Term, top_term: MS.Term, tracing?: Boolean)
+     : (MS.Term * MS.Term) * Boolean =
     case script of
-      | Move mvmts -> (case makeMoves(term, mvmts, top_term) of
-                         | Some new_term -> new_term
-                         | None -> term,
-                       top_term)
       | Steps steps \_rightarrow
-        foldl (\_lambda (s,(term,top_term)) \_rightarrow
-               interpretTerm(spc,s,term,top_term))
-          (term,top_term) steps
-      | SimpStandard \_rightarrow replaceSubTerm(simplify spc term, term, top_term)
-      | PartialEval \_rightarrow
-        replaceSubTerm(evalFullyReducibleSubTerms (term, spc), term, top_term)
-      | AbstractCommonExpressions \_rightarrow
-        replaceSubTerm(abstractCommonSubExpressions (term), term, top_term)
-      | Simplify(rules) \_rightarrow
-        let context = makeContext spc in
-        let rules = makeRules (context, spc, rules) in
-        replaceSubTerm(rewrite(term,context,rules,maxRewrites), term, top_term)
-      | Apply(rules) \_rightarrow
-        let context = makeContext spc in
-        let rules = makeRules (context, spc, rules) in
-        replaceSubTerm(rewrite(term,context,rules,1), term, top_term)
+        foldl (\_lambda (s,((term,top_term),tracing?)) \_rightarrow
+               interpretTerm(spc,s,term,top_term,tracing?))
+          ((term,top_term), tracing?) steps
+      | Print -> let _ = writeLine(printTerm term) in ((term,top_term), tracing?)
+      | Trace on_or_off ->
+        let _ = if on_or_off && ~tracing?
+                 then writeLine("-- Tracing on\n"^printTerm term)
+                 else if ~on_or_off && tracing?
+                 then writeLine("-- Tracing off\n")
+                 else ()
+        in
+        ((term,top_term), on_or_off)
+      | _ ->
+    let _ = if tracing? then writeLine("--"^scriptToString script) else () in
+    let (term,top_term) =
+        case script of
+          | Move mvmts -> (case makeMoves(term, mvmts, top_term) of
+                             | Some new_term -> new_term
+                             | None -> term,
+                            top_term)
+          | SimpStandard \_rightarrow replaceSubTerm(simplify spc term, term, top_term)
+          | PartialEval \_rightarrow
+            replaceSubTerm(evalFullyReducibleSubTerms(term, spc), term, top_term)
+          | AbstractCommonExpressions \_rightarrow
+            replaceSubTerm(abstractCommonSubExpressions(term, spc), term, top_term)
+          | Simplify(rules) \_rightarrow
+            let context = makeContext spc in
+            let rules = makeRules (context, spc, rules) in
+            replaceSubTerm(rewrite(term,context,rules,maxRewrites), term, top_term)
+          | Apply(rules) \_rightarrow
+            let context = makeContext spc in
+            let rules = makeRules (context, spc, rules) in
+            replaceSubTerm(rewrite(term,context,rules,1), term, top_term)
+    in
+    let _ = if tracing? then writeLine(printTerm term) else () in
+    ((term,top_term), tracing?)
 
   op setOpInfo(spc: Spec, qid: QualifiedId, opinfo: OpInfo): Spec =
     let Qualified(q,id) = qid in
@@ -415,31 +437,39 @@ spec
         Some tm
       | _ -> (warn("Ambiguous op name."); None)
 
-  op interpretSpec(spc: Spec, script: Script): Spec =
+  op interpretSpec(spc: Spec, script: Script, tracing?: Boolean): Spec * Boolean =
     case script of
       | Steps steps \_rightarrow
-        foldl (\_lambda (stp,spc) \_rightarrow
-               interpretSpec(spc,stp))
-          spc steps
+        foldl (\_lambda (stp,(spc,tracing?)) \_rightarrow
+               interpretSpec(spc,stp,tracing?))
+          (spc,tracing?) steps
       | At(locs, scr) \_rightarrow
-        foldl (fn (Def qid, spc) \_rightarrow
+        let _ = if tracing? then
+                   writeLine("-- { at"^concatList(map (fn (Def qid) -> " "^printQualifiedId qid) locs)
+                              ^" }")
+                else ()
+        in
+        foldl (fn (Def qid, (spc,tracing?)) \_rightarrow
                case findAllOps(spc,qid) of
                  | [] \_rightarrow (warn("Can't find op "^anyToString qid);
-                            spc)
+                            (spc,tracing?))
                  | [opinfo] \_rightarrow
                    let (tvs, srt, tm) = unpackTerm opinfo.dfn in
-                   let (_,newtm) = interpretTerm(spc, scr, tm, tm) in
+                   let _ = if tracing? then writeLine(printTerm tm) else () in
+                   let ((_,newtm),tracing?) = interpretTerm(spc, scr, tm, tm, tracing?) in
                    let newdfn = maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)) in
-                   setOpInfo(spc,qid,opinfo << {dfn = newdfn})
+                   (setOpInfo(spc,qid,opinfo << {dfn = newdfn}),tracing?)
                  | opinfos -> (warn("Ambiguous op "^anyToString qid);
-                               spc))
-          spc locs
+                               (spc,tracing?)))
+          (spc,tracing?) locs
       | IsoMorphism(iso_osi_prs, rls) \_rightarrow
-        time(makeIsoMorphism(spc, iso_osi_prs, rls))
+        (time(makeIsoMorphism(spc, iso_osi_prs, rls)), tracing?)
+      | Trace on_or_off -> (spc,on_or_off)
+        
 
   op interpret(spc: Spec, script: Script): Spec =
     % let _ = printScript script in
-    let result = interpretSpec(spc, script) in
+    let (result,_) = interpretSpec(spc, script, false) in
     % let _ = writeLine(printSpec result) in
     result
 
