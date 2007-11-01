@@ -411,7 +411,7 @@ IsaTermPrinter qualifying spec
     let s = stripSpaces s in
     let len = length s in
     len > 2 \_and (let pr_type = substring(s,0,3) in
-	       pr_type = "Isa" \_or pr_type = "All")
+	       pr_type = "Isa" \_or pr_type = "isa" \_or pr_type = "All")
     \_or (len > 13 \_and substring(s,0,14) = "Simplification")
 
   op namedPragma?(p: Pragma): Boolean =
@@ -421,10 +421,23 @@ IsaTermPrinter qualifying spec
                   | Some n \_rightarrow substring(s,0,n)
     in
     case removeEmpty(splitStringAt(line1," ")) of
-     | "Isa"::name?::r ->
+     | pragma_kind::name?::r | pragma_kind = "Isa" \_or pragma_kind = "isa" \_rightarrow
        ~(name? = "fa"
            \_or member(sub(name?,0), [#[,#\\,#"]))
      | _ \_rightarrow false
+
+  op verbatimIdString: String = "-verbatim"
+
+  op verbatimPragma?(s: String): Boolean =
+    let line1 = case search("\n",s) of
+                  | None \_rightarrow s
+                  | Some n \_rightarrow substring(s,0,n)
+    in
+    case removeEmpty(splitStringAt(line1," ")) of
+     | _::verbatim_str::_ \_rightarrow
+       verbatim_str = verbatimIdString
+     | _ \_rightarrow false
+
 
   op  makeCoercionTable: TransInfo * Spec \_rightarrow TypeCoercionTable
   def makeCoercionTable(trans_info,spc) =
@@ -584,10 +597,12 @@ IsaTermPrinter qualifying spec
                                      | None \_rightarrow opt_prag
                                      | prag \_rightarrow prag)
 				| prag \_rightarrow prag)
-%      | Pragma(beg_str,mid_str,end_str,pos) \_rightarrow
-%	prConcat [prString beg_str,
-%		  prString mid_str,
-%		  prString end_str]
+      | Pragma("proof",mid_str,"end-proof",pos) | verbatimPragma? mid_str \_rightarrow
+        let verbatim_str = case search("\n",mid_str) of
+                             | None -> ""
+                             | Some n -> substring(mid_str,n,length mid_str)
+        in
+        prLines 0 [prString verbatim_str]
 	   
       | Comment (str,_) \_rightarrow
 	prConcat [prString "(*",
@@ -615,13 +630,22 @@ IsaTermPrinter qualifying spec
                            | Some n \_rightarrow substring(prag_str,0,n)
              in
 	     case removeEmpty(splitStringAt(line1," ")) of
-	       | "Isa"::thm_nm::r | thm_nm = nm \_rightarrow
+	       | pragma_kind::thm_nm::r
+                 | (pragma_kind = "Isa" \_or pragma_kind = "isa") && thm_nm = nm \_rightarrow
 		 Some p_bod
 	       | _ \_rightarrow findPragmaNamed1(rst,nm))
 	  | _ \_rightarrow findPragmaNamed1(rst,nm))
 
+ op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
+                                          "recdef", "primrec", "consts"]
+
  op  ppIdInfo : List QualifiedId \_rightarrow Pretty
- def ppIdInfo qids = ppQualifiedId(hd qids)
+ def ppIdInfo qids =
+   let qid = hd qids in
+   case qid of
+     | Qualified(qual, nm) | qual = UnQualified && member(nm,isabelleReservedWords) \_rightarrow
+       prConcat [prString "\"", ppQualifiedId qid, prString "\""]
+     | _ \_rightarrow  ppQualifiedId qid
    
  op  ppTypeInfo : Context \_rightarrow Boolean \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
  def ppTypeInfo c full? (aliases, dfn) =
@@ -717,21 +741,26 @@ IsaTermPrinter qualifying spec
     case defToCases c op_tm body infix? of
       | ([(lhs,rhs)], tuple?) \_rightarrow
         let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
-        if recursive? \_or tuple?   % \_and ~(simpleHead? lhs))
-          then
-            prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
+        if ~tuple? && existsSubTerm constructorTerm? lhs
+          then prBreak 2 [prString "primrec ",
                            prString "\"",
-                           case findMeasureAnnotation opt_prag of
-                             | Some anot \_rightarrow prConcat[prString anot]
-                             | None \_rightarrow prConcat [prString (if recursive?
-                                                             then "measure size"
-                                                           else "{}")],
-                           prString "\""],
-                          [prBreakCat 2 [[prString "\"",
-                                          ppTerm c Top lhs],
-                                         [prString " = ",
-                                          ppTerm c (Infix(Left,20)) rhs,
-                                          prString "\""]]]]
+                           ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
+                           prString "\""]
+          else if recursive? || tuple? % \_and ~(simpleHead? lhs))
+              then
+                prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
+                               prString "\"",
+                               case findMeasureAnnotation opt_prag of
+                                 | Some anot \_rightarrow prConcat[prString anot]
+                                 | None \_rightarrow prConcat [prString (if recursive?
+                                                                 then "measure size"
+                                                               else "{}")],
+                               prString "\""],
+                              [prBreakCat 2 [[prString "\"",
+                                              ppTerm c Top lhs],
+                                             [prString " = ",
+                                              ppTerm c (Infix(Left,20)) rhs,
+                                              prString "\""]]]]
           else
             prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
                            case findBracketAnnotation opt_prag of
@@ -809,6 +838,19 @@ IsaTermPrinter qualifying spec
              of None -> patToTerm(p1, ext)
 	      | Some(trm) -> Some trm)
 
+  op constructorTerm?(tm: MS.Term): Boolean =
+    case tm of
+      | Fun(Embed _, _, _) \_rightarrow true
+      | _ \_rightarrow false
+
+  op primitiveArg?(tm: MS.Term): Boolean =
+    case tm of
+      | Apply(Fun(Embed _, _, _), arg, _) \_rightarrow
+        all (embed? Var) (MS.termToList arg)
+      | Fun(Embed _, _, _) \_rightarrow true
+      | Var _ \_rightarrow true
+      | _ \_rightarrow false
+
   op sameHead?(tm1: MS.Term, tm2: MS.Term): Boolean =
     equalTerm?(tm1, tm2)
       || (case (tm1, tm2) of
@@ -838,20 +880,22 @@ IsaTermPrinter qualifying spec
   def defToCases c op_tm bod infix? =
     let
       def aux(hd, bod, tuple?) =
+        %let _ = writeLine("aux("^printTerm bod^", "^toString tuple?^")") in
 	case bod of
 	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) | \_not tuple? \_rightarrow
 	    aux(Apply(hd,mkVar v,a), term, tuple?)
-    %      | Lambda ([(pattern,_,term)],a) \_rightarrow
-    %        (case patToTerm pattern of
-    %	   | Some pat_tm \_rightarrow aux (Apply(hd,pat_tm,a)) term
-    %	   | _ \_rightarrow [(hd,bod)])
+          | Lambda ([(pattern,_,term)],a) \_rightarrow
+            (case patToTerm (pattern,"") of
+               | Some pat_tm | primitiveArg? pat_tm \_rightarrow
+                 aux (Apply(hd,pat_tm,a), term, tuple? || embed? Record pat_tm)
+               | _ \_rightarrow ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod)))
 	  | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
 	    if exists (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
 	     then foldl (\_lambda ((pati,_,bodi), (cases,not_prim)) \_rightarrow
 			 case patToTerm(pati,"") of
 			   | Some pati_tm \_rightarrow
                              let (new_cases,n_p) = aux_case(substitute(hd,[(v,pati_tm)]), bodi, tuple?) in
-			     (cases ++ new_cases, not_prim || n_p)
+			     (cases ++ new_cases, not_prim || n_p || ~(primitiveArg? pati_tm))
 			   | _ \_rightarrow
                              let (new_cases,n_p) = aux_case(hd,bodi,tuple?) in
                              (cases ++ new_cases, not_prim || n_p))
@@ -894,7 +938,8 @@ IsaTermPrinter qualifying spec
           | Let([(pat,Var(v,_))],bod,a) | tuple? \_and member(v, freeVars hd) \_rightarrow
             (case patToTerm(pat,"") of
                | Some pat_tm \_rightarrow aux(substitute(hd, [(v,pat_tm)]),
-                                    substitute(bod,[(v,pat_tm)]), tuple?)
+                                    substitute(bod,[(v,pat_tm)]),
+                                    tuple? || ~(primitiveArg? pat_tm))
                | None \_rightarrow ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod)))
           | IfThenElse(Apply(Fun(Equals, _,_),
                              Record([("1", vr as Var(v as (vn,s),_)),
@@ -936,6 +981,7 @@ IsaTermPrinter qualifying spec
               let (cases,n_p) = aux(Apply(op_tm, arg, a), tm, true) in
               (cases, n_p && \_not infix?)
 	    | _ -> aux(op_tm, bod, false) in
+    %let _ = writeLine(" = "^toString (length cases)^", "^toString tuple?) in
     (map fix_vars cases, tuple?)
 
   op addExplicitTyping?: Boolean = true
