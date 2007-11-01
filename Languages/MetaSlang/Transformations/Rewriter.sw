@@ -52,6 +52,7 @@ MetaSlangRewriter qualifying spec
        rules
 
  op useStandardSimplify?: Boolean = true
+ op debugApplyRewrites?: Boolean = false
 
  op applyDemodRewrites(context: Context, subst: SubstC, standardSimplify?: Boolean)
                       (boundVars: List Var, term: MS.Term, demod: Demod RewriteRule)
@@ -64,13 +65,18 @@ MetaSlangRewriter qualifying spec
    let rules = Demod.getRules(demod,term)     in
    (mapFlat 
       (fn rule ->
-%          let _ = writeLine("boundVars: "^anyToString boundVars) in
-%          let _ = printRule rule in
-%          let _ = writeLine("Matching "^printTerm rule.lhs^" against "^printTerm term) in
+          let _ = if debugApplyRewrites? then
+                   (writeLine("boundVars: "^anyToString boundVars);
+                    printRule rule;
+                    writeLine("Matching "^printTerm rule.lhs^" against\n"^printTerm term))
+                   else ()
+          in
           let substs = applyRewrite(context,rule,subst,term) in
-%            let _ = if substs = [] then writeLine("Match failed.\n")
-%                      else (writeLine("Match succeeded."); printSubst (hd substs))
-%            in
+          let _ = if debugApplyRewrites? then
+                    if substs = [] then writeLine("Match failed.\n")
+                      else (writeLine("Match succeeded."); printSubst (hd substs))
+                  else ()
+          in
           fromList
             (mapPartial (fn s ->
                            let rhs = renameBoundVars(rule.rhs,boundVars) in

@@ -401,6 +401,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 \begin{spec}
 
  op emptySubstitution: SubstC = (StringMap.empty,NatMap.empty,[])
+ op debugHOM: Ref Nat = Ref 0
 
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,emptyStack))
@@ -411,11 +412,13 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
    case next stack0
      of None -> [subst]
       | Some(stack,M,N) -> 
-%         let _ = writeLine 
-%    	(printTerm (dereference subst M) ^ " = = "^
-%    	 printTerm N) 
-%         in
-%       let _ = printSubst subst in
+   let _ = (if !debugHOM > 0 then
+              (debugHOM := !debugHOM - 1;
+               writeLine (printTerm (dereference subst M) ^ " =?= "
+                           ^ printTerm N);
+               printSubst subst)
+            else ())
+   in
    case (dereference subst M,N)
      of 
 %%
@@ -565,7 +568,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 
              %% Special case of imitation where other cases are equivalent
              if closedTermV(N,context.boundVars)
-                  && ~(exists (fn t -> some?(isFlexVar? t)) terms)
+                  && ~(exists (existsSubTerm (fn t -> some?(isFlexVar? t))) terms)
                   && noReferencesTo?(N,terms)
  		then 
  		let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
@@ -684,22 +687,24 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	  of Some stack -> matchPairs(context,subst,stack)
 	   | None -> []
      in
-%        let _ = if result = []
-%                  then (writeLine("MatchPairs failed!");
-%                         case next stack0
-%                           of None -> ()
-%                            | Some(stack,M,N) ->
-%                              writeLine (printTerm (dereference subst M) ^ " =~= "^ printTerm N)
-%                             )
-%                else ( writeLine("MatchPairs: "^toString(length result)^" results.");
-%                       if length result = 1 then
-%                         ((case next stack0 of
-%                            | Some(stack,M,N) -> 
-%                              writeLine (printTerm (dereference subst M) ^ " = = "^ printTerm N)
-%                            | None -> ()) ;
-%                          app printSubst result)
-%                       else ()
-%                      ) in
+     let _ = if !debugHOM > 0
+               then if result = []
+                  then (writeLine("MatchPairs failed!");
+                         case next stack0
+                           of None -> ()
+                            | Some(stack,M,N) ->
+                              writeLine (printTerm (dereference subst M) ^ " =~= "^ printTerm N)
+                             )
+                  else (writeLine("MatchPairs: "^toString(length result)^" results.");
+                        if length result > 0 then
+                          ((case next stack0 of
+                              | Some(stack,M,N) -> 
+                                writeLine (printTerm (dereference subst M) ^ " = = "^ printTerm N)
+                              | None -> ()) ;
+                           app printSubst result)
+                        else ())
+              else ()
+     in
      result
 
   op  insertPairs : List MS.Term * List MS.Term * Stack -> Option Stack
@@ -814,6 +819,11 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
                          (subst,foldr (fn(v,M) -> bindPattern(mkVarPat(v),M)) M vars))
                     terms 
       in
+        let _ = if !debugHOM > 0 then
+           (writeLine("Projections");
+              app (fn (_,tm)  -> writeLine(printTerm tm)) terms)
+              else () in
+
       terms
 
 \end{spec}
@@ -1175,12 +1185,14 @@ skolemization transforms a proper matching problem into an inproper one.
       in
       case unifyL(subst,srt1,srt2,[srt1],[srt2],[],optTerm,unify)
 	of NotUnify (s1,s2) -> 
-	   ( % writeLine (printSort s1^" ! = "^printSort s2);
-%  	    printSubst subst;
-	    None)
+	   if !debugHOM > 0 then (writeLine (printSort s1^" ! = "^printSort s2);
+                                  printSubst subst;
+                                  None)
+             else None
 	 | Unify subst ->
-           (%  writeLine (printSort srt1^" = = "^printSort srt2);
-% 	    printSubst subst; 
+           (if !debugHOM > 0 then (writeLine (printSort srt1^" =t= "^printSort srt2);
+                                   printSubst subst)
+              else (); 
 	    Some subst)
 
 (* Normalization
