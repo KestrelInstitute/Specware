@@ -35,11 +35,6 @@ theorem List__nthTail_Obligation_subsort0:
    0 \<le> int i - 1"
   apply(auto)
   done
-theorem List__nthTail_Obligation_subsort1: 
-  "\<lbrakk>i \<le> length l; i \<le> length l; \<not> (i = 0)\<rbrakk> \<Longrightarrow> 
-   int i - 1 \<le> int (length (tl l))"
-  apply(auto, arith)
-  done
 recdef List__nthTail "measure (\<lambda>(l,i). i)"
   "List__nthTail(l,0) = l"
   "List__nthTail(l,Suc i) = List__nthTail(tl l,i)"
@@ -70,11 +65,6 @@ theorem List__removeFirstElems_Obligation_subsort0:
   "\<lbrakk>i \<le> length (l::'a list); i \<le> length l; \<not> (i = 0)\<rbrakk> \<Longrightarrow> 
    0 \<le> int i - 1"
   apply(auto)
-  done
-theorem List__removeFirstElems_Obligation_subsort1: 
-  "\<lbrakk>i \<le> length l; i \<le> length l; \<not> (i = 0)\<rbrakk> \<Longrightarrow> 
-   int i - 1 \<le> int (length (tl l))"
-  apply(auto, arith)
   done
 recdef List__removeFirstElems "measure (\<lambda>(l,i). i)"
   "List__removeFirstElems(l,0) = l"
