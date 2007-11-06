@@ -129,10 +129,12 @@ Utilities qualifying spec
 				   isFree(v,M)) 
      | Bind(b,vars,M,_)       -> all (fn w -> ~(v = w)) vars 
 			          && isFree(v,M)
-     | The(w,M,_)              -> ~(v = w) && isFree(v,M)
+     | The(w,M,_)             -> ~(v = w) && isFree(v,M)
      | IfThenElse(t1,t2,t3,_) -> isFree(v,t1) or 
 			          isFree(v,t2) or 
 				  isFree(v,t3)
+     | SortedTerm(t,_,_)      -> isFree(v,t)
+     | Seq(tms,_)             -> exists (fn t -> isFree(v,t)) tms
 
  op isPatBound : Var * Pattern -> Boolean
  def isPatBound (v,pat) = 
