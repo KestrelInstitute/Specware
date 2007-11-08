@@ -690,11 +690,11 @@ spec
 	exists (fn p -> p = (tau,sigma)) pairs
 	then tcc
      else
-%     let _ = String.writeLine
-%      	   (printTerm M^ " : "^
-%               printSort tau^" <= "^
-%      	        printSort sigma)
-%     in
+%      let _ = String.writeLine
+%       	   (printTerm M^ " : "^
+%                printSort tau^" <= "^
+%       	        printSort sigma)
+%      in
      let pairs  = cons((tau,sigma),pairs) 	in 
      let tau1   = unfoldBase(gamma,tau)    	in
      let sigma1 = unfoldBase(gamma,sigma)  	in
@@ -762,11 +762,12 @@ spec
 			   (fn (s1,s2,tcc) -> 
 			       let x = freshName(gamma,"B") in
 			       let gamma1 = insert((x,s1),gamma) in
-			       let gamma2 = insert((x,s2),gamma) in
+			       %let gamma2 = insert((x,s2),gamma) in
 			       let tcc = subtypeRec(pairs,tcc,gamma1,
 						    mkVar(x,s1),s1,s2) in
-			       let tcc = subtypeRec(pairs,tcc,gamma2,
-						    mkVar(x,s2),s2,s1) in
+                               %% Don't think this is necessary e.g. List Nat < List Integer
+			       %let tcc = subtypeRec(pairs,tcc,gamma2,
+			       %		    mkVar(x,s2),s2,s1) in
 			       tcc)
 			 tcc (srts1,srts2)
  	      in
