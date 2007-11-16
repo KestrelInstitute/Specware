@@ -1,5 +1,6 @@
 morphism /Library/General/FiniteSequences -> FiniteSequencesAsLists 
-  {FSeq.++      +-> List.++,
+  {FSeq.FSeq    +-> List.List,
+   FSeq.++      +-> List.++,
    FSeq.length  +-> List.length,
    FSeq.foldr   +-> List.foldr,
    FSeq.map     +-> List.map,
