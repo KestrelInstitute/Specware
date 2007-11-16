@@ -262,9 +262,12 @@ spec
             | Fun(Bool true, _,_) -> t2
             | Fun(Bool false,_,_) -> t1
             | _ -> term)
-       | _ -> case simplifyCase spc term of
-	       | Some tm -> tm
-	       | None -> tupleInstantiate spc term
+       | _ ->
+     case simplifyCase spc term of
+       | Some tm -> tm
+       | None ->
+     let term = tupleInstantiate spc term in
+     term
 
   op  simplifyForall: Spec -> List Var * List MS.Term * MS.Term -> MS.Term
   def simplifyForall spc (vs,cjs,bod) =
