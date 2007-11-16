@@ -381,7 +381,7 @@ spec
       | None -> (warn("Move failed at: "^ (foldr (fn (m,res) -> moveString m ^ " " ^ res) "" mvs));
                  none)
 
-  op maxRewrites: Nat = 100
+  op maxRewrites: Nat = 400
 
   %% term is the current focus and should  be a sub-term of the top-level term top_term
   op interpretTerm(spc: Spec, script: Script, term: MS.Term, top_term: MS.Term, tracing?: Boolean)
