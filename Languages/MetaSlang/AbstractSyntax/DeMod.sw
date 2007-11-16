@@ -6,7 +6,7 @@ spec
   import TermIndex 
 
    type Demod a = 
-        {index : TermIndex.index,
+        {index : TermIndex.Index,
          idMap : NatMap.Map a }
 
    op empty     : [a] Demod a
@@ -59,7 +59,7 @@ spec
                 idMap2 idMap1,
       index = mergeDiscNets(index1inc,index2)}
      
-   op  incrementIndices: TermIndex.index * Nat -> TermIndex.index
+   op  incrementIndices: TermIndex.Index * Nat -> TermIndex.Index
    def incrementIndices((s,m),i) =
      (IntegerSet.map (fn v -> v+i) s,
       foldri (fn (key,val,new_m) -> insert(new_m,key,incrementIndices(val,i)))

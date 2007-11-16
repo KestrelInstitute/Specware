@@ -1,41 +1,44 @@
 
-\section{Term discrimination nets}
+(* Term discrimination nets
 
 The following implementation is based on Tomas Uribe's 
 support for term discrimination nets in STeP.
+*)
 
-\begin{spec}
 TermDiscNet qualifying
 spec
   import /Library/Legacy/DataStructures/IntSetSplay
   import /Library/Legacy/DataStructures/SplayMap
 
-  sort disc_net = DNode
+  type Disc_net = DNode
 
 %% The labels that make up paths from root to nodes 
 
-  sort Key = Integer
+  type Key = Integer
   def compareKey : Key * Key -> Comparison = 
       Integer.compare
 
-  op findForPath   : (disc_net * List Key ) -> 
-			Option IntegerSet.Set
-  op addForPath    : (disc_net * List Key * Nat) -> disc_net
-  op removeForPath : (disc_net * List Key * Nat) -> disc_net
+  op findForPath   : (Disc_net * List Key ) -> 
+			Option Disc_net
+  op addForPath    : (Disc_net * List Key * Nat) -> Disc_net
+  op removeForPath : (Disc_net * List Key * Nat) -> Disc_net
 
-  op EmptyDiscNet : disc_net
+  op EmptyDiscNet : Disc_net
 
-  sort KeyMap a = SplayMap.Map(Key,a)
+  type KeyMap a = SplayMap.Map(Key,a)
   def  empty = SplayMap.empty compareKey
 
-  sort DNode = IntegerSet.Set * KeyMap DNode
+  type DNode = IntegerSet.Set * KeyMap DNode
 
   def mkDnode cont = (cont,empty)
 
   def EmptyDiscNet = mkDnode IntegerSet.empty
 
-  def contents(set,_) = set
-  def nextList(_,nextLst) = nextLst
+  op contents(set: IntegerSet.Set, _:  KeyMap DNode): IntegerSet.Set = set
+  op nextList(_: IntegerSet.Set, next: KeyMap DNode): KeyMap DNode = next
+
+  op allContents(set: IntegerSet.Set, next: KeyMap DNode): IntegerSet.Set =
+    foldl (fn (nd, result) -> IntegerSet.union(result,allContents nd)) set next
 
   op  getNext : KeyMap DNode * Key -> Option DNode
   def getNext = SplayMap.find
@@ -59,7 +62,7 @@ spec
   def findForPath(dNet, p) =
       let (node,rest) = follow (p,dNet) in
       if null rest 
-	   then Some(contents node)
+	   then Some(node)
       else None
 
 
@@ -67,7 +70,7 @@ spec
  (* This extend now returns the full extended net, not just the
   * last node: *)
 
-   op extend : disc_net * Key -> List Nat -> disc_net % ?? guessing
+   op extend : Disc_net * Key -> List Nat -> Disc_net % ?? guessing
   def extend ((set,next),element) = 
       fn [] ->  (IntegerSet.add(set,element),next)
        | (a::rest) -> 
@@ -100,7 +103,7 @@ spec
 (* The above two functions could be generalized to using just 
  * generic update functions, but it's not worth it. *)
 
-  op  mergeDiscNets: disc_net * disc_net -> disc_net
+  op  mergeDiscNets: Disc_net * Disc_net -> Disc_net
   def mergeDiscNets((s1,m1),(s2,m2)) =
     (IntegerSet.union(s1,s2),
      foldri (fn (key,val,m) ->
@@ -113,4 +116,3 @@ spec
        m1 m2)
 
 endspec (* TermDiscNet *)
-\end{spec}

@@ -1,4 +1,4 @@
-\section{Term indexing}
+(* Term indexing
 
  Implementation of path indexing, as described in Stickel's report,
  using a discrimination net to compute the getTerms functions.
@@ -33,23 +33,23 @@ value as a position.
  which indexing should not be done. isSpecial identifies these
  function symbols; if there are no special symbols, hopefully
  partial evaluation will optimize this away. 
+*)
 
-\begin{spec}
 TermIndex qualifying
 spec
   import /Library/Legacy/Utilities/Lisp
   import TermDiscNet
   import ../Specs/StandardSpec
 
- sort index = TermDiscNet.disc_net
+ type Index = TermDiscNet.Disc_net
 
- op TermIndex.empty : index
- op indexTerm       : index * MS.Term * Nat -> index
- op generalizations : index * MS.Term -> List Nat
+ op TermIndex.empty : Index
+ op indexTerm       : Index * MS.Term * Nat -> Index
+ op generalizations : Index * MS.Term -> List Nat
 
  def  TermIndex.empty = TermDiscNet.EmptyDiscNet
 
- sort sym_entry = | Star | SymS Nat
+ type Sym_entry = | Star | SymS Integer
 
  op printPath: List Key -> ()
  def printPath path = 
@@ -70,7 +70,10 @@ spec
      %% And it's even ok if different terms have the same index (e.g., if
      %% sxhash should return 3) -- that just makes things slightly less
      %% efficient.
-     fn (Fun(Op(qid,fixity),_,_)) -> Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
+     fn (Fun(Op(qid,fixity),_,_)) ->
+        if qid = Qualified (UnQualified,"%Flex")
+          then 0
+          else Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
       | (Fun(Embed(id,_),   _,_)) -> Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell id]))
       | (Fun(Not,           _,_)) ->  1
       | (Fun(And,           _,_)) ->  2
@@ -120,23 +123,20 @@ spec
 	(%String.writeLine(MetaSlangPrint.printTerm term);
 	 %List.app printPath pairs;
 	 List.foldl addOne index pairs)
-	
 
-(* NOTE: To avoid conflicts with Star here, symToInt has to be non-negative.
- * This can be avoided with another constructor and defining an ordering
- * relation... But at expense of efficiency...
- *)
-
-    def makePath(p,entry: sym_entry) = 
+    def makePath(p,entry: Sym_entry) = 
 	case entry
-	  of Star -> p ++ [-1]
+	  of Star -> p
 	   | SymS x  -> p ++ [x]
 
-    op  getTerms : TermDiscNet.disc_net * List Integer * sym_entry -> IntegerSet.Set
+    op  getTerms : TermDiscNet.Disc_net * List Integer * Sym_entry -> IntegerSet.Set
 
     def getTerms(index,p,r) = 
 	case TermDiscNet.findForPath(index,makePath(p,r))
-	  of Some set -> set
+	  of Some node ->
+            (case r of
+               | Star -> allContents node
+               | SymS _ -> contents node)
 	   | None -> IntegerSet.empty
 
     def generalizations (index,term) = 
@@ -149,7 +149,7 @@ spec
 		let subTerms = subterms Ms 		in
 		let arity = length subTerms 	in
 		let indexT = getFunIndex M 		in
-		let set1     = getTerms(index,p,Star)	in
+		let set1     = getTerms(index,p,SymS (-1))	in
 		let set2 = 
 			if arity = 0 
 			    then getTerms(index,p,SymS(indexT))
@@ -171,5 +171,4 @@ spec
 	    IntegerSet.listItems(get([],term))
 	
 endspec (* structure TermIndex *)
-\end{spec}
 
