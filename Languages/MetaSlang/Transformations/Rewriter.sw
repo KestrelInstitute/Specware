@@ -51,8 +51,21 @@ MetaSlangRewriter qualifying spec
                  substs)) 
        rules
 
+ op orderRules(rls: List RewriteRule): List RewriteRule =
+   if length rls < 2 then rls
+   else
+   let (simpleRules, condRules) =
+       %% foldl is arbitrary
+       foldl (fn (rl, (simpleRules, condRules)) ->
+                if some? rl.condition
+                  then (simpleRules, Cons(rl, condRules))
+                  else (Cons(rl, simpleRules), condRules))
+         ([],[]) rls
+   in
+    simpleRules ++ condRules
+
  op useStandardSimplify?: Boolean = true
- op debugApplyRewrites?: Boolean = false
+ op debugApplyRewrites?:  Boolean = false
 
  op applyDemodRewrites(context: Context, subst: SubstC, standardSimplify?: Boolean)
                       (boundVars: List Var, term: MS.Term, demod: Demod RewriteRule)
@@ -62,7 +75,7 @@ MetaSlangRewriter qualifying spec
 %     let _ = app printRule (listRules demod) in
    let context = setBound(context,boundVars)  in
    let spc     = context.spc                  in
-   let rules = Demod.getRules(demod,term)     in
+   let rules = orderRules(Demod.getRules(demod,term)) in
    (mapFlat 
       (fn rule ->
           let _ = if debugApplyRewrites? then
@@ -94,8 +107,18 @@ MetaSlangRewriter qualifying spec
                   then standardSimplify spc (term,subst,boundVars,demod)
                   else Nil)
 
+ op substRule : RewriteRule = 
+     { 
+	name     = "Subst",
+	freeVars = [],
+	tyVars = [],
+	condition = None,
+	lhs   = mkVar(1,TyVar("''a",noPos)),
+	rhs   = mkVar(2,TyVar("''a",noPos))
+     } 
 
- def evalRule : RewriteRule = 
+
+ op evalRule : RewriteRule = 
      { 
 	name     = "Eval",
 	freeVars = [],
@@ -111,30 +134,45 @@ MetaSlangRewriter qualifying spec
  op evalRule?(rl: RewriteRule): Boolean =
    rl.tyVars = [] && rl.lhs = evalRule.lhs && rl.rhs = evalRule.rhs
 
+ op baseSpecTerm?(term: MS.Term): Boolean =
+   ~(existsSubTerm (fn t -> case t of
+                              | Fun(Op(Qualified(qual,_),_),_,_) ->
+                                ~(member(qual,evalQualifiers))
+                              | _ -> false)
+       term)
+
+ op reduceTerm(term: MS.Term, spc: Spec): MS.Term =
+   if ~(constantTerm? term) && freeVarsRec term = []
+     then let v = eval(term,spc) in
+       if fullyReduced? v
+         then valueToTerm v
+         else term
+     else term
+
+ op reduceSubTerms(term: MS.Term, spc: Spec): MS.Term =
+   mapTerm (fn t -> reduceTerm(t,spc), id, id) term
+
  op pushFunctionsIn?: Boolean = true
  op evalGroundTerms?: Boolean = true
 
  op standardSimplify (spc: Spec) (term: MS.Term, subst: SubstC, boundVars: List Var, demod: Demod RewriteRule)
     :  LazyList(MS.Term * (SubstC * RewriteRule * List Var * Demod RewriteRule)) =
+   %let _ = (writeLine "ss:"; printSubst subst) in
+   let (simp?, term) = if evalGroundTerms?
+                         then
+                           let new_term = reduceTerm (term, spc) in
+                           if equalTerm?(new_term, term)
+                             then (false, term)
+                           else (true, new_term)
+                       else (false, term)
+   in
+   if simp? then unit(term, (subst,evalRule,boundVars,demod))
+   else
    case tryEvalOne spc term of
      | Some eTerm ->
        % let _ = writeLine("EvalOne:\n"^printTerm term^"\nTo:\n"^printTerm eTerm) in
        unit (eTerm, (subst,ssRule "Eval1",boundVars,demod))
      | None ->
-   let (simp?, term) = if evalGroundTerms? &&  ~(constantTerm? term) && freeVarsRec term = []
-                         then
-                           let v = eval(term,spc) in
-                           if fullyReduced? v
-                             then
-                               let new_term = valueToTerm v in
-                               if equalTerm?(new_term, term)
-                                 then (false, term)
-                                 else (true, new_term)
-                           else (false, term)
-                       else (false, term)
-   in
-   if simp? then unit(term, (subst,evalRule,boundVars,demod))
-   else
    case term of
      %% case foo x of ... | foo y -> f y | ... --> f x
      | Apply(Lambda(rules, _), N, a) ->
@@ -158,6 +196,11 @@ MetaSlangRewriter qualifying spec
          -> unit (tm, (subst,ssRule "RecordId",boundVars,demod))
      | Apply(Fun(Embedded id1,_,_), Apply(Fun(Embed(id2,_),_,_),_,_),_) ->
        unit (mkBool(id1 = id2), (subst,ssRule "reduceEmbed",boundVars,demod))
+     | Apply(Fun(Equals,s,_), Record([(_,M1),(l2,M2)],_),_) ->
+       (case isFlexVar? M1 of
+          | Some n | ~(hasFlexRef? M2)->
+            unit(trueTerm, (updateSubst(subst,n,M2), ssRule "Subst", boundVars, demod))
+          | _ -> Nil)
      | _ -> Nil
 %   if ~pushFunctionsIn? then Nil
 %    else
@@ -182,6 +225,8 @@ MetaSlangRewriter qualifying spec
      | Lambda _ -> true
      | _ -> false
 
+
+
   op addPatternRestriction(context: Context, pat: Pattern, rules: Demod RewriteRule)
     : Demod RewriteRule =
    case pat of
@@ -201,6 +246,7 @@ MetaSlangRewriter qualifying spec
                            | _ -> p
                in
                let condn = simplifiedApply(pred, mkVar v, context.spc) in
+               let condn = reduceSubTerms (condn,context.spc) in
                addDemodRules(assertRules(context, condn, "Subtype", false),rules))
             | _ -> rules)
      | RecordPat(fields, _ ) ->
@@ -265,6 +311,58 @@ MetaSlangRewriter qualifying spec
                           | _ -> true)
                 binds,
               M1, b)
+
+ op persistentFlexVarStartNum: Nat = 1000   % Greater than largest of variables in a rule
+ op persistentFlexVar?(t: MS.Term): Boolean =
+   case isFlexVar? t of
+     | Some n -> n >= persistentFlexVarStartNum
+     | None -> false
+
+ op renumberFlexVars(term: MS.Term, flexNumIncrement: Nat): MS.Term =
+   mapTerm (fn t ->
+            case t of
+              | Apply(Fun(Op(Qualified (UnQualified,"%Flex"),x1),x2,x3),Fun(Nat n, x4,x5),x6)
+                  | n < persistentFlexVarStartNum ->
+                Apply(Fun(Op(Qualified (UnQualified,"%Flex"),x1),x2,x3),Fun(Nat (n + flexNumIncrement), x4,x5),
+                      x6)               
+              | _ -> t,
+            id, id)
+     term
+
+ op removeLocalFlexVars(subst: SubstC, del_flexvarnums: List Nat): SubstC =
+   let (sortSubst,termSubst,typeConds) = subst in
+   let new_termsubst = NatMap.foldri (fn (i,v,result) ->
+                                        if i >= persistentFlexVarStartNum && ~(member(i,del_flexvarnums))
+                                          then NatMap.insert(result,i,v)
+                                        else result)
+                         NatMap.empty termSubst
+   in
+     (StringMap.empty,new_termsubst,[])
+
+ op renameConditionFlexVars(rule: RewriteRule, term: MS.Term, subst: SubstC): RewriteRule * MS.Term * List Nat =
+   case rule.condition of
+     | None -> (rule, term, [])
+     | Some condn ->
+   let condn = dereferenceAll subst condn in
+   let term  = dereferenceAll subst term in
+   %let (sortSubst,termSubst,typeConds) = subst in
+   let unBoundRefs = foldSubTerms (fn (t,result)  ->
+                                    case isFlexVar? t of
+                                      | Some n | ~(member(n,result)) -> Cons(n,result)
+                                      | _ -> result)
+                       [] condn
+   in
+   if unBoundRefs = []                    % No flex vars
+     then (rule << {condition = Some(condn)}, term, [])
+   else
+   let maxFlexNum = foldl max 0 unBoundRefs in
+   let flexNumIncrement = max(maxFlexNum, persistentFlexVarStartNum) in
+   let rule1 = rule << {condition = Some(renumberFlexVars(condn, flexNumIncrement))} in
+   let term1 = renumberFlexVars(term,   flexNumIncrement) in
+   (rule1, term1, mapPartial (fn n -> if n < persistentFlexVarStartNum
+                                       then Some(n + flexNumIncrement)
+                                       else None)
+                    unBoundRefs)
 
  (* Unnecessary as equality can be done as a built-in rule
      See spec builtInRewrites
@@ -659,7 +757,7 @@ MetaSlangRewriter qualifying spec
                %% Substitutions, history and conditional rewrites need work
 	       if trueTerm? t then Some c_subst else None
 
-      def solveCondition(rules,rule,(sortSubst,termSubst,typeConds),boundVars,history,backChain)
+      def solveCondition(rules,rule,(sortSubst,termSubst,typeConds),prev_term,boundVars,history,backChain)
           : Option SubstC = 
         let subst = (sortSubst,termSubst,[])
         in
@@ -671,32 +769,37 @@ MetaSlangRewriter qualifying spec
           then
 	     (traceRule(context,rule);
 	      Some subst)
+        else if termIn?(prev_term, conds)   % Avoid subproblem same as original
+          then (%writeLine("Found recursive subgoal: "^printTerm prev_term);
+                None)
         else
 	if backChain < backwardChainMaxDepth && completeMatch(rule.lhs,subst) then 
-            let cond = foldl Utilities.mkAnd trueTerm conds in
-            let cond = dereferenceAll subst cond in
-	    let traceIndent = ! context.traceIndent in
+            let cond = foldr Utilities.mkAnd trueTerm conds in
+            let cond = dereferenceAll subst cond in % redundant?
+            let subst = removeLocalFlexVars(subst,[]) in
+            let traceIndent = ! context.traceIndent in
 	    let res = if traceRewriting > 0 then
                         (context.traceIndent := traceIndent + 3;
                          toScreen ("=  "^PrettyPrint.blanks traceIndent^"{ "); 
                          writeLine (toString(! context.traceDepth)^" : "^rule.name);
-                         %%              printSubst subst;
+                         %              printSubst subst;
                          context.traceDepth := 0;
-                         rewritesToTrue(rules,cond,boundVars,emptySubstitution,history,backChain))
+                         rewritesToTrue(rules,cond,boundVars,subst,history,backChain))
                       else 
                         (context.traceDepth := 0;
-                         rewritesToTrue(rules,cond,boundVars,emptySubstitution,history,backChain))
+                         rewritesToTrue(rules,cond,boundVars,subst,history,backChain))
             in
 	    if traceRewriting > 0 then
 	      (context.traceIndent := traceIndent;
 	       writeLine ("   "^PrettyPrint.blanks traceIndent ^"}");
+               %(case res of Some s -> printSubst s | _ -> ());
 	       res)
 	    else
 	       res
 	else None
 
-      def rewriteRec(rules0,subst,term,boundVars,history,backChain) =
-	let _ = traceTerm(context,term,subst)     in
+      def rewriteRec(rules0,subst,term0,boundVars,history,backChain) =
+	let _ = traceTerm(context,term0,subst)     in
 	let traceDepth = ! context.traceDepth + 1 in
         if traceDepth > maxDepth then unit history
         else
@@ -707,7 +810,7 @@ MetaSlangRewriter qualifying spec
 		  ({strategy = strategy,
 		    rewriter = applyDemodRewrites(context,subst,maxDepth > 1),
 		    context = context},
-		   boundVars,term,rules)     
+		   boundVars,term0,rules)     
 	in
 	if historyRepetition(history)
 	    then unit (tl history)
@@ -731,14 +834,16 @@ MetaSlangRewriter qualifying spec
 	rews >>=
 	(fn (term,(subst,rule,boundVars,rules1)) -> 
 	    (context.traceDepth := traceDepth;
-	     case solveCondition(rules1,rule,subst,boundVars,history,backChain+1)
+             let (rule,term,new_flexvarnums) = renameConditionFlexVars(rule,term,subst) in
+	     case solveCondition(rules1,rule,subst,term0,boundVars,history,backChain+1)
 	       of Some subst -> 
 		 (context.traceDepth := traceDepth;
 		  let term = dereferenceAll subst term in
 		  let term = renameBound term in
                   let history = Cons((rule,term,subst),history) in
+                  let subst = removeLocalFlexVars(subst,new_flexvarnums) in
 		  let rec_results
-                     = rewriteRec(rules0,emptySubstitution,term,boundVars, history, backChain)
+                     = rewriteRec(rules0,subst,term,boundVars, history, backChain)
                    in
                    if rec_results = Nil
                      then unit history
@@ -780,24 +885,20 @@ MetaSlangRewriter qualifying spec
 end-spec
 
 (*
-\subsection{Discussion}
+Discussion
 
-\begin{itemize}
-\item This allows to use rewriting as abstract execution. 
+* This allows to use rewriting as abstract execution. 
       What about compiled forms? A la type based partial evaluation forms, or
       unboxing analysis?
 
       Code generation should generate code of the form
-      \begin{verbatim}
       (defun f (x) 
         (let ((x-unboxed (unbox x)))
              (if (boxed? x)
                  (box (cons :|Apply| AST-for-symbol-f x-unboxed))
 	      (unboxed (standard-code-for-f x-unboxed)))))
-      \end{verbatim}
-\item Implement the boxification as a Spec to Spec transformation that allows
+* Implement the boxification as a Spec to Spec transformation that allows
       to reuse one code generator.
-      \begin{verbatim}
         sort Box a = | Boxed Term | UnBoxed a
         op  boxifySpec : Spec -> Spec
         op  boxifyTerm : Term -> Term
@@ -814,10 +915,6 @@ end-spec
               of Unboxed g -> Apply(f,g)
                | Boxed g -> Boxed('Apply(f,g))
 
-      \end{verbatim}
-      
-\item Extend partial evaluation/boxing format with calls to rewrite engine, or
+* Extend partial evaluation/boxing format with calls to rewrite engine, or
       interleave these steps.
-
-\end{itemize}
 *)

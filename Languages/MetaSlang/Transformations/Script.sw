@@ -200,7 +200,7 @@ spec
 
   op rewriteDebug?: Boolean = false
 
-  op rewriteDepth: Nat = 5
+  op rewriteDepth: Nat = 6
   op rewrite(term: MS.Term, context: Context, rules: List RewriteRule, maxDepth: Nat): MS.Term =
      let _ = if rewriteDebug? then
                (writeLine("Rewriting:\n"^printTerm term);
@@ -381,7 +381,7 @@ spec
       | None -> (warn("Move failed at: "^ (foldr (fn (m,res) -> moveString m ^ " " ^ res) "" mvs));
                  none)
 
-  op maxRewrites: Nat = 400
+  op maxRewrites: Nat = 900
 
   %% term is the current focus and should  be a sub-term of the top-level term top_term
   op interpretTerm(spc: Spec, script: Script, term: MS.Term, top_term: MS.Term, tracing?: Boolean)

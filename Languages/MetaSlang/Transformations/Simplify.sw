@@ -236,6 +236,11 @@ spec
 %		    | _ -> term
 %	  in
 %	     mapTerm(replace,fn x -> x,fn p -> p) body
+       | Apply(Fun(Op(Qualified("Nat","natural?"), _),_,_), e, a) ->
+         mkAppl((Fun(Op (Qualified("Integer",">="),Infix(Left,20)),
+                     Arrow(mkProduct[integerSort,integerSort],boolSort,a),
+                     a),
+                 [e, mkNat 0]))
        %% Quantification simplification
        %% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
        | Bind(Forall,_,_,_) -> simplifyForall spc (forallComponents term)

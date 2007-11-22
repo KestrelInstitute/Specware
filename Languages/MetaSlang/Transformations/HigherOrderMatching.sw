@@ -14,7 +14,7 @@ HigherOrderMatching qualifying
 spec
  import ../Specs/Environment
  import ../Specs/Utilities
- import Simplify
+ import Simplify, Interpreter
 
  type SubstC    = StringMap Sort * NatMap.Map MS.Term * List MS.Term
 
@@ -22,7 +22,6 @@ spec
 
  op matchPairs : Context * SubstC * Stack -> List SubstC
 
- type Term = MS.Term
  type VarSubst = List (Var * MS.Term)
 
  type Context = 
@@ -96,11 +95,8 @@ The stack is accessed and modified using the operations
  def stackFromList pairs = 
      foldr (fn ((M,N),stack) -> insert(M,N,stack)) emptyStack pairs
 
-\end{spec}
 
-\subsection{Utilities for fresh and bound variables}
-
-\begin{spec}
+(* Utilities for fresh and bound variables *)
 
  op freshVar : Context * Sort -> MS.Term
 
@@ -122,6 +118,14 @@ The stack is accessed and modified using the operations
      let num = ! context.counter in
      (context.counter := num + 1;
       ("x%"^toString num,srt))
+
+ op flexRef?(t: MS.Term): Boolean =
+   case t of
+     | Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_) -> true
+     | _ -> false
+
+ op hasFlexRef?(t: MS.Term): Boolean =
+   existsSubTerm flexRef? t
 
  op isFlexVar? : MS.Term -> Option Nat
  def isFlexVar?(term) = 
@@ -402,6 +406,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 
  op emptySubstitution: SubstC = (StringMap.empty,NatMap.empty,[])
  op debugHOM: Ref Nat = Ref 0
+ op evaluateConstantTerms?: Boolean = false     % For now until utility is proven
 
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,emptyStack))
@@ -444,6 +449,8 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 		 matchPairs(context,updateSubst(subst,n,N),stack)
 	       | None -> []) 
 	else []
+      | (M, N as Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_), _,_)) | ~(hasFlexRef? M) ->
+        matchPairs(context,subst,insert(N,M,insert(N,M,stack)))
 %%
 %% Eta rules
 %%
@@ -480,6 +487,20 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
         if f1 = Equals && f2 = Equals || f1 = NotEquals && f2 = NotEquals
           then matchPairs(context, subst, stack)
         else matchBase(context,f1,srt1,f2,srt2,stack,subst,N)
+      | (M, N as Fun(f2,srt2,_)) | evaluateConstantTerms?
+                                && ~(hasFlexRef? M)
+                                && ~(constantTerm? M)
+                                && freeVarsRec M = [] ->
+        let v = eval(M,context.spc) in
+        if fullyReduced? v
+          then
+            let new_M = valueToTerm v in
+            if equalTerm?(new_M, M)
+              then []
+            else if equalTerm?(new_M, N)
+              then matchPairs(context,subst,stack)
+            else []
+        else []
       | (Var((n1,srt1), _),Var((n2,srt2), _)) ->  
 	matchBase(context,n1,srt1,n2,srt2,stack,subst,N)
       %% Special case of Let for now
@@ -719,7 +740,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
   def updateSubst((sortSubst,termSubst,condns),n,M) = 
       case isFlexVar?(M)
 	of Some m | n = m -> (sortSubst,termSubst,condns)
-	 | None -> (sortSubst,NatMap.insert(termSubst,n,M),condns)
+	 | _ -> (sortSubst,NatMap.insert(termSubst,n,M),condns)
 
 %%
 %% Infer type with sort dereferencing
@@ -1263,7 +1284,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
 	traceDepth = Ref 0,
 	traceIndent = Ref 0,
         boundVars  = [],
-	counter    = Ref 0
+	counter    = Ref 1
      }
  
  op setBound : Context * List Var -> Context
