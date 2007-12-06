@@ -1,0 +1,29 @@
+Successive stages of the hand-transformed SmartSlang Grammar:
+	grammar0
+	grammar1
+	grammar2
+
+A record of the transformation process:
+	m012
+
+The ABC sources:
+	abc-sources
+
+The Metaslang sources:
+	Fallible.sw
+	Structs.sw
+	Grammar.sw
+	ParseGrammar.sw
+	RawSmartSlangGrammar2.sw
+	TheGrammar.sw
+	Typedef.sw
+	Metakeys.sw
+	Text.sw
+	TypedefToText.sw
+	GrammarToTypedefs.sw
+
+PowerPoint Presentation:
+	GraTys.ppt
+
+This file:
+	Manifest

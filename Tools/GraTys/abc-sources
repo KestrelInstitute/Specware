@@ -1,0 +1,350 @@
+HOW TO RETURN getgrammar:
+   SHARE grammaraw
+   PUT {}, {} IN grammar, notions
+   PUT'' IN notion
+   FOR line IN grammaraw:
+      PROCESS
+   FLUSH
+   RETURN grammar, notions
+PROCESS:
+   IF line|1 <> ' ': FLUSH
+   IF line = '': QUIT
+   PUT split line IN ss
+   IF line|1 <> ' ':
+      CHECK line@#line = ':'
+      PUT '' IN line@#line
+      CHECK #ss = 1
+      PUT line, {} IN notion, alts
+  QUIT
+   PUT {} IN alt
+   WHILE ss <> {}:
+      PUT ss[min keys ss] IN w
+DELETE ss[min keys ss]
+      SELECT:
+         w|1 in {'A'..'Z'}: PUT 'N', w IN alt[#alt+1]
+         w|1 = "'": PUT 'T', w@2 IN alt[#alt+1]
+         w|1 = '!': OSP
+         ELSE:
+            WRITE {w}
+            CHECK 0=1
+   PUT alt IN alts[#alts+1]
+FLUSH:
+   IF notion <> '':
+      PUT alts, notion, ''IN grammar[notion], notions[#notions+1], notion
+OSP:
+   PUT w@2|1 IN t
+   CHECK t in 'OSP'
+   PUT ss[min keys ss] IN w
+   DELETE ss[min keys ss]
+   PUT t, w IN alt[#alt+1]
+
+HOW TO GR2DT:
+   SHARE metakeys
+   WRITE 'spec' /
+   WRITE '  type Seq a = List a' /
+   WRITE '  type ProperSeq a = {x : Seq a | length x > 0}' /
+   WRITE '  type Identifier = | Identifier String' //
+   PUT getgrammar IN gr, nn
+   NONCES
+   PUT {}, {} IN skipped, bad.skips
+   FOR n IN nn:
+      SELECT:
+         n in nonces:
+            INSERT n IN skipped
+       ELSE:
+            DT
+   WRITE 'endspec' /
+   IF bad.skips <> {}:
+      WRITE // '**** Bad skips:' /
+      FOR n IN bad.skips: WRITE '  ', n /
+NONCES:
+ PUT {} IN uu
+   FOR aa IN gr:
+      FOR alt IN aa:
+         FOR t, w IN alt:
+            IF t in 'NOSP':
+               INSERT w IN uu
+   PUT {} IN nonces
+   FOR n IN uu:
+      IF n#uu = 1:
+         INSERT n IN nonces
+   FOR n IN nonces:
+      IF n not.in keys gr OR #gr[n] <> 1: REMOVE n FROM nonces
+   FOR n IN nn:
+      IF n|1 = '-': INSERT n IN nonces
+DT:
+   PUT n IN w
+   IF w|1 = '-': PUT '' IN w|1
+   WRITE '  type `w` ='
+   PUT '-', '-' IN in.alt, in.compound
+   ALTT
+   WRITE /
+ALTT:
+   PUT gr[n] IN aa
+   IF #aa = 1:
+      PUT aa[1] IN alt
+      WRITE ' '
+      SALT
+      WRITE /
+      QUIT
+   WRITE /
+   FOR alt IN aa:
+      ALT1
+SALT:
+   PUT alt[min keys alt] IN t, w
+   CHECK t <> 'T'
+   IF #alt = 1:
+      SALT1
+      QUIT
+   COMPOUND
+COMPOUND:
+   PUT '+' IN in.compound
+   PUT {} IN fss
+   FOR t, w IN alt:
+      CHECK t <> 'T'
+      PUT w IN fs
+      IF fs|1 = '-': PUT '' IN fs|1
+      PUT (lower(fs|1))^fs@2 IN fs
+      PUT fs^{['N']: ''; ['O']: '?'; ['S']: 's'; ['P']: 's'}[t] IN fs
+      INSERT fs IN fss
+   PUT {} IN fsi
+   FOR fs IN fss:
+      SELECT:
+         fs#fss = 1: PUT -1 IN fsi[fs]
+         ELSE: PUT 1 IN fsi[fs]
+   PUT '{' IN sep
+   FOR t, w IN alt:
+      WRITE sep
+      PUT ', ' IN sep
+      PUT w IN fs
+      IF fs|1 = '-': PUT '' IN fs|1
+      PUT (lower(fs|1)+++)^fs@2 IN fs
+      PUT fs^{['N']: ''; ['O']: '?'; ['S']: 's'; ['P']: 's'}[t] INfs
+      IF fsi[fs] > 0:
+         PUT fs^'`fsi[fs]`', fsi[fs]+1 IN fs, fsi[fs]
+      IF fs in keys metakeys:
+         PUT metakeys[fs] IN fs
+      WRITE fs, ' : '
+      SALT1
+   WRITE '}'
+   PUT '-' IN in.compound
+SALT1:
+   SELECT:
+      t = 'N':
+         MAYBENONCE
+      t in 'OSP':
+         WRITE {['O']: 'Option'; ['S']: 'Seq'; ['P']: 'ProperSeq'}[t]
+         WRITE ' '
+         MAYBENONCE
+MAYBENONCE:
+   IF '-'^w in nonces: PUT '-'^w IN w
+   IF w not.in nonces OR complication:
+      IF w in skipped:
+         INSERT w IN bad.skips
+IF w in nonces:
+         REMOVE w FROM nonces
+      IF w|1 = '-': PUT ''IN w|1
+      WRITE w
+      QUIT
+   PUT gr[w][1] IN alt
+   SALT
+complication:
+   IF #gr[w] > 1: SUCCEED
+   IF in.compound = '+' AND is.compound: SUCCEED^K   IF is.typor AND has.exposed.typor: SUCCEED
+   IF in.alt = '+' AND is.typor AND is.compound: SUCCEED
+   FAIL
+is.compound:
+   REPORT #gr[w][1] <> 1
+is.typor:
+   REPORT t <> 'N'
+has.exposed.typor:
+   REPORT #gr[w][1] = 1 AND SOME t', w' IN gr[w][1] HAS t' <> 'N'
+ALT1:
+   PUT '+' IN in.alt
+   WRITE '     | '
+   PUT alt[1] IN t, w
+   PUT w IN cn
+   IF cn|1 = '-': PUT '' IN cn|1
+   PUT (upper(cn|1))^cn@2 IN cn
+   WRITE cn
+   IF t = 'T': DELETE alt[1]
+   IF #alt > 0:
+      WRITE ' '
+      SALT
+   WRITE /
+   PUT '-' IN in.alt
+HOW TO RETURN getgrammar:
+   SHARE grammaraw
+   PUT {}, {} IN grammar, notions
+   PUT'' IN notion
+   FOR line IN grammaraw:
+      PROCESS
+   FLUSH
+   RETURN grammar, notions
+PROCESS:
+   IF line|1 <> ' ': FLUSH
+   IF line = '': QUIT
+   PUT split line IN ss
+   IF line|1 <> ' ':
+      CHECK line@#line = ':'
+      PUT '' IN line@#line
+      CHECK #ss = 1
+      PUT line, {} IN notion, alts
+  QUIT
+   PUT {} IN alt
+   WHILE ss <> {}:
+      PUT ss[min keys ss] IN w
+DELETE ss[min keys ss]
+      SELECT:
+         w|1 in {'A'..'Z'}: PUT 'N', w IN alt[#alt+1]
+         w|1 = "'": PUT 'T', w@2 IN alt[#alt+1]
+         w|1 = '!': OSP
+         ELSE:
+            WRITE {w}
+            CHECK 0=1
+   PUT alt IN alts[#alts+1]
+FLUSH:
+   IF notion <> '':
+      PUT alts, notion, ''IN grammar[notion], notions[#notions+1], notion
+OSP:
+   PUT w@2|1 IN t
+   CHECK t in 'OSP'
+   PUT ss[min keys ss] IN w
+   DELETE ss[min keys ss]
+   PUT t, w IN alt[#alt+1]
+
+HOW TO GR2DT:
+   SHARE metakeys
+   WRITE 'spec' /
+   WRITE '  type Seq a = List a' /
+   WRITE '  type ProperSeq a = {x : Seq a | length x > 0}' /
+   WRITE '  type Identifier = | Identifier String' //
+   PUT getgrammar IN gr, nn
+   NONCES
+   PUT {}, {} IN skipped, bad.skips
+   FOR n IN nn:
+      SELECT:
+         n in nonces:
+            INSERT n IN skipped
+       ELSE:
+            DT
+   WRITE 'endspec' /
+   IF bad.skips <> {}:
+      WRITE // '**** Bad skips:' /
+      FOR n IN bad.skips: WRITE '  ', n /
+NONCES:
+ PUT {} IN uu
+   FOR aa IN gr:
+      FOR alt IN aa:
+         FOR t, w IN alt:
+            IF t in 'NOSP':
+               INSERT w IN uu
+   PUT {} IN nonces
+   FOR n IN uu:
+      IF n#uu = 1:
+         INSERT n IN nonces
+   FOR n IN nonces:
+      IF n not.in keys gr OR #gr[n] <> 1: REMOVE n FROM nonces
+   FOR n IN nn:
+      IF n|1 = '-': INSERT n IN nonces
+DT:
+   PUT n IN w
+   IF w|1 = '-': PUT '' IN w|1
+   WRITE '  type `w` ='
+   PUT '-', '-' IN in.alt, in.compound
+   ALTT
+   WRITE /
+ALTT:
+   PUT gr[n] IN aa
+   IF #aa = 1:
+      PUT aa[1] IN alt
+      WRITE ' '
+      SALT
+      WRITE /
+      QUIT
+   WRITE /
+   FOR alt IN aa:
+      ALT1
+SALT:
+   PUT alt[min keys alt] IN t, w
+   CHECK t <> 'T'
+   IF #alt = 1:
+      SALT1
+      QUIT
+   COMPOUND
+COMPOUND:
+   PUT '+' IN in.compound
+   PUT {} IN fss
+   FOR t, w IN alt:
+      CHECK t <> 'T'
+      PUT w IN fs
+      IF fs|1 = '-': PUT '' IN fs|1
+      PUT (lower(fs|1))^fs@2 IN fs
+      PUT fs^{['N']: ''; ['O']: '?'; ['S']: 's'; ['P']: 's'}[t] IN fs
+      INSERT fs IN fss
+   PUT {} IN fsi
+   FOR fs IN fss:
+      SELECT:
+         fs#fss = 1: PUT -1 IN fsi[fs]
+         ELSE: PUT 1 IN fsi[fs]
+   PUT '{' IN sep
+   FOR t, w IN alt:
+      WRITE sep
+      PUT ', ' IN sep
+      PUT w IN fs
+      IF fs|1 = '-': PUT '' IN fs|1
+      PUT (lower(fs|1)+++)^fs@2 IN fs
+      PUT fs^{['N']: ''; ['O']: '?'; ['S']: 's'; ['P']: 's'}[t] INfs
+      IF fsi[fs] > 0:
+         PUT fs^'`fsi[fs]`', fsi[fs]+1 IN fs, fsi[fs]
+      IF fs in keys metakeys:
+         PUT metakeys[fs] IN fs
+      WRITE fs, ' : '
+      SALT1
+   WRITE '}'
+   PUT '-' IN in.compound
+SALT1:
+   SELECT:
+      t = 'N':
+         MAYBENONCE
+      t in 'OSP':
+         WRITE {['O']: 'Option'; ['S']: 'Seq'; ['P']: 'ProperSeq'}[t]
+         WRITE ' '
+         MAYBENONCE
+MAYBENONCE:
+   IF '-'^w in nonces: PUT '-'^w IN w
+   IF w not.in nonces OR complication:
+      IF w in skipped:
+         INSERT w IN bad.skips
+IF w in nonces:
+         REMOVE w FROM nonces
+      IF w|1 = '-': PUT ''IN w|1
+      WRITE w
+      QUIT
+   PUT gr[w][1] IN alt
+   SALT
+complication:
+   IF #gr[w] > 1: SUCCEED
+   IF in.compound = '+' AND is.compound: SUCCEED^K   IF is.typor AND has.exposed.typor: SUCCEED
+   IF in.alt = '+' AND is.typor AND is.compound: SUCCEED
+   FAIL
+is.compound:
+   REPORT #gr[w][1] <> 1
+is.typor:
+   REPORT t <> 'N'
+has.exposed.typor:
+   REPORT #gr[w][1] = 1 AND SOME t', w' IN gr[w][1] HAS t' <> 'N'
+ALT1:
+   PUT '+' IN in.alt
+   WRITE '     | '
+   PUT alt[1] IN t, w
+   PUT w IN cn
+   IF cn|1 = '-': PUT '' IN cn|1
+   PUT (upper(cn|1))^cn@2 IN cn
+   WRITE cn
+   IF t = 'T': DELETE alt[1]
+   IF #alt > 0:
+      WRITE ' '
+      SALT
+   WRITE /
+   PUT '-' IN in.alt
