@@ -105,6 +105,10 @@
    (muffle-warning))
 
 (handler-bind ((warning #'ignore-warning))
+  (let ((foo (find-symbol "*HASH-DOLLAR-READTABLE*" "SNARK")))
+    ;; fix problem with #$ when snark is reloaded...
+    (when foo
+      (set foo nil)))
   (load (make-pathname
          :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
          :type     "lisp")))
