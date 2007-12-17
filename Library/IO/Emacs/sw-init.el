@@ -438,19 +438,21 @@ sLisp Heap Image File: ")
 (defun build-specware4-continue (*specware4-dir build-dir bin-dir slash-dir world-name base-world-name auto-exit?)
   (when (and base-world-name (not (file-exists-p base-world-name)))
     (run-plain-lisp 1)
-    ;; Currently
-    (eval-in-lisp-in-order
-     (format (if *windows-system-p*
-		 ;; various configurations that were used in Allegro 6.2 for windows:
-		 ;; "(build-lisp-image %S :c-heap-start  #x7d200000 :oldspace #x100)" ; Paulo's "magic number"
-		 ;; "(build-lisp-image %S :c-heap-start  #x7c623000 :oldspace #x100)"
-		 ;; "(build-lisp-image %S :c-heap-start  #x7e000000 :oldspace #x100)"
-		 "(build-lisp-image %S)"
-	       ;; non-windows:
-	       ;; read-from-string is because of slime misfeature
-	       "(cl-user::build-lisp-image %S :lisp-heap-start (cl:read-from-string \"#x48000000\")
-                                              :oldspace #x100)")
-	     base-world-name))
+    (sit-for 4)
+    (let ((cmd (format (if *windows-system-p*
+			   ;; *windows-system-p* is used here as proxy for "running Allegro"
+			   ;; various configurations that were used in Allegro 6.2 for windows:
+			   ;; "(build-lisp-image %S :c-heap-start  #x7d200000 :oldspace #x100)" ; Paulo's "magic number"
+			   ;; "(build-lisp-image %S :c-heap-start  #x7c623000 :oldspace #x100)"
+			   ;; "(build-lisp-image %S :c-heap-start  #x7e000000 :oldspace #x100)"
+			   ;; build-lisp-image is defined in autloaded build.lisp, which will not be present if running from distribution image
+			   "(let ((name %S)) #+specware-distribution (excl::dumplisp :name name) #-specware-distribution (build-lisp-image name))"
+			 ;; non-windows:
+			 ;; read-from-string is because of slime misfeature
+			 "(cl-user::build-lisp-image %S :lisp-heap-start (cl:read-from-string \"#x48000000\")
+                                                        :oldspace #x100)")
+		       base-world-name)))
+      (eval-in-lisp-in-order cmd))
     (sit-for 4)
     (dotimes (i 10)
       (sit-for 2)
