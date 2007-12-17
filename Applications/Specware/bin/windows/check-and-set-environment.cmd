@@ -32,7 +32,14 @@ if "%SWPATH%"=="" (
   set SWPATH=%SWPATH%;C:/
 )
 
-set LISP_EXECUTABLE=%ALLEGRO%\alisp.exe
+if exist %ALLEGRO%\alisp.exe (
+  set LISP_EXECUTABLE=%ALLEGRO%\alisp.exe
+  set XELI="%ALLEGRO%/xeli"
+) else (
+  set LISP_EXECUTABLE=C:\Progra~1\Kestrel\Specware-4-2-2\Specware4.exe
+  set XELI="%SPECWARE4%/Library/IO/Emacs/xeli"
+) 
+
 set LISP_DIRECTORY=%Specware4%/
 set SPECWARE_BIN=%SPECWARE4%\Applications\Specware\bin\windows
 set LISP_HEAP_IMAGE=%SPECWARE_BIN%\Specware4.dxl
@@ -43,6 +50,7 @@ echo "post BOOTSTRAP:       %BOOTSTRAP%"
 echo "post SPECWARE4:       %SPECWARE4%"
 echo "post SWPATH:          %SWPATH%"
 echo "post LISP_EXECUTABLE: %LISP_EXECUTABLE%"
+echo "post LISP_HEAP_IMAGE: %LISP_HEAP_IMAGE%"
 echo "post LISP_DIRECTORY:  %LISP_DIRECTORY%"
 
 rem  Move to Specware4 main directory:
