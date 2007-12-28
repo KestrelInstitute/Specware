@@ -105,7 +105,7 @@
    (muffle-warning))
 
 (handler-bind ((warning #'ignore-warning))
-  (let ((foo (find-symbol "*HASH-DOLLAR-READTABLE*" "SNARK")))
+  (let ((foo (and (find-package "SNARK") (find-symbol "*HASH-DOLLAR-READTABLE*" "SNARK"))))
     ;; fix problem with #$ when snark is reloaded...
     (when foo
       (set foo nil)))
