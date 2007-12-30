@@ -4,8 +4,8 @@
 
 (defun parse-file (file parser tokenizer &key package 
 					      (report-gaps? t)
-					      (report-ambiguities? t))
-
+					      (report-ambiguities? t)
+					      start-rule-name)
   (incf-timing-data 'before-parse-file)
   (unless (parser-p parser)
     (error "~S is not a parser" parser))
@@ -27,6 +27,9 @@
   (let* ((package (or package 
 		      (parser-symbol-package parser)
 		      common-lisp::*package*))
+	 (start-rule (if start-rule-name
+			 (gethash start-rule-name (parser-ht-name-to-rule parser))
+		       (parser-toplevel-rule parser)))
 	 (session (make-parse-session 
 		   :file                 file
 		   :parser               parser
@@ -35,6 +38,7 @@
 		   :report-gaps?         report-gaps?
 		   :report-ambiguities?  report-ambiguities?
 		   :error-reported?      nil
+		   :start-rule           start-rule
 		   )))
     (setq *current-parser-session* session)
     (when-debugging 

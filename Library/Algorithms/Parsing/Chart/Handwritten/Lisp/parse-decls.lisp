@@ -120,17 +120,19 @@
   package
   (error-reported?    nil) 
   (warning-issued?    nil) 
+  start-rule
   )
 
 (defun print-parser-session (session stream ignore-level)
   (declare (ignore ignore-level))
-  (format stream "<Parse of ~A using ~A (~D token~:P) yielding ~D result~:P with ~D gap~:P and ~D ambiguit~:@P>"
+  (format stream "<Parse of ~A using ~A (~D token~:P) from ~A yielding ~D result~:P with ~D gap~:P and ~D ambiguit~:@P>"
 	  (parse-session-file session)
-	  (parser-name (parse-session-parser      session))
-	  (length      (parse-session-locations   session))
-	  (length      (parse-session-results     session))
-	  (length      (parse-session-gaps        session))
-	  (length      (parse-session-ambiguities session))
+	  (parser-name      (parse-session-parser      session))
+	  (parser-rule-name (parse-session-start-rule  session))
+	  (length           (parse-session-locations   session))
+	  (length           (parse-session-results     session))
+	  (length           (parse-session-gaps        session))
+	  (length           (parse-session-ambiguities session))
 	  ))
 
 (defun SUCCESSFUL-PARSE-SESSION? (session)

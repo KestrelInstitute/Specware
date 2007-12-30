@@ -217,15 +217,14 @@
 ;; ======================================================================
 
 (defun add-toplevel-node (session index)
-  (let* ((locations     (parse-session-locations session))
-	 (location      (svref locations index))
-	 (parser        (parse-session-parser session))
-	 (toplevel-rule (parser-toplevel-rule parser))
+  (let* ((locations  (parse-session-locations session))
+	 (location   (svref locations index))
+	 (start-rule (parse-session-start-rule session))
 	 (new-toplevel-node
-	  (create-parser-node  :rule      toplevel-rule
+	  (create-parser-node  :rule      start-rule
 			       :pre-index index
 			       :children  (make-array 1 :initial-element nil)))
-	 (handles-bv (parser-anyof-rule-possible-handles-bv toplevel-rule)))
+	 (handles-bv (parser-anyof-rule-possible-handles-bv start-rule)))
     (when-debugging
      (when *verbose?*
        (let ((position (parser-location-position location)))
@@ -321,7 +320,7 @@
 
 (defun add-partial-tuple-node (session rule child-node child-index)
   ;; child-index will normally be 0, but could be larger if we are skipping past leading optionals
-  (unless (eq rule (parser-toplevel-rule (parse-session-parser session)))
+  (unless (eq rule (parse-session-start-rule session))
     (let* ((child-pre-index  (parser-node-pre-index child-node))
 	   (pattern (parser-rule-items rule))
 	   (pattern-size (length pattern))
@@ -453,7 +452,7 @@
     (attach-reductions session this-node)
     (extend-partial-nodes-reaching-this-node session this-node))
   (when (eq (parser-node-rule this-node)
-	    (parser-toplevel-rule (parse-session-parser session)))
+	    (parse-session-start-rule session))
     (add-toplevel-node session (parser-node-post-index this-node)))
   nil)
 
@@ -507,7 +506,7 @@
       (parser-anyof-rule
        (when-debugging
 	(unless (eq (parser-node-rule parent-node)
-		    (parser-toplevel-rule (parse-session-parser session)))
+		    (parse-session-start-rule session))
 	  (warn "Attempt to extend non-toplevel ANYOF node ~S at ~D using node ~S" 
 		parent-node 
 		child-index 
