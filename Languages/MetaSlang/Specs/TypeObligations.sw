@@ -171,6 +171,7 @@ spec
 	       | LetRec decls -> LetRec(decls,formula,noPos)
      in
      let term = foldl insert term decls in
+     % let _ = writeLine("Simplifying "^printTerm term) in
      case if simplifyObligations? then simplify spc term else term of
        | Fun(Bool true,_,_) -> None
        %% In general simplify doesn't change e -> true because of strictness, but that should not be
@@ -791,6 +792,9 @@ spec
 		      printSort tau^
 		      " could not be made subsort of "^
 		      printSort sigma)
+        | _ -> (writeLine("subtypeRec: type error in "^printTerm M^"\nat "
+                          ^print(termAnn M)^"\n"^printSort tau^" <=? "^printSort sigma);
+                tcc)
 
  op  equivalenceConjectures: MS.Term * Spec -> SpecElements
  def equivalenceConjectures (r,spc) =
