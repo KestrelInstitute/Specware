@@ -573,8 +573,8 @@ Mode map
   (make-local-variable 'comment-indent-function)
   (setq comment-indent-function 'sw:comment-indent)
   (make-local-variable 'font-lock-fontify-region-function)
-  (setq font-lock-fontify-region-function
-        'specware-font-lock-fontify-region-function)
+;;   (setq font-lock-fontify-region-function
+;;         'specware-font-lock-fontify-region-function)
   (setq font-lock-defaults '(specware-font-lock-keywords))
   ;;
   ;; Adding these will fool the matching of parens. I really don't
@@ -1271,7 +1271,7 @@ If anyone has a good algorithm for this..."
     (let* ((file-uid (sw::file-to-specware-unit-id buffer-file-name relativise))
 	   (match (sw:re-search-backward sw:basic-unit-intro-regexp)))
       (if match
-	  (concat file-uid "#" (match-string 1))
+	  (concat file-uid "#" (match-string-no-properties 1))
 	file-uid))))
 
 (when (and (not (featurep 'xemacs)) (not (fboundp 'replace-in-string)))
@@ -1642,25 +1642,27 @@ If anyone has a good algorithm for this..."
 	      read-symbol)))))
 
 (defun sw::get-symbol-at-point (&optional up-p)
-  (let ((symbol
-	 (cond
-	  ((looking-at "\\sw\\|\\s_\\|\\.")
-	   (save-excursion
+  (save-excursion
+    (when (and (member (char-syntax (following-char)) '(?_ ?>))
+	       (eq ?w (char-syntax (preceding-char))))
+      (forward-char -1))
+    (let ((symbol
+	   (cond
+	    ((looking-at "\\sw\\|\\s_\\|\\.")
 	     (while (looking-at "\\sw\\|\\s_\\|\\.\\||")
 	       (forward-char 1))
 	     (while (eq (char-after (- (point) 2)) ?-)
-			   (forward-char -2))
+	       (forward-char -2))
 	     (buffer-substring-no-properties
 	      (point)
 	      (progn (forward-sexp -1)
 		     (while (looking-at "\\s'")
 		       (forward-char 1))
-		     (while (member (char-before) '(?. ?:))
+		     (while (member (preceding-char) '(?. ?:))
 		       (forward-sexp -1))
-		     (point)))))
-	  (t
-	   (condition-case ()
-	       (save-excursion
+		     (point))))
+	    (t
+	     (condition-case ()
 		 (if up-p
 		     (let ((opoint (point)))
 		       (cond ((= (following-char) ?\()
@@ -1682,23 +1684,23 @@ If anyone has a good algorithm for this..."
 				       (forward-char 1)
 				       (forward-sexp 2)
 				       (backward-sexp 1)))))))))
-		 (while (looking-at "\\sw\\|\\s_\\|\\.")
-		   (forward-char 1))
-		 (if (re-search-backward "\\sw\\|\\s_\\|\\." nil t)
-		     (progn (forward-char 1)
-			    (buffer-substring-no-properties
-			     (point)
-			     (progn (forward-sexp -1)
-				    (while (looking-at "\\s'")
-				      (forward-char 1))
-				    (point))))
-		   nil))
-	     (error nil))))))
-    (when (member symbol '(":"))
-      (setq symbol nil))
-    (or symbol
-	(if (and up-p (null symbol))
-	    (sw::get-symbol-at-point)))))
+	       (while (looking-at "\\sw\\|\\s_\\|\\.")
+		 (forward-char 1))
+	       (if (re-search-backward "\\sw\\|\\s_\\|\\." nil t)
+		   (progn (forward-char 1)
+			  (buffer-substring-no-properties
+			   (point)
+			   (progn (forward-sexp -1)
+				  (while (looking-at "\\s'")
+				    (forward-char 1))
+				  (point))))
+		 nil)
+	       (error nil))))))
+      (when (member symbol '(":"))
+	(setq symbol nil))
+      (or symbol
+	  (if (and up-p (null symbol))
+	      (sw::get-symbol-at-point))))))
 
 ;;;; Commands for finding Specware expressions
 (defun sw:find-terms-of-type (name)
@@ -2064,6 +2066,9 @@ uniquely and concretely describes their application.")
 	       default-directory)
      (format "(specware-test::run-test-directories-rec %S)"
 	     default-directory))))
+
+;;; For Gnu Emacs. This will be already defined in xemacs
+(defvar display-warning-suppressed-classes ())
 
 ;;; Isabelle Interface
 (defun sw:convert-spec-to-isa-thy (non-recursive?)
