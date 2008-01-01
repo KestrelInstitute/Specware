@@ -102,10 +102,11 @@ spec
      %% Thm fa(x) osi(iso x) = x
      let x_var = ("x",src_ty) in
      let inv_thm1 = mkBind(Forall,[x_var],
-                           mkEquality(trg_ty,
+                           mkEquality(src_ty,
                                       mkApply(osi_ref,mkApply(iso_ref, mkVar x_var)),
                                       mkVar x_var))
      in
+     %let _ = writeLine("osi__iso theorem:\n"^printTermWithSorts inv_thm1) in
      let osi__iso_qid = Qualified("generated","osi__iso") in
      let spc = addTheorem((osi__iso_qid, tvs, inv_thm1, noPos), spc) in
 
