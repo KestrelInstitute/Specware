@@ -281,7 +281,7 @@ sLisp Heap Image File: ")
 	    ;; similar wait for up to 10 seconds
 	    (if (dotimes (i 100)
 		  (message "Checking to see if new lisp has started in buffer %S -- %S"
-			   sw:common-lisp-buffer-name i (- 100 i))
+			   sw:common-lisp-buffer-name (- 100 i))
 		  (sit-for 0.1 t)
 		  (when (inferior-lisp-running-p)
 		    (return t)))
