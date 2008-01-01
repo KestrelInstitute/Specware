@@ -94,7 +94,7 @@ balanced."
                    (< (point) slime-repl-input-start-mark))
          (slime-repl-grab-old-output end-of-input)
          (slime-repl-recenter-if-needed))
-        ((slime-input-complete-p slime-repl-input-start-mark 
+        ((slime-input-complete-p slime-repl-input-start-mark
                                  (ecase slime-repl-return-behaviour
                                    (:send-only-if-after-complete (min (point) slime-repl-input-end-mark))
                                    (:send-if-complete slime-repl-input-end-mark)))
@@ -173,7 +173,7 @@ If NEWLINE is true then add a newline at the end of the input."
 	    ':exit
 	  (if (equal command "")
 	      command
-	    (format "(%s '%s %S)" sw:*shell-command-function* command argstr)))))))
+	    (format "(%s '%s %S)\n" sw:*shell-command-function* command argstr)))))))
 
 (defun strip-extra-whitespace (s)
   (let ((first-non-ws-pos (string-match "[^ \t\n]" s))
