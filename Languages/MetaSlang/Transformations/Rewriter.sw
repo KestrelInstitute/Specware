@@ -64,6 +64,43 @@ MetaSlangRewriter qualifying spec
    in
     simpleRules ++ condRules
 
+ op optimizeSuccessList(results: List(MS.Term * (SubstC * RewriteRule * List Var * Demod RewriteRule)))
+      : List(MS.Term * (SubstC * RewriteRule * List Var * Demod RewriteRule)) =
+   %% Prefer unconditional match if result is the same -- happens with subtypes and type parameters
+%    let opt_num = if length results > 1 then
+%                   let (t1,(s1,rule1,_,_))::_ = results in
+%                   (foldl (fn ((t1,(s1,rule1,_,_)), (opt_num,t2,s2,rule2)) ->
+%                            if equalTerm?(t1,t2) && s2.3 ~= [] && s1.3 = []
+%                              then (opt_num + 1, t1, s1, rule1)
+%                              else (opt_num, t1, s1, rule1))
+%                     (0, t1, s1, rule1) (tl results)).1
+%                  else 0 in
+%    let _ = if length results > 1 then writeLine("Succ: "^toString(length results)^" results. Opt: "^toString opt_num) else () in
+   let new_results =
+       if length results < 2 then results
+         else
+         let (t1,(s1,rule1,_,_))::_ = results in
+         (foldl (fn (ri as (ti,(si,rulei,_,_)), (new_results,tr,sr,ruler)) ->
+                   if equalTerm?(ti,tr)
+                     then
+                       if equalList?(sr.3,si.3,equalTerm?)
+                         then (new_results,tr,sr,ruler)
+                         else if sr.3 ~= [] && si.3 = []
+                         then   % let _ = writeLine("Optimize "^rule1.name) in
+%                            let _ = if length new_results > 1 then (writeLine(printTerm ti);
+%                                                                    List.app (fn t -> writeLine("  "^printTerm t)) (si.3);
+%                                                                    writeLine(printTerm (hd results).1);
+%                                                                    List.app (fn t -> writeLine("  "^printTerm t)) ((hd results).2.1.3)) else () in
+                           (butLast new_results ++ [ri], ti, si, rulei)
+                         else (new_results ++ [ri], ti, si, rulei)
+                     else (new_results ++ [ri], ti, si, rulei))
+            ([hd results], t1, s1, rule1) (tl results)).1
+   in
+   %let _ = if length new_results < length results then writeLine(toString (length new_results)) else () in
+   if length new_results < length results
+     then optimizeSuccessList new_results
+     else new_results
+
  op useStandardSimplify?: Boolean = true
  op debugApplyRewrites?:  Boolean = false
 
@@ -87,21 +124,22 @@ MetaSlangRewriter qualifying spec
           let substs = applyRewrite(context,rule,subst,term) in
           let _ = if debugApplyRewrites? then
                     if substs = [] then writeLine("Match failed.\n")
-                      else (writeLine("Match succeeded."); printSubst (hd substs))
+                      else (writeLine("Match succeeded."); app printSubst substs)
                   else ()
           in
           fromList
-            (mapPartial (fn s ->
-                           let rhs = renameBoundVars(rule.rhs,boundVars) in
-                           %% Temporary fix to avoid identity transformations early
-                           %% The dereferenceAll will be done later as well,
-                           %% This is also necessary for foldSubPatterns
-                           let result = dereferenceAll s rhs in
-                           let result = renameBound result in
-                           if equalTerm?(term, result)
-                             then None
-                             else Some(result,(s,rule,boundVars,demod)))
-               substs)) 
+            (optimizeSuccessList
+               (mapPartial (fn s ->
+                              let rhs = renameBoundVars(rule.rhs,boundVars) in
+                              %% Temporary fix to avoid identity transformations early
+                              %% The dereferenceAll will be done later as well,
+                              %% This is also necessary for foldSubPatterns
+                              let result = dereferenceAll s rhs in
+                              let result = renameBound result in
+                              if equalTerm?(term, result)
+                                then None
+                              else Some(result,(s,rule,boundVars,demod)))
+                  substs))) 
       rules)
    @@ (fn () -> if standardSimplify? && useStandardSimplify?
                   then standardSimplify spc (term,subst,boundVars,demod)
@@ -442,219 +480,159 @@ MetaSlangRewriter qualifying spec
 	  (fn () -> rewriteSubTerm(solvers,boundVars,term,rules))
 
  def rewriteSubTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
-     (case term of
-% sjw: I don't know why these were ever separate cases
-%         | Apply(Fun(Not,s,_),arg,b) ->  
-% 	   LazyList.map 
-% 		(fn (arg,a) -> (Apply(Fun(Not,s,b), arg, b),a)) 
-% 		(rewriteTerm(solvers,boundVars,arg,rules))
-%         | Apply(Fun(And,s,_),Record([(l1,M),(l2,N)], _),b) -> 
-% 	   LazyList.map 
-% 		(fn (N,a) -> (Apply(Fun(And,s,b),
-% 				    Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,N,rules)) @@
-% 	   (fn () -> 
-% 	   LazyList.map 
-% 		(fn (M,a) -> (Apply(Fun(And,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,M,rules))) 
-%         | Apply(Fun(Or,s,_),Record([(l1,M),(l2,N)], _),b) -> 
-% 	   LazyList.map 
-% 		(fn (N,a) -> (Apply(Fun(Or,s,b),
-% 				    Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,N,rules)) @@
-% 	   (fn () -> 
-% 	   LazyList.map 
-% 		(fn (M,a) -> (Apply(Fun(Or,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,M,rules))) 
-%         | Apply(Fun(Implies,s,_),Record([(l1,M),(l2,N)], _),b) -> 
-% 	   LazyList.map 
-% 		(fn (N,a) -> (Apply(Fun(Implies,s,b),
-% 				    Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,N,rules)) @@
-% 	   (fn () -> 
-% 	   LazyList.map 
-% 		(fn (M,a) -> (Apply(Fun(Implies,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,M,rules))) 
-%         | Apply(Fun(Iff,s,_),Record([(l1,M),(l2,N)], _),b) -> 
-% 	   LazyList.map 
-% 		(fn (N,a) -> (Apply(Fun(Iff,s,b),
-% 				    Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,N,rules)) @@
-% 	   (fn () -> 
-% 	   LazyList.map 
-% 		(fn (M,a) -> (Apply(Fun(Iff,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,M,rules))) 
-%         | Apply(Fun(Equals,s,_),Record([(l1,M),(l2,N)], _),b) -> 
-% 	   LazyList.map 
-% 		(fn (N,a) -> (Apply(Fun(Equals,s,b),
-% 				    Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,N,rules)) @@
-% 	   (fn () -> 
-% 	   LazyList.map 
-% 		(fn (M,a) -> (Apply(Fun(Equals,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,M,rules))) 
-%         | Apply(Fun(NotEquals,s,_),Record([(l1,M),(l2,N)], _),b) -> 
-% 	   LazyList.map 
-% 		(fn (N,a) -> (Apply(Fun(NotEquals,s,b),
-% 				    Record([(l1,M),(l2,N)],b),b),a)) 
-% 		(rewriteTerm(solvers,boundVars,N,rules)) @@
-% 	   (fn () -> 
-% 	   LazyList.map 
-%		(fn (M,a) -> (Apply(Fun(NotEquals,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
-%		(rewriteTerm(solvers,boundVars,M,rules))) 
-
-% Moved in Apply case
-%          | Apply(f, c_tm as (Apply(Lambda(binds,b3), case_tm, b2)), b1)
-%               | pushFunctionsIn?
-%                   && (case f of
-%                         | Fun _ -> true
-%                         | Var _ -> true
-%                         | Apply _ -> true
-%                         | Lambda _ -> true
-%                         | _ -> false)
-%                 ->
-%            let new_c_tm = Apply(Lambda(map (fn (p,c,bod) ->
-%                                                     (p,c,Apply(f,bod,b1)))
-%                                                binds, b3),
-%                                       case_tm,b2)
-%            in
-%              rewriteTerm(solvers,boundVars,new_c_tm,rules)
-%              @@ (fn () ->
-%                    LazyList.map (fn (f,a) -> (Apply(f,c_tm,b2),a)) 
-%                      (rewriteTerm(solvers,boundVars,f,rules)))
-	 | Apply(M,N,b) ->
-           let Ns = termToList N in
-           (case findIndex (embed? IfThenElse) Ns  of
-              | Some (i,if_tm) | pushFunctionsIn? && pushable? M ->
-                (let IfThenElse(p,q,r,b1) = if_tm in
-                 let r_tm = IfThenElse(p,
-                                       mkAppl(M,replaceNth(i, Ns, q)),
-                                       mkAppl(M,replaceNth(i, Ns, r)), b)
-                 in rewriteTerm(solvers,boundVars,r_tm,rules))
-              | _ ->
-            case findIndex (embed? Let) Ns  of
-              | Some (i,let_tm) | pushFunctionsIn? && pushable? M ->
-                (let Let(bds,lt_body,a2) = let_tm in
-                 let r_tm = Let(bds, mkAppl(M,replaceNth(i, Ns, lt_body)),a2) in
-                 rewriteTerm(solvers,boundVars,r_tm,rules))
-              | _ ->
-            case findIndex caseExpr? Ns  of
-              | Some (i,case_tm) | pushFunctionsIn? && pushable? M ->
-                (let Apply(Lambda(binds,b3), case_tm, b2) = case_tm in
-                 let r_tm = Apply(Lambda(map (fn (p,c,bod) ->
-                                                (p,c,mkAppl(M,replaceNth(i, Ns, bod))))
-                                           binds, b3),
-                                  case_tm, b2)
-                 in rewriteTerm(solvers,boundVars,r_tm,rules))
-              | _ ->
-            case M of
-              | Lambda(lrules,b1) ->
-                %% Separate case so we can use the context of the pattern matching
-                LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
-                  (rewriteTerm(solvers,boundVars,N,rules))
-                @@ (fn () ->
-                      mapEach(fn (first,(pat,cond,M),rest) -> 
-                          rewritePattern(solvers,boundVars,pat,rules)
-                          >>= (fn (pat,a) -> unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
-                        lrules
-                @@ (fn () ->
-                    mapEach 
-                      (fn (first,(pat,cond,M),rest) ->
-                         let rules = addPatternRestriction(context,pat,rules) in
-                         let (M, rules, sbst) =
-                             case patternToTerm pat of
-                               | None -> (M, rules, [])
-                               | Some pat_tm ->
-                             case N of
-                               | Var(nv,_) ->
-                                 let sbst = [(nv, pat_tm)] in
-                                 (substitute (M, sbst), rules, sbst)
-                               | _ ->
-                                 let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
-                                 (M, addDemodRules(assertRules(context, equal_term, "case", false), rules), [])
-                         in
-                         rewriteTerm(solvers,(boundVars ++ patternVars pat), M, rules)
-                         >>= (fn (M,a) ->
-                                let M = invertSubst(M,sbst) in
-                                unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
-                      lrules))
-              | _ ->
+   case term of
+     | Apply(M,N,b) ->
+       let Ns = termToList N in
+       (case findIndex (embed? IfThenElse) Ns  of
+          | Some (i,if_tm) | pushFunctionsIn? && pushable? M ->
+            (let IfThenElse(p,q,r,b1) = if_tm in
+             let r_tm = IfThenElse(p,
+                                   mkAppl(M,replaceNth(i, Ns, q)),
+                                   mkAppl(M,replaceNth(i, Ns, r)), b)
+             in rewriteTerm(solvers,boundVars,r_tm,rules))
+          | _ ->
+        case findIndex (embed? Let) Ns  of
+          | Some (i,let_tm) | pushFunctionsIn? && pushable? M ->
+            (let Let(bds,lt_body,a2) = let_tm in
+             let r_tm = Let(bds, mkAppl(M,replaceNth(i, Ns, lt_body)),a2) in
+             rewriteTerm(solvers,boundVars,r_tm,rules))
+          | _ ->
+        case findIndex caseExpr? Ns  of
+          | Some (i,case_tm) | pushFunctionsIn? && pushable? M ->
+            (let Apply(Lambda(binds,b3), case_tm, b2) = case_tm in
+             let r_tm = Apply(Lambda(map (fn (p,c,bod) ->
+                                            (p,c,mkAppl(M,replaceNth(i, Ns, bod))))
+                                       binds, b3),
+                              case_tm, b2)
+             in rewriteTerm(solvers,boundVars,r_tm,rules))
+          | _ ->
+        case M of
+          | Lambda(lrules,b1) ->
+            %% Separate case so we can use the context of the pattern matching
             LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
               (rewriteTerm(solvers,boundVars,N,rules))
-            @@ (fn () -> 
-                  LazyList.map (fn (M,a) -> (Apply(M,N,b),a)) 
-                    (rewriteTerm(solvers,boundVars,M,rules))))
-	 | Record(fields,b) -> 
-	   mapEach 
-   	    (fn (first,(label,M),rest) -> 
-		rewriteTerm(solvers,boundVars,M,rules) >>= 
-		(fn (M,a) -> unit(Record(first ++ [(label,M)] ++ rest,b),a)))
-	    fields
-         | Lambda(lrules,b) ->
-           mapEach(fn (first,(pat,cond,M),rest) -> 
-                     rewritePattern(solvers,boundVars,pat,rules)
-                     >>= (fn (pat,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
-             lrules
-	   @@ (fn () ->
-               mapEach 
-                 (fn (first,(pat,cond,M),rest) -> 
-                    let patvars = patternVars pat in
-                    let rules = addPatternRestriction(context,pat,rules) in
-                    rewriteTerm(solvers, boundVars ++ patternVars pat, M, rules)
-                    >>= (fn (M,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
-                 lrules)
-         | Let(binds,M,b) ->
-            mapEach (fn (first,(pat,N),rest) ->
-                       rewriteTerm(solvers,boundVars,N,rules) >>=
-                       (fn (N,a) -> unit(Let(first ++ [(pat,N)] ++ rest,M,b),a)))
-              binds
             @@ (fn () ->
-                 let let_vars = flatten (map (fn (pat, _) -> patternVars pat) binds) in
-                 let p_M = unFoldSimpleLet(binds,M) in
-                 LazyList.map (fn (r_M,a) -> (reFoldLetVars(binds,r_M,b),a))
-                   (rewriteTerm(solvers,boundVars ++ let_vars,p_M,rules)) )
-         | LetRec(binds,M,b) ->
-           let letrec_vars = map(fn (v, _) -> v) binds in
-           let boundVars = boundVars ++ letrec_vars in
-           mapEach (fn (first,(v,N),rest) ->
-                      rewriteTerm(solvers,boundVars,N,rules) >>=
-                      (fn (N,a) -> unit(LetRec(first ++ [(v,N)] ++ rest,M,b),a)))
-             binds
-           @@ (fn () ->
-                 LazyList.map (fn (M,a) -> (LetRec(binds,M,b),a)) 
-                   (rewriteTerm(solvers,boundVars,M,rules)))
+                  mapEach(fn (first,(pat,cond,M),rest) -> 
+                      rewritePattern(solvers,boundVars,pat,rules)
+                      >>= (fn (pat,a) -> unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
+                    lrules
+            @@ (fn () ->
+                mapEach 
+                  (fn (first,(pat,cond,M),rest) ->
+                     let rules = addPatternRestriction(context,pat,rules) in
+                     let (M, rules, sbst) =
+                         case patternToTerm pat of
+                           | None -> (M, rules, [])
+                           | Some pat_tm ->
+                         case N of
+                           | Var(nv,_) ->
+                             let sbst = [(nv, pat_tm)] in
+                             (substitute (M, sbst), rules, sbst)
+                           | _ ->
+                             let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
+                             (M, addDemodRules(assertRules(context, equal_term, "case", false), rules), [])
+                     in
+                     rewriteTerm(solvers,(boundVars ++ patternVars pat), M, rules)
+                     >>= (fn (M,a) ->
+                            let M = invertSubst(M,sbst) in
+                            unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
+                  lrules))
+          | Fun(Op(Qualified(_,"mapFrom"),_),_,_)
+              | (case Ns of [_,Lambda([_], _)] -> true | _ -> false) ->
+            let [set_term, f as Lambda([(p,c,bod)],b1)] = Ns in 
+            LazyList.map (fn (set_term,a) -> (mkAppl(M,[set_term,f]),a)) 
+              (rewriteTerm(solvers,boundVars,set_term,rules))
+            @@ (fn () -> 
+                  LazyList.map (fn (bod,a) -> (mkAppl(M,[set_term, Lambda([(p,c,bod)],b1)]), a))
+                  (rewriteTerm(solvers,boundVars ++ patternVars p,bod,
+                               let Some v_tm = patternToTerm p in
+                               let memb_assert = mkAppl(mkInfixOp(mkUnQualifiedId("in?"),
+                                                                  Infix(Left,100),
+                                                                  mkArrow(mkProduct[termSort v_tm,
+                                                                                    termSort set_term],
+                                                                          boolSort)),
+                                                        [v_tm,set_term])
+                               in
+                               addDemodRules(assertRules(context, memb_assert,
+                                                         "mapFrom function", false),
+                                             rules))))
+          | _ ->
+        LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
+          (rewriteTerm(solvers,boundVars,N,rules))
+        @@ (fn () -> 
+              LazyList.map (fn (M,a) -> (Apply(M,N,b),a)) 
+                (rewriteTerm(solvers,boundVars,M,rules))))
+     | Record(fields,b) -> 
+       mapEach 
+        (fn (first,(label,M),rest) -> 
+            rewriteTerm(solvers,boundVars,M,rules) >>= 
+            (fn (M,a) -> unit(Record(first ++ [(label,M)] ++ rest,b),a)))
+        fields
+     | Lambda(lrules,b) ->
+       mapEach(fn (first,(pat,cond,M),rest) -> 
+                 rewritePattern(solvers,boundVars,pat,rules)
+                 >>= (fn (pat,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
+         lrules
+       @@ (fn () ->
+           mapEach 
+             (fn (first,(pat,cond,M),rest) -> 
+                let patvars = patternVars pat in
+                let rules = addPatternRestriction(context,pat,rules) in
+                rewriteTerm(solvers, boundVars ++ patternVars pat, M, rules)
+                >>= (fn (M,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
+             lrules)
+     | Let(binds,M,b) ->
+        mapEach (fn (first,(pat,N),rest) ->
+                   rewriteTerm(solvers,boundVars,N,rules) >>=
+                   (fn (N,a) -> unit(Let(first ++ [(pat,N)] ++ rest,M,b),a)))
+          binds
+        @@ (fn () ->
+             let let_vars = flatten (map (fn (pat, _) -> patternVars pat) binds) in
+             let p_M = unFoldSimpleLet(binds,M) in
+             LazyList.map (fn (r_M,a) -> (reFoldLetVars(binds,r_M,b),a))
+               (rewriteTerm(solvers,boundVars ++ let_vars,p_M,rules)) )
+     | LetRec(binds,M,b) ->
+       let letrec_vars = map(fn (v, _) -> v) binds in
+       let boundVars = boundVars ++ letrec_vars in
+       mapEach (fn (first,(v,N),rest) ->
+                  rewriteTerm(solvers,boundVars,N,rules) >>=
+                  (fn (N,a) -> unit(LetRec(first ++ [(v,N)] ++ rest,M,b),a)))
+         binds
+       @@ (fn () ->
+             LazyList.map (fn (M,a) -> (LetRec(binds,M,b),a)) 
+               (rewriteTerm(solvers,boundVars,M,rules)))
 
 %           let let_vars = map(fn (v, _) -> v) bind in
 %           LazyList.map (fn (M,a) -> (Bind(qf,vars,M,b),a))
 %		(rewriteTerm(solvers,boundVars ++ let_vars,M,rules))
-         | Bind(qf,vars,M,b) -> 
-	   LazyList.map (fn (M,a) -> (Bind(qf,vars,M,b),a))
-		(rewriteTerm(solvers,boundVars ++ vars,M,rules))
-         | The (var,M,b) -> 
-	   LazyList.map (fn (M,a) -> (The(var,M,b),a))
-		(rewriteTerm(solvers,boundVars ++ [var],M,rules))
-	 | IfThenElse(M,N,P,b) -> 
-   	   LazyList.map 
-		(fn (M,a) -> (IfThenElse(M,N,P,b),a)) 
-		(rewriteTerm(solvers,boundVars,M,rules)) @@
-	   (fn () -> 
-	   LazyList.map 
-		(fn (N,a) -> (IfThenElse(M,N,P,b),a)) 
-		(rewriteTerm(solvers,boundVars,N,
-			     addDemodRules(assertRules(context,M,"if then",false),rules)))) @@
-	   (fn () -> 
-	   LazyList.map 
-		(fn (P,a) -> (IfThenElse(M,N,P,b),a)) 
-		(rewriteTerm(solvers,boundVars,P,
-			     addDemodRules(assertRules(context,negate M,"if else",false),rules))))
-         | SortedTerm(M,s,b) ->
-           LazyList.map (fn (M,a) -> (SortedTerm(M,s,b),a))
-		(rewriteTerm(solvers,boundVars,M,rules))
-         | Pi(tvs,M,b) ->
-           LazyList.map (fn (M,a) -> (Pi(tvs,M,b),a))
-		(rewriteTerm(solvers,boundVars,M,rules))
-       %  | And(tms,b) ->
- 	 | _ -> Nil)
+     | Bind(qf,vars,M,b) -> 
+       LazyList.map (fn (M,a) -> (Bind(qf,vars,M,b),a))
+            (rewriteTerm(solvers,boundVars ++ vars,M,rules))
+     | The (var,M,b) -> 
+       LazyList.map (fn (M,a) -> (The(var,M,b),a))
+            (rewriteTerm(solvers,boundVars ++ [var],M,rules))
+     | IfThenElse(M,N,P,b) -> 
+       LazyList.map 
+            (fn (M,a) -> (IfThenElse(M,N,P,b),a)) 
+            (rewriteTerm(solvers,boundVars,M,rules)) @@
+       (fn () -> 
+       LazyList.map 
+            (fn (N,a) -> (IfThenElse(M,N,P,b),a)) 
+            (rewriteTerm(solvers,boundVars,N,
+                         addDemodRules(assertRules(context,M,"if then",false),rules)))) @@
+       (fn () -> 
+       LazyList.map 
+            (fn (P,a) -> (IfThenElse(M,N,P,b),a)) 
+            (rewriteTerm(solvers,boundVars,P,
+                         addDemodRules(assertRules(context,negate M,"if else",false),rules))))
+     | SortedTerm(M,s,b) ->
+       LazyList.map (fn (M,a) -> (SortedTerm(M,s,b),a))
+            (rewriteTerm(solvers,boundVars,M,rules))
+     | Pi(tvs,M,b) ->
+       LazyList.map (fn (M,a) -> (Pi(tvs,M,b),a))
+            (rewriteTerm(solvers,boundVars,M,rules))
+   %  | And(tms,b) ->
+     | _ -> Nil
 
 (* Trace utilities *)
 
