@@ -35,6 +35,7 @@
 
 
 (defvar *transform-spec*)
+(defvar *transform-specunit-Id*)
 (defvar *transform-term*)		; Actually a pair of current term and its parent
 (defvar *transform-commands*)
 (defvar *undo-stack*)
@@ -43,6 +44,7 @@
 
 (defun initialize-transform-session (spc)
   (setq *transform-spec* spc)
+  (setq *transform-specunit-Id* cl-user::*last-unit-Id-_loaded*)
   (setq *transform-term* nil)
   (setq *transform-commands* nil)
   (setq *undo-stack* nil)
@@ -272,11 +274,13 @@
 	                             (values))
 	   ((done)             (finish-transform-session))
 
-	   ((proc p) (when (cl-user::sw argstr)
+	   ((proc p) (when (and (cl-user::sw argstr)
+				(equal *transform-specunit-Id* cl-user::*last-unit-Id-_loaded*))
 		       (let ((val (cdr (Specware::evaluateUnitId cl-user::*last-unit-Id-_loaded*))))
 			 (if (or (null val) (not (eq (car val) ':|Spec|)))
 			     (format t "Not a spec!")
 			     (let ((spc (cdr val)))
+			       (setq *redos* nil) ; Don't want to redo commands backed out of
 			       (undo-command "all" t)
 			       (setq *transform-spec* spc)
 			       (format t "Restarting Transformation Shell.")
