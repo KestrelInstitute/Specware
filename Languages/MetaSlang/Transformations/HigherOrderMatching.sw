@@ -1197,10 +1197,11 @@ skolemization transforms a proper matching problem into an inproper one.
                          case unify(subst,ty1,ty2,srt1_orig,equals,optTerm) of
                            | (Unify subst) :: _ ->    % Should generalize
                              let p1 = dereferenceAll subst p1 in
-                              let _ = writeLine("Pred: "^printTermWithSorts p1) in
-                              let _ = printSubst subst in
+                             % let _ = writeLine("Pred: "^printTermWithSorts p1) in
+                             % let _ = printSubst subst in
                              let condn = simplifiedApply(p1,tm,context.spc) in
-                              let _ = writeLine("Condn: "^printTermWithSorts condn) in                             if falseTerm? condn then [NotUnify(srt1,srt2)]
+                             % let _ = writeLine("Condn: "^printTermWithSorts condn) in
+                             if falseTerm? condn then [NotUnify(srt1,srt2)]
                              else [Unify(addCondition(condn, subst))]
                            | result -> result)
                  ++ (case srt1_orig of
