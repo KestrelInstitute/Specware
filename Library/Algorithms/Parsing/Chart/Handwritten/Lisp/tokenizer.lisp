@@ -275,12 +275,9 @@
 			i (code-char i)  (cdr (assoc n alist)))))
 	   (terpri)
 	   (dotimes (i size-of-character-set)
-	     (cond ((= (svref comment-table i) +maybe-open-comment-code+)
-		    (comment "The character ~D (~S) may start an extended comment"
-			     i (code-char i))))
-	     (cond ((= (svref comment-table i) +maybe-open-pragma-code+)
-		    (comment "The character ~D (~S) may start a pragma"
-			     i (code-char i)))))
+	     (when (= (svref comment-table i) +maybe-open-comment-or-pragma-code+)
+	       (comment "The character ~D (~S) may start an extended comment or a pragma"
+			i (code-char i))))
 	   (terpri)
 	   (dolist (x ad-hoc-keywords) (comment "Ad-hoc-keyword : ~S" x))
 	   (dolist (x ad-hoc-symbols)  (comment "Ad-hoc-symbol  : ~S" x))
