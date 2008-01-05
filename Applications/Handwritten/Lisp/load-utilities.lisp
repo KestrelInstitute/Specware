@@ -22,6 +22,15 @@
 ;; file. Perhaps they should be factored into a separate file as they
 ;; are likely to be used for many of the generated lisp applications?
 
+(defun pathname-directory-string (p)
+  (let* ((dirnames (pathname-directory p))
+	 (main-dir-str (apply #'concatenate 'string
+			      (loop for d in (cdr dirnames)
+				nconcing (list "/" d)))))
+    (if (eq (car dirnames) :absolute)
+	main-dir-str
+      (format nil ".~a" main-dir-str))))
+
 (defun current-directory ()
   ;; we need consistency: all pathnames, or all strings, or all lists
   ;; of strings, ...
@@ -38,15 +47,6 @@
 		     (pathname-directory-string dir)
 		     dir)))
     (ensure-final-slash str-dir)))
-
-(defun pathname-directory-string (p)
-  (let* ((dirnames (pathname-directory p))
-	 (main-dir-str (apply #'concatenate 'string
-			      (loop for d in (cdr dirnames)
-				nconcing (list "/" d)))))
-    (if (eq (car dirnames) :absolute)
-	main-dir-str
-      (format nil ".~a" main-dir-str))))
 
 #+gcl
 (defun system-str (cmd &optional args)
@@ -203,7 +203,7 @@
 (setq lisp::*load-lp-object-types* (remove "FASL" lisp::*load-lp-object-types* :test 'string=)
       lisp::*load-object-types* (remove "fasl" lisp::*load-object-types* :test 'string=))
 
-(unless (fboundp 'compile-file-if-needed)
+;; (unless (fboundp 'compile-file-if-needed)
   ;; Conditional because of an apparent Allegro bug in generate-application
   ;; where excl::compile-file-if-needed compiles even if not needed
   (defun compile-file-if-needed (file)
@@ -228,8 +228,9 @@
 	       (if fasl-file 
 		   (or (file-write-date fasl-file) 0)
 		 0))
-	     (file-write-date file))
-      (compile-file file))))
+	     (or (file-write-date file) 0))
+      (compile-file file)))
+;; )
 
 (defun compile-and-load-lisp-file (file)
    (let ((filep (make-pathname :defaults file :type "lisp")))
@@ -376,14 +377,14 @@
   (with-open-file (istream file :direction :input)
     (read-line istream)))
 
-(defun sw-directory (pathname &optional recursive?)
+(defun sw-directory (pathname &optional #+mcl recursive?)
   (directory #-(or mcl sbcl) pathname
 	     #+(or mcl sbcl) 
 	     (merge-pathnames (make-pathname :name :wild :type :wild) pathname)
-	     :allow-other-keys      t             ; permits implementation-specific keys to be ignored by other implementations
-	     :directories           t             ; specific to mcl
-	     :all                   recursive?    ; specific to mcl
-	     :directories-are-files nil           ; specific to allegro -- we never want this option, but it defaults to T (!)
+	     #-sbcl :allow-other-keys         #-sbcl    t  ; permits implementation-specific keys to be ignored by other implementations
+	     #+mcl  :directories              #+mcl     t  ; specific to mcl
+	     #+mcl  :all                      #+mcl     recursive?    ; specific to mcl
+	     #+allegro :directories-are-files #+allegro nil  ; specific to allegro -- we never want this option, but it defaults to T (!)
 	     ))
 
 (defun directory? (pathname)
