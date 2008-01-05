@@ -147,7 +147,7 @@
 (defvar *last-time* 0)
 
 (defun delta-time ()
-  (let ((now (lisp::get-internal-run-time)))
+  (let ((now (common-lisp::get-internal-run-time)))
     (prog1
 	(- now *last-time*)
       (setq *last-time* now))))
@@ -228,7 +228,7 @@
 			    (list node-number rule-name (first semantics) (second semantics)))
 			(list node-number rule-name)))))
 		components))
-	(let ((lisp::*print-circle* nil))
+	(let ((common-lisp::*print-circle* nil))
 	  (format nil "~{~A~^ ~}"
 		  (reverse components)))))))
 
