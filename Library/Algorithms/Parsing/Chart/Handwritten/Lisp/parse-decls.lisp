@@ -63,11 +63,11 @@
 (defvar *current-parser* nil) ; used by define-sw-parser-rule 
 (defvar *current-parser-session* nil) 
 
-(defun new-parser (&optional (name (intern (format nil "PARSER-~D" (incf *gensym-counter*)) "KEYWORD"))
-			     &key 
-			     (case-sensitive? nil)
-			     (rule-package    (find-package "KEYWORD"))
-			     (symbol-package  common-lisp::*package*))
+(defun new-parser (name ;; (intern (format nil "PARSER-~D" (incf *gensym-counter*)) "KEYWORD")
+		   &key 
+		   (case-sensitive? nil)
+		   (rule-package    (find-package "KEYWORD"))
+		   (symbol-package  common-lisp::*package*))
   #+DEBUG-PARSER 
   (progn
     (terpri)
