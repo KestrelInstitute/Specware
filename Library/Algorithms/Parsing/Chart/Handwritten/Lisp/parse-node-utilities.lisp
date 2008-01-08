@@ -115,7 +115,7 @@
 	       ))
 	(when-debugging
 	 (when *verbose?*
-	   (report-pending-rules parser i location)))
+	   (report-pending-rules session i location)))
 	;;
 	(dolist (forward-node (parser-location-post-nodes location))
 	  (when (eq (parser-node-rule forward-node) +token-rule+)
@@ -237,14 +237,14 @@
     (augment-location-desired-bv        location handles-bv)
     (when-debugging
      (when *verbose?*
-       (report-pending-rules parser index location)))
+       (report-pending-rules session index location)))
     ))
 
-(defun report-pending-rules (parser index location)
+(defun report-pending-rules (session index location)
   #-DEBUG-PARSER
   (declare (ignore parser index location))
   #+DEBUG-PARSER
-  (progn
+  (let ((parser (parse-session-parser session)))
     (comment "Pending at ~4D: ~6D" index (length (parser-location-partial-node-data location)))
     (dolist (datum (parser-location-partial-node-data location))
       (let ((node  (car datum))
@@ -469,16 +469,17 @@
 	      (or (parser-rule-bvi parent-rule)
 		  (cdr (assoc (parser-node-precedence this-node)
 			      (parser-rule-p2bvi-map parent-rule))))))
-	(if (eq (sbit desired-bv parent-bv-index) 1)
+	(if (and parent-bv-index (eq (sbit desired-bv parent-bv-index) 1))
 	    (let ((child-index (reduction-child-index reduction)))
 	      (add-partial-node session parent-rule this-node child-index))
-	  (debugging-comment "Reduction from ~D not plausible : ~S ~S (bit ~D) at ~D" 
-			     (parser-node-number this-node)
-			     (structure-type-of  parent-rule)
-			     (parser-rule-name   parent-rule)
-			     parent-bv-index
-			     (reduction-child-index reduction)
-			     ))))))
+	  (progn
+	    (debugging-comment "Reduction from ~D not plausible : ~S ~S (bit ~D) at ~D" 
+			       (parser-node-number this-node)
+			       (structure-type-of  parent-rule)
+			       (parser-rule-name   parent-rule)
+			       parent-bv-index
+			       (reduction-child-index reduction)
+			       )))))))
 
 ;; ======================================================================
 

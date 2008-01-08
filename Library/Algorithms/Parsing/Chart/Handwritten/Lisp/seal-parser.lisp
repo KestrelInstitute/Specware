@@ -23,7 +23,7 @@
     (setf (parser-keywords-are-keywords-only? new-parser) t)
     (seal-parser new-parser)
     (when-debugging
-     (comment "New parser is also in PARSER4::*CURRENT-PARSER*"))
+      (comment "New parser is also in PARSER4::*CURRENT-PARSER*"))
     new-parser))
 
 (defun seal-parser (parser)
@@ -219,14 +219,26 @@
 	 ht-name-to-reductions)
 	(setq done? (null reductions-to-bypass))
 	(dolist (bypass reductions-to-bypass)
-	  (let* ((child-name (car bypass))
-		 (reduction  (cdr bypass))
-		 (parent-rule (reduction-parent-rule reduction))
-		 (parent-name (parser-rule-name parent-rule))
-		 (parent-reductions (gethash parent-name ht-name-to-reductions)))
-	    (setf (gethash child-name ht-name-to-reductions)
-	      (append (remove reduction (gethash child-name ht-name-to-reductions))
-		      parent-reductions))))))
+	  (let* ((child-name           (car bypass))
+		 (reduction-to-bypass  (cdr bypass))
+		 (parent-rule          (reduction-parent-rule reduction-to-bypass))
+		 (parent-name          (parser-rule-name      parent-rule))
+		 (parent-reductions    (gethash parent-name ht-name-to-reductions))
+		 (old-child-reductions (gethash child-name  ht-name-to-reductions))
+		 (new-child-reductions (append (remove reduction-to-bypass 
+						       ;; WARNING: without the following append, 
+						       ;; sbcl signals a memory error upon exit from 
+						       ;; bypass-reductions-to-superfluous-anyof-rules 
+						       ;; Must have something to do with their 
+						       ;; implementation of hash tables
+						       ;; Very strange...
+						       (append old-child-reductions))
+					       parent-reductions))
+		 )
+	    (setf (gethash child-name ht-name-to-reductions) 
+		  new-child-reductions)
+	    (print (gethash child-name ht-name-to-reductions))
+	    ))))
     ))
 
 ;;; ====================
@@ -362,11 +374,6 @@
 
 ;;; ====================
 
-(defun install-p2bvi-keys (parser)
-  (initialize-p2bvi-keys          parser)
-  (compute-closure-for-p2bvi-keys parser)
-  (finalize-p2bvi-keys            parser))
-
 (defun initialize-p2bvi-keys (parser)
   (when-debugging 
    (comment "Initializing precedences"))
@@ -426,19 +433,26 @@
 
 ;;; ===
 
+(defun sort-using-cars (alist)
+  (sort alist #'(lambda (x y) (< (car x) (car y)))))
+
 (defun finalize-p2bvi-keys (parser)
   ;; why bother sorting?? 
   (dolist (rule (parser-rules parser))
     (let* ((raw-p2bvi-alist (parser-rule-p2bvi-map rule))
 	   (null-pair (assoc nil raw-p2bvi-alist))
-	   (sorted-p2bvi-alist
-	    (sort (remove null-pair raw-p2bvi-alist)
-		  #'(lambda (x y) (< (car x) (car y))))))
+	   (foo (remove null-pair raw-p2bvi-alist))
+	   (sorted-p2bvi-alist (sort-using-cars foo)))
       ;; (when (null sorted-p2bvi-alist) (setq sorted-p2bvi-alist (list (cons 0 nil))))
       (setf (parser-rule-p2bvi-map rule) 
-	(if (null null-pair)
-	    sorted-p2bvi-alist
-	  (cons null-pair sorted-p2bvi-alist))))))
+	    (if (null null-pair)
+		sorted-p2bvi-alist
+	      (cons null-pair sorted-p2bvi-alist))))))
+
+(defun install-p2bvi-keys (parser)
+  (initialize-p2bvi-keys          parser)
+  (compute-closure-for-p2bvi-keys parser)
+  (finalize-p2bvi-keys            parser))
 
 ;;; ====================
 
