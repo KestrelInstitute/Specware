@@ -101,6 +101,9 @@ Integer qualifying spec
 
   op >= (i:Integer, j:Integer) infixl 20 : Boolean = i > j || i = j
 
+  theorem <=_and_>=_are_converses is
+    fa (i:Integer, j:Integer) (i <= j) = (j >= i)
+
   % absolute value:
 
   op abs (i:Integer) : {j:Integer | j >= zero} = if i >= zero then i else (- i)
