@@ -22,8 +22,6 @@ spec
 
  op matchPairs : Context * SubstC * Stack -> List SubstC
 
- type VarSubst = List (Var * MS.Term)
-
  type Context = 
       { 
         spc         : Spec,
@@ -83,14 +81,14 @@ The stack is accessed and modified using the operations
 	     of Some _ -> Some({new = new,flex = flex},M,N)
 	      | None -> 
 	   case hasFlexHead?(M)
-	     of Some _ -> next {new = new,flex = cons((M,N),flex)} 
+	     of Some _ -> next {new = new,flex = Cons((M,N),flex)} 
 	      | None -> Some({new = new,flex = flex},M,N))
 	| [] -> 
      case flex
        of (M,N)::flex -> Some({new = new,flex = flex},M,N)
 	| [] -> None
 
- def insert(M,N,{new,flex}) = {new = cons((M,N),new),flex = flex}
+ def insert(M,N,{new,flex}) = {new = Cons((M,N),new),flex = flex}
  op stackFromList: List(MS.Term * MS.Term) -> Stack
  def stackFromList pairs = 
      foldr (fn ((M,N),stack) -> insert(M,N,stack)) emptyStack pairs
@@ -205,7 +203,7 @@ beta contraction.
 
  def patternMatch(pat:Pattern,N,S) = 
      case pat
-       of VarPat(x, _) -> Match(cons((x,N),S))
+       of VarPat(x, _) -> Match(Cons((x,N),S))
 	| WildPat _ -> Match S
 	| RecordPat(fields, _) -> 
 	  let fields2 = map (fn (l,p) -> (l,patternSort p,p)) fields in
@@ -432,7 +430,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 
 	(Lambda(rules1, _),Lambda(rules2, _)) -> 
 	if length rules1 = length rules2
-	   then matchRules(context,subst,stack,rules1,rules2)
+	   then matchRules(context,subst,stack,rules1,rules2,[])
 	else []
 %%
 %% Var 
@@ -860,30 +858,41 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
               [] (unifySorts(context,subst,srt1,srt2,Some N))
       else []
 
-\end{spec}
-  \lambda-binders are matched by matching every pair of pattern against eachother.
+ op reverseSubst (v_subst: VarSubst) (t: MS.Term): MS.Term =
+   case v_subst of
+     | [] -> t
+     | (v,vt)::_ | equalTerm?(vt,t) && ~((embed? Fun) vt)-> mkVar v
+     | _ :: r -> reverseSubst r t
+
+ op invertSubst (tm: MS.Term, sbst: VarSubst): MS.Term =
+   if sbst = [] then tm
+     else mapTerm (reverseSubst sbst, id, id) tm
+
+(* lambda-binders are matched by matching every pair of pattern against eachother.
   The pair of patterns that are compared must match precisely the same instances, thus,
   for example embed patterns must be equal.
   The variables that are bound by the patterns are substituted into the conditions and
   respective bodies such that variables bound at the same positions are equal.
-\begin{spec}
+*)
 
-  def matchRules(context,subst,stack,rules1,rules2) = 
+  def matchRules(context,subst,stack,rules1,rules2,v_subst) = 
       case (rules1,rules2)
         of ((pat1,cond1,body1)::rules1,(pat2,cond2,body2)::rules2) -> 
 	   (case matchPattern(context,pat1,pat2,[],[],[])
 	      of Some (S1,S2) -> 
 		 let stack = insert(substitute(body1,S1),substitute(body2,S2),stack) in
 		 let stack = insert(substitute(cond1,S1),substitute(cond2,S2),stack) in
-		 matchRules(context,subst,stack,rules1,rules2)
+		 matchRules(context,subst,stack,rules1,rules2,S2++v_subst)
 	       | None -> [])
-	 | ([],[]) -> matchPairs(context,subst,stack)
+	 | ([],[]) ->
+           let results = matchPairs(context,subst,stack) in
+           map (fn (m1,m2,condns) ->
+                  (m1,m2,map (fn t -> invertSubst(t,v_subst)) condns))
+             results
 	 | _ -> []
 
-\end{spec}
-  {\tt matchPattern}, {\tt matchPatterns}, and {\tt matchIrefutablePattern} recurse on
-  aligning the same pattern matches.
-\begin{spec}
+(* matchPattern, matchPatterns, and matchIrefutablePattern recurse on
+  aligning the same pattern matches. *)
 
    op matchPattern(context: Context, pat1: Pattern, pat2: Pattern, pairs: List(Pattern * Pattern),
                    S1: VarSubst, S2: VarSubst)
@@ -891,8 +900,8 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
       case (pat1,pat2)
         of (VarPat((x,srt1), _),VarPat((y,srt2), _)) ->
            let z  = freshBoundVar(context,srt1) in
-           let S1 = cons(((x,srt1),Var(z,noPos)),S1) in
-           let S2 = cons(((y,srt2),Var(z,noPos)),S2) in
+           let S1 = Cons(((x,srt1),mkVar(z)),S1) in
+           let S2 = Cons(((y,srt2),mkVar(z)),S2) in
            matchPatterns(context,pairs,S1,S2)
          | (EmbedPat(c1,None,srt1,_),EmbedPat(c2,None,srt2,_)) -> 
            if c1 = c2
@@ -941,7 +950,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
        of WildPat _ -> Some S
         | VarPat((x,s),a) -> 
           let z = freshBoundVar(context,s) in 
-          Some(cons(((x,s),Var(z,a)),S))
+          Some(Cons(((x,s),Var(z,a)),S))
         | RecordPat(fields, _) -> 
           let
               def loop(fields,S): Option VarSubst = 
@@ -1158,7 +1167,7 @@ skolemization transforms a proper matching problem into an inproper one.
 		    then unify(subst,ty1,ty2,ty1,equals,None)
 		 else [NotUnify (srt1,srt2)]
 	       | (Subsort(ty1,p1,_),Subsort(ty2,p2,_))
-                   | equalTerm?(p1,p2) || equalTerm?(dereferenceAll subst p1, dereferenceAll subst p2) ->
+                   | equalTermStruct?(p1,p2) || equalTermStruct?(dereferenceAll subst p1, dereferenceAll subst p2) ->
                  unify(subst,ty1,ty2,srt1_orig,equals,optTerm)
 	       | (bsrt1 as Base(id1,ts1,_),bsrt2 as Base(id2,ts2,_)) -> 
 		 if exists (fn p -> p = (bsrt1,bsrt2)) equals
