@@ -7,9 +7,10 @@ Utilities qualifying spec
  import Elaborate/Utilities
  import Equivalences
 
- sort Vars = List Var
+ type Vars = List Var
+ type VarSubst = List (Var * MS.Term)
 
- op substitute    : MS.Term * List (Var * MS.Term) -> MS.Term
+ op substitute    : MS.Term * VarSubst -> MS.Term
  op freeVars      : MS.Term -> Vars
 
  %% Translate a term encoding an assignment to a list of pairs.
@@ -476,7 +477,7 @@ Utilities qualifying spec
    in 
    substitute2(M,sub,freeNames)
  
- op substitute2(M: MS.Term, sub: List (Var * MS.Term), freeNames: StringSet.Set): MS.Term = 
+ op substitute2(M: MS.Term, sub: VarSubst, freeNames: StringSet.Set): MS.Term = 
    % let _ = String.writeLine "Map is " in
    % let _ = List.app (fn ((v,_),tm) -> 
    %		       String.writeLine (v^" |-> "^MetaSlangPrint.printTerm tm)) sub in	
@@ -846,7 +847,7 @@ Utilities qualifying spec
      in
      loopP(p,[])
 
- op  mkLetWithSubst: MS.Term * List (Var * MS.Term) -> MS.Term
+ op  mkLetWithSubst: MS.Term * VarSubst -> MS.Term
  def mkLetWithSubst(tm,sb) =
    if sb = [] then tm
      else mkLet(map (fn (v,val) -> (mkVarPat v,val)) sb, tm)
