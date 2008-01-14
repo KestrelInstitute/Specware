@@ -4,6 +4,7 @@
 ;;  Specware4/Languages/MetaSlang/CodeGen/Lisp/SpecToLisp.sw
 
 (defpackage "SPECCALC")
+(defpackage "LIST-SPEC")
 (defpackage :SLANG-BUILT-IN)
 (IN-PACKAGE :SLANG-BUILT-IN)
 
@@ -44,6 +45,9 @@
 
 (defun choose-1-1 (f x) 
   (funcall f (quotient-element x)))
+
+(define-compiler-macro choose-1-1 (f x)
+  `(funcall ,f (quotient-element ,x)))
 
 #|
   
@@ -205,6 +209,10 @@
 ;;       since syntax ("&&", "||", "=>", etc.) can't (shouldn't) be passed as an arg
 (defun implies-2 (x y) 
   (or (not x) y))
+
+;; Optimization
+(define-compiler-macro LIST-SPEC::|!length| (l)
+  `(length ,l))
 
 #|
 
