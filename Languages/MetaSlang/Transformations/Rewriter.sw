@@ -321,16 +321,6 @@ MetaSlangRewriter qualifying spec
       then M
       else substitute(M,v_subst)
 
- op reverseSubst (v_subst: VarSubst) (t: MS.Term): MS.Term =
-   case v_subst of
-     | [] -> t
-     | (v,vt)::_ | equalTerm?(vt,t) && ~((embed? Fun) vt)-> mkVar v
-     | _ :: r -> reverseSubst r t
-
- op invertSubst (tm: MS.Term, sbst: VarSubst): MS.Term =
-   if sbst = [] then tm
-     else mapTerm (reverseSubst sbst, id, id) tm
-
  op reFoldLetVars(binds: List(Pattern * MS.Term), M: MS.Term, b: Position)
     : MS.Term =
    let v_subst = substFromBinds binds in
@@ -726,7 +716,7 @@ MetaSlangRewriter qualifying spec
       def rewritesToTrue(rules,term,boundVars,subst,history,backChain): Option SubstC =
           if trueTerm? term then Some subst
           else
-	  let results = rewriteRec(rules,subst,term,boundVars,history,backChain+1) in
+	  let results = rewriteRec(rules,subst,term,freeVars term,history,backChain+1) in
           case LazyList.find (fn (rl,t,c_subst)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
                                | [] -> false)
                  results
