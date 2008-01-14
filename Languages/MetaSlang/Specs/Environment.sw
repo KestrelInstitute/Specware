@@ -215,7 +215,9 @@ spec
     of Apply      (t1, t2,               _) -> (case rangeOpt(sp,inferType(sp,t1)) of
                                                   | Some rng -> rng
 						  | None -> 
-						    System.fail ("inferType: Could not extract type for "^ printTermWithSorts tm))
+						    System.fail ("inferType: Could not extract type for "
+                                                                   ^ printTermWithSorts tm
+                                                                   ^ " dom " ^ printSort (unfoldBase(sp,inferType(sp,t1)))))
      | Bind       _                         -> boolSort
      | Record     (fields,               a) -> Product(map (fn (id, t) -> 
 							    (id, inferType (sp, t)))
