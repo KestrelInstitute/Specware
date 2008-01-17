@@ -33,7 +33,7 @@ MetaSlangRewriter qualifying spec
  op applyRewrite(context: Context, rule: RewriteRule, subst: SubstC, term: MS.Term): List SubstC = 
    let lhs = rule.lhs in
    filter (fn subst -> completeMatch(lhs,subst))
-     (matchPairs(context,subst,stackFromList [(lhs,term)]))
+     (matchPairsTop(context,subst,stackFromList [(lhs,term)]))
 
  def applyRewrites(context,rules,subst) (boundVars,term) = 
      let context = setBound(context,boundVars) in
@@ -414,7 +414,7 @@ MetaSlangRewriter qualifying spec
 
  def matchEquality (context,rules,subst) (boundVars,M,N) = 
      let context = setBound(context,boundVars) in
-     let substs = matchPairs(context,subst, stackFromList [(M,N)]) in
+     let substs = matchPairsTop(context,subst, stackFromList [(M,N)]) in
      fromList (List.map (fn s -> (s,equalityRule,rules)) substs)
  *)
 
