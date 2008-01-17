@@ -100,10 +100,11 @@ The stack is accessed and modified using the operations
 
 % Meta variables (flexible variables) are represented in the form
 % Apply(Fun(Op "%Flex",Arrow(Nat,s)),Fun(Int n,Nat))
+ op flexQId: QualifiedId = mkUnQualifiedId "%Flex"
 
  op mkVar: Nat * Sort -> MS.Term
  def mkVar(num,srt) = 
-     Apply(Fun(Op (mkUnQualifiedId "%Flex",Nonfix),Arrow(natSort,srt,noPos),noPos),
+     Apply(Fun(Op (flexQId,Nonfix),Arrow(natSort,srt,noPos),noPos),
 	   Fun(Nat num,natSort,noPos),noPos)
 
  def freshVar (context,srt) = 
@@ -405,9 +406,34 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
  op emptySubstitution: SubstC = (StringMap.empty,NatMap.empty,[])
  op debugHOM: Ref Nat = Ref 0
  op evaluateConstantTerms?: Boolean = false     % For now until utility is proven
+ op allowTrivialMatches?: Boolean = false       % Allow matches that don't use match terms
+ op resultLimitHOM: Nat = 4
 
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,emptyStack))
+
+ op onlyTrivialMatchesPossible?(topStack:  Option (Stack * MS.Term * MS.Term)): Boolean =
+   case topStack of
+     | None -> false
+     | Some(_,M,N) ->
+       (existsSubTerm
+           (fn mi ->
+              case mi of
+                | Fun(Op(qid_m,_),_,_) | qid_m ~= flexQId ->
+                  ~(existsSubTerm (fn ni ->
+                                     case ni of
+                                       | Fun(Op(qid_n,_),_,_) ->
+                                         qid_m = qid_n
+                                       | _ -> false)
+                      N)
+                %% Could also look for if-then-else, let or other Funs
+                | _ -> false)
+           M)
+
+ op matchPairsTop (context: Context, subst: SubstC, stack0: Stack): List SubstC =
+   if allowTrivialMatches? || ~(onlyTrivialMatchesPossible?(next stack0))
+     then matchPairs(context, subst, stack0)
+     else []
 
  def matchPairs (context,subst,stack0) = 
   %let _ = writeLine("Stack:\n"^ anyToString stack0) in
@@ -667,34 +693,46 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                              else
                                (false,N,[])
                    in
-                   (if sound 
-                      then
-                        let N2     = foldr bindPattern N1 pats in
-                        let stack1 = foldr (fn ((M,N),stack) -> insert(M,N,stack)) stack pairs in
-                        matchPairs(context,updateSubst(subst,n,N2),stack1)
-                    else [])
-                   ++
+                   let rec_results =
+                       (if sound 
+                          then
+                            let N2     = foldr bindPattern N1 pats in
+                            let stack1 = foldr (fn ((M,N),stack) -> insert(M,N,stack)) stack pairs in
+                            matchPairs(context,updateSubst(subst,n,N2),stack1)
+                        else [])
+                   in
+                   if length rec_results  > resultLimitHOM
+                     then rec_results
+                   else
+                   let proj_results =
+                       rec_results
+                      ++
 % 2. Projection.
-	           (let projs  = projections (context,subst,terms,vars,srt2) in
-                      (flatten
-                         (map 
-                            (fn (subst,proj) -> 
-                               let subst = updateSubst(subst,n,proj) in
-                               %% Repeat with the updated substitution, gets rid
-                               %% of the flexible head.
-                               let result = matchPairs(context,subst,insert(M,N,stack)) in
-                               result)
-                            projs))
-                      ++ 
-                      % 3. Imitation.
-                      (if closedTermV(N,context.boundVars)
-                         then 
-                           let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
-                           let trm    = foldr bindPattern N pats in
-                           let subst  = updateSubst(subst,n,trm) in
-                           matchPairs(context,subst,stack) 
-                       else [])
-                      )
+                       (let projs  = projections (context,subst,terms,vars,srt2) in
+                          (flatten
+                             (map 
+                                (fn (subst,proj) -> 
+                                   let subst = updateSubst(subst,n,proj) in
+                                   %% Repeat with the updated substitution, gets rid
+                                   %% of the flexible head.
+                                   let result = matchPairs(context,subst,insert(M,N,stack)) in
+                                   result)
+                                projs)))
+                    in
+                    if length proj_results > resultLimitHOM
+                      then proj_results
+                    else
+                      proj_results
+                        ++ 
+                        % 3. Imitation.
+                        (if closedTermV(N,context.boundVars)
+                           then 
+                             let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
+                             let trm    = foldr bindPattern N pats in
+                             let subst  = updateSubst(subst,n,trm) in
+                             matchPairs(context,subst,stack) 
+                         else [])
+                        
               | Ms -> 
 %%
 %% Rigid head
