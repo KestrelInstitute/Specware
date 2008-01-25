@@ -1166,7 +1166,7 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[inverse]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[[a,b] Bijective(a,b) -> Bijective(b,a)]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] Bijection(a,b) -> Bijection(b,a)]]</entry>
         <entry colname="desc">&nbsp; inverts bijective function; non-constructive</entry>
        </row>
       </tbody>
