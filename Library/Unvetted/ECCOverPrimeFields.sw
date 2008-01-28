@@ -49,7 +49,7 @@ ECCP qualifying spec
     (x + y) rem p
 
   op negF (p:Field, x:Nat | x < p) : Nat =  % additive inverse
-    the(y:Nat) addF(p,x,y) = 0
+    the(y:Nat) y < p && addF(p,x,y) = 0
 
   op subF (p:Field, x:Nat, y:Nat | x < p && y < p) : Nat =  % subtraction
     addF (p, x, negF (p, y))
@@ -58,7 +58,7 @@ ECCP qualifying spec
     (x * y) rem p
 
   op invF (p:Field, x:PosNat | x < p) : Nat =  % multiplicative inverse
-    the(y) mulF (p, x, y) = 1
+    the(y:Nat) y < p && mulF (p, x, y) = 1
 
   op divF (p:Field, x:Nat, y:PosNat | x < p && y < p) : Nat =  % division
     mulF (p, x, invF (p, y))
@@ -106,7 +106,7 @@ ECCP qualifying spec
     % finite point belongs to curve iff it satisfies equation:
     | F(x,y) ->
       let (p,a,b) = E in
-      mulF (p, y, 2) = addF (p,
+      powF (p, y, 2) = addF (p,
                        addF (p, powF (p, x, 3),
                                 mulF (p, a, x)),
                                 b)

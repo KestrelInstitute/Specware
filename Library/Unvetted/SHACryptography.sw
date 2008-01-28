@@ -26,7 +26,7 @@ SHA qualifying spec
 
   op Ch (x: FSeq Bit, y: FSeq Bit, z: FSeq Bit | x equiLong y && y equiLong z)
         : FSeq Bit =
-    (x and y) xor (not x and y)
+    (x and y) xor (not x and z)
     % note that it operates on bit sequences of any length, not just 32 and 64
 
   op Maj (x: FSeq Bit, y: FSeq Bit, z: FSeq Bit | x equiLong y && y equiLong z)
@@ -49,10 +49,10 @@ SHA qualifying spec
     rotateRight (x, 6) xor rotateRight (x, 11) xor rotateRight (x, 25)
 
   op sigma256_0 (x:Word32) : Word32 =
-    rotateRight (x, 7) xor rotateRight (x, 18) xor rotateRight (x, 3)
+    rotateRight (x, 7) xor rotateRight (x, 18) xor shiftRight (x, 0, 3)
 
   op sigma256_1 (x:Word32) : Word32 =
-    rotateRight (x, 17) xor rotateRight (x, 19) xor rotateRight (x, 10)
+    rotateRight (x, 17) xor rotateRight (x, 19) xor shiftRight (x, 0, 10)
 
   op Sigma512_0 (x:Word64) : Word64 =
     rotateRight (x, 28) xor rotateRight (x, 34) xor rotateRight (x, 39)
@@ -61,10 +61,10 @@ SHA qualifying spec
     rotateRight (x, 14) xor rotateRight (x, 18) xor rotateRight (x, 41)
 
   op sigma512_0 (x:Word64) : Word64 =
-    rotateRight (x, 1) xor rotateRight (x, 8) xor rotateRight (x, 7)
+    rotateRight (x, 1) xor rotateRight (x, 8) xor shiftRight (x, 0, 7)
 
   op sigma512_1 (x:Word64) : Word64 =
-    rotateRight (x, 19) xor rotateRight (x, 61) xor rotateRight (x, 6)
+    rotateRight (x, 19) xor rotateRight (x, 61) xor shiftRight (x, 0, 6)
 
   % [FIPS 4.2]:
 
@@ -296,23 +296,23 @@ SHA qualifying spec
 
   Note that ops sha1abcde and sha1H are mutually recursive. *)
 
-
   op sha1abcde (M:Message64, i:PosNat, t:Nat | i <= N512 M && t <= 80)
                : Word32 * Word32 * Word32 * Word32 * Word32 =
     % hash value from previous iteration of the main loop,
     % or initial hash value if i = 1 (i.e. if i-1 = 0):
     let Hi_1 = sha1H (M, i-1) in
-    % abbreviation for readability:
-    let (a,b,c,d,e) = sha1abcde (M, i-1, t) in
     % values of (a,b,c,d,e) at the beginning of iteration 0 of the loop in
     % step 3, assigned in step 2:
     if t = 0 then (Hi_1 0, Hi_1 1, Hi_1 2, Hi_1 3, Hi_1 4)
     % updated values of (a,b,c,d,e):
-    else let T:Word32 = rotateLeft (a, 5)
-                   PLUS f t (b,c,d)
-                   PLUS e
-                   PLUS K t
-                   PLUS sha1W(M,i) t in
+    else
+      % abbreviation for readability:
+      let (a,b,c,d,e) = sha1abcde (M, i, t - 1) in
+      let T:Word32 = rotateLeft (a, 5)
+                     PLUS f t (b,c,d)
+                     PLUS e
+                     PLUS K t
+                     PLUS sha1W(M,i) t in
          (T,                  % updated a
           a,                  % updated b
           rotateLeft (b, 30), % updated c
@@ -534,12 +534,12 @@ SHA qualifying spec
 
   % all bits of final hash value for SHA-512:
 
-  op sha512 (M:Message64) : (FSeq Bit | ofLength? 512) =
+  op sha512 (M:Message128) : (FSeq Bit | ofLength? 512) =
     sha3 (M, sha512H0)
 
   % truncate bits of final hash values for SHA-224:
 
-  op sha384 (M:Message64) : (FSeq Bit | ofLength? 384) =
+  op sha384 (M:Message128) : (FSeq Bit | ofLength? 384) =
     prefix (sha3 (M, sha384H0), 384)
 
 endspec

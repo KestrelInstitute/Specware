@@ -28,7 +28,7 @@ TwosComplement qualifying spec
 
   op nonNegative? : TCNumber -> Boolean = ~~ negative?
 
-  conjecture nonNegative?_alt_def is
+  theorem nonNegative?_alt_def is
     fa(x:TCNumber) nonNegative? x <=> sign x = 0
 
   op positive? : TCNumber -> Boolean = nonNegative? /\ (~~ zero?)
@@ -39,7 +39,7 @@ TwosComplement qualifying spec
   op toInteger (x:TCNumber) : Integer = if nonNegative? x then toNat x
                                         else toNat x - 2 ** (length x)
 
-  conjecture twos_complement_of_negative is
+  theorem twos_complement_of_negative is
     fa(x:TCNumber) negative? x =>  % given negative TC number
       toNat (not x) + 1 =  % two's complement operation
         - (toInteger x)  % yields absolute value of represented integer
@@ -54,20 +54,20 @@ TwosComplement qualifying spec
   op rangeForLength (len:PosNat) : Set Integer =
     fn i -> minForLength len <= i && i <= maxForLength len
 
-  conjecture integerRange is
+  theorem integer_range is
     fa(x:TCNumber) toInteger x in? rangeForLength (length x)
 
   % construct zero TC number of given length (i.e. number of bits):
   op zero (len:PosNat) : TCNumber = repeat 0 len
 
-  conjecture zeroIsZero is
+  theorem zero_is_zero is
     fa(len:PosNat) zero? (zero len)
 
   % extend sign bit to given length (>= current length):
   op signExtend (x:TCNumber, newLen:PosNat | newLen >= length x) : TCNumber =
     extendLeft (x, sign x, newLen)
 
-  conjecture sign_extension_does_not_change_value is
+  theorem sign_extension_does_not_change_value is
     fa (x:TCNumber, newLen:PosNat)
       newLen >= length x =>
       toInteger (signExtend (x, newLen)) = toInteger x
@@ -85,6 +85,10 @@ TwosComplement qualifying spec
   % convert integer to TC number of shortest length:
   op fromInteger (i:Integer) : TCNumber =
     minimizer (length, fn(x:TCNumber) -> toInteger x = i)
+
+  theorem length_of_fromInteger is
+    fa (i:Integer, len:PosNat) i in? rangeForLength len =>
+                               length (fromInteger i) <= len
 
   % unary minus:
   op TCNumber.- (x:TCNumber) : TCNumber =
@@ -123,7 +127,7 @@ TwosComplement qualifying spec
   op rem (x:TCNumber, y:TCNumber | x equiLong y) infixl 26 : TCNumber =
     fromInteger (toInteger x rem toInteger y)  % no overflow is possible
 
-  conjecture rem is
+  theorem rem is
     fa (x:TCNumber, y:TCNumber)
       (x div y) * y + (x rem y) = x
 
