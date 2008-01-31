@@ -6,8 +6,11 @@
 ;;; Among other things, this file is referenced by generate-application in
 ;;; BuildDistribution_ACL.lisp
 
+(defpackage "SPECTOLISP")
 (defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
+
+(defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
 
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1) #+cmu(c::brevity 3)))
 
@@ -49,7 +52,8 @@
 	      (let ((sb-fasl:*fasl-file-type* "fasl"))
 		(require :sb-bsd-sockets)
 		(require :sb-introspect)
-		(require :sb-posix)))
+		(require :sb-posix)
+		(require :sb-sprof)))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 	    )
@@ -162,6 +166,8 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
+    "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsBTHarray.lisp"
+    "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsBTVector.lisp"
     ;"Library/Structures/Data/Sets/Handwritten/Lisp/SetAsCachedHArray.lisp"
     "Library/Structures/Data/Sets/Handwritten/Lisp/SetAsSTHarray.lisp"
     "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
@@ -232,7 +238,8 @@
     "Applications/Specware/Handwritten/Lisp/debug"
 
     ;; Specware Shell
-    "Applications/Specware/Handwritten/Lisp/sw-shell"
+    "Applications/Specware/Handwritten/Lisp/transform-shell" ; creates    MetaSlangRewriter package
+    "Applications/Specware/Handwritten/Lisp/sw-shell"        ; references MetaSlangRewriter package
 
     ;; Test harness
     "Applications/Handwritten/Lisp/test-harness"
