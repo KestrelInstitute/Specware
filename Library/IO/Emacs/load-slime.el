@@ -11,7 +11,8 @@
 (defvar *windows-system-p* (memq system-type '(ms-dos windows-nt windows-95
 					       ms-windows)))
 
-(load (concat *specware-emacs* "augment-load-path.el"))
+(unless *windows-system-p*
+  (load (concat *specware-emacs* "augment-load-path.el")))
 
 (push (concat *specware-emacs* "slime/")
       load-path)
