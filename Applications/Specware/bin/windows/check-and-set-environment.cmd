@@ -36,7 +36,7 @@ if exist %ALLEGRO%\alisp.exe (
   set LISP_EXECUTABLE=%ALLEGRO%\alisp.exe
   set XELI="%ALLEGRO%/xeli"
 ) else (
-  set LISP_EXECUTABLE=C:\Progra~1\Kestrel\Specware-4-2-2\Specware4.exe
+  set LISP_EXECUTABLE=C:\Progra~1\Kestrel\Specware-4-2-4\Specware4.exe
   set XELI="%SPECWARE4%/Library/IO/Emacs/xeli"
 ) 
 
