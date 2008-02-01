@@ -19,7 +19,7 @@ rem named "specware".
 
 set "LISP_DIRECTORY=%SPECWARE4%/"
 set "LISP_EXECUTABLE=%SPECWARE4%/Specware4.exe"
-set "LISP_HEAP_IMAGE=NONE"
+set "LISP_HEAP_IMAGE=%SPECWARE4%/Specware4.dxl"
 
 if not exist "%LISP_EXECUTABLE%" (
   echo Cannot find Specware4 executable: %LISP_EXECUTABLE%
