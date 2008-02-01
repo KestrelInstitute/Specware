@@ -36,7 +36,8 @@
       (byte-compile-file el-file))
     (load elc-file)))
 
-(custom-set-variables '(slime-repl-enable-presentations nil))
+(custom-set-variables '(slime-repl-enable-presentations nil)
+                      '(indent-tabs-mode nil))
 
 ;;; prep for loading slime.el...
 (eval-and-compile
