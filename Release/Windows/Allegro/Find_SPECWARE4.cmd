@@ -21,9 +21,9 @@ set SW_VERSION=Specware-4-2-4
 if "%SPECWARE4%"=="" (
 
     echo undefined SPECWARE4
-    if exist C:\Progra~1/Kestrel/%SW_VERSION% (
-        echo setting SPECWARE4 to C:\Progra~1/Kestrel/%SW_VERSION%
-        set "SPECWARE4=C:\Progra~1/Kestrel/%SW_VERSION%"
+    if exist C:\PROGRA~1/Kestrel/%SW_VERSION% (
+        echo setting SPECWARE4 to C:\PROGRA~1/Kestrel/%SW_VERSION%
+        set "SPECWARE4=C:\PROGRA~1/Kestrel/%SW_VERSION%"
     ) else if exist C:\Docume~1/%USERNAME%/Kestrel/%SW_VERSION% (
         echo setting SPECWARE4 to: C:\Docume~1/%%USERNAME%%/Kestrel/%SW_VERSION%
         set "SPECWARE4=C:\Docume~1/%USERNAME%/Kestrel/%SW_VERSION%"
@@ -32,14 +32,14 @@ if "%SPECWARE4%"=="" (
 ) else if "%SPECWARE4%"=="C:\Program Files\Kestrel\%SW_VERSION%" (
 
     echo Problematic space and backslashes in: "%SPECWARE4%"
-    echo revising SPECWARE4 to: C:\Progra~1/Kestrel/%SW_VERSION%
-    set "SPECWARE4=C:\Progra~1/Kestrel/%SW_VERSION%"
+    echo revising SPECWARE4 to: C:\PROGRA~1/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\PROGRA~1/Kestrel/%SW_VERSION%"
 
-) else if "%SPECWARE4%"=="C:\Progra~1\Kestrel\%SW_VERSION%" (
+) else if "%SPECWARE4%"=="C:\PROGRA~1\Kestrel\%SW_VERSION%" (
 
     echo Problematic backslashes in: "%SPECWARE4%"
-    echo revising SPECWARE4 to: C:\Progra~1/Kestrel/%SW_VERSION%
-    set "SPECWARE4=C:\Progra~1/Kestrel/%SW_VERSION%"
+    echo revising SPECWARE4 to: C:\PROGRA~1/Kestrel/%SW_VERSION%
+    set "SPECWARE4=C:\PROGRA~1/Kestrel/%SW_VERSION%"
 
 ) else if "%SPECWARE4%"=="C:\Documents and Settings\%USERNAME%\Kestrel\%SW_VERSION%" (
 
