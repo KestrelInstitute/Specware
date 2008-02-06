@@ -15,7 +15,8 @@ of APDUs.
 2008:02:05
 AC
 Added constraints to CLA, INS, and SW. Added notions of interindustry,
-proprietary, and reserved commands. Added notion of logical channels.
+proprietary, and reserved commands. Added notion of logical channels. Added some
+predicates for selection commands.
 
 *)
 
@@ -225,13 +226,21 @@ ISO7816APDU qualifying spec
   % the following are the non-reserved interindustry commands [ISO4 5.1.1],
   % which we simply call "ISO commands":
 
-  type ISOCommand = (Command | interindustry? /\ ~~ reserved?)
+  op iso? : Command -> Boolean = interindustry? /\ ~~ reserved?
 
-  op firstInterindustry? (cmd:ISOCommand) : Boolean =
+  type ISOCommand = (Command | iso?)
+
+  % ISO commands can have two forms [ISO4 Table 2, Table 3]:
+
+  op firstInterindustry? (cmd:Command) : Boolean =
     ex (xxxxx: (FSeq Bit | ofLength? 5)) cmd.cla = 0 |> 0 |> 0 |> xxxxx
 
-  op furtherInterindustry? (cmd:ISOCommand) : Boolean =
+  op furtherInterindustry? (cmd:Command) : Boolean =
     ex (xxxxxx: (FSeq Bit | ofLength? 6)) cmd.cla = 0 |> 1 |> xxxxxx
+
+  theorem first_and_further_interindustry_are_ISO is
+    fa (cmd:Command) firstInterindustry? cmd || furtherInterindustry? cmd =>
+                     iso? cmd
 
   theorem first_and_further_interindustry_are_disjoint is
     fa(cmd:ISOCommand) ~ (firstInterindustry? cmd && furtherInterindustry? cmd)
@@ -241,14 +250,94 @@ ISO7816APDU qualifying spec
 
   % ISO commands contain logical channel information [ISO4 5.1.1.2]:
 
-  type LogicalChannel = {ch:Nat | ch <= 19}
+  type Channel = {ch:Nat | ch <= 19}
 
-  op logicalChannel (cmd:ISOCommand) : LogicalChannel =
+  op channel (cmd:ISOCommand) : Channel =
     if firstInterindustry? cmd then
       let chBits: (FSeq Bit | ofLength? 2) = suffix (cmd.cla, 2) in
       toNat chBits  (* 0 thru 3 *)
     else (* furtherInterindustry? cmd *)
       let chBits: (FSeq Bit | ofLength? 4) = suffix (cmd.cla, 4) in
       4 + toNat chBits  (* 4 thru 19 *)
+
+  % ISO commands contain secure messaging indication:
+
+  type SecureMsg =
+    | none
+    | proprietary
+    | iso1
+    | iso2
+
+  op secureMsg (cmd:ISOCommand) : SecureMsg =
+    if firstInterindustry? cmd then
+      let smBits: (FSeq Bit | ofLength? 2) = subFromLong (cmd.cla, 4, 2) in
+      case toNat smBits of
+      | 0 -> embed none
+      | 1 -> proprietary
+      | 2 -> iso1
+      | 3 -> iso2
+    else (* furtherIndustry? cmd *)
+      case cmd.cla @ 2 of
+      | 0 -> embed none
+      | 1 -> iso1
+
+  % ISO commands contain chaining control indication:
+
+  op chaining (cmd:ISOCommand) : Boolean =
+    toBoolean (cmd.cla @ 3)
+
+  % certain ISO commands include indications of occurrences of a certain
+  % entity, abstractly captured by the following type:
+
+  type Occurrence =
+    | first
+    | last
+    | next
+    | previous
+
+  % SELECT command [ISO4 7.1.1]:
+
+  op selectHeader? (cmd:Command) : Boolean =
+    iso? cmd &&
+    cmd.ins = toByte 0xA4
+
+  op selectByDFNameHeader? (cmd:Command, occ:Occurrence) : Boolean =
+    selectHeader? cmd &&
+    cmd.p1 = toByte 4 &&
+    (let fciMask:Byte = empty <| 1 <| 1 <| 1 <| 1 <| 0 <| 0 <| 1 <| 1 in
+    case occ of
+    | first    -> cmd.p2 and fciMask = toByte 0
+    | last     -> cmd.p2 and fciMask = toByte 1
+    | next     -> cmd.p2 and fciMask = toByte 2
+    | previous -> cmd.p2 and fciMask = toByte 3)
+
+  % more predicates for the other forms of the SELECT command (header)
+  % should be added in the future
+
+  % MANAGE CHANNEL command [ISO 7.1.2]:
+
+  op manageChannelHeader? (cmd:Command) : Boolean =
+    iso? cmd &&
+    cmd.ins = toByte 0x70
+
+  op manageChannelOpenHeader? (cmd:Command) : Boolean =
+    manageChannelHeader? cmd &&
+    toNat cmd.p1 = 0 &&
+    toNat cmd.p2 <= 20
+
+  op manageChannelCloseHeader? (cmd:Command) : Boolean =
+    manageChannelHeader? cmd &&
+    toNat cmd.p1 = 0x80 &&
+    toNat cmd.p2 <= 20
+
+  op manageChannelRFUHeader? (cmd:Command) : Boolean =
+    manageChannelHeader? cmd &&
+    ~ (manageChannelOpenHeader? cmd) &&
+    ~ (manageChannelCloseHeader? cmd)
+
+  op manageChannelNumber
+     (cmd:Command | manageChannelOpenHeader? cmd
+                 || manageChannelCloseHeader? cmd) : Channel =
+    toNat cmd.p2
 
 endspec
