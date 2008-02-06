@@ -12,6 +12,11 @@ AC
 Renamed spec and qualifier with reference to the context (ISO7816, smart cards)
 of APDUs.
 
+2008:02:05
+AC
+Added constraints to CLA, INS, and SW. Added notions of interindustry,
+proprietary, and reserved commands. Added notion of logical channels.
+
 *)
 
 
@@ -19,14 +24,30 @@ ISO7816APDU qualifying spec
 
   import BitSequences
 
-  (* This spec formalizes command and response APDUs as specified in ISO
-  7618-4. For now we do not cover notions such as the structure of the CLA byte,
-  but we may add that in the future. *)
+  (* This spec formalizes command and response APDUs as specified in ISO 7618
+  Part 3 (3rd Edition) and ISO 7816 Part 4 (2nd Edition). In the comments in
+  this spec, we refer to those standard as "[ISO3]" and [ISO4], possibly
+  extended with references to (sub)sections (e.g. "[ISO4 5.1]"). *)
 
-  (* Conceptually, a command APDU is defined by the four header bytes CLA, INS,
-  P1, and P2 (upon which we do not impose any constraints for now), the command
-  data (a sequence of bytes), the maximum length Le of the expected response
-  data, and an indication of whether the command uses short or extended length
+  % the CLA byte can have any value except 'FF' [ISO 5.1.1]:
+
+  op claByte? (x:Byte) : Boolean =
+    x ~= toByte 0xff
+
+  type CLAByte = (Byte | claByte?)
+
+  % the INS byte can have any value except '6X' and '9X' [ISO 5.1.2]:
+
+  op insByte? (x:Byte) :Boolean =
+    let (hi,lo) = byteToNibbles x in
+    hi ~= toNibble 6 && hi ~= toNibble 9
+
+  type INSByte = (Byte | insByte?)
+
+  (* Conceptually, a command APDU [ISO4 5.1] is defined by the four header bytes
+  CLA, INS, P1, and P2 (there are no constraints on P1 and P2), the command data
+  (a sequence of bytes), the maximum length Le of the expected response data,
+  and an indication of whether the command uses short or extended length
   fields. The length Lc of the command data is not included because it is
   redundant (it equals the length of the data); see representation into bytes
   below. If the command uses short length fields, the data cannot exceed 255
@@ -34,8 +55,8 @@ ISO7816APDU qualifying spec
   the data cannot exceed 65535 bytes and Le cannot exceed 65536. *)
 
   type Command0 =
-   {cla  : Byte,
-    ins  : Byte,
+   {cla  : CLAByte,
+    ins  : INSByte,
     p1   : Byte,
     p2   : Byte,
     data : FSeq Byte,
@@ -63,7 +84,7 @@ ISO7816APDU qualifying spec
   type    ShortCommand = (Command |    shortCommand?)
   type ExtendedCommand = (Command | extendedCommand?)
 
-  % the four cases for commands (actually defined in ISO 7816-3):
+  % the four command cases [ISO3 12.1.2]:
 
   op case1? (cmd:Command) : Boolean = (length cmd.data  = 0 && cmd.le  = 0)
 
@@ -127,16 +148,27 @@ ISO7816APDU qualifying spec
   op unflattenCommand (bytes: FSeq Byte | flattenedCommand? bytes) : Command =
     the(cmd) flattenCommand cmd = bytes
 
-  (* Conceptually, a reponse APDU is defined by the response data (a sequence of
-  bytes) and the 16-bit status word SW. A reponse to a short (length) command
-  can contain at most 256 data bytes; a response to an extended (length) command
-  can contain at most 65536 data bytes. Since the response itself contains no
-  information about the command, we simply require the response data to not
-  exceed 65535 bytes. *)
+  % the SW can only have a value of the form '6xxx' and '9xxx', except '60xx'
+  % [ISO4 5.1.3]:
+
+  op statusWord? (sw:Word16) : Boolean =
+    let (hiByte, _) = word16ToBytes sw in
+    let (hiNibble, _) = byteToNibbles hiByte in
+    (hiNibble = toNibble 0x6 || hiNibble = toNibble 0x9) &&
+    hiByte ~= toByte 0x60
+
+  type StatusWord = (Word16 | statusWord?)
+
+  (* Conceptually, a reponse APDU [ISO4 5.1] is defined by the response data (a
+  sequence of bytes) and the 16-bit status word SW. A reponse to a short
+  (length) command can contain at most 256 data bytes; a response to an extended
+  (length) command can contain at most 65536 data bytes. Since the response
+  itself contains no information about the command, we simply require the
+  response data to not exceed 65535 bytes. *)
 
   type Response =
     {data : {x : FSeq Byte | length x <= 65536},
-     sw   : Word16}
+     sw   : StatusWord}
 
   (* We consider a response "short" if it contains no more than 256 data bytes,
   otherwise we consider it "extended". However, note that a short response (as
@@ -171,5 +203,52 @@ ISO7816APDU qualifying spec
   op unflattenResponse
      (bytes: FSeq Byte | flattenedResponse? bytes) : Response =
     the(rsp) flattenResponse rsp = bytes
+
+  % the first bit of the CLA byte distinguishes interindustry and proprietary
+  % commands [ISO4 5.1.1]:
+
+  op interindustry? (cmd:Command) : Boolean =
+    first cmd.cla = 0
+
+  op proprietary? (cmd:Command) : Boolean =
+    first cmd.cla = 1
+
+  % the interindustry CLA byte 001xxxxx is reserved for future use by ISO
+  % [ISO 5.1.1]:
+
+  op reserved? (cmd:Command) : Boolean =
+    ex (xxxxx: (FSeq Bit | ofLength? 5)) cmd.cla = 0 |> 0 |> 1 |> xxxxx
+
+  theorem reserved_is_interindustry is
+    fa(cmd:Command) reserved? cmd => interindustry? cmd
+
+  % the following are the non-reserved interindustry commands [ISO4 5.1.1],
+  % which we simply call "ISO commands":
+
+  type ISOCommand = (Command | interindustry? /\ ~~ reserved?)
+
+  op firstInterindustry? (cmd:ISOCommand) : Boolean =
+    ex (xxxxx: (FSeq Bit | ofLength? 5)) cmd.cla = 0 |> 0 |> 0 |> xxxxx
+
+  op furtherInterindustry? (cmd:ISOCommand) : Boolean =
+    ex (xxxxxx: (FSeq Bit | ofLength? 6)) cmd.cla = 0 |> 1 |> xxxxxx
+
+  theorem first_and_further_interindustry_are_disjoint is
+    fa(cmd:ISOCommand) ~ (firstInterindustry? cmd && furtherInterindustry? cmd)
+
+  theorem first_and_further_interindustry_are_exhaustive is
+    fa(cmd:ISOCommand) firstInterindustry? cmd || furtherInterindustry? cmd
+
+  % ISO commands contain logical channel information [ISO4 5.1.1.2]:
+
+  type LogicalChannel = {ch:Nat | ch <= 19}
+
+  op logicalChannel (cmd:ISOCommand) : LogicalChannel =
+    if firstInterindustry? cmd then
+      let chBits: (FSeq Bit | ofLength? 2) = suffix (cmd.cla, 2) in
+      toNat chBits  (* 0 thru 3 *)
+    else (* furtherInterindustry? cmd *)
+      let chBits: (FSeq Bit | ofLength? 4) = suffix (cmd.cla, 4) in
+      4 + toNat chBits  (* 4 thru 19 *)
 
 endspec
