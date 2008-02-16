@@ -61,6 +61,10 @@ MS qualifying spec
  def charSort       = mkBase  (Qualified("Char",    "Char"),    [])
  def stringSort     = mkBase  (Qualified("String",  "String"),  [])
 
+ op listCharType: Sort = mkBase(Qualified("List","List"),[charSort])
+ op optionStringType: Sort = mkBase(Qualified("Option","Option"),[stringSort])
+
+
  def unaryBoolSort  = mkArrow (boolSort, boolSort)
  def binaryBoolSort = mkArrow (mkProduct [boolSort, boolSort], boolSort)
 
