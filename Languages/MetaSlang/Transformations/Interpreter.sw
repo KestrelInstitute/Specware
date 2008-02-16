@@ -13,8 +13,8 @@ spec
     | String      String
     | Bool        Boolean
     | RecordVal   Subst
-    | Constructor Id * Value
-    | Constant    Id
+    | Constructor Id * Value * MS.Sort
+    | Constant    Id * MS.Sort
     | QuotientVal Value * Value	* QualifiedId	% closure * element * sort id
     | ChooseClosure Value * MS.Sort * QualifiedId
     | Closure     Match * Subst
@@ -111,7 +111,7 @@ spec
 	    (case lookup(sb,v) of
 	      | Some e -> e
 	      | None -> Unevaluated t)
-	  | Fun(fun,_,_) -> evalFun(fun,t,sb,spc,depth)
+	  | Fun(fun,ty,_) -> evalFun(fun,t,ty,sb,spc,depth)
 	  | Apply(Fun(Op(Qualified("System","time"),_),_,_),y,_) -> timeEvalRec(y,sb,spc,depth+1)
 	  | Apply(x,y,_) ->
 	    if nonStrict? x
@@ -167,8 +167,8 @@ spec
     let _ = postTrace(t,val,depth) in
     val
   
-  op  evalFun: Fun * MS.Term * Subst * Spec * Nat -> Value
-  def evalFun(fun,t,sb,spc,depth) =
+  op  evalFun: Fun * MS.Term * MS.Sort * Subst * Spec * Nat -> Value
+  def evalFun(fun,t,ty,sb,spc,depth) =
     case fun of
       | Op (qid, _) ->
         (case findTheOp (spc, qid) of
@@ -191,7 +191,7 @@ spec
       | Char   c -> Char   c
       | String s -> String s
       | Bool   b -> Bool   b
-      | Embed (id, false) -> Constant id
+      | Embed (id, false) -> Constant(id,ty)
       | _ -> Unevaluated t
 
   op  nonStrict?: MS.Term -> Boolean
@@ -248,7 +248,7 @@ spec
   def evalApplySpecial(ft,a,sb,spc,depth) =
     let def default() = Unevaluated(mkApply(ft,valueToTerm a)) in
     case ft of
-      | Fun(Embed(id,true),_,_) -> Constructor(id,a)
+      | Fun(Embed(id,true),ty,_) -> Constructor(id,a,ty)
       | Fun(Op(Qualified(spName,opName),_),_,_) ->
         (if member(spName,evalQualifiers)
 	  then (case a
@@ -348,8 +348,8 @@ spec
 	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
       | Fun(Embedded id,srt,_) ->
 	(case a of
-	  | Constructor(constr_id,_) -> Bool(id=constr_id)
-	  | Constant constr_id -> Bool(id=constr_id)
+	  | Constructor(constr_id,_,_) -> Bool(id=constr_id)
+	  | Constant(constr_id,_) -> Bool(id=constr_id)
 	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
 	
       %| Fun(Select id,srt,_) ->
@@ -438,12 +438,12 @@ spec
 	     | _ -> DontKnow)
 	| EmbedPat(lbl,None,srt,_) -> 
 	  (case N of
-	     | Constant(lbl2) -> if lbl = lbl2 then Match S else NoMatch
+	     | Constant(lbl2,_) -> if lbl = lbl2 then Match S else NoMatch
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
 	| EmbedPat(lbl,Some p,srt,_) -> 
 	  (case N of 
-	     | Constructor(lbl2,N2) -> 
+	     | Constructor(lbl2,N2,_) -> 
 	       if lbl = lbl2 
 		  then patternMatch(p,N2,S,spc,depth)
 	       else NoMatch
@@ -601,8 +601,9 @@ spec
 %	   then Int(stringToNat s)
 %	   else default()
        | ("length",String s)  -> Int(length s)
-       | ("explode",String s) -> List.foldr (fn (c,r) -> Constructor("Cons",RecordVal[("1",Char c),("2",r)]))
-                                   (Constant "Nil") (explode s)
+       | ("explode",String s) -> foldr (fn (c,r) -> Constructor("Cons",RecordVal[("1",Char c),("2",r)],
+                                                                listCharType))
+                                   (Constant("Nil",listCharType)) (explode s)
        | ("toScreen",String s)  -> let _ = toScreen  s in RecordVal []
        | ("writeLine",String s) -> let _ = writeLine s in RecordVal []
 
@@ -626,8 +627,8 @@ spec
        | ("debug",String s) -> debug s	% Might want to do something smarter
        | ("warn",String s) -> warn s
        | ("getEnv",String s) -> (case getEnv s of
-				   | None -> Constant "None"
-				   | Some s -> Constructor("Some",String s))
+				   | None -> Constant("None",optionStringType)
+				   | Some s -> Constructor("Some",String s,optionStringType))
        | ("garbageCollect",Bool b) -> let _ = garbageCollect b in RecordVal []
        | ("trueFilename",String s) -> String(trueFilename s)
 
@@ -748,14 +749,14 @@ spec
   op  metaListToList: (Value | metaList?) -> List Value
   def metaListToList v =
     case v of
-      | Constant "Nil" -> []
-      | Constructor("Cons",RecordVal[("1",x),("2",r)]) -> Cons(x,metaListToList r)
+      | Constant ("Nil",_) -> []
+      | Constructor("Cons",RecordVal[("1",x),("2",r)],_) -> Cons(x,metaListToList r)
 
   op  metaList?: Value -> Boolean
   def metaList? v =
     case v of
-      | Constant "Nil" -> true
-      | Constructor("Cons",RecordVal[("1",_),("2",r)]) -> metaList? r
+      | Constant("Nil",_) -> true
+      | Constructor("Cons",RecordVal[("1",_),("2",r)],_) -> metaList? r
       | _ -> false
 
 
@@ -795,7 +796,7 @@ spec
 						     (0,ppValue context x)]))
 					       rm)),
 			    string "}"]
-      | Constructor("Cons",arg as RecordVal[(_,_),(_,_)]) ->
+      | Constructor("Cons",arg as RecordVal[(_,_),(_,_)],_) ->
 	(case valueToList v of
 	   | Some listVals ->
 	     prettysNone [string "[",
@@ -803,8 +804,8 @@ spec
 					(map (ppValue context) listVals)),
 			  string "]"]
 	   | None -> prettysFill[string "Cons",string " ",ppValue context arg])
-      | Constructor (id,arg) -> prettysFill [string id,string " ",ppValue context arg]
-      | Constant          id -> string id
+      | Constructor (id,arg,_) -> prettysFill [string id,string " ",ppValue context arg]
+      | Constant        (id,_) -> string id
       | QuotientVal (f,arg,srt_id)  -> prettysFill [string "quotient[",
                                                     string (printQualifiedId srt_id), string "] ",
                                                     ppValue context arg]
@@ -841,11 +842,11 @@ spec
   op  valueToList: Value -> Option(List Value)
   def valueToList v =
     case v of
-      | Constructor("Cons",RecordVal[(_,a),(_,rl)]) ->
+      | Constructor("Cons",RecordVal[(_,a),(_,rl)],_) ->
         (case valueToList rl of
 	  | Some l -> Some(Cons(a,l))
 	  | None -> None)
-      | Constant "Nil" -> Some []
+      | Constant ("Nil",_) -> Some []
       | _ -> None
 
   op  valueToTerm: Value -> MS.Term
@@ -856,9 +857,8 @@ spec
       | String      s  -> mkString s
       | Bool        b  -> mkBool b
       | RecordVal   rm -> mkRecord(map (fn (id,x) -> (id,valueToTerm x)) rm)
-      %% Punt on the sorts for now; could add sort fields to Constructor and Constant
-      | Constructor (id,arg) -> mkApply(mkEmbed1(id,unknownSort), valueToTerm arg)
-      | Constant    id -> mkEmbed0(id,unknownSort)
+      | Constructor (id,arg,ty) -> mkApply(mkEmbed1(id,ty), valueToTerm arg)
+      | Constant    (id,ty) -> mkEmbed0(id,ty)
 % TODO: restore these
       | QuotientVal (f,arg,srt_qid)  ->
         let argtm = valueToTerm arg in
@@ -874,7 +874,7 @@ spec
       | Closure _ -> false
       | RecClosure _ -> false
       | RecordVal rm -> all (fn (_,x) -> fullyReduced? x) rm
-      | Constructor(_,arg) -> fullyReduced? arg
+      | Constructor(_,arg,_) -> fullyReduced? arg
       | QuotientVal (f,arg,srt_qid) -> fullyReduced? arg
       | ChooseClosure (arg,srt,srt_id) -> fullyReduced? arg
       | _ -> true
@@ -896,8 +896,8 @@ spec
       | Fun (Char c,srt,pos) -> Char c
       | Fun (String s,srt,pos) -> String s
       | Record (flds,pos) -> RecordVal (map (fn (id,x) -> (id,termToValue x)) flds)
-      | Apply (Fun (Embed (id,b),srt,pos),t2,srt2) -> Constructor (id, termToValue t2)
-      | Fun (Embed (id,b),srt,pos) -> Constant id
+      | Apply (Fun (Embed (id,b),srt,pos),t2,srt2) -> Constructor (id, termToValue t2,srt)
+      | Fun (Embed (id,b),srt,pos) -> Constant(id,srt)
       | _ -> Unevaluated term
 
  endspec
