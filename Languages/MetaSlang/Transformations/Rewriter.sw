@@ -199,9 +199,10 @@ MetaSlangRewriter qualifying spec
    let (simp?, term) = if evalGroundTerms?
                          then
                            let new_term = reduceTerm (term, spc) in
-                           if equalTerm?(new_term, term)
+                           if equalTermStruct?(new_term, term)
                              then (false, term)
-                           else (true, new_term)
+                           else % let _ = writeLine(printTerm term ^"\n-->\n"^printTerm new_term^"\n") in
+                             (true, new_term)
                        else (false, term)
    in
    if simp? then unit(term, (subst,evalRule,boundVars,demod))
