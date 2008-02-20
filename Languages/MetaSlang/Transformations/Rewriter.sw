@@ -236,7 +236,10 @@ MetaSlangRewriter qualifying spec
      | Apply(Fun(Embedded id1,_,_), Apply(Fun(Embed(id2,_),_,_),_,_),_) ->
        unit (mkBool(id1 = id2), (subst,ssRule "reduceEmbed",boundVars,demod))
      | Apply(Fun(Equals,s,_), Record([(_,M1),(l2,M2)],_),_) ->
-       (case isFlexVar? M1 of
+       (if equalTerm?(M1,M2)
+          then unit(trueTerm, (subst,ssRule "Eval=",boundVars,demod))
+        else
+        case isFlexVar? M1 of
           | Some n | ~(hasFlexRef? M2)->
             unit(trueTerm, (updateSubst(subst,n,M2), ssRule "Subst", boundVars, demod))
           | _ -> Nil)
