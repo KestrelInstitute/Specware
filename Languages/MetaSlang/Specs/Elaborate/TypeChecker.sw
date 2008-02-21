@@ -145,11 +145,12 @@ TypeChecker qualifying spec
 		   insertAQualifierMap(ops,q,id,new_info))
 	   ops given_spec.elements
 
-      def elaborate_local_props (elts, env) =
+      def elaborate_local_props (elts, env, last_time?) =
 	map (fn el ->
 	     case el of
 	       | Property (prop_type, name, tvs, fm, a) ->
 	         let elaborated_fm = single_pass_elaborate_term_top (env, fm, type_bool) in
+                 let _ = if last_time? then checkForUnboundMetaTyVars (fm, env) else () in
 	         Property(prop_type, name, tvs, elaborated_fm, a)
 	       | _ -> el)
 	    elts
@@ -195,7 +196,7 @@ TypeChecker qualifying spec
     let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, env_with_elaborated_sorts, false) in
 
     %% Elaborate properties
-    let elaborated_elts = elaborate_local_props (given_elts, env_with_elaborated_sorts) in
+    let elaborated_elts = elaborate_local_props (given_elts, env_with_elaborated_sorts, false) in
 
     %% ======================================================================
     %%                           PASS TWO  
@@ -206,7 +207,7 @@ TypeChecker qualifying spec
 
     let final_sorts = elaborate_local_sorts (elaborated_sorts, second_pass_env) in
     let final_ops   = reelaborate_local_ops (elaborated_ops,   second_pass_env) in
-    let final_elts  = elaborate_local_props (elaborated_elts,  second_pass_env) in
+    let final_elts  = elaborate_local_props (elaborated_elts,  second_pass_env, true) in
     let final_spec  = given_spec << {sorts      = final_sorts, 
                                      ops        = final_ops, 
                                      elements   = final_elts}
@@ -469,7 +470,7 @@ TypeChecker qualifying spec
  %%% Bound to false in swe in toplevel.lisp because not a problem with the interpreter
  op complainAboutImplicitPolymorphicOps?: Boolean = true
 
- def collectUsedTyVars (srt, info, dfn, env) =
+ op collectUsedTyVars (srt: Sort, info: OpInfo, dfn: MS.Term, env: LocalEnv): List TyVar =
    let tv_cell = Ref [] : Ref TyVars in
    let 
    
@@ -502,6 +503,25 @@ TypeChecker qualifying spec
    in                        
      let _ = scan srt in
      ! tv_cell
+
+  op checkForUnboundMetaTyVars(tm: MS.Term, env: LocalEnv): () =
+    let warned? = Ref false in
+    let def cType ty =
+          case ty of
+            | MetaTyVar (mtv,     _) -> 
+              (let {name = _, uniqueId, link} = ! mtv in
+                 case link of
+                   | None | ~ (!warned?) ->
+                     (error (env, 
+                             "Incomplete type for " ^ (printTerm tm) ^ ":\n" ^(printSort ty), 
+                             termAnn tm);
+                      warned? := true)
+                   | _ -> ())
+            | _ -> ()
+    in                        
+      appTerm (fn _ -> (), cType, fn _ -> ()) tm
+
+  
 
   op  elaborateTerm : LocalEnv * MS.Term    * MS.Sort            -> MS.Term                       % backward compatibility for Forges Legacy
   def elaborateTerm (env, trm, term_sort) = single_pass_elaborate_term_top (env, trm, term_sort)  % backward compatibility for Forges Legacy
