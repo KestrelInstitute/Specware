@@ -57,76 +57,76 @@ PrList qualifying spec
   op app             : [a]   (a -> ()) -> List a -> ()  % deprecated
 *)
 
-  axiom nilIsNil is nil = Nil
+  axiom nilIsNil is [a] (nil: List a) = Nil
 
-  axiom consIsCons is fa (x, l)  cons(x,l) = Cons(x,l)
+  axiom consIsCons is [a] fa (x: a, l)  cons(x,l) = Cons(x,l)
 
-  axiom insert_def is fa (x, l) insert(x,l) = Cons(x,l)
+  axiom insert_def is [a] fa (x: a, l) insert(x,l) = Cons(x,l)
 
-  axiom length_nil is length([]) = 0
+  axiom length_nil is [a] length([]: List a) = 0
 
-  axiom length_cons is fa (x, l) length(Cons(x, l)) = 1 + length(l)
+  axiom length_cons is [a] fa (x: a, l) length(Cons(x, l)) = 1 + length(l)
 
-  axiom nullNull is null([])
+  axiom nullNull is [a] null([]: List a)
 
-  axiom nullCons is fa (x, l) ~(null(Cons(x, l)))
+  axiom nullCons is [a] fa (x: a, l) ~(null(Cons(x, l)))
 
-  axiom hdCons is fa (x, l) hd (Cons(x, l)) = x
+  axiom hdCons is [a] fa (x: a, l) hd (Cons(x, l)) = x
 
-  axiom tlCons is fa (x, l) tl (Cons(x, l)) = l
+  axiom tlCons is [a] fa (x: a, l) tl (Cons(x, l)) = l
 
-  axiom concatNull is fa (l) concat([], l) = l
+  axiom concatNull is [a] fa (l: List a) concat([], l) = l
 
-  axiom concatCons is fa (x1, l1, l2)
+  axiom concatCons is [a] fa (x1: a, l1, l2)
      concat(Cons(x1, l1), l2) = Cons(x1, concat(l1, l2))
 
-  axiom concat2_def is fa (s1, s2) ++ (s1,s2) = concat(s1,s2)
+  axiom concat2_def is [a] fa (s1: List a, s2: List a) ++ (s1,s2) = concat(s1,s2)
 
 %  def @ (s1,s2) = concat(s1,s2)
 
-  axiom nth_def1 is  fa(hd, tl)
+  axiom nth_def1 is [a] fa(hd: a, tl)
      nth(Cons(hd,tl),0) = hd
 
-  axiom nth_def2 is  fa(hd, tl, i) (i > 0) =>
+  axiom nth_def2 is [a] fa(hd: a, tl, i) (i > 0) =>
      nth(Cons(hd,tl),i) = nth(tl, i-1)
 
-  axiom nthTail_def1 is fa (hd, tl)
+  axiom nthTail_def1 is [a] fa (tl: List a)
      nthTail(tl,0) = tl
 
-  axiom length_nthTail_B is		% Really a theorem
-    fa(l,i: Nat) i <= length l => length(nthTail(l,i)) = length l - i
+  axiom length_nthTail_B is [a]		% Really a theorem
+    fa(l: List a,i: Nat) i <= length l => length(nthTail(l,i)) = length l - i
 
-  axiom nthTail_def2 is fa (hd, tl, i) (i > 0) =>
+  axiom nthTail_def2 is [a] fa (hd: a, tl, i) (i > 0) =>
      nthTail(Cons(hd,tl),i) = nthTail(tl, i-1)
 
-  axiom last_def1 is fa (hd)
+  axiom last_def1 is [a] fa (hd: a)
     last(Cons(hd, [])) = hd
 
-  axiom last_def2 is fa (hd, tl)
+  axiom last_def2 is [a] fa (hd: a, tl)
     tl ~= [] => last(Cons(hd, tl)) = last(tl)
 
-  axiom butLast_def1 is fa (hd)
+  axiom butLast_def1 is [a] fa (hd: a)
     butLast(Cons(hd, [])) = []
 
-  axiom butLast_def2 is fa (hd, tl)
+  axiom butLast_def2 is [a] fa (hd: a, tl)
     tl ~= [] => butLast(Cons(hd, tl)) = Cons(hd, butLast(tl))
 
-  axiom member_def1 is fa (x)
+  axiom member_def1 is [a] fa (x: a)
     ~(member(x, []))
 
-  axiom member_def1 is fa (hd, tl)
+  axiom member_def1 is [a] fa (hd: a, tl)
      member(hd, Cons(hd, tl))
 
-  axiom member_def2 is fa (x, hd, tl)
+  axiom member_def2 is [a] fa (x: a, hd, tl)
      (x ~= hd => (member(x, Cons(hd, tl)) <=> member(x, tl)))
 
-  axiom diff_def1 is fa (l2)
+  axiom diff_def1 is [a] fa (l2: List a)
      diff([], l2) = []
 
-  axiom diff_def2 is fa (hd, tl, l2)
+  axiom diff_def2 is [a] fa (hd: a, tl, l2)
      member(hd, l2) => diff (Cons(hd, tl), l2) = diff(tl, l2)
 
-  axiom diff_def3 is fa (hd, tl, l2)
+  axiom diff_def3 is [a] fa (hd: a, tl, l2)
      ~(member(hd, l2)) => diff (Cons(hd, tl), l2) = Cons(hd, diff(tl, l2))
 
 (* TODO
@@ -138,10 +138,10 @@ PrList qualifying spec
        | hd::tl -> rev2(tl,Cons(hd,r))
 *)
 
-  axiom flatten_def1 is fa (l)
-    flatten([]) = []
+  axiom flatten_def1 is [a]
+    flatten([]) = ([]: List a)
 
-  axiom flatten_def2 is fa (hd, tl)
+  axiom flatten_def2 is [a] fa (hd: List a, tl)
     flatten(Cons(hd, tl)) = concat(hd, flatten(tl))
 
 (* TODO

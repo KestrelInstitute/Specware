@@ -1,7 +1,7 @@
 PrFunctions qualifying spec
   axiom id_def is fa (x) id x = x
 
-  axiom compose_def is fa (f, g, x) (o(f, g)) x = f(g(x))
+  axiom compose_def is [a,b,c] fa (f: b -> c, g: a -> b, x: a) (o(f, g)) x = f(g(x))
 
   axiom injective?_def is [a,b]
     fa (f : a -> b) injective? f <=> (fa (x:a,y:a) f x = f y => x = y)

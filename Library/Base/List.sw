@@ -38,7 +38,7 @@ List qualifying spec
     | [] -> true
     | _  -> false
 
-  theorem null_length is [a] fa(l) null l = (length l = 0)
+  theorem null_length is [a] fa(l: List a) null l = (length l = 0)
   proof Isa
     apply(case_tac l)
     apply(auto)
@@ -82,8 +82,8 @@ List qualifying spec
   apply(auto, arith)
   end-proof
 
-  theorem length_nthTail is
-    fa(l,n: Nat) n <= length l => length(nthTail(l,n)) = length l - n
+  theorem length_nthTail is [a]
+    fa(l: List a,n: Nat) n <= length l => length(nthTail(l,n)) = length l - n
   proof Isa [simp]
     apply(induct_tac l n rule: List__nthTail.induct)
     apply(auto)
@@ -125,8 +125,8 @@ List qualifying spec
   apply(auto, arith)
   end-proof
 
-  theorem length_removeFirstElems is
-     fa(l,i: Nat) i <= length l => length(removeFirstElems(l,i)) = length l - i
+  theorem length_removeFirstElems is [a]
+     fa(l: List a,i: Nat) i <= length l => length(removeFirstElems(l,i)) = length l - i
   proof Isa [simp]
     apply(induct_tac l i rule: List__removeFirstElems.induct)
     apply(auto)

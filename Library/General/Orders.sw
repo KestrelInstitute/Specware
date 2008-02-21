@@ -26,10 +26,10 @@ Order qualifying spec
 
   type LinearOrder a = (EndoRelation a | linearOrder?)
 
-  conjecture orderSubsumption is
-    linearOrder?  <= weakOrder?  &&
-    weakOrder?    <= partialOrder? &&
-    partialOrder? <= preOrder?
+  conjecture orderSubsumption is [a]
+    linearOrder?  <= (weakOrder?: EndoRelation a -> Boolean)  &&
+    weakOrder?    <= (partialOrder?: EndoRelation a -> Boolean) &&
+    partialOrder? <= (preOrder?: EndoRelation a -> Boolean)
 
   % make strict version of predicate over endorelations:
   op strict : [a] (EndoRelation a -> Boolean) -> EndoRelation a -> Boolean

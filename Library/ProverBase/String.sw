@@ -192,8 +192,8 @@ PrString qualifying spec
   axiom compare_show_def is
     fa (cmp) cmp = Less => Compare.show cmp = "Less"
 
-  axiom option_show_def1 is
-    fa (opt, shw) opt = None => Option.show shw opt = "None"
+  axiom option_show_def1 is [a]
+    fa (opt:Option a, shw) opt = None => Option.show shw opt = "None"
 
   axiom option_show_def2 is
     fa (opt, shw, x) opt = Some x => Option.show shw opt = "(Some " ^ (shw x) ^ ")"
