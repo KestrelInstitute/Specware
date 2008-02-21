@@ -7,6 +7,8 @@ spec
   import ../Specs/Utilities
   import ../CodeGen/Lisp/Suppress
 
+  type Subst = List (Id * Value)
+
   type Value =
     | Int         Integer
     | Char        Char
@@ -21,7 +23,20 @@ spec
     | RecClosure  Match * Subst * List Id
     | Unevaluated MS.Term
 
-  type Subst = List (Id * Value)
+  op equalValue?(v1: Value, v2: Value): Boolean =
+    case (v1,v2) of
+      | (Int n1, Int n2) -> n1 = n2
+      | (Char ch1, Char ch2) -> ch1 = ch2
+      | (String str1, String str2) -> str1 = str2
+      | (Bool b1, Bool b2) -> b1 = b2
+      | (RecordVal sb1, RecordVal sb2) ->
+        length sb1 = length sb2
+          && all (fn ((id1,v1),(id2,v2)) -> id1 = id2 && equalValue?(v1, v2)) (zip(sb1,sb2))
+      | (Constructor(id1,v1,_), Constructor(id2,v2,_)) -> id1 = id2 && equalValue?(v1,v2)
+      | (Constant(id1,_), Constant(id2,_)) -> id1 = id2
+      | (Unevaluated(t1),Unevaluated(t2)) -> equalTerm?(t1,t2)
+      %% Should have special cases for QuotientVal ChooseClosure Closure RecClosure
+      | _ -> v1 = v2
 
   op  unevaluated?: Value -> Boolean
   def unevaluated? x = embed? Unevaluated x
@@ -371,7 +386,7 @@ spec
 		      else None
 		  | (Unevaluated _, _) -> None
 		  | (_, Unevaluated _) -> None
-		  | _ -> Some(a1 = a2))
+		  | _ -> Some(equalValue?(a1, a2)))
 	  else None)
       | _ -> None
         
