@@ -242,6 +242,7 @@ Set qualifying spec
   op max : [a] SetOfSetsWithMax a -> Set a
   def max ss = the(s) s isMaxIn ss
 
+(*
    proof Isa Thy_Morphism Set
     type Set.Set -> set (rin,Collect)
     Set.collect -> Collect
@@ -259,7 +260,7 @@ Set qualifying spec
     Set.-- -> - Left 25
     Set.power -> Pow
     Set.empty -> {}
-
   end-proof
+*)
 
 endspec
