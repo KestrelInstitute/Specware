@@ -150,6 +150,12 @@ Set qualifying spec
   % finite cardinality:
   op finite? : [a] Set a -> Boolean
   def [a] finite? s =
+    % this disjunct ensures that the definition is correct in case a is empty;
+    % if a is empty, Nat -> a is empty and the disjunct below (ex ...) is false,
+    % but of course the empty set over empty a (note that there is only one set
+    % over empty a, namely the empty set; so, if s is not empty, a is not empty
+    % and Nat -> a is not empty):
+    empty? s ||
     % there is a surjective function from {i:Nat | i < n} to {x:a | x in? s}
     % (which are "pseudo-types" because of the free variables `n' and `s'):
     (ex (f : Nat -> a, n : Nat)
