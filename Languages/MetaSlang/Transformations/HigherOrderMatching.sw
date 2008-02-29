@@ -236,6 +236,11 @@ beta contraction.
 		   then patternMatch(p,N2,S)
 		else NoMatch
 	      | _ -> DontKnow)
+        | RestrictedPat(p,_,_) ->
+          (case patternMatch(p,N,S) of
+             %% Assume we can't decide predicate
+             | NoMatch -> NoMatch
+             | _ -> DontKnow)
 	| StringPat(n,_) ->
 	  (case N
 	    of Fun(String m,_,_) -> (if n = m then Match S else NoMatch)
