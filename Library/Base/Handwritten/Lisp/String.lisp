@@ -1,7 +1,7 @@
-(DEFPACKAGE "SPECTOLISP")
-(defpackage "SYSTEM-SPEC")
-(defpackage "STRING-SPEC")
-(IN-PACKAGE "STRING-SPEC")
+(defpackage :SpecToLisp)
+(defpackage :System-Spec)
+(defpackage :String-Spec)
+(in-package :String-Spec)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
 
@@ -49,7 +49,52 @@
 		"NAT-SPEC::natToString"
 		"NAT-SPEC::stringToNat"
 		"CHAR-SPEC::show"
-		"CHAR-SPEC::toString")
+		"CHAR-SPEC::toString"
+
+                "String-Spec::implode"
+		"String-Spec::explode"
+		"String-Spec::|!length|"
+		"String-Spec::concat-2"
+		"String-Spec::concat"
+		"String-Spec::++-2"
+		"String-Spec::!++"
+		"String-Spec::^-2"
+		"String-Spec::^"
+		"String-Spec::map-1-1"
+		"String-Spec::|!map|"
+		"String-Spec::exists-1-1"
+		"String-Spec::|!exists|"
+		"String-Spec::all-1-1"
+		"String-Spec::all"
+		"String-Spec::sub-2"
+		"String-Spec::sub"
+		"String-Spec::substring-3"
+		"String-Spec::substring"
+		"String-Spec::concatList"
+		"String-Spec::translate-1-1"
+		"String-Spec::translate"
+		"String-Spec::compare-2"
+		"String-Spec::compare"
+		"String-Spec::<-2"
+		"String-Spec::|!<|"
+		"String-Spec::<=-2"
+		"String-Spec::|!<=|"
+		"String-Spec::lt-2"
+		"String-Spec::lt"
+		"String-Spec::leq-2"
+		"String-Spec::leq"
+		"String-Spec::newline"
+		"String-Spec::toScreen"
+		"String-Spec::writeLine"
+		"Boolean-Spec::show"
+		"Integer-Spec::toString"
+		"Integer-Spec::intToString"
+		"Integer-Spec::stringToInt"
+		"Nat-Spec::toString"
+		"Nat-Spec::natToString"
+		"Nat-Spec::stringToNat"
+		"Char-Spec::show"
+		"Char-Spec::toString")
 	      SpecToLisp::SuppressGeneratedDefuns))
 
 
@@ -194,13 +239,13 @@
     (the cl:simple-string 
       (apply #'concatenate 'string translated-char-strings))))
 
-(defun STRING-SPEC::compare-2 (s1 s2)
+(defun String-Spec::compare-2 (s1 s2)
   (if (string< s1 s2)
       '(:|Less|)
       (if (string< s2 s1) '(:|Greater|) '(:|Equal|))))
 
-(defun STRING-SPEC::compare (s1s2)
-  (STRING-SPEC::compare-2 (car s1s2) (cdr s1s2)))
+(defun String-Spec::compare (s1s2)
+  (String-Spec::compare-2 (car s1s2) (cdr s1s2)))
 
 (defun lt-2 (s1 s2)
   (declare (type cl:simple-string s1 s2))
@@ -266,8 +311,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defpackage :BOOLEAN-SPEC)
-(IN-PACKAGE :BOOLEAN-SPEC)
+(defpackage :Boolean-Spec)
+(in-package :Boolean-Spec)
 
 
 (defun show (x)
@@ -275,8 +320,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defpackage :INTEGER-SPEC)
-(IN-PACKAGE :INTEGER-SPEC)
+(defpackage :Integer-Spec)
+(in-package :Integer-Spec)
 
 
 (defun toString (x)
@@ -310,8 +355,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defpackage :NAT-SPEC)
-(IN-PACKAGE :NAT-SPEC)
+(defpackage :Nat-Spec)
+(in-package :Nat-Spec)
 
 
 (defun toString (x)
@@ -344,8 +389,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(DEFPACKAGE :CHAR-SPEC)
-(IN-PACKAGE :CHAR-SPEC)
+(defpackage :Char-Spec)
+(in-package :Char-Spec)
 
 
 (defun toString (x)

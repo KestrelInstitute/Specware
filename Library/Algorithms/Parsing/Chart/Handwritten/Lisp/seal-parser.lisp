@@ -1,6 +1,6 @@
 ;;; -*- Mode: LISP; Package: Parser4; Base: 10; Syntax: Common-Lisp -*-
 
-(in-package "PARSER4") 
+(in-package :Parser4) 
 
 (defun load-parser (file &key 
 			 (name (intern (format nil "PARSER-~D" (incf *gensym-counter*)) "KEYWORD"))

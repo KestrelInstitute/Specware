@@ -6,9 +6,9 @@
 ;;; Among other things, this file is referenced by generate-application in
 ;;; BuildDistribution_ACL.lisp
 
-(defpackage "SPECTOLISP")
-(defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
-(in-package "SPECWARE")
+(defpackage :SpecToLisp)
+(defpackage :Specware (:use :cl))   ; Most systems default to this but not sbcl until patch loaded below
+(in-package :Specware)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
 
@@ -130,7 +130,7 @@
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
 ;; Snark puts us in another package .. so we go back
-(in-package "SPECWARE")
+(in-package :Specware)
 
 ;; The following uses make-system from load-utilities above.
 ;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.

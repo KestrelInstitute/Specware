@@ -12,7 +12,7 @@ SpecToLisp qualifying spec
 
  op lisp : Spec -> LispSpec
 
- def generateCaseSensitiveLisp? = false
+ def generateCaseSensitiveLisp? = true
  
  def lispPackages = ["LISP", "COMMON-LISP", 
 		     %% Added because of Xanalys packages, but prudent anyway
@@ -178,17 +178,14 @@ SpecToLisp qualifying spec
 			| ch  -> Char.toString ch)
                       id
    in
-   let ID = if generateCaseSensitiveLisp? then 
-              id
-	    else 
-	      String.map toUpperCase id 
-   in
-     if isLispString ID || sub (id, 0) = #! then
+   let upper_ID = String.map toUpperCase id in
+   let ID = if generateCaseSensitiveLisp? then id else upper_ID in
+   if isLispString upper_ID || sub (id, 0) = #! then
        "|!" ^ id ^ "|"
      else if exists (fn ch -> ch = #:) (explode id) then
        "|"  ^ id ^ "|"
      else 
-       lookupSpecId (id, ID, pkg)
+       lookupSpecId (id, upper_ID, pkg)
 
  def defaultSpecwarePackage = 
    if generateCaseSensitiveLisp? then
@@ -200,14 +197,11 @@ SpecToLisp qualifying spec
    if id = UnQualified then 
      defaultSpecwarePackage
    else
-     let id = (if generateCaseSensitiveLisp? then 
-		 id
-	       else 
-		 String.map Char.toUpperCase id)
-     in
-       if isLispString id || lispPackage? id then
-         id ^ "-SPEC"
-       else 
+     let upper_id = String.map Char.toUpperCase id in
+     let id = (if generateCaseSensitiveLisp? then id else upper_id) in
+     if isLispString upper_id || lispPackage? upper_id then
+         id ^ (if generateCaseSensitiveLisp? then "-Spec" else "-SPEC")
+     else 
 	 id
       
  %op printPackageId : QualifiedId * String -> String % see Suppress.sw

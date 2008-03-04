@@ -1,4 +1,4 @@
-(in-package "CL-USER")
+(in-package :cl-user)
 
 #+Allegro
 (defun bail-out (exception)

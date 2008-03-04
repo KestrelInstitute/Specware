@@ -1,5 +1,5 @@
-(defpackage "MAGIC")
-(in-package "MAGIC")
+(defpackage :Magic)
+(in-package :Magic)
 
 ;;;   %% This creates a heterogenous list from the fields of a product
 ;;;   %% Such a beast is not even well formed for metaslang, so it must

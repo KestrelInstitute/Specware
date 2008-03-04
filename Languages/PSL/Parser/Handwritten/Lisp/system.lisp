@@ -1,7 +1,7 @@
 
 ;;; Parser
 
-(in-package "PARSER4")
+(in-package :Parser4)
 
 (cl-user::compile-and-load-local-file "tokenizer")
 

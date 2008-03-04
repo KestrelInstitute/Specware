@@ -1,5 +1,5 @@
-(defpackage "MonadicMapsInternal")
-(in-package "MonadicMapsInternal")
+(defpackage :MonadicMapsInternal)
+(in-package :MonadicMapsInternal)
 
 (defun makeHashtableEqualDefaults ()
   (make-hash-table :test 'equal)

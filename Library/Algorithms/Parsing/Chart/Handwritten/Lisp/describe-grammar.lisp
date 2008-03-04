@@ -1,5 +1,5 @@
 
-(in-package "PARSER4")
+(in-package :Parser4)
 
 (defvar *lhs-latex*) ; used only for debugging messages
 

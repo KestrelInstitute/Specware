@@ -1,5 +1,5 @@
-(defpackage "SPECWARE-TEST" (:use :cl))
-(in-package "SPECWARE-TEST")
+(defpackage :Specware-Test (:use :cl))
+(in-package :Specware-Test)
 
 (defparameter *global-test-counter* 0)
 

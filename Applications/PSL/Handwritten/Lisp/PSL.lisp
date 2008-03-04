@@ -1,5 +1,5 @@
-(defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
-(in-package "SPECWARE")
+(defpackage :Specware (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
+(in-package :Specware)
 
 (declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
 
@@ -75,7 +75,7 @@
 (declaim (optimize (speed 3) (debug 2) (safety 1)))
 
 ;; Snark puts us in another package .. so we go back
-(in-package "SPECWARE")
+(in-package :Specware)
 
 ;; The following uses make-system from load-utilities above.
 ;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.

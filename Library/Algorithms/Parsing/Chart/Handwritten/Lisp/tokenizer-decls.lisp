@@ -1,6 +1,6 @@
 ;;; -*- Mode: LISP; Package: Parser; Base: 10; Syntax: Common-Lisp -*-
 
-(in-package "PARSER4")
+(in-package :Parser4)
 
 (defconstant +word-symbol-start-code+         1)
 (defconstant +word-symbol-continue-code+      2)

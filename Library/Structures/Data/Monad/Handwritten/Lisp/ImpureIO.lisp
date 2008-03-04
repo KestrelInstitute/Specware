@@ -1,6 +1,6 @@
-(defpackage "IO-SPEC")
-(defpackage "IMPUREIO")
-(in-package "IMPUREIO")
+(defpackage :IO-Spec)
+(defpackage :ImpureIO)
+(in-package :ImpureIO)
 
 ;; We want to avoid writing code that depends 
 ;; on the Lisp representation of Specware terms

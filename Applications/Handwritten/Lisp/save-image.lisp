@@ -1,4 +1,4 @@
-(in-package "CL-USER")
+(in-package :cl-user)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 Utility (also in load-utilities.lisp)

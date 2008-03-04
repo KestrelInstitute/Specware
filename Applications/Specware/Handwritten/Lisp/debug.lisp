@@ -1,5 +1,5 @@
 ;;; Utilities for help in debugging MetaSlang programs in Lisp
-(in-package "CL-USER")
+(in-package :cl-user)
 
 ;; When the following boolean is true, then all exceptions (not just Fail)
 ;; take the user into the Lisp debugger.

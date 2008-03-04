@@ -1,6 +1,6 @@
 ;;; -*- Mode: LISP; Package: Specware; Base: 10; Syntax: Common-Lisp -*-
 
-(in-package "PARSER4")
+(in-package :Parser4)
 
 (defun show-reductions (parser)
   (let (#+allegro(excl::*print-nickname* t))

@@ -1,15 +1,15 @@
-(DEFPACKAGE "SPECTOLISP")
-(defpackage "INTEGER-SPEC")
-(defpackage "INTEGER_")
+(defpackage :SpecToLisp)
+(defpackage :Integer-Spec)
+(defpackage :Integer_)
 (defpackage :IntegerAux)
-(IN-PACKAGE "INTEGER-SPEC")
+(in-package :Integer-Spec)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
 
 (setq SpecToLisp::SuppressGeneratedDefuns
   (append '("INTEGER-SPEC::pred"
 	    "INTEGER-SPEC::positive?"
-	    "IntegerAux::|!-|"
+	    "INTEGERAUX::|!-|"
 	    "INTEGER-SPEC::+-2"
 	    "INTEGER-SPEC::|!+|"
 	    "INTEGER-SPEC::--2"
@@ -31,21 +31,48 @@
 	    "INTEGER-SPEC::gcd-2"
 	    "INTEGER-SPEC::|!gcd|"
 	    "INTEGER-SPEC::lcm-2"
-	    "INTEGER-SPEC::|!lcm|")
+	    "INTEGER-SPEC::|!lcm|"
+
+            "Integer-Spec::pred"
+	    "Integer-Spec::positive?"
+	    "IntegerAux::|!-|"
+	    "Integer-Spec::+-2"
+	    "Integer-Spec::|!+|"
+	    "Integer-Spec::--2"
+	    "Integer-Spec::|!-|"
+	    "Integer-Spec::*-2"
+	    "Integer-Spec::|!*|"
+	    "Integer-Spec::<-2"
+	    "Integer-Spec::|!<|"
+	    "Integer-Spec::<=-2"
+	    "Integer-Spec::|!<=|"
+	    "Integer-Spec::div-2"
+	    "Integer-Spec::div"
+	    "Integer-Spec::rem-2"
+	    "Integer-Spec::|!rem|"
+	    "Integer-Spec::divides-2"
+	    "Integer-Spec::divides"
+	    "Integer-Spec::multipleOf-2"
+	    "Integer-Spec::multipleOf"
+	    "Integer-Spec::gcd-2"
+	    "Integer-Spec::|!gcd|"
+	    "Integer-Spec::lcm-2"
+	    "Integer-Spec::|!lcm|"
+)
 	   SpecToLisp::SuppressGeneratedDefuns))
 
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
 
 (setq SpecToLisp::SuppressGeneratedDefuns
-      (append '("INTEGER-SPEC::pred"
-		"INTEGER-SPEC::positive?"
-		"INTEGER-SPEC::|!+|"
-		"INTEGER-SPEC::|!-|"
-		"INTEGER-SPEC::|!*|"
-		"INTEGER-SPEC::div"
-		"INTEGER_::|!-|"
-		"INTEGERAUX::|!-|")
+      (append '("Integer-Spec::pred"
+		"Integer-Spec::positive?"
+		"Integer-Spec::|!+|"
+		"Integer-Spec::|!-|"
+		"Integer-Spec::|!*|"
+		"Integer-Spec::div"
+		"Integer_::|!-|"
+		"Integeraux::|!-|")
 	      SpecToLisp::SuppressGeneratedDefuns))
 
 ;;; For each binary op, there are two Lisp functions. One takes two arguments,

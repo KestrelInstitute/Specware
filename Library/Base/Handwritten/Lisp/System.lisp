@@ -1,9 +1,9 @@
-(defpackage "SYSTEM-SPEC")
-(in-package "SYSTEM-SPEC")
+(defpackage :System-Spec)
+(in-package :System-Spec)
 
-(defvar System-spec::specwareDebug? nil)
+(defvar System-Spec::specwareDebug? nil)
 
-(defvar System-spec::proverUseBase? t)
+(defvar System-Spec::proverUseBase? t)
 
  ;;; op fail     : fa(a) String -> a
 (defun fail (s) (break "~a" s))

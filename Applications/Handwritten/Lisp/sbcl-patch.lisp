@@ -1,4 +1,4 @@
-(in-package "SB-IMPL")
+(in-package :sb-impl)
 
 ;(sb-ext:unlock-package "SB-IMPL")
 ;(sb-ext:unlock-package "SB-INT")
@@ -293,10 +293,18 @@
   (values-list /))
 )
 
-#+win32
-(let ((proto-db '(("ip" . 0) ("icmp" . 1) ("tcp" . 6) ("udp" . 17))))
-  (defun sb-bsd-sockets:get-protocol-by-name (proto)
-    (declare (string proto))
-    (cdr (assoc (string-downcase proto) proto-db :test #'equal))))
+;; #+win32
+;; (let ((proto-db '(("ip" . 0) ("icmp" . 1) ("tcp" . 6) ("udp" . 17))))
+;;   (defun sb-bsd-sockets:get-protocol-by-name (proto)
+;;     (declare (string proto))
+;;     (cdr (assoc (string-downcase proto) proto-db :test #'equal))))
 
 
+(in-package :cl-user)
+
+(define-alien-variable ("dynamic_space_size" dynamic-space-size-bytes)
+    unsigned-long)
+(defun heap-n-bytes ()
+  (+ dynamic-space-size-bytes
+     (- sb-vm::read-only-space-end sb-vm::read-only-space-start)
+     (- sb-vm::static-space-end sb-vm::static-space-start)))

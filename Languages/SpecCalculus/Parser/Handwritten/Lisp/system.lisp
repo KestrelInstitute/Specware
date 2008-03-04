@@ -1,7 +1,7 @@
 
 ;;; Parser
 
-(in-package "PARSER4")
+(in-package :Parser4)
 
 ;; This is a common load file for all the build files in this direcrtory. 
 ;; This loads and compiles all the files pertaining to the specializer.

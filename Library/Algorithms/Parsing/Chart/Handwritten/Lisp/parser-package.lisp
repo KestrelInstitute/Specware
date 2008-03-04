@@ -1,9 +1,9 @@
 ;;; -*- Mode: LISP; Package: User; Base: 10; Syntax: Common-Lisp -*-
 
-(in-package "CL-USER")
+(in-package :cl-user)
 
-(defpackage "PARSER4" 
-  (:use "COMMON-LISP")
+(defpackage :Parser4 
+  (:use :common-lisp)
   (:export :*VERBOSE?*
 	   :WHEN-DEBUGGING
 	   :DEFINE-SW-PARSER-RULE	
@@ -12,5 +12,5 @@
 	   :PARSE-SESSION-RESULTS 
 	   :PARSE-FILE))
 
-(in-package "PARSER4") 
+(in-package :Parser4) 
 

@@ -1,6 +1,6 @@
-(DEFPACKAGE "SPECTOLISP")
-(defpackage "NAT-SPEC")
-(IN-PACKAGE "NAT-SPEC")
+(defpackage :SpecToLisp)
+(defpackage :Nat-Spec)
+(in-package :Nat-Spec)
 
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
@@ -9,7 +9,12 @@
   (append '("NAT-SPEC::plus-2"
 	    "NAT-SPEC::plus"
 	    "NAT-SPEC::minus-2"
-	    "NAT-SPEC::minus")
+	    "NAT-SPEC::minus"
+
+            "Nat-Spec::plus-2"
+	    "Nat-Spec::plus"
+	    "Nat-Spec::minus-2"
+	    "Nat-Spec::minus")
 	   SpecToLisp::SuppressGeneratedDefuns))
 
 

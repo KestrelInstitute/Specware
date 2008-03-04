@@ -296,10 +296,10 @@ ListADT qualifying spec {
 	(streamWriter(stream,preamble);
 	 streamWriter(stream,";;; Lisp spec\n\n");
 	 app (fn pkgName -> streamWriter (stream,
-					  "(defpackage \"" ^ pkgName ^ "\")\n"))
+					  "(defpackage :" ^ pkgName ^ ")\n"))
 	  (sortGT (fn (x,y) -> y leq x) spc.extraPackages);
-	streamWriter(stream,"\n(defpackage \"" ^ name ^ "\")");
-	streamWriter(stream,"\n(in-package \"" ^ name ^ "\")\n\n");
+	streamWriter(stream,"\n(defpackage :" ^ name ^ ")");
+	streamWriter(stream,"\n(in-package :" ^ name ^ ")\n\n");
 
 	streamWriter(stream,";;; Definitions\n\n");
 	app (fn ldef -> ppDefToStream(ldef,stream)) defs))
@@ -313,8 +313,8 @@ ListADT qualifying spec {
 	       (List.map (fn pkgName -> string ("(defpackage \"" ^ pkgName ^ "\")"))
 	          s.extraPackages)
 	       ++
-	       [string ("(defpackage \"" ^ name ^ "\")"),
-		string ("(in-package \"" ^ name ^ "\")")])) 
+	       [string ("(defpackage :" ^ name ^ ")"),
+		string ("(in-package :" ^ name ^ ")")])) 
      ++ 
      (section (";;; Definitions",     List.map ppOpDefn     defs))
 %     List.++ [string "#||"] 

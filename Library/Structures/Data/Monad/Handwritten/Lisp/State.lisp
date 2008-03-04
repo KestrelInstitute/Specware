@@ -1,5 +1,5 @@
-(defpackage "MONADICSTATEINTERNAL")
-(in-package "MONADICSTATEINTERNAL")
+(defpackage :MonadicStateInternal)
+(in-package :MonadicStateInternal)
 
 (defpackage "Specware-Global-Variables")
 

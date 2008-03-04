@@ -88,7 +88,7 @@ $BATCH_LISP <<-XXXX
 	  ;;    $SPECWARE4/Applications/Specware/lisp/Specware4.lisp
 	  ;;   Do not be confused by the similarity of their names.
 	  ;;   (sigh)
-	  (load "Specware4.lisp")))
+	  (time (load "Specware4.lisp"))))
 XXXX
 RC=$?
 

@@ -1,6 +1,6 @@
 ;;; -*- Mode: LISP; Package: Parser4; Base: 10; Syntax: Common-Lisp -*-
 
-(in-package "PARSER4")
+(in-package :Parser4)
 
 (defun parser-get-values (session &optional (min-size 1))
   (let* ((locations (parse-session-locations session))

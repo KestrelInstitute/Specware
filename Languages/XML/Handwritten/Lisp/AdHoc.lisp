@@ -1,5 +1,5 @@
-(defpackage "XML")
-(in-package "XML")
+(defpackage :XML)
+(in-package :XML)
 
 ;;; Misc hooks that attempt to bypass metaslang types.
 ;;; The user may wish to redefine these to be cognizant of user-defined types.

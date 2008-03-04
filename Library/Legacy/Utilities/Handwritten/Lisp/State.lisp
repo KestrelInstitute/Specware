@@ -1,6 +1,6 @@
 
-(defpackage :STATE)
-(IN-PACKAGE :STATE)
+(defpackage :State)
+(in-package :State)
 
 (defun ref (x) 
   (cons :|ref| x))

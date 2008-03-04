@@ -1,7 +1,7 @@
 ;;; This file deals with terms in the procedural
 ;;; specification language (PSL).
-(defpackage "OscarAbsSyn")
-(in-package "PARSER4")
+(defpackage :Oscarabssyn)
+(in-package :Parser4")
 
 ;; Identical to the Specware make-op-definition .. only the constructor has changed from Op to Def
 (defun make-psl-op-definition (tyVars qualifiable-op-names params optional-sort term l r)

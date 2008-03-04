@@ -2,9 +2,9 @@
 ;;  Emacs LISP interaction
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defpackage "EMACS")
+(defpackage :Emacs)
 (defpackage :swank)
-(in-package "EMACS")
+(in-package :Emacs)
 
 #|
 Notes:
@@ -24,6 +24,7 @@ Notes:
 (defvar *use-emacs-interface?* t)
 
 (defun eval-in-emacs (string)
+  (finish-output)
   (when *use-emacs-interface?*
     (if (and (fboundp 'swank::eval-string-in-emacs)
 	     (find-package "SPECWARE")

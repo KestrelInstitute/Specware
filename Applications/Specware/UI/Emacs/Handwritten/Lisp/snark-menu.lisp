@@ -1,5 +1,5 @@
 
-(in-package "SNARK")
+(in-package :snark)
 
 
 ;; This adds a SNARK setting to the Settings menu.

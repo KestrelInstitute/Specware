@@ -3,10 +3,10 @@
 ;; The functions here are referenced in code produced by 
 ;;  Specware4/Languages/MetaSlang/CodeGen/Lisp/SpecToLisp.sw
 
-(defpackage "SPECCALC")
-(defpackage "LIST-SPEC")
-(defpackage :SLANG-BUILT-IN)
-(IN-PACKAGE :SLANG-BUILT-IN)
+(defpackage :SpecCalc)
+(defpackage :List-Spec)
+(defpackage :Slang-Built-In)
+(in-package :Slang-Built-In)
 
 ;; defvar specwareWizard? here (as opposed to def in Monad.sw) 
 ;; to avoid having CMUCL treat it as a constant, in which case
@@ -213,6 +213,10 @@
 ;; Optimization
 (define-compiler-macro LIST-SPEC::|!length| (l)
   `(length ,l))
+
+;;(define-compiler-macro LIST-SPEC::++-2 (l1 l2)
+;;  `(append ,l1 ,l2))
+
 
 #|
 

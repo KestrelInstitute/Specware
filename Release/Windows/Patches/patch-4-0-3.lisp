@@ -1,4 +1,4 @@
-(in-package "ANNSPEC")
+(in-package :AnnSpec)
 
 (defun SPECCALC::mergeOpInfo-1 (newPOpInfo) 
   #'(lambda (optOldPOpInfo) 

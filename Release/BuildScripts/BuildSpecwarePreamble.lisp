@@ -1,5 +1,5 @@
-(defpackage "SPECWARE" (:use "CL"))
-(in-package "SPECWARE")
+(defpackage :Specware (:use :cl))
+(in-package :Specware)
 
 ;;; This file is loaded before Specware4.lisp when generating
 ;;; a Specware distribution

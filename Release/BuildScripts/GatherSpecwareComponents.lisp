@@ -1,6 +1,6 @@
 ; for simplicity, use the same package that utilities.lisp uses
-(defpackage "DISTRIBUTION" (:use "COMMON-LISP"))
-(in-package "DISTRIBUTION")
+(defpackage :Distribution (:use :common-lisp))
+(in-package :Distribution)
 
 (cl:defpackage :swank-loader
 	       (:use :cl)

@@ -1,5 +1,5 @@
-(defpackage "XML")
-(in-package "XML")
+(defpackage :XML)
+(in-package :XML)
 
 ;;; input
 

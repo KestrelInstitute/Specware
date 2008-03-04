@@ -1,6 +1,6 @@
-(defpackage "RATIONAL-SPEC")
+(defpackage :Rational-Spec)
 (defpackage :RationalAux)
-(IN-PACKAGE "RATIONAL-SPEC")
+(in-package :Rational-Spec)
 
 
 ;;; For each binary op in the spec Rational without a def, there are two Lisp

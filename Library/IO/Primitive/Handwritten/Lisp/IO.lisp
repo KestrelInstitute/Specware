@@ -1,7 +1,7 @@
-(defpackage "PARSER4")
-(defpackage "UNICODE")
-(defpackage "IO-SPEC")
-(in-package "IO-SPEC")
+(defpackage :Parser4)
+(defpackage :Unicode)
+(defpackage :IO-Spec)
+(in-package :IO-Spec)
 
 ;;;  sort Filename = String
 ;;;  sort Time     = Nat          % Not a fixnum

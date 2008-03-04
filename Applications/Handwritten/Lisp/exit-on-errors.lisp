@@ -1,4 +1,4 @@
-(in-package "CL-USER")
+(in-package :cl-user)
 
 (defmacro exiting-on-errors (&body body)
   `(handler-bind ((storage-condition                    (function bail-out))

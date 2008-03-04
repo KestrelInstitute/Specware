@@ -1,6 +1,6 @@
-(DEFPACKAGE "SPECTOLISP")
-(DEFPACKAGE "CHAR-SPEC")
-(IN-PACKAGE "CHAR-SPEC")
+(defpackage :SpecToLisp)
+(defpackage :Char-Spec)
+(in-package :Char-Spec)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
 
@@ -14,7 +14,18 @@
 		"CHAR-SPEC::isAlphaNum"
 		"CHAR-SPEC::isAscii"
 		"CHAR-SPEC::toUpperCase"
-		"CHAR-SPEC::toLowerCase")
+		"CHAR-SPEC::toLowerCase"
+
+                "Char-Spec::chr" 
+		"Char-Spec::ord" 
+		"Char-Spec::isUpperCase"
+		"Char-Spec::isLowerCase"
+		"Char-Spec::isAlpha"
+		"Char-Spec::isNum"
+		"Char-Spec::isAlphaNum"
+		"Char-Spec::isAscii"
+		"Char-Spec::toUpperCase"
+		"Char-Spec::toLowerCase")
 	      SpecToLisp::SuppressGeneratedDefuns))
 
 

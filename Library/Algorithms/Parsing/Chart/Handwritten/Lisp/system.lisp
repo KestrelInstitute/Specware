@@ -1,6 +1,6 @@
 ;;; -*- Mode: LISP; Package: User; Base: 10; Syntax: Common-Lisp -*-
 
-(in-package "CL-USER")
+(in-package :cl-user)
 
 (defun local-file (filename) 
   (make-pathname :name filename :defaults #-gcl *LOAD-PATHNAME* #+gcl SI:*LOAD-PATHNAME*))

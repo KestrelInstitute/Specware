@@ -1,4 +1,4 @@
-(in-package "CL-USER")
+(in-package :cl-user)
 
 (defun enlarge-stack (&optional (proposed 10000000))
   #+Allegro (let* ((old (sys::stack-cushion)))

@@ -1,12 +1,12 @@
 ;;; -*- Mode: LISP;  Base: 10; Syntax: Common-Lisp -*-
 
-(in-package "PARSER4")
+(in-package :Parser4)
 
-(defpackage "METASLANG")
-(defpackage "SPECCALC")
-(defpackage "STANDARDSPEC")
-(defpackage "MS")
-(defpackage "POSITION")
+(defpackage :MetaSlang)
+(defpackage :SpecCalc)
+(defpackage :StandardSpec)
+(defpackage :MS)
+(defpackage :Position)
 
 ;;; variables associated with new definition tables (circa May 8, 2002)
 (defvar *current-module-name*   nil) ; used only in this file

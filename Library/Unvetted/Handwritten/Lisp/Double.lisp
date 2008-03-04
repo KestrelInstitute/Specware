@@ -6,7 +6,7 @@
 (defpackage :Integer-Spec)
 
 
-(IN-PACKAGE "DOUBLE")
+(in-package :Double)
 
 
 ;;; For each binary op in the spec Double without a def, there are two Lisp

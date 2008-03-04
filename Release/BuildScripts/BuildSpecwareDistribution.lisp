@@ -1,4 +1,4 @@
-(in-package "COMMON-LISP-USER")
+(in-package :cl-user)
 
 #+CMU (defparameter ext:*GC-VERBOSE* nil)
 

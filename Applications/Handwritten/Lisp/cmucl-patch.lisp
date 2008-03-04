@@ -1,4 +1,4 @@
-(in-package "LISP")
+(in-package :lisp)
 
 (specware::without-package-locks
 

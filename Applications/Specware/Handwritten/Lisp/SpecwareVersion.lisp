@@ -1,4 +1,4 @@
-(in-package "CL-USER")
+(in-package :cl-user)
 
 ;;; Any lisp code anywhere within the Specware system should load this
 ;;; file to get the current version information.

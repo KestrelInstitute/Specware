@@ -1,4 +1,4 @@
-(in-package "CL-USER")
+(in-package :cl-user)
 
 ;; Assumes that MemoryManagement.lisp has been loaded.
 

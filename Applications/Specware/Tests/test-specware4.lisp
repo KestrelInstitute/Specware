@@ -1,4 +1,4 @@
-(in-package "COMMON-LISP-USER")
+(in-package :cl-user)
 
 (defun test-specware4 (&optional (log-file-name
 				  (multiple-value-bind (ss mm hh dd mo yy)
