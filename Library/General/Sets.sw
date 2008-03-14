@@ -15,11 +15,15 @@ Set qualifying spec
   here are useful for specification purposes, not for execution. Finite sets
   as defined in spec `FiniteSets' can instead be refined to be executable. *)
 
-  type Set a = a -> Boolean
+  type Predicate a = a -> Boolean
+  type Set a = Predicate a
 
   % member:
   op in? infixl 20 : [a] a * Set a -> Boolean
   def in? (x,s) = s x
+
+  %% Coercion function that maps a Set to a Predicate
+  op [a] r_in (s: Set a) (x: a): Boolean = x in? s
 
   % not member:
   op nin? infixl 20 : [a] a * Set a -> Boolean
@@ -87,6 +91,7 @@ Set qualifying spec
 
   op empty? : [a] Set a -> Boolean
   def empty? s = (s = empty)
+  proof Isa [simp] end-proof
 
   op nonEmpty? : [a] Set a -> Boolean
   def nonEmpty? = ~~ empty?
@@ -96,24 +101,30 @@ Set qualifying spec
   % set with all elements (lifting of `true' to sets):
   op full : [a] Set a
   def full = fn _ -> true
+  proof Isa [simp] end-proof
 
   op full? : [a] Set a -> Boolean
   def full? s = (s = full)
+  proof Isa [simp] end-proof
 
   op nonFull? : [a] Set a -> Boolean
   def nonFull? = ~~ full?
+  proof Isa [simp] end-proof
 
   type NonFullSet a = (Set a | nonFull?)
 
   % set with one element:
   op single(*ton*) : [a] a -> Set a
   def single x = fn y -> y = x
+  proof Isa [simp] end-proof
 
   op single? : [a] Set a -> Boolean
   def single? s = (ex(x) s = single x)
+  proof Isa [simp] end-proof
 
   op onlyMemberOf infixl 20 : [a] a * Set a -> Boolean
   def onlyMemberOf (x,s) = single? s && x in? s
+  proof Isa [simp] end-proof
 
   type SingletonSet a = (Set a | single?)
 
@@ -124,10 +135,12 @@ Set qualifying spec
   % add member to set (triangle points towards set):
   op <| infixl 25 : [a] Set a * a -> Set a
   def <| (s,x) = s \/ single x
+  proof Isa [simp] end-proof
 
   % remove member from set:
   op - infixl 25 : [a] Set a * a -> Set a
   def - (s,x) = s -- single x
+  proof Isa [simp] end-proof
 
   % map function over set:
   op map : [a,b] (a -> b) -> Set a -> Set b
@@ -169,6 +182,10 @@ Set qualifying spec
     (size empty = 0) &&
     (fa(s: FiniteSet a, x: a) size (s <| x) = 1 + size (s - x))
 
+  proof Isa Set__size_Obligation_subsort
+    apply(auto simp add: Set__finite_p_def)
+  end-proof
+
   op hasSize infixl 20 : [a] Set a * Nat -> Boolean
   def hasSize (s,n) = finite? s && size s = n
 
@@ -185,6 +202,7 @@ Set qualifying spec
     %% Definition of foldable? doesn't depend on initial value c, but it's
     %% convenient to have foldable? apply to entire sequence of args to fold.
     (fa (x:a, y:a, z:b) x in? s && y in? s => f(f(z,x),y) = f(f(z,y),x))
+  proof Isa [simp] end-proof
 
   op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b
   def [a,b] fold = the(fold)
@@ -192,6 +210,10 @@ Set qualifying spec
     (fa(c: b, f: b * a -> b, s: FiniteSet a, x: a)
        foldable? (c, f, s <| x) =>
          fold (c, f, s <| x) = f (fold (c, f, s - x), x))
+
+  proof Isa Set__fold_Obligation_subsort
+    apply(auto simp add: Set__finite_p_def)
+  end-proof
 
   % finite powerset:
   op powerf : [a] Set a -> Set (FiniteSet a)
@@ -234,6 +256,10 @@ Set qualifying spec
   op min : [a] SetOfSetsWithMin a -> Set a
   def min ss = the(s) s isMinIn ss
 
+  proof Isa  Set__min_Obligation_the
+    apply(auto simp add: Set__hasMin_p_def Set__isMinIn_def)
+  end-proof
+
   % set is the largest in set of sets:
   op isMaxIn infixl 20 : [a] Set a * Set (Set a) -> Boolean
   def isMaxIn (s, ss) = s in? ss && (fa(s1) s1 in? ss => s >= s1)
@@ -248,9 +274,13 @@ Set qualifying spec
   op max : [a] SetOfSetsWithMax a -> Set a
   def max ss = the(s) s isMaxIn ss
 
-(*
-   proof Isa Thy_Morphism Set
-    type Set.Set -> set (rin,Collect)
+  proof Isa  Set__max_Obligation_the
+    apply(auto simp add: Set__hasMax_p_def Set__isMaxIn_def)
+  end-proof
+
+
+  proof Isa Thy_Morphism Set
+    type Set.Set -> set (Set__r_in,Collect)
     Set.collect -> Collect
     Set.in? -> \<in> Left 20
     Set.nin? -> \<notin> Left 20
@@ -267,6 +297,5 @@ Set qualifying spec
     Set.power -> Pow
     Set.empty -> {}
   end-proof
-*)
 
 endspec
