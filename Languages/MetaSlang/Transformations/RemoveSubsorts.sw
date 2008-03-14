@@ -8,7 +8,7 @@ SpecNorm qualifying spec
     let spc = spc << {sorts = mapSortInfos
                                 (fn info \_rightarrow
                                  let qid = primarySortName info in
-                                 if exists (\_lambda tb \_rightarrow tb.subtype = qid) coercions
+                                 if false %exists (\_lambda tb \_rightarrow tb.subtype = qid) coercions %% !!
                                    then info << {dfn = And([],noPos)}
                                    else info)
                                 spc.sorts}
