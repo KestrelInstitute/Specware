@@ -116,15 +116,15 @@ IsaTermPrinter qualifying spec
   %op  SpecCalc.findUnitIdForUnit: Value \_times GlobalContext \_rightarrow Option UnitId
   %op  SpecCalc.uidToFullPath : UnitId \_rightarrow String
   op  Specware.cleanEnv : SpecCalc.Env ()
-  op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
+  op  Specware.runSpecCommand : [a] SpecCalc.Env a \_rightarrow a
 
 
-  op  uidToIsaName : UnitId -> String
+  op  uidToIsaName : UnitId \_rightarrow String
   def uidToIsaName {path,hashSuffix=_} =
    let device? = deviceString? (hd path) in
    let main_name = last path in
    let path_dir = butLast path in 
-   let mainPath = concatList (foldr (\_lambda (elem,result) -> cons("/",cons(elem,result)))
+   let mainPath = concatList (foldr (\_lambda (elem,result) \_rightarrow cons("/",cons(elem,result)))
 			        ["/Isa/",main_name]
 				(if device? then tl path_dir else path_dir))
    in if device?
@@ -224,7 +224,7 @@ IsaTermPrinter qualifying spec
            | Some((thynm,sw_file,thy_file),uid) \_rightarrow
          case evaluateTermWrtUnitId(sc_tm, getCurrentUID c) of
            | None \_rightarrow None
-           | Some real_val ->
+           | Some real_val \_rightarrow
              Some((thynm, sw_file, thy_file ^ ".thy"),
                   val, uid))
       | Some((thynm,filnm,hash),uid) \_rightarrow
@@ -332,7 +332,7 @@ IsaTermPrinter qualifying spec
     format(80, main_pp_val)
 
 
-  op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position -> Spec
+  op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position \_rightarrow Spec
   %% --------------------------------------------------------------------------------
 
   op  ppValue : Context \_rightarrow Value \_rightarrow Pretty
@@ -459,12 +459,12 @@ IsaTermPrinter qualifying spec
                     val))
       [] trans_info.type_map
 
-  op  getSuperTypeOp: Sort \_rightarrow QualifiedId
-  def getSuperTypeOp ty =
+  %% Originally was just supertype but generalized to also be a named type
+  op getSuperTypeOp(ty: Sort): QualifiedId =
     case ty of
-      | Subsort(Base(superty,_,_),_,_) \_rightarrow superty
+      | Base(superty,_,_) \_rightarrow superty
       | Subsort(sup,_,_) \_rightarrow getSuperTypeOp sup
-      | _ \_rightarrow fail("Not a Subsort")
+      | _ \_rightarrow fail("Not a Subsort and not a named type")
 
   def baseSpecName = "Empty"
 
@@ -599,8 +599,8 @@ IsaTermPrinter qualifying spec
 				| prag \_rightarrow prag)
       | Pragma("proof",mid_str,"end-proof",pos) | verbatimPragma? mid_str \_rightarrow
         let verbatim_str = case search("\n",mid_str) of
-                             | None -> ""
-                             | Some n -> substring(mid_str,n,length mid_str)
+                             | None \_rightarrow ""
+                             | Some n \_rightarrow substring(mid_str,n,length mid_str)
         in
         prLines 0 [prString verbatim_str]
 	   
@@ -680,8 +680,8 @@ IsaTermPrinter qualifying spec
 		[prString "\"", ppType c Top true ty, prString "\""]]
      else prBreakCat 2
 	    [[prString "typedecl ",
-	      ppIdInfo aliases,
-	      ppTyVars tvs]]
+	      ppTyVars tvs,
+	      ppIdInfo aliases]]
 
  op  ppTyVars : TyVars \_rightarrow Pretty
  def ppTyVars tvs =
@@ -726,7 +726,7 @@ IsaTermPrinter qualifying spec
                     | _ \_rightarrow [])]
             else []
    in
-   let infix? = case fixity of Infix _ -> true | _ \_rightarrow false in
+   let infix? = case fixity of Infix _ \_rightarrow true | _ \_rightarrow false in
    let def_list = if def? then [[ppDef c mainId ty opt_prag term fixity]] else []
    in prLinesCat 0 (decl_list ++ def_list)
 
@@ -737,7 +737,7 @@ IsaTermPrinter qualifying spec
                        body
     in
     let op_tm = mkFun (Op (op_nm, fixity), ty) in
-    let infix? = case fixity of Infix _ -> true | _ -> false in
+    let infix? = case fixity of Infix _ \_rightarrow true | _ \_rightarrow false in
     case defToCases c op_tm body infix? of
       | ([(lhs,rhs)], tuple?) \_rightarrow
         let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
@@ -802,41 +802,41 @@ IsaTermPrinter qualifying spec
 
  op patToTerm(pat: Pattern, ext: String): Option MS.Term = 
      case pat
-       of EmbedPat(con,None,srt,a) -> 
+       of EmbedPat(con,None,srt,a) \_rightarrow 
           Some(Fun(Embed(con,false),srt,a))
-        | EmbedPat(con,Some p,srt,a) -> 
+        | EmbedPat(con,Some p,srt,a) \_rightarrow 
           (case patToTerm(p, ext)
-             of None -> None
-	      | Some (trm) -> 
+             of None \_rightarrow None
+	      | Some (trm) \_rightarrow 
 		let srt1 = patternSort p in
 		Some (Apply(Fun(Embed(con,true),Arrow(srt1,srt,a),a),trm,a)))
-        | RecordPat(fields,a) -> 
+        | RecordPat(fields,a) \_rightarrow 
 	  let
 	     def loop(new,old,i) = 
 	         case new
-                   of [] -> Some(Record(rev old,a))
-	            | (l,p)::new -> 
+                   of [] \_rightarrow Some(Record(rev old,a))
+	            | (l,p)::new \_rightarrow 
 	         case patToTerm(p, ext^(toString i))
-	           of None -> None
-	            | Some(trm) -> 
+	           of None \_rightarrow None
+	            | Some(trm) \_rightarrow 
 	              loop(new, Cons((l,trm),old), i+1)
           in
           loop(fields,[], 0)
-        | NatPat(i, _) -> Some(mkNat i)
-        | BoolPat(b, _) -> Some(mkBool b)
-        | StringPat(s, _) -> Some(mkString s)
-        | CharPat(c, _) -> Some(mkChar c)
-        | VarPat((v,srt), a) -> Some(Var((v,srt), a))
-        | WildPat(srt,a) ->
+        | NatPat(i, _) \_rightarrow Some(mkNat i)
+        | BoolPat(b, _) \_rightarrow Some(mkBool b)
+        | StringPat(s, _) \_rightarrow Some(mkString s)
+        | CharPat(c, _) \_rightarrow Some(mkChar c)
+        | VarPat((v,srt), a) \_rightarrow Some(Var((v,srt), a))
+        | WildPat(srt,a) \_rightarrow
           let v = if ext = "" then "zzz" else "zzz_"^ext in
           Some(Var((v,srt), a))
-        | QuotientPat(pat,cond,_)  -> None %% Not implemented
-        | RestrictedPat(pat,cond,_)  ->
+        | QuotientPat(pat,cond,_)  \_rightarrow None %% Not implemented
+        | RestrictedPat(pat,cond,_)  \_rightarrow
 	  patToTerm(pat,ext)		% cond ??
-	| AliasPat(p1,p2,_) -> 
+	| AliasPat(p1,p2,_) \_rightarrow 
 	  (case patToTerm(p2, ext) 
-             of None -> patToTerm(p1, ext)
-	      | Some(trm) -> Some trm)
+             of None \_rightarrow patToTerm(p1, ext)
+	      | Some(trm) \_rightarrow Some trm)
 
   op constructorTerm?(tm: MS.Term): Boolean =
     case tm of
@@ -854,20 +854,20 @@ IsaTermPrinter qualifying spec
   op sameHead?(tm1: MS.Term, tm2: MS.Term): Boolean =
     equalTerm?(tm1, tm2)
       || (case (tm1, tm2) of
-            | (Apply(x1,_,_), Apply(x2,_,_)) -> sameHead?(x1,x2)
-            | _ -> false)
+            | (Apply(x1,_,_), Apply(x2,_,_)) \_rightarrow sameHead?(x1,x2)
+            | _ \_rightarrow false)
 
   op nonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
     case tm1 of
-      | Apply(Fun(Embed _, _, _), arg, _) ->
+      | Apply(Fun(Embed _, _, _), arg, _) \_rightarrow
         ~(termIn?(tm2, MS.termToList arg))
-      | _ -> false
+      | _ \_rightarrow false
 
   op hasNonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
     case (tm1, tm2) of
-      | (Apply(x1,y1,_), Apply(x2,y2,_)) ->
+      | (Apply(x1,y1,_), Apply(x2,y2,_)) \_rightarrow
         nonPrimitiveArg?(y1,y2) || hasNonPrimitiveArg?(x1,x2)
-      | _ -> false
+      | _ \_rightarrow false
   
   op nonPrimitiveCall? (hd: MS.Term) (tm: MS.Term): Boolean =
     sameHead?(hd,tm) && hasNonPrimitiveArg?(hd,tm)
@@ -906,7 +906,7 @@ IsaTermPrinter qualifying spec
                 && all (fn (_,t) \_rightarrow embed? Var t) var_tms
                 && (case hd of
                       | Apply(_,param,_) \_rightarrow equalTerm?(param,arg)
-                      | _ -> false)
+                      | _ \_rightarrow false)
             \_rightarrow
             let def matchPat (p,c,bod) =
                   case p of
@@ -922,14 +922,14 @@ IsaTermPrinter qualifying spec
                       in
                       if length sbst ~= length rpats then None
                       else
-                      let pat_tms = map (fn (_,p_tm) -> p_tm) sbst in
+                      let pat_tms = map (fn (_,p_tm) \_rightarrow p_tm) sbst in
                       let Apply(hd_hd,_,a) = hd in
                       Some(Apply(hd_hd,mkTuple pat_tms,a), substitute(bod,sbst))
                     | VarPat(v,_) \_rightarrow Some(hd,substitute(bod,[(v,arg)]))
                     | WildPat _ \_rightarrow Some(hd,bod)
                     | AliasPat(VarPat(v,_),p2,_) \_rightarrow matchPat(p2,c,substitute(bod,[(v,arg)]))
                     | RestrictedPat(rp,_,_) \_rightarrow matchPat(rp,c,bod)
-                    | _ -> None
+                    | _ \_rightarrow None
             in
             let cases = mapPartial matchPat pats in
             if length cases = length pats
@@ -980,7 +980,7 @@ IsaTermPrinter qualifying spec
               let Some arg = patToTerm(recd,"") in
               let (cases,n_p) = aux(Apply(op_tm, arg, a), tm, true) in
               (cases, n_p && \_not infix?)
-	    | _ -> aux(op_tm, bod, false) in
+	    | _ \_rightarrow aux(op_tm, bod, false) in
     %let _ = writeLine(" = "^toString (length cases)^", "^toString tuple?) in
     (map fix_vars cases, tuple?)
 
@@ -989,11 +989,11 @@ IsaTermPrinter qualifying spec
   op addExplicitTyping2(c: Context, lhs: MS.Term, rhs: MS.Term): MS.Term * MS.Term =
     if addExplicitTyping? then
       let fvs = freeVars lhs ++ freeVars rhs in
-      %let _ = toScreen("d fvs: "^anyToString (map (fn (x,_) -> x) fvs)^"\n") in
+      %let _ = toScreen("d fvs: "^anyToString (map (fn (x,_) \_rightarrow x) fvs)^"\n") in
       let vs = filterConstrainedVars(c,lhs,fvs) in
-      %let _ = toScreen("d inter vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n") in
+      %let _ = toScreen("d inter vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n") in
       let vs = filterConstrainedVars(c,rhs,vs) in
-      %let _ = toScreen("d remaining vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n\n") in
+      %let _ = toScreen("d remaining vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n\n") in
       let (lhs,vs) = addExplicitTypingForVars(lhs,vs) in
       let (rhs,vs) = addExplicitTypingForVars(rhs,vs) in
       (lhs,rhs)
@@ -1010,11 +1010,11 @@ IsaTermPrinter qualifying spec
                                         freeVars t ++ vs)
                                    (freeVars rhs) lhs)
       in
-      %let _ = toScreen("fvs: "^anyToString (map (fn (x,_) -> x) fvs)^"\n") in
+      %let _ = toScreen("fvs: "^anyToString (map (fn (x,_) \_rightarrow x) fvs)^"\n") in
       let vs = foldl (\_lambda (t,vs) \_rightarrow filterConstrainedVars(c,t,fvs)) fvs lhs in
-      %let _ = toScreen("inter vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n") in
+      %let _ = toScreen("inter vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n") in
       let vs = filterConstrainedVars(c,rhs,vs) in
-      %let _ = toScreen("remaining vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n\n") in
+      %let _ = toScreen("remaining vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n\n") in
 
       let (lhs,vs) = foldl (\_lambda (st,(lhs,vs)) \_rightarrow
                              let (st,vs) = addExplicitTypingForVars(st,vs) in
@@ -1143,7 +1143,9 @@ IsaTermPrinter qualifying spec
 	++ (case propType of
 	      | Axiom \_rightarrow []
 	      | _ \_rightarrow (if prf_pp = []
-			then [[prString defaultProof], [prString "done",prEmpty]]
+			then [[prString defaultProof]]
+                            ++ (if proofEndsWithTerminator? defaultProof then []
+                                  else [[prString "done",prEmpty]])
 			else (if includes_prf_terminator?
                                 then []
                                 else [[prString "done",prEmpty]]))))
@@ -1269,13 +1271,13 @@ IsaTermPrinter qualifying spec
 				   ppTerm c Top term2],
 				  [prString " of ",
 				   ppMatch c match]])
-	 | (Fun (Project p, srt1, _), _) ->
+	 | (Fun (Project p, srt1, _), _) \_rightarrow
 	   let pid = projectorFun(p,srt1,getSpec c) in
 	   let encl? = \_not(isSimpleTerm? term2) in
            prConcat [prString pid,
 		     prConcat [prSpace, enclose?(encl?, ppTerm c (if encl? then Top else Nonfix)
 						          term2)]]
-         | (Fun (Op (Qualified("Nat","natural?"),_), _,a),_) \_rightarrow  % natural? e --> 0 <= e
+         | (Fun (Op (Qualified("Nat","natural?"),_), _,a),_) \_rightarrow  % natural? e \_longrightarrow 0 <= e
            let term2 = case term2 of
                          | Apply(Fun(Op(Qualified(q,"int"),_),_,_),x,_) | q = toIsaQual \_rightarrow
                            %% In this case it is known true, but leave it in for now for transparency
@@ -1285,7 +1287,7 @@ IsaTermPrinter qualifying spec
            ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
                                        [mkNat 0, term2]))
 	 | _ \_rightarrow
-	   prConcat [ppTerm c parentTerm term1,
+	   prConcat [ppTerm c (Infix(Left,1000)) term1,
 		     case term2 of
 		      | Record _ \_rightarrow ppTerm c Top term2
 		      | _ \_rightarrow
@@ -1296,7 +1298,7 @@ IsaTermPrinter qualifying spec
 	        
     in
     case term of
-      | Apply (trm1, Record ([(id1, t1), (id2, t2)], a), _) ->
+      | Apply (trm1, Record ([(id1, t1), (id2, t2)], a), _) \_rightarrow
 	let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
 	      enclose?(encl?,
 		       prLinearCat (if same? then -2 else 2)
@@ -1307,17 +1309,17 @@ IsaTermPrinter qualifying spec
         %let _ = toScreen(anyToString trm1 ^ "\n" ^ anyToString fx ^ "\n") in
         let (t1,t2) = if fx.4 then (t2,t1) else (t1,t2) in   % Reverse args
 	(case (parentTerm, fx) of
-	   | (_, (None, Nonfix, false, _)) ->
+	   | (_, (None, Nonfix, false, _)) \_rightarrow
              prApply (trm1, Record([(id1, t1), (id2, t2)], a))
 	   | (_, (Some pr_op, Nonfix, true, _)) \_rightarrow
 	     enclose?(parentTerm ~= Top,
 		      prLinearCat 2 [[pr_op,prSpace],
 				     [ppTerm c Nonfix t1,prSpace,ppTerm c Nonfix t2]])
-	   | (Nonfix, (Some pr_op, Infix (a, p), _, _)) ->
+	   | (Nonfix, (Some pr_op, Infix (a, p), _, _)) \_rightarrow
 	     prInfix (Infix (Left, p), Infix (Right, p), true, false, t1, pr_op, t2)
-	   | (Top,    (Some pr_op, Infix (a, p), _, _)) ->
+	   | (Top,    (Some pr_op, Infix (a, p), _, _)) \_rightarrow
 	     prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
-	   | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) ->
+	   | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) \_rightarrow
 	     if p1 = p2
 	       then prInfix (Infix (Left, p2), Infix (Right, p2), a1 \_noteq a2, a1=a2, t1, pr_op, t2)
 	       else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2))
@@ -1328,7 +1330,7 @@ IsaTermPrinter qualifying spec
 		 prApply (term1,term2))
       | Apply (term1,term2,_) \_rightarrow prApply (term1,term2)
       | ApplyN ([t1, t2], _) \_rightarrow prApply (t1, t2)
-      | ApplyN (t1 :: t2 :: ts, a) -> prApply (ApplyN ([t1, t2], a), ApplyN (ts, a))
+      | ApplyN (t1 :: t2 :: ts, a) \_rightarrow prApply (ApplyN ([t1, t2], a), ApplyN (ts, a))
       | Record (fields,_) \_rightarrow
 	(case fields of
 	   | [] \_rightarrow prString "()"
@@ -1462,7 +1464,8 @@ IsaTermPrinter qualifying spec
 		      lengthString(5, " \\<Longrightarrow> "),
 		      ppTerm c Top concl]
 
-  def notImplicitVarNames = ["hd","tl","comp","fold","map","o"]   % \_dots Don't know how to get all of them
+  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
+    ["hd","tl","comp","fold","map","o","size"]
 
   op  parsePropertyTerm: Context \_rightarrow List String \_rightarrow MS.Term \_rightarrow List MS.Term \_times MS.Term
   def parsePropertyTerm c explicit_universals term =
@@ -1537,8 +1540,8 @@ IsaTermPrinter qualifying spec
 		      prString "}"])
       | WildPat (ty,_) \_rightarrow
         (case wildstr of
-           | Some str -> prString("ignore"^str)
-           | None -> prString "_")
+           | Some str \_rightarrow prString("ignore"^str)
+           | None \_rightarrow prString "_")
       | StringPat (str,_) \_rightarrow prString ("''" ^ str ^ "''")
       | BoolPat (b,_) \_rightarrow ppBoolean b
       | CharPat (chr,_) \_rightarrow prString (Char.toString chr)
@@ -1599,8 +1602,8 @@ IsaTermPrinter qualifying spec
 
   op  extendWild (wildstr: Option String) (str: String): Option String =
      case wildstr of
-       | Some s -> Some (s^str)
-       | None -> None
+       | Some s \_rightarrow Some (s^str)
+       | None \_rightarrow None
 
   op  sortDef: QualifiedId * Spec \_rightarrow Sort
   def sortDef(qid,spc) =
@@ -1762,10 +1765,10 @@ IsaTermPrinter qualifying spec
 			| _ \_rightarrow ppType c CoProduct in_quotes? ty]
 	in
 	  enclose?(case parent of
-		     | Product -> true
-		     | CoProduct -> true
-		     | Subsort -> true
-		     | _ -> false,
+		     | Product \_rightarrow true
+		     | CoProduct \_rightarrow true
+		     | Subsort \_rightarrow true
+		     | _ \_rightarrow false,
 		   prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
        | Boolean _ \_rightarrow prString "bool"  
       | TyVar (tyVar,_) \_rightarrow prConcat[prString "'",prString tyVar]
@@ -1951,6 +1954,7 @@ IsaTermPrinter qualifying spec
                    | (#&,id) -> att(id, "_amp")
                    | (#',id) -> att(id, "_cqt")
                    | (#`,id) -> att(id, "_oqt")
+                   | (#:,id) -> att(id, "_cl")
 		   | (c,id) -> id ^ toString(c)) "" idarray
    in id
 
