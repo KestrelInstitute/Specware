@@ -214,7 +214,7 @@ spec
   case tm
     of Apply      (t1, t2,               _) -> (case rangeOpt(sp,inferType(sp,t1)) of
                                                   | Some rng -> rng
-						  | None -> 
+						  | None ->
 						    System.fail ("inferType: Could not extract type for "
                                                                    ^ printTermWithSorts tm
                                                                    ^ " dom " ^ printSort (unfoldBase(sp,inferType(sp,t1)))))
