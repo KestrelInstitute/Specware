@@ -217,6 +217,10 @@ String qualifying spec
     String.concatList \_rightarrow concat
     String.lt  \_rightarrow <  Left 20
     String.leq \_rightarrow <= Left 20
+    String.<  \_rightarrow <  Left 20
+    String.<= \_rightarrow <= Left 20
+    String.>  \_rightarrow >  Left 20
+    String.>= \_rightarrow >= Left 20
   end-proof
 
 endspec
