@@ -4,8 +4,8 @@ IsaTermPrinter qualifying spec
  import /Languages/SpecCalculus/Semantics/Value
  import /Library/Unvetted/StringUtilities
  import /Library/Structures/Data/Maps/SimpleAsAlist
-                 (* op       infix info                    curried   reversed *)
- type OpTransInfo = String * Option(Associativity * Nat) * Boolean * Boolean
+                 (* op       infix info                    curried   reversed  include_def? *)
+ type OpTransInfo = String * Option(Associativity * Nat) * Boolean * Boolean * Boolean
                    (* type     coercion fns              Overloaded ops *)
  type TypeTransInfo = String * Option(String * String) * List String
 
@@ -23,20 +23,35 @@ IsaTermPrinter qualifying spec
 
  op  thyMorphismMaps: Spec \_rightarrow TransInfo
  def thyMorphismMaps spc =
-   foldlSpecElements
-     (fn (el,result) \_rightarrow
+   (foldlSpecElements
+     (fn (el,(result, prev_id)) \_rightarrow
       case el of
        | Pragma("proof",prag_str,"end-proof",_) \_rightarrow
          (case isaThyMorphismPragma prag_str of
-	    | None \_rightarrow result
+	    | None \_rightarrow 
+              (case (prev_id, findRenaming prag_str) of
+                 | (Some qid, Some (trans_id, fix, curried?, reversed?)) \_rightarrow
+                   let (fix, curried?) =
+                       if some? fix then (fix, true)
+                       else
+                         let Some {names=_, fixity, dfn=_, fullyQualified?=_} = findTheOp(spc,qid) in
+                         case fixity of
+                           | Infix fx \_rightarrow (Some fx, true)
+                           | _ \_rightarrow (None, false)
+                   in
+                   (result << {op_map = update(result.op_map,qid,(trans_id,fix,curried?,reversed?,false))},
+                    None)
+                 | _ \_rightarrow (result, None))
 	    | Some (trans_string, import_strings) \_rightarrow
               %% Only use import_strings from top-level specs as others will be imported
               let import_strings = if member(el,spc.elements) then import_strings else [] in
 	      let result = result << {thy_imports = removeDuplicates(import_strings ++ result.thy_imports)} in
-	      parseMorphMap(trans_string,result))
-       | _ \_rightarrow result)
-     emptyTranslationTable
-     spc.elements
+	      (parseMorphMap(trans_string,result), None))
+       | OpDef (qid,_)   \_rightarrow (result,Some qid)
+       | Op    (qid,_,_) \_rightarrow (result,Some qid)
+       | _               \_rightarrow (result,None))
+     (emptyTranslationTable, None)
+     spc.elements).1
 
  op  isaThyMorphismPragma: String \_rightarrow Option(String * List String)
  def isaThyMorphismPragma prag =
@@ -50,6 +65,29 @@ IsaTermPrinter qualifying spec
 				       "TheoryMorphism","Theory_Morphism"]) \_rightarrow
        Some(substring(prag,n,length prag), r)
      | _ \_rightarrow None
+
+ op processRhsOp (rhs: String): String * Option(Associativity * Nat) * Boolean * Boolean =
+   case removeEmpty(splitStringAt(rhs," ")) of
+     | [] \_rightarrow (" ", None, false, false)
+     | [isaSym] \_rightarrow (isaSym, None, false, false)
+     | isaSym :: r \_rightarrow
+       (case r of
+          | "curried"::rst \_rightarrow (isaSym, None, true, member("reversed",rst))
+          | "reversed"::rst \_rightarrow (isaSym, None, member("curried",rst), true)
+          | "Left"::ns::rst \_rightarrow (isaSym, Some(Left,stringToNat ns),
+                                true, member("reversed",rst))
+          | "Right"::ns::rst \_rightarrow (isaSym, Some(Right,stringToNat ns),
+                                 true, member("reversed",rst)))
+
+  op findRenaming(prag_str: String)
+     : Option (String * Option(Associativity * Nat) * Boolean * Boolean) =
+    let end_pos = case searchPred(prag_str, fn c -> member(c, [#\n, #", #[])) of   % #]
+		    | Some n \_rightarrow n
+		    | None \_rightarrow length prag_str
+    in
+    case searchBetween("->", prag_str, 0, end_pos) of
+      | Some n \_rightarrow Some(processRhsOp(substring(prag_str, n+2,end_pos))) 
+      | _ \_rightarrow None
 
  %%% Basic string parsing function
  op  parseMorphMap: String * TransInfo \_rightarrow TransInfo
@@ -90,25 +128,13 @@ IsaTermPrinter qualifying spec
 	      Some(substring(rhs,lpos+1,commapos),
 		   substring(rhs,commapos+1,rpos)),
               parseOverloadedOps(rhs))
-       def processRhsOp rhs =
-	 case removeEmpty(splitStringAt(rhs," ")) of
-	   | [] \_rightarrow (" ", None, false, false)
-	   | [isaSym] \_rightarrow (isaSym, None, false, false)
-	   | isaSym :: r \_rightarrow
-	     (case r of
-	       | "curried"::rst \_rightarrow (isaSym, None, true, member("reversed",rst))
-	       | "reversed"::rst \_rightarrow (isaSym, None, member("curried",rst), true)
-	       | "Left"::ns::rst \_rightarrow (isaSym, Some(Left,stringToNat ns),
-                                    true, member("reversed",rst))
-	       | "Right"::ns::rst \_rightarrow (isaSym, Some(Right,stringToNat ns),
-                                      true, member("reversed",rst)))
        def processLine(lhs,rhs,result) =
 	 let (type?,qid) = processLhs lhs in
 	 if type?
 	   then let (isaSym,coercions,overloadedOps) = processRhsType rhs in
 	        result << {type_map = update(result.type_map,qid,(isaSym,coercions,overloadedOps))}
 	   else let (isaSym,fixity,curried,reversed) = processRhsOp rhs in
-	        result << {op_map = update(result.op_map,qid,(isaSym,fixity,curried,reversed))}
+	        result << {op_map = update(result.op_map,qid,(isaSym,fixity,curried,reversed,true))}
    in	     
    foldl parseLine result lines
 
