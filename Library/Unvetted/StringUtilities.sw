@@ -21,21 +21,38 @@ String qualifying spec
     in
     project 1 o flushW o foldr addChar ([], "") o explode
 
-  %% Find position of first occurrence of s1 in s2, or None
-  op  search : String * String -> Option Nat
-  def search (s1, s2) =
+  %% Find position of first occurrence after position i of s1 in s2, or None
+  op  searchBetween : String * String * Nat * Nat -> Option Nat
+  def searchBetween (s1, s2, begp, endp) =
     let sz1 = length s1 in
-    let sz2 = length s2 in
+    let endp = min(length s2,endp) in
     let 
       def loop i =
-	if i + sz1 > sz2 then 
+	if i + sz1 > endp then 
 	  None
 	else if testSubseqEqual? (s1, s2, 0, i) then
 	  Some i
 	else 
 	  loop (i + 1)
     in 
-      loop 0
+      loop begp
+
+  %% Find position of first occurrence of s1 in s2, or None
+  op  search : String * String -> Option Nat
+  def search (s1, s2) =
+    searchBetween(s1, s2, 0, length s2)
+
+  op findStringBetween(s: String, beg_str: String, end_str: String, start_pos: Nat, fin_pos: Nat): Option String =
+    let open_pos = case searchBetween(beg_str,s,start_pos,fin_pos) of
+		     | Some n \_rightarrow n
+		     | None \_rightarrow fin_pos
+    in
+    let close_pos = case searchBetween(end_str,s,open_pos+1,fin_pos) of
+		     | Some n \_rightarrow n
+		     | None \_rightarrow 0
+    in
+    if close_pos >= fin_pos || close_pos <= open_pos then None
+      else Some(substring(s,open_pos, close_pos + 1))
 
   op  replaceString: String * String * String -> String
   def replaceString(s,pat,rep) =
