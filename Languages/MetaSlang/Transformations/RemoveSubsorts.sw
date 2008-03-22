@@ -8,7 +8,8 @@ SpecNorm qualifying spec
     let spc = spc << {sorts = mapSortInfos
                                 (fn info \_rightarrow
                                  let qid = primarySortName info in
-                                 if false %exists (\_lambda tb \_rightarrow tb.subtype = qid) coercions %% !!
+                                 if (exists (\_lambda tb \_rightarrow tb.subtype = qid) coercions)
+                                   && embed? Subsort (firstSortDef info)
                                    then info << {dfn = And([],noPos)}
                                    else info)
                                 spc.sorts}
@@ -21,12 +22,12 @@ SpecNorm qualifying spec
 				   let srt = firstOpDefInnerSort info in
 				   %let _ = toScreen (printSort srt) in
 				   let subTypeFmla = opSubsortNoArityAxiom(spc, qid, srt) in
-				   %let _ = toScreen (printTerm subTypeFmla) in
+				   %let _ = writeLine (printTerm subTypeFmla) in
 				   % ?? let liftedFmlas = removePatternTop(spc, subTypeFmla) in
 				   (case simplify spc subTypeFmla of
 				      | Fun(Bool true,_,_) \_rightarrow Cons(el,r)
 				      | s_fm \_rightarrow
-				        %let _ = toScreen (printTerm s_fm) in
+				        %let _ = writeLine (" --> "^printTerm s_fm) in
 					let axm = Property(Axiom, 
 							   mkQualifiedId
 							     (q, id^"_subtype_constr"), 
