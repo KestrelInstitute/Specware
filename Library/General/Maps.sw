@@ -36,6 +36,7 @@ MapAC qualifying spec
   % remove domain value from map:
   op - infixl 25 : [a,b] Map(a,b) * a -> Map(a,b)
   def - (m,x) = m -- single x
+  proof Isa -> mless [simp] end-proof
 
   % maps agree on intersection of domains:
   op agree? : [a,b] Map(a,b) * Map(a,b) -> Boolean
