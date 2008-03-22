@@ -18,4 +18,9 @@ defs
   fourth_def  [simp]: "fourth x \<equiv> fst(snd(snd(snd x)))"
   fifthl_def  [simp]: "fifthl x \<equiv> snd(snd(snd(snd x)))"
   fifth_def   [simp]: "fifth x \<equiv> fst(snd(snd(snd(snd x))))"
+
+consts
+  Ex1_DP           :: "('a => bool) => (('a => 'b) => bool) => bool"
+defs Ex1_DP_def [simp]: "Ex1_DP (DP)(P)    == ? f. (P(f)) & (! g. P(g) --> (! x. DP x --> f x = g x))"
+  
 end
