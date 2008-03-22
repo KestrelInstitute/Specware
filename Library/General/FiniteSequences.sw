@@ -26,8 +26,8 @@ FSeq qualifying spec
   op definedOnInitialSegmentOfLength infixl 20 : [a]
      (Nat -> Option a) * Nat -> Boolean
   def definedOnInitialSegmentOfLength (f,n) =
-    (fa (i:Nat) i <  n => embed? Some (f i)) &&
-    (fa (i:Nat) i >= n => embed? None (f i))
+    (fa (i:Nat) i <  n => some? (f i)) &&
+    (fa (i:Nat) i >= n => none? (f i))
 
   type FSeqFunction a =   % functions isomorphic to finite sequences
     {f : Nat -> Option a | ex(n:Nat) f definedOnInitialSegmentOfLength n}
@@ -49,6 +49,7 @@ FSeq qualifying spec
   % return `(i+1)'-th element (i.e. element at position `i'):
   op @ infixl 30 : [a] {(s,i) : FSeq a * Nat | inRange? (s, i)} -> a
   def @ (s,i) = the(x) seq_1 s i = Some x
+  proof Isa -> ^^ [simp] end-proof
 
   % "totalization" of `@':
   op @@ infixl 30 : [a] FSeq a * Nat -> Option a
@@ -350,15 +351,15 @@ FSeq qualifying spec
   op removeNones : [a] FSeq (Option a) -> FSeq a
   def removeNones s =
     % remove `None's:
-    let s = filter (embed? Some) s in
+    let s = filter some? s in
     % remove `Some' wrapper:
-    the(r) map (embed Some) r = s
+    the(r) map Some r = s
 
   % sequences of `Option' values have the same "shape" (i.e. same length
   % and matching `None' and `Some' values at every position `i'):
   op matchingOptionSeqs? : [a,b] FSeq (Option a) * FSeq (Option b) -> Boolean
   def matchingOptionSeqs?(s1,s2) =
     s1 equiLong s2 &&
-    (fa(i:Nat) i < length s1 => embed? None (s1@i) = embed? None (s2@i))
+    (fa(i:Nat) i < length s1 => none? (s1@i) = none? (s2@i))
 
 endspec
