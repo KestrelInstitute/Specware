@@ -102,6 +102,7 @@ FSeq qualifying spec
                   | first::rest -> p (i, first) && aux (i+1, rest)
     in
     aux (0, s)
+  proof Isa foralli_p__aux "measure (\_lambda(i,l,p). size l)" end-proof
 
   op exists? : [a] (a -> Boolean) -> FSeq a -> Boolean
   def exists? = List.exists
@@ -151,6 +152,7 @@ FSeq qualifying spec
       | ([], []) -> nil
       | (first1::rest1, first2::rest2) ->
         cons ((first1, first2), zip (rest1, rest2))
+  proof Isa "measure (\_lambda(l,p). size l)" end-proof
 
   op unzip : [a,b] FSeq (a * b) -> ((FSeq a * FSeq b) | equiLong)
   def unzip s =
@@ -162,11 +164,14 @@ FSeq qualifying spec
 
   op zip3 : [a,b,c] {(s1,s2,s3) : FSeq a * FSeq b * FSeq c |
                      s1 equiLong s2 && s2 equiLong s3} -> FSeq (a * b * c)
+  proof Isa "measure (\_lambda(l,p,q). size l)" end-proof
+
   def zip3(s1,s2,s3) =
     case (s1,s2,s3) of
       | ([], [], []) -> nil
       | (first1::rest1, first2::rest2, first3::rest3) ->
         cons ((first1, first2, first3), zip3 (rest1, rest2, rest3))
+  proof Isa "measure (\_lambda(l,p,q). size l)" end-proof
 
   op unzip3 : [a,b,c] FSeq (a * b * c) ->
      {(s1,s2,s3) : FSeq a * FSeq b * FSeq c | s1 equiLong s2 && s2 equiLong s3}
@@ -272,6 +277,8 @@ FSeq qualifying spec
                else aux (posSeq, pos+1, rtail s)
     in
     aux (empty, 0, s)
+  proof Isa positionsOf__aux "measure (\_lambda(i,p,l,s). size l)" end-proof
+
 
   op longestCommonPrefix : [a] FSeq a * FSeq a -> FSeq a
   def longestCommonPrefix(s1,s2) =
@@ -281,6 +288,7 @@ FSeq qualifying spec
         then cons (first1, longestCommonPrefix (rest1, rest2))
         else nil
       | _ -> nil
+  proof Isa "measure (\_lambda(l,p). size l)" end-proof
 
   % copied from spec `FiniteSequences':
   op longestCommonSuffix : [a] FSeq a * FSeq a -> FSeq a
@@ -318,6 +326,7 @@ FSeq qualifying spec
         (case removeOne (first1, s2) of
            | None -> false
            | Some rest2 -> rest1 permutationOf rest2)
+  proof Isa permutationOf__removeOne "measure (\_lambda(p,l). size l)" end-proof
 
   op sorted? : [a] LinearOrder a -> FSeq a -> Boolean
   def [a] sorted? ord s =
@@ -329,6 +338,7 @@ FSeq qualifying spec
     case s of
       | [] -> true
       | x::s -> sortedAux? (x, s)
+  proof Isa sorted_p__sortedAux_p "measure (\_lambda(p,l,q). size l)" end-proof
 
   op sortt : [a] LinearOrder a -> FSeq a -> FSeq a
   def sortt ord = fn
@@ -349,5 +359,29 @@ FSeq qualifying spec
     if s1 = empty then (s2 = empty) else
     embed? None (hd s1) = embed? None (hd s2) &&
     matchingOptionSeqs? (tl s1, tl s2)
+    proof Isa "measure (\_lambda(l,p). size l)" end-proof
 
+
+  proof Isa Thy_Morphism List
+    type FSeq.FSeq \_rightarrow list
+    FSeq.empty \_rightarrow []
+    FSeq.|> \_rightarrow # Right 23
+    FSeq.length \_rightarrow length
+    FSeq.empty? \_rightarrow null
+    FSeq.first \_rightarrow  hd  
+    FSeq.rtail \_rightarrow  tl
+    FSeq.concat \_rightarrow  @ Left 25
+    FSeq.++ \_rightarrow  @ Left 25
+    FSeq.@ \_rightarrow ! Left 35
+    FSeq.last \_rightarrow  last
+    FSeq.ltail \_rightarrow butlast
+    FSeq.reverse \_rightarrow rev
+    FSeq.flatten \_rightarrow concat
+    FSeq.in? \_rightarrow  mem Left 22
+    FSeq.map \_rightarrow map
+    FSeq.mapPartial \_rightarrow  filtermap  
+    FSeq.exists? \_rightarrow list_ex  
+    FSeq.forall? \_rightarrow  list_all  
+    FSeq.filter \_rightarrow  filter  
+  end-proof
 endspec
