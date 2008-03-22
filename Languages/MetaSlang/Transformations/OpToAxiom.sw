@@ -31,15 +31,16 @@ Prover qualifying spec
 
   %% compute the predicate constraining srt to its ultimate supersort
   def srtPred(spc, srt, tm) =
-    %let _ = toScreen ((printSort srt) ^ "\n") in
+    % let _ = writeLine (printSort srt) in
+    
     let def topPredBaseSrt(srt) =
          case srt of
 	   | Base(Qualified("Nat","Nat"),_,_) | treatNatSpecially? -> topPredBaseSrt(proverNatSort())
 	   | Base (qid, _, _) -> (Some qid, mkTrue())
 	   | Boolean _        -> (None,     mkTrue())
 	   | Subsort (supSrt, predFn, _) ->
-	   let (supBaseSrt, supPred) = topPredBaseSrt(supSrt) in
-	   let pred = (simplify spc (mkApply(predFn, tm))) in
+             let (supBaseSrt, supPred) = topPredBaseSrt(supSrt) in
+             let pred = (simplify spc (mkApply(predFn, tm))) in
 	     (case supBaseSrt of
 		| Some qid -> (Some qid, Utilities.mkAnd(supPred, pred))
 	        | _ -> (None, Utilities.mkAnd(supPred, pred))) 
@@ -47,15 +48,15 @@ Prover qualifying spec
     let (topBaseQId, topPred) = topPredBaseSrt(srt) in
     case topBaseQId of
       | Some topBaseQId ->
-      let optSrt = findTheSort(spc, topBaseQId) in
-      (case optSrt of
-	 | Some info ->
-	   (case sortInfoDefs info of
-	      | [dfn] ->
-	        let newSrt = sortInnerSort dfn in
-	        Utilities.mkAnd (topPred, srtPred (spc, newSrt, tm))
-	      | _ -> topPred)
-	 | _ -> topPred)
+        let optSrt = findTheSort(spc, topBaseQId) in
+        (case optSrt of
+           | Some info ->
+             (case sortInfoDefs info of
+                | [dfn] ->
+                  let newSrt = sortInnerSort dfn in
+                  Utilities.mkAnd (topPred, srtPred (spc, newSrt, tm))
+                | _ -> topPred)
+           | _ -> topPred)
       | _ -> topPred
 
   op opSubsortAxiom: Spec * QualifiedId * Sort -> MS.Term
