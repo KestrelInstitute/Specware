@@ -140,7 +140,7 @@ Set qualifying spec
   % remove member from set:
   op - infixl 25 : [a] Set a * a -> Set a
   def - (s,x) = s -- single x
-  proof Isa [simp] end-proof
+  proof Isa -> less [simp] end-proof
 
   % map function over set:
   op map : [a,b] (a -> b) -> Set a -> Set b
@@ -182,10 +182,6 @@ Set qualifying spec
     (size empty = 0) &&
     (fa(s: FiniteSet a, x: a) size (s <| x) = 1 + size (s - x))
 
-  proof Isa Set__size_Obligation_subsort
-    apply(auto simp add: Set__finite_p_def)
-  end-proof
-
   op hasSize infixl 20 : [a] Set a * Nat -> Boolean
   def hasSize (s,n) = finite? s && size s = n
 
@@ -210,10 +206,6 @@ Set qualifying spec
     (fa(c: b, f: b * a -> b, s: FiniteSet a, x: a)
        foldable? (c, f, s <| x) =>
          fold (c, f, s <| x) = f (fold (c, f, s - x), x))
-
-  proof Isa Set__fold_Obligation_subsort
-    apply(auto simp add: Set__finite_p_def)
-  end-proof
 
   % finite powerset:
   op powerf : [a] Set a -> Set (FiniteSet a)
@@ -294,8 +286,10 @@ Set qualifying spec
     Set.\/ -> \<union> Left 24 
     Set.\\// -> \<Union>
     Set.-- -> - Left 25
+    Set.* -> <*> Left 27
     Set.power -> Pow
     Set.empty -> {}
+    Set.finite? -> finite
   end-proof
 
 endspec
