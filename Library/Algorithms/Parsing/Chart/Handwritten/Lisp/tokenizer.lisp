@@ -209,8 +209,9 @@
 	    +maybe-start-of-ad-hoc-token+))
     (let ((ht-ad-hoc-types (make-hash-table
 			    :test (if case-sensitive?
-				      #+allegro 'string= #-allegro 'equal
-				      'string-equal))))
+				      #+allegro 'string=      #-allegro 'equal
+				      #+allegro 'string-equal #-allegro 'equal
+				      ))))
       (dolist (keyword-string ad-hoc-keywords)
 	(setf (gethash keyword-string ht-ad-hoc-types) :AD-HOC-KEYWORD-ONLY))
       (dolist (symbol-string ad-hoc-symbols)

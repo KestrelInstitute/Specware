@@ -87,8 +87,8 @@
 	  :ht-string-to-keyword-rule
 	  (make-hash-table :size 2000 
 			   :test (if case-sensitive? 
-				     #+allegro 'string= #-allegro 'equal 
-				    'string-equal))
+				     #+allegro 'string=      #-allegro 'equal 
+				     #+allegro 'string-equal #-allegro 'equal))
 	  :ht-name-to-precedences    (make-hash-table :size 2000)
 	  :ht-rnp-to-bvi             (make-hash-table :size 2000 :test 'equal)
 	  :ht-rnp-to-handles-bv      (make-hash-table :size 2000 :test 'equal)
