@@ -64,8 +64,10 @@
 ;          (format t "~&[~3D : ~30D~% ~S]~%"
 ;                  i
 ;                  token
-;                  (parser-location-partial-node-data location)))
-	(cond ((or (eq i 0) (not (null (parser-location-partial-node-data location))))
+	(cond ((or (eq i 0) 
+		   (not (null (parser-location-partial-node-data location)))
+		   (null (parser-location-post-nodes location)) ; last location
+		   )
 	       (setq preceding-location-had-no-pending-rules? nil))
 	      (preceding-location-had-no-pending-rules?
 	       ;; Suppress complaint if immediately preceding location also had the same problem.
@@ -131,6 +133,7 @@
 		;;  so don't try to parse toplevel forms until we get back to column 1.
 		(let ((column (third (third token))))
 		  (unless (and (parse-session-error-reported? session) (> column 1))
+		    (debugging-comment "Adding top-level node because of null partial-node-data at location before ~S" token)
 		    (add-toplevel-node session i))))
 	      (let* ((tok2 (second token)) 
 		     (specific-keyword-rule (if (stringp tok2)
