@@ -694,7 +694,7 @@ in
  op  makeNewVars: List Sort -> List Var
  def makeNewVars srts =
    foldl (fn (s, result) ->
-	  cons (("llp-"^Nat.toString (length result), s), result))
+	  Cons (("llp-"^Nat.toString (length result), s), result))
          [] 
 	 srts
 
