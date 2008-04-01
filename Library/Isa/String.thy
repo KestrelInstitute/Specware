@@ -22,15 +22,6 @@ defs translate_def: "translate subst s \<equiv> concat (map subst (id s))"
 consts compare :: "string \<times> string \<Rightarrow> Compare__Comparison"
 recdef compare "{}"
   "compare(s1,s2) = List__compare Char__compare(id s1,id s2)"
-consts e_lt :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "<" 60)
-defs e_lt_def: "s1 < s2 \<equiv> compare(s1,s2) = Less"
-consts e_lt_eq :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "<=" 60)
-defs e_lt_eq_def: 
-  "(s1::string) <= (s2::string) \<equiv> (s1 < s2 \<or> s1 = s2)"
-consts e_gt :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl ">" 60)
-defs e_gt_def: "(s1::string) > (s2::string) \<equiv> s2 < s1"
-consts e_gt_eq :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl ">=" 60)
-defs e_gt_eq_def: "(s1::string) >= (s2::string) \<equiv> s2 <= s1"
 consts newline :: "string"
 consts toScreen :: "string \<Rightarrow> unit"
 defs toScreen_def: "toScreen s \<equiv> ()"
