@@ -141,14 +141,14 @@ spec
      | mystery -> System.fail ("Could not extract product sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
       
  op  productSorts: Spec * Sort -> List Sort
- def productSorts (sp, srt) =
-   let srt = unfoldBase(sp,srt) in
+ def productSorts (sp, srt1) =
+   let srt = unfoldBase(sp,srt1) in
    case stripSubsorts (sp, srt)
     of Product (fields, _) ->
        if tupleFields? fields
 	 then map (fn (_,x) -> x) fields
-	 else [srt]
-     | _ -> [srt]
+	 else [srt1]
+     | _ -> [srt1]
 
  def coproduct (sp : Spec, srt : Sort) = 
   case stripSubsorts (sp, srt) of
