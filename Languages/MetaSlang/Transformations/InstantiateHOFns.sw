@@ -291,9 +291,8 @@ spec
 				 remainingParams, remainingArgs,remainingIndices,
 				 vSubst,simplifyTerm)
       else
-      let instantiateTyVars = fn s -> instantiateTyVars(s,tyVarSbst) in
-      let defbody = mapTerm(id,instantiateTyVars,id) defbody in
-      let remainingParams = map (fn p -> mapPattern(id,instantiateTyVars,id) p)
+      let defbody = instantiateTyVarsInTerm(defbody, tyVarSbst) in
+      let remainingParams = map (fn p -> instantiateTyVarsInPattern(p,tyVarSbst))
                               remainingParams in
 
       let (remainingParams, remainingArgs) = 
