@@ -79,7 +79,7 @@ String qualifying spec
     let sz = length s in
     let 
       def loop i =
-	if i > sz then 
+	if i >= sz then 
 	  None
 	else if pred (sub(s,i)) then
 	  Some i
