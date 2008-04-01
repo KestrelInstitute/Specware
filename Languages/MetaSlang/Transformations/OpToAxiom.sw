@@ -27,19 +27,60 @@ Prover qualifying spec
 
   op treatNatSpecially?: Boolean = true
 
+  op simpleFun?(f: Fun): Boolean =
+    case f of
+      | Not -> true
+      | And -> true
+      | Or -> true
+      | Implies -> true
+      | Iff -> true
+      | Equals -> true
+      | NotEquals -> true
+      | _ -> false
+
+  op simpleBody?(bod: MS.Term): Boolean =
+    simpleTerm bod
+      || (case bod of
+            | Record(fields,_) ->
+              all (fn (_,t) -> simpleTerm t) fields
+            | Apply(Fun(f,_,_),arg,_) ->
+              simpleBody? arg
+            | _ -> false)
+
+  op maybeUnfoldSubTypePred(spc: Spec, predFn: MS.Term): MS.Term =
+    case predFn of
+      | Fun(Op(qid,_),ty,_) ->
+        (case findTheOp(spc, qid) of
+           | None -> predFn
+           | Some opinfo ->
+             (let (tvs,ty1,defn) = unpackFirstOpDef opinfo in
+                case defn of
+                  | Lambda([(VarPat _, _, bod)],_) | simpleBody? bod ->
+                    (case typeMatch(ty1,inferType(spc,defn),spc,true) of
+                       | Some subst ->  % Should match!
+                         instantiateTyVarsInTerm(defn, subst)
+                       | None -> predFn)
+                  | _ -> predFn))
+      | _ -> predFn
+
   op srtPred: Spec * Sort * MS.Term -> MS.Term
 
   %% compute the predicate constraining srt to its ultimate supersort
   def srtPred(spc, srt, tm) =
-    % let _ = writeLine (printSort srt) in
-    
+    % let _ = writeLine ("TPB: "^printSort srt) in
     let def topPredBaseSrt(srt) =
          case srt of
 	   | Base(Qualified("Nat","Nat"),_,_) | treatNatSpecially? -> topPredBaseSrt(proverNatSort())
-	   | Base (qid, _, _) -> (Some qid, mkTrue())
+	   | Base (qid, _, _) ->
+             let uf_srt = unfoldBase(spc, srt) in
+             if uf_srt = srt
+               then (Some qid, mkTrue())
+               else topPredBaseSrt uf_srt
 	   | Boolean _        -> (None,     mkTrue())
 	   | Subsort (supSrt, predFn, _) ->
              let (supBaseSrt, supPred) = topPredBaseSrt(supSrt) in
+             let predFn = maybeUnfoldSubTypePred (spc, predFn) in
+             % let _ = writeLine("Unfold? "^printTerm predFn) in
              let pred = (simplify spc (mkApply(predFn, tm))) in
 	     (case supBaseSrt of
 		| Some qid -> (Some qid, Utilities.mkAnd(supPred, pred))
@@ -50,7 +91,7 @@ Prover qualifying spec
       | Some topBaseQId ->
         let optSrt = findTheSort(spc, topBaseQId) in
         (case optSrt of
-           | Some info ->
+           | Some info ->               % sjw: I think this case is superceded by unfoldBase above
              (case sortInfoDefs info of
                 | [dfn] ->
                   let newSrt = sortInnerSort dfn in
@@ -87,11 +128,11 @@ Prover qualifying spec
        let impl = Utilities.mkSimpImplies(domPred, rangePred) in
        %let fmla = mkBind(Forall, [domVar], impl) in
        let fmla = mkBind(Forall, [domVar], rangePred) in
-         fmla
+       fmla
       | _ ->
        let rangeTerm = mkOp(opname, srt) in
        let srtPred = srtPred(spc, srt, rangeTerm) in
-        srtPred
+       srtPred
 
   op opSubsortNoCurryAxiom: Spec * QualifiedId * Sort * Nat -> MS.Term
 
