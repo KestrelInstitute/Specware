@@ -1394,58 +1394,70 @@ Utilities qualifying spec
   op instantiateTyVarsInType(ty: Sort, subst: TyVarSubst): Sort =
     mapSort (id, fn ty -> instantiateTyVars(ty,subst), id) ty
 
+  op instantiateTyVarsInTerm(tm: MS.Term, subst: TyVarSubst): MS.Term =
+    mapTerm (id, fn ty -> instantiateTyVars(ty,subst), id) tm
+
+  op instantiateTyVarsInPattern(pat: Pattern, subst: TyVarSubst): Pattern =
+    mapPattern (id, fn ty -> instantiateTyVars(ty,subst), id) pat
+
   op  typeMatch: Sort * Sort * Spec * Boolean -> Option TyVarSubst
   def typeMatch(s1,s2,spc,ign_subtypes?) =
    let def match(srt1: Sort, srt2: Sort, pairs: TyVarSubst): Option TyVarSubst =
-        case (srt1,srt2) of
-	  | (TyVar(id1,_), srt2) -> 
-	    (case (find (fn (id,_) -> id = id1) pairs) of
-	      | Some(_,msrt1) -> if equalType?(msrt1,srt2) then Some pairs else None  % TODO: should equalType? be equivType? ??
-	      | None -> Some(Cons((id1,srt2),pairs)))
-	  | (Arrow(t1,t2,_),Arrow(s1,s2,_)) ->
-	    (case match(t1,s1,pairs) of
-	       | Some pairs -> match(t2,s2,pairs)
-	       | None -> None)
-	  | (Product(r1,_),Product(r2,_)) -> 
-	    typeMatchL(r1,r2,pairs,fn((_,s1),(_,s2),pairs) -> match(s1,s2,pairs)) 
-	  | (CoProduct(r1,_),CoProduct(r2,_)) -> 
-	    typeMatchL(r1,r2,pairs,
-		       fn((id1,s1),(id2,s2),pairs) ->
-		       if id1 = id2 then
-			 (case (s1,s2) of
-			    | (None,None) -> Some pairs 
-			    | ((Some ss1),(Some ss2)) -> match(ss1,ss2,pairs))
-		       else None)
-	  | (Quotient(ty,t1,_),Quotient(ty2,t2,_)) -> 
-	    if equalTerm?(t1,t2) then % not equivTerm?
-              match(ty,ty2,pairs)
-            else 
-              None
-	  | (Subsort(ty,t1,_),Subsort(ty2,t2,_)) | equalTerm?(t1,t2) ->  % not equivTerm?
-            match(ty,ty2,pairs)
-          | (Subsort(ty,_,_), ty2) | ign_subtypes? ->
-            match(ty,ty2,pairs)
-          | (ty1, Subsort(ty,_,_)) | ign_subtypes? ->
-            match(ty1,ty,pairs)
-	  | (Base(id,ts,pos1),Base(id2,ts2,pos2)) ->
-	    if id = id2
-	      then typeMatchL(ts,ts2,pairs,match)
-	      else
-		let s2x = unfoldBase(spc,srt2) in
-		if equalType? (srt2,s2x) %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
-		  then Some pairs
-		else match(srt1,s2x,pairs)
-	  | (_,Base _) ->
-	    let s2x = unfoldBase(spc,srt2) in
-	    if equalType? (srt2,s2x)     %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
-	     then None
-	     else match(srt1,s2x,pairs)
-	  | (Base _,_) ->
-	    let s1x = unfoldBase(spc,srt1) in
-	    if equalType? (srt1,s1x)     %% equivType? spc (srt1,s1x)  would also be reasonable -- see NormalizeTypes.sw for usage
-	     then None
-	     else match(s1x,srt2,pairs)
-	  | _ -> None
+        % let _ = writeLine(printSort srt1^" =?= "^ printSort srt2) in
+        let result =
+            case (srt1,srt2) of
+              | (TyVar(id1,_), srt2) -> 
+                (case (find (fn (id,_) -> id = id1) pairs) of
+                   | Some(_,msrt1) -> if equalType?(msrt1,srt2) then Some pairs else None  % TODO: should equalType? be equivType? ??
+                   | None -> Some(Cons((id1,srt2),pairs)))
+              | (Arrow(t1,t2,_),Arrow(s1,s2,_)) ->
+                (case match(t1,s1,pairs) of
+                   | Some pairs -> match(t2,s2,pairs)
+                   | None -> None)
+              | (Product(r1,_),Product(r2,_)) -> 
+                typeMatchL(r1,r2,pairs,fn((_,s1),(_,s2),pairs) -> match(s1,s2,pairs)) 
+              | (CoProduct(r1,_),CoProduct(r2,_)) -> 
+                typeMatchL(r1,r2,pairs,
+                           fn((id1,s1),(id2,s2),pairs) ->
+                             if id1 = id2 then
+                               (case (s1,s2) of
+                                  | (None,None) -> Some pairs 
+                                  | ((Some ss1),(Some ss2)) -> match(ss1,ss2,pairs))
+                             else None)
+              | (Quotient(ty,t1,_),Quotient(ty2,t2,_)) -> 
+                if equalTerm?(t1,t2) then % not equivTerm?
+                  match(ty,ty2,pairs)
+                else 
+                  None
+              | (Subsort(ty,t1,_),Subsort(ty2,t2,_)) | equalTerm?(t1,t2) ->  % not equivTerm?
+                match(ty,ty2,pairs)
+              | (Subsort(ty,_,_), ty2) | ign_subtypes? ->
+                match(ty,ty2,pairs)
+              | (ty1, Subsort(ty,_,_)) | ign_subtypes? ->
+                match(ty1,ty,pairs)
+              | (Base(id,ts,pos1),Base(id2,ts2,pos2)) ->
+                if id = id2
+                  then typeMatchL(ts,ts2,pairs,match)
+                else
+                  let s2x = unfoldBase(spc,srt2) in
+                  if equalType? (srt2,s2x) %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
+                    then Some pairs
+                  else match(srt1,s2x,pairs)
+              | (_,Base _) ->
+                let s2x = unfoldBase(spc,srt2) in
+                if equalType? (srt2,s2x)     %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
+                  then None
+                else match(srt1,s2x,pairs)
+              | (Base _,_) ->
+                let s1x = unfoldBase(spc,srt1) in
+                if equalType? (srt1,s1x)     %% equivType? spc (srt1,s1x)  would also be reasonable -- see NormalizeTypes.sw for usage
+                  then None
+                else match(s1x,srt2,pairs)
+              | (Boolean _, Boolean _) -> Some pairs
+              | _ -> None
+        in
+        % let _ = writeLine("Result: "^anyToString result) in
+        result
   in match(s1,s2,[])
 
   op typeMatchL: [a] List a * List a * TyVarSubst * (a * a * TyVarSubst -> Option TyVarSubst)
