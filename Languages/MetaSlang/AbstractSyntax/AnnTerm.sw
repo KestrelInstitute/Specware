@@ -39,6 +39,8 @@ MetaSlang qualifying spec
      | Qualified(UnQualified, _) -> true
      | _ -> false
 
+ op mainId(Qualified(_,main_id): QualifiedId): String = main_id
+
  %% These are used by translation, morphism code
  def unqualified_Boolean = mkUnQualifiedId "Boolean"               % used by translate
  def Boolean_Boolean     = mkQualifiedId ("Boolean", "Boolean")    % used by translate
