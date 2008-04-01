@@ -33,21 +33,27 @@ FSet qualifying spec
 
   op in? infixl 20 : [a] a * FSet a -> Boolean
   def in? (x,s) = x in? fromFSet s
+  proof Isa -> in_fset? end-proof
 
   op nin? infixl 20 : [a] a * FSet a -> Boolean
   def nin? (x,s) = x nin? fromFSet s
+  proof Isa -> nin_fset? end-proof
 
   op <= infixl 20 : [a] FSet a * FSet a -> Boolean
   def <= (s1,s2) = fromFSet s1 <= fromFSet s2
+  proof Isa -> <=_fset? end-proof
 
   op < infixl 20 : [a] FSet a * FSet a -> Boolean
   def < (s1,s2) = fromFSet s1 < fromFSet s2
+  proof Isa -> <_fset? end-proof
 
   op >= infixl 20 : [a] FSet a * FSet a -> Boolean
   def >= (s1,s2) = fromFSet s1 >= fromFSet s2
+  proof Isa -> >=_fset? end-proof
 
   op > infixl 20 : [a] FSet a * FSet a -> Boolean
   def > (s1,s2) = fromFSet s1 > fromFSet s2
+  proof Isa -> >_fset? end-proof
 
   op /\ infixr 25 : [a] FSet a * FSet a -> FSet a
   def /\ (s1,s2) = toFSet (fromFSet s1 /\ fromFSet s2)
@@ -60,12 +66,14 @@ FSet qualifying spec
 
   op * infixl 27 : [a,b] FSet a * FSet b -> FSet (a * b)
   def * (s1,s2) = toFSet (fromFSet s1 * fromFSet s2)
+  proof Isa -> *_fset? end-proof
 
   op power : [a] FSet a -> FSet (FSet a)
   def power s = toFSet (map toFSet (power (fromFSet s)))
 
   op empty : [a] FSet a
   def empty = toFSet empty
+  proof Isa -> empty_fset? end-proof
 
   op empty? : [a] FSet a -> Boolean
   def empty? s = empty? (fromFSet s)
@@ -91,9 +99,11 @@ FSet qualifying spec
 
   op <| infixl 25 : [a] FSet a * a -> FSet a
   def <| (s,x) = toFSet (fromFSet s <| x)
+  proof Isa -> with_fs [simp] end-proof
 
   op - infixl 25 : [a] FSet a * a -> FSet a
   def - (s,x) = toFSet (fromFSet s - x)
+  proof Isa -> -_fset? end-proof
 
   op map : [a,b] (a -> b) -> FSet a -> FSet b
   def map f s = toFSet (map f (fromFSet s))

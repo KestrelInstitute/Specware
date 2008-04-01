@@ -46,6 +46,7 @@ FMap qualifying spec
 
   op @ infixl 30 : [a,b] ((FMap(a,b) * a) | definedAt) -> b
   def @ (m,x) = (fromFMap m) @ x
+  proof Isa -> @_fm end-proof
 
   op @@ infixl 30 : [a,b] FMap(a,b) * a -> Option b
   def @@ (m,x) = (fromFMap m) @@ x
@@ -67,21 +68,27 @@ FMap qualifying spec
 
   op o infixl 24 : [a,b,c] FMap(b,c) * FMap(a,b) -> FMap(a,c)
   def o (m1,m2) = toFMap (fromFMap m1 o fromFMap m2)
+  proof Isa -> o_fm end-proof
 
   op <= infixl 20 : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
   def <= (m1,m2) = fromFMap m1 <= fromFMap m2
+  proof Isa -> <=_fm end-proof
 
   op < infixl 20 : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
   def < (m1,m2) = fromFMap m1 < fromFMap m2
+  proof Isa -> <_fm end-proof
 
   op >= infixl 20 : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
   def >= (m1,m2) = fromFMap m1 >= fromFMap m2
+  proof Isa -> >=_fm end-proof
 
   op > infixl 20 : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
   def > (m1,m2) = fromFMap m1 > fromFMap m2
+  proof Isa -> >_fm end-proof
 
   op empty : [a,b] FMap(a,b)
   def empty = toFMap empty
+  proof Isa -> empty_fm end-proof
 
   op empty? : [a,b] FMap(a,b) -> Boolean
   def empty? m = empty? (fromFMap m)
@@ -99,9 +106,11 @@ FMap qualifying spec
 
   op -- infixl 25 : [a,b] FMap(a,b) * FSet a -> FMap(a,b)
   def -- (m,xS) = toFMap (fromFMap m -- fromFSet xS)
+  proof Isa -> --_fm end-proof
 
   op - infixl 25 : [a,b] FMap(a,b) * a -> FMap(a,b)
   def - (m,x) = toFMap (fromFMap m - x)
+  proof Isa -> less_fm end-proof
 
   op agree? : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
   def agree?(m1,m2) = agree? (fromFMap m1, fromFMap m2)

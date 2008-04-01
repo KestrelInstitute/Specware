@@ -34,6 +34,7 @@ Relation qualifying spec
   % backward composition:
   op o infixl 24 : [a,b,c] Relation(b,c) * Relation(a,b) -> Relation(a,c)
   def o (r1,r2) = r2 :> r1
+  proof Isa -> o_R end-proof
 
   op inverse : [a,b] Relation(a,b) -> Relation(b,a)
   def inverse r = fn (y,x) -> r(x,y)

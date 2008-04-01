@@ -58,11 +58,15 @@ FSeq qualifying spec
   op empty : [a] FSeq a
   def empty = seq (fn x -> None)
 
+  theorem length_empty is [a] length (empty: FSeq a) = 0
+  proof Isa [simp] end-proof    
+
   op empty? : [a] FSeq a -> Boolean
   def empty? s = (s = empty)
 
   op nonEmpty? : [a] FSeq a -> Boolean
-  def nonEmpty? = ~~ empty?
+  def nonEmpty? s = ~(empty? s)
+  proof Isa [simp] end-proof    
 
   type NonEmptyFSeq a = (FSeq a | nonEmpty?)
 
@@ -107,10 +111,12 @@ FSeq qualifying spec
   % element in sequence:
   op in? infixl 20 : [a] a * FSeq a -> Boolean
   def in? (x,s) = (ex(i:Nat) s @@ i = Some x)
+  proof Isa -> in-fs? end-proof
 
   % element not in sequence:
   op nin? infixl 20 : [a] a * FSeq a -> Boolean
   def nin? (x,s) = ~(x in? s)
+  proof Isa -> nin-fs? end-proof
 
   % every element satisfies predicate:
   op forall? : [a] (a -> Boolean) -> FSeq a -> Boolean
@@ -279,6 +285,12 @@ FSeq qualifying spec
   % left tail (i.e. remove last element):
   op ltail : [a] NonEmptyFSeq a -> FSeq a
   def ltail s = removeSuffix (s, 1)
+
+  theorem length_ltail is [a] fa(s: NonEmptyFSeq a) length (ltail s) = length s - 1
+  proof Isa [simp] end-proof    
+
+  theorem length_ltail_order is [a] fa(s: NonEmptyFSeq a) length (ltail s) < length s
+  proof Isa [simp] end-proof    
 
   % right tail (i.e. remove first element):
   op rtail : [a] NonEmptyFSeq a -> FSeq a

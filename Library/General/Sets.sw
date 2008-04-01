@@ -94,7 +94,7 @@ Set qualifying spec
   proof Isa [simp] end-proof
 
   op nonEmpty? : [a] Set a -> Boolean
-  def nonEmpty? = ~~ empty?
+  def nonEmpty? s = (s ~= empty)
 
   type NonEmptySet a = (Set a | nonEmpty?)
 
@@ -108,7 +108,7 @@ Set qualifying spec
   proof Isa [simp] end-proof
 
   op nonFull? : [a] Set a -> Boolean
-  def nonFull? = ~~ full?
+  def nonFull? s = (s ~= full)
   proof Isa [simp] end-proof
 
   type NonFullSet a = (Set a | nonFull?)
@@ -135,7 +135,7 @@ Set qualifying spec
   % add member to set (triangle points towards set):
   op <| infixl 25 : [a] Set a * a -> Set a
   def <| (s,x) = s \/ single x
-  proof Isa [simp] end-proof
+  proof Isa -> with_el [simp] end-proof
 
   % remove member from set:
   op - infixl 25 : [a] Set a * a -> Set a
