@@ -50,6 +50,11 @@
 (delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/slime/CVS/"))
 (delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/slime/doc/CVS/"))
 
+(specware::copy-directory (in-specware-dir     "Library/General/")
+			  (in-distribution-dir "Library/General/"))
+(delete-dir-if-present    (in-distribution-dir "Library/General/CVS/"))
+(delete-dir-if-present    (in-distribution-dir "Library/General/Isa/"))
+
 (specware::concatenate-files
    (loop for fil in '("Base/Handwritten/Lisp/Integer"
 ;		      "Base/Handwritten/Lisp/Nat"
