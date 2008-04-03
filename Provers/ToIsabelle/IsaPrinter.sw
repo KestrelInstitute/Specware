@@ -1341,16 +1341,19 @@ IsaTermPrinter qualifying spec
       | None \_rightarrow
     let def prApply(term1, term2) =
        case (term1, term2) of
-	 | (Fun(Embed(constr_id,_), ty, _), Record (("1",_)::_,_))
-	     | let spc = getSpec c in
-	       multiArgConstructor?(constr_id,range(spc,ty),spc) \_rightarrow
+	 | (Fun(Embed(constr_id,_), ty, _), Record (("1",_)::_,_)) \_rightarrow
+           let spc = getSpec c in
+	   if multiArgConstructor?(constr_id,range(spc,ty),spc) then
 	   %% Treat as curried
-	   prBreak 2 [ppConstructor constr_id,
-		      prSpace,
-		      prPostSep 2 blockFill prSpace
-			  (map (\_lambda tm \_rightarrow enclose?(\_not(isSimpleTerm? tm),
-						  ppTerm c Nonfix tm))
-			     (MS.termToList term2))]
+	      prBreak 2 [ppConstructor constr_id,
+                         prSpace,
+                         prPostSep 2 blockFill prSpace
+                           (map (\_lambda tm \_rightarrow enclose?(\_not(isSimpleTerm? tm),
+                                                   ppTerm c Nonfix tm))
+                              (MS.termToList term2))]
+           else prConcat [ppConstructor constr_id,
+                          prSpace,
+                          ppTerm c Nonfix term2]
          | (Lambda (match as (_ :: _ :: _), _),_) \_rightarrow
            if nonCaseMatch? match
              then ppTerm c parentTerm (caseToIf(c, match, term2))
@@ -1747,6 +1750,10 @@ IsaTermPrinter qualifying spec
       | true \_rightarrow prString "True"
       | false \_rightarrow prString "False"
 
+  op etaRuleProduct(tm: MS.Term, fields: List(Id * Sort)): MS.Term =
+    let (pat,arg) = patTermVarsForProduct fields in
+    mkLambda(pat, mkApply(tm, arg))
+
   op  ppFun : Context \_rightarrow ParentTerm \_rightarrow Fun \_rightarrow Sort \_rightarrow Pretty
   def ppFun c parentTerm fun ty =
     case fun of
@@ -1774,8 +1781,13 @@ IsaTermPrinter qualifying spec
                                 prString " y"])
            | None \_rightarrow
          case specialOpInfo c qid of
-           | Some(isa_id, _, _, _, _) ->
-             prString isa_id
+           | Some(isa_id, _, curry?, _, _) \_rightarrow
+             if curry?
+               then (let spc = getSpec c in
+                     case productOpt(spc,domain(spc,ty)) of
+                       | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
+                       | None -> prString isa_id)
+               else prString isa_id
            | _ -> ppOpQualifiedId c qid)
       | Project id \_rightarrow
         let (dom, rng) = arrow(getSpec c, ty) in
@@ -1785,16 +1797,11 @@ IsaTermPrinter qualifying spec
       | Embed (id,b) \_rightarrow
         (let spc = getSpec c in
          case arrowOpt(spc,ty) of
-           | Some(dom,rng) \_rightarrow
+           | Some(dom,rng) | multiArgConstructor?(id,rng,spc) \_rightarrow
              (case productOpt(spc,dom) of
-                | Some fields \_rightarrow
-                  let (pat,tm) = patTermVarsForProduct fields in
-                  let exp_tm = (mkLambda(pat, mkApply(mkFun(fun,ty), tm))) in
-                  % let _ = writeLine("exp_tm: "^printTermWithSorts exp_tm) in
-                  % let _ = fail("error?") in
-                  ppTerm c parentTerm exp_tm
+                | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
                 | None -> ppConstructor id)
-           | None \_rightarrow ppConstructor id)
+           | _ \_rightarrow ppConstructor id)
       | Embedded id \_rightarrow ppConstructor id
       | Select id \_rightarrow prConcat [prString "select ", prString id]
       | Nat n \_rightarrow prString (Nat.toString n)
