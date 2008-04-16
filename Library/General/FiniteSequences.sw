@@ -65,7 +65,7 @@ FSeq qualifying spec
   def empty? s = (s = empty)
 
   op nonEmpty? : [a] FSeq a -> Boolean
-  def nonEmpty? s = ~(empty? s)
+  def nonEmpty? s = s ~= empty
   proof Isa [simp] end-proof    
 
   type NonEmptyFSeq a = (FSeq a | nonEmpty?)
