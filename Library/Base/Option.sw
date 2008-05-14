@@ -32,7 +32,9 @@ Option qualifying spec
     | None   -> None
     | Some x -> Some (f x)
 
-  op [a,b] isoOption: Bijection(a,b) -> Bijection(Option a, Option b) =
+  % lift isomorphism (i.e. bijection) to also map extra element:
+
+  op [a,b] isoOption : Bijection(a,b) -> Bijection(Option a, Option b) =
     fn iso_elem -> mapOption iso_elem
 
   % mapping to Isabelle:
